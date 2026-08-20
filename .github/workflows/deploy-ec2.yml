@@ -10,10 +10,35 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Prepare and build BuildIt Wiki
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/buildit-wiki
+          mkdir -p /tmp/buildit-wiki
+          base64 -d wiki-source.tgz.b64 > /tmp/wiki-source.tgz
+          tar -xzf /tmp/wiki-source.tgz -C /tmp/buildit-wiki
+          cd /tmp/buildit-wiki
+          npm ci
+          npm run build -- --base=/problem-generator/wiki/
+          cd "$GITHUB_WORKSPACE"
+          rm -rf src/main/resources/static/problem-generator/wiki
+          mkdir -p src/main/resources/static/problem-generator/wiki
+          cp -R /tmp/buildit-wiki/dist/. src/main/resources/static/problem-generator/wiki/
+          sed -i "s#DB_PATH = '/workspace/data/app.db'#DB_PATH = '/opt/buildit-wiki/data/app.db'#" /tmp/buildit-wiki/backend/main.py
+          sed -i "s#WORKSPACE = Path('/workspace')#WORKSPACE = Path('/opt/buildit-wiki')#" /tmp/buildit-wiki/backend/main.py
+          tar -czf /tmp/buildit-wiki-backend.tgz -C /tmp/buildit-wiki backend requirements.txt
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -34,12 +59,52 @@ jobs:
         shell: bash
         run: |
           JAR=$(find build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*-plain.jar" | head -n 1)
-          if [ -z "$JAR" ]; then
-            echo "::error::bootJar artifact not found"
-            exit 1
-          fi
-          echo "Found JAR: $JAR"
+          test -n "$JAR" || { echo "::error::bootJar artifact not found"; exit 1; }
           echo "path=$JAR" >> "$GITHUB_OUTPUT"
+
+      - name: Create EC2 deploy script
+        shell: bash
+        run: |
+          cat > /tmp/deploy-buildit.sh <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          BUCKET=feel2real-buildit-deploy
+          aws s3 cp s3://$BUCKET/app.jar /tmp/app-new.jar
+          mv /tmp/app-new.jar /home/ec2-user/app.jar
+
+          mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
+          aws s3 cp s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
+          rm -rf /opt/buildit-wiki/app/*
+          tar -xzf /tmp/buildit-wiki-backend.tgz -C /opt/buildit-wiki/app
+          python3 -m venv /opt/buildit-wiki/venv
+          /opt/buildit-wiki/venv/bin/pip install --disable-pip-version-check -r /opt/buildit-wiki/app/requirements.txt
+
+          cat > /etc/systemd/system/buildit-wiki.service <<'UNIT'
+          [Unit]
+          Description=BuildIt Wiki FastAPI
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=/opt/buildit-wiki/app/backend
+          ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
+          Restart=always
+          RestartSec=3
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          systemctl daemon-reload
+          systemctl enable buildit-wiki.service
+          systemctl restart buildit-wiki.service
+          systemctl restart f2r-app.service
+          sleep 6
+          systemctl is-active buildit-wiki.service
+          systemctl is-active f2r-app.service
+          curl -fsS http://127.0.0.1:8000/api/health
+          SCRIPT
+          chmod +x /tmp/deploy-buildit.sh
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -47,9 +112,11 @@ jobs:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
 
-      - name: Upload jar to S3
+      - name: Upload deployment artifacts to S3
         run: |
-          aws s3 cp "${{ steps.jar.outputs.path }}" "s3://feel2real-buildit-deploy/app.jar"
+          aws s3 cp "${{ steps.jar.outputs.path }}" s3://feel2real-buildit-deploy/app.jar
+          aws s3 cp /tmp/buildit-wiki-backend.tgz s3://feel2real-buildit-deploy/buildit-wiki-backend.tgz
+          aws s3 cp /tmp/deploy-buildit.sh s3://feel2real-buildit-deploy/deploy-buildit.sh
 
       - name: Deploy through SSM
         shell: bash
@@ -57,23 +124,8 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "i-09d7cabb5a42d1135" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
-              "set -e",
-              "aws s3 cp s3://feel2real-buildit-deploy/app.jar /tmp/app-new.jar",
-              "sudo mv /tmp/app-new.jar /home/ec2-user/app.jar",
-              "sudo systemctl restart f2r-app.service",
-              "sleep 5",
-              "sudo systemctl is-active f2r-app.service"
-            ]' \
-            --query "Command.CommandId" \
-            --output text)
-
+            --parameters 'commands=["set -e","aws s3 cp s3://feel2real-buildit-deploy/deploy-buildit.sh /tmp/deploy-buildit.sh","chmod +x /tmp/deploy-buildit.sh","/tmp/deploy-buildit.sh"]' \
+            --query 'Command.CommandId' --output text)
           echo "SSM Command ID: $COMMAND_ID"
-
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "i-09d7cabb5a42d1135"
-
-          aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "i-09d7cabb5a42d1135"
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
