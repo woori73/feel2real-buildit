@@ -14,7 +14,7 @@ import org.springframework.web.client.RestClientException;
 
 @Service
 public class GeminiProblemGenerationService {
-  private static final String MODEL = "gemini-3.6-flash";
+  public static final String MODEL = "gemini-3.5-flash";
   private final RestClient restClient;
   private final ObjectMapper objectMapper;
 
@@ -55,7 +55,6 @@ public class GeminiProblemGenerationService {
       throw new IllegalStateException("Gemini API 호출 실패: HTTP " + exception.getStatusCode().value() + geminiErrorMessage(exception));
     }
   }
-
 
   public String chat(String apiKey, String message, String context) {
     if (apiKey == null || apiKey.isBlank()) {
@@ -117,13 +116,12 @@ public class GeminiProblemGenerationService {
     return builder.toString();
   }
 
-
   private String geminiErrorMessage(HttpStatusCodeException exception) {
     String body = exception.getResponseBodyAsString();
     if (body == null || body.isBlank()) {
       return "";
     }
-    String compact = body.replaceAll("\s+", " ").trim();
+    String compact = body.replaceAll("\\s+", " ").trim();
     if (compact.length() > 220) {
       compact = compact.substring(0, 220) + "...";
     }
