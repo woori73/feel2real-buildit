@@ -1,21 +1,5 @@
 name: Deploy to EC2 (manual)
 
-# 수동 트리거 전용. GitHub UI → Actions → "Deploy to EC2 (manual)" → [Run workflow] 클릭.
-#
-# 필요한 GitHub Secrets (Settings → Secrets and variables → Actions):
-#   EC2_HOST     EC2 public IP 또는 도메인 (예: 13.124.xx.xx)
-#   EC2_USER     SSH user (Amazon Linux: ec2-user / Ubuntu: ubuntu)
-#   EC2_SSH_KEY  SSH private key 전체 내용 (-----BEGIN ... PRIVATE KEY----- 포함)
-#
-# EC2 사전 준비 (한 번만):
-#   - systemd unit: f2r-app.service (ExecStart=/usr/bin/java -Xmx1g -jar /home/ec2-user/app.jar)
-#   - jar 위치: /home/ec2-user/app.jar (ec2-user 소유 → sudo 없이 덮어쓰기 가능)
-#   - ec2-user가 sudo 비밀번호 없이 systemctl restart/is-active 가능해야 함:
-#       echo 'ec2-user ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart f2r-app.service, /usr/bin/systemctl is-active f2r-app.service' \
-#         | sudo tee /etc/sudoers.d/f2r-deploy
-#       sudo chmod 440 /etc/sudoers.d/f2r-deploy
-#     ※ systemctl 경로가 다르면 (which systemctl 로 확인) 위 라인의 경로 수정
-
 on:
   workflow_dispatch:
 
@@ -25,22 +9,24 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21 (Temurin)
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Gradle (with cache)
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build bootJar
@@ -49,34 +35,46 @@ jobs:
       - name: Locate jar
         id: jar
         run: |
-          JAR=$(ls build/libs/*-SNAPSHOT.jar | head -n 1)
+          JAR=$(find build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*-plain.jar" | head -n 1)
           if [ -z "$JAR" ]; then
             echo "::error::bootJar artifact not found"
             exit 1
           fi
           echo "path=$JAR" >> "$GITHUB_OUTPUT"
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
 
-      - name: Upload jar to EC2
+      - name: Upload jar to S3
         run: |
-          scp -i ~/.ssh/deploy_key \
-              -o StrictHostKeyChecking=accept-new \
-              "${{ steps.jar.outputs.path }}" \
-              "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/app-new.jar"
+          aws s3 cp "${{ steps.jar.outputs.path }}" \
+            s3://feel2real-buildit-deploy/app.jar
 
-      - name: Swap jar and restart service
+      - name: Deploy through SSM
         run: |
-          ssh -i ~/.ssh/deploy_key \
-              -o StrictHostKeyChecking=accept-new \
-              "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
-              'set -e
-               mv /tmp/app-new.jar /home/ec2-user/app.jar
-               sudo systemctl restart f2r-app.service
-               sleep 5
-               sudo systemctl is-active f2r-app.service'
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "set -e",
+              "aws s3 cp s3://feel2real-buildit-deploy/app.jar /tmp/app-new.jar",
+              "sudo mv /tmp/app-new.jar /home/ec2-user/app.jar",
+              "sudo systemctl restart f2r-app.service",
+              "sleep 5",
+              "sudo systemctl is-active f2r-app.service"
+            ]' \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM Command ID: $COMMAND_ID"
+
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "i-09d7cabb5a42d1135"
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "i-09d7cabb5a42d1135"
