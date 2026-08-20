@@ -1,0 +1,69 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### security ###
+.env
+.envrc.local
+#application-local.yml
+#application-local.yaml
+#application-prd.yml
+#application-prd.yaml
+
+### Claude ###
+.claude/
+
+### OS metadata ###
+.DS_Store
+**/.DS_Store
+
+### test datas ###
+/raw_datas
+
+### local docs artifacts (AWS_DEPLOYMENT.md is tracked canonical runbook) ###
+docs/플로우_ver_1.drawio
+docs/플로우_ver_1.drawio.png
+
+### OMC (oh-my-claudecode) state — ephemeral, not source of truth ###
+.omc/
+
+### OMX (oh-my-codex) state — ephemeral, not source of truth ###
+.omx/
+
+### Temporary parallel workflow docs (absorbed into MVP.md/API.md after completion) ###
+docs/changes/
+docs/temp/
