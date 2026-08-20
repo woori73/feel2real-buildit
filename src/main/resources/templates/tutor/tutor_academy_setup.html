@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academy 생성</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div><div class="brand">Academy 설정</div><p class="muted">필수 정보만 입력해 공개 페이지를 만듭니다.</p></div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="/my/profile">내 프로필</a>
+        <a class="btn btn-ghost" href="/tutor/academy">내 Academy</a>
+        <button class="btn btn-ghost" type="button" onclick="handleLogout()">로그아웃</button>
+      </div>
+    </div>
+    <section class="card">
+      <form id="academyForm">
+        <div class="grid">
+          <div class="field"><label for="name">Academy 이름 *</label><input id="name" required placeholder="예: 민지쌤 영어 Academy"></div>
+          <div class="field"><label for="logo">로고 이미지 (선택, 없으면 기본 로고 적용)</label><input id="logo" type="file" accept="image/*"></div>
+        </div>
+        <div class="field">
+          <label for="handle">공개 주소(handle) *</label>
+          <input id="handle" required placeholder="예: minji-english" maxlength="30" autocapitalize="off" autocomplete="off">
+          <small class="muted">3~30자 소문자/숫자/하이픈. 공개 주소 <b><span id="handlePreview">handle</span>.feel2real.co.kr</b> 로 열립니다.</small>
+          <p id="handleStatus" class="muted" aria-live="polite"></p>
+        </div>
+        <div class="field"><label for="cover">커버 이미지 (선택)</label><input id="cover" type="file" accept="image/*"></div>
+        <div class="field">
+          <label for="intro">소개 * <span id="introCount" class="muted">0/1000</span></label>
+          <textarea id="intro" required maxlength="1000" placeholder="강의 방식, 강점, 학생에게 전달하고 싶은 메시지를 적어주세요."></textarea>
+        </div>
+        <div class="field"><label for="subjectIds">과목 *</label><select id="subjectIds" required></select></div>
+        <div class="field">
+          <label>대상 *</label>
+          <div class="checkbox-row" id="targetGroups">
+            <label><input type="checkbox" value="ELEMENTARY"> 초등학생</label>
+            <label><input type="checkbox" value="MIDDLE"> 중학생</label>
+            <label><input type="checkbox" value="HIGH"> 고등학생</label>
+            <label><input type="checkbox" value="UNIVERSITY"> 대학생</label>
+            <label><input type="checkbox" value="ADULT"> 성인</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>지역 * (최대 3개)</label>
+          <div class="grid">
+            <select id="city1" required></select><select id="district1"></select>
+            <select id="city2"></select><select id="district2"></select>
+            <select id="city3"></select><select id="district3"></select>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="field"><label for="blogUrl">블로그 URL (선택)</label><input id="blogUrl" type="url" placeholder="https://blog.naver.com/..."></div>
+          <div class="field"><label for="storeUrl">스마트스토어 URL (선택)</label><input id="storeUrl" type="url" placeholder="https://smartstore.naver.com/..."></div>
+        </div>
+        <div class="field">
+          <label>공개 페이지 섹션 표시</label>
+          <div class="checkbox-row" id="sectionVisibility">
+            <label><input type="checkbox" value="sec-principal" checked> 원장 소개</label>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Academy 공개하기</button>
+      </form>
+      <p id="statusMsg" role="alert"></p>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/tutor_academy_setup.js"></script>
+  <script>
+    async function handleLogout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+      sessionStorage.clear();
+      location.href = '/';
+    }
+  </script>
+</body>
+</html>

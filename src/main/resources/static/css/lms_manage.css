@@ -1,0 +1,16 @@
+/* 강좌관리(운영자 전용) 전용. 테이블 공통 규칙은 lms_shell.css. */
+
+.tab-bar{display:flex;gap:8px;margin-bottom:24px;background:#f1f1f6;padding:6px;border-radius:16px;width:fit-content}
+.tab-bar button{padding:12px 22px;border:0;background:transparent;border-radius:12px;font-size:15px;font-weight:700;color:var(--text-light);transition:all .2s ease}
+.tab-bar button.active{background:#fff;color:var(--navy);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.manage-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.manage-table td button{border:0;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;margin-right:6px}
+.manage-table td .delete{background:#f1f1f6;color:#333}
+.manage-table td .delete:disabled{cursor:wait;opacity:.55}
+.manage-table .manage-loading,.manage-table .manage-empty,.manage-table .manage-error{padding:36px 16px;text-align:center;color:var(--text-light)}
+.manage-table .manage-error{color:#b42318}
+.admin-review{padding:20px 0;border-bottom:1px solid var(--border)}
+.admin-review:last-child{border-bottom:0}
+.admin-review textarea{margin-top:10px}
+.admin-review-empty{color:var(--text-light);font-size:15px}
+.admin-review-actions{margin-top:10px;display:flex;gap:8px}

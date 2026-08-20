@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName} + ' — 미리보기'">Academy</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/academy_blog.css">
+  <style>
+    .al-section { padding: 32px 20px; max-width: 880px; margin: 0 auto; }
+    .al-topnav { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #eee; font-weight: 700; color: #1a1a2e; }
+    .al-hero h1 { margin: 0 0 8px; font-size: 28px; color: #1a1a2e; }
+    .al-hero p { margin: 0; color: #555; font-size: 15px; line-height: 1.6; }
+    .al-quote blockquote { margin: 0; padding: 16px 20px; border-left: 4px solid #6c5ce7; color: #333; font-style: italic; background: #faf9ff; }
+    .al-heading { font-size: 18px; font-weight: 700; color: #1a1a2e; margin: 0 0 12px; }
+    .al-placeholder { color: #9aa0a6; font-size: 14px; padding: 16px; border: 1px dashed #d1d5db; border-radius: 8px; text-align: center; }
+    .al-cta { text-align: center; }
+    .al-cta button[disabled] { opacity: .55; cursor: not-allowed; }
+    .al-blog-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .al-blog-list a { color: #1a1a2e; text-decoration: none; font-weight: 600; }
+    .al-blog-list a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<main class="page">
+  <!-- block을 order대로 dispatch. 텍스트는 모두 th:text로 escape (user-generated content). -->
+  <th:block th:each="block : ${blocks}" th:switch="${block.type}">
+
+    <!-- topNav -->
+    <header th:case="'topNav'" class="al-topnav">
+      <span th:text="${block.config['title']}">Academy</span>
+    </header>
+
+    <!-- hero -->
+    <section th:case="'hero'" class="al-section al-hero">
+      <h1 th:text="${block.config['headline']}">제목</h1>
+      <p th:text="${block.config['intro']}">소개</p>
+    </section>
+
+    <!-- quote -->
+    <section th:case="'quote'" class="al-section al-quote">
+      <div th:if="${block.config['placeholder']}" class="al-placeholder">인용문이 아직 준비되지 않았어요.</div>
+      <blockquote th:unless="${block.config['placeholder']}" th:text="${block.config['text']}">인용문</blockquote>
+    </section>
+
+    <!-- teachers -->
+    <section th:case="'teachers'" class="al-section al-teachers">
+      <h2 class="al-heading" th:text="${block.config['heading']} ?: '선생님 소개'">선생님 소개</h2>
+      <div th:if="${block.config['placeholder']}" class="al-placeholder">선생님 정보가 아직 등록되지 않았어요.</div>
+      <ul th:unless="${block.config['placeholder']}">
+        <li th:each="t : ${block.config['teachers']}" th:text="${t}">선생님</li>
+      </ul>
+    </section>
+
+    <!-- curriculum -->
+    <section th:case="'curriculum'" class="al-section al-curriculum">
+      <h2 class="al-heading">커리큘럼</h2>
+      <div th:if="${block.config['placeholder']}" class="al-placeholder">커리큘럼이 아직 준비되지 않았어요.</div>
+      <ul th:unless="${block.config['placeholder']}">
+        <li th:each="item : ${block.config['items']}" th:text="${item}">항목</li>
+      </ul>
+    </section>
+
+    <!-- consultationCta -->
+    <section th:case="'consultationCta'" class="al-section al-cta">
+      <div th:if="${block.config['state'] == 'PREPARING'}" class="al-placeholder">상담 신청은 준비 중이에요.</div>
+      <button th:unless="${block.config['state'] == 'PREPARING'}"
+              th:disabled="${!block.config['enabled']}">상담 신청</button>
+    </section>
+
+    <!-- blogPreview -->
+    <section th:case="'blogPreview'" class="al-section al-blog">
+      <h2 class="al-heading">블로그</h2>
+      <div th:if="${blogPosts.isEmpty()}" class="al-placeholder">등록된 블로그 글이 없어요.</div>
+      <ul th:unless="${blogPosts.isEmpty()}" class="al-blog-list">
+        <li th:each="post : ${blogPosts}">
+          <a th:href="@{/academies/{s}/posts/{p}(s=${academySlug},p=${post.slug})}"
+             th:text="${post.title}">제목</a>
+        </li>
+      </ul>
+    </section>
+
+  </th:block>
+</main>
+</body>
+</html>

@@ -1,0 +1,77 @@
+/* 수업 영상 관리 페이지. 레이아웃 톤은 tutor_academy.css의 card/btn을 그대로 쓰고
+   영상 목록 관련 스타일만 여기에 둔다. */
+
+.video-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.video-upload-row input[type="file"] {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.video-upload-status {
+  margin-top: 10px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.video-upload-status[data-tone="ok"] { color: #047857; }
+.video-upload-status[data-tone="error"] { color: #b91c1c; }
+.video-upload-status[data-tone="busy"] { color: #0C238A; }
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.video-card {
+  position: relative;
+  border: 1px solid #e8ecf5;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 변환에 실패해 공개 페이지에 노출되지 않는 영상은 한눈에 구분되어야 한다. */
+.video-card.is-failed {
+  border-color: #fca5a5;
+  opacity: .7;
+}
+
+.video-card-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #e8ecf5;
+}
+
+.video-card-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #3d4a6b;
+}
+
+.video-card-delete {
+  width: 100%;
+  border-radius: 0;
+}
+
+@media (max-width: 520px) {
+  .video-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+.video-upload-progress{display:block;width:100%;margin-top:12px;accent-color:#3157d5;}
+.video-card-thumb-placeholder{display:grid;place-items:center;font-size:2rem;background:#eef1f7;color:#667085;}
+.video-card-ready{color:#16794b;font-weight:700;}
+.video-card-optimization{color:#667085;font-size:.82rem;}

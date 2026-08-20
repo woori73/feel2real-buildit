@@ -1,0 +1,21 @@
+CREATE TABLE wrong_note_entries (
+  entry_id BIGINT NOT NULL AUTO_INCREMENT,
+  conversation_id BIGINT NOT NULL,
+  source_id BIGINT NOT NULL,
+  uploaded_by BIGINT NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  exam_name VARCHAR(150) NULL,
+  exam_scope VARCHAR(255) NULL,
+  memo TEXT NULL,
+  tags VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  created_by VARCHAR(50) NULL,
+  updated_by VARCHAR(50) NULL,
+  PRIMARY KEY (entry_id),
+  CONSTRAINT fk_wrong_note_entries_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id) ON DELETE CASCADE,
+  CONSTRAINT fk_wrong_note_entries_source FOREIGN KEY (source_id) REFERENCES sources(source_id) ON DELETE CASCADE,
+  CONSTRAINT fk_wrong_note_entries_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(user_id) ON DELETE RESTRICT,
+  INDEX idx_wrong_note_entries_conversation_created (conversation_id, created_at),
+  INDEX idx_wrong_note_entries_source (source_id)
+);

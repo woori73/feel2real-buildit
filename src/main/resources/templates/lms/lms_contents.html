@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName} + ' | 콘텐츠 관리'">콘텐츠 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/lms_shell.css">
+  <link rel="stylesheet" href="/css/lms_contents.css">
+</head>
+<body>
+<th:block th:replace="~{fragments/_lms_shell :: header}"></th:block>
+
+<div class="lms-layout"
+     th:attr="data-handle=${academyHandle},
+              data-lms-base=${lmsBase},
+              data-lms-user=${lmsUserKey},
+              data-authenticated=${lmsAuthenticated}">
+  <th:block th:replace="~{fragments/_lms_shell :: sidebar('contents')}"></th:block>
+
+  <main class="lms-content">
+    <h1 class="page-title">콘텐츠 관리</h1>
+    <div class="panel">
+      <div class="course-select" data-content-course-select></div>
+      <div class="video-card-grid" data-video-manage-list></div>
+    </div>
+  </main>
+</div>
+
+<th:block th:replace="~{fragments/_lms_shell :: footer}"></th:block>
+
+<script src="/js/lms_mock.js"></script>
+<script src="/js/lms_data.js"></script>
+<script src="/js/lms_state.js"></script>
+<script src="/js/lms_shell.js"></script>
+<script src="/js/lms_contents.js"></script>
+</body>
+</html>

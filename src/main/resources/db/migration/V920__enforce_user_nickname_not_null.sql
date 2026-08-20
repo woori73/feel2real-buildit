@@ -1,0 +1,3 @@
+-- Enforce nickname requirement after backfill.
+ALTER TABLE users
+    MODIFY COLUMN nickname VARCHAR(50) NOT NULL;

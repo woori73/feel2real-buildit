@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academy</title>
+  <link rel="stylesheet" href="/css/academy_public.css?v=20260809-1">
+  <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1">
+  <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1">
+</head>
+<body>
+<th:block layout:fragment="content">
+  <main class="page">
+    <!-- 서브도메인 root forward 시 slug를 주입한다(브라우저 URL=/ 라 JS가 path로 slug를 못 뽑음).
+         경로형(/academies/{slug}) 진입 땐 model에 slug가 없어 속성이 생략되고 JS는 pathname으로 fallback. -->
+    <section id="publicView" th:attr="data-slug=${slug}"></section>
+    <p id="errorMsg" class="error"></p>
+  </main>
+  <!-- 수업 신청 — 대화 연결 모달 -->
+  <div id="applyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+      <h3 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#1a1a2e;">수업 신청 — 학습 대화 연결</h3>
+      <p style="margin:0 0 14px;font-size:14px;color:#555;">이 수업과 연결할 학습 대화를 선택하세요.<br>선택하지 않으면 새 대화가 자동으로 생성됩니다.</p>
+      <select id="conversationSelect" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:20px;box-sizing:border-box;">
+        <option value="">새 대화로 시작</option>
+      </select>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeApplyModal()">취소</button>
+        <button class="btn btn-primary" id="applyConfirmBtn" onclick="confirmApply()">신청하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상담 신청 — 학원이 입력한 전화/이메일로 연결. 옵션은 academy_public.js가 채운다.
+       (랜딩 '문의하기' 모달과 같은 형태지만 연락처는 학원별 businessInfo에서 온다) -->
+  <div id="consultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;" onclick="closeConsultModal(event)">
+    <div style="background:#fff;border-radius:16px;padding:32px 28px;width:90%;max-width:340px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" onclick="event.stopPropagation()">
+      <div style="font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:24px;">상담 신청하기</div>
+      <div id="consultOptions"></div>
+      <button type="button" onclick="closeConsultModal()" style="width:100%;padding:12px;border:none;border-radius:8px;background:#f3f4f6;color:#6b7280;font-size:15px;cursor:pointer;">닫기</button>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/academy_business_info.js"></script>
+  <script src="/js/lesson_product_showcase.js?v=20260810-1"></script>
+  <!-- 섹션 등장 애니메이션. 랜딩과 같은 GSAP 3.12.5를 쓴다.
+       로드 실패해도 applyReveal이 조기 반환하고 CSS도 걸리지 않아 페이지는 정적으로 보인다. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- 섹션 마크업 정본. academy_public.js보다 먼저 로드해야 한다. -->
+  <script src="/js/academy_sections.js?v=20260810-1"></script>
+  <script src="/js/academy_public.js?v=20260809-1"></script>
+</th:block>
+</body>
+</html>

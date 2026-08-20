@@ -1,0 +1,66 @@
+      footer.public-footer {
+        background: var(--text-dark, #0d1e4a); color: rgba(255,255,255,0.55);
+        padding: 36px 40px 28px;
+        font-size: 13px;
+      }
+      .public-footer .footer-top {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 24px;
+      }
+      .public-footer .footer-brand { display: flex; align-items: center; gap: 10px; }
+      .public-footer .footer-logo-box {
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .public-footer .footer-logo-box img { width: 28px; height: 28px; display: block; filter: brightness(0) invert(1); }
+      .public-footer .footer-name { font-family: 'Montserrat', 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 900; color: var(--white, #ffffff); }
+      /* Build It 워드마크. 랜딩의 밝은 배경용 .bi 그라디언트는 남색 footer에서 안 보이므로 밝은 톤으로 따로 둔다. */
+      .public-footer .footer-name-bi { display: inline-flex; align-items: baseline; font-size: 18px; letter-spacing: -0.04em; white-space: nowrap; }
+      .public-footer .footer-name-bi b { font-weight: 800; color: #ffffff; }
+      .public-footer .footer-name-bi i {
+        font-style: normal; font-weight: 800; margin-left: 0.09em;
+        background: linear-gradient(115deg, #9db4ff 10%, #7f9bff 45%, #e3c46f 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .public-footer .footer-parent-brand {
+        display: inline-flex; align-items: center; gap: 7px;
+        color: rgba(255,255,255,0.52); font-size: 12px; font-weight: 700;
+        letter-spacing: -0.01em; white-space: nowrap;
+      }
+      .public-footer .footer-parent-separator {
+        width: 1px; height: 18px; margin: 0 4px 0 2px;
+        background: rgba(255,255,255,0.22);
+      }
+      .public-footer .footer-parent-label {
+        color: rgba(255,255,255,0.34); font-size: 11px; font-weight: 800; text-transform: uppercase;
+      }
+      .public-footer .footer-parent-logo-box {
+        width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;
+      }
+      .public-footer .footer-parent-logo-box img {
+        width: 18px; height: 18px; display: block; filter: brightness(0) invert(1); opacity: .72;
+      }
+      .public-footer .footer-parent-name { color: rgba(255,255,255,0.56); }
+      .public-footer .footer-links { display: flex; gap: 24px; }
+      .public-footer .footer-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 12px; cursor: pointer; }
+      .public-footer .footer-links a:hover { color: rgba(255,255,255,0.8); }
+      .public-footer .footer-divider {
+        border: none; border-top: 1px solid rgba(255,255,255,0.1);
+        margin: 0 0 20px;
+      }
+      .public-footer .footer-biz {
+        font-size: 12px; color: rgba(255,255,255,0.45);
+        line-height: 1.9;
+      }
+      .public-footer .footer-biz-row { display: flex; flex-wrap: wrap; gap: 6px 0; align-items: baseline; }
+      .public-footer .footer-biz-item { margin-right: 20px; white-space: nowrap; }
+      .public-footer .footer-biz a { color: rgba(255,255,255,0.45); text-decoration: underline; }
+      .public-footer .footer-biz a:hover { color: rgba(255,255,255,0.75); }
+      .public-footer .footer-copyright { margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.3); }
+      .public-contact-option { display:flex; align-items:center; gap:12px; padding:16px 20px; border:1.5px solid #e5e7eb; border-radius:12px; text-decoration:none; color:#1a1a2e; margin-bottom:12px; font-weight:600; transition:background 0.15s; }
+      .public-contact-option:hover { background:#f3f4f6; }
+      @media (max-width: 900px) {
+        footer.public-footer { padding: 28px 24px; }
+        .public-footer .footer-top { flex-direction: column; align-items: flex-start; gap: 16px; }
+        .public-footer .footer-links { flex-wrap: wrap; gap: 14px; }
+      }

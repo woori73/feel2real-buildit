@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 커뮤니티 검색</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_lesson_communities.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('lessonCommunities')}"></th:block>
+
+  <main class="main">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">수업 커뮤니티 검색</h2>
+        <span class="section-hint">관리자가 모든 수업 커뮤니티를 검색하고 바로 접근할 수 있습니다. 수업명, 학원명, 강사명, 글 제목/본문/작성자명으로 검색합니다.</span>
+      </div>
+    </div>
+
+    <section class="search-panel" aria-label="커뮤니티 검색 조건">
+      <form id="communitySearchForm" class="search-row">
+        <input id="keyword" class="search-input" type="search" placeholder="예: 중3 영어, 테스트 학원, 강사명, 게시글 제목" autocomplete="off">
+        <button class="btn btn-primary" type="submit">검색</button>
+        <button id="resetButton" class="btn btn-secondary" type="button">초기화</button>
+      </form>
+    </section>
+
+    <p id="resultMeta" class="result-meta">불러오는 중...</p>
+    <section id="communityList" class="community-grid" aria-live="polite">
+      <div class="empty-card">불러오는 중...</div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_lesson_communities.js"></script>
+</body>
+</html>

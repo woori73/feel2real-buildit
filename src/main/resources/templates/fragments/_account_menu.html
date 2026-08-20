@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="accountMenu(defaultHomeHref, defaultHomeLabel)">
+  <th:block th:replace="~{fragments/_account_menu :: accountMenuControls(${defaultHomeHref}, ${defaultHomeLabel})}"></th:block>
+  <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+</th:block>
+
+<th:block th:fragment="accountMenuControls(defaultHomeHref, defaultHomeLabel)">
+  <div class="auth-actions" data-auth-actions hidden>
+    <button class="auth-action auth-action-login btn-login" type="button" data-auth-login>로그인</button>
+    <a class="auth-action auth-action-signup btn-signup" href="/register" data-auth-signup>회원가입</a>
+  </div>
+
+  <div class="account-menu" data-account-menu hidden>
+    <button class="account-menu-trigger" type="button" aria-label="계정 메뉴 열기" aria-haspopup="true" aria-expanded="false" data-account-menu-trigger>
+      <span class="account-menu-icon" aria-hidden="true">👤</span>
+    </button>
+    <div class="account-menu-panel" role="menu" data-account-menu-panel hidden>
+      <a class="account-menu-item" role="menuitem" data-account-home
+         th:href="${defaultHomeHref}" th:text="${defaultHomeLabel}">내 대시보드</a>
+      <a class="account-menu-item" role="menuitem" href="/my/profile">프로필</a>
+      <button class="account-menu-item account-menu-logout" role="menuitem" type="button" data-account-logout>로그아웃</button>
+    </div>
+  </div>
+</th:block>
+
+<th:block th:fragment="loginModal">
+  <div class="login-modal" data-login-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+    <div class="login-modal-card">
+      <button class="login-modal-close" type="button" data-login-modal-close aria-label="로그인 모달 닫기">×</button>
+      <h2 id="loginModalTitle">로그인</h2>
+      <p class="login-modal-subtitle">현재 페이지에서 바로 로그인합니다.</p>
+      <form data-login-modal-form>
+        <label>
+          <span>아이디</span>
+          <input type="text" name="loginId" autocomplete="username" required>
+        </label>
+        <label>
+          <span>비밀번호</span>
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <p class="login-modal-message" data-login-modal-message hidden></p>
+        <a class="login-modal-reset" href="/signin/reset/password">계정 찾기</a>
+        <button class="login-modal-submit" type="submit">로그인</button>
+      </form>
+      <a class="login-modal-signup" href="/register" data-auth-signup>회원가입</a>
+      <div class="login-modal-social" aria-label="간편 로그인 준비 중">
+        <div class="login-modal-divider"><span>간편 로그인</span></div>
+        <div class="login-modal-social-list" aria-hidden="true">
+          <span class="login-modal-social-placeholder"></span>
+          <span class="login-modal-social-placeholder"></span>
+          <span class="login-modal-social-placeholder"></span>
+          <span class="login-modal-social-placeholder"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

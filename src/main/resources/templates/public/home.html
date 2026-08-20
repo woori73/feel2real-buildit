@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R · Feel to Real — AI 기반 내신 영어 학습 플랫폼</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/home.css">
+<th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="site" role="main">
+  <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Feel to Real (F2R) — AI 기반 내신 영어 학습 플랫폼 홈페이지</h2>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-shell">
+      <div class="nav-logo">
+        <div class="logo-box">
+          <img src="/img/F2R_logo_pure.svg" alt="F2R 로고"/>
+        </div>
+        <div>
+          <div class="nav-brand">F<span>2</span>R</div>
+          <div class="nav-sub">Feel to Real · 압구정에듀홀릭</div>
+        </div>
+      </div>
+      <form class="nav-search" action="/academies" method="get" role="search">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input name="keyword" type="search" placeholder="학원 이름, 과목, 지역 검색" aria-label="학원 검색어">
+        <button type="submit">검색</button>
+      </form>
+      <div class="nav-links">
+        <a href="/academies">학원 찾기</a>
+        <a href="/analyzes">시험 분석</a>
+        <a href="/academy-posts">블로그</a>
+        <a href="/community">커뮤니티</a>
+        <a onclick="openContactModal()">문의하기</a>
+      </div>
+      <div class="nav-auth"><th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block></div>
+    </div>
+  </nav>
+
+  <main class="home-main">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <div class="hero-badge-dot"></div>
+        AI 기반 · 학교별 맞춤 내신 영어 학습
+      </div>
+      <h1 class="hero-title">
+        데이터로 더 정확하게,<br>
+        AI로 더 스마트하게,<br>
+        <span class="accent">성적을 현실로!</span>
+      </h1>
+      <p class="hero-desc">
+        학생의 실제 학교 학습자료와 오답 데이터를 기반으로 AI 분석과 전문가 피드백을 결합하여 학교별 맞춤 내신 영어 학습자료를 제공하는 교육 AX 서비스입니다.
+      </p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="goToService()">서비스 이용하기</button>
+        <button class="btn-secondary" onclick="openSampleReport()">샘플 리포트 보기</button>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-video-card">
+        <div class="hero-video-frame">
+          <iframe
+            src="https://www.youtube.com/embed/cLieSj8YxYA?si=5csXW-ahg_yXhILZ"
+            title="F2R AI 기반 내신 영어 학습 플랫폼 소개 영상"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen></iframe>
+        </div>
+        <div class="hero-video-caption">
+          <strong>영상으로 먼저 보는 F2R</strong>
+          <span>AI 분석과 전문가 피드백이 어떻게 연결되는지 확인해보세요.</span>
+          <a class="hero-video-link" href="https://www.youtube.com/watch?v=cLieSj8YxYA" target="_blank" rel="noopener noreferrer">YouTube에서 보기 →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="market-grid" aria-label="F2R 홈 콘텐츠">
+    <div class="market-main">
+      <div class="section-head">
+        <div>
+          <div class="section-label">Learning marketplace</div>
+          <div class="section-title">지금 바로 시작할 수 있는 학습 선택지</div>
+          <p class="section-desc">학원 탐색, 시험 분석, 블로그, 커뮤니티를 한 화면에서 연결합니다.</p>
+        </div>
+        <a class="section-link" href="/academies">전체 학원 보기 →</a>
+      </div>
+      <div class="academy-row">
+        <a class="academy-mini-card" href="/academies">
+          <div>
+            <div class="academy-cover">Academy</div>
+            <h3>공개 학원 둘러보기</h3>
+            <p>지역, 과목, 수업 상품을 기준으로 내게 맞는 Academy를 찾아보세요.</p>
+          </div>
+          <div class="tag-list"><span>학원</span><span>수업</span></div>
+        </a>
+        <a class="academy-mini-card" href="/academy-posts">
+          <div>
+            <div class="academy-cover">Blog</div>
+            <h3>내신 전략 글 모아보기</h3>
+            <p>최근 공개된 블로그 글을 통해 학교별 학습 방향을 빠르게 파악합니다.</p>
+          </div>
+          <div class="tag-list"><span>블로그</span><span>추천</span></div>
+        </a>
+        <a class="academy-mini-card" href="/community">
+          <div>
+            <div class="academy-cover">Community</div>
+            <h3>학습 Q&amp;A 참여하기</h3>
+            <p>궁금한 학습 질문을 남기고 공개 답변을 통해 함께 학습합니다.</p>
+          </div>
+          <div class="tag-list"><span>Q&amp;A</span><span>공개</span></div>
+        </a>
+      </div>
+    </div>
+    <aside class="market-side" aria-label="추천 행동">
+      <div class="market-side-card">
+        <div class="section-label">For student</div>
+        <div class="section-title" style="font-size:22px;">내 자료로 시작하기</div>
+        <p>학교 프린트, 기출, 오답을 업로드하면 시험 전 단계별 맞춤 자료와 피드백으로 이어집니다.</p>
+        <div class="tag-list"><span>자료 업로드</span><span>AI 분석</span><span>피드백</span></div>
+      </div>
+      <div class="market-side-card">
+        <div class="section-label">For tutor</div>
+        <div class="section-title" style="font-size:22px;">Academy 운영하기</div>
+        <p>수업 상품, 블로그, 커뮤니티를 연결해 학생이 신뢰할 수 있는 운영 페이지를 만듭니다.</p>
+        <div class="tag-list"><span>강사</span><span>Academy</span></div>
+      </div>
+    </aside>
+  </section>
+
+
+  <!-- LATEST SCHOOL EXAM ANALYSES -->
+  <section class="analysis-preview-section" id="school-analyses">
+    <div class="analysis-preview-header">
+      <div>
+        <div class="section-label">학교별 시험 분석</div>
+        <div class="section-title">최신 학교 시험 분석</div>
+        <div class="section-desc" style="margin-bottom:0;">실제 학교별 내신 영어 시험 분석 리포트를 확인해보세요.</div>
+      </div>
+    </div>
+    <div id="latestAnalysisGrid" class="analysis-preview-grid">
+      <div class="analysis-preview-empty">최신 분석 자료를 불러오는 중...</div>
+    </div>
+  </section>
+
+  <th:block th:replace="~{fragments/_public_footer :: publicFooter}"></th:block>
+</div>
+
+<div class="sample-report-modal" id="sampleReportModal" aria-hidden="true">
+  <div class="sample-report-dialog" role="dialog" aria-modal="true" aria-labelledby="sampleReportTitle">
+    <div class="sample-report-header">
+      <div class="sample-report-title" id="sampleReportTitle">F2R 성과분석 샘플 리포트</div>
+      <div class="sample-report-actions">
+        <a class="sample-report-link" href="/img/sample-report.pdf" target="_blank" rel="noopener">새 창으로 보기</a>
+        <button class="sample-report-close" type="button" onclick="closeSampleReport()" aria-label="샘플 리포트 닫기">×</button>
+      </div>
+    </div>
+    <iframe class="sample-report-frame" id="sampleReportFrame" title="F2R 성과분석 샘플 리포트 PDF"></iframe>
+  </div>
+</div>
+
+<th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
+<script src="/js/api.js"></script>
+<th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
+<script th:inline="javascript">
+  // eduholic도 로그인 여부와 무관하게 접근 가능한 랜딩이다. 로드 시 자동 리다이렉트하지
+  // 않고, 버튼 클릭 시점에 currentRole(서버 주입)로 대시보드/로그인 모달을 분기한다.
+  const currentRole = /*[[${role}]]*/ null;
+
+
+  async function loadLatestAnalyses() {
+    const grid = document.getElementById('latestAnalysisGrid');
+    if (!grid) return;
+    try {
+      const res = await fetch('/api/analyzes/latest?limit=3');
+      if (!res.ok) throw new Error('latest analyses failed');
+      const items = await res.json();
+      const cards = items.slice(0, 3).map(item => `
+        <article class="analysis-preview-card" onclick="location.href='${escapeAttr(item.detailUrl)}'" role="link" tabindex="0"
+                 onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); location.href='${escapeAttr(item.detailUrl)}'; }">
+          <div class="analysis-preview-thumb" aria-hidden="true">
+            <iframe src="${escapeAttr(item.contentUrl)}" title="${escapeAttr(item.title)} 썸네일" sandbox loading="lazy"></iframe>
+          </div>
+          <div class="analysis-preview-body">
+            <h3>${escapeHtml(item.title)}</h3>
+            <div class="analysis-preview-meta">${escapeHtml(item.schoolName)} · ${item.grade}학년<br>${escapeHtml(item.semester)} · ${escapeHtml(item.examType)}</div>
+            <span class="analysis-preview-badge">${escapeHtml(item.subject?.nameKo || item.subject?.nameEn || '과목')}</span>
+          </div>
+        </article>`);
+      grid.innerHTML = cards.concat(renderViewAllAnalysisCard(items.length)).join('');
+    } catch (_) {
+      grid.innerHTML = '<div class="analysis-preview-empty">학교 시험 분석 자료를 불러오지 못했습니다.</div>';
+    }
+  }
+
+  function renderViewAllAnalysisCard(count) {
+    const message = count ? '더 많은 학교별 내신 분석 리포트를 검색하고 확인해보세요.' : '공개된 자료가 생기면 이곳에서 학교별 분석을 확인할 수 있습니다.';
+    return `
+      <article class="analysis-preview-card view-all" onclick="location.href='/analyzes'" role="link" tabindex="0"
+               onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); location.href='/analyzes'; }">
+        <div>
+          <div class="analysis-preview-badge" style="background:rgba(255,255,255,.16); color:#fff;">전체 보기</div>
+          <h3>전체 분석 보기</h3>
+          <p>${escapeHtml(message)}</p>
+        </div>
+        <div class="view-all-arrow" aria-hidden="true">→</div>
+      </article>`;
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>'"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
+  }
+  function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
+
+  function servicePathForRole(role) {
+    if (role === 'STUDENT') return '/stdt_dashboard';
+    if (role === 'TUTOR') return '/tutor/academy';
+    if (role === 'ADMIN') return '/admin/students';
+    return null;
+  }
+
+  function goToService() {
+    const path = servicePathForRole(currentRole);
+    if (path) { location.href = path; return; }
+    if (typeof openLoginModal === 'function') openLoginModal();
+  }
+
+  function openSampleReport() {
+    const modal = document.getElementById('sampleReportModal');
+    const frame = document.getElementById('sampleReportFrame');
+    if (frame && !frame.getAttribute('src')) {
+      frame.setAttribute('src', '/img/sample-report.pdf');
+    }
+    if (modal) {
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function closeSampleReport() {
+    const modal = document.getElementById('sampleReportModal');
+    if (modal) {
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  loadLatestAnalyses();
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeSampleReport();
+  });
+
+  document.getElementById('sampleReportModal')?.addEventListener('click', (event) => {
+    if (event.target.id === 'sampleReportModal') closeSampleReport();
+  });
+
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</th:block>
+</body>
+</html>

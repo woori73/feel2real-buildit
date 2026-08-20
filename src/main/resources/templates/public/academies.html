@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academy 찾기</title>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+</head>
+<body>
+<th:block layout:fragment="content">
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <div class="brand">Academy 찾기</div>
+        <p class="muted">지역, 과목, 대상 학년에 맞는 공개 Academy를 찾아보세요.</p>
+      </div>
+      <div><a class="btn btn-secondary" href="/lessons">수업 찾기</a></div>
+    </div>
+
+    <section class="card">
+      <form id="academySearchForm" class="grid">
+        <div class="field"><label for="subjectId">과목</label><select id="subjectId"><option value="">전체</option></select></div>
+        <div class="field"><label for="targetGroup">대상</label><select id="targetGroup"><option value="">전체</option><option value="ELEMENTARY">초등학생</option><option value="MIDDLE">중학생</option><option value="HIGH">고등학생</option><option value="UNIVERSITY">대학생</option><option value="ADULT">성인</option></select></div>
+        <div class="field"><label for="city">시/도</label><input id="city" placeholder="서울시"></div>
+        <div class="field"><label for="district">구/군</label><input id="district" placeholder="서초구"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="submit">검색</button></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="topbar"><h2>Academy 목록</h2><span id="academyCount" class="muted"></span></div>
+      <div id="academyList" class="lesson-list"><p class="muted">Academy를 불러오는 중...</p></div>
+    </section>
+  </main>
+  <script src="/js/academies.js"></script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academy 블로그 글</title>
+  <meta name="description" content="Academy 블로그 글">
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/academy_blog.css">
+  <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260728-1">
+</head>
+<body>
+<th:block layout:fragment="content">
+  <main class="page"><article id="blogPostView" class="card blog-public-post"><p class="muted">글을 불러오는 중...</p></article></main>
+  <div id="academyBusinessFooter"></div>
+  <script src="/js/academy_business_info.js"></script>
+  <script src="/js/academy_blog_public.js"></script>
+</th:block>
+</body>
+</html>

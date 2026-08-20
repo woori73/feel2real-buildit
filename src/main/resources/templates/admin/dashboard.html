@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R - 관리자 대시보드</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_dashboard.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
+
+  <div class="container">
+    <div class="card">
+      <h2>문제 자료 업로드</h2>
+      <p class="desc">답지가 포함된 문제 자료를 업로드하면 Claude Vision이 문제와 정답을 추출하여 문제 풀(pool)에 추가합니다.</p>
+
+      <div class="form-group">
+        <label for="subjectId" class="required">과목</label>
+        <select id="subjectId">
+          <option value="">과목을 선택하세요</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="examName">자료명</label>
+        <input type="text" id="examName" placeholder="예: EBS 수능특강 영어 1강">
+        <p class="field-hint">선택 입력 — 자료의 출처/식별 라벨. questions/passages 양쪽에 같은 값으로 저장됩니다.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="files" class="required">파일 (이미지)</label>
+        <input type="file" id="files" accept="image/*" multiple>
+        <p class="field-hint">한 자료의 페이지를 한꺼번에 선택하세요. 답지 포함 권장.</p>
+      </div>
+
+      <button class="btn-primary" id="submitBtn" onclick="handleImport()">업로드 + Vision 분석</button>
+
+      <div class="result" id="result"></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // 페이지 진입 가드: ADMIN이 아니면 로그인 페이지로 (sessionStorage 비어도 JWT 쿠키로 복원 — 하단 init)
+    let currentUser = null;
+
+    // 과목 목록 로드
+    async function loadSubjects() {
+      try {
+        const res = await fetchAuth('/api/subjects');
+        if (!res.ok) throw new Error('과목 목록을 불러오지 못했습니다.');
+        const subjects = await res.json();
+        const select = document.getElementById('subjectId');
+        subjects.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.subjectId;
+          opt.textContent = s.nameKo + ' (' + s.nameEn + ')';
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        showResult('error', '과목 로드 실패', e.message);
+      }
+    }
+
+    (async () => {
+      currentUser = await ensureCurrentUser();
+      if (!currentUser || currentUser.role !== 'ADMIN') { location.href = '/admin/login'; return; }
+      document.getElementById('userName').textContent = window.userDisplayName(currentUser);
+      loadSubjects();
+    })();
+
+    async function handleImport() {
+      const subjectId = document.getElementById('subjectId').value;
+      const examName = document.getElementById('examName').value.trim();
+      const files = document.getElementById('files').files;
+
+      hideResult();
+
+      if (!subjectId) { showResult('error', '입력 오류', '과목을 선택해 주세요.'); return; }
+      if (!files || files.length === 0) { showResult('error', '입력 오류', '파일을 선택해 주세요.'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = '분석 중... (수십 초 걸릴 수 있음)';
+
+      try {
+        const formData = new FormData();
+        formData.append('subjectId', subjectId);
+        if (examName) formData.append('examName', examName);
+        for (const f of files) formData.append('files', f);
+
+        const res = await fetchAuth('/api/questions/import-vision', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          showResult('error', '업로드 실패', text || ('HTTP ' + res.status));
+          return;
+        }
+
+        const data = await res.json();
+        showResult('success', '업로드 완료',
+          'questions ' + data.importedQuestionCount + '건, passages ' + data.importedPassageCount + '건이 추가되었습니다.');
+
+        document.getElementById('files').value = '';
+        document.getElementById('examName').value = '';
+      } catch (e) {
+        showResult('error', '서버 오류', e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '업로드 + Vision 분석';
+      }
+    }
+
+    function showResult(type, title, message) {
+      const el = document.getElementById('result');
+      el.className = 'result ' + type;
+      el.innerHTML = '<strong>' + title + '</strong>' + message;
+      el.style.display = 'block';
+    }
+
+    function hideResult() {
+      document.getElementById('result').style.display = 'none';
+    }
+
+    async function handleLogout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+      sessionStorage.removeItem('currentUser');
+      location.href = '/admin/login';
+    }
+  </script>
+</body>
+</html>

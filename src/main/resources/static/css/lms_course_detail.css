@@ -1,0 +1,17 @@
+/* 강좌상세 전용. 공통 토큰/플레이어/세그먼트는 lms_shell.css. */
+
+.detail-hero{margin:30px 0 36px}
+.detail-body{display:grid;grid-template-columns:1.6fr 1fr;gap:44px}
+.detail-block{margin-bottom:32px}
+.block-title{font-size:19px;font-weight:800;margin-bottom:10px;letter-spacing:-.01em}
+.detail-side{position:sticky;top:110px}
+.course-detail .title{font-size:38px;font-weight:800;margin-bottom:20px;letter-spacing:-.02em}
+.price-box{border:1px solid var(--border);border-radius:var(--r-md);padding:30px;background:#fbfbfd}
+.price-label{color:var(--text-light);font-size:15px;margin-bottom:6px}
+.price-box .price{font-size:36px;font-weight:800;margin-bottom:22px}
+.curriculum-list{display:flex;flex-direction:column}
+.curriculum-row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--border);font-size:16px;font-weight:600}
+.curriculum-row:last-child{border-bottom:0}
+.curriculum-meta{color:var(--text-light);font-size:13px;font-weight:600}
+
+@media(max-width:960px){.detail-body{grid-template-columns:1fr}.detail-side{position:static}}

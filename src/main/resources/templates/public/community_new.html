@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>질문하기 · F2R 커뮤니티</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/community.css">
+</head>
+<body class="community-body">
+
+  <header class="community-topbar">
+    <a class="brand" href="/community"><img src="/img/F2R_logo_pure.svg" alt="F2R"><b>커뮤니티</b></a>
+    <div class="spacer"></div>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="write-wrap">
+    <h1 id="writeTitle">질문하기</h1>
+    <p class="lead">구체적으로 작성할수록 좋은 답변을 빠르게 받을 수 있어요.</p>
+
+    <form id="postForm">
+      <div class="field">
+        <label for="title">제목<span class="req">*</span></label>
+        <div class="hint">무엇이 궁금한지 한 문장으로 요약해주세요.</div>
+        <input type="text" id="title" maxlength="150" placeholder="예: 현재완료와 과거시제는 언제 구분해서 쓰나요?" required>
+      </div>
+
+      <div class="field">
+        <label>게시판<span class="req">*</span></label>
+        <div id="catPick" class="cat-pick">
+          <button type="button" class="cat-tab" data-board="FREE">자유게시판</button>
+          <button type="button" class="cat-tab" data-board="QNA">Q&amp;A</button>
+          <!-- 과목 칩은 community_new.js가 /api/subjects로 동적 추가 -->
+        </div>
+      </div>
+
+      <div class="field">
+        <label>내용</label>
+        <div class="hint">시도해본 것, 기대한 결과, 실제 결과를 함께 적으면 좋아요.</div>
+        <div class="editor-toolbar" id="toolbar">
+          <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
+          <button type="button" data-cmd="strike" title="취소선"><s>S</s></button>
+          <button type="button" data-cmd="h2" title="제목">H2</button>
+          <button type="button" data-cmd="h3" title="소제목">H3</button>
+          <button type="button" data-cmd="bulletList" title="목록">•</button>
+          <button type="button" data-cmd="orderedList" title="번호목록">1.</button>
+          <button type="button" data-cmd="blockquote" title="인용">❝</button>
+          <button type="button" data-cmd="code" title="코드">&lt;/&gt;</button>
+          <button type="button" data-cmd="link" title="링크">🔗</button>
+          <button type="button" data-cmd="image" title="이미지">🖼</button>
+        </div>
+        <div class="editor-box"><div id="editor"></div></div>
+        <input type="file" id="imageInput" accept="image/*" hidden>
+      </div>
+
+      <div class="write-actions">
+        <button type="submit" class="btn-primary" id="submitBtn">등록</button>
+        <a class="btn-primary btn-ghost" href="/community">취소</a>
+      </div>
+      <p id="statusMsg" class="login-hint"></p>
+    </form>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script type="module" src="/js/community_new.js"></script>
+</body>
+</html>

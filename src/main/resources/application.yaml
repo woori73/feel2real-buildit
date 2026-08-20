@@ -1,0 +1,95 @@
+spring:
+  profiles:
+    # main은 "local" 유지. (stg 브랜치만 "local,stg" — config/application-stg.yaml로 3310/f2r_stg.)
+    # 브랜치별로 main은 "local", stg는 "stg". dev는 "dev". 머지 시 이 줄 오염되면 브랜치에 맞춰 복구.
+    # 운영(EC2)에서는 systemd EnvironmentFile의 SPRING_PROFILES_ACTIVE=prd가 override한다.
+    active: "local"
+
+# Swagger UI 설정 (Springdoc)
+springdoc:
+  swagger-ui:
+    enabled: true
+
+# Claude(LLM) 연동 전역 스위치.
+# 데모 단계: 전 환경(prd 포함) 비활성 → Claude 서비스가 startup에 fromEnv()를 호출하지 않아
+# ANTHROPIC_API_KEY 없이 부팅되고, 채팅/시험지 분석 호출 시 "데모 버전 미동작" 안내가 나간다.
+# 재활성: 이 값을 true로 바꾸거나, 특정 프로필 config/application-<p>.yaml에서 anthropic.enabled: true override.
+anthropic:
+  enabled: false
+
+app:
+  archived:
+    # 삭제 보류/상용 숨김 기능을 소스 복사 없이 단일 REQUEST의 /archived/** alias로 보존한다.
+    # 기본은 ADMIN 전용. 완전히 끄려면 enabled=false로 override.
+    enabled: true
+    require-admin: true
+  academy-blog:
+    # Academy 블로그 글 추천 가능 기간. 운영자는 배포 환경 설정에서 이 값을 덮어쓸 수 있다.
+    like-allowed-days: 30
+    # 추천순 정렬이 집계할 최근 좋아요 기간.
+    recommendation-window-days: 7
+  community:
+    # 공개 커뮤니티 글 좋아요 가능 기간(작성 후 N일). 운영자가 배포 환경 설정에서 덮어쓸 수 있다.
+    like-allowed-days: 30
+    # 추천순 정렬이 집계할 최근 좋아요 기간.
+    recommendation-window-days: 7
+  upload:
+    # 이미지/PDF 업로드 업무 상한. 컨테이너 multipart 한도(105MB)는 영상 때문에 열어 둔 값이라
+    # 이미지·PDF 경로는 이 값으로 각자 판정한다. 이게 없으면 전역 한도까지 통과해 버린다.
+    max-document-bytes: 20971520   # 20MB
+  image:
+    # 디코딩된 BufferedImage는 픽셀당 4바이트를 잡는다. 바이트 상한만으로는 압축률 때문에 힙을
+    # 묶을 수 없어(20MB HEIC가 8000x6000으로 펴지면 ~192MB) 픽셀 수로 따로 판정한다.
+    max-decoded-pixels: 40000000   # 40메가픽셀
+    # 이미지 디코딩 동시 실행 수. 영상 세마포어와 공유하지 않는다 — 공유하면 영상 2건 변환 중
+    # 모든 이미지 업로드가 즉시 503이 된다.
+    max-concurrent-decodes: 2
+  video:
+    # 사용자 원본을 그대로 제공한다. 영상 재인코딩 worker는 실행하지 않는다.
+    optimization-enabled: false
+    max-raw-bytes: 209715200
+    max-duration-ms: 120000
+    upload-deadline-ms: 180000
+    upload-part-size-bytes: 20971520
+    upload-max-count: 10
+    validation-materialization-permits: 1
+    upload-recovery-poll-ms: 1000
+    upload-recovery-retry-ms: 5000
+    upload-recovery-lease-ms: 15000
+    upload-recovery-heartbeat-ms: 5000
+    validation-temp-dir: ${java.io.tmpdir}/academy-video-validation
+    local-upload-dir: ${java.io.tmpdir}/academy-video-uploads
+    optimization-poll-ms: 1000
+    optimization-lease-ms: 90000
+    optimization-heartbeat-ms: 15000
+    optimization-retry-ms: 60000
+    optimization-attempt-budget-ms: 600000
+    optimization-stall-ms: 90000
+    optimization-permits: 1
+    optimization-temp-dir: ${java.io.tmpdir}/academy-video-optimization
+    cleanup-poll-ms: 1000
+    cleanup-lease-ms: 30000
+    cleanup-retry-base-ms: 5000
+    cleanup-orphan-min-age-ms: 300000
+    cleanup-reconciliation-batch-size: 100
+    delivery-signed-url-ttl-ms: 30000
+    # ffmpeg/ffprobe 실행 파일. 환경별로 경로가 다르면 여기서 덮어쓴다(로컬 brew, EC2 dnf 등).
+    ffmpeg-path: ffmpeg
+    ffprobe-path: ffprobe
+    # Academy 영상은 브라우저가 이 서버로 multipart 업로드하고 요청 안에서 MP4로 정규화한다.
+    transcode-timeout-sec: 120
+    # 동시 변환 수. 초과분은 대기시키지 않고 즉시 503으로 돌려보낸다(CPU 폭주·스레드 점유 차단).
+    max-concurrent-transcodes: 2
+    max-duration-sec: 120
+    max-upload-bytes: 209715200    # 200MiB — 업로드 원본 상한
+    max-output-bytes: 209715200    # 200MiB — 변환 산출물 상한(저장 전 거부)
+    # 학원당 영상 개수. 수업상품마다 대표 영상을 걸 수 있어 수업이 늘면 비례해 필요해진다.
+    # 향후 유료 상향 대상이므로 코드에 하드코딩하지 말 것(@Value 주입 유지).
+    # 주의: 공개 학원 페이지의 영상 섹션은 최신 10개만 노출한다(findTop10By...).
+    max-count: 10                  # 학원당 영상 개수
+  landing-video:
+    max-duration-sec: 60
+    max-upload-bytes: 104857600
+    max-output-bytes: 31457280
+    max-thumbnail-bytes: 2097152
+    serve-permits: 3

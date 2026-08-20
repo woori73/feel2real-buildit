@@ -1,0 +1,7 @@
+/* 내 강의실 전용. .grid는 lms_shell.css 공용. */
+
+.myclass-card{background:#fff;border:1px solid rgba(0,0,0,.04);border-radius:var(--r-md);padding:28px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease}
+.myclass-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.myclass-card .school{font-size:14px;color:var(--purple);font-weight:700;margin-bottom:8px}
+.myclass-card h3{font-size:22px;margin-bottom:20px}
+.myclass-empty{font-size:17px;color:var(--text-light)}

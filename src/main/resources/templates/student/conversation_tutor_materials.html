@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R · 시험대비 자료</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/conversation_dashboard.css">
+  <link rel="stylesheet" href="/css/conversation_materials.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- 사이드바 -->
+    <th:block th:replace="~{fragments/_sidebar :: sidebar('tutor-materials')}"></th:block>
+
+    <main class="main">
+      <header class="main-header">
+        <div class="main-header-left">
+          <h1 class="main-title">시험대비 자료</h1>
+          <p class="main-subtitle">강사가 올린 참고 자료예요. 제출은 필요 없어요.</p>
+        </div>
+        <div class="main-header-right">
+          <span class="header-chip" id="tutorMaterialsCountChip">0개</span>
+          <button id="btnUploadTutorMaterial" class="btn-assign-material" hidden
+                  onclick="document.getElementById('tutorMaterialFile').click()">+ 자료 추가</button>
+          <input type="file" id="tutorMaterialFile" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple hidden
+                 onchange="handleTutorUpload(this)">
+        </div>
+      </header>
+
+      <section id="tutorMaterialsGrid" class="materials-grid">
+        <div class="empty-state" id="emptyState">아직 강사가 올린 시험대비 자료가 없어요.</div>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- 라이트박스 (conversation_materials.html과 동일 — exam-materials와 같은 뷰어) -->
+  <div class="lightbox" id="lightbox" style="display:none" onclick="lightboxBackdropClick(event)">
+    <button class="lightbox-close" type="button" onclick="closeLightbox()" aria-label="닫기">✕</button>
+    <a class="lightbox-download" id="lightboxDownload" href="#" title="현재 페이지 다운로드" aria-label="다운로드">⬇</a>
+    <button class="lightbox-nav lightbox-prev" type="button" onclick="lightboxPrev()" aria-label="이전">‹</button>
+    <img class="lightbox-image" id="lightboxImage" alt="미리보기">
+    <button class="lightbox-nav lightbox-next" type="button" onclick="lightboxNext()" aria-label="다음">›</button>
+    <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/conversation_tutor_materials.js"></script>
+</body>
+</html>

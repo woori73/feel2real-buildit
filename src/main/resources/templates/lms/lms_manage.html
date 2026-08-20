@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName} + ' | 강좌관리'">강좌관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/lms_shell.css">
+  <link rel="stylesheet" href="/css/lms_manage.css">
+</head>
+<body>
+<th:block th:replace="~{fragments/_lms_shell :: header}"></th:block>
+
+<div class="lms-layout"
+     th:attr="data-handle=${academyHandle},
+              data-lms-base=${lmsBase},
+              data-lms-user=${lmsUserKey},
+              data-authenticated=${lmsAuthenticated}">
+  <th:block th:replace="~{fragments/_lms_shell :: sidebar('manage')}"></th:block>
+
+  <main class="lms-content">
+    <h1 class="page-title">강좌관리</h1>
+    <div class="tab-bar">
+      <button type="button" class="active" data-tab="course">강좌관리</button>
+      <button type="button" data-tab="review">후기관리</button>
+    </div>
+
+    <div class="panel manage-tab" data-tab-panel="course">
+      <div class="manage-toolbar">
+        <div data-manage-count>등록된 강좌 0개</div>
+        <!-- 파라미터 없는 전용 편집기 링크. ?new=true는 draft를 즉시 생성하므로 붙이지 않는다. -->
+        <a class="btn btn-auto" href="/tutor/academy/lessons/editor">+ 강좌 등록</a>
+      </div>
+      <table class="manage-table">
+        <thead>
+          <tr><th>학교</th><th>학년</th><th>강좌명</th><th>가격</th><th>소개</th><th>관리</th></tr>
+        </thead>
+        <tbody data-manage-body></tbody>
+      </table>
+    </div>
+
+    <div class="panel manage-tab" data-tab-panel="review" hidden>
+      <h2 class="section-title">후기 목록</h2>
+      <div data-admin-review-list></div>
+    </div>
+  </main>
+</div>
+
+<th:block th:replace="~{fragments/_lms_shell :: footer}"></th:block>
+
+<script src="/js/api.js"></script>
+<script src="/js/lms_mock.js"></script>
+<script src="/js/lms_data.js"></script>
+<script src="/js/lms_state.js"></script>
+<script src="/js/lms_shell.js"></script>
+<script src="/js/lms_manage.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+/* 콘텐츠 관리(운영자 전용) 전용. 세그먼트 선택은 lms_shell.css 공용. */
+
+.video-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.video-card{background:#fff;border:1px solid rgba(0,0,0,.04);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease}
+.video-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.video-thumb{aspect-ratio:16/9;background:linear-gradient(135deg,#efe9ff,#eef0fb);display:flex;align-items:center;justify-content:center;font-size:36px}
+.video-card-body{padding:22px}
+.video-card-body .v-title{border:0;border-bottom:1.5px solid var(--border);border-radius:0;padding:6px 2px;font-size:17px;font-weight:800;margin-bottom:12px;background:transparent}
+.video-card-body .v-title:focus{background:#fff7d6}
+.video-badges{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:800;padding:6px 12px;border-radius:999px}
+.badge-length{background:#eef0fa;color:var(--navy)}
+.badge-access{background:var(--purple-light);color:var(--purple)}
+.video-card-body .v-desc{font-size:13px;margin-bottom:12px;min-height:52px}
+.video-meta{font-size:12px;color:var(--text-light);margin-bottom:16px}
+.video-card-actions{display:flex;gap:8px}
+.upload-label{cursor:pointer;display:inline-block;flex:1;text-align:center}
+.video-card-actions .v-delete{flex:1}

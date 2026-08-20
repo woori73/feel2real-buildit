@@ -1,0 +1,654 @@
+/* 공개 학원 페이지(/academies/{slug}) — Build It 브랜드 시안. 자립 스타일시트.
+   섹션 마크업 정본은 academy_sections.js이고 academy_public.js(CSR)가 렌더한다.
+   기존 tutor/blog CSS 재사용 안 함(시안 덮어쓰기 방지). 섹션은 풀폭 밴드다.
+
+   토큰은 랜딩(landing_buildit.css)과 동일하게 맞춘다 — 랜딩만 Build It으로 개편되고
+   학원 페이지가 옛 에듀홀릭 시안에 남아 있던 불일치를 없애는 것이 이 작업의 목적이다. */
+
+/* ══════════════ BUILD IT 토큰 (landing_buildit.css와 동일) ══════════════ */
+:root{
+  --bg:#ffffff;
+  --bg-soft:#f6f7f9;
+  --bg-deep:#f1f3f6;
+  --ink:#0a0a0c;
+  --ink-soft:#67707c;
+  --ink-faint:#a4abb5;
+  --line:#e8eaee;
+  --accent:#2563eb;
+  --accent-soft:#eaf0fe;
+  --ultramarine:#2b3a9e;
+  --gold:#c9a13b;
+  --gold-soft:#f6ecd4;
+  --radius:24px;
+  --radius-sm:16px;
+  --shadow-sm:0 12px 32px rgba(10,12,20,.05);
+  --shadow-lg:0 30px 80px rgba(10,12,20,.09);
+  --ease:cubic-bezier(.16,.84,.44,1);
+  --font:-apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Helvetica, Arial, sans-serif;
+}
+
+/* ══════════════ BASE ══════════════ */
+/* proximity로 완화한다. 시안은 mandatory + snap-stop:always지만 짧은 데모라 성립하는 값이다.
+   수업 목록·시간표처럼 100svh를 넘는 섹션이 들어오면 스냅이 콘텐츠를 잘라먹는다. */
+html{scroll-snap-type:y proximity;}
+/* reveal 초기 상태는 JS가 GSAP 로드를 확인한 뒤에만 건다.
+   무조건 opacity:0으로 두면 CDN이 죽었을 때 페이지 전체가 빈 화면이 된다. */
+html.js-motion [data-fade]{opacity:0;transform:translateY(30px);}
+@media (prefers-reduced-motion:reduce){
+  html.js-motion [data-fade]{opacity:1;transform:none;}
+}
+body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);letter-spacing:-.02em;-webkit-font-smoothing:antialiased;}
+.page{max-width:none;margin:0;padding:0;}
+#publicView{min-width:0;}
+#publicView *{box-sizing:border-box;}
+/* 이 리셋은 specificity가 (1,0,1)이라 클래스 규칙을 전부 이긴다.
+   notes 제목/인용문이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다. */
+#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote){margin:0;}
+#publicView [id^="sec-"]{scroll-margin-top:74px;}
+#errorMsg{text-align:center;color:#ef4444;font-size:.98rem;padding:20px;}
+
+/* ══════════════ CSS 로고 심볼 ══════════════ */
+.eh-logo-component{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+/* 로고 칸: 학원 로고는 대부분 가로형 직사각형 → 고정 높이 + 가변 폭(안 잘림).
+   정사각형 아이콘 전용 입력은 추후 별도. 이미지가 있으면 배경 gem을 숨겨 로고 원본을 살린다. */
+.eh-logo-symbol{height:40px;width:auto;min-width:40px;max-width:200px;border-radius:10px;background:linear-gradient(135deg,#0C238A,#4A7FD4);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;box-shadow:0 3px 10px rgba(12,35,138,.3);flex-shrink:0;}
+.eh-logo-symbol::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(145deg,rgba(255,255,255,.18) 0%,transparent 60%);}
+.eh-logo-symbol-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;}
+.eh-logo-symbol img{height:100%;width:auto;max-width:200px;object-fit:contain;border-radius:inherit;display:block;position:relative;z-index:1;}
+.eh-logo-symbol:has(img){background:transparent;box-shadow:none;}
+.eh-logo-symbol:has(img)::before{display:none;}
+.eh-book{width:26px;height:18px;position:relative;display:flex;align-items:flex-end;justify-content:center;}
+.eh-book::before,.eh-book::after{content:'';position:absolute;bottom:0;width:11px;height:14px;border-radius:1px 1px 0 0;background:rgba(255,255,255,.85);}
+.eh-book::before{left:1px;transform:skewX(4deg);transform-origin:bottom left;}
+.eh-book::after{right:1px;transform:skewX(-4deg);transform-origin:bottom right;}
+.eh-letters{position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);font-size:8px;font-weight:900;color:#0C238A;letter-spacing:-.5px;line-height:1;z-index:2;font-style:italic;}
+.eh-logo-text-area{display:flex;flex-direction:column;line-height:1.2;}
+.eh-logo-title{font-size:1.05rem;font-weight:900;color:#0a0f2e;letter-spacing:-.02em;}
+.eh-logo-sub{font-size:.70rem;color:#4a5872;font-weight:500;}
+
+/* ══════════════ GNB ══════════════ */
+/* 랜딩 헤더(.nav-wrap)와 같은 3열 그리드 — 로고를 가운데 칸, 메뉴를 우측 끝에 둔다.
+   좁은 화면에서는 양쪽 1fr 칸이 0으로 줄어 자연스럽게 좌측 정렬로 되돌아간다(겹침 없음). */
+.cv-gnb{background:#fff;border-bottom:1px solid #e8ecf5;padding:0 20px;height:62px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;position:sticky;top:0;z-index:500;box-shadow:0 1px 10px rgba(12,35,138,.06);gap:10px;}
+.cv-gnb>.eh-logo-component{grid-column:2;}
+.cv-gnb>.cv-nav{grid-column:3;justify-self:end;}
+.cv-nav{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;}
+.cv-nav a{font-size:.90rem;font-weight:600;color:#333f5c;padding:5px 9px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap;}
+.cv-nav a:hover{background:#f0f4ff;color:#0C238A;}
+.cv-btn-primary{background:linear-gradient(135deg,#0C238A,#4A7FD4);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:.90rem;font-weight:800;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;}
+.cv-btn-owner{background:rgba(3,199,90,.1);border:1.5px solid #03C75A;color:#02936f;border-radius:10px;padding:7px 13px;font-size:.90rem;font-weight:800;text-decoration:none;white-space:nowrap;display:inline-block;}
+
+/* ══════════════ 빌더 캔버스 ══════════════
+   캔버스 폭은 뷰포트가 아니라 컨테이너라 @media 반응형이 발화하지 않는다. 아래 규칙은 @container를 쓴다. */
+.builder-public-preview{position:relative;background:transparent;}
+.builder-public-preview > *{position:relative;}
+/* 캔버스 폭은 뷰포트가 아니라 컨테이너라 @media 반응형이 발화하지 않는다(뷰포트는 넓은데
+   캔버스만 좁다). 그래서 아래 규칙은 전부 @container로 쓴다.
+   ⚠ 컨테이너는 .canvas-frame(academy_builder.html) 하나뿐이다. 여기에 container-type을
+     또 걸면 컨테이너가 중첩돼 어느 폭이 기준인지 갈린다 — 걸지 않는다.
+   ⚠ 무조건 1열로 접으면 캔버스가 넓어도 영원히 모바일 레이아웃이 된다 — 폭에 따라 바뀌어야 한다. */
+.builder-public-preview .hero{padding:72px 20px 36px;}
+.builder-public-preview .hero-grid{grid-template-columns:minmax(0,1.05fr) minmax(260px,.95fr);gap:32px;}
+.builder-public-preview .hero h1{font-size:clamp(1.9rem,5.2cqw,3rem);}
+.builder-public-preview .tablet{max-width:min(320px,42cqw);}
+.builder-public-preview .notes-title{font-size:clamp(1.8rem,4.6cqw,2.8rem);}
+.builder-public-preview .notes-quote{font-size:clamp(1rem,2.2cqw,1.25rem);}
+.builder-public-preview .intro-wrap .section-inner{padding:52px 0;}
+/* 캔버스 반응형은 발행 화면과 같은 경계를 써야 한다 — 경계가 다르면 같은 폭에서
+   캔버스와 발행이 다른 레이아웃을 보여준다(캔버스 720/900 vs 발행 980/760이 그랬다).
+   위 @media (max-width:980px)/(max-width:760px)의 컨테이너 판이다. */
+@container (max-width:980px){
+  .builder-public-preview .hero-grid{grid-template-columns:1fr;}
+  .builder-public-preview .hero .tablet{max-width:280px;order:-1;}
+}
+@container (max-width:760px){
+  .builder-public-preview .hero{padding-top:60px;}
+}
+/* 히어로 이미지 슬롯 편집 어피던스 — 빌더 캔버스에서만 보인다(발행 화면 오염 방지). */
+.builder-hero-media-chip{display:none;}
+.builder-public-preview [data-hero-media-edit]{cursor:pointer;position:relative;}
+.builder-public-preview [data-hero-media-edit]:hover{outline:2px dashed rgba(250,204,21,.8);outline-offset:3px;}
+.builder-public-preview .builder-hero-media-chip{display:inline-flex;align-items:center;gap:5px;position:absolute;right:10px;bottom:10px;z-index:5;background:#0C238A;color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:6px;box-shadow:0 2px 8px rgba(12,35,138,.35);}
+.builder-featured-lessons-chip{display:none;}
+.builder-public-preview [data-featured-lessons-edit]{cursor:pointer;position:relative;}
+.builder-public-preview [data-featured-lessons-edit]:hover{outline:2px dashed rgba(250,204,21,.8);outline-offset:3px;}
+.builder-public-preview .builder-featured-lessons-chip{display:inline-flex;align-items:center;gap:5px;background:#0C238A;color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:6px;box-shadow:0 2px 8px rgba(12,35,138,.35);}
+
+/* ══════════════ 히어로 (시안 .hero 이식) ══════════════
+   docs/archive/archived_html/에듀홀릭_BuildIt_3.html의 .hero 블록을 그대로 옮겼다.
+   구조: 좌(eyebrow + h1 + 인용 + 버튼2 + 통계3) / 우(iPad 프레임 원장사진).
+   대표수업 패널·교재 카드·영상·배지는 시안 히어로에 없다 — 다른 섹션으로 이동한다. */
+.brand-glow{
+  position:absolute; inset:-30% -10%; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(closest-side, rgba(43,58,158,.10), transparent 70%) 20% 25%/55% 55% no-repeat,
+    radial-gradient(closest-side, rgba(201,161,59,.11), transparent 70%) 82% 75%/48% 48% no-repeat;
+  filter:blur(50px);
+}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:12.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); margin-bottom:14px;
+}
+.eyebrow .stroke{ width:22px; height:2px; border-radius:2px; background:linear-gradient(90deg, var(--ultramarine), var(--gold)); }
+.hero .btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  padding:16px 28px; border-radius:100px; font-size:15px; font-weight:700;
+  background:var(--ink); color:#fff; border:0; cursor:pointer; font-family:inherit;
+  transition:transform .4s var(--ease), background .3s;
+}
+.hero .btn:hover{ background:var(--accent); transform:translateY(-2px); }
+.hero .btn.outline{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+.hero .btn.outline:hover{ border-color:var(--accent); color:var(--accent); background:transparent; transform:translateY(-2px); }
+
+.hero{ padding:130px 5vw 50px; position:relative; overflow:hidden; background:var(--bg); }
+.hero-grid{ position:relative; z-index:1; width:100%; display:grid; grid-template-columns:1.05fr .95fr; gap:56px; align-items:center; max-width:1120px; margin:0 auto; }
+.hero h1{ font-size:clamp(28px,4vw,46px); font-weight:800; line-height:1.28; letter-spacing:-.03em; margin:0; }
+.hero .hero-quote{
+  margin:18px 0 0; padding-left:16px; border-left:2px solid var(--gold);
+  font-size:14.5px; color:var(--ink-soft); font-weight:500; line-height:1.7;
+}
+.hero-actions{ margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
+.hero-stats{ margin-top:34px; display:flex; gap:30px; }
+.hero-stats b{ display:block; font-size:19px; font-weight:800; letter-spacing:-.02em; }
+.hero-stats b .u{ background:linear-gradient(115deg, var(--ultramarine), var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero-stats > div > span{ display:block; margin-top:3px; font-size:11px; font-weight:700; color:var(--ink-faint); }
+
+/* iPad 프레임 — 시안 .tablet */
+.tablet{
+  width:100%; max-width:360px; aspect-ratio:3/4; background:#111214; border-radius:26px; padding:16px 12px;
+  box-shadow:var(--shadow-lg); position:relative; margin:0 auto;
+}
+.tablet .cam{ position:absolute; top:8px; left:50%; transform:translateX(-50%); width:5px; height:5px; border-radius:50%; background:#3a3b3f; z-index:3; }
+.tablet-screen{ width:100%; height:100%; border-radius:14px; overflow:hidden; position:relative; background:#000; }
+.tablet-screen img{ width:100%; height:100%; object-fit:cover; }
+.tablet-screen::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(10,10,20,.6) 100%); }
+.tablet-cap{
+  position:absolute; left:16px; bottom:16px; z-index:2; color:#fff;
+  font-size:12.5px; font-weight:700; letter-spacing:.01em;
+}
+.tablet-cap b{ display:block; font-size:16px; font-weight:800; margin-bottom:2px; }
+/* 원장 사진 미등록 — 시안엔 없는 상태라 프레임 톤에 맞춘 중립 placeholder를 둔다. */
+.tablet-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(155deg,#2a2c33,#141519); color:rgba(255,255,255,.5); font-size:13px; font-weight:700; }
+
+/* 대상·과목 배지는 시안 히어로에 없다. 빌더 캔버스에서만 편집 통로로 노출된다. */
+.builder-only-badges{ display:none; }
+.builder-public-preview .builder-only-badges{ display:block; margin-top:24px; }
+
+@media (max-width:900px){
+  .hero-grid{ grid-template-columns:1fr; }
+  .hero .tablet{ max-width:280px; order:-1; }
+}
+@media (max-width:520px){
+  .hero{ padding-top:110px; }
+  .hero-actions .btn{ flex:1; }
+  .hero-stats{ gap:22px; }
+}
+
+/* ══════════════ 섹션 공통 (풀폭 밴드) ══════════════ */
+.section-wrap{padding:36px 20px;border-bottom:1px solid #e8ecf5;background:#fff;}
+.section-inner{max-width:860px;margin:0 auto;}
+.section-header{text-align:center;margin-bottom:24px;}
+.section-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 13px;margin-bottom:8px;font-size:.80rem;font-weight:800;background:rgba(12,35,138,.07);border:1px solid rgba(12,35,138,.12);color:#0C238A;}
+.section-title{font-size:1.45rem;font-weight:900;color:#0a0f2e;letter-spacing:-.03em;margin-bottom:5px;}
+.section-sub{font-size:.92rem;color:#4a5872;line-height:1.7;}
+
+/* 수업 상품 카드 스타일은 #244에서 lesson_product_showcase.css 로 이관됐다.
+   .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
+
+/* ══════════════ 대표 수업 / 시간표 (Build It 시안) ══════════════ */
+.section-wrap.classes-wrap{padding:0;background:#fff;border-bottom:0;}
+.classes-wrap .classes-container{width:min(1120px,90vw);max-width:none;padding:100px 0;margin:0 auto;}
+.section-head{max-width:600px;margin-bottom:0;}
+.section-head .eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;color:var(--ink-faint);font-size:12.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;}
+.section-head .stroke{display:inline-block;width:22px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
+.section-head h2{margin:0;color:var(--ink);font-size:clamp(26px,3.6vw,40px);font-weight:800;line-height:1.24;letter-spacing:-.03em;}
+.lesson-product-slot{margin-top:0;}
+.lesson-schedule-wrap{background:var(--bg-soft);}
+.lesson-schedule-inner{width:min(1120px,90vw);max-width:none;margin:0 auto;padding:100px 0;}
+.schedule-head{margin-bottom:0;}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-top:22px;color:var(--ink-soft);font-size:13px;font-weight:700;}
+.toggle-row b{color:var(--ink);}
+.toggle{position:relative;display:inline-flex;width:42px;height:25px;flex:0 0 auto;border:0;border-radius:100px;background:var(--line);box-shadow:none;cursor:pointer;padding:0;}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);transition:transform .25s var(--ease);}
+.toggle.on{background:var(--ultramarine);}
+.toggle.on::after{left:3px;transform:translateX(17px);}
+.toggle:focus-visible{outline:2px solid rgba(43,58,158,.28);outline-offset:3px;}
+/* "시간표 공개"를 끄면 본문(달력)이 사라지고 머리말 + 토글만 남는다. */
+.lesson-schedule-wrap.is-schedule-hidden .schedule-calendar{display:none;}
+.schedule-calendar{position:relative;margin:20px 0 0;padding:0;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;}
+.schedule-calendar-image{display:block;width:100%;height:auto;}
+/* 빌더 전용 빈 자리. 공개 페이지는 이미지가 없으면 .schedule-calendar 자체를 렌더하지 않는다. */
+.schedule-calendar-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:180px;padding:28px 20px;text-align:center;color:var(--ink-soft);font-size:13.5px;font-weight:700;line-height:1.6;}
+.schedule-calendar-placeholder small{color:var(--ink-faint);font-size:12px;font-weight:600;}
+
+/* ══════════════ 블로그 (실데이터) ══════════════ */
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+.blog-public-card{display:block;background:#fff;border:1.5px solid #e2e8f8;border-radius:12px;padding:16px 18px;text-decoration:none;color:inherit;box-shadow:0 2px 8px rgba(12,35,138,.05);transition:box-shadow .2s;}
+.blog-public-card:hover{box-shadow:0 6px 18px rgba(12,35,138,.1);}
+.blog-public-card h3{font-size:.98rem;font-weight:800;color:#0a0f2e;margin-bottom:4px;}
+.blog-public-card .muted{font-size:.84rem;color:#4a5872;line-height:1.6;}
+
+/* ══════════════ 버튼 (모달/공용) ══════════════ */
+.btn{border:none;border-radius:9px;padding:9px 16px;font-size:.92rem;font-weight:800;cursor:pointer;font-family:inherit;}
+.btn-primary{background:linear-gradient(135deg,#0C238A,#4A7FD4);color:#fff;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-secondary{background:#eef2ff;color:#0C238A;border:1px solid #dde6ff;}
+
+/* ══════════════ 학원 소개 → 교육 노트(notes snap) ══════════════ */
+/* BuildIt_3 시안의 .notes.snap을 기존 sec-intro 계약 위에 이식한다. API/섹션 ID는
+   그대로 sec-intro를 쓰고, 화면만 교육 노트 캐러셀로 보이게 한다. */
+.intro-wrap.notes{
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  overflow:hidden;
+  padding:100px 0;
+  background:var(--bg);
+  color:var(--ink);
+  text-align:center;
+}
+.notes-head{padding:0 5vw;}
+.notes-eyebrow{justify-content:center;margin-bottom:14px;}
+.notes-keyword{display:inline-block;}
+.notes-title{
+  max-width:600px;
+  margin:0 auto;
+  color:var(--ink);
+  font-size:clamp(26px,3.6vw,40px);
+  font-weight:800;
+  line-height:1.24;
+  letter-spacing:-.03em;
+  white-space:pre-line;
+}
+.notes-quote{
+  max-width:520px;
+  margin:16px auto 0;
+  padding:0;
+  border:0;
+  color:var(--ink-soft);
+  font-size:15px;
+  font-weight:500;
+  font-style:italic;
+  line-height:1.7;
+  white-space:pre-line;
+}
+.notes-track.intro-feature-list{
+  max-width:min(800px,92vw);
+  margin:40px auto 0;
+  padding:4px 4px 10px;
+  display:flex;
+  gap:18px;
+  overflow-x:auto;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);
+  mask-image:linear-gradient(90deg,#000 90%,transparent);
+  list-style:none;
+}
+.notes-track.intro-feature-list::-webkit-scrollbar{display:none;}
+.note-card.intro-feature-item{
+  position:relative;
+  flex:0 0 auto;
+  width:250px;
+  min-height:146px;
+  padding:24px 20px;
+  border:0;
+  border-radius:16px;
+  background:var(--bg-soft);
+  box-shadow:none;
+  color:var(--ink);
+  text-align:left;
+  scroll-snap-align:start;
+  transition:background .2s var(--ease),transform .2s var(--ease),box-shadow .2s var(--ease);
+}
+.note-card.intro-feature-item:hover{background:#fff;box-shadow:var(--shadow-sm);transform:translateY(-3px);}
+.note-card .date{color:var(--ink-faint);font-size:11px;font-weight:700;letter-spacing:.02em;}
+.note-card .intro-feature-text{display:block;margin-top:10px;color:var(--ink);font-size:15.5px;font-weight:800;line-height:1.42;letter-spacing:-.01em;word-break:keep-all;}
+.note-card p{margin-top:8px;color:var(--ink-soft);font-size:12.5px;font-weight:500;line-height:1.6;}
+.intro-feature-remove,.intro-feature-add{display:none;}
+.builder-public-preview .intro-feature-remove{
+  position:absolute;
+  top:10px;
+  right:10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border:none;
+  border-radius:50%;
+  background:rgba(220,38,38,.12);
+  color:#dc2626;
+  font-size:.72rem;
+  cursor:pointer;
+}
+.builder-public-preview .intro-feature-remove:hover{background:#dc2626;color:#fff;}
+.builder-public-preview .intro-feature-add{
+  display:inline-flex;
+  align-self:center;
+  align-items:center;
+  gap:5px;
+  margin:18px auto 0;
+  padding:6px 12px;
+  border:1px dashed #4A7FD4;
+  border-radius:999px;
+  background:rgba(74,127,212,.08);
+  color:#0C238A;
+  font-size:.80rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.builder-public-preview .intro-feature-add:hover{background:rgba(74,127,212,.16);}
+.builder-public-preview [data-intro-feature-item],.builder-public-preview [data-intro-feature-body]{cursor:text;border-radius:6px;outline:2px dashed transparent;outline-offset:2px;transition:outline .15s ease,background .15s ease;}
+.builder-public-preview [data-intro-feature-item]:hover,.builder-public-preview [data-intro-feature-body]:hover{outline-color:rgba(250,204,21,.6);background:rgba(250,204,21,.1);}
+.builder-public-preview [data-intro-feature-item]:focus,.builder-public-preview [data-intro-feature-body]:focus{outline:3px solid #facc15;background:rgba(250,204,21,.16);}
+/* 본문이 비면 클릭할 면적이 사라져 편집에 들어갈 수 없다. 빌더에서만 안내 문구로 자리를 지킨다. */
+.builder-public-preview [data-intro-feature-body]:empty::before{content:'설명을 입력하세요';color:var(--ink-faint);}
+.notes-hint{margin-top:18px;color:var(--ink-faint);font-size:11.5px;font-weight:700;}
+/* ══════════════ 과목/커리큘럼 카드 (실데이터) ══════════════ */
+.subject-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.subject-card{background:#fff;border:1.5px solid #e2e8f8;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(12,35,138,.05);display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;}
+.subject-card .subject-ico{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#0C238A,#4A7FD4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.28rem;}
+.subject-name{font-size:.95rem;font-weight:900;color:#0a0f2e;}
+.subject-meta{font-size:.78rem;color:#4a5872;}
+
+/* ══════════════ 외부 서비스 연동 (네이버 블로그/스마트스토어) ══════════════ */
+.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+/* 카드는 배너 링크(<a>)로도, 미연동 시 <div>로도 렌더된다. 링크일 때 기본 밑줄·색이
+   새지 않도록 명시한다. */
+.social-card{display:block;border:1.5px solid #e2e8f8;border-radius:15px;overflow:hidden;box-shadow:0 4px 14px rgba(12,35,138,.06);background:#fff;text-decoration:none;color:inherit;}
+.social-card-header{padding:13px 15px;display:flex;align-items:center;gap:9px;color:#fff;}
+.social-card-header.blog{background:linear-gradient(135deg,#03C75A,#02a84c);}
+.social-card-header.store{background:linear-gradient(135deg,#0C238A,#1a3ab0);}
+.social-card-header .sc-ico{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;}
+.social-card-header .sc-title{font-size:.90rem;font-weight:800;color:#fff;}
+.social-card-header .sc-sub{font-size:.72rem;color:rgba(255,255,255,.83);}
+.social-preview-card{transition:transform .15s ease,box-shadow .15s ease;}
+.social-preview-card:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(12,35,138,.1);}
+/* ══════════════ 빈 상태(empty state) 공통 ══════════════ */
+/* 수업 영상 / 수업 상품 두 곳의 빈 상태가 제각각이라 하나로 맞춘다.
+   .demo-placeholder 는 두 렌더러(academy_public.js, academy_builder.js)가 emit하는데
+   CSS 정의가 아예 없어 무스타일 좌측 정렬로 렌더되고 있었다.
+   외부연동(.social-empty-preview)은 카드가 배너 한 장이 되면서 빈 상태 골격을 없앴다. */
+.demo-placeholder,
+.lesson-empty{
+  min-height:132px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;
+  border:1.5px dashed #cbd5e1;border-radius:13px;
+  background:linear-gradient(135deg,#f8faff,#eef4ff);
+  text-align:center;color:#4a5872;
+}
+.demo-placeholder,.lesson-empty{padding:28px 20px;}
+/* 아이콘 아래 간격은 컨테이너 gap이 담당한다(margin-bottom 중복 제거) */
+.demo-placeholder .ph-ico{font-size:1.7rem;line-height:1;}
+.demo-placeholder p{margin:0;font-size:.84rem;font-weight:800;}
+.lesson-empty{margin:0;font-size:.92rem;font-weight:800;}
+/* 빌더 과목/대상 모달은 같은 클래스를 임시 로딩 문구로 쓴다(academy_builder.js:1246).
+   거긴 2열 그리드 셀 안이라 박스 처리가 맞지 않고 로딩 후 교체될 때 레이아웃이 튄다. */
+.builder-option-grid>.lesson-empty{
+  grid-column:1/-1;
+  min-height:0;padding:0;border:0;background:none;
+  font-weight:600;
+}
+
+/* ══════════════ 푸터 (학원 정보 자동) ══════════════ */
+.cv-footer{background:#0a0f2e;padding:28px 20px;text-align:center;}
+.cv-footer-info{font-size:.78rem;color:rgba(255,255,255,.66);line-height:1.9;margin-top:10px;}
+.cv-footer-bottom{font-size:.75rem;color:rgba(255,255,255,.59);margin-top:12px;}
+.eh-logo-component.footer-logo{justify-content:center;}
+.eh-logo-component.footer-logo .eh-logo-title{color:rgba(255,255,255,.9);}
+.eh-logo-component.footer-logo .eh-logo-sub{color:rgba(255,255,255,.67);}
+
+/* ══════════════ 데모 게이트 ══════════════ */
+.demo-badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:800;color:#8a6d00;background:#fff4cc;border:1px solid #f2d675;border-radius:999px;padding:2px 8px;letter-spacing:.02em;vertical-align:middle;}
+.demo-gate{position:relative;}
+.demo-gate::after{content:'데모 — 준비중';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.84rem;font-weight:800;color:#5a4a00;background:rgba(255,244,204,.5);border:1.5px dashed #e6c34d;border-radius:inherit;pointer-events:none;}
+
+.curriculum-tabs{display:flex;justify-content:center;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
+.curriculum-tabs .market-tab{border:1px solid #dde6ff;background:#fff;color:#333f5c;border-radius:999px;padding:8px 14px;font-size:.86rem;font-weight:900;cursor:pointer;}
+.curriculum-tabs .market-tab.active{background:#0C238A;color:#fff;border-color:#0C238A;}
+.curriculum-hero-card{border-radius:14px;padding:24px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden;}
+.curriculum-hero-card .curriculum-label{font-size:.74rem;font-weight:800;color:rgba(255,255,255,.75);letter-spacing:.1em;margin-bottom:5px;}
+.curriculum-hero-card h3{font-size:1.22rem;font-weight:900;margin-bottom:5px;}
+.curriculum-hero-card p{font-size:.88rem;color:rgba(255,255,255,.83);}
+.flow-bar{margin:14px 0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#0a0f2e,#0C238A);border-radius:13px;padding:13px;color:#fff;}
+.flow-item{font-size:.80rem;font-weight:900;white-space:nowrap;}
+.flow-sep{opacity:.45;}
+.flow-total{margin-left:4px;border-radius:999px;background:rgba(255,255,255,.15);padding:5px 10px;font-size:.78rem;font-weight:900;}
+.textbook-card{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #e2e8f8;border-radius:13px;padding:12px 14px;margin:12px 0;}
+.tb-img{width:38px;height:38px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;}
+.tb-badge{font-size:.74rem;font-weight:900;color:#0C238A;background:#eef2ff;border-radius:999px;padding:4px 8px;}
+
+.builder-multiline-text,.academy-multiline-text{white-space:pre-line;}
+
+
+/* ══════════════ 학습 철학(philosophy snap) ══════════════ */
+.philosophy{
+  padding:120px 5vw;
+  background:var(--bg);
+  color:var(--ink);
+}
+.philosophy-inner{max-width:1120px;margin:0 auto;}
+.philosophy-head{margin:0;max-width:600px;text-align:left;}
+.philosophy-eyebrow{justify-content:flex-start;margin-bottom:18px;}
+.philosophy-head h2{
+  margin:0;
+  color:var(--ink);
+  font-size:clamp(26px,3.6vw,40px);
+  font-weight:800;
+  line-height:1.24;
+  letter-spacing:-.03em;
+}
+.philosophy-grid{
+  margin-top:52px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.p-card{
+  padding:28px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:none;
+}
+.p-card .n{display:block;color:var(--gold);font-weight:800;font-size:12px;letter-spacing:.08em;}
+.p-card p{margin:10px 0 0;color:var(--ink);font-size:16px;font-weight:700;line-height:1.5;letter-spacing:-.015em;word-break:keep-all;}
+#publicView .p-card p{margin:10px 0 0;}
+@media (max-width:700px){
+  .philosophy{padding:88px 20px;}
+  .philosophy-grid{grid-template-columns:1fr;margin-top:34px;}
+  .p-card{padding:24px 22px;}
+  .p-card p{font-size:16px;}
+}
+
+/* ══════════════ 원장 소개 (실데이터/시안 이식) ══════════════ */
+/* 좌 카드 + 우 영상 2열. align-items:stretch로 좌우 컬럼을 둘 중 큰 쪽(대개 텍스트가 긴 카드) 높이에
+   맞춰 영상 박스가 잘리거나 삐죽 나오지 않게 한다. 영상 박스는 세로(9:16)~가로(16:9) 어느 비율이든
+   iframe이 박스를 채우며 letterbox되어 orientation에 자연스럽게 적응한다(별도 방향 감지 불필요). */
+.principal-wrap{background:#fff;}
+.principal-inner{max-width:860px;margin:0 auto;}
+.principal-head{text-align:center;margin-bottom:18px;}
+.principal-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:stretch;}
+.principal-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f8;padding:22px;box-shadow:0 4px 14px rgba(12,35,138,.06);display:flex;gap:16px;align-items:flex-start;}
+.principal-avatar{width:64px;height:64px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#0C238A,#4A7FD4);display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:#fff;box-shadow:0 4px 14px rgba(12,35,138,.2);}
+.principal-info{flex:1;min-width:0;}
+.principal-name{font-size:1.1rem;font-weight:900;color:#0a0f2e;margin-bottom:3px;}
+.principal-role{font-size:.80rem;color:#4A7FD4;font-weight:700;background:rgba(74,127,212,.1);border-radius:999px;padding:2px 9px;display:inline-block;margin-bottom:8px;}
+.principal-desc{font-size:.90rem;color:#4a5872;line-height:1.7;margin-bottom:10px;}
+.principal-career{list-style:none;display:flex;flex-direction:column;gap:5px;margin:0;padding:0;}
+.principal-career li{display:flex;align-items:flex-start;gap:6px;font-size:.84rem;color:#333f5c;}
+.principal-career li .li-check{color:var(--ultramarine);font-size:.74rem;font-weight:900;margin-top:3px;flex-shrink:0;}
+.principal-career-text{flex:1;min-width:0;}
+.principal-career-remove,.principal-career-add{display:none;}
+.principal-bottom{margin-top:12px;padding:10px 12px;background:#f5f8ff;border-radius:8px;border-left:3px solid #0C238A;font-size:.87rem;color:#333f5c;line-height:1.6;font-style:italic;}
+/* 영상 박스는 강제 세로 대신 orientation에 맞춰 비율을 유지한다(찌그러짐 없음).
+   기본은 가로(16:9), YouTube Shorts 링크면 세로(9:16). align-self:start로 카드 높이에 늘어나지 않고
+   자기 비율을 지킨다(둘 중 큰 쪽이 행 높이를 정하고, 짧은 쪽은 여백을 둔다). */
+.principal-video-box{position:relative;align-self:start;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1.5px solid #e2e8f8;box-shadow:0 4px 14px rgba(12,35,138,.06);background:#0a0f2e;display:flex;align-items:center;justify-content:center;}
+.principal-video-box.is-portrait{aspect-ratio:9/16;max-width:250px;margin:0 auto;}
+.principal-video-frame{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.principal-video-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,15,46,.55);z-index:2;padding:0 14px;text-align:center;}
+.pv-play{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;}
+.pv-caption{font-size:.84rem;color:rgba(255,255,255,.78);}
+/* 빌더 전용 편집 어피던스 — 영상 박스 클릭 편집 + 약력 추가/삭제 컨트롤 노출(공개 페이지에선 숨김) */
+.builder-public-preview .principal-video-box{cursor:pointer;}
+.builder-public-preview .principal-career-item{align-items:center;}
+.builder-public-preview .principal-career-remove{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;height:18px;border:none;border-radius:50%;background:rgba(220,38,38,.12);color:#dc2626;font-size:.72rem;cursor:pointer;}
+.builder-public-preview .principal-career-remove:hover{background:#dc2626;color:#fff;}
+.builder-public-preview .principal-career-add{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 11px;border:1px dashed #4A7FD4;border-radius:999px;background:rgba(74,127,212,.08);color:#0C238A;font-size:.80rem;font-weight:800;cursor:pointer;}
+.builder-public-preview .principal-career-add:hover{background:rgba(74,127,212,.16);}
+.builder-public-preview [data-principal-career-item]{cursor:text;border-radius:6px;outline:2px dashed transparent;outline-offset:2px;transition:outline .15s ease,background .15s ease;}
+.builder-public-preview [data-principal-career-item]:hover{outline-color:rgba(250,204,21,.6);background:rgba(250,204,21,.1);}
+.builder-public-preview [data-principal-career-item]:focus{outline:3px solid #facc15;background:rgba(250,204,21,.16);}
+/* ── sec-videos 수업 영상 재생목록 ── 세로 숏폼 기준이라 메인 플레이어를 세로 비율로 두고,
+   오른쪽 리스트는 스크롤시킨다. 좁은 화면에서는 리스트를 아래로 내려 가로 스크롤로 바꾼다. */
+.video-playlist-layout{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;align-items:start;}
+.video-main{background:#0b1020;border-radius:14px;overflow:hidden;}
+.video-main-player{display:block;width:100%;max-height:min(70vh,620px);background:#0b1020;}
+.video-playlist{display:flex;flex-direction:column;gap:8px;max-height:min(70vh,620px);overflow-y:auto;}
+.video-playlist-item{position:relative;display:block;width:100%;padding:0;border:2px solid transparent;border-radius:10px;background:none;cursor:pointer;overflow:hidden;transition:border-color .15s;}
+.video-playlist-item:hover{border-color:rgba(12,35,138,.35);}
+.video-playlist-item.active{border-color:#0C238A;}
+.video-playlist-thumb{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e8ecf5;}
+.video-playlist-thumb-placeholder{display:grid;place-items:center;font-size:1.7rem;color:#667085;}
+.video-playlist-meta{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 8px;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;font-size:.74rem;font-weight:800;}
+@media (max-width:720px){
+  .video-playlist-layout{grid-template-columns:1fr;}
+  .video-playlist{flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;}
+  .video-playlist-item{flex:0 0 132px;}
+}
+
+/* 신청 모달은 #publicView 밖에 있어 공통 box-sizing reset의 적용을 받지 않는다. */
+#applyModal>div{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow-y:auto;}
+#consultModal>div{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow-y:auto;}
+
+/* 상담 신청 모달의 연락 수단 행 */
+.consult-contact-option{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;margin-bottom:12px;padding:14px 16px;border:1px solid #e5e7eb;border-radius:10px;color:#1a1a2e;font-size:15px;font-weight:600;text-decoration:none;transition:border-color .15s,background .15s;}
+.consult-contact-option:hover{border-color:#0C238A;background:#f8faff;}
+.consult-contact-option:last-child{margin-bottom:20px;}
+.consult-contact-icon{font-size:22px;line-height:1;}
+.consult-contact-text{display:flex;flex-direction:column;min-width:0;text-align:left;}
+.consult-contact-value{color:#6b7280;font-size:13px;font-weight:400;overflow-wrap:anywhere;}
+
+/* ══════════════ 공개 페이지 반응형 ══════════════ */
+@media(max-width:768px){
+  .cv-gnb{height:auto;min-height:62px;grid-template-columns:minmax(0,1fr) auto;padding:9px 18px;}
+  .cv-gnb>.eh-logo-component{grid-column:1;min-width:0;overflow:hidden;}
+  .cv-gnb>.cv-nav{grid-column:2;}
+  .cv-gnb .eh-logo-text-area{min-width:0;}
+  .cv-gnb .eh-logo-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cv-gnb .eh-logo-symbol,.cv-gnb .eh-logo-symbol img{max-width:120px;}
+  .cv-nav>a:not(.cv-btn-owner){display:none;}
+  .section-wrap{padding:32px 18px;}
+  .principal-grid,.social-grid{grid-template-columns:1fr;}
+  .principal-video-box.is-portrait{max-width:240px;}
+}
+
+@media(max-width:480px){
+  .cv-gnb{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px;gap:8px;}
+  .cv-gnb .eh-logo-component{gap:8px;}
+  .cv-gnb .eh-logo-symbol,.cv-gnb .eh-logo-symbol img{max-width:76px;}
+  .cv-gnb .eh-logo-title{font-size:.92rem;}
+  .cv-nav{min-width:0;}
+  .cv-btn-primary,.cv-btn-owner{padding:7px 10px;font-size:.78rem;border-radius:9px;}
+  .cv-hero-badges{margin-bottom:14px;}
+  .cv-hero-badges .badge{font-size:.75rem;}
+  .cv-hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;}
+  .hero-stat{min-width:0;text-align:center;}
+  .hero-stat-num{font-size:1.08rem;overflow-wrap:anywhere;}
+  .hero-stat-label{font-size:.75rem;}
+  .section-wrap{padding:28px 16px;}
+  .section-header{margin-bottom:18px;}
+  .section-title{font-size:1.28rem;}
+  .section-sub{font-size:.86rem;line-height:1.6;}
+  .principal-desc{overflow-wrap:anywhere;}
+  .principal-card{flex-direction:column;gap:12px;padding:18px;}
+  .principal-avatar{width:54px;height:54px;font-size:1.4rem;}
+  .principal-info{width:100%;}
+  .principal-video-box.is-portrait{max-width:220px;}
+  .subject-grid,.blog-grid{grid-template-columns:1fr;}
+  .social-card-header,.social-card-body{padding:12px;}
+  .map-thumb-label{max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;}
+  .video-playlist-item{flex-basis:116px;}
+  .demo-placeholder,.lesson-empty{padding:22px 16px;}
+  #applyModal>div{width:calc(100% - 24px)!important;padding:20px!important;max-height:calc(100dvh - 24px);}
+  #applyModal>div>div:last-child{display:grid!important;grid-template-columns:1fr 1fr;}
+  #consultModal>div{width:calc(100% - 24px)!important;padding:22px 18px!important;max-height:calc(100dvh - 24px);}
+}
+
+/* ══════════════ V8 히어로·소개 반응형 (시안 원본 브레이크포인트) ══════════════
+   이 두 섹션은 시안이 980/760이라는 자체 경계를 쓴다. 페이지 공용 768/480과 달라
+   섞으면 어느 쪽도 시안과 맞지 않는다 — 시안 수치를 그대로 옮겨 따로 둔다.
+   공용 블록보다 뒤에 와야 겹치는 구간에서 이쪽이 이긴다. */
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr;}
+  /* 시안은 좁아지면 원장 사진을 텍스트 위로 끌어올린다. */
+  .hero .tablet{max-width:280px;order:-1;}
+}
+@media (max-width:760px){
+  .hero{padding-top:110px;}
+  .classes-wrap .classes-container,.lesson-schedule-inner{padding-right:20px;padding-left:20px;}
+  .section-head h2{font-size:clamp(36px,10vw,48px);}
+  .lesson-product-slot{overflow:hidden;}
+  .toggle-row{align-items:flex-start;}
+}
+
+/* Builder는 iframe 없이 공개 DOM을 축소하므로 viewport media query가 동작하지 않는다.
+   canvas-frame을 inline-size container로 두고 같은 세로형 규칙을 미리보기에도 적용한다. */
+@container(max-width:768px){
+  .builder-public-preview .cv-gnb{display:grid;height:auto;min-height:62px;grid-template-columns:minmax(0,1fr) auto;padding:9px 18px;}
+  .builder-public-preview .cv-gnb>.eh-logo-component{grid-column:1;min-width:0;overflow:hidden;}
+  .builder-public-preview .cv-gnb>.cv-nav{grid-column:2;}
+  .builder-public-preview .cv-gnb .eh-logo-text-area{min-width:0;}
+  .builder-public-preview .cv-gnb .eh-logo-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .builder-public-preview .cv-gnb .eh-logo-symbol,.builder-public-preview .cv-gnb .eh-logo-symbol img{max-width:120px;}
+  .builder-public-preview .cv-nav>a:not(.cv-btn-owner){display:none;}
+  .builder-public-preview .hero{padding:60px 18px 32px;}
+  .builder-public-preview .hero-grid{grid-template-columns:1fr;}
+  .builder-public-preview .hero .tablet{max-width:280px;order:-1;}
+  .builder-public-preview .hero h1{font-size:1.7rem;}
+  .builder-public-preview .section-wrap{padding:32px 18px;}
+  .builder-public-preview .intro-grid,.builder-public-preview .principal-grid,.builder-public-preview .social-grid{grid-template-columns:1fr;}
+  .builder-public-preview .principal-video-box.is-portrait{max-width:240px;}
+}
+
+@container(max-width:720px){
+  .builder-public-preview .video-playlist-layout{grid-template-columns:1fr;}
+  .builder-public-preview .video-playlist{flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;}
+  .builder-public-preview .video-playlist-item{flex:0 0 132px;}
+}
+
+@container(max-width:480px){
+  .builder-public-preview .cv-gnb{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px;gap:8px;}
+  .builder-public-preview .cv-gnb .eh-logo-component{gap:8px;}
+  .builder-public-preview .cv-gnb .eh-logo-symbol,.builder-public-preview .cv-gnb .eh-logo-symbol img{max-width:76px;}
+  .builder-public-preview .cv-gnb .eh-logo-title{font-size:.92rem;}
+  .builder-public-preview .cv-btn-primary,.builder-public-preview .cv-btn-owner{padding:7px 10px;font-size:.78rem;border-radius:9px;}
+  .builder-public-preview .hero{padding:52px 16px 28px;}
+  .builder-public-preview .hero h1{font-size:1.55rem;}
+  .builder-public-preview .cv-hero-badges{margin-bottom:14px;}
+  .builder-public-preview .cv-hero-badges .badge{font-size:.75rem;}
+  .builder-public-preview .cv-hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;}
+  .builder-public-preview .hero-stat{min-width:0;text-align:center;}
+  .builder-public-preview .hero-stat-num{font-size:1.08rem;overflow-wrap:anywhere;}
+  .builder-public-preview .hero-stat-label{font-size:.75rem;}
+  .builder-public-preview .section-wrap{padding:28px 16px;}
+  .builder-public-preview .section-header{margin-bottom:18px;}
+  .builder-public-preview .section-title{font-size:1.28rem;}
+  .builder-public-preview .section-sub{font-size:.86rem;line-height:1.6;}
+  .builder-public-preview .intro-grid{gap:20px;}
+  .builder-public-preview .principal-card{flex-direction:column;gap:12px;padding:18px;}
+  .builder-public-preview .principal-avatar{width:54px;height:54px;font-size:1.4rem;}
+  .builder-public-preview .principal-info{width:100%;}
+  .builder-public-preview .principal-video-box.is-portrait{max-width:220px;}
+  .builder-public-preview .subject-grid,.builder-public-preview .blog-grid{grid-template-columns:1fr;}
+  .builder-public-preview .map-thumb-label{max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;}
+  .builder-public-preview .video-playlist-item{flex-basis:116px;}
+  .builder-public-preview .demo-placeholder,.builder-public-preview .lesson-empty{padding:22px 16px;}
+}

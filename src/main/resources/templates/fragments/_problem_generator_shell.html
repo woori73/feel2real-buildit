@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav class="side-nav" th:fragment="sidebar(activeMenu, menus)">
+  <a class="tool-brand" href="/problem-generator" aria-label="Feel to Real AI 스튜디오 홈">
+    <span>F2R</span>
+    <div><b>Feel to Real</b><small>AI 스튜디오</small></div>
+  </a>
+  <p class="tool-subtitle">Digital Twin 기반<br>내신 문제 제작 도구</p>
+  <div class="side-menu" aria-label="주요 메뉴">
+    <a th:each="menu, iter : ${menus}" th:href="${menu.path}" th:classappend="${menu.key == activeMenu} ? ' active' : ''">
+      <span th:text="${iter.index == 0 ? '✦' : iter.index == 1 ? '◈' : iter.index == 2 ? '▤' : iter.index == 3 ? '▧' : iter.index == 4 ? '◎' : iter.index == 5 ? '▦' : '▧'}">✦</span>
+      <span th:text="${menu.label}">중등 내신 문제 생성기</span>
+    </a>
+  </div>
+  <div class="side-bottom">
+    <button type="button" data-action="mock">⚙ 설정</button>
+    <button type="button" data-action="mock">♲ 휴지통</button>
+    <button type="button" data-action="mock">⇩ 데이터 내보내기</button>
+  </div>
+</nav>
+<aside class="ai-panel" th:fragment="assistant(activeMenu, pageSubtitle)">
+  <header><div><p class="kicker">WORK ASSISTANT</p><h2>박원장 AI</h2></div><button type="button" data-action="mock">새 대화</button></header>
+  <div class="ai-context"><b>현재 작업 컨텍스트</b><span th:text="${pageSubtitle}">학교·학년·시험을 선택하면 Digital Twin이 자동 적용되어 신규 문제 생성과 기존 문제 변형을 모두 지원합니다.</span><small>강사 문제 DB 0개</small></div>
+  <div id="assistantChatLog" class="chat-log"><p class="ai">안녕하세요. 현재 작업을 기준으로 출제 유형, 난이도, 문항 구성 검수를 도와드릴게요. Gemini 키를 입력하면 바로 대화할 수 있어요.</p></div>
+  <div class="chat-input"><button type="button" data-action="mock" aria-label="파일 첨부">＋</button><textarea id="assistantMessage" placeholder="현재 작업에 대해 물어보세요"></textarea><button id="assistantSend" class="send-button" type="button" aria-label="전송">↑</button></div><div id="assistantStatus" class="assistant-status" role="status"></div>
+  <button id="assistantClear" class="delete-chat" type="button">대화 삭제</button>
+</aside>
+</body>
+</html>

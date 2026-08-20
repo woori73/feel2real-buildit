@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 랜딩 페이지 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_landing.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('landing')}"></th:block>
+
+  <main class="landing-admin-main">
+    <header class="landing-admin-header">
+      <div>
+        <p class="landing-admin-eyebrow">LANDING PAGE</p>
+        <h2>랜딩 페이지 관리</h2>
+        <p>랜딩페이지의 고정 영상과 베타 참여자 의견을 관리할 수 있습니다.</p>
+      </div>
+      <a class="landing-preview-link" href="/" target="_blank" rel="noopener">랜딩페이지 새 창에서 보기</a>
+    </header>
+
+    <section aria-labelledby="landingVideoGuideTitle" class="landing-admin-guide">
+      <h3 id="landingVideoGuideTitle">업로드 안내</h3>
+      <p>60초 미만, 100MB 이하의 영상 파일을 선택하세요. 업로드한 영상은 웹 재생용 MP4로 변환됩니다.</p>
+      <p>교체에 실패하면 현재 공개 중인 영상은 그대로 유지됩니다. 이 화면에서는 영상을 물리 삭제하지 않습니다.</p>
+    </section>
+
+    <section id="landingVideoCards" class="landing-video-grid" aria-live="polite" aria-busy="true">
+      <p class="landing-video-loading" role="status">영상 정보를 불러오는 중입니다.</p>
+    </section>
+
+    <header class="landing-admin-header beta-admin-header">
+      <div>
+        <p class="landing-admin-eyebrow">BETA VOICE</p>
+        <h2>베타 의견 관리</h2>
+        <p>등록된 의견은 랜딩 &quot;베타 참여자들의 목소리&quot;에 바로 노출됩니다. 부적절한 의견은 여기서 숨기세요.</p>
+      </div>
+      <p class="beta-admin-summary" id="betaCommentSummary" role="status" aria-live="polite"></p>
+    </header>
+
+    <section id="betaCommentGroups" class="beta-admin-groups" aria-live="polite" aria-busy="true">
+      <p class="landing-video-loading" role="status">베타 의견을 불러오는 중입니다.</p>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_landing.js"></script>
+  <script src="/js/admin_beta_comments.js"></script>
+</body>
+</html>

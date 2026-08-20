@@ -1,0 +1,45 @@
+name: Trello Card → Create GitHub Issue
+
+on:
+  repository_dispatch:
+    types: [trello-card-created]
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub issue
+        id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CARD_TITLE="${{ github.event.client_payload.card_title }}"
+          CARD_ID="${{ github.event.client_payload.card_id }}"
+
+          # 이미 #N이 붙어있으면 스킵 (GitHub→Trello 자동 생성 카드)
+          if echo "$CARD_TITLE" | grep -qE '^#[0-9]+'; then
+            echo "Card already linked to issue, skipping."
+            exit 0
+          fi
+
+          ISSUE_URL=$(gh issue create \
+            --title "$CARD_TITLE" \
+            --body "Trello에서 생성된 이슈입니다." \
+            --repo ${{ github.repository }})
+
+          ISSUE_NUM=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "issue_num=$ISSUE_NUM" >> $GITHUB_OUTPUT
+          echo "card_id=$CARD_ID" >> $GITHUB_OUTPUT
+
+      - name: Update Trello card title with issue number
+        if: steps.create.outputs.issue_num != ''
+        run: |
+          ISSUE_NUM="${{ steps.create.outputs.issue_num }}"
+          CARD_ID="${{ steps.create.outputs.card_id }}"
+          OLD_TITLE="${{ github.event.client_payload.card_title }}"
+          NEW_TITLE="#${ISSUE_NUM} ${OLD_TITLE}"
+
+          curl -s -X PUT "https://api.trello.com/1/cards/${CARD_ID}" \
+            -d "key=${{ secrets.TRELLO_API_KEY }}" \
+            -d "token=${{ secrets.TRELLO_TOKEN }}" \
+            --data-urlencode "name=${NEW_TITLE}"

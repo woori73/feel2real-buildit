@@ -1,0 +1,3136 @@
+# API 명세
+
+> 현재 프론트엔드는 Thymeleaf SSR 중심이지만, 향후 React 클라이언트와 Python 서버 연동을 고려해 이 문서를 **API 계약의 단일 기준 문서**로 유지한다.
+
+## 0. 운영 규칙
+
+### 문서화 대상
+
+다음 변경이 있으면 코드 변경과 같은 커밋/작업 단위에서 이 문서를 함께 수정한다.
+
+- Controller endpoint 추가/삭제/변경
+- HTTP method 또는 URL path 변경
+- path/query parameter 변경
+- form field 또는 request body 구조 변경
+- response body, redirect 경로, status code 변경
+- 에러 응답 형식 변경
+- Thymeleaf SSR 전용 endpoint라도 React/Python에서 호출할 가능성이 있는 계약 변경
+
+### 작성 형식
+
+각 endpoint는 가능한 한 아래 형식을 따른다.
+
+```md
+### 상태마커 METHOD /path
+
+- 목적:
+- 현재 사용처:
+  - Thymeleaf SSR / JavaScript fetch / 내부 호출 / 향후 예정 중 선택
+- 향후 사용 가능성:
+  - React client / Python server / 없음 중 선택
+- 인증/권한:
+- Request:
+  - Path parameters:
+  - Query parameters:
+  - Form fields 또는 JSON body:
+- Response:
+  - 성공:
+  - 실패:
+- Redirect:
+- 관련 문서:
+```
+
+### 상태 마커
+
+- ✅ 구현됨: 실제 코드에 존재하고 현재 동작하는 endpoint
+- ⚠️ 부분 구현: endpoint는 있으나 인증, 검증, 응답 형식 등 보완이 필요한 상태
+- 🚧 예정: 문서상 계획만 있고 아직 코드가 없는 상태
+
+### 수정하지 않는 경우
+
+API 계약 변경이 없는 작업은 최종 보고에 다음처럼 명시한다.
+
+```text
+API.md: endpoint/request/response/redirect 변경 없음 → 수정 없음
+```
+
+## 1. 공통 계약
+
+### 이미지 업로드/서빙 포맷
+
+모든 이미지 업로드 경로는 `ImageSanitizer.sanitize`를 거친다. 무검증 통과는 없다.
+
+| 입력 | 저장 포맷 | 저장 키 확장자 | 서빙 Content-Type |
+|---|---|---|---|
+| 애니메이션 GIF (프레임 2장 이상) | GIF, **프레임·지연·반복 보존** (재인코딩) | `.gif` | `image/gif` |
+| 애니메이션 WebP (VP8X ANIM) | WebP, **픽셀 원본 그대로** (검증 + 메타데이터 제거) | `.webp` | `image/webp` |
+| 그 외 (JPEG/PNG/정지 GIF/정지 WebP/HEIC 등) | JPEG (품질 0.82) | `.jpg` | `image/jpeg` |
+
+- **Content-Type은 추측하지 않는다.** Content-Type 컬럼이 있는 곳(`community_images`,
+  `academy_blog_sources`)은 그 값을, 없는 곳(Source·Academy 로고/커버·히어로)은 저장 키의 확장자를
+  쓴다(`ImageSanitizer.contentTypeForStorageKey`).
+- 기존 JPEG 오브젝트는 backfill하지 않는다. 확장자 없는 레거시 키는 JPEG로 판정돼 그대로 서빙된다.
+- ffmpeg가 만드는 영상 썸네일과 PDF 페이지는 항상 JPEG다(위 정책 대상 아님).
+- Claude Vision에 보내는 media type도 원본 파일명이 아니라 저장 키로 판정한다
+  (`VisionMediaType.forStorageKey`).
+
+#### 재인코딩 경로 (GIF / JPEG)
+
+- 최장변 1600px(`ImageSanitizer.MAX_DIMENSION`)로 축소한다.
+- 재인코딩 자체가 악성 페이로드와 EXIF를 떨궈내는 방어선이다.
+- 애니메이션 GIF는 프레임 300장, 논리 화면 4천만 픽셀, 출력 20MB 상한을 넘으면 **거부**한다.
+  잘린(trailer 없는) GIF도 거부한다 — 관대하게 읽으면 프레임이 조용히 사라진다.
+
+#### 애니메이션 WebP만 재인코딩하지 않는 이유 (`AnimatedWebp`)
+
+WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`--enable-libwebp` 미포함이라
+네이티브 디코더가 ANIM/ANMF를 처리하지 못한다). 인코더 없이 가능한 유일한 대안인 GIF 변환은 같은
+애니메이션을 **2.8배**로 불린다(측정: 380KB → 1.06MB). WebP를 쓰는 이유가 용량이므로 채택하지 않았다.
+
+대신 **픽셀 데이터(VP8/VP8L/ALPH)는 원본 바이트 그대로 두고** 다음을 수행한다.
+
+1. 구조 검증 — 청크 워크가 파일 끝에 정확히 맞아떨어지는지(잘린 파일 거부)
+2. 용량 예산 — 20MB / 프레임 1500장 / 캔버스 4천만 픽셀 초과 시 거부
+3. **컨테이너와 디코더의 프레임 수 일치 확인** — 프레임이 조용히 유실된 파일 거부
+4. `EXIF`/`XMP `/`ICCP` 청크 제거 + VP8X 플래그 정리 — 사진의 GPS 좌표가 공개 페이지로 새는 것 방지
+
+**픽셀은 디코딩하지 않는다.** 두 방식을 시도했다가 모두 걷어냈다.
+
+- **전수 디코딩** — 469프레임(629x452, 13MB) 파일에서 **15.6초 / 힙 301MB**. 업로드 요청 안에서
+  감당할 수 없고, 큰 움짤 몇 개로 요청 스레드를 묶는 DoS가 된다.
+- **표본(첫·마지막) 디코딩** — 값어치가 없었다. **우리 디코더가 브라우저보다 약하다.** 실제 파일에서
+  `ALPH`(알파) 프레임 28개 중 10개가 `ArrayIndexOutOfBoundsException: Coordinate out of bounds!`로
+  깨졌는데, 컨테이너상 캔버스를 벗어나지 않는 정상 프레임이었고 브라우저는 정상 재생했다
+  (TwelveMonkeys 3.11.0·3.12.0 동일). 이걸로 판정하면 **멀쩡한 움짤 업로드가 막힌다** — 실제로 막혔다.
+  반대로 페이로드가 쓰레기여도 리더는 캔버스 크기 이미지를 그냥 돌려주므로 "디코딩되니까 정상"이라는
+  보증도 못 준다.
+
+재인코딩이 아니라 원본 바이트를 그대로 저장하므로, 확인용 디코더가 실제 렌더러보다 엄격할 이유가 없다.
+현재 방식은 같은 파일에서 **87ms**다.
+
+> 프레임 상한이 1500인 이유: 실제 움짤은 프레임이 많다(위 테스트 파일이 469프레임 = 15초 클립).
+> 검증 비용이 프레임 수에 비례하지 않으므로 실질 상한은 20MB 쪽이다.
+
+**보장하지 않는 것** (재인코딩 경로와의 차이 — 리뷰 시 이 차이를 인지할 것):
+
+- 픽셀 스트림에 심어진 페이로드를 떨궈내지 못한다. 재인코딩만이 그걸 한다.
+- 픽셀 내용의 무결성도 보장하지 않는다 — VP8은 오류 내성 코덱이라 페이로드가 수천 바이트 손상돼도
+  예외 없이 "깨진 그림"으로 디코딩된다(실측).
+- 프레임이 실제로 그려지는지도 보장하지 않는다 — 픽셀을 디코딩하지 않는다(위 참고).
+- 최장변 1600px 축소가 걸리지 않는다. 그래서 `AnimatedWebp.MAX_BYTES`(20MB)로 직접 묶는다.
+
+> 정지 WebP는 현행대로 JPEG로 재인코딩된다. WebP가 JPEG보다 작으므로 정지 이미지도 WebP로
+> 저장하는 것이 용량상 유리하지만, 그건 모든 이미지에 영향을 주는 별도 범위라 분리한다.
+
+### 인증/인가
+
+- 인증 방식: JWT(HS256) HTTP-only Cookie.
+- 로그인 성공 시 `POST /api/auth/login`이 access token cookie를 내려준다.
+- SSR view route와 정적 리소스는 대부분 public shell이다. 실제 데이터 API는 SecurityConfig에서 보호한다.
+- 예외: `/conversation/chat`, `/conversation/chat.html`은 ADMIN/TUTOR 전용이다. 인증된 STUDENT가 직접 접근하면 `/stdt_dashboard`로 302 redirect된다.
+- Public API:
+  - `POST /api/auth/login`
+  - `POST /api/auth/logout`
+  - `POST /api/auth/password-reset/request`
+  - `POST /api/auth/password-reset/confirm`
+  - `POST /api/users/students`
+  - `GET /api/subjects`
+- Admin API:
+  - `/api/admin/**`는 `ROLE_ADMIN` 필요.
+- Archived alias:
+  - 정확히 `/archived` 또는 `/archived/**`만 기존 화면/API를 복사하지 않고 원래 target path로
+    단일 `REQUEST`에서 정규화하는 보존 라우트다. servlet forward는 사용하지 않는다.
+  - 기본 설정은 `app.archived.enabled=true`, `app.archived.require-admin=true`이며 ADMIN만 접근 가능하다.
+  - 예: `GET /archived/conversation/dashboard` → `GET /conversation/dashboard`, `POST /archived/api/conversations` → `POST /api/conversations`.
+  - archive gate와 target 인가/소유권/validation은 AND로 합성된다. archive ADMIN이라도 target이
+    TUTOR 전용이면 403이며, mutating `/archived/api/**`도 canonical `/api/**` Origin/Referer 검사를 받는다.
+  - `/archived`와 `/archived/`는 `/home` target이며, 중첩 alias·ambiguous encoded 첫 segment·
+    semicolon/matrix 첫 segment는 400이다. `enabled=false`는 downstream 검사 전에 404다.
+  - 보안 보장은 현재 하나의 catch-all `SecurityFilterChain`을 전제로 한다.
+  - 상세 정책은 [ARCHIVED_FEATURES.md](ARCHIVED_FEATURES.md)를 따른다.
+- Tutor API:
+  - `/api/tutor/**`는 `ROLE_TUTOR` 필요. `/api/tutor/conversations/**`는 추가로 강사 본인 소유 기록만 허용한다(Admin도 제외).
+- 그 외 `/api/**`는 인증 필요.
+- Admin 임퍼소네이트:
+  - 일부 학생/자료 API는 `targetStudentId` 또는 `targetUserId` query/form field를 받는다.
+  - `AuthenticatedUserResolver`가 ADMIN이면 target 값을 허용하고, STUDENT면 자기 자원으로 고정하거나 403 처리한다.
+
+### 공통 실패 응답
+
+`GlobalExceptionHandler` 기준 현재 공통 실패 응답은 다음과 같다.
+
+| 상황 | HTTP | Body |
+|------|------|------|
+| 인증 없음/만료 | 401 | Spring Security 기본 body 없음 |
+| 권한/IDOR 차단 | 403 | `text/plain` 에러 메시지 |
+| `IllegalArgumentException` | 400 | `text/plain` 에러 메시지 |
+| `RejectedFilesException` | 400 | `{ "message": "업로드 파일 중 일부가 거부되었습니다.", "rejectedFiles": [{ "fileName": string, "reason": string }] }` |
+| `SourceProcessingNotCompleteException` | 409 | `{ "message": string, "pendingSources": [{ "sourceId": number, "fileName": string, "status": "PENDING"|"ANALYZING"|"PENDING_REVIEW"|"COMPLETED"|"FAILED" }] }` |
+| 파일 preview/download IO 실패 | 404 | body 없음 |
+
+### 404 Page Redirect
+
+- `GET`/`HEAD /error`에서 `RequestDispatcher.ERROR_STATUS_CODE == 404`이고 원 요청 URI가 일반 화면 route이면 `/home`으로 302 redirect한다.
+- 일반 화면 route 제외 대상: `/api/**`, `/css/`, `/js/`, `/img/`, `/swagger-ui/`, `/v3/api-docs/`, `/actuator/`, `/favicon.ico`, `/robots.txt`, `/sitemap.xml`, 마지막 path segment에 파일 확장자가 있는 URI.
+- 위 조건을 만족하지 않는 error 요청은 원 HTTP status를 body 없이 반환한다. 예: API/static/file-extension/non-GET 404는 404 유지.
+
+### 주요 ENUM
+
+- `Role`: `STUDENT`, `ADMIN`, `TUTOR`
+- `ContentKind`: `GENERAL`, `EXAM_BLANK`, `EXAM_GRADED`, `UNCLASSIFIED`
+- `ProcessingStatus`: `PENDING`, `ANALYZING`, `PENDING_REVIEW`, `COMPLETED`, `FAILED`
+- `ExamType`: `MIDTERM`, `FINAL`, `MOCK`, `OTHER`
+- `QuestionType`: `MULTIPLE_CHOICE`, `SHORT_ANSWER`
+- `AcademyStatus`: `DRAFT`, `PUBLISHED`
+- `TargetGroup`: `ELEMENTARY`, `MIDDLE`, `HIGH`, `UNIVERSITY`, `ADULT`
+- `LessonType`: `SUBSCRIPTION`, `SHORT_TERM`
+- `PriceUnit`: `MONTH`, `COURSE`, `NEGOTIABLE`
+- `ScheduleType`: `WEEKLY`, `PERIOD`, `CONSULTATION`
+- `LessonStatus`: `DRAFT`, `PUBLISHED`, `HIDDEN`
+- `LessonWeekday`: `MONDAY`, `TUESDAY`, `WEDNESDAY`, `THURSDAY`, `FRIDAY`, `SATURDAY`, `SUNDAY`
+- `LearningMaterialStatus`: `ASSIGNED`, `COMPLETED`
+- `SourceType`: `STUDENT_MATERIAL`, `HOMEWORK_PROBLEM`, `HOMEWORK_ANSWER`, `TUTOR_MATERIAL`, `HOMEWORK_FEEDBACK` (V11 추가 — 강사 피드백 PDF용, PR2에서 엔티티·엔드포인트 구현 완료), `WRONG_NOTE` (V904 — 오답노트 수동 업로드), `CONSULTATION` (V911 — 강사/Admin 상담 피드백 자료)
+- `LessonApplicationStatus`: `APPROVED`, `CANCELED`
+
+## 2. SSR View Routes
+
+`WebMvcConfig`가 template view를 직접 매핑한다. 대부분 public이며, 페이지 진입 후 JS가 API 인증 상태를 확인한다. AI Chat 화면만 SecurityConfig에서 ADMIN/TUTOR 전용으로 보호한다.
+
+| Route | View template | 현재 사용처 |
+|-------|---------------|-------------|
+| `/` | `public/landing` | ✅ **Build It** 브랜드 랜딩(2026-08 개편, 시안 `docs/archive/archived_html/홈피개선.html`). Hero → Build It Web / Shorts / Report / Wiki → 문의 순의 스크롤 연출 페이지. `LandingPageController`가 주입하는 SSR 모델은 `academyShortsVideo`(=`ACADEMY_SHORTS_DEMO` 슬롯, Build It Web 섹션 영상) 하나뿐이다 — 공개+managed asset이면 공개 proxy stream, 번들이면 정적 mp4, 숨김이면 media element 대신 준비 중 프레임을 렌더한다. Wiki 섹션 3단계 중 `기출 분석`/`변형문제 생성`은 번들 정적 mp4(`digital_twin_ex.mp4` / `how2use_digitaltwin.mp4`)를 직접 참조하고, `학교별 Wiki`는 영상 없이 mock 대시보드다. 개편으로 구 랜딩의 실시간 빌더 미리보기·베타 의견 폼·후기 캐러셀은 제거됐다(`betaCarousel` 미주입). 브랜드 표기는 nav·footer 모두 Build It 워드마크이며 F2R 로고는 쓰지 않는다 — footer는 공용 fragment의 `publicFooterBuildIt` 변형을 쓴다(본문·사업자 정보는 `publicFooterBranded(buildIt)` 하나를 `/home`과 공유). 사용설명서(`/manual/index.html`)는 같은 탭으로 이동하며 매뉴얼 좌상단 `.manual-back`으로 돌아온다. |
+| `/home`, `/home.html` | `public/home` | F2R 메인 랜딩 — AI 기반 내신 영어 학습 플랫폼 (학생 대상). 로그인 여부와 무관한 최종 student landing이며 미로그인 서비스 진입은 로그인 모달을 연다. |
+| `/academy` | `home` | 디지털 학원 창업 플랫폼 랜딩 (강사/창업 대상, 구 `/home`). 우측 상단 [로그인] 버튼은 공통 로그인 모달을 연다. |
+| `/eduholic` | — (301) | 구 학생 랜딩 URL. `/home`으로 **301 영구 리다이렉트** (북마크/외부 링크 보존) |
+| `/login`, `/login.html` | redirect | 일반 로그인 페이지는 제거됨. 직접 접근 시 `/home`으로 302 redirect. 로그인은 공통 모달에서 `/api/auth/login` 호출. |
+| `/register`, `/register.html` | `register` | 학생/강사 통합 회원가입. `?role=tutor`면 강사 탭 기본 선택 |
+| `/signin/reset/password` | `auth/password_reset_request` | 계정 찾기/비밀번호 재설정 페이지. 이메일로 아이디 목록 조회, 아이디+이메일로 임시 비밀번호 재설정 |
+| `/signin/reset/password/confirm` | `auth/password_reset_confirm` | reset token 기반 새 비밀번호 설정 페이지 |
+| `/dashboard`, `/dashboard.html`, `/stdt_dashboard`, `/stdt_dashboard.html` | `stdt_dashboard` | 학생 대시보드 / Admin 임퍼소네이트 진입 |
+| `/tutor/academy` | `tutor_academy` | ✅ 강사 Academy 관리. **수업 상품 섹션은 LMS로 이관됨** — 강좌 등록·수정·삭제 진입이 여기에 없다. 대신 ①`온라인 LMS` 카드의 `LMS로 이동`(→ `/lms/{handle}`, **handle 없으면 카드 자체가 렌더되지 않는다**) ②`수업 운영` 목록(수업명 링크 → `/tutor/lesson/{id}` 신청·수강생 관리)만 남는다. 기존 Academy의 `Academy 수정`은 `/builder`로 이동 |
+| `/tutor/academy/lessons/editor` | `tutor/lesson_product_editor` | ✅ 수업 상품 생성·수정 전용 편집기. `?new=true`는 신규 draft를 추가하고 `?lessonId={id}`는 해당 수업을 활성화한다. `LessonProductEditorPageController`가 JWT principal과 `TUTOR` role을 확인하며, 비로그인·학생·ADMIN은 렌더하지 않고 랜딩(`/`)으로 리다이렉트한다(`/builder`와 동일 규칙) |
+| `/tutor/lesson/{lessonId}` | `tutor/tutor_lesson_detail` | ✅ 강사용 수업 운영 상세. 수업 정보, 신청/수강생, 커뮤니티 진입을 유지하고 수정은 전용 편집기로 이동 |
+| `/tutor/academy/setup` | `tutor_academy_setup` | ✅ Academy 생성/데이터 편집(임시). 공개주소(handle) 수정 가능. 저장 성공 후 `/tutor/academy`로 이동 |
+| `/builder` | `tutor/academy_builder` | ✅ 학원빌더. 기존 Academy 초기값은 Thymeleaf SSR로 주입하며 canvas는 iframe 없이 공개 페이지 모양 DOM을 직접 표시. 기존 Academy는 학원명/소개/상세 소개/커리큘럼 통합 제목 inline 편집을 지원하고, 신규 발행 전 데이터·로고 data URL preview·섹션 표시 변경은 sessionStorage preview/pending payload 사용 |
+| `/academies` | `academies` | ✅ 공개 Academy 목록/필터 페이지 |
+| `/academies/{slug}` | `academy_public` | ✅ 공개 Academy 페이지 |
+| `/academies/{slug}/preview` | `public/academy_layout_preview` | ✅ Academy Builder 레이아웃 기반 공개 렌더(SSR, Phase 3). `resolveLayoutSchema` block을 order대로 렌더 |
+| `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인) |
+| `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글 |
+| `/lessons` | `lesson_search` | ✅ 학생용 수업 검색 페이지 |
+| `/tutor/lessons/{lessonId}/students` | `tutor/lesson_students` | ✅ 강사용 수업별 신청자 목록 |
+| `/tutor/conversation_dashboard` | `tutor/tutor_conversation_dashboard` | ✅ 강사 소유 대화 기록 목록. 학생 `/stdt_dashboard`처럼 카드 생성/열기/이름변경/삭제만 담당하며, 생성/열기는 상세 화면으로 이동 |
+| `/tutor/conversation/dashboard?id={id}` | `tutor/tutor_conversation_detail` | ✅ 강사 소유 conversation 상세 대시보드. 학생 `/conversation/dashboard?id={id}`처럼 자료 카드/현황 카드 중심이며 AI Chat은 별도 화면으로 이동 |
+| `/tutor/conversation/materials?id={id}` | `tutor/tutor_conversation_materials` | ✅ 강사 소유 자료 모음. 학생 materials 사이드바 슬롯 중 `종합 현황판/시험지 대시보드/학습자료 대시보드/학교 자료 모음/AI Chat`만 유지 |
+| `/tutor/conversation/chat?id={id}` | `tutor/tutor_conversation_chat` | ✅ 강사 소유 AI Chat. 학생 `/conversation/chat?id={id}`의 파일 패널 + 채팅 패널 레이아웃을 tutor API context로 재사용 |
+| `/tutor/conversations/{id}` | redirect | ✅ 강사 기록 legacy deep link. `/tutor/conversation/dashboard?id={id}`로 302 redirect |
+| `/my/profile` | `my_profile` | ✅ 내 정보 수정/회원탈퇴. ADMIN 접근 시 `/home`으로 redirect |
+| `/tutor_dashboard`, `/tutor_dashboard.html` | `tutor_dashboard` | ⚠️ legacy/잔존 페이지. 신규 강사 플로우는 `/tutor/academy` 사용 |
+| `/conversation/chat`, `/conversation/chat.html` | `conversation_chat` | AI Chat. ADMIN/TUTOR 전용(사이드바도 role 노출), STUDENT 직접 접근 시 `/stdt_dashboard`로 302 redirect. `?id=`가 있으면 학생 소유 대화 guard를 먼저 통과해야 함 |
+| `/conversation/dashboard`, `/conversation/dashboard.html` | `conversation_dashboard` | 종합 현황판(사이드바 1번). `ConversationPageController`가 mainTitle 주입. 제목 inline 편집(PATCH) 제공. `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/exam-materials`, `/conversation/exam-materials.html` | `conversation_materials` | 시험지 대시보드(2번). `ConversationMaterialsPageController` — 학생 업로드 EXAM_* 필터. `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/study-materials`, `/conversation/study-materials.html` | `conversation_materials` | 학습자료 대시보드(3번). 학생 업로드 GENERAL 필터. `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/materials`, `/conversation/materials.html` | `conversation_materials` | 학교 자료 모음(4번). 학생 업로드 전체(union). `ConversationMaterialsPageController`. `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/tutor-materials`, `/conversation/tutor-materials.html` | `conversation_tutor_materials` | 시험대비 자료(5번). 강사 업로드 참고자료(TUTOR_MATERIAL) 열람/업로드. `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/homework`, `/conversation/homework.html` | `conversation_homework` | 숙제 및 피드백(6번). 강사 숙제 부여 + 학생 제출. 피드백은 placeholder. `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/review`, `/conversation/review.html` | `conversation_review` | 오답 노트(7번). EXAM_GRADED 기반 오답만(숙제 부여 섹션은 6번으로 이관). `?id=`는 학생 소유 대화 guard 적용 |
+| `/conversation/report`, `/conversation/report.html` | `conversation_report` | 대화 리포트. 라우트·페이지 유지하되 신규 사이드바에는 미노출(성취도는 종합 현황판 카드에 포함). `?id=`는 학생 소유 대화 guard 적용 |
+| `/exam_review`, `/exam_review.html` | `exam_review` | 채점된 시험지 검증 |
+| `/admin/login`, `/admin/login.html` | `admin/login` | Admin 로그인 |
+| `/admin/dashboard`, `/admin/dashboard.html` | `admin/dashboard` | ⚠️ 일부 legacy 호출 포함 |
+| `/admin/students`, `/admin/students.html` | `admin/students` | Admin 학생 목록 |
+| `/admin/landing` | `admin/landing` | ✅ 랜딩 관리. 고정 영상 3슬롯 미리보기·교체·공개/숨김 + 베타 의견 모더레이션(승인/숨김/뱃지)을 한 화면에서 처리한다. 화면 route부터 `ROLE_ADMIN` 필요(비인증 401, STUDENT/TUTOR 403). |
+
+### 2.1 학원 온라인 LMS (`/lms/{handle}/**`)
+
+> 설계·결정 배경은 [academy-lms-design.md](academy-lms-design.md). 1단계는 **데이터 MOCK, 인증·권한 진짜**인
+> clickable prototype이라 신규 REST API·Flyway 변경이 0이다.
+
+**URL 두 형태 — 정본은 로컬 형태 하나다.**
+
+| 환경 | 사용자에게 보이는 URL | 학원 식별 |
+|---|---|---|
+| prd | `{handle}.feel2real.co.kr/lms/{feature}` | Host 서브도메인 |
+| local/apex | `/lms/{handle}/{feature}` | 경로 1번째 세그먼트 |
+
+`SubdomainAcademyFilter`가 서브도메인 요청을 **인가 이전에** `HttpServletRequestWrapper`로 로컬 형태로
+정규화한다(301도 forward도 아니다 — forward를 쓰면 시큐리티 체인 나머지가 실행되지 않아 인증·인가가
+통째로 우회된다). 따라서 `SecurityConfig` 매처와 컨트롤러 매핑은 아래 로컬 형태 **한 벌만** 존재한다.
+식별자는 `slug`가 아니라 `handle`이며(slug는 한글 허용이라 서브도메인 불가), handle이 없는 Academy는
+LMS 주소가 성립하지 않는다(404).
+
+| Route (정규화 형태) | View template | 인가 | 컨트롤러 · 가드 |
+|---|---|---|---|
+| `GET /lms/{handle}` | `lms/lms_courses` | permitAll | `AcademyLmsPageController` · `getPublishedEntityByHandle` → 미발행/미존재 404 |
+| `GET /lms/{handle}/courses/{courseId}` | `lms/lms_course_detail` | permitAll | 〃 (`courseId`는 1단계에서 검증 없이 모델 통과 — 데이터가 MOCK) |
+| `GET /lms/{handle}/cart` | `lms/lms_cart` | authenticated | 〃 (학생 포함) |
+| `GET /lms/{handle}/checkout` | `lms/lms_checkout` | authenticated | 〃 |
+| `GET /lms/{handle}/my` | `lms/lms_my` | authenticated | 〃 |
+| `GET /lms/{handle}/lecture/{courseId}` | `lms/lms_lecture` | authenticated | 〃 |
+| `GET /lms/{handle}/manage` | `lms/lms_manage` | `hasRole("TUTOR")` | `AcademyLmsManagePageController` · **slug owner 전용** — `requireOwnedAcademyByHandle`, 타 학원 TUTOR도 403, ADMIN 우회 없음 |
+| `GET /lms/{handle}/contents` | `lms/lms_contents` | `hasRole("TUTOR")` | 〃 |
+
+- 매처에 열거되지 않은 `/lms/**` 하위 경로는 **fail-closed**(최소 인증). catch-all이 `permitAll`이라 이 줄이 없으면 새어 나간다.
+- 비로그인 + `Accept: text/html`로 인증 필요 화면에 접근하면 **302 `/`**(빈 401 대신). LMS 보호 화면은 로그인 상태 전용이고 로그아웃도 `/`로 가므로(`static/js/account_menu.js`) 비로그인 목적지를 `/`로 맞춘다. 그 외(예: `Accept: application/json`)와 LMS 밖 경로는 기존 **401** 계약 그대로다 — `SecurityConfig`의 `defaultAuthenticationEntryPointFor` 2분기.
+- ⚠ 이건 페이지 404 정책(`PageNotFoundRedirectController` → `/home`)과 **다른 흐름**이다. 존재하지 않는 handle처럼 컨트롤러가 404를 던진 경우는 그쪽 정책을 타 `/home`으로 간다. 두 목적지 통일은 별도 이슈(#283)로 분리했다.
+- 운영자 화면의 403 응답은 HTML 에러 페이지가 아니라 `GlobalExceptionHandler`(`@RestControllerAdvice`)의 평문 본문이다.
+- 사이드바의 강좌관리·콘텐츠 관리 링크는 `lmsIsOwner`일 때만 렌더된다. **표시일 뿐 통제가 아니다.**
+- `HandlePolicy.RESERVED`에 `lms`를 추가했다 — 플랫폼용 `lms.{base-domain}`을 학원이 선점하지 못하게 한다.
+
+> `/academy` 행(위 표)은 이 LMS 경로와 무관하다. LMS는 `/academy`·`/academies` 어느 계열도 쓰지 않는다.
+
+## 3. Auth API
+
+### ✅ POST /api/auth/login
+
+- 목적: loginId/password 검증 후 JWT cookie 발급.
+- 현재 사용처:
+  - `templates/home.html`
+  - `templates/admin/login.html`
+  - `templates/auth/register.html`의 강사 가입 후 자동 로그인
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: public.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "loginId": "student01",
+      "password": "plain-password"
+    }
+    ```
+- Response:
+  - 성공: `200 OK`, `Set-Cookie`로 access token 저장, body:
+    ```json
+    {
+      "userId": 1,
+      "loginId": "student01",
+      "name": "홍길동",
+      "nickname": "길동",
+      "displayName": "길동",
+      "role": "STUDENT"
+    }
+    ```
+  - 실패: 로그인 검증 실패 시 service 예외에 따라 400 text 가능.
+- 관련 코드:
+  - `AuthController.login`
+  - `LoginRequest`
+  - `LoginResponse`
+
+
+### ✅ POST /api/auth/login-id/find
+
+- 목적: 가입 이메일로 연결된 아이디 목록을 조회한다. 같은 이메일로 학생/강사 등 여러 계정이 있을 수 있으므로 배열을 반환한다.
+- 현재 사용처:
+  - `templates/auth/password_reset_request.html`
+- 인증/권한: public.
+- Request:
+  - JSON body:
+    ```json
+    { "email": "student@example.com" }
+    ```
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "email": "student@example.com",
+      "accounts": [
+        { "loginId": "student01", "role": "STUDENT", "roleLabel": "학생" },
+        { "loginId": "tutor01", "role": "TUTOR", "roleLabel": "강사" }
+      ]
+    }
+    ```
+  - 매칭 계정 없음: `200 OK` + `accounts: []`
+  - 실패: `400 text/plain` — 이메일 누락/형식 오류.
+- 관련 코드: `AuthController.findLoginIds`, `PasswordResetService.findLoginIds`
+
+### ✅ POST /api/auth/password-reset/request
+
+- 목적: 아이디와 가입 이메일을 함께 확인한 뒤 해당 계정 비밀번호를 임시 비밀번호로 재설정한다. SMTP 발송은 현재 우선순위에서 제외되어 있으며, 운영 포함 모든 환경 기본 임시 모드에서는 비밀번호를 `reset1234`로 직접 변경한다.
+- 현재 사용처:
+  - `templates/auth/password_reset_request.html`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: public.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "loginId": "student01",
+      "email": "student@example.com"
+    }
+    ```
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "email": "student@example.com",
+      "temporaryPassword": "reset1234"
+    }
+    ```
+  - 실패: `400 text/plain`
+    - `아이디를 입력해 주세요.`
+    - `이메일을 입력해 주세요.`
+    - `이메일 형식이 올바르지 않습니다.`
+    - `아이디와 이메일이 일치하는 계정이 없습니다.`
+- 관련 코드:
+  - `AuthController.requestPasswordReset`
+  - `PasswordResetService.requestReset`
+  - 운영 기본값도 `temporary-direct-reset=true`로 두어 SMTP 연동 전까지 `reset1234` 직접 리셋을 사용한다.
+
+### ✅ POST /api/auth/password-reset/confirm
+
+- 목적: 재설정 링크의 token을 검증하고 새 비밀번호를 BCrypt hash로 저장한다. token은 1회 사용 처리된다.
+- 현재 사용처:
+  - `templates/auth/password_reset_confirm.html`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: public.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "token": "reset-token-from-link",
+      "newPassword": "new-password"
+    }
+    ```
+- Response:
+  - 성공: `204 No Content`
+  - 실패: `400 text/plain`
+    - `비밀번호 재설정 링크가 올바르지 않습니다.`
+    - `비밀번호 재설정 링크가 만료되었습니다.`
+    - `이미 사용된 비밀번호 재설정 링크입니다.`
+    - `비밀번호는 8자 이상이어야 합니다.`
+- 관련 코드:
+  - `AuthController.confirmPasswordReset`
+  - `PasswordResetService.confirmReset`
+
+### ✅ POST /api/auth/logout
+
+- 목적: access token cookie 삭제.
+- 현재 사용처:
+  - `templates/admin/students.html`
+  - `templates/admin/dashboard.html`
+  - `templates/tutor_dashboard.html`
+  - `templates/tutor_academy_setup.html`
+  - `static/js/stdt_dashboard.js`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: public. 인증 상태와 무관하게 빈 cookie + `Max-Age=0`으로 삭제.
+- Request: body 없음.
+- Response:
+  - 성공: `204 No Content`, body 없음.
+- 관련 코드:
+  - `AuthController.logout`
+
+### ✅ GET /api/auth/me
+
+- 목적: cookie 기반 현재 로그인 사용자 정보 조회.
+- 현재 사용처:
+  - ✅ `/login`, `/login.html`은 `/home`으로 redirect한다. `/home` 로드 시 role dashboard auto-bounce는 하지 않는다.
+  - ✅ 공통 account menu는 현재 사용자를 조회해 role별 홈(`/stdt_dashboard`, `/admin/students`, `/tutor/academy`) 링크를 갱신한다.
+  - ✅ public 작성/업로드 액션은 `fetchAuth(..., { redirectOnAuthError: false })`로 401/403 응답을 직접 받아 alert + 로그인 모달만 띄우고 현재 페이지 입력을 보존한다.
+- 향후 사용 가능성:
+  - React client session bootstrap
+- 인증/권한: 인증 필요.
+- Request: 없음.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "userId": 1,
+      "loginId": "student01",
+      "name": "홍길동",
+      "nickname": "길동",
+      "displayName": "길동",
+      "role": "STUDENT"
+    }
+    ```
+  - 실패: 401.
+- 관련 코드:
+  - `AuthController.me`
+  - `LoginResponse`
+
+## 4. User API
+
+### ✅ GET /api/me
+
+- 목적: 현재 로그인 사용자의 개인정보 수정 화면 pre-fill 데이터 조회.
+- 현재 사용처:
+  - `templates/my_profile.html`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. `STUDENT`, `TUTOR` 허용. `ADMIN`은 403.
+- Request: 없음.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "userId": 1,
+      "loginId": "student01",
+      "role": "STUDENT",
+      "name": "홍길동",
+      "nickname": "길동",
+      "email": "student@example.com",
+      "phone": "010-0000-0000",
+      "studentId": 10,
+      "schoolName": "OO중학교",
+      "grade": 2,
+      "parentName": "학부모",
+      "parentPhone": "010-1111-2222"
+    }
+    ```
+  - `TUTOR`는 `studentId`, `schoolName`, `grade`, `parentName`, `parentPhone`이 `null`.
+  - 실패: 401, 403, 400.
+- 관련 코드:
+  - `MeController.getMyProfile`
+  - `MyProfileResponse`
+
+### ✅ PATCH /api/me
+
+- 목적: 현재 로그인 사용자의 개인정보 수정. `STUDENT`는 학생 상세 정보도 함께 수정 가능.
+- 현재 사용처:
+  - `templates/my_profile.html`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. `STUDENT`, `TUTOR` 허용. `ADMIN`은 403.
+- Request:
+  - JSON body. `loginId`, `role`은 받지 않는다. 모든 필드는 nullable이며 null이면 기존 값을 유지한다.
+    ```json
+    {
+      "name": "홍길동",
+      "nickname": "길동",
+      "email": "student@example.com",
+      "phone": "010-0000-0000",
+      "currentPassword": "old-password",
+      "newPassword": "new-password",
+      "schoolName": "OO중학교",
+      "grade": 2,
+      "parentName": "학부모",
+      "parentPhone": "010-1111-2222"
+    }
+    ```
+- Response:
+  - 성공: `200 OK`, body는 `GET /api/me`와 동일.
+  - 실패: 401, 403, 400. `newPassword`가 있으면 `currentPassword` 검증 실패 시 400.
+- 관련 코드:
+  - `MeController.updateMyProfile`
+  - `UpdateMyProfileRequest`
+
+### ✅ DELETE /api/me
+
+- 목적: 현재 로그인 사용자의 회원탈퇴.
+- 현재 사용처:
+  - `templates/my_profile.html`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. `STUDENT`, `TUTOR` 허용. `ADMIN`은 403.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "currentPassword": "plain-password"
+    }
+    ```
+- Response:
+  - 성공: `204 No Content`.
+  - 실패: 401, 403, 400. 현재 비밀번호 불일치 시 400.
+- 삭제 정책:
+  - `users` 삭제를 루트로 수행하고 같은 트랜잭션에서 flush한다.
+  - `STUDENT` 소유 데이터는 FK cascade로 삭제된다.
+  - `TUTOR`가 배포자로만 연결된 `learning_materials.assigned_by`는 `NULL`로 남는다.
+- 관련 코드:
+  - `MeController.withdraw`
+  - `WithdrawRequest`
+
+### ✅ POST /api/users/students
+
+- 목적: 학생 회원가입.
+- 현재 사용처:
+  - `templates/register.html`
+  - `templates/tutor_dashboard.html`의 잔존 학생 생성 UI
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: public.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "loginId": "student01",
+      "password": "plain-password",
+      "name": "홍길동",
+      "nickname": "길동",
+      "email": "student@example.com",
+      "phone": "010-0000-0000",
+      "schoolName": "OO중학교",
+      "grade": 2,
+      "parentName": "학부모",
+      "parentPhone": "010-1111-2222"
+    }
+    ```
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "userId": 1,
+      "loginId": "student01",
+      "name": "홍길동",
+      "nickname": "길동",
+      "displayName": "길동",
+      "phone": "010-0000-0000",
+      "role": "STUDENT"
+    }
+    ```
+  - 실패: 400 text 가능.
+- 관련 코드:
+  - `UserController.createStudent`
+  - `CreateStudentRequest`
+  - `UserResponse`
+
+### ✅ GET /api/users/check-login-id
+
+- 목적: 회원가입 화면에서 loginId 중복 여부를 사전 확인한다. 학생/강사 통합 회원가입에서 공통 사용한다. 닉네임은 중복 허용 정책이므로 중복 확인 API를 제공하지 않는다.
+- 현재 사용처:
+  - `templates/auth/register.html`
+- 인증/권한: public.
+- Request:
+  - Query parameters:
+    - `loginId` required string — 확인할 아이디.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    { "available": true }
+    ```
+- 관련 코드:
+  - `UserController.checkLoginId`
+  - `UserService.isLoginIdAvailable`
+
+### ✅ GET /api/users/students
+
+- 목적: 전체 학생 목록 조회.
+- 현재 사용처:
+  - ⚠️ 현재 주요 Admin 화면은 `/api/admin/students`를 사용. 이 endpoint는 Controller에는 존재하나 프론트 직접 사용은 확인되지 않음.
+- 향후 사용 가능성:
+  - React Admin client
+- 인증/권한: 인증 필요. 주석상 ADMIN 전용이나 SecurityConfig path 기준으로는 `/api/users/students`는 인증만 필요하다. ⚠️ service/controller 가드 확인 필요.
+- Request: 없음.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    [
+      {
+        "studentId": 1,
+        "userId": 1,
+        "name": "홍길동",
+        "loginId": "student01",
+        "phone": "010-0000-0000",
+        "schoolName": "OO중학교",
+        "grade": 2,
+        "parentName": "학부모",
+        "parentPhone": "010-1111-2222"
+      }
+    ]
+    ```
+- 관련 코드:
+  - `UserController.getAllStudents`
+  - `StudentSummaryResponse`
+
+### ✅ GET /api/users/students/me
+
+- 목적: 현재 로그인한 학생 프로필 조회. Admin은 target user 임퍼소네이트 가능.
+- 현재 사용처:
+  - `templates/home.html`
+  - `static/js/stdt_dashboard.js`
+- 향후 사용 가능성:
+  - React client session bootstrap
+- 인증/권한: 인증 필요.
+- Request:
+  - Query parameters:
+    - `targetUserId` optional number — ADMIN 임퍼소네이트용.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "studentId": 1,
+      "userId": 1,
+      "name": "홍길동",
+      "loginId": "student01",
+      "phone": "010-0000-0000",
+      "schoolName": "OO중학교",
+      "grade": 2,
+      "parentName": "학부모",
+      "parentPhone": "010-1111-2222"
+    }
+    ```
+  - 실패: 401, 403, 400 text 가능.
+- 관련 코드:
+  - `UserController.getMyStudentProfile`
+  - `StudentSummaryResponse`
+
+
+### ✅ POST /api/users/tutors
+
+- 목적: 강사 회원가입. 학생 row를 만들지 않고 `users.role=TUTOR` 사용자만 생성한다.
+- 현재 사용처:
+  - `templates/auth/register.html`
+- 향후 사용 가능성:
+  - React 강사 온보딩 client
+- 인증/권한: public.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "loginId": "tutor01",
+      "password": "plain-password",
+      "name": "강사",
+      "nickname": "강사닉",
+      "email": "tutor@example.com",
+      "phone": "010-0000-0000"
+    }
+    ```
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "userId": 10,
+      "loginId": "tutor01",
+      "name": "강사",
+      "nickname": "강사닉",
+      "displayName": "강사닉",
+      "phone": "010-0000-0000",
+      "role": "TUTOR"
+    }
+    ```
+  - 실패: 400 text 가능.
+- 관련 코드:
+  - `UserController.createTutor`
+  - `CreateTutorRequest`
+  - `UserService.createTutor`
+
+## 5. Subject API
+
+### ✅ GET /api/subjects
+
+- 목적: 과목 마스터 조회.
+- 현재 사용처:
+  - `templates/admin/dashboard.html`
+  - `templates/tutor_dashboard.html`
+  - `templates/tutor_academy_setup.html`
+- 향후 사용 가능성:
+  - React client
+  - Python server가 subject id/name lookup에 사용할 수 있음
+- 인증/권한: public.
+- Request: 없음.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    [
+      {
+        "createdAt": "2026-05-23T00:00:00",
+        "updatedAt": "2026-05-23T00:00:00",
+        "createdBy": "system",
+        "updatedBy": "system",
+        "subjectId": 1,
+        "nameEn": "English",
+        "nameKo": "영어"
+      }
+    ]
+    ```
+    ⚠️ Entity를 직접 반환하므로 BaseEntity 필드 직렬화 포함 여부는 Jackson/JPA 설정에 따라 확인 필요.
+- 관련 코드:
+  - `SubjectController.getSubjects`
+  - `Subject`
+
+## 6. Admin API
+
+### ✅ GET /api/admin/students
+
+- 목적: Admin 대시보드 학생 목록 + 활동 요약 조회.
+- 현재 사용처:
+  - `templates/admin/students.html`
+- 향후 사용 가능성:
+  - React Admin client
+- 인증/권한: `ROLE_ADMIN` 필요.
+- Request: 없음.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    [
+      {
+        "studentId": 1,
+        "userId": 1,
+        "loginId": "student01",
+        "name": "홍길동",
+        "schoolName": "OO중학교",
+        "grade": 2,
+        "sourceCount": 3,
+        "conversationCount": 2,
+        "createdAt": "2026-05-23T00:00:00"
+      }
+    ]
+    ```
+  - 실패: 401, 403.
+- 관련 코드:
+  - `AdminController.listStudents`
+  - `AdminStudentSummary`
+
+## 7. Conversation API
+
+### ✅ POST /api/conversations
+
+- 목적: 학생 대화 세션 생성.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. STUDENT/ADMIN만 생성 가능. ADMIN은 `targetStudentId`로 임퍼소네이트 가능. TUTOR는 403(강사 전용 생성은 `POST /api/tutor/conversations`).
+- Request:
+  - Query parameters:
+    - `targetStudentId` optional number — ADMIN 임퍼소네이트용.
+  - Body 없음.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "conversationId": 1,
+      "title": "새 대화",
+      "createdAt": "2026-05-23T00:00:00",
+      "lastMessageAt": "2026-05-23T00:00:00",
+      "sourceCount": 0,
+      "messageCount": 0
+    }
+    ```
+  - 실패: 401, 403, 400 text 가능.
+- 관련 코드:
+  - `ConversationController.create`
+  - `ConversationSummaryResponse`
+
+### ✅ GET /api/conversations
+
+- 목적: 학생 대화 목록 조회.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. STUDENT는 자기 목록, ADMIN은 `targetStudentId` 임퍼소네이트, TUTOR는 담당 학생(APPROVED) `targetStudentId` 지정 시 student-owned 목록 조회 가능.
+- Request:
+  - Query parameters:
+    - `targetStudentId` optional number — ADMIN 임퍼소네이트/TUTOR 담당 학생 조회용.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    [
+      {
+        "conversationId": 1,
+        "title": "새 대화",
+        "createdAt": "2026-05-23T00:00:00",
+        "lastMessageAt": "2026-05-23T00:00:00",
+        "sourceCount": 1,
+        "messageCount": 2
+      }
+    ]
+    ```
+- 관련 코드:
+  - `ConversationController.list`
+  - `ConversationSummaryResponse`
+
+### ✅ GET /api/conversations/{id}
+
+- 목적: 대화 상세, 첨부 source, 메시지, 학생 정보 조회.
+- 현재 사용처:
+  - `static/js/conversation.js`
+  - `static/js/conversation_dashboard.js`
+  - `static/js/conversation_materials.js`
+  - `static/js/conversation_report.js`
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. 학생형 상세 API. `ConversationService.getDetail`에서 `requireStudentOwnedConversationAccess`로 학생 소유 대화만 허용한다. STUDENT=본인, ADMIN=통과, TUTOR=APPROVED 담당 학생 대화만 읽기 가능. tutor-owned id는 403.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "conversationId": 1,
+      "title": "대화 제목",
+      "createdAt": "2026-05-23T00:00:00",
+      "student": {
+        "studentId": 1,
+        "name": "홍길동",
+        "schoolName": "OO중학교",
+        "grade": 2
+      },
+      "sources": [
+        {
+          "sourceId": 1,
+          "fileName": "exam.pdf",
+          "fileType": "PDF",
+          "processingStatus": "COMPLETED",
+          "contentKind": "EXAM_GRADED",
+          "sourceType": "STUDENT_MATERIAL",
+          "examId": 1,
+          "examDisplayName": "OO중학교 2학년 MIDTERM 2026-1",
+          "pageCount": 3
+        }
+      ],
+      "messages": [
+        {
+          "messageId": 1,
+          "role": "USER",
+          "content": "질문",
+          "createdAt": "2026-05-23T00:00:00"
+        }
+      ],
+      "lessonId": 5,
+      "lessonName": "고등 영어 내신반",
+      "academyName": "테스트영어학원"
+    }
+    ```
+  - `lessonId` / `lessonName` / `academyName`: nullable. APPROVED 신청으로 연결된 수업이 있을 때만 값이 채워짐. 없으면 `null`.
+  - conversation dashboard는 `lessonName` 존재 여부로 lesson-linked 여부를 판단해 title/sidebar를 분기 렌더링한다.
+- 관련 코드:
+  - `ConversationController.detail`
+  - `ConversationDetailResponse`
+  - `LessonApplicationRepository.findFirstByConversation_ConversationIdAndStatusOrderByAppliedAtDesc`
+
+### ✅ PATCH /api/conversations/{id}
+
+- 목적: 학생이 본인 대화의 이름(대화명)을 직접 수정. 종합 현황판(`/conversation/dashboard`) 제목 옆 inline 편집(✎)에서 호출.
+- 현재 사용처:
+  - `static/js/conversation_dashboard.js` (`startTitleEdit`)
+- 향후 사용 가능성:
+  - React client inline 편집
+- 인증/권한: 인증 필요. 학생형 수정 API. 소유 학생/ADMIN만 허용하며 TUTOR는 403. tutor-owned id도 403. `Conversation.title` 갱신(`updateTitle()`). `lessonName`은 lesson join 파생값이라 미수정.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+  - JSON body:
+    - `title` string required — 새 대화명(trim 후 1~200자).
+- Response:
+  - 성공: `200 OK` — `{ "conversationId": 1, "title": "중간고사 대비" }`.
+  - 실패: 400(빈/200자 초과), 401, 403(비소유자), 404.
+- Redirect: 없음.
+- 관련 코드: `ConversationController.updateTitle`, `ConversationService.updateTitle`, `UpdateConversationTitleRequest`, `ConversationTitleResponse`.
+
+### ✅ POST /api/conversations/{id}/tutor-materials
+
+- 목적: 강사/Admin이 학생 대화에 '시험대비 참고자료'(제출 불필요)를 업로드. `시험대비 자료`(`/conversation/tutor-materials`) 페이지에서 호출.
+- 현재 사용처:
+  - `static/js/conversation_tutor_materials.js` (`handleTutorUpload`)
+- 향후 사용 가능성:
+  - React client multipart upload
+- 인증/권한: ADMIN/TUTOR 전용(`verifyAdminOrTutor`) + 대화 소유 검증(`verifyOwnsConversation` — TUTOR는 APPROVED 매칭 대화만). 학생 호출 시 403. 저장되는 Source는 `source_type=TUTOR_MATERIAL`, `content_kind=GENERAL` 고정, `uploaded_by`=호출 강사/Admin.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+  - Multipart form fields:
+    - `files` file[] required — 1~20개 (PDF / JPG / PNG / WebP).
+- Response:
+  - 성공: `200 OK` — `POST /sources`와 동일한 `SourceAttachResponse[]` 형식.
+  - 실패: 400(파일 없음/초과), 401, 403(학생 또는 비매칭 TUTOR), 404.
+- Redirect: 없음.
+- 관련 코드: `ConversationController.attachTutorMaterials`, `ConversationService.attachTutorMaterials`.
+- 비고: 학생은 첨부된 TUTOR_MATERIAL을 `GET /api/sources/{sourceId}/file|download`로 열람한다 — `verifyOwnsSource`가 **conversation-scoped**로 확장되어, 업로더(강사)가 아니어도 본인 소유 대화에 첨부된 자료면 통과한다.
+
+### ✅ POST /api/conversations/{conversationId}/consultation-materials
+
+- 목적: 강사/Admin이 conversation 대시보드 "개별 상담 및 피드백" 카드에 상담 자료(파일만)를 업로드. 숙제/시험 매칭 없이 `conversation_sources`로 직접 매핑.
+- 현재 사용처:
+  - `static/js/conversation_dashboard.js` (`uploadConsultationMaterials`)
+- 인증/권한: ADMIN/TUTOR 전용(`verifyAdminOrTutor`) + 대화 소유 검증(`verifyOwnsConversation` — TUTOR는 APPROVED 매칭 대화만). 학생 호출 시 403. 저장되는 Source는 `source_type=CONSULTATION`, `content_kind=GENERAL` 고정, `uploaded_by`=호출 강사/Admin.
+- Request:
+  - Path parameters:
+    - `conversationId` number — conversation id.
+  - Multipart form fields:
+    - `files` file[] required — 1개 이상 (PDF / JPG / PNG / WebP).
+- Response:
+  - 성공: `200 OK` — `ConsultationMaterialResponse[]` (`{ sourceId, fileName, fileType, pageCount }`).
+  - 실패: 400(파일 없음/형식 위반), 401, 403(학생 또는 비매칭 TUTOR), 404(대화 없음).
+- Redirect: 없음.
+- 관련 코드: `ConsultationMaterialController.upload`, `ConsultationMaterialService.upload`.
+- 비고: 조회는 `GET /api/conversations/{id}`의 `sources`를 `sourceType=CONSULTATION`으로 필터, 썸네일/다운로드는 `GET /api/sources/{sourceId}/file|download?page=N`을 재활용한다(`verifyOwnsSource` conversation-scoped).
+
+### ✅ DELETE /api/conversations/{conversationId}/consultation-materials/{sourceId}
+
+- 목적: 강사(본인 담당)/Admin이 상담 자료를 물리삭제. Source + ConversationSource + 저장 파일 모두 제거.
+- 현재 사용처:
+  - `static/js/conversation_dashboard.js` (`deleteConsultationMaterial`)
+- 인증/권한: ADMIN/TUTOR 전용(`verifyAdminOrTutor`) + 대화 소유 검증(`verifyOwnsConversation`). 학생 호출 시 403.
+- Request:
+  - Path parameters:
+    - `conversationId` number — conversation id.
+    - `sourceId` number — 삭제할 상담자료 source id.
+- Response:
+  - 성공: `204 No Content`.
+  - 실패: 401, 403(학생 또는 비매칭 TUTOR), **404** — IDOR 가드: ① 이 conversation에 매핑되지 않은 sourceId, ② `source_type != CONSULTATION`(시험지/TUTOR_MATERIAL 등), ③ 미존재 sourceId. `deleteTrusted`(owner 검증 skip) 호출 전 위 가드가 유일 방어선이다.
+- Redirect: 없음.
+- 관련 코드: `ConsultationMaterialController.delete`, `ConsultationMaterialService.delete`, `ConversationSourceRepository.existsByConversationIdAndSourceId`.
+
+### ✅ POST /api/conversations/{id}/sources
+
+- 목적: 대화에 자료 파일 1개 이상 첨부. 업로드 후 분석 워크플로가 진행된다.
+- 현재 사용처:
+  - `static/js/conversation_upload.js`
+- 향후 사용 가능성:
+  - React client multipart upload
+  - Python 분석 서버 연동 시 source 생성 트리거
+- 인증/권한: 인증 필요. ADMIN은 `targetUserId` form field로 임퍼소네이트 가능.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+  - Multipart form fields:
+    - `files` file[] required — 업로드 파일 1~N개.
+    - `contentKind` optional enum — `GENERAL` 또는 `EXAM_BLANK`; 없으면 서버가 `GENERAL`로 처리.
+    - `schoolName` optional string — 시험지 메타.
+    - `grade` optional number — 시험지 메타.
+    - `examType` optional enum — `MIDTERM`, `FINAL`, `MOCK`, `OTHER`.
+    - `examYear` optional number.
+    - `examSemester` optional number.
+    - `targetUserId` optional number — ADMIN 임퍼소네이트용.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    [
+      {
+        "sourceId": 1,
+        "fileName": "exam.pdf",
+        "fileType": "PDF",
+        "fileSize": 123456,
+        "processingStatus": "PENDING"
+      }
+    ]
+    ```
+  - 실패:
+    - 400 rejected files JSON 가능.
+    - 401, 403.
+- 관련 코드:
+  - `ConversationController.attachSources`
+  - `SourceUploadRequest`
+  - `SourceAttachResponse`
+
+### ✅ POST /api/conversations/{id}/messages
+
+- 목적: 대화 메시지 전송 후 assistant 응답 생성/저장.
+- 현재 사용처:
+  - `static/js/conversation.js`
+- 향후 사용 가능성:
+  - React chat client
+- 인증/권한: 인증 필요. 학생/ADMIN형 메시지 API. TUTOR의 담당 학생(APPROVED) student-owned 접근은 읽기 전용이다. TUTOR는 tutor-owned 레코드 발송 시 `/api/tutor/conversations/{id}/messages`를 사용한다. tutor-owned id는 403.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+  - Query parameters:
+    - `targetUserId` optional number — ADMIN 임퍼소네이트용.
+  - JSON body:
+    ```json
+    {
+      "content": "이 문제 설명해줘"
+    }
+    ```
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "userMessage": {
+        "messageId": 1,
+        "role": "USER",
+        "content": "이 문제 설명해줘",
+        "createdAt": "2026-05-23T00:00:00"
+      },
+      "assistantMessage": {
+        "messageId": 2,
+        "role": "ASSISTANT",
+        "content": "풀이 내용",
+        "createdAt": "2026-05-23T00:00:01"
+      }
+    }
+    ```
+  - 실패:
+    - 409 source processing not complete JSON 가능.
+    - 401, 403, 400 text 가능.
+- 관련 코드:
+  - `ConversationController.sendMessage`
+  - `MessageRequest`
+  - `MessageResponse`
+
+
+## 7.1 Tutor Conversation API
+
+강사 개인 작업용 대화 기록. `/api/tutor/conversations/**`는 `ROLE_TUTOR` + `AuthenticatedUserResolver.requireTutorOwnedConversationAccess/Manage`가 모두 필요하다. 학생 소유 id, 다른 강사 id, ADMIN 호출은 403. API는 `TutorConversationController`, 화면/redirect는 `TutorConversationPageController`가 담당한다.
+
+### ✅ POST /api/tutor/conversations
+
+- 목적: 강사 소유 기록 생성.
+- 현재 사용처: `static/js/tutor_conversation_dashboard.js` (`createConversationAndOpen`)
+- 인증/권한: TUTOR 본인만. `Conversation.forTutor(tutorUser, "새 강사 기록", null)`로 생성.
+- Response: `200 OK` — `ConversationSummaryResponse` (`sourceCount=0`, `messageCount=0`, lesson fields null).
+- 실패: 401, 403.
+- 관련 코드: `TutorConversationController.create`, `ConversationService.createForTutor`.
+
+### ✅ GET /api/tutor/conversations
+
+- 목적: 강사 본인 기록 목록 조회.
+- 현재 사용처: `static/js/tutor_conversation_dashboard.js` (`loadList`)
+- 인증/권한: TUTOR 본인만. `tutor_user_id` 기준 최신순.
+- Response: `200 OK` — `ConversationSummaryResponse[]`. `sourceCount`는 강사 기록에 첨부된 자료 수, lesson fields는 null.
+- 실패: 401, 403.
+- 관련 코드: `TutorConversationController.list`, `ConversationService.listForTutor`.
+
+### ✅ GET /api/tutor/conversations/{id}
+
+- 목적: 강사 기록 상세(업로드 자료 + 메시지 포함) 조회.
+- 현재 사용처: `static/js/tutor_conversation_dashboard.js` (`openConversationDetail`, `refreshMaterials`), `static/js/conversation_materials.js`, `static/js/conversation.js`(tutor chat context)
+- 인증/권한: TUTOR 본인 소유 tutor-owned id만. 학생 소유 id/다른 강사 id/ADMIN은 403.
+- Response: `200 OK`
+  ```json
+  {
+    "conversationId": 10,
+    "title": "새 강사 기록",
+    "createdAt": "2026-07-10T00:00:00",
+    "student": null,
+    "sources": [
+      {
+        "sourceId": 20,
+        "fileName": "worksheet.pdf",
+        "fileType": "PDF",
+        "processingStatus": "COMPLETED",
+        "contentKind": "GENERAL",
+        "sourceType": "STUDENT_MATERIAL",
+        "examId": null,
+        "examDisplayName": null,
+        "pageCount": 1
+      }
+    ],
+    "messages": [],
+    "lessonId": null,
+    "lessonName": null,
+    "academyName": null
+  }
+  ```
+- 비고: 같은 `ConversationDetailResponse`를 쓰며 tutor-owned는 `student=null`, `lessonId/lessonName/academyName=null`이다. `sources`에는 강사 기록에 업로드한 자료가 포함된다.
+- 관련 코드: `TutorConversationController.detail`, `ConversationService.getTutorDetail`, `ConversationDetailResponse`.
+
+### ✅ PATCH /api/tutor/conversations/{id}
+
+- 목적: 강사 기록명 변경.
+- 현재 사용처: `static/js/tutor_conversation_dashboard.js` (`renameConversation`)
+- 인증/권한: TUTOR 본인 소유 tutor-owned id만.
+- Request: JSON `{ "title": "기록명" }` — trim 후 1~200자.
+- Response: `200 OK` — `{ "conversationId": 10, "title": "기록명" }`.
+- 실패: 400(빈/200자 초과), 401, 403.
+- 관련 코드: `TutorConversationController.updateTitle`, `ConversationService.updateTutorTitle`.
+
+### ✅ DELETE /api/tutor/conversations/{id}
+
+- 목적: 강사 기록 삭제.
+- 현재 사용처: `static/js/tutor_conversation_dashboard.js` (`deleteConversation`)
+- 인증/권한: TUTOR 본인 소유 tutor-owned id만.
+- Response: `204 No Content`.
+- 실패: 401, 403.
+- 관련 코드: `TutorConversationController.delete`, `ConversationService.deleteTutorConversation`.
+
+### ✅ POST /api/tutor/conversations/{id}/sources
+
+- 목적: 강사 소유 conversation 상세 대시보드에서 자료 업로드. 학생 `/conversation/dashboard`의 업로드 모듈을 endpoint만 바꿔 재사용한다.
+- 현재 사용처: `static/js/tutor_conversation_dashboard.js`, `static/js/conversation_materials.js`, `static/js/conversation.js`(tutor chat context) + `static/js/conversation_upload.js` (`uploadUrl=/api/tutor/conversations/{id}/sources`).
+- 인증/권한: TUTOR 본인 소유 tutor-owned id만. 학생 소유 id/다른 강사 id/ADMIN은 403.
+- Request: `multipart/form-data`
+  - `files`: 1~20개
+  - `contentKind`: `GENERAL` 또는 `EXAM_BLANK` (없으면 `GENERAL`)
+  - `schoolName`, `grade`: 시험지 저장 필수 메타. 강사 기록에서 누락하면 서버가 `schoolName=강사 학원명(없으면 강사 loginId)`, `grade=0`으로 보정.
+  - `examType`, `examYear`, `examSemester`: 시험지 업로드 시 선택값. Claude 메타 추론이 꺼진 개발 환경에서는 강사 업로드 모달이 기본값(`OTHER`, 현재 연도, 현재 학기 추정)을 채워 보낸다.
+- 저장: `SourceType=STUDENT_MATERIAL`, `uploaded_by`=호출 강사, `conversation_sources` 매핑 생성, `Conversation.metadata.sources` 갱신. 제목이 `새 강사 기록`이면 첫 파일명으로 갱신.
+- Response: `200 OK` — `SourceAttachResponse[]`.
+- 실패: 400(파일 없음/20개 초과), 401, 403.
+- 관련 코드: `TutorConversationController.attachSources`, `ConversationService.attachTutorConversationSources`, `ConversationUpload`.
+
+### ✅ POST /api/tutor/conversations/{id}/messages
+
+- 목적: 강사 기록에 메시지 저장 + Claude 응답 저장.
+- 현재 사용처: `static/js/conversation.js`의 tutor chat context (`/tutor/conversation/chat?id={id}`)
+- 인증/권한: TUTOR 본인 소유 tutor-owned id만.
+- Request: JSON `{ "content": "강사용 메모나 질문" }`.
+- Response: `200 OK` — `MessageResponse` (`userMessage`, `assistantMessage`). 첫 메시지면 제목을 메시지 앞 30자로 갱신. 첨부 자료가 분석 중/PENDING_REVIEW이면 학생형 chat과 동일하게 전송을 차단한다.
+- 실패: 401, 403, 409(자료 분석/검증 대기), 400 text 가능.
+- 관련 코드: `TutorConversationController.sendMessage`, `ConversationService.sendTutorMessage`.
+
+## 8. Source / Exam Review API
+
+### ✅ GET /api/sources/pending-review
+
+- 목적: 학생 대시보드의 검증 대기 시험지 목록 조회.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`
+- 향후 사용 가능성:
+  - React student dashboard
+- 인증/권한: 인증 필요. ADMIN은 `targetUserId` query로 임퍼소네이트 가능.
+- Request:
+  - Query parameters:
+    - `targetUserId` optional number — ADMIN 임퍼소네이트용.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    [
+      {
+        "sourceId": 1,
+        "originalFileName": "graded-exam.jpg",
+        "examId": 1,
+        "examDisplayName": "OO중학교 2학년 MIDTERM 2026-1",
+        "createdAt": "2026-05-23T00:00:00"
+      }
+    ]
+    ```
+- 관련 코드:
+  - `SourceController.listPendingReview`
+  - `PendingReviewSourceResponse`
+
+### ✅ GET /api/sources/{sourceId}/exam-review
+
+- 목적: 채점된 시험지 검증 페이지에 메타 + 분석 결과 제공.
+- 현재 사용처:
+  - `static/js/exam_review.js`
+- 향후 사용 가능성:
+  - React exam review page
+- 인증/권한: 인증 필요. `ExamReviewService.review`에서 `authResolver.verifyOwnsSource`로 본인 자료 접근만 허용한다.
+- Request:
+  - Path parameters:
+    - `sourceId` number.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "sourceId": 1,
+      "originalFileName": "graded-exam.jpg",
+      "processingStatus": "PENDING_REVIEW",
+      "contentKind": "EXAM_GRADED",
+      "analysisResult": {
+        "meta": {
+          "school_name": "OO중학교",
+          "grade": 2,
+          "exam_type": "MIDTERM",
+          "exam_year": 2026,
+          "exam_semester": 1,
+          "subject_id": 1
+        },
+        "matched_exam_id": 1,
+        "questions": [
+          {
+            "question_no": 1,
+            "question_label": "1",
+            "question_text": "문항 내용",
+            "question_type": "MULTIPLE_CHOICE",
+            "choices": ["A", "B", "C", "D"],
+            "correct_answer": "A",
+            "student_answer": "B",
+            "is_correct": false,
+            "point": 3,
+            "category": "grammar",
+            "passage_ref": "P1"
+          }
+        ],
+        "passages": [
+          { "id": "P1", "content": "지문 내용" }
+        ],
+        "total_questions": 1,
+        "correct_count": 0
+      }
+    }
+    ```
+  - 실패: 400 text 가능.
+- 관련 코드:
+  - `SourceController.getReview`
+  - `ExamReviewResponse`
+  - `ExamAnalysisResult`
+
+### ✅ POST /api/sources/{sourceId}/exam-confirm
+
+- 목적: 학생이 검증한 시험지 메타/채점 결과 확정. `questions`, `student_answers`, `student_scores`, `exams` 저장 및 source 완료 전이.
+- 현재 사용처:
+  - `static/js/exam_review.js`
+- 향후 사용 가능성:
+  - React exam review page
+  - Python 분석 서버가 만든 결과의 최종 confirm API
+- 인증/권한: 인증 필요. ADMIN은 `targetUserId` query로 임퍼소네이트 가능.
+- Request:
+  - Path parameters:
+    - `sourceId` number.
+  - Query parameters:
+    - `targetUserId` optional number — ADMIN 임퍼소네이트용.
+  - JSON body:
+    ```json
+    {
+      "meta": {
+        "schoolName": "OO중학교",
+        "grade": 2,
+        "examType": "MIDTERM",
+        "examYear": 2026,
+        "examSemester": 1
+      },
+      "answers": [
+        {
+          "questionNo": 1,
+          "isCorrect": false,
+          "point": 3
+        }
+      ]
+    }
+    ```
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "sourceId": 1,
+      "examId": 1,
+      "scoreId": 1,
+      "totalQuestions": 20,
+      "correctCount": 15,
+      "dedupMatched": true
+    }
+    ```
+  - 실패: 401, 403, 400 text 가능.
+- 관련 코드:
+  - `SourceController.confirm`
+  - `ExamConfirmRequest`
+  - `ExamConfirmResponse`
+
+### ✅ DELETE /api/sources/{sourceId}
+
+- 목적: 자료 영구 삭제. 관련 매핑/답안/점수/storage 파일 정리.
+- 현재 사용처:
+  - `static/js/conversation_dashboard.js`
+  - `static/js/conversation_materials.js`
+- 향후 사용 가능성:
+  - React materials page
+- 인증/권한: 인증 필요. `SourceService.delete`에서 `authResolver.verifyOwnsSource`로 본인 자료 접근만 허용한다.
+- Request:
+  - Path parameters:
+    - `sourceId` number.
+- Response:
+  - 성공: `204 No Content`, body 없음.
+  - 실패: 401, 403/400 text 가능.
+- 관련 코드:
+  - `SourceController.deleteSource`
+  - `SourceService.delete`
+
+### ✅ GET /api/sources/{sourceId}/file
+
+- 목적: 라이트박스 미리보기용 이미지 bytes 제공 (JPEG, 애니메이션은 GIF/WebP 원본 포맷).
+- 현재 사용처:
+  - `static/js/conversation.js`
+  - `static/js/conversation_materials.js`
+- 향후 사용 가능성:
+  - React file preview
+- 인증/권한: 인증 필요. `authResolver.verifyOwnsSource(src)`로 본인 자료 검증.
+- Request:
+  - Path parameters:
+    - `sourceId` number.
+  - Query parameters:
+    - `page` optional number, default `1`. PDF 변환 이미지 페이지 번호. IMAGE는 무시.
+- Response:
+  - 성공: `200 OK`, `Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`, body `byte[]`, header `Cache-Control: private, max-age=300`.
+  - Content-Type은 저장 키의 확장자에서 판정한다(`ImageSanitizer.contentTypeForStorageKey`). PDF 페이지는 항상 JPEG.
+  - 실패: 404 body 없음, 403 text 가능.
+- 관련 코드:
+  - `SourceController.getFile`
+
+### ✅ GET /api/sources/{sourceId}/download
+
+- 목적: 학생 자료 페이지 단위 다운로드 (JPEG, 애니메이션은 GIF/WebP 원본 포맷).
+- 현재 사용처:
+  - `static/js/conversation.js`
+  - `static/js/conversation_materials.js`
+- 향후 사용 가능성:
+  - React file download
+- 인증/권한: 인증 필요. `authResolver.verifyOwnsSource(src)`로 본인 자료 검증.
+- Request:
+  - Path parameters:
+    - `sourceId` number.
+  - Query parameters:
+    - `page` optional number, default `1`.
+- Response:
+  - 성공: `200 OK`, `Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`, body `byte[]`, headers:
+    - `Cache-Control: private, no-store`
+    - `Content-Disposition: attachment; filename="..."; filename*=UTF-8''...`
+  - 실패: 404 body 없음, 403 text 가능.
+- 관련 코드:
+  - `SourceController.downloadFile`
+
+## 9. Dashboard Data API
+
+### ✅ GET /api/conversations/{id}/weakness
+
+- 목적: 대화에 첨부된 시험지 기준 카테고리별 정답률 radar 데이터 조회.
+- 현재 사용처:
+  - `static/js/conversation_dashboard.js`
+- 향후 사용 가능성:
+  - React conversation dashboard
+- 인증/권한: 인증 필요. `WeaknessAnalysisService.analyzeForConversation`에서 `authResolver.verifyOwnsConversation`으로 본인 대화 접근만 허용한다.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "categories": [
+        {
+          "categoryNameEn": "grammar",
+          "categoryNameKo": "문법",
+          "total": 10,
+          "correct": 7,
+          "accuracyPercent": 70.0
+        }
+      ]
+    }
+    ```
+- 관련 코드:
+  - `DashboardController.getWeakness`
+  - `WeaknessRadarResponse`
+
+### ✅ GET /api/conversations/{id}/wrong-answers
+
+- 목적: 대화에 첨부된 시험지에서 학생이 틀린 문제를 시험별 그룹으로 묶어 반환. 오답노트 페이지 본문 데이터.
+- 현재 사용처:
+  - `static/js/conversation_review.js`
+- 향후 사용 가능성:
+  - React conversation review page
+  - Admin이 학생 약점 분석 후 맞춤 학습자료 부여 흐름의 기초 데이터 (후속 §5.5 예정)
+- 인증/권한: 인증 필요. `WrongAnswerService.analyzeForConversation`에서 `authResolver.verifyOwnsConversation`으로 본인 대화 접근만 허용. ADMIN은 임퍼소네이트로 통과.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "exams": [
+        {
+          "examId": 1,
+          "examDisplayName": "OO중학교 2학년 MIDTERM 2026-1",
+          "wrongCount": 2,
+          "totalCount": 10,
+          "questions": [
+            {
+              "questionId": 50001,
+              "questionLabel": "1",
+              "orderNum": 1,
+              "questionText": "문항 내용",
+              "questionType": "MULTIPLE_CHOICE",
+              "choices": "[\"A\", \"B\", \"C\", \"D\"]",
+              "correctAnswer": "A",
+              "studentAnswer": "B",
+              "explanation": "해설 (nullable)",
+              "categoryNameEn": "grammar",
+              "categoryNameKo": "문법",
+              "point": 3
+            }
+          ]
+        }
+      ]
+    }
+    ```
+    - `exams`: 시험별 그룹. `order_num` 순으로 정렬된 오답 카드 목록을 포함한다.
+    - `wrongCount`: 그룹 내 오답 수. `totalCount`: 그 시험의 학생 답안 총 개수(정답 + 오답).
+    - `choices`: DB에 저장된 JSON 문자열 그대로(`questions.choices` raw). 프론트가 `JSON.parse`해서 사용한다. 단답형이면 null.
+    - `categoryNameEn` / `categoryNameKo`: 매핑되지 않은 문제는 null — 프론트는 "기타"로 표시한다.
+  - 실패: 401, 403.
+- 빈 케이스: 첨부된 시험지가 없거나 모두 정답이면 `{ "exams": [] }` 반환.
+- 관련 코드:
+  - `DashboardController.getWrongAnswers`
+  - `WrongAnswerService`
+  - `WrongAnswerResponse`
+
+### ✅ GET /api/students/{studentId}/score-timeline
+
+- 목적: 학생 시험 점수 시계열 line chart 데이터 조회.
+- 현재 사용처:
+  - `static/js/conversation_dashboard.js`
+- 향후 사용 가능성:
+  - React student/conversation dashboard
+- 인증/권한: 인증 필요. 학생은 자기 `studentId`만 가능, ADMIN은 path `studentId`로 임퍼소네이트 가능.
+- Request:
+  - Path parameters:
+    - `studentId` number.
+- Response:
+  - 성공: `200 OK`
+    ```json
+    {
+      "points": [
+        {
+          "examId": 1,
+          "examDisplayName": "OO중학교 2학년 MIDTERM 2026-1",
+          "examType": "MIDTERM",
+          "examDate": "2026-05-23",
+          "totalQuestions": 20,
+          "correctCount": 15,
+          "totalPoints": 100,
+          "earnedPoints": 75,
+          "accuracyPercent": 75,
+          "confirmedAt": "2026-05-23T00:00:00"
+        }
+      ]
+    }
+    ```
+  - 실패: 401, 403, 400 text 가능.
+- 관련 코드:
+  - `DashboardController.getScoreTimeline`
+  - `ScoreTimelineResponse`
+
+
+## 10. Academy / Lesson API
+
+### ✅ GET /api/academies
+
+- 목적: 공개 Academy 목록 조회. 카드 목록 UI에서 로고, 이름, 지역, 과목, 대상 학년을 표시한다.
+- 현재 사용처:
+  - `templates/academies.html`
+  - `static/js/academies.js`
+- 향후 사용 가능성:
+  - React public academy marketplace/list
+- 인증/권한: public. `PUBLISHED` Academy만 반환한다.
+- Request query parameters:
+  - `subjectId` optional integer
+  - `targetGroup` optional enum `ELEMENTARY | MIDDLE | HIGH | UNIVERSITY | ADULT`
+  - `city` optional string
+  - `district` optional string
+- Response:
+  - 성공: `200 OK`, `AcademyListResponse[]`
+  - 각 item: `academyId`, `slug`, `name`, `logoUrl`, `subjects`, `targetGroups`, `regions`
+  - `targetGroups`는 저장 순서와 무관하게 항상 `ELEMENTARY → MIDDLE → HIGH → UNIVERSITY → ADULT` 순으로 정렬해 응답한다(`TargetGroup.canonicalOrder`). 배지 표기 순서를 화면마다 고정하기 위한 서버 보장이다.
+- 관련 코드:
+  - `AcademyController.listPublicAcademies`
+  - `AcademyService.listPublic`
+  - `AcademyRepository.findPublicList`
+  - `AcademyListResponse`
+
+### ✅ GET /api/academies/{slug}
+
+- 목적: 공개 Academy 상세와 `sec-lessons`의 접이식 탭 프리뷰에 사용할 공개 수업상품 목록 조회.
+- 현재 사용처:
+  - `templates/academy_public.html`
+  - `static/js/academy_public.js`
+- 향후 사용 가능성:
+  - 학생 검색/마켓플레이스 client
+- 인증/권한: public. `PUBLISHED` Academy만 반환, 없으면 404.
+- Request:
+  - Path variable: `slug`
+- Response:
+  - 성공: `200 OK`, `AcademyResponse` with `lessons`. storage key와 수업 작성용 내부 메타데이터 `creationKey`, `authoringRevision`은 JSON property 자체를 응답하지 않는다.
+  - `targetGroups`는 저장 순서와 무관하게 항상 `ELEMENTARY → MIDDLE → HIGH → UNIVERSITY → ADULT` 순으로 정렬해 응답한다(`TargetGroup.canonicalOrder`). hero 대상 배지 순서가 공개 페이지/Builder에서 동일하게 보이도록 하는 보장이다.
+- 관련 코드:
+  - `AcademyController.getPublicAcademy`
+  - `AcademyService.getPublic`
+  - `AcademyResponse`, `LessonResponse`
+
+### ✅ GET /api/academies/{slug}/visits
+
+- 목적: 공개 Academy의 오늘·누적·최근 7일 방문 횟수 조회. 소유 강사/Admin 화면 확인은 카운터를 늘리지 않는다.
+- 인증/권한: public. `PUBLISHED && visible` Academy만 조회, 없으면 404.
+- Response: `200 OK` + `{ today, total, recentDays: [{ date, count }] }`. 최근 7일은 방문이 없는 날짜도 `0`으로 포함한다.
+- 관련 코드: `AcademyController.getVisitStatistics`, `AcademyVisitStatisticsService`.
+
+### ✅ POST /api/academies/{slug}/visits
+
+- 목적: 공개 Academy 방문을 기록하고 갱신된 통계를 반환한다.
+- 인증/권한: public. `PUBLISHED && visible` Academy만 기록한다.
+- 중복 정책: 서버 HTTP 세션·Academy·`Asia/Seoul` 날짜별 1회. 같은 세션의 새로고침은 증가하지 않는다.
+- 개인정보: IP, User-Agent, 브라우저 ID를 저장하지 않는다.
+- Response: GET과 같은 `AcademyVisitStatisticsResponse`.
+- 관련 코드: `AcademyController.recordVisit`, `AcademyDailyVisitRepository.increment`.
+
+### ✅ GET /api/admin/academies (방문 통계 포함)
+
+- 기존 Academy/수업 노출 관리 응답의 각 Academy에 `visitStatistics`를 포함한다.
+- Admin은 숨김 Academy를 포함한 모든 학원의 오늘·누적·최근 7일 통계를 확인한다.
+
+### ✅ GET /api/academies/{slug}/logo
+
+- 목적: 공개 Academy 로고 조회 (JPEG, 애니메이션은 GIF/WebP). storage key는 노출하지 않는다.
+- 현재 사용처:
+  - `static/js/academy_public.js`
+  - `static/js/tutor_academy.js`
+- 향후 사용 가능성:
+  - React public academy card/list
+- 인증/권한: public. `PUBLISHED` Academy만 조회.
+- Request: Path variable `slug`.
+- Response: 성공 `200 OK`, `Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`, body bytes. 실패 404.
+- 관련 코드: `AcademyController.getPublicLogo`, `AcademyService.readPublicLogo`
+
+### ✅ GET /api/academies/{slug}/cover
+
+- 목적: 공개 Academy 커버 조회 (JPEG, 애니메이션은 GIF/WebP). 커버가 없으면 404.
+- 현재 사용처:
+  - `static/js/academy_public.js`
+  - `static/js/tutor_academy.js`
+- 향후 사용 가능성:
+  - React public academy page
+- 인증/권한: public. `PUBLISHED` Academy만 조회.
+- Request: Path variable `slug`.
+- Response: 성공 `200 OK`, `Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`, body bytes. 실패 404.
+- 관련 코드: `AcademyController.getPublicCover`, `AcademyService.readPublicCover`
+
+### ✅ GET /api/academies/{slug}/layout
+
+- 목적: 공개 Academy 페이지의 해석된 레이아웃(schema + blocks) 조회. React 공개 preview 렌더용. 저장 레이아웃이 없는 레거시 Academy도 기본 레이아웃을 결정적으로 반환한다. 기존 SSR `/academies/{slug}/preview`와 동일 데이터의 JSON 버전.
+- 현재 사용처:
+  - (신규) React public academy preview
+- 인증/권한: public. `PUBLISHED` Academy만 조회(`getPublishedEntity`). `/api/academies/**` GET permitAll 규칙에 포함.
+- Request: Path variable `slug`.
+- Response: `AcademyPageLayoutSchema` = `{ version: int, blocks: [...] }`. 실패 404(미공개/없음).
+- 관련 코드: `AcademyController.getPublicLayout`, `AcademyService.getPublishedEntity`, `AcademyPageLayoutService.resolveLayoutSchema`
+
+### ✅ GET /api/tutor/academy/me
+
+- 목적: 로그인한 TUTOR의 Academy 관리 데이터 조회. 본인 Academy가 없으면 `204 No Content`.
+- 현재 사용처:
+  - `static/js/tutor_academy.js`
+  - `static/js/tutor_academy_setup.js`
+  - `static/js/lesson_product_editor.js` — `204`이면 unattached draft를 만들지 않고 `/builder`로 이동
+  - ~~`static/js/landing_publish.js`~~ — 구 랜딩 발행 폼 전용. 2026-08 Build It 랜딩 개편으로 `/`에서 더 이상 로드하지 않는다(파일은 정리 대상으로 남겨둠). 개편 랜딩의 "Build It 시작하기"는 `static/js/landing_buildit.js`가 `GET /api/auth/me`만 확인해 TUTOR면 `/builder`, 아니면 `/register?returnUrl=/builder`로 보낸다.
+- 향후 사용 가능성:
+  - React tutor dashboard bootstrap
+- 인증/권한: `ROLE_TUTOR` + 서비스 owner guard.
+- Request: 없음.
+- Response: Academy가 있으면 `200 OK` + `AcademyResponse`, 없으면 `204 No Content`. 관리 응답의 `lessons`는 `HIDDEN`을 제외한 `DRAFT`/`PUBLISHED` 수업을 포함하고, 각 수업의 `creationKey`와 유효 `authoringRevision`(레거시 null은 `0`)을 반환한다.
+- 관련 코드: `AcademyController.getMyAcademy`, `AcademyService.getMine`
+
+### ✅ GET /api/tutor/academy/access-statistics
+
+- 목적: TUTOR 본인 Academy의 ALB 요청 기반 누적·일별 접근 통계를 조회한다.
+- 인증/권한: `ROLE_TUTOR` + 본인 Academy owner guard.
+- Query: `days` optional, 기본 `30`, 허용 범위 `1~90`.
+- Response: `200 OK`
+  - `{ "metric": "alb_successful_root_requests", "total": 123, "daily": [{"date":"2026-08-03","count":4}], "lastAggregatedAt":"...Z" }`
+  - 요청이 없던 날짜도 `count: 0`으로 채운다.
+- 집계 정의: 성공(`200~399`)한 `GET https://{handle}.feel2real.co.kr/` 요청 수. 사람·순방문자·세션 수가 아니다.
+- handle 변경: 요청 시점의 handle 이력을 `academy_id`로 해석하므로 기존 누적·일별 통계를 유지한다.
+- 관련 코드: `AcademyAccessStatisticsController`, `AcademyAccessStatisticsQueryService`
+
+### ✅ POST /api/tutor/academy
+
+- 목적: TUTOR 본인 Academy 생성. 로고를 생략하면 서버가 기본 로고를 저장하며, 생성 결과는 즉시 PUBLISHED. handle을 생략하면 서버가 임시 공개주소(`academy-{userId 해시}`)를 자동 부여한다.
+- **하나의 경로/서비스(`create`)를 Content-Type으로 분기한다** — 로고 파일 업로드는 multipart, 로고 없는 일반 클라이언트는 JSON도 가능하다. `/builder` 최초 발행은 로고 선택 여부와 무관하게 `academy` JSON part를 담은 multipart를 사용하고, 로고가 있으면 `logo` part를 추가한다. 별도 `/publish` 엔드포인트는 없다.
+- 현재 사용처:
+  - `static/js/tutor_academy_setup.js` (multipart)
+  - `templates/public/landing.html` 발행 폼 (JSON)
+- 향후 사용 가능성:
+  - React tutor onboarding, LLM 클라이언트(JSON)
+- 인증/권한: `ROLE_TUTOR`. 이미 Academy가 있으면 **`409 Conflict`**.
+- Request (둘 중 하나):
+  - **`multipart/form-data`** parts:
+    - `academy`: JSON `{ name, handle, intro, subjectIds, targetGroups, regions }`
+      - `handle`: optional. 비우면 서버가 `academy-{hash}` 임시값을 생성한다. 입력하면 3~30자 소문자/숫자/하이픈, 예약어/중복 차단.
+      - `intro`: required, max 1000자
+      - `regions`: 1~3개. SSR은 시/구 드롭다운으로 입력하며 구/군 미선택 시 `ALL` 저장
+    - `logo`: image file, optional. 미첨부/null이면 서버가 기본 JPEG 로고를 `FileStorage`에 저장해 `logoStorageKey`를 채운다.
+    - `cover`: image file, optional
+  - **`application/json`** body `{ name, handle, intro, subjectIds, targetGroups, regions }`:
+    - 필수값은 multipart와 동일(`targetGroups`·`regions`는 hero badge 공개 렌더 → 폼에서 수집).
+    - 랜딩 발행 폼은 handle을 보내지 않는다. 서버가 임시 handle을 자동 부여하고, 사용자는 `/tutor/academy/setup`에서 이후 수정한다.
+    - 로고/커버 입력 없음 → 로고는 서버 기본 로고, 커버는 null. `/builder`에서 발행 전 선택한 로고는 같은 multipart `POST`의 `logo` part로 저장하며, 이후 multipart `PUT`으로 교체 가능.
+- Response: 성공 `200 OK`, `AcademyResponse`.
+- 관련 코드: `AcademyController.createAcademy`(multipart)·`createAcademyJson`(JSON), `AcademyService.create`
+
+### ✅ PUT /api/tutor/academy
+
+- 목적: TUTOR 본인 Academy 수정. 기존 로고가 있으면 logo part 생략 가능. 공개주소(handle)는 setup 화면에서 수정 가능하며, 새 값은 형식/예약어/중복 검증을 통과해야 한다.
+- 현재 사용처:
+  - `static/js/tutor_academy_setup.js` — multipart 기본정보/이미지 수정
+  - `static/js/academy_builder.js` — `/builder` 텍스트 inline 편집(학원명/소개/상세 소개/커리큘럼 통합 제목/히어로 지표), 공개 주소(handle) 편집, 기본 데이터 모달(수업대상/과목/지역), 로고 이미지 저장. 기존 subjectIds/pageSettings 등 필수값은 SSR Academy JSON에서 보존해 함께 전송한다.
+- 향후 사용 가능성:
+  - React tutor settings
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Request: `POST /api/tutor/academy`와 동일한 구조.
+  - `multipart/form-data`: setup 화면 기본정보/이미지 수정, Builder 로고 이미지 수정.
+  - `application/json`: Builder 텍스트 inline 저장처럼 파일 변경 없이 기존 필수값을 보존해 수정.
+- Response: 성공 `200 OK`, `AcademyResponse`.
+- 관련 코드: `AcademyController.updateAcademy`(multipart), `AcademyController.updateAcademyJson`(JSON), `AcademyService.update`
+
+### ✅ PUT /api/tutor/academy/page-settings
+
+- 목적: Builder에서 공개 페이지 표시 설정을 부분 업데이트한다. 현재 사용 범위는 섹션 표시/숨김(`sectionVisibility`), 레이아웃 탭 섹션 순서(`sectionOrder`), 외부 연동 URL(`blogUrl`/`naverMapUrl`), 학원별 공개 footer 사업자 정보(`businessInfo`)다. `heroYoutubeUrl` 필드는 하위 호환으로 계속 받는다. Builder 상세 문구, 대표 수업 선택(`builderDraft.featuredLessonIds`, lesson ID 최대 4개 쉼표 결합), 홈페이지 업로드 영상 선택(`builderDraft.heroVideoId`/`principalVideoId`), 히어로 지표(`builderDraft.monthlyTuition`, `builderDraft.scoreImprovement`, `builderDraft.operationYears`)는 허용 key/길이 검증 후 `POST/PUT /api/tutor/academy`의 `pageSettings` payload로 저장한다.
+- 현재 사용처:
+  - `static/js/academy_builder.js` — `/builder` 블록 탭의 실제 데이터 섹션(`sec-intro`, `sec-principal`, `sec-lessons`, `sec-social`) 표시 토글. 기존 Academy는 이 endpoint로 즉시 저장하고, 신규 발행 전 Academy는 `POST /api/tutor/academy`의 `pageSettings.sectionVisibility`에 포함한다. 미래 6개 섹션은 모든 정상 write payload에서 명시적 `false`로 정규화한다.
+  - `static/js/academy_builder.js` — `/builder` 레이아웃 탭 up/down 버튼. 기존 Academy는 `{sectionOrder:[...]}`만 보내 즉시 저장하고, 신규 발행 전 Academy는 `pageSettings.sectionOrder`에 포함한다.
+  - `static/js/academy_builder.js` — 히어로/원장 영상 영역 클릭 → 업로드 영상 또는 YouTube 선택 → 기존 Academy는 상단 발행의 Full PUT으로, 신규 발행 전 Academy는 pending payload로 저장한다. `sec-social`의 네이버 블로그/지도 URL 등록 버튼은 각각 `blogUrl`/`naverMapUrl` 하나씩만 저장하고, 저장 URL은 썸네일형 프리뷰 카드로 표시하며, Builder preview에서는 클릭 시 실제 이동 대신 URL 수정 모달을 연다.
+  - `static/js/academy_builder.js` — Builder preview의 fixed-chrome footer 또는 특정 값 텍스트를 클릭하면 상호명·대표·주소·사업자등록번호·통신판매업신고번호·전화·이메일 7개 값만 다른 섹션과 같은 field-scoped `contenteditable` 상태와 노란색 테두리로 표시한다. 별도 form/modal은 열지 않으며 footer 우상단 Apply 컨트롤로 반영한다. 사업자등록번호 입력은 숫자만 취해 최대 10자리까지 `000-00-00000` 형식으로 자동 포맷한다. 기존 Academy는 `businessInfo`를 즉시 저장하고, 신규 발행 전 Academy는 authoritative `pendingAcademyPublish.pageSettings.businessInfo`에 포함한다. 공개 홈과 해당 Academy 블로그 목록/상세가 같은 값을 렌더한다.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Request JSON:
+  - `{ "sectionVisibility": { "sec-intro": true, "sec-principal": true, "sec-lessons": true, "sec-social": false, "sec-reviews": false, "sec-curriculum": false, "sec-effect": false, "sec-digitaltwin": false, "sec-market": false, "sec-payment": false } }`
+  - `{ "sectionOrder": ["sec-hero", "sec-intro", "sec-principal", "sec-videos", "sec-reviews", "sec-lessons", "sec-curriculum", "sec-effect", "sec-digitaltwin", "sec-market", "sec-payment", "sec-social"] }
+  - `{ "naverMapUrl": "https://map.naver.com/p/entry/place/1422644365" }`
+  - `{ "heroYoutubeUrl": "https://www.youtube.com/watch?v=VIDEO_ID" }`
+  - `{ "businessInfo": { "businessName": "샘플 영어학원", "representative": "대표자명", "address": "00시 00구 00로 00", "businessRegistrationNumber": "000-00-00000", "mailOrderRegistrationNumber": "0000-00-0000-0000", "phone": "000-0000-0000", "email": "academy@example.com" } }`
+  - `blogUrl`, `storeUrl`, `naverMapUrl`, `heroYoutubeUrl`, `sectionVisibility`, `sectionOrder`, `businessInfo`가 `null`/미포함이면 부분 업데이트에서 기존 값을 유지한다. Full `PUT /api/tutor/academy`도 구형 client가 `pageSettings` 또는 `businessInfo`를 생략하면 기존 businessInfo를 보존한다. 7개 direct field를 명시적으로 빈 문자열로 보내면 raw blank로 clear한다.
+  - `businessInfo`의 null/누락/빈 문자열은 공개 렌더에서 필드별 마스킹 dummy로 fallback하며, dummy는 저장 payload로 역유입되지 않는다. 상호명 fallback만 Academy 이름을 사용하고 공용 랜딩의 실제 사업자 정보는 복사하지 않는다.
+  - 예외: 공개 홈 우상단 `상담 신청` 모달의 `tel:`/`mailto:` 링크는 마스킹 dummy를 쓰지 않는다. `phone`/`email` 중 nonblank 값만 옵션으로 노출하고 둘 다 blank면 모달을 열지 않는다(기존 데모 안내 유지). → [FLOWS.md](FLOWS.md) §5.5
+  - Builder의 `상담 신청` 연락처 모달도 endpoint를 추가하지 않고 이 `PUT /api/tutor/academy/page-settings`의 `businessInfo`를 그대로 쓴다. `phone`/`email`만 바꾸고 나머지 5개 field는 현재 값을 함께 실어 보낸다(부분 payload를 보내면 생략한 field가 blank로 clear된다). 전화 형식(`0` 시작 9~11자리, 서울 `02`=2-3-4/2-4-4, 그 외=3-3-4/3-4-4)과 이메일 형식은 **client 검증**이며 서버 계약은 기존 길이/이메일 검증 그대로다. → [FLOWS.md](FLOWS.md) §5.5
+  - `businessInfoUrl`은 response/legacy JSON 호환 field로만 유지한다. Request에 임의 URL이 있어도 무시하며, nonblank 사업자등록번호에서 숫자 10자리를 추출해 서버가 `https://www.ftc.go.kr/bizCommPop.do?wrkr_no={digits}`로 canonicalize한다. Blank 등록번호는 저장 URL이 null이고 화면에서만 masked FTC link를 사용한다. Invalid legacy 번호는 번호는 표시하되 FTC navigation을 만들지 않으며, 새 write는 invalid digit count를 거부한다. `email` 형식과 각 field 최대 길이도 검증한다. `storeUrl`은 기존 데이터 호환용으로 유지하고, Builder UI의 지도 링크는 `naverMapUrl`을 우선 사용한다. 공개 주소(handle)는 `/builder` 브라우저 URL 영역에서 수정하되 저장은 기존 `POST/PUT /api/tutor/academy`의 `handle` 필드를 사용하고, 모달의 `중복확인` 버튼 및 적용 시 기존 `GET /api/tutor/academy/handle-available`로 unique 여부를 확인한다.
+  - `sectionOrder` canonical default full order는 `sec-hero`, `sec-intro`, `sec-principal`, `sec-videos`, `sec-reviews`, `sec-lessons`, `sec-curriculum`, `sec-effect`, `sec-digitaltwin`, `sec-market`, `sec-payment`, `sec-social`이다. non-null이면 hero 누락/첫 번째 아님, null/unknown/duplicate id, 관리 섹션 누락을 400으로 거부한다.
+  - Builder 블록 탭은 실제 데이터 섹션만 토글한다. 미래 6개 섹션은 legacy true/null/누락에도 effective OFF이고 Builder 진입 시 별도 write를 발생시키지 않는다. 레이아웃 탭은 지원되는 ON 섹션만 보여주고 up/down 버튼으로 조정한다. OFF 섹션은 화면에서 제외되지만 저장된 full order slot은 유지한다. 서버는 `sectionVisibility`와 `sectionOrder`를 독립 값으로 저장한다.
+  - URL 필드는 `http://` 또는 `https://`만 허용한다. 프론트는 `heroYoutubeUrl`에 YouTube watch/youtu.be/embed URL만 입력 가능하게 제한하고 공개 렌더 시 embed URL로 정규화한다.
+- Response: 성공 `200 OK`, `AcademyResponse`. 공개 페이지(`/academies/{slug}`)는 `pageSettings.sectionOrder` 순서로 섹션 stack을 렌더하고, 누락/null legacy rows는 canonical default로 fallback한다. `pageSettings.sectionVisibility[id] === false`인 관리 섹션은 렌더하지 않지만 전체 순서에는 남아 다시 보이면 같은 slot에 복귀한다. hero(`sec-hero`)는 항상 첫 번째/ON으로 고정하며 미래 6개 섹션은 저장값과 무관하게 공개/Builder 렌더에서 제외한다. Footer는 이 설정들과 분리된 fixed page chrome이라 숨김·삭제·이동할 수 없고 ordered sections 다음에 항상 렌더한다. 공개 홈과 `/academies/{academySlug}/posts`, `/academies/{academySlug}/posts/{postSlug}` 학원 블로그는 `pageSettings.businessInfo`를 공통 footer에 표시한다.
+- 관련 코드: `AcademyController.updatePageSettings`, `AcademyService.updatePageSettings`
+
+### ✅ DELETE /api/tutor/academy
+
+- 목적: TUTOR 본인 Academy 삭제. 삭제 후 같은 강사는 새 Academy를 다시 생성할 수 있다.
+- 현재 사용처:
+  - `static/js/tutor_academy.js` — `/tutor/academy` 상단 `Academy 삭제` 버튼
+- 향후 사용 가능성:
+  - React tutor settings / academy management
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Request: 없음.
+- Response:
+  - 성공: `204 No Content`
+  - 본인 Academy 없음: `404`
+  - 승인된 신청/수강생이 있는 lesson이 하나라도 있으면 `409 Conflict`, 삭제 차단
+  - 영상, 업로드 세션, 최적화 job, DELETING tombstone 또는 cleanup row가 하나라도 남아 있으면 `409 Conflict`. 각 영상을 삭제하고 durable cleanup/물리 삭제가 끝난 뒤 재시도한다.
+- 삭제 정책:
+  - tutor 소유 Academy 행을 pessimistic lock한 뒤 guard를 검사한다. 업로드 세션 initiation의 동일 부모행 lock과 직렬화되어 guard 통과 뒤 새 예약이 생길 수 없다.
+  - 수강생과 모든 영상 lifecycle state가 없을 때만 물리 삭제한다.
+  - DB FK cascade로 Academy 하위 subject/target/region/lesson 관계가 정리된다. 영상 asset 정리에는 cascade를 사용하지 않는다.
+  - logo/cover storage 파일은 DB 삭제 후 best-effort로 삭제한다.
+- 관련 코드: `AcademyController.deleteAcademy`, `AcademyService.delete`
+
+### ✅ GET /api/tutor/academy/layout
+
+- 목적: 빌더 초기 로딩용. 내 Academy의 레이아웃 schema(`{version, blocks[]}`)를 반환한다. 저장본이 없으면 `AcademyDefaultLayoutFactory` 기본 레이아웃.
+- 인증/권한: `ROLE_TUTOR` + owner guard (`AcademyService.requireMyAcademy`).
+- Response: `200` schema JSON / 본인 Academy 없음 `404`.
+
+### ✅ PUT /api/tutor/academy/layout
+
+- 목적: 빌더가 보낸 전체 semantic schema로 레이아웃을 **upsert**(생성+덮어쓰기). 1 Academy 1 레이아웃.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Request: body = `AcademyPageLayoutSchema` (`{version:int, blocks:[{type,order,config}]}`). allowlist 외 block 타입은 `400`.
+- Response: `200` 해석된 schema / allowlist 위반 `400` / 본인 Academy 없음 `404`.
+
+### ✅ DELETE /api/tutor/academy/layout
+
+- 목적: 저장 레이아웃 물리 삭제. 이후 `resolveLayoutSchema`가 기본 레이아웃으로 fallback 하므로 공개 렌더는 계속 동작. 저장본 없어도 멱등.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Response: `204 No Content` / 본인 Academy 없음 `404`.
+- 관련 코드: `AcademyLayoutApiController`, `AcademyPageLayoutService.saveLayout/deleteLayout`
+
+### ✅ PUT /api/tutor/academy/lessons/collection
+
+- 목적: 전용 편집기의 신규 draft와 변경된 기존 수업을 한 트랜잭션에서 원자적으로 저장한다. 요청 항목 하나라도 실패하면 전체 요청을 롤백한다.
+- 현재 사용처:
+  - `static/js/lesson_product_editor.js`
+- 인증/권한: `ROLE_TUTOR` + Academy owner guard.
+- Request: `LessonCollectionSaveRequest` = `{ "items": LessonCollectionItemRequest[] }`.
+  - 편집기는 모든 신규 draft와 `draft != serverSnapshot`인 기존 수업만 포함한다. 요청에서 빠진 기존 수업은 조회·잠금·revision 검사·수정·숨김 대상이 아니다.
+  - 기존 항목은 `lessonId`와 `expectedAuthoringRevision`을 보내고 `creationKey`는 `null`로 보낸다.
+  - 신규 항목은 Academy 범위에서 안정적인 UUID `creationKey`를 보내고 `lessonId`/`expectedAuthoringRevision`은 `null`로 보낸다.
+  - `lessonId`와 `creationKey`는 정확히 하나만 있어야 하며, 한 요청 안에서 ID/key/해석된 대상 수업이 중복되면 `400 Bad Request`다.
+  - 신규 수업의 `authoringRevision`은 1에서 시작한다. 기존 수업은 아래 작성 상태가 실제로 바뀔 때 한 번 증가한다.
+
+| `LessonCollectionItemRequest` 필드 | 규칙 |
+|---|---|
+| `lessonId`, `creationKey`, `expectedAuthoringRevision` | 저장 대상 식별과 재시도/동시 수정 검증용. `creationKey`는 36자 UUID, 기존 revision은 0 이상 필수 |
+| `name`, `description` | 수업상품명 필수·100자 이하(예시 HTML이 요구하는 유일한 필수값), 설명 nullable |
+| `schoolName`, `gradeLabel` | 학교·학년 자유문구. 각각 100/50자 이하, trim, blank→null. 두 필드는 canonical replay/stale/creation-key binding 비교에 포함한다 |
+| `lessonType`, `targetGroup`, `status` | 전부 nullable. 편집기는 셋 다 보내지 않는다. `status`가 null이면 서버가 `PUBLISHED`로 정규화하고, 값이 오면 `DRAFT|PUBLISHED`만 허용한다. `lessonType`/`targetGroup`은 null을 그대로 저장한다(기본값 주입 없음) |
+| `priceAmount`, `priceUnit`, `priceSummary`, `maxCapacity` | 전부 nullable이며 amount/unit은 서버 collection 계약에서 독립적이다. amount가 있으면 1원 이상만 검사하므로 레거시 `positive/null`도 replay·학교/학년 수정 round-trip이 가능하다. 편집기 신규/가격수정 UI만 `null/null`, `positive/MONTH|COURSE`, `null/NEGOTIABLE` matrix를 강제한다. `maxCapacity`가 null이면 무제한 접수 |
+| `scheduleType`, `weeklyCount`, `weekdays`, `startDate`, `endDate`, `durationWeeks`, `durationMonths`, `scheduleSummary` | 전부 nullable. 편집기가 받지 않는다. `scheduleType`이 명시된 경우에만 하위 규칙을 검사한다(`WEEKLY`는 횟수와 요일, `PERIOD`는 유효한 날짜 범위 또는 양수 기간) |
+| `tabGuidanceLabel`, `tabShortName` | 탭 안내(120자), 탭 짧은 이름(80자) |
+| `kicker`, `highlight`, `learnerNeed`, `coreDetailTitle` | 공개 페이지 문구. 각각 200/300/300/200자 이하 |
+| `explanation1`, `explanation2`, `explanation3` | 핵심 설명 각 500자 이하 |
+| `theme` | `NAVY|TEAL|PURPLE|ORANGE|SKY|PINK|GREEN`; null은 `NAVY`로 정규화 |
+| `mediaImageKey`, `mediaVideoId` | 대표 미디어. **둘 다 non-null이면 `400`**(XOR). `mediaImageKey`는 `POST /api/tutor/academy/media/lesson-hero`가 돌려준 key(500자 이하), `mediaVideoId`는 **내 학원 소유** `academy_videos.video_id`여야 한다(아니면 `400` — IDOR 차단). 둘 다 null이면 미디어 해제 |
+| `otVideoId` | 수업 OT 영상. 대표 미디어와 **독립적으로** 저장·교체·해제하며, 내 학원 소유 `academy_videos.video_id`만 허용한다. null이면 OT 영상 해제 |
+
+- **대표 미디어는 이 endpoint로만 저장된다.** 레거시 `PUT /api/tutor/academy/lessons/{lessonId}`는 미디어 필드를 받지 않으며, 그 경로로 수정해도 기존 미디어는 보존된다(`updateDetails`가 현재 값을 forwarding).
+- 대표 미디어 또는 OT 영상만 바뀐 저장도 canonical 작성 상태 변경으로 취급해 `updated`로 분류되고 revision이 오른다(`replayed` 아님).
+
+- Response: `200 OK`, `LessonCollectionSaveResponse`.
+  - `savedItems`: 요청 순서와 같은 `LessonResponse[]`.
+  - `requestedCount`, `createdCount`, `updatedCount`, `replayedCount`: 요청/생성/변경/상태 동일 재처리 개수.
+  - `LessonResponse`는 기존 운영 필드와 `schoolName`/`gradeLabel`에 위 공개 페이지 문구, `theme`, `creationKey`, 유효 `authoringRevision`을 함께 반환한다. 레거시 null theme/revision은 각각 `NAVY`/`0`으로 반환한다. 공개 응답은 학교·학년 property 자체를 생략한다.
+  - 대표 미디어는 `mediaType`(`IMAGE|VIDEO`, 두 컬럼에서 파생하며 없으면 필드 자체가 빠짐)과 `mediaVideoId`로 반환한다. `mediaImageKey`는 **강사 응답에만** 담기고 공개 응답(`fromPublic`)에서는 제외된다. 별도 OT 영상은 `otVideoId`로 반환한다.
+- 동시성/재시도:
+  - 서버는 Academy 범위 creation-key binding을 scalar로 먼저 해석한 뒤 대상 lesson ID 합집합을 오름차순 `PESSIMISTIC_WRITE`로 한 번 잠근다.
+  - `expectedAuthoringRevision`이 현재 값과 달라도 제출한 canonical 작성 상태가 현재 서버 상태와 같으면 성공 재처리로 계산하고 revision을 올리지 않는다.
+  - 신규 `creationKey`가 이미 같은 작성 상태에 묶여 있어도 성공 재처리다. 같은 key의 상태가 다르면 binding conflict다.
+- 실패:
+  - 일반 검증 오류는 `400` text, 소유권 위반은 `403`, 누락/타 Academy 대상은 `404`다.
+  - 아래 동시성 충돌은 모두 `409 Conflict`와 JSON `{ "code": string, "message": string, "retryable": boolean }`을 반환한다.
+
+| code | retryable | 의미 |
+|---|:-:|---|
+| `LESSON_AUTHORING_STALE` | `false` | revision이 오래됐고 제출 상태도 최신 서버 상태와 다름 |
+| `LESSON_CREATION_KEY_BINDING_CONFLICT` | `false` | creation key가 다른 canonical 작성 상태의 수업에 이미 연결됨 |
+| `LESSON_CREATION_KEY_RACE` | `true` | 동일 Academy/creation key의 동시 insert가 정확한 unique constraint에서 충돌 |
+| `LESSON_AUTHORING_LOCK_CONFLICT` | `true` | lesson row lock timeout/deadlock |
+
+- 관련 코드: `AcademyController.saveLessonCollection`, `LessonCollectionService`, `LessonCollectionExceptionHandler`
+
+### ✅ GET /api/tutor/lms/{handle}/lessons
+
+- 목적: `/lms/{handle}/manage` 강좌관리 탭에 owner의 실제 `LessonProduct`를 표시한다. 다른 LMS 화면과 후기 탭은 계속 MOCK을 사용한다.
+- 인증/권한: `ROLE_TUTOR` + `AcademyService.requireOwnedAcademyByHandle(handle)`. 익명 `401`, STUDENT/ADMIN `403`, 다른 학원 TUTOR `403`, 미존재 handle `404`.
+- 조회: 해당 Academy의 `DRAFT|PUBLISHED`만 포함하고 `HIDDEN`은 제외한다. `isVisible=false`라도 HIDDEN이 아니면 강사 작성 목록에 포함한다. 정렬은 `createdAt ASC, lessonId ASC`.
+- Response: `200 OK`, `LmsManageLessonResponse[]`. allowlist는 정확히 `lessonId`, `schoolName`, `gradeLabel`, `name`, `priceAmount`, `priceUnit`, `description`이며 creation/revision/media/일정/정원/마케팅 작성 필드는 노출하지 않는다.
+- 삭제는 신규 endpoint가 아니라 기존 `DELETE /api/tutor/academy/lessons/{lessonId}`를 재사용한다. 성공 `204`는 HIDDEN 처리, 승인 신청/수강생이 있으면 `409`이며 표 row/count를 유지한다.
+- 관련 코드: `AcademyLmsManageApiController`, `AcademyService.listOwnedLmsLessonsByHandle`, `LmsManageLessonResponse`
+
+### ✅ GET /api/tutor/academy/lessons/{lessonId}
+
+- 목적: 강사용 수업 운영 상세 조회. `HIDDEN` 수업은 `404`로 처리한다.
+- 인증/권한: `ROLE_TUTOR` + lesson.academy owner guard.
+- Response: 성공 `200 OK`, `LessonResponse`. 실패 404/403 가능.
+- 관련 코드: `AcademyController.getLesson`, `LessonProductService.getMine`
+
+### ✅ POST /api/tutor/academy/videos
+
+- 목적: 강사 브라우저가 영상을 application 서버로 multipart 업로드한다. 서버가 요청 안에서 ffprobe
+  검증, H.264/AAC MP4 정규화, JPEG thumbnail 생성을 마친 뒤 private storage와 READY row를 저장한다.
+- 인증/권한: `ROLE_TUTOR` + Academy owner guard.
+- Request: `multipart/form-data`, part 이름 `video`.
+- 제한: 원본/변환 산출물 각각 `<=209715200` bytes, 길이 `<=120초`, 학원당 최대 10개.
+  화면은 MP4/MOV만 선택하게 하고 서버는 실제 codec과 길이를 다시 검사한다.
+- 저장 정합: 변환과 storage IO는 DB transaction 밖에서 수행한다. 마지막 row insert가 실패하면 이미
+  저장한 MP4/thumbnail을 보상 삭제한다.
+- Response: `200 AcademyVideoResponse` / 제한·변환 실패 `400` / 동시 변환 permit 초과 `503`.
+- 현재 사용처: `static/js/tutor_academy_videos.js`.
+
+### ⚠ 호환성 전용 POST /api/tutor/academy/videos/uploads
+
+- 현재 브라우저 UI는 사용하지 않는다. 배포 전 생성된 terminal session의 cleanup/recovery 호환을 위해
+  서버 모델과 endpoint만 유지한다. 신규 화면은 위 same-origin multipart endpoint만 호출한다.
+- 목적: 200MiB 이하 원본 영상의 durable multipart 업로드 세션을 시작한다. 한 세션의 승인 deadline은 DB `CURRENT_TIMESTAMP(6)` 기준 생성 시각부터 정확히 180초다.
+- 인증/권한: `ROLE_TUTOR` + owner guard. Academy 행을 잠근 짧은 트랜잭션에서 `DELETING`이 아닌 영상 + 만료되지 않은 `INITIATED|COMPLETING` 예약을 합산하며 최대 10개다.
+- Request JSON: `{ "filename": string, "declaredSizeBytes": long }`.
+  - 허용 크기: `1..209715200`(inclusive).
+- Response `200`: `{sessionId, serverNow, deadlineAt, partSizeBytes:20971520, parts:[{partNumber,uploadUrl}]}`.
+  - `uploadUrl`은 TLS에서만 전달하는 opaque bearer capability다. bucket/key/uploadId/credential을 별도 필드로 반환하지 않고 서버 상태·로그에도 URL을 저장하지 않는다.
+  - production S3는 exact key/uploadId/part number에 묶인 presigned `UploadPart`; local은 같은 DTO 계약의 same-origin `PUT` capability다.
+  - servlet multipart 설정은 이 direct upload의 크기/시간 제한이 아니다. 배포 IAM/CORS/lifecycle 계약은
+    `docs/AWS_DEPLOYMENT.md`를 따른다.
+
+### ⚠ 호환성 전용 PUT /api/tutor/academy/videos/uploads/{sessionId}/parts/{partNumber} (local profile)
+
+- 목적: 로컬 개발에서 production S3 `UploadPart`와 같은 역할을 하는 bounded part endpoint.
+- Request: `application/octet-stream`, initiate가 반환한 opaque URL 그대로 사용한다.
+- Response: `204`, `ETag` header. 중간 part는 정확히 20MiB, 마지막 part는 선언 크기의 나머지 이하다.
+
+### ⚠ 호환성 전용 POST /api/tutor/academy/videos/uploads/{sessionId}/complete
+
+- Request JSON: `{ "parts": [{"partNumber":1,"eTag":"...", "checksum":null}, ...] }`. part 번호는 1부터 연속·오름차순이어야 한다. storage key/upload ID는 받지 않는다.
+- 완료는 persisted manifest/hash/finalization token을 사용하는 3단계 saga다.
+  1. 짧은 Phase A 트랜잭션에서 `INITIATED → COMPLETING`.
+  2. 트랜잭션 밖에서 multipart complete/HeadObject, 한 개 permit의 private temp materialization, ffprobe 검증을 수행한다.
+  3. DB `now <= deadlineAt`일 때만 한 트랜잭션에서 `READY+RAW` 영상, unique `PENDING` 최적화 job, session `ACCEPTED`를 함께 commit한다.
+- raw 제한: 실제 저장소 크기와 streaming counter 모두 `<=209715200`; duration `<=120000ms`; MP4/MOV/WebM/Matroska 영상 트랙 및 허용 codec만 승인한다.
+- idempotency/recovery:
+  - `ACCEPTED` replay는 deadline 뒤에도 `200`과 같은 `acceptedVideoId`.
+  - 같은 manifest의 `COMPLETING` client replay는 외부 작업/claim 없이 `202 + Retry-After`; due retry는 recovery worker만 claim한다.
+  - 다른 manifest는 `409`; permanent validation은 `422`; transient는 `503 + Retry-After`; deadline 초과는 `408`.
+  - multipart 완료 직전/직후 crash는 persisted manifest와 deterministic staged object로 재개한다.
+
+### ⚠ 호환성 전용 DELETE /api/tutor/academy/videos/uploads/{sessionId}
+
+- `INITIATED|COMPLETING → ABORTED` terminal CAS, token invalidation, multipart/staged cleanup-outbox insert를 한 짧은 트랜잭션에서 수행하고 `204`.
+- abort가 먼저 commit되면 late Phase C는 영상/job을 만들지 못한다. Phase C가 먼저 `ACCEPTED`를 commit하면 abort는 상태를 덮지 않고 `200` accepted outcome을 반환한다. 반복 abort는 멱등이다.
+- 활성 materialization/ffprobe는 local signal과 최대 2초 DB token poll로 협력 취소된다.
+
+### ⚠ 호환성 전용 GET /api/tutor/academy/videos/uploads/{sessionId}
+
+- 목적: 새로고침 뒤 업로드 결과를 안전하게 복구한다. owner guard를 통과한 세션의
+  `{sessionId,state,acceptedVideoId,errorCode,retryAfterSeconds,serverNow,deadlineAt}`만 반환한다.
+- storage key/upload ID/part capability는 반환하지 않는다. 브라우저는 저장해 둔 ordered ETag manifest만
+  재전송하며, `serverNow/deadlineAt`은 클라이언트의 monotonic 180초 budget을 단축하는 데만 사용한다.
+- `ACCEPTED`이면 즉시 Ready 목록으로 복구하고, `COMPLETING`이면 같은 manifest로 complete를 replay한다.
+
+### ✅ GET /api/tutor/academy/videos
+
+- 목적: 강사 대시보드 목록. 본인 Academy의 `READY` 영상만 최신순으로 반환한다. 내부 tombstone인 `DELETING`과 migration-only `UNAVAILABLE`은 query 단계에서 제외한다. 최적화 job의 `FAILED`는 영상 lifecycle이 READY/RAW인 한 목록과 공개 재생에서 유지된다.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Response: `200` `AcademyVideoResponse[]`. `availabilityStatus=READY`는 즉시 사용 가능함을 뜻하고,
+  `optimizationStatus=PENDING|PROCESSING|FAILED|...`는 강사 화면에만 최적화 진행 상태로 표시한다.
+  thumbnail이 아직 없으면 `thumbnailUrl=null`이며 UI는 깨진 이미지 대신 중립 placeholder를 표시한다.
+
+### ✅ DELETE /api/tutor/academy/videos/{videoId}
+
+- 목적: 되돌릴 수 없는 **비동기 물리 삭제 요청**. 응답 트랜잭션은 video를 `DELETING`으로 tombstone하고 알려진 raw/normalized/thumbnail/attempt/staging/multipart asset cleanup을 durable outbox에 원자적으로 넣는다.
+- 인증/권한: `ROLE_TUTOR` + owner guard. 조회 조건에 academy_id가 들어가 타 학원 영상은 `404`.
+- 삭제 순서: video 잠금 → `DELETING`/source version 증가 + job 취소/신호 + atomic dedupe outbox insert → commit 즉시 tutor/public 목록 제외 → worker가 object 부재를 확인한 cleanup만 `DONE` → 모든 row가 DONE이면 cleanup/session/job/video 순으로 FK-safe 물리 삭제. 부분 실패는 보이지 않는 `DELETING` 상태로 남아 backoff/reclaim된다. multipart abort는 `NoSuchUpload`/확정 404만 성공으로 간주하고 transient/unknown 실패는 retry한다.
+- **참조 차단**: 수업상품의 대표/OT 미디어 또는 홈페이지 Builder의 히어로/원장 소개 영상으로 쓰는 영상은 `400`으로 막는다. 홈페이지 참조는 `pageSettings.builderDraft.heroVideoId`/`principalVideoId`를 확인하고 먼저 빌더에서 해제하도록 안내한다. DB FK가 `ON DELETE SET NULL`인 수업 미디어와 JSON 참조 모두 삭제 전에 차단하지 않으면 화면이 조용히 비고 파일까지 사라진다.
+- Response: `204 No Content` / 없거나 타 학원 소유 `404` / 수업상품·홈페이지에서 사용 중 `400`.
+- 관련 코드: `AcademyVideoController`, `AcademyVideoService`, `LessonMediaReferenceGuard`
+
+### ✅ POST /api/tutor/academy/media/lesson-hero
+
+- 목적: 수업상품 **대표 이미지** 업로드. `multipart/form-data`, part 이름 `image`.
+- 인증/권한: `ROLE_TUTOR` + owner guard(`/api/tutor/**` 규칙이 이미 커버).
+- **`lessonId`를 받지 않는다.** 편집기에서 새로 만든 수업상품은 컬렉션 저장 전까지 id가 없어, id를 요구하면 "먼저 저장하세요" 동선이 강제된다. 소유는 학원 단위로 판정하고 수업상품과의 연결은 컬렉션 저장이 맡는다.
+- 처리: 바이트 상한(`UploadSizeGuard`, `app.upload.max-document-bytes` 20MB) → 픽셀 상한(`app.image.max-decoded-pixels`) → `ImageSanitizer`로 최장변 1600px 정규화. **애니메이션 GIF(프레임 2장 이상)는 프레임을 보존한 GIF로, 그 외는 JPEG로** 재인코딩한다. HEIC처럼 `ImageIO`가 못 읽는 포맷은 ffmpeg로 PNG를 거쳐 같은 sanitizer에 넣는다.
+- 동시 디코딩은 `app.image.max-concurrent-decodes`로 제한한다(영상 세마포어와 공유하지 않는다 — 공유하면 영상 변환 중 모든 이미지 업로드가 503이 된다).
+- Response: `200` `{ "imageKey": "..." }` / 용량·해상도 초과 `400` / 동시 처리 상한 초과 `503`.
+- 비고: **DELETE 엔드포인트를 두지 않는다.** 저장 전 이미지는 DB row가 없어 클라이언트가 준 key 문자열 외에 인가 근거가 없다. 고아 정리는 후속 GC 잡의 몫이다.
+
+### ✅ GET /api/academies/{slug}/lessons/{lessonId}/hero-image
+
+- 목적: 공개 수업상품 히어로 이미지 (`Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`).
+- 인증/권한: 없음(permitAll). 공개 Academy(`PUBLISHED && visible=true`)만.
+- 비고: 응답 DTO(`fromPublic`)에 storage key를 싣지 않으므로 **이 경로가 유일한 공개 노출 지점**이다.
+- Response: `200` bytes / 비공개·없음·미등록 `404`.
+
+### ✅ GET /api/tutor/academy/lessons/{lessonId}/hero-image
+
+- 목적: 강사 **빌더 프리뷰**용 히어로 이미지 (`Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`).
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- 비고: 빌더는 아직 발행되지 않은(DRAFT) Academy도 렌더하는데 공개 경로는 발행 상태를 요구해 `404`가 난다. 그래서 소유자 전용 경로를 따로 둔다.
+- Response: `200` bytes / 타 학원·없음·미등록 `404`.
+
+### ✅ POST /api/tutor/academy/media/hero/{slot}
+
+- 목적: Academy 단일 이미지 슬롯 업로드. `slot` = `principal` | `textbook1` | `textbook2` | `textbook3` | `schedule`.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Request: `multipart/form-data`, part 이름 `image`.
+- 비고: 수업상품 대표 이미지와 달리 대상이 Academy 하나로 고정이라 **업로드가 곧 저장**이다(key를 돌려주지 않는다). 저장 위치는 `academies.principal_photo_storage_key` / `textbook_cover1~3_storage_key`(V940) / `schedule_image_storage_key`(V948).
+- `schedule` 슬롯은 히어로가 아니라 `sec-lessons` 하단 개설 시간표(`.lesson-schedule-inner`)의 달력 이미지이며, **이 섹션의 유일한 본문**이다. 원래 수업상품에서 파생하던 행 목록(`.schedule-list`)이 달력형 시간표로 보이지 않는다는 이유로 걷어냈고, 시간표는 원장이 올린 달력 이미지로만 낸다. 슬롯별로 endpoint를 복제하지 않기 위해 히어로와 같은 경로를 쓴다(enum `HeroMediaSlot.SCHEDULE`). 공개 페이지는 이미지가 없으면 **섹션 자체를 렌더하지 않고**(수업상품이 있어도 마찬가지 — 본문 없는 머리말만 남기지 않는다), 빌더는 비어 있어도 업로드용 placeholder를 그린다. 시간표 공개 토글(`is-schedule-hidden`)을 끄면 달력이 숨는다.
+- Response: `204 No Content` / 빈 파일·허용되지 않은 slot `400` / 동시 디코드 한도 초과 `503` / **Academy 미존재 `404`**.
+- ⚠ **발행 전에는 호출하면 안 된다.** `requireMyAcademy`가 Academy row를 요구하므로 발행 전 호출은
+  본문 없는 `404`가 된다. 빌더(`academy_builder.js`)는 로고와 같은 방식으로 파일을 로컬에 보류했다가
+  발행 성공 직후(`flushPendingHeroMedia`) 이 endpoint로 올린다. 미리보기는 그동안 `objectURL`을 쓴다.
+- 관련 코드: `AcademyVideoController.uploadHeroMedia`, `AcademyMediaService.uploadHeroMedia`
+
+### ✅ DELETE /api/tutor/academy/media/hero/{slot}
+
+- 목적: 이미지 슬롯 비우기(`slot` 값은 업로드와 동일). 시안 placeholder로 되돌아간다. `schedule`이면 공개 페이지에서 개설 시간표 섹션이 통째로 사라진다(본문이 달력뿐이라 대체할 내용이 없다).
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- 비고: storage의 실제 파일은 지우지 않고 key만 끊는다(로고 교체와 동일). 발행본이 캐시된 URL을 들고 있을 수 있어 즉시 물리 삭제하지 않는다.
+- Response: `204 No Content`.
+
+### ✅ GET /api/academies/{slug}/hero-media/{slot}
+
+- 목적: 공개 이미지 슬롯 바이트 (`Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`). `slot` = `principal` | `textbook1~3` | `schedule`.
+- 인증/권한: 없음(permitAll). 공개 Academy(`PUBLISHED && visible=true`)만.
+- 비고: `AcademyResponse`에 storage key를 싣지 않으므로 **이 경로가 유일한 공개 노출 지점**이다. 어떤 슬롯이 채워졌는지는 `AcademyResponse.heroMediaSlots`(key 목록)로 알려준다.
+- Response: `200` bytes / 비공개·없음·미등록 `404`.
+
+### ✅ GET /api/tutor/academy/hero-media/{slot}
+
+- 목적: 강사 **빌더 프리뷰**용 이미지 슬롯 바이트 (`Content-Type`은 저장 포맷에 따라 `image/jpeg` / `image/gif` / `image/webp`). `slot` = `principal` | `textbook1~3` | `schedule`.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- 비고: 빌더는 미발행(DRAFT) Academy도 렌더하는데 공개 경로는 발행 상태를 요구해 `404`가 난다. 수업상품 히어로 이미지와 같은 이유의 쌍둥이 경로다. 빌더는 캐시버스팅용 `?v={heroMediaVersion}`을 붙인다.
+- Response: `200` bytes / 미등록 `404`.
+
+### ✅ GET /api/academies/{slug}/videos
+
+- 목적: 공개 페이지 `sec-videos` 섹션 렌더용. `READY` 영상만 최신순 최대 10개. 빈 배열이면 화면은 섹션을 숨기지 않고 준비중 placeholder를 그린다.
+- 인증/권한: 없음(permitAll). 공개 Academy(`PUBLISHED && visible=true`)만.
+- Response: `200` `AcademyVideoResponse[]` / 비공개·없음 `404`.
+- 비고: `AcademyResponse`에 싣지 않고 별도 endpoint로 둔다 — 목록 API(`listPublic`)까지 영상이 딸려가는 N+1을 피하기 위해서다.
+
+### ✅ GET /api/academies/{slug}/videos/{videoId}/stream
+
+- 목적: 현재 활성 소스(RAW 또는 정규화 MP4)를 progressive streaming으로 전달한다.
+- 인증/권한: 없음(permitAll). 공개 Academy의 `READY` 영상만.
+- `Content-Type`은 활성 소스에 저장된 canonical media type을 사용한다. RAW WebM/MOV는 각각 `video/webm`/`video/quicktime`, 정규화본은 `video/mp4`다.
+- local profile은 단일 `Range`를 지원한다. 정상 범위는 `206` + `Content-Range`, 범위 없음은 bounded streaming `200`, 만족 불가능하거나 다중 범위는 `416` + `Content-Range: bytes */{length}`다. 어떤 경우에도 전체 영상을 JVM `byte[]`로 만들지 않는다.
+- S3 profile은 `302`로 TTL 30초 이하의 opaque signed GET에 연결한다. stable 응답과 signed target override 모두 `Cache-Control: no-store`; 브라우저의 `Range`는 redirect target으로 전달된다. TTL은 새 요청 인가 시한이며 이미 S3가 수락한 전송의 중단 시한이 아니다.
+- Response: local `200|206|416`, S3 `302`, 권한/상태/소스 누락 `404`.
+
+### ✅ HEAD /api/academies/{slug}/videos/{videoId}/stream
+
+- 목적: GET과 같은 공개 Academy/`READY` 인가를 적용해 활성 소스의 `Content-Type`, `Content-Length`, `Accept-Ranges: bytes`만 반환한다.
+- 인증/권한: 없음(permitAll).
+- Response: `200` + `Cache-Control: no-store`, body 없음, S3 profile에서도 redirect 없음. 비공개·삭제·누락은 `404`.
+
+### ✅ GET /api/academies/{slug}/videos/{videoId}/thumbnail
+
+- 목적: poster 썸네일 (`Content-Type: image/jpeg`).
+- 인증/권한: 없음(permitAll). `READY` 영상만.
+- Response: `200` bytes / `404`.
+
+### ✅ POST /api/tutor/academy/lessons
+
+- 목적: 기존 클라이언트 호환용 단일 수업 상품 생성. 전용 편집기는 collection endpoint를 사용한다.
+- 인증/권한: `ROLE_TUTOR` + owner guard.
+- Request: `LessonUpsertRequest` (`name`, `description`, `lessonType`, `targetGroup`, `priceAmount`, `priceUnit`, `priceSummary`, `maxCapacity`, `scheduleType`, `weeklyCount`, `weekdays`, `startDate`, `endDate`, `durationWeeks`, `durationMonths`, `scheduleSummary`, `status`). 공개 페이지 문구/theme/creation key는 받지 않는다.
+- Response: 성공 `200 OK`, `LessonResponse`.
+- 관련 코드: `AcademyController.createLesson`, `LessonProductService.create`
+
+### ✅ PUT /api/tutor/academy/lessons/{lessonId}
+
+- 목적: 기존 클라이언트 호환용 단일 수업 상품 수정. 공개 페이지 문구/theme은 보존한다.
+- 인증/권한: `ROLE_TUTOR` + lesson.academy owner guard.
+- Request: `POST /api/tutor/academy/lessons`와 동일한 `LessonUpsertRequest`.
+- Response: 성공 `200 OK`, `LessonResponse`. 실패 404/403 가능.
+- 동시성: 대상 row를 `PESSIMISTIC_WRITE`로 잠그고 실제 작성 상태가 바뀌면 `authoringRevision`을 한 번 증가시킨다.
+- 관련 코드: `AcademyController.updateLesson`, `LessonProductService.update`
+
+### ✅ DELETE /api/tutor/academy/lessons/{lessonId}
+
+- 목적: TUTOR 관리 목록에서 수업을 숨긴다. 물리 삭제가 아니라 `status=HIDDEN`, `isVisible=false`로 변경한다.
+- 인증/권한: `ROLE_TUTOR` + lesson.academy owner guard.
+- Response: 성공 `204 No Content`; 승인 신청/수강생이 있으면 `409 Conflict`; 실패 404/403 가능.
+- 동시성: 대상 row를 `PESSIMISTIC_WRITE`로 잠그며, 처음 HIDDEN으로 전환할 때 `authoringRevision`을 한 번 증가시킨다.
+- 관련 코드: `AcademyController.deleteLesson`, `LessonProductService.hide`
+
+
+## 11. Lesson Search / Application API
+
+학생이 공개 수업을 검색하고 신청/취소하는 marketplace MVP API. 강사 승인/거절, 결제, 채팅, 알림은 없다.
+
+### ✅ GET /api/lessons/search
+
+- 목적: 공개 Academy의 공개 수업 상품 검색.
+- 현재 사용처:
+  - `templates/lesson_search.html`
+  - `static/js/lesson_search.js`
+- 향후 사용 가능성:
+  - React 학생 marketplace 검색 화면
+- 인증/권한: public. `AcademyStatus.PUBLISHED` + `LessonStatus.PUBLISHED`만 반환.
+- Request query parameters: optional
+  - `subjectId` number
+  - `targetGroup` enum — `lesson_products.target_group` 기준으로 필터링
+  - `city` string
+  - `district` string
+  - `lessonType` enum
+  - `weekday` enum
+  - `maxPrice` number
+  - `weeklyCount` number
+- Response: `200 OK`, `LessonSearchResponse[]`
+  - `lessonId`, `lessonName`, `academyName`, `academySlug`, `lessonType`, `targetGroup`, `priceAmount`, `priceUnit`, `priceSummary`, `maxCapacity`, `currentCount`, `remainingCapacity`, `full`, `scheduleType`, `weeklyCount`, `weekdays`, `scheduleSummary`
+- 관련 코드:
+  - `LessonApplicationController.searchLessons`
+  - `LessonApplicationService.search`
+  - `LessonProductRepository.searchPublishedLessons`
+
+### ✅ POST /api/lesson-applications
+
+- 목적: STUDENT가 수업을 신청한다. 정원 여유가 있으면 즉시 `APPROVED`가 되고 conversation이 연결된다.
+- 현재 사용처:
+  - `static/js/lesson_search.js` 신청 버튼 (conversation 선택 모달 → POST)
+  - `static/js/academy_public.js` 수업 카드 신청 버튼
+- 향후 사용 가능성:
+  - React lesson detail 신청 CTA
+- 인증/권한: 인증 필요. STUDENT role만 허용.
+- Request body:
+  ```json
+  {
+    "lessonId": 123,
+    "conversationId": 456
+  }
+  ```
+  - `conversationId`: optional (nullable). null이면 "{수업명} 학습 대화" 제목으로 conversation 자동 생성. 값이 있으면 본인 소유 conversation 검증 후 연결 (다른 학생 conversation 지정 시 403).
+- Response:
+  - 성공: `200 OK`, `LessonApplicationResponse`
+  - 실패: 401/403, 404 공개 수업 없음, 409 이미 신청, 400/500 text 가능
+- 동작:
+  - `lesson_products` row pessimistic lock
+  - 정원 검증 후 `current_count += 1`
+  - conversation 해석: `conversationId` null → 자동 생성, non-null → 소유 검증 후 연결
+  - 기존 `CANCELED` row가 있으면 재활성화 + conversation 연결
+  - 기존 `APPROVED` row가 있으면 중복 신청 거부
+- 관련 코드:
+  - `LessonApplicationController.apply`
+  - `LessonApplicationService.apply`
+  - `LessonApplyRequest`
+
+### ✅ GET /api/lesson-applications/me
+
+- 목적: STUDENT 본인의 수업 신청 목록 조회.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`의 "신청한 수업" 섹션
+- 향후 사용 가능성:
+  - React student dashboard
+- 인증/권한: 인증 필요. STUDENT role만 허용.
+- Response: `200 OK`, `LessonApplicationResponse[]`
+- 관련 코드: `LessonApplicationController.listMine`, `LessonApplicationService.listMine`
+
+### ✅ DELETE /api/lesson-applications/{applicationId}
+
+- 목적: STUDENT가 본인 수업 신청을 취소한다.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js` 신청 취소 버튼
+- 향후 사용 가능성:
+  - React student application management
+- 인증/권한: 인증 필요. 신청 owner STUDENT만 허용.
+- Response:
+  - 성공: `200 OK`, 취소된 `LessonApplicationResponse`
+  - 실패: 401/403/404/409 가능
+- 동작:
+  - `status=CANCELED`, `canceled_at` 세팅
+  - `lesson_products.current_count -= 1`
+  - `conversation_id` 연결은 이력 보존을 위해 유지 (끊지 않음)
+- 관련 코드: `LessonApplicationController.cancel`, `LessonApplicationService.cancel`
+
+### ✅ GET /api/tutor/lesson-applications
+
+- 목적: TUTOR가 본인 Academy/Lesson의 신청/수강생 목록을 조회한다. 승인/거절 버튼은 없다.
+- 현재 사용처:
+  - `static/js/tutor_academy.js` 신청/수강생 목록
+- 향후 사용 가능성:
+  - React tutor CRM/list page
+- 인증/권한: `ROLE_TUTOR`; service는 tutor user id 기준으로 본인 Academy/Lesson 신청만 조회.
+- Response: `200 OK`, `LessonApplicationResponse[]`
+- 관련 코드: `LessonApplicationController.listTutorApplications`, `LessonApplicationService.listTutorApplications`
+
+### ✅ GET /api/tutor/lessons/{lessonId}/applications
+
+- 목적: TUTOR가 특정 수업의 APPROVED 신청자 목록과 연결된 conversation 정보를 조회한다.
+- 현재 사용처:
+  - 🚧 `templates/tutor/lesson_students.html` (Task #6에서 구현 예정)
+- 향후 사용 가능성:
+  - React tutor CRM / 수업별 수강생 관리
+- 인증/권한: `ROLE_TUTOR`. 본인 소유 수업(lesson.academy.tutor == 본인)만 조회 허용, 남의 수업 lessonId → 403.
+- Request:
+  - Path parameters:
+    - `lessonId` number — lesson id.
+- Response:
+  - 성공: `200 OK`, `LessonApplicationResponse[]` (APPROVED 상태만, appliedAt 내림차순)
+  - 실패: 401, 403, 404
+- 관련 코드 (🚧 예정):
+  - `LessonApplicationController.listLessonApplications`
+  - `LessonApplicationService.listLessonApplications`
+  - `LessonApplicationRepository.findApprovedByLessonId`
+
+### LessonApplicationResponse
+
+```json
+{
+  "applicationId": 500,
+  "lessonId": 123,
+  "lessonName": "중3 영어 내신반",
+  "academyId": 40,
+  "academyName": "영어학원",
+  "academySlug": "english-academy",
+  "studentId": 30,
+  "studentName": "학생",
+  "status": "APPROVED",
+  "appliedAt": "2026-06-01T10:00:00",
+  "canceledAt": null,
+  "conversationId": 77,
+  "conversationTitle": "중3 영어 내신반 학습 대화"
+}
+```
+
+> `conversationId` / `conversationTitle`: ✅ `LessonApplicationResponse`에 필드 추가됨. nullable — conversation 미연결 시 null.
+
+## 12. Learning Material API
+
+Phase 2 §5.7 — Admin/TUTOR가 학생에게 PDF 학습자료를 부여하고, 학생이 풀이 결과(이미지/PDF)를 재업로드.
+
+### ✅ POST /api/conversations/{id}/learning-materials
+
+- 목적: ADMIN 또는 TUTOR가 학생에게 학습자료를 부여 (한 대화 컨텍스트 안에서). PDF는 선택 — 없으면 title·description만으로 부여(V13).
+- 현재 사용처:
+  - `static/js/conversation_homework.js`의 [+ 숙제 부여] 모달
+- 향후 사용 가능성:
+  - React Admin/Tutor client
+- 인증/권한: 인증 필요. `verifyAdminOrTutor()` 통과(role) + `verifyOwnsConversation(conv)` 통과(TUTOR면 `lesson_applications.status=APPROVED` 담당 학생만 — V9 이후).
+- Request:
+  - Path parameters:
+    - `id` number — conversation id (부여 컨텍스트).
+  - Multipart form fields:
+    - `file` file **optional** — PDF 1개. 있으면 확장자 검사 (PDF 외 거부). **없으면(빈 파일 포함) `problem_source_id=NULL`로 부여** (V13).
+    - `title` string required — 학생에게 보이는 제목 (비공백, 최대 200자).
+    - `description` string optional — 안내 메시지 (최대 500자).
+- Response:
+  - 성공: `200 OK`. body는 `LearningMaterialResponse`(아래 공통 스키마 참고). PDF 없이 부여 시 `problemSourceId`/`problemFileName`은 `null`, `hasProblemFile=false`.
+  - 실패: 400 text (비-PDF / 공백 title), 401, 403.
+- 동작 변경 (PR1 / V13):
+  - 부여 시 PDF가 있으면 `problem_source`(HOMEWORK_PROBLEM)를 `conversation_sources`에 링크 + `metadata` SourceSummary append → AI Chat이 해당 문제 파일에 접근 가능.
+  - **PDF가 없으면(V13) source 생성/링크를 스킵하고 material만 저장한다.**
+- 관련 코드:
+  - `LearningMaterialController.assign`
+  - `LearningMaterialService.assign`
+  - `LearningMaterialService.linkSourceToConversation`
+
+### ✅ GET /api/learning-materials
+
+- 목적: 학생 본인이 받은 학습자료 목록. ADMIN/TUTOR는 임퍼소네이트.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`의 "받은 학습자료" 섹션
+- 향후 사용 가능성:
+  - React student dashboard
+- 인증/권한: 인증 필요. ADMIN/TUTOR는 `targetStudentId` query로 임퍼소네이트 (TUTOR는 `lesson_applications.status=APPROVED` 담당 학생만 — V9 이후).
+- Request:
+  - Query parameters:
+    - `targetStudentId` optional number — ADMIN/TUTOR 임퍼소네이트용.
+- Response:
+  - 성공: `200 OK`, `LearningMaterialResponse[]` (최신 부여순).
+  - 실패: 401, 403.
+- 관련 코드:
+  - `LearningMaterialController.listForStudent`
+  - `LearningMaterialService.listForStudent`
+
+### ✅ GET /api/conversations/{id}/learning-materials
+
+- 목적: 한 conversation에서 부여된 학습자료 전체 (강사/Admin이 부여 이력 확인용).
+- 현재 사용처:
+  - `static/js/conversation_review.js`의 "부여된 학습자료" 섹션 (TUTOR/ADMIN-as-impersonator만 노출)
+- 향후 사용 가능성:
+  - React conversation review page
+- 인증/권한: 인증 필요. `verifyOwnsConversation`로 본인 대화/ADMIN/매핑 TUTOR만 통과.
+- Request:
+  - Path parameters:
+    - `id` number — conversation id.
+- Response:
+  - 성공: `200 OK`, `LearningMaterialResponse[]` (최신 부여순).
+  - 실패: 401, 403.
+- 관련 코드:
+  - `LearningMaterialController.listForConversation`
+  - `LearningMaterialService.listForConversation`
+
+### ✅ GET /api/learning-materials/{id}/download
+
+- 목적: 문제 PDF 다운로드. attachment 강제.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js` — 학생의 "PDF 받기" 버튼
+  - `static/js/conversation_review.js` — 부여 목록의 "PDF 보기" 링크
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. `verifyOwnsLearningMaterial`로 본인 학생/ADMIN/매핑 TUTOR만 통과.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+- Response:
+  - 성공: `200 OK`, `Content-Type: application/pdf`, body = raw PDF bytes, headers:
+    - `Cache-Control: private, no-store`
+    - `Content-Disposition: attachment; filename="learning-material-{id}.pdf"; filename*=UTF-8''...`
+  - 실패: 401, 403, 400 text 가능. **404 — PDF 없이 부여된 숙제(`problem_source_id=NULL`)는 내려줄 파일이 없어 NOT_FOUND** (V13). 프론트는 `hasProblemFile=false`인 카드에서 다운로드 버튼을 숨기므로 정상 흐름에선 호출되지 않는다.
+- 관련 코드:
+  - `LearningMaterialController.downloadProblem`
+  - `LearningMaterialService.getProblemFileBundle`
+
+### ✅ GET /api/learning-materials/{id}/view
+
+- 목적: 문제 PDF inline 미리보기. 화면(iframe)에 띄워 보기용. `/download`와 같은 bytes·가드지만 `Content-Disposition: inline`.
+- 현재 사용처:
+  - `static/js/conversation_homework.js` — 숙제 카드 클릭 시 문제 PDF 뷰어 모달(`#homeworkPdfModal` iframe)
+- 향후 사용 가능성:
+  - React client (PDF 뷰어 임베드)
+- 인증/권한: 인증 필요. `getProblemFileBundle` → `verifyOwnsLearningMaterial`로 본인 학생/ADMIN/매핑 TUTOR만 통과 (`/download`와 동일 가드).
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+- Response:
+  - 성공: `200 OK`, `Content-Type: application/pdf`, body = raw PDF bytes, headers:
+    - `Cache-Control: private, max-age=300` — inline 미리보기 캐싱. `/download`의 `no-store`와는 **의도적으로 다름** (answer-file inline 미리보기 선례와 일치).
+    - `Content-Disposition: inline; filename="learning-material-{id}.pdf"`
+  - 실패: 401, 403, 400 text 가능 (가드 위반 시). **404 — PDF 없이 부여된 숙제는 NOT_FOUND** (V13, `/download`와 동일). 프론트는 `hasProblemFile=false` 카드에서 뷰어 클릭을 비활성화한다.
+- 관련 코드:
+  - `LearningMaterialController.viewProblem`
+  - `LearningMaterialService.getProblemFileBundle` (재사용)
+
+### ✅ POST /api/learning-materials/{id}/complete
+
+- 목적: 학생이 풀이 결과 파일(이미지/PDF) 업로드. 이미 결과가 있으면 대치 모드(기존 row+storage 모두 정리 후 재INSERT).
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`의 풀이 업로드 모달
+- 향후 사용 가능성:
+  - React client
+- 인증/권한: 인증 필요. STUDENT 본인 또는 ADMIN만 허용. **TUTOR는 차단**. `verifyOwnsLearningMaterial`(조회용 가드) 통과 후 `verifyCanSubmitAnswer` 추가 가드 적용.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+  - Multipart form fields:
+    - `files` file[] required — 1개 이상. 확장자 화이트리스트: PDF / JPG / JPEG / PNG / WebP.
+- Response:
+  - 성공: `200 OK`, 갱신된 `LearningMaterialResponse` (status=`COMPLETED`, answers 채워짐, reviewed=false).
+  - 실패: 400 text (확장자 거부 / 빈 파일 / files 누락 등), 401, 403.
+- 동작 변경 (PR1):
+  - 제출 시 `answer_source`(HOMEWORK_ANSWER)를 `conversation_sources`에 링크 + `metadata` SourceSummary append → AI Chat 접근 가능.
+  - 재제출 시 기존 answer source를 `conversation_sources`에서 먼저 제거(FK-safe) 후 source/storage 삭제. 그 후 신규 answer source를 링크.
+  - 재제출 시 `reviewed=false`, `reviewed_at=NULL`, `reviewed_by=NULL` 리셋 — 강사 확인 재필요 표시.
+  - 제출 가능 role: STUDENT 본인 + ADMIN. TUTOR가 시도하면 403.
+- 동작 변경 (PR2):
+  - 재제출 시 기존 피드백(HOMEWORK_FEEDBACK source)도 stale로 판단해 함께 삭제 — `conversation_sources` 링크 해제 + source/storage 정리. 재제출 후 강사가 피드백을 새로 업로드해야 한다.
+- 관련 코드:
+  - `LearningMaterialController.complete`
+  - `LearningMaterialService.complete`
+  - `LearningMaterialService.verifyCanSubmitAnswer`
+
+### ✅ GET /api/learning-materials/{id}/answers/{aid}/file
+
+- 목적: 풀이 파일 1건의 inline 미리보기.
+- 현재 사용처:
+  - `static/js/stdt_dashboard.js`의 풀이 결과 chip 링크
+  - `static/js/conversation_review.js`의 부여 목록 → 학생 풀이 chip 링크
+- 향후 사용 가능성:
+  - React preview / inline 표시
+- 인증/권한: 인증 필요. `verifyOwnsLearningMaterial` + answer가 material 소속인지 검증.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+    - `aid` number — answer id (`learning_material_answers.answer_id`).
+- Response:
+  - 성공: `200 OK`, `Content-Type`은 원본 확장자로 추론 (`application/pdf` / `image/jpeg` / `image/png` / `image/webp` / `application/octet-stream`). body는 raw bytes.
+    - `Cache-Control: private, max-age=300`
+  - 실패: 401, 403, 400 text 가능.
+- 관련 코드:
+  - `LearningMaterialController.getAnswerFile`
+  - `LearningMaterialService.getAnswerFile`
+
+### ✅ PATCH /api/learning-materials/{id}/reviewed
+
+- 목적: 강사/Admin이 학생 제출물을 확인(채점 완료) 상태로 토글. `reviewed=true`로 세팅하면 확인자(reviewer)와 시각이 기록된다. `reviewed=false`로 세팅하면 확인 기록이 초기화된다.
+- 현재 사용처:
+  - 🚧 프론트 UI는 PR2에서 구현 예정. endpoint는 구현 완료.
+- 향후 사용 가능성:
+  - React 강사용 숙제 확인 UI
+- 인증/권한: 인증 필요. `verifyAdminOrTutor()` + `verifyOwnsLearningMaterial()`(TUTOR는 APPROVED 담당 학생만). 학생 호출 시 403.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+  - JSON body:
+    ```json
+    { "reviewed": true }
+    ```
+    - `reviewed` boolean required — `true`: 확인 완료, `false`: 확인 취소.
+- Response:
+  - 성공: `200 OK`, 갱신된 `LearningMaterialResponse` (reviewed/reviewedAt/reviewedByName 반영).
+  - 실패: 400 text (material 없음 등), 401, 403.
+- 관련 코드:
+  - `LearningMaterialController.setReviewed`
+  - `LearningMaterialController.ReviewedRequest`
+  - `LearningMaterialService.setReviewed`
+
+### ✅ DELETE /api/learning-materials/{id}
+
+- 목적: 학습자료 영구 삭제. cascade로 answers + answer source/storage + material row + problem source/storage 모두 정리.
+- 현재 사용처:
+  - `static/js/conversation_review.js`의 [삭제] 버튼
+- 향후 사용 가능성:
+  - React admin/tutor management UI
+- 인증/권한: 인증 필요. **ADMIN 또는 부여자(`assigned_by`) 본인만** 통과. 다른 TUTOR가 부여한 자료는 못 지움.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+- Response:
+  - 성공: `204 No Content`, body 없음.
+  - 실패: 401, 403 text, 400 text 가능.
+- 동작 변경 (PR1):
+  - 삭제 시 problem source + 모든 answer source를 `conversation_sources`에서 먼저 제거(FK-safe) 후 source/storage 삭제.
+- 동작 변경 (PR2):
+  - 삭제 시 모든 feedback source도 `conversation_sources`에서 링크 제거 + source/storage 삭제. cascade 순서: answers → feedbacks → material row → problem source.
+- 관련 코드:
+  - `LearningMaterialController.delete`
+  - `LearningMaterialService.delete`
+  - `LearningMaterialService.unlinkSourceFromConversation`
+
+### ✅ POST /api/learning-materials/{id}/feedback
+
+- 목적: 강사/Admin이 학생 풀이에 대한 피드백 PDF를 업로드(append). 기존 피드백에 이어 붙이는 방식이며, `conversation_sources`에 편입되어 AI Chat 접근 가능.
+- 현재 사용처:
+  - `static/js/conversation_homework.js` — 숙제 카드의 [피드백 업로드] 버튼
+- 향후 사용 가능성:
+  - React 강사용 숙제 피드백 UI
+- 인증/권한: 인증 필요. `verifyAdminOrTutor()` + `verifyOwnsLearningMaterial()`(TUTOR는 APPROVED 담당 학생만). 학생 호출 시 403.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+  - Multipart form fields:
+    - `files` file[] required — 1개 이상. **PDF만** 허용 (확장자 검사).
+- Response:
+  - 성공: `200 OK`, 갱신된 `LearningMaterialResponse` (feedbacks 채워짐).
+  - 실패: 400 text (비-PDF / 빈 파일 / files 누락 등), 401, 403.
+- 비고:
+  - 학생이 풀이를 재제출(`POST /api/learning-materials/{id}/complete`)하면 기존 피드백이 모두 삭제된다(stale 피드백 정리). 재제출 후 강사가 다시 업로드해야 한다.
+- 관련 코드:
+  - `LearningMaterialController.addFeedback`
+  - `LearningMaterialService.addFeedback`
+
+### ✅ GET /api/learning-materials/{id}/feedback/{fid}/file
+
+- 목적: 피드백 PDF 1건의 inline 미리보기. `GET /api/learning-materials/{id}/answers/{aid}/file`과 동일 패턴.
+- 현재 사용처:
+  - `static/js/conversation_homework.js` — 숙제 카드의 피드백 chip 링크
+  - `static/js/stdt_dashboard.js` — 학생 대시보드의 받은 피드백 chip 링크
+- 향후 사용 가능성:
+  - React preview / inline 표시
+- 인증/권한: 인증 필요. `loadOwned`(`verifyOwnsLearningMaterial`) — 학생 본인 / ADMIN / 매핑 TUTOR 통과. feedback이 해당 material 소속인지 추가 검증.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+    - `fid` number — feedback id (`learning_material_feedbacks.feedback_id`).
+- Response:
+  - 성공: `200 OK`, `Content-Type: application/pdf`. body는 raw bytes.
+    - `Cache-Control: private, max-age=300`
+  - 실패: 401, 403, 400 text (feedback이 다른 material 소속이거나 미존재 시).
+- 관련 코드:
+  - `LearningMaterialController.getFeedbackFile`
+  - `LearningMaterialService.getFeedbackFile`
+
+### ✅ DELETE /api/learning-materials/{id}/feedback/{fid}
+
+- 목적: 피드백 1건 삭제. feedback source를 `conversation_sources`에서 링크 해제 + source/storage 정리 후 갱신된 material 반환.
+- 현재 사용처:
+  - `static/js/conversation_homework.js` — 숙제 카드의 피드백 chip [✕] 버튼 (강사/Admin만 노출)
+- 향후 사용 가능성:
+  - React 강사용 피드백 관리 UI
+- 인증/권한: 인증 필요. `verifyAdminOrTutor()` + `verifyOwnsLearningMaterial()`(TUTOR는 APPROVED 담당 학생만). 학생 호출 시 403.
+- Request:
+  - Path parameters:
+    - `id` number — material id.
+    - `fid` number — feedback id (`learning_material_feedbacks.feedback_id`).
+- Response:
+  - 성공: `200 OK`, 갱신된 `LearningMaterialResponse` (삭제된 feedback 제외).
+  - 실패: 401, 403, 400 text (feedback 미존재 또는 다른 material 소속 시).
+- 관련 코드:
+  - `LearningMaterialController.deleteFeedback`
+  - `LearningMaterialService.deleteFeedback`
+
+### 공통 스키마 — LearningMaterialResponse
+
+```json
+{
+  "materialId": 1,
+  "conversationId": 1,
+  "problemSourceId": 12,
+  "problemFileName": "Unit3-grammar.pdf",
+  "hasProblemFile": true,
+  "title": "Unit 3 — Grammar 보충",
+  "description": "내일까지 풀어와",
+  "status": "ASSIGNED",
+  "assignedAt": "2026-05-24T14:00:00",
+  "completedAt": null,
+  "assignedByUserId": 10,
+  "assignedByName": "강사",
+  "studentId": 200,
+  "studentName": "홍길동",
+  "reviewed": false,
+  "reviewedAt": null,
+  "reviewedByName": null,
+  "answers": [
+    {
+      "answerId": 4001,
+      "sourceId": 9000,
+      "originalFileName": "page1.jpg",
+      "orderNum": 1
+    }
+  ],
+  "feedbacks": [
+    {
+      "feedbackId": 5001,
+      "sourceId": 9001,
+      "originalFileName": "feedback1.pdf",
+      "orderNum": 1
+    }
+  ]
+}
+```
+
+- `status`: `ASSIGNED` 또는 `COMPLETED`.
+- `problemSourceId` / `problemFileName`: 문제 PDF source id / 원본 파일명. **PDF 없이 부여된 숙제(V13)는 둘 다 `null`.**
+- `hasProblemFile`: 문제 PDF 존재 여부 (V13). `false`면 `/view`·`/download`가 404이므로 프론트는 뷰어/다운로드 버튼을 숨기고 `description`을 본문에 노출한다.
+- `answers`: 학생이 풀이 결과를 올리지 않은 상태면 `[]`. COMPLETED면 1개 이상.
+- `feedbacks`: 강사/Admin이 업로드한 피드백 PDF 목록. 없으면 `[]`. 학생이 재제출하면 자동으로 `[]`로 리셋.
+- `reviewed`: 강사/Admin 확인 여부. 기본 `false`. 재제출 시 자동으로 `false` 리셋.
+- `reviewedAt`: 확인 시각 (nullable). `reviewed=false`이면 `null`.
+- `reviewedByName`: 확인한 사용자 이름 (nullable). `reviewed=false`이면 `null`.
+
+## 13. 프론트 잔존 호출 / 현재 미구현 또는 확인 필요 API
+
+다음 endpoint는 template/static JS에서 호출 흔적이 있으나 현재 Controller 목록에는 없다. 코드 변경 시 삭제/구현/문서화 중 하나로 정리해야 한다.
+
+### 🚧 GET /api/users/tutors/{userId}/students
+
+- 현재 사용처: `templates/tutor_dashboard.html` legacy 화면
+- 상태: Controller 없음. 신규 TUTOR 플로우는 `/api/tutor/academy/**`를 사용한다. 학생-강사 매핑/학생 목록은 후속 단계.
+
+### 🚧 POST /api/questions/import-vision
+
+- 현재 사용처: `templates/admin/dashboard.html`
+- 상태: Controller 없음. Admin 시험/문항 import legacy UI 호출로 보이며 현재 MVP 1차 범위와 불일치 가능.
+
+## 14. 조사 근거
+
+### Controller 목록
+
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/admin/controller/AdminController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/conversation/controller/ConversationController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/dashboard/controller/DashboardController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/source/controller/SourceController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/subject/controller/SubjectController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/user/controller/AuthController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/user/controller/UserController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/controller/AcademyController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/learningmaterial/controller/LearningMaterialController.java`
+- `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/lessonapplication/controller/LessonApplicationController.java`
+
+### 주요 프론트 사용처
+
+- `src/main/resources/templates/home.html`
+- `src/main/resources/templates/register.html`
+- `src/main/resources/templates/admin/login.html`
+- `src/main/resources/templates/admin/students.html`
+- `src/main/resources/templates/admin/dashboard.html`
+- `src/main/resources/templates/tutor_dashboard.html`
+- `src/main/resources/templates/tutor_academy.html`
+- `src/main/resources/templates/tutor_academy_setup.html`
+- `src/main/resources/templates/academy_public.html`
+- `src/main/resources/static/js/tutor_academy.js`
+- `src/main/resources/static/js/tutor_academy_setup.js`
+- `src/main/resources/static/js/academy_public.js`
+- `src/main/resources/static/js/stdt_dashboard.js`
+- `src/main/resources/static/js/conversation.js`
+- `src/main/resources/static/js/conversation_upload.js`
+- `src/main/resources/static/js/conversation_dashboard.js`
+- `src/main/resources/static/js/conversation_materials.js`
+- `src/main/resources/static/js/conversation_report.js`
+- `src/main/resources/static/js/exam_review.js`
+- `src/main/resources/static/js/api.js`
+
+### 사용한 확인 명령
+
+```bash
+find src/main/java -name '*Controller.java' -print | sort
+rg -n '@(RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)' src/main/java src/main/resources/templates src/main/resources/static
+rg -n 'fetch\(|axios|\.href|form|action=|/api/' src/main/resources/templates src/main/resources/static -g '*.js' -g '*.html'
+```
+
+
+## Academy Blog API
+
+### ✅ GET /api/tutor/academy/blog-posts
+- 목적: 강사 본인 Academy의 블로그 글 목록 조회
+- 현재 사용처: Thymeleaf SSR / JavaScript fetch
+- 인증/권한: ROLE_TUTOR, 본인 Academy만
+- Response: `AcademyBlogPostResponse[]`
+
+### ✅ POST /api/tutor/academy/blog-posts
+- 목적: Academy 블로그 글 생성
+- 인증/권한: ROLE_TUTOR, 본인 Academy만
+- Request JSON: `title`, `slug`, `summary`, `contentJson`, `contentHtml`, `metaTitle`, `metaDescription`, `status(DRAFT|PUBLISHED)`, `visible`, `sourceIds[]`
+- Response: 생성된 `AcademyBlogPostResponse`
+
+### ✅ GET /api/tutor/academy/blog-posts/{postId}
+- 목적: 강사용 글 수정 화면 데이터 조회
+- 인증/권한: ROLE_TUTOR, 본인 Academy 글만
+- Response: `AcademyBlogPostResponse`
+
+### ✅ PUT /api/tutor/academy/blog-posts/{postId}
+- 목적: Academy 블로그 글 수정
+- 인증/권한: ROLE_TUTOR, 본인 Academy 글만
+- Request JSON: 생성 API와 동일
+- Response: 수정된 `AcademyBlogPostResponse`
+
+### ✅ DELETE /api/tutor/academy/blog-posts/{postId}
+- 목적: Academy 블로그 글 삭제
+- 인증/권한: ROLE_TUTOR, 본인 Academy 글만
+- Response: 204 No Content
+
+### ✅ POST /api/tutor/academy/blog-sources/images
+- 목적: Tiptap 본문 이미지 업로드
+- 인증/권한: ROLE_TUTOR, 본인 Academy만
+- Request: multipart `image`
+- Response: `AcademyBlogSourceResponse` (`sourceId`, `fileUrl`, `contentType`, `fileSize`)
+
+### ✅ GET /api/academy-posts
+- 목적: 공개 Academy 블로그 글 모아보기 목록 조회
+- 인증/권한: public. Academy와 글이 모두 공개 상태여야 함
+- Query: `keyword` optional, `sort=latest|recommended` (기본 latest)
+- 추천순: DB 기반 최근 `app.academy-blog.recommendation-window-days`일 좋아요 수 DESC, 동률 최신순
+- Response: 공개 `AcademyBlogPostResponse[]` (`likeCount`, `recentLikeCount`, `likedByMe`, `likeAllowed`, `likeAllowedUntil` 포함)
+
+### ✅ POST /api/academy-posts/{postId}/like
+- 목적: 공개 Academy 블로그 글 좋아요/추천 토글
+- 인증/권한: 로그인 사용자. 사용자별 글 1회 제한, 다시 누르면 취소
+- 정책: 글 발행 후 `app.academy-blog.like-allowed-days`일(기본 30일)까지만 신규 좋아요/취소 가능
+- Response: 갱신된 `AcademyBlogPostResponse`
+
+### ✅ GET /api/academies/{academySlug}/blog-posts
+- 목적: 공개 Academy 블로그 글 목록 조회
+- 인증/권한: public. Academy와 글이 모두 공개 상태여야 함
+- Response: 공개 `AcademyBlogPostResponse[]`
+
+### ✅ GET /api/academies/{academySlug}/blog-posts/{postSlug}
+- 목적: 공개 Academy 블로그 글 상세 조회
+- 인증/권한: public. Academy와 글이 모두 공개 상태여야 함
+- Response: 공개 `AcademyBlogPostResponse`
+
+### ✅ GET /api/academies/{academySlug}/blog-sources/{sourceId}/file
+- 목적: 블로그 본문 이미지 inline 조회
+- 인증/권한: public 글에 연결된 이미지는 public, 미발행/작성 중 이미지는 소유 TUTOR만
+- Response: `image/jpeg` / `image/gif` / `image/webp` (저장 포맷에 따름) bytes. Content-Type은 업로드 시 `academy_blog_sources.content_type`에 저장된 값을 그대로 쓴다.
+
+### ✅ GET /sitemap.xml / GET /robots.txt
+- 목적: 공개 Academy/블로그 글의 검색엔진 접근성 제공
+- 인증/권한: public
+
+## 15. Lesson Community / Q&A API
+
+Lesson 단위 커뮤니티 MVP. 접근자는 해당 lesson 소유 TUTOR, 해당 lesson APPROVED STUDENT, ADMIN이다.
+
+### ✅ GET /lessons/{lessonId}/community
+- 목적: lesson community Thymeleaf 화면.
+- View: `lesson_community`
+- JS: `static/js/lesson_community.js`
+
+### ✅ GET /api/lessons/{lessonId}/community/context
+- 목적: 화면 초기 컨텍스트(lesson/academy/role/권한) 조회.
+- 인증/권한: lesson participant only.
+
+### ✅ GET /api/lessons/{lessonId}/community/categories
+- 목적: lesson community 커스텀 탭 목록. DB 호환상 endpoint/table 이름은 categories를 유지하되 UI 용어는 “탭”으로 통일한다.
+- 인증/권한: lesson participant only.
+
+### ✅ POST /api/lessons/{lessonId}/community/categories
+- 목적: 강사/Admin이 lesson community 커스텀 탭 생성.
+- 인증/권한: lesson 소유 TUTOR 또는 ADMIN.
+- Request JSON: `{ "name": "숙제방", "sortOrder": 0 }`
+- 기본 탭명(`전체글`, `일반글`, `Q&A`, `공지`)은 커스텀 탭명으로 사용할 수 없다.
+
+### ✅ PUT /api/lessons/{lessonId}/community/categories/{categoryId}
+- 목적: 강사/Admin이 커스텀 탭 이름/정렬 수정.
+- 인증/권한: lesson 소유 TUTOR 또는 ADMIN.
+
+### ✅ DELETE /api/lessons/{lessonId}/community/categories/{categoryId}
+- 목적: 강사/Admin이 커스텀 탭 하드 삭제.
+- 삭제 전 해당 탭의 게시글은 일반글(`categoryId=null`)로 이동한다.
+
+### ✅ GET /api/lessons/{lessonId}/community/posts?tab=&categoryId=
+- 목적: 게시글 목록 + 최신 공지 고정 데이터 조회.
+- `tab`: `all`, `general`, `qna`, `notice`, `custom`
+- 커스텀 탭 조회 시 `tab=custom&categoryId={id}`를 사용한다.
+- Response JSON: `{ "pinnedNotice": LessonCommunityPostSummaryResponse|null, "posts": [...] }`
+- 최신 공지는 `notice` 탭을 제외한 모든 탭 상단에 1건 고정되며, 목록과 중복 반환하지 않는다.
+- Q&A 비공개 글은 작성 학생 + lesson 소유 강사 + ADMIN에게만 반환한다.
+
+### ✅ POST /api/lessons/{lessonId}/community/posts
+- 목적: 게시글 생성.
+- Content-Type: `multipart/form-data`
+- Fields: `postType`, `title`, `content`, `categoryId`, `qnaPublic`, `files` 또는 `files[]`
+- 제한: title 150자, content 5000자, attachments 최대 10개/파일당 10MB 이하.
+- NOTICE는 lesson 소유 TUTOR/ADMIN만 생성 가능.
+
+### ✅ GET /api/community/posts/{postId}
+- 목적: 게시글 상세 + 첨부 + 댓글 조회.
+- 인증/권한: 부모 lesson participant + Q&A private 정책.
+
+### ✅ PUT /api/community/posts/{postId}
+- 목적: 작성자가 자기 글 수정.
+- Request JSON: `LessonCommunityPostRequest`
+- 첨부 수정은 MVP 범위에서 제외.
+
+### ✅ DELETE /api/community/posts/{postId}
+- 목적: 게시글 숨김 처리(`is_visible=false`).
+- 권한: 작성자, lesson 소유 TUTOR, ADMIN.
+
+### ✅ POST /api/community/posts/{postId}/comments
+- 목적: 댓글 생성.
+- Content-Type: `multipart/form-data`
+- Fields: `content`
+- 제한: content 5000자. 댓글 첨부는 MVP 범위에서 비활성화한다.
+
+### ✅ PUT /api/community/comments/{commentId}
+- 목적: 작성자가 자기 댓글 수정.
+
+### ✅ DELETE /api/community/comments/{commentId}
+- 목적: 댓글 숨김 처리(`is_visible=false`).
+- 권한: 작성자, lesson 소유 TUTOR, ADMIN.
+
+### ✅ GET /api/community/attachments/{attachmentId}/file
+- 목적: community 첨부파일 조회. PDF/일반 이미지(svg 제외)는 inline, 그 외 타입은 `application/octet-stream` + attachment로 내려준다.
+- 인증/권한: 부모 글을 읽을 수 있는 사용자. 숨김 댓글의 첨부는 직접 URL 접근도 404.
+
+### ✅ GET /admin/lesson-communities
+- 목적: Admin이 모든 수업 커뮤니티를 검색하고 접근하는 Thymeleaf 화면.
+- View: `admin/lesson_communities`
+- JS: `static/js/admin_lesson_communities.js`
+
+### ✅ GET /api/admin/lesson-communities?keyword=
+- 목적: Admin 수업 커뮤니티 검색. 결과 단위는 lesson community이다.
+- 인증/권한: ADMIN only.
+- 검색 대상: 수업명, 학원명, 강사명, visible 게시글 제목/본문/작성자명.
+- 응답: lesson/academy/tutor 식별자와 공개 상태, 게시글 수, 댓글 수, 최근 게시글 요약.
+- MVP 제한: 최대 100개 표시, 숨김/복구/삭제 작업은 기존 community 상세 화면 정책을 따른다.
+
+## 14. 공개 커뮤니티 Q&A API (`/api/open-community`)
+
+StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)** + 게시판. (V917에서 댓글 폐기 — 답변과 겹침.) 읽기는 비로그인 포함 누구나(anyopen), 작성/답변/좋아요는 로그인, 수정=작성자, 삭제=작성자/Admin soft hide. lesson community와 별개. 본문은 Tiptap(contentJson/contentHtml, sanitize). **게시판 모델(V916)**: `boardType` enum 3종 — `FREE`(자유게시판) / `QNA`(Q&A) / `SUBJECT`(과목, `subjectId`로 `subjects` 동적 참조). `SUBJECT`일 때만 `subjectId` 필수. UI 라벨=`boardLabel`(과목이면 과목 한글명, 아니면 자유게시판/Q&A). 탭=전체/FREE/QNA + `/api/subjects` 동적 과목 탭.
+
+**보안 경계**: `GET /api/open-community/posts`·`/posts/**`·`/images/**`만 permitAll. 나머지(write/answer/like, `/answers/**`)는 `/api/**` catch-all 인증. **404/403**: 숨김/미존재 글·답변에 write/update/delete/like → **404**(존재 누설 금지); visible 대상 wrong-author → **403**. **transitive 가시성**: 답변은 답변·답변의 질문이 모두 visible해야 노출. **keyword 검색은 제목(title)만**(본문 LOB라 검색 제외).
+
+### 질문
+- `GET /posts?boardType=&subjectId=&keyword=&sort=` (공개) — boardType(`FREE`/`QNA`/`SUBJECT`, null=전체), subjectId(`boardType=SUBJECT`일 때만 의미), keyword=제목, sort=latest|recommended(최근 N일 좋아요). 잘못된 boardType 400. → `CommunityPostListResponse[]`(postId, boardType, subjectId, boardLabel, title, author*, createdAt, answerCount, likeCount, likedByMe, likeAllowed).
+- `GET /posts/{postId}` (공개) — 숨김/미존재 404. → `CommunityPostDetailResponse`(boardType, subjectId, boardLabel, title, contentHtml, author*, like*, answers[](answerId, contentHtml, author*, createdAt)).
+- `POST /posts` (인증) — body `{boardType, subjectId, title, contentJson, contentHtml}`. boardType 불가/누락 400, `SUBJECT`인데 subjectId 누락·미존재 과목 400. 응답 상세.
+- `PUT /posts/{postId}` (작성자, 타인 403, 숨김/미존재 404) — body 동일.
+- `DELETE /posts/{postId}` (작성자/Admin soft hide, 204).
+- `POST /posts/{postId}/like` (인증 토글) — 작성 후 N일(`app.community.like-allowed-days`, 기본 30) 경과 400(count 유지), 사용자-질문당 1회(UNIQUE).
+
+### 답변
+- `POST /posts/{postId}/answers` (인증) — 숨김/미존재 질문 404. body `{contentJson, contentHtml}`. 응답 상세.
+- `PUT /answers/{answerId}` (작성자, 숨김 답변/질문 404, 타인 403).
+- `DELETE /answers/{answerId}` (작성자/Admin soft hide, 204).
+
+### 본문 이미지
+- `POST /images` (인증, multipart `image`) — 재인코딩 저장(애니메이션 GIF는 GIF로 프레임 보존, 애니메이션 WebP는 WebP 원본 유지, 그 외는 JPEG) → `{imageId, url}`. 비로그인 401.
+- `GET /images/{imageId}` (공개 serve). Content-Type은 업로드 시 `community_images.content_type`에 저장된 값(`image/jpeg` / `image/gif` / `image/webp`).
+
+- 관련 코드: `CommunityController`, `CommunityService`/`CommunityImageService`, `domain/community/*`(CommunityPost=질문/Answer/CommunityImage, BoardType), `CommunityProperties`(`app.community.*`). 마이그레이션: **`V914`(원본, 불변) + `V915`(Q&A 전환) + `V916`(board_type+subject_id) + `V917`(community_comments DROP — 댓글 폐기)**, 모두 in-place 업그레이드. ※ 적용된 V_파일 재작성 금지, 신규 번호로 추가.
+
+## 16. Landing Video Admin / Public API
+
+관리형 영상은 임의 목록이 아니라 아래 고정 3슬롯이다. 슬롯 생성·삭제·정렬 API는 제공하지 않는다.
+
+- `HERO_BACKGROUND`
+- `ACADEMY_SHORTS_DEMO`
+- `PARENT_REPORT_DEMO`
+
+> ⚠️ 2026-08 Build It 랜딩 개편 이후 `/`가 실제로 쓰는 슬롯은 `ACADEMY_SHORTS_DEMO`(Build It Web 섹션) 하나다.
+> `HERO_BACKGROUND`와 `PARENT_REPORT_DEMO`는 `/admin/landing`에서 여전히 업로드·공개 전환이 가능하지만 랜딩 어디에도 렌더되지 않는다.
+> 슬롯 정리(제거 또는 Build It 섹션 재배치)는 별도 작업으로 남겨둔다 — enum 값 삭제는 기존 `landing_video_slot` row를 고아로 만든다.
+
+### LandingVideoAdminResponse
+
+```json
+{
+  "slot": "HERO_BACKGROUND",
+  "label": "히어로 배경",
+  "description": "랜딩 첫 화면의 자동 재생 배경 영상",
+  "visible": true,
+  "sourceType": "MANAGED",
+  "hasManagedAsset": true,
+  "originalFilename": "hero.mov",
+  "durationSec": 12,
+  "sizeBytes": 8388608,
+  "width": 1280,
+  "height": 720,
+  "previewUrl": "/api/admin/landing/videos/HERO_BACKGROUND/stream",
+  "thumbnailUrl": "/api/admin/landing/videos/HERO_BACKGROUND/thumbnail"
+}
+```
+
+- `sourceType`: `MANAGED`(관리자 업로드) 또는 `BUNDLED`(프로젝트 기본 mp4).
+- 번들 상태는 `hasManagedAsset=false`, 기술 메타데이터와 `thumbnailUrl`이 `null`이며 `previewUrl`은 기존 정적 mp4 경로다.
+- managed 상태의 `previewUrl`/`thumbnailUrl`은 숨김 상태에서도 ADMIN이 확인할 수 있는 보호 endpoint다.
+- 응답에는 `storageKey`, S3 key, 로컬 절대경로를 포함하지 않는다. `visible`은 source 상태와 독립적이다.
+
+### ✅ GET /api/admin/landing/videos
+
+- 목적: 관리자 화면의 고정 3슬롯을 enum 표시 순서대로 조회한다.
+- 현재 사용처: `static/js/admin_landing.js`.
+- 인증/권한: `ROLE_ADMIN` 전용. 비인증 `401`, STUDENT/TUTOR `403`.
+- Response: `200 OK`, `LandingVideoAdminResponse[3]`.
+- 비고: 방어적으로 row가 없으면 공개 상태의 `BUNDLED` 응답을 만든다.
+
+### ✅ PUT /api/admin/landing/videos/{slot}
+
+- 목적: 지정 슬롯의 영상을 교체한다. 동기 ffmpeg 변환이 끝난 뒤 응답한다.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Request: `multipart/form-data`, part 이름 `video`.
+- 서버 검증:
+  - 빈 파일, 업로드 100MiB 초과, 길이가 비정상(`N/A`, non-finite, 0초 이하)이거나 60초 이상,
+    미지원 video codec은 `400`.
+  - 입력 codec: `h264`, `hevc`, `vp8`, `vp9`, `av1`, `mpeg4`.
+  - 정규화된 MP4를 다시 probe해 실제 길이를 같은 규칙으로 검증하며, 이 실제 duration/해상도를 저장한다.
+  - 변환 mp4 30MiB 초과 또는 poster JPEG 2MiB 초과는 저장 전에 `400`.
+- Response: `200 OK`, 교체된 `LandingVideoAdminResponse`.
+- 실패:
+  - 제한 위반·변환 실패 `400` + `{ "message": string }`.
+  - ffmpeg/ffprobe 부재 또는 동시 변환 포화 `503` + `{ "message": string }`.
+  - 유효하지 않은 `{slot}` `400`.
+- 교체 정합성:
+  - 새 mp4/thumbnail 저장 → 슬롯 row lock + `REQUIRES_NEW` DB 원자 교환 → 해당 transaction
+    commit 완료 뒤 이전 파일 best-effort 정리 순서다.
+  - 저장/DB 실패 시 새 파일만 보상 삭제하고 기존 공개본과 `visible` 값을 유지한다.
+  - 숨김 슬롯을 교체해도 자동 공개하지 않는다.
+
+### ✅ PATCH /api/admin/landing/videos/{slot}/visibility
+
+- 목적: asset을 지우지 않고 랜딩 공개/숨김 상태만 변경한다.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Request:
+  ```json
+  { "visible": false }
+  ```
+- `visible`은 non-null 필수값이다. 누락/null 또는 유효하지 않은 `{slot}`은 `400`.
+- Response: `200 OK`, 갱신된 `LandingVideoAdminResponse`.
+- 비고: 다시 공개하면 기존 managed asset을 재사용하고, asset이 없으면 번들 mp4로 복원한다.
+
+### ✅ GET /api/admin/landing/videos/{slot}/stream
+
+- 목적: managed mp4 관리자 미리보기. 숨김 슬롯도 조회할 수 있다.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Response: `200`, `Content-Type: video/mp4`, `Content-Length`, `Cache-Control: no-store`.
+- managed asset이 없으면 `404`; 저장소 읽기/크기 검증 실패 또는 동시 전송 상한 초과는 `503`.
+
+### ✅ GET /api/admin/landing/videos/{slot}/thumbnail
+
+- 목적: managed poster JPEG 관리자 미리보기. 숨김 슬롯도 조회할 수 있다.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Response: `200`, `Content-Type: image/jpeg`, `Content-Length`, `Cache-Control: no-store`.
+- managed thumbnail이 없으면 `404`; 저장소 읽기/2MiB 상한 검증 실패 또는 동시 전송 상한 초과는 `503`.
+
+### ✅ GET /api/landing/videos/{slot}/stream
+
+- 목적: SSR 랜딩이 선택한 공개 managed mp4 proxy stream.
+- 인증/권한: 없음. **GET만** 익명 허용한다.
+- Response: `200`, `Content-Type: video/mp4`, `Content-Length`, `Cache-Control: no-store`.
+- row 없음, 숨김, 번들 상태 또는 managed asset 없음은 `404`.
+- 저장 크기 정보 오류, 실제 바이트 불일치/초과, 저장소 IO 실패 또는 동시 전송 상한 초과는 `503`.
+- 교체 정리와 읽기가 경합하면 DB의 최신 key를 다시 읽고, key가 바뀐 경우에만 한 번 재시도한다. public 재시도 시에도 최신 공개 상태를 다시 검사한다.
+
+### 전송/캐시 제한
+
+- public/admin managed 응답은 `FileStorage.readSingleLimited`로 제한된 전체 바이트를 읽어 전송한다.
+- 기본 상한은 영상 30MiB, thumbnail 2MiB, 랜딩 동시 전송 3개다. permit은 응답 body 쓰기가 끝날 때까지 유지해 영상 retained payload를 대략 90MiB 이하로 묶는다.
+- 현재 HTTP Range를 처리하지 않으며 `206 Partial Content`/`Content-Range`를 제공하지 않는다. 요청은 `200` 전체 응답이다. Range/progressive streaming/CDN은 후속 범위다.
+- 안정 URL이 교체 뒤 같은 경로를 사용하므로 public/admin stream 모두 `Cache-Control: no-store`다.
+
+### 삭제 범위
+
+- `DELETE` endpoint와 물리 삭제 UI는 없다.
+- 운영자는 숨김/복원 또는 교체만 수행한다. 교체 성공 뒤 이전 asset 정리는 내부 best-effort 작업이며, 임의 슬롯 삭제나 변경 이력/복구 기능은 이번 범위가 아니다.
+
+## 17. Beta Comment API (랜딩 베타 의견)
+
+구 랜딩(`/`)의 "베타 서비스에 한마디 남겨주세요" 폼과 "베타 참여자들의 목소리" 캐러셀을 잇던 API다.
+
+> ⚠️ 2026-08 Build It 랜딩 개편으로 **공개 UI가 사라졌다.** `POST /api/beta-comments`와 어드민 모더레이션
+> (`/admin/landing`)은 그대로 살아 있지만, 의견을 남길 화면과 캐러셀을 노출하는 화면이 현재 없다.
+> `LandingPageController`도 `betaCarousel`을 더 이상 주입하지 않는다(`BetaCommentService.renderCarousel()`은 미사용 상태).
+> 다시 노출하려면 Build It 랜딩에 대응 섹션을 새로 배치해야 한다. 상세: [DOMAIN.md §4.40](DOMAIN.md).
+
+`participantType` enum: `ACADEMY_PRINCIPAL` / `ACADEMY_TUTOR` / `STUDY_ROOM` / `TEACHING_ROOM` / `OTHER`.
+`status` enum: `PENDING` / `APPROVED` / `HIDDEN`. 등록은 `APPROVED`로 시작하므로 `PENDING`은 사전 모더레이션을 켠 경우에만 쓰인다.
+`highlightLabel` enum: `NEW` / `REVIEWING` / `APPLYING` / `APPLIED` (null = 뱃지 미노출).
+
+### ✅ POST /api/beta-comments
+
+- 목적: 로그인 사용자가 베타 의견을 등록한다. 결과는 `APPROVED`로 저장되어 **랜딩에 즉시 노출된다**(사전 승인 없음). 사후에 어드민이 숨긴다.
+- 인증/권한: **인증 필수.** `/api/**` catch-all(`.authenticated()`)이 담당하며 permitAll 예외를 두지 않는다. 미로그인 `401`.
+- Request:
+  ```json
+  { "nickname": "민지", "participantType": "STUDY_ROOM", "comment": "상담 신청 알림 기능이 있으면 좋겠어요." }
+  ```
+- 서버 검증 (클라이언트 `maxlength`에 의존하지 않고 `BetaComment` 팩토리가 단일 지점에서 판정):
+  - `nickname` 필수, trim 후 1~12자. 초과/공백만 `400`.
+  - `comment` 필수, trim 후 1~80자. 초과/공백만 `400`.
+  - `participantType` 필수, enum 화이트리스트. 누락/미지원 값 `400`.
+- Response: `201 Created`, 본문 없음. 승인 전에는 노출되지 않으므로 클라이언트는 성공 여부만 알면 된다.
+- 실패: 검증 위반 `400` + **평문 메시지**(JSON 아님 — `GlobalExceptionHandler.handleIllegalArgument`).
+- 등록 횟수 제한 없음. 스팸 게이트는 어드민 모더레이션이 유일하다.
+- 현재 사용처: `static/js/landing_beta_comment.js`. 401/403이면 공통 로그인 모달(`openLoginModal`)을 연다 — `api.js`의 `fetchAuth`는 401에서 `/home`으로 이탈시키므로 이 폼에서는 쓰지 않는다.
+
+### ✅ GET /api/admin/beta-comments
+
+- 목적: 모더레이션 화면의 한 번 조회 분량. 상태별 목록 3개와 현재 랜딩 구간 판단용 수치를 함께 내린다.
+- 인증/권한: `ROLE_ADMIN` 전용 (`/api/admin/**`). 비인증 `401`, STUDENT/TUTOR `403`.
+- Response: `200 OK`
+  ```json
+  {
+    "pending": [ { "id": 12, "nickname": "민지", "participantType": "STUDY_ROOM",
+                   "participantLabel": "공부방 운영", "comment": "…",
+                   "status": "APPROVED", "highlightLabel": null, "highlightText": null,
+                   "createdAt": "2026-07-30T13:20:11" } ],
+    "approved": [],
+    "hidden": [],
+    "approvedCount": 0,
+    "carouselMaxCards": 10,
+    "animationMinCards": 5,
+    "highlightOptions": [ { "value": "NEW", "label": "신규" } ]
+  }
+  ```
+- `approvedCount` / `animationMinCards` / `carouselMaxCards`를 내리는 이유: 승인 건수가 0건 / 1~4건 / 5건 이상에서 랜딩 렌더가 달라지므로 어드민이 현재 어느 구간인지 알아야 한다.
+- `highlightOptions`는 한글 라벨을 서버가 내려 화면에 리터럴이 중복되지 않게 한다.
+- 목록에 상한을 두지 않는다(캐러셀 10건 상한은 공개 렌더에만 적용).
+- 현재 사용처: `static/js/admin_beta_comments.js`.
+
+### ✅ PATCH /api/admin/beta-comments/{id}/status
+
+- 목적: 승인/숨김. 승인한 것만 랜딩에 노출된다.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Request:
+  ```json
+  { "status": "APPROVED" }
+  ```
+- `status`는 non-null 필수. 누락/null `400`.
+- **`PENDING`으로는 되돌릴 수 없다** — 이미 검토한 의견이 미검토 큐로 섞여 들어가는 것을 막는다. 시도하면 `400`.
+- Response: `200 OK`, 갱신된 항목 1건.
+- 실패: 없는 `{id}` `404`.
+
+### ✅ PATCH /api/admin/beta-comments/{id}/highlight
+
+- 목적: 카드 뱃지(`feedback-live`) 지정/해제.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Request:
+  ```json
+  { "highlightLabel": "APPLYING" }
+  ```
+- **`highlightLabel: null`은 유효한 요청이며 뱃지 해제를 뜻한다** — null을 거르면 해제 경로가 사라진다.
+- 미지원 enum 값 `400`, 없는 `{id}` `404`.
+- Response: `200 OK`, 갱신된 항목 1건.
+- 뱃지가 자유 입력이 아니라 고정 4집합인 이유는 뱃지 폭이 카드 레이아웃을 넘기지 않도록 보장하기 위함이다.
+
+### 관련 코드
+
+- `domain/betacomment/` — `BetaCommentController`(공개 등록), `BetaCommentAdminController`, `BetaCommentService`, `BetaComment`, `BetaCommentStatus`/`BetaCommentHighlight`/`BetaParticipantType`, `BetaCommentCarousel`(복제 불변식).
+- 화면: `templates/public/landing.html`(폼 + 캐러셀), `templates/admin/landing.html`(모더레이션 섹션, `/admin/landing`).
+- 마이그레이션: `V939__add_beta_comments.sql`.
+## 18. Problem Generator API (`/problem-generator`, 1단계)
+
+### ✅ SSR 화면 `/problem-generator/**`
+
+- 목적: AI 문제 생성기 7메뉴 스튜디오 목업을 Thymeleaf + vanilla JS로 제공한다.
+- 경로:
+  - `/problem-generator` — 문제 생성기
+  - `/problem-generator/digital-twin` — Digital Twin 자료 업로드
+  - `/problem-generator/questions` — 강사 문제 DB
+  - `/problem-generator/exam` — 내신 실전 제작
+  - `/problem-generator/wrong-notes` — 학생별 오답노트
+  - `/problem-generator/textbooks` — 교과서 DB
+  - `/problem-generator/schools` — 학교별 DB
+- 인증/권한: STUDENT / TUTOR / ADMIN. 비로그인 HTML 요청은 `/?login=required`로 302 리다이렉트한다. 목적지는 비로그인 목적지 통일 원칙대로 `/`를 유지하고, 랜딩(`static/js/landing_buildit.js`)이 `login=required`를 읽어 안내 alert + 공통 로그인 모달을 연 뒤 쿼리 마커를 지운다. 비로그인 JSON 요청은 기존대로 401이다.
+- 비고: 자료 업로드/조회와 Gemini BYO 키 기반 문제 생성 테스트가 실동작한다. Gemini 키는 요청 바디로만 전달하며 서버 DB/설정 파일에 저장하지 않는다.
+
+
+### ✅ POST /api/problem-generator/gemini/generate
+
+- 목적: 브라우저에서 입력한 BYO Gemini API 키로 중등 영어 내신 문제를 생성한다. 브라우저 CORS 회피를 위해 서버가 Google Gemini `generateContent` 호출을 프록시한다.
+- 인증/권한: 인증 필수(STUDENT / TUTOR / ADMIN).
+- 저장 정책: `apiKey`는 요청 처리 중에만 사용하며 DB/로그/설정 파일에 저장하지 않는다. 프론트는 `sessionStorage`에만 보관한다.
+- Request JSON:
+  ```json
+  {
+    "apiKey": "<사용자 BYO Gemini API key>",
+    "grammar": "분사구문, 관계대명사 what",
+    "passage": "새 지문 또는 출제 조건",
+    "count": 3,
+    "difficulty": "학교 평균",
+    "materialTitle": "압구정중 2학년 1학기 기출 분석"
+  }
+  ```
+- 외부 호출: `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, 헤더 `x-goog-api-key`.
+- `materialTitle`은 선택한 Digital Twin 자료명을 생성 프롬프트 컨텍스트로 전달한다. 자료 원문/이미지 bytes는 전송하지 않는다.
+- Response: `200 OK`
+  ```json
+  {
+    "model": "gemini-3.6-flash",
+    "text": "{\"questions\":[...],\"summary\":...}"
+  }
+  ```
+- 실패: 키/프롬프트 누락 `400` 계열, Gemini 인증/모델/쿼터 오류는 `5xx` 응답 메시지로 표시한다.
+
+
+### ✅ Problem Generator 저장 문제 API
+
+#### POST /api/problem-generator/question-sets
+
+- 목적: Gemini 생성 결과를 사용자별 문제 묶음으로 저장한다. 긴 지문은 `passages`, 개별 문항은 기존 `questions(source=GENERATED)`에 저장하고, `problem_generator_question_sets` / `problem_generator_set_questions`가 소유자·묶음·정렬을 관리한다.
+- 인증: `STUDENT` / `TUTOR` / `ADMIN`
+- Request(JSON):
+  - `title` — 저장 묶음 제목(없으면 Gemini summary fallback)
+  - `grammar` — 생성 시 핵심 문법(optional)
+  - `promptPassage` — 생성 시 공유 지문/paragraph(optional, 있으면 `passages`에 1건 저장 후 문항들이 공유)
+  - `model` — 예: `gemini-3.6-flash`
+  - `rawResponseJson` — Gemini 생성 JSON(`questions[]` 필수)
+  - `materialId` — 문제 생성 화면에서 선택한 Digital Twin 자료 ID(optional). 저장 묶음과 자료를 연결한다.
+- Response: `QuestionSetDetailResponse`
+
+#### GET /api/problem-generator/question-sets
+
+- 목적: 내 PRIVATE 문제 묶음 + PUBLIC 문제 묶음을 최신순 조회한다.
+- Query: `page`, `size`
+- Response: Spring `Page<QuestionSetSummaryResponse>`
+
+#### GET /api/problem-generator/question-sets/{setId}
+
+- 목적: 저장 묶음 상세와 포함 문항, 공유 지문 내용을 조회한다.
+- 권한: 소유자, ADMIN, 또는 PUBLIC 묶음.
+
+#### PATCH /api/problem-generator/question-sets/{setId}
+
+- 목적: 묶음 제목/핵심 문법/공유 prompt passage/visibility를 수정한다.
+- 권한: 소유자 또는 ADMIN. `PUBLIC` 전환은 ADMIN만 가능.
+
+#### PATCH /api/problem-generator/question-sets/{setId}/questions/{questionId}
+
+- 목적: 저장된 GENERATED 문항의 발문, 선택지, 정답, 해설, 배점과 공유 지문 내용을 수정한다.
+- Request(JSON): `questionType`, `questionText`, `choices[]`, `correctAnswer`, `explanation`, `questionLabel`, `point`, `passageContent`
+
+#### DELETE /api/problem-generator/question-sets/{setId}
+
+- 목적: 저장 문제 묶음을 삭제한다. 연결된 GENERATED `questions`와 이 묶음에서 만든 `passages`도 함께 정리한다.
+- 권한: 소유자 또는 ADMIN.
+
+### ✅ POST /api/problem-generator/gemini/chat
+
+- 목적: 우측 `박원장 AI` assistant가 브라우저에 임시 저장된 BYO Gemini 키로 작업 컨텍스트 기반 대화를 수행한다.
+- 인증/권한: 인증 필수(STUDENT / TUTOR / ADMIN).
+- 저장 정책: `apiKey`는 요청 처리 중에만 사용하며 DB/로그/설정 파일에 저장하지 않는다. 프론트는 문제 생성기와 동일하게 `sessionStorage`의 `f2r_msc_gemini_key`를 읽는다.
+- Request JSON:
+  ```json
+  {
+    "apiKey": "<사용자 BYO Gemini API key>",
+    "message": "이 지문으로 문법 문제 3개 가능해?",
+    "context": "현재 작업 컨텍스트 문구"
+  }
+  ```
+- Response: `200 OK`
+  ```json
+  { "model": "gemini-3.6-flash", "text": "가능합니다..." }
+  ```
+
+### ✅ POST /api/problem-generator/materials
+
+- 목적: 로그인 사용자가 Digital Twin 개인 자료(PRIVATE)를 업로드한다.
+- 인증/권한: 인증 필수. 업로드 결과는 본인만 조회/삭제 가능하다.
+- Content-Type: `multipart/form-data`
+- Request parts/params:
+  - `files`: 이미지 파일 1~20개. 1단계는 이미지(`image/*`)만 허용한다.
+  - `title`: 필수, trim 후 1~150자.
+- 저장: `UploadedFileIngestor`를 통해 20MB 문서 상한(`UploadSizeGuard`)과 `ImageSanitizer` 정규화(최장변 1600px, GIF/WebP 보존 정책 포함)를 공유한다.
+- Response: `201 Created`, `List<MaterialResponse>`
+  ```json
+  [{
+    "materialId": 1,
+    "title": "압구정중 2학년 기출",
+    "originalFileName": "exam.png",
+    "fileType": "IMAGE",
+    "fileSize": 12345,
+    "visibility": "PRIVATE",
+    "uploadedBy": 10,
+    "pageCount": 1,
+    "createdAt": "2026-08-08T14:00:00"
+  }]
+  ```
+- 실패: 빈 파일/비이미지/제목 오류 `400`, 비로그인 `401`.
+
+### ✅ GET /api/problem-generator/materials
+
+- 목적: 현재 사용자가 접근 가능한 자료 목록을 페이지로 조회한다.
+- 인증/권한: 인증 필수. 결과는 `본인 PRIVATE + 전체 PUBLIC`만 포함한다.
+- Query: `page`, `size` (`Pageable`, 기본 size 20).
+- Response: `200 OK`, Spring `Page<MaterialResponse>` JSON.
+
+### ✅ GET /api/problem-generator/materials/{materialId}/file?page=N
+
+- 목적: 접근 가능한 자료 파일을 inline bytes로 조회한다. PDF 저장 키의 경우 `page`는 1-based 페이지 번호다.
+- 인증/권한: PUBLIC이거나 업로더 본인이거나 ADMIN일 때만 200. 타인 PRIVATE는 403.
+- Response: `200 OK`, 이미지 bytes. 읽기 실패/없는 자료는 404.
+
+### ✅ DELETE /api/problem-generator/materials/{materialId}
+
+- 목적: 자료 row와 storage 객체를 삭제한다.
+- 인증/권한: 업로더 본인 또는 ADMIN. 타인 PRIVATE/PUBLIC 삭제 시도는 403.
+- Response: `204 No Content`. storage 삭제는 best-effort이며, 이미 사라진 객체는 성공으로 간주한다.
+
+### ✅ POST /api/admin/problem-generator/materials
+
+- 목적: ADMIN이 공용(PUBLIC) Digital Twin 자료를 업로드한다.
+- 인증/권한: `ROLE_ADMIN` 전용(`/api/admin/**`). STUDENT/TUTOR는 403.
+- Content-Type / Request / Response: `POST /api/problem-generator/materials`와 동일하되 `visibility=PUBLIC`으로 저장한다.
+
+### ✅ PATCH /api/admin/problem-generator/materials/{materialId}/visibility
+
+- 목적: ADMIN이 자료 공개 범위를 PRIVATE/PUBLIC으로 변경한다.
+- 인증/권한: `ROLE_ADMIN` 전용.
+- Request:
+  ```json
+  { "visibility": "PUBLIC" }
+  ```
+- Response: `200 OK`, 갱신된 `MaterialResponse`. 없는 자료는 404.
+
+### 관련 코드
+
+- `domain/problemgenerator/` — `ProblemGeneratorPageController`, `ProblemGeneratorMaterialController`, `ProblemGeneratorGeminiController`, `ProblemGeneratorMaterialService`, `GeminiProblemGenerationService`, `ProblemGeneratorMaterial`, `MaterialVisibility`.
+- 업로드 공용 컴포넌트: `infrastructure/storage/UploadedFileIngestor`.
+- 화면: `templates/problem-generator/page.html`, `fragments/_problem_generator_shell.html`, `static/js/problem_generator.js`, `static/css/problem_generator.css`.
+- 마이그레이션: `V945__add_problem_generator_materials.sql`.
+
+## 17. BUILD IT CHART
+
+### ✅ GET /chart
+
+- 목적: BuildIt 공개 홈페이지에서 진입하는 지역별 영어 교육자 TOP 100 공개 화면.
+- 현재 사용처: Thymeleaf SSR shell + JavaScript fetch.
+- 인증/권한: public.
+- Response: `templates/public/chart.html`.
+- 데이터: `GET /api/chart/educators`.
+
+### ✅ GET /admin/chart
+
+- 목적: BUILD IT CHART Google Discovery V2 관리자 화면.
+- 현재 사용처: Thymeleaf SSR shell + JavaScript fetch.
+- 인증/권한: `ROLE_ADMIN`.
+- 기능: 검색 설정 수정/기본값 복원, 압구정·신사 V2 검색 실행, 후보 원문 확인, 승인/제외.
+
+### ✅ GET /api/chart/zones
+
+- 목적: 공개/관리 공통 검색권역 목록 조회.
+- 인증/권한: public read.
+- Response: `[{ id, name, searchAreas[], schoolTerms[], allowed }]`.
+
+### ✅ GET /api/chart/educators
+
+- 목적: 공개 BUILD IT CHART 기본 권역(압구정·신사) TOP 100 조회.
+- 인증/권한: public read.
+- Response: `ChartEducatorResponse[]` — rank, 이름, 원장/강사, 소속, 지역, 승인 시각, 원문 활동 링크.
+- 보장: `chart_educators` 승인 row만 반환한다. Google 후보(`chart_candidates`)는 승인 전 공개되지 않는다.
+
+### ✅ GET /api/chart/zones/{zoneId}/educators
+
+- 목적: 특정 권역 공개 TOP 100 조회.
+- 인증/권한: public read.
+- 현재 범위: 데이터 생성은 압구정·신사만 허용. 다른 zone은 빈 목록 가능.
+
+### ✅ GET /api/admin/chart/settings
+
+- 목적: 관리자 검색 설정 조회.
+- 인증/권한: `ROLE_ADMIN`.
+- Response: `{ searchZone, includeActivities, excludedTargets, candidateLimit, deepSearchEnabled, extraInstruction }`.
+
+### ✅ PUT /api/admin/chart/settings
+
+- 목적: 관리자 검색 설정 수정. 코드 수정 없이 검색 지시를 조정한다.
+- 인증/권한: `ROLE_ADMIN`.
+- Request JSON: `searchZone`, `includeActivities`, `excludedTargets`, `candidateLimit`, `deepSearchEnabled`, `extraInstruction`.
+- Response: 갱신된 settings.
+- 검증: `candidateLimit`은 1~10으로 제한, `searchZone`은 지원 zone이어야 한다.
+
+### ✅ POST /api/admin/chart/settings/reset
+
+- 목적: 검색 설정을 압구정·신사 기본값으로 복원.
+- 인증/권한: `ROLE_ADMIN`.
+
+
+### ✅ POST /api/admin/chart/llm-key
+
+- 목적: `/admin/chart`에서 Gemini 또는 ChatGPT(OpenAI) 테스트 키를 서버 메모리에 임시 적용.
+- 인증/권한: `ROLE_ADMIN`.
+- Request JSON: `{ provider: "gemini" | "openai", apiKey: "..." }`.
+- 보안: DB/Git/브라우저 저장소에 저장하지 않고 서버 재시작 시 사라진다. 응답은 설정 여부/출처/provider/model만 반환한다.
+
+### ✅ POST /api/admin/chart/llm-key/clear
+
+- 목적: 서버 메모리 임시 LLM 키 초기화.
+- 인증/권한: `ROLE_ADMIN`.
+
+### ✅ GET /api/admin/chart/candidates?zoneId=apgujeong-sinsa
+
+- 목적: 후보별 이름/역할/소속/지역/발견 콘텐츠/Deep Search/원문 링크/판정/활동 근거 조회.
+- 인증/권한: `ROLE_ADMIN`.
+- Response: `ChartCandidateResponse[]`.
+
+### ✅ POST /api/admin/chart/discovery/run
+
+- 목적: 현재 settings 기준으로 Google Educator Discovery V2 실제 검색 실행.
+- 인증/권한: `ROLE_ADMIN`.
+- 외부 호출: 서버에서만 `GEMINI_API_KEY`/`GEMINI_MODEL` 또는 `OPENAI_API_KEY`/`OPENAI_MODEL` 환경변수를 읽는다. 관리자가 `/admin/chart`에서 Gemini 또는 ChatGPT(OpenAI) 키를 입력하면 서버 메모리 임시 키로 해당 provider를 사용한다. 프론트로 키를 재전달하지 않는다.
+- Timeout: LLM 호출마다 120초.
+- 현재 범위: `apgujeong-sinsa`만 허용. 검색 품질 확인 전 강남구 전체/다른 권역 실행은 400으로 차단.
+- Response: 호출 수, 원천 후보 수, 중복 병합 수, VERIFIED/REVIEW_REQUIRED/제외/저장 수, webSearchQueries, 저장 후보/제외 후보 요약.
+
+### ✅ POST /api/admin/chart/candidates/{candidateId}/approve
+
+- 목적: 후보를 교육자로 승인하고 `chart_educators`에 upsert.
+- 인증/권한: `ROLE_ADMIN`.
+- Response: 갱신 후보.
+- 보장: 이 액션이 공개 Chart 반영의 유일한 경로다.
+
+### ✅ POST /api/admin/chart/candidates/{candidateId}/reject
+
+- 목적: 후보 제외.
+- 인증/권한: `ROLE_ADMIN`.
+- Response: 갱신 후보.

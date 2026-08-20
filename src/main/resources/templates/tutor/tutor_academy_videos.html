@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업 영상 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/tutor_academy_videos.css">
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <div class="brand">수업 영상</div>
+        <p class="muted">학원 공개 페이지의 <strong>수업 영상</strong> 섹션에 노출됩니다.</p>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="/tutor/academy">내 Academy</a>
+        <a class="btn btn-secondary" href="/builder">Academy 수정</a>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>영상 올리기</h2>
+      <p class="muted" id="uploadHint">
+        휴대폰에서 촬영한 MP4 또는 MOV 영상만 올려 주세요.
+        영상은 120초 이하 · 200MiB 이하이며, 학원당 최대 10개까지 보관됩니다.
+      </p>
+      <div class="video-upload-row">
+        <input id="videoInput" type="file" accept=".mp4,.mov,video/mp4,video/quicktime" />
+        <button id="uploadButton" class="btn btn-primary" type="button">업로드</button>
+      </div>
+      <progress id="uploadProgress" class="video-upload-progress hidden" max="100" value="0"></progress>
+      <p id="uploadStatus" class="video-upload-status hidden"></p>
+    </section>
+
+    <section class="card">
+      <div class="topbar">
+        <h2>등록된 영상 <span id="videoCount" class="muted"></span></h2>
+      </div>
+      <div id="videoList" class="video-grid"></div>
+      <p id="emptyState" class="muted hidden">아직 등록된 영상이 없습니다.</p>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/tutor_academy_videos.js"></script>
+</body>
+</html>
