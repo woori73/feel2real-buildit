@@ -3,7 +3,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.s
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,11 +33,8 @@ public class LunaProblemTransformationService {
 
     Map<String, Object> request = Map.of(
         "model", MODEL,
-        "input", List.of(Map.of(
-            "role", "user",
-            "content", List.of(Map.of("type", "input_text", "text", prompt(sourceQuestion, instructions, difficulty, digitalTwinContext))))),
-        "reasoning", Map.of("effort", "low"),
-        "text", Map.of("format", Map.of("type", "json_object")));
+        "input", prompt(sourceQuestion, instructions, difficulty, digitalTwinContext),
+        "reasoning", Map.of("effort", "low"));
 
     try {
       String response = restClient.post()
@@ -57,7 +53,7 @@ public class LunaProblemTransformationService {
   }
 
   private String prompt(String sourceQuestion, String instructions, String difficulty, String digitalTwinContext) {
-    return "너는 BuildIt Wiki의 중학교 영어 내신 문제 변형 전문가다. 반드시 JSON만 반환한다.\n"
+    return "너는 BuildIt Wiki의 중학교 영어 내신 문제 변형 전문가다. 반드시 유효한 JSON 객체만 반환하고 마크다운 코드블록은 사용하지 않는다.\n"
         + "schema: {questions:[{type,level,score,stem,choices,answer,explanation}], summary}.\n"
         + "원문 문제의 학습목표와 정답 논리는 유지하되 문장, 선택지, 함정, 난이도를 새롭게 구성한다.\n"
         + "Digital Twin 맥락이 있으면 해당 학교 출제 특성을 우선 반영한다.\n\n"
@@ -81,12 +77,20 @@ public class LunaProblemTransformationService {
         if (!content.isArray()) continue;
         for (JsonNode part : content) {
           if ("output_text".equals(part.path("type").asText()) && !part.path("text").asText("").isBlank()) {
-            return part.path("text").asText();
+            return stripCodeFence(part.path("text").asText());
           }
         }
       }
     }
     throw new IllegalStateException("OpenAI 응답에서 변형 결과를 찾지 못했습니다.");
+  }
+
+  private String stripCodeFence(String text) {
+    String value = text == null ? "" : text.trim();
+    if (value.startsWith("```")) {
+      value = value.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "").trim();
+    }
+    return value;
   }
 
   private String apiError(HttpStatusCodeException exception) {
