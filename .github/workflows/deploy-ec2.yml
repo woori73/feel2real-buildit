@@ -30,6 +30,12 @@ jobs:
           base64 -d wiki-source.tgz.b64 > /tmp/wiki-source.tgz
           tar -xzf /tmp/wiki-source.tgz -C /tmp/buildit-wiki
           cd /tmp/buildit-wiki
+          # The uploaded archive had been repacked with an old API path.
+          # Restore the original Wiki behavior: Vite BASE_URL + api/.
+          cat > src/lib/api.ts <<'EOF'
+          export const api = (path: string, init?: RequestInit) =>
+            fetch(import.meta.env.BASE_URL + 'api/' + path.replace(/^\/+/, ''), init)
+          EOF
           npm ci
           npm run build -- --base=/problem-generator/wiki/
           cd "$GITHUB_WORKSPACE"
