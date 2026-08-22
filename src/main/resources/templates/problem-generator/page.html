@@ -30,14 +30,13 @@
           <div class="settings-group"><div class="settings-title">🏫 학교 · 학년 · 시험 선택</div><div class="preset-row"><select id="pgMaterialSelect" class="select-input" aria-label="Digital Twin 자료" data-testid="select-digital-twin"><option value="">업로드된 학교 없음</option></select><select id="pgGradeSelect" class="select-input" aria-label="학년"><option>중1</option><option>중2</option><option>중3</option></select></div><div class="preset-row"><select id="pgExamSelect" class="select-input" aria-label="시험"><option>1학기 중간</option><option>1학기 기말</option><option>2학기 중간</option><option>2학기 기말</option></select><a class="btn-ghost upload-link" href="/problem-generator/digital-twin">+ 새 학교 Digital Twin 업로드</a></div><div class="apikey-hint"><span id="pgMaterialHint">업로드한 Digital Twin 자료를 선택하면 생성/저장에 연결됩니다.</span></div></div>
           <div class="mode-tabs" role="tablist"><button class="mode-tab active" type="button" data-action="mock">🆕 신규 문제 생성</button><button class="mode-tab" type="button" data-action="mock">♻️ 기존 문제 변형</button></div>
           <div class="mode-panel">
-            <div class="panel-intro"><b>핵심 문법</b>과 <b>새 지문</b>을 입력하면 Gemini API가 선택한 학교 출제 DNA를 적용해 문항을 분할 생성합니다.</div>
-            <div class="field-group" data-testid="api-key-card"><div class="field-label-row"><label class="field-label" for="pgApiKey">🔑 Gemini API 키 <span class="req">*</span></label></div><div class="apikey-row"><input id="pgApiKey" class="text-input" type="password" placeholder="AIza... 또는 AQ...." data-testid="input-api-key"><button class="btn-ghost apikey-toggle" type="button" id="toggleGeminiKey" data-testid="btn-open-api-settings" title="키 표시/숨기기">👁️</button><button class="visually-hidden" id="saveGeminiKey" type="button" data-testid="btn-save-api-key">키 저장</button></div><div class="apikey-hint"><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>에서 무료 발급 · 이 브라우저에만 저장됩니다.</div></div>
+            <div class="panel-intro"><b>핵심 문법</b>과 <b>새 지문</b>을 입력하면 n8n 문제 생성 워크플로우가 선택한 학교 출제 DNA를 적용해 문항을 분할 생성합니다.</div>
             <div class="field-group"><div class="field-label-row"><label class="field-label">📘 이번 시험 범위 핵심 문법 <span class="req">*</span></label></div><textarea id="pgGrammar" class="textarea-input" rows="3" placeholder="예: 분사구문(현재분사/과거분사), 관계대명사 what, 주요 회화 표현 등" data-testid="textarea-generation-prompt"></textarea></div><div class="field-group"><div class="field-label-row"><label class="field-label">📖 새로운 지문/출제 조건 <span class="req">*</span></label></div><textarea id="pgPassage" class="textarea-input" rows="5" placeholder="생성할 영어 지문, 대화문, 또는 테스트 문장을 붙여넣으세요."></textarea></div>
             <div class="settings-group"><div class="settings-title">🧮 문항 구성</div><div class="count-grid"><select id="pgCount" class="select-input"><option value="3">3문항 테스트</option><option value="5">5문항</option><option value="10">10문항</option></select><select id="pgDifficulty" class="select-input"><option>학교 평균</option><option>쉬움</option><option>어려움</option></select></div><div class="count-info">객관식 8문항 · 서답형 2문항 · 총 30점 구성을 기본으로 준비합니다.</div></div>
             <button id="generateGeminiQuestions" class="btn-primary" type="button" data-testid="btn-generate-questions">🚀 Gemini로 문제 생성 테스트</button><div id="generationStatus" class="generation-status" role="status"></div>
           </div>
         </aside>
-        <section id="generationOutput" class="output-panel" data-testid="panel-output"><div class="empty-state"><div class="empty-icon">🌊</div><div class="empty-title">아직 생성된 시험지가 없습니다</div><div class="empty-desc">왼쪽에서 학교를 선택하고 API 키·핵심 문법·새 지문을 입력한 뒤<br>생성 버튼을 누르면 여기에 시험지가 나타납니다.</div></div></section>
+        <section id="generationOutput" class="output-panel" data-testid="panel-output"><div class="empty-state"><div class="empty-icon">🌊</div><div class="empty-title">아직 생성된 시험지가 없습니다</div><div class="empty-desc">왼쪽에서 학교를 선택하고 핵심 문법·새 지문을 입력한 뒤<br>생성 버튼을 누르면 여기에 시험지가 나타납니다.</div></div></section>
       </div>
     </section>
 
@@ -69,6 +68,6 @@
   <select data-testid="select-type-filter" tabindex="-1"><option>전체 유형</option></select>
   <button type="button" data-action="mock" data-testid="btn-export" tabindex="-1">내보내기</button>
 </div>
-<script src="/js/problem_generator.js?v=20260809-1542"></script>
+<script src="/js/problem_generator.js?v=20260822-1000"></script>
 </body>
 </html>

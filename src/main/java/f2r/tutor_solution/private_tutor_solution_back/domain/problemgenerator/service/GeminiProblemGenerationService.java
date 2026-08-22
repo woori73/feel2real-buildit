@@ -23,25 +23,6 @@ public class GeminiProblemGenerationService {
     this.restClient = RestClient.builder().baseUrl("https://generativelanguage.googleapis.com").build();
   }
 
-  public String generate(String apiKey, String grammar, String passage, int count, String difficulty, String materialTitle) {
-    String resolvedApiKey = resolveApiKey(apiKey);
-    if ((grammar == null || grammar.isBlank()) && (passage == null || passage.isBlank())) {
-      throw new IllegalArgumentException("핵심 문법 또는 새 지문을 입력해 주세요.");
-    }
-    Map<String, Object> request = Map.of(
-        "systemInstruction", Map.of("parts", List.of(Map.of("text", systemInstruction()))),
-        "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt(grammar, passage, count, difficulty, materialTitle))))),
-        "generationConfig", Map.of("temperature", 0.35, "responseMimeType", "application/json"));
-    try {
-      String response = restClient.post().uri("/v1beta/models/{model}:generateContent", MODEL)
-          .header("x-goog-api-key", resolvedApiKey).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-          .body(request).retrieve().body(String.class);
-      return extractText(parseResponse(response));
-    } catch (HttpStatusCodeException exception) {
-      throw new IllegalStateException("Gemini API 호출 실패: HTTP " + exception.getStatusCode().value() + geminiErrorMessage(exception));
-    }
-  }
-
   public String chat(String apiKey, String message, String context) {
     String resolvedApiKey = resolveApiKey(apiKey);
     if (message == null || message.isBlank()) throw new IllegalArgumentException("질문을 입력해 주세요.");
@@ -94,17 +75,6 @@ public class GeminiProblemGenerationService {
 
   private String assistantInstruction() {
     return "너는 박원장 AI라는 중등 영어 내신 문제 제작 보조자다. 답변은 한국어로 짧고 실무적으로 한다. 출제 유형, 난이도, 문항 구성, 지문 개선, 채점 기준을 도와준다. API 키나 민감정보를 반복 출력하지 않는다.";
-  }
-
-  private String systemInstruction() {
-    return "너는 중학교 내신 영어 출제자다. 반드시 JSON만 반환한다. schema: {questions:[{type,level,score,stem,choices,answer,explanation}], summary}. 한국어 발문과 해설을 쓰고, choices는 객관식일 때 5개로 작성한다.";
-  }
-
-  private String userPrompt(String grammar, String passage, int count, String difficulty, String materialTitle) {
-    return "중등 영어 내신 문제를 생성해 주세요.\n문항 수: " + Math.max(1, Math.min(count, 10))
-        + "\n난이도: " + (difficulty == null || difficulty.isBlank() ? "학교 평균" : difficulty)
-        + "\n선택 Digital Twin 자료: " + (materialTitle == null || materialTitle.isBlank() ? "미선택" : materialTitle.trim())
-        + "\n핵심 문법:\n" + nullToBlank(grammar) + "\n\n새 지문/출제 조건:\n" + nullToBlank(passage) + "\n";
   }
 
   private String nullToBlank(String value) { return value == null ? "" : value; }

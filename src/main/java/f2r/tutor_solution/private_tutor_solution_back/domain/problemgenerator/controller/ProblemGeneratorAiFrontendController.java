@@ -30,6 +30,7 @@ public class ProblemGeneratorAiFrontendController {
         function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]})}
         function status(msg,bad){var el=$('#generationStatus');if(el){el.textContent=msg||'';el.style.color=bad?'#b42318':'#067647'}}
         function selectedTwin(){var s=$('#pgMaterialSelect');return s&&s.selectedIndex>=0?s.options[s.selectedIndex].text:''}
+        function selectedValue(sel){var el=$(sel);return el?el.value||'':''}
         function render(text,model){
           var out=$('#generationOutput');if(!out)return;var p=null;try{p=JSON.parse(text)}catch(e){}
           var title=(mode==='transform'?'Luna 변형 결과':'Gemini 생성 결과')+' · '+esc(model||'AI');
@@ -71,7 +72,7 @@ public class ProblemGeneratorAiFrontendController {
           try{
             var url,payload;
             if(mode==='transform'){url='/api/problem-generator/luna/transform';payload={sourceQuestion:passage,instructions:grammar,difficulty:difficulty,digitalTwinContext:twin}}
-            else {url='/api/problem-generator/gemini/generate';payload={apiKey:'',grammar:grammar,passage:passage,count:count,difficulty:difficulty,materialTitle:twin}}
+            else {url='/api/problem-generator/gemini/generate';payload={school:twin,grade:selectedValue('#pgGradeSelect'),exam:selectedValue('#pgExamSelect'),grammar:grammar,passage:passage,count:count,difficulty:difficulty}}
             var r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});var raw=await r.text(),body=null;try{body=raw?JSON.parse(raw):null}catch(e){}
             if(!r.ok)throw new Error(body&&body.detail?body.detail:(raw||'AI 호출 실패'));
             lastAiResult=body;render(body.text,body.model);status((mode==='transform'?'변형':'생성')+' 완료',false);
