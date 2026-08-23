@@ -2,7 +2,7 @@ import type { Page } from '../App'
 
 type Props = {
   onNavigate: (page: Page) => void
-  onCommand: (command: string) => void
+  onCommand?: (command: string) => void
 }
 
 const actions: { label: string; detail: string; page: Page; command?: string }[] = [
@@ -13,8 +13,9 @@ const actions: { label: string; detail: string; page: Page; command?: string }[]
 ]
 
 export default function EducatorState({ onNavigate, onCommand }: Props) {
+  const command = (text: string) => onCommand?.(text)
   const run = (item: (typeof actions)[number]) => {
-    if (item.command) onCommand(item.command)
+    if (item.command) command(item.command)
     onNavigate(item.page)
   }
 
@@ -44,9 +45,9 @@ export default function EducatorState({ onNavigate, onCommand }: Props) {
     <div className="state-command">
       <p>BuildIt Assistant에게 바로 말하기</p>
       <div>
-        <button onClick={() => onCommand('신구중 2학년 중간고사 문제 만들어줘')}>시험 문제 만들어줘</button>
-        <button onClick={() => onCommand('이 학교 프린트를 수업자료로 만들어줘')}>프린트 수업자료로 만들어줘</button>
-        <button onClick={() => onCommand('이 외부 지문을 어휘·구문·지문정리까지 만들어줘')}>지문 정리해줘</button>
+        <button onClick={() => command('신구중 2학년 중간고사 문제 만들어줘')}>시험 문제 만들어줘</button>
+        <button onClick={() => command('이 학교 프린트를 수업자료로 만들어줘')}>프린트 수업자료로 만들어줘</button>
+        <button onClick={() => command('이 외부 지문을 어휘·구문·지문정리까지 만들어줘')}>지문 정리해줘</button>
       </div>
     </div>
   </section>
