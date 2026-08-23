@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import tempfile
@@ -85,7 +86,7 @@ class SchoolHierarchyTest(unittest.TestCase):
                 ('생성연결중', '중3', '2학기 기말', '{"school":"과거값","dna":"학교 DNA","types":[],"rules":[]}', 2, now, now),
             )
             twin_id = cursor.lastrowid
-        ai_response = '{"mcQuestions":[{"questionType":"grammar","stem":"문제","options":["A","B"],"answer":[0]}],"saQuestions":[]}'
+        ai_response = '{"mcQuestions":[{"questionType":"grammar","sourceText":"Passage","stem":"문제","options":["A","B","C","D","E"],"answer":[1],"multi":false,"score":2}],"saQuestions":[]}'
         with patch.object(main.pl, 'call_gemini_structured', return_value=ai_response) as ai:
             result = main.generate_questions(main.NewQuestionRequest(
                 api_key='test-key', twin_id=twin_id, school='다른학교', grade='중1', exam='다른시험',
@@ -96,8 +97,33 @@ class SchoolHierarchyTest(unittest.TestCase):
         self.assertEqual('생성연결중', result['twin']['school'])
         self.assertIn('생성연결중', ai.call_args.args[1])
         with main.get_db() as conn:
-            saved = conn.execute('SELECT twin_id, school, grade, exam FROM generated_questions').fetchone()
-        self.assertEqual((twin_id, '생성연결중', '중3', '2학기 기말'), tuple(saved))
+            saved = conn.execute('SELECT twin_id, school, grade, exam, raw_json FROM generated_questions').fetchone()
+        self.assertEqual((twin_id, '생성연결중', '중3', '2학기 기말'), tuple(saved)[:4])
+        self.assertEqual('Grammar', json.loads(saved['raw_json'])['grammarFocus'])
+
+    def test_incomplete_short_answer_retries_once_then_saves_nothing(self):
+        with main.get_db() as conn:
+            now = '2026.08.24 12:00'
+            cursor = conn.execute(
+                "INSERT INTO digital_twin_profiles (school, grade, exam, profile_json, version, is_active, created_at, updated_at) VALUES (?,?,?,?,?,1,?,?)",
+                ('압구정중', '중3', '기말고사', '{"types":[{"name":"서술형"}]}', 1, now, now),
+            )
+            twin_id = cursor.lastrowid
+        incomplete = json.dumps({'mcQuestions': [], 'saQuestions': [{
+            'questionType': 'writing', 'sourceText': 'Passage', 'stem': '7개 단어로 영작하시오.',
+            'conditions': ['7개 단어'], 'answerFormat': '완전한 문장',
+            'acceptedAnswers': ['He wanted to teach in Korean because'],
+            'sampleAnswer': 'He wanted to teach in Korean because...', 'gradingRule': '조건 충족', 'score': 5,
+        }]})
+        with patch.object(main.pl, 'call_gemini_structured', return_value=incomplete) as ai:
+            with self.assertRaises(main.HTTPException) as raised:
+                main.generate_questions(main.NewQuestionRequest(
+                    api_key='test-key', twin_id=twin_id, passage='Passage', grammar='가정법', count=1,
+                ))
+        self.assertEqual(2, ai.call_count)
+        self.assertEqual(502, raised.exception.status_code)
+        with main.get_db() as conn:
+            self.assertEqual(0, conn.execute('SELECT COUNT(*) FROM generated_questions').fetchone()[0])
 
 
 if __name__ == '__main__':

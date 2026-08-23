@@ -140,6 +140,7 @@ def build_new_rules(twin: dict, ctx: dict) -> str:
         "[삽입·순서 수능형] 문장 삽입 또는 글의 순서 유형은 sourceText에 충분한 길이의 영어 지문을 반드시 제공한다. 삽입 문제는 발문과 삽입할 문장을 stem 맨 위에 함께 제시하고, 그 아래 sourceText 지문 문장 사이에 ① ② ③ ④ ⑤를 직접 표시한다. 순서 문제는 발문을 먼저 제시하고, 주어진 도입문 다음에 (A), (B), (C)를 각각 반드시 새 줄의 가장 왼쪽에서 시작하게 한다. 각 문단은 줄바꿈으로 분리하며 선택지는 실제 배열 조합으로 만든다.",
         "[객관식 공통] 모든 stem은 한국어 시험지 문체이고 영어 보기와 인용은 영어로 작성한다. 일반 객관식은 options 5개, 단어·구 밑줄 번호형만 options 빈 배열이다.",
         "[통제형 서답형] 자유 감상·자유 요약처럼 채점 기준이 흔들리는 문항은 금지한다. 정확한 단어/구 찾기, 빈칸 완성, 주어진 어구 배열, 오류 수정, 시작어·끝어 고정 문장전환, 필수어와 정확한 단어 수가 지정된 영작 중 하나로 만든다. 정답이 1개 또는 허용 가능한 소수 표현으로 확정되어야 한다.",
+        "[서답형 완결성] sampleAnswer와 acceptedAnswers의 모든 답은 생략부호 없이 의미가 완결된 문장이어야 한다. because/although/if/when/that 같은 접속사로 끝내지 말고, 발문의 필수 단어·단어 수·시작어·끝어 조건을 모두 충족한다.",
         "[서답형 필드] sourceText에는 풀이에 필요한 영어 문장·대화문·지문을 넣는다. answerFormat에는 답안 형태와 칸 수 또는 시작어를 명시한다. acceptedAnswers에는 정답으로 인정할 표현을 배열로 넣는다. gradingRule에는 대소문자·철자·문장부호·필수 문법 등 명확한 채점 기준을 쓴다.",
     ]
     if twin.get('rules'):
@@ -265,7 +266,7 @@ class GeminiCallError(Exception):
         self.http_status = http_status
 
 
-def call_gemini_structured(key: str, rules: str, user_msg: str, schema: dict, temperature: float = 0.75) -> str:
+def call_gemini_structured(key: str, rules: str, user_msg: str, schema: dict, temperature: float = 0.35) -> str:
     """원본 callGemini(key, rules, userMsg, sc) 이식: 모델 폴백 체인 + 429 재시도."""
     last_err = None
     for model in MODEL_CANDIDATES:
@@ -402,6 +403,53 @@ def prepare_question(q: dict) -> dict:
         q['stem'] = '다음 중 위 글의 네 단어의 영영풀이로 적절하지 않은 것을 고르시오.'
         q['sourceText'] = ''
     return q
+
+
+def question_quality_issues(q: dict) -> list[str]:
+    """무료 모델 응답도 시험지에 저장하기 전에 구조 불변식을 통과시킨다."""
+    issues: list[str] = []
+    qtype = str(q.get('questionType') or '')
+    stem = str(q.get('stem') or '')
+    source = normalize_underline_markup(q.get('sourceText') or '')
+    options = q.get('options') or []
+    answers = q.get('answer') or []
+    if q.get('type') == 'sa':
+        candidates = [str(q.get('sampleAnswer') or '').strip(), *[str(item).strip() for item in (q.get('acceptedAnswers') or [])]]
+        candidates = [item for item in candidates if item]
+        if not candidates:
+            issues.append('서답형 모범답안이 필요함')
+        incomplete_ending = re.compile(r'(?:\.\.\.|…|\b(?:because|although|though|if|when|while|unless|since|that|and|but|or))\s*[.!?]*$', re.I)
+        if any(incomplete_ending.search(item) for item in candidates):
+            issues.append('서답형 답안은 생략부호나 끝에 남은 접속사 없이 완결되어야 함')
+        word_count_match = re.search(r'(\d+)\s*(?:개\s*)?단어', ' '.join([stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')]))
+        if word_count_match and any(len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", item)) != int(word_count_match.group(1)) for item in candidates):
+            issues.append(f'서답형 답안은 제시된 {word_count_match.group(1)}단어 조건을 충족해야 함')
+    if q.get('type') == 'mc':
+        inline = is_inline_underline({**q, 'sourceText': source})
+        if inline:
+            spans = re.findall(r'\[\[u\]\]([\s\S]*?)\[\[/u\]\]', source)
+            if len(spans) != 5:
+                issues.append('밑줄 번호형은 정확히 5개 밑줄이 필요함')
+            if any(not span.strip() or len(span.split()) > 6 or '\n' in span for span in spans):
+                issues.append('밑줄은 줄바꿈 없는 1~6단어의 짧은 어구여야 함')
+            if options:
+                issues.append('밑줄 번호형 options는 비어 있어야 함')
+        elif len(options) != 5:
+            issues.append('일반 객관식은 선택지 5개가 필요함')
+        if any(not isinstance(answer, int) or answer < 1 or answer > 5 for answer in answers):
+            issues.append('객관식 정답 번호는 1~5여야 함')
+    if re.search(r'sequence', qtype, re.IGNORECASE) or re.search(r'이어질 순서|올바른 순서', stem):
+        if not all(re.search(rf'(?m)^\({mark}\)\s+', source) for mark in 'ABC'):
+            issues.append('순서형은 새 줄에서 시작하는 (A), (B), (C) 문단이 모두 필요함')
+        if len(options) != 5:
+            issues.append('순서형은 배열 조합 선택지 5개가 필요함')
+    if source.count('[[u]]') != source.count('[[/u]]'):
+        issues.append('밑줄 마크업의 시작과 끝이 맞지 않음')
+    return issues
+
+
+def batch_quality_issues(questions: list[dict]) -> list[str]:
+    return [f"{index + 1}번: {issue}" for index, question in enumerate(questions) for issue in question_quality_issues(question)]
 
 
 def repair_transform_question(q: dict) -> dict:

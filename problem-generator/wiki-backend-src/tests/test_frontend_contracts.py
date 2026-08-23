@@ -33,9 +33,12 @@ class FrontendContractTest(unittest.TestCase):
 
     def test_generator_uses_api_exam_values_and_selected_twin_id(self):
         source = (ROOT / 'components' / 'MiddleSchoolExamGenerator.tsx').read_text(encoding='utf-8')
-        self.assertIn("const [exam,setExam]=useState('')", source)
+        self.assertIn("const [exam,setExam]=useState(context.exam||'')", source)
         self.assertIn("setExam(exams[0]?.exam || '')", source)
         self.assertIn('twin_id:profile?.id', source)
+        self.assertIn('시험 범위 주요 문법 사항', source)
+        self.assertIn('grammar:grammarFocus.trim()', source)
+        self.assertIn('setSelectedTypes(matched)', source)
 
     def test_wiki_client_uses_only_spring_proxy_prefix(self):
         source = (ROOT / 'lib' / 'api.ts').read_text(encoding='utf-8')
