@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react'
 import MiddleSchoolExamGenerator from './components/MiddleSchoolExamGenerator'
 import StudentWrongNoteDashboard from './components/StudentWrongNoteDashboard'
@@ -55,6 +54,7 @@ export default function App() {
   const [savingExam, setSavingExam] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [assistantInput, setAssistantInput] = useState('')
+  const [assistantReply, setAssistantReply] = useState<{ text: string; page: Page; action: string } | null>(null)
   const [apiSettings, setApiSettings] = useState<ApiSettings | null>(() => { try { const saved = JSON.parse(sessionStorage.getItem('f2r_api_settings') || '{}') as Partial<ApiSettings>; return saved.provider && (saved.geminiKey || saved.openaiKey) ? { provider: saved.provider, geminiKey: saved.geminiKey || '', openaiKey: saved.openaiKey || '' } : null } catch { return null } })
   const draftLoaded = useRef(false)
   const refreshQuestions = () => { fetchQuestions().then(setQuestions).catch(() => undefined) }
@@ -75,16 +75,26 @@ export default function App() {
     const command = raw.trim()
     if (!command) return
     const route: Page = /오답|학생/.test(command) ? 'wrongnote' : /인사이트|수업 기록|지능/.test(command) ? 'brain' : /프린트|학교/.test(command) ? 'school' : /실전|문제지|docx|인쇄/.test(command) ? 'exam' : /digital twin|디지털 트윈|출제자|분석/.test(command.toLowerCase()) ? 'twin' : 'home'
-    setPage(route)
+    const guidance: Record<Page, { text: string; action: string }> = {
+      state: { text: '원하시는 작업을 조금 더 자세히 말씀해 주세요.', action: '홈에 머물기' },
+      home: { text: '저장된 출제자 Digital Twin과 기존 문제 자료를 연결해 내신 문제를 만들 수 있습니다. 사용할 영어 지문이나 학교 프린트가 필요합니다. 자료를 올리거나 기존 자료를 선택해 주세요.', action: '내신 문제 준비하기' },
+      wrongnote: { text: '학생별 오답 기록과 OCR 자료를 확인해 복습 자료로 연결할 수 있습니다. 분석할 학생과 채점된 시험지 또는 오답 사진을 선택해 주세요.', action: '학생 오답 열기' },
+      brain: { text: '수업에서 발견한 학생 반응과 설명 방식을 다음 제작에 쓸 기억으로 남길 수 있습니다. 오늘 기록할 수업이나 학생을 알려주세요.', action: '수업 기록 열기' },
+      school: { text: '학교별 기출과 프린트를 OCR로 정리하고 출제자 분석에 연결할 수 있습니다. 정리할 학교 프린트를 올려주세요.', action: '학교 자료 열기' },
+      exam: { text: '문제 DB에 저장된 문항과 현재 exam draft를 이어서 실전 문제지로 구성할 수 있습니다. 사용할 문항을 확인해 주세요.', action: '실전 문제지 열기' },
+      twin: { text: '기존 출제 자료를 Digital Twin으로 가져와 학교·학년·시험 맥락에 연결할 수 있습니다. 분석할 자료를 선택해 주세요.', action: 'Digital Twin 열기' },
+      database: { text: '저장된 강사 문항을 확인하고 실전 문제지로 보낼 수 있습니다.', action: '문제 DB 열기' },
+      textbook: { text: '교과서와 Lesson별 수업 자료를 확인하고 제작 작업에 연결할 수 있습니다.', action: '교과서 DB 열기' },
+    }
+    setAssistantReply({ ...guidance[route], page: route })
     setAssistantInput('')
-    setNotice(`“${command}” 요청에 맞는 기존 작업 화면을 열었습니다.`)
   }
 
   return <div className={`tool-shell${page === 'state' ? ' wiki-home-shell' : ''}`}>
     {page !== 'state' && <aside className="side-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><p className="tool-subtitle">Digital Twin 기반<br />교육자 제작 도구</p><nav aria-label="주요 메뉴">{menu.filter(item => item.id !== 'state').map(item => <button key={item.id} className={page === item.id ? 'active' : ''} onClick={() => setPage(item.id)}><span>{item.icon}</span>{item.label}</button>)}</nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><button onClick={() => ready()}>♲ 휴지통</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 데이터 내보내기</a></div></aside>}
     <main className={`tool-main${page === 'state' ? ' wiki-home-main' : ''}`}>{page !== 'state' && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '지능' : '')}</h1><p>{descriptions[page]}</p></div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
       {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
-      {page === 'state' && <EducatorState onNavigate={setPage} onCommand={runAssistant} />}
+      {page === 'state' && <EducatorState onNavigate={setPage} />}
       {page === 'brain' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">EDUCATOR BRAIN</p><h2>수업 인사이트 기록</h2><p>수업에서 발견한 학생 반응, 설명 방식, 출제 포인트와 다음 수업 아이디어를 기록합니다.</p></div></div><div className="empty-state"><b>오늘 수업에서 무엇을 발견하셨나요?</b><p>이 기록은 이후 문제·프린트·강의 상품 제작에서 재사용할 교육자 컨텍스트가 됩니다.</p></div></section>}
       {page === 'home' && <MiddleSchoolExamGenerator onNavigate={setPage} apiSettings={apiSettings} />}
       {page === 'twin' && <DigitalTwinImport onApplied={profile => { setPage('home'); setNotice(`${profile.school} Digital Twin을 저장했습니다. 문제 생성기에서 학교를 선택하면 자동 적용됩니다.`) }} />}
@@ -95,7 +105,8 @@ export default function App() {
       {page === 'exam' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">EXAM MAKER</p><h2>내신 실전 문제 제작</h2><p>강사 문제 DB에서 선택한 문항으로 실전 시험지를 구성합니다.</p></div><button className="btn-ghost" type="button" onClick={() => setShowExamAnswers(v => !v)}>{showExamAnswers ? '🙈 정답 숨기기' : '🔍 정답 보기'}</button></div><div className="exam-settings"><label>시험지 제목<input value={examTitle} onChange={event => setExamTitle(event.target.value)} /></label><label>학원명<input value={academyName} onChange={event => setAcademyName(event.target.value)} /></label><label>강사명<input value={teacherName} onChange={event => setTeacherName(event.target.value)} /></label></div><div className="f2r-gen embedded-question-view"><div className={`exam-sheet${showExamAnswers ? ' show-answers' : ''}`}><div className="exam-meta-box"><div className="meta-row"><span>시험지</span><b>{examTitle}</b></div><div className="meta-row"><span>학교</span><b>{examQuestions[0] ? `${examQuestions[0].school} · ${examQuestions[0].grade}` : '문제 DB에서 문항 선택 필요'}</b></div><div className="meta-row"><span>문항 구성</span><b>객관식 {mcCount} · 서답형 {saCount} · 총 {totalScore}점</b></div></div>{examQuestions.length > 0 ? <div className="question-list">{examQuestions.map((item, index) => <QuestionCard key={item.id} q={item} index={index + 1} />)}</div> : <p className="empty-paper">강사 문제 DB에서 문항을 선택해 실전 제작으로 보내 주세요.</p>}<div className="footer-brand">{academyName} · {teacherName}</div></div></div><button className="primary-action" disabled={savingExam || !selectedExamIds.length} onClick={() => void exportOffice()}>{savingExam ? '내보내는 중...' : '오피스 2007 내보내기'}</button></section>}
     </main>
     <form className={`assistant-dock${page === 'state' ? ' on-home' : ''}`} onSubmit={event => { event.preventDefault(); runAssistant(assistantInput) }}>
-      <label htmlFor="buildit-assistant">무엇을 도와드릴까요?</label><div><input id="buildit-assistant" value={assistantInput} onChange={event => setAssistantInput(event.target.value)} placeholder="예: 신구중 2학년 내신 문제 만들어줘" /><button type="submit" aria-label="요청 보내기">↑</button></div>
+      <label htmlFor="buildit-assistant">무엇을 만들거나 기록할까요?</label><div><input id="buildit-assistant" value={assistantInput} onChange={event => setAssistantInput(event.target.value)} placeholder="예: 신구중 2학년 중간 문제 만들어줘" /><button type="submit" aria-label="요청 보내기">↑</button></div>
+      {assistantReply && <div className="assistant-reply" role="status"><p>{assistantReply.text}</p><button type="button" onClick={() => { setPage(assistantReply.page); setAssistantReply(null) }}>{assistantReply.action} →</button></div>}
     </form>
     <ApiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={settings => { setApiSettings(settings); setNotice('AI API 설정을 저장했습니다. 문제 생성기에서 바로 사용할 수 있습니다.') }} />
   </div>
