@@ -1,78 +1,47 @@
 import { useState } from 'react'
 import type { Page } from '../App'
 
-type Props = {
-  onNavigate: (page: Page) => void
-  onCommand?: (command: string) => void
-}
+type Props = { onNavigate: (page: Page) => void; onCommand: (command: string) => void }
 
-const primary = [
-  { label: '만들기', detail: '문제 · 프린트 · 실전 자료' },
-  { label: '학생', detail: '오답 · 복습 · 학생 자료', page: 'wrongnote' as Page },
-  { label: 'BRAIN', detail: '수업 인사이트 · Digital Twin', page: 'brain' as Page },
+const categories: { label: string; description: string; page?: Page }[] = [
+  { label: '만들기', description: '문제 · 프린트 · 실전 자료' },
+  { label: '학생', description: '오답 · 복습 · 학생 기록', page: 'wrongnote' },
+  { label: '지능', description: '수업 인사이트 · Digital Twin', page: 'brain' },
 ]
-
 const createTools: { label: string; detail: string; page: Page }[] = [
-  { label: '시험 문제', detail: '학교·학년·시험별 문제 생성과 변형', page: 'home' },
-  { label: 'Digital Twin', detail: '출제자 분석 HTML 가져오기·적용', page: 'twin' },
-  { label: '강사 문제 DB', detail: '생성·변형한 문항 저장 및 선택', page: 'database' },
-  { label: '실전 문제지', detail: '선택 문항으로 시험지·DOCX 제작', page: 'exam' },
-  { label: '교과서 DB', detail: '출판사·Lesson별 수업 자료 관리', page: 'textbook' },
-  { label: '학교별 DB', detail: '학교·학년·시험별 기출·프린트 관리', page: 'school' },
+  { label: '내신 문제', detail: '학교·학년·시험별 생성과 문제 변형', page: 'home' },
+  { label: '실전 문제지', detail: '선택 문항으로 편집·인쇄·DOCX 제작', page: 'exam' },
+  { label: '강사 문제 DB', detail: '생성·변형 문항 저장과 재사용', page: 'database' },
+  { label: '교과서 DB', detail: '출판사·Lesson별 수업 자료', page: 'textbook' },
+  { label: '학교별 DB · 프린트', detail: '학교별 기출과 OCR 자료 정리', page: 'school' },
+  { label: '출제자 Digital Twin', detail: '분석 HTML 가져오기와 적용', page: 'twin' },
 ]
-
-const actions: { label: string; detail: string; page: Page; command?: string }[] = [
-  { label: '시험 문제', detail: '학교·학년·시험에 맞는 문제를 준비합니다.', page: 'home' },
-  { label: '수업 자료', detail: '학교 프린트와 지문을 수업용 자료로 정리합니다.', page: 'school', command: '학교 프린트를 수업자료로 만들어줘' },
-  { label: '학생 자료', detail: '오답 사진과 학생별 자료를 복습 자료로 만듭니다.', page: 'wrongnote', command: '학생 오답 자료를 정리해줘' },
-  { label: '수업 인사이트', detail: '오늘 수업에서 얻은 판단과 노하우를 BRAIN에 남깁니다.', page: 'brain', command: '오늘 수업 인사이트를 기록할게' },
-]
+const quickActions = ['내신 문제 만들어줘', '실전 문제지 만들기', '학생 오답 분석해줘', '학교 프린트 정리', '수업 인사이트 기록']
 
 export default function EducatorState({ onNavigate, onCommand }: Props) {
   const [createOpen, setCreateOpen] = useState(false)
-  const command = (value: string) => onCommand?.(value)
-  const run = (item: (typeof actions)[number]) => {
-    if (item.command) command(item.command)
-    onNavigate(item.page)
-  }
-
-  return <section className="educator-state" aria-labelledby="educator-state-title">
-    <div className="state-wave" aria-hidden="true"><i /><i /><i /><i /><i /></div>
-    <div className="state-copy">
-      <p className="state-kicker">EDUCATOR STATE · CURRENT SCENARIO</p>
-      <h1 id="educator-state-title">오늘 무엇을 준비하고 계세요?</h1>
-      <p className="state-intro">BuildIt은 문제만 만들고 끝나지 않습니다. 지금 준비하는 수업과 학생, 자료를 알려주면 작업의 맥락을 기억하고 다음 제작에 다시 활용합니다.</p>
-    </div>
-
-    <nav className="state-primary-nav" aria-label="BuildIt Wiki 주요 작업">
-      {primary.map(item => <button key={item.label} aria-expanded={item.label === '만들기' ? createOpen : undefined} onClick={() => item.label === '만들기' ? setCreateOpen(open => !open) : item.page && onNavigate(item.page)}><b>{item.label}</b><span>{item.detail}</span></button>)}
+  return <section className="ink-home" aria-labelledby="wiki-title">
+    <div className="paper-grain" aria-hidden="true" />
+    <div className="ink-landscape" aria-hidden="true"><i /><i /><i /><span /></div>
+    <header className="ink-brand">
+      <p>FEEL TO REAL EDUCATOR WORKSPACE</p>
+      <h1 id="wiki-title"><span>BuildIt</span> Wiki</h1>
+      <div className="ink-seal">빌딧</div>
+    </header>
+    <nav className="ink-categories" aria-label="BuildIt Wiki 카테고리">
+      {categories.map(category => <button key={category.label} className={createOpen && category.label === '만들기' ? 'active' : ''} onClick={() => category.label === '만들기' ? setCreateOpen(value => !value) : category.page && onNavigate(category.page)}><b>{category.label}</b><span>{category.description}</span></button>)}
     </nav>
-
-    {createOpen && <section className="state-create-hub" aria-label="만들기 도구">
-      <div className="state-create-heading"><b>만들기</b><span>기존 Wiki 제작 기능을 그대로 사용합니다.</span></div>
-      <div className="state-actions">
-        {createTools.map(item => <button key={item.page} className="state-action" onClick={() => onNavigate(item.page)}><b>{item.label}</b><span>{item.detail}</span></button>)}
-      </div>
+    {createOpen && <section className="ink-tool-drawer" aria-label="만들기 도구">
+      {createTools.map(tool => <button key={tool.label} onClick={() => onNavigate(tool.page)}><b>{tool.label}</b><span>{tool.detail}</span></button>)}
     </section>}
-
-    <div className="state-actions">
-      {actions.map(item => <button key={item.label} className="state-action" onClick={() => run(item)}><b>{item.label}</b><span>{item.detail}</span></button>)}
-    </div>
-
-    <div className="state-memory">
-      <div><span>현재 목표</span><b>아직 정해지지 않았습니다.</b></div>
-      <div><span>BuildIt이 알고 있는 것</span><b>학교 · 교과서 · 프린트 · 수업 인사이트</b></div>
-      <div><span>조금 더 필요한 것</span><b>지금 가르치는 학생과 준비 중인 시험</b></div>
-      <div><span>다음 행동</span><b>위에서 가장 가까운 작업을 선택해 주세요.</b></div>
-    </div>
-
-    <div className="state-command">
-      <p>BuildIt Assistant에게 바로 말하기</p>
-      <div>
-        <button onClick={() => command('신구중 2학년 중간고사 문제 만들어줘')}>시험 문제 만들어줘</button>
-        <button onClick={() => command('이 학교 프린트를 수업자료로 만들어줘')}>프린트 수업자료로 만들어줘</button>
-        <button onClick={() => command('이 외부 지문을 어휘·구문·지문정리까지 만들어줘')}>지문 정리해줘</button>
-      </div>
-    </div>
+    <section className="quiet-state" aria-label="교육자 상태">
+      <div><span>현재 준비</span><b>준비 중인 시험을 선택해 이어서 작업하세요</b><button onClick={() => onNavigate('home')}>내신 문제 열기 →</button></div>
+      <div><span>최근 작업</span><b>문제 DB와 exam_draft가 작업 상태를 기억합니다</b><button onClick={() => onNavigate('database')}>최근 문항 보기 →</button></div>
+      <div><span>다음 기록</span><b>수업에서 발견한 판단을 지능에 남겨보세요</b><button onClick={() => onNavigate('brain')}>인사이트 기록 →</button></div>
+    </section>
+    <section className="home-prompt" aria-label="BuildIt Assistant">
+      <h2>무엇을 도와드릴까요?</h2><p>말로 시작하면 이미 연결된 BuildIt 도구로 안내합니다.</p>
+      <div>{quickActions.map(action => <button key={action} onClick={() => onCommand(action)}>{action}</button>)}</div>
+    </section>
   </section>
 }
