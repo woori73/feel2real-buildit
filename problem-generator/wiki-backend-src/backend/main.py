@@ -1,8 +1,11 @@
 import json
+import hashlib
 import os
 import re
 import sqlite3
+import struct
 import zipfile
+import zlib
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -203,6 +206,15 @@ def migrate_schema():
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN title TEXT NOT NULL DEFAULT ''")
         if 'question_type' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN question_type TEXT NOT NULL DEFAULT ''")
+        source_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_question_sources)").fetchall()}
+        for name, definition in (
+            ('source_hash', "TEXT NOT NULL DEFAULT ''"),
+            ('original_stored', 'INTEGER NOT NULL DEFAULT 0'),
+            ('owner_scope', "TEXT NOT NULL DEFAULT 'shared'"),
+        ):
+            if name not in source_cols:
+                conn.execute(f'ALTER TABLE csat_question_sources ADD COLUMN {name} {definition}')
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_csat_source_hash_kind ON csat_question_sources(source_hash, exam_kind) WHERE source_hash <> ''")
 
 
 def seed_default_twins():
@@ -1540,6 +1552,76 @@ def _extract_hwpx_text(data: bytes) -> str:
         raise HTTPException(status_code=400, detail=f'HWPX 본문을 읽지 못했습니다: {error}') from error
 
 
+def _hwp_record_payloads(stream: bytes):
+    offset = 0
+    while offset + 4 <= len(stream):
+        header = struct.unpack_from('<I', stream, offset)[0]
+        offset += 4
+        tag, size = header & 0x3ff, (header >> 20) & 0xfff
+        if size == 0xfff:
+            if offset + 4 > len(stream):
+                raise ValueError('HWP 레코드 길이가 잘렸습니다.')
+            size = struct.unpack_from('<I', stream, offset)[0]
+            offset += 4
+        if offset + size > len(stream):
+            raise ValueError('HWP 본문 레코드가 손상되었습니다.')
+        yield tag, stream[offset:offset + size]
+        offset += size
+
+
+def _clean_hwp_para_text(payload: bytes) -> str:
+    # HWP_TAG_PARA_TEXT payload is UTF-16LE. Inline controls occupy code points below
+    # U+0020; tabs/newlines are retained and other binary control markers are removed.
+    text = payload.decode('utf-16le', errors='strict')
+    return ''.join('\n' if char in ('\r', '\n') else '\t' if char == '\t' else char
+                   for char in text if ord(char) >= 32 or char in ('\r', '\n', '\t')).strip()
+
+
+def _extract_hwp5_text(data: bytes) -> str:
+    """Extract HWP 5.x OLE paragraph text without invoking desktop software.
+
+    Encrypted/distributable documents are rejected. We never pretend that partially
+    decoded binary is source text.
+    """
+    if not data.startswith(bytes.fromhex('D0CF11E0A1B11AE1')):
+        raise HTTPException(status_code=400, detail='HWP 5.x OLE 문서가 아닙니다. 구형 HWP 3.x 또는 손상 파일은 지원하지 않습니다.')
+    try:
+        import olefile
+        with olefile.OleFileIO(data) as ole:
+            required = ('FileHeader',)
+            if any(not ole.exists(name) for name in required):
+                raise ValueError('HWP FileHeader가 없습니다.')
+            header = ole.openstream('FileHeader').read()
+            if not header.startswith(b'HWP Document File') or len(header) < 40:
+                raise ValueError('HWP 5.x 헤더가 올바르지 않습니다.')
+            flags = struct.unpack_from('<I', header, 36)[0]
+            compressed, encrypted, distributable = bool(flags & 1), bool(flags & 2), bool(flags & 4)
+            if encrypted:
+                raise ValueError('암호화된 HWP는 지원하지 않습니다. 암호를 해제한 사본을 올려 주세요.')
+            if distributable:
+                raise ValueError('배포용 HWP는 본문 추출을 지원하지 않습니다. 편집 가능한 사본을 올려 주세요.')
+            sections = sorted((entry for entry in ole.listdir() if len(entry) == 2 and entry[0] == 'BodyText' and re.fullmatch(r'Section\d+', entry[1])), key=lambda entry: int(entry[1][7:]))
+            if not sections:
+                raise ValueError('HWP BodyText section이 없습니다.')
+            paragraphs = []
+            for entry in sections:
+                stream = ole.openstream(entry).read()
+                if compressed:
+                    try: stream = zlib.decompress(stream, -15)
+                    except zlib.error as error: raise ValueError('압축된 HWP 본문이 손상되었습니다.') from error
+                for tag, payload in _hwp_record_payloads(stream):
+                    if tag == 67:  # HWP_TAG_PARA_TEXT
+                        text = _clean_hwp_para_text(payload)
+                        if text: paragraphs.append(text)
+            if not paragraphs:
+                raise ValueError('HWP에서 읽을 수 있는 문단 텍스트를 찾지 못했습니다.')
+            return '\n'.join(paragraphs)
+    except HTTPException:
+        raise
+    except (OSError, ValueError, UnicodeDecodeError) as error:
+        raise HTTPException(status_code=400, detail=f'HWP 본문을 읽지 못했습니다: {error}') from error
+
+
 def _normalise_uploaded_questions(raw_text: str) -> list[dict]:
     """HWPX/TXT/JSON 어댑터의 공통 경계. JSON은 완전 구조화, 문서는 번호 블록을 보수적으로 분리한다."""
     stripped = raw_text.strip()
@@ -1557,8 +1639,38 @@ def _normalise_uploaded_questions(raw_text: str) -> list[dict]:
         prompt = lines[0] if lines else ''
         choices = [re.sub(r'^[①②③④⑤]\s*', '', line) for line in lines if re.match(r'^[①②③④⑤]', line)]
         passage = '\n'.join(line for line in lines[1:] if not re.match(r'^[①②③④⑤]', line))
-        result.append({'question_no': int(match.group(1)), 'prompt': prompt, 'passage': passage, 'choices': choices})
+        result.append({'question_no': int(match.group(1)), 'stem': prompt, 'prompt': prompt, 'passage': passage, 'choices': choices})
     return result
+
+
+def _canonical_question(raw: dict, exam_kind: str, metadata: dict, filename: str, raw_text: str, now: str) -> dict:
+    number = int(raw.get('question_number', raw.get('question_no', 0)) or 0)
+    choices = [str(choice) for choice in raw.get('choices', [])]
+    stem = str(raw.get('stem', raw.get('prompt', '')))
+    classification = classify_csat_question(number, stem, choices)
+    return {
+        'source_exam': str(metadata.get('title', metadata.get('source_exam', ''))),
+        'year': str(metadata.get('year', '')), 'session': str(metadata.get('round', metadata.get('session', ''))),
+        'exam_kind': exam_kind, 'question_number': number, 'question_no': number,
+        'csat_type': classification['type_id'], 'csat_type_id': classification['type_id'],
+        'csat_type_name': classification['type_name'], 'stem': stem, 'prompt': stem,
+        'passage': str(raw.get('passage', '')), 'choices': choices,
+        'answer': str(raw.get('answer', '')), 'explanation': str(raw.get('explanation', raw.get('solution', ''))),
+        'solution': str(raw.get('explanation', raw.get('solution', ''))), 'footnote': str(raw.get('footnote', '')),
+        'group_label': str(raw.get('group_label', '')), 'source_file': filename,
+        'source_reference': f'{filename}#question-{number}', 'raw_text': raw_text,
+        'created_at': now, **classification,
+    }
+
+
+class CsatImportCommit(BaseModel):
+    exam_kind: Literal['half', 'full']
+    source_filename: str
+    source_hash: str = Field(pattern=r'^[0-9a-f]{64}$')
+    parser: str
+    metadata: dict = {}
+    raw_text: str
+    questions: list[dict]
 
 
 def _csat_question_response(row: sqlite3.Row) -> dict:
@@ -1579,11 +1691,14 @@ async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metad
     filename = file.filename or 'upload'
     suffix = Path(filename).suffix.lower()
     data = await file.read()
-    if suffix == '.hwp':
-        raise HTTPException(status_code=415, detail='바이너리 HWP는 서버 직접 파싱을 지원하지 않습니다. 한글에서 HWPX로 저장해 올려 주세요.')
-    if suffix not in ('.hwpx', '.json', '.txt'):
-        raise HTTPException(status_code=415, detail='현재 HWPX, JSON, TXT를 지원합니다. HWP는 HWPX 변환이 필요합니다.')
-    raw_text = _extract_hwpx_text(data) if suffix == '.hwpx' else data.decode('utf-8-sig', errors='replace')
+    if suffix not in ('.hwp', '.hwpx', '.json', '.txt'):
+        raise HTTPException(status_code=415, detail='현재 HWP, HWPX, JSON, TXT를 지원합니다.')
+    if not data:
+        raise HTTPException(status_code=400, detail='빈 파일은 업로드할 수 없습니다.')
+    if len(data) > 30 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='수능 자료 파일은 30MB 이하여야 합니다.')
+    parser = {'hwp': 'hwp5-ole-v1', 'hwpx': 'hwpx-xml-v1', 'json': 'json', 'txt': 'txt'}[suffix[1:]]
+    raw_text = _extract_hwp5_text(data) if suffix == '.hwp' else _extract_hwpx_text(data) if suffix == '.hwpx' else data.decode('utf-8-sig', errors='strict')
     questions = _normalise_uploaded_questions(raw_text)
     if not questions:
         raise HTTPException(status_code=400, detail='18~45번 문항 블록을 찾지 못했습니다. 구조화 JSON 또는 번호가 포함된 HWPX를 확인해 주세요.')
@@ -1592,33 +1707,48 @@ async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metad
     except json.JSONDecodeError as error:
         raise HTTPException(status_code=400, detail='시험 메타데이터 JSON 형식이 올바르지 않습니다.') from error
     now = datetime.now().isoformat()
+    canonical = [_canonical_question(raw, exam_kind, metadata, filename, raw_text, now) for raw in questions]
+    canonical = [item for item in canonical if 1 <= item['question_number'] <= 99]
+    failures = [{'index': index + 1, 'reason': '문항번호를 인식하지 못했습니다.'} for index, raw in enumerate(questions) if not int(raw.get('question_number', raw.get('question_no', 0)) or 0)]
+    if not canonical:
+        raise HTTPException(status_code=400, detail='저장 가능한 문항을 찾지 못했습니다.')
+    return {'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': parser, 'raw_text': raw_text,
+            'metadata': metadata, 'source_filename': filename, 'original_stored': False, 'owner_scope': 'shared',
+            'questions': canonical, 'failures': failures, 'requires_review': True}
+
+
+@app.post('/api/csat/imports', status_code=201)
+def commit_csat_import(payload: CsatImportCommit):
+    now = datetime.now().isoformat()
+    canonical = [_canonical_question(raw, payload.exam_kind, payload.metadata, payload.source_filename, payload.raw_text, now) for raw in payload.questions]
+    canonical = [item for item in canonical if 1 <= item['question_number'] <= 99]
+    if not canonical:
+        raise HTTPException(status_code=400, detail='검수 후 저장할 문항이 없습니다.')
     saved = []
     with get_db() as conn:
+        duplicate = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?', (payload.source_hash, payload.exam_kind)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail=f'같은 원본 파일이 이미 저장되어 있습니다. (source_id={duplicate["id"]})')
         source = conn.execute(
-            'INSERT INTO csat_question_sources (exam_kind, source_filename, exam_metadata_json, parser, raw_text, created_at) VALUES (?,?,?,?,?,?)',
-            (exam_kind, filename, json.dumps(metadata, ensure_ascii=False), 'hwpx-xml-v1' if suffix == '.hwpx' else suffix[1:], raw_text, now),
+            'INSERT INTO csat_question_sources (exam_kind, source_filename, exam_metadata_json, parser, raw_text, created_at, source_hash, original_stored, owner_scope) VALUES (?,?,?,?,?,?,?,?,?)',
+            (payload.exam_kind, payload.source_filename, json.dumps(payload.metadata, ensure_ascii=False), payload.parser, payload.raw_text, now, payload.source_hash, 0, 'shared'),
         )
         source_id = source.lastrowid
-        for index, raw in enumerate(questions):
-            number = int(raw.get('question_no', 0))
-            if not 18 <= number <= 45:
-                continue
-            choices = [str(choice) for choice in raw.get('choices', [])]
-            classification = classify_csat_question(number, str(raw.get('prompt', '')), choices)
+        for raw in canonical:
+            number, choices = raw['question_number'], raw['choices']
             cursor = conn.execute('''INSERT INTO csat_questions
                 (source_id, exam_kind, question_no, csat_type_id, csat_type_name, passage, prompt, choices_json,
                  answer, solution, footnote, group_label, source_reference, type_mismatch, mismatch_reason, raw_json, created_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                (source_id, exam_kind, number, classification['type_id'], classification['type_name'], str(raw.get('passage', '')),
-                 str(raw.get('prompt', '')), json.dumps(choices, ensure_ascii=False), str(raw.get('answer', '')), str(raw.get('solution', '')),
-                 str(raw.get('footnote', '')), str(raw.get('group_label', '')), f'{filename}#question-{number}', int(classification['type_mismatch']),
-                 classification['mismatch_reason'], json.dumps(raw, ensure_ascii=False), now))
+                (source_id, payload.exam_kind, number, raw['type_id'], raw['type_name'], raw['passage'], raw['stem'],
+                 json.dumps(choices, ensure_ascii=False), raw['answer'], raw['explanation'], raw['footnote'], raw['group_label'],
+                 raw['source_reference'], int(raw['type_mismatch']), raw['mismatch_reason'], json.dumps(raw, ensure_ascii=False), now))
             saved.append(cursor.lastrowid)
         if not saved:
             raise HTTPException(status_code=400, detail='18~45번 범위의 저장 가능한 문항이 없습니다.')
         rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json FROM csat_questions q
             JOIN csat_question_sources s ON s.id=q.source_id WHERE q.id IN ({','.join('?' * len(saved))}) ORDER BY q.question_no''', saved).fetchall()
-    return {'source_id': source_id, 'parser': 'hwpx-xml-v1' if suffix == '.hwpx' else suffix[1:], 'questions': [_csat_question_response(row) for row in rows]}
+    return {'source_id': source_id, 'parser': payload.parser, 'original_stored': False, 'owner_scope': 'shared', 'questions': [_csat_question_response(row) for row in rows]}
 
 
 @app.get('/api/csat/questions')
@@ -1676,19 +1806,19 @@ def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어'
     for q in sorted(questions, key=lambda item: item['question_no']):
         choices = ''.join(f'<li>{esc(choice)}</li>' for choice in q.get('choices', []))
         flag = '<span class="flag">유형 확인 필요</span>' if q.get('type_mismatch') else ''
-        blocks.append(f'''<article class="question"><h2>{q['question_no']}. <span contenteditable="true">{esc(q.get('prompt'))}</span> {flag}</h2>
+        blocks.append(f'''<article class="question" data-question-id="{q.get('id', '')}"><nav class="question-tools"><button onclick="moveQuestion(this,-1)">↑</button><button onclick="moveQuestion(this,1)">↓</button><button onclick="this.closest('.question').remove()">삭제</button></nav><h2>{q['question_no']}. <span contenteditable="true">{esc(q.get('prompt'))}</span> {flag}</h2>
             <div class="passage" contenteditable="true">{esc(q.get('passage')).replace(chr(10), '<br>')}</div>
             <ol class="choices" contenteditable="true">{choices}</ol><small contenteditable="true">{esc(q.get('footnote'))}</small></article>''')
     return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{esc(title)}</title><style>
         @page{{size:A4;margin:12mm}}*{{box-sizing:border-box}}body{{font-family:"Noto Serif KR","Malgun Gothic",serif;margin:0;color:#111}}
         header{{display:flex;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:12px}}header b{{font-size:22px}}
         .toolbar{{position:sticky;top:0;background:#fff4cf;padding:8px;text-align:center;z-index:2}}.paper{{column-count:2;column-gap:28px;column-rule:1px solid #222}}
-        .question{{break-inside:avoid;margin:0 0 18px;font-size:11.5px;line-height:1.55}}h2{{font-size:12px;margin:0 0 7px}}.passage{{text-align:justify;margin-left:14px}}
+        .question{{break-inside:avoid;page-break-inside:avoid;margin:0 0 18px;font-size:11.5px;line-height:1.55;position:relative}}.question-tools{{display:none;position:absolute;right:0;top:-5px}}.question:hover .question-tools{{display:block}}h2{{font-size:12px;margin:0 0 7px}}.passage{{text-align:justify;margin-left:14px}}
         .choices{{list-style:none;padding:0 0 0 14px;margin:8px 0;counter-reset:item}}.choices li{{counter-increment:item}}.choices li:before{{content:counter(item, circle) " ";}}
         .flag{{font:10px sans-serif;color:#a33;border:1px solid #a33;padding:1px 4px}}[contenteditable=true]:focus{{outline:2px solid #e5b94f;background:#fff9e8}}
-        @media print{{.toolbar{{display:none}}}}@media(max-width:800px){{.paper{{column-count:1;column-rule:0}}}}
+        @media print{{.toolbar,.question-tools{{display:none!important}}.paper{{column-fill:auto}}.question:nth-of-type(4n+1):not(:first-child){{break-before:page}}}}@media(max-width:800px){{.paper{{column-count:1;column-rule:0}}}}
     </style><body><div class="toolbar">문구를 클릭해 수정할 수 있습니다. <button onclick="print()">인쇄</button> <button onclick="saveEdited()">편집 HTML 저장</button></div>
-    <header><b contenteditable="true">{esc(title)}</b><span>BuildIt 자체 제작 시험지 · 18~45 독해</span></header><main class="paper">{''.join(blocks)}</main><script>function saveEdited(){{const blob=new Blob(['<!doctype html>'+document.documentElement.outerHTML],{{type:'text/html;charset=utf-8'}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildit-csat-edited.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}}</script></body></html>'''
+    <header><b contenteditable="true">{esc(title)}</b><span>BuildIt 자체 제작 시험지 · A4 2단 · 페이지당 4문항 목표</span></header><main class="paper">{''.join(blocks)}</main><script>function moveQuestion(button,direction){{const item=button.closest('.question'),parent=item.parentElement,sibling=direction<0?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;direction<0?parent.insertBefore(item,sibling):parent.insertBefore(sibling,item)}}function saveEdited(){{const blob=new Blob(['<!doctype html>'+document.documentElement.outerHTML],{{type:'text/html;charset=utf-8'}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildit-csat-edited.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}}</script></body></html>'''
 
 
 @app.get('/api/csat/exam.html', response_class=HTMLResponse)
