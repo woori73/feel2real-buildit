@@ -96,15 +96,26 @@ jobs:
           WantedBy=multi-user.target
           UNIT
 
-          cat > /etc/nginx/conf.d/buildit-wiki-timeouts.conf <<'NGINX'
+          if command -v nginx >/dev/null 2>&1; then
+            install -d -m 755 /etc/nginx/conf.d
+            cat > /etc/nginx/conf.d/buildit-wiki-timeouts.conf <<'NGINX'
           # Outer proxy deadlines must remain above Spring (280s) and the
           # bounded AI provider call (90s), so JSON errors reach the browser.
           proxy_connect_timeout 5s;
           proxy_send_timeout 290s;
           proxy_read_timeout 290s;
           NGINX
-          nginx -t
-          systemctl reload nginx
+            nginx -t
+            if nginx -T 2>&1 | grep -q 'buildit-wiki-timeouts.conf'; then
+              systemctl reload nginx
+              echo 'nginx timeout config active'
+            else
+              echo 'nginx timeout config directory is not included; leaving existing gateway config unchanged'
+              rm -f /etc/nginx/conf.d/buildit-wiki-timeouts.conf
+            fi
+          else
+            echo 'nginx is not installed on the application host; gateway timeout is managed outside EC2'
+          fi
 
           systemctl daemon-reload
           systemctl enable buildit-wiki.service
