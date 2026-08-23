@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react'
 import MiddleSchoolExamGenerator from './components/MiddleSchoolExamGenerator'
 import StudentWrongNoteDashboard from './components/StudentWrongNoteDashboard'
@@ -12,6 +13,9 @@ import { api } from './lib/api'
 import './styles/generator.css'
 
 export type Page = 'state' | 'home' | 'twin' | 'database' | 'exam' | 'wrongnote' | 'textbook' | 'school' | 'brain'
+
+// role=ADMIN 같은 query parameter는 권한 컨텍스트일 뿐 Wiki의 초기 화면을 바꾸지 않는다.
+const initialPage = (): Page => 'state'
 
 const menu: { id: Page; label: string; icon: string }[] = [
   { id: 'state', label: '오늘의 상태', icon: '◌' },
@@ -39,7 +43,7 @@ const descriptions: Record<Page, string> = {
 const downloadBlob = (filename: string, blob: Blob) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url) }
 
 export default function App() {
-  const [page, setPage] = useState<Page>('state')
+  const [page, setPage] = useState<Page>(initialPage)
   const [questions, setQuestions] = useState<StoredQuestion[]>([])
   const [selectedExamIds, setSelectedExamIds] = useState<number[]>([])
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
@@ -96,3 +100,4 @@ export default function App() {
     <ApiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={settings => { setApiSettings(settings); setNotice('AI API 설정을 저장했습니다. 문제 생성기에서 바로 사용할 수 있습니다.') }} />
   </div>
 }
+
