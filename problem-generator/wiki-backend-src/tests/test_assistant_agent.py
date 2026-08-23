@@ -73,11 +73,12 @@ class AssistantAgentTest(unittest.TestCase):
         with main.get_db() as conn:
             cursor = conn.execute(
                 'INSERT INTO digital_twin_profiles (school, grade, exam, profile_json, version, is_active, created_at, updated_at) VALUES (?,?,?,?,?,1,?,?)',
-                ('압구정중', '중3', '2학기 기말고사', profile, 3, now, now),
+                ('압구정중', '3학년', '2학기 기말고사', profile, 3, now, now),
             )
         result = main.assistant_chat(self._request('압구정중3 문제 제작을 하려면'))
         self.assertEqual(('압구정중', '중3'), (result['state']['school'], result['state']['grade']))
         self.assertEqual(cursor.lastrowid, result['state']['selected_twin_id'])
+        self.assertEqual(['2학기 기말고사'], result['context']['availableExams'])
         self.assertEqual(['어법', '서술형'], result['context']['questionTypes'])
         self.assertIn('시험 범위 주요 문법 사항', result['state']['needed_materials'])
         self.assertEqual(('home', '문제 제작 화면 열기'), (result['page'], result['action']))
