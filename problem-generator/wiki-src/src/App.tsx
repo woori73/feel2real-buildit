@@ -79,7 +79,7 @@ export default function App() {
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [assistantBusy, setAssistantBusy] = useState(false)
   const [assistantState, setAssistantState] = useState(() => { try { return JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') } catch { return {} } })
-  const [apiSettings, setApiSettings] = useState<ApiSettings | null>(() => { try { const saved = JSON.parse(sessionStorage.getItem('f2r_api_settings') || '{}') as Partial<ApiSettings>; return saved.provider && (saved.geminiKey || saved.openaiKey) ? { provider: saved.provider, geminiKey: saved.geminiKey || '', openaiKey: saved.openaiKey || '' } : null } catch { return null } })
+  const [apiSettings, setApiSettings] = useState<ApiSettings | null>(() => { try { const saved = JSON.parse(sessionStorage.getItem('f2r_api_settings') || '{}') as Partial<ApiSettings>; return { provider: saved.provider || 'auto', geminiKey: saved.geminiKey || '', openrouterKey: saved.openrouterKey || '' } } catch { return null } })
   const draftLoaded = useRef(false)
   const refreshQuestions = () => { fetchQuestions().then(setQuestions).catch(() => undefined) }
   useEffect(() => { if (page === 'database' || page === 'exam') refreshQuestions() }, [page])
@@ -103,7 +103,7 @@ export default function App() {
     setAssistantMessages(history); setAssistantOpen(true); setAssistantBusy(true)
     try {
       let pageContext = {}; try { pageContext = JSON.parse(sessionStorage.getItem('buildit_page_context') || '{}') } catch { /* use assistant state */ }
-      const response = await api('assistant/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: command, api_key: apiSettings?.provider === 'gemini' ? apiSettings.geminiKey : '', state: { ...assistantState, ...pageContext, current_page: page }, history: history.slice(-8), attachments: files.map(file => ({ name: file.name, type: file.type })) }) })
+      const response = await api('assistant/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: command, provider: apiSettings?.provider || 'auto', api_key: apiSettings?.geminiKey || '', openrouter_api_key: apiSettings?.openrouterKey || '', state: { ...assistantState, ...pageContext, current_page: page }, history: history.slice(-8), attachments: files.map(file => ({ name: file.name, type: file.type })) }) })
       if (!response.ok) throw new Error('Assistant 응답을 준비하지 못했습니다.')
       const body = await response.json()
       const nextState = body.state || assistantState

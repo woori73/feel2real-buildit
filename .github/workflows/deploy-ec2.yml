@@ -86,6 +86,7 @@ jobs:
           WorkingDirectory=/opt/buildit-wiki/app/backend
           Environment=BUILDIT_WIKI_DB_PATH=/opt/buildit-wiki/data/app.db
           Environment=BUILDIT_WIKI_WORKSPACE=/opt/buildit-wiki
+          EnvironmentFile=-/etc/buildit-wiki.env
           ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
           Restart=always
           RestartSec=3

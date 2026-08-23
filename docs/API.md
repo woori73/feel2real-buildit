@@ -3050,6 +3050,15 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - AI: 서버 환경의 `GEMINI_API_KEY`가 있을 때 기존 Gemini 텍스트 호출을 재사용한다. 키 미설정·호출 실패 시 `rules-fallback` 답변을 반환한다. 브라우저에 서버 키를 노출하지 않는다.
 - 부작용: 조회 전용이며 DB 생성·수정·삭제를 하지 않는다.
 
+### ✅ Wiki AI Router / A/B API
+
+- `GET /problem-generator/wiki/api/ai/providers`: Gemini와 Ox Alpha의 server-key availability, experimental 표시, 모델 ID를 반환한다. 키 값은 반환하지 않는다.
+- `POST /problem-generator/wiki/api/questions/generate`: 기존 요청에 `provider=gemini|ox-alpha|auto`, 선택적 `openrouter_api_key`를 추가한다. client key가 우선이고 없으면 `GEMINI_API_KEY`/`OPENROUTER_API_KEY`를 사용한다. Gemini가 기존 기본이다.
+- `POST /problem-generator/wiki/api/questions/ab-compare`: 같은 school/grade/exam/twin/types/grammar/passage 계약을 Gemini와 Ox Alpha에 각각 전송하고 provider별 `resultId`, `model`, 검증된 questions를 반환한다. 한 provider 실패 시 다른 결과와 provider별 오류를 반환한다.
+- `POST /problem-generator/wiki/api/questions/ab-evaluations`: `school`, `grade`, `exam`, `twin_id`, `question_type`, 양 provider의 model/result id와 `choice=gemini|ox-alpha|both-revise`를 SQLite에 저장한다.
+- `GET /problem-generator/wiki/api/questions/ab-evaluations?limit=100`: 최근 A/B 평가를 조회한다.
+- Ox Alpha는 OpenRouter OpenAI-compatible chat completions의 기본 모델 `stealth/ox-alpha`를 사용하며 `OX_ALPHA_MODEL`로 override한다. 브라우저에서 OpenRouter를 직접 호출하지 않는다.
+
 ### ✅ GET /api/problem-generator/materials
 
 - 목적: 현재 사용자가 접근 가능한 자료 목록을 페이지로 조회한다.

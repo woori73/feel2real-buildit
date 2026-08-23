@@ -6,8 +6,8 @@ import { PassageAnalysis, PassageMemory, generatePassageAnalysis, generatePassag
 type Props = { mode: 'memory' | 'analysis'; apiSettings: ApiSettings | null }
 
 const storedGeminiKey = (settings: ApiSettings | null) => {
-  try { return sessionStorage.getItem('f2r_msc_gemini_key')?.trim() || (settings?.provider === 'gemini' ? settings.geminiKey.trim() : '') }
-  catch { return settings?.provider === 'gemini' ? settings.geminiKey.trim() : '' }
+  try { return sessionStorage.getItem('f2r_msc_gemini_key')?.trim() || settings?.geminiKey.trim() || '' }
+  catch { return settings?.geminiKey.trim() || '' }
 }
 
 const downloadHtml = (title: string, body: string) => {
