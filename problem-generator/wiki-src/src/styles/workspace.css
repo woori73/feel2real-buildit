@@ -1,0 +1,73 @@
+:root {
+  --wiki-font-sans: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --wiki-font-serif: "Noto Serif KR", "Malgun Gothic", serif;
+  font-family: var(--wiki-font-sans);
+}
+
+body, button, input, select, textarea { font-family: var(--wiki-font-sans); }
+
+.tool-shell:not(.wiki-home-shell) {
+  --work-ink: #172033;
+  --work-muted: #6f7d75;
+  --work-line: #dfe7e1;
+  --work-soft: #f1f5f2;
+  --work-green: #244c37;
+  color: var(--work-ink);
+}
+.tool-shell:not(.wiki-home-shell) button,
+.tool-shell:not(.wiki-home-shell) input,
+.tool-shell:not(.wiki-home-shell) select,
+.tool-shell:not(.wiki-home-shell) textarea { appearance: none; font: inherit; }
+.tool-shell:not(.wiki-home-shell) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.tool-shell:not(.wiki-home-shell) select,
+.tool-shell:not(.wiki-home-shell) textarea {
+  width: 100%; border: 1px solid #cfdad2; border-radius: 10px; padding: 10px 12px;
+  background: #fff; color: var(--work-ink); outline: none; line-height: 1.5;
+}
+.tool-shell:not(.wiki-home-shell) select {
+  padding-right: 34px;
+  background-image: linear-gradient(45deg,transparent 50%,#718078 50%),linear-gradient(135deg,#718078 50%,transparent 50%);
+  background-position: calc(100% - 17px) 50%,calc(100% - 12px) 50%; background-size: 5px 5px; background-repeat: no-repeat;
+}
+.tool-shell:not(.wiki-home-shell) textarea { min-height: 130px; resize: vertical; }
+.tool-shell:not(.wiki-home-shell) input:focus,
+.tool-shell:not(.wiki-home-shell) select:focus,
+.tool-shell:not(.wiki-home-shell) textarea:focus { border-color: #5b846c; box-shadow: 0 0 0 3px rgba(70,111,86,.12); }
+.tool-shell:not(.wiki-home-shell) input[type="checkbox"] { appearance: auto; accent-color: var(--work-green); }
+.tool-shell:not(.wiki-home-shell) button { color: inherit; }
+.tool-shell:not(.wiki-home-shell) .work-panel + .work-panel { margin-top: 16px; }
+.twin-dashboard { display: grid; gap: 16px; }
+.metadata-grid,.print-meta-grid,.import-meta { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; }
+.metadata-grid label,.print-meta-grid label,.title-label,.api-key-field { display: grid; gap: 7px; color: #536159; font-size: 12px; font-weight: 750; }
+.upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; color: var(--work-muted); font-size: 12px; }
+.file-picker { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; background: var(--work-green); color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
+.file-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.material-list,.selected-file-list { display: grid; gap: 10px; }
+.material-list > article,.selected-file-list > div { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border: 1px solid var(--work-line); border-radius: 12px; background: #fff; }
+.material-list > article > div { flex: 1; min-width: 0; }
+.material-list p,.material-list small { margin: 5px 0 0; color: var(--work-muted); }
+.material-list button,.selected-file-list button,.school-tabs button,.provider-tabs button,.editor-mode-tabs button,.publisher-grid button,.lesson-row button,.grade-cards button,.textbook-html-toolbar button {
+  border: 1px solid var(--work-line); border-radius: 9px; padding: 8px 11px; background: #fff; color: #40594b; cursor: pointer;
+}
+.material-list button:hover,.school-tabs button:hover,.provider-tabs button:hover,.editor-mode-tabs button:hover { border-color: #9bb2a2; background: var(--work-soft); }
+.school-tabs,.provider-tabs,.editor-mode-tabs,.publisher-grid,.lesson-row,.textbook-html-toolbar,.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.school-tabs button.active,.provider-tabs button.active,.editor-mode-tabs button.active,.publisher-grid button.active,.lesson-row button.active { border-color: var(--work-green); background: #e8f0eb; color: var(--work-green); font-weight: 800; }
+.grade-cards,.import-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 12px; }
+.grade-cards button,.import-cards article { display: grid; gap: 7px; padding: 18px; text-align: left; border: 1px solid var(--work-line); border-radius: 14px; background: #fff; }
+.grade-cards button.selected { border-color: var(--work-green); background: #f1f6f2; }
+.grade-cards span,.import-cards span,.import-cards p,.import-cards small { color: var(--work-muted); }
+.import-meta > div { padding: 14px; border-radius: 12px; background: var(--work-soft); }
+.import-meta span,.import-meta b { display: block; }.import-meta span { color: var(--work-muted); font-size: 11px; }.import-meta b { margin-top: 5px; }
+.tag-row span { padding: 6px 10px; border-radius: 999px; background: #e8f0eb; color: var(--work-green); font-size: 11px; }
+.wrong-upload-drop { display: grid; place-items: center; min-height: 110px; margin-top: 14px; border: 1px dashed #aebfb3; border-radius: 14px; background: #fafcfb; color: #536159; cursor: pointer; }
+.wrong-upload-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.school-print-workspace { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; margin-top: 14px; }
+.school-print-source,.school-print-editor { min-width: 0; }.school-print-page img { display: block; max-width: 100%; margin-top: 8px; border-radius: 10px; }.school-print-editor textarea { min-height: 420px; }
+.school-preview-modal,.modal-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(12,20,16,.52); }
+.school-preview-modal > div,.settings-modal { width: min(780px,100%); max-height: 90vh; overflow: auto; padding: 22px; border-radius: 18px; background: #fff; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
+.school-preview-modal img,.school-preview-modal iframe { width: 100%; min-height: 60vh; border: 0; object-fit: contain; }
+.settings-modal header,.settings-modal footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }.settings-modal footer { justify-content: flex-end; margin-top: 18px; }
+.modal-close { border: 0; background: transparent; font-size: 24px; cursor: pointer; }
+.textbook-rich-editor { min-height: 520px; margin-top: 12px; padding: 30px; border: 1px solid var(--work-line); background: #fff; outline: none; }.editor-output-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.f2r-gen { font-family: var(--wiki-font-sans); }
+@media(max-width:720px){.school-print-workspace{grid-template-columns:1fr}.material-list>article{align-items:flex-start;flex-wrap:wrap}.material-list>article>div{flex-basis:100%}.settings-modal footer{flex-wrap:wrap}}

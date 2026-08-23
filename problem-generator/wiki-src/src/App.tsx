@@ -74,18 +74,20 @@ export default function App() {
   const runAssistant = (raw: string) => {
     const command = raw.trim()
     if (!command) return
-    const route: Page = /오답|학생/.test(command) ? 'wrongnote' : /인사이트|수업 기록|지능/.test(command) ? 'brain' : /프린트|학교/.test(command) ? 'school' : /실전|문제지|docx|인쇄/.test(command) ? 'exam' : /digital twin|디지털 트윈|출제자|분석/.test(command.toLowerCase()) ? 'twin' : 'home'
+    const normalized = command.toLowerCase()
+    const route: Page = /오답|학생/.test(command) ? 'wrongnote' : /digital\s*twin|디지털\s*트윈|출제자/.test(normalized) ? 'twin' : /프린트|학교 자료|기출 정리/.test(command) ? 'school' : /실전|문제지|docx|인쇄/.test(normalized) ? 'exam' : /인사이트|수업 기록|지능/.test(command) ? 'brain' : 'home'
     const guidance: Record<Page, { text: string; action: string }> = {
       state: { text: '원하시는 작업을 조금 더 자세히 말씀해 주세요.', action: '홈에 머물기' },
-      home: { text: '저장된 출제자 Digital Twin과 기존 문제 자료를 연결해 내신 문제를 만들 수 있습니다. 사용할 영어 지문이나 학교 프린트가 필요합니다. 자료를 올리거나 기존 자료를 선택해 주세요.', action: '내신 문제 준비하기' },
-      wrongnote: { text: '학생별 오답 기록과 OCR 자료를 확인해 복습 자료로 연결할 수 있습니다. 분석할 학생과 채점된 시험지 또는 오답 사진을 선택해 주세요.', action: '학생 오답 열기' },
-      brain: { text: '수업에서 발견한 학생 반응과 설명 방식을 다음 제작에 쓸 기억으로 남길 수 있습니다. 오늘 기록할 수업이나 학생을 알려주세요.', action: '수업 기록 열기' },
-      school: { text: '학교별 기출과 프린트를 OCR로 정리하고 출제자 분석에 연결할 수 있습니다. 정리할 학교 프린트를 올려주세요.', action: '학교 자료 열기' },
-      exam: { text: '문제 DB에 저장된 문항과 현재 exam draft를 이어서 실전 문제지로 구성할 수 있습니다. 사용할 문항을 확인해 주세요.', action: '실전 문제지 열기' },
-      twin: { text: '기존 출제 자료를 Digital Twin으로 가져와 학교·학년·시험 맥락에 연결할 수 있습니다. 분석할 자료를 선택해 주세요.', action: 'Digital Twin 열기' },
+      home: { text: '할 수 있는 작업: 학교별 내신 문제 생성·변형. 필요한 자료: 학교·학년·시험과 영어 지문 또는 저장된 프린트. 다음 행동: 기존 생성기에서 조건과 자료를 확인하세요.', action: '내신 문제 준비하기' },
+      wrongnote: { text: '할 수 있는 작업: 학생별 오답 조회·OCR 저장·복습 DOCX 제작. 필요한 자료: 학생 선택과 채점된 시험지 또는 오답 사진. 다음 행동: 기존 학생 오답 화면에서 기록을 선택하세요.', action: '학생 오답 열기' },
+      brain: { text: '할 수 있는 작업: 수업 인사이트와 교육자 판단 기록. 필요한 자료: 수업·학생·발견 내용. 다음 행동: 기존 Educator Brain 기록 화면을 여세요.', action: '수업 기록 열기' },
+      school: { text: '할 수 있는 작업: 학교 프린트 OCR·편집·DOCX 정리. 필요한 자료: 학교·학년·시험과 원본 사진/PDF. 다음 행동: 기존 학교별 DB에서 프린트를 올리세요.', action: '학교 자료 열기' },
+      exam: { text: '할 수 있는 작업: 저장 문항과 현재 exam_draft로 실전 문제지·DOCX 제작. 필요한 자료: 문제 DB에서 선택한 문항. 다음 행동: 기존 실전 제작 화면에서 초안을 확인하세요.', action: '실전 문제지 열기' },
+      twin: { text: '할 수 있는 작업: 기존 출제 자료를 Digital Twin으로 가져와 학교 맥락에 적용. 필요한 자료: 분석 가능한 HTML·JSON·PDF·TXT. 다음 행동: 기존 Digital Twin 관리 화면에서 자료를 선택하세요.', action: 'Digital Twin 열기' },
       database: { text: '저장된 강사 문항을 확인하고 실전 문제지로 보낼 수 있습니다.', action: '문제 DB 열기' },
       textbook: { text: '교과서와 Lesson별 수업 자료를 확인하고 제작 작업에 연결할 수 있습니다.', action: '교과서 DB 열기' },
     }
+    try { sessionStorage.setItem('buildit_assistant_context', JSON.stringify({ request: command, route, createdAt: Date.now() })) } catch { /* routing still works without browser storage */ }
     setAssistantReply({ ...guidance[route], page: route })
     setAssistantInput('')
   }

@@ -62,7 +62,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
 
   return <div className="f2r-gen">
     <header className="gen-topbar">
-      <button className="gen-back" onClick={()=>onNavigate('home')}>← Wiki</button>
+      <button className="gen-back" onClick={()=>onNavigate('state')}>← Wiki 홈</button>
       <div><b>내신 문제 제작</b><span> · Educator Brain 컨텍스트 기반</span></div>
       <button className="gen-db" onClick={()=>onNavigate('database')}>문제 DB</button>
     </header>
