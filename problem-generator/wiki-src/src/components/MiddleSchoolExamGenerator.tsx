@@ -23,7 +23,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [school,setSchool]=useState('')
   const [grade,setGrade]=useState('')
   const [semester,setSemester]=useState('2')
-  const [exam,setExam]=useState('midterm')
+  const [exam,setExam]=useState('')
   const [passage,setPassage]=useState('')
   const [selectedTypes,setSelectedTypes]=useState<string[]>(['blank','grammar','vocab','order','insert'])
   const [count,setCount]=useState(10)
@@ -39,8 +39,18 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const exams=gradeNode?.exams||[]
 
   useEffect(()=>{
+    if (!school || !tree.some(item => item.school === school)) { setGrade(''); setExam(''); return }
+    if (!grade || !grades.some(item => item.grade === grade)) { setGrade(grades[0]?.grade || ''); setExam('') }
+  },[school,tree,grade,grades])
+
+  useEffect(()=>{
+    if (!grade) { setExam(''); return }
+    if (!exam || !exams.some(item => item.exam === exam)) setExam(exams[0]?.exam || '')
+  },[grade,exam,exams])
+
+  useEffect(()=>{
     if(!school||!grade) { setProfile(null); return }
-    const selected=exams.find(x=>x.exam===exam) || exams[0]
+    const selected=exams.find(x=>x.exam===exam)
     if(!selected?.twinId){setProfile(null);return}
     api(`digital-twins/${selected.twinId}`)
       .then(r=>r.ok?r.json():null).then(setProfile).catch(()=>setProfile(null))

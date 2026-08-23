@@ -307,6 +307,20 @@ class ImportedTwinProfile(BaseModel):
     rawSource: str = ''
 
 
+def digital_twin_response(row: sqlite3.Row) -> dict:
+    """Return the persisted row contract, not potentially stale profile_json metadata."""
+    profile = sanitize_profile_data(json.loads(row['profile_json']))
+    return {
+        **profile,
+        'id': row['id'],
+        'school': sanitize_profile_text(row['school']) or profile.get('school', ''),
+        'grade': sanitize_profile_text(row['grade']),
+        'exam': sanitize_profile_text(row['exam']),
+        'version': row['version'],
+        'updatedAt': row['updated_at'],
+    }
+
+
 @app.get('/api/digital-twins')
 def list_digital_twins(school: Optional[str] = None, grade: Optional[str] = None, exam: Optional[str] = None):
     query = 'SELECT * FROM digital_twin_profiles WHERE is_active = 1'
@@ -323,7 +337,7 @@ def list_digital_twins(school: Optional[str] = None, grade: Optional[str] = None
     query += ' ORDER BY updated_at DESC'
     with get_db() as conn:
         rows = conn.execute(query, values).fetchall()
-        return [{**sanitize_profile_data(json.loads(row['profile_json'])), 'id': row['id'], 'version': row['version']} for row in rows]
+        return [digital_twin_response(row) for row in rows]
 
 
 @app.get('/api/digital-twins/{twin_id}')
@@ -332,7 +346,7 @@ def get_digital_twin(twin_id: int):
         row = conn.execute('SELECT * FROM digital_twin_profiles WHERE id = ?', (twin_id,)).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail='Digital Twin을 찾지 못했습니다.')
-    return {**sanitize_profile_data(json.loads(row['profile_json'])), 'id': row['id'], 'version': row['version']}
+    return digital_twin_response(row)
 
 
 @app.post('/api/digital-twins/import')
@@ -414,10 +428,7 @@ def _load_twin(conn, twin_id: Optional[int], school: Optional[str], grade: Optio
         row = conn.execute(query, values).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail='선택한 학교·학년·시험의 Digital Twin을 찾지 못했습니다. Digital Twin 관리에서 HTML을 먼저 업로드해 주세요.')
-    twin = sanitize_profile_data(json.loads(row['profile_json']))
-    twin['id'] = row['id']
-    twin['version'] = row['version']
-    return twin
+    return digital_twin_response(row)
 
 
 def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict], exam_title: str, exam_group_id: str):

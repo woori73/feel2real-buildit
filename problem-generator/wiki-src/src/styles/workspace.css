@@ -97,8 +97,8 @@ body, button, input, select, textarea { font-family: var(--wiki-font-sans); }
 @media(max-width:900px){.tool-shell:not(.wiki-home-shell):not(.category-shell){grid-template-columns:1fr}.tool-shell:not(.wiki-home-shell) .tool-main{padding:16px 12px 140px}.insight-layout{grid-template-columns:1fr}.hub-actions{grid-template-columns:1fr}.category-main{padding-top:40px!important}}
 
 /* Action contrast is scoped to Wiki work screens so global button rules cannot hide labels. */
-.tool-shell:not(.wiki-home-shell) .primary-action{background:#17211b;color:#fff;opacity:1}
-.tool-shell:not(.wiki-home-shell) .primary-action:disabled{background:#d9dfdb;color:#536159;opacity:1;cursor:not-allowed}
+.tool-shell:not(.wiki-home-shell) button.primary-action{background:#17211b;color:#fff;opacity:1}
+.tool-shell:not(.wiki-home-shell) button.primary-action:disabled{background:#d9dfdb;color:#536159;opacity:1;cursor:not-allowed}
 .tool-shell:not(.wiki-home-shell) .secondary-button,.tool-shell:not(.wiki-home-shell) .btn-ghost{background:#fff;color:#263c30;border:1px solid #9eada3}
 .tool-shell:not(.wiki-home-shell) .secondary-button:disabled,.tool-shell:not(.wiki-home-shell) .btn-ghost:disabled{background:#eef1ef;color:#67726b;border-color:#cbd2cd;opacity:1;cursor:not-allowed}
 .storage-location,.storage-status{margin:12px 0 0;color:#526158;font-size:12px;font-weight:700}.storage-status{padding:8px 10px;border-radius:9px;background:#edf5ef;color:#29563d}
