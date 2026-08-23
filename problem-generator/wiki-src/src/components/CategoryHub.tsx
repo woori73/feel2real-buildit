@@ -17,8 +17,10 @@ const hubs: Record<Hub, { eyebrow: string; title: string; description: string; a
   student: {
     eyebrow: '학생', title: '학생 작업을 선택하세요', description: '오답을 새로 추출하거나 저장된 학생 기록을 이어서 봅니다.',
     actions: [
-      { page: 'wrongnote', title: '오답 기록·추출', detail: '채점지 사진·PDF에서 오답 텍스트 추출' },
+      { page: 'wrongextract', title: '오답 기록·추출', detail: '채점지 사진·PDF에서 오답 텍스트 추출·저장' },
       { page: 'wrongnote', title: '학생별 오답노트', detail: '누적 오답 확인, 수정과 복습 DOCX 제작' },
+      { page: 'passagememory', title: '지문 암기', detail: '영문과 자연스러운 한글 해석을 문장별로 나란히 정리' },
+      { page: 'passageanalysis', title: '지문 분석·문제 제작', detail: '구조·문법·흐름 분석과 한영 T/F 10문항 제작' },
     ],
   },
   intelligence: {

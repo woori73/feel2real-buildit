@@ -4,6 +4,24 @@
 
 ## 0. 운영 규칙
 
+### ✅ POST /problem-generator/wiki/api/passages/memory
+
+- 목적: 외부 영어 지문을 문장별 영문·한국어 해석 쌍으로 변환한다.
+- 현재 사용처: Wiki `학생 → 지문 암기`
+- 인증/권한: 기존 Wiki 프록시 정책을 따른다.
+- Request JSON: `api_key`, `source_text`
+- Response JSON: `title`, `sentences[{english,korean}]`
+- 실패: 빈 지문/키 없음 `400`, AI 호출 실패는 기존 Gemini 오류 계약을 따른다.
+
+### ✅ POST /problem-generator/wiki/api/passages/analysis
+
+- 목적: 6페이지형 지문 분석 데이터와 내용일치 T/F 10문항을 생성한다.
+- 현재 사용처: Wiki `학생 → 지문 분석·문제 제작`
+- 인증/권한: 기존 Wiki 프록시 정책을 따른다.
+- Request JSON: `api_key`, `source_text`
+- Response JSON: `original`, `translation`, `title`, `topic`, `mainIdea`, `summary`, `sentences[{original,structure,translation,guide,grammar}]`, `flow{introduction,development,conclusion}`, `tfQuestions[{language,statement,answer}]`
+- 검증: T/F가 정확히 10개가 아니면 `502`로 재시도를 요청한다.
+
 ### 문서화 대상
 
 다음 변경이 있으면 코드 변경과 같은 커밋/작업 단위에서 이 문서를 함께 수정한다.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import MiddleSchoolExamGenerator from './components/MiddleSchoolExamGenerator'
 import StudentWrongNoteDashboard from './components/StudentWrongNoteDashboard'
+import PassageWorkspace from './components/PassageWorkspace'
 import TextbookDatabase from './components/TextbookDatabase'
 import SchoolDatabase from './components/SchoolDatabase'
 import ApiSettingsModal, { ApiSettings } from './components/ApiSettingsModal'
@@ -14,7 +15,7 @@ import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetc
 import { api } from './lib/api'
 import './styles/generator.css'
 
-export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'twin' | 'database' | 'exam' | 'wrongnote' | 'textbook' | 'school' | 'brain'
+export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'passagememory' | 'passageanalysis' | 'textbook' | 'school' | 'brain'
 
 // role=ADMIN 같은 query parameter는 권한 컨텍스트일 뿐 Wiki의 초기 화면을 바꾸지 않는다.
 const initialPage = (): Page => 'state'
@@ -25,7 +26,10 @@ const menu: { id: Page; label: string; icon: string }[] = [
   { id: 'twin', label: 'Digital Twin 관리', icon: '◈' },
   { id: 'database', label: '강사 문제 DB', icon: '▤' },
   { id: 'exam', label: '내신 실전 제작', icon: '▧' },
+  { id: 'wrongextract', label: '오답 기록·추출', icon: '◉' },
   { id: 'wrongnote', label: '학생별 오답노트', icon: '◎' },
+  { id: 'passagememory', label: '지문 암기', icon: '▥' },
+  { id: 'passageanalysis', label: '지문 분석·문제 제작', icon: '▨' },
   { id: 'textbook', label: '교과서 DB', icon: '▦' },
   { id: 'school', label: '학교별 DB', icon: '▧' },
 ]
@@ -41,13 +45,16 @@ const descriptions: Record<Page, string> = {
   database: '생성하거나 변형한 문항을 SQLite DB에서 확인하고 관리합니다.',
   exam: '선택한 문항으로 실전 시험지를 구성합니다.',
   wrongnote: '학생별 오답을 누적하고 맞춤 복습 자료를 준비합니다.',
+  wrongextract: '채점지 사진·PDF에서 오답을 추출하고 학생 기록으로 저장합니다.',
+  passagememory: '외부 영어 지문을 문장별 영문·한글 대조표로 정리해 암기 자료로 만듭니다.',
+  passageanalysis: '외부 영어 지문을 구조·문법·흐름별로 분석하고 내용일치 문제를 만듭니다.',
   textbook: '출판사와 Lesson별 수업 자료를 등록하고 관리합니다.',
   school: '학교·학년·시험별 기출과 수업 자료를 관리합니다.',
 }
 
 const storageLabels: Partial<Record<Page, string>> = {
   home: '문제 DB', database: '문제 DB', exam: '문제 DB / exam_draft',
-  wrongnote: '학생 오답 기록', brain: 'Educator Brain · 수업 인사이트',
+  wrongextract: '학생 오답 기록', wrongnote: '학생 오답 기록', passagememory: '현재 작업 · 다운로드 가능', passageanalysis: '현재 작업 · 다운로드 가능', brain: 'Educator Brain · 수업 인사이트',
   twin: '학교별 Digital Twin', school: '이 브라우저 · 학교별 DB', textbook: '이 브라우저 · 교과서 DB',
 }
 
@@ -106,7 +113,7 @@ export default function App() {
 
   const isHome = page === 'state'
   const isHub = page === 'create' || page === 'student' || page === 'intelligence'
-  const parentHub: Page = page === 'wrongnote' ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
+  const parentHub: Page = ['wrongextract', 'wrongnote', 'passagememory', 'passageanalysis'].includes(page) ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
   return <div className={`tool-shell${isHome ? ' wiki-home-shell' : ''}${isHub ? ' category-shell' : ''}`}>
     {!isHome && !isHub && <aside className="side-nav compact-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><nav aria-label="현재 작업 내비게이션"><button onClick={() => setPage(parentHub)}>← {parentHub === 'student' ? '학생' : parentHub === 'intelligence' ? '지능' : '만들기'}</button></nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 내보내기</a></div></aside>}
     <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}>{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
@@ -118,7 +125,10 @@ export default function App() {
       {page === 'brain' && <InsightRecorder />}
       {page === 'home' && <MiddleSchoolExamGenerator onNavigate={setPage} apiSettings={apiSettings} />}
       {page === 'twin' && <DigitalTwinImport onApplied={profile => { setPage('home'); setNotice(`${profile.school} Digital Twin을 저장했습니다. 문제 생성기에서 학교를 선택하면 자동 적용됩니다.`) }} />}
-      {page === 'wrongnote' && <StudentWrongNoteDashboard apiSettings={apiSettings} />}
+      {page === 'wrongextract' && <StudentWrongNoteDashboard apiSettings={apiSettings} mode="extract" />}
+      {page === 'wrongnote' && <StudentWrongNoteDashboard apiSettings={apiSettings} mode="notebook" />}
+      {page === 'passagememory' && <PassageWorkspace mode="memory" apiSettings={apiSettings} />}
+      {page === 'passageanalysis' && <PassageWorkspace mode="analysis" apiSettings={apiSettings} />}
       {page === 'textbook' && <TextbookDatabase />}
       {page === 'school' && <SchoolDatabase onAnalyze={() => setPage('twin')} apiSettings={apiSettings} />}
       {page === 'database' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">TEACHER QUESTION DATABASE</p><h2>강사 문제 DB</h2><p>신규 생성·변형한 문항이 SQLite DB에 영구 저장됩니다.</p></div><div className="twin-actions"><button className="secondary-button" onClick={refreshQuestions}>새로고침</button><button className="primary-action" style={{ marginTop: 0 }} disabled={!selectedExamIds.length} onClick={sendSelectedToExam}>선택 문항으로 실전 제작 ({selectedExamIds.length})</button></div></div>{questions.length === 0 ? <div className="empty-state"><b>저장된 문항이 없습니다.</b><p>문제 생성기에서 만든 문항을 저장하면 이곳에서 관리할 수 있어요.</p><button className="primary-action" onClick={() => setPage('home')}>문제 생성으로 이동</button></div> : <div className="db-list">{questions.map(item => <article key={item.id} style={{ flexWrap: 'wrap' }}><input type="checkbox" aria-label={`${item.id} 선택`} checked={selectedExamIds.includes(item.id)} onChange={() => toggleExamSelection(item.id)} /><div><b>{item.question_type || '문항'} · {item.mode === 'transform' ? '변형' : '신규'} · {item.score}점</b><p>{item.school} · {item.grade} · {item.exam} · {new Date(item.created_at).toLocaleString('ko-KR')}</p><small>{item.stem.slice(0, 80)}</small></div><button onClick={() => toggleExpanded(item.id)}>{expandedIds.has(item.id) ? '간단히' : '전체보기'}</button><button onClick={() => sendToExam(item.id)}>실전 제작</button><button onClick={() => deleteQuestion(item.id)}>삭제</button>{expandedIds.has(item.id) && <div style={{ flexBasis: '100%', marginTop: 12 }}><div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="question-list"><QuestionCard q={item} index={1} /></div></div></div></div>}</article>)}</div>}</section>}

@@ -694,3 +694,5 @@ Wiki 홈
 - Assistant 첨부는 새 파일 저장소를 만들지 않는다. 이미지/PDF·학교 자료는 기존 `SchoolDatabase` OCR 흐름, 학생/오답 요청은 `StudentWrongNoteDashboard` OCR 흐름, HTML/JSON/TXT는 `DigitalTwinImport` 흐름으로 안내한다.
 - Assistant는 user/assistant history와 `goal/school/grade/exam/selected_twin_id/needed_materials/recent_request/current_page` 세션 상태를 유지한다. `압구정중3`처럼 붙여 쓴 학교·학년도 파싱하며, 연결된 Twin의 시험·유형과 문제·학생·인사이트 개수만 조회해 실제 부족 항목만 질문한다. 생성기 이동 시 이 상태로 학교·학년·시험을 채운다. 브라우저 Gemini 키 또는 서버 키가 있으면 Agent 응답을 우선하고, 호출 실패 시에만 규칙 기반으로 안내한다.
 - 모든 Wiki API는 `/problem-generator/wiki/api/** → Spring Proxy → FastAPI`를 유지한다.
+- `학생` 허브는 `오답 기록·추출`, `학생별 오답노트`, `지문 암기`, `지문 분석·문제 제작`의 네 독립 화면으로 이동한다. 오답 기록 화면은 학생 선택·OCR·저장에 집중하고, 오답노트 화면은 누적 기록 조회·수정·선택 통합·DOCX 내보내기에 집중한다.
+- 지문 암기는 붙여넣기 또는 PDF·이미지·TXT의 브라우저 추출 결과를 받아 문장별 영어/자연스러운 한국어 쌍을 만든다. 지문 분석은 원문·해석·제목·주제·요지·요약, 모든 문장의 구조·해석·가이드·핵심 문법, 도입-전개-마무리, 한국어 5개+영어 5개의 T/F 문제와 정답을 생성한다. 두 결과는 인쇄와 HTML 다운로드를 지원하며 DB에는 자동 저장하지 않는다.
