@@ -531,7 +531,10 @@ def generate_questions(payload: NewQuestionRequest):
         raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
     with get_db() as conn:
         twin = _load_twin(conn, payload.twin_id, payload.school, payload.grade, payload.exam)
-        type_labels = payload.types or None
+        type_labels = [
+            f"{pl.TYPE_DEF_BY_ID[type_id]['label']} — {pl.TYPE_DEF_BY_ID[type_id]['prompt']}"
+            for type_id in payload.types if type_id in pl.TYPE_DEF_BY_ID
+        ] or None
         mc_total, sa_total = _composition(payload.count, payload.composition)
         batches = _batches(payload.count, mc_total, sa_total)
         all_questions: list[dict] = []
@@ -542,24 +545,36 @@ def generate_questions(payload: NewQuestionRequest):
                 'start': batch['start'], 'end': batch['end'], 'mc': batch['mc'], 'sa': batch['sa'], 'previous': previous,
             })
             user_msg = f"[핵심 문법]\n{payload.grammar}\n\n[새 지문—내용 일치 문제에서는 이 전체 지문을 제시할 것]\n{payload.passage}"
-            try:
-                text = pl.call_gemini_structured(key, rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
-            except Exception as exc:
-                _handle_gemini_error(exc)
-                return
-            try:
-                parsed = json.loads(re.sub(r'```json|```', '', text).strip())
-            except (json.JSONDecodeError, TypeError):
-                raise HTTPException(status_code=502, detail='AI 응답을 JSON으로 해석하지 못했습니다. 다시 시도해 주세요.')
-            mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
-            sa_qs = []
-            for q in parsed.get('saQuestions', []):
-                q['type'] = 'sa'
-                q['acceptedAnswers'] = q.get('acceptedAnswers') or [q.get('sampleAnswer', '')]
-                q['answerFormat'] = q.get('answerFormat') or '정답 한 개를 정확히 작성'
-                q['gradingRule'] = q.get('gradingRule') or '철자와 문법이 모범답안과 일치해야 함'
-                sa_qs.append(q)
-            batch_questions = mc_qs + sa_qs
+            batch_questions: list[dict] = []
+            quality_issues: list[str] = []
+            for quality_attempt in range(2):
+                retry_rules = rules
+                if quality_issues:
+                    retry_rules += ' [직전 응답 품질 오류—모두 수정] ' + ' / '.join(quality_issues)
+                try:
+                    text = pl.call_gemini_structured(key, retry_rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
+                except Exception as exc:
+                    _handle_gemini_error(exc)
+                    return
+                try:
+                    parsed = json.loads(re.sub(r'```json|```', '', text).strip())
+                except (json.JSONDecodeError, TypeError):
+                    quality_issues = ['JSON 형식 오류']
+                    continue
+                mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
+                sa_qs = []
+                for q in parsed.get('saQuestions', []):
+                    q['type'] = 'sa'
+                    q['acceptedAnswers'] = q.get('acceptedAnswers') or [q.get('sampleAnswer', '')]
+                    q['answerFormat'] = q.get('answerFormat') or '정답 한 개를 정확히 작성'
+                    q['gradingRule'] = q.get('gradingRule') or '철자와 문법이 모범답안과 일치해야 함'
+                    sa_qs.append(q)
+                batch_questions = mc_qs + sa_qs
+                quality_issues = pl.batch_quality_issues(batch_questions)
+                if not quality_issues:
+                    break
+            if quality_issues:
+                raise HTTPException(status_code=502, detail='AI가 시험지 형식 검증을 통과하지 못했습니다: ' + '; '.join(quality_issues[:3]))
             all_questions.extend(batch_questions)
             previous = ' || '.join(f"{i+1}. {q.get('questionType','')} / {q.get('stem','')} / {(q.get('sourceText') or '')[:120]}" for i, q in enumerate(all_questions))[-7000:]
         exam_title = f"{twin.get('school','')} {twin.get('grade','')} 맞춤형 시험지".strip()

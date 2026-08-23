@@ -2883,6 +2883,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
   - `/problem-generator/schools` — 학교별 DB
 - 인증/권한: STUDENT / TUTOR / ADMIN. 비로그인 HTML 요청은 `/?login=required`로 302 리다이렉트한다. 목적지는 비로그인 목적지 통일 원칙대로 `/`를 유지하고, 랜딩(`static/js/landing_buildit.js`)이 `login=required`를 읽어 안내 alert + 공통 로그인 모달을 연 뒤 쿼리 마커를 지운다. 비로그인 JSON 요청은 기존대로 401이다.
 - 비고: 자료 업로드/조회와 Gemini BYO 키 기반 문제 생성 테스트가 실동작한다. Gemini 키는 요청 바디로만 전달하며 서버 DB/설정 파일에 저장하지 않는다.
+- Wiki FastAPI 문제 생성은 선택된 Digital Twin의 유형 ID를 서버 카탈로그의 한글명·세부 지침으로 변환한다. 응답은 밑줄 길이/개수, 객관식 선택지 수, 순서형 `(A)·(B)·(C)` 구조를 검증하며 1회 자동 보정 재요청 후에도 실패하면 `502`로 거부하고 저장하지 않는다.
 
 
 ### ✅ POST /api/problem-generator/gemini/generate

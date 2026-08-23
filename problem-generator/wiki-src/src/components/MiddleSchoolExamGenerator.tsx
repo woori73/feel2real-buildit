@@ -25,7 +25,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [semester,setSemester]=useState('2')
   const [exam,setExam]=useState('midterm')
   const [passage,setPassage]=useState('')
-  const [selectedTypes,setSelectedTypes]=useState<string[]>(['blank','grammar','vocab','order','insert'])
+  const [selectedTypes,setSelectedTypes]=useState<string[]>([])
   const [count,setCount]=useState(10)
   const [loading,setLoading]=useState(false)
   const [result,setResult]=useState<any[]>([])
@@ -38,6 +38,8 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const gradeNode=useMemo(()=>grades.find(x=>x.grade===grade),[grades,grade])
   const exams=gradeNode?.exams||[]
 
+  useEffect(()=>{ if(grade&&exams.length&&!exam) setExam(exams[0].exam) },[grade,exam,exams])
+
   useEffect(()=>{
     if(!school||!grade) { setProfile(null); return }
     const selected=exams.find(x=>x.exam===exam) || exams[0]
@@ -46,11 +48,19 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
       .then(r=>r.ok?r.json():null).then(setProfile).catch(()=>setProfile(null))
   },[school,grade,exam,exams])
 
+  useEffect(()=>{
+    if(!profile||!typeDefs.length)return
+    const twinNames=new Set(profile.types.map(item=>item.name.trim()))
+    const matched=typeDefs.filter(item=>twinNames.has(item.label)||profile.types.some(twin=>twin.name.includes(item.label)||item.label.includes(twin.name))).map(item=>item.id)
+    if(matched.length)setSelectedTypes(matched)
+  },[profile,typeDefs])
+
   const toggleType=(id:string)=>setSelectedTypes(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id])
 
   async function generate(){
     setError('')
     if(!school||!grade){setError('학교와 학년을 선택해 주세요.');return}
+    if(!profile){setError('선택한 학교·학년·시험에 연결된 Digital Twin이 없습니다. Digital Twin 관리에서 먼저 연결해 주세요.');return}
     if(!passage.trim()){setError('문제 제작에 사용할 지문을 입력해 주세요.');return}
     if(!selectedTypes.length){setError('문제 유형을 하나 이상 선택해 주세요.');return}
     setLoading(true)
@@ -86,9 +96,9 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
           <label>학기<select value={semester} onChange={e=>setSemester(e.target.value)}><option value="1">1학기</option><option value="2">2학기</option></select></label>
           <label>시험<select value={exam} onChange={e=>setExam(e.target.value)}><option value="">선택</option>{exams.map((x,index)=><option key={`${x.exam}-${x.twinId ?? index}`} value={x.exam}>{x.exam}{x.hasDigitalTwin?' · Twin 연결':' · 기록 있음'}</option>)}</select></label>
         </div>
-        {profile?<div className="twin-strip"><b>Digital Twin 연결됨</b><span>{school} {grade}의 저장된 출제 패턴을 이번 제작에 반영합니다.</span></div>:school&&grade&&<div className="twin-strip"><b>기존 기록 연결됨</b><span>이 학교·학년의 기록은 있으나 Digital Twin은 아직 없습니다.</span></div>}
+        {profile?<div className="twin-strip"><b>Digital Twin 연결됨 · v{profile.version}</b><span>{profile.types.slice(0,6).map(item=>item.name).join(' · ') || profile.dna}</span></div>:school&&grade&&<div className="twin-strip"><b>기존 기록 연결됨</b><span>이 학교·학년의 기록은 있으나 Digital Twin은 아직 없습니다.</span></div>}
         <label className="passage-label">영어 지문<textarea value={passage} onChange={e=>setPassage(e.target.value)} placeholder="교과서, 학교 프린트 또는 외부 지문을 붙여 넣으세요." /></label>
-        <div className="type-head"><b>문제 유형</b><span>{selectedTypes.length}개 선택</span></div>
+        <div className="type-head"><b>문제 유형 {profile?'· Digital Twin 자동 적용':''}</b><span>{selectedTypes.length}개 선택</span></div>
         <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,label:TYPE_LABELS[id]} as TypeDef))).map(t=>{const id=t.id;return <button type="button" key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.label||TYPE_LABELS[id]||id}</button>})}</div>
         <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}

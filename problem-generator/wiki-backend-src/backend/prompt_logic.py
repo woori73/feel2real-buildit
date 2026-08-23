@@ -265,7 +265,7 @@ class GeminiCallError(Exception):
         self.http_status = http_status
 
 
-def call_gemini_structured(key: str, rules: str, user_msg: str, schema: dict, temperature: float = 0.75) -> str:
+def call_gemini_structured(key: str, rules: str, user_msg: str, schema: dict, temperature: float = 0.35) -> str:
     """원본 callGemini(key, rules, userMsg, sc) 이식: 모델 폴백 체인 + 429 재시도."""
     last_err = None
     for model in MODEL_CANDIDATES:
@@ -402,6 +402,42 @@ def prepare_question(q: dict) -> dict:
         q['stem'] = '다음 중 위 글의 네 단어의 영영풀이로 적절하지 않은 것을 고르시오.'
         q['sourceText'] = ''
     return q
+
+
+def question_quality_issues(q: dict) -> list[str]:
+    """무료 모델 응답도 시험지에 저장하기 전에 구조 불변식을 통과시킨다."""
+    issues: list[str] = []
+    qtype = str(q.get('questionType') or '')
+    stem = str(q.get('stem') or '')
+    source = normalize_underline_markup(q.get('sourceText') or '')
+    options = q.get('options') or []
+    answers = q.get('answer') or []
+    if q.get('type') == 'mc':
+        inline = is_inline_underline({**q, 'sourceText': source})
+        if inline:
+            spans = re.findall(r'\[\[u\]\]([\s\S]*?)\[\[/u\]\]', source)
+            if len(spans) != 5:
+                issues.append('밑줄 번호형은 정확히 5개 밑줄이 필요함')
+            if any(not span.strip() or len(span.split()) > 6 or '\n' in span for span in spans):
+                issues.append('밑줄은 줄바꿈 없는 1~6단어의 짧은 어구여야 함')
+            if options:
+                issues.append('밑줄 번호형 options는 비어 있어야 함')
+        elif len(options) != 5:
+            issues.append('일반 객관식은 선택지 5개가 필요함')
+        if any(not isinstance(answer, int) or answer < 1 or answer > 5 for answer in answers):
+            issues.append('객관식 정답 번호는 1~5여야 함')
+    if re.search(r'sequence', qtype, re.IGNORECASE) or re.search(r'이어질 순서|올바른 순서', stem):
+        if not all(re.search(rf'(?m)^\({mark}\)\s+', source) for mark in 'ABC'):
+            issues.append('순서형은 새 줄에서 시작하는 (A), (B), (C) 문단이 모두 필요함')
+        if len(options) != 5:
+            issues.append('순서형은 배열 조합 선택지 5개가 필요함')
+    if source.count('[[u]]') != source.count('[[/u]]'):
+        issues.append('밑줄 마크업의 시작과 끝이 맞지 않음')
+    return issues
+
+
+def batch_quality_issues(questions: list[dict]) -> list[str]:
+    return [f"{index + 1}번: {issue}" for index, question in enumerate(questions) for issue in question_quality_issues(question)]
 
 
 def repair_transform_question(q: dict) -> dict:
