@@ -56,6 +56,10 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
       .then(r=>r.ok?r.json():null).then(setProfile).catch(()=>setProfile(null))
   },[school,grade,exam,exams])
 
+  useEffect(()=>{
+    try { sessionStorage.setItem('buildit_page_context', JSON.stringify({ school, grade, exam, selected_twin_id: profile?.id ?? null })) } catch { /* selection still works without storage */ }
+  },[school,grade,exam,profile])
+
   const toggleType=(id:string)=>setSelectedTypes(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id])
 
   async function generate(){

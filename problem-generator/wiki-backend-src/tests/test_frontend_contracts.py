@@ -9,11 +9,21 @@ class FrontendContractTest(unittest.TestCase):
         source = (ROOT / 'components' / 'AssistantComposer.tsx').read_text(encoding='utf-8')
         self.assertIn('onSubmit={submit}', source)
         self.assertIn('requestSubmit()', source)
-        self.assertIn('disabled={value.trim().length === 0}', source)
+        self.assertIn('disabled={busy || (value.trim().length === 0 && files.length === 0)}', source)
         self.assertIn('!event.nativeEvent.isComposing', source)
         self.assertIn('event.keyCode !== 229', source)
         self.assertIn('onCompositionEnd=', source)
         self.assertIn('<svg aria-hidden="true"', source)
+        self.assertIn("messages.map", source)
+        self.assertIn("className={message.role}", source)
+
+    def test_assistant_uses_proxy_and_keeps_structured_session_state(self):
+        source = (ROOT / 'App.tsx').read_text(encoding='utf-8')
+        self.assertIn("api('assistant/chat'", source)
+        self.assertIn("sessionStorage.getItem('buildit_assistant_state')", source)
+        self.assertIn('current_page: page', source)
+        self.assertIn("sessionStorage.getItem('buildit_page_context')", source)
+        self.assertNotIn("fetch('/api/", source)
 
     def test_assistant_and_primary_actions_have_explicit_layer_and_contrast(self):
         composer_css = (ROOT / 'styles' / 'wiki-ink.css').read_text(encoding='utf-8')
