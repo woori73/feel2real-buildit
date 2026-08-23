@@ -3207,3 +3207,10 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 목적: 후보 제외.
 - 인증/권한: `ROLE_ADMIN`.
 - Response: 갱신 후보.
+
+
+### Wiki AI 오류/timeout 계약
+
+- OpenRouter 단일 호출은 `AI_PROVIDER_TIMEOUT_SECONDS`(기본 90초, 10~120초 범위)로 제한한다. 명시적 `ox-alpha` 선택은 Gemini로 fallback하지 않으며, `auto`에서만 Gemini → Ox Alpha 순 fallback을 허용한다.
+- AI 실패 응답은 `detail: { message, provider, status }` JSON으로 정규화한다. 429/502/504의 게이트웨이 HTML이나 외부 provider 원문을 브라우저에 전달하지 않는다.
+- 문제 생성 성공 응답과 Assistant 응답은 실제 `provider`, `model`을 포함한다.

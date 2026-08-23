@@ -52,10 +52,29 @@ class AiRouterTest(unittest.TestCase):
             result = ai_router.generate('auto', 'system', 'hello')
         self.assertEqual(('gemini', 'Gemini fallback'), (result.provider, result.text))
 
-    def test_explicit_ox_without_key_gracefully_falls_back_to_gemini(self):
+    def test_explicit_ox_without_key_never_falls_back_to_gemini(self):
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-key', 'OPENROUTER_API_KEY': ''}, clear=False), patch.object(ai_router.pl, 'call_gemini_text', return_value='safe fallback'):
+            with self.assertRaises(ai_router.ProviderError) as raised:
+                ai_router.generate('ox-alpha', 'system', 'hello')
+        self.assertEqual('ox-alpha', raised.exception.provider)
+
+    def test_openrouter_timeout_is_normalized_without_html_or_secret(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'never-print-me'}), patch('urllib.request.urlopen', side_effect=TimeoutError()):
+            with self.assertRaises(ai_router.ProviderError) as raised:
+                ai_router.generate('ox-alpha', 'system', 'hello')
+        self.assertEqual(504, raised.exception.status)
+        self.assertIn('응답 시간이 초과', str(raised.exception))
+        self.assertNotIn('never-print-me', str(raised.exception))
+
+    def test_openrouter_uses_configured_model_and_bounded_timeout(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'choices': [{'message': {'content': 'safe'}}]}).encode()
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'key', 'OX_ALPHA_MODEL': 'stealth/ox-alpha', 'AI_PROVIDER_TIMEOUT_SECONDS': '90'}), patch('urllib.request.urlopen', return_value=response) as call:
             result = ai_router.generate('ox-alpha', 'system', 'hello')
-        self.assertEqual('gemini', result.provider)
+        request = call.call_args.args[0]
+        self.assertEqual('stealth/ox-alpha', json.loads(request.data)['model'])
+        self.assertEqual(90.0, call.call_args.kwargs['timeout'])
+        self.assertEqual('stealth/ox-alpha', result.model)
 
     def test_ab_evaluation_save_and_read(self):
         created = main.save_ab_evaluation(main.AbEvaluationCreate(school='신구중', grade='중2', exam='중간', twin_id=1, question_type='어법', gemini_model='flash', gemini_result_id='g1', ox_model='stealth/ox-alpha', ox_result_id='o1', choice='ox-alpha'))
@@ -66,3 +85,4 @@ class AiRouterTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
