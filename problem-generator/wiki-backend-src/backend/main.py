@@ -9,7 +9,7 @@ from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -405,6 +405,141 @@ def school_hierarchy():
             grade_list.append({'grade': grade, 'exams': exam_list})
         result.append({'school': school, 'grades': grade_list})
     return result
+
+
+# ==================================================================================
+# BuildIt Assistant — 기존 Wiki 기억을 최소 범위로 조회하는 대화형 작업 안내.
+# 세션 state/history는 브라우저가 보유하며 서버는 DB를 수정하지 않는다.
+# ==================================================================================
+
+class AssistantState(BaseModel):
+    goal: str = ''
+    school: str = ''
+    grade: str = ''
+    exam: str = ''
+    selected_twin_id: Optional[int] = None
+    needed_materials: list[str] = Field(default_factory=list)
+    recent_request: str = ''
+    current_page: str = 'state'
+
+
+class AssistantMessage(BaseModel):
+    role: Literal['user', 'assistant']
+    content: str
+
+
+class AssistantAttachment(BaseModel):
+    name: str
+    type: str = ''
+
+
+class AssistantRequest(BaseModel):
+    message: str
+    state: AssistantState = Field(default_factory=AssistantState)
+    history: list[AssistantMessage] = Field(default_factory=list)
+    attachments: list[AssistantAttachment] = Field(default_factory=list)
+
+
+def _assistant_entities(message: str, state: AssistantState) -> dict:
+    school_match = re.search(r'([가-힣A-Za-z0-9]+(?:중학교|중|고등학교|고))(?=\s|\d|$)', message)
+    grade_match = re.search(r'(?:중\s*)?([1-3])\s*학년', message)
+    exam_match = re.search(r'((?:1|2)학기\s*)?(중간고사|기말고사|중간|기말)', message)
+    school = school_match.group(1) if school_match else state.school
+    grade = f'중{grade_match.group(1)}' if grade_match else state.grade
+    exam = (exam_match.group(0).replace(' ', '') if exam_match else state.exam)
+    if exam == '중간': exam = '중간고사'
+    if exam == '기말': exam = '기말고사'
+    goal = state.goal
+    if re.search(r'문제|시험지|내신', message): goal = '학교별 내신 문제 제작'
+    elif re.search(r'오답|학생', message): goal = '학생 오답 정리'
+    elif re.search(r'인사이트|수업\s*기록', message): goal = '수업 인사이트 기록'
+    elif re.search(r'Digital\s*Twin|디지털\s*트윈|기출\s*분석', message, re.I): goal = 'Digital Twin 구축'
+    return {'school': school, 'grade': grade, 'exam': exam, 'goal': goal or '요청한 작업 준비'}
+
+
+def _assistant_context(entities: dict) -> dict:
+    school, grade, exam = entities['school'], entities['grade'], entities['exam']
+    context = {'twin': None, 'questionCount': 0, 'studentCount': 0, 'insightCount': 0}
+    if not school:
+        return context
+    with get_db() as conn:
+        twin_query = 'SELECT id, school, grade, exam, version, updated_at FROM digital_twin_profiles WHERE is_active=1 AND school=?'
+        twin_values: list = [school]
+        if grade:
+            twin_query += ' AND grade=?'; twin_values.append(grade)
+        if exam:
+            twin_query += " AND (exam=? OR exam='전체')"; twin_values.append(exam)
+        twin_query += " ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1"
+        twin_values.append(exam)
+        twin = conn.execute(twin_query, twin_values).fetchone()
+        if twin: context['twin'] = dict(twin)
+        filters, values = ['school=?'], [school]
+        if grade: filters.append('grade=?'); values.append(grade)
+        if exam: filters.append('exam=?'); values.append(exam)
+        context['questionCount'] = conn.execute(f"SELECT COUNT(*) n FROM generated_questions WHERE {' AND '.join(filters)}", values).fetchone()['n']
+        student_filters, student_values = ['school=?'], [school]
+        if grade: student_filters.append('grade=?'); student_values.append(grade)
+        context['studentCount'] = conn.execute(f"SELECT COUNT(*) n FROM students WHERE {' AND '.join(student_filters)}", student_values).fetchone()['n']
+        insight_filters, insight_values = ['school=?'], [school]
+        if grade: insight_filters.append('grade=?'); insight_values.append(grade)
+        context['insightCount'] = conn.execute(f"SELECT COUNT(*) n FROM educator_insights WHERE {' AND '.join(insight_filters)}", insight_values).fetchone()['n']
+    return context
+
+
+def _attachment_route(attachments: list[AssistantAttachment], message: str, goal: str) -> tuple[str, str]:
+    names = ' '.join(item.name.lower() for item in attachments)
+    if re.search(r'\.(html?|json|txt)$', names): return 'twin', 'Digital Twin 가져오기'
+    if re.search(r'오답|학생', message + goal): return 'wrongnote', '학생 오답 OCR 열기'
+    if attachments and re.search(r'\.(pdf|png|jpe?g|hwp|hwpx|docx)$', names): return 'school', '학교 프린트 OCR 열기'
+    if goal == '학교별 내신 문제 제작': return 'home', '내신 문제 준비하기'
+    if goal == '수업 인사이트 기록': return 'brain', '수업 인사이트 열기'
+    if goal == 'Digital Twin 구축': return 'twin', 'Digital Twin 열기'
+    return 'state', '현재 상태 보기'
+
+
+def _assistant_fallback(entities: dict, context: dict, attachments: list[AssistantAttachment]) -> tuple[str, list[str]]:
+    school, grade, exam, goal = entities['school'], entities['grade'], entities['exam'], entities['goal']
+    target = ' '.join(part for part in (school, grade, exam) if part) or '현재 요청'
+    lines = [f'{target}의 목표를 “{goal}”으로 정리했습니다.']
+    twin = context['twin']
+    if school and twin:
+        lines.append(f'{school} {grade} Digital Twin을 확인했습니다. 저장 문제 {context["questionCount"]}개, 학생 기록 {context["studentCount"]}명, 관련 수업 인사이트 {context["insightCount"]}개를 연결할 수 있습니다.')
+    elif school:
+        lines.append(f'{school} {grade}에 연결된 Digital Twin을 찾지 못했습니다. 기존 학교 기록은 보존한 채 기출 또는 Digital Twin 자료를 먼저 추가할 수 있습니다.')
+    else:
+        lines.append('연결할 기억을 찾으려면 학교·학년·시험을 알려 주세요.')
+    needed = [] if attachments else (['시험 범위 지문 또는 학교 프린트'] if goal == '학교별 내신 문제 제작' else [])
+    if attachments:
+        lines.append(f'첨부한 {", ".join(item.name for item in attachments)}은 기존 업로드 도구에서 처리하도록 연결하겠습니다. 파일 내용은 이 대화 API에 저장하지 않습니다.')
+    elif needed:
+        lines.append('이번 시험 범위 지문이나 학교 프린트가 필요합니다. 파일을 올리거나 지문을 붙여 주세요.')
+    if goal == '학교별 내신 문제 제작':
+        lines.append('자료를 받으면 출제 경향 확인 → 유형 추천 → 문제 제작 → 검수 → 저장 순서로 함께 진행하겠습니다.')
+    return '\n\n'.join(lines), needed
+
+
+@app.post('/api/assistant/chat')
+def assistant_chat(payload: AssistantRequest):
+    message = payload.message.strip()
+    if not message and not payload.attachments:
+        raise HTTPException(status_code=400, detail='요청이나 첨부 자료를 입력해 주세요.')
+    entities = _assistant_entities(message, payload.state)
+    context = _assistant_context(entities)
+    fallback, needed = _assistant_fallback(entities, context, payload.attachments)
+    route, action = _attachment_route(payload.attachments, message, entities['goal'])
+    text, model = fallback, 'rules-fallback'
+    key = os.getenv('GEMINI_API_KEY', '').strip()
+    if key:
+        minimal_context = json.dumps({'goal': entities['goal'], 'school': entities['school'], 'grade': entities['grade'], 'exam': entities['exam'], **context, 'attachments': [a.name for a in payload.attachments]}, ensure_ascii=False)
+        recent = payload.history[-6:]
+        prompt = f'현재 최소 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n반드시 포함할 사실과 다음 단계: {fallback}'
+        try:
+            text = pl.call_gemini_text(key, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25)
+            model = 'gemini'
+        except Exception:
+            pass
+    next_state = {**payload.state.model_dump(), **entities, 'selected_twin_id': context['twin']['id'] if context['twin'] else None, 'needed_materials': needed, 'recent_request': message}
+    return {'text': text, 'state': next_state, 'context': context, 'page': route, 'action': action, 'model': model}
 
 
 # ==================================================================================

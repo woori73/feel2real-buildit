@@ -689,4 +689,5 @@ Wiki 홈
 - `지능 → 수업 인사이트 기록`은 자유 텍스트와 선택 맥락을 `/problem-generator/wiki/api/educator-insights`로 저장하고 최근 5개를 다시 조회한다. 학교는 `/problem-generator/wiki/api/schools`의 기존 학교 DB를 자동완성으로 재사용한다.
 - 문제 생성기의 학교 계층은 active Digital Twin뿐 아니라 기존 문제·학생 기록을 합쳐 표시한다. Twin이 연결된 시험만 해당 `twinId`로 생성 요청을 보내며, 기록만 있는 항목은 Twin 미등록 상태를 명시한다.
 - Assistant 첨부는 새 파일 저장소를 만들지 않는다. 이미지/PDF·학교 자료는 기존 `SchoolDatabase` OCR 흐름, 학생/오답 요청은 `StudentWrongNoteDashboard` OCR 흐름, HTML/JSON/TXT는 `DigitalTwinImport` 흐름으로 안내한다.
+- Assistant는 user/assistant history와 `goal/school/grade/exam/selected_twin_id/needed_materials/recent_request/current_page` 세션 상태를 유지한다. `/problem-generator/wiki/api/assistant/chat`은 해당 목표의 Twin과 문제·학생·인사이트 개수만 조회하고, 답변 뒤 사용자가 동의하거나 자료를 제공했을 때 기존 전문 화면을 제안한다. Gemini 실패 시에도 동일한 목표 요약·부족 자료·작업 순서를 규칙 기반으로 안내한다.
 - 모든 Wiki API는 `/problem-generator/wiki/api/** → Spring Proxy → FastAPI`를 유지한다.

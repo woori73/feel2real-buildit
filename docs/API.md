@@ -3022,6 +3022,15 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 데이터 원천: `digital_twin_profiles`의 active row와 기존 `generated_questions`, `students`의 학교·학년·시험 값을 합친다. 기존 row를 이동하거나 새 DB로 복사하지 않는다.
 - Response: `[{ school, grades: [{ grade, exams: [{ exam, twinId, version, updatedAt, hasDigitalTwin }] }] }]`. 기존 학교 기록만 있고 Twin이 없으면 `twinId/version=null`, `hasDigitalTwin=false`다.
 
+### ✅ POST /problem-generator/wiki/api/assistant/chat
+
+- 목적: Wiki Assistant가 현재 목표와 관련된 최소 DB 컨텍스트를 확인하고 대화형 작업 안내를 반환한다.
+- 전달 경로: Wiki frontend → Spring `BuildItWikiProxyController` → FastAPI `POST /api/assistant/chat`.
+- Request JSON: `message`, 세션 structured `state`, 최근 `history`(최대 8개 전송), 첨부의 `name/type` 메타데이터. 첨부 파일 본문은 저장하거나 전송하지 않는다.
+- Response: `text`, 갱신된 `state`, 최소 조회 결과 `context`, 기존 Wiki 화면 `page/action`, 응답 `model`.
+- AI: 서버 환경의 `GEMINI_API_KEY`가 있을 때 기존 Gemini 텍스트 호출을 재사용한다. 키 미설정·호출 실패 시 `rules-fallback` 답변을 반환한다. 브라우저에 서버 키를 노출하지 않는다.
+- 부작용: 조회 전용이며 DB 생성·수정·삭제를 하지 않는다.
+
 ### ✅ GET /api/problem-generator/materials
 
 - 목적: 현재 사용자가 접근 가능한 자료 목록을 페이지로 조회한다.
