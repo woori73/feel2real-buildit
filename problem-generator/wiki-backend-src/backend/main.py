@@ -1341,6 +1341,78 @@ class OcrCleanRequest(BaseModel):
     raw_text: str
 
 
+class PassageRequest(BaseModel):
+    api_key: str
+    source_text: str
+
+
+PASSAGE_MEMORY_SCHEMA = {
+    'type': 'object', 'properties': {
+        'title': {'type': 'string'},
+        'sentences': {'type': 'array', 'items': {'type': 'object', 'properties': {
+            'english': {'type': 'string'}, 'korean': {'type': 'string'},
+        }, 'required': ['english', 'korean']}},
+    }, 'required': ['title', 'sentences'],
+}
+
+PASSAGE_ANALYSIS_SCHEMA = {
+    'type': 'object', 'properties': {
+        'original': {'type': 'string'}, 'translation': {'type': 'string'}, 'title': {'type': 'string'},
+        'topic': {'type': 'string'}, 'mainIdea': {'type': 'string'}, 'summary': {'type': 'string'},
+        'sentences': {'type': 'array', 'items': {'type': 'object', 'properties': {
+            'original': {'type': 'string'}, 'structure': {'type': 'string'}, 'translation': {'type': 'string'},
+            'guide': {'type': 'string'}, 'grammar': {'type': 'string'},
+        }, 'required': ['original', 'structure', 'translation', 'guide', 'grammar']}},
+        'flow': {'type': 'object', 'properties': {
+            'introduction': {'type': 'string'}, 'development': {'type': 'string'}, 'conclusion': {'type': 'string'},
+        }, 'required': ['introduction', 'development', 'conclusion']},
+        'tfQuestions': {'type': 'array', 'items': {'type': 'object', 'properties': {
+            'language': {'type': 'string', 'enum': ['KO', 'EN']}, 'statement': {'type': 'string'},
+            'answer': {'type': 'string', 'enum': ['T', 'F']},
+        }, 'required': ['language', 'statement', 'answer']}},
+    }, 'required': ['original', 'translation', 'title', 'topic', 'mainIdea', 'summary', 'sentences', 'flow', 'tfQuestions'],
+}
+
+
+def _passage_source(payload: PassageRequest) -> tuple[str, str]:
+    key, source = payload.api_key.strip(), payload.source_text.strip()
+    if not key:
+        raise HTTPException(status_code=400, detail='Gemini API 키를 설정해 주세요.')
+    if not source:
+        raise HTTPException(status_code=400, detail='분석할 영어 지문이 없습니다.')
+    return key, source[:30000]
+
+
+@app.post('/api/passages/memory')
+def create_passage_memory(payload: PassageRequest):
+    key, source = _passage_source(payload)
+    rules = ('영어 학습용 영한 대조 자료를 만든다. 원문을 빠짐없이 자연스러운 문장 단위로 나누고, '
+             '각 문장에 정확하고 자연스러운 한국어 번역을 붙인다. 영어 원문의 의미나 순서를 바꾸지 않는다.')
+    try:
+        return json.loads(pl.call_gemini_structured(key, rules, source, PASSAGE_MEMORY_SCHEMA, temperature=0.15))
+    except Exception as exc:
+        _handle_gemini_error(exc)
+
+
+@app.post('/api/passages/analysis')
+def create_passage_analysis(payload: PassageRequest):
+    key, source = _passage_source(payload)
+    rules = ('한국 중등 영어 내신용 지문 분석 자료를 만든다. 반드시 다음 6페이지형 구조의 데이터를 반환한다. '
+             '1페이지: 원문 전체와 자연스러운 번역, 제목·주제·요지·요약. 2~5페이지: 모든 문장을 순서대로 나누어 '
+             '문장 구조(슬래시와 핵심 성분), 해석, 독해 가이드, 핵심 문법을 설명. 이어 도입-전개-마무리 흐름. '
+             '6페이지: 내용일치 T/F 정확히 10문항. 앞 5문항은 한국어(KO), 뒤 5문항은 영어(EN)로 쓰고, '
+             'T와 F가 모두 포함되게 하며 지문만으로 판정 가능해야 한다. original에는 잡음 없는 영어 원문만 넣는다.')
+    try:
+        result = json.loads(pl.call_gemini_structured(key, rules, source, PASSAGE_ANALYSIS_SCHEMA, temperature=0.2))
+        if len(result.get('tfQuestions', [])) != 10:
+            raise HTTPException(status_code=502, detail='T/F 문항이 10개로 생성되지 않았습니다. 다시 시도해 주세요.')
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _handle_gemini_error(exc)
+
+
 @app.post('/api/ocr/clean-text')
 def clean_ocr_text(payload: OcrCleanRequest):
     key = payload.api_key.strip()

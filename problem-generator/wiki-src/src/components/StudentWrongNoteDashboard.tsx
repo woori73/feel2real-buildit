@@ -4,7 +4,7 @@ import { Student, StudentWrongNote, cleanOcrText, createStudent, createWrongNote
 import { ExtractedPage, acceptedFileTypes, extractFiles, joinExtractedPages, maxUploadFiles } from '../lib/ocrExtract'
 import { Markup } from './QuestionCard'
 
-type Props = { apiSettings: ApiSettings | null }
+type Props = { apiSettings: ApiSettings | null; mode?: 'extract' | 'notebook' }
 
 const grades = ['1학년', '2학년', '3학년']
 const semesters = ['1학기', '2학기']
@@ -25,7 +25,7 @@ const downloadBlob = (filename: string, blob: Blob) => {
   URL.revokeObjectURL(url)
 }
 
-export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
+export default function StudentWrongNoteDashboard({ apiSettings, mode = 'notebook' }: Props) {
   const [students, setStudents] = useState<Student[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [notice, setNotice] = useState('')
@@ -192,8 +192,8 @@ export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
     }
   }
 
-  return <section className="twin-dashboard" aria-label="학생별 오답노트">
-    <div className="panel-heading"><div><p className="kicker">STUDENT PROFILE</p><h2>학생별 오답노트</h2><p>학생을 등록하고, 채점된 시험지 사진·PDF를 올려 오답을 계속 누적한 뒤 필요한 문제를 골라 하나의 복습 문제지로 만듭니다.</p></div><span className="context-chip">{selected ? `선택 · ${selected.name}` : '학생 미선택'}</span></div>
+  return <section className={`twin-dashboard wrong-workspace ${mode}-mode`} aria-label={mode === 'extract' ? '오답 기록·추출' : '학생별 오답노트'}>
+    <div className="panel-heading"><div><p className="kicker">{mode === 'extract' ? 'WRONG ANSWER CAPTURE' : 'STUDENT REVIEW LIBRARY'}</p><h2>{mode === 'extract' ? '오답 기록·추출' : '학생별 오답노트'}</h2><p>{mode === 'extract' ? '학생과 시험을 지정하고 채점지 사진·PDF에서 오답을 추출해 기록합니다.' : '학생별 누적 오답을 확인·수정하고 선택 문항을 복습 문제지로 만듭니다.'}</p></div><span className="context-chip">{selected ? `선택 · ${selected.name}` : '학생 미선택'}</span></div>
     {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
     {error && <div className="tool-notice" role="alert" style={{ background: '#fdecec', color: '#b5222c' }}>{error}<button onClick={() => setError('')} aria-label="오류 닫기">×</button></div>}
     <article className="work-panel"><div className="panel-heading"><div><p className="kicker">STUDENT REGISTRATION</p><h2>학생 등록</h2></div></div><div className="metadata-grid"><label>학생 이름<input value={form.name} onChange={event => updateForm('name', event.target.value)} placeholder="예: 김민준" /></label><label>학교<input value={form.school} onChange={event => updateForm('school', event.target.value)} placeholder="예: 압구정중" /></label><label>학년<select value={form.grade} onChange={event => updateForm('grade', event.target.value)}>{grades.map(item => <option key={item}>{item}</option>)}</select></label><label>학기<select value={form.semester} onChange={event => updateForm('semester', event.target.value)}>{semesters.map(item => <option key={item}>{item}</option>)}</select></label><label>시험<select value={form.exam_type} onChange={event => updateForm('exam_type', event.target.value)}>{examTypes.map(item => <option key={item}>{item}</option>)}</select></label></div><button className="primary-action" onClick={() => void registerStudent()}>학생 프로필 등록</button></article>

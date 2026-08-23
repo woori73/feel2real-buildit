@@ -45,6 +45,24 @@ class FrontendContractTest(unittest.TestCase):
         self.assertIn("fetch('/problem-generator/wiki/api/'", source)
         self.assertNotIn("fetch('/api/", source)
 
+    def test_student_work_cards_have_independent_routes(self):
+        hub = (ROOT / 'components' / 'CategoryHub.tsx').read_text(encoding='utf-8')
+        app = (ROOT / 'App.tsx').read_text(encoding='utf-8')
+        self.assertIn("page: 'wrongextract'", hub)
+        self.assertIn("page: 'wrongnote'", hub)
+        self.assertIn("page: 'passagememory'", hub)
+        self.assertIn("page: 'passageanalysis'", hub)
+        self.assertIn('mode="extract"', app)
+        self.assertIn('mode="notebook"', app)
+
+    def test_passage_workspace_keeps_assistant_and_proxy_contract(self):
+        source = (ROOT / 'components' / 'PassageWorkspace.tsx').read_text(encoding='utf-8')
+        app = (ROOT / 'App.tsx').read_text(encoding='utf-8')
+        self.assertIn('generatePassageMemory', source)
+        self.assertIn('generatePassageAnalysis', source)
+        self.assertIn('window.print()', source)
+        self.assertIn('<AssistantComposer', app)
+
 
 if __name__ == '__main__':
     unittest.main()
