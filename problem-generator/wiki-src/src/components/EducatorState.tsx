@@ -1,14 +1,13 @@
 
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import type { Page } from '../App'
-import inkLandscape from '../assets/buildit-wiki-ink-home.webp'
 
 type Props = { onNavigate: (page: Page) => void }
 
-const categories: { label: string; description: string; mark: string; page?: Page }[] = [
-  { label: '만들기', description: '문제 · 자료', mark: '◯' },
-  { label: '학생', description: '오답 · 기록', mark: '⌁', page: 'wrongnote' },
-  { label: '지능', description: '수업 · 기억', mark: '⌂', page: 'brain' },
+const categories: { label: string; description: string; page?: Page }[] = [
+  { label: '만들기', description: '문제 · 자료' },
+  { label: '학생', description: '오답 · 기록', page: 'wrongnote' },
+  { label: '지능', description: '수업 · 기억', page: 'brain' },
 ]
 
 const createTools: { label: string; detail: string; page: Page }[] = [
@@ -22,16 +21,14 @@ const createTools: { label: string; detail: string; page: Page }[] = [
 
 export default function EducatorState({ onNavigate }: Props) {
   const [createOpen, setCreateOpen] = useState(false)
-  return <section className="ink-home" aria-labelledby="wiki-title" style={{ '--ink-landscape': `url(${inkLandscape})` } as CSSProperties}>
-    <div className="paper-grain" aria-hidden="true" />
-    <div className="living-ink" aria-hidden="true"><i className="mist mist-one" /><i className="mist mist-two" /><i className="water-ring" /><i className="reed-shadow" /></div>
+  return <section className="ink-home" aria-labelledby="wiki-title">
     <header className="ink-brand">
       <h1 id="wiki-title"><span className="logo-build">Build</span><span className="logo-it">It</span> <span className="logo-wiki">Wiki</span></h1>
       <p>기록하면, 지능이 이어집니다.</p>
     </header>
     <nav className="ink-categories" aria-label="BuildIt Wiki 카테고리">
       {categories.map(category => <button key={category.label} className={createOpen && category.label === '만들기' ? 'active' : ''} onClick={() => category.label === '만들기' ? setCreateOpen(value => !value) : category.page && onNavigate(category.page)}>
-        <i aria-hidden="true">{category.mark}</i><b>{category.label}</b><span>{category.description}</span>
+        <b>{category.label}</b><span>{category.description}</span>
       </button>)}
     </nav>
     {createOpen && <section className="ink-tool-drawer" aria-label="만들기 도구">
