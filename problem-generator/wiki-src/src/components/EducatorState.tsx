@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Page } from '../App'
 
 type Props = {
@@ -6,9 +7,18 @@ type Props = {
 }
 
 const primary = [
-  { label: '만들기', detail: '문제 · 프린트 · 실전 자료', page: 'home' as Page },
+  { label: '만들기', detail: '문제 · 프린트 · 실전 자료' },
   { label: '학생', detail: '오답 · 복습 · 학생 자료', page: 'wrongnote' as Page },
   { label: 'BRAIN', detail: '수업 인사이트 · Digital Twin', page: 'brain' as Page },
+]
+
+const createTools: { label: string; detail: string; page: Page }[] = [
+  { label: '시험 문제', detail: '학교·학년·시험별 문제 생성과 변형', page: 'home' },
+  { label: 'Digital Twin', detail: '출제자 분석 HTML 가져오기·적용', page: 'twin' },
+  { label: '강사 문제 DB', detail: '생성·변형한 문항 저장 및 선택', page: 'database' },
+  { label: '실전 문제지', detail: '선택 문항으로 시험지·DOCX 제작', page: 'exam' },
+  { label: '교과서 DB', detail: '출판사·Lesson별 수업 자료 관리', page: 'textbook' },
+  { label: '학교별 DB', detail: '학교·학년·시험별 기출·프린트 관리', page: 'school' },
 ]
 
 const actions: { label: string; detail: string; page: Page; command?: string }[] = [
@@ -19,6 +29,7 @@ const actions: { label: string; detail: string; page: Page; command?: string }[]
 ]
 
 export default function EducatorState({ onNavigate, onCommand }: Props) {
+  const [createOpen, setCreateOpen] = useState(false)
   const command = (value: string) => onCommand?.(value)
   const run = (item: (typeof actions)[number]) => {
     if (item.command) command(item.command)
@@ -34,8 +45,15 @@ export default function EducatorState({ onNavigate, onCommand }: Props) {
     </div>
 
     <nav className="state-primary-nav" aria-label="BuildIt Wiki 주요 작업">
-      {primary.map(item => <button key={item.label} onClick={() => onNavigate(item.page)}><b>{item.label}</b><span>{item.detail}</span></button>)}
+      {primary.map(item => <button key={item.label} aria-expanded={item.label === '만들기' ? createOpen : undefined} onClick={() => item.label === '만들기' ? setCreateOpen(open => !open) : item.page && onNavigate(item.page)}><b>{item.label}</b><span>{item.detail}</span></button>)}
     </nav>
+
+    {createOpen && <section className="state-create-hub" aria-label="만들기 도구">
+      <div className="state-create-heading"><b>만들기</b><span>기존 Wiki 제작 기능을 그대로 사용합니다.</span></div>
+      <div className="state-actions">
+        {createTools.map(item => <button key={item.page} className="state-action" onClick={() => onNavigate(item.page)}><b>{item.label}</b><span>{item.detail}</span></button>)}
+      </div>
+    </section>}
 
     <div className="state-actions">
       {actions.map(item => <button key={item.label} className="state-action" onClick={() => run(item)}><b>{item.label}</b><span>{item.detail}</span></button>)}
