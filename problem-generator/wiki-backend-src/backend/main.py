@@ -363,17 +363,26 @@ def delete_digital_twin(twin_id: int):
 
 @app.get('/api/schools')
 def school_hierarchy():
-    """Digital Twin DB에서 학교 → 학년 → 시험 계층을 자동으로 만든다.
-    강사가 학교/학년/시험을 별도로 입력하지 않아도, HTML 업로드만으로 트리가 생성된다."""
+    """기존 SQLite 전체 기록에서 학교 → 학년 → 시험 계층을 만든다.
+    Digital Twin만 조회하던 이전 구현 때문에 학생/문제 기록의 학교가 새 UI에서 누락됐다."""
     with get_db() as conn:
-        rows = conn.execute('SELECT id, school, grade, exam, version, updated_at FROM digital_twin_profiles WHERE is_active = 1 ORDER BY school, grade, exam').fetchall()
+        twin_rows = conn.execute('SELECT id, school, grade, exam, version, updated_at FROM digital_twin_profiles WHERE is_active = 1').fetchall()
+        question_rows = conn.execute("SELECT DISTINCT school, grade, exam FROM generated_questions WHERE TRIM(school) <> ''").fetchall()
+        student_rows = conn.execute("SELECT DISTINCT school, grade, exam_type AS exam FROM students WHERE TRIM(school) <> ''").fetchall()
     tree: dict[str, dict[str, dict]] = {}
-    for row in rows:
+    for row in twin_rows:
         school = sanitize_profile_text(row['school']) or '학교명 미확인'
         grade = sanitize_profile_text(row['grade']) or '학년 미지정'
         exam = sanitize_profile_text(row['exam']) or '시험 미지정'
         tree.setdefault(school, {}).setdefault(grade, {})
-        tree[school][grade][exam] = {'twinId': row['id'], 'version': row['version'], 'updatedAt': row['updated_at']}
+        tree[school][grade][exam] = {'twinId': row['id'], 'version': row['version'], 'updatedAt': row['updated_at'], 'hasDigitalTwin': True}
+    for row in [*question_rows, *student_rows]:
+        school = sanitize_profile_text(row['school']) or '학교명 미확인'
+        grade = sanitize_profile_text(row['grade']) or '학년 미지정'
+        exam = sanitize_profile_text(row['exam']) or '시험 미지정'
+        tree.setdefault(school, {}).setdefault(grade, {}).setdefault(
+            exam, {'twinId': None, 'version': None, 'updatedAt': '', 'hasDigitalTwin': False}
+        )
     result = []
     for school, grades in tree.items():
         grade_list = []

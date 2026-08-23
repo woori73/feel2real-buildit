@@ -3015,6 +3015,13 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - Query: `limit` 1~20(범위 밖 값은 서버에서 보정), 기본 5.
 - Response: `200 OK`, insight row 배열.
 
+### ✅ GET /problem-generator/wiki/api/schools
+
+- 목적: Wiki 학교 선택 UI에 기존 SQLite 기록의 학교 → 학년 → 시험 계층과 Digital Twin 연결 상태를 제공한다.
+- 전달 경로: Wiki frontend → Spring `BuildItWikiProxyController` → FastAPI `GET /api/schools`.
+- 데이터 원천: `digital_twin_profiles`의 active row와 기존 `generated_questions`, `students`의 학교·학년·시험 값을 합친다. 기존 row를 이동하거나 새 DB로 복사하지 않는다.
+- Response: `[{ school, grades: [{ grade, exams: [{ exam, twinId, version, updatedAt, hasDigitalTwin }] }] }]`. 기존 학교 기록만 있고 Twin이 없으면 `twinId/version=null`, `hasDigitalTwin=false`다.
+
 ### ✅ GET /api/problem-generator/materials
 
 - 목적: 현재 사용자가 접근 가능한 자료 목록을 페이지로 조회한다.

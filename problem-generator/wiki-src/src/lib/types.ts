@@ -2,7 +2,7 @@ import { api } from './api'
 
 export type TwinType = { name: string; description: string; ratio: string; difficulty: string }
 export type DigitalTwinProfile = { id:number; version:number; school:string; grade:string; exam:string; dna:string; description:string; types:TwinType[]; rules:string[]; difficulty:string; questionRatio:Record<string,string|number>; trapPatterns:string[]; choiceStyle:string; writingStyle:string; updatedAt:string }
-export type SchoolExamNode = { exam:string; twinId:number; version:number; updatedAt:string }
+export type SchoolExamNode = { exam:string; twinId:number|null; version:number|null; updatedAt:string; hasDigitalTwin:boolean }
 export type SchoolGradeNode = { grade:string; exams:SchoolExamNode[] }
 export type SchoolNode = { school:string; grades:SchoolGradeNode[] }
 export type TypeDef = { id:string; cat:string; label:string; prompt:string }
