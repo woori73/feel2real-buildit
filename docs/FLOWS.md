@@ -688,6 +688,9 @@ Wiki 홈
 
 - `지능 → 수업 인사이트 기록`은 자유 텍스트와 선택 맥락을 `/problem-generator/wiki/api/educator-insights`로 저장하고 최근 5개를 다시 조회한다. 학교는 `/problem-generator/wiki/api/schools`의 기존 학교 DB를 자동완성으로 재사용한다.
 - 문제 생성기의 학교 계층은 active Digital Twin뿐 아니라 기존 문제·학생 기록을 합쳐 표시한다. Twin이 연결된 시험만 해당 `twinId`로 생성 요청을 보내며, 기록만 있는 항목은 Twin 미등록 상태를 명시한다.
+- 학교·학년을 선택하면 첫 시험과 해당 Digital Twin 버전을 자동 연결하고, Twin의 유형명을 문제 유형 카탈로그 ID로 역매핑해 기본 선택한다. 생성 요청에는 ID 리터럴이 아니라 유형 한글명과 세부 출제 지침을 전달한다.
+- 신규 문제 화면의 `시험 범위 주요 문법 사항`은 문제 유형과 분리해 입력한다. 해당 값은 문법·서답형에 우선 반영하고 생성 문항 원본 컨텍스트에도 `grammarFocus`로 남긴다.
+- 생성 문항은 저장 전에 서버 품질 게이트를 거친다. 일반 객관식/순서형은 선택지 5개, 밑줄 번호형은 정확히 5개의 1~6단어 밑줄, 순서형은 줄 단위 `(A)·(B)·(C)` 문단을 강제한다. 서답형은 완전한 답, 생략부호·후행 접속사 금지, 제시 단어 수 충족을 검사한다. 실패하면 오류 내용을 포함해 한 번 자동 재생성하고, 재실패 결과는 DB에 저장하지 않는다.
 - Assistant 첨부는 새 파일 저장소를 만들지 않는다. 이미지/PDF·학교 자료는 기존 `SchoolDatabase` OCR 흐름, 학생/오답 요청은 `StudentWrongNoteDashboard` OCR 흐름, HTML/JSON/TXT는 `DigitalTwinImport` 흐름으로 안내한다.
-- Assistant는 user/assistant history와 `goal/school/grade/exam/selected_twin_id/needed_materials/recent_request/current_page` 세션 상태를 유지한다. `/problem-generator/wiki/api/assistant/chat`은 해당 목표의 Twin과 문제·학생·인사이트 개수만 조회하고, 답변 뒤 사용자가 동의하거나 자료를 제공했을 때 기존 전문 화면을 제안한다. Gemini 실패 시에도 동일한 목표 요약·부족 자료·작업 순서를 규칙 기반으로 안내한다.
+- Assistant는 user/assistant history와 `goal/school/grade/exam/selected_twin_id/needed_materials/recent_request/current_page` 세션 상태를 유지한다. `압구정중3`처럼 붙여 쓴 학교·학년도 파싱하며, 연결된 Twin의 시험·유형과 문제·학생·인사이트 개수만 조회해 실제 부족 항목만 질문한다. 생성기 이동 시 이 상태로 학교·학년·시험을 채운다. 브라우저 Gemini 키 또는 서버 키가 있으면 Agent 응답을 우선하고, 호출 실패 시에만 규칙 기반으로 안내한다.
 - 모든 Wiki API는 `/problem-generator/wiki/api/** → Spring Proxy → FastAPI`를 유지한다.

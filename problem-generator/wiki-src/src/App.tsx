@@ -93,7 +93,7 @@ export default function App() {
     setAssistantMessages(history); setAssistantOpen(true); setAssistantBusy(true)
     try {
       let pageContext = {}; try { pageContext = JSON.parse(sessionStorage.getItem('buildit_page_context') || '{}') } catch { /* use assistant state */ }
-      const response = await api('assistant/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: command, state: { ...assistantState, ...pageContext, current_page: page }, history: history.slice(-8), attachments: files.map(file => ({ name: file.name, type: file.type })) }) })
+      const response = await api('assistant/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: command, api_key: apiSettings?.provider === 'gemini' ? apiSettings.geminiKey : '', state: { ...assistantState, ...pageContext, current_page: page }, history: history.slice(-8), attachments: files.map(file => ({ name: file.name, type: file.type })) }) })
       if (!response.ok) throw new Error('Assistant 응답을 준비하지 못했습니다.')
       const body = await response.json()
       const nextState = body.state || assistantState

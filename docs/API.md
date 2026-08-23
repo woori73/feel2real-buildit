@@ -2883,6 +2883,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
   - `/problem-generator/schools` — 학교별 DB
 - 인증/권한: STUDENT / TUTOR / ADMIN. 비로그인 HTML 요청은 `/?login=required`로 302 리다이렉트한다. 목적지는 비로그인 목적지 통일 원칙대로 `/`를 유지하고, 랜딩(`static/js/landing_buildit.js`)이 `login=required`를 읽어 안내 alert + 공통 로그인 모달을 연 뒤 쿼리 마커를 지운다. 비로그인 JSON 요청은 기존대로 401이다.
 - 비고: 자료 업로드/조회와 Gemini BYO 키 기반 문제 생성 테스트가 실동작한다. Gemini 키는 요청 바디로만 전달하며 서버 DB/설정 파일에 저장하지 않는다.
+- Wiki FastAPI 문제 생성은 선택된 Digital Twin의 유형 ID를 서버 카탈로그의 한글명·세부 지침으로 변환한다. `grammar`는 화면의 `시험 범위 주요 문법 사항` 전용 입력값이며 문법·서답형 우선 지시로 전달되고 각 문항 `raw_json.grammarFocus`에 추적 저장된다. 응답은 밑줄/선택지/순서형 구조와 서답형 완결성·단어 수 조건을 검증하며 1회 자동 보정 재요청 후에도 실패하면 `502`로 거부하고 저장하지 않는다.
 
 
 ### ✅ POST /api/problem-generator/gemini/generate
@@ -3025,7 +3026,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### ✅ POST /problem-generator/wiki/api/assistant/chat
 
 - 목적: Wiki Assistant가 현재 목표와 관련된 최소 DB 컨텍스트를 확인하고 대화형 작업 안내를 반환한다.
-- 전달 경로: Wiki frontend → Spring `BuildItWikiProxyController` → FastAPI `POST /api/assistant/chat`.
+- 전달 경로: Wiki frontend → Spring `BuildItWikiProxyController` → FastAPI `POST /api/assistant/chat`. 요청의 임시 `api_key`가 있으면 해당 Gemini 키를 우선 사용하고, 없으면 서버 `GEMINI_API_KEY`, 둘 다 없거나 호출 실패 시에만 규칙 기반 응답으로 전환한다. 키는 저장하지 않는다.
 - Request JSON: `message`, 세션 structured `state`, 최근 `history`(최대 8개 전송), 첨부의 `name/type` 메타데이터. 첨부 파일 본문은 저장하거나 전송하지 않는다.
 - Response: `text`, 갱신된 `state`, 최소 조회 결과 `context`, 기존 Wiki 화면 `page/action`, 응답 `model`.
 - AI: 서버 환경의 `GEMINI_API_KEY`가 있을 때 기존 Gemini 텍스트 호출을 재사용한다. 키 미설정·호출 실패 시 `rules-fallback` 답변을 반환한다. 브라우저에 서버 키를 노출하지 않는다.

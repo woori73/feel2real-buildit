@@ -65,7 +65,31 @@ class AssistantAgentTest(unittest.TestCase):
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'server-only-key'}), patch.object(main.pl, 'call_gemini_text', side_effect=RuntimeError('offline')):
             result = main.assistant_chat(self._request('신구중 2학년 중간고사 문제 만들고 싶어'))
         self.assertEqual('rules-fallback', result['model'])
-        self.assertIn('작업 순서', result['text'].replace('출제 경향 확인 → 유형 추천 → 문제 제작 → 검수 → 저장', '작업 순서'))
+        self.assertIn('문제 제작 화면', result['text'])
+
+    def test_f_compact_school_grade_parses_and_returns_real_twin_context(self):
+        now = '2026.08.24 12:00'
+        profile = '{"types":[{"name":"어법"},{"name":"서술형"}],"rules":["가정법 우선"]}'
+        with main.get_db() as conn:
+            cursor = conn.execute(
+                'INSERT INTO digital_twin_profiles (school, grade, exam, profile_json, version, is_active, created_at, updated_at) VALUES (?,?,?,?,?,1,?,?)',
+                ('압구정중', '중3', '2학기 기말고사', profile, 3, now, now),
+            )
+        result = main.assistant_chat(self._request('압구정중3 문제 제작을 하려면'))
+        self.assertEqual(('압구정중', '중3'), (result['state']['school'], result['state']['grade']))
+        self.assertEqual(cursor.lastrowid, result['state']['selected_twin_id'])
+        self.assertEqual(['어법', '서술형'], result['context']['questionTypes'])
+        self.assertIn('시험 범위 주요 문법 사항', result['state']['needed_materials'])
+        self.assertEqual(('home', '문제 제작 화면 열기'), (result['page'], result['action']))
+
+    def test_g_request_api_key_uses_gemini_before_fallback(self):
+        with patch.object(main.pl, 'call_gemini_text', return_value='확인된 기억에 맞춘 실제 Agent 응답입니다.') as gemini:
+            request = self._request('압구정중3 문제 제작을 하려면')
+            request.api_key = 'browser-key'
+            result = main.assistant_chat(request)
+        self.assertEqual('gemini', result['model'])
+        self.assertEqual('browser-key', gemini.call_args.args[0])
+        self.assertEqual('확인된 기억에 맞춘 실제 Agent 응답입니다.', result['text'])
 
 
 if __name__ == '__main__':

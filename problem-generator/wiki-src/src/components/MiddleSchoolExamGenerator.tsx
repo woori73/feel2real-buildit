@@ -15,17 +15,22 @@ const TYPE_LABELS: Record<string,string> = {
   purpose:'목적', implication:'함축 의미', reference:'지칭 추론', short_answer:'서답형',
 }
 
+const initialContext = () => { try { return JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') as { school?:string; grade?:string; exam?:string } } catch { return {} } }
+const normalizeTypeName = (value:string) => value.toLowerCase().replace(/[\s·_\-()/]/g,'').replace('문제','').replace('서술형','서답형').replace('문법','어법').replace('순서배열','문장순서')
+
 export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: Props) {
   const [mode,setMode]=useState<Mode>('new')
   const [tree,setTree]=useState<SchoolNode[]>([])
   const [typeDefs,setTypeDefs]=useState<TypeDef[]>([])
   const [stored,setStored]=useState<StoredQuestion[]>([])
-  const [school,setSchool]=useState('')
-  const [grade,setGrade]=useState('')
+  const context=useMemo(initialContext,[])
+  const [school,setSchool]=useState(context.school||'')
+  const [grade,setGrade]=useState(context.grade||'')
   const [semester,setSemester]=useState('2')
-  const [exam,setExam]=useState('')
+  const [exam,setExam]=useState(context.exam||'')
   const [passage,setPassage]=useState('')
-  const [selectedTypes,setSelectedTypes]=useState<string[]>(['blank','grammar','vocab','order','insert'])
+  const [grammarFocus,setGrammarFocus]=useState('')
+  const [selectedTypes,setSelectedTypes]=useState<string[]>([])
   const [count,setCount]=useState(10)
   const [loading,setLoading]=useState(false)
   const [result,setResult]=useState<any[]>([])
@@ -37,6 +42,8 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const grades=schoolNode?.grades||[]
   const gradeNode=useMemo(()=>grades.find(x=>x.grade===grade),[grades,grade])
   const exams=gradeNode?.exams||[]
+
+  useEffect(()=>{ if(grade&&exams.length&&!exam) setExam(exams[0].exam) },[grade,exam,exams])
 
   useEffect(()=>{
     if (!school || !tree.some(item => item.school === school)) { setGrade(''); setExam(''); return }
@@ -60,12 +67,24 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
     try { sessionStorage.setItem('buildit_page_context', JSON.stringify({ school, grade, exam, selected_twin_id: profile?.id ?? null })) } catch { /* selection still works without storage */ }
   },[school,grade,exam,profile])
 
+  useEffect(()=>{
+    if(!profile||!typeDefs.length)return
+    const twinNames=profile.types.map(item=>normalizeTypeName(item.name))
+    const matched=typeDefs.filter(item=>{
+      const candidates=[item.id,item.label].map(normalizeTypeName)
+      return twinNames.some(twin=>candidates.some(candidate=>twin===candidate||twin.includes(candidate)||candidate.includes(twin)))
+    }).map(item=>item.id)
+    if(matched.length)setSelectedTypes(matched)
+  },[profile,typeDefs])
+
   const toggleType=(id:string)=>setSelectedTypes(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id])
 
   async function generate(){
     setError('')
     if(!school||!grade){setError('학교와 학년을 선택해 주세요.');return}
+    if(!profile){setError('선택한 학교·학년·시험에 연결된 Digital Twin이 없습니다. Digital Twin 관리에서 먼저 연결해 주세요.');return}
     if(!passage.trim()){setError('문제 제작에 사용할 지문을 입력해 주세요.');return}
+    if(mode==='new'&&!grammarFocus.trim()){setError('시험 범위 주요 문법 사항을 입력해 주세요.');return}
     if(!selectedTypes.length){setError('문제 유형을 하나 이상 선택해 주세요.');return}
     setLoading(true)
     try{
@@ -74,7 +93,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
       if(!apiKey) throw new Error('왼쪽 아래 설정에서 Gemini API 키를 먼저 등록해 주세요.')
       const endpoint=mode==='new'?'questions/generate':'questions/transform'
       const body=mode==='new'
-        ? {api_key:apiKey,twin_id:profile?.id,school,grade,exam,passage,grammar:selectedTypes.map(id=>TYPE_LABELS[id]||id).join(', '),count,types:selectedTypes}
+        ? {api_key:apiKey,twin_id:profile?.id,school,grade,exam,passage,grammar:grammarFocus.trim(),count,types:selectedTypes}
         : {api_key:apiKey,twin_id:profile?.id,school,grade,exam,original:passage,count}
       const r=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       if(!r.ok) throw new Error(await r.text())
@@ -100,9 +119,10 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
           <label>학기<select value={semester} onChange={e=>setSemester(e.target.value)}><option value="1">1학기</option><option value="2">2학기</option></select></label>
           <label>시험<select value={exam} onChange={e=>setExam(e.target.value)}><option value="">선택</option>{exams.map((x,index)=><option key={`${x.exam}-${x.twinId ?? index}`} value={x.exam}>{x.exam}{x.hasDigitalTwin?' · Twin 연결':' · 기록 있음'}</option>)}</select></label>
         </div>
-        {profile?<div className="twin-strip"><b>Digital Twin 연결됨</b><span>{school} {grade}의 저장된 출제 패턴을 이번 제작에 반영합니다.</span></div>:school&&grade&&<div className="twin-strip"><b>기존 기록 연결됨</b><span>이 학교·학년의 기록은 있으나 Digital Twin은 아직 없습니다.</span></div>}
+        {profile?<div className="twin-strip"><b>Digital Twin 연결됨 · v{profile.version}</b><span>{profile.types.slice(0,6).map(item=>item.name).join(' · ') || profile.dna}</span></div>:school&&grade&&<div className="twin-strip"><b>기존 기록 연결됨</b><span>이 학교·학년의 기록은 있으나 Digital Twin은 아직 없습니다.</span></div>}
         <label className="passage-label">영어 지문<textarea value={passage} onChange={e=>setPassage(e.target.value)} placeholder="교과서, 학교 프린트 또는 외부 지문을 붙여 넣으세요." /></label>
-        <div className="type-head"><b>문제 유형</b><span>{selectedTypes.length}개 선택</span></div>
+        {mode==='new'&&<label className="passage-label grammar-focus-label">시험 범위 주요 문법 사항<textarea value={grammarFocus} onChange={e=>setGrammarFocus(e.target.value)} placeholder="예: 관계대명사 what, 가정법, 수동태" /><small>문법·서술형 문항에 우선 반영하고 생성 기록에도 함께 보관합니다.</small></label>}
+        <div className="type-head"><b>문제 유형 {profile?'· Digital Twin 자동 적용':''}</b><span>{selectedTypes.length}개 선택</span></div>
         <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,label:TYPE_LABELS[id]} as TypeDef))).map(t=>{const id=t.id;return <button type="button" key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.label||TYPE_LABELS[id]||id}</button>})}</div>
         <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}

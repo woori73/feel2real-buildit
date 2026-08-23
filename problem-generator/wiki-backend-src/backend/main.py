@@ -435,6 +435,7 @@ class AssistantAttachment(BaseModel):
 
 class AssistantRequest(BaseModel):
     message: str
+    api_key: str = ''
     state: AssistantState = Field(default_factory=AssistantState)
     history: list[AssistantMessage] = Field(default_factory=list)
     attachments: list[AssistantAttachment] = Field(default_factory=list)
@@ -442,7 +443,7 @@ class AssistantRequest(BaseModel):
 
 def _assistant_entities(message: str, state: AssistantState) -> dict:
     school_match = re.search(r'([가-힣A-Za-z0-9]+(?:중학교|중|고등학교|고))(?=\s|\d|$)', message)
-    grade_match = re.search(r'(?:중\s*)?([1-3])\s*학년', message)
+    grade_match = re.search(r'(?:중\s*)?([1-3])\s*학년', message) or re.search(r'(?:중학교|중)\s*([1-3])(?=\s|학년|문제|시험|$)', message)
     exam_match = re.search(r'((?:1|2)학기\s*)?(중간고사|기말고사|중간|기말)', message)
     school = school_match.group(1) if school_match else state.school
     grade = f'중{grade_match.group(1)}' if grade_match else state.grade
@@ -459,11 +460,11 @@ def _assistant_entities(message: str, state: AssistantState) -> dict:
 
 def _assistant_context(entities: dict) -> dict:
     school, grade, exam = entities['school'], entities['grade'], entities['exam']
-    context = {'twin': None, 'questionCount': 0, 'studentCount': 0, 'insightCount': 0}
+    context = {'twin': None, 'availableExams': [], 'questionTypes': [], 'questionCount': 0, 'studentCount': 0, 'insightCount': 0}
     if not school:
         return context
     with get_db() as conn:
-        twin_query = 'SELECT id, school, grade, exam, version, updated_at FROM digital_twin_profiles WHERE is_active=1 AND school=?'
+        twin_query = 'SELECT * FROM digital_twin_profiles WHERE is_active=1 AND school=?'
         twin_values: list = [school]
         if grade:
             twin_query += ' AND grade=?'; twin_values.append(grade)
@@ -472,7 +473,12 @@ def _assistant_context(entities: dict) -> dict:
         twin_query += " ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1"
         twin_values.append(exam)
         twin = conn.execute(twin_query, twin_values).fetchone()
-        if twin: context['twin'] = dict(twin)
+        if twin:
+            context['twin'] = digital_twin_response(twin)
+        exam_rows = conn.execute('SELECT DISTINCT exam FROM digital_twin_profiles WHERE is_active=1 AND school=? AND (? = \'\' OR grade=?) ORDER BY exam', (school, grade, grade)).fetchall()
+        context['availableExams'] = [row['exam'] for row in exam_rows if row['exam']]
+        if context['twin']:
+            context['questionTypes'] = [item.get('name', '') if isinstance(item, dict) else str(item) for item in context['twin'].get('types', []) if item]
         filters, values = ['school=?'], [school]
         if grade: filters.append('grade=?'); values.append(grade)
         if exam: filters.append('exam=?'); values.append(exam)
@@ -491,7 +497,7 @@ def _attachment_route(attachments: list[AssistantAttachment], message: str, goal
     if re.search(r'\.(html?|json|txt)$', names): return 'twin', 'Digital Twin 가져오기'
     if re.search(r'오답|학생', message + goal): return 'wrongnote', '학생 오답 OCR 열기'
     if attachments and re.search(r'\.(pdf|png|jpe?g|hwp|hwpx|docx)$', names): return 'school', '학교 프린트 OCR 열기'
-    if goal == '학교별 내신 문제 제작': return 'home', '내신 문제 준비하기'
+    if goal == '학교별 내신 문제 제작': return 'home', '문제 제작 화면 열기'
     if goal == '수업 인사이트 기록': return 'brain', '수업 인사이트 열기'
     if goal == 'Digital Twin 구축': return 'twin', 'Digital Twin 열기'
     return 'state', '현재 상태 보기'
@@ -503,18 +509,26 @@ def _assistant_fallback(entities: dict, context: dict, attachments: list[Assista
     lines = [f'{target}의 목표를 “{goal}”으로 정리했습니다.']
     twin = context['twin']
     if school and twin:
-        lines.append(f'{school} {grade} Digital Twin을 확인했습니다. 저장 문제 {context["questionCount"]}개, 학생 기록 {context["studentCount"]}명, 관련 수업 인사이트 {context["insightCount"]}개를 연결할 수 있습니다.')
+        type_text = ', '.join(context['questionTypes'][:5]) or '저장된 학교별 출제 패턴'
+        exam_text = ', '.join(context['availableExams']) or '시험 미지정'
+        lines.append(f'{school} {grade} Digital Twin을 확인했습니다. 연결 가능한 시험은 {exam_text}, 출제 유형은 {type_text}입니다. 저장 문제 {context["questionCount"]}개와 학생·수업 기록도 연결할 수 있습니다.')
     elif school:
         lines.append(f'{school} {grade}에 연결된 Digital Twin을 찾지 못했습니다. 기존 학교 기록은 보존한 채 기출 또는 Digital Twin 자료를 먼저 추가할 수 있습니다.')
     else:
         lines.append('연결할 기억을 찾으려면 학교·학년·시험을 알려 주세요.')
-    needed = [] if attachments else (['시험 범위 지문 또는 학교 프린트'] if goal == '학교별 내신 문제 제작' else [])
+    needed = []
+    if goal == '학교별 내신 문제 제작':
+        if not exam: needed.append('시험')
+        if not attachments: needed.extend(['시험 범위 지문 또는 학교 프린트', '시험 범위 주요 문법 사항'])
     if attachments:
         lines.append(f'첨부한 {", ".join(item.name for item in attachments)}은 기존 업로드 도구에서 처리하도록 연결하겠습니다. 파일 내용은 이 대화 API에 저장하지 않습니다.')
     elif needed:
-        lines.append('이번 시험 범위 지문이나 학교 프린트가 필요합니다. 파일을 올리거나 지문을 붙여 주세요.')
+        if goal == '학교별 내신 문제 제작':
+            lines.append('이번 시험 범위 지문이나 학교 프린트와 시험 범위 주요 문법 사항이 필요합니다.' + (' 시험도 선택해 주세요.' if not exam else '') + ' 알려 주시면 저장된 출제 유형을 바로 적용하겠습니다.')
+        else:
+            lines.append('아직 필요한 것은 ' + ', '.join(needed) + '입니다.')
     if goal == '학교별 내신 문제 제작':
-        lines.append('자료를 받으면 출제 경향 확인 → 유형 추천 → 문제 제작 → 검수 → 저장 순서로 함께 진행하겠습니다.')
+        lines.append('준비가 되면 학교·학년·Twin이 채워진 문제 제작 화면을 열겠습니다.')
     return '\n\n'.join(lines), needed
 
 
@@ -528,11 +542,11 @@ def assistant_chat(payload: AssistantRequest):
     fallback, needed = _assistant_fallback(entities, context, payload.attachments)
     route, action = _attachment_route(payload.attachments, message, entities['goal'])
     text, model = fallback, 'rules-fallback'
-    key = os.getenv('GEMINI_API_KEY', '').strip()
+    key = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
     if key:
         minimal_context = json.dumps({'goal': entities['goal'], 'school': entities['school'], 'grade': entities['grade'], 'exam': entities['exam'], **context, 'attachments': [a.name for a in payload.attachments]}, ensure_ascii=False)
         recent = payload.history[-6:]
-        prompt = f'현재 최소 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n반드시 포함할 사실과 다음 단계: {fallback}'
+        prompt = f'확인된 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n부족한 항목: {json.dumps(needed, ensure_ascii=False)}. 확인된 사실만 사용해 자연스럽게 답하고, 정적 기능 목록을 반복하지 마라.'
         try:
             text = pl.call_gemini_text(key, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25)
             model = 'gemini'
@@ -677,7 +691,10 @@ def generate_questions(payload: NewQuestionRequest):
         raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
     with get_db() as conn:
         twin = _load_twin(conn, payload.twin_id, payload.school, payload.grade, payload.exam)
-        type_labels = payload.types or None
+        type_labels = [
+            f"{pl.TYPE_DEF_BY_ID[type_id]['label']} — {pl.TYPE_DEF_BY_ID[type_id]['prompt']}"
+            for type_id in payload.types if type_id in pl.TYPE_DEF_BY_ID
+        ] or None
         mc_total, sa_total = _composition(payload.count, payload.composition)
         batches = _batches(payload.count, mc_total, sa_total)
         all_questions: list[dict] = []
@@ -687,25 +704,39 @@ def generate_questions(payload: NewQuestionRequest):
                 'type_labels': type_labels, 'difficulty': payload.difficulty,
                 'start': batch['start'], 'end': batch['end'], 'mc': batch['mc'], 'sa': batch['sa'], 'previous': previous,
             })
-            user_msg = f"[핵심 문법]\n{payload.grammar}\n\n[새 지문—내용 일치 문제에서는 이 전체 지문을 제시할 것]\n{payload.passage}"
-            try:
-                text = pl.call_gemini_structured(key, rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
-            except Exception as exc:
-                _handle_gemini_error(exc)
-                return
-            try:
-                parsed = json.loads(re.sub(r'```json|```', '', text).strip())
-            except (json.JSONDecodeError, TypeError):
-                raise HTTPException(status_code=502, detail='AI 응답을 JSON으로 해석하지 못했습니다. 다시 시도해 주세요.')
-            mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
-            sa_qs = []
-            for q in parsed.get('saQuestions', []):
-                q['type'] = 'sa'
-                q['acceptedAnswers'] = q.get('acceptedAnswers') or [q.get('sampleAnswer', '')]
-                q['answerFormat'] = q.get('answerFormat') or '정답 한 개를 정확히 작성'
-                q['gradingRule'] = q.get('gradingRule') or '철자와 문법이 모범답안과 일치해야 함'
-                sa_qs.append(q)
-            batch_questions = mc_qs + sa_qs
+            user_msg = f"[시험 범위 주요 문법—문법 문항과 서답형 문항에 최우선 반영]\n{payload.grammar}\n\n[새 지문—내용 일치 문제에서는 이 전체 지문을 제시할 것]\n{payload.passage}"
+            batch_questions: list[dict] = []
+            quality_issues: list[str] = []
+            for quality_attempt in range(2):
+                retry_rules = rules
+                if quality_issues:
+                    retry_rules += ' [직전 응답 품질 오류—모두 수정] ' + ' / '.join(quality_issues)
+                try:
+                    text = pl.call_gemini_structured(key, retry_rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
+                except Exception as exc:
+                    _handle_gemini_error(exc)
+                    return
+                try:
+                    parsed = json.loads(re.sub(r'```json|```', '', text).strip())
+                except (json.JSONDecodeError, TypeError):
+                    quality_issues = ['JSON 형식 오류']
+                    continue
+                mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
+                sa_qs = []
+                for q in parsed.get('saQuestions', []):
+                    q['type'] = 'sa'
+                    q['acceptedAnswers'] = q.get('acceptedAnswers') or [q.get('sampleAnswer', '')]
+                    q['answerFormat'] = q.get('answerFormat') or '정답 한 개를 정확히 작성'
+                    q['gradingRule'] = q.get('gradingRule') or '철자와 문법이 모범답안과 일치해야 함'
+                    sa_qs.append(q)
+                batch_questions = mc_qs + sa_qs
+                for question in batch_questions:
+                    question['grammarFocus'] = payload.grammar.strip()
+                quality_issues = pl.batch_quality_issues(batch_questions)
+                if not quality_issues:
+                    break
+            if quality_issues:
+                raise HTTPException(status_code=502, detail='AI가 시험지 형식 검증을 통과하지 못했습니다: ' + '; '.join(quality_issues[:3]))
             all_questions.extend(batch_questions)
             previous = ' || '.join(f"{i+1}. {q.get('questionType','')} / {q.get('stem','')} / {(q.get('sourceText') or '')[:120]}" for i, q in enumerate(all_questions))[-7000:]
         exam_title = f"{twin.get('school','')} {twin.get('grade','')} 맞춤형 시험지".strip()
