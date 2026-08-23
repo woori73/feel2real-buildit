@@ -19,7 +19,7 @@ const db=()=>new Promise<IDBDatabase>((ok,no)=>{const r=indexedDB.open(DB,1);r.o
 const putFile=async(id:string,f:File)=>{const d=await db();await new Promise<void>((ok,no)=>{const t=d.transaction(STORE,'readwrite');t.objectStore(STORE).put(f,id);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)});d.close()}
 const getFile=async(id:string)=>{const d=await db();const v=await new Promise<File|Blob|undefined>((ok,no)=>{const r=d.transaction(STORE,'readonly').objectStore(STORE).get(id);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});d.close();return v}
 const delFile=async(id:string)=>{const d=await db();await new Promise<void>((ok,no)=>{const t=d.transaction(STORE,'readwrite');t.objectStore(STORE).delete(id);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)});d.close()}
-const geminiKey=(s:ApiSettings|null)=>{try{const k=sessionStorage.getItem('f2r_msc_gemini_key');if(k?.trim())return k.trim()}catch{} return s?.provider==='gemini'?(s.geminiKey||'').trim():''}
+const geminiKey=(s:ApiSettings|null)=>{try{const k=sessionStorage.getItem('f2r_msc_gemini_key');if(k?.trim())return k.trim()}catch{} return (s?.geminiKey||'').trim()}
 const downloadBlob=(name:string,b:Blob)=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 
 export default function SchoolDatabase({onAnalyze,apiSettings}:{onAnalyze:()=>void;apiSettings:ApiSettings|null}){

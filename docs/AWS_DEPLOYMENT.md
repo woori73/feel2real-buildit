@@ -393,3 +393,14 @@ redacted HTTP header, Chrome screenshot을 남긴다. signed capability와 사�
 2026-07-26 작성된 임시 `docs/temp/ec2-video-deploy-guide.md`는 동기 request-thread ffmpeg 구조,
 100MiB/60초/25개 제한, nginx 가정을 포함한 역사 자료다. 현재 실행 지침으로 사용하지 않는다.
 이 문서가 해당 내용을 대체한다.
+# BuildIt Wiki AI Router secret
+
+`buildit-wiki.service`는 선택적 `EnvironmentFile=-/etc/buildit-wiki.env`를 읽는다. 운영 키는 저장소나 배포 압축 파일이 아니라 EC2의 root 전용 파일에만 둔다.
+
+```text
+GEMINI_API_KEY=...
+OPENROUTER_API_KEY=...
+OX_ALPHA_MODEL=stealth/ox-alpha
+```
+
+파일은 `root:root`, mode `600`으로 만들고 `systemctl restart buildit-wiki.service` 후 `/api/ai/providers`의 boolean 상태만 확인한다. 실제 키는 로그·응답·문서에 출력하지 않는다. GitHub secret을 사용한다면 이름은 `OPENROUTER_API_KEY`로 통일하되, 현재 workflow는 secret을 S3 산출물이나 SSM command history에 복사하지 않기 위해 EC2 env file을 사전 등록하는 방식을 사용한다.

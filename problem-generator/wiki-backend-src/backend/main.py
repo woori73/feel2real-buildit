@@ -3,6 +3,7 @@ import os
 import re
 import sqlite3
 import zipfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
@@ -18,6 +19,7 @@ from docx.oxml.ns import qn
 from docx.shared import Mm, Pt
 
 import prompt_logic as pl
+import ai_router
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -179,6 +181,15 @@ def init_db():
             created_at TEXT NOT NULL
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_lookup ON csat_wrong_answers(student_name, exam_name, question_no, csat_type_id)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS ai_ab_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
+            twin_id INTEGER, question_type TEXT NOT NULL DEFAULT '',
+            gemini_provider TEXT NOT NULL, gemini_model TEXT NOT NULL, gemini_result_id TEXT NOT NULL,
+            ox_provider TEXT NOT NULL, ox_model TEXT NOT NULL, ox_result_id TEXT NOT NULL,
+            choice TEXT NOT NULL CHECK (choice IN ('gemini','ox-alpha','both-revise')),
+            created_at TEXT NOT NULL
+        )''')
 
 
 def migrate_schema():
@@ -243,6 +254,12 @@ class StudioRun(BaseModel):
 @app.get('/api/health')
 def health():
     return {'ok': True}
+
+
+@app.get('/api/ai/providers')
+def ai_providers():
+    """Return capability flags only. Secret values never leave the server."""
+    return ai_router.availability()
 
 
 @app.get('/api/runs')
@@ -482,6 +499,8 @@ class AssistantAttachment(BaseModel):
 class AssistantRequest(BaseModel):
     message: str
     api_key: str = ''
+    openrouter_api_key: str = ''
+    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'auto'
     state: AssistantState = Field(default_factory=AssistantState)
     history: list[AssistantMessage] = Field(default_factory=list)
     attachments: list[AssistantAttachment] = Field(default_factory=list)
@@ -598,14 +617,13 @@ def assistant_chat(payload: AssistantRequest):
     fallback, needed = _assistant_fallback(entities, context, payload.attachments)
     route, action = _attachment_route(payload.attachments, message, entities['goal'])
     text, model = fallback, 'rules-fallback'
-    key = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
-    if key:
+    if payload.api_key.strip() or payload.openrouter_api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip() or os.getenv('OPENROUTER_API_KEY', '').strip():
         minimal_context = json.dumps({'goal': entities['goal'], 'school': entities['school'], 'grade': entities['grade'], 'exam': entities['exam'], **context, 'attachments': [a.name for a in payload.attachments]}, ensure_ascii=False)
         recent = payload.history[-6:]
         prompt = f'확인된 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n부족한 항목: {json.dumps(needed, ensure_ascii=False)}. 확인된 사실만 사용해 자연스럽게 답하고, 정적 기능 목록을 반복하지 마라.'
         try:
-            text = pl.call_gemini_text(key, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25)
-            model = 'gemini'
+            result = ai_router.generate(payload.provider, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. 학생 이름·연락처 등 개인정보를 요청하거나 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+            text, model = result.text, result.provider
         except Exception:
             pass
     next_state = {**payload.state.model_dump(), **entities, 'selected_twin_id': context['twin']['id'] if context['twin'] else None, 'needed_materials': needed, 'recent_request': message}
@@ -697,7 +715,9 @@ def _handle_gemini_error(exc):
 
 
 class NewQuestionRequest(BaseModel):
-    api_key: str
+    api_key: str = ''
+    openrouter_api_key: str = ''
+    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'gemini'
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -740,9 +760,6 @@ def _batches(total: int, mc: int, sa: int):
 
 @app.post('/api/questions/generate')
 def generate_questions(payload: NewQuestionRequest):
-    key = payload.api_key.strip()
-    if not key:
-        raise HTTPException(status_code=400, detail='AI API 키를 설정해 주세요.')
     if not payload.passage.strip() or not payload.grammar.strip():
         raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
     with get_db() as conn:
@@ -768,7 +785,8 @@ def generate_questions(payload: NewQuestionRequest):
                 if quality_issues:
                     retry_rules += ' [직전 응답 품질 오류—모두 수정] ' + ' / '.join(quality_issues)
                 try:
-                    text = pl.call_gemini_structured(key, retry_rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
+                    result = ai_router.generate(payload.provider, retry_rules, user_msg, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+                    text = result.text
                 except Exception as exc:
                     _handle_gemini_error(exc)
                     return
@@ -798,11 +816,80 @@ def generate_questions(payload: NewQuestionRequest):
         exam_title = f"{twin.get('school','')} {twin.get('grade','')} 맞춤형 시험지".strip()
         exam_group_id = f"exam_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'new', all_questions, exam_title, exam_group_id)
-        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'provider': result.provider, 'model': result.model, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+
+
+class AbComparisonRequest(NewQuestionRequest):
+    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'gemini'
+
+
+def _ab_generate(provider: str, payload: AbComparisonRequest, twin: dict) -> dict:
+    mc, sa = _composition(payload.count, payload.composition)
+    type_labels = [f"{pl.TYPE_DEF_BY_ID[t]['label']} — {pl.TYPE_DEF_BY_ID[t]['prompt']}" for t in payload.types if t in pl.TYPE_DEF_BY_ID] or None
+    rules = pl.build_new_rules(twin, {'type_labels': type_labels, 'difficulty': payload.difficulty, 'start': 1, 'end': payload.count, 'mc': mc, 'sa': sa, 'previous': ''})
+    prompt = f"[시험 범위 주요 문법]\n{payload.grammar}\n\n[새 지문]\n{payload.passage}"
+    result = ai_router.generate(provider, rules, prompt, schema=pl.schema_new(mc, sa), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+    parsed = json.loads(re.sub(r'```json|```', '', result.text).strip())
+    questions = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
+    questions += [{**q, 'type': 'sa'} for q in parsed.get('saQuestions', [])]
+    issues = pl.batch_quality_issues(questions)
+    if issues:
+        raise ai_router.ProviderError('JSON 문제 구조 검증 실패: ' + '; '.join(issues[:3]), provider)
+    return {'resultId': uuid.uuid4().hex, 'provider': result.provider, 'model': result.model, 'questions': questions}
+
+
+@app.post('/api/questions/ab-compare')
+def compare_questions(payload: AbComparisonRequest):
+    if not payload.passage.strip() or not payload.grammar.strip():
+        raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
+    with get_db() as conn:
+        twin = _load_twin(conn, payload.twin_id, payload.school, payload.grade, payload.exam)
+    results, errors = {}, {}
+    for provider in ('gemini', 'ox-alpha'):
+        try:
+            results[provider] = _ab_generate(provider, payload, twin)
+        except Exception as exc:
+            errors[provider] = str(exc)
+    if not results:
+        raise HTTPException(status_code=502, detail='두 provider 모두 비교 결과를 생성하지 못했습니다.')
+    return {'contextContract': {'school': twin.get('school', ''), 'grade': twin.get('grade', ''), 'exam': twin.get('exam', ''), 'twinId': twin['id'], 'types': payload.types, 'grammar': payload.grammar}, 'results': results, 'errors': errors}
+
+
+class AbEvaluationCreate(BaseModel):
+    school: str = ''
+    grade: str = ''
+    exam: str = ''
+    twin_id: Optional[int] = None
+    question_type: str = ''
+    gemini_model: str
+    gemini_result_id: str
+    ox_model: str
+    ox_result_id: str
+    choice: Literal['gemini', 'ox-alpha', 'both-revise']
+
+
+@app.post('/api/questions/ab-evaluations', status_code=201)
+def save_ab_evaluation(payload: AbEvaluationCreate):
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute('''INSERT INTO ai_ab_evaluations
+            (school,grade,exam,twin_id,question_type,gemini_provider,gemini_model,gemini_result_id,ox_provider,ox_model,ox_result_id,choice,created_at)
+            VALUES (?,?,?,?,?,'gemini',?,?,'ox-alpha',?,?,?,?)''',
+            (payload.school, payload.grade, payload.exam, payload.twin_id, payload.question_type, payload.gemini_model, payload.gemini_result_id, payload.ox_model, payload.ox_result_id, payload.choice, now))
+        row = conn.execute('SELECT * FROM ai_ab_evaluations WHERE id=?', (cursor.lastrowid,)).fetchone()
+        return dict(row)
+
+
+@app.get('/api/questions/ab-evaluations')
+def list_ab_evaluations(limit: int = 100):
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute('SELECT * FROM ai_ab_evaluations ORDER BY id DESC LIMIT ?', (max(1, min(limit, 500)),)).fetchall()]
 
 
 class TransformQuestionRequest(BaseModel):
-    api_key: str
+    api_key: str = ''
+    openrouter_api_key: str = ''
+    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'gemini'
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -845,9 +932,6 @@ def transform_questions(payload: TransformQuestionRequest):
     """항목 7~10: 기존 HTML '기존 문제 변형' 기능 이식.
     학교 선택 → Digital Twin DB 읽기 → 학교 출제 DNA 적용 → 문제 변형.
     유형을 지정하지 않으면 Digital Twin을 보고 자동 추천한다."""
-    key = payload.api_key.strip()
-    if not key:
-        raise HTTPException(status_code=400, detail='AI API 키를 설정해 주세요.')
     if not payload.original.strip():
         raise HTTPException(status_code=400, detail='기존 문제를 입력해 주세요.')
     with get_db() as conn:
@@ -870,7 +954,8 @@ def transform_questions(payload: TransformQuestionRequest):
         rules = pl.build_transform_rules(twin, cfg)
         user_msg = f"[원본 문제]\n{payload.original}\n\n[관련 전체 지문]\n{payload.passage or '제공되지 않음'}"
         try:
-            text = pl.call_gemini_structured(key, rules, user_msg, pl.schema_transform(payload.count))
+            provider_result = ai_router.generate(payload.provider, rules, user_msg, schema=pl.schema_transform(payload.count), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+            text = provider_result.text
         except Exception as exc:
             _handle_gemini_error(exc)
             return
@@ -890,7 +975,7 @@ def transform_questions(payload: TransformQuestionRequest):
         exam_title = data.get('examTitle') or f"{twin.get('school','')} 기존 문제 변형"
         exam_group_id = f"transform_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'transform', questions, exam_title, exam_group_id)
-        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'provider': provider_result.provider, 'model': provider_result.model, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
 
 
 # ==================================================================================

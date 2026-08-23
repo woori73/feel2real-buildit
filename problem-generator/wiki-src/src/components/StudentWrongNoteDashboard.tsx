@@ -15,7 +15,7 @@ const getStoredGeminiKey = (apiSettings: ApiSettings | null): string => {
     const msc = sessionStorage.getItem('f2r_msc_gemini_key')
     if (msc && msc.trim()) return msc.trim()
   } catch { /* ignore */ }
-  return apiSettings?.provider === 'gemini' ? (apiSettings.geminiKey || '').trim() : ''
+  return (apiSettings?.geminiKey || '').trim()
 }
 
 const downloadBlob = (filename: string, blob: Blob) => {
