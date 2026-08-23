@@ -96,6 +96,16 @@ jobs:
           WantedBy=multi-user.target
           UNIT
 
+          cat > /etc/nginx/conf.d/buildit-wiki-timeouts.conf <<'NGINX'
+          # Outer proxy deadlines must remain above Spring (280s) and the
+          # bounded AI provider call (90s), so JSON errors reach the browser.
+          proxy_connect_timeout 5s;
+          proxy_send_timeout 290s;
+          proxy_read_timeout 290s;
+          NGINX
+          nginx -t
+          systemctl reload nginx
+
           systemctl daemon-reload
           systemctl enable buildit-wiki.service
           systemctl restart buildit-wiki.service
