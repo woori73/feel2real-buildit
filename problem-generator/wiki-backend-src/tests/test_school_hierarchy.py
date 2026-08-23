@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1] / 'backend'
@@ -55,6 +56,48 @@ class SchoolHierarchyTest(unittest.TestCase):
         exam = school['grades'][0]['exams'][0]
         self.assertEqual(twin_id, exam['twinId'])
         self.assertTrue(exam['hasDigitalTwin'])
+
+    def test_persisted_columns_are_the_digital_twin_response_contract(self):
+        with main.get_db() as conn:
+            now = '2026.08.23 12:00'
+            cursor = conn.execute(
+                "INSERT INTO digital_twin_profiles (school, grade, exam, profile_json, version, is_active, created_at, updated_at) VALUES (?,?,?,?,?,1,?,?)",
+                ('실제학교', '중2', '1학기 기말', '{"school":"오래된학교","grade":"","exam":""}', 4, now, now),
+            )
+            twin_id = cursor.lastrowid
+
+        profile = main.get_digital_twin(twin_id)
+        self.assertEqual('실제학교', profile['school'])
+        self.assertEqual('중2', profile['grade'])
+        self.assertEqual('1학기 기말', profile['exam'])
+        self.assertEqual(now, profile['updatedAt'])
+
+        with main.get_db() as conn:
+            loaded = main._load_twin(conn, twin_id, None, None, None)
+        self.assertEqual(twin_id, loaded['id'])
+        self.assertEqual('실제학교', loaded['school'])
+
+    def test_selected_twin_is_passed_to_generation_context_and_saved(self):
+        with main.get_db() as conn:
+            now = '2026.08.23 12:00'
+            cursor = conn.execute(
+                "INSERT INTO digital_twin_profiles (school, grade, exam, profile_json, version, is_active, created_at, updated_at) VALUES (?,?,?,?,?,1,?,?)",
+                ('생성연결중', '중3', '2학기 기말', '{"school":"과거값","dna":"학교 DNA","types":[],"rules":[]}', 2, now, now),
+            )
+            twin_id = cursor.lastrowid
+        ai_response = '{"mcQuestions":[{"questionType":"grammar","stem":"문제","options":["A","B"],"answer":[0]}],"saQuestions":[]}'
+        with patch.object(main.pl, 'call_gemini_structured', return_value=ai_response) as ai:
+            result = main.generate_questions(main.NewQuestionRequest(
+                api_key='test-key', twin_id=twin_id, school='다른학교', grade='중1', exam='다른시험',
+                passage='Passage', grammar='Grammar', count=1, types=['grammar'],
+            ))
+
+        self.assertEqual(twin_id, result['twin']['id'])
+        self.assertEqual('생성연결중', result['twin']['school'])
+        self.assertIn('생성연결중', ai.call_args.args[1])
+        with main.get_db() as conn:
+            saved = conn.execute('SELECT twin_id, school, grade, exam FROM generated_questions').fetchone()
+        self.assertEqual((twin_id, '생성연결중', '중3', '2학기 기말'), tuple(saved))
 
 
 if __name__ == '__main__':
