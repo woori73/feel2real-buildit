@@ -2997,6 +2997,24 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
   ```
 - 실패: 빈 파일/비이미지/제목 오류 `400`, 비로그인 `401`.
 
+### ✅ POST /problem-generator/wiki/api/educator-insights
+
+- 목적: Wiki `지능 → 수업 인사이트 기록`에서 수업 직후의 관찰과 교육자 판단을 Educator Brain 컨텍스트로 저장한다.
+- 현재 사용처: React Wiki `InsightRecorder`.
+- 전달 경로: Wiki frontend → Spring `BuildItWikiProxyController` → FastAPI `POST /api/educator-insights`.
+- Request JSON: `content`(필수, 최대 10,000자), `school`, `grade`, `student_context`, `lesson_context`(선택).
+- Response: `201 Created`, 저장된 insight row.
+- 실패: 내용 공백 또는 길이 초과 `400`.
+- 비고: 이번 범위는 생성/최근 조회이며 수정·삭제 API는 제공하지 않는다.
+
+### ✅ GET /problem-generator/wiki/api/educator-insights?limit=5
+
+- 목적: 최근 수업 인사이트를 최신순으로 조회한다.
+- 현재 사용처: React Wiki `InsightRecorder` 최근 기록.
+- 전달 경로: Wiki frontend → Spring proxy → FastAPI `GET /api/educator-insights`.
+- Query: `limit` 1~20(범위 밖 값은 서버에서 보정), 기본 5.
+- Response: `200 OK`, insight row 배열.
+
 ### ✅ GET /api/problem-generator/materials
 
 - 목적: 현재 사용자가 접근 가능한 자료 목록을 페이지로 조회한다.

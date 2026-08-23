@@ -83,7 +83,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
         <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}
       </section>
-      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div>{result.map((q:any,i)=><QuestionCard key={q.id||i} question={q} index={i} />)}</section>}
+      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
       {!result.length&&stored.length>0&&<section className="gen-footnote">현재 문제 DB에 <b>{stored.length}</b>개의 문제가 저장되어 있습니다.</section>}
     </main>
   </div>

@@ -14,26 +14,27 @@ export default function QuestionCard({ q, index }: { q: StoredQuestion; index: n
   const inline = isInlineUnderline(q.question_type, q.stem, q.source_text)
   const answerSet = new Set(q.answer)
 
-  if (q.q_kind === 'sa') return <div className="q-card q-sa">
-    <div className="q-head"><span className="q-num">[서답형 {index}]</span><span className="q-score">[{q.score}점]</span></div>
-    <Markup as="div" text={q.stem} />
+  if (q.q_kind === 'sa') return <article className="q-card q-sa">
+    <header className="q-head"><span className="q-num">서답형 {index}</span><span className="q-type">{q.question_type || '서답형'}</span><span className="q-score">{q.score}점</span></header>
+    <div className="q-instruction"><Markup as="div" text={q.stem} /></div>
     {q.source_text && <div className="source-text"><Markup text={q.source_text} /></div>}
     {q.conditions.length > 0 && <div className="cond-box"><div className="cond-title">조건</div><ul>{q.conditions.map((c, ci) => <li key={ci}><Markup text={c} /></li>)}</ul></div>}
-    <div className="answer-format">✍️ 답안 형태: {q.answer_format || '지시문에 맞게 작성'}</div>
-    <div className="answer-line">＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿</div>
-    <div className="grading-rule">📌 채점 기준: {q.grading_rule || '모범답안과 의미·문법이 일치해야 함'}</div>
-    <div className="sample-answer">✅ 모범답안: {q.sample_answer}</div>
-  </div>
+    <div className="answer-format"><b>답안 형태</b>{q.answer_format || '지시문에 맞게 작성'}</div>
+    <div className="answer-line" aria-hidden="true" />
+    <section className="answer-panel"><b>정답 · 채점 기준</b>{q.sample_answer && <p>모범답안: {q.sample_answer}</p>}<p>{q.grading_rule || '모범답안과 의미·문법이 일치해야 함'}</p></section>
+  </article>
 
-  return <div className="q-card q-mc">
-    <div className="q-head">
-      <span className="q-num">{index}.</span>
-      <Markup text={q.stem} />
+  return <article className="q-card q-mc">
+    <header className="q-head">
+      <span className="q-num">{index}</span>
+      <span className="q-type">{q.question_type || '객관식'}</span>
       {q.multi ? <span className="tag-multi">정답 2개</span> : null}
-      <span className="q-score">[{q.score}점]</span>
-    </div>
+      <span className="q-score">{q.score}점</span>
+    </header>
+    <div className="q-instruction"><Markup text={q.stem} /></div>
     {q.source_text && <div className="source-text"><Markup text={q.source_text} /></div>}
+    {q.conditions.length > 0 && <div className="cond-box"><div className="cond-title">조건</div><ul>{q.conditions.map((condition, conditionIndex) => <li key={conditionIndex}><Markup text={condition} /></li>)}</ul></div>}
     {!inline && q.options.length > 0 && <ul className="opt-list">{q.options.map((opt, oi) => <li key={oi} className={answerSet.has(oi + 1) ? 'is-answer' : ''}><span className="opt-num">{['①', '②', '③', '④', '⑤'][oi]}</span><Markup text={opt} /></li>)}</ul>}
-    {inline && <div className="inline-answer">✅ 정답: {q.answer.map(a => ['', '①', '②', '③', '④', '⑤'][a] || a).join(', ')}</div>}
-  </div>
+    <section className="answer-panel"><b>정답 · 해설</b><p>정답: {q.answer.map(a => ['', '①', '②', '③', '④', '⑤'][a] || a).join(', ') || '저장된 정답 없음'}</p>{q.grading_rule && <p>{q.grading_rule}</p>}</section>
+  </article>
 }

@@ -29,7 +29,9 @@ State actions route to existing tools:
 - 시험 문제 -> `home`
 - 수업 자료 / 학교 프린트 -> `school`
 - 학생 자료 / 오답 -> `wrongnote`
-- 수업 인사이트 -> `brain` (new light-weight page; persistence API follows later)
+- 수업 인사이트 -> `brain` (`educator_insights` SQLite 저장 + 최근 기록 조회)
+
+FastAPI 원본은 `problem-generator/wiki-backend-src/`에서 관리하고 배포 워크플로가 이 디렉터리를 패키징한다. 과거 `wiki-source.tgz.b64`는 신규 배포 입력으로 사용하지 않는다.
 
 ## API normalization
 
