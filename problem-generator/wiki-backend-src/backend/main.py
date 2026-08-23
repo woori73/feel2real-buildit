@@ -636,10 +636,11 @@ def assistant_chat(payload: AssistantRequest):
         try:
             result = ai_router.generate(payload.provider, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. 학생 이름·연락처 등 개인정보를 요청하거나 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
             text, model = result.text, result.provider
-        except Exception:
-            pass
+        except Exception as exc:
+            if payload.provider in ('gemini', 'ox-alpha'):
+                _handle_gemini_error(exc)
     next_state = {**payload.state.model_dump(), **entities, 'selected_twin_id': context['twin']['id'] if context['twin'] else None, 'needed_materials': needed, 'recent_request': message}
-    return {'text': text, 'state': next_state, 'context': context, 'page': route, 'action': action, 'model': model}
+    return {'text': text, 'state': next_state, 'context': context, 'page': route, 'action': action, 'provider': result.provider if 'result' in locals() else 'rules-fallback', 'model': result.model if 'result' in locals() else model}
 
 
 # ==================================================================================
@@ -719,6 +720,16 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
 
 
 def _handle_gemini_error(exc):
+    if isinstance(exc, ai_router.ProviderError):
+        status = exc.status if exc.status in (401, 403, 429, 502, 503, 504) else 502
+        message = str(exc)
+        if status == 429:
+            message = 'Ox Alpha 요청이 많아 잠시 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+        elif status == 504:
+            message = 'Ox Alpha 응답 시간이 초과되었습니다. 다시 시도하거나 Gemini로 전환해 주세요.'
+        elif status in (502, 503) and exc.provider == 'ox-alpha':
+            message = 'Ox Alpha 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+        raise HTTPException(status_code=status, detail={'message': message, 'provider': exc.provider, 'status': status})
     if isinstance(exc, pl.GeminiCallError):
         if exc.http_status in (401, 403):
             raise HTTPException(status_code=401, detail='잘못된 API Key입니다. 설정에서 키를 다시 확인해 주세요.')
@@ -2094,3 +2105,4 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
     path = export_dir / 'school-prints-combined.docx'; doc.save(path)
     safe = re.sub(r'[\\/:*?"<>|]', '_', title) or '학교_프린트'
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f'{safe}.docx')
+

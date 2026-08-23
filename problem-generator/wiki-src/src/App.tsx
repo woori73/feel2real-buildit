@@ -13,7 +13,7 @@ import InsightRecorder from './components/InsightRecorder'
 import AssistantComposer, { AssistantMessage } from './components/AssistantComposer'
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
-import { api } from './lib/api'
+import { api, normalizedApiError } from './lib/api'
 import './styles/generator.css'
 
 export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain'
@@ -104,13 +104,13 @@ export default function App() {
     try {
       let pageContext = {}; try { pageContext = JSON.parse(sessionStorage.getItem('buildit_page_context') || '{}') } catch { /* use assistant state */ }
       const response = await api('assistant/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: command, provider: apiSettings?.provider || 'auto', api_key: apiSettings?.geminiKey || '', openrouter_api_key: apiSettings?.openrouterKey || '', state: { ...assistantState, ...pageContext, current_page: page }, history: history.slice(-8), attachments: files.map(file => ({ name: file.name, type: file.type })) }) })
-      if (!response.ok) throw new Error('Assistant 응답을 준비하지 못했습니다.')
+      if (!response.ok) throw new Error(await normalizedApiError(response, apiSettings?.provider || 'auto'))
       const body = await response.json()
       const nextState = body.state || assistantState
       setAssistantState(nextState); sessionStorage.setItem('buildit_assistant_state', JSON.stringify(nextState))
       setAssistantMessages(items => [...items, { role: 'assistant', content: body.text, page: body.page as Page, action: body.action }])
-    } catch {
-      setAssistantMessages(items => [...items, { role: 'assistant', content: '요청을 정리했습니다. 연결 서비스가 잠시 응답하지 않아도 기존 기록은 변경되지 않습니다. 학교·학년·시험과 시험 범위 지문 또는 프린트를 알려 주시면 출제 경향 확인 → 유형 추천 → 문제 제작 → 검수 → 저장 순서로 안내하겠습니다.', page: 'home', action: '내신 문제 준비하기' }])
+    } catch (error) {
+      setAssistantMessages(items => [...items, { role: 'assistant', content: error instanceof Error ? error.message : 'Assistant 연결에 실패했습니다.', page: 'home', action: '내신 문제 준비하기' }])
     } finally { setAssistantBusy(false) }
   }
 
@@ -121,7 +121,7 @@ export default function App() {
     {!isHome && !isHub && <aside className="side-nav compact-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><nav aria-label="현재 작업 내비게이션"><button onClick={() => setPage(parentHub)}>← {parentHub === 'student' ? '학생' : parentHub === 'intelligence' ? '지능' : '만들기'}</button></nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 내보내기</a></div></aside>}
     <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}>{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
       {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
-      {page === 'state' && <EducatorState onNavigate={setPage} />}
+      {page === 'state' && <><button className="wiki-home-settings" onClick={() => setSettingsOpen(true)} aria-label="AI 설정 열기">⚙ 설정</button><EducatorState onNavigate={setPage} /></>}
       {page === 'create' && <CategoryHub hub="create" onNavigate={setPage} />}
       {page === 'student' && <CategoryHub hub="student" onNavigate={setPage} />}
       {page === 'intelligence' && <CategoryHub hub="intelligence" onNavigate={setPage} />}
@@ -142,4 +142,5 @@ export default function App() {
     <ApiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={settings => { setApiSettings(settings); setNotice('AI API 설정을 저장했습니다. 문제 생성기에서 바로 사용할 수 있습니다.') }} />
   </div>
 }
+
 

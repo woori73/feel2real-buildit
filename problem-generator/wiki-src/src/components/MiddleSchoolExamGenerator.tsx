@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Page } from '../App'
 import { ApiSettings } from './ApiSettingsModal'
-import { api } from '../lib/api'
+import { api, normalizedApiError } from '../lib/api'
 import { DigitalTwinProfile, SchoolNode, StoredQuestion, TypeDef, fetchQuestions, fetchSchoolTree, fetchTypeDefs } from '../lib/types'
 import QuestionCard from './QuestionCard'
 import '../styles/generator.css'
@@ -34,6 +34,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [count,setCount]=useState(10)
   const [loading,setLoading]=useState(false)
   const [result,setResult]=useState<any[]>([])
+  const [resultProvider,setResultProvider]=useState<{provider:string;model:string}|null>(null)
   const [profile,setProfile]=useState<DigitalTwinProfile|null>(null)
   const [error,setError]=useState('')
   const [provider,setProvider]=useState<'gemini'|'ox-alpha'>(apiSettings?.provider==='ox-alpha'?'ox-alpha':'gemini')
@@ -96,9 +97,9 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
         ? {provider,api_key:apiSettings?.geminiKey||'',openrouter_api_key:apiSettings?.openrouterKey||'',twin_id:profile?.id,school,grade,exam,passage,grammar:grammarFocus.trim(),count,types:selectedTypes}
         : {provider,api_key:apiSettings?.geminiKey||'',openrouter_api_key:apiSettings?.openrouterKey||'',twin_id:profile?.id,school,grade,exam,original:passage,count}
       const r=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-      if(!r.ok) throw new Error(await r.text())
+      if(!r.ok) throw new Error(await normalizedApiError(r, provider))
       const data=await r.json()
-      if(abMode&&mode==='new'){setComparison(data);setResult([])}else{setComparison(null);setResult(data.questions||data.items||[])}
+      if(abMode&&mode==='new'){setComparison(data);setResult([]);setResultProvider(null)}else{setComparison(null);setResult(data.questions||data.items||[]);setResultProvider({provider:data.provider,model:data.model})}
     }catch(e:any){setError(e?.message||'문제 생성 중 오류가 발생했습니다.')}
     finally{setLoading(false)}
   }
@@ -128,7 +129,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
         {error&&<div className="gen-error">{error}</div>}
       </section>
       {comparison&&<AbResults data={comparison} context={{school,grade,exam,twinId:profile?.id,questionType:selectedTypes.join(', ')}} />}
-      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><p className="storage-status" role="status">저장됨 · 문제 DB</p><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
+      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><p className="storage-status" role="status">저장됨 · 문제 DB{resultProvider ? ` · ${resultProvider.provider==='ox-alpha'?'Ox Alpha':'Gemini'} · ${resultProvider.model}` : ''}</p><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
       {!result.length&&stored.length>0&&<section className="gen-footnote">현재 문제 DB에 <b>{stored.length}</b>개의 문제가 저장되어 있습니다.</section>}
     </main>
   </div>
@@ -140,3 +141,4 @@ function AbResults({data,context}:{data:any;context:any}){
   const evaluate=async(choice:'gemini'|'ox-alpha'|'both-revise')=>{if(!gem||!ox){setSaved('두 결과가 모두 있어야 평가를 저장할 수 있습니다.');return}const r=await api('questions/ab-evaluations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,twin_id:context.twinId,question_type:context.questionType,gemini_model:gem.model,gemini_result_id:gem.resultId,ox_model:ox.model,ox_result_id:ox.resultId,choice})});setSaved(r.ok?'평가를 저장했습니다.':'평가 저장에 실패했습니다.')}
   return <section className="result-section"><div className="result-title"><h2>Gemini ↔ Ox Alpha Experimental A/B</h2></div><p className="field-hint">비교 기준: 영어 내신 문제 생성 품질 · Digital Twin 반영률 · 한국어 지시 이해 · 긴 학교 자료 처리 · JSON 문제 구조 준수</p><div className="gen-grid" style={{gridTemplateColumns:'1fr 1fr'}}>{[['Gemini',gem],['Ox Alpha · Experimental',ox]].map(([label,r]:any)=><article className="gen-panel" key={label}><h3>{label}</h3>{r?r.questions.map((q:any,i:number)=><QuestionCard key={i} q={q} index={i+1}/>):<p>{data.errors?.[label==='Gemini'?'gemini':'ox-alpha']||'사용 불가'}</p>}</article>)}</div><div className="gen-actions"><button onClick={()=>evaluate('gemini')}>Gemini 우수</button><button onClick={()=>evaluate('ox-alpha')}>Ox Alpha 우수</button><button onClick={()=>evaluate('both-revise')}>둘 다 수정 필요</button><span>{saved}</span></div></section>
 }
+

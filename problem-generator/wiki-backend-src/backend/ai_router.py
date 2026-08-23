@@ -1,12 +1,23 @@
 """Server-side AI provider router. Secrets are accepted per request or read from env only."""
 import json
 import os
+import socket
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Optional
 
 import prompt_logic as pl
+
+DEFAULT_PROVIDER_TIMEOUT_SECONDS = 90.0
+
+
+def provider_timeout_seconds() -> float:
+    try:
+        value = float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS', str(DEFAULT_PROVIDER_TIMEOUT_SECONDS)))
+    except ValueError:
+        value = DEFAULT_PROVIDER_TIMEOUT_SECONDS
+    return max(10.0, min(value, 120.0))
 
 
 class ProviderError(Exception):
@@ -42,7 +53,7 @@ def _openrouter(key: str, system: str, prompt: str, schema: Optional[dict], temp
     body = json.dumps({'model': model, 'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user_prompt}], 'temperature': temperature}, ensure_ascii=False).encode('utf-8')
     request = urllib.request.Request('https://openrouter.ai/api/v1/chat/completions', data=body, method='POST', headers={'Authorization': f'Bearer {key}', 'Content-Type': 'application/json', 'HTTP-Referer': 'https://feel2real.com', 'X-Title': 'BuildIt Wiki'})
     try:
-        with urllib.request.urlopen(request, timeout=float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS', '60'))) as response:
+        with urllib.request.urlopen(request, timeout=provider_timeout_seconds()) as response:
             payload = json.loads(response.read().decode('utf-8'))
         text = payload.get('choices', [{}])[0].get('message', {}).get('content', '')
         if isinstance(text, list):
@@ -52,15 +63,21 @@ def _openrouter(key: str, system: str, prompt: str, schema: Optional[dict], temp
         return ProviderResult(str(text), 'ox-alpha', payload.get('model') or model, 'client')
     except urllib.error.HTTPError as exc:
         raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})', 'ox-alpha', exc.code) from exc
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise ProviderError('OpenRouter 연결 또는 응답 해석에 실패했습니다.', 'ox-alpha') from exc
+    except (TimeoutError, socket.timeout) as exc:
+        raise ProviderError('Ox Alpha 응답 시간이 초과되었습니다. 다시 시도하거나 Gemini로 전환해 주세요.', 'ox-alpha', 504) from exc
+    except urllib.error.URLError as exc:
+        if isinstance(exc.reason, (TimeoutError, socket.timeout)):
+            raise ProviderError('Ox Alpha 응답 시간이 초과되었습니다. 다시 시도하거나 Gemini로 전환해 주세요.', 'ox-alpha', 504) from exc
+        raise ProviderError('Ox Alpha 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.', 'ox-alpha', 502) from exc
+    except json.JSONDecodeError as exc:
+        raise ProviderError('Ox Alpha 응답을 해석하지 못했습니다. 다시 시도해 주세요.', 'ox-alpha', 502) from exc
 
 
 def generate(provider: str, system: str, prompt: str, *, schema: Optional[dict] = None, temperature: float = 0.25, gemini_key: str = '', openrouter_key: str = '') -> ProviderResult:
     requested = provider if provider in ('gemini', 'ox-alpha') else 'auto'
     gemini = gemini_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
     openrouter = openrouter_key.strip() or os.getenv('OPENROUTER_API_KEY', '').strip()
-    candidates = ['gemini', 'ox-alpha'] if requested == 'auto' else (['ox-alpha', 'gemini'] if requested == 'ox-alpha' else [requested])
+    candidates = ['gemini', 'ox-alpha'] if requested == 'auto' else [requested]
     last_error = None
     for candidate in candidates:
         try:
@@ -78,3 +95,4 @@ def generate(provider: str, system: str, prompt: str, *, schema: Optional[dict] 
     if last_error:
         raise last_error
     raise ProviderError('선택한 AI provider에 사용할 client/server 키가 없습니다.', requested)
+
