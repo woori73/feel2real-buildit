@@ -110,7 +110,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
       <button className="gen-db" onClick={()=>onNavigate('database')}>문제 DB</button>
     </header>
     <main className="gen-shell">
-      <section className="gen-hero"><div><small>BUILD IT · CREATE</small><h1>학교별 내신 문제 만들기</h1><p>학교·학년·시험을 고르면 저장된 Digital Twin과 문제 유형을 제작 컨텍스트에 연결합니다.</p></div></section>
+      <section className="gen-hero"><div><small>BUILD IT · CREATE</small><h1>내신·수능 문제 제작</h1><p>기존 내신 Digital Twin 흐름을 유지합니다. 학교·학년·시험을 고르면 저장된 Twin과 문제 유형을 제작 컨텍스트에 연결합니다.</p></div></section>
       <section className="gen-panel">
         <div className="gen-tabs"><button className={mode==='new'?'active':''} onClick={()=>setMode('new')}>신규 문제</button><button className={mode==='transform'?'active':''} onClick={()=>setMode('transform')}>기존 문제 변형</button></div>
         <div className="gen-grid four">

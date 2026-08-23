@@ -7,8 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from docx import Document
 from docx.enum.section import WD_SECTION
@@ -133,6 +133,52 @@ def init_db():
             lesson_context TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL
         )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_sources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exam_kind TEXT NOT NULL CHECK (exam_kind IN ('half','full')),
+            source_filename TEXT NOT NULL,
+            exam_metadata_json TEXT NOT NULL DEFAULT '{}',
+            parser TEXT NOT NULL,
+            raw_text TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_id INTEGER NOT NULL,
+            exam_kind TEXT NOT NULL,
+            question_no INTEGER NOT NULL,
+            csat_type_id TEXT NOT NULL,
+            csat_type_name TEXT NOT NULL,
+            passage TEXT NOT NULL DEFAULT '',
+            prompt TEXT NOT NULL DEFAULT '',
+            choices_json TEXT NOT NULL DEFAULT '[]',
+            answer TEXT NOT NULL DEFAULT '',
+            solution TEXT NOT NULL DEFAULT '',
+            footnote TEXT NOT NULL DEFAULT '',
+            group_label TEXT NOT NULL DEFAULT '',
+            source_reference TEXT NOT NULL DEFAULT '',
+            type_mismatch INTEGER NOT NULL DEFAULT 0,
+            mismatch_reason TEXT NOT NULL DEFAULT '',
+            raw_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (source_id) REFERENCES csat_question_sources(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_questions_kind_no ON csat_questions(exam_kind, question_no)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_questions_type ON csat_questions(csat_type_id)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_wrong_answers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL,
+            exam_name TEXT NOT NULL DEFAULT '',
+            question_no INTEGER NOT NULL,
+            csat_type_id TEXT NOT NULL,
+            csat_type_name TEXT NOT NULL,
+            wrong_answer TEXT NOT NULL DEFAULT '',
+            correct_answer TEXT NOT NULL DEFAULT '',
+            memo TEXT NOT NULL DEFAULT '',
+            source_filename TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_lookup ON csat_wrong_answers(student_name, exam_name, question_no, csat_type_id)')
 
 
 def migrate_schema():
@@ -1346,6 +1392,235 @@ class PassageRequest(BaseModel):
     source_text: str
 
 
+# 2027학년도 6월 모의평가 18~45번을 기준으로 한 번호별 표준 유형이다.
+# 번호는 1차 힌트이고, 저장 시 발문/문항 구조를 함께 검사해 불일치를 별도 기록한다.
+CSAT_TYPE_RANGES = [
+    ((18,), 'purpose', '목적', ('목적으로', 'purpose')),
+    ((19,), 'emotion', '심경', ('심경', 'mood', 'feeling')),
+    ((20,), 'claim', '주장', ('주장', 'claim')),
+    ((21,), 'implication', '함축 의미', ('의미하는', '함축', 'imply')),
+    ((22,), 'main_idea', '요지', ('요지', 'main idea')),
+    ((23,), 'topic', '주제', ('주제로', 'topic')),
+    ((24,), 'title', '제목', ('제목', 'title')),
+    ((25,), 'chart', '도표', ('도표', 'graph', 'chart')),
+    ((26,), 'content_match', '내용 일치·불일치', ('내용과 일치', '내용과 일치하지')),
+    ((27, 28), 'notice', '안내문', ('안내문', 'event', 'competition')),
+    ((29,), 'grammar', '어법', ('어법', 'grammar')),
+    ((30,), 'vocabulary', '어휘', ('낱말', '어휘', 'word')),
+    ((31, 32, 33, 34), 'blank', '빈칸', ('빈칸', 'blank')),
+    ((35,), 'irrelevant', '무관 문장', ('관계 없는', '무관')),
+    ((36, 37), 'order', '글의 순서', ('순서', 'order')),
+    ((38, 39), 'insertion', '문장 삽입', ('들어가기에', '삽입')),
+    ((40,), 'summary', '요약', ('요약', 'summary')),
+    ((41, 42), 'long_complex', '장문 복합', ('41', '42', '윗글')),
+    ((43, 44, 45), 'long_sequence_reference_content', '장문 순서·지칭·내용', ('43', '44', '45', '윗글')),
+]
+HALF_FEATURED_NUMBERS = {21, 24, 29, 30, *range(31, 35), *range(36, 43)}
+
+
+def csat_type_for_number(question_no: int) -> dict:
+    for numbers, type_id, name, signals in CSAT_TYPE_RANGES:
+        if question_no in numbers:
+            return {'id': type_id, 'name': name, 'signals': signals}
+    return {'id': 'other', 'name': '기타', 'signals': ()}
+
+
+def classify_csat_question(question_no: int, prompt: str, choices: list[str]) -> dict:
+    expected = csat_type_for_number(question_no)
+    haystack = f"{prompt} {' '.join(choices)}".lower()
+    matched = any(signal.lower() in haystack for signal in expected['signals'])
+    # 복합문항은 그룹 발문이 한 번만 나올 수 있어 보기 5개 또는 번호 표기도 구조 신호로 인정한다.
+    if question_no >= 41 and len(choices) == 5:
+        matched = True
+    return {
+        'type_id': expected['id'], 'type_name': expected['name'],
+        'type_mismatch': not matched,
+        'mismatch_reason': '' if matched else f"{question_no}번 표준 유형({expected['name']})과 발문/구조 신호가 일치하지 않습니다.",
+    }
+
+
+def _extract_hwpx_text(data: bytes) -> str:
+    try:
+        from xml.etree import ElementTree
+        with zipfile.ZipFile(__import__('io').BytesIO(data)) as archive:
+            section_names = sorted(name for name in archive.namelist() if re.fullmatch(r'Contents/section\d+\.xml', name))
+            if not section_names:
+                raise ValueError('HWPX 본문 section XML이 없습니다.')
+            chunks = []
+            for name in section_names:
+                root = ElementTree.fromstring(archive.read(name))
+                chunks.extend(node.text for node in root.iter() if node.tag.endswith('}t') and node.text)
+            return '\n'.join(chunks)
+    except (zipfile.BadZipFile, ValueError, ElementTree.ParseError) as error:
+        raise HTTPException(status_code=400, detail=f'HWPX 본문을 읽지 못했습니다: {error}') from error
+
+
+def _normalise_uploaded_questions(raw_text: str) -> list[dict]:
+    """HWPX/TXT/JSON 어댑터의 공통 경계. JSON은 완전 구조화, 문서는 번호 블록을 보수적으로 분리한다."""
+    stripped = raw_text.strip()
+    if stripped.startswith(('{', '[')):
+        try:
+            value = json.loads(stripped)
+            return value.get('questions', []) if isinstance(value, dict) else value
+        except json.JSONDecodeError:
+            pass
+    matches = list(re.finditer(r'(?m)^\s*(1[8-9]|[2-3]\d|4[0-5])\s*[\.\)]\s*', stripped))
+    result = []
+    for index, match in enumerate(matches):
+        block = stripped[match.end():matches[index + 1].start() if index + 1 < len(matches) else len(stripped)].strip()
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        prompt = lines[0] if lines else ''
+        choices = [re.sub(r'^[①②③④⑤]\s*', '', line) for line in lines if re.match(r'^[①②③④⑤]', line)]
+        passage = '\n'.join(line for line in lines[1:] if not re.match(r'^[①②③④⑤]', line))
+        result.append({'question_no': int(match.group(1)), 'prompt': prompt, 'passage': passage, 'choices': choices})
+    return result
+
+
+def _csat_question_response(row: sqlite3.Row) -> dict:
+    item = dict(row)
+    item['choices'] = json.loads(item.pop('choices_json'))
+    item['exam_metadata'] = json.loads(item.pop('exam_metadata_json', '{}')) if 'exam_metadata_json' in item else {}
+    item['type_mismatch'] = bool(item['type_mismatch'])
+    return item
+
+
+@app.get('/api/csat/types')
+def list_csat_types():
+    return [{'numbers': list(numbers), 'id': type_id, 'name': name} for numbers, type_id, name, _ in CSAT_TYPE_RANGES]
+
+
+@app.post('/api/csat/uploads', status_code=201)
+async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metadata_json: str = Form('{}'), file: UploadFile = File(...)):
+    filename = file.filename or 'upload'
+    suffix = Path(filename).suffix.lower()
+    data = await file.read()
+    if suffix == '.hwp':
+        raise HTTPException(status_code=415, detail='바이너리 HWP는 서버 직접 파싱을 지원하지 않습니다. 한글에서 HWPX로 저장해 올려 주세요.')
+    if suffix not in ('.hwpx', '.json', '.txt'):
+        raise HTTPException(status_code=415, detail='현재 HWPX, JSON, TXT를 지원합니다. HWP는 HWPX 변환이 필요합니다.')
+    raw_text = _extract_hwpx_text(data) if suffix == '.hwpx' else data.decode('utf-8-sig', errors='replace')
+    questions = _normalise_uploaded_questions(raw_text)
+    if not questions:
+        raise HTTPException(status_code=400, detail='18~45번 문항 블록을 찾지 못했습니다. 구조화 JSON 또는 번호가 포함된 HWPX를 확인해 주세요.')
+    try:
+        metadata = json.loads(metadata_json or '{}')
+    except json.JSONDecodeError as error:
+        raise HTTPException(status_code=400, detail='시험 메타데이터 JSON 형식이 올바르지 않습니다.') from error
+    now = datetime.now().isoformat()
+    saved = []
+    with get_db() as conn:
+        source = conn.execute(
+            'INSERT INTO csat_question_sources (exam_kind, source_filename, exam_metadata_json, parser, raw_text, created_at) VALUES (?,?,?,?,?,?)',
+            (exam_kind, filename, json.dumps(metadata, ensure_ascii=False), 'hwpx-xml-v1' if suffix == '.hwpx' else suffix[1:], raw_text, now),
+        )
+        source_id = source.lastrowid
+        for index, raw in enumerate(questions):
+            number = int(raw.get('question_no', 0))
+            if not 18 <= number <= 45:
+                continue
+            choices = [str(choice) for choice in raw.get('choices', [])]
+            classification = classify_csat_question(number, str(raw.get('prompt', '')), choices)
+            cursor = conn.execute('''INSERT INTO csat_questions
+                (source_id, exam_kind, question_no, csat_type_id, csat_type_name, passage, prompt, choices_json,
+                 answer, solution, footnote, group_label, source_reference, type_mismatch, mismatch_reason, raw_json, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                (source_id, exam_kind, number, classification['type_id'], classification['type_name'], str(raw.get('passage', '')),
+                 str(raw.get('prompt', '')), json.dumps(choices, ensure_ascii=False), str(raw.get('answer', '')), str(raw.get('solution', '')),
+                 str(raw.get('footnote', '')), str(raw.get('group_label', '')), f'{filename}#question-{number}', int(classification['type_mismatch']),
+                 classification['mismatch_reason'], json.dumps(raw, ensure_ascii=False), now))
+            saved.append(cursor.lastrowid)
+        if not saved:
+            raise HTTPException(status_code=400, detail='18~45번 범위의 저장 가능한 문항이 없습니다.')
+        rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json FROM csat_questions q
+            JOIN csat_question_sources s ON s.id=q.source_id WHERE q.id IN ({','.join('?' * len(saved))}) ORDER BY q.question_no''', saved).fetchall()
+    return {'source_id': source_id, 'parser': 'hwpx-xml-v1' if suffix == '.hwpx' else suffix[1:], 'questions': [_csat_question_response(row) for row in rows]}
+
+
+@app.get('/api/csat/questions')
+def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, question_no: Optional[int] = None, type_id: Optional[str] = None, mismatch: Optional[bool] = None):
+    filters, values = [], []
+    for clause, value in (('q.exam_kind=?', exam_kind), ('q.question_no=?', question_no), ('q.csat_type_id=?', type_id)):
+        if value is not None: filters.append(clause); values.append(value)
+    if mismatch is not None: filters.append('q.type_mismatch=?'); values.append(int(mismatch))
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json FROM csat_questions q
+            JOIN csat_question_sources s ON s.id=q.source_id {where} ORDER BY q.created_at DESC, q.question_no''', values).fetchall()
+    return [_csat_question_response(row) for row in rows]
+
+
+class CsatWrongAnswerCreate(BaseModel):
+    student_name: str
+    exam_name: str = ''
+    question_no: int = Field(ge=18, le=45)
+    wrong_answer: str = ''
+    correct_answer: str = ''
+    memo: str = ''
+    source_filename: str = ''
+
+
+@app.post('/api/csat/wrong-answers', status_code=201)
+def create_csat_wrong_answer(payload: CsatWrongAnswerCreate):
+    if not payload.student_name.strip():
+        raise HTTPException(status_code=400, detail='학생 이름을 입력해 주세요.')
+    csat_type = csat_type_for_number(payload.question_no)
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute('''INSERT INTO csat_wrong_answers
+            (student_name, exam_name, question_no, csat_type_id, csat_type_name, wrong_answer, correct_answer, memo, source_filename, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?)''', (payload.student_name.strip(), payload.exam_name.strip(), payload.question_no, csat_type['id'], csat_type['name'],
+            payload.wrong_answer.strip(), payload.correct_answer.strip(), payload.memo.strip(), payload.source_filename.strip(), now))
+        return dict(conn.execute('SELECT * FROM csat_wrong_answers WHERE id=?', (cursor.lastrowid,)).fetchone())
+
+
+@app.get('/api/csat/wrong-answers')
+def list_csat_wrong_answers(student: Optional[str] = None, exam: Optional[str] = None, type_id: Optional[str] = None):
+    filters, values = [], []
+    for clause, value in (('student_name=?', student), ('exam_name=?', exam), ('csat_type_id=?', type_id)):
+        if value: filters.append(clause); values.append(value)
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute(f'SELECT * FROM csat_wrong_answers {where} ORDER BY id DESC', values).fetchall()]
+
+
+def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어') -> str:
+    def esc(value):
+        import html
+        return html.escape(str(value or ''))
+    blocks = []
+    for q in sorted(questions, key=lambda item: item['question_no']):
+        choices = ''.join(f'<li>{esc(choice)}</li>' for choice in q.get('choices', []))
+        flag = '<span class="flag">유형 확인 필요</span>' if q.get('type_mismatch') else ''
+        blocks.append(f'''<article class="question"><h2>{q['question_no']}. <span contenteditable="true">{esc(q.get('prompt'))}</span> {flag}</h2>
+            <div class="passage" contenteditable="true">{esc(q.get('passage')).replace(chr(10), '<br>')}</div>
+            <ol class="choices" contenteditable="true">{choices}</ol><small contenteditable="true">{esc(q.get('footnote'))}</small></article>''')
+    return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{esc(title)}</title><style>
+        @page{{size:A4;margin:12mm}}*{{box-sizing:border-box}}body{{font-family:"Noto Serif KR","Malgun Gothic",serif;margin:0;color:#111}}
+        header{{display:flex;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:12px}}header b{{font-size:22px}}
+        .toolbar{{position:sticky;top:0;background:#fff4cf;padding:8px;text-align:center;z-index:2}}.paper{{column-count:2;column-gap:28px;column-rule:1px solid #222}}
+        .question{{break-inside:avoid;margin:0 0 18px;font-size:11.5px;line-height:1.55}}h2{{font-size:12px;margin:0 0 7px}}.passage{{text-align:justify;margin-left:14px}}
+        .choices{{list-style:none;padding:0 0 0 14px;margin:8px 0;counter-reset:item}}.choices li{{counter-increment:item}}.choices li:before{{content:counter(item, circle) " ";}}
+        .flag{{font:10px sans-serif;color:#a33;border:1px solid #a33;padding:1px 4px}}[contenteditable=true]:focus{{outline:2px solid #e5b94f;background:#fff9e8}}
+        @media print{{.toolbar{{display:none}}}}@media(max-width:800px){{.paper{{column-count:1;column-rule:0}}}}
+    </style><body><div class="toolbar">문구를 클릭해 수정할 수 있습니다. <button onclick="print()">인쇄</button> <button onclick="saveEdited()">편집 HTML 저장</button></div>
+    <header><b contenteditable="true">{esc(title)}</b><span>BuildIt 자체 제작 시험지 · 18~45 독해</span></header><main class="paper">{''.join(blocks)}</main><script>function saveEdited(){{const blob=new Blob(['<!doctype html>'+document.documentElement.outerHTML],{{type:'text/html;charset=utf-8'}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildit-csat-edited.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}}</script></body></html>'''
+
+
+@app.get('/api/csat/exam.html', response_class=HTMLResponse)
+def export_csat_exam_html(ids: str = '', exam_kind: Optional[Literal['half', 'full']] = None, title: str = 'BuildIt 수능 영어'):
+    selected = [int(value) for value in ids.split(',') if value.strip().isdigit()]
+    filters, values = [], []
+    if selected: filters.append(f"q.id IN ({','.join('?' * len(selected))})"); values.extend(selected)
+    if exam_kind: filters.append('q.exam_kind=?'); values.append(exam_kind)
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        rows = conn.execute(f'SELECT q.* FROM csat_questions q {where} ORDER BY q.question_no', values).fetchall()
+    items = []
+    for row in rows:
+        item = dict(row); item['choices'] = json.loads(item['choices_json']); item['type_mismatch'] = bool(item['type_mismatch']); items.append(item)
+    return render_csat_html(items, title)
+
+
 PASSAGE_MEMORY_SCHEMA = {
     'type': 'object', 'properties': {
         'title': {'type': 'string'},
@@ -1357,20 +1632,17 @@ PASSAGE_MEMORY_SCHEMA = {
 
 PASSAGE_ANALYSIS_SCHEMA = {
     'type': 'object', 'properties': {
-        'original': {'type': 'string'}, 'translation': {'type': 'string'}, 'title': {'type': 'string'},
+        'title': {'type': 'string'},
         'topic': {'type': 'string'}, 'mainIdea': {'type': 'string'}, 'summary': {'type': 'string'},
         'sentences': {'type': 'array', 'items': {'type': 'object', 'properties': {
-            'original': {'type': 'string'}, 'structure': {'type': 'string'}, 'translation': {'type': 'string'},
-            'guide': {'type': 'string'}, 'grammar': {'type': 'string'},
-        }, 'required': ['original', 'structure', 'translation', 'guide', 'grammar']}},
-        'flow': {'type': 'object', 'properties': {
-            'introduction': {'type': 'string'}, 'development': {'type': 'string'}, 'conclusion': {'type': 'string'},
-        }, 'required': ['introduction', 'development', 'conclusion']},
+            'slashed': {'type': 'string'}, 'directTranslation': {'type': 'string'},
+            'translation': {'type': 'string'}, 'grammarGuide': {'type': 'string'},
+        }, 'required': ['slashed', 'directTranslation', 'translation', 'grammarGuide']}},
         'tfQuestions': {'type': 'array', 'items': {'type': 'object', 'properties': {
             'language': {'type': 'string', 'enum': ['KO', 'EN']}, 'statement': {'type': 'string'},
             'answer': {'type': 'string', 'enum': ['T', 'F']},
         }, 'required': ['language', 'statement', 'answer']}},
-    }, 'required': ['original', 'translation', 'title', 'topic', 'mainIdea', 'summary', 'sentences', 'flow', 'tfQuestions'],
+    }, 'required': ['title', 'topic', 'mainIdea', 'summary', 'sentences', 'tfQuestions'],
 }
 
 
@@ -1397,11 +1669,10 @@ def create_passage_memory(payload: PassageRequest):
 @app.post('/api/passages/analysis')
 def create_passage_analysis(payload: PassageRequest):
     key, source = _passage_source(payload)
-    rules = ('한국 중등 영어 내신용 지문 분석 자료를 만든다. 반드시 다음 6페이지형 구조의 데이터를 반환한다. '
-             '1페이지: 원문 전체와 자연스러운 번역, 제목·주제·요지·요약. 2~5페이지: 모든 문장을 순서대로 나누어 '
-             '문장 구조(슬래시와 핵심 성분), 해석, 독해 가이드, 핵심 문법을 설명. 이어 도입-전개-마무리 흐름. '
-             '6페이지: 내용일치 T/F 정확히 10문항. 앞 5문항은 한국어(KO), 뒤 5문항은 영어(EN)로 쓰고, '
-             'T와 F가 모두 포함되게 하며 지문만으로 판정 가능해야 한다. original에는 잡음 없는 영어 원문만 넣는다.')
+    rules = ('외부 영어 지문을 밀도 높은 학습 자료로 정리한다. 영어 원문 전체를 별도 반복하지 않는다. '
+             '모든 문장을 원래 순서대로 정확히 한 번만 sentences에 넣는다. slashed는 영어 문장 자체에 의미 단위 / 를 넣은 문자열이고, '
+             '바로 이어 directTranslation은 슬래시 단위의 직독직해, translation은 자연스러운 정식 해석, grammarGuide는 핵심 문법과 구문 설명이다. '
+             '내용일치 T/F는 정확히 10문항으로 앞 5개 한국어(KO), 뒤 5개 영어(EN), T/F를 모두 포함하고 지문만으로 판정 가능하게 한다.')
     try:
         result = json.loads(pl.call_gemini_structured(key, rules, source, PASSAGE_ANALYSIS_SCHEMA, temperature=0.2))
         if len(result.get('tfQuestions', [])) != 10:

@@ -5,6 +5,14 @@
 
 ## 4. 도메인 모델
 
+### Wiki SQLite: 고3 수능 영어 저장소
+
+Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_sources`, `csat_questions`, `csat_wrong_answers`를 추가한다. Spring/JPA 운영 스키마와 별도인 Wiki 저장소이므로 Flyway 번호는 사용하지 않는다.
+
+- `csat_question_sources`: `exam_kind`, 원본 파일명, 시험 메타데이터 JSON, parser, 추출 원문, 생성 시각을 보관한다.
+- `csat_questions`: source FK, half/full, 18~45 번호, 표준 유형 id/name, passage, prompt, choices JSON, answer/solution, footnote, group, source reference, 유형 불일치 flag/reason, raw JSON을 보관한다.
+- `csat_wrong_answers`: 학생, 시험, 번호, 표준 유형, 오답, 정답, 메모, 원본 파일명을 보관한다. 기존 `student_wrong_notes`와 FK나 overwrite 관계가 없다.
+
 ### 핵심 설계 원칙
 1. **`questions`는 모든 문제의 단일 저장소다.**
    - 1차 단계에서는 시험지에서 LLM이 추출한 문제(`source=READFILE`)만 INSERT된다. 후속 단계에서 LLM 생성(`GENERATED`) / Admin 직접 입력(`MANUAL`) 흐름이 추가된다.

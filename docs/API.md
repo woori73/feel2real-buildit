@@ -16,7 +16,7 @@
 ### ✅ POST /problem-generator/wiki/api/passages/analysis
 
 - 목적: 6페이지형 지문 분석 데이터와 내용일치 T/F 10문항을 생성한다.
-- 현재 사용처: Wiki `학생 → 지문 분석·문제 제작`
+- 현재 사용처: Wiki `만들기 → 지문 정리 + 내용일치 문제`
 - 인증/권한: 기존 Wiki 프록시 정책을 따른다.
 - Request JSON: `api_key`, `source_text`
 - Response JSON: `original`, `translation`, `title`, `topic`, `mainIdea`, `summary`, `sentences[{original,structure,translation,guide,grammar}]`, `flow{introduction,development,conclusion}`, `tfQuestions[{language,statement,answer}]`
@@ -3091,6 +3091,16 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 업로드 공용 컴포넌트: `infrastructure/storage/UploadedFileIngestor`.
 - 화면: `templates/problem-generator/page.html`, `fragments/_problem_generator_shell.html`, `static/js/problem_generator.js`, `static/css/problem_generator.css`.
 - 마이그레이션: `V945__add_problem_generator_materials.sql`.
+
+### Wiki 고3 수능 영어 API
+
+- `POST /problem-generator/wiki/api/csat/uploads` (`multipart/form-data`): `exam_kind=half|full`, `metadata_json`, `file`을 받는다. HWPX/JSON/TXT를 지원하며 바이너리 HWP는 `415`와 HWPX 변환 안내를 반환한다. 원본 source와 18~45번 정규화 문항을 SQLite에 영구 저장한다.
+- `GET /problem-generator/wiki/api/csat/types`: 18~45 번호별 표준 유형 메타데이터를 반환한다.
+- `GET /problem-generator/wiki/api/csat/questions`: `exam_kind`, `question_no`, `type_id`, `mismatch` 필터로 저장 문항을 조회한다. 번호와 발문/구조가 어긋나면 `type_mismatch`, `mismatch_reason`을 포함한다.
+- `GET /problem-generator/wiki/api/csat/exam.html`: `ids`, `exam_kind`, `title`로 BuildIt 표기의 2단 인쇄 HTML을 렌더링한다. 본문은 `contenteditable`이며 편집 상태 인쇄·HTML 재저장을 지원한다.
+- `POST/GET /problem-generator/wiki/api/csat/wrong-answers`: 기존 `student_wrong_notes`와 분리된 고3 수능 오답을 학생·시험·문항번호·표준유형·오답·정답·메모로 저장/조회한다.
+
+외부지문 API는 `/passages/memory`와 `/passages/analysis` 두 작업만 제공한다. analysis의 문장 데이터는 `slashed → directTranslation → translation → grammarGuide` 순서이며 영어 원문 전체를 별도 중복 필드로 반환하지 않는다.
 
 ## 17. BUILD IT CHART
 
