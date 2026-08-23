@@ -45,6 +45,12 @@ const descriptions: Record<Page, string> = {
   school: '학교·학년·시험별 기출과 수업 자료를 관리합니다.',
 }
 
+const storageLabels: Partial<Record<Page, string>> = {
+  home: '문제 DB', database: '문제 DB', exam: '문제 DB / exam_draft',
+  wrongnote: '학생 오답 기록', brain: 'Educator Brain · 수업 인사이트',
+  twin: '학교별 Digital Twin', school: '이 브라우저 · 학교별 DB', textbook: '이 브라우저 · 교과서 DB',
+}
+
 const downloadBlob = (filename: string, blob: Blob) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url) }
 
 export default function App() {
@@ -105,7 +111,7 @@ export default function App() {
   const parentHub: Page = page === 'wrongnote' ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
   return <div className={`tool-shell${isHome ? ' wiki-home-shell' : ''}${isHub ? ' category-shell' : ''}`}>
     {!isHome && !isHub && <aside className="side-nav compact-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><nav aria-label="현재 작업 내비게이션"><button onClick={() => setPage(parentHub)}>← {parentHub === 'student' ? '학생' : parentHub === 'intelligence' ? '지능' : '만들기'}</button></nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 내보내기</a></div></aside>}
-    <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}>{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p></div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
+    <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}>{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
       {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
       {page === 'state' && <EducatorState onNavigate={setPage} />}
       {page === 'create' && <CategoryHub hub="create" onNavigate={setPage} />}

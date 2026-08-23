@@ -33,14 +33,18 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [error,setError]=useState('')
 
   useEffect(()=>{ Promise.all([fetchSchoolTree(),fetchTypeDefs(),fetchQuestions()]).then(([a,b,c])=>{setTree(a);setTypeDefs(b);setStored(c)}).catch(()=>{}) },[])
-  const schoolNode=useMemo(()=>tree.find(x=>x.name===school),[tree,school])
+  const schoolNode=useMemo(()=>tree.find(x=>x.school===school),[tree,school])
   const grades=schoolNode?.grades||[]
+  const gradeNode=useMemo(()=>grades.find(x=>x.grade===grade),[grades,grade])
+  const exams=gradeNode?.exams||[]
 
   useEffect(()=>{
     if(!school||!grade) { setProfile(null); return }
-    api(`/digital-twin/profile?school=${encodeURIComponent(school)}&grade=${encodeURIComponent(grade)}&semester=${semester}&exam=${exam}`)
+    const selected=exams.find(x=>x.exam===exam) || exams[0]
+    if(!selected?.twinId){setProfile(null);return}
+    api(`digital-twins/${selected.twinId}`)
       .then(r=>r.ok?r.json():null).then(setProfile).catch(()=>setProfile(null))
-  },[school,grade,semester,exam])
+  },[school,grade,exam,exams])
 
   const toggleType=(id:string)=>setSelectedTypes(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id])
 
@@ -51,8 +55,14 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
     if(!selectedTypes.length){setError('문제 유형을 하나 이상 선택해 주세요.');return}
     setLoading(true)
     try{
-      const body={school,grade,semester,exam,passage,count,types:selectedTypes,mode,digital_twin:profile,api_settings:apiSettings}
-      const r=await api('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      if(apiSettings?.provider==='openai') throw new Error('현재 Wiki 문제 생성은 Gemini 연결을 사용합니다. 설정에서 Gemini를 선택해 주세요.')
+      const apiKey=apiSettings?.geminiKey
+      if(!apiKey) throw new Error('왼쪽 아래 설정에서 Gemini API 키를 먼저 등록해 주세요.')
+      const endpoint=mode==='new'?'questions/generate':'questions/transform'
+      const body=mode==='new'
+        ? {api_key:apiKey,twin_id:profile?.id,school,grade,exam,passage,grammar:selectedTypes.map(id=>TYPE_LABELS[id]||id).join(', '),count,types:selectedTypes}
+        : {api_key:apiKey,twin_id:profile?.id,school,grade,exam,original:passage,count}
+      const r=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       if(!r.ok) throw new Error(await r.text())
       const data=await r.json()
       setResult(data.questions||data.items||[])
@@ -71,19 +81,19 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
       <section className="gen-panel">
         <div className="gen-tabs"><button className={mode==='new'?'active':''} onClick={()=>setMode('new')}>신규 문제</button><button className={mode==='transform'?'active':''} onClick={()=>setMode('transform')}>기존 문제 변형</button></div>
         <div className="gen-grid four">
-          <label>학교<select value={school} onChange={e=>{setSchool(e.target.value);setGrade('')}}><option value="">선택</option>{tree.map(s=><option key={s.name}>{s.name}</option>)}</select></label>
-          <label>학년<select value={grade} onChange={e=>setGrade(e.target.value)}><option value="">선택</option>{grades.map((g:any)=><option key={String(g)} value={String(g)}>{g}학년</option>)}</select></label>
+          <label>학교<select value={school} onChange={e=>{setSchool(e.target.value);setGrade('');setExam('')}}><option value="">선택</option>{tree.map(s=><option key={s.school} value={s.school}>{s.school}</option>)}</select></label>
+          <label>학년<select value={grade} onChange={e=>{setGrade(e.target.value);setExam('')}}><option value="">선택</option>{grades.map(g=><option key={g.grade} value={g.grade}>{g.grade}</option>)}</select></label>
           <label>학기<select value={semester} onChange={e=>setSemester(e.target.value)}><option value="1">1학기</option><option value="2">2학기</option></select></label>
-          <label>시험<select value={exam} onChange={e=>setExam(e.target.value)}><option value="midterm">중간고사</option><option value="final">기말고사</option></select></label>
+          <label>시험<select value={exam} onChange={e=>setExam(e.target.value)}><option value="">선택</option>{exams.map((x,index)=><option key={`${x.exam}-${x.twinId ?? index}`} value={x.exam}>{x.exam}{x.hasDigitalTwin?' · Twin 연결':' · 기록 있음'}</option>)}</select></label>
         </div>
-        {profile&&<div className="twin-strip"><b>Digital Twin 연결됨</b><span>{school} {grade}학년의 저장된 출제 패턴을 이번 제작에 반영합니다.</span></div>}
+        {profile?<div className="twin-strip"><b>Digital Twin 연결됨</b><span>{school} {grade}의 저장된 출제 패턴을 이번 제작에 반영합니다.</span></div>:school&&grade&&<div className="twin-strip"><b>기존 기록 연결됨</b><span>이 학교·학년의 기록은 있으나 Digital Twin은 아직 없습니다.</span></div>}
         <label className="passage-label">영어 지문<textarea value={passage} onChange={e=>setPassage(e.target.value)} placeholder="교과서, 학교 프린트 또는 외부 지문을 붙여 넣으세요." /></label>
         <div className="type-head"><b>문제 유형</b><span>{selectedTypes.length}개 선택</span></div>
-        <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,name:TYPE_LABELS[id]} as any))).map((t:any)=>{const id=t.id||t.code;return <button key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.name||t.label||TYPE_LABELS[id]||id}</button>})}</div>
+        <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,label:TYPE_LABELS[id]} as TypeDef))).map(t=>{const id=t.id;return <button type="button" key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.label||TYPE_LABELS[id]||id}</button>})}</div>
         <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}
       </section>
-      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
+      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><p className="storage-status" role="status">저장됨 · 문제 DB</p><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
       {!result.length&&stored.length>0&&<section className="gen-footnote">현재 문제 DB에 <b>{stored.length}</b>개의 문제가 저장되어 있습니다.</section>}
     </main>
   </div>
