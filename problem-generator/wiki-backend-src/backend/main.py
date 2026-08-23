@@ -458,16 +458,23 @@ def _assistant_entities(message: str, state: AssistantState) -> dict:
     return {'school': school, 'grade': grade, 'exam': exam, 'goal': goal or '요청한 작업 준비'}
 
 
+def _assistant_grade_number(grade: str) -> str:
+    """UI/대화의 '중3'과 Digital Twin 저장값 '3학년'을 같은 학년으로 조회한다."""
+    match = re.fullmatch(r'(?:중)?\s*([1-3])\s*(?:학년)?', (grade or '').strip())
+    return match.group(1) if match else ''
+
+
 def _assistant_context(entities: dict) -> dict:
     school, grade, exam = entities['school'], entities['grade'], entities['exam']
+    grade_number = _assistant_grade_number(grade)
     context = {'twin': None, 'availableExams': [], 'questionTypes': [], 'questionCount': 0, 'studentCount': 0, 'insightCount': 0}
     if not school:
         return context
     with get_db() as conn:
         twin_query = 'SELECT * FROM digital_twin_profiles WHERE is_active=1 AND school=?'
         twin_values: list = [school]
-        if grade:
-            twin_query += ' AND grade=?'; twin_values.append(grade)
+        if grade_number:
+            twin_query += " AND REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"; twin_values.append(grade_number)
         if exam:
             twin_query += " AND (exam=? OR exam='전체')"; twin_values.append(exam)
         twin_query += " ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1"
@@ -475,19 +482,22 @@ def _assistant_context(entities: dict) -> dict:
         twin = conn.execute(twin_query, twin_values).fetchone()
         if twin:
             context['twin'] = digital_twin_response(twin)
-        exam_rows = conn.execute('SELECT DISTINCT exam FROM digital_twin_profiles WHERE is_active=1 AND school=? AND (? = \'\' OR grade=?) ORDER BY exam', (school, grade, grade)).fetchall()
+        exam_rows = conn.execute(
+            "SELECT DISTINCT exam FROM digital_twin_profiles WHERE is_active=1 AND school=? AND (? = '' OR REPLACE(REPLACE(grade, '중', ''), '학년', '')=?) ORDER BY exam",
+            (school, grade_number, grade_number),
+        ).fetchall()
         context['availableExams'] = [row['exam'] for row in exam_rows if row['exam']]
         if context['twin']:
             context['questionTypes'] = [item.get('name', '') if isinstance(item, dict) else str(item) for item in context['twin'].get('types', []) if item]
         filters, values = ['school=?'], [school]
-        if grade: filters.append('grade=?'); values.append(grade)
+        if grade_number: filters.append("REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"); values.append(grade_number)
         if exam: filters.append('exam=?'); values.append(exam)
         context['questionCount'] = conn.execute(f"SELECT COUNT(*) n FROM generated_questions WHERE {' AND '.join(filters)}", values).fetchone()['n']
         student_filters, student_values = ['school=?'], [school]
-        if grade: student_filters.append('grade=?'); student_values.append(grade)
+        if grade_number: student_filters.append("REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"); student_values.append(grade_number)
         context['studentCount'] = conn.execute(f"SELECT COUNT(*) n FROM students WHERE {' AND '.join(student_filters)}", student_values).fetchone()['n']
         insight_filters, insight_values = ['school=?'], [school]
-        if grade: insight_filters.append('grade=?'); insight_values.append(grade)
+        if grade_number: insight_filters.append("REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"); insight_values.append(grade_number)
         context['insightCount'] = conn.execute(f"SELECT COUNT(*) n FROM educator_insights WHERE {' AND '.join(insight_filters)}", insight_values).fetchone()['n']
     return context
 
