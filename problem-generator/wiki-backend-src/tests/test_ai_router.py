@@ -30,6 +30,22 @@ class AiRouterTest(unittest.TestCase):
             result = ai_router.generate('ox-alpha', 'system', 'hello')
         self.assertEqual(('ox-alpha', 'stealth/ox-alpha', 'Ox 응답', 'server'), (result.provider, result.model, result.text, result.key_source))
 
+    def test_request_openrouter_key_precedes_server_and_is_not_returned(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'model': 'stealth/ox-alpha', 'choices': [{'message': {'content': 'safe'}}]}).encode()
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-secret'}), patch('urllib.request.urlopen', return_value=response) as call:
+            result = ai_router.generate('ox-alpha', 'system', 'hello', openrouter_key='browser-secret')
+        self.assertEqual('client', result.key_source)
+        self.assertIn('browser-secret', call.call_args.args[0].headers['Authorization'])
+        self.assertNotIn('browser-secret', repr(result))
+        self.assertNotIn('server-secret', repr(result))
+
+    def test_provider_availability_never_returns_secret_values(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'do-not-return', 'GEMINI_API_KEY': 'also-secret'}):
+            body = json.dumps(main.ai_providers())
+        self.assertNotIn('do-not-return', body)
+        self.assertNotIn('also-secret', body)
+
     def test_missing_openrouter_key_is_unavailable_and_auto_uses_gemini(self):
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-key', 'OPENROUTER_API_KEY': ''}, clear=False), patch.object(ai_router.pl, 'call_gemini_text', return_value='Gemini fallback'):
             self.assertFalse(ai_router.availability()['providers']['ox-alpha']['available'])

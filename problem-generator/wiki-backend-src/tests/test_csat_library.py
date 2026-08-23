@@ -30,6 +30,16 @@ class CsatLibraryTest(unittest.TestCase):
             archive.writestr('Contents/section0.xml', '<hp:section xmlns:hp="urn:test"><hp:t>21. 의미하는 것은?</hp:t><hp:t>Passage</hp:t></hp:section>')
         self.assertIn('21. 의미하는 것은?', main._extract_hwpx_text(payload.getvalue()))
 
+    def test_hwp_rejects_non_ole_instead_of_saving_fake_text(self):
+        with self.assertRaises(main.HTTPException) as raised:
+            main._extract_hwp5_text(b'not-an-hwp')
+        self.assertEqual(400, raised.exception.status_code)
+
+    def test_canonical_schema_keeps_required_fields(self):
+        item = main._canonical_question({'question_no': 24, 'prompt': '제목으로 적절한 것은?', 'passage': 'Text', 'choices': ['A']}, 'half', {'title': '6월', 'year': '2027', 'round': '6'}, 'exam.hwp', 'raw', 'now')
+        for field in ('source_exam','year','session','exam_kind','question_number','csat_type','stem','passage','choices','answer','explanation','source_file','raw_text','created_at'):
+            self.assertIn(field, item)
+
     def test_question_persists_and_reads_back(self):
         with main.get_db() as conn:
             source = conn.execute("INSERT INTO csat_question_sources(exam_kind,source_filename,exam_metadata_json,parser,raw_text,created_at) VALUES('half','sample.json','{}','json','', 'now')")
@@ -41,6 +51,7 @@ class CsatLibraryTest(unittest.TestCase):
     def test_print_html_is_editable_two_column_buildit_document(self):
         html = main.render_csat_html([{'question_no':21,'prompt':'의미하는 것은?','passage':'Text','choices':['A','B'],'type_mismatch':False}], '하프 모의고사')
         self.assertIn('column-count:2', html); self.assertIn('contenteditable="true"', html); self.assertIn('BuildIt 자체 제작 시험지', html)
+        self.assertIn('moveQuestion', html); self.assertIn("closest('.question').remove()", html); self.assertIn('4문항 목표', html)
 
 
 if __name__ == '__main__': unittest.main()

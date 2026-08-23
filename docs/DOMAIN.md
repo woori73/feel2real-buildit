@@ -9,7 +9,7 @@
 
 Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_sources`, `csat_questions`, `csat_wrong_answers`를 추가한다. Spring/JPA 운영 스키마와 별도인 Wiki 저장소이므로 Flyway 번호는 사용하지 않는다.
 
-- `csat_question_sources`: `exam_kind`, 원본 파일명, 시험 메타데이터 JSON, parser, 추출 원문, 생성 시각을 보관한다.
+- `csat_question_sources`: `exam_kind`, 원본 파일명, SHA-256 `source_hash`, 시험 메타데이터 JSON, parser, 추출 원문, 원본 저장 여부(현재 항상 false), owner scope(현재 `shared`), 생성 시각을 보관한다. `(source_hash, exam_kind)`로 중복 업로드를 막는다. 바이너리 원본 자체는 저장하지 않는다.
 - `csat_questions`: source FK, half/full, 18~45 번호, 표준 유형 id/name, passage, prompt, choices JSON, answer/solution, footnote, group, source reference, 유형 불일치 flag/reason, raw JSON을 보관한다.
 - `csat_wrong_answers`: 학생, 시험, 번호, 표준 유형, 오답, 정답, 메모, 원본 파일명을 보관한다. 기존 `student_wrong_notes`와 FK나 overwrite 관계가 없다.
 
