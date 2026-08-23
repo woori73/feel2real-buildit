@@ -5,6 +5,12 @@ type Props = {
   onCommand?: (command: string) => void
 }
 
+const primary = [
+  { label: '만들기', detail: '문제 · 프린트 · 실전 자료', page: 'home' as Page },
+  { label: '학생', detail: '오답 · 복습 · 학생 자료', page: 'wrongnote' as Page },
+  { label: 'BRAIN', detail: '수업 인사이트 · Digital Twin', page: 'brain' as Page },
+]
+
 const actions: { label: string; detail: string; page: Page; command?: string }[] = [
   { label: '시험 문제', detail: '학교·학년·시험에 맞는 문제를 준비합니다.', page: 'home' },
   { label: '수업 자료', detail: '학교 프린트와 지문을 수업용 자료로 정리합니다.', page: 'school', command: '학교 프린트를 수업자료로 만들어줘' },
@@ -13,26 +19,26 @@ const actions: { label: string; detail: string; page: Page; command?: string }[]
 ]
 
 export default function EducatorState({ onNavigate, onCommand }: Props) {
-  const command = (text: string) => onCommand?.(text)
+  const command = (value: string) => onCommand?.(value)
   const run = (item: (typeof actions)[number]) => {
     if (item.command) command(item.command)
     onNavigate(item.page)
   }
 
   return <section className="educator-state" aria-labelledby="educator-state-title">
-    <div className="state-wave" aria-hidden="true">
-      <i /><i /><i /><i /><i />
-    </div>
+    <div className="state-wave" aria-hidden="true"><i /><i /><i /><i /><i /></div>
     <div className="state-copy">
       <p className="state-kicker">EDUCATOR STATE · CURRENT SCENARIO</p>
       <h1 id="educator-state-title">오늘 무엇을 준비하고 계세요?</h1>
       <p className="state-intro">BuildIt은 문제만 만들고 끝나지 않습니다. 지금 준비하는 수업과 학생, 자료를 알려주면 작업의 맥락을 기억하고 다음 제작에 다시 활용합니다.</p>
     </div>
 
+    <nav className="state-primary-nav" aria-label="BuildIt Wiki 주요 작업">
+      {primary.map(item => <button key={item.label} onClick={() => onNavigate(item.page)}><b>{item.label}</b><span>{item.detail}</span></button>)}
+    </nav>
+
     <div className="state-actions">
-      {actions.map(item => <button key={item.label} className="state-action" onClick={() => run(item)}>
-        <b>{item.label}</b><span>{item.detail}</span>
-      </button>)}
+      {actions.map(item => <button key={item.label} className="state-action" onClick={() => run(item)}><b>{item.label}</b><span>{item.detail}</span></button>)}
     </div>
 
     <div className="state-memory">
