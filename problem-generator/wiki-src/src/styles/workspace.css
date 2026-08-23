@@ -71,3 +71,27 @@ body, button, input, select, textarea { font-family: var(--wiki-font-sans); }
 .textbook-rich-editor { min-height: 520px; margin-top: 12px; padding: 30px; border: 1px solid var(--work-line); background: #fff; outline: none; }.editor-output-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .f2r-gen { font-family: var(--wiki-font-sans); }
 @media(max-width:720px){.school-print-workspace{grid-template-columns:1fr}.material-list>article{align-items:flex-start;flex-wrap:wrap}.material-list>article>div{flex-basis:100%}.settings-modal footer{flex-wrap:wrap}}
+
+/* Phase 2 density: professional screens keep comfortable 14–16px reading sizes
+   while fitting substantially more controls and records in one viewport. */
+.tool-shell:not(.wiki-home-shell):not(.category-shell){grid-template-columns:156px minmax(0,1fr);font-size:14px}
+.tool-shell:not(.wiki-home-shell) .compact-nav{padding:18px 12px;gap:14px}
+.tool-shell:not(.wiki-home-shell) .compact-nav .side-wiki-home{font-size:16px}
+.tool-shell:not(.wiki-home-shell) .compact-nav nav button,.tool-shell:not(.wiki-home-shell) .compact-nav .side-bottom>*{padding:8px 9px;font-size:12px}
+.tool-shell:not(.wiki-home-shell) .tool-main{padding:22px 28px 150px;max-width:1280px}
+.tool-shell:not(.wiki-home-shell) .tool-header{margin-bottom:16px}
+.tool-shell:not(.wiki-home-shell) .tool-header h1{font-size:27px}
+.tool-shell:not(.wiki-home-shell) .tool-header p,.tool-shell:not(.wiki-home-shell) .panel-heading p{font-size:13px}
+.tool-shell:not(.wiki-home-shell) .work-panel{padding:20px;border-radius:16px}
+.tool-shell:not(.wiki-home-shell) .panel-heading{margin-bottom:14px}
+.tool-shell:not(.wiki-home-shell) .panel-heading h2{font-size:21px}
+.tool-shell:not(.wiki-home-shell) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),.tool-shell:not(.wiki-home-shell) select{min-height:38px;padding:8px 10px}
+.tool-shell:not(.wiki-home-shell) textarea{padding:9px 11px}
+.tool-shell:not(.wiki-home-shell) .primary-action,.tool-shell:not(.wiki-home-shell) .secondary-button,.tool-shell:not(.wiki-home-shell) .btn-ghost{padding:8px 12px;font-size:13px}
+.tool-shell:not(.wiki-home-shell) .db-list article{padding:10px 11px}
+
+.category-shell{display:block;background:#f7f8f6}.category-main{max-width:980px!important;padding:clamp(52px,8vh,90px) 24px 160px!important}
+.category-hub{max-width:860px;margin:0 auto}.hub-back{border:0;background:transparent;color:#58655d;cursor:pointer;padding:6px 0;margin-bottom:34px}.category-hub>h1{margin:5px 0 10px;font-size:clamp(27px,4vw,36px);letter-spacing:-.045em}.hub-description{margin:0;color:#758078;font-size:14px}.hub-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:34px}.hub-actions button{position:relative;min-height:104px;padding:18px 45px 18px 18px;border:1px solid #e0e6e1;border-radius:16px;background:#fff;text-align:left;cursor:pointer;box-shadow:0 8px 28px rgba(31,42,35,.035)}.hub-actions button:hover{border-color:#a8baad;transform:translateY(-1px)}.hub-actions b,.hub-actions span{display:block}.hub-actions b{font-size:16px;color:#21352a}.hub-actions span{margin-top:7px;font-size:12px;line-height:1.55;color:#7c8780}.hub-actions i{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-style:normal;color:#4f6b5a}
+
+.insight-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.75fr);gap:14px}.insight-prompt{display:grid;gap:8px;font-size:15px;font-weight:800;color:#273b30}.insight-prompt textarea{min-height:220px!important;font-size:15px;line-height:1.7;font-weight:400}.insight-form .metadata-grid{margin-top:14px}.insight-submit{display:flex;align-items:center;justify-content:flex-end;gap:12px}.insight-submit small{color:#89928c}.form-status{margin:10px 0 0;padding:9px 11px;border-radius:9px;background:#eff6f1;color:#315d46}.recent-insights>div{display:grid;gap:9px}.recent-insights article{padding:12px;border:1px solid #e3e9e4;border-radius:11px;background:#fbfcfb}.recent-insights article p{display:-webkit-box;overflow:hidden;-webkit-line-clamp:4;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:1.65}.recent-insights article small{display:block;margin-top:8px;color:#849087;font-size:10px;line-height:1.5}.recent-insights footer,.recent-empty{margin:13px 0 0;color:#77827a;font-size:11px;line-height:1.6}
+@media(max-width:900px){.tool-shell:not(.wiki-home-shell):not(.category-shell){grid-template-columns:1fr}.tool-shell:not(.wiki-home-shell) .tool-main{padding:16px 12px 140px}.insight-layout{grid-template-columns:1fr}.hub-actions{grid-template-columns:1fr}.category-main{padding-top:40px!important}}

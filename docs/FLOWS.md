@@ -676,3 +676,16 @@ ADMIN 로그인
 - `/admin/chart`의 임시 LLM 키 입력은 서버 메모리에만 보관하고 DB/Git/프론트 저장소에 남기지 않는다.
 - 복구본의 `.env`나 테스트 키는 repo에 추가하지 않는다.
 - DB는 Flyway V947로 운영 스키마에 추가되며 재배포 시 초기화하지 않는다.
+# BuildIt Wiki 단계형 작업 흐름
+
+```text
+Wiki 홈
+  → 만들기 / 학생 / 지능 카테고리 선택
+  → 카테고리별 2~5개 핵심 행동 선택
+  → 선택한 전문 화면만 표시
+  → 최소 내비게이션의 ← 카테고리 또는 BuildIt Wiki로 복귀
+```
+
+- `지능 → 수업 인사이트 기록`은 자유 텍스트와 선택 맥락을 `/problem-generator/wiki/api/educator-insights`로 저장하고 최근 5개를 다시 조회한다.
+- Assistant 첨부는 새 파일 저장소를 만들지 않는다. 이미지/PDF·학교 자료는 기존 `SchoolDatabase` OCR 흐름, 학생/오답 요청은 `StudentWrongNoteDashboard` OCR 흐름, HTML/JSON/TXT는 `DigitalTwinImport` 흐름으로 안내한다.
+- 모든 Wiki API는 `/problem-generator/wiki/api/** → Spring Proxy → FastAPI`를 유지한다.

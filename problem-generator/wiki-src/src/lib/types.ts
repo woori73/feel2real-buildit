@@ -11,6 +11,7 @@ export type ExamPaper = { id:number; title:string; academy_name:string; teacher_
 export type ExamDraft = { title:string; academy_name:string; teacher_name:string; question_ids:number[] }
 export type Student = { id:number; name:string; school:string; grade:string; semester:string; exam_type:string; created_at:string }
 export type StudentWrongNote = { id:number; student_id:number; student_name:string; student_school:string; student_grade:string; exam_label:string; title:string; question_type:string; wrong_text:string; answer_text:string; source_text:string; created_at:string }
+export type EducatorInsight = { id:number; content:string; school:string; grade:string; student_context:string; lesson_context:string; created_at:string }
 
 export const fetchSchoolTree=async():Promise<SchoolNode[]>=>{const r=await api('schools');if(!r.ok)throw new Error('학교 목록을 불러오지 못했습니다.');return r.json()}
 export const fetchTypeDefs=async():Promise<TypeDef[]>=>{const r=await api('question-types');if(!r.ok)throw new Error('문제 유형 목록을 불러오지 못했습니다.');return r.json()}
@@ -28,3 +29,5 @@ export const updateWrongNote=async(studentId:number,noteId:number,payload:Partia
 export const deleteWrongNote=async(studentId:number,noteId:number):Promise<void>=>{const r=await api(`students/${studentId}/wrong-notes/${noteId}`,{method:'DELETE'});if(!r.ok)throw new Error('오답 자료를 삭제하지 못했습니다.')}
 export const exportWrongNotesOffice=async(studentId:number,payload:{note_ids:number[];title:string}):Promise<Blob>=>{const r=await api(`students/${studentId}/wrong-notes/export-docx`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(!r.ok){let d='오답 복습 문제지를 내보내지 못했습니다.';try{d=((await r.json())as{detail?:string}).detail||d}catch{}throw new Error(d)}return r.blob()}
 export const cleanOcrText=async(payload:{api_key:string;raw_text:string}):Promise<string>=>{const r=await api('ocr/clean-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const b=await r.json()as{cleanedText?:string;detail?:string};if(!r.ok)throw new Error(b.detail||'텍스트 정리를 완료하지 못했습니다.');return b.cleanedText||''}
+export const fetchEducatorInsights=async():Promise<EducatorInsight[]>=>{const r=await api('educator-insights?limit=5');if(!r.ok)throw new Error('최근 수업 인사이트를 불러오지 못했습니다.');return r.json()}
+export const createEducatorInsight=async(payload:{content:string;school:string;grade:string;student_context:string;lesson_context:string}):Promise<EducatorInsight>=>{const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const b=await r.json()as EducatorInsight&{detail?:string};if(!r.ok)throw new Error(b.detail||'수업 인사이트를 저장하지 못했습니다.');return b}

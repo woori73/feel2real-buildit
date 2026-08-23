@@ -27,8 +27,7 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/buildit-wiki-backend-src
           mkdir -p /tmp/buildit-wiki-backend-src
-          base64 -d wiki-source.tgz.b64 > /tmp/wiki-source.tgz
-          tar -xzf /tmp/wiki-source.tgz -C /tmp/buildit-wiki-backend-src
+          cp -R "$GITHUB_WORKSPACE/problem-generator/wiki-backend-src/." /tmp/buildit-wiki-backend-src/
           cd "$GITHUB_WORKSPACE/problem-generator/wiki-src"
           npm ci
           npm run build -- --base=/problem-generator/wiki/
@@ -36,8 +35,6 @@ jobs:
           rm -rf src/main/resources/static/problem-generator/wiki
           mkdir -p src/main/resources/static/problem-generator/wiki
           cp -R problem-generator/wiki-src/dist/. src/main/resources/static/problem-generator/wiki/
-          sed -i "s#DB_PATH = '/workspace/data/app.db'#DB_PATH = '/opt/buildit-wiki/data/app.db'#" /tmp/buildit-wiki-backend-src/backend/main.py
-          sed -i "s#WORKSPACE = Path('/workspace')#WORKSPACE = Path('/opt/buildit-wiki')#" /tmp/buildit-wiki-backend-src/backend/main.py
           tar -czf /tmp/buildit-wiki-backend.tgz -C /tmp/buildit-wiki-backend-src backend requirements.txt
 
       - name: Set up JDK 21
@@ -87,6 +84,8 @@ jobs:
           [Service]
           Type=simple
           WorkingDirectory=/opt/buildit-wiki/app/backend
+          Environment=BUILDIT_WIKI_DB_PATH=/opt/buildit-wiki/data/app.db
+          Environment=BUILDIT_WIKI_WORKSPACE=/opt/buildit-wiki
           ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
           Restart=always
           RestartSec=3

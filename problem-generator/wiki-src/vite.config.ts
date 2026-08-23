@@ -5,6 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      '/problem-generator/wiki/api/': {
+        target: 'http://127.0.0.1:8000',
+        rewrite: (path) => path.replace(/^\/problem-generator\/wiki/, ''),
+      },
       '^(/preview/[^/]+)?/api/': {
         target: 'http://127.0.0.1:8000',
         rewrite: (p) => p.replace(/^\/preview\/[^/]+/, ''),

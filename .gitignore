@@ -64,6 +64,14 @@ docs/플로우_ver_1.drawio.png
 ### OMX (oh-my-codex) state — ephemeral, not source of truth ###
 .omx/
 
+### BuildIt Wiki local verification ###
+problem-generator/wiki-src/node_modules/
+problem-generator/wiki-src/dist/
+.local-venv/
+.local-data/
+.codex-backend/
+.assistant-upload-check.txt
+
 ### Temporary parallel workflow docs (absorbed into MVP.md/API.md after completion) ###
 docs/changes/
 docs/temp/
