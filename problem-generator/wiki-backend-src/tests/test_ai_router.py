@@ -12,6 +12,7 @@ os.environ['BUILDIT_WIKI_DB_PATH'] = str(Path(tempfile.gettempdir()) / 'buildit-
 os.environ['BUILDIT_WIKI_WORKSPACE'] = tempfile.gettempdir()
 import ai_router  # noqa: E402
 import main  # noqa: E402
+import prompt_logic as pl  # noqa: E402
 
 
 class AiRouterTest(unittest.TestCase):
@@ -103,6 +104,21 @@ class AiRouterTest(unittest.TestCase):
         rows = main.list_ab_evaluations()
         self.assertEqual(created['id'], rows[0]['id'])
         self.assertEqual(('gemini', 'ox-alpha', 'ox-alpha'), (rows[0]['gemini_provider'], rows[0]['ox_provider'], rows[0]['choice']))
+
+
+    def test_quality_rejects_forbidden_because_in_answer_and_grading_rule(self):
+        question = {
+            'type': 'sa',
+            'stem': "다음 문장을 because 절 없이 같은 의미로 바꾸어 쓰시오.",
+            'conditions': ['because 절 사용 금지'],
+            'answerFormat': '12단어 이내의 완전한 문장',
+            'sampleAnswer': 'Every evening, Mina reads because she enjoys learning.',
+            'acceptedAnswers': ['Mina reads because she enjoys learning.'],
+            'gradingRule': "because 또는 as로 연결할 것.",
+        }
+        issues = pl.question_quality_issues(question)
+        self.assertIn('because 사용 금지 조건과 모범답안이 모순됨', issues)
+        self.assertIn('because 사용 금지 조건과 채점 기준이 모순됨', issues)
 
 
 if __name__ == '__main__':
