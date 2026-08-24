@@ -63,6 +63,22 @@ class FrontendContractTest(unittest.TestCase):
         self.assertIn('window.print()', source)
         self.assertIn('<AssistantComposer', app)
 
+    def test_home_exposes_four_core_tasks_and_chat_thread(self):
+        home = (ROOT / 'components' / 'EducatorState.tsx').read_text(encoding='utf-8')
+        composer = (ROOT / 'components' / 'AssistantComposer.tsx').read_text(encoding='utf-8')
+        for label in ('학교별 문제 제작·변형', '학교 프린트 정리', '학생 오답 정리', '외부지문 학습자료'):
+            self.assertIn(label, home)
+        self.assertIn('assistant-messages', composer)
+        self.assertIn('scrollIntoView', composer)
+
+    def test_final_hub_supports_four_sources_and_editable_print_html(self):
+        source = (ROOT / 'components' / 'FinalMaterialHub.tsx').read_text(encoding='utf-8')
+        for label in ('Digital Twin 문제·변형', '학교 프린트', '외부지문', '학생 오답'):
+            self.assertIn(label, source)
+        self.assertIn('contenteditable', source.lower())
+        self.assertIn('인쇄 / PDF 저장', source)
+
 
 if __name__ == '__main__':
     unittest.main()
+
