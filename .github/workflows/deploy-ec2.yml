@@ -2,6 +2,8 @@ name: Deploy to EC2 (manual)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/qwen-default-ai]
 
 permissions:
   id-token: write
@@ -125,6 +127,60 @@ jobs:
           systemctl is-active buildit-wiki.service
           systemctl is-active f2r-app.service
           curl -fsS http://127.0.0.1:8000/api/health
+
+          cat > /tmp/qwen-smoke.py <<'PY'
+          import json, os, sqlite3, sys, urllib.error, urllib.request
+
+          db = '/opt/buildit-wiki/data/app.db'
+          pid = int(os.popen('systemctl show -p MainPID --value buildit-wiki.service').read().strip())
+          env = open(f'/proc/{pid}/environ', 'rb').read().split(b'\0')
+          print('process_openrouter_key_available=' + str(any(item.startswith(b'OPENROUTER_API_KEY=') and item != b'OPENROUTER_API_KEY=' for item in env)).lower())
+
+          def count():
+              with sqlite3.connect(db) as conn:
+                  return conn.execute('select count(*) from generated_questions').fetchone()[0]
+
+          def twin_id():
+              with sqlite3.connect(db) as conn:
+                  row = conn.execute('select id from digital_twin_profiles where is_active=1 order by id limit 1').fetchone()
+                  if not row: raise RuntimeError('active Digital Twin not found')
+                  return row[0]
+
+          def post(path, payload):
+              req = urllib.request.Request('http://127.0.0.1:8000' + path, data=json.dumps(payload).encode(), method='POST', headers={'Content-Type':'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=280) as response:
+                      status, body = response.status, json.loads(response.read())
+              except urllib.error.HTTPError as exc:
+                  status = exc.code
+                  try: body = json.loads(exc.read())
+                  except Exception: body = {}
+              if status != 200:
+                  detail = body.get('detail', {})
+                  if isinstance(detail, dict): detail = {key: detail.get(key) for key in ('message','provider','status') if key in detail}
+                  print(f'{path} status={status} error={detail}')
+                  raise SystemExit(1)
+              print(f"{path} status={status} provider={body.get('provider')} model={body.get('model')} questions={len(body.get('questions', []))}")
+              return body
+
+          common = {'provider':'auto','twin_id':twin_id(),'passage':'Many students improve when they review mistakes carefully. Regular practice helps them notice patterns and explain their choices clearly.','grammar':'관계대명사와 접속사의 정확한 사용','difficulty':'actual','composition':'objective'}
+          before = count()
+          one = post('/api/questions/generate', {**common, 'count':1})
+          after_one = count()
+          print(f'db_one_delta={after_one-before}')
+          if len(one.get('questions', [])) != 1 or after_one-before != 1: raise SystemExit(1)
+
+          three = post('/api/questions/generate', {**common, 'count':3})
+          after_three = count()
+          print(f'db_three_delta={after_three-after_one}')
+          if len(three.get('questions', [])) != 3 or after_three-after_one != 3: raise SystemExit(1)
+
+          transformed = post('/api/questions/transform', {'provider':'auto','twin_id':common['twin_id'],'original':'Choose the correct sentence. ① I know the student which won the prize. ② I know the student who won the prize. ③ I know the student what won the prize. ④ I know the student whom won the prize. ⑤ I know the student whose won the prize.','passage':common['passage'],'count':1,'strength':'normal','target':'same','options':True,'answerPos':True,'harder':False,'schoolStyle':True})
+          after_transform = count()
+          print(f'db_transform_delta={after_transform-after_three}')
+          if len(transformed.get('questions', [])) != 1 or after_transform-after_three != 1: raise SystemExit(1)
+          PY
+          /opt/buildit-wiki/venv/bin/python /tmp/qwen-smoke.py
           SCRIPT
           chmod +x /tmp/deploy-buildit.sh
 
