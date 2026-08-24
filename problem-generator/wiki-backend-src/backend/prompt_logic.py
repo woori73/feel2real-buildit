@@ -405,7 +405,7 @@ def prepare_question(q: dict) -> dict:
     return q
 
 
-def question_quality_issues(q: dict) -> list[str]:
+def question_quality_issues(q: dict, external_instructions: str = '') -> list[str]:
     """무료 모델 응답도 시험지에 저장하기 전에 구조 불변식을 통과시킨다."""
     issues: list[str] = []
     qtype = str(q.get('questionType') or '')
@@ -421,7 +421,7 @@ def question_quality_issues(q: dict) -> list[str]:
         incomplete_ending = re.compile(r'(?:\.\.\.|…|\b(?:because|although|though|if|when|while|unless|since|that|and|but|or))\s*[.!?]*$', re.I)
         if any(incomplete_ending.search(item) for item in candidates):
             issues.append('서답형 답안은 생략부호나 끝에 남은 접속사 없이 완결되어야 함')
-        instructions = ' '.join([stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
+        instructions = ' '.join([external_instructions, stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
         grading_rule = str(q.get('gradingRule') or '')
         if re.search(r'\bbecause\b.*(?:사용\s*)?금지|without\s+because', instructions, re.I):
             if any(re.search(r'\bbecause\b', item, re.I) for item in candidates):
@@ -455,8 +455,8 @@ def question_quality_issues(q: dict) -> list[str]:
     return issues
 
 
-def batch_quality_issues(questions: list[dict]) -> list[str]:
-    return [f"{index + 1}번: {issue}" for index, question in enumerate(questions) for issue in question_quality_issues(question)]
+def batch_quality_issues(questions: list[dict], external_instructions: str = '') -> list[str]:
+    return [f"{index + 1}번: {issue}" for index, question in enumerate(questions) for issue in question_quality_issues(question, external_instructions)]
 
 
 def repair_transform_question(q: dict) -> dict:
