@@ -3169,3 +3169,16 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 목적: 후보 제외.
 - 인증/권한: `ROLE_ADMIN`.
 - Response: 갱신 후보.
+# BuildIt Wiki AI routes
+
+## `POST /problem-generator/wiki/api/questions/generate`
+
+OpenRouter `provider`와 사용자가 고른 `model`을 명시해 Digital Twin 신규 문제를 생성한다. 기본 모델은 `google/gemini-3.7-flash`이며 서버는 실패 시 다른 무료 모델로 fallback하지 않는다. 응답의 `provider`/`model`은 실제 생성 모델 표시용이다. 기존문제 변형은 동일 계약의 `POST .../questions/transform`을 사용한다.
+
+## `POST /problem-generator/wiki/api/school-prints/reconstruct`
+
+`api_key`, 고정 기본 모델 `qwen/qwen3.7-flash`, source metadata, 여러 페이지의 OCR과 이미지 data URL을 받아 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다. 원본 이미지를 배경으로 쓰지 않으며 불확실한 블록은 검토 필요로 표시한다.
+
+## `POST /problem-generator/wiki/api/school-prints/patch-html`
+
+현재 HTML/canonical JSON과 사용자의 수정 지시를 받아 지적된 부분만 수정한다. 응답은 변경된 `html`, 동기화된 `canonicalJson`, 실제 `provider`/`model`이다.

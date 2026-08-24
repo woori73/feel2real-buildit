@@ -3,6 +3,8 @@ import os
 import re
 import sqlite3
 import zipfile
+import urllib.error
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
@@ -22,6 +24,24 @@ import prompt_logic as pl
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
 EXPORT_PATH = WORKSPACE / 'feel-to-real-project-export.zip'
+DEFAULT_PROBLEM_MODEL = 'google/gemini-3.7-flash'
+SCHOOL_PRINT_MODEL = 'qwen/qwen3.7-flash'
+
+def call_openrouter(api_key: str, model: str, system: str, user_content, schema: Optional[dict] = None) -> tuple[str, str]:
+    """Call only the explicitly selected model. There is intentionally no fallback routing here."""
+    payload = {'model': model, 'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user_content}], 'temperature': 0.15}
+    if schema:
+        payload['response_format'] = {'type': 'json_schema', 'json_schema': {'name': 'buildit_result', 'strict': True, 'schema': schema}}
+    request = urllib.request.Request('https://openrouter.ai/api/v1/chat/completions', data=json.dumps(payload).encode('utf-8'), headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json', 'HTTP-Referer': 'https://feel2real.com', 'X-Title': 'BuildIt Wiki'}, method='POST')
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            body = json.loads(response.read().decode('utf-8'))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode('utf-8', errors='replace')[:500]
+        raise HTTPException(status_code=exc.code if exc.code in (400, 401, 403, 429) else 502, detail=f'선택한 모델 요청 실패: {detail}')
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f'선택한 모델 연결 실패: {exc}')
+    return body['choices'][0]['message']['content'], body.get('model') or model
 
 
 def get_db():
@@ -436,6 +456,7 @@ class AssistantAttachment(BaseModel):
 class AssistantRequest(BaseModel):
     message: str
     api_key: str = ''
+    model: str = SCHOOL_PRINT_MODEL
     state: AssistantState = Field(default_factory=AssistantState)
     history: list[AssistantMessage] = Field(default_factory=list)
     attachments: list[AssistantAttachment] = Field(default_factory=list)
@@ -548,8 +569,7 @@ def assistant_chat(payload: AssistantRequest):
         recent = payload.history[-6:]
         prompt = f'확인된 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n부족한 항목: {json.dumps(needed, ensure_ascii=False)}. 확인된 사실만 사용해 자연스럽게 답하고, 정적 기능 목록을 반복하지 마라.'
         try:
-            text = pl.call_gemini_text(key, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25)
-            model = 'gemini'
+            text, model = call_openrouter(key, payload.model, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt)
         except Exception:
             pass
     next_state = {**payload.state.model_dump(), **entities, 'selected_twin_id': context['twin']['id'] if context['twin'] else None, 'needed_materials': needed, 'recent_request': message}
@@ -642,6 +662,8 @@ def _handle_gemini_error(exc):
 
 class NewQuestionRequest(BaseModel):
     api_key: str
+    provider: Literal['openrouter'] = 'openrouter'
+    model: str = DEFAULT_PROBLEM_MODEL
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -698,6 +720,7 @@ def generate_questions(payload: NewQuestionRequest):
         mc_total, sa_total = _composition(payload.count, payload.composition)
         batches = _batches(payload.count, mc_total, sa_total)
         all_questions: list[dict] = []
+        actual_model = payload.model
         previous = ''
         for batch in batches:
             rules = pl.build_new_rules(twin, {
@@ -712,7 +735,7 @@ def generate_questions(payload: NewQuestionRequest):
                 if quality_issues:
                     retry_rules += ' [직전 응답 품질 오류—모두 수정] ' + ' / '.join(quality_issues)
                 try:
-                    text = pl.call_gemini_structured(key, retry_rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
+                    text, actual_model = call_openrouter(key, payload.model, retry_rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
                 except Exception as exc:
                     _handle_gemini_error(exc)
                     return
@@ -742,11 +765,13 @@ def generate_questions(payload: NewQuestionRequest):
         exam_title = f"{twin.get('school','')} {twin.get('grade','')} 맞춤형 시험지".strip()
         exam_group_id = f"exam_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'new', all_questions, exam_title, exam_group_id)
-        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'model': actual_model, 'provider': 'openrouter', 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
 
 
 class TransformQuestionRequest(BaseModel):
     api_key: str
+    provider: Literal['openrouter'] = 'openrouter'
+    model: str = DEFAULT_PROBLEM_MODEL
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -814,7 +839,7 @@ def transform_questions(payload: TransformQuestionRequest):
         rules = pl.build_transform_rules(twin, cfg)
         user_msg = f"[원본 문제]\n{payload.original}\n\n[관련 전체 지문]\n{payload.passage or '제공되지 않음'}"
         try:
-            text = pl.call_gemini_structured(key, rules, user_msg, pl.schema_transform(payload.count))
+            text, actual_model = call_openrouter(key, payload.model, rules, user_msg, pl.schema_transform(payload.count))
         except Exception as exc:
             _handle_gemini_error(exc)
             return
@@ -834,7 +859,7 @@ def transform_questions(payload: TransformQuestionRequest):
         exam_title = data.get('examTitle') or f"{twin.get('school','')} 기존 문제 변형"
         exam_group_id = f"transform_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'transform', questions, exam_title, exam_group_id)
-        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'model': actual_model, 'provider': 'openrouter', 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
 
 
 # ==================================================================================
@@ -1346,6 +1371,64 @@ def clean_ocr_text(payload: OcrCleanRequest):
         _handle_gemini_error(exc)
         return
     return {'cleanedText': text.strip()}
+
+
+# ==================================================================================
+# 학교 프린트 사진 → 구조화 JSON + 편집 가능 HTML (OpenRouter Qwen)
+# ==================================================================================
+
+class SchoolPrintPage(BaseModel):
+    page: int
+    name: str
+    ocr_text: str = ''
+    image_data_url: str = ''
+
+class SchoolPrintReconstructRequest(BaseModel):
+    api_key: str
+    model: str = SCHOOL_PRINT_MODEL
+    metadata: dict = {}
+    pages: list[SchoolPrintPage]
+
+class SchoolPrintPatchRequest(BaseModel):
+    api_key: str
+    model: str = SCHOOL_PRINT_MODEL
+    instruction: str
+    html: str
+    canonical_json: Optional[dict] = None
+
+def _parse_ai_json(text: str) -> dict:
+    try:
+        return json.loads(re.sub(r'^\s*```(?:json)?|```\s*$', '', text.strip(), flags=re.I))
+    except (json.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=502, detail='AI 응답을 구조화 JSON으로 해석하지 못했습니다.')
+
+@app.post('/api/school-prints/reconstruct')
+def reconstruct_school_print(payload: SchoolPrintReconstructRequest):
+    if not payload.api_key.strip(): raise HTTPException(status_code=400, detail='OpenRouter API 키를 설정해 주세요.')
+    if not payload.pages: raise HTTPException(status_code=400, detail='복원할 페이지가 없습니다.')
+    system = '''학교 영어 프린트를 원문 그대로 복원한다. 창작·요약·변형하지 않는다. 제목, A/B/C 섹션, 문항번호, 4열 표, 영영풀이 박스, 밑줄, 빈칸, 답안선, 보기와 강조를 실제 편집 가능한 semantic HTML(table, section, u, span.blank, div.answer-line, div.definition-box)로 만든다. background-image와 원본 이미지 삽입은 금지한다. 판독 불가능한 곳은 class="review-required"와 [검토 필요]로 표시한다. {"html":string,"canonicalJson":object} JSON만 반환한다. canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/version/editedHtml/model을 포함한다.'''
+    content = [{'type':'text','text':'metadata: '+json.dumps(payload.metadata, ensure_ascii=False)}]
+    for page in payload.pages:
+        content.append({'type':'text','text':f'PAGE {page.page} / {page.name}\nOCR:\n{page.ocr_text}'})
+        if page.image_data_url.startswith('data:image/'): content.append({'type':'image_url','image_url':{'url':page.image_data_url}})
+    text, actual_model = call_openrouter(payload.api_key.strip(), payload.model, system, content)
+    result = _parse_ai_json(text); html = str(result.get('html') or '').strip()
+    if not html: raise HTTPException(status_code=502, detail='선택한 모델이 HTML을 반환하지 않았습니다.')
+    canonical = result.get('canonicalJson') if isinstance(result.get('canonicalJson'), dict) else {}
+    canonical.update({'source':canonical.get('source') or {**payload.metadata,'fileNames':[p.name for p in payload.pages]},'sourceLinkage':canonical.get('sourceLinkage') or {'pageCount':len(payload.pages),'uploadedAt':datetime.now().isoformat()},'version':int(canonical.get('version') or 1),'editedHtml':html,'model':actual_model})
+    return {'html':html,'canonicalJson':canonical,'provider':'openrouter','model':actual_model}
+
+@app.post('/api/school-prints/patch-html')
+def patch_school_print_html(payload: SchoolPrintPatchRequest):
+    if not payload.api_key.strip(): raise HTTPException(status_code=400, detail='OpenRouter API 키를 설정해 주세요.')
+    if not payload.instruction.strip() or not payload.html.strip(): raise HTTPException(status_code=400, detail='현재 HTML과 수정 지시가 필요합니다.')
+    system = '''학교 프린트 HTML 부분 수정기다. 사용자가 지적한 부분만 고치고 다른 문구·순서·표·스타일은 바꾸지 않는다. 전체 재작성과 내용 창작, background-image를 금지한다. {"html":string,"canonicalJson":object} JSON만 반환하고 blocks/version/editedHtml을 동기화한다.'''
+    text, actual_model = call_openrouter(payload.api_key.strip(), payload.model, system, json.dumps({'instruction':payload.instruction,'currentHtml':payload.html,'canonicalJson':payload.canonical_json or {}}, ensure_ascii=False))
+    result = _parse_ai_json(text); html = str(result.get('html') or '').strip()
+    if not html: raise HTTPException(status_code=502, detail='수정된 HTML이 비어 있습니다.')
+    canonical = result.get('canonicalJson') if isinstance(result.get('canonicalJson'), dict) else (payload.canonical_json or {})
+    canonical.update({'version':int(canonical.get('version') or 1)+1,'editedHtml':html,'model':actual_model})
+    return {'html':html,'canonicalJson':canonical,'provider':'openrouter','model':actual_model}
 
 
 # ==================================================================================

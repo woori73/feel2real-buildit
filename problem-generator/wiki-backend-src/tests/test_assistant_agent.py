@@ -82,13 +82,13 @@ class AssistantAgentTest(unittest.TestCase):
         self.assertIn('시험 범위 주요 문법 사항', result['state']['needed_materials'])
         self.assertEqual(('home', '문제 제작 화면 열기'), (result['page'], result['action']))
 
-    def test_g_request_api_key_uses_gemini_before_fallback(self):
-        with patch.object(main.pl, 'call_gemini_text', return_value='확인된 기억에 맞춘 실제 Agent 응답입니다.') as gemini:
+    def test_g_request_api_key_uses_qwen_before_fallback(self):
+        with patch.object(main, 'call_openrouter', return_value=('확인된 기억에 맞춘 실제 Agent 응답입니다.', 'qwen/qwen3.7-flash')) as qwen:
             request = self._request('압구정중3 문제 제작을 하려면')
             request.api_key = 'browser-key'
             result = main.assistant_chat(request)
-        self.assertEqual('gemini', result['model'])
-        self.assertEqual('browser-key', gemini.call_args.args[0])
+        self.assertEqual('qwen/qwen3.7-flash', result['model'])
+        self.assertEqual('browser-key', qwen.call_args.args[0])
         self.assertEqual('확인된 기억에 맞춘 실제 Agent 응답입니다.', result['text'])
 
 

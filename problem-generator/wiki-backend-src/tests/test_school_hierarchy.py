@@ -87,7 +87,7 @@ class SchoolHierarchyTest(unittest.TestCase):
             )
             twin_id = cursor.lastrowid
         ai_response = '{"mcQuestions":[{"questionType":"grammar","sourceText":"Passage","stem":"문제","options":["A","B","C","D","E"],"answer":[1],"multi":false,"score":2}],"saQuestions":[]}'
-        with patch.object(main.pl, 'call_gemini_structured', return_value=ai_response) as ai:
+        with patch.object(main, 'call_openrouter', return_value=(ai_response, 'google/gemini-3.7-flash')) as ai:
             result = main.generate_questions(main.NewQuestionRequest(
                 api_key='test-key', twin_id=twin_id, school='다른학교', grade='중1', exam='다른시험',
                 passage='Passage', grammar='Grammar', count=1, types=['grammar'],
@@ -95,7 +95,7 @@ class SchoolHierarchyTest(unittest.TestCase):
 
         self.assertEqual(twin_id, result['twin']['id'])
         self.assertEqual('생성연결중', result['twin']['school'])
-        self.assertIn('생성연결중', ai.call_args.args[1])
+        self.assertIn('생성연결중', ai.call_args.args[2])
         with main.get_db() as conn:
             saved = conn.execute('SELECT twin_id, school, grade, exam, raw_json FROM generated_questions').fetchone()
         self.assertEqual((twin_id, '생성연결중', '중3', '2학기 기말'), tuple(saved)[:4])
@@ -115,7 +115,7 @@ class SchoolHierarchyTest(unittest.TestCase):
             'acceptedAnswers': ['He wanted to teach in Korean because'],
             'sampleAnswer': 'He wanted to teach in Korean because...', 'gradingRule': '조건 충족', 'score': 5,
         }]})
-        with patch.object(main.pl, 'call_gemini_structured', return_value=incomplete) as ai:
+        with patch.object(main, 'call_openrouter', return_value=(incomplete, 'google/gemini-3.7-flash')) as ai:
             with self.assertRaises(main.HTTPException) as raised:
                 main.generate_questions(main.NewQuestionRequest(
                     api_key='test-key', twin_id=twin_id, passage='Passage', grammar='가정법', count=1,
