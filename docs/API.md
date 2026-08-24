@@ -25,8 +25,8 @@
 ### BuildIt Wiki AI 공통 정책
 
 - 일반 요청의 `provider=auto`는 서버 환경변수 `OPENROUTER_API_KEY`로 OpenRouter의 `qwen/qwen3.7-flash`를 사용한다.
-- Assistant, Wiki, 기출/자료 분석, JSON 구조화, Digital Twin 분석, 일반 문제 생성, 기존문제 변형의 기본 모델은 Qwen3.7 Flash다.
-- 일반 문제 생성·기존문제 변형·자료 분석 등 핵심 결과는 Qwen 실패 시 무료 모델로 조용히 fallback하지 않는다.
+- Assistant, 학교 프린트 HTML, 학생 오답 HTML/Word, 외부지문 자료, 기출/자료 분석, JSON 구조화, Digital Twin 분석은 `qwen/qwen3.7-flash`다. Digital Twin 새 문제 생성과 기존문제 변형은 OpenRouter `google/gemini-3.7-flash`로 고정한다.
+- 문제 생성·기존문제 변형은 Gemini 3.7 Flash 실패 시 무료 모델로 fallback하거나 저장하지 않는다. 자료 분석도 Qwen 실패 시 무료 모델로 조용히 fallback하지 않는다.
 - Assistant/OCR 같은 비핵심 보조 호출만 Qwen → Ox Alpha → `openrouter/free` 백업 체인을 명시적으로 허용한다.
 - `gemini`, `ox-alpha`, `openrouter:<model>` 명시 선택은 admin 진단 호환을 위해 유지하며 자동 fallback하지 않는다.
 - 요청의 `api_key`/`openrouter_api_key` 레거시 필드는 호환을 위해 허용하되 인증에 사용하지 않는다. 키는 응답·로그에 포함하지 않는다.
@@ -3226,3 +3226,4 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - OpenRouter 단일 호출은 `AI_PROVIDER_TIMEOUT_SECONDS`(기본 90초, 10~120초 범위)로 제한한다. 명시적 `ox-alpha` 선택은 Gemini로 fallback하지 않으며, `auto`에서만 Gemini → Ox Alpha 순 fallback을 허용한다.
 - AI 실패 응답은 `detail: { message, provider, status }` JSON으로 정규화한다. 429/502/504의 게이트웨이 HTML이나 외부 provider 원문을 브라우저에 전달하지 않는다.
 - 문제 생성 성공 응답과 Assistant 응답은 실제 `provider`, `model`을 포함한다.
+
