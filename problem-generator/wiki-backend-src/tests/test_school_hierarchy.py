@@ -87,7 +87,8 @@ class SchoolHierarchyTest(unittest.TestCase):
             )
             twin_id = cursor.lastrowid
         ai_response = '{"mcQuestions":[{"questionType":"grammar","sourceText":"Passage","stem":"문제","options":["A","B","C","D","E"],"answer":[1],"multi":false,"score":2}],"saQuestions":[]}'
-        with patch.object(main.pl, 'call_gemini_structured', return_value=ai_response) as ai:
+        ai_result = main.ai_router.ProviderResult(ai_response, 'openrouter', 'qwen/qwen3.7-flash', 'server')
+        with patch.object(main.ai_router, 'generate', return_value=ai_result) as ai:
             result = main.generate_questions(main.NewQuestionRequest(
                 api_key='test-key', twin_id=twin_id, school='다른학교', grade='중1', exam='다른시험',
                 passage='Passage', grammar='Grammar', count=1, types=['grammar'],
@@ -115,7 +116,8 @@ class SchoolHierarchyTest(unittest.TestCase):
             'acceptedAnswers': ['He wanted to teach in Korean because'],
             'sampleAnswer': 'He wanted to teach in Korean because...', 'gradingRule': '조건 충족', 'score': 5,
         }]})
-        with patch.object(main.pl, 'call_gemini_structured', return_value=incomplete) as ai:
+        ai_result = main.ai_router.ProviderResult(incomplete, 'openrouter', 'qwen/qwen3.7-flash', 'server')
+        with patch.object(main.ai_router, 'generate', return_value=ai_result) as ai:
             with self.assertRaises(main.HTTPException) as raised:
                 main.generate_questions(main.NewQuestionRequest(
                     api_key='test-key', twin_id=twin_id, passage='Passage', grammar='가정법', count=1,
