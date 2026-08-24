@@ -421,7 +421,14 @@ def question_quality_issues(q: dict) -> list[str]:
         incomplete_ending = re.compile(r'(?:\.\.\.|…|\b(?:because|although|though|if|when|while|unless|since|that|and|but|or))\s*[.!?]*$', re.I)
         if any(incomplete_ending.search(item) for item in candidates):
             issues.append('서답형 답안은 생략부호나 끝에 남은 접속사 없이 완결되어야 함')
-        word_count_match = re.search(r'(\d+)\s*(?:개\s*)?단어', ' '.join([stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')]))
+        instructions = ' '.join([stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
+        grading_rule = str(q.get('gradingRule') or '')
+        if re.search(r'\bbecause\b.*(?:사용\s*)?금지|without\s+because', instructions, re.I):
+            if any(re.search(r'\bbecause\b', item, re.I) for item in candidates):
+                issues.append('because 사용 금지 조건과 모범답안이 모순됨')
+            if re.search(r'\bbecause\b', grading_rule, re.I):
+                issues.append('because 사용 금지 조건과 채점 기준이 모순됨')
+        word_count_match = re.search(r'(\d+)\s*(?:개\s*)?단어', instructions)
         if word_count_match and any(len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", item)) != int(word_count_match.group(1)) for item in candidates):
             issues.append(f'서답형 답안은 제시된 {word_count_match.group(1)}단어 조건을 충족해야 함')
     if q.get('type') == 'mc':
