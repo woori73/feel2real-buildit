@@ -2,9 +2,6 @@ name: Deploy to EC2 (manual)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/qwen-default-ai]
-    paths: ['.github/workflows/deploy-ec2.yml']
 
 permissions:
   id-token: write
