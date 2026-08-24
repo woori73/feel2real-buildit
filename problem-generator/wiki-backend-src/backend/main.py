@@ -832,14 +832,14 @@ def generate_questions(payload: NewQuestionRequest):
                 if quality_issues:
                     retry_rules += ' [직전 응답 품질 오류—모두 수정] ' + ' / '.join(quality_issues)
                 try:
-                    result = ai_router.generate(payload.provider, retry_rules, user_msg, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+                    result = ai_router.generate_for_task('digital-twin-generate', retry_rules, user_msg, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0.35)
                     text = result.text
                 except Exception as exc:
                     _handle_gemini_error(exc)
                     return
                 def repair_json():
                     repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
-                    return ai_router.generate(payload.provider, retry_rules, repair_prompt, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+                    return ai_router.generate_for_task('digital-twin-generate', retry_rules, repair_prompt, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0).text
                 parsed = _parse_generated_json(text, repair_json)
                 try:
                     parsed = qc.validate_new(parsed)
@@ -878,7 +878,7 @@ def _ab_generate(provider: str, payload: AbComparisonRequest, twin: dict) -> dic
     type_labels = [f"{pl.TYPE_DEF_BY_ID[t]['label']} — {pl.TYPE_DEF_BY_ID[t]['prompt']}" for t in payload.types if t in pl.TYPE_DEF_BY_ID] or None
     rules = pl.build_new_rules(twin, {'type_labels': type_labels, 'difficulty': payload.difficulty, 'start': 1, 'end': payload.count, 'mc': mc, 'sa': sa, 'previous': ''})
     prompt = f"[시험 범위 주요 문법]\n{payload.grammar}\n\n[새 지문]\n{payload.passage}"
-    result = ai_router.generate(provider, rules, prompt, schema=pl.schema_new(mc, sa), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+    result = ai_router.generate_for_task('digital-twin-generate', rules, prompt, schema=pl.schema_new(mc, sa), temperature=0.35)
     parsed = json.loads(re.sub(r'```json|```', '', result.text).strip())
     questions = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
     questions += [{**q, 'type': 'sa'} for q in parsed.get('saQuestions', [])]
@@ -1004,14 +1004,14 @@ def transform_questions(payload: TransformQuestionRequest):
         rules = pl.build_transform_rules(twin, cfg)
         user_msg = f"[원본 문제]\n{payload.original}\n\n[관련 전체 지문]\n{payload.passage or '제공되지 않음'}"
         try:
-            provider_result = ai_router.generate(payload.provider, rules, user_msg, schema=pl.schema_transform(payload.count), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+            provider_result = ai_router.generate_for_task('question-transform', rules, user_msg, schema=pl.schema_transform(payload.count), temperature=0.35)
             text = provider_result.text
         except Exception as exc:
             _handle_gemini_error(exc)
             return
         def repair_json():
             repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
-            return ai_router.generate(payload.provider, rules, repair_prompt, schema=pl.schema_transform(payload.count), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+            return ai_router.generate_for_task('question-transform', rules, repair_prompt, schema=pl.schema_transform(payload.count), temperature=0).text
         data = _parse_generated_json(text, repair_json)
         try:
             data = qc.validate_transform(data)
@@ -2138,4 +2138,5 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
     path = export_dir / 'school-prints-combined.docx'; doc.save(path)
     safe = re.sub(r'[\\/:*?"<>|]', '_', title) or '학교_프린트'
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f'{safe}.docx')
+
 
