@@ -9,7 +9,7 @@ import zlib
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
@@ -2196,7 +2196,7 @@ class AutomationGenerationRequest(BaseModel):
     exam: str
     question_count: int = Field(default=3, ge=1, le=30)
     source_passage: str
-    requirements: list[str] | str = Field(default_factory=list)
+    requirements: Union[list[str], str] = Field(default_factory=list)
     digital_twin: Literal['auto'] = 'auto'
 
 

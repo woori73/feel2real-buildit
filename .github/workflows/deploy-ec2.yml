@@ -66,11 +66,11 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           BUCKET=feel2real-buildit-deploy
-          aws s3 cp --no-progress s3://$BUCKET/app.jar /tmp/app-new.jar
+          aws s3 cp s3://$BUCKET/app.jar /tmp/app-new.jar
           mv /tmp/app-new.jar /home/ec2-user/app.jar
 
           mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
-          aws s3 cp --no-progress s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
+          aws s3 cp s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
           rm -rf /opt/buildit-wiki/app/*
           tar -xzf /tmp/buildit-wiki-backend.tgz -C /opt/buildit-wiki/app
           python3 -m venv /opt/buildit-wiki/venv
@@ -122,11 +122,6 @@ jobs:
           systemctl restart buildit-wiki.service
           systemctl restart f2r-app.service
           sleep 6
-          if ! systemctl is-active --quiet buildit-wiki.service; then
-            systemctl status buildit-wiki.service --no-pager || true
-            journalctl -u buildit-wiki.service -n 100 --no-pager || true
-            exit 3
-          fi
           systemctl is-active buildit-wiki.service
           systemctl is-active f2r-app.service
           curl -fsS http://127.0.0.1:8000/api/health
