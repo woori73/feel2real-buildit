@@ -421,7 +421,7 @@ def question_quality_issues(q: dict, external_instructions: str = '') -> list[st
         incomplete_ending = re.compile(r'(?:\.\.\.|…|\b(?:because|although|though|if|when|while|unless|since|that|and|but|or))\s*[.!?]*$', re.I)
         if any(incomplete_ending.search(item) for item in candidates):
             issues.append('서답형 답안은 생략부호나 끝에 남은 접속사 없이 완결되어야 함')
-        instructions = ' '.join([external_instructions, stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
+        instructions = ' '.join([external_instructions, str(q.get('grammarFocus') or ''), stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
         grading_rule = str(q.get('gradingRule') or '')
         if re.search(r'\bbecause\b.*(?:사용\s*)?금지|without\s+because', instructions, re.I):
             if any(re.search(r'\bbecause\b', item, re.I) for item in candidates):
