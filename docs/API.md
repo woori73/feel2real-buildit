@@ -13,6 +13,12 @@
 - Response JSON: `title`, `sentences[{english,korean}]`, `provider`, `model`
 - 실패: 빈 지문 `400`, Qwen 호출 실패 `502/503/504`. 핵심 분석이므로 무료 모델 fallback은 하지 않는다.
 
+### n8n / Hermes 독립 자동화 계약
+
+- `POST /problem-generator/wiki/api/automation/digital-twin/sources` (multipart): `school`, `grade`, `exam`, `material_type`, `file`을 받는다. HWP/HWPX/PDF/DOCX/JSON/TXT 추출을 서버에서 수행하고 SHA-256 중복은 `409 duplicate_source`로 거부한다. 원본 bytes는 저장하지 않고 추출 원문과 문항별 canonical DNA를 분리 저장하며, 학교+학년+시험별 Digital Twin을 새 버전으로 누적한다.
+- `POST /problem-generator/wiki/api/automation/questions/generate` (JSON): `task`, `school`, `grade`, `exam`, `question_count`, `source_passage`, `requirements`, `digital_twin:auto` 계약이다. 활성 DNA가 없으면 `needs_source_material`을 반환한다. 있으면 기존 Qwen3.7 Flash 생성·strict schema normalization·Pydantic·조건 validator를 그대로 거쳐 검증 성공 뒤에만 저장한다.
+- 두 API는 ADMIN 화면이나 향후 Hermes UI에 종속되지 않는다. n8n은 OpenRouter key를 저장하지 않고 BuildIt 서버만 호출한다.
+
 ### ✅ POST /problem-generator/wiki/api/passages/analysis
 
 - 목적: 6페이지형 지문 분석 데이터와 내용일치 T/F 10문항을 생성한다.

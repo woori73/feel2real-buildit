@@ -1,0 +1,123 @@
+{
+  "name": "My workflow 34",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST", "path": "buildit-digital-twin", "responseMode": "responseNode", "options": {}},
+      "id": "existing-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-720, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst task = String(body.task ?? 'generate_questions');\nconst required = ['school','grade','exam'];\nconst missing = required.filter((key) => !String(body[key] ?? '').trim());\nif (missing.length) throw new Error(`missing_fields:${missing.join(',')}`);\nreturn [{json:{...body, task, question_count:Number(body.question_count ?? 3), digital_twin:'auto'}}];"
+      },
+      "id": "normalize-contract",
+      "name": "Validate BuildIt Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 0]
+    },
+    {
+      "parameters": {
+        "rules": {"values": [
+          {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"}, "conditions": [{"leftValue": "={{ $json.task }}", "rightValue": "ingest_source", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}, "renameOutput": true, "outputKey": "source"},
+          {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"}, "conditions": [{"leftValue": "={{ $json.task }}", "rightValue": "generate_questions", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}, "renameOutput": true, "outputKey": "generate"}
+        ]},
+        "options": {"fallbackOutput": "extra"}
+      },
+      "id": "route-task",
+      "name": "Route Task",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-240, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BUILDIT_BASE_URL + '/problem-generator/wiki/api/automation/digital-twin/sources' }}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {"parameters": [
+          {"name": "school", "value": "={{ $json.school }}"},
+          {"name": "grade", "value": "={{ $json.grade }}"},
+          {"name": "exam", "value": "={{ $json.exam }}"},
+          {"name": "material_type", "value": "={{ $json.material_type ?? 'past_exam' }}"},
+          {"parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data"}
+        ]},
+        "options": {"timeout": 120000}
+      },
+      "id": "ingest-source",
+      "name": "BuildIt Source Ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [40, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BUILDIT_BASE_URL + '/problem-generator/wiki/api/automation/questions/generate' }}",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {"timeout": 280000}
+      },
+      "id": "generate-questions",
+      "name": "BuildIt Qwen Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [40, 120]
+    },
+    {
+      "parameters": {"respondWith": "json", "responseBody": "={{ $json }}", "options": {}},
+      "id": "existing-response",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [360, 0]
+    },
+    {
+      "parameters": {"promptType": "define", "text": "={{ $json.body?.message ?? $json.message }}", "options": {}},
+      "id": "existing-agent",
+      "name": "AI Agent (legacy preserved)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [-240, 320],
+      "disabled": true
+    },
+    {
+      "parameters": {"options": {}},
+      "id": "existing-gemini",
+      "name": "Google Gemini Chat Model (legacy preserved)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-360, 520],
+      "disabled": true
+    },
+    {
+      "parameters": {"jsonSchemaExample": "{\"status\":\"generated\"}"},
+      "id": "existing-parser",
+      "name": "Structured Output Parser (legacy preserved)",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [-120, 520],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Validate BuildIt Contract", "type": "main", "index": 0}]]},
+    "Validate BuildIt Contract": {"main": [[{"node": "Route Task", "type": "main", "index": 0}]]},
+    "Route Task": {"main": [[{"node": "BuildIt Source Ingest", "type": "main", "index": 0}], [{"node": "BuildIt Qwen Generate", "type": "main", "index": 0}], [{"node": "Respond to Webhook", "type": "main", "index": 0}]]},
+    "BuildIt Source Ingest": {"main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]},
+    "BuildIt Qwen Generate": {"main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "active": false,
+  "versionId": "buildit-contract-v1",
+  "meta": {"templateCredsSetupCompleted": true},
+  "tags": []
+}

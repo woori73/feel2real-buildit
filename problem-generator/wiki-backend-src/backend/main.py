@@ -13,7 +13,7 @@ from typing import Literal, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError
 from docx import Document
 from docx.enum.section import WD_SECTION
@@ -58,6 +58,31 @@ def init_db():
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS digital_twin_sources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school TEXT NOT NULL,
+            grade TEXT NOT NULL,
+            exam TEXT NOT NULL,
+            material_type TEXT NOT NULL,
+            source_filename TEXT NOT NULL,
+            source_hash TEXT NOT NULL UNIQUE,
+            parser TEXT NOT NULL,
+            raw_text TEXT NOT NULL,
+            analysis_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS digital_twin_question_dna (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_id INTEGER NOT NULL,
+            question_key TEXT NOT NULL,
+            question_no INTEGER NOT NULL,
+            dna_json TEXT NOT NULL,
+            source_reference TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(source_id, question_key),
+            FOREIGN KEY (source_id) REFERENCES digital_twin_sources(id)
         )''')
         conn.execute('''CREATE TABLE IF NOT EXISTS generated_questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2138,4 +2163,212 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
     path = export_dir / 'school-prints-combined.docx'; doc.save(path)
     safe = re.sub(r'[\\/:*?"<>|]', '_', title) or '학교_프린트'
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f'{safe}.docx')
+
+
+# ==================================================================================
+# n8n / Hermes 독립 계약 — UI 파서를 복제하지 않고 BuildIt 서버에서 자료 분석과 생성을 수행한다.
+# ==================================================================================
+
+class DigitalTwinDnaItem(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    question_no: int
+    question_type: str = ''
+    passage: str = ''
+    prompt: str = ''
+    grammar_points: list[str] = Field(default_factory=list)
+    vocabulary_features: list[str] = Field(default_factory=list)
+    choice_structure: list[str] = Field(default_factory=list)
+    trap_patterns: list[str] = Field(default_factory=list)
+    difficulty: str = ''
+    short_answer_features: list[str] = Field(default_factory=list)
+    other_features: list[str] = Field(default_factory=list)
+
+
+class DigitalTwinDnaBatch(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    questions: list[DigitalTwinDnaItem]
+
+
+class AutomationGenerationRequest(BaseModel):
+    task: str = 'generate_questions'
+    school: str
+    grade: str
+    exam: str
+    question_count: int = Field(default=3, ge=1, le=30)
+    source_passage: str
+    requirements: list[str] | str = Field(default_factory=list)
+    digital_twin: Literal['auto'] = 'auto'
+
+
+def _automation_text(filename: str, data: bytes) -> tuple[str, str]:
+    suffix = Path(filename).suffix.lower()
+    if suffix == '.hwp':
+        return _extract_hwp5_text(data), 'hwp5-ole-v1'
+    if suffix == '.hwpx':
+        return _extract_hwpx_text(data), 'hwpx-xml-v1'
+    if suffix in ('.txt', '.json'):
+        try:
+            return data.decode('utf-8-sig', errors='strict'), suffix[1:]
+        except UnicodeDecodeError as error:
+            raise HTTPException(status_code=400, detail='UTF-8 텍스트 파일만 지원합니다.') from error
+    if suffix == '.docx':
+        try:
+            document = Document(__import__('io').BytesIO(data))
+            return '\n'.join(p.text for p in document.paragraphs if p.text.strip()), 'docx-python-docx-v1'
+        except Exception as error:
+            raise HTTPException(status_code=400, detail='DOCX 본문을 읽지 못했습니다.') from error
+    if suffix == '.pdf':
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(__import__('io').BytesIO(data))
+            return '\n'.join((page.extract_text() or '') for page in reader.pages), 'pdf-pypdf-v1'
+        except Exception as error:
+            raise HTTPException(status_code=400, detail='텍스트 레이어가 있는 PDF만 지원합니다.') from error
+    raise HTTPException(status_code=415, detail='HWP, HWPX, PDF, DOCX, JSON, TXT를 지원합니다.')
+
+
+def _automation_question_blocks(raw_text: str) -> list[dict]:
+    stripped = raw_text.strip()
+    if stripped.startswith(('{', '[')):
+        try:
+            value = json.loads(stripped)
+            items = value.get('questions', []) if isinstance(value, dict) else value
+            if isinstance(items, list):
+                return [item for item in items if isinstance(item, dict)]
+        except json.JSONDecodeError:
+            pass
+    marks = list(re.finditer(r'(?m)^\s*(\d{1,3})\s*[\.\)]\s+', stripped))
+    result = []
+    for index, mark in enumerate(marks):
+        block = stripped[mark.end():marks[index + 1].start() if index + 1 < len(marks) else len(stripped)].strip()
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        choices = [re.sub(r'^(?:[①②③④⑤]|[1-5][\.\)])\s*', '', line) for line in lines if re.match(r'^(?:[①②③④⑤]|[1-5][\.\)])', line)]
+        result.append({'question_no': int(mark.group(1)), 'prompt': lines[0] if lines else '', 'passage': '\n'.join(lines[1:]), 'choices': choices})
+    return result
+
+
+def _automation_dna(raw: dict, fallback_no: int) -> dict:
+    def strings(key):
+        value = raw.get(key, [])
+        return [str(x) for x in value] if isinstance(value, list) else ([str(value)] if value else [])
+    return DigitalTwinDnaItem(
+        question_no=int(raw.get('question_no', raw.get('question_number', fallback_no)) or fallback_no),
+        question_type=str(raw.get('question_type', raw.get('type', ''))),
+        passage=str(raw.get('passage', raw.get('source_text', ''))),
+        prompt=str(raw.get('prompt', raw.get('stem', ''))),
+        grammar_points=strings('grammar_points'), vocabulary_features=strings('vocabulary_features'),
+        choice_structure=strings('choice_structure') or strings('choices'), trap_patterns=strings('trap_patterns'),
+        difficulty=str(raw.get('difficulty', '')), short_answer_features=strings('short_answer_features'),
+        other_features=strings('other_features'),
+    ).model_dump()
+
+
+def _automation_analyze_with_qwen(raw_text: str, questions: list[dict]) -> list[dict]:
+    system = (
+        '영어 시험 문항을 문항별 출제 DNA canonical JSON으로 구조화한다. '
+        '원문에 없는 사실을 추측하지 말고 모든 필드를 반환한다.'
+    )
+    prompt = json.dumps({'question_blocks': questions, 'source_text': raw_text[:50000]}, ensure_ascii=False)
+    try:
+        result = ai_router.generate('auto', system, prompt, schema=DigitalTwinDnaBatch.model_json_schema(), temperature=0.1)
+        parsed = json.loads(re.sub(r'```json|```', '', result.text).strip())
+        return [item.model_dump() for item in DigitalTwinDnaBatch.model_validate(parsed).questions]
+    except (json.JSONDecodeError, ValidationError) as error:
+        raise HTTPException(status_code=502, detail='Qwen 문항 DNA schema validation 실패') from error
+    except Exception as error:
+        _handle_gemini_error(error)
+        raise
+
+
+@app.post('/api/automation/digital-twin/sources', status_code=201)
+async def ingest_digital_twin_source(
+    school: str = Form(...), grade: str = Form(...), exam: str = Form(...),
+    material_type: str = Form('past_exam'), file: UploadFile = File(...),
+):
+    school, grade, exam = school.strip(), grade.strip(), exam.strip()
+    if not school or not grade or not exam:
+        raise HTTPException(status_code=400, detail='school, grade, exam은 필수입니다.')
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail='빈 파일은 업로드할 수 없습니다.')
+    if len(data) > 30 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='자료 파일은 30MB 이하여야 합니다.')
+    filename = file.filename or 'upload'
+    source_hash = hashlib.sha256(data).hexdigest()
+    raw_text, parser = _automation_text(filename, data)
+    questions = _automation_question_blocks(raw_text)
+    if not questions:
+        raise HTTPException(status_code=400, detail='문항 번호 블록 또는 canonical JSON questions를 찾지 못했습니다.')
+    if Path(filename).suffix.lower() == '.json':
+        dna_items = [_automation_dna(item, index + 1) for index, item in enumerate(questions)]
+    else:
+        dna_items = _automation_analyze_with_qwen(raw_text, questions)
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        duplicate = conn.execute('SELECT id FROM digital_twin_sources WHERE source_hash=?', (source_hash,)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail={'status': 'duplicate_source', 'source_id': duplicate['id']})
+        source = conn.execute(
+            '''INSERT INTO digital_twin_sources
+               (school,grade,exam,material_type,source_filename,source_hash,parser,raw_text,analysis_json,created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)''',
+            (school, grade, exam, material_type, filename, source_hash, parser, raw_text,
+             json.dumps({'questions': dna_items}, ensure_ascii=False), now),
+        )
+        source_id = source.lastrowid
+        for item in dna_items:
+            reference = f'{filename}#question-{item["question_no"]}'
+            key = hashlib.sha256(f'{source_hash}:{item["question_no"]}:{item["prompt"]}'.encode()).hexdigest()
+            conn.execute(
+                '''INSERT INTO digital_twin_question_dna
+                   (source_id,question_key,question_no,dna_json,source_reference,source_hash,created_at)
+                   VALUES (?,?,?,?,?,?,?)''',
+                (source_id, key, item['question_no'], json.dumps(item, ensure_ascii=False), reference, source_hash, now),
+            )
+        rows = conn.execute(
+            '''SELECT d.dna_json, d.source_reference, d.source_hash
+               FROM digital_twin_question_dna d JOIN digital_twin_sources s ON s.id=d.source_id
+               WHERE s.school=? AND s.grade=? AND s.exam=? ORDER BY d.id''',
+            (school, grade, exam),
+        ).fetchall()
+        all_dna = [{**json.loads(row['dna_json']), 'source_reference': row['source_reference'], 'source_hash': row['source_hash']} for row in rows]
+        latest = conn.execute(
+            'SELECT COALESCE(MAX(version),0) version FROM digital_twin_profiles WHERE school=? AND grade=? AND exam=?',
+            (school, grade, exam),
+        ).fetchone()
+        version = int(latest['version']) + 1
+        profile = {
+            'school': school, 'grade': grade, 'exam': exam, 'sourceCount': len({x['source_hash'] for x in all_dna}),
+            'questionDna': all_dna, 'types': sorted({x['question_type'] for x in all_dna if x['question_type']}),
+            'rules': sorted({feature for x in all_dna for feature in x['other_features']}),
+            'updatedAt': now,
+        }
+        conn.execute('UPDATE digital_twin_profiles SET is_active=0 WHERE school=? AND grade=? AND exam=?', (school, grade, exam))
+        twin = conn.execute(
+            '''INSERT INTO digital_twin_profiles
+               (school,grade,exam,profile_json,version,is_active,created_at,updated_at) VALUES (?,?,?,?,?,1,?,?)''',
+            (school, grade, exam, json.dumps(profile, ensure_ascii=False), version, now, now),
+        )
+        twin_id = twin.lastrowid
+    return {'status': 'stored', 'source_id': source_id, 'source_hash': source_hash, 'parser': parser,
+            'original_stored': False, 'question_count': len(dna_items), 'twin_id': twin_id, 'twin_version': version}
+
+
+@app.post('/api/automation/questions/generate')
+def automation_generate_questions(payload: AutomationGenerationRequest):
+    with get_db() as conn:
+        try:
+            twin = _load_twin(conn, None, payload.school, payload.grade, payload.exam)
+        except HTTPException:
+            return {'status': 'needs_source_material', 'needed': {'school': payload.school, 'grade': payload.grade, 'exam': payload.exam}}
+    if not twin.get('sourceCount') or not twin.get('questionDna'):
+        return {'status': 'needs_source_material', 'needed': {'school': payload.school, 'grade': payload.grade, 'exam': payload.exam}}
+    requirements = payload.requirements if isinstance(payload.requirements, list) else [payload.requirements]
+    requirement_text = '\n'.join(str(item) for item in requirements if str(item).strip()) or 'Digital Twin 출제 DNA를 따른다.'
+    composition = 'writing' if any('서답형' in item for item in requirements) else 'balanced'
+    generated = generate_questions(NewQuestionRequest(
+        provider='auto', twin_id=twin['id'], school=payload.school, grade=payload.grade, exam=payload.exam,
+        passage=payload.source_passage, grammar=requirement_text, count=payload.question_count, composition=composition,
+    ))
+    return {'status': 'generated', **generated}
 
