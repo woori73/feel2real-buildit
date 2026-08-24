@@ -54,6 +54,10 @@ class FrontendContractTest(unittest.TestCase):
         self.assertIn("page: 'passageanalysis'", hub)
         self.assertIn('mode="extract"', app)
         self.assertIn('mode="notebook"', app)
+        wrong = (ROOT / 'components' / 'StudentWrongNoteDashboard.tsx').read_text(encoding='utf-8')
+        for contract in ('multiple', 'contentEditable', 'HTML 저장·파이널 연결', 'HTML 다운로드', 'f2r_wrong_review_materials'):
+            self.assertIn(contract, wrong)
+        self.assertIn('data-source-type="student-wrong-review"', app)
 
     def test_passage_workspace_keeps_assistant_and_proxy_contract(self):
         source = (ROOT / 'components' / 'PassageWorkspace.tsx').read_text(encoding='utf-8')
@@ -78,6 +82,9 @@ class FrontendContractTest(unittest.TestCase):
             self.assertIn(contract, source)
         self.assertIn('data-source-type="school-print"', app)
         self.assertIn('dangerouslySetInnerHTML={{__html:item.html}}', app)
+        for contract in ('multiple', 'previewUrl', "model:'qwen/qwen3.7-flash'", "localStorage.setItem('f2r_school_prints'", 'window.dispatchEvent', 'sourceLinkage'):
+            self.assertIn(contract, source)
+        self.assertNotIn('backgroundImage', source)
 
 
 if __name__ == '__main__':
