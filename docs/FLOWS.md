@@ -693,7 +693,7 @@ Wiki 홈
 - 생성 문항은 저장 전에 서버 품질 게이트를 거친다. 일반 객관식/순서형은 선택지 5개, 밑줄 번호형은 정확히 5개의 1~6단어 밑줄, 순서형은 줄 단위 `(A)·(B)·(C)` 문단을 강제한다. 서답형은 완전한 답, 생략부호·후행 접속사 금지, 제시 단어 수 충족을 검사한다. 실패하면 오류 내용을 포함해 한 번 자동 재생성하고, 재실패 결과는 DB에 저장하지 않는다.
 - Assistant 첨부는 새 파일 저장소를 만들지 않는다. 이미지/PDF·학교 자료는 기존 `SchoolDatabase` OCR 흐름, 학생/오답 요청은 `StudentWrongNoteDashboard` OCR 흐름, HTML/JSON/TXT는 `DigitalTwinImport` 흐름으로 안내한다.
 - Assistant는 user/assistant history와 `goal/school/grade/exam/selected_twin_id/needed_materials/recent_request/current_page` 세션 상태를 유지한다. `압구정중3`처럼 붙여 쓴 학교·학년도 파싱하며, 연결된 Twin의 시험·유형과 문제·학생·인사이트 개수만 조회해 실제 부족 항목만 질문한다. 생성기 이동 시 이 상태로 학교·학년·시험을 채운다. 서버 `OPENROUTER_API_KEY`로 Qwen3.7 Flash 응답을 우선하고, 비핵심 보조 응답에 한해 Ox Alpha와 OpenRouter 무료 모델을 백업으로 사용한 뒤 호출 실패 시 규칙 기반으로 안내한다. 브라우저 키는 사용하거나 저장하지 않는다.
-- 문제 생성·기존문제 변형·기출/자료 분석·JSON 구조화·Digital Twin 분석은 Qwen3.7 Flash를 기본으로 하며 Qwen 실패 시 무료 모델로 품질을 낮춰 저장하지 않는다. 실제 OpenRouter 응답의 provider/model metadata를 API 응답에 포함한다. GPT-5.6 Luna는 향후 중요 변형·검수 확장 지점으로만 남긴다.
+- Digital Twin 새 문제 생성과 기존문제 변형은 OpenRouter `google/gemini-3.7-flash`를 사용하고 무료 fallback 없이 실제 provider/model metadata를 응답에 포함한다. 학교 프린트, 학생 오답, 외부지문과 Assistant는 `qwen/qwen3.7-flash`를 유지한다. 파이널 조립은 검수된 네 종류 결과를 AI 재작성 없이 기존 강사 실전 제작 화면에서 HTML로 결합하며, 사람이 편집한 뒤 A4 인쇄/PDF 저장한다.
 - 모든 Wiki API는 `/problem-generator/wiki/api/** → Spring Proxy → FastAPI`를 유지한다.
 - `학생` 허브는 `오답 기록·추출`, `학생별 오답노트`에 집중한다. 외부지문의 `지문 암기`, `지문 정리 + 내용일치 문제`는 `만들기` 허브에서 연다. 오답 기록 화면은 학생 선택·OCR·저장에 집중하고, 오답노트 화면은 누적 기록 조회·수정·선택 통합·DOCX 내보내기에 집중한다.
 - 지문 암기는 붙여넣기 또는 PDF·이미지·TXT의 브라우저 추출 결과를 받아 문장별 영어/자연스러운 한국어 쌍을 만든다. 지문 분석은 원문·해석·제목·주제·요지·요약, 모든 문장의 구조·해석·가이드·핵심 문법, 도입-전개-마무리, 한국어 5개+영어 5개의 T/F 문제와 정답을 생성한다. 두 결과는 인쇄와 HTML 다운로드를 지원하며 DB에는 자동 저장하지 않는다.
@@ -703,3 +703,4 @@ Wiki 홈
 - `고3 수능 영어`는 하프/정식 모의고사 업로드를 분리 저장한다. HWP 5.x OLE BodyText(`olefile`, 압축 레코드 해제)와 HWPX XML 추출 어댑터 뒤에 공통 canonical JSON 정규화 경계를 둔다. 암호화·배포용·구형 HWP 3.x·손상 파일은 명시적으로 거부한다. 추출 결과를 검수·수정한 뒤에만 SQLite에 저장하며 원본 파일은 보관하지 않는다. 현재 Wiki SQLite는 인증 사용자/Academy tenant로 분리되지 않은 공용 저장소다.
 - 번호별 표준 유형과 발문·보기 구조를 함께 검사한다. 불일치는 저장을 막지 않고 검토 플래그로 남긴다. 하프는 21, 24, 29, 30, 31~34, 36~42를 강조하지만 나머지 번호도 저장한다.
 - 수능 오답은 기존 학생 오답 테이블을 재사용하거나 덮어쓰지 않는다. 새 화면의 작업 종류와 선택 문항은 `buildit_page_context`를 통해 하단 Assistant에 전달한다.
+
