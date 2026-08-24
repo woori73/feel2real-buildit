@@ -122,6 +122,11 @@ jobs:
           systemctl restart buildit-wiki.service
           systemctl restart f2r-app.service
           sleep 6
+          if ! systemctl is-active --quiet buildit-wiki.service; then
+            systemctl status buildit-wiki.service --no-pager || true
+            journalctl -u buildit-wiki.service -n 100 --no-pager || true
+            exit 3
+          fi
           systemctl is-active buildit-wiki.service
           systemctl is-active f2r-app.service
           curl -fsS http://127.0.0.1:8000/api/health
