@@ -86,7 +86,7 @@ class SchoolHierarchyTest(unittest.TestCase):
                 ('생성연결중', '중3', '2학기 기말', '{"school":"과거값","dna":"학교 DNA","types":[],"rules":[]}', 2, now, now),
             )
             twin_id = cursor.lastrowid
-        ai_response = '{"mcQuestions":[{"questionType":"grammar","sourceText":"Passage","stem":"문제","options":["A","B","C","D","E"],"answer":[1],"multi":false,"score":2}],"saQuestions":[]}'
+        ai_response = '{"examTitle":"시험","mcQuestions":[{"questionType":"grammar","sourceText":"Passage","stem":"문제","options":["A","B","C","D","E"],"answer":[1],"multi":false,"score":2}],"saQuestions":[]}'
         ai_result = main.ai_router.ProviderResult(ai_response, 'openrouter', 'qwen/qwen3.7-flash', 'server')
         with patch.object(main.ai_router, 'generate', return_value=ai_result) as ai:
             result = main.generate_questions(main.NewQuestionRequest(
@@ -110,7 +110,7 @@ class SchoolHierarchyTest(unittest.TestCase):
                 ('압구정중', '중3', '기말고사', '{"types":[{"name":"서술형"}]}', 1, now, now),
             )
             twin_id = cursor.lastrowid
-        incomplete = json.dumps({'mcQuestions': [], 'saQuestions': [{
+        incomplete = json.dumps({'examTitle': '시험', 'mcQuestions': [], 'saQuestions': [{
             'questionType': 'writing', 'sourceText': 'Passage', 'stem': '7개 단어로 영작하시오.',
             'conditions': ['7개 단어'], 'answerFormat': '완전한 문장',
             'acceptedAnswers': ['He wanted to teach in Korean because'],

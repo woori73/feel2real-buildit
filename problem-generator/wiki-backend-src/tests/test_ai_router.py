@@ -94,7 +94,15 @@ class AiRouterTest(unittest.TestCase):
         response_format = json.loads(call.call_args.args[0].data)['response_format']
         self.assertEqual('json_schema', response_format['type'])
         self.assertTrue(response_format['json_schema']['strict'])
-        self.assertEqual(schema, response_format['json_schema']['schema'])
+        self.assertEqual({**schema, 'additionalProperties': False}, response_format['json_schema']['schema'])
+
+    def test_strict_schema_recursively_closes_nested_objects(self):
+        schema = {'type': 'object', 'properties': {'items': {'type': 'array', 'items': {
+            'type': 'object', 'properties': {'value': {'type': 'string'}}, 'required': ['value'],
+        }}}, 'required': ['items']}
+        strict = ai_router.strict_object_schema(schema)
+        self.assertFalse(strict['additionalProperties'])
+        self.assertFalse(strict['properties']['items']['items']['additionalProperties'])
 
     def test_core_auto_does_not_fallback_to_free_model_when_qwen_fails(self):
         with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch.object(ai_router, '_openrouter', side_effect=ai_router.ProviderError('failed', 'openrouter')) as call:

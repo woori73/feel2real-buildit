@@ -44,6 +44,14 @@ def _normalized(model):
     architecture=model.get('architecture') or {}; supported=model.get('supported_parameters') or []
     return {'id':str(model.get('id','')),'name':str(model.get('name') or model.get('id') or ''),'contextLength':model.get('context_length'),'textGeneration':not architecture.get('output_modalities') or 'text' in architecture.get('output_modalities',[]),'structuredOutput':'response_format' in supported or 'structured_outputs' in supported,'free':True}
 
+def strict_object_schema(value):
+    """OpenRouter strict mode requires every nested object to reject unknown keys."""
+    if isinstance(value,list):return [strict_object_schema(item) for item in value]
+    if not isinstance(value,dict):return value
+    result={key:strict_object_schema(item) for key,item in value.items()}
+    if result.get('type')=='object':result['additionalProperties']=False
+    return result
+
 def openrouter_free_models(force=False):
     """Dynamic free text models. A stale successful cache is the graceful fallback."""
     global _models_cache
@@ -69,6 +77,7 @@ def availability():
       'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')}}}
 
 def _openrouter(key,model,provider,system,prompt,schema,temperature):
+    schema=strict_object_schema(schema) if schema else None
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
     body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':prompt}],'temperature':temperature}
     if schema:body['response_format']={'type':'json_schema','json_schema':{'name':'buildit_response','strict':True,'schema':schema}}

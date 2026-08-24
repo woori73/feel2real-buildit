@@ -14,6 +14,7 @@ from typing import Literal, Optional
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
+from pydantic import ValidationError
 from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -23,6 +24,7 @@ from docx.shared import Mm, Pt
 
 import prompt_logic as pl
 import ai_router
+import question_contract as qc
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -743,6 +745,22 @@ def _handle_gemini_error(exc):
     raise HTTPException(status_code=502, detail='AI 서비스 연결을 확인하지 못했습니다. 네트워크 상태를 확인해 주세요.')
 
 
+def _parse_generated_json(text: str, repair):
+    """Repair only malformed JSON, once. Schema/quality failures are never retried here."""
+    try:
+        return json.loads(re.sub(r'```json|```', '', text).strip())
+    except (json.JSONDecodeError, TypeError):
+        repaired = repair()
+        try:
+            return json.loads(re.sub(r'```json|```', '', repaired).strip())
+        except (json.JSONDecodeError, TypeError):
+            raise HTTPException(status_code=502, detail='AI 응답 JSON 파싱 실패(repair 1회 포함)')
+
+
+def _contract_error(exc: ValidationError):
+    raise HTTPException(status_code=502, detail='AI 응답 schema validation 실패: ' + qc.validation_fields(exc))
+
+
 class NewQuestionRequest(BaseModel):
     api_key: str = ''
     openrouter_api_key: str = ''
@@ -819,11 +837,14 @@ def generate_questions(payload: NewQuestionRequest):
                 except Exception as exc:
                     _handle_gemini_error(exc)
                     return
+                def repair_json():
+                    repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
+                    return ai_router.generate(payload.provider, retry_rules, repair_prompt, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+                parsed = _parse_generated_json(text, repair_json)
                 try:
-                    parsed = json.loads(re.sub(r'```json|```', '', text).strip())
-                except (json.JSONDecodeError, TypeError):
-                    quality_issues = ['JSON 형식 오류']
-                    continue
+                    parsed = qc.validate_new(parsed)
+                except ValidationError as exc:
+                    _contract_error(exc)
                 mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
                 sa_qs = []
                 for q in parsed.get('saQuestions', []):
@@ -988,10 +1009,14 @@ def transform_questions(payload: TransformQuestionRequest):
         except Exception as exc:
             _handle_gemini_error(exc)
             return
+        def repair_json():
+            repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
+            return ai_router.generate(payload.provider, rules, repair_prompt, schema=pl.schema_transform(payload.count), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+        data = _parse_generated_json(text, repair_json)
         try:
-            data = json.loads(re.sub(r'```json|```', '', text).strip())
-        except (json.JSONDecodeError, TypeError):
-            raise HTTPException(status_code=502, detail='AI 응답을 JSON으로 해석하지 못했습니다. 다시 시도해 주세요.')
+            data = qc.validate_transform(data)
+        except ValidationError as exc:
+            _contract_error(exc)
         questions = []
         for q in data.get('questions', []):
             q['type'] = 'sa' if q.get('type') == 'sa' else 'mc'
@@ -1001,6 +1026,9 @@ def transform_questions(payload: TransformQuestionRequest):
                 q['conditions'] = q.get('conditions') or []
                 q['acceptedAnswers'] = q.get('acceptedAnswers') or []
             questions.append(q)
+        quality_issues = pl.batch_quality_issues(questions)
+        if quality_issues:
+            raise HTTPException(status_code=502, detail='AI가 변형문제 조건 검증을 통과하지 못했습니다: ' + '; '.join(quality_issues[:3]))
         exam_title = data.get('examTitle') or f"{twin.get('school','')} 기존 문제 변형"
         exam_group_id = f"transform_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'transform', questions, exam_title, exam_group_id)
