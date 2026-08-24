@@ -1,8 +1,43 @@
 # API 명세
 
+## BuildIt Wiki 학교 프린트·문제 모델
+
+- `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.
+- `POST /problem-generator/wiki/api/school-prints/reconstruct`: 여러 사진 페이지와 OCR/source metadata를 받아 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다.
+- `POST /problem-generator/wiki/api/school-prints/patch-html`: 현재 HTML/canonical JSON과 수정 지시를 받아 지적된 부분만 수정한다.
+
 > 현재 프론트엔드는 Thymeleaf SSR 중심이지만, 향후 React 클라이언트와 Python 서버 연동을 고려해 이 문서를 **API 계약의 단일 기준 문서**로 유지한다.
 
 ## 0. 운영 규칙
+
+### ✅ POST /problem-generator/wiki/api/passages/memory
+
+- 목적: 외부 영어 지문을 문장별 영문·한국어 해석 쌍으로 변환한다.
+- 현재 사용처: Wiki `학생 → 지문 암기`
+- 인증/권한: 기존 Wiki 프록시 정책을 따른다.
+- Request JSON: `source_text` (`api_key`는 이전 클라이언트 호환용으로 허용하지만 무시)
+- Response JSON: `title`, `sentences[{english,korean}]`, `provider`, `model`
+- 실패: 빈 지문 `400`, Qwen 호출 실패 `502/503/504`. 핵심 분석이므로 무료 모델 fallback은 하지 않는다.
+
+### ✅ POST /problem-generator/wiki/api/passages/analysis
+
+- 목적: 6페이지형 지문 분석 데이터와 내용일치 T/F 10문항을 생성한다.
+- 현재 사용처: Wiki `만들기 → 지문 정리 + 내용일치 문제`
+- 인증/권한: 기존 Wiki 프록시 정책을 따른다.
+- Request JSON: `source_text` (`api_key`는 이전 클라이언트 호환용으로 허용하지만 무시)
+- Response JSON: `title`, `topic`, `mainIdea`, `summary`, `sentences[{slashed,directTranslation,translation,grammarGuide}]`, `tfQuestions[{language,statement,answer}]`, `provider`, `model`
+- 검증: T/F가 정확히 10개가 아니면 `502`로 재시도를 요청한다.
+
+### BuildIt Wiki AI 공통 정책
+
+- 일반 요청의 `provider=auto`는 서버 환경변수 `OPENROUTER_API_KEY`로 OpenRouter의 `qwen/qwen3.7-flash`를 사용한다.
+- Assistant, Wiki, 기출/자료 분석, JSON 구조화, Digital Twin 분석, 일반 문제 생성, 기존문제 변형의 기본 모델은 Qwen3.7 Flash다.
+- 일반 문제 생성·기존문제 변형·자료 분석 등 핵심 결과는 Qwen 실패 시 무료 모델로 조용히 fallback하지 않는다.
+- Assistant/OCR 같은 비핵심 보조 호출만 Qwen → Ox Alpha → `openrouter/free` 백업 체인을 명시적으로 허용한다.
+- `gemini`, `ox-alpha`, `openrouter:<model>` 명시 선택은 admin 진단 호환을 위해 유지하며 자동 fallback하지 않는다.
+- 요청의 `api_key`/`openrouter_api_key` 레거시 필드는 호환을 위해 허용하되 인증에 사용하지 않는다. 키는 응답·로그에 포함하지 않는다.
+- AI 응답은 가능한 모든 endpoint에서 실제 응답의 `provider`와 `model`을 그대로 반환한다.
+- GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장 지점이며 현재 구매나 연결을 요구하지 않는다.
 
 ### 문서화 대상
 
@@ -3032,6 +3067,16 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - AI: 서버 환경의 `GEMINI_API_KEY`가 있을 때 기존 Gemini 텍스트 호출을 재사용한다. 키 미설정·호출 실패 시 `rules-fallback` 답변을 반환한다. 브라우저에 서버 키를 노출하지 않는다.
 - 부작용: 조회 전용이며 DB 생성·수정·삭제를 하지 않는다.
 
+### ✅ Wiki AI Router / A/B API
+
+- `GET /problem-generator/wiki/api/ai/providers`: Gemini/OpenRouter의 server-key availability와 모델 ID만 반환한다. 키 값은 반환하지 않는다.
+- `GET /problem-generator/wiki/api/ai/openrouter/free-models`: 백엔드가 OpenRouter 공식 `/api/v1/models`를 조회해 무료 text-generation 모델을 반환한다. `:free` 또는 prompt/completion 가격이 모두 0인 모델을 무료로 판정하며 `id`, `name`, `contextLength`, `structuredOutput`만 노출한다. 조회 실패 시 마지막 성공 cache 또는 빈 목록을 반환한다.
+- `POST /problem-generator/wiki/api/questions/generate`: `provider=auto|gemini|openrouter-free|ox-alpha|openrouter:<model-id>`를 받는다. 일반 UI는 API 키를 전송하지 않으며 서버 `GEMINI_API_KEY`/`OPENROUTER_API_KEY`를 사용한다. legacy request key 필드는 관리자·개발 호환용 optional override로만 유지한다.
+- `auto`만 Gemini → OpenRouter 무료 자동 fallback을 허용한다. 명시적으로 고른 provider/model은 실패해도 다른 결과로 바꾸지 않는다. `openrouter-free`는 `openrouter/free`, Ox Alpha는 `stealth/ox-alpha`를 호출한다.
+- 성공 응답은 실제 `provider`, `model`을 반환한다. 키 원문은 응답·DB·로그에 저장하지 않는다.
+- `POST /problem-generator/wiki/api/questions/ab-compare`: 같은 school/grade/exam/twin/types/grammar/passage 계약을 Gemini와 Ox Alpha에 각각 전송하고 provider별 `resultId`, `model`, 검증된 questions를 반환한다. 한 provider 실패 시 다른 결과와 provider별 오류를 반환한다.
+- `POST /problem-generator/wiki/api/questions/ab-evaluations` 및 `GET .../ab-evaluations`: 기존 A/B 평가 저장·조회 계약을 유지한다.
+
 ### ✅ GET /api/problem-generator/materials
 
 - 목적: 현재 사용자가 접근 가능한 자료 목록을 페이지로 조회한다.
@@ -3073,6 +3118,17 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 업로드 공용 컴포넌트: `infrastructure/storage/UploadedFileIngestor`.
 - 화면: `templates/problem-generator/page.html`, `fragments/_problem_generator_shell.html`, `static/js/problem_generator.js`, `static/css/problem_generator.css`.
 - 마이그레이션: `V945__add_problem_generator_materials.sql`.
+
+### Wiki 고3 수능 영어 API
+
+- `POST /problem-generator/wiki/api/csat/uploads` (`multipart/form-data`): `exam_kind=half|full`, `metadata_json`, `file`을 받는다. HWP 5.x OLE/HWPX/JSON/TXT를 서버에서 추출해 canonical 문항과 실패 목록을 검수용으로 반환하며 아직 저장하지 않는다. HWP는 `olefile`과 HWP 레코드/zlib 추출을 사용한다. 암호화·배포용·구형 HWP 3.x·손상 파일은 `400`, 30MB 초과는 `413`, 미지원 확장자는 `415`다. 키/원본 파일은 저장하지 않는다.
+- `POST /problem-generator/wiki/api/csat/imports` (`application/json`): 검수·수정한 canonical 문항, source SHA-256, parser, metadata, 추출 원문을 SQLite에 저장한다. 같은 `(source_hash, exam_kind)`는 `409`다. 현재 owner scope는 `shared`이며 원본 파일은 저장하지 않는다.
+- `GET /problem-generator/wiki/api/csat/types`: 18~45 번호별 표준 유형 메타데이터를 반환한다.
+- `GET /problem-generator/wiki/api/csat/questions`: `exam_kind`, `question_no`, `type_id`, `mismatch` 필터로 저장 문항을 조회한다. 번호와 발문/구조가 어긋나면 `type_mismatch`, `mismatch_reason`을 포함한다.
+- `GET /problem-generator/wiki/api/csat/exam.html`: `ids`, `exam_kind`, `title`로 BuildIt 표기의 A4 2단 인쇄 HTML을 렌더링한다. 페이지당 4문항을 목표로 긴 문항 `break-inside`를 방지하고, 본문 편집·문항 순서 이동·삭제·인쇄·편집 HTML 다운로드를 지원한다.
+- `POST/GET /problem-generator/wiki/api/csat/wrong-answers`: 기존 `student_wrong_notes`와 분리된 고3 수능 오답을 학생·시험·문항번호·표준유형·오답·정답·메모로 저장/조회한다.
+
+외부지문 API는 `/passages/memory`와 `/passages/analysis` 두 작업만 제공한다. analysis의 문장 데이터는 `slashed → directTranslation → translation → grammarGuide` 순서이며 영어 원문 전체를 별도 중복 필드로 반환하지 않는다.
 
 ## 17. BUILD IT CHART
 
@@ -3169,16 +3225,11 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 목적: 후보 제외.
 - 인증/권한: `ROLE_ADMIN`.
 - Response: 갱신 후보.
-# BuildIt Wiki AI routes
 
-## `POST /problem-generator/wiki/api/questions/generate`
 
-OpenRouter `provider`와 사용자가 고른 `model`을 명시해 Digital Twin 신규 문제를 생성한다. 기본 모델은 `google/gemini-3.7-flash`이며 서버는 실패 시 다른 무료 모델로 fallback하지 않는다. 응답의 `provider`/`model`은 실제 생성 모델 표시용이다. 기존문제 변형은 동일 계약의 `POST .../questions/transform`을 사용한다.
+### Wiki AI 오류/timeout 계약
 
-## `POST /problem-generator/wiki/api/school-prints/reconstruct`
+- OpenRouter 단일 호출은 `AI_PROVIDER_TIMEOUT_SECONDS`(기본 90초, 10~120초 범위)로 제한한다. 명시적 `ox-alpha` 선택은 Gemini로 fallback하지 않으며, `auto`에서만 Gemini → Ox Alpha 순 fallback을 허용한다.
+- AI 실패 응답은 `detail: { message, provider, status }` JSON으로 정규화한다. 429/502/504의 게이트웨이 HTML이나 외부 provider 원문을 브라우저에 전달하지 않는다.
+- 문제 생성 성공 응답과 Assistant 응답은 실제 `provider`, `model`을 포함한다.
 
-`api_key`, 고정 기본 모델 `qwen/qwen3.7-flash`, source metadata, 여러 페이지의 OCR과 이미지 data URL을 받아 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다. 원본 이미지를 배경으로 쓰지 않으며 불확실한 블록은 검토 필요로 표시한다.
-
-## `POST /problem-generator/wiki/api/school-prints/patch-html`
-
-현재 HTML/canonical JSON과 사용자의 수정 지시를 받아 지적된 부분만 수정한다. 응답은 변경된 `html`, 동기화된 `canonicalJson`, 실제 `provider`/`model`이다.

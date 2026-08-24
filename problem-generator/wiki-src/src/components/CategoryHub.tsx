@@ -7,8 +7,11 @@ const hubs: Record<Hub, { eyebrow: string; title: string; description: string; a
   create: {
     eyebrow: '만들기', title: '무엇을 만들까요?', description: '필요한 작업 하나를 고르면 해당 제작 화면만 엽니다.',
     actions: [
-      { page: 'home', title: '내신 문제 만들기', detail: '학교·학년·시험별 신규·변형 문제' },
+      { page: 'home', title: '내신·수능 문제 제작', detail: '기존 Digital Twin 신규·변형 문제 흐름 유지' },
       { page: 'exam', title: '실전 문제지 만들기', detail: '선택 문항과 exam_draft로 DOCX 제작' },
+      { page: 'passagememory', title: '외부지문 · 지문 암기', detail: '현재 영문·한글 문장 대응 암기표' },
+      { page: 'passageanalysis', title: '외부지문 · 지문 정리', detail: '슬래시·직독직해·정식 해석·문법과 내용일치' },
+      { page: 'csat', title: '고3 수능 영어', detail: '하프·정식 모의고사와 수능 오답 저장·출력' },
       { page: 'school', title: '학교 프린트·자료 정리', detail: '사진·PDF OCR, 편집과 학교별 보관' },
       { page: 'database', title: '문제 DB 보기', detail: '저장된 강사 문항 선택과 재사용' },
       { page: 'textbook', title: '교과서 DB', detail: '출판사·Lesson별 수업 자료' },
@@ -17,7 +20,7 @@ const hubs: Record<Hub, { eyebrow: string; title: string; description: string; a
   student: {
     eyebrow: '학생', title: '학생 작업을 선택하세요', description: '오답을 새로 추출하거나 저장된 학생 기록을 이어서 봅니다.',
     actions: [
-      { page: 'wrongnote', title: '오답 기록·추출', detail: '채점지 사진·PDF에서 오답 텍스트 추출' },
+      { page: 'wrongextract', title: '오답 기록·추출', detail: '채점지 사진·PDF에서 오답 텍스트 추출·저장' },
       { page: 'wrongnote', title: '학생별 오답노트', detail: '누적 오답 확인, 수정과 복습 DOCX 제작' },
     ],
   },

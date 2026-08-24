@@ -73,24 +73,28 @@ class AssistantAgentTest(unittest.TestCase):
         with main.get_db() as conn:
             cursor = conn.execute(
                 'INSERT INTO digital_twin_profiles (school, grade, exam, profile_json, version, is_active, created_at, updated_at) VALUES (?,?,?,?,?,1,?,?)',
-                ('압구정중', '중3', '2학기 기말고사', profile, 3, now, now),
+                ('압구정중', '3학년', '2학기 기말고사', profile, 3, now, now),
             )
         result = main.assistant_chat(self._request('압구정중3 문제 제작을 하려면'))
         self.assertEqual(('압구정중', '중3'), (result['state']['school'], result['state']['grade']))
         self.assertEqual(cursor.lastrowid, result['state']['selected_twin_id'])
+        self.assertEqual(['2학기 기말고사'], result['context']['availableExams'])
         self.assertEqual(['어법', '서술형'], result['context']['questionTypes'])
         self.assertIn('시험 범위 주요 문법 사항', result['state']['needed_materials'])
         self.assertEqual(('home', '문제 제작 화면 열기'), (result['page'], result['action']))
 
-    def test_g_request_api_key_uses_qwen_before_fallback(self):
-        with patch.object(main, 'call_openrouter', return_value=('확인된 기억에 맞춘 실제 Agent 응답입니다.', 'qwen/qwen3.7-flash')) as qwen:
+    def test_g_request_api_key_is_ignored_and_qwen_metadata_is_returned(self):
+        ai = main.ai_router.ProviderResult('확인된 기억에 맞춘 실제 Agent 응답입니다.', 'openrouter', 'qwen/qwen3.7-flash', 'server')
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch.object(main.ai_router, '_openrouter', return_value=ai) as openrouter:
             request = self._request('압구정중3 문제 제작을 하려면')
             request.api_key = 'browser-key'
             result = main.assistant_chat(request)
         self.assertEqual('qwen/qwen3.7-flash', result['model'])
-        self.assertEqual('browser-key', qwen.call_args.args[0])
+        self.assertEqual('openrouter', result['provider'])
+        self.assertEqual('server-key', openrouter.call_args.args[0])
         self.assertEqual('확인된 기억에 맞춘 실제 Agent 응답입니다.', result['text'])
 
 
 if __name__ == '__main__':
     unittest.main()
+

@@ -405,7 +405,7 @@ def prepare_question(q: dict) -> dict:
     return q
 
 
-def question_quality_issues(q: dict) -> list[str]:
+def question_quality_issues(q: dict, external_instructions: str = '') -> list[str]:
     """무료 모델 응답도 시험지에 저장하기 전에 구조 불변식을 통과시킨다."""
     issues: list[str] = []
     qtype = str(q.get('questionType') or '')
@@ -421,7 +421,14 @@ def question_quality_issues(q: dict) -> list[str]:
         incomplete_ending = re.compile(r'(?:\.\.\.|…|\b(?:because|although|though|if|when|while|unless|since|that|and|but|or))\s*[.!?]*$', re.I)
         if any(incomplete_ending.search(item) for item in candidates):
             issues.append('서답형 답안은 생략부호나 끝에 남은 접속사 없이 완결되어야 함')
-        word_count_match = re.search(r'(\d+)\s*(?:개\s*)?단어', ' '.join([stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')]))
+        instructions = ' '.join([external_instructions, str(q.get('grammarFocus') or ''), stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
+        grading_rule = str(q.get('gradingRule') or '')
+        if re.search(r'(?<![A-Za-z])because(?![A-Za-z]).*(?:사용\s*)?금지|without\s+because', instructions, re.I):
+            if any(re.search(r'(?<![A-Za-z])because(?![A-Za-z])', item, re.I) for item in candidates):
+                issues.append('because 사용 금지 조건과 모범답안이 모순됨')
+            if re.search(r'(?<![A-Za-z])because(?![A-Za-z])', grading_rule, re.I):
+                issues.append('because 사용 금지 조건과 채점 기준이 모순됨')
+        word_count_match = re.search(r'(\d+)\s*(?:개\s*)?단어', instructions)
         if word_count_match and any(len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", item)) != int(word_count_match.group(1)) for item in candidates):
             issues.append(f'서답형 답안은 제시된 {word_count_match.group(1)}단어 조건을 충족해야 함')
     if q.get('type') == 'mc':
@@ -448,8 +455,8 @@ def question_quality_issues(q: dict) -> list[str]:
     return issues
 
 
-def batch_quality_issues(questions: list[dict]) -> list[str]:
-    return [f"{index + 1}번: {issue}" for index, question in enumerate(questions) for issue in question_quality_issues(question)]
+def batch_quality_issues(questions: list[dict], external_instructions: str = '') -> list[str]:
+    return [f"{index + 1}번: {issue}" for index, question in enumerate(questions) for issue in question_quality_issues(question, external_instructions)]
 
 
 def repair_transform_question(q: dict) -> dict:

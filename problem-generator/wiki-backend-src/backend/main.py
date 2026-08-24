@@ -1,17 +1,20 @@
 import json
+import hashlib
 import os
 import re
 import sqlite3
+import struct
 import zipfile
-import urllib.error
-import urllib.request
+import zlib
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
+from pydantic import ValidationError
 from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -20,28 +23,12 @@ from docx.oxml.ns import qn
 from docx.shared import Mm, Pt
 
 import prompt_logic as pl
+import ai_router
+import question_contract as qc
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
 EXPORT_PATH = WORKSPACE / 'feel-to-real-project-export.zip'
-DEFAULT_PROBLEM_MODEL = 'google/gemini-3.7-flash'
-SCHOOL_PRINT_MODEL = 'qwen/qwen3.7-flash'
-
-def call_openrouter(api_key: str, model: str, system: str, user_content, schema: Optional[dict] = None) -> tuple[str, str]:
-    """Call only the explicitly selected model. There is intentionally no fallback routing here."""
-    payload = {'model': model, 'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user_content}], 'temperature': 0.15}
-    if schema:
-        payload['response_format'] = {'type': 'json_schema', 'json_schema': {'name': 'buildit_result', 'strict': True, 'schema': schema}}
-    request = urllib.request.Request('https://openrouter.ai/api/v1/chat/completions', data=json.dumps(payload).encode('utf-8'), headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json', 'HTTP-Referer': 'https://feel2real.com', 'X-Title': 'BuildIt Wiki'}, method='POST')
-    try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            body = json.loads(response.read().decode('utf-8'))
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode('utf-8', errors='replace')[:500]
-        raise HTTPException(status_code=exc.code if exc.code in (400, 401, 403, 429) else 502, detail=f'선택한 모델 요청 실패: {detail}')
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f'선택한 모델 연결 실패: {exc}')
-    return body['choices'][0]['message']['content'], body.get('model') or model
 
 
 def get_db():
@@ -153,6 +140,61 @@ def init_db():
             lesson_context TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL
         )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_sources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exam_kind TEXT NOT NULL CHECK (exam_kind IN ('half','full')),
+            source_filename TEXT NOT NULL,
+            exam_metadata_json TEXT NOT NULL DEFAULT '{}',
+            parser TEXT NOT NULL,
+            raw_text TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_id INTEGER NOT NULL,
+            exam_kind TEXT NOT NULL,
+            question_no INTEGER NOT NULL,
+            csat_type_id TEXT NOT NULL,
+            csat_type_name TEXT NOT NULL,
+            passage TEXT NOT NULL DEFAULT '',
+            prompt TEXT NOT NULL DEFAULT '',
+            choices_json TEXT NOT NULL DEFAULT '[]',
+            answer TEXT NOT NULL DEFAULT '',
+            solution TEXT NOT NULL DEFAULT '',
+            footnote TEXT NOT NULL DEFAULT '',
+            group_label TEXT NOT NULL DEFAULT '',
+            source_reference TEXT NOT NULL DEFAULT '',
+            type_mismatch INTEGER NOT NULL DEFAULT 0,
+            mismatch_reason TEXT NOT NULL DEFAULT '',
+            raw_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (source_id) REFERENCES csat_question_sources(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_questions_kind_no ON csat_questions(exam_kind, question_no)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_questions_type ON csat_questions(csat_type_id)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_wrong_answers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL,
+            exam_name TEXT NOT NULL DEFAULT '',
+            question_no INTEGER NOT NULL,
+            csat_type_id TEXT NOT NULL,
+            csat_type_name TEXT NOT NULL,
+            wrong_answer TEXT NOT NULL DEFAULT '',
+            correct_answer TEXT NOT NULL DEFAULT '',
+            memo TEXT NOT NULL DEFAULT '',
+            source_filename TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_lookup ON csat_wrong_answers(student_name, exam_name, question_no, csat_type_id)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS ai_ab_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
+            twin_id INTEGER, question_type TEXT NOT NULL DEFAULT '',
+            gemini_provider TEXT NOT NULL, gemini_model TEXT NOT NULL, gemini_result_id TEXT NOT NULL,
+            ox_provider TEXT NOT NULL, ox_model TEXT NOT NULL, ox_result_id TEXT NOT NULL,
+            choice TEXT NOT NULL CHECK (choice IN ('gemini','ox-alpha','both-revise')),
+            created_at TEXT NOT NULL
+        )''')
 
 
 def migrate_schema():
@@ -166,6 +208,15 @@ def migrate_schema():
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN title TEXT NOT NULL DEFAULT ''")
         if 'question_type' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN question_type TEXT NOT NULL DEFAULT ''")
+        source_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_question_sources)").fetchall()}
+        for name, definition in (
+            ('source_hash', "TEXT NOT NULL DEFAULT ''"),
+            ('original_stored', 'INTEGER NOT NULL DEFAULT 0'),
+            ('owner_scope', "TEXT NOT NULL DEFAULT 'shared'"),
+        ):
+            if name not in source_cols:
+                conn.execute(f'ALTER TABLE csat_question_sources ADD COLUMN {name} {definition}')
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_csat_source_hash_kind ON csat_question_sources(source_hash, exam_kind) WHERE source_hash <> ''")
 
 
 def seed_default_twins():
@@ -217,6 +268,18 @@ class StudioRun(BaseModel):
 @app.get('/api/health')
 def health():
     return {'ok': True}
+
+
+@app.get('/api/ai/providers')
+def ai_providers():
+    """Return capability flags only. Secret values never leave the server."""
+    return ai_router.availability()
+
+
+@app.get('/api/ai/openrouter/free-models')
+def openrouter_models():
+    """Public-safe model metadata only; the OpenRouter credential remains server-side."""
+    return {'models': ai_router.openrouter_free_models(), 'autoModel': ai_router.FREE_ROUTER}
 
 
 @app.get('/api/runs')
@@ -456,7 +519,8 @@ class AssistantAttachment(BaseModel):
 class AssistantRequest(BaseModel):
     message: str
     api_key: str = ''
-    model: str = SCHOOL_PRINT_MODEL
+    openrouter_api_key: str = ''
+    provider: str = 'auto'
     state: AssistantState = Field(default_factory=AssistantState)
     history: list[AssistantMessage] = Field(default_factory=list)
     attachments: list[AssistantAttachment] = Field(default_factory=list)
@@ -479,16 +543,23 @@ def _assistant_entities(message: str, state: AssistantState) -> dict:
     return {'school': school, 'grade': grade, 'exam': exam, 'goal': goal or '요청한 작업 준비'}
 
 
+def _assistant_grade_number(grade: str) -> str:
+    """UI/대화의 '중3'과 Digital Twin 저장값 '3학년'을 같은 학년으로 조회한다."""
+    match = re.fullmatch(r'(?:중)?\s*([1-3])\s*(?:학년)?', (grade or '').strip())
+    return match.group(1) if match else ''
+
+
 def _assistant_context(entities: dict) -> dict:
     school, grade, exam = entities['school'], entities['grade'], entities['exam']
+    grade_number = _assistant_grade_number(grade)
     context = {'twin': None, 'availableExams': [], 'questionTypes': [], 'questionCount': 0, 'studentCount': 0, 'insightCount': 0}
     if not school:
         return context
     with get_db() as conn:
         twin_query = 'SELECT * FROM digital_twin_profiles WHERE is_active=1 AND school=?'
         twin_values: list = [school]
-        if grade:
-            twin_query += ' AND grade=?'; twin_values.append(grade)
+        if grade_number:
+            twin_query += " AND REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"; twin_values.append(grade_number)
         if exam:
             twin_query += " AND (exam=? OR exam='전체')"; twin_values.append(exam)
         twin_query += " ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1"
@@ -496,19 +567,22 @@ def _assistant_context(entities: dict) -> dict:
         twin = conn.execute(twin_query, twin_values).fetchone()
         if twin:
             context['twin'] = digital_twin_response(twin)
-        exam_rows = conn.execute('SELECT DISTINCT exam FROM digital_twin_profiles WHERE is_active=1 AND school=? AND (? = \'\' OR grade=?) ORDER BY exam', (school, grade, grade)).fetchall()
+        exam_rows = conn.execute(
+            "SELECT DISTINCT exam FROM digital_twin_profiles WHERE is_active=1 AND school=? AND (? = '' OR REPLACE(REPLACE(grade, '중', ''), '학년', '')=?) ORDER BY exam",
+            (school, grade_number, grade_number),
+        ).fetchall()
         context['availableExams'] = [row['exam'] for row in exam_rows if row['exam']]
         if context['twin']:
             context['questionTypes'] = [item.get('name', '') if isinstance(item, dict) else str(item) for item in context['twin'].get('types', []) if item]
         filters, values = ['school=?'], [school]
-        if grade: filters.append('grade=?'); values.append(grade)
+        if grade_number: filters.append("REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"); values.append(grade_number)
         if exam: filters.append('exam=?'); values.append(exam)
         context['questionCount'] = conn.execute(f"SELECT COUNT(*) n FROM generated_questions WHERE {' AND '.join(filters)}", values).fetchone()['n']
         student_filters, student_values = ['school=?'], [school]
-        if grade: student_filters.append('grade=?'); student_values.append(grade)
+        if grade_number: student_filters.append("REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"); student_values.append(grade_number)
         context['studentCount'] = conn.execute(f"SELECT COUNT(*) n FROM students WHERE {' AND '.join(student_filters)}", student_values).fetchone()['n']
         insight_filters, insight_values = ['school=?'], [school]
-        if grade: insight_filters.append('grade=?'); insight_values.append(grade)
+        if grade_number: insight_filters.append("REPLACE(REPLACE(grade, '중', ''), '학년', '')=?"); insight_values.append(grade_number)
         context['insightCount'] = conn.execute(f"SELECT COUNT(*) n FROM educator_insights WHERE {' AND '.join(insight_filters)}", insight_values).fetchone()['n']
     return context
 
@@ -563,17 +637,18 @@ def assistant_chat(payload: AssistantRequest):
     fallback, needed = _assistant_fallback(entities, context, payload.attachments)
     route, action = _attachment_route(payload.attachments, message, entities['goal'])
     text, model = fallback, 'rules-fallback'
-    key = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
-    if key:
+    if payload.api_key.strip() or payload.openrouter_api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip() or os.getenv('OPENROUTER_API_KEY', '').strip():
         minimal_context = json.dumps({'goal': entities['goal'], 'school': entities['school'], 'grade': entities['grade'], 'exam': entities['exam'], **context, 'attachments': [a.name for a in payload.attachments]}, ensure_ascii=False)
         recent = payload.history[-6:]
         prompt = f'확인된 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n부족한 항목: {json.dumps(needed, ensure_ascii=False)}. 확인된 사실만 사용해 자연스럽게 답하고, 정적 기능 목록을 반복하지 마라.'
         try:
-            text, model = call_openrouter(key, payload.model, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt)
-        except Exception:
-            pass
+            result = ai_router.generate(payload.provider, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. 학생 이름·연락처 등 개인정보를 요청하거나 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25, allow_noncritical_fallback=True)
+            text, model = result.text, result.provider
+        except Exception as exc:
+            if payload.provider in ('gemini', 'ox-alpha'):
+                _handle_gemini_error(exc)
     next_state = {**payload.state.model_dump(), **entities, 'selected_twin_id': context['twin']['id'] if context['twin'] else None, 'needed_materials': needed, 'recent_request': message}
-    return {'text': text, 'state': next_state, 'context': context, 'page': route, 'action': action, 'model': model}
+    return {'text': text, 'state': next_state, 'context': context, 'page': route, 'action': action, 'provider': result.provider if 'result' in locals() else 'rules-fallback', 'model': result.model if 'result' in locals() else model}
 
 
 # ==================================================================================
@@ -653,6 +728,16 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
 
 
 def _handle_gemini_error(exc):
+    if isinstance(exc, ai_router.ProviderError):
+        status = exc.status if exc.status in (401, 403, 429, 502, 503, 504) else 502
+        message = str(exc)
+        if status == 429:
+            message = 'AI 요청이 많아 잠시 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+        elif status == 504:
+            message = 'AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.'
+        elif status in (502, 503) and exc.provider == 'ox-alpha':
+            message = 'Ox Alpha 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+        raise HTTPException(status_code=status, detail={'message': message, 'provider': exc.provider, 'status': status})
     if isinstance(exc, pl.GeminiCallError):
         if exc.http_status in (401, 403):
             raise HTTPException(status_code=401, detail='잘못된 API Key입니다. 설정에서 키를 다시 확인해 주세요.')
@@ -660,10 +745,26 @@ def _handle_gemini_error(exc):
     raise HTTPException(status_code=502, detail='AI 서비스 연결을 확인하지 못했습니다. 네트워크 상태를 확인해 주세요.')
 
 
+def _parse_generated_json(text: str, repair):
+    """Repair only malformed JSON, once. Schema/quality failures are never retried here."""
+    try:
+        return json.loads(re.sub(r'```json|```', '', text).strip())
+    except (json.JSONDecodeError, TypeError):
+        repaired = repair()
+        try:
+            return json.loads(re.sub(r'```json|```', '', repaired).strip())
+        except (json.JSONDecodeError, TypeError):
+            raise HTTPException(status_code=502, detail='AI 응답 JSON 파싱 실패(repair 1회 포함)')
+
+
+def _contract_error(exc: ValidationError):
+    raise HTTPException(status_code=502, detail='AI 응답 schema validation 실패: ' + qc.validation_fields(exc))
+
+
 class NewQuestionRequest(BaseModel):
-    api_key: str
-    provider: Literal['openrouter'] = 'openrouter'
-    model: str = DEFAULT_PROBLEM_MODEL
+    api_key: str = ''
+    openrouter_api_key: str = ''
+    provider: str = 'auto'
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -706,9 +807,6 @@ def _batches(total: int, mc: int, sa: int):
 
 @app.post('/api/questions/generate')
 def generate_questions(payload: NewQuestionRequest):
-    key = payload.api_key.strip()
-    if not key:
-        raise HTTPException(status_code=400, detail='AI API 키를 설정해 주세요.')
     if not payload.passage.strip() or not payload.grammar.strip():
         raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
     with get_db() as conn:
@@ -720,7 +818,6 @@ def generate_questions(payload: NewQuestionRequest):
         mc_total, sa_total = _composition(payload.count, payload.composition)
         batches = _batches(payload.count, mc_total, sa_total)
         all_questions: list[dict] = []
-        actual_model = payload.model
         previous = ''
         for batch in batches:
             rules = pl.build_new_rules(twin, {
@@ -735,15 +832,19 @@ def generate_questions(payload: NewQuestionRequest):
                 if quality_issues:
                     retry_rules += ' [직전 응답 품질 오류—모두 수정] ' + ' / '.join(quality_issues)
                 try:
-                    text, actual_model = call_openrouter(key, payload.model, retry_rules, user_msg, pl.schema_new(batch['mc'], batch['sa']))
+                    result = ai_router.generate(payload.provider, retry_rules, user_msg, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+                    text = result.text
                 except Exception as exc:
                     _handle_gemini_error(exc)
                     return
+                def repair_json():
+                    repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
+                    return ai_router.generate(payload.provider, retry_rules, repair_prompt, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+                parsed = _parse_generated_json(text, repair_json)
                 try:
-                    parsed = json.loads(re.sub(r'```json|```', '', text).strip())
-                except (json.JSONDecodeError, TypeError):
-                    quality_issues = ['JSON 형식 오류']
-                    continue
+                    parsed = qc.validate_new(parsed)
+                except ValidationError as exc:
+                    _contract_error(exc)
                 mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
                 sa_qs = []
                 for q in parsed.get('saQuestions', []):
@@ -765,13 +866,80 @@ def generate_questions(payload: NewQuestionRequest):
         exam_title = f"{twin.get('school','')} {twin.get('grade','')} 맞춤형 시험지".strip()
         exam_group_id = f"exam_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'new', all_questions, exam_title, exam_group_id)
-        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'model': actual_model, 'provider': 'openrouter', 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'provider': result.provider, 'model': result.model, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+
+
+class AbComparisonRequest(NewQuestionRequest):
+    provider: str = 'auto'
+
+
+def _ab_generate(provider: str, payload: AbComparisonRequest, twin: dict) -> dict:
+    mc, sa = _composition(payload.count, payload.composition)
+    type_labels = [f"{pl.TYPE_DEF_BY_ID[t]['label']} — {pl.TYPE_DEF_BY_ID[t]['prompt']}" for t in payload.types if t in pl.TYPE_DEF_BY_ID] or None
+    rules = pl.build_new_rules(twin, {'type_labels': type_labels, 'difficulty': payload.difficulty, 'start': 1, 'end': payload.count, 'mc': mc, 'sa': sa, 'previous': ''})
+    prompt = f"[시험 범위 주요 문법]\n{payload.grammar}\n\n[새 지문]\n{payload.passage}"
+    result = ai_router.generate(provider, rules, prompt, schema=pl.schema_new(mc, sa), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+    parsed = json.loads(re.sub(r'```json|```', '', result.text).strip())
+    questions = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
+    questions += [{**q, 'type': 'sa'} for q in parsed.get('saQuestions', [])]
+    issues = pl.batch_quality_issues(questions)
+    if issues:
+        raise ai_router.ProviderError('JSON 문제 구조 검증 실패: ' + '; '.join(issues[:3]), provider)
+    return {'resultId': uuid.uuid4().hex, 'provider': result.provider, 'model': result.model, 'questions': questions}
+
+
+@app.post('/api/questions/ab-compare')
+def compare_questions(payload: AbComparisonRequest):
+    if not payload.passage.strip() or not payload.grammar.strip():
+        raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
+    with get_db() as conn:
+        twin = _load_twin(conn, payload.twin_id, payload.school, payload.grade, payload.exam)
+    results, errors = {}, {}
+    for provider in ('gemini', 'ox-alpha'):
+        try:
+            results[provider] = _ab_generate(provider, payload, twin)
+        except Exception as exc:
+            errors[provider] = str(exc)
+    if not results:
+        raise HTTPException(status_code=502, detail='두 provider 모두 비교 결과를 생성하지 못했습니다.')
+    return {'contextContract': {'school': twin.get('school', ''), 'grade': twin.get('grade', ''), 'exam': twin.get('exam', ''), 'twinId': twin['id'], 'types': payload.types, 'grammar': payload.grammar}, 'results': results, 'errors': errors}
+
+
+class AbEvaluationCreate(BaseModel):
+    school: str = ''
+    grade: str = ''
+    exam: str = ''
+    twin_id: Optional[int] = None
+    question_type: str = ''
+    gemini_model: str
+    gemini_result_id: str
+    ox_model: str
+    ox_result_id: str
+    choice: Literal['gemini', 'ox-alpha', 'both-revise']
+
+
+@app.post('/api/questions/ab-evaluations', status_code=201)
+def save_ab_evaluation(payload: AbEvaluationCreate):
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute('''INSERT INTO ai_ab_evaluations
+            (school,grade,exam,twin_id,question_type,gemini_provider,gemini_model,gemini_result_id,ox_provider,ox_model,ox_result_id,choice,created_at)
+            VALUES (?,?,?,?,?,'gemini',?,?,'ox-alpha',?,?,?,?)''',
+            (payload.school, payload.grade, payload.exam, payload.twin_id, payload.question_type, payload.gemini_model, payload.gemini_result_id, payload.ox_model, payload.ox_result_id, payload.choice, now))
+        row = conn.execute('SELECT * FROM ai_ab_evaluations WHERE id=?', (cursor.lastrowid,)).fetchone()
+        return dict(row)
+
+
+@app.get('/api/questions/ab-evaluations')
+def list_ab_evaluations(limit: int = 100):
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute('SELECT * FROM ai_ab_evaluations ORDER BY id DESC LIMIT ?', (max(1, min(limit, 500)),)).fetchall()]
 
 
 class TransformQuestionRequest(BaseModel):
-    api_key: str
-    provider: Literal['openrouter'] = 'openrouter'
-    model: str = DEFAULT_PROBLEM_MODEL
+    api_key: str = ''
+    openrouter_api_key: str = ''
+    provider: str = 'auto'
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -814,9 +982,6 @@ def transform_questions(payload: TransformQuestionRequest):
     """항목 7~10: 기존 HTML '기존 문제 변형' 기능 이식.
     학교 선택 → Digital Twin DB 읽기 → 학교 출제 DNA 적용 → 문제 변형.
     유형을 지정하지 않으면 Digital Twin을 보고 자동 추천한다."""
-    key = payload.api_key.strip()
-    if not key:
-        raise HTTPException(status_code=400, detail='AI API 키를 설정해 주세요.')
     if not payload.original.strip():
         raise HTTPException(status_code=400, detail='기존 문제를 입력해 주세요.')
     with get_db() as conn:
@@ -839,14 +1004,19 @@ def transform_questions(payload: TransformQuestionRequest):
         rules = pl.build_transform_rules(twin, cfg)
         user_msg = f"[원본 문제]\n{payload.original}\n\n[관련 전체 지문]\n{payload.passage or '제공되지 않음'}"
         try:
-            text, actual_model = call_openrouter(key, payload.model, rules, user_msg, pl.schema_transform(payload.count))
+            provider_result = ai_router.generate(payload.provider, rules, user_msg, schema=pl.schema_transform(payload.count), temperature=0.35, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+            text = provider_result.text
         except Exception as exc:
             _handle_gemini_error(exc)
             return
+        def repair_json():
+            repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
+            return ai_router.generate(payload.provider, rules, repair_prompt, schema=pl.schema_transform(payload.count), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+        data = _parse_generated_json(text, repair_json)
         try:
-            data = json.loads(re.sub(r'```json|```', '', text).strip())
-        except (json.JSONDecodeError, TypeError):
-            raise HTTPException(status_code=502, detail='AI 응답을 JSON으로 해석하지 못했습니다. 다시 시도해 주세요.')
+            data = qc.validate_transform(data)
+        except ValidationError as exc:
+            _contract_error(exc)
         questions = []
         for q in data.get('questions', []):
             q['type'] = 'sa' if q.get('type') == 'sa' else 'mc'
@@ -856,10 +1026,13 @@ def transform_questions(payload: TransformQuestionRequest):
                 q['conditions'] = q.get('conditions') or []
                 q['acceptedAnswers'] = q.get('acceptedAnswers') or []
             questions.append(q)
+        quality_issues = pl.batch_quality_issues(questions)
+        if quality_issues:
+            raise HTTPException(status_code=502, detail='AI가 변형문제 조건 검증을 통과하지 못했습니다: ' + '; '.join(quality_issues[:3]))
         exam_title = data.get('examTitle') or f"{twin.get('school','')} 기존 문제 변형"
         exam_group_id = f"transform_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'transform', questions, exam_title, exam_group_id)
-        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'model': actual_model, 'provider': 'openrouter', 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
+        return {'examTitle': exam_title, 'examGroupId': exam_group_id, 'questions': saved, 'provider': provider_result.provider, 'model': provider_result.model, 'twin': {'id': twin['id'], 'school': twin.get('school', ''), 'version': twin['version']}}
 
 
 # ==================================================================================
@@ -1352,31 +1525,444 @@ def delete_student(student_id: int):
 # ==================================================================================
 
 class OcrCleanRequest(BaseModel):
-    api_key: str
+    api_key: str = ''
     raw_text: str
+
+
+class PassageRequest(BaseModel):
+    api_key: str = ''
+    source_text: str
+
+
+# 2027학년도 6월 모의평가 18~45번을 기준으로 한 번호별 표준 유형이다.
+# 번호는 1차 힌트이고, 저장 시 발문/문항 구조를 함께 검사해 불일치를 별도 기록한다.
+CSAT_TYPE_RANGES = [
+    ((18,), 'purpose', '목적', ('목적으로', 'purpose')),
+    ((19,), 'emotion', '심경', ('심경', 'mood', 'feeling')),
+    ((20,), 'claim', '주장', ('주장', 'claim')),
+    ((21,), 'implication', '함축 의미', ('의미하는', '함축', 'imply')),
+    ((22,), 'main_idea', '요지', ('요지', 'main idea')),
+    ((23,), 'topic', '주제', ('주제로', 'topic')),
+    ((24,), 'title', '제목', ('제목', 'title')),
+    ((25,), 'chart', '도표', ('도표', 'graph', 'chart')),
+    ((26,), 'content_match', '내용 일치·불일치', ('내용과 일치', '내용과 일치하지')),
+    ((27, 28), 'notice', '안내문', ('안내문', 'event', 'competition')),
+    ((29,), 'grammar', '어법', ('어법', 'grammar')),
+    ((30,), 'vocabulary', '어휘', ('낱말', '어휘', 'word')),
+    ((31, 32, 33, 34), 'blank', '빈칸', ('빈칸', 'blank')),
+    ((35,), 'irrelevant', '무관 문장', ('관계 없는', '무관')),
+    ((36, 37), 'order', '글의 순서', ('순서', 'order')),
+    ((38, 39), 'insertion', '문장 삽입', ('들어가기에', '삽입')),
+    ((40,), 'summary', '요약', ('요약', 'summary')),
+    ((41, 42), 'long_complex', '장문 복합', ('41', '42', '윗글')),
+    ((43, 44, 45), 'long_sequence_reference_content', '장문 순서·지칭·내용', ('43', '44', '45', '윗글')),
+]
+HALF_FEATURED_NUMBERS = {21, 24, 29, 30, *range(31, 35), *range(36, 43)}
+
+
+def csat_type_for_number(question_no: int) -> dict:
+    for numbers, type_id, name, signals in CSAT_TYPE_RANGES:
+        if question_no in numbers:
+            return {'id': type_id, 'name': name, 'signals': signals}
+    return {'id': 'other', 'name': '기타', 'signals': ()}
+
+
+def classify_csat_question(question_no: int, prompt: str, choices: list[str]) -> dict:
+    expected = csat_type_for_number(question_no)
+    haystack = f"{prompt} {' '.join(choices)}".lower()
+    matched = any(signal.lower() in haystack for signal in expected['signals'])
+    # 복합문항은 그룹 발문이 한 번만 나올 수 있어 보기 5개 또는 번호 표기도 구조 신호로 인정한다.
+    if question_no >= 41 and len(choices) == 5:
+        matched = True
+    return {
+        'type_id': expected['id'], 'type_name': expected['name'],
+        'type_mismatch': not matched,
+        'mismatch_reason': '' if matched else f"{question_no}번 표준 유형({expected['name']})과 발문/구조 신호가 일치하지 않습니다.",
+    }
+
+
+def _extract_hwpx_text(data: bytes) -> str:
+    try:
+        from xml.etree import ElementTree
+        with zipfile.ZipFile(__import__('io').BytesIO(data)) as archive:
+            section_names = sorted(name for name in archive.namelist() if re.fullmatch(r'Contents/section\d+\.xml', name))
+            if not section_names:
+                raise ValueError('HWPX 본문 section XML이 없습니다.')
+            chunks = []
+            for name in section_names:
+                root = ElementTree.fromstring(archive.read(name))
+                chunks.extend(node.text for node in root.iter() if node.tag.endswith('}t') and node.text)
+            return '\n'.join(chunks)
+    except (zipfile.BadZipFile, ValueError, ElementTree.ParseError) as error:
+        raise HTTPException(status_code=400, detail=f'HWPX 본문을 읽지 못했습니다: {error}') from error
+
+
+def _hwp_record_payloads(stream: bytes):
+    offset = 0
+    while offset + 4 <= len(stream):
+        header = struct.unpack_from('<I', stream, offset)[0]
+        offset += 4
+        tag, size = header & 0x3ff, (header >> 20) & 0xfff
+        if size == 0xfff:
+            if offset + 4 > len(stream):
+                raise ValueError('HWP 레코드 길이가 잘렸습니다.')
+            size = struct.unpack_from('<I', stream, offset)[0]
+            offset += 4
+        if offset + size > len(stream):
+            raise ValueError('HWP 본문 레코드가 손상되었습니다.')
+        yield tag, stream[offset:offset + size]
+        offset += size
+
+
+def _clean_hwp_para_text(payload: bytes) -> str:
+    # HWP_TAG_PARA_TEXT payload is UTF-16LE. Inline controls occupy code points below
+    # U+0020; tabs/newlines are retained and other binary control markers are removed.
+    text = payload.decode('utf-16le', errors='strict')
+    return ''.join('\n' if char in ('\r', '\n') else '\t' if char == '\t' else char
+                   for char in text if ord(char) >= 32 or char in ('\r', '\n', '\t')).strip()
+
+
+def _extract_hwp5_text(data: bytes) -> str:
+    """Extract HWP 5.x OLE paragraph text without invoking desktop software.
+
+    Encrypted/distributable documents are rejected. We never pretend that partially
+    decoded binary is source text.
+    """
+    if not data.startswith(bytes.fromhex('D0CF11E0A1B11AE1')):
+        raise HTTPException(status_code=400, detail='HWP 5.x OLE 문서가 아닙니다. 구형 HWP 3.x 또는 손상 파일은 지원하지 않습니다.')
+    try:
+        import olefile
+        with olefile.OleFileIO(data) as ole:
+            required = ('FileHeader',)
+            if any(not ole.exists(name) for name in required):
+                raise ValueError('HWP FileHeader가 없습니다.')
+            header = ole.openstream('FileHeader').read()
+            if not header.startswith(b'HWP Document File') or len(header) < 40:
+                raise ValueError('HWP 5.x 헤더가 올바르지 않습니다.')
+            flags = struct.unpack_from('<I', header, 36)[0]
+            compressed, encrypted, distributable = bool(flags & 1), bool(flags & 2), bool(flags & 4)
+            if encrypted:
+                raise ValueError('암호화된 HWP는 지원하지 않습니다. 암호를 해제한 사본을 올려 주세요.')
+            if distributable:
+                raise ValueError('배포용 HWP는 본문 추출을 지원하지 않습니다. 편집 가능한 사본을 올려 주세요.')
+            sections = sorted((entry for entry in ole.listdir() if len(entry) == 2 and entry[0] == 'BodyText' and re.fullmatch(r'Section\d+', entry[1])), key=lambda entry: int(entry[1][7:]))
+            if not sections:
+                raise ValueError('HWP BodyText section이 없습니다.')
+            paragraphs = []
+            for entry in sections:
+                stream = ole.openstream(entry).read()
+                if compressed:
+                    try: stream = zlib.decompress(stream, -15)
+                    except zlib.error as error: raise ValueError('압축된 HWP 본문이 손상되었습니다.') from error
+                for tag, payload in _hwp_record_payloads(stream):
+                    if tag == 67:  # HWP_TAG_PARA_TEXT
+                        text = _clean_hwp_para_text(payload)
+                        if text: paragraphs.append(text)
+            if not paragraphs:
+                raise ValueError('HWP에서 읽을 수 있는 문단 텍스트를 찾지 못했습니다.')
+            return '\n'.join(paragraphs)
+    except HTTPException:
+        raise
+    except (OSError, ValueError, UnicodeDecodeError) as error:
+        raise HTTPException(status_code=400, detail=f'HWP 본문을 읽지 못했습니다: {error}') from error
+
+
+def _normalise_uploaded_questions(raw_text: str) -> list[dict]:
+    """HWPX/TXT/JSON 어댑터의 공통 경계. JSON은 완전 구조화, 문서는 번호 블록을 보수적으로 분리한다."""
+    stripped = raw_text.strip()
+    if stripped.startswith(('{', '[')):
+        try:
+            value = json.loads(stripped)
+            return value.get('questions', []) if isinstance(value, dict) else value
+        except json.JSONDecodeError:
+            pass
+    matches = list(re.finditer(r'(?m)^\s*(1[8-9]|[2-3]\d|4[0-5])\s*[\.\)]\s*', stripped))
+    result = []
+    for index, match in enumerate(matches):
+        block = stripped[match.end():matches[index + 1].start() if index + 1 < len(matches) else len(stripped)].strip()
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        prompt = lines[0] if lines else ''
+        choices = [re.sub(r'^[①②③④⑤]\s*', '', line) for line in lines if re.match(r'^[①②③④⑤]', line)]
+        passage = '\n'.join(line for line in lines[1:] if not re.match(r'^[①②③④⑤]', line))
+        result.append({'question_no': int(match.group(1)), 'stem': prompt, 'prompt': prompt, 'passage': passage, 'choices': choices})
+    return result
+
+
+def _canonical_question(raw: dict, exam_kind: str, metadata: dict, filename: str, raw_text: str, now: str) -> dict:
+    number = int(raw.get('question_number', raw.get('question_no', 0)) or 0)
+    choices = [str(choice) for choice in raw.get('choices', [])]
+    stem = str(raw.get('stem', raw.get('prompt', '')))
+    classification = classify_csat_question(number, stem, choices)
+    return {
+        'source_exam': str(metadata.get('title', metadata.get('source_exam', ''))),
+        'year': str(metadata.get('year', '')), 'session': str(metadata.get('round', metadata.get('session', ''))),
+        'exam_kind': exam_kind, 'question_number': number, 'question_no': number,
+        'csat_type': classification['type_id'], 'csat_type_id': classification['type_id'],
+        'csat_type_name': classification['type_name'], 'stem': stem, 'prompt': stem,
+        'passage': str(raw.get('passage', '')), 'choices': choices,
+        'answer': str(raw.get('answer', '')), 'explanation': str(raw.get('explanation', raw.get('solution', ''))),
+        'solution': str(raw.get('explanation', raw.get('solution', ''))), 'footnote': str(raw.get('footnote', '')),
+        'group_label': str(raw.get('group_label', '')), 'source_file': filename,
+        'source_reference': f'{filename}#question-{number}', 'raw_text': raw_text,
+        'created_at': now, **classification,
+    }
+
+
+class CsatImportCommit(BaseModel):
+    exam_kind: Literal['half', 'full']
+    source_filename: str
+    source_hash: str = Field(pattern=r'^[0-9a-f]{64}$')
+    parser: str
+    metadata: dict = {}
+    raw_text: str
+    questions: list[dict]
+
+
+def _csat_question_response(row: sqlite3.Row) -> dict:
+    item = dict(row)
+    item['choices'] = json.loads(item.pop('choices_json'))
+    item['exam_metadata'] = json.loads(item.pop('exam_metadata_json', '{}')) if 'exam_metadata_json' in item else {}
+    item['type_mismatch'] = bool(item['type_mismatch'])
+    return item
+
+
+@app.get('/api/csat/types')
+def list_csat_types():
+    return [{'numbers': list(numbers), 'id': type_id, 'name': name} for numbers, type_id, name, _ in CSAT_TYPE_RANGES]
+
+
+@app.post('/api/csat/uploads', status_code=201)
+async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metadata_json: str = Form('{}'), file: UploadFile = File(...)):
+    filename = file.filename or 'upload'
+    suffix = Path(filename).suffix.lower()
+    data = await file.read()
+    if suffix not in ('.hwp', '.hwpx', '.json', '.txt'):
+        raise HTTPException(status_code=415, detail='현재 HWP, HWPX, JSON, TXT를 지원합니다.')
+    if not data:
+        raise HTTPException(status_code=400, detail='빈 파일은 업로드할 수 없습니다.')
+    if len(data) > 30 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='수능 자료 파일은 30MB 이하여야 합니다.')
+    parser = {'hwp': 'hwp5-ole-v1', 'hwpx': 'hwpx-xml-v1', 'json': 'json', 'txt': 'txt'}[suffix[1:]]
+    raw_text = _extract_hwp5_text(data) if suffix == '.hwp' else _extract_hwpx_text(data) if suffix == '.hwpx' else data.decode('utf-8-sig', errors='strict')
+    questions = _normalise_uploaded_questions(raw_text)
+    if not questions:
+        raise HTTPException(status_code=400, detail='18~45번 문항 블록을 찾지 못했습니다. 구조화 JSON 또는 번호가 포함된 HWPX를 확인해 주세요.')
+    try:
+        metadata = json.loads(metadata_json or '{}')
+    except json.JSONDecodeError as error:
+        raise HTTPException(status_code=400, detail='시험 메타데이터 JSON 형식이 올바르지 않습니다.') from error
+    now = datetime.now().isoformat()
+    canonical = [_canonical_question(raw, exam_kind, metadata, filename, raw_text, now) for raw in questions]
+    canonical = [item for item in canonical if 1 <= item['question_number'] <= 99]
+    failures = [{'index': index + 1, 'reason': '문항번호를 인식하지 못했습니다.'} for index, raw in enumerate(questions) if not int(raw.get('question_number', raw.get('question_no', 0)) or 0)]
+    if not canonical:
+        raise HTTPException(status_code=400, detail='저장 가능한 문항을 찾지 못했습니다.')
+    return {'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': parser, 'raw_text': raw_text,
+            'metadata': metadata, 'source_filename': filename, 'original_stored': False, 'owner_scope': 'shared',
+            'questions': canonical, 'failures': failures, 'requires_review': True}
+
+
+@app.post('/api/csat/imports', status_code=201)
+def commit_csat_import(payload: CsatImportCommit):
+    now = datetime.now().isoformat()
+    canonical = [_canonical_question(raw, payload.exam_kind, payload.metadata, payload.source_filename, payload.raw_text, now) for raw in payload.questions]
+    canonical = [item for item in canonical if 1 <= item['question_number'] <= 99]
+    if not canonical:
+        raise HTTPException(status_code=400, detail='검수 후 저장할 문항이 없습니다.')
+    saved = []
+    with get_db() as conn:
+        duplicate = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?', (payload.source_hash, payload.exam_kind)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail=f'같은 원본 파일이 이미 저장되어 있습니다. (source_id={duplicate["id"]})')
+        source = conn.execute(
+            'INSERT INTO csat_question_sources (exam_kind, source_filename, exam_metadata_json, parser, raw_text, created_at, source_hash, original_stored, owner_scope) VALUES (?,?,?,?,?,?,?,?,?)',
+            (payload.exam_kind, payload.source_filename, json.dumps(payload.metadata, ensure_ascii=False), payload.parser, payload.raw_text, now, payload.source_hash, 0, 'shared'),
+        )
+        source_id = source.lastrowid
+        for raw in canonical:
+            number, choices = raw['question_number'], raw['choices']
+            cursor = conn.execute('''INSERT INTO csat_questions
+                (source_id, exam_kind, question_no, csat_type_id, csat_type_name, passage, prompt, choices_json,
+                 answer, solution, footnote, group_label, source_reference, type_mismatch, mismatch_reason, raw_json, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                (source_id, payload.exam_kind, number, raw['type_id'], raw['type_name'], raw['passage'], raw['stem'],
+                 json.dumps(choices, ensure_ascii=False), raw['answer'], raw['explanation'], raw['footnote'], raw['group_label'],
+                 raw['source_reference'], int(raw['type_mismatch']), raw['mismatch_reason'], json.dumps(raw, ensure_ascii=False), now))
+            saved.append(cursor.lastrowid)
+        if not saved:
+            raise HTTPException(status_code=400, detail='18~45번 범위의 저장 가능한 문항이 없습니다.')
+        rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json FROM csat_questions q
+            JOIN csat_question_sources s ON s.id=q.source_id WHERE q.id IN ({','.join('?' * len(saved))}) ORDER BY q.question_no''', saved).fetchall()
+    return {'source_id': source_id, 'parser': payload.parser, 'original_stored': False, 'owner_scope': 'shared', 'questions': [_csat_question_response(row) for row in rows]}
+
+
+@app.get('/api/csat/questions')
+def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, question_no: Optional[int] = None, type_id: Optional[str] = None, mismatch: Optional[bool] = None):
+    filters, values = [], []
+    for clause, value in (('q.exam_kind=?', exam_kind), ('q.question_no=?', question_no), ('q.csat_type_id=?', type_id)):
+        if value is not None: filters.append(clause); values.append(value)
+    if mismatch is not None: filters.append('q.type_mismatch=?'); values.append(int(mismatch))
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json FROM csat_questions q
+            JOIN csat_question_sources s ON s.id=q.source_id {where} ORDER BY q.created_at DESC, q.question_no''', values).fetchall()
+    return [_csat_question_response(row) for row in rows]
+
+
+class CsatWrongAnswerCreate(BaseModel):
+    student_name: str
+    exam_name: str = ''
+    question_no: int = Field(ge=18, le=45)
+    wrong_answer: str = ''
+    correct_answer: str = ''
+    memo: str = ''
+    source_filename: str = ''
+
+
+@app.post('/api/csat/wrong-answers', status_code=201)
+def create_csat_wrong_answer(payload: CsatWrongAnswerCreate):
+    if not payload.student_name.strip():
+        raise HTTPException(status_code=400, detail='학생 이름을 입력해 주세요.')
+    csat_type = csat_type_for_number(payload.question_no)
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute('''INSERT INTO csat_wrong_answers
+            (student_name, exam_name, question_no, csat_type_id, csat_type_name, wrong_answer, correct_answer, memo, source_filename, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?)''', (payload.student_name.strip(), payload.exam_name.strip(), payload.question_no, csat_type['id'], csat_type['name'],
+            payload.wrong_answer.strip(), payload.correct_answer.strip(), payload.memo.strip(), payload.source_filename.strip(), now))
+        return dict(conn.execute('SELECT * FROM csat_wrong_answers WHERE id=?', (cursor.lastrowid,)).fetchone())
+
+
+@app.get('/api/csat/wrong-answers')
+def list_csat_wrong_answers(student: Optional[str] = None, exam: Optional[str] = None, type_id: Optional[str] = None):
+    filters, values = [], []
+    for clause, value in (('student_name=?', student), ('exam_name=?', exam), ('csat_type_id=?', type_id)):
+        if value: filters.append(clause); values.append(value)
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute(f'SELECT * FROM csat_wrong_answers {where} ORDER BY id DESC', values).fetchall()]
+
+
+def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어') -> str:
+    def esc(value):
+        import html
+        return html.escape(str(value or ''))
+    blocks = []
+    for q in sorted(questions, key=lambda item: item['question_no']):
+        choices = ''.join(f'<li>{esc(choice)}</li>' for choice in q.get('choices', []))
+        flag = '<span class="flag">유형 확인 필요</span>' if q.get('type_mismatch') else ''
+        blocks.append(f'''<article class="question" data-question-id="{q.get('id', '')}"><nav class="question-tools"><button onclick="moveQuestion(this,-1)">↑</button><button onclick="moveQuestion(this,1)">↓</button><button onclick="this.closest('.question').remove()">삭제</button></nav><h2>{q['question_no']}. <span contenteditable="true">{esc(q.get('prompt'))}</span> {flag}</h2>
+            <div class="passage" contenteditable="true">{esc(q.get('passage')).replace(chr(10), '<br>')}</div>
+            <ol class="choices" contenteditable="true">{choices}</ol><small contenteditable="true">{esc(q.get('footnote'))}</small></article>''')
+    return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{esc(title)}</title><style>
+        @page{{size:A4;margin:12mm}}*{{box-sizing:border-box}}body{{font-family:"Noto Serif KR","Malgun Gothic",serif;margin:0;color:#111}}
+        header{{display:flex;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:12px}}header b{{font-size:22px}}
+        .toolbar{{position:sticky;top:0;background:#fff4cf;padding:8px;text-align:center;z-index:2}}.paper{{column-count:2;column-gap:28px;column-rule:1px solid #222}}
+        .question{{break-inside:avoid;page-break-inside:avoid;margin:0 0 18px;font-size:11.5px;line-height:1.55;position:relative}}.question-tools{{display:none;position:absolute;right:0;top:-5px}}.question:hover .question-tools{{display:block}}h2{{font-size:12px;margin:0 0 7px}}.passage{{text-align:justify;margin-left:14px}}
+        .choices{{list-style:none;padding:0 0 0 14px;margin:8px 0;counter-reset:item}}.choices li{{counter-increment:item}}.choices li:before{{content:counter(item, circle) " ";}}
+        .flag{{font:10px sans-serif;color:#a33;border:1px solid #a33;padding:1px 4px}}[contenteditable=true]:focus{{outline:2px solid #e5b94f;background:#fff9e8}}
+        @media print{{.toolbar,.question-tools{{display:none!important}}.paper{{column-fill:auto}}.question:nth-of-type(4n+1):not(:first-child){{break-before:page}}}}@media(max-width:800px){{.paper{{column-count:1;column-rule:0}}}}
+    </style><body><div class="toolbar">문구를 클릭해 수정할 수 있습니다. <button onclick="print()">인쇄</button> <button onclick="saveEdited()">편집 HTML 저장</button></div>
+    <header><b contenteditable="true">{esc(title)}</b><span>BuildIt 자체 제작 시험지 · A4 2단 · 페이지당 4문항 목표</span></header><main class="paper">{''.join(blocks)}</main><script>function moveQuestion(button,direction){{const item=button.closest('.question'),parent=item.parentElement,sibling=direction<0?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;direction<0?parent.insertBefore(item,sibling):parent.insertBefore(sibling,item)}}function saveEdited(){{const blob=new Blob(['<!doctype html>'+document.documentElement.outerHTML],{{type:'text/html;charset=utf-8'}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildit-csat-edited.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}}</script></body></html>'''
+
+
+@app.get('/api/csat/exam.html', response_class=HTMLResponse)
+def export_csat_exam_html(ids: str = '', exam_kind: Optional[Literal['half', 'full']] = None, title: str = 'BuildIt 수능 영어'):
+    selected = [int(value) for value in ids.split(',') if value.strip().isdigit()]
+    filters, values = [], []
+    if selected: filters.append(f"q.id IN ({','.join('?' * len(selected))})"); values.extend(selected)
+    if exam_kind: filters.append('q.exam_kind=?'); values.append(exam_kind)
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        rows = conn.execute(f'SELECT q.* FROM csat_questions q {where} ORDER BY q.question_no', values).fetchall()
+    items = []
+    for row in rows:
+        item = dict(row); item['choices'] = json.loads(item['choices_json']); item['type_mismatch'] = bool(item['type_mismatch']); items.append(item)
+    return render_csat_html(items, title)
+
+
+PASSAGE_MEMORY_SCHEMA = {
+    'type': 'object', 'properties': {
+        'title': {'type': 'string'},
+        'sentences': {'type': 'array', 'items': {'type': 'object', 'properties': {
+            'english': {'type': 'string'}, 'korean': {'type': 'string'},
+        }, 'required': ['english', 'korean']}},
+    }, 'required': ['title', 'sentences'],
+}
+
+PASSAGE_ANALYSIS_SCHEMA = {
+    'type': 'object', 'properties': {
+        'title': {'type': 'string'},
+        'topic': {'type': 'string'}, 'mainIdea': {'type': 'string'}, 'summary': {'type': 'string'},
+        'sentences': {'type': 'array', 'items': {'type': 'object', 'properties': {
+            'slashed': {'type': 'string'}, 'directTranslation': {'type': 'string'},
+            'translation': {'type': 'string'}, 'grammarGuide': {'type': 'string'},
+        }, 'required': ['slashed', 'directTranslation', 'translation', 'grammarGuide']}},
+        'tfQuestions': {'type': 'array', 'items': {'type': 'object', 'properties': {
+            'language': {'type': 'string', 'enum': ['KO', 'EN']}, 'statement': {'type': 'string'},
+            'answer': {'type': 'string', 'enum': ['T', 'F']},
+        }, 'required': ['language', 'statement', 'answer']}},
+    }, 'required': ['title', 'topic', 'mainIdea', 'summary', 'sentences', 'tfQuestions'],
+}
+
+
+def _passage_source(payload: PassageRequest) -> str:
+    source = payload.source_text.strip()
+    if not source:
+        raise HTTPException(status_code=400, detail='분석할 영어 지문이 없습니다.')
+    return source[:30000]
+
+
+@app.post('/api/passages/memory')
+def create_passage_memory(payload: PassageRequest):
+    source = _passage_source(payload)
+    rules = ('영어 학습용 영한 대조 자료를 만든다. 원문을 빠짐없이 자연스러운 문장 단위로 나누고, '
+             '각 문장에 정확하고 자연스러운 한국어 번역을 붙인다. 영어 원문의 의미나 순서를 바꾸지 않는다.')
+    try:
+        ai = ai_router.generate('auto', rules, source, schema=PASSAGE_MEMORY_SCHEMA, temperature=0.15)
+        result = json.loads(re.sub(r'```json|```', '', ai.text).strip())
+        return {**result, 'provider': ai.provider, 'model': ai.model}
+    except Exception as exc:
+        _handle_gemini_error(exc)
+
+
+@app.post('/api/passages/analysis')
+def create_passage_analysis(payload: PassageRequest):
+    source = _passage_source(payload)
+    rules = ('외부 영어 지문을 밀도 높은 학습 자료로 정리한다. 영어 원문 전체를 별도 반복하지 않는다. '
+             '모든 문장을 원래 순서대로 정확히 한 번만 sentences에 넣는다. slashed는 영어 문장 자체에 의미 단위 / 를 넣은 문자열이고, '
+             '바로 이어 directTranslation은 슬래시 단위의 직독직해, translation은 자연스러운 정식 해석, grammarGuide는 핵심 문법과 구문 설명이다. '
+             '내용일치 T/F는 정확히 10문항으로 앞 5개 한국어(KO), 뒤 5개 영어(EN), T/F를 모두 포함하고 지문만으로 판정 가능하게 한다.')
+    try:
+        ai = ai_router.generate('auto', rules, source, schema=PASSAGE_ANALYSIS_SCHEMA, temperature=0.2)
+        result = json.loads(re.sub(r'```json|```', '', ai.text).strip())
+        if len(result.get('tfQuestions', [])) != 10:
+            raise HTTPException(status_code=502, detail='T/F 문항이 10개로 생성되지 않았습니다. 다시 시도해 주세요.')
+        return {**result, 'provider': ai.provider, 'model': ai.model}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _handle_gemini_error(exc)
 
 
 @app.post('/api/ocr/clean-text')
 def clean_ocr_text(payload: OcrCleanRequest):
-    key = payload.api_key.strip()
-    if not key:
-        raise HTTPException(status_code=400, detail='Gemini API 키가 설정되어 있지 않습니다. 왼쪽 하단 ⚙ 설정에서 Gemini API 키를 먼저 등록해 주세요.')
     raw_text = payload.raw_text.strip()
     if not raw_text:
         raise HTTPException(status_code=400, detail='정리할 추출 텍스트가 없습니다.')
     rules = pl.build_ocr_clean_rules()
     try:
-        text = pl.call_gemini_text(key, rules, raw_text[:20000], temperature=0.1)
+        ai = ai_router.generate('auto', rules, raw_text[:20000], temperature=0.1, allow_noncritical_fallback=True)
+        text = ai.text
     except Exception as exc:
         _handle_gemini_error(exc)
         return
-    return {'cleanedText': text.strip()}
+    return {'cleanedText': text.strip(), 'provider': ai.provider, 'model': ai.model}
 
 
 # ==================================================================================
-# 학교 프린트 사진 → 구조화 JSON + 편집 가능 HTML (OpenRouter Qwen)
+# 학교 프린트 사진 → 구조화 JSON + 편집 가능 HTML
 # ==================================================================================
-
 class SchoolPrintPage(BaseModel):
     page: int
     name: str
@@ -1384,51 +1970,48 @@ class SchoolPrintPage(BaseModel):
     image_data_url: str = ''
 
 class SchoolPrintReconstructRequest(BaseModel):
-    api_key: str
-    model: str = SCHOOL_PRINT_MODEL
-    metadata: dict = {}
+    model: str = ai_router.QWEN_MODEL
+    metadata: dict = Field(default_factory=dict)
     pages: list[SchoolPrintPage]
 
 class SchoolPrintPatchRequest(BaseModel):
-    api_key: str
-    model: str = SCHOOL_PRINT_MODEL
+    model: str = ai_router.QWEN_MODEL
     instruction: str
     html: str
     canonical_json: Optional[dict] = None
 
-def _parse_ai_json(text: str) -> dict:
-    try:
-        return json.loads(re.sub(r'^\s*```(?:json)?|```\s*$', '', text.strip(), flags=re.I))
-    except (json.JSONDecodeError, TypeError):
-        raise HTTPException(status_code=502, detail='AI 응답을 구조화 JSON으로 해석하지 못했습니다.')
+def _school_print_json(text: str) -> dict:
+    try:return json.loads(re.sub(r'^\s*```(?:json)?|```\s*$', '', text.strip(), flags=re.I))
+    except (json.JSONDecodeError, TypeError):raise HTTPException(status_code=502, detail='AI 응답을 구조화 JSON으로 해석하지 못했습니다.')
 
 @app.post('/api/school-prints/reconstruct')
 def reconstruct_school_print(payload: SchoolPrintReconstructRequest):
-    if not payload.api_key.strip(): raise HTTPException(status_code=400, detail='OpenRouter API 키를 설정해 주세요.')
-    if not payload.pages: raise HTTPException(status_code=400, detail='복원할 페이지가 없습니다.')
-    system = '''학교 영어 프린트를 원문 그대로 복원한다. 창작·요약·변형하지 않는다. 제목, A/B/C 섹션, 문항번호, 4열 표, 영영풀이 박스, 밑줄, 빈칸, 답안선, 보기와 강조를 실제 편집 가능한 semantic HTML(table, section, u, span.blank, div.answer-line, div.definition-box)로 만든다. background-image와 원본 이미지 삽입은 금지한다. 판독 불가능한 곳은 class="review-required"와 [검토 필요]로 표시한다. {"html":string,"canonicalJson":object} JSON만 반환한다. canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/version/editedHtml/model을 포함한다.'''
-    content = [{'type':'text','text':'metadata: '+json.dumps(payload.metadata, ensure_ascii=False)}]
+    if not payload.pages:raise HTTPException(status_code=400, detail='복원할 페이지가 없습니다.')
+    system='''학교 영어 프린트를 원문 그대로 복원한다. 창작·요약·변형하지 않는다. 제목, A/B/C 섹션, 문항번호, 국가/국적 4열 표, 영영풀이 박스, 밑줄, 빈칸, 답안선, 보기와 강조를 실제 편집 가능한 semantic HTML(table, section, u, span.blank, div.answer-line, div.definition-box)로 만든다. background-image와 원본 이미지 삽입은 금지한다. 판독 불가능한 곳은 class="review-required"와 [검토 필요]로 표시한다. {"html":string,"canonicalJson":object} JSON만 반환한다. canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/version/editedHtml/model을 포함한다.'''
+    content=[{'type':'text','text':'metadata: '+json.dumps(payload.metadata,ensure_ascii=False)}]
     for page in payload.pages:
         content.append({'type':'text','text':f'PAGE {page.page} / {page.name}\nOCR:\n{page.ocr_text}'})
-        if page.image_data_url.startswith('data:image/'): content.append({'type':'image_url','image_url':{'url':page.image_data_url}})
-    text, actual_model = call_openrouter(payload.api_key.strip(), payload.model, system, content)
-    result = _parse_ai_json(text); html = str(result.get('html') or '').strip()
-    if not html: raise HTTPException(status_code=502, detail='선택한 모델이 HTML을 반환하지 않았습니다.')
-    canonical = result.get('canonicalJson') if isinstance(result.get('canonicalJson'), dict) else {}
-    canonical.update({'source':canonical.get('source') or {**payload.metadata,'fileNames':[p.name for p in payload.pages]},'sourceLinkage':canonical.get('sourceLinkage') or {'pageCount':len(payload.pages),'uploadedAt':datetime.now().isoformat()},'version':int(canonical.get('version') or 1),'editedHtml':html,'model':actual_model})
-    return {'html':html,'canonicalJson':canonical,'provider':'openrouter','model':actual_model}
+        if page.image_data_url.startswith('data:image/'):content.append({'type':'image_url','image_url':{'url':page.image_data_url}})
+    try:ai=ai_router.generate_multimodal(payload.model,system,content)
+    except Exception as exc:_handle_gemini_error(exc)
+    result=_school_print_json(ai.text);html=str(result.get('html') or '').strip()
+    if not html:raise HTTPException(status_code=502,detail='선택한 모델이 HTML을 반환하지 않았습니다.')
+    canonical=result.get('canonicalJson') if isinstance(result.get('canonicalJson'),dict) else {}
+    canonical.update({'source':canonical.get('source') or {**payload.metadata,'fileNames':[p.name for p in payload.pages]},'sourceLinkage':canonical.get('sourceLinkage') or {'pageCount':len(payload.pages),'uploadedAt':datetime.now().isoformat()},'version':int(canonical.get('version') or 1),'editedHtml':html,'model':ai.model})
+    return {'html':html,'canonicalJson':canonical,'provider':ai.provider,'model':ai.model}
 
 @app.post('/api/school-prints/patch-html')
 def patch_school_print_html(payload: SchoolPrintPatchRequest):
-    if not payload.api_key.strip(): raise HTTPException(status_code=400, detail='OpenRouter API 키를 설정해 주세요.')
-    if not payload.instruction.strip() or not payload.html.strip(): raise HTTPException(status_code=400, detail='현재 HTML과 수정 지시가 필요합니다.')
-    system = '''학교 프린트 HTML 부분 수정기다. 사용자가 지적한 부분만 고치고 다른 문구·순서·표·스타일은 바꾸지 않는다. 전체 재작성과 내용 창작, background-image를 금지한다. {"html":string,"canonicalJson":object} JSON만 반환하고 blocks/version/editedHtml을 동기화한다.'''
-    text, actual_model = call_openrouter(payload.api_key.strip(), payload.model, system, json.dumps({'instruction':payload.instruction,'currentHtml':payload.html,'canonicalJson':payload.canonical_json or {}}, ensure_ascii=False))
-    result = _parse_ai_json(text); html = str(result.get('html') or '').strip()
-    if not html: raise HTTPException(status_code=502, detail='수정된 HTML이 비어 있습니다.')
-    canonical = result.get('canonicalJson') if isinstance(result.get('canonicalJson'), dict) else (payload.canonical_json or {})
-    canonical.update({'version':int(canonical.get('version') or 1)+1,'editedHtml':html,'model':actual_model})
-    return {'html':html,'canonicalJson':canonical,'provider':'openrouter','model':actual_model}
+    if not payload.instruction.strip() or not payload.html.strip():raise HTTPException(status_code=400,detail='현재 HTML과 수정 지시가 필요합니다.')
+    system='''학교 프린트 HTML 부분 수정기다. 사용자가 지적한 부분만 고치고 다른 문구·순서·표·스타일은 바꾸지 않는다. 전체 재작성과 내용 창작, background-image를 금지한다. {"html":string,"canonicalJson":object} JSON만 반환하고 blocks/version/editedHtml을 동기화한다.'''
+    request=json.dumps({'instruction':payload.instruction,'currentHtml':payload.html,'canonicalJson':payload.canonical_json or {}},ensure_ascii=False)
+    try:ai=ai_router.generate('qwen',system,request,temperature=.1)
+    except Exception as exc:_handle_gemini_error(exc)
+    result=_school_print_json(ai.text);html=str(result.get('html') or '').strip()
+    if not html:raise HTTPException(status_code=502,detail='수정된 HTML이 비어 있습니다.')
+    canonical=result.get('canonicalJson') if isinstance(result.get('canonicalJson'),dict) else (payload.canonical_json or {})
+    canonical.update({'version':int(canonical.get('version') or 1)+1,'editedHtml':html,'model':ai.model})
+    return {'html':html,'canonicalJson':canonical,'provider':ai.provider,'model':ai.model}
 
 
 # ==================================================================================
@@ -1609,3 +2192,5 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
     path = export_dir / 'school-prints-combined.docx'; doc.save(path)
     safe = re.sub(r'[\\/:*?"<>|]', '_', title) or '학교_프린트'
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f'{safe}.docx')
+
+

@@ -393,3 +393,21 @@ redacted HTTP header, Chrome screenshot을 남긴다. signed capability와 사�
 2026-07-26 작성된 임시 `docs/temp/ec2-video-deploy-guide.md`는 동기 request-thread ffmpeg 구조,
 100MiB/60초/25개 제한, nginx 가정을 포함한 역사 자료다. 현재 실행 지침으로 사용하지 않는다.
 이 문서가 해당 내용을 대체한다.
+# BuildIt Wiki AI Router secret
+
+`buildit-wiki.service`는 선택적 `EnvironmentFile=-/etc/buildit-wiki.env`를 읽는다. 운영 키는 저장소나 배포 압축 파일이 아니라 EC2의 root 전용 파일에만 둔다.
+
+```text
+GEMINI_API_KEY=...
+OPENROUTER_API_KEY=...
+OX_ALPHA_MODEL=stealth/ox-alpha
+```
+
+파일은 `root:root`, mode `600`으로 만들고 `systemctl restart buildit-wiki.service` 후 `/api/ai/providers`의 boolean 상태만 확인한다. 실제 키는 로그·응답·문서에 출력하지 않는다. GitHub secret을 사용한다면 이름은 `OPENROUTER_API_KEY`로 통일하되, 현재 workflow는 secret을 S3 산출물이나 SSM command history에 복사하지 않기 위해 EC2 env file을 사전 등록하는 방식을 사용한다.
+
+Wiki 설정의 브라우저 OpenRouter 키는 `sessionStorage`에만 두고 요청 body로 Spring Proxy를 거쳐 FastAPI AI Router에 일회 전달하므로 서버 env 등록 없이도 Ox Alpha를 사용할 수 있다. 서버 fallback이 필요할 때만 위 root-owned env file을 사용한다. HWP 5.x 추출은 Python `olefile` 패키지로 배포되며 LibreOffice 시스템 패키지를 요구하지 않는다.
+
+
+## BuildIt Wiki AI timeout 순서
+
+운영 Wiki AI 요청은 안쪽부터 OpenRouter 90초(`AI_PROVIDER_TIMEOUT_SECONDS`) → Spring Wiki proxy 280초 → nginx 290초 → React 300초로 제한한다. 바깥 계층이 먼저 끊겨 HTML 504를 만들지 않도록 이 순서를 유지하며, 무한 대기는 허용하지 않는다. 배포 workflow가 systemd 환경과 `/etc/nginx/conf.d/buildit-wiki-timeouts.conf`를 설정하고 `nginx -t` 후 reload한다.

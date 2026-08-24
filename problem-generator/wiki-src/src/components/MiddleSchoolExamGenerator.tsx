@@ -1,20 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Page } from '../App'
 import { ApiSettings } from './ApiSettingsModal'
-import { api } from '../lib/api'
+import { api, normalizedApiError } from '../lib/api'
 import { DigitalTwinProfile, SchoolNode, StoredQuestion, TypeDef, fetchQuestions, fetchSchoolTree, fetchTypeDefs } from '../lib/types'
 import QuestionCard from './QuestionCard'
 import '../styles/generator.css'
 
 type Props = { onNavigate: (page: Page) => void; apiSettings: ApiSettings | null }
 type Mode = 'new' | 'transform'
-const PROBLEM_MODELS = [
-  { id:'google/gemini-3.7-flash', label:'Gemini 3.7 Flash', recommended:true },
-  { id:'openrouter/free', label:'OpenRouter Free (자동)' },
-  { id:'meta-llama/llama-3.3-70b-instruct:free', label:'Llama 3.3 70B (무료)' },
-  { id:'google/gemma-3-27b-it:free', label:'Gemma 3 27B (무료)' },
-  { id:'qwen/qwen3-235b-a22b:free', label:'Qwen3 235B (무료)' },
-]
 
 const TYPE_LABELS: Record<string,string> = {
   blank:'빈칸 추론', order:'문장 순서', insert:'문장 삽입', vocab:'어휘', grammar:'어법',
@@ -41,12 +34,16 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [count,setCount]=useState(10)
   const [loading,setLoading]=useState(false)
   const [result,setResult]=useState<any[]>([])
+  const [resultProvider,setResultProvider]=useState<{provider:string;model:string}|null>(null)
   const [profile,setProfile]=useState<DigitalTwinProfile|null>(null)
   const [error,setError]=useState('')
-  const [model,setModel]=useState(PROBLEM_MODELS[0].id)
-  const [actualModel,setActualModel]=useState('')
+  const [provider,setProvider]=useState('openrouter:google/gemini-3.7-flash')
+  const [freeModels,setFreeModels]=useState<any[]>([])
+  const [abMode,setAbMode]=useState(false)
+  const [comparison,setComparison]=useState<any>(null)
 
   useEffect(()=>{ Promise.all([fetchSchoolTree(),fetchTypeDefs(),fetchQuestions()]).then(([a,b,c])=>{setTree(a);setTypeDefs(b);setStored(c)}).catch(()=>{}) },[])
+  useEffect(()=>{api('ai/openrouter/free-models').then(r=>r.ok?r.json():{models:[]}).then(body=>setFreeModels(body.models||[])).catch(()=>{})},[])
   const schoolNode=useMemo(()=>tree.find(x=>x.school===school),[tree,school])
   const grades=schoolNode?.grades||[]
   const gradeNode=useMemo(()=>grades.find(x=>x.grade===grade),[grades,grade])
@@ -97,17 +94,14 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
     if(!selectedTypes.length){setError('문제 유형을 하나 이상 선택해 주세요.');return}
     setLoading(true)
     try{
-      const apiKey=apiSettings?.openRouterKey
-      if(!apiKey) throw new Error('왼쪽 아래 설정에서 OpenRouter API 키를 먼저 등록해 주세요.')
-      const endpoint=mode==='new'?'questions/generate':'questions/transform'
+      const endpoint=abMode&&mode==='new'?'questions/ab-compare':mode==='new'?'questions/generate':'questions/transform'
       const body=mode==='new'
-        ? {api_key:apiKey,provider:'openrouter',model,twin_id:profile?.id,school,grade,exam,passage,grammar:grammarFocus.trim(),count,types:selectedTypes}
-        : {api_key:apiKey,provider:'openrouter',model,twin_id:profile?.id,school,grade,exam,original:passage,count}
+        ? {provider,twin_id:profile?.id,school,grade,exam,passage,grammar:grammarFocus.trim(),count,types:selectedTypes}
+        : {provider,twin_id:profile?.id,school,grade,exam,original:passage,count}
       const r=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-      if(!r.ok) throw new Error(await r.text())
+      if(!r.ok) throw new Error(await normalizedApiError(r, provider))
       const data=await r.json()
-      setResult(data.questions||data.items||[])
-      setActualModel(data.model||model)
+      if(abMode&&mode==='new'){setComparison(data);setResult([]);setResultProvider(null)}else{setComparison(null);setResult(data.questions||data.items||[]);setResultProvider({provider:data.provider,model:data.model})}
     }catch(e:any){setError(e?.message||'문제 생성 중 오류가 발생했습니다.')}
     finally{setLoading(false)}
   }
@@ -119,7 +113,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
       <button className="gen-db" onClick={()=>onNavigate('database')}>문제 DB</button>
     </header>
     <main className="gen-shell">
-      <section className="gen-hero"><div><small>BUILD IT · CREATE</small><h1>학교별 내신 문제 만들기</h1><p>학교·학년·시험을 고르면 저장된 Digital Twin과 문제 유형을 제작 컨텍스트에 연결합니다.</p></div></section>
+      <section className="gen-hero"><div><small>BUILD IT · CREATE</small><h1>내신·수능 문제 제작</h1><p>기존 내신 Digital Twin 흐름을 유지합니다. 학교·학년·시험을 고르면 저장된 Twin과 문제 유형을 제작 컨텍스트에 연결합니다.</p></div></section>
       <section className="gen-panel">
         <div className="gen-tabs"><button className={mode==='new'?'active':''} onClick={()=>setMode('new')}>신규 문제</button><button className={mode==='transform'?'active':''} onClick={()=>setMode('transform')}>기존 문제 변형</button></div>
         <div className="gen-grid four">
@@ -133,12 +127,23 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
         {mode==='new'&&<label className="passage-label grammar-focus-label">시험 범위 주요 문법 사항<textarea value={grammarFocus} onChange={e=>setGrammarFocus(e.target.value)} placeholder="예: 관계대명사 what, 가정법, 수동태" /><small>문법·서술형 문항에 우선 반영하고 생성 기록에도 함께 보관합니다.</small></label>}
         <div className="type-head"><b>문제 유형 {profile?'· Digital Twin 자동 적용':''}</b><span>{selectedTypes.length}개 선택</span></div>
         <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,label:TYPE_LABELS[id]} as TypeDef))).map(t=>{const id=t.id;return <button type="button" key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.label||TYPE_LABELS[id]||id}</button>})}</div>
-        <div className="model-routing"><label>문제 제작 모델<select value={model} onChange={e=>setModel(e.target.value)}>{PROBLEM_MODELS.map(item=><option key={item.id} value={item.id}>{item.label}{item.recommended?' · 기본/추천':''}</option>)}</select></label><small>무료 모델은 직접 선택했을 때만 사용합니다. Gemini 실패 시 무료 모델로 자동 전환하지 않습니다.</small></div>
-        <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':'문제 만들기'}</button></div>
+        <div className="model-routing"><label>문제 제작 모델<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="openrouter:google/gemini-3.7-flash">Gemini 3.7 Flash · 기본/추천</option><option value="openrouter-free">OpenRouter Free · 무료 자동</option>{freeModels.map(model=><option key={model.id} value={`openrouter:${model.id}`}>{model.name||model.id} · 무료</option>)}</select></label><small>무료 모델은 직접 선택했을 때만 사용합니다. Gemini 실패 시 무료 모델로 자동 전환하지 않습니다.</small></div>
+        <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label>{mode==='new'&&<label><input type="checkbox" checked={abMode} onChange={e=>setAbMode(e.target.checked)} /> A/B 비교</label>}<button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':abMode?'A/B 비교 생성':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}
       </section>
-      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><p className="storage-status" role="status">저장됨 · 문제 DB · Generated by {actualModel}</p><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
+      {comparison&&<AbResults data={comparison} context={{school,grade,exam,twinId:profile?.id,questionType:selectedTypes.join(', ')}} />}
+      {!!result.length&&<section className="result-section"><div className="result-title"><h2>제작 결과</h2><span>{result.length}문항</span></div><p className="storage-status" role="status">저장됨 · 문제 DB{resultProvider ? ` · Generated by ${resultProvider.provider} / ${resultProvider.model}` : ''}</p><div className="question-list">{result.map((q:any,i)=><QuestionCard key={q.id||i} q={q} index={i+1} />)}</div></section>}
       {!result.length&&stored.length>0&&<section className="gen-footnote">현재 문제 DB에 <b>{stored.length}</b>개의 문제가 저장되어 있습니다.</section>}
     </main>
   </div>
 }
+
+function AbResults({data,context}:{data:any;context:any}){
+  const [saved,setSaved]=useState('')
+  const gem=data.results?.gemini, ox=data.results?.['ox-alpha']
+  const evaluate=async(choice:'gemini'|'ox-alpha'|'both-revise')=>{if(!gem||!ox){setSaved('두 결과가 모두 있어야 평가를 저장할 수 있습니다.');return}const r=await api('questions/ab-evaluations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,twin_id:context.twinId,question_type:context.questionType,gemini_model:gem.model,gemini_result_id:gem.resultId,ox_model:ox.model,ox_result_id:ox.resultId,choice})});setSaved(r.ok?'평가를 저장했습니다.':'평가 저장에 실패했습니다.')}
+  return <section className="result-section"><div className="result-title"><h2>Gemini ↔ Ox Alpha Experimental A/B</h2></div><p className="field-hint">비교 기준: 영어 내신 문제 생성 품질 · Digital Twin 반영률 · 한국어 지시 이해 · 긴 학교 자료 처리 · JSON 문제 구조 준수</p><div className="gen-grid" style={{gridTemplateColumns:'1fr 1fr'}}>{[['Gemini',gem],['Ox Alpha · Experimental',ox]].map(([label,r]:any)=><article className="gen-panel" key={label}><h3>{label}</h3>{r?r.questions.map((q:any,i:number)=><QuestionCard key={i} q={q} index={i+1}/>):<p>{data.errors?.[label==='Gemini'?'gemini':'ox-alpha']||'사용 불가'}</p>}</article>)}</div><div className="gen-actions"><button onClick={()=>evaluate('gemini')}>Gemini 우수</button><button onClick={()=>evaluate('ox-alpha')}>Ox Alpha 우수</button><button onClick={()=>evaluate('both-revise')}>둘 다 수정 필요</button><span>{saved}</span></div></section>
+}
+
+
+

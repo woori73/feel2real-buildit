@@ -86,6 +86,8 @@ jobs:
           WorkingDirectory=/opt/buildit-wiki/app/backend
           Environment=BUILDIT_WIKI_DB_PATH=/opt/buildit-wiki/data/app.db
           Environment=BUILDIT_WIKI_WORKSPACE=/opt/buildit-wiki
+          Environment=AI_PROVIDER_TIMEOUT_SECONDS=90
+          EnvironmentFile=-/etc/buildit-wiki.env
           ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
           Restart=always
           RestartSec=3
@@ -93,6 +95,27 @@ jobs:
           [Install]
           WantedBy=multi-user.target
           UNIT
+
+          if command -v nginx >/dev/null 2>&1; then
+            install -d -m 755 /etc/nginx/conf.d
+            cat > /etc/nginx/conf.d/buildit-wiki-timeouts.conf <<'NGINX'
+          # Outer proxy deadlines must remain above Spring (280s) and the
+          # bounded AI provider call (90s), so JSON errors reach the browser.
+          proxy_connect_timeout 5s;
+          proxy_send_timeout 290s;
+          proxy_read_timeout 290s;
+          NGINX
+            nginx -t
+            if nginx -T 2>&1 | grep -q 'buildit-wiki-timeouts.conf'; then
+              systemctl reload nginx
+              echo 'nginx timeout config active'
+            else
+              echo 'nginx timeout config directory is not included; leaving existing gateway config unchanged'
+              rm -f /etc/nginx/conf.d/buildit-wiki-timeouts.conf
+            fi
+          else
+            echo 'nginx is not installed on the application host; gateway timeout is managed outside EC2'
+          fi
 
           systemctl daemon-reload
           systemctl enable buildit-wiki.service
@@ -126,6 +149,10 @@ jobs:
             --parameters 'commands=["set -e","aws s3 cp s3://feel2real-buildit-deploy/deploy-buildit.sh /tmp/deploy-buildit.sh","chmod +x /tmp/deploy-buildit.sh","/tmp/deploy-buildit.sh"]' \
             --query 'Command.CommandId' --output text)
           echo "SSM Command ID: $COMMAND_ID"
+          set +e
           aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          WAIT_STATUS=$?
+          set -e
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          exit "$WAIT_STATUS"
 

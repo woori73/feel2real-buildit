@@ -4,19 +4,12 @@ import { Student, StudentWrongNote, cleanOcrText, createStudent, createWrongNote
 import { ExtractedPage, acceptedFileTypes, extractFiles, joinExtractedPages, maxUploadFiles } from '../lib/ocrExtract'
 import { Markup } from './QuestionCard'
 
-type Props = { apiSettings: ApiSettings | null }
+type Props = { apiSettings: ApiSettings | null; mode?: 'extract' | 'notebook' }
 
 const grades = ['1학년', '2학년', '3학년']
 const semesters = ['1학기', '2학기']
 const examTypes = ['중간', '기말']
 
-const getStoredGeminiKey = (apiSettings: ApiSettings | null): string => {
-  try {
-    const msc = sessionStorage.getItem('f2r_msc_gemini_key')
-    if (msc && msc.trim()) return msc.trim()
-  } catch { /* ignore */ }
-  return apiSettings?.provider === 'gemini' ? (apiSettings.geminiKey || '').trim() : ''
-}
 
 const downloadBlob = (filename: string, blob: Blob) => {
   const url = URL.createObjectURL(blob)
@@ -25,7 +18,8 @@ const downloadBlob = (filename: string, blob: Blob) => {
   URL.revokeObjectURL(url)
 }
 
-export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
+export default function StudentWrongNoteDashboard({ apiSettings, mode = 'notebook' }: Props) {
+  const geminiKey = true // AI credentials are server-managed; retain the existing conditional UI without a browser key.
   const [students, setStudents] = useState<Student[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [notice, setNotice] = useState('')
@@ -52,7 +46,6 @@ export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
   const [exporting, setExporting] = useState(false)
 
   const selected = students.find(student => student.id === selectedId) || null
-  const geminiKey = getStoredGeminiKey(apiSettings)
   const loadStudents = () => { fetchStudents().then(setStudents).catch(() => setError('학생 목록을 불러오지 못했습니다.')) }
   useEffect(() => { loadStudents() }, [])
   const loadNotes = (studentId: number) => {
@@ -97,17 +90,15 @@ export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
       const extracted = await extractFiles(chosen, message => setExtractStatus(message))
       setPages(extracted)
       const raw = joinExtractedPages(extracted)
-      if (geminiKey) {
+      {
         setExtractStatus('Gemini로 원본 시험지 구조에 맞게 정리하는 중…')
         try {
-          const cleaned = await cleanOcrText({ api_key: geminiKey, raw_text: raw })
+          const cleaned = await cleanOcrText({ api_key: '', raw_text: raw })
           setFinalText(cleaned || raw)
         } catch (err) {
           setFinalText(raw)
           setError(err instanceof Error ? `AI 정리에 실패해 1차 추출 텍스트를 그대로 표시합니다: ${err.message}` : 'AI 정리에 실패해 1차 추출 텍스트를 그대로 표시합니다.')
         }
-      } else {
-        setFinalText(raw)
       }
       setExtractStatus(`추출 완료 · ${extracted.length}개 항목 · 아래에서 확인/수정 후 저장하세요.`)
     } catch (err) {
@@ -192,8 +183,8 @@ export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
     }
   }
 
-  return <section className="twin-dashboard" aria-label="학생별 오답노트">
-    <div className="panel-heading"><div><p className="kicker">STUDENT PROFILE</p><h2>학생별 오답노트</h2><p>학생을 등록하고, 채점된 시험지 사진·PDF를 올려 오답을 계속 누적한 뒤 필요한 문제를 골라 하나의 복습 문제지로 만듭니다.</p></div><span className="context-chip">{selected ? `선택 · ${selected.name}` : '학생 미선택'}</span></div>
+  return <section className={`twin-dashboard wrong-workspace ${mode}-mode`} aria-label={mode === 'extract' ? '오답 기록·추출' : '학생별 오답노트'}>
+    <div className="panel-heading"><div><p className="kicker">{mode === 'extract' ? 'WRONG ANSWER CAPTURE' : 'STUDENT REVIEW LIBRARY'}</p><h2>{mode === 'extract' ? '오답 기록·추출' : '학생별 오답노트'}</h2><p>{mode === 'extract' ? '학생과 시험을 지정하고 채점지 사진·PDF에서 오답을 추출해 기록합니다.' : '학생별 누적 오답을 확인·수정하고 선택 문항을 복습 문제지로 만듭니다.'}</p></div><span className="context-chip">{selected ? `선택 · ${selected.name}` : '학생 미선택'}</span></div>
     {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
     {error && <div className="tool-notice" role="alert" style={{ background: '#fdecec', color: '#b5222c' }}>{error}<button onClick={() => setError('')} aria-label="오류 닫기">×</button></div>}
     <article className="work-panel"><div className="panel-heading"><div><p className="kicker">STUDENT REGISTRATION</p><h2>학생 등록</h2></div></div><div className="metadata-grid"><label>학생 이름<input value={form.name} onChange={event => updateForm('name', event.target.value)} placeholder="예: 김민준" /></label><label>학교<input value={form.school} onChange={event => updateForm('school', event.target.value)} placeholder="예: 압구정중" /></label><label>학년<select value={form.grade} onChange={event => updateForm('grade', event.target.value)}>{grades.map(item => <option key={item}>{item}</option>)}</select></label><label>학기<select value={form.semester} onChange={event => updateForm('semester', event.target.value)}>{semesters.map(item => <option key={item}>{item}</option>)}</select></label><label>시험<select value={form.exam_type} onChange={event => updateForm('exam_type', event.target.value)}>{examTypes.map(item => <option key={item}>{item}</option>)}</select></label></div><button className="primary-action" onClick={() => void registerStudent()}>학생 프로필 등록</button></article>
@@ -203,3 +194,5 @@ export default function StudentWrongNoteDashboard({ apiSettings }: Props) {
     {showIntegratePreview && <article className="work-panel"><div className="panel-heading"><div><p className="kicker">INTEGRATED REVIEW SHEET</p><h2>선택 오답 통합 미리보기</h2><p>선택한 순서대로 하나의 복습 문제지를 구성합니다. 확인 후 오피스 2007로 내보낼 수 있습니다.</p></div><button className="secondary-button" onClick={() => setShowIntegratePreview(false)}>닫기</button></div><div className="metadata-grid" style={{ gridTemplateColumns: '1fr' }}><label>문제지 제목<input value={integrateTitle} onChange={event => setIntegrateTitle(event.target.value)} /></label></div><div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="exam-meta-box"><div className="meta-row"><span>학생</span><b>{selected?.name}</b></div><div className="meta-row"><span>학교 · 학년</span><b>{selected?.school || '학교 미입력'} · {selected?.grade || '학년 미입력'}</b></div><div className="meta-row"><span>문항 수</span><b>{selectedNotesOrdered.length}개</b></div></div><div className="question-list">{selectedNotesOrdered.map((note, index) => <div className="q-card q-mc" key={note.id}><div className="q-head"><span className="q-num">{index + 1}.</span>{note.question_type && <span className="tag-multi" style={{ background: '#397ce0' }}>{note.question_type}</span>}</div><div style={{ whiteSpace: 'pre-wrap' }}><Markup as="div" text={note.wrong_text} /></div>{note.answer_text && <div className="inline-answer">✅ 정답: {note.answer_text}</div>}</div>)}</div></div></div><button className="primary-action" disabled={exporting} onClick={() => void exportIntegrated()}>{exporting ? '내보내는 중...' : '오피스 2007 내보내기'}</button></article>}
   </section>
 }
+
+
