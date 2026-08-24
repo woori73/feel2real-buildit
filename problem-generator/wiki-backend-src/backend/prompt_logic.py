@@ -423,10 +423,10 @@ def question_quality_issues(q: dict, external_instructions: str = '') -> list[st
             issues.append('서답형 답안은 생략부호나 끝에 남은 접속사 없이 완결되어야 함')
         instructions = ' '.join([external_instructions, str(q.get('grammarFocus') or ''), stem, *(q.get('conditions') or []), str(q.get('answerFormat') or '')])
         grading_rule = str(q.get('gradingRule') or '')
-        if re.search(r'\bbecause\b.*(?:사용\s*)?금지|without\s+because', instructions, re.I):
-            if any(re.search(r'\bbecause\b', item, re.I) for item in candidates):
+        if re.search(r'(?<![A-Za-z])because(?![A-Za-z]).*(?:사용\s*)?금지|without\s+because', instructions, re.I):
+            if any(re.search(r'(?<![A-Za-z])because(?![A-Za-z])', item, re.I) for item in candidates):
                 issues.append('because 사용 금지 조건과 모범답안이 모순됨')
-            if re.search(r'\bbecause\b', grading_rule, re.I):
+            if re.search(r'(?<![A-Za-z])because(?![A-Za-z])', grading_rule, re.I):
                 issues.append('because 사용 금지 조건과 채점 기준이 모순됨')
         word_count_match = re.search(r'(\d+)\s*(?:개\s*)?단어', instructions)
         if word_count_match and any(len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", item)) != int(word_count_match.group(1)) for item in candidates):
