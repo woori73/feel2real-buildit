@@ -12,6 +12,7 @@ import CategoryHub from './components/CategoryHub'
 import InsightRecorder from './components/InsightRecorder'
 import AssistantComposer, { AssistantMessage } from './components/AssistantComposer'
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
+import FinalMaterialHub from './components/FinalMaterialHub'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
 import { api, normalizedApiError } from './lib/api'
 import './styles/generator.css'
@@ -26,7 +27,7 @@ const menu: { id: Page; label: string; icon: string }[] = [
   { id: 'home', label: '내신·수능 문제 제작', icon: '✦' },
   { id: 'twin', label: 'Digital Twin 관리', icon: '◈' },
   { id: 'database', label: '강사 문제 DB', icon: '▤' },
-  { id: 'exam', label: '내신 실전 제작', icon: '▧' },
+  { id: 'exam', label: '강사 실전문제 · 파이널', icon: '▧' },
   { id: 'wrongextract', label: '오답 기록·추출', icon: '◉' },
   { id: 'wrongnote', label: '학생별 오답노트', icon: '◎' },
   { id: 'passagememory', label: '지문 암기', icon: '▥' },
@@ -45,7 +46,7 @@ const descriptions: Record<Page, string> = {
   home: '학교·학년·시험을 선택하면 Digital Twin이 자동 적용되어 신규 문제 생성과 기존 문제 변형을 모두 지원합니다.',
   twin: '강사가 만든 Digital Twin HTML을 업로드하면 학교·학년·시험 계층이 자동으로 생성됩니다.',
   database: '생성하거나 변형한 문항을 SQLite DB에서 확인하고 관리합니다.',
-  exam: '선택한 문항으로 실전 시험지를 구성합니다.',
+  exam: '4종 검수 자료를 선택한 순서대로 편집 가능한 파이널 HTML로 구성합니다.',
   wrongnote: '학생별 오답을 누적하고 맞춤 복습 자료를 준비합니다.',
   wrongextract: '채점지 사진·PDF에서 오답을 추출하고 학생 기록으로 저장합니다.',
   passagememory: '외부 영어 지문을 문장별 영문·한글 대조표로 정리해 암기 자료로 만듭니다.',
@@ -137,10 +138,12 @@ export default function App() {
       {page === 'school' && <SchoolDatabase onAnalyze={() => setPage('twin')} apiSettings={apiSettings} />}
       {page === 'database' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">TEACHER QUESTION DATABASE</p><h2>강사 문제 DB</h2><p>신규 생성·변형한 문항이 SQLite DB에 영구 저장됩니다.</p></div><div className="twin-actions"><button className="secondary-button" onClick={refreshQuestions}>새로고침</button><button className="primary-action" style={{ marginTop: 0 }} disabled={!selectedExamIds.length} onClick={sendSelectedToExam}>선택 문항으로 실전 제작 ({selectedExamIds.length})</button></div></div>{questions.length === 0 ? <div className="empty-state"><b>저장된 문항이 없습니다.</b><p>문제 생성기에서 만든 문항을 저장하면 이곳에서 관리할 수 있어요.</p><button className="primary-action" onClick={() => setPage('home')}>문제 생성으로 이동</button></div> : <div className="db-list">{questions.map(item => <article key={item.id} style={{ flexWrap: 'wrap' }}><input type="checkbox" aria-label={`${item.id} 선택`} checked={selectedExamIds.includes(item.id)} onChange={() => toggleExamSelection(item.id)} /><div><b>{item.question_type || '문항'} · {item.mode === 'transform' ? '변형' : '신규'} · {item.score}점</b><p>{item.school} · {item.grade} · {item.exam} · {new Date(item.created_at).toLocaleString('ko-KR')}</p><small>{item.stem.slice(0, 80)}</small></div><button onClick={() => toggleExpanded(item.id)}>{expandedIds.has(item.id) ? '간단히' : '전체보기'}</button><button onClick={() => sendToExam(item.id)}>실전 제작</button><button onClick={() => deleteQuestion(item.id)}>삭제</button>{expandedIds.has(item.id) && <div style={{ flexBasis: '100%', marginTop: 12 }}><div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="question-list"><QuestionCard q={item} index={1} /></div></div></div></div>}</article>)}</div>}</section>}
       {page === 'exam' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">EXAM MAKER</p><h2>내신 실전 문제 제작</h2><p>강사 문제 DB에서 선택한 문항으로 실전 시험지를 구성합니다.</p></div><button className="btn-ghost" type="button" onClick={() => setShowExamAnswers(v => !v)}>{showExamAnswers ? '🙈 정답 숨기기' : '🔍 정답 보기'}</button></div><div className="exam-settings"><label>시험지 제목<input value={examTitle} onChange={event => setExamTitle(event.target.value)} /></label><label>학원명<input value={academyName} onChange={event => setAcademyName(event.target.value)} /></label><label>강사명<input value={teacherName} onChange={event => setTeacherName(event.target.value)} /></label></div><div className="f2r-gen embedded-question-view"><div className={`exam-sheet${showExamAnswers ? ' show-answers' : ''}`}><div className="exam-meta-box"><div className="meta-row"><span>시험지</span><b>{examTitle}</b></div><div className="meta-row"><span>학교</span><b>{examQuestions[0] ? `${examQuestions[0].school} · ${examQuestions[0].grade}` : '문제 DB에서 문항 선택 필요'}</b></div><div className="meta-row"><span>문항 구성</span><b>객관식 {mcCount} · 서답형 {saCount} · 총 {totalScore}점</b></div></div>{examQuestions.length > 0 ? <div className="question-list">{examQuestions.map((item, index) => <QuestionCard key={item.id} q={item} index={index + 1} />)}</div> : <p className="empty-paper">강사 문제 DB에서 문항을 선택해 실전 제작으로 보내 주세요.</p>}<div className="footer-brand">{academyName} · {teacherName}</div></div></div><button className="primary-action" disabled={savingExam || !selectedExamIds.length} onClick={() => void exportOffice()}>{savingExam ? '내보내는 중...' : '오피스 2007 내보내기'}</button></section>}
+      {page === 'exam' && <FinalMaterialHub questions={questions} selectedQuestionIds={selectedExamIds} title={examTitle} school={examQuestions[0]?.school||''} grade={examQuestions[0]?.grade||''} exam={examQuestions[0]?.exam||''} />}
     </main>
-    <AssistantComposer messages={assistantOpen ? assistantMessages : []} busy={assistantBusy} onRun={runAssistant} onNavigate={setPage} onDismiss={() => setAssistantOpen(false)} />
+    <AssistantComposer messages={assistantOpen ? assistantMessages : []} busy={assistantBusy} home={isHome} onRun={runAssistant} onNavigate={setPage} onDismiss={() => setAssistantOpen(false)} />
     <ApiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={settings => { setApiSettings(settings); setNotice('AI API 설정을 저장했습니다. 문제 생성기에서 바로 사용할 수 있습니다.') }} />
   </div>
 }
+
 
 
