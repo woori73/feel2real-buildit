@@ -125,7 +125,15 @@ public class N8nProblemGenerationService {
       throw new IllegalStateException("n8n 응답이 비어 있습니다.");
     }
     try {
-      return objectMapper.readTree(response);
+      JsonNode root = objectMapper.readTree(response);
+      JsonNode output = root.path("output");
+      if (output.isObject()) return output;
+      if (output.isTextual() && !output.asText().isBlank()) {
+        String unwrapped = output.asText().replaceFirst("(?s)^\\s*```(?:json)?\\s*", "")
+            .replaceFirst("(?s)\\s*```\\s*$", "");
+        return objectMapper.readTree(unwrapped);
+      }
+      return root;
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("n8n 응답 JSON 파싱 실패: " + exception.getOriginalMessage());
     }

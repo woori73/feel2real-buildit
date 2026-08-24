@@ -2,7 +2,7 @@
   "name": "My workflow 34",
   "nodes": [
     {
-      "parameters": {"httpMethod": "POST", "path": "buildit-digital-twin", "responseMode": "responseNode", "options": {}},
+      "parameters": {"httpMethod": "POST", "path": "buildit-question-generate", "responseMode": "responseNode", "options": {}},
       "id": "existing-webhook",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -11,7 +11,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body ?? $json;\nconst task = String(body.task ?? 'generate_questions');\nconst required = ['school','grade','exam'];\nconst missing = required.filter((key) => !String(body[key] ?? '').trim());\nif (missing.length) throw new Error(`missing_fields:${missing.join(',')}`);\nreturn [{json:{...body, task, question_count:Number(body.question_count ?? 3), digital_twin:'auto'}}];"
+        "jsCode": "const body = $json.body ?? $json;\nconst task = String(body.task ?? 'generate_questions');\nconst required = ['school','grade','exam'];\nconst missing = required.filter((key) => !String(body[key] ?? '').trim());\nif (missing.length) throw new Error(`missing_fields:${missing.join(',')}`);\nconst requirements = body.requirements ?? [body.grammar, body.difficulty].filter(Boolean);\nreturn [{json:{...body, task, source_passage:String(body.source_passage ?? body.passage ?? ''), requirements, question_count:Number(body.question_count ?? body.count ?? 3), digital_twin:'auto'}}];"
       },
       "id": "normalize-contract",
       "name": "Validate BuildIt Contract",

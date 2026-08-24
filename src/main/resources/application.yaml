@@ -24,7 +24,7 @@ app:
       # Structured Output Parser → Respond to Webhook). 브라우저에는 이 주소를 절대 노출하지 않는다 —
       # Spring 서버(N8nProblemGenerationService)만 호출한다. 다른 환경(dev/stg)에서 별도 n8n
       # 테스트 웹훅을 쓰고 싶으면 N8N_BUILDIT_WEBHOOK_URL 환경변수로 override.
-      webhook-url: ${N8N_BUILDIT_WEBHOOK_URL:https://n8n.aitestbed.kr:5678/webhook/buildit-question-generate}
+      webhook-url: ${N8N_BUILDIT_WEBHOOK_URL:https://n8n.aitestbed.kr/webhook/buildit-question-generate}
       connect-timeout-ms: ${N8N_BUILDIT_CONNECT_TIMEOUT_MS:5000}
       read-timeout-ms: ${N8N_BUILDIT_READ_TIMEOUT_MS:60000}
   archived:

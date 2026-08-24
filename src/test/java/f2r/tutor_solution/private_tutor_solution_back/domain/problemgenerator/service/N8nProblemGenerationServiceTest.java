@@ -127,6 +127,29 @@ class N8nProblemGenerationServiceTest {
         .hasMessageContaining("n8n 응답이 비어 있습니다");
   }
 
+  @Test
+  @DisplayName("given AI Agent output wrapper when parseResponse then structured JSON is unwrapped")
+  void parseResponse_unwrapsAgentOutput() {
+    N8nProblemGenerationService service = service("https://n8n.example.com/webhook/buildit-question-generate");
+
+    JsonNode parsed = service.parseResponse(
+        "{\"output\":\"```json\\n{\\\"school\\\":\\\"신사중\\\",\\\"questions\\\":[{\\\"question\\\":\\\"Q\\\"}]}\\n```\"}");
+
+    assertThat(parsed.path("school").asText()).isEqualTo("신사중");
+    assertThat(parsed.path("questions")).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("given object output wrapper when parseResponse then object is unwrapped")
+  void parseResponse_unwrapsObjectOutput() {
+    N8nProblemGenerationService service = service("https://n8n.example.com/webhook/buildit-question-generate");
+
+    JsonNode parsed = service.parseResponse(
+        "{\"output\":{\"questions\":[{\"question\":\"Q\"}]}}");
+
+    assertThat(parsed.path("questions")).hasSize(1);
+  }
+
   private N8nProblemGenerationService service(String webhookUrl) {
     return new N8nProblemGenerationService(webhookUrl, 5000, 60000);
   }
