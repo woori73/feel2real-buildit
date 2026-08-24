@@ -3052,12 +3052,13 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### ✅ Wiki AI Router / A/B API
 
-- `GET /problem-generator/wiki/api/ai/providers`: Gemini와 Ox Alpha의 server-key availability, experimental 표시, 모델 ID를 반환한다. 키 값은 반환하지 않는다.
-- `POST /problem-generator/wiki/api/questions/generate`: 기존 요청에 `provider=gemini|ox-alpha|auto`, 선택적 `openrouter_api_key`를 추가한다. client key가 우선이고 없으면 `GEMINI_API_KEY`/`OPENROUTER_API_KEY`를 사용한다. Gemini가 기존 기본이다.
+- `GET /problem-generator/wiki/api/ai/providers`: Gemini/OpenRouter의 server-key availability와 모델 ID만 반환한다. 키 값은 반환하지 않는다.
+- `GET /problem-generator/wiki/api/ai/openrouter/free-models`: 백엔드가 OpenRouter 공식 `/api/v1/models`를 조회해 무료 text-generation 모델을 반환한다. `:free` 또는 prompt/completion 가격이 모두 0인 모델을 무료로 판정하며 `id`, `name`, `contextLength`, `structuredOutput`만 노출한다. 조회 실패 시 마지막 성공 cache 또는 빈 목록을 반환한다.
+- `POST /problem-generator/wiki/api/questions/generate`: `provider=auto|gemini|openrouter-free|ox-alpha|openrouter:<model-id>`를 받는다. 일반 UI는 API 키를 전송하지 않으며 서버 `GEMINI_API_KEY`/`OPENROUTER_API_KEY`를 사용한다. legacy request key 필드는 관리자·개발 호환용 optional override로만 유지한다.
+- `auto`만 Gemini → OpenRouter 무료 자동 fallback을 허용한다. 명시적으로 고른 provider/model은 실패해도 다른 결과로 바꾸지 않는다. `openrouter-free`는 `openrouter/free`, Ox Alpha는 `stealth/ox-alpha`를 호출한다.
+- 성공 응답은 실제 `provider`, `model`을 반환한다. 키 원문은 응답·DB·로그에 저장하지 않는다.
 - `POST /problem-generator/wiki/api/questions/ab-compare`: 같은 school/grade/exam/twin/types/grammar/passage 계약을 Gemini와 Ox Alpha에 각각 전송하고 provider별 `resultId`, `model`, 검증된 questions를 반환한다. 한 provider 실패 시 다른 결과와 provider별 오류를 반환한다.
-- `POST /problem-generator/wiki/api/questions/ab-evaluations`: `school`, `grade`, `exam`, `twin_id`, `question_type`, 양 provider의 model/result id와 `choice=gemini|ox-alpha|both-revise`를 SQLite에 저장한다.
-- `GET /problem-generator/wiki/api/questions/ab-evaluations?limit=100`: 최근 A/B 평가를 조회한다.
-- Ox Alpha는 OpenRouter OpenAI-compatible chat completions의 기본 모델 `stealth/ox-alpha`를 사용하며 `OX_ALPHA_MODEL`로 override한다. 브라우저에서 OpenRouter를 직접 호출하지 않는다.
+- `POST /problem-generator/wiki/api/questions/ab-evaluations` 및 `GET .../ab-evaluations`: 기존 A/B 평가 저장·조회 계약을 유지한다.
 
 ### ✅ GET /api/problem-generator/materials
 

@@ -5,10 +5,6 @@ import { PassageAnalysis, PassageMemory, generatePassageAnalysis, generatePassag
 
 type Props = { mode: 'memory' | 'analysis'; apiSettings: ApiSettings | null }
 
-const storedGeminiKey = (settings: ApiSettings | null) => {
-  try { return sessionStorage.getItem('f2r_msc_gemini_key')?.trim() || settings?.geminiKey.trim() || '' }
-  catch { return settings?.geminiKey.trim() || '' }
-}
 
 const downloadHtml = (title: string, body: string) => {
   const escapedTitle = title.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character] || character))
@@ -25,7 +21,6 @@ export default function PassageWorkspace({ mode, apiSettings }: Props) {
   const [busy, setBusy] = useState(false)
   const [memory, setMemory] = useState<PassageMemory | null>(null)
   const [analysis, setAnalysis] = useState<PassageAnalysis | null>(null)
-  const key = storedGeminiKey(apiSettings)
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []); event.target.value = ''
@@ -38,11 +33,10 @@ export default function PassageWorkspace({ mode, apiSettings }: Props) {
 
   const generate = async () => {
     if (!source.trim()) { setStatus('영어 지문을 붙여넣거나 파일을 올려 주세요.'); return }
-    if (!key) { setStatus('왼쪽 하단 설정에서 Gemini API 키를 등록해 주세요.'); return }
     setBusy(true); setStatus(mode === 'memory' ? '문장을 나누고 자연스러운 해석을 만드는 중…' : '개요·문장 구조·문법·T/F 문제를 만드는 중…')
     try {
-      if (mode === 'memory') setMemory(await generatePassageMemory({ api_key: key, source_text: source }))
-      else setAnalysis(await generatePassageAnalysis({ api_key: key, source_text: source }))
+      if (mode === 'memory') setMemory(await generatePassageMemory({ api_key: '', source_text: source }))
+      else setAnalysis(await generatePassageAnalysis({ api_key: '', source_text: source }))
       setStatus('완료했습니다. 결과를 확인한 뒤 인쇄하거나 내려받을 수 있습니다.')
     } catch (error) { setStatus(error instanceof Error ? error.message : '지문 작업을 완료하지 못했습니다.') }
     finally { setBusy(false) }
@@ -61,3 +55,4 @@ export default function PassageWorkspace({ mode, apiSettings }: Props) {
     {analysis && <><article className="work-panel"><div className="panel-heading"><div><p className="kicker">PASSAGE GUIDE</p><h2>{analysis.title}</h2></div></div><div className="analysis-overview"><div className="analysis-card"><b>주제</b><p>{analysis.topic}</p></div><div className="analysis-card"><b>요지</b><p>{analysis.mainIdea}</p></div><div className="analysis-card"><b>요약</b><p>{analysis.summary}</p></div></div><div className="dense-sentence-list">{analysis.sentences.map((row, i) => <section key={i}><h3>{i + 1}. {row.slashed}</h3><p><b>① 직독직해</b> {row.directTranslation}</p><p><b>② 정식 해석</b> {row.translation}</p><p><b>③ 문법/구문 가이드</b> {row.grammarGuide}</p></section>)}</div></article><article className="work-panel"><div className="panel-heading"><div><p className="kicker">CONTENT MATCH</p><h2>내용일치 문제</h2></div></div><div className="tf-list">{analysis.tfQuestions.map((q, i) => <div className="analysis-card" key={i}>{i + 1}. <span className="context-chip">{q.language}</span> {q.statement} ( T / F )</div>)}</div><p><b>정답 · {analysis.tfQuestions.map((q, i) => `${i + 1}.${q.answer}`).join(' ')}</b></p></article></>}
   </section>
 }
+

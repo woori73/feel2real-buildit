@@ -1,98 +1,103 @@
-"""Server-side AI provider router. Secrets are accepted per request or read from env only."""
-import json
-import os
-import socket
-import urllib.error
-import urllib.request
+"""Server-side AI router. Secret values never leave this process."""
+import json, os, socket, time, urllib.error, urllib.request
 from dataclasses import dataclass
 from typing import Optional
-
 import prompt_logic as pl
 
-DEFAULT_PROVIDER_TIMEOUT_SECONDS = 90.0
+DEFAULT_PROVIDER_TIMEOUT_SECONDS=90.0
+MODELS_URL='https://openrouter.ai/api/v1/models'
+CHAT_URL='https://openrouter.ai/api/v1/chat/completions'
+FREE_ROUTER='openrouter/free'
+_models_cache=(0.0, [])
 
-
-def provider_timeout_seconds() -> float:
-    try:
-        value = float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS', str(DEFAULT_PROVIDER_TIMEOUT_SECONDS)))
-    except ValueError:
-        value = DEFAULT_PROVIDER_TIMEOUT_SECONDS
-    return max(10.0, min(value, 120.0))
-
+def provider_timeout_seconds():
+    try: value=float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS', DEFAULT_PROVIDER_TIMEOUT_SECONDS))
+    except ValueError: value=DEFAULT_PROVIDER_TIMEOUT_SECONDS
+    return max(10.0,min(value,120.0))
 
 class ProviderError(Exception):
-    def __init__(self, message: str, provider: str, status: Optional[int] = None):
-        super().__init__(message)
-        self.provider = provider
-        self.status = status
-
+    def __init__(self,message,provider,status=None):
+        super().__init__(message); self.provider=provider; self.status=status
 
 @dataclass
 class ProviderResult:
-    text: str
-    provider: str
-    model: str
-    key_source: str
+    text:str
+    provider:str
+    model:str
+    key_source:str
 
+def _server_keys():
+    return os.getenv('GEMINI_API_KEY','').strip(),os.getenv('OPENROUTER_API_KEY','').strip()
 
-def availability() -> dict:
-    return {
-        'defaultProvider': 'gemini',
-        'providers': {
-            'gemini': {'available': bool(os.getenv('GEMINI_API_KEY', '').strip()), 'experimental': False, 'serverKeyConfigured': bool(os.getenv('GEMINI_API_KEY', '').strip())},
-            'ox-alpha': {'available': bool(os.getenv('OPENROUTER_API_KEY', '').strip()), 'experimental': True, 'serverKeyConfigured': bool(os.getenv('OPENROUTER_API_KEY', '').strip()), 'model': os.getenv('OX_ALPHA_MODEL', 'stealth/ox-alpha')},
-        },
-    }
+def _zero(value):
+    try:return float(value)==0
+    except (TypeError,ValueError):return False
 
+def _free(model):
+    pricing=model.get('pricing') or {}
+    return str(model.get('id','')).endswith(':free') or (_zero(pricing.get('prompt')) and _zero(pricing.get('completion')))
 
-def _openrouter(key: str, system: str, prompt: str, schema: Optional[dict], temperature: float) -> ProviderResult:
-    model = os.getenv('OX_ALPHA_MODEL', 'stealth/ox-alpha').strip() or 'stealth/ox-alpha'
-    user_prompt = prompt
-    if schema:
-        user_prompt += '\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n' + json.dumps(schema, ensure_ascii=False)
-    body = json.dumps({'model': model, 'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user_prompt}], 'temperature': temperature}, ensure_ascii=False).encode('utf-8')
-    request = urllib.request.Request('https://openrouter.ai/api/v1/chat/completions', data=body, method='POST', headers={'Authorization': f'Bearer {key}', 'Content-Type': 'application/json', 'HTTP-Referer': 'https://feel2real.com', 'X-Title': 'BuildIt Wiki'})
+def _normalized(model):
+    architecture=model.get('architecture') or {}; supported=model.get('supported_parameters') or []
+    return {'id':str(model.get('id','')),'name':str(model.get('name') or model.get('id') or ''),'contextLength':model.get('context_length'),'textGeneration':not architecture.get('output_modalities') or 'text' in architecture.get('output_modalities',[]),'structuredOutput':'response_format' in supported or 'structured_outputs' in supported,'free':True}
+
+def openrouter_free_models(force=False):
+    """Dynamic free text models. A stale successful cache is the graceful fallback."""
+    global _models_cache
+    now=time.time()
+    if not force and _models_cache[1] and now-_models_cache[0]<900:return _models_cache[1]
+    request=urllib.request.Request(MODELS_URL,headers={'Accept':'application/json','User-Agent':'BuildIt-Wiki/1.0'})
     try:
-        with urllib.request.urlopen(request, timeout=provider_timeout_seconds()) as response:
-            payload = json.loads(response.read().decode('utf-8'))
-        text = payload.get('choices', [{}])[0].get('message', {}).get('content', '')
-        if isinstance(text, list):
-            text = ''.join(item.get('text', '') for item in text if isinstance(item, dict))
-        if not str(text).strip():
-            raise ProviderError('OpenRouter 응답 내용이 없습니다.', 'ox-alpha')
-        return ProviderResult(str(text), 'ox-alpha', payload.get('model') or model, 'client')
-    except urllib.error.HTTPError as exc:
-        raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})', 'ox-alpha', exc.code) from exc
-    except (TimeoutError, socket.timeout) as exc:
-        raise ProviderError('Ox Alpha 응답 시간이 초과되었습니다. 다시 시도하거나 Gemini로 전환해 주세요.', 'ox-alpha', 504) from exc
-    except urllib.error.URLError as exc:
-        if isinstance(exc.reason, (TimeoutError, socket.timeout)):
-            raise ProviderError('Ox Alpha 응답 시간이 초과되었습니다. 다시 시도하거나 Gemini로 전환해 주세요.', 'ox-alpha', 504) from exc
-        raise ProviderError('Ox Alpha 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.', 'ox-alpha', 502) from exc
-    except json.JSONDecodeError as exc:
-        raise ProviderError('Ox Alpha 응답을 해석하지 못했습니다. 다시 시도해 주세요.', 'ox-alpha', 502) from exc
+        with urllib.request.urlopen(request,timeout=min(provider_timeout_seconds(),20)) as response:
+            payload=json.loads(response.read().decode())
+        models=[_normalized(item) for item in payload.get('data',[]) if _free(item)]
+        models=sorted((m for m in models if m['id'] and m['textGeneration']),key=lambda m:(not m['structuredOutput'],-(m['contextLength'] or 0),m['name']))
+        _models_cache=(now,models);return models
+    except Exception:return _models_cache[1]
 
+def availability():
+    gemini,openrouter=_server_keys()
+    return {'defaultProvider':'auto','providers':{
+      'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},
+      'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},
+      'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},
+      'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')}}}
 
-def generate(provider: str, system: str, prompt: str, *, schema: Optional[dict] = None, temperature: float = 0.25, gemini_key: str = '', openrouter_key: str = '') -> ProviderResult:
-    requested = provider if provider in ('gemini', 'ox-alpha') else 'auto'
-    gemini = gemini_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
-    openrouter = openrouter_key.strip() or os.getenv('OPENROUTER_API_KEY', '').strip()
-    candidates = ['gemini', 'ox-alpha'] if requested == 'auto' else [requested]
-    last_error = None
+def _openrouter(key,model,provider,system,prompt,schema,temperature):
+    if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
+    body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':prompt}],'temperature':temperature}
+    if schema:body['response_format']={'type':'json_object'}
+    request=urllib.request.Request(CHAT_URL,data=json.dumps(body,ensure_ascii=False).encode(),method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
+    try:
+        with urllib.request.urlopen(request,timeout=provider_timeout_seconds()) as response:payload=json.loads(response.read().decode())
+        text=payload.get('choices',[{}])[0].get('message',{}).get('content','')
+        if isinstance(text,list):text=''.join(x.get('text','') for x in text if isinstance(x,dict))
+        if not str(text).strip():raise ProviderError('OpenRouter 응답 내용이 없습니다.',provider)
+        return ProviderResult(str(text),provider,payload.get('model') or model,'server')
+    except urllib.error.HTTPError as exc:raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})',provider,exc.code) from exc
+    except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 다시 시도해 주세요.',provider,504) from exc
+    except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
+    except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502) from exc
+
+def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',openrouter_key=''):
+    """Explicit models never fallback; auto alone may try another provider."""
+    requested=provider or 'auto'; gemini_server,openrouter_server=_server_keys()
+    gemini=gemini_key.strip() or gemini_server; openrouter=openrouter_key.strip() or openrouter_server
+    candidates=['gemini','openrouter-free'] if requested=='auto' else [requested]; last_error=None
     for candidate in candidates:
         try:
-            if candidate == 'gemini' and gemini:
-                text = pl.call_gemini_structured(gemini, system, prompt, schema, temperature) if schema else pl.call_gemini_text(gemini, system, prompt, temperature)
-                return ProviderResult(text, 'gemini', 'gemini-flash', 'client' if gemini_key.strip() else 'server')
-            if candidate == 'ox-alpha' and openrouter:
-                result = _openrouter(openrouter, system, prompt, schema, temperature)
-                result.key_source = 'client' if openrouter_key.strip() else 'server'
-                return result
+            if candidate=='gemini':
+                if not gemini:raise ProviderError('Gemini 서버 키가 설정되지 않았습니다.',candidate)
+                text=pl.call_gemini_structured(gemini,system,prompt,schema,temperature) if schema else pl.call_gemini_text(gemini,system,prompt,temperature)
+                return ProviderResult(text,'gemini','gemini-flash','client' if gemini_key.strip() else 'server')
+            if candidate in ('ox-alpha','openrouter-free') or candidate.startswith('openrouter:'):
+                if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.',candidate)
+                model=os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha') if candidate=='ox-alpha' else FREE_ROUTER if candidate=='openrouter-free' else candidate.removeprefix('openrouter:')
+                result=_openrouter(openrouter,model,candidate,system,prompt,schema,temperature)
+                result.key_source='client' if openrouter_key.strip() else 'server';return result
+            raise ProviderError('지원하지 않는 AI provider입니다.',candidate,400)
         except Exception as exc:
-            last_error = exc
-            if requested == 'gemini':
-                raise
-    if last_error:
-        raise last_error
-    raise ProviderError('선택한 AI provider에 사용할 client/server 키가 없습니다.', requested)
+            last_error=exc
+            if requested!='auto':raise
+    raise last_error or ProviderError('사용 가능한 서버 AI credential이 없습니다.',requested)
 

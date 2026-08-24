@@ -274,6 +274,12 @@ def ai_providers():
     return ai_router.availability()
 
 
+@app.get('/api/ai/openrouter/free-models')
+def openrouter_models():
+    """Public-safe model metadata only; the OpenRouter credential remains server-side."""
+    return {'models': ai_router.openrouter_free_models(), 'autoModel': ai_router.FREE_ROUTER}
+
+
 @app.get('/api/runs')
 def list_runs():
     with get_db() as conn:
@@ -512,7 +518,7 @@ class AssistantRequest(BaseModel):
     message: str
     api_key: str = ''
     openrouter_api_key: str = ''
-    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'auto'
+    provider: str = 'auto'
     state: AssistantState = Field(default_factory=AssistantState)
     history: list[AssistantMessage] = Field(default_factory=list)
     attachments: list[AssistantAttachment] = Field(default_factory=list)
@@ -740,7 +746,7 @@ def _handle_gemini_error(exc):
 class NewQuestionRequest(BaseModel):
     api_key: str = ''
     openrouter_api_key: str = ''
-    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'gemini'
+    provider: str = 'auto'
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -843,7 +849,7 @@ def generate_questions(payload: NewQuestionRequest):
 
 
 class AbComparisonRequest(NewQuestionRequest):
-    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'gemini'
+    provider: str = 'auto'
 
 
 def _ab_generate(provider: str, payload: AbComparisonRequest, twin: dict) -> dict:
@@ -912,7 +918,7 @@ def list_ab_evaluations(limit: int = 100):
 class TransformQuestionRequest(BaseModel):
     api_key: str = ''
     openrouter_api_key: str = ''
-    provider: Literal['auto', 'gemini', 'ox-alpha'] = 'gemini'
+    provider: str = 'auto'
     twin_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
@@ -1491,12 +1497,12 @@ def delete_student(student_id: int):
 # ==================================================================================
 
 class OcrCleanRequest(BaseModel):
-    api_key: str
+    api_key: str = ''
     raw_text: str
 
 
 class PassageRequest(BaseModel):
-    api_key: str
+    api_key: str = ''
     source_text: str
 
 
@@ -1873,9 +1879,9 @@ PASSAGE_ANALYSIS_SCHEMA = {
 
 
 def _passage_source(payload: PassageRequest) -> tuple[str, str]:
-    key, source = payload.api_key.strip(), payload.source_text.strip()
+    key, source = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip(), payload.source_text.strip()
     if not key:
-        raise HTTPException(status_code=400, detail='Gemini API 키를 설정해 주세요.')
+        raise HTTPException(status_code=503, detail='Gemini 서버 연결이 설정되지 않았습니다.')
     if not source:
         raise HTTPException(status_code=400, detail='분석할 영어 지문이 없습니다.')
     return key, source[:30000]
@@ -1912,9 +1918,9 @@ def create_passage_analysis(payload: PassageRequest):
 
 @app.post('/api/ocr/clean-text')
 def clean_ocr_text(payload: OcrCleanRequest):
-    key = payload.api_key.strip()
+    key = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
     if not key:
-        raise HTTPException(status_code=400, detail='Gemini API 키가 설정되어 있지 않습니다. 왼쪽 하단 ⚙ 설정에서 Gemini API 키를 먼저 등록해 주세요.')
+        raise HTTPException(status_code=503, detail='Gemini 서버 연결이 설정되지 않았습니다.')
     raw_text = payload.raw_text.strip()
     if not raw_text:
         raise HTTPException(status_code=400, detail='정리할 추출 텍스트가 없습니다.')

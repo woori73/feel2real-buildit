@@ -46,6 +46,28 @@ class AiRouterTest(unittest.TestCase):
         self.assertNotIn('do-not-return', body)
         self.assertNotIn('also-secret', body)
 
+    def test_free_models_use_pricing_metadata_and_return_no_secret(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'data': [
+            {'id': 'vendor/zero', 'name': 'Zero', 'pricing': {'prompt': '0', 'completion': '0'}, 'context_length': 131072,
+             'architecture': {'output_modalities': ['text']}, 'supported_parameters': ['response_format']},
+            {'id': 'vendor/paid', 'pricing': {'prompt': '0.1', 'completion': '0'}},
+            {'id': 'vendor/tagged:free', 'pricing': {'prompt': '1', 'completion': '1'}, 'architecture': {'output_modalities': ['text']}},
+        ]}).encode()
+        ai_router._models_cache = (0.0, [])
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'never-return'}), patch('urllib.request.urlopen', return_value=response):
+            body = json.dumps(main.openrouter_models())
+        self.assertIn('vendor/zero', body)
+        self.assertIn('vendor/tagged:free', body)
+        self.assertNotIn('vendor/paid', body)
+        self.assertNotIn('never-return', body)
+
+    def test_explicit_free_model_does_not_fallback(self):
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-key', 'OPENROUTER_API_KEY': 'router-key'}), patch('urllib.request.urlopen', side_effect=TimeoutError()), patch.object(ai_router.pl, 'call_gemini_text') as gemini:
+            with self.assertRaises(ai_router.ProviderError):
+                ai_router.generate('openrouter:vendor/model:free', 'system', 'hello')
+        gemini.assert_not_called()
+
     def test_missing_openrouter_key_is_unavailable_and_auto_uses_gemini(self):
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-key', 'OPENROUTER_API_KEY': ''}, clear=False), patch.object(ai_router.pl, 'call_gemini_text', return_value='Gemini fallback'):
             self.assertFalse(ai_router.availability()['providers']['ox-alpha']['available'])
@@ -85,4 +107,5 @@ class AiRouterTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 
