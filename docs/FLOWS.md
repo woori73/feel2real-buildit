@@ -2,6 +2,10 @@
 
 > 화면·API·상태 흐름. 도메인 스키마: [DOMAIN.md](DOMAIN.md) · API 계약: [API.md](API.md)
 
+## BuildIt Wiki 학교 프린트 복원
+
+`사진/PDF 업로드 → 브라우저 Tesseract 또는 PDF 텍스트 레이어로 페이지별 원문 추출 → 추출 텍스트를 즉시 큰 contentEditable HTML로 표시 → Qwen qwen/qwen3.7-flash에 원본 이미지와 추출 텍스트를 함께 전달 → semantic HTML 복원 → 편집/patch/Undo/HTML+canonical JSON 저장/파이널 연결` 순서다. Qwen 복원이 실패해도 1차 추출 텍스트와 페이지 linkage를 유지해 편집과 부분 patch를 계속할 수 있다.
+
 ## 5. 기능별 플로우
 
 > **§5.0** 은 1차 작업의 핵심 플로우. **§5.1 ~ §5.5**는 현재 구현된 SSR/API 흐름과 후속 확장 포인트를 함께 기록한다.
