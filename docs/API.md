@@ -1,5 +1,11 @@
 # API 명세
 
+## BuildIt Wiki 학교 프린트·문제 모델
+
+- `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.
+- `POST /problem-generator/wiki/api/school-prints/reconstruct`: 여러 사진 페이지와 OCR/source metadata를 받아 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다.
+- `POST /problem-generator/wiki/api/school-prints/patch-html`: 현재 HTML/canonical JSON과 수정 지시를 받아 지적된 부분만 수정한다.
+
 > 현재 프론트엔드는 Thymeleaf SSR 중심이지만, 향후 React 클라이언트와 Python 서버 연동을 고려해 이 문서를 **API 계약의 단일 기준 문서**로 유지한다.
 
 ## 0. 운영 규칙
@@ -3226,3 +3232,4 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - OpenRouter 단일 호출은 `AI_PROVIDER_TIMEOUT_SECONDS`(기본 90초, 10~120초 범위)로 제한한다. 명시적 `ox-alpha` 선택은 Gemini로 fallback하지 않으며, `auto`에서만 Gemini → Ox Alpha 순 fallback을 허용한다.
 - AI 실패 응답은 `detail: { message, provider, status }` JSON으로 정규화한다. 429/502/504의 게이트웨이 HTML이나 외부 provider 원문을 브라우저에 전달하지 않는다.
 - 문제 생성 성공 응답과 Assistant 응답은 실제 `provider`, `model`을 포함한다.
+

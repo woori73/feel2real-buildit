@@ -1961,6 +1961,60 @@ def clean_ocr_text(payload: OcrCleanRequest):
 
 
 # ==================================================================================
+# 학교 프린트 사진 → 구조화 JSON + 편집 가능 HTML
+# ==================================================================================
+class SchoolPrintPage(BaseModel):
+    page: int
+    name: str
+    ocr_text: str = ''
+    image_data_url: str = ''
+
+class SchoolPrintReconstructRequest(BaseModel):
+    model: str = ai_router.QWEN_MODEL
+    metadata: dict = Field(default_factory=dict)
+    pages: list[SchoolPrintPage]
+
+class SchoolPrintPatchRequest(BaseModel):
+    model: str = ai_router.QWEN_MODEL
+    instruction: str
+    html: str
+    canonical_json: Optional[dict] = None
+
+def _school_print_json(text: str) -> dict:
+    try:return json.loads(re.sub(r'^\s*```(?:json)?|```\s*$', '', text.strip(), flags=re.I))
+    except (json.JSONDecodeError, TypeError):raise HTTPException(status_code=502, detail='AI 응답을 구조화 JSON으로 해석하지 못했습니다.')
+
+@app.post('/api/school-prints/reconstruct')
+def reconstruct_school_print(payload: SchoolPrintReconstructRequest):
+    if not payload.pages:raise HTTPException(status_code=400, detail='복원할 페이지가 없습니다.')
+    system='''학교 영어 프린트를 원문 그대로 복원한다. 창작·요약·변형하지 않는다. 제목, A/B/C 섹션, 문항번호, 국가/국적 4열 표, 영영풀이 박스, 밑줄, 빈칸, 답안선, 보기와 강조를 실제 편집 가능한 semantic HTML(table, section, u, span.blank, div.answer-line, div.definition-box)로 만든다. background-image와 원본 이미지 삽입은 금지한다. 판독 불가능한 곳은 class="review-required"와 [검토 필요]로 표시한다. {"html":string,"canonicalJson":object} JSON만 반환한다. canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/version/editedHtml/model을 포함한다.'''
+    content=[{'type':'text','text':'metadata: '+json.dumps(payload.metadata,ensure_ascii=False)}]
+    for page in payload.pages:
+        content.append({'type':'text','text':f'PAGE {page.page} / {page.name}\nOCR:\n{page.ocr_text}'})
+        if page.image_data_url.startswith('data:image/'):content.append({'type':'image_url','image_url':{'url':page.image_data_url}})
+    try:ai=ai_router.generate_multimodal(payload.model,system,content)
+    except Exception as exc:_handle_gemini_error(exc)
+    result=_school_print_json(ai.text);html=str(result.get('html') or '').strip()
+    if not html:raise HTTPException(status_code=502,detail='선택한 모델이 HTML을 반환하지 않았습니다.')
+    canonical=result.get('canonicalJson') if isinstance(result.get('canonicalJson'),dict) else {}
+    canonical.update({'source':canonical.get('source') or {**payload.metadata,'fileNames':[p.name for p in payload.pages]},'sourceLinkage':canonical.get('sourceLinkage') or {'pageCount':len(payload.pages),'uploadedAt':datetime.now().isoformat()},'version':int(canonical.get('version') or 1),'editedHtml':html,'model':ai.model})
+    return {'html':html,'canonicalJson':canonical,'provider':ai.provider,'model':ai.model}
+
+@app.post('/api/school-prints/patch-html')
+def patch_school_print_html(payload: SchoolPrintPatchRequest):
+    if not payload.instruction.strip() or not payload.html.strip():raise HTTPException(status_code=400,detail='현재 HTML과 수정 지시가 필요합니다.')
+    system='''학교 프린트 HTML 부분 수정기다. 사용자가 지적한 부분만 고치고 다른 문구·순서·표·스타일은 바꾸지 않는다. 전체 재작성과 내용 창작, background-image를 금지한다. {"html":string,"canonicalJson":object} JSON만 반환하고 blocks/version/editedHtml을 동기화한다.'''
+    request=json.dumps({'instruction':payload.instruction,'currentHtml':payload.html,'canonicalJson':payload.canonical_json or {}},ensure_ascii=False)
+    try:ai=ai_router.generate('qwen',system,request,temperature=.1)
+    except Exception as exc:_handle_gemini_error(exc)
+    result=_school_print_json(ai.text);html=str(result.get('html') or '').strip()
+    if not html:raise HTTPException(status_code=502,detail='수정된 HTML이 비어 있습니다.')
+    canonical=result.get('canonicalJson') if isinstance(result.get('canonicalJson'),dict) else (payload.canonical_json or {})
+    canonical.update({'version':int(canonical.get('version') or 1)+1,'editedHtml':html,'model':ai.model})
+    return {'html':html,'canonicalJson':canonical,'provider':ai.provider,'model':ai.model}
+
+
+# ==================================================================================
 # 학생 오답 관리 — 사진/PDF에서 브라우저 OCR + Gemini로 정리한 "최종 추출 텍스트"를
 # 사용자가 화면에서 확인·수정한 뒤 저장한다. 이 저장 단계에서는 더 이상 AI를 호출하지
 # 않는다(문제2, 6차): 예전에는 저장 버튼을 누르면 서버가 다시 한 번 Gemini를 호출해
@@ -2138,4 +2192,5 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
     path = export_dir / 'school-prints-combined.docx'; doc.save(path)
     safe = re.sub(r'[\\/:*?"<>|]', '_', title) or '학교_프린트'
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f'{safe}.docx')
+
 

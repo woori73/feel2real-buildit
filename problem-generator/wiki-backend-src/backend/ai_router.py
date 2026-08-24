@@ -10,6 +10,7 @@ CHAT_URL='https://openrouter.ai/api/v1/chat/completions'
 FREE_ROUTER='openrouter/free'
 QWEN_PROVIDER='openrouter'
 QWEN_MODEL='qwen/qwen3.7-flash'
+GEMINI_PROBLEM_MODEL='google/gemini-3.7-flash'
 LUNA_MODEL='gpt-5.6-luna'
 _models_cache=(0.0, [])
 
@@ -93,6 +94,21 @@ def _openrouter(key,model,provider,system,prompt,schema,temperature):
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
     except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502) from exc
 
+def generate_multimodal(model,system,content,temperature=.15):
+    """Server-key OpenRouter vision call for school-print reconstruction; never falls back."""
+    _,openrouter=_server_keys()
+    if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.','openrouter',503)
+    body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':content}],'temperature':temperature}
+    request=urllib.request.Request(CHAT_URL,data=json.dumps(body,ensure_ascii=False).encode(),method='POST',headers={'Authorization':f'Bearer {openrouter}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
+    try:
+        with urllib.request.urlopen(request,timeout=provider_timeout_seconds()) as response:payload=json.loads(response.read().decode())
+        text=payload.get('choices',[{}])[0].get('message',{}).get('content','')
+        if not str(text).strip():raise ProviderError('OpenRouter 응답 내용이 없습니다.','openrouter')
+        return ProviderResult(str(text),payload.get('provider') or 'openrouter',payload.get('model') or model,'server')
+    except urllib.error.HTTPError as exc:raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})','openrouter',exc.code) from exc
+    except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 다시 시도해 주세요.','openrouter',504) from exc
+    except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.','openrouter',502) from exc
+
 def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',openrouter_key='',allow_noncritical_fallback=False):
     """Use server-side Qwen by default.
 
@@ -122,4 +138,5 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
             last_error=exc
             if requested!='auto':raise
     raise last_error or ProviderError('사용 가능한 서버 AI credential이 없습니다.',requested)
+
 
