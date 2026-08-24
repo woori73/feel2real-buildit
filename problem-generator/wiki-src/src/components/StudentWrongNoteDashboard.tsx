@@ -10,13 +10,6 @@ const grades = ['1학년', '2학년', '3학년']
 const semesters = ['1학기', '2학기']
 const examTypes = ['중간', '기말']
 
-const getStoredGeminiKey = (apiSettings: ApiSettings | null): string => {
-  try {
-    const msc = sessionStorage.getItem('f2r_msc_gemini_key')
-    if (msc && msc.trim()) return msc.trim()
-  } catch { /* ignore */ }
-  return (apiSettings?.geminiKey || '').trim()
-}
 
 const downloadBlob = (filename: string, blob: Blob) => {
   const url = URL.createObjectURL(blob)
@@ -52,7 +45,6 @@ export default function StudentWrongNoteDashboard({ apiSettings, mode = 'noteboo
   const [exporting, setExporting] = useState(false)
 
   const selected = students.find(student => student.id === selectedId) || null
-  const geminiKey = getStoredGeminiKey(apiSettings)
   const loadStudents = () => { fetchStudents().then(setStudents).catch(() => setError('학생 목록을 불러오지 못했습니다.')) }
   useEffect(() => { loadStudents() }, [])
   const loadNotes = (studentId: number) => {
@@ -97,17 +89,15 @@ export default function StudentWrongNoteDashboard({ apiSettings, mode = 'noteboo
       const extracted = await extractFiles(chosen, message => setExtractStatus(message))
       setPages(extracted)
       const raw = joinExtractedPages(extracted)
-      if (geminiKey) {
+      {
         setExtractStatus('Gemini로 원본 시험지 구조에 맞게 정리하는 중…')
         try {
-          const cleaned = await cleanOcrText({ api_key: geminiKey, raw_text: raw })
+          const cleaned = await cleanOcrText({ api_key: '', raw_text: raw })
           setFinalText(cleaned || raw)
         } catch (err) {
           setFinalText(raw)
           setError(err instanceof Error ? `AI 정리에 실패해 1차 추출 텍스트를 그대로 표시합니다: ${err.message}` : 'AI 정리에 실패해 1차 추출 텍스트를 그대로 표시합니다.')
         }
-      } else {
-        setFinalText(raw)
       }
       setExtractStatus(`추출 완료 · ${extracted.length}개 항목 · 아래에서 확인/수정 후 저장하세요.`)
     } catch (err) {
@@ -203,3 +193,4 @@ export default function StudentWrongNoteDashboard({ apiSettings, mode = 'noteboo
     {showIntegratePreview && <article className="work-panel"><div className="panel-heading"><div><p className="kicker">INTEGRATED REVIEW SHEET</p><h2>선택 오답 통합 미리보기</h2><p>선택한 순서대로 하나의 복습 문제지를 구성합니다. 확인 후 오피스 2007로 내보낼 수 있습니다.</p></div><button className="secondary-button" onClick={() => setShowIntegratePreview(false)}>닫기</button></div><div className="metadata-grid" style={{ gridTemplateColumns: '1fr' }}><label>문제지 제목<input value={integrateTitle} onChange={event => setIntegrateTitle(event.target.value)} /></label></div><div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="exam-meta-box"><div className="meta-row"><span>학생</span><b>{selected?.name}</b></div><div className="meta-row"><span>학교 · 학년</span><b>{selected?.school || '학교 미입력'} · {selected?.grade || '학년 미입력'}</b></div><div className="meta-row"><span>문항 수</span><b>{selectedNotesOrdered.length}개</b></div></div><div className="question-list">{selectedNotesOrdered.map((note, index) => <div className="q-card q-mc" key={note.id}><div className="q-head"><span className="q-num">{index + 1}.</span>{note.question_type && <span className="tag-multi" style={{ background: '#397ce0' }}>{note.question_type}</span>}</div><div style={{ whiteSpace: 'pre-wrap' }}><Markup as="div" text={note.wrong_text} /></div>{note.answer_text && <div className="inline-answer">✅ 정답: {note.answer_text}</div>}</div>)}</div></div></div><button className="primary-action" disabled={exporting} onClick={() => void exportIntegrated()}>{exporting ? '내보내는 중...' : '오피스 2007 내보내기'}</button></article>}
   </section>
 }
+

@@ -88,10 +88,11 @@ class AssistantAgentTest(unittest.TestCase):
             request = self._request('압구정중3 문제 제작을 하려면')
             request.api_key = 'browser-key'
             result = main.assistant_chat(request)
-        self.assertEqual('gemini', result['model'])
+        self.assertEqual('gemini-flash', result['model'])
         self.assertEqual('browser-key', gemini.call_args.args[0])
         self.assertEqual('확인된 기억에 맞춘 실제 Agent 응답입니다.', result['text'])
 
 
 if __name__ == '__main__':
     unittest.main()
+
