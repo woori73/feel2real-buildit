@@ -58,6 +58,7 @@ class FrontendContractTest(unittest.TestCase):
         for contract in ('multiple', 'contentEditable', 'HTML 저장·파이널 연결', 'HTML 다운로드', 'f2r_wrong_review_materials'):
             self.assertIn(contract, wrong)
         self.assertIn('data-source-type="student-wrong-review"', app)
+        self.assertNotIn('geminiKey', wrong)
 
     def test_passage_workspace_keeps_assistant_and_proxy_contract(self):
         source = (ROOT / 'components' / 'PassageWorkspace.tsx').read_text(encoding='utf-8')
@@ -85,6 +86,8 @@ class FrontendContractTest(unittest.TestCase):
         for contract in ('multiple', 'previewUrl', "model:'qwen/qwen3.7-flash'", "localStorage.setItem('f2r_school_prints'", 'window.dispatchEvent', 'sourceLinkage'):
             self.assertIn(contract, source)
         self.assertNotIn('backgroundImage', source)
+        for contract in ('1차 원문 추출 완료', '2차 HTML 복원 완료', '1차 추출 완료 · HTML 구조 복원 필요', "restorationStatus:'extracted-only'", 'extractedText', 'previewDataUrl'):
+            self.assertIn(contract, source)
 
 
 if __name__ == '__main__':

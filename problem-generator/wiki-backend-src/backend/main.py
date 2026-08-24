@@ -1987,17 +1987,23 @@ def _school_print_json(text: str) -> dict:
 @app.post('/api/school-prints/reconstruct')
 def reconstruct_school_print(payload: SchoolPrintReconstructRequest):
     if not payload.pages:raise HTTPException(status_code=400, detail='복원할 페이지가 없습니다.')
-    system='''학교 영어 프린트를 원문 그대로 복원한다. 창작·요약·변형하지 않는다. 제목, A/B/C 섹션, 문항번호, 국가/국적 4열 표, 영영풀이 박스, 밑줄, 빈칸, 답안선, 보기와 강조를 실제 편집 가능한 semantic HTML(table, section, u, span.blank, div.answer-line, div.definition-box)로 만든다. background-image와 원본 이미지 삽입은 금지한다. 판독 불가능한 곳은 class="review-required"와 [검토 필요]로 표시한다. {"html":string,"canonicalJson":object} JSON만 반환한다. canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/version/editedHtml/model을 포함한다.'''
+    system='''학교 영어 프린트 2단계 복원기의 2차 HTML 복원 단계다. 각 PAGE의 OCR TEXT는 이미 브라우저 Tesseract/PDF 텍스트 레이어로 확보한 원문 내용의 기준(source of truth)이고, 함께 제공된 원본 이미지는 배치와 시각 구조의 기준이다. OCR TEXT의 문제·문장·보기·정답을 창작·요약·변형·누락하지 않는다. 이미지에서 제목, A/B/C 섹션, 문항번호, 국가/국적 4열 표, 영영풀이 박스, 밑줄, 빈칸, 답안선, 보기와 강조를 확인해 실제 편집 가능한 semantic HTML(table, thead, tbody, section, u, span.blank, div.answer-line, div.definition-box)로 재구성한다. background-image, 원본 이미지 삽입, 캔버스 기반 가짜 복원은 금지한다. 판독 불가능한 곳은 원문을 유지하고 class="review-required"로 표시한다. {"html":string,"canonicalJson":object} JSON만 반환한다. canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/restorationStatus/restorationVersion/version/editedHtml/model을 포함한다.'''
     content=[{'type':'text','text':'metadata: '+json.dumps(payload.metadata,ensure_ascii=False)}]
     for page in payload.pages:
-        content.append({'type':'text','text':f'PAGE {page.page} / {page.name}\nOCR:\n{page.ocr_text}'})
+        content.append({'type':'text','text':f'PAGE {page.page} / {page.name}\nOCR TEXT (CONTENT SOURCE OF TRUTH):\n{page.ocr_text}'})
         if page.image_data_url.startswith('data:image/'):content.append({'type':'image_url','image_url':{'url':page.image_data_url}})
     try:ai=ai_router.generate_multimodal(payload.model,system,content)
     except Exception as exc:_handle_gemini_error(exc)
     result=_school_print_json(ai.text);html=str(result.get('html') or '').strip()
     if not html:raise HTTPException(status_code=502,detail='선택한 모델이 HTML을 반환하지 않았습니다.')
     canonical=result.get('canonicalJson') if isinstance(result.get('canonicalJson'),dict) else {}
-    canonical.update({'source':canonical.get('source') or {**payload.metadata,'fileNames':[p.name for p in payload.pages]},'sourceLinkage':canonical.get('sourceLinkage') or {'pageCount':len(payload.pages),'uploadedAt':datetime.now().isoformat()},'version':int(canonical.get('version') or 1),'editedHtml':html,'model':ai.model})
+    extracted_text=[{'page':p.page,'sourceName':p.name,'text':p.ocr_text} for p in payload.pages]
+    source={**payload.metadata,'fileNames':[p.name for p in payload.pages]}
+    source.update(canonical.get('source') if isinstance(canonical.get('source'),dict) else {})
+    canonical_pages=canonical.get('pages') if isinstance(canonical.get('pages'),list) else []
+    by_page={item.get('page'):item for item in canonical_pages if isinstance(item,dict)}
+    canonical_pages=[{**by_page.get(p.page,{}),'page':p.page,'sourceName':p.name,'extractedText':p.ocr_text,'sections':by_page.get(p.page,{}).get('sections',[])} for p in payload.pages]
+    canonical.update({'source':source,'pages':canonical_pages,'extractedText':extracted_text,'sourceLinkage':canonical.get('sourceLinkage') or {'pageCount':len(payload.pages),'uploadedAt':datetime.now().isoformat()},'restorationStatus':'structured','restorationVersion':2,'version':int(canonical.get('version') or 1),'editedHtml':html,'model':ai.model})
     return {'html':html,'canonicalJson':canonical,'provider':ai.provider,'model':ai.model}
 
 @app.post('/api/school-prints/patch-html')

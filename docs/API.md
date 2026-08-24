@@ -3,7 +3,7 @@
 ## BuildIt Wiki 학교 프린트·문제 모델
 
 - `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.
-- `POST /problem-generator/wiki/api/school-prints/reconstruct`: 여러 사진 페이지와 OCR/source metadata를 받아 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다.
+- `POST /problem-generator/wiki/api/school-prints/reconstruct`: 브라우저 Tesseract/PDF 텍스트 레이어로 1차 추출한 페이지별 `ocr_text`와 각 원본 `image_data_url`을 함께 받아 Qwen `qwen/qwen3.7-flash`로 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다. `canonicalJson`은 source/page linkage, 페이지별 `extractedText`, `editedHtml`, `restorationStatus`, `restorationVersion`을 보존한다. 2차 실패 시 프론트는 API 오류를 받아 이미 확보한 1차 텍스트를 편집 HTML로 유지한다.
 - `POST /problem-generator/wiki/api/school-prints/patch-html`: 현재 HTML/canonical JSON과 수정 지시를 받아 지적된 부분만 수정한다.
 
 > 현재 프론트엔드는 Thymeleaf SSR 중심이지만, 향후 React 클라이언트와 Python 서버 연동을 고려해 이 문서를 **API 계약의 단일 기준 문서**로 유지한다.
