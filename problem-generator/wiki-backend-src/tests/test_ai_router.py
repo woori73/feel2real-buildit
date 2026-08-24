@@ -85,6 +85,17 @@ class AiRouterTest(unittest.TestCase):
         self.assertEqual(('openrouter', 'qwen/qwen3.7-flash-202608', 'Qwen 응답', 'server'), (result.provider, result.model, result.text, result.key_source))
         self.assertEqual(ai_router.QWEN_MODEL, json.loads(call.call_args.args[0].data)['model'])
 
+    def test_structured_qwen_uses_strict_json_schema(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'model': 'qwen/qwen3.7-flash', 'choices': [{'message': {'content': '{"ok":true}'}}]}).encode()
+        schema = {'type': 'object', 'properties': {'ok': {'type': 'boolean'}}, 'required': ['ok']}
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch('urllib.request.urlopen', return_value=response) as call:
+            ai_router.generate('auto', 'system', 'hello', schema=schema)
+        response_format = json.loads(call.call_args.args[0].data)['response_format']
+        self.assertEqual('json_schema', response_format['type'])
+        self.assertTrue(response_format['json_schema']['strict'])
+        self.assertEqual(schema, response_format['json_schema']['schema'])
+
     def test_core_auto_does_not_fallback_to_free_model_when_qwen_fails(self):
         with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch.object(ai_router, '_openrouter', side_effect=ai_router.ProviderError('failed', 'openrouter')) as call:
             with self.assertRaises(ai_router.ProviderError):
