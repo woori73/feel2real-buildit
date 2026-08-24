@@ -85,6 +85,31 @@ class AiRouterTest(unittest.TestCase):
         self.assertEqual(('openrouter', 'qwen/qwen3.7-flash-202608', 'Qwen 응답', 'server'), (result.provider, result.model, result.text, result.key_source))
         self.assertEqual(ai_router.QWEN_MODEL, json.loads(call.call_args.args[0].data)['model'])
 
+    def test_question_tasks_use_gemini_37_flash_and_report_actual_metadata(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'provider': 'Google AI Studio', 'model': ai_router.GEMINI_QUESTION_MODEL, 'choices': [{'message': {'content': '{"questions":[]}'}}]}).encode()
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch('urllib.request.urlopen', return_value=response) as call:
+            generated = ai_router.generate_for_task('digital-twin-generate', 'system', 'prompt')
+            transformed = ai_router.generate_for_task('question-transform', 'system', 'prompt')
+        self.assertEqual(('Google AI Studio', ai_router.GEMINI_QUESTION_MODEL), (generated.provider, generated.model))
+        self.assertEqual(ai_router.GEMINI_QUESTION_MODEL, transformed.model)
+        self.assertEqual([ai_router.GEMINI_QUESTION_MODEL, ai_router.GEMINI_QUESTION_MODEL], [json.loads(item.args[0].data)['model'] for item in call.call_args_list])
+
+    def test_material_task_stays_on_qwen(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'model': ai_router.QWEN_MODEL, 'choices': [{'message': {'content': '정리'}}]}).encode()
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch('urllib.request.urlopen', return_value=response) as call:
+            result = ai_router.generate_for_task('school-print-html', 'system', 'prompt')
+        self.assertEqual(ai_router.QWEN_MODEL, result.model)
+        self.assertEqual(ai_router.QWEN_MODEL, json.loads(call.call_args.args[0].data)['model'])
+
+    def test_question_task_never_uses_free_or_direct_gemini_fallback(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key', 'GEMINI_API_KEY': 'legacy-key'}), patch.object(ai_router, '_openrouter', side_effect=ai_router.ProviderError('failed', 'gemini')) as openrouter, patch.object(ai_router.pl, 'call_gemini_text') as legacy:
+            with self.assertRaises(ai_router.ProviderError):
+                ai_router.generate_for_task('question-transform', 'system', 'prompt')
+        self.assertEqual(1, openrouter.call_count)
+        legacy.assert_not_called()
+
     def test_structured_qwen_uses_strict_json_schema(self):
         response = MagicMock()
         response.__enter__.return_value.read.return_value = json.dumps({'model': 'qwen/qwen3.7-flash', 'choices': [{'message': {'content': '{"ok":true}'}}]}).encode()
@@ -166,5 +191,6 @@ class AiRouterTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
