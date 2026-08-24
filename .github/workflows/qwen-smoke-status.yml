@@ -1,0 +1,32 @@
+name: Qwen smoke status (temporary)
+
+on:
+  push:
+    branches: [feat/qwen-default-ai]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Read existing SSM smoke result
+        shell: bash
+        run: |
+          set -euo pipefail
+          command_id=483acee9-51ba-4c8f-85a3-cf384d9ac6bc
+          for attempt in $(seq 1 20); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text)
+            case "$status" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+            sleep 15
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135
+          test "$status" = Success
