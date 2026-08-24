@@ -14,6 +14,7 @@ from typing import Literal, Optional
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
+from pydantic import ValidationError
 from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -23,6 +24,7 @@ from docx.shared import Mm, Pt
 
 import prompt_logic as pl
 import ai_router
+import question_contract as qc
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -640,7 +642,7 @@ def assistant_chat(payload: AssistantRequest):
         recent = payload.history[-6:]
         prompt = f'확인된 컨텍스트: {minimal_context}\n최근 대화: ' + json.dumps([m.model_dump() for m in recent], ensure_ascii=False) + f'\n사용자 요청: {message}\n부족한 항목: {json.dumps(needed, ensure_ascii=False)}. 확인된 사실만 사용해 자연스럽게 답하고, 정적 기능 목록을 반복하지 마라.'
         try:
-            result = ai_router.generate(payload.provider, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. 학생 이름·연락처 등 개인정보를 요청하거나 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key)
+            result = ai_router.generate(payload.provider, '너는 BuildIt Wiki의 한국어 작업 Assistant다. 링크만 답하지 말고 목표를 요약하고, 확인된 기억과 부족한 자료, 작업 순서를 짧고 친절하게 설명한다. 제공된 최소 컨텍스트 밖의 DB 사실은 추측하지 않는다. 학생 이름·연락처 등 개인정보를 요청하거나 추측하지 않는다. DB 수정이나 저장을 완료했다고 말하지 않는다.', prompt, temperature=0.25, allow_noncritical_fallback=True)
             text, model = result.text, result.provider
         except Exception as exc:
             if payload.provider in ('gemini', 'ox-alpha'):
@@ -730,9 +732,9 @@ def _handle_gemini_error(exc):
         status = exc.status if exc.status in (401, 403, 429, 502, 503, 504) else 502
         message = str(exc)
         if status == 429:
-            message = 'Ox Alpha 요청이 많아 잠시 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+            message = 'AI 요청이 많아 잠시 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'
         elif status == 504:
-            message = 'Ox Alpha 응답 시간이 초과되었습니다. 다시 시도하거나 Gemini로 전환해 주세요.'
+            message = 'AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.'
         elif status in (502, 503) and exc.provider == 'ox-alpha':
             message = 'Ox Alpha 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.'
         raise HTTPException(status_code=status, detail={'message': message, 'provider': exc.provider, 'status': status})
@@ -741,6 +743,22 @@ def _handle_gemini_error(exc):
             raise HTTPException(status_code=401, detail='잘못된 API Key입니다. 설정에서 키를 다시 확인해 주세요.')
         raise HTTPException(status_code=502, detail=f'AI 요청을 완료하지 못했습니다: {exc}')
     raise HTTPException(status_code=502, detail='AI 서비스 연결을 확인하지 못했습니다. 네트워크 상태를 확인해 주세요.')
+
+
+def _parse_generated_json(text: str, repair):
+    """Repair only malformed JSON, once. Schema/quality failures are never retried here."""
+    try:
+        return json.loads(re.sub(r'```json|```', '', text).strip())
+    except (json.JSONDecodeError, TypeError):
+        repaired = repair()
+        try:
+            return json.loads(re.sub(r'```json|```', '', repaired).strip())
+        except (json.JSONDecodeError, TypeError):
+            raise HTTPException(status_code=502, detail='AI 응답 JSON 파싱 실패(repair 1회 포함)')
+
+
+def _contract_error(exc: ValidationError):
+    raise HTTPException(status_code=502, detail='AI 응답 schema validation 실패: ' + qc.validation_fields(exc))
 
 
 class NewQuestionRequest(BaseModel):
@@ -819,11 +837,14 @@ def generate_questions(payload: NewQuestionRequest):
                 except Exception as exc:
                     _handle_gemini_error(exc)
                     return
+                def repair_json():
+                    repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
+                    return ai_router.generate(payload.provider, retry_rules, repair_prompt, schema=pl.schema_new(batch['mc'], batch['sa']), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+                parsed = _parse_generated_json(text, repair_json)
                 try:
-                    parsed = json.loads(re.sub(r'```json|```', '', text).strip())
-                except (json.JSONDecodeError, TypeError):
-                    quality_issues = ['JSON 형식 오류']
-                    continue
+                    parsed = qc.validate_new(parsed)
+                except ValidationError as exc:
+                    _contract_error(exc)
                 mc_qs = [pl.prepare_question({**q, 'type': 'mc'}) for q in parsed.get('mcQuestions', [])]
                 sa_qs = []
                 for q in parsed.get('saQuestions', []):
@@ -988,10 +1009,14 @@ def transform_questions(payload: TransformQuestionRequest):
         except Exception as exc:
             _handle_gemini_error(exc)
             return
+        def repair_json():
+            repair_prompt = '다음 응답의 내용은 바꾸지 말고 유효한 JSON 객체로만 복구하라:\n' + text
+            return ai_router.generate(payload.provider, rules, repair_prompt, schema=pl.schema_transform(payload.count), temperature=0, gemini_key=payload.api_key, openrouter_key=payload.openrouter_api_key).text
+        data = _parse_generated_json(text, repair_json)
         try:
-            data = json.loads(re.sub(r'```json|```', '', text).strip())
-        except (json.JSONDecodeError, TypeError):
-            raise HTTPException(status_code=502, detail='AI 응답을 JSON으로 해석하지 못했습니다. 다시 시도해 주세요.')
+            data = qc.validate_transform(data)
+        except ValidationError as exc:
+            _contract_error(exc)
         questions = []
         for q in data.get('questions', []):
             q['type'] = 'sa' if q.get('type') == 'sa' else 'mc'
@@ -1001,6 +1026,9 @@ def transform_questions(payload: TransformQuestionRequest):
                 q['conditions'] = q.get('conditions') or []
                 q['acceptedAnswers'] = q.get('acceptedAnswers') or []
             questions.append(q)
+        quality_issues = pl.batch_quality_issues(questions)
+        if quality_issues:
+            raise HTTPException(status_code=502, detail='AI가 변형문제 조건 검증을 통과하지 못했습니다: ' + '; '.join(quality_issues[:3]))
         exam_title = data.get('examTitle') or f"{twin.get('school','')} 기존 문제 변형"
         exam_group_id = f"transform_{int(datetime.now().timestamp())}"
         saved = _save_generated(conn, twin, 'transform', questions, exam_title, exam_group_id)
@@ -1878,38 +1906,39 @@ PASSAGE_ANALYSIS_SCHEMA = {
 }
 
 
-def _passage_source(payload: PassageRequest) -> tuple[str, str]:
-    key, source = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip(), payload.source_text.strip()
-    if not key:
-        raise HTTPException(status_code=503, detail='Gemini 서버 연결이 설정되지 않았습니다.')
+def _passage_source(payload: PassageRequest) -> str:
+    source = payload.source_text.strip()
     if not source:
         raise HTTPException(status_code=400, detail='분석할 영어 지문이 없습니다.')
-    return key, source[:30000]
+    return source[:30000]
 
 
 @app.post('/api/passages/memory')
 def create_passage_memory(payload: PassageRequest):
-    key, source = _passage_source(payload)
+    source = _passage_source(payload)
     rules = ('영어 학습용 영한 대조 자료를 만든다. 원문을 빠짐없이 자연스러운 문장 단위로 나누고, '
              '각 문장에 정확하고 자연스러운 한국어 번역을 붙인다. 영어 원문의 의미나 순서를 바꾸지 않는다.')
     try:
-        return json.loads(pl.call_gemini_structured(key, rules, source, PASSAGE_MEMORY_SCHEMA, temperature=0.15))
+        ai = ai_router.generate('auto', rules, source, schema=PASSAGE_MEMORY_SCHEMA, temperature=0.15)
+        result = json.loads(re.sub(r'```json|```', '', ai.text).strip())
+        return {**result, 'provider': ai.provider, 'model': ai.model}
     except Exception as exc:
         _handle_gemini_error(exc)
 
 
 @app.post('/api/passages/analysis')
 def create_passage_analysis(payload: PassageRequest):
-    key, source = _passage_source(payload)
+    source = _passage_source(payload)
     rules = ('외부 영어 지문을 밀도 높은 학습 자료로 정리한다. 영어 원문 전체를 별도 반복하지 않는다. '
              '모든 문장을 원래 순서대로 정확히 한 번만 sentences에 넣는다. slashed는 영어 문장 자체에 의미 단위 / 를 넣은 문자열이고, '
              '바로 이어 directTranslation은 슬래시 단위의 직독직해, translation은 자연스러운 정식 해석, grammarGuide는 핵심 문법과 구문 설명이다. '
              '내용일치 T/F는 정확히 10문항으로 앞 5개 한국어(KO), 뒤 5개 영어(EN), T/F를 모두 포함하고 지문만으로 판정 가능하게 한다.')
     try:
-        result = json.loads(pl.call_gemini_structured(key, rules, source, PASSAGE_ANALYSIS_SCHEMA, temperature=0.2))
+        ai = ai_router.generate('auto', rules, source, schema=PASSAGE_ANALYSIS_SCHEMA, temperature=0.2)
+        result = json.loads(re.sub(r'```json|```', '', ai.text).strip())
         if len(result.get('tfQuestions', [])) != 10:
             raise HTTPException(status_code=502, detail='T/F 문항이 10개로 생성되지 않았습니다. 다시 시도해 주세요.')
-        return result
+        return {**result, 'provider': ai.provider, 'model': ai.model}
     except HTTPException:
         raise
     except Exception as exc:
@@ -1918,19 +1947,17 @@ def create_passage_analysis(payload: PassageRequest):
 
 @app.post('/api/ocr/clean-text')
 def clean_ocr_text(payload: OcrCleanRequest):
-    key = payload.api_key.strip() or os.getenv('GEMINI_API_KEY', '').strip()
-    if not key:
-        raise HTTPException(status_code=503, detail='Gemini 서버 연결이 설정되지 않았습니다.')
     raw_text = payload.raw_text.strip()
     if not raw_text:
         raise HTTPException(status_code=400, detail='정리할 추출 텍스트가 없습니다.')
     rules = pl.build_ocr_clean_rules()
     try:
-        text = pl.call_gemini_text(key, rules, raw_text[:20000], temperature=0.1)
+        ai = ai_router.generate('auto', rules, raw_text[:20000], temperature=0.1, allow_noncritical_fallback=True)
+        text = ai.text
     except Exception as exc:
         _handle_gemini_error(exc)
         return
-    return {'cleanedText': text.strip()}
+    return {'cleanedText': text.strip(), 'provider': ai.provider, 'model': ai.model}
 
 
 # ==================================================================================

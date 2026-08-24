@@ -9,18 +9,29 @@
 - 목적: 외부 영어 지문을 문장별 영문·한국어 해석 쌍으로 변환한다.
 - 현재 사용처: Wiki `학생 → 지문 암기`
 - 인증/권한: 기존 Wiki 프록시 정책을 따른다.
-- Request JSON: `api_key`, `source_text`
-- Response JSON: `title`, `sentences[{english,korean}]`
-- 실패: 빈 지문/키 없음 `400`, AI 호출 실패는 기존 Gemini 오류 계약을 따른다.
+- Request JSON: `source_text` (`api_key`는 이전 클라이언트 호환용으로 허용하지만 무시)
+- Response JSON: `title`, `sentences[{english,korean}]`, `provider`, `model`
+- 실패: 빈 지문 `400`, Qwen 호출 실패 `502/503/504`. 핵심 분석이므로 무료 모델 fallback은 하지 않는다.
 
 ### ✅ POST /problem-generator/wiki/api/passages/analysis
 
 - 목적: 6페이지형 지문 분석 데이터와 내용일치 T/F 10문항을 생성한다.
 - 현재 사용처: Wiki `만들기 → 지문 정리 + 내용일치 문제`
 - 인증/권한: 기존 Wiki 프록시 정책을 따른다.
-- Request JSON: `api_key`, `source_text`
-- Response JSON: `original`, `translation`, `title`, `topic`, `mainIdea`, `summary`, `sentences[{original,structure,translation,guide,grammar}]`, `flow{introduction,development,conclusion}`, `tfQuestions[{language,statement,answer}]`
+- Request JSON: `source_text` (`api_key`는 이전 클라이언트 호환용으로 허용하지만 무시)
+- Response JSON: `title`, `topic`, `mainIdea`, `summary`, `sentences[{slashed,directTranslation,translation,grammarGuide}]`, `tfQuestions[{language,statement,answer}]`, `provider`, `model`
 - 검증: T/F가 정확히 10개가 아니면 `502`로 재시도를 요청한다.
+
+### BuildIt Wiki AI 공통 정책
+
+- 일반 요청의 `provider=auto`는 서버 환경변수 `OPENROUTER_API_KEY`로 OpenRouter의 `qwen/qwen3.7-flash`를 사용한다.
+- Assistant, Wiki, 기출/자료 분석, JSON 구조화, Digital Twin 분석, 일반 문제 생성, 기존문제 변형의 기본 모델은 Qwen3.7 Flash다.
+- 일반 문제 생성·기존문제 변형·자료 분석 등 핵심 결과는 Qwen 실패 시 무료 모델로 조용히 fallback하지 않는다.
+- Assistant/OCR 같은 비핵심 보조 호출만 Qwen → Ox Alpha → `openrouter/free` 백업 체인을 명시적으로 허용한다.
+- `gemini`, `ox-alpha`, `openrouter:<model>` 명시 선택은 admin 진단 호환을 위해 유지하며 자동 fallback하지 않는다.
+- 요청의 `api_key`/`openrouter_api_key` 레거시 필드는 호환을 위해 허용하되 인증에 사용하지 않는다. 키는 응답·로그에 포함하지 않는다.
+- AI 응답은 가능한 모든 endpoint에서 실제 응답의 `provider`와 `model`을 그대로 반환한다.
+- GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장 지점이며 현재 구매나 연결을 요구하지 않는다.
 
 ### 문서화 대상
 

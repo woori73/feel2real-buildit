@@ -37,12 +37,11 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [resultProvider,setResultProvider]=useState<{provider:string;model:string}|null>(null)
   const [profile,setProfile]=useState<DigitalTwinProfile|null>(null)
   const [error,setError]=useState('')
-  const [provider,setProvider]=useState<string>(apiSettings?.provider||'auto')
-  const [freeModels,setFreeModels]=useState<any[]>([])
+  const provider='auto'
   const [abMode,setAbMode]=useState(false)
   const [comparison,setComparison]=useState<any>(null)
 
-  useEffect(()=>{ Promise.all([fetchSchoolTree(),fetchTypeDefs(),fetchQuestions()]).then(([a,b,c])=>{setTree(a);setTypeDefs(b);setStored(c)}).catch(()=>{});api('ai/openrouter/free-models').then(r=>r.ok?r.json():{models:[]}).then(x=>setFreeModels(x.models||[])).catch(()=>{}) },[])
+  useEffect(()=>{ Promise.all([fetchSchoolTree(),fetchTypeDefs(),fetchQuestions()]).then(([a,b,c])=>{setTree(a);setTypeDefs(b);setStored(c)}).catch(()=>{}) },[])
   const schoolNode=useMemo(()=>tree.find(x=>x.school===school),[tree,school])
   const grades=schoolNode?.grades||[]
   const gradeNode=useMemo(()=>grades.find(x=>x.grade===grade),[grades,grade])
@@ -126,7 +125,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
         {mode==='new'&&<label className="passage-label grammar-focus-label">시험 범위 주요 문법 사항<textarea value={grammarFocus} onChange={e=>setGrammarFocus(e.target.value)} placeholder="예: 관계대명사 what, 가정법, 수동태" /><small>문법·서술형 문항에 우선 반영하고 생성 기록에도 함께 보관합니다.</small></label>}
         <div className="type-head"><b>문제 유형 {profile?'· Digital Twin 자동 적용':''}</b><span>{selectedTypes.length}개 선택</span></div>
         <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,label:TYPE_LABELS[id]} as TypeDef))).map(t=>{const id=t.id;return <button type="button" key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.label||TYPE_LABELS[id]||id}</button>})}</div>
-        <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><label>AI<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="auto">자동</option><option value="gemini">Gemini Flash</option><option value="openrouter-free">OpenRouter 무료 자동</option><option value="ox-alpha">Ox Alpha Experimental</option>{freeModels.map(m=><option key={m.id} value={'openrouter:'+m.id}>{m.name}</option>)}</select></label>{mode==='new'&&<label><input type="checkbox" checked={abMode} onChange={e=>setAbMode(e.target.checked)} /> A/B 비교</label>}<button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':abMode?'A/B 비교 생성':'문제 만들기'}</button></div>
+        <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label><span className="context-chip">기본 AI · Qwen3.7 Flash</span>{mode==='new'&&<label><input type="checkbox" checked={abMode} onChange={e=>setAbMode(e.target.checked)} /> A/B 비교</label>}<button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':abMode?'A/B 비교 생성':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}
       </section>
       {comparison&&<AbResults data={comparison} context={{school,grade,exam,twinId:profile?.id,questionType:selectedTypes.join(', ')}} />}
