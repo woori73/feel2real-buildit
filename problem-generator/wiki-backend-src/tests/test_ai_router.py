@@ -31,13 +31,14 @@ class AiRouterTest(unittest.TestCase):
             result = ai_router.generate('ox-alpha', 'system', 'hello')
         self.assertEqual(('ox-alpha', 'stealth/ox-alpha', 'Ox 응답', 'server'), (result.provider, result.model, result.text, result.key_source))
 
-    def test_request_openrouter_key_precedes_server_and_is_not_returned(self):
+    def test_request_openrouter_key_is_ignored_and_not_returned(self):
         response = MagicMock()
         response.__enter__.return_value.read.return_value = json.dumps({'model': 'stealth/ox-alpha', 'choices': [{'message': {'content': 'safe'}}]}).encode()
         with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-secret'}), patch('urllib.request.urlopen', return_value=response) as call:
             result = ai_router.generate('ox-alpha', 'system', 'hello', openrouter_key='browser-secret')
-        self.assertEqual('client', result.key_source)
-        self.assertIn('browser-secret', call.call_args.args[0].headers['Authorization'])
+        self.assertEqual('server', result.key_source)
+        self.assertIn('server-secret', call.call_args.args[0].headers['Authorization'])
+        self.assertNotIn('browser-secret', call.call_args.args[0].headers['Authorization'])
         self.assertNotIn('browser-secret', repr(result))
         self.assertNotIn('server-secret', repr(result))
 
@@ -69,11 +70,34 @@ class AiRouterTest(unittest.TestCase):
                 ai_router.generate('openrouter:vendor/model:free', 'system', 'hello')
         gemini.assert_not_called()
 
-    def test_missing_openrouter_key_is_unavailable_and_auto_uses_gemini(self):
+    def test_missing_openrouter_key_makes_default_qwen_unavailable_without_gemini_fallback(self):
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-key', 'OPENROUTER_API_KEY': ''}, clear=False), patch.object(ai_router.pl, 'call_gemini_text', return_value='Gemini fallback'):
             self.assertFalse(ai_router.availability()['providers']['ox-alpha']['available'])
+            with self.assertRaises(ai_router.ProviderError) as raised:
+                ai_router.generate('auto', 'system', 'hello')
+        self.assertEqual('qwen', raised.exception.provider)
+
+    def test_auto_uses_qwen_and_reports_actual_openrouter_metadata(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps({'model': 'qwen/qwen3.7-flash-202608', 'choices': [{'message': {'content': 'Qwen 응답'}}]}).encode()
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch('urllib.request.urlopen', return_value=response) as call:
             result = ai_router.generate('auto', 'system', 'hello')
-        self.assertEqual(('gemini', 'Gemini fallback'), (result.provider, result.text))
+        self.assertEqual(('openrouter', 'qwen/qwen3.7-flash-202608', 'Qwen 응답', 'server'), (result.provider, result.model, result.text, result.key_source))
+        self.assertEqual(ai_router.QWEN_MODEL, json.loads(call.call_args.args[0].data)['model'])
+
+    def test_core_auto_does_not_fallback_to_free_model_when_qwen_fails(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch.object(ai_router, '_openrouter', side_effect=ai_router.ProviderError('failed', 'openrouter')) as call:
+            with self.assertRaises(ai_router.ProviderError):
+                ai_router.generate('auto', 'system', 'hello')
+        self.assertEqual(1, call.call_count)
+
+    def test_noncritical_auto_can_use_declared_backup_chain(self):
+        qwen_error = ai_router.ProviderError('failed', 'openrouter')
+        fallback = ai_router.ProviderResult('backup', 'ox-alpha', 'stealth/ox-alpha', 'server')
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), patch.object(ai_router, '_openrouter', side_effect=[qwen_error, fallback]) as call:
+            result = ai_router.generate('auto', 'system', 'hello', allow_noncritical_fallback=True)
+        self.assertEqual('ox-alpha', result.provider)
+        self.assertEqual(2, call.call_count)
 
     def test_explicit_ox_without_key_never_falls_back_to_gemini(self):
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-key', 'OPENROUTER_API_KEY': ''}, clear=False), patch.object(ai_router.pl, 'call_gemini_text', return_value='safe fallback'):

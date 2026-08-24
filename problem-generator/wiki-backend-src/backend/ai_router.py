@@ -8,6 +8,9 @@ DEFAULT_PROVIDER_TIMEOUT_SECONDS=90.0
 MODELS_URL='https://openrouter.ai/api/v1/models'
 CHAT_URL='https://openrouter.ai/api/v1/chat/completions'
 FREE_ROUTER='openrouter/free'
+QWEN_PROVIDER='openrouter'
+QWEN_MODEL='qwen/qwen3.7-flash'
+LUNA_MODEL='gpt-5.6-luna'
 _models_cache=(0.0, [])
 
 def provider_timeout_seconds():
@@ -57,7 +60,9 @@ def openrouter_free_models(force=False):
 
 def availability():
     gemini,openrouter=_server_keys()
-    return {'defaultProvider':'auto','providers':{
+    return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{
+      'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},
+      'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},
       'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},
       'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},
       'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},
@@ -73,28 +78,36 @@ def _openrouter(key,model,provider,system,prompt,schema,temperature):
         text=payload.get('choices',[{}])[0].get('message',{}).get('content','')
         if isinstance(text,list):text=''.join(x.get('text','') for x in text if isinstance(x,dict))
         if not str(text).strip():raise ProviderError('OpenRouter 응답 내용이 없습니다.',provider)
-        return ProviderResult(str(text),provider,payload.get('model') or model,'server')
+        return ProviderResult(str(text),payload.get('provider') or provider,payload.get('model') or model,'server')
     except urllib.error.HTTPError as exc:raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})',provider,exc.code) from exc
     except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 다시 시도해 주세요.',provider,504) from exc
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
     except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502) from exc
 
-def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',openrouter_key=''):
-    """Explicit models never fallback; auto alone may try another provider."""
+def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',openrouter_key='',allow_noncritical_fallback=False):
+    """Use server-side Qwen by default.
+
+    Explicit selections never fallback. Auto requests are strict by default so
+    question generation cannot silently degrade to a free model. Callers may
+    opt into the Ox/free backup chain only for non-critical assistance.
+    Browser-supplied keys remain accepted for API compatibility but are ignored.
+    """
     requested=provider or 'auto'; gemini_server,openrouter_server=_server_keys()
-    gemini=gemini_key.strip() or gemini_server; openrouter=openrouter_key.strip() or openrouter_server
-    candidates=['gemini','openrouter-free'] if requested=='auto' else [requested]; last_error=None
+    gemini=gemini_server; openrouter=openrouter_server
+    candidates=['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested]; last_error=None
     for candidate in candidates:
         try:
             if candidate=='gemini':
                 if not gemini:raise ProviderError('Gemini 서버 키가 설정되지 않았습니다.',candidate)
                 text=pl.call_gemini_structured(gemini,system,prompt,schema,temperature) if schema else pl.call_gemini_text(gemini,system,prompt,temperature)
-                return ProviderResult(text,'gemini','gemini-flash','client' if gemini_key.strip() else 'server')
-            if candidate in ('ox-alpha','openrouter-free') or candidate.startswith('openrouter:'):
+                return ProviderResult(text,'gemini','gemini-flash','server')
+            if candidate=='gpt-5.6-luna':
+                raise ProviderError('GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장용이며 아직 연결되지 않았습니다.',candidate,503)
+            if candidate in ('qwen','ox-alpha','openrouter-free') or candidate.startswith('openrouter:'):
                 if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.',candidate)
-                model=os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha') if candidate=='ox-alpha' else FREE_ROUTER if candidate=='openrouter-free' else candidate.removeprefix('openrouter:')
-                result=_openrouter(openrouter,model,candidate,system,prompt,schema,temperature)
-                result.key_source='client' if openrouter_key.strip() else 'server';return result
+                model=QWEN_MODEL if candidate=='qwen' else os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha') if candidate=='ox-alpha' else FREE_ROUTER if candidate=='openrouter-free' else candidate.removeprefix('openrouter:')
+                provider_name=QWEN_PROVIDER if candidate=='qwen' else candidate
+                return _openrouter(openrouter,model,provider_name,system,prompt,schema,temperature)
             raise ProviderError('지원하지 않는 AI provider입니다.',candidate,400)
         except Exception as exc:
             last_error=exc
