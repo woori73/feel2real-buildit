@@ -4,6 +4,18 @@ spring:
     # 브랜치별로 main은 "local", stg는 "stg". dev는 "dev". 머지 시 이 줄 오염되면 브랜치에 맞춰 복구.
     # 운영(EC2)에서는 systemd EnvironmentFile의 SPRING_PROFILES_ACTIVE=prd가 override한다.
     active: "local"
+  servlet:
+    multipart:
+      # DispatcherServlet은 컨트롤러가 무엇이든 Content-Type이 multipart/*이면 핸들러 호출 전에
+      # MultipartResolver.resolveMultipart()로 request.getParts()를 먼저 실행해 raw body 스트림을
+      # 소비한다. BuildItWikiProxyController(FastAPI Wiki 백엔드로 요청을 그대로 전달하는 프록시)는
+      # MultipartFile/getParts()를 쓰지 않고 request.getInputStream()으로 raw body를 읽어 그대로
+      # 넘기는데, 이 시점엔 이미 스트림이 비어 있어 FastAPI가 모든 Form(...) 필드를 missing으로
+      # 봤다(운영 422 재현·확인됨). resolve-lazily=true는 실제로 MultipartFile/getParts()에
+      # 접근하는 시점까지 파싱을 미뤄, 프록시처럼 raw body만 읽는 경로에서는 스트림이 소비되지
+      # 않고 그대로 전달되게 한다. Academy 영상 업로드 등 기존 @RequestParam MultipartFile
+      # 엔드포인트는 그 파라미터에 접근하는 순간 동일하게(다만 지연) 파싱되므로 동작은 그대로다.
+      resolve-lazily: true
 
 # Swagger UI 설정 (Springdoc)
 springdoc:

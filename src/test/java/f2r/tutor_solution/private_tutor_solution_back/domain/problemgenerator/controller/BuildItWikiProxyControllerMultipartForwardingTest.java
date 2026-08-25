@@ -1,0 +1,135 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.controller;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
+import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.SecurityProperties;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.ManagementWebSecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * BuildItWikiProxyController가 운영 422 재현 원인(멀티파트 body가 프록시에 닿기 전에
+ * Spring의 MultipartResolver가 먼저 소비해 0바이트로 전달되는 문제)을 실제로 재현/방지하는지
+ * 실제 임베디드 서블릿 컨테이너 + 실제 HTTP 요청으로 검증한다.
+ *
+ * <p>DataSource/JPA/Flyway/Security 자동설정은 이 프록시와 무관하고 로컬 MySQL이 없어도
+ * 테스트가 돌아야 하므로 명시적으로 제외한다. FastAPI 백엔드 자리에는
+ * {@code 127.0.0.1:8000}에 바인딩한 JDK 내장 {@link HttpServer}를 세워 실제로 전달된
+ * multipart body를 그대로 캡처해 검증한다.
+ */
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = BuildItWikiProxyControllerMultipartForwardingTest.MinimalProxyApp.class)
+class BuildItWikiProxyControllerMultipartForwardingTest {
+
+  @Configuration
+  @EnableAutoConfiguration(exclude = {
+      DataSourceAutoConfiguration.class,
+      HibernateJpaAutoConfiguration.class,
+      FlywayAutoConfiguration.class,
+      SecurityAutoConfiguration.class,
+      SecurityFilterAutoConfiguration.class,
+      ServletWebSecurityAutoConfiguration.class,
+      ManagementWebSecurityAutoConfiguration.class,
+  })
+  static class MinimalProxyApp {
+    @Bean
+    BuildItWikiProxyController buildItWikiProxyController() {
+      return new BuildItWikiProxyController();
+    }
+
+    // SecurityAutoConfiguration을 빼면서 없어진 SecurityProperties만 다른 자동설정(ErrorMvc 등)이
+    // 여전히 필요로 해서 직접 채운다 — 실제 SecurityFilterChain/HttpSecurity는 등록하지 않는다.
+    @Bean
+    SecurityProperties securityProperties() {
+      return new SecurityProperties();
+    }
+  }
+
+  @LocalServerPort
+  private int port;
+
+  private HttpServer fakeFastApi;
+  private volatile byte[] capturedBody;
+  private volatile String capturedContentType;
+
+  @BeforeEach
+  void startFakeFastApi() throws IOException {
+    // BuildItWikiProxyController가 다운스트림 주소를 http://127.0.0.1:8000으로 하드코딩하므로
+    // 실제 FastAPI 대신 이 포트에 직접 바인딩해 무엇이 전달되는지 가로챈다.
+    fakeFastApi = HttpServer.create(new InetSocketAddress("127.0.0.1", 8000), 0);
+    fakeFastApi.createContext("/api/exam-materials", exchange -> {
+      capturedContentType = exchange.getRequestHeaders().getFirst("Content-Type");
+      capturedBody = exchange.getRequestBody().readAllBytes();
+      byte[] response = "{\"id\":1}".getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().add("Content-Type", "application/json");
+      exchange.sendResponseHeaders(201, response.length);
+      try (var os = exchange.getResponseBody()) {
+        os.write(response);
+      }
+    });
+    fakeFastApi.start();
+  }
+
+  @AfterEach
+  void stopFakeFastApi() {
+    if (fakeFastApi != null) fakeFastApi.stop(0);
+  }
+
+  @Test
+  void multipartExamMaterialBodyReachesFastApiIntact() throws Exception {
+    // React NaesinWikiV1.saveSchoolPrint()가 실제로 만드는 FormData와 동일한 필드 구성.
+    MultipartBodyBuilder builder = new MultipartBodyBuilder();
+    builder.part("school", "신구중");
+    builder.part("grade", "2학년");
+    builder.part("year", "2026");
+    builder.part("semester", "2학기");
+    builder.part("exam", "중간고사");
+    builder.part("core_type", "school_print");
+    builder.part("title", "5과");
+    builder.part("html_text", "<html><body>학교프린트 본문</body></html>");
+    builder.part("json_text", "{}");
+
+    HttpEntity<MultiValueMap<String, HttpEntity<?>>> multipartEntity = new HttpEntity<>(builder.build());
+    RestTemplate restTemplate = new RestTemplate();
+
+    ResponseEntity<String> response = restTemplate.postForEntity(
+        "http://127.0.0.1:" + port + "/problem-generator/wiki/api/exam-materials",
+        multipartEntity,
+        String.class);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(201);
+    assertThat(capturedContentType).as("Content-Type이 프록시를 거치며 유실되면 안 된다").contains("multipart/form-data");
+    assertThat(capturedContentType).as("boundary가 원본 그대로 전달돼야 FastAPI가 파싱할 수 있다").contains("boundary=");
+    assertThat(capturedBody)
+        .as("resolve-lazily=true가 없으면 이 body가 0바이트로 도착해 FastAPI가 모든 Form 필드를 missing 처리한다"
+            + " (운영 422 재현 원인)")
+        .isNotEmpty();
+    String bodyText = new String(capturedBody, StandardCharsets.UTF_8);
+    assertThat(bodyText).contains("신구중");
+    assertThat(bodyText).contains("core_type");
+    assertThat(bodyText).contains("school_print");
+    assertThat(bodyText).contains("학교프린트 본문");
+  }
+}
