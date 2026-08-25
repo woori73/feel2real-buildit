@@ -8,11 +8,18 @@ type Material = { id:number; core_type:'school_print'|'student_wrong_note'; stud
 type Insight = { id:number; content:string; source:'director'|'school_teacher'; created_at:string }
 type Workspace = 'final'|'jikbo'|null
 const years = [new Date().getFullYear(), new Date().getFullYear()-1, new Date().getFullYear()-2]
+// 화면 표시는 전체/중간/기말이지만 저장·조회 값은 기존 Digital Twin·Assistant·exam_material_sets가
+// 이미 쓰고 있는 '전체'/'중간고사'/'기말고사'를 그대로 재사용한다 (main.py의 중간→중간고사 정규화와 동일 규칙).
+const EXAM_OPTIONS: { label: string; value: string }[] = [
+  { label: '전체', value: '전체' },
+  { label: '중간', value: '중간고사' },
+  { label: '기말', value: '기말고사' },
+]
 const downloadBlob = (filename: string, blob: Blob) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url) }
 
 export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}) {
   const [tree,setTree]=useState<SchoolNode[]>([]), [students,setStudents]=useState<Student[]>([])
-  const [context,setContext]=useState<Context>({school:'',grade:'',year:years[0],semester:'1학기',exam:''})
+  const [context,setContext]=useState<Context>({school:'',grade:'',year:years[0],semester:'1학기',exam:'전체'})
   const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
   const [core,setCore]=useState<'school_print'|'student_wrong_note'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
   const [studentId,setStudentId]=useState(''), [title,setTitle]=useState(''), [original,setOriginal]=useState<File|null>(null), [jsonFile,setJsonFile]=useState<File|null>(null), [jsonText,setJsonText]=useState('')
@@ -20,8 +27,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
   const schoolNode=tree.find(item=>item.school===context.school), grades=schoolNode?.grades||[]
-  const gradeNode=grades.find(item=>item.grade===context.grade), exams=gradeNode?.exams||[]
   const exactExam=context.exam
+  const examLabel=EXAM_OPTIONS.find(o=>o.value===context.exam)?.label||context.exam
   const ready=Boolean(context.school&&context.grade&&context.exam)
   const contextQuery=new URLSearchParams({school:context.school,grade:context.grade,year:String(context.year),semester:context.semester,exam:context.exam})
   const load=async()=>{if(!ready)return;const [q,m,i]=await Promise.all([
@@ -29,9 +36,12 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     api(`exam-materials?${contextQuery}`).then(r=>r.ok?r.json():[]),
     api(`educator-insights?limit=100&${contextQuery}`).then(r=>r.ok?r.json():[]),
   ]);setQuestions(q);setMaterials(m);setInsights(i)}
-  useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];if(first)setContext(c=>({...c,school:first.school,grade:grade?.grade||'',exam:grade?.exams[0]?.exam||''}))});fetchStudents().then(setStudents)},[])
+  useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];if(first)setContext(c=>({...c,school:first.school,grade:grade?.grade||'',exam:'전체'}))});fetchStudents().then(setStudents)},[])
   useEffect(()=>{void load()},[context.school,context.grade,context.year,context.semester,context.exam])
-  useEffect(()=>{if(core)document.getElementById('material-set-form')?.scrollIntoView({behavior:'smooth'})},[core])
+  // behavior:'smooth'는 requestAnimationFrame 기반 애니메이션이라 조건부로 막 마운트된
+  // 대상에 걸면 프레임이 씹혀 실제로는 전혀 스크롤되지 않는 경우가 있었다(운영에서 확인됨).
+  // behavior:'auto'는 애니메이션 없이 즉시 오프셋을 적용해 신뢰성 있게 동작한다.
+  useEffect(()=>{if(core)document.getElementById('material-set-form')?.scrollIntoView({behavior:'auto',block:'start'})},[core])
   const filteredStudents=students.filter(s=>(!s.school||s.school===context.school)&&(!s.grade||s.grade===context.grade))
   const prints=materials.filter(m=>m.core_type==='school_print'), wrongs=materials.filter(m=>m.core_type==='student_wrong_note')
   const resetUpload=()=>{setOriginal(null);setJsonFile(null);setJsonText('');setTitle('')}
@@ -55,13 +65,13 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     <header><p className="kicker">BUILD IT · NAESIN WIKI V1.1</p><h1>시험 자료 한눈에 모으기</h1><p>학교와 시험을 먼저 고르면 STEP 1부터 4까지 순서대로 따라가며 시험을 준비할 수 있습니다.</p></header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">
-      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=node?.grades[0];setContext(c=>({...c,school,grade:grade?.grade||'',exam:grade?.exams[0]?.exam||''}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
-      <label>학년<select value={context.grade} onChange={e=>{const grade=e.target.value,node=grades.find(g=>g.grade===grade);setContext(c=>({...c,grade,exam:node?.exams[0]?.exam||''}))}}>{grades.map(g=><option key={g.grade}>{g.grade}</option>)}</select></label>
+      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=node?.grades[0];setContext(c=>({...c,school,grade:grade?.grade||'',exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
+      <label>학년<select value={context.grade} onChange={e=>{const grade=e.target.value;setContext(c=>({...c,grade,exam:'전체'}))}}>{grades.map(g=><option key={g.grade}>{g.grade}</option>)}</select></label>
       <label>연도<select value={context.year} onChange={e=>setContext(c=>({...c,year:Number(e.target.value)}))}>{years.map(y=><option key={y}>{y}</option>)}</select></label>
       <label>학기<select value={context.semester} onChange={e=>setContext(c=>({...c,semester:e.target.value}))}><option>1학기</option><option>2학기</option></select></label>
-      <label>시험<select value={context.exam} onChange={e=>setContext(c=>({...c,exam:e.target.value}))}>{exams.map((item,index)=><option key={`${item.exam}-${index}`}>{item.exam}</option>)}</select></label>
+      <label>시험<select value={context.exam} onChange={e=>setContext(c=>({...c,exam:e.target.value}))}>{EXAM_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></label>
     </div>
-    <div className="context-summary"><b>{context.school} · {context.grade}</b><span>{context.year}년 · {context.semester} · {context.exam}</span></div>
+    <div className="context-summary"><b>{context.school} · {context.grade}</b><span>{context.year}년 · {context.semester} · {examLabel}</span></div>
 
     <ol className="wiki-steps">
       <li className="wiki-step">
@@ -93,7 +103,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       </li>
     </ol>
 
-    {core&&<form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">ORIGINAL + JSON SET</p><h2>{core==='school_print'?'학교 프린트':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>{core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}{core==='school_print'&&<label>자료 제목<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}<label>{core==='school_print'?'원본 파일 업로드':'오답 원본 파일'}<input required type="file" onChange={(e:ChangeEvent<HTMLInputElement>)=>setOriginal(e.target.files?.[0]||null)}/></label><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label><button className="primary-action" disabled={!original||(core==='student_wrong_note'&&!jsonFile&&!jsonText.trim())}>저장</button></form>}
+    {core&&<form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">ORIGINAL + JSON SET</p><h2>{core==='school_print'?'학교 프린트':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>{core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}{core==='school_print'&&<label>자료 제목<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}<label>{core==='school_print'?'원본 파일 업로드':'오답 원본 파일'}<input required type="file" onChange={(e:ChangeEvent<HTMLInputElement>)=>setOriginal(e.target.files?.[0]||null)}/></label><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label><button className="primary-action" disabled={!original||(core==='student_wrong_note'&&!jsonFile&&!jsonText.trim())}>저장</button></form>}
     <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트</h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다.</p></div></div><div className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button></div></section>
 
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
