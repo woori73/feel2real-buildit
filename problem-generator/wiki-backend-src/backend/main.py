@@ -2262,6 +2262,76 @@ def export_wrong_notes_docx(student_id: int, payload: WrongNoteExportRequest):
     )
 
 
+class ExamMaterialWrongNoteExportRequest(BaseModel):
+    material_ids: list[int] = []
+    title: str = ''
+
+
+def _exam_material_json_to_text(json_text: str, original_name: str) -> str:
+    """exam_material_sets.json_text는 사용자가 자유롭게 올린 JSON이라 고정된 스키마가 없다
+    (BUILDIT_CLAUDE_HANDOFF.md 5번: "세부 정보는 JSON 내부에서 확장 가능"). 어떤 형태든
+    한 문단짜리 요약 텍스트로 풀어내며, docx 헬퍼는 줄바꿈을 별도 처리하지 않으므로
+    개행 없이 ' / '로만 이어 붙인다."""
+    try:
+        data = json.loads(json_text) if json_text else None
+    except (ValueError, TypeError):
+        data = None
+    if isinstance(data, dict):
+        parts = [f'{k}: {v}' for k, v in data.items() if v not in (None, '', [], {})]
+        text = ' / '.join(parts) if parts else json.dumps(data, ensure_ascii=False)
+    elif isinstance(data, list):
+        parts = []
+        for i, item in enumerate(data, start=1):
+            item_text = ' / '.join(f'{k}: {v}' for k, v in item.items()) if isinstance(item, dict) else str(item)
+            parts.append(f'{i}) {item_text}')
+        text = '  '.join(parts) if parts else '[]'
+    else:
+        text = (json_text or '').strip()
+    return f'{text} (원본 파일: {original_name})' if original_name else text
+
+
+@app.post('/api/exam-materials/wrong-notes/export-docx')
+def export_exam_material_wrong_notes_docx(payload: ExamMaterialWrongNoteExportRequest):
+    """NaesinWikiV1(원본+JSON 통합 저장)에서 모은 학생 오답 exam_material_sets 행을 선택해
+    통합 복습 문제지로 내보낸다. student_wrong_notes 테이블의 export_wrong_notes_docx와 동일한
+    _build_wrong_note_combined_document를 그대로 재사용한다 — 새 스타일을 만들지 않는다."""
+    if not payload.material_ids:
+        raise HTTPException(status_code=400, detail='내보낼 학생 오답 자료를 먼저 선택해 주세요.')
+    with get_db() as conn:
+        rows = conn.execute(
+            f"""SELECT m.*, s.name student_name FROM exam_material_sets m
+                LEFT JOIN students s ON s.id = m.student_id
+                WHERE m.core_type='student_wrong_note' AND m.id IN ({','.join('?' * len(payload.material_ids))})""",
+            payload.material_ids,
+        ).fetchall()
+    by_id = {row['id']: dict(row) for row in rows}
+    ordered = [by_id[mid] for mid in payload.material_ids if mid in by_id]
+    if not ordered:
+        raise HTTPException(status_code=400, detail='선택한 학생 오답 자료를 찾지 못했습니다.')
+
+    notes = [{
+        'title': ' · '.join(filter(None, [row.get('student_name'), row.get('title') or row.get('original_name')])),
+        'wrong_text': _exam_material_json_to_text(row.get('json_text') or '', row.get('original_name') or ''),
+        'answer_text': '',
+        'question_type': '',
+    } for row in ordered]
+    first = ordered[0]
+    title = payload.title.strip() or f"{first.get('school', '')} {first.get('exam', '')} 학생 오답 복습 문제".strip()
+    subtitle = ' · '.join(filter(None, [first.get('school'), first.get('grade'), f"{first.get('year')}년 {first.get('semester')}" if first.get('year') else '']))
+    doc = _build_wrong_note_combined_document(title, subtitle, notes, '학생 오답 복습 문제')
+
+    export_dir = WORKSPACE / 'data' / 'exports'
+    export_dir.mkdir(parents=True, exist_ok=True)
+    safe_title = re.sub(r'[\\/:*?"<>|]', '_', title) or '학생_오답_복습_문제'
+    doc_path = export_dir / 'exam-material-wrong-notes-combined.docx'
+    doc.save(doc_path)
+    return FileResponse(
+        doc_path,
+        media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        filename=f'{safe_title}.docx',
+    )
+
+
 @app.get('/api/export/project')
 def export_project():
     files = ['backend/main.py', 'backend/prompt_logic.py', 'src', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json', 'index.html', 'requirements.txt', 'data/app.db']

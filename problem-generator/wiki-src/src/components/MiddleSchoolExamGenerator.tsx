@@ -15,15 +15,15 @@ const TYPE_LABELS: Record<string,string> = {
   purpose:'목적', implication:'함축 의미', reference:'지칭 추론', short_answer:'서답형',
 }
 
-const initialContext = () => { try { return JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') as { school?:string; grade?:string; exam?:string } } catch { return {} } }
+const initialContext = () => { try { return JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') as { school?:string; grade?:string; exam?:string; mode?:Mode } } catch { return {} } }
 const normalizeTypeName = (value:string) => value.toLowerCase().replace(/[\s·_\-()/]/g,'').replace('문제','').replace('서술형','서답형').replace('문법','어법').replace('순서배열','문장순서')
 
 export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: Props) {
-  const [mode,setMode]=useState<Mode>('new')
+  const context=useMemo(initialContext,[])
+  const [mode,setMode]=useState<Mode>(context.mode==='transform'?'transform':'new')
   const [tree,setTree]=useState<SchoolNode[]>([])
   const [typeDefs,setTypeDefs]=useState<TypeDef[]>([])
   const [stored,setStored]=useState<StoredQuestion[]>([])
-  const context=useMemo(initialContext,[])
   const [school,setSchool]=useState(context.school||'')
   const [grade,setGrade]=useState(context.grade||'')
   const [semester,setSemester]=useState('2')
