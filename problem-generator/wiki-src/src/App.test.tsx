@@ -63,7 +63,7 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(saveButton).not.toBeDisabled()
   })
 
-  it('학교 프린트 추가 클릭 시 등록 폼이 열리고 수업 인사이트와 동일한 방식으로 그 위치까지 자동 스크롤한다', async()=>{
+  it('학교 프린트 추가 클릭 시 등록 폼이 열리고 즉시(behavior:auto) 그 위치까지 이동한다', async()=>{
     render(<App/>)
     fireEvent.click(await screen.findByRole('button',{name:/학교 프린트 추가/}))
     const form = screen.getByRole('heading',{name:'학교 프린트 추가'}).closest('form') as HTMLElement
@@ -71,10 +71,10 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(form.id).toBe('material-set-form')
     await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled())
     expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length - 1]).toBe(form)
-    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'smooth' })
+    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'auto', block: 'start' })
   })
 
-  it('학생 오답 추가 클릭 시 등록 폼이 열리고 수업 인사이트와 동일한 방식으로 그 위치까지 자동 스크롤한다', async()=>{
+  it('학생 오답 추가 클릭 시 등록 폼이 열리고 즉시(behavior:auto) 그 위치까지 이동한다', async()=>{
     render(<App/>)
     fireEvent.click(await screen.findByRole('button',{name:/학생 오답 추가/}))
     const form = screen.getByRole('heading',{name:'학생 오답 추가'}).closest('form') as HTMLElement
@@ -82,7 +82,7 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(form.id).toBe('material-set-form')
     await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled())
     expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length - 1]).toBe(form)
-    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'smooth' })
+    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'auto', block: 'start' })
   })
 
   it('수업 인사이트 기록 버튼의 기존 스크롤 동작은 회귀 없이 그대로 유지된다', async()=>{
@@ -110,8 +110,17 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(screen.queryByRole('button',{name:/학생별 오답노트/})).not.toBeInTheDocument()
   })
 
-  it('학교 프린트 저장 시 상위 시험 Context를 그대로 전달하고 다시 입력받지 않는다', async()=>{
-    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '중간', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+  it('시험 Context는 전체/중간/기말만 선택할 수 있고 기본값은 전체다', async()=>{
+    render(<App/>)
+    await screen.findByRole('heading',{name:'시험 자료 한눈에 모으기'})
+    const examSelect = within(screen.getByLabelText('시험 Context')).getByLabelText('시험') as HTMLSelectElement
+    const optionLabels = [...examSelect.options].map(o => o.textContent)
+    expect(optionLabels).toEqual(['전체', '중간', '기말'])
+    expect(examSelect.value).toBe('전체')
+  })
+
+  it('학교 프린트 저장 시 상위 시험 Context(중간→중간고사)를 그대로 전달하고 다시 입력받지 않는다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
@@ -122,8 +131,11 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     vi.stubGlobal('fetch', fetchMock)
     render(<App />)
     await screen.findByText('신사중 · 3학년')
+    fireEvent.change(within(screen.getByLabelText('시험 Context')).getByLabelText('시험'), { target: { value: '중간고사' } })
+    await screen.findByText(`${new Date().getFullYear()}년 · 1학기 · 중간`)
     fireEvent.click(screen.getByRole('button', { name: /학교 프린트 추가/ }))
     const formElement = screen.getByRole('heading', { name: '학교 프린트 추가' }).closest('form') as HTMLFormElement
+    expect(within(formElement).getByText(/중간에 자동 연결됩니다/)).toBeInTheDocument()
     fireEvent.change(within(formElement).getByLabelText('원본 파일 업로드'), { target: { files: [new File(['x'], 'print.pdf', { type: 'application/pdf' })] } })
     fireEvent.submit(formElement)
     await waitFor(() => expect(fetchMock.mock.calls.some(([u, init]) => String(u).includes('exam-materials') && init?.method === 'POST')).toBe(true))
@@ -131,7 +143,7 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     const form = call?.[1]?.body as FormData
     expect(form.get('school')).toBe('신사중')
     expect(form.get('grade')).toBe('3학년')
-    expect(form.get('exam')).toBe('중간')
+    expect(form.get('exam')).toBe('중간고사')
   })
 
   it('STEP 4의 FINAL 준비는 4 CORE 선택형 워크스페이스를 연다', async()=>{
