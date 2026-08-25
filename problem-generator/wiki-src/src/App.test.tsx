@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App from './App'
 
@@ -29,12 +29,66 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(screen.queryByRole('button',{name:'Admin / Final 자료 보기'})).not.toBeInTheDocument()
   })
 
-  it('STEP 1의 학생 오답 추가는 중복 메타 입력 없이 원본+JSON 세트 폼을 연다', async()=>{
+  it('STEP 1의 학생 오답 추가는 학생 선택·오답 원본·JSON 필드만 열고 자료 제목·구형 메타 입력이 없다', async()=>{
     render(<App/>); fireEvent.click(await screen.findByRole('button',{name:/학생 오답 추가/}))
-    expect(screen.getByRole('heading',{name:'학생 오답 추가'})).toBeInTheDocument()
-    expect(screen.getByLabelText('원본 업로드')).toBeInTheDocument()
-    expect(screen.getByLabelText('JSON 파일 업로드')).toBeInTheDocument()
-    expect(screen.queryByLabelText(/문제 유형|문제번호|시험명/)).not.toBeInTheDocument()
+    const heading = screen.getByRole('heading',{name:'학생 오답 추가'})
+    const form = within(heading.closest('form') as HTMLElement)
+    expect(form.getByLabelText(/^학생/)).toBeInTheDocument()
+    expect(form.getByLabelText('오답 원본 파일')).toBeInTheDocument()
+    expect(form.getByLabelText('JSON 파일 업로드')).toBeInTheDocument()
+    expect(form.getByLabelText('또는 JSON 붙여넣기')).toBeInTheDocument()
+    expect(form.queryByLabelText('자료 제목')).not.toBeInTheDocument()
+    expect(form.queryByLabelText(/문제 유형|문제번호|시험명/)).not.toBeInTheDocument()
+    const saveButton = form.getByRole('button', { name: '저장' })
+    expect(saveButton).toBeDisabled()
+    fireEvent.change(form.getByLabelText('오답 원본 파일'), { target: { files: [new File(['x'], 'wrong.jpg', { type: 'image/jpeg' })] } })
+    expect(saveButton).toBeDisabled()
+  })
+
+  it('STEP 1의 학교 프린트 추가는 자료 제목·원본·JSON(선택) 필드만 열고 원본만으로 저장할 수 있다', async()=>{
+    render(<App/>); fireEvent.click(await screen.findByRole('button',{name:/학교 프린트 추가/}))
+    const heading = screen.getByRole('heading',{name:'학교 프린트 추가'})
+    const form = within(heading.closest('form') as HTMLElement)
+    expect(form.getByLabelText('자료 제목')).toBeInTheDocument()
+    expect(form.getByLabelText('원본 파일 업로드')).toBeInTheDocument()
+    expect(form.getByLabelText('JSON 파일 업로드')).toBeInTheDocument()
+    expect(form.queryByLabelText(/^학생/)).not.toBeInTheDocument()
+    const saveButton = form.getByRole('button', { name: '저장' })
+    expect(saveButton).toBeDisabled()
+    fireEvent.change(form.getByLabelText('원본 파일 업로드'), { target: { files: [new File(['x'], 'print.pdf', { type: 'application/pdf' })] } })
+    expect(saveButton).not.toBeDisabled()
+  })
+
+  it('STEP 1에는 구형 도구(OCR·재구성, 오답 사진 추출, 학생별 오답노트) 안내가 없다', async()=>{
+    render(<App/>)
+    await screen.findByRole('heading',{name:'시험 자료 한눈에 모으기'})
+    expect(screen.queryByText(/OCR·재구성 도구/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button',{name:/오답 사진 추출/})).not.toBeInTheDocument()
+    expect(screen.queryByRole('button',{name:/학생별 오답노트/})).not.toBeInTheDocument()
+  })
+
+  it('학교 프린트 저장 시 상위 시험 Context를 그대로 전달하고 다시 입력받지 않는다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '중간', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await screen.findByText('신사중 · 3학년')
+    fireEvent.click(screen.getByRole('button', { name: /학교 프린트 추가/ }))
+    const formElement = screen.getByRole('heading', { name: '학교 프린트 추가' }).closest('form') as HTMLFormElement
+    fireEvent.change(within(formElement).getByLabelText('원본 파일 업로드'), { target: { files: [new File(['x'], 'print.pdf', { type: 'application/pdf' })] } })
+    fireEvent.submit(formElement)
+    await waitFor(() => expect(fetchMock.mock.calls.some(([u, init]) => String(u).includes('exam-materials') && init?.method === 'POST')).toBe(true))
+    const call = fetchMock.mock.calls.find(([u, init]) => String(u).includes('exam-materials') && init?.method === 'POST')
+    const form = call?.[1]?.body as FormData
+    expect(form.get('school')).toBe('신사중')
+    expect(form.get('grade')).toBe('3학년')
+    expect(form.get('exam')).toBe('중간')
   })
 
   it('STEP 4의 FINAL 준비는 4 CORE 선택형 워크스페이스를 연다', async()=>{
