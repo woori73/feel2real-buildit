@@ -3,6 +3,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import '@testing-library/jest-dom/vitest'
 import App from './App'
 
+const scrollIntoViewMock = vi.fn()
+
 beforeEach(() => {
   const storage=()=>{const values=new Map<string,string>();return{getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>values.set(key,value),removeItem:(key:string)=>values.delete(key),clear:()=>values.clear(),key:(index:number)=>[...values.keys()][index]??null,get length(){return values.size}}}
   vi.stubGlobal('localStorage',storage());vi.stubGlobal('sessionStorage',storage())
@@ -12,6 +14,8 @@ beforeEach(() => {
     if(url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}',{status:200,headers:{'Content-Type':'application/json'}})
     return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
   }))
+  scrollIntoViewMock.mockClear()
+  window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
@@ -57,6 +61,45 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(saveButton).toBeDisabled()
     fireEvent.change(form.getByLabelText('원본 파일 업로드'), { target: { files: [new File(['x'], 'print.pdf', { type: 'application/pdf' })] } })
     expect(saveButton).not.toBeDisabled()
+  })
+
+  it('학교 프린트 추가 클릭 시 등록 폼이 열리고 수업 인사이트와 동일한 방식으로 그 위치까지 자동 스크롤한다', async()=>{
+    render(<App/>)
+    fireEvent.click(await screen.findByRole('button',{name:/학교 프린트 추가/}))
+    const form = screen.getByRole('heading',{name:'학교 프린트 추가'}).closest('form') as HTMLElement
+    expect(form).toBeInTheDocument()
+    expect(form.id).toBe('material-set-form')
+    await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled())
+    expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length - 1]).toBe(form)
+    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'smooth' })
+  })
+
+  it('학생 오답 추가 클릭 시 등록 폼이 열리고 수업 인사이트와 동일한 방식으로 그 위치까지 자동 스크롤한다', async()=>{
+    render(<App/>)
+    fireEvent.click(await screen.findByRole('button',{name:/학생 오답 추가/}))
+    const form = screen.getByRole('heading',{name:'학생 오답 추가'}).closest('form') as HTMLElement
+    expect(form).toBeInTheDocument()
+    expect(form.id).toBe('material-set-form')
+    await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled())
+    expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length - 1]).toBe(form)
+    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ behavior: 'smooth' })
+  })
+
+  it('수업 인사이트 기록 버튼의 기존 스크롤 동작은 회귀 없이 그대로 유지된다', async()=>{
+    render(<App/>)
+    fireEvent.click(await screen.findByRole('button',{name:/수업 인사이트 기록/}))
+    const insightSection = document.getElementById('insight-entry')
+    expect(insightSection).toBeInTheDocument()
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' })
+    expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length - 1]).toBe(insightSection)
+  })
+
+  it('버튼에 저장 건수를 "추가 · 저장 N건" 형식으로 표시한다', async()=>{
+    render(<App/>)
+    const printButton = await screen.findByRole('button',{name:/학교 프린트 추가\s*·\s*저장\s*0\s*건/})
+    expect(printButton.textContent).toBe('학교 프린트 추가 · 저장 0건')
+    const wrongButton = screen.getByRole('button',{name:/학생 오답 추가\s*·\s*저장\s*0\s*건/})
+    expect(wrongButton.textContent).toBe('학생 오답 추가 · 저장 0건')
   })
 
   it('STEP 1에는 구형 도구(OCR·재구성, 오답 사진 추출, 학생별 오답노트) 안내가 없다', async()=>{
