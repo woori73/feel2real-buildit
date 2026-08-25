@@ -40,6 +40,22 @@ class NaesinWikiV1Test(unittest.TestCase):
                 UploadFile(filename='wrong.jpg', file=io.BytesIO(b'image')), None, '{}')
         self.assertEqual(400, raised.exception.status_code)
 
+    def test_school_print_can_be_saved_without_json_and_added_later(self):
+        """V1.1 STEP1 fix: 학교 프린트는 JSON을 나중에 추가할 수 있도록 선택 입력이다."""
+        created = main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '학교 2차 프린트', None,
+            UploadFile(filename='print2.pdf', file=io.BytesIO(b'%PDF-2'), headers={'content-type': 'application/pdf'}),
+            None, '')
+        self.assertEqual('{}', main.open_exam_material_json(created['id']).body.decode())
+
+    def test_student_wrong_note_still_requires_json(self):
+        """학생 오답은 원본+JSON 세트가 필수라는 기존 규칙을 이번 fix에서도 유지한다."""
+        student = main.create_student(main.StudentCreate(name='박서준', school='신구중', grade='중2'))
+        with self.assertRaises(HTTPException) as raised:
+            main.create_exam_material('student_wrong_note', '신구중', '중2', 2026, '2학기', '중간고사', '', student['id'],
+                UploadFile(filename='wrong2.jpg', file=io.BytesIO(b'image')), None, '')
+        self.assertEqual(400, raised.exception.status_code)
+
     def test_insight_keeps_source_and_exam_context(self):
         main.create_educator_insight(main.EducatorInsightCreate(content='서술형 3번 강조', school='신구중', grade='중2',
             year=2026, semester='2학기', exam='중간고사', source='school_teacher'))

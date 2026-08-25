@@ -378,12 +378,16 @@ def list_educator_insights(limit: int = 5, school: str = '', grade: str = '', ye
         return [dict(row) for row in rows]
 
 
-def _validate_json_upload(json_file: Optional[UploadFile], json_text: str) -> str:
+def _validate_json_upload(json_file: Optional[UploadFile], json_text: str, required: bool = True) -> str:
+    """core_type='school_print'는 JSON을 나중에 추가할 수 있도록 선택 입력으로 둔다
+    (NAESIN_WIKI_V1_1_TASK.md STEP1 fix). student_wrong_note는 기존과 동일하게 필수."""
     raw = json_text.strip()
     if json_file and json_file.filename:
         raw = json_file.file.read().decode('utf-8-sig').strip()
     if not raw:
-        raise HTTPException(status_code=400, detail='JSON 파일을 올리거나 JSON을 붙여넣어 주세요.')
+        if required:
+            raise HTTPException(status_code=400, detail='JSON 파일을 올리거나 JSON을 붙여넣어 주세요.')
+        return '{}'
     try:
         parsed = json.loads(raw)
     except (ValueError, UnicodeDecodeError):
@@ -404,7 +408,7 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     original_bytes = original.file.read()
     if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:
         raise HTTPException(status_code=400, detail='원본은 30MB 이하의 파일이어야 합니다.')
-    canonical_json = _validate_json_upload(json_file, json_text)
+    canonical_json = _validate_json_upload(json_file, json_text, required=core_type == 'student_wrong_note')
     now = datetime.now().isoformat()
     with get_db() as conn:
         cursor = conn.execute('''INSERT INTO exam_material_sets
