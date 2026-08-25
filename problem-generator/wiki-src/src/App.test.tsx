@@ -49,18 +49,29 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(saveButton).toBeDisabled()
   })
 
-  it('STEP 1의 학교 프린트 추가는 자료 제목·원본·JSON(선택) 필드만 열고 원본만으로 저장할 수 있다', async()=>{
+  it('STEP 1의 학교 프린트 추가는 자료 제목·HTML·JSON(선택) 필드만 열고 원본 업로드가 없으며 HTML만으로 저장할 수 있다', async()=>{
     render(<App/>); fireEvent.click(await screen.findByRole('button',{name:/학교 프린트 추가/}))
     const heading = screen.getByRole('heading',{name:'학교 프린트 추가'})
     const form = within(heading.closest('form') as HTMLElement)
     expect(form.getByLabelText('자료 제목')).toBeInTheDocument()
-    expect(form.getByLabelText('원본 파일 업로드')).toBeInTheDocument()
+    expect(form.getByLabelText('HTML 자료 파일 선택')).toBeInTheDocument()
+    expect(form.getByLabelText('HTML 붙여넣기')).toBeInTheDocument()
     expect(form.getByLabelText('JSON 파일 업로드')).toBeInTheDocument()
+    expect(form.queryByLabelText('원본 파일 업로드')).not.toBeInTheDocument()
     expect(form.queryByLabelText(/^학생/)).not.toBeInTheDocument()
     const saveButton = form.getByRole('button', { name: '저장' })
     expect(saveButton).toBeDisabled()
-    fireEvent.change(form.getByLabelText('원본 파일 업로드'), { target: { files: [new File(['x'], 'print.pdf', { type: 'application/pdf' })] } })
+    fireEvent.change(form.getByLabelText('HTML 붙여넣기'), { target: { value: '<p>5과 본문 HTML</p>' } })
     expect(saveButton).not.toBeDisabled()
+  })
+
+  it('학교 프린트 HTML 파일을 선택하면 브라우저에서 읽어 붙여넣기 textarea에 채운다', async()=>{
+    render(<App/>); fireEvent.click(await screen.findByRole('button',{name:/학교 프린트 추가/}))
+    const heading = screen.getByRole('heading',{name:'학교 프린트 추가'})
+    const form = within(heading.closest('form') as HTMLElement)
+    const file = new File(['<p>파일에서 읽은 HTML</p>'], 'print.html', { type: 'text/html' })
+    fireEvent.change(form.getByLabelText('HTML 자료 파일 선택'), { target: { files: [file] } })
+    await waitFor(() => expect((form.getByLabelText('HTML 붙여넣기') as HTMLTextAreaElement).value).toBe('<p>파일에서 읽은 HTML</p>'))
   })
 
   it('학교 프린트 추가 클릭 시 등록 폼이 열리고 즉시(behavior:auto) 그 위치까지 이동한다', async()=>{
@@ -119,7 +130,7 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(examSelect.value).toBe('전체')
   })
 
-  it('학교 프린트 저장 시 상위 시험 Context(중간→중간고사)를 그대로 전달하고 다시 입력받지 않는다', async()=>{
+  it('학교 프린트 저장 시 상위 시험 Context(중간→중간고사)를 그대로 전달하고 HTML content를 함께 보낸다', async()=>{
     const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
@@ -136,7 +147,7 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     fireEvent.click(screen.getByRole('button', { name: /학교 프린트 추가/ }))
     const formElement = screen.getByRole('heading', { name: '학교 프린트 추가' }).closest('form') as HTMLFormElement
     expect(within(formElement).getByText(/중간에 자동 연결됩니다/)).toBeInTheDocument()
-    fireEvent.change(within(formElement).getByLabelText('원본 파일 업로드'), { target: { files: [new File(['x'], 'print.pdf', { type: 'application/pdf' })] } })
+    fireEvent.change(within(formElement).getByLabelText('HTML 붙여넣기'), { target: { value: '<p>5과 본문 HTML</p>' } })
     fireEvent.submit(formElement)
     await waitFor(() => expect(fetchMock.mock.calls.some(([u, init]) => String(u).includes('exam-materials') && init?.method === 'POST')).toBe(true))
     const call = fetchMock.mock.calls.find(([u, init]) => String(u).includes('exam-materials') && init?.method === 'POST')
@@ -144,6 +155,8 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(form.get('school')).toBe('신사중')
     expect(form.get('grade')).toBe('3학년')
     expect(form.get('exam')).toBe('중간고사')
+    expect(form.get('html_text')).toBe('<p>5과 본문 HTML</p>')
+    expect(form.get('original')).toBeNull()
   })
 
   it('STEP 4의 FINAL 준비는 4 CORE 선택형 워크스페이스를 연다', async()=>{

@@ -25,14 +25,37 @@ class NaesinWikiV1Test(unittest.TestCase):
     def tearDown(self): self.temp_dir.cleanup()
 
     def test_original_and_json_are_saved_as_one_context_set(self):
+        """기존(원본 파일 기반) 학교 프린트 데이터는 이번 HTML+JSON 전환 이후에도 그대로 조회되어야 한다."""
         created = main.create_exam_material(
             'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '학교 1차 프린트', None,
             UploadFile(filename='print.pdf', file=io.BytesIO(b'%PDF-original'), headers={'content-type': 'application/pdf'}),
             None, json.dumps({'items': [{'number': 1}]}, ensure_ascii=False))
         rows = main.list_exam_materials('신구중', '중2', 2026, '2학기', '중간고사')
         self.assertEqual([created['id']], [row['id'] for row in rows])
+        self.assertEqual(0, rows[0]['has_html'])
         self.assertEqual(b'%PDF-original', main.open_exam_material_original(created['id']).body)
         self.assertEqual(1, json.loads(main.open_exam_material_json(created['id']).body)['items'][0]['number'])
+
+    def test_school_print_saves_html_and_json_without_any_original_file(self):
+        """새 방식: 학교 프린트는 사진/PDF/HWP 원본 없이 HTML+JSON만으로 저장·조회할 수 있어야 한다."""
+        created = main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '5과 HTML 자료', None,
+            None, None, json.dumps({'items': [{'number': 1}]}, ensure_ascii=False),
+            html_text='<h1>5과 본문</h1><p>학교 프린트 HTML 원문</p>')
+        self.assertEqual('', created['original_name'])
+        rows = main.list_exam_materials('신구중', '중2', 2026, '2학기', '중간고사')
+        self.assertEqual(1, rows[0]['has_html'])
+        html_body = main.open_exam_material_html(created['id']).body.decode('utf-8')
+        self.assertIn('학교 프린트 HTML 원문', html_body)
+        json_body = json.loads(main.open_exam_material_json(created['id']).body)
+        self.assertEqual(1, json_body['items'][0]['number'])
+
+    def test_school_print_requires_html_or_original(self):
+        """HTML도, 원본 파일도 없는 학교 프린트 저장은 거부되어야 한다."""
+        with self.assertRaises(HTTPException) as raised:
+            main.create_exam_material('school_print', '신구중', '중2', 2026, '2학기', '중간고사', '빈 자료', None,
+                None, None, '')
+        self.assertEqual(400, raised.exception.status_code)
 
     def test_wrong_note_requires_selected_student(self):
         with self.assertRaises(HTTPException) as raised:

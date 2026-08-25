@@ -151,7 +151,8 @@ def init_db():
             year INTEGER NOT NULL, semester TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
             student_id INTEGER, title TEXT NOT NULL DEFAULT '',
             original_name TEXT NOT NULL, original_type TEXT NOT NULL DEFAULT 'application/octet-stream',
-            original_blob BLOB NOT NULL, json_text TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL,
+            original_blob BLOB NOT NULL, json_text TEXT NOT NULL DEFAULT '{}',
+            html_text TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
             FOREIGN KEY (student_id) REFERENCES students(id)
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_exam_material_context ON exam_material_sets(school, grade, year, semester, exam, core_type)')
@@ -230,6 +231,9 @@ def migrate_schema():
         ):
             if name not in insight_cols:
                 conn.execute(f'ALTER TABLE educator_insights ADD COLUMN {name} {definition}')
+        material_cols = {row['name'] for row in conn.execute("PRAGMA table_info(exam_material_sets)").fetchall()}
+        if 'html_text' not in material_cols:
+            conn.execute("ALTER TABLE exam_material_sets ADD COLUMN html_text TEXT NOT NULL DEFAULT ''")
         source_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_question_sources)").fetchall()}
         for name, definition in (
             ('source_hash', "TEXT NOT NULL DEFAULT ''"),
@@ -399,26 +403,34 @@ def _validate_json_upload(json_file: Optional[UploadFile], json_text: str, requi
 def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'] = Form(...),
                          school: str = Form(...), grade: str = Form(...), year: int = Form(...),
                          semester: str = Form(...), exam: str = Form(...), title: str = Form(''),
-                         student_id: Optional[int] = Form(None), original: UploadFile = File(...),
-                         json_file: Optional[UploadFile] = File(None), json_text: str = Form('')):
-    if not original.filename:
-        raise HTTPException(status_code=400, detail='원본 파일을 올려 주세요.')
+                         student_id: Optional[int] = Form(None), original: Optional[UploadFile] = File(None),
+                         json_file: Optional[UploadFile] = File(None), json_text: str = Form(''),
+                         html_text: str = Form('')):
     if core_type == 'student_wrong_note' and student_id is None:
         raise HTTPException(status_code=400, detail='학생을 선택해 주세요.')
-    original_bytes = original.file.read()
-    if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail='원본은 30MB 이하의 파일이어야 합니다.')
+    has_original = bool(original and original.filename)
+    if core_type == 'student_wrong_note' and not has_original:
+        raise HTTPException(status_code=400, detail='원본 파일을 올려 주세요.')
+    canonical_html = html_text.strip() if core_type == 'school_print' and isinstance(html_text, str) else ''
+    if core_type == 'school_print' and not has_original and not canonical_html:
+        raise HTTPException(status_code=400, detail='HTML 자료를 올리거나 붙여넣어 주세요.')
+    original_name, original_type, original_bytes = '', 'application/octet-stream', b''
+    if has_original:
+        original_bytes = original.file.read()
+        if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail='원본은 30MB 이하의 파일이어야 합니다.')
+        original_name, original_type = original.filename[:255], original.content_type or 'application/octet-stream'
     canonical_json = _validate_json_upload(json_file, json_text, required=core_type == 'student_wrong_note')
     now = datetime.now().isoformat()
     with get_db() as conn:
         cursor = conn.execute('''INSERT INTO exam_material_sets
             (core_type, school, grade, year, semester, exam, student_id, title, original_name,
-             original_type, original_blob, json_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+             original_type, original_blob, json_text, html_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (core_type, school.strip(), grade.strip(), year, semester.strip(), exam.strip(), student_id,
-             title.strip()[:150], original.filename[:255], original.content_type or 'application/octet-stream',
-             original_bytes, canonical_json, now))
+             title.strip()[:150], original_name, original_type,
+             original_bytes, canonical_json, canonical_html, now))
         row = conn.execute('''SELECT m.id,m.core_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
-            s.name student_name,m.title,m.original_name,m.original_type,m.created_at
+            s.name student_name,m.title,m.original_name,m.original_type,m.html_text,m.created_at
             FROM exam_material_sets m LEFT JOIN students s ON s.id=m.student_id WHERE m.id=?''', (cursor.lastrowid,)).fetchone()
         return dict(row)
 
@@ -427,7 +439,8 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
 def list_exam_materials(school: str, grade: str, year: int, semester: str, exam: str):
     with get_db() as conn:
         rows = conn.execute('''SELECT m.id,m.core_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
-            s.name student_name,m.title,m.original_name,m.original_type,m.created_at
+            s.name student_name,m.title,m.original_name,m.original_type,m.created_at,
+            (CASE WHEN m.html_text <> '' THEN 1 ELSE 0 END) AS has_html
             FROM exam_material_sets m LEFT JOIN students s ON s.id=m.student_id
             WHERE m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=? ORDER BY m.id DESC''',
             (school, grade, year, semester, exam)).fetchall()
@@ -449,6 +462,14 @@ def open_exam_material_json(material_id: int):
         row = conn.execute('SELECT json_text FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
         if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
         return Response(row['json_text'], media_type='application/json; charset=utf-8')
+
+
+@app.get('/api/exam-materials/{material_id}/html')
+def open_exam_material_html(material_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT html_text FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
+        if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        return Response(row['html_text'] or '', media_type='text/html; charset=utf-8')
 
 
 # ==================================================================================
