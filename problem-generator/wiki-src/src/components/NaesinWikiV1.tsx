@@ -16,13 +16,14 @@ const EXAM_OPTIONS: { label: string; value: string }[] = [
   { label: '기말', value: '기말고사' },
 ]
 const downloadBlob = (filename: string, blob: Blob) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url) }
+const MAX_ORIGINALS = 20
 
 export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}) {
   const [tree,setTree]=useState<SchoolNode[]>([]), [students,setStudents]=useState<Student[]>([])
   const [context,setContext]=useState<Context>({school:'',grade:'',year:years[0],semester:'1학기',exam:'전체'})
   const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
   const [core,setCore]=useState<'school_print'|'student_wrong_note'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
-  const [studentId,setStudentId]=useState(''), [title,setTitle]=useState(''), [original,setOriginal]=useState<File|null>(null), [jsonFile,setJsonFile]=useState<File|null>(null), [jsonText,setJsonText]=useState('')
+  const [studentId,setStudentId]=useState(''), [title,setTitle]=useState(''), [originals,setOriginals]=useState<File[]>([]), [jsonFile,setJsonFile]=useState<File|null>(null), [jsonText,setJsonText]=useState('')
   const [insightText,setInsightText]=useState(''), [insightSource,setInsightSource]=useState<'director'|'school_teacher'>('director')
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
@@ -44,8 +45,30 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   useEffect(()=>{if(core)document.getElementById('material-set-form')?.scrollIntoView({behavior:'auto',block:'start'})},[core])
   const filteredStudents=students.filter(s=>(!s.school||s.school===context.school)&&(!s.grade||s.grade===context.grade))
   const prints=materials.filter(m=>m.core_type==='school_print'), wrongs=materials.filter(m=>m.core_type==='student_wrong_note')
-  const resetUpload=()=>{setOriginal(null);setJsonFile(null);setJsonText('');setTitle('')}
-  const saveMaterial=async(e:FormEvent)=>{e.preventDefault();if(!core||!original)return;const form=new FormData();Object.entries(context).forEach(([k,v])=>form.append(k,String(v)));form.append('core_type',core);form.append('title',title);form.append('original',original);if(jsonFile)form.append('json_file',jsonFile);form.append('json_text',jsonText);if(core==='student_wrong_note')form.append('student_id',studentId);const r=await api('exam-materials',{method:'POST',body:form});const b=await r.json();if(!r.ok){setNotice(b.detail||'저장하지 못했습니다.');return}resetUpload();setCore(null);setNotice('원본과 JSON을 한 세트로 저장했습니다.');void load()}
+  const resetUpload=()=>{setOriginals([]);setJsonFile(null);setJsonText('');setTitle('')}
+  const chooseOriginals=(e:ChangeEvent<HTMLInputElement>)=>{const selected=Array.from(e.target.files||[]);e.target.value='';if(!selected.length)return;const merged=[...originals];let added=0,skipped=0;for(const file of selected){const duplicate=merged.some(item=>item.name===file.name&&item.size===file.size&&item.lastModified===file.lastModified);if(duplicate)continue;if(merged.length>=MAX_ORIGINALS){skipped+=1;continue}merged.push(file);added+=1}setOriginals(merged);setNotice(skipped?`원본 자료는 한 번에 최대 ${MAX_ORIGINALS}개까지 선택할 수 있습니다. ${skipped}개를 제외했습니다.`:added?`${added}개 파일을 선택했습니다.`:'')}
+  const removeOriginal=(index:number)=>setOriginals(current=>current.filter((_,i)=>i!==index))
+  const saveMaterial=async(e:FormEvent)=>{
+    e.preventDefault();if(!core||!originals.length)return
+    let failed=0
+    for(const file of originals){
+      const form=new FormData()
+      Object.entries(context).forEach(([k,v])=>form.append(k,String(v)))
+      form.append('core_type',core)
+      form.append('title',originals.length>1&&title.trim()?`${title.trim()} · ${file.name}`:title)
+      form.append('original',file)
+      if(jsonFile)form.append('json_file',jsonFile)
+      form.append('json_text',jsonText)
+      if(core==='student_wrong_note')form.append('student_id',studentId)
+      const r=await api('exam-materials',{method:'POST',body:form})
+      if(!r.ok)failed+=1
+    }
+    if(failed===originals.length){setNotice('저장하지 못했습니다.');return}
+    const saved=originals.length-failed
+    resetUpload();setCore(null)
+    setNotice(failed?`원본 ${saved}개를 저장했습니다. ${failed}개는 저장하지 못했습니다.`:`원본 ${saved}개와 JSON을 한 세트로 저장했습니다.`)
+    void load()
+  }
   const saveInsight=async()=>{if(!insightText.trim())return;const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...context,content:insightText,source:insightSource,student_context:'',lesson_context:''})});if(r.ok){setInsightText('');setNotice('수업 인사이트를 저장했습니다.');void load()}}
   const toggle=(key:string)=>setSelected(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
@@ -103,7 +126,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       </li>
     </ol>
 
-    {core&&<form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">ORIGINAL + JSON SET</p><h2>{core==='school_print'?'학교 프린트':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>{core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}{core==='school_print'&&<label>자료 제목<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}<label>{core==='school_print'?'원본 파일 업로드':'오답 원본 파일'}<input required type="file" onChange={(e:ChangeEvent<HTMLInputElement>)=>setOriginal(e.target.files?.[0]||null)}/></label><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label><button className="primary-action" disabled={!original||(core==='student_wrong_note'&&!jsonFile&&!jsonText.trim())}>저장</button></form>}
+    {core&&<form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">ORIGINAL + JSON SET</p><h2>{core==='school_print'?'학교 프린트':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>{core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}{core==='school_print'&&<label>자료 제목<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}<label>{core==='school_print'?'원본 파일 업로드':'오답 원본 파일'}<input type="file" multiple onChange={chooseOriginals}/></label><small className="field-hint">원본 자료는 한 번에 최대 {MAX_ORIGINALS}개까지 선택할 수 있습니다.</small>{originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}<label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label><button className="primary-action" disabled={!originals.length||(core==='student_wrong_note'&&!jsonFile&&!jsonText.trim())}>저장</button></form>}
     <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트</h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다.</p></div></div><div className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button></div></section>
 
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
