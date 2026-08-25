@@ -49,6 +49,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [insightText,setInsightText]=useState(''), [insightSource,setInsightSource]=useState<'director'|'school_teacher'>('director')
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
+  const [savingSchoolPrint,setSavingSchoolPrint]=useState(false)
   // fetchSchoolTree()가 늦게 끝나면(운영 네트워크 지연) 사용자가 이미 고른 학교/학년/시험을
   // 마운트 시점 기본값(setContext(...exam:'전체'))이 뒤늦게 덮어써 버리는 경합이 있었다.
   // STEP1에서 학교 프린트를 저장한 뒤 목록을 다시 불러오면 방금 고른 시험이 아니라 '전체' 기준으로
@@ -58,7 +59,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const schoolNode=tree.find(item=>item.school===context.school), grades=schoolNode?.grades||[]
   const examLabel=EXAM_OPTIONS.find(o=>o.value===context.exam)?.label||context.exam
   const load=async(targetContext:Context)=>{
-    if(!targetContext.school||!targetContext.grade||!targetContext.exam)return
+    if(!targetContext.school||!targetContext.grade||!targetContext.exam)return false
     const query=contextQuery(targetContext)
     const [q,materialResponse,i]=await Promise.all([
       fetchQuestions({school:targetContext.school,grade:targetContext.grade,exam:targetContext.exam}),
@@ -68,10 +69,11 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     if(!materialResponse.ok){
       const body=await materialResponse.json().catch(()=>({}))
       setNotice(apiErrorMessage(body,'현재 시험의 학교 프린트를 불러오지 못했습니다.'))
-      setQuestions(q);setInsights(i);return
+      setQuestions(q);setInsights(i);return false
     }
     const m=await materialResponse.json()
     setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setInsights(i)
+    return true
   }
   useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];const t=touchedRef.current;if(first)setContext(c=>({...c,school:t.school?c.school:first.school,grade:t.grade?c.grade:(grade?.grade||''),exam:t.exam?c.exam:'전체'}))});fetchStudents().then(setStudents)},[])
   useEffect(()=>{void load(context)},[context.school,context.grade,context.year,context.semester,context.exam])
@@ -92,19 +94,27 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     reader.readAsText(file)
   }
   const saveSchoolPrint=async(e:FormEvent)=>{
-    e.preventDefault();if(!htmlText.trim())return
+    e.preventDefault()
+    if(savingSchoolPrint)return
+    if(!htmlText.trim()){setNotice('학교 프린트 HTML을 입력하거나 HTML 파일을 선택해 주세요.');return}
+    if(!context.school||!context.grade||!context.exam){setNotice('학교·학년·시험 Context를 먼저 선택해 주세요.');return}
+    const savedContext={...context}
     const form=new FormData()
-    Object.entries(context).forEach(([k,v])=>form.append(k,String(v)))
+    Object.entries(savedContext).forEach(([k,v])=>form.append(k,String(v)))
     form.append('core_type','school_print')
     form.append('title',title)
     form.append('html_text',htmlText)
     if(jsonFile)form.append('json_file',jsonFile)
     form.append('json_text',jsonText)
-    const r=await api('exam-materials',{method:'POST',body:form})
-    const b=await r.json().catch(()=>({}))
-    if(!r.ok){setNotice(apiErrorMessage(b,'저장하지 못했습니다.'));return}
-    const savedContext={...context}
-    resetUpload();setCore(null);setNotice('HTML과 JSON을 한 세트로 저장했습니다.');await load(savedContext)
+    setSavingSchoolPrint(true);setNotice('학교 프린트를 저장하는 중입니다.')
+    try{
+      const r=await api('exam-materials',{method:'POST',body:form})
+      const b=await r.json().catch(()=>({}))
+      if(!r.ok){setNotice(apiErrorMessage(b,'학교 프린트를 저장하지 못했습니다.'));return}
+      if(!await load(savedContext))return
+      resetUpload();setCore(null);setNotice('HTML과 JSON을 한 세트로 저장했습니다.')
+    }catch(error){setNotice(error instanceof Error?`학교 프린트를 저장하지 못했습니다: ${error.message}`:'학교 프린트를 저장하지 못했습니다.')}
+    finally{setSavingSchoolPrint(false)}
   }
   const saveStudentWrongNote=async(e:FormEvent)=>{
     e.preventDefault();if(!originals.length)return
@@ -197,7 +207,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       {originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}
     </>}
     <label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label>
-    <button className="primary-action" disabled={core==='school_print'?!htmlText.trim():(!originals.length||!jsonFile&&!jsonText.trim())}>저장</button></form>}
+    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||!htmlText.trim():(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>}
     <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트</h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다.</p></div></div><div className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button></div></section>
 
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
@@ -217,3 +227,4 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
 
 function Core({title,count,children}:{title:string;count:number;children:ReactNode}){return <div className="admin-core"><h3>{title} <span>{count}</span></h3>{count?children:<p className="field-hint">현재 시험에 저장된 자료가 없습니다.</p>}</div>}
 function Row({checked,onToggle,label,actions}:{checked:boolean;onToggle:()=>void;label:string;actions:ReactNode}){return <div className="admin-source-row"><input type="checkbox" checked={checked} onChange={onToggle}/><span>{label}</span><div>{actions}</div></div>}
+
