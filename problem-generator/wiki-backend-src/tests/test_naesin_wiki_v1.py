@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
@@ -44,6 +45,39 @@ class NaesinWikiV1Test(unittest.TestCase):
             year=2026, semester='2학기', exam='중간고사', source='school_teacher'))
         rows = main.list_educator_insights(20, '신구중', '중2', 2026, '2학기', '중간고사')
         self.assertEqual('school_teacher', rows[0]['source'])
+
+    def test_selected_exam_material_wrong_notes_export_as_single_docx(self):
+        """V1.1: NaesinWikiV1의 원본+JSON 통합 저장(학생 오답)을 선택해 그대로 Word 2007로
+        내보낼 수 있어야 한다 — 새 스타일이 아니라 기존 오답 export 헬퍼를 재사용한다."""
+        student = main.create_student(main.StudentCreate(name='김민준', school='신구중', grade='중2'))
+        created = main.create_exam_material(
+            'student_wrong_note', '신구중', '중2', 2026, '2학기', '중간고사', '6번 오답', student['id'],
+            UploadFile(filename='wrong.jpg', file=io.BytesIO(b'jpeg-bytes'), headers={'content-type': 'image/jpeg'}),
+            None, json.dumps({'wrong_text': '6번 문장 흐름 오답', 'answer': '③'}, ensure_ascii=False))
+        response = main.export_exam_material_wrong_notes_docx(
+            main.ExamMaterialWrongNoteExportRequest(material_ids=[created['id']], title='김민준 오답 복습'))
+        self.assertEqual(
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', response.media_type)
+        with zipfile.ZipFile(response.path) as archive:
+            self.assertIn('word/document.xml', archive.namelist())
+            document_xml = archive.read('word/document.xml').decode('utf-8')
+        self.assertIn('김민준', document_xml)
+        self.assertIn('wrong_text', document_xml)
+
+    def test_export_requires_selected_material_ids(self):
+        with self.assertRaises(HTTPException) as raised:
+            main.export_exam_material_wrong_notes_docx(main.ExamMaterialWrongNoteExportRequest(material_ids=[]))
+        self.assertEqual(400, raised.exception.status_code)
+
+    def test_export_ignores_school_print_ids(self):
+        """core_type='school_print' 자료는 학생 오답 export 대상이 아니다."""
+        created = main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '학교 프린트', None,
+            UploadFile(filename='print.pdf', file=io.BytesIO(b'%PDF-1'), headers={'content-type': 'application/pdf'}),
+            None, json.dumps({'items': []}, ensure_ascii=False))
+        with self.assertRaises(HTTPException) as raised:
+            main.export_exam_material_wrong_notes_docx(main.ExamMaterialWrongNoteExportRequest(material_ids=[created['id']]))
+        self.assertEqual(400, raised.exception.status_code)
 
 
 if __name__ == '__main__': unittest.main()
