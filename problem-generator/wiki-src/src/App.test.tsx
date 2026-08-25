@@ -15,16 +15,22 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
-describe('학생 Wiki 카드 라우팅', () => {
-  const openStudentHub=()=>{render(<App/>);fireEvent.click(screen.getByRole('button',{name:/학생 오답 · 기록/}))}
-  it('오답 기록·추출 카드를 클릭하면 실제 추출 컴포넌트를 렌더링한다', async()=>{
-    openStudentHub();fireEvent.click(screen.getByRole('button',{name:/오답 기록·추출/}))
-    expect(await screen.findByRole('region',{name:'오답 기록·추출'})).toBeInTheDocument()
-    expect(screen.getByRole('heading',{name:'오답 추출'})).toBeInTheDocument()
+describe('내신 Wiki V1 시험 Context 홈', () => {
+  it('학교·학년·연도·학기·시험과 4 CORE만 중심에 표시한다', async()=>{
+    render(<App/>)
+    expect(await screen.findByRole('heading',{name:'시험 자료 한눈에 모으기'})).toBeInTheDocument()
+    expect(screen.getByLabelText('시험 Context')).toBeInTheDocument()
+    for(const name of ['제작 문제','학교 프린트','학생 오답','수업 인사이트']) {
+      expect(screen.getByRole('button',{name:new RegExp(name)})).toBeInTheDocument()
+    }
+    expect(screen.getByRole('button',{name:'Admin / Final 자료 보기'})).toBeInTheDocument()
   })
-  it('학생별 오답노트 카드를 클릭하면 실제 누적 오답 컴포넌트를 렌더링한다', async()=>{
-    openStudentHub();fireEvent.click(screen.getByRole('button',{name:/학생별 오답노트/}))
-    expect(await screen.findByRole('region',{name:'학생별 오답노트'})).toBeInTheDocument()
-    expect(screen.getByRole('heading',{name:/저장된 오답 자료/})).toBeInTheDocument()
+
+  it('학생 오답 카드는 중복 메타 입력 없이 원본+JSON 세트 폼을 연다', async()=>{
+    render(<App/>); fireEvent.click(await screen.findByRole('button',{name:/학생 오답/}))
+    expect(screen.getByRole('heading',{name:'학생 오답 추가'})).toBeInTheDocument()
+    expect(screen.getByLabelText('원본 업로드')).toBeInTheDocument()
+    expect(screen.getByLabelText('JSON 파일 업로드')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/문제 유형|문제번호|시험명/)).not.toBeInTheDocument()
   })
 })

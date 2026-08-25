@@ -1,5 +1,13 @@
 # 기능별 플로우 (Feature Flows)
 
+## BuildIt 내신 Wiki V1
+
+첫 화면에서 `학교 → 학년 → 연도 → 학기 → 시험` Context를 선택한다. 같은 화면의 4 CORE는
+`제작 문제(generated_questions)`, `학교 프린트(exam_material_sets)`, `학생 오답(exam_material_sets + student_id)`,
+`수업 인사이트(educator_insights)`만 표시한다. 학교 프린트와 학생 오답은 원본 파일과 canonical JSON을
+한 요청으로 저장하며 Context 값은 화면 선택값을 자동 사용한다. Admin/Final 보기는 현재 Context의 자료만
+목록화하고 개별 원본·JSON 열기와 항목 선택만 제공한다. FINAL/직보 파일 생성은 V1 범위 밖이다.
+
 > 화면·API·상태 흐름. 도메인 스키마: [DOMAIN.md](DOMAIN.md) · API 계약: [API.md](API.md)
 
 ## BuildIt Wiki 학교 프린트 복원

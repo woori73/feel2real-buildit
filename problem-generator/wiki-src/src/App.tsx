@@ -9,11 +9,11 @@ import type { PrintNote } from './components/SchoolDatabase'
 import ApiSettingsModal, { ApiSettings } from './components/ApiSettingsModal'
 import DigitalTwinImport from './components/DigitalTwinImport'
 import QuestionCard from './components/QuestionCard'
-import EducatorState from './components/EducatorState'
 import CategoryHub from './components/CategoryHub'
 import InsightRecorder from './components/InsightRecorder'
 import AssistantComposer, { AssistantMessage } from './components/AssistantComposer'
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
+import NaesinWikiV1 from './components/NaesinWikiV1'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
 import { api, normalizedApiError } from './lib/api'
 import './styles/generator.css'
@@ -130,7 +130,7 @@ export default function App() {
     {!isHome && !isHub && <aside className="side-nav compact-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><nav aria-label="현재 작업 내비게이션"><button onClick={() => setPage(parentHub)}>← {parentHub === 'student' ? '학생' : parentHub === 'intelligence' ? '지능' : '만들기'}</button></nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 내보내기</a></div></aside>}
     <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}>{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
       {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
-      {page === 'state' && <><button className="wiki-home-settings" onClick={() => setSettingsOpen(true)} aria-label="AI 설정 열기">⚙ 설정</button><EducatorState onNavigate={setPage} /></>}
+      {page === 'state' && <><button className="wiki-home-settings" onClick={() => setSettingsOpen(true)} aria-label="AI 설정 열기">⚙ 설정</button><NaesinWikiV1 onNavigate={setPage} /></>}
       {page === 'create' && <CategoryHub hub="create" onNavigate={setPage} />}
       {page === 'student' && <CategoryHub hub="student" onNavigate={setPage} />}
       {page === 'intelligence' && <CategoryHub hub="intelligence" onNavigate={setPage} />}

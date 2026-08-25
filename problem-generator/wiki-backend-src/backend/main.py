@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 from pydantic import ValidationError
 from docx import Document
@@ -138,8 +138,23 @@ def init_db():
             grade TEXT NOT NULL DEFAULT '',
             student_context TEXT NOT NULL DEFAULT '',
             lesson_context TEXT NOT NULL DEFAULT '',
+            year INTEGER,
+            semester TEXT NOT NULL DEFAULT '',
+            exam TEXT NOT NULL DEFAULT '',
+            source TEXT NOT NULL DEFAULT 'director',
             created_at TEXT NOT NULL
         )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS exam_material_sets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            core_type TEXT NOT NULL CHECK (core_type IN ('school_print','student_wrong_note')),
+            school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '',
+            year INTEGER NOT NULL, semester TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
+            student_id INTEGER, title TEXT NOT NULL DEFAULT '',
+            original_name TEXT NOT NULL, original_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+            original_blob BLOB NOT NULL, json_text TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL,
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_exam_material_context ON exam_material_sets(school, grade, year, semester, exam, core_type)')
         conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_sources (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             exam_kind TEXT NOT NULL CHECK (exam_kind IN ('half','full')),
@@ -208,6 +223,13 @@ def migrate_schema():
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN title TEXT NOT NULL DEFAULT ''")
         if 'question_type' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN question_type TEXT NOT NULL DEFAULT ''")
+        insight_cols = {row['name'] for row in conn.execute("PRAGMA table_info(educator_insights)").fetchall()}
+        for name, definition in (
+            ('year', 'INTEGER'), ('semester', "TEXT NOT NULL DEFAULT ''"),
+            ('exam', "TEXT NOT NULL DEFAULT ''"), ('source', "TEXT NOT NULL DEFAULT 'director'"),
+        ):
+            if name not in insight_cols:
+                conn.execute(f'ALTER TABLE educator_insights ADD COLUMN {name} {definition}')
         source_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_question_sources)").fetchall()}
         for name, definition in (
             ('source_hash', "TEXT NOT NULL DEFAULT ''"),
@@ -311,6 +333,10 @@ class EducatorInsightCreate(BaseModel):
     grade: str = ''
     student_context: str = ''
     lesson_context: str = ''
+    year: Optional[int] = None
+    semester: str = ''
+    exam: str = ''
+    source: Literal['director', 'school_teacher'] = 'director'
 
 
 @app.post('/api/educator-insights', status_code=201)
@@ -324,11 +350,12 @@ def create_educator_insight(payload: EducatorInsightCreate):
     with get_db() as conn:
         cursor = conn.execute(
             '''INSERT INTO educator_insights
-               (content, school, grade, student_context, lesson_context, created_at)
-               VALUES (?,?,?,?,?,?)''',
+               (content, school, grade, student_context, lesson_context, year, semester, exam, source, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)''',
             (
                 content, payload.school.strip()[:100], payload.grade.strip()[:50],
-                payload.student_context.strip()[:200], payload.lesson_context.strip()[:200], now,
+                payload.student_context.strip()[:200], payload.lesson_context.strip()[:200], payload.year,
+                payload.semester.strip()[:20], payload.exam.strip()[:80], payload.source, now,
             ),
         )
         row = conn.execute('SELECT * FROM educator_insights WHERE id = ?', (cursor.lastrowid,)).fetchone()
@@ -336,11 +363,88 @@ def create_educator_insight(payload: EducatorInsightCreate):
 
 
 @app.get('/api/educator-insights')
-def list_educator_insights(limit: int = 5):
+def list_educator_insights(limit: int = 5, school: str = '', grade: str = '', year: Optional[int] = None,
+                           semester: str = '', exam: str = ''):
     safe_limit = max(1, min(limit, 20))
     with get_db() as conn:
-        rows = conn.execute('SELECT * FROM educator_insights ORDER BY id DESC LIMIT ?', (safe_limit,)).fetchall()
+        clauses, values = ['1=1'], []
+        for column, value in (('school', school), ('grade', grade), ('semester', semester), ('exam', exam)):
+            if value:
+                clauses.append(f'{column} = ?'); values.append(value)
+        if year is not None:
+            clauses.append('(year = ? OR year IS NULL)'); values.append(year)
+        values.append(safe_limit)
+        rows = conn.execute(f"SELECT * FROM educator_insights WHERE {' AND '.join(clauses)} ORDER BY id DESC LIMIT ?", values).fetchall()
         return [dict(row) for row in rows]
+
+
+def _validate_json_upload(json_file: Optional[UploadFile], json_text: str) -> str:
+    raw = json_text.strip()
+    if json_file and json_file.filename:
+        raw = json_file.file.read().decode('utf-8-sig').strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail='JSON 파일을 올리거나 JSON을 붙여넣어 주세요.')
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(status_code=400, detail='올바른 JSON 형식인지 확인해 주세요.')
+    return json.dumps(parsed, ensure_ascii=False)
+
+
+@app.post('/api/exam-materials', status_code=201)
+def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'] = Form(...),
+                         school: str = Form(...), grade: str = Form(...), year: int = Form(...),
+                         semester: str = Form(...), exam: str = Form(...), title: str = Form(''),
+                         student_id: Optional[int] = Form(None), original: UploadFile = File(...),
+                         json_file: Optional[UploadFile] = File(None), json_text: str = Form('')):
+    if not original.filename:
+        raise HTTPException(status_code=400, detail='원본 파일을 올려 주세요.')
+    if core_type == 'student_wrong_note' and student_id is None:
+        raise HTTPException(status_code=400, detail='학생을 선택해 주세요.')
+    original_bytes = original.file.read()
+    if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail='원본은 30MB 이하의 파일이어야 합니다.')
+    canonical_json = _validate_json_upload(json_file, json_text)
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute('''INSERT INTO exam_material_sets
+            (core_type, school, grade, year, semester, exam, student_id, title, original_name,
+             original_type, original_blob, json_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (core_type, school.strip(), grade.strip(), year, semester.strip(), exam.strip(), student_id,
+             title.strip()[:150], original.filename[:255], original.content_type or 'application/octet-stream',
+             original_bytes, canonical_json, now))
+        row = conn.execute('''SELECT m.id,m.core_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
+            s.name student_name,m.title,m.original_name,m.original_type,m.created_at
+            FROM exam_material_sets m LEFT JOIN students s ON s.id=m.student_id WHERE m.id=?''', (cursor.lastrowid,)).fetchone()
+        return dict(row)
+
+
+@app.get('/api/exam-materials')
+def list_exam_materials(school: str, grade: str, year: int, semester: str, exam: str):
+    with get_db() as conn:
+        rows = conn.execute('''SELECT m.id,m.core_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
+            s.name student_name,m.title,m.original_name,m.original_type,m.created_at
+            FROM exam_material_sets m LEFT JOIN students s ON s.id=m.student_id
+            WHERE m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=? ORDER BY m.id DESC''',
+            (school, grade, year, semester, exam)).fetchall()
+        return [dict(row) for row in rows]
+
+
+@app.get('/api/exam-materials/{material_id}/original')
+def open_exam_material_original(material_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT original_blob,original_type,original_name FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
+        if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        safe_name = re.sub(r'[^0-9A-Za-z._-]', '_', row['original_name'])
+        return Response(row['original_blob'], media_type=row['original_type'], headers={'Content-Disposition': f'inline; filename="{safe_name}"'})
+
+
+@app.get('/api/exam-materials/{material_id}/json')
+def open_exam_material_json(material_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT json_text FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
+        if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        return Response(row['json_text'], media_type='application/json; charset=utf-8')
 
 
 # ==================================================================================
