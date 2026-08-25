@@ -130,6 +130,28 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(examSelect.value).toBe('전체')
   })
 
+  it('학교 목록 조회가 늦게 끝나도 그 사이 사용자가 이미 고른 시험 Context는 전체로 되돌아가지 않는다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    let resolveSchools: (value: Response) => void = () => {}
+    const schoolsPromise = new Promise<Response>(resolve => { resolveSchools = resolve })
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/schools')) return schoolsPromise
+      if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    // 학교 목록 응답이 아직 오지 않은 상태(운영 네트워크 지연 재현)에서 사용자가 먼저 시험을 바꾼다
+    fireEvent.change(within(screen.getByLabelText('시험 Context')).getByLabelText('시험'), { target: { value: '중간고사' } })
+    // 뒤늦게 학교 목록 조회가 끝난다
+    resolveSchools(new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    await screen.findByText('신사중 · 3학년')
+    const examSelect = within(screen.getByLabelText('시험 Context')).getByLabelText('시험') as HTMLSelectElement
+    expect(examSelect.value).toBe('중간고사')
+  })
+
   it('학교 프린트 저장 시 상위 시험 Context(중간→중간고사)를 그대로 전달하고 HTML content를 함께 보낸다', async()=>{
     const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

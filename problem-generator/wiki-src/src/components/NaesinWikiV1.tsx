@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, ReactNode, useEffect, useState } from 'react'
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { exportExamMaterialWrongNotesOffice, fetchQuestions, fetchSchoolTree, fetchStudents, SchoolNode, StoredQuestion, Student } from '../lib/types'
 import type { Page } from '../App'
@@ -28,6 +28,12 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [insightText,setInsightText]=useState(''), [insightSource,setInsightSource]=useState<'director'|'school_teacher'>('director')
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
+  // fetchSchoolTree()가 늦게 끝나면(운영 네트워크 지연) 사용자가 이미 고른 학교/학년/시험을
+  // 마운트 시점 기본값(setContext(...exam:'전체'))이 뒤늦게 덮어써 버리는 경합이 있었다.
+  // STEP1에서 학교 프린트를 저장한 뒤 목록을 다시 불러오면 방금 고른 시험이 아니라 '전체' 기준으로
+  // 조회되어 자료가 안 보이는(빈 화면처럼 보이는) 원인이었다. 사용자가 이미 손댄 필드는
+  // 기본값으로 되돌리지 않도록 어떤 필드를 직접 선택했는지 추적한다.
+  const touchedRef = useRef({school:false,grade:false,exam:false})
   const schoolNode=tree.find(item=>item.school===context.school), grades=schoolNode?.grades||[]
   const exactExam=context.exam
   const examLabel=EXAM_OPTIONS.find(o=>o.value===context.exam)?.label||context.exam
@@ -38,7 +44,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     api(`exam-materials?${contextQuery}`).then(r=>r.ok?r.json():[]),
     api(`educator-insights?limit=100&${contextQuery}`).then(r=>r.ok?r.json():[]),
   ]);setQuestions(q);setMaterials(m);setInsights(i)}
-  useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];if(first)setContext(c=>({...c,school:first.school,grade:grade?.grade||'',exam:'전체'}))});fetchStudents().then(setStudents)},[])
+  useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];const t=touchedRef.current;if(first)setContext(c=>({...c,school:t.school?c.school:first.school,grade:t.grade?c.grade:(grade?.grade||''),exam:t.exam?c.exam:'전체'}))});fetchStudents().then(setStudents)},[])
   useEffect(()=>{void load()},[context.school,context.grade,context.year,context.semester,context.exam])
   // behavior:'smooth'는 requestAnimationFrame 기반 애니메이션이라 조건부로 막 마운트된
   // 대상에 걸면 프레임이 씹혀 실제로는 전혀 스크롤되지 않는 경우가 있었다(운영에서 확인됨).
@@ -111,11 +117,11 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     <header><p className="kicker">BUILD IT · NAESIN WIKI V1.1</p><h1>시험 자료 한눈에 모으기</h1><p>학교와 시험을 먼저 고르면 STEP 1부터 4까지 순서대로 따라가며 시험을 준비할 수 있습니다.</p></header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">
-      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=node?.grades[0];setContext(c=>({...c,school,grade:grade?.grade||'',exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
-      <label>학년<select value={context.grade} onChange={e=>{const grade=e.target.value;setContext(c=>({...c,grade,exam:'전체'}))}}>{grades.map(g=><option key={g.grade}>{g.grade}</option>)}</select></label>
+      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=node?.grades[0];touchedRef.current.school=true;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,school,grade:grade?.grade||'',exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
+      <label>학년<select value={context.grade} onChange={e=>{const grade=e.target.value;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,grade,exam:'전체'}))}}>{grades.map(g=><option key={g.grade}>{g.grade}</option>)}</select></label>
       <label>연도<select value={context.year} onChange={e=>setContext(c=>({...c,year:Number(e.target.value)}))}>{years.map(y=><option key={y}>{y}</option>)}</select></label>
       <label>학기<select value={context.semester} onChange={e=>setContext(c=>({...c,semester:e.target.value}))}><option>1학기</option><option>2학기</option></select></label>
-      <label>시험<select value={context.exam} onChange={e=>setContext(c=>({...c,exam:e.target.value}))}>{EXAM_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></label>
+      <label>시험<select value={context.exam} onChange={e=>{touchedRef.current.exam=true;setContext(c=>({...c,exam:e.target.value}))}}>{EXAM_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></label>
     </div>
     <div className="context-summary"><b>{context.school} · {context.grade}</b><span>{context.year}년 · {context.semester} · {examLabel}</span></div>
 
