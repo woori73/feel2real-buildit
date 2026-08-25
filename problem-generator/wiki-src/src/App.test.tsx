@@ -194,6 +194,57 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(Object.fromEntries(query)).toEqual({ school: '신사중', grade: '3학년', year: String(new Date().getFullYear()), semester: '1학기', exam: '중간고사' })
   })
 
+  it('HTML 붙여넣기와 JSON 파일 선택 후 저장 버튼 click이 POST를 만들고 동일 Context의 저장 자료를 표시한다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    let saved = false
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-materials') && init?.method === 'POST') {
+        saved = true
+        return new Response('{"id":8}', { status: 201, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (url.includes('/exam-materials?')) return new Response(saved ? '[{"id":8,"core_type":"school_print","student_id":null,"student_name":null,"title":"JSON 파일 조합","original_name":"","created_at":"","has_html":1}]' : '[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await screen.findByText('신사중 · 3학년')
+    fireEvent.change(within(screen.getByLabelText('시험 Context')).getByLabelText('시험'), { target: { value: '중간고사' } })
+    fireEvent.click(screen.getByRole('button', { name: /학교 프린트 추가/ }))
+    const formElement = screen.getByRole('heading', { name: '학교 프린트 추가' }).closest('form') as HTMLFormElement
+    const jsonFile = new File(['{"items":[{"id":1}]}'], 'print.json', { type: 'application/json' })
+    fireEvent.change(within(formElement).getByLabelText('자료 제목'), { target: { value: 'JSON 파일 조합' } })
+    fireEvent.change(within(formElement).getByLabelText('HTML 붙여넣기'), { target: { value: '<p>HTML + JSON file</p>' } })
+    fireEvent.change(within(formElement).getByLabelText('JSON 파일 업로드'), { target: { files: [jsonFile] } })
+    expect((within(formElement).getByLabelText('또는 JSON 붙여넣기') as HTMLTextAreaElement).value).toBe('')
+    fireEvent.click(within(formElement).getByRole('button', { name: '저장' }))
+    await waitFor(() => expect(fetchMock.mock.calls.some(([u, init]) => String(u).endsWith('/exam-materials') && init?.method === 'POST')).toBe(true))
+    const postCall = fetchMock.mock.calls.find(([u, init]) => String(u).endsWith('/exam-materials') && init?.method === 'POST')
+    const payload = postCall?.[1]?.body as FormData
+    expect(payload.get('html_text')).toBe('<p>HTML + JSON file</p>')
+    expect(payload.get('json_file')).toBe(jsonFile)
+    expect(payload.get('json_text')).toBe('')
+    expect(payload.get('school')).toBe('신사중')
+    expect(payload.get('grade')).toBe('3학년')
+    expect(payload.get('exam')).toBe('중간고사')
+    expect(await screen.findByRole('status')).toHaveTextContent('HTML과 JSON을 한 세트로 저장했습니다.')
+    expect(screen.getByRole('button', { name: /학교 프린트 추가\s*·\s*저장\s*1\s*건/ })).toBeInTheDocument()
+    expect(within(screen.getByLabelText('시험 Context')).getByLabelText('시험')).toHaveValue('중간고사')
+    fireEvent.click(screen.getByRole('button', { name: 'FINAL 준비' }))
+    expect(await screen.findByText('JSON 파일 조합')).toBeInTheDocument()
+  })
+
+  it('HTML이 없는 제출 경로는 조용히 끝내지 않고 저장 불가 이유를 표시한다', async()=>{
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: /학교 프린트 추가/ }))
+    const formElement = screen.getByRole('heading', { name: '학교 프린트 추가' }).closest('form') as HTMLFormElement
+    fireEvent.submit(formElement)
+    expect(await screen.findByRole('status')).toHaveTextContent('학교 프린트 HTML을 입력하거나 HTML 파일을 선택해 주세요.')
+  })
+
   it('학교 프린트 저장이 422 detail 배열로 실패해도 문자열 오류를 표시하고 Wiki는 crash하지 않는다', async()=>{
     const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -233,3 +284,4 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(await screen.findByRole('heading',{name:'직보 핵심 신호'})).toBeInTheDocument()
   })
 })
+
