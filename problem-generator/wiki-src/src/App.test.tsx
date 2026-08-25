@@ -152,13 +152,19 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(examSelect.value).toBe('중간고사')
   })
 
-  it('학교 프린트 저장 시 상위 시험 Context(중간→중간고사)를 그대로 전달하고 HTML content를 함께 보낸다', async()=>{
+  it('학교 프린트 저장 후 동일한 5개 시험 Context query로 재조회해 저장 자료를 표시한다', async()=>{
     const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    let saved = false
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
       if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
       if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-materials') && init?.method === 'POST') {
+        saved = true
+        return new Response('{"id":7}', { status: 201, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (url.includes('/exam-materials?')) return new Response(saved ? '[{"id":7,"core_type":"school_print","student_id":null,"student_name":null,"title":"5과 학교 프린트","original_name":"","created_at":"","has_html":1}]' : '[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
       return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -179,6 +185,38 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(form.get('exam')).toBe('중간고사')
     expect(form.get('html_text')).toBe('<p>5과 본문 HTML</p>')
     expect(form.get('original')).toBeNull()
+    await screen.findByRole('button', { name: /학교 프린트 추가\s*·\s*저장\s*1\s*건/ })
+    fireEvent.click(screen.getByRole('button', { name: 'FINAL 준비' }))
+    await screen.findByText('5과 학교 프린트')
+    const getCalls = fetchMock.mock.calls.filter(([u, init]) => String(u).includes('/exam-materials?') && !init?.method)
+    const savedContextCall = getCalls[getCalls.length - 1]
+    const query = new URL(String(savedContextCall[0]), 'https://feel2real.co.kr').searchParams
+    expect(Object.fromEntries(query)).toEqual({ school: '신사중', grade: '3학년', year: String(new Date().getFullYear()), semester: '1학기', exam: '중간고사' })
+  })
+
+  it('학교 프린트 저장이 422 detail 배열로 실패해도 문자열 오류를 표시하고 Wiki는 crash하지 않는다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-materials') && init?.method === 'POST') return new Response(JSON.stringify({ detail: [
+        { type: 'missing', loc: ['query', 'school'], msg: 'Field required' },
+        { type: 'missing', loc: ['query', 'grade'], msg: 'Field required' },
+      ] }), { status: 422, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await screen.findByText('신사중 · 3학년')
+    fireEvent.click(screen.getByRole('button', { name: /학교 프린트 추가/ }))
+    const formElement = screen.getByRole('heading', { name: '학교 프린트 추가' }).closest('form') as HTMLFormElement
+    fireEvent.change(within(formElement).getByLabelText('HTML 붙여넣기'), { target: { value: '<p>5과 본문 HTML</p>' } })
+    fireEvent.submit(formElement)
+    expect(await screen.findByRole('status')).toHaveTextContent('저장하지 못했습니다. (Field required)')
+    expect(screen.getByRole('heading', { name: '시험 자료 한눈에 모으기' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '학교 프린트 추가' })).toBeInTheDocument()
   })
 
   it('STEP 4의 FINAL 준비는 4 CORE 선택형 워크스페이스를 연다', async()=>{
