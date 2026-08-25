@@ -17,6 +17,27 @@ const EXAM_OPTIONS: { label: string; value: string }[] = [
 ]
 const downloadBlob = (filename: string, blob: Blob) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url) }
 const MAX_ORIGINALS = 20
+const contextQuery = (context: Context) => new URLSearchParams({
+  school: context.school,
+  grade: context.grade,
+  year: String(context.year),
+  semester: context.semester,
+  exam: context.exam,
+}).toString()
+const apiErrorMessage = (body: unknown, fallback: string) => {
+  if (!body || typeof body !== 'object') return fallback
+  const detail = (body as { detail?: unknown }).detail
+  if (typeof detail === 'string') return detail
+  if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+    const message = (detail as { message?: unknown }).message
+    if (typeof message === 'string') return message
+  }
+  if (Array.isArray(detail)) {
+    const messages = detail.map(item => item && typeof item === 'object' ? (item as { msg?: unknown }).msg : null).filter((message): message is string => typeof message === 'string')
+    if (messages.length) return `${fallback} (${[...new Set(messages)].join(', ')})`
+  }
+  return fallback
+}
 
 export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}) {
   const [tree,setTree]=useState<SchoolNode[]>([]), [students,setStudents]=useState<Student[]>([])
@@ -35,17 +56,25 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   // 기본값으로 되돌리지 않도록 어떤 필드를 직접 선택했는지 추적한다.
   const touchedRef = useRef({school:false,grade:false,exam:false})
   const schoolNode=tree.find(item=>item.school===context.school), grades=schoolNode?.grades||[]
-  const exactExam=context.exam
   const examLabel=EXAM_OPTIONS.find(o=>o.value===context.exam)?.label||context.exam
-  const ready=Boolean(context.school&&context.grade&&context.exam)
-  const contextQuery=new URLSearchParams({school:context.school,grade:context.grade,year:String(context.year),semester:context.semester,exam:context.exam})
-  const load=async()=>{if(!ready)return;const [q,m,i]=await Promise.all([
-    fetchQuestions({school:context.school,grade:context.grade,exam:exactExam}),
-    api(`exam-materials?${contextQuery}`).then(r=>r.ok?r.json():[]),
-    api(`educator-insights?limit=100&${contextQuery}`).then(r=>r.ok?r.json():[]),
-  ]);setQuestions(q);setMaterials(m);setInsights(i)}
+  const load=async(targetContext:Context)=>{
+    if(!targetContext.school||!targetContext.grade||!targetContext.exam)return
+    const query=contextQuery(targetContext)
+    const [q,materialResponse,i]=await Promise.all([
+      fetchQuestions({school:targetContext.school,grade:targetContext.grade,exam:targetContext.exam}),
+      api(`exam-materials?${query}`),
+      api(`educator-insights?limit=100&${query}`).then(r=>r.ok?r.json():[]),
+    ])
+    if(!materialResponse.ok){
+      const body=await materialResponse.json().catch(()=>({}))
+      setNotice(apiErrorMessage(body,'현재 시험의 학교 프린트를 불러오지 못했습니다.'))
+      setQuestions(q);setInsights(i);return
+    }
+    const m=await materialResponse.json()
+    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setInsights(i)
+  }
   useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];const t=touchedRef.current;if(first)setContext(c=>({...c,school:t.school?c.school:first.school,grade:t.grade?c.grade:(grade?.grade||''),exam:t.exam?c.exam:'전체'}))});fetchStudents().then(setStudents)},[])
-  useEffect(()=>{void load()},[context.school,context.grade,context.year,context.semester,context.exam])
+  useEffect(()=>{void load(context)},[context.school,context.grade,context.year,context.semester,context.exam])
   // behavior:'smooth'는 requestAnimationFrame 기반 애니메이션이라 조건부로 막 마운트된
   // 대상에 걸면 프레임이 씹혀 실제로는 전혀 스크롤되지 않는 경우가 있었다(운영에서 확인됨).
   // behavior:'auto'는 애니메이션 없이 즉시 오프셋을 적용해 신뢰성 있게 동작한다.
@@ -73,8 +102,9 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     form.append('json_text',jsonText)
     const r=await api('exam-materials',{method:'POST',body:form})
     const b=await r.json().catch(()=>({}))
-    if(!r.ok){setNotice(b.detail||'저장하지 못했습니다.');return}
-    resetUpload();setCore(null);setNotice('HTML과 JSON을 한 세트로 저장했습니다.');void load()
+    if(!r.ok){setNotice(apiErrorMessage(b,'저장하지 못했습니다.'));return}
+    const savedContext={...context}
+    resetUpload();setCore(null);setNotice('HTML과 JSON을 한 세트로 저장했습니다.');await load(savedContext)
   }
   const saveStudentWrongNote=async(e:FormEvent)=>{
     e.preventDefault();if(!originals.length)return
@@ -95,10 +125,10 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     const saved=originals.length-failed
     resetUpload();setCore(null)
     setNotice(failed?`원본 ${saved}개를 저장했습니다. ${failed}개는 저장하지 못했습니다.`:`원본 ${saved}개와 JSON을 한 세트로 저장했습니다.`)
-    void load()
+    await load({...context})
   }
   const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):saveStudentWrongNote(e)
-  const saveInsight=async()=>{if(!insightText.trim())return;const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...context,content:insightText,source:insightSource,student_context:'',lesson_context:''})});if(r.ok){setInsightText('');setNotice('수업 인사이트를 저장했습니다.');void load()}}
+  const saveInsight=async()=>{if(!insightText.trim())return;const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...context,content:insightText,source:insightSource,student_context:'',lesson_context:''})});if(r.ok){setInsightText('');setNotice('수업 인사이트를 저장했습니다.');await load({...context})}}
   const toggle=(key:string)=>setSelected(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
   const openQuestionMaker=(mode:'new'|'transform')=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,mode}));onNavigate('home')}
