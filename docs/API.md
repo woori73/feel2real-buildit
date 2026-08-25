@@ -3233,3 +3233,12 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - AI 실패 응답은 `detail: { message, provider, status }` JSON으로 정규화한다. 429/502/504의 게이트웨이 HTML이나 외부 provider 원문을 브라우저에 전달하지 않는다.
 - 문제 생성 성공 응답과 Assistant 응답은 실제 `provider`, `model`을 포함한다.
 
+# 내신 Wiki V1 자료 API
+
+- `POST /problem-generator/wiki/api/exam-materials` (`multipart/form-data`): `core_type`, 시험 Context,
+  선택 학생(`student_wrong_note`일 때), `original`, `json_file` 또는 `json_text`를 받아 원본+JSON 한 세트로 저장한다.
+- `GET /problem-generator/wiki/api/exam-materials`: `school`, `grade`, `year`, `semester`, `exam`이 모두 같은 세트만 조회한다.
+- `GET /problem-generator/wiki/api/exam-materials/{id}/original`: 원본을 inline으로 연다.
+- `GET /problem-generator/wiki/api/exam-materials/{id}/json`: canonical JSON을 연다.
+- 수업 인사이트 생성/조회는 기존 `educator-insights` API에 `year`, `semester`, `exam`,
+  `source=director|school_teacher`를 선택적으로 추가한다. 과거 row의 빈 Context도 안전하게 유지한다.

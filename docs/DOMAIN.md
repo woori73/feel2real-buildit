@@ -1034,3 +1034,9 @@ Google V2가 발견한 관리자 검토 후보. 후보는 `DISCOVERED`로 저장
 | audit columns | | `BaseEntity` |
 
 Ranking 1차 구현은 `approved_at DESC` 기준으로 최대 100명을 공개한다. AI 자동 등록 경로는 없다.
+# 내신 Wiki V1 최소 데이터 확장
+
+- `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
+  `school/grade/year/semester/exam`, 선택적 `student_id`로 기존 시험·학생 관계를 보존한다.
+- `educator_insights`: 기존 row를 유지하며 nullable `year`, `semester`, `exam`과
+  `source(director/school_teacher)`를 추가한다. 기존 인사이트는 `source=director`, Context 미지정으로 호환한다.
