@@ -11,6 +11,12 @@ Wiki backend(main.py)가 Context의 single source of truth라는 원칙을 지�
 
 main과의 순환 import를 피하기 위해 각 tool 함수 안에서 지연 import한다
 (main.py가 이 모듈을 mount하므로 모듈 최상단에서 서로를 import할 수 없다).
+같은 이유로 backend 디렉터리의 다른 형제 모듈(question_contract 등)도 모듈
+최상단이 아니라 각 tool 함수 안에서 import한다 — 이 파일이 `backend.mcp_server`
+(패키지 상대 import, 예: tests/test_mcp_routing.py)로도, `mcp_server`
+(backend를 sys.path에 넣고 스크립트로, 예: tests/test_naesin_wiki_v1.py)로도
+둘 다 임포트되므로, 모듈 최상단에서 형제 모듈을 `import question_contract`처럼
+직접 끌어오면 전자의 임포트 방식에서 깨진다.
 
 인증: 운영 사이트의 사용자 로그인 세션(Spring JWT)을 MCP 인증으로 재사용하지
 않는다. 외부 MCP client는 환경변수 BUILDIT_MCP_API_KEY와 정확히 일치하는
@@ -24,8 +30,10 @@ Connector)가 Authorization 헤더를 예약어처럼 취급해 커스텀 값을
 import hmac
 import logging
 import os
+import uuid
 
 from mcp.server.mcpserver import MCPServer
+from pydantic import ValidationError
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -101,6 +109,72 @@ def save_jikbo(school: str, grade: str, year: int, semester: str, exam: str,
     경로를 kind만 바꿔 그대로 사용한다. 저장 직후 get_jikbo_context를 다시 호출하면
     jikbo_deliverables에서 결과가 보인다."""
     return _save_deliverable('jikbo', school, grade, year, semester, exam, title, html_text, json_text)
+
+
+@mcp.tool()
+def save_generated_questions(school: str, grade: str, exam: str, questions: list[dict],
+                              exam_title: str = '', exam_group_id: str = '') -> dict:
+    """[쓰기 도구] 사용자가 "이 문제들을 Wiki에 저장해줘"처럼 명시적으로 저장을 요청했을 때만
+    사용한다. LLM이 검수를 마친 문항을 강사 문제 DB(generated_questions)에 저장한다.
+
+    questions의 각 항목은 새 스키마를 만들지 말고 기존 '기존 문제 변형' 문항 계약과 완전히 같은
+    canonical 필드를 그대로 갖춰야 한다 — type('mc'|'sa'), questionType, sourceText, stem,
+    options(list[str]), answer(list[int]), multi(bool), score(int), conditions(list[str]),
+    answerFormat, acceptedAnswers(list[str]), sampleAnswer, gradingRule. mc/sa 어느 쪽이든 모든
+    필드가 필수이며, 해당 없는 필드는 빈 값([] 또는 '')으로 채운다(예: mc 문항도 conditions=[],
+    answerFormat='' 등을 반드시 포함). 저장 전 이 계약으로 전체 문항을 검증하며, 하나라도
+    검증에 실패하면 아무 것도 저장하지 않고 오류를 반환한다(all-or-nothing). 저장 직후
+    get_final_context를 다시 호출하면 generated_questions에서 결과가 보인다."""
+    import question_contract as qc
+    from fastapi import HTTPException
+    from main import _save_generated, get_db
+
+    school, grade, exam = school.strip(), grade.strip(), exam.strip()
+    if not school or not grade or not exam:
+        raise ValueError('school/grade/exam은 비어 있을 수 없습니다.')
+    if not questions:
+        raise ValueError('questions는 최소 1개 이상이어야 합니다.')
+    try:
+        validated = qc.validate_transform({'examTitle': exam_title, 'questions': questions})
+    except ValidationError as exc:
+        raise ValueError('문항 검증 실패(저장하지 않음): ' + qc.validation_fields(exc)) from exc
+
+    title = exam_title.strip() or validated.get('examTitle') or f'{school} {grade} MCP 저장 문항'
+    group_id = exam_group_id.strip() or f'mcp_{uuid.uuid4().hex}'
+    twin_like = {'id': None, 'school': school, 'grade': grade, 'exam': exam}
+    try:
+        with get_db() as conn:
+            saved = _save_generated(conn, twin_like, 'mcp', validated['questions'], title, group_id)
+    except HTTPException as exc:
+        raise ValueError(str(exc.detail)) from exc
+    return {'examTitle': title, 'examGroupId': group_id, 'questions': saved}
+
+
+@mcp.tool()
+def save_class_insights(content: str, source: str, school: str = '', grade: str = '',
+                         year: int | None = None, semester: str = '', exam: str = '',
+                         student_context: str = '', lesson_context: str = '') -> dict:
+    """[쓰기 도구] 사용자가 "이 인사이트를 Wiki에 저장해줘"처럼 명시적으로 저장을 요청했을 때만
+    사용한다. 문제 제작 과정에서 얻은 재사용 가능한 인사이트를 기존 수업 인사이트
+    저장소(educator_insights)에 저장한다. source는 반드시 이 기록을 실제로 만든 주체를
+    가리켜야 한다 — 'director'(박원장), 'school_teacher'(학교 선생님), 'claude'(Claude),
+    'chatgpt'(ChatGPT) 중 하나. 저장 직후 get_final_context를 다시 호출하면 class_insights에서
+    source 값과 함께 결과가 보인다."""
+    import question_contract as qc
+    from fastapi import HTTPException
+    from main import EducatorInsightCreate, create_educator_insight
+
+    try:
+        payload = EducatorInsightCreate(
+            content=content, school=school, grade=grade, student_context=student_context,
+            lesson_context=lesson_context, year=year, semester=semester, exam=exam, source=source,
+        )
+    except ValidationError as exc:
+        raise ValueError('인사이트 검증 실패: ' + qc.validation_fields(exc)) from exc
+    try:
+        return create_educator_insight(payload)
+    except HTTPException as exc:
+        raise ValueError(str(exc.detail)) from exc
 
 
 class _BearerAuthMiddleware:
