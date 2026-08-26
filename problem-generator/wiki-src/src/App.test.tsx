@@ -270,18 +270,53 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(screen.getByRole('heading', { name: '학교 프린트 추가' })).toBeInTheDocument()
   })
 
-  it('STEP 4의 FINAL 준비는 4 CORE 선택형 워크스페이스를 연다', async()=>{
+  it('STEP 4의 FINAL 준비는 출제자 Digital Twin을 포함한 5 CORE 선택형 워크스페이스를 연다', async()=>{
     render(<App/>); fireEvent.click(await screen.findByRole('button',{name:'FINAL 준비'}))
     const heading = await screen.findByRole('heading',{name:'현재 시험 자료'})
     const workspace = within(heading.closest('section') as HTMLElement)
-    for(const title of ['제작 문제','학교 프린트','학생 오답','수업 인사이트']) {
+    for(const title of ['출제자 Digital Twin','제작 문제','학교 프린트','학생 오답','수업 인사이트']) {
       expect(workspace.getByRole('heading',{name:new RegExp(title)})).toBeInTheDocument()
     }
   })
 
-  it('STEP 4의 직보 준비는 수업 인사이트 중심의 압축 뷰를 연다', async()=>{
+  it('FINAL Workspace에는 FINAL 완성본을 저장하는 영역이 있고 결과 파일 또는 HTML 중 하나만 있으면 저장할 수 있다', async()=>{
+    render(<App/>); fireEvent.click(await screen.findByRole('button',{name:'FINAL 준비'}))
+    const heading = await screen.findByRole('heading',{name:'현재 시험 자료'})
+    const workspace = within(heading.closest('section') as HTMLElement)
+    expect(workspace.getByText('아직 저장된 FINAL 완성본이 없습니다. 외부에서 만든 결과물을 아래에서 저장할 수 있습니다.')).toBeInTheDocument()
+    const saveButton = workspace.getByRole('button',{name:'FINAL 완성본 저장'})
+    expect(saveButton).toBeDisabled()
+    fireEvent.change(workspace.getByLabelText('HTML 붙여넣기'),{target:{value:'<p>FINAL 완성본</p>'}})
+    expect(saveButton).not.toBeDisabled()
+  })
+
+  it('STEP 4의 직보 준비는 FINAL 완성본이 없으면 대기 안내를 보여준다', async()=>{
     render(<App/>); fireEvent.click(await screen.findByRole('button',{name:'직보 준비'}))
-    expect(await screen.findByRole('heading',{name:'직보 핵심 신호'})).toBeInTheDocument()
+    expect(await screen.findByText('아직 FINAL 자료가 없습니다. FINAL 제작 후 직보를 준비할 수 있습니다.')).toBeInTheDocument()
+  })
+
+  it('직보 준비는 FINAL 완성본이 있으면 FINAL 완성본 → 최신 수업 인사이트 → 학생 반복 오답 순으로 보여준다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.includes('/final-deliverables?')) return new Response(JSON.stringify([{ id: 1, kind: 'final', school: '신사중', grade: '3학년', year: new Date().getFullYear(), semester: '1학기', exam: '전체', title: '기말 FINAL', original_name: '', created_at: new Date().toISOString(), has_html: 1 }]), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await screen.findByText('신사중 · 3학년')
+    fireEvent.click(screen.getByRole('button', { name: '직보 준비' }))
+    const heading = await screen.findByRole('heading',{name:'직보 준비'})
+    const workspace = within(heading.closest('section') as HTMLElement)
+    expect(workspace.queryByText('아직 FINAL 자료가 없습니다. FINAL 제작 후 직보를 준비할 수 있습니다.')).not.toBeInTheDocument()
+    const coreHeadings = workspace.getAllByRole('heading',{level:3}).map(el=>el.textContent)
+    const order = ['FINAL 완성본','최신 수업 인사이트','학생 반복 오답'].map(label=>coreHeadings.findIndex(text=>text?.includes(label)))
+    expect(order.every(index=>index>=0)).toBe(true)
+    expect(order).toEqual([...order].sort((a,b)=>a-b))
+    expect(workspace.getByText(/기말 FINAL/)).toBeInTheDocument()
   })
 })
 

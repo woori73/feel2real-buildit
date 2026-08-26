@@ -156,6 +156,21 @@ def init_db():
             FOREIGN KEY (student_id) REFERENCES students(id)
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_exam_material_context ON exam_material_sets(school, grade, year, semester, exam, core_type)')
+        # FINAL/직보 결과물: 시험 Context(학교/학년/연도/학기/시험)별로 외부 LLM(Work/Claude/ChatGPT 등)이나
+        # 강사가 완성해 저장하는 최종 산출물이다. exam_material_sets(자료)와 개념이 달라 별도 테이블로 둔다.
+        # kind로 FINAL 완성본과 직보 완성본을 구분한다 — 이번 작업은 kind='final' 저장 UI만 연결하고
+        # 'jikbo'는 향후 MCP save_jikbo 도구가 같은 API를 그대로 쓸 수 있도록 스키마만 열어 둔다.
+        conn.execute('''CREATE TABLE IF NOT EXISTS final_deliverables (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind TEXT NOT NULL DEFAULT 'final' CHECK (kind IN ('final','jikbo')),
+            school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '',
+            year INTEGER NOT NULL, semester TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
+            title TEXT NOT NULL DEFAULT '',
+            original_name TEXT NOT NULL DEFAULT '', original_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+            original_blob BLOB NOT NULL, html_text TEXT NOT NULL DEFAULT '', json_text TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_final_deliverable_context ON final_deliverables(school, grade, year, semester, exam, kind)')
         conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_sources (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             exam_kind TEXT NOT NULL CHECK (exam_kind IN ('half','full')),
@@ -470,6 +485,83 @@ def open_exam_material_html(material_id: int):
         row = conn.execute('SELECT html_text FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
         if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
         return Response(row['html_text'] or '', media_type='text/html; charset=utf-8')
+
+
+# ==================================================================================
+# FINAL/직보 결과물 — 시험 Context별로 완성된 산출물을 저장·조회한다. 학교 프린트(exam_material_sets)와
+# 같은 원본+HTML+JSON 3종 저장 방식을 그대로 따라 사용자가 이미 익숙한 방식을 재사용한다.
+# 이번 작업에서 LLM이 FINAL을 자동 생성하지는 않는다 — 이 API는 저장·조회 자리만 마련한다.
+# ==================================================================================
+
+@app.post('/api/final-deliverables', status_code=201)
+def create_final_deliverable(kind: Literal['final', 'jikbo'] = Form('final'),
+                             school: str = Form(...), grade: str = Form(...), year: int = Form(...),
+                             semester: str = Form(...), exam: str = Form(...), title: str = Form(''),
+                             original: Optional[UploadFile] = File(None),
+                             json_file: Optional[UploadFile] = File(None), json_text: str = Form(''),
+                             html_text: str = Form('')):
+    has_original = bool(original and original.filename)
+    canonical_html = html_text.strip()
+    if not has_original and not canonical_html:
+        raise HTTPException(status_code=400, detail='결과 파일을 올리거나 HTML을 붙여넣어 주세요.')
+    original_name, original_type, original_bytes = '', 'application/octet-stream', b''
+    if has_original:
+        original_bytes = original.file.read()
+        if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail='결과 파일은 30MB 이하여야 합니다.')
+        original_name, original_type = original.filename[:255], original.content_type or 'application/octet-stream'
+    canonical_json = _validate_json_upload(json_file, json_text, required=False)
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute('''INSERT INTO final_deliverables
+            (kind, school, grade, year, semester, exam, title, original_name, original_type,
+             original_blob, html_text, json_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (kind, school.strip(), grade.strip(), year, semester.strip(), exam.strip(),
+             title.strip()[:150], original_name, original_type, original_bytes, canonical_html, canonical_json, now))
+        row = conn.execute('''SELECT id,kind,school,grade,year,semester,exam,title,original_name,created_at,
+            (CASE WHEN html_text <> '' THEN 1 ELSE 0 END) AS has_html
+            FROM final_deliverables WHERE id=?''', (cursor.lastrowid,)).fetchone()
+        return dict(row)
+
+
+@app.get('/api/final-deliverables')
+def list_final_deliverables(school: str, grade: str, year: int, semester: str, exam: str, kind: Optional[str] = None):
+    with get_db() as conn:
+        query = '''SELECT id,kind,school,grade,year,semester,exam,title,original_name,created_at,
+            (CASE WHEN html_text <> '' THEN 1 ELSE 0 END) AS has_html
+            FROM final_deliverables WHERE school=? AND grade=? AND year=? AND semester=? AND exam=?'''
+        values: list = [school, grade, year, semester, exam]
+        if kind:
+            query += ' AND kind=?'
+            values.append(kind)
+        query += ' ORDER BY id DESC'
+        rows = conn.execute(query, values).fetchall()
+        return [dict(row) for row in rows]
+
+
+@app.get('/api/final-deliverables/{deliverable_id}/original')
+def open_final_deliverable_original(deliverable_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT original_blob,original_type,original_name FROM final_deliverables WHERE id=?', (deliverable_id,)).fetchone()
+        if not row or not row['original_name']: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        safe_name = re.sub(r'[^0-9A-Za-z._-]', '_', row['original_name'])
+        return Response(row['original_blob'], media_type=row['original_type'], headers={'Content-Disposition': f'inline; filename="{safe_name}"'})
+
+
+@app.get('/api/final-deliverables/{deliverable_id}/html')
+def open_final_deliverable_html(deliverable_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT html_text FROM final_deliverables WHERE id=?', (deliverable_id,)).fetchone()
+        if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        return Response(row['html_text'] or '', media_type='text/html; charset=utf-8')
+
+
+@app.get('/api/final-deliverables/{deliverable_id}/json')
+def open_final_deliverable_json(deliverable_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT json_text FROM final_deliverables WHERE id=?', (deliverable_id,)).fetchone()
+        if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        return Response(row['json_text'], media_type='application/json; charset=utf-8')
 
 
 # ==================================================================================
