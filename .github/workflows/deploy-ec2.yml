@@ -73,7 +73,27 @@ jobs:
           aws s3 cp s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
           rm -rf /opt/buildit-wiki/app/*
           tar -xzf /tmp/buildit-wiki-backend.tgz -C /opt/buildit-wiki/app
-          python3 -m venv /opt/buildit-wiki/venv
+
+          # mcp SDK requires Python >=3.10; AL2023's system python3 stays pinned
+          # to 3.9 for the life of the distro, so install 3.11 side by side via
+          # dnf instead of touching /usr/bin/python3.
+          if ! command -v python3.11 >/dev/null 2>&1; then
+            dnf install -y python3.11
+          fi
+
+          VENV_PY=/opt/buildit-wiki/venv/bin/python
+          RECREATE_VENV=1
+          if [ -x "$VENV_PY" ]; then
+            VENV_PYVER=$("$VENV_PY" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo "")
+            if [ "$VENV_PYVER" = "3.11" ]; then
+              RECREATE_VENV=0
+            fi
+          fi
+          if [ "$RECREATE_VENV" = "1" ]; then
+            rm -rf /opt/buildit-wiki/venv
+            python3.11 -m venv /opt/buildit-wiki/venv
+          fi
+
           /opt/buildit-wiki/venv/bin/pip install --disable-pip-version-check -r /opt/buildit-wiki/app/requirements.txt
 
           cat > /etc/systemd/system/buildit-wiki.service <<'UNIT'
