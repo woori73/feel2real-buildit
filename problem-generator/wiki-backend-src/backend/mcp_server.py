@@ -14,8 +14,11 @@ main과의 순환 import를 피하기 위해 각 tool 함수 안에서 지연 im
 
 인증: 운영 사이트의 사용자 로그인 세션(Spring JWT)을 MCP 인증으로 재사용하지
 않는다. 외부 MCP client는 환경변수 BUILDIT_MCP_API_KEY와 정확히 일치하는
-`Authorization: Bearer <token>` 헤더가 있어야 이 아래 모든 요청을 통과한다.
-키를 소스에 하드코딩하지 않고, 값이 비어 있으면(설정 안 됨) 모든 요청을
+`Authorization: Bearer <token>` 헤더 또는 `X-Api-Key: <token>` 헤더 중 하나만
+있으면 이 아래 모든 요청을 통과한다 — 일부 MCP client(예: Claude Custom
+Connector)가 Authorization 헤더를 예약어처럼 취급해 커스텀 값을 그대로 보내지
+못하는 경우의 대안 경로다. 두 비교 모두 constant-time(hmac.compare_digest)으로
+한다. 키를 소스에 하드코딩하지 않고, 값이 비어 있으면(설정 안 됨) 모든 요청을
 503으로 막는다(우연히 인증 없이 열리는 것을 fail-closed로 방지).
 """
 import hmac
@@ -101,8 +104,10 @@ def save_jikbo(school: str, grade: str, year: int, semester: str, exam: str,
 
 
 class _BearerAuthMiddleware:
-    """운영 로그인 세션과 무관한 MCP 전용 인증. 환경변수가 비어 있으면(설정 안 됨)
-    항상 503으로 막아 실수로 인증 없이 열리는 것을 막는다(fail-closed)."""
+    """운영 로그인 세션과 무관한 MCP 전용 인증. `Authorization: Bearer <key>` 또는
+    `X-Api-Key: <key>` 중 하나만 정확히 일치하면 통과시킨다(constant-time 비교).
+    환경변수가 비어 있으면(설정 안 됨) 항상 503으로 막아 실수로 인증 없이 열리는
+    것을 막는다(fail-closed)."""
 
     def __init__(self, app: ASGIApp, api_key: str) -> None:
         self.app = app
@@ -120,7 +125,10 @@ class _BearerAuthMiddleware:
         raw_headers = scope.get('headers') or []
         headers = dict(raw_headers)
         auth_header = headers.get(b'authorization', b'').decode('latin-1')
-        if auth_header != f'Bearer {self.api_key}':
+        api_key_header = headers.get(b'x-api-key', b'').decode('latin-1')
+        bearer_ok = hmac.compare_digest(auth_header, f'Bearer {self.api_key}')
+        api_key_ok = bool(api_key_header) and hmac.compare_digest(api_key_header, self.api_key)
+        if not (bearer_ok or api_key_ok):
             authorization_header_count = sum(
                 1 for name, _value in raw_headers if name.lower() == b'authorization')
             bearer_prefix_present = auth_header.startswith('Bearer ')

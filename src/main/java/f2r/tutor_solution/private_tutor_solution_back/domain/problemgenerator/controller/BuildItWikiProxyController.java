@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class BuildItWikiProxyController {
   private static final Duration WIKI_REQUEST_TIMEOUT = Duration.ofSeconds(280);
   private static final String MCP_PATH = "/api/mcp";
-  // MCP Streamable HTTP 스펙(및 mcp_server.py의 Bearer 미들웨어)이 요구하는 헤더만 골라 전달한다.
-  // Authorization이 없으면 FastAPI 쪽 Bearer 인증이 항상 401을 내므로 이게 근본 원인이었다.
+  // MCP Streamable HTTP 스펙(및 mcp_server.py의 Bearer/X-Api-Key 미들웨어)이 요구하는 헤더만
+  // 골라 전달한다. X-Api-Key는 Authorization 헤더를 커스텀 값으로 못 보내는 MCP client(예:
+  // Claude Custom Connector)를 위한 대안 인증 경로다 — mcp_server.py가 둘 중 하나만 맞아도
+  // 통과시킨다.
   private static final String[] MCP_FORWARDED_REQUEST_HEADERS = {
-      "Authorization", "Accept", "Mcp-Session-Id", "Mcp-Protocol-Version", "Last-Event-ID"
+      "Authorization", "X-Api-Key", "Accept", "Mcp-Session-Id", "Mcp-Protocol-Version", "Last-Event-ID"
   };
   private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
