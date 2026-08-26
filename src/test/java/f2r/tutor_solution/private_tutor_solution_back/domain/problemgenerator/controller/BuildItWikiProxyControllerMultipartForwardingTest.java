@@ -22,7 +22,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.util.MultiValueMap;
@@ -73,6 +75,7 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
   private HttpServer fakeFastApi;
   private volatile byte[] capturedBody;
   private volatile String capturedContentType;
+  private volatile String capturedAuthorization;
 
   @BeforeEach
   void startFakeFastApi() throws IOException {
@@ -85,6 +88,16 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
       byte[] response = "{\"id\":1}".getBytes(StandardCharsets.UTF_8);
       exchange.getResponseHeaders().add("Content-Type", "application/json");
       exchange.sendResponseHeaders(201, response.length);
+      try (var os = exchange.getResponseBody()) {
+        os.write(response);
+      }
+    });
+    fakeFastApi.createContext("/api/mcp", exchange -> {
+      capturedAuthorization = exchange.getRequestHeaders().getFirst("Authorization");
+      capturedBody = exchange.getRequestBody().readAllBytes();
+      byte[] response = "{}".getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().add("Content-Type", "application/json");
+      exchange.sendResponseHeaders(200, response.length);
       try (var os = exchange.getResponseBody()) {
         os.write(response);
       }
@@ -131,5 +144,46 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     assertThat(bodyText).contains("core_type");
     assertThat(bodyText).contains("school_print");
     assertThat(bodyText).contains("학교프린트 본문");
+  }
+
+  @Test
+  void authorizationHeaderIsForwardedForMcpPathWithoutTrailingSlash() {
+    postWithAuthorization("/api/mcp");
+
+    assertThat(capturedAuthorization).isEqualTo("Bearer test-placeholder");
+  }
+
+  @Test
+  void authorizationHeaderIsForwardedForMcpPathWithTrailingSlash() {
+    postWithAuthorization("/api/mcp/");
+
+    assertThat(capturedAuthorization).isEqualTo("Bearer test-placeholder");
+  }
+
+  @Test
+  void authorizationHeaderIsForwardedForMcpSubpath() {
+    postWithAuthorization("/api/mcp/session");
+
+    assertThat(capturedAuthorization).isEqualTo("Bearer test-placeholder");
+  }
+
+  @Test
+  void authorizationHeaderIsNotForwardedForOtherWikiApi() {
+    postWithAuthorization("/api/exam-materials");
+
+    assertThat(capturedAuthorization).isNull();
+  }
+
+  private void postWithAuthorization(String targetPath) {
+    capturedAuthorization = null;
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth("test-placeholder");
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    RestTemplate restTemplate = new RestTemplate();
+
+    restTemplate.postForEntity(
+        "http://127.0.0.1:" + port + "/problem-generator/wiki" + targetPath,
+        new HttpEntity<>("{}", headers),
+        String.class);
   }
 }
