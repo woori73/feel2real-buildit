@@ -26,6 +26,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 MCP_API_KEY_ENV = 'BUILDIT_MCP_API_KEY'
+MCP_ENDPOINT_PATHS = frozenset(('/api/mcp', '/api/mcp/'))
 
 mcp = MCPServer(
     name='buildit-wiki',
@@ -122,8 +123,31 @@ class _BearerAuthMiddleware:
         await self.app(scope, receive, send)
 
 
+class McpEndpointMiddleware:
+    """두 공개 MCP URL을 redirect 없이 같은 내부 SDK endpoint로 전달한다.
+
+    Starlette의 ``app.mount('/api/mcp', ...)``는 mount root인 ``/api/mcp``를
+    ``/api/mcp/``로 307 redirect한다. 일부 MCP client는 redirect 시
+    Authorization 헤더를 보존하지 않으므로, 두 exact path를 직접 가로채 SDK가
+    등록한 내부 ``/`` route로 전달한다. 그 외 Wiki API path는 변경하지 않는다.
+    """
+
+    def __init__(self, app: ASGIApp, mcp_app: ASGIApp) -> None:
+        self.app = app
+        self.mcp_app = mcp_app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope['type'] == 'http' and scope.get('path') in MCP_ENDPOINT_PATHS:
+            mcp_scope = dict(scope)
+            mcp_scope['path'] = '/'
+            mcp_scope['raw_path'] = b'/'
+            await self.mcp_app(mcp_scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
 def build_mcp_asgi_app() -> Starlette:
-    """main.py가 app.mount()로 붙일 인증 적용된 MCP ASGI app을 만든다.
+    """main.py가 exact-path middleware로 연결할 인증 적용된 MCP ASGI app을 만든다.
     stateless_http=True: 리버스 프록시(Spring/nginx) 뒤에서 세션을 오래 들고 있지
     않도록 각 요청을 독립적으로 처리한다 — 소규모 운영에 가장 단순하고 안정적인
     구성이다(§ 조사 보고 참고)."""
