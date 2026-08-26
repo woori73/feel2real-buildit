@@ -1,3 +1,5 @@
+import logging
+
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
@@ -42,6 +44,64 @@ def test_mcp_paths_both_reject_invalid_bearer_token():
         assert response.status_code == 401
         assert response.history == []
         assert response.json() == {'error': 'unauthorized'}
+
+
+def test_mcp_401_logs_only_safe_bearer_diagnostics(caplog):
+    secret_token = 'never-log-this-secret-token'
+
+    with caplog.at_level(logging.WARNING, logger='backend.mcp_server'):
+        response = _test_app(api_key='expected-key').post(
+            '/api/mcp', headers={'Authorization': f' Bearer {secret_token} '})
+
+    assert response.status_code == 401
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert 'authorization_present=True' in message
+    assert 'authorization_header_count=1' in message
+    assert 'bearer_prefix_present=False' in message
+    assert 'received_token_length=0' in message
+    assert 'expected_token_length=12' in message
+    assert 'compare_digest_match=False' in message
+    assert 'header_outer_whitespace=True' in message
+    assert 'token_outer_whitespace=False' in message
+    assert secret_token not in message
+    assert 'Authorization' not in message
+
+
+def test_mcp_401_logs_bearer_token_length_and_whitespace_without_value(caplog):
+    secret_token = 'wrong-secret '
+
+    with caplog.at_level(logging.WARNING, logger='backend.mcp_server'):
+        response = _test_app(api_key='expected-key').post(
+            '/api/mcp/', headers={'Authorization': f'Bearer {secret_token}'})
+
+    assert response.status_code == 401
+    message = caplog.records[0].getMessage()
+    assert 'authorization_present=True' in message
+    assert 'authorization_header_count=1' in message
+    assert 'bearer_prefix_present=True' in message
+    assert f'received_token_length={len(secret_token)}' in message
+    assert 'expected_token_length=12' in message
+    assert 'compare_digest_match=False' in message
+    assert 'header_outer_whitespace=True' in message
+    assert 'token_outer_whitespace=True' in message
+    assert secret_token.strip() not in message
+
+
+def test_mcp_401_logs_missing_authorization_header_safely(caplog):
+    with caplog.at_level(logging.WARNING, logger='backend.mcp_server'):
+        response = _test_app(api_key='expected-key').post('/api/mcp')
+
+    assert response.status_code == 401
+    message = caplog.records[0].getMessage()
+    assert 'authorization_present=False' in message
+    assert 'authorization_header_count=0' in message
+    assert 'bearer_prefix_present=False' in message
+    assert 'received_token_length=0' in message
+    assert 'expected_token_length=12' in message
+    assert 'compare_digest_match=False' in message
+    assert 'header_outer_whitespace=False' in message
+    assert 'token_outer_whitespace=False' in message
 
 
 def test_mcp_paths_both_fail_closed_when_api_key_is_not_configured():

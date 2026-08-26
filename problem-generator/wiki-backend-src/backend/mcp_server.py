@@ -18,6 +18,8 @@ main과의 순환 import를 피하기 위해 각 tool 함수 안에서 지연 im
 키를 소스에 하드코딩하지 않고, 값이 비어 있으면(설정 안 됨) 모든 요청을
 503으로 막는다(우연히 인증 없이 열리는 것을 fail-closed로 방지).
 """
+import hmac
+import logging
 import os
 
 from mcp.server.mcpserver import MCPServer
@@ -27,6 +29,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 MCP_API_KEY_ENV = 'BUILDIT_MCP_API_KEY'
 MCP_ENDPOINT_PATHS = frozenset(('/api/mcp', '/api/mcp/'))
+logger = logging.getLogger(__name__)
 
 mcp = MCPServer(
     name='buildit-wiki',
@@ -114,9 +117,28 @@ class _BearerAuthMiddleware:
                 {'error': f'MCP server is not configured ({MCP_API_KEY_ENV} is not set)'}, status_code=503)
             await response(scope, receive, send)
             return
-        headers = dict(scope.get('headers') or [])
+        raw_headers = scope.get('headers') or []
+        headers = dict(raw_headers)
         auth_header = headers.get(b'authorization', b'').decode('latin-1')
         if auth_header != f'Bearer {self.api_key}':
+            authorization_header_count = sum(
+                1 for name, _value in raw_headers if name.lower() == b'authorization')
+            bearer_prefix_present = auth_header.startswith('Bearer ')
+            received_token = auth_header[len('Bearer '):] if bearer_prefix_present else ''
+            logger.warning(
+                'MCP bearer authentication rejected: '
+                'authorization_present=%s authorization_header_count=%d '
+                'bearer_prefix_present=%s received_token_length=%d expected_token_length=%d '
+                'compare_digest_match=%s header_outer_whitespace=%s token_outer_whitespace=%s',
+                authorization_header_count > 0,
+                authorization_header_count,
+                bearer_prefix_present,
+                len(received_token),
+                len(self.api_key),
+                hmac.compare_digest(received_token, self.api_key),
+                auth_header != auth_header.strip(),
+                received_token != received_token.strip(),
+            )
             response = JSONResponse({'error': 'unauthorized'}, status_code=401)
             await response(scope, receive, send)
             return
