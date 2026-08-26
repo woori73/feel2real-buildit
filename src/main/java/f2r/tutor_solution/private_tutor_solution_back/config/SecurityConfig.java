@@ -154,6 +154,13 @@ public class SecurityConfig {
             .permitAll()
 
             // ── Problem Generator SSR 화면 ─────────────────────────────────
+            // BuildIt Wiki MCP 서버: 외부 MCP client(Claude/GPT 등)는 브라우저 로그인
+            // 세션이 없으므로 아래 /problem-generator/** 규칙(hasAnyRole)에 걸리면 절대
+            // 접근할 수 없다. 실제 인증은 FastAPI 쪽 mcp_server.py의 Bearer 토큰
+            // 미들웨어가 전담하므로, 이 경로만 Spring 레벨에서는 permitAll로 열어둔다.
+            // ⚠ 반드시 아래 넓은 /problem-generator/** 규칙보다 먼저 와야 한다(좁은 것 우선).
+            .requestMatchers("/problem-generator/wiki/api/mcp/**")
+            .permitAll()
             // catch-all permitAll보다 위에서 닫는다. 화면은 로그인한 STUDENT/TUTOR/ADMIN 전용이다.
             .requestMatchers("/problem-generator/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
