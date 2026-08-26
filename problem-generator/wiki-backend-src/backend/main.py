@@ -2640,10 +2640,9 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
 # ==================================================================================
 # MCP Server — 위 Workspace Context API(get_final_workspace_context /
 # get_jikbo_workspace_context / create_final_deliverable) 위의 얇은 adapter를
-# /api/mcp 에 mount한다. 실제 Context 조립·저장 로직은 전부 이 파일에 그대로 있고,
+# /api/mcp 와 /api/mcp/에 redirect 없이 연결한다. 실제 Context 조립·저장 로직은
+# 전부 이 파일에 그대로 있고,
 # mcp_server.py는 그 함수들을 호출만 한다(자세한 설계는 mcp_server.py 모듈 docstring).
 # ==================================================================================
-from mcp_server import build_mcp_asgi_app  # noqa: E402
-app.mount('/api/mcp', build_mcp_asgi_app())
-
-
+from mcp_server import McpEndpointMiddleware, build_mcp_asgi_app  # noqa: E402
+app.add_middleware(McpEndpointMiddleware, mcp_app=build_mcp_asgi_app())
