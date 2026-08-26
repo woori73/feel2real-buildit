@@ -1309,6 +1309,140 @@ def update_question_favorite(question_id: int, payload: FavoriteUpdate):
 
 
 # ==================================================================================
+# FINAL/JIKBO Workspace Context — 향후 MCP/외부 LLM이 한 번의 요청으로 읽을 수 있도록
+# 화면에 흩어진 자료를 DB 원본 그대로 구조화된 JSON으로 조립한다(화면 HTML을 긁지 않는다).
+# 기존 저장/조회 API의 SQL 패턴을 그대로 재사용하고 별도 테이블에 중복 저장하지 않는다.
+# read-only이며 이 섹션의 함수들은 아무 것도 쓰지 않는다.
+# ==================================================================================
+
+def _match_digital_twin(conn, school: str, grade: str, exam: str) -> Optional[dict]:
+    """NaesinWikiV1.tsx FINAL Workspace가 쓰는 것과 같은 우선순위: school+grade가 정확히 같고,
+    exam이 정확히 같은 Twin을 우선하되 없으면 '전체' Twin으로 대체한다."""
+    row = conn.execute(
+        "SELECT * FROM digital_twin_profiles WHERE is_active=1 AND school=? AND grade=? AND (exam=? OR exam='전체') "
+        "ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1",
+        (school, grade, exam, exam),
+    ).fetchone()
+    if not row:
+        return None
+    twin = digital_twin_response(row)
+    return {**twin, 'type': 'digital_twin', 'source': 'digital_twin_profiles', 'title': twin.get('description') or twin.get('dna') or 'Digital Twin'}
+
+
+def _material_context_items(conn, core_type: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
+    """exam_material_sets를 list_exam_materials와 같은 Context 조건으로 조회하되, 목록 화면과
+    달리 AI가 실제로 읽을 수 있도록 html_text/json_text 원문까지 그대로 포함한다."""
+    rows = conn.execute(
+        '''SELECT m.id, m.core_type, m.school, m.grade, m.year, m.semester, m.exam, m.student_id,
+            s.name student_name, m.title, m.original_name, m.html_text, m.json_text, m.created_at
+            FROM exam_material_sets m LEFT JOIN students s ON s.id = m.student_id
+            WHERE m.core_type=? AND m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=?
+            ORDER BY m.id DESC''',
+        (core_type, school, grade, year, semester, exam),
+    ).fetchall()
+    default_title = '학교 프린트' if core_type == 'school_print' else '학생 오답'
+    items = []
+    for row in rows:
+        try:
+            parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
+        except (TypeError, json.JSONDecodeError):
+            parsed_json = {}
+        items.append({
+            'id': row['id'], 'type': core_type, 'title': row['title'] or row['original_name'] or default_title,
+            'created_at': row['created_at'], 'source': 'exam_material_sets',
+            'student_id': row['student_id'], 'student_name': row['student_name'],
+            'has_original': bool(row['original_name']), 'original_name': row['original_name'],
+            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
+            'json_text': parsed_json,
+        })
+    return items
+
+
+def _final_deliverable_context_items(conn, kind: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
+    rows = conn.execute(
+        '''SELECT id, kind, title, original_name, html_text, json_text, created_at
+           FROM final_deliverables WHERE kind=? AND school=? AND grade=? AND year=? AND semester=? AND exam=?
+           ORDER BY id DESC''',
+        (kind, school, grade, year, semester, exam),
+    ).fetchall()
+    items = []
+    for row in rows:
+        try:
+            parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
+        except (TypeError, json.JSONDecodeError):
+            parsed_json = {}
+        items.append({
+            'id': row['id'], 'type': 'final_deliverable', 'title': row['title'] or 'FINAL 완성본',
+            'created_at': row['created_at'], 'source': 'final_deliverables', 'kind': row['kind'],
+            'has_original': bool(row['original_name']), 'original_name': row['original_name'],
+            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
+            'json_text': parsed_json,
+        })
+    return items
+
+
+def _question_context_items(school: str, grade: str, exam: str) -> list:
+    rows = list_questions(school=school, grade=grade, exam=exam, limit=200)
+    return [{
+        **row, 'type': 'generated_question', 'source': 'generated_questions',
+        'title': f"{row.get('question_type') or '문항'} · {(row.get('stem') or '')[:60]}",
+    } for row in rows]
+
+
+def _insight_context_items(school: str, grade: str, year: int, semester: str, exam: str, after: str = '') -> list:
+    """수업 인사이트를 Context 항목 형태(id/type/title/created_at/source)로 변환한다.
+    after가 주어지면 그 시각 이후 기록만 남긴다(직보의 post_final_insights용).
+    학교 선생님 힌트를 박원장 인사이트보다 먼저 보여주는 기존 화면 우선순위(sortedInsights)를 그대로 따른다."""
+    rows = list_educator_insights(200, school, grade, year, semester, exam)
+    items = [{
+        'id': row['id'], 'type': 'educator_insight', 'title': None, 'content': row['content'],
+        'created_at': row['created_at'], 'source': row['source'],
+    } for row in rows if not after or row['created_at'] > after]
+    items.sort(key=lambda item: 0 if item['source'] == 'school_teacher' else 1)
+    return items
+
+
+@app.get('/api/workspaces/final/context')
+def get_final_workspace_context(school: str, grade: str, year: int, semester: str, exam: str):
+    with get_db() as conn:
+        digital_twin = _match_digital_twin(conn, school, grade, exam)
+        school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
+        student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
+        final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
+    return {
+        'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
+        'digital_twin': digital_twin,
+        'school_prints': school_prints,
+        'student_errors': student_errors,
+        'class_insights': _insight_context_items(school, grade, year, semester, exam),
+        'generated_questions': _question_context_items(school, grade, exam),
+        'final_deliverables': final_deliverables,
+    }
+
+
+@app.get('/api/workspaces/jikbo/context')
+def get_jikbo_workspace_context(school: str, grade: str, year: int, semester: str, exam: str):
+    """직보는 FINAL과 별도 원천 저장소가 아니다 — FINAL 완성본 → FINAL 이후 최신 수업 인사이트 →
+    학생 반복 오답 순으로만 압축한다. 학교 프린트/제작 문제/Digital Twin 전체는 FINAL 제작 과정에서
+    이미 반영된 자료라 다시 담지 않는다."""
+    with get_db() as conn:
+        final_items = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
+        latest_final = final_items[0] if final_items else None
+        student_weaknesses = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
+        jikbo_deliverables = _final_deliverable_context_items(conn, 'jikbo', school, grade, year, semester, exam)
+    ready = latest_final is not None
+    post_final_insights = _insight_context_items(school, grade, year, semester, exam, after=latest_final['created_at']) if ready else []
+    return {
+        'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
+        'ready': ready,
+        'latest_final': latest_final,
+        'post_final_insights': post_final_insights,
+        'student_weaknesses': student_weaknesses,
+        'jikbo_deliverables': jikbo_deliverables,
+    }
+
+
+# ==================================================================================
 # 내신 실전 제작 — 강사 문제 DB에서 선택한 문항으로 구성한 시험지를 실제로 저장한다.
 # ==================================================================================
 

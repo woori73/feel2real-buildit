@@ -54,6 +54,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
   const [savingSchoolPrint,setSavingSchoolPrint]=useState(false)
+  const [aiContext,setAiContext]=useState<{workspace:'final'|'jikbo';json:string}|null>(null)
+  const [loadingAiContext,setLoadingAiContext]=useState(false)
   // fetchSchoolTree()가 늦게 끝나면(운영 네트워크 지연) 사용자가 이미 고른 학교/학년/시험을
   // 마운트 시점 기본값(setContext(...exam:'전체'))이 뒤늦게 덮어써 버리는 경합이 있었다.
   // STEP1에서 학교 프린트를 저장한 뒤 목록을 다시 불러오면 방금 고른 시험이 아니라 '전체' 기준으로
@@ -205,6 +207,18 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     }catch(err){setNotice(err instanceof Error?err.message:'학생 오답 복습 문제지를 내보내지 못했습니다.')}finally{setExportingWrong(false)}
   }
   const sortedInsights=[...insights].sort((a,b)=>(a.source==='school_teacher'?0:1)-(b.source==='school_teacher'?0:1))
+  // "화면에는 자료가 있는데 AI에는 전달되지 않는" 문제를 확인하기 위한 디버깅 장치.
+  // 화면을 다시 조합하지 않고 MCP가 실제로 호출할 Context read API를 그대로 호출해 그 응답을 보여준다.
+  const showAiContext=async(kind:'final'|'jikbo')=>{
+    setLoadingAiContext(true)
+    try{
+      const r=await api(`workspaces/${kind}/context?${contextQuery(context)}`)
+      const b=await r.json().catch(()=>({}))
+      if(!r.ok){setNotice(apiErrorMessage(b,'AI Context를 불러오지 못했습니다.'));return}
+      setAiContext({workspace:kind,json:JSON.stringify(b,null,2)})
+    }catch(error){setNotice(error instanceof Error?`AI Context를 불러오지 못했습니다: ${error.message}`:'AI Context를 불러오지 못했습니다.')}
+    finally{setLoadingAiContext(false)}
+  }
   return <section className="naesin-v1">
     <header><p className="kicker">BUILD IT · NAESIN WIKI V1.1</p><h1>시험 자료 한눈에 모으기</h1><p>학교와 시험을 먼저 고르면 STEP 1부터 4까지 순서대로 따라가며 시험을 준비할 수 있습니다.</p></header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
@@ -262,7 +276,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||!htmlText.trim():(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>}
     <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트</h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다.</p></div></div><div className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button></div></section>
 
-    {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+    {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('final')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+      {aiContext?.workspace==='final'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/final/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}
       <Core title="출제자 Digital Twin" count={twinProfile?1:0}>{twinProfile&&<Row checked={false} onToggle={()=>undefined} label={`${twinProfile.description||twinProfile.dna||'Digital Twin'} · v${twinProfile.version}`} actions={<button onClick={()=>open(`digital-twins/${twinProfile.id}`)}>JSON 보기</button>}/>}</Core>
       <Core title="제작 문제" count={questions.length}>{questions.map(q=><Row key={q.id} checked={selected.has(`q-${q.id}`)} onToggle={()=>toggle(`q-${q.id}`)} label={`${q.question_type||'문항'} · ${q.stem.slice(0,70)}`} actions={<button onClick={()=>onNavigate('database')}>상세 열기</button>}/>)}</Core>
       <Core title="학교 프린트" count={prints.length}>{prints.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={m.title||m.original_name||'학교 프린트'} actions={<>{m.has_html?<button onClick={()=>open(`exam-materials/${m.id}/html`)}>HTML 보기</button>:m.original_name&&<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}<button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON 보기</button></>}/>)}</Core>
@@ -283,7 +298,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       </div>
     </section>}
 
-    {workspace==='jikbo'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">직보 WORKSPACE</p><h2>직보 준비</h2><p>FINAL 완성본에서 시험 직전 확인할 내용을 추출하고, FINAL 이후 최신 수업 인사이트와 학생 취약점을 반영합니다.</p></div><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+    {workspace==='jikbo'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">직보 WORKSPACE</p><h2>직보 준비</h2><p>FINAL 완성본에서 시험 직전 확인할 내용을 추출하고, FINAL 이후 최신 수업 인사이트와 학생 취약점을 반영합니다.</p></div><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('jikbo')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+      {aiContext?.workspace==='jikbo'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/jikbo/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}
       {!finals.length?<p className="field-hint">아직 FINAL 자료가 없습니다. FINAL 제작 후 직보를 준비할 수 있습니다.</p>:<>
         <Core title="FINAL 완성본" count={finals.length}>{finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button></>}/>)}</Core>
         <Core title="최신 수업 인사이트 (학교 힌트 우선)" count={sortedInsights.length}>{sortedInsights.map(i=><Row key={i.id} checked={false} onToggle={()=>undefined} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>

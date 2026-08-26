@@ -188,4 +188,128 @@ class FinalDeliverableTest(unittest.TestCase):
         self.assertEqual(404, raised.exception.status_code)
 
 
+class WorkspaceContextTest(unittest.TestCase):
+    """GET /api/workspaces/final|jikbo/context — 향후 MCP/외부 LLM이 한 번의 요청으로 읽을
+    시험 Context를 DB 원본에서 그대로 조립하는지 검증한다(화면을 긁지 않는다)."""
+
+    CTX = dict(school='신구중', grade='중2', year=2026, semester='2학기', exam='중간고사')
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH = str(Path(self.temp_dir.name) / 'test.db')
+        main.init_db(); main.migrate_schema()
+
+    def tearDown(self): self.temp_dir.cleanup()
+
+    def test_final_context_is_empty_state_when_nothing_saved(self):
+        result = main.get_final_workspace_context(**self.CTX)
+        self.assertEqual(self.CTX, result['exam_context'])
+        self.assertIsNone(result['digital_twin'])
+        for key in ('school_prints', 'student_errors', 'class_insights', 'generated_questions', 'final_deliverables'):
+            self.assertEqual([], result[key])
+
+    def test_jikbo_context_is_not_ready_without_final(self):
+        result = main.get_jikbo_workspace_context(**self.CTX)
+        self.assertFalse(result['ready'])
+        self.assertIsNone(result['latest_final'])
+        self.assertEqual([], result['post_final_insights'])
+
+    def test_final_context_assembles_every_category_with_metadata(self):
+        main.import_digital_twin(main.ImportedTwinProfile(
+            school='신구중', grade='중2', exam='중간고사', dna='시험 DNA', description='신구중 중2 Twin'))
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '5과 프린트', None,
+            None, None, json.dumps({'items': [1]}, ensure_ascii=False), html_text='<p>학교 프린트 HTML</p>')
+        student = main.create_student(main.StudentCreate(name='김민준', school='신구중', grade='중2'))
+        main.create_exam_material(
+            'student_wrong_note', '신구중', '중2', 2026, '2학기', '중간고사', '6번 오답', student['id'],
+            UploadFile(filename='wrong.jpg', file=io.BytesIO(b'jpeg'), headers={'content-type': 'image/jpeg'}),
+            None, json.dumps({'wrong_text': '6번 오답'}, ensure_ascii=False))
+        main.create_educator_insight(main.EducatorInsightCreate(
+            content='서술형 3번 강조', school='신구중', grade='중2', year=2026, semester='2학기',
+            exam='중간고사', source='school_teacher'))
+        with main.get_db() as conn:
+            conn.execute(
+                "INSERT INTO generated_questions (school, grade, exam, question_type, stem, created_at) "
+                "VALUES (?,?,?,?,?,?)", ('신구중', '중2', '중간고사', '어법', '다음 중 어법상 옳은 것은?', '2026-01-01T00:00:00'))
+        main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', '기말 FINAL', None, None, '', html_text='<h1>FINAL</h1>')
+
+        result = main.get_final_workspace_context(**self.CTX)
+
+        self.assertEqual('신구중 중2 Twin', result['digital_twin']['title'])
+        self.assertEqual('digital_twin', result['digital_twin']['type'])
+
+        self.assertEqual(1, len(result['school_prints']))
+        print_item = result['school_prints'][0]
+        self.assertEqual({'id', 'type', 'title', 'created_at', 'source', 'student_id', 'student_name',
+                           'has_original', 'original_name', 'has_html', 'html_text', 'json_text'}, set(print_item.keys()))
+        self.assertTrue(print_item['has_html'])
+        self.assertIn('학교 프린트 HTML', print_item['html_text'])
+        self.assertEqual({'items': [1]}, print_item['json_text'])
+
+        self.assertEqual(1, len(result['student_errors']))
+        self.assertEqual('김민준', result['student_errors'][0]['student_name'])
+        self.assertFalse(result['student_errors'][0]['has_html'])
+
+        self.assertEqual(1, len(result['class_insights']))
+        self.assertEqual('school_teacher', result['class_insights'][0]['source'])
+
+        self.assertEqual(1, len(result['generated_questions']))
+        self.assertIn('어법', result['generated_questions'][0]['title'])
+
+        self.assertEqual(1, len(result['final_deliverables']))
+        self.assertEqual('기말 FINAL', result['final_deliverables'][0]['title'])
+
+    def test_school_print_context_item_keeps_html_and_json_separate(self):
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '둘다', None,
+            None, None, json.dumps({'a': 1}, ensure_ascii=False), html_text='<p>html-part</p>')
+        result = main.get_final_workspace_context(**self.CTX)
+        item = result['school_prints'][0]
+        self.assertEqual('<p>html-part</p>', item['html_text'])
+        self.assertEqual({'a': 1}, item['json_text'])
+
+    def test_jikbo_context_ready_with_final_shows_correct_order_and_excludes_bulk_materials(self):
+        """직보는 학교 프린트/제작 문제/Digital Twin 전체를 다시 담지 않는다."""
+        main.import_digital_twin(main.ImportedTwinProfile(school='신구중', grade='중2', exam='중간고사', dna='x'))
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '프린트', None,
+            None, None, '', html_text='<p>x</p>')
+        main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', '기말 FINAL', None, None, '', html_text='<h1>FINAL</h1>')
+
+        result = main.get_jikbo_workspace_context(**self.CTX)
+
+        self.assertTrue(result['ready'])
+        self.assertEqual('기말 FINAL', result['latest_final']['title'])
+        self.assertNotIn('school_prints', result)
+        self.assertNotIn('digital_twin', result)
+        self.assertNotIn('generated_questions', result)
+
+    def test_post_final_insights_only_includes_insights_recorded_after_final(self):
+        created_insight = main.create_educator_insight(main.EducatorInsightCreate(
+            content='FINAL 이전 인사이트', school='신구중', grade='중2', year=2026, semester='2학기',
+            exam='중간고사', source='director'))
+        with main.get_db() as conn:
+            conn.execute("UPDATE educator_insights SET created_at=? WHERE id=?",
+                         ('2026-01-01T00:00:00', created_insight['id']))
+        created_final = main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', '기말 FINAL', None, None, '', html_text='<h1>FINAL</h1>')
+        with main.get_db() as conn:
+            conn.execute("UPDATE final_deliverables SET created_at=? WHERE id=?",
+                         ('2026-06-01T00:00:00', created_final['id']))
+        with main.get_db() as conn:
+            conn.execute(
+                "INSERT INTO educator_insights (content, school, grade, year, semester, exam, source, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                ('FINAL 이후 인사이트', '신구중', '중2', 2026, '2학기', '중간고사', 'school_teacher', '2026-06-02T00:00:00'))
+
+        result = main.get_jikbo_workspace_context(**self.CTX)
+
+        contents = [item['content'] for item in result['post_final_insights']]
+        self.assertIn('FINAL 이후 인사이트', contents)
+        self.assertNotIn('FINAL 이전 인사이트', contents)
+
+
 if __name__ == '__main__': unittest.main()

@@ -318,5 +318,36 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(order).toEqual([...order].sort((a,b)=>a-b))
     expect(workspace.getByText(/기말 FINAL/)).toBeInTheDocument()
   })
+
+  it('FINAL Workspace의 AI Context 보기는 GET /api/workspaces/final/context 응답을 그대로 보여준다', async()=>{
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/workspaces/final/context')) return new Response(JSON.stringify({ exam_context: { school: '신사중', grade: '3학년', year: 2026, semester: '1학기', exam: '전체' }, digital_twin: null, school_prints: [], student_errors: [], class_insights: [], generated_questions: [], final_deliverables: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App/>); fireEvent.click(await screen.findByRole('button',{name:'FINAL 준비'}))
+    const heading = await screen.findByRole('heading',{name:'현재 시험 자료'})
+    const workspace = within(heading.closest('section') as HTMLElement)
+    fireEvent.click(workspace.getByRole('button',{name:'AI Context 보기'}))
+    const preview = await workspace.findByText(/"exam_context"/)
+    expect(preview.textContent).toContain('"school": "신사중"')
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes('/workspaces/final/context'))).toBe(true)
+  })
+
+  it('직보 Workspace의 AI Context 보기는 GET /api/workspaces/jikbo/context 응답을 그대로 보여준다', async()=>{
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/workspaces/jikbo/context')) return new Response(JSON.stringify({ exam_context: { school: '신사중', grade: '3학년', year: 2026, semester: '1학기', exam: '전체' }, ready: false, latest_final: null, post_final_insights: [], student_weaknesses: [], jikbo_deliverables: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App/>); fireEvent.click(await screen.findByRole('button',{name:'직보 준비'}))
+    const heading = await screen.findByRole('heading',{name:'직보 준비'})
+    const workspace = within(heading.closest('section') as HTMLElement)
+    fireEvent.click(workspace.getByRole('button',{name:'AI Context 보기'}))
+    const preview = await workspace.findByText(/"ready": false/)
+    expect(preview).toBeInTheDocument()
+  })
 })
 
