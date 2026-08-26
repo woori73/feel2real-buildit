@@ -119,4 +119,73 @@ class NaesinWikiV1Test(unittest.TestCase):
         self.assertEqual(400, raised.exception.status_code)
 
 
+class FinalDeliverableTest(unittest.TestCase):
+    """FINAL/직보 결과물 저장 영역. exam_material_sets(자료)와 별개로, 외부 LLM/강사가 완성한
+    산출물을 학교/학년/연도/학기/시험 Context 기준으로 저장·조회하는 자리를 검증한다."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH = str(Path(self.temp_dir.name) / 'test.db')
+        main.init_db(); main.migrate_schema()
+
+    def tearDown(self): self.temp_dir.cleanup()
+
+    def test_final_deliverable_requires_original_or_html(self):
+        with self.assertRaises(HTTPException) as raised:
+            main.create_final_deliverable('final', '신구중', '중2', 2026, '2학기', '중간고사', 'FINAL',
+                None, None, '', '')
+        self.assertEqual(400, raised.exception.status_code)
+
+    def test_final_deliverable_saves_html_and_json_without_original_file(self):
+        created = main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', '기말 FINAL',
+            None, None, json.dumps({'sections': ['국어']}, ensure_ascii=False),
+            html_text='<h1>FINAL 완성본</h1>')
+        self.assertEqual('final', created['kind'])
+        rows = main.list_final_deliverables('신구중', '중2', 2026, '2학기', '중간고사', kind='final')
+        self.assertEqual([created['id']], [row['id'] for row in rows])
+        self.assertEqual(1, rows[0]['has_html'])
+        html_body = main.open_final_deliverable_html(created['id']).body.decode('utf-8')
+        self.assertIn('FINAL 완성본', html_body)
+        json_body = json.loads(main.open_final_deliverable_json(created['id']).body)
+        self.assertEqual(['국어'], json_body['sections'])
+
+    def test_final_deliverable_saves_original_file_without_html(self):
+        """FINAL 결과물은 학교 프린트와 달리 외부에서 만든 실제 파일(원본)도 그대로 받을 수 있어야 한다."""
+        created = main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', 'FINAL docx',
+            UploadFile(filename='final.docx', file=io.BytesIO(b'docx-bytes'),
+                       headers={'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),
+            None, '', html_text='')
+        self.assertEqual(0, main.list_final_deliverables('신구중', '중2', 2026, '2학기', '중간고사', kind='final')[0]['has_html'])
+        self.assertEqual(b'docx-bytes', main.open_final_deliverable_original(created['id']).body)
+
+    def test_final_deliverable_defaults_kind_to_final(self):
+        created = main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', 'FINAL',
+            None, None, '', html_text='<p>x</p>')
+        self.assertEqual('final', created['kind'])
+
+    def test_list_final_deliverables_kind_filter_excludes_jikbo(self):
+        """이번 작업은 kind='jikbo' 저장 UI를 만들지 않지만, 향후 MCP save_jikbo가 같은 API를
+        쓸 수 있도록 kind 필터가 이미 정확히 동작해야 한다."""
+        main.create_final_deliverable('final', '신구중', '중2', 2026, '2학기', '중간고사', 'FINAL',
+            None, None, '', html_text='<p>final</p>')
+        main.create_final_deliverable('jikbo', '신구중', '중2', 2026, '2학기', '중간고사', '직보',
+            None, None, '', html_text='<p>jikbo</p>')
+        final_only = main.list_final_deliverables('신구중', '중2', 2026, '2학기', '중간고사', kind='final')
+        self.assertEqual(1, len(final_only))
+        self.assertEqual('final', final_only[0]['kind'])
+        both = main.list_final_deliverables('신구중', '중2', 2026, '2학기', '중간고사', kind=None)
+        self.assertEqual(2, len(both))
+
+    def test_final_deliverable_original_view_404s_when_no_original_saved(self):
+        created = main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', 'FINAL',
+            None, None, '', html_text='<p>x</p>')
+        with self.assertRaises(HTTPException) as raised:
+            main.open_final_deliverable_original(created['id'])
+        self.assertEqual(404, raised.exception.status_code)
+
+
 if __name__ == '__main__': unittest.main()

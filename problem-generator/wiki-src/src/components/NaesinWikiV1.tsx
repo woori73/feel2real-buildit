@@ -1,11 +1,12 @@
 import { ChangeEvent, FormEvent, ReactNode, useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
-import { exportExamMaterialWrongNotesOffice, fetchQuestions, fetchSchoolTree, fetchStudents, SchoolNode, StoredQuestion, Student } from '../lib/types'
+import { DigitalTwinProfile, exportExamMaterialWrongNotesOffice, fetchQuestions, fetchSchoolTree, fetchStudents, SchoolNode, StoredQuestion, Student } from '../lib/types'
 import type { Page } from '../App'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
 type Material = { id:number; core_type:'school_print'|'student_wrong_note'; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number }
 type Insight = { id:number; content:string; source:'director'|'school_teacher'; created_at:string }
+type FinalDeliverable = { id:number; kind:'final'|'jikbo'; school:string; grade:string; year:number; semester:string; exam:string; title:string; original_name:string; created_at:string; has_html?:number }
 type Workspace = 'final'|'jikbo'|null
 const years = [new Date().getFullYear(), new Date().getFullYear()-1, new Date().getFullYear()-2]
 // 화면 표시는 전체/중간/기말이지만 저장·조회 값은 기존 Digital Twin·Assistant·exam_material_sets가
@@ -43,9 +44,12 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [tree,setTree]=useState<SchoolNode[]>([]), [students,setStudents]=useState<Student[]>([])
   const [context,setContext]=useState<Context>({school:'',grade:'',year:years[0],semester:'1학기',exam:'전체'})
   const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
+  const [finals,setFinals]=useState<FinalDeliverable[]>([]), [twinProfile,setTwinProfile]=useState<DigitalTwinProfile|null>(null)
   const [core,setCore]=useState<'school_print'|'student_wrong_note'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
   const [studentId,setStudentId]=useState(''), [title,setTitle]=useState(''), [originals,setOriginals]=useState<File[]>([]), [jsonFile,setJsonFile]=useState<File|null>(null), [jsonText,setJsonText]=useState('')
   const [htmlText,setHtmlText]=useState('')
+  const [finalTitle,setFinalTitle]=useState(''), [finalHtmlText,setFinalHtmlText]=useState(''), [finalOriginal,setFinalOriginal]=useState<File|null>(null), [finalJsonFile,setFinalJsonFile]=useState<File|null>(null), [finalJsonText,setFinalJsonText]=useState('')
+  const [savingFinal,setSavingFinal]=useState(false)
   const [insightText,setInsightText]=useState(''), [insightSource,setInsightSource]=useState<'director'|'school_teacher'>('director')
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
@@ -58,25 +62,40 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const touchedRef = useRef({school:false,grade:false,exam:false})
   const schoolNode=tree.find(item=>item.school===context.school), grades=schoolNode?.grades||[]
   const examLabel=EXAM_OPTIONS.find(o=>o.value===context.exam)?.label||context.exam
+  // 출제자 Digital Twin은 exam_material_sets처럼 새로 저장하지 않고, 이미 school/grade/exam
+  // 계층으로 저장돼 있는 digital_twin_profiles를 시험 Context 기준으로 찾아 연결만 한다.
+  // 정확히 일치하는 시험(중간고사/기말고사)에 Twin이 없으면 '전체' Twin으로 대체한다 —
+  // BuildIt Assistant(_assistant_context)가 이미 쓰는 것과 같은 우선순위 규칙이다.
+  const gradeNode=grades.find(g=>g.grade===context.grade)
+  const twinId=gradeNode?.exams.find(e=>e.exam===context.exam&&e.hasDigitalTwin)?.twinId
+    ??gradeNode?.exams.find(e=>e.exam==='전체'&&e.hasDigitalTwin)?.twinId
+    ??null
   const load=async(targetContext:Context)=>{
     if(!targetContext.school||!targetContext.grade||!targetContext.exam)return false
     const query=contextQuery(targetContext)
-    const [q,materialResponse,i]=await Promise.all([
+    const [q,materialResponse,i,finalRows]=await Promise.all([
       fetchQuestions({school:targetContext.school,grade:targetContext.grade,exam:targetContext.exam}),
       api(`exam-materials?${query}`),
       api(`educator-insights?limit=100&${query}`).then(r=>r.ok?r.json():[]),
+      api(`final-deliverables?kind=final&${query}`).then(r=>r.ok?r.json():[]),
     ])
     if(!materialResponse.ok){
       const body=await materialResponse.json().catch(()=>({}))
       setNotice(apiErrorMessage(body,'현재 시험의 학교 프린트를 불러오지 못했습니다.'))
-      setQuestions(q);setInsights(i);return false
+      setQuestions(q);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[]);return false
     }
     const m=await materialResponse.json()
-    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setInsights(i)
+    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[])
     return true
   }
   useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);const first=nodes[0], grade=first?.grades[0];const t=touchedRef.current;if(first)setContext(c=>({...c,school:t.school?c.school:first.school,grade:t.grade?c.grade:(grade?.grade||''),exam:t.exam?c.exam:'전체'}))});fetchStudents().then(setStudents)},[])
   useEffect(()=>{void load(context)},[context.school,context.grade,context.year,context.semester,context.exam])
+  useEffect(()=>{
+    if(!twinId){setTwinProfile(null);return}
+    let cancelled=false
+    api(`digital-twins/${twinId}`).then(r=>r.ok?r.json():null).then(profile=>{if(!cancelled)setTwinProfile(profile)}).catch(()=>{if(!cancelled)setTwinProfile(null)})
+    return ()=>{cancelled=true}
+  },[twinId])
   // behavior:'smooth'는 requestAnimationFrame 기반 애니메이션이라 조건부로 막 마운트된
   // 대상에 걸면 프레임이 씹혀 실제로는 전혀 스크롤되지 않는 경우가 있었다(운영에서 확인됨).
   // behavior:'auto'는 애니메이션 없이 즉시 오프셋을 적용해 신뢰성 있게 동작한다.
@@ -138,6 +157,39 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     await load({...context})
   }
   const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):saveStudentWrongNote(e)
+  const resetFinalUpload=()=>{setFinalTitle('');setFinalHtmlText('');setFinalOriginal(null);setFinalJsonFile(null);setFinalJsonText('')}
+  const chooseFinalOriginal=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0]||null;e.target.value='';setFinalOriginal(file)}
+  const chooseFinalHtmlFile=(e:ChangeEvent<HTMLInputElement>)=>{
+    const file=e.target.files?.[0];e.target.value='';if(!file)return
+    const reader=new FileReader()
+    reader.onload=()=>{setFinalHtmlText(String(reader.result||''));setNotice('HTML 파일 내용을 불러왔습니다. 필요하면 아래에서 수정한 뒤 저장하세요.')}
+    reader.onerror=()=>setNotice('HTML 파일을 읽지 못했습니다.')
+    reader.readAsText(file)
+  }
+  const saveFinalDeliverable=async(e:FormEvent)=>{
+    e.preventDefault()
+    if(savingFinal)return
+    if(!finalOriginal&&!finalHtmlText.trim()){setNotice('FINAL 결과 파일을 올리거나 HTML을 붙여넣어 주세요.');return}
+    if(!context.school||!context.grade||!context.exam){setNotice('학교·학년·시험 Context를 먼저 선택해 주세요.');return}
+    const savedContext={...context}
+    const form=new FormData()
+    Object.entries(savedContext).forEach(([k,v])=>form.append(k,String(v)))
+    form.append('kind','final')
+    form.append('title',finalTitle)
+    if(finalOriginal)form.append('original',finalOriginal)
+    form.append('html_text',finalHtmlText)
+    if(finalJsonFile)form.append('json_file',finalJsonFile)
+    form.append('json_text',finalJsonText)
+    setSavingFinal(true);setNotice('FINAL 완성본을 저장하는 중입니다.')
+    try{
+      const r=await api('final-deliverables',{method:'POST',body:form})
+      const b=await r.json().catch(()=>({}))
+      if(!r.ok){setNotice(apiErrorMessage(b,'FINAL 완성본을 저장하지 못했습니다.'));return}
+      if(!await load(savedContext))return
+      resetFinalUpload();setNotice('FINAL 완성본을 저장했습니다.')
+    }catch(error){setNotice(error instanceof Error?`FINAL 완성본을 저장하지 못했습니다: ${error.message}`:'FINAL 완성본을 저장하지 못했습니다.')}
+    finally{setSavingFinal(false)}
+  }
   const saveInsight=async()=>{if(!insightText.trim())return;const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...context,content:insightText,source:insightSource,student_context:'',lesson_context:''})});if(r.ok){setInsightText('');setNotice('수업 인사이트를 저장했습니다.');await load({...context})}}
   const toggle=(key:string)=>setSelected(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
@@ -211,16 +263,32 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트</h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다.</p></div></div><div className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button></div></section>
 
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+      <Core title="출제자 Digital Twin" count={twinProfile?1:0}>{twinProfile&&<Row checked={false} onToggle={()=>undefined} label={`${twinProfile.description||twinProfile.dna||'Digital Twin'} · v${twinProfile.version}`} actions={<button onClick={()=>open(`digital-twins/${twinProfile.id}`)}>JSON 보기</button>}/>}</Core>
       <Core title="제작 문제" count={questions.length}>{questions.map(q=><Row key={q.id} checked={selected.has(`q-${q.id}`)} onToggle={()=>toggle(`q-${q.id}`)} label={`${q.question_type||'문항'} · ${q.stem.slice(0,70)}`} actions={<button onClick={()=>onNavigate('database')}>상세 열기</button>}/>)}</Core>
       <Core title="학교 프린트" count={prints.length}>{prints.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={m.title||m.original_name||'학교 프린트'} actions={<>{m.has_html?<button onClick={()=>open(`exam-materials/${m.id}/html`)}>HTML 보기</button>:m.original_name&&<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}<button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON 보기</button></>}/>)}</Core>
       <Core title="학생 오답" count={wrongs.length}>{wrongs.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`${m.student_name||'학생'} · ${m.title||m.original_name}`} actions={<><button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button><button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON</button></>}/>)}</Core>
       {wrongs.length>0&&<div className="twin-actions"><button className="primary-action" disabled={!selectedWrongMaterialIds.length||exportingWrong} onClick={()=>void exportSelectedWrong()}>{exportingWrong?'내보내는 중...':`선택 학생 오답 Word 내보내기 (${selectedWrongMaterialIds.length})`}</button></div>}
       <Core title="수업 인사이트" count={insights.length}>{insights.map(i=><Row key={i.id} checked={selected.has(`i-${i.id}`)} onToggle={()=>toggle(`i-${i.id}`)} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>
+      <div className="admin-core"><h3>FINAL 완성본 <span>{finals.length}</span></h3>
+        {finals.length?finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button></>}/>):<p className="field-hint">아직 저장된 FINAL 완성본이 없습니다. 외부에서 만든 결과물을 아래에서 저장할 수 있습니다.</p>}
+        <form className="material-set-form" onSubmit={saveFinalDeliverable}>
+          <label>FINAL 제목<input value={finalTitle} onChange={e=>setFinalTitle(e.target.value)}/></label>
+          <label>결과 파일 업로드<input type="file" onChange={chooseFinalOriginal}/></label>
+          <label>HTML 자료 파일 선택<input type="file" accept=".html,.htm,text/html" onChange={chooseFinalHtmlFile}/></label>
+          <label>HTML 붙여넣기<textarea value={finalHtmlText} onChange={e=>setFinalHtmlText(e.target.value)} placeholder="완성된 FINAL HTML을 붙여넣거나 파일을 선택해 불러오세요."/></label>
+          <label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setFinalJsonFile(e.target.files?.[0]||null)}/></label>
+          <label>또는 JSON 붙여넣기<textarea value={finalJsonText} onChange={e=>setFinalJsonText(e.target.value)} placeholder='{"items":[]}'/></label>
+          <button type="submit" className="primary-action" disabled={savingFinal||(!finalOriginal&&!finalHtmlText.trim())}>{savingFinal?'저장 중...':'FINAL 완성본 저장'}</button>
+        </form>
+      </div>
     </section>}
 
-    {workspace==='jikbo'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">직보 WORKSPACE</p><h2>직보 핵심 신호</h2><p>학교 선생님 힌트 → 박원장 인사이트 → 학생 반복 오답 → FINAL 핵심 문제 순으로 압축해서 확인합니다.</p></div><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
-      <Core title="수업 인사이트 (학교 힌트 우선)" count={sortedInsights.length}>{sortedInsights.map(i=><Row key={i.id} checked={false} onToggle={()=>undefined} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>
-      <p className="field-hint">학생 반복 오답 {wrongs.length}건 · 제작 문제 {questions.length}건 · 학교 프린트 {prints.length}건이 이 시험 Context에 저장되어 있습니다. 세부 확인과 Word 내보내기는 FINAL 준비에서 진행하세요.</p>
+    {workspace==='jikbo'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">직보 WORKSPACE</p><h2>직보 준비</h2><p>FINAL 완성본에서 시험 직전 확인할 내용을 추출하고, FINAL 이후 최신 수업 인사이트와 학생 취약점을 반영합니다.</p></div><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+      {!finals.length?<p className="field-hint">아직 FINAL 자료가 없습니다. FINAL 제작 후 직보를 준비할 수 있습니다.</p>:<>
+        <Core title="FINAL 완성본" count={finals.length}>{finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button></>}/>)}</Core>
+        <Core title="최신 수업 인사이트 (학교 힌트 우선)" count={sortedInsights.length}>{sortedInsights.map(i=><Row key={i.id} checked={false} onToggle={()=>undefined} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>
+        <Core title="학생 반복 오답" count={wrongs.length}>{wrongs.map(m=><Row key={m.id} checked={false} onToggle={()=>undefined} label={`${m.student_name||'학생'} · ${m.title||m.original_name}`} actions={<><button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button><button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON</button></>}/>)}</Core>
+      </>}
     </section>}
   </section>
 }
