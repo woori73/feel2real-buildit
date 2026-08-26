@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class BuildItWikiProxyController {
   private static final Duration WIKI_REQUEST_TIMEOUT = Duration.ofSeconds(280);
-  private static final String MCP_PATH_PREFIX = "/api/mcp/";
+  private static final String MCP_PATH = "/api/mcp";
   // MCP Streamable HTTP 스펙(및 mcp_server.py의 Bearer 미들웨어)이 요구하는 헤더만 골라 전달한다.
   // Authorization이 없으면 FastAPI 쪽 Bearer 인증이 항상 401을 내므로 이게 근본 원인이었다.
   private static final String[] MCP_FORWARDED_REQUEST_HEADERS = {
@@ -36,7 +36,7 @@ public class BuildItWikiProxyController {
         .method(request.getMethod(), body.length == 0 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(body));
     String contentType = request.getHeader("Content-Type");
     if (contentType != null) builder.header("Content-Type", contentType);
-    if (targetPath.startsWith(MCP_PATH_PREFIX)) {
+    if (isMcpPath(targetPath)) {
       for (String headerName : MCP_FORWARDED_REQUEST_HEADERS) {
         String value = request.getHeader(headerName);
         if (value != null) builder.header(headerName, value);
@@ -53,10 +53,14 @@ public class BuildItWikiProxyController {
     ResponseEntity.BodyBuilder out = ResponseEntity.status(response.statusCode());
     response.headers().firstValue("content-type").ifPresent(v -> out.header(HttpHeaders.CONTENT_TYPE, v));
     response.headers().firstValue("content-disposition").ifPresent(v -> out.header(HttpHeaders.CONTENT_DISPOSITION, v));
-    if (targetPath.startsWith(MCP_PATH_PREFIX)) {
+    if (isMcpPath(targetPath)) {
       response.headers().firstValue("mcp-session-id").ifPresent(v -> out.header("Mcp-Session-Id", v));
     }
     return out.body(response.body());
+  }
+
+  private boolean isMcpPath(String targetPath) {
+    return targetPath.equals(MCP_PATH) || targetPath.startsWith(MCP_PATH + "/");
   }
 
   private ResponseEntity<byte[]> normalizedGatewayError(int status, String message) {
