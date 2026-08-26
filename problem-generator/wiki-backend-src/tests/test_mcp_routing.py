@@ -46,6 +46,54 @@ def test_mcp_paths_both_reject_invalid_bearer_token():
         assert response.json() == {'error': 'unauthorized'}
 
 
+def test_mcp_paths_accept_x_api_key_when_authorization_is_absent():
+    client = _test_app()
+
+    for path in ('/api/mcp', '/api/mcp/'):
+        response = client.post(path, headers={'X-Api-Key': 'test-key'})
+
+        assert response.status_code == 200
+        assert response.json() == {'path': '/'}
+
+
+def test_mcp_paths_reject_wrong_x_api_key_with_no_authorization():
+    client = _test_app()
+
+    for path in ('/api/mcp', '/api/mcp/'):
+        response = client.post(path, headers={'X-Api-Key': 'wrong-key'})
+
+        assert response.status_code == 401
+        assert response.json() == {'error': 'unauthorized'}
+
+
+def test_mcp_paths_reject_missing_authorization_and_x_api_key():
+    client = _test_app()
+
+    for path in ('/api/mcp', '/api/mcp/'):
+        response = client.post(path)
+
+        assert response.status_code == 401
+        assert response.json() == {'error': 'unauthorized'}
+
+
+def test_mcp_paths_accept_valid_bearer_even_with_wrong_x_api_key_present():
+    client = _test_app()
+
+    response = client.post(
+        '/api/mcp', headers={'Authorization': 'Bearer test-key', 'X-Api-Key': 'wrong-key'})
+
+    assert response.status_code == 200
+
+
+def test_mcp_paths_accept_valid_x_api_key_even_with_wrong_bearer_present():
+    client = _test_app()
+
+    response = client.post(
+        '/api/mcp', headers={'Authorization': 'Bearer wrong-key', 'X-Api-Key': 'test-key'})
+
+    assert response.status_code == 200
+
+
 def test_mcp_401_logs_only_safe_bearer_diagnostics(caplog):
     secret_token = 'never-log-this-secret-token'
 

@@ -76,6 +76,7 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
   private volatile byte[] capturedBody;
   private volatile String capturedContentType;
   private volatile String capturedAuthorization;
+  private volatile String capturedApiKeyHeader;
 
   @BeforeEach
   void startFakeFastApi() throws IOException {
@@ -94,6 +95,7 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     });
     fakeFastApi.createContext("/api/mcp", exchange -> {
       capturedAuthorization = exchange.getRequestHeaders().getFirst("Authorization");
+      capturedApiKeyHeader = exchange.getRequestHeaders().getFirst("X-Api-Key");
       capturedBody = exchange.getRequestBody().readAllBytes();
       byte[] response = "{}".getBytes(StandardCharsets.UTF_8);
       exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -178,6 +180,40 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     capturedAuthorization = null;
     HttpHeaders headers = new HttpHeaders();
     headers.setBearerAuth("test-placeholder");
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    RestTemplate restTemplate = new RestTemplate();
+
+    restTemplate.postForEntity(
+        "http://127.0.0.1:" + port + "/problem-generator/wiki" + targetPath,
+        new HttpEntity<>("{}", headers),
+        String.class);
+  }
+
+  @Test
+  void xApiKeyHeaderIsForwardedForMcpPathWithoutTrailingSlash() {
+    postWithApiKeyHeader("/api/mcp");
+
+    assertThat(capturedApiKeyHeader).isEqualTo("test-api-key-placeholder");
+  }
+
+  @Test
+  void xApiKeyHeaderIsForwardedForMcpPathWithTrailingSlash() {
+    postWithApiKeyHeader("/api/mcp/");
+
+    assertThat(capturedApiKeyHeader).isEqualTo("test-api-key-placeholder");
+  }
+
+  @Test
+  void xApiKeyHeaderIsNotForwardedForOtherWikiApi() {
+    postWithApiKeyHeader("/api/exam-materials");
+
+    assertThat(capturedApiKeyHeader).isNull();
+  }
+
+  private void postWithApiKeyHeader(String targetPath) {
+    capturedApiKeyHeader = null;
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Api-Key", "test-api-key-placeholder");
     headers.setContentType(MediaType.APPLICATION_JSON);
     RestTemplate restTemplate = new RestTemplate();
 
