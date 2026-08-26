@@ -1,4 +1,5 @@
 import json
+import contextlib
 import hashlib
 import os
 import re
@@ -294,7 +295,18 @@ def seed_default_twins():
             )
 
 
-app = FastAPI()
+@contextlib.asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    # mcp_server의 StreamableHTTP session manager는 자체 task group을 갖고 있어서
+    # app.mount()만으로는 시작되지 않는다 — 부모 app의 lifespan 안에서 명시적으로
+    # run()에 진입시켜야 한다. mcp_server는 main을 지연 import하므로 순환 import를
+    # 피하기 위해 여기서도 지연 import한다(서버 startup 시점에만 실행됨).
+    from mcp_server import mcp as _mcp
+    async with _mcp.session_manager.run():
+        yield
+
+
+app = FastAPI(lifespan=_lifespan)
 init_db()
 migrate_schema()
 seed_default_twins()
@@ -2623,5 +2635,15 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
     path = export_dir / 'school-prints-combined.docx'; doc.save(path)
     safe = re.sub(r'[\\/:*?"<>|]', '_', title) or '학교_프린트'
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f'{safe}.docx')
+
+
+# ==================================================================================
+# MCP Server — 위 Workspace Context API(get_final_workspace_context /
+# get_jikbo_workspace_context / create_final_deliverable) 위의 얇은 adapter를
+# /api/mcp 에 mount한다. 실제 Context 조립·저장 로직은 전부 이 파일에 그대로 있고,
+# mcp_server.py는 그 함수들을 호출만 한다(자세한 설계는 mcp_server.py 모듈 docstring).
+# ==================================================================================
+from mcp_server import build_mcp_asgi_app  # noqa: E402
+app.mount('/api/mcp', build_mcp_asgi_app())
 
 
