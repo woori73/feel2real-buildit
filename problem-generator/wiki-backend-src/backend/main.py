@@ -367,7 +367,9 @@ class EducatorInsightCreate(BaseModel):
     year: Optional[int] = None
     semester: str = ''
     exam: str = ''
-    source: Literal['director', 'school_teacher'] = 'director'
+    # 'claude'/'chatgpt'는 MCP save_class_insights(mcp_server.py)가 쓰는 외부 LLM 출처 값이다.
+    # 기존 'director'/'school_teacher' 값과 동작·우선순위 정렬(_insight_context_items)은 그대로 유지된다.
+    source: Literal['director', 'school_teacher', 'claude', 'chatgpt'] = 'director'
 
 
 @app.post('/api/educator-insights', status_code=201)
