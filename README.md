@@ -5,6 +5,7 @@ BUILD IT은 AI CHART로 숨은 영어교육자를 발견하고, 홈페이지·�
 
 ## 빠른 문서 진입점
 
+- 제품·개발 최상위 원칙: [`docs/BUILDIT_PHILOSOPHY.md`](docs/BUILDIT_PHILOSOPHY.md)
 - 프로젝트 전체 인수인계: [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md)
 - 작업별 문서 라우팅: [`docs/INDEX.md`](docs/INDEX.md)
 - 개발 워크플로/Flyway 정책: [`docs/WORKFLOW.md`](docs/WORKFLOW.md)

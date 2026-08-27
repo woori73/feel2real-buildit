@@ -110,6 +110,9 @@ main{ max-width:1120px; margin:0 auto; padding:0 5vw 96px; }
 .chart-hero h2{ margin-top:14px; font-size:clamp(18px,2.4vw,24px); font-weight:700; color:var(--ink-soft); }
 .chart-hero h2 b{ color:var(--ink); background:var(--gold-soft); padding:0 6px; border-radius:6px; }
 .chart-hero p.lead{ margin:18px auto 0; max-width:520px; font-size:15px; color:var(--ink-soft); line-height:1.6; font-weight:500; }
+.weekly-update{display:inline-block;margin-top:14px;padding:7px 13px;border-radius:100px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800}
+.chart-disclaimer{margin:16px 0 40px;padding:18px;border-radius:var(--radius-sm);background:var(--bg-soft);color:var(--ink-soft);font-size:12px;line-height:1.7}
+.score-badge{font-size:12px;font-weight:800;color:var(--accent)}
 
 /* ---------- Billboard-style rank list ---------- */
 .rank-section{ padding:40px 0; }
