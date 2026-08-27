@@ -3244,7 +3244,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 publication Site tool은 등록하지 않는다. 관리자가 Review Inbox를 승인해도 공개 상태는 바뀌지 않으며, 잠긴 `POST /publications`를 브라우저 도구가 우회할 수 없다.
 
 - `GET /context`: 선정 기준, Hard Gate, Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
-- `GET /regions/next?limit=1`: 미조사·재조사 예정·오류 지역을 조회한다. read.
+- `GET /regions/next?limit=1`: 미조사·재조사 예정·오류 지역을 조회한다. read. 시드 조사 지역은 `seoul-gangnam`(서울특별시 강남구), `gyeonggi-seongnam-bundang`(경기도 성남시 분당구)이며 지역 추가는 `chart_regions` 행 추가(마이그레이션)로만 한다.
 - `POST /regions/{regionId}/claim`: 조사 가능한 지역을 `IN_PROGRESS`로 점유한다. Draft Write.
 - `POST /regions/{regionId}/complete`: 후보 수 할당 없이 조사 결과 수와 메모를 남기고 `RESEARCHED`, 다음 주 재조사일을 설정한다. Draft Write.
 - `POST /educators/search-existing`: 이름·학원 기반으로 기존 후보/교육자를 조회한다. read.
