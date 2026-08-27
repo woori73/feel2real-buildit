@@ -66,7 +66,7 @@ class ChartSiteToolServiceTest {
     Map<String, Integer> second = service.score(candidate, evidence);
 
     assertThat(first).isEqualTo(second);
-    assertThat(first.values()).hasSum(100);
+    assertThat(first.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(100);
   }
 
   private DraftRequest eligibleRequest(List<EvidenceRequest> evidence) {
