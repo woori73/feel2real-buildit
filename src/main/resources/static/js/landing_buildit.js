@@ -36,6 +36,24 @@
     el.addEventListener('click', onStartClick);
   });
 
+  // --- Hero 소개영상: 첫 화면에서는 썸네일만, 클릭할 때 YouTube iframe을 생성한다. ---
+  document.querySelectorAll('[data-youtube-id]').forEach((card) => {
+    const trigger = card.querySelector('.hero-video-trigger');
+    if (!trigger) return;
+    trigger.addEventListener('click', () => {
+      const videoId = card.dataset.youtubeId;
+      if (!/^[\w-]{11}$/.test(videoId || '')) return;
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube-nocookie.com/embed/' + videoId
+        + '?autoplay=1&rel=0&modestbranding=1';
+      iframe.title = 'BuildIt 소개영상';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+      card.replaceChildren(iframe);
+    }, { once: true });
+  });
+
   // --- 보호 화면에서 튕겨 온 경우: 로그인 안내 ---
   // SecurityConfig가 /problem-generator/** 익명 HTML 요청을 "/?login=required"로 302한다.
   // 안내 전에 마커를 지우므로 새로고침·뒤로가기에서 다시 뜨지 않는다.
