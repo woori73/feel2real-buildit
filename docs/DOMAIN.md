@@ -1039,7 +1039,7 @@ Ranking 1차 구현은 `approved_at DESC` 기준으로 최대 100명을 공개�
 
 기존 후보/활동/교육자와 관리자 승인 경계를 유지하면서 ChatGPT Site tool이 조사 결과를 비공개 초안으로 넘기고, 승인된 주간 발행본을 Living Archive로 보존할 수 있게 확장한다. 승인용 diff 단계에서는 publication write가 잠겨 있어 실제 `/chart` 데이터는 바뀌지 않는다.
 
-- `chart_regions`: 전국 확장용 시·군·구 진행 상태. `UNRESEARCHED`, `IN_PROGRESS`, `RESEARCHED`, `DUE`, `ERROR`를 사용하고 마지막 조사일과 다음 주 조사 예정일을 보존한다. V949 테스트 지역은 `seoul-gangnam` 1곳이다.
+- `chart_regions`: 전국 확장용 시·군·구 진행 상태. `UNRESEARCHED`, `IN_PROGRESS`, `RESEARCHED`, `DUE`, `ERROR`를 사용하고 마지막 조사일과 다음 주 조사 예정일을 보존한다. 지역 추가는 행 추가로만 한다(Java/JS 하드코딩 없음). 시드: `seoul-gangnam`(서울특별시 강남구, V949), `gyeonggi-seongnam-bundang`(경기도 성남시 분당구, V950).
 - `chart_candidates` 추가 nullable 필드: 시/도·시군구, 정체성/철학/커리큘럼/수업특징/성장조언, 공식 공개 채널, Hard Gate 확인값, eligibility 결과, potential signals, 조사 source, criteria version. 기존 Gemini 후보와 호환되도록 nullable로 추가한다.
 - `chart_candidate_activities` 추가 nullable 필드: 활동일, evidence 종류, 교육적 정보성, 조사일. 전화·이메일·개인주소는 저장하지 않는다.
 - `chart_score_snapshots`: Hard Gate 통과 후보의 결정론적 Score breakdown, 사용 근거, 기준 버전, 계산일, 제안 순위와 검토 상태를 저장한다.
