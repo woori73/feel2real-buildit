@@ -684,6 +684,8 @@ ADMIN 로그인
 
 ### ChatGPT Site tool 1차 검증 흐름
 
+Site tools는 `/admin/chart`의 JavaScript가 WebMCP `document.modelContext.registerTool()`로 등록한다. ChatGPT 데스크톱 내장 브라우저에서 이 ADMIN 페이지를 열어 둔 동안만 발견되며, 기존 로그인 세션·Spring Security·서버 validation을 그대로 통과한다. 별도 MCP/FastAPI/SQLite 서비스는 두지 않는다.
+
 ```text
 선정 기준/다음 미조사 지역 조회
   → ChatGPT가 공개 웹 조사(서버의 이중 AI 호출 없음)
@@ -708,6 +710,20 @@ ChatGPT: context + next region → claim
 ```
 
 `POST /api/admin/chart/tools/publications`는 승인용 diff 단계에서 계속 잠겨 있어 실제 교육자 공개가 발생하지 않는다. `PROMISING` entry는 Score 순위와 분리된 “주목할 교육자”이며 동일하게 관리자 승인 발행본 안에서만 공개한다.
+
+### Legacy V3 → 현행 재조사
+
+```text
+Legacy app.db read-only 검증 (125 / VERIFIED 43)
+  → 개인정보 필드 제외한 sanitized JSON queue
+  → PENDING_CURRENT_RESEARCH
+  → ChatGPT가 현재 연도 공개 활동·오프라인 지역·고유성을 다시 조사
+  → 기존 후보 중복 확인 → 현행 Hard Gate → 현행 Score preview
+  → Review Inbox → 인간 승인
+  → 별도 publication 승인 전 비공개
+```
+
+Legacy Score는 조사 완성도 차이가 섞인 역사적 값이므로 현행 Score나 순위 입력으로 사용하지 않는다. 과거 VERIFIED 상태도 자동 승계하지 않는다.
 
 ### 운영 보안
 

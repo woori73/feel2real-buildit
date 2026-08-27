@@ -1050,6 +1050,8 @@ Ranking 1차 구현은 `approved_at DESC` 기준으로 최대 100명을 공개�
 Hard Gate는 Score보다 먼저 적용한다. 현재 오프라인 활동, 실행 시점의 현재 연도 활동, 교육자 고유성, 제외대상 아님을 모두 실제 URL 근거로 확인해야 한다. 광고·보도자료만 있는 후보는 저장과 Score 계산 대상이 아니다.
 
 BuildIt Score `buildit-chart-v1`은 최대 100점이다: 교육자 고유성 35, 수업·교육 실천 20, 교육 콘텐츠 지속성 15, 전문성 15, 검증 근거 10, 지역 활동 5. 검색량·광고량·규모·유명세·BuildIt 가입 여부는 입력하지 않는다.
+
+Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERIFIED 43명을 `PENDING_CURRENT_RESEARCH` 전송 형식으로 만들 뿐이며 `chart_candidates`, `chart_educators`, Score snapshot 또는 publication에 직접 넣지 않는다. 전화·이메일·상세주소는 전송 형식에 없고, Legacy Score는 `legacy_score_is_current_score=false`인 역사 메타데이터로만 보존한다.
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
