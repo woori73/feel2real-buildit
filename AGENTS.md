@@ -5,9 +5,10 @@
 > CLAUDE.md(OMC용)와 이 파일의 핵심 규칙은 동일하게 유지한다.
 
 ## 작업 착수 전 (필수)
-1. **`docs/INDEX.md`를 먼저 읽고** 해당 작업 문서를 로드한다.
-2. 현재 git 상태 / 브랜치 확인.
-3. DB/마이그레이션을 건드리면 **`docs/WORKFLOW.md` §4 번호정책**을 반드시 확인한다.
+1. **BuildIt 관련 기능을 수정하기 전에 `docs/BUILDIT_PHILOSOPHY.md`를 먼저 읽는다.**
+2. **`docs/INDEX.md`를 읽고** 해당 작업 문서를 로드한다.
+3. 현재 git 상태 / 브랜치 확인.
+4. DB/마이그레이션을 건드리면 **`docs/WORKFLOW.md` §4 번호정책**을 반드시 확인한다.
 
 ## 핵심 규칙 (요약 — 상세는 docs/)
 - **main 단일 로컬 개발**: 기본 작업은 `main`에서 수행하고 `./scripts/run-local.sh`가 로컬 MySQL(`localhost:3308/f2r_db`)을 자동 생성·재사용한다. 검증 후 PR로만 병합하고, 운영 배포는 수동 GitHub Actions로만 수행한다. → [docs/WORKFLOW.md](docs/WORKFLOW.md)

@@ -1034,6 +1034,22 @@ Google V2가 발견한 관리자 검토 후보. 후보는 `DISCOVERED`로 저장
 | audit columns | | `BaseEntity` |
 
 Ranking 1차 구현은 `approved_at DESC` 기준으로 최대 100명을 공개한다. AI 자동 등록 경로는 없다.
+
+### 4.43 buildit_chart Site tool 조사 초안 (V949)
+
+기존 후보/활동/교육자와 관리자 승인 경계를 유지하면서 ChatGPT Site tool이 조사 결과를 비공개 초안으로 넘기고, 승인된 주간 발행본을 Living Archive로 보존할 수 있게 확장한다. 승인용 diff 단계에서는 publication write가 잠겨 있어 실제 `/chart` 데이터는 바뀌지 않는다.
+
+- `chart_regions`: 전국 확장용 시·군·구 진행 상태. `UNRESEARCHED`, `IN_PROGRESS`, `RESEARCHED`, `DUE`, `ERROR`를 사용하고 마지막 조사일과 다음 주 조사 예정일을 보존한다. V949 테스트 지역은 `seoul-gangnam` 1곳이다.
+- `chart_candidates` 추가 nullable 필드: 시/도·시군구, 정체성/철학/커리큘럼/수업특징/성장조언, 공식 공개 채널, Hard Gate 확인값, eligibility 결과, potential signals, 조사 source, criteria version. 기존 Gemini 후보와 호환되도록 nullable로 추가한다.
+- `chart_candidate_activities` 추가 nullable 필드: 활동일, evidence 종류, 교육적 정보성, 조사일. 전화·이메일·개인주소는 저장하지 않는다.
+- `chart_score_snapshots`: Hard Gate 통과 후보의 결정론적 Score breakdown, 사용 근거, 기준 버전, 계산일, 제안 순위와 검토 상태를 저장한다.
+- `chart_review_batches`: 점수·순위 변경안을 `PENDING_ADMIN_REVIEW`로 묶고 관리자 판정 시각·메모를 보존한다.
+- `chart_publications` / `chart_publication_entries`: 승인된 주차별 불변 발행본과 `RANKED`/`PROMISING` 항목, 현재·이전 순위, 당시 소개·최근 활동을 보존한다. 과거 발행본을 덮어쓰지 않는다.
+- `chart_web_draft_requests`: 교육자 동의 시각과 Chart 프로필 snapshot payload를 기록하는 Chart → BuildIt Web 계약이다. 자동 홈페이지 생성이나 Score 가산은 하지 않는다.
+
+Hard Gate는 Score보다 먼저 적용한다. 현재 오프라인 활동, 실행 시점의 현재 연도 활동, 교육자 고유성, 제외대상 아님을 모두 실제 URL 근거로 확인해야 한다. 광고·보도자료만 있는 후보는 저장과 Score 계산 대상이 아니다.
+
+BuildIt Score `buildit-chart-v1`은 최대 100점이다: 교육자 고유성 35, 수업·교육 실천 20, 교육 콘텐츠 지속성 15, 전문성 15, 검증 근거 10, 지역 활동 5. 검색량·광고량·규모·유명세·BuildIt 가입 여부는 입력하지 않는다.
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과

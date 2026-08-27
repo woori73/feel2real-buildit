@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartD
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartPublicService;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,9 @@ public class ChartPublicController {
   public List<ChartEducatorResponse> educators() {
     return chartPublicService.defaultTopEducators();
   }
+
+  @GetMapping("/publication/current")
+  public Map<String, Object> currentPublication() { return chartPublicService.currentPublication(); }
 
   @GetMapping("/zones/{zoneId}/educators")
   public List<ChartEducatorResponse> educatorsByZone(@PathVariable String zoneId) {

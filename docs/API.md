@@ -3226,6 +3226,31 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 인증/권한: `ROLE_ADMIN`.
 - Response: 갱신 후보.
 
+### 🧪 Chart Site tool 1차 계약 (`/api/admin/chart/tools/**`)
+
+모든 endpoint는 `ROLE_ADMIN` 전용이다. ChatGPT가 공개 웹 조사를 담당하며 이 API가 다시 Gemini/OpenAI 검색을 호출하지 않는다.
+
+- `GET /context`: 선정 기준, Hard Gate, Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
+- `GET /regions/next?limit=1`: 미조사·재조사 예정·오류 지역을 조회한다. read.
+- `POST /regions/{regionId}/claim`: 조사 가능한 지역을 `IN_PROGRESS`로 점유한다. Draft Write.
+- `POST /regions/{regionId}/complete`: 후보 수 할당 없이 조사 결과 수와 메모를 남기고 `RESEARCHED`, 다음 주 재조사일을 설정한다. Draft Write.
+- `POST /educators/search-existing`: 이름·학원 기반으로 기존 후보/교육자를 조회한다. read.
+- `POST /research-drafts`: 시/도·시군구, 교육자 정체성, Hard Gate 확인값, 공개 공식 채널, 실제 evidence URL·활동일·종류를 저장한다. Draft Write. Hard Gate 실패, 현재 연도 evidence 부재, 광고성 evidence만 존재, URL 부재 시 `422/400`; 중복은 `409`.
+- `GET /scores/preview?candidateId=`: 저장된 근거로 결정론적 Score와 potential signals를 계산한다. DB를 변경하지 않는 preview.
+- `POST /review-batches`: 후보들의 점수 snapshot과 제안 순위를 `PENDING_ADMIN_REVIEW`로 제출한다. Draft Write이며 공개 데이터는 변경하지 않는다.
+- `GET /review-batches`: 관리자 승인 직전의 `PENDING_ADMIN_REVIEW` batch를 조회한다. read.
+- `POST /review-batches/{reviewBatchId}/decision`: 관리자가 제안안을 `APPROVED` 또는 `REJECTED`로 판정한다. Review Write이며 공개는 변경하지 않는다.
+- `POST /educators/{candidateId}/web-draft-requests`: 교육자 동의 시각을 필수로 받아 Chart 기록의 BuildIt Web draft 요청 payload를 만든다. 가입 여부는 Score에 반영하지 않는다.
+- `POST /publications`: 1차 검증 중 잠금. 항상 `409`이며 실제 공개를 막는다. Publish 권한 계약의 자리만 확보한다.
+
+### ✅ GET /api/chart/publication/current
+
+- 목적: `/chart`와 메인 TOP5가 같은 최신 `PUBLISHED` 주간 발행본을 읽는다.
+- 응답: 주간 업데이트일, 순위 entries, 관리자 승인 `PROMISING` 교육자, Score/이전 순위/소개·활동·공개 근거, 지표 고지.
+- 호환: 아직 발행본이 없으면 기존 승인 교육자 목록을 legacy 응답으로 제공한다.
+
+`research-drafts`는 전화번호, 이메일, 개인주소 입력 필드를 제공하지 않는다. 공식 URL은 `http(s)`만 허용한다. 현재 연도 판정은 서버 실행 연도를 사용하며 2026을 하드코딩하지 않는다.
+
 
 ### Wiki AI 오류/timeout 계약
 

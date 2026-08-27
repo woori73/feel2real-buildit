@@ -682,6 +682,33 @@ ADMIN 로그인
 - 대형학원·프랜차이즈·인강 중심 강사는 프롬프트와 서버 분류에서 제외/검토 대상으로 처리한다. 애매하면 `REVIEW_REQUIRED`로 남겨 관리자가 원문을 확인한다.
 - AI가 자동으로 TOP 100에 등록하는 경로는 없다.
 
+### ChatGPT Site tool 1차 검증 흐름
+
+```text
+선정 기준/다음 미조사 지역 조회
+  → ChatGPT가 공개 웹 조사(서버의 이중 AI 호출 없음)
+  → 기존 후보·교육자 중복 조회
+  → 오프라인 활동 + 현재 연도 활동 + 개인 고유성 + 제외대상 아님 Hard Gate
+  → 실제 URL/활동일/evidence가 있는 draft 저장
+  → 서버 결정론적 Score preview
+  → Potential Signals는 Score와 별도 표시
+  → ranking review batch 제출
+  → PENDING_ADMIN_REVIEW에서 중지
+```
+
+V949 최소 구현은 `seoul-gangnam` 테스트 지역 한 곳에서 시작한다. 후보 저장과 지역 조사 완료를 분리하여 `UNRESEARCHED → IN_PROGRESS → RESEARCHED → DUE`를 지키며, 월요일 스케줄은 기한이 지난 지역을 `DUE`로 표시할 뿐 외부 검색이나 공개를 실행하지 않는다. 기존 Gemini V2 discovery와 approve/reject는 호환·롤백용으로 그대로 유지한다.
+
+```text
+ChatGPT: context + next region → claim
+  → 여러 검색 관점으로 공개 웹 조사 → 중복 확인 → Hard Gate → draft/evidence
+  → Score preview + Potential Signals → region complete → review batch
+관리자 Review Inbox: 승인/반려 (발행과 분리)
+  → 별도 publication 승인 시에만 PUBLISHED snapshot
+  → /chart와 랜딩 TOP5가 같은 publication을 조회
+```
+
+`POST /api/admin/chart/tools/publications`는 승인용 diff 단계에서 계속 잠겨 있어 실제 교육자 공개가 발생하지 않는다. `PROMISING` entry는 Score 순위와 분리된 “주목할 교육자”이며 동일하게 관리자 승인 발행본 안에서만 공개한다.
+
 ### 운영 보안
 
 - `GEMINI_API_KEY` / `GEMINI_MODEL` 또는 `OPENAI_API_KEY` / `OPENAI_MODEL`은 서버 환경변수로만 사용한다.

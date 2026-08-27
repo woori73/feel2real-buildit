@@ -7,6 +7,7 @@
 
 | 작업 | 먼저 읽을 문서 |
 |---|---|
+| **모든 BuildIt 제품·기능 설계 및 수정** | [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md) |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |
 | **로컬 실행 / DB 자동 생성 / PR / 배포** | [WORKFLOW.md](WORKFLOW.md) |
 | **Windows에서 처음 환경 세팅 (WSL2/Docker/JDK)** | [LOCAL_SETUP_WINDOWS.md](LOCAL_SETUP_WINDOWS.md) |
@@ -31,6 +32,7 @@
 - 워크플로/마이그레이션 정책 변경 → [WORKFLOW.md](WORKFLOW.md) (CLAUDE.md·AGENTS.md는 포인터만)
 
 ## 작업 전 필수 확인 (모든 에이전트)
-1. 이 인덱스에서 해당 문서 로드
-2. 현재 git 상태 / 브랜치 확인
-3. DB/마이그레이션 건드리면 [WORKFLOW.md](WORKFLOW.md) §4 번호정책 **반드시** 확인
+1. BuildIt 관련 작업이면 [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md)를 먼저 읽기
+2. 이 인덱스에서 해당 작업 문서 로드
+3. 현재 git 상태 / 브랜치 확인
+4. DB/마이그레이션 건드리면 [WORKFLOW.md](WORKFLOW.md) §4 번호정책 **반드시** 확인
