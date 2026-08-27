@@ -696,7 +696,7 @@ ADMIN 로그인
   → PENDING_ADMIN_REVIEW에서 중지
 ```
 
-V948 최소 구현은 `seoul-gangnam` 테스트 지역 한 곳에서 시작한다. 후보 저장과 지역 조사 완료를 분리하여 `UNRESEARCHED → IN_PROGRESS → RESEARCHED → DUE`를 지키며, 월요일 스케줄은 기한이 지난 지역을 `DUE`로 표시할 뿐 외부 검색이나 공개를 실행하지 않는다. 기존 Gemini V2 discovery와 approve/reject는 호환·롤백용으로 그대로 유지한다.
+V949 최소 구현은 `seoul-gangnam` 테스트 지역 한 곳에서 시작한다. 후보 저장과 지역 조사 완료를 분리하여 `UNRESEARCHED → IN_PROGRESS → RESEARCHED → DUE`를 지키며, 월요일 스케줄은 기한이 지난 지역을 `DUE`로 표시할 뿐 외부 검색이나 공개를 실행하지 않는다. 기존 Gemini V2 discovery와 approve/reject는 호환·롤백용으로 그대로 유지한다.
 
 ```text
 ChatGPT: context + next region → claim
