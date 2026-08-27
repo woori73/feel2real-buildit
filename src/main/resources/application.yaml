@@ -29,6 +29,13 @@ springdoc:
 anthropic:
   enabled: false
 
+# BuildIt Chart 전국 Living Archive 조사.
+# re-research-days: RESEARCHED 지역이 며칠 뒤 DUE(재조사 대상)로 돌아오는지. 전국 초기 구축에서는
+#   신규 지역 조사를 우선하도록 기본 90일. re-research-cron: DUE 승격 확인 스케줄(매일 03:15 KST).
+chart:
+  re-research-days: ${CHART_RE_RESEARCH_DAYS:90}
+  re-research-cron: ${CHART_RE_RESEARCH_CRON:0 15 3 * * *}
+
 app:
   problem-generator:
     n8n:

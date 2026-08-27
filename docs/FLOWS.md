@@ -698,32 +698,45 @@ Site tools는 `/admin/chart`의 JavaScript가 WebMCP `document.modelContext.regi
   → PENDING_ADMIN_REVIEW에서 중지
 ```
 
-V949 최소 구현은 `seoul-gangnam` 테스트 지역 한 곳에서 시작한다. 후보 저장과 지역 조사 완료를 분리하여 `UNRESEARCHED → IN_PROGRESS → RESEARCHED → DUE`를 지키며, 월요일 스케줄은 기한이 지난 지역을 `DUE`로 표시할 뿐 외부 검색이나 공개를 실행하지 않는다. 기존 Gemini V2 discovery와 approve/reject는 호환·롤백용으로 그대로 유지한다.
+### 전국 Living Archive 자동발행 (V951/V952, PR-A)
+
+`chart_regions`는 대한민국 전국 시·군·구가 seed되어 있고(V952, 서울 25구+부산 해운대구+분당구 27개는 조사 완료 승계), 초기 전국 구축 단계에서는 관리자 사전 승인 없이 정상 조사 파이프라인 완료 시 서버가 자동 발행한다.
 
 ```text
-ChatGPT: context + next region → claim
-  → 여러 검색 관점으로 공개 웹 조사 → 중복 확인 → Hard Gate → draft/evidence
-  → Score preview + Potential Signals → region complete → review batch
-관리자 Review Inbox: 승인/반려 (발행과 분리)
-  → 별도 publication 승인 시에만 PUBLISHED snapshot
-  → /chart와 랜딩 TOP5가 같은 publication을 조회
+get_next_regions (RESEARCHED 제외, DUE 포함)
+  → claim_region (IN_PROGRESS)
+  → 공개 웹 조사 → 중복 확인
+  → Hard Gate 7단계: 현재 활동 · 최근 활동 · 개인 식별 · 교육철학(2~3문장) · 커리큘럼(2~3문장) · 공개 근거 URL · 제외/중복 아님
+  → save_research_drafts (education_philosophy_summary / curriculum_summary 필수, 강점·개선·최근활동·프로필이미지 구조화 저장)
+  → (submit_chart_review_batch = audit record)
+  → complete_region ── 서버 단일 트랜잭션 ──▶
+        · 이 지역 현행 Hard Gate 통과 후보 → audit batch + 결정론 Score snapshot(evidence_json)
+        · 전국 누적 publication 재생성: 유효 교육자 전체 total_score DESC 재정렬,
+          상위 최대 100 = RANKED, 나머지 = DISCOVERED(+ potential signals면 PROMISING), previous_rank 승계
+        · 직전 PUBLISHED → SUPERSEDED (삭제 없음)
+        · region RESEARCHED (+ chart.re-research-days 기본 90일 뒤 DUE)
+        · publication 실패 시 전체 롤백 → region 완료 취소
+  → 선정 0명도 정상 완료 (current publication 유지, RESEARCHED)
+  → get_next_regions → 다음 신규 지역
 ```
 
-`POST /api/admin/chart/tools/publications`는 승인용 diff 단계에서 계속 잠겨 있어 실제 교육자 공개가 발생하지 않는다. `PROMISING` entry는 Score 순위와 분리된 “주목할 교육자”이며 동일하게 관리자 승인 발행본 안에서만 공개한다.
+publication은 AI/WebMCP 직접 명령으로 만들 수 없다(`POST /publications` = 409, publish tool 없음). `/chart`와 홈 TOP5는 `GET /api/chart/publication/current` 하나만 읽는다(홈은 `rankedTop100[0:5]`). 관리자는 사후에 공개 제외·재조사 지정·근거/Score 확인을 한다(PR-D).
 
-### Legacy V3 → 현행 재조사
+### Legacy V3 → 현행 재조사 (PR-C)
+
+우선순위: 전수 재검증을 먼저 하지 않는다. 현재까지 선정된 교육자(Legacy 43 + 신규)를 초기 공개 데이터로 연결하고, 나머지 전국 지역 조사를 계속한다.
 
 ```text
-Legacy app.db read-only 검증 (125 / VERIFIED 43)
-  → 개인정보 필드 제외한 sanitized JSON queue
-  → PENDING_CURRENT_RESEARCH
-  → ChatGPT가 현재 연도 공개 활동·오프라인 지역·고유성을 다시 조사
-  → 기존 후보 중복 확인 → 현행 Hard Gate → 현행 Score preview
-  → Review Inbox → 인간 승인
-  → 별도 publication 승인 전 비공개
+현재 선정 교육자 = Legacy 43(서울 auto 37 + 강남 수동 4 + 부산 수동 2) + 신규 조사 선정자
+  → 이름/학원 매칭 오류·공개 불가 개인정보만 제외
+  → 순위 산정용 현행 Score 를 서버에서 재계산(placeholder 2.0 그대로 공개 금지)
+  → 기존 조사에서 확보한 교육철학/커리큘럼/강점/최근활동/근거 URL 이 있으면 그대로 상세카드에 사용
+  → 없는 내용은 AI 가 만들지 않고 확보된 범위까지만 표시
+분당 Review Batch 1(5명)도 기존 Draft/Score 그대로 finalizeReviewBatch(1) 로 공개
+앞으로 신규 조사 교육자부터는 교육철학·커리큘럼을 공개 근거로 설명 가능해야 최종 선정(강화 기준).
 ```
 
-Legacy Score는 조사 완성도 차이가 섞인 역사적 값이므로 현행 Score나 순위 입력으로 사용하지 않는다. 과거 VERIFIED 상태도 자동 승계하지 않는다.
+Legacy Score(대부분 placeholder 2.0)는 현행 Score/순위 입력으로 절대 사용하지 않는다. 기존 Batch/Draft/Score는 삭제하지 않고 audit history로 보존한다. (전수 재검증·Admin 사후관리는 이후 병행.)
 
 ### 운영 보안
 
