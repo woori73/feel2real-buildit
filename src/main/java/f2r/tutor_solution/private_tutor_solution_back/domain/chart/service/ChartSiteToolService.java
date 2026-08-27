@@ -375,6 +375,45 @@ public class ChartSiteToolService {
         "publication은 AI/WebMCP 직접 명령으로 만들 수 없습니다. 정상 조사 파이프라인(complete) 완료 시 서버가 자동 발행합니다.");
   }
 
+  /**
+   * 현재까지 조사·선정된 교육자를 전국 누적 snapshot 으로 (재)생성한다. 지역 조사와 무관한 서버/관리자
+   * 트리거(부팅 시 최초 1회, 또는 Legacy import 후)이며 AI/WebMCP 명령이 아니다. publishable 후보가
+   * 없으면 아무것도 만들지 않는다.
+   */
+  @Transactional
+  public Map<String, Object> rebuildNationwidePublication() {
+    LocalDateTime now = LocalDateTime.now(clock);
+    Integer publishable = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*) FROM chart_candidates c
+         WHERE c.eligibility_status = 'ELIGIBLE'
+           AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
+           AND (c.legacy_source IS NOT NULL OR (
+                 COALESCE(NULLIF(c.education_philosophy_summary,''), NULLIF(c.education_philosophy,'')) IS NOT NULL
+             AND COALESCE(NULLIF(c.curriculum_summary,''), NULLIF(c.curriculum_features,'')) IS NOT NULL))
+        """, Integer.class);
+    if (publishable == null || publishable == 0) {
+      return Map.of("publicationChanged", false, "reason", "공개 가능한 선정 교육자가 없습니다.");
+    }
+    // 아직 Score snapshot 이 없는 publishable 후보(예: Legacy import)에 현행 Score 를 계산해 둔다.
+    List<Long> needScore = jdbcTemplate.queryForList("""
+        SELECT c.candidate_id FROM chart_candidates c
+         WHERE c.eligibility_status = 'ELIGIBLE'
+           AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
+           AND (c.legacy_source IS NOT NULL OR (
+                 COALESCE(NULLIF(c.education_philosophy_summary,''), NULLIF(c.education_philosophy,'')) IS NOT NULL
+             AND COALESCE(NULLIF(c.curriculum_summary,''), NULLIF(c.curriculum_features,'')) IS NOT NULL))
+           AND NOT EXISTS (SELECT 1 FROM chart_score_snapshots s WHERE s.candidate_id = c.candidate_id)
+        """, Long.class);
+    for (Long candidateId : needScore) {
+      writeScoreSnapshot(candidateId, null, "AUTO_PUBLISHED", now);
+    }
+    Map<String, Object> published = autoPublishNationwide(null, now);
+    Map<String, Object> result = new LinkedHashMap<>(published);
+    result.put("publicationChanged", true);
+    result.put("scoredCandidates", needScore.size());
+    return result;
+  }
+
   @Transactional
   public Map<String, Object> reviewDecision(long reviewBatchId, String decision, String note) {
     String normalized = require(decision, "decision").toUpperCase(Locale.ROOT);

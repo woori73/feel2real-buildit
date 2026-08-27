@@ -79,6 +79,13 @@ public class ChartSiteToolController {
   @PostMapping("/publications")
   public Map<String, Object> publish() { return service.publicationDisabled(); }
 
+  /**
+   * 현재까지 선정된 교육자로 전국 누적 publication 을 재생성한다(서버/관리자 트리거). 지역 조사와
+   * 무관하며 AI/WebMCP 명령이 아니다. Legacy import 반영·사후 공개 제외 후 갱신 등에 사용.
+   */
+  @PostMapping("/publications/rebuild")
+  public Map<String, Object> rebuildPublication() { return service.rebuildNationwidePublication(); }
+
   public record ExistingSearchRequest(String name, String academyName, String province, String cityDistrict) {}
   public record ReviewBatchRequest(String regionId, List<Long> candidateIds, String summary) {}
   public record RegionCompletionRequest(int eligibleCount, int rejectedCount, String note) {}
