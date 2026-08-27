@@ -12,7 +12,7 @@
 ## 작업 착수 전 (필수)
 1. **BuildIt 관련 기능을 수정하기 전에 `docs/BUILDIT_PHILOSOPHY.md`를 먼저 읽는다.**
 2. **`docs/INDEX.md`를 읽고** 해당 작업 문서를 로드한다.
-3. 현재 git 상태 / 브랜치 확인.
+3. 현재 git 상태 / 브랜치 확인. **ChatGPT Work / Codex 세션은 [docs/WORK_GIT_WORKSPACE_WORKFLOW.md](docs/WORK_GIT_WORKSPACE_WORKFLOW.md)를 먼저 읽는다** (세션별 stale checkout·`origin/main` 오판 방지, GitHub 최신 main이 authoritative).
 4. DB/마이그레이션을 건드리면 **`docs/WORKFLOW.md` §4 번호정책**을 반드시 확인한다.
 
 > 규칙·스펙의 단일 출처는 `docs/`다. 이 파일은 얇은 진입점 + Claude 전용 규칙(아래)만 둔다.

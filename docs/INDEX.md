@@ -10,6 +10,7 @@
 | **모든 BuildIt 제품·기능 설계 및 수정** | [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md) |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |
 | **로컬 실행 / DB 자동 생성 / PR / 배포** | [WORKFLOW.md](WORKFLOW.md) |
+| **ChatGPT Work / Codex 세션에서 repo 열기 (stale checkout·`origin/main` 오판 방지)** | [WORK_GIT_WORKSPACE_WORKFLOW.md](WORK_GIT_WORKSPACE_WORKFLOW.md) |
 | **Windows에서 처음 환경 세팅 (WSL2/Docker/JDK)** | [LOCAL_SETUP_WINDOWS.md](LOCAL_SETUP_WINDOWS.md) |
 | **요구사항 변경으로 기능 숨김/보존(/archived)** | [ARCHIVED_FEATURES.md](ARCHIVED_FEATURES.md) + [API.md](API.md) |
 | **기능 화면·API·상태 흐름 구현** | [FLOWS.md](FLOWS.md) + [API.md](API.md) |
