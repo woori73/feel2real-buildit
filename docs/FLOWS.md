@@ -722,9 +722,11 @@ get_next_regions (RESEARCHED 제외, DUE 포함)
 
 publication은 AI/WebMCP 직접 명령으로 만들 수 없다(`POST /publications` = 409, publish tool 없음). `/chart`와 홈 TOP5는 `GET /api/chart/publication/current` 하나만 읽는다(홈은 `rankedTop100[0:5]`). 관리자는 사후에 공개 제외·재조사 지정·근거/Score 확인을 한다(PR-D).
 
-### Legacy V3 → 현행 재조사 (PR-C)
+### Legacy V3 → 현행 공개 연결 (PR-B) · 재검증 (PR-C 이후)
 
 우선순위: 전수 재검증을 먼저 하지 않는다. 현재까지 선정된 교육자(Legacy 43 + 신규)를 초기 공개 데이터로 연결하고, 나머지 전국 지역 조사를 계속한다.
+
+**PR-B 연결**: `V953`가 Legacy 43명을 `chart_candidates`(`legacy_source`, PII 제외, placeholder Score 미저장)로 import → 앱 시작 시 `ChartInitialPublicationRunner`가 `PUBLISHED` 0건이면 `rebuildNationwidePublication` 1회 호출(현행 Score 재계산 + 전국 snapshot). `/chart` = Billboard TOP100 + `BUILD IT DISCOVERED`(순위 밖), 홈 = `rankedTop100[0:5]` + `전국 TOP100 전체보기`. 상세는 기존 `.profile-sheet` 재사용, 확보된 데이터만 표시하고 없으면 "확인된 공개 기록이 아직 없습니다".
 
 ```text
 현재 선정 교육자 = Legacy 43(서울 auto 37 + 강남 수동 4 + 부산 수동 2) + 신규 조사 선정자

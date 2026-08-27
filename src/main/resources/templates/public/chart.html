@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>BUILD IT CHART | 지역 교육자 발견과 기록</title>
-  <meta name="description" content="지역 교실에서 자신의 교육을 만들어가는 교육자를 발견하고 매주 공개 활동을 기록하는 BUILD IT CHART입니다.">
-  <link rel="stylesheet" href="/css/chart.css?v=20260809-2">
+  <title>BUILD IT CHART TOP 100 | 전국 지역 교육자 Living Archive</title>
+  <meta name="description" content="AI가 전국의 원장·강사를 공개 웹에서 지속적으로 발굴·분석하는 BUILD IT CHART TOP 100입니다.">
+  <link rel="stylesheet" href="/css/chart.css?v=20260828-1">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -25,21 +25,17 @@
           <path d="M0,470 C 200,570 400,370 600,470 C 800,570 1000,370 1200,470 C1400,570 1600,370 1800,470 C2000,570 2200,370 2400,470" fill="none" stroke="#c9d3e0" stroke-width="1.2" opacity="0.45" />
         </svg>
       </div>
-      <p class="eyebrow">LOCAL EDUCATOR DISCOVERY · LIVING ARCHIVE</p>
-      <h1>BUILD IT <span class="ext">CHART</span></h1>
-      <h2>지역 교실에서 자신의 교육을 만들어가는 교육자를 발견합니다.</h2>
-      <p class="lead">매주 새로운 활동과 아직 발견하지 못한 교육자를 찾고, 관리자가 확인한 기록만 공개합니다.</p>
-      <p class="weekly-update" id="weeklyUpdate">이번 주 업데이트 확인 중</p>
+      <p class="eyebrow">NATIONWIDE EDUCATOR LIVING ARCHIVE</p>
+      <h1>BUILD IT <span class="ext">CHART</span> TOP 100</h1>
+      <h2>AI가 전국의 교육자를 지속적으로 발굴·분석합니다.</h2>
+      <p class="lead">자신만의 교육철학과 커리큘럼으로 학생을 가르치는 지역 원장·강사를 공개 근거와 함께 기록합니다.</p>
+      <p class="weekly-update" id="weeklyUpdate">지속 업데이트</p>
     </section>
 
-    <section class="rank-section" id="promisingSection" hidden>
-      <div class="section-label">주목할 교육자 <span class="count">Potential Signals · 관리자 승인</span></div>
-      <div class="chart-list" id="promisingList"></div>
-    </section>
     <p class="chart-disclaimer" id="chartDisclaimer"></p>
 
     <section class="rank-section">
-      <div class="section-label">TOP 10 <span class="count" id="topCount">이달의 주목 교육자</span></div>
+      <div class="section-label">TOP 10 <span class="count" id="topCount">현재 선정 교육자</span></div>
       <div class="chart-list" id="topChartList" aria-live="polite"></div>
     </section>
 
@@ -47,10 +43,15 @@
       <div class="section-label">11 – 100 <span class="count">전체 순위</span></div>
       <div class="chart-list" id="restChartList"></div>
     </section>
+
+    <section class="rank-section" id="discoveredSection" hidden>
+      <div class="section-label">BUILD IT DISCOVERED <span class="count">순위 밖에서도 BuildIt이 발견한 주목할 교육자</span></div>
+      <div class="chart-list" id="discoveredList"></div>
+    </section>
   </main>
 
   <div id="profileModalRoot"></div>
-  <script src="/js/chart_public.js?v=20260809-2"></script>
+  <script src="/js/chart_public.js?v=20260828-1"></script>
 </th:block>
 </body>
 </html>

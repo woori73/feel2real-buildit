@@ -3258,6 +3258,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `POST /review-batches/{reviewBatchId}/finalize`: 이미 Draft/Score/Batch가 있는 조사(예: 분당 Review Batch 1)를 새 자동발행 코드에서 publication 단계부터 resume한다. 새 Draft/Score를 만들지 않고, 현행 Hard Gate(교육철학·커리큘럼 요약 보유, Legacy 선정자는 grandfather) 통과 후보만 전국 snapshot에 포함한다. 멱등(이미 발행됐으면 `ALREADY_FINALIZED`). 서버/관리자 트리거용(WebMCP 도구 아님).
 - `POST /educators/{candidateId}/web-draft-requests`: 교육자 동의 시각을 필수로 받아 Chart 기록의 BuildIt Web draft 요청 payload를 만든다. 가입 여부는 Score에 반영하지 않는다.
 - `POST /publications`: 항상 `409`. publication은 AI 직접 명령이 아니라 조사 파이프라인 완료의 서버 결과다.
+- `POST /publications/rebuild`: 현재까지 선정된 교육자로 전국 누적 publication을 (재)생성한다. 지역 조사와 무관한 서버/관리자 트리거이며 AI/WebMCP 도구가 아니다. Legacy import 반영·사후 공개 제외 후 갱신에 사용. `ROLE_ADMIN`. 앱 시작 시 `ChartInitialPublicationRunner`가 `PUBLISHED` 0건이면 1회 자동 호출.
 
 ### ✅ GET /api/chart/publication/current
 
