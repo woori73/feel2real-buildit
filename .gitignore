@@ -75,3 +75,7 @@ problem-generator/wiki-src/dist/
 ### Temporary parallel workflow docs (absorbed into MVP.md/API.md after completion) ###
 docs/changes/
 docs/temp/
+
+### Legacy Chart V3 re-research inspection (original .env + app.db with PII — never commit) ###
+.legacy-chart-inspection/
+.gradle-codex/

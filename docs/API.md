@@ -3230,6 +3230,19 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 모든 endpoint는 `ROLE_ADMIN` 전용이다. ChatGPT가 공개 웹 조사를 담당하며 이 API가 다시 Gemini/OpenAI 검색을 호출하지 않는다.
 
+`/admin/chart`는 지원 브라우저에서 `document.modelContext.registerTool()`로 아래 REST 계약을 WebMCP Site tools로 등록한다. Site tools는 현재 페이지의 ADMIN 로그인 세션과 `fetchAuth` 인증을 그대로 사용하며 별도 API key, MCP 서버 또는 우회 권한을 만들지 않는다. 페이지를 닫거나 로그아웃하면 도구도 사용할 수 없다.
+
+| Site tool | 권한 | REST 연결 |
+|---|---|---|
+| `get_chart_context` | read | `GET /context` |
+| `get_next_regions` | read | `GET /regions/next` |
+| `search_existing_educators` | read | `POST /educators/search-existing` |
+| `save_research_drafts` | Draft Write | 각 초안을 `POST /research-drafts`로 검증·저장 |
+| `preview_buildit_scores` | read | 각 후보를 `GET /scores/preview`로 결정론적 계산 |
+| `submit_chart_review_batch` | Review Draft Write | `POST /review-batches` |
+
+publication Site tool은 등록하지 않는다. 관리자가 Review Inbox를 승인해도 공개 상태는 바뀌지 않으며, 잠긴 `POST /publications`를 브라우저 도구가 우회할 수 없다.
+
 - `GET /context`: 선정 기준, Hard Gate, Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
 - `GET /regions/next?limit=1`: 미조사·재조사 예정·오류 지역을 조회한다. read.
 - `POST /regions/{regionId}/claim`: 조사 가능한 지역을 `IN_PROGRESS`로 점유한다. Draft Write.
@@ -3250,6 +3263,15 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 호환: 아직 발행본이 없으면 기존 승인 교육자 목록을 legacy 응답으로 제공한다.
 
 `research-drafts`는 전화번호, 이메일, 개인주소 입력 필드를 제공하지 않는다. 공식 URL은 `http(s)`만 허용한다. 현재 연도 판정은 서버 실행 연도를 사용하며 2026을 하드코딩하지 않는다.
+
+### Legacy Chart V3 재조사 경계
+
+`scripts/export-legacy-chart-v3.py <app.db>`는 Legacy SQLite를 read-only URI로 열어 `125 candidates / 43 verified educators` 계약을 검증하고, VERIFIED 43명을 `PENDING_CURRENT_RESEARCH` JSON 큐로 내보낸다. 출력은 현행 DB import나 승인을 수행하지 않는다.
+
+- 전화번호·이메일·상세주소는 출력 스키마에서 제외한다.
+- `legacy_score`와 breakdown은 역사적 기록으로만 표시하며 현행 Score로 사용할 수 없다.
+- 모든 항목은 `auto_approved=false`, `published=false`다.
+- 실제 현행 후보 저장은 WebMCP 조사 → Hard Gate → 관리자 Review 흐름을 다시 통과해야 한다.
 
 
 ### Wiki AI 오류/timeout 계약
