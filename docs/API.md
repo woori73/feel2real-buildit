@@ -3236,30 +3236,33 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 |---|---|---|
 | `get_chart_context` | read | `GET /context` |
 | `get_next_regions` | read | `GET /regions/next` |
+| `claim_region` | Write | `POST /regions/{regionId}/claim` |
+| `complete_region` | Write | `POST /regions/{regionId}/complete` (서버 자동 발행 트리거) |
 | `search_existing_educators` | read | `POST /educators/search-existing` |
 | `save_research_drafts` | Draft Write | 각 초안을 `POST /research-drafts`로 검증·저장 |
 | `preview_buildit_scores` | read | 각 후보를 `GET /scores/preview`로 결정론적 계산 |
-| `submit_chart_review_batch` | Review Draft Write | `POST /review-batches` |
+| `submit_chart_review_batch` | Audit Write | `POST /review-batches` (audit record) |
 
-publication Site tool은 등록하지 않는다. 관리자가 Review Inbox를 승인해도 공개 상태는 바뀌지 않으며, 잠긴 `POST /publications`를 브라우저 도구가 우회할 수 없다.
+publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접 명령으로 만들 수 없고(`POST /publications`는 항상 `409`), 정상 조사 파이프라인 완료(`complete_region`) 시 서버 내부 workflow가 전국 누적 snapshot을 발행한다.
 
-- `GET /context`: 선정 기준, Hard Gate, Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
-- `GET /regions/next?limit=1`: 미조사·재조사 예정·오류 지역을 조회한다. read. 시드 조사 지역은 `seoul-gangnam`(서울특별시 강남구), `gyeonggi-seongnam-bundang`(경기도 성남시 분당구)이며 지역 추가는 `chart_regions` 행 추가(마이그레이션)로만 한다.
-- `POST /regions/{regionId}/claim`: 조사 가능한 지역을 `IN_PROGRESS`로 점유한다. Draft Write.
-- `POST /regions/{regionId}/complete`: 후보 수 할당 없이 조사 결과 수와 메모를 남기고 `RESEARCHED`, 다음 주 재조사일을 설정한다. Draft Write.
+- `GET /context`: 선정 기준, 7단계 Hard Gate(교육철학·커리큘럼 필수), Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
+- `GET /regions/next?limit=1`: 신규 조사 또는 재조사 예정(`DUE`)/오류 지역만 조회한다. `RESEARCHED`는 제외. `chart_regions`는 V952로 대한민국 전국 시·군·구가 seed되어 있고 지역 추가는 migration seed로만 한다. read.
+- `POST /regions/{regionId}/claim`: `UNRESEARCHED`/`DUE`/`ERROR` 지역을 `IN_PROGRESS`로 점유한다. Write.
+- `POST /regions/{regionId}/complete`: **단일 트랜잭션**으로 이 지역의 현행 Hard Gate 통과 후보를 audit batch + Score snapshot으로 기록하고 전국 누적 publication을 재생성한 뒤 지역을 `RESEARCHED`(+`re-research-days`일 뒤 재조사)로 만든다. 선정 0명이면 publication 생성 없이 `RESEARCHED`만. publication 실패 시 지역 완료도 롤백. body `{eligibleCount, rejectedCount, note}`는 참고용이며 서버가 실제 선정 수를 계산한다. Write.
 - `POST /educators/search-existing`: 이름·학원 기반으로 기존 후보/교육자를 조회한다. read.
-- `POST /research-drafts`: 시/도·시군구, 교육자 정체성, Hard Gate 확인값, 공개 공식 채널, 실제 evidence URL·활동일·종류를 저장한다. Draft Write. Hard Gate 실패, 현재 연도 evidence 부재, 광고성 evidence만 존재, URL 부재 시 `422/400`; 중복은 `409`.
+- `POST /research-drafts`: 시/도·시군구, 교육 정체성, **교육철학 요약·커리큘럼 요약(필수)**, 고유 수업 방식, 최근 활동 요약, 강점/개선 제안 배열, 프로필 이미지 URL, 공개 공식 채널, Hard Gate 확인값, 실제 evidence URL·활동일·종류를 저장한다. Draft Write. Hard Gate 실패(교육철학·커리큘럼 근거 부족/광고 문구/과목 나열 포함), 현재 연도 evidence 부재, URL 부재 시 `422/400`; 중복은 `409`.
 - `GET /scores/preview?candidateId=`: 저장된 근거로 결정론적 Score와 potential signals를 계산한다. DB를 변경하지 않는 preview.
-- `POST /review-batches`: 후보들의 점수 snapshot과 제안 순위를 `PENDING_ADMIN_REVIEW`로 제출한다. Draft Write이며 공개 데이터는 변경하지 않는다.
-- `GET /review-batches`: 관리자 승인 직전의 `PENDING_ADMIN_REVIEW` batch를 조회한다. read.
-- `POST /review-batches/{reviewBatchId}/decision`: 관리자가 제안안을 `APPROVED` 또는 `REJECTED`로 판정한다. Review Write이며 공개는 변경하지 않는다.
+- `POST /review-batches`: 조사 audit record(`AUDIT_RECORDED`) + 후보별 Score snapshot을 남긴다. 관리자 사전 승인 gate가 아니며 공개 데이터를 변경하지 않는다.
+- `GET /review-batches`: 최근 조사 audit batch를 조회한다(최대 100건). read.
+- `POST /review-batches/{reviewBatchId}/decision`: 관리자가 audit batch를 `APPROVED`/`REJECTED`로 표기한다(사후 품질관리). 공개는 변경하지 않는다.
+- `POST /review-batches/{reviewBatchId}/finalize`: 이미 Draft/Score/Batch가 있는 조사(예: 분당 Review Batch 1)를 새 자동발행 코드에서 publication 단계부터 resume한다. 새 Draft/Score를 만들지 않고, 현행 Hard Gate(교육철학·커리큘럼 요약 보유, Legacy 선정자는 grandfather) 통과 후보만 전국 snapshot에 포함한다. 멱등(이미 발행됐으면 `ALREADY_FINALIZED`). 서버/관리자 트리거용(WebMCP 도구 아님).
 - `POST /educators/{candidateId}/web-draft-requests`: 교육자 동의 시각을 필수로 받아 Chart 기록의 BuildIt Web draft 요청 payload를 만든다. 가입 여부는 Score에 반영하지 않는다.
-- `POST /publications`: 1차 검증 중 잠금. 항상 `409`이며 실제 공개를 막는다. Publish 권한 계약의 자리만 확보한다.
+- `POST /publications`: 항상 `409`. publication은 AI 직접 명령이 아니라 조사 파이프라인 완료의 서버 결과다.
 
 ### ✅ GET /api/chart/publication/current
 
-- 목적: `/chart`와 메인 TOP5가 같은 최신 `PUBLISHED` 주간 발행본을 읽는다.
-- 응답: 주간 업데이트일, 순위 entries, 관리자 승인 `PROMISING` 교육자, Score/이전 순위/소개·활동·공개 근거, 지표 고지.
+- 목적: `/chart`와 메인 TOP5가 같은 최신 `PUBLISHED` 전국 누적 snapshot을 읽는다(source of truth). 홈은 `rankedTop100[0:5]`, `/chart`는 전체.
+- 응답: `publicationId`, `updatedAt`(publication `published_at`, 하드코딩 금지), `updatedLabel`("최근 업데이트 YYYY.MM.dd"), `weeklyUpdateDate`(하위호환), `rankedTop100`/`entries`(최대 100, `chartRank`·`previousRank`·Score·교육철학·커리큘럼·강점·개선제안·활동·검증근거), `discovered`(순위 밖 Hard Gate 통과 교육자 = BUILD IT DISCOVERED), `promisingEducators`, `disclaimer`. 개인정보 필드 없음.
 - 호환: 아직 발행본이 없으면 기존 승인 교육자 목록을 legacy 응답으로 제공한다.
 
 `research-drafts`는 전화번호, 이메일, 개인주소 입력 필드를 제공하지 않는다. 공식 URL은 `http(s)`만 허용한다. 현재 연도 판정은 서버 실행 연도를 사용하며 2026을 하드코딩하지 않는다.

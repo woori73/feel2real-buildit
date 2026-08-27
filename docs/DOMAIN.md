@@ -1035,19 +1035,19 @@ Google V2가 발견한 관리자 검토 후보. 후보는 `DISCOVERED`로 저장
 
 Ranking 1차 구현은 `approved_at DESC` 기준으로 최대 100명을 공개한다. AI 자동 등록 경로는 없다.
 
-### 4.43 buildit_chart Site tool 조사 초안 (V949)
+### 4.43 buildit_chart 전국 Living Archive 조사 (V949 초안 → V951/V952 전국 전환, PR-A)
 
-기존 후보/활동/교육자와 관리자 승인 경계를 유지하면서 ChatGPT Site tool이 조사 결과를 비공개 초안으로 넘기고, 승인된 주간 발행본을 Living Archive로 보존할 수 있게 확장한다. 승인용 diff 단계에서는 publication write가 잠겨 있어 실제 `/chart` 데이터는 바뀌지 않는다.
+AI가 전국의 원장·강사를 공개 웹에서 조사해 교육철학·커리큘럼을 근거와 함께 축적하는 Living Archive다. 초기 전국 구축 단계에서는 관리자 사전 승인 없이 정상 조사 파이프라인 완료 시 서버가 자동 발행한다(별도 AI/WebMCP publish tool 없음).
 
-- `chart_regions`: 전국 확장용 시·군·구 진행 상태. `UNRESEARCHED`, `IN_PROGRESS`, `RESEARCHED`, `DUE`, `ERROR`를 사용하고 마지막 조사일과 다음 주 조사 예정일을 보존한다. 지역 추가는 행 추가로만 한다(Java/JS 하드코딩 없음). 시드: `seoul-gangnam`(서울특별시 강남구, V949), `gyeonggi-seongnam-bundang`(경기도 성남시 분당구, V950).
-- `chart_candidates` 추가 nullable 필드: 시/도·시군구, 정체성/철학/커리큘럼/수업특징/성장조언, 공식 공개 채널, Hard Gate 확인값, eligibility 결과, potential signals, 조사 source, criteria version. 기존 Gemini 후보와 호환되도록 nullable로 추가한다.
+- `chart_regions`: 대한민국 전국 시·군·구 조사 registry(V952 일괄 seed, region_id = `<시도>-<시군구>` roman). `UNRESEARCHED`, `IN_PROGRESS`, `RESEARCHED`, `DUE`, `ERROR`. 운영자 확정 조사 완료 = 서울특별시 25개 구 전체 + 부산 해운대구 + 분당구 = 27개 → `RESEARCHED`(선정 0명인 구도 완료). `RESEARCHED` → `next_research_at`(기본 `chart.re-research-days`=90일) 뒤 `DUE`. `get_next_regions`는 신규/재조사 대상만 반환하며 지역 추가는 migration seed로만 한다.
+- `chart_candidates` 추가 nullable 필드(V951): `education_philosophy_summary`, `curriculum_summary`, `distinctive_teaching_summary`, `recent_activity_summary`, `strengths_json`, `improvement_suggestions_json`, `profile_image_url`, `profile_image_source_url`, `legacy_source`, `legacy_metadata_json`, `excluded_from_chart`/`excluded_reason`/`excluded_at`. 조사 1회로 저장한 이 값이 그대로 상세 프로필에 쓰인다(같은 교육자 재조사 없음). V949의 `education_philosophy`/`curriculum_features` 등 구 필드는 그대로 두되 신규 저장은 `*_summary` 컬럼을 사용한다.
 - `chart_candidate_activities` 추가 nullable 필드: 활동일, evidence 종류, 교육적 정보성, 조사일. 전화·이메일·개인주소는 저장하지 않는다.
-- `chart_score_snapshots`: Hard Gate 통과 후보의 결정론적 Score breakdown, 사용 근거, 기준 버전, 계산일, 제안 순위와 검토 상태를 저장한다.
-- `chart_review_batches`: 점수·순위 변경안을 `PENDING_ADMIN_REVIEW`로 묶고 관리자 판정 시각·메모를 보존한다.
-- `chart_publications` / `chart_publication_entries`: 승인된 주차별 불변 발행본과 `RANKED`/`PROMISING` 항목, 현재·이전 순위, 당시 소개·최근 활동을 보존한다. 과거 발행본을 덮어쓰지 않는다.
+- `chart_score_snapshots`: 서버 결정론 Score breakdown 과 실제 근거(`evidence_json` = 활동·공개 채널·철학/커리큘럼 근거), 기준 버전, 계산일, 검토 상태(`AUTO_PUBLISHED`/`AUDIT_RECORDED`/…)를 저장한다. AI는 점수를 입력하지 않는다.
+- `chart_review_batches`: 초기 자동발행 단계에서 관리자 사전 승인 gate가 아니라 "누가·어떤 근거로·어떤 Score로 선정했는지" audit record. status 값에 `AUTO_PUBLISHED`, `AUDIT_RECORDED` 추가(VARCHAR, 스키마 변경 없음). 기존 `PENDING_ADMIN_REVIEW` 행은 그대로 읽힌다.
+- `chart_publications` / `chart_publication_entries`(V951 완화): `week_start` UNIQUE 제거(같은 날/주 여러 지역 발행 가능), `review_batch_id` NULL 허용, `scope`('NATIONWIDE') 추가. publication = 그 시점 전국 유효 교육자 전체 snapshot이며 현행 Score로 재정렬한다. entry_type `RANKED`(최대 100) / `DISCOVERED`(순위 밖) / `PROMISING`(순위 밖 + potential signals). `chart_rank` NULL 허용. 새 발행 시 직전 PUBLISHED는 `SUPERSEDED`로 보존(삭제 없음). current publication = 가장 최근 `PUBLISHED` 1건(`published_at DESC, publication_id DESC`).
 - `chart_web_draft_requests`: 교육자 동의 시각과 Chart 프로필 snapshot payload를 기록하는 Chart → BuildIt Web 계약이다. 자동 홈페이지 생성이나 Score 가산은 하지 않는다.
 
-Hard Gate는 Score보다 먼저 적용한다. 현재 오프라인 활동, 실행 시점의 현재 연도 활동, 교육자 고유성, 제외대상 아님을 모두 실제 URL 근거로 확인해야 한다. 광고·보도자료만 있는 후보는 저장과 Score 계산 대상이 아니다.
+Hard Gate는 Score보다 먼저 적용한다: ① 현재 실제 교육 활동 ② 최근 공개 활동 ③ 교육자 개인 식별 ④ **교육철학**(공개 근거로 2~3문장 설명 가능, 일반 광고 문구 불가) ⑤ **커리큘럼/고유 수업 구조**(공개 근거로 2~3문장, 과목 나열 불가) ⑥ 공개 검증 근거 URL ⑦ 제외대상 아님·Chart 중복 아님. ④⑤ 중 하나라도 근거로 작성 불가하면 최종 선정하지 않는다. 지역별 선정 인원 목표는 없다(0명도 정상). Legacy V3 Score(대부분 placeholder 2.0)는 현행 Score로 사용하지 않는다.
 
 BuildIt Score `buildit-chart-v1`은 최대 100점이다: 교육자 고유성 35, 수업·교육 실천 20, 교육 콘텐츠 지속성 15, 전문성 15, 검증 근거 10, 지역 활동 5. 검색량·광고량·규모·유명세·BuildIt 가입 여부는 입력하지 않는다.
 

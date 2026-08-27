@@ -31,6 +31,7 @@
     ] }),
     educationallyInformative: { type: 'boolean', description: '철학·커리큘럼·수업 등 실질 정보 포함 여부' }
   }, ['contentType', 'summary', 'sourceUrl', 'activityDate', 'evidenceKind', 'educationallyInformative']);
+  const stringArray = (description, maxItems) => ({ type: 'array', description, items: { type: 'string' }, maxItems: maxItems || 10 });
   const draftSchema = objectSchema({
     regionId: stringSchema('get_next_regions가 반환한 조사 지역 ID'),
     name: stringSchema('개인이 명확한 원장 또는 강사 이름'),
@@ -38,11 +39,15 @@
     academyName: stringSchema('현재 오프라인 학원 또는 교습소'),
     province: stringSchema('공개적으로 확인한 시·도'),
     cityDistrict: stringSchema('공개적으로 확인한 시·군·구'),
-    identitySummary: stringSchema('공개 근거에 기반한 교육 정체성 요약'),
-    educationPhilosophy: stringSchema('확인된 교육 철학'),
-    curriculumFeatures: stringSchema('고유 커리큘럼 특징'),
-    teachingFeatures: stringSchema('실제 수업 방식 특징'),
-    growthAdvice: stringSchema('이미 가진 강점이 더 잘 발견되도록 돕는 조언'),
+    identitySummary: stringSchema('공개 근거에 기반한 교육 정체성 한 문장'),
+    educationPhilosophySummary: stringSchema('공개 근거만으로 작성한 교육철학 2~3문장. 일반 광고 문구("학생 중심", "성적 향상")는 불가. 근거가 부족하면 이 후보를 저장하지 마세요.'),
+    curriculumSummary: stringSchema('실제 어떤 과정·방법으로 가르치는지 공개 근거로 작성한 2~3문장(예: 진단→개념→적용→오답→반복). 과목 나열(중등영어/수능/내신)만으로는 불가.'),
+    distinctiveTeachingSummary: stringSchema('다른 교육자와 구별되는 고유한 수업 방식/구조'),
+    recentActivitySummary: stringSchema('현재 연도 활동을 판단한 공개 근거를 사람이 읽기 좋게 요약'),
+    strengths: stringArray('BuildIt이 발견한 구체적 강점 2~4개(각 한 문장)', 4),
+    improvementSuggestions: stringArray('비난이 아닌 성장 제안 2~3개(각 한 문장)', 3),
+    profileImageUrl: Object.assign(stringSchema('공개적으로 사용 가능한 프로필 이미지 URL(있을 때만)'), { format: 'uri' }),
+    profileImageSourceUrl: Object.assign(stringSchema('프로필 이미지가 게시된 공개 페이지 URL'), { format: 'uri' }),
     officialHomepage: Object.assign(stringSchema('공식 홈페이지 URL'), { format: 'uri' }),
     officialBlog: Object.assign(stringSchema('공식 블로그 URL'), { format: 'uri' }),
     officialYoutube: Object.assign(stringSchema('공식 YouTube URL'), { format: 'uri' }),
@@ -55,7 +60,8 @@
     potentialSignals: { type: 'array', items: { type: 'string' }, maxItems: 20 },
     evidence: { type: 'array', items: evidenceSchema, minItems: 1, maxItems: 30 }
   }, [
-    'regionId', 'name', 'role', 'province', 'cityDistrict', 'identitySummary', 'discoveryReason',
+    'regionId', 'name', 'role', 'province', 'cityDistrict', 'identitySummary',
+    'educationPhilosophySummary', 'curriculumSummary', 'discoveryReason',
     'offlineActivityConfirmed', 'currentYearActivityConfirmed', 'educatorIdentityConfirmed',
     'exclusionFree', 'evidence'
   ]);
@@ -80,6 +86,26 @@
         limit: Object.assign(integerSchema('반환할 지역 수. 1~10.'), { minimum: 1, maximum: 10 })
       }, []), annotations: readOnly,
       execute: async ({ limit = 1 } = {}) => request(`/api/admin/chart/tools/regions/next?limit=${encodeURIComponent(limit)}`)
+    }),
+    register({
+      name: 'claim_region',
+      description: '다음 조사할 지역을 IN_PROGRESS로 점유합니다. get_next_regions가 반환한 지역만 사용하세요.',
+      inputSchema: objectSchema({ regionId: stringSchema('조사 지역 ID') }, ['regionId']), annotations: write,
+      execute: async ({ regionId }) => request(`/api/admin/chart/tools/regions/${encodeURIComponent(regionId)}/claim`, { method: 'POST' })
+    }),
+    register({
+      name: 'complete_region',
+      description: '이 지역 조사를 완료합니다. 서버가 이 지역의 현행 Hard Gate 통과 선정자를 전국 누적 publication에 자동 반영한 뒤 지역을 RESEARCHED로 만듭니다(선정 0명도 정상 완료). publication은 AI가 직접 만들지 않으며 정상 파이프라인 완료의 서버 결과입니다.',
+      inputSchema: objectSchema({
+        regionId: stringSchema('조사 지역 ID'),
+        selectedCount: integerSchema('이 지역에서 최종 선정한 인원(참고용, 서버가 실제 값 계산)'),
+        rejectedCount: integerSchema('기준 미달로 제외한 인원(참고용)'),
+        note: stringSchema('조사 메모')
+      }, ['regionId']), annotations: write,
+      execute: async ({ regionId, selectedCount = 0, rejectedCount = 0, note = '' }) =>
+        request(`/api/admin/chart/tools/regions/${encodeURIComponent(regionId)}/complete`, {
+          method: 'POST', body: JSON.stringify({ eligibleCount: selectedCount, rejectedCount, note })
+        })
     }),
     register({
       name: 'search_existing_educators',
@@ -126,11 +152,11 @@
     }),
     register({
       name: 'submit_chart_review_batch',
-      description: '점수·순위 후보를 관리자 Review Inbox에 제출합니다. 승인 전 공개되지 않고 publication도 생성하지 않습니다.',
+      description: '누가·어떤 근거로·어떤 Score로 선정했는지를 audit 기록으로 남깁니다(관리자 사전 승인 gate 아님). 실제 공개는 complete_region 시 서버가 자동 처리합니다.',
       inputSchema: objectSchema({
         regionId: stringSchema('조사 지역 ID'),
         candidateIds: { type: 'array', minItems: 1, maxItems: 100, items: integerSchema('후보 ID') },
-        summary: stringSchema('관리자 검토용 변경 요약')
+        summary: stringSchema('조사 audit 요약')
       }, ['regionId', 'candidateIds', 'summary']), annotations: write,
       execute: async (input) => request('/api/admin/chart/tools/review-batches', {
         method: 'POST', body: JSON.stringify(input)

@@ -62,6 +62,15 @@ public class ChartSiteToolController {
     return service.reviewDecision(reviewBatchId, request.decision(), request.note());
   }
 
+  /**
+   * 이미 Draft/Score/Batch 가 있는 조사(예: 분당 Review Batch 1)를 새 자동발행 코드에서 publication
+   * 단계부터 resume 한다. AI/WebMCP 도구가 아니라 서버/관리자 트리거용이며 새 Draft/Score 를 만들지 않는다.
+   */
+  @PostMapping("/review-batches/{reviewBatchId}/finalize")
+  public Map<String, Object> finalizeReviewBatch(@PathVariable long reviewBatchId) {
+    return service.finalizeReviewBatch(reviewBatchId);
+  }
+
   @PostMapping("/educators/{candidateId}/web-draft-requests")
   public Map<String, Object> requestWebDraft(@PathVariable long candidateId, @RequestBody WebDraftRequest request) {
     return service.requestWebDraft(candidateId, request.educatorConsentAt());
