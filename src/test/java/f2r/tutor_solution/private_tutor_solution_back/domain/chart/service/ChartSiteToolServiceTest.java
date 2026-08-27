@@ -3,7 +3,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.chart.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolService.DraftRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolService.EvidenceRequest;
 import java.time.LocalDate;
@@ -15,7 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class ChartSiteToolServiceTest {
 
-  private final ChartSiteToolService service = new ChartSiteToolService(mock(JdbcTemplate.class), new ObjectMapper());
+  private final ChartSiteToolService service = new ChartSiteToolService(mock(JdbcTemplate.class));
 
   @Test
   void evaluate_passes_givenCurrentOfflineDistinctiveEducatorEvidence() {

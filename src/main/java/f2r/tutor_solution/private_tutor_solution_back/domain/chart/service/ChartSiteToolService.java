@@ -34,12 +34,11 @@ public class ChartSiteToolService {
   private static final Set<String> PROMOTIONAL_KINDS = Set.of("ADVERTISEMENT", "PRESS_RELEASE", "RECRUITMENT");
 
   private final JdbcTemplate jdbcTemplate;
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper();
   private final Clock clock = Clock.systemDefaultZone();
 
-  public ChartSiteToolService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+  public ChartSiteToolService(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
-    this.objectMapper = objectMapper;
   }
 
   public Map<String, Object> context() {
