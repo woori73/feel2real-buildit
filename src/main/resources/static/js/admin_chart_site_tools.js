@@ -166,6 +166,24 @@
       execute: async (input) => request('/api/admin/chart/tools/review-batches', {
         method: 'POST', body: JSON.stringify(input)
       })
+    }),
+    register({
+      name: 'inspect_chart_review_batch',
+      description: 'review batch 하나에 연결된 candidate·score snapshot·publication entry를 조회합니다(읽기 전용, 사고 조사용). 승인/반려(decision)와 무관하며 아무 것도 변경하지 않습니다. 출력: batch id/status, 각 snapshot의 candidateId·educator name·zoneId·activityRegion·totalScore, 연결된 publication entry.',
+      inputSchema: objectSchema({
+        reviewBatchId: integerSchema('조회할 review batch ID')
+      }, ['reviewBatchId']), annotations: readOnly,
+      execute: async ({ reviewBatchId }) =>
+        request(`/api/admin/chart/tools/review-batches/${encodeURIComponent(reviewBatchId)}`)
+    }),
+    register({
+      name: 'revert_chart_review_batch',
+      description: '잘못 자동발행된 review batch를 안전하게 되돌립니다(승인/반려와 다른 별도 기능). 이 batch의 publication entry와 score snapshot만 제거하고 batch를 REVERTED로 표시한 뒤, 서버가 직전 정상 명단으로 전국 publication을 자동 재생성합니다. 다른 정상 batch snapshot이 남아 있는 educator는 계속 게시되고, 이 batch로만 유입된 educator만 빠집니다. candidate·activity·Legacy 데이터·Score 산식·지역 상태(RESEARCHED)는 변경하지 않습니다. 이미 REVERTED면 아무 것도 바꾸지 않습니다. 별도 publication rebuild를 따로 호출할 필요가 없습니다.',
+      inputSchema: objectSchema({
+        reviewBatchId: integerSchema('되돌릴 review batch ID')
+      }, ['reviewBatchId']), annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      execute: async ({ reviewBatchId }) =>
+        request(`/api/admin/chart/tools/review-batches/${encodeURIComponent(reviewBatchId)}/revert`, { method: 'POST' })
     })
   ]).then(() => {
     document.documentElement.dataset.chartSiteTools = 'ready';

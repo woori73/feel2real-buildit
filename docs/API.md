@@ -3242,6 +3242,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 | `save_research_drafts` | Draft Write | 각 초안을 `POST /research-drafts`로 검증·저장 |
 | `preview_buildit_scores` | read | 각 후보를 `GET /scores/preview`로 결정론적 계산 |
 | `submit_chart_review_batch` | Audit Write | `POST /review-batches` (audit record) |
+| `inspect_chart_review_batch` | read | `GET /review-batches/{reviewBatchId}` (사고 조사) |
+| `revert_chart_review_batch` | Recovery Write | `POST /review-batches/{reviewBatchId}/revert` (잘못 발행 batch 되돌리기) |
 
 publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접 명령으로 만들 수 없고(`POST /publications`는 항상 `409`), 정상 조사 파이프라인 완료(`complete_region`) 시 서버 내부 workflow가 전국 누적 snapshot을 발행한다.
 
@@ -3259,8 +3261,8 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `POST /educators/{candidateId}/web-draft-requests`: 교육자 동의 시각을 필수로 받아 Chart 기록의 BuildIt Web draft 요청 payload를 만든다. 가입 여부는 Score에 반영하지 않는다.
 - `POST /publications`: 항상 `409`. publication은 AI 직접 명령이 아니라 조사 파이프라인 완료의 서버 결과다.
 - `POST /publications/rebuild`: 전국 누적 publication (재)생성. `PUBLISHED` 0건이면 PUBLISHABLE 한 기존 선정자(Legacy import·분당 batch) 전체로 첫 snapshot; 이미 있으면 직전 snapshot 교육자(제외자 제거) 기준으로만 재생성한다. 서버/관리자 트리거(AI/WebMCP 아님), `ROLE_ADMIN`. 앱 시작 시 `ChartInitialPublicationRunner` 가 `PUBLISHED` 0건이면 1회 자동 호출.
-- `GET /review-batches/{reviewBatchId}`: 사고 조사용. batch 에 연결된 candidate/score snapshot/publication entry 를 조회한다(읽기 전용). `ROLE_ADMIN`.
-- `POST /review-batches/{reviewBatchId}/revert`: 잘못 발행된 batch 를 안전하게 되돌린다. 해당 batch 의 `chart_publication_entries`·`chart_score_snapshots` 만 제거하고 batch 를 `REVERTED` 로 표시한 뒤 전국 publication 을 재생성한다. `chart_candidates`(Living Archive)·activity 는 삭제하지 않는다. `ROLE_ADMIN`.
+- `GET /review-batches/{reviewBatchId}`: 사고 조사용. batch 에 연결된 candidate/score snapshot/publication entry 를 조회한다(읽기 전용). 응답: batch id·status, `scoreSnapshots[]`(candidateId·name·zoneId·activityRegion·legacySource·totalScore), `publicationEntries[]`. `ROLE_ADMIN`. WebMCP: `inspect_chart_review_batch`.
+- `POST /review-batches/{reviewBatchId}/revert`: 잘못 발행된 batch 를 안전하게 되돌린다. 해당 batch 의 `chart_publication_entries`·`chart_score_snapshots` 만 제거하고 batch 를 `REVERTED` 로 표시한 뒤 서버가 직전 정상 명단으로 전국 publication 을 재생성한다(별도 rebuild 호출 불필요). entry 가 제거된 candidate 라도 **다른 정상 review batch 의 snapshot 이 남아 공개 자격을 유지하면 계속 게시**되고, 이 batch 로만 유입된 candidate 만 빠진다. `chart_candidates`(Living Archive)·activity·Legacy 데이터·Score 산식·`chart_regions` 상태(`RESEARCHED` 유지)는 변경하지 않는다. 이미 `REVERTED` 면 아무 것도 바꾸지 않는다(idempotent, `alreadyReverted:true`). 응답: `removedPublicationEntries`, `removedScoreSnapshots`, `affectedCandidateIds`, `candidatesKeptElsewhere`, `finalPublicationId`, `finalPublishedEducatorCount`. `ROLE_ADMIN`. WebMCP: `revert_chart_review_batch`.
 
 ### ✅ GET /api/chart/publication/current
 

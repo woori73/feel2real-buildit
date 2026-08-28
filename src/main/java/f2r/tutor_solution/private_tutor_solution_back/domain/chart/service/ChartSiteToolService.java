@@ -442,17 +442,41 @@ public class ChartSiteToolService {
   /**
    * 잘못 발행된 review batch 를 안전하게 되돌린다: 해당 batch 의 publication entry 와 score snapshot 만
    * 제거하고 batch 를 {@code REVERTED} 로 표시한 뒤 전국 publication 을 직전 정상 snapshot 기준으로 재생성한다.
-   * candidate(Living Archive 데이터)와 그 activity 는 삭제하지 않는다.
+   * candidate(Living Archive 데이터)와 그 activity, Legacy 데이터, Score 산식, 지역 상태는 건드리지 않는다.
+   *
+   * <p>entry 가 제거된 candidate 라도 <b>다른 정상 review batch 의 snapshot 이 남아 공개 자격을 유지</b>하면
+   * 재생성 시 계속 게시된다. 이 batch 로만 유입된 candidate 만 실제로 빠진다.
+   *
+   * <p>이미 {@code REVERTED} 인 batch 에 대해서는 아무 것도 바꾸지 않고 현재 상태만 반환한다(idempotent).
    */
   @Transactional
   public Map<String, Object> revertReviewBatch(long reviewBatchId) {
     Map<String, Object> batch = jdbcTemplate.queryForList(
-        "SELECT review_batch_id, region_id, status FROM chart_review_batches WHERE review_batch_id=?", reviewBatchId)
+        "SELECT review_batch_id, region_id, status FROM chart_review_batches WHERE review_batch_id=? FOR UPDATE", reviewBatchId)
         .stream().findFirst()
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "review batch를 찾을 수 없습니다."));
     LocalDateTime now = LocalDateTime.now(clock);
+
+    if ("REVERTED".equals(str(batch.get("status")))) {
+      Map<String, Object> noop = new LinkedHashMap<>();
+      noop.put("reviewBatchId", reviewBatchId);
+      noop.put("regionId", batch.get("region_id"));
+      noop.put("batchStatus", "REVERTED");
+      noop.put("alreadyReverted", true);
+      noop.put("removedPublicationEntries", 0);
+      noop.put("removedScoreSnapshots", 0);
+      noop.put("candidatesKeptElsewhere", 0);
+      Long curPub = currentPublicationId();
+      noop.put("finalPublicationId", curPub);
+      noop.put("finalPublishedEducatorCount", publishedEntryCount(curPub));
+      return noop;
+    }
+
     List<Long> snapshotIds = jdbcTemplate.queryForList(
         "SELECT score_snapshot_id FROM chart_score_snapshots WHERE review_batch_id=?", Long.class, reviewBatchId);
+    List<Long> affectedCandidateIds = snapshotIds.isEmpty() ? List.of() : jdbcTemplate.queryForList(
+        "SELECT DISTINCT candidate_id FROM chart_publication_entries WHERE score_snapshot_id IN ("
+            + placeholders(snapshotIds.size()) + ")", Long.class, snapshotIds.toArray());
     int removedEntries = 0;
     if (!snapshotIds.isEmpty()) {
       removedEntries = jdbcTemplate.update(
@@ -464,18 +488,46 @@ public class ChartSiteToolService {
     jdbcTemplate.update("UPDATE chart_publications SET review_batch_id=NULL, updated_at=? WHERE review_batch_id=?", now, reviewBatchId);
     jdbcTemplate.update("UPDATE chart_review_batches SET status='REVERTED', reviewed_at=?, updated_at=? WHERE review_batch_id=?", now, now, reviewBatchId);
 
-    Map<String, Object> rebuilt = rebuildNationwidePublication();
+    // entry 가 제거됐지만 다른 정상 snapshot 으로 여전히 공개 자격을 유지하는 candidate 는 재생성 대상에 유지.
+    Set<Long> survivors = affectedCandidateIds.isEmpty() ? Set.of() : new java.util.LinkedHashSet<>(
+        jdbcTemplate.queryForList("""
+            SELECT DISTINCT c.candidate_id FROM chart_candidates c
+             JOIN chart_score_snapshots s ON s.candidate_id = c.candidate_id
+             WHERE c.candidate_id IN (%s)
+               AND c.eligibility_status = 'ELIGIBLE'
+               AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
+               AND""".formatted(placeholders(affectedCandidateIds.size())) + PUBLISHABLE_PROFILE_SQL,
+            Long.class, affectedCandidateIds.toArray()));
+    Map<String, Object> rebuilt = autoPublishNationwide(survivors, null, now);
 
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("reviewBatchId", reviewBatchId);
     out.put("regionId", batch.get("region_id"));
+    out.put("batchStatus", "REVERTED");
+    out.put("alreadyReverted", false);
     out.put("removedPublicationEntries", removedEntries);
     out.put("removedScoreSnapshots", removedSnapshots);
-    out.put("candidatesKept", snapshotIds.size());
-    out.put("rebuiltPublicationId", rebuilt.get("publicationId"));
+    out.put("affectedCandidateIds", affectedCandidateIds);
+    out.put("candidatesKeptElsewhere", survivors.size());
+    Long finalPub = ((Number) rebuilt.get("publicationId")).longValue();
+    out.put("finalPublicationId", finalPub);
+    out.put("finalPublishedEducatorCount", publishedEntryCount(finalPub));
     out.put("rebuiltRankedCount", rebuilt.get("rankedCount"));
     out.put("rebuiltDiscoveredCount", rebuilt.get("discoveredCount"));
     return out;
+  }
+
+  private Long currentPublicationId() {
+    List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+        "SELECT publication_id FROM chart_publications WHERE status='PUBLISHED' ORDER BY published_at DESC, publication_id DESC LIMIT 1");
+    return rows.isEmpty() ? null : ((Number) rows.get(0).get("publication_id")).longValue();
+  }
+
+  private int publishedEntryCount(Long publicationId) {
+    if (publicationId == null) return 0;
+    Integer n = jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM chart_publication_entries WHERE publication_id=?", Integer.class, publicationId);
+    return n == null ? 0 : n;
   }
 
   public Map<String, Object> publicationDisabled() {

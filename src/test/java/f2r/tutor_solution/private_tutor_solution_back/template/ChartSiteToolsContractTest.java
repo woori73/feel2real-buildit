@@ -21,7 +21,9 @@ class ChartSiteToolsContractTest {
         "search_existing_educators",
         "save_research_drafts",
         "preview_buildit_scores",
-        "submit_chart_review_batch");
+        "submit_chart_review_batch",
+        "inspect_chart_review_batch",
+        "revert_chart_review_batch");
     assertThat(template).contains("/js/admin_chart_site_tools.js");
   }
 
@@ -32,6 +34,9 @@ class ChartSiteToolsContractTest {
     assertThat(script).contains("published: false");
     assertThat(script).doesNotContain("/api/admin/chart/tools/publications");
     assertThat(script).doesNotContain("publish_chart_review_batch");
+    // 사고 복구 도구는 있어도 되지만, 직접 발행/재생성을 AI에 노출하지는 않는다.
+    assertThat(script).doesNotContain("rebuild_nationwide_publication");
+    assertThat(script).contains("revert_chart_review_batch");
   }
 
   private String read(String path) throws IOException {
