@@ -690,8 +690,8 @@ Site tools는 `/admin/chart`의 JavaScript가 WebMCP `document.modelContext.regi
 선정 기준/다음 미조사 지역 조회
   → ChatGPT가 공개 웹 조사(서버의 이중 AI 호출 없음)
   → 기존 후보·교육자 중복 조회
-  → 오프라인 활동 + 현재 연도 활동 + 개인 고유성 + 제외대상 아님 Hard Gate
-  → 실제 URL/활동일/evidence가 있는 draft 저장
+  → 최소 게이트(개인 식별 · 현장 영어교육 범위 · 공개 근거 URL) / 평가 게이트(오프라인·최근 근거·교육철학·커리큘럼)
+  → 실제 URL/활동일/evidence가 있는 draft 저장(평가 게이트 미달 시 RESEARCH_PENDING)
   → 서버 결정론적 Score preview
   → Potential Signals는 Score와 별도 표시
   → ranking review batch 제출
@@ -706,12 +706,14 @@ Site tools는 `/admin/chart`의 JavaScript가 WebMCP `document.modelContext.regi
 get_next_regions (RESEARCHED 제외, DUE 포함)
   → claim_region (IN_PROGRESS)
   → 공개 웹 조사 → 중복 확인
-  → Hard Gate 7단계: 현재 활동 · 최근 활동 · 개인 식별 · 교육철학(2~3문장) · 커리큘럼(2~3문장) · 공개 근거 URL · 제외/중복 아님
-  → save_research_drafts (후보 풀 저장. education_philosophy_summary / curriculum_summary 필수,
-                          강점·개선·최근활동·프로필이미지 구조화 저장. 저장 = 선정 아님)
+  → save_research_drafts (정보 구조화 = 저장. 최소 게이트[개인 식별 · 현재 초·중·고 현장 영어교육 범위 · 공개 근거 URL]
+                          실패만 422. 평가 게이트[현재 오프라인 활동 · 최근 연도 근거 · 교육철학 2~3문장 · 커리큘럼 2~3문장
+                          · 비광고 교육 근거] 실패는 RESEARCH_PENDING 으로 저장 = 검색 노출, 점수 제외, 보강 대상. 저장 = 선정 아님)
+  → 평가 가능 여부 판단: eligibilityStatus = EVALUATABLE | RESEARCH_PENDING
+  → preview_buildit_scores (EVALUATABLE 만, RESEARCH_PENDING 은 422)
   → (submit_chart_review_batch = audit record)
   → complete_region(selectedCandidateIds=[...]) ── 서버 단일 트랜잭션 ──▶
-        · selectedCandidateIds 로 넘긴 후보만 이 지역 선정자로 인정(이 지역 소속·ELIGIBLE·미제외·서술가능 검증, 아니면 422)
+        · selectedCandidateIds 로 넘긴 후보만 이 지역 선정자로 인정(이 지역 소속·EVALUATABLE(또는 Legacy)·미제외 검증, 아니면 422)
         · 선정자 → audit batch + 결정론 Score snapshot(evidence_json)
         · 전국 누적 publication 재생성: (직전 PUBLISHED snapshot 교육자 ∪ 이번 선정자, 제외자 제거)
           를 total_score DESC 재정렬, 상위 최대 100 = RANKED, 나머지 = DISCOVERED, previous_rank 승계
