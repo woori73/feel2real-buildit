@@ -35,7 +35,7 @@ public class ChartSiteToolController {
 
   @PostMapping("/regions/{regionId}/complete")
   public Map<String, Object> completeRegion(@PathVariable String regionId, @RequestBody RegionCompletionRequest request) {
-    return service.completeRegion(regionId, request.eligibleCount(), request.rejectedCount(), request.note());
+    return service.completeRegion(regionId, request.selectedCandidateIds(), request.selectedCount(), request.note());
   }
 
   @PostMapping("/educators/search-existing")
@@ -86,9 +86,24 @@ public class ChartSiteToolController {
   @PostMapping("/publications/rebuild")
   public Map<String, Object> rebuildPublication() { return service.rebuildNationwidePublication(); }
 
+  /** review batch 하나에 연결된 candidate/score snapshot/publication entry 조회(사고 조사용, 읽기 전용). */
+  @GetMapping("/review-batches/{reviewBatchId}")
+  public Map<String, Object> inspectReviewBatch(@PathVariable long reviewBatchId) {
+    return service.inspectReviewBatch(reviewBatchId);
+  }
+
+  /**
+   * 잘못 발행된 review batch 를 안전하게 되돌린다: 해당 batch 의 publication entry·score snapshot 만
+   * 제거하고 batch 를 REVERTED 로 표시한 뒤 전국 publication 을 재생성한다. candidate 데이터는 보존한다.
+   */
+  @PostMapping("/review-batches/{reviewBatchId}/revert")
+  public Map<String, Object> revertReviewBatch(@PathVariable long reviewBatchId) {
+    return service.revertReviewBatch(reviewBatchId);
+  }
+
   public record ExistingSearchRequest(String name, String academyName, String province, String cityDistrict) {}
   public record ReviewBatchRequest(String regionId, List<Long> candidateIds, String summary) {}
-  public record RegionCompletionRequest(int eligibleCount, int rejectedCount, String note) {}
+  public record RegionCompletionRequest(List<Long> selectedCandidateIds, Integer selectedCount, Integer rejectedCount, String note) {}
   public record ReviewDecisionRequest(String decision, String note) {}
   public record WebDraftRequest(java.time.LocalDateTime educatorConsentAt) {}
 }

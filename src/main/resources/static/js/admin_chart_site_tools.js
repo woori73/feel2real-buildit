@@ -95,16 +95,21 @@
     }),
     register({
       name: 'complete_region',
-      description: '이 지역 조사를 완료합니다. 서버가 이 지역의 현행 Hard Gate 통과 선정자를 전국 누적 publication에 자동 반영한 뒤 지역을 RESEARCHED로 만듭니다(선정 0명도 정상 완료). publication은 AI가 직접 만들지 않으며 정상 파이프라인 완료의 서버 결과입니다.',
+      description: '이 지역 조사를 완료합니다. selectedCandidateIds에 넣은 후보만 이 지역 최종 선정자로 반영됩니다(save_research_drafts로 저장만 한 후보는 선정이 아님). 적합 교육자가 없으면 selectedCandidateIds를 비우고 호출하면 0명으로 조사 완료됩니다. 서버가 선정자를 전국 누적 publication에 반영한 뒤 지역을 RESEARCHED로 만듭니다.',
       inputSchema: objectSchema({
         regionId: stringSchema('조사 지역 ID'),
-        selectedCount: integerSchema('이 지역에서 최종 선정한 인원(참고용, 서버가 실제 값 계산)'),
+        selectedCandidateIds: { type: 'array', items: integerSchema('이 지역에서 최종 선정한 candidate ID'), maxItems: 100, description: '최종 선정자 candidate ID 목록. 0명이면 빈 배열.' },
+        selectedCount: integerSchema('선정 인원(교차 확인용, 서버가 실제 값 계산)'),
         rejectedCount: integerSchema('기준 미달로 제외한 인원(참고용)'),
         note: stringSchema('조사 메모')
       }, ['regionId']), annotations: write,
-      execute: async ({ regionId, selectedCount = 0, rejectedCount = 0, note = '' }) =>
+      execute: async ({ regionId, selectedCandidateIds = [], selectedCount, rejectedCount = 0, note = '' }) =>
         request(`/api/admin/chart/tools/regions/${encodeURIComponent(regionId)}/complete`, {
-          method: 'POST', body: JSON.stringify({ eligibleCount: selectedCount, rejectedCount, note })
+          method: 'POST', body: JSON.stringify({
+            selectedCandidateIds,
+            selectedCount: (selectedCount === undefined ? selectedCandidateIds.length : selectedCount),
+            rejectedCount, note
+          })
         })
     }),
     register({

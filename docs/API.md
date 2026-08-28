@@ -3248,7 +3248,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /context`: 선정 기준, 7단계 Hard Gate(교육철학·커리큘럼 필수), Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
 - `GET /regions/next?limit=1`: 신규 조사 또는 재조사 예정(`DUE`)/오류 지역만 조회한다. `RESEARCHED`는 제외. `chart_regions`는 V952로 대한민국 전국 시·군·구가 seed되어 있고 지역 추가는 migration seed로만 한다. read.
 - `POST /regions/{regionId}/claim`: `UNRESEARCHED`/`DUE`/`ERROR` 지역을 `IN_PROGRESS`로 점유한다. Write.
-- `POST /regions/{regionId}/complete`: **단일 트랜잭션**으로 이 지역의 현행 Hard Gate 통과 후보를 audit batch + Score snapshot으로 기록하고 전국 누적 publication을 재생성한 뒤 지역을 `RESEARCHED`(+`re-research-days`일 뒤 재조사)로 만든다. 선정 0명이면 publication 생성 없이 `RESEARCHED`만. publication 실패 시 지역 완료도 롤백. body `{eligibleCount, rejectedCount, note}`는 참고용이며 서버가 실제 선정 수를 계산한다. Write.
+- `POST /regions/{regionId}/complete`: body `{selectedCandidateIds, selectedCount, rejectedCount, note}`. **`selectedCandidateIds` 에 넣은 후보만** 이 지역 최종 선정자로 인정한다 — `save_research_drafts` 저장은 후보 풀 등록일 뿐 선정이 아니며, `zone_id` 로 ELIGIBLE draft 를 재유도하지 않는다. 각 후보는 이 지역(`zone_id`) 소속·ELIGIBLE·미제외·서술가능이어야 하며 아니면 `422`. 빈 목록이면 0명으로 조사 완료(`RESEARCHED_ZERO` audit batch 만 남기고 publication 무변경). 비어있지 않으면 audit batch + 현행 Score snapshot 생성 후 전국 누적 publication(직전 snapshot ∪ 이번 선정자)을 재생성하고 지역을 `RESEARCHED`(+`re-research-days`일 뒤 재조사)로. 단일 트랜잭션, 실패 시 전체 롤백. `selectedCount` 는 교차 확인용(불일치 시 응답에 표기). Write.
 - `POST /educators/search-existing`: 이름·학원 기반으로 기존 후보/교육자를 조회한다. read.
 - `POST /research-drafts`: 시/도·시군구, 교육 정체성, **교육철학 요약·커리큘럼 요약(필수)**, 고유 수업 방식, 최근 활동 요약, 강점/개선 제안 배열, 프로필 이미지 URL, 공개 공식 채널, Hard Gate 확인값, 실제 evidence URL·활동일·종류를 저장한다. Draft Write. Hard Gate 실패(교육철학·커리큘럼 근거 부족/광고 문구/과목 나열 포함), 현재 연도 evidence 부재, URL 부재 시 `422/400`; 중복은 `409`.
 - `GET /scores/preview?candidateId=`: 저장된 근거로 결정론적 Score와 potential signals를 계산한다. DB를 변경하지 않는 preview.
@@ -3258,7 +3258,9 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `POST /review-batches/{reviewBatchId}/finalize`: 이미 Draft/Score/Batch가 있는 조사(예: 분당 Review Batch 1)를 새 자동발행 코드에서 publication 단계부터 resume한다. 새 Draft/Score를 만들지 않고, 현행 Hard Gate(교육철학·커리큘럼 요약 보유, Legacy 선정자는 grandfather) 통과 후보만 전국 snapshot에 포함한다. 멱등(이미 발행됐으면 `ALREADY_FINALIZED`). 서버/관리자 트리거용(WebMCP 도구 아님).
 - `POST /educators/{candidateId}/web-draft-requests`: 교육자 동의 시각을 필수로 받아 Chart 기록의 BuildIt Web draft 요청 payload를 만든다. 가입 여부는 Score에 반영하지 않는다.
 - `POST /publications`: 항상 `409`. publication은 AI 직접 명령이 아니라 조사 파이프라인 완료의 서버 결과다.
-- `POST /publications/rebuild`: 현재까지 선정된 교육자로 전국 누적 publication을 (재)생성한다. 지역 조사와 무관한 서버/관리자 트리거이며 AI/WebMCP 도구가 아니다. Legacy import 반영·사후 공개 제외 후 갱신에 사용. `ROLE_ADMIN`. 앱 시작 시 `ChartInitialPublicationRunner`가 `PUBLISHED` 0건이면 1회 자동 호출.
+- `POST /publications/rebuild`: 전국 누적 publication (재)생성. `PUBLISHED` 0건이면 PUBLISHABLE 한 기존 선정자(Legacy import·분당 batch) 전체로 첫 snapshot; 이미 있으면 직전 snapshot 교육자(제외자 제거) 기준으로만 재생성한다. 서버/관리자 트리거(AI/WebMCP 아님), `ROLE_ADMIN`. 앱 시작 시 `ChartInitialPublicationRunner` 가 `PUBLISHED` 0건이면 1회 자동 호출.
+- `GET /review-batches/{reviewBatchId}`: 사고 조사용. batch 에 연결된 candidate/score snapshot/publication entry 를 조회한다(읽기 전용). `ROLE_ADMIN`.
+- `POST /review-batches/{reviewBatchId}/revert`: 잘못 발행된 batch 를 안전하게 되돌린다. 해당 batch 의 `chart_publication_entries`·`chart_score_snapshots` 만 제거하고 batch 를 `REVERTED` 로 표시한 뒤 전국 publication 을 재생성한다. `chart_candidates`(Living Archive)·activity 는 삭제하지 않는다. `ROLE_ADMIN`.
 
 ### ✅ GET /api/chart/publication/current
 
