@@ -342,6 +342,124 @@ def seed_default_twins():
             )
 
 
+# ==================================================================================
+# Legacy 마이그레이션 — PR #63 이전에 save_generated_questions(구형 tool)로 저장된 특정 MCP
+# 문항 묶음을 Generated Test 구조에 1회 연결한다. 문항 내용은 복제·재생성하지 않고 test_id만
+# 채운다. exam_group_id별 external_id guard로 완전 idempotent(재배포해도 중복 안 생김).
+# 향후 신규 저장은 save_generated_test가 정식 schema로 하므로 여기에 새 항목이 추가될 일은 없다.
+# ==================================================================================
+_LEGACY_TEST_MIGRATIONS = [
+    {
+        'exam_group_id': 'mcp_f5061b3f4b5b43778291b2c1e25c37fc',
+        'school': '신사중', 'grade': '3학년', 'exam': '전체', 'year': 2026, 'semester': '2학기',
+        'source_material': 'The Boiling Frog Myth', 'source_page': '2',
+        'material_type': 'ted_ed', 'test_type': 'vocabulary',
+        'title': 'The Boiling Frog Myth — Page 2 Vocabulary Test',
+        'delete_question_ids': [83, 84],  # MCP 진단 중 잘못 저장된 test/test3 dummy (내용 확인 후에만 삭제)
+    },
+]
+
+# sourceText에 우회 저장된 태그: [대상어휘 | 어휘등급 | 난이도 | Page | DigitalTwin근거 | DigitalTwin패턴]
+_LEGACY_TWIN_TAG_RE = re.compile(r'\[([^\[\]]*\|[^\[\]]*\|[^\[\]]*\|[^\[\]]*\|[^\[\]]*\|[^\[\]]*)\]')
+
+
+def _parse_legacy_twin_tag(source_text: str) -> Optional[dict]:
+    if not source_text:
+        return None
+    matches = _LEGACY_TWIN_TAG_RE.findall(source_text)
+    if not matches:
+        return None
+    parts = [p.strip() for p in matches[-1].split('|')]
+    if len(parts) != 6:
+        return None
+    return {'target_vocab': parts[0], 'vocab_level': parts[1], 'difficulty': parts[2],
+            'page': parts[3], 'twin_basis': parts[4], 'twin_pattern': parts[5]}
+
+
+def _audit_note(conn, school: str, grade: str, year: int, semester: str, exam: str, content: str) -> None:
+    conn.execute(
+        'INSERT INTO educator_insights (content, school, grade, student_context, lesson_context, '
+        'year, semester, exam, source, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        (content, school, grade, '', 'Generated Question Store 마이그레이션', year, semester, exam,
+         'claude', datetime.now().isoformat()),
+    )
+
+
+def backfill_legacy_generated_tests():
+    with get_db() as conn:
+        for m in _LEGACY_TEST_MIGRATIONS:
+            ext = 'legacy-migrate-' + m['exam_group_id']
+            audit = []
+            did_work = False
+
+            # 1) 잘못 저장된 진단 row 삭제 — 내용이 test/test3 짧은 dummy이고 이 묶음 소속이 아닐 때만.
+            for qid in m.get('delete_question_ids', []):
+                r = conn.execute(
+                    'SELECT id, stem, source_text, exam_group_id FROM generated_questions WHERE id = ?', (qid,),
+                ).fetchone()
+                if not r:
+                    continue
+                blob = ((r['stem'] or '') + ' ' + (r['source_text'] or '')).strip().lower()
+                if r['exam_group_id'] != m['exam_group_id'] and len(blob) <= 12 and 'test' in blob:
+                    conn.execute('DELETE FROM generated_questions WHERE id = ?', (qid,))
+                    audit.append(f'delete id={qid}: 삭제함 (content={blob!r})')
+                    did_work = True
+                else:
+                    audit.append(f'delete id={qid}: SKIP — 진단 데이터로 확인 안 됨 (content={blob!r}, group={r["exam_group_id"]})')
+
+            # 2) 문항 묶음 연결 (이미 연결됐거나 묶음이 없으면 skip)
+            already_linked = conn.execute('SELECT id FROM generated_tests WHERE external_id = ?', (ext,)).fetchone()
+            rows = [] if already_linked else conn.execute(
+                'SELECT * FROM generated_questions WHERE exam_group_id = ? ORDER BY id', (m['exam_group_id'],),
+            ).fetchall()
+            if not rows:
+                if did_work:
+                    _audit_note(conn, m['school'], m['grade'], m['year'], m['semester'], m['exam'],
+                                f'[backfill {m["exam_group_id"]}] ' + ' | '.join(audit))
+                continue
+
+            vocab: list = []
+            difficulty = twin_basis = twin_pattern = ''
+            page = m['source_page']
+            for r in rows:
+                tag = _parse_legacy_twin_tag(r['source_text'])
+                if not tag:
+                    continue
+                if tag['target_vocab'] and tag['target_vocab'] not in vocab:
+                    vocab.append(tag['target_vocab'])
+                difficulty = difficulty or tag['difficulty']
+                twin_basis = twin_basis or tag['twin_basis']
+                twin_pattern = twin_pattern or tag['twin_pattern']
+                page = tag['page'] or page
+
+            twin = _match_digital_twin(conn, m['school'], m['grade'], m['exam'])
+            twin_id = twin.get('id') if twin else None
+            twin_label = twin_basis or (pl._twin_name(twin) if twin else '') or f"{m['school']} {m['grade']} 출제자 디지털트윈"
+            sm_id = _upsert_source_material(conn, m['school'], m['grade'], m['source_material'],
+                                           material_type=m['material_type'])
+            now = datetime.now().isoformat()
+            cur = conn.execute(
+                '''INSERT INTO generated_tests
+                (external_id, source_material_id, source_page, school, grade, year, semester, exam,
+                 test_type, title, twin_id, twin_label, twin_pattern, difficulty, target_vocabulary,
+                 target_grammar, target_passage, generation_source, question_count, raw_request_json, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                (ext, sm_id, str(page or m['source_page']), m['school'], m['grade'], m['year'], m['semester'],
+                 m['exam'], m['test_type'], m['title'], twin_id, twin_label, twin_pattern,
+                 difficulty or '실제 시험 수준의 중상 난이도', json.dumps(vocab, ensure_ascii=False), '[]', '',
+                 'mcp', len(rows), json.dumps({'migrated_from_exam_group_id': m['exam_group_id']}, ensure_ascii=False), now),
+            )
+            test_id = cur.lastrowid
+            conn.execute(
+                'UPDATE generated_questions SET test_id = ?, school = ?, grade = ?, exam = ? WHERE exam_group_id = ?',
+                (test_id, m['school'], m['grade'], m['exam'], m['exam_group_id']),
+            )
+            audit.append(f'linked {len(rows)}문항 -> generated_test id={test_id}, source_material_id={sm_id}, '
+                         f'target_vocabulary={len(vocab)}, twin_id={twin_id}, twin_label={twin_label!r}')
+            _audit_note(conn, m['school'], m['grade'], m['year'], m['semester'], m['exam'],
+                        f'[backfill {m["exam_group_id"]}] ' + ' | '.join(audit))
+
+
 @contextlib.asynccontextmanager
 async def _lifespan(_app: FastAPI):
     # mcp_server의 StreamableHTTP session manager는 자체 task group을 갖고 있어서
@@ -349,6 +467,9 @@ async def _lifespan(_app: FastAPI):
     # run()에 진입시켜야 한다. mcp_server는 main을 지연 import하므로 순환 import를
     # 피하기 위해 여기서도 지연 import한다(서버 startup 시점에만 실행됨).
     from mcp_server import mcp as _mcp
+    # 모든 모듈 레벨 정의가 끝난 뒤(=서버 startup) 실행한다 — backfill이 파일 뒤쪽의
+    # _upsert_source_material / _match_digital_twin 을 참조하므로 import 시점엔 부를 수 없다.
+    backfill_legacy_generated_tests()
     async with _mcp.session_manager.run():
         yield
 
