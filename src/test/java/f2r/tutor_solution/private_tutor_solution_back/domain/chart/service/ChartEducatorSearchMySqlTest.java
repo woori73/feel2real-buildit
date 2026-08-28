@@ -27,7 +27,7 @@ class ChartEducatorSearchMySqlTest {
 
   @Autowired ChartEducatorSearchService service;
   @Autowired JdbcTemplate jdbcTemplate;
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
   private String tag;
 
@@ -143,8 +143,9 @@ class ChartEducatorSearchMySqlTest {
     assertThat(detail.evidence().get(0).sourceUrl()).contains("example.com");
     assertThat(detail.officialChannels()).isNotNull();
 
-    String json = objectMapper.writeValueAsString(detail);
-    assertThat(json)
+    com.fasterxml.jackson.databind.JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(detail));
+    String jsonStr = json.toString();
+    assertThat(jsonStr)
         .doesNotContain("내부 판정 사유 - 노출 금지")
         .doesNotContain("INTERNAL_DEEP_SEARCH_NOTE_DO_NOT_EXPOSE")
         .doesNotContain("INTERNAL_EXCLUSION_MEMO_DO_NOT_EXPOSE")
@@ -153,6 +154,11 @@ class ChartEducatorSearchMySqlTest {
         .doesNotContain("eligibility_reasons").doesNotContain("eligibilityReasons")
         .doesNotContain("deepSearch").doesNotContain("googleQuery")
         .doesNotContain("\"score\"").doesNotContain("buildItScore").doesNotContain("\"rank\"");
+    // hotfix: officialChannels 는 record component 만 — 헬퍼 유래 'empty' 필드가 없어야 한다
+    assertThat(json.get("officialChannels").has("empty")).isFalse();
+    java.util.Set<String> channelKeys = new java.util.HashSet<>();
+    json.get("officialChannels").fieldNames().forEachRemaining(channelKeys::add);
+    assertThat(channelKeys).containsExactlyInAnyOrder("homepage", "blog", "youtube", "social");
   }
 
   @Test

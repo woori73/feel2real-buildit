@@ -213,7 +213,7 @@ public class ChartEducatorSearchService {
         blankToNull(str(row.get("recent_activity_summary"))),
         parseStringArray(row.get("strengths_json")),
         improvements,
-        channels.isEmpty() ? null : channels,
+        channels.hasNoChannels() ? null : channels,
         blankToNull(str(row.get("profile_image_url"))),
         evidence,
         blankToNull(str(row.get("discovery_reason"))),
