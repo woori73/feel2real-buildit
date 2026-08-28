@@ -89,16 +89,29 @@ public class ChartSiteToolService {
     context.put("criteriaVersion", CRITERIA_VERSION);
     context.put("mission", "누가 가장 유명한가가 아니라, 우리가 아직 발견하지 못한 좋은 지역 교육자는 누구인가를 찾는 Living Archive");
     context.put("subject", "학원이 아닌 원장·강사 개인");
-    context.put("hardGate", List.of(
-        "현재 실제 교육 활동", "최근 공개 활동", "교육자 개인 식별", "교육철학(공개 근거로 2~3문장 설명 가능)",
-        "커리큘럼 또는 고유한 수업 구조(공개 근거로 2~3문장 설명 가능)", "공개 검증 근거 URL", "제외대상 아님 · Chart 중복 아님"));
-    context.put("finalCheck", "교육철학과 커리큘럼 중 하나라도 공개 근거로 충분히 설명할 수 없으면 최종 선정하지 않는다. 빈 부분을 추측·일반 문구로 채우지 않는다.");
-    context.put("excluded", List.of("온라인 강의 전업", "과외 전업", "대형·체인 유명세만 확인", "광고 외 개인 교육활동 없음", "현재 활동 미확인"));
+    context.put("scope", "대한민국 초·중·고 영어교육만. 타 과목·타 학교급은 이번 범위가 아니다.");
+    context.put("pipeline", "정보 수집 → 정보 구조화(저장) → 검색/발견 → 평가 가능 여부 판단 → 점수화 → TOP100. "
+        + "최소 게이트만 통과하면 RESEARCH_PENDING 으로 저장되어 공개 검색에 노출되고, 평가 게이트까지 통과하면 EVALUATABLE(점수·TOP100 대상)이 된다.");
+    context.put("minimumGate", List.of(
+        "교육자 개인 식별(이름·역할·소속 등 개인 단위 확인)",
+        "초·중·고 영어교육 관련 공개 근거 URL 1개 이상",
+        "현재 초·중·고 현장 영어교육 범위를 명백히 벗어나지 않음(온라인 강의 전업 등 아님)"));
+    context.put("evaluationGate", List.of(
+        "현재 오프라인 현장 교육 활동 확인",
+        "최근(현재 연도) 공개 활동 근거",
+        "교육철학(공개 근거로 2~3문장, 일반 광고 문구 불가)",
+        "커리큘럼 또는 고유 수업 구조(공개 근거로 2~3문장, 과목 나열 불가)",
+        "광고·보도자료가 아닌 실제 교육 정보 근거"));
+    context.put("finalCheck", "정보가 부족한 교육자는 낮은 점수를 주지 말고 RESEARCH_PENDING 으로 저장한다(향후 Evidence 보강 대상, 폐기 아님). "
+        + "빈 부분을 추측·일반 문구로 채우지 않는다. 광고성 자료는 교육철학·전문성 근거로 인정하지 않되, 광고가 많거나 유명하다는 이유로 제외·감점하지 않는다.");
+    context.put("excluded", List.of("온라인 강의 전업", "과외 전업", "현재 초·중·고 현장 영어교육 활동이 아님"));
+    context.put("exclusionPolicy", "학원 규모·프랜차이즈 소속·브랜드·광고량·유명세는 제외 사유가 아니다. "
+        + "교육자 개인의 공개 Evidence만 평가하며, 현재 초·중·고 현장 영어교육 범위를 명백히 벗어난 경우(온라인 전업 등)만 제외한다.");
     context.put("scoreWeights", weights);
     context.put("selectionTargets", "지역별 선정 인원 목표 없음. 7명·1명·0명 모두 정상 결과다. TOP100을 채우려고 기준을 낮추지 않는다.");
-    context.put("nonSignals", List.of("검색 결과 수", "광고량", "학원 규모", "지점 수", "매출", "유명세", "BuildIt 가입 여부"));
+    context.put("nonSignals", List.of("검색 결과 수", "광고량", "학원 규모", "지점 수", "매출", "유명세", "프랜차이즈 소속", "BuildIt 가입 여부"));
     context.put("searchAngles", List.of("원장 수업", "강사 수업", "자체 교재", "커리큘럼", "수업 연구", "교육 철학", "특강", "학생 지도", "교육 콘텐츠"));
-    context.put("searchPolicy", List.of("첫 검색 결과에서 멈추지 않기", "검색 노출이 적다는 이유로 제외하지 않기", "후보 수를 채우기 위해 Hard Gate를 낮추지 않기"));
+    context.put("searchPolicy", List.of("첫 검색 결과에서 멈추지 않기", "검색 노출이 적다는 이유로 제외하지 않기", "정보가 부족하면 제외가 아니라 RESEARCH_PENDING 으로 저장하기"));
     context.put("privacy", "시/도와 시·군·구까지만 저장하며 전화·이메일·개인주소는 수집하지 않습니다.");
     context.put("disclaimer", "BuildIt Score는 공개 교육 활동과 브랜드 성장 신호를 기준으로 한 자체 지표이며 인격, 전반적 능력 또는 학생 성과를 단정하지 않습니다.");
     return context;
@@ -142,9 +155,8 @@ public class ChartSiteToolService {
           .stream().findFirst().orElse(null);
       if (c == null) { rejected.add(candidateId + "(없음)"); continue; }
       if (!rid.equals(str(c.get("zone_id")))) { rejected.add(candidateId + "(다른 지역 소속: " + c.get("zone_id") + ")"); continue; }
-      if (!"ELIGIBLE".equals(c.get("eligibility_status"))) { rejected.add(candidateId + "(비적격)"); continue; }
       if (Boolean.TRUE.equals(bit(c.get("excluded_from_chart")))) { rejected.add(candidateId + "(공개 제외됨)"); continue; }
-      if (!describableProfile(c)) { rejected.add(candidateId + "(교육철학·커리큘럼 서술 불가)"); continue; }
+      if (!isEvaluatable(c)) { rejected.add(candidateId + "(평가 보류 상태 — 점수화·선정 불가, 현재: " + c.get("eligibility_status") + ")"); continue; }
     }
     if (!rejected.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
@@ -255,11 +267,12 @@ public class ChartSiteToolService {
 
   @Transactional
   public Map<String, Object> saveDraft(DraftRequest request) {
-    Eligibility eligibility = evaluate(request);
-    if (!eligibility.eligible()) {
+    Assessment assessment = assess(request);
+    if (assessment.rejected()) {
       throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-          "BuildIt Chart Hard Gate 탈락: " + String.join(", ", eligibility.reasons()));
+          "BuildIt Chart 저장 최소 조건 미달: " + String.join(", ", assessment.rejectReasons()));
     }
+    List<String> savedReasons = assessment.evaluatable() ? assessment.passReasons() : assessment.holdReasons();
     EvidenceRequest primary = request.evidence().get(0);
     String personKey = normalize(request.name()) + "|" + normalize(request.academyName()) + "|"
         + normalize(request.province()) + "|" + normalize(request.cityDistrict());
@@ -281,25 +294,29 @@ public class ChartSiteToolService {
            source_title, discovery_reason, deep_search_result, exclusion_check, verification_status,
            status, google_query, discovered_at, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                  b'1', b'1', b'1', b'1', 'ELIGIBLE', ?, ?, 'CHATGPT_SITE_TOOL', ?, ?, ?, ?, ?,
+                  ?, ?, ?, ?, ?, ?, ?, 'CHATGPT_SITE_TOOL', ?, ?, ?, ?, ?,
                   ?, '', 'VERIFIED', 'DISCOVERED', 'BuildIt Chart Site tool research draft', ?, ?, ?)
           """,
           request.regionId(), personKey, require(request.name(), "name"), validatedRole(request.role()),
           blank(request.academyName()), region, request.province(), request.cityDistrict(),
           require(primary.contentType(), "evidence.contentType"), require(primary.summary(), "evidence.summary"),
           require(request.identitySummary(), "identitySummary"),
-          require(request.educationPhilosophySummary(), "educationPhilosophySummary"),
-          require(request.curriculumSummary(), "curriculumSummary"),
+          blank(request.educationPhilosophySummary()),
+          blank(request.curriculumSummary()),
           blank(request.distinctiveTeachingSummary()), blank(request.recentActivitySummary()),
           jsonList(request.strengths()), jsonList(request.improvementSuggestions()),
           nullableUrl(request.profileImageUrl()), nullableUrl(request.profileImageSourceUrl()),
           nullableUrl(request.officialHomepage()), nullableUrl(request.officialBlog()),
           nullableUrl(request.officialYoutube()), nullableUrl(request.officialSocial()),
-          json(eligibility.reasons()),
+          request.offlineActivityConfirmed(), request.currentYearActivityConfirmed(),
+          request.educatorIdentityConfirmed(), request.exclusionFree(),
+          assessment.status(), json(savedReasons),
           jsonList(request.potentialSignals()), CRITERIA_VERSION,
           sourceUrl, sha256(sourceUrl), blank(primary.title()),
           require(request.discoveryReason(), "discoveryReason"),
-          "Hard Gate(교육철학·커리큘럼 포함) 통과: " + String.join(", ", eligibility.reasons()),
+          (assessment.evaluatable()
+              ? "평가 가능(EVALUATABLE): " + String.join(", ", assessment.passReasons())
+              : "평가 보류(RESEARCH_PENDING): " + String.join(", ", assessment.holdReasons())),
           now, now, now);
     } catch (DuplicateKeyException error) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "동일 교육자와 근거 URL 후보가 이미 존재합니다.");
@@ -316,7 +333,11 @@ public class ChartSiteToolService {
           require(evidence.summary(), "evidence.summary"), evidence.activityDate(),
           normalizedKind(evidence.evidenceKind()), evidence.educationallyInformative(), now, url, now, now, now);
     }
-    return Map.of("candidateId", candidateId, "status", "DISCOVERED", "eligibility", eligibility,
+    return Map.of("candidateId", candidateId, "status", "DISCOVERED",
+        "eligibilityStatus", assessment.status(),
+        "evaluationHold", assessment.researchPending(),
+        "holdReasons", assessment.holdReasons(),
+        "assessment", assessment,
         "criteriaVersion", CRITERIA_VERSION, "published", false);
   }
 
@@ -494,7 +515,7 @@ public class ChartSiteToolService {
             SELECT DISTINCT c.candidate_id FROM chart_candidates c
              JOIN chart_score_snapshots s ON s.candidate_id = c.candidate_id
              WHERE c.candidate_id IN (%s)
-               AND c.eligibility_status = 'ELIGIBLE'
+               AND (c.eligibility_status = 'EVALUATABLE' OR c.legacy_source IS NOT NULL)
                AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
                AND""".formatted(placeholders(affectedCandidateIds.size())) + PUBLISHABLE_PROFILE_SQL,
             Long.class, affectedCandidateIds.toArray()));
@@ -554,7 +575,7 @@ public class ChartSiteToolService {
     if (!hasPublished) {
       List<Long> seed = jdbcTemplate.queryForList("""
           SELECT c.candidate_id FROM chart_candidates c
-           WHERE c.eligibility_status = 'ELIGIBLE'
+           WHERE (c.eligibility_status = 'EVALUATABLE' OR c.legacy_source IS NOT NULL)
              AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
              AND""" + PUBLISHABLE_PROFILE_SQL, Long.class);
       if (seed.isEmpty()) {
@@ -562,7 +583,7 @@ public class ChartSiteToolService {
       }
       List<Long> needScore = jdbcTemplate.queryForList("""
           SELECT c.candidate_id FROM chart_candidates c
-           WHERE c.eligibility_status = 'ELIGIBLE'
+           WHERE (c.eligibility_status = 'EVALUATABLE' OR c.legacy_source IS NOT NULL)
              AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
              AND""" + PUBLISHABLE_PROFILE_SQL + """
              AND NOT EXISTS (SELECT 1 FROM chart_score_snapshots s WHERE s.candidate_id = c.candidate_id)
@@ -614,44 +635,68 @@ public class ChartSiteToolService {
     return Map.of("candidateId", candidateId, "status", "REQUESTED", "consentRecorded", true, "scoreBoost", false);
   }
 
-  // ----- Hard Gate -------------------------------------------------------------------------------
+  // ----- 조사 파이프라인: 저장 최소 게이트 + 평가 게이트 -----------------------------------------
 
-  Eligibility evaluate(DraftRequest request) {
-    List<String> reasons = new ArrayList<>();
-    if (!request.offlineActivityConfirmed()) reasons.add("현재 실제 교육 활동 미확인");
-    if (!request.currentYearActivityConfirmed()) reasons.add("최근 공개 활동 미확인");
-    if (!request.educatorIdentityConfirmed()) reasons.add("교육자 개인 식별 불가");
-    if (!request.exclusionFree()) reasons.add("제외대상 신호 존재");
+  /**
+   * 조사 초안을 두 단계로 판정한다.
+   *
+   * <ul>
+   *   <li><b>최소 게이트</b>(하나라도 실패 → {@code REJECTED}, 저장 거부): 교육자 개인 식별,
+   *       현재 초·중·고 현장 영어교육 범위(온라인 전업 등 명백한 이탈 아님), 실제 공개 근거 URL.
+   *       학원 규모·프랜차이즈·광고량·유명세는 제외 사유가 아니다.</li>
+   *   <li><b>평가 게이트</b>(실패해도 저장 → {@code RESEARCH_PENDING}, 점수·TOP100 대상에서만 제외):
+   *       현재 오프라인 현장 활동, 최근(현재 연도) 근거, 교육철학·커리큘럼 서술 가능,
+   *       광고가 아닌 실제 교육 정보 근거. 정보 부족은 폐기가 아니라 향후 Evidence 보강 대상이다.</li>
+   *   <li>둘 다 통과 → {@code EVALUATABLE}.</li>
+   * </ul>
+   *
+   * <p>"현재 오프라인 활동 미확인"과 "명백히 현장 교육자가 아님"을 구분한다: 전자는 단순 미확인이므로
+   * 평가 보류, 후자는 {@code exclusionFree == false} 로 조사자가 이탈 신호를 확인한 경우이므로 거부.
+   */
+  Assessment assess(DraftRequest request) {
+    List<String> reject = new ArrayList<>();
+    List<String> hold = new ArrayList<>();
+
+    // ── 최소 게이트 (실패 → REJECTED / 422) ──
+    if (!request.educatorIdentityConfirmed()) reject.add("교육자 개인 식별 불가");
+    if (!request.exclusionFree()) reject.add("현재 초·중·고 현장 영어교육 범위를 명백히 벗어남(온라인 전업 등)");
+    boolean hasEvidenceUrl = request.evidence() != null && request.evidence().stream()
+        .anyMatch(e -> e.sourceUrl() != null && !e.sourceUrl().isBlank());
+    if (!hasEvidenceUrl) reject.add("실제 공개 근거 URL 없음");
+
+    // ── 평가 게이트 (실패 → RESEARCH_PENDING, 저장은 됨) ──
+    if (!request.offlineActivityConfirmed()) hold.add("현재 오프라인 현장 활동 미확인");
+    if (!request.currentYearActivityConfirmed()) hold.add("최근 공개 활동 미확인");
 
     if (!describable(request.educationPhilosophySummary())) {
-      reasons.add("교육철학을 공개 근거로 2~3문장 설명할 수 없음");
+      hold.add("교육철학을 공개 근거로 2~3문장 설명할 수 없음");
     } else if (isGenericPhilosophy(request.educationPhilosophySummary())) {
-      reasons.add("교육철학이 일반 광고 문구 수준임");
+      hold.add("교육철학이 일반 광고 문구 수준임");
     }
     if (!describable(request.curriculumSummary())) {
-      reasons.add("커리큘럼·수업 구조를 공개 근거로 2~3문장 설명할 수 없음");
+      hold.add("커리큘럼·수업 구조를 공개 근거로 2~3문장 설명할 수 없음");
     } else if (isSubjectEnumerationOnly(request.curriculumSummary())) {
-      reasons.add("커리큘럼이 과목 나열 수준임");
+      hold.add("커리큘럼이 과목 나열 수준임");
     }
 
-    if (request.evidence() == null || request.evidence().isEmpty()) {
-      reasons.add("실제 공개 근거 URL 없음");
-    } else {
-      boolean current = request.evidence().stream().anyMatch(e -> e.activityDate() != null && e.activityDate().getYear() == LocalDate.now(clock).getYear());
+    if (request.evidence() != null && !request.evidence().isEmpty()) {
+      boolean current = request.evidence().stream().anyMatch(e -> e.activityDate() != null
+          && e.activityDate().getYear() == LocalDate.now(clock).getYear());
       boolean offline = request.evidence().stream().anyMatch(e -> "OFFLINE_ACTIVITY".equals(normalizedKind(e.evidenceKind())));
       boolean informative = request.evidence().stream().anyMatch(e -> e.educationallyInformative()
           && INFORMATIVE_KINDS.contains(normalizedKind(e.evidenceKind())));
-      boolean allPromotional = request.evidence().stream().allMatch(e -> PROMOTIONAL_KINDS.contains(normalizedKind(e.evidenceKind())));
-      if (!current) reasons.add("현재 연도 날짜가 있는 근거 없음");
-      if (!offline) reasons.add("오프라인 교육 활동 URL 근거 없음");
-      if (!informative) reasons.add("철학·커리큘럼·수업 등 교육적 정보 근거 없음");
-      if (allPromotional) reasons.add("광고·보도자료만 존재");
+      if (!current) hold.add("현재 연도 날짜가 있는 근거 없음");
+      if (!offline) hold.add("오프라인 교육 활동 URL 근거 없음");
+      if (!informative) hold.add("광고·보도자료가 아닌 실제 교육 정보 근거 없음");
     }
-    if (reasons.isEmpty()) {
-      return new Eligibility(true, List.of("현재 교육 활동 확인", "최근 활동 확인", "교육자 개인 식별", "교육철학 서술 가능",
-          "커리큘럼 서술 가능", "공개 근거 URL 확보", "제외대상 아님"));
-    }
-    return new Eligibility(false, reasons);
+
+    List<String> holdDistinct = hold.stream().distinct().toList();
+    if (!reject.isEmpty()) return new Assessment("REJECTED", List.of(), reject, holdDistinct);
+    if (!holdDistinct.isEmpty()) return new Assessment("RESEARCH_PENDING", List.of(), List.of(), holdDistinct);
+    return new Assessment("EVALUATABLE",
+        List.of("교육자 개인 식별", "현장 영어교육 범위 확인", "현재 오프라인 활동 확인", "최근 활동 확인",
+            "교육철학 서술 가능", "커리큘럼 서술 가능", "비광고 교육 근거 확보", "공개 근거 URL 확보"),
+        List.of(), List.of());
   }
 
   private boolean describable(String summary) {
@@ -851,18 +896,27 @@ public class ChartSiteToolService {
     return first != null ? first : blank(str(b));
   }
 
+  /**
+   * 점수화·TOP100 대상 여부. Legacy 승계자는 grandfather 로 통과, 신규 후보는 {@code EVALUATABLE}
+   * 상태이면서 교육철학·커리큘럼을 서술할 수 있어야 한다. {@code RESEARCH_PENDING}(정보 보강 대상)은
+   * 검색에는 노출되지만 점수화 대상이 아니다.
+   */
+  private boolean isEvaluatable(Map<String, Object> candidate) {
+    if (blank(str(candidate.get("legacy_source"))) != null) return true;
+    return "EVALUATABLE".equals(str(candidate.get("eligibility_status"))) && describableProfile(candidate);
+  }
+
   private void requireCurrentGate(Map<String, Object> candidate) {
-    if (!"ELIGIBLE".equals(candidate.get("eligibility_status")) || !describableProfile(candidate)) {
+    if (!isEvaluatable(candidate)) {
       throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-          "교육철학·커리큘럼을 공개 근거로 설명할 수 있는 후보만 Score/발행 대상입니다: " + candidate.get("candidate_id"));
+          "평가 가능(EVALUATABLE) 상태의 후보만 Score/발행 대상입니다. 현재 상태: "
+              + candidate.get("eligibility_status") + " (candidate " + candidate.get("candidate_id") + ")");
     }
   }
 
   private boolean passesCurrentGate(long candidateId) {
     Map<String, Object> candidate = candidate(candidateId);
-    return "ELIGIBLE".equals(candidate.get("eligibility_status"))
-        && !Boolean.TRUE.equals(bit(candidate.get("excluded_from_chart")))
-        && describableProfile(candidate);
+    return !Boolean.TRUE.equals(bit(candidate.get("excluded_from_chart"))) && isEvaluatable(candidate);
   }
 
   // ----- helpers -------------------------------------------------------------------------------
@@ -939,7 +993,16 @@ public class ChartSiteToolService {
     } catch (Exception e) { throw new IllegalStateException(e); }
   }
 
-  public record Eligibility(boolean eligible, List<String> reasons) {}
+  /**
+   * 조사 초안 판정 결과. {@code status} 는 {@code REJECTED}(저장 거부) / {@code RESEARCH_PENDING}
+   * (저장·검색 노출, 점수·TOP100 제외) / {@code EVALUATABLE}(점수·TOP100 대상) 중 하나.
+   */
+  public record Assessment(String status, List<String> passReasons,
+                           List<String> rejectReasons, List<String> holdReasons) {
+    public boolean rejected() { return "REJECTED".equals(status); }
+    public boolean researchPending() { return "RESEARCH_PENDING".equals(status); }
+    public boolean evaluatable() { return "EVALUATABLE".equals(status); }
+  }
 
   public record EvidenceRequest(String contentType, String summary, String title, String sourceUrl,
                                 LocalDate activityDate, String evidenceKind, boolean educationallyInformative) {}

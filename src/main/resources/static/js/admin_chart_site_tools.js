@@ -40,8 +40,8 @@
     province: stringSchema('공개적으로 확인한 시·도'),
     cityDistrict: stringSchema('공개적으로 확인한 시·군·구'),
     identitySummary: stringSchema('공개 근거에 기반한 교육 정체성 한 문장'),
-    educationPhilosophySummary: stringSchema('공개 근거만으로 작성한 교육철학 2~3문장. 일반 광고 문구("학생 중심", "성적 향상")는 불가. 근거가 부족하면 이 후보를 저장하지 마세요.'),
-    curriculumSummary: stringSchema('실제 어떤 과정·방법으로 가르치는지 공개 근거로 작성한 2~3문장(예: 진단→개념→적용→오답→반복). 과목 나열(중등영어/수능/내신)만으로는 불가.'),
+    educationPhilosophySummary: stringSchema('공개 근거만으로 작성한 교육철학 2~3문장. 일반 광고 문구("학생 중심", "성적 향상")는 불가. 근거가 부족하면 비워 두세요 — 후보는 RESEARCH_PENDING(향후 보강 대상)으로 저장되고 삭제되지 않습니다.'),
+    curriculumSummary: stringSchema('실제 어떤 과정·방법으로 가르치는지 공개 근거로 작성한 2~3문장(예: 진단→개념→적용→오답→반복). 과목 나열(중등영어/수능/내신)만으로는 불가. 근거가 부족하면 비워 두세요 — RESEARCH_PENDING으로 저장됩니다.'),
     distinctiveTeachingSummary: stringSchema('다른 교육자와 구별되는 고유한 수업 방식/구조'),
     recentActivitySummary: stringSchema('현재 연도 활동을 판단한 공개 근거를 사람이 읽기 좋게 요약'),
     strengths: stringArray('BuildIt이 발견한 구체적 강점 2~4개(각 한 문장)', 4),
@@ -60,8 +60,7 @@
     potentialSignals: { type: 'array', items: { type: 'string' }, maxItems: 20 },
     evidence: { type: 'array', items: evidenceSchema, minItems: 1, maxItems: 30 }
   }, [
-    'regionId', 'name', 'role', 'province', 'cityDistrict', 'identitySummary',
-    'educationPhilosophySummary', 'curriculumSummary', 'discoveryReason',
+    'regionId', 'name', 'role', 'province', 'cityDistrict', 'identitySummary', 'discoveryReason',
     'offlineActivityConfirmed', 'currentYearActivityConfirmed', 'educatorIdentityConfirmed',
     'exclusionFree', 'evidence'
   ]);
@@ -75,7 +74,7 @@
   Promise.all([
     register({
       name: 'get_chart_context',
-      description: 'BuildIt Chart의 철학, Hard Gate, 제외 기준, 결정론적 Score 기준과 개인정보 원칙을 읽습니다. 교육자 조사를 시작하기 전에 먼저 호출하세요.',
+      description: 'BuildIt Chart의 철학, 조사 파이프라인, 저장 최소 게이트 / 평가 게이트, 제외 기준, 결정론적 Score 기준, 개인정보 원칙을 읽습니다. 교육자 조사를 시작하기 전에 먼저 호출하세요. (범위: 대한민국 초·중·고 영어교육)',
       inputSchema: objectSchema({}, []), annotations: readOnly,
       execute: async () => request('/api/admin/chart/tools/context')
     }),
@@ -95,7 +94,7 @@
     }),
     register({
       name: 'complete_region',
-      description: '이 지역 조사를 완료합니다. selectedCandidateIds에 넣은 후보만 이 지역 최종 선정자로 반영됩니다(save_research_drafts로 저장만 한 후보는 선정이 아님). 적합 교육자가 없으면 selectedCandidateIds를 비우고 호출하면 0명으로 조사 완료됩니다. 서버가 선정자를 전국 누적 publication에 반영한 뒤 지역을 RESEARCHED로 만듭니다.',
+      description: '이 지역 조사를 완료합니다. selectedCandidateIds에 넣은 후보만 이 지역 최종 선정자로 반영됩니다(저장만 한 후보·RESEARCH_PENDING 후보는 선정 불가, EVALUATABLE 후보만 가능). 적합 교육자가 없으면 selectedCandidateIds를 비우고 호출하면 0명으로 조사 완료됩니다. 서버가 선정자를 전국 누적 publication에 반영한 뒤 지역을 RESEARCHED로 만듭니다.',
       inputSchema: objectSchema({
         regionId: stringSchema('조사 지역 ID'),
         selectedCandidateIds: { type: 'array', items: integerSchema('이 지역에서 최종 선정한 candidate ID'), maxItems: 100, description: '최종 선정자 candidate ID 목록. 0명이면 빈 배열.' },
@@ -125,7 +124,7 @@
     }),
     register({
       name: 'save_research_drafts',
-      description: '공개 웹에서 조사한 교육자 후보와 evidence URL을 비공개 초안으로 저장합니다. 서버 Hard Gate를 통과해야 하며 공개 Chart는 변경하지 않습니다.',
+      description: '공개 웹에서 조사한 초·중·고 영어교육자 후보와 evidence URL을 아카이브에 저장합니다. 최소 게이트(교육자 개인 식별 / 현재 초·중·고 현장 영어교육 범위 / 공개 근거 URL)만 통과하면 저장됩니다. 교육철학·커리큘럼·현재 오프라인 활동 근거가 부족하면 REJECTED가 아니라 RESEARCH_PENDING(검색 노출, 점수 대상 아님, 향후 보강 대상)으로 저장됩니다. 공개 Chart/TOP100은 변경하지 않습니다. 응답의 eligibilityStatus로 EVALUATABLE / RESEARCH_PENDING을 확인하세요.',
       inputSchema: objectSchema({
         drafts: {
           type: 'array', minItems: 1, maxItems: 20,
@@ -145,7 +144,7 @@
     }),
     register({
       name: 'preview_buildit_scores',
-      description: 'Hard Gate 통과 후보의 BuildIt Score를 서버 기준으로 계산합니다. AI가 점수를 결정하지 않으며 저장·공개하지 않습니다.',
+      description: 'EVALUATABLE 상태 후보의 BuildIt Score를 서버 기준으로 계산합니다(RESEARCH_PENDING 후보는 422). AI가 점수를 결정하지 않으며 저장·공개하지 않습니다.',
       inputSchema: objectSchema({
         candidateIds: { type: 'array', minItems: 1, maxItems: 100, items: integerSchema('후보 ID') }
       }, ['candidateIds']), annotations: readOnly,

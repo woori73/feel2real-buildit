@@ -3247,13 +3247,13 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접 명령으로 만들 수 없고(`POST /publications`는 항상 `409`), 정상 조사 파이프라인 완료(`complete_region`) 시 서버 내부 workflow가 전국 누적 snapshot을 발행한다.
 
-- `GET /context`: 선정 기준, 7단계 Hard Gate(교육철학·커리큘럼 필수), Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. read.
+- `GET /context`: 조사 파이프라인, 저장 최소 게이트 / 평가 게이트, 제외 정책(학원 규모·프랜차이즈·광고량·유명세는 제외 사유 아님), Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. 범위: 대한민국 초·중·고 영어교육. read.
 - `GET /regions/next?limit=1`: 신규 조사 또는 재조사 예정(`DUE`)/오류 지역만 조회한다. `RESEARCHED`는 제외. `chart_regions`는 V952로 대한민국 전국 시·군·구가 seed되어 있고 지역 추가는 migration seed로만 한다. read.
 - `POST /regions/{regionId}/claim`: `UNRESEARCHED`/`DUE`/`ERROR` 지역을 `IN_PROGRESS`로 점유한다. Write.
-- `POST /regions/{regionId}/complete`: body `{selectedCandidateIds, selectedCount, rejectedCount, note}`. **`selectedCandidateIds` 에 넣은 후보만** 이 지역 최종 선정자로 인정한다 — `save_research_drafts` 저장은 후보 풀 등록일 뿐 선정이 아니며, `zone_id` 로 ELIGIBLE draft 를 재유도하지 않는다. 각 후보는 이 지역(`zone_id`) 소속·ELIGIBLE·미제외·서술가능이어야 하며 아니면 `422`. 빈 목록이면 0명으로 조사 완료(`RESEARCHED_ZERO` audit batch 만 남기고 publication 무변경). 비어있지 않으면 audit batch + 현행 Score snapshot 생성 후 전국 누적 publication(직전 snapshot ∪ 이번 선정자)을 재생성하고 지역을 `RESEARCHED`(+`re-research-days`일 뒤 재조사)로. 단일 트랜잭션, 실패 시 전체 롤백. `selectedCount` 는 교차 확인용(불일치 시 응답에 표기). Write.
+- `POST /regions/{regionId}/complete`: body `{selectedCandidateIds, selectedCount, rejectedCount, note}`. **`selectedCandidateIds` 에 넣은 후보만** 이 지역 최종 선정자로 인정한다 — `save_research_drafts` 저장은 후보 풀 등록일 뿐 선정이 아니며, `zone_id` 로 draft 를 재유도하지 않는다. 각 후보는 이 지역(`zone_id`) 소속·`EVALUATABLE`(또는 Legacy grandfather)·미제외여야 하며 아니면 `422`(`RESEARCH_PENDING` 후보는 선정 불가). 빈 목록이면 0명으로 조사 완료(`RESEARCHED_ZERO` audit batch 만 남기고 publication 무변경). 비어있지 않으면 audit batch + 현행 Score snapshot 생성 후 전국 누적 publication(직전 snapshot ∪ 이번 선정자)을 재생성하고 지역을 `RESEARCHED`(+`re-research-days`일 뒤 재조사)로. 단일 트랜잭션, 실패 시 전체 롤백. `selectedCount` 는 교차 확인용(불일치 시 응답에 표기). Write.
 - `POST /educators/search-existing`: 이름·학원 기반으로 기존 후보/교육자를 조회한다. read.
-- `POST /research-drafts`: 시/도·시군구, 교육 정체성, **교육철학 요약·커리큘럼 요약(필수)**, 고유 수업 방식, 최근 활동 요약, 강점/개선 제안 배열, 프로필 이미지 URL, 공개 공식 채널, Hard Gate 확인값, 실제 evidence URL·활동일·종류를 저장한다. Draft Write. Hard Gate 실패(교육철학·커리큘럼 근거 부족/광고 문구/과목 나열 포함), 현재 연도 evidence 부재, URL 부재 시 `422/400`; 중복은 `409`.
-- `GET /scores/preview?candidateId=`: 저장된 근거로 결정론적 Score와 potential signals를 계산한다. DB를 변경하지 않는 preview.
+- `POST /research-drafts`: 시/도·시군구, 교육 정체성, 교육철학·커리큘럼 요약(선택 — 부족하면 `RESEARCH_PENDING` 저장), 고유 수업 방식, 최근 활동 요약, 강점/개선 제안, 프로필 이미지 URL, 공개 공식 채널, 최소 게이트 확인값, 실제 evidence URL·활동일·종류를 저장한다. Draft Write. **최소 게이트**(교육자 개인 식별 / `exclusionFree` = 현재 초·중·고 현장 영어교육 범위 / 공개 근거 URL) 실패만 `422`(행 생성 안 함). **평가 게이트**(현재 오프라인 활동·최근 연도 근거·교육철학·커리큘럼·비광고 교육 근거) 실패는 `eligibility_status='RESEARCH_PENDING'` 으로 저장되고 검색에 노출되나 점수·TOP100 대상이 아니다. 응답: `candidateId`, `eligibilityStatus`(`EVALUATABLE`|`RESEARCH_PENDING`), `evaluationHold`, `holdReasons`, `published:false`. 중복은 `409`. 학원 규모·프랜차이즈·광고량·유명세는 거부·감점 사유가 아니다.
+- `GET /scores/preview?candidateId=`: 저장된 근거로 결정론적 Score와 potential signals를 계산한다. `EVALUATABLE`(또는 Legacy) 후보만 — `RESEARCH_PENDING` 은 `422`. DB를 변경하지 않는 preview.
 - `POST /review-batches`: 조사 audit record(`AUDIT_RECORDED`) + 후보별 Score snapshot을 남긴다. 관리자 사전 승인 gate가 아니며 공개 데이터를 변경하지 않는다.
 - `GET /review-batches`: 최근 조사 audit batch를 조회한다(최대 100건). read.
 - `POST /review-batches/{reviewBatchId}/decision`: 관리자가 audit batch를 `APPROVED`/`REJECTED`로 표기한다(사후 품질관리). 공개는 변경하지 않는다.
