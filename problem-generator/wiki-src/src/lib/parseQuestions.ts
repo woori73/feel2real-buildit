@@ -18,6 +18,8 @@ export type ParsedQuestion = {
   // 미리보기 전용(저장 시 제거)
   _answerText?: string
   _warnings?: string[]
+  _missingAnswer?: boolean      // 정답이 파일에 없음 → 저장은 허용, "정답: 미등록" 표시
+  _structuralIssue?: boolean    // 문제 본문/선택지 구조를 제대로 못 읽음 → 신뢰도 저하
 }
 
 const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩'
@@ -170,9 +172,9 @@ export const htmlToText = (html: string): string => {
   return s.replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
-// 저장 계약에 맞게 미리보기 전용 필드를 제거한다.
+// 저장 계약에 맞게 미리보기 전용 필드(_로 시작)를 제거한다.
 export const toContractQuestion = (q: ParsedQuestion) => {
-  const { _answerText, _warnings, ...rest } = q
-  void _answerText; void _warnings
-  return rest
+  const rest: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(q)) if (!k.startsWith('_')) rest[k] = v
+  return rest as Omit<ParsedQuestion, '_answerText' | '_warnings' | '_missingAnswer' | '_structuralIssue'>
 }
