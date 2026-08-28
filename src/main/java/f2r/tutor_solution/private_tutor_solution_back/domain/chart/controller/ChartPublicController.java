@@ -1,12 +1,17 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.chart.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartCriteria;
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartEducatorRanking;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartEducatorResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorDetail;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorPage;
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartRankingList;
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartRegionDirectory;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartZoneResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartDiscoveryZone;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartEducatorSearchService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartPublicService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartRankingService;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +29,7 @@ public class ChartPublicController {
 
   private final ChartPublicService chartPublicService;
   private final ChartEducatorSearchService chartEducatorSearchService;
+  private final ChartRankingService chartRankingService;
 
   @GetMapping("/zones")
   public List<ChartZoneResponse> zones() {
@@ -62,5 +68,39 @@ public class ChartPublicController {
   @GetMapping("/zones/{zoneId}/educators")
   public List<ChartEducatorResponse> educatorsByZone(@PathVariable String zoneId) {
     return chartPublicService.topEducators(zoneId);
+  }
+
+  // ----- PR-C: 지역/전국 Ranking (read-only, 현재 publication 에서 파생, EVALUATABLE 만) -----
+
+  /**
+   * BuildIt Ranking 목록. {@code province} 없으면 전국 순위 상위 {@code limit}(기본 100 = TOP100),
+   * {@code province}(+선택 {@code cityDistrict})가 있으면 해당 지역 순위. 동일한 BuildIt Score 사용.
+   */
+  @GetMapping("/rankings")
+  public ChartRankingList rankings(
+      @RequestParam(required = false) String province,
+      @RequestParam(required = false) String cityDistrict,
+      @RequestParam(required = false) Integer limit) {
+    return province == null || province.isBlank()
+        ? chartRankingService.nationwide(limit)
+        : chartRankingService.region(province, cityDistrict);
+  }
+
+  /** 교육자 1명의 BuildIt Ranking. 순위 대상이 아니면 {@code ranked:false}. */
+  @GetMapping("/rankings/{id:\\d+}")
+  public ChartEducatorRanking educatorRanking(@PathVariable long id) {
+    return chartRankingService.forEducator(id);
+  }
+
+  /** BuildIt AI 평가 기준(항목·가중치는 실제 Score 산식과 일치). */
+  @GetMapping("/criteria")
+  public ChartCriteria criteria() {
+    return chartRankingService.criteria();
+  }
+
+  /** 공개 검색 가능한(= BuildIt 이 발견한) 지역 목록 + 인원. 지역 선택 UI 용. */
+  @GetMapping("/regions")
+  public ChartRegionDirectory regions() {
+    return chartRankingService.regions();
   }
 }

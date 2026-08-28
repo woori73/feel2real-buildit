@@ -85,9 +85,19 @@
 
   <!-- ============ 4. Build It Chart ============ -->
   <section class="chart-showcase" id="chart-showcase">
-    <div class="chart-date" id="landingChartDate">지속 업데이트</div>
     <h2 class="chart-title"><span>Build</span><span class="chart-it">It</span> <span class="chart-muted">Chart</span></h2>
-    <p class="chart-sub">AI가 전국의 교육자를 지속적으로 발굴·분석합니다</p>
+    <p class="chart-headline">BuildIt이 발견한<br>동네 실력있는 영어쌤</p>
+    <p class="chart-sub">유명세나 광고보다 어떻게 가르치는지를 봅니다. BuildIt이 교육철학·커리큘럼·수업방식과 실제 교육활동을 공개정보를 바탕으로 찾아 기록합니다.</p>
+
+    <form class="chart-region-picker" id="chartRegionPicker" autocomplete="off">
+      <label class="visually-hidden" for="chartProvince">시·도</label>
+      <select id="chartProvince"><option value="">시·도 선택</option></select>
+      <label class="visually-hidden" for="chartDistrict">시·군·구</label>
+      <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
+      <button type="submit">우리 동네 영어쌤 보기</button>
+    </form>
+    <p class="chart-ranking-note">BuildIt Ranking은 선생님의 실제 수업 능력 순위가 아닙니다.
+      <a href="/chart#criteria">평가 기준 보기 →</a></p>
 
     <div class="chart-phone" aria-label="BuildIt Chart 모바일 미리보기">
       <div class="chart-island" aria-hidden="true"></div>
@@ -97,14 +107,14 @@
           <div class="chart-phone-brand">BUILD<span class="chart-it">It</span> <span>CHART</span></div>
           <div class="chart-top">전국의 지역 교육자를 <mark>지속 발굴</mark></div>
         </div>
-        <div class="chart-list-title">TOP 5</div>
+        <div class="chart-list-title">BuildIt TOP 5 <span id="landingChartDate"></span></div>
         <div id="landingChartTop5"><div class="chart-row"><div class="chart-meta">전국 Chart를 불러오는 중입니다.</div></div></div>
         <div class="chart-fade" aria-hidden="true"></div>
-        <a class="chart-cta" href="/chart">전국 TOP100 전체보기 →</a>
+        <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
       </div>
     </div>
   </section>
-  <script src="/js/landing_chart.js?v=20260828-1" defer></script>
+  <script src="/js/landing_chart.js?v=20260828-2" defer></script>
 
   <!-- ============ 5. Build It Web ============ -->
   <section class="builder" id="web">

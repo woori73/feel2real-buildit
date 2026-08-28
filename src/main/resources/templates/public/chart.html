@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>BUILD IT CHART TOP 100 | 전국 지역 교육자 Living Archive</title>
-  <meta name="description" content="AI가 전국의 원장·강사를 공개 웹에서 지속적으로 발굴·분석하는 BUILD IT CHART TOP 100입니다.">
-  <link rel="stylesheet" href="/css/chart.css?v=20260828-1">
+  <title>BuildIt Chart | BuildIt이 발견한 동네 실력있는 영어쌤</title>
+  <meta name="description" content="지역을 선택하면 BuildIt이 공개 웹에서 발굴한 우리 동네 초·중·고 영어교육자를 교육철학·커리큘럼·수업방식·전문성 중심으로 볼 수 있습니다.">
+  <link rel="stylesheet" href="/css/chart.css?v=20260828-2">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -18,40 +18,71 @@
   </header>
 
   <main id="top">
-    <section class="chart-hero">
+    <section class="chart-hero discover-hero">
       <div class="hero-lines" aria-hidden="true">
         <svg viewBox="0 0 2400 900" xmlns="http://www.w3.org/2000/svg">
           <path d="M0,520 C 200,420 400,620 600,520 C 800,420 1000,620 1200,520 C1400,420 1600,620 1800,520 C2000,420 2200,620 2400,520" fill="none" stroke="#2563eb" stroke-width="1.4" opacity="0.22" />
           <path d="M0,470 C 200,570 400,370 600,470 C 800,570 1000,370 1200,470 C1400,570 1600,370 1800,470 C2000,570 2200,370 2400,470" fill="none" stroke="#c9d3e0" stroke-width="1.2" opacity="0.45" />
         </svg>
       </div>
-      <p class="eyebrow">NATIONWIDE EDUCATOR LIVING ARCHIVE</p>
-      <h1>BUILD IT <span class="ext">CHART</span> TOP 100</h1>
-      <h2>AI가 전국의 교육자를 지속적으로 발굴·분석합니다.</h2>
-      <p class="lead">자신만의 교육철학과 커리큘럼으로 학생을 가르치는 지역 원장·강사를 공개 근거와 함께 기록합니다.</p>
-      <p class="weekly-update" id="weeklyUpdate">지속 업데이트</p>
+      <p class="eyebrow">전국 영어교육자 LIVING ARCHIVE</p>
+      <h1>BuildIt이 발견한<br><span class="ext">동네 실력있는 영어쌤</span></h1>
+      <p class="lead">유명세나 광고보다 <b>어떻게 가르치는지</b>를 봅니다. BuildIt이 교육철학·커리큘럼·수업방식과 실제 교육활동을 공개정보를 바탕으로 찾아 기록합니다.
+        <span class="scope-note">현재 범위: 대한민국 초·중·고 영어</span></p>
+
+      <form class="region-picker" id="regionPicker" autocomplete="off">
+        <label class="visually-hidden" for="provinceSelect">시·도</label>
+        <select id="provinceSelect"><option value="">시·도 선택</option></select>
+        <label class="visually-hidden" for="districtSelect">시·군·구</label>
+        <select id="districtSelect" disabled><option value="">시·군·구 선택</option></select>
+        <button class="btn" type="submit" id="regionGoBtn">우리 동네 영어쌤 보기</button>
+      </form>
+      <p class="region-picker-note" id="regionPickerNote">BuildIt이 이미 조사·기록한 지역만 선택할 수 있습니다.</p>
     </section>
 
-    <p class="chart-disclaimer" id="chartDisclaimer"></p>
+    <section class="region-result" id="regionResult" hidden>
+      <h2 class="region-result-title" id="regionResultTitle"></h2>
+      <p class="region-result-sub" id="regionResultSub">BuildIt이 이 지역에서 발견하고 기록한 영어교육자를 소개합니다.</p>
+      <div class="educator-grid" id="educatorGrid" aria-live="polite"></div>
+      <div class="load-more-wrap"><button class="btn outline" type="button" id="loadMoreBtn" hidden>더 보기</button></div>
+    </section>
 
-    <section class="rank-section">
-      <div class="section-label">TOP 10 <span class="count" id="topCount">현재 선정 교육자</span></div>
+    <section class="discover-standard">
+      <h2>BuildIt은 이런 영어쌤을 발견합니다</h2>
+      <ul class="discover-standard-list">
+        <li><strong>교육철학</strong><span>무엇을 왜 그렇게 가르치는지</span></li>
+        <li><strong>커리큘럼</strong><span>어떤 과정과 방법으로 지도하는지</span></li>
+        <li><strong>수업방식</strong><span>다른 교육자와 구별되는 방식</span></li>
+        <li><strong>전문성</strong><span>어떤 학년·영역에 강한지</span></li>
+        <li><strong>실제 교육활동</strong><span>지금 무엇을 하고 있는지</span></li>
+        <li><strong>공개 근거</strong><span>공개적으로 확인 가능한 기록</span></li>
+      </ul>
+      <p class="muted-note">이 기준으로 교육자가 BuildIt Chart에 등장합니다. 순위(Ranking) 평가 기준은 아래에서 따로 확인할 수 있습니다.</p>
+    </section>
+
+    <section class="criteria-section" id="criteria">
+      <h2>AI는 무엇을 보고 평가하나요?</h2>
+      <p class="ranking-disclaimer" id="rankingDisclaimer"></p>
+      <div class="criteria-list" id="criteriaList"></div>
+      <div class="criteria-negatives" id="criteriaNegatives"></div>
+    </section>
+
+    <section class="rank-section top100-section" id="top100">
+      <div class="section-label">BuildIt TOP100 <span class="count" id="topCount"></span></div>
+      <p class="top100-sub">BuildIt이 발견한 교육자 가운데 충분한 온라인 공개정보가 확보된 교육자를 동일한 BuildIt 기준으로 분석한 <b>전국 순위 상위 100명</b>입니다. 실제 수업 능력 순위가 아닙니다.</p>
       <div class="chart-list" id="topChartList" aria-live="polite"></div>
-    </section>
-
-    <section class="rank-section" id="restSection" hidden>
-      <div class="section-label">11 – 100 <span class="count">전체 순위</span></div>
-      <div class="chart-list" id="restChartList"></div>
-    </section>
-
-    <section class="rank-section" id="discoveredSection" hidden>
-      <div class="section-label">BUILD IT DISCOVERED <span class="count">순위 밖에서도 BuildIt이 발견한 주목할 교육자</span></div>
-      <div class="chart-list" id="discoveredList"></div>
+      <div id="restSection" hidden>
+        <div class="section-label sub">11 – 100 <span class="count">전체 순위</span></div>
+        <div class="chart-list" id="restChartList"></div>
+      </div>
+      <div id="discoveredSection" hidden>
+        <div class="section-label sub">BUILD IT DISCOVERED <span class="count">순위 밖에서도 BuildIt이 발견한 교육자</span></div>
+        <div class="chart-list" id="discoveredList"></div>
+      </div>
     </section>
   </main>
 
-  <div id="profileModalRoot"></div>
-  <script src="/js/chart_public.js?v=20260828-1"></script>
+  <script src="/js/chart_public.js?v=20260828-2"></script>
 </th:block>
 </body>
 </html>

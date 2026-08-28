@@ -197,6 +197,7 @@ public class SecurityConfig {
                 "/analyzes",
                 "/analyzes/**",
                 "/chart",
+                "/chart/educators/**",
                 "/lessons",
                 "/stdt_dashboard",
                 "/tutor_dashboard",
