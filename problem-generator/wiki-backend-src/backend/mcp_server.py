@@ -48,7 +48,11 @@ mcp = MCPServer(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
         '조립하지 말고 그대로 신뢰해서 사용하라. FINAL/직보 완성본을 만든 뒤에는 '
-        'save_final/save_jikbo로 저장해야 Wiki에 영구 보관된다.'
+        'save_final/save_jikbo로 저장해야 Wiki에 영구 보관된다. '
+        'Wiki 학습자료(교과서 지문·프린트 등)를 대상으로 시험문항을 생성했다면, 마지막 단계로 '
+        'save_generated_test를 호출해 Generated Question Store에 자동 저장한다 — 사용자가 따로 '
+        '"저장해줘"라고 말하지 않아도 이것이 기본 동작이다. 저장이 실패하면 문제 생성 성공과 '
+        '구분해서 generation: success / storage: failed 로 보고한다.'
     ),
 )
 
@@ -124,7 +128,10 @@ def save_generated_questions(school: str, grade: str, exam: str, questions: list
     필드가 필수이며, 해당 없는 필드는 빈 값([] 또는 '')으로 채운다(예: mc 문항도 conditions=[],
     answerFormat='' 등을 반드시 포함). 저장 전 이 계약으로 전체 문항을 검증하며, 하나라도
     검증에 실패하면 아무 것도 저장하지 않고 오류를 반환한다(all-or-nothing). 저장 직후
-    get_final_context를 다시 호출하면 generated_questions에서 결과가 보인다."""
+    get_final_context를 다시 호출하면 generated_questions에서 결과가 보인다.
+
+    원본 학습자료·페이지·출제자 Digital Twin·난이도·target vocabulary까지 함께 묶어 '시험' 단위로
+    영구 저장하려면 save_generated_test를 쓴다 — Wiki 생성 문항의 기본 저장 경로다."""
     import question_contract as qc
     from fastapi import HTTPException
     from main import _save_generated, get_db
@@ -148,6 +155,58 @@ def save_generated_questions(school: str, grade: str, exam: str, questions: list
     except HTTPException as exc:
         raise ValueError(str(exc.detail)) from exc
     return {'examTitle': title, 'examGroupId': group_id, 'questions': saved}
+
+
+@mcp.tool()
+def save_generated_test(school: str, grade: str, source_material: str, questions: list[dict],
+                        source_page: str = '', test_type: str = '', title: str = '',
+                        digital_twin: str = '', twin_pattern: str = '', difficulty: str = '',
+                        target_vocabulary: list[str] | None = None, target_grammar: list[str] | None = None,
+                        target_passage: str = '', year: int | None = None, semester: str = '',
+                        exam: str = '전체', publisher: str = '', lesson: str = '',
+                        material_type: str = '', external_id: str = '') -> dict:
+    """Wiki에서 생성한 시험문항을 '시험(Test)' 단위로 Generated Question Store에 영구 저장한다.
+
+    Wiki 학습자료로 문제를 생성했으면 사용자가 따로 저장을 지시하지 않아도 문제 생성 workflow의
+    마지막 단계로 이 도구를 호출한다(생성 → 검증 → save_generated_test).
+
+    관계: Source Material(school+grade+source_material로 upsert) → Generated Test(이 저장 1건) →
+    Questions. source_page로 원본 페이지에, digital_twin/twin_pattern으로 출제자 Digital Twin에 연결된다.
+
+    questions의 각 항목은 새 스키마를 만들지 말고 save_generated_questions와 동일한 canonical 계약을
+    그대로 갖춘다 — type('mc'|'sa'), questionType, sourceText, stem, options, answer, multi, score,
+    conditions, answerFormat, acceptedAnswers, sampleAnswer, gradingRule (해당 없는 필드는 [] 또는 '').
+    저장 전 전체 문항을 검증하고, 하나라도 실패하면 아무 것도 저장하지 않는다(all-or-nothing).
+
+    idempotency: external_id가 비면 요청 내용으로 안정적인 키를 파생한다. 같은 external_id로 다시
+    저장하면 새 시험을 만들지 않고 기존 test_id를 그대로 돌려준다(duplicate=True).
+
+    반환: {saved: true, test_id, question_count, source_material, source_page, duplicate}.
+    저장 실패 시 문제 생성 성공과 구분되도록 'storage: failed —' 접두가 붙은 오류를 낸다."""
+    import question_contract as qc
+    from fastapi import HTTPException
+    from main import GeneratedTestCreate, create_generated_test
+
+    try:
+        payload = GeneratedTestCreate(
+            school=school, grade=grade, source_material=source_material, questions=questions or [],
+            source_page=source_page, test_type=test_type, title=title, digital_twin=digital_twin,
+            twin_pattern=twin_pattern, difficulty=difficulty, target_vocabulary=target_vocabulary or [],
+            target_grammar=target_grammar or [], target_passage=target_passage, year=year,
+            semester=semester, exam=exam or '전체', publisher=publisher, lesson=lesson,
+            material_type=material_type, external_id=external_id,
+        )
+    except ValidationError as exc:
+        raise ValueError('입력 검증 실패: ' + qc.validation_fields(exc)) from exc
+    try:
+        result = create_generated_test(payload)
+    except HTTPException as exc:
+        raise ValueError('storage: failed — ' + str(exc.detail)) from exc
+    return {
+        'saved': True, 'test_id': result['test_id'], 'question_count': result['question_count'],
+        'source_material': result['source_material'], 'source_page': result['source_page'],
+        'duplicate': result.get('duplicate', False),
+    }
 
 
 @mcp.tool()

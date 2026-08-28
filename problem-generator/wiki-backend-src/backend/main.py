@@ -84,7 +84,8 @@ def init_db():
             exam_group_id TEXT NOT NULL DEFAULT '',
             favorite INTEGER NOT NULL DEFAULT 0,
             raw_json TEXT NOT NULL DEFAULT '{}',
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            test_id INTEGER
         )''')
         # 내신 실전 제작: 강사 문제 DB에서 선택한 문항으로 구성한 시험지를 실제로 저장한다.
         conn.execute('''CREATE TABLE IF NOT EXISTS exam_papers (
@@ -227,6 +228,49 @@ def init_db():
             choice TEXT NOT NULL CHECK (choice IN ('gemini','ox-alpha','both-revise')),
             created_at TEXT NOT NULL
         )''')
+        # Generated Question Store — MCP가 생성한 시험문항을 시험(Test) 단위로 영구 저장한다.
+        # source_materials(학습자료) → generated_tests(생성 시험) → generated_questions(문항, test_id로 연결).
+        # 기존 generated_questions/exam_material_sets/digital_twin_profiles는 건드리지 않고 위에 얹는다.
+        conn.execute('''CREATE TABLE IF NOT EXISTS source_materials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school TEXT NOT NULL DEFAULT '',
+            grade TEXT NOT NULL DEFAULT '',
+            title TEXT NOT NULL DEFAULT '',
+            publisher TEXT NOT NULL DEFAULT '',
+            lesson TEXT NOT NULL DEFAULT '',
+            material_type TEXT NOT NULL DEFAULT '',
+            school_print_material_id INTEGER,
+            created_at TEXT NOT NULL
+        )''')
+        conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS uk_source_material_ident ON source_materials(school, grade, title)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS generated_tests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            external_id TEXT NOT NULL DEFAULT '',
+            source_material_id INTEGER NOT NULL,
+            source_page TEXT NOT NULL DEFAULT '',
+            school TEXT NOT NULL DEFAULT '',
+            grade TEXT NOT NULL DEFAULT '',
+            year INTEGER,
+            semester TEXT NOT NULL DEFAULT '',
+            exam TEXT NOT NULL DEFAULT '',
+            test_type TEXT NOT NULL DEFAULT '',
+            title TEXT NOT NULL DEFAULT '',
+            twin_id INTEGER,
+            twin_label TEXT NOT NULL DEFAULT '',
+            twin_pattern TEXT NOT NULL DEFAULT '',
+            difficulty TEXT NOT NULL DEFAULT '',
+            target_vocabulary TEXT NOT NULL DEFAULT '[]',
+            target_grammar TEXT NOT NULL DEFAULT '[]',
+            target_passage TEXT NOT NULL DEFAULT '',
+            generation_source TEXT NOT NULL DEFAULT 'mcp',
+            question_count INTEGER NOT NULL DEFAULT 0,
+            raw_request_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (source_material_id) REFERENCES source_materials(id)
+        )''')
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_generated_test_external ON generated_tests(external_id) WHERE external_id <> ''")
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_generated_test_material ON generated_tests(source_material_id)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_generated_test_context ON generated_tests(school, grade, exam)')
 
 
 def migrate_schema():
@@ -259,6 +303,9 @@ def migrate_schema():
             if name not in source_cols:
                 conn.execute(f'ALTER TABLE csat_question_sources ADD COLUMN {name} {definition}')
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_csat_source_hash_kind ON csat_question_sources(source_hash, exam_kind) WHERE source_hash <> ''")
+        gq_cols = {row['name'] for row in conn.execute("PRAGMA table_info(generated_questions)").fetchall()}
+        if 'test_id' not in gq_cols:
+            conn.execute("ALTER TABLE generated_questions ADD COLUMN test_id INTEGER")
 
 
 def seed_default_twins():
@@ -910,7 +957,8 @@ def _load_twin(conn, twin_id: Optional[int], school: Optional[str], grade: Optio
     return digital_twin_response(row)
 
 
-def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict], exam_title: str, exam_group_id: str):
+def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict], exam_title: str, exam_group_id: str,
+                    test_id: Optional[int] = None):
     """생성/변형된 문항을 DB에 저장하고, 프런트엔드(GET /api/questions와 동일한 snake_case 형태)로
     정규화한 결과를 반환한다. AI 원본 응답의 camelCase 키를 그대로 돌려주면 프런트 표시가 깨지므로 여기서 통일한다."""
     now = datetime.now().isoformat()
@@ -939,14 +987,14 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
             1 if multi else 0, score,
             json.dumps(conditions, ensure_ascii=False), answer_format,
             json.dumps(accepted_answers, ensure_ascii=False), sample_answer, grading_rule,
-            exam_title, exam_group_id, json.dumps(q, ensure_ascii=False), now,
+            exam_title, exam_group_id, json.dumps(q, ensure_ascii=False), now, test_id,
         )
         cursor = conn.execute(
             '''INSERT INTO generated_questions
             (twin_id, school, grade, exam, mode, q_kind, question_type, stem, source_text, options_json, answer_json,
              multi, score, conditions_json, answer_format, accepted_answers_json, sample_answer, grading_rule,
-             exam_title, exam_group_id, raw_json, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+             exam_title, exam_group_id, raw_json, created_at, test_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             row_data,
         )
         saved.append({
@@ -958,6 +1006,7 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
             'answer_format': answer_format, 'accepted_answers': accepted_answers,
             'sample_answer': sample_answer, 'grading_rule': grading_rule,
             'exam_title': exam_title, 'exam_group_id': exam_group_id, 'favorite': 0, 'created_at': now,
+            'test_id': test_id,
         })
     return saved
 
@@ -1276,11 +1325,12 @@ def transform_questions(payload: TransformQuestionRequest):
 
 @app.get('/api/questions')
 def list_questions(school: Optional[str] = None, grade: Optional[str] = None, exam: Optional[str] = None,
-                    mode: Optional[str] = None, search: Optional[str] = None, limit: int = 200):
+                    mode: Optional[str] = None, search: Optional[str] = None, limit: int = 200,
+                    test_id: Optional[int] = None):
     query = 'SELECT * FROM generated_questions WHERE 1=1'
     values: list = []
-    for field, value in (('school', school), ('grade', grade), ('exam', exam), ('mode', mode)):
-        if value:
+    for field, value in (('school', school), ('grade', grade), ('exam', exam), ('mode', mode), ('test_id', test_id)):
+        if value is not None and value != '':
             query += f' AND {field} = ?'
             values.append(value)
     if search:
@@ -1320,6 +1370,210 @@ def update_question_favorite(question_id: int, payload: FavoriteUpdate):
     with get_db() as conn:
         conn.execute('UPDATE generated_questions SET favorite = ? WHERE id = ?', (1 if payload.favorite else 0, question_id))
     return {'ok': True}
+
+
+# ==================================================================================
+# Generated Question Store — MCP가 생성한 시험문항을 시험(Test) 단위로 영구 저장한다.
+#   Source Material(학습자료) → Generated Test(생성 시험) → Questions → Answer/Explanation.
+# 새 저장 로직을 늘리지 않고 기존 question_contract.validate_transform + _save_generated를 재사용한다.
+# 저장은 all-or-nothing이며, 문항 검증은 어떤 것도 쓰기 전에 먼저 한다(요구사항 5: 생성 성공 ≠ 저장 성공).
+# ==================================================================================
+
+class GeneratedTestCreate(BaseModel):
+    school: str
+    grade: str
+    source_material: str
+    questions: list[dict]
+    source_page: str = ''
+    test_type: str = ''
+    title: str = ''
+    year: Optional[int] = None
+    semester: str = ''
+    exam: str = '전체'
+    digital_twin: str = ''
+    twin_pattern: str = ''
+    difficulty: str = ''
+    target_vocabulary: list[str] = []
+    target_grammar: list[str] = []
+    target_passage: str = ''
+    publisher: str = ''
+    lesson: str = ''
+    material_type: str = ''
+    external_id: str = ''
+
+
+def _derive_external_id(school: str, grade: str, source_material: str, source_page: str,
+                        title: str, questions: list[dict]) -> str:
+    """external_id 미지정 시 요청 내용으로 안정적인 idempotency 키를 만든다 — 같은 요청 재시도가
+    같은 시험을 중복 저장하지 않도록 한다(요구사항 5)."""
+    stems = [str(q.get('stem', '')) for q in questions]
+    seed = '|'.join([school, grade, source_material, source_page, title, *stems])
+    return hashlib.sha256(seed.encode('utf-8')).hexdigest()[:16]
+
+
+def _upsert_source_material(conn, school: str, grade: str, title: str, publisher: str = '',
+                            lesson: str = '', material_type: str = '',
+                            school_print_material_id: Optional[int] = None) -> int:
+    """(school, grade, title) unique 기준 upsert. 이미 있으면 그 id를 재사용하고 빈 필드만 채운다 —
+    같은 '학습자료'가 시험마다 중복 생성되지 않게 한다(요구사항 7: 관계 유지)."""
+    school, grade, title = school.strip(), grade.strip(), title.strip()
+    if not school or not grade or not title:
+        raise HTTPException(status_code=422, detail='source material은 school/grade/title이 모두 필요합니다.')
+    if school_print_material_id is None:
+        needle = f"%{title.split(':')[0].split('(')[0].strip()[:20]}%"
+        linked = conn.execute(
+            "SELECT id FROM exam_material_sets WHERE core_type='school_print' AND school=? AND grade=? "
+            "AND (title LIKE ? OR ? LIKE '%' || title || '%') ORDER BY id DESC LIMIT 1",
+            (school, grade, needle, title),
+        ).fetchone()
+        if linked:
+            school_print_material_id = linked['id']
+    row = conn.execute(
+        'SELECT id, publisher, lesson, material_type, school_print_material_id FROM source_materials '
+        'WHERE school=? AND grade=? AND title=?',
+        (school, grade, title),
+    ).fetchone()
+    if row:
+        updates, params = [], []
+        for field, value in (('publisher', publisher), ('lesson', lesson), ('material_type', material_type)):
+            if value and not row[field]:
+                updates.append(f'{field}=?')
+                params.append(value)
+        if school_print_material_id is not None and row['school_print_material_id'] is None:
+            updates.append('school_print_material_id=?')
+            params.append(school_print_material_id)
+        if updates:
+            params.append(row['id'])
+            conn.execute(f"UPDATE source_materials SET {', '.join(updates)} WHERE id=?", params)
+        return row['id']
+    cursor = conn.execute(
+        'INSERT INTO source_materials (school, grade, title, publisher, lesson, material_type, '
+        'school_print_material_id, created_at) VALUES (?,?,?,?,?,?,?,?)',
+        (school, grade, title, publisher.strip(), lesson.strip(), material_type.strip(),
+         school_print_material_id, datetime.now().isoformat()),
+    )
+    return cursor.lastrowid
+
+
+def _generated_test_row(row) -> dict:
+    item = dict(row)
+    for jkey in ('target_vocabulary', 'target_grammar'):
+        try:
+            item[jkey] = json.loads(item.get(jkey) or '[]')
+        except (TypeError, json.JSONDecodeError):
+            item[jkey] = []
+    item.pop('raw_request_json', None)
+    return item
+
+
+def create_generated_test(payload: GeneratedTestCreate) -> dict:
+    """생성 문항을 시험 단위로 저장하는 단일 write 경로. 저장이 성공했을 때만 saved=True를 준다."""
+    school, grade = payload.school.strip(), payload.grade.strip()
+    source_material = payload.source_material.strip()
+    test_type = payload.test_type.strip()
+    if not school or not grade or not source_material:
+        raise HTTPException(status_code=422, detail='school/grade/source_material은 비어 있을 수 없습니다.')
+    if not payload.questions:
+        raise HTTPException(status_code=422, detail='questions는 최소 1개 이상이어야 합니다.')
+    title = payload.title.strip() or f'{source_material} {test_type or "Test"}'.strip()
+    # 1) 어떤 것도 쓰기 전에 문항 계약을 먼저 검증한다 (실패 시 아무 것도 저장하지 않음).
+    try:
+        validated = qc.validate_transform({'examTitle': title, 'questions': payload.questions})
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail='문항 검증 실패(저장하지 않음): ' + qc.validation_fields(exc)) from exc
+    external_id = payload.external_id.strip() or _derive_external_id(
+        school, grade, source_material, payload.source_page.strip(), title, payload.questions)
+    try:
+        with get_db() as conn:
+            existing = conn.execute(
+                'SELECT t.*, sm.title source_material_title FROM generated_tests t '
+                'JOIN source_materials sm ON sm.id = t.source_material_id WHERE t.external_id=?',
+                (external_id,),
+            ).fetchone()
+            if existing:
+                return {
+                    'saved': True, 'duplicate': True, 'test_id': existing['id'],
+                    'question_count': existing['question_count'],
+                    'source_material': existing['source_material_title'], 'source_page': existing['source_page'],
+                    'external_id': external_id,
+                }
+            source_material_id = _upsert_source_material(
+                conn, school, grade, source_material, payload.publisher, payload.lesson, payload.material_type)
+            twin = _match_digital_twin(conn, school, grade, payload.exam or '전체')
+            twin_id = twin.get('id') if twin else None
+            twin_label = payload.digital_twin.strip() or (pl._twin_name(twin) if twin else '')
+            now = datetime.now().isoformat()
+            group_id = f'gtest_{uuid.uuid4().hex}'
+            cursor = conn.execute(
+                '''INSERT INTO generated_tests
+                (external_id, source_material_id, source_page, school, grade, year, semester, exam,
+                 test_type, title, twin_id, twin_label, twin_pattern, difficulty, target_vocabulary,
+                 target_grammar, target_passage, generation_source, question_count, raw_request_json, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                (external_id, source_material_id, payload.source_page.strip(), school, grade, payload.year,
+                 payload.semester.strip(), payload.exam or '전체', test_type, title, twin_id, twin_label,
+                 payload.twin_pattern.strip(), payload.difficulty.strip(),
+                 json.dumps(payload.target_vocabulary, ensure_ascii=False),
+                 json.dumps(payload.target_grammar, ensure_ascii=False), payload.target_passage.strip(),
+                 'mcp', 0, json.dumps(payload.model_dump(exclude={'questions'}), ensure_ascii=False), now),
+            )
+            test_id = cursor.lastrowid
+            twin_like = {'id': twin_id, 'school': school, 'grade': grade, 'exam': payload.exam or '전체'}
+            saved = _save_generated(conn, twin_like, 'mcp', validated['questions'], title, group_id, test_id=test_id)
+            conn.execute('UPDATE generated_tests SET question_count=? WHERE id=?', (len(saved), test_id))
+    except HTTPException:
+        raise
+    except Exception as exc:  # 저장 도중 예기치 못한 실패 — 트랜잭션은 이미 롤백됨. 생성 성공과 구분한다.
+        raise HTTPException(status_code=500, detail=f'생성 시험을 저장하지 못했습니다: {exc}') from exc
+    return {
+        'saved': True, 'duplicate': False, 'test_id': test_id, 'question_count': len(saved),
+        'source_material': source_material, 'source_page': payload.source_page.strip(),
+        'external_id': external_id, 'questions': saved,
+    }
+
+
+@app.post('/api/generated-tests')
+def create_generated_test_endpoint(payload: GeneratedTestCreate):
+    return create_generated_test(payload)
+
+
+@app.get('/api/generated-tests/{test_id}')
+def get_generated_test(test_id: int):
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT t.*, sm.title source_material_title, sm.publisher source_material_publisher, '
+            'sm.lesson source_material_lesson, sm.school_print_material_id '
+            'FROM generated_tests t JOIN source_materials sm ON sm.id = t.source_material_id WHERE t.id=?',
+            (test_id,),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='생성 시험을 찾지 못했습니다.')
+    questions = sorted(list_questions(test_id=test_id, limit=1000), key=lambda q: q['id'])
+    return {'test': _generated_test_row(row), 'questions': questions}
+
+
+@app.get('/api/source-materials')
+def list_source_materials(school: Optional[str] = None, grade: Optional[str] = None):
+    query = ('SELECT sm.*, (SELECT COUNT(*) FROM generated_tests t WHERE t.source_material_id = sm.id) '
+             'test_count FROM source_materials sm WHERE 1=1')
+    values: list = []
+    for field, value in (('school', school), ('grade', grade)):
+        if value:
+            query += f' AND sm.{field} = ?'
+            values.append(value)
+    query += ' ORDER BY sm.id DESC'
+    with get_db() as conn:
+        rows = conn.execute(query, values).fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.get('/api/source-materials/{material_id}/generated-tests')
+def list_generated_tests_for_material(material_id: int):
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT * FROM generated_tests WHERE source_material_id=? ORDER BY id DESC', (material_id,),
+        ).fetchall()
+    return [_generated_test_row(row) for row in rows]
 
 
 # ==================================================================================
@@ -1403,6 +1657,29 @@ def _question_context_items(school: str, grade: str, exam: str) -> list:
     } for row in rows]
 
 
+def _generated_test_context_items(conn, school: str, grade: str, exam: str) -> list:
+    """Generated Question Store에 저장된 생성 시험을 Context 항목으로 담는다(추적성). exam이 '전체'가
+    아니면 그 시험과 '전체' 저장분을 함께 본다 — 기존 Twin 매칭 우선순위와 같은 관대함을 따른다."""
+    rows = conn.execute(
+        'SELECT t.*, sm.title source_material_title FROM generated_tests t '
+        'JOIN source_materials sm ON sm.id = t.source_material_id '
+        "WHERE t.school=? AND t.grade=? AND (t.exam=? OR t.exam='전체' OR ?='전체') ORDER BY t.id DESC",
+        (school, grade, exam, exam),
+    ).fetchall()
+    items = []
+    for row in rows:
+        data = _generated_test_row(row)
+        items.append({
+            'id': data['id'], 'type': 'generated_test', 'source': 'generated_tests',
+            'title': data['title'] or data['source_material_title'],
+            'source_material': data['source_material_title'], 'source_page': data['source_page'],
+            'test_type': data['test_type'], 'question_count': data['question_count'],
+            'twin_label': data['twin_label'], 'generation_source': data['generation_source'],
+            'created_at': data['created_at'],
+        })
+    return items
+
+
 def _insight_context_items(school: str, grade: str, year: int, semester: str, exam: str, after: str = '') -> list:
     """수업 인사이트를 Context 항목 형태(id/type/title/created_at/source)로 변환한다.
     after가 주어지면 그 시각 이후 기록만 남긴다(직보의 post_final_insights용).
@@ -1423,6 +1700,7 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
         student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
+        generated_tests = _generated_test_context_items(conn, school, grade, exam)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
         'digital_twin': digital_twin,
@@ -1430,6 +1708,7 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         'student_errors': student_errors,
         'class_insights': _insight_context_items(school, grade, year, semester, exam),
         'generated_questions': _question_context_items(school, grade, exam),
+        'generated_tests': generated_tests,
         'final_deliverables': final_deliverables,
     }
 

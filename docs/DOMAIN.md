@@ -13,6 +13,15 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 - `csat_questions`: source FK, half/full, 18~45 번호, 표준 유형 id/name, passage, prompt, choices JSON, answer/solution, footnote, group, source reference, 유형 불일치 flag/reason, raw JSON을 보관한다.
 - `csat_wrong_answers`: 학생, 시험, 번호, 표준 유형, 오답, 정답, 메모, 원본 파일명을 보관한다. 기존 `student_wrong_notes`와 FK나 overwrite 관계가 없다.
 
+### Wiki SQLite: Generated Question Store (MCP 생성문항)
+
+기존 Wiki SQLite에 additive로 `source_materials`, `generated_tests`를 추가하고 `generated_questions`에 `test_id` 컬럼을 더한다. `Source Material → Generated Test → Questions → Answer/Explanation` 관계로, MCP `save_generated_test`가 유일한 write 경로다.
+
+- `source_materials`: Wiki 전체에서 재사용하는 학습자료 registry. `school`, `grade`, `title`, `publisher`, `lesson`, `material_type`, 선택적 `school_print_material_id`(→ `exam_material_sets.id`, 추적용), 생성 시각. `(school, grade, title)` UNIQUE로 저장 시 upsert하여 같은 자료가 시험마다 중복 생성되지 않는다.
+- `generated_tests`: 생성 시험 1건. `external_id`(idempotency, `<> ''`일 때 UNIQUE — 같은 요청 재시도 시 재삽입 대신 기존 test 반환), `source_material_id`(FK, 필수), `source_page`, 시험 Context(school/grade/year/semester/exam), `test_type`, `title`, `twin_id`(→ `digital_twin_profiles.id`, nullable) + `twin_label` + `twin_pattern`, `difficulty`, `target_vocabulary`/`target_grammar`(JSON 배열), `target_passage`, `generation_source`(기본 `'mcp'`), `question_count`, `raw_request_json`.
+- `generated_questions.test_id`: nullable FK → `generated_tests.id`. 기존 신규·변형·`save_generated_questions` 저장 row는 NULL 유지. `save_generated_test` 저장분만 세팅되며 문항 자체는 기존 canonical 계약(`mode='mcp'`) 그대로다.
+- 저장은 all-or-nothing: 문항 계약 검증을 어떤 쓰기보다 먼저 하고, 트랜잭션 도중 실패 시 롤백 후 생성 성공과 구분되는 오류를 낸다.
+
 ### 핵심 설계 원칙
 1. **`questions`는 모든 문제의 단일 저장소다.**
    - 1차 단계에서는 시험지에서 LLM이 추출한 문제(`source=READFILE`)만 INSERT된다. 후속 단계에서 LLM 생성(`GENERATED`) / Admin 직접 입력(`MANUAL`) 흐름이 추가된다.
