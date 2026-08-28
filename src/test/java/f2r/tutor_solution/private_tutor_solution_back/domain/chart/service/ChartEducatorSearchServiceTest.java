@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorDetail;
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorPage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorSummary;
 import java.lang.reflect.RecordComponent;
 import java.time.LocalDate;
@@ -170,6 +171,138 @@ class ChartEducatorSearchServiceTest {
     assertThat(ChartEducatorSearchService.disclaimer(true)).contains("RESEARCH_PENDING");
     assertThat(ChartEducatorSearchService.disclaimer(false)).doesNotContain("RESEARCH_PENDING");
     assertThat(ChartEducatorSearchService.disclaimer(false)).contains("TOP100");
+  }
+
+  // ---- S1: evidence URL read-side 방어 ----
+
+  @Test
+  void toDetail_excludesEvidenceWithInvalidOrBlankOrNonHttpUrl() {
+    Map<String, Object> row = baseRow();
+    row.put("eligibility_status", "EVALUATABLE");
+    List<Map<String, Object>> acts = List.of(
+        activityRow("수업", "정규 수업", "https://example.com/ok", LocalDate.of(2026, 3, 1), "OFFLINE_ACTIVITY",
+            LocalDateTime.of(2026, 3, 2, 9, 0)),
+        activityRow("칼럼", "글", "not-a-url", LocalDate.of(2026, 2, 1), "PHILOSOPHY", null),
+        activityRow("영상", "영상", "   ", LocalDate.of(2026, 1, 1), "EDUCATIONAL_CONTENT", null),
+        activityRow("메모", "x", "ftp://example.com/f", LocalDate.of(2026, 1, 1), "MATERIAL", null),
+        activityRow("스크립트", "x", "javascript:alert(1)", LocalDate.of(2026, 1, 1), "MATERIAL", null));
+
+    ChartPublicEducatorDetail d = service.toDetail(row, acts);
+
+    assertThat(d.evidence()).hasSize(1);
+    assertThat(d.evidence().get(0).sourceUrl()).isEqualTo("https://example.com/ok");
+  }
+
+  @Test
+  void toDetail_allEvidenceUrlsInvalid_yieldsEmptyEvidence_butStillUsesResearchedAt() {
+    Map<String, Object> row = baseRow();
+    row.put("eligibility_status", "RESEARCH_PENDING");
+    List<Map<String, Object>> acts = List.of(
+        activityRow("x", "x", "bad", LocalDate.of(2026, 1, 1), "MATERIAL", LocalDateTime.of(2026, 5, 1, 0, 0)));
+
+    ChartPublicEducatorDetail d = service.toDetail(row, acts);
+
+    assertThat(d.evidence()).isEmpty();
+    assertThat(d.lastResearchedAt()).isEqualTo(LocalDateTime.of(2026, 5, 1, 0, 0));
+  }
+
+  @Test
+  void isPublicHttpUrl_acceptsOnlyHttpAndHttpsWithHost() {
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("https://a.example.com/x")).isTrue();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("http://a.example.com")).isTrue();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("HTTPS://A.EXAMPLE.com")).isTrue();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("ftp://a.example.com")).isFalse();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("javascript:alert(1)")).isFalse();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("not-a-url")).isFalse();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("has space")).isFalse();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("  ")).isFalse();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl(null)).isFalse();
+    assertThat(ChartEducatorSearchService.isPublicHttpUrl("https:///nohost")).isFalse();
+  }
+
+  // ---- S2: official channel URL read-side 방어 ----
+
+  @Test
+  void toDetail_invalidOfficialChannelUrlBecomesNull() {
+    Map<String, Object> row = baseRow();
+    row.put("eligibility_status", "EVALUATABLE");
+    row.put("official_homepage", "https://ok.example.com");
+    row.put("official_blog", "javascript:alert(1)");
+    row.put("official_youtube", "   ");
+    row.put("official_social", "not a url");
+
+    ChartPublicEducatorDetail d = service.toDetail(row, List.of());
+
+    assertThat(d.officialChannels()).isNotNull();
+    assertThat(d.officialChannels().homepage()).isEqualTo("https://ok.example.com");
+    assertThat(d.officialChannels().blog()).isNull();
+    assertThat(d.officialChannels().youtube()).isNull();
+    assertThat(d.officialChannels().social()).isNull();
+  }
+
+  @Test
+  void toDetail_allOfficialChannelsInvalid_yieldsNullChannels() {
+    Map<String, Object> row = baseRow();
+    row.put("eligibility_status", "EVALUATABLE");
+    row.put("official_homepage", "ftp://x");
+    row.put("official_blog", "bad");
+    row.put("official_youtube", "");
+    // official_social 미설정
+
+    assertThat(service.toDetail(row, List.of()).officialChannels()).isNull();
+  }
+
+  // ---- S3: offset long 계산 / 매우 큰 page ----
+
+  @Test
+  void offset_isComputedInLongSpace_noIntOverflow() {
+    assertThat(ChartEducatorSearchService.offset(Integer.MAX_VALUE, 100))
+        .isEqualTo((long) Integer.MAX_VALUE * 100)
+        .isGreaterThan((long) Integer.MAX_VALUE);
+    assertThat(ChartEducatorSearchService.offset(0, 20)).isZero();
+    assertThat(ChartEducatorSearchService.offset(3, 20)).isEqualTo(60L);
+  }
+
+  @Test
+  void search_hugePageRequest_returnsEmptyContentWithoutOverflowOrError() {
+    // bare mock: COUNT(*) → null → totalElements 0 → content 쿼리 미실행, 예외 없음
+    ChartPublicEducatorPage page = service.search(null, null, null, null, Integer.MAX_VALUE, 100);
+    assertThat(page.content()).isEmpty();
+    assertThat(page.totalElements()).isZero();
+    assertThat(page.totalPages()).isZero();
+  }
+
+  // ---- S4: malformed json / totalElements=0 / size 경계 ----
+
+  @Test
+  void toDetail_malformedStrengthsAndImprovementJson_yieldEmptyLists_noException() {
+    Map<String, Object> row = baseRow();
+    row.put("eligibility_status", "EVALUATABLE");
+    row.put("strengths_json", "{ not valid json ]");
+    row.put("improvement_suggestions_json", "also broken");
+    row.put("growth_advice", null);
+
+    ChartPublicEducatorDetail d = service.toDetail(row, List.of());
+
+    assertThat(d.strengths()).isEmpty();
+    assertThat(d.improvementSuggestions()).isEmpty();
+  }
+
+  @Test
+  void page_of_zeroResults_isEmptyWithZeroPages() {
+    ChartPublicEducatorPage p = ChartPublicEducatorPage.of(List.of(), 0L, 0, 20);
+    assertThat(p.content()).isEmpty();
+    assertThat(p.totalElements()).isZero();
+    assertThat(p.totalPages()).isZero();
+    assertThat(p.page()).isZero();
+    assertThat(p.size()).isEqualTo(20);
+  }
+
+  @Test
+  void clampSize_zeroToDefault_overCeilingToMax() {
+    assertThat(service.clampSize(0)).isEqualTo(20);
+    assertThat(service.clampSize(101)).isEqualTo(100);
+    assertThat(service.clampSize(1_000_000)).isEqualTo(100);
   }
 
   // ---- helpers ----

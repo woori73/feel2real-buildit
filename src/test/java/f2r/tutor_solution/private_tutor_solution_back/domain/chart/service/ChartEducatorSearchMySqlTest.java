@@ -164,4 +164,133 @@ class ChartEducatorSearchMySqlTest {
     assertThatThrownBy(() -> service.getById(nullElig)).isInstanceOf(ResponseStatusException.class);
     assertThatThrownBy(() -> service.getById(999_999_999L)).isInstanceOf(ResponseStatusException.class);
   }
+
+  // ---- S4: q 의 LIKE 메타문자가 리터럴로 취급되는지 (실제 SQL 의미) ----
+
+  @Test
+  void search_q_treatsPercentAndUnderscoreAsLiteralsNotWildcards() {
+    insertCandidate("퍼센트강사", "리터럴도", "리터럴시", "EVALUATABLE", false, "50%할인영어학원", "정체성", "철학 문장 하나 둘 셋");
+    insertCandidate("맹물강사", "리터럴도", "리터럴시", "EVALUATABLE", false, "50할인영어학원", "정체성", "철학 문장 하나 둘 셋");
+    insertCandidate("언더강사", "리터럴도", "리터럴시", "EVALUATABLE", false, "a_b영어학원", "정체성", "철학 문장 하나 둘 셋");
+    insertCandidate("엑스강사", "리터럴도", "리터럴시", "EVALUATABLE", false, "axb영어학원", "정체성", "철학 문장 하나 둘 셋");
+
+    // '%' 가 wildcard 였다면 '50할인영어학원'(맹물강사) 도 '50'+''+'할인' 으로 매칭. 리터럴이면 '50%할인' 포함만.
+    assertThat(service.search("리터럴도", "리터럴시", "50%할인", null, 0, 20).content())
+        .extracting(e -> e.name()).containsExactly("퍼센트강사");
+    // '_' 가 wildcard 였다면 'axb영어학원'(엑스강사) 도 매칭. 리터럴이면 'a_b' 만.
+    assertThat(service.search("리터럴도", "리터럴시", "a_b", null, 0, 20).content())
+        .extracting(e -> e.name()).containsExactly("언더강사");
+    // 순수 '%' 검색이 지역 전체를 쓸어오지 않는다(리터럴 '%' 를 가진 후보만).
+    assertThat(service.search("리터럴도", "리터럴시", "%", null, 0, 20).content())
+        .extracting(e -> e.name()).containsExactly("퍼센트강사");
+  }
+
+  // ---- S4: 검색 결과 0건 ----
+
+  @Test
+  void search_zeroResults_returnsEmptyPageWithZeroTotals() {
+    insertCandidate("존재", "있는도", "있는시", "EVALUATABLE", false, "존재영어", "정체성", "철학 문장 하나 둘 셋");
+
+    ChartPublicEducatorPage page = service.search("없는도" + tag, null, null, null, 0, 20);
+
+    assertThat(page.content()).isEmpty();
+    assertThat(page.totalElements()).isZero();
+    assertThat(page.totalPages()).isZero();
+  }
+
+  // ---- S4: 매우 큰 page → overflow 없이 빈 content ----
+
+  @Test
+  void search_veryLargePage_returnsEmptyContentNoError() {
+    insertCandidate("한명", "큰페이지도", "큰페이지시", "EVALUATABLE", false, "한명영어", "정체성", "철학 문장 하나 둘 셋");
+
+    ChartPublicEducatorPage page = service.search("큰페이지도", "큰페이지시", null, null, Integer.MAX_VALUE, 100);
+
+    assertThat(page.content()).isEmpty();
+    assertThat(page.totalElements()).isEqualTo(1);
+    assertThat(page.page()).isEqualTo(Integer.MAX_VALUE);
+  }
+
+  // ---- S4: size 경계 ----
+
+  @Test
+  void search_sizeZeroUsesDefault_sizeOverMaxIsCapped() {
+    for (int i = 0; i < 3; i++) {
+      insertCandidate("사이즈" + i, "사이즈도", "사이즈시", "EVALUATABLE", false, "학원" + i, "정체성", "철학 " + i + " 하나 둘 셋");
+    }
+    assertThat(service.search("사이즈도", "사이즈시", null, null, 0, 0).size()).isEqualTo(20);
+    assertThat(service.search("사이즈도", "사이즈시", null, null, 0, 100_000).size()).isEqualTo(100);
+    assertThat(service.search("사이즈도", "사이즈시", null, null, 0, 0).content()).hasSize(3);
+  }
+
+  // ---- S1: 무효/blank evidence URL 은 공개 상세에서 제외 ----
+
+  @Test
+  void getById_excludesEvidenceRowsWithInvalidUrl() {
+    long id = insertCandidate("근거검증", "근거도", "근거시", "EVALUATABLE", false, "근거검증영어", "정체성", "철학 문장 하나 둘 셋");
+    // 기본 helper 가 유효 URL activity 1건 삽입. 여기에 무효 URL 3건 추가.
+    jdbcTemplate.update("""
+        INSERT INTO chart_candidate_activities
+        (candidate_id, content_type, content_summary, activity_date, evidence_kind,
+         educationally_informative, researched_at, source_url, discovered_at, created_at, updated_at)
+        VALUES (?, '메모', 'x', CURDATE(), 'MATERIAL', b'1', NOW(6), 'not-a-url', NOW(6), NOW(6), NOW(6)),
+               (?, '영상', 'y', CURDATE(), 'EDUCATIONAL_CONTENT', b'1', NOW(6), 'ftp://x/y', NOW(6), NOW(6), NOW(6)),
+               (?, '글', 'z', CURDATE(), 'PHILOSOPHY', b'1', NOW(6), '', NOW(6), NOW(6), NOW(6))
+        """, id, id, id);
+
+    ChartPublicEducatorDetail d = service.getById(id);
+
+    assertThat(d.evidence()).hasSize(1);
+    assertThat(d.evidence().get(0).sourceUrl()).startsWith("https://");
+  }
+
+  // ---- S2: 무효 official channel URL → null / 전부 무효 → officialChannels null ----
+
+  @Test
+  void getById_invalidOfficialChannelUrlBecomesNull() {
+    long id = insertCandidate("채널검증", "채널도", "채널시", "EVALUATABLE", false, "채널검증영어", "정체성", "철학 문장 하나 둘 셋");
+    jdbcTemplate.update("""
+        UPDATE chart_candidates
+           SET official_homepage='https://valid.example.com', official_blog='not a url',
+               official_youtube='javascript:alert(1)', official_social='   '
+         WHERE candidate_id=?
+        """, id);
+
+    ChartPublicEducatorDetail d = service.getById(id);
+
+    assertThat(d.officialChannels()).isNotNull();
+    assertThat(d.officialChannels().homepage()).isEqualTo("https://valid.example.com");
+    assertThat(d.officialChannels().blog()).isNull();
+    assertThat(d.officialChannels().youtube()).isNull();
+    assertThat(d.officialChannels().social()).isNull();
+  }
+
+  @Test
+  void getById_allOfficialChannelsInvalid_yieldsNull_no500() {
+    long id = insertCandidate("전부무효채널", "채널도", "채널시", "EVALUATABLE", false, "전부무효영어", "정체성", "철학 문장 하나 둘 셋");
+    jdbcTemplate.update("""
+        UPDATE chart_candidates
+           SET official_homepage='ftp://x', official_blog='bad', official_youtube=NULL, official_social=''
+         WHERE candidate_id=?
+        """, id);
+
+    assertThat(service.getById(id).officialChannels()).isNull();
+  }
+
+  // ---- S4: malformed strengths/improvement JSON → 빈 배열, 500 아님 ----
+
+  @Test
+  void getById_malformedStrengthsJson_yieldsEmptyList_noError() {
+    long id = insertCandidate("깨진JSON", "제이도", "제이시", "EVALUATABLE", false, "깨진영어", "정체성", "철학 문장 하나 둘 셋");
+    jdbcTemplate.update("""
+        UPDATE chart_candidates
+           SET strengths_json='{ not json ]', improvement_suggestions_json='also broken', growth_advice=NULL
+         WHERE candidate_id=?
+        """, id);
+
+    ChartPublicEducatorDetail d = service.getById(id);
+
+    assertThat(d.strengths()).isEmpty();
+    assertThat(d.improvementSuggestions()).isEmpty();
+  }
 }

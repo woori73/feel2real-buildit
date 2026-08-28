@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPubl
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorSummary;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEvidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicOfficialChannels;
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -89,11 +90,13 @@ public class ChartEducatorSearchService {
         "SELECT COUNT(*) FROM chart_candidates c" + where, Long.class, args.toArray());
     long totalElements = total == null ? 0L : total;
 
+    // offset 은 long 으로 계산한다(page 상한을 두지 않으므로 int overflow 를 피한다).
+    long offset = offset(safePage, safeSize);
     List<ChartPublicEducatorSummary> content = List.of();
-    if (totalElements > 0 && (long) safePage * safeSize < totalElements) {
+    if (totalElements > 0 && offset < totalElements) {
       List<Object> pageArgs = new ArrayList<>(args);
-      pageArgs.add(safeSize);
-      pageArgs.add(safePage * safeSize);
+      pageArgs.add(safeSize);   // LIMIT — clampSize 로 [1,100]
+      pageArgs.add(offset);     // OFFSET — long, int overflow 없음
       content = jdbcTemplate.queryForList(
           """
           SELECT c.candidate_id, c.name, c.role, c.academy_name, c.activity_region,
@@ -169,14 +172,17 @@ public class ChartEducatorSearchService {
     List<ChartPublicEvidence> evidence = new ArrayList<>();
     List<LocalDateTime> researchedAts = new ArrayList<>();
     for (Map<String, Object> a : activityRows) {
+      LocalDateTime r = dateTime(a.get("researched_at"));
+      if (r != null) researchedAts.add(r);
+      // read-side 방어: 유효한 공개 http(s) URL 이 없는 evidence 는 공개 상세에서 제외한다(수정·추측 없음).
+      String sourceUrl = publicUrlOrNull(a.get("source_url"));
+      if (sourceUrl == null) continue;
       evidence.add(new ChartPublicEvidence(
           blankToNull(str(a.get("content_type"))),
           blankToNull(str(a.get("content_summary"))),
-          blankToNull(str(a.get("source_url"))),
+          sourceUrl,
           date(a.get("activity_date")),
           blankToNull(str(a.get("evidence_kind")))));
-      LocalDateTime r = dateTime(a.get("researched_at"));
-      if (r != null) researchedAts.add(r);
     }
 
     List<String> improvements = parseStringArray(row.get("improvement_suggestions_json"));
@@ -185,11 +191,12 @@ public class ChartEducatorSearchService {
       improvements = List.of(growthAdvice);
     }
 
+    // read-side 방어: 공개 http(s) URL 이 아니면 null. 잘못된 DB 값이 500 을 만들지 않는다.
     ChartPublicOfficialChannels channels = new ChartPublicOfficialChannels(
-        blankToNull(str(row.get("official_homepage"))),
-        blankToNull(str(row.get("official_blog"))),
-        blankToNull(str(row.get("official_youtube"))),
-        blankToNull(str(row.get("official_social"))));
+        publicUrlOrNull(row.get("official_homepage")),
+        publicUrlOrNull(row.get("official_blog")),
+        publicUrlOrNull(row.get("official_youtube")),
+        publicUrlOrNull(row.get("official_social")));
 
     return new ChartPublicEducatorDetail(
         num(row.get("candidate_id")),
@@ -245,6 +252,11 @@ public class ChartEducatorSearchService {
     return Math.min(size, MAX_SIZE);
   }
 
+  /** LIMIT ? OFFSET ? 의 offset. int overflow 없이 long 으로 계산한다. 음수는 clampPage 가 막는다. */
+  static long offset(int page, int size) {
+    return (long) page * size;
+  }
+
   /** LIKE 메타문자(!, %, _)를 ESCAPE '!' 기준으로 이스케이프하고 부분일치 패턴으로 감싼다. */
   static String likeArg(String raw) {
     String lowered = raw.toLowerCase(Locale.ROOT);
@@ -280,6 +292,27 @@ public class ChartEducatorSearchService {
     if (best != null) return best;
     if (updatedAt != null) return updatedAt;
     return discoveredAt;
+  }
+
+  /**
+   * PR #59와 동일한 URL 판정 원칙: 스킴이 http/https 이고 host 가 존재하는 URL 만 공개로 인정한다.
+   * 예외를 던지지 않으며, URL 을 수정·보정하지 않는다.
+   */
+  static boolean isPublicHttpUrl(String value) {
+    if (value == null || value.isBlank()) return false;
+    try {
+      URI uri = URI.create(value.trim());
+      return ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+          && uri.getHost() != null;
+    } catch (IllegalArgumentException error) {
+      return false;
+    }
+  }
+
+  /** 공개 가능한 http(s) URL 이면 trim 한 값 그대로, 아니면 {@code null}. 보정하지 않는다. */
+  private static String publicUrlOrNull(Object value) {
+    String s = blankToNull(str(value));
+    return s != null && isPublicHttpUrl(s) ? s : null;
   }
 
   private static String str(Object value) {
