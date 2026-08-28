@@ -721,8 +721,13 @@ get_next_regions (RESEARCHED 제외, DUE 포함)
   → selectedCandidateIds 빈 배열 = 0명 정상 완료 (RESEARCHED_ZERO audit batch만, current publication 무변경)
   → get_next_regions → 다음 신규 지역
 
-사후 복구: 잘못 발행된 batch 는 GET /review-batches/{id} 로 확인 후 POST /review-batches/{id}/revert
-(해당 batch 의 publication entry·score snapshot 만 제거, candidate 는 보존, publication 재생성).
+사후 복구(관리자 WebMCP): inspect_chart_review_batch(reviewBatchId) 로 batch 의 candidate·zoneId·
+activityRegion·snapshot·entry 를 확인한 뒤 revert_chart_review_batch(reviewBatchId) 실행.
+  · 해당 batch 의 publication entry·score snapshot 만 제거, batch → REVERTED
+  · 서버가 직전 정상 명단으로 전국 publication 자동 재생성(별도 rebuild 불필요)
+  · 다른 정상 batch snapshot 이 남은 educator 는 유지, 이 batch 로만 유입된 educator 만 제거
+  · candidate·activity·Legacy·Score·region 상태(RESEARCHED)는 불변
+  · 이미 REVERTED 면 무변경(idempotent)
 ```
 
 publication은 AI/WebMCP 직접 명령으로 만들 수 없다(`POST /publications` = 409, publish tool 없음). `/chart`와 홈 TOP5는 `GET /api/chart/publication/current` 하나만 읽는다(홈은 `rankedTop100[0:5]`). 관리자는 사후에 공개 제외·재조사 지정·근거/Score 확인을 한다(PR-D).
