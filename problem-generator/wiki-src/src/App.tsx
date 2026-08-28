@@ -14,11 +14,12 @@ import InsightRecorder from './components/InsightRecorder'
 import AssistantComposer, { AssistantMessage } from './components/AssistantComposer'
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
 import NaesinWikiV1 from './components/NaesinWikiV1'
+import GeneratedTestBrowser from './components/GeneratedTestBrowser'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
 import { api, normalizedApiError } from './lib/api'
 import './styles/generator.css'
 
-export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain'
+export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
 
 // role=ADMIN 같은 query parameter는 권한 컨텍스트일 뿐 Wiki의 초기 화면을 바꾸지 않는다.
 const initialPage = (): Page => 'state'
@@ -28,6 +29,7 @@ const menu: { id: Page; label: string; icon: string }[] = [
   { id: 'home', label: '내신·수능 문제 제작', icon: '✦' },
   { id: 'twin', label: 'Digital Twin 관리', icon: '◈' },
   { id: 'database', label: '강사 문제 DB', icon: '▤' },
+  { id: 'gentests', label: '생성 문제', icon: '❖' },
   { id: 'exam', label: '내신 실전 제작', icon: '▧' },
   { id: 'wrongextract', label: '오답 기록·추출', icon: '◉' },
   { id: 'wrongnote', label: '학생별 오답노트', icon: '◎' },
@@ -47,6 +49,7 @@ const descriptions: Record<Page, string> = {
   home: '학교·학년·시험을 선택하면 Digital Twin이 자동 적용되어 신규 문제 생성과 기존 문제 변형을 모두 지원합니다.',
   twin: '강사가 만든 Digital Twin HTML을 업로드하면 학교·학년·시험 계층이 자동으로 생성됩니다.',
   database: '생성하거나 변형한 문항을 SQLite DB에서 확인하고 관리합니다.',
+  gentests: '학습자료별로 MCP가 생성·저장한 시험을 학생용 문제·정답/해설·출제 정보로 다시 확인합니다.',
   exam: '선택한 문항으로 실전 시험지를 구성합니다.',
   wrongnote: '학생별 오답을 누적하고 맞춤 복습 자료를 준비합니다.',
   wrongextract: '채점지 사진·PDF에서 오답을 추출하고 학생 기록으로 저장합니다.',
@@ -58,7 +61,7 @@ const descriptions: Record<Page, string> = {
 }
 
 const storageLabels: Partial<Record<Page, string>> = {
-  home: '문제 DB', database: '문제 DB', exam: '문제 DB / exam_draft',
+  home: '문제 DB', database: '문제 DB', gentests: 'Generated Question Store', exam: '문제 DB / exam_draft',
   wrongextract: '학생 오답 기록', wrongnote: '학생 오답 기록', passagememory: '현재 작업 · 다운로드 가능', passageanalysis: '현재 작업 · 다운로드 가능', csat: '수능 문항·오답 SQLite 영구 저장', brain: 'Educator Brain · 수업 인사이트',
   twin: '학교별 Digital Twin', school: '이 브라우저 · 학교별 DB', textbook: '이 브라우저 · 교과서 DB',
 }
@@ -143,6 +146,7 @@ export default function App() {
       {page === 'passageanalysis' && <PassageWorkspace mode="analysis" apiSettings={apiSettings} />}
       {page === 'csat' && <CsatEnglishWorkspace />}
       {page === 'textbook' && <TextbookDatabase />}
+      {page === 'gentests' && <GeneratedTestBrowser />}
       {page === 'school' && <SchoolDatabase onAnalyze={() => setPage('twin')} apiSettings={apiSettings} />}
       {page === 'database' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">TEACHER QUESTION DATABASE</p><h2>강사 문제 DB</h2><p>신규 생성·변형한 문항이 SQLite DB에 영구 저장됩니다.</p></div><div className="twin-actions"><button className="secondary-button" onClick={refreshQuestions}>새로고침</button><button className="primary-action" style={{ marginTop: 0 }} disabled={!selectedExamIds.length} onClick={sendSelectedToExam}>선택 문항으로 실전 제작 ({selectedExamIds.length})</button></div></div>{questions.length === 0 ? <div className="empty-state"><b>저장된 문항이 없습니다.</b><p>문제 생성기에서 만든 문항을 저장하면 이곳에서 관리할 수 있어요.</p><button className="primary-action" onClick={() => setPage('home')}>문제 생성으로 이동</button></div> : <div className="db-list">{questions.map(item => <article key={item.id} style={{ flexWrap: 'wrap' }}><input type="checkbox" aria-label={`${item.id} 선택`} checked={selectedExamIds.includes(item.id)} onChange={() => toggleExamSelection(item.id)} /><div><b>{item.question_type || '문항'} · {item.mode === 'transform' ? '변형' : item.mode === 'mcp' ? 'MCP 저장' : '신규'} · {item.score}점</b><p>{item.school} · {item.grade} · {item.exam} · {new Date(item.created_at).toLocaleString('ko-KR')}</p><small>{item.stem.slice(0, 80)}</small></div><button onClick={() => toggleExpanded(item.id)}>{expandedIds.has(item.id) ? '간단히' : '전체보기'}</button><button onClick={() => sendToExam(item.id)}>실전 제작</button><button onClick={() => deleteQuestion(item.id)}>삭제</button>{expandedIds.has(item.id) && <div style={{ flexBasis: '100%', marginTop: 12 }}><div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="question-list"><QuestionCard q={item} index={1} /></div></div></div></div>}</article>)}</div>}</section>}
       {page === 'exam' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">EXAM MAKER</p><h2>내신 실전 문제 제작</h2><p>강사 문제 DB에서 선택한 문항으로 실전 시험지를 구성합니다.</p></div><button className="btn-ghost" type="button" onClick={() => setShowExamAnswers(v => !v)}>{showExamAnswers ? '🙈 정답 숨기기' : '🔍 정답 보기'}</button></div><div className="exam-settings"><label>시험지 제목<input value={examTitle} onChange={event => setExamTitle(event.target.value)} /></label><label>학원명<input value={academyName} onChange={event => setAcademyName(event.target.value)} /></label><label>강사명<input value={teacherName} onChange={event => setTeacherName(event.target.value)} /></label></div><div className="f2r-gen embedded-question-view"><div className={`exam-sheet${showExamAnswers ? ' show-answers' : ''}`}><div className="exam-meta-box"><div className="meta-row"><span>시험지</span><b>{examTitle}</b></div><div className="meta-row"><span>학교</span><b>{examQuestions[0] ? `${examQuestions[0].school} · ${examQuestions[0].grade}` : '문제 DB에서 문항 선택 필요'}</b></div><div className="meta-row"><span>문항 구성</span><b>객관식 {mcCount} · 서답형 {saCount} · 총 {totalScore}점</b></div></div>{examQuestions.length > 0 ? <div className="question-list">{examQuestions.map((item, index) => <QuestionCard key={item.id} q={item} index={index + 1} />)}</div> : <p className="empty-paper">강사 문제 DB에서 문항을 선택해 실전 제작으로 보내 주세요.</p>}<div className="footer-brand">{academyName} · {teacherName}</div></div></div><button className="primary-action" disabled={savingExam || !selectedExamIds.length} onClick={() => void exportOffice()}>{savingExam ? '내보내는 중...' : '오피스 2007 내보내기'}</button></section>}

@@ -3058,6 +3058,18 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 데이터 원천: `digital_twin_profiles`의 active row와 기존 `generated_questions`, `students`의 학교·학년·시험 값을 합친다. 기존 row를 이동하거나 새 DB로 복사하지 않는다.
 - Response: `[{ school, grades: [{ grade, exams: [{ exam, twinId, version, updatedAt, hasDigitalTwin }] }] }]`. 기존 학교 기록만 있고 Twin이 없으면 `twinId/version=null`, `hasDigitalTwin=false`다.
 
+### ✅ Generated Question Store (MCP 생성문항 자동저장)
+
+- 목적: Claude MCP가 Wiki 학습자료로 생성한 시험문항을 `Source Material → Generated Test → Questions` 관계를 유지한 채 영구 저장한다. 새 저장 로직을 만들지 않고 기존 `question_contract.validate_transform` + `_save_generated`(mode='mcp')를 재사용한다.
+- 스키마: `source_materials`((school,grade,title) unique upsert), `generated_tests`(external_id idempotency, source_material_id FK, source_page, twin_id/twin_label/twin_pattern, difficulty, target_vocabulary/target_grammar JSON, generation_source, question_count), `generated_questions.test_id`(nullable, 기존 row는 NULL).
+- MCP tool: `save_generated_test(school, grade, source_material, questions[, source_page, test_type, title, digital_twin, twin_pattern, difficulty, target_vocabulary, target_grammar, target_passage, year, semester, exam, publisher, lesson, material_type, external_id])`. 문항 계약 검증을 어떤 쓰기보다 먼저 하고(all-or-nothing), 저장 성공 시에만 `{saved:true, test_id, question_count, source_material, source_page, duplicate}`를 반환한다. 저장 실패는 `storage: failed —` 접두 오류로 생성 성공과 구분한다. `external_id` 미지정 시 요청 내용으로 파생해 같은 요청 재시도가 중복 저장되지 않는다. Wiki 문제 생성 workflow의 기본 마지막 단계다.
+- `POST /problem-generator/wiki/api/generated-tests`: MCP tool과 동일 입력(JSON)을 받는 REST 경로. Response `200`(dup 포함) / `422`(문항 검증 실패, 아무 것도 저장 안 함) / `500`(저장 중 실패).
+- `GET /problem-generator/wiki/api/source-materials?school=&grade=`: `source_materials` 목록 + `test_count`.
+- `GET /problem-generator/wiki/api/source-materials/{id}/generated-tests`: 해당 학습자료의 생성 시험 목록.
+- `GET /problem-generator/wiki/api/generated-tests/{id}`: `{ test: {...메타, target_vocabulary/grammar 파싱}, questions: [list_questions 형태, test_id로 필터·id 오름차순] }`.
+- `GET /problem-generator/wiki/api/workspaces/final/context` 응답에 `generated_tests` 키가 추가된다(추적성). 기존 키는 그대로 유지.
+- 사용처: React Wiki `생성 문제` 페이지(`GeneratedTestBrowser`) — 학교/학년 → 학습자료 → 생성 시험 → 학생용 문제 / 정답·해설 / 출제 정보.
+
 ### ✅ POST /problem-generator/wiki/api/assistant/chat
 
 - 목적: Wiki Assistant가 현재 목표와 관련된 최소 DB 컨텍스트를 확인하고 대화형 작업 안내를 반환한다.

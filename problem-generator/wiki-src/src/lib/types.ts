@@ -6,7 +6,7 @@ export type SchoolExamNode = { exam:string; twinId:number|null; version:number|n
 export type SchoolGradeNode = { grade:string; exams:SchoolExamNode[] }
 export type SchoolNode = { school:string; grades:SchoolGradeNode[] }
 export type TypeDef = { id:string; cat:string; label:string; prompt:string }
-export type StoredQuestion = { id:number; twin_id:number|null; school:string; grade:string; exam:string; mode:'new'|'transform'|'mcp'; q_kind:'mc'|'sa'; question_type:string; stem:string; source_text:string; options:string[]; answer:number[]; multi:number; score:number; conditions:string[]; answer_format:string; accepted_answers:string[]; sample_answer:string; grading_rule:string; exam_title:string; exam_group_id:string; favorite:number; created_at:string }
+export type StoredQuestion = { id:number; twin_id:number|null; school:string; grade:string; exam:string; mode:'new'|'transform'|'mcp'; q_kind:'mc'|'sa'; question_type:string; stem:string; source_text:string; options:string[]; answer:number[]; multi:number; score:number; conditions:string[]; answer_format:string; accepted_answers:string[]; sample_answer:string; grading_rule:string; exam_title:string; exam_group_id:string; favorite:number; created_at:string; test_id?:number|null }
 export type ExamPaper = { id:number; title:string; academy_name:string; teacher_name:string; question_ids:number[]; created_at:string }
 export type ExamDraft = { title:string; academy_name:string; teacher_name:string; question_ids:number[] }
 export type Student = { id:number; name:string; school:string; grade:string; semester:string; exam_type:string; created_at:string }
@@ -18,7 +18,14 @@ export type CsatQuestion = { id:number;source_id:number;exam_kind:'half'|'full';
 export type CsatImportPreview = { source_id:null;source_hash:string;parser:string;raw_text:string;metadata:Record<string,string>;source_filename:string;original_stored:false;owner_scope:'shared';requires_review:true;failures:{index:number;reason:string}[];questions:CsatQuestion[] }
 export type CsatWrongAnswer = { id:number;student_name:string;exam_name:string;question_no:number;csat_type_id:string;csat_type_name:string;wrong_answer:string;correct_answer:string;memo:string;source_filename:string;created_at:string }
 
+export type SourceMaterial={id:number;school:string;grade:string;title:string;publisher:string;lesson:string;material_type:string;school_print_material_id:number|null;created_at:string;test_count:number}
+export type GeneratedTest={id:number;external_id:string;source_material_id:number;source_page:string;school:string;grade:string;year:number|null;semester:string;exam:string;test_type:string;title:string;twin_id:number|null;twin_label:string;twin_pattern:string;difficulty:string;target_vocabulary:string[];target_grammar:string[];target_passage:string;generation_source:string;question_count:number;created_at:string;source_material_title?:string;source_material_publisher?:string;source_material_lesson?:string;school_print_material_id?:number|null}
+export type GeneratedTestDetail={test:GeneratedTest;questions:StoredQuestion[]}
+
 export const fetchSchoolTree=async():Promise<SchoolNode[]>=>{const r=await api('schools');if(!r.ok)throw new Error('학교 목록을 불러오지 못했습니다.');return r.json()}
+export const fetchSourceMaterials=async(params:Record<string,string>={}):Promise<SourceMaterial[]>=>{const q=new URLSearchParams(params).toString();const r=await api(`source-materials${q?`?${q}`:''}`);if(!r.ok)throw new Error('학습자료 목록을 불러오지 못했습니다.');return r.json()}
+export const fetchSourceMaterialTests=async(materialId:number):Promise<GeneratedTest[]>=>{const r=await api(`source-materials/${materialId}/generated-tests`);if(!r.ok)throw new Error('생성 시험 목록을 불러오지 못했습니다.');return r.json()}
+export const fetchGeneratedTest=async(testId:number):Promise<GeneratedTestDetail>=>{const r=await api(`generated-tests/${testId}`);if(!r.ok)throw new Error('생성 시험을 불러오지 못했습니다.');return r.json()}
 export const fetchTypeDefs=async():Promise<TypeDef[]>=>{const r=await api('question-types');if(!r.ok)throw new Error('문제 유형 목록을 불러오지 못했습니다.');return r.json()}
 export const fetchQuestions=async(params:Record<string,string>={}):Promise<StoredQuestion[]>=>{const q=new URLSearchParams(params).toString();const r=await api(`questions${q?`?${q}`:''}`);if(!r.ok)throw new Error('저장된 문제를 불러오지 못했습니다.');return r.json()}
 export const createExamPaper=async(payload:{title:string;academy_name:string;teacher_name:string;question_ids:number[]}):Promise<ExamPaper>=>{const r=await api('exam-papers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const b=await r.json() as ExamPaper&{detail?:string};if(!r.ok)throw new Error(b.detail||'시험지를 저장하지 못했습니다.');return b}

@@ -14,6 +14,7 @@ const hubs: Record<Hub, { eyebrow: string; title: string; description: string; a
       { page: 'csat', title: '고3 수능 영어', detail: '하프·정식 모의고사와 수능 오답 저장·출력' },
       { page: 'school', title: '학교 프린트·자료 정리', detail: '사진·PDF OCR, 편집과 학교별 보관' },
       { page: 'database', title: '문제 DB 보기', detail: '저장된 강사 문항 선택과 재사용' },
+      { page: 'gentests', title: '생성 문제', detail: '학습자료별 생성 시험 · 정답/해설 · 출제정보' },
       { page: 'textbook', title: '교과서 DB', detail: '출판사·Lesson별 수업 자료' },
     ],
   },
