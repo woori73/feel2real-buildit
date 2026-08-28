@@ -17,11 +17,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * BuildIt Ranking E2E — 현재 publication 에서 파생. CI 미실행(MySQL 필요).
- *   · 전국 순위 = publication chart_rank 와 일치.
- *   · 지역 순위 = 같은 (province, cityDistrict) 안에서의 위치.
- *   · RESEARCH_PENDING 은 순위 어디에도 없음.
- *   · Score 재계산·publication 재생성 없음(이미 만들어진 snapshot/entry 를 읽기만).
+ * BuildIt Ranking E2E — <b>publication 과 독립</b>. CI 미실행(MySQL 필요).
+ *   · pool = EVALUATABLE(또는 Legacy) + 미제외 + PUBLISHABLE + 최신 Score snapshot. publication 참조 안 함.
+ *   · publication 에 없는 scored 교육자도 순위에 포함되고 publication 은 그대로다.
+ *   · RESEARCH_PENDING / Score 없음 / excluded=true → 순위 제외.
+ *   · 정렬 total_score DESC, candidate_id ASC. 지역 grouping.
  */
 @SpringBootTest
 @Transactional
@@ -29,7 +29,6 @@ class ChartRankingMySqlTest {
 
   @Autowired ChartSiteToolService siteToolService;
   @Autowired ChartRankingService rankingService;
-  @Autowired ChartEducatorSearchService searchService;
   @Autowired JdbcTemplate jdbcTemplate;
 
   private static final String PHIL =
@@ -48,34 +47,32 @@ class ChartRankingMySqlTest {
     return id;
   }
 
-  private long fullDraft(String regionId, String name, String province, String city, int evidenceCount) {
+  private long fullDraft(String regionId, String name, String province, String city, int extraEvidence) {
     java.util.List<EvidenceRequest> ev = new java.util.ArrayList<>();
     ev.add(new EvidenceRequest("커리큘럼", "자체 커리큘럼과 수업 단계 설명", "커리큘럼",
         "https://example.com/" + name + "/c", LocalDate.now(), "CURRICULUM", true));
     ev.add(new EvidenceRequest("오프라인 수업", "현재 학생 지도 정규 수업", "수업",
         "https://example.com/" + name + "/class", LocalDate.now(), "OFFLINE_ACTIVITY", true));
     String[] kinds = {"TEACHING_METHOD", "MATERIAL", "STUDENT_GUIDANCE", "EDUCATIONAL_CONTENT", "SUBJECT_EXPERTISE"};
-    for (int i = 0; i < evidenceCount && i < kinds.length; i++) {
+    for (int i = 0; i < extraEvidence && i < kinds.length; i++) {
       ev.add(new EvidenceRequest("근거" + i, "교육 근거 " + i, "근거",
           "https://example.com/" + name + "/e" + i, LocalDate.now().minusMonths(i + 1), kinds[i], true));
     }
-    var result = siteToolService.saveDraft(new DraftRequest(regionId, name, "원장", name + "영어",
+    return ((Number) siteToolService.saveDraft(new DraftRequest(regionId, name, "원장", name + "영어",
         province, city, name + " 교육 정체성", PHIL, CURR, "질문식 토론 수업", "2026년 봄학기 공지",
         List.of("자체 커리큘럼 운영"), List.of("온라인 정리 보강"), null, null,
         "https://example.com/" + name, null, null, null, "공개 콘텐츠에서 개인 교육활동 확인",
-        true, true, true, true, List.of(), ev));
-    return ((Number) result.get("candidateId")).longValue();
+        true, true, true, true, List.of(), ev)).get("candidateId")).longValue();
   }
 
   private long researchPendingDraft(String regionId, String name, String province, String city) {
-    var result = siteToolService.saveDraft(new DraftRequest(regionId, name, "원장", name + "영어",
+    return ((Number) siteToolService.saveDraft(new DraftRequest(regionId, name, "원장", name + "영어",
         province, city, name + " 교육 정체성", null, null, null, null,
         List.of(), List.of(), null, null,
         "https://example.com/" + name, null, null, null, "공개 콘텐츠에서 개인 교육활동 확인",
         false, true, true, true, List.of(),
         List.of(new EvidenceRequest("글", "블로그 글", "글", "https://example.com/" + name + "/p",
-            LocalDate.now(), "EDUCATIONAL_CONTENT", true))));
-    return ((Number) result.get("candidateId")).longValue();
+            LocalDate.now(), "EDUCATIONAL_CONTENT", true)))).get("candidateId")).longValue();
   }
 
   private void publish(String regionId, List<Long> ids) {
@@ -83,61 +80,126 @@ class ChartRankingMySqlTest {
     siteToolService.completeRegion(regionId, ids, ids.size(), null);
   }
 
-  @Test
-  void nationwideRank_matchesPublicationChartRank_regionRankPartitions() {
-    tag = "A" + System.nanoTime();
-    String regA = freshRegion("테스트랭크도", "테스트시" + tag);
-    long a1 = fullDraft(regA, "가일" + tag, "테스트랭크도", "테스트시" + tag, 5);   // 근거 많음 → 높은 점수
-    long a2 = fullDraft(regA, "가이" + tag, "테스트랭크도", "테스트시" + tag, 1);   // 근거 적음 → 낮은 점수
-    publish(regA, List.of(a1, a2));
+  private boolean inCurrentPublication(long candidateId) {
+    Integer n = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*) FROM chart_publication_entries pe
+         JOIN chart_publications p ON p.publication_id = pe.publication_id
+        WHERE p.status='PUBLISHED' AND pe.candidate_id=?
+        """, Integer.class, candidateId);
+    return n != null && n > 0;
+  }
 
-    ChartRankingList all = rankingService.nationwide(null);
-    // 내 두 명이 전국 목록에 있고, chart_rank 와 overallRank 가 일치한다
-    for (long id : List.of(a1, a2)) {
-      Integer chartRank = jdbcTemplate.queryForObject("""
-          SELECT pe.chart_rank FROM chart_publication_entries pe
-           JOIN chart_publications p ON p.publication_id = pe.publication_id
-          WHERE p.status='PUBLISHED' AND pe.candidate_id=?
-          ORDER BY p.published_at DESC, p.publication_id DESC LIMIT 1
-          """, Integer.class, id);
-      ChartEducatorRanking r = rankingService.forEducator(id);
-      assertThat(r.ranked()).isTrue();
-      assertThat(r.overallRank()).isEqualTo(chartRank);
-      assertThat(all.educators()).anySatisfy(e -> {
-        if (e.id() == id) assertThat(e.overallRank()).isEqualTo(chartRank);
-      });
-    }
+  private long currentPublicationId() {
+    Long id = jdbcTemplate.queryForObject(
+        "SELECT publication_id FROM chart_publications WHERE status='PUBLISHED' "
+        + "ORDER BY published_at DESC, publication_id DESC LIMIT 1", Long.class);
+    return id == null ? 0L : id;
+  }
 
-    ChartRankingList region = rankingService.region("테스트랭크도", "테스트시" + tag);
-    assertThat(region.scope()).isEqualTo("REGION");
-    assertThat(region.educators()).extracting(ChartRankedEducator::id).containsExactly(a1, a2);
-    assertThat(region.educators().get(0).regionRank()).isEqualTo(1);
-    assertThat(region.educators().get(1).regionRank()).isEqualTo(2);
-    assertThat(region.educators().get(0).regionTotal()).isEqualTo(2);
-    // 지역 순위 1위가 전국 순위도 더 앞
-    assertThat(region.educators().get(0).overallRank()).isLessThan(region.educators().get(1).overallRank());
+  private long publishedEducatorCount() {
+    Long n = jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM chart_publication_entries WHERE publication_id=?", Long.class, currentPublicationId());
+    return n == null ? 0L : n;
   }
 
   @Test
-  void researchPending_isExcludedFromAllRankings() {
-    tag = "P" + System.nanoTime();
-    String reg = freshRegion("보류랭크도", "보류시" + tag);
-    long ev = fullDraft(reg, "발행자" + tag, "보류랭크도", "보류시" + tag, 3);
-    long pend = researchPendingDraft(reg, "보류자" + tag, "보류랭크도", "보류시" + tag);
-    publish(reg, List.of(ev));
+  void scoredEducatorNotInPublication_stillGetsRanked_publicationUnchanged() {
+    tag = "np" + System.nanoTime();
+    String reg = freshRegion("독립랭크도", "독립시" + tag);
+    long publishedId = fullDraft(reg, "발행자" + tag, "독립랭크도", "독립시" + tag, 4);
+    long auditedOnlyId = fullDraft(reg, "감사자" + tag, "독립랭크도", "독립시" + tag, 2);
 
-    assertThat(rankingService.forEducator(ev).ranked()).isTrue();
-    assertThat(rankingService.forEducator(pend).ranked()).isFalse();
-    assertThat(rankingService.forEducator(pend).buildItScore()).isNull();
-    assertThat(rankingService.region("보류랭크도", "보류시" + tag).educators())
-        .extracting(ChartRankedEducator::id).containsExactly(ev).doesNotContain(pend);
+    publish(reg, List.of(publishedId));
+    long pubIdAfterPublish = currentPublicationId();
+    long pubCountAfterPublish = publishedEducatorCount();
+
+    siteToolService.submitReview(reg, List.of(auditedOnlyId), "감사 기록"); // Score 만, publication 무변경
+
+    assertThat(inCurrentPublication(auditedOnlyId)).isFalse();
+    ChartEducatorRanking r = rankingService.forEducator(auditedOnlyId);
+    assertThat(r.ranked()).isTrue();
+    assertThat(r.overallRank()).isNotNull().isPositive();
+    assertThat(r.regionRank()).isNotNull().isPositive();
     assertThat(rankingService.nationwide(null).educators())
-        .extracting(ChartRankedEducator::id).doesNotContain(pend);
+        .extracting(ChartRankedEducator::id).contains(auditedOnlyId);
+    assertThat(rankingService.region("독립랭크도", "독립시" + tag).educators())
+        .extracting(ChartRankedEducator::id).contains(auditedOnlyId, publishedId);
+
+    // submitReview 는 publication 을 바꾸지 않았다
+    assertThat(currentPublicationId()).isEqualTo(pubIdAfterPublish);
+    assertThat(publishedEducatorCount()).isEqualTo(pubCountAfterPublish);
+  }
+
+  @Test
+  void rankingPool_excludesResearchPending_noScore_andExcluded() {
+    tag = "ex" + System.nanoTime();
+    String reg = freshRegion("제외랭크도", "제외시" + tag);
+    long scored = fullDraft(reg, "채점자" + tag, "제외랭크도", "제외시" + tag, 3);
+    long pending = researchPendingDraft(reg, "보류자" + tag, "제외랭크도", "제외시" + tag);
+    long noScore = fullDraft(reg, "무점수자" + tag, "제외랭크도", "제외시" + tag, 1); // EVALUATABLE, Score snapshot 없음
+    publish(reg, List.of(scored));
+    long excluded = fullDraft(reg, "제외자" + tag, "제외랭크도", "제외시" + tag, 3);
+    siteToolService.submitReview(reg, List.of(excluded), "감사");
+    jdbcTemplate.update("UPDATE chart_candidates SET excluded_from_chart=1 WHERE candidate_id=?", excluded);
+
+    List<Long> ranked = rankingService.region("제외랭크도", "제외시" + tag).educators()
+        .stream().map(ChartRankedEducator::id).toList();
+    assertThat(ranked).contains(scored).doesNotContain(pending, noScore, excluded);
+
+    assertThat(rankingService.forEducator(pending).ranked()).isFalse();
+    assertThat(rankingService.forEducator(noScore).ranked()).isFalse();
+    assertThat(rankingService.forEducator(excluded).ranked()).isFalse();
+  }
+
+  @Test
+  void ranking_ordersByScoreThenCandidateId_regionGrouping() {
+    tag = "ord" + System.nanoTime();
+    String regA = freshRegion("정렬도", "정렬시A" + tag);
+    String regB = freshRegion("정렬도", "정렬시B" + tag);
+    long a1 = fullDraft(regA, "가1" + tag, "정렬도", "정렬시A" + tag, 5);
+    long a2 = fullDraft(regA, "가2" + tag, "정렬도", "정렬시A" + tag, 5); // 동점 예상 → candidate_id ASC
+    long b1 = fullDraft(regB, "나1" + tag, "정렬도", "정렬시B" + tag, 1);
+    publish(regA, List.of(a1, a2));
+    publish(regB, List.of(b1));
+
+    ChartRankingList regionA = rankingService.region("정렬도", "정렬시A" + tag);
+    assertThat(regionA.educators()).extracting(ChartRankedEducator::id).containsExactly(a1, a2);
+    assertThat(regionA.educators().get(0).regionRank()).isEqualTo(1);
+    assertThat(regionA.educators().get(1).regionRank()).isEqualTo(2);
+
+    ChartRankingList regionB = rankingService.region("정렬도", "정렬시B" + tag);
+    assertThat(regionB.educators()).extracting(ChartRankedEducator::id).containsExactly(b1);
+
+    assertThat(rankingService.region("정렬도", null).educators())
+        .extracting(ChartRankedEducator::id).contains(a1, a2, b1);
+
+    if (rankingService.forEducator(a1).buildItScore().equals(rankingService.forEducator(a2).buildItScore())) {
+      assertThat(rankingService.forEducator(a1).overallRank())
+          .isLessThan(rankingService.forEducator(a2).overallRank());
+    }
+  }
+
+  @Test
+  void ranking_usesLatestScoreSnapshot() {
+    tag = "lt" + System.nanoTime();
+    String reg = freshRegion("최신도", "최신시" + tag);
+    long id = fullDraft(reg, "최신자" + tag, "최신도", "최신시" + tag, 3);
+    publish(reg, List.of(id));
+    int first = rankingService.forEducator(id).buildItScore();
+
+    // 과거 시각의 낮은 점수 snapshot → 최신이 아니므로 무시돼야 한다
+    jdbcTemplate.update("""
+        INSERT INTO chart_score_snapshots
+        (candidate_id, review_batch_id, criteria_version, total_score, score_breakdown_json, evidence_json,
+         calculated_at, review_status, created_at, updated_at)
+        VALUES (?, NULL, 'buildit-chart-v1', 1, '{}', '{}', DATE_SUB(NOW(6), INTERVAL 10 DAY), 'AUDIT_RECORDED', NOW(6), NOW(6))
+        """, id);
+    assertThat(rankingService.forEducator(id).buildItScore()).isEqualTo(first);
   }
 
   @Test
   void regions_directoryListsSeededRegionWithCounts() {
-    tag = "D" + System.nanoTime();
+    tag = "d" + System.nanoTime();
     String reg = freshRegion("디렉토리도", "디렉시" + tag);
     long ev = fullDraft(reg, "디렉발행" + tag, "디렉토리도", "디렉시" + tag, 3);
     researchPendingDraft(reg, "디렉보류" + tag, "디렉토리도", "디렉시" + tag);

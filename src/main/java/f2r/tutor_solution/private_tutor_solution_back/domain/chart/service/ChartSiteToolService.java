@@ -58,7 +58,8 @@ public class ChartSiteToolService {
    * 교육철학·커리큘럼(신규 *_summary 또는 구 V949 컬럼)을 갖춰야 하고, Legacy 승계자와 이미 review
    * batch 로 선정·채점된 기존 선정자(예: 분당 5명)는 확보된 정보까지만으로 grandfather 로 포함한다.
    */
-  private static final String PUBLISHABLE_PROFILE_SQL =
+  /** 같은 패키지의 {@code ChartRankingService} 가 Ranking pool 조건에 그대로 재사용한다(단일 출처). */
+  static final String PUBLISHABLE_PROFILE_SQL =
       " (c.legacy_source IS NOT NULL"
       + " OR EXISTS (SELECT 1 FROM chart_score_snapshots sg"
       + "             WHERE sg.candidate_id = c.candidate_id AND sg.review_batch_id IS NOT NULL)"

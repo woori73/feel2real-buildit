@@ -3193,16 +3193,16 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### ✅ GET /api/chart/rankings  (PR-C)
 
-- 목적: BuildIt Ranking 목록. **현재 publication 에서 파생**(Score 재계산·publication 재생성 없음). EVALUATABLE + 유효 BuildIt Score 를 가진 교육자만 등장한다(RESEARCH_PENDING 은 애초에 publication 에 없어 자동 제외).
+- 목적: BuildIt Ranking 목록. **publication 과 독립** — TOP100 publication 이 아니라 `chart_candidates`(공개 대상) × candidate 별 최신 유효 Score snapshot 에서 직접 계산. Score 재계산·publication 재생성 없음. pool = `(eligibility_status='EVALUATABLE' OR legacy_source IS NOT NULL)` AND 미제외 AND PR-A 의 grandfather 규칙(`PUBLISHABLE_PROFILE`) AND 최신 Score snapshot 존재. RESEARCH_PENDING / Score 없는 후보 자동 제외. publication 에 아직 없는 scored 교육자도 순위에 포함된다(전체 Ranking 이 100명을 넘을 수 있음).
 - 인증/권한: public read.
 - Query: `province` 없으면 **전국 순위 상위 `limit`**(기본·최대 100 = BuildIt TOP100 큐레이션). `province`(+선택 `cityDistrict`)가 있으면 **해당 지역 순위**(지역 순위 오름차순). `province` 만 있고 값이 비면 400.
-- 순위 규칙: 전국 순위 = 현재 publication 삽입 순서(`total_score DESC, candidate_id ASC` — `autoPublishNationwide` 와 동일, 동점은 먼저 등록된 교육자가 앞). 지역 순위 = 같은 (province, cityDistrict) 안에서의 위치. 지역별로 평가 기준·가중치를 바꾸지 않는다. `top100 = overallRank <= 100`.
-- Response: `{ scope: "NATIONWIDE"|"REGION", province, cityDistrict, criteriaVersion, publicationId, total, educators: [{ id, name, role, academyName, province, cityDistrict, activityRegion, identitySummary, educationPhilosophy, profileImageUrl, buildItScore, overallRank, overallTotal, regionRank, regionTotal, top100 }], disclaimer }`.
+- 순위 규칙: pool 을 `total_score DESC, candidate_id ASC`(= `autoPublishNationwide` 와 동일 규칙, 동점은 candidate_id 오름차순 — 우열의 의미 아님) 로 정렬한 위치. 전국 순위 = pool 안의 위치(1..N). 지역 순위 = 같은 (province, cityDistrict) 안에서의 위치. 지역별로 평가 기준·가중치를 바꾸지 않는다. `top100 = overallRank <= 100`(현재 데이터에서는 기존 publication RANKED 집합과 동일).
+- Response: `{ scope: "NATIONWIDE"|"REGION", province, cityDistrict, criteriaVersion, total, educators: [{ id, name, role, academyName, province, cityDistrict, activityRegion, identitySummary, educationPhilosophy, profileImageUrl, buildItScore, overallRank, overallTotal, regionRank, regionTotal, top100 }], disclaimer }`.
 
 ### ✅ GET /api/chart/rankings/{id}  (PR-C)
 
 - 목적: 교육자 1명의 BuildIt Ranking(상세 페이지용). `{id}` = `candidate_id`(숫자).
-- 인증/권한: public read. 현재 publication 에 없는 교육자(RESEARCH_PENDING·미채점·미존재)는 **항상 200 `{ id, ranked:false, disclaimer }`** (순위·점수 필드는 모두 `null`).
+- 인증/권한: public read. Ranking pool 에 없는 교육자(RESEARCH_PENDING·미채점·excluded·미존재)는 **항상 200 `{ id, ranked:false, disclaimer }`** (순위·점수 필드는 모두 `null`).
 - Response(ranked): `{ id, ranked:true, buildItScore, overallRank, overallTotal, regionRank, regionTotal, province, cityDistrict, top100, criteriaVersion, disclaimer }`.
 
 ### ✅ GET /api/chart/criteria  (PR-C)
