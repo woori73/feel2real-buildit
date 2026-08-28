@@ -59,6 +59,8 @@
 .manual-paste-toggle{margin-top:4px}
 .manual-paste-area{width:100%;min-height:150px;margin:10px 0}
 .manual-found{margin:6px 0 10px;line-height:1.7}
+.manual-import-note{margin:4px 0;padding:7px 10px;border-radius:8px;background:#fff6e0;color:#7a5a00;font-size:12px;line-height:1.55}
+.manual-import-note.is-error{background:#fdeceb;color:#a5342c}
 .manual-adv{margin:8px 0 4px}
 .manual-preview{margin-top:12px;max-height:46vh;overflow-y:auto}
 .manual-preview article{align-items:flex-start}

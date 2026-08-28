@@ -1,7 +1,7 @@
 import { DragEvent, useMemo, useRef, useState } from 'react'
 import { saveManualQuestions } from '../lib/types'
-import { ParsedQuestion, parsePastedQuestions, toContractQuestion } from '../lib/parseQuestions'
-import { ImportMeta, importQuestionFile } from '../lib/importQuestions'
+import { ParsedQuestion, toContractQuestion } from '../lib/parseQuestions'
+import { ImportMeta, ImportResult, importQuestionFile } from '../lib/importQuestions'
 
 // 강사 문제 DB — 외부(Claude/ChatGPT/MCP)에서 만든 문제 파일을 올려 그대로 저장한다.
 // AI 재생성·Digital Twin 분석 없음. 파일 업로드 → N문항 발견 → 문제 확인 → Wiki에 저장.
@@ -29,18 +29,25 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
   const [dragOver, setDragOver] = useState(false)
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
+  const [lowConfidence, setLowConfidence] = useState(false)
+  const [importNotes, setImportNotes] = useState<string[]>([])
   const fileInput = useRef<HTMLInputElement>(null)
 
   const included = useMemo(() => rows.filter(r => r._include), [rows])
   const ctxLine = [ctx.school, ctx.grade, ctx.year, ctx.semester, ctx.exam].filter(Boolean).join(' > ') || '현재 Context 없음'
+  const missingAnswers = useMemo(() => included.filter(r => r._missingAnswer).length, [included])
 
-  const ingest = (questions: ParsedQuestion[], m: ImportMeta, name: string) => {
-    if (!questions.length) { setNotice('파일에서 문항을 찾지 못했습니다. 형식을 확인하거나 "직접 텍스트 붙여넣기"를 이용해 주세요.'); return }
-    setRows(questions.map(q => ({ ...q, _include: true })))
-    setMeta(m)
-    if (m.title || m.sourceMaterial || m.digitalTwin) setAdvOpen(true)
+  const ingest = (res: ImportResult, name: string) => {
+    if (!res.questions.length && !res.lowConfidence) {
+      setNotice('파일에서 문항을 찾지 못했습니다. 형식을 확인하거나 "직접 텍스트 붙여넣기"를 이용해 주세요.'); return
+    }
+    setRows(res.questions.map(q => ({ ...q, _include: true })))
+    setMeta(res.meta)
+    setLowConfidence(res.lowConfidence)
+    setImportNotes(res.notes)
+    if (res.meta.title || res.meta.sourceMaterial || res.meta.digitalTwin) setAdvOpen(true)
     setFileName(name)
-    setStage('found')
+    setStage(res.lowConfidence ? 'review' : 'found')
     setNotice('')
   }
 
@@ -48,8 +55,7 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
     setAnalyzing(true); setStage('upload'); setNotice('')
     try {
       const text = await file.text()
-      const res = importQuestionFile(file.name, text)
-      ingest(res.questions, res.meta, file.name)
+      ingest(importQuestionFile(file.name, text), file.name)
     } catch (e) {
       setNotice(e instanceof Error ? `파일을 읽지 못했습니다: ${e.message}` : '파일을 읽지 못했습니다.')
     } finally { setAnalyzing(false) }
@@ -62,15 +68,16 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
   }
 
   const analyzePaste = () => {
-    const qs = parsePastedQuestions(paste)
-    if (!qs.length) { setNotice('붙여넣은 내용에서 문항을 분리하지 못했습니다.'); return }
-    ingest(qs, {}, '(붙여넣기)')
+    const res = importQuestionFile('paste.txt', paste)
+    if (!res.questions.length) { setNotice('붙여넣은 내용에서 문항을 분리하지 못했습니다.'); return }
+    ingest(res, '(붙여넣기)')
   }
 
   const patch = (i: number, next: Partial<Row>) => setRows(rs => rs.map((r, idx) => idx === i ? { ...r, ...next } : r))
 
   const save = async () => {
     if (!included.length) { setNotice('저장할 문항을 선택해 주세요.'); return }
+    if (lowConfidence) { setNotice('문항 구조를 정확히 인식하지 못해 저장할 수 없습니다. 파일 형식을 확인해 주세요.'); return }
     setSaving(true); setNotice('저장하는 중입니다.')
     try {
       const res = await saveManualQuestions({
@@ -120,6 +127,11 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
       {stage !== 'upload' && <>
         <p className="manual-found">{fileName && <span className="field-hint">파일명: {fileName}</span>}<br />
           <b>{rows.length}문항을 찾았습니다.</b>{included.length !== rows.length && <span> (선택 {included.length})</span>}</p>
+        {importNotes.filter(n => !(stage === 'review' && n.includes('정답이 없는 문항')))
+          .map((n, i) => <p key={i} className={`manual-import-note${lowConfidence ? ' is-error' : ''}`}>⚠ {n}</p>)}
+        {stage === 'review' && missingAnswers > 0 && !lowConfidence &&
+          <p className="manual-import-note">⚠ 정답이 없는 문항 {missingAnswers}개 — 그대로 저장하면 정답/해설은 비어 있습니다(학생용 시험지).</p>}
+        {lowConfidence && <p className="manual-import-note is-error">문항 구조 인식 실패로 <b>저장이 차단</b>되었습니다. 아래에서 수정하거나 다른 파일을 올려 주세요.</p>}
 
         <button type="button" className="link-button" onClick={() => setAdvOpen(v => !v)}>{advOpen ? '상세 설정 접기' : '상세 설정'}</button>
         {advOpen && <div className="metadata-grid manual-adv">
@@ -134,9 +146,9 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
 
         {stage === 'found' && <div className="twin-actions">
           <button type="button" className="secondary-button" onClick={() => setStage('review')}>문제 확인</button>
-          <button type="button" className="primary-action" style={{ marginTop: 0 }} disabled={saving || !included.length} onClick={() => void save()}>
+          <button type="button" className="primary-action" style={{ marginTop: 0 }} disabled={saving || !included.length || lowConfidence} onClick={() => void save()}>
             {saving ? '저장하는 중…' : `Wiki에 저장 (${included.length}문항)`}</button>
-          <button type="button" className="link-button" onClick={() => { setStage('upload'); setRows([]); setFileName('') }}>다른 파일</button>
+          <button type="button" className="link-button" onClick={() => { setStage('upload'); setRows([]); setFileName(''); setLowConfidence(false); setImportNotes([]) }}>다른 파일</button>
         </div>}
 
         {stage === 'review' && <>
@@ -154,16 +166,17 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
                   <label>유형<input value={r.questionType} onChange={e => patch(i, { questionType: e.target.value })} /></label>
                   <label>배점<input type="number" min={0} value={r.score} onChange={e => patch(i, { score: Number(e.target.value) || 0 })} /></label>
                   <label>정답{r.type === 'mc'
-                    ? <input value={r.answer.join(', ')} placeholder="예: 2 또는 2,4"
-                        onChange={e => { const answer = e.target.value.split(/[^\d]+/).map(Number).filter(n => n >= 1 && n <= r.options.length); patch(i, { answer, multi: answer.length > 1 }) }} />
-                    : <input value={r.sampleAnswer} onChange={e => patch(i, { sampleAnswer: e.target.value, acceptedAnswers: e.target.value ? [e.target.value] : [] })} />}</label>
+                    ? <input value={r.answer.join(', ')} placeholder={r._missingAnswer ? '미등록' : '예: 2 또는 2,4'}
+                        onChange={e => { const answer = e.target.value.split(/[^\d]+/).map(Number).filter(n => n >= 1 && n <= r.options.length); patch(i, { answer, multi: answer.length > 1, _missingAnswer: answer.length === 0 }) }} />
+                    : <input value={r.sampleAnswer} placeholder={r._missingAnswer ? '미등록' : ''}
+                        onChange={e => patch(i, { sampleAnswer: e.target.value, acceptedAnswers: e.target.value ? [e.target.value] : [], _missingAnswer: !e.target.value })} />}</label>
                 </div>
-                <label className="manual-edit">해설 / 채점 기준<textarea rows={2} value={r.gradingRule} onChange={e => patch(i, { gradingRule: e.target.value })} /></label>
+                <label className="manual-edit">해설 / 채점 기준<textarea rows={2} value={r.gradingRule} placeholder="비어 있음(학생용 파일)" onChange={e => patch(i, { gradingRule: e.target.value })} /></label>
               </div>
             </article>)}
           </div>
-          <button className="primary-action" disabled={saving || !included.length} onClick={() => void save()}>
-            {saving ? '저장하는 중…' : `Wiki에 저장 (${included.length}문항)`}</button>
+          <button className="primary-action" disabled={saving || !included.length || lowConfidence} onClick={() => void save()}>
+            {saving ? '저장하는 중…' : lowConfidence ? '저장 불가 (구조 인식 실패)' : `Wiki에 저장 (${included.length}문항)`}</button>
         </>}
       </>}
     </section>
