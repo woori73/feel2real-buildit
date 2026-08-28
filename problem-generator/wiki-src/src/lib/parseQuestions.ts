@@ -25,7 +25,7 @@ const BLOCK_START = /^\s*(?:Q|문제|문항|No\.?)?\s*\d+\s*[.)．]/i
 const OPTION_LINE = /^\s*(?:([①-⑩])|([A-Ea-e])[.)]|(\d{1,2})[.)])\s*(.*\S)?\s*$/
 const LABELLED = /^\s*(정답|답|해설|풀이|유형|문제유형|조건|배점|점수)\s*[:：]\s*(.*)$/
 
-const markersToIndices = (raw: string, optionCount: number): number[] => {
+export const markersToIndices = (raw: string, optionCount: number): number[] => {
   const out = new Set<number>()
   for (const ch of raw) {
     const c = CIRCLED.indexOf(ch)
@@ -44,14 +44,17 @@ const markersToIndices = (raw: string, optionCount: number): number[] => {
 
 const splitBlocks = (text: string): string[] => {
   const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const anyMarker = lines.some(l => BLOCK_START.test(l))
   const blocks: string[] = []
   let current: string[] = []
+  let started = !anyMarker
   for (const line of lines) {
-    if (BLOCK_START.test(line) && current.some(l => l.trim())) {
-      blocks.push(current.join('\n'))
+    if (BLOCK_START.test(line)) {
+      if (current.some(l => l.trim())) blocks.push(current.join('\n'))
       current = []
+      started = true  // 첫 번호 마커 앞의 제목·머리글은 버린다
     }
-    current.push(line)
+    if (started) current.push(line)
   }
   if (current.some(l => l.trim())) blocks.push(current.join('\n'))
   // 번호 마커가 전혀 없으면 빈 줄 2개로 분리 시도
@@ -72,9 +75,15 @@ const parseBlock = (block: string): ParsedQuestion | null => {
   let score = 0
   let sawOptionsOrAnswer = false
 
-  for (let raw of lines) {
-    let line = raw.replace(BLOCK_START, '').trim()
+  for (const raw of lines) {
+    const isFirstNumbered = BLOCK_START.test(raw)
+    const line = raw.replace(BLOCK_START, '').trim()
     if (!line && !raw.trim()) continue
+    if (isFirstNumbered && !sawOptionsOrAnswer) {
+      // 블록 첫 줄의 "1." 은 문항 번호 — 선택지/라벨로 재해석하지 않는다.
+      if (line) stemLines.push(line)
+      continue
+    }
     const labelled = raw.match(LABELLED)
     if (labelled) {
       sawOptionsOrAnswer = true
@@ -140,6 +149,26 @@ const parseBlock = (block: string): ParsedQuestion | null => {
 
 export const parsePastedQuestions = (text: string): ParsedQuestion[] =>
   splitBlocks(text).map(parseBlock).filter((q): q is ParsedQuestion => q !== null)
+
+// HTML 시험지를 줄바꿈이 보존된 평문으로 바꾼다(블록 태그 → 개행). 그 뒤 parsePastedQuestions 재사용.
+export const htmlToText = (html: string): string => {
+  let s = html
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    doc.querySelectorAll('script,style,noscript').forEach(n => n.remove())
+    // 번호 없는 <ol><li> 선택지에 원형번호를 붙여 parser가 인식하게 한다.
+    doc.querySelectorAll('ol').forEach(ol => {
+      Array.from(ol.children).forEach((li, i) => {
+        if (li.tagName === 'LI' && i < CIRCLED.length && !/^[\s①-⑩]/.test(li.textContent || '')) li.prepend(`${CIRCLED[i]} `)
+      })
+    })
+    doc.querySelectorAll('li,p,div,tr,br,h1,h2,h3,h4,h5,h6,section,article').forEach(n => n.after('\n'))
+    s = doc.body?.textContent ?? doc.textContent ?? ''
+  } catch {
+    s = html.replace(/<(li|p|div|tr|br|h[1-6]|section|article)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '')
+  }
+  return s.replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
+}
 
 // 저장 계약에 맞게 미리보기 전용 필드를 제거한다.
 export const toContractQuestion = (q: ParsedQuestion) => {
