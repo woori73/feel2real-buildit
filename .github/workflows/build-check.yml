@@ -37,3 +37,21 @@ jobs:
 
       - name: Build bootJar only (no deploy)
         run: ./gradlew clean bootJar --no-daemon
+
+      # MySQL 이 없는 CI 에서 실행 가능한 순수 단위/계약 테스트만 실행한다.
+      # @SpringBootTest(MySQL) 통합 테스트는 여기에 포함하지 않는다(로컬/전용 환경에서만).
+      # 이 스텝 덕분에 Build Check 는 "컴파일 성공"이 아니라 "핵심 단위 로직 통과"까지 의미한다.
+      - name: Run non-MySQL unit & contract tests
+        run: >-
+          ./gradlew test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartSiteToolsContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartDiscoveryServiceTest"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-check-test-report
+          path: build/reports/tests/test
+          if-no-files-found: ignore

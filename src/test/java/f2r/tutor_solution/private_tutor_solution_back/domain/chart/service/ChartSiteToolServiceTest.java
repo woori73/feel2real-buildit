@@ -126,6 +126,50 @@ class ChartSiteToolServiceTest {
     assertThat(result.rejectReasons()).contains("실제 공개 근거 URL 없음");
   }
 
+  // ---- 평가 게이트: 현재 연도 활동 미확인 → 저장 허용 + RESEARCH_PENDING ----
+
+  @Test
+  void assess_researchPending_givenCurrentYearActivityNotConfirmed() {
+    var result = service.assess(request(PHILOSOPHY, CURRICULUM, true, false, true, true, List.of(currentClassEvidence())));
+    assertThat(result.status()).isEqualTo("RESEARCH_PENDING");
+    assertThat(result.rejected()).isFalse();
+    assertThat(result.holdReasons()).contains("최근 공개 활동 미확인");
+  }
+
+  // ---- REJECT 조건과 HOLD 조건 동시 존재 → REJECTED 우선 ----
+
+  @Test
+  void assess_rejected_takesPrecedenceWhenRejectAndHoldCoexist() {
+    // 신원 미확인(최소 게이트 실패) + 철학·커리큘럼 미서술(평가 게이트 실패) 동시
+    var result = service.assess(request(null, null, false, false, false, true, List.of(currentClassEvidence())));
+    assertThat(result.status()).isEqualTo("REJECTED");
+    assertThat(result.rejectReasons()).contains("교육자 개인 식별 불가");
+    assertThat(result.holdReasons()).isNotEmpty(); // 참고용 hold 사유는 함께 실리되 status 는 REJECTED
+  }
+
+  // ---- 최소 게이트 URL 판정: evidence[0] 이 잘못돼도 뒤의 정상 evidence 를 대표로 사용 ----
+  //      (saveDraft 도 동일한 primaryEvidence 기준을 쓴다)
+
+  @Test
+  void assess_minimumGate_usesFirstValidEvidenceUrl_notOnlyIndexZero() {
+    var result = service.assess(request(PHILOSOPHY, CURRICULUM, true, true, true, true, List.of(
+        new EvidenceRequest("커리큘럼", "자체 독해 커리큘럼과 수업 단계 설명", "커리큘럼", "not-a-url",
+            LocalDate.now(), "CURRICULUM", true),
+        new EvidenceRequest("오프라인 수업", "현재 학생을 지도하는 정규 수업", "수업 일정", "https://example.com/valid",
+            LocalDate.now(), "OFFLINE_ACTIVITY", true))));
+    assertThat(result.rejectReasons()).doesNotContain("실제 공개 근거 URL 없음");
+    assertThat(result.status()).isEqualTo("EVALUATABLE");
+  }
+
+  @Test
+  void assess_rejected_whenNoEvidenceHasValidPublicHttpUrl() {
+    var result = service.assess(request(PHILOSOPHY, CURRICULUM, true, true, true, true, List.of(
+        new EvidenceRequest("커리큘럼", "설명", "커리큘럼", "not-a-url", LocalDate.now(), "CURRICULUM", true),
+        new EvidenceRequest("오프라인 수업", "설명", "수업", "   ", LocalDate.now(), "OFFLINE_ACTIVITY", true))));
+    assertThat(result.status()).isEqualTo("REJECTED");
+    assertThat(result.rejectReasons()).contains("실제 공개 근거 URL 없음");
+  }
+
   @Test
   void score_isDeterministicAndNeverExceedsOneHundred() {
     Map<String, Object> candidate = new HashMap<>();

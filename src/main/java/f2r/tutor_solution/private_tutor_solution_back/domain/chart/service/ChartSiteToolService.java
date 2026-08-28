@@ -273,7 +273,13 @@ public class ChartSiteToolService {
           "BuildIt Chart 저장 최소 조건 미달: " + String.join(", ", assessment.rejectReasons()));
     }
     List<String> savedReasons = assessment.evaluatable() ? assessment.passReasons() : assessment.holdReasons();
-    EvidenceRequest primary = request.evidence().get(0);
+    // assess() 의 최소 게이트와 동일 기준으로 대표 evidence 를 고른다. evidence[0] 이 잘못돼도
+    // 뒤의 정상 evidence 를 쓴다. rejected() 가 아니면 여기서 primary 는 non-null 이다.
+    EvidenceRequest primary = primaryEvidence(request.evidence());
+    if (primary == null) {
+      throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+          "BuildIt Chart 저장 최소 조건 미달: 실제 공개 근거 URL 없음");
+    }
     String personKey = normalize(request.name()) + "|" + normalize(request.academyName()) + "|"
         + normalize(request.province()) + "|" + normalize(request.cityDistrict());
     String region = require(request.province(), "province") + " " + require(request.cityDistrict(), "cityDistrict");
@@ -322,7 +328,10 @@ public class ChartSiteToolService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "동일 교육자와 근거 URL 후보가 이미 존재합니다.");
     }
     Long candidateId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+    int skippedEvidence = 0;
     for (EvidenceRequest evidence : request.evidence()) {
+      // 유효한 공개 http(s) URL 이 없는 evidence 행은 건너뛴다(보정·추측 없음, 대표 evidence 선정과 동일 기준).
+      if (!isPublicHttpUrl(evidence.sourceUrl())) { skippedEvidence++; continue; }
       String url = validPublicUrl(evidence.sourceUrl());
       jdbcTemplate.update("""
           INSERT IGNORE INTO chart_candidate_activities
@@ -338,6 +347,7 @@ public class ChartSiteToolService {
         "evaluationHold", assessment.researchPending(),
         "holdReasons", assessment.holdReasons(),
         "assessment", assessment,
+        "skippedEvidence", skippedEvidence,
         "criteriaVersion", CRITERIA_VERSION, "published", false);
   }
 
@@ -660,9 +670,7 @@ public class ChartSiteToolService {
     // ── 최소 게이트 (실패 → REJECTED / 422) ──
     if (!request.educatorIdentityConfirmed()) reject.add("교육자 개인 식별 불가");
     if (!request.exclusionFree()) reject.add("현재 초·중·고 현장 영어교육 범위를 명백히 벗어남(온라인 전업 등)");
-    boolean hasEvidenceUrl = request.evidence() != null && request.evidence().stream()
-        .anyMatch(e -> e.sourceUrl() != null && !e.sourceUrl().isBlank());
-    if (!hasEvidenceUrl) reject.add("실제 공개 근거 URL 없음");
+    if (primaryEvidence(request.evidence()) == null) reject.add("실제 공개 근거 URL 없음");
 
     // ── 평가 게이트 (실패 → RESEARCH_PENDING, 저장은 됨) ──
     if (!request.offlineActivityConfirmed()) hold.add("현재 오프라인 현장 활동 미확인");
@@ -950,6 +958,30 @@ public class ChartSiteToolService {
   }
 
   private String nullableUrl(String value) { return value == null || value.isBlank() ? null : validPublicUrl(value); }
+
+  /** 값이 실제 공개 http(s) URL(스킴 http/https + host 존재)인지. 예외를 던지지 않는다. */
+  private boolean isPublicHttpUrl(String value) {
+    if (value == null || value.isBlank()) return false;
+    try {
+      URI uri = URI.create(value.trim());
+      return ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+          && uri.getHost() != null;
+    } catch (IllegalArgumentException error) {
+      return false;
+    }
+  }
+
+  /**
+   * evidence 배열에서 실제 유효한 공개 http(s) URL 을 가진 첫 evidence 를 대표 evidence 로 고른다.
+   * {@code assess()} 의 최소 게이트와 {@code saveDraft()} 의 저장이 같은 기준을 쓰도록 공유한다.
+   * 유효 URL 이 하나도 없으면 {@code null}(→ 최소 게이트 REJECTED). invalid URL 을 보정·추측하지 않는다.
+   */
+  private EvidenceRequest primaryEvidence(List<EvidenceRequest> evidence) {
+    if (evidence == null) return null;
+    return evidence.stream()
+        .filter(e -> e != null && isPublicHttpUrl(e.sourceUrl()))
+        .findFirst().orElse(null);
+  }
   private String normalizedKind(String value) { return require(value, "evidenceKind").trim().toUpperCase(Locale.ROOT); }
   private String normalize(String value) { return value == null ? "" : value.replaceAll("\\s+", "").toLowerCase(Locale.ROOT); }
   private String blank(String value) { return value == null || value.isBlank() ? null : value.trim(); }

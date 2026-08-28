@@ -114,6 +114,26 @@ class ChartArchivePipelineMySqlTest {
   }
 
   @Test
+  void draft_withInvalidFirstEvidence_usesNextValidEvidence_andSkipsInvalid() {
+    // 최소 게이트(assess)와 saveDraft 저장 판정이 일치: evidence[0] 이 잘못돼도 뒤의 정상 evidence 를 대표로 쓴다.
+    String region = freshRegion("mixedev");
+    Map<String, Object> result = save(region, "혼합근거", PHILOSOPHY, CURRICULUM, true, true, true, true, List.of(
+        new EvidenceRequest("커리큘럼", "자체 커리큘럼 설명", "커리큘럼", "not-a-url",
+            LocalDate.now(), "CURRICULUM", true),
+        new EvidenceRequest("오프라인 수업", "현재 학생을 지도하는 정규 수업", "수업",
+            "https://example.com/mixed-valid", LocalDate.now(), "OFFLINE_ACTIVITY", true)));
+
+    assertThat(result).containsEntry("eligibilityStatus", "EVALUATABLE").containsEntry("skippedEvidence", 1);
+    long id = ((Number) result.get("candidateId")).longValue();
+    // invalid URL evidence 는 건너뛰고 유효 evidence 1건만 활동으로 저장한다(보정·추측 없음).
+    assertThat(jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM chart_candidate_activities WHERE candidate_id=?", Integer.class, id)).isEqualTo(1);
+    assertThat(jdbcTemplate.queryForObject(
+        "SELECT source_url FROM chart_candidates WHERE candidate_id=?", String.class, id))
+        .isEqualTo("https://example.com/mixed-valid");
+  }
+
+  @Test
   void evaluatableCandidate_isScoredSelectedAndPublished() {
     String region = freshRegion("publish");
     long id = ((Number) save(region, "발행원장", PHILOSOPHY, CURRICULUM, true, true, true, true, fullEvidence("발행원장"))
