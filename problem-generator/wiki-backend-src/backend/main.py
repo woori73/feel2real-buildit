@@ -1513,6 +1513,55 @@ def list_questions(school: Optional[str] = None, grade: Optional[str] = None, ex
     return result
 
 
+class ManualQuestionsCreate(BaseModel):
+    """외부(Claude/MCP 등)에서 이미 제작한 문항을 사용자가 강사 문제 DB에 직접 붙여넣어 저장한다.
+    AI 호출·Digital Twin 분석 없이 기존 question_contract + _save_generated만 재사용한다.
+    source_material이 있으면 기존 create_generated_test 경로로 Generated Test까지 연결한다."""
+    school: str = ''
+    grade: str = ''
+    year: Optional[int] = None
+    semester: str = ''
+    exam: str = '전체'
+    exam_title: str = ''
+    source_material: str = ''
+    source_page: str = ''
+    digital_twin: str = ''
+    questions: list[dict]
+
+
+@app.post('/api/questions', status_code=201)
+def create_manual_questions(payload: ManualQuestionsCreate):
+    if not payload.questions:
+        raise HTTPException(status_code=422, detail='저장할 문항이 없습니다.')
+    if payload.source_material.strip():
+        title = payload.exam_title.strip() or f'{payload.source_material.strip()} 수동 저장 문항'
+        result = create_generated_test(GeneratedTestCreate(
+            school=payload.school, grade=payload.grade, source_material=payload.source_material,
+            questions=payload.questions, source_page=payload.source_page, title=title,
+            year=payload.year, semester=payload.semester, exam=payload.exam or '전체',
+            digital_twin=payload.digital_twin, test_type='manual', generation_source='manual',
+        ))
+        return {'saved': True, 'question_count': result['question_count'],
+                'examGroupId': result.get('external_id', ''), 'test_id': result.get('test_id'),
+                'questions': result.get('questions', [])}
+    title = payload.exam_title.strip() or f'{payload.school} {payload.grade} 수동 저장 문항'.strip()
+    try:
+        validated = qc.validate_transform({'examTitle': title, 'questions': payload.questions})
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail='문항 검증 실패(저장하지 않음): ' + qc.validation_fields(exc)) from exc
+    twin_like = {'id': None, 'school': payload.school.strip(), 'grade': payload.grade.strip(),
+                 'exam': (payload.exam or '전체').strip()}
+    group_id = f'manual_{uuid.uuid4().hex}'
+    try:
+        with get_db() as conn:
+            saved = _save_generated(conn, twin_like, 'manual', validated['questions'], title, group_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f'문항을 저장하지 못했습니다: {exc}') from exc
+    return {'saved': True, 'question_count': len(saved), 'examGroupId': group_id, 'questions': saved}
+
+
 @app.delete('/api/questions/{question_id}')
 def delete_question(question_id: int):
     with get_db() as conn:
@@ -1559,6 +1608,7 @@ class GeneratedTestCreate(BaseModel):
     lesson: str = ''
     material_type: str = ''
     external_id: str = ''
+    generation_source: str = 'mcp'  # 'mcp'(MCP 자동저장) | 'manual'(사용자 직접 붙여넣기)
 
 
 def _derive_external_id(school: str, grade: str, source_material: str, source_page: str,
@@ -1674,11 +1724,13 @@ def create_generated_test(payload: GeneratedTestCreate) -> dict:
                  payload.twin_pattern.strip(), payload.difficulty.strip(),
                  json.dumps(payload.target_vocabulary, ensure_ascii=False),
                  json.dumps(payload.target_grammar, ensure_ascii=False), payload.target_passage.strip(),
-                 'mcp', 0, json.dumps(payload.model_dump(exclude={'questions'}), ensure_ascii=False), now),
+                 payload.generation_source or 'mcp', 0,
+                 json.dumps(payload.model_dump(exclude={'questions'}), ensure_ascii=False), now),
             )
             test_id = cursor.lastrowid
             twin_like = {'id': twin_id, 'school': school, 'grade': grade, 'exam': payload.exam or '전체'}
-            saved = _save_generated(conn, twin_like, 'mcp', validated['questions'], title, group_id, test_id=test_id)
+            saved = _save_generated(conn, twin_like, payload.generation_source or 'mcp',
+                                    validated['questions'], title, group_id, test_id=test_id)
             conn.execute('UPDATE generated_tests SET question_count=? WHERE id=?', (len(saved), test_id))
     except HTTPException:
         raise

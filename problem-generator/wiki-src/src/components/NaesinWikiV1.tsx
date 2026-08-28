@@ -248,7 +248,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
         <div className="twin-actions">
           <button className="primary-action" onClick={()=>openQuestionMaker('new')}>문제 만들기</button>
           <button className="primary-action" onClick={()=>openQuestionMaker('transform')}>기존 문제 변형</button>
-          <button className="primary-action" onClick={()=>onNavigate('database')}>저장된 문제 <strong>{questions.length}</strong></button>
+          <button className="primary-action" onClick={()=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,year:context.year,semester:context.semester}));onNavigate('database')}}>저장된 문제 <strong>{questions.length}</strong></button>
         </div>
         <p className="field-hint">저장된 문제를 선택하면 기존 오피스 2007(.docx) 내보내기로 이어집니다. Digital Twin을 새로 등록하려면 <button type="button" className="link-button" onClick={()=>onNavigate('twin')}>Digital Twin 관리</button>로 이동하세요.</p>
       </li>

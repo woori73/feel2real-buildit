@@ -142,6 +142,60 @@ class GeneratedTestStoreTest(unittest.TestCase):
         self.assertTrue(loose)
 
 
+class ManualQuestionSaveTest(unittest.TestCase):
+    """강사 문제 DB 「문제 저장하기」 — POST /api/questions. AI 호출 없이 기존 계약 재사용."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH = str(Path(self.temp_dir.name) / 'test.db')
+        main.init_db(); main.migrate_schema(); main.seed_default_twins()
+        from fastapi.testclient import TestClient
+        self.c = TestClient(main.app)
+
+    def tearDown(self): self.temp_dir.cleanup()
+
+    def test_flat_manual_save_appends_to_question_db(self):
+        r = self.c.post('/api/questions', json={
+            'school': '신사중', 'grade': '3학년', 'exam': '전체', 'exam_title': '수동 붙여넣기',
+            'questions': [_mc('gradually'), _sa_manual()]})
+        self.assertEqual(201, r.status_code)
+        self.assertEqual(2, r.json()['question_count'])
+        rows = self.c.get('/api/questions').json()
+        self.assertEqual(2, len(rows))
+        self.assertEqual({'manual'}, {q['mode'] for q in rows})
+
+    def test_manual_save_with_source_material_links_generated_test(self):
+        r = self.c.post('/api/questions', json={
+            'school': '신사중', 'grade': '3학년', 'exam': '전체',
+            'source_material': 'The Boiling Frog Myth', 'source_page': '2',
+            'digital_twin': '신사중 3학년 출제자 Digital Twin',
+            'questions': [_mc('gradually'), _mc('adapt')]})
+        self.assertEqual(201, r.status_code)
+        self.assertEqual(2, r.json()['question_count'])
+        self.assertIsNotNone(r.json().get('test_id'))
+        sm = main.list_source_materials(school='신사중', grade='3학년')
+        self.assertEqual(1, len(sm))
+        self.assertEqual('The Boiling Frog Myth', sm[0]['title'])
+        rows = self.c.get('/api/questions').json()
+        self.assertEqual({'manual'}, {q['mode'] for q in rows})  # MCP 저장과 구분됨
+        detail = main.get_generated_test(r.json()['test_id'])
+        self.assertEqual('manual', detail['test']['generation_source'])
+
+    def test_invalid_questions_rejected_nothing_saved(self):
+        r = self.c.post('/api/questions', json={'school': 's', 'grade': 'g', 'questions': [{'type': 'mc'}]})
+        self.assertEqual(422, r.status_code)
+        self.assertEqual([], self.c.get('/api/questions').json())
+
+
+def _sa_manual(**o):
+    b = {'type': 'sa', 'questionType': '영작', 'sourceText': '', 'stem': 'gradually로 문장 쓰기',
+         'options': [], 'answer': [], 'multi': False, 'score': 5, 'conditions': [],
+         'answerFormat': '완전한 문장', 'acceptedAnswers': ['It rose gradually.'],
+         'sampleAnswer': 'It rose gradually.', 'gradingRule': '문법·의미 일치'}
+    b.update(o)
+    return b
+
+
 class McpToolDiscoveryTest(unittest.TestCase):
     """save_generated_test는 MCP tool 목록에 실제로 노출되어야 한다(코드에 함수만 있는 것과 다름)."""
 
