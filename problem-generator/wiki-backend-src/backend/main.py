@@ -355,25 +355,52 @@ _LEGACY_TEST_MIGRATIONS = [
         'source_material': 'The Boiling Frog Myth', 'source_page': '2',
         'material_type': 'ted_ed', 'test_type': 'vocabulary',
         'title': 'The Boiling Frog Myth — Page 2 Vocabulary Test',
-        'delete_question_ids': [83, 84],  # MCP 진단 중 잘못 저장된 test/test3 dummy (내용 확인 후에만 삭제)
+        'twin_label': '신사중 3학년 출제자 디지털트윈',
+        'twin_pattern': '복수정답·문학개념 전이·심리/담화 추론·조건형 영작',
+        'difficulty': '실제 시험 수준의 중상 난이도',
+        'delete_question_ids': [83, 84],  # MCP 진단 중 잘못 저장된 dummy — 내용이 test/test3 짧은 것만 삭제
     },
 ]
 
-# sourceText에 우회 저장된 태그: [대상어휘 | 어휘등급 | 난이도 | Page | DigitalTwin근거 | DigitalTwin패턴]
-_LEGACY_TWIN_TAG_RE = re.compile(r'\[([^\[\]]*\|[^\[\]]*\|[^\[\]]*\|[^\[\]]*\|[^\[\]]*\|[^\[\]]*)\]')
+# sourceText에 우회 저장된 Digital Twin 태그. 실제 형식은 key:value 쌍이며 대소문자가 섞여 있다:
+#   [문항ID:Q30 | 대상어휘:be oblivious to | 어휘등급:CHALLENGE | 난이도:상 | Page:4 | DigitalTwin근거:... | DigitalTwin패턴:...]
+# (초기 저장분은 bare 6-value: [대상어휘 | 어휘등급 | 난이도 | Page | 근거 | 패턴] 도 지원)
+_LEGACY_TAG_RE = re.compile(r'\[([^\[\]]+)\]')
+_LEGACY_TAG_KEYS = {
+    '대상어휘': 'target_vocab', '어휘등급': 'vocab_level', '난이도': 'difficulty',
+    'page': 'page', 'digitaltwin근거': 'twin_basis', 'digitaltwin패턴': 'twin_pattern',
+}
 
 
 def _parse_legacy_twin_tag(source_text: str) -> Optional[dict]:
     if not source_text:
         return None
-    matches = _LEGACY_TWIN_TAG_RE.findall(source_text)
-    if not matches:
-        return None
-    parts = [p.strip() for p in matches[-1].split('|')]
-    if len(parts) != 6:
-        return None
-    return {'target_vocab': parts[0], 'vocab_level': parts[1], 'difficulty': parts[2],
-            'page': parts[3], 'twin_basis': parts[4], 'twin_pattern': parts[5]}
+    for group in _LEGACY_TAG_RE.findall(source_text):
+        if '|' not in group:
+            continue
+        fields = [f.strip() for f in group.split('|')]
+        if all(':' in f for f in fields):
+            out: dict = {}
+            for field in fields:
+                key, _, val = field.partition(':')
+                canon = _LEGACY_TAG_KEYS.get(key.strip().lower())
+                if canon and val.strip():
+                    out.setdefault(canon, val.strip())
+            if out.get('target_vocab'):
+                return out
+        elif len(fields) == 6:
+            return {'target_vocab': fields[0], 'vocab_level': fields[1], 'difficulty': fields[2],
+                    'page': fields[3], 'twin_basis': fields[4], 'twin_pattern': fields[5]}
+    return None
+
+
+def _aggregate_legacy_vocab(rows) -> list:
+    vocab: list = []
+    for r in rows:
+        tag = _parse_legacy_twin_tag(r['source_text'])
+        if tag and tag.get('target_vocab') and tag['target_vocab'] not in vocab:
+            vocab.append(tag['target_vocab'])
+    return vocab
 
 
 def _audit_note(conn, school: str, grade: str, year: int, semester: str, exam: str, content: str) -> None:
@@ -407,34 +434,45 @@ def backfill_legacy_generated_tests():
                 else:
                     audit.append(f'delete id={qid}: SKIP — 진단 데이터로 확인 안 됨 (content={blob!r}, group={r["exam_group_id"]})')
 
-            # 2) 문항 묶음 연결 (이미 연결됐거나 묶음이 없으면 skip)
-            already_linked = conn.execute('SELECT id FROM generated_tests WHERE external_id = ?', (ext,)).fetchone()
-            rows = [] if already_linked else conn.execute(
+            group_rows = conn.execute(
                 'SELECT * FROM generated_questions WHERE exam_group_id = ? ORDER BY id', (m['exam_group_id'],),
             ).fetchall()
-            if not rows:
+            twin = _match_digital_twin(conn, m['school'], m['grade'], m['exam'])
+            twin_id = twin.get('id') if twin else None
+            twin_label = m.get('twin_label') or (pl._twin_name(twin) if twin else '') or f"{m['school']} {m['grade']} 출제자 디지털트윈"
+            twin_pattern = m.get('twin_pattern') or (twin.get('dna') if twin else '') or ''
+            difficulty = m.get('difficulty') or '실제 시험 수준의 중상 난이도'
+
+            existing = conn.execute('SELECT * FROM generated_tests WHERE external_id = ?', (ext,)).fetchone()
+
+            # 2a) 이미 연결됨 — metadata(target_vocabulary/twin_pattern)가 비어 있으면 태그 재파싱으로 보강.
+            if existing:
+                needs_repair = (not (json.loads(existing['target_vocabulary'] or '[]'))
+                                or not existing['twin_pattern'] or not existing['twin_label'])
+                if needs_repair and group_rows:
+                    vocab = _aggregate_legacy_vocab(group_rows)
+                    conn.execute(
+                        'UPDATE generated_tests SET target_vocabulary=?, twin_label=?, twin_pattern=?, '
+                        'difficulty=?, source_page=?, question_count=? WHERE id=?',
+                        (json.dumps(vocab, ensure_ascii=False), twin_label, twin_pattern, difficulty,
+                         m['source_page'], len(group_rows), existing['id']),
+                    )
+                    audit.append(f'repaired generated_test id={existing["id"]}: target_vocabulary={len(vocab)}, '
+                                 f'twin_label={twin_label!r}, twin_pattern set')
+                    did_work = True
                 if did_work:
                     _audit_note(conn, m['school'], m['grade'], m['year'], m['semester'], m['exam'],
                                 f'[backfill {m["exam_group_id"]}] ' + ' | '.join(audit))
                 continue
 
-            vocab: list = []
-            difficulty = twin_basis = twin_pattern = ''
-            page = m['source_page']
-            for r in rows:
-                tag = _parse_legacy_twin_tag(r['source_text'])
-                if not tag:
-                    continue
-                if tag['target_vocab'] and tag['target_vocab'] not in vocab:
-                    vocab.append(tag['target_vocab'])
-                difficulty = difficulty or tag['difficulty']
-                twin_basis = twin_basis or tag['twin_basis']
-                twin_pattern = twin_pattern or tag['twin_pattern']
-                page = tag['page'] or page
+            # 2b) 최초 연결 — 문항 내용 복제 없이 test_id만 채운다.
+            if not group_rows:
+                if did_work:
+                    _audit_note(conn, m['school'], m['grade'], m['year'], m['semester'], m['exam'],
+                                f'[backfill {m["exam_group_id"]}] 묶음 없음. ' + ' | '.join(audit))
+                continue
 
-            twin = _match_digital_twin(conn, m['school'], m['grade'], m['exam'])
-            twin_id = twin.get('id') if twin else None
-            twin_label = twin_basis or (pl._twin_name(twin) if twin else '') or f"{m['school']} {m['grade']} 출제자 디지털트윈"
+            vocab = _aggregate_legacy_vocab(group_rows)
             sm_id = _upsert_source_material(conn, m['school'], m['grade'], m['source_material'],
                                            material_type=m['material_type'])
             now = datetime.now().isoformat()
@@ -444,17 +482,17 @@ def backfill_legacy_generated_tests():
                  test_type, title, twin_id, twin_label, twin_pattern, difficulty, target_vocabulary,
                  target_grammar, target_passage, generation_source, question_count, raw_request_json, created_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                (ext, sm_id, str(page or m['source_page']), m['school'], m['grade'], m['year'], m['semester'],
-                 m['exam'], m['test_type'], m['title'], twin_id, twin_label, twin_pattern,
-                 difficulty or '실제 시험 수준의 중상 난이도', json.dumps(vocab, ensure_ascii=False), '[]', '',
-                 'mcp', len(rows), json.dumps({'migrated_from_exam_group_id': m['exam_group_id']}, ensure_ascii=False), now),
+                (ext, sm_id, m['source_page'], m['school'], m['grade'], m['year'], m['semester'],
+                 m['exam'], m['test_type'], m['title'], twin_id, twin_label, twin_pattern, difficulty,
+                 json.dumps(vocab, ensure_ascii=False), '[]', '',
+                 'mcp', len(group_rows), json.dumps({'migrated_from_exam_group_id': m['exam_group_id']}, ensure_ascii=False), now),
             )
             test_id = cur.lastrowid
             conn.execute(
                 'UPDATE generated_questions SET test_id = ?, school = ?, grade = ?, exam = ? WHERE exam_group_id = ?',
                 (test_id, m['school'], m['grade'], m['exam'], m['exam_group_id']),
             )
-            audit.append(f'linked {len(rows)}문항 -> generated_test id={test_id}, source_material_id={sm_id}, '
+            audit.append(f'linked {len(group_rows)}문항 -> generated_test id={test_id}, source_material_id={sm_id}, '
                          f'target_vocabulary={len(vocab)}, twin_id={twin_id}, twin_label={twin_label!r}')
             _audit_note(conn, m['school'], m['grade'], m['year'], m['semester'], m['exam'],
                         f'[backfill {m["exam_group_id"]}] ' + ' | '.join(audit))
