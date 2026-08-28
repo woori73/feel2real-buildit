@@ -3166,6 +3166,25 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 인증/권한: public read.
 - 현재 범위: 데이터 생성은 압구정·신사만 허용. 다른 zone은 빈 목록 가능.
 
+### ✅ GET /api/chart/educators/search  (PR-B)
+
+- 목적: 전국에 흩어진 초·중·고 영어교육자 공개정보를 일반 사용자가 검색한다. **TOP100 publication(`/publication/current`)과 분리된 교육자 아카이브 검색**이다. 학원 directory가 아니라 교육자 개인의 정체성·교육철학 중심으로 반환한다.
+- 인증/권한: public read (`GET /api/chart/**`).
+- Query params (모두 선택): `province`(시·도 정확일치), `cityDistrict`(시·군·구 정확일치), `q`(이름·학원/활동기관·활동지역·교육 정체성 부분일치, LIKE 메타문자 이스케이프), `status`(`EVALUATABLE`|`RESEARCH_PENDING`, 생략 시 둘 다), `page`(0-base, 음수→0), `size`(기본 20, 최대 100).
+- 공개 대상: `eligibility_status IN ('EVALUATABLE','RESEARCH_PENDING')` 이고 `excluded_from_chart` 아님. `RESEARCH_PENDING` 도 결과에 포함되나 `researchPending:true` 로 표시되고 **Score·순위는 어떤 필드로도 반환하지 않는다**.
+- Response: `{ content: [{ id, name, role, academyName, province, cityDistrict, activityRegion, identitySummary, educationPhilosophy, eligibilityStatus, researchPending, profileImageUrl, lastResearchedAt }], totalElements, totalPages, page, size }`.
+- 정렬: 최근 조사(`updated_at`) 내림차순, `candidate_id` tie-break. Score 정렬 아님.
+- `status` 가 허용값이 아니면 `400`.
+
+### ✅ GET /api/chart/educators/{id}  (PR-B)
+
+- 목적: 공개 교육자 상세. `{id}` = `candidate_id`(숫자). DB에 **실제 확인된 사실만** 반환하며 없는 값은 `null`/빈 배열(생성·추측 금지).
+- 인증/권한: public read. 공개 대상이 아니거나(비제외·공개 eligibility 아님) 존재하지 않으면 `404`.
+- Response: `{ id, name, role, academyName, province, cityDistrict, activityRegion, identitySummary, educationPhilosophy, curriculum, distinctiveTeaching, recentActivity, strengths[], improvementSuggestions[], officialChannels{homepage,blog,youtube,social}|null, profileImageUrl, evidence[{contentType, summary, sourceUrl, activityDate, evidenceKind}], discoveryReason, lastResearchedAt, eligibilityStatus, researchPending, disclaimer }`.
+- `evidence` 의 `sourceUrl` 은 조사 시 검증된 공개 http(s) 출처만(기존 정책). 광고·모집 문구를 전문성으로 표현하지 않는다.
+- 비노출: 개인 전화번호·이메일·상세주소, `person_key`, `source_url_hash`, `eligibility_reasons_json`(내부 판정), `deep_search_result`·`exclusion_check`·`google_query`(내부 조사 메모), `legacy_metadata_json`, `excluded_reason`, `created_by`/`updated_by`, BuildIt Score·TOP100 순위.
+- `researchPending:true` → `disclaimer` 가 "평가 근거 미확인, Score·TOP100 대상 아님, 확인된 사실만 표시" 를 명시한다.
+
 ### ✅ GET /api/admin/chart/settings
 
 - 목적: 관리자 검색 설정 조회.
