@@ -3146,11 +3146,11 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### ✅ GET /chart
 
-- 목적: BuildIt 공개 홈페이지에서 진입하는 지역별 영어 교육자 TOP 100 공개 화면.
-- 현재 사용처: Thymeleaf SSR shell + JavaScript fetch.
+- 목적: BuildIt Chart 공개 화면. **지역 선택 → BuildIt이 발견한 우리 동네 영어쌤**이 1차 진입이고, BuildIt TOP100 은 그 아래 큐레이션 섹션이다. 서비스명은 계속 BuildIt Chart.
+- 현재 사용처: Thymeleaf SSR shell + JavaScript fetch (`/js/chart_public.js`).
 - 인증/권한: public.
 - Response: `templates/public/chart.html`.
-- 데이터: `GET /api/chart/educators`.
+- 데이터: `/api/chart/regions`(지역 선택), `/api/chart/educators/search`(지역 교육자), `/api/chart/rankings`(지역·전국 순위), `/api/chart/criteria`(평가 기준), `/api/chart/publication/current`(TOP100). 교육자 카드/행은 `/chart/educators/{id}` 로 연결(modal 없음).
 
 ### ✅ GET /admin/chart
 
@@ -3196,6 +3196,38 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `evidence` 의 `sourceUrl` 은 조사 시 검증된 공개 http(s) 출처만(기존 정책). 광고·모집 문구를 전문성으로 표현하지 않는다.
 - 비노출: 개인 전화번호·이메일·상세주소, `person_key`, `source_url_hash`, `eligibility_reasons_json`(내부 판정), `deep_search_result`·`exclusion_check`·`google_query`(내부 조사 메모), `legacy_metadata_json`, `excluded_reason`, `created_by`/`updated_by`, BuildIt Score·TOP100 순위.
 - `researchPending:true` → `disclaimer` 가 "평가 근거 미확인, Score·TOP100 대상 아님, 확인된 사실만 표시" 를 명시한다.
+
+### ✅ GET /api/chart/regions  (PR-C)
+
+- 목적: 공개 검색이 가능한(= BuildIt 이 이미 발견해 기록한) 지역 목록. 지역 선택 UI 를 채운다. 새 지역 DB 체계가 아니라 `chart_candidates` 의 공개 대상 행에서 집계한 것.
+- 인증/권한: public read.
+- Response: `{ provinces: [{ province, educatorCount, cityDistricts: [{ cityDistrict, educatorCount, evaluatableCount, researchPendingCount }] }] }` (시·도·시군구 오름차순).
+
+### ✅ GET /api/chart/rankings  (PR-C)
+
+- 목적: BuildIt Ranking 목록. **publication 과 독립** — TOP100 publication 이 아니라 `chart_candidates`(공개 대상) × candidate 별 최신 유효 Score snapshot 에서 직접 계산. Score 재계산·publication 재생성 없음. pool = `(eligibility_status='EVALUATABLE' OR legacy_source IS NOT NULL)` AND 미제외 AND PR-A 의 grandfather 규칙(`PUBLISHABLE_PROFILE`) AND 최신 Score snapshot 존재. RESEARCH_PENDING / Score 없는 후보 자동 제외. publication 에 아직 없는 scored 교육자도 순위에 포함된다(전체 Ranking 이 100명을 넘을 수 있음).
+- 인증/권한: public read.
+- Query: `province` 없으면 **전국 순위 상위 `limit`**(기본·최대 100 = BuildIt TOP100 큐레이션). `province`(+선택 `cityDistrict`)가 있으면 **해당 지역 순위**(지역 순위 오름차순). `province` 만 있고 값이 비면 400.
+- 순위 규칙: pool 을 `total_score DESC, candidate_id ASC`(= `autoPublishNationwide` 와 동일 규칙, 동점은 candidate_id 오름차순 — 우열의 의미 아님) 로 정렬한 위치. 전국 순위 = pool 안의 위치(1..N). 지역 순위 = 같은 (province, cityDistrict) 안에서의 위치. 지역별로 평가 기준·가중치를 바꾸지 않는다. `top100 = overallRank <= 100`(현재 데이터에서는 기존 publication RANKED 집합과 동일).
+- Response: `{ scope: "NATIONWIDE"|"REGION", province, cityDistrict, criteriaVersion, total, educators: [{ id, name, role, academyName, province, cityDistrict, activityRegion, identitySummary, educationPhilosophy, profileImageUrl, buildItScore, overallRank, overallTotal, regionRank, regionTotal, top100 }], disclaimer }`.
+
+### ✅ GET /api/chart/rankings/{id}  (PR-C)
+
+- 목적: 교육자 1명의 BuildIt Ranking(상세 페이지용). `{id}` = `candidate_id`(숫자).
+- 인증/권한: public read. Ranking pool 에 없는 교육자(RESEARCH_PENDING·미채점·excluded·미존재)는 **항상 200 `{ id, ranked:false, disclaimer }`** (순위·점수 필드는 모두 `null`).
+- Response(ranked): `{ id, ranked:true, buildItScore, overallRank, overallTotal, regionRank, regionTotal, province, cityDistrict, top100, criteriaVersion, disclaimer }`.
+
+### ✅ GET /api/chart/criteria  (PR-C)
+
+- 목적: BuildIt AI 평가 기준 공개("AI는 무엇을 보고 평가하나요?"). 항목·가중치는 실제 `ChartSiteToolService.score()` 산식과 1:1(테스트로 검증). 사용자-facing 라벨/설명은 코드 의미를 왜곡하지 않는 한국어.
+- 인증/권한: public read.
+- Response: `{ criteriaVersion, maxScore:100, criteria: [{ key, label, weight, description }] (합계 100), notEvaluated: [광고·규모·유명세·프랜차이즈·광고성 표현·학생 성과 등], rankingDisclaimer, scoreDisclaimer }`.
+- `rankingDisclaimer` 핵심: "BuildIt Ranking은 선생님의 실제 수업 능력 순위가 아닙니다."
+
+### ✅ GET /chart/educators/{id}  (PR-C)
+
+- 목적: 교육자 공개 상세 페이지 — 공유·뒤로가기·검색엔진용 안정 URL. Thymeleaf SSR 로 제목·메타·기본 식별 정보만 심고, 실제 데이터는 클라이언트가 `/api/chart/educators/{id}` + `/api/chart/rankings/{id}` 로 채운다.
+- 인증/권한: public (SecurityConfig `/chart/educators/**`). 비공개/미존재 교육자는 `/chart` 로 redirect.
 
 ### ✅ GET /api/admin/chart/settings
 

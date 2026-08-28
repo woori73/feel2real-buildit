@@ -46,7 +46,11 @@ jobs:
           ./gradlew test --no-daemon
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartEducatorSearchServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.RankingComputationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartRankingServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.controller.ChartPublicControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartSiteToolsContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartPublicPageContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartDiscoveryServiceTest"
 
       - name: Upload test report
