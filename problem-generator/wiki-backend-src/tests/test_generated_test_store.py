@@ -157,28 +157,38 @@ LEGACY_GID = 'mcp_f5061b3f4b5b43778291b2c1e25c37fc'
 
 
 class LegacyBackfillTest(unittest.TestCase):
-    """PR #63 이전 save_generated_questions로 저장된 31문항을 Generated Test에 연결한다.
-    문항은 복제/재생성하지 않고 test_id만 채운다. id 83/84 진단 dummy는 삭제한다."""
+    """PR #63 이전 save_generated_questions로 저장된 30문항(운영 exam_group_id
+    mcp_f5061b3f4b5b43778291b2c1e25c37fc)을 Generated Test에 연결한다. 문항은 복제/재생성하지
+    않고 test_id만 채운다. sourceText의 key:value Digital Twin 태그를 정식 필드로 옮긴다."""
+
+    # 운영 실제 태그 형식 (대소문자 혼용, 7 필드)
+    def _tag(self, i, word, page):
+        return (f'[문항ID:Q{i} | 대상어휘:{word} | 어휘등급:CHALLENGE | 난이도:상 | Page:{page} | '
+                f'DigitalTwin근거:조건 제한형 영작 (Digital Twin 명시 유형) | DigitalTwin패턴:조건 제한형 영작]')
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         main.DB_PATH = str(Path(self.temp_dir.name) / 'test.db')
         main.init_db(); main.migrate_schema(); main.seed_default_twins()
         now = '2026-08-28T12:00:00'
+        words = VOCAB25 + VOCAB25[:5]  # 30문항 / 25 distinct vocab
         with main.get_db() as conn:
-            for i, word in enumerate(VOCAB25 + VOCAB25[:6]):  # 31문항
-                tag = f'[{word} | must-know | 실제 시험 수준의 중상 난이도 | 2 | 신사중 3학년 출제자 디지털트윈 | 복수정답·문맥어휘·개념전이]'
+            for i, word in enumerate(words, start=1):
                 conn.execute(
                     "INSERT INTO generated_questions (school, grade, exam, mode, q_kind, question_type, stem, "
                     "source_text, options_json, answer_json, score, exam_title, exam_group_id, raw_json, created_at) "
                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     ('신사중', '3', '중간고사', 'mcp', 'mc', '문맥 어휘', f'{word} 뜻은?',
-                     f'The passage uses {word}. {tag}', '["a","b","c","d","e"]', '[1]', 4,
-                     'Boiling Frog Vocab', LEGACY_GID, '{}', now))
+                     f"Page{2 + i % 5} 원문 인용 {self._tag(i, word, 2 + i % 5)}",
+                     '["a","b","c","d","e"]', '[1]', 4, 'The Boiling Frog Myth — Page 2 Vocabulary Test',
+                     LEGACY_GID, '{}', now))
+            # id 83: 짧은 'test' dummy — 삭제 대상. id 84: 다른 group의 정상 문항 — 삭제 금지.
             conn.execute("INSERT INTO generated_questions (id, mode, stem, source_text, exam_group_id, created_at) "
-                         "VALUES (83, 'mcp', 'test', '', 'mcp_diagnostic_a', ?)", (now,))
-            conn.execute("INSERT INTO generated_questions (id, mode, stem, source_text, exam_group_id, created_at) "
-                         "VALUES (84, 'mcp', 'test3', '', 'mcp_diagnostic_b', ?)", (now,))
+                         "VALUES (83, 'mcp', 'test', '', 'mcp_diag_a', ?)", (now,))
+            conn.execute("INSERT INTO generated_questions (id, mode, q_kind, stem, source_text, exam_group_id, created_at) "
+                         "VALUES (84, 'mcp', 'mc', 'emission 뜻은?', "
+                         "'emission page2 must-know vocabulary table [대상어휘:emission | 어휘등급:must-know | 난이도:하 | page:2 | digitaltwin근거:단순 회상형 | digitaltwin패턴:기본 어휘 확인]', "
+                         "'mcp_ac5952a638a64f74a7080548ea8ca606', ?)", (now,))
 
     def tearDown(self): self.temp_dir.cleanup()
 
@@ -190,39 +200,60 @@ class LegacyBackfillTest(unittest.TestCase):
                 conn.execute('SELECT COUNT(*) n FROM generated_questions').fetchone()['n'],
             )
 
-    def test_backfill_links_31_and_removes_diagnostics(self):
+    def test_backfill_links_30_parses_kv_tag_and_removes_only_true_diagnostic(self):
         main.backfill_legacy_generated_tests()
         tests, linked, total = self._counts()
         self.assertEqual(1, tests)
-        self.assertEqual(31, linked)
-        self.assertEqual(31, total)  # 83, 84 삭제됨
+        self.assertEqual(30, linked)
+        self.assertEqual(31, total)  # id 83만 삭제(30 group + id 84)
 
         with main.get_db() as conn:
             t = dict(conn.execute('SELECT * FROM generated_tests').fetchone())
             self.assertEqual('legacy-migrate-' + LEGACY_GID, t['external_id'])
-            self.assertEqual(31, t['question_count'])
+            self.assertEqual(30, t['question_count'])
             self.assertEqual('The Boiling Frog Myth — Page 2 Vocabulary Test', t['title'])
             self.assertEqual('2', t['source_page'])
             self.assertEqual(1, t['twin_id'])
             self.assertEqual('신사중 3학년 출제자 디지털트윈', t['twin_label'])
-            self.assertEqual(25, len(json.loads(t['target_vocabulary'])))
-            self.assertIsNone(conn.execute('SELECT id FROM generated_questions WHERE id IN (83,84)').fetchone())
+            self.assertEqual('복수정답·문학개념 전이·심리/담화 추론·조건형 영작', t['twin_pattern'])
+            self.assertEqual(25, len(json.loads(t['target_vocabulary'])))  # kv 태그 파싱 성공
+            self.assertIsNone(conn.execute('SELECT id FROM generated_questions WHERE id = 83').fetchone())
+            self.assertIsNotNone(conn.execute('SELECT id FROM generated_questions WHERE id = 84').fetchone())  # 삭제 안 함
             q = dict(conn.execute('SELECT * FROM generated_questions WHERE exam_group_id=? LIMIT 1', (LEGACY_GID,)).fetchone())
             self.assertEqual(('신사중', '3학년', '전체'), (q['school'], q['grade'], q['exam']))
             self.assertEqual(t['id'], q['test_id'])
             audit = conn.execute("SELECT content FROM educator_insights WHERE source='claude'").fetchone()
-            self.assertIn('linked 31', audit['content'])
+            self.assertIn('linked 30', audit['content'])
 
         sm_id = main.list_source_materials(school='신사중', grade='3학년')[0]['id']
         detail = main.get_generated_test(main.list_generated_tests_for_material(sm_id)[0]['id'])
-        self.assertEqual(31, len(detail['questions']))
+        self.assertEqual(30, len(detail['questions']))
+
+    def test_backfill_repairs_empty_metadata_on_already_linked_test(self):
+        # PR #64 이전 backfill이 태그 파싱에 실패해 target_vocabulary가 빈 상태로 연결된 경우 재보강.
+        with main.get_db() as conn:
+            conn.execute('UPDATE generated_questions SET test_id = 999 WHERE exam_group_id = ?', (LEGACY_GID,))
+            conn.execute(
+                "INSERT INTO generated_tests (id, external_id, source_material_id, school, grade, "
+                "test_type, title, twin_id, twin_label, twin_pattern, target_vocabulary, question_count, created_at) "
+                "VALUES (999, ?, 1, '신사중', '3학년', 'vocabulary', 't', 1, '', '', '[]', 30, '2026-08-28T00:00:00')",
+                ('legacy-migrate-' + LEGACY_GID,))
+            conn.execute("INSERT INTO source_materials (id, school, grade, title, created_at) "
+                         "VALUES (1, '신사중', '3학년', 'The Boiling Frog Myth', '2026-08-28T00:00:00')")
+        main.backfill_legacy_generated_tests()
+        with main.get_db() as conn:
+            t = dict(conn.execute('SELECT * FROM generated_tests WHERE id = 999').fetchone())
+            self.assertEqual(25, len(json.loads(t['target_vocabulary'])))
+            self.assertEqual('신사중 3학년 출제자 디지털트윈', t['twin_label'])
+            self.assertTrue(t['twin_pattern'])
+            self.assertEqual(1, conn.execute('SELECT COUNT(*) n FROM generated_tests').fetchone()['n'])  # 중복 없음
 
     def test_backfill_is_idempotent(self):
         main.backfill_legacy_generated_tests()
         main.backfill_legacy_generated_tests()
-        tests, linked, total = self._counts()
+        tests, linked, _ = self._counts()
         self.assertEqual(1, tests)
-        self.assertEqual(31, linked)
+        self.assertEqual(30, linked)
         with main.get_db() as conn:
             self.assertEqual(1, conn.execute("SELECT COUNT(*) n FROM educator_insights WHERE source='claude'").fetchone()['n'])
             self.assertEqual(1, conn.execute("SELECT COUNT(*) n FROM source_materials").fetchone()['n'])
