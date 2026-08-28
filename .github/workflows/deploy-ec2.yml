@@ -94,6 +94,8 @@ jobs:
             python3.11 -m venv /opt/buildit-wiki/venv
           fi
 
+          # requirements.txt에 고정된 버전(mcp==)은 이미 설치된 다른 버전이 있어도 pip가
+          # 해당 버전으로 재설치한다(요구사항 불충족). 고정 안 한 패키지는 그대로 둔다.
           /opt/buildit-wiki/venv/bin/pip install --disable-pip-version-check -r /opt/buildit-wiki/app/requirements.txt
 
           cat > /etc/systemd/system/buildit-wiki.service <<'UNIT'

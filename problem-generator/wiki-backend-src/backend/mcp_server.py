@@ -44,6 +44,9 @@ logger = logging.getLogger(__name__)
 
 mcp = MCPServer(
     name='buildit-wiki',
+    # save_generated_test 추가 시 bump — 일부 MCP client가 serverInfo.version 변화로
+    # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
+    version='2',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -161,7 +164,7 @@ def save_generated_questions(school: str, grade: str, exam: str, questions: list
 def save_generated_test(school: str, grade: str, source_material: str, questions: list[dict],
                         source_page: str = '', test_type: str = '', title: str = '',
                         digital_twin: str = '', twin_pattern: str = '', difficulty: str = '',
-                        target_vocabulary: list[str] | None = None, target_grammar: list[str] | None = None,
+                        target_vocabulary: list[str] = [], target_grammar: list[str] = [],
                         target_passage: str = '', year: int | None = None, semester: str = '',
                         exam: str = '전체', publisher: str = '', lesson: str = '',
                         material_type: str = '', external_id: str = '') -> dict:
@@ -189,10 +192,10 @@ def save_generated_test(school: str, grade: str, source_material: str, questions
 
     try:
         payload = GeneratedTestCreate(
-            school=school, grade=grade, source_material=source_material, questions=questions or [],
+            school=school, grade=grade, source_material=source_material, questions=list(questions or []),
             source_page=source_page, test_type=test_type, title=title, digital_twin=digital_twin,
-            twin_pattern=twin_pattern, difficulty=difficulty, target_vocabulary=target_vocabulary or [],
-            target_grammar=target_grammar or [], target_passage=target_passage, year=year,
+            twin_pattern=twin_pattern, difficulty=difficulty, target_vocabulary=list(target_vocabulary or []),
+            target_grammar=list(target_grammar or []), target_passage=target_passage, year=year,
             semester=semester, exam=exam or '전체', publisher=publisher, lesson=lesson,
             material_type=material_type, external_id=external_id,
         )
