@@ -113,12 +113,15 @@ public class ChartSiteToolService {
   }
 
   /**
-   * 지역 조사 완료 = 서버 자동 발행. 이 지역의 최종 선정자(현행 Hard Gate + 현행 Score)를 전국 누적
-   * publication 에 반영한 뒤에만 region 을 RESEARCHED 로 만든다. publication 실패 시 전체 롤백되어
-   * region 완료도 취소된다(단일 트랜잭션). 선정자 0명도 정상 완료다.
+   * 지역 조사 완료 = 서버 자동 발행. <b>Work 가 명시적으로 넘긴 selectedCandidateIds</b> 만 이 지역의
+   * 최종 선정자로 인정한다 — draft 저장(save_research_drafts)은 후보 풀 등록일 뿐 선정이 아니므로
+   * "zone_id 가 이 지역인 ELIGIBLE draft 전부" 를 선정으로 재유도하지 않는다. 선정자를 전국 누적
+   * publication 에 반영한 뒤 region 을 RESEARCHED 로 만든다. 선정 0명도 정상 완료(publication 변화 없음).
+   * publication 실패 시 전체 롤백되어 region 완료도 취소된다(단일 트랜잭션).
    */
   @Transactional
-  public Map<String, Object> completeRegion(String regionId, int eligibleCountHint, int rejectedCountHint, String note) {
+  public Map<String, Object> completeRegion(String regionId, List<Long> selectedCandidateIds,
+      Integer selectedCountHint, String note) {
     String rid = require(regionId, "regionId");
     LocalDateTime now = LocalDateTime.now(clock);
     Map<String, Object> region = jdbcTemplate.queryForList(
@@ -129,32 +132,55 @@ public class ChartSiteToolService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "IN_PROGRESS 지역만 완료할 수 있습니다.");
     }
 
-    List<Long> selectedIds = jdbcTemplate.queryForList("""
-        SELECT candidate_id FROM chart_candidates c
-         WHERE c.zone_id = ? AND c.eligibility_status = 'ELIGIBLE'
-           AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
-           AND""" + PUBLISHABLE_PROFILE_SQL, Long.class, rid);
+    // 명시 선정 목록만 인정. 이 지역 조사(zone_id) 소속이 아닌 후보, 비적격/제외/서술불가 후보는 거부.
+    java.util.LinkedHashSet<Long> selected = new java.util.LinkedHashSet<>();
+    if (selectedCandidateIds != null) selected.addAll(selectedCandidateIds);
+    selected.remove(null);
+    List<String> rejected = new ArrayList<>();
+    for (Long candidateId : selected) {
+      Map<String, Object> c = jdbcTemplate.queryForList("SELECT * FROM chart_candidates WHERE candidate_id=?", candidateId)
+          .stream().findFirst().orElse(null);
+      if (c == null) { rejected.add(candidateId + "(없음)"); continue; }
+      if (!rid.equals(str(c.get("zone_id")))) { rejected.add(candidateId + "(다른 지역 소속: " + c.get("zone_id") + ")"); continue; }
+      if (!"ELIGIBLE".equals(c.get("eligibility_status"))) { rejected.add(candidateId + "(비적격)"); continue; }
+      if (Boolean.TRUE.equals(bit(c.get("excluded_from_chart")))) { rejected.add(candidateId + "(공개 제외됨)"); continue; }
+      if (!describableProfile(c)) { rejected.add(candidateId + "(교육철학·커리큘럼 서술 불가)"); continue; }
+    }
+    if (!rejected.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+          "선정 목록에 포함할 수 없는 후보: " + String.join(", ", rejected));
+    }
 
     Long batchId = null;
     Long publicationId = null;
     int rankedCount = 0;
     int discoveredCount = 0;
-    if (!selectedIds.isEmpty()) {
+    if (!selected.isEmpty()) {
       String summary = blank(note) != null ? note
-          : "전국 자동 조사 완료: " + region.get("city_district") + " · 선정 " + selectedIds.size() + "명";
+          : "전국 자동 조사 완료: " + region.get("city_district") + " · 선정 " + selected.size() + "명";
       jdbcTemplate.update("""
           INSERT INTO chart_review_batches
           (region_id, status, criteria_version, summary, submitted_at, reviewed_at, created_at, updated_at)
           VALUES (?, 'AUTO_PUBLISHED', ?, ?, ?, ?, ?, ?)
           """, rid, CRITERIA_VERSION, summary, now, now, now, now);
       batchId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-      for (Long candidateId : selectedIds) {
+      for (Long candidateId : selected) {
         writeScoreSnapshot(candidateId, batchId, "AUTO_PUBLISHED", now);
       }
-      Map<String, Object> published = autoPublishNationwide(batchId, now);
+      Map<String, Object> published = autoPublishNationwide(selected, batchId, now);
       publicationId = (Long) published.get("publicationId");
       rankedCount = (int) published.get("rankedCount");
       discoveredCount = (int) published.get("discoveredCount");
+    } else {
+      // 선정 0명: 조사 사실만 기록하고 publication 은 건드리지 않는다.
+      jdbcTemplate.update("""
+          INSERT INTO chart_review_batches
+          (region_id, status, criteria_version, summary, submitted_at, reviewed_at, created_at, updated_at)
+          VALUES (?, 'RESEARCHED_ZERO', ?, ?, ?, ?, ?, ?)
+          """, rid, CRITERIA_VERSION,
+          blank(note) != null ? note : "조사 완료: " + region.get("city_district") + " · 적합 교육자 0명",
+          now, now, now, now);
+      batchId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
     }
 
     jdbcTemplate.update("""
@@ -166,13 +192,17 @@ public class ChartSiteToolService {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("regionId", rid);
     result.put("status", "RESEARCHED");
-    result.put("selectedCount", selectedIds.size());
+    result.put("selectedCount", selected.size());
     result.put("reviewBatchId", batchId);
     result.put("publicationId", publicationId);
     result.put("publicationChanged", publicationId != null);
     result.put("rankedCount", rankedCount);
     result.put("discoveredCount", discoveredCount);
     result.put("nextResearchAt", now.plusDays(reResearchDays));
+    if (selectedCountHint != null && selectedCountHint != selected.size()) {
+      result.put("clientReportedCount", selectedCountHint);
+      result.put("note", "Work 보고 인원(" + selectedCountHint + ")과 서버 선정 인원(" + selected.size() + ")이 달라 서버 값을 사용했습니다.");
+    }
     return result;
   }
 
@@ -353,9 +383,9 @@ public class ChartSiteToolService {
     if (batchCandidateIds.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "이 batch에 Score snapshot이 없습니다.");
     }
-    long passing = batchCandidateIds.stream().filter(this::passesCurrentGate).count();
+    List<Long> passingIds = batchCandidateIds.stream().filter(this::passesCurrentGate).toList();
 
-    Map<String, Object> published = autoPublishNationwide(reviewBatchId, now);
+    Map<String, Object> published = autoPublishNationwide(new java.util.LinkedHashSet<>(passingIds), reviewBatchId, now);
     jdbcTemplate.update("UPDATE chart_review_batches SET status='AUTO_PUBLISHED', reviewed_at=?, updated_at=? WHERE review_batch_id=?", now, now, reviewBatchId);
     jdbcTemplate.update("UPDATE chart_score_snapshots SET review_status='AUTO_PUBLISHED', updated_at=? WHERE review_batch_id=? AND review_status IN ('PENDING_ADMIN_REVIEW','AUDIT_RECORDED')", now, reviewBatchId);
     jdbcTemplate.update("""
@@ -371,12 +401,81 @@ public class ChartSiteToolService {
     result.put("reviewBatchId", reviewBatchId);
     result.put("regionId", regionId);
     result.put("batchCandidateCount", batchCandidateIds.size());
-    result.put("currentGatePassingCount", passing);
+    result.put("currentGatePassingCount", passingIds.size());
     result.put("publicationId", published.get("publicationId"));
     result.put("rankedCount", published.get("rankedCount"));
     result.put("discoveredCount", published.get("discoveredCount"));
     result.put("publicationChanged", true);
     return result;
+  }
+
+  /** review batch 하나에 연결된 candidate / score snapshot / publication entry 를 조회한다(사고 조사용, 읽기 전용). */
+  public Map<String, Object> inspectReviewBatch(long reviewBatchId) {
+    Map<String, Object> batch = jdbcTemplate.queryForList("""
+        SELECT review_batch_id AS reviewBatchId, region_id AS regionId, status, criteria_version AS criteriaVersion,
+               summary, submitted_at AS submittedAt, reviewed_at AS reviewedAt
+          FROM chart_review_batches WHERE review_batch_id=?
+        """, reviewBatchId).stream().findFirst()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "review batch를 찾을 수 없습니다."));
+    List<Map<String, Object>> snapshots = jdbcTemplate.queryForList("""
+        SELECT s.score_snapshot_id AS scoreSnapshotId, s.candidate_id AS candidateId, s.total_score AS totalScore,
+               s.review_status AS reviewStatus, s.calculated_at AS calculatedAt,
+               c.name, c.academy_name AS academyName, c.zone_id AS zoneId, c.activity_region AS activityRegion,
+               c.legacy_source AS legacySource, c.discovered_at AS candidateDiscoveredAt, c.created_at AS candidateCreatedAt
+          FROM chart_score_snapshots s JOIN chart_candidates c ON c.candidate_id = s.candidate_id
+         WHERE s.review_batch_id=? ORDER BY s.score_snapshot_id
+        """, reviewBatchId);
+    List<Map<String, Object>> entries = jdbcTemplate.queryForList("""
+        SELECT pe.publication_id AS publicationId, p.status AS publicationStatus, pe.candidate_id AS candidateId,
+               pe.entry_type AS entryType, pe.chart_rank AS chartRank
+          FROM chart_publication_entries pe
+          JOIN chart_publications p ON p.publication_id = pe.publication_id
+         WHERE pe.score_snapshot_id IN (SELECT score_snapshot_id FROM chart_score_snapshots WHERE review_batch_id=?)
+         ORDER BY pe.publication_id, pe.publication_entry_id
+        """, reviewBatchId);
+    Map<String, Object> out = new LinkedHashMap<>(batch);
+    out.put("scoreSnapshots", snapshots);
+    out.put("publicationEntries", entries);
+    return out;
+  }
+
+  /**
+   * 잘못 발행된 review batch 를 안전하게 되돌린다: 해당 batch 의 publication entry 와 score snapshot 만
+   * 제거하고 batch 를 {@code REVERTED} 로 표시한 뒤 전국 publication 을 직전 정상 snapshot 기준으로 재생성한다.
+   * candidate(Living Archive 데이터)와 그 activity 는 삭제하지 않는다.
+   */
+  @Transactional
+  public Map<String, Object> revertReviewBatch(long reviewBatchId) {
+    Map<String, Object> batch = jdbcTemplate.queryForList(
+        "SELECT review_batch_id, region_id, status FROM chart_review_batches WHERE review_batch_id=?", reviewBatchId)
+        .stream().findFirst()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "review batch를 찾을 수 없습니다."));
+    LocalDateTime now = LocalDateTime.now(clock);
+    List<Long> snapshotIds = jdbcTemplate.queryForList(
+        "SELECT score_snapshot_id FROM chart_score_snapshots WHERE review_batch_id=?", Long.class, reviewBatchId);
+    int removedEntries = 0;
+    if (!snapshotIds.isEmpty()) {
+      removedEntries = jdbcTemplate.update(
+          "DELETE FROM chart_publication_entries WHERE score_snapshot_id IN (" + placeholders(snapshotIds.size()) + ")",
+          snapshotIds.toArray());
+    }
+    int removedSnapshots = jdbcTemplate.update("DELETE FROM chart_score_snapshots WHERE review_batch_id=?", reviewBatchId);
+    // publication 이 이 batch 로 만들어졌다면 참조를 끊는다(행은 보존).
+    jdbcTemplate.update("UPDATE chart_publications SET review_batch_id=NULL, updated_at=? WHERE review_batch_id=?", now, reviewBatchId);
+    jdbcTemplate.update("UPDATE chart_review_batches SET status='REVERTED', reviewed_at=?, updated_at=? WHERE review_batch_id=?", now, now, reviewBatchId);
+
+    Map<String, Object> rebuilt = rebuildNationwidePublication();
+
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("reviewBatchId", reviewBatchId);
+    out.put("regionId", batch.get("region_id"));
+    out.put("removedPublicationEntries", removedEntries);
+    out.put("removedScoreSnapshots", removedSnapshots);
+    out.put("candidatesKept", snapshotIds.size());
+    out.put("rebuiltPublicationId", rebuilt.get("publicationId"));
+    out.put("rebuiltRankedCount", rebuilt.get("rankedCount"));
+    out.put("rebuiltDiscoveredCount", rebuilt.get("discoveredCount"));
+    return out;
   }
 
   public Map<String, Object> publicationDisabled() {
@@ -385,36 +484,52 @@ public class ChartSiteToolService {
   }
 
   /**
-   * 현재까지 조사·선정된 교육자를 전국 누적 snapshot 으로 (재)생성한다. 지역 조사와 무관한 서버/관리자
-   * 트리거(부팅 시 최초 1회, 또는 Legacy import 후)이며 AI/WebMCP 명령이 아니다. publishable 후보가
-   * 없으면 아무것도 만들지 않는다.
+   * 전국 누적 publication 을 (재)생성한다. 지역 조사와 무관한 서버/관리자 트리거이며 AI/WebMCP 명령이 아니다.
+   *
+   * <ul>
+   *   <li>PUBLISHED snapshot 이 없으면(최초 부트스트랩): PUBLISHABLE 한 기존 선정자(Legacy import·분당 batch)
+   *       전체로 첫 snapshot 을 만든다.</li>
+   *   <li>이미 있으면(사후 관리): 직전 snapshot 의 교육자 중 공개 제외되지 않은 사람으로만 다시 만든다
+   *       — draft·미선정 후보를 재유입시키지 않는다.</li>
+   * </ul>
    */
   @Transactional
   public Map<String, Object> rebuildNationwidePublication() {
     LocalDateTime now = LocalDateTime.now(clock);
-    Integer publishable = jdbcTemplate.queryForObject("""
-        SELECT COUNT(*) FROM chart_candidates c
-         WHERE c.eligibility_status = 'ELIGIBLE'
-           AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
-           AND""" + PUBLISHABLE_PROFILE_SQL, Integer.class);
-    if (publishable == null || publishable == 0) {
-      return Map.of("publicationChanged", false, "reason", "공개 가능한 선정 교육자가 없습니다.");
+    boolean hasPublished = Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+        "SELECT EXISTS(SELECT 1 FROM chart_publications WHERE status='PUBLISHED')", Boolean.class));
+
+    if (!hasPublished) {
+      List<Long> seed = jdbcTemplate.queryForList("""
+          SELECT c.candidate_id FROM chart_candidates c
+           WHERE c.eligibility_status = 'ELIGIBLE'
+             AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
+             AND""" + PUBLISHABLE_PROFILE_SQL, Long.class);
+      if (seed.isEmpty()) {
+        return Map.of("publicationChanged", false, "reason", "공개 가능한 선정 교육자가 없습니다.");
+      }
+      List<Long> needScore = jdbcTemplate.queryForList("""
+          SELECT c.candidate_id FROM chart_candidates c
+           WHERE c.eligibility_status = 'ELIGIBLE'
+             AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
+             AND""" + PUBLISHABLE_PROFILE_SQL + """
+             AND NOT EXISTS (SELECT 1 FROM chart_score_snapshots s WHERE s.candidate_id = c.candidate_id)
+          """, Long.class);
+      for (Long candidateId : needScore) {
+        writeScoreSnapshot(candidateId, null, "AUTO_PUBLISHED", now);
+      }
+      Map<String, Object> published = autoPublishNationwide(new java.util.LinkedHashSet<>(seed), null, now);
+      Map<String, Object> result = new LinkedHashMap<>(published);
+      result.put("publicationChanged", true);
+      result.put("scoredCandidates", needScore.size());
+      return result;
     }
-    // 아직 Score snapshot 이 없는 publishable 후보(예: Legacy import)에 현행 Score 를 계산해 둔다.
-    List<Long> needScore = jdbcTemplate.queryForList("""
-        SELECT c.candidate_id FROM chart_candidates c
-         WHERE c.eligibility_status = 'ELIGIBLE'
-           AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
-           AND""" + PUBLISHABLE_PROFILE_SQL + """
-           AND NOT EXISTS (SELECT 1 FROM chart_score_snapshots s WHERE s.candidate_id = c.candidate_id)
-        """, Long.class);
-    for (Long candidateId : needScore) {
-      writeScoreSnapshot(candidateId, null, "AUTO_PUBLISHED", now);
-    }
-    Map<String, Object> published = autoPublishNationwide(null, now);
+
+    // 사후 재생성: 직전 snapshot 교육자만(제외자 제거 반영). autoPublishNationwide 가 직전 pub 을 이어받는다.
+    Map<String, Object> published = autoPublishNationwide(java.util.Set.of(), null, now);
     Map<String, Object> result = new LinkedHashMap<>(published);
     result.put("publicationChanged", true);
-    result.put("scoredCandidates", needScore.size());
+    result.put("scoredCandidates", 0);
     return result;
   }
 
@@ -593,8 +708,23 @@ public class ChartSiteToolService {
    * 유효 교육자 전체를 total_score 기준으로 다시 정렬해 상위 최대 100명은 RANKED, 나머지는 DISCOVERED
    * (potential signals 보유 시 PROMISING)로 새 snapshot 을 만들고 이전 snapshot 은 SUPERSEDED 로 보존한다.
    */
-  private Map<String, Object> autoPublishNationwide(Long reviewBatchId, LocalDateTime now) {
-    List<Map<String, Object>> pool = jdbcTemplate.queryForList("""
+  private Map<String, Object> autoPublishNationwide(Set<Long> extraCandidateIds, Long reviewBatchId, LocalDateTime now) {
+    List<Map<String, Object>> previousPub = jdbcTemplate.queryForList(
+        "SELECT publication_id FROM chart_publications WHERE status='PUBLISHED' ORDER BY published_at DESC, publication_id DESC LIMIT 1");
+    Long previousPubId = previousPub.isEmpty() ? null : ((Number) previousPub.get(0).get("publication_id")).longValue();
+    Map<Long, Integer> previousRankByCandidate = new HashMap<>();
+    java.util.LinkedHashSet<Long> candidateIds = new java.util.LinkedHashSet<>();
+    if (previousPubId != null) {
+      jdbcTemplate.queryForList("SELECT candidate_id, chart_rank FROM chart_publication_entries WHERE publication_id=?", previousPubId)
+          .forEach(row -> {
+            long cid = ((Number) row.get("candidate_id")).longValue();
+            candidateIds.add(cid);
+            if (row.get("chart_rank") != null) previousRankByCandidate.put(cid, ((Number) row.get("chart_rank")).intValue());
+          });
+    }
+    if (extraCandidateIds != null) candidateIds.addAll(extraCandidateIds);
+
+    List<Map<String, Object>> pool = candidateIds.isEmpty() ? List.of() : jdbcTemplate.queryForList("""
         SELECT c.candidate_id AS candidateId, c.identity_summary AS identitySummary,
                c.recent_activity_summary AS recentActivitySummary, c.potential_signals_json AS potentialSignalsJson,
                s.score_snapshot_id AS scoreSnapshotId, s.total_score AS totalScore
@@ -603,20 +733,10 @@ public class ChartSiteToolService {
             ON s.score_snapshot_id = (SELECT s2.score_snapshot_id FROM chart_score_snapshots s2
                                        WHERE s2.candidate_id = c.candidate_id
                                        ORDER BY s2.calculated_at DESC, s2.score_snapshot_id DESC LIMIT 1)
-         WHERE c.eligibility_status = 'ELIGIBLE'
+         WHERE c.candidate_id IN (%s)
            AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
-           AND""" + PUBLISHABLE_PROFILE_SQL + """
          ORDER BY s.total_score DESC, c.candidate_id ASC
-        """);
-
-    List<Map<String, Object>> previousPub = jdbcTemplate.queryForList(
-        "SELECT publication_id FROM chart_publications WHERE status='PUBLISHED' ORDER BY published_at DESC, publication_id DESC LIMIT 1");
-    Long previousPubId = previousPub.isEmpty() ? null : ((Number) previousPub.get(0).get("publication_id")).longValue();
-    Map<Long, Integer> previousRankByCandidate = new HashMap<>();
-    if (previousPubId != null) {
-      jdbcTemplate.queryForList("SELECT candidate_id, chart_rank FROM chart_publication_entries WHERE publication_id=? AND chart_rank IS NOT NULL", previousPubId)
-          .forEach(row -> previousRankByCandidate.put(((Number) row.get("candidate_id")).longValue(), ((Number) row.get("chart_rank")).intValue()));
-    }
+        """.formatted(placeholders(candidateIds.size())), candidateIds.toArray());
 
     LocalDate weekStart = now.toLocalDate().with(DayOfWeek.MONDAY);
     jdbcTemplate.update("""
@@ -746,6 +866,9 @@ public class ChartSiteToolService {
   private String require(String value, String field) {
     if (value == null || value.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, field + " 값이 필요합니다.");
     return value.trim();
+  }
+  private String placeholders(int n) {
+    return n <= 0 ? "NULL" : String.join(",", java.util.Collections.nCopies(n, "?"));
   }
   private String json(Object value) {
     try { return objectMapper.writeValueAsString(value); }

@@ -707,17 +707,22 @@ get_next_regions (RESEARCHED 제외, DUE 포함)
   → claim_region (IN_PROGRESS)
   → 공개 웹 조사 → 중복 확인
   → Hard Gate 7단계: 현재 활동 · 최근 활동 · 개인 식별 · 교육철학(2~3문장) · 커리큘럼(2~3문장) · 공개 근거 URL · 제외/중복 아님
-  → save_research_drafts (education_philosophy_summary / curriculum_summary 필수, 강점·개선·최근활동·프로필이미지 구조화 저장)
+  → save_research_drafts (후보 풀 저장. education_philosophy_summary / curriculum_summary 필수,
+                          강점·개선·최근활동·프로필이미지 구조화 저장. 저장 = 선정 아님)
   → (submit_chart_review_batch = audit record)
-  → complete_region ── 서버 단일 트랜잭션 ──▶
-        · 이 지역 현행 Hard Gate 통과 후보 → audit batch + 결정론 Score snapshot(evidence_json)
-        · 전국 누적 publication 재생성: 유효 교육자 전체 total_score DESC 재정렬,
-          상위 최대 100 = RANKED, 나머지 = DISCOVERED(+ potential signals면 PROMISING), previous_rank 승계
+  → complete_region(selectedCandidateIds=[...]) ── 서버 단일 트랜잭션 ──▶
+        · selectedCandidateIds 로 넘긴 후보만 이 지역 선정자로 인정(이 지역 소속·ELIGIBLE·미제외·서술가능 검증, 아니면 422)
+        · 선정자 → audit batch + 결정론 Score snapshot(evidence_json)
+        · 전국 누적 publication 재생성: (직전 PUBLISHED snapshot 교육자 ∪ 이번 선정자, 제외자 제거)
+          를 total_score DESC 재정렬, 상위 최대 100 = RANKED, 나머지 = DISCOVERED, previous_rank 승계
         · 직전 PUBLISHED → SUPERSEDED (삭제 없음)
         · region RESEARCHED (+ chart.re-research-days 기본 90일 뒤 DUE)
         · publication 실패 시 전체 롤백 → region 완료 취소
-  → 선정 0명도 정상 완료 (current publication 유지, RESEARCHED)
+  → selectedCandidateIds 빈 배열 = 0명 정상 완료 (RESEARCHED_ZERO audit batch만, current publication 무변경)
   → get_next_regions → 다음 신규 지역
+
+사후 복구: 잘못 발행된 batch 는 GET /review-batches/{id} 로 확인 후 POST /review-batches/{id}/revert
+(해당 batch 의 publication entry·score snapshot 만 제거, candidate 는 보존, publication 재생성).
 ```
 
 publication은 AI/WebMCP 직접 명령으로 만들 수 없다(`POST /publications` = 409, publish tool 없음). `/chart`와 홈 TOP5는 `GET /api/chart/publication/current` 하나만 읽는다(홈은 `rankedTop100[0:5]`). 관리자는 사후에 공개 제외·재조사 지정·근거/Score 확인을 한다(PR-D).
