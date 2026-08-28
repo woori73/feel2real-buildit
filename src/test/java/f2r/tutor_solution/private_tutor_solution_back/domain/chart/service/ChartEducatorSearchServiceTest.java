@@ -4,9 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorDetail;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorPage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorSummary;
+import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicOfficialChannels;
 import java.lang.reflect.RecordComponent;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +29,49 @@ import org.springframework.web.server.ResponseStatusException;
 class ChartEducatorSearchServiceTest {
 
   private final ChartEducatorSearchService service = new ChartEducatorSearchService(mock(JdbcTemplate.class));
+  // 클래스패스의 Jackson 모듈(jsr310 등)을 등록해 LocalDateTime 등을 직렬화할 수 있게 한다.
+  private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+
+  // ---- 직렬화: officialChannels 는 record component 만 노출 (hotfix: "empty" 필드 제거) ----
+
+  @Test
+  void officialChannels_serializesOnlyRecordComponents_noEmptyOrHelperField() throws Exception {
+    ChartPublicOfficialChannels ch = new ChartPublicOfficialChannels(
+        "https://home.example.com", null, "https://youtube.example.com/@x", null);
+
+    JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(ch));
+
+    assertThat(iterableFieldNames(json)).containsExactlyInAnyOrder("homepage", "blog", "youtube", "social");
+    assertThat(json.has("empty")).isFalse();
+    assertThat(json.has("hasNoChannels")).isFalse();
+    assertThat(json.get("homepage").asText()).isEqualTo("https://home.example.com");
+    assertThat(json.get("blog").isNull()).isTrue();
+  }
+
+  @Test
+  void detailJson_officialChannels_hasNoEmptyField_andNoScoreOrRank() throws Exception {
+    Map<String, Object> row = baseRow();
+    row.put("eligibility_status", "EVALUATABLE");
+    row.put("official_homepage", "https://home.example.com");
+    row.put("official_youtube", "https://youtube.example.com/@x");
+
+    ChartPublicEducatorDetail d = service.toDetail(row, List.of());
+    JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(d));
+
+    assertThat(json.get("officialChannels").has("empty")).isFalse();
+    assertThat(iterableFieldNames(json.get("officialChannels")))
+        .containsExactlyInAnyOrder("homepage", "blog", "youtube", "social");
+    // Score/rank 계열 키는 상세 JSON 어디에도 없다
+    for (String forbidden : List.of("score", "buildItScore", "totalScore", "rank", "chartRank", "empty")) {
+      assertThat(json.findValue(forbidden)).as("forbidden key: " + forbidden).isNull();
+    }
+  }
+
+  private static Set<String> iterableFieldNames(JsonNode node) {
+    Set<String> names = new java.util.HashSet<>();
+    node.fieldNames().forEachRemaining(names::add);
+    return names;
+  }
 
   // ---- status 파라미터 ----
 
