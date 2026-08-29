@@ -3,9 +3,13 @@
     'sec-reviews',
     'sec-curriculum',
     'sec-effect',
-    'sec-digitaltwin',
     'sec-market',
     'sec-payment'
+  ]);
+  // Education Storefront 신규 섹션 — 명시적 true일 때만 렌더한다(기본 OFF, 기존 사이트 불변).
+  const OPT_IN_SECTION_IDS = new Set([
+    'sec-featured',
+    'sec-digitaltwin'
   ]);
   if (!window.F2RAcademyBusinessInfo) {
     throw new Error('F2RAcademyBusinessInfo must be loaded before academy_public.js');
@@ -193,10 +197,12 @@
 
   function renderSectionById(id, academy, primarySubject, regionText) {
     if (id === 'sec-hero') return renderHero(academy, primarySubject, regionText);
+    if (id === 'sec-featured') return renderFeatured(academy);
     if (id === 'sec-intro') return renderIntro(academy);
     if (id === 'sec-principal') return renderPrincipal(academy);
     if (id === 'sec-philosophy') return renderPhilosophy(academy);
     if (id === 'sec-videos') return renderVideos(academy);
+    if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
     if (id === 'sec-social') return renderExternalServices(academy);
     return '';
@@ -205,6 +211,7 @@
   function isSectionVisible(academy, id) {
     if (FUTURE_SECTION_IDS.has(id)) return false;
     const visibility = academy.pageSettings && academy.pageSettings.sectionVisibility;
+    if (OPT_IN_SECTION_IDS.has(id)) return !!(visibility && visibility[id] === true);
     return !(visibility && visibility[id] === false);
   }
 
@@ -334,6 +341,16 @@
     return SECTIONS.renderPhilosophy(sectionView(academy), PUBLIC_CTX);
   }
 
+  // Education Storefront 신규 섹션. 마크업 정본은 academy_sections.js에 있고 여기서는 공개 ctx만 얹는다.
+  // sectionView.sectionVisible이 opt-in(명시적 true) 규칙을 적용하므로 기존 학원에는 렌더되지 않는다.
+  function renderFeatured(academy) {
+    return SECTIONS.renderFeatured(sectionView(academy), PUBLIC_CTX);
+  }
+
+  function renderAiProcess(academy) {
+    return SECTIONS.renderAiProcess(sectionView(academy), PUBLIC_CTX);
+  }
+
 
   function findUploadedVideo(videoId) {
     const id = String(videoId || '').trim();
@@ -401,6 +418,7 @@
 
   const DEFAULT_SECTION_ORDER = [
     'sec-hero',
+    'sec-featured',
     'sec-intro',
     'sec-principal',
     'sec-philosophy',
@@ -507,6 +525,8 @@
   window.F2RAcademyRenderTestHooks = Object.freeze({
     renderGnb,
     renderHero,
+    renderFeatured,
+    renderAiProcess,
     renderIntro,
     renderPrincipal,
     renderPhilosophy,

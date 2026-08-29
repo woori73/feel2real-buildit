@@ -5,7 +5,7 @@
 > 상태: **1차 구현 진행 중**. 착수 전 이 문서 로드.
 
 ## 0. 한 줄 요약
-로그인 tutor가 랜딩폼에서 학원 정보를 입력해 `/builder`로 이동하고, 실제 지원되는 인라인 편집·섹션 표시·레이아웃·미디어·공개정보 기능만 사용해 발행한다. 신규 발행 전 상태는 client sessionStorage에 보관하고 `POST /api/tutor/academy` multipart 요청으로 발행하며, 기존 Academy는 SSR 데이터로 Builder 내부 DOM에 공개 페이지를 렌더한다. 추가예정 6개 섹션은 legacy 저장값과 무관하게 항상 OFF이고 공개 페이지에서도 렌더하지 않는다.
+로그인 tutor가 랜딩폼에서 학원 정보를 입력해 `/builder`로 이동하고, 실제 지원되는 인라인 편집·섹션 표시·레이아웃·미디어·공개정보 기능만 사용해 발행한다. 신규 발행 전 상태는 client sessionStorage에 보관하고 `POST /api/tutor/academy` multipart 요청으로 발행하며, 기존 Academy는 SSR 데이터로 Builder 내부 DOM에 공개 페이지를 렌더한다. 추가예정 5개 섹션(`sec-reviews`/`sec-curriculum`/`sec-effect`/`sec-market`/`sec-payment`)은 legacy 저장값과 무관하게 항상 OFF이고 공개 페이지에서도 렌더하지 않는다. Education Storefront 섹션 `sec-featured`·`sec-digitaltwin`은 opt-in(기본 OFF, §10 참고).
 
 ## 1. 플로우 (확정)
 1. **랜딩 입력** — `templates/public/landing.html` `#builder-try` 섹션: 이름/슬로건/과목/수강료 + `updatePreview()` 실시간 프리뷰. `#publishBtn`("학원 페이지 발행하기").
@@ -151,6 +151,63 @@
   - 로고 편집은 GNB/Footer 로고(`data-builder-logo="gnb"|"footer"`)로 계속 가능하다. `introEnglishName`/`introMotto`는 **렌더·편집 대상에서 빠졌지만 서버 허용 key에는 남긴다** — 기존 row의 저장값이 그대로 full PUT payload에 실려 오므로 key를 지우면 기존 Academy 저장이 400이 된다.
 - **수업상품/시간표 시안.** `lesson_product_showcase.js`의 공유 `render()`는 수업 관리 편집기 미리보기와 같은 골격(탭 + `selected-hero`/`detail-section`)을 접힌 상태로 렌더하고, 탭 클릭(`toggle()`)으로만 편다. `academy_sections.js`의 `sec-lessons`는 그 아래에 `개설 시간표` / `지금 모집 중인 반` 밴드를 함께 렌더한다. 이 밴드의 본문은 **원장이 올린 달력 이미지 1장**이다(`academies.schedule_image_storage_key`, V948 — 위 "시간표 달력 이미지" 항목). 과거에는 수업 데이터의 `name`/`targetGroup`/`scheduleSummary`로 리스트를 자동 생성했으나 달력형으로 보이지 않아 걷어냈다 — 시간표는 수업상품 데이터에서 파생하지 않는다. 별도 `sec-schedule` 관리 섹션은 만들지 않는다(순서/표시 설정 대상이 아니다). 방문자 카운터는 본문 플로팅 위젯이 아니라 footer copyright 옆 `<span class="counter"><span class="d"></span>오늘 n · 누적 n</span>` 형태로 표시한다.
 - **검증**: `node --test "src/test/js/*.test.js"`(신규 `academy_intro_summary.test.js`, `academy_builder_consult_contact.test.js` 포함), `AcademyServiceTest`(introFeatures accept/2000자 초과 reject), `AcademyBuilderTemplateContractTest`(builder JS 캐시버스팅 버전을 문자열로 pin하므로 `?v=` 변경 시 함께 수정).
+
+## 10. 2026-08-30 변경: Education Storefront Capability V1
+
+Builder를 "학원 홈페이지 편집기"에서 "교육자의 교육서비스를 Storefront처럼 보여주는 편집기"로
+한 단계 확장한다. Shopify Storefront UX 원리(Featured hierarchy, Collection 탐색성, 강한
+typography hierarchy, 단일 CTA, mobile-first)를 교육 서비스로 번역해 적용하되, Shopify의 색상·
+로고·문구·proprietary UI는 복제하지 않는다. 이번 범위는 **재사용 가능한 generic 섹션 2개 추가 +
+섹션 추가 시 4곳 수동 동기화 취약성 완화**이며, 에듀홀릭 등 실제 콘텐츠 입력·발행은 별도 PHASE 2다.
+
+### 추가된 재사용 섹션 (기본 OFF · opt-in)
+
+| id | UI 이름 | 용도 | 입력 키(`builderDraft`) |
+|---|---|---|---|
+| `sec-featured` | Featured · 시즌 프로그램 | "지금 가장 알리고 싶은 프로그램 / 시즌 캠페인" | `featuredEyebrow`, `featuredTitle`, `featuredDescription`, `featuredItem1..4`, `featuredCtaLabel` |
+| `sec-digitaltwin` | AI Native 교육 과정 | "경험 있는 교육자 + AI"의 교육 과정을 단계 흐름으로 | `aiProcessEyebrow`, `aiProcessTitle`, `aiProcessDescription`, `aiProcessStep1..5`, `aiProcessNote` |
+
+- `sec-digitaltwin`은 기존 future 예약 id를 재사용한다(순서/저장 호환). future 목록에서 빼고
+  opt-in 데이터 섹션으로 승격했다.
+- **opt-in 규칙:** 두 섹션은 `sectionVisibility[id] === true`일 때만 공개/Builder canvas/레이아웃 탭에
+  렌더된다. 키가 없으면(기존 모든 학원) 렌더되지 않아 기존 사이트 모습이 그대로 유지된다.
+  기존 데이터 섹션은 반대로 명시적 `false`일 때만 숨는다. 판정은 `academy_sections.js`의
+  `OPT_IN_SECTION_IDS` + `toSectionView.sectionVisible`, 공개 `academy_public.js`의
+  `isSectionVisible`, 빌더 `academy_builder.js`의 `academySectionVisible`/`toggleSectionVisibility`/
+  `applySectionVisibilityState`가 같은 규칙을 공유한다.
+- 마크업 정본은 `academy_sections.js`의 `renderFeatured`/`renderAiProcess` 한 벌이고, 공개/빌더
+  차이는 기존 ctx 슬롯 패턴(`editableText` + `featuredItem`/`featuredCta`/`aiProcessStep`)이 흡수한다.
+- 문구·항목은 전부 `builderDraft` generic key다. `2026`, `압구정중`, `에듀홀릭` 같은 값을 코드에
+  하드코딩하지 않는다 — 다른 원장도 같은 섹션으로 자기 프로그램/교육 과정을 표현할 수 있다.
+- 공개 화면에는 `RAG`/`LLM`/`Embedding`/`Vector DB`/`MCP` 등 개발 용어를 쓰지 않는다.
+
+### SECTION_ORDER 4곳 동기화 취약성 완화
+
+기존: `DEFAULT_SECTION_ORDER`가 서버(`AcademyService`) + `academy_public.js` + `academy_builder.js`
+(`DEFAULT_SECTION_ORDER`, `MANAGED_SECTION_IDS`)에 중복 정의되고, `validateSectionOrder`가
+**size-lock**(정확히 같은 길이 + 모든 관리 섹션 포함)이라 서버에만 섹션을 추가하고 클라이언트
+배열을 못 맞추면(혹은 브라우저가 옛 JS를 캐시하면) 옛 길이 순서가 넘어와 **레이아웃 저장 전체가 400**.
+
+변경:
+- `AcademyService.normalizeSectionOrderForWrite()` — 저장 전 순서를 canonical 완전 목록으로 정규화한다.
+  부분 목록을 받아 빠진 관리 섹션을 canonical 위치(그 섹션 다음 순위 섹션 앞)에 채워 넣는다.
+- `validateSectionOrderInput()` — 형식만 본다: 빈 ID·중복·미등록 ID·hero 포함 시 첫 번째 아님만 거부.
+  **완전성(모든 관리 섹션 포함)은 더 이상 입력 조건이 아니다** — normalize가 보장한다.
+- 결과: 서버에 섹션을 추가하고 3개 JS가 못 따라와도 사용자 저장이 깨지지 않는다. 새 섹션은
+  JS가 따라잡기 전까지 canonical 기본 위치에 렌더될 뿐이다.
+- `src/test/js/academy_sec_videos.test.js`가 여전히 서버/공개/빌더 3곳의 `DEFAULT_SECTION_ORDER`
+  완전 일치를 CI에서 못박는다(파서를 `List.of(...)` 포함하도록 `;` 종결자 기준으로 고침).
+- Builder 전체를 재작성하는 architecture refactor는 하지 않았다.
+
+### 검증 (DB 불필요분)
+
+- `node --test src/test/js/academy_storefront_sections.test.js` — opt-in 기본 OFF, 명시적 true 렌더,
+  기존 섹션 회귀 없음, generic 기본값 fallback(하드코딩 없음), 편집 앵커 분리.
+- `academy_builder_future_sections.test.js`, `academy_sec_videos.test.js` — 3곳 순서 일치, 승격 후 future 목록.
+- `./gradlew test --tests AcademyServiceTest --tests AcademyBuilderTemplateContractTest` — 신규 draft key
+  수용, opt-in visibility 토글, stale client 순서 backfill(400 없음), 입력 검증 유지.
+- `@SpringBootTest` 계열(EduHolicSeedIntegrationTest, SubdomainRenderIntegrationTest 등)은 로컬 MySQL이
+  필요해 CI에서 검증한다.
 
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 

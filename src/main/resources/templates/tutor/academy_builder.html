@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/academy_public.css?v=20260809-1"/>
+  <link rel="stylesheet" href="/css/academy_public.css?v=20260830-1"/>
   <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1"/>
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1"/>
 
@@ -148,6 +148,12 @@
       content:'추가예정🔧';position:absolute;left:50%;bottom:7px;transform:translateX(-50%);
       z-index:2;padding:3px 7px;border-radius:999px;background:rgba(10,15,46,.72);
       color:#fff;font-size:.55rem;font-weight:900;white-space:nowrap;
+    }
+    /* Education Storefront 신규 섹션: 기본 OFF(opt-in), 클릭해 켜면 공개 페이지에 표시된다 */
+    .block-item.is-storefront-optin::before{
+      content:'NEW';position:absolute;top:5px;left:5px;z-index:3;
+      font-size:.5rem;font-weight:900;letter-spacing:.04em;
+      background:rgba(16,185,129,.28);color:#6ee7b7;padding:1px 5px;border-radius:4px;
     }
     .block-item.is-coming-soon{
       opacity:.42;cursor:not-allowed;filter:saturate(.55);pointer-events:none;
@@ -1025,6 +1031,22 @@
           <div class="block-name">히어로<br/>배너<span class="block-source">sec-hero · academies</span></div>
         </div>
 
+        <div class="block-item is-data-backed is-section-toggle is-storefront-optin is-toggle-off" data-section-id="sec-featured" data-section-toggle="sec-featured" data-section-key="sec-featured" role="button" tabindex="0">
+          <span class="block-toggle-state section-toggle-state">OFF</span>
+          <div class="block-icon" style="background:linear-gradient(135deg,#b45309,#f59e0b);">
+            <i class="fa-solid fa-bullhorn" style="color:#fff;font-size:.9rem;"></i>
+          </div>
+          <div class="block-name">Featured<br/>시즌 프로그램<span class="block-source">sec-featured · page_settings</span></div>
+        </div>
+
+        <div class="block-item is-data-backed is-section-toggle is-storefront-optin is-toggle-off" data-section-id="sec-digitaltwin" data-section-toggle="sec-digitaltwin" data-section-key="sec-digitaltwin" role="button" tabindex="0">
+          <span class="block-toggle-state section-toggle-state">OFF</span>
+          <div class="block-icon" style="background:linear-gradient(135deg,#0C238A,#10B981);">
+            <i class="fa-solid fa-diagram-project" style="color:#fff;font-size:.9rem;"></i>
+          </div>
+          <div class="block-name">AI Native<br/>교육 과정<span class="block-source">sec-digitaltwin · page_settings</span></div>
+        </div>
+
         <div class="block-item is-data-backed is-section-toggle" data-section-id="sec-intro" data-section-toggle="sec-intro" data-section-key="sec-intro" role="button" tabindex="0">
           <span class="block-toggle-state section-toggle-state">ON</span>
           <div class="block-icon" style="background:linear-gradient(135deg,#4A7FD4,#7aaef0);">
@@ -1111,14 +1133,6 @@
             <i class="fa-solid fa-chart-line" style="color:#fff;font-size:.9rem;"></i>
           </div>
           <div class="block-name">학습 효과<br/>대시보드<span class="block-source">future</span></div>
-        </div>
-
-        <div class="block-item is-coming-soon is-future-disabled is-toggle-off" data-section-id="sec-digitaltwin" aria-disabled="true">
-          <span class="block-toggle-state section-toggle-state">OFF</span>
-          <div class="block-icon" style="background:linear-gradient(135deg,#0C238A,#4A7FD4);">
-            <i class="fa-solid fa-chart-simple" style="color:#fff;font-size:.9rem;"></i>
-          </div>
-          <div class="block-name">디지털<br/>트윈<span class="block-source">future</span></div>
         </div>
 
         <div class="block-item is-coming-soon is-future-disabled is-toggle-off" data-section-id="sec-market" aria-disabled="true">
@@ -1530,8 +1544,8 @@ function setView(mode, btn){
 <script src="/js/academy_builder_editable_guide.js?v=20260801-1"></script>
 <script src="/js/lesson_product_showcase.js?v=20260810-1"></script>
 <!-- 섹션 마크업 정본. academy_builder.js보다 먼저 로드해야 한다. -->
-<script src="/js/academy_sections.js?v=20260810-1"></script>
-<script src="/js/academy_builder.js?v=20260809-1"></script>
+<script src="/js/academy_sections.js?v=20260830-1"></script>
+<script src="/js/academy_builder.js?v=20260830-1"></script>
 
 </body>
 </html>
