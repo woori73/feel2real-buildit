@@ -58,7 +58,9 @@ class ChartPublicPageContractTest {
     String js = read("static/js/landing_chart.js");
 
     assertThat(html).contains("id=\"chartRegionPicker\"", "id=\"chartProvince\"", "id=\"chartDistrict\"");
-    assertThat(html).contains("동네 실력있는 영어쌤");
+    // Chart 영역은 '우리 동네 영어쌤 찾기'가 아니라 '색깔 있는 교육자 발견'으로 정의한다
+    assertThat(html).contains("전국의 색깔 있는 영어교육자를 발견합니다", "색깔 있는 영어쌤 보기");
+    assertThat(html).doesNotContain("동네 실력있는 영어쌤", "우리 동네 영어쌤 보기");
     assertThat(html).contains("실제 수업 능력 순위가 아닙니다");
     // 홈에는 이름 검색 입력이 없다
     assertThat(html).doesNotContain("id=\"chartNameSearch\"", "교육자 이름 검색");

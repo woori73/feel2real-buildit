@@ -8,7 +8,7 @@
   <title>Build It | 원장과 강사가 브랜드가 되는 시대</title>
   <meta name="description" content="당신의 이름을 브랜드로 만드는 플랫폼, Build It. Build It Web, Shorts, Report, Wiki.">
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/landing_buildit.css?v=20260827-1">
+  <link rel="stylesheet" href="/css/landing_buildit.css?v=20260829-2">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -86,15 +86,17 @@
   <!-- ============ 4. Build It Chart ============ -->
   <section class="chart-showcase" id="chart-showcase">
     <h2 class="chart-title"><span>Build</span><span class="chart-it">It</span> <span class="chart-muted">Chart</span></h2>
-    <p class="chart-headline">BuildIt이 발견한<br>동네 실력있는 영어쌤</p>
-    <p class="chart-sub">유명세나 광고보다 어떻게 가르치는지를 봅니다. BuildIt이 교육철학·커리큘럼·수업방식과 실제 교육활동을 공개정보를 바탕으로 찾아 기록합니다.</p>
+    <p class="chart-headline">전국의 색깔 있는 영어교육자를 발견합니다.</p>
+    <p class="chart-sub"><strong>교육철학·커리큘럼·수업 노하우를 실제 데이터로 기록하고,<br>
+      AI가 인간 영어교육자의 지능을 배우게 합니다.</strong></p>
 
+    <p class="chart-picker-note">전국에서 발견한 교육자 보기</p>
     <form class="chart-region-picker" id="chartRegionPicker" autocomplete="off">
       <label class="visually-hidden" for="chartProvince">시·도</label>
       <select id="chartProvince"><option value="">시·도 선택</option></select>
       <label class="visually-hidden" for="chartDistrict">시·군·구</label>
       <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
-      <button type="submit">우리 동네 영어쌤 보기</button>
+      <button type="submit">색깔 있는 영어쌤 보기</button>
     </form>
     <p class="chart-ranking-note">BuildIt Ranking은 선생님의 실제 수업 능력 순위가 아닙니다.
       <a href="/chart#criteria">평가 기준 보기 →</a></p>
@@ -112,6 +114,18 @@
         <div class="chart-fade" aria-hidden="true"></div>
         <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
       </div>
+    </div>
+
+    <div class="chart-vision">
+      <p class="chart-vision-title">발견에서 끝나지 않습니다.</p>
+      <ol class="chart-vision-flow">
+        <li><b>CHART</b><span>발견</span></li>
+        <li><b>WIKI</b><span>축적</span></li>
+        <li><b>AI</b><span>학습·연결</span></li>
+        <li><b>SUPERBRAIN</b><span>교육지능</span></li>
+      </ol>
+      <p class="chart-vision-foot">축적된 지능은 AI Agent와 Physical AI가<br>
+        교육 현장을 돕는 Brain으로 발전합니다.</p>
     </div>
   </section>
   <script src="/js/landing_chart.js?v=20260828-2" defer></script>
