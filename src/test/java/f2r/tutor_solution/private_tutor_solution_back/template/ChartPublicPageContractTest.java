@@ -61,7 +61,9 @@ class ChartPublicPageContractTest {
     // Chart 영역은 '우리 동네 영어쌤 찾기'가 아니라 '색깔 있는 교육자 발견'으로 정의한다
     assertThat(html).contains("전국의 색깔 있는 영어교육자를 발견합니다", "색깔 있는 영어쌤 보기");
     assertThat(html).doesNotContain("동네 실력있는 영어쌤", "우리 동네 영어쌤 보기");
-    assertThat(html).contains("실제 수업 능력 순위가 아닙니다");
+    // 평가 기준 링크는 유지(CTA 바로 위), 기존 "BuildIt Ranking은…" 안내문은 제거
+    assertThat(html).contains("평가 기준 보기", "/chart#criteria");
+    assertThat(html).doesNotContain("BuildIt Ranking은 선생님의 실제 수업 능력 순위가 아닙니다");
     // 홈에는 이름 검색 입력이 없다
     assertThat(html).doesNotContain("id=\"chartNameSearch\"", "교육자 이름 검색");
     assertThat(js).contains("/api/chart/regions", "/chart?");
