@@ -3289,6 +3289,19 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 인증/권한: `ROLE_ADMIN`.
 - Response: 갱신 후보.
 
+### ✅ POST /api/admin/chart/candidates/{candidateId}/enrichment  (PR-D)
+
+- 목적: **이미 저장된 교육자(`chart_candidates`)의 Educator Intelligence 보완**. 신규 발굴 저장(`saveDraft`, INSERT)과 분리된 **기존 `candidate_id` 전용 UPDATE**. 서울 legacy 41명처럼 요약 필드가 비어 있는 교육자를 이후 재조사해 근거와 함께 채워 넣는 경로다.
+- 인증/권한: `ROLE_ADMIN`. WebMCP/AI tool 로 노출하지 않는다(관리자 REST 전용).
+- Request body: `{ educationPhilosophySummary?, curriculumSummary?, distinctiveTeachingSummary?, recentActivitySummary?, strengths?: string[], improvementSuggestions?: string[], overwrite?: boolean, evidence?: [{ contentType, contentSummary, sourceUrl, activityDate?, evidenceKind?, educationallyInformative? }] }`.
+- 병합 규칙:
+  - 요약 4필드: 비어 있으면 채우고, 이미 값이 있으면 `overwrite:true` 일 때만 교체한다. **null/blank 로는 절대 기존 값을 지우지 않는다.**
+  - `strengths` / `improvementSuggestions`: 기존 항목을 보존한 채 합집합으로 누적(삭제 없음).
+  - `evidence`: `chart_candidate_activities` 에 원 출처 URL 로만 추가(누적, `(candidate_id, source_url)` 중복은 무시). **네이버 AI·검색 결과 URL, Gemini grounding redirect(`vertexaisearch.cloud.google.com`), placeholder(`buildit.example`) 는 400 으로 거부.** 기존 Evidence 는 삭제하지 않는다.
+- 변경 안 함(요청 record 에 해당 필드가 없음): Score/Score snapshot, Ranking, `eligibility_status`, publication, `excluded_from_chart`, `legacy_source`, identity(`name`·`academy_name`·`activity_*`·`person_key`·`zone_id`). `saveDraft` 의 교육철학·커리큘럼 2~3문장 평가 게이트는 적용하지 않는다(확인된 필드만 부분 보완).
+- 오류: 빈 요청(요약·리스트·근거 모두 없음) → 400. 존재하지 않는 `candidateId` → 404. 원 출처 아닌 Evidence URL → 400.
+- Response: `{ candidateId, changedFields: string[], evidenceAdded, evidenceSkippedDuplicate, eligibilityStatus, updatedAt }`.
+
 ### 🧪 Chart Site tool 1차 계약 (`/api/admin/chart/tools/**`)
 
 모든 endpoint는 `ROLE_ADMIN` 전용이다. ChatGPT가 공개 웹 조사를 담당하며 이 API가 다시 Gemini/OpenAI 검색을 호출하지 않는다.
