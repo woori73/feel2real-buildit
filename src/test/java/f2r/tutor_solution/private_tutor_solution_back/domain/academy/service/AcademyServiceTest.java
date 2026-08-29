@@ -943,6 +943,7 @@ class AcademyServiceTest {
             "sec-effect", "sec-digitaltwin", "sec-market", "sec-payment", "sec-social"),
         draft);
     academy.updatePageSettings(current);
+    // 신규 sec-featured를 뺀 옛 길이의 순서를 보낸다(구형/캐시된 클라이언트 시나리오).
     List<String> reordered = List.of("sec-hero", "sec-intro", "sec-lessons", "sec-principal", "sec-philosophy", "sec-videos", "sec-reviews", "sec-curriculum",
         "sec-effect", "sec-digitaltwin", "sec-market", "sec-payment", "sec-social");
     when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
@@ -953,11 +954,14 @@ class AcademyServiceTest {
     // when
     AcademyResponse response = service.updatePageSettings(principal, request);
 
-    // then
+    // then — URL/표시토글/draft는 보존하고, 빠진 관리 섹션(sec-featured)은 canonical 위치에 채워 넣는다.
     assertThat(response.pageSettings().blogUrl()).isEqualTo("https://blog.example.com");
     assertThat(response.pageSettings().sectionVisibility()).containsEntry("sec-effect", false);
     assertThat(response.pageSettings().builderDraft()).isEqualTo(draft);
-    assertThat(response.pageSettings().sectionOrder()).containsExactlyElementsOf(reordered);
+    assertThat(response.pageSettings().sectionOrder())
+        .containsExactlyInAnyOrderElementsOf(AcademyService.DEFAULT_SECTION_ORDER)
+        .startsWith("sec-hero", "sec-featured")
+        .containsSubsequence("sec-intro", "sec-lessons", "sec-principal");
   }
 
   @Test
@@ -980,6 +984,81 @@ class AcademyServiceTest {
     // then
     assertThat(response.pageSettings().sectionOrder()).contains("sec-videos");
     assertThat(AcademyService.DEFAULT_SECTION_ORDER).contains("sec-videos");
+  }
+
+  @Test
+  void updatePageSettings_backfillsNewlyAddedSectionWhenStaleClientOmitsIt() {
+    // given: 서버에 섹션을 추가한 뒤 옛 JS를 캐시한 클라이언트가 그 섹션 없이 순서를 저장한다.
+    // 예전 size-lock에서는 이 요청 전체가 400이었다(빌더 레이아웃 저장이 통째로 막힘).
+    Academy academy = academy("old/logo.jpg", null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+    List<String> withoutFeatured = new ArrayList<>(AcademyService.DEFAULT_SECTION_ORDER);
+    withoutFeatured.remove("sec-featured");
+    AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, withoutFeatured);
+
+    // when
+    AcademyResponse response = service.updatePageSettings(principal, request);
+
+    // then: 400 없이 저장되고, 빠진 섹션은 canonical 위치(sec-hero 바로 뒤)에 채워진다.
+    assertThat(response.pageSettings().sectionOrder())
+        .containsExactlyElementsOf(AcademyService.DEFAULT_SECTION_ORDER);
+  }
+
+  @Test
+  void updatePageSettings_acceptsOptInStorefrontSectionVisibilityToggle() {
+    // given: Education Storefront 신규 섹션은 명시적 true로 켤 수 있어야 한다.
+    Academy academy = academy("old/logo.jpg", null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+    AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, Map.of("sec-featured", true, "sec-digitaltwin", true), null);
+
+    // when
+    AcademyResponse response = service.updatePageSettings(principal, request);
+
+    // then
+    assertThat(response.pageSettings().sectionVisibility())
+        .containsEntry("sec-featured", true)
+        .containsEntry("sec-digitaltwin", true);
+  }
+
+  @Test
+  void create_acceptsEducationStorefrontBuilderDraftKeys() throws Exception {
+    // given: Featured / AI Native 교육 과정 섹션의 generic 입력 키.
+    User tutor = tutor();
+    Subject subject = subject();
+    Map<String, String> draft = Map.of(
+        "featuredEyebrow", "2026 FALL",
+        "featuredTitle", "우리 학교 2학기 내신",
+        "featuredItem1", "압구정중",
+        "aiProcessTitle", "경험 있는 교육자 + AI",
+        "aiProcessStep1", "학교 자료");
+    AcademyPageSettings pageSettings = new AcademyPageSettings(
+        null, null, null, null, draft);
+    AcademyUpsertRequest request = validRequestWithPageSettings(pageSettings);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.empty());
+    when(userRepository.findById(10L)).thenReturn(Optional.of(tutor));
+    when(subjectRepository.findAllById(Set.of(1))).thenReturn(List.of(subject));
+    when(academyRepository.existsBySlug("테스트-academy")).thenReturn(false);
+    when(fileStorage.saveImage(eq(10L), eq("default-academy-logo.jpg"), any(byte[].class)))
+        .thenReturn("secret/default-logo.jpg");
+    when(academyRepository.save(any(Academy.class))).thenAnswer(invocation -> {
+      Academy academy = invocation.getArgument(0);
+      ReflectionTestUtils.setField(academy, "academyId", 100L);
+      return academy;
+    });
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+
+    // when
+    AcademyResponse response = service.create(principal, request, null, null);
+
+    // then
+    assertThat(response.pageSettings().builderDraft())
+        .containsEntry("featuredEyebrow", "2026 FALL")
+        .containsEntry("featuredItem1", "압구정중")
+        .containsEntry("aiProcessStep1", "학교 자료");
   }
 
   @Test

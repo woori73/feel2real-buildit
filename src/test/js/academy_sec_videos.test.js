@@ -7,9 +7,9 @@ const { bothRenderers, loadRenderHooks, primeRenderer, academyFixture } = requir
 /**
  * sec-videos(수업 영상) 섹션의 교차 파일 정합성.
  *
- * DEFAULT_SECTION_ORDER는 서버/공개/빌더 3개 파일에 각각 복제되어 있고,
- * AcademyService.validateSectionOrder가 size-lock이라 하나만 고치면 빌더의 순서 저장이
- * 통째로 400이 된다. 이 테스트가 그 어긋남을 잡는다.
+ * DEFAULT_SECTION_ORDER는 서버/공개/빌더 3개 파일에 각각 복제되어 있다. 서버 size-lock은
+ * 완화됐지만(빠진 섹션은 canonical 위치로 채워 넣음), 세 목록이 어긋나면 새 섹션이 JS가
+ * 따라잡기 전까지 기본 위치에 렌더되므로 이 테스트가 여전히 정합성을 못박는다.
  */
 
 const read = (relative) => fs.readFileSync(path.resolve(__dirname, relative), 'utf8');
@@ -20,11 +20,14 @@ const builderJs = read('../../main/resources/static/js/academy_builder.js');
 const builderTemplate = read('../../main/resources/templates/tutor/academy_builder.html');
 const tutorAcademyTemplate = read('../../main/resources/templates/tutor/tutor_academy.html');
 
-/** `"sec-a", "sec-b"` / `'sec-a', 'sec-b'` 형태의 배열 리터럴에서 섹션 id를 순서대로 뽑는다. */
+/**
+ * `"sec-a", "sec-b"` / `'sec-a', 'sec-b'` 형태의 선언에서 섹션 id를 순서대로 뽑는다.
+ * JS는 `[...]`, Java는 `List.of(...)`라 닫는 기호가 다르다 — 문(statement) 종결자 `;`까지 자른다.
+ */
 function sectionIdsFrom(source, declaration) {
   const start = source.indexOf(declaration);
   assert.notEqual(start, -1, `선언을 찾지 못했다: ${declaration}`);
-  const body = source.slice(start, source.indexOf(']', start) + 1);
+  const body = source.slice(start, source.indexOf(';', start) + 1);
   return [...body.matchAll(/['"](sec-[a-z0-9-]+)['"]/g)].map((m) => m[1]);
 }
 

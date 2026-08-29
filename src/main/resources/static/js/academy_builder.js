@@ -33,6 +33,7 @@
   });
   const DEFAULT_SECTION_ORDER = [
     'sec-hero',
+    'sec-featured',
     'sec-intro',
     'sec-principal',
     'sec-philosophy',
@@ -50,12 +51,19 @@
     'sec-reviews',
     'sec-curriculum',
     'sec-effect',
-    'sec-digitaltwin',
     'sec-market',
     'sec-payment'
   ]);
   const FUTURE_SECTIONS = new Set(FUTURE_SECTION_IDS);
+  // Education Storefront 신규 섹션 — 기본 OFF(opt-in). 명시적으로 ON 하기 전에는 캔버스·레이아웃·
+  // 공개 페이지 어디에도 렌더되지 않아, 기존 학원 사이트가 그대로 유지된다.
+  const OPT_IN_SECTION_IDS = Object.freeze([
+    'sec-featured',
+    'sec-digitaltwin'
+  ]);
+  const OPT_IN_SECTIONS = new Set(OPT_IN_SECTION_IDS);
   const MANAGED_SECTION_IDS = [
+    'sec-featured',
     'sec-intro',
     'sec-principal',
     'sec-philosophy',
@@ -104,6 +112,7 @@
 
   const STYLE_PANEL_SECTION_NAMES = {
     'sec-hero': '히어로 배너',
+    'sec-featured': 'Featured · 시즌 프로그램',
     'sec-intro': '학원 소개',
     'sec-principal': '원장 소개',
     'sec-philosophy': '학습 철학',
@@ -112,7 +121,7 @@
     'sec-lessons': '수업상품 · 강의 목록',
     'sec-curriculum': '커리큘럼 관리',
     'sec-effect': '학습 효과 대시보드',
-    'sec-digitaltwin': '디지털 트윈',
+    'sec-digitaltwin': 'AI Native 교육 과정',
     'sec-market': '마켓플레이스',
     'sec-payment': '수강료 결제',
     'sec-social': '외부 연동',
@@ -342,13 +351,24 @@
 
   function renderSectionById(id, academy, primarySubject, regionText) {
     if (id === 'sec-hero') return renderHero(academy, primarySubject, regionText);
+    if (id === 'sec-featured') return renderFeatured(academy);
     if (id === 'sec-intro') return renderIntro(academy);
     if (id === 'sec-principal') return renderPrincipal(academy);
     if (id === 'sec-philosophy') return renderPhilosophy(academy);
     if (id === 'sec-videos') return renderVideos(academy);
+    if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
     if (id === 'sec-social') return renderExternalServices(academy);
     return '';
+  }
+
+  // Education Storefront 신규 섹션 — 마크업 정본은 academy_sections.js, 빌더는 편집 ctx만 얹는다.
+  function renderFeatured(academy) {
+    return SECTIONS.renderFeatured(sectionView(academy), BUILDER_CTX);
+  }
+
+  function renderAiProcess(academy) {
+    return SECTIONS.renderAiProcess(sectionView(academy), BUILDER_CTX);
   }
 
   function renderGnb(academy, topBtn) {
@@ -671,7 +691,12 @@
     }
     const previousVisibility = normalizeSectionVisibility(currentPreview.sectionVisibility);
     const visibility = normalizeSectionVisibility(previousVisibility);
-    visibility[sectionId] = visibility[sectionId] === false;
+    // opt-in 섹션(기본 OFF)은 명시적 true일 때만 보인다. opt-out 섹션(기본 ON)은 명시적 false일 때만 숨는다.
+    // 어느 쪽이든 토글은 "현재 유효 상태"의 반대를 명시적 boolean으로 저장한다.
+    const currentlyVisible = OPT_IN_SECTIONS.has(sectionId)
+      ? visibility[sectionId] === true
+      : visibility[sectionId] !== false;
+    visibility[sectionId] = !currentlyVisible;
     currentPreview.sectionVisibility = visibility;
     applySectionVisibilityState(visibility);
 
@@ -3669,6 +3694,7 @@
     const key = canonicalSectionId(sectionId);
     if (FUTURE_SECTIONS.has(key)) return false;
     const visibility = preview && (preview.sectionVisibility || (preview.pageSettings && preview.pageSettings.sectionVisibility));
+    if (OPT_IN_SECTIONS.has(key)) return !!(visibility && visibility[key] === true);
     return !(key && visibility && visibility[key] === false);
   }
 
@@ -3700,7 +3726,9 @@
       const sectionId = canonicalSectionId(button.dataset.sectionKey || button.dataset.sectionToggle || button.dataset.sectionId);
       if (sectionId) button.dataset.sectionKey = sectionId;
       const hidden = FUTURE_SECTIONS.has(sectionId)
-        || (sectionId && visibility && visibility[sectionId] === false);
+        || (OPT_IN_SECTIONS.has(sectionId)
+            ? !(visibility && visibility[sectionId] === true)
+            : (sectionId && visibility && visibility[sectionId] === false));
       button.classList.toggle('is-hidden', hidden);
       button.classList.toggle('is-toggle-on', !hidden);
       button.classList.toggle('is-toggle-off', hidden);
@@ -3940,6 +3968,8 @@
   window.F2RAcademyRenderTestHooks = Object.freeze({
     renderGnb,
     renderHero,
+    renderFeatured,
+    renderAiProcess,
     renderIntro,
     renderPrincipal,
     renderPhilosophy,

@@ -29,9 +29,16 @@
     'sec-reviews',
     'sec-curriculum',
     'sec-effect',
-    'sec-digitaltwin',
     'sec-market',
     'sec-payment'
+  ]);
+
+  // Education Storefront 신규 섹션. 기존 사이트에는 이 키가 없으므로, 명시적 true일 때만 렌더한다
+  // (기존 섹션은 반대로 명시적 false일 때만 숨긴다). 이 opt-in 규칙 덕분에 새 섹션을
+  // DEFAULT_SECTION_ORDER에 추가해도 기존 학원 공개 페이지의 모습이 그대로 유지된다.
+  const OPT_IN_SECTION_IDS = new Set([
+    'sec-featured',
+    'sec-digitaltwin'
   ]);
 
   // ── 공용 헬퍼 ──────────────────────────────────────────────────────────────
@@ -70,6 +77,7 @@
       builderDraft: pageSettings.builderDraft || {},
       sectionVisible(id) {
         if (FUTURE_SECTION_IDS.has(id)) return false;
+        if (OPT_IN_SECTION_IDS.has(id)) return !!(visibility && visibility[id] === true);
         return !(visibility && visibility[id] === false);
       }
     });
@@ -186,6 +194,73 @@
             ${ctx.editableText({ tag: 'h2', className: 'philosophy-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
           <div class="philosophy-grid">${philosophyItems(view).map((item, index) => ctx.philosophyCard(item, index)).join('')}</div>
+        </div>
+      </section>`;
+  }
+
+  // ── sec-featured : Featured / Seasonal Program ────────────────────────────
+  // 재사용 가능한 generic 섹션. "지금 이 교육자가 가장 알리고 싶은 프로그램/시즌 캠페인"을
+  // Shopify Featured처럼 강한 hierarchy(eyebrow → 큰 제목 → 짧은 설명 → 항목 → 단일 CTA)로 보여준다.
+  // 학교명·연도·학원명은 전부 builderDraft 입력값이며 코드에 하드코딩하지 않는다.
+  const FEATURED_EYEBROW_DEFAULT = 'FEATURED';
+  const FEATURED_TITLE_DEFAULT = '이번 시즌\n가장 중요한 프로그램';
+  const FEATURED_DESC_DEFAULT = '지금 모집·진행 중인 대표 프로그램을 한눈에 보여주세요. 대상, 시기, 핵심 포인트를 짧게 적으면 됩니다.';
+  const FEATURED_ITEM_DEFAULTS = ['핵심 포인트 1', '핵심 포인트 2', '핵심 포인트 3', '핵심 포인트 4'];
+  const FEATURED_CTA_DEFAULT = '상담 신청하기';
+
+  function featuredItems(view) {
+    return FEATURED_ITEM_DEFAULTS.map((fallback, index) => draftText(view, 'featuredItem' + (index + 1), fallback));
+  }
+
+  function renderFeatured(view, ctx) {
+    if (!view.sectionVisible('sec-featured')) return '';
+    const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
+    const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
+    const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
+    const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
+    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-fade>
+        <div class="section-inner featured-inner">
+          <div class="featured-head">
+            <div class="eyebrow featured-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
+            ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+          </div>
+          <div class="featured-items">${featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join('')}</div>
+          <div class="featured-cta">${ctx.featuredCta(ctaLabel)}</div>
+        </div>
+      </section>`;
+  }
+
+  // ── sec-digitaltwin : AI Native Education Process ─────────────────────────
+  // 섹션 id는 기존 예약값 sec-digitaltwin을 그대로 쓴다(순서/저장 호환). 표시 문구는 특정
+  // 학원 전용이 아니라, 어떤 교육자든 "자료 → 분석 → 수업 인사이트 → 제작 → 완성"류의 자기
+  // AI Native 교육 과정을 단계 흐름으로 표현할 수 있는 generic 섹션이다. 공개 화면에는
+  // 개발 용어(RAG/LLM/Embedding 등)를 쓰지 않는다 — 입력값은 교육자가 직접 쓴 문장이다.
+  const AI_PROCESS_EYEBROW_DEFAULT = 'AI NATIVE';
+  const AI_PROCESS_TITLE_DEFAULT = '경험 있는 교육자 + AI';
+  const AI_PROCESS_DESC_DEFAULT = '오랜 현장 경험을 AI가 기록·정리·확장해 실제 수업과 시험 준비의 정밀도를 높입니다. 우리 교육 과정을 단계로 보여주세요.';
+  const AI_PROCESS_STEP_DEFAULTS = ['자료 수집', '경향 분석', '수업 인사이트', '자료 제작', '최종본'];
+  const AI_PROCESS_NOTE_DEFAULT = 'AI는 교육자를 대체하지 않습니다. 교육자의 판단과 노하우를 넓히는 도구로 씁니다.';
+
+  function aiProcessSteps(view) {
+    return AI_PROCESS_STEP_DEFAULTS.map((fallback, index) => draftText(view, 'aiProcessStep' + (index + 1), fallback));
+  }
+
+  function renderAiProcess(view, ctx) {
+    if (!view.sectionVisible('sec-digitaltwin')) return '';
+    const eyebrow = draftText(view, 'aiProcessEyebrow', AI_PROCESS_EYEBROW_DEFAULT);
+    const title = draftText(view, 'aiProcessTitle', AI_PROCESS_TITLE_DEFAULT);
+    const desc = draftText(view, 'aiProcessDescription', AI_PROCESS_DESC_DEFAULT);
+    const note = draftText(view, 'aiProcessNote', AI_PROCESS_NOTE_DEFAULT);
+    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-process-wrap" data-fade>
+        <div class="section-inner ai-process-inner">
+          <div class="section-header ai-process-head">
+            <div class="eyebrow ai-process-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'ai-process-eyebrow-text', draftKey: 'aiProcessEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
+            ${ctx.editableText({ tag: 'h2', className: 'section-title ai-process-title', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            ${ctx.editableText({ tag: 'p', className: 'ai-process-desc', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+          </div>
+          <ol class="ai-process-steps">${aiProcessSteps(view).map((step, index) => ctx.aiProcessStep(step, index)).join('')}</ol>
+          ${ctx.editableText({ tag: 'p', className: 'ai-process-note', draftKey: 'aiProcessNote', value: note, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', quoted: false, omitWhenEmpty: true })}
         </div>
       </section>`;
   }
@@ -565,6 +640,19 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
+      // 값이 빈 항목은 공개 페이지에서 생략한다(빈 칩이 남지 않게).
+      featuredItem(text) {
+        const label = String(text == null ? '' : text).trim();
+        return label ? `<div class="featured-item" data-fade><span class="featured-item-label">${escapeHtml(label)}</span></div>` : '';
+      },
+      featuredCta(label) {
+        const text = String(label == null ? '' : label).trim();
+        return text ? `<button type="button" class="btn featured-cta-btn" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
+      },
+      aiProcessStep(text, index) {
+        const label = String(text == null ? '' : text).trim();
+        return label ? `<li class="ai-process-step" data-fade><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label">${escapeHtml(label)}</span></li>` : '';
+      },
 
       // 공개 페이지는 목록 조회가 실패해도 영상을 그린다 — id가 유효하면 stream URL을 합성해
       // 재생을 시도한다(로딩 실패 내성). 빌더는 목록에 없으면 placeholder를 띄운다.
@@ -711,6 +799,18 @@
         const draftKey = 'philosophyItem' + (index + 1);
         return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
       },
+      // 빈 값이어도 항상 렌더한다 — 요소가 없으면 원장이 클릭해 채울 수 없다(빈 값은 CSS placeholder로 안내).
+      featuredItem(text, index) {
+        const draftKey = 'featuredItem' + (index + 1);
+        return `<div class="featured-item" data-fade><span class="featured-item-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
+      },
+      featuredCta(label) {
+        return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
+      },
+      aiProcessStep(text, index) {
+        const draftKey = 'aiProcessStep' + (index + 1);
+        return `<li class="ai-process-step" data-fade><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></li>`;
+      },
 
       // 빌더는 아직 발행 전 학원도 렌더하므로 공개 stream 경로를 합성하지 않는다.
       // 목록에 없으면 placeholder로 떨어뜨린다.
@@ -748,6 +848,7 @@
 
   global.F2RAcademySections = Object.freeze({
     FUTURE_SECTION_IDS,
+    OPT_IN_SECTION_IDS,
     escapeHtml,
     escapeAttr,
     safeUrl,
@@ -762,6 +863,8 @@
     uploadedVideoPlayer,
     featuredLessonIds,
     selectedFeaturedLessons,
+    featuredItems,
+    aiProcessSteps,
     lessonPanelTitle,
     renderHero,
     renderIntro,
@@ -769,6 +872,8 @@
     renderPrincipal,
     renderVideos,
     renderExternalServices,
-    renderLessons
+    renderLessons,
+    renderFeatured,
+    renderAiProcess
   });
 })(typeof window !== 'undefined' ? window : globalThis);

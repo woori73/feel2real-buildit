@@ -44,8 +44,8 @@ class AcademyBuilderTemplateContractTest {
     assertThat(html)
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
-            "<script src=\"/js/academy_sections.js?v=20260810-1\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260809-1\"></script>");
+            "<script src=\"/js/academy_sections.js?v=20260830-1\"></script>",
+            "<script src=\"/js/academy_builder.js?v=20260830-1\"></script>");
   }
 
   @Test
@@ -495,9 +495,11 @@ class AcademyBuilderTemplateContractTest {
 
     // then
     assertThat(html)
-        // Academy 데이터 섹션 순서: hero → intro → principal → lessons → social (원장소개 구현 후 데이터 섹션 복귀)
+        // Academy 데이터 섹션 순서: hero → featured → AI Native 교육 과정 → intro → principal → lessons → social
         .containsSubsequence(
             "data-section-id=\"sec-hero\"",
+            "data-section-toggle=\"sec-featured\"",
+            "data-section-toggle=\"sec-digitaltwin\"",
             "data-section-toggle=\"sec-intro\"",
             "data-section-toggle=\"sec-principal\"",
             "data-section-toggle=\"sec-lessons\"",
@@ -505,15 +507,16 @@ class AcademyBuilderTemplateContractTest {
         .contains("수업상품<br/>강의 목록")
         // 원장소개(sec-principal)는 is-data-backed 데이터 섹션 카드다
         .contains("is-data-backed is-section-toggle\" data-section-id=\"sec-principal\"")
+        // Education Storefront 신규 섹션은 데이터 섹션 카드이며 기본 OFF(opt-in)로 렌더된다
+        .contains("is-storefront-optin is-toggle-off\" data-section-id=\"sec-featured\"")
+        .contains("is-storefront-optin is-toggle-off\" data-section-id=\"sec-digitaltwin\"")
         .contains("data-section-id=\"sec-curriculum\"")
         .contains("커리큘럼<br/>관리")
         .contains("data-section-id=\"sec-effect\"")
-        .contains("data-section-id=\"sec-digitaltwin\"")
         .contains("data-section-id=\"sec-market\"")
         .contains("data-section-id=\"sec-payment\"")
         .doesNotContain("data-section-toggle=\"sec-curriculum\"")
         .doesNotContain("data-section-toggle=\"sec-effect\"")
-        .doesNotContain("data-section-toggle=\"sec-digitaltwin\"")
         .doesNotContain("data-section-toggle=\"sec-market\"")
         .doesNotContain("data-section-toggle=\"sec-payment\"")
         .contains("is-future-disabled is-toggle-off")

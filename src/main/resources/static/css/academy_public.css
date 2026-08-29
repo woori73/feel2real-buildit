@@ -198,6 +198,59 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* 수업 상품 카드 스타일은 #244에서 lesson_product_showcase.css 로 이관됐다.
    .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
 
+/* ══════════════ Education Storefront: Featured / 시즌 프로그램 (sec-featured) ══════════════
+   Shopify Featured의 hierarchy를 교육 서비스로 옮긴다: 강한 eyebrow → 큰 제목 → 짧은 설명
+   → 항목 칩 → 단일 CTA. 색상·문구는 Build It 토큰만 쓴다(Shopify 브랜드 요소 복제 없음). */
+.section-wrap.featured-wrap{background:linear-gradient(180deg,var(--gold-soft) 0%,#fff 78%);padding:64px 20px;}
+.featured-inner{max-width:920px;margin:0 auto;text-align:center;}
+.featured-head{max-width:720px;margin:0 auto;}
+.featured-eyebrow{justify-content:center;color:var(--ultramarine);}
+.featured-eyebrow .stroke{background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
+.featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
+.featured-desc{margin:16px auto 0;max-width:600px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
+.featured-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px;}
+.featured-item{display:inline-flex;align-items:center;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
+.featured-item-label{color:var(--ink);font-size:14px;font-weight:800;letter-spacing:-.01em;}
+.featured-cta{margin-top:32px;}
+.featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background .18s var(--ease),transform .18s var(--ease);}
+.featured-cta-btn:hover{background:var(--accent);transform:translateY(-2px);}
+.builder-public-preview [data-builder-draft="featuredTitle"]:empty::before,
+.builder-public-preview [data-builder-draft="featuredDescription"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
+.builder-public-preview .featured-item-label:empty::before{content:'항목';color:var(--ink-faint);}
+
+/* ══════════════ Education Storefront: AI Native 교육 과정 (sec-digitaltwin) ══════════════
+   "경험 있는 교육자 + AI"를 단계 흐름으로 보여준다. 개발 용어 없이 교육자가 쓴 문장만 노출. */
+.section-wrap.ai-process-wrap{background:var(--bg-soft);padding:60px 20px;}
+.ai-process-inner{max-width:960px;margin:0 auto;}
+.ai-process-head{text-align:center;}
+.ai-process-eyebrow{justify-content:center;color:var(--ultramarine);}
+.ai-process-title{margin:0;}
+.ai-process-desc{margin:14px auto 0;max-width:620px;color:var(--ink-soft);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
+.ai-process-steps{list-style:none;margin:34px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
+.ai-process-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;flex:1 1 150px;max-width:190px;padding:20px 14px;border-radius:var(--radius-sm);background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);text-align:center;}
+.ai-process-step + .ai-process-step::before{content:'→';position:absolute;left:-11px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:15px;font-weight:900;}
+.ai-process-step-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,var(--ultramarine),var(--accent));color:#fff;font-size:12px;font-weight:900;}
+.ai-process-step-label{color:var(--ink);font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.4;word-break:keep-all;}
+.ai-process-note{margin:26px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:700;line-height:1.65;word-break:keep-all;}
+.builder-public-preview [data-builder-draft="aiProcessTitle"]:empty::before,
+.builder-public-preview [data-builder-draft="aiProcessDescription"]:empty::before,
+.builder-public-preview [data-builder-draft="aiProcessNote"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
+.builder-public-preview .ai-process-step-label:empty::before{content:'단계';color:var(--ink-faint);}
+
+@media(max-width:640px){
+  .section-wrap.featured-wrap{padding:48px 18px;}
+  .section-wrap.ai-process-wrap{padding:44px 18px;}
+  .ai-process-steps{flex-direction:column;align-items:stretch;gap:10px;}
+  .ai-process-step{flex-basis:auto;max-width:none;flex-direction:row;justify-content:center;gap:12px;padding:14px 16px;}
+  .ai-process-step + .ai-process-step::before{content:'↓';left:50%;top:-11px;transform:translateX(-50%);}
+}
+@container(max-width:640px){
+  .builder-public-preview .section-wrap.featured-wrap{padding:48px 18px;}
+  .builder-public-preview .ai-process-steps{flex-direction:column;align-items:stretch;gap:10px;}
+  .builder-public-preview .ai-process-step{flex-basis:auto;max-width:none;flex-direction:row;justify-content:center;gap:12px;padding:14px 16px;}
+  .builder-public-preview .ai-process-step + .ai-process-step::before{content:'↓';left:50%;top:-11px;transform:translateX(-50%);}
+}
+
 /* ══════════════ 대표 수업 / 시간표 (Build It 시안) ══════════════ */
 .section-wrap.classes-wrap{padding:0;background:#fff;border-bottom:0;}
 .classes-wrap .classes-container{width:min(1120px,90vw);max-width:none;padding:100px 0;margin:0 auto;}

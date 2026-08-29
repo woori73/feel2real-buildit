@@ -4,16 +4,18 @@ const test = require('node:test');
 const { loadBrowserScript, memoryStorage } = require('./helpers/browser_script_harness');
 
 const BUILDER = path.resolve(__dirname, '../../main/resources/static/js/academy_builder.js');
+// sec-digitaltwin은 Education Storefront 개편에서 future → opt-in(기본 OFF)로 승격됐다.
+// 아래 목록은 여전히 렌더 대상이 아닌 진짜 future 섹션만 담는다.
 const FUTURE_IDS = [
   'sec-reviews',
   'sec-curriculum',
   'sec-effect',
-  'sec-digitaltwin',
   'sec-market',
   'sec-payment'
 ];
 const FULL_ORDER = [
   'sec-hero',
+  'sec-featured',
   'sec-intro',
   'sec-principal',
   'sec-philosophy',

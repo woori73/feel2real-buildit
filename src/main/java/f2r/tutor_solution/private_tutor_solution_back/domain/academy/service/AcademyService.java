@@ -88,7 +88,27 @@ public class AcademyService {
       "heroVideoId",
       "principalVideoId",
       "principalYoutubeUrl",
-      "principalVideoOrientation");
+      "principalVideoOrientation",
+      // ── Education Storefront: Featured / Seasonal Program (sec-featured) ──
+      // 전부 재사용 가능한 generic 키다. 학교명·연도·학원명을 서버/프런트에 하드코딩하지 않는다.
+      "featuredEyebrow",
+      "featuredTitle",
+      "featuredDescription",
+      "featuredItem1",
+      "featuredItem2",
+      "featuredItem3",
+      "featuredItem4",
+      "featuredCtaLabel",
+      // ── Education Storefront: AI Native Education Process (sec-digitaltwin) ──
+      "aiProcessEyebrow",
+      "aiProcessTitle",
+      "aiProcessDescription",
+      "aiProcessStep1",
+      "aiProcessStep2",
+      "aiProcessStep3",
+      "aiProcessStep4",
+      "aiProcessStep5",
+      "aiProcessNote");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
@@ -97,13 +117,26 @@ public class AcademyService {
           "philosophyTitle",
           "principalDesc",
           "principalQuote",
-          "principalCareer");
+          "principalCareer",
+          "featuredDescription",
+          "featuredItem1",
+          "featuredItem2",
+          "featuredItem3",
+          "featuredItem4",
+          "aiProcessDescription",
+          "aiProcessStep1",
+          "aiProcessStep2",
+          "aiProcessStep3",
+          "aiProcessStep4",
+          "aiProcessStep5",
+          "aiProcessNote");
   private static final String TEMP_HANDLE_PREFIX = "academy-";
   private static final String TEMP_HANDLE_SALT = "private-tutor-solution-academy-handle-v1";
   private static final String DEFAULT_LOGO_FILENAME = "default-academy-logo.jpg";
   private static final String DEFAULT_LOGO_RESOURCE = "static/img/demo_logo.png";
   static final List<String> DEFAULT_SECTION_ORDER = List.of(
       "sec-hero",
+      "sec-featured",
       "sec-intro",
       "sec-principal",
       "sec-philosophy",
@@ -117,6 +150,12 @@ public class AcademyService {
       "sec-payment",
       "sec-social");
   private static final Set<String> MANAGED_SECTION_IDS = Set.copyOf(DEFAULT_SECTION_ORDER);
+  /**
+   * 신규 Education Storefront 섹션. 기존 사이트는 이 키가 없으므로 opt-in(명시적 true)일 때만 렌더된다.
+   * (기존 섹션은 반대로 명시적 false일 때만 숨긴다.) 렌더 판정은 프런트 {@code academy_sections.js}가
+   * 담당하고, 서버는 순서 목록에만 포함해 레이아웃 저장이 깨지지 않게 한다.
+   */
+  static final Set<String> OPT_IN_SECTION_IDS = Set.of("sec-featured", "sec-digitaltwin");
 
   private final AcademyRepository academyRepository;
   private final AcademyRegionRepository academyRegionRepository;
@@ -240,8 +279,8 @@ public class AcademyService {
             ? current.sectionVisibility()
             : sanitizedSectionVisibility(request.sectionVisibility()),
         request.sectionOrder() == null && current != null
-            ? compatibleStoredSectionOrder(current.sectionOrder())
-            : sanitizedSectionOrder(request.sectionOrder()),
+            ? normalizeSectionOrderForWrite(current.sectionOrder())
+            : normalizeSectionOrderForWrite(request.sectionOrder()),
         current != null ? current.builderDraft() : null,
         !businessInfoSupplied && current != null
             ? current.businessInfo()
@@ -601,7 +640,7 @@ public class AcademyService {
         requested.naverMapUrl(),
         requested.heroYoutubeUrl(),
         requested.sectionVisibility(),
-        requested.sectionOrder(),
+        normalizeSectionOrderForWrite(requested.sectionOrder()),
         requested.builderDraft(),
         businessInfo);
   }
@@ -702,19 +741,23 @@ public class AcademyService {
     return sanitized;
   }
 
-  private List<String> sanitizedSectionOrder(List<String> sectionOrder) {
+  /**
+   * 레이아웃 저장 시 들어온 순서를 canonical 완전 목록으로 정규화한다.
+   *
+   * <p>왜 필요한가: {@code DEFAULT_SECTION_ORDER}는 서버 + 3개 JS 파일에 중복 정의돼 있다.
+   * 예전에는 {@code validateSectionOrder}가 size-lock이라, 서버에 섹션을 추가하고 클라이언트
+   * 배열을 못 맞추면(혹은 브라우저가 옛 JS를 캐시하면) 옛 길이의 순서가 넘어와 레이아웃 저장이
+   * 통째로 400이 됐다. 이제는 부분 목록도 받아 빠진 관리 섹션을 canonical 위치에 채워 넣으므로,
+   * 그 드리프트가 사용자 저장을 깨지 않는다. 대신 새 섹션은 JS가 따라잡기 전까지 기본 위치에
+   * 렌더된다. 입력 형식(빈 ID·중복·미등록 ID·hero 위치)은 여전히 거부한다.
+   */
+  private List<String> normalizeSectionOrderForWrite(List<String> sectionOrder) {
     if (sectionOrder == null) return null;
-    return new ArrayList<>(sectionOrder);
-  }
-
-
-  private List<String> compatibleStoredSectionOrder(List<String> sectionOrder) {
-    if (sectionOrder == null) return null;
-    LinkedHashSet<String> seen = new LinkedHashSet<>();
-    for (String id : sectionOrder) {
-      if (id != null && MANAGED_SECTION_IDS.contains(id)) seen.add(id);
+    validateSectionOrderInput(sectionOrder);
+    LinkedHashSet<String> seen = new LinkedHashSet<>(sectionOrder);
+    if (seen.isEmpty() || !"sec-hero".equals(seen.iterator().next())) {
+      return new ArrayList<>(DEFAULT_SECTION_ORDER);
     }
-    if (!seen.contains("sec-hero")) return sectionOrder;
     List<String> normalized = new ArrayList<>(seen);
     for (String id : DEFAULT_SECTION_ORDER) {
       if (seen.contains(id)) continue;
@@ -729,7 +772,27 @@ public class AcademyService {
       }
       normalized.add(insertionIndex, id);
     }
-    return "sec-hero".equals(normalized.get(0)) ? normalized : sectionOrder;
+    return normalized;
+  }
+
+  /** 저장 전 입력 형식 검증. 완전성(모든 관리 섹션 포함)은 {@link #normalizeSectionOrderForWrite}가 보장한다. */
+  private void validateSectionOrderInput(List<String> sectionOrder) {
+    if (sectionOrder == null || sectionOrder.isEmpty()) return;
+    Set<String> seen = new LinkedHashSet<>();
+    for (String id : sectionOrder) {
+      if (id == null) {
+        throw new IllegalArgumentException("섹션 순서에 빈 섹션 ID가 포함되어 있습니다.");
+      }
+      if (!MANAGED_SECTION_IDS.contains(id)) {
+        throw new IllegalArgumentException("올바르지 않은 섹션 ID입니다: " + id);
+      }
+      if (!seen.add(id)) {
+        throw new IllegalArgumentException("섹션 순서에 중복 ID가 포함되어 있습니다: " + id);
+      }
+    }
+    if (seen.contains("sec-hero") && !"sec-hero".equals(sectionOrder.get(0))) {
+      throw new IllegalArgumentException("히어로 섹션은 순서의 첫 번째에 있어야 합니다.");
+    }
   }
 
   private void validateSectionVisibility(Map<String, Boolean> sectionVisibility) {
