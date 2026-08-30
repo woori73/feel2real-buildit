@@ -107,9 +107,38 @@
       + renderOrderedSections(academy, primarySubject, regionText)
       + renderFooter(academy);
     applyReveal();
+    wireStory();
     wireStorefrontMotion();
     wireContentCollections();
     void loadVisitStatistics(academy, ownAcademy);
+  }
+
+  /**
+   * Vertical Story Engine (V2-4). academy_story.js(GSAP ScrollTrigger 래퍼)로 몇몇 섹션에
+   * "scroll = 장면 전환" 을 준다. scrub 이라 위로 스크롤하면 역전된다(bidirectional).
+   *
+   * - Hero → 2026 FALL: scroll 하면 hero 콘텐츠가 퇴장(--story-exit 0→1), 다음 섹션이 stage 를 차지.
+   * - AI Native: 섹션을 pin 하고 5개 장면(학교 자료 → … → FINAL)으로 scrub. data-scene-state 를
+   *   각 step 에 부여 — CSS 가 active/past/upcoming 을 그린다.
+   *
+   * 모듈/GSAP 미로드·reduced-motion·모바일(<761px) → no-op. 콘텐츠는 정적으로 완전히 보인다.
+   * pin 이 실제로 걸리면 sec-digitaltwin[data-story-staged] → wireStorefrontMotion 이 그 섹션의
+   * 1회성 processProgress 를 건너뛴다(두 시스템이 같은 요소를 만지지 않게).
+   */
+  function wireStory() {
+    const STORY = window.F2RStorefrontStory;
+    if (!STORY || !root) return;
+    const hero = root.querySelector('#sec-hero');
+    if (hero) STORY.exit(hero, { id: 'story-hero-exit' });
+    const ai = root.querySelector('#sec-digitaltwin');
+    if (ai) {
+      STORY.stage(ai, {
+        id: 'story-aiprocess',
+        scenes: 5,
+        sceneSelector: '.ai-process-step'
+      });
+    }
+    STORY.refresh();
   }
 
   /**
@@ -140,8 +169,12 @@
       featured.dataset.motionWired = 'true';
       MOTION.revealSequence(featured, { step: 90 });
     }
+    // AI Native 가 Story Engine 으로 pin 되면(데스크톱) 이쪽 1회성 진행은 건너뛴다 —
+    // 두 시스템이 같은 .ai-process-step 을 동시에 만지면 상태가 어긋난다.
+    const aiSection = root.querySelector('#sec-digitaltwin');
     const steps = root.querySelector('#sec-digitaltwin .ai-process-steps');
-    if (steps && steps.dataset.motionWired !== 'true') {
+    const staged = aiSection && aiSection.getAttribute('data-story-staged') === 'true';
+    if (steps && !staged && steps.dataset.motionWired !== 'true') {
       steps.dataset.motionWired = 'true';
       MOTION.revealSequence(root.querySelector('#sec-digitaltwin .ai-process-head'), { step: 90 });
       MOTION.processProgress(steps, { start: 250, step: 180 });

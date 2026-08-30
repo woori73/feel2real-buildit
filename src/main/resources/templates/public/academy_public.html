@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/css/academy_public.css?v=20260830-3">
   <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1">
   <link rel="stylesheet" href="/css/academy_collection.css?v=20260830-5">
+  <link rel="stylesheet" href="/css/academy_story.css?v=20260830-1">
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1">
 </head>
 <body>
@@ -54,12 +55,15 @@
   <!-- Storefront 모션 primitive (IntersectionObserver + CSS). 로드 실패해도 wireStorefrontMotion이
        조기 반환하고 js-storefront-motion도 안 붙어 콘텐츠가 정적으로 완전히 보인다. -->
   <script src="/js/academy_storefront_motion.js?v=20260830-5"></script>
+  <!-- Vertical Story Engine (GSAP ScrollTrigger 래퍼). GSAP 미로드·reduced-motion·모바일에서는
+       no-op 이고 html.js-story 도 안 붙어 콘텐츠가 정적으로 완전히 보인다. -->
+  <script src="/js/academy_story.js?v=20260830-1"></script>
   <!-- Horizontal Content Collection 배선(화살표 스크롤 + 카드 클릭 재생). 로드 실패해도
        콘텐츠는 정적 shelf로 완전히 보인다(화살표만 동작 안 함). -->
   <script src="/js/academy_collection.js?v=20260830-4"></script>
   <!-- 섹션 마크업 정본. academy_public.js보다 먼저 로드해야 한다. -->
   <script src="/js/academy_sections.js?v=20260830-7"></script>
-  <script src="/js/academy_public.js?v=20260830-4"></script>
+  <script src="/js/academy_public.js?v=20260830-5"></script>
 </th:block>
 </body>
 </html>
