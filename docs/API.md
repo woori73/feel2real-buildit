@@ -3417,3 +3417,27 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - DAILY는 두 문서에 동일한 `data-question-id`와 `data-day-no` 순서를 출력한다.
 - 호출 자체는 사용 이력을 추가하지 않는다.
 
+### ✅ PATCH /api/csat/assessments/{id}/items/{position}
+
+- 목적: 저장된 Assessment의 한 위치를 다른 기존 Question ID로 교체한다.
+- DAILY 문제/해설은 별도 배열이 아니라 갱신된 같은 item을 렌더하므로 함께 교체된다. `day_no`와 position은 유지한다.
+- 같은 Assessment 안의 Question 중복은 `409`, 없는 Assessment/item/Question은 `404`.
+- 실제 저장 변경이므로 기존 usage를 새 Question ID의 usage로 같은 transaction에서 교체한다.
+
+### ✅ PATCH /api/csat/wrong-answers/{id}/question
+
+- 목적: 기존 `csat_wrong_answers` record를 삭제·대체하지 않고 정확한 `csat_questions.id`에 연결한다.
+- 오답 번호와 Question의 수능 번호가 다르면 `400`으로 거부한다.
+
+### ✅ POST /api/csat/wrong-assessments
+
+- Request JSON: `title`, `wrong_answer_ids`, `exclude_used`.
+- 목적: 선택한 오답의 연결된 Question ID 순서로 공통 WRONG Assessment를 저장한다.
+- 연결되지 않은 오답이나 중복 Question은 `409`; 저장 성공 전에는 usage를 기록하지 않는다.
+
+### DAILY 전용 Renderer
+
+- 저장된 `assessment_type=daily`의 problem/explanation URL은 공식 DAILY Reference를 반영한 전용 Template을 사용한다.
+- Problem: 금색 Day 배너, 흰 A4 문제 페이지, Day당 4문항.
+- Explanation: 크림색 A4, 금색 강조, 2단 해설.
+- 두 HTML은 같은 `csat_assessment_items`에서 동일 `data-question-id`와 `data-day-no` 순서를 출력한다.
