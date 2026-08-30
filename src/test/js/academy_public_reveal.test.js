@@ -68,7 +68,7 @@ test('given 재렌더 when reveal을 다시 적용 then 이미 처리한 요소�
   assert.match(publicJs, /el\.dataset\.fadeWired = 'true'/);
   assert.match(publicJs, /dataset\.motionWired !== 'true'/);
   // render() 안에서 GSAP reveal + Storefront 모션이 순서대로 호출되어야 CSR 렌더 뒤에 잡힌다
-  assert.match(publicJs, /applyReveal\(\);\s*\n\s*wireStory\(\);\s*\n\s*wireStorefrontMotion\(\);\s*\n\s*wireContentCollections\(\);\s*\n\s*void loadVisitStatistics/);
+  assert.match(publicJs, /applyReveal\(\);\s*\n\s*wireStory\(\);\s*\n\s*wireStorefrontMotion\(\);\s*\n\s*wireContentCollections\(\);\s*\n\s*wireFeaturedSelector\(\);\s*\n\s*void loadVisitStatistics/);
 });
 
 test('given Storefront 모션 when 책임 분리를 확인 then Featured/AI Native는 GSAP data-fade가 아니라 primitive를 쓴다', () => {

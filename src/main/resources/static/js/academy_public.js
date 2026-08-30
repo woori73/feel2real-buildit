@@ -110,6 +110,7 @@
     wireStory();
     wireStorefrontMotion();
     wireContentCollections();
+    wireFeaturedSelector();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
@@ -152,6 +153,65 @@
     const COLLECTION = window.F2RAcademyCollection;
     if (!COLLECTION || !root) return;
     COLLECTION.wire(root);
+  }
+
+  /**
+   * Featured school selector (V2-6). 학교 칩을 단일 선택으로 만들고, 선택하면 중앙 Featured Stage
+   * 의 정보 상태(시트 상단 학교명 · "지금 보는 학교" 라인 · CTA 접두어)가 실제로 바뀐다 —
+   * "내 학교를 선택해 둘러본다". 학교별 실데이터는 만들지 않는다: 공통 프로세스(Featured 프로그램)
+   * 안에서 "선택된 학교" 만 명확히 반영한다.
+   *
+   * 상태 전환은 "요소 자신의 attribute/textContent + (원하면) WAAPI" 로만 한다 — 조상 attribute +
+   * CSS transition 조합은 일부 Chromium 에서 transition 이 첫 값에 고정되는 버그가 있다(V2-5 #86).
+   * 모듈/마크업이 없거나 칩이 없으면 no-op. reduced-motion 이면 페이드 없이 즉시 반영.
+   */
+  function wireFeaturedSelector() {
+    if (!root) return;
+    const group = root.querySelector('[data-featured-group]');
+    if (!group || group.dataset.selectorWired === 'true') return;
+    const buttons = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
+    if (buttons.length === 0) return;
+    group.dataset.selectorWired = 'true';
+
+    const section = root.querySelector('#sec-featured');
+    const stage = root.querySelector('#sec-featured [data-featured-stage]');
+    const stageName = root.querySelector('#sec-featured [data-featured-stage-school]');
+    const selectedOut = root.querySelector('#sec-featured [data-featured-selected]');
+    const cta = root.querySelector('#sec-featured [data-featured-cta]');
+    const ctaBase = cta ? (cta.getAttribute('data-featured-cta-base') || cta.textContent || '') : '';
+    const reduce = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function paint(school) {
+      if (stageName && stageName.textContent !== school) stageName.textContent = school;
+      if (selectedOut) selectedOut.textContent = school;
+      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
+      if (section) section.setAttribute('data-featured-school', school);
+      if (stage && !reduce && typeof stage.animate === 'function') {
+        stage.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+      }
+    }
+
+    function select(btn, focus) {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+      paint((btn.getAttribute('data-featured-school') || '').trim());
+      if (focus) btn.focus();
+    }
+
+    buttons.forEach((btn, i) => {
+      btn.addEventListener('click', () => select(btn, false));
+      btn.addEventListener('keydown', (e) => {
+        let next = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % buttons.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + buttons.length) % buttons.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = buttons.length - 1;
+        if (next >= 0) { e.preventDefault(); select(buttons[next], true); }
+      });
+    });
+
+    const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')[0];
+    select(pressed || buttons[0], false);
   }
 
   /**
