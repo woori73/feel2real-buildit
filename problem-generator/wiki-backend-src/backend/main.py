@@ -2440,6 +2440,95 @@ def classify_csat_question(question_no: int, prompt: str, choices: list[str]) ->
     }
 
 
+def classify_csat_prompt(prompt: str, choices: list[str] | None = None) -> dict:
+    """발문만으로 분류하되 같은 유형의 여러 수능 번호 중 하나를 임의 선택하지 않는다."""
+    haystack = f"{prompt} {' '.join(choices or [])}".lower()
+    matches = []
+    for numbers, type_id, name, signals in CSAT_TYPE_RANGES:
+        if any(signal.lower() in haystack for signal in signals):
+            matches.append({'numbers': list(numbers), 'id': type_id, 'name': name})
+    if len(matches) > 1:
+        exact = [item for item in matches if item['id'] in ('grammar', 'vocabulary', 'blank', 'order', 'insertion', 'summary')]
+        if len(exact) == 1:
+            matches = exact
+    if len(matches) != 1:
+        return {'type_id': 'review', 'type_name': 'REVIEW', 'candidate_numbers': [],
+                'classification_status': 'review', 'classification_reason': '발문 규칙으로 수능 번호 유형을 하나로 판별하지 못했습니다.'}
+    match = matches[0]
+    candidates = match['numbers']
+    return {'type_id': match['id'], 'type_name': match['name'], 'candidate_numbers': candidates,
+            'classification_status': 'classified' if len(candidates) == 1 else 'review',
+            'classification_reason': '' if len(candidates) == 1 else f"{','.join(map(str, candidates))}번이 같은 발문 유형이므로 정확한 번호를 검수해 주세요."}
+
+
+def _html_text(fragment: str) -> str:
+    import html
+    value = re.sub(r'(?is)<(?:script|style)\b.*?</(?:script|style)>', ' ', fragment)
+    value = re.sub(r'(?i)<br\s*/?>', '\n', value)
+    value = re.sub(r'(?i)</(?:p|div|li|h[1-6]|section|article)>', '\n', value)
+    return re.sub(r'[ \t]+', ' ', html.unescape(re.sub(r'(?s)<[^>]+>', ' ', value))).strip()
+
+
+def _first_html_part(fragment: str, class_names: tuple[str, ...], tags: str = r'[a-z][\w:-]*') -> str:
+    names = '|'.join(re.escape(name) for name in class_names)
+    pattern = rf'(?is)<(?P<tag>{tags})\b[^>]*class=["\'][^"\']*\b(?:{names})\b[^"\']*["\'][^>]*>(?P<body>.*?)</(?P=tag)>'
+    found = re.search(pattern, fragment)
+    return found.group('body').strip() if found else ''
+
+
+def _question_html_fragments(html_text: str):
+    """Yield balanced top-level question containers without truncating nested divs."""
+    tag_pattern = re.compile(r'(?is)<(?P<closing>/)?(?P<tag>article|section|div)\b(?P<attrs>[^>]*)>')
+    tokens = list(tag_pattern.finditer(html_text))
+    for position, token in enumerate(tokens):
+        if token.group('closing'):
+            continue
+        attrs = token.group('attrs')
+        marked = re.search(r'(?i)data-question-no\s*=', attrs) or re.search(
+            r'(?i)class\s*=\s*["\'][^"\']*\b(?:question|q)\b', attrs)
+        if not marked:
+            continue
+        tag, depth = token.group('tag').lower(), 1
+        for end in tokens[position + 1:]:
+            if end.group('tag').lower() != tag:
+                continue
+            depth += -1 if end.group('closing') else 1
+            if depth == 0:
+                yield html_text[token.start():end.end()], attrs
+                break
+
+
+def split_csat_html(html_text: str) -> list[dict]:
+    """Editable HTML을 보수적으로 분리하고 인식한 원문 fragment를 그대로 보존한다."""
+    questions = []
+    for index, (fragment, attrs) in enumerate(_question_html_fragments(html_text), start=1):
+        number_match = re.search(r'(?i)data-(?:source-)?question-no\s*=\s*["\']?(\d{1,2})', attrs)
+        visible = _html_text(fragment)
+        if not number_match:
+            number_match = re.search(r'^\s*(\d{1,2})\s*[.\)]', visible)
+        source_no = int(number_match.group(1)) if number_match else index
+        prompt_html = _first_html_part(fragment, ('prompt', 'stem', 'instruction'))
+        if not prompt_html:
+            heading = re.search(r'(?is)<(?:h[1-6]|p)\b[^>]*>(.*?)</(?:h[1-6]|p)>', fragment)
+            prompt_html = heading.group(1) if heading else ''
+        prompt = re.sub(r'^\s*\d{1,2}\s*[.\)]\s*', '', _html_text(prompt_html))
+        passage_html = _first_html_part(fragment, ('passage', 'source-text', 'reading'))
+        choices_html = _first_html_part(fragment, ('choices', 'options'))
+        choices = [_html_text(item) for item in re.findall(r'(?is)<li\b[^>]*>(.*?)</li>', choices_html or fragment)]
+        answer_html = _first_html_part(fragment, ('answer', 'correct-answer'))
+        explanation_html = _first_html_part(fragment, ('explanation', 'solution', 'commentary'))
+        classification = classify_csat_prompt(prompt, choices)
+        questions.append({
+            'source_question_no': source_no,
+            'question_no': classification['candidate_numbers'][0] if len(classification['candidate_numbers']) == 1 else 0,
+            'csat_type_id': classification['type_id'], 'csat_type_name': classification['type_name'],
+            'stem': prompt, 'prompt': prompt, 'passage': _html_text(passage_html), 'choices': choices,
+            'answer': _html_text(answer_html), 'explanation': _html_text(explanation_html),
+            'question_html': fragment, 'explanation_html': explanation_html, **classification,
+        })
+    return questions
+
+
 def _extract_hwpx_text(data: bytes) -> str:
     try:
         from xml.etree import ElementTree
@@ -2563,6 +2652,8 @@ def _canonical_question(raw: dict, exam_kind: str, metadata: dict, filename: str
         'solution': str(raw.get('explanation', raw.get('solution', ''))), 'footnote': str(raw.get('footnote', '')),
         'group_label': str(raw.get('group_label', '')), 'source_file': filename,
         'source_reference': f'{filename}#question-{number}', 'raw_text': raw_text,
+        'source_question_no': raw.get('source_question_no'), 'question_html': str(raw.get('question_html', '')),
+        'explanation_html': str(raw.get('explanation_html', '')),
         'created_at': now, **classification,
     }
 
@@ -2619,6 +2710,40 @@ async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metad
     return {'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': parser, 'raw_text': raw_text,
             'metadata': metadata, 'source_filename': filename, 'original_stored': False, 'owner_scope': 'shared',
             'questions': canonical, 'failures': failures, 'requires_review': True}
+
+
+@app.post('/api/csat/html-imports/preview', status_code=201)
+async def preview_csat_html_imports(exam_kind: Literal['half', 'full'] = Form(...), metadata_json: str = Form('{}'), files: list[UploadFile] = File(...)):
+    if not files or len(files) > 50:
+        raise HTTPException(status_code=400, detail='HTML 파일은 한 번에 1~50개까지 업로드할 수 있습니다.')
+    try:
+        metadata = json.loads(metadata_json or '{}')
+    except json.JSONDecodeError as error:
+        raise HTTPException(status_code=400, detail='시험 메타데이터 JSON 형식이 올바르지 않습니다.') from error
+    previews, total_bytes = [], 0
+    for file in files:
+        filename = file.filename or 'upload.html'
+        if Path(filename).suffix.lower() not in ('.html', '.htm'):
+            raise HTTPException(status_code=415, detail=f'{filename}: HTML 파일만 Batch Import할 수 있습니다.')
+        data = await file.read()
+        total_bytes += len(data)
+        if not data or len(data) > 10 * 1024 * 1024 or total_bytes > 30 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail='HTML은 파일당 10MB, 전체 30MB 이하여야 합니다.')
+        try:
+            raw_html = data.decode('utf-8-sig', errors='strict')
+        except UnicodeDecodeError as error:
+            raise HTTPException(status_code=400, detail=f'{filename}: UTF-8 HTML이 아닙니다.') from error
+        questions = split_csat_html(raw_html)
+        previews.append({
+            'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': 'editable-html-v1',
+            'raw_text': raw_html, 'metadata': metadata, 'source_filename': filename, 'original_stored': False,
+            'owner_scope': 'shared', 'questions': questions,
+            'failures': [] if questions else [{'index': 1, 'reason': '문항 container를 찾지 못했습니다.'}],
+            'requires_review': True,
+        })
+    return {'files': previews, 'file_count': len(previews),
+            'question_count': sum(len(item['questions']) for item in previews),
+            'review_count': sum(1 for item in previews for question in item['questions'] if question['classification_status'] == 'review')}
 
 
 @app.post('/api/csat/imports', status_code=201)
