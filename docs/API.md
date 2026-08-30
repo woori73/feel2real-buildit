@@ -3441,3 +3441,21 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - Problem: 금색 Day 배너, 흰 A4 문제 페이지, Day당 4문항.
 - Explanation: 크림색 A4, 금색 강조, 2단 해설.
 - 두 HTML은 같은 `csat_assessment_items`에서 동일 `data-question-id`와 `data-day-no` 순서를 출력한다.
+
+## 수능 WebMCP Site Tools
+
+- 등록 위치: top-level React Wiki의 `document.modelContext.registerTool()`.
+- 인증: 현재 열린 Production Wiki의 동일 signed-in session과 기존 Spring proxy/API 정책을 사용한다. `role=ADMIN` query를 인증으로 사용하지 않는다.
+- 미지원 브라우저: `document.modelContext`가 없으면 기존 Wiki UI만 정상 동작한다.
+
+| Tool | 성격 | 기존 API |
+|---|---|---|
+| `search_csat_questions` | read-only | `GET /api/csat/questions` |
+| `get_csat_assessment` | read-only | `GET /api/csat/assessments/{id}` |
+| `create_csat_assessment` | write | `POST /api/csat/assessments` |
+| `create_csat_wrong_assessment` | write | `POST /api/csat/wrong-assessments` |
+| `replace_csat_assessment_question` | write | `PATCH /api/csat/assessments/{id}/items/{position}` |
+
+- write tool은 `annotations.readOnlyHint=false`이며 브라우저의 Site tools 안전 검토/확인 정책을 따른다.
+- Tool handler는 DOM을 클릭하지 않고 동일 CSAT API를 호출한다.
+- WRONG tool input/output은 record ID와 Assessment Question asset만 사용하고 학생 식별정보를 반환하지 않는다.
