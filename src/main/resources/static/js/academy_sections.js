@@ -38,7 +38,8 @@
   // DEFAULT_SECTION_ORDER에 추가해도 기존 학원 공개 페이지의 모습이 그대로 유지된다.
   const OPT_IN_SECTION_IDS = new Set([
     'sec-featured',
-    'sec-digitaltwin'
+    'sec-digitaltwin',
+    'sec-minilectures'
   ]);
 
   // ── 공용 헬퍼 ──────────────────────────────────────────────────────────────
@@ -732,6 +733,82 @@
     </section>`;
   }
 
+  // ── sec-minilectures (V2-9) ──────────────────────────────────────────────
+  // Actual Class(sec-videos) = "실제 수업 현장/분위기/신뢰".
+  // Mini Lectures = "교육자가 직접 설명하는 짧은 학습 콘텐츠 → 전문성/설명력/교육 철학".
+  // 두 컬렉션의 역할을 섞지 않는다. opt-in(기본 OFF). 콘텐츠는 academy_videos 재사용 —
+  // 강의별 제목/학습포인트/대상만 builderDraft.miniLectures JSON 배열에 담는다(스키마 변경 없음).
+  // 재생은 V2-8 공통 Media Viewport primitive(mediaViewportHtml) 를 그대로 쓴다.
+
+  /** builderDraft.miniLectures(JSON 배열 문자열) → [{v,t,n,g}] 정규화. 깨진 항목은 버린다. */
+  function miniLectureItems(view) {
+    const raw = draftText(view, 'miniLectures', '');
+    if (!raw) return [];
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (_) { return []; }
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((e) => (e && typeof e === 'object'
+        ? { v: Number(e.v), t: textValue(e.t), n: textValue(e.n), g: textValue(e.g) }
+        : null))
+      .filter((e) => e && e.v > 0)
+      .slice(0, 12);
+  }
+
+  function miniLecturesTitleDefault(view) {
+    const name = String((view && view.name) || '').trim();
+    return name ? name + ' 미니 강의' : '미니 강의';
+  }
+
+  /** Mini Lecture Card = 미디어(재생) + 대상(g) + 제목(t) + 학습 포인트(n). CTA 없음. */
+  function miniLectureCardHtml(item, video, ctx) {
+    const v = video || {};
+    const dur = v.durationSec != null
+      ? `<span class="f2r-video-card-dur">${formatDuration(v.durationSec)}</span>` : '';
+    const thumb = v.thumbnailUrl
+      ? `<img src="${escapeAttr(v.thumbnailUrl)}" alt="" loading="lazy">`
+      : '<span class="f2r-lecture-media-ph" aria-hidden="true">🎓</span>';
+    const face = `${thumb}<span class="f2r-video-play" aria-hidden="true">▶</span>${dur}`;
+    const media = ctx.miniLectureMedia(v, face, mediaAspectRatio(v.width, v.height));
+    const body = [];
+    if (item.g) body.push(`<div class="f2r-lecture-card-tag">${escapeHtml(item.g)}</div>`);
+    if (item.t) body.push(`<div class="f2r-lecture-card-title">${escapeHtml(item.t)}</div>`);
+    if (item.n) body.push(`<div class="f2r-lecture-card-note">${escapeHtml(item.n)}</div>`);
+    return `<article class="f2r-lecture-card">${media}<div class="f2r-lecture-card-body">${body.join('')}</div></article>`;
+  }
+
+  function miniLecturesCollectionHtml(items, videosById, ctx, opts) {
+    return renderCollectionShell({
+      navLabel: '미니 강의',
+      variant: 'lectures',
+      hint: (opts && opts.hint) || '좌우로 밀어 미니 강의를 둘러보세요',
+      staticMode: !!(opts && opts.staticMode),
+      cards: items.map((item) => miniLectureCardHtml(item, videosById.get(String(item.v)), ctx))
+    });
+  }
+
+  function renderMiniLectures(view, ctx) {
+    if (!view.sectionVisible('sec-minilectures')) return '';
+    const videosById = new Map((ctx.videoList() || []).map((v) => [String(v.videoId), v]));
+    // 영상이 삭제된 항목은 렌더하지 않는다(가짜 카드 만들지 않음).
+    const usable = miniLectureItems(view).filter((it) => videosById.has(String(it.v)));
+    const body = usable.length
+      ? ctx.miniLectureCollection(usable, videosById)
+      : ctx.miniLecturesEmpty();
+    if (!body) return ''; // 공개 + 콘텐츠 없음 → 섹션 자체를 내지 않는다
+    const title = draftText(view, 'miniLecturesSectionTitle', miniLecturesTitleDefault(view));
+    return `<section id="sec-minilectures" data-builder-section-key="sec-minilectures" class="section-wrap" data-fade>
+      <div class="section-inner">
+        <div class="section-header">
+          <div class="eyebrow"><span class="stroke"></span>미니 강의</div>
+          ${ctx.editableText({ tag: 'h2', className: 'section-title', draftKey: 'miniLecturesSectionTitle', value: title, omitWhenEmpty: true })}
+        </div>
+        ${body}
+        ${ctx.miniLecturesFooter(view)}
+      </div>
+    </section>`;
+  }
+
   // ── sec-lessons ───────────────────────────────────────────────────────────
   /** 시간표 달력 이미지 슬롯 key. 서버 HeroMediaSlot.SCHEDULE와 같은 문자열이어야 한다. */
   const SCHEDULE_MEDIA_SLOT = 'schedule';
@@ -835,6 +912,23 @@
       videoCollection(videos) {
         return videoCollectionHtml(videos, this);
       },
+      // Mini Lectures (V2-9) — 공개: 실제 가로 shelf + 카드 재생. 콘텐츠 없으면 섹션 생략(''→renderMiniLectures).
+      miniLectureCollection(items, videosById) {
+        return miniLecturesCollectionHtml(items, videosById, this);
+      },
+      miniLectureMedia(video, face, aspect) {
+        return mediaViewportHtml({
+          viewportClass: 'f2r-lecture-media',
+          face,
+          playable: true,
+          src: video.videoUrl || '',
+          poster: video.thumbnailUrl || '',
+          aspect,
+          label: '미니 강의 재생'
+        });
+      },
+      miniLecturesEmpty() { return ''; },
+      miniLecturesFooter() { return ''; },
       collectionConsultCta(label) {
         const text = String(label == null ? '' : label).trim() || '상담 신청하기';
         return `<button type="button" class="f2r-program-card-cta" onclick="requestConsult()">${escapeHtml(text)}</button>`;
@@ -1043,6 +1137,25 @@
           hint: '공개 페이지에서는 좌우로 둘러보는 가로 컬렉션으로 표시됩니다'
         });
       },
+      // Mini Lectures (V2-9) — 빌더 캔버스: 정적 wrap + 편집 진입점(data-mini-lectures-edit).
+      miniLectureCollection(items, videosById) {
+        return miniLecturesCollectionHtml(items, videosById, this, {
+          staticMode: true,
+          hint: '공개 페이지에서는 좌우로 둘러보는 가로 컬렉션으로 표시됩니다'
+        });
+      },
+      miniLectureMedia(video, face, aspect) {
+        return mediaViewportHtml({ viewportClass: 'f2r-lecture-media', face, playable: false, aspect });
+      },
+      miniLecturesEmpty() {
+        return '<div class="f2r-lecture-empty" data-mini-lectures-edit role="button" tabindex="0">'
+          + '<strong>미니 강의를 추가해 주세요</strong>'
+          + '<span>영상 보관함에서 강의를 고르고 제목·학습 포인트를 적습니다.</span></div>';
+      },
+      miniLecturesFooter() {
+        return '<div style="text-align:center;margin-top:14px;">'
+          + '<button type="button" class="cv-btn-primary" data-mini-lectures-edit>🎓 미니 강의 편집</button></div>';
+      },
       collectionConsultCta(label) {
         const text = String(label == null ? '' : label).trim() || '상담 신청하기';
         return `<span class="f2r-program-card-cta" aria-hidden="true">${escapeHtml(text)}</span>`;
@@ -1247,12 +1360,15 @@
     mediaAspectRatio,
     programCardHtml,
     videoCardHtml,
+    miniLectureItems,
+    miniLectureCardHtml,
     lessonPanelTitle,
     renderHero,
     renderIntro,
     renderPhilosophy,
     renderPrincipal,
     renderVideos,
+    renderMiniLectures,
     renderExternalServices,
     renderLessons,
     renderFeatured,

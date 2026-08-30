@@ -20,6 +20,7 @@ const FULL_ORDER = [
   'sec-principal',
   'sec-philosophy',
   'sec-videos',
+  'sec-minilectures',
   'sec-reviews',
   'sec-lessons',
   'sec-curriculum',

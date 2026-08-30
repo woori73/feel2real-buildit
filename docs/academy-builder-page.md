@@ -460,6 +460,58 @@ Media Viewport (.f2r-media-viewport)  — 크기·비율·overflow·radius 소�
   비율), `academy_horizontal_collection.test.js` (마크업 갱신), 로컬 harness 로 CASE A/B/C 재생 전후
   DOM 실측(플레이어가 뷰포트를 정확히 채움, 외곽 불변, 페이지 가로밀림 없음).
 
+## 16. 2026-08-31 변경: Storefront V2-9 — Mini Lectures Collection
+
+Actual Class(`sec-videos`) = "실제 수업 현장/분위기/신뢰". **Mini Lectures**(`sec-minilectures`) =
+"교육자가 직접 설명하는 짧은 학습 콘텐츠 → 전문성/설명력/교육 철학". 두 컬렉션의 역할을 섞지 않는다.
+
+### 데이터 — 스키마 변경 없음
+
+- `AcademyVideo` 는 title/description/category 필드가 없다(파일·스토리지 키·썸네일·w/h·duration 뿐).
+  → 강의별 메타(제목/학습포인트/대상)는 **`builderDraft.miniLectures` JSON 배열 문자열**에 담는다:
+  `[{"v":<videoId>,"t":"제목","n":"학습 포인트","g":"대상·분류"}]`. `v` 는 기존 `academy_videos`
+  항목을 참조 — 썸네일·스트림·비율은 그대로 재사용. 마이그레이션·엔티티 변경 없음.
+- 서버: `BUILDER_DRAFT_KEYS` + `LONG_BUILDER_DRAFT_KEYS`(2000자)에 `miniLectures` 추가,
+  `miniLecturesSectionTitle`(일반 200자) 추가. 별도 검증 없음 — 렌더러가 방어적으로 파싱하고
+  깨진 항목을 버린다(`principalCareer` 등 다른 구조적 draft 값과 동일 정책).
+
+### 섹션 — opt-in, 기본 OFF (`sec-videos` 뒤)
+
+- `DEFAULT_SECTION_ORDER`(서버 + `academy_public.js` + `academy_builder.js`) 에 `sec-videos` 다음으로
+  `sec-minilectures` 삽입. `OPT_IN_SECTION_IDS`(4곳) + 빌더 `MANAGED_SECTION_IDS` 에도 추가.
+  `academy_sec_videos.test.js` 3-way 정합성 유지.
+- **실제 콘텐츠가 없으면 production 은 OFF·빈 상태**를 유지한다. 가짜 콘텐츠를 만들거나 발행하지 않는다.
+
+### 렌더 — 기존 primitive 재사용, 새 캐러셀/플레이어 없음
+
+- 마크업 정본 `academy_sections.js` `renderMiniLectures()` / `miniLectureCardHtml()` /
+  `miniLectureItems()`. Card = **V2-8 `mediaViewportHtml()`**(공통 Media Viewport, `object-fit:contain`,
+  `--f2r-media-aspect` = 실제 영상 비율) + 대상(g) + 제목(t) + 학습 포인트(n). **CTA 없음**
+  (Actual Class·Program 과 달리 판매가 아니라 전문성 전시).
+- **재생은 V2-8 공통 계약 그대로** — Mini Lecture 전용 player 없음. `academy_collection.js onPlayClick`
+  (`.f2r-media-viewport` 안에 `.f2r-media-player` append)를 그대로 탄다.
+- Collection = **V2-8 `renderCollectionShell()`** + `f2r-collection--lectures` variant (카드폭 320px
+  데스크톱 / 80vw 모바일). native swipe / scroll-snap / next-card peek / desktop 화살표 재사용.
+- 빈 상태: 공개 → `renderMiniLectures` 가 `''`(섹션 자체 생략). 빌더 → placeholder(`data-mini-lectures-edit`).
+- 영상이 삭제된 항목(`v` 가 `videoList` 에 없음)은 렌더하지 않는다.
+
+### 빌더 — SSoT + 편집 모달
+
+- `renderMiniLectures` 는 공개/빌더가 같은 함수(ctx 슬롯만 다름 — 공개는 재생 트리거, 빌더는 정적 wrap
+  + `data-mini-lectures-edit`).
+- 섹션 편집 컨트롤에 "미니 강의 편집" 버튼(`appendMiniLecturesControl`). 모달 `builderMiniLecturesModal`:
+  `academy_videos` 목록 → 체크로 포함 + 강의별 제목/학습포인트/대상 입력 → JSON 직렬화 →
+  `builderDraft.miniLectures` 저장(featured 모달과 같은 pre-publish preview / post-publish PUT 흐름).
+  블록 팔레트에 `is-storefront-optin` OFF 블록 추가.
+
+### 캐시버스팅 / 검증
+
+- `academy_sections.js?v=20260831-3`, `academy_public.js?v=20260831-3`,
+  `academy_builder.js?v=20260831-3`, `academy_collection.css?v=20260831-3`.
+- `node --test src/test/js/academy_mini_lectures.test.js` — opt-in OFF 기본, 공개 빈→섹션생략 /
+  빌더 빈→placeholder, 카드 구조, V2-8 media viewport 재사용, 깨진 JSON·정규화·최대 12개, 공개/빌더
+  SSoT, 모달·배선·블록. 로컬 harness 375/390/1280 — 재생 전후 뷰포트 유지·crop 없음·가로밀림 없음.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락
