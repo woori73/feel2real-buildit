@@ -795,4 +795,12 @@ Wiki 홈
 5. 모든 문항 번호가 확정된 파일만 기존 commit API로 저장한다. 원본 파일 자체는 저장하지 않고 추출 HTML fragment를 `raw_json`에 보존한다.
 6. 저장 완료 후 기존 번호·유형 필터와 시험지 조합 흐름에서 즉시 조회한다.
 
+## 수능 Assessment 저장과 사용 이력 흐름
+
+1. Wiki 또는 WebMCP가 수능 번호/유형, 제작 형태, 수량, `exclude_used` 조건을 동일 CSAT Service에 전달한다.
+2. Service는 기존 `csat_questions`만 검색하며 `exclude_used=true`이면 `csat_question_usage`가 존재하는 Question ID를 제외한다.
+3. 필요한 수량이 부족하면 `409`로 종료하고 Assessment/item/usage를 하나도 저장하지 않는다.
+4. 충분하면 `csat_assessments` → 순서 정본 `csat_assessment_items` → `csat_question_usage`를 하나의 transaction으로 저장한다.
+5. DAILY item은 네 문항마다 같은 `day_no`를 갖는다. 문제 HTML과 해설 HTML은 별도 문항 배열을 만들지 않고 같은 item 순서를 렌더한다.
+6. 저장된 Assessment는 Wiki와 WebMCP가 같은 ID로 다시 열 수 있다. 조회·preview·HTML render는 사용 이력을 변경하지 않는다.
 
