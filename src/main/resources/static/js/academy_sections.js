@@ -221,15 +221,15 @@
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
-    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-fade>
+    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap">
         <div class="section-inner featured-inner">
           <div class="featured-head">
-            <div class="eyebrow featured-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
-            ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
-            ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            <div class="eyebrow featured-eyebrow f2r-reveal"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
+            ${ctx.editableText({ tag: 'h2', className: 'featured-title f2r-reveal', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            ${ctx.editableText({ tag: 'p', className: 'featured-desc f2r-reveal', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
           <div class="featured-items">${featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join('')}</div>
-          <div class="featured-cta">${ctx.featuredCta(ctaLabel)}</div>
+          <div class="featured-cta f2r-reveal">${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
   }
@@ -255,12 +255,12 @@
     const title = draftText(view, 'aiProcessTitle', AI_PROCESS_TITLE_DEFAULT);
     const desc = draftText(view, 'aiProcessDescription', AI_PROCESS_DESC_DEFAULT);
     const note = draftText(view, 'aiProcessNote', AI_PROCESS_NOTE_DEFAULT);
-    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-process-wrap" data-fade>
+    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-process-wrap">
         <div class="section-inner ai-process-inner">
           <div class="section-header ai-process-head">
-            <div class="eyebrow ai-process-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'ai-process-eyebrow-text', draftKey: 'aiProcessEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
-            ${ctx.editableText({ tag: 'h2', className: 'section-title ai-process-title', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
-            ${ctx.editableText({ tag: 'p', className: 'ai-process-desc', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            <div class="eyebrow ai-process-eyebrow f2r-reveal"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'ai-process-eyebrow-text', draftKey: 'aiProcessEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
+            ${ctx.editableText({ tag: 'h2', className: 'section-title ai-process-title f2r-reveal', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            ${ctx.editableText({ tag: 'p', className: 'ai-process-desc f2r-reveal', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
           <ol class="ai-process-steps">${aiProcessSteps(view).map((step, index) => ctx.aiProcessStep(step, index)).join('')}</ol>
           ${ctx.editableText({ tag: 'p', className: 'ai-process-note', draftKey: 'aiProcessNote', value: note, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', quoted: false, omitWhenEmpty: true })}
@@ -650,10 +650,11 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // 값이 빈 항목은 공개 페이지에서 생략한다(빈 칩이 남지 않게).
+      // 값이 빈 항목은 공개 페이지에서 생략한다(빈 칩이 남지 않게). 모션은 Storefront primitive가
+      // .f2r-reveal / [data-step]로 담당한다(GSAP data-fade 아님 — 책임 분리).
       featuredItem(text) {
         const label = String(text == null ? '' : text).trim();
-        return label ? `<div class="featured-item" data-fade><span class="featured-item-label">${escapeHtml(label)}</span></div>` : '';
+        return label ? `<div class="featured-item f2r-reveal"><span class="featured-item-label">${escapeHtml(label)}</span></div>` : '';
       },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
@@ -661,7 +662,7 @@
       },
       aiProcessStep(text, index) {
         const label = String(text == null ? '' : text).trim();
-        return label ? `<li class="ai-process-step" data-fade><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label">${escapeHtml(label)}</span></li>` : '';
+        return label ? `<li class="ai-process-step" data-step="${index}"><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label">${escapeHtml(label)}</span></li>` : '';
       },
 
       // 공개 페이지는 목록 조회가 실패해도 영상을 그린다 — id가 유효하면 stream URL을 합성해
@@ -810,16 +811,17 @@
         return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
       },
       // 빈 값이어도 항상 렌더한다 — 요소가 없으면 원장이 클릭해 채울 수 없다(빈 값은 CSS placeholder로 안내).
+      // 빌더 캔버스는 정적으로 보여준다(모션 클래스는 공개 페이지에서만 js-storefront-motion으로 활성).
       featuredItem(text, index) {
         const draftKey = 'featuredItem' + (index + 1);
-        return `<div class="featured-item" data-fade><span class="featured-item-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
+        return `<div class="featured-item f2r-reveal"><span class="featured-item-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
       },
       featuredCta(label) {
         return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
       },
       aiProcessStep(text, index) {
         const draftKey = 'aiProcessStep' + (index + 1);
-        return `<li class="ai-process-step" data-fade><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></li>`;
+        return `<li class="ai-process-step" data-step="${index}"><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></li>`;
       },
 
       // 빌더는 아직 발행 전 학원도 렌더하므로 공개 stream 경로를 합성하지 않는다.
