@@ -18,6 +18,7 @@ import GeneratedTestBrowser from './components/GeneratedTestBrowser'
 import ManualQuestionSave from './components/ManualQuestionSave'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
 import { api, normalizedApiError } from './lib/api'
+import { registerCsatSiteTools } from './lib/csatWebMcp'
 import './styles/generator.css'
 
 export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
@@ -94,6 +95,7 @@ export default function App() {
   const draftLoaded = useRef(false)
   const refreshQuestions = () => { fetchQuestions().then(setQuestions).catch(() => undefined) }
   useEffect(() => { if (page === 'database' || page === 'exam') refreshQuestions() }, [page])
+  useEffect(() => { void registerCsatSiteTools().catch(error=>console.warn('CSAT site tools registration failed',error)) }, [])
   useEffect(() => { const refresh=()=>{try{setSchoolPrints(JSON.parse(localStorage.getItem('f2r_school_prints')||'[]'))}catch{}};window.addEventListener('f2r-school-prints-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-school-prints-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
   useEffect(() => { const refresh=()=>{try{setWrongReviews(JSON.parse(localStorage.getItem('f2r_wrong_review_materials')||'[]'))}catch{}};window.addEventListener('f2r-wrong-reviews-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-wrong-reviews-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
   useEffect(() => { fetchExamDraft().then(draft => { if (draft.question_ids.length) setSelectedExamIds(draft.question_ids); if (draft.title) setExamTitle(draft.title); if (draft.academy_name) setAcademyName(draft.academy_name); if (draft.teacher_name) setTeacherName(draft.teacher_name) }).catch(() => undefined).finally(() => { draftLoaded.current = true }) }, [])

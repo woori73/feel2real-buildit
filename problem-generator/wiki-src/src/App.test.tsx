@@ -18,7 +18,7 @@ beforeEach(() => {
   scrollIntoViewMock.mockClear()
   window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock
 })
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals();delete document.modelContext })
 
 describe('내신 Wiki V1.1 시나리오 홈', () => {
   it('수능 Workspace는 문제 DB와 4개 Assessment 제작 탭을 분리한다', async()=>{
@@ -46,6 +46,29 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     const select = within(linkedRow.closest('article') as HTMLElement).getByRole('checkbox')
     fireEvent.click(select)
     expect(screen.getByRole('button',{name:'선택 오답으로 WRONG 저장'})).not.toBeDisabled()
+  })
+
+  it('top-level Wiki가 DOM 클릭 없는 CSAT WebMCP tools를 기존 API에 등록한다',async()=>{
+    const registered:Array<{name:string;annotations:{readOnlyHint:boolean};execute:(input:Record<string,unknown>)=>Promise<unknown>}>=[]
+    Object.defineProperty(document,'modelContext',{configurable:true,value:{registerTool:vi.fn(async tool=>{registered.push(tool)})}})
+    const fetchMock=vi.fn(async(input:RequestInfo|URL,init?:RequestInit)=>{
+      const url=String(input)
+      if(url.includes('/csat/questions'))return new Response('[{"id":7}]',{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/csat/assessments')&&init?.method==='POST')return new Response('{"id":9,"assessment_type":"daily","question_ids":[1,2,3,4]}',{status:201,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/exam-draft'))return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}',{status:200,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    })
+    vi.stubGlobal('fetch',fetchMock)
+    render(<App/>)
+    await waitFor(()=>expect(registered).toHaveLength(5))
+    expect(registered.map(tool=>tool.name)).toEqual(['search_csat_questions','get_csat_assessment','create_csat_assessment','create_csat_wrong_assessment','replace_csat_assessment_question'])
+    expect(registered.find(tool=>tool.name==='search_csat_questions')?.annotations.readOnlyHint).toBe(true)
+    expect(registered.find(tool=>tool.name==='create_csat_assessment')?.annotations.readOnlyHint).toBe(false)
+    await registered.find(tool=>tool.name==='search_csat_questions')?.execute({question_no:34,exclude_used:true})
+    await registered.find(tool=>tool.name==='create_csat_assessment')?.execute({assessment_type:'daily',days:1,question_ids:[1,2,3,4],exclude_used:true})
+    expect(fetchMock.mock.calls.some(([url])=>String(url).includes('csat/questions?question_no=34&exclude_used=true'))).toBe(true)
+    const write=fetchMock.mock.calls.find(([url,init])=>String(url).endsWith('/csat/assessments')&&init?.method==='POST')
+    expect(JSON.parse(String(write?.[1]?.body))).toMatchObject({assessment_type:'daily',days:1,question_ids:[1,2,3,4],exclude_used:true})
   })
 
   it('학교·학년·연도·학기·시험 Context와 STEP 1~4를 순서대로 표시한다', async()=>{
