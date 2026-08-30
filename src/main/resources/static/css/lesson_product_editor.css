@@ -864,3 +864,166 @@ select { font: inherit; }
 .media-modal-actions { display: flex; justify-content: space-between; gap: 8px; }
 
 .media-modal-actions [hidden] { display: none !important; }
+
+/* ── 기본/상세 설정 폼 분리 (V2-7) ─────────────────────────────
+   기본 화면은 수업 카드를 구동하는 핵심 항목만. 나머지 저장 필드는
+   "상세 설정" <details> 안에 그대로 유지 — 데이터·저장계약은 불변. */
+
+.editor-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.editor-group-hint {
+  margin: -4px 0 14px;
+  color: var(--editor-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.editor-advanced {
+  margin: 4px 0 6px;
+  border: 1px solid var(--editor-line);
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.editor-advanced > summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.editor-advanced > summary::-webkit-details-marker { display: none; }
+
+.editor-advanced > summary::after {
+  content: "펼치기 ▾";
+  position: absolute;
+  right: 16px;
+  color: var(--editor-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.editor-advanced[open] > summary::after { content: "접기 ▴"; }
+
+.editor-advanced > summary { position: relative; }
+
+.editor-advanced-title {
+  color: var(--editor-ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.editor-advanced-sub {
+  color: var(--editor-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.editor-advanced-body {
+  padding: 0 16px 6px;
+  border-top: 1px solid var(--editor-line);
+}
+
+.editor-advanced-body fieldset.editor-group {
+  padding-top: 14px;
+  border-top: 0;
+}
+
+.editor-ot-control { align-self: flex-start; }
+
+/* ── Program Card 미리보기 = 공개 storefront 와 같은 렌더 계약 ──── */
+
+.program-card-preview {
+  /* academy_collection.css 의 .f2r-program-card* 규칙이 소비하는 토큰.
+     편집기 페이지에는 academy_public.css 가 없으므로 여기서 스코프로 정의한다. */
+  --bg-soft: #f6f7f9;
+  --ink: #0a0a0c;
+  --ink-soft: #67707c;
+  --ink-faint: #a4abb5;
+  --line: #e8eaee;
+  --accent: #2563eb;
+  --ultramarine: #2b3a9e;
+  --radius-sm: 16px;
+  --shadow-sm: 0 12px 32px rgba(10, 12, 20, .05);
+  --ease: cubic-bezier(.16, .84, .44, 1);
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 26px;
+  border-radius: 24px;
+  background: #eef1f6;
+  box-shadow: var(--preview-shadow);
+}
+
+.program-card-preview[hidden] { display: none; }
+
+.program-card-preview .f2r-program-card {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.program-card-preview .f2r-program-card-media-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 1px dashed #b9c0cd;
+  background: var(--bg-soft);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  cursor: pointer;
+}
+
+.program-card-preview .f2r-program-card-media { cursor: pointer; }
+
+.program-card-preview .f2r-program-card-media-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 30px;
+}
+
+.program-card-preview-ot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+  margin: 14px auto 0;
+}
+
+.program-card-preview-ot-label {
+  color: #344056;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.program-card-preview-ot-state {
+  color: var(--editor-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.program-card-preview-ot .btn { padding: 8px 12px; font-size: 12px; }
+
+@media (max-width: 760px) {
+  .program-card-preview { padding: 14px; border-radius: 17px; }
+}

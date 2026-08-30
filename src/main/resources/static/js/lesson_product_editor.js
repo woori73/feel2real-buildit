@@ -10,9 +10,17 @@
   const draftState = document.getElementById('draftState');
   const preview = document.getElementById('lessonPreview');
   const previewShell = preview?.closest('.preview');
+  const programCardPreview = document.getElementById('lessonProgramCardPreview');
+  const programCardSlot = programCardPreview?.querySelector('[data-program-card-slot]');
+  const programCardOtRow = programCardPreview?.querySelector('[data-program-card-ot]');
   const mediaModal = document.getElementById('mediaModal');
   const mediaArea = document.getElementById('courseMediaArea');
   const otMediaArea = document.getElementById('otMediaArea');
+  const otVideoControl = document.getElementById('otVideoControl');
+  const SECTIONS = window.F2RAcademySections || null;
+  // 가로 컬렉션 학원: 편집기 미리보기가 공개 storefront 와 같은 programCardHtml 을 쓴다.
+  // 그 외: 기존 showcase 골격(#lessonPreview) 유지.
+  let horizontalLayout = false;
   const closeMediaButton = document.getElementById('closeMediaModal');
   const clearSelectedMediaButton = document.getElementById('clearSelectedMediaButton');
   const mediaImageInput = document.getElementById('mediaImageInput');
@@ -46,6 +54,12 @@
   addButton.addEventListener('click', addLesson);
   mediaArea?.addEventListener('click', () => openMediaPicker('hero'));
   otMediaArea?.addEventListener('click', () => openMediaPicker('ot'));
+  otVideoControl?.addEventListener('click', () => openMediaPicker('ot'));
+  programCardPreview?.addEventListener('click', (event) => {
+    const trigger = event.target.closest?.('[data-editor-media]');
+    if (!trigger) return;
+    openMediaPicker(trigger.dataset.editorMedia === 'ot' ? 'ot' : 'hero');
+  });
   closeMediaButton?.addEventListener('click', () => mediaModal?.close());
   clearSelectedMediaButton?.addEventListener('click', clearSelectedMedia);
   mediaImageInput?.addEventListener('change', (event) => uploadMedia(event, 'image'));
@@ -66,6 +80,11 @@
       if (!response.ok) throw new Error('Academy 조회에 실패했습니다.');
 
       const academy = await response.json();
+      const builderDraft = (academy.pageSettings && academy.pageSettings.builderDraft) || {};
+      horizontalLayout = SECTIONS != null
+        && String(builderDraft.lessonsLayout || '').trim().toLowerCase() === 'horizontal';
+      document.querySelector('.lesson-editor-app')
+        ?.classList.toggle('is-horizontal-layout', horizontalLayout);
       const params = new URLSearchParams(location.search);
       const requestedLessonId = params.get('lessonId');
       editorState = stateApi.createState(academy.lessons || [], {
@@ -237,12 +256,27 @@
     const active = stateApi.getActiveItem(editorState);
     if (!active) {
       preview.hidden = true;
+      if (programCardPreview) programCardPreview.hidden = true;
       return;
     }
-    preview.hidden = false;
     const value = active.appliedPreview;
-    preview.dataset.theme = value.theme || 'NAVY';
-    if (previewShell) previewShell.dataset.theme = preview.dataset.theme;
+    const theme = value.theme || 'NAVY';
+    if (previewShell) previewShell.dataset.theme = theme;
+
+    // 가로 컬렉션 학원: 공개 storefront 와 같은 programCardHtml 로 렌더한다.
+    if (horizontalLayout) {
+      preview.hidden = true;
+      if (programCardPreview) {
+        programCardPreview.hidden = false;
+        programCardPreview.dataset.theme = theme;
+        renderProgramCardPreview(value, active);
+      }
+      return;
+    }
+
+    if (programCardPreview) programCardPreview.hidden = true;
+    preview.hidden = false;
+    preview.dataset.theme = theme;
     setPreview('kicker', value.kicker, '상단 보조 문구');
     setPreview('tabShortName', value.tabShortName || value.name, '수업명');
     setPreview('name', value.name, '수업명을 입력해 주세요');
@@ -258,6 +292,67 @@
     setPreview('explanation2', value.explanation2, '두 번째 핵심 설명');
     setPreview('explanation3', value.explanation3, '세 번째 핵심 설명');
     renderMedia();
+  }
+
+  /* ── 가로 컬렉션(Storefront V2) Program Card 미리보기 ──────────
+   * 공개 홈페이지(academy_public.js)와 빌더 캔버스(academy_builder.js)가 쓰는 것과
+   * 똑같은 F2RAcademySections.programCardHtml 을 호출한다 — 하나의 렌더 계약.
+   * ctx 는 편집기 전용 두 슬롯만 채운다(미디어=클릭 시 모달, CTA=정적 표시).
+   */
+  const EDITOR_CARD_CTX = {
+    programCardMedia(lesson) {
+      if (lesson.mediaType === 'IMAGE' && lesson.lessonId != null) {
+        return `<button type="button" class="f2r-program-card-media" data-editor-media="hero" aria-label="대표 이미지 변경">`
+          + `<img src="/api/tutor/academy/lessons/${encodeURIComponent(lesson.lessonId)}/hero-image" alt="" loading="lazy"></button>`;
+      }
+      if (lesson.mediaType === 'IMAGE') {
+        // 미저장 신규 수업: lessonId 기반 이미지 URL을 아직 만들 수 없다.
+        return '<button type="button" class="f2r-program-card-media f2r-program-card-media-empty" data-editor-media="hero">'
+          + '이미지가 등록되었습니다.<br>저장하면 카드에 표시됩니다.</button>';
+      }
+      if (lesson.mediaType === 'VIDEO' && lesson.mediaVideoId != null) {
+        const found = myVideos.find((video) => String(video.videoId) === String(lesson.mediaVideoId));
+        const thumb = found && found.thumbnailUrl
+          ? `<img src="${escapeAttr(found.thumbnailUrl)}" alt="" loading="lazy">`
+          : '<span class="f2r-program-card-media-ph" aria-hidden="true">🎬</span>';
+        return `<button type="button" class="f2r-program-card-media f2r-program-card-media-video" data-editor-media="hero" aria-label="대표 영상 변경">`
+          + `${thumb}<span class="f2r-video-play" aria-hidden="true">▶</span></button>`;
+      }
+      return '<button type="button" class="f2r-program-card-media f2r-program-card-media-empty" data-editor-media="hero">'
+        + '대표 이미지 또는 수업 영상을<br>등록해 주세요</button>';
+    },
+    collectionConsultCta(labelText) {
+      const text = String(labelText == null ? '' : labelText).trim() || '상담 신청하기';
+      return `<span class="f2r-program-card-cta" aria-hidden="true">${escapeHtml(text)}</span>`;
+    }
+  };
+
+  function renderProgramCardPreview(value, active) {
+    if (!SECTIONS || !programCardSlot) return;
+    const lesson = {
+      lessonId: active.lessonId,
+      tabShortName: value.tabShortName,
+      name: value.name,
+      kicker: value.kicker,
+      learnerNeed: value.learnerNeed,
+      highlight: value.highlight,
+      gradeLabel: value.gradeLabel,
+      tabGuidanceLabel: value.tabGuidanceLabel,
+      mediaType: value.mediaVideoId != null ? 'VIDEO' : (value.mediaImageKey ? 'IMAGE' : null),
+      mediaVideoId: value.mediaVideoId
+    };
+    programCardSlot.innerHTML = SECTIONS.programCardHtml(lesson, EDITOR_CARD_CTX);
+    renderProgramCardOt(value.otVideoId);
+  }
+
+  function renderProgramCardOt(videoId) {
+    if (!programCardOtRow) return;
+    const has = videoId != null;
+    const found = has ? myVideos.find((video) => String(video.videoId) === String(videoId)) : null;
+    const name = found && found.originalFilename ? ` · ${escapeHtml(found.originalFilename)}` : '';
+    programCardOtRow.innerHTML = `<span class="program-card-preview-ot-label">수업 OT 영상</span>`
+      + `<button type="button" class="btn btn-secondary" data-editor-media="ot">${has ? 'OT 영상 변경' : 'OT 영상 등록'}</button>`
+      + (has ? `<span class="program-card-preview-ot-state">등록됨${name} · 저장 후 공개</span>` : '');
   }
 
   /* ── 대표 미디어 ──────────────────────────────────────────── */
@@ -296,6 +391,13 @@
   }
 
   function renderMedia() {
+    // 가로 컬렉션 학원은 미디어도 Program Card 미리보기 안에서 렌더한다
+    // (#courseMediaArea/#otMediaArea 는 숨겨져 있다).
+    if (horizontalLayout) {
+      const active = stateApi.getActiveItem(editorState);
+      if (active) renderProgramCardPreview(active.appliedPreview, active);
+      return;
+    }
     const { imageKey, videoId } = currentMedia();
     renderMediaArea(imageKey, videoId);
     renderOtMedia(currentOtVideoId());

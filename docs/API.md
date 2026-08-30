@@ -1621,7 +1621,7 @@ LMS 주소가 성립하지 않는다(404).
 - 현재 사용처:
   - `static/js/tutor_academy.js`
   - `static/js/tutor_academy_setup.js`
-  - `static/js/lesson_product_editor.js` — `204`이면 unattached draft를 만들지 않고 `/builder`로 이동
+  - `static/js/lesson_product_editor.js` — `204`이면 unattached draft를 만들지 않고 `/builder`로 이동. `pageSettings.builderDraft.lessonsLayout == 'horizontal'`이면 편집기 미리보기를 공개 storefront와 같은 `programCardHtml`로 렌더한다(V2-7).
   - ~~`static/js/landing_publish.js`~~ — 구 랜딩 발행 폼 전용. 2026-08 Build It 랜딩 개편으로 `/`에서 더 이상 로드하지 않는다(파일은 정리 대상으로 남겨둠). 개편 랜딩의 "Build It 시작하기"는 `static/js/landing_buildit.js`가 `GET /api/auth/me`만 확인해 TUTOR면 `/builder`, 아니면 `/register?returnUrl=/builder`로 보낸다.
 - 향후 사용 가능성:
   - React tutor dashboard bootstrap
