@@ -3389,4 +3389,31 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - 저장 정책: preview 단계에서는 SQLite를 변경하지 않는다. 검수 후 기존 `POST /api/csat/imports/commit`으로 파일별 저장하며 HTML fragment는 문항 `raw_json`에 보존한다.
 - 실패: 지원하지 않는 확장자/비 UTF-8/제한 초과/문항 미인식은 `400`; 전체 파일이 실패하면 preview를 생성하지 않는다.
 
+## 수능 Assessment와 Usage History
+
+### ✅ POST /api/csat/assessments
+
+- 목적: 기존 `csat_questions` 문항으로 HALF/FULL/WRONG/DAILY 공통 Assessment를 저장한다.
+- Request JSON: `assessment_type`, `title`, `template_id`, `question_ids`, `question_no`, `type_id`, `count`, `days`, `exclude_used`.
+- DAILY: 목표 문항 수는 `days × 4`이며 저장 item에 1부터 시작하는 `day_no`를 기록한다.
+- 사용 이력: Assessment와 item 저장이 성공한 같은 transaction에서만 `csat_question_usage`를 기록한다. 검색·preview·HTML render는 사용 이력을 만들지 않는다.
+- `exclude_used=true`: 이미 저장된 Assessment에 포함된 Question ID를 후보에서 제외한다.
+- Response `201`: Assessment 메타데이터와 순서가 보존된 `items`, `question_ids`.
+- 실패: 후보 부족 또는 사용 이력 제외 후 부족하면 `409`; 부분 Assessment/usage는 저장하지 않는다.
+
+### ✅ GET /api/csat/assessments · GET /api/csat/assessments/{id}
+
+- 목적: Wiki와 WebMCP가 동일한 저장 Assessment를 다시 조회한다.
+- 상세 응답의 `items`가 문제·해설 양쪽 renderer의 유일한 Question ID 순서 정본이다.
+
+### ✅ GET /api/csat/question-usage
+
+- Query: `question_id`, `assessment_type` 선택.
+- 목적: Question ID별 실제 저장 Assessment 사용 이력을 조회한다.
+
+### ✅ GET /api/csat/assessments/{id}/problem.html · /explanation.html
+
+- 목적: 저장된 동일 Assessment item 순서로 편집 가능한 문제/해설 HTML을 렌더한다.
+- DAILY는 두 문서에 동일한 `data-question-id`와 `data-day-no` 순서를 출력한다.
+- 호출 자체는 사용 이력을 추가하지 않는다.
 

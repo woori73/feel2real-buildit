@@ -24,6 +24,22 @@ class CsatLibraryTest(unittest.TestCase):
         main.DB_PATH = Path(tmp.name)
         main.init_db()
 
+    def seed_csat_questions(self, count, question_no=39):
+        now = 'assessment-test'
+        with main.get_db() as conn:
+            source = conn.execute("INSERT INTO csat_question_sources(exam_kind,source_filename,exam_metadata_json,parser,raw_text,created_at) VALUES('half',?,'{}','test','',?)", (f'fixture-{count}-{question_no}.html', now))
+            ids = []
+            csat_type = main.csat_type_for_number(question_no)
+            for index in range(count):
+                raw = {'explanation_html': f'<b>fixture explanation {index}</b>'}
+                cursor = conn.execute('''INSERT INTO csat_questions
+                    (source_id,exam_kind,question_no,csat_type_id,csat_type_name,passage,prompt,choices_json,answer,solution,raw_json,created_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
+                    (source.lastrowid, 'half', question_no, csat_type['id'], csat_type['name'], f'Passage {index}',
+                     '문장이 들어가기에 가장 적절한 곳은?', '["A","B","C","D","E"]', '1', f'Solution {index}', json.dumps(raw), now))
+                ids.append(cursor.lastrowid)
+        return ids
+
     def test_number_to_standard_type(self):
         expected = {18:'purpose', 21:'implication', 24:'title', 29:'grammar', 30:'vocabulary', 31:'blank', 34:'blank', 36:'order', 39:'insertion', 40:'summary', 42:'long_complex', 45:'long_sequence_reference_content'}
         for number, type_id in expected.items():
@@ -105,6 +121,52 @@ class CsatLibraryTest(unittest.TestCase):
         self.assertEqual(['01.html', '02.html'], [item['source_filename'] for item in body['files']])
         with main.get_db() as conn:
             self.assertEqual(source_count, conn.execute('SELECT COUNT(*) FROM csat_question_sources').fetchone()[0])
+
+    def test_saved_assessment_is_the_only_path_that_records_usage(self):
+        ids = self.seed_csat_questions(5, 34)
+        client = TestClient(main.app)
+        before = client.get('/api/csat/question-usage').json()
+        preview = client.get('/api/csat/questions', params={'question_no': 34, 'exclude_used': True})
+        self.assertEqual(200, preview.status_code)
+        self.assertEqual(len(before), len(client.get('/api/csat/question-usage').json()))
+        created = client.post('/api/csat/assessments', json={
+            'assessment_type': 'half', 'title': 'Fixture HALF', 'question_ids': ids[:4], 'count': 4,
+        })
+        self.assertEqual(201, created.status_code)
+        self.assertEqual(ids[:4], created.json()['question_ids'])
+        usage = client.get('/api/csat/question-usage', params={'assessment_type': 'half'}).json()
+        self.assertEqual(set(ids[:4]), {item['question_id'] for item in usage if item['assessment_id'] == created.json()['id']})
+        remaining = client.get('/api/csat/questions', params={'question_no': 34, 'exclude_used': True}).json()
+        self.assertIn(ids[4], [item['id'] for item in remaining])
+        self.assertFalse(set(ids[:4]) & {item['id'] for item in remaining})
+
+    def test_daily_problem_and_explanation_share_question_order_and_day_numbers(self):
+        ids = self.seed_csat_questions(8, 39)
+        client = TestClient(main.app)
+        created = client.post('/api/csat/assessments', json={
+            'assessment_type': 'daily', 'title': 'Fixture DAILY', 'question_ids': ids, 'days': 2,
+        })
+        self.assertEqual(201, created.status_code)
+        body = created.json()
+        self.assertEqual(ids, body['question_ids'])
+        self.assertEqual([1, 1, 1, 1, 2, 2, 2, 2], [item['day_no'] for item in body['items']])
+        problem = client.get(f"/api/csat/assessments/{body['id']}/problem.html").text
+        explanation = client.get(f"/api/csat/assessments/{body['id']}/explanation.html").text
+        for document in (problem, explanation):
+            offsets = [document.index(f'data-question-id="{question_id}"') for question_id in ids]
+            self.assertEqual(sorted(offsets), offsets)
+
+    def test_insufficient_exclude_used_selection_does_not_save_partial_assessment(self):
+        ids = self.seed_csat_questions(1, 24)
+        client = TestClient(main.app)
+        first = client.post('/api/csat/assessments', json={'assessment_type': 'half', 'question_ids': ids, 'count': 1})
+        self.assertEqual(201, first.status_code)
+        with main.get_db() as conn:
+            before = conn.execute('SELECT COUNT(*) FROM csat_assessments').fetchone()[0]
+        failed = client.post('/api/csat/assessments', json={'assessment_type': 'half', 'question_no': 24, 'count': 1, 'exclude_used': True})
+        self.assertEqual(409, failed.status_code)
+        with main.get_db() as conn:
+            self.assertEqual(before, conn.execute('SELECT COUNT(*) FROM csat_assessments').fetchone()[0])
 
 
 if __name__ == '__main__': unittest.main()

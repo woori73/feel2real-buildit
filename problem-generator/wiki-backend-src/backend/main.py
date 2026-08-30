@@ -219,6 +219,40 @@ def init_db():
             created_at TEXT NOT NULL
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_lookup ON csat_wrong_answers(student_name, exam_name, question_no, csat_type_id)')
+        # 수능 제작물의 공통 저장 기반. Question 원본/Assessment 구성/Template 표현을 분리한다.
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assessment_type TEXT NOT NULL CHECK (assessment_type IN ('half','full','wrong','daily')),
+            title TEXT NOT NULL DEFAULT '',
+            template_id TEXT NOT NULL DEFAULT '',
+            request_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_assessment_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assessment_id INTEGER NOT NULL,
+            question_id INTEGER NOT NULL,
+            position INTEGER NOT NULL,
+            day_no INTEGER,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (assessment_id) REFERENCES csat_assessments(id),
+            FOREIGN KEY (question_id) REFERENCES csat_questions(id),
+            UNIQUE (assessment_id, position),
+            UNIQUE (assessment_id, question_id)
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            assessment_id INTEGER NOT NULL,
+            assessment_type TEXT NOT NULL,
+            used_at TEXT NOT NULL,
+            FOREIGN KEY (question_id) REFERENCES csat_questions(id),
+            FOREIGN KEY (assessment_id) REFERENCES csat_assessments(id),
+            UNIQUE (assessment_id, question_id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_assessment_items_order ON csat_assessment_items(assessment_id, day_no, position)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_usage_lookup ON csat_question_usage(question_id, assessment_type, used_at)')
         conn.execute('''CREATE TABLE IF NOT EXISTS ai_ab_evaluations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
@@ -2781,16 +2815,130 @@ def commit_csat_import(payload: CsatImportCommit):
 
 
 @app.get('/api/csat/questions')
-def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, question_no: Optional[int] = None, type_id: Optional[str] = None, mismatch: Optional[bool] = None):
+def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, question_no: Optional[int] = None,
+                        type_id: Optional[str] = None, mismatch: Optional[bool] = None,
+                        exclude_used: bool = False, used_in: Optional[Literal['half', 'full', 'wrong', 'daily']] = None):
     filters, values = [], []
     for clause, value in (('q.exam_kind=?', exam_kind), ('q.question_no=?', question_no), ('q.csat_type_id=?', type_id)):
         if value is not None: filters.append(clause); values.append(value)
     if mismatch is not None: filters.append('q.type_mismatch=?'); values.append(int(mismatch))
+    if exclude_used:
+        if used_in:
+            filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id AND u.assessment_type=?)'); values.append(used_in)
+        else:
+            filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)')
     where = f"WHERE {' AND '.join(filters)}" if filters else ''
     with get_db() as conn:
-        rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json FROM csat_questions q
+        rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json,
+            (SELECT COUNT(*) FROM csat_question_usage u WHERE u.question_id=q.id) usage_count
+            FROM csat_questions q
             JOIN csat_question_sources s ON s.id=q.source_id {where} ORDER BY q.created_at DESC, q.question_no''', values).fetchall()
     return [_csat_question_response(row) for row in rows]
+
+
+AssessmentType = Literal['half', 'full', 'wrong', 'daily']
+
+
+class CsatAssessmentCreate(BaseModel):
+    assessment_type: AssessmentType
+    title: str = ''
+    template_id: str = ''
+    question_ids: list[int] = Field(default_factory=list)
+    question_no: Optional[int] = Field(default=None, ge=18, le=45)
+    type_id: str = ''
+    count: int = Field(default=4, ge=1, le=45)
+    days: int = Field(default=1, ge=1, le=30)
+    exclude_used: bool = False
+
+
+def _assessment_detail(conn: sqlite3.Connection, assessment_id: int) -> dict:
+    assessment = conn.execute('SELECT * FROM csat_assessments WHERE id=?', (assessment_id,)).fetchone()
+    if not assessment:
+        raise HTTPException(status_code=404, detail='수능 Assessment를 찾을 수 없습니다.')
+    items = conn.execute('''SELECT i.position, i.day_no, q.*, s.source_filename, s.exam_metadata_json
+        FROM csat_assessment_items i JOIN csat_questions q ON q.id=i.question_id
+        JOIN csat_question_sources s ON s.id=q.source_id
+        WHERE i.assessment_id=? ORDER BY i.position''', (assessment_id,)).fetchall()
+    result = dict(assessment)
+    result['request'] = json.loads(result.pop('request_json'))
+    result['items'] = [{**_csat_question_response(row), 'position': row['position'], 'day_no': row['day_no']} for row in items]
+    result['question_ids'] = [item['id'] for item in result['items']]
+    return result
+
+
+def compose_csat_assessment(payload: CsatAssessmentCreate) -> dict:
+    """Select and persist atomically; only this saved Assessment path creates usage rows."""
+    target_count = payload.days * 4 if payload.assessment_type == 'daily' else payload.count
+    requested_ids = list(dict.fromkeys(payload.question_ids))
+    if requested_ids and len(requested_ids) != target_count:
+        raise HTTPException(status_code=400, detail=f'저장할 Assessment에는 정확히 {target_count}개 Question ID가 필요합니다.')
+    with get_db() as conn:
+        filters, values = [], []
+        if requested_ids:
+            filters.append(f"q.id IN ({','.join('?' * len(requested_ids))})"); values.extend(requested_ids)
+        if payload.question_no is not None:
+            filters.append('q.question_no=?'); values.append(payload.question_no)
+        if payload.type_id:
+            filters.append('q.csat_type_id=?'); values.append(payload.type_id)
+        if payload.exclude_used:
+            filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)')
+        where = f"WHERE {' AND '.join(filters)}" if filters else ''
+        rows = conn.execute(f'''SELECT q.id FROM csat_questions q {where}
+            ORDER BY q.created_at, q.id LIMIT ?''', (*values, target_count)).fetchall()
+        selected = [row['id'] for row in rows]
+        if requested_ids:
+            # SQL order is deterministic, while explicit editing order must be preserved.
+            selected_set = set(selected)
+            selected = [question_id for question_id in requested_ids if question_id in selected_set]
+        if len(selected) < target_count:
+            raise HTTPException(status_code=409, detail=f'조건에 맞는 문항이 {len(selected)}개뿐입니다. {target_count}개가 필요합니다.')
+        now = datetime.now().isoformat()
+        title = payload.title.strip() or f'BuildIt {payload.assessment_type.upper()}'
+        template_id = payload.template_id.strip() or f'csat-{payload.assessment_type}-v1'
+        cursor = conn.execute('''INSERT INTO csat_assessments
+            (assessment_type,title,template_id,request_json,created_at,updated_at) VALUES(?,?,?,?,?,?)''',
+            (payload.assessment_type, title, template_id, payload.model_dump_json(), now, now))
+        assessment_id = cursor.lastrowid
+        for position, question_id in enumerate(selected, start=1):
+            day_no = ((position - 1) // 4) + 1 if payload.assessment_type == 'daily' else None
+            conn.execute('''INSERT INTO csat_assessment_items
+                (assessment_id,question_id,position,day_no,created_at) VALUES(?,?,?,?,?)''',
+                (assessment_id, question_id, position, day_no, now))
+            conn.execute('''INSERT INTO csat_question_usage
+                (question_id,assessment_id,assessment_type,used_at) VALUES(?,?,?,?)''',
+                (question_id, assessment_id, payload.assessment_type, now))
+        return _assessment_detail(conn, assessment_id)
+
+
+@app.post('/api/csat/assessments', status_code=201)
+def create_csat_assessment(payload: CsatAssessmentCreate):
+    return compose_csat_assessment(payload)
+
+
+@app.get('/api/csat/assessments')
+def list_csat_assessments(assessment_type: Optional[AssessmentType] = None):
+    with get_db() as conn:
+        where, values = ('WHERE a.assessment_type=?', [assessment_type]) if assessment_type else ('', [])
+        return [dict(row) for row in conn.execute(f'''SELECT a.*,
+            (SELECT COUNT(*) FROM csat_assessment_items i WHERE i.assessment_id=a.id) question_count
+            FROM csat_assessments a {where} ORDER BY a.id DESC''', values).fetchall()]
+
+
+@app.get('/api/csat/assessments/{assessment_id}')
+def get_csat_assessment(assessment_id: int):
+    with get_db() as conn:
+        return _assessment_detail(conn, assessment_id)
+
+
+@app.get('/api/csat/question-usage')
+def list_csat_question_usage(question_id: Optional[int] = None, assessment_type: Optional[AssessmentType] = None):
+    filters, values = [], []
+    if question_id is not None: filters.append('u.question_id=?'); values.append(question_id)
+    if assessment_type: filters.append('u.assessment_type=?'); values.append(assessment_type)
+    where = f"WHERE {' AND '.join(filters)}" if filters else ''
+    with get_db() as conn:
+        return [dict(row) for row in conn.execute(f'''SELECT u.*, a.title FROM csat_question_usage u
+            JOIN csat_assessments a ON a.id=u.assessment_id {where} ORDER BY u.id DESC''', values).fetchall()]
 
 
 class CsatWrongAnswerCreate(BaseModel):
@@ -2827,15 +2975,16 @@ def list_csat_wrong_answers(student: Optional[str] = None, exam: Optional[str] =
         return [dict(row) for row in conn.execute(f'SELECT * FROM csat_wrong_answers {where} ORDER BY id DESC', values).fetchall()]
 
 
-def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어') -> str:
+def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어', preserve_order: bool = False) -> str:
     def esc(value):
         import html
         return html.escape(str(value or ''))
     blocks = []
-    for q in sorted(questions, key=lambda item: item['question_no']):
+    ordered = questions if preserve_order else sorted(questions, key=lambda item: item['question_no'])
+    for q in ordered:
         choices = ''.join(f'<li>{esc(choice)}</li>' for choice in q.get('choices', []))
         flag = '<span class="flag">유형 확인 필요</span>' if q.get('type_mismatch') else ''
-        blocks.append(f'''<article class="question" data-question-id="{q.get('id', '')}"><nav class="question-tools"><button onclick="moveQuestion(this,-1)">↑</button><button onclick="moveQuestion(this,1)">↓</button><button onclick="this.closest('.question').remove()">삭제</button></nav><h2>{q['question_no']}. <span contenteditable="true">{esc(q.get('prompt'))}</span> {flag}</h2>
+        blocks.append(f'''<article class="question" data-question-id="{q.get('id', '')}" data-day-no="{q.get('day_no') or ''}"><nav class="question-tools"><button onclick="moveQuestion(this,-1)">↑</button><button onclick="moveQuestion(this,1)">↓</button><button onclick="this.closest('.question').remove()">삭제</button></nav><h2>{q['question_no']}. <span contenteditable="true">{esc(q.get('prompt'))}</span> {flag}</h2>
             <div class="passage" contenteditable="true">{esc(q.get('passage')).replace(chr(10), '<br>')}</div>
             <ol class="choices" contenteditable="true">{choices}</ol><small contenteditable="true">{esc(q.get('footnote'))}</small></article>''')
     return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{esc(title)}</title><style>
@@ -2848,6 +2997,36 @@ def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어'
         @media print{{.toolbar,.question-tools{{display:none!important}}.paper{{column-fill:auto}}.question:nth-of-type(4n+1):not(:first-child){{break-before:page}}}}@media(max-width:800px){{.paper{{column-count:1;column-rule:0}}}}
     </style><body><div class="toolbar">문구를 클릭해 수정할 수 있습니다. <button onclick="print()">인쇄</button> <button onclick="saveEdited()">편집 HTML 저장</button></div>
     <header><b contenteditable="true">{esc(title)}</b><span>BuildIt 자체 제작 시험지 · A4 2단 · 페이지당 4문항 목표</span></header><main class="paper">{''.join(blocks)}</main><script>function moveQuestion(button,direction){{const item=button.closest('.question'),parent=item.parentElement,sibling=direction<0?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;direction<0?parent.insertBefore(item,sibling):parent.insertBefore(sibling,item)}}function saveEdited(){{const blob=new Blob(['<!doctype html>'+document.documentElement.outerHTML],{{type:'text/html;charset=utf-8'}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildit-csat-edited.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}}</script></body></html>'''
+
+
+def render_csat_explanation_html(questions: list[dict], title: str) -> str:
+    import html
+    blocks = []
+    for item in questions:
+        raw = json.loads(item.get('raw_json') or '{}')
+        explanation = raw.get('explanation_html') or html.escape(item.get('solution') or '해설 없음').replace('\n', '<br>')
+        blocks.append(f'''<article class="explanation" data-question-id="{item['id']}" data-day-no="{item.get('day_no') or ''}">
+            <h2>{item['question_no']}번 · {html.escape(item.get('csat_type_name') or '')}</h2>
+            <p><b>정답</b> {html.escape(item.get('answer') or '')}</p><div contenteditable="true">{explanation}</div></article>''')
+    return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{html.escape(title)} 해설</title><style>
+        @page{{size:A4;margin:14mm}}body{{font-family:"Noto Serif KR","Malgun Gothic",serif;color:#211b13;background:#fffaf0}}
+        main{{columns:2;column-gap:28px}}article{{break-inside:avoid;border-top:2px solid #d58a1f;padding:8px 4px 18px;line-height:1.6}}
+        h1{{color:#c66f12}}h2{{font-size:14px}}[contenteditable=true]:focus{{outline:2px solid #e5b94f;background:#fff}}
+        @media(max-width:800px){{main{{columns:1}}}}</style><body><h1 contenteditable="true">{html.escape(title)} 해설</h1><main>{''.join(blocks)}</main></body></html>'''
+
+
+@app.get('/api/csat/assessments/{assessment_id}/problem.html', response_class=HTMLResponse)
+def render_saved_assessment_problem(assessment_id: int):
+    with get_db() as conn:
+        assessment = _assessment_detail(conn, assessment_id)
+    return render_csat_html(assessment['items'], assessment['title'], preserve_order=True)
+
+
+@app.get('/api/csat/assessments/{assessment_id}/explanation.html', response_class=HTMLResponse)
+def render_saved_assessment_explanation(assessment_id: int):
+    with get_db() as conn:
+        assessment = _assessment_detail(conn, assessment_id)
+    return render_csat_explanation_html(assessment['items'], assessment['title'])
 
 
 @app.get('/api/csat/exam.html', response_class=HTMLResponse)
