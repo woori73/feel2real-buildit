@@ -213,5 +213,39 @@ class CsatLibraryTest(unittest.TestCase):
         })
         self.assertEqual(400, response.status_code)
 
+    def test_full_assessment_requires_one_question_for_every_number_18_to_45(self):
+        for question_no in range(18, 46):
+            self.seed_csat_questions(1, question_no)
+        client = TestClient(main.app)
+        created = client.post('/api/csat/assessments', json={
+            'assessment_type': 'full', 'title': 'Fixture FULL', 'count': 1,
+        })
+        self.assertEqual(201, created.status_code, created.text)
+        body = created.json()
+        self.assertEqual(28, len(body['question_ids']))
+        self.assertEqual(list(range(18, 46)), [item['question_no'] for item in body['items']])
+        for endpoint in ('problem.html', 'explanation.html'):
+            document = client.get(f"/api/csat/assessments/{body['id']}/{endpoint}").text
+            self.assertIn('data-template-id="csat-full-v1"', document)
+            offsets = [document.index(f'data-question-id="{question_id}"') for question_id in body['question_ids']]
+            self.assertEqual(sorted(offsets), offsets)
+
+    def test_full_exclude_used_fails_atomically_when_any_number_is_missing(self):
+        for question_no in range(18, 46):
+            self.seed_csat_questions(1, question_no)
+        client = TestClient(main.app)
+        first = client.post('/api/csat/assessments', json={'assessment_type': 'full'})
+        self.assertEqual(201, first.status_code)
+        with main.get_db() as conn:
+            now = '2026-01-01T00:00:00'
+            conn.execute('''INSERT INTO csat_question_usage(question_id,assessment_id,assessment_type,used_at)
+                SELECT q.id, ?, 'full', ? FROM csat_questions q
+                WHERE NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)''', (first.json()['id'], now))
+            before = conn.execute('SELECT COUNT(*) FROM csat_assessments').fetchone()[0]
+        failed = client.post('/api/csat/assessments', json={'assessment_type': 'full', 'exclude_used': True})
+        self.assertEqual(409, failed.status_code)
+        with main.get_db() as conn:
+            self.assertEqual(before, conn.execute('SELECT COUNT(*) FROM csat_assessments').fetchone()[0])
+
 
 if __name__ == '__main__': unittest.main()
