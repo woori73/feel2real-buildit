@@ -804,3 +804,11 @@ Wiki 홈
 5. DAILY item은 네 문항마다 같은 `day_no`를 갖는다. 문제 HTML과 해설 HTML은 별도 문항 배열을 만들지 않고 같은 item 순서를 렌더한다.
 6. 저장된 Assessment는 Wiki와 WebMCP가 같은 ID로 다시 열 수 있다. 조회·preview·HTML render는 사용 이력을 변경하지 않는다.
 
+## 수능 Wiki 제작 Workspace
+
+1. 수능 화면 상단의 `[문제 DB] [HALF] [FULL] [WRONG] [DAILY]`가 수집과 제작 흐름을 분리한다.
+2. 문제 DB에서 기존 HWP/HWPX/JSON/TXT와 HTML Batch Import를 유지한다.
+3. HALF/FULL/DAILY에서 번호·유형 또는 직접 선택한 Question ID, 문항 수, `이전 Assessment 사용 문항 제외`를 지정한다.
+4. 저장 버튼은 공통 `POST /api/csat/assessments`만 호출한다. UI가 별도 조합/usage 로직을 갖지 않는다.
+5. 저장 목록에서 같은 Assessment ID의 문제 HTML과 해설 HTML을 다시 연다.
+6. WRONG 탭은 기존 수능 오답 저장 흐름을 유지하며, 실제 오답과 Question ID 연결은 별도 WRONG composer 단계에서 확장한다.
