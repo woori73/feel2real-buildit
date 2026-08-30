@@ -4,7 +4,7 @@
  * 마크업 정본은 academy_sections.js(renderCollectionShell / programCardHtml / videoCardHtml)이고,
  * 이 파일은 그 위에 "사용자가 직접 둘러보는" 상호작용만 얹는다.
  *
- *   Navigation  — 좌/우 화살표는 track.scrollTo(절대 위치)로 한 화면 남기고 이동(맥락 유지).
+ *   Navigation  — 좌/우 화살표는 track.scrollBy(x, y)(레거시 시그니처)로 한 화면 남기고 이동.
  *                 부드러움은 CSS `.f2r-collection-track{scroll-behavior}` 가 담당.
  *   Video Card  — 카드를 클릭하면 그 자리에서 재생(업로드 스트림 → <video>, 임베드 URL → <iframe>).
  *
@@ -81,12 +81,15 @@
     if (!track) return;
     event.preventDefault();
     var dir = btn.dataset.collectionScroll === 'prev' ? -1 : 1;
-    // 절대 위치를 계산해 scrollTo 로 이동. 부드러움은 CSS `.f2r-collection-track{scroll-behavior}`
-    // 가 담당한다(prefers-reduced-motion 도 CSS media query 에서 auto 로 내린다). 일부 Chromium 빌드에서
-    // JS 스크롤 옵션의 smooth 지정이 overflow 컨테이너에서 조용히 무시되기 때문 — 위치 세팅은 항상 동작한다.
-    var max = track.scrollWidth - track.clientWidth;
-    var target = Math.max(0, Math.min(max, track.scrollLeft + dir * stepFor(track)));
-    track.scrollTo({ left: target });
+    // 레거시 2-인자 scrollBy(x, y) 를 쓴다. 옵션-딕셔너리 형태(scrollBy/scrollTo({...}))는 일부
+    // Chromium 빌드에서 overflow 컨테이너 대상일 때 조용히 무시된다(레거시 시그니처는 정상). 델타는
+    // 네이티브가 [0, max] 로 클램프한다. 부드러움은 CSS `.f2r-collection-track{scroll-behavior}` 담당
+    // (prefers-reduced-motion 은 CSS media query 에서 auto 로 내린다).
+    track.scrollBy(dir * stepFor(track), 0);
+    // scroll 이벤트가 늦거나 누락되는 환경 대비 — 다음 프레임에 화살표 상태를 직접 맞춘다.
+    if (typeof global.requestAnimationFrame === 'function') {
+      global.requestAnimationFrame(function () { syncArrows(collection); });
+    }
   }
 
   function onPlayClick(event) {
