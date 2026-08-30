@@ -207,6 +207,7 @@ def init_db():
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_questions_type ON csat_questions(csat_type_id)')
         conn.execute('''CREATE TABLE IF NOT EXISTS csat_wrong_answers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER,
             student_name TEXT NOT NULL,
             exam_name TEXT NOT NULL DEFAULT '',
             question_no INTEGER NOT NULL,
@@ -216,7 +217,8 @@ def init_db():
             correct_answer TEXT NOT NULL DEFAULT '',
             memo TEXT NOT NULL DEFAULT '',
             source_filename TEXT NOT NULL DEFAULT '',
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (question_id) REFERENCES csat_questions(id)
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_lookup ON csat_wrong_answers(student_name, exam_name, question_no, csat_type_id)')
         # 수능 제작물의 공통 저장 기반. Question 원본/Assessment 구성/Template 표현을 분리한다.
@@ -337,6 +339,10 @@ def migrate_schema():
             if name not in source_cols:
                 conn.execute(f'ALTER TABLE csat_question_sources ADD COLUMN {name} {definition}')
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_csat_source_hash_kind ON csat_question_sources(source_hash, exam_kind) WHERE source_hash <> ''")
+        wrong_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_wrong_answers)").fetchall()}
+        if 'question_id' not in wrong_cols:
+            conn.execute('ALTER TABLE csat_wrong_answers ADD COLUMN question_id INTEGER')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_question ON csat_wrong_answers(question_id)')
         gq_cols = {row['name'] for row in conn.execute("PRAGMA table_info(generated_questions)").fetchall()}
         if 'test_id' not in gq_cols:
             conn.execute("ALTER TABLE generated_questions ADD COLUMN test_id INTEGER")
@@ -2930,6 +2936,32 @@ def get_csat_assessment(assessment_id: int):
         return _assessment_detail(conn, assessment_id)
 
 
+class CsatAssessmentItemReplace(BaseModel):
+    question_id: int
+
+
+@app.patch('/api/csat/assessments/{assessment_id}/items/{position}')
+def replace_csat_assessment_item(assessment_id: int, position: int, payload: CsatAssessmentItemReplace):
+    """Replace one saved item; both problem and explanation renderers follow this single row."""
+    with get_db() as conn:
+        assessment = conn.execute('SELECT * FROM csat_assessments WHERE id=?', (assessment_id,)).fetchone()
+        current = conn.execute('SELECT * FROM csat_assessment_items WHERE assessment_id=? AND position=?', (assessment_id, position)).fetchone()
+        question = conn.execute('SELECT id FROM csat_questions WHERE id=?', (payload.question_id,)).fetchone()
+        if not assessment or not current or not question:
+            raise HTTPException(status_code=404, detail='Assessment item 또는 Question을 찾을 수 없습니다.')
+        duplicate = conn.execute('SELECT 1 FROM csat_assessment_items WHERE assessment_id=? AND question_id=? AND position<>?',
+                                 (assessment_id, payload.question_id, position)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail='같은 Assessment에 동일 Question을 중복 배치할 수 없습니다.')
+        now = datetime.now().isoformat()
+        conn.execute('UPDATE csat_assessment_items SET question_id=?, created_at=? WHERE id=?', (payload.question_id, now, current['id']))
+        conn.execute('DELETE FROM csat_question_usage WHERE assessment_id=? AND question_id=?', (assessment_id, current['question_id']))
+        conn.execute('''INSERT INTO csat_question_usage(question_id,assessment_id,assessment_type,used_at)
+            VALUES(?,?,?,?)''', (payload.question_id, assessment_id, assessment['assessment_type'], now))
+        conn.execute('UPDATE csat_assessments SET updated_at=? WHERE id=?', (now, assessment_id))
+        return _assessment_detail(conn, assessment_id)
+
+
 @app.get('/api/csat/question-usage')
 def list_csat_question_usage(question_id: Optional[int] = None, assessment_type: Optional[AssessmentType] = None):
     filters, values = [], []
@@ -2942,6 +2974,7 @@ def list_csat_question_usage(question_id: Optional[int] = None, assessment_type:
 
 
 class CsatWrongAnswerCreate(BaseModel):
+    question_id: Optional[int] = None
     student_name: str
     exam_name: str = ''
     question_no: int = Field(ge=18, le=45)
@@ -2958,9 +2991,15 @@ def create_csat_wrong_answer(payload: CsatWrongAnswerCreate):
     csat_type = csat_type_for_number(payload.question_no)
     now = datetime.now().isoformat()
     with get_db() as conn:
+        if payload.question_id is not None:
+            question = conn.execute('SELECT id, question_no FROM csat_questions WHERE id=?', (payload.question_id,)).fetchone()
+            if not question:
+                raise HTTPException(status_code=400, detail='연결할 Question ID를 찾을 수 없습니다.')
+            if question['question_no'] != payload.question_no:
+                raise HTTPException(status_code=400, detail='오답 번호와 연결할 Question의 수능 번호가 다릅니다.')
         cursor = conn.execute('''INSERT INTO csat_wrong_answers
-            (student_name, exam_name, question_no, csat_type_id, csat_type_name, wrong_answer, correct_answer, memo, source_filename, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?)''', (payload.student_name.strip(), payload.exam_name.strip(), payload.question_no, csat_type['id'], csat_type['name'],
+            (question_id, student_name, exam_name, question_no, csat_type_id, csat_type_name, wrong_answer, correct_answer, memo, source_filename, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)''', (payload.question_id, payload.student_name.strip(), payload.exam_name.strip(), payload.question_no, csat_type['id'], csat_type['name'],
             payload.wrong_answer.strip(), payload.correct_answer.strip(), payload.memo.strip(), payload.source_filename.strip(), now))
         return dict(conn.execute('SELECT * FROM csat_wrong_answers WHERE id=?', (cursor.lastrowid,)).fetchone())
 
@@ -2973,6 +3012,49 @@ def list_csat_wrong_answers(student: Optional[str] = None, exam: Optional[str] =
     where = f"WHERE {' AND '.join(filters)}" if filters else ''
     with get_db() as conn:
         return [dict(row) for row in conn.execute(f'SELECT * FROM csat_wrong_answers {where} ORDER BY id DESC', values).fetchall()]
+
+
+class CsatWrongLink(BaseModel):
+    question_id: int
+
+
+@app.patch('/api/csat/wrong-answers/{wrong_answer_id}/question')
+def link_csat_wrong_question(wrong_answer_id: int, payload: CsatWrongLink):
+    with get_db() as conn:
+        wrong = conn.execute('SELECT * FROM csat_wrong_answers WHERE id=?', (wrong_answer_id,)).fetchone()
+        question = conn.execute('SELECT * FROM csat_questions WHERE id=?', (payload.question_id,)).fetchone()
+        if not wrong or not question:
+            raise HTTPException(status_code=404, detail='오답 또는 Question을 찾을 수 없습니다.')
+        if wrong['question_no'] != question['question_no']:
+            raise HTTPException(status_code=400, detail='오답 번호와 Question의 수능 번호가 다릅니다.')
+        conn.execute('UPDATE csat_wrong_answers SET question_id=? WHERE id=?', (payload.question_id, wrong_answer_id))
+        return dict(conn.execute('SELECT * FROM csat_wrong_answers WHERE id=?', (wrong_answer_id,)).fetchone())
+
+
+class CsatWrongAssessmentCreate(BaseModel):
+    title: str = ''
+    wrong_answer_ids: list[int] = Field(min_length=1, max_length=45)
+    exclude_used: bool = False
+
+
+@app.post('/api/csat/wrong-assessments', status_code=201)
+def create_csat_wrong_assessment(payload: CsatWrongAssessmentCreate):
+    unique_wrong_ids = list(dict.fromkeys(payload.wrong_answer_ids))
+    with get_db() as conn:
+        rows = conn.execute(f'''SELECT id, question_id FROM csat_wrong_answers
+            WHERE id IN ({','.join('?' * len(unique_wrong_ids))})''', unique_wrong_ids).fetchall()
+    by_id = {row['id']: row['question_id'] for row in rows}
+    if len(by_id) != len(unique_wrong_ids):
+        raise HTTPException(status_code=404, detail='선택한 오답 중 존재하지 않는 항목이 있습니다.')
+    if any(by_id[wrong_id] is None for wrong_id in unique_wrong_ids):
+        raise HTTPException(status_code=409, detail='Question ID가 연결되지 않은 오답이 있습니다.')
+    question_ids = [by_id[wrong_id] for wrong_id in unique_wrong_ids]
+    if len(set(question_ids)) != len(question_ids):
+        raise HTTPException(status_code=409, detail='같은 Question이 중복 연결된 오답은 하나의 WRONG에 함께 넣을 수 없습니다.')
+    return compose_csat_assessment(CsatAssessmentCreate(
+        assessment_type='wrong', title=payload.title or 'BuildIt WRONG', question_ids=question_ids,
+        count=len(question_ids), exclude_used=payload.exclude_used,
+    ))
 
 
 def render_csat_html(questions: list[dict], title: str = 'BuildIt 수능 영어', preserve_order: bool = False) -> str:
@@ -3015,10 +3097,78 @@ def render_csat_explanation_html(questions: list[dict], title: str) -> str:
         @media(max-width:800px){{main{{columns:1}}}}</style><body><h1 contenteditable="true">{html.escape(title)} 해설</h1><main>{''.join(blocks)}</main></body></html>'''
 
 
+def _safe_csat_fragment(value: str) -> str:
+    fragment = re.sub(r'(?is)<(?:script|iframe|object|embed|form)\b.*?</(?:script|iframe|object|embed|form)>', '', value or '')
+    fragment = re.sub(r'''(?is)\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*')''', '', fragment)
+    return re.sub(r'(?i)javascript\s*:', '', fragment)
+
+
+def _daily_question_content(item: dict) -> str:
+    import html
+    raw = json.loads(item.get('raw_json') or '{}')
+    if raw.get('question_html'):
+        return _safe_csat_fragment(raw['question_html'])
+    choices = ''.join(f'<li>{html.escape(str(choice))}</li>' for choice in item.get('choices', []))
+    return f'''<h2>{item['question_no']}. {html.escape(item.get('prompt') or '')}</h2>
+        <div class="passage">{html.escape(item.get('passage') or '').replace(chr(10), '<br>')}</div><ol>{choices}</ol>'''
+
+
+def render_daily_problem_html(questions: list[dict], title: str) -> str:
+    import html
+    pages = []
+    days = sorted({int(item['day_no']) for item in questions})
+    for day_no in days:
+        day_items = [item for item in questions if item['day_no'] == day_no]
+        for page_index in range(0, len(day_items), 2):
+            blocks = ''.join(f'''<article class="daily-question" data-question-id="{item['id']}" data-day-no="{day_no}">
+                <div class="daily-question-content" contenteditable="true">{_daily_question_content(item)}</div></article>'''
+                for item in day_items[page_index:page_index + 2])
+            pages.append(f'''<section class="daily-page" data-day-no="{day_no}"><header><strong>Day {day_no}</strong>
+                <span>{html.escape(title)} · 수능 번호 유형 파악 훈련</span></header><main>{blocks}</main><footer>BuildIt DAILY · {day_no}</footer></section>''')
+    return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{html.escape(title)}</title><style>
+        @page{{size:A4;margin:0}}*{{box-sizing:border-box}}body{{margin:0;background:#ddd;color:#17120d;font-family:"Noto Serif KR","Malgun Gothic",serif}}
+        .daily-page{{width:210mm;min-height:297mm;margin:0 auto 8mm;background:white;padding:20mm 20mm 14mm;break-after:page;position:relative}}
+        header{{display:flex;align-items:flex-end;border-bottom:3px double #ad6708;margin-bottom:10mm;color:#a95f04}}
+        header strong{{display:grid;place-items:end start;width:35mm;height:28mm;padding:0 3mm 2mm;background:#b66b08;color:white;font:900 27px Arial}}
+        header span{{margin-left:auto;padding:0 0 3mm;font:800 14px "Malgun Gothic"}}main{{display:grid;gap:15mm}}
+        .daily-question{{break-inside:avoid;min-height:105mm;font-size:11.5px;line-height:1.55}}.daily-question :is(article,section){{margin:0}}
+        .daily-question h2{{font-size:12.5px}}.daily-question .passage{{text-align:justify}}.daily-question ol{{padding-left:22px}}
+        footer{{position:absolute;left:20mm;bottom:10mm;color:#b66b08;font:700 10px Arial}}[contenteditable=true]:focus{{outline:2px solid #df9b34;background:#fff8e9}}
+        @media(max-width:800px){{.daily-page{{width:100%;min-height:auto;margin:0;padding:24px}}}}@media print{{body{{background:white}}.daily-page{{margin:0}}}}</style>
+        <body>{''.join(pages)}</body></html>'''
+
+
+def render_daily_explanation_html(questions: list[dict], title: str) -> str:
+    import html
+    pages = []
+    for day_no in sorted({int(item['day_no']) for item in questions}):
+        blocks = []
+        for item in [question for question in questions if question['day_no'] == day_no]:
+            raw = json.loads(item.get('raw_json') or '{}')
+            explanation = _safe_csat_fragment(raw.get('explanation_html') or '')
+            if not explanation:
+                explanation = html.escape(item.get('solution') or '해설 없음').replace('\n', '<br>')
+            blocks.append(f'''<article class="daily-explanation" data-question-id="{item['id']}" data-day-no="{day_no}">
+                <h2>{item['question_no']}번 <span>정답 {html.escape(item.get('answer') or '')}</span></h2>
+                <div contenteditable="true">{explanation}</div></article>''')
+        pages.append(f'''<section class="daily-answer-page" data-day-no="{day_no}"><header><b>Day {day_no}</b><strong>정답과 해설</strong></header>
+            <main>{''.join(blocks)}</main><footer>{html.escape(title)} · {day_no}</footer></section>''')
+    return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{html.escape(title)} 정답과 해설</title><style>
+        @page{{size:A4;margin:0}}*{{box-sizing:border-box}}body{{margin:0;background:#d9d2c4;color:#271f15;font-family:"Noto Sans KR","Malgun Gothic",sans-serif}}
+        .daily-answer-page{{width:210mm;min-height:297mm;margin:0 auto 8mm;padding:18mm;background:#fff9e9;break-after:page;position:relative}}
+        header{{border-top:2px solid #b76b08;padding:7mm 0 5mm;color:#b76b08;display:flex;gap:8px;align-items:baseline}}header b{{font-size:18px}}header strong{{font-size:13px}}
+        main{{column-count:2;column-gap:10mm;column-rule:1px solid #ead5ad}}.daily-explanation{{break-inside:avoid;border-top:1px solid #d18a24;padding:5mm 0 7mm;font-size:10.5px;line-height:1.62}}
+        h2{{font-size:13px;margin:0 0 3mm;color:#2d251b}}h2 span{{color:#b76b08;margin-left:8px}}footer{{position:absolute;right:18mm;bottom:9mm;color:#9b6b2d;font-size:9px}}
+        [contenteditable=true]:focus{{outline:2px solid #df9b34;background:white}}@media(max-width:800px){{.daily-answer-page{{width:100%;min-height:auto;margin:0;padding:24px}}main{{column-count:1}}}}
+        @media print{{body{{background:white}}.daily-answer-page{{margin:0}}}}</style><body>{''.join(pages)}</body></html>'''
+
+
 @app.get('/api/csat/assessments/{assessment_id}/problem.html', response_class=HTMLResponse)
 def render_saved_assessment_problem(assessment_id: int):
     with get_db() as conn:
         assessment = _assessment_detail(conn, assessment_id)
+    if assessment['assessment_type'] == 'daily':
+        return render_daily_problem_html(assessment['items'], assessment['title'])
     return render_csat_html(assessment['items'], assessment['title'], preserve_order=True)
 
 
@@ -3026,6 +3176,8 @@ def render_saved_assessment_problem(assessment_id: int):
 def render_saved_assessment_explanation(assessment_id: int):
     with get_db() as conn:
         assessment = _assessment_detail(conn, assessment_id)
+    if assessment['assessment_type'] == 'daily':
+        return render_daily_explanation_html(assessment['items'], assessment['title'])
     return render_csat_explanation_html(assessment['items'], assessment['title'])
 
 
