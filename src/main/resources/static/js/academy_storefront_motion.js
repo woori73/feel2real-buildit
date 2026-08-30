@@ -8,6 +8,10 @@
  *   revealSequence(root)     — root 안의 .f2r-reveal 를 DOM 순서대로 stagger 등장(정보 위계).
  *   processProgress(list)    — list 안의 [data-step] 을 "커넥터 활성 → 다음 카드 활성" 순으로
  *                              순차 진행. 지나간 단계는 is-done, 끝나면 list 에 is-complete.
+ *   sceneFlow(sections)      — 각 Story Section 에 스크롤 위치 기반 data-scene = enter|active|exit
+ *                              을 준다(V2-10). 1회성 아님 — 위/아래 스크롤에 따라 다시 바뀐다
+ *                              (bidirectional). IntersectionObserver 만 쓰고 scroll 이벤트를 걸지
+ *                              않는다. CSS(academy_scene.css)가 opacity/translateY 로 표현한다.
  *
  * 규칙
  *   - scroll 이벤트를 직접 계산하지 않는다(IntersectionObserver만).
@@ -126,12 +130,75 @@
     }, opt);
   }
 
+  /**
+   * scene-flow (V2-10): PAGE = Vertical Story. 각 Story Section 이 스크롤 위치에 따라
+   *   enter  — 아직 뷰포트 아래(다음에 등장할 장면)
+   *   active — 현재 뷰포트를 차지한 장면
+   *   exit   — 위로 지나간 장면(퇴장)
+   * 을 data-scene 으로 표현한다. 1회성 entrance 가 아니라 **양방향** — 위로 다시 스크롤하면
+   * exit → active → enter 로 되돌아온다.
+   *
+   * IntersectionObserver 만 쓴다(scroll 이벤트 없음). threshold 교차마다 콜백이 오고,
+   * 그때 entry.boundingClientRect / rootBounds 로 상태를 계산한다 — 매 프레임 측정 루프 없음.
+   * 섹션에는 opacity + 작은 translateY 만 걸리므로(CSS) transform 이 IO rect 를 흔든다. 그래서
+   * 진입/이탈 임계치를 비대칭(dead-zone)으로 둬 상태가 튀지 않게 한다.
+   *
+   * data-story-staged(데스크톱 pin, academy_story.js) 섹션은 scene-flow 가 건드리지 않는다.
+   * INSTANT(reduced-motion / IO 미지원) → 전부 active(정적 최종 상태).
+   */
+  function classifyScene(rect, vh, prev) {
+    // 비대칭 임계치: active 로 돌아오려면 조금 더 들어와야 한다(transform 되먹임 방지).
+    if (prev === 'exit') {
+      return rect.bottom >= vh * 0.52 ? (rect.top >= vh * 0.60 ? 'enter' : 'active') : 'exit';
+    }
+    if (prev === 'enter') {
+      return rect.top <= vh * 0.48 ? (rect.bottom <= vh * 0.40 ? 'exit' : 'active') : 'enter';
+    }
+    if (rect.bottom <= vh * 0.40) return 'exit';
+    if (rect.top >= vh * 0.60) return 'enter';
+    return 'active';
+  }
+
+  function sceneFlow(sections) {
+    var els = Array.prototype.slice.call(sections || []).filter(Boolean);
+    if (!els.length) return null;
+    if (INSTANT) {
+      els.forEach(function (el) { el.setAttribute('data-scene', 'active'); });
+      return null;
+    }
+    var vhNow = global.innerHeight
+      || (global.document && global.document.documentElement && global.document.documentElement.clientHeight)
+      || 800;
+    // 초기 상태를 동기적으로 세팅(깜빡임 방지 — 이미 보이는 섹션은 active 로 시작).
+    els.forEach(function (el) {
+      if (el.getAttribute('data-story-staged') === 'true') { el.removeAttribute('data-scene'); return; }
+      if (typeof el.getBoundingClientRect === 'function') {
+        el.setAttribute('data-scene', classifyScene(el.getBoundingClientRect(), vhNow, null));
+      }
+    });
+    var thresholds = [0, 0.08, 0.16, 0.24, 0.32, 0.4, 0.5, 0.6, 0.68, 0.76, 0.84, 0.92, 1];
+    var io = new global.IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i += 1) {
+        var el = entries[i].target;
+        if (el.getAttribute('data-story-staged') === 'true') { el.removeAttribute('data-scene'); continue; }
+        var rb = entries[i].rootBounds;
+        var vh = (rb && rb.height) || global.innerHeight || 800;
+        var prev = el.getAttribute('data-scene');
+        var next = classifyScene(entries[i].boundingClientRect, vh, prev);
+        if (next !== prev) el.setAttribute('data-scene', next);
+      }
+    }, { threshold: thresholds });
+    els.forEach(function (el) { io.observe(el); });
+    return io;
+  }
+
   global.F2RStorefrontMotion = Object.freeze({
     reduced: REDUCED,
     supported: HAS_IO,
     onEnter: onEnter,
     revealSequence: revealSequence,
-    processProgress: processProgress
+    processProgress: processProgress,
+    sceneFlow: sceneFlow
   });
 
   // 모듈이 로드된 즉시(= academy_public.js 렌더보다 먼저) gate 클래스를 붙인다.
@@ -142,5 +209,8 @@
       && global.document.documentElement
       && global.document.documentElement.classList) {
     global.document.documentElement.classList.add('js-storefront-motion');
+    // scene-flow(V2-10) 게이트 — 붙어야만 academy_scene.css 의 초기 opacity/transform 이 걸린다.
+    // 모듈 미로드 시 이 클래스도 안 붙어 섹션이 정적으로 완전히 보인다.
+    global.document.documentElement.classList.add('js-scene');
   }
 })(typeof window !== 'undefined' ? window : globalThis);

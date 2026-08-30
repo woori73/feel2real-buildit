@@ -162,7 +162,7 @@
     const keyword = draftText(view, 'introHeading', INTRO_KEYWORD_DEFAULT);
     const title = maskedIntroTitle(draftText(view, 'introMotto', INTRO_TITLE_DEFAULT));
     const lead = draftText(view, 'introBodySecondary', INTRO_LEAD_DEFAULT);
-    return `<section id="sec-intro" data-builder-section-key="sec-intro" class="section-wrap intro-wrap notes snap" data-fade>
+    return `<section id="sec-intro" data-builder-section-key="sec-intro" class="section-wrap intro-wrap notes snap">
         <div class="notes-head" data-fade>
           <div class="eyebrow notes-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'notes-keyword', draftKey: 'introHeading', value: keyword, omitWhenEmpty: true })}</div>
           ${ctx.editableText({ tag: 'h2', className: 'section-head notes-title', draftKey: 'introMotto', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
@@ -722,7 +722,7 @@
       ? ctx.videoCollection(videos)
       : (videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER);
     const title = draftText(view, 'videosSectionTitle', videosTitleDefault(view));
-    return `<section id="sec-videos" data-builder-section-key="sec-videos" class="section-wrap" data-fade>
+    return `<section id="sec-videos" data-builder-section-key="sec-videos" class="section-wrap">
       <div class="section-inner">
         <div class="section-header">
           ${ctx.editableText({ tag: 'h2', className: 'section-title', draftKey: 'videosSectionTitle', value: title, omitWhenEmpty: true })}
@@ -797,7 +797,7 @@
       : ctx.miniLecturesEmpty();
     if (!body) return ''; // 공개 + 콘텐츠 없음 → 섹션 자체를 내지 않는다
     const title = draftText(view, 'miniLecturesSectionTitle', miniLecturesTitleDefault(view));
-    return `<section id="sec-minilectures" data-builder-section-key="sec-minilectures" class="section-wrap" data-fade>
+    return `<section id="sec-minilectures" data-builder-section-key="sec-minilectures" class="section-wrap">
       <div class="section-inner">
         <div class="section-header">
           <div class="eyebrow"><span class="stroke"></span>미니 강의</div>
@@ -825,7 +825,7 @@
     const slot = isHorizontalCollection(view, 'lessonsLayout')
       ? ctx.lessonCollection(view.lessons || [])
       : ctx.renderLessonShowcase(view.lessons || []);
-    return `<section id="sec-lessons" data-builder-section-key="sec-lessons" class="section-wrap classes-wrap" data-fade>
+    return `<section id="sec-lessons" data-builder-section-key="sec-lessons" class="section-wrap classes-wrap">
         <div class="section-inner classes-container">
           <div class="section-head classes-head">
             <div class="eyebrow"><span class="stroke"></span>대표 수업</div>

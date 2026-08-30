@@ -21,24 +21,52 @@ const publicCss = read('../../main/resources/static/css/academy_public.css');
 const publicJs = read('../../main/resources/static/js/academy_public.js');
 const publicTemplate = read('../../main/resources/templates/public/academy_public.html');
 
-test('given 렌더된 섹션 when 마크업을 확인 then 공개·빌더 모두 data-fade를 갖는다', () => {
+test('given 렌더된 섹션 when 마크업을 확인 then 공개·빌더 모두 모션 앵커를 갖는다', () => {
   for (const [name, hooks] of bothRenderers()) {
     // given
     const academy = academyFixture();
     primeRenderer(hooks, academy);
 
-    // when / then — 정본 모듈이 내므로 두 화면이 같은 앵커를 갖는다
+    // 비-Story 섹션은 GSAP [data-fade] reveal 앵커를 유지한다
     for (const [label, html] of [
       ['hero', hooks.renderHero(academy)],
-      ['intro', hooks.renderIntro(academy)],
       ['principal', hooks.renderPrincipal(academy)],
-      ['videos', hooks.renderVideos(academy)],
-      ['lessons', hooks.renderLessons(academy)],
       ['social', hooks.renderExternalServices(academy)]
     ]) {
       assert.match(html, /data-fade/, `${name}/${label}: reveal 앵커가 없다`);
     }
+
+    // V2-10: 주요 Story Section 은 섹션 레벨 [data-fade] 대신 Vertical Scene Flow(data-scene,
+    // wireSceneFlow)를 쓴다 — GSAP data-fade 와 같은 요소에 겹치지 않는다.
+    for (const [label, html] of [
+      ['videos', hooks.renderVideos(academy)],
+      ['lessons', hooks.renderLessons(academy)]
+    ]) {
+      assert.doesNotMatch(html, /<section[^>]*\bdata-fade\b/, `${name}/${label}: 섹션에 data-fade 잔존`);
+    }
   }
+});
+
+test('given V2-10 Scene Flow when 배선을 확인 then 주요 Story Section 을 IntersectionObserver 로 잡는다', () => {
+  const motionSrc = require('node:fs').readFileSync(
+    require('node:path').resolve(__dirname, '../../main/resources/static/js/academy_storefront_motion.js'), 'utf8');
+  // primitive: IO 만, scroll 이벤트 없음, enter/active/exit 3-state 양방향
+  assert.match(motionSrc, /function sceneFlow\(/);
+  assert.match(motionSrc, /new global\.IntersectionObserver/);
+  assert.doesNotMatch(motionSrc, /addEventListener\(['"]scroll['"]/);
+  assert.match(motionSrc, /'enter'/);
+  assert.match(motionSrc, /'active'/);
+  assert.match(motionSrc, /'exit'/);
+  // 데스크톱 pin(academy_story.js) 섹션은 건드리지 않는다
+  assert.match(motionSrc, /data-story-staged/);
+  // public.js 배선: 재렌더마다 이전 IO disconnect, Story Section id 목록
+  assert.match(publicJs, /function wireSceneFlow\(\)/);
+  assert.match(publicJs, /sceneFlowObserver[\s\S]{0,40}disconnect\(\)/);
+  assert.match(publicJs, /STORY_SCENE_IDS/);
+  assert.match(publicJs, /'sec-featured'[\s\S]{0,120}'sec-intro'/);
+  // hero 는 scene-flow 목록에서 제외(academy_story.js exit 이 담당)
+  const idsBlock = publicJs.slice(publicJs.indexOf('STORY_SCENE_IDS'), publicJs.indexOf('STORY_SCENE_IDS') + 260);
+  assert.doesNotMatch(idsBlock, /'sec-hero'/);
 });
 
 test('given GSAP 미로드 when 페이지를 보면 then 섹션이 숨겨지지 않는다', () => {
@@ -67,8 +95,8 @@ test('given 재렌더 when reveal을 다시 적용 then 이미 처리한 요소�
   assert.match(publicJs, /el\.dataset\.fadeWired === 'true'/);
   assert.match(publicJs, /el\.dataset\.fadeWired = 'true'/);
   assert.match(publicJs, /dataset\.motionWired !== 'true'/);
-  // render() 안에서 GSAP reveal + Storefront 모션이 순서대로 호출되어야 CSR 렌더 뒤에 잡힌다
-  assert.match(publicJs, /applyReveal\(\);\s*\n\s*wireStory\(\);\s*\n\s*wireStorefrontMotion\(\);\s*\n\s*wireContentCollections\(\);\s*\n\s*wireFeaturedSelector\(\);\s*\n\s*void loadVisitStatistics/);
+  // render() 안에서 GSAP reveal + Storefront 모션 + Scene Flow 가 순서대로 호출되어야 CSR 렌더 뒤에 잡힌다
+  assert.match(publicJs, /applyReveal\(\);\s*\n\s*wireStory\(\);\s*\n\s*wireStorefrontMotion\(\);\s*\n\s*wireSceneFlow\(\);\s*\n\s*wireContentCollections\(\);\s*\n\s*wireFeaturedSelector\(\);\s*\n\s*void loadVisitStatistics/);
 });
 
 test('given Storefront 모션 when 책임 분리를 확인 then Featured/AI Native는 GSAP data-fade가 아니라 primitive를 쓴다', () => {

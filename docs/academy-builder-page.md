@@ -512,6 +512,70 @@ Actual Class(`sec-videos`) = "실제 수업 현장/분위기/신뢰". **Mini Lec
   빌더 빈→placeholder, 카드 구조, V2-8 media viewport 재사용, 깨진 JSON·정규화·최대 12개, 공개/빌더
   SSoT, 모달·배선·블록. 로컬 harness 375/390/1280 — 재생 전후 뷰포트 유지·crop 없음·가로밀림 없음.
 
+## 17. 2026-08-31 변경: Storefront V2-10 — Vertical Scene Flow
+
+### 부족했던 점
+
+모바일에서 세로 스크롤하면 각 섹션이 일반 긴 웹페이지처럼 연속으로 지나갔다. 원인:
+- `academy_story.js`(GSAP pin/scrub, 양방향 ENTER→ACTIVE→EXIT)는 **데스크톱 전용**(`minWidth: 761`),
+  모바일은 no-op 정적 폴백.
+- 모바일에 남는 모션은 `[data-fade]` GSAP 1회성 페이드인 + `revealSequence`/`processProgress`
+  1회성 등장뿐. **ACTIVE→EXIT 없음** — 이전 장면이 "퇴장"하지 않고 그냥 스크롤로 사라진다.
+
+### 공통 Vertical Scene 계약 — enter / active / exit (양방향)
+
+- primitive: `academy_storefront_motion.js` `sceneFlow(sections)` — 각 Story Section 에
+  `data-scene = enter | active | exit` 을 준다. **1회성 아님** — 스크롤 위치에 따라 다시 바뀐다
+  (위로 올라가면 exit → active → enter 로 역전).
+- **IntersectionObserver 만** 쓴다. scroll 이벤트 없음. threshold 배열(13단계) 교차마다 콜백이 오고
+  `entry.boundingClientRect` / `rootBounds` 로 상태 계산 — 매 프레임 측정 루프 없음.
+  초기 상태는 `getBoundingClientRect` 로 1회 동기 세팅(깜빡임 방지).
+- 섹션 transform 이 IO rect 를 흔들지 않게: 섹션엔 **opacity 만**, 자식(`> *`)엔 **translateY** 만.
+  진입/이탈 임계치를 비대칭(dead-zone: enter 60%↕48%, exit 40%↕52%)으로 둬 튀지 않는다.
+- `data-story-staged`(데스크톱 pin) 섹션은 `sceneFlow` 가 스스로 건너뛴다 — `academy_story.js` 와
+  같은 요소를 만지지 않는다. 모바일은 pin 이 없어 digitaltwin 도 scene-flow 로 등장/퇴장.
+
+### 표현 — academy_scene.css (신규)
+
+- 전부 `html.js-scene` 스코프(`academy_storefront_motion.js` 로드 시 게이트 클래스). 모듈 미로드 →
+  정적. 빌더 캔버스는 motion 을 로드하지 않으므로 js-scene 도 없다.
+- `enter`: 섹션 opacity .38, 자식 `translateY(26px) scale(.992)` — 아래에서 흐리게 대기.
+- `active`: opacity 1, `transform: none` — stage 를 차지.
+- `exit`: opacity .28, 자식 `translateY(-20px) scale(.99)` — 위로 밀리며 흐려짐.
+- transition `.55s var(--ease)`. compositor-only(opacity/transform). 100vh 강제·scroll hijack·
+  parallax·회전·큰 zoom 없음 — 네이티브 세로 스크롤 그대로.
+- `@media (prefers-reduced-motion: reduce)` → 전부 `opacity:1 !important; transform:none !important`.
+
+### 대상 Story Section
+
+`academy_public.js` `wireSceneFlow()` 가 `STORY_SCENE_IDS` (`sec-featured`, `sec-digitaltwin`,
+`sec-videos`, `sec-minilectures`, `sec-lessons`, `sec-intro`) 를 잡는다. `sec-hero` 제외
+(`academy_story.js` `exit` 담당). CSR 재렌더마다 이전 IO `disconnect`.
+`academy_sections.js` 는 이 6개 중 섹션 레벨 `data-fade` 를 제거(`sec-videos`/`sec-minilectures`/
+`sec-lessons`/`sec-intro`) — GSAP `[data-fade]` 와 scene-flow 가 같은 섹션을 이중으로 페이드하지
+않게. 내부 요소 `[data-fade]`(`.notes-head`, `.p-card` 등)와 비-Story 섹션(`sec-philosophy`/
+`sec-principal`/`sec-social`)의 `data-fade` 는 유지.
+
+### Horizontal 과 분리
+
+scene-flow 의 translateY 는 **섹션의 직계 자식(`> *`)만** — 가로 컬렉션(`.f2r-collection-track`,
+`.section-inner` 안쪽)은 건드리지 않는다. 세로 Story 이동과 가로 swipe/scroll-snap 이 충돌 안 함.
+
+### V2-8 재생 유지
+
+`.f2r-media-player` 는 `.f2r-media-viewport`(position:relative) 안에 있어 containing block 이
+transform 된 섹션이 아니다 → 재생 후에도 player viewport 불변·crop 없음·phone frame 유지.
+
+### 캐시버스팅 / 검증
+
+- `academy_storefront_motion.js?v=20260831-4`, `academy_sections.js?v=20260831-4`,
+  `academy_public.js?v=20260831-4`, 신규 `academy_scene.css?v=20260831-4`.
+- `node --test src/test/js/academy_scene.test.js` (신규) + `academy_storefront_motion.test.js`
+  (sceneFlow API·양방향·pin 제외·reduced-motion) + `academy_public_reveal.test.js`(배선·책임 분리).
+- 로컬 harness 390/1280: 스크롤 DOWN → featured active→exit / videos active / … / intro active,
+  스크롤 UP → 정확히 역전. IO 발화 확인, CSS opacity/translateY 전환 실측, 가로 swipe 무충돌,
+  page horizontal overflow 없음.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

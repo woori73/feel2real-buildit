@@ -127,16 +127,15 @@ test('academy_public.css: 선택 상태/포커스/무대 스타일이 정의된�
   assert.match(PUBLIC_CSS, /\.featured-selected strong\{color:var\(--ultramarine\)/);
 });
 
-test('캐시버스팅: sections/public/builder/collection 자산 버전이 함께 올라간다', () => {
-  // V2-9: sec-minilectures — academy_sections.js + academy_public.js + academy_builder.js
-  //       + academy_collection.css 변경
-  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260831-3/);
-  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260831-3/);
-  assert.match(PUBLIC_HTML, /academy_collection\.css\?v=20260831-3/);
+test('캐시버스팅: 변경된 storefront 자산 버전이 함께 올라간다', () => {
+  // V2-10: Vertical Scene Flow — academy_storefront_motion.js + academy_sections.js
+  //        + academy_public.js + 신규 academy_scene.css 변경
+  assert.match(PUBLIC_HTML, /academy_storefront_motion\.js\?v=20260831-4/);
+  assert.match(PUBLIC_HTML, /academy_scene\.css\?v=20260831-4/);
+  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260831-4/);
+  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260831-4/);
   assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260830-4/);
-  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260831-3/);
-  assert.match(BUILDER_HTML, /academy_builder\.js\?v=20260831-3/);
-  assert.match(BUILDER_HTML, /academy_collection\.css\?v=20260831-3/);
+  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260831-4/);
 });
 
 test('sections.js featured 영역에 학교/연도/시즌 하드코딩이 없다', () => {
