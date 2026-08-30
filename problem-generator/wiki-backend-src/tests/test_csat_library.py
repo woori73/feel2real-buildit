@@ -31,7 +31,8 @@ class CsatLibraryTest(unittest.TestCase):
             ids = []
             csat_type = main.csat_type_for_number(question_no)
             for index in range(count):
-                raw = {'explanation_html': f'<b>fixture explanation {index}</b>'}
+                raw = {'question_html': f'<article class="question"><h2>Original fixture {index}</h2><div class="passage">Passage {index}</div></article>',
+                       'explanation_html': f'<b>fixture explanation {index}</b>'}
                 cursor = conn.execute('''INSERT INTO csat_questions
                     (source_id,exam_kind,question_no,csat_type_id,csat_type_name,passage,prompt,choices_json,answer,solution,raw_json,created_at)
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
@@ -152,9 +153,23 @@ class CsatLibraryTest(unittest.TestCase):
         self.assertEqual([1, 1, 1, 1, 2, 2, 2, 2], [item['day_no'] for item in body['items']])
         problem = client.get(f"/api/csat/assessments/{body['id']}/problem.html").text
         explanation = client.get(f"/api/csat/assessments/{body['id']}/explanation.html").text
+        self.assertIn('class="daily-page"', problem)
+        self.assertIn('class="daily-answer-page"', explanation)
+        self.assertIn('Original fixture 0', problem)
+        self.assertIn('fixture explanation 0', explanation)
         for document in (problem, explanation):
             offsets = [document.index(f'data-question-id="{question_id}"') for question_id in ids]
             self.assertEqual(sorted(offsets), offsets)
+
+        replacement = self.seed_csat_questions(1, 39)[0]
+        changed = client.patch(f"/api/csat/assessments/{body['id']}/items/3", json={'question_id': replacement})
+        self.assertEqual(200, changed.status_code)
+        expected = [ids[0], ids[1], replacement, *ids[3:]]
+        for path in ('problem.html', 'explanation.html'):
+            document = client.get(f"/api/csat/assessments/{body['id']}/{path}").text
+            offsets = [document.index(f'data-question-id="{question_id}"') for question_id in expected]
+            self.assertEqual(sorted(offsets), offsets)
+            self.assertNotIn(f'data-question-id="{ids[2]}"', document)
 
     def test_insufficient_exclude_used_selection_does_not_save_partial_assessment(self):
         ids = self.seed_csat_questions(1, 24)
@@ -167,6 +182,36 @@ class CsatLibraryTest(unittest.TestCase):
         self.assertEqual(409, failed.status_code)
         with main.get_db() as conn:
             self.assertEqual(before, conn.execute('SELECT COUNT(*) FROM csat_assessments').fetchone()[0])
+
+    def test_wrong_answer_links_to_question_and_composes_without_pii_fixture(self):
+        ids = self.seed_csat_questions(2, 21)
+        client = TestClient(main.app)
+        wrong_ids = []
+        for index, question_id in enumerate(ids):
+            response = client.post('/api/csat/wrong-answers', json={
+                'question_id': question_id, 'student_name': f'TEST_STUDENT_{index + 1:03d}',
+                'exam_name': 'TEST_EXAM', 'question_no': 21, 'wrong_answer': '2', 'correct_answer': '1',
+            })
+            self.assertEqual(201, response.status_code)
+            self.assertEqual(question_id, response.json()['question_id'])
+            wrong_ids.append(response.json()['id'])
+        created = client.post('/api/csat/wrong-assessments', json={
+            'title': 'Fixture WRONG', 'wrong_answer_ids': wrong_ids, 'exclude_used': False,
+        })
+        self.assertEqual(201, created.status_code)
+        self.assertEqual(ids, created.json()['question_ids'])
+        problem = client.get(f"/api/csat/assessments/{created.json()['id']}/problem.html").text
+        explanation = client.get(f"/api/csat/assessments/{created.json()['id']}/explanation.html").text
+        for question_id in ids:
+            self.assertIn(f'data-question-id="{question_id}"', problem)
+            self.assertIn(f'data-question-id="{question_id}"', explanation)
+
+    def test_wrong_link_rejects_mismatched_question_number(self):
+        question_id = self.seed_csat_questions(1, 34)[0]
+        response = TestClient(main.app).post('/api/csat/wrong-answers', json={
+            'question_id': question_id, 'student_name': 'TEST_STUDENT_999', 'question_no': 39,
+        })
+        self.assertEqual(400, response.status_code)
 
 
 if __name__ == '__main__': unittest.main()
