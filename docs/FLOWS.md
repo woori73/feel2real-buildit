@@ -812,3 +812,19 @@ Wiki 홈
 4. 저장 버튼은 공통 `POST /api/csat/assessments`만 호출한다. UI가 별도 조합/usage 로직을 갖지 않는다.
 5. 저장 목록에서 같은 Assessment ID의 문제 HTML과 해설 HTML을 다시 연다.
 6. WRONG 탭은 기존 수능 오답 저장 흐름을 유지하며, 실제 오답과 Question ID 연결은 별도 WRONG composer 단계에서 확장한다.
+
+## WRONG Composer
+
+1. 기존 `csat_wrong_answers`에 학생 오답을 계속 누적하되, 선택한 `csat_questions.id`를 nullable 연결값으로 함께 저장한다.
+2. Question 번호가 오답 번호와 같은지 서버가 검증한다. 기존 연결 없는 record도 그대로 조회된다.
+3. WRONG 탭에서 Question이 연결된 오답만 선택할 수 있다.
+4. 공통 Assessment에 연결된 Question ID 순서를 저장하고, 성공한 transaction에서만 usage를 기록한다.
+5. WRONG 문제/해설 HTML은 Question 원문·정답·해설을 공통 renderer로 복원한다. 학생 식별정보는 HTML 콘텐츠에 넣지 않는다.
+
+## DAILY 전용 문제·해설 흐름
+
+1. 하루당 같은 수능 번호 유형의 Question 4개를 선택하며 여러 날이면 `4 × days`개를 하나의 Assessment에 저장한다.
+2. `exclude_used`는 저장된 모든 Assessment usage에 이미 존재하는 Question을 제외한다.
+3. Problem Renderer는 공식 Reference의 금색 Day 헤더와 흰 문제 페이지를, Explanation Renderer는 크림색 2단 해설 페이지를 적용한다.
+4. 두 renderer는 같은 Assessment item 배열을 position 순으로 읽는다. 별도 explanation Question 목록을 만들지 않는다.
+5. item 교체 API는 한 position의 Question ID만 바꾸고 `day_no`를 유지한다. 따라서 문제와 대응 해설이 동시에 같은 ID로 변경된다.
