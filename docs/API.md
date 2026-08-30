@@ -3373,3 +3373,20 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/exam-materials/{id}/json`: canonical JSON을 연다.
 - 수업 인사이트 생성/조회는 기존 `educator-insights` API에 `year`, `semester`, `exam`,
   `source=director|school_teacher`를 선택적으로 추가한다. 과거 row의 빈 Context도 안전하게 유지한다.
+
+## 수능 HTML Batch Import
+
+### ✅ POST /api/csat/html-imports/preview
+
+- 목적: 최대 50개의 수능 HTML 파일을 한 번에 받아 파일별 문항을 분리하고 발문 기반 번호 유형 후보를 검수용으로 반환한다.
+- 현재 사용처: React Wiki `고3 수능 영어 자료 제작`.
+- 인증/권한: Spring Wiki 프록시와 기존 인증 정책을 그대로 따른다. URL query의 `role` 값은 권한 근거로 사용하지 않는다.
+- Request: `multipart/form-data`
+  - `files`: `.html` 또는 `.htm`, 파일당 10MB 이하, 전체 30MB 이하, 최대 50개, UTF-8.
+  - `exam_kind`: `half` 또는 `full`.
+  - `title`, `year`, `round`: 선택 메타데이터.
+- Response `201`: `file_count`, `question_count`, `review_count`, `files[]`. 각 파일에는 기존 import preview 계약과 `source_question_no`, `candidate_numbers`, `classification_status`, `classification_reason`, `question_html`, `explanation_html`이 포함될 수 있다.
+- 저장 정책: preview 단계에서는 SQLite를 변경하지 않는다. 검수 후 기존 `POST /api/csat/imports/commit`으로 파일별 저장하며 HTML fragment는 문항 `raw_json`에 보존한다.
+- 실패: 지원하지 않는 확장자/비 UTF-8/제한 초과/문항 미인식은 `400`; 전체 파일이 실패하면 preview를 생성하지 않는다.
+
+
