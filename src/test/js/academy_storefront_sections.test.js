@@ -109,3 +109,46 @@ test('빌더 렌더는 편집 앵커를 얹고 공개 렌더는 얹지 않는다
   assert.doesNotMatch(publicFeatured, /data-builder-draft/);
   assert.match(publicFeatured, /onclick="requestConsult\(\)"/);
 });
+
+// ── PHASE 2.1: 섹션 제목 독립 + Storefront 중앙 정렬 ─────────────────────────
+
+const fs = require('node:fs');
+const path = require('node:path');
+const PUBLIC_CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/academy_public.css'), 'utf8');
+
+test('sec-videos / sec-social 제목은 학원명·고정문구가 아니라 독립 draft 키로 편집한다', () => {
+  for (const [kind, hooks] of bothRenderers()) {
+    // 미설정: 기존 사이트 호환 — 학원명 파생값 / 고정 문구로 fallback
+    const base = academyFixture({ name: '테스트영어교실', pageSettings: { sectionVisibility: {}, builderDraft: {} } });
+    primeRenderer(hooks, base, []);
+    assert.match(hooks.renderVideos(base), /테스트영어교실의 수업 현장/, `${kind}: videos 기본 제목 fallback`);
+    assert.match(hooks.renderExternalServices(base), /최신 소식 (&|&amp;) 방문 안내/, `${kind}: social 기본 제목 fallback`);
+
+    // 설정: 각 섹션 제목을 서로 다른 값으로 독립 편집
+    const custom = academyFixture({ name: '테스트영어교실', pageSettings: {
+      sectionVisibility: {},
+      builderDraft: { videosSectionTitle: '에듀홀릭의 실제 수업 현장', socialSectionTitle: '학원 소식과 오시는 길' }
+    }});
+    primeRenderer(hooks, custom, []);
+    const v = hooks.renderVideos(custom);
+    const s = hooks.renderExternalServices(custom);
+    assert.match(v, /에듀홀릭의 실제 수업 현장/, `${kind}: videos 커스텀 제목 미반영`);
+    assert.doesNotMatch(v, /테스트영어교실의 수업 현장/, `${kind}: videos 옛 파생 제목 잔존`);
+    assert.match(s, /학원 소식과 오시는 길/, `${kind}: social 커스텀 제목 미반영`);
+    if (kind === 'builder') {
+      assert.match(v, /data-builder-draft="videosSectionTitle"/, 'builder: videos 제목 편집 앵커 없음');
+      assert.match(s, /data-builder-draft="socialSectionTitle"/, 'builder: social 제목 편집 앵커 없음');
+    } else {
+      assert.doesNotMatch(v + s, /data-builder-draft/, 'public: 편집 앵커 누수');
+    }
+  }
+});
+
+test('공개 CSS 리셋이 Storefront 설명/주석의 auto 마진과 margin-top을 덮지 않는다', () => {
+  // #publicView :is(h1..p) 리셋은 specificity가 높아 클래스 규칙을 이긴다 →
+  // featured-desc/ai-process-desc/ai-process-note가 예외 목록에 있어야 중앙 정렬 + 카드 겹침 방지가 유지된다.
+  assert.match(PUBLIC_CSS, /:not\([^)]*\.featured-desc[^)]*\.ai-process-desc[^)]*\.ai-process-note[^)]*\)\{margin:0;\}/);
+  assert.match(PUBLIC_CSS, /\.featured-desc\{margin:16px auto 0;[^}]*max-width:600px/);
+  assert.match(PUBLIC_CSS, /\.ai-process-desc\{margin:14px auto 0;[^}]*max-width:620px/);
+  assert.match(PUBLIC_CSS, /\.ai-process-note\{margin:32px auto 0;max-width:600px;text-align:center/);
+});

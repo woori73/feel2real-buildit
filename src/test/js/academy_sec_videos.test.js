@@ -117,8 +117,11 @@ test('given sec-videos 섹션 골격 when 공개·빌더를 렌더 then 제목�
     // when
     const html = primeRenderer(hooks, academy, []).renderVideos(academy);
 
-    // then
-    assert.match(html, /<h2 class="section-title">테스트학원의 수업 현장<\/h2>/, `${name}: section-title 없음`);
+    // then — 제목은 videosSectionTitle draft로 독립 편집한다. 미설정이면 학원명에서 파생한 기본값.
+    assert.match(html, /<h2 class="section-title"[^>]*>테스트학원의 수업 현장<\/h2>/, `${name}: section-title 없음`);
+    if (name === 'builder') {
+      assert.match(html, /data-builder-draft="videosSectionTitle"/, 'builder: 수업 현장 제목 편집 앵커 없음');
+    }
     assert.doesNotMatch(html, /<span class="section-badge">수업 영상<\/span>/, `${name}: 배지가 남아 있음`);
     assert.doesNotMatch(html, /<p class="section-sub">/, `${name}: 안내문이 남아 있음`);
     assert.doesNotMatch(html, /cv-eyebrow|cv-h2/, `${name}: 히어로 전용 클래스가 남아 있음`);

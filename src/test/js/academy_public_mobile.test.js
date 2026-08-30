@@ -123,19 +123,23 @@ test('given 빌더 캔버스 when 경계를 확인 then 발행 화면과 같은 
 });
 
 /**
- * 이 리셋은 specificity가 (1,0,1)이라 클래스 규칙을 전부 이긴다.
- * V8 제목(h1/h2)·인용문(p)이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 통째로 사라진다.
+ * 이 리셋은 specificity가 (1,1,1)이라 클래스 규칙을 전부 이긴다.
+ * V8 제목(h1/h2)·인용문(p), Storefront 설명/주석이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이
+ * 통째로 사라진다(margin:X auto 0의 auto가 0으로, margin-top이 0으로 덮여 카드와 겹친다).
  */
 test('given the publicView margin reset then hero and notes typography keeps its own spacing', () => {
   const css = compact(publicCss);
 
-  // 리셋이 notes 요소를 건드리지 않아야 한다
-  assert.match(css, /#publicView:is\(h1,h2,h3,h4,p\):not\(\.notes-title,\.notes-quote\)\{margin:0;\}/);
+  // 리셋이 notes 요소와 Storefront 설명/주석을 건드리지 않아야 한다
+  assert.match(css, /#publicView:is\(h1,h2,h3,h4,p\):not\(\.notes-title,\.notes-quote,\.featured-desc,\.ai-process-desc,\.ai-process-note\)\{margin:0;\}/);
   // 새 히어로는 h1과 quote가 자기 여백을 직접 가진다.
   assert.ok(includesDecl(css, 'margin:0;'));
   assert.ok(includesDecl(css, 'margin:18px 0 0;'));
   // .notes-quote는 auto가 빠지면 블록이 왼쪽으로 붙어 가운데 정렬을 잃는다
   assert.ok(includesDecl(css, 'margin:16px auto 0;'));
+  // Storefront 설명/주석도 auto 마진과 margin-top이 리셋에 덮이지 않아야 한다(카드 겹침 방지)
+  assert.ok(includesDecl(css, 'margin:14px auto 0;'), 'ai-process-desc 중앙 정렬 마진');
+  assert.ok(includesDecl(css, 'margin:32px auto 0;'), 'ai-process-note margin-top 확보 + 중앙 정렬');
 });
 
 test('given narrow portrait phone when rendering published academy then header actions cards and modal stay inside viewport', () => {
