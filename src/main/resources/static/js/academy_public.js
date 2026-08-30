@@ -108,7 +108,20 @@
       + renderFooter(academy);
     applyReveal();
     wireStorefrontMotion();
+    wireContentCollections();
     void loadVisitStatistics(academy, ownAcademy);
+  }
+
+  /**
+   * Horizontal Content Collection(sec-lessons / sec-videos 가로 레이아웃)의 배선.
+   * academy_collection.js primitive를 쓴다 — 화살표 스크롤 + 비디오 카드 인라인 재생만.
+   * Story 모션(3-A)과 분리: 등장 애니메이션·자동 캐러셀 없음(사용자가 직접 둘러본다).
+   * 모듈이 없으면(로드 실패) 아무것도 하지 않고 콘텐츠는 정적 shelf로 완전히 보인다.
+   */
+  function wireContentCollections() {
+    const COLLECTION = window.F2RAcademyCollection;
+    if (!COLLECTION || !root) return;
+    COLLECTION.wire(root);
   }
 
   /**

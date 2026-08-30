@@ -44,8 +44,8 @@ class AcademyBuilderTemplateContractTest {
     assertThat(html)
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
-            "<script src=\"/js/academy_sections.js?v=20260830-3\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260830-1\"></script>");
+            "<script src=\"/js/academy_sections.js?v=20260830-4\"></script>",
+            "<script src=\"/js/academy_builder.js?v=20260830-2\"></script>");
   }
 
   @Test
@@ -691,6 +691,46 @@ class AcademyBuilderTemplateContractTest {
         .contains("if (!window.F2RBuilderTextUtils)")
         .contains(
             "throw new Error('F2RBuilderTextUtils must be loaded before academy_builder.js')");
+  }
+
+  @Test
+  @DisplayName("given 3-B Horizontal Content Collection when 자산/배선을 확인 then 공통 shell 한 벌 + opt-in draft 키만 쓴다")
+  void horizontal_content_collection_shares_one_shell_and_is_opt_in() throws Exception {
+    // given
+    String publicHtml = Files.readString(Path.of("src/main/resources/templates/public/academy_public.html"));
+    String builderHtml = Files.readString(Path.of("src/main/resources/templates/tutor/academy_builder.html"));
+    String sections = Files.readString(Path.of("src/main/resources/static/js/academy_sections.js"));
+    String builderJs = Files.readString(Path.of("src/main/resources/static/js/academy_builder.js"));
+    String service = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyService.java"));
+
+    // when & then — 배선 모듈은 공개 템플릿에만, 정본 모듈보다 먼저 로드된다.
+    assertThat(publicHtml)
+        .contains("/css/academy_collection.css")
+        .containsSubsequence(
+            "/js/academy_collection.js", "/js/academy_sections.js", "/js/academy_public.js");
+    assertThat(builderHtml).contains("/css/academy_collection.css");
+
+    // then — 공통 shell 한 벌 + Program/Video 는 그 위의 card type(별도 캐러셀 아님).
+    assertThat(sections)
+        .contains("function renderCollectionShell(")
+        .contains("function programCardHtml(")
+        .contains("function videoCardHtml(")
+        .contains("isHorizontalCollection(view, 'lessonsLayout')")
+        .contains("isHorizontalCollection(view, 'videosLayout')");
+
+    // then — opt-in draft 키만 서버 화이트리스트에 추가(sectionVisibility/sectionOrder 는 불변).
+    assertThat(service).contains("\"lessonsLayout\"").contains("\"videosLayout\"");
+
+    // then — 빌더는 섹션 편집 컨트롤에서 레이아웃을 토글한다.
+    assertThat(builderJs)
+        .contains("COLLECTION_LAYOUT_KEYS")
+        .contains("toggleCollectionLayout")
+        .contains("appendCollectionLayoutControl(controls, section)");
+
+    // then — 자동 캐러셀/등장 애니메이션 없음(Story 3-A 와 분리).
+    String collectionJs = Files.readString(Path.of("src/main/resources/static/js/academy_collection.js"));
+    assertThat(collectionJs).doesNotContain("setInterval").contains("scrollBy");
   }
 
   @Test

@@ -3353,10 +3353,45 @@
     const controls = document.createElement('div');
     controls.className = 'block-controls builder-section-controls' + (isHeader ? ' builder-header-controls' : '');
     controls.appendChild(sectionControlButton('fa-check', '적용', '', () => applySectionTextChanges(section)));
+    appendCollectionLayoutControl(controls, section);
     if (!isHeader) {
       controls.appendChild(sectionControlButton('fa-trash', '삭제', 'danger', () => hideSelectedSection(section)));
     }
     section.appendChild(controls);
+  }
+
+  // ── Horizontal Content Collection 레이아웃 선택 (PHASE 3-B) ──────────────
+  // sec-lessons(Program) / sec-videos(Video)는 "기존 레이아웃"과 "가로 컬렉션 shelf" 중
+  // 하나를 고를 수 있다. 값은 builderDraft.lessonsLayout / videosLayout 이며 'horizontal' 일 때만
+  // opt-in(그 외/미설정이면 기존 레이아웃). 다른 학원 사이트는 이 키가 없으므로 그대로 유지된다.
+  const COLLECTION_LAYOUT_KEYS = { 'sec-lessons': 'lessonsLayout', 'sec-videos': 'videosLayout' };
+
+  function isHorizontalLayout(draftKey) {
+    return String(draftText(currentPreview, draftKey, '') || '').trim().toLowerCase() === 'horizontal';
+  }
+
+  function appendCollectionLayoutControl(controls, section) {
+    const sectionId = canonicalSectionId(section.dataset.builderSectionKey);
+    const draftKey = COLLECTION_LAYOUT_KEYS[sectionId];
+    if (!draftKey || !currentPreview) return;
+    const label = isHorizontalLayout(draftKey) ? '레이아웃: 가로' : '레이아웃: 기본';
+    controls.appendChild(sectionControlButton('fa-table-columns', label, '', () => toggleCollectionLayout(sectionId, draftKey)));
+  }
+
+  function toggleCollectionLayout(sectionId, draftKey) {
+    if (!currentPreview) return;
+    const next = isHorizontalLayout(draftKey) ? '' : 'horizontal';
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    pageSettings.builderDraft = Object.assign({}, pageSettings.builderDraft || {}, { [draftKey]: next });
+    currentPreview.pageSettings = pageSettings;
+    populatePreview(currentPreview);
+    persistVariableListChange();
+    toast(
+      next === 'horizontal'
+        ? '가로 컬렉션 레이아웃으로 전환했습니다. 발행 시 저장됩니다.'
+        : '기본 레이아웃으로 되돌렸습니다. 발행 시 저장됩니다.',
+      'fa-table-columns'
+    );
   }
 
   function sectionControlButton(icon, label, extraClass, action) {
