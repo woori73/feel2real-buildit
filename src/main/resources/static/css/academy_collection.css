@@ -65,6 +65,7 @@
   overflow-y: hidden;
   scroll-snap-type: x proximity;
   scroll-padding-left: 4px;
+  scroll-behavior: smooth;           /* 화살표 이동의 부드러움은 CSS 가 담당(JS 는 위치만 세팅) */
   overscroll-behavior-x: contain;   /* track 끝에서 페이지로 스크롤이 새지 않게 */
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -261,6 +262,7 @@
 .f2r-collection[data-collection-static] .f2r-video-card-media { cursor: default; }
 
 @media (prefers-reduced-motion: reduce) {
+  .f2r-collection-track { scroll-behavior: auto; }
   .f2r-collection-arrow,
   .f2r-program-card-cta,
   .f2r-video-play { transition: none; }
