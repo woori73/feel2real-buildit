@@ -2869,6 +2869,8 @@ def _assessment_detail(conn: sqlite3.Connection, assessment_id: int) -> dict:
     result['request'] = json.loads(result.pop('request_json'))
     result['items'] = [{**_csat_question_response(row), 'position': row['position'], 'day_no': row['day_no']} for row in items]
     result['question_ids'] = [item['id'] for item in result['items']]
+    result['problem_html_url'] = f'/problem-generator/wiki/api/csat/assessments/{assessment_id}/problem.html'
+    result['explanation_html_url'] = f'/problem-generator/wiki/api/csat/assessments/{assessment_id}/explanation.html'
     return result
 
 

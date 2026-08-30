@@ -51,7 +51,7 @@ export const registerCsatSiteTools=():Promise<void>=>{
     },
     {
       name:'create_csat_assessment',
-      description:'Create and save a HALF, FULL, or DAILY Assessment from existing Question DB assets. This write records usage only after the Assessment saves successfully. DAILY uses four questions per day.',
+      description:'Create and save a HALF, FULL, or DAILY Assessment from existing Question DB assets. This write records usage only after the Assessment saves successfully. FULL always uses one Question for every number 18–45 (28 total); DAILY uses four questions per day. The result includes stable problem/explanation HTML URLs for reopening in Wiki.',
       inputSchema:objectSchema({
         assessment_type:{type:'string',enum:['half','full','daily']},title:{type:'string'},
         question_ids:{type:'array',items:{type:'integer',minimum:1},uniqueItems:true,maxItems:120},
@@ -83,4 +83,3 @@ export const registerCsatSiteTools=():Promise<void>=>{
   registration=Promise.all(tools.map(tool=>Promise.resolve(register.call(document.modelContext,tool)))).then(()=>undefined).catch(error=>{registration=null;throw error})
   return registration
 }
-

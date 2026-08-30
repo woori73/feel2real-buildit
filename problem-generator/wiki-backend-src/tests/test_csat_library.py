@@ -224,6 +224,9 @@ class CsatLibraryTest(unittest.TestCase):
         body = created.json()
         self.assertEqual(28, len(body['question_ids']))
         self.assertEqual(list(range(18, 46)), [item['question_no'] for item in body['items']])
+        self.assertEqual(f"/problem-generator/wiki/api/csat/assessments/{body['id']}/problem.html", body['problem_html_url'])
+        reopened = client.get(f"/api/csat/assessments/{body['id']}").json()
+        self.assertEqual(body['question_ids'], reopened['question_ids'])
         for endpoint in ('problem.html', 'explanation.html'):
             document = client.get(f"/api/csat/assessments/{body['id']}/{endpoint}").text
             self.assertIn('data-template-id="csat-full-v1"', document)
