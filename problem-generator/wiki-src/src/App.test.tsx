@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App from './App'
+import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
 
 const scrollIntoViewMock = vi.fn()
 
@@ -20,6 +21,17 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('내신 Wiki V1.1 시나리오 홈', () => {
+  it('수능 Workspace는 문제 DB와 4개 Assessment 제작 탭을 분리한다', async()=>{
+    render(<CsatEnglishWorkspace/>)
+    const tabs = screen.getByRole('navigation',{name:'수능 Workspace'})
+    for(const label of ['문제 DB','HALF','FULL','WRONG','DAILY']) expect(within(tabs).getByRole('button',{name:label})).toBeInTheDocument()
+    expect(screen.getByRole('heading',{name:'고3 수능 영어 자료 제작'})).toBeInTheDocument()
+    fireEvent.click(within(tabs).getByRole('button',{name:'DAILY'}))
+    expect(await screen.findByRole('heading',{name:'DAILY 제작'})).toBeInTheDocument()
+    expect(screen.getByLabelText('DAY 수')).toHaveValue(1)
+    expect(screen.queryByRole('heading',{name:'고3 수능 영어 자료 제작'})).not.toBeInTheDocument()
+  })
+
   it('학교·학년·연도·학기·시험 Context와 STEP 1~4를 순서대로 표시한다', async()=>{
     render(<App/>)
     expect(await screen.findByRole('heading',{name:'시험 자료 한눈에 모으기'})).toBeInTheDocument()
@@ -350,4 +362,3 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(preview).toBeInTheDocument()
   })
 })
-
