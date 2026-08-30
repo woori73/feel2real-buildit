@@ -523,7 +523,8 @@
           <button type="button" class="f2r-collection-arrow" data-collection-scroll="next" aria-label="${label} 다음으로">&#8250;</button>
         </div>`;
     const hint = o.hint ? escapeHtml(o.hint) : '';
-    return `<div class="f2r-collection"${o.staticMode ? ' data-collection-static' : ''} data-collection>
+    const variant = o.variant ? ` f2r-collection--${escapeAttr(o.variant)}` : '';
+    return `<div class="f2r-collection${variant}"${o.staticMode ? ' data-collection-static' : ''} data-collection>
         <div class="f2r-collection-head">
           <span class="f2r-collection-hint">${hint}</span>
           <div class="f2r-collection-controls">${progress}${nav}</div>
@@ -565,20 +566,27 @@
   }
 
   /**
-   * Video Card. 기존 콘텐츠(업로드된 세로 숏폼) 보존 — thumbnail 중심으로 빠르게 둘러보고
-   * 클릭하면 그 자리에서 재생. YouTube 링크(향후 다른 card type)는 공용 youtube 파서를 태운다.
+   * Video Card = Phone Screen (V2-3). 기존 콘텐츠(업로드된 세로 숏폼)를 보존하되,
+   * 일반 video 카드가 아니라 "휴대폰 화면을 넘겨본다"는 경험으로 프레임에 담는다.
+   * 세로 영상은 화면을 채우고(object-fit:cover), 가로 영상은 letterbox(is-landscape).
+   * 클릭 시 그 자리에서 재생(sec-videos 카드와 같은 data-collection-play 배선).
    */
   function videoCardHtml(video, ctx) {
     const data = video || {};
     const landscape = Number(data.width) > 0 && Number(data.height) > 0 && Number(data.width) > Number(data.height);
     const thumb = data.thumbnailUrl
       ? `<img src="${escapeAttr(data.thumbnailUrl)}" alt="" loading="lazy">`
-      : '<span class="f2r-video-card-thumb-ph" aria-hidden="true">🎬</span>';
+      : '<span class="f2r-phone-screen-ph" aria-hidden="true">🎬</span>';
     const dur = data.durationSec != null
       ? `<span class="f2r-video-card-dur">${formatDuration(data.durationSec)}</span>`
       : '';
     const face = `${thumb}<span class="f2r-video-play" aria-hidden="true">▶</span>${dur}`;
-    return `<article class="f2r-video-card${landscape ? ' is-landscape' : ''}">${ctx.collectionVideoMedia(data, face)}</article>`;
+    return `<article class="f2r-phone-card${landscape ? ' is-landscape' : ''}">
+        <div class="f2r-phone-frame">
+          <span class="f2r-phone-cam" aria-hidden="true"></span>
+          ${ctx.collectionVideoMedia(data, face)}
+        </div>
+      </article>`;
   }
 
   function lessonCollectionHtml(lessons, ctx, opts) {
@@ -586,6 +594,7 @@
     if (!items.length) return `<p class="lesson-empty">${escapeHtml((opts && opts.emptyMessage) || '아직 등록된 수업이 없습니다.')}</p>`;
     return renderCollectionShell({
       navLabel: '프로그램',
+      variant: 'programs',
       hint: (opts && opts.hint) || '좌우로 밀어 프로그램을 둘러보세요',
       staticMode: !!(opts && opts.staticMode),
       cards: items.map((lesson) => programCardHtml(lesson, ctx))
@@ -597,6 +606,7 @@
     if (!items.length) return VIDEO_EMPTY_PLACEHOLDER;
     return renderCollectionShell({
       navLabel: '수업 영상',
+      variant: 'videos',
       hint: (opts && opts.hint) || '좌우로 밀어 영상을 둘러보세요',
       staticMode: !!(opts && opts.staticMode),
       cards: items.map((video) => videoCardHtml(video, ctx))
@@ -737,8 +747,8 @@
       collectionVideoMedia(video, face) {
         const src = escapeAttr(video.videoUrl || '');
         const poster = video.thumbnailUrl ? ` data-video-poster="${escapeAttr(video.thumbnailUrl)}"` : '';
-        if (!src) return `<div class="f2r-video-card-media">${face}</div>`;
-        return `<button type="button" class="f2r-video-card-media" data-collection-play data-video-src="${src}"${poster} aria-label="수업 영상 재생">${face}</button>`;
+        if (!src) return `<div class="f2r-phone-screen">${face}</div>`;
+        return `<button type="button" class="f2r-phone-screen" data-collection-play data-video-src="${src}"${poster} aria-label="수업 영상 재생">${face}</button>`;
       },
       // Program Card 대표 미디어 — 공개 페이지는 발행 학원의 공개 바이트 경로를 쓴다.
       // 이미지: 그대로 표시. 영상: 썸네일 + 클릭 시 그 자리에서 재생(sec-videos 카드와 같은 배선).
@@ -898,7 +908,7 @@
         return `<span class="f2r-program-card-cta" aria-hidden="true">${escapeHtml(text)}</span>`;
       },
       collectionVideoMedia(video, face) {
-        return `<div class="f2r-video-card-media">${face}</div>`;
+        return `<div class="f2r-phone-screen">${face}</div>`;
       },
       // 빌더 캔버스: 정적 표시. 이미지는 소유자 전용 경로, 영상은 목록의 썸네일 URL 을 재사용한다.
       programCardMedia(lesson) {
