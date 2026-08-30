@@ -215,6 +215,11 @@
     return FEATURED_ITEM_DEFAULTS.map((fallback, index) => draftText(view, 'featuredItem' + (index + 1), fallback));
   }
 
+  /** 첫 번째 비어있지 않은 학교 칩 값. Featured Stage 의 기본 선택. */
+  function featuredFirst(view) {
+    return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
+  }
+
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
@@ -228,7 +233,8 @@
             ${ctx.editableText({ tag: 'h2', className: 'featured-title f2r-reveal', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
             ${ctx.editableText({ tag: 'p', className: 'featured-desc f2r-reveal', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
-          <div class="featured-items">${featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join('')}</div>
+          ${ctx.featuredStage(featuredFirst(view), title)}
+          ${ctx.featuredItemsGroup(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''), featuredItems(view))}
           <div class="featured-cta f2r-reveal">${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
@@ -859,15 +865,42 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // 값이 빈 항목은 공개 페이지에서 생략한다(빈 칩이 남지 않게). 모션은 Storefront primitive가
-      // .f2r-reveal / [data-step]로 담당한다(GSAP data-fade 아님 — 책임 분리).
-      featuredItem(text) {
+      // V2-6: 학교 칩을 단일 선택 selector 로. 선택하면 중앙 Featured Stage 의 정보 상태가 바뀐다
+      // ("내 학교를 선택해 둘러본다"). 학교별 실데이터는 만들지 않고, 공통 프로세스 안에서 선택 학교만
+      // 명확히 반영한다. 배선은 academy_public.js wireFeaturedSelector. 빈 항목은 생략(빈 칩 방지).
+      featuredItem(text, index) {
         const label = String(text == null ? '' : text).trim();
-        return label ? `<div class="featured-item f2r-reveal"><span class="featured-item-label">${escapeHtml(label)}</span></div>` : '';
+        if (!label) return '';
+        return `<button type="button" class="featured-item f2r-reveal" data-featured-school="${escapeAttr(label)}" aria-pressed="${index === 0 ? 'true' : 'false'}"><span class="featured-item-label">${escapeHtml(label)}</span></button>`;
+      },
+      // 중앙 무대 — 선택한 학교 이름이 시트 상단에 박힌다. 선택 시 academy_public.js 가 이름을 갈아끼운다.
+      // 시트의 캡션은 교육자가 실제 입력한 featuredTitle 첫 줄(코드에 학교/시즌/과목을 하드코딩하지 않는다).
+      featuredStage(school, title) {
+        const name = String(school == null ? '' : school).trim();
+        if (!name) return '';
+        const caption = String(title == null ? '' : title).split('\n').map((s) => s.trim()).filter(Boolean).join(' ');
+        return `<div class="featured-stage f2r-reveal" data-featured-stage aria-hidden="true">
+            <svg class="featured-paper" viewBox="0 0 260 176" role="presentation">
+              <rect class="featured-paper-bg" x="6" y="6" width="248" height="164" rx="12"/>
+              <rect class="featured-paper-band" x="6" y="6" width="248" height="46" rx="12"/>
+              <text class="featured-paper-school" x="130" y="37" text-anchor="middle" data-featured-stage-school>${escapeHtml(name)}</text>
+              <rect class="featured-paper-line" x="30" y="80" width="200" height="9" rx="4"/>
+              <rect class="featured-paper-line" x="30" y="104" width="200" height="9" rx="4"/>
+              <rect class="featured-paper-line" x="30" y="128" width="132" height="9" rx="4"/>
+            </svg>
+            ${caption ? `<span class="featured-stage-caption">${escapeHtml(caption)}</span>` : ''}
+          </div>`;
+      },
+      featuredItemsGroup(itemsHtml, labels) {
+        const first = (labels || []).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
+        const selected = first
+          ? `<div class="featured-selected f2r-reveal" aria-live="polite">지금 보는 학교 · <strong data-featured-selected>${escapeHtml(first)}</strong></div>`
+          : '';
+        return `<div class="featured-items" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>${selected}`;
       },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
-        return text ? `<button type="button" class="btn featured-cta-btn" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
+        return text ? `<button type="button" class="btn featured-cta-btn" data-featured-cta data-featured-cta-base="${escapeAttr(text)}" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
       },
       aiProcessStep(text, index) {
         const label = String(text == null ? '' : text).trim();
@@ -1062,6 +1095,26 @@
         const draftKey = 'featuredItem' + (index + 1);
         return `<div class="featured-item f2r-reveal"><span class="featured-item-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
       },
+      // 빌더 캔버스: 중앙 무대를 첫 학교로 정적 프리뷰(공개와 같은 모양). 선택 배선은 공개 전용.
+      featuredStage(school, title) {
+        const name = String(school == null ? '' : school).trim();
+        if (!name) return '';
+        const caption = String(title == null ? '' : title).split('\n').map((s) => s.trim()).filter(Boolean).join(' ');
+        return `<div class="featured-stage f2r-reveal" data-featured-stage aria-hidden="true">
+            <svg class="featured-paper" viewBox="0 0 260 176" role="presentation">
+              <rect class="featured-paper-bg" x="6" y="6" width="248" height="164" rx="12"/>
+              <rect class="featured-paper-band" x="6" y="6" width="248" height="46" rx="12"/>
+              <text class="featured-paper-school" x="130" y="37" text-anchor="middle" data-featured-stage-school>${escapeHtml(name)}</text>
+              <rect class="featured-paper-line" x="30" y="80" width="200" height="9" rx="4"/>
+              <rect class="featured-paper-line" x="30" y="104" width="200" height="9" rx="4"/>
+              <rect class="featured-paper-line" x="30" y="128" width="132" height="9" rx="4"/>
+            </svg>
+            ${caption ? `<span class="featured-stage-caption">${escapeHtml(caption)}</span>` : ''}
+          </div>`;
+      },
+      featuredItemsGroup(itemsHtml) {
+        return `<div class="featured-items">${itemsHtml}</div>`;
+      },
       featuredCta(label) {
         return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
       },
@@ -1122,6 +1175,7 @@
     featuredLessonIds,
     selectedFeaturedLessons,
     featuredItems,
+    featuredFirst,
     aiProcessSteps,
     isHorizontalCollection,
     renderCollectionShell,

@@ -209,10 +209,26 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-eyebrow .stroke{background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
 .featured-desc{margin:16px auto 0;max-width:600px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
-.featured-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px;}
-.featured-item{display:inline-flex;align-items:center;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
-.featured-item-label{color:var(--ink);font-size:14px;font-weight:800;letter-spacing:-.01em;}
-.featured-cta{margin-top:32px;}
+/* V2-6 Featured Stage — 선택한 학교가 시트 상단에 박히는 중앙 무대. 학교별 실데이터는 없고,
+   공통 프로세스(Featured 프로그램) 안에서 "선택된 학교" 만 반영한다. 캡션은 교육자가 입력한
+   featuredTitle 첫 줄. academy_public.js wireFeaturedSelector 가 선택 시 텍스트를 갈아끼운다. */
+.featured-stage{margin:30px auto 0;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.featured-paper{width:100%;max-width:260px;height:auto;filter:drop-shadow(0 18px 34px rgba(10,12,20,.14));}
+.featured-paper-bg{fill:#fff;stroke:var(--line);stroke-width:2;}
+.featured-paper-band{fill:var(--ultramarine);}
+.featured-paper-school{fill:#fff;font-family:inherit;font-size:19px;font-weight:800;letter-spacing:-.02em;}
+.featured-paper-line{fill:var(--gold-soft);}
+.featured-stage-caption{color:var(--ink-soft);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
+.featured-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px;}
+.featured-item{display:inline-flex;align-items:center;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);font-family:inherit;cursor:pointer;transition:background .16s var(--ease),border-color .16s var(--ease);}
+.featured-item-label{color:var(--ink);font-size:14px;font-weight:800;letter-spacing:-.01em;transition:color .16s var(--ease);}
+.featured-item:hover{border-color:var(--ultramarine);}
+.featured-item:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+.featured-item[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);}
+.featured-item[aria-pressed="true"] .featured-item-label{color:#fff;}
+.featured-selected{margin:16px auto 0;color:var(--ink-soft);font-size:13px;font-weight:700;letter-spacing:-.01em;}
+.featured-selected strong{color:var(--ultramarine);font-weight:900;}
+.featured-cta{margin-top:28px;}
 .featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background .18s var(--ease),transform .18s var(--ease);}
 .featured-cta-btn:hover{background:var(--accent);transform:translateY(-2px);}
 .builder-public-preview [data-builder-draft="featuredTitle"]:empty::before,
