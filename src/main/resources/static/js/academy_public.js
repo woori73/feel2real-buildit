@@ -135,7 +135,8 @@
       STORY.stage(ai, {
         id: 'story-aiprocess',
         scenes: 5,
-        sceneSelector: '.ai-process-step'
+        sceneSelector: '.ai-process-step',
+        layerSelector: '.ai-stage-layer'
       });
     }
     STORY.refresh();

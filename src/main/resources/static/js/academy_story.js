@@ -65,16 +65,30 @@
     }
   }
 
-  function paintScenes(section, els, idx) {
+  /**
+   * 장면 상태를 "요소 자신의 attribute" 로 준다. 조상 attribute(section[data-story-scene]) + CSS
+   * transition 조합은 일부 Chromium 에서 transition 이 첫 값에 붙어버리는 버그가 있어, 상태를
+   * 각 대상에 직접 붙인다(V2-4 .ai-process-step 이 이미 쓰는 방식과 동일).
+   *   sceneSelector 요소(단계 목록): i 번째가 scene i 에서 active — DOM 순서 = 장면 순서.
+   *   layerSelector 요소(stage 오버레이): data-scene(1-index)로 자기 장면 번호를 갖는다.
+   */
+  function paintScenes(section, els, layers, idx) {
     section.setAttribute('data-story-scene', String(idx));
     for (var i = 0; i < els.length; i += 1) {
       els[i].setAttribute('data-scene-state', i < idx ? 'past' : (i === idx ? 'active' : 'upcoming'));
     }
+    for (var j = 0; j < layers.length; j += 1) {
+      var n = parseInt(layers[j].getAttribute('data-scene'), 10) - 1;
+      if (idx > n) layers[j].setAttribute('data-scene-state', 'past');
+      else if (idx === n) layers[j].setAttribute('data-scene-state', 'active');
+      else layers[j].removeAttribute('data-scene-state');
+    }
   }
 
-  function staticStage(section, els, scenes) {
+  function staticStage(section, els, layers, scenes) {
     section.setAttribute('data-story-scene', String(scenes - 1));
     for (var i = 0; i < els.length; i += 1) els[i].setAttribute('data-scene-state', 'active');
+    for (var j = 0; j < layers.length; j += 1) layers[j].removeAttribute('data-scene-state');
   }
 
   function stage(section, opts) {
@@ -83,11 +97,12 @@
     var scenes = Math.max(1, o.scenes || 1);
     var id = o.id || ('story-' + (section.id || 'stage'));
     var els = o.sceneSelector ? section.querySelectorAll(o.sceneSelector) : [];
+    var layers = o.layerSelector ? section.querySelectorAll(o.layerSelector) : [];
 
     if (!usable(o.minWidth)) {
       killById(id);
       section.removeAttribute('data-story-staged');
-      staticStage(section, els, scenes);
+      staticStage(section, els, layers, scenes);
       return;
     }
 
@@ -96,7 +111,7 @@
     // data-story-staged 를 먼저 세팅 → CSS(min-height:100vh 등)가 적용된 뒤 ScrollTrigger 가
     // 실제 높이로 pin 을 계산하게 한다. (뒤에 세팅하면 GSAP 이 옛 높이로 pin 해 어긋난다.)
     section.setAttribute('data-story-staged', 'true');
-    paintScenes(section, els, 0);
+    paintScenes(section, els, layers, 0);
 
     // 안전 가드: staged 상태의 섹션이 뷰포트보다 훨씬 크면(콘텐츠가 안 들어가면) pin 하지 않는다 —
     // pin 된 요소가 뷰포트를 넘으면 아래쪽이 잘려 보인다. 정적 폴백으로 되돌린다.
@@ -104,7 +119,7 @@
     var h = section.getBoundingClientRect ? section.getBoundingClientRect().height : 0;
     if (vh && h > vh * 1.3) {
       section.removeAttribute('data-story-staged');
-      staticStage(section, els, scenes);
+      staticStage(section, els, layers, scenes);
       return;
     }
 
@@ -124,14 +139,14 @@
         scrub: o.scrub == null ? 0.4 : o.scrub,
         onUpdate: function (self) {
           var idx = Math.min(scenes - 1, Math.max(0, Math.round(self.progress * (scenes - 1))));
-          if (idx !== lastIdx) { lastIdx = idx; paintScenes(section, els, idx); }
+          if (idx !== lastIdx) { lastIdx = idx; paintScenes(section, els, layers, idx); }
         }
       });
     } catch (err) {
       // ScrollTrigger 생성 실패 → 정적 폴백. 콘텐츠는 온전히 보인다.
       killById(id);
       section.removeAttribute('data-story-staged');
-      staticStage(section, els, scenes);
+      staticStage(section, els, layers, scenes);
     }
   }
 
