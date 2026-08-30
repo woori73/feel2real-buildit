@@ -89,6 +89,9 @@ public class AcademyService {
       "principalVideoId",
       "principalYoutubeUrl",
       "principalVideoOrientation",
+      // 섹션별 독립 제목. 미설정이면 프런트가 학원명 파생값/고정 문구로 fallback한다(마이그레이션 불필요).
+      "videosSectionTitle",
+      "socialSectionTitle",
       // ── Education Storefront: Featured / Seasonal Program (sec-featured) ──
       // 전부 재사용 가능한 generic 키다. 학교명·연도·학원명을 서버/프런트에 하드코딩하지 않는다.
       "featuredEyebrow",

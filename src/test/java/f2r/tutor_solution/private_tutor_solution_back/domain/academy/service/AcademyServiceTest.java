@@ -1034,7 +1034,10 @@ class AcademyServiceTest {
         "featuredTitle", "우리 학교 2학기 내신",
         "featuredItem1", "압구정중",
         "aiProcessTitle", "경험 있는 교육자 + AI",
-        "aiProcessStep1", "학교 자료");
+        "aiProcessStep1", "학교 자료",
+        // 섹션별 독립 제목 키
+        "videosSectionTitle", "에듀홀릭의 실제 수업 현장",
+        "socialSectionTitle", "학원 소식과 오시는 길");
     AcademyPageSettings pageSettings = new AcademyPageSettings(
         null, null, null, null, draft);
     AcademyUpsertRequest request = validRequestWithPageSettings(pageSettings);
@@ -1058,7 +1061,9 @@ class AcademyServiceTest {
     assertThat(response.pageSettings().builderDraft())
         .containsEntry("featuredEyebrow", "2026 FALL")
         .containsEntry("featuredItem1", "압구정중")
-        .containsEntry("aiProcessStep1", "학교 자료");
+        .containsEntry("aiProcessStep1", "학교 자료")
+        .containsEntry("videosSectionTitle", "에듀홀릭의 실제 수업 현장")
+        .containsEntry("socialSectionTitle", "학원 소식과 오시는 길");
   }
 
   @Test

@@ -209,6 +209,44 @@ typography hierarchy, 단일 CTA, mobile-first)를 교육 서비스로 번역해
 - `@SpringBootTest` 계열(EduHolicSeedIntegrationTest, SubdomainRenderIntegrationTest 등)은 로컬 MySQL이
   필요해 CI에서 검증한다.
 
+## 11. 2026-08-30 변경: PHASE 2.1 — Storefront 중앙 정렬 + 섹션 제목 독립
+
+에듀홀릭 실제 발행 페이지에서 나온 수정.
+
+### Featured 설명 / AI Native 주석이 왼쪽으로 밀리고 카드와 겹치던 버그
+
+근본 원인: `#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote){margin:0;}` 리셋의
+specificity가 (1,1,1)이라 `.featured-desc`/`.ai-process-desc`/`.ai-process-note`의
+`margin:X auto 0`를 이겼다 → `auto`가 0으로(좌측 정렬), `margin-top`이 0으로(단계 카드와 겹침).
+`.notes-title`/`.notes-quote`가 이미 예외로 빠져 있던 것과 같은 방식으로 세 클래스를 `:not()`에
+추가했다. `.ai-process-note` 상단 여백은 26→32px, `line-height` 1.65→1.7. `text-align:center`만
+넣지 않고 flow 원인을 고쳤다. `academy_public_mobile.test.js`가 예외 목록과 세 마진을 pin한다.
+
+### 섹션 제목 독립 편집 (마이그레이션 없이)
+
+`sec-videos` 제목이 `${academy.name}의 수업 현장`으로 **하드코딩**돼 있어 학원명을 바꾸면 같이
+바뀌었다. `sec-social` 제목("최신 소식 & 방문 안내")도 고정. 각 섹션 제목을 독립 draft key로 뺐다.
+
+| 섹션 | 제목 소스 | 미설정 시 fallback |
+|---|---|---|
+| GNB / 간판 | `builderDraft.headerTitle` (기존) | `academy.name` |
+| Hero H1 | `academy.name` (`data-builder-text="name"`, 정체성값) | — |
+| 수업 영상(Actual Class) | `builderDraft.videosSectionTitle` (신규) | `${academy.name}의 수업 현장` |
+| 커리큘럼(Programs) | `builderDraft.curriculumTitle` (기존) | `${academy.name} 커리큘럼` |
+| 외부 연동 | `builderDraft.socialSectionTitle` (신규) | `최신 소식 & 방문 안내` |
+
+- Hero H1은 그대로 `academy.name`을 쓴다(정체성 = 히어로에서 편집, GNB·영상·커리큘럼은 각자 키).
+  `academy-builder-page.md` §9의 "name에 직접 묶으면 히어로 제목까지 같이 바뀐다" 원칙을 유지.
+- 새 키는 `ctx.editableText`를 통해 렌더되므로 빌더 편집 앵커/공개 non-anchor가 자동 분리된다.
+  `academy_builder.js` 변경 없음(섹션은 이미 `data-builder-section-key`로 클릭·편집 대상).
+- 기존 사이트: 새 키 없음 → fallback으로 기존 문구 그대로 → 회귀 0.
+- 서버 `BUILDER_DRAFT_KEYS`에 `videosSectionTitle`·`socialSectionTitle` 추가(200자 제한).
+
+### 이번 범위 밖 (PHASE 3 설계 후 별도 PR)
+
+Featured/AI Native scroll storytelling(stagger reveal, 단계 순차 활성), Programs(`sec-lessons`)
+Collection 탐색 UX. `prefers-reduced-motion`·IntersectionObserver 우선, animation 라이브러리 미추가.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

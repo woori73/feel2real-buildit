@@ -103,14 +103,17 @@
     return ctx.wrapSocialCard({ cardClass, header, url, field: card.field, label: card.label });
   }
 
-  // 제목의 raw `&`는 추출 전 두 렌더러가 쓰던 그대로다. A-2는 동작 변화 0이 계약이라 유지한다.
-  // HTML 문법상 &amp;가 맞지만 시안 마크업 교체(Phase C) 때 함께 정리한다.
+  // 이 제목은 이제 socialSectionTitle draft로 독립 편집한다(미설정 시 이 기본값).
+  // editableText가 escapeHtml을 거치므로 `&`는 화면 동일한 `&amp;`로 정규화된다.
+  const SOCIAL_TITLE_DEFAULT = '최신 소식 & 방문 안내';
+
   function renderExternalServices(view, ctx) {
     if (!view.sectionVisible('sec-social')) return '';
     const pageSettings = view.pageSettings;
+    const title = draftText(view, 'socialSectionTitle', SOCIAL_TITLE_DEFAULT);
     return `<section id="sec-social" data-builder-section-key="sec-social" class="section-wrap" style="background:#f8faff;" data-fade>
         <div class="section-inner">
-          <div class="section-header"><h2 class="section-title">최신 소식 & 방문 안내</h2></div>
+          <div class="section-header">${ctx.editableText({ tag: 'h2', className: 'section-title', draftKey: 'socialSectionTitle', value: title, omitWhenEmpty: true })}</div>
           <div class="social-grid">
             ${SOCIAL_CARDS.map((card) => socialPreviewCard(ctx, pageSettings, card)).join('\n            ')}
           </div>
@@ -482,14 +485,21 @@
         </div>`;
   }
 
+  /** 학원마다 달라야 하는 제목이라 기본값도 학원명에서 파생한다(고정 문구 금지). */
+  function videosTitleDefault(view) {
+    const name = String((view && view.name) || '').trim();
+    return name ? name + '의 수업 현장' : '수업 현장';
+  }
+
   function renderVideos(view, ctx) {
     if (!view.sectionVisible('sec-videos')) return '';
     const videos = ctx.videoList();
     const body = videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER;
+    const title = draftText(view, 'videosSectionTitle', videosTitleDefault(view));
     return `<section id="sec-videos" data-builder-section-key="sec-videos" class="section-wrap" data-fade>
       <div class="section-inner">
         <div class="section-header">
-          <h2 class="section-title">${escapeHtml(view.name)}의 수업 현장</h2>
+          ${ctx.editableText({ tag: 'h2', className: 'section-title', draftKey: 'videosSectionTitle', value: title, omitWhenEmpty: true })}
         </div>
         ${body}
         ${ctx.videosFooter(view)}

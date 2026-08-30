@@ -42,9 +42,10 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .page{max-width:none;margin:0;padding:0;}
 #publicView{min-width:0;}
 #publicView *{box-sizing:border-box;}
-/* 이 리셋은 specificity가 (1,0,1)이라 클래스 규칙을 전부 이긴다.
-   notes 제목/인용문이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다. */
-#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote){margin:0;}
+/* 이 리셋은 specificity가 (1,1,1)이라 클래스 규칙을 전부 이긴다.
+   notes 제목/인용문, Storefront 설명/주석이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다
+   (margin:X auto 0의 auto가 0으로, margin-top이 0으로 덮여 카드와 겹친다). */
+#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-process-desc,.ai-process-note){margin:0;}
 #publicView [id^="sec-"]{scroll-margin-top:74px;}
 #errorMsg{text-align:center;color:#ef4444;font-size:.98rem;padding:20px;}
 
@@ -231,7 +232,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .ai-process-step + .ai-process-step::before{content:'→';position:absolute;left:-11px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:15px;font-weight:900;}
 .ai-process-step-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,var(--ultramarine),var(--accent));color:#fff;font-size:12px;font-weight:900;}
 .ai-process-step-label{color:var(--ink);font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.4;word-break:keep-all;}
-.ai-process-note{margin:26px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:700;line-height:1.65;word-break:keep-all;}
+.ai-process-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:700;line-height:1.7;word-break:keep-all;}
 .builder-public-preview [data-builder-draft="aiProcessTitle"]:empty::before,
 .builder-public-preview [data-builder-draft="aiProcessDescription"]:empty::before,
 .builder-public-preview [data-builder-draft="aiProcessNote"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
