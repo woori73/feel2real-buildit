@@ -82,59 +82,31 @@ html.js-story #sec-digitaltwin[data-story-staged] .ai-process-step[data-scene-st
   opacity: 1;
 }
 
-/* ── AI Native transformation stage (V2-5) ─────────────────────────────
-   하나의 "정보 오브젝트"(문서)가 장면마다 상태를 바꾼다: SOURCE → ANALYSIS → INTELLIGENCE
-   → CREATION → FINAL. 순수 SVG 도형. pin 상태(desktop)에서만 보이고, 모바일/폴백/빌더는
-   .ai-process-stage 가 display:none 이고 아래 단계 목록이 콘텐츠다. */
-.ai-process-stage { display: none; }
-html.js-story #sec-digitaltwin[data-story-staged] .ai-process-stage { display: block; }
-
-.ai-stage-canvas {
-  position: relative;
-  width: 200px;
-  height: 260px;
-  margin: 8px auto 0;
-}
-.ai-stage-doc,
-.ai-stage-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.ai-doc-paper { fill: #fff; stroke: var(--line); stroke-width: 2; }
-.ai-doc-line { fill: var(--bg-deep); }
-/* FINAL 장면에서 문서 테두리 강조. 조상 attr + transition 조합의 Chromium 버그를 피해 transition 없이. */
-html.js-story #sec-digitaltwin[data-story-scene="4"] .ai-doc-paper { stroke: var(--ultramarine); }
-
-/* 장면 오버레이 — 상태는 academy_story.js 가 각 레이어의 data-scene-state 로 직접 준다
-   (조상 attr + transition 은 일부 Chromium 에서 transition 이 첫 값에 붙는 버그가 있어 회피).
-   current 장면 = active, 지나온 장면 = past(흐리게 남겨 "축적되는 변화"), 미래 = 미지정(숨김). */
-html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer {
+/* ── AI Native Visual Stage (V2-11 corrective) ─────────────────────────
+   기본 스타일은 academy_public.css(.ai-process-stage / .ai-stage-*) — 데스크톱·모바일 모두
+   보인다. 여기서는 데스크톱 pin 일 때 활성 프레임을 스크롤 장면(data-story-scene)이 정하게만
+   한다(processProgress 는 pin 상태에서 안 돈다 → data-active-frame 이 안 붙는다). */
+html.js-story #sec-digitaltwin[data-story-staged] .ai-process-stage:not([data-active-frame]) .ai-stage-frame[data-frame="0"] {
   opacity: 0;
-  transform: scale(.96);
-  transition: opacity .5s var(--ease), transform .5s var(--ease);
+  transform: translateY(8px);
 }
-html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer[data-scene-state="active"] {
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="0"] .ai-stage-frame[data-frame="0"],
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="1"] .ai-stage-frame[data-frame="1"],
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="2"] .ai-stage-frame[data-frame="2"],
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="3"] .ai-stage-frame[data-frame="3"],
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="4"] .ai-stage-frame[data-frame="4"] {
   opacity: 1;
   transform: none;
 }
-html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer[data-scene-state="past"] {
-  opacity: .22;
-  transform: none;
+/* pin 상태에서는 stage 를 조금 키우고, 아래 pip 는 story-scene 이 채운다. */
+html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-window { height: 168px; }
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="0"] .ai-stage-pips li:nth-child(1),
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="1"] .ai-stage-pips li:nth-child(-n+2),
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="2"] .ai-stage-pips li:nth-child(-n+3),
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="3"] .ai-stage-pips li:nth-child(-n+4),
+html.js-story #sec-digitaltwin[data-story-staged][data-story-scene="4"] .ai-stage-pips li:nth-child(-n+5) {
+  background: var(--ultramarine);
 }
-
-.ai-mark { fill: rgba(201, 161, 59, .5); }
-.ai-scan { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; }
-.ai-node { fill: #fff; stroke-width: 2.5; }
-.ai-node-ai { stroke: var(--accent); }
-.ai-node-human { stroke: var(--ultramarine); }
-.ai-link { fill: none; stroke: var(--ink-faint); stroke-width: 2; }
-.ai-merge { fill: var(--ultramarine); }
-.ai-block { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
-.ai-badge { fill: var(--ultramarine); }
-.ai-check { fill: none; stroke: #fff; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
 
 /* 단계 박스 5개 → pin 상태에서는 슬림한 진행 rail 로 강등(주 콘텐츠는 stage). */
 html.js-story #sec-digitaltwin[data-story-staged] .ai-process-steps {
@@ -179,10 +151,5 @@ html.js-story #sec-digitaltwin[data-story-staged] .ai-process-step-label {
     transform: none !important;
     transition: none;
   }
-  html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer { transition: none; }
-}
-
-@media (max-width: 760px) {
-  /* 모바일은 pin 자체가 없어 stage 도 안 뜬다. 안전상 명시. */
-  .ai-process-stage { display: none !important; }
+  html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-frame { transition: none; }
 }

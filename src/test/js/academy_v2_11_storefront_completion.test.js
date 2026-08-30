@@ -135,36 +135,55 @@ test('B: academy_scene.css — 전환 체감 강화(translateY↑, exit opacity�
   assert.match(c, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
-/* ── C: Featured — 저장된 featuredLessonIds 실제 렌더 ──────────────────── */
+/* ── C: Featured / 2학기 영어 내신 — 대표수업 제거, Stage = 항목별 정보 ──── */
 
-test('C: Featured 는 featuredLessonIds 로 고른 대표 수업을 실제 name + 핵심특징으로 낸다', () => {
+test('C: Featured Stage 는 항목명 + 프레임 라벨 + 매칭 프로그램 핵심특징만 (레고/버블티/가우디 제거)', () => {
   const s = loadSectionsModule();
   const view = s.toSectionView({
     name: '테스트영어',
     lessons: [
       { lessonId: 9, name: '영문법 기초: 레고', highlight: '원리 중심 영문법' },
-      { lessonId: 13, name: '압구정중, 신구중', tabShortName: '중학교 영어내신', highlight: '출제자의 눈으로 함정 파악' }
+      { lessonId: 10, name: '영문법 중급: 버블티', highlight: '한 알씩 풀어보기' },
+      { lessonId: 13, name: '압구정중, 신구중, 신사중, 언북중', highlight: '20년 문법으로 만점 도전' }
     ],
-    pageSettings: { sectionVisibility: { 'sec-featured': true }, builderDraft: { featuredLessonIds: '9,13', featuredItem1: '압구정중' } }
+    pageSettings: {
+      sectionVisibility: { 'sec-featured': true },
+      builderDraft: { featuredLessonIds: '9,10,13', featuredItem1: '압구정중', featuredItem2: '신구중', featuredTitle: '2학기 영어 내신 Build It' }
+    }
   });
   for (const [kind, ctxName] of [['public', 'createPublicContext'], ['builder', 'createBuilderContext']]) {
     const ctx = s[ctxName]({ slug: () => 'x', showcase: () => ({ render: () => '' }), videos: () => [] });
     const html = s.renderFeatured(view, ctx);
-    assert.match(html, /class="featured-programs/, kind);
-    assert.match(html, /featured-program-name">영문법 기초: 레고</, kind);
-    assert.match(html, /featured-program-highlight">원리 중심 영문법</, kind);
-    assert.match(html, /featured-program-highlight">출제자의 눈으로 함정 파악</, kind);
+    assert.doesNotMatch(html, /featured-programs|featured-paper/, kind + ': V2-11 대표수업 리스트 / 종이 SVG 제거');
+    assert.match(html, /featured-stage-school[^>]*>압구정중</, kind);
+    assert.match(html, /featured-stage-frame">2학기 영어 내신 Build It</, kind);
+    // 항목명이 이름에 든 lesson 13 의 핵심특징만
+    assert.match(html, /featured-stage-approach">20년 문법으로 만점 도전</, kind);
+    assert.doesNotMatch(html, /원리 중심 영문법|한 알씩 풀어보기/, kind + ': 문법 커리큘럼은 Stage 에 안 온다');
   }
 });
 
-test('C: featuredLessonIds 가 없으면 Featured 에 프로그램 블록을 만들지 않는다(빈 데코 금지)', () => {
+test('C: 매칭되는 프로그램이 없으면 Stage 는 항목명 + 프레임만(가짜 프로그램 없음)', () => {
   const s = loadSectionsModule();
   const view = s.toSectionView({
-    name: 'x', lessons: [{ lessonId: 9, name: 'A', highlight: 'h' }],
-    pageSettings: { sectionVisibility: { 'sec-featured': true }, builderDraft: { featuredItem1: '학교' } }
+    name: 'x', lessons: [{ lessonId: 9, name: '영문법 레고', highlight: 'h' }],
+    pageSettings: { sectionVisibility: { 'sec-featured': true }, builderDraft: { featuredLessonIds: '9', featuredItem1: '압구정중', featuredTitle: 'T' } }
   });
   const ctx = s.createPublicContext({ slug: () => 'x', showcase: () => ({ render: () => '' }), videos: () => [] });
-  assert.doesNotMatch(s.renderFeatured(view, ctx), /featured-programs/);
+  const html = s.renderFeatured(view, ctx);
+  assert.match(html, /featured-stage-school[^>]*>압구정중</);
+  assert.doesNotMatch(html, /featured-stage-approach/);
+});
+
+test('C: 공개 Stage 는 AI Native 로 가는 앵커, 빌더 Stage 는 앵커 없음', () => {
+  const s = loadSectionsModule();
+  const view = s.toSectionView({
+    name: 'x', pageSettings: { sectionVisibility: { 'sec-featured': true }, builderDraft: { featuredItem1: '압구정중', featuredTitle: 'T' } }
+  });
+  const pub = s.renderFeatured(view, s.createPublicContext({ slug: () => 'x', showcase: () => ({ render: () => '' }), videos: () => [] }));
+  const bld = s.renderFeatured(view, s.createBuilderContext({ slug: () => 'x', showcase: () => ({ render: () => '' }), videos: () => [] }));
+  assert.match(pub, /featured-stage-more" href="#sec-digitaltwin"/);
+  assert.doesNotMatch(bld, /featured-stage-more/);
 });
 
 /* ── D: Programs 핵심 특징 Visual Highlight Box ───────────────────────── */
@@ -191,18 +210,27 @@ test('E: renderCollectionShell — variant 별 data-collection-auto (programs=ad
   assert.doesNotMatch(shell({}), /data-collection-auto/); // variant 없으면 없음
 });
 
-test('E: academy_collection.js auto — IO 1회, 사용자 입력 즉시 중단, reduced-motion 스킵, 무한 반복 없음', () => {
+test('E: academy_collection.js auto — 3중 트리거, 사용자 입력·영상 재생 중단, reduced-motion 스킵, 무한 없음', () => {
   assert.match(COLLECTION_JS, /function runAuto\(/);
   assert.match(COLLECTION_JS, /function initAuto\(/);
-  assert.match(COLLECTION_JS, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(COLLECTION_JS, /setInterval/);
-  // 사용자 직접 입력에서 중단(스크롤 이벤트 아님)
-  assert.match(COLLECTION_JS, /\[['"]pointerdown['"], ['"]touchstart['"], ['"]wheel['"], ['"]keydown['"], ['"]focusin['"]\]/);
-  // 레거시 scrollBy(dx, 0) — behavior:'smooth' 옵션에 의존하지 않는다(CSS scroll-behavior 담당)
+  // 사용자 직접 입력에서 중단(스크롤 이벤트 아님, focusin 제외 — 재생 버튼 focus 로 오작동 방지)
+  assert.match(COLLECTION_JS, /\[['"]pointerdown['"], ['"]touchstart['"], ['"]wheel['"], ['"]keydown['"]\]/);
+  assert.doesNotMatch(COLLECTION_JS, /['"]focusin['"]/);
+  // 하위 <video> 재생 시작 → 중단
+  assert.match(COLLECTION_JS, /addEventListener\('play', cancel, true\)/);
+  assert.match(COLLECTION_JS, /function anyVideoPlaying/);
+  // behavior:'smooth' 옵션에 의존하지 않는다(Chromium 이 오버플로 컨테이너에서 무시) —
+  // scrollLeft 를 동기적으로 세팅, 부드러움은 CSS scroll-behavior 담당
   assert.doesNotMatch(COLLECTION_JS, /behavior:\s*['"]smooth['"]/);
-  assert.match(COLLECTION_JS, /track\.scrollBy\(/);
-  // IO 는 1회성(첫 진입 후 disconnect)
-  assert.match(COLLECTION_JS, /io\.disconnect\(\);\s*\n\s*runAuto\(collection\)/);
+  assert.match(COLLECTION_JS, /function autoScrollTo/);
+  assert.match(COLLECTION_JS, /track\.scrollLeft = left/);
+  // IO 하나에 의존하지 않는다: sceneFlow data-scene + IO + guarded timeout
+  assert.match(COLLECTION_JS, /attributeFilter: \['data-scene'\]/);
+  assert.match(COLLECTION_JS, /getBoundingClientRect/);
+  assert.match(COLLECTION_JS, /prefers-reduced-motion: reduce/);
+  // reduced-motion → 배선 자체를 안 함
+  assert.match(COLLECTION_JS, /function initAuto\(root\) \{\s*\n\s*if \(REDUCED\) return;/);
 });
 
 /* ── E: academy_collection.js auto — 동작(behavioral) ──────────────────── */
@@ -211,11 +239,13 @@ function loadCollection(opts) {
   const o = opts || {};
   const timers = [];
   const ios = [];
+  const mos = [];
+  let rafClock = 0;
   function el(tag, extra) {
     const listeners = {};
     const cls = new Set();
     return Object.assign({
-      tagName: tag, className: '', dataset: {}, _attrs: {},
+      tagName: tag, nodeType: 1, className: '', dataset: {}, _attrs: {}, parentNode: null,
       children: [], style: {},
       classList: {
         add: (...x) => x.forEach((v) => cls.add(v)),
@@ -226,6 +256,8 @@ function loadCollection(opts) {
       getAttribute(k) { return k in this._attrs ? this._attrs[k] : null; },
       setAttribute(k, v) { this._attrs[k] = String(v); },
       hasAttribute(k) { return k in this._attrs; },
+      getElementsByTagName() { return []; },
+      getBoundingClientRect() { return { top: 100, bottom: 500, height: 400 }; },
       addEventListener(t, fn) { (listeners[t] = listeners[t] || []).push(fn); },
       removeEventListener(t, fn) { if (listeners[t]) listeners[t] = listeners[t].filter((f) => f !== fn); },
       _fire(t) { (listeners[t] || []).slice().forEach((fn) => fn({ type: t })); },
@@ -243,10 +275,13 @@ function loadCollection(opts) {
   });
   track.dataset = {};
   const collection = el('div', {
-    className: 'f2r-collection f2r-collection--' + (o.variant || 'videos'),
+    tagName: 'DIV',
+    className: 'f2r-collection f2r-collection--' + (o.variant || 'programs'),
     querySelector(sel) { return sel.indexOf('collection-track') >= 0 ? track : null; }
   });
-  collection._attrs['data-collection-auto'] = o.mode || 'hint';
+  collection._attrs['data-collection-auto'] = o.mode || 'advance';
+  const section = el('section', { tagName: 'SECTION', id: 'sec-lessons' });
+  collection.parentNode = section;
   const root = {
     querySelectorAll(sel) {
       if (sel.indexOf('f2r-collection') >= 0) return [collection];
@@ -254,17 +289,22 @@ function loadCollection(opts) {
     }
   };
   const win = {
+    innerHeight: 800,
     matchMedia: () => ({ matches: !!o.reduced }),
     setTimeout: (fn, ms) => { const id = timers.length + 1; timers.push({ fn, ms, id, done: false }); return id; },
     clearTimeout: (id) => { const t = timers.find((x) => x.id === id); if (t) t.done = true; },
     addEventListener() {}, removeEventListener() {},
-    requestAnimationFrame: (fn) => { fn(); return 1; },
+    requestAnimationFrame: (fn) => { rafClock += 24; fn(rafClock); return 1; },
+    MutationObserver: function (cb) {
+      const m = { cb, observe() {}, disconnect() { this.disconnected = true; }, fire() { this.cb([{ type: 'attributes' }]); } };
+      mos.push(m); return m;
+    },
     IntersectionObserver: o.noIO ? undefined : function (cb) {
       const io = { cb, disconnected: false, observe() {}, disconnect() { this.disconnected = true; }, fire(e) { this.cb(e); } };
       ios.push(io); return io;
     },
     document: {
-      documentElement: { classList: { add() {} } },
+      documentElement: { clientHeight: 800, classList: { add() {} } },
       addEventListener() {}, removeEventListener() {},
       querySelectorAll: root.querySelectorAll
     }
@@ -280,30 +320,41 @@ function loadCollection(opts) {
       due.ran = true; due.fn();
     }
   };
-  return { C: win.F2RAcademyCollection, root, collection, track, cardEls, timers, ios, advance };
+  return { C: win.F2RAcademyCollection, root, collection, track, section, cardEls, timers, ios, mos, advance };
 }
 
-test('E(동작): hint 모드 — 진입하면 살짝 밀었다(peek) 원위치로 복귀하고 끝난다(1회)', () => {
-  const { C, root, track, ios, advance } = loadCollection({ mode: 'hint' });
+test('E(동작): scene 트리거 — 섹션이 active 가 되면 자동 진행이 시작된다 (IO 안 와도)', () => {
+  const { C, root, track, section, mos, advance } = loadCollection({ mode: 'advance', cards: 4 });
   C.wire(root);
-  assert.equal(track.dataset.autoReady, 'true', 'initAuto 가 IO 를 배선한다');
-  assert.equal(ios.length, 1);
-  ios[0].fire([{ isIntersecting: true, intersectionRatio: 0.7 }]);
-  assert.ok(track.scrollLeft > 0, 'peek — 오른쪽으로 살짝 이동');
-  const peeked = track.scrollLeft;
+  assert.equal(track.dataset.autoReady, 'true');
+  assert.ok(mos.length >= 1, 'sceneFlow data-scene MutationObserver 배선');
+  section.setAttribute('data-scene', 'active');
+  mos[0].fire();
   advance();
-  assert.equal(track.scrollLeft, 0, 'peek 후 원위치 복귀');
-  assert.ok(peeked < track.scrollWidth - track.clientWidth, 'peek 은 한 카드 미만의 작은 양');
+  assert.ok(track.scrollLeft > 0, 'active 후 카드가 이동한다');
 });
 
-test('E(동작): advance 모드 — 카드를 하나씩 정지-이동으로 넘겨보고 처음으로 복귀(무한 아님)', () => {
+test('E(동작): advance 모드 — Card1 읽을 시간 → 2 → 3 → 4, 마지막에서 정지(처음으로 복귀 안 함)', () => {
   const { C, root, track, ios, advance, timers } = loadCollection({ mode: 'advance', cards: 4 });
   C.wire(root);
   ios[0].fire([{ isIntersecting: true, intersectionRatio: 0.9 }]);
   advance();
-  assert.equal(track.scrollLeft, 0, '끝나면 처음으로 복귀');
-  assert.ok(timers.length > 3, '단계별 타이머가 여러 개(정지-이동)');
+  const maxLeft = track.scrollWidth - track.clientWidth - 1;
+  assert.ok(track.scrollLeft >= maxLeft - 4, '마지막 카드에서 멈춘다(0 으로 복귀하지 않는다): ' + track.scrollLeft);
+  assert.ok(timers.length > 3, '단계별 타이머(정지-이동)');
   assert.ok(timers.every((t) => t.done || t.ran), '모든 타이머 소진 — 재예약(무한) 없음');
+});
+
+test('E(동작): hint 모드 — 다음 카드 쪽으로 살짝 밀었다 복귀하고 끝난다(1회)', () => {
+  const { C, root, track, ios, advance } = loadCollection({ mode: 'hint', cards: 4 });
+  C.wire(root);
+  ios[0].fire([{ isIntersecting: true, intersectionRatio: 0.7 }]);
+  advance(500);                       // peek 타이머(400ms)만
+  const peeked = track.scrollLeft;
+  assert.ok(peeked > 0, 'peek — 오른쪽으로 살짝: ' + peeked);
+  assert.ok(peeked < track.scrollWidth - track.clientWidth, 'peek 은 한 카드 미만의 작은 양');
+  advance();                          // 나머지(복귀 1100ms + cancel)
+  assert.equal(track.scrollLeft, 0, 'peek 후 원위치 복귀');
 });
 
 test('E(동작): 사용자 입력(pointerdown)이 오면 이후 자동 이동을 즉시 중단한다', () => {
@@ -316,17 +367,30 @@ test('E(동작): 사용자 입력(pointerdown)이 오면 이후 자동 이동을
   assert.equal(track.scrollLeft, at, '취소 이후 자동 스크롤이 track 을 더 건드리지 않는다');
 });
 
+test('E(동작): 하위 <video> 가 재생되면 자동 이동을 중단한다', () => {
+  const { C, root, track, ios, advance } = loadCollection({ mode: 'advance', cards: 4 });
+  C.wire(root);
+  ios[0].fire([{ isIntersecting: true, intersectionRatio: 0.9 }]);
+  track._fire('play');
+  const at = track.scrollLeft;
+  advance();
+  assert.equal(track.scrollLeft, at, '재생 시작 후 자동 이동 없음');
+});
+
 test('E(동작): prefers-reduced-motion 이면 auto 를 아예 배선하지 않는다', () => {
-  const { C, root, track, ios } = loadCollection({ mode: 'hint', reduced: true });
+  const { C, root, track, ios, mos } = loadCollection({ mode: 'hint', reduced: true });
   C.wire(root);
   assert.notEqual(track.dataset.autoReady, 'true');
   assert.equal(ios.length, 0);
+  assert.equal(mos.length, 0);
 });
 
-test('E(동작): IntersectionObserver 미지원이면 auto 를 건너뛴다(콘텐츠는 그대로)', () => {
-  const { C, root, track } = loadCollection({ mode: 'hint', noIO: true });
+test('E(동작): IO 미지원 + scene 안 옴 → guarded timeout 이 뷰에 있으면 진행(콘텐츠는 그대로)', () => {
+  const { C, root, track, advance } = loadCollection({ mode: 'hint', noIO: true, cards: 4 });
   C.wire(root);
-  assert.notEqual(track.dataset.autoReady, 'true');
+  assert.equal(track.dataset.autoReady, 'true', 'IO 없어도 배선은 한다(fallback)');
+  advance();               // guarded timeout(1800ms) — collection 이 뷰 안(top 100 / vh 800)
+  assert.ok(track.scrollLeft > 0 || track.dataset.autoDone === 'true', 'fallback 으로 실행됨');
 });
 
 test('E: 공개 sec-videos / sec-lessons 렌더에 data-collection-auto 가 붙는다 (빌더는 정적)', () => {
