@@ -8,6 +8,8 @@
  *   revealSequence(root)     — root 안의 .f2r-reveal 를 DOM 순서대로 stagger 등장(정보 위계).
  *   processProgress(list)    — list 안의 [data-step] 을 "커넥터 활성 → 다음 카드 활성" 순으로
  *                              순차 진행. 지나간 단계는 is-done, 끝나면 list 에 is-complete.
+ *                              (V2-11: options.watchScene 로 섹션 data-scene=active 면 재생·
+ *                              벗어나면 초기화 — 무한 반복 아님)
  *   sceneFlow(sections)      — 각 Story Section 에 스크롤 위치 기반 data-scene = enter|active|exit
  *                              을 준다(V2-10). 1회성 아님 — 위/아래 스크롤에 따라 다시 바뀐다
  *                              (bidirectional). IntersectionObserver 만 쓰고 scroll 이벤트를 걸지
@@ -96,6 +98,10 @@
    *          linkLead ms 뒤 이번 카드 활성(is-active). 첫 단계는 커넥터가 없어 바로 is-active.
    * 마지막 단계가 끝나면 list 에 is-complete(뒤따르는 note 가 CSS 형제 선택자로 등장).
    * options.start(기본 250), options.step(단계 간격, 기본 180), options.linkLead(커넥터→카드, 기본 90).
+   * options.watchScene(V2-11): 섹션 요소를 주면 그 요소의 data-scene(V2-10 sceneFlow) 을
+   *   MutationObserver 로 지켜본다. "active" 가 되면 처음부터 재생, "enter"/"exit" 로 벗어나면
+   *   초기화한다 → 위로 갔다 다시 내려오면 진행이 다시 보인다(무한 반복 아님 — 실제로 나갔다
+   *   들어와야 한 번). sceneFlow 가 없거나 data-scene 이 안 붙는 환경이면 1회성 onEnter 로 폴백.
    */
   function processProgress(list, options) {
     var steps = items(list, '[data-step]');
@@ -109,25 +115,60 @@
     var start = opt.start || 250;
     var step = opt.step || 180;
     var linkLead = opt.linkLead == null ? 90 : opt.linkLead;
-    onEnter(list, function () {
+    var timers = [];
+
+    function clearTimers() {
+      for (var t = 0; t < timers.length; t += 1) global.clearTimeout(timers[t]);
+      timers = [];
+    }
+    function reset() {
+      clearTimers();
+      steps.forEach(function (el) { el.classList.remove('is-linked', 'is-active', 'is-done'); });
+      if (list) list.classList.remove('is-complete');
+    }
+    function play() {
+      clearTimers();
       steps.forEach(function (el, i) {
-        global.setTimeout(function () {
+        timers.push(global.setTimeout(function () {
           if (i > 0) {
             steps[i - 1].classList.add('is-done');
             el.classList.add('is-linked');
-            global.setTimeout(function () { el.classList.add('is-active'); }, linkLead);
+            timers.push(global.setTimeout(function () { el.classList.add('is-active'); }, linkLead));
           } else {
             el.classList.add('is-active');
           }
           if (i === steps.length - 1) {
-            global.setTimeout(function () {
+            timers.push(global.setTimeout(function () {
               el.classList.add('is-done');
               if (list) list.classList.add('is-complete');
-            }, step);
+            }, step));
           }
-        }, start + i * step);
+        }, start + i * step));
       });
-    }, opt);
+    }
+
+    var scene = opt.watchScene;
+    if (!scene || typeof global.MutationObserver !== 'function') {
+      onEnter(list, play, opt);
+      return;
+    }
+
+    // watchScene: V2-10 sceneFlow 의 data-scene 에 붙어 재생/초기화 (단일 요소·단일 속성 관찰).
+    var playing = false;
+    function applyScene() {
+      var s = scene.getAttribute('data-scene');
+      if (s === 'active') { if (!playing) { playing = true; reset(); play(); } }
+      else { playing = false; reset(); }
+    }
+    var mo = new global.MutationObserver(applyScene);
+    mo.observe(scene, { attributes: true, attributeFilter: ['data-scene'] });
+    applyScene();
+    // 페일세이프: sceneFlow 가 6초 안에 data-scene 을 안 준 채 list 가 뷰에 있으면 최종 상태로.
+    global.setTimeout(function () {
+      if (playing || scene.getAttribute('data-scene')) return;
+      steps.forEach(function (el) { el.classList.add('is-linked', 'is-active', 'is-done'); });
+      if (list) list.classList.add('is-complete');
+    }, 6000);
   }
 
   /**
@@ -177,6 +218,7 @@
       }
     });
     var thresholds = [0, 0.08, 0.16, 0.24, 0.32, 0.4, 0.5, 0.6, 0.68, 0.76, 0.84, 0.92, 1];
+    var sawActive = false;
     var io = new global.IntersectionObserver(function (entries) {
       for (var i = 0; i < entries.length; i += 1) {
         var el = entries[i].target;
@@ -185,10 +227,20 @@
         var vh = (rb && rb.height) || global.innerHeight || 800;
         var prev = el.getAttribute('data-scene');
         var next = classifyScene(entries[i].boundingClientRect, vh, prev);
+        if (next === 'active') sawActive = true;
         if (next !== prev) el.setAttribute('data-scene', next);
       }
     }, { threshold: thresholds });
     els.forEach(function (el) { io.observe(el); });
+    // 하드 페일세이프(onEnter 와 동일 철학): IO 가 6초 안에 한 번도 active 를 못 만들면
+    // (계측/구현 이슈로 콜백이 안 옴) 전부 active 로 고정한다 — 섹션이 흐리게 갇히지 않게.
+    global.setTimeout(function () {
+      if (sawActive) return;
+      io.disconnect();
+      els.forEach(function (el) {
+        if (el.getAttribute('data-story-staged') !== 'true') el.setAttribute('data-scene', 'active');
+      });
+    }, 6000);
     return io;
   }
 

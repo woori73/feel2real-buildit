@@ -273,7 +273,10 @@
     if (steps && !staged && steps.dataset.motionWired !== 'true') {
       steps.dataset.motionWired = 'true';
       MOTION.revealSequence(root.querySelector('#sec-digitaltwin .ai-process-head'), { step: 90 });
-      MOTION.processProgress(steps, { start: 250, step: 180 });
+      // V2-11: 모바일에서 5-step 진행이 사람 눈에 구분되도록 느리게(총 ~2.3s). watchScene 으로
+      // V2-10 sceneFlow 의 data-scene 에 물려 — 이 섹션이 active 가 되면 학교자료 → … → FINAL
+      // 진행이 재생되고, 위로 갔다 다시 내려오면 다시 보인다(무한 반복 아님).
+      MOTION.processProgress(steps, { start: 350, step: 400, linkLead: 140, watchScene: aiSection });
     }
   }
 

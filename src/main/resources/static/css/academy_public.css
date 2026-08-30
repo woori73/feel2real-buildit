@@ -228,6 +228,11 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-item[aria-pressed="true"] .featured-item-label{color:#fff;}
 .featured-selected{margin:16px auto 0;color:var(--ink-soft);font-size:13px;font-weight:700;letter-spacing:-.01em;}
 .featured-selected strong{color:var(--ultramarine);font-weight:900;}
+/* V2-11: 원장이 고른 대표 수업(featuredLessonIds)의 실제 내용 — 데코 목업 아님. name + 핵심 특징. */
+.featured-programs{list-style:none;margin:20px auto 0;padding:0;display:grid;gap:10px;max-width:520px;width:100%;text-align:left;}
+.featured-program{display:flex;flex-direction:column;gap:5px;padding:13px 15px;border:1px solid var(--line);border-left:3px solid var(--ultramarine);border-radius:12px;background:#fff;box-shadow:var(--shadow-sm);}
+.featured-program-name{color:var(--ink);font-size:13.5px;font-weight:900;letter-spacing:-.02em;word-break:keep-all;}
+.featured-program-highlight{color:var(--ink-soft);font-size:12.5px;font-weight:700;line-height:1.55;word-break:keep-all;}
 .featured-cta{margin-top:28px;}
 .featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background .18s var(--ease),transform .18s var(--ease);}
 .featured-cta-btn:hover{background:var(--accent);transform:translateY(-2px);}

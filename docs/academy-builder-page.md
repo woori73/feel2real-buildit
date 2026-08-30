@@ -576,6 +576,108 @@ transform 된 섹션이 아니다 → 재생 후에도 player viewport 불변·c
   스크롤 UP → 정확히 역전. IO 발화 확인, CSS opacity/translateY 전환 실측, 가로 swipe 무충돌,
   page horizontal overflow 없음.
 
+## 18. 2026-08-31 변경: Storefront V2-11 — Eduholic Mobile Storefront Completion
+
+실기기(에듀홀릭) 점검에서 나온 "코드엔 있는데 사용자 눈엔 안 보이거나 안 느껴진다" 6가지를
+한 작업으로 마감했다. **재설계 아님** — V2-7~V2-10 primitive 를 확장만 했다.
+
+### A. AI Native 5-step — 정적 텍스트처럼 보이던 문제
+
+- 원인(코드 정상, 체감 실패): `processProgress(start:250, step:180)` = 총 ~1.1s 로 **너무 빠르고**,
+  1회성이라 사용자가 섹션을 볼 때쯤 이미 5단계가 전부 `is-active is-done`(동일 상태)로 끝나 있었다.
+  Browser pane 에선 6초 페일세이프가 먼저 터져 오프스크린에서 소진되기도 했다.
+- 조치: `processProgress` 에 `options.watchScene` 추가 — **V2-10 `sceneFlow` 의 `data-scene` 에
+  MutationObserver 로 물린다**(단일 요소·단일 속성). `active` 가 되면 처음부터 재생, `enter`/`exit`
+  로 벗어나면 초기화 → 위로 갔다 다시 내려오면 학교자료 → … → FINAL 진행이 **다시** 보인다.
+  무한 반복 아님(실제로 나갔다 들어와야 1회). `setInterval` 없음.
+- 속도: `academy_public.js` `start:350 step:400 linkLead:140` = 총 ~2.35s. 사람 눈으로
+  제목 등장 → Step1 활성 → 커넥터 → Step2 → 3 → 4 → Step5 FINAL 을 구분 가능.
+- Outer(섹션 ENTER/ACTIVE/EXIT) 와 Inner(5-step) 는 다른 레이어다. Outer 는 `sceneFlow`+`academy_scene.css`
+  가, Inner 는 `processProgress` 가 담당하고 `watchScene` 이 둘을 연결만 한다(같은 요소 이중 제어 없음).
+- 데스크톱 pin(`data-story-staged`) 이면 `academy_story.js` 가 5-step 을 담당 → `wireStorefrontMotion`
+  이 `processProgress` 를 아예 건너뛴다(기존 V2-10 로직 유지).
+
+### B. Vertical Scene 체감 강화 — 계약은 유지
+
+`academy_scene.css` 튜닝만(enter/active/exit 계약·양방향·compositor-only 는 그대로):
+
+| | V2-10 | V2-11 |
+|---|---|---|
+| enter 섹션 opacity | .38 | **.32** |
+| enter 자식 translateY | 26px | **38px** |
+| exit 섹션 opacity | .28 | **.16** |
+| exit 자식 translateY | -20px | **-32px** |
+| scale | .992 / .99 | **.982** (통일) |
+| transition | .55s | **.6s** |
+
+100vh 강제·scroll hijack·parallax·회전·큰 zoom 없음. reduced-motion → 전부 리셋.
+
+### C. "2학기 영어내신 학교별 카드" 빈 상태 — CODE GAP (데이터는 실재)
+
+- 추적 결과: 에듀홀릭 `builderDraft.featuredLessonIds = "9,13"` **이 저장돼 있다**. 그런데
+  `renderFeatured` 가 `selectedFeaturedLessons(view)` 를 **한 번도 렌더하지 않았다**(V1 잔재, V2-11 전까지 미사용).
+  "빈 카드"는 장식용 SVG(`.featured-paper` + 추상 회색 바)였다 — 데이터 부재가 아니라 **렌더 누락**.
+- 학교별 개별 프로그램은 **없다**. lesson id 13 이 "압구정중, 신구중, 신사중, 언북중" 4교 공통
+  내신 프로그램 1개다. 가짜 학교/프로그램을 만들지 않았다.
+- 조치: `academy_sections.js` `featuredProgramsHtml(lessons)` 신규 — 선택된 대표 수업의
+  **실제 `name` + `highlight`(핵심 특징)** 를 학교 chip 아래 카드 리스트로 렌더. public/builder ctx 양쪽
+  `ctx.featuredPrograms(...)`. `featuredLessonIds` 없으면 블록 자체를 안 만든다(빈 데코 금지).
+  스타일 `academy_public.css` `.featured-programs` / `.featured-program{-name,-highlight}`.
+
+### D. 공감성장영어 4 Program Card — 핵심 특징 Visual Highlight Box
+
+- SSoT 그대로: Program Editor `highlight` 필드. 새 카피 없음, 에듀홀릭 하드코딩 없음,
+  `programCardHtml()` 공통(public=builder).
+- `academy_collection.css` `.f2r-program-card-highlight` 만 강화: `border:0; background:#f6f7f9`
+  (희미한 회색) → **`border:1.5px solid var(--ultramarine)` + `border-radius:12px` + `font-weight:800`**,
+  `::before { content:"핵심 특징" }` 라벨(울트라마린, letter-spacing). 카드 테두리(`--line`)와
+  하이라이트 박스 테두리(ultramarine)의 위계가 확실히 다르다. gradient/네온/과한 그림자 없음.
+
+### E. Horizontal Collection — 첫 진입 Affordance (무한 캐러셀 아님)
+
+- 공통 primitive 확장: `renderCollectionShell` 이 variant 별 `data-collection-auto` 를 붙인다
+  (`programs=advance`, `videos=hint`, `lectures=hint`). `staticMode`(빌더 캔버스)엔 안 붙는다.
+- `academy_collection.js` `initAuto`/`runAuto` 신규:
+  - **IntersectionObserver 1회** (`ratio≥0.6` 첫 진입에서 `disconnect` 후 실행). `setInterval` 없음,
+    자기 예약 rAF 루프 없음.
+  - `hint`: 한 카드폭의 ~18% 만 밀었다(`scrollBy(dx,0)` 레거시 2-인자, 부드러움은 CSS
+    `scroll-behavior:smooth` 담당) 680ms 뒤 복귀. 1회.
+  - `advance`(programs): Card1 → dwell 3s → Card2 → … → Card4 → 처음으로 복귀. **1회, 무한 아님.**
+  - 사용자 입력(`pointerdown`/`touchstart`/`wheel`/`keydown`/`focusin`) 이 오면 **즉시 취소**하고
+    양보한다(우리 smooth-scroll 이 내는 scroll 이벤트와 안 헷갈리게 스크롤 이벤트는 안 본다).
+  - `prefers-reduced-motion` → 배선 자체를 건너뜀. IO 미지원 → 건너뜀.
+  - Program 영상 재생 중에는? `runAuto` 는 첫 진입 1회성이라 재생 시점엔 이미 끝나 있고,
+    재생 트리거가 `focusin`/`pointerdown` 이라 혹시 진행 중이어도 취소된다.
+- Actual Class(`videos`)·Mini Lectures(`lectures`) 는 `hint` 만(영상 중심이라 자동 카드 이동 없이
+  peek 만). Programs 만 `advance`.
+
+### F. Mini Lectures — 현재 프로덕션 상태 (변경 없음, 확인만)
+
+- `miniLectures` 미설정 + `sec-minilectures` 가 `sectionVisibility` 에 없음 → **정상 OFF**(V2-9 설계대로).
+  공개 DOM 에 빈 Mini Lecture Scene 없음. 가짜 콘텐츠 주입 안 함.
+- E2E 경로는 코드상 온전: Builder 모달 → 영상 선택 → 제목/학습포인트/대상 → `miniLectures` JSON(LONG key)
+  저장 → Publish → `toSectionView` → `renderMiniLectures` → `renderCollectionShell('lectures')` →
+  모바일 Collection → `.f2r-media-viewport` 재생. 삭제된 영상 참조는 기존 방어 로직 유지.
+
+### G. Story 순서
+
+현재 프로덕션 저장 순서: Featured → AI Native → Actual Class(`sec-videos`) → Programs(`sec-lessons`) → intro.
+사용자 의도(Featured → 학교별 Programs → AI Native → Actual Class → …)와 다르다. **하드코딩하지 않는다** —
+`DEFAULT_SECTION_ORDER` 는 그대로, 에듀홀릭 저장 `sectionOrder` 를 Builder 재정렬로 바꿔야 한다(별도).
+
+### 캐시버스팅 / 검증
+
+- `?v=20260831-5`: `academy_storefront_motion.js`, `academy_collection.js`, `academy_collection.css`,
+  `academy_scene.css`, `academy_sections.js`, `academy_public.js`, `academy_public.css`.
+  빌더 템플릿·lesson_product_editor 도 동일 버전.
+- `node --test src/test/js/academy_v2_11_storefront_completion.test.js` (17): watchScene 재생/초기화/replay/
+  페일세이프, `setInterval` 부재, public.js 배선, scene.css 튜닝치, Featured featuredLessonIds 실렌더
+  (public+builder)·빈 값 시 미생성, highlight box CSS, `data-collection-auto` variant 별, collection auto
+  **동작**(peek+복귀, advance+복귀, pointerdown 취소, reduced-motion/무 IO 스킵).
+- Browser pane 한계(V2-10 부터): 프로덕션/harness 페이지에서 **스크롤에 의한 IntersectionObserver
+  콜백이 스크립트 실행 중 발화하지 않는다**. `watchScene`·`sceneFlow`·`initAuto` 의 스크롤 연동은
+  단위 테스트로만 검증, 실기기 확인 필요 항목으로 분리 보고.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

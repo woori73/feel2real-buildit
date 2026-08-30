@@ -221,6 +221,27 @@
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
   }
 
+  /**
+   * Featured 섹션이 실제로 보여줄 프로그램들(V2-11). builderDraft.featuredLessonIds 로 원장이
+   * 고른 대표 수업을 name + 핵심 특징(highlight)으로 낸다 — 데코 목업이 아니라 실제 데이터.
+   * 공개/빌더 동일(읽기 전용 표시). 고른 게 없거나 highlight 가 하나도 없으면 아무것도 안 낸다.
+   */
+  function featuredProgramsHtml(lessons) {
+    const items = (lessons || []).filter(Boolean);
+    if (!items.length) return '';
+    const rows = items.map((l) => {
+      const name = textValue(l.name) || textValue(l.tabShortName);
+      const hi = textValue(l.highlight);
+      if (!name && !hi) return '';
+      return `<li class="featured-program">`
+        + (name ? `<span class="featured-program-name">${escapeHtml(name)}</span>` : '')
+        + (hi ? `<span class="featured-program-highlight">${escapeHtml(hi)}</span>` : '')
+        + `</li>`;
+    }).filter(Boolean).join('');
+    if (!rows) return '';
+    return `<ul class="featured-programs f2r-reveal" aria-label="선택한 대표 프로그램">${rows}</ul>`;
+  }
+
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
@@ -236,6 +257,7 @@
           </div>
           ${ctx.featuredStage(featuredFirst(view), title)}
           ${ctx.featuredItemsGroup(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''), featuredItems(view))}
+          ${ctx.featuredPrograms(selectedFeaturedLessons(view))}
           <div class="featured-cta f2r-reveal">${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
@@ -620,7 +642,11 @@
         </div>`;
     const hint = o.hint ? escapeHtml(o.hint) : '';
     const variant = o.variant ? ` f2r-collection--${escapeAttr(o.variant)}` : '';
-    return `<div class="f2r-collection${variant}"${o.staticMode ? ' data-collection-static' : ''} data-collection>
+    // V2-11: 첫 진입 시 횡스크롤 affordance. Programs = 제한적 자동 진행(advance),
+    // Actual Class / Mini Lectures = 짧은 hint. 배선·중단·reduced-motion 은 academy_collection.js.
+    const AUTO = { programs: 'advance', videos: 'hint', lectures: 'hint' };
+    const auto = (!o.staticMode && AUTO[o.variant]) ? ` data-collection-auto="${AUTO[o.variant]}"` : '';
+    return `<div class="f2r-collection${variant}"${o.staticMode ? ' data-collection-static' : ''}${auto} data-collection>
         <div class="f2r-collection-head">
           <span class="f2r-collection-hint">${hint}</span>
           <div class="f2r-collection-controls">${progress}${nav}</div>
@@ -1056,6 +1082,7 @@
           : '';
         return `<div class="featured-items" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>${selected}`;
       },
+      featuredPrograms(lessons) { return featuredProgramsHtml(lessons); },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
         return text ? `<button type="button" class="btn featured-cta-btn" data-featured-cta data-featured-cta-base="${escapeAttr(text)}" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
@@ -1292,6 +1319,7 @@
       featuredItemsGroup(itemsHtml) {
         return `<div class="featured-items">${itemsHtml}</div>`;
       },
+      featuredPrograms(lessons) { return featuredProgramsHtml(lessons); },
       featuredCta(label) {
         return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
       },
