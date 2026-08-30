@@ -550,6 +550,52 @@
     return value == null ? '' : String(value).trim();
   }
 
+  // ── Common Video Playback (V2-8): Media Viewport 계약 ─────────────────────
+  // 하나의 재사용 primitive. Actual Class(Phone Card)와 대표 수업(Program Card) 영상이
+  // 모두 이 계약을 쓴다.
+  //
+  //   Media Viewport (.f2r-media-viewport)  — 크기·비율·overflow·radius 를 소유. 재생 중에도 유지.
+  //   ├ Thumbnail + ▶  (.f2r-media-play button, position:absolute inset:0)   재생 전
+  //   └ Player          (.f2r-media-player,       position:absolute inset:0)   재생 후 (academy_collection.js)
+  //
+  // 배선(academy_collection.js onPlayClick)은 트리거 버튼을 "치환"하지 않고, 뷰포트 "안에서"
+  // 플레이어를 덧붙인 뒤 트리거를 숨긴다 → 외곽 크기가 절대 바뀌지 않는다.
+  // 원본 비율은 CSS object-fit:contain 으로 보존한다(letterbox, crop 금지).
+
+  /** 업로드 영상의 width/height 로 뷰포트 비율을 정한다. 모르면 null(어댑터 기본 비율 사용). */
+  function mediaAspectRatio(width, height) {
+    const w = Number(width);
+    const h = Number(height);
+    if (!(w > 0) || !(h > 0)) return null;
+    // 9:16(세로) ~ 16:9(가로) 범위로 클램프 — 카드가 극단적으로 길거나 납작해지지 않게.
+    const ratio = Math.max(9 / 16, Math.min(16 / 9, w / h));
+    return `${Math.round(ratio * 1000)} / 1000`;
+  }
+
+  /**
+   * Media Viewport 마크업.
+   *   viewportClass : 섹션 어댑터 클래스(.f2r-phone-screen / .f2r-program-card-media …)
+   *   face          : 썸네일 + ▶ + 길이 배지 HTML
+   *   playable      : false 면 정적(빌더 캔버스) — 버튼 없이 face 만
+   *   aspect        : "W / H" 문자열이면 뷰포트 aspect-ratio 를 그 값으로(어댑터 기본 대신)
+   */
+  function mediaViewportHtml(opts) {
+    const o = opts || {};
+    const cls = `${o.viewportClass} f2r-media-viewport`;
+    const style = o.aspect ? ` style="--f2r-media-aspect:${escapeAttr(o.aspect)}"` : '';
+    if (!o.playable || (!o.src && !o.embed)) {
+      return `<div class="${cls}"${style}>${o.face || ''}</div>`;
+    }
+    const data = [
+      o.src ? `data-video-src="${escapeAttr(o.src)}"` : '',
+      o.embed ? `data-video-embed="${escapeAttr(o.embed)}"` : '',
+      o.poster ? `data-video-poster="${escapeAttr(o.poster)}"` : ''
+    ].filter(Boolean).join(' ');
+    return `<div class="${cls}"${style}>`
+      + `<button type="button" class="f2r-media-play" data-collection-play ${data} aria-label="${escapeAttr(o.label || '영상 재생')}">`
+      + `${o.face || ''}</button></div>`;
+  }
+
   /**
    * 컬렉션 공통 shell. cards는 카드 *내용* HTML 문자열 배열이고 여기서 <li>로 감싼다.
    * staticMode(빌더 캔버스): 화살표 없음 + track이 가로 스크롤 대신 wrap(편집 UX / public 분리).
@@ -793,14 +839,19 @@
         const text = String(label == null ? '' : label).trim() || '상담 신청하기';
         return `<button type="button" class="f2r-program-card-cta" onclick="requestConsult()">${escapeHtml(text)}</button>`;
       },
+      // Actual Class Phone Card — 프레임(9:19)은 유지, 그 안에서 재생. 공통 Media Viewport 계약.
       collectionVideoMedia(video, face) {
-        const src = escapeAttr(video.videoUrl || '');
-        const poster = video.thumbnailUrl ? ` data-video-poster="${escapeAttr(video.thumbnailUrl)}"` : '';
-        if (!src) return `<div class="f2r-phone-screen">${face}</div>`;
-        return `<button type="button" class="f2r-phone-screen" data-collection-play data-video-src="${src}"${poster} aria-label="수업 영상 재생">${face}</button>`;
+        return mediaViewportHtml({
+          viewportClass: 'f2r-phone-screen',
+          face,
+          playable: true,
+          src: video.videoUrl || '',
+          poster: video.thumbnailUrl || '',
+          label: '수업 영상 재생'
+        });
       },
       // Program Card 대표 미디어 — 공개 페이지는 발행 학원의 공개 바이트 경로를 쓴다.
-      // 이미지: 그대로 표시. 영상: 썸네일 + 클릭 시 그 자리에서 재생(sec-videos 카드와 같은 배선).
+      // 이미지: 그대로 표시. 영상: 실제 영상 비율의 stage + 클릭 시 그 안에서 재생.
       programCardMedia(lesson) {
         const id = lesson.lessonId;
         if (lesson.mediaType === 'IMAGE' && id != null) {
@@ -810,7 +861,20 @@
         if (lesson.mediaType === 'VIDEO' && lesson.mediaVideoId != null) {
           const slug = encodeURIComponent(resolve(options.slug));
           const base = `/api/academies/${slug}/videos/${encodeURIComponent(lesson.mediaVideoId)}`;
-          return `<button type="button" class="f2r-program-card-media f2r-program-card-media-video" data-collection-play data-video-src="${base}/stream" data-video-poster="${base}/thumbnail" aria-label="수업 영상 재생"><img src="${base}/thumbnail" alt="" loading="lazy"><span class="f2r-video-play" aria-hidden="true">▶</span></button>`;
+          // 영상 stage 는 실제 업로드 영상 비율을 따른다(pillarbox 최소화). 목록에서 width/height 조회.
+          const found = (resolve(options.videos) || [])
+            .find((v) => String(v.videoId) === String(lesson.mediaVideoId));
+          const aspect = found ? mediaAspectRatio(found.width, found.height) : null;
+          const face = `<img src="${base}/thumbnail" alt="" loading="lazy"><span class="f2r-video-play" aria-hidden="true">▶</span>`;
+          return mediaViewportHtml({
+            viewportClass: 'f2r-program-card-media f2r-program-card-media-video',
+            face,
+            playable: true,
+            src: `${base}/stream`,
+            poster: `${base}/thumbnail`,
+            aspect,
+            label: '수업 영상 재생'
+          });
         }
         return '';
       },
@@ -984,7 +1048,7 @@
         return `<span class="f2r-program-card-cta" aria-hidden="true">${escapeHtml(text)}</span>`;
       },
       collectionVideoMedia(video, face) {
-        return `<div class="f2r-phone-screen">${face}</div>`;
+        return mediaViewportHtml({ viewportClass: 'f2r-phone-screen', face, playable: false });
       },
       // 빌더 캔버스: 정적 표시. 이미지는 소유자 전용 경로, 영상은 목록의 썸네일 URL 을 재사용한다.
       programCardMedia(lesson) {
@@ -1179,6 +1243,8 @@
     aiProcessSteps,
     isHorizontalCollection,
     renderCollectionShell,
+    mediaViewportHtml,
+    mediaAspectRatio,
     programCardHtml,
     videoCardHtml,
     lessonPanelTitle,

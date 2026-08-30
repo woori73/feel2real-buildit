@@ -8,7 +8,11 @@
  *                 부드러움은 CSS `.f2r-collection-track{scroll-behavior}` 가 담당.
  *   Progress    — 스크롤 위치 → "선두 카드 번호 / 전체" 카운터(NN / MM).
  *   Focus       — 뷰포트 가장자리에서 절반 이상 잘린 카드는 `is-dimmed`(미세 축소·감광)로 shelf 느낌.
- *   Video Card  — 카드를 클릭하면 그 자리에서 재생(업로드 스트림 → <video>, 임베드 URL → <iframe>).
+ *   Playback    — [data-collection-play] 클릭 시, 감싸는 .f2r-media-viewport "안에" 플레이어를
+ *                 덧붙이고 트리거를 숨긴다(치환하지 않는다). 뷰포트가 크기·비율·overflow 를
+ *                 소유하므로 재생해도 외곽 크기가 바뀌지 않는다. Actual Class(Phone Card)와
+ *                 대표 수업(Program Card) 영상이 같은 계약을 공유한다. 업로드 → <video>,
+ *                 임베드 URL → <iframe>. 원본 비율은 CSS object-fit:contain 으로 보존(crop 금지).
  *
  * 규칙(V2)
  *   - Story(3-A)와 분리: 등장 애니메이션·자동 캐러셀 없음. 사용자 제스처만.
@@ -148,12 +152,20 @@
     if (!trigger) return;
     event.preventDefault();
 
+    // Media Viewport 계약: 뷰포트(크기·비율·overflow·radius 소유)는 그대로 두고, 그 "안에서"
+    // 썸네일/버튼을 플레이어로 교체한다. 트리거를 replaceWith 하면 뷰포트가 사라져 플레이어가
+    // 부모 없이(또는 뷰포트 밖) 원본 해상도로 렌더되어 프레임을 벗어난다(V2-8 이전 버그).
+    var viewport = trigger.closest ? trigger.closest('.f2r-media-viewport') : null;
+    if (!viewport) viewport = trigger.parentNode;
+    if (!viewport) return;
+    if (viewport.querySelector('.f2r-media-player')) return; // 이미 재생 중
+
     var embed = trigger.dataset.videoEmbed;
     var src = trigger.dataset.videoSrc;
     var node;
     if (embed) {
       node = doc.createElement('iframe');
-      node.src = embed;
+      node.src = embed + (embed.indexOf('?') === -1 ? '?' : '&') + 'autoplay=1&playsinline=1&rel=0';
       node.setAttribute('title', '수업 영상');
       node.setAttribute('loading', 'lazy');
       node.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
@@ -169,8 +181,9 @@
     } else {
       return;
     }
-    node.className = 'f2r-video-card-player';
-    trigger.replaceWith(node);
+    node.className = 'f2r-media-player';
+    viewport.appendChild(node);
+    trigger.hidden = true;
   }
 
   var wired = false;

@@ -111,15 +111,16 @@ test('Program Card 는 lesson_products 에 등록된 대표 미디어를 표시�
   const pub = map.public.renderLessons(academy);
   // IMAGE lesson → 공개 hero-image 경로
   assert.match(pub, /<img src="\/api\/academies\/[^"]+\/lessons\/9\/hero-image" alt="" loading="lazy">/, 'IMAGE 대표 미디어');
-  // VIDEO lesson(13, mediaVideoId 6) → 클릭 재생 트리거 + 썸네일
-  assert.match(pub, /class="f2r-program-card-media f2r-program-card-media-video" data-collection-play data-video-src="\/api\/academies\/[^"]+\/videos\/6\/stream"/, 'VIDEO 대표 미디어 재생 트리거');
+  // VIDEO lesson(13, mediaVideoId 6) → Media Viewport(뷰포트 div) + 그 안의 재생 트리거 버튼 + 썸네일
+  assert.match(pub, /<div class="f2r-program-card-media f2r-program-card-media-video f2r-media-viewport">/, 'VIDEO 대표 미디어는 Media Viewport');
+  assert.match(pub, /<button type="button" class="f2r-media-play" data-collection-play data-video-src="\/api\/academies\/[^"]+\/videos\/6\/stream"/, 'VIDEO 재생 트리거는 뷰포트 안의 버튼');
   assert.match(pub, /\/api\/academies\/[^"]+\/videos\/6\/thumbnail/, 'VIDEO 썸네일');
 
   // 빌더 캔버스: 이미지는 소유자 전용 경로, 재생 트리거 없음(정적)
   primeRenderer(map.builder, academy, [{ videoId: 6, thumbnailUrl: '/api/academies/x/videos/6/thumbnail' }]);
   const bld = map.builder.renderLessons(academy);
   assert.match(bld, /<img src="\/api\/tutor\/academy\/lessons\/9\/hero-image"/, '빌더 IMAGE 는 소유자 경로');
-  assert.doesNotMatch(bld, /f2r-program-card-media[^"]*" data-collection-play/, '빌더 미디어는 재생 트리거 없음');
+  assert.doesNotMatch(bld, /data-collection-play/, '빌더 미디어는 재생 트리거 없음');
 });
 
 test('공개 Program Card 는 상담 CTA 가 실제 동작(requestConsult)이고, 빌더는 정적이다', () => {
@@ -145,8 +146,8 @@ test('Phone Card 는 프레임 + 클릭 재생 스크린을 갖고, 가로 영�
 
   primeRenderer(map.public, academy, VIDEOS);
   const pub = map.public.renderVideos(academy);
-  // 스크린이 재생 트리거(button.f2r-phone-screen[data-collection-play])
-  assert.match(pub, /<button type="button" class="f2r-phone-screen" data-collection-play data-video-src="\/api\/academies\/x\/videos\/8\/stream"/, 'phone-screen 이 재생 트리거');
+  // 폰 스크린은 Media Viewport(유지되는 뷰포트), 재생 트리거는 그 안의 버튼
+  assert.match(pub, /<div class="f2r-phone-screen f2r-media-viewport"><button type="button" class="f2r-media-play" data-collection-play data-video-src="\/api\/academies\/x\/videos\/8\/stream"/, 'phone-screen 뷰포트 안의 재생 트리거');
   assert.match(pub, /class="f2r-phone-frame"/, 'phone 프레임');
   assert.match(pub, /class="f2r-phone-cam"/, 'phone 카메라 장식');
   // 세로 영상(8: 406x720)은 letterbox 아님, 가로 영상(6: 640x360)은 is-landscape
