@@ -29,7 +29,15 @@ html.js-story #sec-digitaltwin[data-story-staged] {
 html.js-story #sec-digitaltwin[data-story-staged] .ai-process-inner {
   width: 100%;
 }
-/* js-storefront-motion 의 초기 opacity:0 을 무력화 — 가시성은 story 엔진이 data-scene-state 로 관리. */
+/* pin 상태에서는 academy_storefront_motion 의 1회성 reveal(processProgress/revealSequence)이
+   실행되지 않으므로, 그 초기 opacity:0 (js-storefront-motion .f2r-reveal / .ai-process-note /
+   .ai-process-step)을 여기서 무력화한다. [data-story-staged] 는 토글되지 않아 조상-attr transition
+   버그와 무관. 장면별 가시성은 story 엔진이 data-scene-state 로 따로 관리. */
+html.js-story #sec-digitaltwin[data-story-staged] .f2r-reveal,
+html.js-story #sec-digitaltwin[data-story-staged] .ai-process-note {
+  opacity: 1;
+  transform: none;
+}
 html.js-story #sec-digitaltwin[data-story-staged] .ai-process-step {
   opacity: 1;
   transform: none;
