@@ -13,20 +13,20 @@
    (.f2r-collection-track overflow-x / scroll-snap) 은 이 규칙이 건드리지 않는다. */
 
 html.js-scene section[data-scene] {
-  transition: opacity .55s var(--ease, cubic-bezier(.16, .84, .44, 1));
+  transition: opacity .6s var(--ease, cubic-bezier(.16, .84, .44, 1));
   will-change: opacity;
 }
 html.js-scene section[data-scene] > * {
-  transition: transform .55s var(--ease, cubic-bezier(.16, .84, .44, 1));
+  transition: transform .6s var(--ease, cubic-bezier(.16, .84, .44, 1));
   will-change: transform;
 }
 
-/* ENTER — 아직 아래에서 올라오는 장면: 살짝 아래 + 흐리게 대기 */
+/* ENTER — 아직 아래에서 올라오는 장면: 아래에서 흐리게 대기 (V2-11: 전환 체감 강화) */
 html.js-scene section[data-scene="enter"] {
-  opacity: .38;
+  opacity: .32;
 }
 html.js-scene section[data-scene="enter"] > * {
-  transform: translateY(26px) scale(.992);
+  transform: translateY(38px) scale(.982);
 }
 
 /* ACTIVE — 현재 뷰포트를 차지한 장면: 원래 위치, 선명 */
@@ -37,12 +37,12 @@ html.js-scene section[data-scene="active"] > * {
   transform: none;
 }
 
-/* EXIT — 위로 지나가는 장면: 위로 밀리며 흐려짐 → 다음 장면이 stage 를 차지 */
+/* EXIT — 위로 지나가는 장면: 위로 밀리며 확실히 물러남 → 다음 장면이 stage 를 차지 */
 html.js-scene section[data-scene="exit"] {
-  opacity: .28;
+  opacity: .16;
 }
 html.js-scene section[data-scene="exit"] > * {
-  transform: translateY(-20px) scale(.99);
+  transform: translateY(-32px) scale(.982);
 }
 
 /* reduced-motion → 항상 최종(active) 상태, 트랜지션 없음 */

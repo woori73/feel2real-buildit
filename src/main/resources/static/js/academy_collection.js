@@ -13,9 +13,14 @@
  *                 소유하므로 재생해도 외곽 크기가 바뀌지 않는다. Actual Class(Phone Card)와
  *                 대표 수업(Program Card) 영상이 같은 계약을 공유한다. 업로드 → <video>,
  *                 임베드 URL → <iframe>. 원본 비율은 CSS object-fit:contain 으로 보존(crop 금지).
+ *   Affordance  — [data-collection-auto] (V2-11): 첫 진입 시 이 영역이 "옆으로 더 있다"는 걸
+ *                 움직임으로 알린다. "hint" = 짧게 살짝 밀었다 복귀(Actual Class / Mini Lectures).
+ *                 "advance" = hint 후 카드를 하나씩 정지-이동으로 넘겨보고 처음으로 복귀(Programs).
+ *                 무한 캐러셀 아님(1회). 사용자 입력(pointerdown/touch/wheel/key/focus) 즉시 중단,
+ *                 사용자가 항상 우선. prefers-reduced-motion / IO 미지원 → 자동 이동 없음.
  *
  * 규칙(V2)
- *   - Story(3-A)와 분리: 등장 애니메이션·자동 캐러셀 없음. 사용자 제스처만.
+ *   - Story(3-A)와 분리: 등장 애니메이션 없음. 자동 이동은 "affordance 1회"뿐(무한 캐러셀 금지).
  *   - 세로 마우스 휠을 가로로 강제 변환하지 않는다(native overflow-x 우선, trackpad 가로 스크롤 그대로).
  *   - 새 제스처/캐러셀 라이브러리 없음. 모바일 스와이프는 CSS overflow-x + scroll-snap 이 담당.
  *   - 페이지 자체가 가로로 밀리지 않게: viewport 가 track 을 자르고 track 은 overscroll-behavior-x:contain.
@@ -186,6 +191,88 @@
     trigger.hidden = true;
   }
 
+  // ── Horizontal Affordance (V2-11) ────────────────────────────────────────
+  // 첫 진입 시 "옆으로 더 있다"를 움직임으로 알린다. 무한 캐러셀 아님(1회). 사용자 입력이 항상 우선.
+  var REDUCED = typeof global.matchMedia === 'function'
+    && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 화살표 이동과 같은 방식: 레거시 2-인자 scrollBy(dx, 0). 부드러움은 CSS
+  // .f2r-collection-track{scroll-behavior:smooth} 가 담당(reduced-motion 이면 CSS 가 auto 로 끈다).
+  function autoScrollTo(track, left) {
+    track.scrollBy(Math.round(left - track.scrollLeft), 0);
+  }
+
+  function runAuto(collection) {
+    var track = collection.querySelector('[data-collection-track]');
+    if (!track || track.dataset.autoDone === 'true') return;
+    track.dataset.autoDone = 'true';
+    var mode = collection.getAttribute('data-collection-auto');
+    var m = metrics(track);
+    var stride = m.stride || Math.round(track.clientWidth * 0.8);
+    var maxLeft = Math.max(0, track.scrollWidth - track.clientWidth - 1);
+    if (maxLeft < 8) return; // 스크롤할 게 없으면 hint 도 불필요
+    var timers = [];
+    var cancelled = false;
+
+    function clearAll() { for (var i = 0; i < timers.length; i += 1) global.clearTimeout(timers[i]); timers = []; }
+    function cancel() {
+      if (cancelled) return;
+      cancelled = true;
+      clearAll();
+      detach();
+    }
+    function after(ms, fn) { timers.push(global.setTimeout(function () { if (!cancelled) fn(); }, ms)); }
+
+    // 사용자 입력이 오면 즉시 사용자에게 양보한다(스크롤 이벤트가 아니라 직접 입력만 본다 —
+    // 우리 smooth-scroll 자신이 내는 scroll 이벤트와 헷갈리지 않게).
+    var stopEvents = ['pointerdown', 'touchstart', 'wheel', 'keydown', 'focusin'];
+    function detach() { stopEvents.forEach(function (t) { track.removeEventListener(t, cancel); }); }
+    stopEvents.forEach(function (t) { track.addEventListener(t, cancel, { passive: true, once: true }); });
+
+    // 1) hint — 살짝 밀었다 복귀
+    var peek = Math.min(Math.round(stride * 0.18), Math.round(maxLeft));
+    autoScrollTo(track, peek);
+    after(680, function () { autoScrollTo(track, 0); });
+
+    if (mode !== 'advance') { after(1200, cancel); return; }
+
+    // 2) advance — 카드를 하나씩 정지-이동으로 넘겨보고 처음으로 복귀(1회)
+    var dwell = 3000;
+    var cards = m.cards ? m.cards.length : 0;
+    var t = 1500;
+    for (var c = 1; c < Math.min(cards, 6); c += 1) {
+      (function (idx) {
+        after(t, function () { autoScrollTo(track, Math.min(idx * stride, maxLeft)); });
+      })(c);
+      t += dwell;
+    }
+    after(t + 400, function () { autoScrollTo(track, 0); });
+    after(t + 1400, cancel);
+  }
+
+  function initAuto(root) {
+    if (REDUCED || typeof global.IntersectionObserver !== 'function') return;
+    var scope = root && root.querySelectorAll ? root : doc;
+    Array.prototype.forEach.call(
+      scope.querySelectorAll('.f2r-collection[data-collection-auto]:not([data-collection-static])'),
+      function (collection) {
+        var track = collection.querySelector('[data-collection-track]');
+        if (!track || track.dataset.autoReady === 'true') return;
+        track.dataset.autoReady = 'true';
+        var io = new global.IntersectionObserver(function (entries) {
+          for (var i = 0; i < entries.length; i += 1) {
+            if (entries[i].isIntersecting && entries[i].intersectionRatio >= 0.6) {
+              io.disconnect();
+              runAuto(collection);
+              return;
+            }
+          }
+        }, { threshold: [0, 0.3, 0.6, 0.9] });
+        io.observe(collection);
+      }
+    );
+  }
+
   var wired = false;
   function wire(root) {
     if (!wired) {
@@ -198,6 +285,7 @@
       global.addEventListener('resize', function () { eachCollection(doc, update); });
     }
     init(root);
+    initAuto(root);
   }
 
   global.F2RAcademyCollection = Object.freeze({
