@@ -103,35 +103,78 @@
 }
 .f2r-collection[data-collection-static] .f2r-collection-card { flex-basis: 260px; max-width: 320px; }
 
-/* ── Program Card (sec-lessons) ──────────────────────────────────────────
-   고정 2×2 SaaS 카드에서 벗어나 "교육 프로그램을 둘러보는 storefront shelf" 로 보이게 한다.
-   표시 우선순위: kicker → name → learnerNeed → highlight → coreDetailTitle → 상담 CTA.
-   존재하지 않는 필드는 렌더하지 않는다(가짜 데이터 없음). */
+/* ── Program Card (sec-lessons) — V2 ─────────────────────────────────────
+   고정 2×2 SaaS 카드에서 벗어나 하나의 작은 Web Experience 처럼 보이게 한다:
+   VISUAL STAGE(대표 미디어) → 프로그램 라벨 → 이름 → 한 줄 설명 → 이런 학생에게
+   → 핵심 특징 → 대상 → 상담 CTA.  존재하지 않는 필드는 렌더하지 않는다(가짜 데이터 없음).
+   미디어는 lesson_products 에 이미 등록된 대표 이미지/영상을 그대로 쓴다. */
 .f2r-program-card {
   display: flex;
   flex-direction: column;
-  padding: 22px 20px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: #fff;
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
-.f2r-program-card-kicker {
-  margin-bottom: 8px;
+.f2r-program-card-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.f2r-program-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.f2r-program-card-media-video { cursor: pointer; }
+.f2r-program-card-media .f2r-video-play {
+  width: 46px;
+  height: 46px;
+  font-size: 15px;
+}
+.f2r-program-card-media-video:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
+.f2r-program-card-media:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.f2r-collection[data-collection-static] .f2r-program-card-media-video { cursor: default; }
+
+.f2r-program-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+}
+.f2r-program-card-eyebrow {
+  margin-bottom: 6px;
   color: var(--ultramarine);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  line-height: 1.5;
-  letter-spacing: -.01em;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   word-break: keep-all;
 }
 .f2r-program-card-name {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--ink);
   font-size: 18px;
   font-weight: 900;
   line-height: 1.32;
   letter-spacing: -.02em;
+  word-break: keep-all;
+}
+.f2r-program-card-kicker {
+  margin-bottom: 10px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.55;
   word-break: keep-all;
 }
 .f2r-program-card-need {
@@ -153,12 +196,12 @@
   line-height: 1.55;
   word-break: keep-all;
 }
-.f2r-program-card-core {
-  margin-bottom: 16px;
+.f2r-program-card-grade {
+  margin-bottom: 14px;
   color: var(--ink-faint);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.5;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: -.01em;
   word-break: keep-all;
 }
 .f2r-program-card-cta {

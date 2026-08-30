@@ -530,25 +530,31 @@
   }
 
   /**
-   * Program Card. 표시 우선순위: kicker → name → learnerNeed → highlight → coreDetailTitle → 상담 CTA.
+   * Program Card (V2). 하나의 작은 Web Experience 처럼 보이게 한다:
+   *   VISUAL STAGE(대표 미디어) → 프로그램 라벨(tabShortName) → 이름 → 한 줄 설명(kicker)
+   *   → 이런 학생에게(learnerNeed) → 핵심 특징(highlight) → 대상(gradeLabel/tabGuidanceLabel) → 상담 CTA
    * 존재하지 않는 필드는 렌더하지 않는다(가짜 target/student 데이터를 만들지 않는다).
-   * 상세 펼침은 없다 — 이 카드는 "둘러보기 + 상담 연결" 까지만 한다.
+   * 대표 미디어는 ctx.programCardMedia 가 화면별(공개/빌더) 경로로 조립한다 —
+   * lesson_products.media_image_key / media_video_id 로 이미 등록된 자료를 그대로 쓴다.
    */
   function programCardHtml(lesson, ctx) {
     const data = lesson || {};
-    const rows = [];
+    const media = ctx.programCardMedia ? ctx.programCardMedia(data) : '';
+    const eyebrow = textValue(data.tabShortName);
+    const name = textValue(data.name) || eyebrow;
     const kicker = textValue(data.kicker);
-    const name = textValue(data.name) || textValue(data.tabShortName);
     const need = textValue(data.learnerNeed);
     const highlight = textValue(data.highlight);
-    const core = textValue(data.coreDetailTitle);
-    if (kicker) rows.push(`<div class="f2r-program-card-kicker">${escapeHtml(kicker)}</div>`);
-    if (name) rows.push(`<div class="f2r-program-card-name">${escapeHtml(name)}</div>`);
-    if (need) rows.push(`<div class="f2r-program-card-need">${escapeHtml(need)}</div>`);
-    if (highlight) rows.push(`<div class="f2r-program-card-highlight">${escapeHtml(highlight)}</div>`);
-    if (core) rows.push(`<div class="f2r-program-card-core">${escapeHtml(core)}</div>`);
-    rows.push(ctx.collectionConsultCta('상담 신청하기'));
-    return `<article class="f2r-program-card">${rows.join('')}</article>`;
+    const grade = textValue(data.gradeLabel) || textValue(data.tabGuidanceLabel);
+    const body = [];
+    if (eyebrow && eyebrow !== name) body.push(`<div class="f2r-program-card-eyebrow">${escapeHtml(eyebrow)}</div>`);
+    if (name) body.push(`<div class="f2r-program-card-name">${escapeHtml(name)}</div>`);
+    if (kicker) body.push(`<div class="f2r-program-card-kicker">${escapeHtml(kicker)}</div>`);
+    if (need) body.push(`<div class="f2r-program-card-need">${escapeHtml(need)}</div>`);
+    if (highlight) body.push(`<div class="f2r-program-card-highlight">${escapeHtml(highlight)}</div>`);
+    if (grade) body.push(`<div class="f2r-program-card-grade">${escapeHtml(grade)}</div>`);
+    body.push(ctx.collectionConsultCta('상담 신청하기'));
+    return `<article class="f2r-program-card${media ? ' has-media' : ''}">${media}<div class="f2r-program-card-body">${body.join('')}</div></article>`;
   }
 
   /**
@@ -727,6 +733,21 @@
         if (!src) return `<div class="f2r-video-card-media">${face}</div>`;
         return `<button type="button" class="f2r-video-card-media" data-collection-play data-video-src="${src}"${poster} aria-label="수업 영상 재생">${face}</button>`;
       },
+      // Program Card 대표 미디어 — 공개 페이지는 발행 학원의 공개 바이트 경로를 쓴다.
+      // 이미지: 그대로 표시. 영상: 썸네일 + 클릭 시 그 자리에서 재생(sec-videos 카드와 같은 배선).
+      programCardMedia(lesson) {
+        const id = lesson.lessonId;
+        if (lesson.mediaType === 'IMAGE' && id != null) {
+          const slug = encodeURIComponent(resolve(options.slug));
+          return `<div class="f2r-program-card-media"><img src="/api/academies/${slug}/lessons/${encodeURIComponent(id)}/hero-image" alt="" loading="lazy"></div>`;
+        }
+        if (lesson.mediaType === 'VIDEO' && lesson.mediaVideoId != null) {
+          const slug = encodeURIComponent(resolve(options.slug));
+          const base = `/api/academies/${slug}/videos/${encodeURIComponent(lesson.mediaVideoId)}`;
+          return `<button type="button" class="f2r-program-card-media f2r-program-card-media-video" data-collection-play data-video-src="${base}/stream" data-video-poster="${base}/thumbnail" aria-label="수업 영상 재생"><img src="${base}/thumbnail" alt="" loading="lazy"><span class="f2r-video-play" aria-hidden="true">▶</span></button>`;
+        }
+        return '';
+      },
 
       /**
        * 텍스트 노드. 값이 비면 요소 자체를 생략해 빈 자리가 남지 않게 한다
@@ -871,6 +892,20 @@
       },
       collectionVideoMedia(video, face) {
         return `<div class="f2r-video-card-media">${face}</div>`;
+      },
+      // 빌더 캔버스: 정적 표시. 이미지는 소유자 전용 경로, 영상은 목록의 썸네일 URL 을 재사용한다.
+      programCardMedia(lesson) {
+        const id = lesson.lessonId;
+        if (lesson.mediaType === 'IMAGE' && id != null) {
+          return `<div class="f2r-program-card-media"><img src="/api/tutor/academy/lessons/${encodeURIComponent(id)}/hero-image" alt="" loading="lazy"></div>`;
+        }
+        if (lesson.mediaType === 'VIDEO' && lesson.mediaVideoId != null) {
+          const found = (resolve(options.videos) || []).find((v) => String(v.videoId) === String(lesson.mediaVideoId));
+          if (found && found.thumbnailUrl) {
+            return `<div class="f2r-program-card-media f2r-program-card-media-video"><img src="${escapeAttr(found.thumbnailUrl)}" alt="" loading="lazy"><span class="f2r-video-play" aria-hidden="true">▶</span></div>`;
+          }
+        }
+        return '';
       },
 
       /**
