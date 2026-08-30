@@ -485,6 +485,111 @@
         </div>`;
   }
 
+  // ── Horizontal Content Collection (PHASE 3-B) ─────────────────────────────
+  // 재사용 가능한 가로 컬렉션 한 벌. sec-lessons(Program) / sec-videos(Video)가 공유한다.
+  //   구조:  Collection → head(hint + nav) → viewport → track → card
+  //   Program Card / Video Card 는 이 위의 card *type* 이다(별도 캐러셀을 만들지 않는다).
+  // 렌더는 순수 문자열이고, 배선(화살표 스크롤·카드 클릭 재생)은 academy_collection.js가 담당한다.
+  // 다음 단계에서 Mini Lectures / School Exam Contents 등도 같은 shell + card type으로 올린다.
+
+  /** 섹션 레이아웃 선택. draft 값이 'horizontal'이면 opt-in, 그 외/미설정이면 기존 레이아웃. */
+  function isHorizontalCollection(view, key) {
+    return String(draftText(view, key, '') || '').trim().toLowerCase() === 'horizontal';
+  }
+
+  function textValue(value) {
+    return value == null ? '' : String(value).trim();
+  }
+
+  /**
+   * 컬렉션 공통 shell. cards는 카드 *내용* HTML 문자열 배열이고 여기서 <li>로 감싼다.
+   * staticMode(빌더 캔버스): 화살표 없음 + track이 가로 스크롤 대신 wrap(편집 UX / public 분리).
+   */
+  function renderCollectionShell(options) {
+    const o = options || {};
+    const cards = Array.isArray(o.cards) ? o.cards : [];
+    const label = escapeAttr(o.navLabel || '카드');
+    const nav = o.staticMode
+      ? ''
+      : `<div class="f2r-collection-nav" data-collection-nav>
+          <button type="button" class="f2r-collection-arrow" data-collection-scroll="prev" aria-label="${label} 이전으로" disabled>&#8249;</button>
+          <button type="button" class="f2r-collection-arrow" data-collection-scroll="next" aria-label="${label} 다음으로">&#8250;</button>
+        </div>`;
+    const hint = o.hint ? escapeHtml(o.hint) : '';
+    return `<div class="f2r-collection"${o.staticMode ? ' data-collection-static' : ''} data-collection>
+        <div class="f2r-collection-head">
+          <span class="f2r-collection-hint">${hint}</span>
+          ${nav}
+        </div>
+        <div class="f2r-collection-viewport">
+          <ul class="f2r-collection-track" data-collection-track role="list">
+            ${cards.map((card) => `<li class="f2r-collection-card">${card}</li>`).join('\n            ')}
+          </ul>
+        </div>
+      </div>`;
+  }
+
+  /**
+   * Program Card. 표시 우선순위: kicker → name → learnerNeed → highlight → coreDetailTitle → 상담 CTA.
+   * 존재하지 않는 필드는 렌더하지 않는다(가짜 target/student 데이터를 만들지 않는다).
+   * 상세 펼침은 없다 — 이 카드는 "둘러보기 + 상담 연결" 까지만 한다.
+   */
+  function programCardHtml(lesson, ctx) {
+    const data = lesson || {};
+    const rows = [];
+    const kicker = textValue(data.kicker);
+    const name = textValue(data.name) || textValue(data.tabShortName);
+    const need = textValue(data.learnerNeed);
+    const highlight = textValue(data.highlight);
+    const core = textValue(data.coreDetailTitle);
+    if (kicker) rows.push(`<div class="f2r-program-card-kicker">${escapeHtml(kicker)}</div>`);
+    if (name) rows.push(`<div class="f2r-program-card-name">${escapeHtml(name)}</div>`);
+    if (need) rows.push(`<div class="f2r-program-card-need">${escapeHtml(need)}</div>`);
+    if (highlight) rows.push(`<div class="f2r-program-card-highlight">${escapeHtml(highlight)}</div>`);
+    if (core) rows.push(`<div class="f2r-program-card-core">${escapeHtml(core)}</div>`);
+    rows.push(ctx.collectionConsultCta('상담 신청하기'));
+    return `<article class="f2r-program-card">${rows.join('')}</article>`;
+  }
+
+  /**
+   * Video Card. 기존 콘텐츠(업로드된 세로 숏폼) 보존 — thumbnail 중심으로 빠르게 둘러보고
+   * 클릭하면 그 자리에서 재생. YouTube 링크(향후 다른 card type)는 공용 youtube 파서를 태운다.
+   */
+  function videoCardHtml(video, ctx) {
+    const data = video || {};
+    const landscape = Number(data.width) > 0 && Number(data.height) > 0 && Number(data.width) > Number(data.height);
+    const thumb = data.thumbnailUrl
+      ? `<img src="${escapeAttr(data.thumbnailUrl)}" alt="" loading="lazy">`
+      : '<span class="f2r-video-card-thumb-ph" aria-hidden="true">🎬</span>';
+    const dur = data.durationSec != null
+      ? `<span class="f2r-video-card-dur">${formatDuration(data.durationSec)}</span>`
+      : '';
+    const face = `${thumb}<span class="f2r-video-play" aria-hidden="true">▶</span>${dur}`;
+    return `<article class="f2r-video-card${landscape ? ' is-landscape' : ''}">${ctx.collectionVideoMedia(data, face)}</article>`;
+  }
+
+  function lessonCollectionHtml(lessons, ctx, opts) {
+    const items = (lessons || []).filter(Boolean);
+    if (!items.length) return `<p class="lesson-empty">${escapeHtml((opts && opts.emptyMessage) || '아직 등록된 수업이 없습니다.')}</p>`;
+    return renderCollectionShell({
+      navLabel: '프로그램',
+      hint: (opts && opts.hint) || '좌우로 밀어 프로그램을 둘러보세요',
+      staticMode: !!(opts && opts.staticMode),
+      cards: items.map((lesson) => programCardHtml(lesson, ctx))
+    });
+  }
+
+  function videoCollectionHtml(videos, ctx, opts) {
+    const items = (videos || []).filter(Boolean);
+    if (!items.length) return VIDEO_EMPTY_PLACEHOLDER;
+    return renderCollectionShell({
+      navLabel: '수업 영상',
+      hint: (opts && opts.hint) || '좌우로 밀어 영상을 둘러보세요',
+      staticMode: !!(opts && opts.staticMode),
+      cards: items.map((video) => videoCardHtml(video, ctx))
+    });
+  }
+
   /** 학원마다 달라야 하는 제목이라 기본값도 학원명에서 파생한다(고정 문구 금지). */
   function videosTitleDefault(view) {
     const name = String((view && view.name) || '').trim();
@@ -494,7 +599,9 @@
   function renderVideos(view, ctx) {
     if (!view.sectionVisible('sec-videos')) return '';
     const videos = ctx.videoList();
-    const body = videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER;
+    const body = isHorizontalCollection(view, 'videosLayout')
+      ? ctx.videoCollection(videos)
+      : (videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER);
     const title = draftText(view, 'videosSectionTitle', videosTitleDefault(view));
     return `<section id="sec-videos" data-builder-section-key="sec-videos" class="section-wrap" data-fade>
       <div class="section-inner">
@@ -520,13 +627,16 @@
   function renderLessons(view, ctx) {
     if (!view.sectionVisible('sec-lessons')) return '';
     const title = draftText(view, 'curriculumTitle', lessonsTitleDefault(view));
+    const slot = isHorizontalCollection(view, 'lessonsLayout')
+      ? ctx.lessonCollection(view.lessons || [])
+      : ctx.renderLessonShowcase(view.lessons || []);
     return `<section id="sec-lessons" data-builder-section-key="sec-lessons" class="section-wrap classes-wrap" data-fade>
         <div class="section-inner classes-container">
           <div class="section-head classes-head">
             <div class="eyebrow"><span class="stroke"></span>대표 수업</div>
             ${ctx.editableText({ tag: 'h2', className: 'classes-title', draftKey: 'curriculumTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
-          <div class="lesson-product-slot">${ctx.renderLessonShowcase(view.lessons || [])}</div>
+          <div class="lesson-product-slot">${slot}</div>
           ${ctx.lessonsFooter(view)}
         </div>
         ${renderLessonSchedule(view, ctx)}
@@ -599,6 +709,24 @@
       },
       // 공개 페이지에는 관리 버튼이 없다.
       lessonsFooter() { return ''; },
+
+      // Horizontal Content Collection — 공개 페이지는 실제 가로 shelf + 카드 상호작용.
+      lessonCollection(lessons) {
+        return lessonCollectionHtml(lessons, this, { emptyMessage: '아직 공개된 수업 상품이 없습니다.' });
+      },
+      videoCollection(videos) {
+        return videoCollectionHtml(videos, this);
+      },
+      collectionConsultCta(label) {
+        const text = String(label == null ? '' : label).trim() || '상담 신청하기';
+        return `<button type="button" class="f2r-program-card-cta" onclick="requestConsult()">${escapeHtml(text)}</button>`;
+      },
+      collectionVideoMedia(video, face) {
+        const src = escapeAttr(video.videoUrl || '');
+        const poster = video.thumbnailUrl ? ` data-video-poster="${escapeAttr(video.thumbnailUrl)}"` : '';
+        if (!src) return `<div class="f2r-video-card-media">${face}</div>`;
+        return `<button type="button" class="f2r-video-card-media" data-collection-play data-video-src="${src}"${poster} aria-label="수업 영상 재생">${face}</button>`;
+      },
 
       /**
        * 텍스트 노드. 값이 비면 요소 자체를 생략해 빈 자리가 남지 않게 한다
@@ -720,6 +848,29 @@
           ? '<a class="cv-btn-primary builder-lesson-manage" href="/tutor/academy/lessons/editor">📚 수업 관리</a>'
           : '<button type="button" class="cv-btn-primary builder-lesson-manage" data-lesson-publish-required>📚 수업 관리</button>';
         return `<div style="text-align:center;margin-top:14px;">${manageBtn}</div>`;
+      },
+
+      // Horizontal Content Collection — 캔버스는 편집 UX 우선이라 정적 wrap(가로 스크롤 없음).
+      // 실제 발행 페이지는 좌우로 둘러보는 shelf 라는 hint 를 남긴다.
+      lessonCollection(lessons) {
+        return lessonCollectionHtml(lessons, this, {
+          emptyMessage: '아직 등록된 수업이 없습니다.',
+          staticMode: true,
+          hint: '공개 페이지에서는 좌우로 둘러보는 가로 컬렉션으로 표시됩니다'
+        });
+      },
+      videoCollection(videos) {
+        return videoCollectionHtml(videos, this, {
+          staticMode: true,
+          hint: '공개 페이지에서는 좌우로 둘러보는 가로 컬렉션으로 표시됩니다'
+        });
+      },
+      collectionConsultCta(label) {
+        const text = String(label == null ? '' : label).trim() || '상담 신청하기';
+        return `<span class="f2r-program-card-cta" aria-hidden="true">${escapeHtml(text)}</span>`;
+      },
+      collectionVideoMedia(video, face) {
+        return `<div class="f2r-video-card-media">${face}</div>`;
       },
 
       /**
@@ -877,6 +1028,10 @@
     selectedFeaturedLessons,
     featuredItems,
     aiProcessSteps,
+    isHorizontalCollection,
+    renderCollectionShell,
+    programCardHtml,
+    videoCardHtml,
     lessonPanelTitle,
     renderHero,
     renderIntro,

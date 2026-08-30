@@ -246,6 +246,7 @@ specificity가 (1,1,1)이라 `.featured-desc`/`.ai-process-desc`/`.ai-process-no
 
 Horizontal Collection primitive (Programs → Actual Class Shorts → Mini Lectures).
 BuildIt Web V2: PAGE = Vertical Story × 각 Collection = Horizontal Browse.
+→ §13에서 구현.
 
 ## 12. 2026-08-30 변경: PHASE 3-A — Storefront Motion (Vertical Storytelling)
 
@@ -284,6 +285,62 @@ VERTICAL STORYTELLING — 섹션이 스크롤 진입하면 "의미가 진행되�
 `.featured-desc`/`.ai-process-desc`/`.ai-process-note` 중앙 정렬(`margin:X auto 0` + `:not()` 리셋 예외,
 PHASE 2.1)은 유지. `.f2r-reveal` 초기 transform은 `:not(.is-in)`으로만 걸어 is-in 시 정확히 원위치
 (`transform:none`)로 복귀 — per-type 규칙이 resting transform을 남기던 specificity 함정 제거.
+
+## 13. 2026-08-30 변경: PHASE 3-B — Horizontal Content Collection
+
+BuildIt Web V2 구조:  `PAGE → Vertical Story Sections → Horizontal Collection Sections → Content Cards`.
+Story(3-A) = "페이지가 보여준다"(자동 모션).  Collection(3-B) = "사용자가 둘러본다"(직접 탐색).
+→ 컬렉션 카드에 등장 애니메이션·자동 캐러셀을 넣지 않는다. 사용자 제스처(스와이프/휠 가로/화살표)만.
+
+### 공통 구조 한 벌 —  Collection → head(hint + nav) → viewport → track → card
+
+- 마크업 정본: `academy_sections.js` — `renderCollectionShell()` / `programCardHtml()` / `videoCardHtml()`.
+  Program Card / Video Card 는 **같은 shell 위의 card type**이다(Programs용·Videos용 캐러셀을 따로 만들지 않는다).
+  다음 단계의 Mini Lectures / School Exam Contents 도 같은 shell + 새 card type 으로 올린다.
+- 배선: `academy_collection.js` (`window.F2RAcademyCollection`, 공개 페이지에서만 로드).
+  `wire(root)` — 좌/우 화살표는 `track.scrollBy`(한 화면 남기고 이동), Video Card 클릭 → 그 자리 재생
+  (업로드 스트림 → `<video>`, 임베드 URL → `<iframe>`). `scroll` 이벤트로 화살표 disabled 상태만 갱신.
+  세로 휠을 가로로 강제 변환하지 않는다(native `overflow-x` 우선). 새 제스처/캐러셀 라이브러리 없음.
+- CSS: `academy_collection.css` (page-owned, `academy_public.css` 토큰 재사용).
+  Desktop(≥761px): 카드폭 300px 고정 → 여러 장 + 다음 카드 peek + 화살표.
+  Mobile(≤760px): 화살표 숨김, 카드폭 78vw, `scroll-snap-type:x` + touch 스와이프 + peek.
+  페이지 가로 밀림 방지: `.f2r-collection-viewport{overflow:hidden}` + track `overscroll-behavior-x:contain`.
+  빌더 캔버스: `data-collection-static` → 화살표 없이 wrap 배치(편집 UX / public presentation 분리).
+
+### opt-in — 다른 학원 사이트 불변
+
+- `sec-lessons` / `sec-videos` 렌더는 `builderDraft.lessonsLayout` / `videosLayout == 'horizontal'` 일 때만
+  가로 컬렉션으로 바뀐다. 키가 없으면 기존 레이아웃(수업상품 showcase / 유튜브 재생목록형) 그대로.
+- 서버 `BUILDER_DRAFT_KEYS` 에 `lessonsLayout`·`videosLayout` 추가(200자 제한). `sectionVisibility`/`sectionOrder`
+  는 건드리지 않는다.
+- 빌더: `sec-lessons`/`sec-videos` 섹션 편집 컨트롤에 `레이아웃: 기본 / 가로` 토글 버튼
+  (`toggleCollectionLayout` → draft 갱신 + 프리뷰 재렌더 + 발행 시 저장).
+
+### Program Card / Video Card
+
+- **Program Card**(sec-lessons): 표시 우선순위 `kicker → name → learnerNeed → highlight → coreDetailTitle → 상담 CTA`.
+  존재하지 않는 필드는 렌더하지 않는다(가짜 target/student 데이터를 만들지 않는다). 상세 펼침 없음 —
+  "둘러보기 + 상담 연결"까지만. 공개 CTA 는 `requestConsult()` 버튼, 빌더는 정적 `<span>`.
+- **Video Card**(sec-videos = Actual Class Shorts): 기존 업로드 콘텐츠(세로 숏폼 mp4) 보존. thumbnail 중심,
+  길이 배지, 클릭 → 그 자리 재생(`data-collection-play` + `data-video-src` 스트림). 방향(width>height)에 따라
+  `is-landscape` 비율. YouTube URL 파서(`youtubeVideoId`/`youtubeEmbedUrl`)는 `academy_sections.js` 한 곳에
+  centralize — 향후 다른 card type(Mini Lectures 등)이 임베드를 태울 때 공용으로 쓴다.
+
+### Eduholic 적용
+
+- `V955__eduholic_storefront_horizontal_collection.sql` — `handle='eduholic'` 한 행의 `page_settings` JSON 에
+  `builderDraft.lessonsLayout='horizontal'` / `videosLayout='horizontal'` 두 키만 `JSON_SET`. 스키마 변경·
+  기존 데이터 삭제/변환 없음. handle 이 없으면 아무 행도 바뀌지 않는다.
+
+### 안전 / 회귀
+
+- 배선 모듈 미로드·JS 장애 시: 콘텐츠는 정적 shelf 로 완전히 보인다(화살표만 동작 안 함).
+- `prefers-reduced-motion` — 화살표 스크롤은 smooth 대신 즉시 점프.
+- 캐시버스팅: `academy_sections.js?v=20260830-4`, `academy_builder.js?v=20260830-2`,
+  `academy_public.js?v=20260830-4`, 신규 `academy_collection.js?v=20260830-1` / `.css?v=20260830-1`.
+- 검증: `node --test src/test/js/academy_horizontal_collection.test.js` (opt-in 기본 OFF, horizontal 렌더,
+  Program 카드 우선순위·빈 필드 생략, Video 카드 재생 앵커·방향 클래스, 공개/빌더 앵커 분리, FA-free,
+  가로 밀림 방지 CSS). `AcademyBuilderTemplateContractTest.horizontal_content_collection_shares_one_shell_and_is_opt_in`.
 
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 

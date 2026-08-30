@@ -1,0 +1,267 @@
+/* ══════════════ Horizontal Content Collection (PHASE 3-B) ══════════════
+   Builder V2 구조:  PAGE → Vertical Story Sections → Horizontal Collection Sections → Content Cards.
+   Story(3-A) = "페이지가 보여준다"(자동 모션).  Collection(3-B) = "사용자가 둘러본다"(직접 탐색).
+   그래서 여기에는 자동 캐러셀·등장 애니메이션이 없다 — 사용자 제스처(스와이프/휠 가로/화살표)만.
+
+   공통 구조 한 벌:  .f2r-collection → head(hint + nav) → viewport → track → card
+   Program Card / Video Card 는 이 Collection 위의 card *type* 이다(별도 캐러셀 아님).
+
+   마크업 정본은 academy_sections.js(renderCollectionShell), 배선은 academy_collection.js.
+   토큰은 academy_public.css(landing_buildit.css와 동일)를 그대로 쓴다. */
+
+.f2r-collection { --f2r-card-w: 300px; margin-top: 22px; }
+
+.f2r-collection-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  margin-bottom: 12px;
+}
+.f2r-collection-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  word-break: keep-all;
+}
+.f2r-collection-nav { display: flex; gap: 8px; flex-shrink: 0; }
+.f2r-collection-arrow {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .15s var(--ease), color .15s var(--ease), opacity .15s var(--ease);
+}
+.f2r-collection-arrow:hover { border-color: var(--accent); color: var(--accent); }
+.f2r-collection-arrow:focus-visible { outline: 2px solid rgba(37, 99, 235, .4); outline-offset: 2px; }
+.f2r-collection-arrow:disabled { opacity: .3; cursor: default; border-color: var(--line); color: var(--ink); }
+
+/* viewport 는 track 을 잘라 페이지가 가로로 밀리지 않게 한다. 스크롤은 track 내부에서만. */
+.f2r-collection-viewport { overflow: hidden; }
+.f2r-collection-track {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 4px 4px 12px;
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 4px;
+  overscroll-behavior-x: contain;   /* track 끝에서 페이지로 스크롤이 새지 않게 */
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.f2r-collection-track::-webkit-scrollbar { display: none; }
+
+.f2r-collection-card {
+  flex: 0 0 var(--f2r-card-w);
+  max-width: 86%;
+  scroll-snap-align: start;
+  display: flex;
+}
+.f2r-collection-card > * { width: 100%; }
+
+/* 데스크톱: 여러 카드 동시 표시 + 다음 카드 일부 peek(고정 px 카드폭이 컨테이너 대비 자연스럽게 2~3.x개). */
+@media (min-width: 761px) {
+  .f2r-collection { --f2r-card-w: 300px; }
+}
+/* 모바일: 화살표 숨김. 터치 스와이프 + scroll-snap + 다음 카드 peek. JS 제스처 라이브러리 없음. */
+@media (max-width: 760px) {
+  .f2r-collection { --f2r-card-w: 78vw; }
+  .f2r-collection-nav { display: none; }
+  .f2r-collection-head { min-height: 0; margin-bottom: 10px; }
+  .f2r-collection-card { max-width: 82vw; }
+}
+
+/* 빌더 캔버스: 편집 UX 우선 — 가로 스크롤 대신 wrap 배치(3-B 지침: 편집 UX와 public presentation 분리).
+   실제 발행 페이지는 가로 컬렉션으로 보인다는 hint 를 카드 위에 남긴다. */
+.f2r-collection[data-collection-static] .f2r-collection-nav { display: none; }
+.f2r-collection[data-collection-static] .f2r-collection-viewport { overflow: visible; }
+.f2r-collection[data-collection-static] .f2r-collection-track {
+  flex-wrap: wrap;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+.f2r-collection[data-collection-static] .f2r-collection-card { flex-basis: 260px; max-width: 320px; }
+
+/* ── Program Card (sec-lessons) ──────────────────────────────────────────
+   고정 2×2 SaaS 카드에서 벗어나 "교육 프로그램을 둘러보는 storefront shelf" 로 보이게 한다.
+   표시 우선순위: kicker → name → learnerNeed → highlight → coreDetailTitle → 상담 CTA.
+   존재하지 않는 필드는 렌더하지 않는다(가짜 데이터 없음). */
+.f2r-program-card {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.f2r-program-card-kicker {
+  margin-bottom: 8px;
+  color: var(--ultramarine);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: -.01em;
+  word-break: keep-all;
+}
+.f2r-program-card-name {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.32;
+  letter-spacing: -.02em;
+  word-break: keep-all;
+}
+.f2r-program-card-need {
+  margin-bottom: 10px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.62;
+  word-break: keep-all;
+}
+.f2r-program-card-highlight {
+  margin-bottom: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+.f2r-program-card-core {
+  margin-bottom: 16px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.f2r-program-card-cta {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  text-align: center;
+  cursor: pointer;
+  transition: background .15s var(--ease), transform .15s var(--ease);
+}
+.f2r-program-card-cta:hover { background: var(--accent); transform: translateY(-1px); }
+.f2r-collection[data-collection-static] .f2r-program-card-cta { cursor: default; }
+
+/* ── Video Card (sec-videos = Actual Class Shorts) ───────────────────────
+   기존 콘텐츠(업로드된 세로 숏폼 mp4)를 보존한다. thumbnail 중심으로 빠르게 둘러보고
+   클릭하면 그 자리에서 재생된다. 새 carousel/YouTube API/oEmbed 의존성 없음. */
+.f2r-video-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #0b1020;
+  box-shadow: var(--shadow-sm);
+}
+.f2r-video-card-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  padding: 0;
+  border: 0;
+  background: #0b1020;
+  cursor: pointer;
+  overflow: hidden;
+}
+.f2r-video-card.is-landscape .f2r-video-card-media { aspect-ratio: 16 / 9; }
+.f2r-video-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.f2r-video-card-thumb-ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, .55);
+}
+.f2r-video-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, .85);
+  background: rgba(0, 0, 0, .45);
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s var(--ease), background .15s var(--ease);
+}
+.f2r-video-card-media:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
+.f2r-video-card-dur {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, .72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.f2r-video-card-media:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.f2r-video-card-player {
+  display: block;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: #000;
+  border: 0;
+}
+.f2r-video-card.is-landscape .f2r-video-card-player { aspect-ratio: 16 / 9; }
+.f2r-collection[data-collection-static] .f2r-video-card-media { cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .f2r-collection-arrow,
+  .f2r-program-card-cta,
+  .f2r-video-play { transition: none; }
+}

@@ -111,7 +111,12 @@ public class AcademyService {
       "aiProcessStep3",
       "aiProcessStep4",
       "aiProcessStep5",
-      "aiProcessNote");
+      "aiProcessNote",
+      // ── Education Storefront: Horizontal Content Collection (PHASE 3-B) ──
+      // sec-lessons / sec-videos 를 가로 컬렉션(shelf)으로 표시할지. 'horizontal' 이면 opt-in,
+      // 그 외/미설정이면 기존 레이아웃(showcase / 재생목록). 다른 학원은 이 키가 없어 불변.
+      "lessonsLayout",
+      "videosLayout");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
