@@ -429,11 +429,98 @@ class LessonProductEditorTemplateContractTest {
     String controller = Files.readString(CONTROLLER);
 
     // when & then
-    // 공통 디자인 섹션이 수업상품 입력보다 위에 온다.
-    String html = Files.readString(TEMPLATE);
-    assertThat(html.indexOf("공통 디자인")).isLessThan(html.indexOf("수업상품 입력"));
-    assertThat(document.selectFirst("#theme")).isNotNull();
+    // 배경 스타일(theme)은 학원 공통이고, V2-7 에서 "상세 설정" <details> 안으로 이동했다.
+    Element theme = document.selectFirst("details.editor-advanced #theme[name=theme]");
+    assertThat(theme).isNotNull();
+    assertThat(theme.parent().selectFirst("label[for=theme] .required-mark")).isNotNull();
     assertThat(functionBody(controller, "syncCommonTheme")).contains("setCommonTheme");
+  }
+
+  @Test
+  void coreFormExposesOnlyTheProgramCardFieldsWithFriendlyLabels() throws Exception {
+    // given — 기본 화면은 수업 카드를 구동하는 핵심 항목만, DB/내부 필드명은 숨긴다.
+    Document document = Jsoup.parse(Files.readString(TEMPLATE));
+
+    // when
+    Element core = document.selectFirst("fieldset.editor-group-core");
+
+    // then
+    assertThat(core).isNotNull();
+    // 카드를 구동하는 6개 항목 + 필수 표시.
+    assertThat(core.select("#tabShortName, #name, #kicker, #learnerNeed, #highlight, #gradeLabel"))
+        .hasSize(6);
+    assertThat(core.selectFirst("label[for=name] .required-mark")).isNotNull();
+    // 원장에게 보이는 라벨은 이해하기 쉬운 표현으로.
+    assertThat(core.selectFirst("label[for=tabShortName]").text()).isEqualTo("카드 라벨");
+    assertThat(core.selectFirst("label[for=name]").text()).contains("수업명");
+    assertThat(core.selectFirst("label[for=kicker]").text()).isEqualTo("한 줄 설명");
+    assertThat(core.selectFirst("label[for=learnerNeed]").text()).isEqualTo("이런 학생에게");
+    assertThat(core.selectFirst("label[for=highlight]").text()).isEqualTo("핵심 특징");
+    assertThat(core.selectFirst("label[for=gradeLabel]").text()).isEqualTo("대상");
+    // 이전의 내부 지향 라벨은 원장 화면에서 사라진다.
+    String coreText = core.text();
+    assertThat(coreText)
+        .doesNotContain("탭 상품명", "상단 보조 문구", "핵심 강조 문구", "아래 상세 보조 문구");
+    // CTA 는 데이터 필드가 아니라 고정 동작이므로 새 입력을 만들지 않는다.
+    assertThat(document.select("#ctaLabel, #ctaText, [name=ctaLabel], [name=cta]")).isEmpty();
+  }
+
+  @Test
+  void advancedDetailsKeepsEveryLegacyFieldWithoutRemovingData() throws Exception {
+    // given — 기존 저장 필드는 삭제하지 않고 "상세 설정" <details> 안에 그대로 둔다.
+    Document document = Jsoup.parse(Files.readString(TEMPLATE));
+
+    // when
+    Element advanced = document.selectFirst("details.editor-advanced .editor-advanced-body");
+
+    // then
+    assertThat(advanced).isNotNull();
+    for (String id : new String[] {
+        "theme", "tabGuidanceLabel", "description", "schoolName",
+        "priceAmount", "priceUnit", "coreDetailTitle",
+        "explanation1", "explanation2", "explanation3"}) {
+      assertThat(advanced.selectFirst("#" + id))
+          .withFailMessage("상세 설정에 기존 필드 %s 가 보존돼야 한다", id)
+          .isNotNull();
+    }
+    // OT 영상도 상세 설정에서 등록/변경할 수 있다(별도 저장 필드).
+    assertThat(advanced.selectFirst("#otVideoControl[type=button]")).isNotNull();
+    // <details> 는 기본 접힘.
+    assertThat(document.selectFirst("details.editor-advanced").hasAttr("open")).isFalse();
+  }
+
+  @Test
+  void horizontalAcademyPreviewSharesTheStorefrontProgramCardRenderer() throws Exception {
+    // given — "빌더에서 본 카드 ≠ 발행된 카드" 를 구조적으로 없앤다:
+    //         가로 컬렉션 학원은 편집기 미리보기도 공개 페이지와 같은 renderer 를 쓴다.
+    String html = Files.readString(TEMPLATE);
+    Document document = Jsoup.parse(html);
+    String controller = Files.readString(CONTROLLER);
+
+    // when & then — 정본 렌더 모듈과 카드 CSS 를 편집기 페이지가 로드한다.
+    assertThat(html)
+        .contains("/js/academy_sections.js")
+        .contains("/css/academy_collection.css");
+    assertThat(html.indexOf("/js/academy_sections.js"))
+        .isLessThan(html.indexOf("/js/lesson_product_editor.js"));
+
+    // 미리보기 영역: 기존 showcase 골격(#lessonPreview) 다음에 Program Card 슬롯.
+    Element card = document.selectFirst("article.preview > #lessonProgramCardPreview");
+    assertThat(card).isNotNull();
+    assertThat(card.hasAttr("hidden")).isTrue();
+    assertThat(card.selectFirst("[data-program-card-slot]")).isNotNull();
+    assertThat(card.selectFirst("[data-program-card-ot]")).isNotNull();
+    assertThat(document.selectFirst("#lessonPreview").elementSiblingIndex())
+        .isLessThan(card.elementSiblingIndex());
+
+    // 컨트롤러: 레이아웃 판정은 builderDraft.lessonsLayout, 렌더는 정본 programCardHtml.
+    assertThat(controller)
+        .contains("builderDraft.lessonsLayout")
+        .contains("SECTIONS.programCardHtml(lesson, EDITOR_CARD_CTX)")
+        .contains("window.F2RAcademySections");
+    assertThat(functionBody(controller, "renderPreview"))
+        .contains("if (horizontalLayout) {")
+        .contains("renderProgramCardPreview(value, active)");
   }
 
   @Test

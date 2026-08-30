@@ -342,6 +342,61 @@ Story(3-A) = "페이지가 보여준다"(자동 모션).  Collection(3-B) = "사
   Program 카드 우선순위·빈 필드 생략, Video 카드 재생 앵커·방향 클래스, 공개/빌더 앵커 분리, FA-free,
   가로 밀림 방지 CSS). `AcademyBuilderTemplateContractTest.horizontal_content_collection_shares_one_shell_and_is_opt_in`.
 
+## 14. 2026-08-31 변경: Storefront V2-7 — Program Editor (복잡성은 숨기고 데이터는 유지)
+
+수업상품 편집기(`/tutor/academy/lessons/editor`)를 "필드 나열"에서 "수업 카드를 만드는 도구"로
+재구성한다. **필드를 삭제하거나 데이터를 변환하지 않는다** — 라벨·노출·미리보기 표현만 바꾼다.
+
+### 기본 화면 = 수업 카드를 구동하는 핵심 항목만
+
+`fieldset.editor-group-core` 에 6개만 노출한다. 원장 화면 라벨은 DB/내부 명칭이 아니라
+이해하기 쉬운 표현을 쓴다(저장 계약의 `name`/`id`/`maxlength` 는 그대로).
+
+| 원장 라벨 | 내부 필드 | Program Card 위치 |
+|---|---|---|
+| 카드 라벨 | `tabShortName` | eyebrow |
+| 수업명 (필수) | `name` | 제목 |
+| 한 줄 설명 | `kicker` | 부제 |
+| 이런 학생에게 | `learnerNeed` | need |
+| 핵심 특징 | `highlight` | highlight |
+| 대상 | `gradeLabel` | grade (없으면 `tabGuidanceLabel` fallback) |
+
+대표 이미지·영상은 오른쪽 미리보기 카드를 눌러 등록한다. **CTA 는 데이터 필드가 아니라
+고정 동작**(`requestConsult()`)이므로 새 입력을 만들지 않는다.
+
+### 상세 설정 = 나머지 기존 필드 전부 보존
+
+`<details class="editor-advanced">`(기본 접힘) 안에 이동: `theme`, `tabGuidanceLabel`,
+`description`, `schoolName`, `priceAmount`/`priceUnit`, `coreDetailTitle`, `explanation1~3`,
+그리고 OT 영상 등록 버튼(`#otVideoControl`). hidden input(`mediaImageKey`/`mediaVideoId`/
+`otVideoId`)과 저장 요청(`PUT /api/tutor/academy/lessons/collection`)은 불변. AUTHORING_FIELDS
+목록·`lesson_product_editor_state.js` 계약은 손대지 않았다.
+
+### 미리보기 = 공개 storefront 와 같은 렌더 계약
+
+"빌더에서 본 카드 ≠ 발행된 카드" 를 구조적으로 없앤다.
+
+- **가로 컬렉션 학원**(`pageSettings.builderDraft.lessonsLayout == 'horizontal'`, 현재 eduholic):
+  편집기 미리보기가 `#lessonProgramCardPreview` 에 `F2RAcademySections.programCardHtml(lesson, ctx)`
+  를 그대로 호출한다 — 공개 페이지(`academy_public.js`)·빌더 캔버스(`academy_builder.js`)가 쓰는 것과
+  **같은 함수 한 벌**. 편집기 ctx 는 슬롯 2개만 채운다: 미디어=클릭 시 미디어 모달, CTA=정적 `<span>`.
+  `#courseMediaArea`/`#otMediaArea` 대신 카드 안의 `[data-editor-media]` 트리거와 카드 아래 OT 행을 쓴다.
+- **그 외 학원**: 기존 showcase 골격(`#lessonPreview` = selected-hero + detail-section)과 데이터 계약
+  그대로. 강제로 V2 Program Card 로 전환하지 않는다.
+
+편집기 페이지가 `academy_sections.js` + `academy_collection.css` 를 로드한다. 카드 CSS 토큰
+(`--ink`/`--line`/…)은 `academy_public.css` 가 없으므로 `.program-card-preview` 스코프에 정의.
+
+### 캐시버스팅 / 검증
+
+- `lesson_product_editor.html`: `lesson_product_editor.css?v=20260831-1`,
+  `academy_collection.css?v=20260830-5`, 신규 `academy_sections.js?v=20260831-1`,
+  `lesson_product_editor.js?v=20260831-1`.
+- `node --test src/test/js/lesson_product_editor_program_card_preview.test.js` — 편집기가 정본
+  `programCardHtml` 을 호출, draft 필드→카드 구조 매핑, 빈 필드 생략, `gradeLabel`→`tabGuidanceLabel`
+  fallback. `LessonProductEditorTemplateContractTest`(핵심 6필드·친화 라벨·상세설정 보존·미리보기 공통화),
+  `lesson_product_editor_state.test.js`(저장 계약 불변).
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락
