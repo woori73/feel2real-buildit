@@ -194,3 +194,37 @@ test('공개 템플릿은 academy_collection 자산을 로드하고, 배선 모�
   assert.doesNotMatch(js, /requestAnimationFrame\([^)]*\bsyncArrows[^)]*\)[\s\S]{0,60}requestAnimationFrame/, '자기 예약 rAF 루프 금지');
   assert.match(js, /track\.scrollBy\(\s*dir/, '화살표는 native scrollBy(x, y) 레거시 시그니처로 이동');
 });
+
+// ── V2-2: Horizontal Experience Engine 고도화 ────────────────────────────────
+
+test('컬렉션 shell 은 진행 카운터(NN / MM)를 갖고 total 이 카드 수와 일치한다', () => {
+  const map = Object.fromEntries(bothRenderers());
+  const academy = fixture({ lessonsLayout: 'horizontal' });   // LESSONS = 2개
+  primeRenderer(map.public, academy, []);
+  const pub = map.public.renderLessons(academy);
+  assert.match(pub, /<span class="f2r-collection-progress"[^>]*>/, 'progress 카운터');
+  assert.match(pub, /<span data-collection-current>01<\/span>/, 'current 기본 01');
+  assert.match(pub, /<span data-collection-total>02<\/span>/, 'total = 카드 수(2)');
+
+  // 빌더 캔버스(정적)에는 카운터가 없다 — 스크롤이 없어 의미 없음
+  primeRenderer(map.builder, academy, []);
+  assert.doesNotMatch(map.builder.renderLessons(academy), /f2r-collection-progress/, 'static 모드는 카운터 없음');
+});
+
+test('academy_collection.js 는 ResizeObserver + 선두 카드 추적 + is-dimmed 로 shelf 상태를 갱신한다', () => {
+  const js = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/academy_collection.js'), 'utf8');
+  assert.match(js, /new global\.ResizeObserver/, 'ResizeObserver 로 stride 재계산');
+  assert.match(js, /data-collection-current/, '진행 카운터 갱신');
+  assert.match(js, /classList\.toggle\('is-dimmed'/, '가장자리 카드 감광');
+  assert.match(js, /classList\.add\('js-collection'\)/, 'JS 게이트 클래스');
+  // 매 scroll 마다 rAF 1회로 배칭(자기 예약 루프 아님)
+  assert.match(js, /if \(scheduled\) return;\s*\n\s*scheduled = true;/, 'scroll 핸들러 rAF 배칭');
+});
+
+test('academy_collection.css 의 active/dim 축소는 js-collection 스코프 + reduced-motion 예외를 갖는다', () => {
+  const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/academy_collection.css'), 'utf8');
+  assert.match(css, /html\.js-collection \.f2r-collection-card\.is-dimmed > \*\s*\{[^}]*transform:\s*scale/, 'is-dimmed 축소는 js-collection 스코프');
+  assert.match(css, /prefers-reduced-motion[\s\S]*html\.js-collection \.f2r-collection-card[\s\S]{0,120}transform:\s*none/, 'reduced-motion → 축소 제거');
+  // JS 미로드 시 카드가 축소된 채 남지 않는다(스코프 밖은 규칙 없음)
+  assert.doesNotMatch(css, /\n\.f2r-collection-card\.is-dimmed > \*\s*\{/, 'is-dimmed 축소가 무스코프로 새지 않는다');
+});
