@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 51931)
+Total output lines: 3631
+
 import json
 import contextlib
 import hashlib
@@ -1774,154 +1777,7 @@ def create_generated_test(payload: GeneratedTestCreate) -> dict:
             conn.execute('UPDATE generated_tests SET question_count=? WHERE id=?', (len(saved), test_id))
     except HTTPException:
         raise
-    except Exception as exc:  # 저장 도중 예기치 못한 실패 — 트랜잭션은 이미 롤백됨. 생성 성공과 구분한다.
-        raise HTTPException(status_code=500, detail=f'생성 시험을 저장하지 못했습니다: {exc}') from exc
-    return {
-        'saved': True, 'duplicate': False, 'test_id': test_id, 'question_count': len(saved),
-        'source_material': source_material, 'source_page': payload.source_page.strip(),
-        'external_id': external_id, 'questions': saved,
-    }
-
-
-@app.post('/api/generated-tests')
-def create_generated_test_endpoint(payload: GeneratedTestCreate):
-    return create_generated_test(payload)
-
-
-@app.get('/api/generated-tests/{test_id}')
-def get_generated_test(test_id: int):
-    with get_db() as conn:
-        row = conn.execute(
-            'SELECT t.*, sm.title source_material_title, sm.publisher source_material_publisher, '
-            'sm.lesson source_material_lesson, sm.school_print_material_id '
-            'FROM generated_tests t JOIN source_materials sm ON sm.id = t.source_material_id WHERE t.id=?',
-            (test_id,),
-        ).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail='생성 시험을 찾지 못했습니다.')
-    questions = sorted(list_questions(test_id=test_id, limit=1000), key=lambda q: q['id'])
-    return {'test': _generated_test_row(row), 'questions': questions}
-
-
-@app.get('/api/source-materials')
-def list_source_materials(school: Optional[str] = None, grade: Optional[str] = None):
-    query = ('SELECT sm.*, (SELECT COUNT(*) FROM generated_tests t WHERE t.source_material_id = sm.id) '
-             'test_count FROM source_materials sm WHERE 1=1')
-    values: list = []
-    for field, value in (('school', school), ('grade', grade)):
-        if value:
-            query += f' AND sm.{field} = ?'
-            values.append(value)
-    query += ' ORDER BY sm.id DESC'
-    with get_db() as conn:
-        rows = conn.execute(query, values).fetchall()
-    return [dict(row) for row in rows]
-
-
-@app.get('/api/source-materials/{material_id}/generated-tests')
-def list_generated_tests_for_material(material_id: int):
-    with get_db() as conn:
-        rows = conn.execute(
-            'SELECT * FROM generated_tests WHERE source_material_id=? ORDER BY id DESC', (material_id,),
-        ).fetchall()
-    return [_generated_test_row(row) for row in rows]
-
-
-# ==================================================================================
-# FINAL/JIKBO Workspace Context — 향후 MCP/외부 LLM이 한 번의 요청으로 읽을 수 있도록
-# 화면에 흩어진 자료를 DB 원본 그대로 구조화된 JSON으로 조립한다(화면 HTML을 긁지 않는다).
-# 기존 저장/조회 API의 SQL 패턴을 그대로 재사용하고 별도 테이블에 중복 저장하지 않는다.
-# read-only이며 이 섹션의 함수들은 아무 것도 쓰지 않는다.
-# ==================================================================================
-
-def _match_digital_twin(conn, school: str, grade: str, exam: str) -> Optional[dict]:
-    """NaesinWikiV1.tsx FINAL Workspace가 쓰는 것과 같은 우선순위: school+grade가 정확히 같고,
-    exam이 정확히 같은 Twin을 우선하되 없으면 '전체' Twin으로 대체한다."""
-    row = conn.execute(
-        "SELECT * FROM digital_twin_profiles WHERE is_active=1 AND school=? AND grade=? AND (exam=? OR exam='전체') "
-        "ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1",
-        (school, grade, exam, exam),
-    ).fetchone()
-    if not row:
-        return None
-    twin = digital_twin_response(row)
-    return {**twin, 'type': 'digital_twin', 'source': 'digital_twin_profiles', 'title': twin.get('description') or twin.get('dna') or 'Digital Twin'}
-
-
-def _material_context_items(conn, core_type: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
-    """exam_material_sets를 list_exam_materials와 같은 Context 조건으로 조회하되, 목록 화면과
-    달리 AI가 실제로 읽을 수 있도록 html_text/json_text 원문까지 그대로 포함한다."""
-    rows = conn.execute(
-        '''SELECT m.id, m.core_type, m.school, m.grade, m.year, m.semester, m.exam, m.student_id,
-            s.name student_name, m.title, m.original_name, m.html_text, m.json_text, m.created_at
-            FROM exam_material_sets m LEFT JOIN students s ON s.id = m.student_id
-            WHERE m.core_type=? AND m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=?
-            ORDER BY m.id DESC''',
-        (core_type, school, grade, year, semester, exam),
-    ).fetchall()
-    default_title = '학교 프린트' if core_type == 'school_print' else '학생 오답'
-    items = []
-    for row in rows:
-        try:
-            parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
-        except (TypeError, json.JSONDecodeError):
-            parsed_json = {}
-        items.append({
-            'id': row['id'], 'type': core_type, 'title': row['title'] or row['original_name'] or default_title,
-            'created_at': row['created_at'], 'source': 'exam_material_sets',
-            'student_id': row['student_id'], 'student_name': row['student_name'],
-            'has_original': bool(row['original_name']), 'original_name': row['original_name'],
-            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
-            'json_text': parsed_json,
-        })
-    return items
-
-
-def _final_deliverable_context_items(conn, kind: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
-    rows = conn.execute(
-        '''SELECT id, kind, title, original_name, html_text, json_text, created_at
-           FROM final_deliverables WHERE kind=? AND school=? AND grade=? AND year=? AND semester=? AND exam=?
-           ORDER BY id DESC''',
-        (kind, school, grade, year, semester, exam),
-    ).fetchall()
-    items = []
-    for row in rows:
-        try:
-            parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
-        except (TypeError, json.JSONDecodeError):
-            parsed_json = {}
-        items.append({
-            'id': row['id'], 'type': 'final_deliverable', 'title': row['title'] or 'FINAL 완성본',
-            'created_at': row['created_at'], 'source': 'final_deliverables', 'kind': row['kind'],
-            'has_original': bool(row['original_name']), 'original_name': row['original_name'],
-            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
-            'json_text': parsed_json,
-        })
-    return items
-
-
-def _question_context_items(school: str, grade: str, exam: str) -> list:
-    rows = list_questions(school=school, grade=grade, exam=exam, limit=200)
-    return [{
-        **row, 'type': 'generated_question', 'source': 'generated_questions',
-        'title': f"{row.get('question_type') or '문항'} · {(row.get('stem') or '')[:60]}",
-    } for row in rows]
-
-
-def _generated_test_context_items(conn, school: str, grade: str, exam: str) -> list:
-    """Generated Question Store에 저장된 생성 시험을 Context 항목으로 담는다(추적성). exam이 '전체'가
-    아니면 그 시험과 '전체' 저장분을 함께 본다 — 기존 Twin 매칭 우선순위와 같은 관대함을 따른다."""
-    rows = conn.execute(
-        'SELECT t.*, sm.title source_material_title FROM generated_tests t '
-        'JOIN source_materials sm ON sm.id = t.source_material_id '
-        "WHERE t.school=? AND t.grade=? AND (t.exam=? OR t.exam='전체' OR ?='전체') ORDER BY t.id DESC",
-        (school, grade, exam, exam),
-    ).fetchall()
-    items = []
-    for row in rows:
-        data = _generated_test_row(row)
-        items.append({
-            'id': data['id'], 'type': 'generated_test', 'source': 'generated_tests',
+    except Exception as exc:  # 저장 도…1931 tokens truncated…d': data['id'], 'type': 'generated_test', 'source': 'generated_tests',
             'title': data['title'] or data['source_material_title'],
             'source_material': data['source_material_title'], 'source_page': data['source_page'],
             'test_type': data['test_type'], 'question_count': data['question_count'],
@@ -2874,28 +2730,49 @@ def _assessment_detail(conn: sqlite3.Connection, assessment_id: int) -> dict:
 
 def compose_csat_assessment(payload: CsatAssessmentCreate) -> dict:
     """Select and persist atomically; only this saved Assessment path creates usage rows."""
-    target_count = payload.days * 4 if payload.assessment_type == 'daily' else payload.count
+    target_count = 28 if payload.assessment_type == 'full' else payload.days * 4 if payload.assessment_type == 'daily' else payload.count
     requested_ids = list(dict.fromkeys(payload.question_ids))
     if requested_ids and len(requested_ids) != target_count:
         raise HTTPException(status_code=400, detail=f'저장할 Assessment에는 정확히 {target_count}개 Question ID가 필요합니다.')
+    if payload.assessment_type == 'full' and (payload.question_no is not None or payload.type_id):
+        raise HTTPException(status_code=400, detail='FULL은 특정 번호/유형 필터가 아니라 18~45번을 각각 한 문항씩 구성합니다.')
     with get_db() as conn:
-        filters, values = [], []
-        if requested_ids:
-            filters.append(f"q.id IN ({','.join('?' * len(requested_ids))})"); values.extend(requested_ids)
-        if payload.question_no is not None:
-            filters.append('q.question_no=?'); values.append(payload.question_no)
-        if payload.type_id:
-            filters.append('q.csat_type_id=?'); values.append(payload.type_id)
-        if payload.exclude_used:
-            filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)')
-        where = f"WHERE {' AND '.join(filters)}" if filters else ''
-        rows = conn.execute(f'''SELECT q.id FROM csat_questions q {where}
-            ORDER BY q.created_at, q.id LIMIT ?''', (*values, target_count)).fetchall()
-        selected = [row['id'] for row in rows]
-        if requested_ids:
-            # SQL order is deterministic, while explicit editing order must be preserved.
-            selected_set = set(selected)
-            selected = [question_id for question_id in requested_ids if question_id in selected_set]
+        if payload.assessment_type == 'full':
+            if requested_ids:
+                rows = conn.execute(f'''SELECT q.id, q.question_no FROM csat_questions q
+                    WHERE q.id IN ({','.join('?' * len(requested_ids))})
+                    {'AND NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)' if payload.exclude_used else ''}
+                    ORDER BY q.question_no''', requested_ids).fetchall()
+                if [row['question_no'] for row in rows] != list(range(18, 46)):
+                    raise HTTPException(status_code=409, detail='FULL은 18~45번 Question이 번호별로 정확히 하나씩 필요합니다.')
+                selected = [row['id'] for row in rows]
+            else:
+                selected = []
+                for question_no in range(18, 46):
+                    row = conn.execute(f'''SELECT q.id FROM csat_questions q WHERE q.question_no=?
+                        {'AND NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)' if payload.exclude_used else ''}
+                        ORDER BY q.created_at, q.id LIMIT 1''', (question_no,)).fetchone()
+                    if not row:
+                        raise HTTPException(status_code=409, detail=f'FULL 구성에 필요한 {question_no}번 미사용 문항이 없습니다.')
+                    selected.append(row['id'])
+        else:
+            filters, values = [], []
+            if requested_ids:
+                filters.append(f"q.id IN ({','.join('?' * len(requested_ids))})"); values.extend(requested_ids)
+            if payload.question_no is not None:
+                filters.append('q.question_no=?'); values.append(payload.question_no)
+            if payload.type_id:
+                filters.append('q.csat_type_id=?'); values.append(payload.type_id)
+            if payload.exclude_used:
+                filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)')
+            where = f"WHERE {' AND '.join(filters)}" if filters else ''
+            rows = conn.execute(f'''SELECT q.id FROM csat_questions q {where}
+                ORDER BY q.created_at, q.id LIMIT ?''', (*values, target_count)).fetchall()
+            selected = [row['id'] for row in rows]
+            if requested_ids:
+                # SQL order is deterministic, while explicit editing order must be preserved.
+                selected_set = set(selected)
+                selected = [question_id for question_id in requested_ids if question_id in selected_set]
         if len(selected) < target_count:
             raise HTTPException(status_code=409, detail=f'조건에 맞는 문항이 {len(selected)}개뿐입니다. {target_count}개가 필요합니다.')
         now = datetime.now().isoformat()
@@ -2946,9 +2823,13 @@ def replace_csat_assessment_item(assessment_id: int, position: int, payload: Csa
     with get_db() as conn:
         assessment = conn.execute('SELECT * FROM csat_assessments WHERE id=?', (assessment_id,)).fetchone()
         current = conn.execute('SELECT * FROM csat_assessment_items WHERE assessment_id=? AND position=?', (assessment_id, position)).fetchone()
-        question = conn.execute('SELECT id FROM csat_questions WHERE id=?', (payload.question_id,)).fetchone()
+        question = conn.execute('SELECT id, question_no FROM csat_questions WHERE id=?', (payload.question_id,)).fetchone()
         if not assessment or not current or not question:
             raise HTTPException(status_code=404, detail='Assessment item 또는 Question을 찾을 수 없습니다.')
+        if assessment['assessment_type'] == 'full':
+            current_question = conn.execute('SELECT question_no FROM csat_questions WHERE id=?', (current['question_id'],)).fetchone()
+            if question['question_no'] != current_question['question_no']:
+                raise HTTPException(status_code=400, detail='FULL 문항 교체는 같은 수능 번호의 Question으로만 가능합니다.')
         duplicate = conn.execute('SELECT 1 FROM csat_assessment_items WHERE assessment_id=? AND question_id=? AND position<>?',
                                  (assessment_id, payload.question_id, position)).fetchone()
         if duplicate:
@@ -3163,22 +3044,32 @@ def render_daily_explanation_html(questions: list[dict], title: str) -> str:
         @media print{{body{{background:white}}.daily-answer-page{{margin:0}}}}</style><body>{''.join(pages)}</body></html>'''
 
 
+def render_assessment_problem_html(assessment: dict) -> str:
+    if assessment['assessment_type'] == 'daily':
+        return render_daily_problem_html(assessment['items'], assessment['title'])
+    document = render_csat_html(assessment['items'], assessment['title'], preserve_order=True)
+    return document.replace('<body>', f'<body data-template-id="{assessment["template_id"]}" data-assessment-type="{assessment["assessment_type"]}">', 1)
+
+
+def render_assessment_explanation_html(assessment: dict) -> str:
+    if assessment['assessment_type'] == 'daily':
+        return render_daily_explanation_html(assessment['items'], assessment['title'])
+    document = render_csat_explanation_html(assessment['items'], assessment['title'])
+    return document.replace('<body>', f'<body data-template-id="{assessment["template_id"]}" data-assessment-type="{assessment["assessment_type"]}">', 1)
+
+
 @app.get('/api/csat/assessments/{assessment_id}/problem.html', response_class=HTMLResponse)
 def render_saved_assessment_problem(assessment_id: int):
     with get_db() as conn:
         assessment = _assessment_detail(conn, assessment_id)
-    if assessment['assessment_type'] == 'daily':
-        return render_daily_problem_html(assessment['items'], assessment['title'])
-    return render_csat_html(assessment['items'], assessment['title'], preserve_order=True)
+    return render_assessment_problem_html(assessment)
 
 
 @app.get('/api/csat/assessments/{assessment_id}/explanation.html', response_class=HTMLResponse)
 def render_saved_assessment_explanation(assessment_id: int):
     with get_db() as conn:
         assessment = _assessment_detail(conn, assessment_id)
-    if assessment['assessment_type'] == 'daily':
-        return render_daily_explanation_html(assessment['items'], assessment['title'])
-    return render_csat_explanation_html(assessment['items'], assessment['title'])
+    return render_assessment_explanation_html(assessment)
 
 
 @app.get('/api/csat/exam.html', response_class=HTMLResponse)
