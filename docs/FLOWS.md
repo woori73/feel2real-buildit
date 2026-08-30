@@ -828,3 +828,12 @@ Wiki 홈
 3. Problem Renderer는 공식 Reference의 금색 Day 헤더와 흰 문제 페이지를, Explanation Renderer는 크림색 2단 해설 페이지를 적용한다.
 4. 두 renderer는 같은 Assessment item 배열을 position 순으로 읽는다. 별도 explanation Question 목록을 만들지 않는다.
 5. item 교체 API는 한 position의 Question ID만 바꾸고 `day_no`를 유지한다. 따라서 문제와 대응 해설이 동시에 같은 ID로 변경된다.
+
+## Work → WebMCP → CSAT Service
+
+1. 사용자가 ChatGPT Work의 built-in browser에서 로그인된 Production Wiki top-level page를 연다.
+2. 브라우저가 `document.modelContext.registerTool()`로 등록된 최소 CSAT 도구를 발견한다.
+3. read tool은 Question/Assessment를 조회만 하며 usage를 변경하지 않는다.
+4. write tool은 브라우저의 안전 검토 후 현재 session으로 기존 CSAT API를 호출한다. frontend DOM 위치나 버튼에 의존하지 않는다.
+5. 저장 결과는 Assessment ID, ordered Question IDs, 문제/해설 URL의 기반 정보를 반환한다.
+6. Wiki의 HALF/FULL/WRONG/DAILY 탭이 같은 Assessment ID를 조회하므로 Work에서 만든 결과를 다시 열 수 있다.
