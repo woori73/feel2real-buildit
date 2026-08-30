@@ -150,6 +150,10 @@ test('academy_collection.css / academy_collection.js 는 FontAwesome 없이 자�
   assert.match(css, /\.f2r-collection-viewport\s*\{[^}]*overflow:\s*hidden/, 'viewport overflow:hidden');
   assert.match(css, /overscroll-behavior-x:\s*contain/, 'track overscroll-behavior-x:contain');
   assert.match(css, /scroll-snap-type:\s*x/, 'track scroll-snap-type:x');
+  // 화살표 이동의 부드러움은 CSS 가 담당(JS behavior:'smooth' 옵션은 일부 Chromium 에서 무시됨)
+  assert.match(css, /\.f2r-collection-track\s*\{[^}]*scroll-behavior:\s*smooth/, 'track scroll-behavior:smooth');
+  assert.match(css, /prefers-reduced-motion[\s\S]{0,400}\.f2r-collection-track\s*\{\s*scroll-behavior:\s*auto/, 'reduced-motion → scroll-behavior:auto');
+  assert.doesNotMatch(js, /behavior:\s*['"]smooth['"]/, "JS 는 behavior:'smooth' 옵션에 의존하지 않는다");
 });
 
 test('공개 템플릿은 academy_collection 자산을 로드하고, 배선 모듈은 자동 캐러셀을 만들지 않는다', () => {
@@ -161,6 +165,7 @@ test('공개 템플릿은 academy_collection 자산을 로드하고, 배선 모�
     'academy_collection.js 가 academy_public.js 보다 먼저 로드되어야 한다');
 
   const js = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/academy_collection.js'), 'utf8');
-  assert.doesNotMatch(js, /setInterval|requestAnimationFrame/, '자동 캐러셀/루프 애니메이션 금지');
-  assert.match(js, /scrollBy/, '화살표는 native scrollBy 로 이동');
+  assert.doesNotMatch(js, /setInterval/, '자동 캐러셀(setInterval) 금지');
+  assert.doesNotMatch(js, /requestAnimationFrame\([^)]*\bsyncArrows[^)]*\)[\s\S]{0,60}requestAnimationFrame/, '자기 예약 rAF 루프 금지');
+  assert.match(js, /track\.scrollTo/, '화살표는 native scrollTo(절대 위치)로 이동');
 });

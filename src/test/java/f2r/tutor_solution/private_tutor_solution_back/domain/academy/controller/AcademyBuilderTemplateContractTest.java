@@ -730,7 +730,7 @@ class AcademyBuilderTemplateContractTest {
 
     // then — 자동 캐러셀/등장 애니메이션 없음(Story 3-A 와 분리).
     String collectionJs = Files.readString(Path.of("src/main/resources/static/js/academy_collection.js"));
-    assertThat(collectionJs).doesNotContain("setInterval").contains("scrollBy");
+    assertThat(collectionJs).doesNotContain("setInterval").contains("track.scrollTo");
   }
 
   @Test
