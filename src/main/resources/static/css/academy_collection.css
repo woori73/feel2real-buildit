@@ -113,6 +113,22 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   .f2r-collection--videos { --f2r-card-w: 210px; }
   .f2r-collection--lectures { --f2r-card-w: 320px; }
 }
+/* V2-11 corrective — Programs 는 데스크톱에서 4장을 한눈에(그리드). 4개 존재를 즉시 인지하게.
+   가로 스크롤/화살표/카운터 불필요 → 숨김. runAuto 는 스크롤이 없어 조용히 no-op. */
+@media (min-width: 900px) {
+  .f2r-collection--programs .f2r-collection-viewport { overflow: visible; }
+  .f2r-collection--programs .f2r-collection-track {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding-bottom: 4px;
+  }
+  .f2r-collection--programs .f2r-collection-card { flex: none; max-width: none; }
+  .f2r-collection--programs .f2r-collection-head { display: none; }
+}
+
 /* 모바일: 화살표 숨김. 터치 스와이프 + scroll-snap + 다음 카드 peek. JS 제스처 라이브러리 없음. */
 @media (max-width: 760px) {
   .f2r-collection { --f2r-card-w: 78vw; }

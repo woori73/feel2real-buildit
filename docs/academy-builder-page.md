@@ -678,6 +678,115 @@ transform 된 섹션이 아니다 → 재생 후에도 player viewport 불변·c
   콜백이 스크립트 실행 중 발화하지 않는다**. `watchScene`·`sceneFlow`·`initAuto` 의 스크롤 연동은
   단위 테스트로만 검증, 실기기 확인 필요 항목으로 분리 보고.
 
+## 19. 2026-08-31 변경: Storefront V2-11 Corrective — 실제 Production UX 기준 재수정
+
+§18 을 완료 처리했지만 사용자가 PC·모바일 실기기로 확인한 결과 UX 가 안 맞았다. 새 V2 단계가
+아니라 §18(PR #97)의 결과를 실제 화면 기준으로 바로잡는 작업.
+
+### 1. Featured "2학기 영어 내신" — 대표수업이 잘못 들어감
+
+- §18 이 `featuredLessonIds` 를 발견하고 선택 수업(레고/버블티/가우디 = 공감성장영어 문법
+  커리큘럼)을 학교 칩 아래에 리스트로 렌더했다 → "대표수업"을 "학교별 내신 카드"로 오해.
+- 조치: `featuredProgramsHtml` **제거**. `renderFeatured` 에서 `ctx.featuredPrograms(...)` 라인 제거.
+  문법 커리큘럼은 이미 `sec-lessons` 가 전부 렌더한다(중복 불필요).
+- 학교별로 분리된 데이터는 **없다** — eduholic lesson 13 하나가 "압구정중, 신구중, 신사중,
+  언북중" 4개 학교 공통 내신 프로그램. `featuredStageProgram(view)` = `featuredLessonIds` 중
+  이름에 학교 칩 라벨이 든 수업(→ lesson 13)만 골라 그 핵심 특징을 Stage 에 쓴다. 매칭 없으면 없음.
+- **데이터 모델 한계 & 최소 구조 제안**(별도 작업): 학교별 차별화를 하려면 lesson_products
+  에 `school` 축이 없어 못 한다. 최소안 — `builderDraft.featuredSchoolInfo` JSON
+  `{ "압구정중": { "exam": "…", "range": "…", "point": "…" }, … }` (스키마 변경 없음,
+  LONG key), `wireFeaturedSelector` 가 선택 학교로 Stage 본문을 갈아끼움. 지금은 통합 프로그램
+  하나만 있어 미도입 — 가짜 학교별 프로그램은 만들지 않는다.
+
+### 2. Featured 빈 종이 SVG 제거
+
+- `featuredStage` 의 `.featured-paper*` SVG(파란 헤더 + 빈 종이 + 회색 선) **완전 제거**.
+- `featuredStageHtml(school, title, program, moreHtml)` — 실제 정보 패널: 프레임 라벨
+  (featuredTitle 첫 줄) + 큰 학교명(`data-featured-stage-school`, 선택 시 갈아끼움) + 대표
+  프로그램 핵심 특징(실데이터) + 공개는 "AI로 준비하는 과정 보기" 앵커(→ `#sec-digitaltwin`).
+  빌더는 앵커 없음. CSS `.featured-stage` = bordered 카드.
+
+### 3–4. AI Native Visual — 추상 그림 + 모바일 미표시
+
+- 원인: `aiProcessStageHtml()` 가 추상 SVG 도형(문서/원/선/체크)만 그렸고, `academy_story.css`
+  `.ai-process-stage { display:none }` + `html.js-story [data-story-staged]` 에서만 노출 →
+  **데스크톱 pin 상태에서만** 보이고 모바일은 완전히 숨김. 뜻도 안 읽힘.
+- 조치: `aiProcessStageHtml(steps)` 재작성 — 5개 프레임(단계별), 각 프레임 = 의미 있는
+  currentColor SVG 아이콘 + 단계 이름(`<b>N</b>라벨`). 아이콘: 문서 → 스캔+패턴 → 두 노드 병합
+  → 문항 블록 → 문서+체크. 한 번에 한 프레임만 보이고 진행에 따라 크로스페이드. 진행 전/JS
+  없음 = 프레임 0.
+- 기본 스타일 `academy_public.css` `.ai-process-stage` / `.ai-stage-*` — **데스크톱·모바일 모두
+  보인다**(모바일 `.ai-stage-window` height 118px 로 축소, `display:none` 아님).
+- 활성 프레임 구동:
+  - 모바일 — `processProgress` 에 `options.stage` 추가. 단계 i 활성화 시
+    `stage[data-active-frame]=i`. `academy_public.js` 가 `[data-ai-stage]` 전달.
+  - 데스크톱 pin — `academy_story.css` 가 `#sec-digitaltwin[data-story-staged][data-story-scene=N]
+    .ai-stage-frame[data-frame=N]` 로. `processProgress` 는 pin 시 안 돈다 → `data-active-frame`
+    안 붙음 → `:not([data-active-frame])` 로 story-scene 이 우선.
+- `academy_public.js` `wireStory` 에서 `layerSelector: '.ai-stage-layer'` 제거. `academy_story.js`
+  `paintScenes` 는 `layers=[]` 도 정상 처리(무변경). `.ai-process-step[data-scene-state]` 강조는 유지.
+
+### 5. 공감성장영어 카드 — 데스크톱에서 4개 인지 불가
+
+- 원인: `.f2r-collection--programs` 가 모든 폭에서 가로 스크롤 → 데스크톱에서 3개만 보이고 4번째
+  존재를 알기 어려움.
+- 조치: `academy_collection.css` `@media (min-width: 900px)` — `.f2r-collection--programs
+  .f2r-collection-track` 를 `display:grid; grid-template-columns: repeat(4, 1fr)` 로. head(hint/
+  화살표/카운터) 숨김. 스크롤이 없어 `runAuto` 는 조용히 no-op. 모바일은 가로 컬렉션 유지.
+- 핵심 특징 Highlight Box 는 §18 D 그대로(ultramarine border + "핵심 특징" 라벨).
+
+### 6–9. Horizontal Auto Motion — 실기기에서 전혀 안 움직임
+
+- 원인: §18 `initAuto` 의 IO 가 `intersectionRatio >= 0.6` 을 요구 → 컬렉션 요소가 크면 그 비율에
+  도달 못 해 `runAuto` 가 트리거되지 않음. 단위 테스트는 IO fire 를 수동 호출해서 통과했을 뿐.
+- 조치(#7 — IO 하나에 의존 안 함): `initAuto` 가 컬렉션마다 **3개 트리거**를 건다 —
+  1. `sectionOf(collection)` 의 `data-scene` 를 MutationObserver 로 지켜보다 `"active"` 면 실행
+     (V2-10 sceneFlow, 실기기 검증된 신호),
+  2. IntersectionObserver `ratio >= 0.25`(낮춤),
+  3. guarded `setTimeout`(1800ms, 이후 +4000ms) 에서 `getBoundingClientRect` 로 뷰 안이면 실행
+     (스크롤 리스너 아님).
+  먼저 오는 게 이기고 `start()` 가 나머지를 teardown. continuous scroll listener / 무한 rAF /
+  새 라이브러리 없음.
+- `runAuto` 재작성:
+  - `advance`(Programs): Card1 을 읽을 시간(1.7s) → Card2 → dwell 2.6s → Card3 → … →
+    **마지막 카드에서 정지**(처음으로 복귀 안 함, #8).
+  - `hint`(Actual Class / Mini Lectures): 다음 카드 쪽으로 한 카드폭의 16% 만 밀었다(400ms) →
+    복귀(1100ms) → 끝(1회, #9).
+  - 위치는 `track.scrollLeft = X` 동기 세팅(화살표 네비와 동일). 부드러움은 CSS
+    `scroll-behavior: smooth`(지원 안 하면 즉시 점프 — 그래도 움직인다). `rafTween` 안 씀
+    (배경 탭 rAF throttle 회피).
+  - 중단: `pointerdown`/`touchstart`/`wheel`/`keydown`(focusin 제거 — 재생 버튼 포커스 오작동
+    방지) + 하위 `<video>` 의 `play`(capture). 취소 후 재개 없음.
+  - `anyVideoPlaying(track)` 이면 시작도 안 함. `prefers-reduced-motion` → `initAuto` 자체 skip.
+
+### 10. 검증 방식
+
+- 로컬 harness(byte-identical assets, `.v11c/`): **실제로 스크롤·자동 진행을 관찰**했다 —
+  Programs advance 가 Card1→2(321px)→3(641px)→4(962px) 로 이동 후 정지(0 복귀 없음),
+  `pointerdown` 후 재개 없음, AI Stage `data-active-frame` 0→…→4 진행, 프레임별 아이콘 크로스
+  페이드, `.ai-process-stage` `display:block`(모바일), Featured Stage 실데이터·종이 SVG 없음,
+  데스크톱 4-카드 그리드(한 줄), page h-overflow 0.
+- Browser pane 은 `data-collection-auto` 자동 이동을 **관찰함**(동기 scrollLeft + CSS smooth 라
+  rAF throttle 영향 없음). 남는 실기기 확인: sceneFlow IO 가 실제 스크롤에서 `data-scene` 를
+  주는 타이밍, 세로 Scene 체감, AI 진행 속도 체감.
+
+### 캐시버스팅
+
+`?v=20260831-6`: `academy_public.css`, `academy_collection.css`, `academy_story.css`,
+`academy_storefront_motion.js`, `academy_collection.js`, `academy_sections.js`, `academy_public.js`
+(+ 빌더·lesson_product_editor 템플릿). `academy_scene.css`/`academy_story.js` 무변경(-5/-2 유지).
+
+### 변경 파일
+
+`academy_sections.js`(featuredStageHtml/featuredStageProgram, aiProcessStageHtml 재작성,
+featuredProgramsHtml·ctx featuredPrograms 제거), `academy_storefront_motion.js`(processProgress
+options.stage), `academy_public.js`(wireStory layerSelector 제거, processProgress stage 전달),
+`academy_collection.js`(initAuto 3중 트리거·sectionOf, runAuto 재작성·autoScrollTo),
+`academy_public.css`(featured-stage 카드, ai-stage 패널, featured-paper/featured-programs 제거),
+`academy_story.css`(추상 레이어 규칙 제거, data-story-scene → ai-stage-frame),
+`academy_collection.css`(데스크톱 4-카드 그리드), 3 템플릿, `AcademyBuilderTemplateContractTest.java`,
+`academy_featured_selector.test.js`, `academy_story.test.js`, `academy_v2_11_storefront_completion.test.js`.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

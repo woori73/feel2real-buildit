@@ -61,61 +61,59 @@ test('reduced-motion / 모바일 폭에서도 stage()는 pin 하지 않는다', 
 
 test('academy_public.js 는 render()에서 applyReveal → wireStory → wireStorefrontMotion 순으로 배선한다', () => {
   assert.match(PUBLIC_JS, /applyReveal\(\);\s*\n\s*wireStory\(\);\s*\n\s*wireStorefrontMotion\(\);/);
-  // wireStory: hero exit + AI Native 5-scene stage
+  // wireStory: hero exit + AI Native 5-scene stage (V2-11: layerSelector 제거)
   assert.match(PUBLIC_JS, /function wireStory\(\)/);
   assert.match(PUBLIC_JS, /STORY\.exit\(hero/);
-  assert.match(PUBLIC_JS, /STORY\.stage\(ai, \{[\s\S]*scenes: 5[\s\S]*sceneSelector: '\.ai-process-step'[\s\S]*layerSelector: '\.ai-stage-layer'/);
+  assert.match(PUBLIC_JS, /STORY\.stage\(ai, \{[\s\S]*scenes: 5[\s\S]*sceneSelector: '\.ai-process-step'/);
+  assert.doesNotMatch(PUBLIC_JS, /layerSelector/, 'V2-11: 추상 레이어 오버레이 제거');
   // AI Native 가 story 로 pin 되면 storefront_motion 의 1회성 processProgress 는 건너뛴다
   assert.match(PUBLIC_JS, /data-story-staged['"]\)\s*===\s*['"]true['"]/);
   assert.match(PUBLIC_JS, /if \(steps && !staged && steps\.dataset\.motionWired/);
+  // V2-11: 모바일 진행은 Visual Stage([data-ai-stage])도 함께 바꾼다
+  assert.match(PUBLIC_JS, /stage: root\.querySelector\('#sec-digitaltwin \[data-ai-stage\]'\)/);
 });
 
 test('story CSS 는 동작 규칙을 html.js-story 로 게이트한다 (미로드 시 콘텐츠 안 숨김)', () => {
   // "무언가를 숨기거나 옮기는" 규칙은 전부 html.js-story 스코프 아래에만.
-  // 예외: 순수 SVG 도형 프리젠테이션(.ai-doc-* / .ai-mark / .ai-node 등), stage 기본 숨김
-  // (.ai-process-stage{display:none} — js-story 가 다시 켠다), 모바일 안전 @media.
   const ruleHeads = STORY_CSS.match(/(?:^|\n)([.#][^{@]*)\{/g) || [];
   ruleHeads.forEach((h) => {
     const head = h.replace(/[\s\n]+/g, ' ').trim();
     if (/html\.js-story/.test(head)) return;
-    // 예외: 순수 SVG 도형/골격 프리젠테이션 + stage 기본 숨김(js-story 가 다시 켠다).
-    if (/^\.ai-(doc-|mark|scan|node|link|merge|block|badge|check|stage-)/.test(head)) return;
-    if (/^\.ai-process-stage \{/.test(head)) return;
     assert.fail(`js-story 스코프 밖 동작 규칙: ${head}`);
   });
-  assert.match(STORY_CSS, /\.ai-process-stage \{ display: none; \}/, 'stage 는 기본 숨김');
-  assert.match(STORY_CSS, /html\.js-story #sec-digitaltwin\[data-story-staged\] \.ai-process-stage \{ display: block/, 'js-story + staged 에서만 stage 노출');
+  // V2-11: Visual Stage 는 기본으로 보인다(academy_public.css). story.css 는 pin 일 때
+  // 활성 프레임을 스크롤 장면으로만 정한다 — display:none 게이트 없음.
+  assert.doesNotMatch(STORY_CSS, /\.ai-process-stage \{ display: none/, 'stage 를 숨기지 않는다');
+  assert.match(STORY_CSS, /html\.js-story #sec-digitaltwin\[data-story-staged\]\[data-story-scene="0"\] \.ai-stage-frame\[data-frame="0"\]/);
   assert.match(STORY_CSS, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(STORY_CSS, /--story-exit/);
   assert.match(STORY_CSS, /\[data-story-staged\][\s\S]*\[data-scene-state="active"\]/);
-  // 레이아웃을 흔드는 속성(top/left/height 애니메이션) 없음 — transform/opacity 중심
-  assert.doesNotMatch(STORY_CSS, /transition:[^;]*\b(width|height|top|left)\b/);
+  // 레이아웃을 흔드는 속성(top/left/width 애니메이션) 없음 — transform/opacity 중심
+  assert.doesNotMatch(STORY_CSS, /transition:[^;]*\b(width|top|left)\b/);
 });
 
 test('장면 상태는 조상 attr 이 아니라 각 대상의 data-scene-state 로 준다 (Chromium transition 버그 회피)', () => {
-  // academy_story.js: paintScenes 가 sceneSelector + layerSelector 요소에 직접 data-scene-state 부착
   assert.match(SRC, /function paintScenes\(section, els, layers, idx\)/);
-  assert.match(SRC, /layers\[j\]\.setAttribute\('data-scene-state', 'past'\)/);
-  assert.match(SRC, /layers\[j\]\.setAttribute\('data-scene-state', 'active'\)/);
-  assert.match(SRC, /layers\[j\]\.removeAttribute\('data-scene-state'\)/);
-  // CSS: 레이어 opacity 는 레이어 자신의 data-scene-state 로 (조상 [data-story-scene] 아님)
-  assert.match(STORY_CSS, /\.ai-stage-layer\[data-scene-state="active"\] \{\s*opacity: 1/);
-  assert.doesNotMatch(STORY_CSS, /\[data-story-scene="\d"\] \.ai-stage-layer\[data-scene=/,
-    '조상 [data-story-scene] + transition 되는 레이어 규칙이 남아 있으면 안 된다');
+  assert.match(SRC, /els\[i\]\.setAttribute\('data-scene-state'/);
+  // 단계 목록 강조는 각 .ai-process-step 자신의 data-scene-state 로
+  assert.match(STORY_CSS, /\.ai-process-step\[data-scene-state="active"\]/);
 });
 
-test('AI Native stage 는 이미지 자산 없이 SVG 도형만 쓰고 5장면 오버레이를 갖는다', () => {
+test('AI Native Visual Stage 는 이미지 자산 없이 단계별 아이콘 + 이름을 가진다 (모바일에서도 표시)', () => {
   const sections = fs.readFileSync(
     path.resolve(__dirname, '../../main/resources/static/js/academy_sections.js'), 'utf8');
-  assert.match(sections, /function aiProcessStageHtml\(\)/);
+  assert.match(sections, /function aiProcessStageHtml\(steps\)/);
   assert.match(sections, /class="ai-process-stage" data-ai-stage aria-hidden="true"/);
-  assert.match(sections, /\$\{aiProcessStageHtml\(\)\}\s*\n\s*<ol class="ai-process-steps">/, 'stage 는 단계 목록 앞에');
-  const start = sections.indexOf('function aiProcessStageHtml');
+  assert.match(sections, /\$\{aiProcessStageHtml\(aiProcessSteps\(view\)\)\}\s*\n\s*<ol class="ai-process-steps">/, 'stage 는 단계 목록 앞에');
+  const start = sections.indexOf('const AI_STAGE_GLYPHS');
   const body = sections.slice(start, sections.indexOf('function renderAiProcess', start));
-  ['data-scene="2"', 'data-scene="3"', 'data-scene="4"', 'data-scene="5"'].forEach((s) =>
-    assert.match(body, new RegExp(s), `장면 레이어 ${s}`));
   assert.doesNotMatch(body, /<img|url\(|\.png|\.jpe?g/, 'stage 에 이미지 자산 없음 (SVG 도형만)');
-  assert.match(body, /<svg class="ai-stage-doc"/, 'SVG 문서 도형');
+  assert.match(body, /data-frame="\$\{i\}"/, '프레임 인덱스');
+  assert.match(body, /class="ai-stage-frame-name"><b>\$\{i \+ 1\}<\/b>/, '단계 번호 + 이름');
+  // 모바일에서 stage 를 display:none 으로 제거하지 않는다
+  const publicCss = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/academy_public.css'), 'utf8');
+  assert.doesNotMatch(publicCss, /\.ai-process-stage\{[^}]*display:none/);
+  assert.match(publicCss, /\.ai-process-stage\[data-active-frame="4"\] \.ai-stage-frame\[data-frame="4"\]/);
 });
 
 test('공개 템플릿은 academy_story 자산을 GSAP 뒤, academy_public.js 앞에 로드한다', () => {

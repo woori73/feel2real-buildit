@@ -52,18 +52,42 @@ test('공개 렌더: 학교 칩이 단일 선택 버튼이고 첫 학교만 aria
   assert.equal(pressedTrue.length, 1, 'aria-pressed="true" 는 정확히 하나');
 });
 
-test('공개 렌더: 중앙 Featured Stage 가 선택 학교/제목을 반영하는 앵커를 갖는다', () => {
+test('공개 렌더: 중앙 Featured Stage 는 추상 종이 SVG 없이 항목명 + 프레임 라벨 + 앵커를 낸다', () => {
   const hooks = Object.fromEntries(bothRenderers()).public;
   const academy = fixture(SCHOOLS);
   primeRenderer(hooks, academy);
   const html = hooks.renderFeatured(academy);
 
   assert.match(html, /<div class="featured-stage[^"]*" data-featured-stage/);
-  assert.match(html, /<text class="featured-paper-school"[^>]*data-featured-stage-school>압구정중<\/text>/);
-  // 캡션은 교육자가 입력한 featuredTitle 첫 줄(코드에 학교/시즌/과목 하드코딩 없음)
-  assert.match(html, /<span class="featured-stage-caption">우리 학교 2학기 내신 집중 대비<\/span>/);
+  assert.doesNotMatch(html, /featured-paper/, '추상 종이 SVG 제거');
+  assert.match(html, /<strong class="featured-stage-school" data-featured-stage-school>압구정중<\/strong>/);
+  // 프레임 라벨 = 교육자가 입력한 featuredTitle 첫 줄(코드에 학교/시즌/과목 하드코딩 없음)
+  assert.match(html, /<span class="featured-stage-frame">우리 학교 2학기 내신<\/span>/);
+  // 공개는 AI Native 로 연결하는 앵커를 갖는다
+  assert.match(html, /<a class="featured-stage-more" href="#sec-digitaltwin"[^>]*>/);
   // "지금 보는 학교" 라인은 live region, div(=#publicView p margin reset 회피)
   assert.match(html, /<div class="featured-selected[^"]*" aria-live="polite">지금 보는 학교 · <strong data-featured-selected>압구정중<\/strong><\/div>/);
+});
+
+test('공개 렌더: Featured Stage 는 featuredLessonIds 중 항목명과 매칭되는 프로그램의 핵심 특징만 낸다', () => {
+  const hooks = Object.fromEntries(bothRenderers()).public;
+  const academy = academyFixture({
+    name: '테스트영어교실',
+    lessons: [
+      { lessonId: 9, name: '영문법 기초: 레고', highlight: '원리 중심 영문법' },
+      { lessonId: 13, name: '압구정중, 신구중, 신사중, 언북중', highlight: '20년 문법으로 내신 만점 도전' }
+    ],
+    pageSettings: {
+      sectionVisibility: { 'sec-featured': true },
+      builderDraft: Object.assign({}, SCHOOLS.builderDraft, { featuredLessonIds: '9,13' })
+    }
+  });
+  primeRenderer(hooks, academy);
+  const html = hooks.renderFeatured(academy);
+  // 항목명("압구정중"…)이 이름에 든 수업(id 13)의 핵심 특징만 — 문법 커리큘럼(레고)은 여기 안 온다
+  assert.match(html, /<p class="featured-stage-approach">20년 문법으로 내신 만점 도전<\/p>/);
+  assert.doesNotMatch(html, /원리 중심 영문법/, '레고/버블티/가우디는 Featured Stage 에 넣지 않는다');
+  assert.doesNotMatch(html, /featured-programs/, 'V2-11 의 대표수업 리스트는 제거됐다');
 });
 
 test('공개 렌더: 빈 학교 항목은 칩도 무대도 만들지 않는다(빈 pill 방지)', () => {
@@ -123,20 +147,20 @@ test('academy_public.css: 선택 상태/포커스/무대 스타일이 정의된�
   assert.match(PUBLIC_CSS, /\.featured-item\[aria-pressed="true"\]\{[^}]*background:var\(--ink\)/);
   assert.match(PUBLIC_CSS, /\.featured-item\[aria-pressed="true"\] \.featured-item-label\{[^}]*color:#fff/);
   assert.match(PUBLIC_CSS, /\.featured-stage\{[^}]*display:flex/);
-  assert.match(PUBLIC_CSS, /\.featured-paper-band\{fill:var\(--ultramarine\)/);
+  assert.match(PUBLIC_CSS, /\.featured-stage-school\{[^}]*font-weight:900/);
   assert.match(PUBLIC_CSS, /\.featured-selected strong\{color:var\(--ultramarine\)/);
+  assert.doesNotMatch(PUBLIC_CSS, /featured-paper/, '추상 종이 SVG 스타일 제거');
 });
 
 test('캐시버스팅: 변경된 storefront 자산 버전이 함께 올라간다', () => {
-  // V2-11: Mobile Storefront Completion — storefront_motion/collection/sections/public.js
-  //        + scene/collection/public.css 변경
-  assert.match(PUBLIC_HTML, /academy_storefront_motion\.js\?v=20260831-5/);
-  assert.match(PUBLIC_HTML, /academy_scene\.css\?v=20260831-5/);
-  assert.match(PUBLIC_HTML, /academy_collection\.(js|css)\?v=20260831-5/);
-  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260831-5/);
-  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260831-5/);
-  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260831-5/);
-  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260831-5/);
+  // V2-11 corrective — storefront_motion/collection/sections/public.js + story/collection/public.css
+  assert.match(PUBLIC_HTML, /academy_storefront_motion\.js\?v=20260831-6/);
+  assert.match(PUBLIC_HTML, /academy_story\.css\?v=20260831-6/);
+  assert.match(PUBLIC_HTML, /academy_collection\.(js|css)\?v=20260831-6/);
+  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260831-6/);
+  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260831-6/);
+  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260831-6/);
+  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260831-6/);
 });
 
 test('sections.js featured 영역에 학교/연도/시즌 하드코딩이 없다', () => {

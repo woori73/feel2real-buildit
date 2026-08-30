@@ -222,24 +222,38 @@
   }
 
   /**
-   * Featured 섹션이 실제로 보여줄 프로그램들(V2-11). builderDraft.featuredLessonIds 로 원장이
-   * 고른 대표 수업을 name + 핵심 특징(highlight)으로 낸다 — 데코 목업이 아니라 실제 데이터.
-   * 공개/빌더 동일(읽기 전용 표시). 고른 게 없거나 highlight 가 하나도 없으면 아무것도 안 낸다.
+   * Featured Stage 가 보여줄 대표 프로그램(V2-11 corrective). builderDraft.featuredLessonIds
+   * 중 이름에 항목 칩 라벨이 들어간 수업을 고른다. 항목별로 분리된 데이터는 만들지 않는다 —
+   * 통합 프로그램이 하나면 그 하나를 쓴다. 매칭 없으면 null(Stage 는 항목명 + 프레임 라벨만).
+   * 나머지 수업(문법 커리큘럼 등)은 여기에 넣지 않는다 — 그건 sec-lessons 담당이다.
    */
-  function featuredProgramsHtml(lessons) {
-    const items = (lessons || []).filter(Boolean);
-    if (!items.length) return '';
-    const rows = items.map((l) => {
-      const name = textValue(l.name) || textValue(l.tabShortName);
-      const hi = textValue(l.highlight);
-      if (!name && !hi) return '';
-      return `<li class="featured-program">`
-        + (name ? `<span class="featured-program-name">${escapeHtml(name)}</span>` : '')
-        + (hi ? `<span class="featured-program-highlight">${escapeHtml(hi)}</span>` : '')
-        + `</li>`;
-    }).filter(Boolean).join('');
-    if (!rows) return '';
-    return `<ul class="featured-programs f2r-reveal" aria-label="선택한 대표 프로그램">${rows}</ul>`;
+  function featuredStageProgram(view) {
+    const chips = featuredItems(view).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
+    if (!chips.length) return null;
+    return selectedFeaturedLessons(view).find((l) => {
+      const n = String((l && l.name) || '');
+      return chips.some((s) => n.indexOf(s) !== -1);
+    }) || null;
+  }
+
+  /**
+   * Featured 중앙 무대(V2-11 corrective). 추상 종이 SVG 제거 — 선택 항목의 실제 정보를 낸다:
+   * 프레임 라벨(featuredTitle 첫 줄) + 큰 항목명(선택 시 academy_public.js 가 갈아끼움) + 대표
+   * 프로그램의 핵심 특징(실데이터, 없으면 생략). moreHtml = 공개는 앵커, 빌더는 빈 값.
+   * 항목별로 분리된 내용은 만들지 않는다(통합 프로그램 하나면 그 하나를 보여준다).
+   */
+  function featuredStageHtml(school, title, program, moreHtml) {
+    const name = String(school == null ? '' : school).trim();
+    if (!name) return '';
+    const frame = String(title == null ? '' : title).split('\n').map((s) => s.trim()).filter(Boolean)[0] || '';
+    const p = program || {};
+    const approach = textValue(p.highlight) || textValue(p.kicker);
+    return `<div class="featured-stage f2r-reveal" data-featured-stage>`
+      + (frame ? `<span class="featured-stage-frame">${escapeHtml(frame)}</span>` : '')
+      + `<strong class="featured-stage-school" data-featured-stage-school>${escapeHtml(name)}</strong>`
+      + (approach ? `<p class="featured-stage-approach">${escapeHtml(approach)}</p>` : '')
+      + (moreHtml || '')
+      + `</div>`;
   }
 
   function renderFeatured(view, ctx) {
@@ -255,9 +269,8 @@
             ${ctx.editableText({ tag: 'h2', className: 'featured-title f2r-reveal', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
             ${ctx.editableText({ tag: 'p', className: 'featured-desc f2r-reveal', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
-          ${ctx.featuredStage(featuredFirst(view), title)}
+          ${ctx.featuredStage(featuredFirst(view), title, featuredStageProgram(view))}
           ${ctx.featuredItemsGroup(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''), featuredItems(view))}
-          ${ctx.featuredPrograms(selectedFeaturedLessons(view))}
           <div class="featured-cta f2r-reveal">${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
@@ -279,45 +292,41 @@
   }
 
   /**
-   * AI Native transformation stage (V2-5). 하나의 "정보 오브젝트"(문서)가 단계마다 상태를 바꾼다:
-   *   SOURCE(학교 자료) → ANALYSIS(패턴/근거 추출) → INTELLIGENCE(AI + 교육자 인사이트 결합)
-   *   → CREATION(문항 제작) → FINAL(완성본).
-   * 순수 CSS+SVG 도형. 이미지 자산 없음. 장면 전환은 academy_story.js 가 section[data-story-scene]로
-   * 주고, 표시는 academy_story.css 가 한다(데스크톱 pin 상태에서만). aria-hidden — 스크린리더는
-   * 아래 단계 목록으로 같은 내용을 읽는다.
+   * AI Native Visual Stage (V2-11 corrective). 추상 도형 대신 "지금 이 단계가 무엇인지"를
+   * 아이콘 + 단계 이름으로 읽히게 한다. 하나의 "정보 오브젝트"(학교 자료)가 단계마다 상태를
+   * 바꾸는 흐름: 자료 → 분석/패턴 → 인사이트 결합 → 문항 제작 → 완성 시험지.
+   * 데스크톱·모바일 모두 보인다(모바일 축소, display:none 아님). 활성 프레임:
+   *   데스크톱 pin  — academy_story.js #sec-digitaltwin[data-story-scene=N]
+   *   그 외(모바일) — academy_storefront_motion.js processProgress(options.stage) [data-active-frame=N]
+   * 이미지 자산 없음(currentColor SVG 도형). aria-hidden — 스크린리더는 아래 단계 목록을 읽는다.
    */
-  function aiProcessStageHtml() {
-    const docLines = [40, 58, 76, 94, 112, 130].map((y, i) =>
-      `<rect class="ai-doc-line" x="34" y="${y}" width="${i % 3 === 2 ? 92 : 132}" height="7" rx="3.5"/>`).join('');
-    return `<div class="ai-process-stage" data-ai-stage aria-hidden="true">
-        <div class="ai-stage-canvas">
-          <svg class="ai-stage-doc" viewBox="0 0 200 260" role="presentation">
-            <rect class="ai-doc-paper" x="18" y="8" width="164" height="244" rx="10"/>
-            ${docLines}
-          </svg>
-          <svg class="ai-stage-layer" data-scene="2" viewBox="0 0 200 260" role="presentation">
-            <rect class="ai-mark" x="32" y="55" width="90" height="11" rx="3"/>
-            <rect class="ai-mark" x="32" y="91" width="110" height="11" rx="3"/>
-            <line class="ai-scan" x1="10" y1="130" x2="190" y2="130"/>
-          </svg>
-          <svg class="ai-stage-layer" data-scene="3" viewBox="0 0 200 260" role="presentation">
-            <circle class="ai-node ai-node-ai" cx="42" cy="42" r="20"/>
-            <circle class="ai-node ai-node-human" cx="158" cy="42" r="20"/>
-            <path class="ai-link" d="M42 62 Q100 120 100 150"/>
-            <path class="ai-link" d="M158 62 Q100 120 100 150"/>
-            <circle class="ai-merge" cx="100" cy="150" r="9"/>
-          </svg>
-          <svg class="ai-stage-layer" data-scene="4" viewBox="0 0 200 260" role="presentation">
-            <rect class="ai-block" x="34" y="150" width="60" height="26" rx="5"/>
-            <rect class="ai-block" x="104" y="150" width="60" height="26" rx="5"/>
-            <rect class="ai-block" x="34" y="186" width="130" height="26" rx="5"/>
-          </svg>
-          <svg class="ai-stage-layer" data-scene="5" viewBox="0 0 200 260" role="presentation">
-            <circle class="ai-badge" cx="158" cy="222" r="22"/>
-            <path class="ai-check" d="M148 222 l7 7 l13 -15"/>
-          </svg>
-        </div>
-      </div>`;
+  const AI_STAGE_GLYPHS = [
+    // 0 자료 수집 — 문서
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-doc" x="12" y="6" width="24" height="36" rx="3"/><line class="ais-line" x1="17" y1="16" x2="31" y2="16"/><line class="ais-line" x1="17" y1="23" x2="31" y2="23"/><line class="ais-line" x1="17" y1="30" x2="25" y2="30"/></svg>',
+    // 1 경향 분석 — 스캔선 + 패턴 하이라이트
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-doc" x="12" y="6" width="24" height="36" rx="3"/><rect class="ais-hl" x="16" y="14" width="11" height="6" rx="2"/><rect class="ais-hl" x="16" y="27" width="16" height="6" rx="2"/><line class="ais-scan" x1="7" y1="24" x2="41" y2="24"/></svg>',
+    // 2 인사이트 결합 — 두 노드가 하나로
+    '<svg viewBox="0 0 48 48" role="presentation"><circle class="ais-node" cx="14" cy="14" r="8"/><circle class="ais-node" cx="34" cy="14" r="8"/><path class="ais-merge" d="M14 22 Q24 33 24 38 Q24 33 34 22"/><circle class="ais-core" cx="24" cy="39" r="6"/></svg>',
+    // 3 문항 제작 — 문제 블록
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-q" x="9" y="10" width="13" height="13" rx="2"/><rect class="ais-q" x="26" y="10" width="13" height="13" rx="2"/><rect class="ais-q" x="9" y="27" width="30" height="11" rx="2"/></svg>',
+    // 4 완성 시험지 — 체크
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-doc" x="9" y="6" width="24" height="36" rx="3"/><line class="ais-line" x1="14" y1="16" x2="27" y2="16"/><line class="ais-line" x1="14" y1="23" x2="27" y2="23"/><circle class="ais-badge" cx="34" cy="34" r="10"/><path class="ais-check" d="M29 34 l4 4 l7 -8"/></svg>'
+  ];
+  function aiProcessStageHtml(steps) {
+    const labels = (steps || []).map((s) => textValue(s));
+    const frames = labels.map((label, i) => {
+      if (!label && i > 0) return '';
+      const glyph = AI_STAGE_GLYPHS[i] || AI_STAGE_GLYPHS[AI_STAGE_GLYPHS.length - 1];
+      return `<li class="ai-stage-frame" data-frame="${i}">`
+        + `<span class="ai-stage-glyph">${glyph}</span>`
+        + `<span class="ai-stage-frame-name"><b>${i + 1}</b>${escapeHtml(label || '')}</span>`
+        + `</li>`;
+    }).filter(Boolean).join('');
+    const pips = labels.map((l, i) => (l || i === 0) ? `<li data-pip="${i}"></li>` : '').filter(Boolean).join('');
+    return `<figure class="ai-process-stage" data-ai-stage aria-hidden="true">
+        <div class="ai-stage-window"><ol class="ai-stage-frames">${frames}</ol></div>
+        <ol class="ai-stage-pips">${pips}</ol>
+      </figure>`;
   }
 
   function renderAiProcess(view, ctx) {
@@ -333,7 +342,7 @@
             ${ctx.editableText({ tag: 'h2', className: 'section-title ai-process-title f2r-reveal', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
             ${ctx.editableText({ tag: 'p', className: 'ai-process-desc f2r-reveal', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
-          ${aiProcessStageHtml()}
+          ${aiProcessStageHtml(aiProcessSteps(view))}
           <ol class="ai-process-steps">${aiProcessSteps(view).map((step, index) => ctx.aiProcessStep(step, index)).join('')}</ol>
           ${ctx.editableText({ tag: 'p', className: 'ai-process-note', draftKey: 'aiProcessNote', value: note, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', quoted: false, omitWhenEmpty: true })}
         </div>
@@ -1057,23 +1066,11 @@
         if (!label) return '';
         return `<button type="button" class="featured-item f2r-reveal" data-featured-school="${escapeAttr(label)}" aria-pressed="${index === 0 ? 'true' : 'false'}"><span class="featured-item-label">${escapeHtml(label)}</span></button>`;
       },
-      // 중앙 무대 — 선택한 학교 이름이 시트 상단에 박힌다. 선택 시 academy_public.js 가 이름을 갈아끼운다.
-      // 시트의 캡션은 교육자가 실제 입력한 featuredTitle 첫 줄(코드에 학교/시즌/과목을 하드코딩하지 않는다).
-      featuredStage(school, title) {
-        const name = String(school == null ? '' : school).trim();
-        if (!name) return '';
-        const caption = String(title == null ? '' : title).split('\n').map((s) => s.trim()).filter(Boolean).join(' ');
-        return `<div class="featured-stage f2r-reveal" data-featured-stage aria-hidden="true">
-            <svg class="featured-paper" viewBox="0 0 260 176" role="presentation">
-              <rect class="featured-paper-bg" x="6" y="6" width="248" height="164" rx="12"/>
-              <rect class="featured-paper-band" x="6" y="6" width="248" height="46" rx="12"/>
-              <text class="featured-paper-school" x="130" y="37" text-anchor="middle" data-featured-stage-school>${escapeHtml(name)}</text>
-              <rect class="featured-paper-line" x="30" y="80" width="200" height="9" rx="4"/>
-              <rect class="featured-paper-line" x="30" y="104" width="200" height="9" rx="4"/>
-              <rect class="featured-paper-line" x="30" y="128" width="132" height="9" rx="4"/>
-            </svg>
-            ${caption ? `<span class="featured-stage-caption">${escapeHtml(caption)}</span>` : ''}
-          </div>`;
+      // 중앙 무대 — 선택 학교의 실제 내신 정보(프레임 라벨 + 큰 학교명 + 대표 프로그램 핵심 특징).
+      // 선택 시 academy_public.js 가 학교명을 갈아끼운다. "준비 과정" 앵커로 AI Native 로 연결.
+      featuredStage(school, title, program) {
+        return featuredStageHtml(school, title, program,
+          '<a class="featured-stage-more" href="#sec-digitaltwin" onclick="scrollToId(\'sec-digitaltwin\');return false;">AI로 준비하는 과정 보기</a>');
       },
       featuredItemsGroup(itemsHtml, labels) {
         const first = (labels || []).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
@@ -1082,7 +1079,6 @@
           : '';
         return `<div class="featured-items" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>${selected}`;
       },
-      featuredPrograms(lessons) { return featuredProgramsHtml(lessons); },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
         return text ? `<button type="button" class="btn featured-cta-btn" data-featured-cta data-featured-cta-base="${escapeAttr(text)}" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
@@ -1299,27 +1295,13 @@
         const draftKey = 'featuredItem' + (index + 1);
         return `<div class="featured-item f2r-reveal"><span class="featured-item-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
       },
-      // 빌더 캔버스: 중앙 무대를 첫 학교로 정적 프리뷰(공개와 같은 모양). 선택 배선은 공개 전용.
-      featuredStage(school, title) {
-        const name = String(school == null ? '' : school).trim();
-        if (!name) return '';
-        const caption = String(title == null ? '' : title).split('\n').map((s) => s.trim()).filter(Boolean).join(' ');
-        return `<div class="featured-stage f2r-reveal" data-featured-stage aria-hidden="true">
-            <svg class="featured-paper" viewBox="0 0 260 176" role="presentation">
-              <rect class="featured-paper-bg" x="6" y="6" width="248" height="164" rx="12"/>
-              <rect class="featured-paper-band" x="6" y="6" width="248" height="46" rx="12"/>
-              <text class="featured-paper-school" x="130" y="37" text-anchor="middle" data-featured-stage-school>${escapeHtml(name)}</text>
-              <rect class="featured-paper-line" x="30" y="80" width="200" height="9" rx="4"/>
-              <rect class="featured-paper-line" x="30" y="104" width="200" height="9" rx="4"/>
-              <rect class="featured-paper-line" x="30" y="128" width="132" height="9" rx="4"/>
-            </svg>
-            ${caption ? `<span class="featured-stage-caption">${escapeHtml(caption)}</span>` : ''}
-          </div>`;
+      // 빌더 캔버스: 중앙 무대를 첫 학교로 정적 프리뷰(공개와 같은 모양). 선택 배선·앵커는 공개 전용.
+      featuredStage(school, title, program) {
+        return featuredStageHtml(school, title, program, '');
       },
       featuredItemsGroup(itemsHtml) {
         return `<div class="featured-items">${itemsHtml}</div>`;
       },
-      featuredPrograms(lessons) { return featuredProgramsHtml(lessons); },
       featuredCta(label) {
         return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
       },

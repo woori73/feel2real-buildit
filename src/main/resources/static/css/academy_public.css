@@ -209,16 +209,17 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-eyebrow .stroke{background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
 .featured-desc{margin:16px auto 0;max-width:600px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
-/* V2-6 Featured Stage — 선택한 학교가 시트 상단에 박히는 중앙 무대. 학교별 실데이터는 없고,
-   공통 프로세스(Featured 프로그램) 안에서 "선택된 학교" 만 반영한다. 캡션은 교육자가 입력한
-   featuredTitle 첫 줄. academy_public.js wireFeaturedSelector 가 선택 시 텍스트를 갈아끼운다. */
-.featured-stage{margin:30px auto 0;display:flex;flex-direction:column;align-items:center;gap:12px;}
-.featured-paper{width:100%;max-width:260px;height:auto;filter:drop-shadow(0 18px 34px rgba(10,12,20,.14));}
-.featured-paper-bg{fill:#fff;stroke:var(--line);stroke-width:2;}
-.featured-paper-band{fill:var(--ultramarine);}
-.featured-paper-school{fill:#fff;font-family:inherit;font-size:19px;font-weight:800;letter-spacing:-.02em;}
-.featured-paper-line{fill:var(--gold-soft);}
-.featured-stage-caption{color:var(--ink-soft);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
+/* V2-11 corrective — Featured Stage = 선택 학교의 실제 내신 정보 패널(추상 종이 SVG 제거).
+   프레임 라벨(featuredTitle 첫 줄) + 큰 학교명 + 대표 내신 프로그램의 핵심 특징(실데이터) +
+   "AI로 준비하는 과정" 앵커. 학교별로 분리된 데이터는 없어 통합 프로그램 하나를 보여준다.
+   academy_public.js wireFeaturedSelector 가 선택 시 학교명을 갈아끼운다. */
+.featured-stage{margin:28px auto 0;max-width:440px;width:100%;padding:22px 22px 20px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.featured-stage-frame{color:var(--ink-faint);font-size:11.5px;font-weight:800;letter-spacing:.04em;word-break:keep-all;}
+.featured-stage-school{color:var(--ink);font-size:clamp(20px,4.6vw,26px);font-weight:900;letter-spacing:-.02em;line-height:1.25;word-break:keep-all;}
+.featured-stage-approach{margin:4px 0 2px;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.62;word-break:keep-all;}
+.featured-stage-more{margin-top:6px;display:inline-flex;align-items:center;gap:4px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
+.featured-stage-more::after{content:'↓';}
+.featured-stage-more:hover{text-decoration:underline;}
 .featured-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px;}
 .featured-item{display:inline-flex;align-items:center;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);font-family:inherit;cursor:pointer;transition:background .16s var(--ease),border-color .16s var(--ease);}
 .featured-item-label{color:var(--ink);font-size:14px;font-weight:800;letter-spacing:-.01em;transition:color .16s var(--ease);}
@@ -228,11 +229,6 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-item[aria-pressed="true"] .featured-item-label{color:#fff;}
 .featured-selected{margin:16px auto 0;color:var(--ink-soft);font-size:13px;font-weight:700;letter-spacing:-.01em;}
 .featured-selected strong{color:var(--ultramarine);font-weight:900;}
-/* V2-11: 원장이 고른 대표 수업(featuredLessonIds)의 실제 내용 — 데코 목업 아님. name + 핵심 특징. */
-.featured-programs{list-style:none;margin:20px auto 0;padding:0;display:grid;gap:10px;max-width:520px;width:100%;text-align:left;}
-.featured-program{display:flex;flex-direction:column;gap:5px;padding:13px 15px;border:1px solid var(--line);border-left:3px solid var(--ultramarine);border-radius:12px;background:#fff;box-shadow:var(--shadow-sm);}
-.featured-program-name{color:var(--ink);font-size:13.5px;font-weight:900;letter-spacing:-.02em;word-break:keep-all;}
-.featured-program-highlight{color:var(--ink-soft);font-size:12.5px;font-weight:700;line-height:1.55;word-break:keep-all;}
 .featured-cta{margin-top:28px;}
 .featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background .18s var(--ease),transform .18s var(--ease);}
 .featured-cta-btn:hover{background:var(--accent);transform:translateY(-2px);}
@@ -248,7 +244,48 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .ai-process-eyebrow{justify-content:center;color:var(--ultramarine);}
 .ai-process-title{margin:0;}
 .ai-process-desc{margin:14px auto 0;max-width:620px;color:var(--ink-soft);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
-.ai-process-steps{list-style:none;margin:34px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
+
+/* V2-11 corrective — AI Native Visual Stage. 추상 도형 대신 "지금 이 단계가 무엇인지"를
+   아이콘 + 단계 이름으로. 데스크톱·모바일 모두 보인다(모바일 축소, display:none 아님).
+   프레임 전환: 모바일 = [data-ai-stage][data-active-frame=N] (processProgress), 데스크톱 pin =
+   academy_story.css 의 #sec-digitaltwin[data-story-scene=N]. 진행 전/JS 없음 = 첫 프레임. */
+.ai-process-stage{margin:30px auto 0;max-width:420px;width:100%;padding:0;border:0;}
+.ai-stage-window{position:relative;height:150px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);overflow:hidden;}
+.ai-stage-frames{list-style:none;margin:0;padding:0;height:100%;}
+.ai-stage-frame{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px;opacity:0;transform:translateY(8px);transition:opacity .42s var(--ease),transform .42s var(--ease);}
+.ai-process-stage:not([data-active-frame]) .ai-stage-frame[data-frame="0"]{opacity:1;transform:none;}
+.ai-process-stage[data-active-frame="0"] .ai-stage-frame[data-frame="0"],
+.ai-process-stage[data-active-frame="1"] .ai-stage-frame[data-frame="1"],
+.ai-process-stage[data-active-frame="2"] .ai-stage-frame[data-frame="2"],
+.ai-process-stage[data-active-frame="3"] .ai-stage-frame[data-frame="3"],
+.ai-process-stage[data-active-frame="4"] .ai-stage-frame[data-frame="4"]{opacity:1;transform:none;}
+.ai-stage-glyph{display:flex;}
+.ai-stage-glyph svg{width:56px;height:56px;color:var(--ultramarine);}
+.ais-doc{fill:#fff;stroke:currentColor;stroke-width:2.2;}
+.ais-line{stroke:var(--ink-faint);stroke-width:2.4;stroke-linecap:round;}
+.ais-hl{fill:var(--gold);}
+.ais-scan{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;}
+.ais-node{fill:none;stroke:currentColor;stroke-width:2.4;}
+.ais-merge{fill:none;stroke:var(--ink-faint);stroke-width:2;}
+.ais-core{fill:var(--accent);}
+.ais-q{fill:none;stroke:currentColor;stroke-width:2.4;}
+.ais-badge{fill:var(--accent);}
+.ais-check{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+.ai-stage-frame-name{color:var(--ink);font-size:14px;font-weight:900;letter-spacing:-.02em;text-align:center;word-break:keep-all;display:flex;align-items:center;gap:8px;}
+.ai-stage-frame-name b{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:var(--accent-soft);color:var(--ultramarine);font-size:11px;font-weight:900;}
+.ai-stage-pips{list-style:none;margin:12px 0 0;padding:0;display:flex;justify-content:center;gap:7px;}
+.ai-stage-pips li{width:7px;height:7px;border-radius:999px;background:var(--line);transition:background .3s var(--ease),transform .3s var(--ease);}
+.ai-process-stage:not([data-active-frame]) .ai-stage-pips li:first-child,
+.ai-process-stage[data-active-frame="0"] .ai-stage-pips li:nth-child(1),
+.ai-process-stage[data-active-frame="1"] .ai-stage-pips li:nth-child(-n+2),
+.ai-process-stage[data-active-frame="2"] .ai-stage-pips li:nth-child(-n+3),
+.ai-process-stage[data-active-frame="3"] .ai-stage-pips li:nth-child(-n+4),
+.ai-process-stage[data-active-frame="4"] .ai-stage-pips li:nth-child(-n+5){background:var(--ultramarine);}
+@media (prefers-reduced-motion:reduce){
+  .ai-stage-frame{transition:none;}
+}
+
+.ai-process-steps{list-style:none;margin:26px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
 .ai-process-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;flex:1 1 150px;max-width:190px;padding:20px 14px;border-radius:var(--radius-sm);background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);text-align:center;}
 .ai-process-step + .ai-process-step::before{content:'→';position:absolute;left:-11px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:15px;font-weight:900;}
 .ai-process-step-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,var(--ultramarine),var(--accent));color:#fff;font-size:12px;font-weight:900;}
@@ -312,6 +349,11 @@ html.js-storefront-motion .ai-process-steps.is-complete ~ .ai-process-note{opaci
 @media(max-width:640px){
   .section-wrap.featured-wrap{padding:48px 18px;}
   .section-wrap.ai-process-wrap{padding:44px 18px;}
+  /* Visual Stage 는 모바일에서도 유지(display:none 아님) — 축소만. */
+  .ai-process-stage{max-width:none;margin-top:24px;}
+  .ai-stage-window{height:118px;}
+  .ai-stage-glyph svg{width:44px;height:44px;}
+  .ai-stage-frame-name{font-size:13px;}
   .ai-process-steps{flex-direction:column;align-items:stretch;gap:10px;}
   .ai-process-step{flex-basis:auto;max-width:none;flex-direction:row;justify-content:center;gap:12px;padding:14px 16px;}
   .ai-process-step + .ai-process-step::before{content:'↓';left:50%;top:-11px;transform:translateX(-50%);}

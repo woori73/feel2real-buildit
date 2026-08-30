@@ -102,16 +102,23 @@
    *   MutationObserver 로 지켜본다. "active" 가 되면 처음부터 재생, "enter"/"exit" 로 벗어나면
    *   초기화한다 → 위로 갔다 다시 내려오면 진행이 다시 보인다(무한 반복 아님 — 실제로 나갔다
    *   들어와야 한 번). sceneFlow 가 없거나 data-scene 이 안 붙는 환경이면 1회성 onEnter 로 폴백.
+   * options.stage(V2-11 corrective): Visual Stage 요소. 단계 i 가 활성화될 때마다
+   *   stage[data-active-frame] = i 로 미러링한다(모바일에서 AI Native 중앙 그림이 단계와 함께
+   *   바뀌게). reset 은 attr 제거. 데스크톱 pin 은 이 경로를 안 타고 academy_story.css 가
+   *   data-story-scene 으로 같은 프레임을 그린다.
    */
   function processProgress(list, options) {
     var steps = items(list, '[data-step]');
     if (!steps.length) return;
+    var opt = options || {};
+    var stage = opt.stage || null;
+    function markStage(i) { if (stage) stage.setAttribute('data-active-frame', String(i)); }
     if (INSTANT) {
       steps.forEach(function (el) { el.classList.add('is-linked', 'is-active', 'is-done'); });
       if (list) list.classList.add('is-complete');
+      markStage(steps.length - 1);
       return;
     }
-    var opt = options || {};
     var start = opt.start || 250;
     var step = opt.step || 180;
     var linkLead = opt.linkLead == null ? 90 : opt.linkLead;
@@ -125,6 +132,7 @@
       clearTimers();
       steps.forEach(function (el) { el.classList.remove('is-linked', 'is-active', 'is-done'); });
       if (list) list.classList.remove('is-complete');
+      if (stage) stage.removeAttribute('data-active-frame');
     }
     function play() {
       clearTimers();
@@ -133,9 +141,10 @@
           if (i > 0) {
             steps[i - 1].classList.add('is-done');
             el.classList.add('is-linked');
-            timers.push(global.setTimeout(function () { el.classList.add('is-active'); }, linkLead));
+            timers.push(global.setTimeout(function () { el.classList.add('is-active'); markStage(i); }, linkLead));
           } else {
             el.classList.add('is-active');
+            markStage(0);
           }
           if (i === steps.length - 1) {
             timers.push(global.setTimeout(function () {
@@ -168,6 +177,7 @@
       if (playing || scene.getAttribute('data-scene')) return;
       steps.forEach(function (el) { el.classList.add('is-linked', 'is-active', 'is-done'); });
       if (list) list.classList.add('is-complete');
+      markStage(steps.length - 1);
     }, 6000);
   }
 
