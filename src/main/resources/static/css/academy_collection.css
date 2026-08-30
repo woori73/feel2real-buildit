@@ -30,6 +30,20 @@
   letter-spacing: -.01em;
   word-break: keep-all;
 }
+.f2r-collection-controls { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+/* 진행 카운터 — 스크롤/스와이프/화살표와 함께 선두 카드 번호가 바뀐다(academy_collection.js). */
+.f2r-collection-progress {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.f2r-collection-progress [data-collection-current] { color: var(--ink); }
+.f2r-collection-progress-sep { opacity: .45; }
 .f2r-collection-nav { display: flex; gap: 8px; flex-shrink: 0; }
 .f2r-collection-arrow {
   width: 38px;
@@ -79,6 +93,18 @@
   display: flex;
 }
 .f2r-collection-card > * { width: 100%; }
+
+/* Active / edge treatment — JS(js-collection)가 붙을 때만. 뷰포트 가장자리에서 절반 이상 잘린 카드는
+   미세하게 축소·감광해 "shelf" 느낌을 준다. 과한 3D/coverflow 아님. transform/opacity 만 사용. */
+html.js-collection .f2r-collection-card > * {
+  transition: transform .3s var(--ease), opacity .3s var(--ease);
+}
+html.js-collection .f2r-collection-card.is-dimmed > * {
+  transform: scale(.94);
+  opacity: .55;
+}
+html.js-collection .f2r-collection-card.is-active { z-index: 1; }
+.f2r-collection[data-collection-static] .f2r-collection-card > * { transform: none; opacity: 1; }
 
 /* 데스크톱: 여러 카드 동시 표시 + 다음 카드 일부 peek(고정 px 카드폭이 컨테이너 대비 자연스럽게 2~3.x개). */
 @media (min-width: 761px) {
@@ -309,4 +335,10 @@
   .f2r-collection-arrow,
   .f2r-program-card-cta,
   .f2r-video-play { transition: none; }
+  html.js-collection .f2r-collection-card > *,
+  html.js-collection .f2r-collection-card.is-dimmed > * {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
 }

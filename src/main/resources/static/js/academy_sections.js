@@ -505,10 +505,17 @@
    * 컬렉션 공통 shell. cards는 카드 *내용* HTML 문자열 배열이고 여기서 <li>로 감싼다.
    * staticMode(빌더 캔버스): 화살표 없음 + track이 가로 스크롤 대신 wrap(편집 UX / public 분리).
    */
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
   function renderCollectionShell(options) {
     const o = options || {};
     const cards = Array.isArray(o.cards) ? o.cards : [];
     const label = escapeAttr(o.navLabel || '카드');
+    // 진행 카운터(NN / MM). 배선(academy_collection.js)이 스크롤 위치로 current 를 갱신한다.
+    // staticMode(빌더 캔버스)에는 넣지 않는다 — 스크롤이 없어 의미가 없다.
+    const progress = o.staticMode
+      ? ''
+      : `<span class="f2r-collection-progress" aria-hidden="true"><span data-collection-current>01</span><span class="f2r-collection-progress-sep">/</span><span data-collection-total>${pad2(cards.length)}</span></span>`;
     const nav = o.staticMode
       ? ''
       : `<div class="f2r-collection-nav" data-collection-nav>
@@ -519,7 +526,7 @@
     return `<div class="f2r-collection"${o.staticMode ? ' data-collection-static' : ''} data-collection>
         <div class="f2r-collection-head">
           <span class="f2r-collection-hint">${hint}</span>
-          ${nav}
+          <div class="f2r-collection-controls">${progress}${nav}</div>
         </div>
         <div class="f2r-collection-viewport">
           <ul class="f2r-collection-track" data-collection-track role="list">
