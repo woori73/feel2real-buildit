@@ -116,7 +116,12 @@ public class AcademyService {
       // sec-lessons / sec-videos 를 가로 컬렉션(shelf)으로 표시할지. 'horizontal' 이면 opt-in,
       // 그 외/미설정이면 기존 레이아웃(showcase / 재생목록). 다른 학원은 이 키가 없어 불변.
       "lessonsLayout",
-      "videosLayout");
+      "videosLayout",
+      // ── Education Storefront: Mini Lectures (V2-9) ──
+      // sec-minilectures 콘텐츠. academy_videos 를 재사용하고, 강의별 제목/학습포인트/대상은
+      // JSON 배열 문자열로 이 키에 담는다([{"v":<videoId>,"t":..,"n":..,"g":..}]). 스키마 변경 없음.
+      "miniLectures",
+      "miniLecturesSectionTitle");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
@@ -137,7 +142,9 @@ public class AcademyService {
           "aiProcessStep3",
           "aiProcessStep4",
           "aiProcessStep5",
-          "aiProcessNote");
+          "aiProcessNote",
+          // Mini Lectures 목록 JSON — 강의 수 × (제목/노트/태그)라 200자를 넘는다.
+          "miniLectures");
   private static final String TEMP_HANDLE_PREFIX = "academy-";
   private static final String TEMP_HANDLE_SALT = "private-tutor-solution-academy-handle-v1";
   private static final String DEFAULT_LOGO_FILENAME = "default-academy-logo.jpg";
@@ -149,6 +156,7 @@ public class AcademyService {
       "sec-principal",
       "sec-philosophy",
       "sec-videos",
+      "sec-minilectures",
       "sec-reviews",
       "sec-lessons",
       "sec-curriculum",
@@ -163,7 +171,8 @@ public class AcademyService {
    * (기존 섹션은 반대로 명시적 false일 때만 숨긴다.) 렌더 판정은 프런트 {@code academy_sections.js}가
    * 담당하고, 서버는 순서 목록에만 포함해 레이아웃 저장이 깨지지 않게 한다.
    */
-  static final Set<String> OPT_IN_SECTION_IDS = Set.of("sec-featured", "sec-digitaltwin");
+  static final Set<String> OPT_IN_SECTION_IDS =
+      Set.of("sec-featured", "sec-digitaltwin", "sec-minilectures");
 
   private final AcademyRepository academyRepository;
   private final AcademyRegionRepository academyRegionRepository;

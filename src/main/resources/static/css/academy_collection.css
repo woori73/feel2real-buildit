@@ -111,11 +111,13 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
 @media (min-width: 761px) {
   .f2r-collection { --f2r-card-w: 300px; }
   .f2r-collection--videos { --f2r-card-w: 210px; }
+  .f2r-collection--lectures { --f2r-card-w: 320px; }
 }
 /* 모바일: 화살표 숨김. 터치 스와이프 + scroll-snap + 다음 카드 peek. JS 제스처 라이브러리 없음. */
 @media (max-width: 760px) {
   .f2r-collection { --f2r-card-w: 78vw; }
   .f2r-collection--videos { --f2r-card-w: 60vw; }
+  .f2r-collection--lectures { --f2r-card-w: 80vw; }
   .f2r-collection-nav { display: none; }
   .f2r-collection-head { min-height: 0; margin-bottom: 10px; }
   .f2r-collection-card { max-width: 82vw; }
@@ -254,6 +256,96 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
 }
 .f2r-program-card-cta:hover { background: var(--accent); transform: translateY(-1px); }
 .f2r-collection[data-collection-static] .f2r-program-card-cta { cursor: default; }
+
+/* ── Mini Lecture Card (sec-minilectures) — V2-9 ────────────────────────
+   "교육자가 직접 설명하는 짧은 학습 콘텐츠". Actual Class(폰 덱)와 시각적으로 구분된다:
+   가로형 강의 카드(제목 + 학습 포인트). 미디어 재생은 V2-8 공통 Media Viewport 계약 재사용
+   (.f2r-lecture-media 는 .f2r-media-viewport). 원본 영상 비율은 --f2r-media-aspect. CTA 없음. */
+.f2r-lecture-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.f2r-lecture-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--f2r-media-aspect, 16 / 9);
+  max-height: 52vh;
+  margin: 0;
+  border: 0;
+  background: #0b0d12;
+  overflow: hidden;
+}
+.f2r-lecture-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.f2r-lecture-media-ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, .5);
+}
+.f2r-lecture-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  padding: 16px 18px 18px;
+}
+.f2r-lecture-card-tag {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--ultramarine);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  word-break: keep-all;
+}
+.f2r-lecture-card-title {
+  color: var(--ink);
+  font-size: 15.5px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: -.02em;
+  word-break: keep-all;
+}
+.f2r-lecture-card-note {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+/* 빌더 캔버스 전용: 콘텐츠가 없을 때 클릭해 편집기를 여는 placeholder. */
+.f2r-lecture-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 26px 22px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  color: var(--ink-soft);
+  text-align: center;
+  cursor: pointer;
+}
+.f2r-lecture-empty strong { color: var(--ink); font-size: 14px; font-weight: 800; }
+.f2r-lecture-empty span { font-size: 12px; }
 
 /* ── Actual Class Shorts = Phone Screen Deck (V2-3) ─────────────────────
    기존 업로드 세로 숏폼을 보존하되, 일반 video 카드가 아니라 "휴대폰 화면을 넘겨본다"는

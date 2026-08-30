@@ -38,6 +38,7 @@
     'sec-principal',
     'sec-philosophy',
     'sec-videos',
+    'sec-minilectures',
     'sec-reviews',
     'sec-lessons',
     'sec-curriculum',
@@ -59,7 +60,8 @@
   // 공개 페이지 어디에도 렌더되지 않아, 기존 학원 사이트가 그대로 유지된다.
   const OPT_IN_SECTION_IDS = Object.freeze([
     'sec-featured',
-    'sec-digitaltwin'
+    'sec-digitaltwin',
+    'sec-minilectures'
   ]);
   const OPT_IN_SECTIONS = new Set(OPT_IN_SECTION_IDS);
   const MANAGED_SECTION_IDS = [
@@ -68,6 +70,7 @@
     'sec-principal',
     'sec-philosophy',
     'sec-videos',
+    'sec-minilectures',
     'sec-reviews',
     'sec-lessons',
     'sec-curriculum',
@@ -117,6 +120,7 @@
     'sec-principal': '원장 소개',
     'sec-philosophy': '학습 철학',
     'sec-videos': '수업 영상',
+    'sec-minilectures': '미니 강의',
     'sec-reviews': '수강 후기',
     'sec-lessons': '수업상품 · 강의 목록',
     'sec-curriculum': '커리큘럼 관리',
@@ -201,6 +205,7 @@
     wireHeroVideoEditing(preview);
     wireHeroMediaEditing();
     wireFeaturedLessonsEditing();
+    wireMiniLecturesEditing();
     wirePrincipalVideoEditing(preview);
     wirePrincipalCareerEditing(preview);
     wireIntroFeatureEditing(preview);
@@ -356,6 +361,7 @@
     if (id === 'sec-principal') return renderPrincipal(academy);
     if (id === 'sec-philosophy') return renderPhilosophy(academy);
     if (id === 'sec-videos') return renderVideos(academy);
+    if (id === 'sec-minilectures') return renderMiniLectures(academy);
     if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
     if (id === 'sec-social') return renderExternalServices(academy);
@@ -479,6 +485,10 @@
 
   function renderVideos(academy) {
     return SECTIONS.renderVideos(sectionView(academy), BUILDER_CTX);
+  }
+
+  function renderMiniLectures(academy) {
+    return SECTIONS.renderMiniLectures(sectionView(academy), BUILDER_CTX);
   }
 
   function wireVideoManagement() {
@@ -3354,6 +3364,7 @@
     controls.className = 'block-controls builder-section-controls' + (isHeader ? ' builder-header-controls' : '');
     controls.appendChild(sectionControlButton('fa-check', '적용', '', () => applySectionTextChanges(section)));
     appendCollectionLayoutControl(controls, section);
+    appendMiniLecturesControl(controls, section);
     if (!isHeader) {
       controls.appendChild(sectionControlButton('fa-trash', '삭제', 'danger', () => hideSelectedSection(section)));
     }
@@ -3392,6 +3403,206 @@
         : '기본 레이아웃으로 되돌렸습니다. 발행 시 저장됩니다.',
       'fa-table-columns'
     );
+  }
+
+  // ── Mini Lectures 편집 (V2-9) ──────────────────────────────────────────────
+  // sec-minilectures = "교육자가 직접 설명하는 짧은 학습 콘텐츠". Actual Class 와 역할이 다르다.
+  // 콘텐츠는 academy_videos 재사용 + 강의별 제목/학습포인트/대상은 builderDraft.miniLectures
+  // (JSON 배열 문자열)에 담는다. 스키마 변경 없음. 실제 콘텐츠가 없으면 섹션은 OFF·빈 상태를 유지한다.
+  const MINI_LECTURES_MAX = 12;
+
+  function parsedMiniLectures() {
+    const raw = draftText(currentPreview, 'miniLectures', '');
+    if (!raw) return [];
+    try {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr)
+        ? arr.filter((e) => e && Number(e.v) > 0).map((e) => ({
+            v: Number(e.v),
+            t: String(e.t == null ? '' : e.t),
+            n: String(e.n == null ? '' : e.n),
+            g: String(e.g == null ? '' : e.g)
+          }))
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function appendMiniLecturesControl(controls, section) {
+    const sectionId = canonicalSectionId(section.dataset.builderSectionKey);
+    if (sectionId !== 'sec-minilectures' || !currentPreview) return;
+    controls.appendChild(sectionControlButton('fa-graduation-cap', '미니 강의 편집', '', openMiniLecturesModal));
+  }
+
+  function wireMiniLecturesEditing() {
+    const pageContent = document.getElementById('pageContent');
+    if (pageContent && pageContent.dataset.miniLecturesWired !== 'true') {
+      pageContent.dataset.miniLecturesWired = 'true';
+      const open = (event) => {
+        const hit = event.target && event.target.closest ? event.target.closest('[data-mini-lectures-edit]') : null;
+        if (!hit) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openMiniLecturesModal();
+      };
+      pageContent.addEventListener('click', open, true);
+      pageContent.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        open(event);
+      }, true);
+    }
+
+    const modal = document.getElementById('builderMiniLecturesModal');
+    if (!modal || modal.dataset.wired === 'true') return;
+    modal.dataset.wired = 'true';
+    modal.querySelectorAll('[data-mini-lectures-close]').forEach((button) => {
+      button.addEventListener('click', closeMiniLecturesModal);
+    });
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeMiniLecturesModal();
+    });
+    const apply = document.getElementById('builderMiniLecturesApplyBtn');
+    if (apply) apply.addEventListener('click', applyMiniLecturesFromModal);
+    const list = document.getElementById('builderMiniLecturesOptions');
+    if (list) {
+      list.addEventListener('change', (event) => {
+        const row = event.target && event.target.closest ? event.target.closest('.builder-lecture-row') : null;
+        if (row && event.target.matches('input[type="checkbox"]')) {
+          row.classList.toggle('is-selected', event.target.checked);
+        }
+      });
+    }
+  }
+
+  function openMiniLecturesModal() {
+    const modal = document.getElementById('builderMiniLecturesModal');
+    const options = document.getElementById('builderMiniLecturesOptions');
+    if (!modal || !options || !currentPreview) return;
+    const saved = parsedMiniLectures();
+    const savedById = new Map(saved.map((e) => [String(e.v), e]));
+    const videos = (builderVideos || []).filter((video) => video && video.videoId != null);
+    // 저장된 순서 → 그 외 영상 순으로 나열한다(모달 안 재정렬은 이번 범위 밖).
+    const ordered = saved
+      .map((e) => videos.find((v) => String(v.videoId) === String(e.v)))
+      .filter(Boolean)
+      .concat(videos.filter((v) => !savedById.has(String(v.videoId))));
+
+    options.innerHTML = ordered.length
+      ? ordered.map((video) => {
+          const entry = savedById.get(String(video.videoId));
+          const checked = entry ? 'checked' : '';
+          const thumb = video.thumbnailUrl
+            ? `<img src="${escapeHtml(video.thumbnailUrl)}" alt="">`
+            : '<span class="builder-lecture-thumb-ph">🎓</span>';
+          return `<div class="builder-lecture-row${entry ? ' is-selected' : ''}" data-video-id="${escapeHtml(String(video.videoId))}">
+            <label class="builder-lecture-pick">
+              <input type="checkbox" ${checked}>
+              ${thumb}
+              <span class="builder-lecture-file">${escapeHtml(video.originalFilename || '이름 없는 영상')}</span>
+            </label>
+            <div class="builder-lecture-fields">
+              <input type="text" data-lecture-field="t" maxlength="80" placeholder="강의 제목 (예: 관계대명사 한 번에 정리)" value="${escapeHtml(entry ? entry.t : '')}">
+              <input type="text" data-lecture-field="n" maxlength="160" placeholder="학습 포인트 (예: which·that 헷갈릴 때 판단 기준)" value="${escapeHtml(entry ? entry.n : '')}">
+              <input type="text" data-lecture-field="g" maxlength="40" placeholder="대상·분류 (선택) (예: 중등 내신)" value="${escapeHtml(entry ? entry.g : '')}">
+            </div>
+          </div>`;
+        }).join('')
+      : '<p class="lesson-empty">먼저 <a href="/tutor/academy/videos">영상 관리</a>에서 강의 영상을 업로드해 주세요.</p>';
+    clearMiniLecturesError();
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeMiniLecturesModal() {
+    const modal = document.getElementById('builderMiniLecturesModal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    clearMiniLecturesError();
+  }
+
+  function collectMiniLecturesFromModal() {
+    return Array.from(document.querySelectorAll('#builderMiniLecturesOptions .builder-lecture-row'))
+      .filter((row) => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        return checkbox && checkbox.checked;
+      })
+      .map((row) => ({
+        v: Number(row.dataset.videoId),
+        t: (row.querySelector('[data-lecture-field="t"]').value || '').trim(),
+        n: (row.querySelector('[data-lecture-field="n"]').value || '').trim(),
+        g: (row.querySelector('[data-lecture-field="g"]').value || '').trim()
+      }))
+      .filter((entry) => entry.v > 0);
+  }
+
+  async function applyMiniLecturesFromModal() {
+    const apply = document.getElementById('builderMiniLecturesApplyBtn');
+    const entries = collectMiniLecturesFromModal();
+    if (entries.length > MINI_LECTURES_MAX) {
+      setMiniLecturesError('미니 강의는 최대 ' + MINI_LECTURES_MAX + '개까지 담을 수 있습니다.');
+      return;
+    }
+    if (entries.some((e) => !e.t)) {
+      setMiniLecturesError('선택한 강의에는 제목을 입력해 주세요.');
+      return;
+    }
+    const serialized = entries.length ? JSON.stringify(entries) : '';
+
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    const previousDraft = Object.assign({}, pageSettings.builderDraft || {});
+    pageSettings.builderDraft = Object.assign({}, previousDraft, { miniLectures: serialized });
+    currentPreview.pageSettings = pageSettings;
+
+    if (!currentPreview.publicPathUrl) {
+      persistPendingTextChanges(currentPreview);
+      renderPublicPreview(currentPreview, 'sec-minilectures');
+      closeMiniLecturesModal();
+      toast('발행 전 미리보기에 미니 강의를 반영했습니다.', 'fa-graduation-cap');
+      return;
+    }
+
+    const request = academyUpdateRequest(currentPreview);
+    if (!request) {
+      currentPreview.pageSettings = Object.assign({}, currentPreview.pageSettings || {}, { builderDraft: previousDraft });
+      setMiniLecturesError('기존 Academy 필수값을 읽지 못해 저장할 수 없습니다.');
+      return;
+    }
+    setSaving(apply, true);
+    try {
+      const res = await fetch('/api/tutor/academy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(request)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const academy = await res.json();
+      syncPreviewFromAcademy(academy);
+      applyAcademyToLivePreview(currentPreview, 'sec-minilectures');
+      closeMiniLecturesModal();
+      toast('미니 강의를 저장했습니다.', 'fa-graduation-cap');
+    } catch (_) {
+      currentPreview.pageSettings = Object.assign({}, currentPreview.pageSettings || {}, { builderDraft: previousDraft });
+      setMiniLecturesError('미니 강의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setSaving(apply, false);
+    }
+  }
+
+  function setMiniLecturesError(message) {
+    const error = document.getElementById('builderMiniLecturesError');
+    if (!error) return;
+    error.textContent = message;
+    error.hidden = false;
+  }
+
+  function clearMiniLecturesError() {
+    const error = document.getElementById('builderMiniLecturesError');
+    if (!error) return;
+    error.textContent = '';
+    error.hidden = true;
   }
 
   function sectionControlButton(icon, label, extraClass, action) {
@@ -4009,6 +4220,7 @@
     renderPrincipal,
     renderPhilosophy,
     renderVideos,
+    renderMiniLectures,
     renderLessons,
     renderExternalServices,
     renderFooter,

@@ -9,7 +9,8 @@
   // Education Storefront 신규 섹션 — 명시적 true일 때만 렌더한다(기본 OFF, 기존 사이트 불변).
   const OPT_IN_SECTION_IDS = new Set([
     'sec-featured',
-    'sec-digitaltwin'
+    'sec-digitaltwin',
+    'sec-minilectures'
   ]);
   if (!window.F2RAcademyBusinessInfo) {
     throw new Error('F2RAcademyBusinessInfo must be loaded before academy_public.js');
@@ -334,6 +335,7 @@
     if (id === 'sec-principal') return renderPrincipal(academy);
     if (id === 'sec-philosophy') return renderPhilosophy(academy);
     if (id === 'sec-videos') return renderVideos(academy);
+    if (id === 'sec-minilectures') return renderMiniLectures(academy);
     if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
     if (id === 'sec-social') return renderExternalServices(academy);
@@ -354,6 +356,10 @@
    */
   function renderVideos(academy) {
     return SECTIONS.renderVideos(sectionView(academy), PUBLIC_CTX);
+  }
+
+  function renderMiniLectures(academy) {
+    return SECTIONS.renderMiniLectures(sectionView(academy), PUBLIC_CTX);
   }
 
 
@@ -555,6 +561,7 @@
     'sec-principal',
     'sec-philosophy',
     'sec-videos',
+    'sec-minilectures',
     'sec-reviews',
     'sec-lessons',
     'sec-curriculum',
@@ -663,6 +670,7 @@
     renderPrincipal,
     renderPhilosophy,
     renderVideos,
+    renderMiniLectures,
     renderLessons,
     renderExternalServices,
     renderFooter,
