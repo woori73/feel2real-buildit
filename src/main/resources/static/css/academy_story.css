@@ -95,35 +95,24 @@ html.js-story #sec-digitaltwin[data-story-staged] .ai-process-stage { display: b
   height: 100%;
   overflow: visible;
 }
-.ai-doc-paper {
-  fill: #fff;
-  stroke: var(--line);
-  stroke-width: 2;
-  transition: stroke .5s var(--ease);
-}
+.ai-doc-paper { fill: #fff; stroke: var(--line); stroke-width: 2; }
 .ai-doc-line { fill: var(--bg-deep); }
+/* FINAL 장면에서 문서 테두리 강조. 조상 attr + transition 조합의 Chromium 버그를 피해 transition 없이. */
 html.js-story #sec-digitaltwin[data-story-scene="4"] .ai-doc-paper { stroke: var(--ultramarine); }
 
+/* 장면 오버레이 — 상태는 academy_story.js 가 각 레이어의 data-scene-state 로 직접 준다
+   (조상 attr + transition 은 일부 Chromium 에서 transition 이 첫 값에 붙는 버그가 있어 회피).
+   current 장면 = active, 지나온 장면 = past(흐리게 남겨 "축적되는 변화"), 미래 = 미지정(숨김). */
 html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer {
   opacity: 0;
   transform: scale(.96);
   transition: opacity .5s var(--ease), transform .5s var(--ease);
 }
-/* 현재 장면의 오버레이만 전면에. (data-story-scene 은 0-index, data-scene 은 1-index) */
-html.js-story #sec-digitaltwin[data-story-scene="1"] .ai-stage-layer[data-scene="2"],
-html.js-story #sec-digitaltwin[data-story-scene="2"] .ai-stage-layer[data-scene="3"],
-html.js-story #sec-digitaltwin[data-story-scene="3"] .ai-stage-layer[data-scene="4"],
-html.js-story #sec-digitaltwin[data-story-scene="4"] .ai-stage-layer[data-scene="5"] {
+html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer[data-scene-state="active"] {
   opacity: 1;
   transform: none;
 }
-/* 지나온 장면은 흐리게 남겨 "축적되는 변화"로 읽히게 한다. */
-html.js-story #sec-digitaltwin[data-story-scene="2"] .ai-stage-layer[data-scene="2"],
-html.js-story #sec-digitaltwin[data-story-scene="3"] .ai-stage-layer[data-scene="2"],
-html.js-story #sec-digitaltwin[data-story-scene="3"] .ai-stage-layer[data-scene="3"],
-html.js-story #sec-digitaltwin[data-story-scene="4"] .ai-stage-layer[data-scene="2"],
-html.js-story #sec-digitaltwin[data-story-scene="4"] .ai-stage-layer[data-scene="3"],
-html.js-story #sec-digitaltwin[data-story-scene="4"] .ai-stage-layer[data-scene="4"] {
+html.js-story #sec-digitaltwin[data-story-staged] .ai-stage-layer[data-scene-state="past"] {
   opacity: .22;
   transform: none;
 }
