@@ -132,3 +132,14 @@ test('빈 대상/누락 대상은 조용히 무시', () => {
   assert.doesNotThrow(() => M.processProgress(null));
   assert.doesNotThrow(() => M.revealSequence({ querySelectorAll: () => [] }));
 });
+
+test('모듈 로드 즉시(렌더 전) html에 js-storefront-motion 을 붙인다 — 초기 opacity:0 깜빡임 방지', () => {
+  const added = [];
+  const doc = { documentElement: { classList: { add: (c) => added.push(c) } } };
+  const win = { document: doc, matchMedia: () => ({ matches: false }), setTimeout: () => 0 };
+  win.IntersectionObserver = function () { return { observe() {}, disconnect() {} }; };
+  const sandbox = { window: win, globalThis: win };
+  vm.createContext(sandbox);
+  vm.runInContext(SRC, sandbox);
+  assert.deepEqual(added, ['js-storefront-motion']);
+});

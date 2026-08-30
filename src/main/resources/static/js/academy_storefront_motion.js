@@ -130,4 +130,14 @@
     revealSequence: revealSequence,
     processProgress: processProgress
   });
+
+  // 모듈이 로드된 즉시(= academy_public.js 렌더보다 먼저) gate 클래스를 붙인다.
+  // 렌더 후에 붙이면 .f2r-reveal 이 opacity:1 로 한 프레임 보였다가 0 으로 트랜지션되며 깜빡인다.
+  // 미리 붙여두면 요소가 생성 시점부터 opacity:0 이라 시작 트랜지션이 없다. 모듈이 아예 로드되지
+  // 않으면 이 코드도 안 돌아 CSS opacity:0 도 안 걸린다(정적으로 완전히 보임 — 기존 안전장치 유지).
+  if (typeof global.document !== 'undefined'
+      && global.document.documentElement
+      && global.document.documentElement.classList) {
+    global.document.documentElement.classList.add('js-storefront-motion');
+  }
 })(typeof window !== 'undefined' ? window : globalThis);
