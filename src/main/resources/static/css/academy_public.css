@@ -238,6 +238,56 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .builder-public-preview [data-builder-draft="aiProcessNote"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
 .builder-public-preview .ai-process-step-label:empty::before{content:'단계';color:var(--ink-faint);}
 
+/* ══════════════ Storefront Motion (academy_storefront_motion.js) ══════════════
+   VERTICAL STORYTELLING — 섹션이 스크롤 진입하면 "의미가 진행되는" 모션을 갖는다.
+   js-storefront-motion 이 붙어야만 초기 opacity:0/transform 이 걸린다(모듈 미로드·JS 장애 시
+   콘텐츠는 그대로 보인다). is-in/is-linked/is-active/is-done/is-complete 는 primitive가 붙인다.
+   빌더 캔버스에는 js-storefront-motion 이 없어 전부 최종 상태로 정적 표시된다. */
+html.js-storefront-motion .f2r-reveal{transition:opacity .5s var(--ease),transform .5s var(--ease);}
+html.js-storefront-motion .f2r-reveal:not(.is-in){opacity:0;transform:translateY(16px);}
+html.js-storefront-motion .f2r-reveal.is-in{opacity:1;transform:none;}
+/* 정보 위계 — 요소 종류별 등장 character(제목은 더 무겁게, 칩은 팝, CTA는 한 박자 뒤).
+   초기 transform은 :not(.is-in)로만 걸어 is-in 이 붙으면 .f2r-reveal.is-in{transform:none}이 이긴다. */
+html.js-storefront-motion .featured-title.f2r-reveal{transition-duration:.62s;}
+html.js-storefront-motion .featured-title.f2r-reveal:not(.is-in){transform:translateY(24px);}
+html.js-storefront-motion .featured-item.f2r-reveal{transition-duration:.42s;}
+html.js-storefront-motion .featured-item.f2r-reveal:not(.is-in){transform:translateY(10px) scale(.94);}
+html.js-storefront-motion .featured-cta.f2r-reveal{transition-delay:60ms;}
+html.js-storefront-motion .featured-cta.f2r-reveal:not(.is-in){transform:translateY(12px);}
+
+/* AI Native — 커넥터 활성 → 다음 카드 활성 순으로 진행. 지나간 단계는 is-done(평온). */
+html.js-storefront-motion .ai-process-step{opacity:0;transform:translateY(14px);transition:opacity .45s var(--ease),transform .45s var(--ease),border-color .35s,box-shadow .35s;}
+html.js-storefront-motion .ai-process-step.is-active,
+html.js-storefront-motion .ai-process-step.is-done{opacity:1;transform:none;}
+html.js-storefront-motion .ai-process-step.is-active{border-color:rgba(43,58,158,.4);box-shadow:0 16px 36px rgba(10,12,20,.1);}
+html.js-storefront-motion .ai-process-step.is-done{border-color:var(--line);box-shadow:var(--shadow-sm);}
+html.js-storefront-motion .ai-process-step-num{background:rgba(43,58,158,.14);color:var(--ultramarine);transition:background .4s,transform .4s,color .4s;}
+html.js-storefront-motion .ai-process-step.is-active .ai-process-step-num,
+html.js-storefront-motion .ai-process-step.is-done .ai-process-step-num{background:linear-gradient(135deg,var(--ultramarine),var(--accent));color:#fff;}
+html.js-storefront-motion .ai-process-step.is-active .ai-process-step-num{transform:scale(1.12);}
+html.js-storefront-motion .ai-process-step-label{transition:color .4s;}
+html.js-storefront-motion .ai-process-step:not(.is-active):not(.is-done) .ai-process-step-label{color:var(--ink-faint);}
+html.js-storefront-motion .ai-process-step + .ai-process-step::before{color:var(--ink-faint);opacity:.35;transition:color .32s,opacity .32s;}
+html.js-storefront-motion .ai-process-step.is-linked::before,
+html.js-storefront-motion .ai-process-step.is-active::before,
+html.js-storefront-motion .ai-process-step.is-done::before{color:var(--accent);opacity:1;}
+html.js-storefront-motion .ai-process-note{opacity:0;transform:translateY(12px);transition:opacity .5s var(--ease),transform .5s var(--ease);}
+html.js-storefront-motion .ai-process-steps.is-complete ~ .ai-process-note{opacity:1;transform:none;}
+
+/* reduced-motion: 모든 콘텐츠 즉시 최종 상태, 커넥터 최종 상태, transform/transition 없음.
+   콘텐츠 이해가 모션에 의존하지 않는다. */
+@media (prefers-reduced-motion:reduce){
+  html.js-storefront-motion .f2r-reveal,
+  html.js-storefront-motion .featured-title.f2r-reveal,
+  html.js-storefront-motion .featured-item.f2r-reveal,
+  html.js-storefront-motion .featured-cta.f2r-reveal,
+  html.js-storefront-motion .ai-process-step,
+  html.js-storefront-motion .ai-process-note{opacity:1!important;transform:none!important;transition:none!important;}
+  html.js-storefront-motion .ai-process-step + .ai-process-step::before{color:var(--accent)!important;opacity:1!important;transition:none!important;}
+  html.js-storefront-motion .ai-process-step-num{background:linear-gradient(135deg,var(--ultramarine),var(--accent))!important;color:#fff!important;transform:none!important;}
+  html.js-storefront-motion .ai-process-step-label{color:var(--ink)!important;}
+}
+
 @media(max-width:640px){
   .section-wrap.featured-wrap{padding:48px 18px;}
   .section-wrap.ai-process-wrap{padding:44px 18px;}

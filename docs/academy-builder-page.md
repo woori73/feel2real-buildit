@@ -242,10 +242,48 @@ specificity가 (1,1,1)이라 `.featured-desc`/`.ai-process-desc`/`.ai-process-no
 - 기존 사이트: 새 키 없음 → fallback으로 기존 문구 그대로 → 회귀 0.
 - 서버 `BUILDER_DRAFT_KEYS`에 `videosSectionTitle`·`socialSectionTitle` 추가(200자 제한).
 
-### 이번 범위 밖 (PHASE 3 설계 후 별도 PR)
+### 이번 범위 밖 (PHASE 3-B — 설계 후 별도 PR)
 
-Featured/AI Native scroll storytelling(stagger reveal, 단계 순차 활성), Programs(`sec-lessons`)
-Collection 탐색 UX. `prefers-reduced-motion`·IntersectionObserver 우선, animation 라이브러리 미추가.
+Horizontal Collection primitive (Programs → Actual Class Shorts → Mini Lectures).
+BuildIt Web V2: PAGE = Vertical Story × 각 Collection = Horizontal Browse.
+
+## 12. 2026-08-30 변경: PHASE 3-A — Storefront Motion (Vertical Storytelling)
+
+VERTICAL STORYTELLING — 섹션이 스크롤 진입하면 "의미가 진행되는" 모션을 갖는다.
+
+### 재사용 Motion primitive — `academy_storefront_motion.js` (`window.F2RStorefrontMotion`)
+
+- `onEnter(el, cb)` — IntersectionObserver 1회. rAF + 4s 재확인으로 이미 뷰포트 안이면 즉시 실행
+  (앵커 진입·짧은 페이지·IO 초기 콜백 누락 대비). **scroll 이벤트 없음.**
+- `revealSequence(root, {start, step})` — root 안의 `.f2r-reveal`를 DOM 순서대로 stagger 등장(is-in).
+  정보 위계는 CSS가 요소 종류별로(제목 무겁게 .62s, 칩 pop scale, CTA 한 박자 뒤) 정한다.
+- `processProgress(list, {start, step, linkLead})` — `[data-step]`을 "커넥터 활성(is-linked) →
+  linkLead 뒤 카드 활성(is-active)" 순으로 진행. 지나간 단계 is-done, 끝나면 list에 is-complete.
+- `INSTANT`(reduced-motion 또는 IO 미지원) → 전부 즉시 최종 상태.
+
+### 적용
+
+- Featured: `revealSequence(.featured-inner)` — eyebrow→title→desc→칩4→CTA.
+- AI Native: `revealSequence(.ai-process-head)` + `processProgress(.ai-process-steps)`.
+  Desktop 좌→우, Mobile(<640px) 위→아래. connector가 진행의 핵심.
+- `academy_public.js`의 `wireStorefrontMotion()`이 `render()`마다 호출. GSAP `applyReveal()`과 분리 —
+  이쪽은 `.f2r-reveal`/`[data-step]`, 그쪽은 `[data-fade]`. Featured/AI Native에서 `data-fade` 제거.
+
+### 안전 / 회귀
+
+- 초기 `opacity:0`은 `html.js-storefront-motion` 스코프 아래에만. 모듈 미로드·JS 장애 시 클래스가
+  안 붙어 콘텐츠가 정적으로 완전히 보인다. 빌더 캔버스도 이 클래스가 없어 최종 상태로 정적 표시.
+- `prefers-reduced-motion: reduce` — CSS `@media`에서 `opacity:1;transform:none;transition:none`,
+  커넥터/번호 최종 상태. 콘텐츠 이해가 모션에 의존하지 않는다.
+- 성능: IO 2개(Featured head, AI steps). 콜백은 classList 토글만. `transform`/`opacity`만 사용
+  (레이아웃/CLS 없음). CSS +~2KB, JS +~1.5KB(gzip 전). 새 라이브러리 없음.
+- 캐시버스팅 `v=20260830-3` (css + sections.js + public.js + 신규 motion.js).
+
+### PHASE 2.1 정렬 하드닝(이 PR에 포함)
+
+`.featured-desc`/`.ai-process-desc`/`.ai-process-note` 중앙 정렬(`margin:X auto 0` + `:not()` 리셋 예외,
+PHASE 2.1)은 유지. `.f2r-reveal` 초기 transform은 `:not(.is-in)`으로만 걸어 is-in 시 정확히 원위치
+(`transform:none`)로 복귀 — per-type 규칙이 resting transform을 남기던 specificity 함정 제거.
 
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 

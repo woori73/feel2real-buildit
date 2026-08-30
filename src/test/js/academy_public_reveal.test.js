@@ -66,8 +66,44 @@ test('given 재렌더 when reveal을 다시 적용 then 이미 처리한 요소�
   // given / when / then — 섹션 토글·순서변경마다 render()가 다시 돌아 중복 트리거가 쌓인다
   assert.match(publicJs, /el\.dataset\.fadeWired === 'true'/);
   assert.match(publicJs, /el\.dataset\.fadeWired = 'true'/);
-  // render() 안에서 호출되어야 CSR 렌더 뒤에 잡힌다
-  assert.match(publicJs, /applyReveal\(\);\s*\n\s*void loadVisitStatistics/);
+  assert.match(publicJs, /dataset\.motionWired !== 'true'/);
+  // render() 안에서 GSAP reveal + Storefront 모션이 순서대로 호출되어야 CSR 렌더 뒤에 잡힌다
+  assert.match(publicJs, /applyReveal\(\);\s*\n\s*wireStorefrontMotion\(\);\s*\n\s*void loadVisitStatistics/);
+});
+
+test('given Storefront 모션 when 책임 분리를 확인 then Featured/AI Native는 GSAP data-fade가 아니라 primitive를 쓴다', () => {
+  const sectionsJs = read('../../main/resources/static/js/academy_sections.js');
+  const featured = sectionsJs.slice(sectionsJs.indexOf('function renderFeatured'), sectionsJs.indexOf('function renderAiProcess'));
+  const aiProcess = sectionsJs.slice(sectionsJs.indexOf('function renderAiProcess'), sectionsJs.indexOf('function noteParts'));
+
+  // GSAP applyReveal 대상(data-fade)이 아니어야 한다 — 두 시스템이 같은 요소에 겹치지 않는다
+  assert.doesNotMatch(featured, /data-fade/, 'featured 섹션에 data-fade 잔존');
+  assert.doesNotMatch(aiProcess, /data-fade/, 'ai-process 섹션에 data-fade 잔존');
+  // 대신 primitive 앵커
+  assert.match(featured, /featured-title f2r-reveal/);
+  assert.match(featured, /featured-cta f2r-reveal/);
+  assert.match(aiProcess, /ai-process-title f2r-reveal/);
+
+  // primitive 모듈이 렌더러보다 먼저 로드된다
+  assert.ok(
+    publicTemplate.indexOf('/js/academy_storefront_motion.js') < publicTemplate.indexOf('/js/academy_public.js'),
+    'storefront_motion이 렌더러보다 늦게 로드된다');
+
+  // CDN/모듈 장애 안전: 초기 opacity:0은 js-storefront-motion 스코프 아래에만 걸린다
+  assert.match(publicCss, /html\.js-storefront-motion \.f2r-reveal:not\(\.is-in\)\{opacity:0/);
+  assert.match(publicCss, /html\.js-storefront-motion \.ai-process-step\{opacity:0/);
+  assert.doesNotMatch(publicCss, /^\.f2r-reveal(:not\(\.is-in\))?\{opacity:0/m);
+  assert.match(publicJs, /if \(!MOTION \|\| !root\) return;/);
+
+  // 커넥터 활성 → 다음 카드 활성: is-linked 가 커넥터(::before)를, is-active 가 카드를 켠다
+  assert.match(publicCss, /\.ai-process-step\.is-linked::before/);
+  assert.match(publicCss, /\.ai-process-step\.is-linked::before[\s\S]{0,320}\{color:var\(--accent\)/);
+  assert.match(publicCss, /html\.js-storefront-motion \.ai-process-step\.is-active\{[^}]*border-color/);
+  // note 는 전 단계 완료(is-complete) 후 등장
+  assert.match(publicCss, /\.ai-process-steps\.is-complete ~ \.ai-process-note\{opacity:1/);
+
+  // reduced-motion: 즉시 최종 상태 + 커넥터 최종 상태
+  assert.match(publicCss, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*?html\.js-storefront-motion \.f2r-reveal[\s\S]*?opacity:1!important/);
 });
 
 test('given 공개 템플릿 when 스크립트 순서를 확인 then GSAP이 렌더러보다 먼저 로드된다', () => {

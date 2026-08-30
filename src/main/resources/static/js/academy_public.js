@@ -107,7 +107,32 @@
       + renderOrderedSections(academy, primarySubject, regionText)
       + renderFooter(academy);
     applyReveal();
+    wireStorefrontMotion();
     void loadVisitStatistics(academy, ownAcademy);
+  }
+
+  /**
+   * Storefront 섹션(Featured, AI Native)의 모션. academy_storefront_motion.js의 primitive를
+   * 쓴다 — IntersectionObserver + CSS만, GSAP applyReveal()과 요소가 겹치지 않는다(이쪽은
+   * .f2r-reveal / [data-step], 그쪽은 [data-fade]). 모듈이 없으면 아무것도 하지 않고
+   * html.js-storefront-motion도 안 붙어 CSS opacity:0도 안 걸린다(정적으로 완전히 보인다).
+   * reduced-motion / IO 미지원은 primitive가 즉시 최종 상태로 처리한다.
+   */
+  function wireStorefrontMotion() {
+    const MOTION = window.F2RStorefrontMotion;
+    if (!MOTION || !root) return;
+    document.documentElement.classList.add('js-storefront-motion');
+    const featured = root.querySelector('#sec-featured .featured-inner');
+    if (featured && featured.dataset.motionWired !== 'true') {
+      featured.dataset.motionWired = 'true';
+      MOTION.revealSequence(featured, { step: 90 });
+    }
+    const steps = root.querySelector('#sec-digitaltwin .ai-process-steps');
+    if (steps && steps.dataset.motionWired !== 'true') {
+      steps.dataset.motionWired = 'true';
+      MOTION.revealSequence(root.querySelector('#sec-digitaltwin .ai-process-head'), { step: 90 });
+      MOTION.processProgress(steps, { start: 250, step: 180 });
+    }
   }
 
   /**
