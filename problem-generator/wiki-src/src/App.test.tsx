@@ -32,6 +32,22 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(screen.queryByRole('heading',{name:'고3 수능 영어 자료 제작'})).not.toBeInTheDocument()
   })
 
+  it('WRONG 탭은 Question ID가 연결된 기존 오답만 Assessment 대상으로 선택한다', async()=>{
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.includes('/csat/questions')) return new Response('[{"id":7,"source_id":1,"exam_kind":"half","source_filename":"fixture.html","question_no":21,"csat_type_id":"implication","csat_type_name":"함축 의미","passage":"Original","prompt":"의미하는 것은?","choices":[],"answer":"1","solution":"Because","footnote":"","group_label":"","source_reference":"","type_mismatch":false,"mismatch_reason":"","created_at":""}]',{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/csat/wrong-answers')) return new Response('[{"id":3,"question_id":7,"student_name":"TEST_STUDENT_001","exam_name":"TEST_EXAM","question_no":21,"csat_type_id":"implication","csat_type_name":"함축 의미","wrong_answer":"2","correct_answer":"1","memo":"","source_filename":"","created_at":""}]',{status:200,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<CsatEnglishWorkspace/>)
+    fireEvent.click(screen.getByRole('button',{name:'WRONG'}))
+    expect((await screen.findAllByText(/QID 7/)).length).toBeGreaterThan(0)
+    const linkedRow = screen.getAllByText(/QID 7/).find(element=>element.tagName==='P') as HTMLElement
+    const select = within(linkedRow.closest('article') as HTMLElement).getByRole('checkbox')
+    fireEvent.click(select)
+    expect(screen.getByRole('button',{name:'선택 오답으로 WRONG 저장'})).not.toBeDisabled()
+  })
+
   it('학교·학년·연도·학기·시험 Context와 STEP 1~4를 순서대로 표시한다', async()=>{
     render(<App/>)
     expect(await screen.findByRole('heading',{name:'시험 자료 한눈에 모으기'})).toBeInTheDocument()
