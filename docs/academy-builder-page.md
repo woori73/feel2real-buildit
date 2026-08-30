@@ -397,6 +397,69 @@ Story(3-A) = "페이지가 보여준다"(자동 모션).  Collection(3-B) = "사
   fallback. `LessonProductEditorTemplateContractTest`(핵심 6필드·친화 라벨·상세설정 보존·미리보기 공통화),
   `lesson_product_editor_state.test.js`(저장 계약 불변).
 
+## 15. 2026-08-31 변경: Storefront V2-8 — Common Video Playback + Actual Class Collection
+
+### P0: 두 영역의 재생 확대·crop 버그는 같은 원인이었다
+
+Production 모바일 Eduholic 에서 두 곳이 동일 증상(썸네일 정상 → Play → 플레이어가 프레임보다
+크게 렌더 → crop):
+- CASE A — Actual Class(Phone Card, `sec-videos` 가로 컬렉션)
+- CASE B — 대표 수업(Program Card, `sec-lessons`) 영상(내신 등)
+
+**공통 원인** — `academy_collection.js onPlayClick` 이 미디어 트리거 버튼을
+`trigger.replaceWith(<video|iframe class="f2r-video-card-player">)` 로 **치환**했다:
+1. 트리거 버튼(`.f2r-phone-screen` / `.f2r-program-card-media`)이 곧 미디어 컨테이너였다 —
+   `position`·`aspect-ratio`·`overflow:hidden`·`border-radius` 를 소유. 치환하면 이 컨테이너가
+   사라진다.
+2. `.f2r-video-card-player { position:absolute; width:auto; height:auto }` — 대체(replaced) 요소
+   (`<video>`/`<iframe>`)는 `width/height:auto` 면 `inset` 이 아니라 **원본 해상도**로 렌더된다
+   (예: 406×722). → 프레임 밖으로 넘침.
+3. Containing block 이 비결정적: Program Card 는 positioned 조상이 하나도 없어(`.page` 까지 전부
+   `static`) → **뷰포트** 기준(전체화면). is-dimmed 카드는 `transform` 때문에 카드 기준(crop).
+   Phone frame 은 `position:relative` 지만 `overflow:visible` 라 원본크기 영상이 밖으로 흘렀다.
+
+### 공통 해결 — Media Viewport 계약 (재사용 primitive)
+
+```
+Media Viewport (.f2r-media-viewport)  — 크기·비율·overflow·radius 소유. 재생 중에도 유지.
+├ Thumbnail + ▶  (.f2r-media-play  button, position:absolute inset:0)   재생 전
+└ Player          (.f2r-media-player,        position:absolute inset:0)   재생 후
+```
+
+- 마크업 정본: `academy_sections.js` `mediaViewportHtml()` — Actual Class(`collectionVideoMedia`)와
+  대표 수업 영상(`programCardMedia` VIDEO 분기)이 **모두 이 함수**를 쓴다. `.f2r-phone-screen` /
+  `.f2r-program-card-media` 는 이제 `<button>` 이 아니라 유지되는 **뷰포트 `<div>`** 이고, 그 안에
+  `.f2r-media-play` 버튼이 들어간다.
+- 배선: `academy_collection.js onPlayClick` — 트리거를 치환하지 않고 **뷰포트 안에** `.f2r-media-player`
+  를 `appendChild` 한 뒤 트리거를 `hidden`. 중복 재생 가드(`.f2r-media-player` 이미 있으면 return).
+- CSS(`academy_collection.css`): `.f2r-media-player { position:absolute; inset:0; width:100%; height:100% }`
+  (auto 아님 → 뷰포트를 채움). `video.f2r-media-player { object-fit:contain }` — **원본 비율 보존,
+  crop 금지(letterbox)**. `.f2r-video-card-player` 규칙 제거.
+
+### 비율 처리 — 강제 단일 비율 금지
+
+- **Actual Class**: 폰 프레임(9:19)은 유지(디자인). 플레이어 `object-fit:contain` — 세로 영상은
+  꽉, 가로 영상은 letterbox(`is-landscape`).
+- **대표 수업 영상**: stage 가 **실제 업로드 영상 비율**을 따른다. `AcademyVideoResponse.width/height`
+  (공개 ctx `options.videos` 로 조회) → `mediaAspectRatio()` 가 9:16~16:9 클램프한 `--f2r-media-aspect`
+  CSS 변수. IMAGE 대표 미디어는 기존 16:10 유지(`aspect-ratio: var(--f2r-media-aspect, 16/10)`).
+  → 세로 내신 영상이 pillarbox 없이 stage 를 채운다. 재생 전/후 외곽 크기 동일(zero layout shift).
+- YouTube: `data-video-embed` → `<iframe>` + `autoplay=1&playsinline=1&rel=0`. `youtubeEmbedUrl`
+  (watch/youtu.be/shorts 지원) 재사용 — 새 파서 없음. (현재 academy video 는 업로드 전용이라
+  collection 임베드는 미사용 경로지만 primitive 는 지원.)
+
+### 안전 / 범위
+
+- opt-in 컬렉션(eduholic) 만 영향. 비-horizontal 학원의 `lesson_product_showcase.js` /
+  `videoPlaylist` (in-flow `width:100%` 플레이어)는 이 버그가 없어 건드리지 않는다.
+- V2-7 Program Editor: `programCardHtml` SSoT 불변. 편집기 미리보기는 `EDITOR_CARD_CTX` 자체 경로라
+  영향 없음(회귀 테스트 통과).
+- 캐시버스팅: `academy_sections.js?v=20260831-2`, `academy_collection.js?v=20260831-2`,
+  `academy_collection.css?v=20260831-2` (public·builder·editor 템플릿).
+- 검증: `node --test src/test/js/academy_video_playback.test.js` (primitive·onPlayClick 계약·CSS·
+  비율), `academy_horizontal_collection.test.js` (마크업 갱신), 로컬 harness 로 CASE A/B/C 재생 전후
+  DOM 실측(플레이어가 뷰포트를 정확히 채움, 외곽 불변, 페이지 가로밀림 없음).
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

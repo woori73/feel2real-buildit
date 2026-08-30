@@ -153,7 +153,10 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  /* IMAGE 대표 미디어 = 16:10 stage. VIDEO = 실제 업로드 영상 비율(--f2r-media-aspect,
+     academy_sections.js mediaAspectRatio, 9:16~16:9 클램프) → pillarbox 최소화. */
+  aspect-ratio: var(--f2r-media-aspect, 16 / 10);
+  max-height: 62vh;
   margin: 0;
   padding: 0;
   border: 0;
@@ -166,15 +169,11 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   object-fit: cover;
   display: block;
 }
-.f2r-program-card-media-video { cursor: pointer; }
 .f2r-program-card-media .f2r-video-play {
   width: 46px;
   height: 46px;
   font-size: 15px;
 }
-.f2r-program-card-media-video:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
-.f2r-program-card-media:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
-.f2r-collection[data-collection-static] .f2r-program-card-media-video { cursor: default; }
 
 .f2r-program-card-body {
   display: flex;
@@ -291,12 +290,9 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   display: block;
   width: 100%;
   height: 100%;
-  padding: 0;
-  border: 0;
   border-radius: 22px;
   overflow: hidden;
   background: #000;
-  cursor: pointer;
 }
 .f2r-phone-screen img {
   width: 100%;
@@ -314,8 +310,6 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   font-size: 2rem;
   color: rgba(255, 255, 255, .55);
 }
-.f2r-phone-screen:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.f2r-collection[data-collection-static] .f2r-phone-screen { cursor: default; }
 
 .f2r-video-play {
   position: absolute;
@@ -333,7 +327,6 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   justify-content: center;
   transition: transform .15s var(--ease), background .15s var(--ease);
 }
-.f2r-phone-screen:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
 .f2r-video-card-dur {
   position: absolute;
   right: 8px;
@@ -346,17 +339,43 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   font-weight: 800;
   letter-spacing: .02em;
 }
-/* 재생 중 플레이어는 화면(스크린 버튼)을 대체하므로 프레임을 그대로 채운다. */
-.f2r-video-card-player {
+
+/* ── Common Video Playback (V2-8): Media Viewport 계약 ─────────────────────
+   뷰포트는 크기·비율·overflow·radius 를 소유하고 재생 중에도 유지된다.
+   그 "안에서" 트리거(.f2r-media-play)만 플레이어(.f2r-media-player)로 교체된다
+   → 외곽 크기 불변. 원본 비율은 object-fit:contain 으로 보존(letterbox, crop 금지).
+   마크업 정본: academy_sections.js mediaViewportHtml. 배선: academy_collection.js onPlayClick. */
+.f2r-media-viewport { position: relative; }
+.f2r-media-play {
   position: absolute;
-  inset: 8px;
-  width: auto;
-  height: auto;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
   border: 0;
-  border-radius: 22px;
-  background: #000;
-  object-fit: cover;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  display: block;
+  cursor: pointer;
 }
+.f2r-media-play:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
+.f2r-media-play:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.f2r-collection[data-collection-static] .f2r-media-play { cursor: default; }
+.f2r-media-player {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #000;
+}
+/* 업로드 <video>: 원본 비율을 뷰포트 안에 담는다 — 잘라내지 않고 letterbox. */
+video.f2r-media-player { object-fit: contain; }
 
 @media (prefers-reduced-motion: reduce) {
   .f2r-collection-track { scroll-behavior: auto; }
