@@ -249,6 +249,48 @@
     return AI_PROCESS_STEP_DEFAULTS.map((fallback, index) => draftText(view, 'aiProcessStep' + (index + 1), fallback));
   }
 
+  /**
+   * AI Native transformation stage (V2-5). 하나의 "정보 오브젝트"(문서)가 단계마다 상태를 바꾼다:
+   *   SOURCE(학교 자료) → ANALYSIS(패턴/근거 추출) → INTELLIGENCE(AI + 교육자 인사이트 결합)
+   *   → CREATION(문항 제작) → FINAL(완성본).
+   * 순수 CSS+SVG 도형. 이미지 자산 없음. 장면 전환은 academy_story.js 가 section[data-story-scene]로
+   * 주고, 표시는 academy_story.css 가 한다(데스크톱 pin 상태에서만). aria-hidden — 스크린리더는
+   * 아래 단계 목록으로 같은 내용을 읽는다.
+   */
+  function aiProcessStageHtml() {
+    const docLines = [40, 58, 76, 94, 112, 130].map((y, i) =>
+      `<rect class="ai-doc-line" x="34" y="${y}" width="${i % 3 === 2 ? 92 : 132}" height="7" rx="3.5"/>`).join('');
+    return `<div class="ai-process-stage" data-ai-stage aria-hidden="true">
+        <div class="ai-stage-canvas">
+          <svg class="ai-stage-doc" viewBox="0 0 200 260" role="presentation">
+            <rect class="ai-doc-paper" x="18" y="8" width="164" height="244" rx="10"/>
+            ${docLines}
+          </svg>
+          <svg class="ai-stage-layer" data-scene="2" viewBox="0 0 200 260" role="presentation">
+            <rect class="ai-mark" x="32" y="55" width="90" height="11" rx="3"/>
+            <rect class="ai-mark" x="32" y="91" width="110" height="11" rx="3"/>
+            <line class="ai-scan" x1="10" y1="130" x2="190" y2="130"/>
+          </svg>
+          <svg class="ai-stage-layer" data-scene="3" viewBox="0 0 200 260" role="presentation">
+            <circle class="ai-node ai-node-ai" cx="42" cy="42" r="20"/>
+            <circle class="ai-node ai-node-human" cx="158" cy="42" r="20"/>
+            <path class="ai-link" d="M42 62 Q100 120 100 150"/>
+            <path class="ai-link" d="M158 62 Q100 120 100 150"/>
+            <circle class="ai-merge" cx="100" cy="150" r="9"/>
+          </svg>
+          <svg class="ai-stage-layer" data-scene="4" viewBox="0 0 200 260" role="presentation">
+            <rect class="ai-block" x="34" y="150" width="60" height="26" rx="5"/>
+            <rect class="ai-block" x="104" y="150" width="60" height="26" rx="5"/>
+            <rect class="ai-block" x="34" y="186" width="130" height="26" rx="5"/>
+          </svg>
+          <svg class="ai-stage-layer" data-scene="5" viewBox="0 0 200 260" role="presentation">
+            <circle class="ai-badge" cx="158" cy="222" r="22"/>
+            <path class="ai-check" d="M148 222 l7 7 l13 -15"/>
+          </svg>
+        </div>
+      </div>`;
+  }
+
   function renderAiProcess(view, ctx) {
     if (!view.sectionVisible('sec-digitaltwin')) return '';
     const eyebrow = draftText(view, 'aiProcessEyebrow', AI_PROCESS_EYEBROW_DEFAULT);
@@ -262,6 +304,7 @@
             ${ctx.editableText({ tag: 'h2', className: 'section-title ai-process-title f2r-reveal', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
             ${ctx.editableText({ tag: 'p', className: 'ai-process-desc f2r-reveal', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
+          ${aiProcessStageHtml()}
           <ol class="ai-process-steps">${aiProcessSteps(view).map((step, index) => ctx.aiProcessStep(step, index)).join('')}</ol>
           ${ctx.editableText({ tag: 'p', className: 'ai-process-note', draftKey: 'aiProcessNote', value: note, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', quoted: false, omitWhenEmpty: true })}
         </div>

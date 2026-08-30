@@ -70,17 +70,40 @@ test('academy_public.js 는 render()에서 applyReveal → wireStory → wireSto
   assert.match(PUBLIC_JS, /if \(steps && !staged && steps\.dataset\.motionWired/);
 });
 
-test('story CSS 는 전부 html.js-story 스코프 + reduced-motion 예외 + transform/opacity 만', () => {
-  // 모든 규칙이 html.js-story 아래에만
-  const ruleHeads = STORY_CSS.match(/^[.#a-z][^{@]*\{/gmi) || [];
+test('story CSS 는 동작 규칙을 html.js-story 로 게이트한다 (미로드 시 콘텐츠 안 숨김)', () => {
+  // "무언가를 숨기거나 옮기는" 규칙은 전부 html.js-story 스코프 아래에만.
+  // 예외: 순수 SVG 도형 프리젠테이션(.ai-doc-* / .ai-mark / .ai-node 등), stage 기본 숨김
+  // (.ai-process-stage{display:none} — js-story 가 다시 켠다), 모바일 안전 @media.
+  const ruleHeads = STORY_CSS.match(/(?:^|\n)([.#][^{@]*)\{/g) || [];
   ruleHeads.forEach((h) => {
-    assert.ok(/html\.js-story/.test(h), `js-story 스코프 밖 규칙: ${h.trim()}`);
+    const head = h.replace(/[\s\n]+/g, ' ').trim();
+    if (/html\.js-story/.test(head)) return;
+    // 예외: 순수 SVG 도형/골격 프리젠테이션 + stage 기본 숨김(js-story 가 다시 켠다).
+    if (/^\.ai-(doc-|mark|scan|node|link|merge|block|badge|check|stage-)/.test(head)) return;
+    if (/^\.ai-process-stage \{/.test(head)) return;
+    assert.fail(`js-story 스코프 밖 동작 규칙: ${head}`);
   });
+  assert.match(STORY_CSS, /\.ai-process-stage \{ display: none; \}/, 'stage 는 기본 숨김');
+  assert.match(STORY_CSS, /html\.js-story #sec-digitaltwin\[data-story-staged\] \.ai-process-stage \{ display: block/, 'js-story + staged 에서만 stage 노출');
   assert.match(STORY_CSS, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(STORY_CSS, /--story-exit/);
   assert.match(STORY_CSS, /\[data-story-staged\][\s\S]*\[data-scene-state="active"\]/);
-  // 레이아웃을 흔드는 속성(top/left/width/height 애니메이션) 없음 — transform/opacity 중심
-  assert.doesNotMatch(STORY_CSS, /transition:[^;]*\b(width|height|top|left|margin)\b/);
+  // 레이아웃을 흔드는 속성(top/left/height 애니메이션) 없음 — transform/opacity 중심
+  assert.doesNotMatch(STORY_CSS, /transition:[^;]*\b(width|height|top|left)\b/);
+});
+
+test('AI Native stage 는 이미지 자산 없이 SVG 도형만 쓰고 5장면 오버레이를 갖는다', () => {
+  const sections = fs.readFileSync(
+    path.resolve(__dirname, '../../main/resources/static/js/academy_sections.js'), 'utf8');
+  assert.match(sections, /function aiProcessStageHtml\(\)/);
+  assert.match(sections, /class="ai-process-stage" data-ai-stage aria-hidden="true"/);
+  assert.match(sections, /\$\{aiProcessStageHtml\(\)\}\s*\n\s*<ol class="ai-process-steps">/, 'stage 는 단계 목록 앞에');
+  const start = sections.indexOf('function aiProcessStageHtml');
+  const body = sections.slice(start, sections.indexOf('function renderAiProcess', start));
+  ['data-scene="2"', 'data-scene="3"', 'data-scene="4"', 'data-scene="5"'].forEach((s) =>
+    assert.match(body, new RegExp(s), `장면 레이어 ${s}`));
+  assert.doesNotMatch(body, /<img|url\(|\.png|\.jpe?g/, 'stage 에 이미지 자산 없음 (SVG 도형만)');
+  assert.match(body, /<svg class="ai-stage-doc"/, 'SVG 문서 도형');
 });
 
 test('공개 템플릿은 academy_story 자산을 GSAP 뒤, academy_public.js 앞에 로드한다', () => {
