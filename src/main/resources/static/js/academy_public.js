@@ -39,6 +39,15 @@
   let academyVideos = [];
   // 상담 신청 모달에 띄울 학원 연락 수단. render()마다 businessInfo에서 다시 뽑는다.
   let consultChannels = [];
+  // Vertical Scene Flow(V2-10). render()마다 IO를 새로 만들므로 이전 것을 끊는다.
+  let sceneFlowObserver = null;
+  // PAGE = Vertical Story. 스크롤에 따라 enter→active→exit 하는 주요 Story Section.
+  //   hero/digitaltwin(데스크톱 pin)은 academy_story.js 가 따로 담당 — 여기서 제외하거나
+  //   staged 가 아닐 때(모바일)만 scene-flow 가 잡는다.
+  const STORY_SCENE_IDS = [
+    'sec-featured', 'sec-digitaltwin', 'sec-videos',
+    'sec-minilectures', 'sec-lessons', 'sec-intro'
+  ];
   const slug = (root && root.dataset.slug)
     ? root.dataset.slug
     : decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
@@ -110,6 +119,7 @@
     applyReveal();
     wireStory();
     wireStorefrontMotion();
+    wireSceneFlow();
     wireContentCollections();
     wireFeaturedSelector();
     void loadVisitStatistics(academy, ownAcademy);
@@ -213,6 +223,30 @@
 
     const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')[0];
     select(pressed || buttons[0], false);
+  }
+
+  /**
+   * Vertical Scene Flow(V2-10). 주요 Story Section 이 스크롤에 따라 enter → active → exit 한다
+   * (양방향 — 위로 스크롤하면 되돌아온다). academy_storefront_motion.js sceneFlow() 가
+   * IntersectionObserver 로 data-scene 을 주고, academy_scene.css 가 opacity/translateY 로 표현한다.
+   *
+   * academy_story.js(데스크톱 pin/scrub)와 분리: hero 는 목록에서 빼고, digitaltwin 은 pin 이
+   * 걸리면(data-story-staged) sceneFlow 가 스스로 건너뛴다. 모바일에서는 pin 이 없어 digitaltwin
+   * 도 scene-flow 로 등장/퇴장한다.
+   *
+   * 모듈 미로드·reduced-motion·IO 미지원 → primitive 가 즉시 active(정적)로 처리. render()마다
+   * IO 를 새로 만들므로 이전 것을 disconnect 한다.
+   */
+  function wireSceneFlow() {
+    const MOTION = window.F2RStorefrontMotion;
+    if (!MOTION || typeof MOTION.sceneFlow !== 'function' || !root) return;
+    if (sceneFlowObserver && typeof sceneFlowObserver.disconnect === 'function') {
+      sceneFlowObserver.disconnect();
+    }
+    const sections = STORY_SCENE_IDS
+      .map((id) => root.querySelector('#' + id))
+      .filter(Boolean);
+    sceneFlowObserver = MOTION.sceneFlow(sections);
   }
 
   /**

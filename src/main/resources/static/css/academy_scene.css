@@ -1,0 +1,56 @@
+/* ══════════════ Vertical Scene Flow (V2-10) ══════════════
+   PAGE = Vertical Story. 각 Story Section 이 하나의 Scene 처럼 ENTER → ACTIVE → EXIT 한다.
+   상태는 academy_storefront_motion.js sceneFlow() 가 스크롤 위치(IntersectionObserver)로
+   data-scene = enter | active | exit 로 준다 — 1회성 아님, 위/아래 스크롤에 따라 다시 바뀐다.
+
+   전부 html.js-scene 스코프. 모듈/JS 미로드 시 이 클래스가 안 붙어 섹션이 정적으로 완전히 보인다.
+   빌더 캔버스는 storefront_motion 을 로드하지 않으므로 js-scene 도 없다(정적).
+
+   compositor-only: 섹션에는 opacity + transition, 자식에는 transform 만. 레이아웃 read/write
+   루프 없음. 100vh 강제·scroll hijack 없음 — 네이티브 세로 스크롤 그대로.
+
+   ⚠ Horizontal 과 분리: translateY 는 세로 Story 이동만 표현한다. 가로 컬렉션 탐색
+   (.f2r-collection-track overflow-x / scroll-snap) 은 이 규칙이 건드리지 않는다. */
+
+html.js-scene section[data-scene] {
+  transition: opacity .55s var(--ease, cubic-bezier(.16, .84, .44, 1));
+  will-change: opacity;
+}
+html.js-scene section[data-scene] > * {
+  transition: transform .55s var(--ease, cubic-bezier(.16, .84, .44, 1));
+  will-change: transform;
+}
+
+/* ENTER — 아직 아래에서 올라오는 장면: 살짝 아래 + 흐리게 대기 */
+html.js-scene section[data-scene="enter"] {
+  opacity: .38;
+}
+html.js-scene section[data-scene="enter"] > * {
+  transform: translateY(26px) scale(.992);
+}
+
+/* ACTIVE — 현재 뷰포트를 차지한 장면: 원래 위치, 선명 */
+html.js-scene section[data-scene="active"] {
+  opacity: 1;
+}
+html.js-scene section[data-scene="active"] > * {
+  transform: none;
+}
+
+/* EXIT — 위로 지나가는 장면: 위로 밀리며 흐려짐 → 다음 장면이 stage 를 차지 */
+html.js-scene section[data-scene="exit"] {
+  opacity: .28;
+}
+html.js-scene section[data-scene="exit"] > * {
+  transform: translateY(-20px) scale(.99);
+}
+
+/* reduced-motion → 항상 최종(active) 상태, 트랜지션 없음 */
+@media (prefers-reduced-motion: reduce) {
+  html.js-scene section[data-scene],
+  html.js-scene section[data-scene] > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

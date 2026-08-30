@@ -71,6 +71,7 @@ test('primitive API 노출', () => {
   assert.equal(typeof M.onEnter, 'function');
   assert.equal(typeof M.revealSequence, 'function');
   assert.equal(typeof M.processProgress, 'function');
+  assert.equal(typeof M.sceneFlow, 'function');
 });
 
 test('revealSequence: 진입 전엔 아무것도, 진입 후 DOM 순서대로 is-in', () => {
@@ -154,5 +155,6 @@ test('모듈 로드 즉시(렌더 전) html에 js-storefront-motion 을 붙인�
   const sandbox = { window: win, globalThis: win };
   vm.createContext(sandbox);
   vm.runInContext(SRC, sandbox);
-  assert.deepEqual(added, ['js-storefront-motion']);
+  // V2-10: js-scene 게이트도 로드 즉시 붙는다.
+  assert.deepEqual(added, ['js-storefront-motion', 'js-scene']);
 });
