@@ -46,8 +46,7 @@
     }, { threshold: opt.threshold == null ? 0.3 : opt.threshold, rootMargin: opt.rootMargin || '0px' });
     io.observe(el);
 
-    // 뷰포트 안이면 즉시 실행하는 이중 안전장치(IO 초기 콜백을 흘리는 환경 + 앵커/짧은 페이지).
-    // 스크롤 이벤트를 걸지 않는다 — 다음 프레임 1회 + 4초 뒤 1회만 확인한다.
+    // 안전장치 1: 로드 시점에 이미 뷰포트 안이면(앵커·짧은 페이지·IO 초기 콜백 누락) 다음 프레임에 실행.
     function checkInView() {
       if (done || typeof el.getBoundingClientRect !== 'function') return;
       var r = el.getBoundingClientRect();
@@ -57,7 +56,11 @@
       if (r.top < vh && r.bottom > 0) { io.disconnect(); run(); }
     }
     if (typeof global.requestAnimationFrame === 'function') global.requestAnimationFrame(checkInView);
-    global.setTimeout(checkInView, 4000);
+
+    // 안전장치 2(하드 페일세이프): IO/rAF 를 아예 흘리는 환경에서도 콘텐츠가 영구히 숨지 않도록
+    // 6초 뒤 위치와 무관하게 무조건 실행한다. 그 전에 스크롤로 도달하면 정상 모션이 재생된다.
+    // 스크롤 이벤트는 걸지 않는다.
+    global.setTimeout(function () { io.disconnect(); run(); }, 6000);
   }
 
   function items(root, selector) {

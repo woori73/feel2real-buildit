@@ -133,6 +133,19 @@ test('빈 대상/누락 대상은 조용히 무시', () => {
   assert.doesNotThrow(() => M.revealSequence({ querySelectorAll: () => [] }));
 });
 
+test('하드 페일세이프: IO/rAF 를 흘리는 환경에서도 6초 뒤 콘텐츠가 반드시 등장한다', () => {
+  // IO는 만들어지지만 절대 fire하지 않고, rAF도 없는 환경(자동화/프리뷰) — 콘텐츠가 영구히 숨으면 안 된다
+  const { M, makeEl, timers, runTimers, observers } = loadMotion();
+  const items = [makeEl(), makeEl()];
+  const root = { querySelectorAll: () => items, getBoundingClientRect: () => ({ top: -9999, bottom: -9000 }) };
+  M.revealSequence(root, { step: 50 });
+  assert.ok(items.every((i) => !i.has('is-in')), '아직 등장하면 안 됨');
+  assert.ok(observers.length === 1, 'IO는 세팅되어 있어야 함');
+  // 아무도 fire하지 않는다. 시간만 흐른다.
+  runTimers();
+  assert.ok(items.every((i) => i.has('is-in')), '6초 페일세이프 후에도 숨어 있음 — 콘텐츠 영구 은닉 위험');
+});
+
 test('모듈 로드 즉시(렌더 전) html에 js-storefront-motion 을 붙인다 — 초기 opacity:0 깜빡임 방지', () => {
   const added = [];
   const doc = { documentElement: { classList: { add: (c) => added.push(c) } } };
