@@ -59,7 +59,7 @@ test("lessonsLayout='horizontal' 이면 sec-lessons 를 가로 컬렉션으로 �
     const academy = fixture({ lessonsLayout: 'horizontal' });
     primeRenderer(hooks, academy, VIDEOS);
     const html = hooks.renderLessons(academy);
-    assert.match(html, /<div class="f2r-collection"/, `${kind}: collection shell`);
+    assert.match(html, /<div class="f2r-collection f2r-collection--programs"/, `${kind}: programs 변형 컬렉션 shell`);
     assert.match(html, /f2r-collection-track/, `${kind}: track`);
     assert.match(html, /f2r-program-card/, `${kind}: program card`);
     // 여전히 섹션 골격/제목/스케줄은 유지
@@ -73,8 +73,9 @@ test("videosLayout='horizontal' 이면 sec-videos 를 가로 Video 컬렉션으�
     const academy = fixture({ videosLayout: 'horizontal' });
     primeRenderer(hooks, academy, VIDEOS);
     const html = hooks.renderVideos(academy);
-    assert.match(html, /<div class="f2r-collection"/, `${kind}: collection shell`);
-    assert.match(html, /f2r-video-card/, `${kind}: video card`);
+    assert.match(html, /<div class="f2r-collection f2r-collection--videos"/, `${kind}: videos 변형 컬렉션 shell`);
+    assert.match(html, /f2r-phone-card/, `${kind}: phone card`);
+    assert.match(html, /f2r-phone-frame/, `${kind}: phone frame`);
     assert.match(html, /0:17/, `${kind}: 첫 영상 길이 배지`);
     assert.doesNotMatch(html, /video-playlist-layout/, `${kind}: 기존 재생목록 미사용`);
   }
@@ -138,22 +139,26 @@ test('공개 Program Card 는 상담 CTA 가 실제 동작(requestConsult)이고
   assert.doesNotMatch(bld, /data-collection-scroll/, 'builder 는 화살표 없음');
 });
 
-test('공개 Video Card 는 클릭 재생 앵커(업로드 스트림)를 갖고 방향에 맞는 비율 클래스를 붙인다', () => {
+test('Phone Card 는 프레임 + 클릭 재생 스크린을 갖고, 가로 영상만 letterbox(is-landscape) 한다', () => {
   const map = Object.fromEntries(bothRenderers());
   const academy = fixture({ videosLayout: 'horizontal' });
 
   primeRenderer(map.public, academy, VIDEOS);
   const pub = map.public.renderVideos(academy);
-  assert.match(pub, /data-collection-play/, 'public video card 는 재생 트리거');
-  assert.match(pub, /data-video-src="\/api\/academies\/x\/videos\/8\/stream"/, '업로드 스트림 URL');
-  assert.match(pub, /f2r-video-card is-landscape/, '가로(640x360) 영상은 is-landscape');
-  // 세로 영상(406x720)은 landscape 클래스가 없다
-  const portraitCard = pub.slice(pub.indexOf('videos/8/stream'));
-  assert.doesNotMatch(portraitCard.slice(0, portraitCard.indexOf('</article>')), /is-landscape/, '세로 영상은 landscape 아님');
+  // 스크린이 재생 트리거(button.f2r-phone-screen[data-collection-play])
+  assert.match(pub, /<button type="button" class="f2r-phone-screen" data-collection-play data-video-src="\/api\/academies\/x\/videos\/8\/stream"/, 'phone-screen 이 재생 트리거');
+  assert.match(pub, /class="f2r-phone-frame"/, 'phone 프레임');
+  assert.match(pub, /class="f2r-phone-cam"/, 'phone 카메라 장식');
+  // 세로 영상(8: 406x720)은 letterbox 아님, 가로 영상(6: 640x360)은 is-landscape
+  const card8 = pub.slice(pub.lastIndexOf('f2r-phone-card', pub.indexOf('videos/8/stream')), pub.indexOf('videos/8/stream'));
+  assert.doesNotMatch(card8, /is-landscape/, '세로 영상 phone card 는 letterbox 아님');
+  const card6 = pub.slice(pub.lastIndexOf('f2r-phone-card', pub.indexOf('videos/6/stream')), pub.indexOf('videos/6/stream'));
+  assert.match(card6, /is-landscape/, '가로 영상 phone card 는 letterbox(is-landscape)');
 
   primeRenderer(map.builder, academy, VIDEOS);
   const bld = map.builder.renderVideos(academy);
-  assert.doesNotMatch(bld, /data-collection-play/, 'builder video card 는 재생 트리거 없음(정적)');
+  assert.doesNotMatch(bld, /data-collection-play/, 'builder phone card 는 재생 트리거 없음(정적)');
+  assert.match(bld, /class="f2r-phone-frame"/, 'builder 도 프레임은 표시(정적)');
 });
 
 test('공개 렌더는 빌더 편집 앵커를 얹지 않는다(누수 방지)', () => {

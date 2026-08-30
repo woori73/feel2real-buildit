@@ -106,16 +106,21 @@ html.js-collection .f2r-collection-card.is-dimmed > * {
 html.js-collection .f2r-collection-card.is-active { z-index: 1; }
 .f2r-collection[data-collection-static] .f2r-collection-card > * { transform: none; opacity: 1; }
 
-/* 데스크톱: 여러 카드 동시 표시 + 다음 카드 일부 peek(고정 px 카드폭이 컨테이너 대비 자연스럽게 2~3.x개). */
+/* 데스크톱: 여러 카드 동시 표시 + 다음 카드 일부 peek(고정 px 카드폭이 컨테이너 대비 자연스럽게 2~3.x개).
+   Programs = Mini Web Experience(넓게), Actual Class = Phone Deck(좁게, 더 많이 peek). */
 @media (min-width: 761px) {
   .f2r-collection { --f2r-card-w: 300px; }
+  .f2r-collection--videos { --f2r-card-w: 210px; }
 }
 /* 모바일: 화살표 숨김. 터치 스와이프 + scroll-snap + 다음 카드 peek. JS 제스처 라이브러리 없음. */
 @media (max-width: 760px) {
   .f2r-collection { --f2r-card-w: 78vw; }
+  .f2r-collection--videos { --f2r-card-w: 60vw; }
   .f2r-collection-nav { display: none; }
   .f2r-collection-head { min-height: 0; margin-bottom: 10px; }
   .f2r-collection-card { max-width: 82vw; }
+  /* 모바일에서는 폰 프레임을 카드 폭에 맞춰 채운다(screen-in-screen 축소 방지). */
+  .f2r-phone-frame { max-width: none; border-radius: 26px; }
 }
 
 /* 빌더 캔버스: 편집 UX 우선 — 가로 스크롤 대신 wrap 배치(3-B 지침: 편집 UX와 public presentation 분리).
@@ -251,37 +256,56 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
 .f2r-program-card-cta:hover { background: var(--accent); transform: translateY(-1px); }
 .f2r-collection[data-collection-static] .f2r-program-card-cta { cursor: default; }
 
-/* ── Video Card (sec-videos = Actual Class Shorts) ───────────────────────
-   기존 콘텐츠(업로드된 세로 숏폼 mp4)를 보존한다. thumbnail 중심으로 빠르게 둘러보고
-   클릭하면 그 자리에서 재생된다. 새 carousel/YouTube API/oEmbed 의존성 없음. */
-.f2r-video-card {
+/* ── Actual Class Shorts = Phone Screen Deck (V2-3) ─────────────────────
+   기존 업로드 세로 숏폼을 보존하되, 일반 video 카드가 아니라 "휴대폰 화면을 넘겨본다"는
+   경험으로 프레임에 담는다. 특정 기종 복제는 아니고, 즉시 "폰 화면"으로 인지되게만 한다.
+   클릭하면 그 자리에서 재생(academy_collection.js data-collection-play). 새 라이브러리 없음. */
+.f2r-phone-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: #0b1020;
-  box-shadow: var(--shadow-sm);
+  align-items: center;
 }
-.f2r-video-card-media {
+.f2r-phone-frame {
+  position: relative;
+  width: 100%;
+  max-width: 232px;
+  aspect-ratio: 9 / 19;
+  padding: 8px;
+  border-radius: 30px;
+  background: linear-gradient(160deg, #14161c, #0a0b0f);
+  box-shadow: 0 22px 48px rgba(10, 12, 20, .22), inset 0 0 0 1.5px rgba(255, 255, 255, .06);
+}
+.f2r-phone-cam {
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .14);
+  z-index: 2;
+}
+.f2r-phone-screen {
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 9 / 16;
+  height: 100%;
   padding: 0;
   border: 0;
-  background: #0b1020;
-  cursor: pointer;
+  border-radius: 22px;
   overflow: hidden;
+  background: #000;
+  cursor: pointer;
 }
-.f2r-video-card.is-landscape .f2r-video-card-media { aspect-ratio: 16 / 9; }
-.f2r-video-card-media img {
+.f2r-phone-screen img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-.f2r-video-card-thumb-ph {
+.f2r-phone-card.is-landscape .f2r-phone-screen img { object-fit: contain; }
+.f2r-phone-screen-ph {
   position: absolute;
   inset: 0;
   display: flex;
@@ -290,23 +314,26 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   font-size: 2rem;
   color: rgba(255, 255, 255, .55);
 }
+.f2r-phone-screen:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.f2r-collection[data-collection-static] .f2r-phone-screen { cursor: default; }
+
 .f2r-video-play {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, .85);
   background: rgba(0, 0, 0, .45);
   color: #fff;
-  font-size: 16px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform .15s var(--ease), background .15s var(--ease);
 }
-.f2r-video-card-media:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
+.f2r-phone-screen:hover .f2r-video-play { transform: scale(1.08); background: rgba(0, 0, 0, .6); }
 .f2r-video-card-dur {
   position: absolute;
   right: 8px;
@@ -319,16 +346,17 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   font-weight: 800;
   letter-spacing: .02em;
 }
-.f2r-video-card-media:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+/* 재생 중 플레이어는 화면(스크린 버튼)을 대체하므로 프레임을 그대로 채운다. */
 .f2r-video-card-player {
-  display: block;
-  width: 100%;
-  aspect-ratio: 9 / 16;
-  background: #000;
+  position: absolute;
+  inset: 8px;
+  width: auto;
+  height: auto;
   border: 0;
+  border-radius: 22px;
+  background: #000;
+  object-fit: cover;
 }
-.f2r-video-card.is-landscape .f2r-video-card-player { aspect-ratio: 16 / 9; }
-.f2r-collection[data-collection-static] .f2r-video-card-media { cursor: default; }
 
 @media (prefers-reduced-motion: reduce) {
   .f2r-collection-track { scroll-behavior: auto; }
