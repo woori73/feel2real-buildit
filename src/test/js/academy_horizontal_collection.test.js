@@ -15,13 +15,16 @@ const LESSONS = [
     kicker: '영어의 기본 블록을 조립하는 단계',
     learnerNeed: '중등 영문법 기초 체력을 다지고 싶은 초등~중1',
     highlight: '외우지 않고 직접 조립하며 이해하는 원리 중심 영문법',
-    coreDetailTitle: '블록 조립으로 영문법 원리를 직관적으로 체득'
+    coreDetailTitle: '블록 조립으로 영문법 원리를 직관적으로 체득',
+    gradeLabel: '초등 고학년 - 중등 1학년', tabGuidanceLabel: '개념이 부족하다면',
+    mediaType: 'IMAGE'
   },
   {
     lessonId: 13, name: '압구정중, 신구중, 신사중, 언북중', tabShortName: '중학교 영어내신',
     kicker: '출제자의 눈으로 풀고 함정을 미리 파악합니다.',
     learnerNeed: '문법과 서술형에서 자꾸 감점될 때',
-    highlight: '', coreDetailTitle: ''
+    highlight: '', coreDetailTitle: '', tabGuidanceLabel: '중등 1학년 - 3학년',
+    mediaType: 'VIDEO', mediaVideoId: 6
   }
 ];
 const VIDEOS = [
@@ -77,23 +80,45 @@ test("videosLayout='horizontal' 이면 sec-videos 를 가로 Video 컬렉션으�
   }
 });
 
-test('Program Card 는 우선순위(kicker→name→learnerNeed→highlight→coreDetailTitle→CTA)를 지키고 빈 필드는 생략한다', () => {
+test('Program Card 는 V2 우선순위(eyebrow→name→kicker→need→highlight→grade→CTA)를 지키고 빈 필드는 생략한다', () => {
   const map = Object.fromEntries(bothRenderers());
   const academy = fixture({ lessonsLayout: 'horizontal' });
   primeRenderer(map.public, academy, []);
   const html = map.public.renderLessons(academy);
 
-  const order = ['f2r-program-card-kicker', 'f2r-program-card-name', 'f2r-program-card-need',
-    'f2r-program-card-highlight', 'f2r-program-card-core', 'f2r-program-card-cta'];
-  const positions = order.map((m) => html.indexOf(m));
-  assert.ok(positions.every((p, i) => i === 0 || (p > positions[i - 1])), '필드 DOM 순서가 우선순위와 다르다');
+  // 첫 카드(lesson 9) 영역만: track 시작 ~ 두 번째 카드(lesson 13) 전까지.
+  const c9 = html.slice(html.indexOf('f2r-collection-track'), html.indexOf('압구정중, 신구중'));
+  const order = ['f2r-program-card-eyebrow', 'f2r-program-card-name', 'f2r-program-card-kicker',
+    'f2r-program-card-need', 'f2r-program-card-highlight', 'f2r-program-card-grade', 'f2r-program-card-cta'];
+  const positions = order.map((m) => c9.indexOf(m));
+  assert.ok(positions.every((p, i) => p >= 0 && (i === 0 || p > positions[i - 1])), '필드 DOM 순서가 V2 우선순위와 다르다: ' + JSON.stringify(positions));
+  // media(VISUAL STAGE)는 body 앞에 온다
+  assert.ok(html.indexOf('f2r-program-card-media') < html.indexOf('f2r-program-card-body'), 'media 는 카드 본문보다 앞');
 
-  // lesson 13 은 highlight/coreDetailTitle 이 비어 있다 → 그 카드에는 해당 요소가 없어야 한다
+  // lesson 13 은 highlight 가 비어 있다 → 그 카드에는 해당 요소가 없어야 한다. coreDetailTitle 은 V2 카드에서 아예 안 쓴다.
   const card13 = html.slice(html.indexOf('압구정중, 신구중'));
-  const card13End = card13.indexOf('</article>');
-  const card13Html = card13.slice(0, card13End);
+  const card13Html = card13.slice(0, card13.indexOf('</article>'));
   assert.doesNotMatch(card13Html, /f2r-program-card-highlight/, 'lesson 13 은 highlight 없음 → 요소 생략');
-  assert.doesNotMatch(card13Html, /f2r-program-card-core/, 'lesson 13 은 coreDetailTitle 없음 → 요소 생략');
+  assert.doesNotMatch(html, /f2r-program-card-core/, 'coreDetailTitle 은 V2 Program Card 에서 렌더하지 않는다');
+});
+
+test('Program Card 는 lesson_products 에 등록된 대표 미디어를 표시한다 (item 16)', () => {
+  const map = Object.fromEntries(bothRenderers());
+  const academy = fixture({ lessonsLayout: 'horizontal' });
+
+  primeRenderer(map.public, academy, []);
+  const pub = map.public.renderLessons(academy);
+  // IMAGE lesson → 공개 hero-image 경로
+  assert.match(pub, /<img src="\/api\/academies\/[^"]+\/lessons\/9\/hero-image" alt="" loading="lazy">/, 'IMAGE 대표 미디어');
+  // VIDEO lesson(13, mediaVideoId 6) → 클릭 재생 트리거 + 썸네일
+  assert.match(pub, /class="f2r-program-card-media f2r-program-card-media-video" data-collection-play data-video-src="\/api\/academies\/[^"]+\/videos\/6\/stream"/, 'VIDEO 대표 미디어 재생 트리거');
+  assert.match(pub, /\/api\/academies\/[^"]+\/videos\/6\/thumbnail/, 'VIDEO 썸네일');
+
+  // 빌더 캔버스: 이미지는 소유자 전용 경로, 재생 트리거 없음(정적)
+  primeRenderer(map.builder, academy, [{ videoId: 6, thumbnailUrl: '/api/academies/x/videos/6/thumbnail' }]);
+  const bld = map.builder.renderLessons(academy);
+  assert.match(bld, /<img src="\/api\/tutor\/academy\/lessons\/9\/hero-image"/, '빌더 IMAGE 는 소유자 경로');
+  assert.doesNotMatch(bld, /f2r-program-card-media[^"]*" data-collection-play/, '빌더 미디어는 재생 트리거 없음');
 });
 
 test('공개 Program Card 는 상담 CTA 가 실제 동작(requestConsult)이고, 빌더는 정적이다', () => {
