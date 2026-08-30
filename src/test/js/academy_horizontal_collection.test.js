@@ -167,5 +167,5 @@ test('공개 템플릿은 academy_collection 자산을 로드하고, 배선 모�
   const js = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/academy_collection.js'), 'utf8');
   assert.doesNotMatch(js, /setInterval/, '자동 캐러셀(setInterval) 금지');
   assert.doesNotMatch(js, /requestAnimationFrame\([^)]*\bsyncArrows[^)]*\)[\s\S]{0,60}requestAnimationFrame/, '자기 예약 rAF 루프 금지');
-  assert.match(js, /track\.scrollTo/, '화살표는 native scrollTo(절대 위치)로 이동');
+  assert.match(js, /track\.scrollBy\(\s*dir/, '화살표는 native scrollBy(x, y) 레거시 시그니처로 이동');
 });
