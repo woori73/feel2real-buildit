@@ -380,19 +380,79 @@ class CsatLibraryTest(unittest.TestCase):
         self.assertEqual(201, saved.status_code, saved.text)
         self.assertFalse(saved.json()['questions'][0]['has_explanation'])
 
-    def test_json_v1_common_passage_groups_get_standard_numbers_in_source_order(self):
+    def test_json_v1_production_shape_extracts_passage_and_markup_choices(self):
+        questions = [
+            {'number': 1, 'problem': {'instruction': '다음 글의 주제로 가장 적절한 것은?',
+                'passage': 'Original passage.\n\n① first option wraps\nonto another line\n\n② second\n③ third\n④ fourth\n⑤ fifth'},
+                'answer': '①'},
+            {'number': 2, 'problem': {'instruction': '글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?',
+                'passage': 'Original （ ① ） insertion （ ② ） positions （ ③ ） remain （ ④ ） here （ ⑤ ）.',
+                'markup': [{'type': 'insertion_positions', 'labels': ['①', '②', '③', '④', '⑤']}]}, 'answer': '③'},
+            {'number': 3, 'problem': {'instruction': '글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?',
+                'passage': 'Another （ ① ） insertion （ ② ） source （ ③ ） remains （ ④ ） here （ ⑤ ）.',
+                'markup': [{'type': 'insertion_positions', 'labels': ['①', '②', '③', '④', '⑤']}]}, 'answer': '④'},
+            {'number': 4, 'problem': {'instruction': '다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?',
+                'passage': 'Original underlined source.',
+                'markup': [{'type': 'underline_targets', 'tokens': ['①be', '②that', '③to', '④were', '⑤highly']}]}, 'answer': '④'},
+        ]
+        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'round': '1', 'questions': questions}
+        parsed = main.parse_csat_question_json(payload)
+        self.assertEqual([5, 5, 5, 5], [len(item['choices']) for item in parsed])
+        self.assertEqual('① first option wraps\nonto another line', parsed[0]['choices'][0])
+        self.assertEqual('Original passage.', parsed[0]['problem']['passage'])
+        self.assertIn('① first option', parsed[0]['source_problem']['passage'])
+        self.assertIn('（ ① ）', parsed[1]['problem']['passage'])
+        self.assertEqual(['READY', 'READY', 'READY', 'READY'],
+            ['READY' if not main._csat_json_review_reason(item) else 'REVIEW' for item in parsed])
+
+    def test_json_v1_compound_number_specs_resolve_in_source_order(self):
+        self.assertEqual([31, 32, 33, 34], main._parse_csat_number_spec('31.32.33.34'))
+        self.assertEqual([31, 32, 33, 34], main._parse_csat_number_spec('31, 32, 33, 34'))
+        self.assertEqual([36, 37], main._parse_csat_number_spec('36～37'))
+        self.assertEqual([], main._parse_csat_number_spec('2028년 31~34번'))
+        groups = [
+            ('31·32·33·34', 4, '빈칸에 들어갈 말로 가장 적절한 것은?'),
+            ('36-37', 2, '주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?'),
+            ('38~39', 2, '주어진 문장이 들어가기에 가장 적절한 곳은?'),
+        ]
         questions = []
-        for source_no in (11, 12):
-            questions.append({'number': source_no, 'type': '공통지문', 'common_passage_id': 'long-41-42',
-                'problem': {'instruction': f'{source_no}번 질문', 'passage': 'Shared passage' if source_no == 11 else '',
+        source_no = 1
+        for number_spec, count, instruction in groups:
+            for _ in range(count):
+                questions.append({'number': source_no, 'question_number': number_spec,
+                    'problem': {'instruction': instruction, 'passage': 'Source',
+                                'choices': ['① one', '② two', '③ three', '④ four', '⑤ five']}, 'answer': '①'})
+                source_no += 1
+        parsed = main.parse_csat_question_json({'schema': 'buildit.csat.question.v1', 'source_kind': 'half',
+            'round': '2', 'questions': questions})
+        self.assertEqual([31, 32, 33, 34, 36, 37, 38, 39], [item['question_no'] for item in parsed])
+        self.assertEqual(['31·32·33·34'] * 4 + ['36-37'] * 2 + ['38~39'] * 2,
+                         [item['source_question_number_raw'] for item in parsed])
+        self.assertTrue(all(not main._csat_json_review_reason(item) for item in parsed))
+
+    def test_json_v1_explicit_individual_number_wins_and_unsafe_number_stays_review(self):
+        questions = []
+        for offset, number in enumerate(range(31, 35), start=1):
+            questions.append({'number': offset, 'question_number': number, 'group_label': '31·32·33·34',
+                'problem': {'instruction': '빈칸에 들어갈 말로 가장 적절한 것은?', 'passage': 'Source',
                             'choices': ['① one', '② two']}, 'answer': '①'})
-        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'exam_name': 'Complex Fixture',
-                   'year': '2028', 'round': '5', 'questions': questions}
-        preview = TestClient(main.app).post('/api/csat/json-imports/preview', files={
-            'files': ('complex.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
-        self.assertEqual([11, 12], [item['source_question_no'] for item in preview['questions']])
-        self.assertEqual([41, 42], [item['question_no'] for item in preview['questions']])
-        self.assertEqual(['READY', 'READY'], [item['import_status'] for item in preview['questions']])
+        questions.append({'number': 5, 'problem': {'instruction': '분류 근거가 없는 질문', 'passage': 'Source',
+                                                   'choices': ['① one', '② two']}, 'answer': '①'})
+        parsed = main.parse_csat_question_json({'schema': 'buildit.csat.question.v1', 'source_kind': 'half',
+            'round': '3', 'questions': questions})
+        self.assertEqual([31, 32, 33, 34], [item['question_no'] for item in parsed[:4]])
+        self.assertEqual(0, parsed[4]['question_no'])
+        self.assertEqual('유효한 수능 문항 번호가 필요합니다.', main._csat_json_review_reason(parsed[4]))
+
+    def test_json_v1_common_passage_relation_does_not_invent_numbers(self):
+        questions = [{'number': source_no, 'common_passage_id': 'shared-source',
+            'problem': {'instruction': '번호를 판별할 수 없는 공통 질문', 'passage': 'Shared passage',
+                        'choices': ['① one', '② two']}, 'answer': '①'} for source_no in (11, 12)]
+        parsed = main.parse_csat_question_json({'schema': 'buildit.csat.question.v1', 'source_kind': 'half',
+            'round': '5', 'questions': questions})
+        self.assertEqual(['shared-source', 'shared-source'], [item['common_passage_id'] for item in parsed])
+        self.assertEqual([0, 0], [item['question_no'] for item in parsed])
+        self.assertTrue(all(main._csat_json_review_reason(item) == '유효한 수능 문항 번호가 필요합니다.' for item in parsed))
 
     def test_json_v1_missing_choices_stays_review_and_commit_rejects_it(self):
         payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'exam_name': 'Invalid Fixture',
