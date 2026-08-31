@@ -318,6 +318,52 @@ class CsatLibraryTest(unittest.TestCase):
         self.assertTrue(item['has_explanation'])
         self.assertTrue(item['question_source_filename'].startswith('fixture-'))
 
+    def test_json_v1_preview_preserves_markup_and_isolates_multi_round_review(self):
+        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'daily', 'exam_name': 'JSON Fixture', 'year': '2028',
+            'rounds': [
+                {'round': '1', 'questions': [{'number': 1, 'csat_question_no': 18, 'type': '목적',
+                    'problem': {'instruction': '다음 글의 목적으로 가장 적절한 것은?', 'passage': 'Read this target.',
+                                'choices': ['one', 'two'], 'markup': [{'type': 'underline', 'field': 'passage', 'text': 'target'}]},
+                    'answer': '1', 'explanation': '목적 해설'}]},
+                {'round': '2', 'questions': [{'number': 1, 'type': '빈칸',
+                    'problem': {'instruction': '빈칸에 들어갈 말은?', 'passage': 'A ____ B', 'choices': ['one']},
+                    'answer': '1', 'explanation': ''}]},
+            ]}
+        client = TestClient(main.app)
+        before = client.get('/api/csat/questions').json()
+        response = client.post('/api/csat/json-imports/preview', files={
+            'files': ('fixture.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')})
+        self.assertEqual(201, response.status_code, response.text)
+        body = response.json()
+        self.assertEqual(2, body['file_count'])
+        self.assertEqual(['READY', 'REVIEW'], [item['questions'][0]['import_status'] for item in body['files']])
+        self.assertEqual('target', body['files'][0]['questions'][0]['markup'][0]['text'])
+        self.assertEqual(before, client.get('/api/csat/questions').json())
+
+    def test_json_v1_commit_keeps_structured_source_and_renderer_markup(self):
+        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'exam_name': 'Markup Fixture',
+            'year': '2028', 'round': '1', 'questions': [{'number': 18, 'csat_question_no': 18, 'type': '목적',
+                'problem': {'instruction': '목적으로 가장 적절한 것은?', 'passage': 'underlined blankword',
+                    'choices': ['(A) first', '(B) second'], 'markup': [
+                        {'type': 'underline', 'field': 'passage', 'text': 'underlined'},
+                        {'type': 'blank', 'field': 'passage', 'text': 'blankword'}]},
+                'answer': '1', 'explanation': 'fixture explanation'}]}
+        client = TestClient(main.app)
+        preview = client.post('/api/csat/json-imports/preview', files={
+            'files': ('markup.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
+        saved = client.post('/api/csat/imports', json={'exam_kind': 'half', 'source_kind': 'half',
+            'source_filename': preview['source_filename'], 'source_hash': preview['source_hash'], 'parser': preview['parser'],
+            'metadata': preview['metadata'], 'raw_text': preview['raw_text'], 'questions': preview['questions']})
+        self.assertEqual(201, saved.status_code, saved.text)
+        question_id = saved.json()['questions'][0]['id']
+        document = client.get(f'/api/csat/exam.html?ids={question_id}').text
+        self.assertIn('<u>underlined</u>', document)
+        self.assertIn('<span class="blank">blankword</span>', document)
+        self.assertIn('(A) first', document)
+        duplicate = client.post('/api/csat/json-imports/preview', files={
+            'files': ('markup.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
+        self.assertEqual('DUPLICATE', duplicate['questions'][0]['import_status'])
+
     def test_full_assessment_requires_one_question_for_every_number_18_to_45(self):
         for question_no in range(18, 46):
             self.seed_csat_questions(1, question_no)

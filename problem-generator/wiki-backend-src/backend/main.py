@@ -2569,6 +2569,108 @@ def split_csat_html(html_text: str) -> list[dict]:
     return questions
 
 
+CSAT_JSON_TYPE_ALIASES = {
+    '목적': ('purpose', '목적', [18]), '심경': ('emotion', '심경', [19]),
+    '주장': ('claim', '필자의 주장', [20]), '함축 의미': ('implication', '함축 의미', [21]),
+    '요지': ('main_idea', '요지', [22]), '주제': ('topic', '주제', [23]), '제목': ('title', '제목', [24]),
+    '도표': ('chart', '도표', [25]), '내용 일치': ('content_match', '내용 일치·불일치', [26]),
+    '내용 불일치': ('content_match', '내용 일치·불일치', [26]), '안내문': ('notice', '안내문', [27, 28]),
+    '어법': ('grammar', '어법', [29]),
+    '어휘': ('vocabulary', '어휘', [30]), '빈칸': ('blank', '빈칸 추론', [31, 32, 33, 34]),
+    '무관한 문장': ('irrelevant', '무관한 문장', [35]), '순서': ('order', '글의 순서', [36, 37]),
+    '문장 삽입': ('insertion', '문장 삽입', [38, 39]), '삽입': ('insertion', '문장 삽입', [38, 39]),
+    '요약': ('summary', '요약문 완성', [40]), '장문': ('long_complex', '장문', [41, 42, 43, 44, 45]),
+    '공통지문': ('long_complex', '장문', [41, 42, 43, 44, 45]),
+}
+
+
+def _normalise_csat_json_question(raw: dict, inherited: dict, index: int) -> dict:
+    if not isinstance(raw, dict):
+        raise ValueError('문항은 JSON object여야 합니다.')
+    problem = raw.get('problem') or {}
+    if not isinstance(problem, dict):
+        raise ValueError('problem은 JSON object여야 합니다.')
+    source_no = int(raw.get('source_question_no', raw.get('number', index)) or index)
+    explicit_no = int(raw.get('csat_question_no', raw.get('question_no', 0)) or 0)
+    supplied_type = str(raw.get('type') or raw.get('csat_question_type') or '').strip()
+    alias = CSAT_JSON_TYPE_ALIASES.get(supplied_type)
+    instruction = str(problem.get('instruction', raw.get('instruction', raw.get('prompt', raw.get('stem', '')))) or '')
+    passage = str(problem.get('passage', raw.get('passage', '')) or '')
+    choices = problem.get('choices', raw.get('choices', [])) or []
+    if not isinstance(choices, list):
+        raise ValueError('problem.choices는 array여야 합니다.')
+    choices = [str(choice) for choice in choices]
+    if explicit_no:
+        if not 18 <= explicit_no <= 45:
+            raise ValueError('csat_question_no는 18~45 사이여야 합니다.')
+        classified = classify_csat_question(explicit_no, instruction, choices)
+        classification_status = 'review' if classified['type_mismatch'] else 'classified'
+        candidates = [explicit_no]
+    elif alias:
+        type_id, type_name, candidates = alias
+        explicit_no = candidates[0] if len(candidates) == 1 else 0
+        classified = {'type_id': type_id, 'type_name': type_name, 'type_mismatch': False,
+                      'mismatch_reason': '' if explicit_no else f'{supplied_type} 유형의 표준 번호 {candidates} 중 하나를 확인해 주세요.'}
+        classification_status = 'classified' if explicit_no else 'review'
+    else:
+        prompt_classification = classify_csat_prompt(instruction, choices)
+        candidates = prompt_classification['candidate_numbers']
+        explicit_no = candidates[0] if len(candidates) == 1 else 0
+        classified = {'type_id': prompt_classification['type_id'], 'type_name': prompt_classification['type_name'],
+                      'type_mismatch': prompt_classification['classification_status'] == 'review',
+                      'mismatch_reason': prompt_classification['classification_reason']}
+        classification_status = prompt_classification['classification_status']
+    markup = problem.get('markup', raw.get('markup', [])) or []
+    if not isinstance(markup, list) or any(not isinstance(item, dict) for item in markup):
+        raise ValueError('problem.markup은 object array여야 합니다.')
+    return {
+        'source_question_no': source_no, 'question_no': explicit_no,
+        'csat_type_id': classified['type_id'], 'csat_type_name': classified['type_name'],
+        'stem': instruction, 'prompt': instruction, 'passage': passage, 'choices': choices,
+        'answer': str(raw.get('answer', '') or ''), 'explanation': str(raw.get('explanation', '') or ''),
+        'problem': problem, 'markup': markup, 'group_label': str(raw.get('group_label', raw.get('common_passage_id', '')) or ''),
+        'common_passage_id': str(raw.get('common_passage_id', '') or ''),
+        'classification_status': classification_status, 'candidate_numbers': candidates,
+        'classification_reason': classified['mismatch_reason'], **classified,
+        '_source_metadata': inherited,
+    }
+
+
+def parse_csat_question_json(value: object, ui_source_kind: str = '', ui_metadata: dict | None = None) -> list[dict]:
+    """Map CSAT Question JSON Standard V1 (single or multi-round) without rewriting content."""
+    if not isinstance(value, dict):
+        raise ValueError('최상위 JSON은 object여야 합니다.')
+    schema = str(value.get('schema') or '')
+    if schema and schema != 'buildit.csat.question.v1':
+        raise ValueError('지원하지 않는 schema입니다. buildit.csat.question.v1을 사용해 주세요.')
+    base = {
+        'source_kind': str(ui_source_kind or value.get('source_kind') or '').lower(),
+        'source_title': str((ui_metadata or {}).get('title') or value.get('exam_name') or ''),
+        'source_year': str((ui_metadata or {}).get('year') or value.get('year') or ''),
+        'source_round': str((ui_metadata or {}).get('round') or value.get('round') or ''),
+    }
+    rounds = value.get('rounds')
+    groups = rounds if isinstance(rounds, list) else [value]
+    parsed = []
+    for round_index, group in enumerate(groups, start=1):
+        if not isinstance(group, dict):
+            raise ValueError(f'{round_index}번째 회차는 object여야 합니다.')
+        metadata = {
+            'source_kind': str(group.get('source_kind') or base['source_kind']).lower(),
+            'source_title': str(group.get('exam_name') or group.get('title') or base['source_title']),
+            'source_year': str(group.get('year') or base['source_year']),
+            'source_round': str(group.get('round') or base['source_round'] or round_index),
+        }
+        if metadata['source_kind'] not in ('half', 'full', 'wrong', 'daily'):
+            raise ValueError('source_kind는 HALF/FULL/WRONG/DAILY 중 하나여야 합니다.')
+        questions = group.get('questions')
+        if not isinstance(questions, list) or not questions:
+            raise ValueError(f'{metadata["source_round"]}회차에 questions가 없습니다.')
+        for index, raw in enumerate(questions, start=1):
+            parsed.append(_normalise_csat_json_question(raw, metadata, index))
+    return parsed
+
+
 def _extract_hwpx_text(data: bytes) -> str:
     try:
         from xml.etree import ElementTree
@@ -2679,7 +2781,8 @@ def _normalise_uploaded_questions(raw_text: str) -> list[dict]:
 def _canonical_question(raw: dict, exam_kind: str, metadata: dict, filename: str, raw_text: str, now: str) -> dict:
     number = int(raw.get('question_number', raw.get('question_no', 0)) or 0)
     choices = [str(choice) for choice in raw.get('choices', [])]
-    stem = str(raw.get('stem', raw.get('prompt', '')))
+    problem = raw.get('problem') if isinstance(raw.get('problem'), dict) else {}
+    stem = str(raw.get('stem', raw.get('prompt', problem.get('instruction', ''))))
     classification = classify_csat_question(number, stem, choices)
     return {
         'source_exam': str(metadata.get('title', metadata.get('source_exam', ''))),
@@ -2687,13 +2790,18 @@ def _canonical_question(raw: dict, exam_kind: str, metadata: dict, filename: str
         'exam_kind': exam_kind, 'question_number': number, 'question_no': number,
         'csat_type': classification['type_id'], 'csat_type_id': classification['type_id'],
         'csat_type_name': classification['type_name'], 'stem': stem, 'prompt': stem,
-        'passage': str(raw.get('passage', '')), 'choices': choices,
+        'passage': str(raw.get('passage', problem.get('passage', ''))), 'choices': choices,
         'answer': str(raw.get('answer', '')), 'explanation': str(raw.get('explanation', raw.get('solution', ''))),
         'solution': str(raw.get('explanation', raw.get('solution', ''))), 'footnote': str(raw.get('footnote', '')),
         'group_label': str(raw.get('group_label', '')), 'source_file': filename,
         'source_reference': f'{filename}#question-{number}', 'raw_text': raw_text,
         'source_question_no': raw.get('source_question_no'), 'question_html': str(raw.get('question_html', '')),
         'explanation_html': str(raw.get('explanation_html', '')),
+        # Structured JSON V1 content stays in raw_json when the canonical object is committed.
+        # This is the lossless master used by renderers; DB columns remain search indexes.
+        'problem': problem, 'markup': raw.get('markup', problem.get('markup', [])),
+        'common_passage_id': str(raw.get('common_passage_id', '')),
+        'classification_status': raw.get('classification_status', 'review' if classification.get('type_mismatch') else 'classified'),
         'created_at': now, **classification,
     }
 
@@ -2770,6 +2878,86 @@ async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metad
     return {'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': parser, 'raw_text': raw_text,
             'metadata': metadata, 'source_filename': filename, 'original_stored': False, 'owner_scope': 'shared',
             'questions': canonical, 'failures': failures, 'requires_review': True}
+
+
+@app.post('/api/csat/json-imports/preview', status_code=201)
+async def preview_csat_json_imports(source_kind: Optional[CsatSourceKind] = Form(None),
+                                    metadata_json: str = Form('{}'), files: list[UploadFile] = File(...)):
+    if not files or len(files) > 50:
+        raise HTTPException(status_code=400, detail='JSON 파일은 한 번에 1~50개까지 업로드할 수 있습니다.')
+    try:
+        ui_metadata = json.loads(metadata_json or '{}')
+    except json.JSONDecodeError as error:
+        raise HTTPException(status_code=400, detail='시험 메타데이터 JSON 형식이 올바르지 않습니다.') from error
+    with get_db() as conn:
+        existing_rows = conn.execute('''SELECT q.raw_json, s.exam_metadata_json FROM csat_questions q
+            JOIN csat_question_sources s ON s.id=q.source_id''').fetchall()
+    existing = set()
+    for row in existing_rows:
+        raw = json.loads(row['raw_json'] or '{}')
+        metadata = json.loads(row['exam_metadata_json'] or '{}')
+        existing.add((str(metadata.get('source_kind') or '').lower(),
+                      str(metadata.get('source_title') or metadata.get('title') or ''),
+                      str(metadata.get('source_year') or metadata.get('year') or ''),
+                      str(metadata.get('source_round') or metadata.get('round') or ''),
+                      int(raw.get('source_question_no') or raw.get('question_number') or 0)))
+    previews, total_bytes = [], 0
+    for file in files:
+        filename = file.filename or 'questions.json'
+        data = await file.read()
+        total_bytes += len(data)
+        failure, raw_text = '', ''
+        if Path(filename).suffix.lower() != '.json': failure = 'JSON 파일만 업로드할 수 있습니다.'
+        elif not data: failure = '빈 JSON 파일입니다.'
+        elif len(data) > 10 * 1024 * 1024: failure = 'JSON은 파일당 10MB 이하여야 합니다.'
+        elif total_bytes > 30 * 1024 * 1024: failure = '전체 JSON 크기는 30MB 이하여야 합니다.'
+        try:
+            raw_text = data.decode('utf-8-sig', errors='strict') if not failure else ''
+            value = json.loads(raw_text) if raw_text else None
+            parsed = parse_csat_question_json(value, source_kind or '', ui_metadata) if value is not None else []
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError) as error:
+            failure, parsed = f'JSON 검증 실패: {error}', []
+        if failure:
+            previews.append({'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': 'csat-json-v1',
+                'raw_text': raw_text, 'metadata': {**ui_metadata, 'source_kind': (source_kind or '')},
+                'source_filename': filename, 'display_source_name': filename, 'original_stored': False,
+                'owner_scope': 'shared', 'questions': [], 'failures': [{'index': 1, 'reason': failure}],
+                'requires_review': False, 'status': 'FAILED', 'duplicate_source_id': None})
+            continue
+        groups = {}
+        for question in parsed:
+            metadata = question.pop('_source_metadata')
+            key = tuple(metadata[field] for field in ('source_kind', 'source_title', 'source_year', 'source_round'))
+            groups.setdefault(key, {'metadata': metadata, 'questions': []})['questions'].append(question)
+        for key, group in groups.items():
+            metadata, questions = group['metadata'], group['questions']
+            for question in questions:
+                provenance = (*key, int(question['source_question_no']))
+                question['source_kind'] = metadata['source_kind']
+                question['exam_kind'] = _source_storage_kind(metadata['source_kind'])
+                question['import_status'] = ('DUPLICATE' if provenance in existing else 'REVIEW'
+                    if question['classification_status'] == 'review' or not question['question_no']
+                    or not question['answer'] or not question['explanation'] else 'READY')
+            identity = json.dumps(metadata, sort_keys=True, ensure_ascii=False).encode()
+            source_hash = hashlib.sha256(data + b'\0' + identity).hexdigest()
+            storage_kind = _source_storage_kind(metadata['source_kind'])
+            with get_db() as conn:
+                duplicate_source = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?',
+                                                (source_hash, storage_kind)).fetchone()
+            states = [question['import_status'] for question in questions]
+            status = 'DUPLICATE' if states and all(state == 'DUPLICATE' for state in states) else 'REVIEW' if 'REVIEW' in states else 'READY'
+            display_name = f'{filename} · {metadata["source_round"]}회'
+            previews.append({'source_id': None, 'source_hash': source_hash, 'parser': 'csat-json-v1',
+                'raw_text': raw_text, 'metadata': metadata, 'source_filename': filename,
+                'display_source_name': display_name, 'original_stored': False, 'owner_scope': 'shared',
+                'questions': questions, 'failures': [], 'requires_review': 'REVIEW' in states,
+                'status': 'DUPLICATE' if duplicate_source else status,
+                'duplicate_source_id': duplicate_source['id'] if duplicate_source else None})
+    return {'files': previews, 'file_count': len(previews),
+            'question_count': sum(len(item['questions']) for item in previews),
+            'review_count': sum(state == 'REVIEW' for item in previews for state in [q.get('import_status') for q in item['questions']]),
+            'failed_count': sum(item['status'] == 'FAILED' for item in previews),
+            'duplicate_count': sum(q.get('import_status') == 'DUPLICATE' for item in previews for q in item['questions'])}
 
 
 @app.post('/api/csat/html-imports/preview', status_code=201)
@@ -3287,11 +3475,79 @@ def render_daily_explanation_html(questions: list[dict], title: str) -> str:
         @media print{{body{{background:white}}.daily-answer-page{{margin:0}}}}</style><body>{''.join(pages)}</body></html>'''
 
 
+def _structured_csat_text(value: str, markup: list, field: str) -> str:
+    """Render JSON V1 text without treating model-provided strings as HTML."""
+    import html
+    rendered = html.escape(str(value or '')).replace('\n', '<br>')
+    for mark in markup if isinstance(markup, list) else []:
+        if not isinstance(mark, dict) or str(mark.get('field') or 'passage') != field:
+            continue
+        target = html.escape(str(mark.get('text') or mark.get('target') or ''))
+        if not target or target not in rendered:
+            continue
+        kind = str(mark.get('type') or '').lower()
+        replacement = (f'<u>{target}</u>' if kind == 'underline' else
+                       f'<strong>{target}</strong>' if kind in ('bold', 'emphasis') else
+                       f'<span class="blank">{target}</span>' if kind == 'blank' else target)
+        if kind in ('box', 'given_sentence'):
+            replacement = f'<span class="given-sentence">{target}</span>'
+        rendered = rendered.replace(target, replacement, 1)
+    return rendered
+
+
+def _structured_csat_question(item: dict, include_passage: bool = True) -> str:
+    import html
+    raw = json.loads(item.get('raw_json') or '{}')
+    if raw.get('question_html'):
+        return _safe_csat_fragment(raw['question_html'])
+    problem = raw.get('problem') if isinstance(raw.get('problem'), dict) else {}
+    markup = raw.get('markup') or problem.get('markup') or []
+    instruction = problem.get('instruction', item.get('prompt') or '')
+    passage = problem.get('passage', item.get('passage') or '')
+    choices = problem.get('choices') if isinstance(problem.get('choices'), list) else item.get('choices', [])
+    choice_html = ''.join(f'<li>{_structured_csat_text(str(choice), markup, "choices")}</li>' for choice in choices)
+    passage_html = f'<div class="passage" contenteditable="true">{_structured_csat_text(passage, markup, "passage")}</div>' if include_passage else ''
+    return f'''<h2><span contenteditable="true">{_structured_csat_text(instruction, markup, 'instruction')}</span></h2>
+        {passage_html}<ol class="choices" contenteditable="true">{choice_html}</ol>'''
+
+
+def render_csat_problem_document(questions: list[dict], title: str, renderer: Literal['compact', 'full']) -> str:
+    """Editable A4 two-column output. CSS flows content; it never hard-codes questions per page."""
+    import html
+    ordered = questions if renderer == 'compact' else sorted(questions, key=lambda item: item['question_no'])
+    blocks, seen_common = [], set()
+    for item in ordered:
+        raw = json.loads(item.get('raw_json') or '{}')
+        common_id = str(raw.get('common_passage_id') or '')
+        include_passage = not common_id or common_id not in seen_common
+        if common_id:
+            seen_common.add(common_id)
+        group = f' data-common-passage-id="{html.escape(common_id)}"' if common_id else ''
+        day = f' data-day-no="{item.get("day_no") or ""}"'
+        blocks.append(f'''<article class="question" data-question-id="{item.get('id', '')}"{day}{group}>
+            <nav class="question-tools"><button onclick="moveQuestion(this,-1)">↑</button><button onclick="moveQuestion(this,1)">↓</button><button onclick="this.closest('.question').remove()">삭제</button></nav>
+            <div class="question-number">{item['question_no']}.</div><div class="question-content">{_structured_csat_question(item, include_passage)}</div></article>''')
+    density = 'full-reading' if renderer == 'full' else 'compact'
+    subtitle = '18–45 수능 독해형 · 문항 길이에 따른 자동 흐름' if renderer == 'full' else 'HALF · WRONG · DAILY Compact'
+    return f'''<!doctype html><html lang="ko"><meta charset="utf-8"><title>{html.escape(title)}</title><style>
+        @page{{size:A4;margin:11mm}}*{{box-sizing:border-box}}body{{font-family:"Noto Serif KR","Malgun Gothic",serif;margin:0;color:#111}}
+        .toolbar{{position:sticky;top:0;background:#fff4cf;padding:7px;text-align:center;z-index:3}}header{{display:flex;justify-content:space-between;align-items:end;border-bottom:2px solid #111;margin-bottom:8px}}header b{{font-size:19px}}
+        .paper{{column-count:2;column-gap:8mm;column-rule:1px solid #333;column-fill:auto}}.question{{display:grid;grid-template-columns:20px 1fr;break-inside:avoid;page-break-inside:avoid;margin:0 0 11px;font-size:10.5px;line-height:1.44;position:relative}}
+        .full-reading .question{{font-size:9.5pt;line-height:1.38;margin-bottom:9px}}.question-number{{font-weight:800}}.question-content h2{{font:inherit;font-weight:600;margin:0 0 4px}}.passage{{text-align:justify;white-space:normal}}.choices{{list-style:none;padding:0;margin:5px 0;counter-reset:item}}.choices li{{counter-increment:item}}.choices li:before{{content:counter(item, circle) " ";}}
+        .blank{{display:inline-block;min-width:42px;border-bottom:1px solid #111;color:transparent}}.given-sentence{{display:block;border:1px solid #333;padding:5px 7px;margin:5px 0}}.question-tools{{display:none;position:absolute;right:0;top:-6px;background:white}}.question:hover .question-tools{{display:block}}[contenteditable=true]:focus{{outline:2px solid #e5b94f;background:#fff9e8}}
+        @media(max-width:800px){{.paper{{column-count:1;column-rule:0}}}}@media print{{.toolbar,.question-tools{{display:none!important}}}}
+    </style><body class="{density}"><div class="toolbar">문구를 클릭해 수정할 수 있습니다. <button onclick="print()">인쇄</button> <button onclick="saveEdited()">편집 HTML 저장</button></div>
+    <header><b contenteditable="true">{html.escape(title)}</b><span>{subtitle}</span></header><main class="paper">{''.join(blocks)}</main>
+    <script>function moveQuestion(button,direction){{const item=button.closest('.question'),parent=item.parentElement,sibling=direction<0?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;direction<0?parent.insertBefore(item,sibling):parent.insertBefore(sibling,item)}}function saveEdited(){{const blob=new Blob(['<!doctype html>'+document.documentElement.outerHTML],{{type:'text/html;charset=utf-8'}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildit-csat-edited.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}}</script></body></html>'''
+
+
 def render_assessment_problem_html(assessment: dict) -> str:
     if assessment['assessment_type'] == 'daily':
-        return render_daily_problem_html(assessment['items'], assessment['title'])
-    document = render_csat_html(assessment['items'], assessment['title'], preserve_order=True)
-    return document.replace('<body>', f'<body data-template-id="{assessment["template_id"]}" data-assessment-type="{assessment["assessment_type"]}">', 1)
+        return render_daily_problem_html(assessment['items'], assessment['title']).replace(
+            '<body>', f'<body data-template-id="{assessment["template_id"]}" data-assessment-type="daily">', 1)
+    renderer = 'full' if assessment['assessment_type'] == 'full' else 'compact'
+    document = render_csat_problem_document(assessment['items'], assessment['title'], renderer)
+    return document.replace('<body ', f'<body data-template-id="{assessment["template_id"]}" data-assessment-type="{assessment["assessment_type"]}" ', 1)
 
 
 def render_assessment_explanation_html(assessment: dict) -> str:
@@ -3327,7 +3583,7 @@ def export_csat_exam_html(ids: str = '', exam_kind: Optional[Literal['half', 'fu
     items = []
     for row in rows:
         item = dict(row); item['choices'] = json.loads(item['choices_json']); item['type_mismatch'] = bool(item['type_mismatch']); items.append(item)
-    return render_csat_html(items, title)
+    return render_csat_problem_document(items, title, 'full' if exam_kind == 'full' else 'compact')
 
 
 PASSAGE_MEMORY_SCHEMA = {
