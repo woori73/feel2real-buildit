@@ -173,6 +173,38 @@ class CsatLibraryTest(unittest.TestCase):
             conn.execute('DELETE FROM csat_questions WHERE source_id=?', (saved.json()['source_id'],))
             conn.execute('DELETE FROM csat_question_sources WHERE id=?', (saved.json()['source_id'],))
 
+    def test_html_import_preserves_daily_source_kind_without_schema_change(self):
+        client = TestClient(main.app)
+        html = '''<article class="question" data-question-no="24">
+        <h2 class="prompt">다음 글의 제목으로 가장 적절한 것은?</h2>
+        <div class="passage">Daily source original</div><ol class="choices"><li>A</li><li>B</li></ol>
+        <div class="answer">1</div><div class="explanation">Daily explanation</div></article>'''
+        preview_response = client.post('/api/csat/html-imports/preview', data={
+            'source_kind': 'daily',
+            'metadata_json': json.dumps({'source_title': '운영 DAILY', 'source_year': '2028', 'source_round': '3'}),
+        }, files=[('files', ('daily-source.html', html.encode(), 'text/html'))])
+        self.assertEqual(201, preview_response.status_code)
+        preview = preview_response.json()['files'][0]
+        self.assertEqual('daily', preview['metadata']['source_kind'])
+        preview['questions'][0]['question_no'] = 24
+        saved = client.post('/api/csat/imports', json={
+            'exam_kind': 'half', 'source_kind': 'daily', 'source_filename': preview['source_filename'],
+            'source_hash': preview['source_hash'], 'parser': preview['parser'], 'metadata': preview['metadata'],
+            'raw_text': preview['raw_text'], 'questions': preview['questions'],
+        })
+        self.assertEqual(201, saved.status_code)
+        question = saved.json()['questions'][0]
+        self.assertEqual('half', question['exam_kind'])
+        self.assertEqual('daily', question['source_kind'])
+        result = client.get('/api/csat/questions', params={
+            'source_kind': 'daily', 'source_title': '운영 DAILY', 'source_year': '2028',
+            'source_round': '3', 'has_answer': True, 'has_explanation': True, 'used': False,
+        })
+        self.assertEqual([question['id']], [item['id'] for item in result.json()])
+        with main.get_db() as conn:
+            conn.execute('DELETE FROM csat_questions WHERE source_id=?', (saved.json()['source_id'],))
+            conn.execute('DELETE FROM csat_question_sources WHERE id=?', (saved.json()['source_id'],))
+
     def test_saved_assessment_is_the_only_path_that_records_usage(self):
         ids = self.seed_csat_questions(5, 34)
         client = TestClient(main.app)

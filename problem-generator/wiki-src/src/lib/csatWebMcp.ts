@@ -36,13 +36,14 @@ export const registerCsatSiteTools=():Promise<void>=>{
       name:'search_csat_questions',
       description:'Search the signed-in BuildIt Wiki CSAT Question DB by official CSAT number or type. This does not record usage.',
       inputSchema:objectSchema({
-        exam_kind:{type:'string',enum:['half','full']},question_no:{type:'integer',minimum:18,maximum:45},type_id:{type:'string'},
+        source_kind:{type:'string',enum:['half','full','wrong','daily']},exam_kind:{type:'string',enum:['half','full']},question_no:{type:'integer',minimum:18,maximum:45},type_id:{type:'string'},
         source_id:{type:'integer',minimum:1},source_filename:{type:'string'},source_round:{type:'string'},
+        source_title:{type:'string'},source_year:{type:'string'},used:{type:'boolean'},
         has_answer:{type:'boolean'},has_explanation:{type:'boolean'},review_status:{type:'string',enum:['classified','review']},
         exclude_used:{type:'boolean'},used_in:{type:'string',enum:['half','full','wrong','daily']},
       }),
       annotations:{readOnlyHint:true},
-      execute:async input=>{const query=new URLSearchParams();for(const key of ['exam_kind','question_no','type_id','source_id','source_filename','source_round','has_answer','has_explanation','review_status','exclude_used','used_in'])if(input[key]!==undefined)query.set(key,String(input[key]));return call(`csat/questions${query.size?`?${query}`:''}`)},
+      execute:async input=>{const query=new URLSearchParams();for(const key of ['source_kind','exam_kind','question_no','type_id','source_id','source_filename','source_title','source_year','source_round','has_answer','has_explanation','review_status','used','exclude_used','used_in'])if(input[key]!==undefined)query.set(key,String(input[key]));return call(`csat/questions${query.size?`?${query}`:''}`)},
     },
     {
       name:'search_csat_wrong_answers',
