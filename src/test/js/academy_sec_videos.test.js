@@ -288,7 +288,7 @@ test('given sec-intro when 공개·빌더를 렌더 then 입력 안내 라벨과
   const academy = academyFixture();
   const builderHero = primeRenderer(builderHooks, academy).renderHero(academy, '영어', '강남구');
   assert.match(builderHero, /cv-hero-subject-badges" data-builder-basic="subjects"/, 'builder: 과목 편집 진입점 소실');
-  assert.match(builderHero, /hero-quote builder-multiline-text" data-builder-text="intro"/, 'builder: 소개 편집 진입점 소실');
+  assert.match(builderHero, /hero-quote builder-multiline-text"[^>]* data-builder-text="intro"/, 'builder: 소개 편집 진입점 소실');
 });
 
 test('given 영상 플레이리스트 when 공개·빌더를 렌더 then 양쪽 모두 순번과 재생시간을 표시한다', () => {

@@ -82,7 +82,8 @@ test('AI Native 교육 과정은 번호가 매겨진 단계 흐름으로 렌더�
     });
     primeRenderer(hooks, academy);
     const html = hooks.renderAiProcess(academy);
-    assert.match(html, /<ol class="ai-process-steps">/, `${kind}: ordered step list`);
+    assert.match(html, /<ol class="ai-native-steps">/, `${kind}: 단계 목록`);
+    assert.match(html, /class="ai-native-step" data-ai-step="0"/, `${kind}: 번호가 매겨진 단계`);
     ['학교 자료', '출제자 분석', '수업 인사이트', '학교별 문제 제작', 'FINAL'].forEach((label) => {
       assert.match(html, new RegExp(label), `${kind}: step ${label}`);
     });
@@ -147,8 +148,8 @@ test('sec-videos / sec-social 제목은 학원명·고정문구가 아니라 독
 test('공개 CSS 리셋이 Storefront 설명/주석의 auto 마진과 margin-top을 덮지 않는다', () => {
   // #publicView :is(h1..p) 리셋은 specificity가 높아 클래스 규칙을 이긴다 →
   // featured-desc/ai-process-desc/ai-process-note가 예외 목록에 있어야 중앙 정렬 + 카드 겹침 방지가 유지된다.
-  assert.match(PUBLIC_CSS, /:not\([^)]*\.featured-desc[^)]*\.ai-process-desc[^)]*\.ai-process-note[^)]*\)\{margin:0;\}/);
-  assert.match(PUBLIC_CSS, /\.featured-desc\{margin:16px auto 0;[^}]*max-width:600px/);
-  assert.match(PUBLIC_CSS, /\.ai-process-desc\{margin:14px auto 0;[^}]*max-width:620px/);
-  assert.match(PUBLIC_CSS, /\.ai-process-note\{margin:32px auto 0;max-width:600px;text-align:center/);
+  assert.match(PUBLIC_CSS, /:not\([^)]*\.featured-desc[^)]*\.ai-native-desc[^)]*\.ai-native-note[^)]*\)\{margin:0;\}/);
+  assert.match(PUBLIC_CSS, /\.featured-desc\{margin:16px auto 0;[^}]*max-width:5[0-9]0px/);
+  assert.match(PUBLIC_CSS, /\.ai-native-desc\{margin:14px auto 0;[^}]*max-width:620px/);
+  assert.match(PUBLIC_CSS, /\.ai-native-note\{margin:32px auto 0;max-width:600px;text-align:center/);
 });

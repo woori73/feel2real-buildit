@@ -293,7 +293,7 @@ test('given sec-philosophy when 공개·빌더가 렌더 then BuildIt 학습 철
     // then
     assert.match(philosophy, /id="sec-philosophy"/, `${name}: 학습 철학 독립 섹션 id 없음`);
     assert.match(philosophy, /data-builder-section-key="sec-philosophy"/, `${name}: 빌더 섹션 키가 분리되지 않음`);
-    assert.match(philosophy, /philosophy snap/, `${name}: 시안 philosophy snap 클래스 없음`);
+    assert.match(philosophy, /class="section-wrap philosophy"/, `${name}: philosophy 섹션 클래스 없음`);
     assert.ok(philosophy.includes('학습 철학'), `${name}: eyebrow 없음`);
     assert.ok(philosophy.includes('000 원장이'), `${name}: 실명 마스킹 제목 아님`);
     assert.equal((philosophy.match(/class="p-card"/g) || []).length, 4, `${name}: 철학 카드 4개가 아님`);

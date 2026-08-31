@@ -787,6 +787,110 @@ options.stage), `academy_public.js`(wireStory layerSelector 제거, processProgr
 `academy_collection.css`(데스크톱 4-카드 그리드), 3 템플릿, `AcademyBuilderTemplateContractTest.java`,
 `academy_featured_selector.test.js`, `academy_story.test.js`, `academy_v2_11_storefront_completion.test.js`.
 
+## 20. 2026-09-01 변경: Storefront Motion 재설계 — Shopify 레퍼런스 확정 스펙 1회 구현
+
+V2-10/V2-11 은 "Shopify-like dynamic storefront" 를 실제 레퍼런스 없이 opacity/IO/GSAP/auto-scroll
+을 개별 추가하며 만들어졌다. Dawn(MIT)·Prestige·Shopify Editions 를 8축(Desktop/Mobile/Vertical/
+Horizontal/Card/Media/Motion/Interaction)으로 분석한 결과, Shopify 기본 모션은 **① 스크롤 진입 시
+1회 reveal, ② hover/tap 반응** 둘뿐이었다. 사용자 승인된 LOCKED SPEC 으로 재구현.
+
+### 삭제한 레거시 모션
+
+| 삭제 | 이유 |
+|---|---|
+| `academy_storefront_motion.js` (전체) | `sceneFlow`(읽은 섹션을 opacity 0.16 으로 — Shopify 안 함), `processProgress`(AI Native state machine), `revealSequence` |
+| `academy_story.js` + `academy_story.css` (전체) | GSAP ScrollTrigger 로 `#sec-digitaltwin` 을 100vh pin+scrub (scroll-jack 인접). Shopify 는 `position: sticky` 만 |
+| `academy_scene.css` (전체) | `sceneFlow` 의 enter/active/exit opacity·translateY 표현 전용 |
+| GSAP + ScrollTrigger CDN `<script>` | pin 섹션 1개 위한 ≈70KB. Dawn/Prestige 는 애니메이션 라이브러리 0 |
+| `academy_collection.js` `initAuto`/`runAuto`/`autoScrollTo`/`anyVideoPlaying`/`sectionOf` | product grid/collection 자동 이동. Shopify 는 절대 autoplay 안 함(opt-in Hero 슬라이드쇼 예외) |
+| `academy_public.js` `wireStory`/`wireSceneFlow`/`wireStorefrontMotion`/`applyReveal`/`wireFeaturedSelector` | 5개 모션 시스템 → 1개 |
+| `academy_public.css` `html{scroll-snap-type:y}`, `[data-fade]` 게이트, `.f2r-reveal`/`.ai-process-*`/`.ai-stage-*` 규칙 | 죽은/중복 모션 CSS |
+| `academy_sections.js` `data-fade`·`.f2r-reveal`·`data-collection-auto`·`aiProcessStageHtml`·`featuredStageHtml`·`featuredStageProgram` | 위 시스템의 마크업 앵커 |
+| 테스트: `academy_storefront_motion.test.js`, `academy_scene.test.js`, `academy_story.test.js`, `academy_public_reveal.test.js`, `academy_v2_11_storefront_completion.test.js` | 삭제된 기능 검증 |
+
+### 남은 motion primitive — `academy_reveal.js` (~65줄) + `academy_reveal.css`
+
+Dawn 계열 1개 시스템. 마크업 계약: `[data-reveal]`(트리거 그룹) + `[data-reveal-item]`(움직이는 요소).
+`IntersectionObserver({ rootMargin: '0px 0px -12% 0px' })` → 진입 시 하위 item 에 `--reveal-order`(index)
+부여, 그룹에 `.is-revealed`, **`observer.unobserve()`**. 1회성 — `is-revealed` 를 제거하는 코드가 없다.
+지나간 섹션은 건드리지 않는다(흐리게/축소/recede 없음). 토큰(`academy_public.css :root`, 빌더 캔버스도 로드):
+`--reveal-duration: 550ms`, `--reveal-ease: cubic-bezier(0,0,.3,1)`(순수 감속), `--reveal-stagger: 80ms`,
+`--reveal-distance: 28px`, `--hover-lift: -6px`, `--hover-duration: 180ms`. reduced-motion → IO 없이 즉시
+`.is-revealed` + CSS `opacity:1!important`. 모듈 미로드 → `html.js-reveal` 안 붙어 콘텐츠 정적.
+`academy_public.js` render() 마다 `REVEAL.wire(root)` (이미 배선한 그룹은 `[data-reveal-wired]` 로 skip).
+
+### `/analyzes` 실제 연결 — Featured "2학기 영어 내신"
+
+`renderFeatured` = eyebrow → H2 → 설명 → 학교 칩(`featuredItem1~4`) → `[data-featured-twin]` 빈 패널 → CTA.
+`academy_public.js` `wireFeaturedSchoolTwin()`: 칩 선택 시(+ 로드 시 첫 칩) `fetch('/api/analyzes?schoolName='
++ encodeURIComponent(school))` — `ExamAnalysisRepository.searchPublic` 의 `schoolName LIKE %:schoolName%`
+로 "압구정중" 이 "압구정중학교" 를 매칭. 영어 과목만 필터(`subject.nameEn === 'english'`). 패널에
+"{학교} · 출제자 Digital Twin {N}건" + 최대 4행(`{grade}학년 {semester} {examType}` → `/analyzes/{id}`
+새 탭) + "전체 출제 분석 보기 →". 칩 선택은 **섹션 전체를 흐리게 하지 않는다** — 패널만 WAAPI
+마이크로 전환(`opacity .35→1, translateY 6→0, 200ms`). 응답은 school 별 캐시. race guard(`aria-pressed`
+재확인). 빌더 canvas 는 `/api/analyzes` fetch 안 함 — `featured-twin--builder` 정적 안내(`<code>/analyzes</code>`).
+`lesson_products` 의 공감성장영어 `highlight` 를 학교별 정보로 재사용하지 않고, builderDraft 에 복제도 안 함.
+`/analyzes/{id}` 는 eduholic 서브도메인에서 301 → `feel2real.co.kr/analyzes/{id}`(전체 68KB 출제자 디지털트윈 문서).
+
+**⚠ 후속**: 빌더의 featuredLessonIds 픽커(`wireFeaturedLessonsEditing`, `builderFeaturedLessonsModal`)는
+편집 어피던스가 삭제된 Featured Stage 요소에 있어 현재 canvas 에서 열 수 없다. `featuredLessonIds`
+저장 데이터·`SECTIONS.featuredLessonIds`/`selectedFeaturedLessons` API 는 보존(builder.js·hero_polish
+테스트 의존). storefront 는 더 이상 소비 안 함 → 픽커 제거는 별도 작업.
+
+### Storefront Story
+
+Hero → 2학기 영어 내신(학교별 출제자 Digital Twin) → AI Native(그 데이터를 원장+AI 가 FINAL 로) →
+Actual Class → 공감성장영어 → Educator Story. `sec-lessons`(Programs)가 AI Native·videos 뒤에 있는 건
+Builder 레이아웃 재정렬 필요(Production `sectionOrder`, 코드 아님).
+
+### AI Native — 페이지 유일 cinematic (`position: sticky`, GSAP 없음)
+
+`aiNativeHtml(steps, ctx)` — `<figure.ai-native-visual[data-ai-visual][data-active="0"]>` (5 프레임) +
+`<ol.ai-native-steps>` (5 `.ai-native-step[data-ai-step=N]`, 각 번호 + 아이콘 + 단계명 + 한 줄 설명).
+단계명은 `aiProcessStepN` 편집 가능, 설명은 위치별 상수(`AI_PROCESS_STEP_DESC_DEFAULTS`, generic).
+아이콘: currentColor SVG(문서 → 스캔/패턴 → 두 노드 병합 → 문항 격자 → 문서+체크), 이미지 자산 없음.
+- **데스크톱(≥900px)**: `.ai-native` 2열 grid, `.ai-native-visual` `position: sticky; top: 100px`.
+  각 `.ai-native-step` `min-height: 34vh` → 섹션 ~180vh. `academy_public.js` `wireAiNative()` 가
+  `IntersectionObserver({ rootMargin: '-48% 0px -48% 0px' })` 로 뷰포트 중앙 밴드를 지나는 step 을
+  잡아 `visual[data-active]` 갱신 → Visual 만 바뀐다. **타이머/자동 sequence 없음**, 스크롤 위치만.
+  CSR 재렌더 시 이전 IO disconnect. reduced-motion / IO 미지원 → visual frame 0 고정, 트래킹 안 함.
+- **모바일**: `.ai-native-visual` `display:none`, `.ai-native-step` 세로 스택(inline 아이콘). reveal-once.
+- **빌더 canvas**: `@container (max-width:900px)` 로 세로 블록 정적 프리뷰 강제(sticky 미적용).
+
+### Collections — 자동 이동 없음
+
+`renderCollectionShell` 에서 `data-collection-auto` 제거. `academy_collection.js` 는 화살표 네비(`track.scrollBy`)
++ 진행 카운터 + V2-8 재생만. **데스크톱(≥900px)**: `.f2r-collection--programs` = 4열 grid(동일 높이,
+통일 미디어 비율 `16/10`, name `min-height: 2.6em`, CTA `margin-top: auto`), `.f2r-collection--videos` =
+`repeat(auto-fit, minmax(180px,1fr))` grid — head/화살표/카운터 숨김. **모바일**: 네이티브 `overflow-x`
++ `scroll-snap-type: x` + 다음 카드 peek(`--f2r-card-w: 78vw`) + 카운터. autoplay 없음.
+**Hover 생명력**(`@media (hover:hover) and (pointer:fine)` 만): 카드 `translateY(-6px)` + box-shadow +
+program highlight border → accent, 180ms. reduced-motion → transform 없음.
+
+### Educator Story (sec-intro)
+
+`.intro-wrap.notes` 의 `min-height: 100svh` 제거(강제 viewport 높이 없음). `.snap` 클래스 제거. 섹션 =
+`data-reveal`, `.notes-head` + 4 철학 카드 = `data-reveal-item`(stagger). sticky cinematic 없음 — editorial
+typography + reveal-once.
+
+### 캐시버스팅 / 검증
+
+- `?v=20260831-7`: `academy_reveal.{js,css}`(신규), `academy_public.{js,css}`, `academy_collection.{js,css}`,
+  `academy_sections.js` (+ 빌더·lesson_product_editor 템플릿). GSAP/story/scene 자산은 템플릿에서 제거.
+- 신규 `academy_reveal.test.js`(13): reveal 1회성·stagger·unobserve·failsafe·재렌더 가드·reduced-motion,
+  레거시 자산·API 완전 삭제, AI Native sticky/세로 블록, collection 자동 이동 없음·hover.
+- JS 전체: 321 tests, 315 pass, 6 fail(전부 기존 로컬 CRLF — `academy_builder_*`, `LessonProductSurface
+  sharedShowcase_*`. CI Linux/LF 무관). `bootJar` BUILD SUCCESSFUL. `AcademyBuilderTemplateContractTest`
+  / `AcademyServiceTest` / `LessonProductEditorTemplateContractTest` / `AcademyVisitStatisticsContractTest`
+  통과. `SubdomainRenderIntegrationTest` 는 로컬 ApplicationContext 로드 실패(MySQL 없음, CI 무관).
+- 로컬 harness(byte-identical, `/api/analyzes` mock): 데스크톱 1280 — `html` 클래스 `js-reveal js-collection`
+  뿐(gsap false), h-overflow 0, hero reveal, Featured 패널이 "압구정중 · 출제자 Digital Twin 4건" + 시험
+  목록 렌더, 칩(신사중) 클릭 → 패널만 갱신(섹션 opacity 1 유지), AI Native `position: sticky` + 스크롤 시
+  `data-active` 0→3 추적, Programs/Actual Class grid, intro 64vh. 모바일 390 — AI Native visual `display:none`
+  + 5 세로 블록, collection `scroll-snap-type: x` + peek, h-overflow 0.
+- 실기기 확인 필요: 세로 스크롤 시 reveal 진입 타이밍 체감, AI Native sticky 스크롤 중 Visual 전환
+  타이밍, hover 반응(데스크톱), reduced-motion 기기.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

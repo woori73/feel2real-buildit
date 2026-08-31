@@ -26,18 +26,19 @@
   --ease:cubic-bezier(.16,.84,.44,1);
   --font:-apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard,
     "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Helvetica, Arial, sans-serif;
+  /* 스크롤 reveal / hover 토큰 — Shopify Dawn 계열(감속 이징, 작은 stagger). academy_reveal.{js,css}. */
+  --reveal-distance:28px;
+  --reveal-duration:550ms;
+  --reveal-ease:cubic-bezier(0, 0, .3, 1);
+  --reveal-stagger:80ms;
+  --hover-lift:-6px;
+  --hover-duration:180ms;
+  --hover-ease:cubic-bezier(.2, 0, .2, 1);
 }
 
 /* ══════════════ BASE ══════════════ */
-/* proximity로 완화한다. 시안은 mandatory + snap-stop:always지만 짧은 데모라 성립하는 값이다.
-   수업 목록·시간표처럼 100svh를 넘는 섹션이 들어오면 스냅이 콘텐츠를 잘라먹는다. */
-html{scroll-snap-type:y proximity;}
-/* reveal 초기 상태는 JS가 GSAP 로드를 확인한 뒤에만 건다.
-   무조건 opacity:0으로 두면 CDN이 죽었을 때 페이지 전체가 빈 화면이 된다. */
-html.js-motion [data-fade]{opacity:0;transform:translateY(30px);}
-@media (prefers-reduced-motion:reduce){
-  html.js-motion [data-fade]{opacity:1;transform:none;}
-}
+/* 세로 scroll-snap 없음(Shopify 레퍼런스 확정 — 스크롤을 가로채지 않는다).
+   스크롤 진입 reveal 은 academy_reveal.{js,css} 의 단일 primitive 가 담당한다. */
 body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);letter-spacing:-.02em;-webkit-font-smoothing:antialiased;}
 .page{max-width:none;margin:0;padding:0;}
 #publicView{min-width:0;}
@@ -45,7 +46,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* 이 리셋은 specificity가 (1,1,1)이라 클래스 규칙을 전부 이긴다.
    notes 제목/인용문, Storefront 설명/주석이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다
    (margin:X auto 0의 auto가 0으로, margin-top이 0으로 덮여 카드와 겹친다). */
-#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-process-desc,.ai-process-note){margin:0;}
+#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-native-desc,.ai-native-note){margin:0;}
 #publicView [id^="sec-"]{scroll-margin-top:74px;}
 #errorMsg{text-align:center;color:#ef4444;font-size:.98rem;padding:20px;}
 
@@ -105,6 +106,17 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 }
 @container (max-width:760px){
   .builder-public-preview .hero{padding-top:60px;}
+}
+/* 빌더 캔버스는 폭이 좁고 스크롤 컨텍스트가 발행 화면과 달라 AI Native 의 sticky/2-열
+   레이아웃을 강제하지 않는다 — 5개 세로 블록(inline 아이콘)으로 정적 프리뷰. */
+@container (max-width:900px){
+  .builder-public-preview .ai-native{display:block;}
+  .builder-public-preview .ai-native-visual{display:none;}
+  .builder-public-preview .ai-native-steps::before{display:none;}
+  .builder-public-preview .ai-native-step{grid-template-columns:28px 1fr;min-height:0;padding-bottom:24px;}
+  .builder-public-preview .ai-native-step-glyph{display:flex;}
+  .builder-public-preview .ai-native-step + .ai-native-step::before{display:block;}
+  .builder-public-preview .ai-native-step-name{font-size:15px;}
 }
 /* 히어로 이미지 슬롯 편집 어피던스 — 빌더 캔버스에서만 보인다(발행 화면 오염 방지). */
 .builder-hero-media-chip{display:none;}
@@ -199,170 +211,119 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* 수업 상품 카드 스타일은 #244에서 lesson_product_showcase.css 로 이관됐다.
    .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
 
-/* ══════════════ Education Storefront: Featured / 시즌 프로그램 (sec-featured) ══════════════
-   Shopify Featured의 hierarchy를 교육 서비스로 옮긴다: 강한 eyebrow → 큰 제목 → 짧은 설명
-   → 항목 칩 → 단일 CTA. 색상·문구는 Build It 토큰만 쓴다(Shopify 브랜드 요소 복제 없음). */
+/* ══════════════ Education Storefront: Featured / 2학기 영어 내신 (sec-featured) ══════════════
+   Shopify Featured hierarchy: eyebrow → 큰 제목 → 짧은 설명 → 학교 칩 → 학교별 Digital Twin 패널 → 단일 CTA.
+   학교 칩 선택 시 아래 패널이 그 학교의 실제 /api/analyzes 데이터로 바뀐다(academy_public.js wireFeaturedSchoolTwin).
+   공감성장영어 lesson highlight 를 여기 재사용하지 않는다 — 학교별 데이터는 /analyzes 가 SSoT. */
 .section-wrap.featured-wrap{background:linear-gradient(180deg,var(--gold-soft) 0%,#fff 78%);padding:64px 20px;}
-.featured-inner{max-width:920px;margin:0 auto;text-align:center;}
-.featured-head{max-width:720px;margin:0 auto;}
+.featured-inner{max-width:760px;margin:0 auto;text-align:center;}
+.featured-head{max-width:640px;margin:0 auto;}
 .featured-eyebrow{justify-content:center;color:var(--ultramarine);}
 .featured-eyebrow .stroke{background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
-.featured-desc{margin:16px auto 0;max-width:600px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
-/* V2-11 corrective — Featured Stage = 선택 학교의 실제 내신 정보 패널(추상 종이 SVG 제거).
-   프레임 라벨(featuredTitle 첫 줄) + 큰 학교명 + 대표 내신 프로그램의 핵심 특징(실데이터) +
-   "AI로 준비하는 과정" 앵커. 학교별로 분리된 데이터는 없어 통합 프로그램 하나를 보여준다.
-   academy_public.js wireFeaturedSelector 가 선택 시 학교명을 갈아끼운다. */
-.featured-stage{margin:28px auto 0;max-width:440px;width:100%;padding:22px 22px 20px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;}
-.featured-stage-frame{color:var(--ink-faint);font-size:11.5px;font-weight:800;letter-spacing:.04em;word-break:keep-all;}
-.featured-stage-school{color:var(--ink);font-size:clamp(20px,4.6vw,26px);font-weight:900;letter-spacing:-.02em;line-height:1.25;word-break:keep-all;}
-.featured-stage-approach{margin:4px 0 2px;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.62;word-break:keep-all;}
-.featured-stage-more{margin-top:6px;display:inline-flex;align-items:center;gap:4px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
-.featured-stage-more::after{content:'↓';}
-.featured-stage-more:hover{text-decoration:underline;}
-.featured-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px;}
-.featured-item{display:inline-flex;align-items:center;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);font-family:inherit;cursor:pointer;transition:background .16s var(--ease),border-color .16s var(--ease);}
-.featured-item-label{color:var(--ink);font-size:14px;font-weight:800;letter-spacing:-.01em;transition:color .16s var(--ease);}
-.featured-item:hover{border-color:var(--ultramarine);}
-.featured-item:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
-.featured-item[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);}
-.featured-item[aria-pressed="true"] .featured-item-label{color:#fff;}
-.featured-selected{margin:16px auto 0;color:var(--ink-soft);font-size:13px;font-weight:700;letter-spacing:-.01em;}
-.featured-selected strong{color:var(--ultramarine);font-weight:900;}
-.featured-cta{margin-top:28px;}
-.featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background .18s var(--ease),transform .18s var(--ease);}
-.featured-cta-btn:hover{background:var(--accent);transform:translateY(-2px);}
+.featured-desc{margin:16px auto 0;max-width:560px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
+
+.featured-schools{margin-top:26px;}
+.featured-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;}
+.featured-chip{display:inline-flex;align-items:center;padding:9px 17px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);color:var(--ink);font-family:inherit;font-size:14px;font-weight:800;letter-spacing:-.01em;cursor:pointer;transition:border-color var(--hover-duration) var(--hover-ease),background var(--hover-duration) var(--hover-ease),color var(--hover-duration) var(--hover-ease);}
+.featured-chip:hover{border-color:var(--ultramarine);}
+.featured-chip:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+.featured-chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+.featured-chip-label:empty::before{content:'학교';color:var(--ink-faint);}
+
+.featured-twin{margin:18px auto 0;max-width:440px;width:100%;min-height:118px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:left;}
+.featured-twin.is-loading{opacity:.5;}
+.featured-twin-loading,.featured-twin-empty{margin:0;color:var(--ink-soft);font-size:13.5px;font-weight:600;text-align:center;line-height:1.6;word-break:keep-all;}
+.featured-twin-empty code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
+.featured-twin-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);}
+.featured-twin-school{color:var(--ink);font-size:16px;font-weight:900;letter-spacing:-.02em;}
+.featured-twin-count{color:var(--ultramarine);font-size:11.5px;font-weight:800;letter-spacing:.02em;}
+.featured-twin-list{list-style:none;margin:10px 0 0;padding:0;}
+.featured-twin-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+.featured-twin-row:last-child{border-bottom:0;}
+.featured-twin-exam{color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
+.featured-twin-link{flex:none;color:var(--ultramarine);font-size:12px;font-weight:800;text-decoration:none;}
+.featured-twin-link:hover{text-decoration:underline;}
+.featured-twin-more{display:inline-block;margin-top:12px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
+.featured-twin-more:hover{text-decoration:underline;}
+.featured-twin--builder{text-align:center;}
+
+.featured-cta{margin-top:26px;}
+.featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background var(--hover-duration) var(--hover-ease),transform var(--hover-duration) var(--hover-ease);}
+.featured-cta-btn:hover{background:var(--accent);transform:translateY(var(--hover-lift));}
 .builder-public-preview [data-builder-draft="featuredTitle"]:empty::before,
 .builder-public-preview [data-builder-draft="featuredDescription"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
-.builder-public-preview .featured-item-label:empty::before{content:'항목';color:var(--ink-faint);}
 
-/* ══════════════ Education Storefront: AI Native 교육 과정 (sec-digitaltwin) ══════════════
-   "경험 있는 교육자 + AI"를 단계 흐름으로 보여준다. 개발 용어 없이 교육자가 쓴 문장만 노출. */
-.section-wrap.ai-process-wrap{background:var(--bg-soft);padding:60px 20px;}
-.ai-process-inner{max-width:960px;margin:0 auto;}
-.ai-process-head{text-align:center;}
-.ai-process-eyebrow{justify-content:center;color:var(--ultramarine);}
-.ai-process-title{margin:0;}
-.ai-process-desc{margin:14px auto 0;max-width:620px;color:var(--ink-soft);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
+/* ══════════════ Education Storefront: AI Native (sec-digitaltwin) ══════════════
+   페이지에서 유일하게 허용되는 cinematic 섹션. 데스크톱은 CSS position:sticky 로 Visual Stage 를
+   고정하고 사용자가 5개 설명을 자기 속도로 읽으며 내려간다(academy_public.js wireAiNative 가 IO 로
+   활성 단계를 추적 → Visual 만 바뀜). 모바일은 sticky 없이 5개 세로 블록. GSAP/pin/scrub/타이머 없음. */
+.section-wrap.ai-native-wrap{background:var(--bg-soft);padding:60px 20px;}
+.ai-native-inner{max-width:1000px;margin:0 auto;}
+.ai-native-head{text-align:center;max-width:640px;margin:0 auto;}
+.ai-native-eyebrow{justify-content:center;color:var(--ultramarine);}
+.ai-native-title{margin:0;}
+.ai-native-desc{margin:14px auto 0;max-width:620px;color:var(--ink-soft);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
+.ai-native{margin-top:36px;}
 
-/* V2-11 corrective — AI Native Visual Stage. 추상 도형 대신 "지금 이 단계가 무엇인지"를
-   아이콘 + 단계 이름으로. 데스크톱·모바일 모두 보인다(모바일 축소, display:none 아님).
-   프레임 전환: 모바일 = [data-ai-stage][data-active-frame=N] (processProgress), 데스크톱 pin =
-   academy_story.css 의 #sec-digitaltwin[data-story-scene=N]. 진행 전/JS 없음 = 첫 프레임. */
-.ai-process-stage{margin:30px auto 0;max-width:420px;width:100%;padding:0;border:0;}
-.ai-stage-window{position:relative;height:150px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);overflow:hidden;}
-.ai-stage-frames{list-style:none;margin:0;padding:0;height:100%;}
-.ai-stage-frame{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px;opacity:0;transform:translateY(8px);transition:opacity .42s var(--ease),transform .42s var(--ease);}
-.ai-process-stage:not([data-active-frame]) .ai-stage-frame[data-frame="0"]{opacity:1;transform:none;}
-.ai-process-stage[data-active-frame="0"] .ai-stage-frame[data-frame="0"],
-.ai-process-stage[data-active-frame="1"] .ai-stage-frame[data-frame="1"],
-.ai-process-stage[data-active-frame="2"] .ai-stage-frame[data-frame="2"],
-.ai-process-stage[data-active-frame="3"] .ai-stage-frame[data-frame="3"],
-.ai-process-stage[data-active-frame="4"] .ai-stage-frame[data-frame="4"]{opacity:1;transform:none;}
-.ai-stage-glyph{display:flex;}
-.ai-stage-glyph svg{width:56px;height:56px;color:var(--ultramarine);}
-.ais-doc{fill:#fff;stroke:currentColor;stroke-width:2.2;}
-.ais-line{stroke:var(--ink-faint);stroke-width:2.4;stroke-linecap:round;}
-.ais-hl{fill:var(--gold);}
-.ais-scan{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;}
-.ais-node{fill:none;stroke:currentColor;stroke-width:2.4;}
-.ais-merge{fill:none;stroke:var(--ink-faint);stroke-width:2;}
-.ais-core{fill:var(--accent);}
-.ais-q{fill:none;stroke:currentColor;stroke-width:2.4;}
-.ais-badge{fill:var(--accent);}
-.ais-check{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
-.ai-stage-frame-name{color:var(--ink);font-size:14px;font-weight:900;letter-spacing:-.02em;text-align:center;word-break:keep-all;display:flex;align-items:center;gap:8px;}
-.ai-stage-frame-name b{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:var(--accent-soft);color:var(--ultramarine);font-size:11px;font-weight:900;}
-.ai-stage-pips{list-style:none;margin:12px 0 0;padding:0;display:flex;justify-content:center;gap:7px;}
-.ai-stage-pips li{width:7px;height:7px;border-radius:999px;background:var(--line);transition:background .3s var(--ease),transform .3s var(--ease);}
-.ai-process-stage:not([data-active-frame]) .ai-stage-pips li:first-child,
-.ai-process-stage[data-active-frame="0"] .ai-stage-pips li:nth-child(1),
-.ai-process-stage[data-active-frame="1"] .ai-stage-pips li:nth-child(-n+2),
-.ai-process-stage[data-active-frame="2"] .ai-stage-pips li:nth-child(-n+3),
-.ai-process-stage[data-active-frame="3"] .ai-stage-pips li:nth-child(-n+4),
-.ai-process-stage[data-active-frame="4"] .ai-stage-pips li:nth-child(-n+5){background:var(--ultramarine);}
-@media (prefers-reduced-motion:reduce){
-  .ai-stage-frame{transition:none;}
+.aig-doc{fill:#fff;stroke:currentColor;stroke-width:2.2;}
+.aig-line{stroke:var(--ink-faint);stroke-width:2.4;stroke-linecap:round;}
+.aig-hl{fill:var(--gold);}
+.aig-scan{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;}
+.aig-node{fill:none;stroke:currentColor;stroke-width:2.4;}
+.aig-merge{fill:none;stroke:var(--ink-faint);stroke-width:2;}
+.aig-core{fill:var(--accent);}
+.aig-q{fill:none;stroke:currentColor;stroke-width:2.4;}
+.aig-badge{fill:var(--accent);}
+.aig-check{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+
+/* 모바일 기본 — 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). */
+.ai-native-visual{display:none;}
+.ai-native-steps{list-style:none;margin:0;padding:0;}
+.ai-native-step{position:relative;display:grid;grid-template-columns:28px 1fr;column-gap:16px;padding-bottom:24px;}
+.ai-native-step:last-child{padding-bottom:0;}
+.ai-native-step-num{grid-row:1;width:28px;height:28px;border-radius:999px;background:var(--accent-soft);color:var(--ultramarine);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
+.ai-native-step + .ai-native-step::before{content:"";position:absolute;left:13px;top:-24px;height:24px;width:2px;background:var(--line);}
+.ai-native-step-c{grid-column:2;display:flex;gap:13px;align-items:flex-start;}
+.ai-native-step-glyph{flex:none;width:40px;height:40px;color:var(--ultramarine);}
+.ai-native-step-glyph svg{width:100%;height:100%;display:block;}
+.ai-native-step-text{display:flex;flex-direction:column;gap:4px;padding-top:1px;}
+.ai-native-step-name{color:var(--ink);font-size:15px;font-weight:900;letter-spacing:-.02em;line-height:1.3;word-break:keep-all;}
+.ai-native-step-desc{color:var(--ink-soft);font-size:13px;font-weight:500;line-height:1.6;word-break:keep-all;}
+.ai-native-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:600;line-height:1.7;word-break:keep-all;}
+
+/* 데스크톱 — 왼쪽 sticky Visual Stage + 오른쪽 스크롤 설명. */
+@media (min-width:900px){
+  .ai-native{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:56px;align-items:start;}
+  .ai-native-visual{display:block;position:sticky;top:100px;align-self:start;}
+  .ai-native-visual-frames{list-style:none;margin:0;padding:0;position:relative;height:300px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);}
+  .ai-native-visual-frame{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px;opacity:0;transform:translateY(10px);transition:opacity .4s var(--reveal-ease),transform .4s var(--reveal-ease);}
+  .ai-native-visual-frame svg{width:76px;height:76px;color:var(--ultramarine);display:block;}
+  .ai-native-visual-frame span{color:var(--ink);font-size:16px;font-weight:900;letter-spacing:-.02em;text-align:center;}
+  .ai-native-visual[data-active="0"] .ai-native-visual-frame[data-frame="0"],
+  .ai-native-visual[data-active="1"] .ai-native-visual-frame[data-frame="1"],
+  .ai-native-visual[data-active="2"] .ai-native-visual-frame[data-frame="2"],
+  .ai-native-visual[data-active="3"] .ai-native-visual-frame[data-frame="3"],
+  .ai-native-visual[data-active="4"] .ai-native-visual-frame[data-frame="4"],
+  .ai-native-visual:not([data-active]) .ai-native-visual-frame[data-frame="0"]{opacity:1;transform:none;}
+  .ai-native-steps{position:relative;}
+  .ai-native-steps::before{content:"";position:absolute;left:15px;top:16px;height:calc(100% - 30vh);width:2px;background:var(--line);}
+  .ai-native-step-glyph{display:none;}
+  .ai-native-step{grid-template-columns:32px 1fr;min-height:34vh;align-content:start;padding-bottom:0;}
+  .ai-native-step:last-child{min-height:auto;}
+  .ai-native-step + .ai-native-step::before{display:none;}
+  .ai-native-step-num{width:32px;height:32px;font-size:13px;}
+  .ai-native-step-text{gap:6px;}
+  .ai-native-step-name{font-size:19px;}
+  .ai-native-step-desc{font-size:14.5px;line-height:1.7;}
 }
-
-.ai-process-steps{list-style:none;margin:26px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
-.ai-process-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;flex:1 1 150px;max-width:190px;padding:20px 14px;border-radius:var(--radius-sm);background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);text-align:center;}
-.ai-process-step + .ai-process-step::before{content:'→';position:absolute;left:-11px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:15px;font-weight:900;}
-.ai-process-step-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,var(--ultramarine),var(--accent));color:#fff;font-size:12px;font-weight:900;}
-.ai-process-step-label{color:var(--ink);font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.4;word-break:keep-all;}
-.ai-process-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:700;line-height:1.7;word-break:keep-all;}
-.builder-public-preview [data-builder-draft="aiProcessTitle"]:empty::before,
-.builder-public-preview [data-builder-draft="aiProcessDescription"]:empty::before,
-.builder-public-preview [data-builder-draft="aiProcessNote"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
-.builder-public-preview .ai-process-step-label:empty::before{content:'단계';color:var(--ink-faint);}
-
-/* ══════════════ Storefront Motion (academy_storefront_motion.js) ══════════════
-   VERTICAL STORYTELLING — 섹션이 스크롤 진입하면 "의미가 진행되는" 모션을 갖는다.
-   js-storefront-motion 이 붙어야만 초기 opacity:0/transform 이 걸린다(모듈 미로드·JS 장애 시
-   콘텐츠는 그대로 보인다). is-in/is-linked/is-active/is-done/is-complete 는 primitive가 붙인다.
-   빌더 캔버스에는 js-storefront-motion 이 없어 전부 최종 상태로 정적 표시된다. */
-html.js-storefront-motion .f2r-reveal{transition:opacity .5s var(--ease),transform .5s var(--ease);}
-html.js-storefront-motion .f2r-reveal:not(.is-in){opacity:0;transform:translateY(16px);}
-html.js-storefront-motion .f2r-reveal.is-in{opacity:1;transform:none;}
-/* 정보 위계 — 요소 종류별 등장 character(제목은 더 무겁게, 칩은 팝, CTA는 한 박자 뒤).
-   초기 transform은 :not(.is-in)로만 걸어 is-in 이 붙으면 .f2r-reveal.is-in{transform:none}이 이긴다. */
-html.js-storefront-motion .featured-title.f2r-reveal{transition-duration:.62s;}
-html.js-storefront-motion .featured-title.f2r-reveal:not(.is-in){transform:translateY(24px);}
-html.js-storefront-motion .featured-item.f2r-reveal{transition-duration:.42s;}
-html.js-storefront-motion .featured-item.f2r-reveal:not(.is-in){transform:translateY(10px) scale(.94);}
-html.js-storefront-motion .featured-cta.f2r-reveal{transition-delay:60ms;}
-html.js-storefront-motion .featured-cta.f2r-reveal:not(.is-in){transform:translateY(12px);}
-
-/* AI Native — 커넥터 활성 → 다음 카드 활성 순으로 진행. 지나간 단계는 is-done(평온). */
-html.js-storefront-motion .ai-process-step{opacity:0;transform:translateY(14px);transition:opacity .45s var(--ease),transform .45s var(--ease),border-color .35s,box-shadow .35s;}
-html.js-storefront-motion .ai-process-step.is-active,
-html.js-storefront-motion .ai-process-step.is-done{opacity:1;transform:none;}
-html.js-storefront-motion .ai-process-step.is-active{border-color:rgba(43,58,158,.4);box-shadow:0 16px 36px rgba(10,12,20,.1);}
-html.js-storefront-motion .ai-process-step.is-done{border-color:var(--line);box-shadow:var(--shadow-sm);}
-html.js-storefront-motion .ai-process-step-num{background:rgba(43,58,158,.14);color:var(--ultramarine);transition:background .4s,transform .4s,color .4s;}
-html.js-storefront-motion .ai-process-step.is-active .ai-process-step-num,
-html.js-storefront-motion .ai-process-step.is-done .ai-process-step-num{background:linear-gradient(135deg,var(--ultramarine),var(--accent));color:#fff;}
-html.js-storefront-motion .ai-process-step.is-active .ai-process-step-num{transform:scale(1.12);}
-html.js-storefront-motion .ai-process-step-label{transition:color .4s;}
-html.js-storefront-motion .ai-process-step:not(.is-active):not(.is-done) .ai-process-step-label{color:var(--ink-faint);}
-html.js-storefront-motion .ai-process-step + .ai-process-step::before{color:var(--ink-faint);opacity:.35;transition:color .32s,opacity .32s;}
-html.js-storefront-motion .ai-process-step.is-linked::before,
-html.js-storefront-motion .ai-process-step.is-active::before,
-html.js-storefront-motion .ai-process-step.is-done::before{color:var(--accent);opacity:1;}
-html.js-storefront-motion .ai-process-note{opacity:0;transform:translateY(12px);transition:opacity .5s var(--ease),transform .5s var(--ease);}
-html.js-storefront-motion .ai-process-steps.is-complete ~ .ai-process-note{opacity:1;transform:none;}
-
-/* reduced-motion: 모든 콘텐츠 즉시 최종 상태, 커넥터 최종 상태, transform/transition 없음.
-   콘텐츠 이해가 모션에 의존하지 않는다. */
 @media (prefers-reduced-motion:reduce){
-  html.js-storefront-motion .f2r-reveal,
-  html.js-storefront-motion .featured-title.f2r-reveal,
-  html.js-storefront-motion .featured-item.f2r-reveal,
-  html.js-storefront-motion .featured-cta.f2r-reveal,
-  html.js-storefront-motion .ai-process-step,
-  html.js-storefront-motion .ai-process-note{opacity:1!important;transform:none!important;transition:none!important;}
-  html.js-storefront-motion .ai-process-step + .ai-process-step::before{color:var(--accent)!important;opacity:1!important;transition:none!important;}
-  html.js-storefront-motion .ai-process-step-num{background:linear-gradient(135deg,var(--ultramarine),var(--accent))!important;color:#fff!important;transform:none!important;}
-  html.js-storefront-motion .ai-process-step-label{color:var(--ink)!important;}
+  .ai-native-visual-frame{transition:none;}
 }
 
 @media(max-width:640px){
   .section-wrap.featured-wrap{padding:48px 18px;}
-  .section-wrap.ai-process-wrap{padding:44px 18px;}
-  /* Visual Stage 는 모바일에서도 유지(display:none 아님) — 축소만. */
-  .ai-process-stage{max-width:none;margin-top:24px;}
-  .ai-stage-window{height:118px;}
-  .ai-stage-glyph svg{width:44px;height:44px;}
-  .ai-stage-frame-name{font-size:13px;}
-  .ai-process-steps{flex-direction:column;align-items:stretch;gap:10px;}
-  .ai-process-step{flex-basis:auto;max-width:none;flex-direction:row;justify-content:center;gap:12px;padding:14px 16px;}
-  .ai-process-step + .ai-process-step::before{content:'↓';left:50%;top:-11px;transform:translateX(-50%);}
-}
-@container(max-width:640px){
-  .builder-public-preview .section-wrap.featured-wrap{padding:48px 18px;}
-  .builder-public-preview .ai-process-steps{flex-direction:column;align-items:stretch;gap:10px;}
-  .builder-public-preview .ai-process-step{flex-basis:auto;max-width:none;flex-direction:row;justify-content:center;gap:12px;padding:14px 16px;}
-  .builder-public-preview .ai-process-step + .ai-process-step::before{content:'↓';left:50%;top:-11px;transform:translateX(-50%);}
+  .section-wrap.ai-native-wrap{padding:44px 18px;}
 }
 
 /* ══════════════ 대표 수업 / 시간표 (Build It 시안) ══════════════ */
@@ -404,16 +365,14 @@ html.js-storefront-motion .ai-process-steps.is-complete ~ .ai-process-note{opaci
 .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
 .btn-secondary{background:#eef2ff;color:#0C238A;border:1px solid #dde6ff;}
 
-/* ══════════════ 학원 소개 → 교육 노트(notes snap) ══════════════ */
-/* BuildIt_3 시안의 .notes.snap을 기존 sec-intro 계약 위에 이식한다. API/섹션 ID는
-   그대로 sec-intro를 쓰고, 화면만 교육 노트 캐러셀로 보이게 한다. */
+/* ══════════════ Educator Story (sec-intro) ══════════════ */
+/* editorial typography + reveal-once. 강제 viewport 높이 없음(콘텐츠 흐름). */
 .intro-wrap.notes{
-  min-height:100svh;
   display:flex;
   flex-direction:column;
   justify-content:center;
   overflow:hidden;
-  padding:100px 0;
+  padding:84px 0;
   background:var(--bg);
   color:var(--ink);
   text-align:center;

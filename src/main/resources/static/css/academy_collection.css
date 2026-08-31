@@ -113,10 +113,12 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   .f2r-collection--videos { --f2r-card-w: 210px; }
   .f2r-collection--lectures { --f2r-card-w: 320px; }
 }
-/* V2-11 corrective — Programs 는 데스크톱에서 4장을 한눈에(그리드). 4개 존재를 즉시 인지하게.
-   가로 스크롤/화살표/카운터 불필요 → 숨김. runAuto 는 스크롤이 없어 조용히 no-op. */
+/* 데스크톱: 카드가 다 들어가면 grid(가로 스크롤·화살표·카운터 불필요 → 숨김).
+   Shopify 레퍼런스 확정 — 홈의 collection 은 carousel 이 아니라 grid. 자동 이동 없음.
+   Programs = 4-카드 grid(4개 존재 즉시 인지), Actual Class = 영상 카드가 다 들어가는 만큼 grid. */
 @media (min-width: 900px) {
-  .f2r-collection--programs .f2r-collection-viewport { overflow: visible; }
+  .f2r-collection--programs .f2r-collection-viewport,
+  .f2r-collection--videos .f2r-collection-viewport { overflow: visible; }
   .f2r-collection--programs .f2r-collection-track {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -124,10 +126,27 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
     overflow: visible;
     scroll-snap-type: none;
     padding-bottom: 4px;
+    align-items: stretch;
   }
-  .f2r-collection--programs .f2r-collection-card { flex: none; max-width: none; }
-  .f2r-collection--programs .f2r-collection-head { display: none; }
+  .f2r-collection--videos .f2r-collection-track {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding-bottom: 4px;
+    justify-items: center;
+  }
+  .f2r-collection--programs .f2r-collection-card,
+  .f2r-collection--videos .f2r-collection-card { flex: none; max-width: none; }
+  .f2r-collection--programs .f2r-collection-head,
+  .f2r-collection--videos .f2r-collection-head { display: none; }
+
+  /* Programs 카드 정렬 — 동일 높이(grid) + 통일된 미디어 비율 + CTA bottom align(margin-top:auto). */
+  .f2r-collection--programs .f2r-program-card-media { aspect-ratio: 16 / 10; }
+  .f2r-collection--programs .f2r-program-card-name { min-height: 2.6em; }
 }
+.f2r-collection--programs .f2r-program-card-media { aspect-ratio: 16 / 10; }
 
 /* 모바일: 화살표 숨김. 터치 스와이프 + scroll-snap + 다음 카드 peek. JS 제스처 라이브러리 없음. */
 @media (max-width: 760px) {
@@ -287,6 +306,30 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
 }
 .f2r-program-card-cta:hover { background: var(--accent); transform: translateY(-1px); }
 .f2r-collection[data-collection-static] .f2r-program-card-cta { cursor: default; }
+
+/* Hover 생명력(데스크톱) — Shopify 레퍼런스: 스크롤은 1회 reveal, hover 가 요소를 살린다.
+   포인터가 정밀한(=데스크톱) 환경에서만. transform/box-shadow 만, 180ms. */
+@media (hover: hover) and (pointer: fine) {
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-program-card,
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-phone-card {
+    transition: transform var(--hover-duration, 180ms) var(--hover-ease, ease),
+                box-shadow var(--hover-duration, 180ms) var(--hover-ease, ease);
+  }
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-program-card:hover,
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-phone-card:hover {
+    transform: translateY(var(--hover-lift, -6px));
+    box-shadow: 0 22px 44px rgba(10, 12, 20, .1);
+  }
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-program-card:hover .f2r-program-card-highlight {
+    border-color: var(--accent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js-collection .f2r-program-card,
+  html.js-collection .f2r-phone-card { transition: none; }
+  html.js-collection .f2r-program-card:hover,
+  html.js-collection .f2r-phone-card:hover { transform: none; }
+}
 
 /* ── Mini Lecture Card (sec-minilectures) — V2-9 ────────────────────────
    "교육자가 직접 설명하는 짧은 학습 콘텐츠". Actual Class(폰 덱)와 시각적으로 구분된다:
