@@ -50,6 +50,30 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(within(states).getByText('JSON 파일만 업로드할 수 있습니다.')).toBeInTheDocument()
   })
 
+  it('해설이 없는 정상 JSON 문항도 READY로 표시한다',async()=>{
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.includes('/csat/json-imports/preview'))return new Response(JSON.stringify({files:[{
+        source_id:null,source_hash:'c'.repeat(64),parser:'csat-json-v1',raw_text:'{}',
+        metadata:{source_kind:'half'},source_filename:'no-explanation.json',original_stored:false,owner_scope:'shared',
+        requires_review:false,status:'READY',failures:[],questions:[{id:0,source_id:0,exam_kind:'half',source_kind:'half',
+          source_filename:'no-explanation.json',source_question_no:1,question_no:23,csat_type_id:'topic',csat_type_name:'주제',
+          prompt:'다음 글의 주제로 가장 적절한 것은?',passage:'Passage',choices:['① one','② two'],answer:'①',solution:'',
+          footnote:'',group_label:'',source_reference:'',type_mismatch:false,mismatch_reason:'',created_at:'',
+          classification_status:'classified',problem:{instruction:'다음 글의 주제로 가장 적절한 것은?',passage:'Passage',choices:['① one','② two']},import_status:'READY'}]
+      }],file_count:1,question_count:1,review_count:0,failed_count:0,duplicate_count:0}),{status:201,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<CsatEnglishWorkspace/>)
+    fireEvent.change(screen.getByLabelText('수능 문제 JSON 업로드'),{target:{files:[new File(['{}'],'no-explanation.json',{type:'application/json'})]}})
+    const preview=await screen.findByRole('heading',{name:/문항 Preview/})
+    const table=within(preview.closest('section') as HTMLElement)
+    expect(table.getAllByText('없음').length).toBeGreaterThan(0)
+    expect(table.getByText('(선택)')).toBeInTheDocument()
+    expect(table.getByText('READY')).toBeInTheDocument()
+    expect(table.getByRole('button',{name:'⑤ READY 문항 저장'})).toBeEnabled()
+  })
+
   it('WRONG 탭은 Question ID가 연결된 기존 오답만 Assessment 대상으로 선택한다', async()=>{
     vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
       const url=String(input)
