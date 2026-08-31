@@ -128,23 +128,62 @@ test('academy_public.css: reveal / hover 토큰이 :root 에 있다(빌더 캔�
 
 /* ── 삭제된 레거시 모션 ──────────────────────────────────────────────────── */
 
-test('레거시 모션 자산·API 는 완전히 제거됐다', () => {
+test('Phase 4 에서 삭제한 레거시 모션 자산·API 는 여전히 없다(Phase 5 는 별도 academy_cinematic.js)', () => {
   for (const rel of [
     '../../main/resources/static/js/academy_storefront_motion.js',
     '../../main/resources/static/js/academy_story.js',
     '../../main/resources/static/css/academy_scene.css',
     '../../main/resources/static/css/academy_story.css'
   ]) {
-    assert.equal(fs.existsSync(path.resolve(__dirname, rel)), false, `${rel} 는 삭제됐어야 한다`);
+    assert.equal(fs.existsSync(path.resolve(__dirname, rel)), false, `${rel} 는 삭제된 상태여야 한다`);
   }
-  assert.doesNotMatch(PUBLIC_JS, /F2RStorefrontMotion|F2RStorefrontStory|wireStory|wireSceneFlow|wireStorefrontMotion|applyReveal|gsap|ScrollTrigger|processProgress|sceneFlow/);
-  assert.doesNotMatch(PUBLIC_HTML, /gsap|ScrollTrigger|academy_storefront_motion|academy_story|academy_scene/);
+  // 죽은 모션 API 는 되살아나지 않는다.
+  assert.doesNotMatch(PUBLIC_JS, /F2RStorefrontMotion|F2RStorefrontStory|wireStory|wireSceneFlow|wireStorefrontMotion|applyReveal|processProgress\b|sceneFlow/);
+  assert.doesNotMatch(PUBLIC_HTML, /academy_storefront_motion|academy_story\.(js|css)|academy_scene\.css/);
   assert.doesNotMatch(SECTIONS_SRC, /data-fade|f2r-reveal|ai-process-step|ai-process-stage|data-collection-auto/);
+  // Phase 5: GSAP/ScrollTrigger 는 academy_cinematic.js 한 곳만 소유한다. academy_public.js 는
+  // window.F2RCinematic 만 부른다(GSAP 리터럴 없음).
+  assert.doesNotMatch(PUBLIC_JS, /\bgsap\b\.|new ScrollTrigger|ScrollTrigger\.create/);
+  assert.match(PUBLIC_JS, /window\.F2RCinematic/);
+  assert.ok(fs.existsSync(path.resolve(__dirname, '../../main/resources/static/js/academy_cinematic.js')));
 });
 
-/* ── AI Native: 유일한 cinematic 섹션 (sticky 데스크톱 / 세로 블록 모바일) ── */
+/* ── Phase 5 cinematic: School Digital Twin Showcase + AI Native Panorama ── */
 
-test('AI Native: sticky Visual Stage + 5 세로 블록. GSAP/pin/scrub/타이머 없음', () => {
+const CINEMATIC_JS = read('../../main/resources/static/js/academy_cinematic.js');
+const CINEMATIC_CSS = read('../../main/resources/static/css/academy_cinematic.css');
+
+test('academy_cinematic.js: GSAP+ScrollTrigger 를 두 섹션에만 쓰고, 미로드/reduced/모바일이면 no-op', () => {
+  // 책임 범위 = sec-featured + sec-digitaltwin 뿐
+  assert.match(CINEMATIC_JS, /#sec-featured/);
+  assert.match(CINEMATIC_JS, /#sec-digitaltwin/);
+  // scrub (pin 아님) — USER SCROLL = STORY TIMELINE
+  assert.match(CINEMATIC_JS, /scrub:/);
+  assert.doesNotMatch(CINEMATIC_JS, /pin:\s*true/, '전체 페이지 pin 없음(레이아웃은 CSS sticky)');
+  // 폴백 가드
+  assert.match(CINEMATIC_JS, /prefers-reduced-motion: reduce/);
+  assert.match(CINEMATIC_JS, /viewportWidth\(\) < 900/);
+  assert.match(CINEMATIC_JS, /if \(!gsap\(\) \|\| !ST\(\)\) return false/);
+  // CSR 재렌더/리사이즈 안전 — 이전 trigger/timeline kill
+  assert.match(CINEMATIC_JS, /function teardown\(\)/);
+  assert.match(CINEMATIC_JS, /\.kill\(\)/);
+  // 실제로 trigger 를 만들었을 때만 게이트 클래스
+  assert.match(CINEMATIC_JS, /js-cinematic/);
+  assert.doesNotMatch(CINEMATIC_JS, /setInterval/, '자동 진행 타이머 없음');
+});
+
+test('academy_cinematic.css: js-cinematic 게이트 + 정적 폴백(가로 스와이프 + scroll-snap)', () => {
+  assert.match(CINEMATIC_CSS, /html\.js-cinematic #sec-featured\{min-height:calc/);
+  assert.match(CINEMATIC_CSS, /html\.js-cinematic #sec-featured \.featured-inner\{[\s\S]*position:sticky/);
+  // 폴백/모바일: track 은 네이티브 가로 스와이프
+  assert.match(CINEMATIC_CSS, /\.dt-track\{[\s\S]*overflow-x:auto/);
+  assert.match(CINEMATIC_CSS, /\.dt-track\{[\s\S]*scroll-snap-type:x/);
+  assert.match(CINEMATIC_CSS, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*\.dt-track\{scroll-behavior:auto/);
+});
+
+/* ── AI Native: 5-Scene Panorama (데스크톱 sticky stage / 세로 블록 모바일) ── */
+
+test('AI Native: 5개 목적별 scene + 5개 세로 블록. pin/타이머 없음(scrub 는 cinematic 모듈)', () => {
   const map = Object.fromEntries(bothRenderers());
   const academy = academyFixture({
     pageSettings: {
@@ -157,18 +196,24 @@ test('AI Native: sticky Visual Stage + 5 세로 블록. GSAP/pin/scrub/타이머
   });
   primeRenderer(map.public, academy);
   const html = map.public.renderAiProcess(academy);
+  // Visual Stage — 5개 목적별 scene(자료 수집 → 분석 → 결합 → 문항 생성 → 조립)
   assert.match(html, /<figure class="ai-native-visual" data-ai-visual data-active="0"/);
-  assert.match(html, /<ol class="ai-native-visual-frames">/);
-  assert.equal((html.match(/class="ai-native-visual-frame" data-frame="/g) || []).length, 5);
+  assert.match(html, /<div class="ai-stage" data-ai-stage>/);
+  assert.equal((html.match(/class="ai-scene" data-ai-scene="/g) || []).length, 5);
+  assert.match(html, /data-ai-scene="0"[\s\S]*SCHOOL DATA/);
+  assert.match(html, /data-ai-scene="2"[\s\S]*BUILD IT/);
+  assert.match(html, /data-ai-scene="4"[\s\S]*class="ai-final"/);
+  // 텍스트 블록 — 번호 리스트는 유지(모바일 세로 스토리)
   assert.equal((html.match(/class="ai-native-step" data-ai-step="/g) || []).length, 5);
   assert.match(html, /class="ai-native-step-desc">우리 학교 기출·프린트/);
-  assert.doesNotMatch(html, /data-active-frame|ai-stage-frame|processProgress|watchScene/);
+  assert.doesNotMatch(html, /ai-native-visual-frames|data-active-frame|processProgress|watchScene/);
 
   // desktop = CSS position:sticky (JS pin 아님)
   assert.match(PUBLIC_CSS, /@media \(min-width:900px\)\{[\s\S]*\.ai-native-visual\{display:block;position:sticky/);
-  // active 단계 트래커: IO 기반, 타이머/자동 sequence 없음
+  // GSAP 없을 때 폴백: IO 트래커. cinematic 활성이면 건너뛴다.
   assert.match(PUBLIC_JS, /function wireAiNative\(\)/);
   assert.match(PUBLIC_JS, /rootMargin: '-48% 0px -48% 0px'/);
+  assert.match(PUBLIC_JS, /classList\.contains\('js-cinematic'\)\) return/);
   assert.doesNotMatch(PUBLIC_JS.slice(PUBLIC_JS.indexOf('function wireAiNative')), /setTimeout|setInterval/);
 });
 

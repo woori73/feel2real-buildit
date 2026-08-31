@@ -221,12 +221,18 @@
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
   }
 
+  /** 비어있지 않은 학교 라벨만(순서 유지). Digital Twin Showcase 의 scene 목록. */
+  function featuredSchoolLabels(view) {
+    return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).filter(Boolean);
+  }
+
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
+    const schools = featuredSchoolLabels(view);
     return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-reveal>
         <div class="section-inner featured-inner">
           <div class="featured-head">
@@ -235,10 +241,35 @@
             ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
           ${ctx.featuredSchools(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''))}
-          ${ctx.featuredTwin(featuredFirst(view))}
+          ${ctx.featuredShowcase(schools)}
           <div class="featured-cta" data-reveal-item>${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
+  }
+
+  /**
+   * Digital Twin Showcase — 학교별 실제 출제자 Digital Twin(/api/analyzes)을 가로 track 의
+   * scene 으로 보여준다. 각 scene 은 번호 + 학교명 + "출제자 Digital Twin" + 실제 분석 목록으로
+   * 채워진다(academy_public.js wireFeaturedShowcase 가 fetch 로 body 를 채운다).
+   *
+   * 데스크톱: academy_cinematic.js 가 sec-featured 진입 시 sticky 로 잡고, 세로 스크롤 progress 에
+   *          맞춰 track 을 가로로 이동시킨다(GSAP ScrollTrigger scrub, pin 아님 — jump 없음).
+   *          GSAP 미로드·reduced-motion → 네이티브 가로 스와이프로 정적 폴백.
+   * 모바일:  항상 네이티브 scroll-snap 가로 스와이프 + 다음 카드 peek + 진행 카운터 + prev/next.
+   * 자동 진행 없음 — 사용자 스크롤/스와이프만.
+   */
+  function featuredShowcaseScenes(schools) {
+    return (schools || []).map((school, i) =>
+      `<li class="dt-scene" data-dt-scene="${i}" data-featured-school="${escapeAttr(school)}"${i === 0 ? ' data-active' : ''}>
+            <div class="dt-scene-card">
+              <span class="dt-scene-num" aria-hidden="true">${pad2(i + 1)}</span>
+              <p class="dt-scene-kicker">출제자 Digital Twin</p>
+              <h3 class="dt-scene-school">${escapeHtml(school)}</h3>
+              <div class="dt-scene-body" data-dt-body data-dt-school="${escapeAttr(school)}" aria-live="polite">
+                <p class="dt-scene-loading">${escapeHtml(school)} 출제 분석을 불러오는 중…</p>
+              </div>
+            </div>
+          </li>`).join('');
   }
 
   // ── sec-digitaltwin : AI Native Education Process ─────────────────────────
@@ -278,20 +309,68 @@
   ];
 
   /**
-   * AI Native 본문 — 페이지에서 유일하게 허용되는 cinematic 섹션.
-   *   데스크톱: 왼쪽 Visual Stage 를 CSS position:sticky 로 고정, 오른쪽 5개 설명을 읽으며 내려간다.
-   *            읽고 있는 단계에 따라 Visual 만 바뀐다(academy_public.js wireAiNative, IO 기반).
-   *   모바일:  sticky 없이 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄 설명), reveal-once.
-   * 자동 sequence·타이머·GSAP/pin/scrub 없음. 단계 이름은 builder 편집 가능, 설명은 위치별 고정.
+   * AI Native Panorama — 5-scene visual stage. 각 scene 은 "그 단계에서 실제로 무슨 일이
+   * 일어나는지"를 목적별 미니 비주얼로 보여준다(자료가 모인다 → 패턴이 만들어진다 →
+   * 두 지능이 결합된다 → 문제가 생성된다 → 시험지로 조립된다). 한 scene 의 마지막 오브젝트가
+   * 다음 scene 의 첫 입력이 되도록 연결한다(continuity). 무거운 문서 전체가 아니라 가벼운
+   * HTML/SVG representation 만 쓴다.
+   *
+   *   데스크톱: academy_cinematic.js 가 sec-digitaltwin 진입 시 stage 를 sticky 로 잡고
+   *            세로 스크롤 progress → GSAP timeline progress 로 scene 애니메이션을 구동한다
+   *            (scrub, pin 아님). GSAP 미로드·reduced-motion → [data-active] 셀렉터로 정적
+   *            scene 표시(academy_public.js wireAiNative IO 폴백).
+   *   모바일:  stage 숨김. 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄), reveal-once.
    */
+  const AI_SCENES = [
+    // 0 학교 자료 — 흩어진 자료가 중앙으로 모여 stack 된다.
+    '<div class="ai-scene" data-ai-scene="0"><span class="ai-scene-cap">SCHOOL DATA</span>'
+      + '<div class="ai-s0" data-ai-el="stack">'
+      + '<span class="ai-doc" data-ai-doc="0">시험지</span>'
+      + '<span class="ai-doc" data-ai-doc="1">학교 프린트</span>'
+      + '<span class="ai-doc" data-ai-doc="2">교과서</span>'
+      + '<span class="ai-doc" data-ai-doc="3">수업 자료</span>'
+      + '</div></div>',
+    // 1 출제자 Digital Twin — 모인 자료 위에 분석 레이어 → 패턴이 만들어진다.
+    '<div class="ai-scene" data-ai-scene="1"><span class="ai-scene-cap">EXAMINER PATTERN</span>'
+      + '<div class="ai-s1-doc" data-ai-el="doc"><span class="ai-scanline" data-ai-el="scan"></span></div>'
+      + '<ul class="ai-bars" data-ai-el="bars">'
+      + '<li style="--v:.55"><b>VOCAB</b><i></i></li>'
+      + '<li style="--v:.92"><b>GRAMMAR</b><i></i></li>'
+      + '<li style="--v:.7"><b>READING</b><i></i></li>'
+      + '<li style="--v:.4"><b>WRITING</b><i></i></li>'
+      + '<li style="--v:.8"><b>PATTERN</b><i></i></li>'
+      + '</ul>'
+      + '<div class="ai-twin-card" data-ai-el="twin"><span>EXAMINER</span><b>DIGITAL TWIN</b></div></div>',
+    // 2 수업 Insight — Digital Twin + 강사 Insight 두 스트림이 중앙에서 결합.
+    '<div class="ai-scene" data-ai-scene="2"><span class="ai-scene-cap">TWIN + INSIGHT</span>'
+      + '<div class="ai-stream ai-stream--a" data-ai-el="streamA">DIGITAL TWIN</div>'
+      + '<div class="ai-stream ai-stream--b" data-ai-el="streamB">TEACHER INSIGHT</div>'
+      + '<div class="ai-brain" data-ai-el="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
+      + '<ul class="ai-tokens" data-ai-el="tokens"><li>시험에 자주 나옴</li><li>자주 틀리는 유형</li><li>서술형 주의</li><li>이번 시험 핵심</li></ul></div>',
+    // 3 학교별 문제 제작 — BRAIN 에서 원본 문항 → 변형/서술형으로 갈라진다.
+    '<div class="ai-scene" data-ai-scene="3"><span class="ai-scene-cap">QUESTION BUILD</span>'
+      + '<div class="ai-brain ai-brain--sm" data-ai-el="brain">BUILD IT BRAIN</div>'
+      + '<div class="ai-q ai-q--origin" data-ai-el="origin"><b>18.</b><p>다음 글의 목적으로 가장 적절한 것은?</p><span class="ai-q-choices">① ② ③ ④ ⑤</span></div>'
+      + '<div class="ai-q ai-q--var" data-ai-el="v0">변형 A</div>'
+      + '<div class="ai-q ai-q--var" data-ai-el="v1">변형 B</div>'
+      + '<div class="ai-q ai-q--var" data-ai-el="v2">서술형</div>'
+      + '<span class="ai-stamp" data-ai-el="stamp">SCHOOL PATTERN ✓</span></div>',
+    // 4 FINAL — 생성된 문항이 하나의 완성 시험지로 조립된다.
+    '<div class="ai-scene" data-ai-scene="4"><span class="ai-scene-cap">FINAL</span>'
+      + '<span class="ai-qc" data-ai-el="qc0">Q01</span><span class="ai-qc" data-ai-el="qc1">Q02</span>'
+      + '<span class="ai-qc" data-ai-el="qc2">Q03</span><span class="ai-qc" data-ai-el="qc3">Q04</span>'
+      + '<span class="ai-qc" data-ai-el="qc4">Q05</span>'
+      + '<div class="ai-final" data-ai-el="final"><b>FINAL</b><p class="ai-final-title">실전 대비 모의고사</p>'
+      + '<ol><li></li><li></li><li></li><li></li></ol></div></div>'
+  ];
+
   function aiNativeHtml(steps, ctx) {
     const items = (steps || [])
       .map((s, i) => ({ i, name: textValue(s) || AI_PROCESS_STEP_DEFAULTS[i] || '' }))
       .filter((s) => s.i === 0 || s.name);
     if (!items.length) return '';
     const glyphOf = (i) => AI_NATIVE_GLYPHS[i] || AI_NATIVE_GLYPHS[AI_NATIVE_GLYPHS.length - 1];
-    const frames = items.map((s) =>
-      `<li class="ai-native-visual-frame" data-frame="${s.i}">${glyphOf(s.i)}<span>${escapeHtml(s.name)}</span></li>`).join('');
+    const scenes = items.map((s) => AI_SCENES[s.i] || '').join('');
     const blocks = items.map((s) => {
       const desc = AI_PROCESS_STEP_DESC_DEFAULTS[s.i] || '';
       return `<li class="ai-native-step" data-ai-step="${s.i}" data-reveal-item>`
@@ -305,7 +384,7 @@
     }).join('');
     return `<div class="ai-native" data-reveal>
         <figure class="ai-native-visual" data-ai-visual data-active="0" aria-hidden="true">
-          <ol class="ai-native-visual-frames">${frames}</ol>
+          <div class="ai-stage" data-ai-stage>${scenes}</div>
         </figure>
         <ol class="ai-native-steps">${blocks}</ol>
       </div>`;
@@ -1037,22 +1116,34 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // 학교 칩 — 단일 선택. 선택하면 아래 Digital Twin 패널이 그 학교의 실제 /api/analyzes
-      // 데이터로 바뀐다(배선: academy_public.js wireFeaturedSchoolTwin). 빈 항목은 생략(빈 칩 방지).
+      // 학교 칩 — 단일 선택. 선택하면 Digital Twin Showcase 가 그 학교 scene 으로 이동한다
+      // (배선: academy_public.js wireFeaturedShowcase). 빈 항목은 생략(빈 칩 방지).
       featuredItem(text, index) {
         const label = String(text == null ? '' : text).trim();
         if (!label) return '';
-        return `<button type="button" class="featured-chip" data-featured-school="${escapeAttr(label)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
+        return `<button type="button" class="featured-chip" data-featured-school="${escapeAttr(label)}" data-featured-index="${index}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
       },
       featuredSchools(itemsHtml) {
         return `<div class="featured-schools" data-reveal-item>`
           + `<div class="featured-chips" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>`
           + `</div>`;
       },
-      // Digital Twin 패널 — 공개는 빈 컨테이너를 낸다. academy_public.js 가 /api/analyzes 로 채운다.
-      featuredTwin(firstSchool) {
-        return `<div class="featured-twin" data-reveal-item data-featured-twin aria-live="polite">`
-          + `<p class="featured-twin-loading">${escapeHtml(firstSchool || '')} 출제 분석을 불러오는 중…</p>`
+      // Digital Twin Showcase — 공개는 학교별 빈 scene 을 낸다. academy_public.js 가 /api/analyzes
+      // 로 각 scene body 를 채우고, academy_cinematic.js 가 세로 스크롤에 맞춰 가로로 이동시킨다.
+      featuredShowcase(schools) {
+        const list = (schools || []).filter(Boolean);
+        if (!list.length) {
+          return `<div class="dt-showcase dt-showcase--empty" data-featured-twin>`
+            + `<p class="dt-scene-loading">학교를 입력하면 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 표시됩니다.</p>`
+            + `</div>`;
+        }
+        return `<div class="dt-showcase" data-reveal-item data-dt-showcase data-featured-twin data-active="0">`
+          + `<div class="dt-progress" aria-hidden="true"><span data-dt-current>01</span><span class="dt-progress-sep">/</span><span data-dt-total>${pad2(list.length)}</span></div>`
+          + `<div class="dt-viewport"><ol class="dt-track" data-dt-track role="list">${featuredShowcaseScenes(list)}</ol></div>`
+          + `<div class="dt-nav" data-dt-nav>`
+          + `<button type="button" class="dt-nav-btn" data-dt-nav-dir="prev" aria-label="이전 학교" disabled>&#8249;</button>`
+          + `<button type="button" class="dt-nav-btn" data-dt-nav-dir="next" aria-label="다음 학교">&#8250;</button>`
+          + `</div>`
           + `</div>`;
       },
       featuredCta(label) {
@@ -1270,10 +1361,10 @@
       featuredSchools(itemsHtml) {
         return `<div class="featured-schools"><div class="featured-chips">${itemsHtml}</div></div>`;
       },
-      // 빌더 캔버스: Digital Twin 패널은 공개 전용(/api/analyzes fetch). 정적 안내만.
-      featuredTwin() {
-        return `<div class="featured-twin featured-twin--builder">`
-          + `<p class="featured-twin-empty">공개 페이지에서 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 표시됩니다.</p>`
+      // 빌더 캔버스: Digital Twin Showcase 는 공개 전용(/api/analyzes fetch + cinematic). 정적 안내만.
+      featuredShowcase() {
+        return `<div class="dt-showcase dt-showcase--builder">`
+          + `<p class="featured-twin-empty">공개 페이지에서 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 가로 Showcase 로 표시됩니다.</p>`
           + `</div>`;
       },
       featuredCta(label) {
@@ -1336,6 +1427,7 @@
     selectedFeaturedLessons,
     featuredItems,
     featuredFirst,
+    featuredSchoolLabels,
     aiProcessSteps,
     isHorizontalCollection,
     renderCollectionShell,

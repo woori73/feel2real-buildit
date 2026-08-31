@@ -110,10 +110,22 @@
       + renderOrderedSections(academy, primarySubject, regionText)
       + renderFooter(academy);
     wireReveal();
+    wireCinematic();
     wireContentCollections();
     wireAiNative();
-    wireFeaturedSchoolTwin();
+    wireFeaturedShowcase();
     void loadVisitStatistics(academy, ownAcademy);
+  }
+
+  /**
+   * Cinematic 섹션(School Digital Twin Showcase + AI Native Panorama) — GSAP+ScrollTrigger 는
+   * academy_cinematic.js(F2RCinematic) 한 곳에만 있다. 여기서는 호출만 한다. 모듈 미로드 /
+   * reduced-motion / 모바일 → no-op 이고 두 섹션은 CSS 로 정적 판독 가능(폴백은 아래 wire 들).
+   */
+  function wireCinematic() {
+    const CINEMATIC = window.F2RCinematic;
+    if (!CINEMATIC || !root) return;
+    CINEMATIC.wire(root);
   }
 
   /**
@@ -140,13 +152,10 @@
   }
 
   /**
-   * AI Native — 페이지에서 유일하게 허용되는 cinematic 섹션. 데스크톱은 CSS position:sticky 로
-   * 왼쪽 Visual Stage 를 고정하고 사용자가 오른쪽 5개 설명을 읽으며 내려간다. 지금 읽고 있는
-   * 단계(뷰포트 중앙 밴드를 지나는 .ai-native-step)에 따라 Visual 만 바뀐다 — 타이머/자동
-   * sequence 없음, GSAP/pin/scrub 없음. 모바일에서는 sticky 없이 5개 세로 블록(각자 inline visual).
-   *
-   * IO 미지원·reduced-motion → Visual 은 첫 프레임에 고정, 트래킹 안 함(콘텐츠는 모두 읽힌다).
-   * CSR 재렌더마다 이전 IO 를 disconnect.
+   * AI Native 단계 트래커 — academy_cinematic.js(GSAP)가 활성일 때는 그쪽이 scene timeline 을
+   * 소유하므로 이 IO 폴백은 비활성화된다(html.js-cinematic). GSAP 미로드 / reduced-motion /
+   * 모바일에서만 동작: 뷰포트 중앙 밴드를 지나는 .ai-native-step 에 따라 [data-ai-visual] 의
+   * data-active 를 바꾼다(타이머·자동 sequence 없음). CSR 재렌더마다 이전 IO 를 disconnect.
    */
   function wireAiNative() {
     if (aiNativeObserver && typeof aiNativeObserver.disconnect === 'function') {
@@ -154,6 +163,7 @@
       aiNativeObserver = null;
     }
     if (!root) return;
+    if (document.documentElement.classList.contains('js-cinematic')) return;
     const visual = root.querySelector('#sec-digitaltwin [data-ai-visual]');
     const steps = root.querySelectorAll('#sec-digitaltwin .ai-native-step');
     if (!visual || !steps.length || typeof IntersectionObserver !== 'function') return;
@@ -169,90 +179,145 @@
   }
 
   /**
-   * Featured "2학기 영어 내신" — 학교 칩 선택 시 그 학교의 실제 출제자 Digital Twin 을
-   * /api/analyzes(기존 SSoT/service)에서 가져와 패널에 표시한다. lesson_products 의 공감성장영어
-   * highlight 를 학교별 정보로 재사용하지 않고, builderDraft 에 데이터를 복제하지도 않는다.
+   * School Digital Twin Showcase — 학교별 실제 출제자 Digital Twin(/api/analyzes, 기존 SSoT/service)을
+   * 가로 track 의 scene 으로 보여준다. 각 scene body 를 fetch 로 채우고, 학교 칩/네비/스크롤을
+   * 현재 scene 과 동기화한다.
    *
-   * 칩 선택은 섹션 전체를 흐리게 하지 않는다 — 패널만 짧은 WAAPI 마이크로 전환으로 교체.
-   * 학교별 실데이터가 없으면(신규 학원) "준비 중" 안내. 재렌더 시 이미 배선한 그룹은 건너뛴다.
+   *   데스크톱: academy_cinematic.js(F2RCinematic)가 세로 스크롤 progress → track 가로 이동을
+   *            소유한다. 여기서는 f2r:cinematic-scene 이벤트를 듣고 칩/CTA/카운터만 맞춘다.
+   *   폴백/모바일: 네이티브 가로 스와이프 + scroll-snap. track scroll 을 읽어 동기화하고,
+   *            칩/네비 클릭은 track 을 해당 scene 으로 스크롤한다.
+   *
+   * lesson_products highlight 재사용 없음, builderDraft 복제 없음. 재렌더 시 이미 배선한 showcase 는 건너뛴다.
    */
-  function wireFeaturedSchoolTwin() {
+  function wireFeaturedShowcase() {
     if (!root) return;
-    const group = root.querySelector('#sec-featured [data-featured-group]');
-    const panel = root.querySelector('#sec-featured [data-featured-twin]');
-    if (!group || !panel || group.dataset.twinWired === 'true') return;
+    const section = root.querySelector('#sec-featured');
+    if (!section) return;
+    const group = section.querySelector('[data-featured-group]');
+    const showcase = section.querySelector('[data-dt-showcase]');
+    if (!group || !showcase || showcase.dataset.showcaseWired === 'true') return;
     const chips = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
-    if (chips.length === 0) return;
-    group.dataset.twinWired = 'true';
+    const scenes = Array.prototype.slice.call(showcase.querySelectorAll('.dt-scene'));
+    if (!chips.length || !scenes.length) return;
+    showcase.dataset.showcaseWired = 'true';
 
-    const cta = root.querySelector('#sec-featured [data-featured-cta]');
+    const track = showcase.querySelector('[data-dt-track]');
+    const cta = section.querySelector('[data-featured-cta]');
     const ctaBase = cta ? (cta.getAttribute('data-featured-cta-base') || cta.textContent || '') : '';
+    const current = showcase.querySelector('[data-dt-current]');
+    const prevBtn = showcase.querySelector('[data-dt-nav-dir="prev"]');
+    const nextBtn = showcase.querySelector('[data-dt-nav-dir="next"]');
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const cache = new Map();
+    const n = scenes.length;
+    let activeIdx = -1;
 
-    function loadSchool(school) {
-      if (cache.has(school)) return cache.get(school);
-      const p = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
-        .then((r) => (r.ok ? r.json() : []))
-        .then((list) => (Array.isArray(list) ? list : []).filter((a) => {
-          const s = a.subject || {};
-          return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
-        }))
-        .catch(() => []);
-      cache.set(school, p);
-      return p;
-    }
-
-    function renderPanel(school, list) {
-      if (!list.length) {
-        panel.innerHTML = '<p class="featured-twin-empty">'
-          + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
-        return;
-      }
-      const rows = list.slice(0, 4).map((a) =>
-        '<li class="featured-twin-row"><span class="featured-twin-exam">'
-        + escapeHtml(a.grade) + '학년 ' + escapeHtml(a.semester) + ' ' + escapeHtml(a.examType)
-        + '</span><a class="featured-twin-link" href="' + escapeAttr(a.detailUrl || '#')
-        + '" target="_blank" rel="noopener">분석 보기</a></li>').join('');
-      panel.innerHTML =
-        '<div class="featured-twin-head"><strong class="featured-twin-school" data-featured-school-name>'
-        + escapeHtml(school) + '</strong><span class="featured-twin-count">출제자 Digital Twin '
-        + list.length + '건</span></div>'
-        + '<ul class="featured-twin-list">' + rows + '</ul>'
-        + '<a class="featured-twin-more" href="/analyzes" target="_blank" rel="noopener">전체 출제 분석 보기 →</a>';
-    }
-
-    function select(chip, focus) {
-      const school = (chip.getAttribute('data-featured-school') || '').trim();
-      chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
-      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
-      if (focus) chip.focus();
-      panel.classList.add('is-loading');
-      loadSchool(school).then((list) => {
-        if (chip.getAttribute('aria-pressed') !== 'true') return;   // race guard
-        panel.classList.remove('is-loading');
-        if (!reduce && typeof panel.animate === 'function') {
-          panel.animate(
-            [{ opacity: 0.35, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-            { duration: 200, easing: 'cubic-bezier(0,0,.3,1)' });
-        }
-        renderPanel(school, list);
+    function englishOnly(list) {
+      return (Array.isArray(list) ? list : []).filter((a) => {
+        const s = a.subject || {};
+        return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
       });
+    }
+
+    function fillScene(scene) {
+      const body = scene.querySelector('[data-dt-body]');
+      const school = (scene.getAttribute('data-featured-school') || '').trim();
+      if (!body || !school) return;
+      fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
+        .then((r) => (r.ok ? r.json() : []))
+        .then((list) => englishOnly(list))
+        .catch(() => [])
+        .then((list) => {
+          if (!list.length) {
+            body.innerHTML = '<p class="dt-scene-empty">' + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
+            return;
+          }
+          const rows = list.slice(0, 5).map((a) =>
+            '<li class="dt-row"><span class="dt-row-exam">'
+            + escapeHtml(a.grade) + '학년 ' + escapeHtml(a.semester) + ' ' + escapeHtml(a.examType)
+            + '</span><a class="dt-row-link" href="' + escapeAttr(a.detailUrl || '/analyzes')
+            + '" target="_blank" rel="noopener">분석 보기</a></li>').join('');
+          body.innerHTML =
+            '<p class="dt-scene-count">' + list.length + ' ANALYSES</p>'
+            + '<ul class="dt-list">' + rows + '</ul>'
+            + '<a class="dt-scene-more" href="/analyzes" target="_blank" rel="noopener">전체 출제 분석 보기 →</a>';
+          if (!reduce && typeof body.animate === 'function') {
+            body.animate(
+              [{ opacity: 0.3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+              { duration: 220, easing: 'cubic-bezier(0,0,.3,1)' });
+          }
+        });
+    }
+
+    // 모든 scene 을 실제 데이터로 채운다(가로 track 이므로 4개 전부 필요).
+    scenes.forEach(fillScene);
+
+    /** 칩/CTA/카운터/네비만 맞춘다 — 스크롤을 건드리지 않는다(이벤트 루프 방지). */
+    function syncChrome(idx) {
+      idx = Math.max(0, Math.min(n - 1, idx));
+      if (idx === activeIdx) return;
+      activeIdx = idx;
+      const school = (scenes[idx].getAttribute('data-featured-school') || '').trim();
+      chips.forEach((c, i) => c.setAttribute('aria-pressed', i === idx ? 'true' : 'false'));
+      scenes.forEach((s, i) => (i === idx ? s.setAttribute('data-active', '') : s.removeAttribute('data-active')));
+      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
+      if (current) current.textContent = idx + 1 < 10 ? '0' + (idx + 1) : String(idx + 1);
+      if (prevBtn) prevBtn.disabled = idx === 0;
+      if (nextBtn) nextBtn.disabled = idx === n - 1;
+    }
+
+    /** 사용자 동작 → 해당 scene 으로 이동(cinematic: 스크롤 위치, 폴백: track 가로 스크롤). */
+    function goTo(idx, focus) {
+      idx = Math.max(0, Math.min(n - 1, idx));
+      const CINEMATIC = window.F2RCinematic;
+      if (CINEMATIC && typeof CINEMATIC.active === 'function' && CINEMATIC.active()) {
+        CINEMATIC.seekFeatured(idx, n);
+      } else if (track) {
+        const left = scenes[idx].offsetLeft - (track.clientWidth - scenes[idx].offsetWidth) / 2;
+        try { track.scrollTo({ left: Math.max(0, left), behavior: reduce ? 'auto' : 'smooth' }); }
+        catch (e) { track.scrollLeft = Math.max(0, left); }
+      }
+      syncChrome(idx);
+      if (focus && chips[idx]) chips[idx].focus();
     }
 
     chips.forEach((chip, i) => {
-      chip.addEventListener('click', () => select(chip, false));
+      chip.addEventListener('click', () => goTo(i, false));
       chip.addEventListener('keydown', (e) => {
-        let n = -1;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % chips.length;
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + chips.length) % chips.length;
-        else if (e.key === 'Home') n = 0;
-        else if (e.key === 'End') n = chips.length - 1;
-        if (n >= 0) { e.preventDefault(); select(chips[n], true); }
+        let t = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') t = (i + 1) % n;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') t = (i - 1 + n) % n;
+        else if (e.key === 'Home') t = 0;
+        else if (e.key === 'End') t = n - 1;
+        if (t >= 0) { e.preventDefault(); goTo(t, true); }
       });
     });
-    const pressed = chips.filter((c) => c.getAttribute('aria-pressed') === 'true')[0];
-    select(pressed || chips[0], false);
+    if (prevBtn) prevBtn.addEventListener('click', () => goTo(activeIdx - 1, false));
+    if (nextBtn) nextBtn.addEventListener('click', () => goTo(activeIdx + 1, false));
+
+    // cinematic 엔진이 scene 을 바꾸면 chrome 만 따라간다.
+    root.addEventListener('f2r:cinematic-scene', (e) => {
+      const d = e.detail || {};
+      if (d.section === 'sec-featured') syncChrome(d.index || 0);
+    });
+
+    // 폴백/모바일: track 가로 스크롤 위치 → 현재 scene.
+    if (track) {
+      let scheduled = false;
+      track.addEventListener('scroll', () => {
+        if (scheduled) return;
+        scheduled = true;
+        const run = () => {
+          scheduled = false;
+          if (window.F2RCinematic && window.F2RCinematic.active && window.F2RCinematic.active()) return;
+          const stride = scenes.length > 1 ? scenes[1].offsetLeft - scenes[0].offsetLeft : 1;
+          syncChrome(Math.round(track.scrollLeft / stride));
+        };
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run); else run();
+      }, { passive: true });
+    }
+
+    syncChrome(0);
   }
 
 
