@@ -198,7 +198,10 @@
 
     var g = gsap();
     var n = scenes.length;
-    var tl = g.timeline({ paused: true });
+    // immediateRender:false — progress 0 에서 요소는 CSS 최종(조립 완료) 상태로 남는다.
+    // scrub 이 각 scene 창에 들어오면 그때 from→최종을 재생한다. GSAP 이 있어도 스크롤이
+    // 아직 안 왔거나(앵커 진입) ScrollTrigger 가 발화 못 하면, 콘텐츠는 그대로 읽힌다.
+    var tl = g.timeline({ paused: true, defaults: { immediateRender: false } });
     for (var i = 0; i < n; i += 1) buildSceneTweens(tl, scenes[i], i);
     // timeline 총 길이를 정확히 n 으로 고정한다(빈 tween 패딩). totalDuration(n) 은 기존 tween
     // 위치까지 스케일해 scene 정렬이 깨지므로 쓰지 않는다.
