@@ -82,6 +82,23 @@ class CsatLibraryTest(unittest.TestCase):
         rows = main.list_csat_questions(exam_kind='half')
         self.assertEqual(24, rows[0]['question_no']); self.assertEqual(5, len(rows[0]['choices']))
 
+    def test_question_search_supports_operational_source_and_content_filters(self):
+        with main.get_db() as conn:
+            source = conn.execute("""INSERT INTO csat_question_sources(exam_kind,source_filename,exam_metadata_json,parser,raw_text,created_at)
+                VALUES('full','2027-round-6.html',?,'test','', 'filter-test')""", (json.dumps({'round': '6'}),))
+            csat_type = main.csat_type_for_number(34)
+            cursor = conn.execute('''INSERT INTO csat_questions
+                (source_id,exam_kind,question_no,csat_type_id,csat_type_name,prompt,choices_json,answer,solution,raw_json,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?)''', (source.lastrowid, 'full', 34, csat_type['id'], csat_type['name'],
+                '빈칸에 들어갈 말은?', '[]', '2', '', json.dumps({'classification_status': 'review', 'explanation_html': '<b>해설</b>'}), 'filter-test'))
+            question_id = cursor.lastrowid
+        response = TestClient(main.app).get('/api/csat/questions', params={
+            'exam_kind': 'full', 'source_id': source.lastrowid, 'source_filename': '2027-round-6.html',
+            'source_round': '6', 'has_answer': True, 'has_explanation': True, 'review_status': 'review',
+        })
+        self.assertEqual(200, response.status_code)
+        self.assertEqual([question_id], [item['id'] for item in response.json()])
+
     def test_print_html_is_editable_two_column_buildit_document(self):
         html = main.render_csat_html([{'question_no':21,'prompt':'의미하는 것은?','passage':'Text','choices':['A','B'],'type_mismatch':False}], '하프 모의고사')
         self.assertIn('column-count:2', html); self.assertIn('contenteditable="true"', html); self.assertIn('BuildIt 자체 제작 시험지', html)
@@ -245,6 +262,29 @@ class CsatLibraryTest(unittest.TestCase):
             'question_id': question_id, 'student_name': 'TEST_STUDENT_999', 'question_no': 39,
         })
         self.assertEqual(400, response.status_code)
+
+    def test_wrong_search_filters_link_state_and_returns_question_readiness(self):
+        question_id = self.seed_csat_questions(1, 21)[0]
+        client = TestClient(main.app)
+        linked = client.post('/api/csat/wrong-answers', json={
+            'question_id': question_id, 'student_name': 'TEST_STUDENT_SEARCH', 'exam_name': 'TEST_EXAM_SEARCH',
+            'question_no': 21, 'wrong_answer': '2', 'correct_answer': '1',
+        }).json()
+        client.post('/api/csat/wrong-answers', json={
+            'student_name': 'TEST_STUDENT_SEARCH', 'exam_name': 'TEST_EXAM_SEARCH', 'question_no': 21,
+        })
+        response = client.get('/api/csat/wrong-answers', params={
+            'student': 'TEST_STUDENT_SEARCH', 'exam': 'TEST_EXAM_SEARCH', 'question_no': 21, 'linked': True,
+        })
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.json()))
+        item = response.json()[0]
+        self.assertEqual(linked['id'], item['wrong_answer_id'])
+        self.assertEqual(question_id, item['question_id'])
+        self.assertTrue(item['question_linked'])
+        self.assertTrue(item['has_answer'])
+        self.assertTrue(item['has_explanation'])
+        self.assertTrue(item['question_source_filename'].startswith('fixture-'))
 
     def test_full_assessment_requires_one_question_for_every_number_18_to_45(self):
         for question_no in range(18, 46):

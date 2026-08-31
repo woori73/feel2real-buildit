@@ -2847,10 +2847,16 @@ def commit_csat_import(payload: CsatImportCommit):
 @app.get('/api/csat/questions')
 def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, question_no: Optional[int] = None,
                         type_id: Optional[str] = None, mismatch: Optional[bool] = None,
-                        exclude_used: bool = False, used_in: Optional[Literal['half', 'full', 'wrong', 'daily']] = None):
+                        exclude_used: bool = False, used_in: Optional[Literal['half', 'full', 'wrong', 'daily']] = None,
+                        source_id: Optional[int] = None, source_filename: Optional[str] = None,
+                        source_round: Optional[str] = None, has_answer: Optional[bool] = None,
+                        has_explanation: Optional[bool] = None,
+                        review_status: Optional[Literal['classified', 'review']] = None):
     filters, values = [], []
     for clause, value in (('q.exam_kind=?', exam_kind), ('q.question_no=?', question_no), ('q.csat_type_id=?', type_id)):
         if value is not None: filters.append(clause); values.append(value)
+    if source_id is not None: filters.append('q.source_id=?'); values.append(source_id)
+    if source_filename: filters.append('s.source_filename=?'); values.append(source_filename)
     if mismatch is not None: filters.append('q.type_mismatch=?'); values.append(int(mismatch))
     if exclude_used:
         if used_in:
@@ -2863,7 +2869,22 @@ def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, que
             (SELECT COUNT(*) FROM csat_question_usage u WHERE u.question_id=q.id) usage_count
             FROM csat_questions q
             JOIN csat_question_sources s ON s.id=q.source_id {where} ORDER BY q.created_at DESC, q.question_no''', values).fetchall()
-    return [_csat_question_response(row) for row in rows]
+    result = [_csat_question_response(row) for row in rows]
+    for item in result:
+        raw = json.loads(item.get('raw_json') or '{}')
+        item['source_round'] = str(item.get('exam_metadata', {}).get('round') or item.get('exam_metadata', {}).get('source_round') or '')
+        item['has_answer'] = bool(str(item.get('answer') or '').strip())
+        item['has_explanation'] = bool(str(item.get('solution') or '').strip() or str(raw.get('explanation_html') or '').strip())
+        item['review_status'] = 'review' if item.get('type_mismatch') or raw.get('classification_status') == 'review' else 'classified'
+    if source_round:
+        result = [item for item in result if item['source_round'] == source_round]
+    if has_answer is not None:
+        result = [item for item in result if item['has_answer'] is has_answer]
+    if has_explanation is not None:
+        result = [item for item in result if item['has_explanation'] is has_explanation]
+    if review_status:
+        result = [item for item in result if item['review_status'] == review_status]
+    return result
 
 
 AssessmentType = Literal['half', 'full', 'wrong', 'daily']
@@ -3056,13 +3077,30 @@ def create_csat_wrong_answer(payload: CsatWrongAnswerCreate):
 
 
 @app.get('/api/csat/wrong-answers')
-def list_csat_wrong_answers(student: Optional[str] = None, exam: Optional[str] = None, type_id: Optional[str] = None):
+def list_csat_wrong_answers(student: Optional[str] = None, exam: Optional[str] = None, type_id: Optional[str] = None,
+                            question_no: Optional[int] = None, linked: Optional[bool] = None):
     filters, values = [], []
-    for clause, value in (('student_name=?', student), ('exam_name=?', exam), ('csat_type_id=?', type_id)):
+    for clause, value in (('w.student_name=?', student), ('w.exam_name=?', exam), ('w.csat_type_id=?', type_id), ('w.question_no=?', question_no)):
         if value: filters.append(clause); values.append(value)
+    if linked is not None: filters.append('w.question_id IS NOT NULL' if linked else 'w.question_id IS NULL')
     where = f"WHERE {' AND '.join(filters)}" if filters else ''
     with get_db() as conn:
-        return [dict(row) for row in conn.execute(f'SELECT * FROM csat_wrong_answers {where} ORDER BY id DESC', values).fetchall()]
+        rows = conn.execute(f'''SELECT w.*, w.id wrong_answer_id,
+            q.source_id question_source_id, s.source_filename question_source_filename,
+            q.answer question_answer, q.solution question_solution, q.raw_json question_raw_json
+            FROM csat_wrong_answers w
+            LEFT JOIN csat_questions q ON q.id=w.question_id
+            LEFT JOIN csat_question_sources s ON s.id=q.source_id
+            {where} ORDER BY w.id DESC''', values).fetchall()
+    result = []
+    for row in rows:
+        item = dict(row)
+        raw = json.loads(item.pop('question_raw_json') or '{}')
+        item['question_linked'] = item['question_id'] is not None
+        item['has_answer'] = bool(str(item.pop('question_answer') or '').strip())
+        item['has_explanation'] = bool(str(item.pop('question_solution') or '').strip() or str(raw.get('explanation_html') or '').strip())
+        result.append(item)
+    return result
 
 
 class CsatWrongLink(BaseModel):
