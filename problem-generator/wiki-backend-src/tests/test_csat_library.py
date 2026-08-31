@@ -364,6 +364,50 @@ class CsatLibraryTest(unittest.TestCase):
             'files': ('markup.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
         self.assertEqual('DUPLICATE', duplicate['questions'][0]['import_status'])
 
+    def test_json_v1_missing_explanation_is_ready_and_persists(self):
+        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'exam_name': 'No Explanation',
+            'year': '2028', 'round': '4', 'questions': [{'number': 1, 'csat_question_no': 23, 'type': '주제',
+                'problem': {'instruction': '다음 글의 주제로 가장 적절한 것은?', 'passage': 'A complete passage.',
+                            'choices': ['① one', '② two']}, 'answer': '①'}]}
+        client = TestClient(main.app)
+        preview = client.post('/api/csat/json-imports/preview', files={
+            'files': ('no-explanation.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
+        self.assertEqual('READY', preview['questions'][0]['import_status'])
+        self.assertEqual('', preview['questions'][0]['review_reason'])
+        saved = client.post('/api/csat/imports', json={'exam_kind': 'half', 'source_kind': 'half',
+            'source_filename': preview['source_filename'], 'source_hash': preview['source_hash'], 'parser': preview['parser'],
+            'metadata': preview['metadata'], 'raw_text': preview['raw_text'], 'questions': preview['questions']})
+        self.assertEqual(201, saved.status_code, saved.text)
+        self.assertFalse(saved.json()['questions'][0]['has_explanation'])
+
+    def test_json_v1_common_passage_groups_get_standard_numbers_in_source_order(self):
+        questions = []
+        for source_no in (11, 12):
+            questions.append({'number': source_no, 'type': '공통지문', 'common_passage_id': 'long-41-42',
+                'problem': {'instruction': f'{source_no}번 질문', 'passage': 'Shared passage' if source_no == 11 else '',
+                            'choices': ['① one', '② two']}, 'answer': '①'})
+        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'exam_name': 'Complex Fixture',
+                   'year': '2028', 'round': '5', 'questions': questions}
+        preview = TestClient(main.app).post('/api/csat/json-imports/preview', files={
+            'files': ('complex.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
+        self.assertEqual([11, 12], [item['source_question_no'] for item in preview['questions']])
+        self.assertEqual([41, 42], [item['question_no'] for item in preview['questions']])
+        self.assertEqual(['READY', 'READY'], [item['import_status'] for item in preview['questions']])
+
+    def test_json_v1_missing_choices_stays_review_and_commit_rejects_it(self):
+        payload = {'schema': 'buildit.csat.question.v1', 'source_kind': 'half', 'exam_name': 'Invalid Fixture',
+            'year': '2028', 'round': '6', 'questions': [{'number': 1, 'csat_question_no': 24, 'type': '제목',
+                'problem': {'instruction': '제목으로 가장 적절한 것은?', 'passage': 'Passage', 'choices': []}, 'answer': '①'}]}
+        client = TestClient(main.app)
+        preview = client.post('/api/csat/json-imports/preview', files={
+            'files': ('invalid.json', json.dumps(payload, ensure_ascii=False).encode(), 'application/json')}).json()['files'][0]
+        self.assertEqual('REVIEW', preview['questions'][0]['import_status'])
+        self.assertIn('선택지', preview['questions'][0]['review_reason'])
+        rejected = client.post('/api/csat/imports', json={'exam_kind': 'half', 'source_kind': 'half',
+            'source_filename': preview['source_filename'], 'source_hash': preview['source_hash'], 'parser': preview['parser'],
+            'metadata': preview['metadata'], 'raw_text': preview['raw_text'], 'questions': preview['questions']})
+        self.assertEqual(422, rejected.status_code)
+
     def test_full_assessment_requires_one_question_for_every_number_18_to_45(self):
         for question_no in range(18, 46):
             self.seed_csat_questions(1, question_no)

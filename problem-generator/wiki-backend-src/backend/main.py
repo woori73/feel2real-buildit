@@ -2636,6 +2636,49 @@ def _normalise_csat_json_question(raw: dict, inherited: dict, index: int) -> dic
     }
 
 
+def _resolve_csat_common_passage_numbers(questions: list[dict]) -> None:
+    """Resolve the two standard CSAT reading complexes without inventing numbers.
+
+    JSON V1 already carries ``common_passage_id``. A two-item group is the 41–42
+    complex and a three-item group is the 43–45 complex. Explicit numbers always
+    win; incomplete, mixed, or non-standard group sizes stay REVIEW.
+    """
+    groups: dict[str, list[dict]] = {}
+    for question in questions:
+        common_id = str(question.get('common_passage_id') or '')
+        if common_id:
+            groups.setdefault(common_id, []).append(question)
+    for group in groups.values():
+        if any(question.get('question_no') for question in group):
+            continue
+        numbers = [41, 42] if len(group) == 2 else [43, 44, 45] if len(group) == 3 else []
+        for question, number in zip(group, numbers):
+            standard = csat_type_for_number(number)
+            question.update({
+                'question_no': number, 'csat_type_id': standard['id'], 'csat_type_name': standard['name'],
+                'type_id': standard['id'], 'type_name': standard['name'], 'candidate_numbers': [number],
+                'classification_status': 'classified', 'classification_reason': '',
+                'type_mismatch': False, 'mismatch_reason': '',
+            })
+
+
+def _csat_json_review_reason(question: dict) -> str:
+    number = int(question.get('question_no') or 0)
+    if not 18 <= number <= 45:
+        return '유효한 수능 문항 번호가 필요합니다.'
+    if question.get('classification_status') == 'review' or question.get('type_mismatch') or question.get('csat_type_id') == 'review':
+        return question.get('classification_reason') or question.get('mismatch_reason') or '표준 유형 검수가 필요합니다.'
+    problem = question.get('problem') if isinstance(question.get('problem'), dict) else {}
+    if not str(problem.get('instruction') or question.get('prompt') or '').strip() and not str(problem.get('passage') or question.get('passage') or '').strip():
+        return '문제 발문 또는 본문이 필요합니다.'
+    choices = problem.get('choices', question.get('choices'))
+    if not isinstance(choices, list) or not any(str(choice).strip() for choice in choices):
+        return '객관식 선택지가 필요합니다.'
+    if not str(question.get('answer') or '').strip():
+        return '정답이 필요합니다.'
+    return ''
+
+
 def parse_csat_question_json(value: object, ui_source_kind: str = '', ui_metadata: dict | None = None) -> list[dict]:
     """Map CSAT Question JSON Standard V1 (single or multi-round) without rewriting content."""
     if not isinstance(value, dict):
@@ -2666,8 +2709,10 @@ def parse_csat_question_json(value: object, ui_source_kind: str = '', ui_metadat
         questions = group.get('questions')
         if not isinstance(questions, list) or not questions:
             raise ValueError(f'{metadata["source_round"]}회차에 questions가 없습니다.')
-        for index, raw in enumerate(questions, start=1):
-            parsed.append(_normalise_csat_json_question(raw, metadata, index))
+        round_questions = [_normalise_csat_json_question(raw, metadata, index)
+                           for index, raw in enumerate(questions, start=1)]
+        _resolve_csat_common_passage_numbers(round_questions)
+        parsed.extend(round_questions)
     return parsed
 
 
@@ -2935,9 +2980,10 @@ async def preview_csat_json_imports(source_kind: Optional[CsatSourceKind] = Form
                 provenance = (*key, int(question['source_question_no']))
                 question['source_kind'] = metadata['source_kind']
                 question['exam_kind'] = _source_storage_kind(metadata['source_kind'])
-                question['import_status'] = ('DUPLICATE' if provenance in existing else 'REVIEW'
-                    if question['classification_status'] == 'review' or not question['question_no']
-                    or not question['answer'] or not question['explanation'] else 'READY')
+                review_reason = _csat_json_review_reason(question)
+                question['review_reason'] = review_reason
+                question['import_status'] = ('DUPLICATE' if provenance in existing else
+                                             'REVIEW' if review_reason else 'READY')
             identity = json.dumps(metadata, sort_keys=True, ensure_ascii=False).encode()
             source_hash = hashlib.sha256(data + b'\0' + identity).hexdigest()
             storage_kind = _source_storage_kind(metadata['source_kind'])
@@ -3032,6 +3078,11 @@ def commit_csat_import(payload: CsatImportCommit):
     source_kind = payload.source_kind or payload.metadata.get('source_kind') or payload.exam_kind
     storage_kind = _source_storage_kind(source_kind)
     metadata = {**payload.metadata, 'source_kind': source_kind}
+    if payload.parser == 'csat-json-v1':
+        invalid = [{'source_question_no': raw.get('source_question_no'), 'reason': _csat_json_review_reason(raw)}
+                   for raw in payload.questions if _csat_json_review_reason(raw)]
+        if invalid:
+            raise HTTPException(status_code=422, detail={'message': 'READY 문항만 저장할 수 있습니다.', 'questions': invalid})
     canonical = [_canonical_question(raw, storage_kind, metadata, payload.source_filename, payload.raw_text, now) for raw in payload.questions]
     canonical = [item for item in canonical if 1 <= item['question_number'] <= 99]
     if not canonical:
