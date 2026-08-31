@@ -39,15 +39,8 @@
   let academyVideos = [];
   // 상담 신청 모달에 띄울 학원 연락 수단. render()마다 businessInfo에서 다시 뽑는다.
   let consultChannels = [];
-  // Vertical Scene Flow(V2-10). render()마다 IO를 새로 만들므로 이전 것을 끊는다.
-  let sceneFlowObserver = null;
-  // PAGE = Vertical Story. 스크롤에 따라 enter→active→exit 하는 주요 Story Section.
-  //   hero/digitaltwin(데스크톱 pin)은 academy_story.js 가 따로 담당 — 여기서 제외하거나
-  //   staged 가 아닐 때(모바일)만 scene-flow 가 잡는다.
-  const STORY_SCENE_IDS = [
-    'sec-featured', 'sec-digitaltwin', 'sec-videos',
-    'sec-minilectures', 'sec-lessons', 'sec-intro'
-  ];
+  // AI Native sticky Visual Stage 트래커. render()마다 새로 만들므로 이전 것을 끊는다.
+  let aiNativeObserver = null;
   const slug = (root && root.dataset.slug)
     ? root.dataset.slug
     : decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
@@ -116,47 +109,28 @@
       renderGnb(academy, topBtn)
       + renderOrderedSections(academy, primarySubject, regionText)
       + renderFooter(academy);
-    applyReveal();
-    wireStory();
-    wireStorefrontMotion();
-    wireSceneFlow();
+    wireReveal();
     wireContentCollections();
-    wireFeaturedSelector();
+    wireAiNative();
+    wireFeaturedSchoolTwin();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
   /**
-   * Vertical Story Engine (V2-4). academy_story.js(GSAP ScrollTrigger 래퍼)로 몇몇 섹션에
-   * "scroll = 장면 전환" 을 준다. scrub 이라 위로 스크롤하면 역전된다(bidirectional).
-   *
-   * - Hero → 2026 FALL: scroll 하면 hero 콘텐츠가 퇴장(--story-exit 0→1), 다음 섹션이 stage 를 차지.
-   * - AI Native: 섹션을 pin 하고 5개 장면(학교 자료 → … → FINAL)으로 scrub. data-scene-state 를
-   *   각 step 에 부여 — CSS 가 active/past/upcoming 을 그린다.
-   *
-   * 모듈/GSAP 미로드·reduced-motion·모바일(<761px) → no-op. 콘텐츠는 정적으로 완전히 보인다.
-   * pin 이 실제로 걸리면 sec-digitaltwin[data-story-staged] → wireStorefrontMotion 이 그 섹션의
-   * 1회성 processProgress 를 건너뛴다(두 시스템이 같은 요소를 만지지 않게).
+   * 스크롤 모션 — 단 하나의 primitive(academy_reveal.js). translateY + opacity → 최종 상태,
+   * 1회성, 형제 stagger, reveal 후 unobserve, reduced-motion → 즉시 최종. 지나간 섹션은
+   * 건드리지 않는다(흐리게/축소 없음). CSR 재렌더마다 호출, 이미 배선한 그룹은 건너뛴다.
    */
-  function wireStory() {
-    const STORY = window.F2RStorefrontStory;
-    if (!STORY || !root) return;
-    const hero = root.querySelector('#sec-hero');
-    if (hero) STORY.exit(hero, { id: 'story-hero-exit' });
-    const ai = root.querySelector('#sec-digitaltwin');
-    if (ai) {
-      STORY.stage(ai, {
-        id: 'story-aiprocess',
-        scenes: 5,
-        sceneSelector: '.ai-process-step'
-      });
-    }
-    STORY.refresh();
+  function wireReveal() {
+    const REVEAL = window.F2RReveal;
+    if (!REVEAL || !root) return;
+    REVEAL.wire(root);
   }
 
   /**
    * Horizontal Content Collection(sec-lessons / sec-videos 가로 레이아웃)의 배선.
-   * academy_collection.js primitive를 쓴다 — 화살표 스크롤 + 비디오 카드 인라인 재생만.
-   * Story 모션(3-A)과 분리: 등장 애니메이션·자동 캐러셀 없음(사용자가 직접 둘러본다).
+   * academy_collection.js primitive를 쓴다 — 화살표 스크롤 + 비디오 카드 인라인 재생 + 진행 카운터만.
+   * 자동 이동 없음(Shopify 레퍼런스 확정). 데스크톱은 CSS grid, 모바일은 네이티브 swipe/scroll-snap.
    * 모듈이 없으면(로드 실패) 아무것도 하지 않고 콘텐츠는 정적 shelf로 완전히 보인다.
    */
   function wireContentCollections() {
@@ -166,146 +140,121 @@
   }
 
   /**
-   * Featured school selector (V2-6). 학교 칩을 단일 선택으로 만들고, 선택하면 중앙 Featured Stage
-   * 의 정보 상태(시트 상단 학교명 · "지금 보는 학교" 라인 · CTA 접두어)가 실제로 바뀐다 —
-   * "내 학교를 선택해 둘러본다". 학교별 실데이터는 만들지 않는다: 공통 프로세스(Featured 프로그램)
-   * 안에서 "선택된 학교" 만 명확히 반영한다.
+   * AI Native — 페이지에서 유일하게 허용되는 cinematic 섹션. 데스크톱은 CSS position:sticky 로
+   * 왼쪽 Visual Stage 를 고정하고 사용자가 오른쪽 5개 설명을 읽으며 내려간다. 지금 읽고 있는
+   * 단계(뷰포트 중앙 밴드를 지나는 .ai-native-step)에 따라 Visual 만 바뀐다 — 타이머/자동
+   * sequence 없음, GSAP/pin/scrub 없음. 모바일에서는 sticky 없이 5개 세로 블록(각자 inline visual).
    *
-   * 상태 전환은 "요소 자신의 attribute/textContent + (원하면) WAAPI" 로만 한다 — 조상 attribute +
-   * CSS transition 조합은 일부 Chromium 에서 transition 이 첫 값에 고정되는 버그가 있다(V2-5 #86).
-   * 모듈/마크업이 없거나 칩이 없으면 no-op. reduced-motion 이면 페이드 없이 즉시 반영.
+   * IO 미지원·reduced-motion → Visual 은 첫 프레임에 고정, 트래킹 안 함(콘텐츠는 모두 읽힌다).
+   * CSR 재렌더마다 이전 IO 를 disconnect.
    */
-  function wireFeaturedSelector() {
+  function wireAiNative() {
+    if (aiNativeObserver && typeof aiNativeObserver.disconnect === 'function') {
+      aiNativeObserver.disconnect();
+      aiNativeObserver = null;
+    }
     if (!root) return;
-    const group = root.querySelector('[data-featured-group]');
-    if (!group || group.dataset.selectorWired === 'true') return;
-    const buttons = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
-    if (buttons.length === 0) return;
-    group.dataset.selectorWired = 'true';
+    const visual = root.querySelector('#sec-digitaltwin [data-ai-visual]');
+    const steps = root.querySelectorAll('#sec-digitaltwin .ai-native-step');
+    if (!visual || !steps.length || typeof IntersectionObserver !== 'function') return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const section = root.querySelector('#sec-featured');
-    const stage = root.querySelector('#sec-featured [data-featured-stage]');
-    const stageName = root.querySelector('#sec-featured [data-featured-stage-school]');
-    const selectedOut = root.querySelector('#sec-featured [data-featured-selected]');
+    // 뷰포트 중앙의 얇은 밴드를 지나는 step 이 "지금 읽는 단계". 밴드가 얇아 한 번에 하나만 잡힌다.
+    aiNativeObserver = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) visual.setAttribute('data-active', e.target.getAttribute('data-ai-step') || '0');
+      });
+    }, { rootMargin: '-48% 0px -48% 0px', threshold: 0 });
+    steps.forEach((s) => aiNativeObserver.observe(s));
+  }
+
+  /**
+   * Featured "2학기 영어 내신" — 학교 칩 선택 시 그 학교의 실제 출제자 Digital Twin 을
+   * /api/analyzes(기존 SSoT/service)에서 가져와 패널에 표시한다. lesson_products 의 공감성장영어
+   * highlight 를 학교별 정보로 재사용하지 않고, builderDraft 에 데이터를 복제하지도 않는다.
+   *
+   * 칩 선택은 섹션 전체를 흐리게 하지 않는다 — 패널만 짧은 WAAPI 마이크로 전환으로 교체.
+   * 학교별 실데이터가 없으면(신규 학원) "준비 중" 안내. 재렌더 시 이미 배선한 그룹은 건너뛴다.
+   */
+  function wireFeaturedSchoolTwin() {
+    if (!root) return;
+    const group = root.querySelector('#sec-featured [data-featured-group]');
+    const panel = root.querySelector('#sec-featured [data-featured-twin]');
+    if (!group || !panel || group.dataset.twinWired === 'true') return;
+    const chips = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
+    if (chips.length === 0) return;
+    group.dataset.twinWired = 'true';
+
     const cta = root.querySelector('#sec-featured [data-featured-cta]');
     const ctaBase = cta ? (cta.getAttribute('data-featured-cta-base') || cta.textContent || '') : '';
-    const reduce = window.matchMedia
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cache = new Map();
 
-    function paint(school) {
-      if (stageName && stageName.textContent !== school) stageName.textContent = school;
-      if (selectedOut) selectedOut.textContent = school;
-      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
-      if (section) section.setAttribute('data-featured-school', school);
-      if (stage && !reduce && typeof stage.animate === 'function') {
-        stage.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+    function loadSchool(school) {
+      if (cache.has(school)) return cache.get(school);
+      const p = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
+        .then((r) => (r.ok ? r.json() : []))
+        .then((list) => (Array.isArray(list) ? list : []).filter((a) => {
+          const s = a.subject || {};
+          return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
+        }))
+        .catch(() => []);
+      cache.set(school, p);
+      return p;
+    }
+
+    function renderPanel(school, list) {
+      if (!list.length) {
+        panel.innerHTML = '<p class="featured-twin-empty">'
+          + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
+        return;
       }
+      const rows = list.slice(0, 4).map((a) =>
+        '<li class="featured-twin-row"><span class="featured-twin-exam">'
+        + escapeHtml(a.grade) + '학년 ' + escapeHtml(a.semester) + ' ' + escapeHtml(a.examType)
+        + '</span><a class="featured-twin-link" href="' + escapeAttr(a.detailUrl || '#')
+        + '" target="_blank" rel="noopener">분석 보기</a></li>').join('');
+      panel.innerHTML =
+        '<div class="featured-twin-head"><strong class="featured-twin-school" data-featured-school-name>'
+        + escapeHtml(school) + '</strong><span class="featured-twin-count">출제자 Digital Twin '
+        + list.length + '건</span></div>'
+        + '<ul class="featured-twin-list">' + rows + '</ul>'
+        + '<a class="featured-twin-more" href="/analyzes" target="_blank" rel="noopener">전체 출제 분석 보기 →</a>';
     }
 
-    function select(btn, focus) {
-      buttons.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
-      paint((btn.getAttribute('data-featured-school') || '').trim());
-      if (focus) btn.focus();
+    function select(chip, focus) {
+      const school = (chip.getAttribute('data-featured-school') || '').trim();
+      chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
+      if (focus) chip.focus();
+      panel.classList.add('is-loading');
+      loadSchool(school).then((list) => {
+        if (chip.getAttribute('aria-pressed') !== 'true') return;   // race guard
+        panel.classList.remove('is-loading');
+        if (!reduce && typeof panel.animate === 'function') {
+          panel.animate(
+            [{ opacity: 0.35, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 200, easing: 'cubic-bezier(0,0,.3,1)' });
+        }
+        renderPanel(school, list);
+      });
     }
 
-    buttons.forEach((btn, i) => {
-      btn.addEventListener('click', () => select(btn, false));
-      btn.addEventListener('keydown', (e) => {
-        let next = -1;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % buttons.length;
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + buttons.length) % buttons.length;
-        else if (e.key === 'Home') next = 0;
-        else if (e.key === 'End') next = buttons.length - 1;
-        if (next >= 0) { e.preventDefault(); select(buttons[next], true); }
+    chips.forEach((chip, i) => {
+      chip.addEventListener('click', () => select(chip, false));
+      chip.addEventListener('keydown', (e) => {
+        let n = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % chips.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + chips.length) % chips.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = chips.length - 1;
+        if (n >= 0) { e.preventDefault(); select(chips[n], true); }
       });
     });
-
-    const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')[0];
-    select(pressed || buttons[0], false);
+    const pressed = chips.filter((c) => c.getAttribute('aria-pressed') === 'true')[0];
+    select(pressed || chips[0], false);
   }
 
-  /**
-   * Vertical Scene Flow(V2-10). 주요 Story Section 이 스크롤에 따라 enter → active → exit 한다
-   * (양방향 — 위로 스크롤하면 되돌아온다). academy_storefront_motion.js sceneFlow() 가
-   * IntersectionObserver 로 data-scene 을 주고, academy_scene.css 가 opacity/translateY 로 표현한다.
-   *
-   * academy_story.js(데스크톱 pin/scrub)와 분리: hero 는 목록에서 빼고, digitaltwin 은 pin 이
-   * 걸리면(data-story-staged) sceneFlow 가 스스로 건너뛴다. 모바일에서는 pin 이 없어 digitaltwin
-   * 도 scene-flow 로 등장/퇴장한다.
-   *
-   * 모듈 미로드·reduced-motion·IO 미지원 → primitive 가 즉시 active(정적)로 처리. render()마다
-   * IO 를 새로 만들므로 이전 것을 disconnect 한다.
-   */
-  function wireSceneFlow() {
-    const MOTION = window.F2RStorefrontMotion;
-    if (!MOTION || typeof MOTION.sceneFlow !== 'function' || !root) return;
-    if (sceneFlowObserver && typeof sceneFlowObserver.disconnect === 'function') {
-      sceneFlowObserver.disconnect();
-    }
-    const sections = STORY_SCENE_IDS
-      .map((id) => root.querySelector('#' + id))
-      .filter(Boolean);
-    sceneFlowObserver = MOTION.sceneFlow(sections);
-  }
-
-  /**
-   * Storefront 섹션(Featured, AI Native)의 모션. academy_storefront_motion.js의 primitive를
-   * 쓴다 — IntersectionObserver + CSS만, GSAP applyReveal()과 요소가 겹치지 않는다(이쪽은
-   * .f2r-reveal / [data-step], 그쪽은 [data-fade]). 모듈이 없으면 아무것도 하지 않고
-   * html.js-storefront-motion도 안 붙어 CSS opacity:0도 안 걸린다(정적으로 완전히 보인다).
-   * reduced-motion / IO 미지원은 primitive가 즉시 최종 상태로 처리한다.
-   */
-  function wireStorefrontMotion() {
-    const MOTION = window.F2RStorefrontMotion;
-    if (!MOTION || !root) return;
-    document.documentElement.classList.add('js-storefront-motion');
-    const featured = root.querySelector('#sec-featured .featured-inner');
-    if (featured && featured.dataset.motionWired !== 'true') {
-      featured.dataset.motionWired = 'true';
-      MOTION.revealSequence(featured, { step: 90 });
-    }
-    // AI Native 가 Story Engine 으로 pin 되면(데스크톱) 이쪽 1회성 진행은 건너뛴다 —
-    // 두 시스템이 같은 .ai-process-step 을 동시에 만지면 상태가 어긋난다.
-    const aiSection = root.querySelector('#sec-digitaltwin');
-    const steps = root.querySelector('#sec-digitaltwin .ai-process-steps');
-    const staged = aiSection && aiSection.getAttribute('data-story-staged') === 'true';
-    if (steps && !staged && steps.dataset.motionWired !== 'true') {
-      steps.dataset.motionWired = 'true';
-      MOTION.revealSequence(root.querySelector('#sec-digitaltwin .ai-process-head'), { step: 90 });
-      // V2-11: 모바일에서 5-step 진행이 사람 눈에 구분되도록 느리게(총 ~2.3s). watchScene 으로
-      // V2-10 sceneFlow 의 data-scene 에 물려 — 이 섹션이 active 가 되면 학교자료 → … → FINAL
-      // 진행이 재생되고, 위로 갔다 다시 내려오면 다시 보인다(무한 반복 아님). stage = 중앙 Visual
-      // Stage(단계마다 그림이 바뀐다). 데스크톱 pin 은 academy_story.css 가 data-story-scene 으로.
-      MOTION.processProgress(steps, {
-        start: 350, step: 400, linkLead: 140,
-        watchScene: aiSection,
-        stage: root.querySelector('#sec-digitaltwin [data-ai-stage]')
-      });
-    }
-  }
-
-  /**
-   * 섹션 등장 애니메이션. 랜딩(landing_buildit.js:94-121)과 같은 GSAP + ScrollTrigger 방식이다.
-   *
-   * 이 페이지는 CSR이라 fetch 후에야 섹션이 생기고, 섹션 토글·순서변경으로 재렌더도 된다.
-   * 그래서 로드 시점이 아니라 render()마다 호출하고, 이미 처리한 요소는 건너뛴다.
-   *
-   * GSAP이 없으면(CDN 장애·차단) 아무것도 하지 않는다. html.js-motion을 붙이지 않으므로
-   * CSS의 opacity:0도 걸리지 않아 페이지가 그냥 정적으로 보인다 — 빈 화면이 되지 않는다.
-   */
-  function applyReveal() {
-    if (!window.gsap || !window.ScrollTrigger) return;
-    document.documentElement.classList.add('js-motion');
-    gsap.registerPlugin(ScrollTrigger);
-    gsap.utils.toArray('[data-fade]').forEach((el) => {
-      if (el.dataset.fadeWired === 'true') return;
-      el.dataset.fadeWired = 'true';
-      gsap.to(el, {
-        opacity: 1, y: 0, duration: .45, ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 94%', toggleActions: 'play none none reverse' }
-      });
-    });
-  }
 
   function renderVisitStatistics() {
     return `<span id="visitStatistics" class="counter" aria-label="홈페이지 방문 통계" aria-live="polite"><span class="d"></span>오늘 <span id="visitToday">-</span> · 누적 <span id="visitTotal">-</span></span>`;

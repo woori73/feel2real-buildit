@@ -13,19 +13,13 @@
  *                 소유하므로 재생해도 외곽 크기가 바뀌지 않는다. Actual Class(Phone Card)와
  *                 대표 수업(Program Card) 영상이 같은 계약을 공유한다. 업로드 → <video>,
  *                 임베드 URL → <iframe>. 원본 비율은 CSS object-fit:contain 으로 보존(crop 금지).
- *   Affordance  — [data-collection-auto] (V2-11): 첫 진입 시 이 영역이 "옆으로 더 있다"는 걸
- *                 실제 움직임으로 알린다. "hint" = 다음 카드 쪽으로 살짝 밀었다 복귀(Actual Class /
- *                 Mini Lectures, 1회). "advance" = Card1 을 읽을 시간 → Card2 → … → 마지막 카드
- *                 에서 정지(처음으로 복귀 안 함, Programs). 무한 캐러셀 아님. 사용자 입력
- *                 (pointerdown/touch/wheel/key) 또는 하위 영상 재생 → 즉시 중단·재개 없음.
- *                 진입 신호는 IO 하나에 의존하지 않는다 — sceneFlow data-scene=active +
- *                 IntersectionObserver(낮은 threshold) + guarded timeout(getBoundingClientRect).
- *                 위치는 scrollLeft 를 동기적으로 세팅(화살표 네비와 동일). 부드러움은 CSS
- *                 scroll-behavior. prefers-reduced-motion → 실행 안 함. 데스크톱 4-카드
- *                 그리드면 스크롤이 없어 no-op.
  *
- * 규칙(V2)
- *   - Story(3-A)와 분리: 등장 애니메이션 없음. 자동 이동은 "affordance 1회"뿐(무한 캐러셀 금지).
+ *   자동 이동(autoplay/auto-advance) 없음 — Shopify 레퍼런스 확정: product grid/collection 을
+ *   자동으로 넘기지 않는다. 데스크톱에서 카드가 다 들어가면 CSS 가 grid 로(가로 스크롤 없음),
+ *   모바일에서는 네이티브 scroll-snap + swipe + 다음 카드 peek + 카운터가 어포던스를 담당한다.
+ *
+ * 규칙
+ *   - 등장 애니메이션·자동 캐러셀 없음. 스크롤 리스너 없음(진행 카운터는 track 의 scroll 이벤트만).
  *   - 세로 마우스 휠을 가로로 강제 변환하지 않는다(native overflow-x 우선, trackpad 가로 스크롤 그대로).
  *   - 새 제스처/캐러셀 라이브러리 없음. 모바일 스와이프는 CSS overflow-x + scroll-snap 이 담당.
  *   - 페이지 자체가 가로로 밀리지 않게: viewport 가 track 을 자르고 track 은 overscroll-behavior-x:contain.
@@ -196,156 +190,6 @@
     trigger.hidden = true;
   }
 
-  // ── Horizontal Affordance (V2-11 corrective) ─────────────────────────────
-  // 첫 진입 시 "옆으로 더 있다"를 실제 움직임으로 알린다. 무한 캐러셀 아님.
-  //   hint    = 다음 카드 쪽으로 살짝 밀었다 복귀(Actual Class / Mini Lectures) — 1회.
-  //   advance = Card1 을 읽을 시간 → Card2 → … → 마지막 카드에서 정지(처음으로 복귀 안 함, Programs).
-  // 사용자 입력(pointerdown/touch/wheel/key) 또는 하위 영상 재생 → 즉시 중단, 재개 없음.
-  // prefers-reduced-motion → 아예 실행 안 함. 데스크톱에서 카드가 한 화면에 다 보이면(그리드)
-  //   스크롤할 게 없어 runAuto 가 조용히 no-op.
-  //
-  // 진입 신호를 IO 하나에 의존하지 않는다(#7): (1) V2-10 sceneFlow 의 data-scene=active,
-  //   (2) IntersectionObserver(낮은 threshold), (3) guarded timeout + getBoundingClientRect.
-  var REDUCED = typeof global.matchMedia === 'function'
-    && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // 위치를 동기적으로 세팅한다(어느 환경에서든 카드가 실제로 이동한다 — 배경 탭/rAF throttle
-  // 에도 영향 없음). 부드러움은 CSS .f2r-collection-track{scroll-behavior:smooth} 가 담당한다
-  // (지원 안 하면 즉시 점프 — 그래도 카드는 움직여서 "가로 컬렉션"이라는 걸 알린다).
-  // 화살표 네비게이션(onArrowClick)이 쓰는 것과 같은 방식.
-  function autoScrollTo(track, left) {
-    left = Math.max(0, Math.round(left));
-    track.scrollLeft = left;
-  }
-
-  function anyVideoPlaying(track) {
-    var vids = track.getElementsByTagName('video');
-    for (var i = 0; i < vids.length; i += 1) if (!vids[i].paused && !vids[i].ended) return true;
-    return false;
-  }
-
-  function runAuto(collection) {
-    var track = collection.querySelector('[data-collection-track]');
-    if (!track || track.dataset.autoDone === 'true') return;
-    track.dataset.autoDone = 'true';
-    if (anyVideoPlaying(track)) return;                 // 재생 중이면 시작하지 않는다
-    var mode = collection.getAttribute('data-collection-auto');
-    var m = metrics(track);
-    var stride = m.stride || Math.round(track.clientWidth * 0.85);
-    var maxLeft = Math.max(0, track.scrollWidth - track.clientWidth - 1);
-    if (maxLeft < 12 || stride < 12) return;            // 스크롤할 게 없으면(그리드/짧은 목록) no-op
-
-    var timers = [];
-    var cancelled = false;
-    function after(ms, fn) { timers.push(global.setTimeout(function () { if (!cancelled) fn(); }, ms)); }
-    var stopEvents = ['pointerdown', 'touchstart', 'wheel', 'keydown'];
-    function cancel() {
-      if (cancelled) return;
-      cancelled = true;
-      for (var i = 0; i < timers.length; i += 1) global.clearTimeout(timers[i]);
-      timers = [];
-      stopEvents.forEach(function (t) { track.removeEventListener(t, cancel); });
-      track.removeEventListener('play', cancel, true);
-    }
-    // 사용자 직접 입력 → 즉시 양보(스크롤 이벤트가 아니라 입력만 본다). 하위 <video> 재생 → 중단.
-    stopEvents.forEach(function (t) { track.addEventListener(t, cancel, { passive: true }); });
-    track.addEventListener('play', cancel, true);
-
-    if (mode !== 'advance') {
-      // hint — 다음 카드 쪽으로 살짝 밀었다 복귀(1회)
-      var peek = Math.min(Math.round(stride * 0.16), maxLeft);
-      after(400, function () { autoScrollTo(track, peek); });
-      after(1100, function () { autoScrollTo(track, 0); });
-      after(1700, cancel);
-      return;
-    }
-
-    // advance — Card1 을 먼저 읽을 시간 → 2 → 3 → 4 … 마지막 카드에서 정지(복귀 없음)
-    var count = Math.min(m.count || 0, 6);
-    if (count < 2) { cancel(); return; }
-    var dwell = 2600;
-    var t = 1700;
-    for (var c = 1; c < count; c += 1) {
-      (function (idx) {
-        after(t, function () { autoScrollTo(track, Math.min(idx * stride, maxLeft)); });
-      })(c);
-      t += dwell;
-    }
-    after(t + 200, cancel);
-  }
-
-  function sectionOf(node) {
-    var n = node;
-    while (n && n.nodeType === 1) {
-      if (n.tagName === 'SECTION' && (n.getAttribute('data-scene') != null || n.id)) return n;
-      n = n.parentNode;
-    }
-    return null;
-  }
-
-  function initAuto(root) {
-    if (REDUCED) return;
-    var scope = root && root.querySelectorAll ? root : doc;
-    Array.prototype.forEach.call(
-      scope.querySelectorAll('.f2r-collection[data-collection-auto]:not([data-collection-static])'),
-      function (collection) {
-        var track = collection.querySelector('[data-collection-track]');
-        if (!track || track.dataset.autoReady === 'true') return;
-        track.dataset.autoReady = 'true';
-
-        var started = false;
-        var mo = null;
-        var io = null;
-        var fb1 = null;
-        var fb2 = null;
-        function teardown() {
-          if (mo) mo.disconnect();
-          if (io) io.disconnect();
-          global.clearTimeout(fb1);
-          global.clearTimeout(fb2);
-        }
-        function start() {
-          if (started) return;
-          started = true;
-          teardown();
-          runAuto(collection);
-        }
-        function inView(minRatio) {
-          var r = collection.getBoundingClientRect();
-          var vh = global.innerHeight || (doc.documentElement && doc.documentElement.clientHeight) || 800;
-          if (r.bottom <= 0 || r.top >= vh) return false;
-          var vis = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-          return vis >= Math.min(r.height, vh) * (minRatio || 0.3);
-        }
-
-        // (1) V2-10 sceneFlow — 섹션이 active 가 되는 신호(실기기에서 검증됨)
-        var section = sectionOf(collection);
-        if (section && typeof global.MutationObserver === 'function') {
-          mo = new global.MutationObserver(function () {
-            if (section.getAttribute('data-scene') === 'active') start();
-          });
-          mo.observe(section, { attributes: true, attributeFilter: ['data-scene'] });
-          if (section.getAttribute('data-scene') === 'active') start();
-        }
-        // (2) IntersectionObserver — 낮은 threshold, 여러 신호 중 하나
-        if (typeof global.IntersectionObserver === 'function') {
-          io = new global.IntersectionObserver(function (entries) {
-            for (var i = 0; i < entries.length; i += 1) {
-              if (entries[i].isIntersecting && entries[i].intersectionRatio >= 0.25) { start(); return; }
-            }
-          }, { threshold: [0, 0.12, 0.25, 0.5] });
-          io.observe(collection);
-        }
-        // (3) guarded timeout — IO/scene 둘 다 안 와도 rect 로 직접 판정(스크롤 리스너 아님)
-        fb1 = global.setTimeout(function () {
-          if (started) return;
-          if (inView(0.3)) start();
-          else fb2 = global.setTimeout(function () { if (!started && inView(0.3)) start(); }, 4000);
-        }, 1800);
-      }
-    );
-  }
-
   var wired = false;
   function wire(root) {
     if (!wired) {
@@ -358,7 +202,6 @@
       global.addEventListener('resize', function () { eachCollection(doc, update); });
     }
     init(root);
-    initAuto(root);
   }
 
   global.F2RAcademyCollection = Object.freeze({
