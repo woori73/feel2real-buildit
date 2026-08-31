@@ -2447,7 +2447,7 @@ CSAT_TYPE_RANGES = [
     ((26,), 'content_match', '내용 일치·불일치', ('내용과 일치', '내용과 일치하지')),
     ((27, 28), 'notice', '안내문', ('안내문', 'event', 'competition')),
     ((29,), 'grammar', '어법', ('어법', 'grammar')),
-    ((30,), 'vocabulary', '어휘', ('낱말', '어휘', 'word')),
+    ((30,), 'vocabulary', '어휘', ('낱말', '어휘', '문맥상 적절하지', 'word')),
     ((31, 32, 33, 34), 'blank', '빈칸', ('빈칸', 'blank')),
     ((35,), 'irrelevant', '무관 문장', ('관계 없는', '무관')),
     ((36, 37), 'order', '글의 순서', ('순서', 'order')),
@@ -2482,11 +2482,17 @@ def classify_csat_question(question_no: int, prompt: str, choices: list[str]) ->
 
 def classify_csat_prompt(prompt: str, choices: list[str] | None = None) -> dict:
     """발문만으로 분류하되 같은 유형의 여러 수능 번호 중 하나를 임의 선택하지 않는다."""
-    haystack = f"{prompt} {' '.join(choices or [])}".lower()
+    # Choice prose routinely contains words such as ``event`` or ``purpose`` and
+    # must not override the actual instruction. Classification is prompt-scoped.
+    haystack = prompt.lower()
     matches = []
     for numbers, type_id, name, signals in CSAT_TYPE_RANGES:
         if any(signal.lower() in haystack for signal in signals):
             matches.append({'numbers': list(numbers), 'id': type_id, 'name': name})
+    if len(matches) > 1:
+        singleton = [item for item in matches if len(item['numbers']) == 1]
+        if len(singleton) == 1:
+            matches = singleton
     if len(matches) > 1:
         exact = [item for item in matches if item['id'] in ('grammar', 'vocabulary', 'blank', 'order', 'insertion', 'summary')]
         if len(exact) == 1:
@@ -2584,6 +2590,77 @@ CSAT_JSON_TYPE_ALIASES = {
 }
 
 
+def _normalise_csat_problem_choices(problem: dict, raw_choices: object) -> tuple[dict, list[str]]:
+    """Normalize the production V1 layout where choices trail the passage.
+
+    Only a final, sequential circled-number block is extracted. Digits elsewhere
+    in the passage are never considered. The original problem remains available
+    as ``source_problem`` in raw_json and the source file is retained verbatim.
+    """
+    if isinstance(raw_choices, list) and raw_choices:
+        return {**problem, 'choices': raw_choices}, [str(choice) for choice in raw_choices]
+    passage = str(problem.get('passage') or '')
+    markers = '①②③④⑤'
+    markup = problem.get('markup') if isinstance(problem.get('markup'), list) else []
+    # In insertion and underlined-word questions, the source markup is itself the
+    # explicit option model. Preserve it instead of inventing text choices.
+    for item in markup:
+        if not isinstance(item, dict):
+            continue
+        values = item.get('labels') if item.get('type') == 'insertion_positions' else \
+            item.get('tokens') if item.get('type') == 'underline_targets' else None
+        if isinstance(values, list) and len(values) >= 2 and all(str(value).strip() for value in values):
+            choices = [str(value) for value in values]
+            return {**problem, 'choices': choices}, choices
+
+    occurrences = [(match.start(), markers.index(match.group()) + 1)
+                   for match in re.finditer(r'[①②③④⑤]', passage)]
+    selected = None
+    for position, (offset, marker_no) in enumerate(occurrences):
+        tail = occurrences[position:]
+        numbers = [number for _, number in tail]
+        if marker_no == 1 and numbers == list(range(1, len(numbers) + 1)) and len(numbers) >= 2:
+            selected = (offset, tail)
+    if selected is None:
+        return dict(problem), []
+    start_offset, tail = selected
+    choices = []
+    for position, (offset, _) in enumerate(tail):
+        end = tail[position + 1][0] if position + 1 < len(tail) else len(passage)
+        choices.append(passage[offset:end].strip())
+    normalized = {**problem, 'passage': passage[:start_offset].rstrip(), 'choices': choices}
+    return normalized, choices
+
+
+def _parse_csat_number_spec(value: object) -> list[int]:
+    """Parse only an explicit CSAT-number field; never mine numbers from prose."""
+    if value is None or value == '' or isinstance(value, bool):
+        return []
+    if isinstance(value, int):
+        numbers = [value]
+    elif isinstance(value, list):
+        if not value or any(isinstance(item, bool) or not isinstance(item, int) for item in value):
+            return []
+        numbers = value
+    elif isinstance(value, str):
+        source = value.strip()
+        range_match = re.fullmatch(r'(\d{1,2})\s*[-~～〜–—]\s*(\d{1,2})', source)
+        if range_match:
+            start, end = map(int, range_match.groups())
+            if start > end:
+                return []
+            numbers = list(range(start, end + 1))
+        elif re.fullmatch(r'\d{1,2}(?:\s*[·.,]\s*\d{1,2})+', source):
+            numbers = [int(item) for item in re.split(r'\s*[·.,]\s*', source)]
+        elif re.fullmatch(r'\d{1,2}', source):
+            numbers = [int(source)]
+        else:
+            return []
+    else:
+        return []
+    return numbers if len(numbers) == len(set(numbers)) and all(18 <= number <= 45 for number in numbers) else []
+
+
 def _normalise_csat_json_question(raw: dict, inherited: dict, index: int) -> dict:
     if not isinstance(raw, dict):
         raise ValueError('문항은 JSON object여야 합니다.')
@@ -2591,27 +2668,42 @@ def _normalise_csat_json_question(raw: dict, inherited: dict, index: int) -> dic
     if not isinstance(problem, dict):
         raise ValueError('problem은 JSON object여야 합니다.')
     source_no = int(raw.get('source_question_no', raw.get('number', index)) or index)
-    explicit_no = int(raw.get('csat_question_no', raw.get('question_no', 0)) or 0)
+    source_number_raw = next((raw[key] for key in ('csat_question_no', 'question_no', 'question_number')
+                              if raw.get(key) not in (None, '')), '')
+    declared_numbers = _parse_csat_number_spec(source_number_raw)
+    explicit_no = declared_numbers[0] if len(declared_numbers) == 1 else 0
     supplied_type = str(raw.get('type') or raw.get('csat_question_type') or '').strip()
     alias = CSAT_JSON_TYPE_ALIASES.get(supplied_type)
     instruction = str(problem.get('instruction', raw.get('instruction', raw.get('prompt', raw.get('stem', '')))) or '')
-    passage = str(problem.get('passage', raw.get('passage', '')) or '')
-    choices = problem.get('choices', raw.get('choices', [])) or []
-    if not isinstance(choices, list):
+    raw_choices = problem.get('choices', raw.get('choices', [])) or []
+    if not isinstance(raw_choices, list):
         raise ValueError('problem.choices는 array여야 합니다.')
-    choices = [str(choice) for choice in choices]
+    normalized_problem, choices = _normalise_csat_problem_choices(problem, raw_choices)
+    passage = str(normalized_problem.get('passage', raw.get('passage', '')) or '')
     if explicit_no:
-        if not 18 <= explicit_no <= 45:
-            raise ValueError('csat_question_no는 18~45 사이여야 합니다.')
         classified = classify_csat_question(explicit_no, instruction, choices)
         classification_status = 'review' if classified['type_mismatch'] else 'classified'
         candidates = [explicit_no]
+        candidate_source = 'explicit'
+    elif len(declared_numbers) > 1:
+        standards = [csat_type_for_number(number) for number in declared_numbers]
+        same_type = len({item['id'] for item in standards}) == 1
+        classified = {
+            'type_id': standards[0]['id'] if same_type else 'review',
+            'type_name': standards[0]['name'] if same_type else 'REVIEW',
+            'type_mismatch': not same_type,
+            'mismatch_reason': '' if same_type else '복합 수능번호가 서로 다른 표준 유형에 걸쳐 있습니다.',
+        }
+        candidates = declared_numbers
+        classification_status = 'review'
+        candidate_source = 'declared'
     elif alias:
         type_id, type_name, candidates = alias
         explicit_no = candidates[0] if len(candidates) == 1 else 0
         classified = {'type_id': type_id, 'type_name': type_name, 'type_mismatch': False,
                       'mismatch_reason': '' if explicit_no else f'{supplied_type} 유형의 표준 번호 {candidates} 중 하나를 확인해 주세요.'}
         classification_status = 'classified' if explicit_no else 'review'
+        candidate_source = 'mapping'
     else:
         prompt_classification = classify_csat_prompt(instruction, choices)
         candidates = prompt_classification['candidate_numbers']
@@ -2620,46 +2712,57 @@ def _normalise_csat_json_question(raw: dict, inherited: dict, index: int) -> dic
                       'type_mismatch': prompt_classification['classification_status'] == 'review',
                       'mismatch_reason': prompt_classification['classification_reason']}
         classification_status = prompt_classification['classification_status']
-    markup = problem.get('markup', raw.get('markup', [])) or []
+        candidate_source = 'mapping'
+    markup = normalized_problem.get('markup', raw.get('markup', [])) or []
     if not isinstance(markup, list) or any(not isinstance(item, dict) for item in markup):
         raise ValueError('problem.markup은 object array여야 합니다.')
     return {
-        'source_question_no': source_no, 'question_no': explicit_no,
+        'source_question_no': source_no, 'source_question_number_raw': source_number_raw,
+        'question_no': explicit_no,
         'csat_type_id': classified['type_id'], 'csat_type_name': classified['type_name'],
         'stem': instruction, 'prompt': instruction, 'passage': passage, 'choices': choices,
         'answer': str(raw.get('answer', '') or ''), 'explanation': str(raw.get('explanation', '') or ''),
-        'problem': problem, 'markup': markup, 'group_label': str(raw.get('group_label', raw.get('common_passage_id', '')) or ''),
-        'common_passage_id': str(raw.get('common_passage_id', '') or ''),
+        'problem': normalized_problem, 'source_problem': problem, 'markup': markup,
+        'group_label': str(raw.get('group_label') or raw.get('common_passage_id') or problem.get('shared_group') or ''),
+        'common_passage_id': str(raw.get('common_passage_id') or problem.get('shared_group') or ''),
         'classification_status': classification_status, 'candidate_numbers': candidates,
+        'candidate_source': candidate_source,
         'classification_reason': classified['mismatch_reason'], **classified,
         '_source_metadata': inherited,
     }
 
 
-def _resolve_csat_common_passage_numbers(questions: list[dict]) -> None:
-    """Resolve the two standard CSAT reading complexes without inventing numbers.
+def _resolve_csat_candidate_runs(questions: list[dict]) -> None:
+    """Assign an explicit standard candidate range to its complete source-order run.
 
-    JSON V1 already carries ``common_passage_id``. A two-item group is the 41–42
-    complex and a three-item group is the 43–45 complex. Explicit numbers always
-    win; incomplete, mixed, or non-standard group sizes stay REVIEW.
+    Examples are the four blank questions (31–34), two order questions (36–37),
+    and two insertion questions (38–39). This uses classifier-declared standard
+    mappings, never common-passage group size. Explicit individual numbers win.
     """
-    groups: dict[str, list[dict]] = {}
-    for question in questions:
-        common_id = str(question.get('common_passage_id') or '')
-        if common_id:
-            groups.setdefault(common_id, []).append(question)
-    for group in groups.values():
-        if any(question.get('question_no') for question in group):
+    index = 0
+    while index < len(questions):
+        question = questions[index]
+        if question.get('question_no'):
+            index += 1
             continue
-        numbers = [41, 42] if len(group) == 2 else [43, 44, 45] if len(group) == 3 else []
-        for question, number in zip(group, numbers):
-            standard = csat_type_for_number(number)
-            question.update({
-                'question_no': number, 'csat_type_id': standard['id'], 'csat_type_name': standard['name'],
-                'type_id': standard['id'], 'type_name': standard['name'], 'candidate_numbers': [number],
-                'classification_status': 'classified', 'classification_reason': '',
-                'type_mismatch': False, 'mismatch_reason': '',
-            })
+        candidates = question.get('candidate_numbers') or []
+        type_id = question.get('csat_type_id')
+        end = index + 1
+        while end < len(questions) and not questions[end].get('question_no') \
+                and questions[end].get('csat_type_id') == type_id \
+                and questions[end].get('candidate_numbers') == candidates:
+            end += 1
+        group = questions[index:end]
+        if len(candidates) == len(group) and len(group) > 1:
+            for item, number in zip(group, candidates):
+                standard = csat_type_for_number(number)
+                item.update({
+                    'question_no': number, 'csat_type_id': standard['id'], 'csat_type_name': standard['name'],
+                    'type_id': standard['id'], 'type_name': standard['name'], 'candidate_numbers': [number],
+                    'classification_status': 'classified', 'classification_reason': '',
+                    'type_mismatch': False, 'mismatch_reason': '',
+                })
+        index = end
 
 
 def _csat_json_review_reason(question: dict) -> str:
@@ -2711,7 +2814,7 @@ def parse_csat_question_json(value: object, ui_source_kind: str = '', ui_metadat
             raise ValueError(f'{metadata["source_round"]}회차에 questions가 없습니다.')
         round_questions = [_normalise_csat_json_question(raw, metadata, index)
                            for index, raw in enumerate(questions, start=1)]
-        _resolve_csat_common_passage_numbers(round_questions)
+        _resolve_csat_candidate_runs(round_questions)
         parsed.extend(round_questions)
     return parsed
 
