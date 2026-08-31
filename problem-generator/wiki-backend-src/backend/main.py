@@ -2763,27 +2763,51 @@ async def preview_csat_html_imports(exam_kind: Literal['half', 'full'] = Form(..
     previews, total_bytes = [], 0
     for file in files:
         filename = file.filename or 'upload.html'
-        if Path(filename).suffix.lower() not in ('.html', '.htm'):
-            raise HTTPException(status_code=415, detail=f'{filename}: HTML 파일만 Batch Import할 수 있습니다.')
         data = await file.read()
         total_bytes += len(data)
-        if not data or len(data) > 10 * 1024 * 1024 or total_bytes > 30 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail='HTML은 파일당 10MB, 전체 30MB 이하여야 합니다.')
+        source_hash = hashlib.sha256(data).hexdigest()
+        failure = ''
+        if Path(filename).suffix.lower() not in ('.html', '.htm'):
+            failure = 'HTML 파일만 Batch Import할 수 있습니다.'
+        elif not data:
+            failure = '빈 HTML 파일입니다.'
+        elif len(data) > 10 * 1024 * 1024:
+            failure = 'HTML은 파일당 10MB 이하여야 합니다.'
+        elif total_bytes > 30 * 1024 * 1024:
+            failure = 'Batch HTML 전체 크기는 30MB 이하여야 합니다.'
+        if failure:
+            previews.append({'source_id': None, 'source_hash': source_hash, 'parser': 'editable-html-v1',
+                'raw_text': '', 'metadata': metadata, 'source_filename': filename, 'original_stored': False,
+                'owner_scope': 'shared', 'questions': [], 'failures': [{'index': 1, 'reason': failure}],
+                'requires_review': False, 'status': 'FAILED', 'duplicate_source_id': None})
+            continue
         try:
             raw_html = data.decode('utf-8-sig', errors='strict')
-        except UnicodeDecodeError as error:
-            raise HTTPException(status_code=400, detail=f'{filename}: UTF-8 HTML이 아닙니다.') from error
+        except UnicodeDecodeError:
+            previews.append({'source_id': None, 'source_hash': source_hash, 'parser': 'editable-html-v1',
+                'raw_text': '', 'metadata': metadata, 'source_filename': filename, 'original_stored': False,
+                'owner_scope': 'shared', 'questions': [], 'failures': [{'index': 1, 'reason': 'UTF-8 HTML이 아닙니다.'}],
+                'requires_review': False, 'status': 'FAILED', 'duplicate_source_id': None})
+            continue
         questions = split_csat_html(raw_html)
+        with get_db() as conn:
+            duplicate = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?',
+                                     (source_hash, exam_kind)).fetchone()
+        review = any(question['classification_status'] == 'review' for question in questions)
+        status = 'DUPLICATE' if duplicate else 'FAILED' if not questions else 'REVIEW' if review else 'READY'
         previews.append({
-            'source_id': None, 'source_hash': hashlib.sha256(data).hexdigest(), 'parser': 'editable-html-v1',
+            'source_id': None, 'source_hash': source_hash, 'parser': 'editable-html-v1',
             'raw_text': raw_html, 'metadata': metadata, 'source_filename': filename, 'original_stored': False,
             'owner_scope': 'shared', 'questions': questions,
             'failures': [] if questions else [{'index': 1, 'reason': '문항 container를 찾지 못했습니다.'}],
-            'requires_review': True,
+            'requires_review': review, 'status': status,
+            'duplicate_source_id': duplicate['id'] if duplicate else None,
         })
     return {'files': previews, 'file_count': len(previews),
             'question_count': sum(len(item['questions']) for item in previews),
-            'review_count': sum(1 for item in previews for question in item['questions'] if question['classification_status'] == 'review')}
+            'review_count': sum(1 for item in previews for question in item['questions'] if question['classification_status'] == 'review'),
+            'failed_count': sum(1 for item in previews if item['status'] == 'FAILED'),
+            'duplicate_count': sum(1 for item in previews if item['status'] == 'DUPLICATE')}
 
 
 @app.post('/api/csat/imports', status_code=201)

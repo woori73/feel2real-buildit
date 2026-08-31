@@ -32,6 +32,24 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(screen.queryByRole('heading',{name:'고3 수능 영어 자료 제작'})).not.toBeInTheDocument()
   })
 
+  it('HTML Batch는 정상 파일과 실패 파일 상태를 독립적으로 표시한다',async()=>{
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.includes('/csat/html-imports/preview'))return new Response(JSON.stringify({files:[
+        {source_id:null,source_hash:'a'.repeat(64),parser:'editable-html-v1',raw_text:'<article/>',metadata:{},source_filename:'ready.html',original_stored:false,owner_scope:'shared',requires_review:false,status:'READY',duplicate_source_id:null,failures:[],questions:[]},
+        {source_id:null,source_hash:'b'.repeat(64),parser:'editable-html-v1',raw_text:'',metadata:{},source_filename:'broken.txt',original_stored:false,owner_scope:'shared',requires_review:false,status:'FAILED',duplicate_source_id:null,failures:[{index:1,reason:'HTML 파일만 Batch Import할 수 있습니다.'}],questions:[]},
+      ],file_count:2,question_count:0,review_count:0,failed_count:1,duplicate_count:0}),{status:201,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<CsatEnglishWorkspace/>)
+    const input=screen.getByLabelText('수능 문제 HTML 여러 개 업로드')
+    fireEvent.change(input,{target:{files:[new File(['ok'],'ready.html',{type:'text/html'}),new File(['bad'],'broken.txt',{type:'text/plain'})]}})
+    const states=await screen.findByRole('region',{name:'HTML Batch 상태'})
+    expect(within(states).getByText('READY')).toBeInTheDocument()
+    expect(within(states).getByText('FAILED')).toBeInTheDocument()
+    expect(within(states).getByText('HTML 파일만 Batch Import할 수 있습니다.')).toBeInTheDocument()
+  })
+
   it('WRONG 탭은 Question ID가 연결된 기존 오답만 Assessment 대상으로 선택한다', async()=>{
     vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
       const url=String(input)
