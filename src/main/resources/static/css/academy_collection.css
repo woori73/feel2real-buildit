@@ -323,12 +323,21 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   html.js-collection .f2r-collection:not([data-collection-static]) .f2r-program-card:hover .f2r-program-card-highlight {
     border-color: var(--accent);
   }
+  /* Actual Class 카드 — hover 시 외곽 경계 미세 강조 + media micro-scale. */
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-phone-card:hover {
+    border-color: var(--accent);
+  }
+  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-phone-card:hover .f2r-phone-frame {
+    transform: scale(1.02);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   html.js-collection .f2r-program-card,
-  html.js-collection .f2r-phone-card { transition: none; }
+  html.js-collection .f2r-phone-card,
+  .f2r-phone-frame { transition: none; }
   html.js-collection .f2r-program-card:hover,
   html.js-collection .f2r-phone-card:hover { transform: none; }
+  html.js-collection .f2r-phone-card:hover .f2r-phone-frame { transform: none; }
 }
 
 /* ── Mini Lecture Card (sec-minilectures) — V2-9 ────────────────────────
@@ -425,11 +434,21 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
    기존 업로드 세로 숏폼을 보존하되, 일반 video 카드가 아니라 "휴대폰 화면을 넘겨본다"는
    경험으로 프레임에 담는다. 특정 기종 복제는 아니고, 즉시 "폰 화면"으로 인지되게만 한다.
    클릭하면 그 자리에서 재생(academy_collection.js data-collection-play). 새 라이브러리 없음. */
+/* Phase 5: 각 수업을 독립된 콘텐츠 카드로 인지하도록 카드 전체에 subtle border 를 준다.
+   Programs 의 .f2r-program-card-highlight(카드 *내부* 정보 강조)와 역할이 다르다 — 여기는 카드
+   *외곽* 경계다. 모바일에서도 항상 보인다(스와이프 시 카드 시작/끝이 명확). media viewport /
+   video 재생 계약(.f2r-phone-frame 이하)은 건드리지 않는다. */
 .f2r-phone-card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
 }
+.f2r-phone-frame { transition: transform 200ms var(--hover-ease, ease); }
 .f2r-phone-frame {
   position: relative;
   width: 100%;

@@ -891,6 +891,115 @@ typography + reveal-once.
 - 실기기 확인 필요: 세로 스크롤 시 reveal 진입 타이밍 체감, AI Native sticky 스크롤 중 Visual 전환
   타이밍, hover 반응(데스크톱), reduced-motion 기기.
 
+## 21. 2026-09-01 변경: Storefront Phase 5 — Cinematic Storytelling (School Digital Twin Showcase + AI Native Panorama)
+
+Phase 4 의 정적 구조 위에, 두 핵심 섹션만 cinematic section 으로 승격한다. **일반 섹션은 Phase 4 의
+가벼운 `academy_reveal.js` 1회 reveal 을 그대로 유지**하고, `#sec-featured` + `#sec-digitaltwin` 두
+곳만 GSAP + ScrollTrigger 를 쓴다.
+
+### 역할 분리
+- 일반 섹션 = `academy_reveal.js` (IntersectionObserver 1회 reveal). 변경 없음.
+- cinematic 2섹션 = **`academy_cinematic.js` (`window.F2RCinematic`)** — GSAP + ScrollTrigger 를 소유하는
+  **유일한** 모듈. `wire(root)` / `refresh()` / `active()` / `seekFeatured` / `seekAiNative`.
+- Phase 4 이전 문제(GSAP·sceneFlow·processProgress·revealSequence·data-fade·collection autoplay·다중
+  IO 가 같은 페이지에서 motion state 중복 관리)를 다시 만들지 않는다. GSAP timeline 이 element 상태의
+  SSoT. academy_public.js 는 `window.F2RCinematic` 만 호출(GSAP API 직접 호출 없음).
+
+### 안전 / 폴백 (아래 중 하나라도면 `F2RCinematic.wire()` 는 전부 no-op)
+- `window.gsap` / `window.ScrollTrigger` 미로드 (cdnjs `gsap@3.12.5` + ScrollTrigger, `landing.html` 과 동일 CDN)
+- `prefers-reduced-motion: reduce`
+- 뷰포트 폭 `< 900` (모바일 — 네이티브 scroll-snap 스와이프가 담당)
+- no-op 이면 두 섹션은 CSS 로 정적 판독 가능(가로 스와이프 + scroll-snap). 실제 trigger 를 만들었을
+  때만 `html.js-cinematic` 게이트 클래스가 붙는다. CSR 재렌더/리사이즈 → `teardown()` 이 이전
+  ScrollTrigger/timeline 을 전부 kill 후 재구성.
+
+### USER SCROLL = STORY TIMELINE
+- `scrub` (pin 아님). 레이아웃은 CSS `position:sticky` 가 담당 → pin 진입/탈출 jump 없음.
+- ScrollTrigger 는 세로 스크롤 progress → transform/opacity 매핑만. 스크롤 멈추면 진행 멈춤,
+  위로 스크롤하면 그대로 역행. 자동 진행(setInterval) 없음.
+
+### A. School Digital Twin Horizontal Showcase (`#sec-featured`)
+- 마크업(`academy_sections.js` `renderFeatured` → `ctx.featuredShowcase(schools)`): `.dt-showcase` →
+  `.dt-progress`(`01 / 04`) + `.dt-viewport` > `.dt-track[data-dt-track]` > N `.dt-scene[data-featured-school]`
+  (번호 + 학교명 + "출제자 Digital Twin" + `.dt-scene-body`) + `.dt-nav`(prev/next).
+- 데이터: `academy_public.js` `wireFeaturedShowcase()` 가 각 scene 마다
+  `fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))` → 영어 과목 필터 → `N ANALYSES` +
+  `{grade}학년 {semester} {examType}` 목록 + `/analyzes/{id}` 링크 + `/analyzes` 전체보기. **builderDraft
+  복제 없음, lesson highlight 재사용 없음, 가짜 분석 결과 없음**(영역별 배점/출제경향 summary 는
+  `/api/analyzes` 에 없으므로 만들지 않는다 — 필요 시 별도 후속 Phase).
+- 데스크톱 cinematic: `academy_cinematic.js` `wireFeatured()` — `#sec-featured` min-height =
+  `calc(100vh + (--dt-count - 1) * 82vh)`, `.featured-inner{position:sticky;top:0}`, ScrollTrigger
+  `scrub` 이 세로 progress → `.dt-track` `translateX` (transform 만). 중앙 scene `[data-active]` +
+  scale 1/opacity 1, 벗어난 scene scale .9/opacity .4 (카메라 포커스, 섹션 전체 dimming 아님). 다음
+  학교가 오른쪽에서 peek. `.dt-viewport{overflow-x:clip}` 로 페이지 가로 밀림 방지.
+- 폴백/모바일: `.dt-track` 네이티브 `overflow-x:auto` + `scroll-snap-type:x` + peek. 칩/네비 클릭 →
+  `track.scrollTo`, track scroll → 칩/CTA/카운터 동기화(rAF 배치). autoplay 없음.
+- 칩 ↔ scene 동기화: cinematic 엔진이 `root` 에 `f2r:cinematic-scene` CustomEvent 디스패치 →
+  `wireFeaturedShowcase` 가 칩 `aria-pressed` + CTA prefix + `01/04` 만 맞춘다(스크롤 안 건드림).
+
+### B. AI Native 5-Scene Panorama (`#sec-digitaltwin`)
+- 마크업(`aiNativeHtml`): `<figure data-ai-visual data-active="0">` > `.ai-stage[data-ai-stage]` >
+  5 `.ai-scene[data-ai-scene]` (각자 목적별 미니 비주얼) + `<ol class="ai-native-steps">` 5 텍스트 블록
+  (번호 + 이름 + 한 줄, Phase 4 와 동일 — 모바일 세로 스토리). 5개 inline glyph(`AI_NATIVE_GLYPHS`)도 유지.
+- 5 scene (한 scene 의 마지막 오브젝트 = 다음 scene 의 입력, continuity):
+  - 0 SCHOOL DATA — 흩어진 자료(시험지/프린트/교과서/수업자료)가 중앙으로 모여 stack.
+  - 1 EXAMINER PATTERN — 모인 자료 위 scan line + 영역별 bar(VOCAB/GRAMMAR/READING/WRITING/PATTERN) →
+    "EXAMINER DIGITAL TWIN" 카드 형성.
+  - 2 TWIN + INSIGHT — DIGITAL TWIN / TEACHER INSIGHT 두 스트림이 중앙 "BUILD IT BRAIN" 으로 결합 +
+    insight 토큰(시험에 자주 나옴 / 자주 틀리는 유형 / 서술형 주의 / 이번 시험 핵심).
+  - 3 QUESTION BUILD — BRAIN → 원본 문항(miniature: `18. 다음 글의 목적으로…` + `① ② ③ ④ ⑤`) →
+    변형 A / 변형 B / 서술형 으로 분기 + `SCHOOL PATTERN ✓` 스탬프.
+  - 4 FINAL — Q01~Q05 카드가 중앙으로 모여 하나의 완성 시험지(`FINAL / 실전 대비 모의고사`)로 조립.
+    (학교명/시즌 하드코딩 없음 — generic 섹션.)
+- 데스크톱: `.ai-native-visual{position:sticky;top:100px}` (Phase 4 와 동일), `academy_cinematic.js`
+  `wireAiNative()` 가 `paused` timeline 을 만들고 ScrollTrigger `scrub` 이 `.ai-native-steps` progress →
+  `tl.progress()` 로 구동. scene i 의 조립 tween 은 timeline 상 `[i-0.45, i+0.15)` 에 몰아 넣어 "진입
+  하면서" 조립이 끝나고 그 scene 활성 구간 내내 완성 상태 유지(reverse 시 이전 scene 구간에서 분해).
+  `data-active` = `floor(progress * 5)`.
+- GSAP 없음/reduced-motion: `academy_public.js` `wireAiNative()` (IO 폴백, `rootMargin: '-48% 0px -48% 0px'`)
+  가 활성 scene 을 `[data-active]` 로. `html.js-cinematic` 이면 이 IO 폴백은 스킵.
+  CSS `[data-active="N"] .ai-scene[data-ai-scene="N"]{opacity:1}` 로 정적 표시. 각 scene 의 CSS 최종
+  배치 = "조립 완료" 상태이므로 GSAP 없이도 뜻이 읽힌다.
+- 모바일: `.ai-native-visual{display:none}` (Phase 4 와 동일) + 5 세로 블록(각자 inline glyph + 이름 + 한 줄).
+
+### C. Actual Class (`#sec-videos`) — 카드 외곽 경계
+- `academy_collection.css` `.f2r-phone-card` 에 `border:1px solid var(--line)` + `border-radius:20px` +
+  `background:#fff` + `padding:16px` + `box-shadow:var(--shadow-sm)`. 모바일에서도 항상 보인다.
+- 데스크톱 hover(기존 `@media (hover:hover)` 블록): `border-color:var(--accent)` + `.f2r-phone-frame`
+  `transform:scale(1.02)` 추가, transition 200ms. reduced-motion → 해제.
+- Programs 의 `.f2r-program-card-highlight`(카드 *내부* 정보 강조)와 역할 구분. `.f2r-media-viewport` /
+  `.f2r-media-play` / V2-8 재생 계약 **미변경**.
+
+### 파일 / 캐시버스팅
+- 신규: `academy_cinematic.js`, `academy_cinematic.css`, `academy_cinematic.test.js`.
+- 수정: `academy_sections.js`(featured showcase + aiNative 5 scene), `academy_public.js`(`wireCinematic`
+  + `wireFeaturedShowcase` + `wireAiNative` js-cinematic 스킵), `academy_public.css`(AI stage/scene 정의,
+  frame 규칙 제거), `academy_collection.css`(phone-card border), `academy_public.html`(GSAP CDN +
+  cinematic 자산), `academy_builder.html` / `lesson_product_editor.html`(캐시버스팅),
+  `AcademyBuilderTemplateContractTest.java` / `academy_reveal.test.js` / `academy_featured_selector.test.js`
+  (Phase 5 스펙에 맞춰 수정 — Phase 4 의 "GSAP 완전 제거" assertion 은 §1 이 명시적으로 허용하므로
+  "삭제된 Phase-4 파일만 금지"로 변경).
+- 캐시버스팅 `?v=20260901-1` (reveal/public/collection/cinematic css + reveal/collection/cinematic/sections/public js).
+
+### 검증
+- JS 333 tests / 327 pass / 6 fail (전부 기존 로컬 CRLF: `academy_builder_header_section_apply` ×1,
+  `academy_builder_hero_media_pending` ×2, `academy_intro_summary` ×3). `academy_cinematic.test.js` 8 신규.
+- `bootJar` BUILD SUCCESSFUL. `AcademyBuilderTemplateContractTest` / `AcademyServiceTest` /
+  `LessonProductEditorTemplateContractTest` 통과. `LessonProductSurfaceCompatibilityContractTest.sharedShowcase_*`
+  (CRLF) / `SubdomainRenderIntegrationTest`(MySQL) 는 기존 환경 실패.
+- 로컬 harness(byte-identical 자산, `/api/analyzes` mock): 데스크톱 1360 — `html` 클래스
+  `js-reveal js-cinematic js-collection`, `--dt-count:4`, `.featured-inner` sticky, 4 scene 실데이터
+  (압4/신구4/신사2/언북2), 세로 스크롤 → ScrollTrigger progress 0→1 매핑 + 중앙 scene 0→1→2→3 전환 +
+  track translateX, AI Native progress 0→1 → scene 0→1→2→3→4 순차 활성(각 scene 조립 완료 상태),
+  스크롤 멈추면 progress 고정(3s idle drift 없음 = autoplay 없음), 위로 스크롤 → 역행, sticky 유지,
+  h-overflow 0. 모바일 375 — `js-cinematic` 없음(cinematic no-op), `.dt-track` `overflow-x:auto` +
+  `scroll-snap-type:x` + peek(85%), AI Native visual `display:none` + 5 세로 블록 + glyph, phone-card
+  border `1px solid var(--line)` radius 20px 항상 표시, h-overflow 0. Programs 4-col grid, Actual Class
+  4 phone card, V2-8 재생(`<video>` INTO viewport, 크기 불변) 무회귀.
+- **실기기에서만 확인 가능**: 세로 스크롤 시 track 가로 이동 체감, scene 조립 애니메이션의 부드러움,
+  다음 학교 peek 의 continuity, 모바일 네이티브 스와이프 관성/스냅, AI Native 5 scene 의 시각적
+  이해도, pin(sticky) 구간 진입/탈출 jump 유무, reduced-motion 실제 OS 설정, hover(데스크톱).
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락
