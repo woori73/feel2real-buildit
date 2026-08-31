@@ -36,11 +36,30 @@ export const registerCsatSiteTools=():Promise<void>=>{
       name:'search_csat_questions',
       description:'Search the signed-in BuildIt Wiki CSAT Question DB by official CSAT number or type. This does not record usage.',
       inputSchema:objectSchema({
-        question_no:{type:'integer',minimum:18,maximum:45},type_id:{type:'string'},
+        exam_kind:{type:'string',enum:['half','full']},question_no:{type:'integer',minimum:18,maximum:45},type_id:{type:'string'},
+        source_id:{type:'integer',minimum:1},source_filename:{type:'string'},source_round:{type:'string'},
+        has_answer:{type:'boolean'},has_explanation:{type:'boolean'},review_status:{type:'string',enum:['classified','review']},
         exclude_used:{type:'boolean'},used_in:{type:'string',enum:['half','full','wrong','daily']},
       }),
       annotations:{readOnlyHint:true},
-      execute:async input=>{const query=new URLSearchParams();for(const key of ['question_no','type_id','exclude_used','used_in'])if(input[key]!==undefined)query.set(key,String(input[key]));return call(`csat/questions${query.size?`?${query}`:''}`)},
+      execute:async input=>{const query=new URLSearchParams();for(const key of ['exam_kind','question_no','type_id','source_id','source_filename','source_round','has_answer','has_explanation','review_status','exclude_used','used_in'])if(input[key]!==undefined)query.set(key,String(input[key]));return call(`csat/questions${query.size?`?${query}`:''}`)},
+    },
+    {
+      name:'search_csat_wrong_answers',
+      description:'Search one student’s saved CSAT wrong answers by exam, official type, number, and Question-link state. The signed-in Wiki session is reused and an exact student condition is required to avoid exposing all student records.',
+      inputSchema:objectSchema({
+        student:{type:'string',minLength:1},exam:{type:'string'},type_id:{type:'string'},
+        question_no:{type:'integer',minimum:18,maximum:45},linked:{type:'boolean'},
+      },['student']),
+      annotations:{readOnlyHint:true},
+      execute:async input=>{if(!String(input.student||'').trim())throw new Error('student 조건이 필요합니다.');const query=new URLSearchParams();for(const key of ['student','exam','type_id','question_no','linked'])if(input[key]!==undefined)query.set(key,String(input[key]));return call(`csat/wrong-answers?${query}`)},
+    },
+    {
+      name:'link_csat_wrong_question',
+      description:'Link one existing CSAT wrong-answer record to one existing Question DB ID. The existing server validation requires the official CSAT question number to match.',
+      inputSchema:objectSchema({wrong_answer_id:{type:'integer',minimum:1},question_id:{type:'integer',minimum:1}},['wrong_answer_id','question_id']),
+      annotations:{readOnlyHint:false},
+      execute:input=>call(`csat/wrong-answers/${Number(input.wrong_answer_id)}/question`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:Number(input.question_id)})}),
     },
     {
       name:'get_csat_assessment',
