@@ -23,6 +23,14 @@ class CsatLibraryTest(unittest.TestCase):
         os.environ['BUILDIT_WIKI_DB_PATH'] = tmp.name
         main.DB_PATH = Path(tmp.name)
         main.init_db()
+        main.migrate_schema()
+
+    def setUp(self):
+        # Other modules also exercise the shared imported app and may replace DB_PATH.
+        os.environ['BUILDIT_WIKI_DB_PATH'] = tmp.name
+        main.DB_PATH = Path(tmp.name)
+        main.init_db()
+        main.migrate_schema()
 
     def seed_csat_questions(self, count, question_no=39):
         now = 'assessment-test'
@@ -120,8 +128,33 @@ class CsatLibraryTest(unittest.TestCase):
         self.assertEqual(2, body['file_count'])
         self.assertEqual(2, body['question_count'])
         self.assertEqual(['01.html', '02.html'], [item['source_filename'] for item in body['files']])
+        self.assertEqual(['READY', 'REVIEW'], [item['status'] for item in body['files']])
         with main.get_db() as conn:
             self.assertEqual(source_count, conn.execute('SELECT COUNT(*) FROM csat_question_sources').fetchone()[0])
+
+    def test_html_batch_preview_isolates_failed_file_and_marks_duplicate_before_commit(self):
+        client = TestClient(main.app)
+        valid = b'<article class="question"><h2 class="prompt">\xeb\x8b\xa4\xec\x9d\x8c \xea\xb8\x80\xec\x9d\x98 \xec\xa0\x9c\xeb\xaa\xa9\xec\x9c\xbc\xeb\xa1\x9c \xea\xb0\x80\xec\x9e\xa5 \xec\xa0\x81\xec\xa0\x88\xed\x95\x9c \xea\xb2\x83\xec\x9d\x80?</h2></article>'
+        mixed = client.post('/api/csat/html-imports/preview', data={'exam_kind': 'half', 'metadata_json': '{}'},
+                            files=[('files', ('valid.html', valid, 'text/html')),
+                                   ('files', ('broken.txt', b'not html', 'text/plain'))])
+        self.assertEqual(201, mixed.status_code)
+        self.assertEqual(['READY', 'FAILED'], [item['status'] for item in mixed.json()['files']])
+        self.assertEqual(1, mixed.json()['failed_count'])
+        preview = mixed.json()['files'][0]
+        saved = client.post('/api/csat/imports', json={
+            'exam_kind': 'half', 'source_filename': preview['source_filename'], 'source_hash': preview['source_hash'],
+            'parser': preview['parser'], 'metadata': preview['metadata'], 'raw_text': preview['raw_text'],
+            'questions': preview['questions'],
+        })
+        self.assertEqual(201, saved.status_code)
+        repeated = client.post('/api/csat/html-imports/preview', data={'exam_kind': 'half', 'metadata_json': '{}'},
+                               files=[('files', ('valid-again.html', valid, 'text/html'))])
+        self.assertEqual('DUPLICATE', repeated.json()['files'][0]['status'])
+        self.assertEqual(saved.json()['source_id'], repeated.json()['files'][0]['duplicate_source_id'])
+        with main.get_db() as conn:
+            conn.execute('DELETE FROM csat_questions WHERE source_id=?', (saved.json()['source_id'],))
+            conn.execute('DELETE FROM csat_question_sources WHERE id=?', (saved.json()['source_id'],))
 
     def test_saved_assessment_is_the_only_path_that_records_usage(self):
         ids = self.seed_csat_questions(5, 34)
