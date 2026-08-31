@@ -2698,8 +2698,17 @@ def _canonical_question(raw: dict, exam_kind: str, metadata: dict, filename: str
     }
 
 
+CsatSourceKind = Literal['half', 'full', 'wrong', 'daily']
+
+
+def _source_storage_kind(source_kind: str) -> Literal['half', 'full']:
+    """Keep the applied half/full schema while source_kind records ingestion intent in metadata."""
+    return 'full' if source_kind == 'full' else 'half'
+
+
 class CsatImportCommit(BaseModel):
     exam_kind: Literal['half', 'full']
+    source_kind: Optional[CsatSourceKind] = None
     source_filename: str
     source_hash: str = Field(pattern=r'^[0-9a-f]{64}$')
     parser: str
@@ -2712,6 +2721,17 @@ def _csat_question_response(row: sqlite3.Row) -> dict:
     item = dict(row)
     item['choices'] = json.loads(item.pop('choices_json'))
     item['exam_metadata'] = json.loads(item.pop('exam_metadata_json', '{}')) if 'exam_metadata_json' in item else {}
+    raw = json.loads(item.get('raw_json') or '{}')
+    item['source_kind'] = item['exam_metadata'].get('source_kind') or item.get('exam_kind')
+    item['source_title'] = (item['exam_metadata'].get('source_title') or item['exam_metadata'].get('title')
+                            or item['exam_metadata'].get('source_name') or item['exam_metadata'].get('exam_name') or '')
+    item['source_year'] = str(item['exam_metadata'].get('source_year') or item['exam_metadata'].get('year') or '')
+    item['source_round'] = str(item['exam_metadata'].get('source_round') or item['exam_metadata'].get('round') or '')
+    item['question_html'] = raw.get('question_html') or ''
+    item['explanation_html'] = raw.get('explanation_html') or ''
+    item['has_answer'] = bool(str(item.get('answer') or '').strip())
+    item['has_explanation'] = bool(str(item.get('solution') or '').strip() or str(raw.get('explanation_html') or '').strip())
+    item['review_status'] = 'review' if item.get('type_mismatch') or raw.get('classification_status') == 'review' else 'classified'
     item['type_mismatch'] = bool(item['type_mismatch'])
     return item
 
@@ -2753,13 +2773,20 @@ async def upload_csat_exam(exam_kind: Literal['half', 'full'] = Form(...), metad
 
 
 @app.post('/api/csat/html-imports/preview', status_code=201)
-async def preview_csat_html_imports(exam_kind: Literal['half', 'full'] = Form(...), metadata_json: str = Form('{}'), files: list[UploadFile] = File(...)):
+async def preview_csat_html_imports(exam_kind: Optional[Literal['half', 'full']] = Form(None),
+                                    source_kind: Optional[CsatSourceKind] = Form(None),
+                                    metadata_json: str = Form('{}'), files: list[UploadFile] = File(...)):
     if not files or len(files) > 50:
         raise HTTPException(status_code=400, detail='HTML 파일은 한 번에 1~50개까지 업로드할 수 있습니다.')
     try:
         metadata = json.loads(metadata_json or '{}')
     except json.JSONDecodeError as error:
         raise HTTPException(status_code=400, detail='시험 메타데이터 JSON 형식이 올바르지 않습니다.') from error
+    selected_source_kind = source_kind or exam_kind
+    if not selected_source_kind:
+        raise HTTPException(status_code=400, detail='자료 종류(HALF/FULL/WRONG/DAILY)를 선택해 주세요.')
+    storage_kind = _source_storage_kind(selected_source_kind)
+    metadata = {**metadata, 'source_kind': selected_source_kind}
     previews, total_bytes = [], 0
     for file in files:
         filename = file.filename or 'upload.html'
@@ -2792,13 +2819,14 @@ async def preview_csat_html_imports(exam_kind: Literal['half', 'full'] = Form(..
         questions = split_csat_html(raw_html)
         with get_db() as conn:
             duplicate = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?',
-                                     (source_hash, exam_kind)).fetchone()
+                                     (source_hash, storage_kind)).fetchone()
         review = any(question['classification_status'] == 'review' for question in questions)
         status = 'DUPLICATE' if duplicate else 'FAILED' if not questions else 'REVIEW' if review else 'READY'
+        preview_questions = [{**question, 'exam_kind': storage_kind, 'source_kind': selected_source_kind} for question in questions]
         previews.append({
             'source_id': None, 'source_hash': source_hash, 'parser': 'editable-html-v1',
             'raw_text': raw_html, 'metadata': metadata, 'source_filename': filename, 'original_stored': False,
-            'owner_scope': 'shared', 'questions': questions,
+            'owner_scope': 'shared', 'questions': preview_questions,
             'failures': [] if questions else [{'index': 1, 'reason': '문항 container를 찾지 못했습니다.'}],
             'requires_review': review, 'status': status,
             'duplicate_source_id': duplicate['id'] if duplicate else None,
@@ -2813,18 +2841,21 @@ async def preview_csat_html_imports(exam_kind: Literal['half', 'full'] = Form(..
 @app.post('/api/csat/imports', status_code=201)
 def commit_csat_import(payload: CsatImportCommit):
     now = datetime.now().isoformat()
-    canonical = [_canonical_question(raw, payload.exam_kind, payload.metadata, payload.source_filename, payload.raw_text, now) for raw in payload.questions]
+    source_kind = payload.source_kind or payload.metadata.get('source_kind') or payload.exam_kind
+    storage_kind = _source_storage_kind(source_kind)
+    metadata = {**payload.metadata, 'source_kind': source_kind}
+    canonical = [_canonical_question(raw, storage_kind, metadata, payload.source_filename, payload.raw_text, now) for raw in payload.questions]
     canonical = [item for item in canonical if 1 <= item['question_number'] <= 99]
     if not canonical:
         raise HTTPException(status_code=400, detail='검수 후 저장할 문항이 없습니다.')
     saved = []
     with get_db() as conn:
-        duplicate = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?', (payload.source_hash, payload.exam_kind)).fetchone()
+        duplicate = conn.execute('SELECT id FROM csat_question_sources WHERE source_hash=? AND exam_kind=?', (payload.source_hash, storage_kind)).fetchone()
         if duplicate:
             raise HTTPException(status_code=409, detail=f'같은 원본 파일이 이미 저장되어 있습니다. (source_id={duplicate["id"]})')
         source = conn.execute(
             'INSERT INTO csat_question_sources (exam_kind, source_filename, exam_metadata_json, parser, raw_text, created_at, source_hash, original_stored, owner_scope) VALUES (?,?,?,?,?,?,?,?,?)',
-            (payload.exam_kind, payload.source_filename, json.dumps(payload.metadata, ensure_ascii=False), payload.parser, payload.raw_text, now, payload.source_hash, 0, 'shared'),
+            (storage_kind, payload.source_filename, json.dumps(metadata, ensure_ascii=False), payload.parser, payload.raw_text, now, payload.source_hash, 0, 'shared'),
         )
         source_id = source.lastrowid
         for raw in canonical:
@@ -2833,7 +2864,7 @@ def commit_csat_import(payload: CsatImportCommit):
                 (source_id, exam_kind, question_no, csat_type_id, csat_type_name, passage, prompt, choices_json,
                  answer, solution, footnote, group_label, source_reference, type_mismatch, mismatch_reason, raw_json, created_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                (source_id, payload.exam_kind, number, raw['type_id'], raw['type_name'], raw['passage'], raw['stem'],
+                (source_id, storage_kind, number, raw['type_id'], raw['type_name'], raw['passage'], raw['stem'],
                  json.dumps(choices, ensure_ascii=False), raw['answer'], raw['explanation'], raw['footnote'], raw['group_label'],
                  raw['source_reference'], int(raw['type_mismatch']), raw['mismatch_reason'], json.dumps(raw, ensure_ascii=False), now))
             saved.append(cursor.lastrowid)
@@ -2851,7 +2882,9 @@ def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, que
                         source_id: Optional[int] = None, source_filename: Optional[str] = None,
                         source_round: Optional[str] = None, has_answer: Optional[bool] = None,
                         has_explanation: Optional[bool] = None,
-                        review_status: Optional[Literal['classified', 'review']] = None):
+                        review_status: Optional[Literal['classified', 'review']] = None,
+                        source_kind: Optional[CsatSourceKind] = None, source_title: Optional[str] = None,
+                        source_year: Optional[str] = None, used: Optional[bool] = None):
     filters, values = [], []
     for clause, value in (('q.exam_kind=?', exam_kind), ('q.question_no=?', question_no), ('q.csat_type_id=?', type_id)):
         if value is not None: filters.append(clause); values.append(value)
@@ -2863,6 +2896,8 @@ def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, que
             filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id AND u.assessment_type=?)'); values.append(used_in)
         else:
             filters.append('NOT EXISTS (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)')
+    if used is not None:
+        filters.append(('EXISTS' if used else 'NOT EXISTS') + ' (SELECT 1 FROM csat_question_usage u WHERE u.question_id=q.id)')
     where = f"WHERE {' AND '.join(filters)}" if filters else ''
     with get_db() as conn:
         rows = conn.execute(f'''SELECT q.*, s.source_filename, s.exam_metadata_json,
@@ -2870,14 +2905,14 @@ def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, que
             FROM csat_questions q
             JOIN csat_question_sources s ON s.id=q.source_id {where} ORDER BY q.created_at DESC, q.question_no''', values).fetchall()
     result = [_csat_question_response(row) for row in rows]
-    for item in result:
-        raw = json.loads(item.get('raw_json') or '{}')
-        item['source_round'] = str(item.get('exam_metadata', {}).get('round') or item.get('exam_metadata', {}).get('source_round') or '')
-        item['has_answer'] = bool(str(item.get('answer') or '').strip())
-        item['has_explanation'] = bool(str(item.get('solution') or '').strip() or str(raw.get('explanation_html') or '').strip())
-        item['review_status'] = 'review' if item.get('type_mismatch') or raw.get('classification_status') == 'review' else 'classified'
     if source_round:
         result = [item for item in result if item['source_round'] == source_round]
+    if source_kind:
+        result = [item for item in result if item['source_kind'] == source_kind]
+    if source_title:
+        result = [item for item in result if item['source_title'] == source_title]
+    if source_year:
+        result = [item for item in result if item['source_year'] == source_year]
     if has_answer is not None:
         result = [item for item in result if item['has_answer'] is has_answer]
     if has_explanation is not None:
