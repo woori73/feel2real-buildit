@@ -34,6 +34,12 @@
   --hover-lift:-6px;
   --hover-duration:180ms;
   --hover-ease:cubic-bezier(.2, 0, .2, 1);
+  /* 모바일 디바이스형 카드 프레임 — 2학기 영어내신 / 학습철학 / 대표수업 공통 디자인 언어.
+     명확한 outer rim + 큰 radius + 얇은 inner edge/highlight + 은은한 shadow. 과한 노치/가짜 카메라 없음.
+     (academy_collection.css .f2r-program-card / academy_public.css .featured-schoolcard, .p-card 가 참조) */
+  --device-rim:#bcc3cf;
+  --device-radius:22px;
+  --device-shadow:0 0 0 1px rgba(15,23,42,.06),inset 0 0 0 1.5px rgba(255,255,255,.9),0 2px 6px rgba(15,23,42,.06),0 16px 34px rgba(10,12,20,.13);
 }
 
 /* ══════════════ BASE ══════════════ */
@@ -226,12 +232,14 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
 .featured-desc{margin:16px auto 0;max-width:560px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
 
-/* 학교별 카드 횡스크롤. 모바일은 섹션 좌우 여백을 상쇄해 카드가 뷰포트의 ~88% 를 채우고
-   다음 카드가 살짝 보이게 한다(가로 스와이프 어피던스). */
+/* 학교별 카드 횡스크롤 — 대표수업(.f2r-collection)과 동일한 swipe 감각으로 통일:
+   scroll-snap x proximity + snap-align:start + 카드 78vw + gap 16px → 카드 하나 중심 + 다음 카드 일부 peek.
+   카드는 공통 디바이스형 프레임(--device-*). */
 .featured-schoolcards-wrap{margin-top:28px;}
-.featured-schoolcards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px 10px;}
+.featured-schoolcards{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding-left:4px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 4px 12px;}
 .featured-schoolcards::-webkit-scrollbar{display:none;}
-.featured-schoolcard{flex:0 0 82vw;max-width:340px;scroll-snap-align:center;display:flex;flex-direction:column;min-height:184px;padding:18px 18px 16px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:left;}
+.featured-schoolcard{flex:0 0 78vw;max-width:86vw;scroll-snap-align:start;display:flex;flex-direction:column;min-height:184px;padding:18px 18px 16px;
+  border:3px solid var(--device-rim);border-radius:var(--device-radius);background:#fff;box-shadow:var(--device-shadow);text-align:left;}
 .featured-schoolcard-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);}
 .featured-schoolcard-name{color:var(--ink);font-size:18px;font-weight:900;letter-spacing:-.02em;}
 .featured-schoolcard-kind{color:var(--ultramarine);font-size:11.5px;font-weight:800;letter-spacing:.02em;}
@@ -240,8 +248,13 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-schoolcard-loading code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
 .featured-schoolcard-count{margin:0 0 8px;color:var(--ultramarine);font-size:12px;font-weight:800;letter-spacing:.02em;}
 .featured-schoolcard-rows{list-style:none;margin:0;padding:0;}
-.featured-schoolcard-row{padding:7px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
+.featured-schoolcard-row{border-bottom:1px solid var(--line);}
 .featured-schoolcard-row:last-child{border-bottom:0;}
+/* 학년·학기·중간/기말 별 출제자 Digital Twin(분석 상세) 링크 */
+.featured-schoolcard-rowlink{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px;color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;text-decoration:none;}
+.featured-schoolcard-rowlink.is-plain{color:var(--ink-soft);}
+.featured-schoolcard-rowlink:not(.is-plain):hover{color:var(--ultramarine);}
+.featured-schoolcard-rowgo{flex:none;color:var(--ultramarine);font-weight:900;}
 .featured-schoolcard-more{align-self:flex-start;margin-top:14px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
 .featured-schoolcard-more:hover{text-decoration:underline;}
 
@@ -585,7 +598,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* ══════════════ 학습 철학(philosophy snap) ══════════════ */
 .philosophy{
   padding:120px 5vw;
-  background:var(--bg);
+  background:var(--bg-soft);
   color:var(--ink);
 }
 .philosophy-inner{max-width:1120px;margin:0 auto;}
@@ -599,27 +612,37 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
   line-height:1.24;
   letter-spacing:-.03em;
 }
+/* 빌더 캔버스 프리뷰 전용 정적 그리드(공개 페이지는 .f2r-collection--philosophy 횡스크롤). */
 .philosophy-grid{
   margin-top:52px;
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:16px;
 }
+.philosophy .f2r-collection{margin-top:34px;}
+/* 학습 철학 카드 — 공통 디바이스형 프레임 + 핵심 문구 시각 위계 강화. */
 .p-card{
-  padding:28px;
-  border:1px solid var(--line);
-  border-radius:18px;
+  display:flex;flex-direction:column;gap:10px;
+  padding:26px 24px;
+  border:3px solid var(--device-rim);
+  border-radius:var(--device-radius);
   background:#fff;
-  box-shadow:none;
+  box-shadow:var(--device-shadow);
 }
-.p-card .n{display:block;color:var(--gold);font-weight:800;font-size:12px;letter-spacing:.08em;}
-.p-card p{margin:10px 0 0;color:var(--ink);font-size:16px;font-weight:700;line-height:1.5;letter-spacing:-.015em;word-break:keep-all;}
-#publicView .p-card p{margin:10px 0 0;}
-@media (max-width:700px){
+.p-card .n{align-self:flex-start;padding:4px 10px;border-radius:999px;background:var(--gold-soft);color:#8a6a1e;font-weight:900;font-size:11px;letter-spacing:.04em;}
+.p-card p{margin:0;color:var(--ink);font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.02em;word-break:keep-all;}
+#publicView .p-card p{margin:0;}
+@media (max-width:900px){
   .philosophy{padding:88px 20px;}
   .philosophy-grid{grid-template-columns:1fr;margin-top:34px;}
-  .p-card{padding:24px 22px;}
-  .p-card p{font-size:16px;}
+}
+/* 데스크톱: 카드가 다 들어가면 그리드(가로 스크롤·화살표·카운터 숨김) — 기존 2열 느낌 유지. */
+@media (min-width:900px){
+  .f2r-collection--philosophy .f2r-collection-viewport{overflow:visible;}
+  .f2r-collection--philosophy .f2r-collection-track{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;overflow:visible;scroll-snap-type:none;padding-bottom:4px;}
+  .f2r-collection--philosophy .f2r-collection-card{flex:none;max-width:none;}
+  .f2r-collection--philosophy .f2r-collection-head{display:none;}
+  html.js-collection .f2r-collection--philosophy .f2r-collection-card.is-dimmed > *{transform:none;opacity:1;}
 }
 
 /* ══════════════ 원장 소개 (실데이터/시안 이식) ══════════════ */

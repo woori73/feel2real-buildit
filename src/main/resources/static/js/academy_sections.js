@@ -197,7 +197,7 @@
             <div class="eyebrow philosophy-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'philosophy-keyword', draftKey: 'philosophyKeyword', value: keyword, omitWhenEmpty: true })}</div>
             ${ctx.editableText({ tag: 'h2', className: 'philosophy-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
-          <div class="philosophy-grid">${philosophyItems(view).map((item, index) => ctx.philosophyCard(item, index)).join('')}</div>
+          ${ctx.philosophyCards(philosophyItems(view))}
         </div>
       </section>`;
   }
@@ -323,6 +323,7 @@
   const AI_SCENE_DEFS = [
     {
       key: 'sources', cap: '학교 자료',
+      desc: '시험지·학교 프린트·교과서 등 다양한 학교 자료를 AI WIKI에 축적합니다.',
       canvas:
         '<div class="scn-doc" data-scn="d0">시험지</div>'
         + '<div class="scn-doc" data-scn="d1">학교 프린트</div>'
@@ -332,6 +333,7 @@
     },
     {
       key: 'brain', cap: 'BUILD IT BRAIN',
+      desc: '학교 자료에 박원장님의 수업 인사이트와 노하우를 더해 하나의 교육 두뇌를 만듭니다.',
       canvas:
         '<span class="scn-ring" data-scn="r0"></span>'
         + '<span class="scn-ring" data-scn="r1"></span>'
@@ -342,6 +344,7 @@
     },
     {
       key: 'twin', cap: 'Digital Twin + Insight',
+      desc: '출제자의 문제 패턴과 박원장님의 수업 인사이트를 결합해 우리 학교 시험을 이해합니다.',
       canvas:
         '<div class="scn-brain scn-brain--lg" data-scn="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
         + '<div class="scn-node scn-node--twin" data-scn="twin"><span>EXAMINER</span>DIGITAL TWIN</div>'
@@ -349,6 +352,7 @@
     },
     {
       key: 'questions', cap: '문제 생성',
+      desc: '학교의 출제 패턴과 실제 수업 내용을 반영해 새로운 문제를 다양하게 만듭니다.',
       canvas:
         AI_SCENE_BRAIN
         + '<div class="scn-q" data-scn="q0"><b>원본 문제</b></div>'
@@ -358,6 +362,7 @@
     },
     {
       key: 'final', cap: 'FINAL EXAM',
+      desc: 'AI가 만든 문제를 선별·조합해 우리 학생들을 위한 맞춤 시험을 완성합니다.',
       canvas:
         '<div class="scn-q scn-q--mini" data-scn="q0">원본</div>'
         + '<div class="scn-q scn-q--mini" data-scn="q1">변형 A</div>'
@@ -372,6 +377,7 @@
       `<figure class="ai-scene" data-ai-scene="${i}" data-ai-scene-key="${scene.key}" aria-hidden="true">`
       + `<div class="ai-scene-canvas" data-ai-scene-canvas>${scene.canvas}</div>`
       + `<figcaption class="ai-scene-cap"><b>${i + 1}</b> ${escapeHtml(scene.cap)}</figcaption>`
+      + `<p class="ai-scene-desc">${escapeHtml(scene.desc)}</p>`
       + `</figure>`);
     return `<div class="ai-scenes-mobile" data-ai-scenes>`
       + renderCollectionShell({
@@ -1136,7 +1142,16 @@
       },
       introFooter() { return ''; },
       philosophyCard(text, index) {
-        return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
+        return `<div class="p-card" data-reveal-item><span class="n">원칙 ${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
+      },
+      // 학습 철학 — 모바일에서 대표수업과 동일한 .f2r-collection 횡스크롤(새 carousel 없음).
+      philosophyCards(items) {
+        return renderCollectionShell({
+          navLabel: '학습 철학',
+          variant: 'philosophy',
+          hint: '옆으로 밀어 원칙을 확인하세요',
+          cards: (items || []).map((t, i) => this.philosophyCard(t, i))
+        });
       },
       // 학교별 독립 카드 횡스크롤. 각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin.
       // 카드 본문은 빈 상태로 내고 academy_public.js wireFeaturedSchoolCards 가 학교별로 fetch 해 채운다.
@@ -1367,7 +1382,11 @@
       },
       philosophyCard(text, index) {
         const draftKey = 'philosophyItem' + (index + 1);
-        return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
+        return `<div class="p-card" data-reveal-item><span class="n">원칙 ${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
+      },
+      // 빌더 캔버스: 편집 UX 우선 — 정적 그리드로 프리뷰(공개 페이지는 횡스크롤 컬렉션).
+      philosophyCards(items) {
+        return `<div class="philosophy-grid">${(items || []).map((t, i) => this.philosophyCard(t, i)).join('')}</div>`;
       },
       // 빌더 캔버스: 학교별 카드(4칸 항상 렌더 — 빈 값은 CSS placeholder). 학교명만 편집.
       // 실제 출제자 Digital Twin(/api/analyzes)은 공개 페이지 전용 — 정적 안내만.

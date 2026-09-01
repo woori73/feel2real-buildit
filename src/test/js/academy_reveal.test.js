@@ -206,6 +206,10 @@ test('AI Native: 데스크톱 canvas 오브젝트 전부 존재 + 모바일 5 Sc
   assert.equal((html.match(/class="ai-scene" data-ai-scene="/g) || []).length, 5);
   assert.match(html, /data-ai-scene-key="sources"/);
   assert.match(html, /data-ai-scene-key="final"/);
+  // 각 Scene 모션 아래 설명 문구(사용자가 작동 과정을 바로 이해)
+  assert.equal((html.match(/class="ai-scene-desc">/g) || []).length, 5);
+  assert.match(html, /class="ai-scene-desc">시험지·학교 프린트·교과서 등 다양한 학교 자료를 AI WIKI/);
+  assert.match(html, /class="ai-scene-desc">AI가 만든 문제를 선별·조합해 우리 학생들을 위한 맞춤 시험/);
   assert.match(html, /class="ai-src" data-ai-src="0">시험지/);
   assert.equal((html.match(/class="ai-src" data-ai-src="/g) || []).length, 4);
   assert.match(html, /class="ai-brain" data-ai-brain><b>BUILD IT<\/b>/);

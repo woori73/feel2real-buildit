@@ -123,6 +123,17 @@ html.js-cinematic .ai-flow-path { stroke-dasharray: none; }
   background: var(--accent-soft, #eef2ff); color: var(--ultramarine, #0c238a);
   display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900;
 }
+/* 모션 아래 한 줄 설명 — 제목(.ai-scene-cap)보다 작되 충분히 읽히는 크기. 1~2줄 중심.
+   설명 때문에 카드가 과도하게 길어지지 않도록 line-height 를 조인다. */
+.ai-scene-desc {
+  margin: -2px 0 0;
+  color: var(--ink-soft, #475569);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -.01em;
+  word-break: keep-all;
+}
 
 /* Scene 오브젝트 — 좌표계는 카드 canvas(위 .ai-scene-canvas). */
 .scn-doc {
