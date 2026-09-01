@@ -14,7 +14,13 @@ from pathlib import Path
 
 
 LEGACY_WORKSPACE_ID = "legacy"
-LEGACY_LOGIN_IDS = frozenset({"admin", "modu"})
+# The shared "legacy" Wiki DB is owned by the real ADMIN principal plus one designated legacy
+# TUTOR account. ADMIN is judged only by the signed identity's role (the Spring authenticated
+# principal, carried HMAC-signed in X-BuildIt-Role) — never by login_id: in Production the admin
+# account's login_id is "admin-f2r" (V2 migration), not the dev-seed's literal "admin" this set
+# used to hardcode, so the real admin fell through to an empty personal workspace. "modu" is one
+# specific tutor account, not a role, so it stays matched by login_id.
+LEGACY_TUTOR_LOGIN_IDS = frozenset({"modu"})
 IDENTITY_HEADER_PREFIX = "x-buildit-"
 WORKSPACE_OVERRIDE_HEADER = "x-buildit-wiki-workspace"
 OWNED_TABLES = (
@@ -107,6 +113,11 @@ def _init_catalog(conn: sqlite3.Connection, legacy_database_path: str) -> None:
         VALUES (?, 'legacy', ?, 1)""", (LEGACY_WORKSPACE_ID, legacy_database_path))
 
 
+def is_legacy_member(identity: WikiIdentity) -> bool:
+    """Who shares the single legacy Wiki DB: the ADMIN principal, or the designated legacy tutor."""
+    return identity.role == "ADMIN" or identity.login_id.casefold() in LEGACY_TUTOR_LOGIN_IDS
+
+
 def resolve_workspace(identity: WikiIdentity, legacy_database_path: str) -> WikiWorkspace:
     legacy_database_path = str(legacy_database_path)
     catalog = catalog_path(legacy_database_path)
@@ -115,9 +126,10 @@ def resolve_workspace(identity: WikiIdentity, legacy_database_path: str) -> Wiki
         conn.row_factory = sqlite3.Row
         _init_catalog(conn, legacy_database_path)
         login = identity.login_id.casefold()
-        if login in LEGACY_LOGIN_IDS:
-            # Stable synthetic member keys avoid assuming production user IDs while preserving
-            # the explicit admin/modu shared-workspace contract.
+        if is_legacy_member(identity):
+            # Re-point membership to legacy on every request (upsert) so an identity that was
+            # briefly mis-routed to a personal workspace heals itself without touching any
+            # workspace's data DB.
             conn.execute("""INSERT INTO wiki_workspace_members(user_id, login_id, workspace_id)
                 VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET
                 login_id=excluded.login_id, workspace_id=excluded.workspace_id""",
@@ -145,8 +157,9 @@ def resolve_workspace(identity: WikiIdentity, legacy_database_path: str) -> Wiki
 
 
 def is_workspace_admin(identity: WikiIdentity) -> bool:
-    """Only the signed Spring principal for the canonical admin account is a super-admin."""
-    return identity.login_id.casefold() == "admin" and identity.role == "ADMIN"
+    """Super-admin = the signed Spring principal whose role is ADMIN (login_id-agnostic —
+    Production admin login_id is "admin-f2r", not the literal "admin")."""
+    return identity.role == "ADMIN"
 
 
 def get_workspace(workspace_id: str, legacy_database_path: str) -> WikiWorkspace | None:

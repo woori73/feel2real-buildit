@@ -381,7 +381,11 @@ public class AcademyService {
   }
 
   public Optional<AcademyResponse> getMine(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    authResolver.requireTutor(principal);
+    // 공개 스토어프론트(academy_public.js isOwnAcademy)가 방문자 자기소유 여부를 판별하려고
+    // 호출한다. 실제 ADMIN principal은 소유 학원이 없어 Optional.empty()(→ 204)로 떨어질 뿐이며,
+    // 여기서 403을 던지면 공개 페이지가 admin을 튕겨낸다(운영 회귀). 쓰기 경로는 그대로
+    // verifyOwnsAcademy(내부에서 requireTutor)로 TUTOR 본인만 통과한다.
+    authResolver.requireTutorOrAdmin(principal);
     return academyRepository.findByTutor_UserId(principal.userId())
         .map(academy -> {
           authResolver.verifyOwnsAcademy(academy);

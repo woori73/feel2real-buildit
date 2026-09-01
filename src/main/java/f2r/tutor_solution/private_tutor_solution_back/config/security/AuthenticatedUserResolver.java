@@ -120,6 +120,17 @@ public class AuthenticatedUserResolver {
     }
   }
 
+  /**
+   * TUTOR 본인 또는 ADMIN principal만 통과. 소유권까지 확인하지는 않는다 — "내 학원" 조회처럼
+   * ADMIN이 소유 학원 없이 진입해도 빈 결과로 떨어지면 되는 read 경로에서만 쓴다. 쓰기 경로는
+   * 계속 {@link #requireTutor} + {@link #verifyOwnsAcademy}를 쓴다.
+   */
+  public void requireTutorOrAdmin(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!isTutor(principal) && !isAdmin(principal)) {
+      throw new AccessDeniedException("강사 또는 관리자 권한이 필요합니다.");
+    }
+  }
+
   /** TUTOR가 넘긴 target user_id가 담당 학생(APPROVED 신청 존재)의 user인지 검증. 없으면 403. */
   private void ensureTutorTeachesUser(Long tutorUserId, Long targetUserId) {
     Student student = studentRepository.findByUser_UserId(targetUserId)

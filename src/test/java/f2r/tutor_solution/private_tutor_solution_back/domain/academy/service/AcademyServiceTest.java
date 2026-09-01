@@ -474,6 +474,46 @@ class AcademyServiceTest {
         .findByAcademy_AcademyIdOrderByCreatedAtAscLessonIdAsc(100L);
   }
 
+  // getMine은 공개 스토어프론트의 자기소유 판별(academy_public.js isOwnAcademy)이 호출한다.
+  // 실제 authResolver(mock 아님)를 물려 ADMIN principal이 403 없이 빈 결과로 떨어지는지,
+  // STUDENT는 계속 차단되는지 확인한다.
+  private AcademyService serviceWithRealAuthResolver() {
+    AuthenticatedUserResolver realResolver = new AuthenticatedUserResolver(
+        mock(f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.StudentRepository.class),
+        lessonApplicationRepository,
+        mock(f2r.tutor_solution.private_tutor_solution_back.domain.conversation.repository.ConversationSourceRepository.class),
+        mock(f2r.tutor_solution.private_tutor_solution_back.domain.conversation.repository.ConversationRepository.class));
+    return new AcademyService(
+        academyRepository, regionRepository, lessonProductRepository, lessonApplicationRepository,
+        subjectRepository, userRepository, fileStorage, imageSanitizer, realResolver,
+        new f2r.tutor_solution.private_tutor_solution_back.config.PublicSiteProperties(null),
+        academyVideoDeletionGuard, academyHandleHistoryService);
+  }
+
+  @Test
+  void getMine_allowsAdminPrincipalAndReturnsEmptyWhenAdminOwnsNoAcademy() {
+    // given
+    AcademyService svc = serviceWithRealAuthResolver();
+    JwtTokenProvider.AuthenticatedPrincipal admin =
+        new JwtTokenProvider.AuthenticatedPrincipal(999L, "admin-f2r", Role.ADMIN.name());
+    when(academyRepository.findByTutor_UserId(999L)).thenReturn(Optional.empty());
+
+    // when & then: no AccessDeniedException — just an empty result → controller returns 204.
+    assertThat(svc.getMine(admin)).isEmpty();
+  }
+
+  @Test
+  void getMine_stillRejectsStudentPrincipal() {
+    // given
+    AcademyService svc = serviceWithRealAuthResolver();
+    JwtTokenProvider.AuthenticatedPrincipal student =
+        new JwtTokenProvider.AuthenticatedPrincipal(5L, "student1", Role.STUDENT.name());
+
+    // when & then
+    assertThatThrownBy(() -> svc.getMine(student))
+        .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+  }
+
   @Test
   void listPublic_returnsPublishedAcademiesWithFiltersAndPublicUrls() {
     // given
