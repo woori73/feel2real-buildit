@@ -57,15 +57,17 @@ export const wikiQuestionToLegacy=(q:WikiQuestionV1)=>({
 type Material={id:number;title:string;html_text?:string|null;json_text?:unknown}
 export const resolveReferencedPassage=(label:string,materials:Material[]):{materialId:number;value:RichText}|null=>{
   if(!label)return null
+  const found:Array<{materialId:number;value:RichText}>=[]
   for(const material of materials){
     const doc=new DOMParser().parseFromString(material.html_text||'','text/html')
     const headings=[...doc.querySelectorAll('h1,h2,h3,h4,[data-reading],[data-section-title],.reading-title,.lesson-title')]
-    const start=headings.find(h=>(h.textContent||'').replace(/\s+/g,' ').toLowerCase().includes(label.toLowerCase()))
+    const normalized=(value:string)=>value.replace(/\s+/g,' ').trim().toLowerCase()
+    const start=headings.find(h=>normalized(h.textContent||'')===normalized(label))
     if(!start)continue
     const nodes:Element[]=[];let cursor=start.nextElementSibling
     while(cursor&&!/^H[1-4]$/.test(cursor.tagName)&&!cursor.matches('[data-reading],[data-section-title],.reading-title,.lesson-title')){nodes.push(cursor);cursor=cursor.nextElementSibling}
     const html=nodes.map(n=>n.outerHTML).join('')
-    if(textOfHtml(html).length>=40)return{materialId:material.id,value:rich(html)}
+    if(textOfHtml(html).length>=40)found.push({materialId:material.id,value:rich(html)})
   }
-  return null
+  return found.length===1?found[0]:null
 }
