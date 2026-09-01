@@ -25,13 +25,14 @@ export const sanitizeQuestionHtml=(html:string)=>{
 }
 export const textOfHtml=(html:string)=>{const doc=new DOMParser().parseFromString(html,'text/html');return(doc.body.textContent||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').replace(/\n\s*\n/g,'\n').trim()}
 export const rich=(html:string,text=''):RichText=>{const safe=sanitizeQuestionHtml(html);return{text:text||textOfHtml(safe),html:safe}}
-export const needsPassage=(instruction:string,questionType:string)=>/읽고|글의|지문|Reading\s*\d+|본문|밑줄|빈칸|순서|삽입|내용|주제|제목|요지/i.test(`${instruction} ${questionType}`)
+export const needsPassage=(instruction:string,questionType:string)=>/읽고|글의|지문|Reading\s*\d+|본문|밑줄|순서|삽입|내용|주제|제목|요지/i.test(`${instruction} ${questionType}`)
 export const referenceLabel=(instruction:string)=>instruction.match(/(?:Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)/i)?.[0]||''
 export const isSelfContained=(q:WikiQuestionV1)=>{
   if(!q.instruction.text.trim())return false
   if(q.kind==='mc'&&q.choices.length<2)return false
   if(needsPassage(q.instruction.text,q.question_type)&&!['complete','recovered'].includes(q.passage.status))return false
-  if(/밑줄/.test(q.instruction.text)&&!/<u(?:\s|>)/i.test(q.passage.html)&&!q.passage.html.includes('class="underline"'))return false
+  const markup=`${q.instruction.html} ${q.passage.html}`
+  if(/밑줄/.test(q.instruction.text)&&!/<u(?:\s|>)/i.test(markup)&&!markup.includes('class="underline"'))return false
   return true
 }
 
