@@ -254,6 +254,13 @@ public class SecurityConfig {
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+            // Eduholic 등 학원 공개 홈페이지가 "이 방문자가 이 학원 소유자인가"를 판별하는 조회
+            // 전용 엔드포인트(academy_public.js isOwnAcademy). ADMIN 실계정도 서브도메인 공개
+            // 페이지에서 이 호출이 401/403 없이 통과해야 한다 — getMine()은 principal이 소유한
+            // 학원이 없으면 안전하게 204를 반환할 뿐 다른 tutor의 데이터를 주거나 쓰기 권한을
+            // 주지 않는다. 반드시 아래 넓은 /api/tutor/** 규칙보다 먼저(좁은 것 우선).
+            .requestMatchers(HttpMethod.GET, "/api/tutor/academy/me").hasAnyRole("TUTOR", "ADMIN")
+
             // Tutor 전용
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
 
