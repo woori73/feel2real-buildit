@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 62959)
-Total output lines: 4285
-
 import json
 import contextlib
 import hashlib
@@ -1759,7 +1756,1032 @@ def _derive_external_id(school: str, grade: str, source_material: str, source_pa
     """external_id 미지정 시 요청 내용으로 안정적인 idempotency 키를 만든다 — 같은 요청 재시도가
     같은 시험을 중복 저장하지 않도록 한다(요구사항 5)."""
     stems = [str(q.get('stem', '')) for q in questions]
-    seed = '|'.join([school, grade, source_material, source_page, title, *ste…12959 tokens truncated…instruction, choices)
+    seed = '|'.join([school, grade, source_material, source_page, title, *stems])
+    return hashlib.sha256(seed.encode('utf-8')).hexdigest()[:16]
+
+
+def _upsert_source_material(conn, school: str, grade: str, title: str, publisher: str = '',
+                            lesson: str = '', material_type: str = '',
+                            school_print_material_id: Optional[int] = None) -> int:
+    """(school, grade, title) unique 기준 upsert. 이미 있으면 그 id를 재사용하고 빈 필드만 채운다 —
+    같은 '학습자료'가 시험마다 중복 생성되지 않게 한다(요구사항 7: 관계 유지)."""
+    school, grade, title = school.strip(), grade.strip(), title.strip()
+    if not school or not grade or not title:
+        raise HTTPException(status_code=422, detail='source material은 school/grade/title이 모두 필요합니다.')
+    if school_print_material_id is None:
+        needle = f"%{title.split(':')[0].split('(')[0].strip()[:20]}%"
+        linked = conn.execute(
+            "SELECT id FROM exam_material_sets WHERE core_type='school_print' AND school=? AND grade=? "
+            "AND (title LIKE ? OR ? LIKE '%' || title || '%') ORDER BY id DESC LIMIT 1",
+            (school, grade, needle, title),
+        ).fetchone()
+        if linked:
+            school_print_material_id = linked['id']
+    row = conn.execute(
+        'SELECT id, publisher, lesson, material_type, school_print_material_id FROM source_materials '
+        'WHERE school=? AND grade=? AND title=?',
+        (school, grade, title),
+    ).fetchone()
+    if row:
+        updates, params = [], []
+        for field, value in (('publisher', publisher), ('lesson', lesson), ('material_type', material_type)):
+            if value and not row[field]:
+                updates.append(f'{field}=?')
+                params.append(value)
+        if school_print_material_id is not None and row['school_print_material_id'] is None:
+            updates.append('school_print_material_id=?')
+            params.append(school_print_material_id)
+        if updates:
+            params.append(row['id'])
+            conn.execute(f"UPDATE source_materials SET {', '.join(updates)} WHERE id=?", params)
+        return row['id']
+    cursor = conn.execute(
+        'INSERT INTO source_materials (school, grade, title, publisher, lesson, material_type, '
+        'school_print_material_id, created_at) VALUES (?,?,?,?,?,?,?,?)',
+        (school, grade, title, publisher.strip(), lesson.strip(), material_type.strip(),
+         school_print_material_id, datetime.now().isoformat()),
+    )
+    return cursor.lastrowid
+
+
+def _generated_test_row(row) -> dict:
+    item = dict(row)
+    for jkey in ('target_vocabulary', 'target_grammar'):
+        try:
+            item[jkey] = json.loads(item.get(jkey) or '[]')
+        except (TypeError, json.JSONDecodeError):
+            item[jkey] = []
+    item.pop('raw_request_json', None)
+    return item
+
+
+def create_generated_test(payload: GeneratedTestCreate) -> dict:
+    """생성 문항을 시험 단위로 저장하는 단일 write 경로. 저장이 성공했을 때만 saved=True를 준다."""
+    school, grade = payload.school.strip(), payload.grade.strip()
+    source_material = payload.source_material.strip()
+    test_type = payload.test_type.strip()
+    if not school or not grade or not source_material:
+        raise HTTPException(status_code=422, detail='school/grade/source_material은 비어 있을 수 없습니다.')
+    if not payload.questions:
+        raise HTTPException(status_code=422, detail='questions는 최소 1개 이상이어야 합니다.')
+    title = payload.title.strip() or f'{source_material} {test_type or "Test"}'.strip()
+    # 1) 어떤 것도 쓰기 전에 문항 계약을 먼저 검증한다 (실패 시 아무 것도 저장하지 않음).
+    try:
+        validated = qc.validate_transform({'examTitle': title, 'questions': payload.questions})
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail='문항 검증 실패(저장하지 않음): ' + qc.validation_fields(exc)) from exc
+    external_id = payload.external_id.strip() or _derive_external_id(
+        school, grade, source_material, payload.source_page.strip(), title, payload.questions)
+    try:
+        with get_db() as conn:
+            existing = conn.execute(
+                'SELECT t.*, sm.title source_material_title FROM generated_tests t '
+                'JOIN source_materials sm ON sm.id = t.source_material_id WHERE t.external_id=?',
+                (external_id,),
+            ).fetchone()
+            if existing:
+                return {
+                    'saved': True, 'duplicate': True, 'test_id': existing['id'],
+                    'question_count': existing['question_count'],
+                    'source_material': existing['source_material_title'], 'source_page': existing['source_page'],
+                    'external_id': external_id,
+                }
+            source_material_id = _upsert_source_material(
+                conn, school, grade, source_material, payload.publisher, payload.lesson, payload.material_type)
+            twin = _match_digital_twin(conn, school, grade, payload.exam or '전체')
+            twin_id = twin.get('id') if twin else None
+            twin_label = payload.digital_twin.strip() or (pl._twin_name(twin) if twin else '')
+            now = datetime.now().isoformat()
+            group_id = f'gtest_{uuid.uuid4().hex}'
+            cursor = conn.execute(
+                '''INSERT INTO generated_tests
+                (external_id, source_material_id, source_page, school, grade, year, semester, exam,
+                 test_type, title, twin_id, twin_label, twin_pattern, difficulty, target_vocabulary,
+                 target_grammar, target_passage, generation_source, question_count, raw_request_json, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                (external_id, source_material_id, payload.source_page.strip(), school, grade, payload.year,
+                 payload.semester.strip(), payload.exam or '전체', test_type, title, twin_id, twin_label,
+                 payload.twin_pattern.strip(), payload.difficulty.strip(),
+                 json.dumps(payload.target_vocabulary, ensure_ascii=False),
+                 json.dumps(payload.target_grammar, ensure_ascii=False), payload.target_passage.strip(),
+                 payload.generation_source or 'mcp', 0,
+                 json.dumps(payload.model_dump(exclude={'questions'}), ensure_ascii=False), now),
+            )
+            test_id = cursor.lastrowid
+            twin_like = {'id': twin_id, 'school': school, 'grade': grade, 'exam': payload.exam or '전체'}
+            saved = _save_generated(conn, twin_like, payload.generation_source or 'mcp',
+                                    validated['questions'], title, group_id, test_id=test_id)
+            conn.execute('UPDATE generated_tests SET question_count=? WHERE id=?', (len(saved), test_id))
+    except HTTPException:
+        raise
+    except Exception as exc:  # 저장 도중 예기치 못한 실패 — 트랜잭션은 이미 롤백됨. 생성 성공과 구분한다.
+        raise HTTPException(status_code=500, detail=f'생성 시험을 저장하지 못했습니다: {exc}') from exc
+    return {
+        'saved': True, 'duplicate': False, 'test_id': test_id, 'question_count': len(saved),
+        'source_material': source_material, 'source_page': payload.source_page.strip(),
+        'external_id': external_id, 'questions': saved,
+    }
+
+
+@app.post('/api/generated-tests')
+def create_generated_test_endpoint(payload: GeneratedTestCreate):
+    return create_generated_test(payload)
+
+
+@app.get('/api/generated-tests/{test_id}')
+def get_generated_test(test_id: int):
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT t.*, sm.title source_material_title, sm.publisher source_material_publisher, '
+            'sm.lesson source_material_lesson, sm.school_print_material_id '
+            'FROM generated_tests t JOIN source_materials sm ON sm.id = t.source_material_id WHERE t.id=?',
+            (test_id,),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='생성 시험을 찾지 못했습니다.')
+    questions = sorted(list_questions(test_id=test_id, limit=1000), key=lambda q: q['id'])
+    return {'test': _generated_test_row(row), 'questions': questions}
+
+
+@app.get('/api/source-materials')
+def list_source_materials(school: Optional[str] = None, grade: Optional[str] = None):
+    query = ('SELECT sm.*, (SELECT COUNT(*) FROM generated_tests t WHERE t.source_material_id = sm.id) '
+             'test_count FROM source_materials sm WHERE 1=1')
+    values: list = []
+    for field, value in (('school', school), ('grade', grade)):
+        if value:
+            query += f' AND sm.{field} = ?'
+            values.append(value)
+    query += ' ORDER BY sm.id DESC'
+    with get_db() as conn:
+        rows = conn.execute(query, values).fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.get('/api/source-materials/{material_id}/generated-tests')
+def list_generated_tests_for_material(material_id: int):
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT * FROM generated_tests WHERE source_material_id=? ORDER BY id DESC', (material_id,),
+        ).fetchall()
+    return [_generated_test_row(row) for row in rows]
+
+
+# ==================================================================================
+# FINAL/JIKBO Workspace Context — 향후 MCP/외부 LLM이 한 번의 요청으로 읽을 수 있도록
+# 화면에 흩어진 자료를 DB 원본 그대로 구조화된 JSON으로 조립한다(화면 HTML을 긁지 않는다).
+# 기존 저장/조회 API의 SQL 패턴을 그대로 재사용하고 별도 테이블에 중복 저장하지 않는다.
+# read-only이며 이 섹션의 함수들은 아무 것도 쓰지 않는다.
+# ==================================================================================
+
+def _match_digital_twin(conn, school: str, grade: str, exam: str) -> Optional[dict]:
+    """NaesinWikiV1.tsx FINAL Workspace가 쓰는 것과 같은 우선순위: school+grade가 정확히 같고,
+    exam이 정확히 같은 Twin을 우선하되 없으면 '전체' Twin으로 대체한다."""
+    row = conn.execute(
+        "SELECT * FROM digital_twin_profiles WHERE is_active=1 AND school=? AND grade=? AND (exam=? OR exam='전체') "
+        "ORDER BY CASE WHEN exam=? THEN 0 ELSE 1 END, updated_at DESC LIMIT 1",
+        (school, grade, exam, exam),
+    ).fetchone()
+    if not row:
+        return None
+    twin = digital_twin_response(row)
+    return {**twin, 'type': 'digital_twin', 'source': 'digital_twin_profiles', 'title': twin.get('description') or twin.get('dna') or 'Digital Twin'}
+
+
+def _material_context_items(conn, core_type: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
+    """exam_material_sets를 list_exam_materials와 같은 Context 조건으로 조회하되, 목록 화면과
+    달리 AI가 실제로 읽을 수 있도록 html_text/json_text 원문까지 그대로 포함한다."""
+    rows = conn.execute(
+        '''SELECT m.id, m.core_type, m.school, m.grade, m.year, m.semester, m.exam, m.student_id,
+            s.name student_name, m.title, m.original_name, m.html_text, m.json_text, m.created_at
+            FROM exam_material_sets m LEFT JOIN students s ON s.id = m.student_id
+            WHERE m.core_type=? AND m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=?
+            ORDER BY m.id DESC''',
+        (core_type, school, grade, year, semester, exam),
+    ).fetchall()
+    default_title = '학교 프린트' if core_type == 'school_print' else '학생 오답'
+    items = []
+    for row in rows:
+        try:
+            parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
+        except (TypeError, json.JSONDecodeError):
+            parsed_json = {}
+        items.append({
+            'id': row['id'], 'type': core_type, 'title': row['title'] or row['original_name'] or default_title,
+            'created_at': row['created_at'], 'source': 'exam_material_sets',
+            'student_id': row['student_id'], 'student_name': row['student_name'],
+            'has_original': bool(row['original_name']), 'original_name': row['original_name'],
+            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
+            'json_text': parsed_json,
+        })
+    return items
+
+
+def _final_deliverable_context_items(conn, kind: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
+    rows = conn.execute(
+        '''SELECT id, kind, title, original_name, html_text, json_text, created_at
+           FROM final_deliverables WHERE kind=? AND school=? AND grade=? AND year=? AND semester=? AND exam=?
+           ORDER BY id DESC''',
+        (kind, school, grade, year, semester, exam),
+    ).fetchall()
+    items = []
+    for row in rows:
+        try:
+            parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
+        except (TypeError, json.JSONDecodeError):
+            parsed_json = {}
+        items.append({
+            'id': row['id'], 'type': 'final_deliverable', 'title': row['title'] or 'FINAL 완성본',
+            'created_at': row['created_at'], 'source': 'final_deliverables', 'kind': row['kind'],
+            'has_original': bool(row['original_name']), 'original_name': row['original_name'],
+            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
+            'json_text': parsed_json,
+        })
+    return items
+
+
+def _question_context_items(school: str, grade: str, exam: str) -> list:
+    rows = list_questions(school=school, grade=grade, exam=exam, limit=200)
+    return [{
+        **row, 'type': 'generated_question', 'source': 'generated_questions',
+        'title': f"{row.get('question_type') or '문항'} · {(row.get('stem') or '')[:60]}",
+    } for row in rows]
+
+
+def _generated_test_context_items(conn, school: str, grade: str, exam: str) -> list:
+    """Generated Question Store에 저장된 생성 시험을 Context 항목으로 담는다(추적성). exam이 '전체'가
+    아니면 그 시험과 '전체' 저장분을 함께 본다 — 기존 Twin 매칭 우선순위와 같은 관대함을 따른다."""
+    rows = conn.execute(
+        'SELECT t.*, sm.title source_material_title FROM generated_tests t '
+        'JOIN source_materials sm ON sm.id = t.source_material_id '
+        "WHERE t.school=? AND t.grade=? AND (t.exam=? OR t.exam='전체' OR ?='전체') ORDER BY t.id DESC",
+        (school, grade, exam, exam),
+    ).fetchall()
+    items = []
+    for row in rows:
+        data = _generated_test_row(row)
+        items.append({
+            'id': data['id'], 'type': 'generated_test', 'source': 'generated_tests',
+            'title': data['title'] or data['source_material_title'],
+            'source_material': data['source_material_title'], 'source_page': data['source_page'],
+            'test_type': data['test_type'], 'question_count': data['question_count'],
+            'twin_label': data['twin_label'], 'generation_source': data['generation_source'],
+            'created_at': data['created_at'],
+        })
+    return items
+
+
+def _insight_context_items(school: str, grade: str, year: int, semester: str, exam: str, after: str = '') -> list:
+    """수업 인사이트를 Context 항목 형태(id/type/title/created_at/source)로 변환한다.
+    after가 주어지면 그 시각 이후 기록만 남긴다(직보의 post_final_insights용).
+    학교 선생님 힌트를 박원장 인사이트보다 먼저 보여주는 기존 화면 우선순위(sortedInsights)를 그대로 따른다."""
+    rows = list_educator_insights(200, school, grade, year, semester, exam)
+    items = [{
+        'id': row['id'], 'type': 'educator_insight', 'title': None, 'content': row['content'],
+        'created_at': row['created_at'], 'source': row['source'],
+    } for row in rows if not after or row['created_at'] > after]
+    items.sort(key=lambda item: 0 if item['source'] == 'school_teacher' else 1)
+    return items
+
+
+@app.get('/api/workspaces/final/context')
+def get_final_workspace_context(school: str, grade: str, year: int, semester: str, exam: str):
+    with get_db() as conn:
+        digital_twin = _match_digital_twin(conn, school, grade, exam)
+        school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
+        student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
+        final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
+        generated_tests = _generated_test_context_items(conn, school, grade, exam)
+    return {
+        'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
+        'digital_twin': digital_twin,
+        'school_prints': school_prints,
+        'student_errors': student_errors,
+        'class_insights': _insight_context_items(school, grade, year, semester, exam),
+        'generated_questions': _question_context_items(school, grade, exam),
+        'generated_tests': generated_tests,
+        'final_deliverables': final_deliverables,
+    }
+
+
+@app.get('/api/workspaces/jikbo/context')
+def get_jikbo_workspace_context(school: str, grade: str, year: int, semester: str, exam: str):
+    """직보는 FINAL과 별도 원천 저장소가 아니다 — FINAL 완성본 → FINAL 이후 최신 수업 인사이트 →
+    학생 반복 오답 순으로만 압축한다. 학교 프린트/제작 문제/Digital Twin 전체는 FINAL 제작 과정에서
+    이미 반영된 자료라 다시 담지 않는다."""
+    with get_db() as conn:
+        final_items = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
+        latest_final = final_items[0] if final_items else None
+        student_weaknesses = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
+        jikbo_deliverables = _final_deliverable_context_items(conn, 'jikbo', school, grade, year, semester, exam)
+    ready = latest_final is not None
+    post_final_insights = _insight_context_items(school, grade, year, semester, exam, after=latest_final['created_at']) if ready else []
+    return {
+        'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
+        'ready': ready,
+        'latest_final': latest_final,
+        'post_final_insights': post_final_insights,
+        'student_weaknesses': student_weaknesses,
+        'jikbo_deliverables': jikbo_deliverables,
+    }
+
+
+# ==================================================================================
+# 내신 실전 제작 — 강사 문제 DB에서 선택한 문항으로 구성한 시험지를 실제로 저장한다.
+# ==================================================================================
+
+class ExamPaperCreate(BaseModel):
+    title: str
+    academy_name: str = ''
+    teacher_name: str = ''
+    question_ids: list[int] = []
+
+
+@app.post('/api/exam-papers')
+def create_exam_paper(payload: ExamPaperCreate):
+    if not payload.question_ids:
+        raise HTTPException(status_code=400, detail='저장할 문항을 강사 문제 DB에서 먼저 선택해 주세요.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        rows = conn.execute(
+            f"SELECT id FROM generated_questions WHERE id IN ({','.join('?' * len(payload.question_ids))})",
+            payload.question_ids,
+        ).fetchall()
+        valid_ids = [row['id'] for row in rows]
+        if not valid_ids:
+            raise HTTPException(status_code=400, detail='선택한 문항을 강사 문제 DB에서 찾지 못했습니다.')
+        cursor = conn.execute(
+            'INSERT INTO exam_papers (title, academy_name, teacher_name, question_ids_json, created_at) VALUES (?,?,?,?,?)',
+            (payload.title.strip() or '내신 실전 시험지', payload.academy_name.strip(), payload.teacher_name.strip(), json.dumps(valid_ids), now),
+        )
+        return {'id': cursor.lastrowid, 'title': payload.title, 'academy_name': payload.academy_name, 'teacher_name': payload.teacher_name, 'question_ids': valid_ids, 'created_at': now}
+
+
+@app.get('/api/exam-papers')
+def list_exam_papers():
+    with get_db() as conn:
+        rows = conn.execute('SELECT * FROM exam_papers ORDER BY id DESC').fetchall()
+    result = []
+    for row in rows:
+        item = dict(row)
+        item['question_ids'] = json.loads(item.pop('question_ids_json'))
+        result.append(item)
+    return result
+
+
+# ==================================================================================
+# 내신 실전 제작 — 현재 작업 중인 시험지의 선택 문항/순서를 DB에 지속시키는 draft.
+# React state에만 두지 않고 새로고침·페이지 이동 후에도 그대로 복원되도록 한다.
+# ==================================================================================
+
+class ExamDraftUpdate(BaseModel):
+    title: str = ''
+    academy_name: str = ''
+    teacher_name: str = ''
+    question_ids: list[int] = []
+
+
+@app.get('/api/exam-draft')
+def get_exam_draft():
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM exam_draft WHERE id = 1').fetchone()
+    if not row:
+        return {'title': '', 'academy_name': '', 'teacher_name': '', 'question_ids': []}
+    return {
+        'title': row['title'], 'academy_name': row['academy_name'], 'teacher_name': row['teacher_name'],
+        'question_ids': json.loads(row['question_ids_json']),
+    }
+
+
+@app.put('/api/exam-draft')
+def save_exam_draft(payload: ExamDraftUpdate):
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        conn.execute(
+            '''INSERT INTO exam_draft (id, title, academy_name, teacher_name, question_ids_json, updated_at)
+               VALUES (1, ?, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                 title = excluded.title, academy_name = excluded.academy_name,
+                 teacher_name = excluded.teacher_name, question_ids_json = excluded.question_ids_json,
+                 updated_at = excluded.updated_at''',
+            (payload.title, payload.academy_name, payload.teacher_name, json.dumps(payload.question_ids), now),
+        )
+    return {'ok': True}
+
+
+# ==================================================================================
+# 내신 실전 제작 — 오피스 2007(.docx) 문제지/정답지 내보내기
+# ==================================================================================
+
+_UNDERLINE_RE = re.compile(r'\[\[u\]\](.*?)\[\[/u\]\]', re.DOTALL)
+_OPTION_MARKS = ['①', '②', '③', '④', '⑤']
+
+
+def _render_markup_segments(text: str):
+    """[[u]]...[[/u]] 형태로 저장된 밑줄 마크업을 (텍스트, 밑줄여부) 세그먼트 목록으로 변환한다."""
+    text = text or ''
+    segments: list[tuple[str, bool]] = []
+    pos = 0
+    for m in _UNDERLINE_RE.finditer(text):
+        if m.start() > pos:
+            segments.append((text[pos:m.start()], False))
+        segments.append((m.group(1), True))
+        pos = m.end()
+    if pos < len(text):
+        segments.append((text[pos:], False))
+    if not segments:
+        segments.append(('', False))
+    return [(seg.replace('[[u]]', '').replace('[[/u]]', ''), underline) for seg, underline in segments]
+
+
+def _set_korean_font(run, name: str = '맑은 고딕'):
+    run.font.name = name
+    rpr = run._element.get_or_add_rPr()
+    rfonts = rpr.find(qn('w:rFonts'))
+    if rfonts is None:
+        rfonts = OxmlElement('w:rFonts')
+        rpr.append(rfonts)
+    rfonts.set(qn('w:eastAsia'), name)
+
+
+def _add_markup_run(paragraph, text: str, bold: bool = False):
+    for seg_text, underline in _render_markup_segments(text):
+        if not seg_text:
+            continue
+        run = paragraph.add_run(seg_text)
+        run.bold = bold
+        run.underline = underline
+        _set_korean_font(run)
+    return paragraph
+
+
+def _set_columns(section, num: int = 1):
+    """섹션 본문을 num단으로 설정한다 (1=단일 칼럼, 2=신문형 2단)."""
+    sect_pr = section._sectPr
+    cols = sect_pr.find(qn('w:cols'))
+    if cols is None:
+        cols = OxmlElement('w:cols')
+        sect_pr.append(cols)
+    cols.set(qn('w:num'), str(num))
+    if num > 1:
+        cols.set(qn('w:space'), '425')  # 칼럼 사이 간격(약 0.3인치)
+    elif qn('w:space') in cols.attrib:
+        del cols.attrib[qn('w:space')]
+
+
+def _configure_a4_section(section, columns: int = 1):
+    """문제11(6차): A4 용지 크기와 여백을 명시적으로 지정한다 (python-docx 기본값은 Letter이므로
+    A4로 맞춰야 한다). 문제지 본문은 2단, 표지/정답 섹션은 1단으로 재사용한다."""
+    section.page_width = Mm(210)
+    section.page_height = Mm(297)
+    section.top_margin = Mm(15)
+    section.bottom_margin = Mm(15)
+    section.left_margin = Mm(14)
+    section.right_margin = Mm(14)
+    _set_columns(section, columns)
+
+
+def _new_docx_with_korean_style() -> Document:
+    doc = Document()
+    normal = doc.styles['Normal']
+    normal.font.name = '맑은 고딕'
+    normal.font.size = Pt(10)
+    rpr = normal.element.get_or_add_rPr()
+    rfonts = rpr.find(qn('w:rFonts'))
+    if rfonts is None:
+        rfonts = OxmlElement('w:rFonts')
+        rpr.append(rfonts)
+    rfonts.set(qn('w:eastAsia'), '맑은 고딕')
+    _configure_a4_section(doc.sections[0], columns=1)
+    return doc
+
+
+def _start_section(doc: Document, columns: int, new_page: bool):
+    """문제11(6차): 표지(1단) → 본문(2단) → 정답(1단, 새 페이지)처럼 구간별로 칼럼 수가
+    다른 섹션을 이어붙인다. new_page=True면 항상 새 페이지에서 시작한다(명시적 page_break 불필요)."""
+    section = doc.add_section(WD_SECTION.NEW_PAGE if new_page else WD_SECTION.CONTINUOUS)
+    _configure_a4_section(section, columns=columns)
+    return section
+
+
+def _add_doc_heading(doc: Document, title: str, subtitle: str, label: str):
+    heading = doc.add_paragraph()
+    heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    heading_run = heading.add_run(title or '문제지')
+    heading_run.bold = True
+    heading_run.font.size = Pt(18)
+    _set_korean_font(heading_run)
+
+    if subtitle:
+        sub = doc.add_paragraph()
+        sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        sub_run = sub.add_run(subtitle)
+        sub_run.font.size = Pt(11)
+        _set_korean_font(sub_run)
+
+    label_p = doc.add_paragraph()
+    label_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    label_run = label_p.add_run(label)
+    label_run.bold = True
+    _set_korean_font(label_run)
+
+
+def _build_question_section(doc: Document, questions: list[dict]):
+    """문제지 섹션. 객관식 선택지는 ①~⑤ 각각 별도 문단(줄)으로 추가한다
+    (한 문단에 이어 붙이지 않는다)."""
+    for idx, q in enumerate(questions, start=1):
+        head = doc.add_paragraph()
+        num_run = head.add_run(f"{idx}. [{q.get('score', 0)}점]  ")
+        num_run.bold = True
+        _set_korean_font(num_run)
+        _add_markup_run(head, q.get('stem', ''))
+
+        if q.get('source_text'):
+            src = doc.add_paragraph()
+            _add_markup_run(src, q.get('source_text', ''))
+
+        if q.get('q_kind') == 'sa':
+            conditions = q.get('conditions') or []
+            if conditions:
+                cond_p = doc.add_paragraph()
+                cond_run = cond_p.add_run('조건: ' + ' / '.join(conditions))
+                _set_korean_font(cond_run)
+            blank = doc.add_paragraph()
+            blank_run = blank.add_run('답: ______________________________________________________')
+            _set_korean_font(blank_run)
+        else:
+            options = q.get('options') or []
+            for i, opt in enumerate(options):
+                opt_p = doc.add_paragraph()
+                mark = _OPTION_MARKS[i] if i < len(_OPTION_MARKS) else str(i + 1)
+                mark_run = opt_p.add_run(f"{mark} ")
+                _set_korean_font(mark_run)
+                _add_markup_run(opt_p, opt)
+        doc.add_paragraph('')
+
+
+def _build_answer_section(doc: Document, questions: list[dict]):
+    """정답 섹션. 요청하신 형태(예: "1. ③")대로 문항 번호당 한 줄씩 정답만 간단히 표시한다."""
+    for idx, q in enumerate(questions, start=1):
+        line = doc.add_paragraph()
+        num_run = line.add_run(f"{idx}. ")
+        num_run.bold = True
+        _set_korean_font(num_run)
+        if q.get('q_kind') == 'sa':
+            ans_run = line.add_run(f"모범답안: {q.get('sample_answer', '') or '-'}")
+        else:
+            answer_idx = sorted(set(q.get('answer') or []))
+            labels = ', '.join(_OPTION_MARKS[a - 1] if 1 <= a <= len(_OPTION_MARKS) else str(a) for a in answer_idx)
+            ans_run = line.add_run(labels or '-')
+        ans_run.bold = True
+        _set_korean_font(ans_run)
+        if q.get('q_kind') == 'sa' and q.get('grading_rule'):
+            rule_p = doc.add_paragraph()
+            rule_run = rule_p.add_run(f"    채점 기준: {q.get('grading_rule', '')}")
+            rule_run.font.size = Pt(9.5)
+            _set_korean_font(rule_run)
+
+
+def _build_combined_exam_document(meta: dict, questions: list[dict]) -> Document:
+    """ZIP으로 문제지·정답지 두 파일을 나눠 만들던 방식을 폐지하고, 문제지(A4, 2단) 마지막에
+    새 섹션(1단)으로 정답을 이어붙인 단일 .docx(오피스 2007 호환) 하나만 생성한다."""
+    doc = _new_docx_with_korean_style()  # 표지: 1단
+    subtitle = ' · '.join(filter(None, [meta.get('academy_name', ''), meta.get('teacher_name', '')]))
+    _add_doc_heading(doc, meta.get('title') or '내신 실전 시험지', subtitle, '문제지')
+
+    _start_section(doc, columns=2, new_page=False)  # 본문: 2단 (표지 바로 아래에서 이어짐)
+    _build_question_section(doc, questions)
+
+    _start_section(doc, columns=1, new_page=True)  # 정답: 새 페이지, 1단
+    answer_label = doc.add_paragraph()
+    answer_label.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    answer_label_run = answer_label.add_run('정답')
+    answer_label_run.bold = True
+    answer_label_run.font.size = Pt(15)
+    _set_korean_font(answer_label_run)
+    doc.add_paragraph('')
+    _build_answer_section(doc, questions)
+
+    footer = doc.add_paragraph()
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    footer_run = footer.add_run(subtitle)
+    footer_run.font.size = Pt(9)
+    _set_korean_font(footer_run)
+    return doc
+
+
+def _build_wrong_note_combined_document(title: str, subtitle: str, notes: list[dict], document_label: str = '오답 복습 문제') -> Document:
+    """문제9~11(6차): 학생이 선택한 오답 기록 여러 개를 하나의 통합 오답 복습 문제지로 만든다.
+    내신 실전 제작(_build_combined_exam_document)과 동일한 A4/2단/맑은 고딕 10pt/페이지 나누기
+    helper(_new_docx_with_korean_style, _start_section, _add_doc_heading, _set_korean_font,
+    _add_markup_run)를 그대로 재사용한다 — 새로운 스타일 체계를 만들지 않는다."""
+    doc = _new_docx_with_korean_style()
+    _add_doc_heading(doc, title, subtitle, document_label)
+
+    _start_section(doc, columns=2, new_page=False)
+    for idx, note in enumerate(notes, start=1):
+        head = doc.add_paragraph()
+        num_run = head.add_run(f"{idx}. ")
+        num_run.bold = True
+        _set_korean_font(num_run)
+        if note.get('question_type'):
+            type_run = head.add_run(f"[{note['question_type']}]  ")
+            type_run.bold = True
+            _set_korean_font(type_run)
+        if note.get('title'):
+            _add_markup_run(head, note['title'])
+        body = doc.add_paragraph()
+        _add_markup_run(body, note.get('wrong_text', ''))
+        doc.add_paragraph('')
+
+    _start_section(doc, columns=1, new_page=True)
+    answer_label = doc.add_paragraph()
+    answer_label.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    answer_label_run = answer_label.add_run('정답')
+    answer_label_run.bold = True
+    answer_label_run.font.size = Pt(15)
+    _set_korean_font(answer_label_run)
+    doc.add_paragraph('')
+    for idx, note in enumerate(notes, start=1):
+        line = doc.add_paragraph()
+        num_run = line.add_run(f"{idx}. ")
+        num_run.bold = True
+        _set_korean_font(num_run)
+        ans_run = line.add_run(note.get('answer_text') or '-')
+        ans_run.bold = True
+        _set_korean_font(ans_run)
+
+    footer = doc.add_paragraph()
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    footer_run = footer.add_run(subtitle)
+    footer_run.font.size = Pt(9)
+    _set_korean_font(footer_run)
+    return doc
+
+
+class ExamExportRequest(BaseModel):
+    title: str = ''
+    academy_name: str = ''
+    teacher_name: str = ''
+    question_ids: list[int] = []
+
+
+@app.post('/api/exam-papers/export-docx')
+def export_exam_docx(payload: ExamExportRequest):
+    """선택된 전체 문항을 기준으로 문제지 + 정답을 하나의 오피스 2007(.docx) 파일로 내보낸다.
+    각 문항은 강사 문제 DB(generated_questions)에 저장된 전체 데이터(지문/발문/선택지/조건/정답 등)를
+    그대로 불러와 렌더링한다 — 실전 제작 화면에서 별도로 재구성하지 않는다."""
+    if not payload.question_ids:
+        raise HTTPException(status_code=400, detail='내보낼 문항을 먼저 선택해 주세요.')
+    with get_db() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM generated_questions WHERE id IN ({','.join('?' * len(payload.question_ids))})",
+            payload.question_ids,
+        ).fetchall()
+    by_id = {row['id']: dict(row) for row in rows}
+    ordered = [by_id[qid] for qid in payload.question_ids if qid in by_id]
+    if not ordered:
+        raise HTTPException(status_code=400, detail='선택한 문항을 강사 문제 DB에서 찾지 못했습니다.')
+
+    questions = []
+    for row in ordered:
+        questions.append({
+            'score': row.get('score', 0),
+            'stem': row.get('stem', ''),
+            'source_text': row.get('source_text', ''),
+            'q_kind': row.get('q_kind', 'mc'),
+            'options': json.loads(row.get('options_json') or '[]'),
+            'answer': json.loads(row.get('answer_json') or '[]'),
+            'conditions': json.loads(row.get('conditions_json') or '[]'),
+            'sample_answer': row.get('sample_answer', ''),
+            'grading_rule': row.get('grading_rule', ''),
+        })
+    meta = {
+        'title': payload.title.strip() or '내신 실전 시험지',
+        'academy_name': payload.academy_name.strip(),
+        'teacher_name': payload.teacher_name.strip(),
+    }
+    doc = _build_combined_exam_document(meta, questions)
+
+    export_dir = WORKSPACE / 'data' / 'exports'
+    export_dir.mkdir(parents=True, exist_ok=True)
+    safe_title = re.sub(r'[\\/:*?"<>|]', '_', meta['title']) or '내신_실전_시험지'
+    doc_path = export_dir / 'exam-combined.docx'
+    doc.save(doc_path)
+    return FileResponse(
+        doc_path,
+        media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        filename=f'{safe_title}.docx',
+    )
+
+
+# ==================================================================================
+# 학생 프로필 — 이름/학교/학년/학기/시험(중간·기말)만 저장한다.
+# ==================================================================================
+
+class StudentCreate(BaseModel):
+    name: str
+    school: str = ''
+    grade: str = ''
+    semester: str = ''
+    exam_type: str = ''
+
+
+@app.post('/api/students')
+def create_student(payload: StudentCreate):
+    if not payload.name.strip():
+        raise HTTPException(status_code=400, detail='학생 이름을 입력해 주세요.')
+    now = datetime.now().strftime('%Y.%m.%d %H:%M')
+    with get_db() as conn:
+        cursor = conn.execute(
+            'INSERT INTO students (name, school, grade, semester, exam_type, created_at) VALUES (?,?,?,?,?,?)',
+            (payload.name.strip(), payload.school.strip(), payload.grade.strip(), payload.semester.strip(), payload.exam_type.strip(), now),
+        )
+        row = conn.execute('SELECT * FROM students WHERE id = ?', (cursor.lastrowid,)).fetchone()
+        return dict(row)
+
+
+@app.get('/api/students')
+def list_students():
+    with get_db() as conn:
+        rows = conn.execute('SELECT * FROM students ORDER BY id DESC').fetchall()
+        return [dict(row) for row in rows]
+
+
+@app.delete('/api/students/{student_id}')
+def delete_student(student_id: int):
+    with get_db() as conn:
+        conn.execute('DELETE FROM student_wrong_notes WHERE student_id = ?', (student_id,))
+        conn.execute('DELETE FROM students WHERE id = ?', (student_id,))
+    return {'ok': True}
+
+
+# ==================================================================================
+# 오답 사진/PDF → 텍스트 추출 2차 정리 (Gemini).
+# 1차 브라우저 추출(PDF 텍스트 레이어 + 필요 시 OCR)로 얻은 원문을, 요약·재작성 없이
+# 원본 시험지 구조(문제 번호/지문/발문/선택지/밑줄/채점 표시 등) 그대로 정돈만 한다.
+# 사용자에게 별도 API Key 입력 UI를 새로 만들지 않고, 이미 앱에 설정되어 있는 Gemini 키를 그대로 사용한다.
+# ==================================================================================
+
+class OcrCleanRequest(BaseModel):
+    api_key: str = ''
+    raw_text: str
+
+
+class PassageRequest(BaseModel):
+    api_key: str = ''
+    source_text: str
+
+
+# 2027학년도 6월 모의평가 18~45번을 기준으로 한 번호별 표준 유형이다.
+# 번호는 1차 힌트이고, 저장 시 발문/문항 구조를 함께 검사해 불일치를 별도 기록한다.
+CSAT_TYPE_RANGES = [
+    ((18,), 'purpose', '목적', ('목적으로', 'purpose')),
+    ((19,), 'emotion', '심경', ('심경', 'mood', 'feeling')),
+    ((20,), 'claim', '주장', ('주장', 'claim')),
+    ((21,), 'implication', '함축 의미', ('의미하는', '함축', 'imply')),
+    ((22,), 'main_idea', '요지', ('요지', 'main idea')),
+    ((23,), 'topic', '주제', ('주제로', 'topic')),
+    ((24,), 'title', '제목', ('제목', 'title')),
+    ((25,), 'chart', '도표', ('도표', 'graph', 'chart')),
+    ((26,), 'content_match', '내용 일치·불일치', ('내용과 일치', '내용과 일치하지')),
+    ((27, 28), 'notice', '안내문', ('안내문', 'event', 'competition')),
+    ((29,), 'grammar', '어법', ('어법', 'grammar')),
+    ((30,), 'vocabulary', '어휘', ('낱말', '어휘', '문맥상 적절하지', 'word')),
+    ((31, 32, 33, 34), 'blank', '빈칸', ('빈칸', 'blank')),
+    ((35,), 'irrelevant', '무관 문장', ('관계 없는', '무관')),
+    ((36, 37), 'order', '글의 순서', ('순서', 'order')),
+    ((38, 39), 'insertion', '문장 삽입', ('들어가기에', '삽입')),
+    ((40,), 'summary', '요약', ('요약', 'summary')),
+    ((41, 42), 'long_complex', '장문 복합', ('41', '42', '윗글')),
+    ((43, 44, 45), 'long_sequence_reference_content', '장문 순서·지칭·내용', ('43', '44', '45', '윗글')),
+]
+HALF_FEATURED_NUMBERS = {21, 24, 29, 30, *range(31, 35), *range(36, 43)}
+
+
+def csat_type_for_number(question_no: int) -> dict:
+    for numbers, type_id, name, signals in CSAT_TYPE_RANGES:
+        if question_no in numbers:
+            return {'id': type_id, 'name': name, 'signals': signals}
+    return {'id': 'other', 'name': '기타', 'signals': ()}
+
+
+def classify_csat_question(question_no: int, prompt: str, choices: list[str]) -> dict:
+    expected = csat_type_for_number(question_no)
+    haystack = f"{prompt} {' '.join(choices)}".lower()
+    matched = any(signal.lower() in haystack for signal in expected['signals'])
+    # 복합문항은 그룹 발문이 한 번만 나올 수 있어 보기 5개 또는 번호 표기도 구조 신호로 인정한다.
+    if question_no >= 41 and len(choices) == 5:
+        matched = True
+    return {
+        'type_id': expected['id'], 'type_name': expected['name'],
+        'type_mismatch': not matched,
+        'mismatch_reason': '' if matched else f"{question_no}번 표준 유형({expected['name']})과 발문/구조 신호가 일치하지 않습니다.",
+    }
+
+
+def classify_csat_prompt(prompt: str, choices: list[str] | None = None) -> dict:
+    """발문만으로 분류하되 같은 유형의 여러 수능 번호 중 하나를 임의 선택하지 않는다."""
+    # Choice prose routinely contains words such as ``event`` or ``purpose`` and
+    # must not override the actual instruction. Classification is prompt-scoped.
+    haystack = prompt.lower()
+    matches = []
+    for numbers, type_id, name, signals in CSAT_TYPE_RANGES:
+        if any(signal.lower() in haystack for signal in signals):
+            matches.append({'numbers': list(numbers), 'id': type_id, 'name': name})
+    if len(matches) > 1:
+        singleton = [item for item in matches if len(item['numbers']) == 1]
+        if len(singleton) == 1:
+            matches = singleton
+    if len(matches) > 1:
+        exact = [item for item in matches if item['id'] in ('grammar', 'vocabulary', 'blank', 'order', 'insertion', 'summary')]
+        if len(exact) == 1:
+            matches = exact
+    if len(matches) != 1:
+        return {'type_id': 'review', 'type_name': 'REVIEW', 'candidate_numbers': [],
+                'classification_status': 'review', 'classification_reason': '발문 규칙으로 수능 번호 유형을 하나로 판별하지 못했습니다.'}
+    match = matches[0]
+    candidates = match['numbers']
+    return {'type_id': match['id'], 'type_name': match['name'], 'candidate_numbers': candidates,
+            'classification_status': 'classified' if len(candidates) == 1 else 'review',
+            'classification_reason': '' if len(candidates) == 1 else f"{','.join(map(str, candidates))}번이 같은 발문 유형이므로 정확한 번호를 검수해 주세요."}
+
+
+def _html_text(fragment: str) -> str:
+    import html
+    value = re.sub(r'(?is)<(?:script|style)\b.*?</(?:script|style)>', ' ', fragment)
+    value = re.sub(r'(?i)<br\s*/?>', '\n', value)
+    value = re.sub(r'(?i)</(?:p|div|li|h[1-6]|section|article)>', '\n', value)
+    return re.sub(r'[ \t]+', ' ', html.unescape(re.sub(r'(?s)<[^>]+>', ' ', value))).strip()
+
+
+def _first_html_part(fragment: str, class_names: tuple[str, ...], tags: str = r'[a-z][\w:-]*') -> str:
+    names = '|'.join(re.escape(name) for name in class_names)
+    pattern = rf'(?is)<(?P<tag>{tags})\b[^>]*class=["\'][^"\']*\b(?:{names})\b[^"\']*["\'][^>]*>(?P<body>.*?)</(?P=tag)>'
+    found = re.search(pattern, fragment)
+    return found.group('body').strip() if found else ''
+
+
+def _question_html_fragments(html_text: str):
+    """Yield balanced top-level question containers without truncating nested divs."""
+    tag_pattern = re.compile(r'(?is)<(?P<closing>/)?(?P<tag>article|section|div)\b(?P<attrs>[^>]*)>')
+    tokens = list(tag_pattern.finditer(html_text))
+    for position, token in enumerate(tokens):
+        if token.group('closing'):
+            continue
+        attrs = token.group('attrs')
+        marked = re.search(r'(?i)data-question-no\s*=', attrs) or re.search(
+            r'(?i)class\s*=\s*["\'][^"\']*\b(?:question|q)\b', attrs)
+        if not marked:
+            continue
+        tag, depth = token.group('tag').lower(), 1
+        for end in tokens[position + 1:]:
+            if end.group('tag').lower() != tag:
+                continue
+            depth += -1 if end.group('closing') else 1
+            if depth == 0:
+                yield html_text[token.start():end.end()], attrs
+                break
+
+
+def split_csat_html(html_text: str) -> list[dict]:
+    """Editable HTML을 보수적으로 분리하고 인식한 원문 fragment를 그대로 보존한다."""
+    questions = []
+    for index, (fragment, attrs) in enumerate(_question_html_fragments(html_text), start=1):
+        number_match = re.search(r'(?i)data-(?:source-)?question-no\s*=\s*["\']?(\d{1,2})', attrs)
+        visible = _html_text(fragment)
+        if not number_match:
+            number_match = re.search(r'^\s*(\d{1,2})\s*[.\)]', visible)
+        source_no = int(number_match.group(1)) if number_match else index
+        prompt_html = _first_html_part(fragment, ('prompt', 'stem', 'instruction'))
+        if not prompt_html:
+            heading = re.search(r'(?is)<(?:h[1-6]|p)\b[^>]*>(.*?)</(?:h[1-6]|p)>', fragment)
+            prompt_html = heading.group(1) if heading else ''
+        prompt = re.sub(r'^\s*\d{1,2}\s*[.\)]\s*', '', _html_text(prompt_html))
+        passage_html = _first_html_part(fragment, ('passage', 'source-text', 'reading'))
+        choices_html = _first_html_part(fragment, ('choices', 'options'))
+        choices = [_html_text(item) for item in re.findall(r'(?is)<li\b[^>]*>(.*?)</li>', choices_html or fragment)]
+        answer_html = _first_html_part(fragment, ('answer', 'correct-answer'))
+        explanation_html = _first_html_part(fragment, ('explanation', 'solution', 'commentary'))
+        classification = classify_csat_prompt(prompt, choices)
+        questions.append({
+            'source_question_no': source_no,
+            'question_no': classification['candidate_numbers'][0] if len(classification['candidate_numbers']) == 1 else 0,
+            'csat_type_id': classification['type_id'], 'csat_type_name': classification['type_name'],
+            'stem': prompt, 'prompt': prompt, 'passage': _html_text(passage_html), 'choices': choices,
+            'answer': _html_text(answer_html), 'explanation': _html_text(explanation_html),
+            'question_html': fragment, 'explanation_html': explanation_html, **classification,
+        })
+    return questions
+
+
+CSAT_JSON_TYPE_ALIASES = {
+    '목적': ('purpose', '목적', [18]), '심경': ('emotion', '심경', [19]),
+    '주장': ('claim', '필자의 주장', [20]), '함축 의미': ('implication', '함축 의미', [21]),
+    '요지': ('main_idea', '요지', [22]), '주제': ('topic', '주제', [23]), '제목': ('title', '제목', [24]),
+    '도표': ('chart', '도표', [25]), '내용 일치': ('content_match', '내용 일치·불일치', [26]),
+    '내용 불일치': ('content_match', '내용 일치·불일치', [26]), '안내문': ('notice', '안내문', [27, 28]),
+    '어법': ('grammar', '어법', [29]),
+    '어휘': ('vocabulary', '어휘', [30]), '빈칸': ('blank', '빈칸 추론', [31, 32, 33, 34]),
+    '무관한 문장': ('irrelevant', '무관한 문장', [35]), '순서': ('order', '글의 순서', [36, 37]),
+    '문장 삽입': ('insertion', '문장 삽입', [38, 39]), '삽입': ('insertion', '문장 삽입', [38, 39]),
+    '요약': ('summary', '요약문 완성', [40]), '장문': ('long_complex', '장문', [41, 42, 43, 44, 45]),
+    '공통지문': ('long_complex', '장문', [41, 42, 43, 44, 45]),
+}
+
+
+def _normalise_csat_problem_choices(problem: dict, raw_choices: object) -> tuple[dict, list[str]]:
+    """Normalize the production V1 layout where choices trail the passage.
+
+    Only a final, sequential circled-number block is extracted. Digits elsewhere
+    in the passage are never considered. The original problem remains available
+    as ``source_problem`` in raw_json and the source file is retained verbatim.
+    """
+    if isinstance(raw_choices, list) and raw_choices:
+        return {**problem, 'choices': raw_choices}, [str(choice) for choice in raw_choices]
+    passage = str(problem.get('passage') or '')
+    markers = '①②③④⑤'
+    markup = problem.get('markup') if isinstance(problem.get('markup'), list) else []
+    # In insertion and underlined-word questions, the source markup is itself the
+    # explicit option model. Preserve it instead of inventing text choices.
+    for item in markup:
+        if not isinstance(item, dict):
+            continue
+        values = item.get('labels') if item.get('type') == 'insertion_positions' else \
+            item.get('tokens') if item.get('type') == 'underline_targets' else None
+        if isinstance(values, list) and len(values) >= 2 and all(str(value).strip() for value in values):
+            choices = [str(value) for value in values]
+            return {**problem, 'choices': choices}, choices
+
+    occurrences = [(match.start(), markers.index(match.group()) + 1)
+                   for match in re.finditer(r'[①②③④⑤]', passage)]
+    selected = None
+    for position, (offset, marker_no) in enumerate(occurrences):
+        tail = occurrences[position:]
+        numbers = [number for _, number in tail]
+        if marker_no == 1 and numbers == list(range(1, len(numbers) + 1)) and len(numbers) >= 2:
+            selected = (offset, tail)
+    if selected is None:
+        return dict(problem), []
+    start_offset, tail = selected
+    choices = []
+    for position, (offset, _) in enumerate(tail):
+        end = tail[position + 1][0] if position + 1 < len(tail) else len(passage)
+        choices.append(passage[offset:end].strip())
+    normalized = {**problem, 'passage': passage[:start_offset].rstrip(), 'choices': choices}
+    return normalized, choices
+
+
+def _parse_csat_number_spec(value: object) -> list[int]:
+    """Parse only an explicit CSAT-number field; never mine numbers from prose."""
+    if value is None or value == '' or isinstance(value, bool):
+        return []
+    if isinstance(value, int):
+        numbers = [value]
+    elif isinstance(value, list):
+        if not value or any(isinstance(item, bool) or not isinstance(item, int) for item in value):
+            return []
+        numbers = value
+    elif isinstance(value, str):
+        source = value.strip()
+        range_match = re.fullmatch(r'(\d{1,2})\s*[-~～〜–—]\s*(\d{1,2})', source)
+        if range_match:
+            start, end = map(int, range_match.groups())
+            if start > end:
+                return []
+            numbers = list(range(start, end + 1))
+        elif re.fullmatch(r'\d{1,2}(?:\s*[·.,]\s*\d{1,2})+', source):
+            numbers = [int(item) for item in re.split(r'\s*[·.,]\s*', source)]
+        elif re.fullmatch(r'\d{1,2}', source):
+            numbers = [int(source)]
+        else:
+            return []
+    else:
+        return []
+    return numbers if len(numbers) == len(set(numbers)) and all(18 <= number <= 45 for number in numbers) else []
+
+
+def _normalise_csat_json_question(raw: dict, inherited: dict, index: int) -> dict:
+    if not isinstance(raw, dict):
+        raise ValueError('문항은 JSON object여야 합니다.')
+    problem = raw.get('problem') or {}
+    if not isinstance(problem, dict):
+        raise ValueError('problem은 JSON object여야 합니다.')
+    source_no = int(raw.get('source_question_no', raw.get('number', index)) or index)
+    source_number_raw = next((raw[key] for key in ('csat_question_no', 'question_no', 'question_number')
+                              if raw.get(key) not in (None, '')), '')
+    declared_numbers = _parse_csat_number_spec(source_number_raw)
+    explicit_no = declared_numbers[0] if len(declared_numbers) == 1 else 0
+    supplied_type = str(raw.get('type') or raw.get('csat_question_type') or '').strip()
+    alias = CSAT_JSON_TYPE_ALIASES.get(supplied_type)
+    instruction = str(problem.get('instruction', raw.get('instruction', raw.get('prompt', raw.get('stem', '')))) or '')
+    raw_choices = problem.get('choices', raw.get('choices', [])) or []
+    if not isinstance(raw_choices, list):
+        raise ValueError('problem.choices는 array여야 합니다.')
+    normalized_problem, choices = _normalise_csat_problem_choices(problem, raw_choices)
+    passage = str(normalized_problem.get('passage', raw.get('passage', '')) or '')
+    if explicit_no:
+        classified = classify_csat_question(explicit_no, instruction, choices)
         classification_status = 'review' if classified['type_mismatch'] else 'classified'
         candidates = [explicit_no]
         candidate_source = 'explicit'
