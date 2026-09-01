@@ -221,19 +221,20 @@
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
   }
 
-  /** 비어있지 않은 라벨만(순서 유지). Featured 칩 목록. */
+  /** 비어있지 않은 학교 라벨만(순서 유지). */
   function featuredSchoolLabels(view) {
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).filter(Boolean);
   }
 
-  // Phase 5.1: 단순 Featured 밴드(eyebrow → 큰 제목 → 짧은 설명 → 정적 칩 → 단일 CTA). 별도 showcase 없음.
+  // Phase 5.2: sec-featured — eyebrow → 큰 제목 → 짧은 설명 → 학교 칩(단일 선택) → 선택 학교의
+  // 실제 출제자 Digital Twin(/api/analyzes) 패널 → 단일 CTA. 배선: academy_public.js
+  // wireFeaturedSchoolTwin. 횡스크롤·GSAP·별도 showcase 없음. 다른 섹션과 무관한 별개 섹션.
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
-    const chipsHtml = featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join('');
     return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-reveal>
         <div class="section-inner featured-inner">
           <div class="featured-head">
@@ -241,22 +242,11 @@
             ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
             ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${chipsHtml ? ctx.featuredSchools(chipsHtml) : ''}
+          ${ctx.featuredSchools(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''))}
+          ${ctx.featuredTwin(featuredFirst(view))}
           <div class="featured-cta" data-reveal-item>${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
-  }
-
-  /**
-   * 카드 이름에서 "초/중/고"로 끝나는 토큰을 뽑는다(콤마/슬래시/가운뎃점 구분). 학원장이 카드
-   * 이름에 직접 나열한 학교 목록만 잡는다 — 2개 이상이면 그 Program Card 를 school-twin 카드로
-   * 인식해 학교별 실제 출제 분석(/api/analyzes)을 카드 안에서 보여준다. 추측 아님(이름이 곧 목록).
-   */
-  function schoolTokensFrom(name) {
-    return String(name == null ? '' : name)
-      .split(/\s*[,/·・、|]\s*/)
-      .map((s) => s.trim())
-      .filter((s) => /^[가-힣A-Za-z0-9]{2,}(초|중|고|초등학교|중학교|고등학교)$/.test(s));
   }
 
   // ── sec-digitaltwin : AI Native Education Process ─────────────────────────
@@ -309,32 +299,30 @@
    *   모바일:  stage 숨김. 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄), reveal-once.
    */
   const AI_SCENES = [
-    // 0 학교 자료 — 흩어진 자료가 중앙으로 모여 stack 된다.
+    // 0 SCHOOL DATA — 자료 4개가 stage 네 귀퉁이에서 중앙으로 실제로 이동해 stack.
     '<div class="ai-scene" data-ai-scene="0"><span class="ai-scene-cap">SCHOOL DATA</span>'
-      + '<div class="ai-s0" data-ai-el="stack">'
-      + '<span class="ai-doc" data-ai-doc="0">시험지</span>'
-      + '<span class="ai-doc" data-ai-doc="1">학교 프린트</span>'
-      + '<span class="ai-doc" data-ai-doc="2">교과서</span>'
-      + '<span class="ai-doc" data-ai-doc="3">수업 자료</span>'
-      + '</div></div>',
-    // 1 출제자 Digital Twin — 모인 자료 위에 분석 레이어 → 패턴이 만들어진다.
+      + '<div class="ai-doc" data-ai-doc="0">시험지</div>'
+      + '<div class="ai-doc" data-ai-doc="1">학교 프린트</div>'
+      + '<div class="ai-doc" data-ai-doc="2">교과서</div>'
+      + '<div class="ai-doc" data-ai-doc="3">수업 자료</div></div>',
+    // 1 EXAMINER PATTERN — 모인 자료 위로 scan 이 지나가고, 영역별 bar 가 자라며 DIGITAL TWIN 형성.
     '<div class="ai-scene" data-ai-scene="1"><span class="ai-scene-cap">EXAMINER PATTERN</span>'
-      + '<div class="ai-s1-doc" data-ai-el="doc"><span class="ai-scanline" data-ai-el="scan"></span></div>'
+      + '<div class="ai-s1-doc" data-ai-el="doc"></div>'
+      + '<span class="ai-scanline" data-ai-el="scan"></span>'
       + '<ul class="ai-bars" data-ai-el="bars">'
       + '<li style="--v:.55"><b>VOCAB</b><i></i></li>'
       + '<li style="--v:.92"><b>GRAMMAR</b><i></i></li>'
       + '<li style="--v:.7"><b>READING</b><i></i></li>'
       + '<li style="--v:.4"><b>WRITING</b><i></i></li>'
-      + '<li style="--v:.8"><b>PATTERN</b><i></i></li>'
-      + '</ul>'
+      + '<li style="--v:.8"><b>PATTERN</b><i></i></li></ul>'
       + '<div class="ai-twin-card" data-ai-el="twin"><span>EXAMINER</span><b>DIGITAL TWIN</b></div></div>',
-    // 2 수업 Insight — Digital Twin + 강사 Insight 두 스트림이 중앙에서 결합.
+    // 2 TWIN + INSIGHT — 두 스트림이 stage 좌우 끝에서 중앙으로 이동해 BUILD IT BRAIN 으로 결합.
     '<div class="ai-scene" data-ai-scene="2"><span class="ai-scene-cap">TWIN + INSIGHT</span>'
-      + '<div class="ai-stream ai-stream--a" data-ai-el="streamA">DIGITAL TWIN</div>'
-      + '<div class="ai-stream ai-stream--b" data-ai-el="streamB">TEACHER INSIGHT</div>'
+      + '<div class="ai-stream ai-stream--a" data-ai-el="streamA">EXAMINER<br>DIGITAL TWIN</div>'
+      + '<div class="ai-stream ai-stream--b" data-ai-el="streamB">TEACHER<br>INSIGHT</div>'
       + '<div class="ai-brain" data-ai-el="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
       + '<ul class="ai-tokens" data-ai-el="tokens"><li>시험에 자주 나옴</li><li>자주 틀리는 유형</li><li>서술형 주의</li><li>이번 시험 핵심</li></ul></div>',
-    // 3 학교별 문제 제작 — BRAIN 에서 원본 문항 → 변형/서술형으로 갈라진다.
+    // 3 QUESTION BUILD — BRAIN 에서 원본 문항이 내려와 변형 A / 변형 B / 서술형으로 갈라진다.
     '<div class="ai-scene" data-ai-scene="3"><span class="ai-scene-cap">QUESTION BUILD</span>'
       + '<div class="ai-brain ai-brain--sm" data-ai-el="brain">BUILD IT BRAIN</div>'
       + '<div class="ai-q ai-q--origin" data-ai-el="origin"><b>18.</b><p>다음 글의 목적으로 가장 적절한 것은?</p><span class="ai-q-choices">① ② ③ ④ ⑤</span></div>'
@@ -342,7 +330,7 @@
       + '<div class="ai-q ai-q--var" data-ai-el="v1">변형 B</div>'
       + '<div class="ai-q ai-q--var" data-ai-el="v2">서술형</div>'
       + '<span class="ai-stamp" data-ai-el="stamp">SCHOOL PATTERN ✓</span></div>',
-    // 4 FINAL — 생성된 문항이 하나의 완성 시험지로 조립된다.
+    // 4 FINAL — 생성된 문항 Q01~Q05 가 사방에서 날아와 완성 시험지로 조립된다.
     '<div class="ai-scene" data-ai-scene="4"><span class="ai-scene-cap">FINAL</span>'
       + '<span class="ai-qc" data-ai-el="qc0">Q01</span><span class="ai-qc" data-ai-el="qc1">Q02</span>'
       + '<span class="ai-qc" data-ai-el="qc2">Q03</span><span class="ai-qc" data-ai-el="qc3">Q04</span>'
@@ -725,24 +713,20 @@
     const data = lesson || {};
     const media = ctx.programCardMedia ? ctx.programCardMedia(data) : '';
     const eyebrow = textValue(data.tabShortName);
-    const rawName = textValue(data.name) || eyebrow;
+    const name = textValue(data.name) || eyebrow;
     const kicker = textValue(data.kicker);
     const need = textValue(data.learnerNeed);
     const highlight = textValue(data.highlight);
     const grade = textValue(data.gradeLabel) || textValue(data.tabGuidanceLabel);
-    // 카드 이름이 학교 목록(2개+)이면 school-twin 카드 — 이름 줄 대신 학교 셀렉터 + 실제 출제 분석 패널.
-    const schools = schoolTokensFrom(rawName);
-    const isTwin = schools.length >= 2 && typeof ctx.programCardSchools === 'function';
     const body = [];
-    if (eyebrow && eyebrow !== rawName) body.push(`<div class="f2r-program-card-eyebrow">${escapeHtml(eyebrow)}</div>`);
-    if (isTwin) body.push(ctx.programCardSchools(schools));
-    else if (rawName) body.push(`<div class="f2r-program-card-name">${escapeHtml(rawName)}</div>`);
+    if (eyebrow && eyebrow !== name) body.push(`<div class="f2r-program-card-eyebrow">${escapeHtml(eyebrow)}</div>`);
+    if (name) body.push(`<div class="f2r-program-card-name">${escapeHtml(name)}</div>`);
     if (kicker) body.push(`<div class="f2r-program-card-kicker">${escapeHtml(kicker)}</div>`);
     if (need) body.push(`<div class="f2r-program-card-need">${escapeHtml(need)}</div>`);
     if (highlight) body.push(`<div class="f2r-program-card-highlight">${escapeHtml(highlight)}</div>`);
     if (grade) body.push(`<div class="f2r-program-card-grade">${escapeHtml(grade)}</div>`);
     body.push(ctx.collectionConsultCta('상담 신청하기'));
-    return `<article class="f2r-program-card${isTwin ? ' f2r-program-card--twin' : ''}${media ? ' has-media' : ''}">${media}<div class="f2r-program-card-body">${body.join('')}</div></article>`;
+    return `<article class="f2r-program-card${media ? ' has-media' : ''}">${media}<div class="f2r-program-card-body">${body.join('')}</div></article>`;
   }
 
   /**
@@ -1107,30 +1091,27 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // Featured 칩 — 정적(비상호작용) 라벨. 학교별 상호작용은 sec-lessons 의 school-twin Program Card.
+      // 학교 칩 — 단일 선택. 선택하면 아래 Digital Twin 패널이 그 학교의 실제 /api/analyzes
+      // 데이터로 바뀐다(배선: academy_public.js wireFeaturedSchoolTwin). 빈 항목은 생략(빈 칩 방지).
       featuredItem(text, index) {
         const label = String(text == null ? '' : text).trim();
         if (!label) return '';
-        return `<span class="featured-chip">${escapeHtml(label)}</span>`;
+        return `<button type="button" class="featured-chip" data-featured-school="${escapeAttr(label)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
       },
       featuredSchools(itemsHtml) {
-        return `<div class="featured-schools" data-reveal-item><div class="featured-chips">${itemsHtml}</div></div>`;
+        return `<div class="featured-schools" data-reveal-item>`
+          + `<div class="featured-chips" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>`
+          + `</div>`;
       },
-      // school-twin Program Card — 학교 칩 셀렉터 + 빈 패널. academy_public.js wireProgramCardTwin 이
-      // 칩 선택 시 그 학교의 실제 /api/analyzes 데이터로 패널을 채운다. builderDraft 복제 없음.
-      programCardSchools(schools) {
-        const list = (schools || []).filter(Boolean);
-        const chips = list.map((s, i) =>
-          `<button type="button" class="f2r-twin-chip" data-twin-school="${escapeAttr(s)}" aria-pressed="${i === 0 ? 'true' : 'false'}">${escapeHtml(s)}</button>`).join('');
-        return `<div class="f2r-program-card-schools" data-program-twin-group>`
-          + `<div class="f2r-twin-chips" role="group" aria-label="학교 선택">${chips}</div>`
-          + `<div class="f2r-program-card-twin" data-program-twin aria-live="polite">`
-          + `<p class="f2r-twin-loading">${escapeHtml(list[0] || '')} 출제 분석을 불러오는 중…</p>`
-          + `</div></div>`;
+      // Digital Twin 패널 — 공개는 빈 컨테이너를 낸다. academy_public.js 가 /api/analyzes 로 채운다.
+      featuredTwin(firstSchool) {
+        return `<div class="featured-twin" data-reveal-item data-featured-twin aria-live="polite">`
+          + `<p class="featured-twin-loading">${escapeHtml(firstSchool || '')} 출제 분석을 불러오는 중…</p>`
+          + `</div>`;
       },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
-        return text ? `<button type="button" class="btn featured-cta-btn" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
+        return text ? `<button type="button" class="btn featured-cta-btn" data-featured-cta data-featured-cta-base="${escapeAttr(text)}" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
       },
       aiStepName(index, name) { return escapeHtml(name); },
 
@@ -1343,14 +1324,10 @@
       featuredSchools(itemsHtml) {
         return `<div class="featured-schools"><div class="featured-chips">${itemsHtml}</div></div>`;
       },
-      // 빌더 캔버스: school-twin Program Card 의 학교 셀렉터/패널은 공개 전용(/api/analyzes fetch).
-      // 정적 칩 + 안내만.
-      programCardSchools(schools) {
-        const list = (schools || []).filter(Boolean);
-        const chips = list.map((s) => `<span class="f2r-twin-chip">${escapeHtml(s)}</span>`).join('');
-        return `<div class="f2r-program-card-schools f2r-program-card-schools--builder">`
-          + `<div class="f2r-twin-chips">${chips}</div>`
-          + `<p class="f2r-twin-empty">공개 페이지에서 학교별 실제 출제 분석(<code>/analyzes</code>)이 표시됩니다.</p>`
+      // 빌더 캔버스: Digital Twin 패널은 공개 전용(/api/analyzes fetch). 정적 안내만.
+      featuredTwin() {
+        return `<div class="featured-twin featured-twin--builder">`
+          + `<p class="featured-twin-empty">공개 페이지에서 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 표시됩니다.</p>`
           + `</div>`;
       },
       featuredCta(label) {
@@ -1414,7 +1391,6 @@
     featuredItems,
     featuredFirst,
     featuredSchoolLabels,
-    schoolTokensFrom,
     aiProcessSteps,
     isHorizontalCollection,
     renderCollectionShell,
