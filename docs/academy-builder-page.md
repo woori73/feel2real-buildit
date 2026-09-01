@@ -1124,6 +1124,54 @@ Phase 5.1 이 실제 Production 화면 기준 미완료. Production DOM 을 실�
   `AcademyBuilderTemplateContractTest` / `AcademyServiceTest` / `LessonProductEditorTemplateContractTest` 통과.
 - harness(byte-identical, `/api/analyzes` mock, **실제 computer wheel 스크롤**) 데스크톱 1512 + 모바일 375.
 
+## 24. 2026-09-01 변경: AI Native Visual Rebuild — 5-scene 교체 → 하나의 파이프라인 canvas
+
+Phase 5/5.1/5.2 의 "5개 정적 scene 을 opacity 로 교체" 구조를 폐기하고, `#sec-digitaltwin` **하나만**
+다시 만들었다. 다른 섹션(`#sec-featured` 2학기 영어내신 / `#sec-lessons` 대표수업 / Actual Class /
+phone frame / lesson·product 데이터 / `/api/analyzes` / 백엔드)은 **손대지 않음**(diff 0 확인).
+
+### 제거된 것 (구 AI Native 구조)
+- `academy_sections.js`: `AI_SCENES`(5개 scene 문자열 배열), `figure[data-active]` 속성, `.ai-scene`/
+  `.ai-scene-cap`/`[data-ai-scene]` 마크업, scene 별 `.ai-doc`/`.ai-s1-doc`/`.ai-scanline`/`.ai-bars`/
+  `.ai-twin-card`/`.ai-stream`/`.ai-q`/`.ai-qc` 등.
+- `academy_cinematic.js`: `buildSceneTweens()` per-scene 루프, `visual.setAttribute('data-active')` +
+  `.is-active` 토글, scene 창 `[index, index+1)` 매핑.
+- `academy_cinematic.css`: scene 요소 절대배치 전부(`left/top:50% + margin` 방식), `@media 900~1140` scene scale.
+- `academy_public.css`: `.ai-scene`, `.ai-native-visual[data-active="N"] .ai-scene[...]` 셀렉터,
+  `html.js-cinematic .ai-scene.is-active`, `.ai-scene-cap`, `aspect-ratio:16/11` stage.
+- `academy_public.js`: `wireAiNative()` 의 IntersectionObserver `data-active` 폴백(`aiNativeObserver`),
+  `rootMargin:'-48% 0px -48% 0px'`.
+
+### 새 구조
+- **하나의 canvas** `.ai-canvas`(좌표계 660×460 고정, `academy_sections.js` `AI_PIPELINE_HTML`). 모든
+  오브젝트가 동시에 존재: `.ai-src`×4(시험지/학교 프린트/교과서/수업 자료) · `.ai-cap--src`(학교 자료) ·
+  `.ai-brain`(BUILD IT BRAIN, 중앙) · `.ai-node--twin`(EXAMINER DIGITAL TWIN) · `.ai-node--insight`
+  (TEACHER INSIGHT) · `.ai-qout`×4(원본 문제/변형 A/변형 B/서술형) · `.ai-final`(FINAL EXAM) ·
+  `.ai-flow-path`(SVG connector, `strokeDashoffset` 로 그려짐).
+- **하나의 GSAP timeline**(`academy_cinematic.js` `wireAiNative`). `.fromTo()`만 사용(scrub 에서 `.from()`
+  의 end 캡처 버그 회피). 절대 시간 0→1: A(0.02–0.50) 자료가 화면 왼쪽 밖 −360px 에서 들어와
+  자리잡고 Brain 으로 빨려 들어가며 축소 → B(0.28–0.72) Brain 확대 생성 + Twin(왼쪽) / Insight(오른쪽)
+  결합 + pulse → C(0.50–0.80) Brain 오른쪽에서 문제 4개가 −210~−250px 에서 부채꼴로 나옴 →
+  D(0.74–1.0) 문제가 아래로 모여 FINAL EXAM 으로 조립. `data-active`/scene 토글 없음.
+- `fitCanvas(stage, canvas)` (cinematic + public.js 양쪽): `canvas.style.transform = scale(stageW/660)`
+  + `stage.style.height = 460*s`. GSAP 유무와 무관하게 돈다(정적 폴백도 같은 배치).
+- ScrollTrigger: `trigger:.ai-native-steps`(데스크톱 각 step `min-height:44vh` → 충분한 스크롤 거리),
+  `start:'top 72%' end:'bottom 42%' scrub:0.6`, `pin` 없음(레이아웃은 CSS `position:sticky`),
+  `onUpdate/onRefresh → paint(self.progress) → tl.progress(p)`. 역행 가능, 멈추면 멈춤.
+- 폴백: GSAP 미로드/reduced-motion/데스크톱<900 → canvas 기본 CSS 배치가 파이프라인 다이어그램으로
+  정적 표시. 모바일 → `.ai-native-visual{display:none}` + 5개 세로 블록(`.ai-native-step`, 번호+glyph+설명, 미변경).
+
+### 파일 / 검증
+- `academy_sections.js` · `academy_cinematic.{js,css}` · `academy_public.{js,css}` · 캐시버스팅 템플릿 3개
+  (`?v=20260901-4`) · `AcademyBuilderTemplateContractTest.java`(→`-4`) · `academy_cinematic.test.js` /
+  `academy_reveal.test.js` / `academy_featured_selector.test.js`(버전만).
+- JS 335 tests / 330 pass / 5 fail(전부 기존 로컬 CRLF: header_section_apply·hero_media_pending·
+  intro_summary). `AcademyBuilderTemplateContractTest` 통과, `bootJar` BUILD SUCCESSFUL.
+- 실제 브라우저 검증(byte-identical harness, GSAP 3.12.5, **실제 computer wheel 스크롤**): 데스크톱에서
+  wheel 스크롤 scrollY 800→1800 → ST progress 0→0.76 확인. progress 0/.25/.5/.75/1 에서 오브젝트
+  x/y/scale 이 연속 이동(src −360→+150 = 510px, qout −210→+10). 모바일 375 → canvas 숨김 + 5블록.
+  no-GSAP → 정적 파이프라인 다이어그램. Before/After 스크린샷 PR 첨부.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

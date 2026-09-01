@@ -255,11 +255,12 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .builder-public-preview [data-builder-draft="featuredDescription"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
 
 /* ══════════════ Education Storefront: AI Native (sec-digitaltwin) ══════════════
-   AI Native 5-Scene Panorama. 데스크톱은 왼쪽 Visual Stage 를 CSS position:sticky 로 고정하고
-   사용자가 5개 설명을 자기 속도로 읽으며 내려간다. scene 애니메이션은 academy_cinematic.js
-   (GSAP ScrollTrigger scrub, pin 아님)가 구동하고, GSAP 미로드·reduced-motion 이면
-   academy_public.js wireAiNative(IO)가 활성 scene 만 바꾼다([data-active]). 모바일은 sticky 없이
-   5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). scene 내부 비주얼 스타일은 academy_cinematic.css. */
+   AI Native Pipeline. 데스크톱은 왼쪽 Visual Stage(하나의 넓은 canvas)를 CSS position:sticky 로
+   고정하고, 사용자가 오른쪽 5개 설명을 자기 속도로 읽으며 내려간다. canvas 안 오브젝트는
+   academy_cinematic.js(GSAP ScrollTrigger scrub, pin 아님)가 세로 스크롤 progress 0→1 에 직접
+   묶어 왼쪽 자료 → BRAIN → 문제 → FINAL 로 실제 이동시킨다. GSAP 미로드·reduced-motion 이면
+   canvas 기본 배치가 파이프라인 다이어그램으로 정적 표시된다(scene 교체 없음). 모바일은 canvas
+   숨김 + 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). canvas 오브젝트 스타일은 academy_cinematic.css. */
 .section-wrap.ai-native-wrap{background:var(--bg-soft);padding:60px 20px;}
 .ai-native-inner{max-width:1000px;margin:0 auto;}
 .ai-native-head{text-align:center;max-width:640px;margin:0 auto;}
@@ -294,20 +295,12 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .ai-native-step-desc{color:var(--ink-soft);font-size:13px;font-weight:500;line-height:1.6;word-break:keep-all;}
 .ai-native-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:600;line-height:1.7;word-break:keep-all;}
 
-/* Visual Stage(데스크톱). scene 은 겹쳐 쌓이고 활성 scene 만 보인다. scene 안의 오브젝트는
-   GSAP(academy_cinematic.js)가 스크롤 progress 에 따라 "흩어진 상태 → 중앙 조립"으로 실제 이동
-   시킨다. GSAP 없음/reduced/모바일 → [data-active] 셀렉터가 조립 완료 상태를 정적으로 표시한다. */
-.ai-stage{position:relative;width:100%;aspect-ratio:16/11;max-height:60vh;border:1px solid var(--line);border-radius:var(--radius-sm);background:linear-gradient(180deg,#fff,#fafbfe);box-shadow:var(--shadow-sm);overflow:hidden;}
-.ai-scene{position:absolute;inset:0;opacity:0;transition:opacity .4s var(--reveal-ease);}
-.ai-native-visual[data-active="0"] .ai-scene[data-ai-scene="0"],
-.ai-native-visual[data-active="1"] .ai-scene[data-ai-scene="1"],
-.ai-native-visual[data-active="2"] .ai-scene[data-ai-scene="2"],
-.ai-native-visual[data-active="3"] .ai-scene[data-ai-scene="3"],
-.ai-native-visual[data-active="4"] .ai-scene[data-ai-scene="4"],
-.ai-native-visual:not([data-active]) .ai-scene[data-ai-scene="0"]{opacity:1;}
-html.js-cinematic .ai-scene{transition:opacity .28s linear;}
-html.js-cinematic .ai-scene.is-active{opacity:1;}
-.ai-scene-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:var(--ink-faint);font-size:11px;font-weight:900;letter-spacing:.18em;z-index:3;}
+/* Visual Stage(데스크톱). 하나의 넓은 canvas(.ai-canvas, 좌표계 660×460)를 담는 뷰포트.
+   fitCanvas(academy_public.js / academy_cinematic.js)가 stage 폭에 맞춰 canvas 를 scale 하고
+   stage 높이를 맞춘다. canvas 안 오브젝트는 GSAP(academy_cinematic.js)가 스크롤 progress 에
+   따라 왼쪽 자료 → BRAIN → 문제 → FINAL 로 실제 이동시킨다. GSAP 없음/reduced → 기본 배치가
+   파이프라인 다이어그램으로 정적 표시. */
+.ai-stage{position:relative;width:100%;height:420px;border:1px solid var(--line);border-radius:var(--radius-sm);background:linear-gradient(180deg,#fff,#fafbfe);box-shadow:var(--shadow-sm);overflow:hidden;}
 
 /* 데스크톱 — 큰 왼쪽 sticky Visual Stage + 오른쪽 좁은 설명 열. */
 @media (min-width:900px){
@@ -316,7 +309,7 @@ html.js-cinematic .ai-scene.is-active{opacity:1;}
   .ai-native-steps{position:relative;}
   .ai-native-steps::before{content:"";position:absolute;left:15px;top:16px;height:calc(100% - 30vh);width:2px;background:var(--line);}
   .ai-native-step-glyph{display:none;}
-  .ai-native-step{grid-template-columns:32px 1fr;min-height:40vh;align-content:start;padding-bottom:0;}
+  .ai-native-step{grid-template-columns:32px 1fr;min-height:44vh;align-content:start;padding-bottom:0;}
   .ai-native-step:last-child{min-height:auto;}
   .ai-native-step + .ai-native-step::before{display:none;}
   .ai-native-step-num{width:32px;height:32px;font-size:13px;}
@@ -326,9 +319,6 @@ html.js-cinematic .ai-scene.is-active{opacity:1;}
 }
 @media (min-width:1200px){
   .ai-native{grid-template-columns:1fr 300px;gap:56px;}
-}
-@media (prefers-reduced-motion:reduce){
-  .ai-scene{transition:none;}
 }
 /* 빌더 캔버스는 Visual Stage 를 쓰지 않는다 — 항상 5개 세로 블록으로 정적 프리뷰. */
 .builder-public-preview .ai-native{display:block;}

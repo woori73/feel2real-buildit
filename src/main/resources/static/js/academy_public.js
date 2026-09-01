@@ -39,8 +39,8 @@
   let academyVideos = [];
   // 상담 신청 모달에 띄울 학원 연락 수단. render()마다 businessInfo에서 다시 뽑는다.
   let consultChannels = [];
-  // AI Native sticky Visual Stage 트래커. render()마다 새로 만들므로 이전 것을 끊는다.
-  let aiNativeObserver = null;
+  // AI Native pipeline canvas(660×460 좌표계)를 stage 폭에 맞추는 resize 리스너를 한 번만 건다.
+  let aiNativeFitBound = false;
   const slug = (root && root.dataset.slug)
     ? root.dataset.slug
     : decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
@@ -152,30 +152,28 @@
   }
 
   /**
-   * AI Native 단계 트래커 — academy_cinematic.js(GSAP)가 활성일 때는 그쪽이 scene timeline 을
-   * 소유하므로 이 IO 폴백은 비활성화된다(html.js-cinematic). GSAP 미로드 / reduced-motion /
-   * 모바일에서만 동작: 뷰포트 중앙 밴드를 지나는 .ai-native-step 에 따라 [data-ai-visual] 의
-   * data-active 를 바꾼다(타이머·자동 sequence 없음). CSR 재렌더마다 이전 IO 를 disconnect.
+   * AI Native pipeline canvas 핏 — 오브젝트 애니메이션(GSAP timeline, scrub)은 academy_cinematic.js
+   * 가 소유한다. 여기서는 좌표계 660×460 고정 canvas 를 stage 실제 폭에 맞춰 transform:scale 하고
+   * stage 높이를 맞춘다(GSAP 유무와 무관 — 정적 폴백도 같은 배치로 보여야 하므로). 타이머·IO·
+   * 자동 sequence 없음. resize 리스너는 한 번만 건다. 모바일은 stage 가 display:none → clientWidth 0
+   * → no-op.
    */
   function wireAiNative() {
-    if (aiNativeObserver && typeof aiNativeObserver.disconnect === 'function') {
-      aiNativeObserver.disconnect();
-      aiNativeObserver = null;
-    }
     if (!root) return;
-    if (document.documentElement.classList.contains('js-cinematic')) return;
-    const visual = root.querySelector('#sec-digitaltwin [data-ai-visual]');
-    const steps = root.querySelectorAll('#sec-digitaltwin .ai-native-step');
-    if (!visual || !steps.length || typeof IntersectionObserver !== 'function') return;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // 뷰포트 중앙의 얇은 밴드를 지나는 step 이 "지금 읽는 단계". 밴드가 얇아 한 번에 하나만 잡힌다.
-    aiNativeObserver = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) visual.setAttribute('data-active', e.target.getAttribute('data-ai-step') || '0');
-      });
-    }, { rootMargin: '-48% 0px -48% 0px', threshold: 0 });
-    steps.forEach((s) => aiNativeObserver.observe(s));
+    const stage = root.querySelector('#sec-digitaltwin [data-ai-stage]');
+    const canvas = stage && stage.querySelector('[data-ai-canvas]');
+    if (!stage || !canvas) return;
+    const fit = () => {
+      const w = stage.clientWidth || 0;
+      if (!w) return;
+      const s = w / 660;
+      canvas.style.transform = 'scale(' + s + ')';
+      stage.style.height = (460 * s) + 'px';
+    };
+    fit();
+    if (aiNativeFitBound) return;
+    aiNativeFitBound = true;
+    window.addEventListener('resize', fit);
   }
 
   /**

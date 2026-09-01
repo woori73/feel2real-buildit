@@ -286,58 +286,36 @@
   ];
 
   /**
-   * AI Native Panorama — 5-scene visual stage. 각 scene 은 "그 단계에서 실제로 무슨 일이
-   * 일어나는지"를 목적별 미니 비주얼로 보여준다(자료가 모인다 → 패턴이 만들어진다 →
-   * 두 지능이 결합된다 → 문제가 생성된다 → 시험지로 조립된다). 한 scene 의 마지막 오브젝트가
-   * 다음 scene 의 첫 입력이 되도록 연결한다(continuity). 무거운 문서 전체가 아니라 가벼운
-   * HTML/SVG representation 만 쓴다.
+   * AI Native — 하나의 넓은 canvas 안에서 같은 오브젝트들이 계속 이동하며 만드는 하나의 파이프라인.
+   *   왼쪽에서 학교 자료 4개가 화면을 가로질러 중앙 BUILD IT BRAIN 으로 들어간다
+   *   → Brain 주변에서 EXAMINER DIGITAL TWIN + TEACHER INSIGHT 가 생성돼 Brain 에 결합
+   *   → Brain 오른쪽에서 원본 문제·변형·서술형이 나온다
+   *   → 문제들이 아래로 모여 한 장의 FINAL EXAM 으로 조립된다.
+   * academy_cinematic.js 가 세로 스크롤 progress 0→1 을 이 오브젝트들의 x/y/scale 이동에 직접 연결한다
+   * (GSAP timeline, scrub, pin 아님). 5개 정적 scene 교체 구조 아님. connector 선(.ai-flow) 이 흐름을 잇는다.
    *
-   *   데스크톱: academy_cinematic.js 가 sec-digitaltwin 진입 시 stage 를 sticky 로 잡고
-   *            세로 스크롤 progress → GSAP timeline progress 로 scene 애니메이션을 구동한다
-   *            (scrub, pin 아님). GSAP 미로드·reduced-motion → [data-active] 셀렉터로 정적
-   *            scene 표시(academy_public.js wireAiNative IO 폴백).
-   *   모바일:  stage 숨김. 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄), reveal-once.
+   * DOM 은 canvas 좌표계(660×460) 안에 절대배치. GSAP 미로드·reduced-motion·데스크톱<900 이면
+   * CSS 기본 배치(파이프라인 최종 상태)가 정적으로 보인다. 모바일은 canvas 숨김 + 5 세로 블록.
    */
-  const AI_SCENES = [
-    // 0 SCHOOL DATA — 자료 4개가 stage 네 귀퉁이에서 중앙으로 실제로 이동해 stack.
-    '<div class="ai-scene" data-ai-scene="0"><span class="ai-scene-cap">SCHOOL DATA</span>'
-      + '<div class="ai-doc" data-ai-doc="0">시험지</div>'
-      + '<div class="ai-doc" data-ai-doc="1">학교 프린트</div>'
-      + '<div class="ai-doc" data-ai-doc="2">교과서</div>'
-      + '<div class="ai-doc" data-ai-doc="3">수업 자료</div></div>',
-    // 1 EXAMINER PATTERN — 모인 자료 위로 scan 이 지나가고, 영역별 bar 가 자라며 DIGITAL TWIN 형성.
-    '<div class="ai-scene" data-ai-scene="1"><span class="ai-scene-cap">EXAMINER PATTERN</span>'
-      + '<div class="ai-s1-doc" data-ai-el="doc"></div>'
-      + '<span class="ai-scanline" data-ai-el="scan"></span>'
-      + '<ul class="ai-bars" data-ai-el="bars">'
-      + '<li style="--v:.55"><b>VOCAB</b><i></i></li>'
-      + '<li style="--v:.92"><b>GRAMMAR</b><i></i></li>'
-      + '<li style="--v:.7"><b>READING</b><i></i></li>'
-      + '<li style="--v:.4"><b>WRITING</b><i></i></li>'
-      + '<li style="--v:.8"><b>PATTERN</b><i></i></li></ul>'
-      + '<div class="ai-twin-card" data-ai-el="twin"><span>EXAMINER</span><b>DIGITAL TWIN</b></div></div>',
-    // 2 TWIN + INSIGHT — 두 스트림이 stage 좌우 끝에서 중앙으로 이동해 BUILD IT BRAIN 으로 결합.
-    '<div class="ai-scene" data-ai-scene="2"><span class="ai-scene-cap">TWIN + INSIGHT</span>'
-      + '<div class="ai-stream ai-stream--a" data-ai-el="streamA">EXAMINER<br>DIGITAL TWIN</div>'
-      + '<div class="ai-stream ai-stream--b" data-ai-el="streamB">TEACHER<br>INSIGHT</div>'
-      + '<div class="ai-brain" data-ai-el="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
-      + '<ul class="ai-tokens" data-ai-el="tokens"><li>시험에 자주 나옴</li><li>자주 틀리는 유형</li><li>서술형 주의</li><li>이번 시험 핵심</li></ul></div>',
-    // 3 QUESTION BUILD — BRAIN 에서 원본 문항이 내려와 변형 A / 변형 B / 서술형으로 갈라진다.
-    '<div class="ai-scene" data-ai-scene="3"><span class="ai-scene-cap">QUESTION BUILD</span>'
-      + '<div class="ai-brain ai-brain--sm" data-ai-el="brain">BUILD IT BRAIN</div>'
-      + '<div class="ai-q ai-q--origin" data-ai-el="origin"><b>18.</b><p>다음 글의 목적으로 가장 적절한 것은?</p><span class="ai-q-choices">① ② ③ ④ ⑤</span></div>'
-      + '<div class="ai-q ai-q--var" data-ai-el="v0">변형 A</div>'
-      + '<div class="ai-q ai-q--var" data-ai-el="v1">변형 B</div>'
-      + '<div class="ai-q ai-q--var" data-ai-el="v2">서술형</div>'
-      + '<span class="ai-stamp" data-ai-el="stamp">SCHOOL PATTERN ✓</span></div>',
-    // 4 FINAL — 생성된 문항 Q01~Q05 가 사방에서 날아와 완성 시험지로 조립된다.
-    '<div class="ai-scene" data-ai-scene="4"><span class="ai-scene-cap">FINAL</span>'
-      + '<span class="ai-qc" data-ai-el="qc0">Q01</span><span class="ai-qc" data-ai-el="qc1">Q02</span>'
-      + '<span class="ai-qc" data-ai-el="qc2">Q03</span><span class="ai-qc" data-ai-el="qc3">Q04</span>'
-      + '<span class="ai-qc" data-ai-el="qc4">Q05</span>'
-      + '<div class="ai-final" data-ai-el="final"><b>FINAL</b><p class="ai-final-title">실전 대비 모의고사</p>'
-      + '<ol><li></li><li></li><li></li><li></li></ol></div></div>'
-  ];
+  const AI_PIPELINE_HTML =
+    '<div class="ai-canvas" data-ai-canvas>'
+    + '<svg class="ai-flow" data-ai-flow viewBox="0 0 660 460" preserveAspectRatio="none" aria-hidden="true">'
+    + '<path class="ai-flow-path" data-ai-flow-path d="M150,150 C232,150 250,225 320,225 C398,225 420,150 470,150 M320,225 C356,300 400,332 432,342"/>'
+    + '</svg>'
+    + '<div class="ai-src" data-ai-src="0">시험지</div>'
+    + '<div class="ai-src" data-ai-src="1">학교 프린트</div>'
+    + '<div class="ai-src" data-ai-src="2">교과서</div>'
+    + '<div class="ai-src" data-ai-src="3">수업 자료</div>'
+    + '<div class="ai-cap ai-cap--src" data-ai-el="capSrc">학교 자료</div>'
+    + '<div class="ai-node ai-node--twin" data-ai-node="twin"><span>EXAMINER</span>DIGITAL TWIN</div>'
+    + '<div class="ai-node ai-node--insight" data-ai-node="insight"><span>TEACHER</span>INSIGHT</div>'
+    + '<div class="ai-brain" data-ai-brain><b>BUILD IT</b><span>BRAIN</span></div>'
+    + '<div class="ai-qout" data-ai-qout="0"><b>원본 문제</b><i>18. 다음 글의 목적…</i></div>'
+    + '<div class="ai-qout" data-ai-qout="1">변형 A</div>'
+    + '<div class="ai-qout" data-ai-qout="2">변형 B</div>'
+    + '<div class="ai-qout" data-ai-qout="3">서술형</div>'
+    + '<div class="ai-final" data-ai-final><b>FINAL EXAM</b><p>학교별 실전 대비 시험지</p><ol><li></li><li></li><li></li><li></li></ol></div>'
+    + '</div>';
 
   function aiNativeHtml(steps, ctx) {
     const items = (steps || [])
@@ -345,7 +323,6 @@
       .filter((s) => s.i === 0 || s.name);
     if (!items.length) return '';
     const glyphOf = (i) => AI_NATIVE_GLYPHS[i] || AI_NATIVE_GLYPHS[AI_NATIVE_GLYPHS.length - 1];
-    const scenes = items.map((s) => AI_SCENES[s.i] || '').join('');
     const blocks = items.map((s) => {
       const desc = AI_PROCESS_STEP_DESC_DEFAULTS[s.i] || '';
       return `<li class="ai-native-step" data-ai-step="${s.i}" data-reveal-item>`
@@ -358,8 +335,8 @@
         + `</div></div></li>`;
     }).join('');
     return `<div class="ai-native" data-reveal>
-        <figure class="ai-native-visual" data-ai-visual data-active="0" aria-hidden="true">
-          <div class="ai-stage" data-ai-stage>${scenes}</div>
+        <figure class="ai-native-visual" data-ai-visual aria-hidden="true">
+          <div class="ai-stage" data-ai-stage>${AI_PIPELINE_HTML}</div>
         </figure>
         <ol class="ai-native-steps">${blocks}</ol>
       </div>`;

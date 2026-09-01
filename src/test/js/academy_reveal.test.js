@@ -148,7 +148,7 @@ test('Phase 4 에서 삭제한 레거시 모션 자산·API 는 여전히 없다
   assert.ok(fs.existsSync(path.resolve(__dirname, '../../main/resources/static/js/academy_cinematic.js')));
 });
 
-/* ── cinematic: AI Native Panorama (Phase 5.1 — 담당 섹션 1개) ── */
+/* ── cinematic: AI Native Pipeline (담당 섹션 1개) ── */
 
 const CINEMATIC_JS = read('../../main/resources/static/js/academy_cinematic.js');
 
@@ -171,9 +171,9 @@ test('academy_cinematic.js: #sec-digitaltwin 하나만 담당, sec-featured 는 
   assert.doesNotMatch(CINEMATIC_JS, /setInterval/);
 });
 
-/* ── AI Native: 5-Scene Panorama (데스크톱 sticky stage / 세로 블록 모바일) ── */
+/* ── AI Native: 하나의 파이프라인 canvas (데스크톱 sticky stage / 세로 블록 모바일) ── */
 
-test('AI Native: 5개 목적별 scene + 5개 세로 블록. pin/타이머 없음(scrub 는 cinematic 모듈)', () => {
+test('AI Native: 하나의 canvas 안 파이프라인 오브젝트 + 5개 세로 블록. scene 교체·pin·타이머 없음', () => {
   const map = Object.fromEntries(bothRenderers());
   const academy = academyFixture({
     pageSettings: {
@@ -186,13 +186,20 @@ test('AI Native: 5개 목적별 scene + 5개 세로 블록. pin/타이머 없음
   });
   primeRenderer(map.public, academy);
   const html = map.public.renderAiProcess(academy);
-  // Visual Stage — 5개 목적별 scene(자료 수집 → 분석 → 결합 → 문항 생성 → 조립)
-  assert.match(html, /<figure class="ai-native-visual" data-ai-visual data-active="0"/);
+  // Visual Stage — 하나의 넓은 canvas 안에 파이프라인 오브젝트가 전부 존재(자료 → BRAIN → 문제 → FINAL)
+  assert.match(html, /<figure class="ai-native-visual" data-ai-visual/);
   assert.match(html, /<div class="ai-stage" data-ai-stage>/);
-  assert.equal((html.match(/class="ai-scene" data-ai-scene="/g) || []).length, 5);
-  assert.match(html, /data-ai-scene="0"[\s\S]*SCHOOL DATA/);
-  assert.match(html, /data-ai-scene="2"[\s\S]*BUILD IT/);
-  assert.match(html, /data-ai-scene="4"[\s\S]*class="ai-final"/);
+  assert.match(html, /<div class="ai-canvas" data-ai-canvas>/);
+  // 5개 정적 scene 교체 구조는 없다
+  assert.doesNotMatch(html, /class="ai-scene" data-ai-scene=/);
+  assert.match(html, /class="ai-src" data-ai-src="0">시험지/);
+  assert.equal((html.match(/class="ai-src" data-ai-src="/g) || []).length, 4);
+  assert.match(html, /class="ai-brain" data-ai-brain><b>BUILD IT<\/b>/);
+  assert.match(html, /data-ai-node="twin"/);
+  assert.match(html, /data-ai-node="insight"/);
+  assert.equal((html.match(/class="ai-qout" data-ai-qout="/g) || []).length, 4);
+  assert.match(html, /class="ai-final" data-ai-final><b>FINAL EXAM/);
+  assert.match(html, /class="ai-flow-path" data-ai-flow-path/);
   // 텍스트 블록 — 번호 리스트는 유지(모바일 세로 스토리)
   assert.equal((html.match(/class="ai-native-step" data-ai-step="/g) || []).length, 5);
   assert.match(html, /class="ai-native-step-desc">우리 학교 기출·프린트/);
@@ -200,11 +207,11 @@ test('AI Native: 5개 목적별 scene + 5개 세로 블록. pin/타이머 없음
 
   // desktop = CSS position:sticky (JS pin 아님)
   assert.match(PUBLIC_CSS, /@media \(min-width:900px\)\{[\s\S]*\.ai-native-visual\{display:block;position:sticky/);
-  // GSAP 없을 때 폴백: IO 트래커. cinematic 활성이면 건너뛴다.
+  // canvas 핏: 좌표계 660 고정 canvas 를 stage 폭에 맞춰 scale. IO·타이머 없음.
   assert.match(PUBLIC_JS, /function wireAiNative\(\)/);
-  assert.match(PUBLIC_JS, /rootMargin: '-48% 0px -48% 0px'/);
-  assert.match(PUBLIC_JS, /classList\.contains\('js-cinematic'\)\) return/);
-  assert.doesNotMatch(PUBLIC_JS.slice(PUBLIC_JS.indexOf('function wireAiNative')), /setTimeout|setInterval/);
+  assert.match(PUBLIC_JS, /\[data-ai-canvas\]/);
+  assert.match(PUBLIC_JS, /w \/ 660/);
+  assert.doesNotMatch(PUBLIC_JS.slice(PUBLIC_JS.indexOf('function wireAiNative')), /setTimeout|setInterval|IntersectionObserver/);
 });
 
 test('AI Native: 빌더 canvas 는 sticky 대신 세로 블록으로 정적 프리뷰 + 단계 이름 편집 앵커', () => {

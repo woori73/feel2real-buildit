@@ -1,111 +1,90 @@
-/* ══════════════ Storefront Cinematic — AI Native Panorama scene 비주얼 ══════════════
-   scene 컨테이너 / stage / 활성 전환은 academy_public.css. 여기는 각 scene 안 오브젝트의
-   "조립 완료(최종)" 배치 — GSAP(academy_cinematic.js, ScrollTrigger scrub)가 흩어진 시작에서
-   이 위치로 실제 이동시킨다. GSAP 없음/reduced-motion/모바일이면 이 최종 배치가 그대로
-   정적으로 보인다([data-active] 셀렉터). 위치는 stage 중심 기준 left/top:50% + margin, GSAP 은
-   transform(x/y/rotation/scale) 만 애니메이트한다(둘이 안 겹침).
+/* ══════════════ Storefront Cinematic — AI Native Pipeline canvas ══════════════
+   하나의 넓은 canvas 안 오브젝트들의 "파이프라인 상 최종 위치"를 px 로 절대배치한다
+   (좌표계 660×460 고정). academy_public.js / academy_cinematic.js 의 fitCanvas 가 stage 폭에
+   맞춰 .ai-canvas 를 transform:scale 한다 → px 이동량도 함께 스케일된다.
 
-   토큰(--ultramarine / --ink* / --line …)은 academy_public.css :root 를 쓴다. */
+   GSAP(academy_cinematic.js, ScrollTrigger scrub)는 transform(x/y/scale/opacity)만 애니메이트해
+   왼쪽 학교 자료 → BUILD IT BRAIN → 문제 → FINAL EXAM 으로 실제 이동시킨다. GSAP 없음 /
+   reduced-motion / 데스크톱<900 이면 이 최종 배치가 그대로 파이프라인 다이어그램으로 정적 표시.
 
-.ai-scene [data-ai-el], .ai-scene .ai-doc { will-change: transform; }
+   stage 컨테이너 / 데스크톱 sticky 레이아웃 / 모바일 세로 블록은 academy_public.css.
+   토큰(--ultramarine / --ink* / --line / --accent …)은 academy_public.css :root 를 쓴다. */
 
-/* 공통 — stage 중심 기준 절대배치 카드 */
-.ai-doc, .ai-s1-doc, .ai-twin-card, .ai-stream, .ai-brain, .ai-q, .ai-qc, .ai-final, .ai-stamp, .ai-scanline, .ai-bars {
-  position: absolute; left: 50%; top: 50%;
+.ai-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 660px; height: 460px;
+  transform-origin: top left;
 }
+.ai-canvas > * { position: absolute; will-change: transform; }
 
-/* ── Scene 0: 자료 4개 → 중앙 stack ─────────────────────────────────────── */
-.ai-doc {
-  width: 118px; height: 74px; margin: -37px 0 0 -59px;
+/* ── 흐름 척추(connector) ─────────────────────────────────────────────── */
+.ai-flow { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.ai-flow-path {
+  fill: none; stroke: var(--accent, #4A7FD4); stroke-width: 2; stroke-linecap: round;
+  opacity: .55; stroke-dasharray: 5 7;
+}
+html.js-cinematic .ai-flow-path { stroke-dasharray: none; }
+
+/* ── 캡션 ─────────────────────────────────────────────────────────────── */
+.ai-cap { color: var(--ink-faint); font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.ai-cap--src { left: 14px; top: 14px; }
+
+/* ── 학교 자료 4개 (왼쪽 열) ─────────────────────────────────────────── */
+.ai-src {
+  left: 18px; width: 132px; min-height: 44px;
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid #cfd5de; border-radius: 9px; background: #fff;
+  padding: 8px 10px; border: 1px solid #cfd5de; border-radius: 9px; background: #fff;
   box-shadow: 0 6px 16px rgba(15,23,42,.1);
-  color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: -.01em;
+  color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: -.01em; text-align: center;
 }
-.ai-doc[data-ai-doc="0"] { transform: translate(-46px,-26px) rotate(-7deg); z-index: 1; }
-.ai-doc[data-ai-doc="1"] { transform: translate(30px,-16px) rotate(5deg); z-index: 2; }
-.ai-doc[data-ai-doc="2"] { transform: translate(-30px,20px) rotate(-4deg); z-index: 3; }
-.ai-doc[data-ai-doc="3"] { transform: translate(42px,28px) rotate(8deg); z-index: 4; }
+.ai-src[data-ai-src="0"] { top: 46px; }
+.ai-src[data-ai-src="1"] { top: 112px; }
+.ai-src[data-ai-src="2"] { top: 178px; }
+.ai-src[data-ai-src="3"] { top: 244px; }
 
-/* ── Scene 1: 분석 ─────────────────────────────────────────────────────── */
-.ai-s1-doc {
-  width: 116px; height: 150px; margin: -75px 0 0 -175px;
-  border: 1px solid #cfd5de; border-radius: 9px; background: #fff; box-shadow: 0 8px 20px rgba(15,23,42,.1);
-}
-.ai-scanline {
-  width: 128px; height: 20px; margin: -6px 0 0 -181px;
-  background: linear-gradient(180deg, rgba(37,99,235,.45), rgba(37,99,235,0));
-  border-radius: 3px;
-}
-.ai-bars { list-style: none; padding: 0; width: 230px; margin: -60px 0 0 -30px; display: flex; flex-direction: column; gap: 8px; }
-.ai-bars li { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 9px; }
-.ai-bars b { color: var(--ink-faint); font-size: 9.5px; font-weight: 900; letter-spacing: .06em; }
-.ai-bars i { display: block; height: 9px; border-radius: 999px; background: var(--ultramarine); width: calc(var(--v,.5) * 100%); transform-origin: left center; }
-.ai-twin-card {
-  margin: 92px 0 0 -80px; width: 160px; padding: 10px 12px;
-  border: 2px solid var(--ultramarine); border-radius: 12px; background: #fff; text-align: center;
-}
-.ai-twin-card span { display: block; color: var(--ink-faint); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
-.ai-twin-card b { color: var(--ink); font-size: 14px; font-weight: 900; letter-spacing: .02em; }
-
-/* ── Scene 2: 두 스트림 → BRAIN ────────────────────────────────────────── */
-.ai-stream {
-  width: 120px; padding: 10px 12px; border-radius: 12px;
-  color: #fff; font-size: 10.5px; font-weight: 900; line-height: 1.35; letter-spacing: .04em; text-align: center;
-}
-.ai-stream--a { margin: -110px 0 0 -150px; background: var(--ultramarine); }
-.ai-stream--b { margin: -110px 0 0 30px; background: var(--ink); }
+/* ── BUILD IT BRAIN (중앙) ───────────────────────────────────────────── */
 .ai-brain {
-  width: 128px; height: 128px; margin: -50px 0 0 -64px; border-radius: 28px;
-  background: linear-gradient(150deg, var(--ultramarine), var(--accent,#4A7FD4));
+  left: 250px; top: 122px; width: 150px; height: 150px; border-radius: 30px;
+  background: linear-gradient(150deg, var(--ultramarine), var(--accent, #4A7FD4));
   color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: 0 20px 44px rgba(12,35,138,.32);
+  box-shadow: 0 22px 48px rgba(12,35,138,.34); z-index: 4;
 }
-.ai-brain b { font-size: 14px; font-weight: 900; letter-spacing: .02em; }
-.ai-brain span { font-size: 11px; font-weight: 800; letter-spacing: .18em; opacity: .9; }
-.ai-tokens { list-style: none; padding: 0; margin: 96px 0 0 -140px; width: 280px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.ai-tokens li { padding: 4px 10px; border-radius: 999px; background: var(--accent-soft,#eef2ff); color: var(--ultramarine); font-size: 10px; font-weight: 800; }
+.ai-brain b { font-size: 15px; font-weight: 900; letter-spacing: .02em; }
+.ai-brain span { font-size: 11px; font-weight: 800; letter-spacing: .2em; opacity: .9; margin-top: 2px; }
 
-/* ── Scene 3: 문항 분기 ───────────────────────────────────────────────── */
-.ai-brain--sm {
-  width: auto; height: auto; margin: -128px 0 0 -70px; padding: 7px 16px; border-radius: 10px;
-  font-size: 10.5px; font-weight: 900; letter-spacing: .05em;
-  background: linear-gradient(150deg, var(--ultramarine), var(--accent,#4A7FD4)); color: #fff;
+/* ── 두 지능 노드 ───────────────────────────────────────────────────── */
+.ai-node {
+  width: 150px; padding: 9px 12px; border-radius: 12px; background: #fff;
+  border: 2px solid var(--ultramarine); text-align: center;
+  color: var(--ink); font-size: 12px; font-weight: 900; line-height: 1.25;
+  box-shadow: 0 8px 20px rgba(15,23,42,.12); z-index: 5;
 }
-.ai-q { border: 1px solid #cfd5de; border-radius: 9px; background: #fff; box-shadow: 0 6px 16px rgba(15,23,42,.1); }
-.ai-q--origin { width: 200px; margin: -84px 0 0 -100px; padding: 11px 13px; text-align: left; }
-.ai-q--origin b { color: var(--ultramarine); font-size: 12px; font-weight: 900; }
-.ai-q--origin p { margin: 4px 0 6px; color: var(--ink); font-size: 10.5px; font-weight: 700; line-height: 1.4; word-break: keep-all; }
-.ai-q-choices { color: var(--ink-faint); font-size: 11px; letter-spacing: .24em; }
-.ai-q--var {
-  width: 96px; padding: 9px 8px; text-align: center;
-  color: var(--ink); font-size: 10.5px; font-weight: 800;
-}
-.ai-q--var[data-ai-el="v0"] { margin: 58px 0 0 -160px; }
-.ai-q--var[data-ai-el="v1"] { margin: 58px 0 0 -48px; }
-.ai-q--var[data-ai-el="v2"] { margin: 58px 0 0 64px; }
-.ai-stamp {
-  margin: 130px 0 0 -78px; padding: 5px 12px; border-radius: 999px;
-  background: var(--ultramarine); color: #fff; font-size: 10px; font-weight: 900; letter-spacing: .04em;
-}
+.ai-node span { display: block; color: var(--ink-faint); font-size: 8.5px; font-weight: 900; letter-spacing: .14em; margin-bottom: 1px; }
+.ai-node--twin { left: 196px; top: 24px; }
+.ai-node--insight { left: 400px; top: 36px; border-color: var(--ink); }
 
-/* ── Scene 4: 완성 시험지 조립 ────────────────────────────────────────── */
-.ai-qc {
-  width: 54px; margin: -14px 0 0 -27px; padding: 5px 0; text-align: center;
-  border: 1px solid #cfd5de; border-radius: 7px; background: #fff; box-shadow: 0 5px 14px rgba(15,23,42,.12);
-  color: var(--ink-soft); font-size: 9.5px; font-weight: 900; letter-spacing: .04em; z-index: 2;
+/* ── 생성 문제 (오른쪽) ─────────────────────────────────────────────── */
+.ai-qout {
+  left: 470px; border: 1px solid #cfd5de; border-radius: 9px; background: #fff;
+  box-shadow: 0 6px 16px rgba(15,23,42,.1); color: var(--ink); font-weight: 800; z-index: 6;
 }
+.ai-qout[data-ai-qout="0"] { top: 112px; width: 180px; padding: 10px 12px; font-size: 11px; text-align: left; }
+.ai-qout[data-ai-qout="0"] b { display: block; color: var(--ultramarine); font-size: 12px; font-weight: 900; margin-bottom: 3px; }
+.ai-qout[data-ai-qout="0"] i { font-style: normal; font-weight: 600; color: var(--ink-soft); font-size: 10.5px; line-height: 1.35; word-break: keep-all; }
+.ai-qout[data-ai-qout="1"], .ai-qout[data-ai-qout="2"], .ai-qout[data-ai-qout="3"] {
+  width: 150px; padding: 9px 10px; text-align: center; font-size: 11px;
+}
+.ai-qout[data-ai-qout="1"] { top: 198px; }
+.ai-qout[data-ai-qout="2"] { top: 250px; }
+.ai-qout[data-ai-qout="3"] { top: 302px; }
+
+/* ── FINAL EXAM (아래 조립) ──────────────────────────────────────────── */
 .ai-final {
-  width: 168px; margin: -96px 0 0 -84px; padding: 14px 16px 16px;
-  border: 1px solid #cfd5de; border-radius: 12px; background: #fff; box-shadow: 0 20px 44px rgba(10,12,20,.16);
-  text-align: center; z-index: 1;
+  left: 250px; top: 284px; width: 366px; padding: 16px 20px 18px;
+  border: 1px solid #cfd5de; border-radius: 14px; background: #fff;
+  box-shadow: 0 22px 48px rgba(10,12,20,.18); z-index: 3;
 }
 .ai-final b { display: block; color: var(--ultramarine); font-size: 13px; font-weight: 900; letter-spacing: .16em; }
-.ai-final-title { margin: 4px 0 10px; color: var(--ink); font-size: 11px; font-weight: 800; word-break: keep-all; }
-.ai-final ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
-.ai-final li { height: 6px; border-radius: 999px; background: var(--bg-soft); }
-
-/* 작은 stage(900~1100px)에서는 오브젝트를 약간 축소해 stage 안에 확실히 들어오게 한다. */
-@media (min-width:900px) and (max-width:1140px){
-  .ai-stage .ai-scene { transform: scale(.86); transform-origin: center; }
-}
+.ai-final p { margin: 4px 0 10px; color: var(--ink); font-size: 11px; font-weight: 800; word-break: keep-all; }
+.ai-final ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ai-final li { height: 7px; border-radius: 999px; background: var(--bg-soft); }
