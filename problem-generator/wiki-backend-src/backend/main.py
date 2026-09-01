@@ -181,6 +181,20 @@ def init_db():
             created_at TEXT NOT NULL
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_final_deliverable_context ON final_deliverables(school, grade, year, semester, exam, kind)')
+        # 교과서 DB(TextbookDatabase). 예전에는 원본 파일이 브라우저 IndexedDB, 목록이 localStorage에만
+        # 있어서 브라우저 정리·기기 변경·workspace namespace 변경으로 통째로 사라졌다. 이제 학교 프린트와
+        # 같은 방식으로 원본 blob + 추출 HTML을 서버 SQLite(/opt/buildit-wiki/data/app.db, 배포 시 보존)에
+        # 저장한다. page_total/page_extracted 로 부분 추출을 그대로 노출한다.
+        conn.execute('''CREATE TABLE IF NOT EXISTS textbook_materials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            grade TEXT NOT NULL DEFAULT '', publisher TEXT NOT NULL DEFAULT '', lesson TEXT NOT NULL DEFAULT '',
+            title TEXT NOT NULL DEFAULT '', tags TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '',
+            original_name TEXT NOT NULL DEFAULT '', original_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+            original_blob BLOB NOT NULL, content_html TEXT NOT NULL DEFAULT '',
+            page_total INTEGER NOT NULL DEFAULT 0, page_extracted INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT ''
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_textbook_material_path ON textbook_materials(grade, publisher, lesson)')
         conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_sources (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             exam_kind TEXT NOT NULL CHECK (exam_kind IN ('half','full')),
@@ -939,6 +953,107 @@ def open_exam_material_html(material_id: int):
         row = conn.execute('SELECT html_text FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
         if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
         return Response(row['html_text'] or '', media_type='text/html; charset=utf-8')
+
+
+# ==================================================================================
+# 교과서 DB — 원본 파일 + 추출 HTML을 서버에 영구 저장한다(예전 브라우저 전용 저장 구조의 소실 대체).
+# 학교 프린트(exam_material_sets)와 같은 원본 blob 방식이며, 부분 추출을 page_total/page_extracted로
+# 숨기지 않고 그대로 노출한다.
+# ==================================================================================
+
+_TEXTBOOK_MAX_BYTES = 60 * 1024 * 1024
+
+
+@app.post('/api/textbook-materials', status_code=201)
+def create_textbook_material(grade: str = Form(''), publisher: str = Form(''), lesson: str = Form(''),
+                             title: str = Form(''), tags: str = Form(''), author: str = Form(''),
+                             page_total: int = Form(0), page_extracted: int = Form(0),
+                             content_html: str = Form(''), file: UploadFile = File(...)):
+    if not (file and file.filename):
+        raise HTTPException(status_code=400, detail='원본 파일을 올려 주세요.')
+    data = file.file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail='빈 파일입니다.')
+    if len(data) > _TEXTBOOK_MAX_BYTES:
+        raise HTTPException(status_code=400, detail=f'원본은 {_TEXTBOOK_MAX_BYTES // (1024 * 1024)}MB 이하여야 합니다.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        cursor = conn.execute(
+            '''INSERT INTO textbook_materials
+               (grade, publisher, lesson, title, tags, author, original_name, original_type,
+                original_blob, content_html, page_total, page_extracted, created_at, updated_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (grade.strip(), publisher.strip(), lesson.strip(), title.strip()[:200], tags.strip()[:300],
+             author.strip()[:100], file.filename[:255], file.content_type or 'application/octet-stream',
+             data, content_html, max(0, page_total), max(0, page_extracted), now, now))
+        return dict(conn.execute(
+            '''SELECT id, grade, publisher, lesson, title, tags, author, original_name, original_type,
+               page_total, page_extracted, created_at, updated_at,
+               (CASE WHEN content_html <> '' THEN 1 ELSE 0 END) AS has_content
+               FROM textbook_materials WHERE id=?''', (cursor.lastrowid,)).fetchone())
+
+
+@app.get('/api/textbook-materials')
+def list_textbook_materials(grade: Optional[str] = None, publisher: Optional[str] = None, lesson: Optional[str] = None):
+    clauses, values = ['1=1'], []
+    for column, value in (('grade', grade), ('publisher', publisher), ('lesson', lesson)):
+        if value is not None:
+            clauses.append(f'{column}=?'); values.append(value)
+    with get_db() as conn:
+        rows = conn.execute(
+            f'''SELECT id, grade, publisher, lesson, title, tags, author, original_name, original_type,
+                page_total, page_extracted, created_at, updated_at,
+                (CASE WHEN content_html <> '' THEN 1 ELSE 0 END) AS has_content
+                FROM textbook_materials WHERE {' AND '.join(clauses)} ORDER BY id DESC''', values).fetchall()
+        return [dict(row) for row in rows]
+
+
+@app.get('/api/textbook-materials/{material_id}/original')
+def open_textbook_material_original(material_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT original_blob, original_type, original_name FROM textbook_materials WHERE id=?', (material_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+    safe_name = re.sub(r'[^0-9A-Za-z._-]', '_', row['original_name']) or 'textbook'
+    return Response(row['original_blob'], media_type=row['original_type'],
+                    headers={'Content-Disposition': f'attachment; filename="{safe_name}"'})
+
+
+@app.get('/api/textbook-materials/{material_id}/content')
+def open_textbook_material_content(material_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT content_html FROM textbook_materials WHERE id=?', (material_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+    return Response(row['content_html'] or '', media_type='text/html; charset=utf-8')
+
+
+class TextbookContentUpdate(BaseModel):
+    content_html: str = ''
+    page_extracted: Optional[int] = None
+    page_total: Optional[int] = None
+
+
+@app.put('/api/textbook-materials/{material_id}/content')
+def update_textbook_material_content(material_id: int, payload: TextbookContentUpdate):
+    with get_db() as conn:
+        row = conn.execute('SELECT page_total, page_extracted FROM textbook_materials WHERE id=?', (material_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        page_total = payload.page_total if payload.page_total is not None else row['page_total']
+        page_extracted = payload.page_extracted if payload.page_extracted is not None else row['page_extracted']
+        conn.execute('UPDATE textbook_materials SET content_html=?, page_total=?, page_extracted=?, updated_at=? WHERE id=?',
+                     (payload.content_html, max(0, page_total), max(0, page_extracted), datetime.now().isoformat(), material_id))
+    return {'ok': True}
+
+
+@app.delete('/api/textbook-materials/{material_id}', status_code=204)
+def delete_textbook_material(material_id: int):
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM textbook_materials WHERE id=?', (material_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('DELETE FROM textbook_materials WHERE id=?', (material_id,))
+    return Response(status_code=204)
 
 
 # ==================================================================================
