@@ -1,6 +1,7 @@
 import json
 import contextlib
 import hashlib
+import html
 import os
 import re
 import sqlite3
@@ -84,6 +85,10 @@ def init_db():
             exam_group_id TEXT NOT NULL DEFAULT '',
             favorite INTEGER NOT NULL DEFAULT 0,
             raw_json TEXT NOT NULL DEFAULT '{}',
+            schema_version TEXT NOT NULL DEFAULT 'legacy',
+            canonical_json TEXT NOT NULL DEFAULT '{}',
+            passage_status TEXT NOT NULL DEFAULT 'unknown',
+            source_question_number TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL,
             test_id INTEGER
         )''')
@@ -309,6 +314,93 @@ def init_db():
         conn.execute('CREATE INDEX IF NOT EXISTS idx_generated_test_context ON generated_tests(school, grade, exam)')
 
 
+def _legacy_markup_html(text: str) -> str:
+    escaped = html.escape(text or '').replace('\n', '<br>')
+    escaped = re.sub(r'\[\[u\]\](.*?)\[\[/u\]\]', r'<u>\1</u>', escaped, flags=re.S)
+    return escaped
+
+
+def _exact_material_passage(conn, row, label: str):
+    """같은 학교/학년/시험 자료에서 제목이 정확히 일치하는 단 하나의 section만 복구한다."""
+    if not label: return None
+    materials=conn.execute('''SELECT id,html_text FROM exam_material_sets
+        WHERE school=? AND grade=? AND (exam=? OR exam='') AND html_text<>?''',(row['school'],row['grade'],row['exam'],'')).fetchall()
+    found=[]
+    heading=re.compile(r'<(h[1-4]|[^>]+(?:data-reading|data-section-title|class=["\'][^"\']*(?:reading-title|lesson-title))[^>]*)>(.*?)</(?:h[1-4]|[^>]+)>',re.I|re.S)
+    plain_text=lambda value:re.sub(r'\s+',' ',html.unescape(re.sub(r'<[^>]+>','',value))).strip()
+    normalized=lambda value:plain_text(value).lower()
+    for material in materials:
+        source=material['html_text'] or '';matches=list(heading.finditer(source))
+        for index,match in enumerate(matches):
+            if normalized(match.group(2))!=normalized(label): continue
+            end=matches[index+1].start() if index+1<len(matches) else len(source)
+            section=source[match.end():end].strip();plain=plain_text(section)
+            if len(plain)>=40: found.append((material['id'],plain,section))
+    return found[0] if len(found)==1 else None
+
+
+def _legacy_canonical(row: sqlite3.Row, recovered=None) -> tuple[dict, str]:
+    def loads(name):
+        try: return json.loads(row[name] or '[]')
+        except (TypeError, json.JSONDecodeError): return []
+    stem,source=row['stem'] or '',row['source_text'] or ''
+    required=bool(re.search(r'읽고|글의|지문|Reading\s*\d+|본문|밑줄|순서|삽입|내용|주제|제목|요지',f"{stem} {row['question_type']}",re.I))
+    if recovered: source=recovered[1];passage_html=recovered[2];status='recovered'
+    else: passage_html=_legacy_markup_html(source);status='needs_review' if source else 'missing' if required else 'not_applicable'
+    options=loads('options_json');conditions=loads('conditions_json');answers=loads('answer_json');accepted=loads('accepted_answers_json')
+    canonical={'schema_version':'wiki-question-v1','kind':row['q_kind'],'question_type':row['question_type'],
+      'instruction':{'text':stem,'html':_legacy_markup_html(stem)},
+      'passage':{'text':source,'html':passage_html,'status':status},
+      'choices':[{'number':i+1,'text':str(v),'html':_legacy_markup_html(str(v))} for i,v in enumerate(options)],
+      'conditions':[{'text':str(v),'html':_legacy_markup_html(str(v))} for v in conditions],
+      'answer':{'choice_numbers':answers,'accepted_answers':accepted,'sample_answer':row['sample_answer'] or ''},
+      'explanation':{'text':row['grading_rule'] or '','html':_legacy_markup_html(row['grading_rule'] or '')},
+      'scoring':{'score':row['score'],'multi':bool(row['multi']),'answer_format':row['answer_format'] or '','grading_rule':row['grading_rule'] or ''},
+      'source':{'school':row['school'],'grade':row['grade'],'exam':row['exam'],'source_material_id':recovered[0] if recovered else None,'source_question_number':row['source_question_number'] if 'source_question_number' in row.keys() else ''}}
+    return canonical,status
+
+
+def _legacy_canonical_rows(conn):
+    return conn.execute("""SELECT * FROM generated_questions
+        WHERE schema_version='legacy' AND (canonical_json='{}' OR canonical_json='' OR canonical_json IS NULL)""").fetchall()
+
+
+def legacy_canonical_backfill(dry_run: bool = True):
+    """명시적 legacy 분석/적용 함수. dry-run은 DB를 수정하지 않는다."""
+    counts={'total_legacy':0,'complete':0,'recovered':0,'complete_or_recovered':0,
+            'needs_review':0,'missing':0,'not_applicable':0,'reading_candidates':0,'updated':0}
+    with get_db() as conn:
+        rows=_legacy_canonical_rows(conn);counts['total_legacy']=len(rows)
+        prepared=[]
+        for row in rows:
+            label_match=re.search(r'(Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)',row['stem'] or '',re.I)
+            recovered=_exact_material_passage(conn,row,label_match.group(1)) if label_match else None
+            if recovered: counts['reading_candidates']+=1
+            canonical,status=_legacy_canonical(row,recovered);counts[status]+=1
+            if status in ('complete','recovered'): counts['complete_or_recovered']+=1
+            prepared.append((row['id'],canonical,status))
+        if not dry_run:
+            for question_id,canonical,status in prepared:
+                conn.execute("UPDATE generated_questions SET canonical_json=?,schema_version='wiki-question-v1',passage_status=? WHERE id=?",
+                    (json.dumps(canonical,ensure_ascii=False),status,question_id))
+            counts['updated']=len(prepared)
+    return counts
+
+
+def _canonical_self_contained_issues(canonical: dict) -> list[str]:
+    if canonical.get('schema_version')!='wiki-question-v1': return ['schema_version']
+    instruction=canonical.get('instruction') or {};passage=canonical.get('passage') or {}
+    text=str(instruction.get('text') or '').strip();question_type=str(canonical.get('question_type') or '')
+    issues=[]
+    if not text: issues.append('instruction')
+    if canonical.get('kind')=='mc' and len(canonical.get('choices') or [])<2: issues.append('choices')
+    required=bool(re.search(r'읽고|글의|지문|Reading\s*\d+|본문|밑줄|순서|삽입|내용|주제|제목|요지',f'{text} {question_type}',re.I))
+    if required and (passage.get('status') not in ('complete','recovered') or not str(passage.get('text') or '').strip()): issues.append('passage_missing')
+    markup=f"{instruction.get('html') or ''} {passage.get('html') or ''}"
+    if '밑줄' in text and not re.search(r'<u(?:\s|>)|class=["\'][^"\']*\bunderline\b',markup,re.I): issues.append('underline_markup_missing')
+    return issues
+
+
 def migrate_schema():
     """기존에 만들어져 있던 DB에는 없는 컬럼을 안전하게 추가한다.
     기존 데이터/테이블은 그대로 두고 누락된 컬럼만 ALTER TABLE로 보강한다 (데이터 삭제·재생성 없음)."""
@@ -346,6 +438,11 @@ def migrate_schema():
         gq_cols = {row['name'] for row in conn.execute("PRAGMA table_info(generated_questions)").fetchall()}
         if 'test_id' not in gq_cols:
             conn.execute("ALTER TABLE generated_questions ADD COLUMN test_id INTEGER")
+        for name,definition in (
+            ('schema_version',"TEXT NOT NULL DEFAULT 'legacy'"),('canonical_json',"TEXT NOT NULL DEFAULT '{}'"),
+            ('passage_status',"TEXT NOT NULL DEFAULT 'unknown'"),('source_question_number',"TEXT NOT NULL DEFAULT ''"),
+        ):
+            if name not in gq_cols: conn.execute(f'ALTER TABLE generated_questions ADD COLUMN {name} {definition}')
 
 
 def seed_default_twins():
@@ -1179,6 +1276,23 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
         answer_format = q.get('answerFormat', '')
         sample_answer = q.get('sampleAnswer', '')
         grading_rule = q.get('gradingRule', '')
+        canonical = q.get('canonical') or {}
+        if canonical:
+            canonical_issues=_canonical_self_contained_issues(canonical)
+            if canonical_issues:
+                raise HTTPException(status_code=422,detail='Self-contained 문항 검증 실패(저장하지 않음): '+', '.join(canonical_issues))
+            passage_status = str((canonical.get('passage') or {}).get('status') or 'unknown')
+            schema_version = str(canonical.get('schema_version') or 'wiki-question-v1')
+            source_question_number = str((canonical.get('source') or {}).get('source_question_number') or q.get('sourceQuestionNumber') or '')
+            # compatibility projection은 canonical을 기준으로 만든다.
+            stem = str((canonical.get('instruction') or {}).get('text') or stem)
+            source_text = str((canonical.get('passage') or {}).get('text') or source_text)
+            choices = canonical.get('choices') or []
+            if choices: options = [str(item.get('text','')) for item in choices]
+            explanation = canonical.get('explanation') or {}
+            grading_rule = str(explanation.get('text') or grading_rule)
+        else:
+            passage_status = 'unknown'; schema_version = 'legacy'; source_question_number = str(q.get('sourceQuestionNumber') or '')
         row_data = (
             twin.get('id') if twin else None, twin_school, twin_grade, twin_exam, mode, q_kind,
             question_type, stem, source_text,
@@ -1186,14 +1300,16 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
             1 if multi else 0, score,
             json.dumps(conditions, ensure_ascii=False), answer_format,
             json.dumps(accepted_answers, ensure_ascii=False), sample_answer, grading_rule,
-            exam_title, exam_group_id, json.dumps(q, ensure_ascii=False), now, test_id,
+            exam_title, exam_group_id, json.dumps(q, ensure_ascii=False), schema_version,
+            json.dumps(canonical, ensure_ascii=False), passage_status, source_question_number, now, test_id,
         )
         cursor = conn.execute(
             '''INSERT INTO generated_questions
             (twin_id, school, grade, exam, mode, q_kind, question_type, stem, source_text, options_json, answer_json,
              multi, score, conditions_json, answer_format, accepted_answers_json, sample_answer, grading_rule,
-             exam_title, exam_group_id, raw_json, created_at, test_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+             exam_title, exam_group_id, raw_json, schema_version, canonical_json, passage_status,
+             source_question_number, created_at, test_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             row_data,
         )
         saved.append({
@@ -1206,6 +1322,8 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
             'sample_answer': sample_answer, 'grading_rule': grading_rule,
             'exam_title': exam_title, 'exam_group_id': exam_group_id, 'favorite': 0, 'created_at': now,
             'test_id': test_id,
+            'schema_version': schema_version, 'canonical': canonical, 'passage_status': passage_status,
+            'source_question_number': source_question_number,
         })
     return saved
 
@@ -1549,8 +1667,25 @@ def list_questions(school: Optional[str] = None, grade: Optional[str] = None, ex
             except (TypeError, json.JSONDecodeError):
                 item[jkey.replace('_json', '')] = []
         item.pop('raw_json', None)
+        try: item['canonical']=json.loads(item.pop('canonical_json') or '{}')
+        except (TypeError,json.JSONDecodeError): item['canonical']={}
         result.append(item)
     return result
+
+
+@app.get('/api/questions/{question_id}')
+def get_question(question_id: int):
+    with get_db() as conn:
+        row=conn.execute('SELECT * FROM generated_questions WHERE id = ?', (question_id,)).fetchone()
+    if not row: raise HTTPException(status_code=404,detail='문항을 찾지 못했습니다.')
+    item=dict(row)
+    for jkey in ('options_json', 'answer_json', 'conditions_json', 'accepted_answers_json'):
+        try: item[jkey.replace('_json', '')]=json.loads(item.pop(jkey))
+        except (TypeError,json.JSONDecodeError): item[jkey.replace('_json', '')]=[]
+    item.pop('raw_json',None)
+    try: item['canonical']=json.loads(item.pop('canonical_json') or '{}')
+    except (TypeError,json.JSONDecodeError): item['canonical']={}
+    return item
 
 
 class ManualQuestionsCreate(BaseModel):

@@ -1,5 +1,6 @@
 import { StoredQuestion } from '../lib/types'
 import { isInlineUnderline, renderMarkupHtml } from '../lib/markup'
+import { sanitizeQuestionHtml } from '../lib/wikiQuestion'
 
 // 문제5(5차): 문제 생성 결과 화면 / 강사 문제 DB(전체보기) / 내신 실전 제작이 모두 이 컴포넌트
 // 하나로 문항 전체(지문/발문/선택지/밑줄/조건/정답)를 렌더링한다. 화면마다 따로 문제를
@@ -9,8 +10,26 @@ import { isInlineUnderline, renderMarkupHtml } from '../lib/markup'
 
 export const Markup = ({ text, as: Tag = 'span' }: { text: string; as?: 'span' | 'div' | 'p' }) =>
   <Tag dangerouslySetInnerHTML={{ __html: renderMarkupHtml(text || '') }} />
+const Rich=({html,text,as:Tag='div'}:{html?:string;text:string;as?:'div'|'span'|'p'})=><Tag dangerouslySetInnerHTML={{__html:html?sanitizeQuestionHtml(html):renderMarkupHtml(text||'')}}/>
 
 export default function QuestionCard({ q, index }: { q: StoredQuestion; index: number }) {
+  const c=q.canonical
+  // Legacy/partial canonical rows can exist before wiki-question-v1 backfill. Never dereference
+  // nested canonical fields until the complete v1 shape is present; fall back to legacy rendering.
+  const canonicalReady=Boolean(c?.schema_version==='wiki-question-v1'&&c.answer&&c.scoring&&c.instruction&&c.passage&&c.explanation&&Array.isArray(c.choices)&&Array.isArray(c.conditions))
+  if(canonicalReady&&c){
+    const subjectiveAnswer=c.answer.sample_answer||c.answer.accepted_answers?.join(' / ')||'저장된 정답 없음'
+    return <article className={`q-card ${c.kind==='sa'?'q-sa':'q-mc'}`}>
+      <header className="q-head"><span className="q-num">{c.kind==='sa'?'서답형 ':''}{index}</span><span className="q-type">{c.question_type}</span><span className="q-score">{c.scoring.score}점</span></header>
+      <div className="q-instruction"><Rich html={c.instruction.html} text={c.instruction.text}/></div>
+      {c.passage.status==='missing'&&<p className="passage-missing">지문을 찾지 못한 REVIEW 문항입니다.</p>}
+      {c.passage.text&&<div className="source-text"><Rich html={c.passage.html} text={c.passage.text}/></div>}
+      {c.conditions.length>0&&<div className="cond-box"><div className="cond-title">보기 · 조건</div><ul>{c.conditions.map((v,i)=><li key={i}><Rich as="span" html={v.html} text={v.text}/></li>)}</ul></div>}
+      {c.kind==='mc'&&c.choices.length>0&&<ul className="opt-list">{c.choices.map(v=><li key={v.number} className={c.answer.choice_numbers.includes(v.number)?'is-answer':''}><span className="opt-num">{['','①','②','③','④','⑤'][v.number]||v.number}</span><Rich as="span" html={v.html} text={v.text}/></li>)}</ul>}
+      {c.kind==='sa'&&<><div className="answer-format"><b>답안 형태</b>{c.scoring.answer_format||'지시문에 맞게 작성'}</div><div className="answer-line" aria-hidden="true"/></>}
+      <section className="answer-panel"><b>정답 · 해설</b><p>{c.kind==='mc'?'정답':'모범답안'}: {c.kind==='mc'?(c.answer.choice_numbers.join(', ')||'저장된 정답 없음'):subjectiveAnswer}</p>{c.explanation.text&&<Rich html={c.explanation.html} text={c.explanation.text}/>}</section>
+    </article>
+  }
   const inline = isInlineUnderline(q.question_type, q.stem, q.source_text)
   const answerSet = new Set(q.answer)
 

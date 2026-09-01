@@ -24,6 +24,14 @@ def _mc(word, **overrides):
     return base
 
 
+def _canonical(stem='다음 글을 읽고 답하시오.', passage='', passage_html='', status='missing'):
+    return {'schema_version':'wiki-question-v1','kind':'mc','question_type':'독해','instruction':{'text':stem,'html':stem},
+      'passage':{'text':passage,'html':passage_html or passage,'status':status},
+      'choices':[{'number':i,'text':str(i),'html':str(i)} for i in range(1,6)],'conditions':[],
+      'answer':{'choice_numbers':[1],'accepted_answers':[],'sample_answer':''},'explanation':{'text':'','html':''},
+      'scoring':{'score':4,'multi':False,'answer_format':'','grading_rule':''},'source':{}}
+
+
 VOCAB25 = [
     'gradually', 'adapt', 'be accustomed to', 'perceive', 'accumulate', 'emission', 'greenhouse gas',
     'global average', 'consequence', 'net zero', 'significant', 'scalding', 'trap', 'release',
@@ -186,6 +194,21 @@ class ManualQuestionSaveTest(unittest.TestCase):
         self.assertEqual(422, r.status_code)
         self.assertEqual([], self.c.get('/api/questions').json())
 
+    def test_missing_passage_canonical_is_rejected_by_backend(self):
+        r=self.c.post('/api/questions',json={'school':'s','grade':'g','questions':[_mc('x',canonical=_canonical())]})
+        self.assertEqual(422,r.status_code);self.assertIn('passage_missing',str(r.json()['detail']))
+        self.assertEqual([],self.c.get('/api/questions').json())
+
+    def test_missing_underline_markup_is_rejected_by_backend(self):
+        canonical=_canonical('밑줄 친 부분의 의미는?','The answer matters.','The answer matters.','complete')
+        r=self.c.post('/api/questions',json={'school':'s','grade':'g','questions':[_mc('x',canonical=canonical)]})
+        self.assertEqual(422,r.status_code);self.assertIn('underline_markup_missing',str(r.json()['detail']))
+
+    def test_not_applicable_canonical_is_saved(self):
+        canonical=_canonical('rapid과 의미가 같은 것은?','','','not_applicable')
+        r=self.c.post('/api/questions',json={'school':'s','grade':'g','questions':[_mc('rapid',canonical=canonical)]})
+        self.assertEqual(201,r.status_code);self.assertEqual('not_applicable',r.json()['questions'][0]['passage_status'])
+
 
 def _sa_manual(**o):
     b = {'type': 'sa', 'questionType': '영작', 'sourceText': '', 'stem': 'gradually로 문장 쓰기',
@@ -311,6 +334,54 @@ class LegacyBackfillTest(unittest.TestCase):
         with main.get_db() as conn:
             self.assertEqual(1, conn.execute("SELECT COUNT(*) n FROM educator_insights WHERE source='claude'").fetchone()['n'])
             self.assertEqual(1, conn.execute("SELECT COUNT(*) n FROM source_materials").fetchone()['n'])
+
+
+class SelfContainedQuestionStoreTest(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir=tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH=str(Path(self.temp_dir.name)/'self-contained.db');main.init_db();main.migrate_schema()
+    def tearDown(self): self.temp_dir.cleanup()
+
+    def test_canonical_round_trip_by_qid_keeps_full_markup(self):
+        passage='The problem is more complicated than it appears.'
+        canonical={'schema_version':'wiki-question-v1','kind':'mc','question_type':'밑줄 의미',
+          'instruction':{'text':'밑줄 친 부분의 의미는?','html':'밑줄 친 부분의 의미는?'},
+          'passage':{'text':passage,'html':'The problem is <u>more complicated than it appears</u>.','status':'complete'},
+          'choices':[{'number':i,'text':f'choice {i}','html':f'<strong>choice {i}</strong>'} for i in range(1,6)],
+          'conditions':[{'text':'한 개를 고르시오','html':'<div class="box">한 개를 고르시오</div>'}],
+          'answer':{'choice_numbers':[1],'accepted_answers':[],'sample_answer':''},'explanation':{'text':'해설','html':'<p>해설</p>'},
+          'scoring':{'score':4,'multi':False,'answer_format':'','grading_rule':'해설'},'source':{'source_question_number':'18'}}
+        legacy=_mc('answer',canonical=canonical,sourceQuestionNumber='18')
+        with main.get_db() as conn: saved=main._save_generated(conn,None,'manual',[legacy],'시험','self-contained')
+        q=main.get_question(saved[0]['id'])
+        self.assertEqual('wiki-question-v1',q['schema_version']);self.assertEqual(passage,q['canonical']['passage']['text'])
+        self.assertIn('<u>more complicated',q['canonical']['passage']['html']);self.assertEqual(5,len(q['canonical']['choices']))
+
+
+class ExplicitLegacyCanonicalBackfillTest(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir=tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH=str(Path(self.temp_dir.name)/'legacy.db');main.init_db()
+        with main.get_db() as conn:
+            conn.execute("INSERT INTO generated_questions (schema_version,canonical_json,stem,source_text,question_type,created_at) VALUES ('legacy','{}','Reading 1을 읽고 답하시오.','','독해','now')")
+            conn.execute("INSERT INTO generated_questions (schema_version,canonical_json,stem,source_text,question_type,created_at) VALUES ('legacy','{}','다음 글을 읽고 답하시오.','','독해','now')")
+            conn.execute("INSERT INTO generated_questions (schema_version,canonical_json,stem,source_text,question_type,created_at) VALUES ('legacy','{}','rapid의 뜻은?','','어휘','now')")
+            conn.execute("""INSERT INTO exam_material_sets (core_type,school,grade,year,semester,exam,title,original_name,original_blob,html_text,created_at)
+                VALUES ('school_print','','',2026,'','','Reading 자료','reading.html',X'00','<h2>Reading 1</h2><p>This is the verified Reading One passage with enough exact source content for recovery.</p>','now')""")
+    def tearDown(self): self.temp_dir.cleanup()
+
+    def test_migrate_schema_does_not_backfill_legacy_rows(self):
+        main.migrate_schema()
+        with main.get_db() as conn:
+            rows=conn.execute("SELECT schema_version,canonical_json FROM generated_questions ORDER BY id").fetchall()
+        self.assertTrue(all(row['schema_version']=='legacy' and row['canonical_json']=='{}' for row in rows))
+
+    def test_dry_run_counts_without_writes_then_apply_updates(self):
+        report=main.legacy_canonical_backfill(dry_run=True)
+        self.assertEqual(3,report['total_legacy']);self.assertEqual(1,report['recovered']);self.assertEqual(1,report['reading_candidates']);self.assertEqual(1,report['missing']);self.assertEqual(1,report['not_applicable']);self.assertEqual(0,report['updated'])
+        with main.get_db() as conn: self.assertEqual(3,conn.execute("SELECT COUNT(*) n FROM generated_questions WHERE schema_version='legacy'").fetchone()['n'])
+        applied=main.legacy_canonical_backfill(dry_run=False);self.assertEqual(3,applied['updated'])
+        with main.get_db() as conn: self.assertEqual(0,conn.execute("SELECT COUNT(*) n FROM generated_questions WHERE schema_version='legacy'").fetchone()['n'])
 
 
 if __name__ == '__main__':

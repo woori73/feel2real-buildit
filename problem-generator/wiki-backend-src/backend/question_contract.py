@@ -50,6 +50,8 @@ class TransformQuestion(_StrictModel):
     accepted_answers: list[str] = Field(alias='acceptedAnswers')
     sample_answer: str = Field(alias='sampleAnswer')
     grading_rule: str = Field(alias='gradingRule')
+    canonical: dict | None = None
+    source_question_number: str = Field(default='', alias='sourceQuestionNumber')
 
 
 class TransformResponse(_StrictModel):
