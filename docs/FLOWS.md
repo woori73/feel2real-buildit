@@ -653,6 +653,18 @@ TUTOR click
 - 단일행 field는 Enter를 막고, multiline field는 `intro`, `introBodySecondary`만 줄바꿈을 허용한다(`introMotto`는 sec-intro 재구성으로 렌더에서 빠졌다. → [academy-builder-page.md](academy-builder-page.md) §9). 줄바꿈 표시 class는 Builder `builder-multiline-text`, 공개 페이지 `academy-multiline-text`를 사용한다.
 - 기존 Academy는 섹션 적용 후 상단 `발행` 버튼으로 기존 `PUT /api/tutor/academy` 저장을 수행하고, 신규 Academy는 pending/sessionStorage에 누적했다가 최초 `POST /api/tutor/academy`에 포함한다. endpoint/request/response 계약 변경은 없다.
 
+## 12-1. 공개 BuildIt Wiki (`/wiki`)
+
+누구나 들어오는 공개 위키/커뮤니티. `/problem-generator/wiki/`(로그인 전용 내신 제작 엔진)를 대체하지 않고 역할이 다르다. 2026년 9월 모의고사 중심으로 시작한다.
+
+- **허브 `/wiki`**: 상단 학년 탭 `고3`/`고2`/`고1`(grade 3/2/1). 탭을 바꾸면 (a) 모의고사 원본(`GET /api/wiki/originals?grade=`), (b) 분석 자료(`GET /api/analyzes?grade=` — 기존 공개 자료 재사용), (c) 커뮤니티 3게시판 최신글 미리보기(`GET /api/open-community/posts?scope=wiki&boardType=`)를 다시 로드한다. SSR 모델 없이 JS로 구동. 하단에 눈에 띄지 않게 `내신 Wiki 보기 → /problem-generator` 링크.
+- **게시판 `/wiki/board/{key}`**: `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). 목록은 `scope=wiki` 로 F2R 커뮤니티(`/community`) 전체 탭과 분리된다.
+- **글쓰기·상세**: 새 화면을 만들지 않고 기존 `/community/posts/new` · `/community/posts/{id}` 를 재사용한다. 글쓰기는 `/community/posts/new?board=EXAM_REVIEW&return=/wiki/board/review` 로 진입 — 게시판 고정 + 저장 후 `return` 경로로 복귀. 비로그인은 로그인 모달.
+- **모의고사 원본(운영자 수동)**: `/admin/wiki-originals`(ADMIN)에서 PDF 문제지/정답지를 등록 → 공개 `/wiki` 목록에 노출 → `GET /api/wiki/originals/{id}/download` 첨부 다운로드. `wiki_exam_originals` 테이블(V956), `FileStorage.saveRaw` 원본 보관.
+- **자료 요청 → 제작**: 사용자가 `share` 게시판에 요청 → 운영자가 기존 Chrome 문제 변형 Workbench로 제작 → 검수 후 무료 공개 → 요청글에 답변으로 연결. **이 과정은 이번 범위에서 자동화하지 않는다.**
+
+계약 변경: SSR view 3개(`/wiki`, `/wiki/board/{boardKey}`, `/admin/wiki-originals`) + `/api/wiki/originals*`(신규) + `GET /api/open-community/posts` 에 `scope` 파라미터. 기존 `/problem-generator/**` · `/analyzes` · `/community` 계약은 불변.
+
 ## 13. BUILD IT CHART — Google Educator Discovery V2
 
 1차 범위는 BuildIt 홈페이지 연결, `/admin/chart`, 압구정·신사 V2 실제 검색, 승인/제외, 공개 Chart 반영까지다.

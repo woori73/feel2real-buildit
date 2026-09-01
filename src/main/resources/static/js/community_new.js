@@ -3,11 +3,21 @@ import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.7';
 import Image from 'https://esm.sh/@tiptap/extension-image@2.11.7';
 import Link from 'https://esm.sh/@tiptap/extension-link@2.11.7';
 
-const editId = new URLSearchParams(location.search).get('edit');
+const params = new URLSearchParams(location.search);
+const editId = params.get('edit');
+// BuildIt Wiki(/wiki)에서 넘어온 경우: 게시판 고정 + 저장 후 wiki로 복귀.
+const WIKI_BOARDS = { EXAM_REVIEW: '시험 후기', VARIANT: '변형문제', MATERIAL: '자료 공유·요청' };
+const presetBoard = params.get('board');
+const returnUrl = safeReturn(params.get('return'));
 const statusMsg = document.getElementById('statusMsg');
-let boardType = null;   // 'FREE' | 'QNA' | 'SUBJECT'
+let boardType = null;   // 'FREE' | 'QNA' | 'SUBJECT' | 'EXAM_REVIEW' | 'VARIANT' | 'MATERIAL'
 let subjectId = null;   // SUBJECT일 때만
 let editor = null;
+
+/** open redirect 방지: 같은 출처의 절대경로만 허용. */
+function safeReturn(v) {
+  return v && v.startsWith('/') && !v.startsWith('//') ? v : null;
+}
 
 init();
 
@@ -30,7 +40,28 @@ async function init() {
     document.getElementById('writeTitle').textContent = '질문 수정';
     document.getElementById('submitBtn').textContent = '수정';
     await loadForEdit();
+  } else if (WIKI_BOARDS[presetBoard]) {
+    lockWikiBoard(presetBoard);
+    document.getElementById('writeTitle').textContent = WIKI_BOARDS[presetBoard] + ' 작성';
+    document.querySelector('.lead').textContent = 'BuildIt Wiki에 함께 나눌 내용을 적어주세요.';
+    const cancel = document.querySelector('.write-actions a.btn-ghost');
+    if (cancel && returnUrl) cancel.setAttribute('href', returnUrl);
   }
+}
+
+/** wiki 게시판(칩 없음): 해당 게시판 칩 1개만 렌더하고 picker를 잠근다. */
+function lockWikiBoard(board) {
+  const pick = document.getElementById('catPick');
+  pick.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'cat-tab active';
+  btn.dataset.board = board;
+  btn.textContent = WIKI_BOARDS[board];
+  pick.appendChild(btn);
+  pick.classList.add('locked');
+  boardType = board;
+  subjectId = null;
 }
 
 async function loadSubjects() {
@@ -57,7 +88,11 @@ async function loadForEdit() {
     if (!res.ok) throw new Error();
     const p = await res.json();
     document.getElementById('title').value = p.title || '';
-    selectBoard(p.boardType, p.subjectId != null ? String(p.subjectId) : null);
+    if (WIKI_BOARDS[p.boardType]) {
+      lockWikiBoard(p.boardType);
+    } else {
+      selectBoard(p.boardType, p.subjectId != null ? String(p.subjectId) : null);
+    }
     editor.commands.setContent(p.contentHtml || '');
   } catch { show('질문을 불러오지 못했습니다.', true); }
 }
@@ -133,7 +168,7 @@ async function onSubmit(e) {
     if (res.status === 401 || res.status === 403) { alert('로그인 후 이용할 수 있습니다.'); if (typeof openLoginModal === 'function') openLoginModal(); return; }
     if (!res.ok) { show((await res.text()) || '저장에 실패했습니다.', true); return; }
     const saved = await res.json();
-    location.href = '/community/posts/' + saved.postId;
+    location.href = returnUrl || ('/community/posts/' + saved.postId);
   } catch { show('저장에 실패했습니다.', true); }
 }
 

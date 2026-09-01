@@ -100,6 +100,13 @@ Admin은 학교별 시험 분석 HTML 파일을 업로드해 public 콘텐츠로
 - CRUD 범위: ADMIN만 생성/조회/수정/삭제 가능. 삭제는 숨김/비공개 처리와 완전 삭제를 모두 제공한다.
 - 새 분석 자료 필수 메타데이터: 제목, 학교명, 학년, 학기, 시험 종류, 과목, 공개 여부.
 
+## 공개 BuildIt Wiki (`/wiki`) 화면 컨벤션
+
+- 공개 위키/커뮤니티 허브. `layouts/public` 데코레이트 + `bodyClass='wiki-body'`, 전용 `static/css/wiki.css`(자체 `:root` 팔레트 — teal 계열, "작고 편안한" 톤. 대형 브랜드 CSS 미사용).
+- 게시판(시험 후기/변형문제/자료 공유·요청)은 기존 open-community 엔진 재사용 — `BoardType` enum 값 3개(`EXAM_REVIEW`/`VARIANT`/`MATERIAL`) + 목록 `scope=wiki` 로 F2R `/community` 와 분리. 글쓰기/상세는 `/community/posts/*` 재사용(`?board=`·`?return=`).
+- 모의고사 원본 PDF: 관리 `/admin/wiki-originals`, 공개 다운로드 `/api/wiki/originals/{id}/download`(첨부). `exam_analyses`(HTML)와 별도 테이블(`wiki_exam_originals`).
+- 내신 Wiki(`/problem-generator`) 연결은 하단 1줄로만. 과도한 광고 금지.
+
 ### Academy Blog / SEO 콘텐츠
 
 강사는 본인 Academy 단위로 블로그 글을 작성할 수 있다. 글은 Tiptap JSON 원본과 sanitizer 적용 HTML을 함께 저장하며, 본문 이미지는 `academy_blog_source`에 메타데이터를 보관하고 기존 FileStorage를 재사용한다. 공개 상태(`PUBLISHED` + `is_visible=true`)인 글만 `/academies/{academySlug}/posts`와 sitemap에 노출된다.

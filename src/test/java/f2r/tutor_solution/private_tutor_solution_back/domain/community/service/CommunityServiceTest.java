@@ -21,6 +21,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.Use
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
@@ -306,27 +307,58 @@ class CommunityServiceTest {
 
   @Test @DisplayName("목록: sort=recommended는 추천 쿼리, boardType enum 전달")
   void list_recommended_board() {
-    when(postRepository.searchRecommended(eq(BoardType.QNA), any(), any(), any())).thenReturn(List.of());
-    service.list("QNA", null, null, "recommended");
-    verify(postRepository).searchRecommended(eq(BoardType.QNA), any(), any(), any());
-    verify(postRepository, never()).searchLatest(any(), any(), any());
+    when(postRepository.searchRecommended(any(), eq(BoardType.QNA), any(), any(), any())).thenReturn(List.of());
+    service.list(null, "QNA", null, null, "recommended");
+    verify(postRepository).searchRecommended(any(), eq(BoardType.QNA), any(), any(), any());
+    verify(postRepository, never()).searchLatest(any(), any(), any(), any());
   }
 
   @Test @DisplayName("목록: 잘못된 게시판 필터 400")
   void list_badBoard_400() {
-    assertThatThrownBy(() -> service.list("NOPE", null, null, "latest"))
+    assertThatThrownBy(() -> service.list(null, "NOPE", null, null, "latest"))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
   }
 
   @Test @DisplayName("목록: 비로그인 likedByMe=false")
   void list_anon_likedByMeFalse() {
     CommunityPost p = post(1L, author, LocalDateTime.now());
-    when(postRepository.searchLatest(any(), any(), any())).thenReturn(List.of(p));
+    when(postRepository.searchLatest(any(), any(), any(), any())).thenReturn(List.of(p));
     when(likeRepository.countTotalByPostIds(any())).thenReturn(List.of());
     when(likeRepository.countRecentByPostIds(any(), any())).thenReturn(List.of());
     when(answerRepository.countVisibleByQuestionIds(any())).thenReturn(List.of());
-    var result = service.list(null, null, null, "latest");
+    var result = service.list(null, null, null, null, "latest");
     assertThat(result).hasSize(1);
     assertThat(result.get(0).likedByMe()).isFalse();
+  }
+
+  @Test @DisplayName("목록 scope: 기본(community)은 F2R 게시판만, wiki는 wiki 게시판만 범위로 전달")
+  void list_scope_splitsBoards() {
+    // given
+    when(postRepository.searchLatest(any(), any(), any(), any())).thenReturn(List.of());
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<java.util.Collection<BoardType>> scope = ArgumentCaptor.forClass(java.util.Collection.class);
+
+    // when
+    service.list(null, null, null, null, "latest");
+    service.list("wiki", null, null, null, "latest");
+
+    // then
+    verify(postRepository, times(2)).searchLatest(scope.capture(), any(), any(), any());
+    assertThat(scope.getAllValues().get(0))
+        .containsExactlyInAnyOrder(BoardType.FREE, BoardType.QNA, BoardType.SUBJECT);
+    assertThat(scope.getAllValues().get(1))
+        .containsExactlyInAnyOrder(BoardType.EXAM_REVIEW, BoardType.VARIANT, BoardType.MATERIAL);
+  }
+
+  @Test @DisplayName("목록 scope: wiki 공간에 F2R 게시판(QNA) 필터를 요청하면 400")
+  void list_scope_boardOutsideScope_400() {
+    assertThatThrownBy(() -> service.list("wiki", "QNA", null, null, "latest"))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
+  }
+
+  @Test @DisplayName("목록 scope: 알 수 없는 scope 400")
+  void list_scope_unknown_400() {
+    assertThatThrownBy(() -> service.list("nope", null, null, null, "latest"))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
   }
 }

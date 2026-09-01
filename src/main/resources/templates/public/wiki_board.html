@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildIt Wiki 게시판</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260902-1">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki"><b>BuildIt</b><span>Wiki</span></a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <button type="button" id="btnWrite" class="btn-write">＋ 글쓰기</button>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap board-page">
+    <nav class="breadcrumb">
+      <a href="/wiki">BuildIt Wiki</a> <span>›</span> <span id="bcBoard">게시판</span>
+    </nav>
+
+    <div class="board-head">
+      <h1 id="boardTitle">게시판</h1>
+      <p id="boardDesc" class="muted"></p>
+      <form id="boardSearch" class="board-search">
+        <input type="search" name="keyword" maxlength="80" placeholder="제목 검색">
+        <select name="sort" aria-label="정렬">
+          <option value="latest">최신순</option>
+          <option value="recommended">추천순</option>
+        </select>
+      </form>
+    </div>
+
+    <div id="boardList" class="board-list"><p class="muted">불러오는 중...</p></div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script src="/js/wiki_board.js?v=20260902-1"></script>
+</th:block>
+</body>
+</html>

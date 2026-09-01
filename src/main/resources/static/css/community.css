@@ -108,6 +108,9 @@ body.community-body {
 .field input[type=text] { width: 100%; height: 46px; padding: 0 14px; border: 1px solid var(--c-line2); border-radius: 10px; font-size: 15px; font-family: inherit; }
 .cat-pick { display: flex; flex-wrap: wrap; gap: 8px; }
 .cat-pick .cat-tab.active { background: var(--c-accent); }
+/* BuildIt Wiki(/wiki)에서 넘어와 게시판이 고정된 경우 */
+.cat-pick.locked { pointer-events: none; }
+.cat-pick.locked .cat-tab.active { background: #14705a; }
 .editor-toolbar { display: flex; gap: 4px; padding: 8px; border: 1px solid var(--c-line2); border-bottom: none; border-radius: 10px 10px 0 0; background: #fafbfc; }
 .editor-toolbar button { width: 32px; height: 32px; border: none; background: none; border-radius: 6px; cursor: pointer; font-size: 14px; color: #3a3f48; }
 .editor-toolbar button:hover { background: #eef0f3; }

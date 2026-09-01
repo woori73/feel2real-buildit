@@ -196,6 +196,9 @@ public class SecurityConfig {
                 "/community/posts/**",
                 "/analyzes",
                 "/analyzes/**",
+                "/wiki",
+                "/wiki/**",
+                "/admin/wiki-originals",
                 "/chart",
                 "/chart/educators/**",
                 "/lessons",
@@ -246,6 +249,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/open-community/posts", "/api/open-community/posts/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/open-community/images/**").permitAll()  // 본문 이미지 공개 serve
             .requestMatchers(HttpMethod.GET, "/api/analyzes", "/api/analyzes/**").permitAll()  // 공개 시험 분석 조회
+            .requestMatchers(HttpMethod.GET, "/api/wiki/originals", "/api/wiki/originals/**").permitAll()  // 공개 모의고사 원본 조회/다운로드
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.

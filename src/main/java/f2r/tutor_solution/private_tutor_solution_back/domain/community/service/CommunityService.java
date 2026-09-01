@@ -43,6 +43,13 @@ public class CommunityService {
   private static final int MAX_TITLE = 150;
   private static final String EMPTY_DOC_JSON = "{\"type\":\"doc\",\"content\":[]}";
 
+  /** F2R 커뮤니티(/community) 공간 게시판. */
+  private static final List<BoardType> COMMUNITY_BOARDS =
+      List.of(BoardType.FREE, BoardType.QNA, BoardType.SUBJECT);
+  /** 공개 BuildIt Wiki(/wiki) 공간 게시판. */
+  private static final List<BoardType> WIKI_BOARDS =
+      List.of(BoardType.EXAM_REVIEW, BoardType.VARIANT, BoardType.MATERIAL);
+
   private final CommunityPostRepository postRepository;
   private final AnswerRepository answerRepository;
   private final CommunityPostLikeRepository likeRepository;
@@ -54,13 +61,17 @@ public class CommunityService {
 
   /* ── read (anyopen) ─────────────────────────────────────── */
 
-  public List<CommunityPostListResponse> list(String boardType, Integer subjectId, String keyword, String sort) {
+  public List<CommunityPostListResponse> list(String scope, String boardType, Integer subjectId, String keyword, String sort) {
+    List<BoardType> scopeBoards = resolveScope(scope);
     BoardType board = parseBoardFilter(boardType);
+    if (board != null && !scopeBoards.contains(board)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이 게시판은 요청한 공간에 속하지 않습니다: " + boardType);
+    }
     Integer subj = board == BoardType.SUBJECT ? subjectId : null;  // 과목 탭에서만 subjectId 의미
     String kw = trimToNull(keyword);
     List<CommunityPost> posts = "recommended".equalsIgnoreCase(sort)
-        ? postRepository.searchRecommended(board, subj, kw, recommendationWindowStart())
-        : postRepository.searchLatest(board, subj, kw);
+        ? postRepository.searchRecommended(scopeBoards, board, subj, kw, recommendationWindowStart())
+        : postRepository.searchLatest(scopeBoards, board, subj, kw);
     if (posts.isEmpty()) return List.of();
 
     List<Long> ids = posts.stream().map(CommunityPost::getPostId).toList();
@@ -267,6 +278,14 @@ public class CommunityService {
     Map<Long, Long> counts = new HashMap<>();
     for (Object[] row : rows) counts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
     return counts;
+  }
+
+  /** 목록 공간 — null/blank/"community"면 F2R 커뮤니티 게시판, "wiki"면 공개 Wiki 게시판. 그 외 400. */
+  private List<BoardType> resolveScope(String scope) {
+    String s = trimToNull(scope);
+    if (s == null || "community".equalsIgnoreCase(s)) return COMMUNITY_BOARDS;
+    if ("wiki".equalsIgnoreCase(s)) return WIKI_BOARDS;
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 scope: " + scope);
   }
 
   /** 목록 필터용 — null/blank면 전체(null 반환). 잘못된 값이면 400. */
