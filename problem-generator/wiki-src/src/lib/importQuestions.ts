@@ -2,6 +2,7 @@
 // 형식별 importer를 분리한다: JSON=구조화 데이터 직접, HTML=DOM 파서, TXT=parseQuestions 정규식.
 // AI 호출 없음. HTML은 평문화하지 않고 DOM 구조/semantic을 그대로 사용한다.
 import { ParsedQuestion, markersToIndices, parsePastedQuestions } from './parseQuestions'
+import { isSelfContained, needsPassage, rich, sanitizeQuestionHtml, textOfHtml, WikiQuestionV1 } from './wikiQuestion'
 
 export type ImportMeta = {
   title?: string; sourceMaterial?: string; sourcePage?: string; digitalTwin?: string
@@ -29,6 +30,18 @@ const emptyQuestion = (): ParsedQuestion => ({
   _warnings: [],
 })
 
+const canonicalize=(q:ParsedQuestion,parts?:Partial<{instructionHtml:string;passageHtml:string;choiceHtml:string[];conditionHtml:string[];explanationHtml:string;sourceQuestionNumber:string;commonPassageId:string}>):ParsedQuestion=>{
+  const passageText=q.sourceText.trim(),required=needsPassage(q.stem,q.questionType)
+  const canonical:WikiQuestionV1={schema_version:'wiki-question-v1',kind:q.type,question_type:q.questionType,
+    instruction:rich(parts?.instructionHtml||'',q.stem),passage:{...rich(parts?.passageHtml||'',passageText),status:passageText?'complete':required?'missing':'not_applicable'},
+    choices:q.options.map((text,i)=>({...rich(parts?.choiceHtml?.[i]||'',text),number:i+1})),conditions:q.conditions.map((text,i)=>rich(parts?.conditionHtml?.[i]||'',text)),
+    answer:{choice_numbers:q.answer,accepted_answers:q.acceptedAnswers,sample_answer:q.sampleAnswer},explanation:rich(parts?.explanationHtml||'',q.gradingRule),
+    scoring:{score:q.score,multi:q.multi,answer_format:q.answerFormat,grading_rule:q.gradingRule},source:{source_question_number:parts?.sourceQuestionNumber,common_passage_id:parts?.commonPassageId}}
+  q.canonical=canonical;q.sourceQuestionNumber=parts?.sourceQuestionNumber
+  if(!isSelfContained(canonical))(q._warnings??=[]).push(canonical.passage.status==='missing'?'지문을 찾지 못해 REVIEW 필요':'문항 표시 확인 필요')
+  return q
+}
+
 // ── 공통: 파싱된 문항에 검증 플래그를 매긴다 ──────────────────────────────
 const validate = (q: ParsedQuestion): ParsedQuestion => {
   const w = q._warnings ?? (q._warnings = [])
@@ -36,7 +49,7 @@ const validate = (q: ParsedQuestion): ParsedQuestion => {
   const structural = stemLen < 2 || (q.type === 'mc' && q.options.length < 2)
   if (stemLen < 2) w.push('문제 본문 확인 필요')
   if (q.type === 'mc' && q.options.length < 2) w.push('선택지 확인 필요')
-  q._structuralIssue = structural
+  q._structuralIssue = Boolean(q._structuralIssue) || structural
   if (!q._answerText && q.answer.length === 0 && !q.sampleAnswer) {
     q._missingAnswer = true
     if (!w.includes('정답 미등록')) w.push('정답 미등록')
@@ -90,7 +103,9 @@ const fromJsonQuestion = (raw: Record<string, unknown>): ParsedQuestion => {
     q.gradingRule = explanation
     q._answerText = sample
   }
-  return q
+  const canonicalRaw=raw.canonical_json||raw.canonical
+  if(canonicalRaw&&typeof canonicalRaw==='object')q.canonical=canonicalRaw as WikiQuestionV1
+  return q.canonical?q:canonicalize(q,{passageHtml:s(pick(raw,'passage_html','passageHtml')),instructionHtml:s(pick(raw,'instruction_html','instructionHtml'))})
 }
 
 const jsonMeta = (root: Record<string, unknown>): ImportMeta => {
@@ -199,6 +214,7 @@ const buildHtmlQuestion = (el: Element, sec: Sec): ParsedQuestion => {
   const isMc = options.length >= 2 || (sec.mc && options.length >= 2)
   const hasEssay = !!el.querySelector('.essay-box')
   const { text, blanks } = cleanText(el)
+  const passageEl=el.querySelector('.passage,[data-passage],.reading,blockquote')
 
   let stem = text
   let sourceText = ''
@@ -214,7 +230,7 @@ const buildHtmlQuestion = (el: Element, sec: Sec): ParsedQuestion => {
 
   q.type = (isMc || (sec.mc && options.length >= 2)) ? 'mc' : 'sa'
   q.stem = stem
-  q.sourceText = sourceText === stem ? '' : sourceText
+  q.sourceText = passageEl?(passageEl.textContent||'').trim():(sourceText === stem ? '' : sourceText)
   q.options = options
   q.score = sec.score || (q.type === 'mc' ? 4 : hasEssay ? 5 : 2)
   q.questionType = questionTypeLabel(sec, q.type === 'mc', hasEssay)
@@ -228,7 +244,9 @@ const buildHtmlQuestion = (el: Element, sec: Sec): ParsedQuestion => {
   const exp = explanationOf(el)
   if (q.type === 'mc') { q.answer = answer; q.multi = answer.length > 1; q.gradingRule = exp; q._answerText = answer.length ? answer.join(',') : sample }
   else { q.sampleAnswer = sample; q.acceptedAnswers = sample ? [sample] : []; q.gradingRule = exp; q._answerText = sample }
-  return q
+  const number=(el.querySelector(':scope > .qn,:scope > b.qn')?.textContent||el.getAttribute('data-question-id')||'').match(/\d+/)?.[0]||''
+  const choiceEls=[...el.querySelectorAll('.choices .choice,.choices li,ol.choices>li,ul.choices>li')]
+  return canonicalize(q,{instructionHtml:passageEl?'':sanitizeQuestionHtml(el.querySelector('.question-text,.stem,[data-question-text]')?.innerHTML||''),passageHtml:passageEl?.innerHTML||'',choiceHtml:choiceEls.map(n=>n.innerHTML),explanationHtml:el.querySelector('.explanation,.commentary,[data-explanation]')?.innerHTML||'',sourceQuestionNumber:number})
 }
 
 const fromDataNode = (el: Element): ParsedQuestion => {
@@ -248,7 +266,13 @@ const fromDataNode = (el: Element): ParsedQuestion => {
   const tw = el.getAttribute('data-target-word')
   if (tw && !q.stem.includes(tw)) q.sourceText = `대상 표현: ${tw}`
   q.gradingRule = el.querySelector('.explanation, [data-explanation]')?.textContent?.trim() || ''
-  return q
+  const conditionEls=[...el.querySelectorAll('.cond,[data-condition]')]
+  q.conditions=conditionEls.map(n=>(n.textContent||'').replace(/^\s*조건\s*[:：]?\s*/,'').trim()).filter(Boolean)
+  const passageEl=el.querySelector('.passage,[data-passage],.reading,blockquote')
+  if(passageEl)q.sourceText=(passageEl.textContent||'').trim()
+  const number=(el.getAttribute('data-question-id')||el.querySelector('.qn')?.textContent||'').match(/\d+/)?.[0]||''
+  const choiceEls=[...el.querySelectorAll('.choices .choice,.choices li,ol.choices>li,ul.choices>li')]
+  return canonicalize(q,{instructionHtml:stemEl===el?'':stemEl.innerHTML,passageHtml:passageEl?.innerHTML||'',choiceHtml:choiceEls.map(n=>n.innerHTML),conditionHtml:conditionEls.map(n=>n.innerHTML),explanationHtml:el.querySelector('.explanation,[data-explanation]')?.innerHTML||'',sourceQuestionNumber:number})
 }
 
 const htmlMeta = (doc: Document): ImportMeta => {
@@ -277,13 +301,18 @@ const importHtml = (text: string): ImportResult => {
 
   // 1) data-* machine-readable markup 우선
   const dataNodes = [...doc.querySelectorAll('[data-question-id], [data-question]')]
-  if (dataNodes.length >= 1) return finalize('html', dataNodes.map(fromDataNode), meta)
+  if (dataNodes.length >= 1) {
+    const common=new Map<string,Element>();doc.querySelectorAll('[data-common-passage-id]').forEach(n=>common.set(n.getAttribute('data-common-passage-id')||'',n))
+    const rows=dataNodes.map(el=>{const q=fromDataNode(el),ref=el.getAttribute('data-passage-ref')||'';if(ref&&common.has(ref)&&q.canonical){const node=common.get(ref)!;q.sourceText=(node.textContent||'').trim();q.canonical.passage={...rich(node.innerHTML),status:'complete'};q.canonical.source.common_passage_id=ref}return q})
+    return finalize('html',rows,meta)
+  }
 
   // 2) 반복 문항 container: b.qn 을 가진 .q / .question / .question-item
   const questions: ParsedQuestion[] = []
   let sec: Sec = { instruction: '', note: '', score: 0, mc: false, not: false, roman: '' }
   let secHadNumbered = false
   let pending: Element[] = []
+  let activeCommon:Element|null=null
 
   const flushChallenge = () => {
     if (!pending.length || secHadNumbered) { pending = []; return }
@@ -303,11 +332,13 @@ const importHtml = (text: string): ImportResult => {
     pending = []
   }
 
-  const walk = [...doc.body.querySelectorAll('h2.sec, .sec, .sec-note, .q, .question, .question-item')]
+  const walk = [...doc.body.querySelectorAll('h2.sec, .sec, .sec-note, .common-passage, [data-common-passage], .passage-range, .q, .question, .question-item')]
   for (const el of walk) {
+    if(el.matches('.common-passage,[data-common-passage],.passage-range')){activeCommon=el;continue}
     if (el.matches('.sec-note')) { sec.note = (el.textContent || '').trim(); continue }
     if (el.matches('h2.sec, .sec')) {
       flushChallenge()
+      activeCommon=null
       const raw = (el.textContent || '').replace(/\u00a0/g, ' ').trim()
       sec = {
         roman: (raw.match(ROMAN_RE)?.[0] || '').trim(),
@@ -322,7 +353,9 @@ const importHtml = (text: string): ImportResult => {
     if (hasQn || el.matches('.question, .question-item')) {
       flushChallenge()
       secHadNumbered = true
-      questions.push(buildHtmlQuestion(el, sec))
+      const q=buildHtmlQuestion(el, sec)
+      if(q.canonical&&activeCommon){const id=(activeCommon.getAttribute('data-common-passage')||activeCommon.previousElementSibling?.textContent||'common').trim();q.sourceText=(activeCommon.textContent||'').trim();q.canonical.passage={...rich(activeCommon.innerHTML),status:'complete'};q.canonical.source.common_passage_id=id}
+      questions.push(q)
     } else {
       pending.push(el) // 번호 없는 .q/p.q → 도전문제 후보로 모은다
     }
@@ -334,7 +367,7 @@ const importHtml = (text: string): ImportResult => {
 
 // ── TXT ──────────────────────────────────────────────────────────────────
 const importTxt = (text: string): ImportResult =>
-  finalize('txt', parsePastedQuestions(text), {})
+  finalize('txt', parsePastedQuestions(text).map(q=>canonicalize(q)), {})
 
 // ── 진입점 ───────────────────────────────────────────────────────────────
 export const importQuestionFile = (filename: string, text: string): ImportResult => {
