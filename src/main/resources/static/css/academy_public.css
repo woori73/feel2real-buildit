@@ -212,41 +212,56 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
    .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
 
 /* ══════════════ Education Storefront: 「2학기 영어 내신」 (sec-featured) ══════════════
-   Phase 5.2: eyebrow → 큰 제목 → 짧은 설명 → 학교 칩(단일 선택) → 학교별 실제 출제자 Digital Twin
-   패널(/api/analyzes) → 단일 CTA. 칩 선택 시 아래 패널이 바뀐다(academy_public.js wireFeaturedSchoolTwin).
-   대표수업(sec-lessons)·수업 영상(sec-videos)과 무관한 별개 섹션. 횡스크롤·GSAP 없음. */
+   eyebrow → 큰 제목 → 짧은 설명 → **학교별 독립 카드 횡스크롤**(압구정중/신구중/신사중/언북중,
+   각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA.
+   배선: academy_public.js wireFeaturedSchoolCards — 전부 #sec-featured 안에서만.
+   대표수업(sec-lessons)·수업 영상(sec-videos)과 무관한 별개 섹션.
+   가로 스와이프 = 학교 카드 이동(세로 섹션 전환 아님 — academy_scene.css 가 이 섹션 자식엔
+   transform 을 안 건다). */
 .section-wrap.featured-wrap{background:linear-gradient(180deg,var(--gold-soft) 0%,#fff 78%);padding:64px 20px;}
-.featured-inner{max-width:760px;margin:0 auto;text-align:center;}
+.featured-inner{max-width:900px;margin:0 auto;text-align:center;}
 .featured-head{max-width:640px;margin:0 auto;}
 .featured-eyebrow{justify-content:center;color:var(--ultramarine);}
 .featured-eyebrow .stroke{background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
 .featured-desc{margin:16px auto 0;max-width:560px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
 
-.featured-schools{margin-top:26px;}
-.featured-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;}
-.featured-chip{display:inline-flex;align-items:center;padding:9px 17px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);color:var(--ink);font-family:inherit;font-size:14px;font-weight:800;letter-spacing:-.01em;cursor:pointer;transition:border-color var(--hover-duration) var(--hover-ease),background var(--hover-duration) var(--hover-ease),color var(--hover-duration) var(--hover-ease);}
-.featured-chip:hover{border-color:var(--ultramarine);}
-.featured-chip:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
-.featured-chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
-.featured-chip-label:empty::before{content:'학교';color:var(--ink-faint);}
+/* 학교별 카드 횡스크롤. 모바일은 섹션 좌우 여백을 상쇄해 카드가 뷰포트의 ~88% 를 채우고
+   다음 카드가 살짝 보이게 한다(가로 스와이프 어피던스). */
+.featured-schoolcards-wrap{margin-top:28px;}
+.featured-schoolcards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px 10px;}
+.featured-schoolcards::-webkit-scrollbar{display:none;}
+.featured-schoolcard{flex:0 0 82vw;max-width:340px;scroll-snap-align:center;display:flex;flex-direction:column;min-height:184px;padding:18px 18px 16px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:left;}
+.featured-schoolcard-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);}
+.featured-schoolcard-name{color:var(--ink);font-size:18px;font-weight:900;letter-spacing:-.02em;}
+.featured-schoolcard-kind{color:var(--ultramarine);font-size:11.5px;font-weight:800;letter-spacing:.02em;}
+.featured-schoolcard-body{flex:1;margin-top:12px;}
+.featured-schoolcard-loading,.featured-schoolcard-empty{margin:0;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.6;word-break:keep-all;}
+.featured-schoolcard-loading code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
+.featured-schoolcard-count{margin:0 0 8px;color:var(--ultramarine);font-size:12px;font-weight:800;letter-spacing:.02em;}
+.featured-schoolcard-rows{list-style:none;margin:0;padding:0;}
+.featured-schoolcard-row{padding:7px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
+.featured-schoolcard-row:last-child{border-bottom:0;}
+.featured-schoolcard-more{align-self:flex-start;margin-top:14px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
+.featured-schoolcard-more:hover{text-decoration:underline;}
 
-.featured-twin{margin:18px auto 0;max-width:440px;width:100%;min-height:118px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:left;}
-.featured-twin.is-loading{opacity:.5;}
-.featured-twin-loading,.featured-twin-empty{margin:0;color:var(--ink-soft);font-size:13.5px;font-weight:600;text-align:center;line-height:1.6;word-break:keep-all;}
-.featured-twin-empty code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
-.featured-twin-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);}
-.featured-twin-school{color:var(--ink);font-size:16px;font-weight:900;letter-spacing:-.02em;}
-.featured-twin-count{color:var(--ultramarine);font-size:11.5px;font-weight:800;letter-spacing:.02em;}
-.featured-twin-list{list-style:none;margin:10px 0 0;padding:0;}
-.featured-twin-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
-.featured-twin-row:last-child{border-bottom:0;}
-.featured-twin-exam{color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
-.featured-twin-link{flex:none;color:var(--ultramarine);font-size:12px;font-weight:800;text-decoration:none;}
-.featured-twin-link:hover{text-decoration:underline;}
-.featured-twin-more{display:inline-block;margin-top:12px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
-.featured-twin-more:hover{text-decoration:underline;}
-.featured-twin--builder{text-align:center;}
+.featured-schoolcards-bar{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:6px;}
+.featured-schoolcards-count{color:var(--ink-faint);font-size:12px;font-weight:800;letter-spacing:.04em;font-variant-numeric:tabular-nums;}
+.featured-schoolcards-dots{display:flex;gap:7px;}
+.featured-schoolcards-dot{width:8px;height:8px;padding:0;border:0;border-radius:999px;background:var(--line);cursor:pointer;transition:background var(--hover-duration) var(--hover-ease),width var(--hover-duration) var(--hover-ease);}
+.featured-schoolcards-dot.is-on{width:20px;background:var(--ultramarine);}
+.featured-schoolcards-dot:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+
+/* 데스크톱: 카드 폭 고정 + 한 화면에 2~3장, 그래도 자연스러운 horizontal track */
+@media (min-width:900px){
+  .featured-schoolcards{gap:18px;margin:0;padding:4px 2px 10px;}
+  .featured-schoolcard{flex-basis:300px;max-width:none;}
+}
+
+/* 빌더 캔버스: 학교명만 편집. fetch 없음. 세로로 쌓아 프리뷰. */
+.featured-schoolcard--builder{flex-basis:auto;}
+.builder-public-preview .featured-schoolcards{display:flex;flex-direction:column;overflow:visible;gap:12px;}
+.featured-chip-label:empty::before{content:'학교';color:var(--ink-faint);}
 
 .featured-cta{margin-top:26px;}
 .featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background var(--hover-duration) var(--hover-ease),transform var(--hover-duration) var(--hover-ease);}
@@ -255,11 +270,12 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .builder-public-preview [data-builder-draft="featuredDescription"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
 
 /* ══════════════ Education Storefront: AI Native (sec-digitaltwin) ══════════════
-   AI Native 5-Scene Panorama. 데스크톱은 왼쪽 Visual Stage 를 CSS position:sticky 로 고정하고
-   사용자가 5개 설명을 자기 속도로 읽으며 내려간다. scene 애니메이션은 academy_cinematic.js
-   (GSAP ScrollTrigger scrub, pin 아님)가 구동하고, GSAP 미로드·reduced-motion 이면
-   academy_public.js wireAiNative(IO)가 활성 scene 만 바꾼다([data-active]). 모바일은 sticky 없이
-   5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). scene 내부 비주얼 스타일은 academy_cinematic.css. */
+   AI Native Pipeline. 데스크톱은 왼쪽 Visual Stage(하나의 넓은 canvas)를 CSS position:sticky 로
+   고정하고, 사용자가 오른쪽 5개 설명을 자기 속도로 읽으며 내려간다. canvas 안 오브젝트는
+   academy_cinematic.js(GSAP ScrollTrigger scrub, pin 아님)가 세로 스크롤 progress 0→1 에 직접
+   묶어 왼쪽 자료 → BRAIN → 문제 → FINAL 로 실제 이동시킨다. GSAP 미로드·reduced-motion 이면
+   canvas 기본 배치가 파이프라인 다이어그램으로 정적 표시된다(scene 교체 없음). 모바일은 canvas
+   숨김 + 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). canvas 오브젝트 스타일은 academy_cinematic.css. */
 .section-wrap.ai-native-wrap{background:var(--bg-soft);padding:60px 20px;}
 .ai-native-inner{max-width:1000px;margin:0 auto;}
 .ai-native-head{text-align:center;max-width:640px;margin:0 auto;}
@@ -279,9 +295,10 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .aig-badge{fill:var(--accent);}
 .aig-check{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
 
-/* 모바일 기본 — 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). */
-.ai-native-visual{display:none;}
-.ai-native-steps{list-style:none;margin:0;padding:0;}
+/* 모바일 기본 — 세로형 Visual Pipeline 을 보여준다(텍스트 5블록은 숨김, 공개 전용).
+   빌더 캔버스는 아래에서 반대로(visual 숨김 + 5블록) 처리한다. */
+.ai-native-visual{display:block;margin:0;}
+.ai-native-steps{list-style:none;margin:0;padding:0;display:none;}
 .ai-native-step{position:relative;display:grid;grid-template-columns:28px 1fr;column-gap:16px;padding-bottom:24px;}
 .ai-native-step:last-child{padding-bottom:0;}
 .ai-native-step-num{grid-row:1;width:28px;height:28px;border-radius:999px;background:var(--accent-soft);color:var(--ultramarine);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
@@ -294,29 +311,22 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .ai-native-step-desc{color:var(--ink-soft);font-size:13px;font-weight:500;line-height:1.6;word-break:keep-all;}
 .ai-native-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:600;line-height:1.7;word-break:keep-all;}
 
-/* Visual Stage(데스크톱). scene 은 겹쳐 쌓이고 활성 scene 만 보인다. scene 안의 오브젝트는
-   GSAP(academy_cinematic.js)가 스크롤 progress 에 따라 "흩어진 상태 → 중앙 조립"으로 실제 이동
-   시킨다. GSAP 없음/reduced/모바일 → [data-active] 셀렉터가 조립 완료 상태를 정적으로 표시한다. */
-.ai-stage{position:relative;width:100%;aspect-ratio:16/11;max-height:60vh;border:1px solid var(--line);border-radius:var(--radius-sm);background:linear-gradient(180deg,#fff,#fafbfe);box-shadow:var(--shadow-sm);overflow:hidden;}
-.ai-scene{position:absolute;inset:0;opacity:0;transition:opacity .4s var(--reveal-ease);}
-.ai-native-visual[data-active="0"] .ai-scene[data-ai-scene="0"],
-.ai-native-visual[data-active="1"] .ai-scene[data-ai-scene="1"],
-.ai-native-visual[data-active="2"] .ai-scene[data-ai-scene="2"],
-.ai-native-visual[data-active="3"] .ai-scene[data-ai-scene="3"],
-.ai-native-visual[data-active="4"] .ai-scene[data-ai-scene="4"],
-.ai-native-visual:not([data-active]) .ai-scene[data-ai-scene="0"]{opacity:1;}
-html.js-cinematic .ai-scene{transition:opacity .28s linear;}
-html.js-cinematic .ai-scene.is-active{opacity:1;}
-.ai-scene-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:var(--ink-faint);font-size:11px;font-weight:900;letter-spacing:.18em;z-index:3;}
+/* Visual Stage(데스크톱). 하나의 넓은 canvas(.ai-canvas, 좌표계 660×460)를 담는 뷰포트.
+   fitCanvas(academy_public.js / academy_cinematic.js)가 stage 폭에 맞춰 canvas 를 scale 하고
+   stage 높이를 맞춘다. canvas 안 오브젝트는 GSAP(academy_cinematic.js)가 스크롤 progress 에
+   따라 왼쪽 자료 → BRAIN → 문제 → FINAL 로 실제 이동시킨다. GSAP 없음/reduced → 기본 배치가
+   파이프라인 다이어그램으로 정적 표시. */
+.ai-stage{position:relative;width:100%;height:575px;border:1px solid var(--line);border-radius:var(--radius-sm);background:linear-gradient(180deg,#fff,#fafbfe);box-shadow:var(--shadow-sm);overflow:hidden;}
 
 /* 데스크톱 — 큰 왼쪽 sticky Visual Stage + 오른쪽 좁은 설명 열. */
 @media (min-width:900px){
   .ai-native{display:grid;grid-template-columns:1fr minmax(230px,290px);gap:44px;align-items:start;}
   .ai-native-visual{display:block;position:sticky;top:88px;align-self:start;}
-  .ai-native-steps{position:relative;}
+  .ai-stage{height:420px;}
+  .ai-native-steps{position:relative;display:block;}
   .ai-native-steps::before{content:"";position:absolute;left:15px;top:16px;height:calc(100% - 30vh);width:2px;background:var(--line);}
   .ai-native-step-glyph{display:none;}
-  .ai-native-step{grid-template-columns:32px 1fr;min-height:40vh;align-content:start;padding-bottom:0;}
+  .ai-native-step{grid-template-columns:32px 1fr;min-height:44vh;align-content:start;padding-bottom:0;}
   .ai-native-step:last-child{min-height:auto;}
   .ai-native-step + .ai-native-step::before{display:none;}
   .ai-native-step-num{width:32px;height:32px;font-size:13px;}
@@ -327,12 +337,10 @@ html.js-cinematic .ai-scene.is-active{opacity:1;}
 @media (min-width:1200px){
   .ai-native{grid-template-columns:1fr 300px;gap:56px;}
 }
-@media (prefers-reduced-motion:reduce){
-  .ai-scene{transition:none;}
-}
 /* 빌더 캔버스는 Visual Stage 를 쓰지 않는다 — 항상 5개 세로 블록으로 정적 프리뷰. */
 .builder-public-preview .ai-native{display:block;}
 .builder-public-preview .ai-native-visual{display:none;}
+.builder-public-preview .ai-native-steps{display:block;}
 
 @media(max-width:640px){
   .section-wrap.featured-wrap{padding:48px 18px;}

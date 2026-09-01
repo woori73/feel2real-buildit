@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 /**
  * Storefront Cinematic — GSAP + ScrollTrigger 를 소유하는 유일한 모듈.
- * Phase 5.1: 담당 섹션은 #sec-digitaltwin (AI Native 5-Scene Panorama) 하나뿐.
+ * 담당 섹션은 #sec-digitaltwin (AI Native Pipeline — 하나의 canvas / 하나의 timeline) 하나뿐.
  *   - GSAP 미로드 / reduced-motion / 모바일(<900) 이면 전부 no-op.
  *   - immediateRender 기본(true): progress 0 = 요소가 "흩어진 시작" 상태 → 스크롤하면 실제로 조립.
  *   - scrub, pin 없음, setInterval 없음.
@@ -129,13 +129,24 @@ test('immediateRender:false 를 쓰지 않는다 — progress 0 에서 요소는
   assert.doesNotMatch(CINEMATIC_JS, /immediateRender:\s*false/);
 });
 
-test('scene tween 은 opacity 페이드가 아니라 큰 위치 이동이 주 신호다', () => {
-  // scene 0: 자료 4개가 ±200px 이상 이동
-  assert.match(CINEMATIC_JS, /\[-230, 235, -215, 225\]/);
-  assert.match(CINEMATIC_JS, /\[-150, -140, 150, 145\]/);
-  // scene 2: 스트림이 ±260px 이동
-  assert.match(CINEMATIC_JS, /x: -260/);
-  assert.match(CINEMATIC_JS, /x: 260/);
+test('하나의 timeline — 정적 scene 교체가 아니라 오브젝트의 큰 위치 이동이 주 신호다', () => {
+  // 5개 scene 을 도는 per-scene 빌더는 없다(하나의 연속 파이프라인)
+  assert.doesNotMatch(CINEMATIC_JS, /buildSceneTweens|querySelectorAll\('\.ai-scene'\)|data-ai-scene/);
+  // 좌표계: 데스크톱 660×460 / 모바일 330×900 canvas 를 stage 폭에 맞춘다
+  assert.match(CINEMATIC_JS, /function fitCanvas/);
+  assert.match(CINEMATIC_JS, /function canvasBox/);
+  assert.match(CINEMATIC_JS, /\{ w: 330, h: 560 \}\s*:\s*\{ w: 660, h: 460 \}/);
+  // scrub timeline 이므로 .from() 대신 .fromTo()(양끝 명시)를 쓴다
+  assert.match(CINEMATIC_JS, /tl\.fromTo\(srcs,/);
+  assert.doesNotMatch(CINEMATIC_JS, /tl\.from\([^T]/);
+  // A: 학교 자료가 화면 밖에서 들어온다(데스크톱 -360px, 모바일 -46px)
+  assert.match(CINEMATIC_JS, /x: -360/);
+  // C: 문제가 Brain 쪽에서 200px 이상 이동해 부채꼴로 나온다
+  assert.match(CINEMATIC_JS, /\[210, 250, 250, 232\]/);
+  // 연결선(connector)이 스크롤 내내 그려진다
+  assert.match(CINEMATIC_JS, /strokeDashoffset/);
+  // 하나의 timeline 을 progress 로 직접 구동한다
+  assert.match(CINEMATIC_JS, /tl\.progress\(p\)/);
 });
 
 test('reduced-motion → no-op', () => {
@@ -145,8 +156,15 @@ test('reduced-motion → no-op', () => {
   assert.ok(!c.htmlClasses.has('js-cinematic'));
 });
 
-test('모바일(<900) → no-op', () => {
+test('모바일(<900) → ScrollTrigger 도 js-cinematic 도 없다(세로형 자동재생 경로)', () => {
   const c = loadCinematic({ width: 720 });
+  c.api.wire(c.root);
+  assert.equal(c.stCreated.length, 0, '모바일은 ScrollTrigger 를 만들지 않는다');
+  assert.ok(!c.htmlClasses.has('js-cinematic'), '모바일은 scrub 마커를 붙이지 않는다');
+});
+
+test('모바일 + reduced-motion → no-op(정적 완성 Pipeline)', () => {
+  const c = loadCinematic({ width: 720, reduced: true });
   c.api.wire(c.root);
   assert.equal(c.stCreated.length, 0);
   assert.ok(!c.htmlClasses.has('js-cinematic'));

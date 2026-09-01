@@ -44,7 +44,7 @@ class AcademyBuilderTemplateContractTest {
     assertThat(html)
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
-            "<script src=\"/js/academy_sections.js?v=20260901-3\"></script>",
+            "<script src=\"/js/academy_sections.js?v=20260901-5\"></script>",
             "<script src=\"/js/academy_builder.js?v=20260831-3\"></script>");
   }
 

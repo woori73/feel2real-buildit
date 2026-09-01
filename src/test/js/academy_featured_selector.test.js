@@ -5,13 +5,13 @@ const path = require('node:path');
 const { bothRenderers, primeRenderer, academyFixture } = require('./helpers/academy_render_hooks');
 
 /**
- * Phase 5.2 — 학교별 실제 출제자 Digital Twin 은 「2학기 영어 내신」 섹션(sec-featured)에만 있다.
+ * 「2학기 영어 내신」(sec-featured) — 학교별 독립 카드 횡스크롤.
  *
- *  - sec-featured: eyebrow → 제목 → 설명 → 학교 칩(단일 선택 버튼) → .featured-twin 패널 → CTA.
- *    칩 선택 시 그 학교의 실제 /api/analyzes 데이터로 패널이 바뀐다(wireFeaturedSchoolTwin).
- *  - 대표수업(sec-lessons)의 programCardHtml 은 학교 셀렉터/Digital Twin 패널을 만들지 않는다
- *    (Phase 5.1 회귀 제거). 카드 이름은 그냥 이름 줄로 렌더.
- *  - 가짜 summary 없음, /api/analyzes 실데이터만, builderDraft 복제 없음.
+ *  - sec-featured: eyebrow → 제목 → 설명 → **학교별 카드 트랙**(각 카드 = 그 학교의 실제
+ *    /api/analyzes 출제자 Digital Twin) → 단일 CTA. 배선 wireFeaturedSchoolCards — 전부
+ *    #sec-featured 안에서만. 가짜 분석 없음, builderDraft 복제 없음.
+ *  - 대표수업(sec-lessons)의 programCardHtml 은 학교 셀렉터/Digital Twin 을 만들지 않는다.
+ *    카드 이름은 그냥 이름 줄. schoolTokensFrom 없음.
  */
 
 const read = (rel) => fs.readFileSync(path.resolve(__dirname, rel), 'utf8');
@@ -35,79 +35,75 @@ const SCHOOLS = {
   }
 };
 
-/* ── sec-featured: 학교 칩 셀렉터 + Digital Twin 패널 ────────────────────── */
+/* ── sec-featured: 학교별 카드 횡스크롤 ─────────────────────────────────── */
 
-test('공개 렌더: 학교 칩이 단일 선택 버튼이고 첫 학교만 aria-pressed="true"', () => {
+test('공개 렌더: 학교마다 독립 카드(data-featured-card + data-school) + 트랙 + 카운터/dot', () => {
   const hooks = Object.fromEntries(bothRenderers()).public;
   const academy = fixture(SCHOOLS);
   primeRenderer(hooks, academy);
   const html = hooks.renderFeatured(academy);
 
-  assert.match(html, /<div class="featured-chips" role="group"[^>]*data-featured-group/);
-  assert.match(html, /<button type="button" class="featured-chip" data-featured-school="압구정중" aria-pressed="true">압구정중<\/button>/);
-  assert.match(html, /data-featured-school="신구중" aria-pressed="false"/);
-  assert.match(html, /data-featured-school="언북중" aria-pressed="false"/);
-  assert.equal((html.match(/aria-pressed="true"/g) || []).length, 1);
+  assert.match(html, /<div class="featured-schoolcards" role="list" data-featured-track>/);
+  assert.equal((html.match(/class="featured-schoolcard" role="listitem" data-featured-card data-school="/g) || []).length, 4);
+  assert.match(html, /data-featured-card data-school="압구정중"[\s\S]*?<b class="featured-schoolcard-name">압구정중<\/b>/);
+  assert.match(html, /data-school="언북중"/);
+  assert.match(html, /출제자 Digital Twin/);
+  // 카드 본문은 빈 상태(academy_public.js 가 fetch 로 채운다)
+  assert.match(html, /data-featured-card-body[^>]*>\s*<p class="featured-schoolcard-loading">압구정중 출제 분석/);
+  assert.match(html, /data-featured-card-more href="\/analyzes"/);
+  // 카운터 + dot
+  assert.match(html, /data-featured-count>1 \/ 4</);
+  assert.equal((html.match(/class="featured-schoolcards-dot[^"]*" data-featured-dot="/g) || []).length, 4);
+  // 옛 칩/단일패널/showcase 흔적 없음
+  assert.doesNotMatch(html, /featured-chip"|data-featured-group|data-featured-school=|data-featured-twin|dt-showcase|dt-scene/);
 });
 
-test('공개 렌더: Digital Twin 패널은 비어 있는 컨테이너 + 로딩 안내(academy_public.js 가 fetch 로 채운다)', () => {
-  const hooks = Object.fromEntries(bothRenderers()).public;
-  const academy = fixture(SCHOOLS);
-  primeRenderer(hooks, academy);
-  const html = hooks.renderFeatured(academy);
-
-  assert.match(html, /<div class="featured-twin" data-reveal-item data-featured-twin aria-live="polite">/);
-  assert.match(html, /class="featured-twin-loading">압구정중 출제 분석/);
-  // Phase 5 의 가로 showcase / Phase 5.1 의 program-card-twin 흔적 없음
-  assert.doesNotMatch(html, /dt-showcase|dt-scene|data-dt-track|f2r-program-card-schools|data-program-twin/);
-});
-
-test('공개 렌더: 빈 학교 항목은 칩을 만들지 않는다(빈 pill 방지)', () => {
+test('공개 렌더: 빈 학교 항목은 카드를 만들지 않는다', () => {
   const hooks = Object.fromEntries(bothRenderers()).public;
   const academy = fixture({ sectionVisibility: { 'sec-featured': true }, builderDraft: {
     featuredItem1: '압구정중', featuredItem2: '   ', featuredItem3: '   ', featuredItem4: '   '
   } });
   primeRenderer(hooks, academy);
   const html = hooks.renderFeatured(academy);
-  assert.equal((html.match(/<button type="button" class="featured-chip"/g) || []).length, 1);
+  assert.equal((html.match(/class="featured-schoolcard" role="listitem" data-featured-card/g) || []).length, 1);
+  assert.match(html, /data-featured-count>1 \/ 1</);
 });
 
-test('빌더 렌더: 칩은 편집 앵커, selector group/버튼은 공개 전용, 패널은 정적 안내', () => {
+test('빌더 렌더: 학교명은 편집 앵커, 트랙 이벤트 훅(data-featured-track/card)은 공개 전용, 본문은 정적 안내', () => {
   const hooks = Object.fromEntries(bothRenderers()).builder;
   const academy = fixture(SCHOOLS);
   primeRenderer(hooks, academy);
   const html = hooks.renderFeatured(academy);
 
-  assert.match(html, /<div class="featured-chip"><span class="featured-chip-label" data-builder-draft="featuredItem1"/);
-  assert.doesNotMatch(html, /data-featured-group|<button[^>]*data-featured-school/);
-  assert.match(html, /featured-twin--builder/);
+  assert.match(html, /<span class="featured-chip-label" data-builder-draft="featuredItem1"/);
+  assert.match(html, /featured-schoolcard--builder/);
+  assert.doesNotMatch(html, /data-featured-track|data-featured-card |data-featured-count|data-featured-dot/);
   assert.match(html, /<code>\/analyzes<\/code>/);
 });
 
-test('academy_public.js: wireFeaturedSchoolTwin 이 render()에 배선되고 sec-featured 에서 /api/analyzes 를 쓴다', () => {
-  assert.match(PUBLIC_JS, /function wireFeaturedSchoolTwin\(\)/);
-  assert.match(PUBLIC_JS, /wireAiNative\(\);\s*\n\s*wireFeaturedSchoolTwin\(\);/);
-  assert.match(PUBLIC_JS, /root\.querySelector\('#sec-featured \[data-featured-group\]'\)/);
-  assert.match(PUBLIC_JS, /root\.querySelector\('#sec-featured \[data-featured-twin\]'\)/);
+test('academy_public.js: wireFeaturedSchoolCards 가 render()에 배선되고 #sec-featured 에서만 /api/analyzes 를 쓴다', () => {
+  assert.match(PUBLIC_JS, /function wireFeaturedSchoolCards\(\)/);
+  assert.match(PUBLIC_JS, /wireAiNative\(\);\s*\n\s*wireFeaturedSchoolCards\(\);/);
+  assert.match(PUBLIC_JS, /root\.querySelector\('#sec-featured \[data-featured-cards\]'\)/);
   assert.match(PUBLIC_JS, /fetch\('\/api\/analyzes\?schoolName=' \+ encodeURIComponent\(school\)\)/);
   assert.match(PUBLIC_JS, /nameEn === 'english'/);
-  assert.match(PUBLIC_JS, /escapeHtml\(a\.grade\) \+ '학년 ' \+ escapeHtml\(a\.semester\)/);
-  assert.doesNotMatch(PUBLIC_JS, /wireProgramCardTwin|featuredLessonIds|selectedFeaturedLessons/);
-  // 재렌더 가드 + 키보드 + reduced
-  assert.match(PUBLIC_JS, /group\.dataset\.twinWired === 'true'/);
-  assert.match(PUBLIC_JS, /ArrowRight' \|\| e\.key === 'ArrowDown'/);
-  assert.match(PUBLIC_JS, /prefers-reduced-motion: reduce/);
+  // #sec-lessons 를 fallback 셀렉터로 쓰지 않는다
+  assert.doesNotMatch(PUBLIC_JS, /wireFeaturedSchoolTwin|wireProgramCardTwin|featuredLessonIds|selectedFeaturedLessons/);
+  assert.doesNotMatch(PUBLIC_JS, /#sec-lessons \[data-featured|#sec-lessons[^']*analyzes/);
+  // 재렌더 가드
+  assert.match(PUBLIC_JS, /wrap\.dataset\.cardsWired === 'true'/);
 });
 
-test('academy_public.css: 학교 칩 상호작용(hover/포커스/aria-pressed) + .featured-twin 패널 스타일', () => {
-  assert.match(PUBLIC_CSS, /\.featured-chip\{[^}]*cursor:pointer/);
-  assert.match(PUBLIC_CSS, /\.featured-chip:focus-visible\{[^}]*outline/);
-  assert.match(PUBLIC_CSS, /\.featured-chip\[aria-pressed="true"\]\{[^}]*background:var\(--ink\)/);
-  assert.match(PUBLIC_CSS, /\.featured-twin\{[^}]*border:1px solid var\(--line\)/);
-  assert.match(PUBLIC_CSS, /\.featured-twin-school\{[^}]*font-weight:900/);
+test('academy_public.css: 학교 카드 트랙(overflow-x + scroll-snap) + dot', () => {
+  assert.match(PUBLIC_CSS, /\.featured-schoolcards\{[^}]*overflow-x:auto/);
+  assert.match(PUBLIC_CSS, /\.featured-schoolcards\{[^}]*scroll-snap-type:x mandatory/);
+  assert.match(PUBLIC_CSS, /\.featured-schoolcard\{[^}]*scroll-snap-align:center/);
+  assert.match(PUBLIC_CSS, /\.featured-schoolcards-dot\.is-on\{/);
+  // 데스크톱은 카드 폭 고정(과도하게 큰 카드 금지)
+  assert.match(PUBLIC_CSS, /@media \(min-width:900px\)\{[\s\S]*\.featured-schoolcard\{flex-basis:300px/);
 });
 
-/* ── 대표수업(sec-lessons): Phase 5.1 회귀 제거 ─────────────────────────── */
+/* ── 대표수업(sec-lessons): 회귀 제거 유지 ─────────────────────────────── */
 
 test('programCardHtml: 카드 이름은 그냥 이름 줄로 렌더 — 학교 셀렉터/Twin 패널 없음', () => {
   const hooks = Object.fromEntries(bothRenderers()).public;
@@ -123,8 +119,11 @@ test('programCardHtml: 카드 이름은 그냥 이름 줄로 렌더 — 학교 �
   assert.doesNotMatch(html, /f2r-program-card--twin|f2r-program-card-schools|data-program-twin|f2r-twin-/);
 });
 
-test('academy_sections.js: schoolTokensFrom / programCardSchools / f2r-program-card--twin 흔적 없음', () => {
+test('academy_sections.js: schoolTokensFrom / programCardSchools / f2r-program-card--twin 흔적 없음. 학교 카드는 sec-featured 안에서만', () => {
   assert.doesNotMatch(SECTIONS, /schoolTokensFrom|programCardSchools|f2r-program-card--twin|data-program-twin-group/);
+  // featuredSchoolCards 는 renderFeatured 에서만 호출된다(대표수업 렌더 경로엔 없음)
+  const lessonsSlice = SECTIONS.slice(SECTIONS.indexOf('function renderLessons'), SECTIONS.indexOf('function renderVideos') + 1 || SECTIONS.length);
+  assert.doesNotMatch(lessonsSlice, /featuredSchoolCards|data-featured-card|data-school=/);
 });
 
 test('academy_collection.css: school-twin(.f2r-twin-*/.f2r-program-card-schools) 스타일 제거됨', () => {
@@ -135,17 +134,16 @@ test('academy_collection.css: school-twin(.f2r-twin-*/.f2r-program-card-schools)
 /* ── 캐시버스팅 / 하드코딩 ─────────────────────────────────────────────── */
 
 test('캐시버스팅: 변경된 storefront 자산 버전이 함께 올라간다', () => {
-  assert.match(PUBLIC_HTML, /academy_public\.(js|css)\?v=20260901-3/);
-  assert.match(PUBLIC_HTML, /academy_collection\.css\?v=20260901-3/);
-  assert.match(PUBLIC_HTML, /academy_cinematic\.(js|css)\?v=20260901-3/);
-  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260901-3/);
-  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260901-3/);
+  assert.match(PUBLIC_HTML, /academy_public\.(js|css)\?v=20260901-5/);
+  assert.match(PUBLIC_HTML, /academy_scene\.(js|css)\?v=20260901-5/);
+  assert.match(PUBLIC_HTML, /academy_cinematic\.(js|css)\?v=20260901-5/);
+  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260901-5/);
+  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260901-5/);
 });
 
 test('sections.js featured 영역에 학교/연도/시즌 하드코딩이 없다', () => {
   const featured = SECTIONS.slice(
     SECTIONS.indexOf('sec-featured : Featured'),
     SECTIONS.indexOf('sec-digitaltwin : AI Native'));
-  assert.doesNotMatch(featured, /압구정|신구중|신사중|언북중|202\d|2학기|1학기|내신/,
-    '코드에 학교/연도/시즌/과목 문자열이 있으면 안 된다 — 전부 builderDraft 입력값');
+  assert.doesNotMatch(featured, /압구정|신구중|신사중|언북|2학기|내신|\b202\d\b/);
 });

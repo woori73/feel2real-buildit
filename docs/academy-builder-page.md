@@ -1124,6 +1124,152 @@ Phase 5.1 이 실제 Production 화면 기준 미완료. Production DOM 을 실�
   `AcademyBuilderTemplateContractTest` / `AcademyServiceTest` / `LessonProductEditorTemplateContractTest` 통과.
 - harness(byte-identical, `/api/analyzes` mock, **실제 computer wheel 스크롤**) 데스크톱 1512 + 모바일 375.
 
+## 24. 2026-09-01 변경: AI Native Visual Rebuild — 5-scene 교체 → 하나의 파이프라인 canvas
+
+Phase 5/5.1/5.2 의 "5개 정적 scene 을 opacity 로 교체" 구조를 폐기하고, `#sec-digitaltwin` **하나만**
+다시 만들었다. 다른 섹션(`#sec-featured` 2학기 영어내신 / `#sec-lessons` 대표수업 / Actual Class /
+phone frame / lesson·product 데이터 / `/api/analyzes` / 백엔드)은 **손대지 않음**(diff 0 확인).
+
+### 제거된 것 (구 AI Native 구조)
+- `academy_sections.js`: `AI_SCENES`(5개 scene 문자열 배열), `figure[data-active]` 속성, `.ai-scene`/
+  `.ai-scene-cap`/`[data-ai-scene]` 마크업, scene 별 `.ai-doc`/`.ai-s1-doc`/`.ai-scanline`/`.ai-bars`/
+  `.ai-twin-card`/`.ai-stream`/`.ai-q`/`.ai-qc` 등.
+- `academy_cinematic.js`: `buildSceneTweens()` per-scene 루프, `visual.setAttribute('data-active')` +
+  `.is-active` 토글, scene 창 `[index, index+1)` 매핑.
+- `academy_cinematic.css`: scene 요소 절대배치 전부(`left/top:50% + margin` 방식), `@media 900~1140` scene scale.
+- `academy_public.css`: `.ai-scene`, `.ai-native-visual[data-active="N"] .ai-scene[...]` 셀렉터,
+  `html.js-cinematic .ai-scene.is-active`, `.ai-scene-cap`, `aspect-ratio:16/11` stage.
+- `academy_public.js`: `wireAiNative()` 의 IntersectionObserver `data-active` 폴백(`aiNativeObserver`),
+  `rootMargin:'-48% 0px -48% 0px'`.
+
+### 새 구조
+- **하나의 canvas** `.ai-canvas`(좌표계 660×460 고정, `academy_sections.js` `AI_PIPELINE_HTML`). 모든
+  오브젝트가 동시에 존재: `.ai-src`×4(시험지/학교 프린트/교과서/수업 자료) · `.ai-cap--src`(학교 자료) ·
+  `.ai-brain`(BUILD IT BRAIN, 중앙) · `.ai-node--twin`(EXAMINER DIGITAL TWIN) · `.ai-node--insight`
+  (TEACHER INSIGHT) · `.ai-qout`×4(원본 문제/변형 A/변형 B/서술형) · `.ai-final`(FINAL EXAM) ·
+  `.ai-flow-path`(SVG connector, `strokeDashoffset` 로 그려짐).
+- **하나의 GSAP timeline**(`academy_cinematic.js` `wireAiNative`). `.fromTo()`만 사용(scrub 에서 `.from()`
+  의 end 캡처 버그 회피). 절대 시간 0→1: A(0.02–0.50) 자료가 화면 왼쪽 밖 −360px 에서 들어와
+  자리잡고 Brain 으로 빨려 들어가며 축소 → B(0.28–0.72) Brain 확대 생성 + Twin(왼쪽) / Insight(오른쪽)
+  결합 + pulse → C(0.50–0.80) Brain 오른쪽에서 문제 4개가 −210~−250px 에서 부채꼴로 나옴 →
+  D(0.74–1.0) 문제가 아래로 모여 FINAL EXAM 으로 조립. `data-active`/scene 토글 없음.
+- `fitCanvas(stage, canvas)` (cinematic + public.js 양쪽): `canvas.style.transform = scale(stageW/660)`
+  + `stage.style.height = 460*s`. GSAP 유무와 무관하게 돈다(정적 폴백도 같은 배치).
+- ScrollTrigger: `trigger:.ai-native-steps`(데스크톱 각 step `min-height:44vh` → 충분한 스크롤 거리),
+  `start:'top 72%' end:'bottom 42%' scrub:0.6`, `pin` 없음(레이아웃은 CSS `position:sticky`),
+  `onUpdate/onRefresh → paint(self.progress) → tl.progress(p)`. 역행 가능, 멈추면 멈춤.
+- 폴백: GSAP 미로드/reduced-motion/데스크톱<900 → canvas 기본 CSS 배치가 파이프라인 다이어그램으로
+  정적 표시. 모바일 → `.ai-native-visual{display:none}` + 5개 세로 블록(`.ai-native-step`, 번호+glyph+설명, 미변경).
+
+### 파일 / 검증
+- `academy_sections.js` · `academy_cinematic.{js,css}` · `academy_public.{js,css}` · 캐시버스팅 템플릿 3개
+  (`?v=20260901-4`) · `AcademyBuilderTemplateContractTest.java`(→`-4`) · `academy_cinematic.test.js` /
+  `academy_reveal.test.js` / `academy_featured_selector.test.js`(버전만).
+- JS 335 tests / 330 pass / 5 fail(전부 기존 로컬 CRLF: header_section_apply·hero_media_pending·
+  intro_summary). `AcademyBuilderTemplateContractTest` 통과, `bootJar` BUILD SUCCESSFUL.
+- 실제 브라우저 검증(byte-identical harness, GSAP 3.12.5, **실제 computer wheel 스크롤**): 데스크톱에서
+  wheel 스크롤 scrollY 800→1800 → ST progress 0→0.76 확인. progress 0/.25/.5/.75/1 에서 오브젝트
+  x/y/scale 이 연속 이동(src −360→+150 = 510px, qout −210→+10). 모바일 375 → canvas 숨김 + 5블록.
+  no-GSAP → 정적 파이프라인 다이어그램. Before/After 스크린샷 PR 첨부.
+
+## 25. 2026-09-01 변경: Storefront Mobile-first Correction (PR #117 계속) — AI Native 모바일 Visual + 「2학기 영어내신」 학교 횡스크롤 + Vertical Scroll Fade 복구
+
+PR #117 에서 세 가지를 완성. 캐시버스팅 `?v=20260901-5`. 대표수업(`#sec-lessons`)·Actual Class·phone
+frame·playback 구조/데이터 **미변경**(`academy_collection.{js,css}` diff 0).
+
+### A. AI Native — 모바일 세로형 Visual Pipeline + 1회 자동재생
+- 이전: 모바일 `.ai-native-visual{display:none}` + 텍스트 5블록만. 지금: 모바일도 Visual 표시,
+  텍스트 5블록은 공개에서 숨김(`.ai-native-steps{display:none}`; 빌더는 반대로 유지).
+- **좌표계 2벌**: 데스크톱 가로 660×460, 모바일 세로 330×760(`academy_cinematic.js canvasBox()`,
+  `academy_public.js` fit `mobile ? 330 : 660` / `760 : 460`). 모바일 배치는 `academy_cinematic.css
+  @media(max-width:899px)` — 자료 2×2 → Twin·Insight 2개 → Brain 중앙 → 문제 2×2 → FINAL 중앙.
+  `.ai-flow` 는 모바일에서 숨김(가로 경로 부적합). 데스크톱 canvas 를 축소하지 않는다.
+- **모바일 애니메이션**: `academy_cinematic.js` `wireAiNativeMobile` — scroll scrub 아님. 섹션이
+  뷰포트에 들어오면(`IntersectionObserver` threshold 0.3, + 3.5s 고정시각 페일세이프 1회 —
+  스크롤 리스너 아님) ~6.4s timeline 을 `tl.play(0)` 로 1회 재생하고 FINAL 에서 멈춘다.
+  `mobilePlayed` 모듈 플래그로 CSR 재렌더에도 재생 안 함. 무한 반복·flashing 없음.
+  `usable()`(데스크톱 scrub) ↔ `mobileUsable()`(gsap core 만, ST 불필요) 로 경로 분기.
+  모바일은 `js-cinematic` 안 붙임(scrub 마커). reduced-motion → `mobileUsable()` false →
+  no-op → CSS 기본 배치(완성 Pipeline) 정적. `tl.pause(0)` 로 로드 시 흩어진 시작 상태 렌더.
+- 데스크톱은 PR #117 의 scroll-linked scrub 그대로.
+
+### B. 「2학기 영어 내신」(`#sec-featured`) — 학교별 독립 카드 횡스크롤
+- 이전(Phase 5.2): 학교 칩(단일 선택) + 단일 `.featured-twin` 패널(칩 클릭 시 교체).
+  지금: 학교마다 **독립 카드**(`.featured-schoolcard[data-featured-card][data-school]`)를 가로
+  트랙(`.featured-schoolcards`, `overflow-x:auto` + `scroll-snap-type:x mandatory`,
+  카드 `scroll-snap-align:center`)에 나열. 카드 = 학교명 + "출제자 Digital Twin" + 본문(분석
+  자료 N건 + `{grade}학년 · {semester} · {examType}` 리스트) + `[출제 분석 보기]`(첫 detailUrl).
+- 모바일 카드 `flex:0 0 82vw`(max 340) → 다음 카드 살짝 보임(가로 스와이프 어피던스).
+  데스크톱 `@media(min-width:900px)` `flex-basis:300px`(과도하게 큰 카드 금지). `1 / N` 카운터
+  + dot(활성 dot 확대) — track scroll 이벤트로 계산(root 있는 IntersectionObserver 지원 불균일).
+- `academy_sections.js` public ctx `featuredSchoolCards(schools)`(← `featuredItem`/`featuredSchools`/
+  `featuredTwin` 대체), 빌더 ctx 는 학교명만 편집 + 정적 안내(fetch 없음). `renderFeatured` 는
+  `featuredItems(view)`(빈 슬롯 포함) 전달, public 은 `.filter(Boolean)`.
+- `academy_public.js` `wireFeaturedSchoolCards`(← `wireFeaturedSchoolTwin`): **query/render/event
+  전부 `#sec-featured [data-featured-cards]` 안에서만**. `#sec-lessons` fallback 셀렉터 없음,
+  공용 `programCardHtml` 에 학교 분기 없음, `schoolTokensFrom` 재도입 없음. `/api/analyzes` 실데이터만.
+- CSS: `.featured-chip*`/`.featured-twin*` 규칙 제거 → `.featured-schoolcard*`/`.featured-schoolcards*`.
+
+### C. Vertical Scene Flow 복구 (Phase 4 에서 삭제된 이전-섹션-흐려짐)
+- Phase 4(`267b6b3`)가 `academy_storefront_motion.js sceneFlow` + `academy_scene.css` 를 삭제
+  ("Shopify 는 안 함")했으나 이번에 **최소 구현으로 복구**.
+- 신규 `academy_scene.js`(`window.F2RSceneFlow.wire(sections)`) — `IntersectionObserver` 만
+  (scroll 이벤트·setInterval 없음), threshold 교차마다 `entry.boundingClientRect`/`rootBounds` 로
+  `data-scene = enter|active|exit` 분류(비대칭 dead-zone 임계치, bidirectional — 위로 스크롤하면
+  되돌아옴). 6s 하드 페일세이프. reduced-motion/IO 미지원 → 전부 active. 로드 즉시 `html.js-scene` 게이트.
+- 신규 `academy_scene.css`(구버전보다 완만): `html.js-scene section.section-wrap[data-scene]` —
+  enter opacity `.62`, active `1`, exit `.42`(가독성 우선, 구 `.16`→`.42`). `.section-wrap` 을
+  물려 specificity 를 올려 섹션이 스스로 `[data-reveal-item].is-revealed`(opacity:1)인 경우도 이긴다.
+  자식 `> *` translateY(22/-18px)는 `:not(#sec-digitaltwin):not(#sec-featured):not(#sec-lessons)
+  :not(#sec-videos)` — sticky visual 컨테이닝 블록 깨짐 / 가로 트랙 오인 / 대표수업·Actual Class
+  격리. 즉 sec-digitaltwin·sec-featured·sec-lessons·sec-videos 는 opacity 페이드만.
+- `academy_public.js` `wireSceneFlow()`(`render()` 에서 `wireReveal` 다음) — `SCENE_FLOW_IDS`
+  (featured/digitaltwin/videos/minilectures/lessons/intro/social). `academy_public.html` 이
+  `academy_scene.{js,css}` 로드(빌더 템플릿은 로드 안 함 — 캔버스 정적). AI Native 애니메이션과
+  별개(sec-digitaltwin active → opacity 1). 가로 학교 카드 스와이프는 섹션 세로 rect 를 안 바꿔 무영향.
+
+### 파일 / 검증
+- 신규: `academy_scene.{js,css}` + `academy_scene.test.js`(15). 수정: `academy_sections.js` ·
+  `academy_cinematic.{js,css}` · `academy_public.{js,css}` · `academy_public.html`(+scene 2줄) ·
+  캐시버스팅 4파일 · `AcademyBuilderTemplateContractTest.java`(→`-5`) · `academy_cinematic.test.js` /
+  `academy_reveal.test.js` / `academy_featured_selector.test.js`(재작성). `academy_collection.{js,css}` diff 0.
+- JS 345 tests / 340 pass / 5 fail(전부 기존 로컬 CRLF: header_section_apply·hero_media_pending×2·
+  intro_summary×2). `AcademyBuilderTemplateContractTest` / `PublicAnalyticsLayoutContractTest` 통과,
+  `bootJar` BUILD SUCCESSFUL. (`LessonProductSurfaceCompatibilityContractTest.sharedShowcase_*` 는
+  `lesson_product_showcase.js` CRLF 로 기존 로컬 실패 — 이번 변경 무관.)
+- **⚠ Browser pane 은 스크롤에 의한 `IntersectionObserver` 콜백을 발화 못 함**(fresh 최소 IO 도
+  observe 초기 콜백 0회 — Phase 3-A~V2-11 과 동일 제약). 그래서 harness 검증:
+  · 정적 렌더/좌표(JS 측정): 모바일 AI canvas 330×760 세로배치·h-overflow 0·`.ai-native-steps`
+    숨김·`.ai-native-visual` margin 0, 학교 카드 4장·`overflow-x:auto`·`scroll-snap`·카드 82vw·본문
+    실 `/api/analyzes` 데이터(압4/신구4/신사2/언북2)·`1/4` 카운터, 대표수업에 school 마크업 0.
+  · AI 모바일 timeline: `tl.time()` 수동 샘플 0/1.3/3.3/4.5/6.4s → 자료 등장→Brain 유입→Twin·
+    Insight 결합→문제 생성→FINAL 조립 순차 확인(스크린샷 첨부). `tl.play(0)` 1회·FINAL 정지.
+  · 학교 카드 횡스크롤: `track.scrollLeft` 세팅 → `scroll` 리스너 → 카운터 `1/4`→`3/4`, dot 클릭 → 복귀.
+  · sceneFlow: `classify()` 단위 테스트 + `data-scene` 수동 세팅 → CSS opacity enter `.62`/exit `.42`/
+    active `1`, sec-featured/lessons/videos 자식 transform none 확인.
+  · 데스크톱 무회귀: `js-cinematic` + `cinematic-ai-native` ScrollTrigger 존재, progress 0→1 오브젝트
+    이동(PR #117 동일), 학교 카드 데스크톱 300px 고정.
+- 실기기 end-to-end(세로 스크롤 fade → 학교 카드 swipe → AI Native 진입 1회 자동재생 → 대표수업
+  정상)는 사용자 실제 기기 확인 필요(pane IO 제약). merge/deploy 전 사용자 확인.
+
+### 최종 조정 (사용자 피드백 3건, `fb82532`)
+- **A. 모바일 AI Native 좌표계 세로 330×760 → 330×560**. 375px 에서 `.ai-stage` ≈ 574px →
+  자료→Brain→Twin/Insight→문제→FINAL 핵심 과정이 한 화면(500~600px) 안에서 이해된다. 6.4s
+  1회 autoplay 유지. timeline y 오프셋 재조정(srcs `y:150`, qouts from `y:-92`, final `y:48`,
+  fold `[104,104,58,58]`). `academy_public.css` `.ai-stage{height:575px}`(데스크톱 `@media`
+  에서 420 유지). **slider/timeline/▶ 같은 개발용 UI 는 production 코드에 없음**(harness·
+  deliverable 전용).
+- **B. 학교 카드 본문** `list.slice(0,4)` → `slice(0,3)`(핵심 2~3건 중심, 전체는 "분석 자료
+  N건" 카운트로). `.featured-schoolcard{min-height:210 → 184}`. 다음 카드 peek 유지.
+- **C. Vertical Fade** `enter .62 / exit .42` → **`enter 1 / active 1 / exit .4`**. "다음 화면이
+  흐린 것"이 아니라 "지나간 이전 화면만 희미해지는 것". 다음 섹션은 정상 밝기로 진입. `enter`
+  자식 transform 제거, `exit` 만 `translateY(-16px)`(digitaltwin/featured/lessons/videos 제외).
+  `academy_scene.css` 셀렉터 `section.section-wrap[data-scene="enter"], ...[data-scene="active"]
+  { opacity: 1 }` + `...[data-scene="exit"] { opacity: .4 }`.
+- 재검증(harness 375px): mobile AI stage 574px·h-overflow 0·timeline 순차(t0 흩어짐→t3.5 Brain+
+  Twin/Insight→t5 문제→t6.4 FINAL); 학교 카드 3행·82vw; scene fade enter `1`/active `1`/exit `.4`,
+  lessons·videos 자식 transform `none`. JS 345/339 pass(6 기존 CRLF). `AcademyBuilderTemplateContractTest` 통과.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락
