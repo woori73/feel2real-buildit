@@ -98,6 +98,24 @@ jobs:
           # 해당 버전으로 재설치한다(요구사항 불충족). 고정 안 한 패키지는 그대로 둔다.
           /opt/buildit-wiki/venv/bin/pip install --disable-pip-version-check -r /opt/buildit-wiki/app/requirements.txt
 
+          # Spring(f2r-app.service)은 Wiki 프록시 identity를 JWT_SECRET(app.jwt.secret)으로
+          # HMAC 서명한다. 이 FastAPI 서비스는 별도 systemd 유닛이라 /etc/f2r/env를 상속하지
+          # 않으므로, 같은 값을 WIKI_IDENTITY_SECRET 으로 매 배포마다 root 전용 drop-in에
+          # 재생성한다(회전 시 drift 없음, 시크릿은 EC2 밖으로 나가지 않음). /etc/f2r/env 가
+          # 없거나 JWT_SECRET 이 비어 있으면 기존 파일을 건드리지 않는다.
+          if [ -r /etc/f2r/env ]; then
+            JWT_SECRET_LINE=$(grep -E '^JWT_SECRET=.+' /etc/f2r/env | tail -n 1 || true)
+            if [ -n "$JWT_SECRET_LINE" ]; then
+              install -m 600 -o root -g root /dev/null /etc/buildit-wiki-identity.env
+              printf 'WIKI_IDENTITY_SECRET=%s\n' "${JWT_SECRET_LINE#JWT_SECRET=}" > /etc/buildit-wiki-identity.env
+              echo 'wiki identity secret drop-in refreshed from /etc/f2r/env'
+            else
+              echo '::warning::JWT_SECRET not found in /etc/f2r/env; Wiki identity HMAC will stay unconfigured'
+            fi
+          else
+            echo '::warning::/etc/f2r/env not readable; Wiki identity HMAC drop-in not refreshed'
+          fi
+
           cat > /etc/systemd/system/buildit-wiki.service <<'UNIT'
           [Unit]
           Description=BuildIt Wiki FastAPI
@@ -110,6 +128,7 @@ jobs:
           Environment=BUILDIT_WIKI_WORKSPACE=/opt/buildit-wiki
           Environment=AI_PROVIDER_TIMEOUT_SECONDS=90
           EnvironmentFile=-/etc/buildit-wiki.env
+          EnvironmentFile=-/etc/buildit-wiki-identity.env
           ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
           Restart=always
           RestartSec=3

@@ -407,6 +407,15 @@ OX_ALPHA_MODEL=stealth/ox-alpha
 
 Wiki 설정의 브라우저 OpenRouter 키는 `sessionStorage`에만 두고 요청 body로 Spring Proxy를 거쳐 FastAPI AI Router에 일회 전달하므로 서버 env 등록 없이도 Ox Alpha를 사용할 수 있다. 서버 fallback이 필요할 때만 위 root-owned env file을 사용한다. HWP 5.x 추출은 Python `olefile` 패키지로 배포되며 LibreOffice 시스템 패키지를 요구하지 않는다.
 
+# BuildIt Wiki identity HMAC secret (Spring ↔ FastAPI)
+
+PR #134 이후 브라우저 Wiki API는 Spring proxy(`BuildItWikiProxyController`)가 만든 단기 HMAC identity assertion을 요구한다. Spring은 `app.wiki.identity-secret`(미설정 시 `app.jwt.secret` = 운영 `JWT_SECRET`)으로 서명하고, FastAPI(`workspace.identity_secret()`)는 `WIKI_IDENTITY_SECRET` 또는 `JWT_SECRET`으로 검증한다. 두 서비스는 각자의 systemd 유닛이라 `buildit-wiki.service`는 `/etc/f2r/env`를 상속하지 않는다 — secret이 없으면 `verify_identity()`가 모든 인증 요청을 `401`로 막고, 프론트가 `Wiki를 열 수 없습니다 / Wiki 사용자 저장공간을 확인하지 못했습니다.`를 띄운다(운영 장애 #137).
+
+배포 workflow(`deploy-ec2.yml`)가 매 배포마다 `/etc/f2r/env`의 `JWT_SECRET` 값을 읽어 root 전용(`0600`) drop-in `/etc/buildit-wiki-identity.env`에 `WIKI_IDENTITY_SECRET=<동일 값>`으로 재생성하고, 유닛이 `EnvironmentFile=-/etc/buildit-wiki-identity.env`로 이를 로드한다. secret 값은 EC2 밖(S3 산출물, SSM 히스토리, CI 로그)으로 나가지 않는다.
+
+- `JWT_SECRET`을 회전하면 다음 배포에서 drop-in이 자동 갱신된다. 배포 없이 회전했다면 EC2에서 `/etc/buildit-wiki-identity.env`를 같은 값으로 갱신하고 `systemctl restart buildit-wiki.service`.
+- Spring 쪽에 전용 `APP_WIKI_IDENTITY_SECRET`을 쓰기로 하면 `/etc/f2r/env`와 `/etc/buildit-wiki-identity.env`(`WIKI_IDENTITY_SECRET`) 양쪽을 같은 값으로 맞춘다.
+- 검증: 실제 로그인 후 `GET /problem-generator/wiki/api/workspace/me` `200`, `admin`/`modu`는 `workspace_id=legacy`. secret 값 자체는 로그·이슈에 출력하지 않는다.
 
 ## BuildIt Wiki AI timeout 순서
 

@@ -46,15 +46,14 @@ _workspace_context: contextvars.ContextVar[WikiWorkspace | None] = contextvars.C
 
 
 def identity_secret() -> str:
-    # Spring Boot maps app.jwt.secret to APP_JWT_SECRET in Production. Keep the
-    # dedicated Wiki variable highest priority, while accepting the same server-controlled
-    # JWT secret name Spring already uses so both sides of the HMAC share one value.
-    return (
-        os.getenv("WIKI_IDENTITY_SECRET")
-        or os.getenv("APP_WIKI_IDENTITY_SECRET")
-        or os.getenv("JWT_SECRET")
-        or os.getenv("APP_JWT_SECRET", "")
-    )
+    # Server-to-server HMAC key shared with the Spring proxy (BuildItWikiProxyController
+    # signs with ``app.wiki.identity-secret`` -> ``app.jwt.secret`` -> ``JWT_SECRET``).
+    # This FastAPI service runs as its own systemd unit and does not inherit Spring's
+    # EnvironmentFile, so the deploy step feeds it the same value as ``WIKI_IDENTITY_SECRET``
+    # (derived from Spring's ``JWT_SECRET`` at deploy time). ``JWT_SECRET`` stays accepted so
+    # a single env line works if both services ever share one file. An empty result is fatal
+    # in ``verify_identity`` — the request is rejected rather than trusted.
+    return os.getenv("WIKI_IDENTITY_SECRET") or os.getenv("JWT_SECRET", "")
 
 
 def signature_payload(identity: WikiIdentity, timestamp: str) -> bytes:
