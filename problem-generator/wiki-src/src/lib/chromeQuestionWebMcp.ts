@@ -24,6 +24,23 @@ const readJson = async (response: Response) => {
 
 const emit = (name: string, detail: unknown) => window.dispatchEvent(new CustomEvent(name, { detail }))
 
+const previewInputSchema = {
+  type: 'object', required: ['question'],
+  properties: {
+    question: { type:'object', description: 'Wiki canonical 또는 호환 가능한 Chrome 변형 문항. Workbench가 wiki-question-v1로 정규화합니다.' },
+    revision_note: { type: 'string' },
+  },
+}
+
+const previewTransformedQuestion = async (input: Record<string, unknown>) => {
+  const question=normalizeChromeQuestion(input.question)
+  if(!isSelfContained(question))throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
+  const context=JSON.parse(sessionStorage.getItem('buildit_chrome_workbench_context')||'{}')
+  sessionStorage.setItem('buildit_chrome_preview_question',JSON.stringify({source_question_id:context.source_question_id,question}))
+  emit('buildit-chrome-question-preview', {...input,question})
+  return { previewed: true, tool: 'preview_transformed_question' }
+}
+
 export const registerChromeQuestionTools = async () => {
   const modelContext = getModelContext()
   if (!modelContext) return false
@@ -58,25 +75,22 @@ export const registerChromeQuestionTools = async () => {
     },
   })
 
+  // Canonical public name used in the Workbench/Chrome instructions.
+  await modelContext.registerTool({
+    name: 'preview_transformed_question',
+    description: '변형한 문항을 저장하기 전에 Workbench의 변형본 Preview에 표시합니다. 호환 입력을 wiki-question-v1로 정규화합니다.',
+    inputSchema: previewInputSchema,
+    annotations: { readOnlyHint: true },
+    execute: previewTransformedQuestion,
+  })
+
+  // Backward-compatible alias for sessions/prompts created before the canonical name was fixed.
   await modelContext.registerTool({
     name: 'preview_chrome_transformed_question',
-    description: '변형한 문항을 저장하기 전에 Workbench의 변형본 Preview에 표시합니다. canonical question schema를 사용합니다.',
-    inputSchema: {
-      type: 'object', required: ['question'],
-      properties: {
-        question: { type:'object', description: 'Wiki canonical 또는 호환 가능한 Chrome 변형 문항. Workbench가 wiki-question-v1로 정규화합니다.' },
-        revision_note: { type: 'string' },
-      },
-    },
+    description: 'preview_transformed_question의 이전 호환 이름입니다. 변형 문항을 Workbench Preview에 표시합니다.',
+    inputSchema: previewInputSchema,
     annotations: { readOnlyHint: true },
-    execute: async input => {
-      const question=normalizeChromeQuestion(input.question)
-      if(!isSelfContained(question))throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
-      const context=JSON.parse(sessionStorage.getItem('buildit_chrome_workbench_context')||'{}')
-      sessionStorage.setItem('buildit_chrome_preview_question',JSON.stringify({source_question_id:context.source_question_id,question}))
-      emit('buildit-chrome-question-preview', {...input,question})
-      return { previewed: true }
-    },
+    execute: previewTransformedQuestion,
   })
 
   await modelContext.registerTool({
