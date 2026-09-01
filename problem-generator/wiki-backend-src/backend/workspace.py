@@ -46,6 +46,13 @@ _workspace_context: contextvars.ContextVar[WikiWorkspace | None] = contextvars.C
 
 
 def identity_secret() -> str:
+    # Server-to-server HMAC key shared with the Spring proxy (BuildItWikiProxyController
+    # signs with ``app.wiki.identity-secret`` -> ``app.jwt.secret`` -> ``JWT_SECRET``).
+    # This FastAPI service runs as its own systemd unit and does not inherit Spring's
+    # EnvironmentFile, so the deploy step feeds it the same value as ``WIKI_IDENTITY_SECRET``
+    # (derived from Spring's ``JWT_SECRET`` at deploy time). ``JWT_SECRET`` stays accepted so
+    # a single env line works if both services ever share one file. An empty result is fatal
+    # in ``verify_identity`` — the request is rejected rather than trusted.
     return os.getenv("WIKI_IDENTITY_SECRET") or os.getenv("JWT_SECRET", "")
 
 
