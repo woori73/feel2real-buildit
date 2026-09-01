@@ -110,17 +110,34 @@ export const registerChromeQuestionTools = async () => {
     execute: async input => {
       const context = JSON.parse(sessionStorage.getItem('buildit_chrome_workbench_context') || '{}')
       const source = context.source_question || {}
+      const meta = context.source_question_meta || {}
       const preview=JSON.parse(sessionStorage.getItem('buildit_chrome_preview_question')||'{}')
       if(preview.source_question_id!==input.source_question_id)throw new Error('현재 QID에서 승인된 Preview가 없습니다. 먼저 Preview를 생성해 주세요.')
       const question=preview.question
       if(!isSelfContained(question))throw new Error('완전한 wiki-question-v1 문항만 저장할 수 있습니다.')
-      const provenance = { source_question_id: input.source_question_id, digital_twin_id: input.digital_twin_id, material_ids: input.material_ids || [], insight_ids: input.insight_ids || [], revision_note: input.revision_note || '', workbench: 'chrome-question-transform' }
+      // 강사 문제 DB / 교과서 DB 어느 Source든 원본은 덮어쓰지 않고 별도 파생 row로 저장한다.
+      // PDF 페이지와 교과서 Question ID를 한 필드에 섞지 않는다 — twin_pattern에 각각 독립 보존.
+      const isTextbook = meta.source_kind === 'textbook'
+      const textbookPage = isTextbook && typeof meta.page === 'number' ? meta.page : null
+      const provenance = { source_kind: isTextbook ? 'textbook' : 'teacher',
+        source_question_id: input.source_question_id,                          // 교과서면 textbook_questions.id
+        textbook_material_id: isTextbook ? (meta.textbook_material_id ?? null) : null,  // 원본 PDF
+        source_page: textbookPage,                                            // 원본 PDF 페이지 번호
+        source_question_number: isTextbook ? (meta.question_number || '') : (source.source?.source_question_number || ''),  // 교과서 문항번호
+        digital_twin_id: input.digital_twin_id, material_ids: input.material_ids || [], insight_ids: input.insight_ids || [],
+        revision_note: input.revision_note || '', workbench: 'chrome-question-transform' }
       const response = await api('generated-tests', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          school: source.school || context.exam_context?.school || '', grade: source.grade || context.exam_context?.grade || '',
-          year: context.exam_context?.year, semester: context.exam_context?.semester || '', exam: source.exam || context.exam_context?.exam || '전체',
-          source_material: `기존 문제 QID ${input.source_question_id}`, source_page: `question:${input.source_question_id}`,
-          questions: [wikiQuestionToLegacy(question)], test_type: 'chrome-transform', title: `Chrome 변형 · QID ${input.source_question_id}`,
+          school: meta.school || source.school || context.exam_context?.school || '', grade: meta.grade || source.grade || context.exam_context?.grade || '',
+          year: context.exam_context?.year, semester: context.exam_context?.semester || '', exam: meta.exam || source.exam || context.exam_context?.exam || '전체',
+          publisher: isTextbook ? (meta.publisher || '') : '', lesson: isTextbook ? (meta.lesson || '') : '',
+          source_material: isTextbook
+            ? ['교과서', meta.publisher, meta.lesson, textbookPage ? `p.${textbookPage}` : '', `문항번호 ${meta.question_number || '-'}`].filter(Boolean).join(' · ')
+            : `기존 문제 QID ${input.source_question_id}`,
+          // generated_tests.source_page 는 실제 원본 PDF 페이지 의미를 유지한다.
+          source_page: isTextbook ? (textbookPage != null ? String(textbookPage) : '') : `question:${input.source_question_id}`,
+          questions: [wikiQuestionToLegacy(question)], test_type: 'chrome-transform',
+          title: `Chrome 변형 · ${isTextbook ? '교과서 ' : ''}QID ${input.source_question_id}`,
           digital_twin: input.digital_twin_id ? `Digital Twin #${input.digital_twin_id}` : '', twin_pattern: JSON.stringify(provenance),
           target_passage: String(input.revision_note || ''), external_id: `chrome_${Date.now()}_${Math.random().toString(16).slice(2)}`, generation_source: 'transform',
         }),
