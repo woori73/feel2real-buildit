@@ -3,14 +3,14 @@ import type { Page } from '../App'
 import { api } from '../lib/api'
 import { fetchQuestions, StoredQuestion } from '../lib/types'
 import { registerChromeQuestionTools } from '../lib/chromeQuestionWebMcp'
-import { WikiQuestionV1, wikiQuestionToLegacy } from '../lib/wikiQuestion'
+import { normalizeChromeQuestion, WikiQuestionV1, wikiQuestionToLegacy } from '../lib/wikiQuestion'
 import QuestionCard from './QuestionCard'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
 type Material = { id:number; title:string; original_name?:string; html_text?:string|null; json_text?:unknown }
 type Insight = { id:number; content:string; source:string; created_at:string }
 type WorkspaceContext = { exam_context:Context; digital_twin:any; school_prints:Material[]; class_insights:Insight[] }
-type PreviewPayload = { question?:WikiQuestionV1; revision_note?:string }
+type PreviewPayload = { question?:unknown; revision_note?:string }
 
 const emptyContext:Context={school:'',grade:'',year:new Date().getFullYear(),semester:'1학기',exam:'전체'}
 const canonicalToStored=(question:WikiQuestionV1,source:StoredQuestion):StoredQuestion=>{const legacy=wikiQuestionToLegacy(question);return{
@@ -44,9 +44,9 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
     class_insights:(workspace?.class_insights||[]).filter(i=>insightIds.includes(i.id)),source_question:current?.canonical||null,source_question_id:current?.id||null,
   }),[context,workspace,materialIds,insightIds,current])
   useEffect(()=>{sessionStorage.setItem('buildit_chrome_workbench_context',JSON.stringify(included))},[included])
-  useEffect(()=>{setPreview(null);setRevisionNote('');setView('original')},[current?.id])
+  useEffect(()=>{setPreview(null);setRevisionNote('');setView('original');sessionStorage.removeItem('buildit_chrome_preview_question')},[current?.id])
   useEffect(()=>{
-    const onPreview=(event:Event)=>{const detail=(event as CustomEvent<PreviewPayload>).detail;if(!current||detail?.question?.schema_version!=='wiki-question-v1')return;setPreview(canonicalToStored(detail.question,current));setRevisionNote(detail.revision_note||'');setView('transformed');setStatus('Chrome AI 변형안을 Preview에 반영했습니다.')}
+    const onPreview=(event:Event)=>{const detail=(event as CustomEvent<PreviewPayload>).detail;if(!current||!detail?.question)return;const canonical=normalizeChromeQuestion(detail.question);setPreview(canonicalToStored(canonical,current));setRevisionNote(detail.revision_note||'');setView('transformed');setStatus('Chrome AI 변형안을 Preview에 반영했습니다.')}
     const onSaved=()=>setStatus('변형본을 기존 강사 문제 DB에 저장했습니다. STEP 3 저장된 문제와 실전 제작에서 사용할 수 있습니다.')
     window.addEventListener('buildit-chrome-question-preview',onPreview);window.addEventListener('buildit-chrome-question-saved',onSaved)
     return()=>{window.removeEventListener('buildit-chrome-question-preview',onPreview);window.removeEventListener('buildit-chrome-question-saved',onSaved)}
