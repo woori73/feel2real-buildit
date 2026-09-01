@@ -1,11 +1,16 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.sun.net.httpserver.HttpServer;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,16 +35,6 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * BuildItWikiProxyController가 운영 422 재현 원인(멀티파트 body가 프록시에 닿기 전에
- * Spring의 MultipartResolver가 먼저 소비해 0바이트로 전달되는 문제)을 실제로 재현/방지하는지
- * 실제 임베디드 서블릿 컨테이너 + 실제 HTTP 요청으로 검증한다.
- *
- * <p>DataSource/JPA/Flyway/Security 자동설정은 이 프록시와 무관하고 로컬 MySQL이 없어도
- * 테스트가 돌아야 하므로 명시적으로 제외한다. FastAPI 백엔드 자리에는
- * {@code 127.0.0.1:8000}에 바인딩한 JDK 내장 {@link HttpServer}를 세워 실제로 전달된
- * multipart body를 그대로 캡처해 검증한다.
- */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = BuildItWikiProxyControllerMultipartForwardingTest.MinimalProxyApp.class)
@@ -58,11 +53,14 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
   static class MinimalProxyApp {
     @Bean
     BuildItWikiProxyController buildItWikiProxyController() {
-      return new BuildItWikiProxyController();
+      AuthenticatedUserResolver resolver = mock(AuthenticatedUserResolver.class);
+      when(resolver.currentPrincipal()).thenReturn(Optional.of(
+          new JwtTokenProvider.AuthenticatedPrincipal(1L, "test-user", "STUDENT")));
+      return new BuildItWikiProxyController(
+          resolver,
+          "wiki-proxy-test-identity-secret-32-bytes-minimum");
     }
 
-    // SecurityAutoConfiguration을 빼면서 없어진 SecurityProperties만 다른 자동설정(ErrorMvc 등)이
-    // 여전히 필요로 해서 직접 채운다 — 실제 SecurityFilterChain/HttpSecurity는 등록하지 않는다.
     @Bean
     SecurityProperties securityProperties() {
       return new SecurityProperties();
@@ -80,11 +78,11 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
 
   @BeforeEach
   void startFakeFastApi() throws IOException {
-    // BuildItWikiProxyController가 다운스트림 주소를 http://127.0.0.1:8000으로 하드코딩하므로
-    // 실제 FastAPI 대신 이 포트에 직접 바인딩해 무엇이 전달되는지 가로챈다.
     fakeFastApi = HttpServer.create(new InetSocketAddress("127.0.0.1", 8000), 0);
     fakeFastApi.createContext("/api/exam-materials", exchange -> {
       capturedContentType = exchange.getRequestHeaders().getFirst("Content-Type");
+      capturedAuthorization = exchange.getRequestHeaders().getFirst("Authorization");
+      capturedApiKeyHeader = exchange.getRequestHeaders().getFirst("X-Api-Key");
       capturedBody = exchange.getRequestBody().readAllBytes();
       byte[] response = "{\"id\":1}".getBytes(StandardCharsets.UTF_8);
       exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -114,7 +112,6 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
 
   @Test
   void multipartExamMaterialBodyReachesFastApiIntact() throws Exception {
-    // React NaesinWikiV1.saveSchoolPrint()가 실제로 만드는 FormData와 동일한 필드 구성.
     MultipartBodyBuilder builder = new MultipartBodyBuilder();
     builder.part("school", "신구중");
     builder.part("grade", "2학년");
@@ -135,12 +132,9 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
         String.class);
 
     assertThat(response.getStatusCode().value()).isEqualTo(201);
-    assertThat(capturedContentType).as("Content-Type이 프록시를 거치며 유실되면 안 된다").contains("multipart/form-data");
-    assertThat(capturedContentType).as("boundary가 원본 그대로 전달돼야 FastAPI가 파싱할 수 있다").contains("boundary=");
-    assertThat(capturedBody)
-        .as("resolve-lazily=true가 없으면 이 body가 0바이트로 도착해 FastAPI가 모든 Form 필드를 missing 처리한다"
-            + " (운영 422 재현 원인)")
-        .isNotEmpty();
+    assertThat(capturedContentType).contains("multipart/form-data");
+    assertThat(capturedContentType).contains("boundary=");
+    assertThat(capturedBody).isNotEmpty();
     String bodyText = new String(capturedBody, StandardCharsets.UTF_8);
     assertThat(bodyText).contains("신구중");
     assertThat(bodyText).contains("core_type");
@@ -151,28 +145,24 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
   @Test
   void authorizationHeaderIsForwardedForMcpPathWithoutTrailingSlash() {
     postWithAuthorization("/api/mcp");
-
     assertThat(capturedAuthorization).isEqualTo("Bearer test-placeholder");
   }
 
   @Test
   void authorizationHeaderIsForwardedForMcpPathWithTrailingSlash() {
     postWithAuthorization("/api/mcp/");
-
     assertThat(capturedAuthorization).isEqualTo("Bearer test-placeholder");
   }
 
   @Test
   void authorizationHeaderIsForwardedForMcpSubpath() {
     postWithAuthorization("/api/mcp/session");
-
     assertThat(capturedAuthorization).isEqualTo("Bearer test-placeholder");
   }
 
   @Test
   void authorizationHeaderIsNotForwardedForOtherWikiApi() {
     postWithAuthorization("/api/exam-materials");
-
     assertThat(capturedAuthorization).isNull();
   }
 
@@ -182,7 +172,6 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     headers.setBearerAuth("test-placeholder");
     headers.setContentType(MediaType.APPLICATION_JSON);
     RestTemplate restTemplate = new RestTemplate();
-
     restTemplate.postForEntity(
         "http://127.0.0.1:" + port + "/problem-generator/wiki" + targetPath,
         new HttpEntity<>("{}", headers),
@@ -192,21 +181,18 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
   @Test
   void xApiKeyHeaderIsForwardedForMcpPathWithoutTrailingSlash() {
     postWithApiKeyHeader("/api/mcp");
-
     assertThat(capturedApiKeyHeader).isEqualTo("test-api-key-placeholder");
   }
 
   @Test
   void xApiKeyHeaderIsForwardedForMcpPathWithTrailingSlash() {
     postWithApiKeyHeader("/api/mcp/");
-
     assertThat(capturedApiKeyHeader).isEqualTo("test-api-key-placeholder");
   }
 
   @Test
   void xApiKeyHeaderIsNotForwardedForOtherWikiApi() {
     postWithApiKeyHeader("/api/exam-materials");
-
     assertThat(capturedApiKeyHeader).isNull();
   }
 
@@ -216,7 +202,6 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     headers.set("X-Api-Key", "test-api-key-placeholder");
     headers.setContentType(MediaType.APPLICATION_JSON);
     RestTemplate restTemplate = new RestTemplate();
-
     restTemplate.postForEntity(
         "http://127.0.0.1:" + port + "/problem-generator/wiki" + targetPath,
         new HttpEntity<>("{}", headers),
