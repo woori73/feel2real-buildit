@@ -153,8 +153,8 @@ test('Phase 4 에서 삭제한 레거시 모션 자산·API 는 여전히 없다
 const CINEMATIC_JS = read('../../main/resources/static/js/academy_cinematic.js');
 
 test('academy_cinematic.js: #sec-digitaltwin 하나만 담당, sec-featured 는 안 건드린다', () => {
-  assert.match(CINEMATIC_JS, /#sec-digitaltwin/);
-  assert.doesNotMatch(CINEMATIC_JS, /#sec-featured|cinematic-featured|wireFeatured|seekFeatured/);
+  assert.match(CINEMATIC_JS, /root\.querySelector\('#sec-digitaltwin'\)/);
+  assert.doesNotMatch(CINEMATIC_JS, /cinematic-featured|function wireFeatured|seekFeatured/);
   // scrub (pin 아님)
   assert.match(CINEMATIC_JS, /scrub:/);
   assert.doesNotMatch(CINEMATIC_JS, /pin:\s*true/);

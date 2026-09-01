@@ -113,7 +113,7 @@
     wireCinematic();
     wireContentCollections();
     wireAiNative();
-    wireProgramCardTwin();
+    wireFeaturedSchoolTwin();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
@@ -179,91 +179,90 @@
   }
 
   /**
-   * school-twin Program Card — sec-lessons 의 「중학교 영어내신」 카드(이름이 학교 목록인 Program
-   * Card, academy_sections.js schoolTokensFrom) 안에서 학교를 고르면 그 학교의 실제 출제자
-   * Digital Twin 을 /api/analyzes(기존 SSoT/service)에서 가져와 카드 안 패널에 표시한다.
+   * 「2학기 영어 내신」 섹션(sec-featured) — 학교 칩 선택 시 그 학교의 실제 출제자 Digital Twin 을
+   * /api/analyzes(기존 SSoT/service)에서 가져와 아래 패널에 표시한다. lesson_products 의 공감성장영어
+   * highlight 를 재사용하지 않고, builderDraft 에 데이터를 복제하지도 않는다. 가짜 summary 없음.
    *
-   * 가짜 summary 없음, /api/analyzes 실데이터만. builderDraft 복제 없음. lesson/product 저장
-   * 구조 미변경(카드 이름을 파싱할 뿐). 재렌더 시 이미 배선한 그룹은 건너뛴다.
+   * 칩 선택은 섹션을 흐리게 하지 않는다 — 패널만 짧은 WAAPI 마이크로 전환으로 교체.
+   * 학교별 실데이터가 없으면 "준비 중" 안내. 재렌더 시 이미 배선한 그룹은 건너뛴다.
    */
-  function wireProgramCardTwin() {
+  function wireFeaturedSchoolTwin() {
     if (!root) return;
-    const groups = Array.prototype.slice.call(root.querySelectorAll('#sec-lessons [data-program-twin-group]'));
-    if (!groups.length) return;
+    const group = root.querySelector('#sec-featured [data-featured-group]');
+    const panel = root.querySelector('#sec-featured [data-featured-twin]');
+    if (!group || !panel || group.dataset.twinWired === 'true') return;
+    const chips = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
+    if (chips.length === 0) return;
+    group.dataset.twinWired = 'true';
+
+    const cta = root.querySelector('#sec-featured [data-featured-cta]');
+    const ctaBase = cta ? (cta.getAttribute('data-featured-cta-base') || cta.textContent || '') : '';
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cache = new Map();
 
-    groups.forEach((group) => {
-      if (group.dataset.twinWired === 'true') return;
-      group.dataset.twinWired = 'true';
-      const chips = Array.prototype.slice.call(group.querySelectorAll('[data-twin-school]'));
-      const panel = group.querySelector('[data-program-twin]');
-      if (!chips.length || !panel) return;
-      const cache = new Map();
-
-      function englishOnly(list) {
-        return (Array.isArray(list) ? list : []).filter((a) => {
+    function loadSchool(school) {
+      if (cache.has(school)) return cache.get(school);
+      const p = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
+        .then((r) => (r.ok ? r.json() : []))
+        .then((list) => (Array.isArray(list) ? list : []).filter((a) => {
           const s = a.subject || {};
           return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
-        });
-      }
+        }))
+        .catch(() => []);
+      cache.set(school, p);
+      return p;
+    }
 
-      function load(school) {
-        if (cache.has(school)) return cache.get(school);
-        const p = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
-          .then((r) => (r.ok ? r.json() : []))
-          .then((list) => englishOnly(list))
-          .catch(() => []);
-        cache.set(school, p);
-        return p;
+    function renderPanel(school, list) {
+      if (!list.length) {
+        panel.innerHTML = '<p class="featured-twin-empty">'
+          + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
+        return;
       }
+      const rows = list.slice(0, 4).map((a) =>
+        '<li class="featured-twin-row"><span class="featured-twin-exam">'
+        + escapeHtml(a.grade) + '학년 ' + escapeHtml(a.semester) + ' ' + escapeHtml(a.examType)
+        + '</span><a class="featured-twin-link" href="' + escapeAttr(a.detailUrl || '#')
+        + '" target="_blank" rel="noopener">분석 보기</a></li>').join('');
+      panel.innerHTML =
+        '<div class="featured-twin-head"><strong class="featured-twin-school" data-featured-school-name>'
+        + escapeHtml(school) + '</strong><span class="featured-twin-count">출제자 Digital Twin '
+        + list.length + '건</span></div>'
+        + '<ul class="featured-twin-list">' + rows + '</ul>'
+        + '<a class="featured-twin-more" href="/analyzes" target="_blank" rel="noopener">전체 출제 분석 보기 →</a>';
+    }
 
-      function renderPanel(school, list) {
-        if (!list.length) {
-          panel.innerHTML = '<p class="f2r-twin-empty">' + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
-          return;
+    function select(chip, focus) {
+      const school = (chip.getAttribute('data-featured-school') || '').trim();
+      chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
+      if (focus) chip.focus();
+      panel.classList.add('is-loading');
+      loadSchool(school).then((list) => {
+        if (chip.getAttribute('aria-pressed') !== 'true') return;   // race guard
+        panel.classList.remove('is-loading');
+        if (!reduce && typeof panel.animate === 'function') {
+          panel.animate(
+            [{ opacity: 0.35, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 200, easing: 'cubic-bezier(0,0,.3,1)' });
         }
-        const rows = list.slice(0, 4).map((a) =>
-          '<li class="f2r-twin-row">' + escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester)
-          + ' · ' + escapeHtml(a.examType) + '</li>').join('');
-        panel.innerHTML =
-          '<p class="f2r-twin-kicker">출제자 Digital Twin</p>'
-          + '<ul class="f2r-twin-list">' + rows + '</ul>'
-          + '<p class="f2r-twin-count">분석 자료 ' + list.length + '건</p>'
-          + '<a class="f2r-twin-cta" href="' + escapeAttr((list[0] && list[0].detailUrl) || '/analyzes')
-          + '" target="_blank" rel="noopener">출제 분석 보기</a>';
-      }
-
-      function select(chip, focus) {
-        const school = (chip.getAttribute('data-twin-school') || '').trim();
-        chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
-        if (focus) chip.focus();
-        panel.classList.add('is-loading');
-        load(school).then((list) => {
-          if (chip.getAttribute('aria-pressed') !== 'true') return;   // race guard
-          panel.classList.remove('is-loading');
-          if (!reduce && typeof panel.animate === 'function') {
-            panel.animate(
-              [{ opacity: 0.3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-              { duration: 200, easing: 'cubic-bezier(0,0,.3,1)' });
-          }
-          renderPanel(school, list);
-        });
-      }
-
-      chips.forEach((chip, i) => {
-        chip.addEventListener('click', () => select(chip, false));
-        chip.addEventListener('keydown', (e) => {
-          let t = -1;
-          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') t = (i + 1) % chips.length;
-          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') t = (i - 1 + chips.length) % chips.length;
-          else if (e.key === 'Home') t = 0;
-          else if (e.key === 'End') t = chips.length - 1;
-          if (t >= 0) { e.preventDefault(); select(chips[t], true); }
-        });
+        renderPanel(school, list);
       });
-      const pressed = chips.filter((c) => c.getAttribute('aria-pressed') === 'true')[0];
-      select(pressed || chips[0], false);
+    }
+
+    chips.forEach((chip, i) => {
+      chip.addEventListener('click', () => select(chip, false));
+      chip.addEventListener('keydown', (e) => {
+        let n = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % chips.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + chips.length) % chips.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = chips.length - 1;
+        if (n >= 0) { e.preventDefault(); select(chips[n], true); }
+      });
     });
+    const pressed = chips.filter((c) => c.getAttribute('aria-pressed') === 'true')[0];
+    select(pressed || chips[0], false);
   }
 
 

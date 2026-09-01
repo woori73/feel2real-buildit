@@ -294,82 +294,10 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   word-break: keep-all;
 }
 
-/* ── school-twin Program Card (Phase 5.1) ───────────────────────────────
-   카드 이름이 학교 목록인 Program Card(「중학교 영어내신」)는 이름 줄 대신 학교 셀렉터 +
-   실제 출제 분석(/api/analyzes) 패널을 카드 안에 렌더한다(academy_sections.js programCardHtml
-   + academy_public.js wireProgramCardTwin). 가짜 summary 없음. 다른 Program Card 는 이 마크업이
-   없어 영향 없음. 빌더 캔버스는 정적(칩만 + 안내). */
-.f2r-program-card-schools { margin: 4px 0 12px; }
-.f2r-twin-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.f2r-twin-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px solid #c9cfda;
-  background: #fff;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: -.01em;
-  cursor: pointer;
-  transition: border-color .15s var(--ease), background .15s var(--ease), color .15s var(--ease);
-}
-.f2r-twin-chip:hover { border-color: var(--ultramarine); }
-.f2r-twin-chip:focus-visible { outline: 2px solid var(--ultramarine); outline-offset: 2px; }
-.f2r-twin-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
-.f2r-program-card-schools--builder .f2r-twin-chip { cursor: default; }
-
-.f2r-program-card-twin {
-  border: 1px solid #c9cfda;
-  border-radius: 12px;
-  background: var(--bg-soft, #f6f7f9);
-  padding: 12px 14px;
-  min-height: 116px;
-}
-.f2r-program-card-twin.is-loading { opacity: .5; }
-.f2r-twin-loading, .f2r-twin-empty {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.6;
-  word-break: keep-all;
-}
-.f2r-twin-empty code { font-size: .9em; background: #fff; padding: 1px 5px; border-radius: 4px; }
-.f2r-twin-kicker {
-  margin: 0 0 8px;
-  color: var(--ultramarine);
-  font-size: 10.5px;
-  font-weight: 900;
-  letter-spacing: .1em;
-}
-.f2r-twin-list { list-style: none; margin: 0; padding: 0; }
-.f2r-twin-row {
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(10, 12, 20, .07);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -.01em;
-  word-break: keep-all;
-}
-.f2r-twin-row:last-child { border-bottom: 0; }
-.f2r-twin-count { margin: 8px 0 0; color: var(--ink-faint); font-size: 11px; font-weight: 800; }
-.f2r-twin-cta {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 7px 14px;
-  border-radius: 9px;
-  background: var(--ultramarine);
-  color: #fff;
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: -.01em;
-  text-decoration: none;
-}
-.f2r-twin-cta:hover { background: var(--accent, #4A7FD4); }
+/* Phase 5.2: Phase 5.1 이 대표수업(sec-lessons) Program Card 안에 잘못 넣었던 학교 셀렉터 /
+   Digital Twin 패널(.f2r-program-card-schools / .f2r-twin-*)은 제거됐다. 학교별 출제자 Digital
+   Twin 은 「2학기 영어 내신」 섹션(sec-featured)의 .featured-twin 패널에서만 보여준다
+   (academy_public.css .featured-twin*, academy_public.js wireFeaturedSchoolTwin). */
 .f2r-program-card-cta {
   margin-top: auto;
   display: inline-flex;
@@ -407,11 +335,9 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   html.js-collection .f2r-collection:not([data-collection-static]) .f2r-program-card:hover .f2r-program-card-highlight {
     border-color: var(--accent);
   }
-  /* Actual Class 카드 — hover 시 외곽 경계 미세 강조 + media micro-scale. */
-  html.js-collection .f2r-collection:not([data-collection-static]) .f2r-phone-card:hover {
-    border-color: var(--accent);
-  }
+  /* Actual Class — hover 시 폰 프레임 테두리 강조 + micro-scale. */
   html.js-collection .f2r-collection:not([data-collection-static]) .f2r-phone-card:hover .f2r-phone-frame {
+    border-color: var(--accent);
     transform: scale(1.02);
   }
 }
@@ -423,6 +349,7 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   html.js-collection .f2r-phone-card:hover { transform: none; }
   html.js-collection .f2r-phone-card:hover .f2r-phone-frame { transform: none; }
 }
+/* Actual Class 재생 계약(V2-8, .f2r-media-viewport 이하)은 위 규칙과 무관 — 미변경. */
 
 /* ── Mini Lecture Card (sec-minilectures) — V2-9 ────────────────────────
    "교육자가 직접 설명하는 짧은 학습 콘텐츠". Actual Class(폰 덱)와 시각적으로 구분된다:
@@ -518,32 +445,27 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
    기존 업로드 세로 숏폼을 보존하되, 일반 video 카드가 아니라 "휴대폰 화면을 넘겨본다"는
    경험으로 프레임에 담는다. 특정 기종 복제는 아니고, 즉시 "폰 화면"으로 인지되게만 한다.
    클릭하면 그 자리에서 재생(academy_collection.js data-collection-play). 새 라이브러리 없음. */
-/* Phase 5 / 5.1: 각 수업을 독립된 콘텐츠 카드로 인지하도록 폰 프레임 전체를 감싸는 흰 카드
-   surface + 명확한 외곽선. var(--line)(#e8eaee)은 흰 배경에서 대비가 약해(사용자가 경계를
-   인식 못 함) 더 진한 값으로 조정한다. Programs 의 .f2r-program-card-highlight(카드 *내부*
-   정보 강조)와 역할이 다르다 — 여기는 카드 *외곽* 경계다. 모바일에서도 항상 보인다.
-   폰 frame 자체 border 와 혼동되지 않도록 padding 으로 확실히 분리한다.
-   media viewport / video 재생 계약(.f2r-phone-frame 이하)은 건드리지 않는다. */
+/* Phase 5.2: 바깥에 흰 "큰 박스"(collection card)를 만들지 않는다 — Phase 5.1 의 .f2r-phone-card
+   흰 박스 border/bg/padding 제거. 사용자가 원하는 건 *휴대폰 화면 자체*(폰 프레임)의 외곽선이다.
+   → .f2r-phone-frame(폰 베젤)에 명확한 테두리, .f2r-phone-screen(영상/썸네일)에 crisp 안쪽 선.
+   media viewport / video 재생 계약(.f2r-media-viewport 이하)은 건드리지 않는다. */
 .f2r-phone-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 14px;
-  border: 1px solid #c9cfda;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, .07);
 }
-.f2r-phone-frame { transition: transform 200ms var(--hover-ease, ease); }
 .f2r-phone-frame {
   position: relative;
   width: 100%;
   max-width: 232px;
   aspect-ratio: 9 / 19;
-  padding: 8px;
-  border-radius: 30px;
-  background: linear-gradient(160deg, #14161c, #0a0b0f);
-  box-shadow: 0 22px 48px rgba(10, 12, 20, .22), inset 0 0 0 1.5px rgba(255, 255, 255, .06);
+  padding: 9px;
+  /* 폰 베젤 외곽선 — 검은 프레임 위에서는 밝은 rim 으로, 흰 배경 대비로는 외곽 halo 로 보인다. */
+  border: 3px solid #5b6070;
+  border-radius: 34px;
+  background: linear-gradient(160deg, #16181f, #0a0b0f);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, .16), 0 14px 32px rgba(10, 12, 20, .3), inset 0 0 0 1.5px rgba(255, 255, 255, .1);
+  transition: transform 200ms var(--hover-ease, ease), border-color 200ms var(--hover-ease, ease);
 }
 .f2r-phone-cam {
   position: absolute;
@@ -564,6 +486,7 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   border-radius: 22px;
   overflow: hidden;
   background: #000;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .55);   /* 영상/썸네일을 정확히 둘러싸는 안쪽 경계선 */
 }
 .f2r-phone-screen img {
   width: 100%;

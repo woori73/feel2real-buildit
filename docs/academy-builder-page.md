@@ -1074,6 +1074,56 @@ Phase 5 가 배포됐지만 실제 Production 사용자 화면 기준으로 미�
   `academy_reveal.test.js`(cinematic 계약 갱신), `AcademyBuilderTemplateContractTest.java`(`-2`).
   JS 334 tests / 328 pass / 6 fail(전부 기존 로컬 CRLF). `bootJar` BUILD SUCCESSFUL.
 
+## 23. 2026-09-01 변경: Storefront Phase 5.2 — Production UI Emergency Fix (Phase 5.1 회귀 3건)
+
+Phase 5.1 이 실제 Production 화면 기준 미완료. Production DOM 을 실측(작업 로그)한 뒤 최소 수정.
+
+### 실측한 3개 DOM
+- **「2학기 영어내신」 = `#sec-featured`** (H2 "2학기 영어 내신 Build It"). Phase 5.1 이 이걸 정적
+  `<span>` 칩 밴드로 만들고 school 기능을 잘못 옮김. — cf. `#sec-lessons`(H2 "…커리큘럼", eyebrow
+  "대표 수업"), `#sec-videos`("에듀홀릭의 실제 수업 현장").
+- **회귀**: `#sec-lessons` lesson-13 카드가 `f2r-program-card--twin` + `[data-program-twin-group]`
+  (학교 chip + Digital Twin 패널 + `/api/analyzes`) — 대표수업 카드에 들어가 있었음.
+- **대표수업 phone frame**: `article.f2r-phone-card`(Phase 5.1 이 흰 박스 border/bg/padding 추가) >
+  `div.f2r-phone-frame`(다크 베젤, `border:0`) > `div.f2r-phone-screen.f2r-media-viewport`.
+- **AI Native**: ScrollTrigger `cinematic-ai-native` 생성됨, `.ai-native-visual` `display:block`
+  sticky, **실제 wheel 스크롤 시 doc transform 실제 변함**(`translate(-190,-120)`→`translate(-64,-35)`).
+  → ScrollTrigger/timeline 정상. 문제 = `.ai-stage` **w:280 `overflow:hidden`** 인데 scatter 거리
+  `-190px` 가 stage 밖 → 이동이 클리핑되어 opacity 페이드처럼만 보임.
+
+### 수정
+1. **AI Native 재작성** — `.ai-stage` 를 `width:100% aspect-ratio:16/11`(≈560×390)로 크게, `.ai-native`
+   grid `1fr minmax(230,290)`(visual 이 넓은 열). scene 요소는 `left/top:50%`+margin 으로 최종 배치,
+   GSAP 은 transform(x/y/rotation/scale)만 — 둘이 안 겹침. `buildSceneTweens` 재작성: scene 창
+   `[i+0.05, i+0.9]` 전체에 걸쳐 **±140~260px 위치 이동**이 주 신호(opacity 페이드 최소). scene 0
+   자료 4개 `x:[-230,235,-215,225] y:[-150,-140,150,145]` 로 네 귀퉁이→중앙 stack. ScrollTrigger
+   `start:'top 46%' end:'bottom 54%' scrub:0.6` — progress 0 이 visual 이 뷰포트 중앙에 온 시점.
+   harness(실제 wheel): 정지 시 doc0↔doc1 gap 466px(흩어짐) → 스크롤 시 gap 77px(조립),
+   scene 0→2→4, 정지 시 progress 고정(drift 없음), 위로 스크롤 → gap 463px 재분해.
+2. **「2학기 영어내신」 원복 + 회귀 제거** — `renderFeatured` 를 Phase 4 형태로: 학교 칩 단일 선택
+   `<button data-featured-school aria-pressed>` + `ctx.featuredTwin` `.featured-twin` 패널 + CTA prefix.
+   `academy_public.js` `wireProgramCardTwin` → **`wireFeaturedSchoolTwin`**(`#sec-featured [data-featured-group]`
+   / `[data-featured-twin]`, `fetch('/api/analyzes?schoolName=...')`, `출제자 Digital Twin N건` +
+   `{grade}학년 {semester} {examType}` + `분석 보기`/`전체 출제 분석 보기 →`). `programCardHtml` 에서
+   `schoolTokensFrom`/`programCardSchools`/`f2r-program-card--twin` **전부 제거** → 카드 이름은 그냥
+   `.f2r-program-card-name` 줄. `academy_collection.css` `.f2r-twin-*`/`.f2r-program-card-schools` 제거,
+   `academy_public.css` `.featured-chip` 상호작용 + `.featured-twin*` 복원. `academy_cinematic.js` 은
+   `#sec-digitaltwin` 하나만 담당(변경 없음, Phase 5.1 에서 이미).
+3. **phone frame 테두리** — `.f2r-phone-card` 흰 박스(border/bg/padding/shadow) **제거**(바깥 큰 박스
+   금지). `.f2r-phone-frame` 에 `border:3px solid #5b6070`(베젤 rim) + `box-shadow: 0 0 0 1px
+   rgba(15,23,42,.16), …`(흰 배경 대비 외곽 halo) + radius 34. `.f2r-phone-screen` `box-shadow:inset
+   0 0 0 1px rgba(0,0,0,.55)`(영상/썸네일 안쪽 경계). 데스크톱/모바일 항상. hover → 프레임 border
+   `var(--accent)` + `scale(1.02)`. `.f2r-media-viewport`/재생 계약 미변경. videos grid 사이징(Phase 5.1)
+   유지(붕괴 방지).
+
+### 파일 / 검증
+- `academy_sections.js`, `academy_cinematic.{js,css}`, `academy_public.{js,css}`, `academy_collection.css`,
+  캐시버스팅 템플릿 3개(`?v=20260901-3`), `AcademyBuilderTemplateContractTest.java`,
+  `academy_featured_selector.test.js`(재작성) / `academy_cinematic.test.js` / `academy_reveal.test.js`.
+- JS 335 tests / 329 pass / 6 fail(전부 기존 로컬 CRLF). `bootJar` BUILD SUCCESSFUL,
+  `AcademyBuilderTemplateContractTest` / `AcademyServiceTest` / `LessonProductEditorTemplateContractTest` 통과.
+- harness(byte-identical, `/api/analyzes` mock, **실제 computer wheel 스크롤**) 데스크톱 1512 + 모바일 375.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락

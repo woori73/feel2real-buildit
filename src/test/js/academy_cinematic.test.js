@@ -120,13 +120,22 @@ test('데스크톱 + GSAP + not-reduced → AI Native ScrollTrigger 1개 + html.
   assert.notEqual(c.stCreated[0].pin, true);
 });
 
-test('#sec-featured 를 건드리지 않는다', () => {
-  assert.doesNotMatch(CINEMATIC_JS, /#sec-featured|cinematic-featured|wireFeatured|seekFeatured/);
-  assert.match(CINEMATIC_JS, /#sec-digitaltwin/);
+test('#sec-digitaltwin 만 담당 — cinematic-featured/wireFeatured/seekFeatured 없음', () => {
+  assert.doesNotMatch(CINEMATIC_JS, /cinematic-featured|function wireFeatured|seekFeatured/);
+  assert.match(CINEMATIC_JS, /root\.querySelector\('#sec-digitaltwin'\)/);
 });
 
 test('immediateRender:false 를 쓰지 않는다 — progress 0 에서 요소는 흩어진 시작 상태', () => {
   assert.doesNotMatch(CINEMATIC_JS, /immediateRender:\s*false/);
+});
+
+test('scene tween 은 opacity 페이드가 아니라 큰 위치 이동이 주 신호다', () => {
+  // scene 0: 자료 4개가 ±200px 이상 이동
+  assert.match(CINEMATIC_JS, /\[-230, 235, -215, 225\]/);
+  assert.match(CINEMATIC_JS, /\[-150, -140, 150, 145\]/);
+  // scene 2: 스트림이 ±260px 이동
+  assert.match(CINEMATIC_JS, /x: -260/);
+  assert.match(CINEMATIC_JS, /x: 260/);
 });
 
 test('reduced-motion → no-op', () => {
