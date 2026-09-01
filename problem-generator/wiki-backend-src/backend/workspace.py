@@ -117,6 +117,8 @@ def resolve_workspace(identity: WikiIdentity, legacy_database_path: str) -> Wiki
         _init_catalog(conn, legacy_database_path)
         login = identity.login_id.casefold()
         if login in LEGACY_LOGIN_IDS:
+            # Stable synthetic member keys avoid assuming production user IDs while preserving
+            # the explicit admin/modu shared-workspace contract.
             conn.execute("""INSERT INTO wiki_workspace_members(user_id, login_id, workspace_id)
                 VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET
                 login_id=excluded.login_id, workspace_id=excluded.workspace_id""",
