@@ -196,6 +196,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const toggle=(key:string)=>setSelected(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
   const openQuestionMaker=(mode:'new'|'transform')=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,mode}));onNavigate('home')}
+  const openChromeWorkbench=()=>{sessionStorage.setItem('buildit_chrome_context',JSON.stringify(context));onNavigate('chrometransform')}
   const selectedWrongMaterialIds=wrongs.filter(m=>selected.has(`m-${m.id}`)).map(m=>m.id)
   const exportSelectedWrong=async()=>{
     if(!selectedWrongMaterialIds.length)return
@@ -248,6 +249,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
         <div className="twin-actions">
           <button className="primary-action" onClick={()=>openQuestionMaker('new')}>문제 만들기</button>
           <button className="primary-action" onClick={()=>openQuestionMaker('transform')}>기존 문제 변형</button>
+          <button className="primary-action chrome-transform-entry" onClick={openChromeWorkbench}>크롬 문제 변형</button>
           <button className="primary-action" onClick={()=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,year:context.year,semester:context.semester}));onNavigate('database')}}>저장된 문제 <strong>{questions.length}</strong></button>
         </div>
         <p className="field-hint">저장된 문제를 선택하면 기존 오피스 2007(.docx) 내보내기로 이어집니다. Digital Twin을 새로 등록하려면 <button type="button" className="link-button" onClick={()=>onNavigate('twin')}>Digital Twin 관리</button>로 이동하세요.</p>
