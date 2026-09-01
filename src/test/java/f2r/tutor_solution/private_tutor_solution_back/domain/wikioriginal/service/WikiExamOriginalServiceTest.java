@@ -163,17 +163,17 @@ class WikiExamOriginalServiceTest {
   }
 
   @Test
-  @DisplayName("given limit 초과 요청 when latestPublic then 12로 상한")
-  void latestPublic_capsLimit() {
+  @DisplayName("given grade 필터 when searchPublic then 그대로 위임")
+  void searchPublic_delegatesGrade() {
     // given
-    when(repository.findLatestPublic(any())).thenReturn(List.of());
+    when(repository.findPublicByGrade(3)).thenReturn(List.of(original("k")));
 
     // when
-    service.latestPublic(100);
+    List<WikiExamOriginalResponse> res = service.searchPublic(3);
 
     // then
-    verify(repository).findLatestPublic(
-        org.mockito.ArgumentMatchers.argThat(pageable -> pageable.getPageSize() == 12));
+    assertThat(res).hasSize(1);
+    verify(repository).findPublicByGrade(3);
   }
 
   private MockMultipartFile pdf(String name) {

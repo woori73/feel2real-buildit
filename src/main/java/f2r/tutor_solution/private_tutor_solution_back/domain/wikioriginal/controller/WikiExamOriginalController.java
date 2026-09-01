@@ -27,12 +27,6 @@ public class WikiExamOriginalController {
     return ResponseEntity.ok(service.searchPublic(grade));
   }
 
-  @GetMapping("/api/wiki/originals/latest")
-  public ResponseEntity<List<WikiExamOriginalResponse>> latestPublic(
-      @RequestParam(defaultValue = "6") int limit) {
-    return ResponseEntity.ok(service.latestPublic(limit));
-  }
-
   @GetMapping("/api/wiki/originals/{id}/download")
   public ResponseEntity<byte[]> download(@PathVariable Long id) {
     DownloadFile file = service.getPublicDownload(id);

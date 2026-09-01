@@ -9,7 +9,6 @@ import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.Upl
 import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,14 +45,6 @@ public class WikiExamOriginalService {
   @Transactional(readOnly = true)
   public List<WikiExamOriginalResponse> searchPublic(Integer grade) {
     return repository.findPublicByGrade(grade).stream().map(WikiExamOriginalResponse::of).toList();
-  }
-
-  @Transactional(readOnly = true)
-  public List<WikiExamOriginalResponse> latestPublic(int limit) {
-    int safeLimit = Math.max(1, Math.min(limit, 12));
-    return repository.findLatestPublic(PageRequest.of(0, safeLimit)).stream()
-        .map(WikiExamOriginalResponse::of)
-        .toList();
   }
 
   @Transactional(readOnly = true)

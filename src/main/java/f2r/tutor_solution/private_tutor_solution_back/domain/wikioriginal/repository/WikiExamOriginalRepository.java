@@ -3,7 +3,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.repos
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginal;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,13 +16,6 @@ public interface WikiExamOriginalRepository extends JpaRepository<WikiExamOrigin
       order by w.createdAt desc, w.wikiExamOriginalId desc
       """)
   List<WikiExamOriginal> findPublicByGrade(@Param("grade") Integer grade);
-
-  @Query("""
-      select w from WikiExamOriginal w
-      where w.deleted = false and w.visible = true
-      order by w.createdAt desc, w.wikiExamOriginalId desc
-      """)
-  List<WikiExamOriginal> findLatestPublic(Pageable pageable);
 
   @Query("""
       select w from WikiExamOriginal w

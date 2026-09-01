@@ -2716,7 +2716,6 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 공개
 - `GET /api/wiki/originals?grade=` — deleted=false·visible=true, grade(1~3, null=전체) 필터, 최신순. → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examLabel, docType, docTypeLabel, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/originals/latest?limit=` — 최신 N개(1~12, 기본 6).
 - `GET /api/wiki/originals/{id}/download` — 공개 자료만. `application/pdf` + `Content-Disposition: attachment; filename*=UTF-8''…`. 미존재/비공개 404.
 
 ### 관리 (ADMIN)
