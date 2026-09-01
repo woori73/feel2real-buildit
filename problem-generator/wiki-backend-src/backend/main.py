@@ -344,7 +344,7 @@ def _legacy_canonical(row: sqlite3.Row, recovered=None) -> tuple[dict, str]:
         try: return json.loads(row[name] or '[]')
         except (TypeError, json.JSONDecodeError): return []
     stem,source=row['stem'] or '',row['source_text'] or ''
-    required=bool(re.search(r'읽고|글의|지문|Reading\s*\d+|본문|밑줄|빈칸|순서|삽입|내용|주제|제목|요지',f"{stem} {row['question_type']}",re.I))
+    required=bool(re.search(r'읽고|글의|지문|Reading\s*\d+|본문|밑줄|순서|삽입|내용|주제|제목|요지',f"{stem} {row['question_type']}",re.I))
     if recovered: source=recovered[1];passage_html=recovered[2];status='recovered'
     else: passage_html=_legacy_markup_html(source);status='needs_review' if source else 'missing' if required else 'not_applicable'
     options=loads('options_json');conditions=loads('conditions_json');answers=loads('answer_json');accepted=loads('accepted_answers_json')
@@ -360,13 +360,45 @@ def _legacy_canonical(row: sqlite3.Row, recovered=None) -> tuple[dict, str]:
     return canonical,status
 
 
-def _backfill_legacy_canonical(conn):
-    rows=conn.execute("SELECT * FROM generated_questions WHERE canonical_json='{}' OR canonical_json='' OR canonical_json IS NULL").fetchall()
-    for row in rows:
-        label_match=re.search(r'(Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)',row['stem'] or '',re.I)
-        recovered=_exact_material_passage(conn,row,label_match.group(1)) if label_match else None
-        canonical,status=_legacy_canonical(row,recovered)
-        conn.execute("UPDATE generated_questions SET canonical_json=?,schema_version='wiki-question-v1',passage_status=? WHERE id=?",(json.dumps(canonical,ensure_ascii=False),status,row['id']))
+def _legacy_canonical_rows(conn):
+    return conn.execute("""SELECT * FROM generated_questions
+        WHERE schema_version='legacy' AND (canonical_json='{}' OR canonical_json='' OR canonical_json IS NULL)""").fetchall()
+
+
+def legacy_canonical_backfill(dry_run: bool = True):
+    """명시적 legacy 분석/적용 함수. dry-run은 DB를 수정하지 않는다."""
+    counts={'total_legacy':0,'complete':0,'recovered':0,'complete_or_recovered':0,
+            'needs_review':0,'missing':0,'not_applicable':0,'reading_candidates':0,'updated':0}
+    with get_db() as conn:
+        rows=_legacy_canonical_rows(conn);counts['total_legacy']=len(rows)
+        prepared=[]
+        for row in rows:
+            label_match=re.search(r'(Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)',row['stem'] or '',re.I)
+            recovered=_exact_material_passage(conn,row,label_match.group(1)) if label_match else None
+            if recovered: counts['reading_candidates']+=1
+            canonical,status=_legacy_canonical(row,recovered);counts[status]+=1
+            if status in ('complete','recovered'): counts['complete_or_recovered']+=1
+            prepared.append((row['id'],canonical,status))
+        if not dry_run:
+            for question_id,canonical,status in prepared:
+                conn.execute("UPDATE generated_questions SET canonical_json=?,schema_version='wiki-question-v1',passage_status=? WHERE id=?",
+                    (json.dumps(canonical,ensure_ascii=False),status,question_id))
+            counts['updated']=len(prepared)
+    return counts
+
+
+def _canonical_self_contained_issues(canonical: dict) -> list[str]:
+    if canonical.get('schema_version')!='wiki-question-v1': return ['schema_version']
+    instruction=canonical.get('instruction') or {};passage=canonical.get('passage') or {}
+    text=str(instruction.get('text') or '').strip();question_type=str(canonical.get('question_type') or '')
+    issues=[]
+    if not text: issues.append('instruction')
+    if canonical.get('kind')=='mc' and len(canonical.get('choices') or [])<2: issues.append('choices')
+    required=bool(re.search(r'읽고|글의|지문|Reading\s*\d+|본문|밑줄|순서|삽입|내용|주제|제목|요지',f'{text} {question_type}',re.I))
+    if required and (passage.get('status') not in ('complete','recovered') or not str(passage.get('text') or '').strip()): issues.append('passage_missing')
+    markup=f"{instruction.get('html') or ''} {passage.get('html') or ''}"
+    if '밑줄' in text and not re.search(r'<u(?:\s|>)|class=["\'][^"\']*\bunderline\b',markup,re.I): issues.append('underline_markup_missing')
+    return issues
 
 
 def migrate_schema():
@@ -411,7 +443,6 @@ def migrate_schema():
             ('passage_status',"TEXT NOT NULL DEFAULT 'unknown'"),('source_question_number',"TEXT NOT NULL DEFAULT ''"),
         ):
             if name not in gq_cols: conn.execute(f'ALTER TABLE generated_questions ADD COLUMN {name} {definition}')
-        _backfill_legacy_canonical(conn)
 
 
 def seed_default_twins():
@@ -1247,6 +1278,9 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
         grading_rule = q.get('gradingRule', '')
         canonical = q.get('canonical') or {}
         if canonical:
+            canonical_issues=_canonical_self_contained_issues(canonical)
+            if canonical_issues:
+                raise HTTPException(status_code=422,detail='Self-contained 문항 검증 실패(저장하지 않음): '+', '.join(canonical_issues))
             passage_status = str((canonical.get('passage') or {}).get('status') or 'unknown')
             schema_version = str(canonical.get('schema_version') or 'wiki-question-v1')
             source_question_number = str((canonical.get('source') or {}).get('source_question_number') or q.get('sourceQuestionNumber') or '')
