@@ -29,7 +29,8 @@ export const needsPassage=(instruction:string,questionType:string)=>/읽고|글�
 export const referenceLabel=(instruction:string)=>instruction.match(/(?:Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)/i)?.[0]||''
 export const isSelfContained=(q:WikiQuestionV1)=>{
   if(!q.instruction.text.trim())return false
-  if(q.kind==='mc'&&(q.choices.length<2||q.choices.some(choice=>!choice.text.trim())))return false
+  if(q.kind==='mc'&&(q.choices.length<2||q.choices.some(choice=>!choice.text.trim())||q.answer.choice_numbers.length<1))return false
+  if(q.kind==='sa'&&!q.answer.sample_answer.trim()&&!q.answer.accepted_answers.length)return false
   if(needsPassage(q.instruction.text,q.question_type)&&!['complete','recovered'].includes(q.passage.status))return false
   const markup=`${q.instruction.html} ${q.passage.html}`
   if(/밑줄/.test(q.instruction.text)&&!/<u(?:\s|>)/i.test(markup)&&!markup.includes('class="underline"'))return false
@@ -58,9 +59,16 @@ export const wikiQuestionToLegacy=(q:WikiQuestionV1)=>({
 const asRecord=(value:unknown):Record<string,any>=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,any>:{}
 const asText=(value:unknown)=>value==null?'':String(value).trim()
 const asList=(value:unknown):unknown[]=>Array.isArray(value)?value:value==null||value===''?[]:[value]
-const richInput=(value:unknown,htmlValue?:unknown):RichText=>{
-  const object=asRecord(value),text=asText(object.text??value),html=asText(object.html??htmlValue)
-  return rich(html,text)
+const underlineMarkup=(text:string,underline:unknown)=>{
+  const target=asText(underline);if(!text||!target)return''
+  const index=text.indexOf(target);if(index<0)return''
+  const esc=(value:string)=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  return `${esc(text.slice(0,index))}<u>${esc(target)}</u>${esc(text.slice(index+target.length))}`
+}
+const richInput=(value:unknown,htmlValue?:unknown,underline?:unknown):RichText=>{
+  const object=asRecord(value),text=asText(object.text??value),explicitHtml=asText(object.html??htmlValue)
+  const legacyHtml=explicitHtml.replace(/\[\[u\]\]([\s\S]*?)\[\[\/u\]\]/gi,'<u>$1</u>')
+  return rich(legacyHtml||underlineMarkup(text,object.underline_text??object.underlined_text??underline),text)
 }
 const SUBJECTIVE=/서답형|서술형|주관식|subjective|short[-_ ]?answer|essay|^sa$/i
 const MULTIPLE=/객관식|multiple[-_ ]?choice|^mc$/i
@@ -79,7 +87,7 @@ const normalizeChoice=(value:unknown,index:number)=>{
   const item=asRecord(value)
   if(!Object.keys(item).length)return{...richInput(value),number:index+1}
   const bodyValue=item.text??item.content??item.value??item.label??item.choice??item.option??''
-  const body=richInput(bodyValue,item.html??item.content_html??item.value_html)
+  const body=richInput(bodyValue,item.html??item.content_html??item.value_html,item.underline_text??item.underlined_text)
   const number=Number(item.number??item.no??item.index??item.id)||index+1
   return{...body,number}
 }
@@ -87,24 +95,26 @@ const normalizeChoice=(value:unknown,index:number)=>{
 /** Chrome AI의 여러 호환 표현을 Preview/저장 공통 wiki-question-v1으로 단 한 번 정규화한다. */
 export const normalizeChromeQuestion=(input:unknown):WikiQuestionV1=>{
   const raw=asRecord(input),kind=normalizeKind(raw),answerObject=asRecord(raw.answer)
-  const instruction=richInput(raw.instruction??raw.stem??raw.question??raw.prompt,raw.instruction_html??raw.stem_html)
-  const passage=richInput(raw.passage??raw.source_text??raw.sourceText,raw.passage_html)
+  const underline=raw.underline_text??raw.underlined_text??raw.underline??raw.underlined
+  const instruction=richInput(raw.instruction??raw.stem??raw.question??raw.prompt,raw.instruction_html??raw.stem_html,underline)
+  const passage=richInput(raw.passage??raw.source_text??raw.sourceText,raw.passage_html,underline)
   const choices=asList(raw.choices??raw.options).map(normalizeChoice)
   const conditions=asList(raw.conditions??raw.condition).map(value=>richInput(value))
+  const answerSources=[answerObject.choice_numbers,answerObject.choice_number,answerObject.number,raw.choice_numbers,raw.choice_number,raw.correct_answer,raw.model_answer,kind==='mc'?raw.answer:undefined]
+  const answerNumbers=kind==='mc'?answerSources.map(choiceNumbers).find(values=>values.length>0)||[]:[]
   const acceptedSource=answerObject.accepted_answers??raw.accepted_answers??raw.acceptedAnswers
   let accepted=asList(acceptedSource).map(asText).filter(Boolean)
   const sampleSource=raw.correct_answer??raw.model_answer??raw.answer_text??raw.sample_answer??raw.sampleAnswer??raw.subjective_answer??answerObject.sample_answer??answerObject.sampleAnswer??(kind==='sa'&&typeof raw.answer!=='object'?raw.answer:'')
-  let sample=asText(Array.isArray(sampleSource)?sampleSource[0]:sampleSource)
+  let sample=kind==='sa'?asText(Array.isArray(sampleSource)?sampleSource[0]:sampleSource):''
   if(kind==='sa'&&Array.isArray(sampleSource)&&!accepted.length)accepted=sampleSource.map(asText).filter(Boolean)
   if(kind==='sa'&&Array.isArray(raw.answer)&&raw.answer.every((v:unknown)=>typeof v==='string'))accepted=accepted.length?accepted:raw.answer.map(asText).filter(Boolean)
   if(kind==='sa'&&!sample&&accepted.length)sample=accepted[0]
-  const numberSource=answerObject.choice_numbers??raw.choice_numbers??raw.correct_answer??(kind==='mc'?raw.answer:[])
   const explanation=richInput(raw.explanation??raw.solution??raw.rationale??raw.grading_rule??raw.gradingRule,raw.explanation_html)
   const scoring=asRecord(raw.scoring),source=asRecord(raw.source)
   const status=asText(asRecord(raw.passage).status) as PassageStatus
   return{schema_version:'wiki-question-v1',kind,question_type:asText(raw.question_type??raw.questionType??raw.item_type)||(kind==='sa'?'서답형':'객관식'),
     instruction,passage:{...passage,status:status||(passage.text?'complete':needsPassage(instruction.text,asText(raw.question_type))?'missing':'not_applicable')},
-    choices,conditions,answer:{choice_numbers:kind==='mc'?choiceNumbers(numberSource):[],accepted_answers:accepted,sample_answer:sample},explanation,
+    choices,conditions,answer:{choice_numbers:answerNumbers,accepted_answers:accepted,sample_answer:sample},explanation,
     scoring:{score:Number(scoring.score??raw.score)||0,multi:Boolean(scoring.multi??raw.multi),answer_format:asText(scoring.answer_format??raw.answer_format??raw.answerFormat),grading_rule:asText(scoring.grading_rule??raw.grading_rule??raw.gradingRule)},source}
 }
 
@@ -122,7 +132,13 @@ export const normalizeChromeQuestionResult=(input:string|unknown):WikiQuestionV1
   if(wrapped&&(!data||typeof data!=='object'))throw new Error('UPDATE_VARIANT_QUESTION wrapper의 data에 문항 JSON이 필요합니다.')
   const dataRecord=asRecord(data)
   const canonical=normalizeChromeQuestion(dataRecord.question??data)
-  if(!isSelfContained(canonical))throw new Error(canonical.kind==='mc'&&canonical.choices.some(choice=>!choice.text.trim())?'객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 text/content/value 중 하나를 넣어 주세요.':'변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
+  if(!isSelfContained(canonical)){
+    if(canonical.kind==='mc'&&canonical.choices.some(choice=>!choice.text.trim()))throw new Error('객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 text/content/value 중 하나를 넣어 주세요.')
+    if(canonical.kind==='mc'&&!canonical.answer.choice_numbers.length)throw new Error('객관식 정답을 읽지 못했습니다. answer/model_answer/correct_answer에 번호(예: 3, "3", "③")를 넣어 주세요.')
+    if(canonical.kind==='sa'&&!canonical.answer.sample_answer&&!canonical.answer.accepted_answers.length)throw new Error('서답형 정답을 읽지 못했습니다. answer/model_answer/correct_answer에 답안을 넣어 주세요.')
+    if(/밑줄/.test(canonical.instruction.text))throw new Error('밑줄 위치를 읽지 못했습니다. <u>...</u>, [[u]]...[[/u]], underline_text/underlined_text 중 하나로 밑줄 대상을 표시해 주세요.')
+    throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
+  }
   return canonical
 }
 
