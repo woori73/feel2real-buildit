@@ -29,7 +29,7 @@ export const needsPassage=(instruction:string,questionType:string)=>/읽고|글�
 export const referenceLabel=(instruction:string)=>instruction.match(/(?:Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)/i)?.[0]||''
 export const isSelfContained=(q:WikiQuestionV1)=>{
   if(!q.instruction.text.trim())return false
-  if(q.kind==='mc'&&q.choices.length<2)return false
+  if(q.kind==='mc'&&(q.choices.length<2||q.choices.some(choice=>!choice.text.trim())))return false
   if(needsPassage(q.instruction.text,q.question_type)&&!['complete','recovered'].includes(q.passage.status))return false
   const markup=`${q.instruction.html} ${q.passage.html}`
   if(/밑줄/.test(q.instruction.text)&&!/<u(?:\s|>)/i.test(markup)&&!markup.includes('class="underline"'))return false
@@ -75,13 +75,21 @@ const choiceNumbers=(value:unknown)=>{
   const out=new Set<number>(),scan=(item:unknown)=>{if(typeof item==='number'&&item>0)out.add(item);else for(const match of asText(item).matchAll(/[①-⑩]|\b\d+\b/g)){const circled='①②③④⑤⑥⑦⑧⑨⑩'.indexOf(match[0]);const n=circled>=0?circled+1:Number(match[0]);if(n>0)out.add(n)}}
   asList(value).forEach(scan);return[...out]
 }
+const normalizeChoice=(value:unknown,index:number)=>{
+  const item=asRecord(value)
+  if(!Object.keys(item).length)return{...richInput(value),number:index+1}
+  const bodyValue=item.text??item.content??item.value??item.label??item.choice??item.option??''
+  const body=richInput(bodyValue,item.html??item.content_html??item.value_html)
+  const number=Number(item.number??item.no??item.index??item.id)||index+1
+  return{...body,number}
+}
 
 /** Chrome AI의 여러 호환 표현을 Preview/저장 공통 wiki-question-v1으로 단 한 번 정규화한다. */
 export const normalizeChromeQuestion=(input:unknown):WikiQuestionV1=>{
   const raw=asRecord(input),kind=normalizeKind(raw),answerObject=asRecord(raw.answer)
   const instruction=richInput(raw.instruction??raw.stem??raw.question??raw.prompt,raw.instruction_html??raw.stem_html)
   const passage=richInput(raw.passage??raw.source_text??raw.sourceText,raw.passage_html)
-  const choices=asList(raw.choices??raw.options).map((value,index)=>{const item=asRecord(value),body=richInput(Object.keys(item).length?item:value,item.html);return{...body,number:Number(item.number)||index+1}})
+  const choices=asList(raw.choices??raw.options).map(normalizeChoice)
   const conditions=asList(raw.conditions??raw.condition).map(value=>richInput(value))
   const acceptedSource=answerObject.accepted_answers??raw.accepted_answers??raw.acceptedAnswers
   let accepted=asList(acceptedSource).map(asText).filter(Boolean)
@@ -100,7 +108,6 @@ export const normalizeChromeQuestion=(input:unknown):WikiQuestionV1=>{
     scoring:{score:Number(scoring.score??raw.score)||0,multi:Boolean(scoring.multi??raw.multi),answer_format:asText(scoring.answer_format??raw.answer_format??raw.answerFormat),grading_rule:asText(scoring.grading_rule??raw.grading_rule??raw.gradingRule)},source}
 }
 
-
 /** Chrome AI가 출력한 직접 문항 JSON 또는 UPDATE_VARIANT_QUESTION wrapper를 Preview/저장 공통 canonical로 변환한다. */
 export const normalizeChromeQuestionResult=(input:string|unknown):WikiQuestionV1=>{
   let parsed:unknown=input
@@ -115,7 +122,7 @@ export const normalizeChromeQuestionResult=(input:string|unknown):WikiQuestionV1
   if(wrapped&&(!data||typeof data!=='object'))throw new Error('UPDATE_VARIANT_QUESTION wrapper의 data에 문항 JSON이 필요합니다.')
   const dataRecord=asRecord(data)
   const canonical=normalizeChromeQuestion(dataRecord.question??data)
-  if(!isSelfContained(canonical))throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
+  if(!isSelfContained(canonical))throw new Error(canonical.kind==='mc'&&canonical.choices.some(choice=>!choice.text.trim())?'객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 text/content/value 중 하나를 넣어 주세요.':'변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
   return canonical
 }
 
@@ -136,4 +143,3 @@ export const resolveReferencedPassage=(label:string,materials:Material[]):{mater
   }
   return found.length===1?found[0]:null
 }
-
