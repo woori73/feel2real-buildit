@@ -93,10 +93,12 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
             const resolved=resolveReferencedPassage(referenceLabel(q.canonical.instruction.text),workspace.school_prints||[])
             if(resolved){q.canonical.passage={...resolved.value,status:'recovered'};q.canonical.source.source_material_id=resolved.materialId;q.sourceText=resolved.value.text}
           }
-          if(!isSelfContained(q.canonical))q._warnings=[...(q._warnings||[]),'passage_missing · REVIEW 저장']
+          if(!isSelfContained(q.canonical))q._warnings=[...(q._warnings||[]),'Self-contained 검사 실패 · 저장 불가']
         }
         return q
       })
+      const invalid=prepared.filter(q=>q.canonical&&!isSelfContained(q.canonical))
+      if(invalid.length)throw new Error(`지문 또는 필수 markup이 없는 문항 ${invalid.length}개는 저장할 수 없습니다. 원문을 확인해 주세요.`)
       const res = await saveManualQuestions({
         school: ctx.school, grade: ctx.grade, year: ctx.year, semester: ctx.semester, exam: ctx.exam,
         exam_title: meta.title?.trim() || '', source_material: meta.sourceMaterial?.trim() || '',
