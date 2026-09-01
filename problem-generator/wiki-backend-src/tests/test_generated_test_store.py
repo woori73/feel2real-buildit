@@ -313,5 +313,27 @@ class LegacyBackfillTest(unittest.TestCase):
             self.assertEqual(1, conn.execute("SELECT COUNT(*) n FROM source_materials").fetchone()['n'])
 
 
+class SelfContainedQuestionStoreTest(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir=tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH=str(Path(self.temp_dir.name)/'self-contained.db');main.init_db();main.migrate_schema()
+    def tearDown(self): self.temp_dir.cleanup()
+
+    def test_canonical_round_trip_by_qid_keeps_full_markup(self):
+        passage='The problem is more complicated than it appears.'
+        canonical={'schema_version':'wiki-question-v1','kind':'mc','question_type':'밑줄 의미',
+          'instruction':{'text':'밑줄 친 부분의 의미는?','html':'밑줄 친 부분의 의미는?'},
+          'passage':{'text':passage,'html':'The problem is <u>more complicated than it appears</u>.','status':'complete'},
+          'choices':[{'number':i,'text':f'choice {i}','html':f'<strong>choice {i}</strong>'} for i in range(1,6)],
+          'conditions':[{'text':'한 개를 고르시오','html':'<div class="box">한 개를 고르시오</div>'}],
+          'answer':{'choice_numbers':[1],'accepted_answers':[],'sample_answer':''},'explanation':{'text':'해설','html':'<p>해설</p>'},
+          'scoring':{'score':4,'multi':False,'answer_format':'','grading_rule':'해설'},'source':{'source_question_number':'18'}}
+        legacy=_mc('answer',canonical=canonical,sourceQuestionNumber='18')
+        with main.get_db() as conn: saved=main._save_generated(conn,None,'manual',[legacy],'시험','self-contained')
+        q=main.get_question(saved[0]['id'])
+        self.assertEqual('wiki-question-v1',q['schema_version']);self.assertEqual(passage,q['canonical']['passage']['text'])
+        self.assertIn('<u>more complicated',q['canonical']['passage']['html']);self.assertEqual(5,len(q['canonical']['choices']))
+
+
 if __name__ == '__main__':
     unittest.main()
