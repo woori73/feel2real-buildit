@@ -86,7 +86,23 @@
   var resizeBound = false;
   var resizeTimer = null;
   var mobileIO = null;   // 모바일 자동재생 트리거 IntersectionObserver
+  var mobileWatch = null;   // 모바일 자동재생 폴백 scroll/resize 리스너
   var mobilePlayed = false;   // 한 번 재생하면 CSR 재렌더에도 다시 재생하지 않는다
+
+  // 모바일 자동재생 트리거(IO + scroll/resize 리스너)를 전부 뗀다 — 재생 성공 후, 그리고 teardown 시.
+  function detachMobileTriggers() {
+    if (mobileIO && typeof mobileIO.disconnect === 'function') {
+      try { mobileIO.disconnect(); } catch (e) { /* noop */ }
+    }
+    mobileIO = null;
+    if (mobileWatch) {
+      try {
+        global.removeEventListener('scroll', mobileWatch);
+        global.removeEventListener('resize', mobileWatch);
+      } catch (e2) { /* noop */ }
+    }
+    mobileWatch = null;
+  }
 
   function teardown() {
     for (var i = 0; i < built.length; i += 1) {
@@ -98,10 +114,7 @@
     built = [];
     timelines = [];
     byId = {};
-    if (mobileIO && typeof mobileIO.disconnect === 'function') {
-      try { mobileIO.disconnect(); } catch (e3) { /* noop */ }
-    }
-    mobileIO = null;
+    detachMobileTriggers();
     if (doc.documentElement.classList.contains('js-cinematic')) {
       doc.documentElement.classList.remove('js-cinematic');
     }
@@ -302,39 +315,68 @@
     // playhead 를 명시적으로 0 에 두어 모든 .fromTo() 의 "from"(흩어진 시작) 상태를 렌더한다.
     tl.pause(0);
 
-    // 이미 재생했으면(= CSR 재렌더) 다시 재생하지 않고 완성 상태로.
-    if (mobilePlayed || typeof global.IntersectionObserver !== 'function') {
+    // 이미 한 번 재생했으면(= CSR 재렌더 / 리사이즈) 다시 재생하지 않고 완성(FINAL) 상태로 둔다.
+    if (mobilePlayed) {
       tl.progress(1);
       return;
     }
+
+    // 섹션이 지금 화면(또는 그 가장자리)에 걸쳐 있는가 — 스크롤 위치와 무관하게 동기 판정.
+    // 섹션이 뷰포트보다 크므로(자료+Brain+문제+FINAL) 가장자리만 걸쳐도 재생 대상으로 본다.
+    function sectionInView() {
+      if (typeof section.getBoundingClientRect !== 'function') return true;
+      var r = section.getBoundingClientRect();
+      if (!r || (!r.height && !r.width)) return false;
+      var vh = global.innerHeight || (doc.documentElement && doc.documentElement.clientHeight) || 800;
+      return r.top < vh * 0.9 && r.bottom > vh * 0.1;
+    }
+
     function playOnce() {
       if (mobilePlayed) return;
-      if (mobileIO && typeof mobileIO.disconnect === 'function') { try { mobileIO.disconnect(); } catch (e) { /* noop */ } }
-      mobileIO = null;
       mobilePlayed = true;
+      detachMobileTriggers();
       tl.play(0);
       emitScene(root, 'sec-digitaltwin', 0, 5);
     }
-    mobileIO = new global.IntersectionObserver(function (entries) {
-      for (var i = 0; i < entries.length; i += 1) {
-        if (entries[i].isIntersecting) { playOnce(); return; }
-      }
-    }, { threshold: 0.3 });
-    mobileIO.observe(section);
-    // 페일세이프(스크롤 리스너 아님, 고정 시각 1회): IO 콜백이 안 오는 환경에서도, 섹션이
-    // 이미 화면에 들어와 있으면 재생한다. 아직 안 보이면 그대로 두고 IO 를 기다린다.
-    global.setTimeout(function () {
-      if (mobilePlayed || typeof section.getBoundingClientRect !== 'function') return;
-      var r = section.getBoundingClientRect();
-      var vh = global.innerHeight || (doc.documentElement && doc.documentElement.clientHeight) || 800;
-      if (r.top < vh * 0.85 && r.bottom > vh * 0.15) playOnce();
-    }, 3500);
+
+    // 트리거를 3중으로 건다 — 하나라도 놓치면 사용자에겐 "정지된 다이어그램"으로 보이므로.
+    //  (1) IntersectionObserver(threshold 0): 아래에서 스크롤로 섹션에 진입할 때.
+    //  (2) 지속 scroll/resize 리스너: IO 콜백이 유실되는 상황(빠른 스크롤, 백그라운드 복귀,
+    //      주소창 리사이즈 직후, 이미 섹션까지 스크롤한 채 늦게 CSR 렌더)에서도 재생. 재생 시 스스로 제거.
+    //  (3) 다음 프레임 즉시 판정: 페이지가 이미 섹션 위치에서 열린 경우 스크롤 이벤트를 기다리지 않는다.
+    if (typeof global.IntersectionObserver === 'function') {
+      mobileIO = new global.IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i += 1) {
+          if (entries[i].isIntersecting) { playOnce(); return; }
+        }
+      }, { threshold: 0 });
+      mobileIO.observe(section);
+    }
+
+    mobileWatch = function () {
+      if (mobilePlayed) { detachMobileTriggers(); return; }
+      if (sectionInView()) playOnce();
+    };
+    global.addEventListener('scroll', mobileWatch, { passive: true });
+    global.addEventListener('resize', mobileWatch);
+
+    var raf = typeof global.requestAnimationFrame === 'function'
+      ? global.requestAnimationFrame
+      : function (fn) { return global.setTimeout(fn, 32); };
+    raf(function () { if (!mobilePlayed && sectionInView()) playOnce(); });
   }
 
+  var lastResizeW = 0;
   function bindResize() {
     if (resizeBound) return;
     resizeBound = true;
+    lastResizeW = viewportWidth();
     global.addEventListener('resize', function () {
+      // 폭이 바뀔 때만 재구성한다(데스크톱↔모바일 경계·회전). 모바일에서 스크롤 중
+      // 주소창이 접히며 나는 높이 전용 resize 로는 재생 중인 timeline 을 teardown 하지 않는다.
+      var w = viewportWidth();
+      if (w === lastResizeW) return;
+      lastResizeW = w;
       if (resizeTimer) global.clearTimeout(resizeTimer);
       resizeTimer = global.setTimeout(function () {
         if (lastRoot) wire(lastRoot);

@@ -16,6 +16,10 @@ const vm = require('node:vm');
 const CINEMATIC_JS = fs.readFileSync(
   path.resolve(__dirname, '../../main/resources/static/js/academy_cinematic.js'), 'utf8');
 
+// 공유 가변 rect — wireAiNativeMobile 의 sectionInView() 판정을 테스트에서 제어한다.
+// { top, bottom } 만 본다(innerHeight 800 기준: top<720 && bottom>80 이면 "화면 안").
+let fakeElRect = { top: 0, bottom: 500, left: 0, right: 300, width: 300, height: 500 };
+
 function fakeEl() {
   const cls = new Set();
   const attrs = {};
@@ -34,7 +38,9 @@ function fakeEl() {
     querySelector() { return fakeEl(); },
     querySelectorAll() { return [fakeEl(), fakeEl(), fakeEl(), fakeEl(), fakeEl()]; },
     addEventListener() {},
+    removeEventListener() {},
     dispatchEvent() { return true; },
+    getBoundingClientRect() { return fakeElRect; },
     get clientWidth() { return 1200; },
     textContent: ''
   };
@@ -43,6 +49,13 @@ function fakeEl() {
 
 function loadCinematic(opts) {
   const o = opts || {};
+  // 섹션 위치를 테스트가 정한다: 기본 = 화면 안, sectionBelowFold = 화면 아래로 벗어남.
+  fakeElRect = o.sectionBelowFold
+    ? { top: 2000, bottom: 2600, left: 0, right: 300, width: 300, height: 600 }
+    : { top: 0, bottom: 500, left: 0, right: 300, width: 300, height: 500 };
+  const setSectionInView = () => {
+    fakeElRect = { top: 40, bottom: 700, left: 0, right: 300, width: 300, height: 660 };
+  };
   const htmlClasses = new Set();
   const stCreated = [];
   const killed = [];
@@ -50,10 +63,16 @@ function loadCinematic(opts) {
 
   const fakeTimeline = () => {
     const tl = {
+      _paused: false, _progress: 0, _playedCount: 0,
       from() { return tl; }, fromTo() { return tl; }, to() { return tl; },
-      set() { return tl; }, totalDuration() { return tl; }, progress() { return tl; },
+      set() { return tl; }, totalDuration() { return tl; },
+      progress(p) { if (p !== undefined) tl._progress = p; return tl; },
+      pause(p) { tl._paused = true; if (p !== undefined) tl._progress = p; return tl; },
+      play(p) { tl._paused = false; tl._playedCount += 1; if (p !== undefined) tl._progress = p; return tl; },
+      paused() { return tl._paused; },
       kill() { killed.push('timeline'); }
     };
+    fakeTimeline._last = tl;
     return tl;
   };
 
@@ -81,16 +100,27 @@ function loadCinematic(opts) {
     }
   };
 
+  const ioList = [];
+  function FakeIO(cb) { this.cb = cb; this.el = null; this.disconnected = false; ioList.push(this); }
+  FakeIO.prototype.observe = function (el) { this.el = el; };
+  FakeIO.prototype.disconnect = function () { this.disconnected = true; };
+  FakeIO.prototype.fire = function (isIntersecting) {
+    this.cb([{ isIntersecting: isIntersecting, target: this.el }]);
+  };
+
   const win = {
     document: documentEl,
     gsap, ScrollTrigger,
     innerWidth: o.width == null ? 1280 : o.width,
+    innerHeight: 800,
     matchMedia: () => ({ matches: !!o.reduced }),
     addEventListener: (t, fn) => { listeners[t] = fn; },
+    removeEventListener: (t) => { if (listeners[t]) delete listeners[t]; },
     setTimeout: (fn) => { fn(); return 1; },
     clearTimeout() {},
     requestAnimationFrame: (fn) => { fn(); },
     scrollTo() {},
+    IntersectionObserver: o.noIO ? undefined : FakeIO,
     CustomEvent: function (type, init) { this.type = type; this.detail = (init || {}).detail; }
   };
 
@@ -98,7 +128,7 @@ function loadCinematic(opts) {
   vm.createContext(sandbox);
   vm.runInContext(CINEMATIC_JS, sandbox);
 
-  return { api: win.F2RCinematic, root: fakeEl(), htmlClasses, stCreated, killed, listeners, gsap, fakeTimeline };
+  return { api: win.F2RCinematic, root: fakeEl(), htmlClasses, stCreated, killed, listeners, gsap, fakeTimeline, ioList, setSectionInView };
 }
 
 test('export 계약: wire / refresh / active — seek* 는 노출하지 않는다(showcase 제거됨)', () => {
@@ -168,6 +198,50 @@ test('모바일 + reduced-motion → no-op(정적 완성 Pipeline)', () => {
   c.api.wire(c.root);
   assert.equal(c.stCreated.length, 0);
   assert.ok(!c.htmlClasses.has('js-cinematic'));
+});
+
+test('모바일: 섹션이 화면에 있으면 진입 즉시 1회 자동재생하고 트리거를 정리한다', () => {
+  const c = loadCinematic({ width: 375 });
+  c.api.wire(c.root);
+  const tl = c.fakeTimeline._last;
+  assert.ok(tl, '모바일 세로형 timeline 이 만들어진다');
+  assert.equal(tl._playedCount, 1, '섹션이 이미 보이면(스크롤 이벤트 대기 없이) 자동재생 1회');
+  assert.ok(c.ioList.length >= 1 && c.ioList.every((io) => io.disconnected),
+    '재생 후 IntersectionObserver 는 정리된다');
+});
+
+test('모바일: 재생은 정확히 1회 — 중복 IO 콜백·스크롤에도 반복 재생 없음(무한 반복 금지)', () => {
+  const c = loadCinematic({ width: 375 });
+  c.api.wire(c.root);
+  const tl = c.fakeTimeline._last;
+  c.ioList.forEach((io) => io.fire(true));
+  c.ioList.forEach((io) => io.fire(true));
+  assert.equal(tl._playedCount, 1, '한 번 재생한 뒤에는 다시 재생하지 않는다');
+});
+
+test('모바일: IntersectionObserver 미지원이어도 화면에 있으면 rAF 폴백으로 재생(정지 방지)', () => {
+  const c = loadCinematic({ width: 375, noIO: true });
+  c.api.wire(c.root);
+  const tl = c.fakeTimeline._last;
+  assert.ok(tl);
+  assert.equal(tl._playedCount, 1, 'IO 없이도 자동재생된다');
+});
+
+test('모바일: 스크롤/리사이즈 리스너를 폴백 트리거로 등록한다(IO 콜백 유실 대비)', () => {
+  const c = loadCinematic({ width: 375, sectionBelowFold: true });
+  c.api.wire(c.root);
+  const tl = c.fakeTimeline._last;
+  assert.equal(tl._playedCount, 0, '섹션이 화면 밖이면 wire 시점에 재생하지 않는다');
+  assert.equal(typeof c.listeners.scroll, 'function', 'scroll 폴백 리스너 등록');
+  // 사용자가 섹션까지 스크롤 → 화면 안 → 폴백 리스너가 재생.
+  c.setSectionInView();
+  c.listeners.scroll();
+  assert.equal(tl._playedCount, 1, '스크롤 진입 시 재생(트리거 누락 없음)');
+});
+
+test('모바일: 재생은 play(0) 한 번 — 자동 진행 타이머(setInterval)·timeline repeat 없음', () => {
+  assert.doesNotMatch(CINEMATIC_JS, /setInterval/);
+  assert.doesNotMatch(CINEMATIC_JS, /timeline\(\{[^}]*repeat/);
 });
 
 test('GSAP 미로드 → F2RCinematic 는 있지만 wire() 는 no-op', () => {
