@@ -3267,6 +3267,51 @@ def list_csat_questions(exam_kind: Optional[Literal['half', 'full']] = None, que
 AssessmentType = Literal['half', 'full', 'wrong', 'daily']
 
 
+def _csat_delete_protection(conn: sqlite3.Connection, question_ids: list[int]) -> list[str]:
+    if not question_ids:
+        return []
+    placeholders = ','.join('?' * len(question_ids))
+    reasons = []
+    if conn.execute(f'SELECT 1 FROM csat_assessment_items WHERE question_id IN ({placeholders}) LIMIT 1', question_ids).fetchone():
+        reasons.append('Assessment 사용 이력')
+    elif conn.execute(f'SELECT 1 FROM csat_question_usage WHERE question_id IN ({placeholders}) LIMIT 1', question_ids).fetchone():
+        reasons.append('Assessment 사용 이력')
+    if conn.execute(f'SELECT 1 FROM csat_wrong_answers WHERE question_id IN ({placeholders}) LIMIT 1', question_ids).fetchone():
+        reasons.append('학생 오답 연결')
+    return reasons
+
+
+def _raise_csat_delete_conflict(reasons: list[str]):
+    if reasons:
+        raise HTTPException(status_code=409, detail=f"사용 중인 문항은 삭제할 수 없습니다. ({', '.join(reasons)})")
+
+
+@app.delete('/api/csat/questions/{question_id}')
+def delete_csat_question(question_id: int):
+    with get_db() as conn:
+        question = conn.execute('SELECT id, source_id FROM csat_questions WHERE id=?', (question_id,)).fetchone()
+        if not question:
+            raise HTTPException(status_code=404, detail='수능 문항을 찾을 수 없습니다.')
+        _raise_csat_delete_conflict(_csat_delete_protection(conn, [question_id]))
+        conn.execute('DELETE FROM csat_questions WHERE id=?', (question_id,))
+    return {'deleted_question_id': question_id, 'source_id': question['source_id']}
+
+
+@app.delete('/api/csat/question-sources/{source_id}')
+def delete_csat_question_source(source_id: int):
+    with get_db() as conn:
+        source = conn.execute('SELECT id FROM csat_question_sources WHERE id=?', (source_id,)).fetchone()
+        if not source:
+            raise HTTPException(status_code=404, detail='수능 회차 원본을 찾을 수 없습니다.')
+        question_ids = [row['id'] for row in conn.execute(
+            'SELECT id FROM csat_questions WHERE source_id=? ORDER BY id', (source_id,)
+        ).fetchall()]
+        _raise_csat_delete_conflict(_csat_delete_protection(conn, question_ids))
+        conn.execute('DELETE FROM csat_questions WHERE source_id=?', (source_id,))
+        conn.execute('DELETE FROM csat_question_sources WHERE id=?', (source_id,))
+    return {'deleted_source_id': source_id, 'deleted_question_ids': question_ids, 'deleted_count': len(question_ids)}
+
+
 class CsatAssessmentCreate(BaseModel):
     assessment_type: AssessmentType
     title: str = ''

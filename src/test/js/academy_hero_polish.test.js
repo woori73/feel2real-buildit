@@ -39,7 +39,7 @@ test('given 히어로 좌측 when 요소 순서를 확인 then 시안 순서(eye
     const html = primeRenderer(hooks, academy).renderHero(academy);
     const order = markerOrder(html, [
       'class="eyebrow"',
-      '<h1>',
+      '<h1 ',
       'class="hero-quote',
       'class="hero-actions"',
       'class="hero-stats"'

@@ -49,6 +49,33 @@ class CsatLibraryTest(unittest.TestCase):
                 ids.append(cursor.lastrowid)
         return ids
 
+    def seed_delete_source(self, suffix, question_numbers=(21, 23)):
+        now = f'delete-{suffix}'
+        with main.get_db() as conn:
+            source = conn.execute("""INSERT INTO csat_question_sources
+                (exam_kind,source_filename,exam_metadata_json,parser,raw_text,created_at)
+                VALUES('half',?,'{}','test','',?)""", (f'delete-{suffix}.json', now))
+            source_id = source.lastrowid
+            question_ids = []
+            for question_no in question_numbers:
+                csat_type = main.csat_type_for_number(question_no)
+                cursor = conn.execute('''INSERT INTO csat_questions
+                    (source_id,exam_kind,question_no,csat_type_id,csat_type_name,prompt,choices_json,answer,created_at)
+                    VALUES(?,?,?,?,?,?,?,?,?)''', (source_id, 'half', question_no, csat_type['id'], csat_type['name'],
+                    '삭제 테스트 문항', '["A","B","C","D","E"]', '1', now))
+                question_ids.append(cursor.lastrowid)
+        return source_id, question_ids
+
+    def protect_with_assessment(self, question_id, suffix):
+        now = f'delete-{suffix}'
+        with main.get_db() as conn:
+            assessment = conn.execute('''INSERT INTO csat_assessments
+                (assessment_type,title,template_id,request_json,created_at,updated_at)
+                VALUES('half',?,'test','{}',?,?)''', (suffix, now, now))
+            conn.execute('''INSERT INTO csat_assessment_items
+                (assessment_id,question_id,position,created_at) VALUES(?,?,1,?)''',
+                (assessment.lastrowid, question_id, now))
+
     def test_number_to_standard_type(self):
         expected = {18:'purpose', 21:'implication', 24:'title', 29:'grammar', 30:'vocabulary', 31:'blank', 34:'blank', 36:'order', 39:'insertion', 40:'summary', 42:'long_complex', 45:'long_sequence_reference_content'}
         for number, type_id in expected.items():
@@ -98,6 +125,64 @@ class CsatLibraryTest(unittest.TestCase):
         })
         self.assertEqual(200, response.status_code)
         self.assertEqual([question_id], [item['id'] for item in response.json()])
+
+    def test_delete_unused_question_keeps_other_question(self):
+        _, question_ids = self.seed_delete_source('individual')
+        response = TestClient(main.app).delete(f'/api/csat/questions/{question_ids[0]}')
+        self.assertEqual(200, response.status_code)
+        with main.get_db() as conn:
+            self.assertIsNone(conn.execute('SELECT id FROM csat_questions WHERE id=?', (question_ids[0],)).fetchone())
+            self.assertIsNotNone(conn.execute('SELECT id FROM csat_questions WHERE id=?', (question_ids[1],)).fetchone())
+
+    def test_delete_nonexistent_question_returns_404(self):
+        response = TestClient(main.app).delete('/api/csat/questions/987654321')
+        self.assertEqual(404, response.status_code)
+
+    def test_delete_assessment_question_returns_409_and_keeps_question(self):
+        _, question_ids = self.seed_delete_source('assessment-protected', (21,))
+        self.protect_with_assessment(question_ids[0], 'assessment-protected')
+        response = TestClient(main.app).delete(f'/api/csat/questions/{question_ids[0]}')
+        self.assertEqual(409, response.status_code)
+        self.assertIn('Assessment 사용 이력', response.json()['detail'])
+        with main.get_db() as conn:
+            self.assertIsNotNone(conn.execute('SELECT id FROM csat_questions WHERE id=?', (question_ids[0],)).fetchone())
+
+    def test_delete_wrong_answer_question_returns_409_and_keeps_question(self):
+        _, question_ids = self.seed_delete_source('wrong-protected', (21,))
+        with main.get_db() as conn:
+            conn.execute('''INSERT INTO csat_wrong_answers
+                (question_id,student_name,exam_name,question_no,csat_type_id,csat_type_name,created_at)
+                VALUES(?,?,?,?,?,?,?)''', (question_ids[0], '비식별 테스트', '삭제 테스트', 21,
+                'implication', '함축 의미', 'delete-wrong-protected'))
+        response = TestClient(main.app).delete(f'/api/csat/questions/{question_ids[0]}')
+        self.assertEqual(409, response.status_code)
+        self.assertIn('학생 오답 연결', response.json()['detail'])
+        with main.get_db() as conn:
+            self.assertIsNotNone(conn.execute('SELECT id FROM csat_questions WHERE id=?', (question_ids[0],)).fetchone())
+
+    def test_delete_source_keeps_other_source_and_questions(self):
+        source_a, questions_a = self.seed_delete_source('source-a')
+        source_b, questions_b = self.seed_delete_source('source-b', (24,))
+        response = TestClient(main.app).delete(f'/api/csat/question-sources/{source_a}')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(questions_a, response.json()['deleted_question_ids'])
+        with main.get_db() as conn:
+            self.assertIsNone(conn.execute('SELECT id FROM csat_question_sources WHERE id=?', (source_a,)).fetchone())
+            self.assertEqual(0, conn.execute('SELECT COUNT(*) FROM csat_questions WHERE source_id=?', (source_a,)).fetchone()[0])
+            self.assertIsNotNone(conn.execute('SELECT id FROM csat_question_sources WHERE id=?', (source_b,)).fetchone())
+            self.assertEqual(questions_b, [row['id'] for row in conn.execute(
+                'SELECT id FROM csat_questions WHERE source_id=? ORDER BY id', (source_b,)).fetchall()])
+
+    def test_delete_source_with_used_question_is_atomic(self):
+        source_id, question_ids = self.seed_delete_source('source-protected')
+        self.protect_with_assessment(question_ids[1], 'source-protected')
+        response = TestClient(main.app).delete(f'/api/csat/question-sources/{source_id}')
+        self.assertEqual(409, response.status_code)
+        with main.get_db() as conn:
+            self.assertIsNotNone(conn.execute('SELECT id FROM csat_question_sources WHERE id=?', (source_id,)).fetchone())
+            remaining = [row['id'] for row in conn.execute(
+                'SELECT id FROM csat_questions WHERE source_id=? ORDER BY id', (source_id,)).fetchall()]
+            self.assertEqual(question_ids, remaining)
 
     def test_print_html_is_editable_two_column_buildit_document(self):
         html = main.render_csat_html([{'question_no':21,'prompt':'의미하는 것은?','passage':'Text','choices':['A','B'],'type_mismatch':False}], '하프 모의고사')

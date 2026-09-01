@@ -112,7 +112,7 @@
     if (!view.sectionVisible('sec-social')) return '';
     const pageSettings = view.pageSettings;
     const title = draftText(view, 'socialSectionTitle', SOCIAL_TITLE_DEFAULT);
-    return `<section id="sec-social" data-builder-section-key="sec-social" class="section-wrap" style="background:#f8faff;" data-fade>
+    return `<section id="sec-social" data-builder-section-key="sec-social" class="section-wrap" style="background:#f8faff;" data-reveal data-reveal-item>
         <div class="section-inner">
           <div class="section-header">${ctx.editableText({ tag: 'h2', className: 'section-title', draftKey: 'socialSectionTitle', value: title, omitWhenEmpty: true })}</div>
           <div class="social-grid">
@@ -162,8 +162,8 @@
     const keyword = draftText(view, 'introHeading', INTRO_KEYWORD_DEFAULT);
     const title = maskedIntroTitle(draftText(view, 'introMotto', INTRO_TITLE_DEFAULT));
     const lead = draftText(view, 'introBodySecondary', INTRO_LEAD_DEFAULT);
-    return `<section id="sec-intro" data-builder-section-key="sec-intro" class="section-wrap intro-wrap notes snap">
-        <div class="notes-head" data-fade>
+    return `<section id="sec-intro" data-builder-section-key="sec-intro" class="section-wrap intro-wrap notes" data-reveal>
+        <div class="notes-head" data-reveal-item>
           <div class="eyebrow notes-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'notes-keyword', draftKey: 'introHeading', value: keyword, omitWhenEmpty: true })}</div>
           ${ctx.editableText({ tag: 'h2', className: 'section-head notes-title', draftKey: 'introMotto', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           ${ctx.editableText({ tag: 'blockquote', className: 'notes-quote', draftKey: 'introBodySecondary', value: lead, builderClass: 'builder-multiline-text', quoted: true })}
@@ -191,9 +191,9 @@
     if (!view.sectionVisible('sec-philosophy')) return '';
     const keyword = draftText(view, 'philosophyKeyword', PHILOSOPHY_KEYWORD_DEFAULT);
     const title = maskedIntroTitle(draftText(view, 'philosophyTitle', PHILOSOPHY_TITLE_DEFAULT));
-    return `<section id="sec-philosophy" data-builder-section-key="sec-philosophy" class="section-wrap philosophy snap" data-fade>
+    return `<section id="sec-philosophy" data-builder-section-key="sec-philosophy" class="section-wrap philosophy" data-reveal>
         <div class="philosophy-inner">
-          <div class="section-head philosophy-head" data-fade>
+          <div class="section-head philosophy-head" data-reveal-item>
             <div class="eyebrow philosophy-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'philosophy-keyword', draftKey: 'philosophyKeyword', value: keyword, omitWhenEmpty: true })}</div>
             ${ctx.editableText({ tag: 'h2', className: 'philosophy-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
@@ -221,39 +221,9 @@
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
   }
 
-  /**
-   * Featured Stage 가 보여줄 대표 프로그램(V2-11 corrective). builderDraft.featuredLessonIds
-   * 중 이름에 항목 칩 라벨이 들어간 수업을 고른다. 항목별로 분리된 데이터는 만들지 않는다 —
-   * 통합 프로그램이 하나면 그 하나를 쓴다. 매칭 없으면 null(Stage 는 항목명 + 프레임 라벨만).
-   * 나머지 수업(문법 커리큘럼 등)은 여기에 넣지 않는다 — 그건 sec-lessons 담당이다.
-   */
-  function featuredStageProgram(view) {
-    const chips = featuredItems(view).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
-    if (!chips.length) return null;
-    return selectedFeaturedLessons(view).find((l) => {
-      const n = String((l && l.name) || '');
-      return chips.some((s) => n.indexOf(s) !== -1);
-    }) || null;
-  }
-
-  /**
-   * Featured 중앙 무대(V2-11 corrective). 추상 종이 SVG 제거 — 선택 항목의 실제 정보를 낸다:
-   * 프레임 라벨(featuredTitle 첫 줄) + 큰 항목명(선택 시 academy_public.js 가 갈아끼움) + 대표
-   * 프로그램의 핵심 특징(실데이터, 없으면 생략). moreHtml = 공개는 앵커, 빌더는 빈 값.
-   * 항목별로 분리된 내용은 만들지 않는다(통합 프로그램 하나면 그 하나를 보여준다).
-   */
-  function featuredStageHtml(school, title, program, moreHtml) {
-    const name = String(school == null ? '' : school).trim();
-    if (!name) return '';
-    const frame = String(title == null ? '' : title).split('\n').map((s) => s.trim()).filter(Boolean)[0] || '';
-    const p = program || {};
-    const approach = textValue(p.highlight) || textValue(p.kicker);
-    return `<div class="featured-stage f2r-reveal" data-featured-stage>`
-      + (frame ? `<span class="featured-stage-frame">${escapeHtml(frame)}</span>` : '')
-      + `<strong class="featured-stage-school" data-featured-stage-school>${escapeHtml(name)}</strong>`
-      + (approach ? `<p class="featured-stage-approach">${escapeHtml(approach)}</p>` : '')
-      + (moreHtml || '')
-      + `</div>`;
+  /** 비어있지 않은 학교 라벨만(순서 유지). Digital Twin Showcase 의 scene 목록. */
+  function featuredSchoolLabels(view) {
+    return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).filter(Boolean);
   }
 
   function renderFeatured(view, ctx) {
@@ -262,18 +232,44 @@
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
-    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap">
+    const schools = featuredSchoolLabels(view);
+    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-reveal>
         <div class="section-inner featured-inner">
           <div class="featured-head">
-            <div class="eyebrow featured-eyebrow f2r-reveal"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
-            ${ctx.editableText({ tag: 'h2', className: 'featured-title f2r-reveal', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
-            ${ctx.editableText({ tag: 'p', className: 'featured-desc f2r-reveal', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            <div class="eyebrow featured-eyebrow" data-reveal-item><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
+            ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
+            ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${ctx.featuredStage(featuredFirst(view), title, featuredStageProgram(view))}
-          ${ctx.featuredItemsGroup(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''), featuredItems(view))}
-          <div class="featured-cta f2r-reveal">${ctx.featuredCta(ctaLabel)}</div>
+          ${ctx.featuredSchools(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''))}
+          ${ctx.featuredShowcase(schools)}
+          <div class="featured-cta" data-reveal-item>${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
+  }
+
+  /**
+   * Digital Twin Showcase — 학교별 실제 출제자 Digital Twin(/api/analyzes)을 가로 track 의
+   * scene 으로 보여준다. 각 scene 은 번호 + 학교명 + "출제자 Digital Twin" + 실제 분석 목록으로
+   * 채워진다(academy_public.js wireFeaturedShowcase 가 fetch 로 body 를 채운다).
+   *
+   * 데스크톱: academy_cinematic.js 가 sec-featured 진입 시 sticky 로 잡고, 세로 스크롤 progress 에
+   *          맞춰 track 을 가로로 이동시킨다(GSAP ScrollTrigger scrub, pin 아님 — jump 없음).
+   *          GSAP 미로드·reduced-motion → 네이티브 가로 스와이프로 정적 폴백.
+   * 모바일:  항상 네이티브 scroll-snap 가로 스와이프 + 다음 카드 peek + 진행 카운터 + prev/next.
+   * 자동 진행 없음 — 사용자 스크롤/스와이프만.
+   */
+  function featuredShowcaseScenes(schools) {
+    return (schools || []).map((school, i) =>
+      `<li class="dt-scene" data-dt-scene="${i}" data-featured-school="${escapeAttr(school)}"${i === 0 ? ' data-active' : ''}>
+            <div class="dt-scene-card">
+              <span class="dt-scene-num" aria-hidden="true">${pad2(i + 1)}</span>
+              <p class="dt-scene-kicker">출제자 Digital Twin</p>
+              <h3 class="dt-scene-school">${escapeHtml(school)}</h3>
+              <div class="dt-scene-body" data-dt-body data-dt-school="${escapeAttr(school)}" aria-live="polite">
+                <p class="dt-scene-loading">${escapeHtml(school)} 출제 분석을 불러오는 중…</p>
+              </div>
+            </div>
+          </li>`).join('');
   }
 
   // ── sec-digitaltwin : AI Native Education Process ─────────────────────────
@@ -285,6 +281,15 @@
   const AI_PROCESS_TITLE_DEFAULT = '경험 있는 교육자 + AI';
   const AI_PROCESS_DESC_DEFAULT = '오랜 현장 경험을 AI가 기록·정리·확장해 실제 수업과 시험 준비의 정밀도를 높입니다. 우리 교육 과정을 단계로 보여주세요.';
   const AI_PROCESS_STEP_DEFAULTS = ['자료 수집', '경향 분석', '수업 인사이트', '자료 제작', '최종본'];
+  // 위치별 프로세스 설명(generic — 특정 학원/학교/시즌 문자열 없음). 단계 이름은 교육자가
+  // builderDraft.aiProcessStepN 으로 편집하지만, 이 한 줄 설명은 코드가 고정한다.
+  const AI_PROCESS_STEP_DESC_DEFAULTS = [
+    '우리 학교 기출·프린트·수업 자료를 모읍니다.',
+    'AI가 반복되는 출제 유형과 배점 패턴을 분석합니다.',
+    '오랜 현장 수업 경험과 분석 결과를 결합합니다.',
+    '우리 학교 시험 유형에 맞춘 문항을 만듭니다.',
+    '실전과 같은 시험지로 시험을 대비합니다.'
+  ];
   const AI_PROCESS_NOTE_DEFAULT = 'AI는 교육자를 대체하지 않습니다. 교육자의 판단과 노하우를 넓히는 도구로 씁니다.';
 
   function aiProcessSteps(view) {
@@ -292,41 +297,97 @@
   }
 
   /**
-   * AI Native Visual Stage (V2-11 corrective). 추상 도형 대신 "지금 이 단계가 무엇인지"를
-   * 아이콘 + 단계 이름으로 읽히게 한다. 하나의 "정보 오브젝트"(학교 자료)가 단계마다 상태를
-   * 바꾸는 흐름: 자료 → 분석/패턴 → 인사이트 결합 → 문항 제작 → 완성 시험지.
-   * 데스크톱·모바일 모두 보인다(모바일 축소, display:none 아님). 활성 프레임:
-   *   데스크톱 pin  — academy_story.js #sec-digitaltwin[data-story-scene=N]
-   *   그 외(모바일) — academy_storefront_motion.js processProgress(options.stage) [data-active-frame=N]
-   * 이미지 자산 없음(currentColor SVG 도형). aria-hidden — 스크린리더는 아래 단계 목록을 읽는다.
+   * AI Native 단계 아이콘 — 하나의 "정보 오브젝트"(학교 자료)가 단계마다 상태를 바꾼다:
+   * 문서 → 스캔/패턴 → 두 노드 병합 → 문항 격자 → 문서+체크. currentColor SVG 도형, 이미지 자산 없음.
    */
-  const AI_STAGE_GLYPHS = [
-    // 0 자료 수집 — 문서
-    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-doc" x="12" y="6" width="24" height="36" rx="3"/><line class="ais-line" x1="17" y1="16" x2="31" y2="16"/><line class="ais-line" x1="17" y1="23" x2="31" y2="23"/><line class="ais-line" x1="17" y1="30" x2="25" y2="30"/></svg>',
-    // 1 경향 분석 — 스캔선 + 패턴 하이라이트
-    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-doc" x="12" y="6" width="24" height="36" rx="3"/><rect class="ais-hl" x="16" y="14" width="11" height="6" rx="2"/><rect class="ais-hl" x="16" y="27" width="16" height="6" rx="2"/><line class="ais-scan" x1="7" y1="24" x2="41" y2="24"/></svg>',
-    // 2 인사이트 결합 — 두 노드가 하나로
-    '<svg viewBox="0 0 48 48" role="presentation"><circle class="ais-node" cx="14" cy="14" r="8"/><circle class="ais-node" cx="34" cy="14" r="8"/><path class="ais-merge" d="M14 22 Q24 33 24 38 Q24 33 34 22"/><circle class="ais-core" cx="24" cy="39" r="6"/></svg>',
-    // 3 문항 제작 — 문제 블록
-    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-q" x="9" y="10" width="13" height="13" rx="2"/><rect class="ais-q" x="26" y="10" width="13" height="13" rx="2"/><rect class="ais-q" x="9" y="27" width="30" height="11" rx="2"/></svg>',
-    // 4 완성 시험지 — 체크
-    '<svg viewBox="0 0 48 48" role="presentation"><rect class="ais-doc" x="9" y="6" width="24" height="36" rx="3"/><line class="ais-line" x1="14" y1="16" x2="27" y2="16"/><line class="ais-line" x1="14" y1="23" x2="27" y2="23"/><circle class="ais-badge" cx="34" cy="34" r="10"/><path class="ais-check" d="M29 34 l4 4 l7 -8"/></svg>'
+  const AI_NATIVE_GLYPHS = [
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="aig-doc" x="12" y="6" width="24" height="36" rx="3"/><line class="aig-line" x1="17" y1="16" x2="31" y2="16"/><line class="aig-line" x1="17" y1="23" x2="31" y2="23"/><line class="aig-line" x1="17" y1="30" x2="25" y2="30"/></svg>',
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="aig-doc" x="12" y="6" width="24" height="36" rx="3"/><rect class="aig-hl" x="16" y="14" width="11" height="6" rx="2"/><rect class="aig-hl" x="16" y="27" width="16" height="6" rx="2"/><line class="aig-scan" x1="7" y1="24" x2="41" y2="24"/></svg>',
+    '<svg viewBox="0 0 48 48" role="presentation"><circle class="aig-node" cx="14" cy="14" r="8"/><circle class="aig-node" cx="34" cy="14" r="8"/><path class="aig-merge" d="M14 22 Q24 33 24 38 Q24 33 34 22"/><circle class="aig-core" cx="24" cy="39" r="6"/></svg>',
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="aig-q" x="9" y="10" width="13" height="13" rx="2"/><rect class="aig-q" x="26" y="10" width="13" height="13" rx="2"/><rect class="aig-q" x="9" y="27" width="30" height="11" rx="2"/></svg>',
+    '<svg viewBox="0 0 48 48" role="presentation"><rect class="aig-doc" x="9" y="6" width="24" height="36" rx="3"/><line class="aig-line" x1="14" y1="16" x2="27" y2="16"/><line class="aig-line" x1="14" y1="23" x2="27" y2="23"/><circle class="aig-badge" cx="34" cy="34" r="10"/><path class="aig-check" d="M29 34 l4 4 l7 -8"/></svg>'
   ];
-  function aiProcessStageHtml(steps) {
-    const labels = (steps || []).map((s) => textValue(s));
-    const frames = labels.map((label, i) => {
-      if (!label && i > 0) return '';
-      const glyph = AI_STAGE_GLYPHS[i] || AI_STAGE_GLYPHS[AI_STAGE_GLYPHS.length - 1];
-      return `<li class="ai-stage-frame" data-frame="${i}">`
-        + `<span class="ai-stage-glyph">${glyph}</span>`
-        + `<span class="ai-stage-frame-name"><b>${i + 1}</b>${escapeHtml(label || '')}</span>`
-        + `</li>`;
-    }).filter(Boolean).join('');
-    const pips = labels.map((l, i) => (l || i === 0) ? `<li data-pip="${i}"></li>` : '').filter(Boolean).join('');
-    return `<figure class="ai-process-stage" data-ai-stage aria-hidden="true">
-        <div class="ai-stage-window"><ol class="ai-stage-frames">${frames}</ol></div>
-        <ol class="ai-stage-pips">${pips}</ol>
-      </figure>`;
+
+  /**
+   * AI Native Panorama — 5-scene visual stage. 각 scene 은 "그 단계에서 실제로 무슨 일이
+   * 일어나는지"를 목적별 미니 비주얼로 보여준다(자료가 모인다 → 패턴이 만들어진다 →
+   * 두 지능이 결합된다 → 문제가 생성된다 → 시험지로 조립된다). 한 scene 의 마지막 오브젝트가
+   * 다음 scene 의 첫 입력이 되도록 연결한다(continuity). 무거운 문서 전체가 아니라 가벼운
+   * HTML/SVG representation 만 쓴다.
+   *
+   *   데스크톱: academy_cinematic.js 가 sec-digitaltwin 진입 시 stage 를 sticky 로 잡고
+   *            세로 스크롤 progress → GSAP timeline progress 로 scene 애니메이션을 구동한다
+   *            (scrub, pin 아님). GSAP 미로드·reduced-motion → [data-active] 셀렉터로 정적
+   *            scene 표시(academy_public.js wireAiNative IO 폴백).
+   *   모바일:  stage 숨김. 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄), reveal-once.
+   */
+  const AI_SCENES = [
+    // 0 학교 자료 — 흩어진 자료가 중앙으로 모여 stack 된다.
+    '<div class="ai-scene" data-ai-scene="0"><span class="ai-scene-cap">SCHOOL DATA</span>'
+      + '<div class="ai-s0" data-ai-el="stack">'
+      + '<span class="ai-doc" data-ai-doc="0">시험지</span>'
+      + '<span class="ai-doc" data-ai-doc="1">학교 프린트</span>'
+      + '<span class="ai-doc" data-ai-doc="2">교과서</span>'
+      + '<span class="ai-doc" data-ai-doc="3">수업 자료</span>'
+      + '</div></div>',
+    // 1 출제자 Digital Twin — 모인 자료 위에 분석 레이어 → 패턴이 만들어진다.
+    '<div class="ai-scene" data-ai-scene="1"><span class="ai-scene-cap">EXAMINER PATTERN</span>'
+      + '<div class="ai-s1-doc" data-ai-el="doc"><span class="ai-scanline" data-ai-el="scan"></span></div>'
+      + '<ul class="ai-bars" data-ai-el="bars">'
+      + '<li style="--v:.55"><b>VOCAB</b><i></i></li>'
+      + '<li style="--v:.92"><b>GRAMMAR</b><i></i></li>'
+      + '<li style="--v:.7"><b>READING</b><i></i></li>'
+      + '<li style="--v:.4"><b>WRITING</b><i></i></li>'
+      + '<li style="--v:.8"><b>PATTERN</b><i></i></li>'
+      + '</ul>'
+      + '<div class="ai-twin-card" data-ai-el="twin"><span>EXAMINER</span><b>DIGITAL TWIN</b></div></div>',
+    // 2 수업 Insight — Digital Twin + 강사 Insight 두 스트림이 중앙에서 결합.
+    '<div class="ai-scene" data-ai-scene="2"><span class="ai-scene-cap">TWIN + INSIGHT</span>'
+      + '<div class="ai-stream ai-stream--a" data-ai-el="streamA">DIGITAL TWIN</div>'
+      + '<div class="ai-stream ai-stream--b" data-ai-el="streamB">TEACHER INSIGHT</div>'
+      + '<div class="ai-brain" data-ai-el="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
+      + '<ul class="ai-tokens" data-ai-el="tokens"><li>시험에 자주 나옴</li><li>자주 틀리는 유형</li><li>서술형 주의</li><li>이번 시험 핵심</li></ul></div>',
+    // 3 학교별 문제 제작 — BRAIN 에서 원본 문항 → 변형/서술형으로 갈라진다.
+    '<div class="ai-scene" data-ai-scene="3"><span class="ai-scene-cap">QUESTION BUILD</span>'
+      + '<div class="ai-brain ai-brain--sm" data-ai-el="brain">BUILD IT BRAIN</div>'
+      + '<div class="ai-q ai-q--origin" data-ai-el="origin"><b>18.</b><p>다음 글의 목적으로 가장 적절한 것은?</p><span class="ai-q-choices">① ② ③ ④ ⑤</span></div>'
+      + '<div class="ai-q ai-q--var" data-ai-el="v0">변형 A</div>'
+      + '<div class="ai-q ai-q--var" data-ai-el="v1">변형 B</div>'
+      + '<div class="ai-q ai-q--var" data-ai-el="v2">서술형</div>'
+      + '<span class="ai-stamp" data-ai-el="stamp">SCHOOL PATTERN ✓</span></div>',
+    // 4 FINAL — 생성된 문항이 하나의 완성 시험지로 조립된다.
+    '<div class="ai-scene" data-ai-scene="4"><span class="ai-scene-cap">FINAL</span>'
+      + '<span class="ai-qc" data-ai-el="qc0">Q01</span><span class="ai-qc" data-ai-el="qc1">Q02</span>'
+      + '<span class="ai-qc" data-ai-el="qc2">Q03</span><span class="ai-qc" data-ai-el="qc3">Q04</span>'
+      + '<span class="ai-qc" data-ai-el="qc4">Q05</span>'
+      + '<div class="ai-final" data-ai-el="final"><b>FINAL</b><p class="ai-final-title">실전 대비 모의고사</p>'
+      + '<ol><li></li><li></li><li></li><li></li></ol></div></div>'
+  ];
+
+  function aiNativeHtml(steps, ctx) {
+    const items = (steps || [])
+      .map((s, i) => ({ i, name: textValue(s) || AI_PROCESS_STEP_DEFAULTS[i] || '' }))
+      .filter((s) => s.i === 0 || s.name);
+    if (!items.length) return '';
+    const glyphOf = (i) => AI_NATIVE_GLYPHS[i] || AI_NATIVE_GLYPHS[AI_NATIVE_GLYPHS.length - 1];
+    const scenes = items.map((s) => AI_SCENES[s.i] || '').join('');
+    const blocks = items.map((s) => {
+      const desc = AI_PROCESS_STEP_DESC_DEFAULTS[s.i] || '';
+      return `<li class="ai-native-step" data-ai-step="${s.i}" data-reveal-item>`
+        + `<span class="ai-native-step-num">${s.i + 1}</span>`
+        + `<div class="ai-native-step-c">`
+        + `<span class="ai-native-step-glyph" aria-hidden="true">${glyphOf(s.i)}</span>`
+        + `<div class="ai-native-step-text">`
+        + `<h3 class="ai-native-step-name">${ctx.aiStepName(s.i, s.name)}</h3>`
+        + (desc ? `<p class="ai-native-step-desc">${escapeHtml(desc)}</p>` : '')
+        + `</div></div></li>`;
+    }).join('');
+    return `<div class="ai-native" data-reveal>
+        <figure class="ai-native-visual" data-ai-visual data-active="0" aria-hidden="true">
+          <div class="ai-stage" data-ai-stage>${scenes}</div>
+        </figure>
+        <ol class="ai-native-steps">${blocks}</ol>
+      </div>`;
   }
 
   function renderAiProcess(view, ctx) {
@@ -335,16 +396,15 @@
     const title = draftText(view, 'aiProcessTitle', AI_PROCESS_TITLE_DEFAULT);
     const desc = draftText(view, 'aiProcessDescription', AI_PROCESS_DESC_DEFAULT);
     const note = draftText(view, 'aiProcessNote', AI_PROCESS_NOTE_DEFAULT);
-    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-process-wrap">
-        <div class="section-inner ai-process-inner">
-          <div class="section-header ai-process-head">
-            <div class="eyebrow ai-process-eyebrow f2r-reveal"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'ai-process-eyebrow-text', draftKey: 'aiProcessEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
-            ${ctx.editableText({ tag: 'h2', className: 'section-title ai-process-title f2r-reveal', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
-            ${ctx.editableText({ tag: 'p', className: 'ai-process-desc f2r-reveal', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-native-wrap">
+        <div class="section-inner ai-native-inner">
+          <div class="section-header ai-native-head" data-reveal>
+            <div class="eyebrow ai-native-eyebrow" data-reveal-item><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'ai-native-eyebrow-text', draftKey: 'aiProcessEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
+            ${ctx.editableText({ tag: 'h2', className: 'section-title ai-native-title', draftKey: 'aiProcessTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
+            ${ctx.editableText({ tag: 'p', className: 'ai-native-desc', draftKey: 'aiProcessDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${aiProcessStageHtml(aiProcessSteps(view))}
-          <ol class="ai-process-steps">${aiProcessSteps(view).map((step, index) => ctx.aiProcessStep(step, index)).join('')}</ol>
-          ${ctx.editableText({ tag: 'p', className: 'ai-process-note', draftKey: 'aiProcessNote', value: note, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', quoted: false, omitWhenEmpty: true })}
+          ${aiNativeHtml(aiProcessSteps(view), ctx)}
+          ${ctx.editableText({ tag: 'p', className: 'ai-native-note', draftKey: 'aiProcessNote', value: note, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', quoted: false, omitWhenEmpty: true, extraAttrs: 'data-reveal data-reveal-item' })}
         </div>
       </section>`;
   }
@@ -436,7 +496,7 @@
     const desc = draftText(view, 'principalDesc', '원장 소개 문구를 입력해 주세요. 학원의 교육 철학과 지도 방식을 소개합니다.');
     const quote = draftText(view, 'principalQuote', '원장님의 교육 신념이나 학생·학부모에게 전하고 싶은 한마디를 입력해 주세요.');
     const careerItems = principalCareerList(view).map((text) => ctx.principalCareerItem(text)).join('');
-    return `<section id="sec-principal" data-builder-section-key="sec-principal" class="section-wrap principal-wrap" data-fade>
+    return `<section id="sec-principal" data-builder-section-key="sec-principal" class="section-wrap principal-wrap" data-reveal data-reveal-item>
         <div class="principal-inner">
           <div class="principal-head"><span class="section-badge">🎓 대표 원장 소개</span></div>
           <div class="principal-grid">
@@ -486,7 +546,7 @@
     const body = ctx.hasHeroMedia(view, 'principal')
       ? `<img src="${escapeHtml(ctx.heroMediaUrl('principal'))}" alt="${escapeHtml(view.name)} 원장 사진">`
       : '<div class="tablet-empty"><span>원장 대표사진</span></div>';
-    return `<div class="tablet"${ctx.portraitClusterAttrs()}>
+    return `<div class="tablet" data-reveal-item${ctx.portraitClusterAttrs()}>
             <div class="cam"></div>
             <div class="tablet-screen">
               ${body}
@@ -511,18 +571,18 @@
     const stats = HERO_STATS.map((stat) =>
       `<div><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
     ).join('');
-    return `<section class="hero" id="sec-hero" data-builder-section-key="sec-hero" data-fade>
+    return `<section class="hero" id="sec-hero" data-builder-section-key="sec-hero" data-reveal>
         <div class="brand-glow" aria-hidden="true"></div>
         <div class="hero-grid">
           <div>
-            ${eyebrow ? `<div class="eyebrow"><span class="stroke"></span>${ctx.heroEyebrow(eyebrow)}</div>` : ''}
-            <h1>${ctx.heroTitleInner(view.name)}</h1>
-            ${ctx.editableText({ tag: 'blockquote', className: 'hero-quote', anchor: 'text', draftKey: 'intro', value: view.intro, builderClass: 'builder-multiline-text' })}
-            <div class="hero-actions">
+            ${eyebrow ? `<div class="eyebrow" data-reveal-item><span class="stroke"></span>${ctx.heroEyebrow(eyebrow)}</div>` : ''}
+            <h1 data-reveal-item>${ctx.heroTitleInner(view.name)}</h1>
+            ${ctx.editableText({ tag: 'blockquote', className: 'hero-quote', anchor: 'text', draftKey: 'intro', value: view.intro, builderClass: 'builder-multiline-text', extraAttrs: 'data-reveal-item' })}
+            <div class="hero-actions" data-reveal-item>
               <button type="button" class="btn" onclick="requestConsult()">상담 신청하기</button>
               <button type="button" class="btn outline" onclick="scrollToId('sec-lessons')">대표 수업 보기</button>
             </div>
-            <div class="hero-stats">${stats}</div>
+            <div class="hero-stats" data-reveal-item>${stats}</div>
             ${ctx.heroBadges(view)}
           </div>
           ${renderPortraitTablet(view, ctx)}
@@ -651,11 +711,9 @@
         </div>`;
     const hint = o.hint ? escapeHtml(o.hint) : '';
     const variant = o.variant ? ` f2r-collection--${escapeAttr(o.variant)}` : '';
-    // V2-11: 첫 진입 시 횡스크롤 affordance. Programs = 제한적 자동 진행(advance),
-    // Actual Class / Mini Lectures = 짧은 hint. 배선·중단·reduced-motion 은 academy_collection.js.
-    const AUTO = { programs: 'advance', videos: 'hint', lectures: 'hint' };
-    const auto = (!o.staticMode && AUTO[o.variant]) ? ` data-collection-auto="${AUTO[o.variant]}"` : '';
-    return `<div class="f2r-collection${variant}"${o.staticMode ? ' data-collection-static' : ''}${auto} data-collection>
+    // 자동 이동 없음. 데스크톱에서 카드가 다 들어가면 CSS 가 grid 로(head/화살표 숨김),
+    // 모바일에서는 네이티브 scroll-snap + swipe + 다음 카드 peek + 진행 카운터가 어포던스.
+    return `<div class="f2r-collection${variant}"${o.staticMode ? ' data-collection-static' : ''} data-collection>
         <div class="f2r-collection-head">
           <span class="f2r-collection-hint">${hint}</span>
           <div class="f2r-collection-controls">${progress}${nav}</div>
@@ -890,7 +948,7 @@
     const body = filled
       ? `<img class="schedule-calendar-image" src="${escapeAttr(ctx.heroMediaUrl(SCHEDULE_MEDIA_SLOT))}" alt="${escapeAttr(view.name)} 개설 시간표">`
       : placeholder;
-    return `<figure class="schedule-calendar"${ctx.scheduleCalendarAttrs()} data-fade>${body}${ctx.scheduleCalendarExtra()}</figure>`;
+    return `<figure class="schedule-calendar"${ctx.scheduleCalendarAttrs()} data-reveal data-reveal-item>${body}${ctx.scheduleCalendarExtra()}</figure>`;
   }
 
   function renderLessonSchedule(view, ctx) {
@@ -1013,13 +1071,13 @@
        * (빌더는 반대로 항상 렌더해야 원장이 클릭해 채울 수 있다).
        * quoted는 인용문 앞뒤에 붙는 장식 따옴표다.
        */
-      editableText({ tag, className, value, publicClass, omitWhenEmpty, quoted }) {
+      editableText({ tag, className, value, publicClass, omitWhenEmpty, quoted, extraAttrs }) {
         if (omitWhenEmpty && !value) return '';
         const cls = publicClass ? `${className} ${publicClass}` : className;
         const inner = quoted
           ? `<span class="qm">"</span>${escapeHtml(value)}<span class="qm">"</span>`
           : escapeHtml(value);
-        return `<${tag} class="${cls}">${inner}</${tag}>`;
+        return `<${tag} class="${cls}"${extraAttrs ? ' ' + extraAttrs : ''}>${inner}</${tag}>`;
       },
 
       // 히어로 — 공개는 편집 크롬을 일절 얹지 않는다.
@@ -1052,41 +1110,47 @@
       introFeatureListAttrs() { return ''; },
       introFeatureItem(text, index) {
         const parts = noteParts(text, index);
-        return `<article class="note-card intro-feature-item" data-fade><h3 class="intro-feature-text">${escapeHtml(parts.title)}</h3>${parts.body ? `<p>${escapeHtml(parts.body)}</p>` : ''}</article>`;
+        return `<article class="note-card intro-feature-item" data-reveal-item><h3 class="intro-feature-text">${escapeHtml(parts.title)}</h3>${parts.body ? `<p>${escapeHtml(parts.body)}</p>` : ''}</article>`;
       },
       introFooter() { return ''; },
       philosophyCard(text, index) {
-        return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
+        return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // V2-6: 학교 칩을 단일 선택 selector 로. 선택하면 중앙 Featured Stage 의 정보 상태가 바뀐다
-      // ("내 학교를 선택해 둘러본다"). 학교별 실데이터는 만들지 않고, 공통 프로세스 안에서 선택 학교만
-      // 명확히 반영한다. 배선은 academy_public.js wireFeaturedSelector. 빈 항목은 생략(빈 칩 방지).
+      // 학교 칩 — 단일 선택. 선택하면 Digital Twin Showcase 가 그 학교 scene 으로 이동한다
+      // (배선: academy_public.js wireFeaturedShowcase). 빈 항목은 생략(빈 칩 방지).
       featuredItem(text, index) {
         const label = String(text == null ? '' : text).trim();
         if (!label) return '';
-        return `<button type="button" class="featured-item f2r-reveal" data-featured-school="${escapeAttr(label)}" aria-pressed="${index === 0 ? 'true' : 'false'}"><span class="featured-item-label">${escapeHtml(label)}</span></button>`;
+        return `<button type="button" class="featured-chip" data-featured-school="${escapeAttr(label)}" data-featured-index="${index}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
       },
-      // 중앙 무대 — 선택 학교의 실제 내신 정보(프레임 라벨 + 큰 학교명 + 대표 프로그램 핵심 특징).
-      // 선택 시 academy_public.js 가 학교명을 갈아끼운다. "준비 과정" 앵커로 AI Native 로 연결.
-      featuredStage(school, title, program) {
-        return featuredStageHtml(school, title, program,
-          '<a class="featured-stage-more" href="#sec-digitaltwin" onclick="scrollToId(\'sec-digitaltwin\');return false;">AI로 준비하는 과정 보기</a>');
+      featuredSchools(itemsHtml) {
+        return `<div class="featured-schools" data-reveal-item>`
+          + `<div class="featured-chips" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>`
+          + `</div>`;
       },
-      featuredItemsGroup(itemsHtml, labels) {
-        const first = (labels || []).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
-        const selected = first
-          ? `<div class="featured-selected f2r-reveal" aria-live="polite">지금 보는 학교 · <strong data-featured-selected>${escapeHtml(first)}</strong></div>`
-          : '';
-        return `<div class="featured-items" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>${selected}`;
+      // Digital Twin Showcase — 공개는 학교별 빈 scene 을 낸다. academy_public.js 가 /api/analyzes
+      // 로 각 scene body 를 채우고, academy_cinematic.js 가 세로 스크롤에 맞춰 가로로 이동시킨다.
+      featuredShowcase(schools) {
+        const list = (schools || []).filter(Boolean);
+        if (!list.length) {
+          return `<div class="dt-showcase dt-showcase--empty" data-featured-twin>`
+            + `<p class="dt-scene-loading">학교를 입력하면 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 표시됩니다.</p>`
+            + `</div>`;
+        }
+        return `<div class="dt-showcase" data-reveal-item data-dt-showcase data-featured-twin data-active="0">`
+          + `<div class="dt-progress" aria-hidden="true"><span data-dt-current>01</span><span class="dt-progress-sep">/</span><span data-dt-total>${pad2(list.length)}</span></div>`
+          + `<div class="dt-viewport"><ol class="dt-track" data-dt-track role="list">${featuredShowcaseScenes(list)}</ol></div>`
+          + `<div class="dt-nav" data-dt-nav>`
+          + `<button type="button" class="dt-nav-btn" data-dt-nav-dir="prev" aria-label="이전 학교" disabled>&#8249;</button>`
+          + `<button type="button" class="dt-nav-btn" data-dt-nav-dir="next" aria-label="다음 학교">&#8250;</button>`
+          + `</div>`
+          + `</div>`;
       },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
         return text ? `<button type="button" class="btn featured-cta-btn" data-featured-cta data-featured-cta-base="${escapeAttr(text)}" onclick="requestConsult()">${escapeHtml(text)}</button>` : '';
       },
-      aiProcessStep(text, index) {
-        const label = String(text == null ? '' : text).trim();
-        return label ? `<li class="ai-process-step" data-step="${index}"><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label">${escapeHtml(label)}</span></li>` : '';
-      },
+      aiStepName(index, name) { return escapeHtml(name); },
 
       // 공개 페이지는 목록 조회가 실패해도 영상을 그린다 — id가 유효하면 stream URL을 합성해
       // 재생을 시도한다(로딩 실패 내성). 빌더는 목록에 없으면 placeholder를 띄운다.
@@ -1207,10 +1271,10 @@
        */
       // anchor='text'는 Academy 본체 필드(name/intro), 기본값 'draft'는 builderDraft 키다.
       // 커밋 경로가 달라 속성 이름도 다르다.
-      editableText({ tag, className, draftKey, value, builderClass, anchor }) {
+      editableText({ tag, className, draftKey, value, builderClass, anchor, extraAttrs }) {
         const cls = builderClass ? `${className} ${builderClass}` : className;
         const attr = anchor === 'text' ? 'data-builder-text' : 'data-builder-draft';
-        return `<${tag} class="${cls}" ${attr}="${escapeAttr(draftKey)}" contenteditable="false" spellcheck="false">${escapeHtml(value)}</${tag}>`;
+        return `<${tag} class="${cls}"${extraAttrs ? ' ' + extraAttrs : ''} ${attr}="${escapeAttr(draftKey)}" contenteditable="false" spellcheck="false">${escapeHtml(value)}</${tag}>`;
       },
 
       // 히어로 — 클릭 가능한 편집 진입점과 "수정" 칩을 얹는다.
@@ -1280,34 +1344,34 @@
       // 요소가 없으면 원장이 클릭해 본문을 채울 수 없다(빈 본문은 CSS placeholder로 안내).
       introFeatureItem(text, index) {
         const parts = noteParts(text, index);
-        return `<article class="note-card intro-feature-item" data-fade><h3 class="intro-feature-text" data-intro-feature-item contenteditable="false" spellcheck="false">${escapeHtml(parts.title)}</h3><p data-intro-feature-body contenteditable="false" spellcheck="false">${escapeHtml(parts.body)}</p><button type="button" class="intro-feature-remove" data-intro-feature-remove aria-label="노트 삭제">✕</button></article>`;
+        return `<article class="note-card intro-feature-item" data-reveal-item><h3 class="intro-feature-text" data-intro-feature-item contenteditable="false" spellcheck="false">${escapeHtml(parts.title)}</h3><p data-intro-feature-body contenteditable="false" spellcheck="false">${escapeHtml(parts.body)}</p><button type="button" class="intro-feature-remove" data-intro-feature-remove aria-label="노트 삭제">✕</button></article>`;
       },
       introFooter() {
         return '<button type="button" class="intro-feature-add" data-intro-feature-add>＋ 특징 추가</button>';
       },
       philosophyCard(text, index) {
         const draftKey = 'philosophyItem' + (index + 1);
-        return `<div class="p-card" data-fade><span class="n">${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
+        return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
       },
       // 빈 값이어도 항상 렌더한다 — 요소가 없으면 원장이 클릭해 채울 수 없다(빈 값은 CSS placeholder로 안내).
-      // 빌더 캔버스는 정적으로 보여준다(모션 클래스는 공개 페이지에서만 js-storefront-motion으로 활성).
       featuredItem(text, index) {
         const draftKey = 'featuredItem' + (index + 1);
-        return `<div class="featured-item f2r-reveal"><span class="featured-item-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
+        return `<div class="featured-chip"><span class="featured-chip-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
       },
-      // 빌더 캔버스: 중앙 무대를 첫 학교로 정적 프리뷰(공개와 같은 모양). 선택 배선·앵커는 공개 전용.
-      featuredStage(school, title, program) {
-        return featuredStageHtml(school, title, program, '');
+      featuredSchools(itemsHtml) {
+        return `<div class="featured-schools"><div class="featured-chips">${itemsHtml}</div></div>`;
       },
-      featuredItemsGroup(itemsHtml) {
-        return `<div class="featured-items">${itemsHtml}</div>`;
+      // 빌더 캔버스: Digital Twin Showcase 는 공개 전용(/api/analyzes fetch + cinematic). 정적 안내만.
+      featuredShowcase() {
+        return `<div class="dt-showcase dt-showcase--builder">`
+          + `<p class="featured-twin-empty">공개 페이지에서 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 가로 Showcase 로 표시됩니다.</p>`
+          + `</div>`;
       },
       featuredCta(label) {
         return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
       },
-      aiProcessStep(text, index) {
-        const draftKey = 'aiProcessStep' + (index + 1);
-        return `<li class="ai-process-step" data-step="${index}"><span class="ai-process-step-num">${index + 1}</span><span class="ai-process-step-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></li>`;
+      aiStepName(index, name) {
+        return `<span class="ai-native-step-label" data-builder-draft="aiProcessStep${index + 1}" contenteditable="false" spellcheck="false">${escapeHtml(String(name == null ? '' : name))}</span>`;
       },
 
       // 빌더는 아직 발행 전 학원도 렌더하므로 공개 stream 경로를 합성하지 않는다.
@@ -1363,6 +1427,7 @@
     selectedFeaturedLessons,
     featuredItems,
     featuredFirst,
+    featuredSchoolLabels,
     aiProcessSteps,
     isHorizontalCollection,
     renderCollectionShell,
