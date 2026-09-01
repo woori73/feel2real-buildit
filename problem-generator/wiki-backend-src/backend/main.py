@@ -195,6 +195,27 @@ def init_db():
             created_at TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT ''
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_textbook_material_path ON textbook_materials(grade, publisher, lesson)')
+        # 교과서 PDF에서 문항 단위로 분리한 원천 Question DB. canonical_json 은 generated_questions 와
+        # 동일한 wiki-question-v1 스키마다(같은 renderer / Chrome Workbench pipeline 재사용). 강사가
+        # 만든 문항(generated_questions)과 개념이 달라(원본 vs 생성/변형) 테이블만 분리한다.
+        # extraction_status: ok(자동 분리 신뢰) / review(사람 검수 필요) / failed(분리 실패 표시).
+        conn.execute('''CREATE TABLE IF NOT EXISTS textbook_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            textbook_material_id INTEGER NOT NULL,
+            grade TEXT NOT NULL DEFAULT '', publisher TEXT NOT NULL DEFAULT '', lesson TEXT NOT NULL DEFAULT '',
+            page INTEGER NOT NULL DEFAULT 0, question_number TEXT NOT NULL DEFAULT '',
+            q_kind TEXT NOT NULL DEFAULT 'mc', question_type TEXT NOT NULL DEFAULT '',
+            stem TEXT NOT NULL DEFAULT '', source_text TEXT NOT NULL DEFAULT '',
+            options_json TEXT NOT NULL DEFAULT '[]', answer_json TEXT NOT NULL DEFAULT '[]',
+            sample_answer TEXT NOT NULL DEFAULT '', explanation TEXT NOT NULL DEFAULT '',
+            schema_version TEXT NOT NULL DEFAULT 'legacy', canonical_json TEXT NOT NULL DEFAULT '{}',
+            extraction_status TEXT NOT NULL DEFAULT 'review'
+                CHECK (extraction_status IN ('ok', 'review', 'failed')),
+            created_at TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT '',
+            FOREIGN KEY (textbook_material_id) REFERENCES textbook_materials(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_textbook_question_material ON textbook_questions(textbook_material_id, page)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_textbook_question_path ON textbook_questions(grade, publisher, lesson, question_type)')
         conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_sources (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             exam_kind TEXT NOT NULL CHECK (exam_kind IN ('half','full')),
@@ -1063,7 +1084,186 @@ def delete_textbook_material(material_id: int):
     with get_db() as conn:
         if not conn.execute('SELECT 1 FROM textbook_materials WHERE id=?', (material_id,)).fetchone():
             raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('DELETE FROM textbook_questions WHERE textbook_material_id=?', (material_id,))
         conn.execute('DELETE FROM textbook_materials WHERE id=?', (material_id,))
+    return Response(status_code=204)
+
+
+# ==================================================================================
+# 교과서 문항 DB — 교과서 PDF에서 문항 단위로 분리한 원천 Question. canonical_json 은 강사 문제
+# (generated_questions)와 동일한 wiki-question-v1 이므로 QuestionCard / Chrome Workbench 를 그대로
+# 재사용한다. 여기서는 원본 문항 저장/조회/수정/삭제만 한다 — AI 변형은 Chrome Workbench 한 곳뿐.
+# ==================================================================================
+
+def _project_textbook_question(canonical: dict) -> dict:
+    """wiki-question-v1 canonical → textbook_questions 컬럼(호환 투영). canonical 이 source of truth."""
+    c = canonical if isinstance(canonical, dict) else {}
+    kind = str(c.get('kind') or 'mc')
+    choices = c.get('choices') if isinstance(c.get('choices'), list) else []
+    answer = c.get('answer') if isinstance(c.get('answer'), dict) else {}
+    return {
+        'q_kind': 'sa' if kind == 'sa' else 'mc',
+        'question_type': str(c.get('question_type') or ('서답형' if kind == 'sa' else '객관식')),
+        'stem': str((c.get('instruction') or {}).get('text') or ''),
+        'source_text': str((c.get('passage') or {}).get('text') or ''),
+        'options': [str(ch.get('text', '')) for ch in choices if isinstance(ch, dict)],
+        'answer': [n for n in (answer.get('choice_numbers') or []) if isinstance(n, int)],
+        'sample_answer': str(answer.get('sample_answer') or ''),
+        'explanation': str((c.get('explanation') or {}).get('text') or ''),
+        'score': int((c.get('scoring') or {}).get('score') or 0),
+    }
+
+
+def _textbook_question_row(row: sqlite3.Row) -> dict:
+    item = dict(row)
+    for jkey in ('options_json', 'answer_json'):
+        try:
+            item[jkey.replace('_json', '')] = json.loads(item.pop(jkey))
+        except (TypeError, json.JSONDecodeError):
+            item[jkey.replace('_json', '')] = []
+    try:
+        item['canonical'] = json.loads(item.pop('canonical_json') or '{}')
+    except (TypeError, json.JSONDecodeError):
+        item['canonical'] = {}
+    # StoredQuestion(강사 문제 DB 응답) 호환 필드 — Chrome Workbench가 분기 없이 렌더/저장한다.
+    item['source_kind'] = 'textbook'
+    item['conditions'] = []
+    item['accepted_answers'] = [item['sample_answer']] if item.get('sample_answer') else []
+    item['grading_rule'] = item.get('explanation', '')
+    item['answer_format'] = ''
+    item['multi'] = 1 if len(item.get('answer') or []) > 1 else 0
+    item['score'] = int((item.get('canonical', {}).get('scoring') or {}).get('score') or 0)
+    item['school'] = ''
+    item['exam'] = ''
+    item['exam_title'] = ''
+    item['favorite'] = 0
+    item['mode'] = 'textbook'
+    return item
+
+
+class TextbookQuestionItem(BaseModel):
+    page: int = 0
+    question_number: str = ''
+    extraction_status: Literal['ok', 'review', 'failed'] = 'review'
+    question: dict
+
+
+class TextbookQuestionsSave(BaseModel):
+    replace: bool = False
+    items: list[TextbookQuestionItem]
+
+
+@app.post('/api/textbook-materials/{material_id}/questions', status_code=201)
+def save_textbook_questions(material_id: int, payload: TextbookQuestionsSave):
+    with get_db() as conn:
+        material = conn.execute(
+            'SELECT grade, publisher, lesson FROM textbook_materials WHERE id=?', (material_id,)).fetchone()
+        if not material:
+            raise HTTPException(status_code=404, detail='교과서 자료를 찾지 못했습니다.')
+        now = datetime.now().isoformat()
+        if payload.replace:
+            conn.execute('DELETE FROM textbook_questions WHERE textbook_material_id=?', (material_id,))
+        counts = {'ok': 0, 'review': 0, 'failed': 0}
+        for item in payload.items:
+            canonical = item.question if isinstance(item.question, dict) else {}
+            is_v1 = canonical.get('schema_version') == 'wiki-question-v1'
+            proj = _project_textbook_question(canonical if is_v1 else {})
+            status = item.extraction_status
+            if not proj['stem'].strip():
+                status = 'failed'
+            counts[status] += 1
+            conn.execute(
+                '''INSERT INTO textbook_questions
+                   (textbook_material_id, grade, publisher, lesson, page, question_number, q_kind,
+                    question_type, stem, source_text, options_json, answer_json, sample_answer,
+                    explanation, schema_version, canonical_json, extraction_status, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                (material_id, material['grade'], material['publisher'], material['lesson'],
+                 max(0, item.page), item.question_number.strip()[:20], proj['q_kind'], proj['question_type'],
+                 proj['stem'], proj['source_text'], json.dumps(proj['options'], ensure_ascii=False),
+                 json.dumps(proj['answer'], ensure_ascii=False), proj['sample_answer'], proj['explanation'],
+                 'wiki-question-v1' if is_v1 else 'legacy', json.dumps(canonical if is_v1 else {}, ensure_ascii=False),
+                 status, now, now))
+        rows = conn.execute(
+            'SELECT * FROM textbook_questions WHERE textbook_material_id=? ORDER BY page, id', (material_id,)).fetchall()
+    return {'total': len(payload.items), **counts,
+            'questions': [_textbook_question_row(r) for r in rows]}
+
+
+@app.get('/api/textbook-materials/{material_id}/questions')
+def list_textbook_material_questions(material_id: int):
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT * FROM textbook_questions WHERE textbook_material_id=? ORDER BY page, id', (material_id,)).fetchall()
+    return [_textbook_question_row(r) for r in rows]
+
+
+@app.get('/api/textbook-questions')
+def search_textbook_questions(grade: Optional[str] = None, publisher: Optional[str] = None,
+                              lesson: Optional[str] = None, question_type: Optional[str] = None,
+                              status: Optional[str] = None, search: Optional[str] = None, limit: int = 300):
+    clauses, values = ['1=1'], []
+    for column, value in (('grade', grade), ('publisher', publisher), ('lesson', lesson),
+                          ('question_type', question_type), ('extraction_status', status)):
+        if value:
+            clauses.append(f'{column}=?'); values.append(value)
+    if search:
+        clauses.append('(stem LIKE ? OR source_text LIKE ?)')
+        values.extend([f'%{search}%', f'%{search}%'])
+    values.append(max(1, min(limit, 1000)))
+    with get_db() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM textbook_questions WHERE {' AND '.join(clauses)} ORDER BY id DESC LIMIT ?", values).fetchall()
+    return [_textbook_question_row(r) for r in rows]
+
+
+@app.get('/api/textbook-questions/{question_id}')
+def get_textbook_question(question_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM textbook_questions WHERE id=?', (question_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='문항을 찾지 못했습니다.')
+    return _textbook_question_row(row)
+
+
+class TextbookQuestionPatch(BaseModel):
+    question: dict
+    question_number: Optional[str] = None
+    page: Optional[int] = None
+    extraction_status: Optional[Literal['ok', 'review', 'failed']] = None
+
+
+@app.patch('/api/textbook-questions/{question_id}')
+def update_textbook_question(question_id: int, payload: TextbookQuestionPatch):
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM textbook_questions WHERE id=?', (question_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='문항을 찾지 못했습니다.')
+        canonical = payload.question if isinstance(payload.question, dict) else {}
+        is_v1 = canonical.get('schema_version') == 'wiki-question-v1'
+        proj = _project_textbook_question(canonical if is_v1 else {})
+        if not proj['stem'].strip():
+            raise HTTPException(status_code=422, detail='발문을 입력해 주세요.')
+        status = payload.extraction_status or row['extraction_status']
+        conn.execute(
+            '''UPDATE textbook_questions SET question_number=?, page=?, q_kind=?, question_type=?, stem=?,
+               source_text=?, options_json=?, answer_json=?, sample_answer=?, explanation=?, schema_version=?,
+               canonical_json=?, extraction_status=?, updated_at=? WHERE id=?''',
+            (payload.question_number if payload.question_number is not None else row['question_number'],
+             payload.page if payload.page is not None else row['page'],
+             proj['q_kind'], proj['question_type'], proj['stem'], proj['source_text'],
+             json.dumps(proj['options'], ensure_ascii=False), json.dumps(proj['answer'], ensure_ascii=False),
+             proj['sample_answer'], proj['explanation'], 'wiki-question-v1' if is_v1 else 'legacy',
+             json.dumps(canonical if is_v1 else {}, ensure_ascii=False), status, datetime.now().isoformat(), question_id))
+    return get_textbook_question(question_id)
+
+
+@app.delete('/api/textbook-questions/{question_id}', status_code=204)
+def delete_textbook_question(question_id: int):
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM textbook_questions WHERE id=?', (question_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='문항을 찾지 못했습니다.')
+        conn.execute('DELETE FROM textbook_questions WHERE id=?', (question_id,))
     return Response(status_code=204)
 
 
