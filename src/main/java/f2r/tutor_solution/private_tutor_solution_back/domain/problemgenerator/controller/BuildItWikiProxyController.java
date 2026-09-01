@@ -31,6 +31,7 @@ public class BuildItWikiProxyController {
   private static final String[] MCP_FORWARDED_REQUEST_HEADERS = {
       "Authorization", "X-Api-Key", "Accept", "Mcp-Session-Id", "Mcp-Protocol-Version", "Last-Event-ID"
   };
+  private static final String WIKI_WORKSPACE_HEADER = "X-BuildIt-Wiki-Workspace";
   private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   private final AuthenticatedUserResolver authenticatedUserResolver;
   private final byte[] identitySecret;
@@ -65,6 +66,12 @@ public class BuildItWikiProxyController {
     String contentType = request.getHeader("Content-Type");
     if (contentType != null) builder.header("Content-Type", contentType);
     if (principal != null) addTrustedIdentity(builder, principal);
+    if (principal != null) {
+      String workspaceOverride = request.getHeader(WIKI_WORKSPACE_HEADER);
+      if (workspaceOverride != null && !workspaceOverride.isBlank()) {
+        builder.header(WIKI_WORKSPACE_HEADER, workspaceOverride);
+      }
+    }
     if (isMcpPath(targetPath)) {
       for (String headerName : MCP_FORWARDED_REQUEST_HEADERS) {
         String value = request.getHeader(headerName);

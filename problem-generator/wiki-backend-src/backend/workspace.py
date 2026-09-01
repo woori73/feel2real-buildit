@@ -16,6 +16,7 @@ from pathlib import Path
 LEGACY_WORKSPACE_ID = "legacy"
 LEGACY_LOGIN_IDS = frozenset({"admin", "modu"})
 IDENTITY_HEADER_PREFIX = "x-buildit-"
+WORKSPACE_OVERRIDE_HEADER = "x-buildit-wiki-workspace"
 OWNED_TABLES = (
     "digital_twin_profiles", "generated_questions", "exam_papers", "exam_draft",
     "students", "student_wrong_notes", "educator_insights", "exam_material_sets",
@@ -134,6 +135,53 @@ def resolve_workspace(identity: WikiIdentity, legacy_database_path: str) -> Wiki
             login_id=excluded.login_id, workspace_id=excluded.workspace_id""",
             (identity.user_id, identity.login_id, workspace_id))
         return WikiWorkspace(workspace_id, database_path, False)
+
+
+def is_workspace_admin(identity: WikiIdentity) -> bool:
+    """Only the signed Spring principal for the canonical admin account is a super-admin."""
+    return identity.login_id.casefold() == "admin" and identity.role == "ADMIN"
+
+
+def get_workspace(workspace_id: str, legacy_database_path: str) -> WikiWorkspace | None:
+    catalog = catalog_path(str(legacy_database_path))
+    Path(catalog).parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(catalog) as conn:
+        conn.row_factory = sqlite3.Row
+        _init_catalog(conn, str(legacy_database_path))
+        row = conn.execute(
+            "SELECT workspace_id, database_path, is_legacy FROM wiki_workspaces WHERE workspace_id=?",
+            (workspace_id,),
+        ).fetchone()
+    if not row:
+        return None
+    return WikiWorkspace(row["workspace_id"], row["database_path"], bool(row["is_legacy"]))
+
+
+def list_workspaces(legacy_database_path: str) -> list[dict[str, object]]:
+    """Return catalog metadata only; database paths are deliberately never exposed."""
+    catalog = catalog_path(str(legacy_database_path))
+    Path(catalog).parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(catalog) as conn:
+        conn.row_factory = sqlite3.Row
+        _init_catalog(conn, str(legacy_database_path))
+        rows = conn.execute("""SELECT workspace_id, is_legacy, created_at
+            FROM wiki_workspaces ORDER BY is_legacy DESC, created_at""").fetchall()
+        result = []
+        for row in rows:
+            members = [dict(member) for member in conn.execute(
+                "SELECT user_id, login_id FROM wiki_workspace_members WHERE workspace_id=? ORDER BY lower(login_id)",
+                (row["workspace_id"],),
+            ).fetchall()]
+            owner = members[0] if not row["is_legacy"] and len(members) == 1 else {}
+            result.append({
+                "workspace_id": row["workspace_id"],
+                "legacy": bool(row["is_legacy"]),
+                "created_at": row["created_at"],
+                "user_id": owner.get("user_id"),
+                "login_id": owner.get("login_id"),
+                "members": members,
+            })
+    return result
 
 
 def set_current_workspace(workspace: WikiWorkspace):

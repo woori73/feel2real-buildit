@@ -682,7 +682,15 @@ async def authenticated_workspace(request: Request, call_next):
             identity = wiki_workspace.WikiIdentity('test-legacy', 'admin', 'ADMIN')
         else:
             return Response(content=json.dumps({'detail': str(exc)}), status_code=401, media_type='application/json')
-    resolved = wiki_workspace.resolve_workspace(identity, DB_PATH)
+    requested_workspace_id = request.headers.get(wiki_workspace.WORKSPACE_OVERRIDE_HEADER, '').strip()
+    if requested_workspace_id:
+        if not wiki_workspace.is_workspace_admin(identity):
+            return Response(content=json.dumps({'detail': 'admin workspace access required'}), status_code=403, media_type='application/json')
+        resolved = wiki_workspace.get_workspace(requested_workspace_id, DB_PATH)
+        if resolved is None:
+            return Response(content=json.dumps({'detail': 'Wiki workspace not found'}), status_code=404, media_type='application/json')
+    else:
+        resolved = wiki_workspace.resolve_workspace(identity, DB_PATH)
     token = wiki_workspace.set_current_workspace(resolved)
     try:
         if not Path(resolved.database_path).exists():
@@ -701,14 +709,47 @@ async def authenticated_workspace(request: Request, call_next):
 def workspace_me(request: Request):
     identity = request.state.wiki_identity
     resolved = request.state.wiki_workspace
+    metadata = next(
+        (item for item in wiki_workspace.list_workspaces(DB_PATH) if item['workspace_id'] == resolved.workspace_id),
+        None,
+    )
+    owner_user_id = metadata['user_id'] if metadata else None
     return {
         'workspace_id': resolved.workspace_id,
-        'storage_namespace': 'legacy' if resolved.legacy else f'user-{identity.user_id}',
+        'storage_namespace': 'legacy' if resolved.legacy else f'user-{owner_user_id}',
         'legacy': resolved.legacy,
         'user_id': identity.user_id,
         'login_id': identity.login_id,
         'role': identity.role,
+        'workspace_admin': wiki_workspace.is_workspace_admin(identity),
+        'workspace_owner_login_id': metadata['login_id'] if metadata else None,
     }
+
+
+def _require_workspace_admin(request: Request) -> None:
+    if not wiki_workspace.is_workspace_admin(request.state.wiki_identity):
+        raise HTTPException(status_code=403, detail='admin workspace access required')
+
+
+@app.get('/api/admin/workspaces')
+def admin_workspaces(request: Request):
+    _require_workspace_admin(request)
+    return wiki_workspace.list_workspaces(DB_PATH)
+
+
+@app.get('/api/admin/workspaces/{workspace_id}')
+def admin_workspace(workspace_id: str, request: Request):
+    _require_workspace_admin(request)
+    resolved = wiki_workspace.get_workspace(workspace_id, DB_PATH)
+    if resolved is None:
+        raise HTTPException(status_code=404, detail='Wiki workspace not found')
+    metadata = next(
+        (item for item in wiki_workspace.list_workspaces(DB_PATH) if item['workspace_id'] == workspace_id),
+        None,
+    )
+    if metadata is None:
+        raise HTTPException(status_code=404, detail='Wiki workspace not found')
+    return metadata
 
 
 class StudioRun(BaseModel):

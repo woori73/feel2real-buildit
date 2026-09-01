@@ -845,3 +845,5 @@ Wiki 홈
 4. The request opens only that workspace database. All existing Wiki CRUD code therefore operates inside the authenticated workspace boundary.
 5. The frontend calls `workspace/me` before rendering. Legacy users retain the original four localStorage keys; other users use a server-derived namespace and never read or overwrite legacy keys.
 6. External MCP clients without a Spring principal continue through Bearer/X-Api-Key authentication and are explicitly scoped to the legacy workspace. Browser API requests remain HMAC-only.
+7. Signed `admin` starts in `legacy` and can list the catalog, then explicitly select a target workspace. The frontend sends only the selected workspace ID; FastAPI re-checks the signed principal before binding the request context. Clearing the selection removes the override and returns to `legacy`.
+8. `modu` and ordinary users cannot override workspace context, even with `?role=ADMIN`, client state, request-body identity fields, or a directly supplied workspace header.

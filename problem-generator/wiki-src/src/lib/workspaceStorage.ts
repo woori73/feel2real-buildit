@@ -1,4 +1,4 @@
-import { api } from './api'
+import { api, selectedWorkspace, selectWorkspace } from './api'
 
 export type WorkspaceIdentity = {
   workspace_id: string
@@ -7,12 +7,20 @@ export type WorkspaceIdentity = {
   user_id: string
   login_id: string
   role: string
+  workspace_admin: boolean
+  workspace_owner_login_id: string | null
 }
 
 let current: WorkspaceIdentity | null = null
 
 export async function initializeWorkspace(): Promise<WorkspaceIdentity> {
-  const response = await api('workspace/me')
+  let response = await api('workspace/me')
+  // A previous admin selection may remain in this tab after logout. It is only a selector,
+  // never authority: clear a denied/stale target and resolve the newly signed user normally.
+  if ((response.status === 403 || response.status === 404) && selectedWorkspace()) {
+    selectWorkspace('')
+    response = await api('workspace/me')
+  }
   if (!response.ok) throw new Error('Wiki 사용자 저장공간을 확인하지 못했습니다.')
   current = await response.json() as WorkspaceIdentity
   return current

@@ -1,9 +1,22 @@
 const REQUEST_TIMEOUT_MS = 300_000
+const WORKSPACE_SELECTION_KEY = 'buildit_admin_wiki_workspace'
+
+export function selectedWorkspace(): string {
+  return sessionStorage.getItem(WORKSPACE_SELECTION_KEY) || ''
+}
+
+export function selectWorkspace(workspaceId: string): void {
+  if (workspaceId) sessionStorage.setItem(WORKSPACE_SELECTION_KEY, workspaceId)
+  else sessionStorage.removeItem(WORKSPACE_SELECTION_KEY)
+}
 
 export const api = (path: string, init: RequestInit = {}) => {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
-  return fetch('/problem-generator/wiki/api/' + path.replace(/^\/+/, ''), { ...init, signal: init.signal || controller.signal })
+  const headers = new Headers(init.headers)
+  const workspaceId = selectedWorkspace()
+  if (workspaceId) headers.set('X-BuildIt-Wiki-Workspace', workspaceId)
+  return fetch('/problem-generator/wiki/api/' + path.replace(/^\/+/, ''), { ...init, headers, signal: init.signal || controller.signal })
     .finally(() => window.clearTimeout(timeout))
 }
 
