@@ -3,6 +3,7 @@ import type { Page } from '../App'
 import { ApiSettings } from './ApiSettingsModal'
 import { api, normalizedApiError } from '../lib/api'
 import { DigitalTwinProfile, SchoolNode, StoredQuestion, TypeDef, fetchQuestions, fetchSchoolTree, fetchTypeDefs } from '../lib/types'
+import { loadExamContext } from '../lib/wikiContext'
 import QuestionCard from './QuestionCard'
 import '../styles/generator.css'
 
@@ -15,7 +16,19 @@ const TYPE_LABELS: Record<string,string> = {
   purpose:'목적', implication:'함축 의미', reference:'지칭 추론', short_answer:'서답형',
 }
 
-const initialContext = () => { try { return JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') as { school?:string; grade?:string; exam?:string; mode?:Mode } } catch { return {} } }
+const initialContext = () => {
+  // 문제 만들기로 넘어올 때 심어둔 assistant_state가 우선. 없으면 Wiki 홈에서 마지막으로 고른
+  // 시험 Context(workspace별 분리)를 학교/학년/시험 초기값으로 재사용한다.
+  let handoff: { school?:string; grade?:string; exam?:string; mode?:Mode } = {}
+  try { handoff = JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') } catch { handoff = {} }
+  const remembered = loadExamContext()
+  return {
+    school: handoff.school || remembered.school || '',
+    grade: handoff.grade || remembered.grade || '',
+    exam: handoff.exam || remembered.exam || '',
+    mode: handoff.mode,
+  }
+}
 const normalizeTypeName = (value:string) => value.toLowerCase().replace(/[\s·_\-()/]/g,'').replace('문제','').replace('서술형','서답형').replace('문법','어법').replace('순서배열','문장순서')
 
 export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: Props) {

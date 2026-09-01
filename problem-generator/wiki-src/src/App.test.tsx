@@ -408,6 +408,45 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(await screen.findByText('JSON 파일 조합')).toBeInTheDocument()
   })
 
+  it('STEP1 학교 프린트 화면에서 기존 저장 자료를 다운로드하고 확인 후 삭제하면 목록·건수가 즉시 갱신된다', async()=>{
+    const schools = [{ school: '신사중', grades: [{ grade: '3학년', exams: [{ exam: '전체', twinId: null, version: null, updatedAt: '', hasDigitalTwin: false }] }] }]
+    let deleted = false
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/schools')) return new Response(JSON.stringify(schools), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/students')) return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.endsWith('/exam-draft')) return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.includes('/exam-materials/5/html')) return new Response('<p>saved</p>', { status: 200, headers: { 'Content-Type': 'text/html' } })
+      if (url.includes('/exam-materials/5') && init?.method === 'DELETE') { deleted = true; return new Response(null, { status: 204 }) }
+      if (url.includes('/exam-materials?')) return new Response(deleted ? '[]' : '[{"id":5,"core_type":"school_print","student_id":null,"student_name":null,"title":"1과 프린트","original_name":"","created_at":"2026-01-02T00:00:00","has_html":1}]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const createObjectURL = vi.fn(() => 'blob:mock')
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }))
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    try {
+      render(<App />)
+      await screen.findByText('신사중 · 3학년')
+      fireEvent.click(screen.getByRole('button', { name: /학교 프린트 추가/ }))
+      const listRegion = await screen.findByRole('region', { name: '저장된 학교 프린트 관리' })
+      expect(within(listRegion).getByText('1과 프린트')).toBeInTheDocument()
+
+      fireEvent.click(within(listRegion).getByRole('button', { name: 'HTML 다운로드' }))
+      await waitFor(() => expect(fetchMock.mock.calls.some(([u]) => String(u).includes('/exam-materials/5/html'))).toBe(true))
+      expect(anchorClick).toHaveBeenCalled()
+
+      fireEvent.click(within(listRegion).getByRole('button', { name: '삭제' }))
+      expect(confirmSpy).toHaveBeenCalled()
+      await waitFor(() => expect(deleted).toBe(true))
+      expect(await screen.findByText('이 시험 Context에 저장된 학교 프린트가 없습니다.')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /학교 프린트 추가\s*·\s*저장\s*0\s*건/ })).toBeInTheDocument()
+    } finally {
+      anchorClick.mockRestore(); confirmSpy.mockRestore()
+    }
+  })
+
   it('HTML이 없는 제출 경로는 조용히 끝내지 않고 저장 불가 이유를 표시한다', async()=>{
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: /학교 프린트 추가/ }))
