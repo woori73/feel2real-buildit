@@ -36,7 +36,7 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
     Promise.all([
       api(`workspaces/final/context?${query}`).then(r=>r.ok?r.json():Promise.reject(new Error('참고자료를 불러오지 못했습니다.'))),
       fetchQuestions({school:context.school,grade:context.grade,exam:context.exam}),
-    ]).then(([ctx,rows])=>{setWorkspace(ctx);setQuestions(rows);setExpanded(new Set(['twin',...(ctx.class_insights||[]).map((i:Insight)=>`i-${i.id}`),...(ctx.school_prints||[]).map((m:Material)=>`m-${m.id}`)]));setStatus(rows.length?`${rows.length}개 DB 문제를 불러왔습니다.`:'현재 Context에 저장된 문제가 없습니다.')}).catch(e=>setStatus(e instanceof Error?e.message:'자료를 불러오지 못했습니다.'))
+    ]).then(([ctx,rows])=>{setWorkspace(ctx);setQuestions(rows);setExpanded(new Set(['twin']));setStatus(rows.length?`${rows.length}개 DB 문제를 불러왔습니다.`:'현재 Context에 저장된 문제가 없습니다.')}).catch(e=>setStatus(e instanceof Error?e.message:'자료를 불러오지 못했습니다.'))
   },[context])
   useEffect(()=>{void registerChromeQuestionTools().then(ok=>{if(ok)setStatus(s=>`${s} Chrome AI 연결 준비가 완료되었습니다.`)},()=>setStatus(s=>`${s} WebMCP 연결은 사용할 수 없습니다. 변형 결과 입력을 사용하세요.`))},[])
   const toggleReference=(key:string)=>setExpanded(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
@@ -95,7 +95,7 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
 }
 
 function Reference({title,checked,onCheck,active,onOpen,children}:{title:string;checked:boolean;onCheck?:()=>void;active:boolean;onOpen:()=>void;children:ReactNode}){
-  return <article className={`chrome-reference${active?' expanded':''}`}><header>{onCheck?<input type="checkbox" aria-label={`${title} AI Context 포함`} checked={checked} onChange={onCheck}/>:<span className="context-on">포함</span>}<button onClick={onOpen}>{title}<span>{active?'접기':'내용 보기'}</span></button></header>{active&&<div className="chrome-reference-content">{children}</div>}</article>
+  return <article className={`chrome-reference${active?' expanded':''}`}><header>{onCheck?<input type="checkbox" aria-label={`${title} AI Context 포함`} checked={checked} onChange={onCheck}/>:<span className="context-on">포함</span>}<button aria-expanded={active} onClick={onOpen}>{title}<span>{active?'접기':'내용 보기'}</span></button></header><div className={`chrome-reference-content${active?'':' collapsed'}`}>{children}</div></article>
 }
 
 

@@ -199,9 +199,9 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     for(const token of ['TWIN INITIAL DOM TOKEN','INSIGHT INITIAL DOM TOKEN','SCHOOL PRINT INITIAL DOM TOKEN','PRINT JSON TOKEN','QID 82 전체 지문 TOKEN']){
       expect((await screen.findAllByText(new RegExp(token))).length).toBeGreaterThan(0)
     }
-    expect(screen.getByRole('button',{name:/Digital Twin접기/})).toBeInTheDocument()
-    expect(screen.getByRole('button',{name:/학교 선생님 Insight #21접기/})).toBeInTheDocument()
-    expect(screen.getByRole('button',{name:/5과 학교프린트접기/})).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:/Digital Twin접기/})).toHaveAttribute('aria-expanded','true')
+    expect(screen.getByRole('button',{name:/학교 선생님 Insight #21내용 보기/})).toHaveAttribute('aria-expanded','false')
+    expect(screen.getByRole('button',{name:/5과 학교프린트내용 보기/})).toHaveAttribute('aria-expanded','false')
   })
 
   it('STEP 1의 학생 오답 추가는 학생 선택·오답 원본·JSON 필드만 열고 자료 제목·구형 메타 입력이 없다', async()=>{
