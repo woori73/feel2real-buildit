@@ -301,8 +301,14 @@ test('given sec-philosophy when 공개·빌더가 렌더 then BuildIt 학습 철
       assert.match(philosophy, /data-builder-draft="philosophyKeyword"/, `${name}: eyebrow 편집 앵커 없음`);
       assert.match(philosophy, /data-builder-draft="philosophyTitle"/, `${name}: 제목 편집 앵커 없음`);
       assert.match(philosophy, /data-builder-draft="philosophyItem1"/, `${name}: 카드 편집 앵커 없음`);
+      // 빌더 캔버스는 편집 UX 우선 — 정적 그리드
+      assert.match(philosophy, /class="philosophy-grid"/, `${name}: 빌더는 정적 그리드`);
     } else {
       assert.doesNotMatch(philosophy, /data-builder-draft/, `${name}: 공개 화면에 편집 앵커가 샘`);
+      // 공개 페이지는 대표수업과 동일한 .f2r-collection 횡스크롤(새 carousel 없음)
+      assert.match(philosophy, /class="f2r-collection f2r-collection--philosophy"/, `${name}: 학습철학 횡스크롤 컬렉션 아님`);
+      assert.match(philosophy, /data-collection-track/, `${name}: 컬렉션 트랙 없음`);
+      assert.doesNotMatch(philosophy, /class="philosophy-grid"/, `${name}: 공개에 정적 그리드가 남음`);
     }
   }
 });

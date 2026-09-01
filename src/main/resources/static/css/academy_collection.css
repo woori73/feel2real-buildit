@@ -183,14 +183,16 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
    VISUAL STAGE(대표 미디어) → 프로그램 라벨 → 이름 → 한 줄 설명 → 이런 학생에게
    → 핵심 특징 → 대상 → 상담 CTA.  존재하지 않는 필드는 렌더하지 않는다(가짜 데이터 없음).
    미디어는 lesson_products 에 이미 등록된 대표 이미지/영상을 그대로 쓴다. */
+/* 공통 디바이스형 프레임(2학기 영어내신 / 학습철학 / 대표수업 동일 디자인 언어).
+   콘텐츠·동작·미디어 재생은 변경 없음 — 카드 외형만 강화한다. */
 .f2r-program-card {
   display: flex;
   flex-direction: column;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border: 3px solid var(--device-rim, #bcc3cf);
+  border-radius: var(--device-radius, 22px);
   background: #fff;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--device-shadow, 0 0 0 1px rgba(15,23,42,.045), inset 0 0 0 1.5px rgba(255,255,255,.92), 0 12px 30px rgba(10,12,20,.10));
   overflow: hidden;
 }
 .f2r-program-card-media {

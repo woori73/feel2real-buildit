@@ -87,6 +87,10 @@ test('academy_public.js: wireFeaturedSchoolCards 가 render()에 배선되고 #s
   assert.match(PUBLIC_JS, /root\.querySelector\('#sec-featured \[data-featured-cards\]'\)/);
   assert.match(PUBLIC_JS, /fetch\('\/api\/analyzes\?schoolName=' \+ encodeURIComponent\(school\)\)/);
   assert.match(PUBLIC_JS, /nameEn === 'english'/);
+  // 학년 → 학기 → 중간/기말 별로 그 출제자 Digital Twin(분석 상세) 로 들어가는 실링크 복구
+  assert.match(PUBLIC_JS, /a\.grade[^;]*a\.semester[^;]*a\.examType/);
+  assert.match(PUBLIC_JS, /featured-schoolcard-rowlink" href="' \+ href/);
+  assert.match(PUBLIC_JS, /a\.detailUrl \? escapeAttr\(a\.detailUrl\)/);
   // #sec-lessons 를 fallback 셀렉터로 쓰지 않는다
   assert.doesNotMatch(PUBLIC_JS, /wireFeaturedSchoolTwin|wireProgramCardTwin|featuredLessonIds|selectedFeaturedLessons/);
   assert.doesNotMatch(PUBLIC_JS, /#sec-lessons \[data-featured|#sec-lessons[^']*analyzes/);
@@ -94,12 +98,19 @@ test('academy_public.js: wireFeaturedSchoolCards 가 render()에 배선되고 #s
   assert.match(PUBLIC_JS, /wrap\.dataset\.cardsWired === 'true'/);
 });
 
-test('academy_public.css: 학교 카드 트랙(overflow-x + scroll-snap) + dot', () => {
+test('academy_public.css: 학교 카드 트랙 — 대표수업과 동일한 swipe/scroll-snap + dot + 디바이스 프레임', () => {
   assert.match(PUBLIC_CSS, /\.featured-schoolcards\{[^}]*overflow-x:auto/);
-  assert.match(PUBLIC_CSS, /\.featured-schoolcards\{[^}]*scroll-snap-type:x mandatory/);
-  assert.match(PUBLIC_CSS, /\.featured-schoolcard\{[^}]*scroll-snap-align:center/);
+  // 대표수업(.f2r-collection)과 동일: proximity snap + snap-align:start + overscroll contain
+  assert.match(PUBLIC_CSS, /\.featured-schoolcards\{[^}]*scroll-snap-type:x proximity/);
+  assert.match(PUBLIC_CSS, /\.featured-schoolcards\{[^}]*overscroll-behavior-x:contain/);
+  assert.match(PUBLIC_CSS, /\.featured-schoolcard\{[^}]*scroll-snap-align:start/);
+  // 카드 하나 중심 + 다음 카드 일부 peek (78vw)
+  assert.match(PUBLIC_CSS, /\.featured-schoolcard\{flex:0 0 78vw/);
+  // 공통 디바이스형 프레임
+  assert.match(PUBLIC_CSS, /\.featured-schoolcard\{[^}]*border:3px solid var\(--device-rim\)/);
   assert.match(PUBLIC_CSS, /\.featured-schoolcards-dot\.is-on\{/);
-  // 데스크톱은 카드 폭 고정(과도하게 큰 카드 금지)
+  // 학년·학기·중간/기말 별 Digital Twin(분석 상세) 링크
+  assert.match(PUBLIC_CSS, /\.featured-schoolcard-rowlink\{/);
   assert.match(PUBLIC_CSS, /@media \(min-width:900px\)\{[\s\S]*\.featured-schoolcard\{flex-basis:300px/);
 });
 
@@ -134,14 +145,15 @@ test('academy_collection.css: school-twin(.f2r-twin-*/.f2r-program-card-schools)
 /* ── 캐시버스팅 / 하드코딩 ─────────────────────────────────────────────── */
 
 test('캐시버스팅: 변경된 storefront 자산 버전이 함께 올라간다', () => {
-  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260901-5/);
   assert.match(PUBLIC_HTML, /academy_scene\.(js|css)\?v=20260901-5/);
-  // AI Native 모바일 Scene 개편으로 함께 올라간 자산.
-  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260901-7/);
   assert.match(PUBLIC_HTML, /academy_cinematic\.js\?v=20260901-7/);
-  assert.match(PUBLIC_HTML, /academy_cinematic\.css\?v=20260901-7/);
-  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260901-7/);
-  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260901-7/);
+  // 모바일 카드 디자인 시스템 + Scene 설명 + Digital Twin 복구로 함께 올라간 자산.
+  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260901-8/);
+  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260901-8/);
+  assert.match(PUBLIC_HTML, /academy_cinematic\.css\?v=20260901-8/);
+  assert.match(PUBLIC_HTML, /academy_collection\.css\?v=20260901-8/);
+  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260901-8/);
+  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260901-8/);
 });
 
 test('sections.js featured 영역에 학교/연도/시즌 하드코딩이 없다', () => {

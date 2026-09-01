@@ -241,13 +241,20 @@
               + ' 출제 분석을 준비 중입니다.</p>';
             return;
           }
-          // 카드가 모바일에서 과도하게 길어지지 않게 핵심 2~3건만 표시(전체 건수는 카운트로).
-          const rows = list.slice(0, 3).map((a) =>
-            '<li class="featured-schoolcard-row">'
-            + escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester) + ' · ' + escapeHtml(a.examType)
-            + '</li>').join('');
+          // 학년 → 학기 → 중간/기말 별로 그 출제자 Digital Twin(분석 상세)에 바로 들어갈 수 있게
+          // 각 행을 실제 detailUrl 링크로 만든다. 카드가 길어지지 않게 최대 4건만(전체는 카운트로).
+          const rows = list.slice(0, 4).map((a) => {
+            const label = escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester) + ' · ' + escapeHtml(a.examType);
+            const href = a.detailUrl ? escapeAttr(a.detailUrl) : '';
+            return '<li class="featured-schoolcard-row">'
+              + (href
+                ? '<a class="featured-schoolcard-rowlink" href="' + href + '" target="_blank" rel="noopener">'
+                  + label + '<span class="featured-schoolcard-rowgo" aria-hidden="true">›</span></a>'
+                : '<span class="featured-schoolcard-rowlink is-plain">' + label + '</span>')
+              + '</li>';
+          }).join('');
           body.innerHTML =
-            '<p class="featured-schoolcard-count">분석 자료 ' + list.length + '건</p>'
+            '<p class="featured-schoolcard-count">출제자 Digital Twin ' + list.length + '건</p>'
             + '<ul class="featured-schoolcard-rows">' + rows + '</ul>';
           if (more && list[0] && list[0].detailUrl) more.setAttribute('href', list[0].detailUrl);
         });
