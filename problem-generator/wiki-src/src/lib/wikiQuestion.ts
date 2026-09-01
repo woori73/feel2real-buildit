@@ -6,7 +6,7 @@ export type WikiQuestionV1={
   choices:Array<RichText&{number:number}>;conditions:RichText[]
   answer:{choice_numbers:number[];accepted_answers:string[];sample_answer:string}
   explanation:RichText;scoring:{score:number;multi:boolean;answer_format:string;grading_rule:string}
-  source:{school?:string;grade?:string;year?:number;semester?:string;exam?:string;source_material_id?:number;source_page?:string;source_question_number?:string;common_passage_id?:string}
+  source:{school?:string;grade?:string;year?:number;semester?:string;exam?:string;source_kind?:'teacher'|'textbook';source_material_id?:number;source_page?:string;source_question_number?:string;common_passage_id?:string;publisher?:string;lesson?:string}
 }
 
 const ALLOWED=new Set(['P','BR','DIV','SPAN','U','STRONG','B','EM','I','TABLE','THEAD','TBODY','TR','TH','TD','UL','OL','LI','BOX','HR','SUP','SUB'])

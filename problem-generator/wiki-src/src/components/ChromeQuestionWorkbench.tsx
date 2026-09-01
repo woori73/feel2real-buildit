@@ -1,8 +1,9 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react'
 import type { Page } from '../App'
 import { api } from '../lib/api'
-import { fetchQuestions, StoredQuestion } from '../lib/types'
+import { fetchQuestions, fetchTextbookQuestions, StoredQuestion } from '../lib/types'
 import { registerChromeQuestionTools } from '../lib/chromeQuestionWebMcp'
+import { buildTransformProvenance, questionOrigin, type SourceKind } from '../lib/questionSource'
 import { normalizeChromeQuestionResult, normalizeChromeQuestion, WikiQuestionV1, wikiQuestionToLegacy } from '../lib/wikiQuestion'
 import QuestionCard from './QuestionCard'
 
@@ -24,6 +25,8 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
   const [context]=useState<Context>(()=>{try{return JSON.parse(sessionStorage.getItem('buildit_chrome_context')||'null')||emptyContext}catch{return emptyContext}})
   const [workspace,setWorkspace]=useState<WorkspaceContext|null>(null)
   const [questions,setQuestions]=useState<StoredQuestion[]>([])
+  const [source,setSource]=useState<SourceKind>('teacher')
+  const [tbFilter,setTbFilter]=useState({publisher:'',lesson:'',question_type:''})
   const [index,setIndex]=useState(0)
   const [materialIds,setMaterialIds]=useState<number[]>([]),[insightIds,setInsightIds]=useState<number[]>([])
   const [expanded,setExpanded]=useState<Set<string>>(()=>new Set(['twin']))
@@ -33,17 +36,29 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
   const current=questions[index]
   useEffect(()=>{
     const query=new URLSearchParams({...context,year:String(context.year)} as any).toString()
-    Promise.all([
-      api(`workspaces/final/context?${query}`).then(r=>r.ok?r.json():Promise.reject(new Error('참고자료를 불러오지 못했습니다.'))),
-      fetchQuestions({school:context.school,grade:context.grade,exam:context.exam}),
-    ]).then(([ctx,rows])=>{setWorkspace(ctx);setQuestions(rows);setExpanded(new Set(['twin',...(ctx.class_insights||[]).map((i:Insight)=>`i-${i.id}`),...(ctx.school_prints||[]).map((m:Material)=>`m-${m.id}`)]));setStatus(rows.length?`${rows.length}개 DB 문제를 불러왔습니다.`:'현재 Context에 저장된 문제가 없습니다.')}).catch(e=>setStatus(e instanceof Error?e.message:'자료를 불러오지 못했습니다.'))
+    api(`workspaces/final/context?${query}`).then(r=>r.ok?r.json():Promise.reject(new Error('참고자료를 불러오지 못했습니다.')))
+      .then((ctx:WorkspaceContext)=>{setWorkspace(ctx);setExpanded(new Set(['twin',...(ctx.class_insights||[]).map((i:Insight)=>`i-${i.id}`),...(ctx.school_prints||[]).map((m:Material)=>`m-${m.id}`)]))})
+      .catch(e=>setStatus(e instanceof Error?e.message:'참고자료를 불러오지 못했습니다.'))
   },[context])
+  // Source(강사 문제 DB | 교과서 DB | 전체)만 다르고 이후 pipeline 은 하나. 두 Source 모두
+  // wiki-question-v1 canonical + StoredQuestion 형태라 QuestionCard/변형/저장 코드가 분기하지 않는다.
+  useEffect(()=>{
+    setIndex(0)
+    const teacher=source==='textbook'?Promise.resolve([]):fetchQuestions({school:context.school,grade:context.grade,exam:context.exam}).then(rows=>rows.map(r=>({...r,source_kind:'teacher' as const})))
+    const tb=source==='teacher'?Promise.resolve([]):fetchTextbookQuestions({...(tbFilter.publisher?{publisher:tbFilter.publisher}:{}),...(tbFilter.lesson?{lesson:tbFilter.lesson}:{}),...(tbFilter.question_type?{question_type:tbFilter.question_type}:{}),...(context.grade?{grade:context.grade}:{})})
+    Promise.all([teacher,tb]).then(([t,b])=>{
+      const rows=source==='textbook'?b:source==='teacher'?t:[...t,...b]
+      setQuestions(rows)
+      setStatus(rows.length?`${rows.length}개 문제를 불러왔습니다 (강사 ${t.length} · 교과서 ${b.length}).`:'선택한 Source에 문제가 없습니다.')
+    }).catch(e=>setStatus(e instanceof Error?e.message:'문제를 불러오지 못했습니다.'))
+  },[context,source,tbFilter])
   useEffect(()=>{void registerChromeQuestionTools().then(ok=>{if(ok)setStatus(s=>`${s} Chrome AI 연결 준비가 완료되었습니다.`)},()=>setStatus(s=>`${s} WebMCP 연결은 사용할 수 없습니다. 변형 결과 입력을 사용하세요.`))},[])
   const toggleReference=(key:string)=>setExpanded(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const included=useMemo(()=>({
     exam_context:context,digital_twin:workspace?.digital_twin||null,
     school_prints:(workspace?.school_prints||[]).filter(m=>materialIds.includes(m.id)),
     class_insights:(workspace?.class_insights||[]).filter(i=>insightIds.includes(i.id)),source_question:current?.canonical||null,source_question_id:current?.id||null,
+    source_question_meta:current?{source_kind:current.source_kind==='textbook'?'textbook':'teacher',id:current.id,textbook_material_id:current.textbook_material_id||null,page:current.page||null,question_number:current.question_number||'',publisher:current.publisher||'',lesson:current.lesson||'',school:current.school||'',grade:current.grade||'',exam:current.exam||''}:null,
   }),[context,workspace,materialIds,insightIds,current])
   useEffect(()=>{sessionStorage.setItem('buildit_chrome_workbench_context',JSON.stringify(included))},[included])
   useEffect(()=>{setPreview(null);setRevisionNote('');setResultInput('');setView('original');sessionStorage.removeItem('buildit_chrome_preview_question')},[current?.id])
@@ -64,7 +79,22 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
     try{showPreview(normalizeChromeQuestionResult(resultInput));setStatus('입력한 변형 결과를 검증하여 Preview에 반영했습니다.')}
     catch(error){setStatus(error instanceof Error?error.message:'변형 결과 JSON을 확인해 주세요.')}
   }
-  const save=async()=>{if(!current||!preview?.canonical)return;setStatus('변형본을 저장하는 중입니다.');const canonical=preview.canonical;const provenance={source_question_id:current.id,digital_twin_id:workspace?.digital_twin?.id||null,material_ids:materialIds,insight_ids:insightIds,revision_note:revisionNote,workbench:'chrome-question-transform'};const response=await api('generated-tests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({school:current.school,grade:current.grade,year:context.year,semester:context.semester,exam:current.exam,source_material:`기존 문제 QID ${current.id}`,source_page:`question:${current.id}`,questions:[wikiQuestionToLegacy(canonical)],test_type:'chrome-transform',title:`Chrome 변형 · QID ${current.id}`,digital_twin:workspace?.digital_twin?.id?`Digital Twin #${workspace.digital_twin.id}`:'',twin_pattern:JSON.stringify(provenance),target_passage:revisionNote,external_id:`chrome_${Date.now()}_${Math.random().toString(16).slice(2)}`,generation_source:'transform'})});const body=await response.json().catch(()=>({}));setStatus(response.ok?'변형본을 저장했습니다. 저장된 문제와 실전 제작 흐름에 연결되었습니다.':body.detail||'저장하지 못했습니다.')}
+  const save=async()=>{
+    if(!current||!preview?.canonical)return
+    setStatus('변형본을 저장하는 중입니다.')
+    const {kind,provenance,source_material,source_page}=buildTransformProvenance(current,context,{digital_twin_id:workspace?.digital_twin?.id||null,material_ids:materialIds,insight_ids:insightIds,revision_note:revisionNote})
+    // 교과서 원본은 절대 덮어쓰지 않는다 — 별도 generated_test row로만 저장된다.
+    const response=await api('generated-tests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      school:current.school||context.school,grade:current.grade||context.grade,year:context.year,semester:context.semester,exam:current.exam||context.exam||'전체',
+      publisher:current.publisher||'',lesson:current.lesson||'',
+      source_material,source_page,questions:[wikiQuestionToLegacy(preview.canonical)],test_type:'chrome-transform',
+      title:`Chrome 변형 · ${kind==='textbook'?'교과서 ':''}QID ${current.id}`,
+      digital_twin:workspace?.digital_twin?.id?`Digital Twin #${workspace.digital_twin.id}`:'',twin_pattern:JSON.stringify(provenance),
+      target_passage:revisionNote,external_id:`chrome_${Date.now()}_${Math.random().toString(16).slice(2)}`,generation_source:'transform',
+    })})
+    const body=await response.json().catch(()=>({}))
+    setStatus(response.ok?`변형본을 저장했습니다 (원본: ${questionOrigin(current)}). 저장된 문제와 실전 제작 흐름에 연결되었습니다.`:body.detail||'저장하지 못했습니다.')
+  }
   return <section className="chrome-workbench">
     <header className="chrome-workbench-head"><div><p className="kicker">WIKI STEP 3 · CHROME AI</p><h2>크롬 문제 변형 Workbench</h2><p>{context.school} · {context.grade} · {context.year}년 · {context.semester} · {context.exam}</p></div><button onClick={()=>onNavigate('state')}>← STEP 3로 돌아가기</button></header>
     <p className="tool-notice" role="status">{status}</p>
@@ -75,7 +105,13 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
           {(workspace?.class_insights||[]).map(i=><Reference key={`i-${i.id}`} title={`${i.source==='school_teacher'?'학교 선생님':'원장'} Insight #${i.id}`} checked={insightIds.includes(i.id)} onCheck={()=>setInsightIds(v=>v.includes(i.id)?v.filter(x=>x!==i.id):[...v,i.id])} active={expanded.has(`i-${i.id}`)} onOpen={()=>toggleReference(`i-${i.id}`)}><p>{i.content}</p></Reference>)}
           {(workspace?.school_prints||[]).map(m=><Reference key={`m-${m.id}`} title={m.title||m.original_name||`학습지 #${m.id}`} checked={materialIds.includes(m.id)} onCheck={()=>setMaterialIds(v=>v.includes(m.id)?v.filter(x=>x!==m.id):[...v,m.id])} active={expanded.has(`m-${m.id}`)} onOpen={()=>toggleReference(`m-${m.id}`)}><div className="reference-html" dangerouslySetInnerHTML={{__html:m.html_text||'<p>저장된 HTML 내용이 없습니다. JSON 내용을 확인하세요.</p>'}}/><pre>{m.json_text?JSON.stringify(m.json_text,null,2):''}</pre></Reference>)}
         </section>
-        <section className="chrome-question-panel"><div className="question-nav"><button disabled={index<=0} onClick={()=>setIndex(i=>i-1)}>← 이전 문제</button><b>{questions.length?`${index+1} / ${questions.length} · QID ${current?.id}`:'문제 없음'}</b><button disabled={index>=questions.length-1} onClick={()=>setIndex(i=>i+1)}>다음 문제 →</button></div>
+        <section className="chrome-question-panel">
+          <div className="chrome-source-tabs" role="group" aria-label="문제 Source">
+            {(['teacher','textbook','all'] as SourceKind[]).map(k=><button key={k} className={source===k?'active':''} onClick={()=>setSource(k)}>{k==='teacher'?'강사 문제 DB':k==='textbook'?'교과서 DB':'전체'}</button>)}
+          </div>
+          {source!=='teacher'&&<div className="chrome-textbook-filter"><input aria-label="교과서 출판사" placeholder="출판사" value={tbFilter.publisher} onChange={e=>setTbFilter(f=>({...f,publisher:e.target.value}))}/><input aria-label="교과서 단원" placeholder="단원(Lesson)" value={tbFilter.lesson} onChange={e=>setTbFilter(f=>({...f,lesson:e.target.value}))}/><input aria-label="교과서 문제 유형" placeholder="유형" value={tbFilter.question_type} onChange={e=>setTbFilter(f=>({...f,question_type:e.target.value}))}/></div>}
+          <div className="question-nav"><button disabled={index<=0} onClick={()=>setIndex(i=>i-1)}>← 이전 문제</button><b>{questions.length?`${index+1} / ${questions.length}`:'문제 없음'}</b><button disabled={index>=questions.length-1} onClick={()=>setIndex(i=>i+1)}>다음 문제 →</button></div>
+          {current&&<p className="chrome-question-origin" aria-label="현재 문제 출처">{questionOrigin(current)}</p>}
           <div className="view-tabs"><button className={view==='original'?'active':''} onClick={()=>setView('original')}>원본 보기</button><button className={view==='transformed'?'active':''} disabled={!preview} onClick={()=>setView('transformed')}>변형본 보기</button></div>
           <div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="question-list">{(view==='transformed'?preview:current)&&<QuestionCard q={(view==='transformed'?preview:current)!} index={1}/>}</div></div></div>
         </section>
