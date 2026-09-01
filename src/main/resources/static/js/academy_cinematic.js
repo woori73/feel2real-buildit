@@ -2,11 +2,14 @@
  * Storefront Cinematic — GSAP + ScrollTrigger 를 소유하는 *유일한* 모듈.
  *
  * 책임 범위는 정확히 한 섹션이다:
- *   #sec-digitaltwin  AI Native Pipeline — 하나의 넓은 canvas 안에서 동일한 오브젝트들이 세로
- *   스크롤 progress 0→1 에 직접 묶여 계속 이동한다: 왼쪽 학교 자료 4개가 화면을 가로질러
- *   BUILD IT BRAIN 으로 들어가고 → Twin + Insight 가 좌우에서 결합 → Brain 오른쪽에서 문제들이
- *   나오고 → 문제들이 아래로 모여 한 장의 FINAL EXAM 으로 조립된다. 정적 scene 교체가 아니다 —
- *   하나의 timeline, 오브젝트의 실제 x/y/scale 이동과 connector 선(.ai-flow-path stroke)이 신호다.
+ *   #sec-digitaltwin  AI Native Pipeline — 하나의 canvas 안에서 동일한 오브젝트들이 이동한다:
+ *   학교 자료 4개 → BUILD IT BRAIN → EXAMINER DIGITAL TWIN + TEACHER INSIGHT 결합 → 문제
+ *   4개 생성 → 한 장의 FINAL EXAM 으로 조립. 정적 scene 교체가 아니다 — 하나의 timeline.
+ *     · 데스크톱(≥900): 가로형 canvas(660×460). 세로 스크롤 progress 0→1 을 timeline 에 직접
+ *       묶는다(ScrollTrigger scrub, pin 아님).
+ *     · 모바일(<900): 세로형 canvas(330×900, 오브젝트 2×2 재배치, 배치는 academy_cinematic.css).
+ *       섹션이 뷰포트에 들어오면 ~6.5s timeline 을 1회 자동재생하고 FINAL 에서 멈춘다
+ *       (scroll scrub 아님, 무한 반복 없음). reduced-motion → 재생 없이 완성 Pipeline 정적.
  *   (학교별 Digital Twin 은 별개 — 「2학기 영어 내신」 섹션(sec-featured)의 패널.
  *    academy_public.js wireFeaturedSchoolTwin. 이 모듈과 무관.)
  *
@@ -49,11 +52,14 @@
     return global.innerWidth || (doc.documentElement && doc.documentElement.clientWidth) || 0;
   }
 
+  var MOBILE_MAX = 900;   // < 900 = 모바일(세로형 pipeline + 1회 자동재생), ≥ 900 = 데스크톱(scroll scrub)
+
   var registered = false;
+  // 데스크톱 scroll-scrub 경로 사용 조건.
   function usable() {
     if (!gsap() || !ST()) return false;
     if (reduced()) return false;
-    if (viewportWidth() < 900) return false;
+    if (viewportWidth() < MOBILE_MAX) return false;
     if (!registered) {
       try { gsap().registerPlugin(ST()); } catch (e) { return false; }
       // 모바일 주소창 리사이즈로 refresh 가 계속 도는 것을 막는다(우리는 데스크톱 전용).
@@ -62,6 +68,16 @@
     }
     return true;
   }
+  // 모바일 1회-자동재생 경로 사용 조건(ScrollTrigger 불필요, gsap core 만).
+  function mobileUsable() {
+    return !!gsap() && !reduced() && viewportWidth() < MOBILE_MAX;
+  }
+
+  // canvas 좌표계 — 데스크톱은 가로형(660×460), 모바일은 세로형(330×900). fitCanvas 가 stage
+  // 실제 폭에 맞춰 scale 하므로 px 이동량도 함께 스케일된다. 두 레이아웃의 절대배치는 CSS.
+  function canvasBox() {
+    return viewportWidth() < MOBILE_MAX ? { w: 330, h: 760 } : { w: 660, h: 460 };
+  }
 
   var built = [];        // ScrollTrigger 인스턴스
   var timelines = [];    // gsap.timeline 인스턴스
@@ -69,6 +85,8 @@
   var lastRoot = null;
   var resizeBound = false;
   var resizeTimer = null;
+  var mobileIO = null;   // 모바일 자동재생 트리거 IntersectionObserver
+  var mobilePlayed = false;   // 한 번 재생하면 CSR 재렌더에도 다시 재생하지 않는다
 
   function teardown() {
     for (var i = 0; i < built.length; i += 1) {
@@ -80,6 +98,10 @@
     built = [];
     timelines = [];
     byId = {};
+    if (mobileIO && typeof mobileIO.disconnect === 'function') {
+      try { mobileIO.disconnect(); } catch (e3) { /* noop */ }
+    }
+    mobileIO = null;
     if (doc.documentElement.classList.contains('js-cinematic')) {
       doc.documentElement.classList.remove('js-cinematic');
     }
@@ -101,18 +123,16 @@
   // 네 단계가 이어진다. immediateRender 기본(true) → progress 0 에서 자료는 화면 왼쪽 밖, Brain·
   // 문제·시험지는 아직 없음(흩어진 시작). 스크롤하면 실제로 이동/결합/분기/조립되고, 멈추면
   // 멈추고, 위로 스크롤하면 역행(분해)한다. opacity 는 보조일 뿐 — x/y/scale 이동이 주 신호.
-  var CANVAS_W = 660;
-  var CANVAS_H = 460;
-
   function fitCanvas(stage, canvas) {
-    var w = stage.clientWidth || CANVAS_W;
+    var box = canvasBox();
+    var w = stage.clientWidth || box.w;
     if (!w) return;
-    var s = w / CANVAS_W;
+    var s = w / box.w;
     canvas.style.transform = 'scale(' + s + ')';
-    stage.style.height = (CANVAS_H * s) + 'px';
+    stage.style.height = (box.h * s) + 'px';
   }
 
-  function wireAiNative(root) {
+  function wireAiNativeDesktop(root) {
     var section = root.querySelector('#sec-digitaltwin');
     if (!section) return;
     var visual = section.querySelector('[data-ai-visual]');
@@ -217,6 +237,100 @@
     paint(0);
   }
 
+  // ── AI Native — 모바일 세로형 Pipeline (scroll scrub 아님, 1회 자동재생) ──────────
+  // 데스크톱 가로 canvas 를 축소하지 않는다. 같은 오브젝트를 세로로 재배치(2×2 자료 → Twin·
+  // Insight → Brain → 2×2 문제 → FINAL, 좌표계 330×900, 배치는 academy_cinematic.css @media).
+  // 섹션이 뷰포트에 들어오면 timeline 을 0 부터 한 번만 재생하고 FINAL 상태에서 멈춘다.
+  // 무한 반복·flashing 없음. reduced-motion 이면 이 경로 자체가 실행되지 않아(mobileUsable=false)
+  // CSS 기본 배치(완성된 Pipeline)가 정적으로 보인다.
+  function wireAiNativeMobile(root) {
+    var section = root.querySelector('#sec-digitaltwin');
+    if (!section) return;
+    var stage = section.querySelector('[data-ai-stage]');
+    var canvas = section.querySelector('[data-ai-canvas]');
+    if (!stage || !canvas) return;
+    var srcs = canvas.querySelectorAll('.ai-src');
+    var qouts = canvas.querySelectorAll('.ai-qout');
+    var brain = canvas.querySelector('.ai-brain');
+    var twin = canvas.querySelector('[data-ai-node="twin"]');
+    var insight = canvas.querySelector('[data-ai-node="insight"]');
+    var finalSheet = canvas.querySelector('[data-ai-final]');
+    var flowPath = canvas.querySelector('[data-ai-flow-path]');
+    if (!srcs.length || !qouts.length || !brain || !finalSheet) return;
+
+    var g = gsap();
+    fitCanvas(stage, canvas);
+
+    var tl = g.timeline({ paused: true });
+
+    if (flowPath && typeof flowPath.getTotalLength === 'function') {
+      var len = 900;
+      try { len = flowPath.getTotalLength() || 900; } catch (e) { len = 900; }
+      g.set(flowPath, { strokeDasharray: len, strokeDashoffset: len });
+      tl.to(flowPath, { strokeDashoffset: 0, duration: 6.2, ease: 'none' }, 0);
+    }
+
+    // 0–1s: 자료 4개 등장(2×2)
+    tl.fromTo(srcs,
+      { y: -46, opacity: 0, scale: 0.8 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.14 }, 0.1);
+    // 1–2.5s: 자료가 Brain 방향(아래 중앙)으로 이동하며 축소
+    tl.to(srcs, {
+      x: function (i) { return [76, -76, 76, -76][i] || 0; },
+      y: 210, scale: 0.34, opacity: 0.2,
+      duration: 1.2, ease: 'power2.inOut', stagger: 0.1
+    }, 1.0);
+    // 2.3–3.6s: Brain 생성 + Twin / Insight 결합
+    tl.fromTo(brain, { scale: 0.15, opacity: 0.3 }, { scale: 1, opacity: 1, duration: 1.0, ease: 'back.out(1.4)' }, 2.3);
+    tl.fromTo(twin, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, 2.6);
+    tl.fromTo(insight, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, 2.9);
+    tl.to(brain, { scale: 1.08, duration: 0.35, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 3.5);
+    // 3.6–5s: Brain 에서 문제 4개 생성(2×2, 아래로)
+    tl.fromTo(qouts,
+      { y: -110, scale: 0.25, opacity: 0 },
+      { y: 0, scale: 1, opacity: 1, duration: 0.9, ease: 'power2.out', stagger: 0.22 }, 3.7);
+    // 5–6.5s: 문제가 FINAL EXAM 으로 조립
+    tl.fromTo(finalSheet, { y: 54, scale: 0.42, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.0, ease: 'power2.out' }, 5.0);
+    tl.to(qouts, {
+      x: function (i) { return [36, -36, 36, -36][i] || 0; },
+      y: function (i) { return [134, 134, 88, 88][i] || 0; },
+      scale: 0.5, opacity: 0.28,
+      duration: 1.0, ease: 'power2.inOut', stagger: 0.08
+    }, 5.2);
+
+    timelines.push(tl);
+    // playhead 를 명시적으로 0 에 두어 모든 .fromTo() 의 "from"(흩어진 시작) 상태를 렌더한다.
+    tl.pause(0);
+
+    // 이미 재생했으면(= CSR 재렌더) 다시 재생하지 않고 완성 상태로.
+    if (mobilePlayed || typeof global.IntersectionObserver !== 'function') {
+      tl.progress(1);
+      return;
+    }
+    function playOnce() {
+      if (mobilePlayed) return;
+      if (mobileIO && typeof mobileIO.disconnect === 'function') { try { mobileIO.disconnect(); } catch (e) { /* noop */ } }
+      mobileIO = null;
+      mobilePlayed = true;
+      tl.play(0);
+      emitScene(root, 'sec-digitaltwin', 0, 5);
+    }
+    mobileIO = new global.IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i += 1) {
+        if (entries[i].isIntersecting) { playOnce(); return; }
+      }
+    }, { threshold: 0.3 });
+    mobileIO.observe(section);
+    // 페일세이프(스크롤 리스너 아님, 고정 시각 1회): IO 콜백이 안 오는 환경에서도, 섹션이
+    // 이미 화면에 들어와 있으면 재생한다. 아직 안 보이면 그대로 두고 IO 를 기다린다.
+    global.setTimeout(function () {
+      if (mobilePlayed || typeof section.getBoundingClientRect !== 'function') return;
+      var r = section.getBoundingClientRect();
+      var vh = global.innerHeight || (doc.documentElement && doc.documentElement.clientHeight) || 800;
+      if (r.top < vh * 0.85 && r.bottom > vh * 0.15) playOnce();
+    }, 3500);
+  }
+
   function bindResize() {
     if (resizeBound) return;
     resizeBound = true;
@@ -233,26 +347,37 @@
     lastRoot = root;
     bindResize();
     teardown();
-    if (!usable()) return;
-    mark();
-    try {
-      wireAiNative(root);
-    } catch (e) {
-      // 어떤 이유로든 실패하면 전부 되돌리고 정적 폴백에 맡긴다.
-      teardown();
+
+    if (usable()) {
+      // 데스크톱 — 세로 스크롤 progress 0→1 을 하나의 timeline 에 직접 묶는다(scrub).
+      mark();
+      try {
+        wireAiNativeDesktop(root);
+      } catch (e) {
+        teardown();
+        return;
+      }
+      if (!built.length) {
+        if (doc.documentElement.classList.contains('js-cinematic')) {
+          doc.documentElement.classList.remove('js-cinematic');
+        }
+        return;
+      }
+      // reveal 트랜지션·이미지·폰트가 늦게 정착하면 start/end 가 밀린다 — 몇 번 더 맞춘다.
+      scheduleRefresh();
       return;
     }
-    if (!built.length) {
-      // 아무 trigger 도 안 만들어졌으면 게이트 클래스도 떼어 CSS 정적 경로를 탄다.
-      if (doc.documentElement.classList.contains('js-cinematic')) {
-        doc.documentElement.classList.remove('js-cinematic');
+
+    if (mobileUsable()) {
+      // 모바일 — 세로형 Pipeline, 섹션 진입 시 1회 자동재생(scroll scrub 아님, js-cinematic 안 붙임).
+      try {
+        wireAiNativeMobile(root);
+      } catch (e2) {
+        teardown();
       }
       return;
     }
-    // reveal 트랜지션·이미지·폰트가 늦게 정착하면 start/end 가 밀린다 — 몇 번 더 맞춘다
-    // (자기 예약 루프 아님, 고정 횟수). GSAP 은 resize/load 에서 자동 refresh 하지만 이 페이지는
-    // fetch 후 CSR 렌더라 load 는 이미 지난 뒤다.
-    scheduleRefresh();
+    // GSAP 미로드 / reduced-motion → no-op. CSS 기본 배치가 정적 Pipeline 다이어그램.
   }
 
   var refreshTimers = [];

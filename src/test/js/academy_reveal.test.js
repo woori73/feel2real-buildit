@@ -128,19 +128,21 @@ test('academy_public.css: reveal / hover 토큰이 :root 에 있다(빌더 캔�
 
 /* ── 삭제된 레거시 모션 ──────────────────────────────────────────────────── */
 
-test('Phase 4 에서 삭제한 레거시 모션 자산·API 는 여전히 없다(Phase 5 는 별도 academy_cinematic.js)', () => {
+test('Phase 4 에서 삭제한 레거시 모션 자산·API 는 여전히 없다(GSAP=academy_cinematic.js, Scene Fade=academy_scene.js 만)', () => {
   for (const rel of [
     '../../main/resources/static/js/academy_storefront_motion.js',
     '../../main/resources/static/js/academy_story.js',
-    '../../main/resources/static/css/academy_scene.css',
     '../../main/resources/static/css/academy_story.css'
   ]) {
     assert.equal(fs.existsSync(path.resolve(__dirname, rel)), false, `${rel} 는 삭제된 상태여야 한다`);
   }
-  // 죽은 모션 API 는 되살아나지 않는다.
-  assert.doesNotMatch(PUBLIC_JS, /F2RStorefrontMotion|F2RStorefrontStory|wireStory|wireSceneFlow|wireStorefrontMotion|applyReveal|processProgress\b|sceneFlow/);
-  assert.doesNotMatch(PUBLIC_HTML, /academy_storefront_motion|academy_story\.(js|css)|academy_scene\.css/);
+  // 죽은 모션 API(GSAP page-wide engine, story pin/scrub, processProgress state machine)는 되살아나지 않는다.
+  assert.doesNotMatch(PUBLIC_JS, /F2RStorefrontMotion|F2RStorefrontStory|wireStory\b|wireStorefrontMotion|applyReveal|processProgress\b/);
+  assert.doesNotMatch(PUBLIC_HTML, /academy_storefront_motion|academy_story\.(js|css)/);
   assert.doesNotMatch(SECTIONS_SRC, /data-fade|f2r-reveal|ai-process-step|ai-process-stage|data-collection-auto/);
+  // Vertical Scene Flow(이전 섹션 흐려짐)는 별도 primitive academy_scene.{js,css} 로 복구됨.
+  assert.ok(fs.existsSync(path.resolve(__dirname, '../../main/resources/static/js/academy_scene.js')));
+  assert.ok(fs.existsSync(path.resolve(__dirname, '../../main/resources/static/css/academy_scene.css')));
   // Phase 5: GSAP/ScrollTrigger 는 academy_cinematic.js 한 곳만 소유한다. academy_public.js 는
   // window.F2RCinematic 만 부른다(GSAP 리터럴 없음).
   assert.doesNotMatch(PUBLIC_JS, /\bgsap\b\.|new ScrollTrigger|ScrollTrigger\.create/);
@@ -162,8 +164,13 @@ test('academy_cinematic.js: #sec-digitaltwin 하나만 담당, sec-featured 는 
   assert.doesNotMatch(CINEMATIC_JS, /immediateRender:\s*false/);
   // 폴백 가드
   assert.match(CINEMATIC_JS, /prefers-reduced-motion: reduce/);
-  assert.match(CINEMATIC_JS, /viewportWidth\(\) < 900/);
+  assert.match(CINEMATIC_JS, /MOBILE_MAX\s*=\s*900/);
+  assert.match(CINEMATIC_JS, /viewportWidth\(\) < MOBILE_MAX/);
   assert.match(CINEMATIC_JS, /if \(!gsap\(\) \|\| !ST\(\)\) return false/);
+  // 모바일(<900): scroll scrub 아님 — 섹션 진입 시 1회 자동재생(IntersectionObserver + tl.play).
+  assert.match(CINEMATIC_JS, /function wireAiNativeMobile/);
+  assert.match(CINEMATIC_JS, /mobilePlayed/);
+  assert.match(CINEMATIC_JS, /tl\.play\(0\)/);
   // CSR 재렌더/리사이즈 안전
   assert.match(CINEMATIC_JS, /function teardown\(\)/);
   assert.match(CINEMATIC_JS, /\.kill\(\)/);
@@ -207,11 +214,14 @@ test('AI Native: 하나의 canvas 안 파이프라인 오브젝트 + 5개 세로
 
   // desktop = CSS position:sticky (JS pin 아님)
   assert.match(PUBLIC_CSS, /@media \(min-width:900px\)\{[\s\S]*\.ai-native-visual\{display:block;position:sticky/);
-  // canvas 핏: 좌표계 660 고정 canvas 를 stage 폭에 맞춰 scale. IO·타이머 없음.
+  // canvas 핏: 데스크톱 660×460 / 모바일 330×900 좌표계를 stage 폭에 맞춰 scale. IO·타이머 없음.
   assert.match(PUBLIC_JS, /function wireAiNative\(\)/);
   assert.match(PUBLIC_JS, /\[data-ai-canvas\]/);
-  assert.match(PUBLIC_JS, /w \/ 660/);
-  assert.doesNotMatch(PUBLIC_JS.slice(PUBLIC_JS.indexOf('function wireAiNative')), /setTimeout|setInterval|IntersectionObserver/);
+  assert.match(PUBLIC_JS, /mobile \? 330 : 660/);
+  const fitSlice = PUBLIC_JS.slice(
+    PUBLIC_JS.indexOf('function wireAiNative'),
+    PUBLIC_JS.indexOf('function wireFeaturedSchoolCards'));
+  assert.doesNotMatch(fitSlice, /setTimeout|setInterval|IntersectionObserver/);
 });
 
 test('AI Native: 빌더 canvas 는 sticky 대신 세로 블록으로 정적 프리뷰 + 단계 이름 편집 앵커', () => {

@@ -216,25 +216,23 @@
     return FEATURED_ITEM_DEFAULTS.map((fallback, index) => draftText(view, 'featuredItem' + (index + 1), fallback));
   }
 
-  /** 첫 번째 비어있지 않은 학교 칩 값. Featured Stage 의 기본 선택. */
-  function featuredFirst(view) {
-    return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).find(Boolean) || '';
-  }
-
   /** 비어있지 않은 학교 라벨만(순서 유지). */
   function featuredSchoolLabels(view) {
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).filter(Boolean);
   }
 
-  // Phase 5.2: sec-featured — eyebrow → 큰 제목 → 짧은 설명 → 학교 칩(단일 선택) → 선택 학교의
-  // 실제 출제자 Digital Twin(/api/analyzes) 패널 → 단일 CTA. 배선: academy_public.js
-  // wireFeaturedSchoolTwin. 횡스크롤·GSAP·별도 showcase 없음. 다른 섹션과 무관한 별개 섹션.
+  // sec-featured — eyebrow → 큰 제목 → 짧은 설명 → **학교별 독립 카드 횡스크롤**
+  // (각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA. 학교명은 전부
+  // builderDraft(featuredItemN) 입력값이며 코드에 하드코딩하지 않는다. 배선: academy_public.js
+  // wireFeaturedSchoolCards — query/render/event 모두 #sec-featured 안에서만. sec-lessons(대표수업)
+  // 와 완전히 분리 — 공용 programCardHtml 에 학교 분기 없음, lesson name 파싱 없음.
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
+    const schools = featuredItems(view);
     return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-reveal>
         <div class="section-inner featured-inner">
           <div class="featured-head">
@@ -242,8 +240,7 @@
             ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
             ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${ctx.featuredSchools(featuredItems(view).map((item, index) => ctx.featuredItem(item, index)).join(''))}
-          ${ctx.featuredTwin(featuredFirst(view))}
+          ${ctx.featuredSchoolCards(schools)}
           <div class="featured-cta" data-reveal-item>${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
@@ -1068,22 +1065,26 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // 학교 칩 — 단일 선택. 선택하면 아래 Digital Twin 패널이 그 학교의 실제 /api/analyzes
-      // 데이터로 바뀐다(배선: academy_public.js wireFeaturedSchoolTwin). 빈 항목은 생략(빈 칩 방지).
-      featuredItem(text, index) {
-        const label = String(text == null ? '' : text).trim();
-        if (!label) return '';
-        return `<button type="button" class="featured-chip" data-featured-school="${escapeAttr(label)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
-      },
-      featuredSchools(itemsHtml) {
-        return `<div class="featured-schools" data-reveal-item>`
-          + `<div class="featured-chips" role="group" aria-label="학교 선택" data-featured-group>${itemsHtml}</div>`
-          + `</div>`;
-      },
-      // Digital Twin 패널 — 공개는 빈 컨테이너를 낸다. academy_public.js 가 /api/analyzes 로 채운다.
-      featuredTwin(firstSchool) {
-        return `<div class="featured-twin" data-reveal-item data-featured-twin aria-live="polite">`
-          + `<p class="featured-twin-loading">${escapeHtml(firstSchool || '')} 출제 분석을 불러오는 중…</p>`
+      // 학교별 독립 카드 횡스크롤. 각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin.
+      // 카드 본문은 빈 상태로 내고 academy_public.js wireFeaturedSchoolCards 가 학교별로 fetch 해 채운다.
+      // #sec-featured 안에서만 배선된다 — 대표수업(sec-lessons)과 무관.
+      featuredSchoolCards(schools) {
+        const list = (schools || []).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
+        if (!list.length) return '';
+        const cards = list.map((school) =>
+          `<article class="featured-schoolcard" role="listitem" data-featured-card data-school="${escapeAttr(school)}">`
+          + `<div class="featured-schoolcard-head"><b class="featured-schoolcard-name">${escapeHtml(school)}</b>`
+          + `<span class="featured-schoolcard-kind">출제자 Digital Twin</span></div>`
+          + `<div class="featured-schoolcard-body" data-featured-card-body aria-live="polite">`
+          + `<p class="featured-schoolcard-loading">${escapeHtml(school)} 출제 분석 불러오는 중…</p></div>`
+          + `<a class="featured-schoolcard-more" data-featured-card-more href="/analyzes" target="_blank" rel="noopener">출제 분석 보기 →</a>`
+          + `</article>`).join('');
+        const dots = list.map((school, i) =>
+          `<button type="button" class="featured-schoolcards-dot${i === 0 ? ' is-on' : ''}" data-featured-dot="${i}" aria-label="${escapeAttr(school)}"></button>`).join('');
+        return `<div class="featured-schoolcards-wrap" data-reveal-item data-featured-cards>`
+          + `<div class="featured-schoolcards" role="list" data-featured-track>${cards}</div>`
+          + `<div class="featured-schoolcards-bar"><span class="featured-schoolcards-count" data-featured-count>1 / ${list.length}</span>`
+          + `<div class="featured-schoolcards-dots" role="tablist" aria-label="학교 카드 이동">${dots}</div></div>`
           + `</div>`;
       },
       featuredCta(label) {
@@ -1293,19 +1294,18 @@
         const draftKey = 'philosophyItem' + (index + 1);
         return `<div class="p-card" data-reveal-item><span class="n">${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
       },
-      // 빈 값이어도 항상 렌더한다 — 요소가 없으면 원장이 클릭해 채울 수 없다(빈 값은 CSS placeholder로 안내).
-      featuredItem(text, index) {
-        const draftKey = 'featuredItem' + (index + 1);
-        return `<div class="featured-chip"><span class="featured-chip-label" data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></div>`;
-      },
-      featuredSchools(itemsHtml) {
-        return `<div class="featured-schools"><div class="featured-chips">${itemsHtml}</div></div>`;
-      },
-      // 빌더 캔버스: Digital Twin 패널은 공개 전용(/api/analyzes fetch). 정적 안내만.
-      featuredTwin() {
-        return `<div class="featured-twin featured-twin--builder">`
-          + `<p class="featured-twin-empty">공개 페이지에서 학교별 실제 출제자 Digital Twin(<code>/analyzes</code>)이 표시됩니다.</p>`
-          + `</div>`;
+      // 빌더 캔버스: 학교별 카드(4칸 항상 렌더 — 빈 값은 CSS placeholder). 학교명만 편집.
+      // 실제 출제자 Digital Twin(/api/analyzes)은 공개 페이지 전용 — 정적 안내만.
+      featuredSchoolCards(schools) {
+        const list = schools && schools.length ? schools : ['', '', '', ''];
+        const cards = list.map((text, index) =>
+          `<article class="featured-schoolcard featured-schoolcard--builder">`
+          + `<div class="featured-schoolcard-head">`
+          + `<b class="featured-schoolcard-name"><span class="featured-chip-label" data-builder-draft="featuredItem${index + 1}" contenteditable="false" spellcheck="false">${escapeHtml(String(text == null ? '' : text))}</span></b>`
+          + `<span class="featured-schoolcard-kind">출제자 Digital Twin</span></div>`
+          + `<div class="featured-schoolcard-body"><p class="featured-schoolcard-loading">공개 페이지에서 이 학교의 실제 출제 분석(<code>/analyzes</code>)이 표시됩니다.</p></div>`
+          + `</article>`).join('');
+        return `<div class="featured-schoolcards-wrap"><div class="featured-schoolcards">${cards}</div></div>`;
       },
       featuredCta(label) {
         return `<span class="btn featured-cta-btn" data-builder-draft="featuredCtaLabel" contenteditable="false" spellcheck="false">${escapeHtml(String(label == null ? '' : label))}</span>`;
@@ -1366,7 +1366,6 @@
     featuredLessonIds,
     selectedFeaturedLessons,
     featuredItems,
-    featuredFirst,
     featuredSchoolLabels,
     aiProcessSteps,
     isHorizontalCollection,

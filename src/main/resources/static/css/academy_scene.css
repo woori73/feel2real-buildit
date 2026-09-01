@@ -1,0 +1,52 @@
+/* ══════════════ Vertical Scene Flow ══════════════
+   academy_scene.js 가 스크롤 위치(IntersectionObserver)로 section[data-scene] = enter|active|exit
+   를 준다. 1회성 아님 — 위/아래 스크롤에 따라 다시 바뀐다.
+
+   전부 html.js-scene 스코프. 모듈/JS 미로드 시 이 클래스가 안 붙어 섹션이 정적으로 완전히 보인다.
+   빌더 캔버스는 academy_scene.js 를 로드하지 않으므로 js-scene 도 없다(정적).
+
+   compositor-only: 섹션에는 opacity + transition, 자식에는 transform 만. 레이아웃 read/write 루프 없음.
+   100vh 강제·scroll hijack 없음 — 네이티브 세로 스크롤 그대로. 가독성 우선 — dim 은 완만하게(≥.42).
+
+   .section-wrap 을 함께 물려 specificity 를 올린다 — 스토어프론트 밴드에만 걸리고, 섹션이 스스로
+   [data-reveal-item].is-revealed 인 경우(academy_reveal.css opacity:1)도 이긴다.
+
+   ⚠ 자식 transform 을 받지 않는 섹션(opacity 페이드만):
+     #sec-digitaltwin  — sticky visual(AI Native canvas) 컨테이닝 블록이 깨짐
+     #sec-featured      — 가로 학교 카드 트랙을 세로 이동으로 오인
+     #sec-lessons / #sec-videos — 대표수업·Actual Class 를 이번 작업으로 건드리지 않는다(가로 컬렉션) */
+
+html.js-scene section.section-wrap[data-scene] {
+  transition: opacity .5s var(--reveal-ease, cubic-bezier(0, 0, .3, 1));
+  will-change: opacity;
+}
+html.js-scene section.section-wrap[data-scene]:not(#sec-digitaltwin):not(#sec-featured):not(#sec-lessons):not(#sec-videos) > * {
+  transition: transform .5s var(--reveal-ease, cubic-bezier(0, 0, .3, 1));
+  will-change: transform;
+}
+
+/* ENTER — 아래에서 올라올 장면: 살짝 흐리게 대기 */
+html.js-scene section.section-wrap[data-scene="enter"] { opacity: .62; }
+html.js-scene section.section-wrap[data-scene="enter"]:not(#sec-digitaltwin):not(#sec-featured):not(#sec-lessons):not(#sec-videos) > * {
+  transform: translateY(22px);
+}
+
+/* ACTIVE — 현재 뷰포트를 차지한 장면: 원래 위치, 선명 */
+html.js-scene section.section-wrap[data-scene="active"] { opacity: 1; }
+html.js-scene section.section-wrap[data-scene="active"] > * { transform: none; }
+
+/* EXIT — 위로 지나간 장면: 물러나며 흐려짐(가독 유지 위해 완만하게) */
+html.js-scene section.section-wrap[data-scene="exit"] { opacity: .42; }
+html.js-scene section.section-wrap[data-scene="exit"]:not(#sec-digitaltwin):not(#sec-featured):not(#sec-lessons):not(#sec-videos) > * {
+  transform: translateY(-18px);
+}
+
+/* reduced-motion → 항상 최종(active), 트랜지션 없음 */
+@media (prefers-reduced-motion: reduce) {
+  html.js-scene section.section-wrap[data-scene],
+  html.js-scene section.section-wrap[data-scene] > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

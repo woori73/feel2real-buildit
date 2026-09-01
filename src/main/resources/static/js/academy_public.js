@@ -110,10 +110,11 @@
       + renderOrderedSections(academy, primarySubject, regionText)
       + renderFooter(academy);
     wireReveal();
+    wireSceneFlow();
     wireCinematic();
     wireContentCollections();
     wireAiNative();
-    wireFeaturedSchoolTwin();
+    wireFeaturedSchoolCards();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
@@ -126,6 +127,27 @@
     const CINEMATIC = window.F2RCinematic;
     if (!CINEMATIC || !root) return;
     CINEMATIC.wire(root);
+  }
+
+  /**
+   * Vertical Scene Flow — 세로 스크롤에 따라 주요 섹션이 enter → active → exit(이전 섹션 흐려짐).
+   * academy_scene.js(F2RSceneFlow)가 IntersectionObserver 로 data-scene 을 주고 academy_scene.css
+   * 가 opacity/translateY 로 표현한다. 모듈 미로드·reduced-motion·IO 미지원 → 즉시 active(정적).
+   * CSR 재렌더마다 호출 — F2RSceneFlow.wire 가 이전 IO 를 끊는다.
+   * (AI Native 애니메이션과 별개: sec-digitaltwin 이 active 면 opacity 1 로 선명. sec-featured
+   *  가로 학교 카드 스와이프는 세로 rect 를 안 바꿔 영향 없음.)
+   */
+  const SCENE_FLOW_IDS = [
+    'sec-featured', 'sec-digitaltwin', 'sec-videos',
+    'sec-minilectures', 'sec-lessons', 'sec-intro', 'sec-social'
+  ];
+  function wireSceneFlow() {
+    const SF = window.F2RSceneFlow;
+    if (!SF || typeof SF.wire !== 'function' || !root) return;
+    const sections = SCENE_FLOW_IDS
+      .map((id) => root.querySelector('#' + id))
+      .filter(Boolean);
+    SF.wire(sections);
   }
 
   /**
@@ -166,9 +188,13 @@
     const fit = () => {
       const w = stage.clientWidth || 0;
       if (!w) return;
-      const s = w / 660;
+      // 좌표계: 데스크톱 가로형 660×460, 모바일 세로형 330×760 (academy_cinematic.js 와 동일).
+      const mobile = (window.innerWidth || document.documentElement.clientWidth || 0) < 900;
+      const base = mobile ? 330 : 660;
+      const boxH = mobile ? 760 : 460;
+      const s = w / base;
       canvas.style.transform = 'scale(' + s + ')';
-      stage.style.height = (460 * s) + 'px';
+      stage.style.height = (boxH * s) + 'px';
     };
     fit();
     if (aiNativeFitBound) return;
@@ -177,90 +203,91 @@
   }
 
   /**
-   * 「2학기 영어 내신」 섹션(sec-featured) — 학교 칩 선택 시 그 학교의 실제 출제자 Digital Twin 을
-   * /api/analyzes(기존 SSoT/service)에서 가져와 아래 패널에 표시한다. lesson_products 의 공감성장영어
-   * highlight 를 재사용하지 않고, builderDraft 에 데이터를 복제하지도 않는다. 가짜 summary 없음.
+   * 「2학기 영어 내신」 섹션(sec-featured) — 학교별 독립 카드 횡스크롤. 각 카드마다 그 학교의 실제
+   * 출제자 Digital Twin 을 /api/analyzes(기존 SSoT/service)에서 가져와 카드 본문에 표시한다.
+   * 가짜 분석 내용 생성 없음, lesson_products highlight 재사용 없음, builderDraft 복제 없음.
    *
-   * 칩 선택은 섹션을 흐리게 하지 않는다 — 패널만 짧은 WAAPI 마이크로 전환으로 교체.
-   * 학교별 실데이터가 없으면 "준비 중" 안내. 재렌더 시 이미 배선한 그룹은 건너뛴다.
+   * ⚠ query/render/event 는 전부 `#sec-featured` 안에서만. `#sec-lessons`(대표수업)을 fallback
+   *   셀렉터로 쓰지 않는다. 공용 programCardHtml 에 학교 분기 없음.
+   *
+   * 횡스크롤: CSS(overflow-x:auto + scroll-snap). 여기서는 스크롤 위치에 따라 `1 / N` 카운터와
+   * dot 활성만 갱신하고, dot 클릭 시 해당 카드로 스크롤한다. 세로 섹션 전환(sceneFlow)과 무관.
    */
-  function wireFeaturedSchoolTwin() {
+  function wireFeaturedSchoolCards() {
     if (!root) return;
-    const group = root.querySelector('#sec-featured [data-featured-group]');
-    const panel = root.querySelector('#sec-featured [data-featured-twin]');
-    if (!group || !panel || group.dataset.twinWired === 'true') return;
-    const chips = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
-    if (chips.length === 0) return;
-    group.dataset.twinWired = 'true';
+    const wrap = root.querySelector('#sec-featured [data-featured-cards]');
+    const track = wrap && wrap.querySelector('[data-featured-track]');
+    if (!wrap || !track || wrap.dataset.cardsWired === 'true') return;
+    const cards = Array.prototype.slice.call(track.querySelectorAll('[data-featured-card]'));
+    if (cards.length === 0) return;
+    wrap.dataset.cardsWired = 'true';
 
-    const cta = root.querySelector('#sec-featured [data-featured-cta]');
-    const ctaBase = cta ? (cta.getAttribute('data-featured-cta-base') || cta.textContent || '') : '';
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const cache = new Map();
-
-    function loadSchool(school) {
-      if (cache.has(school)) return cache.get(school);
-      const p = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
+    // 학교별 출제자 Digital Twin 렌더 (실데이터만)
+    cards.forEach((card) => {
+      const school = (card.getAttribute('data-school') || '').trim();
+      const body = card.querySelector('[data-featured-card-body]');
+      const more = card.querySelector('[data-featured-card-more]');
+      if (!school || !body) return;
+      fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
         .then((r) => (r.ok ? r.json() : []))
-        .then((list) => (Array.isArray(list) ? list : []).filter((a) => {
+        .then((raw) => (Array.isArray(raw) ? raw : []).filter((a) => {
           const s = a.subject || {};
           return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
         }))
-        .catch(() => []);
-      cache.set(school, p);
-      return p;
-    }
+        .catch(() => [])
+        .then((list) => {
+          if (!list.length) {
+            body.innerHTML = '<p class="featured-schoolcard-empty">' + escapeHtml(school)
+              + ' 출제 분석을 준비 중입니다.</p>';
+            return;
+          }
+          const rows = list.slice(0, 4).map((a) =>
+            '<li class="featured-schoolcard-row">'
+            + escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester) + ' · ' + escapeHtml(a.examType)
+            + '</li>').join('');
+          body.innerHTML =
+            '<p class="featured-schoolcard-count">분석 자료 ' + list.length + '건</p>'
+            + '<ul class="featured-schoolcard-rows">' + rows + '</ul>';
+          if (more && list[0] && list[0].detailUrl) more.setAttribute('href', list[0].detailUrl);
+        });
+    });
 
-    function renderPanel(school, list) {
-      if (!list.length) {
-        panel.innerHTML = '<p class="featured-twin-empty">'
-          + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
-        return;
-      }
-      const rows = list.slice(0, 4).map((a) =>
-        '<li class="featured-twin-row"><span class="featured-twin-exam">'
-        + escapeHtml(a.grade) + '학년 ' + escapeHtml(a.semester) + ' ' + escapeHtml(a.examType)
-        + '</span><a class="featured-twin-link" href="' + escapeAttr(a.detailUrl || '#')
-        + '" target="_blank" rel="noopener">분석 보기</a></li>').join('');
-      panel.innerHTML =
-        '<div class="featured-twin-head"><strong class="featured-twin-school" data-featured-school-name>'
-        + escapeHtml(school) + '</strong><span class="featured-twin-count">출제자 Digital Twin '
-        + list.length + '건</span></div>'
-        + '<ul class="featured-twin-list">' + rows + '</ul>'
-        + '<a class="featured-twin-more" href="/analyzes" target="_blank" rel="noopener">전체 출제 분석 보기 →</a>';
+    // 횡스크롤 위치 → `1 / N` 카운터 / dot. 스크롤 중앙에 가장 가까운 카드를 현재로 본다
+    // (track scroll 이벤트 기반 — root 있는 IntersectionObserver 지원이 고르지 않아 스크롤로 계산).
+    const countEl = wrap.querySelector('[data-featured-count]');
+    const dots = Array.prototype.slice.call(wrap.querySelectorAll('[data-featured-dot]'));
+    let current = -1;
+    function setCurrent(i) {
+      if (i === current || i < 0 || i >= cards.length) return;
+      current = i;
+      if (countEl) countEl.textContent = (i + 1) + ' / ' + cards.length;
+      dots.forEach((d, di) => d.classList.toggle('is-on', di === i));
     }
-
-    function select(chip, focus) {
-      const school = (chip.getAttribute('data-featured-school') || '').trim();
-      chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
-      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
-      if (focus) chip.focus();
-      panel.classList.add('is-loading');
-      loadSchool(school).then((list) => {
-        if (chip.getAttribute('aria-pressed') !== 'true') return;   // race guard
-        panel.classList.remove('is-loading');
-        if (!reduce && typeof panel.animate === 'function') {
-          panel.animate(
-            [{ opacity: 0.35, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-            { duration: 200, easing: 'cubic-bezier(0,0,.3,1)' });
-        }
-        renderPanel(school, list);
+    function nearestCard() {
+      const mid = track.scrollLeft + track.clientWidth / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      cards.forEach((c, i) => {
+        const center = c.offsetLeft - track.offsetLeft + c.offsetWidth / 2;
+        const dist = Math.abs(center - mid);
+        if (dist < bestDist) { bestDist = dist; best = i; }
       });
+      return best;
     }
-
-    chips.forEach((chip, i) => {
-      chip.addEventListener('click', () => select(chip, false));
-      chip.addEventListener('keydown', (e) => {
-        let n = -1;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % chips.length;
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + chips.length) % chips.length;
-        else if (e.key === 'Home') n = 0;
-        else if (e.key === 'End') n = chips.length - 1;
-        if (n >= 0) { e.preventDefault(); select(chips[n], true); }
+    let scrollRaf = null;
+    track.addEventListener('scroll', () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => { scrollRaf = null; setCurrent(nearestCard()); });
+    }, { passive: true });
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', () => {
+        const card = cards[i];
+        if (!card) return;
+        track.scrollTo({ left: card.offsetLeft - track.offsetLeft, behavior: 'smooth' });
+        setCurrent(i);
       });
     });
-    const pressed = chips.filter((c) => c.getAttribute('aria-pressed') === 'true')[0];
-    select(pressed || chips[0], false);
+    setCurrent(0);
   }
 
 
