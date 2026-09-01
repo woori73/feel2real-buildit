@@ -113,14 +113,14 @@
     wireCinematic();
     wireContentCollections();
     wireAiNative();
-    wireFeaturedShowcase();
+    wireProgramCardTwin();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
   /**
-   * Cinematic 섹션(School Digital Twin Showcase + AI Native Panorama) — GSAP+ScrollTrigger 는
-   * academy_cinematic.js(F2RCinematic) 한 곳에만 있다. 여기서는 호출만 한다. 모듈 미로드 /
-   * reduced-motion / 모바일 → no-op 이고 두 섹션은 CSS 로 정적 판독 가능(폴백은 아래 wire 들).
+   * AI Native Panorama(sec-digitaltwin) — GSAP+ScrollTrigger 는 academy_cinematic.js(F2RCinematic)
+   * 한 곳에만 있다. 여기서는 호출만 한다. 모듈 미로드 / reduced-motion / 모바일 → no-op 이고
+   * 섹션은 CSS 로 정적 판독 가능(폴백은 wireAiNative IO).
    */
   function wireCinematic() {
     const CINEMATIC = window.F2RCinematic;
@@ -179,145 +179,91 @@
   }
 
   /**
-   * School Digital Twin Showcase — 학교별 실제 출제자 Digital Twin(/api/analyzes, 기존 SSoT/service)을
-   * 가로 track 의 scene 으로 보여준다. 각 scene body 를 fetch 로 채우고, 학교 칩/네비/스크롤을
-   * 현재 scene 과 동기화한다.
+   * school-twin Program Card — sec-lessons 의 「중학교 영어내신」 카드(이름이 학교 목록인 Program
+   * Card, academy_sections.js schoolTokensFrom) 안에서 학교를 고르면 그 학교의 실제 출제자
+   * Digital Twin 을 /api/analyzes(기존 SSoT/service)에서 가져와 카드 안 패널에 표시한다.
    *
-   *   데스크톱: academy_cinematic.js(F2RCinematic)가 세로 스크롤 progress → track 가로 이동을
-   *            소유한다. 여기서는 f2r:cinematic-scene 이벤트를 듣고 칩/CTA/카운터만 맞춘다.
-   *   폴백/모바일: 네이티브 가로 스와이프 + scroll-snap. track scroll 을 읽어 동기화하고,
-   *            칩/네비 클릭은 track 을 해당 scene 으로 스크롤한다.
-   *
-   * lesson_products highlight 재사용 없음, builderDraft 복제 없음. 재렌더 시 이미 배선한 showcase 는 건너뛴다.
+   * 가짜 summary 없음, /api/analyzes 실데이터만. builderDraft 복제 없음. lesson/product 저장
+   * 구조 미변경(카드 이름을 파싱할 뿐). 재렌더 시 이미 배선한 그룹은 건너뛴다.
    */
-  function wireFeaturedShowcase() {
+  function wireProgramCardTwin() {
     if (!root) return;
-    const section = root.querySelector('#sec-featured');
-    if (!section) return;
-    const group = section.querySelector('[data-featured-group]');
-    const showcase = section.querySelector('[data-dt-showcase]');
-    if (!group || !showcase || showcase.dataset.showcaseWired === 'true') return;
-    const chips = Array.prototype.slice.call(group.querySelectorAll('[data-featured-school]'));
-    const scenes = Array.prototype.slice.call(showcase.querySelectorAll('.dt-scene'));
-    if (!chips.length || !scenes.length) return;
-    showcase.dataset.showcaseWired = 'true';
-
-    const track = showcase.querySelector('[data-dt-track]');
-    const cta = section.querySelector('[data-featured-cta]');
-    const ctaBase = cta ? (cta.getAttribute('data-featured-cta-base') || cta.textContent || '') : '';
-    const current = showcase.querySelector('[data-dt-current]');
-    const prevBtn = showcase.querySelector('[data-dt-nav-dir="prev"]');
-    const nextBtn = showcase.querySelector('[data-dt-nav-dir="next"]');
+    const groups = Array.prototype.slice.call(root.querySelectorAll('#sec-lessons [data-program-twin-group]'));
+    if (!groups.length) return;
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const n = scenes.length;
-    let activeIdx = -1;
 
-    function englishOnly(list) {
-      return (Array.isArray(list) ? list : []).filter((a) => {
-        const s = a.subject || {};
-        return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
-      });
-    }
+    groups.forEach((group) => {
+      if (group.dataset.twinWired === 'true') return;
+      group.dataset.twinWired = 'true';
+      const chips = Array.prototype.slice.call(group.querySelectorAll('[data-twin-school]'));
+      const panel = group.querySelector('[data-program-twin]');
+      if (!chips.length || !panel) return;
+      const cache = new Map();
 
-    function fillScene(scene) {
-      const body = scene.querySelector('[data-dt-body]');
-      const school = (scene.getAttribute('data-featured-school') || '').trim();
-      if (!body || !school) return;
-      fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
-        .then((r) => (r.ok ? r.json() : []))
-        .then((list) => englishOnly(list))
-        .catch(() => [])
-        .then((list) => {
-          if (!list.length) {
-            body.innerHTML = '<p class="dt-scene-empty">' + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
-            return;
-          }
-          const rows = list.slice(0, 5).map((a) =>
-            '<li class="dt-row"><span class="dt-row-exam">'
-            + escapeHtml(a.grade) + '학년 ' + escapeHtml(a.semester) + ' ' + escapeHtml(a.examType)
-            + '</span><a class="dt-row-link" href="' + escapeAttr(a.detailUrl || '/analyzes')
-            + '" target="_blank" rel="noopener">분석 보기</a></li>').join('');
-          body.innerHTML =
-            '<p class="dt-scene-count">' + list.length + ' ANALYSES</p>'
-            + '<ul class="dt-list">' + rows + '</ul>'
-            + '<a class="dt-scene-more" href="/analyzes" target="_blank" rel="noopener">전체 출제 분석 보기 →</a>';
-          if (!reduce && typeof body.animate === 'function') {
-            body.animate(
-              [{ opacity: 0.3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-              { duration: 220, easing: 'cubic-bezier(0,0,.3,1)' });
-          }
+      function englishOnly(list) {
+        return (Array.isArray(list) ? list : []).filter((a) => {
+          const s = a.subject || {};
+          return s.nameEn === 'english' || s.nameKo === '영어' || (!s.nameEn && !s.nameKo);
         });
-    }
-
-    // 모든 scene 을 실제 데이터로 채운다(가로 track 이므로 4개 전부 필요).
-    scenes.forEach(fillScene);
-
-    /** 칩/CTA/카운터/네비만 맞춘다 — 스크롤을 건드리지 않는다(이벤트 루프 방지). */
-    function syncChrome(idx) {
-      idx = Math.max(0, Math.min(n - 1, idx));
-      if (idx === activeIdx) return;
-      activeIdx = idx;
-      const school = (scenes[idx].getAttribute('data-featured-school') || '').trim();
-      chips.forEach((c, i) => c.setAttribute('aria-pressed', i === idx ? 'true' : 'false'));
-      scenes.forEach((s, i) => (i === idx ? s.setAttribute('data-active', '') : s.removeAttribute('data-active')));
-      if (cta && ctaBase) cta.textContent = school ? (school + ' · ' + ctaBase) : ctaBase;
-      if (current) current.textContent = idx + 1 < 10 ? '0' + (idx + 1) : String(idx + 1);
-      if (prevBtn) prevBtn.disabled = idx === 0;
-      if (nextBtn) nextBtn.disabled = idx === n - 1;
-    }
-
-    /** 사용자 동작 → 해당 scene 으로 이동(cinematic: 스크롤 위치, 폴백: track 가로 스크롤). */
-    function goTo(idx, focus) {
-      idx = Math.max(0, Math.min(n - 1, idx));
-      const CINEMATIC = window.F2RCinematic;
-      if (CINEMATIC && typeof CINEMATIC.active === 'function' && CINEMATIC.active()) {
-        CINEMATIC.seekFeatured(idx, n);
-      } else if (track) {
-        const left = scenes[idx].offsetLeft - (track.clientWidth - scenes[idx].offsetWidth) / 2;
-        try { track.scrollTo({ left: Math.max(0, left), behavior: reduce ? 'auto' : 'smooth' }); }
-        catch (e) { track.scrollLeft = Math.max(0, left); }
       }
-      syncChrome(idx);
-      if (focus && chips[idx]) chips[idx].focus();
-    }
 
-    chips.forEach((chip, i) => {
-      chip.addEventListener('click', () => goTo(i, false));
-      chip.addEventListener('keydown', (e) => {
-        let t = -1;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') t = (i + 1) % n;
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') t = (i - 1 + n) % n;
-        else if (e.key === 'Home') t = 0;
-        else if (e.key === 'End') t = n - 1;
-        if (t >= 0) { e.preventDefault(); goTo(t, true); }
+      function load(school) {
+        if (cache.has(school)) return cache.get(school);
+        const p = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
+          .then((r) => (r.ok ? r.json() : []))
+          .then((list) => englishOnly(list))
+          .catch(() => []);
+        cache.set(school, p);
+        return p;
+      }
+
+      function renderPanel(school, list) {
+        if (!list.length) {
+          panel.innerHTML = '<p class="f2r-twin-empty">' + escapeHtml(school) + ' 출제 분석을 준비 중입니다.</p>';
+          return;
+        }
+        const rows = list.slice(0, 4).map((a) =>
+          '<li class="f2r-twin-row">' + escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester)
+          + ' · ' + escapeHtml(a.examType) + '</li>').join('');
+        panel.innerHTML =
+          '<p class="f2r-twin-kicker">출제자 Digital Twin</p>'
+          + '<ul class="f2r-twin-list">' + rows + '</ul>'
+          + '<p class="f2r-twin-count">분석 자료 ' + list.length + '건</p>'
+          + '<a class="f2r-twin-cta" href="' + escapeAttr((list[0] && list[0].detailUrl) || '/analyzes')
+          + '" target="_blank" rel="noopener">출제 분석 보기</a>';
+      }
+
+      function select(chip, focus) {
+        const school = (chip.getAttribute('data-twin-school') || '').trim();
+        chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+        if (focus) chip.focus();
+        panel.classList.add('is-loading');
+        load(school).then((list) => {
+          if (chip.getAttribute('aria-pressed') !== 'true') return;   // race guard
+          panel.classList.remove('is-loading');
+          if (!reduce && typeof panel.animate === 'function') {
+            panel.animate(
+              [{ opacity: 0.3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+              { duration: 200, easing: 'cubic-bezier(0,0,.3,1)' });
+          }
+          renderPanel(school, list);
+        });
+      }
+
+      chips.forEach((chip, i) => {
+        chip.addEventListener('click', () => select(chip, false));
+        chip.addEventListener('keydown', (e) => {
+          let t = -1;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') t = (i + 1) % chips.length;
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') t = (i - 1 + chips.length) % chips.length;
+          else if (e.key === 'Home') t = 0;
+          else if (e.key === 'End') t = chips.length - 1;
+          if (t >= 0) { e.preventDefault(); select(chips[t], true); }
+        });
       });
+      const pressed = chips.filter((c) => c.getAttribute('aria-pressed') === 'true')[0];
+      select(pressed || chips[0], false);
     });
-    if (prevBtn) prevBtn.addEventListener('click', () => goTo(activeIdx - 1, false));
-    if (nextBtn) nextBtn.addEventListener('click', () => goTo(activeIdx + 1, false));
-
-    // cinematic 엔진이 scene 을 바꾸면 chrome 만 따라간다.
-    root.addEventListener('f2r:cinematic-scene', (e) => {
-      const d = e.detail || {};
-      if (d.section === 'sec-featured') syncChrome(d.index || 0);
-    });
-
-    // 폴백/모바일: track 가로 스크롤 위치 → 현재 scene.
-    if (track) {
-      let scheduled = false;
-      track.addEventListener('scroll', () => {
-        if (scheduled) return;
-        scheduled = true;
-        const run = () => {
-          scheduled = false;
-          if (window.F2RCinematic && window.F2RCinematic.active && window.F2RCinematic.active()) return;
-          const stride = scenes.length > 1 ? scenes[1].offsetLeft - scenes[0].offsetLeft : 1;
-          syncChrome(Math.round(track.scrollLeft / stride));
-        };
-        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run); else run();
-      }, { passive: true });
-    }
-
-    syncChrome(0);
   }
 
 

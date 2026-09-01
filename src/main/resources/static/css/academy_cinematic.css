@@ -1,163 +1,75 @@
-/* ══════════════ Storefront Cinematic (Phase 5) ══════════════
-   딱 두 섹션만: #sec-featured (School Digital Twin Horizontal Showcase) + #sec-digitaltwin
-   (AI Native 5-Scene Panorama). 애니메이션 구동은 academy_cinematic.js(GSAP ScrollTrigger scrub).
-
-   html.js-cinematic  = academy_cinematic.js 가 실제로 ScrollTrigger 를 만든 데스크톱 상태.
-                        이 게이트가 없으면(모바일 / GSAP 미로드 / reduced-motion) 두 섹션은
-                        네이티브 가로 스와이프 + scroll-snap 으로 정적 판독 가능하다.
+/* ══════════════ Storefront Cinematic ══════════════
+   AI Native 5-Scene Panorama(#sec-digitaltwin) 의 scene 내부 비주얼.
+   scene 컨테이너 / stage / 활성 전환은 academy_public.css. 여기는 각 scene 안의 오브젝트가
+   "최종 조립 상태"로 배치되는 규칙 — GSAP .from() 이 흩어진 시작에서 이 상태로 애니메이트한다
+   (academy_cinematic.js, ScrollTrigger scrub). GSAP 없음/reduced-motion/모바일이면 이 최종 상태가
+   그대로 정적으로 보인다([data-active] 셀렉터).
 
    토큰(--reveal-*, --hover-*, --ink*, --line …)은 academy_public.css :root 를 그대로 쓴다. */
-
-/* ─────────────── School Digital Twin — Horizontal Showcase ─────────────── */
-
-.dt-showcase{position:relative;margin:26px auto 0;max-width:640px;}
-.dt-progress{display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:12px;color:var(--ink-faint);font-size:12px;font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums;}
-.dt-progress [data-dt-current]{color:var(--ink);}
-.dt-progress-sep{opacity:.45;}
-
-.dt-viewport{overflow:hidden;}
-.dt-track{
-  display:flex;gap:18px;margin:0;padding:4px 4px 12px;list-style:none;
-  overflow-x:auto;overflow-y:hidden;
-  scroll-snap-type:x proximity;scroll-behavior:smooth;
-  overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;
-}
-.dt-track::-webkit-scrollbar{display:none;}
-
-.dt-scene{flex:0 0 82%;max-width:82%;scroll-snap-align:center;}
-.dt-scene-card{
-  height:100%;box-sizing:border-box;padding:22px 22px 20px;
-  border:1px solid var(--line);border-radius:var(--radius-sm);
-  background:#fff;box-shadow:var(--shadow-sm);text-align:left;
-}
-.dt-scene-num{display:block;color:var(--ultramarine);font-size:13px;font-weight:900;letter-spacing:.14em;font-variant-numeric:tabular-nums;}
-.dt-scene-kicker{margin:10px 0 2px;color:var(--ink-faint);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;}
-.dt-scene-school{margin:0 0 12px;color:var(--ink);font-size:clamp(20px,2.6vw,26px);font-weight:900;letter-spacing:-.02em;word-break:keep-all;}
-.dt-scene-body{border-top:1px solid var(--line);padding-top:12px;}
-.dt-scene-loading,.dt-scene-empty{margin:0;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.6;word-break:keep-all;}
-.dt-scene-empty code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
-.dt-scene-count{margin:0 0 8px;color:var(--ultramarine);font-size:11.5px;font-weight:900;letter-spacing:.12em;}
-.dt-list{list-style:none;margin:0;padding:0;}
-.dt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);}
-.dt-row:last-child{border-bottom:0;}
-.dt-row-exam{color:var(--ink);font-size:12.5px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
-.dt-row-link{flex:none;color:var(--ultramarine);font-size:11.5px;font-weight:800;text-decoration:none;}
-.dt-row-link:hover{text-decoration:underline;}
-.dt-scene-more{display:inline-block;margin-top:12px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
-.dt-scene-more:hover{text-decoration:underline;}
-
-.dt-nav{display:flex;justify-content:center;gap:10px;margin-top:14px;}
-.dt-nav-btn{
-  width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:999px;
-  background:#fff;color:var(--ink);font-size:18px;line-height:1;font-family:inherit;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);
-  transition:border-color .15s var(--hover-ease),color .15s var(--hover-ease),opacity .15s var(--hover-ease);
-}
-.dt-nav-btn:hover{border-color:var(--ultramarine);color:var(--ultramarine);}
-.dt-nav-btn:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
-.dt-nav-btn:disabled{opacity:.3;cursor:default;border-color:var(--line);color:var(--ink);}
-
-.dt-showcase--empty,.dt-showcase--builder{max-width:520px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:center;}
-.dt-showcase--builder .featured-twin-empty,.dt-showcase--empty .dt-scene-loading{margin:0;}
-
-/* 데스크톱 cinematic — sticky 로 뷰포트를 잡고 세로 스크롤이 track 을 가로로 민다(pin 아님). */
-@media (min-width:900px){
-  .dt-scene{flex:0 0 min(480px,42vw);max-width:none;}
-  .dt-scene-card{min-height:230px;}
-
-  html.js-cinematic #sec-featured{min-height:calc(100vh + (var(--dt-count,4) - 1) * 82vh);overflow-x:clip;}
-  html.js-cinematic #sec-featured .featured-inner{
-    position:sticky;top:0;min-height:100vh;max-width:min(1180px,92vw);
-    display:flex;flex-direction:column;justify-content:center;
-    padding-top:6vh;padding-bottom:6vh;
-  }
-  html.js-cinematic #sec-featured .dt-showcase{max-width:none;width:100%;}
-  /* viewport 는 넓은 track 을 잘라 페이지가 가로로 밀리지 않게 한다(GSAP 이 track 을 x 이동). */
-  html.js-cinematic #sec-featured .dt-viewport{overflow-x:clip;overflow-y:visible;}
-  html.js-cinematic #sec-featured .dt-track{
-    overflow:visible;scroll-snap-type:none;flex-wrap:nowrap;gap:32px;
-    padding:8px 0;will-change:transform;
-  }
-  /* 가운데 벗어난 scene 은 GSAP 이 scale/opacity 를 인라인으로 준다(중앙 포커스). */
-  html.js-cinematic #sec-featured .dt-scene{transform-origin:center;}
-  html.js-cinematic #sec-featured .dt-nav{margin-top:22px;}
-}
-
-@media (max-width:640px){
-  .dt-scene{flex-basis:86%;max-width:86%;}
-  .dt-scene-school{font-size:20px;}
-}
-
-/* ─────────────── AI Native — 5-Scene Panorama (scene 내부 비주얼) ───────────────
-   scene 컨테이너 / stage / 활성 전환은 academy_public.css. 여기는 각 scene 안의 오브젝트가
-   "최종 조립 상태"로 배치되는 규칙 — GSAP .from() 이 흩어진 시작에서 이 상태로 애니메이트한다.
-   GSAP 없으면 이 최종 상태가 그대로 정적으로 보인다. */
 
 .ai-scene-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:var(--ink-faint);font-size:10.5px;font-weight:900;letter-spacing:.16em;}
 .ai-scene [data-ai-el]{will-change:transform,opacity;}
 
-/* Scene 0 — 학교 자료가 모여 stack */
+/* Scene 0 — 학교 자료가 흩어진 상태에서 중앙으로 모여 stack */
 .ai-s0{position:relative;width:150px;height:150px;}
 .ai-doc{
-  position:absolute;left:50%;top:50%;width:112px;padding:9px 10px;
-  border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:var(--shadow-sm);
+  position:absolute;left:50%;top:50%;width:116px;padding:9px 10px;
+  border:1px solid #cfd5de;border-radius:8px;background:#fff;box-shadow:var(--shadow-sm);
   color:var(--ink);font-size:11px;font-weight:800;letter-spacing:-.01em;text-align:center;
 }
-.ai-doc[data-ai-doc="0"]{transform:translate(-50%,-50%) translate(-6px,-16px) rotate(-4deg);}
+.ai-doc[data-ai-doc="0"]{transform:translate(-50%,-50%) translate(-6px,-17px) rotate(-4deg);}
 .ai-doc[data-ai-doc="1"]{transform:translate(-50%,-50%) translate(8px,-6px) rotate(3deg);}
 .ai-doc[data-ai-doc="2"]{transform:translate(-50%,-50%) translate(-8px,6px) rotate(-2deg);}
-.ai-doc[data-ai-doc="3"]{transform:translate(-50%,-50%) translate(6px,16px) rotate(4deg);}
+.ai-doc[data-ai-doc="3"]{transform:translate(-50%,-50%) translate(6px,17px) rotate(4deg);}
 
-/* Scene 1 — 분석 레이어 + Digital Twin 카드 */
-.ai-s1-doc{position:relative;width:96px;height:120px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:var(--shadow-sm);overflow:hidden;}
-.ai-scanline{position:absolute;left:0;right:0;top:0;height:14px;background:linear-gradient(180deg,rgba(37,99,235,.35),rgba(37,99,235,0));}
-.ai-bars{list-style:none;margin:14px 0 0;padding:0;width:190px;display:flex;flex-direction:column;gap:5px;}
-.ai-bars li{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;}
+/* Scene 1 — scan → 분석 bar → EXAMINER DIGITAL TWIN 카드 */
+.ai-s1-doc{position:relative;width:96px;height:118px;border:1px solid #cfd5de;border-radius:8px;background:#fff;box-shadow:var(--shadow-sm);overflow:hidden;}
+.ai-scanline{position:absolute;left:0;right:0;top:0;height:16px;background:linear-gradient(180deg,rgba(37,99,235,.4),rgba(37,99,235,0));}
+.ai-bars{list-style:none;margin:14px 0 0;padding:0;width:200px;display:flex;flex-direction:column;gap:5px;}
+.ai-bars li{display:grid;grid-template-columns:66px 1fr;align-items:center;gap:8px;}
 .ai-bars b{color:var(--ink-faint);font-size:9px;font-weight:900;letter-spacing:.08em;}
-.ai-bars i{display:block;height:7px;border-radius:999px;background:var(--ultramarine);width:calc(var(--v,.5) * 100%);}
-.ai-twin-card{margin-top:14px;padding:8px 14px;border:1.5px solid var(--ultramarine);border-radius:10px;background:#fff;text-align:center;}
+.ai-bars i{display:block;height:8px;border-radius:999px;background:var(--ultramarine);width:calc(var(--v,.5) * 100%);}
+.ai-twin-card{margin-top:14px;padding:8px 15px;border:1.5px solid var(--ultramarine);border-radius:10px;background:#fff;text-align:center;}
 .ai-twin-card span{display:block;color:var(--ink-faint);font-size:8.5px;font-weight:900;letter-spacing:.16em;}
-.ai-twin-card b{color:var(--ink);font-size:12px;font-weight:900;letter-spacing:.02em;}
+.ai-twin-card b{color:var(--ink);font-size:12.5px;font-weight:900;letter-spacing:.02em;}
 
-/* Scene 2 — 두 스트림 → BRAIN + insight 토큰 */
+/* Scene 2 — 두 스트림이 중앙으로 이동 → BUILD IT BRAIN 결합 + insight 토큰 */
 .ai-scene[data-ai-scene="2"]{position:relative;}
-.ai-stream{position:absolute;top:44px;padding:6px 11px;border-radius:8px;font-size:9.5px;font-weight:900;letter-spacing:.06em;color:#fff;}
-.ai-stream--a{left:10px;background:var(--ultramarine);}
-.ai-stream--b{right:10px;background:var(--ink);}
-.ai-brain{width:104px;height:104px;border-radius:22px;background:linear-gradient(150deg,var(--ultramarine),var(--accent,#4A7FD4));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 14px 30px rgba(12,35,138,.28);}
-.ai-brain b{font-size:12px;font-weight:900;letter-spacing:.02em;}
+.ai-stream{position:absolute;top:42px;padding:6px 12px;border-radius:8px;font-size:9.5px;font-weight:900;letter-spacing:.05em;color:#fff;}
+.ai-stream--a{left:8px;background:var(--ultramarine);}
+.ai-stream--b{right:8px;background:var(--ink);}
+.ai-brain{width:108px;height:108px;border-radius:24px;background:linear-gradient(150deg,var(--ultramarine),var(--accent,#4A7FD4));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 16px 34px rgba(12,35,138,.3);}
+.ai-brain b{font-size:12.5px;font-weight:900;letter-spacing:.02em;}
 .ai-brain span{font-size:10px;font-weight:800;letter-spacing:.16em;opacity:.85;}
-.ai-tokens{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:5px;max-width:250px;}
-.ai-tokens li{padding:3px 8px;border-radius:999px;background:var(--bg-soft);color:var(--ultramarine);font-size:9.5px;font-weight:800;letter-spacing:-.01em;}
+.ai-tokens{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:5px;max-width:260px;}
+.ai-tokens li{padding:3px 9px;border-radius:999px;background:var(--accent-soft,#eef2ff);color:var(--ultramarine);font-size:9.5px;font-weight:800;letter-spacing:-.01em;}
 
-/* Scene 3 — 원본 문항 → 변형/서술형 */
+/* Scene 3 — BRAIN → 원본 문항 → 변형 A / 변형 B / 서술형 분기 */
 .ai-scene[data-ai-scene="3"]{position:relative;}
-.ai-brain--sm{width:auto;height:auto;padding:5px 12px;border-radius:8px;font-size:9.5px;font-weight:900;letter-spacing:.06em;position:absolute;top:36px;}
-.ai-q{border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:var(--shadow-sm);}
-.ai-q--origin{width:172px;padding:10px 12px;text-align:left;}
+.ai-brain--sm{width:auto;height:auto;padding:5px 13px;border-radius:8px;font-size:9.5px;font-weight:900;letter-spacing:.05em;position:absolute;top:34px;background:linear-gradient(150deg,var(--ultramarine),var(--accent,#4A7FD4));color:#fff;}
+.ai-q{border:1px solid #cfd5de;border-radius:8px;background:#fff;box-shadow:var(--shadow-sm);}
+.ai-q--origin{width:180px;padding:10px 12px;text-align:left;}
 .ai-q--origin b{color:var(--ultramarine);font-size:11px;font-weight:900;}
 .ai-q--origin p{margin:3px 0 6px;color:var(--ink);font-size:10px;font-weight:700;line-height:1.4;word-break:keep-all;}
-.ai-q-choices{color:var(--ink-faint);font-size:10px;letter-spacing:.14em;}
-.ai-q--var{position:absolute;bottom:34px;padding:6px 9px;font-size:9.5px;font-weight:800;color:var(--ink);}
-.ai-q--var:nth-of-type(1){left:6px;}
+.ai-q-choices{color:var(--ink-faint);font-size:10px;letter-spacing:.2em;}
+.ai-q--var{position:absolute;bottom:32px;padding:6px 10px;font-size:9.5px;font-weight:800;color:var(--ink);}
+.ai-q--var:nth-of-type(1){left:4px;}
 .ai-q--var:nth-of-type(2){left:50%;transform:translateX(-50%);}
-.ai-q--var:nth-of-type(3){right:6px;}
-.ai-stamp{position:absolute;bottom:8px;color:var(--ultramarine);font-size:10px;font-weight:900;letter-spacing:.06em;}
+.ai-q--var:nth-of-type(3){right:4px;}
+.ai-stamp{position:absolute;bottom:6px;color:var(--ultramarine);font-size:10px;font-weight:900;letter-spacing:.05em;}
 
-/* Scene 4 — 문항이 완성 시험지로 조립 */
+/* Scene 4 — 문항 Q01~Q05 가 모여 FINAL 실전 대비 시험지로 조립 */
 .ai-scene[data-ai-scene="4"]{position:relative;}
-.ai-qc{position:absolute;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;box-shadow:var(--shadow-sm);color:var(--ink-soft);font-size:9px;font-weight:900;letter-spacing:.04em;}
-.ai-qc[data-ai-el="qc0"]{left:14px;top:40px;}
-.ai-qc[data-ai-el="qc1"]{right:14px;top:40px;}
-.ai-qc[data-ai-el="qc2"]{left:22px;bottom:40px;}
-.ai-qc[data-ai-el="qc3"]{right:22px;bottom:40px;}
-.ai-qc[data-ai-el="qc4"]{left:50%;top:20px;transform:translateX(-50%);}
-.ai-final{width:132px;padding:12px 14px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 16px 34px rgba(10,12,20,.12);text-align:center;}
+.ai-qc{position:absolute;padding:4px 8px;border:1px solid #cfd5de;border-radius:6px;background:#fff;box-shadow:var(--shadow-sm);color:var(--ink-soft);font-size:9px;font-weight:900;letter-spacing:.04em;}
+.ai-qc[data-ai-el="qc0"]{left:12px;top:38px;}
+.ai-qc[data-ai-el="qc1"]{right:12px;top:38px;}
+.ai-qc[data-ai-el="qc2"]{left:20px;bottom:38px;}
+.ai-qc[data-ai-el="qc3"]{right:20px;bottom:38px;}
+.ai-qc[data-ai-el="qc4"]{left:50%;top:18px;transform:translateX(-50%);}
+.ai-final{width:138px;padding:12px 14px 14px;border:1px solid #cfd5de;border-radius:10px;background:#fff;box-shadow:0 18px 36px rgba(10,12,20,.14);text-align:center;}
 .ai-final b{display:block;color:var(--ultramarine);font-size:12px;font-weight:900;letter-spacing:.14em;}
 .ai-final-title{margin:3px 0 8px;color:var(--ink);font-size:10px;font-weight:800;word-break:keep-all;}
 .ai-final ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .ai-final li{height:5px;border-radius:999px;background:var(--bg-soft);}
-
-@media (prefers-reduced-motion:reduce){
-  .dt-track{scroll-behavior:auto;}
-}
+/* school-twin Program Card 스타일(.f2r-program-card-schools / .f2r-twin-*)은 academy_collection.css
+   에 있다 — 빌더 캔버스도 그 파일을 로드한다(academy_cinematic.css 는 공개 페이지 전용). */

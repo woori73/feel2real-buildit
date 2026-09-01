@@ -1000,6 +1000,80 @@ Phase 4 의 정적 구조 위에, 두 핵심 섹션만 cinematic section 으로 
   다음 학교 peek 의 continuity, 모바일 네이티브 스와이프 관성/스냅, AI Native 5 scene 의 시각적
   이해도, pin(sticky) 구간 진입/탈출 jump 유무, reduced-motion 실제 OS 설정, hover(데스크톱).
 
+## 22. 2026-09-01 변경: Storefront Phase 5.1 — Production Visual Correction (3개 실화면 결함)
+
+Phase 5 가 배포됐지만 실제 Production 사용자 화면 기준으로 미완료 — 3개 결함만 최소 수정.
+
+### 결함 1 — AI Native 정적 화면
+- 원인: fix #111 의 `timeline({defaults:{immediateRender:false}})` 가 progress 0 에서 모든
+  scene 요소를 CSS 최종(조립 완료) 상태로 남겨 실제 애니메이션 체감을 죽였다.
+- 수정: `immediateRender:false` **제거**(기본 true) → progress 0 = 요소가 "흩어진 시작" 상태.
+  scene i 조립 tween 을 timeline 창 `[i+0.06, i+0.9]` 전체에 펼쳐(기존 `[i-0.45, i+0.15]` 에서
+  변경) 스크롤하는 내내 이동/결합/분기/조립이 보인다. scatter 거리 확대(x ±150~190, y ±95~130).
+  ScrollTrigger `start: 'top 88%'` / `end: 'bottom 22%'` / `scrub: 0.5` (진입 runway 확보).
+  `.ai-stage` 높이 320→360, scene padding 26→34.
+- 폴백 무변경: GSAP 없음 / reduced-motion / 모바일 → `wireAiNative()` IO 폴백 + CSS `[data-active]`
+  셀렉터가 조립 완료 상태를 정적 표시(scene 요소는 CSS 자연 위치 = 조립 완료).
+- harness 검증: 정지 시 doc0 opacity 0/rotate -16°(흩어짐), f=0.02→0.16 스크롤 시 opacity
+  0.15→0.83→1(조립), scene 0→1→2→3→4 순차, 정지 시 progress 고정(2.5s drift 없음), 역스크롤 시
+  scene 0 재활성 + 재분해.
+
+### 결함 2 — 「2학기 영어내신」 실제 Program Card
+- Phase 5 는 sec-featured 에 별도 Digital Twin Showcase(`.dt-showcase`)를 만들었으나 사용자가
+  가리킨 대상은 **sec-lessons 의 Program Card(lesson 13, `tabShortName:"중학교 영어내신"`,
+  `name:"압구정중, 신구중, 신사중, 언북중"`)** 였다.
+- `renderFeatured` → **단순 Featured 밴드로 되돌림**(eyebrow → 제목 → 설명 → 정적 `<span>` 칩 →
+  CTA). `dt-showcase`/`dt-scene`/`featuredShowcase` ctx + `.dt-*` CSS + `academy_public.js`
+  `wireFeaturedShowcase` + `academy_cinematic.js` `wireFeatured`/`seekFeatured` **전부 제거**.
+  `academy_cinematic.js` 담당 섹션 = `#sec-digitaltwin` 하나만.
+- `programCardHtml`: `schoolTokensFrom(name)` — 카드 이름을 `[,/·・|]` 로 분해 →
+  `/^[가-힣A-Za-z0-9]{2,}(초|중|고|초등학교|중학교|고등학교)$/` 토큰 **2개+** 이면 그 카드는
+  school-twin 카드. 이름 줄(`.f2r-program-card-name`) 대신 `ctx.programCardSchools(schools)` —
+  `.f2r-program-card-schools[data-program-twin-group]` = `.f2r-twin-chip` 셀렉터 +
+  `.f2r-program-card-twin[data-program-twin]` 패널. eyebrow/kicker/highlight/grade/CTA/media 무변경.
+  다른 3장(school 토큰 0~1개)은 이 마크업이 없어 무변경.
+- `academy_public.js` `wireProgramCardTwin()` — `#sec-lessons [data-program-twin-group]` 마다 칩
+  선택 → `fetch('/api/analyzes?schoolName='+encodeURIComponent(school))` → 영어 필터 →
+  `출제자 Digital Twin` + `{grade}학년 · {semester} · {examType}` 목록 + `분석 자료 N건` +
+  `[출제 분석 보기]`(`list[0].detailUrl`). 재렌더 가드(`group.dataset.twinWired`), 키보드 화살표,
+  race-guard, reduced 아니면 `panel.animate` 마이크로 전환. **가짜 summary 없음, /api/analyzes
+  실데이터만, builderDraft 복제 없음, lesson/product 저장 구조 미변경(이름 파싱만).**
+- 빌더 ctx `programCardSchools` = 정적 `<span>` 칩 + `/analyzes` 안내.
+- CSS(`academy_collection.css` — 빌더도 로드): `.f2r-twin-chip`(pill, aria-pressed 시 var(--ink)),
+  `.f2r-program-card-twin`(border 1px #c9cfda + bg var(--bg-soft)), `.f2r-twin-*`.
+
+### 결함 3 — 「대표수업 / Actual Class」 카드 테두리
+- 실측: `.f2r-phone-card` 가 데스크톱에서 **w:50 / .f2r-phone-frame w:16 px 로 붕괴**(Phase 4
+  부터의 버그) + border `var(--line)`(#e8eaee)이 흰 배경에서 대비 ~3% → 사용자 인식 불가.
+- 원인 1(붕괴): `@media(min-width:900px) .f2r-collection--videos .f2r-collection-track` 의
+  `grid-template-columns: repeat(auto-fit, minmax(180px,1fr)) + justify-items:center` 조합 —
+  `justify-items:center` 가 각 `<li>` 를 content 폭으로 shrink → `.f2r-collection-card > *{width:100%}`
+  + `.f2r-phone-frame{width:100%;aspect-ratio:9/19}` 순환으로 폭 0 근처. 추가로 auto-fit 이 빈
+  5번째 트랙(+gap)을 만들어 마지막 카드가 `clientWidth` 밖 → `academy_collection.js` `is-dimmed`
+  로 `scale(.94)` 축소·이탈.
+- 수정: videos grid = Programs 와 동일 `repeat(4, minmax(0,1fr))` (고정 4트랙, 팬텀 트랙 없음),
+  `justify-items` 는 `center` 제거, `.f2r-collection--videos .f2r-phone-frame{max-width:200px;
+  margin:0 auto}` 로 카드 안 중앙 배치. `html.js-collection .f2r-collection--{programs,videos}
+  .f2r-collection-card.is-dimmed > *{transform:none;opacity:1}` — 데스크톱 grid 는 스크롤 안 되므로
+  edge 축소/감광 비활성(모바일 가로 스크롤 전용).
+- border: `.f2r-phone-card` `border:1px solid var(--line)` → `border:1px solid #c9cfda` +
+  `border-radius:20→18` + `padding:16→14` + shadow 강화. 모바일에서도 항상 표시. hover 시
+  `border-color:var(--accent)` + `.f2r-phone-frame scale(1.02)` (Phase 5 유지).
+- harness 검증: 4 카드 모두 w:201 / h:391 / 같은 행, transform none, border rgb(201,207,218)
+  가시. V2-8 media viewport / 재생 계약 미변경.
+
+### 파일 / 캐시버스팅
+- `academy_sections.js`(renderFeatured 단순화, schoolTokensFrom, programCardHtml twin 분기, ctx
+  programCardSchools ×2, featuredShowcase 제거), `academy_cinematic.{js}`(immediateRender 제거 +
+  scene tween 재배치 + wireFeatured/seek 제거), `academy_cinematic.css`(.dt-* 제거),
+  `academy_public.js`(wireFeaturedShowcase → wireProgramCardTwin), `academy_public.css`(featured
+  단순화 + .ai-stage 높이), `academy_collection.css`(videos grid 사이징 + is-dimmed 데스크톱 비활성
+  + phone-card border + .f2r-twin-* 추가). 캐시버스팅 `?v=20260901-2`.
+- 테스트: `academy_featured_selector.test.js`(school-twin Program Card 로 재작성),
+  `academy_cinematic.test.js`(1섹션, seek* 없음, immediateRender:false 금지),
+  `academy_reveal.test.js`(cinematic 계약 갱신), `AcademyBuilderTemplateContractTest.java`(`-2`).
+  JS 334 tests / 328 pass / 6 fail(전부 기존 로컬 CRLF). `bootJar` BUILD SUCCESSFUL.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락
