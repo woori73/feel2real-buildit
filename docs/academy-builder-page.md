@@ -1252,6 +1252,24 @@ frame·playback 구조/데이터 **미변경**(`academy_collection.{js,css}` dif
 - 실기기 end-to-end(세로 스크롤 fade → 학교 카드 swipe → AI Native 진입 1회 자동재생 → 대표수업
   정상)는 사용자 실제 기기 확인 필요(pane IO 제약). merge/deploy 전 사용자 확인.
 
+### 최종 조정 (사용자 피드백 3건, `fb82532`)
+- **A. 모바일 AI Native 좌표계 세로 330×760 → 330×560**. 375px 에서 `.ai-stage` ≈ 574px →
+  자료→Brain→Twin/Insight→문제→FINAL 핵심 과정이 한 화면(500~600px) 안에서 이해된다. 6.4s
+  1회 autoplay 유지. timeline y 오프셋 재조정(srcs `y:150`, qouts from `y:-92`, final `y:48`,
+  fold `[104,104,58,58]`). `academy_public.css` `.ai-stage{height:575px}`(데스크톱 `@media`
+  에서 420 유지). **slider/timeline/▶ 같은 개발용 UI 는 production 코드에 없음**(harness·
+  deliverable 전용).
+- **B. 학교 카드 본문** `list.slice(0,4)` → `slice(0,3)`(핵심 2~3건 중심, 전체는 "분석 자료
+  N건" 카운트로). `.featured-schoolcard{min-height:210 → 184}`. 다음 카드 peek 유지.
+- **C. Vertical Fade** `enter .62 / exit .42` → **`enter 1 / active 1 / exit .4`**. "다음 화면이
+  흐린 것"이 아니라 "지나간 이전 화면만 희미해지는 것". 다음 섹션은 정상 밝기로 진입. `enter`
+  자식 transform 제거, `exit` 만 `translateY(-16px)`(digitaltwin/featured/lessons/videos 제외).
+  `academy_scene.css` 셀렉터 `section.section-wrap[data-scene="enter"], ...[data-scene="active"]
+  { opacity: 1 }` + `...[data-scene="exit"] { opacity: .4 }`.
+- 재검증(harness 375px): mobile AI stage 574px·h-overflow 0·timeline 순차(t0 흩어짐→t3.5 Brain+
+  Twin/Insight→t5 문제→t6.4 FINAL); 학교 카드 3행·82vw; scene fade enter `1`/active `1`/exit `.4`,
+  lessons·videos 자식 transform `none`. JS 345/339 pass(6 기존 CRLF). `AcademyBuilderTemplateContractTest` 통과.
+
 ## 알려진 버그 / 후속 이슈 (별도 이슈로 처리)
 
 ### [BUG] handle 없는 기존 Academy는 `/builder` 발행(PUT) 시 400 — update 경로에 임시 handle 생성 누락
