@@ -73,7 +73,7 @@ const storageLabels: Partial<Record<Page, string>> = {
   home: '문제 DB', database: '문제 DB', gentests: 'Generated Question Store', exam: '문제 DB / exam_draft',
   chrometransform: '기존 문제 DB · 변형본은 문제 DB에 별도 저장',
   wrongextract: '학생 오답 기록', wrongnote: '학생 오답 기록', passagememory: '현재 작업 · 다운로드 가능', passageanalysis: '현재 작업 · 다운로드 가능', csat: '수능 문항·오답 SQLite 영구 저장', brain: 'Educator Brain · 수업 인사이트',
-  twin: '학교별 Digital Twin', school: '이 브라우저 · 학교별 DB', textbook: '이 브라우저 · 교과서 DB',
+  twin: '학교별 Digital Twin', school: '이 브라우저 · 학교별 DB', textbook: '교과서 DB · SQLite 영구 저장',
 }
 
 const downloadBlob = (filename: string, blob: Blob) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url) }
