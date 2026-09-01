@@ -59,6 +59,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.service.WikiExamOriginalServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.controller.WikiExamOriginalControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.WikiPersistenceVerificationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.WikiPageContractTest"
 
       - name: Upload test report

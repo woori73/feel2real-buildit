@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -106,6 +107,40 @@ class WikiExamOriginalControllerWebMvcTest {
             .param("examLabel", "2026 9월 모의고사").param("docType", "QUESTION")
             .cookie(token("ADMIN")))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("given STUDENT when 관리 목록/삭제/공개전환 then 403")
+  void adminReadWrite_student_forbidden() throws Exception {
+    mockMvc.perform(get("/api/admin/wiki/originals").cookie(token("STUDENT")))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(delete("/api/admin/wiki/originals/1").cookie(token("STUDENT")))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(delete("/api/admin/wiki/originals/1/hard").cookie(token("STUDENT")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("given 익명 when 관리 목록/삭제 then 401")
+  void adminReadWrite_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(get("/api/admin/wiki/originals")).andExpect(status().isUnauthorized());
+    mockMvc.perform(delete("/api/admin/wiki/originals/1")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("given ADMIN when 삭제 then 204")
+  void adminDelete_admin_noContent() throws Exception {
+    mockMvc.perform(delete("/api/admin/wiki/originals/1").cookie(token("ADMIN")))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  @DisplayName("given 없는 자료 when 다운로드 then 404")
+  void publicDownload_missing_notFound() throws Exception {
+    when(service.getPublicDownload(999L)).thenThrow(
+        new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.NOT_FOUND, "no"));
+    mockMvc.perform(get("/api/wiki/originals/999/download")).andExpect(status().isNotFound());
   }
 
   private Cookie token(String role) {
