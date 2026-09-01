@@ -18,9 +18,11 @@ import GeneratedTestBrowser from './components/GeneratedTestBrowser'
 import ManualQuestionSave from './components/ManualQuestionSave'
 import ChromeQuestionWorkbench from './components/ChromeQuestionWorkbench'
 import QuestionEditModal from './components/QuestionEditModal'
+import AdminWorkspaceSelector from './components/AdminWorkspaceSelector'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
 import { api, normalizedApiError } from './lib/api'
 import { registerCsatSiteTools } from './lib/csatWebMcp'
+import { storageKey } from './lib/workspaceStorage'
 import './styles/generator.css'
 import './styles/chrome-workbench.css'
 
@@ -87,9 +89,9 @@ export default function App() {
   const [teacherName, setTeacherName] = useState('박정민 원장')
   const [showExamAnswers, setShowExamAnswers] = useState(false)
   const [savingExam, setSavingExam] = useState(false)
-  const [schoolPrints, setSchoolPrints] = useState<PrintNote[]>(() => { try { return JSON.parse(localStorage.getItem('f2r_school_prints') || '[]') } catch { return [] } })
+  const [schoolPrints, setSchoolPrints] = useState<PrintNote[]>(() => { try { return JSON.parse(localStorage.getItem(storageKey('f2r_school_prints')) || '[]') } catch { return [] } })
   const [selectedPrintIds, setSelectedPrintIds] = useState<string[]>([])
-  const [wrongReviews, setWrongReviews] = useState<WrongReviewMaterial[]>(() => { try { return JSON.parse(localStorage.getItem('f2r_wrong_review_materials') || '[]') } catch { return [] } })
+  const [wrongReviews, setWrongReviews] = useState<WrongReviewMaterial[]>(() => { try { return JSON.parse(localStorage.getItem(storageKey('f2r_wrong_review_materials')) || '[]') } catch { return [] } })
   const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([])
@@ -103,8 +105,8 @@ export default function App() {
   const refreshQuestions = () => { fetchQuestions().then(setQuestions).catch(() => undefined) }
   useEffect(() => { if (page === 'database' || page === 'exam') refreshQuestions() }, [page])
   useEffect(() => { void registerCsatSiteTools().catch(error=>console.warn('CSAT site tools registration failed',error)) }, [])
-  useEffect(() => { const refresh=()=>{try{setSchoolPrints(JSON.parse(localStorage.getItem('f2r_school_prints')||'[]'))}catch{}};window.addEventListener('f2r-school-prints-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-school-prints-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
-  useEffect(() => { const refresh=()=>{try{setWrongReviews(JSON.parse(localStorage.getItem('f2r_wrong_review_materials')||'[]'))}catch{}};window.addEventListener('f2r-wrong-reviews-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-wrong-reviews-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
+  useEffect(() => { const refresh=()=>{try{setSchoolPrints(JSON.parse(localStorage.getItem(storageKey('f2r_school_prints'))||'[]'))}catch{}};window.addEventListener('f2r-school-prints-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-school-prints-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
+  useEffect(() => { const refresh=()=>{try{setWrongReviews(JSON.parse(localStorage.getItem(storageKey('f2r_wrong_review_materials'))||'[]'))}catch{}};window.addEventListener('f2r-wrong-reviews-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-wrong-reviews-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
   useEffect(() => { fetchExamDraft().then(draft => { if (draft.question_ids.length) setSelectedExamIds(draft.question_ids); if (draft.title) setExamTitle(draft.title); if (draft.academy_name) setAcademyName(draft.academy_name); if (draft.teacher_name) setTeacherName(draft.teacher_name) }).catch(() => undefined).finally(() => { draftLoaded.current = true }) }, [])
   useEffect(() => { if (!draftLoaded.current) return; saveExamDraft({ title: examTitle, academy_name: academyName, teacher_name: teacherName, question_ids: selectedExamIds }).catch(() => undefined) }, [selectedExamIds, examTitle, academyName, teacherName])
   const ready = (text = '현재 준비 중인 기능입니다.') => setNotice(text)
@@ -142,7 +144,7 @@ export default function App() {
   const parentHub: Page = ['wrongextract', 'wrongnote'].includes(page) ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
   return <div className={`tool-shell${isHome ? ' wiki-home-shell' : ''}${isHub ? ' category-shell' : ''}`}>
     {!isHome && !isHub && <aside className="side-nav compact-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><nav aria-label="현재 작업 내비게이션"><button onClick={() => setPage(parentHub)}>← {parentHub === 'student' ? '학생' : parentHub === 'intelligence' ? '지능' : '만들기'}</button></nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 내보내기</a></div></aside>}
-    <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}>{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
+    <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}><AdminWorkspaceSelector />{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
       {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
       {page === 'state' && <><button className="wiki-home-settings" onClick={() => setSettingsOpen(true)} aria-label="AI 설정 열기">⚙ 설정</button><NaesinWikiV1 onNavigate={setPage} /></>}
       {page === 'create' && <CategoryHub hub="create" onNavigate={setPage} />}
@@ -170,5 +172,4 @@ export default function App() {
     <ApiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={settings => { setApiSettings(settings); setNotice('AI API 설정을 저장했습니다. 문제 생성기에서 바로 사용할 수 있습니다.') }} />
   </div>
 }
-
 

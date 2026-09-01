@@ -3459,3 +3459,12 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - write tool은 `annotations.readOnlyHint=false`이며 브라우저의 Site tools 안전 검토/확인 정책을 따른다.
 - Tool handler는 DOM을 클릭하지 않고 동일 CSAT API를 호출한다.
 - WRONG tool input/output은 record ID와 Assessment Question asset만 사용하고 학생 식별정보를 반환하지 않는다.
+## Wiki authenticated workspace identity
+
+- `GET /problem-generator/wiki/api/workspace/me` returns the server-resolved Wiki workspace identity used by the frontend for browser-storage namespacing.
+- The Spring Wiki proxy resolves the JWT principal from `SecurityContext` and signs `userId`, `loginId`, `role`, and a short-lived timestamp with HMAC-SHA256. FastAPI rejects missing, expired, or forged assertions.
+- `?role=ADMIN` and `?role=TUTOR` are display-only legacy query values and never participate in workspace or authorization decisions.
+- `admin` and `modu` resolve to the shared legacy workspace by default. Every other authenticated user resolves to one private workspace and starts with an empty Wiki database.
+- `GET /problem-generator/wiki/api/admin/workspaces` lists workspace catalog metadata and members; database paths are never returned. `GET /problem-generator/wiki/api/admin/workspaces/{workspaceId}` returns one workspace or `404`. Both require the signed Spring principal to be the canonical `admin` account with `ADMIN` role.
+- A normal Wiki API request may include `X-BuildIt-Wiki-Workspace: {workspaceId}` as an explicit target selector. FastAPI honors it only for that signed `admin` identity. `modu` and ordinary users receive `403`; an unknown target receives `404`. Omitting or clearing the header restores admin to `legacy`.
+- Principal-less external MCP requests retain `MCP_API_KEY` authentication and are explicitly bound to the legacy workspace; they never fall through browser HMAC identity resolution.

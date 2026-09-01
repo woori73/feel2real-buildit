@@ -32,6 +32,11 @@ import logging
 import os
 import uuid
 
+if __package__:
+    from . import workspace as wiki_workspace
+else:
+    import workspace as wiki_workspace
+
 from mcp.server.mcpserver import MCPServer
 from pydantic import ValidationError
 from starlette.applications import Starlette
@@ -298,16 +303,25 @@ class McpEndpointMiddleware:
     등록한 내부 ``/`` route로 전달한다. 그 외 Wiki API path는 변경하지 않는다.
     """
 
-    def __init__(self, app: ASGIApp, mcp_app: ASGIApp) -> None:
+    def __init__(
+        self, app: ASGIApp, mcp_app: ASGIApp,
+        workspace: wiki_workspace.WikiWorkspace | None = None,
+    ) -> None:
         self.app = app
         self.mcp_app = mcp_app
+        self.workspace = workspace
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope['type'] == 'http' and scope.get('path') in MCP_ENDPOINT_PATHS:
             mcp_scope = dict(scope)
             mcp_scope['path'] = '/'
             mcp_scope['raw_path'] = b'/'
-            await self.mcp_app(mcp_scope, receive, send)
+            token = wiki_workspace.set_current_workspace(self.workspace) if self.workspace else None
+            try:
+                await self.mcp_app(mcp_scope, receive, send)
+            finally:
+                if token is not None:
+                    wiki_workspace.reset_current_workspace(token)
             return
         await self.app(scope, receive, send)
 
