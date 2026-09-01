@@ -2,6 +2,8 @@ import { DragEvent, useMemo, useRef, useState } from 'react'
 import { saveManualQuestions } from '../lib/types'
 import { ParsedQuestion, toContractQuestion } from '../lib/parseQuestions'
 import { ImportMeta, ImportResult, importQuestionFile } from '../lib/importQuestions'
+import { api } from '../lib/api'
+import { isSelfContained, referenceLabel, resolveReferencedPassage } from '../lib/wikiQuestion'
 
 // 강사 문제 DB — 외부(Claude/ChatGPT/MCP)에서 만든 문제 파일을 올려 그대로 저장한다.
 // AI 재생성·Digital Twin 분석 없음. 파일 업로드 → N문항 발견 → 문제 확인 → Wiki에 저장.
@@ -80,11 +82,26 @@ export default function ManualQuestionSave({ onSaved, onClose }: { onSaved: () =
     if (lowConfidence) { setNotice('문항 구조를 정확히 인식하지 못해 저장할 수 없습니다. 파일 형식을 확인해 주세요.'); return }
     setSaving(true); setNotice('저장하는 중입니다.')
     try {
+      const query=new URLSearchParams({school:ctx.school,grade:ctx.grade,year:String(ctx.year),semester:ctx.semester,exam:ctx.exam}).toString()
+      const contextResponse=await api(`workspaces/final/context?${query}`)
+      const workspace=contextResponse.ok?await contextResponse.json():{school_prints:[]}
+      const prepared=included.map(row=>{
+        const q={...row,canonical:row.canonical?structuredClone(row.canonical):undefined}
+        if(q.canonical){
+          q.canonical.source={...q.canonical.source,...ctx,source_page:meta.sourcePage}
+          if(q.canonical.passage.status==='missing'){
+            const resolved=resolveReferencedPassage(referenceLabel(q.canonical.instruction.text),workspace.school_prints||[])
+            if(resolved){q.canonical.passage={...resolved.value,status:'recovered'};q.canonical.source.source_material_id=resolved.materialId;q.sourceText=resolved.value.text}
+          }
+          if(!isSelfContained(q.canonical))q._warnings=[...(q._warnings||[]),'passage_missing · REVIEW 저장']
+        }
+        return q
+      })
       const res = await saveManualQuestions({
         school: ctx.school, grade: ctx.grade, year: ctx.year, semester: ctx.semester, exam: ctx.exam,
         exam_title: meta.title?.trim() || '', source_material: meta.sourceMaterial?.trim() || '',
         source_page: meta.sourcePage?.trim() || '', digital_twin: meta.digitalTwin?.trim() || '',
-        questions: included.map(({ _include, ...q }) => { void _include; return toContractQuestion(q) }),
+        questions: prepared.map(({ _include, ...q }) => { void _include; return toContractQuestion(q) }),
       })
       setNotice(`✓ ${res.question_count}문항을 강사 문제 DB에 저장했습니다.`)
       onSaved()
