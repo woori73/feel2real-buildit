@@ -1,13 +1,14 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import JSZip from 'jszip'
 import { extractFiles, joinExtractedPages } from '../lib/ocrExtract'
+import { storageKey } from '../lib/workspaceStorage'
 
 type Grade = '중1 (2022 개정)' | '중2 (2022 개정)' | '중3 (2022 개정)'
 type Material = { id: string; title: string; publisher: string; grade: Grade; lesson: string; tags: string; author: string; fileName: string; size: string; createdAt: string; content?: string }
 const publishers = ['NE능률(김기택)', 'YBM(김은형)', 'YBM(박준언)', '동아(윤정미)', '동아(이병민)', '미래엔(문영인)', '비상(황종배)', '지학사(송미정)', '천재(소영순)', '천재(이상기)']
 const lessons = ['1과', '2과', '3과', '4과', '5과', '6과', '7과', '8과', 'Special Lesson', 'Special Reading 1', 'Special Reading 2']
 const allowedExtensions = ['pdf', 'hwp', 'hwpx', 'docx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg', 'zip']
-const loadMaterials = (): Material[] => { try { return JSON.parse(localStorage.getItem('f2r_textbook_materials') || '[]') as Material[] } catch { return [] } }
+const loadMaterials = (): Material[] => { try { return JSON.parse(localStorage.getItem(storageKey('f2r_textbook_materials')) || '[]') as Material[] } catch { return [] } }
 const fileSize = (file: File) => `${Math.max(1, Math.round(file.size / 1024))}KB`
 
 const DB_NAME = 'f2r_textbook_files'
@@ -81,7 +82,7 @@ export default function TextbookDatabase() {
   const [printMeta, setPrintMeta] = useState({ title: '영어 내신 학습자료', academy: 'Feel to Real 영어학원', director: '박정민 원장' })
   const disabled = grade === '중3 (2022 개정)'
   const filtered = useMemo(() => materials.filter(item => item.grade === grade && item.publisher === publisher && item.lesson === lesson), [materials, grade, publisher, lesson])
-  const persist = (next: Material[]) => { setMaterials(next); localStorage.setItem('f2r_textbook_materials', JSON.stringify(next)) }
+  const persist = (next: Material[]) => { setMaterials(next); localStorage.setItem(storageKey('f2r_textbook_materials'), JSON.stringify(next)) }
   const chooseGrade = (next: Grade) => { setGrade(next); setPublisher(''); setLesson(''); setNotice(next === '중3 (2022 개정)' ? '중3 2022 개정 교과서는 2027년 제공 예정입니다.' : '') }
   const chooseFiles = (event: ChangeEvent<HTMLInputElement>) => { const selected = Array.from(event.target.files || []); const valid = selected.filter(file => allowedExtensions.includes(file.name.split('.').pop()?.toLowerCase() || '')); const invalidCount = selected.length - valid.length; if (!valid.length) { setNotice('지원하는 자료 파일을 선택해 주세요.'); return }; setFiles(current => [...current, ...valid.filter(file => !current.some(saved => saved.name === file.name && saved.size === file.size && saved.lastModified === file.lastModified))]); event.target.value = ''; setNotice(invalidCount ? `지원하지 않는 파일 ${invalidCount}개를 제외했습니다.` : `${valid.length}개 파일을 선택했습니다.`) }
   const addMaterial = async () => { if (!grade || !publisher || !lesson || !files.length) { setNotice('학년, 출판사, Lesson과 파일을 확인해 주세요.'); return }; const createdAt = new Date().toLocaleString('ko-KR'); const next: Material[] = []; for (const file of files) { const id = crypto.randomUUID(); await putFile(id, file); next.push({ id, title: form.title.trim() ? (files.length === 1 ? form.title.trim() : `${form.title.trim()} · ${file.name}`) : file.name.replace(/\.[^.]+$/, ''), publisher, grade, lesson, tags: form.tags.trim(), author: form.author.trim() || '작성자 미입력', fileName: file.name, size: fileSize(file), createdAt }) }; persist([...next, ...materials]); setForm({ title: '', tags: '', author: '박정민 원장' }); setFiles([]); setNotice(`${next.length}개 자료를 등록했습니다.`) }

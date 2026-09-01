@@ -1073,3 +1073,10 @@ Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERI
   `school/grade/year/semester/exam`, 선택적 `student_id`로 기존 시험·학생 관계를 보존한다.
 - `educator_insights`: 기존 row를 유지하며 nullable `year`, `semester`, `exam`과
   `source(director/school_teacher)`를 추가한다. 기존 인사이트는 `source=director`, Context 미지정으로 호환한다.
+## Wiki workspace isolation (FastAPI SQLite)
+
+`wiki_workspaces` and `wiki_workspace_members` live in the Wiki workspace catalog SQLite file. The fixed `legacy` workspace points to the existing Production Wiki database and has only the authenticated `admin` and `modu` members. A non-legacy member receives a deterministic private workspace ID and a separate empty SQLite database on first access.
+
+Every user-owned Wiki table is migrated idempotently with a nullable `workspace_id` column, backfilled without changing row counts, indexed, and protected by an insert trigger that writes the database workspace ID. The isolated database file is the primary security boundary; therefore a resource ID from another workspace cannot resolve even if numeric IDs collide.
+
+Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.

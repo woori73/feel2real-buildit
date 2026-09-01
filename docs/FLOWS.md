@@ -837,3 +837,10 @@ Wiki 홈
 4. write tool은 브라우저의 안전 검토 후 현재 session으로 기존 CSAT API를 호출한다. frontend DOM 위치나 버튼에 의존하지 않는다.
 5. 저장 결과는 Assessment ID, ordered Question IDs, 문제/해설 URL의 기반 정보를 반환한다.
 6. Wiki의 HALF/FULL/WRONG/DAILY 탭이 같은 Assessment ID를 조회하므로 Work에서 만든 결과를 다시 열 수 있다.
+## Wiki login to workspace flow
+
+1. Spring Security validates the JWT HttpOnly cookie and creates an authenticated principal.
+2. `BuildItWikiProxyController` ignores URL role parameters, signs the principal identity, and forwards the request only to the loopback FastAPI service.
+3. FastAPI verifies the HMAC and timestamp, resolves `admin`/`modu` to `legacy`, or creates/resolves the user's private workspace.
+4. The request opens only that workspace database. All existing Wiki CRUD code therefore operates inside the authenticated workspace boundary.
+5. The frontend calls `workspace/me` before rendering. Legacy users retain the original four localStorage keys; other users use a server-derived namespace and never read or overwrite legacy keys.

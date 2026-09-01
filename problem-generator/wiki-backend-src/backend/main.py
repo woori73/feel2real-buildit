@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 from pydantic import ValidationError
@@ -27,6 +27,7 @@ from docx.shared import Mm, Pt
 import prompt_logic as pl
 import ai_router
 import question_contract as qc
+import workspace as wiki_workspace
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -34,8 +35,10 @@ EXPORT_PATH = WORKSPACE / 'feel-to-real-project-export.zip'
 
 
 def get_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    active = wiki_workspace.current_workspace()
+    database_path = active.database_path if active else DB_PATH
+    os.makedirs(os.path.dirname(database_path), exist_ok=True)
+    conn = sqlite3.connect(database_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -652,7 +655,51 @@ async def _lifespan(_app: FastAPI):
 app = FastAPI(lifespan=_lifespan)
 init_db()
 migrate_schema()
+with get_db() as _legacy_conn:
+    wiki_workspace.migrate_owned_tables(_legacy_conn, wiki_workspace.LEGACY_WORKSPACE_ID)
 seed_default_twins()
+
+
+@app.middleware('http')
+async def authenticated_workspace(request: Request, call_next):
+    # Direct backend access is allowed only for health checks. All user data requests must
+    # carry the short-lived identity assertion created by the authenticated Spring proxy.
+    if request.url.path == '/api/health':
+        return await call_next(request)
+    try:
+        identity = wiki_workspace.verify_identity(request.headers)
+    except ValueError as exc:
+        if os.getenv('BUILDIT_WIKI_ALLOW_UNSIGNED_IDENTITY') == '1':
+            identity = wiki_workspace.WikiIdentity('test-legacy', 'admin', 'ADMIN')
+        else:
+            return Response(content=json.dumps({'detail': str(exc)}), status_code=401, media_type='application/json')
+    resolved = wiki_workspace.resolve_workspace(identity, DB_PATH)
+    token = wiki_workspace.set_current_workspace(resolved)
+    try:
+        if not Path(resolved.database_path).exists():
+            init_db()
+            migrate_schema()
+        with get_db() as conn:
+            wiki_workspace.migrate_owned_tables(conn, resolved.workspace_id)
+        request.state.wiki_identity = identity
+        request.state.wiki_workspace = resolved
+        return await call_next(request)
+    finally:
+        wiki_workspace.reset_current_workspace(token)
+
+
+@app.get('/api/workspace/me')
+def workspace_me(request: Request):
+    identity = request.state.wiki_identity
+    resolved = request.state.wiki_workspace
+    return {
+        'workspace_id': resolved.workspace_id,
+        'storage_namespace': 'legacy' if resolved.legacy else f'user-{identity.user_id}',
+        'legacy': resolved.legacy,
+        'user_id': identity.user_id,
+        'login_id': identity.login_id,
+        'role': identity.role,
+    }
 
 
 class StudioRun(BaseModel):
@@ -2594,6 +2641,8 @@ def list_students():
 @app.delete('/api/students/{student_id}')
 def delete_student(student_id: int):
     with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM students WHERE id = ?', (student_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='학생을 찾을 수 없습니다.')
         conn.execute('DELETE FROM student_wrong_notes WHERE student_id = ?', (student_id,))
         conn.execute('DELETE FROM students WHERE id = ?', (student_id,))
     return {'ok': True}

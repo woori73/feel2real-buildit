@@ -2,6 +2,7 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { ApiSettings } from './ApiSettingsModal'
 import { Student, StudentWrongNote, cleanOcrText, createStudent, createWrongNote, deleteStudent, deleteWrongNote, exportWrongNotesOffice, fetchStudents, fetchWrongNotes, updateWrongNote } from '../lib/types'
 import { ExtractedPage, acceptedFileTypes, extractFiles, joinExtractedPages, maxUploadFiles } from '../lib/ocrExtract'
+import { storageKey } from '../lib/workspaceStorage'
 
 type Props = { apiSettings: ApiSettings | null; mode?: 'extract' | 'notebook' }
 
@@ -191,7 +192,7 @@ export default function StudentWrongNoteDashboard({ apiSettings, mode = 'noteboo
   }
   const saveReviewMaterial = () => {
     if (!selected || !reviewHtml.trim()) return
-    const key='f2r_wrong_review_materials', previous=JSON.parse(localStorage.getItem(key)||'[]') as WrongReviewMaterial[]
+    const key=storageKey('f2r_wrong_review_materials'), previous=JSON.parse(localStorage.getItem(key)||'[]') as WrongReviewMaterial[]
     const material:WrongReviewMaterial={id:crypto.randomUUID(),studentId:selected.id,studentName:selected.name,school:selected.school,grade:selected.grade,exam:selected.exam_type||examLabel,title:integrateTitle,html:reviewHtml,createdAt:new Date().toISOString()}
     localStorage.setItem(key,JSON.stringify([material,...previous]));window.dispatchEvent(new Event('f2r-wrong-reviews-changed'))
     setNotice('편집한 HTML을 저장했습니다. 파이널 조립 화면에서 그대로 선택할 수 있습니다.')

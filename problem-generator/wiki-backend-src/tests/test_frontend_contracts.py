@@ -83,7 +83,7 @@ class FrontendContractTest(unittest.TestCase):
             self.assertIn(contract, source)
         self.assertIn('data-source-type="school-print"', app)
         self.assertIn('dangerouslySetInnerHTML={{__html:item.html}}', app)
-        for contract in ('multiple', 'previewUrl', "model:'qwen/qwen3.7-flash'", "localStorage.setItem('f2r_school_prints'", 'window.dispatchEvent', 'sourceLinkage'):
+        for contract in ('multiple', 'previewUrl', "model:'qwen/qwen3.7-flash'", "localStorage.setItem(storageKey('f2r_school_prints')", 'window.dispatchEvent', 'sourceLinkage'):
             self.assertIn(contract, source)
         self.assertNotIn('backgroundImage', source)
         for contract in ('1차 원문 추출 완료', '2차 HTML 복원 완료', '1차 추출 완료 · HTML 구조 복원 필요', "restorationStatus:'extracted-only'", 'extractedText', 'previewDataUrl'):

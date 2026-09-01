@@ -21,6 +21,7 @@ import QuestionEditModal from './components/QuestionEditModal'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
 import { api, normalizedApiError } from './lib/api'
 import { registerCsatSiteTools } from './lib/csatWebMcp'
+import { storageKey } from './lib/workspaceStorage'
 import './styles/generator.css'
 import './styles/chrome-workbench.css'
 
@@ -87,9 +88,9 @@ export default function App() {
   const [teacherName, setTeacherName] = useState('박정민 원장')
   const [showExamAnswers, setShowExamAnswers] = useState(false)
   const [savingExam, setSavingExam] = useState(false)
-  const [schoolPrints, setSchoolPrints] = useState<PrintNote[]>(() => { try { return JSON.parse(localStorage.getItem('f2r_school_prints') || '[]') } catch { return [] } })
+  const [schoolPrints, setSchoolPrints] = useState<PrintNote[]>(() => { try { return JSON.parse(localStorage.getItem(storageKey('f2r_school_prints')) || '[]') } catch { return [] } })
   const [selectedPrintIds, setSelectedPrintIds] = useState<string[]>([])
-  const [wrongReviews, setWrongReviews] = useState<WrongReviewMaterial[]>(() => { try { return JSON.parse(localStorage.getItem('f2r_wrong_review_materials') || '[]') } catch { return [] } })
+  const [wrongReviews, setWrongReviews] = useState<WrongReviewMaterial[]>(() => { try { return JSON.parse(localStorage.getItem(storageKey('f2r_wrong_review_materials')) || '[]') } catch { return [] } })
   const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([])
@@ -103,8 +104,8 @@ export default function App() {
   const refreshQuestions = () => { fetchQuestions().then(setQuestions).catch(() => undefined) }
   useEffect(() => { if (page === 'database' || page === 'exam') refreshQuestions() }, [page])
   useEffect(() => { void registerCsatSiteTools().catch(error=>console.warn('CSAT site tools registration failed',error)) }, [])
-  useEffect(() => { const refresh=()=>{try{setSchoolPrints(JSON.parse(localStorage.getItem('f2r_school_prints')||'[]'))}catch{}};window.addEventListener('f2r-school-prints-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-school-prints-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
-  useEffect(() => { const refresh=()=>{try{setWrongReviews(JSON.parse(localStorage.getItem('f2r_wrong_review_materials')||'[]'))}catch{}};window.addEventListener('f2r-wrong-reviews-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-wrong-reviews-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
+  useEffect(() => { const refresh=()=>{try{setSchoolPrints(JSON.parse(localStorage.getItem(storageKey('f2r_school_prints'))||'[]'))}catch{}};window.addEventListener('f2r-school-prints-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-school-prints-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
+  useEffect(() => { const refresh=()=>{try{setWrongReviews(JSON.parse(localStorage.getItem(storageKey('f2r_wrong_review_materials'))||'[]'))}catch{}};window.addEventListener('f2r-wrong-reviews-changed',refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener('f2r-wrong-reviews-changed',refresh);window.removeEventListener('storage',refresh)} }, [])
   useEffect(() => { fetchExamDraft().then(draft => { if (draft.question_ids.length) setSelectedExamIds(draft.question_ids); if (draft.title) setExamTitle(draft.title); if (draft.academy_name) setAcademyName(draft.academy_name); if (draft.teacher_name) setTeacherName(draft.teacher_name) }).catch(() => undefined).finally(() => { draftLoaded.current = true }) }, [])
   useEffect(() => { if (!draftLoaded.current) return; saveExamDraft({ title: examTitle, academy_name: academyName, teacher_name: teacherName, question_ids: selectedExamIds }).catch(() => undefined) }, [selectedExamIds, examTitle, academyName, teacherName])
   const ready = (text = '현재 준비 중인 기능입니다.') => setNotice(text)
