@@ -134,11 +134,14 @@ test('academy_collection.css: school-twin(.f2r-twin-*/.f2r-program-card-schools)
 /* ── 캐시버스팅 / 하드코딩 ─────────────────────────────────────────────── */
 
 test('캐시버스팅: 변경된 storefront 자산 버전이 함께 올라간다', () => {
-  assert.match(PUBLIC_HTML, /academy_public\.(js|css)\?v=20260901-5/);
+  assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260901-5/);
   assert.match(PUBLIC_HTML, /academy_scene\.(js|css)\?v=20260901-5/);
-  assert.match(PUBLIC_HTML, /academy_cinematic\.(js|css)\?v=20260901-5/);
-  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260901-5/);
-  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260901-5/);
+  // AI Native 모바일 Scene 개편으로 함께 올라간 자산.
+  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260901-7/);
+  assert.match(PUBLIC_HTML, /academy_cinematic\.js\?v=20260901-7/);
+  assert.match(PUBLIC_HTML, /academy_cinematic\.css\?v=20260901-7/);
+  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260901-7/);
+  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260901-7/);
 });
 
 test('sections.js featured 영역에 학교/연도/시즌 하드코딩이 없다', () => {

@@ -85,23 +85,14 @@
   var lastRoot = null;
   var resizeBound = false;
   var resizeTimer = null;
-  var mobileIO = null;   // 모바일 자동재생 트리거 IntersectionObserver
-  var mobileWatch = null;   // 모바일 자동재생 폴백 scroll/resize 리스너
-  var mobilePlayed = false;   // 한 번 재생하면 CSR 재렌더에도 다시 재생하지 않는다
+  // 모바일 단계별 횡스크롤 Story 의 배선 정리 함수들(teardown 시 전부 호출).
+  var mobileSceneCleanups = [];
 
-  // 모바일 자동재생 트리거(IO + scroll/resize 리스너)를 전부 뗀다 — 재생 성공 후, 그리고 teardown 시.
   function detachMobileTriggers() {
-    if (mobileIO && typeof mobileIO.disconnect === 'function') {
-      try { mobileIO.disconnect(); } catch (e) { /* noop */ }
+    for (var i = 0; i < mobileSceneCleanups.length; i += 1) {
+      try { mobileSceneCleanups[i](); } catch (e) { /* noop */ }
     }
-    mobileIO = null;
-    if (mobileWatch) {
-      try {
-        global.removeEventListener('scroll', mobileWatch);
-        global.removeEventListener('resize', mobileWatch);
-      } catch (e2) { /* noop */ }
-    }
-    mobileWatch = null;
+    mobileSceneCleanups = [];
   }
 
   function teardown() {
@@ -250,120 +241,146 @@
     paint(0);
   }
 
-  // ── AI Native — 모바일 세로형 Pipeline (scroll scrub 아님, 1회 자동재생) ──────────
-  // 데스크톱 가로 canvas 를 축소하지 않는다. 같은 오브젝트를 세로로 재배치(2×2 자료 → Twin·
-  // Insight → Brain → 2×2 문제 → FINAL, 좌표계 330×900, 배치는 academy_cinematic.css @media).
-  // 섹션이 뷰포트에 들어오면 timeline 을 0 부터 한 번만 재생하고 FINAL 상태에서 멈춘다.
-  // 무한 반복·flashing 없음. reduced-motion 이면 이 경로 자체가 실행되지 않아(mobileUsable=false)
-  // CSS 기본 배치(완성된 Pipeline)가 정적으로 보인다.
-  function wireAiNativeMobile(root) {
+  // ── AI Native — 모바일 단계별 횡스크롤 Story ─────────────────────────────
+  // 데스크톱 scroll-linked canvas 와 별개. academy_sections.js aiScenesMobileHtml 가 만든 5개
+  // Scene 카드(.ai-scene)를 대표수업과 동일한 .f2r-collection 위에 얹는다(새 carousel 없음).
+  // 각 Scene 은 자기만의 짧은 timeline(≈2.2s)을 갖고, 그 Scene 이 활성(선두) 카드가 될 때마다
+  // progress 0 으로 되감아 1회 재생한다(양방향 — 왼쪽으로 되돌아와도 재재생). 자동 다음 장면
+  // 전환 없음. 무한 반복 없음. "전체 파이프라인을 섹션당 한 번만 재생"하는 플래그도 없다.
+  // reduced-motion → 이 경로 자체가 실행되지 않아(mobileUsable=false) CSS 정적 배치가 보인다.
+  function buildSceneTimeline(g, sceneEl) {
+    var all = function (sel) { return sceneEl.querySelectorAll(sel); };
+    var one = function (sel) { return sceneEl.querySelector(sel); };
+    var key = sceneEl.getAttribute('data-ai-scene-key');
+    var tl = g.timeline({ paused: true });
+    var brain = one('[data-scn="brain"]');
+    var docs = all('.scn-doc');
+    var chips = all('.scn-chip');
+    var rings = all('.scn-ring');
+    var twin = one('[data-scn="twin"]');
+    var insight = one('[data-scn="insight"]');
+    var qs = all('.scn-q');
+    var finalSheet = one('[data-scn="final"]');
+
+    if (key === 'sources') {
+      if (brain) tl.fromTo(brain, { scale: 0.4, opacity: 0.25 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.4)' }, 0.15);
+      if (docs.length) {
+        tl.fromTo(docs, { y: -22, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out', stagger: 0.12 }, 0.1);
+        tl.to(docs, { y: 128, x: function (i) { return [44, -44, 44, -44][i] || 0; }, scale: 0.32, opacity: 0.16, duration: 0.9, ease: 'power2.inOut', stagger: 0.08 }, 1.1);
+      }
+      if (brain) tl.to(brain, { scale: 1.08, duration: 0.3, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 2.0);
+    } else if (key === 'brain') {
+      if (brain) tl.fromTo(brain, { scale: 0.4, opacity: 0.3 }, { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(1.4)' }, 0.1);
+      if (rings.length) tl.fromTo(rings, { scale: 0.5, opacity: 0.5 }, { scale: 1.9, opacity: 0, duration: 1.1, ease: 'power1.out', stagger: 0.5, repeat: 1 }, 0.5);
+      if (chips.length) {
+        tl.fromTo(chips, { opacity: 0, scale: 0.6, y: 14 }, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.16 }, 0.7);
+        tl.to(chips, { opacity: 0, scale: 0.4, duration: 0.6, ease: 'power2.in', stagger: 0.1 }, 1.9);
+      }
+      if (brain) tl.to(brain, { scale: 1.06, duration: 0.3, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 2.2);
+    } else if (key === 'twin') {
+      if (brain) tl.fromTo(brain, { scale: 0.5, opacity: 0.35 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.1);
+      if (twin) tl.fromTo(twin, { x: -64, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, 0.4);
+      if (insight) tl.fromTo(insight, { x: 64, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, 0.8);
+      if (brain) tl.to(brain, { scale: 1.08, duration: 0.32, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 1.7);
+    } else if (key === 'questions') {
+      if (brain) tl.fromTo(brain, { scale: 0.6, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.1);
+      if (qs.length) tl.fromTo(qs, { y: -60, scale: 0.3, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(1.3)', stagger: 0.2 }, 0.5);
+    } else { // final
+      if (qs.length) tl.fromTo(qs, { y: 0, scale: 1, opacity: 1 }, { y: 42, scale: 0.42, opacity: 0.14, duration: 0.7, ease: 'power2.inOut', stagger: 0.08 }, 0.1);
+      if (finalSheet) {
+        tl.fromTo(finalSheet, { y: 24, scale: 0.5, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(1.3)' }, 0.7);
+        tl.to(finalSheet, { scale: 1.04, duration: 0.28, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 1.7);
+      }
+    }
+    tl.to({}, { duration: 0.01 }, 2.2);   // 최소 길이 패딩 — 짧은 Scene 도 재생 감지가 안정적
+    return tl;
+  }
+
+  function wireAiNativeScenes(root) {
     var section = root.querySelector('#sec-digitaltwin');
     if (!section) return;
-    var stage = section.querySelector('[data-ai-stage]');
-    var canvas = section.querySelector('[data-ai-canvas]');
-    if (!stage || !canvas) return;
-    var srcs = canvas.querySelectorAll('.ai-src');
-    var qouts = canvas.querySelectorAll('.ai-qout');
-    var brain = canvas.querySelector('.ai-brain');
-    var twin = canvas.querySelector('[data-ai-node="twin"]');
-    var insight = canvas.querySelector('[data-ai-node="insight"]');
-    var finalSheet = canvas.querySelector('[data-ai-final]');
-    var flowPath = canvas.querySelector('[data-ai-flow-path]');
-    if (!srcs.length || !qouts.length || !brain || !finalSheet) return;
+    var scenesRoot = section.querySelector('[data-ai-scenes]');
+    if (!scenesRoot) return;
+    var track = scenesRoot.querySelector('[data-collection-track]');
+    var sceneEls = scenesRoot.querySelectorAll('[data-ai-scene]');
+    if (!track || !sceneEls.length) return;
 
     var g = gsap();
-    fitCanvas(stage, canvas);
-
-    var tl = g.timeline({ paused: true });
-
-    if (flowPath && typeof flowPath.getTotalLength === 'function') {
-      var len = 900;
-      try { len = flowPath.getTotalLength() || 900; } catch (e) { len = 900; }
-      g.set(flowPath, { strokeDasharray: len, strokeDashoffset: len });
-      tl.to(flowPath, { strokeDashoffset: 0, duration: 6.2, ease: 'none' }, 0);
+    var sceneTls = [];
+    for (var s = 0; s < sceneEls.length; s += 1) {
+      var stl = buildSceneTimeline(g, sceneEls[s]);
+      stl.progress(1).pause();   // 비활성 Scene 은 완성 상태 — 옆에서 peek 해도 온전히 보인다
+      sceneTls.push(stl);
+      timelines.push(stl);
     }
 
-    // 0–1s: 자료 4개 등장(2×2)
-    tl.fromTo(srcs,
-      { y: -46, opacity: 0, scale: 0.8 },
-      { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.14 }, 0.1);
-    // 1–2.5s: 자료가 Brain 방향(아래 중앙)으로 이동하며 축소
-    tl.to(srcs, {
-      x: function (i) { return [70, -70, 70, -70][i] || 0; },
-      y: 150, scale: 0.34, opacity: 0.2,
-      duration: 1.2, ease: 'power2.inOut', stagger: 0.1
-    }, 1.0);
-    // 2.3–3.6s: Brain 생성 + Twin / Insight 결합
-    tl.fromTo(brain, { scale: 0.15, opacity: 0.3 }, { scale: 1, opacity: 1, duration: 1.0, ease: 'back.out(1.4)' }, 2.3);
-    tl.fromTo(twin, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, 2.6);
-    tl.fromTo(insight, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, 2.9);
-    tl.to(brain, { scale: 1.08, duration: 0.35, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 3.5);
-    // 3.6–5s: Brain 에서 문제 4개 생성(2×2, 아래로)
-    tl.fromTo(qouts,
-      { y: -92, scale: 0.25, opacity: 0 },
-      { y: 0, scale: 1, opacity: 1, duration: 0.9, ease: 'power2.out', stagger: 0.22 }, 3.7);
-    // 5–6.5s: 문제가 FINAL EXAM 으로 조립
-    tl.fromTo(finalSheet, { y: 48, scale: 0.42, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.0, ease: 'power2.out' }, 5.0);
-    tl.to(qouts, {
-      x: function (i) { return [32, -32, 32, -32][i] || 0; },
-      y: function (i) { return [104, 104, 58, 58][i] || 0; },
-      scale: 0.5, opacity: 0.28,
-      duration: 1.0, ease: 'power2.inOut', stagger: 0.08
-    }, 5.2);
-
-    timelines.push(tl);
-    // playhead 를 명시적으로 0 에 두어 모든 .fromTo() 의 "from"(흩어진 시작) 상태를 렌더한다.
-    tl.pause(0);
-
-    // 이미 한 번 재생했으면(= CSR 재렌더 / 리사이즈) 다시 재생하지 않고 완성(FINAL) 상태로 둔다.
-    if (mobilePlayed) {
-      tl.progress(1);
-      return;
+    var activeIdx = -1;
+    function activate(idx) {
+      if (idx < 0 || idx >= sceneTls.length || idx === activeIdx) return;
+      activeIdx = idx;
+      // 활성 Scene 만 0 으로 되감아 1회 재생. 나머지는 건드리지 않는다(완성 상태 유지).
+      sceneTls[idx].pause(0).play(0);
+      emitScene(root, 'sec-digitaltwin', idx, sceneTls.length);
     }
 
-    // 섹션이 지금 화면(또는 그 가장자리)에 걸쳐 있는가 — 스크롤 위치와 무관하게 동기 판정.
-    // 섹션이 뷰포트보다 크므로(자료+Brain+문제+FINAL) 가장자리만 걸쳐도 재생 대상으로 본다.
-    function sectionInView() {
-      if (typeof section.getBoundingClientRect !== 'function') return true;
-      var r = section.getBoundingClientRect();
-      if (!r || (!r.height && !r.width)) return false;
-      var vh = global.innerHeight || (doc.documentElement && doc.documentElement.clientHeight) || 800;
-      return r.top < vh * 0.9 && r.bottom > vh * 0.1;
+    function leadIndex() {
+      var cards = track.querySelectorAll('.f2r-collection-card');
+      if (cards.length < 2) return 0;
+      var stride = cards[1].offsetLeft - cards[0].offsetLeft;
+      if (!stride) return 0;
+      return Math.max(0, Math.min(cards.length - 1, Math.round(track.scrollLeft / stride)));
     }
 
-    function playOnce() {
-      if (mobilePlayed) return;
-      mobilePlayed = true;
-      detachMobileTriggers();
-      tl.play(0);
-      emitScene(root, 'sec-digitaltwin', 0, 5);
+    // 활성(선두) Scene 추적 — 대표수업과 동일하게 track scroll 위치로 계산(rAF 배칭, 스크롤 리스너 1개).
+    var scheduled = false;
+    function onScroll() {
+      if (scheduled) return;
+      scheduled = true;
+      var run = function () { scheduled = false; activate(leadIndex()); };
+      if (typeof global.requestAnimationFrame === 'function') global.requestAnimationFrame(run);
+      else run();
     }
+    track.addEventListener('scroll', onScroll, { passive: true });
+    mobileSceneCleanups.push(function () { track.removeEventListener('scroll', onScroll); });
 
-    // 트리거를 3중으로 건다 — 하나라도 놓치면 사용자에겐 "정지된 다이어그램"으로 보이므로.
-    //  (1) IntersectionObserver(threshold 0): 아래에서 스크롤로 섹션에 진입할 때.
-    //  (2) 지속 scroll/resize 리스너: IO 콜백이 유실되는 상황(빠른 스크롤, 백그라운드 복귀,
-    //      주소창 리사이즈 직후, 이미 섹션까지 스크롤한 채 늦게 CSR 렌더)에서도 재생. 재생 시 스스로 제거.
-    //  (3) 다음 프레임 즉시 판정: 페이지가 이미 섹션 위치에서 열린 경우 스크롤 이벤트를 기다리지 않는다.
+    // 첫 진입 — 섹션이 화면에 들어오면 현재 선두 Scene(보통 0)을 재생시킨다.
+    // 그 뒤로는 사용자가 swipe 해서 선두 카드가 바뀔 때만 activate 가 다시 불린다(자동 전환 아님).
+    var entered = false;
+    var io = null;
+    function detachEnter() {
+      if (io && typeof io.disconnect === 'function') { try { io.disconnect(); } catch (e) { /* noop */ } }
+      io = null;
+      try {
+        global.removeEventListener('scroll', tryEnter);
+        global.removeEventListener('resize', tryEnter);
+      } catch (e2) { /* noop */ }
+    }
+    function tryEnter() {
+      if (entered) return;
+      if (typeof section.getBoundingClientRect === 'function') {
+        var r = section.getBoundingClientRect();
+        var vh = global.innerHeight || (doc.documentElement && doc.documentElement.clientHeight) || 800;
+        if (r && (r.height || r.width) && !(r.top < vh * 0.9 && r.bottom > vh * 0.1)) return;
+      }
+      entered = true;
+      detachEnter();
+      activate(leadIndex());
+    }
+    mobileSceneCleanups.push(detachEnter);
     if (typeof global.IntersectionObserver === 'function') {
-      mobileIO = new global.IntersectionObserver(function (entries) {
-        for (var i = 0; i < entries.length; i += 1) {
-          if (entries[i].isIntersecting) { playOnce(); return; }
+      io = new global.IntersectionObserver(function (entries) {
+        for (var k = 0; k < entries.length; k += 1) {
+          if (entries[k].isIntersecting) { tryEnter(); return; }
         }
       }, { threshold: 0 });
-      mobileIO.observe(section);
+      io.observe(section);
     }
-
-    mobileWatch = function () {
-      if (mobilePlayed) { detachMobileTriggers(); return; }
-      if (sectionInView()) playOnce();
-    };
-    global.addEventListener('scroll', mobileWatch, { passive: true });
-    global.addEventListener('resize', mobileWatch);
-
+    global.addEventListener('scroll', tryEnter, { passive: true });
+    global.addEventListener('resize', tryEnter);
     var raf = typeof global.requestAnimationFrame === 'function'
       ? global.requestAnimationFrame
       : function (fn) { return global.setTimeout(fn, 32); };
-    raf(function () { if (!mobilePlayed && sectionInView()) playOnce(); });
+    raf(tryEnter);
   }
 
   var lastResizeW = 0;
@@ -411,9 +428,9 @@
     }
 
     if (mobileUsable()) {
-      // 모바일 — 세로형 Pipeline, 섹션 진입 시 1회 자동재생(scroll scrub 아님, js-cinematic 안 붙임).
+      // 모바일 — 단계별 횡스크롤 Story. 활성 카드가 될 때마다 그 Scene 을 재생(js-cinematic 안 붙임).
       try {
-        wireAiNativeMobile(root);
+        wireAiNativeScenes(root);
       } catch (e2) {
         teardown();
       }
