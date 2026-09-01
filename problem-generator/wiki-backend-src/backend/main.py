@@ -1737,6 +1737,54 @@ def create_manual_questions(payload: ManualQuestionsCreate):
     return {'saved': True, 'question_count': len(saved), 'examGroupId': group_id, 'questions': saved}
 
 
+class QuestionUpdate(BaseModel):
+    stem: str
+    source_text: str = ''
+    options: list[str] = []
+    answer: list[int] = []
+    score: int = 0
+    grading_rule: str = ''
+    sample_answer: str = ''
+    accepted_answers: list[str] = []
+
+
+@app.patch('/api/questions/{question_id}')
+def update_question(question_id: int, payload: QuestionUpdate):
+    with get_db() as conn:
+        row=conn.execute('SELECT * FROM generated_questions WHERE id = ?', (question_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='문항을 찾지 못했습니다.')
+        kind=row['q_kind']
+        if not payload.stem.strip():
+            raise HTTPException(status_code=422, detail='발문을 입력해 주세요.')
+        if kind=='mc' and (len(payload.options)<2 or not payload.answer):
+            raise HTTPException(status_code=422, detail='객관식은 선택지 2개 이상과 정답 번호가 필요합니다.')
+        if kind=='sa' and not (payload.sample_answer.strip() or payload.accepted_answers):
+            raise HTTPException(status_code=422, detail='서답형은 모범답안 또는 허용답안이 필요합니다.')
+        canonical={}
+        try:
+            canonical=json.loads(row['canonical_json'] or '{}')
+        except (TypeError,json.JSONDecodeError):
+            canonical={}
+        if canonical.get('schema_version')=='wiki-question-v1':
+            canonical['instruction']={'text':payload.stem.strip(),'html':_legacy_markup_html(payload.stem.strip())}
+            passage=canonical.get('passage') or {}
+            passage.update({'text':payload.source_text.strip(),'html':_legacy_markup_html(payload.source_text.strip())})
+            if payload.source_text.strip() and passage.get('status') in ('missing','unknown','not_applicable',None): passage['status']='complete'
+            canonical['passage']=passage
+            canonical['choices']=[{'number':i+1,'text':v.strip(),'html':_legacy_markup_html(v.strip())} for i,v in enumerate(payload.options)]
+            answer=canonical.get('answer') or {}
+            answer.update({'choice_numbers':payload.answer if kind=='mc' else [],'accepted_answers':[v.strip() for v in payload.accepted_answers if v.strip()],'sample_answer':payload.sample_answer.strip()})
+            canonical['answer']=answer
+            canonical['explanation']={'text':payload.grading_rule.strip(),'html':_legacy_markup_html(payload.grading_rule.strip())}
+            scoring=canonical.get('scoring') or {};scoring['score']=payload.score;canonical['scoring']=scoring
+        conn.execute('''UPDATE generated_questions SET stem=?, source_text=?, options_json=?, answer_json=?, score=?, accepted_answers_json=?, sample_answer=?, grading_rule=?, canonical_json=?, passage_status=? WHERE id=?''',(
+            payload.stem.strip(),payload.source_text.strip(),json.dumps(payload.options,ensure_ascii=False),json.dumps(payload.answer if kind=='mc' else [],ensure_ascii=False),payload.score,
+            json.dumps([v.strip() for v in payload.accepted_answers if v.strip()],ensure_ascii=False),payload.sample_answer.strip(),payload.grading_rule.strip(),
+            json.dumps(canonical,ensure_ascii=False) if canonical else row['canonical_json'],(canonical.get('passage') or {}).get('status',row['passage_status']) if canonical else row['passage_status'],question_id))
+    return get_question(question_id)
+
+
 @app.delete('/api/questions/{question_id}')
 def delete_question(question_id: int):
     with get_db() as conn:
