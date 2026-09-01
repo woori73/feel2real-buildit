@@ -79,6 +79,37 @@ class NaesinWikiV1Test(unittest.TestCase):
                 UploadFile(filename='wrong2.jpg', file=io.BytesIO(b'image')), None, '')
         self.assertEqual(400, raised.exception.status_code)
 
+    def test_school_print_can_be_downloaded_then_deleted_and_list_updates(self):
+        """STEP1 자료 관리: 저장된 학교 프린트를 HTML로 내려받고, 삭제하면 목록에서 즉시 사라진다."""
+        keep = main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '남길 자료', None,
+            None, None, '', html_text='<p>keep</p>')
+        drop = main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '지울 자료', None,
+            None, None, '', html_text='<p>drop</p>')
+        self.assertIn('drop', main.open_exam_material_html(drop['id']).body.decode('utf-8'))
+
+        self.assertEqual(204, main.delete_exam_material(drop['id']).status_code)
+
+        remaining = main.list_exam_materials('신구중', '중2', 2026, '2학기', '중간고사')
+        self.assertEqual([keep['id']], [row['id'] for row in remaining])
+        with self.assertRaises(HTTPException) as raised:
+            main.delete_exam_material(drop['id'])
+        self.assertEqual(404, raised.exception.status_code)
+
+    def test_delete_exam_material_only_touches_its_own_context_row(self):
+        """다른 학교/학년/시험 자료는 id로만 지우므로 현재 Context 자료를 지워도 남는다."""
+        other = main.create_exam_material(
+            'school_print', '신사중', '중3', 2026, '1학기', '기말고사', '다른 시험', None,
+            None, None, '', html_text='<p>other</p>')
+        target = main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '이번 시험', None,
+            None, None, '', html_text='<p>target</p>')
+        main.delete_exam_material(target['id'])
+        self.assertEqual(
+            [other['id']],
+            [row['id'] for row in main.list_exam_materials('신사중', '중3', 2026, '1학기', '기말고사')])
+
     def test_insight_keeps_source_and_exam_context(self):
         main.create_educator_insight(main.EducatorInsightCreate(content='서술형 3번 강조', school='신구중', grade='중2',
             year=2026, semester='2학기', exam='중간고사', source='school_teacher'))

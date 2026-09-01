@@ -955,6 +955,17 @@ def open_exam_material_html(material_id: int):
         return Response(row['html_text'] or '', media_type='text/html; charset=utf-8')
 
 
+@app.delete('/api/exam-materials/{material_id}', status_code=204)
+def delete_exam_material(material_id: int):
+    """자료 1건 삭제. get_db()가 이미 현재 workspace의 DB로 라우팅되므로 다른 workspace 자료는
+    애초에 이 id로 조회되지 않는다(다른 학교/학년/시험 자료도 UI가 현재 Context만 노출한다)."""
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM exam_material_sets WHERE id=?', (material_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('DELETE FROM exam_material_sets WHERE id=?', (material_id,))
+    return Response(status_code=204)
+
+
 # ==================================================================================
 # 교과서 DB — 원본 파일 + 추출 HTML을 서버에 영구 저장한다(예전 브라우저 전용 저장 구조의 소실 대체).
 # 학교 프린트(exam_material_sets)와 같은 원본 blob 방식이며, 부분 추출을 page_total/page_extracted로
