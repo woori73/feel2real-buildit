@@ -337,10 +337,18 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 @media (min-width:1200px){
   .ai-native{grid-template-columns:1fr 300px;gap:56px;}
 }
+/* 모바일(<900): 데스크톱 sticky Visual Stage 를 숨긴다 — 대신 단계별 횡스크롤 Story
+   (.ai-scenes-mobile). 그 표시 토글·오브젝트 스타일·배선은 academy_cinematic.{css,js}
+   (한 파일 안에 base+@media 를 둬 로드 순서와 무관하게 동작하도록). */
+@media (max-width:899px){
+  .ai-native-visual{display:none;}
+}
+
 /* 빌더 캔버스는 Visual Stage 를 쓰지 않는다 — 항상 5개 세로 블록으로 정적 프리뷰. */
 .builder-public-preview .ai-native{display:block;}
 .builder-public-preview .ai-native-visual{display:none;}
 .builder-public-preview .ai-native-steps{display:block;}
+.builder-public-preview .ai-scenes-mobile{display:none;}
 
 @media(max-width:640px){
   .section-wrap.featured-wrap{padding:48px 18px;}

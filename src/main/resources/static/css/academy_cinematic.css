@@ -89,35 +89,121 @@ html.js-cinematic .ai-flow-path { stroke-dasharray: none; }
 .ai-final ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .ai-final li { height: 7px; border-radius: 999px; background: var(--bg-soft); }
 
-/* ── 모바일 세로형 Pipeline (좌표계 330×560) ──────────────────────────────
-   데스크톱 가로 canvas 를 축소하지 않는다 — 같은 오브젝트를 세로로 재배치한다:
-   자료 2×2 → Twin·Insight 2개 → Brain 중앙 → 문제 2×2 → FINAL 중앙.
-   좌표계 높이 560 = 375px 에서 stage ≈ 575px → 핵심 과정이 한 화면(500~600px) 안에서 이해된다.
-   academy_cinematic.js wireAiNativeMobile 이 이 배치를 기준(최종 상태)으로 ~6.4s 1회 자동재생.
-   글자 크기는 데스크톱과 동일하게 유지(축소로 인한 가독성 저하 금지). */
-@media (max-width: 899px) {
-  .ai-canvas { width: 330px; height: 560px; }
-  .ai-flow { display: none; }              /* 가로 경로 — 세로 레이아웃엔 맞지 않아 숨김 */
+/* ════════════ 모바일 — 단계별 횡스크롤 Story (5 Scene) ════════════
+   모바일(<900)에서는 데스크톱 sticky canvas(.ai-native-visual)를 숨기고, 대신 대표수업과
+   동일한 .f2r-collection 위에 5개 Scene 카드를 얹는다(academy_public.css 가 display 토글).
+   마크업 정본: academy_sections.js aiScenesMobileHtml. 배선: academy_cinematic.js wireAiNativeScenes
+   — 각 Scene 이 활성(선두) 카드가 될 때마다 그 Scene 애니메이션을 0 부터 1회 재생(양방향).
+   각 Scene canvas 는 자기 카드폭(약 78vw)을 좌표계로 삼고, 오브젝트는 % + px 로 절대배치한다. */
+/* 표시 토글 — base + @media 를 이 파일 한 곳에 둔다(academy_public.css 와 로드 순서가 갈려도 안전). */
+.ai-scenes-mobile { display: none; }
+@media (max-width: 899px) { .ai-scenes-mobile { display: block; } }
 
-  .ai-cap--src { left: 12px; top: 4px; }
+.ai-scene {
+  display: flex; flex-direction: column; gap: 10px; margin: 0;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #fafbfe);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .08), inset 0 0 0 1px rgba(255, 255, 255, .6);
+}
+.ai-scene-canvas {
+  position: relative; width: 100%; height: 292px;
+  border-radius: 12px; background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line, #e5e7eb);
+  overflow: hidden;
+}
+.ai-scene-canvas > * { position: absolute; will-change: transform, opacity; }
+.ai-scene-cap {
+  margin: 0; display: flex; align-items: center; gap: 7px;
+  color: var(--ink, #0b1220); font-size: 13px; font-weight: 800; letter-spacing: -.01em;
+}
+.ai-scene-cap b {
+  flex: none; width: 20px; height: 20px; border-radius: 999px;
+  background: var(--accent-soft, #eef2ff); color: var(--ultramarine, #0c238a);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900;
+}
 
-  .ai-src { left: auto; width: 150px; }
-  .ai-src[data-ai-src="0"] { left: 12px; top: 22px; }
-  .ai-src[data-ai-src="1"] { left: 168px; top: 22px; }
-  .ai-src[data-ai-src="2"] { left: 12px; top: 68px; }
-  .ai-src[data-ai-src="3"] { left: 168px; top: 68px; }
+/* Scene 오브젝트 — 좌표계는 카드 canvas(위 .ai-scene-canvas). */
+.scn-doc {
+  width: 40%; min-height: 40px; padding: 7px 8px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  border: 1px solid #cfd5de; border-radius: 8px; background: #fff;
+  box-shadow: 0 5px 13px rgba(15, 23, 42, .1);
+  color: var(--ink, #0b1220); font-size: 11.5px; font-weight: 800; letter-spacing: -.01em;
+}
+.scn-doc[data-scn="d0"] { left: 6%; top: 14px; }
+.scn-doc[data-scn="d1"] { left: 54%; top: 14px; }
+.scn-doc[data-scn="d2"] { left: 6%; top: 70px; }
+.scn-doc[data-scn="d3"] { left: 54%; top: 70px; }
 
-  .ai-node { width: 150px; }
-  .ai-node--twin { left: 12px; top: 128px; }
-  .ai-node--insight { left: 168px; top: 128px; }
+.scn-brain {
+  left: calc(50% - 58px); top: 168px; width: 116px; height: 116px; border-radius: 26px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(150deg, var(--ultramarine, #0c238a), var(--accent, #4a7fd4));
+  color: #fff; box-shadow: 0 18px 40px rgba(12, 35, 138, .32); z-index: 4;
+}
+.scn-brain b { font-size: 13px; font-weight: 900; letter-spacing: .02em; }
+.scn-brain span { font-size: 10px; font-weight: 800; letter-spacing: .18em; opacity: .9; margin-top: 2px; }
+.scn-brain--lg { left: calc(50% - 66px); top: calc(50% - 66px); width: 132px; height: 132px; border-radius: 30px; }
 
-  .ai-brain { left: 97px; top: 190px; width: 136px; height: 136px; border-radius: 28px; }
+.scn-ring {
+  left: calc(50% - 66px); top: calc(50% - 66px); width: 132px; height: 132px;
+  border-radius: 999px; border: 2px solid var(--accent, #4a7fd4); opacity: 0; z-index: 2;
+}
+.scn-chip {
+  padding: 6px 10px; border-radius: 999px; background: #fff;
+  border: 1px solid var(--line, #e5e7eb); box-shadow: 0 5px 13px rgba(15, 23, 42, .1);
+  color: var(--ink-soft, #475569); font-size: 11px; font-weight: 800; z-index: 5;
+}
+.scn-chip[data-scn="c0"] { left: 4%; top: 20px; }
+.scn-chip[data-scn="c1"] { left: 52%; top: 40px; }
+.scn-chip[data-scn="c2"] { left: 22%; top: 236px; }
 
-  .ai-qout { left: auto; }
-  .ai-qout[data-ai-qout="0"] { left: 12px; top: 344px; width: 150px; }
-  .ai-qout[data-ai-qout="1"] { left: 168px; top: 344px; width: 150px; }
-  .ai-qout[data-ai-qout="2"] { left: 12px; top: 392px; width: 150px; }
-  .ai-qout[data-ai-qout="3"] { left: 168px; top: 392px; width: 150px; }
+.scn-node {
+  width: 46%; padding: 8px 10px; border-radius: 11px; background: #fff;
+  border: 2px solid var(--ultramarine, #0c238a); text-align: center;
+  color: var(--ink, #0b1220); font-size: 11.5px; font-weight: 900; line-height: 1.25;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, .12); z-index: 5;
+}
+.scn-node span { display: block; color: var(--ink-faint, #94a3b8); font-size: 8px; font-weight: 900; letter-spacing: .12em; margin-bottom: 1px; }
+.scn-node--twin { left: 5%; top: 26px; }
+.scn-node--insight { left: 49%; top: 200px; border-color: var(--ink, #0b1220); }
 
-  .ai-final { left: 40px; top: 448px; width: 250px; }
+.scn-q {
+  width: 42%; padding: 8px 9px; border-radius: 8px; background: #fff;
+  border: 1px solid #cfd5de; box-shadow: 0 5px 13px rgba(15, 23, 42, .1);
+  color: var(--ink, #0b1220); font-size: 11px; font-weight: 800; text-align: center; z-index: 6;
+}
+.scn-q b { display: block; color: var(--ultramarine, #0c238a); font-size: 11.5px; font-weight: 900; }
+.scn-q[data-scn="q0"] { left: 6%; top: 120px; }
+.scn-q[data-scn="q1"] { left: 52%; top: 120px; }
+.scn-q[data-scn="q2"] { left: 6%; top: 210px; }
+.scn-q[data-scn="q3"] { left: 52%; top: 210px; }
+.scn-q--mini[data-scn="q0"] { left: 7%; top: 14px; }
+.scn-q--mini[data-scn="q1"] { left: 58%; top: 24px; }
+.scn-q--mini[data-scn="q2"] { left: 12%; top: 104px; }
+.scn-q--mini[data-scn="q3"] { left: 60%; top: 104px; }
+
+.scn-final {
+  left: 8%; top: 128px; width: 84%; padding: 12px 14px 13px;
+  border: 1px solid #cfd5de; border-radius: 12px; background: #fff;
+  box-shadow: 0 18px 40px rgba(10, 12, 20, .16); z-index: 3;
+}
+.scn-final b { display: block; color: var(--ultramarine, #0c238a); font-size: 12px; font-weight: 900; letter-spacing: .14em; }
+.scn-final p { margin: 3px 0 8px; color: var(--ink, #0b1220); font-size: 10.5px; font-weight: 800; word-break: keep-all; }
+.scn-final ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.scn-final li { height: 6px; border-radius: 999px; background: var(--bg-soft, #f1f5f9); }
+
+/* Scene 카드 폭 — 대표수업 모바일과 동일 계열(다음 카드 일부 peek). */
+@media (max-width: 760px) {
+  .f2r-collection--ai-scenes { --f2r-card-w: 78vw; }
+}
+@media (min-width: 761px) and (max-width: 899px) {
+  .f2r-collection--ai-scenes { --f2r-card-w: 320px; }
+}
+
+/* reduced-motion: wireAiNativeScenes 자체가 안 도므로 Scene 은 완성 상태로 정적. 트랜지션만 제거. */
+@media (prefers-reduced-motion: reduce) {
+  .ai-scene-canvas > * { transition: none !important; }
 }

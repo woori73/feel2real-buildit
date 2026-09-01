@@ -314,6 +314,75 @@
     + '<div class="ai-final" data-ai-final><b>FINAL EXAM</b><p>학교별 실전 대비 시험지</p><ol><li></li><li></li><li></li><li></li></ol></div>'
     + '</div>';
 
+  // ── AI Native 모바일 — 단계별 횡스크롤 Story (5개 Scene) ──────────────────
+  // 데스크톱 scroll-linked canvas 와 별개. 대표수업(sec-lessons)과 동일한 renderCollectionShell
+  // 위에 얹는다(새 carousel 없음). 각 Scene 카드는 자기만의 작은 canvas 를 갖고, academy_cinematic.js
+  // wireAiNativeScenes 가 "활성 카드로 들어올 때마다" 그 Scene 애니메이션을 0 부터 1회 재생한다
+  // (양방향 — 왼쪽으로 되돌아와도 재생). 자동 다음 장면 전환 없음. mobilePlayed 전체 1회 재생 없음.
+  const AI_SCENE_BRAIN = '<div class="scn-brain" data-scn="brain"><b>BUILD IT</b><span>BRAIN</span></div>';
+  const AI_SCENE_DEFS = [
+    {
+      key: 'sources', cap: '학교 자료',
+      canvas:
+        '<div class="scn-doc" data-scn="d0">시험지</div>'
+        + '<div class="scn-doc" data-scn="d1">학교 프린트</div>'
+        + '<div class="scn-doc" data-scn="d2">교과서</div>'
+        + '<div class="scn-doc" data-scn="d3">수업 자료</div>'
+        + AI_SCENE_BRAIN
+    },
+    {
+      key: 'brain', cap: 'BUILD IT BRAIN',
+      canvas:
+        '<span class="scn-ring" data-scn="r0"></span>'
+        + '<span class="scn-ring" data-scn="r1"></span>'
+        + '<div class="scn-brain scn-brain--lg" data-scn="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
+        + '<div class="scn-chip" data-scn="c0">시험 경향</div>'
+        + '<div class="scn-chip" data-scn="c1">배점 패턴</div>'
+        + '<div class="scn-chip" data-scn="c2">출제 포인트</div>'
+    },
+    {
+      key: 'twin', cap: 'Digital Twin + Insight',
+      canvas:
+        '<div class="scn-brain scn-brain--lg" data-scn="brain"><b>BUILD IT</b><span>BRAIN</span></div>'
+        + '<div class="scn-node scn-node--twin" data-scn="twin"><span>EXAMINER</span>DIGITAL TWIN</div>'
+        + '<div class="scn-node scn-node--insight" data-scn="insight"><span>TEACHER</span>INSIGHT</div>'
+    },
+    {
+      key: 'questions', cap: '문제 생성',
+      canvas:
+        AI_SCENE_BRAIN
+        + '<div class="scn-q" data-scn="q0"><b>원본 문제</b></div>'
+        + '<div class="scn-q" data-scn="q1">변형 A</div>'
+        + '<div class="scn-q" data-scn="q2">변형 B</div>'
+        + '<div class="scn-q" data-scn="q3">서술형</div>'
+    },
+    {
+      key: 'final', cap: 'FINAL EXAM',
+      canvas:
+        '<div class="scn-q scn-q--mini" data-scn="q0">원본</div>'
+        + '<div class="scn-q scn-q--mini" data-scn="q1">변형 A</div>'
+        + '<div class="scn-q scn-q--mini" data-scn="q2">변형 B</div>'
+        + '<div class="scn-q scn-q--mini" data-scn="q3">서술형</div>'
+        + '<div class="scn-final" data-scn="final"><b>FINAL EXAM</b><p>학교별 실전 대비 시험지</p><ol><li></li><li></li><li></li><li></li></ol></div>'
+    }
+  ];
+
+  function aiScenesMobileHtml() {
+    const cards = AI_SCENE_DEFS.map((scene, i) =>
+      `<figure class="ai-scene" data-ai-scene="${i}" data-ai-scene-key="${scene.key}" aria-hidden="true">`
+      + `<div class="ai-scene-canvas" data-ai-scene-canvas>${scene.canvas}</div>`
+      + `<figcaption class="ai-scene-cap"><b>${i + 1}</b> ${escapeHtml(scene.cap)}</figcaption>`
+      + `</figure>`);
+    return `<div class="ai-scenes-mobile" data-ai-scenes>`
+      + renderCollectionShell({
+        navLabel: 'AI Native 단계',
+        variant: 'ai-scenes',
+        hint: '옆으로 밀어 단계별로 보기',
+        cards: cards
+      })
+      + `</div>`;
+  }
+
   function aiNativeHtml(steps, ctx) {
     const items = (steps || [])
       .map((s, i) => ({ i, name: textValue(s) || AI_PROCESS_STEP_DEFAULTS[i] || '' }))
@@ -331,12 +400,14 @@
         + (desc ? `<p class="ai-native-step-desc">${escapeHtml(desc)}</p>` : '')
         + `</div></div></li>`;
     }).join('');
+    // 데스크톱: sticky canvas + 5 세로 설명(scroll-linked, academy_cinematic.js 데스크톱 경로).
+    // 모바일: ctx.aiScenesMobile() 가 있으면(공개 페이지) 단계별 횡스크롤 Story 로 대체된다.
     return `<div class="ai-native" data-reveal>
         <figure class="ai-native-visual" data-ai-visual aria-hidden="true">
           <div class="ai-stage" data-ai-stage>${AI_PIPELINE_HTML}</div>
         </figure>
         <ol class="ai-native-steps">${blocks}</ol>
-      </div>`;
+      </div>${ctx.aiScenesMobile ? ctx.aiScenesMobile() : ''}`;
   }
 
   function renderAiProcess(view, ctx) {
@@ -951,6 +1022,8 @@
       lessonCollection(lessons) {
         return lessonCollectionHtml(lessons, this, { emptyMessage: '아직 공개된 수업 상품이 없습니다.' });
       },
+      // AI Native 모바일 — 단계별 횡스크롤 Story(공개 전용). 배선: academy_cinematic.js wireAiNativeScenes.
+      aiScenesMobile() { return aiScenesMobileHtml(); },
       videoCollection(videos) {
         return videoCollectionHtml(videos, this);
       },
@@ -1159,6 +1232,8 @@
           hint: '공개 페이지에서는 좌우로 둘러보는 가로 컬렉션으로 표시됩니다'
         });
       },
+      // AI Native 모바일 횡스크롤 Story 는 공개 전용 — 빌더 캔버스는 5 세로 블록 프리뷰를 그대로 쓴다.
+      aiScenesMobile() { return ''; },
       videoCollection(videos) {
         return videoCollectionHtml(videos, this, {
           staticMode: true,

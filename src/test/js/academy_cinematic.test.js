@@ -159,9 +159,12 @@ test('immediateRender:false 를 쓰지 않는다 — progress 0 에서 요소는
   assert.doesNotMatch(CINEMATIC_JS, /immediateRender:\s*false/);
 });
 
-test('하나의 timeline — 정적 scene 교체가 아니라 오브젝트의 큰 위치 이동이 주 신호다', () => {
-  // 5개 scene 을 도는 per-scene 빌더는 없다(하나의 연속 파이프라인)
-  assert.doesNotMatch(CINEMATIC_JS, /buildSceneTweens|querySelectorAll\('\.ai-scene'\)|data-ai-scene/);
+test('데스크톱 timeline — 정적 scene 교체가 아니라 오브젝트의 큰 위치 이동이 주 신호다', () => {
+  // 데스크톱 경로는 여전히 per-scene 빌더 없이 하나의 연속 timeline 이다(모바일만 Scene 분리).
+  const desktop = CINEMATIC_JS.slice(
+    CINEMATIC_JS.indexOf('function wireAiNativeDesktop'),
+    CINEMATIC_JS.indexOf('function buildSceneTimeline'));
+  assert.doesNotMatch(desktop, /buildSceneTweens|data-ai-scene/);
   // 좌표계: 데스크톱 660×460 / 모바일 330×900 canvas 를 stage 폭에 맞춘다
   assert.match(CINEMATIC_JS, /function fitCanvas/);
   assert.match(CINEMATIC_JS, /function canvasBox/);
@@ -200,46 +203,144 @@ test('모바일 + reduced-motion → no-op(정적 완성 Pipeline)', () => {
   assert.ok(!c.htmlClasses.has('js-cinematic'));
 });
 
-test('모바일: 섹션이 화면에 있으면 진입 즉시 1회 자동재생하고 트리거를 정리한다', () => {
-  const c = loadCinematic({ width: 375 });
+// 모바일 단계별 횡스크롤 Story 전용 fake DOM — section > [data-ai-scenes] > [data-collection-track]
+// + 5개 [data-ai-scene]. track.scrollLeft 을 바꾸고 scroll 리스너를 부르면 활성 Scene 이 바뀐다.
+function loadScenes(opts) {
+  const o = opts || {};
+  const keys = ['sources', 'brain', 'twin', 'questions', 'final'];
+  const played = [0, 0, 0, 0, 0];
+  const emitted = [];
+  const winListeners = {};
+  const trackListeners = {};
+  let ioInstances = [];
+
+  const leaf = () => ({
+    querySelector: () => leaf(), querySelectorAll: () => [leaf(), leaf(), leaf(), leaf()],
+    getAttribute: () => null, style: {}
+  });
+  const sceneEls = keys.map((k) => ({
+    getAttribute: (a) => (a === 'data-ai-scene-key' ? k : null),
+    querySelector: () => leaf(),
+    querySelectorAll: () => [leaf(), leaf(), leaf(), leaf()]
+  }));
+  const cards = [0, 1, 2, 3, 4].map((i) => ({ offsetLeft: i * 100 }));
+  const track = {
+    scrollLeft: 0,
+    addEventListener: (t, fn) => { trackListeners[t] = fn; },
+    removeEventListener: (t) => { delete trackListeners[t]; },
+    querySelectorAll: () => cards
+  };
+  const scenesRoot = {
+    querySelector: (s) => (s.indexOf('collection-track') >= 0 ? track : leaf()),
+    querySelectorAll: () => sceneEls
+  };
+  const section = {
+    querySelector: (s) => (s.indexOf('ai-scenes') >= 0 ? scenesRoot : leaf()),
+    getBoundingClientRect: () => (o.belowFold
+      ? { top: 3000, bottom: 3600, width: 320, height: 600 }
+      : { top: 20, bottom: 620, width: 320, height: 600 })
+  };
+  const root = { querySelector: (s) => (s.indexOf('sec-digitaltwin') >= 0 ? section : leaf()), querySelectorAll: () => [] };
+
+  let n = 0;
+  const gsap = {
+    registerPlugin() {}, set() {}, to() {},
+    timeline() {
+      const idx = n; n += 1;
+      const tl = {
+        _i: idx,
+        fromTo() { return tl; }, to() { return tl; }, set() { return tl; },
+        progress() { return tl; },
+        pause() { return tl; },
+        play() { played[idx] = (played[idx] || 0) + 1; return tl; },
+        kill() {}
+      };
+      return tl;
+    }
+  };
+  const win = {
+    document: { documentElement: { classList: { add() {}, remove() {}, contains: () => false } } },
+    gsap,
+    ScrollTrigger: { config() {}, refresh() {}, create() { return { kill() {} }; } },
+    innerWidth: 375, innerHeight: 800,
+    matchMedia: () => ({ matches: !!o.reduced }),
+    addEventListener: (t, fn) => { winListeners[t] = fn; },
+    removeEventListener: (t) => { delete winListeners[t]; },
+    requestAnimationFrame: (fn) => { fn(); },
+    setTimeout: (fn) => { fn(); return 1; }, clearTimeout() {},
+    IntersectionObserver: o.noIO ? undefined : function (cb) {
+      const io = { cb, observe() {}, disconnect() {}, fire() { cb([{ isIntersecting: true }]); } };
+      ioInstances.push(io);
+      return io;
+    },
+    CustomEvent: function (t, i) { this.type = t; this.detail = (i || {}).detail; }
+  };
+  // emitScene → root.dispatchEvent 로 CustomEvent 를 던진다 — 활성 Scene index 를 관찰한다.
+  root.dispatchEvent = (ev) => { if (ev && ev.detail) emitted.push(ev.detail.index); return true; };
+
+  const sandbox = { window: win, globalThis: win };
+  vm.createContext(sandbox);
+  vm.runInContext(CINEMATIC_JS, sandbox);
+
+  return {
+    api: win.F2RCinematic, root, played, emitted,
+    scrollTo(i) { track.scrollLeft = i * 100; if (trackListeners.scroll) trackListeners.scroll(); },
+    fireIO() { ioInstances.forEach((io) => io.fire()); },
+    winListeners
+  };
+}
+
+test('모바일 Scene: 섹션 진입 시 선두 Scene(0) 을 1회 재생한다 — 전체 파이프라인 autoplay 아님', () => {
+  const c = loadScenes();
   c.api.wire(c.root);
-  const tl = c.fakeTimeline._last;
-  assert.ok(tl, '모바일 세로형 timeline 이 만들어진다');
-  assert.equal(tl._playedCount, 1, '섹션이 이미 보이면(스크롤 이벤트 대기 없이) 자동재생 1회');
-  assert.ok(c.ioList.length >= 1 && c.ioList.every((io) => io.disconnected),
-    '재생 후 IntersectionObserver 는 정리된다');
+  assert.equal(c.played[0], 1, 'Scene 0 재생');
+  assert.deepEqual(c.played.slice(1), [0, 0, 0, 0], '나머지 Scene 은 아직 재생 안 함(자동 다음 장면 없음)');
+  assert.deepEqual(c.emitted, [0]);
 });
 
-test('모바일: 재생은 정확히 1회 — 중복 IO 콜백·스크롤에도 반복 재생 없음(무한 반복 금지)', () => {
-  const c = loadCinematic({ width: 375 });
-  c.api.wire(c.root);
-  const tl = c.fakeTimeline._last;
-  c.ioList.forEach((io) => io.fire(true));
-  c.ioList.forEach((io) => io.fire(true));
-  assert.equal(tl._playedCount, 1, '한 번 재생한 뒤에는 다시 재생하지 않는다');
+test('모바일 Scene: swipe 로 활성 카드가 바뀔 때마다 그 Scene 을 재생(양방향, 되돌아와도 재재생)', () => {
+  const c = loadScenes();
+  c.api.wire(c.root);           // Scene 0 재생
+  c.scrollTo(1);                // → Scene 1
+  c.scrollTo(2);                // → Scene 2
+  c.scrollTo(1);                // ← Scene 1 (되돌아옴)
+  c.scrollTo(0);                // ← Scene 0
+  assert.equal(c.played[0], 2, 'Scene 0 = 진입 + 되돌아옴 = 2회');
+  assert.equal(c.played[1], 2, 'Scene 1 = 오른쪽 진입 + 왼쪽 재진입 = 2회');
+  assert.equal(c.played[2], 1);
+  assert.deepEqual(c.emitted, [0, 1, 2, 1, 0]);
 });
 
-test('모바일: IntersectionObserver 미지원이어도 화면에 있으면 rAF 폴백으로 재생(정지 방지)', () => {
-  const c = loadCinematic({ width: 375, noIO: true });
+test('모바일 Scene: 같은 카드에서 scroll 이 여러 번 와도 재생은 1회(무한 반복 금지)', () => {
+  const c = loadScenes();
   c.api.wire(c.root);
-  const tl = c.fakeTimeline._last;
-  assert.ok(tl);
-  assert.equal(tl._playedCount, 1, 'IO 없이도 자동재생된다');
+  c.scrollTo(1);
+  c.scrollTo(1);
+  c.scrollTo(1);
+  assert.equal(c.played[1], 1, '활성 index 가 안 바뀌면 재재생하지 않는다');
 });
 
-test('모바일: 스크롤/리사이즈 리스너를 폴백 트리거로 등록한다(IO 콜백 유실 대비)', () => {
-  const c = loadCinematic({ width: 375, sectionBelowFold: true });
-  c.api.wire(c.root);
-  const tl = c.fakeTimeline._last;
-  assert.equal(tl._playedCount, 0, '섹션이 화면 밖이면 wire 시점에 재생하지 않는다');
-  assert.equal(typeof c.listeners.scroll, 'function', 'scroll 폴백 리스너 등록');
-  // 사용자가 섹션까지 스크롤 → 화면 안 → 폴백 리스너가 재생.
-  c.setSectionInView();
-  c.listeners.scroll();
-  assert.equal(tl._playedCount, 1, '스크롤 진입 시 재생(트리거 누락 없음)');
+test('모바일 Scene: mobilePlayed(전체 1회 재생) 개념을 쓰지 않는다', () => {
+  assert.doesNotMatch(CINEMATIC_JS, /mobilePlayed/);
+  assert.match(CINEMATIC_JS, /function wireAiNativeScenes/);
+  assert.match(CINEMATIC_JS, /function buildSceneTimeline/);
 });
 
-test('모바일: 재생은 play(0) 한 번 — 자동 진행 타이머(setInterval)·timeline repeat 없음', () => {
+test('모바일 Scene: 섹션이 화면 밖이면 wire 시점에 아무 Scene 도 재생하지 않는다', () => {
+  const c = loadScenes({ belowFold: true });
+  c.api.wire(c.root);
+  assert.deepEqual(c.played, [0, 0, 0, 0, 0]);
+  // 사용자가 섹션까지 스크롤 → window scroll 폴백이 진입 판정 → Scene 0 재생
+  assert.equal(typeof c.winListeners.scroll, 'function');
+});
+
+test('모바일 Scene: IntersectionObserver 미지원이어도 rAF 폴백으로 진입 Scene 재생', () => {
+  const c = loadScenes({ noIO: true });
+  c.api.wire(c.root);
+  assert.equal(c.played[0], 1);
+});
+
+test('모바일 Scene: 자동 진행 타이머(setInterval)·timeline repeat 옵션 없음', () => {
   assert.doesNotMatch(CINEMATIC_JS, /setInterval/);
   assert.doesNotMatch(CINEMATIC_JS, /timeline\(\{[^}]*repeat/);
 });

@@ -167,10 +167,13 @@ test('academy_cinematic.js: #sec-digitaltwin 하나만 담당, sec-featured 는 
   assert.match(CINEMATIC_JS, /MOBILE_MAX\s*=\s*900/);
   assert.match(CINEMATIC_JS, /viewportWidth\(\) < MOBILE_MAX/);
   assert.match(CINEMATIC_JS, /if \(!gsap\(\) \|\| !ST\(\)\) return false/);
-  // 모바일(<900): scroll scrub 아님 — 섹션 진입 시 1회 자동재생(IntersectionObserver + tl.play).
-  assert.match(CINEMATIC_JS, /function wireAiNativeMobile/);
-  assert.match(CINEMATIC_JS, /mobilePlayed/);
-  assert.match(CINEMATIC_JS, /tl\.play\(0\)/);
+  // 모바일(<900): scroll scrub 아님 — 단계별 횡스크롤 Story. 활성 Scene 이 될 때마다 그 Scene 재생.
+  assert.match(CINEMATIC_JS, /function wireAiNativeScenes/);
+  assert.match(CINEMATIC_JS, /function buildSceneTimeline/);
+  assert.doesNotMatch(CINEMATIC_JS, /mobilePlayed/);   // 전체 파이프라인 1회 autoplay 개념 제거
+  assert.match(CINEMATIC_JS, /\.play\(0\)/);
+  // sec-featured / sec-lessons 는 안 건드린다(Scene 은 #sec-digitaltwin [data-ai-scenes] 안에서만)
+  assert.doesNotMatch(CINEMATIC_JS, /#sec-featured|#sec-lessons/);
   // CSR 재렌더/리사이즈 안전
   assert.match(CINEMATIC_JS, /function teardown\(\)/);
   assert.match(CINEMATIC_JS, /\.kill\(\)/);
@@ -178,9 +181,9 @@ test('academy_cinematic.js: #sec-digitaltwin 하나만 담당, sec-featured 는 
   assert.doesNotMatch(CINEMATIC_JS, /setInterval/);
 });
 
-/* ── AI Native: 하나의 파이프라인 canvas (데스크톱 sticky stage / 세로 블록 모바일) ── */
+/* ── AI Native: 데스크톱 = 하나의 파이프라인 canvas / 모바일 = 5 Scene 횡스크롤 Story ── */
 
-test('AI Native: 하나의 canvas 안 파이프라인 오브젝트 + 5개 세로 블록. scene 교체·pin·타이머 없음', () => {
+test('AI Native: 데스크톱 canvas 오브젝트 전부 존재 + 모바일 5 Scene 횡스크롤 마크업. pin·타이머 없음', () => {
   const map = Object.fromEntries(bothRenderers());
   const academy = academyFixture({
     pageSettings: {
@@ -197,8 +200,12 @@ test('AI Native: 하나의 canvas 안 파이프라인 오브젝트 + 5개 세로
   assert.match(html, /<figure class="ai-native-visual" data-ai-visual/);
   assert.match(html, /<div class="ai-stage" data-ai-stage>/);
   assert.match(html, /<div class="ai-canvas" data-ai-canvas>/);
-  // 5개 정적 scene 교체 구조는 없다
-  assert.doesNotMatch(html, /class="ai-scene" data-ai-scene=/);
+  // 모바일 — 대표수업과 같은 .f2r-collection 위 5개 Scene 카드(공개 전용). 데스크톱 canvas 와 공존.
+  assert.match(html, /<div class="ai-scenes-mobile" data-ai-scenes>/);
+  assert.match(html, /class="f2r-collection f2r-collection--ai-scenes"/);
+  assert.equal((html.match(/class="ai-scene" data-ai-scene="/g) || []).length, 5);
+  assert.match(html, /data-ai-scene-key="sources"/);
+  assert.match(html, /data-ai-scene-key="final"/);
   assert.match(html, /class="ai-src" data-ai-src="0">시험지/);
   assert.equal((html.match(/class="ai-src" data-ai-src="/g) || []).length, 4);
   assert.match(html, /class="ai-brain" data-ai-brain><b>BUILD IT<\/b>/);
