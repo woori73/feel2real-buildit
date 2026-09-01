@@ -165,6 +165,45 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(JSON.parse(sessionStorage.getItem('buildit_chrome_context')||'{}')).toMatchObject({school:'신사중',grade:'3학년',semester:'1학기',exam:'전체'})
   })
 
+
+  it('Chrome Workbench는 최초 진입 DOM에 QID, Twin, Insight와 학교프린트 전체 내용을 노출한다',async()=>{
+    const year=new Date().getFullYear()
+    const schools=[{school:'신사중',grades:[{grade:'3학년',exams:[{exam:'전체',twinId:9,version:1,updatedAt:'now',hasDigitalTwin:true}]}]}]
+    const canonical={schema_version:'wiki-question-v1',kind:'mc',question_type:'객관식',
+      instruction:{text:'QID 82 발문 TOKEN',html:'<p>QID 82 발문 TOKEN</p>'},
+      passage:{text:'QID 82 전체 지문 TOKEN',html:'<p>QID 82 전체 지문 TOKEN</p>',status:'complete'},
+      choices:[{number:1,text:'정답',html:'정답'},{number:2,text:'오답',html:'오답'}],conditions:[],
+      answer:{choice_numbers:[1],accepted_answers:[],sample_answer:''},explanation:{text:'해설',html:'해설'},
+      scoring:{score:1,multi:false,answer_format:'',grading_rule:''},source:{school:'신사중',grade:'3학년',year,semester:'1학기',exam:'전체',source_question_number:'82'}}
+    const question={id:82,twin_id:9,school:'신사중',grade:'3학년',exam:'전체',mode:'new',q_kind:'mc',question_type:'객관식',
+      source_text:'QID 82 전체 지문 TOKEN',stem:'QID 82 발문 TOKEN',options:['정답','오답'],answer:[1],multi:0,score:1,conditions:[],
+      answer_format:'',accepted_answers:[],sample_answer:'',grading_rule:'해설',exam_title:'시험',exam_group_id:'g82',favorite:0,created_at:'now',canonical}
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.endsWith('/schools'))return new Response(JSON.stringify(schools),{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/students'))return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/exam-draft'))return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}',{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.includes('/workspaces/final/context'))return new Response(JSON.stringify({
+        exam_context:{school:'신사중',grade:'3학년',year,semester:'1학기',exam:'전체'},
+        digital_twin:{id:9,description:'TWIN INITIAL DOM TOKEN'},
+        class_insights:[{id:21,content:'INSIGHT INITIAL DOM TOKEN',source:'school_teacher',created_at:'now'}],
+        school_prints:[{id:31,title:'5과 학교프린트',html_text:'<p>SCHOOL PRINT INITIAL DOM TOKEN</p>',json_text:{reading:'PRINT JSON TOKEN'}}],
+      }),{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.includes('/questions?'))return new Response(JSON.stringify([question]),{status:200,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<App/>)
+    fireEvent.click(await screen.findByRole('button',{name:'크롬 문제 변형'}))
+    expect(await screen.findByRole('heading',{name:'크롬 문제 변형 Workbench'})).toBeInTheDocument()
+    expect((await screen.findAllByText(/QID 82/)).length).toBeGreaterThan(0)
+    for(const token of ['TWIN INITIAL DOM TOKEN','INSIGHT INITIAL DOM TOKEN','SCHOOL PRINT INITIAL DOM TOKEN','PRINT JSON TOKEN','QID 82 전체 지문 TOKEN']){
+      expect((await screen.findAllByText(new RegExp(token))).length).toBeGreaterThan(0)
+    }
+    expect(screen.getByRole('button',{name:/Digital Twin접기/})).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:/학교 선생님 Insight #21접기/})).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:/5과 학교프린트접기/})).toBeInTheDocument()
+  })
+
   it('STEP 1의 학생 오답 추가는 학생 선택·오답 원본·JSON 필드만 열고 자료 제목·구형 메타 입력이 없다', async()=>{
     render(<App/>); fireEvent.click(await screen.findByRole('button',{name:/학생 오답 추가/}))
     const heading = screen.getByRole('heading',{name:'학생 오답 추가'})
