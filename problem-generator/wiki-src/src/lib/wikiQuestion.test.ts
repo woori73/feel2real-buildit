@@ -1,6 +1,6 @@
 import { describe,expect,it } from 'vitest'
 import { importQuestionFile } from './importQuestions'
-import { isSelfContained,normalizeChromeQuestion,resolveReferencedPassage,wikiQuestionToLegacy } from './wikiQuestion'
+import { isSelfContained,normalizeChromeQuestion,normalizeChromeQuestionResult,resolveReferencedPassage,wikiQuestionToLegacy } from './wikiQuestion'
 
 const dataQuestion=(id:string,stem:string,passage:string,extra='')=>`<article data-question-id="${id}" data-question-type="mc" data-answer="1"><div class="stem">${stem}</div>${passage}<ol class="choices"><li>정답</li><li>오답</li><li>오답</li><li>오답</li><li>오답</li></ol>${extra}</article>`
 
@@ -57,5 +57,18 @@ describe('Chrome transformed question normalization',()=>{
   it('keeps objective choice answers unchanged',()=>{
     const q=normalizeChromeQuestion({...base,type:'mc',choices:['A','B','C','D','E'],answer:[3]})
     expect(q.kind).toBe('mc');expect(q.answer.choice_numbers).toEqual([3]);expect(q.answer.sample_answer).toBe('')
+  })
+  it('accepts direct and UPDATE_VARIANT_QUESTION wrapped QID 82 results',()=>{
+    const payload={type:'서답형',question_type:'subjective',instruction:'다음 조건에 맞게 영작하시오.',
+      passage:{text:'Turn trash into music and give people hope.',html:'<p>Turn trash into music and give people hope.</p>',status:'complete'},
+      conditions:['가정법 과거완료를 사용할 것'],model_answer:sentence,explanation:'가정법 과거완료 해설'}
+    const direct=normalizeChromeQuestionResult(JSON.stringify(payload))
+    const wrapped=normalizeChromeQuestionResult(JSON.stringify({action:'UPDATE_VARIANT_QUESTION',data:payload}))
+    expect(direct.kind).toBe('sa');expect(direct.answer.sample_answer).toBe(sentence)
+    expect(wrapped).toEqual(direct);expect(isSelfContained(wrapped)).toBe(true)
+  })
+  it('rejects invalid JSON and non-self-contained transformed results',()=>{
+    expect(()=>normalizeChromeQuestionResult('{bad json')).toThrow(/올바른 JSON/)
+    expect(()=>normalizeChromeQuestionResult(JSON.stringify({type:'서답형',instruction:'밑줄 친 부분을 설명하시오.',model_answer:'답'}))).toThrow(/self-contained/)
   })
 })
