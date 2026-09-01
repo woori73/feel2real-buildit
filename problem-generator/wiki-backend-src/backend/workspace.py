@@ -46,7 +46,15 @@ _workspace_context: contextvars.ContextVar[WikiWorkspace | None] = contextvars.C
 
 
 def identity_secret() -> str:
-    return os.getenv("WIKI_IDENTITY_SECRET") or os.getenv("JWT_SECRET", "")
+    # Spring Boot maps app.jwt.secret to APP_JWT_SECRET in Production. Keep the
+    # dedicated Wiki variable highest priority, while accepting the same server-controlled
+    # JWT secret name Spring already uses so both sides of the HMAC share one value.
+    return (
+        os.getenv("WIKI_IDENTITY_SECRET")
+        or os.getenv("APP_WIKI_IDENTITY_SECRET")
+        or os.getenv("JWT_SECRET")
+        or os.getenv("APP_JWT_SECRET", "")
+    )
 
 
 def signature_payload(identity: WikiIdentity, timestamp: str) -> bytes:
@@ -109,8 +117,6 @@ def resolve_workspace(identity: WikiIdentity, legacy_database_path: str) -> Wiki
         _init_catalog(conn, legacy_database_path)
         login = identity.login_id.casefold()
         if login in LEGACY_LOGIN_IDS:
-            # Stable synthetic member keys avoid assuming production user IDs while preserving
-            # the explicit admin/modu shared-workspace contract.
             conn.execute("""INSERT INTO wiki_workspace_members(user_id, login_id, workspace_id)
                 VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET
                 login_id=excluded.login_id, workspace_id=excluded.workspace_id""",
