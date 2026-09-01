@@ -148,37 +148,27 @@ test('Phase 4 에서 삭제한 레거시 모션 자산·API 는 여전히 없다
   assert.ok(fs.existsSync(path.resolve(__dirname, '../../main/resources/static/js/academy_cinematic.js')));
 });
 
-/* ── Phase 5 cinematic: School Digital Twin Showcase + AI Native Panorama ── */
+/* ── cinematic: AI Native Panorama (Phase 5.1 — 담당 섹션 1개) ── */
 
 const CINEMATIC_JS = read('../../main/resources/static/js/academy_cinematic.js');
-const CINEMATIC_CSS = read('../../main/resources/static/css/academy_cinematic.css');
 
-test('academy_cinematic.js: GSAP+ScrollTrigger 를 두 섹션에만 쓰고, 미로드/reduced/모바일이면 no-op', () => {
-  // 책임 범위 = sec-featured + sec-digitaltwin 뿐
-  assert.match(CINEMATIC_JS, /#sec-featured/);
+test('academy_cinematic.js: #sec-digitaltwin 하나만 담당, sec-featured 는 안 건드린다', () => {
   assert.match(CINEMATIC_JS, /#sec-digitaltwin/);
-  // scrub (pin 아님) — USER SCROLL = STORY TIMELINE
+  assert.doesNotMatch(CINEMATIC_JS, /#sec-featured|cinematic-featured|wireFeatured|seekFeatured/);
+  // scrub (pin 아님)
   assert.match(CINEMATIC_JS, /scrub:/);
-  assert.doesNotMatch(CINEMATIC_JS, /pin:\s*true/, '전체 페이지 pin 없음(레이아웃은 CSS sticky)');
+  assert.doesNotMatch(CINEMATIC_JS, /pin:\s*true/);
+  // immediateRender:false 를 쓰지 않는다 — progress 0 = 흩어진 시작(정적 아님)
+  assert.doesNotMatch(CINEMATIC_JS, /immediateRender:\s*false/);
   // 폴백 가드
   assert.match(CINEMATIC_JS, /prefers-reduced-motion: reduce/);
   assert.match(CINEMATIC_JS, /viewportWidth\(\) < 900/);
   assert.match(CINEMATIC_JS, /if \(!gsap\(\) \|\| !ST\(\)\) return false/);
-  // CSR 재렌더/리사이즈 안전 — 이전 trigger/timeline kill
+  // CSR 재렌더/리사이즈 안전
   assert.match(CINEMATIC_JS, /function teardown\(\)/);
   assert.match(CINEMATIC_JS, /\.kill\(\)/);
-  // 실제로 trigger 를 만들었을 때만 게이트 클래스
   assert.match(CINEMATIC_JS, /js-cinematic/);
-  assert.doesNotMatch(CINEMATIC_JS, /setInterval/, '자동 진행 타이머 없음');
-});
-
-test('academy_cinematic.css: js-cinematic 게이트 + 정적 폴백(가로 스와이프 + scroll-snap)', () => {
-  assert.match(CINEMATIC_CSS, /html\.js-cinematic #sec-featured\{min-height:calc/);
-  assert.match(CINEMATIC_CSS, /html\.js-cinematic #sec-featured \.featured-inner\{[\s\S]*position:sticky/);
-  // 폴백/모바일: track 은 네이티브 가로 스와이프
-  assert.match(CINEMATIC_CSS, /\.dt-track\{[\s\S]*overflow-x:auto/);
-  assert.match(CINEMATIC_CSS, /\.dt-track\{[\s\S]*scroll-snap-type:x/);
-  assert.match(CINEMATIC_CSS, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*\.dt-track\{scroll-behavior:auto/);
+  assert.doesNotMatch(CINEMATIC_JS, /setInterval/);
 });
 
 /* ── AI Native: 5-Scene Panorama (데스크톱 sticky stage / 세로 블록 모바일) ── */

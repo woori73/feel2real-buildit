@@ -1,19 +1,21 @@
 /**
- * Storefront Cinematic (Phase 5) — GSAP + ScrollTrigger 를 소유하는 *유일한* 모듈.
+ * Storefront Cinematic — GSAP + ScrollTrigger 를 소유하는 *유일한* 모듈.
  *
- * 책임 범위는 정확히 두 섹션이다:
- *   #sec-featured     School Digital Twin Horizontal Showcase — 세로 스크롤 progress 로 가로 track 이동.
+ * 책임 범위는 정확히 한 섹션이다:
  *   #sec-digitaltwin  AI Native 5-Scene Panorama — 세로 스크롤 progress 로 scene timeline 구동.
+ *   (Phase 5.1: sec-featured 의 가로 showcase 는 제거됨 — 학교별 Digital Twin 은 이제 sec-lessons
+ *    「중학교 영어내신」 Program Card 안에서 보여준다. academy_public.js wireProgramCardTwin.)
  *
- * 원칙 (Phase 5 스펙)
- *   USER SCROLL = STORY TIMELINE.  scrub 이므로 스크롤을 멈추면 진행도 멈추고, 위로 스크롤하면
- *   그대로 역행한다.  pin 을 쓰지 않는다 — 레이아웃은 CSS position:sticky 가 담당하고(진입/탈출
- *   jump 없음), ScrollTrigger 는 progress→transform/opacity 매핑만 한다.
+ * 원칙
+ *   USER SCROLL = STORY TIMELINE.  scrub — 스크롤을 멈추면 진행도 멈추고, 위로 스크롤하면 그대로
+ *   역행한다.  immediateRender 기본(true) 이므로 progress 0 에서 요소는 "흩어진 시작" 상태 →
+ *   스크롤하면 실제로 이동/결합/분기/조립된다(slideshow 아님).  pin 을 쓰지 않는다 — 레이아웃은
+ *   CSS position:sticky 가 담당(진입/탈출 jump 없음), ScrollTrigger 는 progress→transform/opacity 만.
  *
- * 안전 / 폴백  (아래 중 하나라도면 전부 no-op — 두 섹션은 CSS 로 정적 판독 가능)
+ * 안전 / 폴백  (아래 중 하나라도면 전부 no-op — 섹션은 CSS [data-active] 로 조립 완료 상태 정적 표시)
  *   - window.gsap / window.ScrollTrigger 미로드
  *   - prefers-reduced-motion: reduce
- *   - 뷰포트 폭 < 900 (모바일 — 네이티브 scroll-snap 스와이프가 담당)
+ *   - 뷰포트 폭 < 900 (모바일 — 5개 세로 블록 + inline glyph 가 담당)
  *
  * 생명주기
  *   wire(root)  : 이전 ScrollTrigger/timeline 를 전부 kill 후 재구성(CSR 재렌더/리사이즈 안전).
@@ -23,8 +25,6 @@
  *
  * 이벤트
  *   root 에 'f2r:cinematic-scene' CustomEvent { detail: { section, index, total } } 를 디스패치한다.
- *   academy_public.js 가 이걸 듣고 학교 칩 aria-pressed / CTA prefix 를 동기화한다(엔진은 timeline
- *   SSoT, chrome 동기화는 소비자 몫 — 한 요소를 두 엔진이 건드리지 않는다).
  */
 (function (global) {
   'use strict';
@@ -90,99 +90,49 @@
     } catch (e) { /* CustomEvent 미지원 환경은 무시 */ }
   }
 
-  // ── School Digital Twin — 가로 Showcase ─────────────────────────────────
-  function wireFeatured(root) {
-    var section = root.querySelector('#sec-featured');
-    if (!section) return;
-    var showcase = section.querySelector('[data-dt-showcase]');
-    var track = showcase && showcase.querySelector('[data-dt-track]');
-    var viewport = showcase && showcase.querySelector('.dt-viewport');
-    if (!showcase || !track || !viewport) return;
-    var scenes = track.querySelectorAll('.dt-scene');
-    if (scenes.length < 2) return;
-
-    var n = scenes.length;
-    section.style.setProperty('--dt-count', String(n));
-
-    var g = gsap();
-    var current = showcase.querySelector('[data-dt-current]');
-    var prevBtn = showcase.querySelector('[data-dt-nav-dir="prev"]');
-    var nextBtn = showcase.querySelector('[data-dt-nav-dir="next"]');
-    var lastIdx = -1;
-
-    function place(p) {
-      // p: 0..n-1 (연속). 중앙에 scene p 가 오도록 track 을 x 이동(transform 만).
-      var stride = scenes[1].offsetLeft - scenes[0].offsetLeft;
-      var pad = (viewport.clientWidth - scenes[0].offsetWidth) / 2;
-      g.set(track, { x: Math.round(pad - p * stride) });
-      var idx = Math.max(0, Math.min(n - 1, Math.round(p)));
-      for (var i = 0; i < n; i += 1) {
-        var d = Math.abs(i - p);
-        // 중앙에서 멀수록 살짝 축소·감광(카메라 포커스). 섹션 전체를 흐리게 하는 게 아니다.
-        g.set(scenes[i], { scale: d < 0.5 ? 1 : 0.9, opacity: d < 0.5 ? 1 : 0.4 });
-        scenes[i].toggleAttribute('data-active', i === idx);
-      }
-      if (idx !== lastIdx) {
-        lastIdx = idx;
-        showcase.setAttribute('data-active', String(idx));
-        if (current) current.textContent = idx + 1 < 10 ? '0' + (idx + 1) : String(idx + 1);
-        if (prevBtn) prevBtn.disabled = idx === 0;
-        if (nextBtn) nextBtn.disabled = idx === n - 1;
-        emitScene(root, 'sec-featured', idx, n);
-      }
-    }
-
-    var st = ST().create({
-      id: 'cinematic-featured',
-      trigger: section,
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.35,
-      invalidateOnRefresh: true,
-      onUpdate: function (self) { place(self.progress * (n - 1)); },
-      onRefresh: function () { place(0); }
-    });
-    built.push(st);
-    byId['cinematic-featured'] = st;
-    place(0);
-  }
-
   // ── AI Native — 5-Scene Panorama ───────────────────────────────────────
-  // scene i 의 조립 애니메이션은 timeline 상 [at-0.45, at+0.15) 에 몰아넣는다(at=i, scene0 은 0.05~).
-  // → scene 에 "진입하면서" 조립이 끝나고, 그 scene 의 활성 구간 [i/n,(i+1)/n) 내내 완성 상태 유지.
-  // 뒤로 스크롤하면 이전 scene 구간에서 자연스럽게 분해된다(reverse).
+  // 각 scene 의 조립 애니메이션은 timeline 창 [i+0.06, i+0.9] 전체에 펼친다(immediateRender 기본
+  // = true 이므로 progress 0 에서 요소는 "흩어진 시작" 상태). scene 활성 구간 [i/n,(i+1)/n) 동안
+  // 스크롤하는 내내 이동/결합/분기/조립이 눈에 보이고, 창 끝(i+0.9)에서 완성된다.
+  // 스크롤을 멈추면(scrub) 멈추고, 위로 스크롤하면 그대로 역행(분해)한다.
   function buildSceneTweens(tl, scene, index) {
     var q = function (sel) { return scene.querySelectorAll(sel); };
     var one = function (sel) { return scene.querySelector(sel); };
-    var at = Math.max(0.05, index - 0.45);
+    var at = index + 0.06;
     if (index === 0) {
+      // 시험지 / 학교 프린트 / 교과서 / 수업 자료가 흩어진 상태에서 중앙으로 모여 stack.
       tl.from(q('.ai-doc'), {
-        x: function (i) { return [-150, 130, -110, 150][i] || 0; },
-        y: function (i) { return [-90, -70, 90, 80][i] || 0; },
-        rotate: function (i) { return [-12, 10, 8, -9][i] || 0; },
-        opacity: 0, stagger: 0.06, duration: 0.42, ease: 'power2.out'
+        x: function (i) { return [-190, 170, -150, 185][i] || 0; },
+        y: function (i) { return [-120, -95, 115, 105][i] || 0; },
+        rotate: function (i) { return [-16, 13, 11, -12][i] || 0; },
+        opacity: 0, stagger: 0.12, duration: 0.78, ease: 'power2.out'
       }, at);
     } else if (index === 1) {
-      tl.fromTo(one('.ai-scanline'), { yPercent: -110, opacity: 0.2 },
-        { yPercent: 210, opacity: 0.9, duration: 0.4, ease: 'none' }, at);
-      tl.from(q('.ai-bars i'), { scaleX: 0, transformOrigin: 'left center', stagger: 0.04, duration: 0.3, ease: 'power1.out' }, at + 0.12);
-      tl.from(one('.ai-twin-card'), { scale: 0.55, opacity: 0, duration: 0.32, ease: 'back.out(1.6)' }, at + 0.3);
+      // 01 에서 모인 자료가 그대로 분석 대상 → scan → pattern bar → EXAMINER DIGITAL TWIN.
+      tl.fromTo(one('.ai-scanline'), { yPercent: -120, opacity: 0.15 },
+        { yPercent: 240, opacity: 0.9, duration: 0.5, ease: 'none' }, at);
+      tl.from(q('.ai-bars i'), { scaleX: 0, transformOrigin: 'left center', stagger: 0.09, duration: 0.42, ease: 'power1.out' }, at + 0.34);
+      tl.from(one('.ai-twin-card'), { scale: 0.5, opacity: 0, duration: 0.4, ease: 'back.out(1.6)' }, at + 0.66);
     } else if (index === 2) {
-      tl.from(one('.ai-stream--a'), { xPercent: -160, opacity: 0, duration: 0.36, ease: 'power2.out' }, at);
-      tl.from(one('.ai-stream--b'), { xPercent: 160, opacity: 0, duration: 0.36, ease: 'power2.out' }, at);
-      tl.from(one('.ai-brain'), { scale: 0, opacity: 0, duration: 0.32, ease: 'back.out(1.5)' }, at + 0.22);
-      tl.from(q('.ai-tokens li'), { y: 12, opacity: 0, stagger: 0.04, duration: 0.26, ease: 'power1.out' }, at + 0.36);
+      // DIGITAL TWIN + TEACHER INSIGHT 두 스트림이 실제로 중앙으로 이동 → BUILD IT BRAIN 결합.
+      tl.from(one('.ai-stream--a'), { xPercent: -200, opacity: 0, duration: 0.5, ease: 'power2.out' }, at);
+      tl.from(one('.ai-stream--b'), { xPercent: 200, opacity: 0, duration: 0.5, ease: 'power2.out' }, at);
+      tl.from(one('.ai-brain'), { scale: 0, opacity: 0, duration: 0.42, ease: 'back.out(1.5)' }, at + 0.4);
+      tl.from(q('.ai-tokens li'), { y: 16, opacity: 0, stagger: 0.07, duration: 0.32, ease: 'power1.out' }, at + 0.62);
     } else if (index === 3) {
-      tl.from(one('.ai-q--origin'), { scale: 0.6, opacity: 0, duration: 0.32, ease: 'back.out(1.4)' }, at);
-      tl.from(q('.ai-q--var'), { y: -26, opacity: 0, scale: 0.7, stagger: 0.06, duration: 0.32, ease: 'power2.out' }, at + 0.22);
-      tl.from(one('.ai-stamp'), { scale: 1.7, opacity: 0, duration: 0.28, ease: 'back.out(2)' }, at + 0.44);
+      // BUILD IT BRAIN 에서 원본 문항 → 변형 A / 변형 B / 서술형 으로 분기 생성.
+      tl.from(one('.ai-q--origin'), { scale: 0.55, opacity: 0, y: -16, duration: 0.42, ease: 'back.out(1.4)' }, at);
+      tl.from(q('.ai-q--var'), { y: -34, opacity: 0, scale: 0.6, stagger: 0.12, duration: 0.42, ease: 'power2.out' }, at + 0.34);
+      tl.from(one('.ai-stamp'), { scale: 1.8, opacity: 0, duration: 0.34, ease: 'back.out(2)' }, at + 0.66);
     } else if (index === 4) {
+      // 생성된 문항 Q01~Q05 가 모여 FINAL 실전 대비 시험지 하나로 조립.
       tl.from(q('.ai-qc'), {
-        x: function (i) { return [-120, 120, -90, 100, 0][i] || 0; },
-        y: function (i) { return [-70, -60, 70, 60, -100][i] || 0; },
-        opacity: 0, scale: 0.6, stagger: 0.05, duration: 0.36, ease: 'power2.out'
+        x: function (i) { return [-150, 150, -115, 130, 0][i] || 0; },
+        y: function (i) { return [-95, -80, 95, 85, -130][i] || 0; },
+        opacity: 0, scale: 0.5, stagger: 0.1, duration: 0.5, ease: 'power2.out'
       }, at);
-      tl.from(one('.ai-final'), { scale: 0.9, opacity: 0, duration: 0.32, ease: 'power2.out' }, at + 0.3);
+      tl.from(one('.ai-final'), { scale: 0.86, opacity: 0, duration: 0.42, ease: 'power2.out' }, at + 0.44);
+      tl.to(one('.ai-final'), { scale: 1.03, duration: 0.18, ease: 'power1.inOut' }, at + 0.82);
     }
   }
 
@@ -198,10 +148,11 @@
 
     var g = gsap();
     var n = scenes.length;
-    // immediateRender:false — progress 0 에서 요소는 CSS 최종(조립 완료) 상태로 남는다.
-    // scrub 이 각 scene 창에 들어오면 그때 from→최종을 재생한다. GSAP 이 있어도 스크롤이
-    // 아직 안 왔거나(앵커 진입) ScrollTrigger 가 발화 못 하면, 콘텐츠는 그대로 읽힌다.
-    var tl = g.timeline({ paused: true, defaults: { immediateRender: false } });
+    // immediateRender 기본(true): progress 0 에서 모든 .from() 요소가 "흩어진 시작" 상태로
+    // 렌더된다 → scene 0 은 처음부터 흩어져 있고 스크롤하면 중앙으로 모인다(정적 아님).
+    // GSAP 없음 / reduced-motion / 모바일에서는 wire() 가 no-op → CSS [data-active] 로 조립 완료
+    // 상태를 정적 표시(academy_public.css). 이 timeline 은 cinematic 활성일 때만 만들어진다.
+    var tl = g.timeline({ paused: true });
     for (var i = 0; i < n; i += 1) buildSceneTweens(tl, scenes[i], i);
     // timeline 총 길이를 정확히 n 으로 고정한다(빈 tween 패딩). totalDuration(n) 은 기존 tween
     // 위치까지 스케일해 scene 정렬이 깨지므로 쓰지 않는다.
@@ -223,34 +174,16 @@
     var st = ST().create({
       id: 'cinematic-ai-native',
       trigger: driver,
-      start: 'top 72%',
-      end: 'bottom 34%',
-      scrub: 0.4,
+      start: 'top 88%',
+      end: 'bottom 22%',
+      scrub: 0.5,
       invalidateOnRefresh: true,
       onUpdate: function (self) { paint(self.progress); },
-      onRefresh: function () { paint(0); }
+      onRefresh: function (self) { paint(self.progress); }
     });
     built.push(st);
     byId['cinematic-ai-native'] = st;
     paint(0);
-  }
-
-  /** 칩/네비 클릭 → 해당 scene 이 중앙에 오는 스크롤 위치로 부드럽게 이동(cinematic 활성 시). */
-  function seek(id, index, count) {
-    var st = byId[id];
-    if (!st || count < 2) return false;
-    var frac = Math.max(0, Math.min(1, index / (count - 1)));
-    var target = st.start + (st.end - st.start) * frac;
-    try {
-      if (gsap().plugins && gsap().plugins.scrollTo) {
-        gsap().to(global, { duration: 0.6, scrollTo: { y: target, autoKill: false }, ease: 'power2.inOut' });
-      } else {
-        global.scrollTo({ top: target, behavior: 'smooth' });
-      }
-    } catch (e) {
-      global.scrollTo(0, target);
-    }
-    return true;
   }
 
   function bindResize() {
@@ -272,7 +205,6 @@
     if (!usable()) return;
     mark();
     try {
-      wireFeatured(root);
       wireAiNative(root);
     } catch (e) {
       // 어떤 이유로든 실패하면 전부 되돌리고 정적 폴백에 맡긴다.
@@ -307,14 +239,10 @@
   function refresh() { if (ST()) ST().refresh(); }
 
   function active() { return doc.documentElement.classList.contains('js-cinematic') && built.length > 0; }
-  function seekFeatured(index, count) { return seek('cinematic-featured', index, count); }
-  function seekAiNative(index, count) { return seek('cinematic-ai-native', index, count); }
 
   global.F2RCinematic = Object.freeze({
     wire: wire,
     refresh: refresh,
-    active: active,
-    seekFeatured: seekFeatured,
-    seekAiNative: seekAiNative
+    active: active
   });
 })(typeof window !== 'undefined' ? window : globalThis);

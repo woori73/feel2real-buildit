@@ -212,9 +212,9 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
    .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
 
 /* ══════════════ Education Storefront: Featured / 2학기 영어 내신 (sec-featured) ══════════════
-   Shopify Featured hierarchy: eyebrow → 큰 제목 → 짧은 설명 → 학교 칩 → 학교별 Digital Twin 패널 → 단일 CTA.
-   학교 칩 선택 시 아래 패널이 그 학교의 실제 /api/analyzes 데이터로 바뀐다(academy_public.js wireFeaturedSchoolTwin).
-   공감성장영어 lesson highlight 를 여기 재사용하지 않는다 — 학교별 데이터는 /analyzes 가 SSoT. */
+   Phase 5.1: 단순 Featured 밴드 — eyebrow → 큰 제목 → 짧은 설명 → 정적 학교 칩 → 단일 CTA.
+   학교별 실제 출제자 Digital Twin(/api/analyzes)은 sec-lessons 의 school-twin Program Card 안에서
+   보여준다(academy_sections.js programCardHtml + academy_public.js wireProgramCardTwin). */
 .section-wrap.featured-wrap{background:linear-gradient(180deg,var(--gold-soft) 0%,#fff 78%);padding:64px 20px;}
 .featured-inner{max-width:760px;margin:0 auto;text-align:center;}
 .featured-head{max-width:640px;margin:0 auto;}
@@ -223,30 +223,11 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
 .featured-desc{margin:16px auto 0;max-width:560px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
 
-.featured-schools{margin-top:26px;}
+.featured-schools{margin-top:24px;}
 .featured-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;}
-.featured-chip{display:inline-flex;align-items:center;padding:9px 17px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);color:var(--ink);font-family:inherit;font-size:14px;font-weight:800;letter-spacing:-.01em;cursor:pointer;transition:border-color var(--hover-duration) var(--hover-ease),background var(--hover-duration) var(--hover-ease),color var(--hover-duration) var(--hover-ease);}
-.featured-chip:hover{border-color:var(--ultramarine);}
-.featured-chip:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
-.featured-chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+/* 정적 라벨(비상호작용). 공개는 <span>, 빌더는 <div><span data-builder-draft> 편집 앵커. */
+.featured-chip{display:inline-flex;align-items:center;padding:8px 16px;border-radius:999px;background:#fff;border:1px solid #d3d8e0;box-shadow:var(--shadow-sm);color:var(--ink);font-family:inherit;font-size:14px;font-weight:800;letter-spacing:-.01em;}
 .featured-chip-label:empty::before{content:'학교';color:var(--ink-faint);}
-
-.featured-twin{margin:18px auto 0;max-width:440px;width:100%;min-height:118px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);text-align:left;}
-.featured-twin.is-loading{opacity:.5;}
-.featured-twin-loading,.featured-twin-empty{margin:0;color:var(--ink-soft);font-size:13.5px;font-weight:600;text-align:center;line-height:1.6;word-break:keep-all;}
-.featured-twin-empty code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
-.featured-twin-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);}
-.featured-twin-school{color:var(--ink);font-size:16px;font-weight:900;letter-spacing:-.02em;}
-.featured-twin-count{color:var(--ultramarine);font-size:11.5px;font-weight:800;letter-spacing:.02em;}
-.featured-twin-list{list-style:none;margin:10px 0 0;padding:0;}
-.featured-twin-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
-.featured-twin-row:last-child{border-bottom:0;}
-.featured-twin-exam{color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;}
-.featured-twin-link{flex:none;color:var(--ultramarine);font-size:12px;font-weight:800;text-decoration:none;}
-.featured-twin-link:hover{text-decoration:underline;}
-.featured-twin-more{display:inline-block;margin-top:12px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
-.featured-twin-more:hover{text-decoration:underline;}
-.featured-twin--builder{text-align:center;}
 
 .featured-cta{margin-top:26px;}
 .featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background var(--hover-duration) var(--hover-ease),transform var(--hover-duration) var(--hover-ease);}
@@ -296,8 +277,8 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 
 /* Visual Stage(데스크톱). scene 은 겹쳐 쌓이고 활성 scene 만 보인다. GSAP 없으면 [data-active]
    셀렉터가 정적으로 활성 scene 을 표시한다(academy_public.js wireAiNative IO 폴백). */
-.ai-stage{position:relative;height:320px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);overflow:hidden;}
-.ai-scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px 24px;opacity:0;transition:opacity .45s var(--reveal-ease);}
+.ai-stage{position:relative;height:360px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;box-shadow:var(--shadow-sm);overflow:hidden;}
+.ai-scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:34px 22px;opacity:0;transition:opacity .45s var(--reveal-ease);}
 .ai-native-visual[data-active="0"] .ai-scene[data-ai-scene="0"],
 .ai-native-visual[data-active="1"] .ai-scene[data-ai-scene="1"],
 .ai-native-visual[data-active="2"] .ai-scene[data-ai-scene="2"],
