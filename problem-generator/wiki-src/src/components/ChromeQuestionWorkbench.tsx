@@ -15,7 +15,7 @@ type PreviewPayload = { question?:WikiQuestionV1; revision_note?:string }
 const emptyContext:Context={school:'',grade:'',year:new Date().getFullYear(),semester:'1학기',exam:'전체'}
 const canonicalToStored=(question:WikiQuestionV1,source:StoredQuestion):StoredQuestion=>{const legacy=wikiQuestionToLegacy(question);return{
   ...source,id:0,mode:'transform',q_kind:legacy.type,question_type:legacy.questionType,source_text:legacy.sourceText,stem:legacy.stem,
-  options:legacy.options,answer:legacy.answer,multi:legacy.multi,score:legacy.score,conditions:legacy.conditions,answer_format:legacy.answerFormat,
+  options:legacy.options,answer:legacy.answer,multi:legacy.multi?1:0,score:legacy.score,conditions:legacy.conditions,answer_format:legacy.answerFormat,
   accepted_answers:legacy.acceptedAnswers,sample_answer:legacy.sampleAnswer,grading_rule:legacy.gradingRule,canonical:question,
   schema_version:question.schema_version,passage_status:question.passage.status,created_at:new Date().toISOString(),
 }}
