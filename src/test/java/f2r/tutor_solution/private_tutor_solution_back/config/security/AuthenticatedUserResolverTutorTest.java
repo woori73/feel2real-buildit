@@ -71,6 +71,25 @@ class AuthenticatedUserResolverTutorTest {
   }
 
   @Test
+  void requireTutorOrAdmin_allowsTutorAndAdminButRejectsStudentAndAnonymous() {
+    // given
+    JwtTokenProvider.AuthenticatedPrincipal tutor =
+        new JwtTokenProvider.AuthenticatedPrincipal(1L, "tutor", Role.TUTOR.name());
+    JwtTokenProvider.AuthenticatedPrincipal admin =
+        new JwtTokenProvider.AuthenticatedPrincipal(2L, "admin-f2r", Role.ADMIN.name());
+    JwtTokenProvider.AuthenticatedPrincipal student =
+        new JwtTokenProvider.AuthenticatedPrincipal(3L, "student", Role.STUDENT.name());
+
+    // when & then
+    assertThatCode(() -> resolver.requireTutorOrAdmin(tutor)).doesNotThrowAnyException();
+    assertThatCode(() -> resolver.requireTutorOrAdmin(admin)).doesNotThrowAnyException();
+    assertThatThrownBy(() -> resolver.requireTutorOrAdmin(student))
+        .isInstanceOf(AccessDeniedException.class);
+    assertThatThrownBy(() -> resolver.requireTutorOrAdmin(null))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
   void verifyOwnsAcademy_allowsOwningTutor() {
     // given
     User tutor = User.builder()

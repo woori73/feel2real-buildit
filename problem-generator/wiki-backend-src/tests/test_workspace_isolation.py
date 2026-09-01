@@ -109,6 +109,62 @@ class WorkspaceIsolationTest(unittest.TestCase):
         # then: the request is rejected rather than trusted (fail closed, 401).
         self.assertEqual(401, response.status_code, response.text)
 
+    def test_production_admin_login_id_shares_modu_legacy_workspace(self):
+        # Root cause of the empty-Wiki regression: Production's admin account login_id is
+        # "admin-f2r" (V2 migration), not the dev-seed "admin" that LEGACY_LOGIN_IDS hardcoded,
+        # so the real admin fell through to an empty personal workspace. Admin is now judged by
+        # the signed principal's role, so any ADMIN login_id lands on modu's legacy DB.
+        modu = identity_headers('2', 'modu', 'TUTOR')
+        admin_prod = identity_headers('42', 'admin-f2r', 'ADMIN')
+        self.create_student(modu, 'legacy student')
+
+        me = self.client.get('/api/workspace/me', headers=admin_prod)
+        self.assertEqual(200, me.status_code, me.text)
+        body = me.json()
+        self.assertEqual('legacy', body['workspace_id'])
+        self.assertTrue(body['legacy'])
+        self.assertTrue(body['workspace_admin'])  # role-based, not login_id == "admin"
+
+        self.assertEqual(
+            ['legacy student'],
+            [row['name'] for row in self.client.get('/api/students', headers=admin_prod).json()],
+        )
+
+    def test_role_tutor_alone_does_not_grant_legacy_workspace(self):
+        # Regression guard: only the one designated legacy tutor login ("modu") shares legacy.
+        # A normal TUTOR must still get an isolated personal workspace.
+        other_tutor = identity_headers('501', 'some-tutor', 'TUTOR')
+        me = self.client.get('/api/workspace/me', headers=other_tutor)
+        self.assertEqual(200, me.status_code, me.text)
+        self.assertNotEqual('legacy', me.json()['workspace_id'])
+        self.assertFalse(me.json()['legacy'])
+
+    def test_admin_membership_self_heals_from_a_stale_personal_workspace(self):
+        # Reproduces the catalog state the bug left behind: admin's user_id recorded against a
+        # personal workspace. The next authenticated request must re-point membership to legacy
+        # via the upsert, without touching any workspace's data DB.
+        admin_prod = identity_headers('42', 'admin-f2r', 'ADMIN')
+        self.client.get('/api/workspace/me', headers=admin_prod)  # creates legacy membership
+        catalog = os.environ['BUILDIT_WIKI_WORKSPACE_CATALOG']
+        with sqlite3.connect(catalog) as conn:
+            conn.execute(
+                "INSERT INTO wiki_workspaces(workspace_id, workspace_key, database_path, is_legacy) "
+                "VALUES ('stale-personal', 'user:42', ?, 0)",
+                (str(Path(self.temp.name) / 'legacy.workspace-stale.db'),),
+            )
+            conn.execute(
+                "UPDATE wiki_workspace_members SET workspace_id='stale-personal' WHERE user_id='42'"
+            )
+            conn.commit()
+
+        me = self.client.get('/api/workspace/me', headers=admin_prod)
+        self.assertEqual('legacy', me.json()['workspace_id'])
+        with sqlite3.connect(catalog) as conn:
+            healed = conn.execute(
+                "SELECT workspace_id FROM wiki_workspace_members WHERE user_id='42'"
+            ).fetchone()[0]
+        self.assertEqual('legacy', healed)
+
     def test_personal_workspace_persists_and_blocks_other_resource_ids(self):
         user_a = identity_headers('101', 'new-a')
         user_b = identity_headers('202', 'new-b')
