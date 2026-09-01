@@ -324,7 +324,7 @@ def _exact_material_passage(conn, row, label: str):
     """같은 학교/학년/시험 자료에서 제목이 정확히 일치하는 단 하나의 section만 복구한다."""
     if not label: return None
     materials=conn.execute('''SELECT id,html_text FROM exam_material_sets
-        WHERE school=? AND grade=? AND (exam=? OR exam='') AND html_text<>''''',(row['school'],row['grade'],row['exam'])).fetchall()
+        WHERE school=? AND grade=? AND (exam=? OR exam='') AND html_text<>?''',(row['school'],row['grade'],row['exam'],'')).fetchall()
     found=[]
     heading=re.compile(r'<(h[1-4]|[^>]+(?:data-reading|data-section-title|class=["\'][^"\']*(?:reading-title|lesson-title))[^>]*)>(.*?)</(?:h[1-4]|[^>]+)>',re.I|re.S)
     plain_text=lambda value:re.sub(r'\s+',' ',html.unescape(re.sub(r'<[^>]+>','',value))).strip()
