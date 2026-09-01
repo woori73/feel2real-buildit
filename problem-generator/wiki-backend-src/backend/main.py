@@ -327,13 +327,14 @@ def _exact_material_passage(conn, row, label: str):
         WHERE school=? AND grade=? AND (exam=? OR exam='') AND html_text<>''''',(row['school'],row['grade'],row['exam'])).fetchall()
     found=[]
     heading=re.compile(r'<(h[1-4]|[^>]+(?:data-reading|data-section-title|class=["\'][^"\']*(?:reading-title|lesson-title))[^>]*)>(.*?)</(?:h[1-4]|[^>]+)>',re.I|re.S)
-    normalized=lambda value:re.sub(r'\s+',' ',html.unescape(re.sub(r'<[^>]+>','',value))).strip().lower()
+    plain_text=lambda value:re.sub(r'\s+',' ',html.unescape(re.sub(r'<[^>]+>','',value))).strip()
+    normalized=lambda value:plain_text(value).lower()
     for material in materials:
         source=material['html_text'] or '';matches=list(heading.finditer(source))
         for index,match in enumerate(matches):
             if normalized(match.group(2))!=normalized(label): continue
             end=matches[index+1].start() if index+1<len(matches) else len(source)
-            section=source[match.end():end].strip();plain=normalized(section)
+            section=source[match.end():end].strip();plain=plain_text(section)
             if len(plain)>=40: found.append((material['id'],plain,section))
     return found[0] if len(found)==1 else None
 
