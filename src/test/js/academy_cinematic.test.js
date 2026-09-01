@@ -135,7 +135,7 @@ test('하나의 timeline — 정적 scene 교체가 아니라 오브젝트의 �
   // 좌표계: 데스크톱 660×460 / 모바일 330×900 canvas 를 stage 폭에 맞춘다
   assert.match(CINEMATIC_JS, /function fitCanvas/);
   assert.match(CINEMATIC_JS, /function canvasBox/);
-  assert.match(CINEMATIC_JS, /\{ w: 330, h: 760 \}\s*:\s*\{ w: 660, h: 460 \}/);
+  assert.match(CINEMATIC_JS, /\{ w: 330, h: 560 \}\s*:\s*\{ w: 660, h: 460 \}/);
   // scrub timeline 이므로 .from() 대신 .fromTo()(양끝 명시)를 쓴다
   assert.match(CINEMATIC_JS, /tl\.fromTo\(srcs,/);
   assert.doesNotMatch(CINEMATIC_JS, /tl\.from\([^T]/);

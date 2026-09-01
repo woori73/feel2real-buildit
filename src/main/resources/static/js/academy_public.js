@@ -188,10 +188,10 @@
     const fit = () => {
       const w = stage.clientWidth || 0;
       if (!w) return;
-      // 좌표계: 데스크톱 가로형 660×460, 모바일 세로형 330×760 (academy_cinematic.js 와 동일).
+      // 좌표계: 데스크톱 가로형 660×460, 모바일 세로형 330×560 (academy_cinematic.js 와 동일).
       const mobile = (window.innerWidth || document.documentElement.clientWidth || 0) < 900;
       const base = mobile ? 330 : 660;
-      const boxH = mobile ? 760 : 460;
+      const boxH = mobile ? 560 : 460;
       const s = w / base;
       canvas.style.transform = 'scale(' + s + ')';
       stage.style.height = (boxH * s) + 'px';
@@ -241,7 +241,8 @@
               + ' 출제 분석을 준비 중입니다.</p>';
             return;
           }
-          const rows = list.slice(0, 4).map((a) =>
+          // 카드가 모바일에서 과도하게 길어지지 않게 핵심 2~3건만 표시(전체 건수는 카운트로).
+          const rows = list.slice(0, 3).map((a) =>
             '<li class="featured-schoolcard-row">'
             + escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester) + ' · ' + escapeHtml(a.examType)
             + '</li>').join('');

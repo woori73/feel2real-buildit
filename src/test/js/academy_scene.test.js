@@ -142,15 +142,17 @@ test('scroll 이벤트/setInterval 을 쓰지 않는다(IntersectionObserver 만
 
 /* ── CSS 계약 ── */
 
-test('academy_scene.css: html.js-scene 스코프 + 가독성 우선 dim(≥.42) + reduced-motion 즉시 최종', () => {
-  assert.match(SCENE_CSS, /html\.js-scene section\.section-wrap\[data-scene="active"\]\s*\{\s*opacity:\s*1/);
-  // dim 은 너무 어둡지 않게(가독성) — enter/exit opacity 가 .42 이상
-  const enter = SCENE_CSS.match(/section\.section-wrap\[data-scene="enter"\]\s*\{\s*opacity:\s*([.\d]+)/);
+test('academy_scene.css: 지나간 이전 섹션만 dim — enter/active 정상 밝기, exit 만 ~.4', () => {
+  // "다음 화면이 흐린 것"이 아니라 "지나간 이전 화면이 희미해지는 것"
+  assert.match(SCENE_CSS, /section\.section-wrap\[data-scene="enter"\],\s*\n\s*html\.js-scene section\.section-wrap\[data-scene="active"\]\s*\{\s*opacity:\s*1/);
   const exit = SCENE_CSS.match(/section\.section-wrap\[data-scene="exit"\]\s*\{\s*opacity:\s*([.\d]+)/);
-  assert.ok(enter && parseFloat(enter[1]) >= 0.42, 'enter opacity >= .42');
-  assert.ok(exit && parseFloat(exit[1]) >= 0.42, 'exit opacity >= .42');
-  // sticky/가로트랙 섹션은 자식 transform 제외
-  assert.match(SCENE_CSS, /:not\(#sec-digitaltwin\):not\(#sec-featured\):not\(#sec-lessons\):not\(#sec-videos\) > \*/);
+  assert.ok(exit, 'exit opacity 규칙 존재');
+  assert.ok(parseFloat(exit[1]) >= 0.3 && parseFloat(exit[1]) <= 0.5, 'exit opacity ~.4 (가독성 유지)');
+  // enter 는 opacity 를 낮추지 않는다
+  assert.doesNotMatch(SCENE_CSS, /section\.section-wrap\[data-scene="enter"\]\s*\{\s*opacity:\s*0?\.[0-8]/);
+  // exit 자식 transform 만 걸리고, sticky/가로트랙/대표수업/Actual Class 는 제외
+  assert.match(SCENE_CSS, /\[data-scene="exit"\]:not\(#sec-digitaltwin\):not\(#sec-featured\):not\(#sec-lessons\):not\(#sec-videos\) > \*/);
+  assert.doesNotMatch(SCENE_CSS, /\[data-scene="enter"\][^{]*> \*\s*\{\s*transform:\s*translate/);
   assert.match(SCENE_CSS, /@media \(prefers-reduced-motion: reduce\)[\s\S]*opacity:\s*1\s*!important/);
 });
 

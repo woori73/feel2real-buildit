@@ -76,7 +76,7 @@
   // canvas 좌표계 — 데스크톱은 가로형(660×460), 모바일은 세로형(330×900). fitCanvas 가 stage
   // 실제 폭에 맞춰 scale 하므로 px 이동량도 함께 스케일된다. 두 레이아웃의 절대배치는 CSS.
   function canvasBox() {
-    return viewportWidth() < MOBILE_MAX ? { w: 330, h: 760 } : { w: 660, h: 460 };
+    return viewportWidth() < MOBILE_MAX ? { w: 330, h: 560 } : { w: 660, h: 460 };
   }
 
   var built = [];        // ScrollTrigger 인스턴스
@@ -276,8 +276,8 @@
       { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.14 }, 0.1);
     // 1–2.5s: 자료가 Brain 방향(아래 중앙)으로 이동하며 축소
     tl.to(srcs, {
-      x: function (i) { return [76, -76, 76, -76][i] || 0; },
-      y: 210, scale: 0.34, opacity: 0.2,
+      x: function (i) { return [70, -70, 70, -70][i] || 0; },
+      y: 150, scale: 0.34, opacity: 0.2,
       duration: 1.2, ease: 'power2.inOut', stagger: 0.1
     }, 1.0);
     // 2.3–3.6s: Brain 생성 + Twin / Insight 결합
@@ -287,13 +287,13 @@
     tl.to(brain, { scale: 1.08, duration: 0.35, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 3.5);
     // 3.6–5s: Brain 에서 문제 4개 생성(2×2, 아래로)
     tl.fromTo(qouts,
-      { y: -110, scale: 0.25, opacity: 0 },
+      { y: -92, scale: 0.25, opacity: 0 },
       { y: 0, scale: 1, opacity: 1, duration: 0.9, ease: 'power2.out', stagger: 0.22 }, 3.7);
     // 5–6.5s: 문제가 FINAL EXAM 으로 조립
-    tl.fromTo(finalSheet, { y: 54, scale: 0.42, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.0, ease: 'power2.out' }, 5.0);
+    tl.fromTo(finalSheet, { y: 48, scale: 0.42, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.0, ease: 'power2.out' }, 5.0);
     tl.to(qouts, {
-      x: function (i) { return [36, -36, 36, -36][i] || 0; },
-      y: function (i) { return [134, 134, 88, 88][i] || 0; },
+      x: function (i) { return [32, -32, 32, -32][i] || 0; },
+      y: function (i) { return [104, 104, 58, 58][i] || 0; },
       scale: 0.5, opacity: 0.28,
       duration: 1.0, ease: 'power2.inOut', stagger: 0.08
     }, 5.2);
