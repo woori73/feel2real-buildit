@@ -141,10 +141,28 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     for(const step of ['STEP 1','STEP 2','STEP 3','STEP 4']) {
       expect(screen.getByText(step)).toBeInTheDocument()
     }
-    for(const name of ['학교 프린트 추가','학생 오답 추가','수업 인사이트 기록','문제 만들기','기존 문제 변형','저장된 문제','FINAL 준비','직보 준비']) {
+    for(const name of ['학교 프린트 추가','학생 오답 추가','수업 인사이트 기록','문제 만들기','기존 문제 변형','크롬 문제 변형','저장된 문제','FINAL 준비','직보 준비']) {
       expect(screen.getByRole('button',{name:new RegExp(name)})).toBeInTheDocument()
     }
     expect(screen.queryByRole('button',{name:'Admin / Final 자료 보기'})).not.toBeInTheDocument()
+  })
+
+  it('STEP 3의 크롬 문제 변형은 현재 5개 Context를 유지해 Workbench로 이동한다',async()=>{
+    const schools=[{school:'신사중',grades:[{grade:'3학년',exams:[{exam:'전체',twinId:null,version:null,updatedAt:'',hasDigitalTwin:false}]}]}]
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.endsWith('/schools'))return new Response(JSON.stringify(schools),{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/students'))return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.endsWith('/exam-draft'))return new Response('{"question_ids":[],"title":"","academy_name":"","teacher_name":""}',{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.includes('/workspaces/final/context'))return new Response(JSON.stringify({exam_context:{school:'신사중',grade:'3학년',year:new Date().getFullYear(),semester:'1학기',exam:'전체'},digital_twin:null,school_prints:[],class_insights:[]}),{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.includes('/questions?'))return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<App/>);await screen.findByText('신사중 · 3학년')
+    fireEvent.click(screen.getByRole('button',{name:'크롬 문제 변형'}))
+    expect(await screen.findByRole('heading',{name:'크롬 문제 변형 Workbench'})).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(`신사중 · 3학년 · ${new Date().getFullYear()}년 · 1학기 · 전체`))).toBeInTheDocument()
+    expect(JSON.parse(sessionStorage.getItem('buildit_chrome_context')||'{}')).toMatchObject({school:'신사중',grade:'3학년',semester:'1학기',exam:'전체'})
   })
 
   it('STEP 1의 학생 오답 추가는 학생 선택·오답 원본·JSON 필드만 열고 자료 제목·구형 메타 입력이 없다', async()=>{
