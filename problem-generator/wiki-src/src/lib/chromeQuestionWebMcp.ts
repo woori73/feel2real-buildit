@@ -1,5 +1,5 @@
 import { api } from './api'
-import { isSelfContained, WIKI_QUESTION_SCHEMA, WikiQuestionV1, wikiQuestionToLegacy } from './wikiQuestion'
+import { isSelfContained, normalizeChromeQuestion, WIKI_QUESTION_SCHEMA, wikiQuestionToLegacy } from './wikiQuestion'
 
 type ToolDefinition = {
   name: string
@@ -64,15 +64,17 @@ export const registerChromeQuestionTools = async () => {
     inputSchema: {
       type: 'object', required: ['question'],
       properties: {
-        question: { ...WIKI_QUESTION_SCHEMA, description: 'Wiki가 제공한 wiki-question-v1과 동일한 구조의 self-contained 변형 문항' },
+        question: { type:'object', description: 'Wiki canonical 또는 호환 가능한 Chrome 변형 문항. Workbench가 wiki-question-v1로 정규화합니다.' },
         revision_note: { type: 'string' },
       },
     },
     annotations: { readOnlyHint: true },
     execute: async input => {
-      const question=input.question as WikiQuestionV1
-      if(question?.schema_version!=='wiki-question-v1'||!isSelfContained(question))throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
-      emit('buildit-chrome-question-preview', input)
+      const question=normalizeChromeQuestion(input.question)
+      if(!isSelfContained(question))throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
+      const context=JSON.parse(sessionStorage.getItem('buildit_chrome_workbench_context')||'{}')
+      sessionStorage.setItem('buildit_chrome_preview_question',JSON.stringify({source_question_id:context.source_question_id,question}))
+      emit('buildit-chrome-question-preview', {...input,question})
       return { previewed: true }
     },
   })
@@ -81,10 +83,9 @@ export const registerChromeQuestionTools = async () => {
     name: 'save_chrome_transformed_question',
     description: '사용자가 승인한 Chrome AI 변형 문항을 원본과 분리해 기존 강사 문제 DB에 저장합니다. 먼저 preview 도구로 확인한 뒤 명시적 승인 후에만 호출합니다.',
     inputSchema: {
-      type: 'object', required: ['source_question_id', 'question'],
+      type: 'object', required: ['source_question_id'],
       properties: {
         source_question_id: { type: 'integer' },
-        question: { type: 'object' },
         revision_note: { type: 'string' },
         material_ids: { type: 'array', items: { type: 'integer' } },
         insight_ids: { type: 'array', items: { type: 'integer' } },
@@ -95,8 +96,10 @@ export const registerChromeQuestionTools = async () => {
     execute: async input => {
       const context = JSON.parse(sessionStorage.getItem('buildit_chrome_workbench_context') || '{}')
       const source = context.source_question || {}
-      const question=input.question as WikiQuestionV1
-      if(question?.schema_version!=='wiki-question-v1'||!isSelfContained(question))throw new Error('완전한 wiki-question-v1 문항만 저장할 수 있습니다.')
+      const preview=JSON.parse(sessionStorage.getItem('buildit_chrome_preview_question')||'{}')
+      if(preview.source_question_id!==input.source_question_id)throw new Error('현재 QID에서 승인된 Preview가 없습니다. 먼저 Preview를 생성해 주세요.')
+      const question=preview.question
+      if(!isSelfContained(question))throw new Error('완전한 wiki-question-v1 문항만 저장할 수 있습니다.')
       const provenance = { source_question_id: input.source_question_id, digital_twin_id: input.digital_twin_id, material_ids: input.material_ids || [], insight_ids: input.insight_ids || [], revision_note: input.revision_note || '', workbench: 'chrome-question-transform' }
       const response = await api('generated-tests', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
