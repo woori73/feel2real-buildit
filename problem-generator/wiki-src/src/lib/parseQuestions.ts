@@ -1,6 +1,8 @@
 // 붙여넣은 문제 텍스트를 강사 문제 DB 저장 계약(question_contract) 형태로 분리한다.
 // AI 호출 없이 정규식만 사용한다. 잘못 분리된 문항은 미리보기에서 사용자가 고치거나 제외한다.
 
+import type { WikiQuestionV1 } from './wikiQuestion'
+
 export type ParsedQuestion = {
   type: 'mc' | 'sa'
   questionType: string
@@ -15,6 +17,8 @@ export type ParsedQuestion = {
   acceptedAnswers: string[]
   sampleAnswer: string
   gradingRule: string
+  canonical?: WikiQuestionV1
+  sourceQuestionNumber?: string
   // 미리보기 전용(저장 시 제거)
   _answerText?: string
   _warnings?: string[]

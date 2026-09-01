@@ -1,4 +1,5 @@
 import { api } from './api'
+import type { WikiQuestionV1 } from './wikiQuestion'
 
 export type TwinType = { name: string; description: string; ratio: string; difficulty: string }
 export type DigitalTwinProfile = { id:number; version:number; school:string; grade:string; exam:string; dna:string; description:string; types:TwinType[]; rules:string[]; difficulty:string; questionRatio:Record<string,string|number>; trapPatterns:string[]; choiceStyle:string; writingStyle:string; updatedAt:string }
@@ -6,7 +7,7 @@ export type SchoolExamNode = { exam:string; twinId:number|null; version:number|n
 export type SchoolGradeNode = { grade:string; exams:SchoolExamNode[] }
 export type SchoolNode = { school:string; grades:SchoolGradeNode[] }
 export type TypeDef = { id:string; cat:string; label:string; prompt:string }
-export type StoredQuestion = { id:number; twin_id:number|null; school:string; grade:string; exam:string; mode:'new'|'transform'|'mcp'|'manual'; q_kind:'mc'|'sa'; question_type:string; stem:string; source_text:string; options:string[]; answer:number[]; multi:number; score:number; conditions:string[]; answer_format:string; accepted_answers:string[]; sample_answer:string; grading_rule:string; exam_title:string; exam_group_id:string; favorite:number; created_at:string; test_id?:number|null }
+export type StoredQuestion = { id:number; twin_id:number|null; school:string; grade:string; exam:string; mode:'new'|'transform'|'mcp'|'manual'; q_kind:'mc'|'sa'; question_type:string; stem:string; source_text:string; options:string[]; answer:number[]; multi:number; score:number; conditions:string[]; answer_format:string; accepted_answers:string[]; sample_answer:string; grading_rule:string; exam_title:string; exam_group_id:string; favorite:number; created_at:string; test_id?:number|null;schema_version?:string;canonical?:WikiQuestionV1;passage_status?:string;source_question_number?:string }
 export type ExamPaper = { id:number; title:string; academy_name:string; teacher_name:string; question_ids:number[]; created_at:string }
 export type ExamDraft = { title:string; academy_name:string; teacher_name:string; question_ids:number[] }
 export type Student = { id:number; name:string; school:string; grade:string; semester:string; exam_type:string; created_at:string }
@@ -34,6 +35,7 @@ export const fetchGeneratedTest=async(testId:number):Promise<GeneratedTestDetail
 export const saveManualQuestions=async(payload:{school:string;grade:string;year?:number;semester?:string;exam:string;exam_title:string;source_material?:string;source_page?:string;digital_twin?:string;questions:unknown[]}):Promise<{saved:boolean;question_count:number}>=>{const r=await api('questions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const b=await r.json() as {saved?:boolean;question_count?:number;detail?:string};if(!r.ok)throw new Error(typeof b.detail==='string'?b.detail:'문항을 저장하지 못했습니다.');return {saved:!!b.saved,question_count:b.question_count||0}}
 export const fetchTypeDefs=async():Promise<TypeDef[]>=>{const r=await api('question-types');if(!r.ok)throw new Error('문제 유형 목록을 불러오지 못했습니다.');return r.json()}
 export const fetchQuestions=async(params:Record<string,string>={}):Promise<StoredQuestion[]>=>{const q=new URLSearchParams(params).toString();const r=await api(`questions${q?`?${q}`:''}`);if(!r.ok)throw new Error('저장된 문제를 불러오지 못했습니다.');return r.json()}
+export const fetchQuestion=async(id:number):Promise<StoredQuestion>=>{const r=await api(`questions/${id}`);if(!r.ok)throw new Error('문항을 불러오지 못했습니다.');return r.json()}
 export const createExamPaper=async(payload:{title:string;academy_name:string;teacher_name:string;question_ids:number[]}):Promise<ExamPaper>=>{const r=await api('exam-papers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const b=await r.json() as ExamPaper&{detail?:string};if(!r.ok)throw new Error(b.detail||'시험지를 저장하지 못했습니다.');return b}
 export const fetchExamDraft=async():Promise<ExamDraft>=>{const r=await api('exam-draft');if(!r.ok)throw new Error('작업 중인 시험지 상태를 불러오지 못했습니다.');return r.json()}
 export const saveExamDraft=async(payload:ExamDraft):Promise<void>=>{const r=await api('exam-draft',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(!r.ok)throw new Error('작업 중인 시험지 상태를 저장하지 못했습니다.')}
