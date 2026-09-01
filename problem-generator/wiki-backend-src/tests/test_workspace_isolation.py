@@ -39,6 +39,9 @@ class WorkspaceIsolationTest(unittest.TestCase):
         self.old_db = main.DB_PATH
         self.old_catalog = os.environ.get('BUILDIT_WIKI_WORKSPACE_CATALOG')
         self.old_unsigned = os.environ.pop('BUILDIT_WIKI_ALLOW_UNSIGNED_IDENTITY', None)
+        self.old_wiki_secret = os.environ.get('WIKI_IDENTITY_SECRET')
+        self.old_jwt_secret = os.environ.get('JWT_SECRET')
+        self.old_app_jwt_secret = os.environ.get('APP_JWT_SECRET')
         main.DB_PATH = str(Path(self.temp.name) / 'legacy.db')
         os.environ['BUILDIT_WIKI_WORKSPACE_CATALOG'] = str(Path(self.temp.name) / 'catalog.db')
         os.environ['WIKI_IDENTITY_SECRET'] = SECRET
@@ -56,6 +59,15 @@ class WorkspaceIsolationTest(unittest.TestCase):
             os.environ['BUILDIT_WIKI_WORKSPACE_CATALOG'] = self.old_catalog
         if self.old_unsigned is not None:
             os.environ['BUILDIT_WIKI_ALLOW_UNSIGNED_IDENTITY'] = self.old_unsigned
+        for key, value in (
+            ('WIKI_IDENTITY_SECRET', self.old_wiki_secret),
+            ('JWT_SECRET', self.old_jwt_secret),
+            ('APP_JWT_SECRET', self.old_app_jwt_secret),
+        ):
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
         self.temp.cleanup()
 
     def create_student(self, headers: dict[str, str], name: str):
@@ -72,6 +84,15 @@ class WorkspaceIsolationTest(unittest.TestCase):
         self.create_student(admin, 'legacy student')
         self.assertEqual(['legacy student'], [row['name'] for row in self.client.get('/api/students', headers=modu).json()])
         self.assertEqual([], self.client.get('/api/students', headers=user_a).json())
+
+    def test_app_jwt_secret_fallback_accepts_signed_admin_and_modu_bootstrap(self):
+        os.environ.pop('WIKI_IDENTITY_SECRET', None)
+        os.environ.pop('JWT_SECRET', None)
+        os.environ['APP_JWT_SECRET'] = SECRET
+        for user_id, login_id, role in (('1', 'admin', 'ADMIN'), ('2', 'modu', 'TUTOR')):
+            response = self.client.get('/api/workspace/me', headers=identity_headers(user_id, login_id, role))
+            self.assertEqual(200, response.status_code, response.text)
+            self.assertEqual('legacy', response.json()['workspace_id'])
 
     def test_personal_workspace_persists_and_blocks_other_resource_ids(self):
         user_a = identity_headers('101', 'new-a')
