@@ -3465,3 +3465,4 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - The Spring Wiki proxy resolves the JWT principal from `SecurityContext` and signs `userId`, `loginId`, `role`, and a short-lived timestamp with HMAC-SHA256. FastAPI rejects missing, expired, or forged assertions.
 - `?role=ADMIN` and `?role=TUTOR` are display-only legacy query values and never participate in workspace or authorization decisions.
 - `admin` and `modu` resolve to the shared legacy workspace. Every other authenticated user resolves to one private workspace and starts with an empty Wiki database.
+- Principal-less external MCP requests retain `MCP_API_KEY` authentication and are explicitly bound to the legacy workspace; they never fall through browser HMAC identity resolution.

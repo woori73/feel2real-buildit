@@ -148,6 +148,11 @@ def current_workspace() -> WikiWorkspace | None:
     return _workspace_context.get()
 
 
+def legacy_workspace(legacy_database_path: str) -> WikiWorkspace:
+    """Explicit workspace contract for API-key authenticated external MCP clients."""
+    return WikiWorkspace(LEGACY_WORKSPACE_ID, str(legacy_database_path), True)
+
+
 def migrate_owned_tables(conn: sqlite3.Connection, workspace_id: str) -> dict[str, tuple[int, int]]:
     """Add/backfill ownership without deleting or duplicating rows; safe to rerun."""
     result: dict[str, tuple[int, int]] = {}

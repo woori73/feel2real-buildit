@@ -666,6 +666,15 @@ async def authenticated_workspace(request: Request, call_next):
     # carry the short-lived identity assertion created by the authenticated Spring proxy.
     if request.url.path == '/api/health':
         return await call_next(request)
+    if request.url.path in ('/api/mcp', '/api/mcp/'):
+        # External MCP clients authenticate with MCP_API_KEY rather than the browser JWT.
+        # They intentionally operate on the admin/modu legacy workspace; the outer exact-path
+        # MCP middleware applies the same binding when it intercepts before this middleware.
+        token = wiki_workspace.set_current_workspace(wiki_workspace.legacy_workspace(DB_PATH))
+        try:
+            return await call_next(request)
+        finally:
+            wiki_workspace.reset_current_workspace(token)
     try:
         identity = wiki_workspace.verify_identity(request.headers)
     except ValueError as exc:
@@ -4414,4 +4423,8 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
 # mcp_server.py는 그 함수들을 호출만 한다(자세한 설계는 mcp_server.py 모듈 docstring).
 # ==================================================================================
 from mcp_server import McpEndpointMiddleware, build_mcp_asgi_app  # noqa: E402
-app.add_middleware(McpEndpointMiddleware, mcp_app=build_mcp_asgi_app())
+app.add_middleware(
+    McpEndpointMiddleware,
+    mcp_app=build_mcp_asgi_app(),
+    workspace=wiki_workspace.legacy_workspace(DB_PATH),
+)

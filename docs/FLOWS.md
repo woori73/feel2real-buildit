@@ -844,3 +844,4 @@ Wiki 홈
 3. FastAPI verifies the HMAC and timestamp, resolves `admin`/`modu` to `legacy`, or creates/resolves the user's private workspace.
 4. The request opens only that workspace database. All existing Wiki CRUD code therefore operates inside the authenticated workspace boundary.
 5. The frontend calls `workspace/me` before rendering. Legacy users retain the original four localStorage keys; other users use a server-derived namespace and never read or overwrite legacy keys.
+6. External MCP clients without a Spring principal continue through Bearer/X-Api-Key authentication and are explicitly scoped to the legacy workspace. Browser API requests remain HMAC-only.

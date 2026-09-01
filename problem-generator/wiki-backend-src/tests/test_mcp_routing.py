@@ -6,10 +6,12 @@ from starlette.routing import Route
 from starlette.testclient import TestClient
 
 from backend.mcp_server import McpEndpointMiddleware, _BearerAuthMiddleware
+from backend import workspace as wiki_workspace
 
 
 async def _mcp_endpoint(request):
-    return JSONResponse({'path': request.scope['path']})
+    active = wiki_workspace.current_workspace()
+    return JSONResponse({'path': request.scope['path'], 'workspace_id': active.workspace_id if active else None})
 
 
 async def _wiki_endpoint(_request):
@@ -20,7 +22,11 @@ def _test_app(api_key: str = 'test-key') -> TestClient:
     mcp_app = Starlette(routes=[Route('/', _mcp_endpoint, methods=['POST'])])
     authenticated_mcp_app = _BearerAuthMiddleware(mcp_app, api_key)
     wiki_app = Starlette(routes=[Route('/api/health', _wiki_endpoint)])
-    wiki_app.add_middleware(McpEndpointMiddleware, mcp_app=authenticated_mcp_app)
+    wiki_app.add_middleware(
+        McpEndpointMiddleware,
+        mcp_app=authenticated_mcp_app,
+        workspace=wiki_workspace.legacy_workspace('/tmp/test-legacy.db'),
+    )
     return TestClient(wiki_app, follow_redirects=False)
 
 
@@ -32,7 +38,7 @@ def test_mcp_paths_are_handled_directly_with_the_same_authentication():
 
         assert response.status_code == 200
         assert response.history == []
-        assert response.json() == {'path': '/'}
+        assert response.json() == {'path': '/', 'workspace_id': 'legacy'}
 
 
 def test_mcp_paths_both_reject_invalid_bearer_token():
@@ -53,7 +59,15 @@ def test_mcp_paths_accept_x_api_key_when_authorization_is_absent():
         response = client.post(path, headers={'X-Api-Key': 'test-key'})
 
         assert response.status_code == 200
-        assert response.json() == {'path': '/'}
+        assert response.json() == {'path': '/', 'workspace_id': 'legacy'}
+
+
+def test_principal_less_api_key_mcp_request_uses_explicit_legacy_workspace():
+    response = _test_app().post('/api/mcp', headers={'X-Api-Key': 'test-key'})
+
+    assert response.status_code == 200
+    assert response.json()['workspace_id'] == wiki_workspace.LEGACY_WORKSPACE_ID
+    assert wiki_workspace.current_workspace() is None
 
 
 def test_mcp_paths_reject_wrong_x_api_key_with_no_authorization():
