@@ -27,9 +27,20 @@ export const textOfHtml=(html:string)=>{const doc=new DOMParser().parseFromStrin
 export const rich=(html:string,text=''):RichText=>{const safe=sanitizeQuestionHtml(html);return{text:text||textOfHtml(safe),html:safe}}
 export const needsPassage=(instruction:string,questionType:string)=>/읽고|글의|지문|Reading\s*\d+|본문|밑줄|순서|삽입|내용|주제|제목|요지/i.test(`${instruction} ${questionType}`)
 export const referenceLabel=(instruction:string)=>instruction.match(/(?:Reading\s*\d+|\d+과\s*본문|학습지\s*[A-Z가-힣0-9]+)/i)?.[0]||''
+export const isCanonicalInlineUnderline=(q:WikiQuestionV1)=>{
+  if(q.kind!=='mc')return false
+  if(/(?:grammar|vocab)_underlined/i.test(q.question_type||''))return true
+  const source=`${q.passage.text} ${q.passage.html}`
+  const underlines=(source.match(/<u(?:\s|>)|class=["']underline["']|\[\[u\]\]/gi)||[]).length
+  const markers=(source.match(/[①②③④⑤⑥⑦⑧⑨⑩]/g)||[]).length
+  return /밑줄|어법/.test(`${q.instruction.text} ${q.question_type}`)&&underlines>=2&&markers>=2
+}
 export const isSelfContained=(q:WikiQuestionV1)=>{
   if(!q.instruction.text.trim())return false
-  if(q.kind==='mc'&&(q.choices.length<2||q.choices.some(choice=>!choice.text.trim())||q.answer.choice_numbers.length<1))return false
+  if(q.kind==='mc'){
+    if(q.answer.choice_numbers.length<1)return false
+    if(!isCanonicalInlineUnderline(q)&&(q.choices.length<2||q.choices.some(choice=>!choice.text.trim())))return false
+  }
   if(q.kind==='sa'&&!q.answer.sample_answer.trim()&&!q.answer.accepted_answers.length)return false
   if(needsPassage(q.instruction.text,q.question_type)&&!['complete','recovered'].includes(q.passage.status))return false
   const markup=`${q.instruction.html} ${q.passage.html}`
@@ -144,7 +155,7 @@ export const normalizeChromeQuestionResult=(input:string|unknown):WikiQuestionV1
   const dataRecord=asRecord(data)
   const canonical=normalizeChromeQuestion(dataRecord.question??data)
   if(!isSelfContained(canonical)){
-    if(canonical.kind==='mc'&&canonical.choices.some(choice=>!choice.text.trim()))throw new Error('객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 실제 문항 텍스트를 넣어 주세요.')
+    if(canonical.kind==='mc'&&!isCanonicalInlineUnderline(canonical)&&canonical.choices.some(choice=>!choice.text.trim()))throw new Error('객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 실제 문항 텍스트를 넣어 주세요.')
     if(canonical.kind==='mc'&&!canonical.answer.choice_numbers.length)throw new Error('객관식 정답을 읽지 못했습니다. answer/model_answer/correct_answer에 번호(예: 3, "3", "③")를 넣어 주세요.')
     if(canonical.kind==='sa'&&!canonical.answer.sample_answer&&!canonical.answer.accepted_answers.length)throw new Error('서답형 정답을 읽지 못했습니다. answer/model_answer/correct_answer에 답안을 넣어 주세요.')
     if(/밑줄/.test(canonical.instruction.text))throw new Error('밑줄 위치를 읽지 못했습니다. <u>...</u>, [[u]]...[[/u]], underline_text/underlined_text 중 하나로 밑줄 대상을 표시해 주세요.')
