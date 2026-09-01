@@ -55,6 +55,51 @@ export const wikiQuestionToLegacy=(q:WikiQuestionV1)=>({
   canonical:q,sourceQuestionNumber:q.source.source_question_number||'',
 })
 
+const asRecord=(value:unknown):Record<string,any>=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,any>:{}
+const asText=(value:unknown)=>value==null?'':String(value).trim()
+const asList=(value:unknown):unknown[]=>Array.isArray(value)?value:value==null||value===''?[]:[value]
+const richInput=(value:unknown,htmlValue?:unknown):RichText=>{
+  const object=asRecord(value),text=asText(object.text??value),html=asText(object.html??htmlValue)
+  return rich(html,text)
+}
+const SUBJECTIVE=/서답형|서술형|주관식|subjective|short[-_ ]?answer|essay|^sa$/i
+const MULTIPLE=/객관식|multiple[-_ ]?choice|^mc$/i
+const normalizeKind=(raw:Record<string,any>):'mc'|'sa'=>{
+  if(raw.is_subjective===true||raw.isSubjective===true||asText(raw.is_subjective).toLowerCase()==='true')return'sa'
+  for(const value of [raw.kind,raw.type,raw.item_type,raw.itemType,raw.question_type]){
+    const label=asText(value);if(SUBJECTIVE.test(label))return'sa';if(MULTIPLE.test(label))return'mc'
+  }
+  return asList(raw.choices??raw.options).length>=2?'mc':'sa'
+}
+const choiceNumbers=(value:unknown)=>{
+  const out=new Set<number>(),scan=(item:unknown)=>{if(typeof item==='number'&&item>0)out.add(item);else for(const match of asText(item).matchAll(/[①-⑩]|\b\d+\b/g)){const circled='①②③④⑤⑥⑦⑧⑨⑩'.indexOf(match[0]);const n=circled>=0?circled+1:Number(match[0]);if(n>0)out.add(n)}}
+  asList(value).forEach(scan);return[...out]
+}
+
+/** Chrome AI의 여러 호환 표현을 Preview/저장 공통 wiki-question-v1으로 단 한 번 정규화한다. */
+export const normalizeChromeQuestion=(input:unknown):WikiQuestionV1=>{
+  const raw=asRecord(input),kind=normalizeKind(raw),answerObject=asRecord(raw.answer)
+  const instruction=richInput(raw.instruction??raw.stem??raw.question??raw.prompt,raw.instruction_html??raw.stem_html)
+  const passage=richInput(raw.passage??raw.source_text??raw.sourceText,raw.passage_html)
+  const choices=asList(raw.choices??raw.options).map((value,index)=>{const item=asRecord(value),body=richInput(Object.keys(item).length?item:value,item.html);return{...body,number:Number(item.number)||index+1}})
+  const conditions=asList(raw.conditions??raw.condition).map(value=>richInput(value))
+  const acceptedSource=answerObject.accepted_answers??raw.accepted_answers??raw.acceptedAnswers
+  let accepted=asList(acceptedSource).map(asText).filter(Boolean)
+  const sampleSource=raw.correct_answer??raw.model_answer??raw.answer_text??raw.sample_answer??raw.sampleAnswer??raw.subjective_answer??answerObject.sample_answer??answerObject.sampleAnswer??(kind==='sa'&&typeof raw.answer!=='object'?raw.answer:'')
+  let sample=asText(Array.isArray(sampleSource)?sampleSource[0]:sampleSource)
+  if(kind==='sa'&&Array.isArray(sampleSource)&&!accepted.length)accepted=sampleSource.map(asText).filter(Boolean)
+  if(kind==='sa'&&Array.isArray(raw.answer)&&raw.answer.every((v:unknown)=>typeof v==='string'))accepted=accepted.length?accepted:raw.answer.map(asText).filter(Boolean)
+  if(kind==='sa'&&!sample&&accepted.length)sample=accepted[0]
+  const numberSource=answerObject.choice_numbers??raw.choice_numbers??raw.correct_answer??(kind==='mc'?raw.answer:[])
+  const explanation=richInput(raw.explanation??raw.solution??raw.rationale??raw.grading_rule??raw.gradingRule,raw.explanation_html)
+  const scoring=asRecord(raw.scoring),source=asRecord(raw.source)
+  const status=asText(asRecord(raw.passage).status) as PassageStatus
+  return{schema_version:'wiki-question-v1',kind,question_type:asText(raw.question_type??raw.questionType??raw.item_type)||(kind==='sa'?'서답형':'객관식'),
+    instruction,passage:{...passage,status:status||(passage.text?'complete':needsPassage(instruction.text,asText(raw.question_type))?'missing':'not_applicable')},
+    choices,conditions,answer:{choice_numbers:kind==='mc'?choiceNumbers(numberSource):[],accepted_answers:accepted,sample_answer:sample},explanation,
+    scoring:{score:Number(scoring.score??raw.score)||0,multi:Boolean(scoring.multi??raw.multi),answer_format:asText(scoring.answer_format??raw.answer_format??raw.answerFormat),grading_rule:asText(scoring.grading_rule??raw.grading_rule??raw.gradingRule)},source}
+}
+
 type Material={id:number;title:string;html_text?:string|null;json_text?:unknown}
 export const resolveReferencedPassage=(label:string,materials:Material[]):{materialId:number;value:RichText}|null=>{
   if(!label)return null
