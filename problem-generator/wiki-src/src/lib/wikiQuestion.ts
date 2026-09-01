@@ -100,6 +100,25 @@ export const normalizeChromeQuestion=(input:unknown):WikiQuestionV1=>{
     scoring:{score:Number(scoring.score??raw.score)||0,multi:Boolean(scoring.multi??raw.multi),answer_format:asText(scoring.answer_format??raw.answer_format??raw.answerFormat),grading_rule:asText(scoring.grading_rule??raw.grading_rule??raw.gradingRule)},source}
 }
 
+
+/** Chrome AI가 출력한 직접 문항 JSON 또는 UPDATE_VARIANT_QUESTION wrapper를 Preview/저장 공통 canonical로 변환한다. */
+export const normalizeChromeQuestionResult=(input:string|unknown):WikiQuestionV1=>{
+  let parsed:unknown=input
+  if(typeof input==='string'){
+    const trimmed=input.trim().replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'')
+    if(!trimmed)throw new Error('Chrome AI 변형 결과 JSON을 입력해 주세요.')
+    try{parsed=JSON.parse(trimmed)}catch{throw new Error('변형 결과가 올바른 JSON이 아닙니다. Chrome AI의 JSON 전체를 붙여넣어 주세요.')}
+  }
+  const envelope=asRecord(parsed)
+  const wrapped=envelope.action==='UPDATE_VARIANT_QUESTION'
+  const data=wrapped?envelope.data:parsed
+  if(wrapped&&(!data||typeof data!=='object'))throw new Error('UPDATE_VARIANT_QUESTION wrapper의 data에 문항 JSON이 필요합니다.')
+  const dataRecord=asRecord(data)
+  const canonical=normalizeChromeQuestion(dataRecord.question??data)
+  if(!isSelfContained(canonical))throw new Error('변형 문항이 wiki-question-v1 self-contained 검사를 통과하지 못했습니다.')
+  return canonical
+}
+
 type Material={id:number;title:string;html_text?:string|null;json_text?:unknown}
 export const resolveReferencedPassage=(label:string,materials:Material[]):{materialId:number;value:RichText}|null=>{
   if(!label)return null
@@ -117,3 +136,4 @@ export const resolveReferencedPassage=(label:string,materials:Material[]):{mater
   }
   return found.length===1?found[0]:null
 }
+
