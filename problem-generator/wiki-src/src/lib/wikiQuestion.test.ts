@@ -58,6 +58,18 @@ describe('Chrome transformed question normalization',()=>{
     const q=normalizeChromeQuestion({...base,type:'mc',choices:['A','B','C','D','E'],answer:[3]})
     expect(q.kind).toBe('mc');expect(q.answer.choice_numbers).toEqual([3]);expect(q.answer.sample_answer).toBe('')
   })
+  it('normalizes an options object map into visible objective choice text',()=>{
+    const q=normalizeChromeQuestion({type:'mc',instruction:'밑줄 친 부분 중 어법상 틀린 것은?',passage:{text:'A had taken B could play C wishes D knows.',html:'A <u>had taken</u> B could play C wishes D knows.',status:'complete'},options:{'①':'had taken','②':'could play','③':'wishes','④':'knows'},answer:'③'})
+    expect(q.kind).toBe('mc');expect(q.choices.map(c=>c.text)).toEqual(['had taken','could play','wishes','knows']);expect(q.choices.map(c=>c.number)).toEqual([1,2,3,4]);expect(q.answer.choice_numbers).toEqual([3]);expect(isSelfContained(q)).toBe(true)
+  })
+  it('normalizes single-key choice objects from Chrome AI',()=>{
+    const q=normalizeChromeQuestion({type:'mc',instruction:'알맞은 것을 고르시오.',options:[{'①':'had taken'},{'②':'could play'},{'③':'wishes'}],answer:2})
+    expect(q.choices.map(c=>c.text)).toEqual(['had taken','could play','wishes']);expect(q.choices.map(c=>c.number)).toEqual([1,2,3])
+  })
+  it('infers objective kind from a mapped options object',()=>{
+    const q=normalizeChromeQuestion({instruction:'알맞은 것을 고르시오.',options:{'①':'A','②':'B','③':'C'},answer:'②'})
+    expect(q.kind).toBe('mc');expect(q.answer.choice_numbers).toEqual([2]);expect(q.choices).toHaveLength(3)
+  })
   it('accepts direct and UPDATE_VARIANT_QUESTION wrapped QID 82 results',()=>{
     const payload={type:'서답형',question_type:'subjective',instruction:'다음 조건에 맞게 영작하시오.',
       passage:{text:'Turn trash into music and give people hope.',html:'<p>Turn trash into music and give people hope.</p>',status:'complete'},

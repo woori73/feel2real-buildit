@@ -59,6 +59,15 @@ export const wikiQuestionToLegacy=(q:WikiQuestionV1)=>({
 const asRecord=(value:unknown):Record<string,any>=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,any>:{}
 const asText=(value:unknown)=>value==null?'':String(value).trim()
 const asList=(value:unknown):unknown[]=>Array.isArray(value)?value:value==null||value===''?[]:[value]
+const circledNumber=(value:unknown)=>{const text=asText(value),i='①②③④⑤⑥⑦⑧⑨⑩'.indexOf(text);if(i>=0)return i+1;const n=Number(text);return Number.isFinite(n)&&n>0?n:0}
+const choiceList=(value:unknown):unknown[]=>{
+  if(Array.isArray(value))return value
+  const record=asRecord(value),entries=Object.entries(record)
+  if(!entries.length)return value==null||value===''?[]:[value]
+  const known=['text','html','content','value','label','choice','option','number','no','index','id','underline_text','underlined_text']
+  if(entries.some(([key])=>known.includes(key)))return[value]
+  return entries.map(([key,body])=>({number:circledNumber(key)||undefined,text:body,key}))
+}
 const underlineMarkup=(text:string,underline:unknown)=>{
   const target=asText(underline);if(!text||!target)return''
   const index=text.indexOf(target);if(index<0)return''
@@ -77,7 +86,7 @@ const normalizeKind=(raw:Record<string,any>):'mc'|'sa'=>{
   for(const value of [raw.kind,raw.type,raw.item_type,raw.itemType,raw.question_type]){
     const label=asText(value);if(SUBJECTIVE.test(label))return'sa';if(MULTIPLE.test(label))return'mc'
   }
-  return asList(raw.choices??raw.options).length>=2?'mc':'sa'
+  return choiceList(raw.choices??raw.options).length>=2?'mc':'sa'
 }
 const choiceNumbers=(value:unknown)=>{
   const out=new Set<number>(),scan=(item:unknown)=>{if(typeof item==='number'&&item>0)out.add(item);else for(const match of asText(item).matchAll(/[①-⑩]|\b\d+\b/g)){const circled='①②③④⑤⑥⑦⑧⑨⑩'.indexOf(match[0]);const n=circled>=0?circled+1:Number(match[0]);if(n>0)out.add(n)}}
@@ -86,9 +95,11 @@ const choiceNumbers=(value:unknown)=>{
 const normalizeChoice=(value:unknown,index:number)=>{
   const item=asRecord(value)
   if(!Object.keys(item).length)return{...richInput(value),number:index+1}
-  const bodyValue=item.text??item.content??item.value??item.label??item.choice??item.option??''
+  const entries=Object.entries(item),single=entries.length===1?entries[0]:null
+  const singleKeyNumber=single?circledNumber(single[0]):0
+  const bodyValue=item.text??item.content??item.value??item.label??item.choice??item.option??(singleKeyNumber?single?.[1]:'')
   const body=richInput(bodyValue,item.html??item.content_html??item.value_html,item.underline_text??item.underlined_text)
-  const number=Number(item.number??item.no??item.index??item.id)||index+1
+  const number=circledNumber(item.number??item.no??item.index??item.id)||singleKeyNumber||index+1
   return{...body,number}
 }
 
@@ -98,7 +109,7 @@ export const normalizeChromeQuestion=(input:unknown):WikiQuestionV1=>{
   const underline=raw.underline_text??raw.underlined_text??raw.underline??raw.underlined
   const instruction=richInput(raw.instruction??raw.stem??raw.question??raw.prompt,raw.instruction_html??raw.stem_html,underline)
   const passage=richInput(raw.passage??raw.source_text??raw.sourceText,raw.passage_html,underline)
-  const choices=asList(raw.choices??raw.options).map(normalizeChoice)
+  const choices=choiceList(raw.choices??raw.options).map(normalizeChoice)
   const conditions=asList(raw.conditions??raw.condition).map(value=>richInput(value))
   const answerSources=[answerObject.choice_numbers,answerObject.choice_number,answerObject.number,raw.choice_numbers,raw.choice_number,raw.correct_answer,raw.model_answer,kind==='mc'?raw.answer:undefined]
   const answerNumbers=kind==='mc'?answerSources.map(choiceNumbers).find(values=>values.length>0)||[]:[]
@@ -133,7 +144,7 @@ export const normalizeChromeQuestionResult=(input:string|unknown):WikiQuestionV1
   const dataRecord=asRecord(data)
   const canonical=normalizeChromeQuestion(dataRecord.question??data)
   if(!isSelfContained(canonical)){
-    if(canonical.kind==='mc'&&canonical.choices.some(choice=>!choice.text.trim()))throw new Error('객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 text/content/value 중 하나를 넣어 주세요.')
+    if(canonical.kind==='mc'&&canonical.choices.some(choice=>!choice.text.trim()))throw new Error('객관식 선택지 텍스트를 읽지 못했습니다. choices/options의 각 선택지에 실제 문항 텍스트를 넣어 주세요.')
     if(canonical.kind==='mc'&&!canonical.answer.choice_numbers.length)throw new Error('객관식 정답을 읽지 못했습니다. answer/model_answer/correct_answer에 번호(예: 3, "3", "③")를 넣어 주세요.')
     if(canonical.kind==='sa'&&!canonical.answer.sample_answer&&!canonical.answer.accepted_answers.length)throw new Error('서답형 정답을 읽지 못했습니다. answer/model_answer/correct_answer에 답안을 넣어 주세요.')
     if(/밑줄/.test(canonical.instruction.text))throw new Error('밑줄 위치를 읽지 못했습니다. <u>...</u>, [[u]]...[[/u]], underline_text/underlined_text 중 하나로 밑줄 대상을 표시해 주세요.')
