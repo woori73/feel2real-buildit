@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildIt Wiki · 함께 나누고, AI와 함께 발전시킵니다</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260902-1">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki">
+      <b>BuildIt</b><span>Wiki</span>
+    </a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap">
+
+    <section class="wiki-intro">
+      <h1>시험이 끝난 후, 새로운 공부가 시작됩니다.</h1>
+      <p>2026년 9월 모의고사를 중심으로 원본·분석·무료 변형문제·후기·자료 요청을 함께 나눕니다.</p>
+      <div id="gradeTabs" class="grade-tabs" role="tablist" aria-label="학년 선택">
+        <button class="grade-tab active" role="tab" data-grade="3">고3<small>수능 대비</small></button>
+        <button class="grade-tab" role="tab" data-grade="2">고2<small>내신 대비</small></button>
+        <button class="grade-tab" role="tab" data-grade="1">고1<small>내신 대비</small></button>
+      </div>
+      <p id="gradeNote" class="grade-note"></p>
+    </section>
+
+    <section class="wiki-block">
+      <div class="block-head">
+        <h2>모의고사 원본</h2>
+        <a class="more-link" href="/analyzes">전체 분석 보기 →</a>
+      </div>
+      <div id="originalList" class="original-list"><p class="muted">불러오는 중...</p></div>
+    </section>
+
+    <section class="wiki-block">
+      <div class="block-head">
+        <h2>분석 자료</h2>
+        <a class="more-link" href="/analyzes">전체 분석 보기 →</a>
+      </div>
+      <div id="analysisList" class="analysis-list"><p class="muted">불러오는 중...</p></div>
+    </section>
+
+    <section class="wiki-block">
+      <div class="block-head"><h2>커뮤니티</h2></div>
+      <div class="board-grid">
+        <article class="board-col" data-board="EXAM_REVIEW" data-key="review">
+          <div class="board-col-head">
+            <h3>시험 후기</h3>
+            <a class="more-link" href="/wiki/board/review">더 보기 →</a>
+          </div>
+          <div class="board-col-list"><p class="muted">불러오는 중...</p></div>
+          <button type="button" class="board-write" data-board="EXAM_REVIEW" data-key="review">＋ 후기 남기기</button>
+        </article>
+        <article class="board-col" data-board="VARIANT" data-key="variant">
+          <div class="board-col-head">
+            <h3>변형문제</h3>
+            <a class="more-link" href="/wiki/board/variant">더 보기 →</a>
+          </div>
+          <div class="board-col-list"><p class="muted">불러오는 중...</p></div>
+          <button type="button" class="board-write" data-board="VARIANT" data-key="variant">＋ 변형문제 공유</button>
+        </article>
+        <article class="board-col" data-board="MATERIAL" data-key="share">
+          <div class="board-col-head">
+            <h3>자료 공유·요청</h3>
+            <a class="more-link" href="/wiki/board/share">더 보기 →</a>
+          </div>
+          <div class="board-col-list"><p class="muted">불러오는 중...</p></div>
+          <button type="button" class="board-write" data-board="MATERIAL" data-key="share">＋ 공유 / 요청하기</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="wiki-foot-note">
+      <p>학교별 시험을 직접 분석하고 문제를 만들고 싶다면 BuildIt 내신 Wiki를 이용할 수 있습니다.</p>
+      <a class="ghost-link" href="/problem-generator">내신 Wiki 보기 →</a>
+    </section>
+
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script src="/js/wiki.js?v=20260902-1"></script>
+</th:block>
+</body>
+</html>

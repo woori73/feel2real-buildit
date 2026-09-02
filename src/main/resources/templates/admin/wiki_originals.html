@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 모의고사 원본 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_analyzes.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('wikiOriginals')}"></th:block>
+
+  <main class="main">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">모의고사 원본 자료</h2>
+        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 원본 문제지/정답지 PDF를 관리합니다.</span>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ 새 원본</button>
+    </div>
+
+    <section id="originalList" class="analysis-grid" aria-live="polite">
+      <div class="empty-card">불러오는 중...</div>
+    </section>
+  </main>
+
+  <div id="originalModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <div class="modal-header">
+        <h2 id="formTitle" class="modal-title">원본 자료 등록</h2>
+        <button class="modal-close" type="button" onclick="closeModal()" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="originalForm">
+          <input id="originalId" type="hidden">
+          <div class="form-grid">
+            <div class="field full"><label for="title">제목</label><input id="title" required placeholder="고3 2026 9월 모의고사 영어 문제지"></div>
+            <div class="field"><label for="grade">학년</label><select id="grade"><option value="3">고3</option><option value="2">고2</option><option value="1">고1</option></select></div>
+            <div class="field"><label for="docType">구분</label><select id="docType"><option value="QUESTION">문제지</option><option value="ANSWER">정답지</option></select></div>
+            <div class="field full"><label for="examLabel">시험 이름</label><input id="examLabel" required value="2026 9월 모의고사"></div>
+            <div class="field full"><label for="file">PDF 파일 <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf"></div>
+            <label class="check-row"><input id="visible" type="checkbox" checked> 공개</label>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="button" onclick="closeModal()">취소</button>
+            <button class="btn btn-primary" type="submit">저장</button>
+          </div>
+          <p id="formMessage" class="muted" style="margin-top:12px;"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_wiki_originals.js"></script>
+</body>
+</html>

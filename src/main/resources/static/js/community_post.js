@@ -5,6 +5,7 @@ import Link from 'https://esm.sh/@tiptap/extension-link@2.11.7';
 
 const BOARD_COLOR = {
   FREE:{color:'#5a626e',bg:'#f1f2f4'}, QNA:{color:'#3b5bdb',bg:'#eef1fd'}, SUBJECT:{color:'#1f9d57',bg:'#e4f6ec'},
+  EXAM_REVIEW:{color:'#14705a',bg:'#e6f5ef'}, VARIANT:{color:'#14705a',bg:'#e6f5ef'}, MATERIAL:{color:'#14705a',bg:'#e6f5ef'},
 };
 const postId = location.pathname.split('/').filter(Boolean).pop();
 let me = readUser();

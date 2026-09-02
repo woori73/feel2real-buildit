@@ -36,11 +36,12 @@ public class CommunityController {
 
   @GetMapping("/posts")
   public ResponseEntity<List<CommunityPostListResponse>> list(
+      @RequestParam(required = false) String scope,
       @RequestParam(required = false) String boardType,
       @RequestParam(required = false) Integer subjectId,
       @RequestParam(required = false) String keyword,
       @RequestParam(required = false, defaultValue = "latest") String sort) {
-    return ResponseEntity.ok(communityService.list(boardType, subjectId, keyword, sort));
+    return ResponseEntity.ok(communityService.list(scope, boardType, subjectId, keyword, sort));
   }
 
   @GetMapping("/posts/{postId}")

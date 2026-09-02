@@ -250,8 +250,12 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | `/academies` | `academies` | ✅ 공개 Academy 목록/필터 페이지 |
 | `/academies/{slug}` | `academy_public` | ✅ 공개 Academy 페이지 |
 | `/academies/{slug}/preview` | `public/academy_layout_preview` | ✅ Academy Builder 레이아웃 기반 공개 렌더(SSR, Phase 3). `resolveLayoutSchema` block을 order대로 렌더 |
-| `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인) |
-| `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글 |
+| `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인). 목록은 `scope=community`(기본) — F2R 게시판(FREE/QNA/SUBJECT)만 |
+| `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글. wiki 게시판 글 상세도 이 화면 재사용 |
+| `/community/posts/new` | `public/community_new` | ✅ 글 작성/수정. `?board=EXAM_REVIEW\|VARIANT\|MATERIAL` + `?return=`(같은 출처 경로)면 게시판 고정 + 저장 후 그 경로로 복귀 — BuildIt Wiki 게시판 진입점 |
+| `/wiki` | `public/wiki` | ✅ 공개 BuildIt Wiki 허브. 학년 탭(고3/고2/고1)으로 분석(`/api/analyzes`)·모의고사 원본(`/api/wiki/originals`)·커뮤니티 3게시판 미리보기. SSR 모델 없음(JS 구동) |
+| `/wiki/board/{boardKey}` | `public/wiki_board` | ✅ Wiki 게시판별 목록. `boardKey` = `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). `/api/open-community/posts?scope=wiki` 재사용 |
+| `/admin/wiki-originals` | `admin/wiki_originals` | ✅ (ADMIN) 모의고사 원본 PDF 등록/수정/공개전환/삭제. 셸은 permitAll, `/api/admin/wiki/originals*` 가 ADMIN 게이트 |
 | `/lessons` | `lesson_search` | ✅ 학생용 수업 검색 페이지 |
 | `/tutor/lessons/{lessonId}/students` | `tutor/lesson_students` | ✅ 강사용 수업별 신청자 목록 |
 | `/tutor/conversation_dashboard` | `tutor/tutor_conversation_dashboard` | ✅ 강사 소유 대화 기록 목록. 학생 `/stdt_dashboard`처럼 카드 생성/열기/이름변경/삭제만 담당하며, 생성/열기는 상세 화면으로 이동 |
@@ -2681,12 +2685,12 @@ Lesson 단위 커뮤니티 MVP. 접근자는 해당 lesson 소유 TUTOR, 해당 
 
 ## 14. 공개 커뮤니티 Q&A API (`/api/open-community`)
 
-StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)** + 게시판. (V917에서 댓글 폐기 — 답변과 겹침.) 읽기는 비로그인 포함 누구나(anyopen), 작성/답변/좋아요는 로그인, 수정=작성자, 삭제=작성자/Admin soft hide. lesson community와 별개. 본문은 Tiptap(contentJson/contentHtml, sanitize). **게시판 모델(V916)**: `boardType` enum 3종 — `FREE`(자유게시판) / `QNA`(Q&A) / `SUBJECT`(과목, `subjectId`로 `subjects` 동적 참조). `SUBJECT`일 때만 `subjectId` 필수. UI 라벨=`boardLabel`(과목이면 과목 한글명, 아니면 자유게시판/Q&A). 탭=전체/FREE/QNA + `/api/subjects` 동적 과목 탭.
+StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)** + 게시판. (V917에서 댓글 폐기 — 답변과 겹침.) 읽기는 비로그인 포함 누구나(anyopen), 작성/답변/좋아요는 로그인, 수정=작성자, 삭제=작성자/Admin soft hide. lesson community와 별개. 본문은 Tiptap(contentJson/contentHtml, sanitize). **게시판 모델(V916)**: `boardType` enum — F2R 커뮤니티 `FREE`(자유게시판) / `QNA`(Q&A) / `SUBJECT`(과목, `subjectId`로 `subjects` 동적 참조) + 공개 BuildIt Wiki 전용 `EXAM_REVIEW`(시험 후기) / `VARIANT`(변형문제) / `MATERIAL`(자료 공유·요청). `SUBJECT`일 때만 `subjectId` 필수. UI 라벨=`boardLabel`. 같은 `community_posts` 테이블을 쓰되 목록은 `GET /api/open-community/posts?scope=` 로 공간이 분리된다 — `scope` 미지정/`community` = F2R 게시판만(기존 `/community` 전체 탭), `scope=wiki` = Wiki 게시판만(`/wiki`). `boardType` 이 요청 scope에 없으면 400. Wiki enum 값 추가는 마이그레이션 불필요(`board_type` VARCHAR + `@Enumerated(STRING)`, CHECK 없음).
 
 **보안 경계**: `GET /api/open-community/posts`·`/posts/**`·`/images/**`만 permitAll. 나머지(write/answer/like, `/answers/**`)는 `/api/**` catch-all 인증. **404/403**: 숨김/미존재 글·답변에 write/update/delete/like → **404**(존재 누설 금지); visible 대상 wrong-author → **403**. **transitive 가시성**: 답변은 답변·답변의 질문이 모두 visible해야 노출. **keyword 검색은 제목(title)만**(본문 LOB라 검색 제외).
 
 ### 질문
-- `GET /posts?boardType=&subjectId=&keyword=&sort=` (공개) — boardType(`FREE`/`QNA`/`SUBJECT`, null=전체), subjectId(`boardType=SUBJECT`일 때만 의미), keyword=제목, sort=latest|recommended(최근 N일 좋아요). 잘못된 boardType 400. → `CommunityPostListResponse[]`(postId, boardType, subjectId, boardLabel, title, author*, createdAt, answerCount, likeCount, likedByMe, likeAllowed).
+- `GET /posts?scope=&boardType=&subjectId=&keyword=&sort=` (공개) — scope(`community` 기본 = FREE/QNA/SUBJECT, `wiki` = EXAM_REVIEW/VARIANT/MATERIAL, 그 외 400), boardType(scope 내 값, null=scope 전체, scope 밖이면 400), subjectId(`boardType=SUBJECT`일 때만 의미), keyword=제목, sort=latest|recommended(최근 N일 좋아요). → `CommunityPostListResponse[]`(postId, boardType, subjectId, boardLabel, title, author*, createdAt, answerCount, likeCount, likedByMe, likeAllowed).
 - `GET /posts/{postId}` (공개) — 숨김/미존재 404. → `CommunityPostDetailResponse`(boardType, subjectId, boardLabel, title, contentHtml, author*, like*, answers[](answerId, contentHtml, author*, createdAt)).
 - `POST /posts` (인증) — body `{boardType, subjectId, title, contentJson, contentHtml}`. boardType 불가/누락 400, `SUBJECT`인데 subjectId 누락·미존재 과목 400. 응답 상세.
 - `PUT /posts/{postId}` (작성자, 타인 403, 숨김/미존재 404) — body 동일.
@@ -2703,6 +2707,26 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /images/{imageId}` (공개 serve). Content-Type은 업로드 시 `community_images.content_type`에 저장된 값(`image/jpeg` / `image/gif` / `image/webp`).
 
 - 관련 코드: `CommunityController`, `CommunityService`/`CommunityImageService`, `domain/community/*`(CommunityPost=질문/Answer/CommunityImage, BoardType), `CommunityProperties`(`app.community.*`). 마이그레이션: **`V914`(원본, 불변) + `V915`(Q&A 전환) + `V916`(board_type+subject_id) + `V917`(community_comments DROP — 댓글 폐기)**, 모두 in-place 업그레이드. ※ 적용된 V_파일 재작성 금지, 신규 번호로 추가.
+
+## 15-1. 모의고사 원본 API (`/api/wiki/originals`) — 공개 BuildIt Wiki
+
+공개 `/wiki` 의 모의고사 원본 PDF(문제지/정답지). `exam_analyses`(HTML 분석 리포트)와 목적이 달라 별도 테이블(`wiki_exam_originals`, V956)·도메인(`domain/wikioriginal/*`). 파일은 `FileStorage.saveRaw` 원본 저장, 다운로드로만 제공.
+
+**보안 경계**: `GET /api/wiki/originals`·`/originals/**` 만 permitAll. `/api/admin/wiki/originals*` 는 `/api/admin/**` → ROLE_ADMIN.
+
+### 공개
+- `GET /api/wiki/originals?grade=` — deleted=false·visible=true, grade(1~3, null=전체) 필터, 최신순. → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examLabel, docType, docTypeLabel, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
+- `GET /api/wiki/originals/{id}/download` — 공개 자료만. `application/pdf` + `Content-Disposition: attachment; filename*=UTF-8''…`. 미존재/비공개 404.
+
+### 관리 (ADMIN)
+- `GET /api/admin/wiki/originals` — deleted=false 전체(비공개 포함).
+- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), examLabel, docType(QUESTION|ANSWER), visible(기본 true)`, part `file`(`.pdf`만, `app.upload.max-document-bytes` 이내). 검증 실패 400.
+- `PUT /api/admin/wiki/originals/{id}` (multipart) — 위와 동일, `file` 선택(있으면 교체 + 이전 파일 삭제).
+- `PATCH /api/admin/wiki/originals/{id}/visibility` — body `{isVisible}`.
+- `DELETE /api/admin/wiki/originals/{id}` — soft delete(deleted=true, visible=false), 204.
+- `DELETE /api/admin/wiki/originals/{id}/hard` — 물리 삭제 + storage 파일 삭제, 204.
+
+- 관련 코드: `WikiExamOriginalController`/`WikiExamOriginalService`/`WikiExamOriginalRepository`, `domain/wikioriginal/*`(WikiExamOriginal, WikiExamOriginalDocType). 마이그레이션 **`V956`**(신규 테이블).
 
 ## 16. Landing Video Admin / Public API
 

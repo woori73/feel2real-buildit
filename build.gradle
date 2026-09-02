@@ -67,9 +67,15 @@ dependencies {
 	// Spring Boot 4.0 모듈 분리 — MockMvc autoconfig는 starter-webmvc-test에 격리됨.
 	// 통합 테스트에서 @AutoConfigureMockMvc를 쓰려면 명시적으로 끌어와야 한다.
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// Spring Boot 4.0 모듈 분리 — @DataJpaTest / TestEntityManager도 별도 모듈로 격리됐다
+	// (webmvc-test와 동일한 이유). Entity 매핑·JPQL 슬라이스 테스트용.
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// @DataJpaTest용 임베디드 DB. 운영은 MySQL(Flyway)이며, 로컬에 MySQL이 없어도
+	// Entity 매핑·JPQL을 빠르게 검증하기 위한 test 전용 의존성이다(Flyway는 이 슬라이스에서 비활성).
+	testRuntimeOnly 'com.h2database:h2'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 

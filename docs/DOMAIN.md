@@ -745,7 +745,7 @@ lesson_community와 별개의 **공개 Q&A 공간**(`/community`). 2계층: 질�
 |---|---|---|
 | post_id | BIGINT PK | =question id |
 | author_user_id | BIGINT FK users NOT NULL | 작성자 |
-| board_type | VARCHAR(20) NOT NULL | enum name() 저장: `FREE`(자유게시판) / `QNA`(Q&A) / `SUBJECT`(과목). UI에 한글 라벨 |
+| board_type | VARCHAR(20) NOT NULL | enum name() 저장. F2R 커뮤니티: `FREE`(자유게시판) / `QNA`(Q&A) / `SUBJECT`(과목). 공개 BuildIt Wiki(/wiki): `EXAM_REVIEW`(시험 후기) / `VARIANT`(변형문제) / `MATERIAL`(자료 공유·요청). 같은 테이블, 목록은 `scope`(community/wiki)로 분리. enum 값 추가는 마이그레이션 불필요(CHECK 없음). UI에 한글 라벨 |
 | subject_id | INT NULL FK subjects(subject_id) | `board_type=SUBJECT`일 때만. UI 라벨=과목 한글명(name_ko) |
 | title | VARCHAR(150) NOT NULL | **keyword 검색 대상(lower(title))** |
 | content_json | LONGTEXT NOT NULL | Tiptap 원본 JSON |
@@ -1067,6 +1067,27 @@ AI가 전국의 원장·강사를 공개 웹에서 조사해 교육철학·커�
 BuildIt Score `buildit-chart-v1`은 최대 100점이다: 교육자 고유성 35, 수업·교육 실천 20, 교육 콘텐츠 지속성 15, 전문성 15, 검증 근거 10, 지역 활동 5. 검색량·광고량·규모·유명세·BuildIt 가입 여부는 입력하지 않는다.
 
 Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERIFIED 43명을 `PENDING_CURRENT_RESEARCH` 전송 형식으로 만들 뿐이며 `chart_candidates`, `chart_educators`, Score snapshot 또는 publication에 직접 넣지 않는다. 전화·이메일·상세주소는 전송 형식에 없고, Legacy Score는 `legacy_score_is_current_score=false`인 역사 메타데이터로만 보존한다.
+
+### 4.44 wiki_exam_originals ✅ 공개 BuildIt Wiki 모의고사 원본 PDF (V956)
+
+공개 `/wiki` 의 모의고사 원본(문제지/정답지) PDF 저장소. `exam_analyses`(HTML 분석 리포트, sandbox iframe 렌더)와 목적이 달라 별도 테이블. 파일은 `FileStorage.saveRaw` 로 원본 그대로 저장하고 `/api/wiki/originals/{id}/download` 로 첨부 다운로드만 제공한다. CRUD는 ADMIN, 공개 조회는 grade(1~3) 필터.
+
+| column | type | note |
+|---|---|---|
+| wiki_exam_original_id | BIGINT PK AUTO_INCREMENT | |
+| title | VARCHAR(200) NOT NULL | |
+| grade | INT NOT NULL | 1\|2\|3 (고1/고2/고3) |
+| exam_label | VARCHAR(100) NOT NULL | 예: "2026 9월 모의고사" |
+| doc_type | VARCHAR(20) NOT NULL | enum name(): `QUESTION`(문제지) / `ANSWER`(정답지) |
+| original_file_name | VARCHAR(255) NOT NULL | 업로드 원본 파일명(다운로드 시 사용) |
+| storage_key | VARCHAR(500) NOT NULL | FileStorage 불투명 키 |
+| file_size | BIGINT NOT NULL | |
+| is_visible | BIT(1) NOT NULL | 공개 여부 |
+| is_deleted | BIT(1) NOT NULL DEFAULT b'0' | soft delete(삭제 시 visible=false 동반) |
+| (BaseEntity) | created_at/updated_at/created_by/updated_by | |
+
+인덱스: `idx_wiki_exam_originals_public(is_deleted, is_visible, grade, created_at, wiki_exam_original_id)`.
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
