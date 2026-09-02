@@ -59,8 +59,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/academies/{slug}", "public/academy_public");
         view(registry, "/analyzes", "public/analyzes");
         view(registry, "/analyzes/{id}", "public/analyze_detail");
-        // /wiki, /wiki/originals, /wiki/analysis 는 관리자 업로드 UI를 서버에서 조건부 렌더해야 해서
-        // WikiPageController(@Controller + @AuthenticationPrincipal)가 담당한다. 나머지는 role 불필요.
+        // /wiki, /wiki/originals, /wiki/analysis 는 Cache-Control: no-store 때문에 WikiPageController 가 담당.
+        // (업로드 버튼/모달은 role 무관하게 항상 렌더 — 권한은 wiki_admin_upload.js + /api/admin/wiki/** 서버 게이트)
         view(registry, "/wiki/board/{boardKey}", "public/wiki_board");
         view(registry, "/wiki/board/{boardKey}/new", "public/wiki_post_new");
         view(registry, "/wiki/posts/{postId}", "public/wiki_post");

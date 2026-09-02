@@ -25,7 +25,7 @@
     <a class="back-link" href="/wiki">← BuildIt Wiki로 돌아가기</a>
     <div class="block-head">
       <h2>분석 자료</h2>
-      <a th:if="${wikiAdmin}" class="upload-link" href="/admin/wiki-analysis">＋ 분석 자료 업로드</a>
+      <button type="button" class="upload-link" id="btnUploadAnalysis">＋ 분석 자료 업로드</button>
     </div>
     <div id="gradeTabs" class="grade-tabs" role="tablist" style="margin-bottom:20px;">
       <button class="grade-tab active" data-grade="3">고3</button>
@@ -36,9 +36,11 @@
     <div id="list" class="analysis-list"><p class="muted">불러오는 중...</p></div>
   </main>
 
+  <th:block th:replace="~{fragments/_wiki_admin_upload :: modal}"></th:block>
+
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/wiki_analysis.js?v=20260903-3"></script>
+  <script src="/js/wiki_analysis.js?v=20260903-4"></script>
 </th:block>
 </body>
 </html>

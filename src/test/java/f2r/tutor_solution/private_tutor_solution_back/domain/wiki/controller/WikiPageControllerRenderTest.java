@@ -1,7 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wiki.controller;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -22,10 +21,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * 실제 authenticated request(JWT 쿠키 → JwtAuthenticationFilter → principal)로 /wiki 를 렌더해
- * 관리자 업로드 UI 노출이 principal 에 따라 달라지는지 검증한다(template 문자열 존재 여부가 아님).
+ * /wiki · /wiki/originals · /wiki/analysis 의 자료 업로드 진입점은 <b>authentication 여부와 무관하게</b>
+ * HTML 응답 자체에 존재해야 한다("UI 표시 ≠ 권한 부여"). 실제 권한은 API(WikiExamOriginal/WikiAnalysis
+ * ControllerWebMvcTest) 가 검증한다.
  */
-@DisplayName("WikiPageController — /wiki 렌더: ADMIN principal 일 때만 업로드 UI, 항상 BuildIt 홈 링크")
+@DisplayName("WikiPageController — 업로드 버튼/모달/스크립트가 익명 응답 HTML 에도 항상 존재")
 @WebMvcTest(controllers = WikiPageController.class)
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
 @TestPropertySource(properties = {
@@ -46,30 +46,9 @@ class WikiPageControllerRenderTest {
   }
 
   @Test
-  @DisplayName("익명: 업로드 버튼/모달/스크립트 없음, BuildIt 홈 링크(href=\"/\") 있음")
-  void anonymous_noAdminUi_hasHomeLink() throws Exception {
+  @DisplayName("익명 GET /wiki → 두 업로드 버튼 + 모달 + 스크립트가 HTML 에 존재")
+  void anonymous_hub_hasBothUploadButtons() throws Exception {
     mockMvc.perform(get("/wiki"))
-        .andExpect(status().isOk())
-        .andExpect(content().string(not(containsString("id=\"btnUploadOriginal\""))))
-        .andExpect(content().string(not(containsString("id=\"wikiUploadModal\""))))
-        .andExpect(content().string(not(containsString("wiki_admin_upload.js"))))
-        .andExpect(content().string(containsString(">BuildIt 홈</a>")))
-        .andExpect(content().string(containsString("class=\"wiki-home-link\" href=\"/\"")));
-  }
-
-  @Test
-  @DisplayName("STUDENT: 관리자 업로드 UI 없음")
-  void student_noAdminUi() throws Exception {
-    mockMvc.perform(get("/wiki").cookie(token("STUDENT")))
-        .andExpect(status().isOk())
-        .andExpect(content().string(not(containsString("id=\"btnUploadOriginal\""))))
-        .andExpect(content().string(not(containsString("wiki_admin_upload.js"))));
-  }
-
-  @Test
-  @DisplayName("ADMIN: 원본/분석 업로드 버튼 + 모달 + wiki_admin_upload.js + BuildIt 홈 모두 렌더")
-  void admin_rendersAdminUi() throws Exception {
-    mockMvc.perform(get("/wiki").cookie(token("ADMIN")))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("id=\"btnUploadOriginal\"")))
         .andExpect(content().string(containsString("id=\"btnUploadAnalysis\"")))
@@ -81,23 +60,48 @@ class WikiPageControllerRenderTest {
   }
 
   @Test
-  @DisplayName("응답에 Cache-Control: no-store + Vary: Cookie (앞단 캐시가 익명 HTML을 공유 못하게)")
-  void response_isNotSharedCacheable() throws Exception {
-    mockMvc.perform(get("/wiki").cookie(token("ADMIN")))
-        .andExpect(header().string("Cache-Control", containsString("no-store")))
-        .andExpect(header().string("Vary", containsString("Cookie")));
+  @DisplayName("STUDENT / ADMIN GET /wiki → 익명과 동일하게 버튼 존재(렌더가 principal 에 의존하지 않음)")
+  void authenticated_hub_hasSameButtons() throws Exception {
+    for (String role : new String[] {"STUDENT", "ADMIN"}) {
+      mockMvc.perform(get("/wiki").cookie(token(role)))
+          .andExpect(status().isOk())
+          .andExpect(content().string(containsString("id=\"btnUploadOriginal\"")))
+          .andExpect(content().string(containsString("id=\"btnUploadAnalysis\"")));
+    }
   }
 
   @Test
-  @DisplayName("/wiki/originals·/wiki/analysis: ADMIN 이면 업로드 진입점, 익명이면 없음")
-  void listPages_adminUploadEntry() throws Exception {
-    mockMvc.perform(get("/wiki/originals").cookie(token("ADMIN")))
-        .andExpect(status().isOk())
-        .andExpect(content().string(containsString("＋ 원본 업로드")));
-    mockMvc.perform(get("/wiki/analysis").cookie(token("ADMIN")))
-        .andExpect(status().isOk())
-        .andExpect(content().string(containsString("＋ 분석 자료 업로드")));
+  @DisplayName("익명 GET /wiki/originals → 원본 업로드 버튼 존재")
+  void anonymous_originalsPage_hasUploadButton() throws Exception {
     mockMvc.perform(get("/wiki/originals"))
-        .andExpect(content().string(not(containsString("＋ 원본 업로드"))));
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("id=\"btnUploadOriginal\"")))
+        .andExpect(content().string(containsString("id=\"wikiUploadModal\"")))
+        .andExpect(content().string(containsString("＋ 원본 업로드")));
+  }
+
+  @Test
+  @DisplayName("익명 GET /wiki/analysis → 분석 자료 업로드 버튼 존재")
+  void anonymous_analysisPage_hasUploadButton() throws Exception {
+    mockMvc.perform(get("/wiki/analysis"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("id=\"btnUploadAnalysis\"")))
+        .andExpect(content().string(containsString("id=\"wikiUploadModal\"")))
+        .andExpect(content().string(containsString("＋ 분석 자료 업로드")));
+  }
+
+  @Test
+  @DisplayName("HTML 에 서버 role 조건부 렌더 흔적이 없다")
+  void noServerSideRoleGating() throws Exception {
+    String body = mockMvc.perform(get("/wiki")).andReturn().getResponse().getContentAsString();
+    org.assertj.core.api.Assertions.assertThat(body)
+        .doesNotContain("${wikiAdmin}", "${role");
+  }
+
+  @Test
+  @DisplayName("Cache-Control: no-store (앞단 캐시가 HTML 공유 안 하게)")
+  void response_noStore() throws Exception {
+    mockMvc.perform(get("/wiki"))
+        .andExpect(header().string("Cache-Control", containsString("no-store")));
   }
 }
