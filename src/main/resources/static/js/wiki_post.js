@@ -43,8 +43,16 @@ async function load() {
 function render(d) {
   const wiki = !!WIKI_BOARDS[d.boardType];
   const boardKey = BOARD_KEY[d.boardType] || 'review';
+  // 스펙 §12: 상세에서 "← BuildIt Wiki로 돌아가기"는 항상 /wiki 로 간다(직접 URL 접근 대비).
   const backLink = document.querySelector('.back-link');
-  if (backLink) backLink.setAttribute('href', wiki ? '/wiki/board/' + boardKey : '/wiki');
+  if (backLink) backLink.setAttribute('href', '/wiki');
+  const crumb = document.getElementById('crumb');
+  if (wiki && crumb) {
+    crumb.hidden = false;
+    const cb = document.getElementById('crumbBoard');
+    cb.setAttribute('href', '/wiki/board/' + boardKey);
+    cb.textContent = d.boardLabel;
+  }
 
   if (!wiki) {
     detailEl.innerHTML = '<div class="notice-box">이 글은 F2R 커뮤니티 글입니다. '

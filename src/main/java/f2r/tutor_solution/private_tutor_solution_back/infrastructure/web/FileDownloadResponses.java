@@ -28,9 +28,18 @@ public final class FileDownloadResponses {
         .body(bytes);
   }
 
-  /** 항상 attachment로 강제하고 싶을 때(자료실 다운로드 등). */
+  /**
+   * 항상 attachment로 강제하는 다운로드(자료실 등). disposition이 attachment라 inline 렌더 위험이 없으므로
+   * 저장된 content_type을 그대로 실어 준다(파싱 불가 시 octet-stream).
+   */
   public static ResponseEntity<byte[]> attachment(byte[] bytes, String contentType, String filename) {
-    MediaType mediaType = safeMediaType(contentType);
+    MediaType mediaType;
+    try {
+      mediaType = (contentType == null || contentType.isBlank())
+          ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
+    } catch (Exception e) {
+      mediaType = MediaType.APPLICATION_OCTET_STREAM;
+    }
     return ResponseEntity.ok()
         .header(HttpHeaders.CACHE_CONTROL, "private, max-age=300")
         .header("X-Content-Type-Options", "nosniff")
