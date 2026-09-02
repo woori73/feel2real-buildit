@@ -1230,26 +1230,29 @@ body {
   .bi-page .btn.nav-cta { min-height: 34px; padding: 7px 12px; font-size: 12.5px; }
 }
 
-/* 모바일에서는 데스크톱 화면을 그대로 축소하지 않고, 중요한 중앙 영역을 크게 보여준다. */
+/* 모바일은 전체 데스크톱을 축소하지 않고 핵심 UI를 세로형 뷰포트로 확대·크롭한다. */
 @media (max-width: 520px) {
   .builder-pin {
     min-height: auto;
-    padding: 96px 12px 56px;
+    padding: 96px 6px 56px;
     gap: 22px;
   }
 
   .builder-video-wrap {
-    width: 100%;
+    width: calc(100vw - 12px);
+    max-width: none;
   }
 
   .web-video-card {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 4 / 5;
     border-radius: 18px;
   }
 
   .web-video {
     object-fit: cover;
-    object-position: top center;
+    object-position: 38% top;
+    transform: scale(1.08);
+    transform-origin: 38% top;
   }
 
   .wiki {
@@ -1257,26 +1260,38 @@ body {
   }
 
   .wiki-pin {
-    padding: 96px 12px 56px;
+    padding: 96px 6px 56px;
     gap: 24px;
     overflow: hidden;
   }
 
   .wiki-laptop-wrap {
-    width: 100%;
+    width: calc(100vw - 12px);
+    max-width: none;
   }
 
   .wiki-pin .laptop-xl {
     width: 100%;
+    max-width: none;
+  }
+
+  .laptop-top {
+    padding: 10px 10px 0;
+  }
+
+  .laptop-cam {
+    margin-bottom: 8px;
   }
 
   .laptop-screen {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 4 / 5;
   }
 
   .scr-video {
     object-fit: cover;
-    object-position: top center;
+    object-position: 32% top;
+    transform: scale(1.18);
+    transform-origin: 32% top;
   }
 }
 
