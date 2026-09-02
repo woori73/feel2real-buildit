@@ -93,6 +93,8 @@ class LandingTemplateContractTest {
         .contains("대한민국 지역별 영어교육자 TOP 100")
         .contains("BuildIt Chart 전체보기 →")
         .contains("href=\"/chart\"")
+        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">Buildit 모의고사</a>")
+        .contains("href=\"/home\" class=\"btn outline nav-cta\">F2R</a>")
         .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">BUILD IT WIKI</a>")
         .contains("class=\"chart-phone\"")
         .contains("정수정영어학원 · 서울 송파구 삼전동");
