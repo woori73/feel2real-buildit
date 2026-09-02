@@ -68,21 +68,27 @@ class LandingTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given Chart 소개 섹션 when 템플릿을 읽으면 then Flow 이후 Web 이전에 모바일 미리보기를 노출한다")
-  void chart_showcase_is_inserted_after_hero_before_build_it_web() throws Exception {
+  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then Wiki·Web·Chart·Report·Shorts 순서로 노출한다")
+  void landing_orders_services_by_product_strategy() throws Exception {
     // given
     String html = Files.readString(LANDING);
     String css = Files.readString(LANDING_CSS);
 
     // when
     int hero = html.indexOf("id=\"hero\"");
-    int chart = html.indexOf("id=\"chart-showcase\"");
+    int wiki = html.indexOf("id=\"wiki\"");
     int web = html.indexOf("id=\"web\"");
+    int chart = html.indexOf("id=\"chart-showcase\"");
+    int report = html.indexOf("id=\"report\"");
+    int shorts = html.indexOf("id=\"shorts\"");
 
     // then
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(chart).isGreaterThan(hero);
-    assertThat(web).isGreaterThan(chart);
+    assertThat(wiki).isGreaterThan(hero);
+    assertThat(web).isGreaterThan(wiki);
+    assertThat(chart).isGreaterThan(web);
+    assertThat(report).isGreaterThan(chart);
+    assertThat(shorts).isGreaterThan(report);
     assertThat(html)
         .contains("대한민국 지역별 영어교육자 TOP 100")
         .contains("BuildIt Chart 전체보기 →")
@@ -223,6 +229,10 @@ class LandingTemplateContractTest {
         .doesNotContain("\n* {")
         .contains("@media (max-width: 860px)")
         .contains("@media (max-width: 520px)")
+        .contains(".web-video-card")
+        .contains("aspect-ratio: 4 / 3")
+        .contains(".wiki-pin .laptop-xl")
+        .contains(".laptop-screen")
         .contains(".chart-showcase")
         .contains(".hero-title-subject")
         .contains("font-size: .65em")
