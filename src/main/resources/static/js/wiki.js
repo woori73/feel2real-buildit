@@ -37,6 +37,13 @@
 
   render();
 
+  // 관리자 업로드 UI(wiki_admin_upload.js)가 현재 학년을 읽고 업로드 후 목록만 새로고침하도록 노출.
+  window.wikiHub = {
+    currentGrade: function () { return grade; },
+    reloadOriginals: loadOriginals,
+    reloadAnalyses: loadAnalyses,
+  };
+
   function render() {
     gradeNote.textContent = GRADE_NOTE[grade] || '';
     loadOriginals();

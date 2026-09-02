@@ -129,43 +129,71 @@ async function onSubmit(e) {
   if (!title) { show('제목을 입력해주세요.', true); return; }
   if (editor.getText().trim() === '') { show('내용을 입력해주세요.', true); return; }
 
-  const payload = {
-    boardType: board.boardType,
-    subjectId: null,
-    title,
-    contentJson: JSON.stringify(editor.getJSON()),
-    contentHtml: editor.getHTML(),
-  };
-  const url = editId ? '/api/open-community/posts/' + editId : '/api/open-community/posts';
+  const contentJson = JSON.stringify(editor.getJSON());
+  const contentHtml = editor.getHTML();
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
-  try {
-    const res = await fetchAuth(url, {
-      method: editId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      redirectOnAuthError: false,
-    });
-    if (res.status === 401 || res.status === 403) { submitBtn.disabled = false; authFail(); return; }
-    if (!res.ok) { submitBtn.disabled = false; show((await res.text()) || '저장에 실패했습니다.', true); return; }
-    const saved = await res.json();
-    const postId = saved.postId;
 
-    if (pendingFiles.length) {
-      show('첨부파일 업로드 중...', false);
-      const fd = new FormData();
-      pendingFiles.forEach(f => fd.append('files', f));
-      const up = await fetchAuth('/api/open-community/posts/' + postId + '/attachments',
-        { method: 'POST', body: fd, redirectOnAuthError: false });
-      if (!up.ok && up.status !== 401 && up.status !== 403) {
-        alert('첨부파일 업로드에 실패했습니다: ' + ((await up.text()) || up.status) + '\n글은 저장되었습니다.');
-      }
-    }
+  try {
+    const postId = editId
+      ? await saveEdit(contentJson, contentHtml)
+      : await createWithAttachments(title, contentJson, contentHtml);
+    if (postId == null) { submitBtn.disabled = false; return; }
     location.href = '/wiki/posts/' + postId;
   } catch {
     submitBtn.disabled = false;
     show('저장에 실패했습니다.', true);
   }
+}
+
+/**
+ * 신규 글: 본문 + 첨부를 한 번의 multipart 요청으로 원자적으로 생성한다.
+ * 첨부가 거부되면 글도 생성되지 않으므로(서버 트랜잭션) "글만 남는" 상태가 없다 — 그대로 다시 시도하면 된다.
+ */
+async function createWithAttachments(title, contentJson, contentHtml) {
+  const fd = new FormData();
+  fd.append('boardType', board.boardType);
+  fd.append('title', title);
+  fd.append('contentJson', contentJson);
+  fd.append('contentHtml', contentHtml);
+  pendingFiles.forEach(f => fd.append('files', f));
+
+  if (pendingFiles.length) show('글과 첨부파일을 저장하는 중...', false);
+  const res = await fetchAuth('/api/open-community/posts', { method: 'POST', body: fd, redirectOnAuthError: false });
+  if (res.status === 401 || res.status === 403) { authFail(); return null; }
+  if (!res.ok) {
+    show((await res.text()) || '저장에 실패했습니다. 첨부파일을 확인하고 다시 시도해주세요.', true);
+    return null;
+  }
+  return (await res.json()).postId;
+}
+
+/** 수정: 본문은 JSON PUT, 새로 고른 첨부만 이어서 업로드(글은 이미 존재하므로 고아 글이 생기지 않는다). */
+async function saveEdit(contentJson, contentHtml) {
+  const res = await fetchAuth('/api/open-community/posts/' + editId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ boardType: board.boardType, subjectId: null, title: document.getElementById('title').value.trim(), contentJson, contentHtml }),
+    redirectOnAuthError: false,
+  });
+  if (res.status === 401 || res.status === 403) { authFail(); return null; }
+  if (!res.ok) { show((await res.text()) || '저장에 실패했습니다.', true); return null; }
+  const postId = (await res.json()).postId;
+
+  if (pendingFiles.length) {
+    show('첨부파일 업로드 중...', false);
+    const fd = new FormData();
+    pendingFiles.forEach(f => fd.append('files', f));
+    const up = await fetchAuth('/api/open-community/posts/' + postId + '/attachments',
+      { method: 'POST', body: fd, redirectOnAuthError: false });
+    if (!up.ok && up.status !== 401 && up.status !== 403) {
+      show('본문은 저장됐습니다. 첨부파일만 실패했습니다: ' + ((await up.text()) || up.status)
+        + ' — 파일을 확인 후 다시 시도하거나, 글 상세에서 "＋ 파일 추가"로 첨부해주세요.', true);
+      return null;
+    }
+    pendingFiles = [];
+  }
+  return postId;
 }
 
 function authFail() {

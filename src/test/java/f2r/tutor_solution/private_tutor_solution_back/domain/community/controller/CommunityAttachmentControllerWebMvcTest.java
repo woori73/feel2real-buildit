@@ -88,6 +88,33 @@ class CommunityAttachmentControllerWebMvcTest {
   }
 
   @Test
+  @DisplayName("given 로그인 when 글+JPG 첨부 원자 생성(multipart) then 200 · createPostWithAttachments 경유")
+  void createWithAttachments_authenticated_ok() throws Exception {
+    byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+    mockMvc.perform(multipart("/api/open-community/posts")
+            .file("files", jpeg)
+            .param("boardType", "VARIANT")
+            .param("title", "변형문제 공유")
+            .param("contentJson", "{}")
+            .param("contentHtml", "<p>본문</p>")
+            .cookie(token("STUDENT")))
+        .andExpect(status().isOk());
+    org.mockito.Mockito.verify(communityService)
+        .createPostWithAttachments(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("given 익명 when 글+첨부 원자 생성(multipart) then 401")
+  void createWithAttachments_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(multipart("/api/open-community/posts")
+            .file("files", "%PDF".getBytes())
+            .param("boardType", "VARIANT")
+            .param("title", "t")
+            .param("contentHtml", "<p>x</p>"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   @DisplayName("given 로그인 when 첨부 삭제 then 204")
   void delete_authenticated_noContent() throws Exception {
     mockMvc.perform(delete("/api/open-community/attachments/1").cookie(token("STUDENT")))

@@ -52,11 +52,31 @@ public class CommunityController {
     return ResponseEntity.ok(communityService.detail(postId));
   }
 
-  @PostMapping("/posts")
+  @PostMapping(value = "/posts", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<CommunityPostDetailResponse> create(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody CommunityPostRequest request) {
     return ResponseEntity.ok(communityService.createPost(principal, request));
+  }
+
+  /**
+   * 글 + 문서/이미지 첨부를 한 번의 multipart 요청으로 원자적으로 생성한다(변형문제·자료 공유·요청).
+   * 첨부 검증/저장이 실패하면 글까지 롤백되어 고아 글이 남지 않는다.
+   */
+  @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<CommunityPostDetailResponse> createWithAttachments(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestParam String boardType,
+      @RequestParam(required = false) Integer subjectId,
+      @RequestParam String title,
+      @RequestParam(required = false) String contentJson,
+      @RequestParam(required = false) String contentHtml,
+      @RequestParam(value = "files", required = false) List<MultipartFile> files,
+      @RequestParam(value = "files[]", required = false) List<MultipartFile> bracketFiles) {
+    CommunityPostRequest request =
+        new CommunityPostRequest(boardType, subjectId, title, contentJson, contentHtml);
+    return ResponseEntity.ok(
+        communityService.createPostWithAttachments(principal, request, mergeFiles(files, bracketFiles)));
   }
 
   @PutMapping("/posts/{postId}")

@@ -63,41 +63,64 @@ public class CommunityPostAttachmentService {
     User uploader = requireUser(principal);
     CommunityPost post = loadVisiblePost(postId);
     requireAuthor(post, uploader);
-    if (!ATTACHMENT_BOARDS.contains(post.getBoardType())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이 게시판은 파일을 첨부할 수 없습니다.");
-    }
 
-    List<MultipartFile> nonEmpty = files == null ? List.of()
-        : files.stream().filter(f -> f != null && !f.isEmpty()).toList();
-    if (nonEmpty.isEmpty()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "첨부할 파일을 선택해주세요.");
-    }
-    long existing = attachmentRepository.countByPost_PostIdAndVisibleTrue(postId);
-    if (existing + nonEmpty.size() > MAX_ATTACHMENTS) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-          "첨부파일은 게시글당 최대 " + MAX_ATTACHMENTS + "개까지 가능합니다.");
-    }
-    nonEmpty.forEach(documentUploadValidator::validate);
+    List<MultipartFile> nonEmpty = nonEmpty(files);
+    validateAttachable(post, nonEmpty);
 
     try {
       AuditorContextHolder.set(principal.loginId());
-      for (MultipartFile file : nonEmpty) {
-        String name = originalFileName(file);
-        String storageKey = saveRaw(uploader, name, file);
-        registerRollbackCleanup(storageKey);
-        attachmentRepository.save(CommunityPostAttachment.builder()
-            .post(post)
-            .uploader(uploader)
-            .originalFileName(name)
-            .contentType(DocumentUploadValidator.contentType(name))
-            .fileSize(file.getSize())
-            .storageKey(storageKey)
-            .build());
-      }
+      persist(post, uploader, nonEmpty);
     } finally {
       AuditorContextHolder.clear();
     }
     return listForPost(postId);
+  }
+
+  /**
+   * 새로 만든 글에 첨부를 붙인다 — 글 생성과 <b>같은 트랜잭션·auditor 컨텍스트</b>에서 호출된다
+   * (호출자 {@code CommunityService.createPostWithAttachments} 가 tx/auditor 소유).
+   * 검증 실패 시 예외를 던져 글 생성까지 통째로 롤백시킨다(고아 글 방지).
+   */
+  void attachToNewPost(CommunityPost post, User uploader, List<MultipartFile> files) {
+    List<MultipartFile> nonEmpty = nonEmpty(files);
+    validateAttachable(post, nonEmpty);
+    persist(post, uploader, nonEmpty);
+  }
+
+  private void validateAttachable(CommunityPost post, List<MultipartFile> nonEmpty) {
+    if (!ATTACHMENT_BOARDS.contains(post.getBoardType())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이 게시판은 파일을 첨부할 수 없습니다.");
+    }
+    if (nonEmpty.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "첨부할 파일을 선택해주세요.");
+    }
+    long existing = attachmentRepository.countByPost_PostIdAndVisibleTrue(post.getPostId());
+    if (existing + nonEmpty.size() > MAX_ATTACHMENTS) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+          "첨부파일은 게시글당 최대 " + MAX_ATTACHMENTS + "개까지 가능합니다.");
+    }
+    nonEmpty.forEach(documentUploadValidator::validateAttachment);
+  }
+
+  private void persist(CommunityPost post, User uploader, List<MultipartFile> files) {
+    for (MultipartFile file : files) {
+      String name = originalFileName(file);
+      String storageKey = saveRaw(uploader, name, file);
+      registerRollbackCleanup(storageKey);
+      attachmentRepository.save(CommunityPostAttachment.builder()
+          .post(post)
+          .uploader(uploader)
+          .originalFileName(name)
+          .contentType(DocumentUploadValidator.contentType(name))
+          .fileSize(file.getSize())
+          .storageKey(storageKey)
+          .build());
+    }
+  }
+
+  private static List<MultipartFile> nonEmpty(List<MultipartFile> files) {
+    return files == null ? List.of()
+        : files.stream().filter(f -> f != null && !f.isEmpty()).toList();
   }
 
   @Transactional

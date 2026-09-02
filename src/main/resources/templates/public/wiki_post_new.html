@@ -8,7 +8,7 @@
   <title>BuildIt Wiki 글쓰기</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
-  <link rel="stylesheet" href="/css/wiki.css?v=20260903-1">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-2">
 </head>
 <body class="wiki-body">
 <th:block layout:fragment="content">
@@ -52,9 +52,10 @@
 
       <div class="field" id="attachField" hidden>
         <label for="fileInput">첨부파일</label>
-        <div class="hint">PDF · HWP · HWPX · DOCX 등 문서 파일 (파일당 20MB, 최대 10개)</div>
+        <div class="hint">PDF · 한글(HWP/HWPX) · 오피스(DOC·XLS·PPT 등) · 압축(ZIP) · 이미지(JPG·PNG·WebP) (파일당 20MB, 최대 10개)</div>
         <div class="file-picker-row">
-          <input type="file" id="fileInput" multiple>
+          <input type="file" id="fileInput" multiple
+                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
           <div id="filePending"></div>
         </div>
       </div>
@@ -69,7 +70,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script type="module" src="/js/wiki_post_new.js?v=20260903-1"></script>
+  <script type="module" src="/js/wiki_post_new.js?v=20260903-2"></script>
 </th:block>
 </body>
 </html>

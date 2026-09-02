@@ -165,6 +165,45 @@ class CommunityServiceTest {
     assertThat(captor.getValue().getSubject()).isSameAs(subject);
   }
 
+  @Test @DisplayName("글+첨부 원자 생성: 첨부 없으면 글만 저장(첨부 서비스 호출 없음)")
+  void createWithAttachments_noFiles_savesPostOnly() {
+    CommunityPost saved = post(1L, author, LocalDateTime.now());
+    when(postRepository.save(any())).thenReturn(saved);
+    when(postRepository.findVisibleDetailById(1L)).thenReturn(Optional.of(saved));
+    when(likeRepository.countByPost_PostId(1L)).thenReturn(0L);
+
+    service.createPostWithAttachments(authorP, new CommunityPostRequest("VARIANT", null, "t", "{}", "<p>x</p>"), List.of());
+
+    verify(postRepository).save(any(CommunityPost.class));
+    verify(attachmentService, never()).attachToNewPost(any(), any(), any());
+  }
+
+  @Test @DisplayName("글+첨부 원자 생성: 파일이 있으면 같은 흐름에서 첨부 서비스에 위임")
+  void createWithAttachments_withFiles_delegatesToAttachmentService() {
+    CommunityPost saved = post(1L, author, LocalDateTime.now());
+    when(postRepository.save(any())).thenReturn(saved);
+    when(postRepository.findVisibleDetailById(1L)).thenReturn(Optional.of(saved));
+    when(likeRepository.countByPost_PostId(1L)).thenReturn(0L);
+    var file = new org.springframework.mock.web.MockMultipartFile("files", "q.pdf", "application/pdf", new byte[]{0x25, 0x50, 0x44, 0x46});
+
+    service.createPostWithAttachments(authorP, new CommunityPostRequest("VARIANT", null, "t", "{}", "<p>x</p>"), List.of(file));
+
+    verify(attachmentService).attachToNewPost(eq(saved), eq(author), any());
+  }
+
+  @Test @DisplayName("글+첨부 원자 생성: 첨부 검증 실패는 전체를 롤백시키도록 예외를 전파")
+  void createWithAttachments_attachmentRejected_propagates() {
+    CommunityPost saved = post(1L, author, LocalDateTime.now());
+    when(postRepository.save(any())).thenReturn(saved);
+    doThrow(new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "이 게시판은 파일을 첨부할 수 없습니다."))
+        .when(attachmentService).attachToNewPost(any(), any(), any());
+    var file = new org.springframework.mock.web.MockMultipartFile("files", "x.pdf", "application/pdf", new byte[]{0x25, 0x50, 0x44, 0x46});
+
+    assertThatThrownBy(() -> service.createPostWithAttachments(
+        authorP, new CommunityPostRequest("EXAM_REVIEW", null, "t", "{}", "<p>x</p>"), List.of(file)))
+        .isInstanceOf(ResponseStatusException.class);
+  }
+
   @Test @DisplayName("질문 수정: 타인 403")
   void updatePost_notAuthor_403() {
     when(postRepository.findById(1L)).thenReturn(Optional.of(post(1L, author, LocalDateTime.now())));
