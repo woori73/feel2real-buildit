@@ -1230,6 +1230,56 @@ body {
   .bi-page .btn.nav-cta { min-height: 34px; padding: 7px 12px; font-size: 12.5px; }
 }
 
+/* 모바일에서는 데스크톱 화면을 그대로 축소하지 않고, 중요한 중앙 영역을 크게 보여준다. */
+@media (max-width: 520px) {
+  .builder-pin {
+    min-height: auto;
+    padding: 96px 12px 56px;
+    gap: 22px;
+  }
+
+  .builder-video-wrap {
+    width: 100%;
+  }
+
+  .web-video-card {
+    aspect-ratio: 4 / 3;
+    border-radius: 18px;
+  }
+
+  .web-video {
+    object-fit: cover;
+    object-position: top center;
+  }
+
+  .wiki {
+    min-height: auto;
+  }
+
+  .wiki-pin {
+    padding: 96px 12px 56px;
+    gap: 24px;
+    overflow: hidden;
+  }
+
+  .wiki-laptop-wrap {
+    width: 100%;
+  }
+
+  .wiki-pin .laptop-xl {
+    width: 100%;
+  }
+
+  .laptop-screen {
+    aspect-ratio: 4 / 3;
+  }
+
+  .scr-video {
+    object-fit: cover;
+    object-position: top center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-lines .l2,
   .hero-lines .l3,
