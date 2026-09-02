@@ -103,8 +103,11 @@ Admin은 학교별 시험 분석 HTML 파일을 업로드해 public 콘텐츠로
 ## 공개 BuildIt Wiki (`/wiki`) 화면 컨벤션
 
 - 공개 위키/커뮤니티 허브. `layouts/public` 데코레이트 + `bodyClass='wiki-body'`, 전용 `static/css/wiki.css`(자체 `:root` 팔레트 — teal 계열, "작고 편안한" 톤. 대형 브랜드 CSS 미사용).
-- 게시판(시험 후기/변형문제/자료 공유·요청)은 기존 open-community 엔진 재사용 — `BoardType` enum 값 3개(`EXAM_REVIEW`/`VARIANT`/`MATERIAL`) + 목록 `scope=wiki` 로 F2R `/community` 와 분리. 글쓰기/상세는 `/community/posts/*` 재사용(`?board=`·`?return=`).
-- 모의고사 원본 PDF: 관리 `/admin/wiki-originals`, 공개 다운로드 `/api/wiki/originals/{id}/download`(첨부). `exam_analyses`(HTML)와 별도 테이블(`wiki_exam_originals`).
+- 게시판(시험 후기/변형문제/자료 공유·요청)은 open-community 엔진(`/api/open-community/*`) 재사용 — `BoardType` enum 값 3개(`EXAM_REVIEW`/`VARIANT`/`MATERIAL`) + 목록 `scope=wiki` 로 F2R `/community` 와 분리.
+- **`/wiki` Community 플로우는 `/wiki` 문맥 안에서만 끝난다(스펙 §11~13)**: 전용 화면 `/wiki/board/{key}/new`·`/wiki/posts/{id}`, 모든 API 호출 `redirectOnAuthError:false`, `/home`·`/community` 링크·리다이렉트 금지, 각 화면에 명시적 "← BuildIt Wiki로 돌아가기"(`history.back()` 의존 금지). `/community/posts/*` 는 F2R 커뮤니티 전용.
+- **자료실 2종 — `analyzes`/`ExamAnalysis` 절대 재사용 안 함**: 모의고사 원본(`wiki_exam_originals` V956, PDF) + 분석 자료(`wiki_analysis_materials` V957, PDF/HWP/HWPX/DOCX 등). 관리 `/admin/wiki-originals`·`/admin/wiki-analysis`(ADMIN), 공개 다운로드 `/api/wiki/originals|analysis-materials/{id}/download`(attachment).
+- **문서 업로드 검증은 공용 `infrastructure/storage/DocumentUploadValidator`** — 확장자 화이트리스트(pdf/hwp/hwpx/doc/docx/xls/xlsx/ppt/pptx/zip) + 첫 8바이트 매직 교차검증(PDF / OLE2 / ZIP) + 실행파일(MZ/ELF/#!) 차단 + `UploadSizeGuard`(20MB). 다운로드 응답은 공용 `infrastructure/web/FileDownloadResponses`(pdf/image만 inline, RFC5987 파일명, `nosniff`).
+- 게시글 문서 첨부: `community_post_attachments`(V958), `variant`/`share` 게시판만, 게시글당 10개·파일당 20MB.
 - 내신 Wiki(`/problem-generator`) 연결은 하단 1줄로만. 과도한 광고 금지.
 
 ### Academy Blog / SEO 콘텐츠

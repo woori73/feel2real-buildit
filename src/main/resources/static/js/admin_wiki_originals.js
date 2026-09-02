@@ -15,7 +15,7 @@ document.addEventListener('click', (event) => {
 
 (async () => {
   currentUser = await ensureCurrentUser();
-  if (!currentUser || currentUser.role !== 'ADMIN') { location.href = '/home'; return; }
+  if (!currentUser || currentUser.role !== 'ADMIN') { location.href = '/wiki'; return; }
   document.getElementById('userName').textContent = window.userDisplayName(currentUser);
   loadOriginals();
 })();

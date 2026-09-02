@@ -1088,6 +1088,43 @@ Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERI
 
 인덱스: `idx_wiki_exam_originals_public(is_deleted, is_visible, grade, created_at, wiki_exam_original_id)`.
 
+### 4.45 wiki_analysis_materials ✅ 공개 BuildIt Wiki 분석 자료 문서 (V957)
+
+공개 `/wiki` 의 분석 자료 **문서 파일**(PDF/HWP/HWPX/DOC/DOCX/XLS/XLSX/PPT/PPTX/ZIP). `exam_analyses`(/analyzes, HTML 콘텐츠)와 완전히 분리된 별도 시스템(`domain/wikianalysis/*`). `FileStorage.saveRaw` 원본 저장, `/api/wiki/analysis-materials/{id}/download` attachment 다운로드. CRUD는 ADMIN.
+
+| column | type | note |
+|---|---|---|
+| wiki_analysis_material_id | BIGINT PK AUTO_INCREMENT | |
+| title | VARCHAR(200) NOT NULL | |
+| description | VARCHAR(1000) NULL | 선택 |
+| school_name | VARCHAR(100) NULL | 자유 입력(전국이면 비움) |
+| grade | INT NOT NULL | 1\|2\|3 |
+| exam_year | INT NOT NULL | (엔티티 필드명 `year`; H2 예약어 회피로 컬럼은 `exam_year`) |
+| semester | VARCHAR(20) NOT NULL | 자유 입력 |
+| exam_type | VARCHAR(40) NOT NULL | |
+| subject | VARCHAR(60) NULL | blank→서비스에서 "영어" |
+| content_type | VARCHAR(100) NOT NULL | 확장자로 추론(`DocumentUploadValidator.contentType`) |
+| original_file_name / storage_key / file_size | VARCHAR(255) / VARCHAR(500) / BIGINT | |
+| is_visible / is_deleted | BIT(1) NOT NULL / BIT(1) NOT NULL DEFAULT b'0' | soft delete |
+| (BaseEntity) | created_at/updated_at/created_by/updated_by | |
+
+인덱스: `idx_wiki_analysis_materials_public(is_deleted, is_visible, grade, created_at, wiki_analysis_material_id)`.
+
+### 4.46 community_post_attachments ✅ 공개 커뮤니티 게시글 문서 첨부 (V958)
+
+open-community 게시글의 원본 문서 첨부. BuildIt Wiki 변형문제·자료 공유·요청(`VARIANT`/`MATERIAL`) 게시판에서만 사용(`EXAM_REVIEW`는 텍스트 전용). `lesson_community_attachments`와 형태는 같지만 별개 테이블이다. 본문 이미지(`community_images`, 인라인·재인코딩)와도 별개 — 원본 그대로 보관.
+
+| column | type | note |
+|---|---|---|
+| attachment_id | BIGINT PK AUTO_INCREMENT | |
+| post_id | BIGINT NOT NULL FK community_posts(post_id) ON DELETE CASCADE | |
+| uploader_user_id | BIGINT NOT NULL FK users(user_id) | |
+| original_file_name / content_type / file_size / storage_key | VARCHAR(255) / VARCHAR(100) / BIGINT / VARCHAR(500) | |
+| is_visible | BIT(1) NOT NULL DEFAULT b'1' | 글 숨김 시 목록·serve에서 제외(스토리지는 명시적 삭제 시에만 정리) |
+| (audit) | created_at/updated_at/created_by/updated_by | |
+
+인덱스: `idx_cpa_post(post_id, is_visible, attachment_id)`. 게시글당 최대 10개, 파일당 20MB, `DocumentUploadValidator` 통과 필수.
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과

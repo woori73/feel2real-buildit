@@ -4,10 +4,11 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.dto.Wi
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginalDocType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.repository.WikiExamOriginalRepository;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage;
-import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.UploadSizeGuard;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,17 +27,20 @@ public class WikiExamOriginalService {
   private static final String RAW_FILE_TYPE = "UNKNOWN";
   private static final long STORAGE_OWNER_ID = 0L;
 
+  /** 모의고사 원본은 PDF만 받는다(스펙: 평가원 원본 문제지/정답지). */
+  private static final Set<String> ORIGINAL_EXTENSIONS = Set.of("pdf");
+
   private final WikiExamOriginalRepository repository;
   private final FileStorage fileStorage;
-  private final UploadSizeGuard uploadSizeGuard;
+  private final DocumentUploadValidator documentUploadValidator;
   private final long maxDocumentBytes;
 
   public WikiExamOriginalService(WikiExamOriginalRepository repository, FileStorage fileStorage,
-      UploadSizeGuard uploadSizeGuard,
+      DocumentUploadValidator documentUploadValidator,
       @Value("${app.upload.max-document-bytes:20971520}") long maxDocumentBytes) {
     this.repository = repository;
     this.fileStorage = fileStorage;
-    this.uploadSizeGuard = uploadSizeGuard;
+    this.documentUploadValidator = documentUploadValidator;
     this.maxDocumentBytes = maxDocumentBytes;
   }
 
@@ -67,7 +71,7 @@ public class WikiExamOriginalService {
   @Transactional
   public WikiExamOriginalResponse create(String title, Integer grade, String examLabel, String docType,
       boolean visible, MultipartFile file) {
-    validateFile(file, true);
+    documentUploadValidator.validate(file, ORIGINAL_EXTENSIONS);
     String storageKey = saveFile(file);
     WikiExamOriginal original = WikiExamOriginal.builder()
         .title(required(title, "제목"))
@@ -93,7 +97,7 @@ public class WikiExamOriginalService {
         parseDocType(docType),
         visible);
     if (file != null && !file.isEmpty()) {
-      validateFile(file, true);
+      documentUploadValidator.validate(file, ORIGINAL_EXTENSIONS);
       String newStorageKey = saveFile(file);
       String oldStorageKey = original.replaceFile(originalFileName(file), newStorageKey, file.getSize());
       fileStorage.delete(oldStorageKey, RAW_FILE_TYPE);
@@ -131,18 +135,6 @@ public class WikiExamOriginalService {
       return fileStorage.saveRaw(STORAGE_OWNER_ID, originalFileName(file), file.getInputStream(), file.getSize());
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "원본 파일 저장에 실패했습니다.", e);
-    }
-  }
-
-  private void validateFile(MultipartFile file, boolean requiredFile) {
-    if (file == null || file.isEmpty()) {
-      if (requiredFile) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF 파일을 업로드해주세요.");
-      return;
-    }
-    uploadSizeGuard.requireWithinDocumentLimit(file);
-    String name = originalFileName(file).toLowerCase();
-    if (!name.endsWith(".pdf")) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF 파일만 업로드할 수 있습니다.");
     }
   }
 

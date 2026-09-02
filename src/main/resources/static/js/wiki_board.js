@@ -1,7 +1,7 @@
 /**
  * 공개 BuildIt Wiki 게시판별 목록(/wiki/board/{key}).
  * key = review | variant | share. open-community 목록 API를 scope=wiki로 재사용한다.
- * 글쓰기/상세는 기존 /community/posts/* 를 재사용한다(return 파라미터로 wiki 복귀).
+ * 글쓰기/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id}).
  */
 (function () {
   var BOARDS = {
@@ -38,8 +38,7 @@
       if (typeof openLoginModal === 'function') openLoginModal();
       return;
     }
-    location.href = '/community/posts/new?board=' + encodeURIComponent(board.boardType)
-      + '&return=' + encodeURIComponent('/wiki/board/' + key);
+    location.href = '/wiki/board/' + encodeURIComponent(key) + '/new';
   }
 
   async function load() {
@@ -63,7 +62,7 @@
   }
 
   function card(p) {
-    return '<a class="q-card" href="/community/posts/' + p.postId + '">'
+    return '<a class="q-card" href="/wiki/posts/' + p.postId + '">'
       + '<div class="q-card-meta"><span class="who">' + escapeHtml(p.authorName) + ' · ' + fmt(p.createdAt) + '</span></div>'
       + '<h3>' + escapeHtml(p.title) + '</h3>'
       + '<div class="q-card-stats"><span class="answers">✓ 답변 ' + Number(p.answerCount || 0) + '</span>'

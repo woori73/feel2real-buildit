@@ -15,9 +15,9 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 /**
  * 공개 BuildIt Wiki(/wiki) 화면 계약.
- * - 기존 /analyzes · open-community · 신규 /api/wiki/originals 를 재사용한다.
- * - layouts/public 데코레이트(공개 방문자 분석 범위), 내신 Wiki 링크는 1개만.
- * - 문자열 계약뿐 아니라 실제 Thymeleaf 렌더(DB 없이)로 파싱·fragment 오류를 잡는다.
+ * - 자료실(원본·분석)은 새 Wiki 자료실 시스템(/api/wiki/originals, /api/wiki/analysis-materials) — /analyzes 재사용 X.
+ * - 게시판 작성/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id}) — /community·/home 로 이동하지 않음.
+ * - 문자열 계약 + 실제 Thymeleaf 렌더로 파싱·fragment 오류를 함께 잡는다.
  */
 class WikiPageContractTest {
 
@@ -34,76 +34,73 @@ class WikiPageContractTest {
   }
 
   @Test
-  @DisplayName("허브·게시판·관리 템플릿이 layouts/public·fragment 치환까지 실제로 렌더된다")
+  @DisplayName("허브·게시판·전용 화면·관리 템플릿이 layouts/public·fragment 치환까지 실제로 렌더된다")
   void templates_render_withLayoutAndFragmentsResolved() {
     TemplateEngine engine = engine();
 
-    String hub = engine.process("public/wiki", new Context());
-    assertThat(hub)
-        .contains("<!DOCTYPE html>")
-        .contains("GTM-MMJ4MGNN")                       // layouts/public 적용
-        .contains("/favicon.svg?v=20260613")            // _head fragment
-        .contains("<body class=\"wiki-body\">")         // bodyClass 파라미터 전달
-        .contains("data-account-menu", "data-login-modal")  // _account_menu fragment
-        .contains("id=\"gradeTabs\"", "id=\"originalList\"", "id=\"analysisList\"")
-        .contains("href=\"/problem-generator\"")
-        .doesNotContain("th:block", "th:replace", "layout:fragment");
+    for (String view : new String[] {
+        "public/wiki", "public/wiki_board", "public/wiki_post_new", "public/wiki_post",
+        "public/wiki_originals", "public/wiki_analysis"}) {
+      String html = engine.process(view, new Context());
+      assertThat(html)
+          .as(view)
+          .contains("<!DOCTYPE html>")
+          .contains("GTM-MMJ4MGNN")
+          .contains("<body class=\"wiki-body\">")
+          .doesNotContain("th:block", "th:replace", "layout:fragment");
+    }
 
-    String board = engine.process("public/wiki_board", new Context());
-    assertThat(board)
-        .contains("<body class=\"wiki-body\">")
-        .contains("id=\"boardList\"", "id=\"btnWrite\"")
-        .doesNotContain("th:block", "th:replace");
-
-    String admin = engine.process("admin/wiki_originals", new Context());
+    String admin = engine.process("admin/wiki_analysis", new Context());
     assertThat(admin)
         .contains("<!DOCTYPE html>")
-        .contains("admin-nav")                          // _admin_topnav fragment
-        .contains("href=\"/admin/wiki-originals\"")
-        .contains("id=\"originalForm\"", "id=\"originalModal\"")
-        .contains("accept=\".pdf\"")
+        .contains("admin-nav")
+        .contains("href=\"/admin/wiki-analysis\"")
+        .contains("id=\"materialForm\"", "id=\"materialModal\"")
         .doesNotContain("th:block", "th:replace");
   }
 
   @Test
-  @DisplayName("허브: layouts/public 데코레이트 + 학년 탭 + 세 자료 소스 재사용")
-  void wikiHub_reusesExistingSourcesUnderPublicLayout() throws IOException {
+  @DisplayName("허브: 새 Wiki 자료실 시스템 사용 + /analyzes 재사용 안 함 + /wiki 전용 네비")
+  void wikiHub_usesWikiResourceSystem() throws IOException {
     String html = read("templates/public/wiki.html");
     String js = read("static/js/wiki.js");
 
     assertThat(html).contains("layout:decorate=\"~{layouts/public(bodyClass='wiki-body')}\"");
     assertThat(html).contains("id=\"gradeTabs\"", "data-grade=\"3\"", "data-grade=\"2\"", "data-grade=\"1\"");
-    // 내신 Wiki 연결은 딱 1곳
     assertThat(countOccurrences(html, "/problem-generator")).isEqualTo(1);
+    assertThat(html).contains("href=\"/wiki/originals\"", "href=\"/wiki/analysis\"");
+    // 관리자 업로드 링크는 role 가드
+    assertThat(html).contains("th:if=\"${role == 'ADMIN'}\"");
 
-    // 기존 공개 API 재사용
-    assertThat(js).contains("/api/analyzes?grade=");
     assertThat(js).contains("/api/wiki/originals?grade=");
+    assertThat(js).contains("/api/wiki/analysis-materials?grade=");
     assertThat(js).contains("/api/open-community/posts?scope=wiki");
-    // 글쓰기는 기존 커뮤니티 작성 화면 재사용(게시판 고정 + wiki 복귀)
-    assertThat(js).contains("/community/posts/new?board=");
-    assertThat(js).contains("return=");
+    assertThat(js).contains("/wiki/board/", "/new");
+    assertThat(js).contains("/wiki/posts/");
+    assertThat(js).doesNotContain("/api/analyzes");
+    assertThat(js).doesNotContain("/community/posts/");
   }
 
   @Test
-  @DisplayName("게시판: /wiki/board/{key} 는 scope=wiki 로 open-community 목록을 재사용")
-  void wikiBoard_usesWikiScope() throws IOException {
-    String html = read("templates/public/wiki_board.html");
-    String js = read("static/js/wiki_board.js");
+  @DisplayName("게시판 목록·작성 화면은 /wiki 문맥에서만 움직인다")
+  void wikiBoardAndCompose_stayInWikiContext() throws IOException {
+    String boardJs = read("static/js/wiki_board.js");
+    assertThat(boardJs).contains("/wiki/board/", "/wiki/posts/");
+    assertThat(boardJs).doesNotContain("/community/posts/");
 
-    assertThat(html).contains("layout:decorate=\"~{layouts/public(bodyClass='wiki-body')}\"");
-    assertThat(js).contains("scope', 'wiki'");
-    assertThat(js).contains("EXAM_REVIEW", "VARIANT", "MATERIAL");
-    assertThat(js).contains("/community/posts/");
-  }
+    String newHtml = read("templates/public/wiki_post_new.html");
+    String newJs = read("static/js/wiki_post_new.js");
+    assertThat(newHtml).contains("← BuildIt Wiki로 돌아가기");
+    assertThat(newJs).contains("/wiki/posts/");                 // 저장 후 wiki 상세로
+    assertThat(newJs).contains("/api/open-community/posts/", "/attachments");  // 첨부 업로드
+    assertThat(newJs).doesNotContain("'/home'").doesNotContain("\"/home\"");
 
-  @Test
-  @DisplayName("커뮤니티 작성 화면: ?board= wiki 게시판이면 picker 잠금 + return 복귀")
-  void communityNew_handlesWikiPreset() throws IOException {
-    String js = read("static/js/community_new.js");
-    assertThat(js).contains("EXAM_REVIEW", "VARIANT", "MATERIAL");
-    assertThat(js).contains("returnUrl");
-    assertThat(js).contains("locked");
+    String postHtml = read("templates/public/wiki_post.html");
+    String postJs = read("static/js/wiki_post.js");
+    assertThat(postHtml).contains("← BuildIt Wiki로 돌아가기");
+    assertThat(postJs).contains("/api/open-community/attachments/");
+    assertThat(postJs).doesNotContain("'/home'").doesNotContain("\"/home\"");
+    assertThat(postJs).doesNotContain("/community/posts/new");
   }
 
   private static String read(String classpath) throws IOException {

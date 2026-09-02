@@ -3,7 +3,9 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.community.controll
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityImageService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityService;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -31,6 +33,7 @@ public class CommunityController {
 
   private final CommunityService communityService;
   private final CommunityImageService communityImageService;
+  private final CommunityPostAttachmentService communityPostAttachmentService;
 
   /* ── 질문 ── */
 
@@ -122,5 +125,41 @@ public class CommunityController {
         .cacheControl(CacheControl.maxAge(Duration.ofDays(7)).cachePublic())
         .contentType(MediaType.parseMediaType(image.contentType()))
         .body(image.bytes());
+  }
+
+  /* ── 게시글 문서 첨부 (변형문제·자료 공유·요청) ── */
+
+  @PostMapping(value = "/posts/{postId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<CommunityPostDetailResponse> addAttachments(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable Long postId,
+      @RequestParam(value = "files", required = false) List<MultipartFile> files,
+      @RequestParam(value = "files[]", required = false) List<MultipartFile> bracketFiles) {
+    communityPostAttachmentService.addAttachments(principal, postId, mergeFiles(files, bracketFiles));
+    return ResponseEntity.ok(communityService.detail(postId));
+  }
+
+  @DeleteMapping("/attachments/{attachmentId}")
+  public ResponseEntity<Void> deleteAttachment(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable Long attachmentId) {
+    communityPostAttachmentService.deleteAttachment(principal, attachmentId);
+    return ResponseEntity.noContent().build();
+  }
+
+  /** 공개 serve. SecurityConfig에서 GET /api/open-community/attachments/** permitAll. */
+  @GetMapping("/attachments/{attachmentId}/file")
+  public ResponseEntity<byte[]> getAttachment(@PathVariable Long attachmentId) {
+    CommunityPostAttachmentService.AttachmentFileBundle bundle =
+        communityPostAttachmentService.getAttachmentFile(attachmentId);
+    return FileDownloadResponses.serve(bundle.bytes(), bundle.contentType(), bundle.filename());
+  }
+
+  private List<MultipartFile> mergeFiles(List<MultipartFile> files, List<MultipartFile> bracketFiles) {
+    if (files == null || files.isEmpty()) return bracketFiles;
+    if (bracketFiles == null || bracketFiles.isEmpty()) return files;
+    List<MultipartFile> merged = new java.util.ArrayList<>(files);
+    merged.addAll(bracketFiles);
+    return merged;
   }
 }

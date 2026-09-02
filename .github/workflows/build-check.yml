@@ -61,6 +61,11 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.controller.WikiExamOriginalControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.WikiPersistenceVerificationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.WikiPageContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidatorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.controller.WikiAnalysisMaterialControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.controller.CommunityAttachmentControllerWebMvcTest"
 
       - name: Upload test report
         if: always()
