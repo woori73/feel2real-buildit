@@ -87,7 +87,7 @@ class WikiExamOriginalServiceTest {
 
   @Test
   @DisplayName("given XLSX(원본 성격 아님) when 원본 등록 then 400 — 원본은 PDF/HWP/HWPX만")
-  void create_rejectsNonOriginalDoc() {
+  void create_rejectsNonOriginalDoc() throws Exception {
     byte[] zip = {0x50, 0x4B, 0x03, 0x04, 0x14};
     MockMultipartFile file = new MockMultipartFile("file", "mock.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", zip);
