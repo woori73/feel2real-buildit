@@ -137,8 +137,9 @@ class LandingTemplateContractTest {
     // when & then
     assertThat(html)
         // Web 섹션은 매뉴얼의 가로 홈페이지 제작 영상을 정적 경로로 쓴다.
-        .contains("/manual/videos/02_homepage_setup.mp4")
+        .contains("/video/landing/buildit-web-builder-highlight.mp4")
         .contains("class=\"web-video\"")
+        .contains("muted loop autoplay playsinline preload=\"metadata\"")
         .doesNotContain("id=\"builderVideo\"")
         // Shorts 섹션은 기존 학원 홍보 쇼츠 슬롯을 쓴다.
         .contains("th:if=\"${academyShortsVideo.visible}\"")
@@ -152,6 +153,7 @@ class LandingTemplateContractTest {
         .contains("/video/landing/parent-report-demo.mp4");
     assertThat(LANDING_VIDEO_DIR.resolve("academy-shorts-demo.mp4")).exists();
     assertThat(LANDING_VIDEO_DIR.resolve("parent-report-demo.mp4")).exists();
+    assertThat(LANDING_VIDEO_DIR.resolve("buildit-web-builder-highlight.mp4")).exists();
   }
 
   @Test
@@ -230,7 +232,12 @@ class LandingTemplateContractTest {
         .contains("@media (max-width: 860px)")
         .contains("@media (max-width: 520px)")
         .contains(".web-video-card")
-        .contains("aspect-ratio: 4 / 3")
+        .contains("aspect-ratio: 4 / 5")
+        .contains("width: calc(100vw - 12px)")
+        .contains("object-position: 38% top")
+        .contains("transform: scale(1.08)")
+        .contains("object-position: 32% top")
+        .contains("transform: scale(1.18)")
         .contains(".wiki-pin .laptop-xl")
         .contains(".laptop-screen")
         .contains(".chart-showcase")
