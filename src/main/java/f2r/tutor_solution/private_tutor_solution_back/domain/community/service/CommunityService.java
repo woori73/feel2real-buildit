@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -121,6 +122,34 @@ public class CommunityService {
       CommunityPost saved = postRepository.save(CommunityPost.builder()
           .author(author).boardType(rb.boardType()).subject(rb.subject())
           .title(title).contentJson(body.json()).contentHtml(body.html()).build());
+      return detail(saved.getPostId());
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * 글 + 문서/이미지 첨부를 <b>한 트랜잭션</b>에서 원자적으로 생성한다. 첨부 검증/저장이 실패하면
+   * 글까지 통째로 롤백되어 "글만 남고 첨부는 실패"한 고아 글이 생기지 않는다.
+   * (첨부 없는 글은 {@link #createPost} 와 동일하게 동작한다.)
+   */
+  @Transactional
+  public CommunityPostDetailResponse createPostWithAttachments(
+      JwtTokenProvider.AuthenticatedPrincipal principal, CommunityPostRequest req, List<MultipartFile> files) {
+    User author = requireUser(principal);
+    ResolvedBoard rb = resolveBoard(req == null ? null : req.boardType(), req == null ? null : req.subjectId());
+    String title = requireLength(req == null ? null : req.title(), MAX_TITLE, "제목");
+    Body body = normalizeBody(req == null ? null : req.contentJson(), req == null ? null : req.contentHtml());
+    List<MultipartFile> attachments = files == null ? List.of()
+        : files.stream().filter(f -> f != null && !f.isEmpty()).toList();
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      CommunityPost saved = postRepository.save(CommunityPost.builder()
+          .author(author).boardType(rb.boardType()).subject(rb.subject())
+          .title(title).contentJson(body.json()).contentHtml(body.html()).build());
+      if (!attachments.isEmpty()) {
+        attachmentService.attachToNewPost(saved, author, attachments);
+      }
       return detail(saved.getPostId());
     } finally {
       AuditorContextHolder.clear();

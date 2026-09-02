@@ -1112,7 +1112,9 @@ Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERI
 
 ### 4.46 community_post_attachments ✅ 공개 커뮤니티 게시글 문서 첨부 (V958)
 
-open-community 게시글의 원본 문서 첨부. BuildIt Wiki 변형문제·자료 공유·요청(`VARIANT`/`MATERIAL`) 게시판에서만 사용(`EXAM_REVIEW`는 텍스트 전용). `lesson_community_attachments`와 형태는 같지만 별개 테이블이다. 본문 이미지(`community_images`, 인라인·재인코딩)와도 별개 — 원본 그대로 보관.
+open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형문제·자료 공유·요청(`VARIANT`/`MATERIAL`) 게시판에서만 사용(`EXAM_REVIEW`는 텍스트 전용). `lesson_community_attachments`와 형태는 같지만 별개 테이블이다. 본문 이미지(`community_images`, 인라인·재인코딩)와도 별개 — 원본 그대로 보관.
+
+허용 형식: 문서(`pdf/hwp/hwpx/doc/docx/xls/xlsx/ppt/pptx/zip`) + 이미지(`jpg/jpeg/png/webp`). `DocumentUploadValidator.validateAttachment` — 확장자 화이트리스트 + 매직바이트 교차검증(이미지는 JPEG `FF D8 FF` / PNG 8B 시그니처 / WebP `RIFF…WEBP`) + 실행파일(MZ/ELF/`#!`) 위장 차단. 글+첨부는 `POST /api/open-community/posts`(multipart)로 **한 트랜잭션에서 원자적 생성** — 첨부 실패 시 글도 롤백(고아 글 방지).
 
 | column | type | note |
 |---|---|---|

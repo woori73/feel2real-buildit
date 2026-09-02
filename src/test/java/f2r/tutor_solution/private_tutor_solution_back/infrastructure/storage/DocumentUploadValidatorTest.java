@@ -19,6 +19,10 @@ class DocumentUploadValidatorTest {
   private static final byte[] ZIP = {0x50, 0x4B, 0x03, 0x04, 0x14};
   private static final byte[] MZ = {0x4D, 0x5A, (byte) 0x90, 0x00};
   private static final byte[] ELF = {0x7F, 0x45, 0x4C, 0x46};
+  private static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+  private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+  private static final byte[] WEBP =
+      {0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20};
 
   private final DocumentUploadValidator validator =
       new DocumentUploadValidator(new UploadSizeGuard(20L * 1024 * 1024));
@@ -95,6 +99,35 @@ class DocumentUploadValidatorTest {
   }
 
   @Test
+  @DisplayName("게시글 첨부: 이미지(JPEG/PNG/WebP)는 매직바이트 일치 시 통과")
+  void validateAttachment_acceptsImages() {
+    assertThatCode(() -> validator.validateAttachment(file("a.jpg", JPEG))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validateAttachment(file("a.jpeg", JPEG))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validateAttachment(file("a.png", PNG))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validateAttachment(file("a.webp", WEBP))).doesNotThrowAnyException();
+    // 문서 계열도 그대로 통과
+    assertThatCode(() -> validator.validateAttachment(file("a.pdf", PDF))).doesNotThrowAnyException();
+  }
+
+  @Test
+  @DisplayName("게시글 첨부: 이미지 확장자 + 실행파일/문서 매직 위장은 400")
+  void validateAttachment_rejectsDisguisedImages() {
+    assertThatThrownBy(() -> validator.validateAttachment(file("a.jpg", MZ)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
+    assertThatThrownBy(() -> validator.validateAttachment(file("a.png", PDF)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
+    assertThatThrownBy(() -> validator.validateAttachment(file("a.webp", JPEG)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
+  }
+
+  @Test
+  @DisplayName("자료실 기본 validate()는 이미지를 계속 거부한다(문서 전용)")
+  void defaultValidate_stillRejectsImages() {
+    assertThatThrownBy(() -> validator.validate(file("a.jpg", JPEG)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
+  }
+
+  @Test
   @DisplayName("contentType(): 확장자로 MIME 추론")
   void contentType_byExtension() {
     assertThat(DocumentUploadValidator.contentType("a.pdf")).isEqualTo("application/pdf");
@@ -102,5 +135,9 @@ class DocumentUploadValidatorTest {
     assertThat(DocumentUploadValidator.contentType("a.docx"))
         .isEqualTo("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     assertThat(DocumentUploadValidator.contentType("weird")).isEqualTo("application/octet-stream");
+    assertThat(DocumentUploadValidator.contentType("a.jpg")).isEqualTo("image/jpeg");
+    assertThat(DocumentUploadValidator.contentType("a.jpeg")).isEqualTo("image/jpeg");
+    assertThat(DocumentUploadValidator.contentType("a.png")).isEqualTo("image/png");
+    assertThat(DocumentUploadValidator.contentType("a.webp")).isEqualTo("image/webp");
   }
 }

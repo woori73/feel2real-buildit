@@ -38,6 +38,9 @@ import org.springframework.web.server.ResponseStatusException;
 class CommunityPostAttachmentServiceTest {
 
   private static final byte[] PDF = {0x25, 0x50, 0x44, 0x46};
+  private static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10};
+  private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+  private static final byte[] MZ = {0x4D, 0x5A, (byte) 0x90, 0x00};
 
   private CommunityPostAttachmentRepository attachmentRepository;
   private CommunityPostRepository postRepository;
@@ -85,6 +88,47 @@ class CommunityPostAttachmentServiceTest {
 
     verify(fileStorage).saveRaw(anyLong(), anyString(), any(), anyLong());
     verify(attachmentRepository).save(any(CommunityPostAttachment.class));
+  }
+
+  @Test
+  @DisplayName("given 변형문제 글·작성자 when JPG 첨부 then storage 저장 + image/jpeg 추론")
+  void addAttachments_authorVariantJpg_ok() throws Exception {
+    CommunityPost post = post(1L, BoardType.VARIANT, author);
+    when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+    when(attachmentRepository.countByPost_PostIdAndVisibleTrue(1L)).thenReturn(0L);
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("k1");
+
+    service.addAttachments(authorP, 1L, List.of(file("사진.jpg", JPEG)));
+
+    org.mockito.ArgumentCaptor<CommunityPostAttachment> captor =
+        org.mockito.ArgumentCaptor.forClass(CommunityPostAttachment.class);
+    verify(attachmentRepository).save(captor.capture());
+    assertThat(captor.getValue().getContentType()).isEqualTo("image/jpeg");
+  }
+
+  @Test
+  @DisplayName("given 자료 공유·요청 글·작성자 when PNG + PDF 첨부 then 모두 저장")
+  void addAttachments_authorMaterialImageAndPdf_ok() throws Exception {
+    CommunityPost post = post(1L, BoardType.MATERIAL, author);
+    when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+    when(attachmentRepository.countByPost_PostIdAndVisibleTrue(1L)).thenReturn(0L);
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("k");
+
+    service.addAttachments(authorP, 1L, List.of(file("표.png", PNG), file("문제.pdf", PDF)));
+
+    verify(attachmentRepository, org.mockito.Mockito.times(2)).save(any(CommunityPostAttachment.class));
+  }
+
+  @Test
+  @DisplayName("given jpg 이름으로 위장한 실행파일(MZ) when 첨부 then 400")
+  void addAttachments_disguisedExecutable_rejected() throws Exception {
+    CommunityPost post = post(1L, BoardType.VARIANT, author);
+    when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+    when(attachmentRepository.countByPost_PostIdAndVisibleTrue(1L)).thenReturn(0L);
+
+    assertThatThrownBy(() -> service.addAttachments(authorP, 1L, List.of(file("evil.jpg", MZ))))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
+    verify(fileStorage, never()).saveRaw(anyLong(), anyString(), any(), anyLong());
   }
 
   @Test

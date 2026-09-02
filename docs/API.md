@@ -253,7 +253,7 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인). 목록은 `scope=community`(기본) — F2R 게시판(FREE/QNA/SUBJECT)만 |
 | `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글. wiki 게시판 글 상세도 이 화면 재사용 |
 | `/community/posts/new` | `public/community_new` | ✅ F2R 커뮤니티(`/community`) 글 작성/수정. (구 `?board=`/`?return=` wiki 진입은 폐기 — Wiki는 전용 화면 사용) |
-| `/wiki` | `public/wiki` | ✅ 공개 BuildIt Wiki 허브. 학년 탭(고3/고2/고1)으로 모의고사 원본(`/api/wiki/originals`)·분석 자료(`/api/wiki/analysis-materials`)·커뮤니티 3게시판 미리보기. `${role=='ADMIN'}`이면 관리자 업로드 링크. SSR 모델 없음(JS 구동) |
+| `/wiki` | `public/wiki` | ✅ 공개 BuildIt Wiki 허브. 학년 탭(고3/고2/고1)으로 모의고사 원본(`/api/wiki/originals`)·분석 자료(`/api/wiki/analysis-materials`)·커뮤니티 3게시판 미리보기. `${role=='ADMIN'}`(서버 authenticated principal)이면 **인라인 업로드 모달**(`＋ 원본 업로드`/`＋ 분석 자료 업로드`, `wiki_admin_upload.js`) 노출 — 현재 학년 탭이 기본값, 업로드 성공 시 새로고침 없이 해당 목록만 재조회. 기존 admin API(`/api/admin/wiki/originals`, `/api/admin/wiki/analysis-materials`) 재사용(새 저장 시스템 없음), 실제 권한은 `/api/admin/**` ROLE_ADMIN 게이트. SSR 모델 없음(JS 구동) |
 | `/wiki/originals`, `/wiki/analysis` | `public/wiki_originals`, `public/wiki_analysis` | ✅ 자료 전체 목록(학년 필터, 다운로드) |
 | `/wiki/board/{boardKey}` | `public/wiki_board` | ✅ Wiki 게시판별 목록. `boardKey` = `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). `/api/open-community/posts?scope=wiki` 재사용 |
 | `/wiki/board/{boardKey}/new` | `public/wiki_post_new` | ✅ Wiki 전용 글 작성/수정(`?edit={id}`). 게시판은 URL로 고정, variant/share만 문서 첨부. 저장 후 `/wiki/posts/{id}`. `/home`·`/community`로 이동하지 않음 |
@@ -2696,8 +2696,9 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### 질문
 - `GET /posts?scope=&boardType=&subjectId=&keyword=&sort=` (공개) — scope(`community` 기본 = FREE/QNA/SUBJECT, `wiki` = EXAM_REVIEW/VARIANT/MATERIAL, 그 외 400), boardType(scope 내 값, null=scope 전체, scope 밖이면 400), subjectId(`boardType=SUBJECT`일 때만 의미), keyword=제목, sort=latest|recommended(최근 N일 좋아요). → `CommunityPostListResponse[]`(postId, boardType, subjectId, boardLabel, title, author*, createdAt, answerCount, likeCount, likedByMe, likeAllowed).
 - `GET /posts/{postId}` (공개) — 숨김/미존재 404. → `CommunityPostDetailResponse`(boardType, subjectId, boardLabel, title, contentHtml, author*, like*, answers[](answerId, contentHtml, author*, createdAt), **attachments[]**(attachmentId, originalFileName, contentType, fileSize, downloadUrl) — F2R 게시판 글은 빈 배열).
-- `POST /posts` (인증) — body `{boardType, subjectId, title, contentJson, contentHtml}`. boardType 불가/누락 400, `SUBJECT`인데 subjectId 누락·미존재 과목 400. 응답 상세.
-- `PUT /posts/{postId}` (작성자, 타인 403, 숨김/미존재 404) — body 동일.
+- `POST /posts` (인증) — **JSON**(`Content-Type: application/json`) body `{boardType, subjectId, title, contentJson, contentHtml}`. boardType 불가/누락 400, `SUBJECT`인데 subjectId 누락·미존재 과목 400. 응답 상세.
+- `POST /posts` (인증) — **multipart/form-data**(`boardType, subjectId?, title, contentJson?, contentHtml?` + `files`/`files[]`) — 글 + 문서/이미지 첨부를 **한 트랜잭션에서 원자적으로** 생성한다. 첨부 검증·저장 실패 시 글까지 롤백되어 "글만 남는" 고아 글이 생기지 않는다. 첨부 규칙은 아래 `POST /posts/{postId}/attachments` 와 동일. 첨부 없는 multipart 요청도 허용(= JSON 생성과 동일 동작). Wiki 글쓰기(`/wiki/board/{key}/new`) 신규 저장 경로.
+- `PUT /posts/{postId}` (작성자, 타인 403, 숨김/미존재 404) — body 동일(JSON). 수정 화면의 새 첨부는 `POST /posts/{postId}/attachments` 로 이어서 올린다(글이 이미 존재하므로 고아 위험 없음).
 - `DELETE /posts/{postId}` (작성자/Admin soft hide, 204).
 - `POST /posts/{postId}/like` (인증 토글) — 작성 후 N일(`app.community.like-allowed-days`, 기본 30) 경과 400(count 유지), 사용자-질문당 1회(UNIQUE).
 
@@ -2711,7 +2712,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /images/{imageId}` (공개 serve). Content-Type은 업로드 시 `community_images.content_type`에 저장된 값(`image/jpeg` / `image/gif` / `image/webp`).
 
 ### 게시글 문서 첨부 (V958, `community_post_attachments`) — Wiki 변형문제·자료 공유·요청 전용
-- `POST /posts/{postId}/attachments` (인증·작성자, multipart `files`) — 게시판이 `VARIANT`/`MATERIAL`이 아니면 400, 기존 visible + 신규 > 10이면 400, `DocumentUploadValidator`(확장자 `pdf/hwp/hwpx/doc/docx/xls/xlsx/ppt/pptx/zip` + 매직바이트 + 실행파일 차단 + 20MB) 실패 400. tx 롤백 시 storage 정리. → 게시글 상세.
+- `POST /posts/{postId}/attachments` (인증·작성자, multipart `files`/`files[]`) — 게시판이 `VARIANT`/`MATERIAL`이 아니면 400, 기존 visible + 신규 > 10이면 400, `DocumentUploadValidator.validateAttachment`(확장자 **문서** `pdf/hwp/hwpx/doc/docx/xls/xlsx/ppt/pptx/zip` **+ 이미지** `jpg/jpeg/png/webp` + 매직바이트 교차검증 + 실행파일(MZ/ELF/`#!`) 차단 + 파일당 20MB) 실패 400. content_type은 확장자로 추론해 저장(이미지 = `image/jpeg|png|webp`). tx 롤백 시 storage 정리. → 게시글 상세.
 - `DELETE /attachments/{attachmentId}` (작성자 또는 ADMIN, 204) — row + storage 파일 삭제.
 - `GET /attachments/{attachmentId}/file` (공개 serve) — 글/첨부 비visible 404. `pdf`·`image`만 inline, 그 외 `application/octet-stream` + `attachment`, RFC5987 파일명, `X-Content-Type-Options: nosniff`.
 
