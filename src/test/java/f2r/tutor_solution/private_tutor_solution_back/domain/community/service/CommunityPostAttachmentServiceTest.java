@@ -121,7 +121,7 @@ class CommunityPostAttachmentServiceTest {
 
   @Test
   @DisplayName("given jpg 이름으로 위장한 실행파일(MZ) when 첨부 then 400")
-  void addAttachments_disguisedExecutable_rejected() {
+  void addAttachments_disguisedExecutable_rejected() throws Exception {
     CommunityPost post = post(1L, BoardType.VARIANT, author);
     when(postRepository.findById(1L)).thenReturn(Optional.of(post));
     when(attachmentRepository.countByPost_PostIdAndVisibleTrue(1L)).thenReturn(0L);
