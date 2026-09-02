@@ -15,6 +15,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.dto.Wi
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginalDocType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.repository.WikiExamOriginalRepository;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.UploadSizeGuard;
 import java.io.InputStream;
@@ -39,7 +40,7 @@ class WikiExamOriginalServiceTest {
     repository = mock(WikiExamOriginalRepository.class);
     fileStorage = mock(FileStorage.class);
     service = new WikiExamOriginalService(repository, fileStorage,
-        new UploadSizeGuard(20L * 1024 * 1024), 20L * 1024 * 1024);
+        new DocumentUploadValidator(new UploadSizeGuard(20L * 1024 * 1024)), 20L * 1024 * 1024);
   }
 
   @Test
@@ -67,16 +68,27 @@ class WikiExamOriginalServiceTest {
   }
 
   @Test
-  @DisplayName("given 비-PDF when 등록 then 400 + storage 미호출")
-  void create_rejectsNonPdf() throws Exception {
-    // given
-    MockMultipartFile file = new MockMultipartFile("file", "mock.hwp", "application/octet-stream", "x".getBytes());
+  @DisplayName("given HWP(문서 매직) when 원본 등록 then 400 — 원본은 PDF만 허용, storage 미호출")
+  void create_rejectsHwp() throws Exception {
+    // given: OLE2 매직을 가진 정상 HWP라도 원본 자료실은 pdf만 받는다
+    byte[] ole2 = {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};
+    MockMultipartFile file = new MockMultipartFile("file", "mock.hwp", "application/x-hwp", ole2);
 
     // when & then
     assertThatThrownBy(() -> service.create("t", 3, "2026 9월 모의고사", "QUESTION", true, file))
         .isInstanceOf(ResponseStatusException.class)
-        .hasMessageContaining("PDF");
+        .hasMessageContaining("형식");
     verify(fileStorage, never()).saveRaw(anyLong(), anyString(), any(), anyLong());
+  }
+
+  @Test
+  @DisplayName("given 확장자만 pdf, 내용은 실행파일 when 등록 then 400 — 매직 불일치")
+  void create_rejectsMagicMismatch() {
+    MockMultipartFile file = new MockMultipartFile("file", "mock.pdf", "application/pdf",
+        new byte[] {0x4D, 0x5A, 0x00, 0x00}); // MZ = PE 실행파일
+    assertThatThrownBy(() -> service.create("t", 3, "2026 9월 모의고사", "QUESTION", true, file))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("실행 파일");
   }
 
   @Test

@@ -657,13 +657,17 @@ TUTOR click
 
 누구나 들어오는 공개 위키/커뮤니티. `/problem-generator/wiki/`(로그인 전용 내신 제작 엔진)를 대체하지 않고 역할이 다르다. 2026년 9월 모의고사 중심으로 시작한다.
 
-- **허브 `/wiki`**: 상단 학년 탭 `고3`/`고2`/`고1`(grade 3/2/1). 탭을 바꾸면 (a) 모의고사 원본(`GET /api/wiki/originals?grade=`), (b) 분석 자료(`GET /api/analyzes?grade=` — 기존 공개 자료 재사용), (c) 커뮤니티 3게시판 최신글 미리보기(`GET /api/open-community/posts?scope=wiki&boardType=`)를 다시 로드한다. SSR 모델 없이 JS로 구동. 하단에 눈에 띄지 않게 `내신 Wiki 보기 → /problem-generator` 링크.
+- **허브 `/wiki`**: 상단 학년 탭 `고3`/`고2`/`고1`(grade 3/2/1). 탭을 바꾸면 (a) 모의고사 원본(`GET /api/wiki/originals?grade=`), (b) 분석 자료(`GET /api/wiki/analysis-materials?grade=`), (c) 커뮤니티 3게시판 최신글 미리보기(`GET /api/open-community/posts?scope=wiki&boardType=`)를 다시 로드한다. SSR 모델 없이 JS로 구동, `${role=='ADMIN'}`이면 자료별 "관리자 업로드" 링크. 하단에 눈에 띄지 않게 `내신 Wiki 보기 → /problem-generator` 링크.
+- **자료실 2종 — `analyzes` 절대 재사용 안 함**:
+  - **모의고사 원본**(`wiki_exam_originals` V956, `domain/wikioriginal`) — PDF 문제지/정답지. 전체 목록 `/wiki/originals`.
+  - **분석 자료**(`wiki_analysis_materials` V957, `domain/wikianalysis`) — 실제 업로드 문서(PDF/HWP/HWPX/DOC/DOCX/XLS/XLSX/PPT/PPTX/ZIP). 전체 목록 `/wiki/analysis`.
+  - 업로드는 ADMIN이 `/admin/wiki-originals` · `/admin/wiki-analysis`에서(권한은 `/api/admin/**`→ROLE_ADMIN). 파일 검증은 공용 `DocumentUploadValidator`(확장자 화이트리스트 + 매직바이트 교차검증 + 실행파일 차단 + 20MB). 저장 `FileStorage.saveRaw`(원본 UUID key), 다운로드는 저장된 `content_type` + `attachment` + `nosniff`. path traversal은 구조상 불가(다운로드는 resource id → DB의 서버 생성 storage_key 조회, URL에 경로 없음).
 - **게시판 `/wiki/board/{key}`**: `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). 목록은 `scope=wiki` 로 F2R 커뮤니티(`/community`) 전체 탭과 분리된다.
-- **글쓰기·상세**: 새 화면을 만들지 않고 기존 `/community/posts/new` · `/community/posts/{id}` 를 재사용한다. 글쓰기는 `/community/posts/new?board=EXAM_REVIEW&return=/wiki/board/review` 로 진입 — 게시판 고정 + 저장 후 `return` 경로로 복귀. 비로그인은 로그인 모달.
-- **모의고사 원본(운영자 수동)**: `/admin/wiki-originals`(ADMIN)에서 PDF 문제지/정답지를 등록 → 공개 `/wiki` 목록에 노출 → `GET /api/wiki/originals/{id}/download` 첨부 다운로드. `wiki_exam_originals` 테이블(V956), `FileStorage.saveRaw` 원본 보관.
+- **글쓰기·상세 — `/wiki` 전용 화면(스펙 §11~13)**: `/wiki/board/{key}/new`(작성/`?edit=`), `/wiki/posts/{id}`(상세). open-community API(`/api/open-community/*`)를 재사용하되 모든 호출 `redirectOnAuthError:false` — 401/403이면 로그인 모달, **`/home`·`/community`로 절대 이동하지 않는다.** 화면마다 "← BuildIt Wiki로 돌아가기"(→ `/wiki` 또는 `/wiki/board/{key}`)를 제공하며 `history.back()`에 의존하지 않는다. 저장 후 `/wiki/posts/{id}`, 수정 `/wiki/board/{key}/new?edit=`, 삭제 `/wiki/board/{key}`.
+- **게시글 문서 첨부**: `variant`/`share` 글에 PDF/HWP/HWPX/DOCX 등 첨부(작성 시 또는 상세에서 추가). `community_post_attachments`(V958), 게시글당 최대 10개·파일당 20MB. `POST /api/open-community/posts/{id}/attachments`(작성자), `DELETE /api/open-community/attachments/{id}`(작성자/ADMIN, storage 정리), `GET /api/open-community/attachments/{id}/file`(공개). `EXAM_REVIEW`(시험 후기)는 텍스트 전용.
 - **자료 요청 → 제작**: 사용자가 `share` 게시판에 요청 → 운영자가 기존 Chrome 문제 변형 Workbench로 제작 → 검수 후 무료 공개 → 요청글에 답변으로 연결. **이 과정은 이번 범위에서 자동화하지 않는다.**
 
-계약 변경: SSR view 3개(`/wiki`, `/wiki/board/{boardKey}`, `/admin/wiki-originals`) + `/api/wiki/originals*`(신규) + `GET /api/open-community/posts` 에 `scope` 파라미터. 기존 `/problem-generator/**` · `/analyzes` · `/community` 계약은 불변.
+계약 변경: SSR view 신규(`/wiki/originals`, `/wiki/analysis`, `/wiki/board/{key}/new`, `/wiki/posts/{id}`, `/admin/wiki-analysis`) + `/api/wiki/analysis-materials*`·`/api/open-community/posts/{id}/attachments`·`/attachments/{id}`·`/attachments/{id}/file`(신규) + `CommunityPostDetailResponse`에 `attachments[]` 추가. 기존 `/problem-generator/**` · `/analyzes`(ExamAnalysis) · `/community` 사용자 플로우는 불변. 마이그레이션 **V957·V958**(신규 테이블).
 
 ## 13. BUILD IT CHART — Google Educator Discovery V2
 

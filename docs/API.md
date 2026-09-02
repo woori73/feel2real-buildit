@@ -252,10 +252,14 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | `/academies/{slug}/preview` | `public/academy_layout_preview` | ✅ Academy Builder 레이아웃 기반 공개 렌더(SSR, Phase 3). `resolveLayoutSchema` block을 order대로 렌더 |
 | `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인). 목록은 `scope=community`(기본) — F2R 게시판(FREE/QNA/SUBJECT)만 |
 | `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글. wiki 게시판 글 상세도 이 화면 재사용 |
-| `/community/posts/new` | `public/community_new` | ✅ 글 작성/수정. `?board=EXAM_REVIEW\|VARIANT\|MATERIAL` + `?return=`(같은 출처 경로)면 게시판 고정 + 저장 후 그 경로로 복귀 — BuildIt Wiki 게시판 진입점 |
-| `/wiki` | `public/wiki` | ✅ 공개 BuildIt Wiki 허브. 학년 탭(고3/고2/고1)으로 분석(`/api/analyzes`)·모의고사 원본(`/api/wiki/originals`)·커뮤니티 3게시판 미리보기. SSR 모델 없음(JS 구동) |
+| `/community/posts/new` | `public/community_new` | ✅ F2R 커뮤니티(`/community`) 글 작성/수정. (구 `?board=`/`?return=` wiki 진입은 폐기 — Wiki는 전용 화면 사용) |
+| `/wiki` | `public/wiki` | ✅ 공개 BuildIt Wiki 허브. 학년 탭(고3/고2/고1)으로 모의고사 원본(`/api/wiki/originals`)·분석 자료(`/api/wiki/analysis-materials`)·커뮤니티 3게시판 미리보기. `${role=='ADMIN'}`이면 관리자 업로드 링크. SSR 모델 없음(JS 구동) |
+| `/wiki/originals`, `/wiki/analysis` | `public/wiki_originals`, `public/wiki_analysis` | ✅ 자료 전체 목록(학년 필터, 다운로드) |
 | `/wiki/board/{boardKey}` | `public/wiki_board` | ✅ Wiki 게시판별 목록. `boardKey` = `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). `/api/open-community/posts?scope=wiki` 재사용 |
+| `/wiki/board/{boardKey}/new` | `public/wiki_post_new` | ✅ Wiki 전용 글 작성/수정(`?edit={id}`). 게시판은 URL로 고정, variant/share만 문서 첨부. 저장 후 `/wiki/posts/{id}`. `/home`·`/community`로 이동하지 않음 |
+| `/wiki/posts/{postId}` | `public/wiki_post` | ✅ Wiki 전용 글 상세. 본문 + 첨부 다운로드/추가/삭제 + 답변. "← BuildIt Wiki로 돌아가기" → `/wiki`. 비-wiki 게시판 글이면 `/community/posts/{id}` 안내 |
 | `/admin/wiki-originals` | `admin/wiki_originals` | ✅ (ADMIN) 모의고사 원본 PDF 등록/수정/공개전환/삭제. 셸은 permitAll, `/api/admin/wiki/originals*` 가 ADMIN 게이트 |
+| `/admin/wiki-analysis` | `admin/wiki_analysis` | ✅ (ADMIN) 분석 자료 문서(PDF/HWP/HWPX/DOCX 등) 관리. `/api/admin/wiki/analysis-materials*` ADMIN 게이트 |
 | `/lessons` | `lesson_search` | ✅ 학생용 수업 검색 페이지 |
 | `/tutor/lessons/{lessonId}/students` | `tutor/lesson_students` | ✅ 강사용 수업별 신청자 목록 |
 | `/tutor/conversation_dashboard` | `tutor/tutor_conversation_dashboard` | ✅ 강사 소유 대화 기록 목록. 학생 `/stdt_dashboard`처럼 카드 생성/열기/이름변경/삭제만 담당하며, 생성/열기는 상세 화면으로 이동 |
@@ -2691,7 +2695,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 질문
 - `GET /posts?scope=&boardType=&subjectId=&keyword=&sort=` (공개) — scope(`community` 기본 = FREE/QNA/SUBJECT, `wiki` = EXAM_REVIEW/VARIANT/MATERIAL, 그 외 400), boardType(scope 내 값, null=scope 전체, scope 밖이면 400), subjectId(`boardType=SUBJECT`일 때만 의미), keyword=제목, sort=latest|recommended(최근 N일 좋아요). → `CommunityPostListResponse[]`(postId, boardType, subjectId, boardLabel, title, author*, createdAt, answerCount, likeCount, likedByMe, likeAllowed).
-- `GET /posts/{postId}` (공개) — 숨김/미존재 404. → `CommunityPostDetailResponse`(boardType, subjectId, boardLabel, title, contentHtml, author*, like*, answers[](answerId, contentHtml, author*, createdAt)).
+- `GET /posts/{postId}` (공개) — 숨김/미존재 404. → `CommunityPostDetailResponse`(boardType, subjectId, boardLabel, title, contentHtml, author*, like*, answers[](answerId, contentHtml, author*, createdAt), **attachments[]**(attachmentId, originalFileName, contentType, fileSize, downloadUrl) — F2R 게시판 글은 빈 배열).
 - `POST /posts` (인증) — body `{boardType, subjectId, title, contentJson, contentHtml}`. boardType 불가/누락 400, `SUBJECT`인데 subjectId 누락·미존재 과목 400. 응답 상세.
 - `PUT /posts/{postId}` (작성자, 타인 403, 숨김/미존재 404) — body 동일.
 - `DELETE /posts/{postId}` (작성자/Admin soft hide, 204).
@@ -2705,6 +2709,11 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### 본문 이미지
 - `POST /images` (인증, multipart `image`) — 재인코딩 저장(애니메이션 GIF는 GIF로 프레임 보존, 애니메이션 WebP는 WebP 원본 유지, 그 외는 JPEG) → `{imageId, url}`. 비로그인 401.
 - `GET /images/{imageId}` (공개 serve). Content-Type은 업로드 시 `community_images.content_type`에 저장된 값(`image/jpeg` / `image/gif` / `image/webp`).
+
+### 게시글 문서 첨부 (V958, `community_post_attachments`) — Wiki 변형문제·자료 공유·요청 전용
+- `POST /posts/{postId}/attachments` (인증·작성자, multipart `files`) — 게시판이 `VARIANT`/`MATERIAL`이 아니면 400, 기존 visible + 신규 > 10이면 400, `DocumentUploadValidator`(확장자 `pdf/hwp/hwpx/doc/docx/xls/xlsx/ppt/pptx/zip` + 매직바이트 + 실행파일 차단 + 20MB) 실패 400. tx 롤백 시 storage 정리. → 게시글 상세.
+- `DELETE /attachments/{attachmentId}` (작성자 또는 ADMIN, 204) — row + storage 파일 삭제.
+- `GET /attachments/{attachmentId}/file` (공개 serve) — 글/첨부 비visible 404. `pdf`·`image`만 inline, 그 외 `application/octet-stream` + `attachment`, RFC5987 파일명, `X-Content-Type-Options: nosniff`.
 
 - 관련 코드: `CommunityController`, `CommunityService`/`CommunityImageService`, `domain/community/*`(CommunityPost=질문/Answer/CommunityImage, BoardType), `CommunityProperties`(`app.community.*`). 마이그레이션: **`V914`(원본, 불변) + `V915`(Q&A 전환) + `V916`(board_type+subject_id) + `V917`(community_comments DROP — 댓글 폐기)**, 모두 in-place 업그레이드. ※ 적용된 V_파일 재작성 금지, 신규 번호로 추가.
 
@@ -2726,7 +2735,27 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `DELETE /api/admin/wiki/originals/{id}` — soft delete(deleted=true, visible=false), 204.
 - `DELETE /api/admin/wiki/originals/{id}/hard` — 물리 삭제 + storage 파일 삭제, 204.
 
-- 관련 코드: `WikiExamOriginalController`/`WikiExamOriginalService`/`WikiExamOriginalRepository`, `domain/wikioriginal/*`(WikiExamOriginal, WikiExamOriginalDocType). 마이그레이션 **`V956`**(신규 테이블).
+- 관련 코드: `WikiExamOriginalController`/`WikiExamOriginalService`/`WikiExamOriginalRepository`, `domain/wikioriginal/*`(WikiExamOriginal, WikiExamOriginalDocType). 마이그레이션 **`V956`**(신규 테이블). 업로드 검증은 공용 `DocumentUploadValidator`(원본은 `.pdf`로 좁혀 사용).
+
+## 15-2. 분석 자료 API (`/api/wiki/analysis-materials`) — 공개 BuildIt Wiki
+
+공개 `/wiki` 의 분석 자료 **문서 파일**(PDF/HWP/HWPX/DOC/DOCX/XLS/XLSX/PPT/PPTX/ZIP). `exam_analyses`(HTML 분석 콘텐츠, `/analyzes`)와 **완전히 분리** — 별도 테이블(`wiki_analysis_materials`, V957)·도메인(`domain/wikianalysis/*`). `FileStorage.saveRaw` 원본 저장, 다운로드로만 제공.
+
+**보안 경계**: `GET /api/wiki/analysis-materials`·`/analysis-materials/**` 만 permitAll. `/api/admin/wiki/analysis-materials*` 는 `/api/admin/**` → ROLE_ADMIN.
+
+### 공개
+- `GET /api/wiki/analysis-materials?grade=` — deleted=false·visible=true, grade(1~3, null=전체), 최신순. → `WikiAnalysisMaterialResponse[]`(wikiAnalysisMaterialId, title, description, schoolName, grade, year, semester, examType, subject, contentType, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
+- `GET /api/wiki/analysis-materials/{id}/download` — 공개 자료만. 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404.
+
+### 관리 (ADMIN)
+- `GET /api/admin/wiki/analysis-materials` — deleted=false 전체.
+- `POST /api/admin/wiki/analysis-materials` (multipart) — params `title, description?, schoolName?, grade(1~3), year, semester, examType, subject?(blank→"영어"), visible`, part `file`(`DocumentUploadValidator` 통과, 20MB 이내).
+- `PUT /api/admin/wiki/analysis-materials/{id}` (multipart) — `file` 선택(있으면 교체 + 이전 파일·content_type 갱신).
+- `PATCH /api/admin/wiki/analysis-materials/{id}/visibility` — body `{isVisible}`.
+- `DELETE /api/admin/wiki/analysis-materials/{id}` — soft delete, 204.
+- `DELETE /api/admin/wiki/analysis-materials/{id}/hard` — 물리 삭제 + storage 파일 삭제, 204.
+
+- 관련 코드: `WikiAnalysisMaterialController`/`Service`/`Repository`, `domain/wikianalysis/*`. 마이그레이션 **`V957`**. 공용: `infrastructure/storage/DocumentUploadValidator`, `infrastructure/web/FileDownloadResponses`.
 
 ## 16. Landing Video Admin / Public API
 

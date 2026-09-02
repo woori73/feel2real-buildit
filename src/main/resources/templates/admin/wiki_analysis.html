@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 분석 자료 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_analyzes.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('wikiAnalysis')}"></th:block>
+
+  <main class="main">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">분석 자료</h2>
+        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 분석 자료 문서(PDF/HWP/HWPX/DOCX 등)를 관리합니다.</span>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ 새 분석 자료</button>
+    </div>
+
+    <section id="materialList" class="analysis-grid" aria-live="polite">
+      <div class="empty-card">불러오는 중...</div>
+    </section>
+  </main>
+
+  <div id="materialModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <div class="modal-header">
+        <h2 id="formTitle" class="modal-title">분석 자료 등록</h2>
+        <button class="modal-close" type="button" onclick="closeModal()" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="materialForm">
+          <input id="materialId" type="hidden">
+          <div class="form-grid">
+            <div class="field full"><label for="title">제목</label><input id="title" required placeholder="신사중 3학년 1학기 기말 영어 분석"></div>
+            <div class="field full"><label for="description">설명 <span class="muted">(선택)</span></label><input id="description" placeholder="자료 요약"></div>
+            <div class="field"><label for="schoolName">학교 <span class="muted">(전국이면 비워두기)</span></label><input id="schoolName" placeholder="신사중"></div>
+            <div class="field"><label for="grade">학년</label><select id="grade"><option value="3">고3</option><option value="2">고2</option><option value="1">고1</option></select></div>
+            <div class="field"><label for="year">연도</label><input id="year" type="number" min="2000" max="2100" value="2026" required></div>
+            <div class="field"><label for="semester">학기</label><input id="semester" required placeholder="1학기"></div>
+            <div class="field"><label for="examType">시험</label><input id="examType" required placeholder="기말"></div>
+            <div class="field"><label for="subject">과목 <span class="muted">(기본 영어)</span></label><input id="subject" placeholder="영어"></div>
+            <div class="field full"><label for="file">파일 <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"></div>
+            <label class="check-row"><input id="visible" type="checkbox" checked> 공개</label>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="button" onclick="closeModal()">취소</button>
+            <button class="btn btn-primary" type="submit">저장</button>
+          </div>
+          <p id="formMessage" class="muted" style="margin-top:12px;"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_wiki_analysis.js"></script>
+</body>
+</html>

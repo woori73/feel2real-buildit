@@ -8,6 +8,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.community.entity.Co
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.repository.CommunityPostRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.entity.CommunityPostAttachment;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.repository.CommunityPostAttachmentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.entity.WikiAnalysisMaterial;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.repository.WikiAnalysisMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginalDocType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.repository.WikiExamOriginalRepository;
@@ -39,7 +43,9 @@ import org.springframework.test.context.TestPropertySource;
 class WikiPersistenceVerificationTest {
 
   @Autowired WikiExamOriginalRepository originalRepository;
+  @Autowired WikiAnalysisMaterialRepository analysisRepository;
   @Autowired CommunityPostRepository postRepository;
+  @Autowired CommunityPostAttachmentRepository attachmentRepository;
   @Autowired TestEntityManager em;
 
   private static final List<BoardType> COMMUNITY = List.of(BoardType.FREE, BoardType.QNA, BoardType.SUBJECT);
@@ -91,6 +97,57 @@ class WikiPersistenceVerificationTest {
     assertThat(postRepository.searchLatest(WIKI, BoardType.EXAM_REVIEW, null, null))
         .extracting(CommunityPost::getTitle)
         .containsExactly("9평 후기");
+  }
+
+  @Test
+  @DisplayName("WikiAnalysisMaterial: 저장 후 grade·visible·deleted 필터가 동작한다")
+  void wikiAnalysisMaterial_mapsAndFilters() {
+    analysisRepository.save(analysis("고3 분석", 3, true));
+    analysisRepository.save(analysis("고2 분석", 2, true));
+    WikiAnalysisMaterial hidden = analysisRepository.save(analysis("숨김", 3, false));
+    WikiAnalysisMaterial deleted = analysis("삭제", 3, true);
+    deleted.softDelete();
+    analysisRepository.save(deleted);
+    em.flush();
+    em.clear();
+
+    assertThat(analysisRepository.findPublicByGrade(3)).extracting(WikiAnalysisMaterial::getTitle)
+        .containsExactly("고3 분석");
+    assertThat(analysisRepository.findPublicByGrade(null)).hasSize(2);
+    assertThat(analysisRepository.findAdminList()).hasSize(3);
+    assertThat(analysisRepository.findPublicById(hidden.getWikiAnalysisMaterialId())).isEmpty();
+  }
+
+  @Test
+  @DisplayName("CommunityPostAttachment: 게시글 첨부 매핑 + post별·visible 필터")
+  void communityPostAttachment_mapsAndFilters() {
+    User author = em.persist(User.builder()
+        .loginId("att-user").password("x").name("첨부").nickname("첨부").role(Role.STUDENT).build());
+    CommunityPost post = postRepository.save(post(author, BoardType.VARIANT, "변형문제"));
+    attachmentRepository.save(attachment(post, author, "k1", true));
+    attachmentRepository.save(attachment(post, author, "k2", true));
+    attachmentRepository.save(attachment(post, author, "k3", false));
+    em.flush();
+    em.clear();
+
+    assertThat(attachmentRepository.findByPost_PostIdAndVisibleTrueOrderByAttachmentIdAsc(post.getPostId()))
+        .hasSize(2);
+    assertThat(attachmentRepository.countByPost_PostIdAndVisibleTrue(post.getPostId())).isEqualTo(2);
+  }
+
+  private WikiAnalysisMaterial analysis(String title, int grade, boolean visible) {
+    return WikiAnalysisMaterial.builder()
+        .title(title).grade(grade).year(2026).semester("1학기").examType("기말").subject("영어")
+        .contentType("application/pdf").originalFileName("f.pdf").storageKey("k/" + title)
+        .fileSize(10L).visible(visible).build();
+  }
+
+  private CommunityPostAttachment attachment(CommunityPost post, User uploader, String key, boolean visible) {
+    CommunityPostAttachment a = CommunityPostAttachment.builder()
+        .post(post).uploader(uploader).originalFileName("f.pdf").contentType("application/pdf")
+        .fileSize(4L).storageKey(key).build();
+    if (!visible) a.hide();
+    return a;
   }
 
   private WikiExamOriginal original(String title, int grade, WikiExamOriginalDocType type, boolean visible) {

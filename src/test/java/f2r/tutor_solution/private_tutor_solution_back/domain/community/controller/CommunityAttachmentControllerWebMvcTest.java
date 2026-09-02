@@ -1,0 +1,106 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.community.controller;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityImageService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentService.AttachmentFileBundle;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityService;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+@DisplayName("CommunityController 첨부 — GET file은 permitAll, add/delete는 인증·작성자")
+@WebMvcTest(controllers = CommunityController.class)
+@AutoConfigureMockMvc
+@Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
+@TestPropertySource(properties = {
+    "app.jwt.secret=12345678901234567890123456789012",
+    "app.jwt.expiration-seconds=86400",
+    "app.jwt.cookie-name=ACCESS_TOKEN",
+    "app.jwt.secure-cookie=false"
+})
+class CommunityAttachmentControllerWebMvcTest {
+
+  @Autowired MockMvc mockMvc;
+  @Autowired JwtTokenProvider tokenProvider;
+
+  @MockitoBean CommunityService communityService;
+  @MockitoBean CommunityImageService communityImageService;
+  @MockitoBean CommunityPostAttachmentService attachmentService;
+  @MockitoBean AcademyRepository academyRepository;
+
+  @BeforeEach
+  void stubs() {
+    when(attachmentService.getAttachmentFile(1L))
+        .thenReturn(new AttachmentFileBundle("PDF".getBytes(), "application/pdf", "문제.pdf"));
+  }
+
+  @Test
+  @DisplayName("given 익명 when 첨부 파일 serve then 200")
+  void serve_anonymous_ok() throws Exception {
+    mockMvc.perform(get("/api/open-community/attachments/1/file")).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("given 익명 when 첨부 등록 then 401")
+  void add_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(multipart("/api/open-community/posts/1/attachments").file("files", "%PDF".getBytes()))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("given 비작성자(403 던짐) when 첨부 등록 then 403")
+  void add_nonAuthor_forbidden() throws Exception {
+    doThrow(new AccessDeniedException("nope"))
+        .when(attachmentService).addAttachments(any(), anyLong(), any());
+    mockMvc.perform(multipart("/api/open-community/posts/1/attachments").file("files", "%PDF".getBytes())
+            .cookie(token("STUDENT")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("given 로그인 when 첨부 등록 then 200")
+  void add_authenticated_ok() throws Exception {
+    mockMvc.perform(multipart("/api/open-community/posts/1/attachments").file("files", "%PDF".getBytes())
+            .cookie(token("STUDENT")))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("given 로그인 when 첨부 삭제 then 204")
+  void delete_authenticated_noContent() throws Exception {
+    mockMvc.perform(delete("/api/open-community/attachments/1").cookie(token("STUDENT")))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  @DisplayName("given 익명 when 첨부 삭제 then 401")
+  void delete_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(delete("/api/open-community/attachments/1")).andExpect(status().isUnauthorized());
+  }
+
+  private Cookie token(String role) {
+    return new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "test-" + role.toLowerCase(), role));
+  }
+}

@@ -1,8 +1,9 @@
 /**
  * 공개 BuildIt Wiki 허브(/wiki).
- * - 학년 탭(고3/고2/고1)으로 분석·원본을 필터
+ * - 학년 탭(고3/고2/고1)으로 모의고사 원본·분석 자료를 필터
  * - 커뮤니티 3개 게시판(시험 후기 / 변형문제 / 자료 공유·요청) 최신글 미리보기
- * - 게시판 글쓰기는 로그인 게이트 후 기존 /community/posts/new 재사용(scope=wiki)
+ * - 자료는 새 Wiki 자료실 시스템(/api/wiki/originals, /api/wiki/analysis-materials) — /analyzes 재사용 안 함
+ * - 게시판 글쓰기/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id})
  */
 (function () {
   var grade = 3;
@@ -30,10 +31,7 @@
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
-      var board = btn.dataset.board;
-      var key = btn.dataset.key;
-      location.href = '/community/posts/new?board=' + encodeURIComponent(board)
-        + '&return=' + encodeURIComponent('/wiki/board/' + key);
+      location.href = '/wiki/board/' + encodeURIComponent(btn.dataset.key) + '/new';
     });
   });
 
@@ -52,7 +50,7 @@
     try {
       var res = await fetch('/api/wiki/originals?grade=' + grade);
       if (!res.ok) throw new Error();
-      var items = await res.json();
+      var items = (await res.json()).slice(0, 6);
       if (!items.length) {
         box.innerHTML = '<p class="muted">아직 등록된 원본이 없습니다. 준비되는 대로 이곳에 올라옵니다.</p>';
         return;
@@ -61,7 +59,7 @@
         return '<a class="file-card" href="' + escapeAttr(it.downloadUrl) + '">'
           + '<span class="file-badge">' + escapeHtml(it.docTypeLabel) + '</span>'
           + '<b>' + escapeHtml(it.title) + '</b>'
-          + '<span class="file-meta">' + escapeHtml(it.examLabel) + ' · 고' + it.grade + ' · PDF</span>'
+          + '<span class="file-meta">' + escapeHtml(it.examLabel) + ' · 고' + it.grade + ' · ' + fileMeta(it) + '</span>'
           + '<span class="file-dl">내려받기 ↓</span>'
           + '</a>';
       }).join('');
@@ -74,7 +72,7 @@
     var box = document.getElementById('analysisList');
     box.innerHTML = '<p class="muted">불러오는 중...</p>';
     try {
-      var res = await fetch('/api/analyzes?grade=' + grade);
+      var res = await fetch('/api/wiki/analysis-materials?grade=' + grade);
       if (!res.ok) throw new Error();
       var items = (await res.json()).slice(0, 6);
       if (!items.length) {
@@ -82,11 +80,11 @@
         return;
       }
       box.innerHTML = items.map(function (it) {
-        return '<a class="analysis-card" href="' + escapeAttr(it.detailUrl) + '">'
+        var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
+        return '<a class="analysis-card" href="' + escapeAttr(it.downloadUrl) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
-          + '<span class="analysis-meta">' + escapeHtml(it.schoolName) + ' · ' + it.grade + '학년 · '
-          + escapeHtml(it.semester) + ' · ' + escapeHtml(it.examType) + '</span>'
-          + '<span class="analysis-badge">' + escapeHtml((it.subject && (it.subject.nameKo || it.subject.nameEn)) || '영어') + '</span>'
+          + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
+          + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + ' · ' + fileMeta(it) + '</span>'
           + '</a>';
       }).join('');
     } catch (_) {
@@ -95,9 +93,7 @@
   }
 
   function loadBoards() {
-    document.querySelectorAll('.board-col').forEach(function (col) {
-      loadBoard(col);
-    });
+    document.querySelectorAll('.board-col').forEach(loadBoard);
   }
 
   async function loadBoard(col) {
@@ -107,15 +103,15 @@
     try {
       var res = await fetch('/api/open-community/posts?scope=wiki&boardType=' + encodeURIComponent(board) + '&sort=latest');
       if (!res.ok) throw new Error();
-      var posts = (await res.json()).slice(0, 4);
+      var posts = (await res.json()).slice(0, 5);
       if (!posts.length) {
         list.innerHTML = '<p class="muted">아직 글이 없어요. 첫 글을 남겨보세요.</p>';
         return;
       }
       list.innerHTML = posts.map(function (p) {
-        return '<a class="post-row" href="/community/posts/' + p.postId + '">'
+        return '<a class="post-row" href="/wiki/posts/' + p.postId + '">'
           + '<span class="post-title">' + escapeHtml(p.title) + '</span>'
-          + '<span class="post-sub">' + escapeHtml(p.authorName) + ' · 답변 ' + Number(p.answerCount || 0) + '</span>'
+          + '<span class="post-sub">' + fmtDay(p.createdAt) + ' · ' + escapeHtml(p.authorName) + '</span>'
           + '</a>';
       }).join('');
     } catch (_) {
@@ -123,7 +119,17 @@
     }
   }
 
+  function fileMeta(it) {
+    var ext = (it.originalFileName || '').split('.').pop().toUpperCase();
+    var mb = it.fileSize ? (it.fileSize / (1024 * 1024)).toFixed(1) + 'MB' : '';
+    return [ext, mb].filter(Boolean).join(' · ');
+  }
   function readUser() { try { return JSON.parse(sessionStorage.getItem('currentUser')); } catch (_) { return null; } }
+  function fmtDay(v) {
+    if (!v) return '';
+    var d = new Date(v);
+    return (d.getMonth() + 1).toString().padStart(2, '0') + '.' + d.getDate().toString().padStart(2, '0');
+  }
   function escapeHtml(v) {
     return String(v || '').replace(/[&<>'"]/g, function (c) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c];

@@ -46,6 +46,7 @@ class CommunityServiceTest {
   private SubjectRepository subjectRepository;
   private AuthenticatedUserResolver authResolver;
   private AcademyBlogSanitizer sanitizer;
+  private CommunityPostAttachmentService attachmentService;
   private CommunityService service;
 
   private User author, other, admin;
@@ -60,8 +61,11 @@ class CommunityServiceTest {
     subjectRepository = mock(SubjectRepository.class);
     authResolver = mock(AuthenticatedUserResolver.class);
     sanitizer = mock(AcademyBlogSanitizer.class);
+    attachmentService = mock(CommunityPostAttachmentService.class);
     service = new CommunityService(postRepository, answerRepository, likeRepository,
-        userRepository, subjectRepository, authResolver, new CommunityProperties(30, 7), sanitizer);
+        userRepository, subjectRepository, authResolver, new CommunityProperties(30, 7), sanitizer,
+        attachmentService);
+    lenient().when(attachmentService.listForPost(anyLong())).thenReturn(List.of());
 
     author = user(10L, "author", Role.STUDENT);
     other = user(20L, "other", Role.STUDENT);
@@ -303,6 +307,19 @@ class CommunityServiceTest {
     when(postRepository.findVisibleDetailById(1L)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> service.detail(1L))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("404");
+  }
+
+  @Test @DisplayName("상세: 첨부 서비스에 위임하고 응답에 attachments를 담는다")
+  void detail_includesAttachments() {
+    CommunityPost p = post(1L, author, LocalDateTime.now());
+    when(postRepository.findVisibleDetailById(1L)).thenReturn(Optional.of(p));
+    when(likeRepository.countByPost_PostId(1L)).thenReturn(0L);
+    when(attachmentService.listForPost(1L)).thenReturn(List.of());
+
+    var result = service.detail(1L);
+
+    assertThat(result.attachments()).isEmpty();
+    verify(attachmentService).listForPost(1L);
   }
 
   @Test @DisplayName("목록: sort=recommended는 추천 쿼리, boardType enum 전달")

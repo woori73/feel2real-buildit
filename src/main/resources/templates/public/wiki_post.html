@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>글 · BuildIt Wiki</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-1">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki"><b>BuildIt</b><span>Wiki</span></a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap detail-page">
+    <a class="back-link" href="/wiki">← BuildIt Wiki로 돌아가기</a>
+    <nav class="breadcrumb" id="crumb" hidden>
+      <a href="/wiki">BuildIt Wiki</a> <span>›</span> <a id="crumbBoard" href="/wiki">게시판</a>
+    </nav>
+
+    <article id="postDetail" aria-live="polite">
+      <p class="muted">불러오는 중...</p>
+    </article>
+
+    <section id="answersSection" class="answers-section" hidden>
+      <div class="answers-title" id="answersTitle">답변</div>
+      <div id="answersList"></div>
+
+      <div id="answerComposeWrap" hidden>
+        <div class="field" style="margin-top:16px;">
+          <label>답변 작성</label>
+          <div class="editor-toolbar" id="answerToolbar">
+            <button type="button" data-cmd="bold"><b>B</b></button>
+            <button type="button" data-cmd="italic"><i>I</i></button>
+            <button type="button" data-cmd="bulletList">•</button>
+            <button type="button" data-cmd="code">&lt;/&gt;</button>
+            <button type="button" data-cmd="link">🔗</button>
+          </div>
+          <div class="editor-box"><div id="answerEditor"></div></div>
+        </div>
+        <button type="button" id="submitAnswer" class="btn-primary">답변 등록</button>
+      </div>
+      <p id="answerLoginHint" class="login-hint" hidden>답변은 로그인 후 작성할 수 있어요.</p>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script type="module" src="/js/wiki_post.js?v=20260903-1"></script>
+</th:block>
+</body>
+</html>

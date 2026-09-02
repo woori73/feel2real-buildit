@@ -58,6 +58,7 @@ public class CommunityService {
   private final AuthenticatedUserResolver authResolver;
   private final CommunityProperties properties;
   private final AcademyBlogSanitizer sanitizer;
+  private final CommunityPostAttachmentService attachmentService;
 
   /* ── read (anyopen) ─────────────────────────────────────── */
 
@@ -103,7 +104,8 @@ public class CommunityService {
         likedByMe(postId),
         isLikeAllowed(post),
         likeAllowedUntil(post),
-        answerResponses);
+        answerResponses,
+        attachmentService.listForPost(postId));
   }
 
   /* ── question write ─────────────────────────────────────── */

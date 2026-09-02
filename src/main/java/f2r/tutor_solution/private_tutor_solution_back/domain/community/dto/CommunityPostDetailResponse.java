@@ -22,10 +22,12 @@ public record CommunityPostDetailResponse(
     boolean likedByMe,
     boolean likeAllowed,
     LocalDateTime likeAllowedUntil,
-    List<AnswerResponse> answers) {
+    List<AnswerResponse> answers,
+    List<CommunityAttachmentResponse> attachments) {
 
   public static CommunityPostDetailResponse of(CommunityPost p, long likeCount, boolean likedByMe,
-      boolean likeAllowed, LocalDateTime likeAllowedUntil, List<AnswerResponse> answers) {
+      boolean likeAllowed, LocalDateTime likeAllowedUntil, List<AnswerResponse> answers,
+      List<CommunityAttachmentResponse> attachments) {
     Subject s = p.getSubject();
     return new CommunityPostDetailResponse(
         p.getPostId(),
@@ -42,6 +44,7 @@ public record CommunityPostDetailResponse(
         likedByMe,
         likeAllowed,
         likeAllowedUntil,
-        answers);
+        answers,
+        attachments);
   }
 }
