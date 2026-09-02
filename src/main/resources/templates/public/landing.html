@@ -6,9 +6,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Build It | 원장과 강사가 브랜드가 되는 시대</title>
-  <meta name="description" content="당신의 이름을 브랜드로 만드는 플랫폼, Build It. Build It Web, Shorts, Report, Wiki.">
+  <meta name="description" content="당신의 이름을 브랜드로 만드는 플랫폼, Build It. Build It Wiki, Web, Chart, Report, Shorts.">
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/landing_buildit.css?v=20260829-3">
+  <link rel="stylesheet" href="/css/landing_buildit.css?v=20260902-1">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -78,111 +78,12 @@
       </svg>
     </div>
     <div class="fm-row">
-      <span class="hi">Build Your Brand</span><span>Homepage</span><span>Shorts</span><span>Report</span><span>Wiki</span><span>Digital Twin</span>
-      <span class="hi">Build Your Brand</span><span>Homepage</span><span>Shorts</span><span>Report</span><span>Wiki</span><span>Digital Twin</span>
+      <span class="hi">Build Your Brand</span><span>Wiki</span><span>Web</span><span>Chart</span><span>Report</span><span>Shorts</span>
+      <span class="hi">Build Your Brand</span><span>Wiki</span><span>Web</span><span>Chart</span><span>Report</span><span>Shorts</span>
     </div>
   </section>
 
-  <!-- ============ 4. Build It Chart ============ -->
-  <section class="chart-showcase" id="chart-showcase">
-    <h2 class="chart-title"><span>Build</span><span class="chart-it">It</span> <span class="chart-muted">Chart</span></h2>
-    <p class="chart-headline">전국의 색깔 있는 영어교육자를 발견합니다.</p>
-    <p class="chart-sub"><strong>교육철학·커리큘럼·수업 노하우를 실제 데이터로 기록하고,<br>
-      AI가 인간 영어교육자의 지능을 배우게 합니다.</strong></p>
-
-    <p class="chart-picker-note">전국에서 발견한 교육자 보기</p>
-    <form class="chart-region-picker" id="chartRegionPicker" autocomplete="off">
-      <label class="visually-hidden" for="chartProvince">시·도</label>
-      <select id="chartProvince"><option value="">시·도 선택</option></select>
-      <label class="visually-hidden" for="chartDistrict">시·군·구</label>
-      <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
-      <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
-      <button type="submit">색깔 있는 영어쌤 보기</button>
-    </form>
-
-    <div class="chart-phone" aria-label="BuildIt Chart 모바일 미리보기">
-      <div class="chart-island" aria-hidden="true"></div>
-      <div class="chart-screen">
-        <div class="chart-hero-card">
-          <div class="chart-tiny">NATIONWIDE EDUCATOR LIVING ARCHIVE</div>
-          <div class="chart-phone-brand">BUILD<span class="chart-it">It</span> <span>CHART</span></div>
-          <div class="chart-top">전국의 지역 교육자를 <mark>지속 발굴</mark></div>
-        </div>
-        <div class="chart-list-title">BuildIt TOP 5 <span id="landingChartDate"></span></div>
-        <div id="landingChartTop5"><div class="chart-row"><div class="chart-meta">전국 Chart를 불러오는 중입니다.</div></div></div>
-        <div class="chart-fade" aria-hidden="true"></div>
-        <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
-      </div>
-    </div>
-
-    <div class="chart-vision">
-      <ol class="chart-vision-flow">
-        <li><b>CHART</b><span>발견</span></li>
-        <li><b>WIKI</b><span>축적</span></li>
-        <li><b>AI</b><span>학습·연결</span></li>
-        <li><b>SUPERBRAIN</b><span>교육지능</span></li>
-      </ol>
-      <p class="chart-vision-foot">축적된 지능은 AI Agent와 Physical AI가<br>
-        교육 현장을 돕는 Brain으로 발전합니다.</p>
-    </div>
-  </section>
-  <script src="/js/landing_chart.js?v=20260828-2" defer></script>
-
-  <!-- ============ 5. Build It Web ============ -->
-  <section class="builder" id="web">
-    <div class="brand-glow soft" aria-hidden="true"></div>
-    <div class="builder-pin">
-      <div class="builder-text reveal" data-fade>
-        <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Web</span></h2>
-        <p>학원 홈페이지 제작부터 학생 모집까지.</p>
-      </div>
-      <div class="builder-video-wrap">
-        <div class="web-video-card">
-          <div class="web-video-bar" aria-hidden="true"><span></span><span></span><span></span></div>
-          <video class="web-video"
-                 src="/manual/videos/02_homepage_setup.mp4"
-                 muted loop autoplay playsinline preload="metadata"
-                 aria-label="Build It Web 홈페이지 제작 예시"></video>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 6. Build It Shorts ============ -->
-  <section class="product-solo" id="shorts" style="background:var(--bg);">
-    <div class="brand-glow soft" aria-hidden="true"></div>
-    <div class="reveal" data-fade>
-      <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Shorts</span></h2>
-      <p>AI 홍보 쇼츠를 쉽고 빠르게 제작합니다.</p>
-    </div>
-    <div class="phone phone-lg reveal" data-fade>
-      <div class="phone-screen">
-        <video th:if="${academyShortsVideo.visible}" class="phone-video"
-               src="/video/landing/academy-shorts-demo.mp4" th:src="${academyShortsVideo.sourceUrl}"
-               muted loop autoplay playsinline preload="metadata" aria-label="Build It Shorts 예시 영상"></video>
-        <div th:unless="${academyShortsVideo.visible}" class="video-ready" role="img" aria-label="Build It Shorts 예시 영상 준비 중"><div class="vr-play"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#fff" fill-opacity=".7"/></svg></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 7. Build It Report ============ -->
-  <section class="product-solo" id="report" style="background:var(--bg-soft);">
-    <div class="brand-glow soft" aria-hidden="true"></div>
-    <div class="reveal" data-fade>
-      <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Report</span></h2>
-      <p>학생 성장 리포트를 학부모에게 전달합니다.</p>
-    </div>
-    <div class="phone phone-lg reveal" data-fade>
-      <div class="phone-screen">
-        <video th:if="${parentReportVideo.visible}" class="phone-video"
-               src="/video/landing/parent-report-demo.mp4" th:src="${parentReportVideo.sourceUrl}"
-               muted loop autoplay playsinline preload="metadata" aria-label="Build It Report 예시 영상"></video>
-        <div th:unless="${parentReportVideo.visible}" class="video-ready" role="img" aria-label="Build It Report 예시 영상 준비 중"><div class="vr-play"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#fff" fill-opacity=".7"/></svg></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 8. Build It Wiki ============ -->
+  <!-- ============ 3. Build It Wiki ============ -->
   <section class="wiki" id="wiki">
     <div class="wiki-pin">
       <div class="wiki-top reveal" data-fade>
@@ -233,7 +134,106 @@
     </div>
   </section>
 
-  <!-- ============ 9. 문의 ============ -->
+  <!-- ============ 4. Build It Web ============ -->
+  <section class="builder" id="web">
+    <div class="brand-glow soft" aria-hidden="true"></div>
+    <div class="builder-pin">
+      <div class="builder-text reveal" data-fade>
+        <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Web</span></h2>
+        <p>학원 홈페이지 제작부터 학생 모집까지.</p>
+      </div>
+      <div class="builder-video-wrap">
+        <div class="web-video-card">
+          <div class="web-video-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+          <video class="web-video"
+                 src="/manual/videos/02_homepage_setup.mp4"
+                 muted loop autoplay playsinline preload="metadata"
+                 aria-label="Build It Web 홈페이지 제작 예시"></video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. Build It Chart ============ -->
+  <section class="chart-showcase" id="chart-showcase">
+    <h2 class="chart-title"><span>Build</span><span class="chart-it">It</span> <span class="chart-muted">Chart</span></h2>
+    <p class="chart-headline">전국의 색깔 있는 영어교육자를 발견합니다.</p>
+    <p class="chart-sub"><strong>교육철학·커리큘럼·수업 노하우를 실제 데이터로 기록하고,<br>
+      AI가 인간 영어교육자의 지능을 배우게 합니다.</strong></p>
+
+    <p class="chart-picker-note">전국에서 발견한 교육자 보기</p>
+    <form class="chart-region-picker" id="chartRegionPicker" autocomplete="off">
+      <label class="visually-hidden" for="chartProvince">시·도</label>
+      <select id="chartProvince"><option value="">시·도 선택</option></select>
+      <label class="visually-hidden" for="chartDistrict">시·군·구</label>
+      <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
+      <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
+      <button type="submit">색깔 있는 영어쌤 보기</button>
+    </form>
+
+    <div class="chart-phone" aria-label="BuildIt Chart 모바일 미리보기">
+      <div class="chart-island" aria-hidden="true"></div>
+      <div class="chart-screen">
+        <div class="chart-hero-card">
+          <div class="chart-tiny">NATIONWIDE EDUCATOR LIVING ARCHIVE</div>
+          <div class="chart-phone-brand">BUILD<span class="chart-it">It</span> <span>CHART</span></div>
+          <div class="chart-top">전국의 지역 교육자를 <mark>지속 발굴</mark></div>
+        </div>
+        <div class="chart-list-title">BuildIt TOP 5 <span id="landingChartDate"></span></div>
+        <div id="landingChartTop5"><div class="chart-row"><div class="chart-meta">전국 Chart를 불러오는 중입니다.</div></div></div>
+        <div class="chart-fade" aria-hidden="true"></div>
+        <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
+      </div>
+    </div>
+
+    <div class="chart-vision">
+      <ol class="chart-vision-flow">
+        <li><b>CHART</b><span>발견</span></li>
+        <li><b>WIKI</b><span>축적</span></li>
+        <li><b>AI</b><span>학습·연결</span></li>
+        <li><b>SUPERBRAIN</b><span>교육지능</span></li>
+      </ol>
+      <p class="chart-vision-foot">축적된 지능은 AI Agent와 Physical AI가<br>
+        교육 현장을 돕는 Brain으로 발전합니다.</p>
+    </div>
+  </section>
+  <script src="/js/landing_chart.js?v=20260828-2" defer></script>
+
+  <!-- ============ 6. Build It Report ============ -->
+  <section class="product-solo" id="report" style="background:var(--bg-soft);">
+    <div class="brand-glow soft" aria-hidden="true"></div>
+    <div class="reveal" data-fade>
+      <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Report</span></h2>
+      <p>학생 성장 리포트를 학부모에게 전달합니다.</p>
+    </div>
+    <div class="phone phone-lg reveal" data-fade>
+      <div class="phone-screen">
+        <video th:if="${parentReportVideo.visible}" class="phone-video"
+               src="/video/landing/parent-report-demo.mp4" th:src="${parentReportVideo.sourceUrl}"
+               muted loop autoplay playsinline preload="metadata" aria-label="Build It Report 예시 영상"></video>
+        <div th:unless="${parentReportVideo.visible}" class="video-ready" role="img" aria-label="Build It Report 예시 영상 준비 중"><div class="vr-play"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#fff" fill-opacity=".7"/></svg></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 7. Build It Shorts ============ -->
+  <section class="product-solo" id="shorts" style="background:var(--bg);">
+    <div class="brand-glow soft" aria-hidden="true"></div>
+    <div class="reveal" data-fade>
+      <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Shorts</span></h2>
+      <p>AI 홍보 쇼츠를 쉽고 빠르게 제작합니다.</p>
+    </div>
+    <div class="phone phone-lg reveal" data-fade>
+      <div class="phone-screen">
+        <video th:if="${academyShortsVideo.visible}" class="phone-video"
+               src="/video/landing/academy-shorts-demo.mp4" th:src="${academyShortsVideo.sourceUrl}"
+               muted loop autoplay playsinline preload="metadata" aria-label="Build It Shorts 예시 영상"></video>
+        <div th:unless="${academyShortsVideo.visible}" class="video-ready" role="img" aria-label="Build It Shorts 예시 영상 준비 중"><div class="vr-play"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#fff" fill-opacity=".7"/></svg></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8. 문의 ============ -->
   <section class="cta-mini" id="cta">
     <div class="brand-glow" aria-hidden="true"></div>
     <p class="reveal" data-fade>이제, 당신의 브랜드를 만들 시간입니다</p>
