@@ -104,7 +104,7 @@
     fd.set('examLabel', [year, exam].filter(Boolean).join(' '));
     fd.set('visible', 'true');
     var file = form.querySelector('[name="file"]').files[0];
-    if (!file) { msg(form, 'PDF 파일을 선택해주세요.', true); return null; }
+    if (!file) { msg(form, '파일(PDF·HWP·HWPX)을 선택해주세요.', true); return null; }
     fd.set('file', file);
     return fd;
   }

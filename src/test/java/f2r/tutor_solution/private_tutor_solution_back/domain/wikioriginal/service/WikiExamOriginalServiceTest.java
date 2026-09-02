@@ -68,13 +68,29 @@ class WikiExamOriginalServiceTest {
   }
 
   @Test
-  @DisplayName("given HWP(문서 매직) when 원본 등록 then 400 — 원본은 PDF만 허용, storage 미호출")
-  void create_rejectsHwp() throws Exception {
-    // given: OLE2 매직을 가진 정상 HWP라도 원본 자료실은 pdf만 받는다
+  @DisplayName("given HWP(OLE2 매직) when 원본 등록 then 저장 — 원본은 PDF·HWP·HWPX 허용")
+  void create_acceptsHwp() throws Exception {
     byte[] ole2 = {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};
     MockMultipartFile file = new MockMultipartFile("file", "mock.hwp", "application/x-hwp", ole2);
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("k");
+    when(repository.save(any(WikiExamOriginal.class))).thenAnswer(inv -> {
+      WikiExamOriginal saved = inv.getArgument(0);
+      ReflectionTestUtils.setField(saved, "wikiExamOriginalId", 9L);
+      return saved;
+    });
 
-    // when & then
+    WikiExamOriginalResponse res = service.create("고3 9월 정답지", 3, "2026 9월 모의고사", "ANSWER", true, file);
+
+    assertThat(res.wikiExamOriginalId()).isEqualTo(9L);
+    verify(fileStorage).saveRaw(anyLong(), anyString(), any(), anyLong());
+  }
+
+  @Test
+  @DisplayName("given XLSX(원본 성격 아님) when 원본 등록 then 400 — 원본은 PDF/HWP/HWPX만")
+  void create_rejectsNonOriginalDoc() throws Exception {
+    byte[] zip = {0x50, 0x4B, 0x03, 0x04, 0x14};
+    MockMultipartFile file = new MockMultipartFile("file", "mock.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", zip);
     assertThatThrownBy(() -> service.create("t", 3, "2026 9월 모의고사", "QUESTION", true, file))
         .isInstanceOf(ResponseStatusException.class)
         .hasMessageContaining("형식");

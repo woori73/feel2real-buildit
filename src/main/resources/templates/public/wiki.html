@@ -8,7 +8,7 @@
   <title>BuildIt Wiki · 함께 나누고, AI와 함께 발전시킵니다</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
-  <link rel="stylesheet" href="/css/wiki.css?v=20260903-2">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-3">
 </head>
 <body class="wiki-body">
 <th:block layout:fragment="content">
@@ -19,6 +19,7 @@
     </a>
     <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
     <div class="spacer"></div>
+    <a class="wiki-home-link" href="/">BuildIt 홈</a>
     <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
   </header>
 
@@ -39,7 +40,7 @@
       <div class="block-head">
         <h2>모의고사 원본</h2>
         <div class="block-actions">
-          <button th:if="${role == 'ADMIN'}" type="button" class="upload-link" id="btnUploadOriginal">＋ 원본 업로드</button>
+          <button th:if="${wikiAdmin}" type="button" class="upload-link" id="btnUploadOriginal">＋ 원본 업로드</button>
           <a class="more-link" href="/wiki/originals">전체 보기 →</a>
         </div>
       </div>
@@ -50,7 +51,7 @@
       <div class="block-head">
         <h2>분석 자료</h2>
         <div class="block-actions">
-          <button th:if="${role == 'ADMIN'}" type="button" class="upload-link" id="btnUploadAnalysis">＋ 분석 자료 업로드</button>
+          <button th:if="${wikiAdmin}" type="button" class="upload-link" id="btnUploadAnalysis">＋ 분석 자료 업로드</button>
           <a class="more-link" href="/wiki/analysis">전체 보기 →</a>
         </div>
       </div>
@@ -95,7 +96,7 @@
   </main>
 
   <!-- 관리자 전용 업로드 UI — 서버 authenticated principal(role) 기준 렌더. API도 /api/admin/** → ROLE_ADMIN 게이트. -->
-  <div th:if="${role == 'ADMIN'}" id="wikiUploadModal" class="wiki-upload-backdrop" aria-hidden="true">
+  <div th:if="${wikiAdmin}" id="wikiUploadModal" class="wiki-upload-backdrop" aria-hidden="true">
     <div class="wiki-upload-dialog" role="dialog" aria-modal="true" aria-labelledby="wikiUploadTitle">
       <div class="wiki-upload-head">
         <h3 id="wikiUploadTitle">원본 업로드</h3>
@@ -113,7 +114,8 @@
           </label>
           <label class="uf">연도<input type="number" name="year" min="2000" max="2100" value="2026" required></label>
           <label class="uf">시험<input type="text" name="exam" value="9월 모의고사" required></label>
-          <label class="uf uf-full">PDF 파일<input type="file" name="file" accept=".pdf,application/pdf" required></label>
+          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX)</span><input type="file" name="file"
+                 accept=".pdf,.hwp,.hwpx,application/pdf" required></label>
         </div>
         <p class="uf-msg" data-upload-msg></p>
         <div class="uf-actions">
@@ -148,8 +150,8 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/wiki.js?v=20260903-2"></script>
-  <script th:if="${role == 'ADMIN'}" src="/js/wiki_admin_upload.js?v=20260903-2"></script>
+  <script src="/js/wiki.js?v=20260903-3"></script>
+  <script th:if="${wikiAdmin}" src="/js/wiki_admin_upload.js?v=20260903-3"></script>
 </th:block>
 </body>
 </html>

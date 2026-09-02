@@ -167,12 +167,16 @@ public class CommunityController {
     return ResponseEntity.noContent().build();
   }
 
-  /** 공개 serve. SecurityConfig에서 GET /api/open-community/attachments/** permitAll. */
+  /**
+   * 공개 다운로드. SecurityConfig에서 GET /api/open-community/attachments/** permitAll.
+   * [내려받기] 버튼이므로 파일 종류(이미지·PDF 포함)와 무관하게 항상 {@code Content-Disposition: attachment}
+   * 로 강제한다 — 브라우저가 이미지/PDF를 화면에 펼치지 않고 실제로 내려받게.
+   */
   @GetMapping("/attachments/{attachmentId}/file")
   public ResponseEntity<byte[]> getAttachment(@PathVariable Long attachmentId) {
     CommunityPostAttachmentService.AttachmentFileBundle bundle =
         communityPostAttachmentService.getAttachmentFile(attachmentId);
-    return FileDownloadResponses.serve(bundle.bytes(), bundle.contentType(), bundle.filename());
+    return FileDownloadResponses.attachment(bundle.bytes(), bundle.contentType(), bundle.filename());
   }
 
   private List<MultipartFile> mergeFiles(List<MultipartFile> files, List<MultipartFile> bracketFiles) {

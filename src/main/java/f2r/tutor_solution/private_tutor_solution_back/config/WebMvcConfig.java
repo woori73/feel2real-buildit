@@ -59,12 +59,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/academies/{slug}", "public/academy_public");
         view(registry, "/analyzes", "public/analyzes");
         view(registry, "/analyzes/{id}", "public/analyze_detail");
-        view(registry, "/wiki", "public/wiki");
+        // /wiki, /wiki/originals, /wiki/analysis 는 관리자 업로드 UI를 서버에서 조건부 렌더해야 해서
+        // WikiPageController(@Controller + @AuthenticationPrincipal)가 담당한다. 나머지는 role 불필요.
         view(registry, "/wiki/board/{boardKey}", "public/wiki_board");
         view(registry, "/wiki/board/{boardKey}/new", "public/wiki_post_new");
         view(registry, "/wiki/posts/{postId}", "public/wiki_post");
-        view(registry, "/wiki/originals", "public/wiki_originals");
-        view(registry, "/wiki/analysis", "public/wiki_analysis");
         view(registry, "/academies/{slug}/posts", "public/academy_blog_posts");
         view(registry, "/academies/{slug}/posts/{postSlug}", "public/academy_blog_post");
         view(registry, "/lessons", "public/lesson_search");

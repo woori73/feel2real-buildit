@@ -66,6 +66,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.controller.WikiAnalysisMaterialControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.controller.CommunityAttachmentControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wiki.controller.WikiPageControllerRenderTest"
 
       - name: Upload test report
         if: always()

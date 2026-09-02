@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
@@ -54,12 +55,44 @@ class CommunityAttachmentControllerWebMvcTest {
   void stubs() {
     when(attachmentService.getAttachmentFile(1L))
         .thenReturn(new AttachmentFileBundle("PDF".getBytes(), "application/pdf", "문제.pdf"));
+    when(attachmentService.getAttachmentFile(2L))
+        .thenReturn(new AttachmentFileBundle(new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF},
+            "image/jpeg", "5과 영영단어.jpg"));
   }
 
   @Test
-  @DisplayName("given 익명 when 첨부 파일 serve then 200")
-  void serve_anonymous_ok() throws Exception {
-    mockMvc.perform(get("/api/open-community/attachments/1/file")).andExpect(status().isOk());
+  @DisplayName("given 익명 when PDF 첨부 다운로드 then 200 + Content-Disposition: attachment + 파일명 보존")
+  void download_pdf_forcesAttachment() throws Exception {
+    mockMvc.perform(get("/api/open-community/attachments/1/file"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Type", "application/pdf"))
+        .andExpect(header().string("Content-Disposition",
+            org.hamcrest.Matchers.allOf(
+                org.hamcrest.Matchers.startsWith("attachment"),
+                org.hamcrest.Matchers.containsString("filename*=UTF-8''"),
+                org.hamcrest.Matchers.containsString(".pdf"))));
+  }
+
+  @Test
+  @DisplayName("given 익명 when JPG 첨부 다운로드 then image/jpeg + attachment (브라우저 뷰어 X) + 한글 파일명")
+  void download_jpg_forcesAttachmentNotInline() throws Exception {
+    mockMvc.perform(get("/api/open-community/attachments/2/file"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Type", "image/jpeg"))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+        .andExpect(header().string("Content-Disposition",
+            org.hamcrest.Matchers.allOf(
+                org.hamcrest.Matchers.startsWith("attachment"),
+                org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("inline")))));
+  }
+
+  @Test
+  @DisplayName("given 없는 첨부 when 다운로드 then 404")
+  void download_missing_notFound() throws Exception {
+    when(attachmentService.getAttachmentFile(999L)).thenThrow(
+        new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.NOT_FOUND, "no"));
+    mockMvc.perform(get("/api/open-community/attachments/999/file")).andExpect(status().isNotFound());
   }
 
   @Test

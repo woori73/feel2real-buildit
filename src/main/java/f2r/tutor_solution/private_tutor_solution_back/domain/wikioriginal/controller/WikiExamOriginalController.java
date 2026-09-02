@@ -4,11 +4,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admin.dto.AdminVisi
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.dto.WikiExamOriginalResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.service.WikiExamOriginalService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.service.WikiExamOriginalService.DownloadFile;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,11 +29,9 @@ public class WikiExamOriginalController {
   @GetMapping("/api/wiki/originals/{id}/download")
   public ResponseEntity<byte[]> download(@PathVariable Long id) {
     DownloadFile file = service.getPublicDownload(id);
-    String encoded = URLEncoder.encode(file.fileName(), StandardCharsets.UTF_8).replace("+", "%20");
-    return ResponseEntity.ok()
-        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encoded)
-        .body(file.bytes());
+    // 항상 attachment(브라우저 뷰어 X) + 확장자로 content-type 추론(pdf/hwp/hwpx) + RFC5987 파일명.
+    return FileDownloadResponses.attachment(
+        file.bytes(), DocumentUploadValidator.contentType(file.fileName()), file.fileName());
   }
 
   @GetMapping("/api/admin/wiki/originals")

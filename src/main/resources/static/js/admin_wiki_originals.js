@@ -123,7 +123,7 @@ async function saveOriginal(e) {
   const file = document.getElementById('file').files[0];
   if (file) data.set('file', file);
   if (!id && !file) {
-    formMessage.textContent = '신규 등록에는 PDF 파일이 필요합니다.';
+    formMessage.textContent = '신규 등록에는 파일(PDF·HWP·HWPX)이 필요합니다.';
     formMessage.className = 'error';
     return;
   }
