@@ -27,8 +27,8 @@ public class WikiExamOriginalService {
   private static final String RAW_FILE_TYPE = "UNKNOWN";
   private static final long STORAGE_OWNER_ID = 0L;
 
-  /** 모의고사 원본은 PDF만 받는다(스펙: 평가원 원본 문제지/정답지). */
-  private static final Set<String> ORIGINAL_EXTENSIONS = Set.of("pdf");
+  /** 모의고사 원본 문서 — PDF 및 한글(HWP/HWPX)만. 이미지·오피스 등은 받지 않는다(원본 자료 성격). */
+  private static final Set<String> ORIGINAL_EXTENSIONS = Set.of("pdf", "hwp", "hwpx");
 
   private final WikiExamOriginalRepository repository;
   private final FileStorage fileStorage;

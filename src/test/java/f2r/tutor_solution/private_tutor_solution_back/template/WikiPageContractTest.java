@@ -69,8 +69,8 @@ class WikiPageContractTest {
     assertThat(html).contains("id=\"gradeTabs\"", "data-grade=\"3\"", "data-grade=\"2\"", "data-grade=\"1\"");
     assertThat(countOccurrences(html, "/problem-generator")).isEqualTo(1);
     assertThat(html).contains("href=\"/wiki/originals\"", "href=\"/wiki/analysis\"");
-    // 관리자 업로드 링크는 role 가드
-    assertThat(html).contains("th:if=\"${role == 'ADMIN'}\"");
+    // 관리자 업로드 UI는 서버 principal 가드(WikiPageController가 wikiAdmin 주입). 렌더 검증은 WikiPageControllerRenderTest.
+    assertThat(html).contains("th:if=\"${wikiAdmin}\"");
 
     assertThat(js).contains("/api/wiki/originals?grade=");
     assertThat(js).contains("/api/wiki/analysis-materials?grade=");

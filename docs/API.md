@@ -253,8 +253,7 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인). 목록은 `scope=community`(기본) — F2R 게시판(FREE/QNA/SUBJECT)만 |
 | `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글. wiki 게시판 글 상세도 이 화면 재사용 |
 | `/community/posts/new` | `public/community_new` | ✅ F2R 커뮤니티(`/community`) 글 작성/수정. (구 `?board=`/`?return=` wiki 진입은 폐기 — Wiki는 전용 화면 사용) |
-| `/wiki` | `public/wiki` | ✅ 공개 BuildIt Wiki 허브. 학년 탭(고3/고2/고1)으로 모의고사 원본(`/api/wiki/originals`)·분석 자료(`/api/wiki/analysis-materials`)·커뮤니티 3게시판 미리보기. `${role=='ADMIN'}`(서버 authenticated principal)이면 **인라인 업로드 모달**(`＋ 원본 업로드`/`＋ 분석 자료 업로드`, `wiki_admin_upload.js`) 노출 — 현재 학년 탭이 기본값, 업로드 성공 시 새로고침 없이 해당 목록만 재조회. 기존 admin API(`/api/admin/wiki/originals`, `/api/admin/wiki/analysis-materials`) 재사용(새 저장 시스템 없음), 실제 권한은 `/api/admin/**` ROLE_ADMIN 게이트. SSR 모델 없음(JS 구동) |
-| `/wiki/originals`, `/wiki/analysis` | `public/wiki_originals`, `public/wiki_analysis` | ✅ 자료 전체 목록(학년 필터, 다운로드) |
+| `/wiki`, `/wiki/originals`, `/wiki/analysis` | `public/wiki`, `public/wiki_originals`, `public/wiki_analysis` | ✅ **`WikiPageController`**(`@Controller` + `@AuthenticationPrincipal`, view-controller 아님) — `wikiAdmin`(서버 principal 이 ROLE_ADMIN) 모델 속성 + `Cache-Control: private, no-store` + `Vary: Cookie` 를 실어 렌더. `th:if="${wikiAdmin}"` 일 때만 **인라인 업로드 모달**(`＋ 원본 업로드`/`＋ 분석 자료 업로드`, `wiki_admin_upload.js`) 노출 — 현재 학년 탭 기본값, 성공 시 새로고침 없이 해당 목록만 재조회. 기존 admin API(`/api/admin/wiki/originals`, `/api/admin/wiki/analysis-materials`) 재사용(새 저장 시스템 없음), 실권한은 `/api/admin/**` ROLE_ADMIN. 상단 헤더 `BuildIt 홈`(→ `/`, Wiki 내부 `← BuildIt Wiki로 돌아가기`→`/wiki` 와 별개). 목록 데이터는 JS 구동. 게시판 화면(/wiki/board/**, /wiki/posts/**)은 role 불필요 → view-controller 유지 |
 | `/wiki/board/{boardKey}` | `public/wiki_board` | ✅ Wiki 게시판별 목록. `boardKey` = `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). `/api/open-community/posts?scope=wiki` 재사용 |
 | `/wiki/board/{boardKey}/new` | `public/wiki_post_new` | ✅ Wiki 전용 글 작성/수정(`?edit={id}`). 게시판은 URL로 고정, variant/share만 문서 첨부. 저장 후 `/wiki/posts/{id}`. `/home`·`/community`로 이동하지 않음 |
 | `/wiki/posts/{postId}` | `public/wiki_post` | ✅ Wiki 전용 글 상세. 본문 + 첨부 다운로드/추가/삭제 + 답변. "← BuildIt Wiki로 돌아가기" → `/wiki`. 비-wiki 게시판 글이면 `/community/posts/{id}` 안내 |
@@ -2714,7 +2713,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### 게시글 문서 첨부 (V958, `community_post_attachments`) — Wiki 변형문제·자료 공유·요청 전용
 - `POST /posts/{postId}/attachments` (인증·작성자, multipart `files`/`files[]`) — 게시판이 `VARIANT`/`MATERIAL`이 아니면 400, 기존 visible + 신규 > 10이면 400, `DocumentUploadValidator.validateAttachment`(확장자 **문서** `pdf/hwp/hwpx/doc/docx/xls/xlsx/ppt/pptx/zip` **+ 이미지** `jpg/jpeg/png/webp` + 매직바이트 교차검증 + 실행파일(MZ/ELF/`#!`) 차단 + 파일당 20MB) 실패 400. content_type은 확장자로 추론해 저장(이미지 = `image/jpeg|png|webp`). tx 롤백 시 storage 정리. → 게시글 상세.
 - `DELETE /attachments/{attachmentId}` (작성자 또는 ADMIN, 204) — row + storage 파일 삭제.
-- `GET /attachments/{attachmentId}/file` (공개 serve) — 글/첨부 비visible 404. `pdf`·`image`만 inline, 그 외 `application/octet-stream` + `attachment`, RFC5987 파일명, `X-Content-Type-Options: nosniff`.
+- `GET /attachments/{attachmentId}/file` (공개 다운로드) — 글/첨부 비visible 404. **[내려받기] 버튼이므로 파일 종류(이미지·PDF 포함)와 무관하게 항상 `Content-Disposition: attachment`** (`FileDownloadResponses.attachment`) — 브라우저 뷰어로 펼치지 않고 실제 다운로드. 저장된 content_type 유지, RFC5987(UTF-8) 파일명, `X-Content-Type-Options: nosniff`.
 
 - 관련 코드: `CommunityController`, `CommunityService`/`CommunityImageService`, `domain/community/*`(CommunityPost=질문/Answer/CommunityImage, BoardType), `CommunityProperties`(`app.community.*`). 마이그레이션: **`V914`(원본, 불변) + `V915`(Q&A 전환) + `V916`(board_type+subject_id) + `V917`(community_comments DROP — 댓글 폐기)**, 모두 in-place 업그레이드. ※ 적용된 V_파일 재작성 금지, 신규 번호로 추가.
 
@@ -2726,11 +2725,11 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 공개
 - `GET /api/wiki/originals?grade=` — deleted=false·visible=true, grade(1~3, null=전체) 필터, 최신순. → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examLabel, docType, docTypeLabel, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/originals/{id}/download` — 공개 자료만. `application/pdf` + `Content-Disposition: attachment; filename*=UTF-8''…`. 미존재/비공개 404.
+- `GET /api/wiki/originals/{id}/download` — 공개 자료만. `Content-Disposition: attachment` + 확장자로 추론한 content-type(pdf/hwp/hwpx) + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/originals` — deleted=false 전체(비공개 포함).
-- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), examLabel, docType(QUESTION|ANSWER), visible(기본 true)`, part `file`(`.pdf`만, `app.upload.max-document-bytes` 이내). 검증 실패 400.
+- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), examLabel, docType(QUESTION|ANSWER), visible(기본 true)`, part `file`(`.pdf/.hwp/.hwpx` + 매직바이트 교차검증, `app.upload.max-document-bytes` 이내). 검증 실패 400.
 - `PUT /api/admin/wiki/originals/{id}` (multipart) — 위와 동일, `file` 선택(있으면 교체 + 이전 파일 삭제).
 - `PATCH /api/admin/wiki/originals/{id}/visibility` — body `{isVisible}`.
 - `DELETE /api/admin/wiki/originals/{id}` — soft delete(deleted=true, visible=false), 204.

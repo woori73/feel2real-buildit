@@ -14,7 +14,7 @@
     <div class="section-header">
       <div>
         <h2 class="section-title">모의고사 원본 자료</h2>
-        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 원본 문제지/정답지 PDF를 관리합니다.</span>
+        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 원본 문제지/정답지(PDF·HWP·HWPX)를 관리합니다.</span>
       </div>
       <button class="btn btn-primary" onclick="openCreateModal()">+ 새 원본</button>
     </div>
@@ -38,7 +38,7 @@
             <div class="field"><label for="grade">학년</label><select id="grade"><option value="3">고3</option><option value="2">고2</option><option value="1">고1</option></select></div>
             <div class="field"><label for="docType">구분</label><select id="docType"><option value="QUESTION">문제지</option><option value="ANSWER">정답지</option></select></div>
             <div class="field full"><label for="examLabel">시험 이름</label><input id="examLabel" required value="2026 9월 모의고사"></div>
-            <div class="field full"><label for="file">PDF 파일 <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf"></div>
+            <div class="field full"><label for="file">파일 (PDF·HWP·HWPX) <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf,.hwp,.hwpx"></div>
             <label class="check-row"><input id="visible" type="checkbox" checked> 공개</label>
           </div>
           <div class="form-actions">
