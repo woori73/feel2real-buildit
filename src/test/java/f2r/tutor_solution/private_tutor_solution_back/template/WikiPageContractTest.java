@@ -50,6 +50,21 @@ class WikiPageContractTest {
           .doesNotContain("th:block", "th:replace", "layout:fragment");
     }
 
+    // 자료 업로드 진입점은 principal 무관하게 항상 렌더된다(빈 Context = 익명). "UI 표시 ≠ 권한 부여".
+    String hub = engine.process("public/wiki", new Context());
+    assertThat(hub).as("hub 업로드 버튼")
+        .contains("id=\"btnUploadOriginal\"", "id=\"btnUploadAnalysis\"",
+            "id=\"wikiUploadModal\"", "wiki_admin_upload.js")
+        .doesNotContain("${wikiAdmin}", "${role");
+    String originals = engine.process("public/wiki_originals", new Context());
+    assertThat(originals).as("originals 업로드 버튼")
+        .contains("id=\"btnUploadOriginal\"", "id=\"wikiUploadModal\"", "wiki_admin_upload.js")
+        .doesNotContain("${wikiAdmin}", "${role");
+    String analysis = engine.process("public/wiki_analysis", new Context());
+    assertThat(analysis).as("analysis 업로드 버튼")
+        .contains("id=\"btnUploadAnalysis\"", "id=\"wikiUploadModal\"", "wiki_admin_upload.js")
+        .doesNotContain("${wikiAdmin}", "${role");
+
     String admin = engine.process("admin/wiki_analysis", new Context());
     assertThat(admin)
         .contains("<!DOCTYPE html>")
@@ -69,8 +84,10 @@ class WikiPageContractTest {
     assertThat(html).contains("id=\"gradeTabs\"", "data-grade=\"3\"", "data-grade=\"2\"", "data-grade=\"1\"");
     assertThat(countOccurrences(html, "/problem-generator")).isEqualTo(1);
     assertThat(html).contains("href=\"/wiki/originals\"", "href=\"/wiki/analysis\"");
-    // 관리자 업로드 UI는 서버 principal 가드(WikiPageController가 wikiAdmin 주입). 렌더 검증은 WikiPageControllerRenderTest.
-    assertThat(html).contains("th:if=\"${wikiAdmin}\"");
+    // 업로드 버튼/모달/스크립트는 role 조건부 렌더 없이 항상 존재 — th:if 로 지워지지 않는다.
+    assertThat(html).contains("id=\"btnUploadOriginal\"", "id=\"btnUploadAnalysis\"");
+    assertThat(html).doesNotContain("th:if=\"${wikiAdmin}\"", "th:if=\"${role");
+    assertThat(html).contains("fragments/_wiki_admin_upload :: modal");
 
     assertThat(js).contains("/api/wiki/originals?grade=");
     assertThat(js).contains("/api/wiki/analysis-materials?grade=");

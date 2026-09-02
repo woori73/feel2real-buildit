@@ -14,6 +14,9 @@
 
   load();
 
+  // wiki_admin_upload.js 가 업로드 성공 후 새로고침 없이 목록만 재조회하도록.
+  window.wikiListReload = load;
+
   async function load() {
     list.innerHTML = '<p class="muted">불러오는 중...</p>';
     try {
