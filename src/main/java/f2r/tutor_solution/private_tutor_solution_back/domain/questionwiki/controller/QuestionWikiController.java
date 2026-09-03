@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.servic
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionWikiService;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -123,6 +124,25 @@ public class QuestionWikiController {
     QuestionThreadService.AttachmentFileBundle bundle =
         questionThreadService.getAttachmentFile(attachmentId);
     return FileDownloadResponses.attachment(bundle.bytes(), bundle.contentType(), bundle.filename());
+  }
+
+  /**
+   * HTML 학습자료 격리 미리보기(공개). sandboxed iframe 안에서만 열도록 CSP {@code sandbox} +
+   * {@code frame-ancestors 'self'} + {@code default-src 'none'}(스크립트 차단, CSS/이미지만 허용).
+   * 다운로드는 여전히 {@code viewUrl}(attachment 강제)이 담당한다.
+   */
+  @GetMapping("/materials/{linkId}/preview")
+  public ResponseEntity<byte[]> materialHtmlPreview(@PathVariable Long linkId) {
+    QuestionWikiService.HtmlPreview preview = questionWikiService.getHtmlPreview(linkId);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+        .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Content-Security-Policy",
+            "sandbox; default-src 'none'; img-src data: https:; media-src data: https:; "
+                + "style-src 'unsafe-inline' https:; font-src https: data:; frame-ancestors 'self'")
+        .header(HttpHeaders.CACHE_CONTROL, "private, max-age=60")
+        .body(preview.bytes());
   }
 
   private List<MultipartFile> mergeFiles(List<MultipartFile> files, List<MultipartFile> bracketFiles) {

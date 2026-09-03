@@ -66,7 +66,23 @@ public class WikiAnalysisMaterialService {
   @Transactional
   public WikiAnalysisMaterialResponse create(String title, String description, String schoolName, Integer grade,
       Integer year, String semester, String examType, String subject, boolean visible, MultipartFile file) {
-    documentUploadValidator.validate(file);
+    return create(title, description, schoolName, grade, year, semester, examType, subject, visible, file, null);
+  }
+
+  /**
+   * 확장자 화이트리스트를 넓혀서 저장한다. {@code allowedExtensions == null} 이면 기본 문서 정책.
+   * Question Wiki ADMIN "직접 올리기"가 {@link DocumentUploadValidator#DOCUMENT_WITH_HTML_EXTENSIONS}
+   * (문서 + HTML)를 넘겨 이 경로에서만 HTML 을 허용한다 — 전역 자료실 정책은 그대로다.
+   */
+  @Transactional
+  public WikiAnalysisMaterialResponse create(String title, String description, String schoolName, Integer grade,
+      Integer year, String semester, String examType, String subject, boolean visible, MultipartFile file,
+      java.util.Set<String> allowedExtensions) {
+    if (allowedExtensions == null) {
+      documentUploadValidator.validate(file);
+    } else {
+      documentUploadValidator.validate(file, allowedExtensions);
+    }
     String name = originalFileName(file);
     String storageKey = saveFile(file, name);
     WikiAnalysisMaterial material = WikiAnalysisMaterial.builder()

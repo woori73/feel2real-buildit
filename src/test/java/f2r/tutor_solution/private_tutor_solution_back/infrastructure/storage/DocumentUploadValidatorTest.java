@@ -127,6 +127,50 @@ class DocumentUploadValidatorTest {
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
   }
 
+  // ── HTML: Question Wiki ADMIN "직접 올리기" 전용 세트에서만 허용 ──
+
+  private static final byte[] HTML = "<!DOCTYPE html><html><body>x</body></html>".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+  private static final byte[] HTML_BOM_WS = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF, '\n', ' ', '<', 'h', 't', 'm', 'l', '>'};
+
+  @Test
+  @DisplayName("given HTML + DOCUMENT_WITH_HTML_EXTENSIONS when validate then 통과, 기존 문서도 그대로 통과")
+  void html_allowedOnlyWithHtmlSet() {
+    var set = DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS;
+    assertThatCode(() -> validator.validate(file("a.html", HTML), set)).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validate(file("a.htm", HTML_BOM_WS), set)).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validate(file("a.pdf", PDF), set)).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validate(file("a.docx", ZIP), set)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @DisplayName("given HTML + 기본 자료실 정책 when validate then 400 (전역 정책 불변)")
+  void html_rejectedByGlobalPolicy() {
+    assertThatThrownBy(() -> validator.validate(file("a.html", HTML)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
+    assertThatThrownBy(() -> validator.validate(
+            file("a.html", HTML), Set.copyOf(DocumentUploadValidator.allowedExtensions())))
+        .isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
+  @DisplayName("given .html 로 위장한 실행파일/비-HTML when validate(HTML set) then 400")
+  void html_rejectsDisguised() {
+    assertThatThrownBy(() -> validator.validate(file("x.html", MZ), DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
+    // '<' 로 시작하지 않는 텍스트 → 확장자 불일치
+    assertThatThrownBy(() -> validator.validate(
+            file("x.html", "not html".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+            DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
+  }
+
+  @Test
+  @DisplayName("contentType(): html/htm → text/html")
+  void contentType_html() {
+    assertThat(DocumentUploadValidator.contentType("a.html")).isEqualTo("text/html");
+    assertThat(DocumentUploadValidator.contentType("a.htm")).isEqualTo("text/html");
+  }
+
   @Test
   @DisplayName("contentType(): 확장자로 MIME 추론")
   void contentType_byExtension() {

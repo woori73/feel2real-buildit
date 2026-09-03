@@ -1133,7 +1133,7 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 
 - **`question_wikis`** — 문항. `UNIQUE(subject, grade, exam_year, exam_label, question_number)`. `passage_group_key` 로 공동지문(41-42 등) 묶음. seed: 2026년 9월 전국연합학력평가 고1·고2 영어, 문항 20~24 / 29~42(38행).
 - **`question_wiki_material_links`** — 문항 ↔ `wiki_exam_originals`/`wiki_analysis_materials` 링크(참조만). ADMIN 관리.
-- **`question_thread_posts`** — THREAD 글(+ `parent_post_id` 1단계 답글). 두 축을 저장: `category`(질문/해석·구문/어법/어휘/출제포인트/예상문제/변형문제/풀이·해설/해설개선/수업인사이트/기타) + `data_kind`(`DISCUSSION` 커뮤니티 지식 / `GENERATED_PRACTICE` 사용자 제작 문제 / `EXAM_EVIDENCE` 실제 기출 증거). `author_role` 은 작성 시점 스냅샷(공개 participant type = 교육자/학생/운영자). soft-hide(`is_visible`+`hidden_by`).
+- **`question_thread_posts`** — THREAD 글(+ `parent_post_id` 1단계 답글). 두 축을 저장: `category`(질문/해석·구문/어법/어휘/출제포인트/예상문제/변형문제/풀이·해설/해설개선/수업인사이트/기타) + `data_kind`(`DISCUSSION` 커뮤니티 지식 / `GENERATED_PRACTICE` 사용자 제작 문제 / `EXAM_EVIDENCE` 실제 기출 증거). `author_role` 은 작성 시점 스냅샷(공개 participant type = 교육자/학생/운영자). soft-hide(`is_visible`+`hidden_by`). **단순화된 UI 는 분류를 사용자에게 요구하지 않아 `category` 미지정 글은 `ETC` 로 저장되고, 두 필드 모두 향후 Browser AI 자동분류가 갱신한다(스키마·enum 은 그대로 유지).**
 - **`question_thread_variant_details`** — `GENERATED_PRACTICE` 1:1. `question_text/question_type/answer/explanation/source_sentence/source_question/difficulty` 구조화 저장(향후 문제 DB/WORKBOOK 승격 대비).
 - **`question_thread_exam_evidence`** — `EXAM_EVIDENCE` 1:1. `school_name/grade_label/exam_period/related_sentence/exam_question_type/exam_point/description` + 향후 `exam_id` 선택 연결. 예상과 절대 같은 데이터로 취급하지 않는다.
 - **`question_thread_attachments`** — `lesson_community_attachments` 형태. 글당 10개, 파일당 10MB, `DocumentUploadValidator.validateAttachment`.

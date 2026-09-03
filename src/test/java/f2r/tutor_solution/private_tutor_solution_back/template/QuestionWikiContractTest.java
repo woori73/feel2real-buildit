@@ -14,10 +14,10 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 /**
- * 공개 BuildIt Wiki 문항별 THREAD 화면 계약.
- * - /wiki 문맥에서만 움직인다(/home·/community 로 이동하지 않음).
- * - 목록·상세가 layouts/public·fragment 치환까지 실제로 렌더된다.
- * - 프론트가 문항 Context API(/api/wiki/questions/{id}/context)와 THREAD write API 를 쓴다.
+ * 공개 BuildIt Wiki 문항 상세 화면 계약.
+ *
+ * <p>단순화 원칙(스펙): 화면은 [학습자료] / [이 문항에 대한 의견] 두 영역만 명확히 보인다.
+ * 작성폼은 기본으로 펼쳐져 있지 않고, 내부 개념(data_kind / DISCUSSION 등)을 사용자에게 노출하지 않는다.
  */
 class QuestionWikiContractTest {
 
@@ -50,20 +50,54 @@ class QuestionWikiContractTest {
   @Test
   @DisplayName("허브(/wiki)에 문항별 THREAD 진입점이 있다")
   void wikiHub_linksToQuestionWiki() throws IOException {
-    String hub = read("templates/public/wiki.html");
-    assertThat(hub).contains("href=\"/wiki/questions\"");
+    assertThat(read("templates/public/wiki.html")).contains("href=\"/wiki/questions\"");
   }
 
   @Test
-  @DisplayName("문항 상세 JS 는 Context API + THREAD write API 를 쓰고 /home 으로 가지 않는다")
+  @DisplayName("상세 화면은 [학습자료]/[이 문항에 대한 의견] 두 영역 + '의견 남기기' 버튼이 있고, 작성폼은 모달(기본 숨김)이다")
+  void detailTemplate_twoAreasAndNoInlineForm() throws IOException {
+    String html = read("templates/public/question_wiki.html");
+
+    assertThat(html).contains("id=\"qwMaterialSection\"", "id=\"qwOpinionSection\"");
+    assertThat(html).contains(">학습자료<", "이 문항에 대한 의견");
+    assertThat(html).contains("id=\"qwWriteBtn\"").contains("+ 의견 남기기");
+    // 학습자료 등록 두 갈래
+    assertThat(html).contains("Wiki 자료에서 찾기", "직접 올리기");
+    // 작성폼(qwComposer)은 모달(qwComposerModal) 안에 있다 — 전면 노출 금지
+    assertThat(html).contains("id=\"qwComposerModal\"", "id=\"qwComposer\"");
+    assertThat(html.indexOf("id=\"qwComposerModal\"")).isLessThan(html.indexOf("id=\"qwComposer\""));
+    // 내부 분류 개념을 사용자에게 노출하지 않는다
+    assertThat(html)
+        .doesNotContain("데이터 성격")
+        .doesNotContain("GENERATED_PRACTICE")
+        .doesNotContain("DISCUSSION")
+        .doesNotContain("id=\"qwDataKind\"")
+        .doesNotContain("id=\"qwVariantFields\"")
+        .doesNotContain("id=\"qwEvidenceFields\"");
+  }
+
+  @Test
+  @DisplayName("분류 필터는 보조(details 안)로 우선순위가 낮다")
+  void detailTemplate_filterIsSecondary() throws IOException {
+    String html = read("templates/public/question_wiki.html");
+    assertThat(html).contains("<details class=\"qw-filter\"");
+    assertThat(html).contains("data-filter=\"all\"", "data-filter=\"VARIANT\"", "data-filter=\"EXAM_EVIDENCE\"");
+  }
+
+  @Test
+  @DisplayName("상세 JS 는 Context API + 의견/자료 API 를 쓰고 /home·/community 로 가지 않는다")
   void detailJs_usesContextApi() throws IOException {
     String js = read("static/js/question_wiki.js");
     assertThat(js).contains("/api/wiki/questions/");
     assertThat(js).contains("/context");
     assertThat(js).contains("/posts");
     assertThat(js).contains("/replies");
+    assertThat(js).contains("/api/admin/wiki/questions/materials/search");
+    assertThat(js).contains("/materials/upload");
     assertThat(js).doesNotContain("'/home'").doesNotContain("\"/home\"");
     assertThat(js).doesNotContain("/community/posts/");
+    // 새 글은 분류를 보내지 않는다(서버 기본값 ETC + 향후 AI 자동분류)
+    assertThat(js).contains("JSON.stringify({ content: content })");
 
     String listJs = read("static/js/question_wiki_list.js");
     assertThat(listJs).contains("/api/wiki/questions?grade=");
@@ -71,13 +105,20 @@ class QuestionWikiContractTest {
   }
 
   @Test
-  @DisplayName("상세 화면은 THREAD 필터(전체/질문/해설/출제포인트/변형문제/기출)와 5개 섹션을 갖는다")
-  void detailTemplate_hasFiltersAndSections() throws IOException {
+  @DisplayName("HTML 직접 올리기: accept 에 .html + 학습자료 카드는 [HTML] 미리보기를 격리 iframe 으로 연다")
+  void htmlUpload_acceptAndSandboxedPreview() throws IOException {
     String html = read("templates/public/question_wiki.html");
-    assertThat(html).contains("data-filter=\"all\"", "data-filter=\"QUESTION\"",
-        "data-filter=\"VARIANT\"", "data-filter=\"EXAM_EVIDENCE\"");
-    assertThat(html).contains("학습자료", "THREAD", "변형문제", "기출 THREAD", "AI 종합 요약");
-    assertThat(html).contains("id=\"qwVariantFields\"", "id=\"qwEvidenceFields\"");
+    assertThat(html).contains(".html,.htm");           // 파일 선택 accept
+    assertThat(html).contains("id=\"qwHtmlPreviewModal\"", "id=\"qwHtmlFrame\"");
+    // 부모 DOM 삽입이 아니라 sandbox iframe
+    assertThat(html).contains("<iframe id=\"qwHtmlFrame\"").contains("sandbox");
+
+    String js = read("static/js/question_wiki.js");
+    assertThat(js).contains("previewKind === 'HTML'");
+    assertThat(js).contains("data-html-preview", "openHtmlPreview");
+    assertThat(js).contains("els.htmlFrame.setAttribute('src'");
+    // iframe src 로만 연다(srcdoc/innerHTML 로 부모에 삽입하지 않음)
+    assertThat(js).doesNotContain("htmlFrame.srcdoc").doesNotContain("innerHTML = html");
   }
 
   private static String read(String classpath) throws IOException {

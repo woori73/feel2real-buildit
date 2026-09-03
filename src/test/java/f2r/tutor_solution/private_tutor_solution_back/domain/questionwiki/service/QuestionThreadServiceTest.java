@@ -176,4 +176,36 @@ class QuestionThreadServiceTest {
         .isInstanceOf(AccessDeniedException.class);
     assertThat(root.isVisible()).isTrue();
   }
+
+  @Test
+  @DisplayName("given 분류 미지정(단순화 UI) when 작성 then category=ETC 로 저장(사용자에게 분류를 떠넘기지 않음)")
+  void unclassifiedPostDefaultsToEtc() {
+    QuestionThreadPostRequest req = new QuestionThreadPostRequest(
+        null, null, null, "여기서 where를 쓰는 이유가 무엇인가요?", null, null, null);
+
+    service.createPost(studentP, 100L, req);
+
+    verify(postRepository).save(argThat(p ->
+        p.getCategory() == QuestionThreadCategory.ETC
+            && p.getDataKind() == QuestionThreadDataKind.DISCUSSION));
+  }
+
+  @Test
+  @DisplayName("given GENERATED_PRACTICE 글을 내용만으로 수정 when updatePost then 변형문제 상세 없이도 통과(원문 보존)")
+  void updateGeneratedPracticeWithContentOnly() {
+    QuestionThreadPost variantPost = QuestionThreadPost.builder()
+        .questionWiki(question).parentPost(null).author(student)
+        .category(QuestionThreadCategory.VARIANT).dataKind(QuestionThreadDataKind.GENERATED_PRACTICE)
+        .title("변형문제").content("원래 내용").build();
+    ReflectionTestUtils.setField(variantPost, "postId", 5L);
+    when(postRepository.findDetailById(5L)).thenReturn(Optional.of(variantPost));
+
+    QuestionThreadPostRequest req = new QuestionThreadPostRequest(
+        null, null, null, "내용만 고침", null, null, null);
+
+    service.updatePost(studentP, 5L, req);
+
+    assertThat(variantPost.getContent()).isEqualTo("내용만 고침");
+    verify(variantRepository, never()).save(any());
+  }
 }
