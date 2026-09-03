@@ -1,0 +1,128 @@
+/* 공개 BuildIt Wiki 문항별 THREAD (/wiki/questions, /wiki/questions/{id}).
+   wiki.css 의 토큰·레이아웃을 이어받아 문항 화면 전용 요소만 정의한다. */
+
+.qw-list-page .back-link,
+.qw-detail-page .back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: #14705a;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ── 문항 네비 카드 ── */
+.qw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.qw-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #e2e6e4;
+  border-radius: 12px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.qw-card:hover { border-color: #14705a; box-shadow: 0 4px 14px rgba(20, 112, 90, .1); }
+.qw-card-num { font-size: 1.15rem; font-weight: 800; color: #14705a; }
+.qw-card-group {
+  align-self: flex-start;
+  font-size: .7rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eef6f3;
+  color: #14705a;
+}
+.qw-card-sub { font-size: .82rem; color: #5b6360; line-height: 1.35; }
+.qw-card-thread { font-size: .78rem; color: #8a918e; }
+
+/* ── 문항 상세 ── */
+.qw-context { margin-bottom: 8px; }
+.qw-context h1 { margin: 6px 0 0; font-size: 1.4rem; }
+.qw-passage-note {
+  margin-top: 8px;
+  font-size: .85rem;
+  color: #14705a;
+  background: #eef6f3;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.qw-small { font-size: .85rem; }
+
+.qw-materials { display: flex; flex-direction: column; gap: 8px; }
+.qw-material {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px; border: 1px solid #e2e6e4; border-radius: 10px;
+  text-decoration: none; color: inherit; background: #fff;
+}
+.qw-material-kind { font-size: .72rem; color: #14705a; background: #eef6f3; padding: 2px 8px; border-radius: 999px; }
+.qw-material-dl { margin-left: auto; font-size: .8rem; color: #14705a; }
+
+.qw-ai-box { border: 1px solid #d9e6f2; background: #f4f9ff; border-radius: 10px; padding: 14px; }
+.qw-ai-meta { font-size: .8rem; color: #3a6ea5; margin-bottom: 6px; }
+.qw-ai-text { line-height: 1.6; }
+
+/* ── THREAD ── */
+.qw-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.qw-chip {
+  border: 1px solid #d7dcda; background: #fff; color: #5b6360;
+  padding: 6px 14px; border-radius: 999px; font-size: .85rem; cursor: pointer;
+}
+.qw-chip.active { background: #14705a; color: #fff; border-color: #14705a; }
+
+.qw-composer {
+  border: 1px solid #e2e6e4; border-radius: 12px; padding: 16px;
+  background: #fbfcfc; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;
+}
+.qw-composer label { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: #5b6360; }
+.qw-composer .qw-full { width: 100%; }
+.qw-composer input[type="text"], .qw-composer textarea, .qw-composer select {
+  font: inherit; padding: 8px 10px; border: 1px solid #d7dcda; border-radius: 8px; width: 100%;
+}
+.qw-composer-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.qw-composer-row label { flex: 1 1 140px; }
+.qw-sub-fields { border: 1px dashed #c7d6d0; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.qw-sub-fields legend { font-size: .8rem; color: #14705a; font-weight: 700; padding: 0 6px; }
+.qw-composer-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+.qw-thread-list, .qw-variant-list, .qw-evidence-list { display: flex; flex-direction: column; gap: 12px; }
+.qw-post {
+  border: 1px solid #e6e9e8; border-radius: 12px; padding: 14px 16px; background: #fff;
+}
+.qw-post-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .78rem; color: #8a918e; }
+.qw-post-head .qw-author { color: #3a413e; font-weight: 600; }
+.qw-badge { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: #eef2f0; color: #5b6360; }
+.qw-badge-DISCUSSION { background: #eef6f3; color: #14705a; }
+.qw-badge-GENERATED_PRACTICE { background: #fff2e0; color: #b26a12; }
+.qw-badge-EXAM_EVIDENCE { background: #fdeaea; color: #c0392b; }
+.qw-cat { background: #eef2f0; color: #5b6360; }
+.qw-participant { font-weight: 600; color: #14705a; }
+.qw-post h4 { margin: 8px 0 4px; font-size: .98rem; }
+.qw-post-body { margin: 6px 0; line-height: 1.6; white-space: normal; }
+.qw-post-actions { display: flex; gap: 12px; margin-top: 8px; }
+.qw-txt-btn { background: none; border: none; color: #8a918e; font-size: .8rem; cursor: pointer; padding: 0; }
+.qw-txt-btn:hover { color: #14705a; }
+
+.qw-kv { margin: 8px 0 0; display: grid; grid-template-columns: 84px 1fr; gap: 4px 10px; font-size: .88rem; }
+.qw-kv dt { color: #8a918e; }
+.qw-kv dd { margin: 0; line-height: 1.55; }
+
+.qw-attach { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.qw-attach-row { font-size: .82rem; color: #14705a; text-decoration: none; }
+
+.qw-replies { margin-top: 10px; padding-left: 12px; border-left: 2px solid #eceeed; display: flex; flex-direction: column; gap: 8px; }
+.qw-reply { background: #fafbfb; border-radius: 8px; padding: 8px 10px; }
+
+.qw-ai .block-head h2::after { content: " (준비 중)"; font-size: .75rem; color: #8a918e; font-weight: 400; }
+
+@media (max-width: 600px) {
+  .qw-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .qw-kv { grid-template-columns: 1fr; gap: 2px; }
+  .qw-kv dt { margin-top: 4px; }
+}

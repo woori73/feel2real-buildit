@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문항 · BuildIt Wiki</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-3">
+  <link rel="stylesheet" href="/css/question_wiki.css?v=20260903-1">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki"><b>BuildIt</b><span>Wiki</span></a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <a class="wiki-home-link" href="/">BuildIt 홈</a>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap qw-detail-page" aria-live="polite">
+    <a class="back-link" href="/wiki/questions">← 문항 목록으로</a>
+
+    <!-- 1. 문항 / Context -->
+    <section class="qw-context">
+      <p id="qwContext" class="muted">불러오는 중...</p>
+      <h1 id="qwTitle"></h1>
+      <p id="qwPassageNote" class="qw-passage-note" hidden></p>
+    </section>
+
+    <!-- 2. 학습자료 -->
+    <section class="wiki-block">
+      <div class="block-head"><h2>학습자료</h2></div>
+      <div id="qwMaterials" class="qw-materials">
+        <p class="muted">연결된 학습자료가 아직 없습니다. 준비되는 대로 이곳에 원문·해설지·WORKBOOK·변형문제·관련 자료가 연결됩니다.</p>
+      </div>
+    </section>
+
+    <!-- (향후) AI SUMMARY -->
+    <section id="qwAiSummarySection" class="wiki-block qw-ai" hidden>
+      <div class="block-head"><h2>AI 종합 요약</h2></div>
+      <div id="qwAiSummary" class="qw-ai-box"></div>
+    </section>
+
+    <!-- 3. THREAD -->
+    <section class="wiki-block qw-thread">
+      <div class="block-head">
+        <h2>THREAD</h2>
+        <button type="button" id="qwWriteBtn" class="upload-link">＋ 글 남기기</button>
+      </div>
+
+      <div id="qwFilters" class="qw-filters" role="tablist" aria-label="THREAD 필터">
+        <button class="qw-chip active" data-filter="all">전체</button>
+        <button class="qw-chip" data-filter="QUESTION">질문</button>
+        <button class="qw-chip" data-filter="SOLUTION">해설</button>
+        <button class="qw-chip" data-filter="EXAM_POINT">출제포인트</button>
+        <button class="qw-chip" data-filter="VARIANT">변형문제</button>
+        <button class="qw-chip" data-filter="EXAM_EVIDENCE">기출</button>
+      </div>
+
+      <!-- 작성 폼 (기본 숨김) -->
+      <form id="qwComposer" class="qw-composer" hidden>
+        <div class="qw-composer-row">
+          <label>분류
+            <select name="category" id="qwCategory"></select>
+          </label>
+          <label>데이터 성격
+            <select name="dataKind" id="qwDataKind">
+              <option value="DISCUSSION">토론·질문·의견 (커뮤니티 지식)</option>
+              <option value="GENERATED_PRACTICE">변형·예상 문제 (내가 만든 문제)</option>
+              <option value="EXAM_EVIDENCE">실제 기출 (학교 시험에서 확인)</option>
+            </select>
+          </label>
+        </div>
+        <label class="qw-full">제목 <span class="muted">(선택)</span>
+          <input type="text" name="title" id="qwPostTitle" maxlength="200">
+        </label>
+        <label class="qw-full">내용
+          <textarea name="content" id="qwPostContent" rows="5" maxlength="5000" required
+                    placeholder="질문, 설명, 풀이, 출제 아이디어 등을 자유롭게 남겨보세요."></textarea>
+        </label>
+
+        <!-- 변형문제 상세 -->
+        <fieldset id="qwVariantFields" class="qw-sub-fields" hidden>
+          <legend>변형문제 상세</legend>
+          <label class="qw-full">문제 지문<textarea name="v_questionText" rows="3" maxlength="4000"></textarea></label>
+          <div class="qw-composer-row">
+            <label>문제 유형<input type="text" name="v_questionType" maxlength="40" placeholder="빈칸 / 어법 / 서답형 …"></label>
+            <label>난이도<input type="text" name="v_difficulty" maxlength="20" placeholder="상 / 중 / 하"></label>
+          </div>
+          <label class="qw-full">정답<textarea name="v_answer" rows="2" maxlength="4000"></textarea></label>
+          <label class="qw-full">해설<textarea name="v_explanation" rows="2" maxlength="4000"></textarea></label>
+          <label class="qw-full">근거 문장 <span class="muted">(본문)</span><textarea name="v_sourceSentence" rows="2" maxlength="4000"></textarea></label>
+          <label class="qw-full">원 문항 <span class="muted">(선택)</span><input type="text" name="v_sourceQuestion" maxlength="200"></label>
+        </fieldset>
+
+        <!-- 기출 증거 상세 -->
+        <fieldset id="qwEvidenceFields" class="qw-sub-fields" hidden>
+          <legend>기출 증거 상세</legend>
+          <div class="qw-composer-row">
+            <label>학교<input type="text" name="e_schoolName" maxlength="100" placeholder="○○고"></label>
+            <label>학년<input type="text" name="e_gradeLabel" maxlength="20" placeholder="2학년"></label>
+            <label>시험 시기<input type="text" name="e_examPeriod" maxlength="60" placeholder="2026 2학기 중간"></label>
+          </div>
+          <div class="qw-composer-row">
+            <label>출제 유형<input type="text" name="e_examQuestionType" maxlength="40" placeholder="어법 / 서답형 …"></label>
+          </div>
+          <label class="qw-full">사용 문장<textarea name="e_relatedSentence" rows="2" maxlength="4000"></textarea></label>
+          <label class="qw-full">출제 포인트<textarea name="e_examPoint" rows="2" maxlength="4000"></textarea></label>
+          <label class="qw-full">설명 <span class="muted">(선택)</span><textarea name="e_description" rows="2" maxlength="4000"></textarea></label>
+        </fieldset>
+
+        <div class="qw-composer-actions">
+          <button type="button" id="qwComposerCancel" class="btn-ghost">취소</button>
+          <button type="submit" id="qwComposerSubmit" class="btn-primary">등록</button>
+        </div>
+        <p id="qwComposerMsg" class="uf-msg"></p>
+      </form>
+      <p id="qwLoginHint" class="login-hint" hidden>로그인하면 읽고, 묻고, 직접 참여할 수 있어요.</p>
+
+      <div id="qwThreadList" class="qw-thread-list"></div>
+    </section>
+
+    <!-- 4. 변형문제 -->
+    <section class="wiki-block">
+      <div class="block-head"><h2>변형문제</h2></div>
+      <div id="qwVariantList" class="qw-variant-list"><p class="muted">아직 공유된 변형문제가 없습니다.</p></div>
+    </section>
+
+    <!-- 5. 기출 THREAD -->
+    <section class="wiki-block">
+      <div class="block-head"><h2>기출 THREAD</h2></div>
+      <p class="muted qw-small">이 지문이 실제 학교 내신에서 어떻게 출제되었는지 축적합니다. 예상과 실제 기출은 구분해서 다룹니다.</p>
+      <div id="qwEvidenceList" class="qw-evidence-list"><p class="muted">아직 등록된 기출이 없습니다.</p></div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script src="/js/question_wiki.js?v=20260903-1"></script>
+</th:block>
+</body>
+</html>
