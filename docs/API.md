@@ -2769,19 +2769,23 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /api/wiki/questions/{id}/context` — 문항 전체 Context. `QuestionWikiContextResponse`: `question`(문항 정보 + 공동지문 번호), `materials[]`(연결 자료 + downloadUrl), `threads[]`(DISCUSSION 최상위 + `replies[]` 1단계 중첩), `variants[]`(GENERATED_PRACTICE + `variantDetail`), `examEvidence[]`(EXAM_EVIDENCE + `examEvidence`), `aiSummary`(최신 APPROVED 또는 null), `counts`. 각 글은 `category`/`categoryLabel` + `dataKind`/`dataKindLabel` + `participantType`(교육자/학생/운영자) + `mine`/`canManage` + `attachments[]`.
 - `GET /api/wiki/questions/attachments/{attachmentId}/file` — `Content-Disposition: attachment` 강제(`FileDownloadResponses.attachment`).
 
+`materials[]` 항목은 사람이 읽을 카드 정보만 담는다: `linkId`, `kindLabel`("모의고사 원본"/"학습자료"), `label`(자료 종류 자유 입력, 예 "상세 해설지"), `title`·`description`·`fileName`(원본 자료에서 해석), `viewUrl`. 삭제된 원본은 응답에서 제외된다. 각 글의 `category`/`dataKind` 는 내부 필드로 유지되나(향후 AI 자동분류·MCP 용) UI 에는 노출하지 않는다.
+
 ### write (인증)
-- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category, dataKind, title?, content, parentPostId?, variant?, examEvidence?}. `dataKind=GENERATED_PRACTICE` → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수(글 저장 전 검증). → 갱신된 Context.
+- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category?, dataKind?, title?, content, parentPostId?, variant?, examEvidence?}. **단순화된 UI 는 `{content}` 만 보낸다** → 서버가 `category=ETC`(미분류) + `dataKind=DISCUSSION` 기본값으로 저장(향후 Browser AI 가 이 값을 갱신). `dataKind=GENERATED_PRACTICE`(API 직접 호출 시) → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수. → 갱신된 Context.
 - `POST /api/wiki/questions/{id}/posts/{parentPostId}/replies` (JSON) — 1단계 답글(답글의 답글 400, 답글은 항상 DISCUSSION). → Context.
-- `PUT /api/wiki/questions/posts/{postId}` (JSON) — 작성자만. 변형/기출 상세도 함께 갱신. → Context.
+- `PUT /api/wiki/questions/posts/{postId}` (JSON) — 작성자만. **`variant`/`examEvidence` 가 요청에 실제로 들어온 경우에만** 상세를 갱신한다 → 단순화 UI(내용만)로 기존 GENERATED_PRACTICE/EXAM_EVIDENCE 글을 수정해도 원문·상세가 보존된다. → Context.
 - `DELETE /api/wiki/questions/posts/{postId}` — 작성자·ADMIN soft-hide. → Context.
 - `POST /api/wiki/questions/posts/{postId}/attachments` (multipart, `files`/`files[]`) — 작성자만, 글당 10개·파일당 10MB. → Context.
 - `DELETE /api/wiki/questions/attachments/{attachmentId}` — 업로더·글 작성자·ADMIN, 204.
 
-### 관리 (ADMIN)
-- `POST /api/admin/wiki/questions/{id}/material-links` — body `{materialKind: EXAM_ORIGINAL|ANALYSIS_MATERIAL, materialId, label?}`. 중복 409.
-- `DELETE /api/admin/wiki/questions/material-links/{linkId}` — 204.
+### 관리 (ADMIN) — 학습자료
+- `GET /api/admin/wiki/questions/materials/search?q=` — "Wiki 자료에서 찾기": 기존 자료실(`wiki_exam_originals` + `wiki_analysis_materials`, 비삭제)에서 `q`(제목·학교·파일명, 대소문자 무시) 매칭 후보를 통합 반환(최대 60). → `LinkableMaterialResponse[]`(materialKind, kindLabel, materialId, title, meta).
+- `POST /api/admin/wiki/questions/{id}/material-links` — 검색해서 고른 자료를 연결. body `{materialKind: EXAM_ORIGINAL|ANALYSIS_MATERIAL, materialId, label?}`. 원본 미존재 404, 중복 409. → `QuestionWikiMaterialLinkResponse`.
+- `POST /api/admin/wiki/questions/{id}/materials/upload` (multipart) — "직접 올리기": params `title?`(비우면 문항 정보로 자동 생성), `description?`, `docLabel?`(자료 종류), part `file`. **기존 `WikiAnalysisMaterialService` 의 저장/검증(PDF·HWP·HWPX·DOC·DOCX·XLS·XLSX·PPT·PPTX·ZIP, 매직바이트 교차검증, 20MB)을 그대로 재사용**하여 `wiki_analysis_materials` row 를 만들고(grade/year 는 문항에서 파생, semester "공통"·examType=문항 examLabel·schoolName "전국연합") 링크를 건다. Question Wiki 전용 파일 시스템 없음. → `QuestionWikiMaterialLinkResponse`.
+- `DELETE /api/admin/wiki/questions/material-links/{linkId}` — 연결만 해제(자료 자체는 유지), 204.
 
-- 관련 코드: `domain/questionwiki/*`(`QuestionWikiController`/`QuestionWikiAdminController`/`QuestionWikiPageController`, `QuestionWikiService`/`QuestionThreadService`). SSR: `/wiki/questions`, `/wiki/questions/{id}`(`Cache-Control: no-store`). 마이그레이션 **`V959`**.
+- 관련 코드: `domain/questionwiki/*`(`QuestionWikiController`/`QuestionWikiAdminController`/`QuestionWikiPageController`, `QuestionWikiService`/`QuestionThreadService`). SSR: `/wiki/questions`, `/wiki/questions/{id}`(`Cache-Control: no-store`). 마이그레이션 **`V959`**. 화면 단순화 이후 상세 화면은 [학습자료]/[이 문항에 대한 의견] 두 영역 + `+ 의견 남기기` 모달만 노출한다.
 
 ## 16. Landing Video Admin / Public API
 

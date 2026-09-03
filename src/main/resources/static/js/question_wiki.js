@@ -1,69 +1,78 @@
 /**
  * 공개 BuildIt Wiki 문항 상세(/wiki/questions/{id}).
  *
- * 구조: 문맥 → 학습자료 → (AI 요약) → THREAD → 변형문제 → 기출 THREAD.
- * 데이터는 성격별로 나뉘어 온다: threads(토론) / variants(사용자 제작 문제) / examEvidence(실제 기출).
- * 읽기는 누구나, 작성/답글/수정/삭제는 로그인 후. 권한은 서버가 최종 결정한다.
+ * 화면은 2개 영역만 명확하게: [학습자료] / [이 문항에 대한 의견].
+ * 내부 개념(data_kind / DISCUSSION / enum 등)은 사용자에게 노출하지 않는다.
+ * 읽기는 누구나. 로그인하면 의견 작성. 학습자료 연결/업로드는 ADMIN. 권한은 서버가 최종 결정한다.
+ *
+ * 분류(질문/해설/출제포인트/변형문제/실제기출 …)는 사람에게 떠넘기지 않는다 —
+ * 미지정 글은 그대로 저장되고 향후 Browser AI 가 자동 분류한다.
  */
 (function () {
-  var CATEGORY = {
-    QUESTION: '질문', INTERPRETATION: '해석·구문', GRAMMAR: '어법', VOCAB: '어휘',
-    EXAM_POINT: '출제포인트', PREDICTED: '예상문제', VARIANT: '변형문제', SOLUTION: '풀이·해설',
-    EXPLANATION_IMPROVEMENT: '해설 개선', CLASS_INSIGHT: '수업 인사이트', ETC: '기타'
-  };
-
   var questionWikiId = location.pathname.split('/').filter(Boolean).pop();
   var me = null;
   var cache = null;
   var activeFilter = 'all';
-  var editingPostId = null;
-  var replyParentId = null;
+  var composerMode = 'new'; // new | reply | edit
+  var composerTarget = null; // parentPostId (reply) or postId (edit)
 
   var els = {
     context: document.getElementById('qwContext'),
     title: document.getElementById('qwTitle'),
     passageNote: document.getElementById('qwPassageNote'),
     materials: document.getElementById('qwMaterials'),
-    aiSection: document.getElementById('qwAiSummarySection'),
-    aiBox: document.getElementById('qwAiSummary'),
-    filters: document.getElementById('qwFilters'),
+    materialAdmin: document.getElementById('qwMaterialAdmin'),
+    findBtn: document.getElementById('qwFindMaterialBtn'),
+    uploadBtn: document.getElementById('qwUploadMaterialBtn'),
     writeBtn: document.getElementById('qwWriteBtn'),
+    loginHint: document.getElementById('qwLoginHint'),
+    opinionList: document.getElementById('qwOpinionList'),
+    filters: document.getElementById('qwFilters'),
+    composerModal: document.getElementById('qwComposerModal'),
+    composerTitle: document.getElementById('qwComposerTitle'),
     composer: document.getElementById('qwComposer'),
-    category: document.getElementById('qwCategory'),
-    dataKind: document.getElementById('qwDataKind'),
-    postTitle: document.getElementById('qwPostTitle'),
     postContent: document.getElementById('qwPostContent'),
-    variantFields: document.getElementById('qwVariantFields'),
-    evidenceFields: document.getElementById('qwEvidenceFields'),
-    composerCancel: document.getElementById('qwComposerCancel'),
+    postFiles: document.getElementById('qwPostFiles'),
     composerSubmit: document.getElementById('qwComposerSubmit'),
     composerMsg: document.getElementById('qwComposerMsg'),
-    loginHint: document.getElementById('qwLoginHint'),
-    threadList: document.getElementById('qwThreadList'),
-    variantList: document.getElementById('qwVariantList'),
-    evidenceList: document.getElementById('qwEvidenceList')
+    findModal: document.getElementById('qwFindModal'),
+    findInput: document.getElementById('qwFindInput'),
+    findResults: document.getElementById('qwFindResults'),
+    uploadModal: document.getElementById('qwUploadModal'),
+    uploadForm: document.getElementById('qwUploadForm'),
+    upLabel: document.getElementById('qwUpLabel'),
+    upTitle: document.getElementById('qwUpTitle'),
+    upDesc: document.getElementById('qwUpDesc'),
+    upFile: document.getElementById('qwUpFile'),
+    uploadSubmit: document.getElementById('qwUploadSubmit'),
+    uploadMsg: document.getElementById('qwUploadMsg')
   };
-
-  Object.keys(CATEGORY).forEach(function (key) {
-    var opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = CATEGORY[key];
-    els.category.appendChild(opt);
-  });
 
   init();
 
   async function init() {
     me = (typeof ensureCurrentUser === 'function') ? await ensureCurrentUser() : readUser();
+
+    els.writeBtn.addEventListener('click', function () { openComposer('new'); });
+    els.composer.addEventListener('submit', onComposerSubmit);
+    els.opinionList.addEventListener('click', onOpinionClick);
     els.filters.addEventListener('click', onFilterClick);
-    els.writeBtn.addEventListener('click', openComposerForNew);
-    els.composerCancel.addEventListener('click', closeComposer);
-    els.dataKind.addEventListener('change', syncSubFields);
-    els.composer.addEventListener('submit', onSubmit);
-    els.threadList.addEventListener('click', onThreadClick);
-    els.variantList.addEventListener('click', onThreadClick);
-    els.evidenceList.addEventListener('click', onThreadClick);
-    window.addEventListener('f2r:login', function (e) { me = (e && e.detail) || readUser(); syncAuthUi(); });
+
+    els.findBtn.addEventListener('click', function () { openModal(els.findModal); els.findInput.focus(); });
+    els.uploadBtn.addEventListener('click', function () { openModal(els.uploadModal); });
+    els.findInput.addEventListener('input', debounce(runMaterialSearch, 250));
+    els.findResults.addEventListener('click', onFindResultClick);
+    els.uploadForm.addEventListener('submit', onUploadSubmit);
+
+    document.querySelectorAll('[data-qw-close]').forEach(function (b) {
+      b.addEventListener('click', function () { closeModals(); });
+    });
+    document.querySelectorAll('.qw-modal').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m) closeModals(); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
+
+    window.addEventListener('f2r:login', function (e) { me = (e && e.detail) || readUser(); syncAuthUi(); render(); });
     syncAuthUi();
     await load();
   }
@@ -77,158 +86,212 @@
       render();
     } catch (_) {
       els.context.textContent = '';
-      els.threadList.innerHTML = '<p class="error">불러오지 못했습니다.</p>';
+      els.opinionList.innerHTML = '<p class="qw-error">불러오지 못했습니다.</p>';
     }
   }
 
+  function isAdmin() { return !!(me && me.role === 'ADMIN'); }
+
   function render() {
+    if (!cache) return;
     var q = cache.question;
     els.context.textContent = q.displayContext;
-    els.title.textContent = q.title || (q.questionNumber + '번 문항');
+    els.title.textContent = q.title || (q.questionNumber + '번');
     document.title = q.displayContext + ' · BuildIt Wiki';
     if (q.passageGroupKey && (q.passageGroupQuestionNumbers || []).length > 1) {
       els.passageNote.hidden = false;
-      els.passageNote.textContent = '공동지문 세트: ' + q.passageGroupQuestionNumbers.join('–') + '번';
+      els.passageNote.textContent = '이 지문은 ' + q.passageGroupQuestionNumbers.join('·') + '번이 함께 사용합니다.';
     }
-
     renderMaterials(cache.materials || []);
-    renderAiSummary(cache.aiSummary);
-    renderThreads();
-    renderVariants(cache.variants || []);
-    renderEvidence(cache.examEvidence || []);
+    renderOpinions();
   }
+
+  /* ── 학습자료 ─────────────────────────────────────────────── */
 
   function renderMaterials(materials) {
-    if (!materials.length) return;
+    els.materialAdmin.hidden = !isAdmin();
+
+    if (!materials.length) {
+      els.materials.innerHTML = '<p class="qw-empty">아직 등록된 학습자료가 없습니다.'
+        + (isAdmin() ? '' : ' 준비되는 대로 원문·해설지 등이 이곳에 올라옵니다.') + '</p>';
+      return;
+    }
+
     els.materials.innerHTML = materials.map(function (m) {
-      var kind = m.materialKind === 'EXAM_ORIGINAL' ? '모의고사 원본' : '분석 자료';
-      return '<a class="qw-material" href="' + escAttr(m.downloadUrl) + '">'
-        + '<span class="qw-material-kind">' + kind + '</span>'
-        + '<b>' + esc(m.label || kind) + '</b><span class="qw-material-dl">내려받기 ↓</span></a>';
+      var kindLine = esc(m.label || m.kindLabel);
+      var title = esc(m.title || m.fileName || m.kindLabel);
+      return '<article class="qw-material-card" data-link-id="' + m.linkId + '">'
+        + '<div class="qw-material-body">'
+        + '<span class="qw-material-kind">' + kindLine + '</span>'
+        + '<b class="qw-material-title">' + title + '</b>'
+        + (m.description ? '<span class="qw-material-desc">' + esc(m.description) + '</span>' : '')
+        + '</div>'
+        + '<div class="qw-material-side">'
+        + '<a class="qw-material-view" href="' + escAttr(m.viewUrl) + '" target="_blank" rel="noopener">보기</a>'
+        + (isAdmin() ? '<button type="button" class="qw-material-remove" data-remove-link>연결 해제</button>' : '')
+        + '</div>'
+        + '</article>';
     }).join('');
   }
 
-  function renderAiSummary(summary) {
-    if (!summary) return;
-    els.aiSection.hidden = false;
-    els.aiBox.innerHTML = '<div class="qw-ai-meta">Summary v' + summary.version
-      + (summary.threadPostCount != null ? ' · THREAD ' + summary.threadPostCount + '건 분석' : '') + '</div>'
-      + '<div class="qw-ai-text">' + esc(summary.summaryText).replace(/\n/g, '<br>') + '</div>';
+  async function onMaterialListClick(e) {
+    var card = e.target.closest('[data-link-id]');
+    if (!card || !e.target.closest('[data-remove-link]')) return;
+    if (!confirm('이 자료 연결을 해제할까요? (자료 자체는 삭제되지 않습니다)')) return;
+    var res = await authSend('/api/admin/wiki/questions/material-links/' + card.dataset.linkId, 'DELETE');
+    if (res) await load();
   }
 
-  function renderThreads() {
-    var list = (cache.threads || []).filter(function (p) {
-      if (activeFilter === 'all' || activeFilter === 'EXAM_EVIDENCE' || activeFilter === 'VARIANT') return activeFilter === 'all';
-      return p.category === activeFilter;
-    });
-    if (activeFilter === 'VARIANT') { els.threadList.innerHTML = renderPointer('변형문제'); return; }
-    if (activeFilter === 'EXAM_EVIDENCE') { els.threadList.innerHTML = renderPointer('기출 THREAD'); return; }
+  async function runMaterialSearch() {
+    var q = els.findInput.value.trim();
+    els.findResults.innerHTML = '<p class="muted">검색 중...</p>';
+    try {
+      var res = await fetchAuth('/api/admin/wiki/questions/materials/search?q=' + encodeURIComponent(q),
+        { redirectOnAuthError: false });
+      if (res.status === 401 || res.status === 403) { promptLogin(); return; }
+      if (!res.ok) throw new Error();
+      var items = await res.json();
+      if (!items.length) {
+        els.findResults.innerHTML = '<p class="muted">일치하는 자료가 없습니다.</p>';
+        return;
+      }
+      els.findResults.innerHTML = items.map(function (it) {
+        return '<button type="button" class="qw-find-row" data-kind="' + it.materialKind + '" data-id="' + it.materialId + '">'
+          + '<span class="qw-find-kind">' + esc(it.kindLabel) + '</span>'
+          + '<b>' + esc(it.title) + '</b>'
+          + '<span class="qw-find-meta">' + esc(it.meta) + '</span>'
+          + '</button>';
+      }).join('');
+    } catch (_) {
+      els.findResults.innerHTML = '<p class="qw-error">검색에 실패했습니다.</p>';
+    }
+  }
+
+  async function onFindResultClick(e) {
+    var row = e.target.closest('.qw-find-row');
+    if (!row) return;
+    var label = prompt('이 자료의 종류를 입력하세요 (예: 상세 해설지). 비워두면 기본값을 사용합니다.', '상세 해설지');
+    if (label === null) return;
+    var body = { materialKind: row.dataset.kind, materialId: Number(row.dataset.id), label: label.trim() || null };
+    var res = await fetchAuth('/api/admin/wiki/questions/' + questionWikiId + '/material-links',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), redirectOnAuthError: false });
+    if (res.status === 401 || res.status === 403) { promptLogin(); return; }
+    if (res.status === 409) { alert('이미 연결된 자료입니다.'); return; }
+    if (!res.ok) { alert((await res.text()) || '연결에 실패했습니다.'); return; }
+    closeModals();
+    await load();
+  }
+
+  async function onUploadSubmit(e) {
+    e.preventDefault();
+    if (!els.upFile.files.length) { els.uploadMsg.textContent = '파일을 선택해 주세요.'; return; }
+    var fd = new FormData();
+    fd.append('file', els.upFile.files[0]);
+    if (els.upTitle.value.trim()) fd.append('title', els.upTitle.value.trim());
+    if (els.upDesc.value.trim()) fd.append('description', els.upDesc.value.trim());
+    if (els.upLabel.value.trim()) fd.append('docLabel', els.upLabel.value.trim());
+    els.uploadSubmit.disabled = true;
+    els.uploadMsg.textContent = '';
+    try {
+      var res = await fetchAuth('/api/admin/wiki/questions/' + questionWikiId + '/materials/upload',
+        { method: 'POST', body: fd, redirectOnAuthError: false });
+      if (res.status === 401 || res.status === 403) { promptLogin(); return; }
+      if (!res.ok) { els.uploadMsg.textContent = (await res.text()) || '업로드에 실패했습니다.'; return; }
+      els.uploadForm.reset();
+      closeModals();
+      await load();
+    } catch (_) {
+      els.uploadMsg.textContent = '업로드에 실패했습니다.';
+    } finally {
+      els.uploadSubmit.disabled = false;
+    }
+  }
+
+  /* ── 의견 ─────────────────────────────────────────────────── */
+
+  function allOpinions() {
+    if (!cache) return [];
+    return [].concat(cache.threads || [], cache.variants || [], cache.examEvidence || [])
+      .sort(function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); });
+  }
+
+  function matchesFilter(p) {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'VARIANT') return p.dataKind === 'GENERATED_PRACTICE';
+    if (activeFilter === 'EXAM_EVIDENCE') return p.dataKind === 'EXAM_EVIDENCE';
+    return p.category === activeFilter;
+  }
+
+  function renderOpinions() {
+    var list = allOpinions().filter(matchesFilter);
     if (!list.length) {
-      els.threadList.innerHTML = '<p class="muted">아직 글이 없어요. 이 문항에 대한 첫 질문이나 설명을 남겨보세요.</p>';
+      if (activeFilter !== 'all') {
+        els.opinionList.innerHTML = '<p class="qw-empty">이 분류의 의견이 아직 없습니다.</p>';
+        return;
+      }
+      els.opinionList.innerHTML = '<div class="qw-empty-cta">'
+        + '<p>아직 의견이 없습니다.<br>이 문항에서 궁금하거나 중요하다고 생각한 점을 남겨보세요.</p>'
+        + '<button type="button" class="qw-btn-primary" id="qwFirstBtn">+ 첫 의견 남기기</button>'
+        + '</div>';
+      var fb = document.getElementById('qwFirstBtn');
+      if (fb) fb.addEventListener('click', function () { openComposer('new'); });
       return;
     }
-    els.threadList.innerHTML = list.map(renderPost).join('');
+    els.opinionList.innerHTML = list.map(renderOpinionCard).join('');
   }
 
-  function renderPointer(name) {
-    return '<p class="muted">' + name + '은(는) 아래 "' + name + '" 섹션에서 확인하세요.</p>';
-  }
+  function roleLabel(p) { return p.participantType || '참여자'; }
 
-  function renderVariants(variants) {
-    if (!variants.length) {
-      els.variantList.innerHTML = '<p class="muted">아직 공유된 변형문제가 없습니다. 직접 만든 문제를 THREAD에 올려보세요.</p>';
-      return;
-    }
-    els.variantList.innerHTML = variants.map(function (p) {
-      var v = p.variantDetail || {};
-      return '<article class="qw-post qw-variant" data-post-id="' + p.postId + '">'
-        + postHead(p)
-        + (p.title ? '<h4>' + esc(p.title) + '</h4>' : '')
-        + (p.content ? '<p class="qw-post-body">' + esc(p.content).replace(/\n/g, '<br>') + '</p>' : '')
-        + '<dl class="qw-kv">'
-        + kv('문제', v.questionText)
-        + kv('유형', v.questionType)
-        + kv('정답', v.answer)
-        + kv('해설', v.explanation)
-        + kv('근거 문장', v.sourceSentence)
-        + kv('원 문항', v.sourceQuestion)
-        + kv('난이도', v.difficulty)
-        + '</dl>'
-        + attachBlock(p)
-        + postActions(p)
-        + replies(p)
-        + '</article>';
-    }).join('');
-  }
-
-  function renderEvidence(evidence) {
-    if (!evidence.length) {
-      els.evidenceList.innerHTML = '<p class="muted">아직 등록된 기출이 없습니다. 실제 학교 시험에서 이 지문이 출제됐다면 공유해 주세요.</p>';
-      return;
-    }
-    els.evidenceList.innerHTML = evidence.map(function (p) {
-      var e = p.examEvidence || {};
+  function renderOpinionCard(p) {
+    var extra = '';
+    if (p.dataKind === 'GENERATED_PRACTICE' && p.variantDetail) {
+      extra = kvBlock([
+        ['문제', p.variantDetail.questionText], ['유형', p.variantDetail.questionType],
+        ['정답', p.variantDetail.answer], ['해설', p.variantDetail.explanation],
+        ['근거 문장', p.variantDetail.sourceSentence], ['난이도', p.variantDetail.difficulty]
+      ]);
+    } else if (p.dataKind === 'EXAM_EVIDENCE' && p.examEvidence) {
+      var e = p.examEvidence;
       var head = [e.schoolName, e.gradeLabel, e.examPeriod].filter(Boolean).join(' · ');
-      return '<article class="qw-post qw-evidence" data-post-id="' + p.postId + '">'
-        + postHead(p)
-        + (head ? '<h4>' + esc(head) + '</h4>' : '')
-        + (p.content ? '<p class="qw-post-body">' + esc(p.content).replace(/\n/g, '<br>') + '</p>' : '')
-        + '<dl class="qw-kv">'
-        + kv('사용 문장', e.relatedSentence)
-        + kv('출제 유형', e.examQuestionType)
-        + kv('출제 포인트', e.examPoint)
-        + kv('설명', e.description)
-        + '</dl>'
-        + attachBlock(p)
-        + postActions(p)
-        + replies(p)
-        + '</article>';
-    }).join('');
-  }
+      extra = (head ? '<div class="qw-evidence-head">' + esc(head) + '</div>' : '')
+        + kvBlock([
+          ['사용 문장', e.relatedSentence], ['출제 유형', e.examQuestionType],
+          ['출제 포인트', e.examPoint], ['설명', e.description]
+        ]);
+    }
+    var tag = (p.category && p.category !== 'ETC') ? '<span class="qw-tag">#' + esc(p.categoryLabel) + '</span>' : '';
+    var replyCount = (p.replies || []).length;
 
-  function renderPost(p) {
-    return '<article class="qw-post" data-post-id="' + p.postId + '">'
-      + postHead(p)
-      + (p.title ? '<h4>' + esc(p.title) + '</h4>' : '')
-      + '<p class="qw-post-body">' + esc(p.content).replace(/\n/g, '<br>') + '</p>'
+    return '<article class="qw-op-card" data-post-id="' + p.postId + '">'
+      + '<div class="qw-op-meta"><span class="qw-op-role">' + esc(roleLabel(p)) + '</span>'
+      + '<span class="qw-op-time">' + fmt(p.createdAt) + '</span></div>'
+      + (p.title ? '<div class="qw-op-title">' + esc(p.title) + '</div>' : '')
+      + '<div class="qw-op-body">' + nl2br(esc(p.content)) + '</div>'
+      + extra
       + attachBlock(p)
-      + postActions(p)
-      + replies(p)
+      + '<div class="qw-op-foot">'
+      + tag
+      + '<span class="qw-op-actions">'
+      + '<button type="button" class="qw-txt-btn" data-reply>답글' + (replyCount ? ' ' + replyCount : '') + '</button>'
+      + (p.mine ? '<button type="button" class="qw-txt-btn" data-edit>수정</button>' : '')
+      + (p.canManage ? '<button type="button" class="qw-txt-btn" data-del>삭제</button>' : '')
+      + '</span></div>'
+      + renderReplies(p.replies || [])
       + '</article>';
   }
 
-  function postHead(p) {
-    return '<div class="qw-post-head">'
-      + '<span class="qw-badge qw-badge-' + p.dataKind + '">' + esc(p.dataKindLabel) + '</span>'
-      + '<span class="qw-badge qw-cat">' + esc(p.categoryLabel) + '</span>'
-      + '<span class="qw-participant">' + esc(p.participantType) + '</span>'
-      + '<span class="qw-author">' + esc(p.authorName) + '</span>'
-      + '<span class="qw-time">' + fmt(p.createdAt) + '</span>'
-      + '</div>';
-  }
-
-  function postActions(p) {
-    var parts = ['<button type="button" class="qw-txt-btn" data-reply>답글</button>'];
-    if (p.mine) parts.push('<button type="button" class="qw-txt-btn" data-edit>수정</button>');
-    if (p.canManage) parts.push('<button type="button" class="qw-txt-btn" data-del>삭제</button>');
-    return '<div class="qw-post-actions">' + parts.join('') + '</div>';
-  }
-
-  function replies(p) {
-    var rs = p.replies || [];
-    var box = '<div class="qw-replies">';
-    box += rs.map(function (r) {
+  function renderReplies(rs) {
+    if (!rs.length) return '';
+    return '<div class="qw-replies">' + rs.map(function (r) {
       return '<div class="qw-reply" data-post-id="' + r.postId + '">'
-        + '<div class="qw-post-head"><span class="qw-participant">' + esc(r.participantType) + '</span>'
-        + '<span class="qw-author">' + esc(r.authorName) + '</span><span class="qw-time">' + fmt(r.createdAt) + '</span></div>'
-        + '<p class="qw-post-body">' + esc(r.content).replace(/\n/g, '<br>') + '</p>'
-        + '<div class="qw-post-actions">'
+        + '<div class="qw-op-meta"><span class="qw-op-role">' + esc(roleLabel(r)) + '</span>'
+        + '<span class="qw-op-time">' + fmt(r.createdAt) + '</span></div>'
+        + '<div class="qw-op-body">' + nl2br(esc(r.content)) + '</div>'
+        + '<div class="qw-op-foot"><span class="qw-op-actions">'
         + (r.mine ? '<button type="button" class="qw-txt-btn" data-edit-reply>수정</button>' : '')
         + (r.canManage ? '<button type="button" class="qw-txt-btn" data-del-reply>삭제</button>' : '')
-        + '</div></div>';
-    }).join('');
-    box += '</div>';
-    return box;
+        + '</span></div></div>';
+    }).join('') + '</div>';
   }
 
   function attachBlock(p) {
@@ -236,227 +299,171 @@
     if (!atts.length) return '';
     return '<div class="qw-attach">' + atts.map(function (a) {
       return '<a class="qw-attach-row" href="' + escAttr(a.downloadUrl) + '">'
-        + esc(a.originalFileName) + ' <span class="muted">(' + (a.fileSize / 1024 / 1024).toFixed(1) + 'MB)</span> 내려받기 ↓</a>';
+        + esc(a.originalFileName) + ' <span class="muted">(' + mb(a.fileSize) + ')</span> 내려받기 ↓</a>';
     }).join('') + '</div>';
   }
 
-  function kv(label, value) {
-    if (!value) return '';
-    return '<dt>' + label + '</dt><dd>' + esc(value).replace(/\n/g, '<br>') + '</dd>';
+  function kvBlock(pairs) {
+    var rows = pairs.filter(function (p) { return p[1]; })
+      .map(function (p) { return '<dt>' + p[0] + '</dt><dd>' + nl2br(esc(p[1])) + '</dd>'; }).join('');
+    return rows ? '<dl class="qw-kv">' + rows + '</dl>' : '';
   }
-
-  /* ── composer ─────────────────────────────────────────────── */
 
   function onFilterClick(e) {
     var b = e.target.closest('.qw-chip');
     if (!b) return;
     els.filters.querySelectorAll('.qw-chip').forEach(function (c) { c.classList.toggle('active', c === b); });
     activeFilter = b.dataset.filter;
-    renderThreads();
+    renderOpinions();
   }
 
-  function openComposerForNew() {
-    if (!me) { promptLogin(); return; }
-    editingPostId = null;
-    replyParentId = null;
-    els.composer.reset();
-    Array.prototype.forEach.call(els.category.options, function (o) { o.selected = o.value === 'QUESTION'; });
-    els.dataKind.disabled = false;
-    els.dataKind.parentElement.hidden = false;
-    els.category.parentElement.hidden = false;
-    syncSubFields();
-    els.composerSubmit.textContent = '등록';
-    els.composerMsg.textContent = '';
-    els.composer.hidden = false;
-    els.postContent.focus();
-  }
-
-  function closeComposer() {
-    els.composer.hidden = true;
-    editingPostId = null;
-    replyParentId = null;
-  }
-
-  function syncSubFields() {
-    var kind = els.dataKind.value;
-    els.variantFields.hidden = kind !== 'GENERATED_PRACTICE';
-    els.evidenceFields.hidden = kind !== 'EXAM_EVIDENCE';
-    if (kind === 'GENERATED_PRACTICE') selectCategory('VARIANT');
-    if (kind === 'EXAM_EVIDENCE') selectCategory('EXAM_POINT');
-  }
-
-  function selectCategory(value) {
-    Array.prototype.forEach.call(els.category.options, function (o) { o.selected = o.value === value; });
-  }
-
-  function openReply(parentId) {
-    if (!me) { promptLogin(); return; }
-    editingPostId = null;
-    replyParentId = parentId;
-    els.composer.reset();
-    els.dataKind.parentElement.hidden = true;
-    els.category.parentElement.hidden = true;
-    els.variantFields.hidden = true;
-    els.evidenceFields.hidden = true;
-    els.composerSubmit.textContent = '답글 등록';
-    els.composerMsg.textContent = '';
-    els.composer.hidden = false;
-    var anchor = els.threadList.querySelector('[data-post-id="' + parentId + '"]')
-      || els.variantList.querySelector('[data-post-id="' + parentId + '"]')
-      || els.evidenceList.querySelector('[data-post-id="' + parentId + '"]');
-    els.composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    els.postContent.focus();
-    void anchor;
-  }
-
-  function openEdit(post) {
-    if (!post) return;
-    editingPostId = post.postId;
-    replyParentId = null;
-    els.composer.reset();
-    els.dataKind.parentElement.hidden = !!post.parentPostId;
-    els.category.parentElement.hidden = !!post.parentPostId;
-    if (!post.parentPostId) {
-      selectCategory(post.category);
-      Array.prototype.forEach.call(els.dataKind.options, function (o) { o.selected = o.value === post.dataKind; });
-      syncSubFields();
-      var v = post.variantDetail;
-      if (v) {
-        setVal('v_questionText', v.questionText); setVal('v_questionType', v.questionType);
-        setVal('v_answer', v.answer); setVal('v_explanation', v.explanation);
-        setVal('v_sourceSentence', v.sourceSentence); setVal('v_sourceQuestion', v.sourceQuestion);
-        setVal('v_difficulty', v.difficulty);
-      }
-      var e = post.examEvidence;
-      if (e) {
-        setVal('e_schoolName', e.schoolName); setVal('e_gradeLabel', e.gradeLabel);
-        setVal('e_examPeriod', e.examPeriod); setVal('e_relatedSentence', e.relatedSentence);
-        setVal('e_examQuestionType', e.examQuestionType); setVal('e_examPoint', e.examPoint);
-        setVal('e_description', e.description);
-      }
+  async function onOpinionClick(e) {
+    var node = e.target.closest('[data-post-id]');
+    if (!node) return;
+    var postId = node.dataset.postId;
+    if (e.target.closest('[data-reply]')) { openComposer('reply', postId); return; }
+    if (e.target.closest('[data-edit]')) { openComposer('edit', postId); return; }
+    if (e.target.closest('[data-edit-reply]')) { openComposer('edit', postId); return; }
+    if (e.target.closest('[data-del]') || e.target.closest('[data-del-reply]')) {
+      if (!confirm('이 글을 삭제할까요?')) return;
+      var res = await authSend('/api/wiki/questions/posts/' + postId, 'DELETE');
+      if (res) await load();
     }
-    els.postTitle.value = post.title || '';
-    els.postContent.value = post.content || '';
-    els.composerSubmit.textContent = '수정';
+  }
+
+  /* ── 작성 모달 ────────────────────────────────────────────── */
+
+  function openComposer(mode, targetId) {
+    if (!me) { promptLogin(); return; }
+    composerMode = mode;
+    composerTarget = targetId || null;
+    els.composer.reset();
     els.composerMsg.textContent = '';
-    els.composer.hidden = false;
-    els.composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    els.composerSubmit.textContent = mode === 'edit' ? '수정' : (mode === 'reply' ? '답글 등록' : '등록');
+    els.composerTitle.textContent = mode === 'edit' ? '의견 수정' : (mode === 'reply' ? '답글 남기기' : '의견 남기기');
+    els.postFiles.closest('.qw-file-field').hidden = mode === 'edit';
+
+    if (mode === 'edit') {
+      var post = findAny(targetId);
+      if (post) els.postContent.value = post.content || '';
+    }
+    openModal(els.composerModal);
+    els.postContent.focus();
   }
 
-  function setVal(name, value) {
-    var el = els.composer.querySelector('[name="' + name + '"]');
-    if (el) el.value = value || '';
-  }
-
-  async function onSubmit(e) {
+  async function onComposerSubmit(e) {
     e.preventDefault();
     if (!me) { promptLogin(); return; }
     var content = els.postContent.value.trim();
     if (!content) { els.composerMsg.textContent = '내용을 입력해 주세요.'; return; }
 
-    var body = {
-      category: els.category.parentElement.hidden ? null : els.category.value,
-      dataKind: els.dataKind.parentElement.hidden ? null : els.dataKind.value,
-      title: els.postTitle.value.trim() || null,
-      content: content
-    };
-    if (body.dataKind === 'GENERATED_PRACTICE') {
-      body.variant = {
-        questionText: fv('v_questionText'), questionType: fv('v_questionType'), answer: fv('v_answer'),
-        explanation: fv('v_explanation'), sourceSentence: fv('v_sourceSentence'),
-        sourceQuestion: fv('v_sourceQuestion'), difficulty: fv('v_difficulty')
-      };
-    }
-    if (body.dataKind === 'EXAM_EVIDENCE') {
-      body.examEvidence = {
-        schoolName: fv('e_schoolName'), gradeLabel: fv('e_gradeLabel'), examPeriod: fv('e_examPeriod'),
-        relatedSentence: fv('e_relatedSentence'), examQuestionType: fv('e_examQuestionType'),
-        examPoint: fv('e_examPoint'), description: fv('e_description')
-      };
-    }
-
     var url, method;
-    if (editingPostId) {
-      url = '/api/wiki/questions/posts/' + editingPostId; method = 'PUT';
-    } else if (replyParentId) {
-      url = '/api/wiki/questions/' + questionWikiId + '/posts/' + replyParentId + '/replies'; method = 'POST';
+    if (composerMode === 'edit') {
+      url = '/api/wiki/questions/posts/' + composerTarget; method = 'PUT';
+    } else if (composerMode === 'reply') {
+      url = '/api/wiki/questions/' + questionWikiId + '/posts/' + composerTarget + '/replies'; method = 'POST';
     } else {
       url = '/api/wiki/questions/' + questionWikiId + '/posts'; method = 'POST';
     }
+
     els.composerSubmit.disabled = true;
-    var ok = await send(url, method, body);
-    els.composerSubmit.disabled = false;
-    if (ok) closeComposer();
-  }
-
-  function fv(name) {
-    var el = els.composer.querySelector('[name="' + name + '"]');
-    return el && el.value.trim() ? el.value.trim() : null;
-  }
-
-  async function onThreadClick(e) {
-    var article = e.target.closest('[data-post-id]');
-    if (!article) return;
-    var postId = article.dataset.postId;
-    if (e.target.closest('[data-reply]')) { openReply(postId); return; }
-    if (e.target.closest('[data-edit]')) { openEdit(findPost(postId)); return; }
-    if (e.target.closest('[data-edit-reply]')) { openEditReply(postId); return; }
-    if (e.target.closest('[data-del]') || e.target.closest('[data-del-reply]')) {
-      if (!confirm('이 글을 삭제할까요?')) return;
-      await send('/api/wiki/questions/posts/' + postId, 'DELETE');
-    }
-  }
-
-  function openEditReply(replyId) {
-    var reply = null;
-    allRoots().forEach(function (r) {
-      (r.replies || []).forEach(function (x) { if (String(x.postId) === String(replyId)) reply = x; });
-    });
-    if (reply) openEdit(reply);
-  }
-
-  function findPost(postId) {
-    return allRoots().find(function (p) { return String(p.postId) === String(postId); }) || null;
-  }
-
-  function allRoots() {
-    if (!cache) return [];
-    return [].concat(cache.threads || [], cache.variants || [], cache.examEvidence || []);
-  }
-
-  async function send(url, method, body) {
     try {
-      var opts = { method: method, redirectOnAuthError: false };
-      if (body) { opts.headers = { 'Content-Type': 'application/json' }; opts.body = JSON.stringify(body); }
-      var res = await fetchAuth(url, opts);
-      if (res.status === 401 || res.status === 403) { promptLogin(); return false; }
-      if (method === 'DELETE') {
-        if (res.ok || res.status === 204) { await load(); return true; }
-        alert('삭제에 실패했습니다.'); return false;
+      var res = await fetchAuth(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content }),
+        redirectOnAuthError: false
+      });
+      if (res.status === 401 || res.status === 403) { promptLogin(); return; }
+      if (!res.ok) { els.composerMsg.textContent = (await res.text()) || '처리에 실패했습니다.'; return; }
+      var saved = await res.json();
+
+      // 새 글/답글에 첨부가 있으면 이어서 업로드한다(가장 최근 내 글에).
+      var files = els.postFiles.files;
+      if (composerMode !== 'edit' && files && files.length) {
+        var target = latestMinePostId(saved);
+        if (target) {
+          var afd = new FormData();
+          for (var i = 0; i < files.length; i++) afd.append('files', files[i]);
+          var ares = await fetchAuth('/api/wiki/questions/posts/' + target + '/attachments',
+            { method: 'POST', body: afd, redirectOnAuthError: false });
+          if (ares.ok) saved = await ares.json();
+        }
       }
-      if (!res.ok) { els.composerMsg.textContent = (await res.text()) || '처리에 실패했습니다.'; return false; }
-      cache = await res.json();
+      cache = saved;
+      closeModals();
       render();
-      return true;
     } catch (_) {
       els.composerMsg.textContent = '처리에 실패했습니다.';
-      return false;
+    } finally {
+      els.composerSubmit.disabled = false;
     }
+  }
+
+  function latestMinePostId(ctx) {
+    var all = [];
+    [].concat(ctx.threads || [], ctx.variants || [], ctx.examEvidence || []).forEach(function (p) {
+      all.push(p);
+      (p.replies || []).forEach(function (r) { all.push(r); });
+    });
+    var mine = all.filter(function (p) { return p.mine; })
+      .sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+    return mine.length ? mine[0].postId : null;
+  }
+
+  function findAny(postId) {
+    var all = [];
+    allOpinions().forEach(function (p) {
+      all.push(p);
+      (p.replies || []).forEach(function (r) { all.push(r); });
+    });
+    return all.find(function (p) { return String(p.postId) === String(postId); }) || null;
+  }
+
+  /* ── 공통 ─────────────────────────────────────────────────── */
+
+  els.materials.addEventListener('click', onMaterialListClick);
+
+  async function authSend(url, method) {
+    try {
+      var res = await fetchAuth(url, { method: method, redirectOnAuthError: false });
+      if (res.status === 401 || res.status === 403) { promptLogin(); return false; }
+      return res.ok || res.status === 204;
+    } catch (_) { return false; }
+  }
+
+  function openModal(m) { closeModals(); m.hidden = false; document.body.classList.add('qw-modal-open'); }
+  function closeModals() {
+    document.querySelectorAll('.qw-modal').forEach(function (m) { m.hidden = true; });
+    document.body.classList.remove('qw-modal-open');
   }
 
   function syncAuthUi() {
-    var loggedIn = !!me;
     els.writeBtn.hidden = false;
-    els.loginHint.hidden = loggedIn;
+    els.loginHint.hidden = !!me;
+    els.materialAdmin.hidden = !isAdmin();
   }
 
   function promptLogin() {
-    alert('로그인하면 읽고, 묻고, 직접 참여할 수 있어요.');
+    alert('로그인하면 이 문항에 참여할 수 있어요.');
     if (typeof openLoginModal === 'function') openLoginModal();
   }
 
+  function debounce(fn, ms) {
+    var t;
+    return function () { clearTimeout(t); t = setTimeout(fn, ms); };
+  }
   function readUser() { try { return JSON.parse(sessionStorage.getItem('currentUser')); } catch (_) { return null; } }
-  function fmt(v) { return v ? new Date(v).toLocaleDateString('ko-KR') : ''; }
+  function fmt(v) {
+    if (!v) return '';
+    var d = new Date(v), diff = (Date.now() - d.getTime()) / 60000;
+    if (diff < 1) return '방금 전';
+    if (diff < 60) return Math.floor(diff) + '분 전';
+    if (diff < 1440) return Math.floor(diff / 60) + '시간 전';
+    return d.toLocaleDateString('ko-KR');
+  }
+  function mb(bytes) { return (Number(bytes || 0) / 1024 / 1024).toFixed(1) + 'MB'; }
+  function nl2br(s) { return String(s).replace(/\n/g, '<br>'); }
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>'"]/g, function (c) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c];

@@ -64,8 +64,10 @@ public class QuestionThreadService {
         ? QuestionThreadDataKind.DISCUSSION
         : (request == null || request.dataKind() == null
             ? QuestionThreadDataKind.DISCUSSION : request.dataKind());
+    // 단순화된 UI 는 분류를 사용자에게 떠넘기지 않는다 — 미지정이면 ETC(미분류)로 저장하고
+    // 향후 Browser AI 자동분류가 이 값을 갱신한다.
     QuestionThreadCategory category = request == null || request.category() == null
-        ? QuestionThreadCategory.QUESTION : request.category();
+        ? QuestionThreadCategory.ETC : request.category();
 
     // 구조화 상세는 글 저장 전에 먼저 검증한다(부분 저장 방지).
     QuestionThreadPostRequest.Variant variant =
@@ -120,7 +122,11 @@ public class QuestionThreadService {
           category,
           dataKind);
 
-      if (!post.isReply() && post.getDataKind() == QuestionThreadDataKind.GENERATED_PRACTICE) {
+      // 변형문제/기출 상세는 요청에 실제로 들어온 경우에만 손댄다 — 단순화된 UI(내용만)로
+      // 기존 GENERATED_PRACTICE/EXAM_EVIDENCE 글을 수정해도 원문·상세가 보존된다.
+      if (!post.isReply()
+          && post.getDataKind() == QuestionThreadDataKind.GENERATED_PRACTICE
+          && request != null && request.variant() != null) {
         QuestionThreadPostRequest.Variant v = requireVariant(request);
         variantRepository.findByPost_PostId(postId).ifPresentOrElse(
             existing -> existing.update(
@@ -133,7 +139,9 @@ public class QuestionThreadService {
                 trimToNull(v.difficulty(), "난이도", 20)),
             () -> variantRepository.save(buildVariant(post, v)));
       }
-      if (!post.isReply() && post.getDataKind() == QuestionThreadDataKind.EXAM_EVIDENCE) {
+      if (!post.isReply()
+          && post.getDataKind() == QuestionThreadDataKind.EXAM_EVIDENCE
+          && request != null && request.examEvidence() != null) {
         QuestionThreadPostRequest.ExamEvidence e = requireEvidence(request);
         examEvidenceRepository.findByPost_PostId(postId).ifPresentOrElse(
             existing -> existing.update(
