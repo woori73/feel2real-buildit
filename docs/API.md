@@ -2757,6 +2757,32 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 - 관련 코드: `WikiAnalysisMaterialController`/`Service`/`Repository`, `domain/wikianalysis/*`. 마이그레이션 **`V957`**. 공용: `infrastructure/storage/DocumentUploadValidator`, `infrastructure/web/FileDownloadResponses`.
 
+## 15-3. 문항별 Question Wiki + THREAD API (`/api/wiki/questions`) — 공개 BuildIt Wiki (V959)
+
+한 모의고사 문항을 중심으로 질문·해설·토론·변형문제·기출을 축적한다. 하위 데이터는 안정적 `questionWikiId` 로 연결되고, 향후 AI 는 `GET /api/wiki/questions/{id}/context` 한 번으로 문항 전체 맥락을 읽는다(MCP `get_question_wiki_context(questionWikiId)` 가 그대로 감쌀 수 있게).
+
+**보안 경계**: `GET /api/wiki/questions`·`/questions/**` 만 permitAll(목록/상세/Context/첨부 다운로드). write(글/답글/수정/삭제/첨부)는 `/api/**` catch-all → 인증(STUDENT/TUTOR/ADMIN 누구나). 자료 링크는 `/api/admin/wiki/questions/**` → ROLE_ADMIN. 작성자만 수정, 작성자·ADMIN 만 숨김. `@AuthenticationPrincipal` 기준 — request body user id 불신뢰.
+
+### 공개 (read)
+- `GET /api/wiki/questions?subject=&grade=&examYear=&examLabel=` — visible 문항, `(grade, questionNumber)` 순. → `QuestionWikiSummaryResponse[]`(questionWikiId, subject, grade, examYear, examLabel, questionNumber, passageGroupKey, title, displayContext, threadCount).
+- `GET /api/wiki/questions/{id}` — 단건 요약.
+- `GET /api/wiki/questions/{id}/context` — 문항 전체 Context. `QuestionWikiContextResponse`: `question`(문항 정보 + 공동지문 번호), `materials[]`(연결 자료 + downloadUrl), `threads[]`(DISCUSSION 최상위 + `replies[]` 1단계 중첩), `variants[]`(GENERATED_PRACTICE + `variantDetail`), `examEvidence[]`(EXAM_EVIDENCE + `examEvidence`), `aiSummary`(최신 APPROVED 또는 null), `counts`. 각 글은 `category`/`categoryLabel` + `dataKind`/`dataKindLabel` + `participantType`(교육자/학생/운영자) + `mine`/`canManage` + `attachments[]`.
+- `GET /api/wiki/questions/attachments/{attachmentId}/file` — `Content-Disposition: attachment` 강제(`FileDownloadResponses.attachment`).
+
+### write (인증)
+- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category, dataKind, title?, content, parentPostId?, variant?, examEvidence?}. `dataKind=GENERATED_PRACTICE` → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수(글 저장 전 검증). → 갱신된 Context.
+- `POST /api/wiki/questions/{id}/posts/{parentPostId}/replies` (JSON) — 1단계 답글(답글의 답글 400, 답글은 항상 DISCUSSION). → Context.
+- `PUT /api/wiki/questions/posts/{postId}` (JSON) — 작성자만. 변형/기출 상세도 함께 갱신. → Context.
+- `DELETE /api/wiki/questions/posts/{postId}` — 작성자·ADMIN soft-hide. → Context.
+- `POST /api/wiki/questions/posts/{postId}/attachments` (multipart, `files`/`files[]`) — 작성자만, 글당 10개·파일당 10MB. → Context.
+- `DELETE /api/wiki/questions/attachments/{attachmentId}` — 업로더·글 작성자·ADMIN, 204.
+
+### 관리 (ADMIN)
+- `POST /api/admin/wiki/questions/{id}/material-links` — body `{materialKind: EXAM_ORIGINAL|ANALYSIS_MATERIAL, materialId, label?}`. 중복 409.
+- `DELETE /api/admin/wiki/questions/material-links/{linkId}` — 204.
+
+- 관련 코드: `domain/questionwiki/*`(`QuestionWikiController`/`QuestionWikiAdminController`/`QuestionWikiPageController`, `QuestionWikiService`/`QuestionThreadService`). SSR: `/wiki/questions`, `/wiki/questions/{id}`(`Cache-Control: no-store`). 마이그레이션 **`V959`**.
+
 ## 16. Landing Video Admin / Public API
 
 관리형 영상은 임의 목록이 아니라 아래 고정 3슬롯이다. 슬롯 생성·삭제·정렬 API는 제공하지 않는다.

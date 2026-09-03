@@ -1127,6 +1127,20 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 
 인덱스: `idx_cpa_post(post_id, is_visible, attachment_id)`. 게시글당 최대 10개, 파일당 20MB, `DocumentUploadValidator` 통과 필수.
 
+### 4.47 question_wikis + THREAD ✅ 공개 BuildIt Wiki 문항별 Question Wiki (V959)
+
+한 모의고사 문항을 장기적으로 진화하는 Knowledge Unit 으로 취급한다. 모든 하위 데이터는 안정적 `question_wiki_id` 로 연결되어, 향후 AI 가 문항 전체 Context 를 한 번에(`GET /api/wiki/questions/{id}/context`) 읽는다. 기존 `/wiki` 커뮤니티(`community_posts` scope=wiki)·자료실(`wiki_exam_originals`/`wiki_analysis_materials`)은 건드리지 않는다.
+
+- **`question_wikis`** — 문항. `UNIQUE(subject, grade, exam_year, exam_label, question_number)`. `passage_group_key` 로 공동지문(41-42 등) 묶음. seed: 2026년 9월 전국연합학력평가 고1·고2 영어, 문항 20~24 / 29~42(38행).
+- **`question_wiki_material_links`** — 문항 ↔ `wiki_exam_originals`/`wiki_analysis_materials` 링크(참조만). ADMIN 관리.
+- **`question_thread_posts`** — THREAD 글(+ `parent_post_id` 1단계 답글). 두 축을 저장: `category`(질문/해석·구문/어법/어휘/출제포인트/예상문제/변형문제/풀이·해설/해설개선/수업인사이트/기타) + `data_kind`(`DISCUSSION` 커뮤니티 지식 / `GENERATED_PRACTICE` 사용자 제작 문제 / `EXAM_EVIDENCE` 실제 기출 증거). `author_role` 은 작성 시점 스냅샷(공개 participant type = 교육자/학생/운영자). soft-hide(`is_visible`+`hidden_by`).
+- **`question_thread_variant_details`** — `GENERATED_PRACTICE` 1:1. `question_text/question_type/answer/explanation/source_sentence/source_question/difficulty` 구조화 저장(향후 문제 DB/WORKBOOK 승격 대비).
+- **`question_thread_exam_evidence`** — `EXAM_EVIDENCE` 1:1. `school_name/grade_label/exam_period/related_sentence/exam_question_type/exam_point/description` + 향후 `exam_id` 선택 연결. 예상과 절대 같은 데이터로 취급하지 않는다.
+- **`question_thread_attachments`** — `lesson_community_attachments` 형태. 글당 10개, 파일당 10MB, `DocumentUploadValidator.validateAttachment`.
+- **`question_ai_summaries`** — 버전형 AI 종합(v1→v2). `status DRAFT|APPROVED`. 이번 PR 에는 write 경로 없음(빈 테이블) — Context 응답에 최신 `APPROVED` 포함만. AI Suggestion → Human Approval → New Version.
+
+권한: 읽기 공개(비로그인), write(글/답글/수정/삭제/첨부)는 인증(STUDENT/TUTOR/ADMIN 누구나). 작성자만 수정, 작성자·ADMIN 만 숨김. 전부 `@AuthenticationPrincipal` 기준 — request body user id 불신뢰.
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과

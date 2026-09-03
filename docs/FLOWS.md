@@ -669,6 +669,17 @@ TUTOR click
 
 계약 변경: SSR view 신규(`/wiki/originals`, `/wiki/analysis`, `/wiki/board/{key}/new`, `/wiki/posts/{id}`, `/admin/wiki-analysis`) + `/api/wiki/analysis-materials*`·`/api/open-community/posts/{id}/attachments`·`/attachments/{id}`·`/attachments/{id}/file`(신규) + `CommunityPostDetailResponse`에 `attachments[]` 추가. 기존 `/problem-generator/**` · `/analyzes`(ExamAnalysis) · `/community` 사용자 플로우는 불변. 마이그레이션 **V957·V958**(신규 테이블).
 
+### 12-1-1. 문항별 Question Wiki + THREAD (`/wiki/questions`, V959)
+
+허브 `/wiki` 의 "문항별 THREAD" 진입점 → `/wiki/questions`(학년 탭 고2/고1, `GET /api/wiki/questions?grade=`) → 문항 카드 → `/wiki/questions/{id}`.
+
+- **문항 = Knowledge Unit**: `question_wikis`(V959). seed = 2026년 9월 전국연합학력평가 고1·고2 영어, 문항 20~24 / 29~42. 41-42는 `passage_group_key` 로 공동지문 한 세트. 문항 번호·범위는 사용자 지정값 그대로 — 임의 확장 안 함.
+- **문항 상세 구조(스펙 §13)**: 문맥 → 학습자료(`question_wiki_material_links` → 기존 `wiki_exam_originals`/`wiki_analysis_materials`, 없으면 빈 상태) → (향후) AI SUMMARY → THREAD → 변형문제 → 기출 THREAD. THREAD 필터 chip `전체 | 질문 | 해설 | 출제포인트 | 변형문제 | 기출`.
+- **참여(교육자·학생 공통)**: 읽기 공개. 로그인하면 글 작성 — `category`(11종) + `dataKind`(`DISCUSSION`/`GENERATED_PRACTICE`/`EXAM_EVIDENCE`) 선택. 변형문제는 `question_text/answer/explanation/source_sentence` 등 구조화 필드, 기출은 `school_name/exam_period/related_sentence/exam_question_type/exam_point` 필드를 추가로 받는다. 1단계 답글. 작성자 수정/삭제(soft-hide), ADMIN 전체 관리. 모든 write 는 `@AuthenticationPrincipal` 기준, `redirectOnAuthError:false`(로그인 모달, `/home` 이동 안 함).
+- **AI Context(스펙 §8)**: `GET /api/wiki/questions/{id}/context` 가 문항 전체 맥락(문항정보·자료·THREAD·변형문제·기출·이전 AI 요약)을 안정적 `questionWikiId` 로 한 번에 반환. 데이터 성격이 `dataKind` 로 분리되어 있어 AI 가 예상과 실제 기출을 혼동하지 않는다. `question_ai_summaries` 는 버전형 + `DRAFT/APPROVED` — 이번 범위엔 write 없음(AI Suggestion → Human Approval → New Version 만 확보).
+
+계약 변경: SSR view 신규(`/wiki/questions`, `/wiki/questions/{id}`, `Cache-Control: no-store`) + `/api/wiki/questions/**`(read permitAll) + write/admin API(`domain/questionwiki`). 기존 `/wiki` 커뮤니티·자료실·`/problem-generator/**` 불변. 마이그레이션 **V959**(신규 테이블 7 + 문항 seed 38).
+
 ## 13. BUILD IT CHART — Google Educator Discovery V2
 
 1차 범위는 BuildIt 홈페이지 연결, `/admin/chart`, 압구정·신사 V2 실제 검색, 승인/제외, 공개 Chart 반영까지다.
