@@ -2,6 +2,11 @@
    wiki.css 토큰·레이아웃을 이어받고, 문항 화면 전용 요소만 정의한다.
    핵심: 사람이 보는 순간 "여기는 자료, 여기는 의견, 나는 여기서 의견을 남긴다"를 알 수 있어야 한다. */
 
+/* JS 가 el.hidden 으로 토글하는 요소(모달·관리 버튼·힌트)가 display:flex 등에 가려지지 않게. */
+.qw-detail-page [hidden],
+.qw-list-page [hidden],
+.qw-modal[hidden] { display: none !important; }
+
 .qw-list-page .back-link,
 .qw-detail-page .back-link {
   display: inline-block;
