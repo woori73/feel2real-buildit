@@ -31,6 +31,15 @@ public class DocumentUploadValidator {
   /** 게시글 첨부(변형문제·자료 공유·요청)용 화이트리스트 = 문서 + 이미지. */
   private static final Set<String> ATTACHMENT_EXTENSIONS = union(ALLOWED_EXTENSIONS, IMAGE_EXTENSIONS);
 
+  /** HTML 확장자. 전역 자료실 정책에는 절대 포함하지 않는다 — 아래 별도 세트로만 노출. */
+  private static final Set<String> HTML_EXTENSIONS = Set.of("html", "htm");
+
+  /**
+   * Question Wiki ADMIN "직접 올리기" 전용 화이트리스트 = 문서 + HTML.
+   * 전역 자료실({@link #validate(MultipartFile)})은 그대로 두고, 이 경로에서만 HTML 을 허용한다.
+   */
+  public static final Set<String> DOCUMENT_WITH_HTML_EXTENSIONS = union(ALLOWED_EXTENSIONS, HTML_EXTENSIONS);
+
   private static final byte[] MAGIC_PDF = {0x25, 0x50, 0x44, 0x46};                                // %PDF
   private static final byte[] MAGIC_OLE2 =
       {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};  // hwp5/doc/xls/ppt
@@ -87,6 +96,23 @@ public class DocumentUploadValidator {
     }
   }
 
+  /**
+   * HTML 은 매직바이트가 없는 텍스트 포맷이라, 실행파일 위장(MZ/ELF/{@code #!})을 배제한 뒤
+   * 선행 공백/BOM 을 건너뛴 첫 바이트가 {@code '<'} 인지로만 판별한다(WHATWG sniff 와 동일 취지).
+   */
+  private static boolean looksLikeHtml(byte[] head) {
+    int i = 0;
+    if (head.length >= 3
+        && (head[0] & 0xFF) == 0xEF && (head[1] & 0xFF) == 0xBB && (head[2] & 0xFF) == 0xBF) {
+      i = 3;  // UTF-8 BOM
+    }
+    while (i < head.length
+        && (head[i] == ' ' || head[i] == '\t' || head[i] == '\r' || head[i] == '\n')) {
+      i++;
+    }
+    return i < head.length && head[i] == '<';
+  }
+
   /** 확장자로 응답 Content-Type을 추론한다. 알 수 없으면 application/octet-stream. */
   public static String contentType(String filename) {
     String extension = extensionOf(filename);
@@ -104,6 +130,7 @@ public class DocumentUploadValidator {
       case "ppt" -> "application/vnd.ms-powerpoint";
       case "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
       case "zip" -> "application/zip";
+      case "html", "htm" -> "text/html";
       case "jpg", "jpeg" -> "image/jpeg";
       case "png" -> "image/png";
       case "webp" -> "image/webp";
@@ -120,6 +147,7 @@ public class DocumentUploadValidator {
       case "jpg", "jpeg" -> startsWith(head, MAGIC_JPEG);
       case "png" -> startsWith(head, MAGIC_PNG);
       case "webp" -> startsWith(head, MAGIC_RIFF) && regionEquals(head, 8, MAGIC_WEBP);
+      case "html", "htm" -> looksLikeHtml(head);
       default -> false;
     };
   }

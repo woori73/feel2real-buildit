@@ -17,13 +17,19 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.reposi
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -198,8 +204,78 @@ class QuestionWikiServiceTest {
   @Test
   @DisplayName("given 학생 when searchLinkableMaterials then 403")
   void searchLinkableMaterials_studentDenied() {
-    org.assertj.core.api.Assertions.assertThatThrownBy(
-            () -> service.searchLinkableMaterials(student(), "x"))
-        .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+    assertThatThrownBy(() -> service.searchLinkableMaterials(student(), "x"))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  // ── HTML 직접 올리기 ──
+
+  private static f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.dto.WikiAnalysisMaterialResponse
+      analysisResponse(Long id, String fileName) {
+    return new f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.dto.WikiAnalysisMaterialResponse(
+        id, "자습용 상세해설", "설명", "전국연합", 2, 2026, "공통", "9월 전국연합학력평가", "영어",
+        "text/html", fileName, 2048L, true, null, null, "/api/wiki/analysis-materials/" + id + "/download");
+  }
+
+  @Test
+  @DisplayName("given ADMIN + .html when 직접 올리기 then HTML set 으로 저장 + 현재 문항에만 연결 + previewKind=HTML")
+  void uploadHtml_linksToCurrentQuestionOnly() {
+    when(wikiAnalysisMaterialService.create(any(), any(), any(), any(), any(), any(), any(), any(),
+        anyBoolean(), any(), any())).thenReturn(analysisResponse(88L, "deep-dive.html"));
+    when(materialLinkRepository.save(any())).thenAnswer(inv -> {
+      QuestionWikiMaterialLink l = inv.getArgument(0);
+      ReflectionTestUtils.setField(l, "linkId", 77L);
+      return l;
+    });
+    MockMultipartFile file = new MockMultipartFile(
+        "file", "deep-dive.html", "text/html", "<!DOCTYPE html><p>x".getBytes());
+
+    QuestionWikiMaterialLinkResponse res = service.uploadAndLinkMaterial(
+        admin(), 1L, "자습용 상세해설", "설명", "상세 해설지", file);
+
+    // HTML 을 허용하는 세트로 저장을 위임했는지
+    verify(wikiAnalysisMaterialService).create(any(), any(), any(), any(), any(), any(), any(), any(),
+        anyBoolean(), any(),
+        eq(f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS));
+    // 링크는 현재 문항(1L)에만
+    ArgumentCaptor<QuestionWikiMaterialLink> cap = ArgumentCaptor.forClass(QuestionWikiMaterialLink.class);
+    verify(materialLinkRepository).save(cap.capture());
+    assertThat(cap.getValue().getQuestionWiki().getQuestionWikiId()).isEqualTo(1L);
+    assertThat(cap.getValue().getMaterialKind()).isEqualTo(QuestionWikiMaterialKind.ANALYSIS_MATERIAL);
+    assertThat(cap.getValue().getMaterialId()).isEqualTo(88L);
+
+    assertThat(res.previewKind()).isEqualTo("HTML");
+    assertThat(res.previewUrl()).isEqualTo("/api/wiki/questions/materials/77/preview");
+  }
+
+  @Test
+  @DisplayName("given 학생 when 직접 올리기 then 403 (저장 위임 안 함)")
+  void uploadHtml_studentDenied() {
+    MockMultipartFile file = new MockMultipartFile("file", "x.html", "text/html", "<p>x".getBytes());
+    assertThatThrownBy(() -> service.uploadAndLinkMaterial(student(), 1L, "t", null, null, file))
+        .isInstanceOf(AccessDeniedException.class);
+    verify(wikiAnalysisMaterialService, never()).create(any(), any(), any(), any(), any(), any(), any(), any(),
+        anyBoolean(), any(), any());
+  }
+
+  @Test
+  @DisplayName("given HTML 링크 when getHtmlPreview then 원본 바이트 반환 / 비-HTML 링크는 404")
+  void getHtmlPreview() {
+    QuestionWikiMaterialLink htmlLink = QuestionWikiMaterialLink.builder()
+        .questionWiki(question).materialKind(QuestionWikiMaterialKind.ANALYSIS_MATERIAL)
+        .materialId(88L).label("상세 해설지").build();
+    ReflectionTestUtils.setField(htmlLink, "linkId", 77L);
+    when(materialLinkRepository.findById(77L)).thenReturn(Optional.of(htmlLink));
+    when(wikiAnalysisMaterialService.getPublicDownload(88L)).thenReturn(
+        new WikiAnalysisMaterialService.DownloadFile("<html>hi".getBytes(), "deep-dive.html", "text/html"));
+
+    QuestionWikiService.HtmlPreview p = service.getHtmlPreview(77L);
+    assertThat(new String(p.bytes())).isEqualTo("<html>hi");
+
+    QuestionWikiMaterialLink pdfLink = QuestionWikiMaterialLink.builder()
+        .questionWiki(question).materialKind(QuestionWikiMaterialKind.EXAM_ORIGINAL).materialId(3L).build();
+    ReflectionTestUtils.setField(pdfLink, "linkId", 78L);
+    when(materialLinkRepository.findById(78L)).thenReturn(Optional.of(pdfLink));
+    assertThatThrownBy(() -> service.getHtmlPreview(78L)).isInstanceOf(ResponseStatusException.class);
   }
 }

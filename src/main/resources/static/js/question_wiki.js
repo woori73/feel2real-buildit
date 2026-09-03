@@ -45,7 +45,10 @@
     upDesc: document.getElementById('qwUpDesc'),
     upFile: document.getElementById('qwUpFile'),
     uploadSubmit: document.getElementById('qwUploadSubmit'),
-    uploadMsg: document.getElementById('qwUploadMsg')
+    uploadMsg: document.getElementById('qwUploadMsg'),
+    htmlPreviewModal: document.getElementById('qwHtmlPreviewModal'),
+    htmlFrame: document.getElementById('qwHtmlFrame'),
+    htmlDownload: document.getElementById('qwHtmlDownload')
   };
 
   init();
@@ -118,8 +121,14 @@
     }
 
     els.materials.innerHTML = materials.map(function (m) {
-      var kindLine = esc(m.label || m.kindLabel);
+      var isHtml = m.previewKind === 'HTML';
+      var kindLine = (isHtml ? '<span class="qw-fmt-badge">HTML</span> ' : '') + esc(m.label || m.kindLabel);
       var title = esc(m.title || m.fileName || m.kindLabel);
+      var viewBtn = isHtml
+        ? '<button type="button" class="qw-material-view" data-html-preview'
+          + ' data-preview-url="' + escAttr(m.previewUrl) + '" data-download-url="' + escAttr(m.viewUrl)
+          + '" data-title="' + escAttr(m.title || m.fileName || 'HTML 자료') + '">보기</button>'
+        : '<a class="qw-material-view" href="' + escAttr(m.viewUrl) + '" target="_blank" rel="noopener">보기</a>';
       return '<article class="qw-material-card" data-link-id="' + m.linkId + '">'
         + '<div class="qw-material-body">'
         + '<span class="qw-material-kind">' + kindLine + '</span>'
@@ -127,7 +136,7 @@
         + (m.description ? '<span class="qw-material-desc">' + esc(m.description) + '</span>' : '')
         + '</div>'
         + '<div class="qw-material-side">'
-        + '<a class="qw-material-view" href="' + escAttr(m.viewUrl) + '" target="_blank" rel="noopener">보기</a>'
+        + viewBtn
         + (isAdmin() ? '<button type="button" class="qw-material-remove" data-remove-link>연결 해제</button>' : '')
         + '</div>'
         + '</article>';
@@ -136,7 +145,13 @@
 
   async function onMaterialListClick(e) {
     var card = e.target.closest('[data-link-id]');
-    if (!card || !e.target.closest('[data-remove-link]')) return;
+    if (!card) return;
+    var previewBtn = e.target.closest('[data-html-preview]');
+    if (previewBtn) {
+      openHtmlPreview(previewBtn.dataset.previewUrl, previewBtn.dataset.downloadUrl, previewBtn.dataset.title);
+      return;
+    }
+    if (!e.target.closest('[data-remove-link]')) return;
     if (!confirm('이 자료 연결을 해제할까요? (자료 자체는 삭제되지 않습니다)')) return;
     var res = await authSend('/api/admin/wiki/questions/material-links/' + card.dataset.linkId, 'DELETE');
     if (res) await load();
@@ -436,6 +451,15 @@
   function closeModals() {
     document.querySelectorAll('.qw-modal').forEach(function (m) { m.hidden = true; });
     document.body.classList.remove('qw-modal-open');
+    if (els.htmlFrame) els.htmlFrame.removeAttribute('src');  // 미리보기 iframe 정리
+  }
+
+  // HTML 학습자료는 격리된 sandbox iframe 으로만 연다(부모 DOM 삽입 X, 스크립트 차단, CSS 유지).
+  function openHtmlPreview(previewUrl, downloadUrl, title) {
+    document.getElementById('qwHtmlPreviewTitle').textContent = title || 'HTML 학습자료 미리보기';
+    els.htmlDownload.setAttribute('href', downloadUrl || '#');
+    openModal(els.htmlPreviewModal);
+    els.htmlFrame.setAttribute('src', previewUrl);
   }
 
   function syncAuthUi() {

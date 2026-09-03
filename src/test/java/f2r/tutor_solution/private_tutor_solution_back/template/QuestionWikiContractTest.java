@@ -104,6 +104,23 @@ class QuestionWikiContractTest {
     assertThat(listJs).contains("/wiki/questions/");
   }
 
+  @Test
+  @DisplayName("HTML 직접 올리기: accept 에 .html + 학습자료 카드는 [HTML] 미리보기를 격리 iframe 으로 연다")
+  void htmlUpload_acceptAndSandboxedPreview() throws IOException {
+    String html = read("templates/public/question_wiki.html");
+    assertThat(html).contains(".html,.htm");           // 파일 선택 accept
+    assertThat(html).contains("id=\"qwHtmlPreviewModal\"", "id=\"qwHtmlFrame\"");
+    // 부모 DOM 삽입이 아니라 sandbox iframe
+    assertThat(html).contains("<iframe id=\"qwHtmlFrame\"").contains("sandbox");
+
+    String js = read("static/js/question_wiki.js");
+    assertThat(js).contains("previewKind === 'HTML'");
+    assertThat(js).contains("data-html-preview", "openHtmlPreview");
+    assertThat(js).contains("els.htmlFrame.setAttribute('src'");
+    // iframe src 로만 연다(srcdoc/innerHTML 로 부모에 삽입하지 않음)
+    assertThat(js).doesNotContain("htmlFrame.srcdoc").doesNotContain("innerHTML = html");
+  }
+
   private static String read(String classpath) throws IOException {
     try (var in = new ClassPathResource(classpath).getInputStream()) {
       return new String(in.readAllBytes(), StandardCharsets.UTF_8);

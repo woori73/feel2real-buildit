@@ -111,6 +111,12 @@
 .qw-material-view {
   background: #14705a; color: #fff; text-decoration: none; font-size: .85rem; font-weight: 600;
   padding: 6px 16px; border-radius: 8px;
+  border: 0; cursor: pointer; font-family: inherit; line-height: 1.4;
+}
+.qw-material-view:hover { background: #0f5b49; }
+.qw-fmt-badge {
+  font-size: .66rem; font-weight: 700; letter-spacing: .04em;
+  background: #14705a; color: #fff; padding: 1px 6px; border-radius: 4px; vertical-align: 1px;
 }
 .qw-material-remove { background: none; border: none; color: #b7bdba; font-size: .76rem; cursor: pointer; }
 .qw-material-remove:hover { color: #c0392b; }
@@ -169,6 +175,11 @@ body.qw-modal-open { overflow: hidden; }
 .qw-modal-dialog {
   background: #fff; border-radius: 14px; width: 100%; max-width: 480px;
   padding: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
+}
+.qw-modal-dialog.qw-modal-wide { max-width: 920px; }
+.qw-html-frame {
+  width: 100%; height: 72vh; border: 1px solid #e2e6e4; border-radius: 8px;
+  background: #fff; display: block;
 }
 .qw-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .qw-modal-head h3 { margin: 0; font-size: 1.05rem; }

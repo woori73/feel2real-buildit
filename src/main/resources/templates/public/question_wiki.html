@@ -137,8 +137,9 @@
           <textarea id="qwUpDesc" rows="2" maxlength="500"></textarea>
         </label>
         <label class="qw-field qw-file-field">
-          <span>파일 <span class="muted">(PDF·HWP·HWPX·DOC·DOCX·XLS·XLSX·PPT·PPTX·ZIP)</span></span>
-          <input type="file" id="qwUpFile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" required>
+          <span>파일 <span class="muted">(PDF·HWP·HWPX·DOC·DOCX·XLS·XLSX·PPT·PPTX·ZIP·HTML)</span></span>
+          <input type="file" id="qwUpFile"
+                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm" required>
         </label>
         <p id="qwUploadMsg" class="qw-msg"></p>
         <div class="qw-modal-actions">
@@ -149,9 +150,25 @@
     </div>
   </div>
 
+  <!-- HTML 학습자료 격리 미리보기 -->
+  <div class="qw-modal" id="qwHtmlPreviewModal" hidden>
+    <div class="qw-modal-dialog qw-modal-wide" role="dialog" aria-modal="true" aria-labelledby="qwHtmlPreviewTitle">
+      <div class="qw-modal-head">
+        <h3 id="qwHtmlPreviewTitle">학습자료 미리보기</h3>
+        <button type="button" class="qw-modal-close" data-qw-close aria-label="닫기">×</button>
+      </div>
+      <iframe id="qwHtmlFrame" class="qw-html-frame" title="HTML 학습자료 미리보기"
+              sandbox referrerpolicy="no-referrer" loading="lazy"></iframe>
+      <div class="qw-modal-actions">
+        <a id="qwHtmlDownload" class="qw-btn-ghost" href="#" target="_blank" rel="noopener">파일 내려받기</a>
+        <button type="button" class="qw-btn-primary" data-qw-close>닫기</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/question_wiki.js?v=20260904-1"></script>
+  <script src="/js/question_wiki.js?v=20260904-2"></script>
 </th:block>
 </body>
 </html>

@@ -10,8 +10,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.dto.Wi
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.entity.WikiAnalysisMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.repository.WikiAnalysisMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService.DownloadFile;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.repository.WikiExamOriginalRepository;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -219,6 +221,7 @@ public class QuestionWikiService {
     String subject = "ENGLISH".equalsIgnoreCase(q.getSubject()) ? "영어" : q.getSubject();
     try {
       AuditorContextHolder.set(principal.loginId());
+      // 이 경로에서만 문서 + HTML 을 허용한다(전역 자료실 정책 불변).
       WikiAnalysisMaterialResponse created = wikiAnalysisMaterialService.create(
           blankToNull(title) == null ? defaultTitle(q, docLabel) : title.trim(),
           blankToNull(description),
@@ -229,7 +232,8 @@ public class QuestionWikiService {
           truncate(q.getExamLabel(), 40),
           subject,
           true,
-          file);
+          file,
+          DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS);
       QuestionWikiMaterialLink link = materialLinkRepository.save(QuestionWikiMaterialLink.builder()
           .questionWiki(q)
           .materialKind(QuestionWikiMaterialKind.ANALYSIS_MATERIAL)
@@ -250,6 +254,22 @@ public class QuestionWikiService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "자료 링크를 찾을 수 없습니다."));
     materialLinkRepository.delete(link);
   }
+
+  /** HTML 학습자료 격리 미리보기용 원본. 공개(카드의 [보기]와 동일 대상). HTML 링크가 아니면 404. */
+  public HtmlPreview getHtmlPreview(Long linkId) {
+    QuestionWikiMaterialLink link = materialLinkRepository.findById(linkId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "자료를 찾을 수 없습니다."));
+    if (link.getMaterialKind() != QuestionWikiMaterialKind.ANALYSIS_MATERIAL) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "미리보기를 지원하지 않는 자료입니다.");
+    }
+    DownloadFile file = wikiAnalysisMaterialService.getPublicDownload(link.getMaterialId());
+    if (!QuestionWikiMaterialLinkResponse.isHtml(file.fileName())) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "HTML 자료가 아닙니다.");
+    }
+    return new HtmlPreview(file.bytes(), file.fileName());
+  }
+
+  public record HtmlPreview(byte[] bytes, String fileName) {}
 
   /* ── helpers ──────────────────────────────────────────────────── */
 
