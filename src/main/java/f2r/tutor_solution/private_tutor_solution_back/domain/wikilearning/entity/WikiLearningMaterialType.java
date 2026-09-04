@@ -4,11 +4,12 @@ import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-/** 모의고사 학습 자료 종류: 어휘 / Workbook / 변형문제 / 기타. */
+/** 모의고사 학습 자료 종류: 어휘 / Workbook / 변형문제 / WEEKLY / 기타. */
 public enum WikiLearningMaterialType {
   VOCAB("어휘"),
   WORKBOOK("Workbook"),
   VARIANT("변형문제"),
+  WEEKLY("WEEKLY"),
   ETC("기타");
 
   private final String label;

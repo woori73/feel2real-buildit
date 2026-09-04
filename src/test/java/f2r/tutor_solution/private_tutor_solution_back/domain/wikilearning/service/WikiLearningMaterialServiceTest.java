@@ -179,4 +179,56 @@ class WikiLearningMaterialServiceTest {
     assertThat(f.contentType()).isEqualTo("application/pdf");
     assertThat(new String(f.bytes())).isEqualTo("PDF");
   }
+
+  @Test
+  @DisplayName("given WEEKLY 종류 when upload then WEEKLY 로 저장 + 라벨 WEEKLY")
+  void upload_acceptsWeeklyType() throws Exception {
+    when(userRepository.findById(1L)).thenReturn(Optional.of(member(1L, "n")));
+    MockMultipartFile pdf = new MockMultipartFile("file", "wk.pdf", "application/pdf", "%PDF".getBytes());
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("k");
+    when(repository.save(any(WikiLearningMaterial.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    WikiLearningMaterialResponse res = service.upload(1L, "weekly", 1, "3월 WEEKLY", pdf);
+
+    assertThat(res.dataType()).isEqualTo("WEEKLY");
+    assertThat(res.dataTypeLabel()).isEqualTo("WEEKLY");
+  }
+
+  @Test
+  @DisplayName("given PDF 자료 when getDetail then previewable=true + previewUrl")
+  void getDetail_pdf_previewable() {
+    WikiLearningMaterial m = material("k", "application/pdf");
+    when(repository.findActiveById(4L)).thenReturn(Optional.of(m));
+
+    WikiLearningMaterialResponse res = service.getDetail(4L);
+
+    assertThat(res.previewable()).isTrue();
+    assertThat(res.previewUrl()).isEqualTo("/api/wiki/learning-materials/4/preview");
+    assertThat(res.downloadUrl()).isEqualTo("/api/wiki/learning-materials/4/download");
+  }
+
+  @Test
+  @DisplayName("given PDF when getPreview then bytes; given 비-PDF when getPreview then 415")
+  void getPreview_pdfOnly() throws Exception {
+    WikiLearningMaterial pdf = material("k", "application/pdf");
+    when(repository.findActiveById(4L)).thenReturn(Optional.of(pdf));
+    when(fileStorage.readSingleLimited("k", "UNKNOWN", LIMIT)).thenReturn("%PDF".getBytes());
+    assertThat(new String(service.getPreview(4L).bytes())).isEqualTo("%PDF");
+
+    WikiLearningMaterial docx = material("k2",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    when(repository.findActiveById(5L)).thenReturn(Optional.of(docx));
+    assertThatThrownBy(() -> service.getPreview(5L))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(415));
+  }
+
+  private WikiLearningMaterial material(String storageKey, String contentType) {
+    WikiLearningMaterial m = WikiLearningMaterial.builder()
+        .dataType(f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.entity.WikiLearningMaterialType.VOCAB)
+        .grade(2).title("t").contentType(contentType).originalFileName("a.pdf")
+        .storageKey(storageKey).fileSize(3L).uploaderUserId(1L).uploaderName("n").build();
+    ReflectionTestUtils.setField(m, "wikiLearningMaterialId", 4L);
+    return m;
+  }
 }

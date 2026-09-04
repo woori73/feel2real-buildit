@@ -54,14 +54,31 @@ class WikiLearningMaterialControllerWebMvcTest {
   void stubs() {
     when(service.searchPublic(any())).thenReturn(List.of(sample()));
     when(service.listAdmin()).thenReturn(List.of(sample()));
+    when(service.getDetail(1L)).thenReturn(sample());
+    when(service.getPreview(1L)).thenReturn(new DownloadFile("%PDF-1.4".getBytes(), "어휘.pdf", "application/pdf"));
     when(service.getDownload(1L)).thenReturn(new DownloadFile("PDF".getBytes(), "어휘.pdf", "application/pdf"));
     when(service.upload(anyLong(), anyString(), any(), any(), any())).thenReturn(sample());
   }
 
   @Test
-  @DisplayName("given 익명 when 목록 then 200")
-  void list_anonymous_ok() throws Exception {
+  @DisplayName("given 익명 when 목록/상세/미리보기 then 200 (미리보기는 inline+nosniff)")
+  void publicRead_anonymous_ok() throws Exception {
     mockMvc.perform(get("/api/wiki/learning-materials").param("grade", "2")).andExpect(status().isOk());
+    mockMvc.perform(get("/api/wiki/learning-materials/1")).andExpect(status().isOk());
+    mockMvc.perform(get("/api/wiki/learning-materials/1/preview"))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("inline")))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+        .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("frame-ancestors 'self'")));
+  }
+
+  @Test
+  @DisplayName("given 미리보기 불가 형식 when preview then 415")
+  void preview_unsupported_type() throws Exception {
+    when(service.getPreview(2L)).thenThrow(new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE, "no"));
+    mockMvc.perform(get("/api/wiki/learning-materials/2/preview"))
+        .andExpect(status().isUnsupportedMediaType());
   }
 
   @Test
@@ -110,6 +127,7 @@ class WikiLearningMaterialControllerWebMvcTest {
 
   private WikiLearningMaterialResponse sample() {
     return new WikiLearningMaterialResponse(1L, "VOCAB", "어휘", 2, "고2 어휘", "어휘.pdf", 100L,
-        "홍길동", LocalDateTime.now(), "/api/wiki/learning-materials/1/download");
+        "홍길동", LocalDateTime.now(), true, "/api/wiki/learning-materials/1/preview",
+        "/api/wiki/learning-materials/1/download");
   }
 }

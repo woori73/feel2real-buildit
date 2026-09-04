@@ -75,36 +75,18 @@
         box.innerHTML = '<p class="muted">이 학년의 학습 자료가 아직 없습니다. 첫 자료를 올려보세요.</p>';
         return;
       }
+      // 카드 클릭 = 즉시 다운로드가 아니라 Wiki 안의 상세/미리보기 화면으로 이동한다.
       box.innerHTML = items.map(function (it) {
         var label = it.dataTypeLabel || LEARNING_TYPE_LABEL[it.dataType] || '기타';
-        return '<button type="button" class="learning-card" data-download-url="' + escapeAttr(it.downloadUrl) + '">'
+        return '<a class="learning-card" href="/wiki/learning/' + encodeURIComponent(it.wikiLearningMaterialId) + '">'
           + '<span class="learning-badge">' + escapeHtml(label) + '</span>'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="learning-meta">고' + it.grade + ' · ' + escapeHtml(it.uploaderName || '회원') + ' · ' + fileMeta(it) + '</span>'
-          + '</button>';
+          + '</a>';
       }).join('');
-      box.querySelectorAll('.learning-card').forEach(function (card) {
-        card.addEventListener('click', function () { downloadLearning(card.dataset.downloadUrl); });
-      });
     } catch (_) {
       box.innerHTML = '<p class="error">학습 자료를 불러오지 못했습니다.</p>';
     }
-  }
-
-  /** 다운로드는 회원 전용. 비회원이면 안내 후 로그인/회원가입. */
-  async function downloadLearning(url) {
-    if (!url) return;
-    var me = null;
-    try {
-      var res = await fetch('/api/auth/me', { credentials: 'same-origin' });
-      if (res.ok) me = await res.json();
-    } catch (_) { /* 비로그인 취급 */ }
-    if (!me) {
-      alert('자료 다운로드는 회원 가입 후 이용할 수 있습니다.');
-      if (typeof window.openLoginModal === 'function') window.openLoginModal();
-      return;
-    }
-    window.location.href = url;
   }
 
   async function loadOriginals() {

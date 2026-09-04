@@ -67,11 +67,37 @@ public class WikiLearningMaterialService {
     return repository.findAdminList().stream().map(WikiLearningMaterialResponse::of).toList();
   }
 
+  /** 상세/미리보기 화면용 단건 조회 — 비회원도 접근 가능(목록과 같은 공개 범위). */
+  @Transactional(readOnly = true)
+  public WikiLearningMaterialResponse getDetail(Long id) {
+    return WikiLearningMaterialResponse.of(getActive(id));
+  }
+
+  /**
+   * 인라인 미리보기 바이트 — 현재 PDF 만. 비회원도 볼 수 있다(다운로드와 별개 엔드포인트).
+   * 미리보기 불가 형식이면 415 — 프런트는 상세 정보 + 다운로드 버튼만 노출한다.
+   */
+  @Transactional(readOnly = true)
+  public DownloadFile getPreview(Long id) {
+    WikiLearningMaterial material = getActive(id);
+    if (!WikiLearningMaterialResponse.PREVIEWABLE_CONTENT_TYPE.equals(material.getContentType())) {
+      throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "이 형식은 미리보기를 지원하지 않습니다.");
+    }
+    return readFile(material);
+  }
+
   /** 회원(로그인) 전용 다운로드. 인증 검사는 컨트롤러/시큐리티가 이미 끝낸 상태로 진입한다. */
   @Transactional(readOnly = true)
   public DownloadFile getDownload(Long id) {
-    WikiLearningMaterial material = repository.findActiveById(id)
+    return readFile(getActive(id));
+  }
+
+  private WikiLearningMaterial getActive(Long id) {
+    return repository.findActiveById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "학습 자료를 찾을 수 없습니다."));
+  }
+
+  private DownloadFile readFile(WikiLearningMaterial material) {
     try {
       byte[] bytes = fileStorage.readSingleLimited(material.getStorageKey(), RAW_FILE_TYPE, maxDocumentBytes);
       return new DownloadFile(bytes, material.getOriginalFileName(), material.getContentType());

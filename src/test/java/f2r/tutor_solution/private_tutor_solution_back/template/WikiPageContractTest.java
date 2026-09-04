@@ -40,7 +40,8 @@ class WikiPageContractTest {
 
     for (String view : new String[] {
         "public/wiki", "public/wiki_board", "public/wiki_post_new", "public/wiki_post",
-        "public/wiki_originals", "public/wiki_analysis", "public/wiki_learning"}) {
+        "public/wiki_originals", "public/wiki_analysis",
+        "public/wiki_learning", "public/wiki_learning_detail"}) {
       String html = engine.process(view, new Context());
       assertThat(html)
           .as(view)
@@ -73,6 +74,15 @@ class WikiPageContractTest {
     assertThat(learning).as("학습 자료 전체보기")
         .contains("id=\"btnUploadLearning\"", "id=\"wikiLearningModal\"", "wiki_learning.js")
         .doesNotContain("${wikiAdmin}", "${role");
+    // 학습 자료 업로드 모달: 자료 종류에 WEEKLY 포함(어휘/Workbook/변형문제/WEEKLY/기타)
+    assertThat(learning).as("학습 자료 종류 WEEKLY")
+        .contains("data-type=\"VOCAB\"", "data-type=\"WORKBOOK\"", "data-type=\"VARIANT\"",
+            "data-type=\"WEEKLY\"", "data-type=\"ETC\"");
+    // 상세/미리보기 화면: 카드 클릭 → 즉시 다운로드가 아니라 상세로 이동한다.
+    String detail = engine.process("public/wiki_learning_detail", new Context());
+    assertThat(detail).as("학습 자료 상세")
+        .contains("id=\"wlDetail\"", "wiki_learning_detail.js", "href=\"/wiki/learning\"")
+        .doesNotContain("${wikiAdmin}", "${role");
 
     String admin = engine.process("admin/wiki_analysis", new Context());
     assertThat(admin)
@@ -102,6 +112,7 @@ class WikiPageContractTest {
     assertThat(js).contains("/api/wiki/analysis-materials?grade=");
     assertThat(js).contains("/api/wiki/learning-materials?grade=");
     assertThat(js).contains("/api/wiki/visits");   // 방문 비컨
+    assertThat(js).contains("/wiki/learning/");     // 카드 클릭 → 상세(즉시 다운로드 아님)
     assertThat(js).contains("/api/open-community/posts?scope=wiki");
     assertThat(js).contains("/wiki/board/", "/new");
     assertThat(js).contains("/wiki/posts/");

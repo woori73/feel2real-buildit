@@ -6,7 +6,7 @@
 
 CREATE TABLE wiki_learning_materials (
     wiki_learning_material_id BIGINT       NOT NULL AUTO_INCREMENT,
-    data_type                 VARCHAR(20)  NOT NULL,       -- VOCAB|WORKBOOK|VARIANT|ETC (어휘/Workbook/변형문제/기타)
+    data_type                 VARCHAR(20)  NOT NULL,       -- VOCAB|WORKBOOK|VARIANT|WEEKLY|ETC (어휘/Workbook/변형문제/WEEKLY/기타)
     grade                     INT          NOT NULL,       -- 1|2|3 (고1/고2/고3) — 업로드 시점 Wiki 학년 탭에서 자동
     title                     VARCHAR(200) NOT NULL,       -- 파일명에서 자동 생성, 사용자가 수정 가능
     content_type              VARCHAR(120) NOT NULL,
