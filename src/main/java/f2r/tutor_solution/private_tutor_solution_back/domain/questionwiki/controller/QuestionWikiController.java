@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,13 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/wiki/questions")
 public class QuestionWikiController {
+
+  private static final String MOBILE_PREVIEW_HEAD = """
+      <meta name="viewport" content="width=1100, initial-scale=1">
+      <style>
+        html, body { margin-left: 0 !important; margin-right: 0 !important; }
+      </style>
+      """;
 
   private final QuestionWikiService questionWikiService;
   private final QuestionThreadService questionThreadService;
@@ -132,8 +140,11 @@ public class QuestionWikiController {
    * 다운로드는 여전히 {@code viewUrl}(attachment 강제)이 담당한다.
    */
   @GetMapping("/materials/{linkId}/preview")
-  public ResponseEntity<byte[]> materialHtmlPreview(@PathVariable Long linkId) {
+  public ResponseEntity<byte[]> materialHtmlPreview(
+      @PathVariable Long linkId,
+      @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
     QuestionWikiService.HtmlPreview preview = questionWikiService.getHtmlPreview(linkId);
+    byte[] body = isMobileUserAgent(userAgent) ? mobileFitHtml(preview.bytes()) : preview.bytes();
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
         .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
@@ -142,7 +153,29 @@ public class QuestionWikiController {
             "sandbox; default-src 'none'; img-src data: https:; media-src data: https:; "
                 + "style-src 'unsafe-inline' https:; font-src https: data:; frame-ancestors 'self'")
         .header(HttpHeaders.CACHE_CONTROL, "private, max-age=60")
-        .body(preview.bytes());
+        .body(body);
+  }
+
+  private boolean isMobileUserAgent(String userAgent) {
+    if (userAgent == null) {
+      return false;
+    }
+    String ua = userAgent.toLowerCase();
+    return ua.contains("android") || ua.contains("iphone") || ua.contains("ipad") || ua.contains("mobile");
+  }
+
+  private byte[] mobileFitHtml(byte[] original) {
+    String html = new String(original, StandardCharsets.UTF_8);
+    // The uploaded worksheets often have desktop fixed widths. A wider layout viewport makes
+    // mobile Chrome scale the whole worksheet into the iframe instead of clipping both sides.
+    html = html.replaceAll("(?is)<meta\\s+[^>]*name\\s*=\\s*['\"]viewport['\"][^>]*>", "");
+    int headEnd = html.toLowerCase().indexOf("</head>");
+    if (headEnd >= 0) {
+      html = html.substring(0, headEnd) + MOBILE_PREVIEW_HEAD + html.substring(headEnd);
+    } else {
+      html = MOBILE_PREVIEW_HEAD + html;
+    }
+    return html.getBytes(StandardCharsets.UTF_8);
   }
 
   private List<MultipartFile> mergeFiles(List<MultipartFile> files, List<MultipartFile> bracketFiles) {
