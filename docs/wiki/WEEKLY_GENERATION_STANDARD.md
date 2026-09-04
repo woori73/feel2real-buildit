@@ -1,6 +1,7 @@
 # BUILD IT WEEKLY 문제지 제작 기준
 
-이 문서는 Wiki의 기존 `WEEKLY` 학습자료 유형에서 AI가 WEEKLY 문제지를 생성할 때 항상 우선 적용하는 제작 기준이다.
+> Canonical source for ChatGPT WEEKLY production.
+> 사용자가 ChatGPT 채팅에서 WEEKLY 제작을 요청하면 이 문서와 같은 디렉터리의 `WEEKLY_REFERENCE.html`을 먼저 읽고, 그 다음 이번 HALF/원문을 읽어 제작한다.
 
 ## 기본 체제
 - 고3 수능 영어형 WEEKLY는 14문항을 기본으로 한다.
@@ -53,12 +54,15 @@
 - 공통지문 반복 금지.
 - OCR 잔여 문자 및 내부 메타데이터 출력 금지.
 
-## AI Context 규칙
-WEEKLY 생성기는 이 문서와 `WEEKLY_REFERENCE.html`을 항상 먼저 Context에 로드한 뒤, 이번 HALF/원문 자료를 추가 Context로 사용해야 한다.
+## ChatGPT 제작 절차
+WEEKLY 제작 요청을 받으면 GitHub 연결을 통해 아래 순서로 실제 파일을 조회한다.
+1. `docs/wiki/WEEKLY_GENERATION_STANDARD.md` — 제작 규칙
+2. `docs/wiki/WEEKLY_REFERENCE.html` — 확정 시각 레퍼런스
+3. 사용자가 지정하거나 첨부한 이번 HALF/원문 — 실제 출제 내용
 
-우선순위는 다음과 같다.
-1. `WEEKLY_GENERATION_STANDARD.md` — 제작 규칙
-2. `WEEKLY_REFERENCE.html` — 확정된 시각적 레퍼런스
-3. 이번 HALF/원문 — 실제 출제 내용
+대화 기억만으로 포맷을 재구성하지 않는다. 1·2번 파일을 조회할 수 없는 경우에는 이를 사용자에게 알리고 기준을 추측하여 제작하지 않는다. 원문 내용과 제작 규칙을 임의로 섞거나 원문 내용을 추측하지 않는다.
 
-원문 내용과 제작 규칙을 임의로 섞거나 추측하지 않는다.
+## 유지 원칙
+- 이 MD와 `WEEKLY_REFERENCE.html` 두 파일을 WEEKLY 제작의 공식 기준으로 관리한다.
+- 기준이 변경되면 이 두 파일을 함께 갱신한다.
+- Wiki 화면의 DOM/sessionStorage 자동 주입은 공식 기준이 아니며 필요하지 않다.
