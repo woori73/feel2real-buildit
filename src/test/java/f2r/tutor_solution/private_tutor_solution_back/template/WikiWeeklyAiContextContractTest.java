@@ -25,7 +25,7 @@ class WikiWeeklyAiContextContractTest {
 
     assertThat(standard)
         .contains("14문항")
-        .contains("수능 29번형 함축 의미")
+        .contains("수능 21번형 함축 의미")
         .contains("수능 29번형 — 어법")
         .contains("수능 30번형 — 문맥상 어휘")
         .contains("Fixed Typography + Fixed Margin + Flexible Pagination")
