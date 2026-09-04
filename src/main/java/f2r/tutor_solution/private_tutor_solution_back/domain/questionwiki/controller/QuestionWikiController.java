@@ -25,13 +25,13 @@ public class QuestionWikiController {
 
   /*
    * Mobile preview deliberately keeps the worksheet's desktop layout intact.
-   * A wide layout viewport lets the browser scale the complete document to the
-   * device screen instead of reflowing fixed A4/page layouts.  Do not add
-   * width/height overrides for worksheet/page elements here: doing so can move
-   * or clip content that relies on fixed page geometry.
+   * The 1100px layout viewport covers the fixed A4 worksheet geometry.  An
+   * explicit 0.3 initial scale makes that full viewport visible on common
+   * phone-sized iframe viewports; users can then pinch-zoom as needed.
+   * Do not add width/height overrides for worksheet/page elements here.
    */
   private static final String MOBILE_PREVIEW_HEAD = """
-      <meta name="viewport" content="width=1100, minimum-scale=0.25, maximum-scale=5, user-scalable=yes">
+      <meta name="viewport" content="width=1100, initial-scale=0.3, minimum-scale=0.25, maximum-scale=5, user-scalable=yes">
       <style id="f2r-mobile-scale-fit">
         html, body {
           margin-left: 0 !important;
