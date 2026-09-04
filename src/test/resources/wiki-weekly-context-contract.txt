@@ -1,0 +1,9 @@
+WEEKLY AI CONTEXT CONTRACT
+
+The /wiki/learning browser context must load both resources before WEEKLY generation/reference work:
+- /wiki/weekly/WEEKLY_GENERATION_STANDARD.md
+- /wiki/weekly/WEEKLY_REFERENCE.html
+
+The browser payload key is buildit_weekly_ai_context.
+Priority: generation_standard > visual_reference > current_half_source.
+The context is also rendered in the DOM as #weeklyAiContext[data-ai-context="WEEKLY_STANDARD"] so Browser/Chrome AI can read it without a user expanding a panel.
