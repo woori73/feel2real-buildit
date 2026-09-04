@@ -23,29 +23,20 @@ import java.util.List;
 @RequestMapping("/api/wiki/questions")
 public class QuestionWikiController {
 
+  /*
+   * Mobile preview deliberately keeps the worksheet's desktop layout intact.
+   * A wide layout viewport lets the browser scale the complete document to the
+   * device screen instead of reflowing fixed A4/page layouts.  Do not add
+   * width/height overrides for worksheet/page elements here: doing so can move
+   * or clip content that relies on fixed page geometry.
+   */
   private static final String MOBILE_PREVIEW_HEAD = """
-      <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=5, user-scalable=yes">
-      <style id="f2r-mobile-reflow">
+      <meta name="viewport" content="width=1100, minimum-scale=0.25, maximum-scale=5, user-scalable=yes">
+      <style id="f2r-mobile-scale-fit">
         html, body {
-          width: 100% !important;
-          min-width: 0 !important;
-          max-width: 100% !important;
           margin-left: 0 !important;
           margin-right: 0 !important;
-          overflow-x: hidden !important;
-          -webkit-text-size-adjust: 100%;
           touch-action: pan-x pan-y pinch-zoom;
-        }
-        img, svg, video, canvas {
-          max-width: 100% !important;
-          height: auto !important;
-        }
-        table {
-          max-width: 100% !important;
-        }
-        pre, code {
-          white-space: pre-wrap !important;
-          overflow-wrap: anywhere;
         }
       </style>
       """;
