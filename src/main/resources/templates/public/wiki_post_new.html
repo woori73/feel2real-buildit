@@ -53,10 +53,10 @@
 
       <div class="field" id="attachField" hidden>
         <label for="fileInput">첨부파일</label>
-        <div class="hint">PDF · 한글(HWP/HWPX) · 오피스(DOC·XLS·PPT 등) · 압축(ZIP) · 이미지(JPG·PNG·WebP) (파일당 20MB, 최대 10개)</div>
+        <div class="hint">PDF · 한글(HWP/HWPX) · 오피스(DOC·XLS·PPT 등) · 압축(ZIP) · HTML · 이미지(JPG·PNG·WebP) (파일당 20MB, 최대 10개)</div>
         <div class="file-picker-row">
           <input type="file" id="fileInput" multiple
-                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,.jpg,.jpeg,.png,.webp,text/html,image/jpeg,image/png,image/webp">
           <div id="filePending"></div>
         </div>
       </div>
@@ -71,7 +71,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script type="module" src="/js/wiki_post_new.js?v=20260903-3"></script>
+  <script type="module" src="/js/wiki_post_new.js?v=20260904-4"></script>
 </th:block>
 </body>
 </html>
