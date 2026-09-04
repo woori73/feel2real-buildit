@@ -10,6 +10,7 @@
 
   var gradeTabs = document.getElementById('gradeTabs');
   var gradeNote = document.getElementById('gradeNote');
+  var LEARNING_TYPE_LABEL = { VOCAB: '어휘', WORKBOOK: 'Workbook', VARIANT: '변형문제', ETC: '기타' };
   var GRADE_NOTE = {
     3: '9월 모의평가 현장 분석과 함께, 11월 수능까지 매주 유사 패턴의 새 문제를 무료로 제공합니다.',
     2: '9월 모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
@@ -36,19 +37,56 @@
   });
 
   render();
+  recordVisit();
 
-  // 관리자 업로드 UI(wiki_admin_upload.js)가 현재 학년을 읽고 업로드 후 목록만 새로고침하도록 노출.
+  // 업로드 UI(wiki_admin_upload.js / wiki_learning_upload.js)가 현재 학년을 읽고
+  // 업로드 후 목록만 새로고침하도록 노출.
   window.wikiHub = {
     currentGrade: function () { return grade; },
     reloadOriginals: loadOriginals,
     reloadAnalyses: loadAnalyses,
+    reloadLearning: loadLearningMaterials,
   };
 
   function render() {
     gradeNote.textContent = GRADE_NOTE[grade] || '';
     loadOriginals();
     loadAnalyses();
+    loadLearningMaterials();
     loadBoards();
+  }
+
+  /** /wiki 방문 집계 비컨. 같은 세션·같은 날 중복은 서버(HttpSession)가 무시한다. */
+  function recordVisit() {
+    try {
+      fetch('/api/wiki/visits', { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(function () {});
+    } catch (_) { /* 집계 실패는 무시 */ }
+  }
+
+  async function loadLearningMaterials() {
+    var box = document.getElementById('learningList');
+    if (!box) return;
+    box.innerHTML = '<p class="muted">불러오는 중...</p>';
+    try {
+      var res = await fetch('/api/wiki/learning-materials?grade=' + grade);
+      if (!res.ok) throw new Error();
+      var items = (await res.json()).slice(0, 6);
+      if (!items.length) {
+        box.innerHTML = '<p class="muted">이 학년의 학습 자료가 아직 없습니다. 첫 자료를 올려보세요.</p>';
+        return;
+      }
+      // 카드 클릭 = 즉시 다운로드가 아니라 Wiki 안의 상세/미리보기 화면으로 이동한다.
+      box.innerHTML = items.map(function (it) {
+        var label = it.dataTypeLabel || LEARNING_TYPE_LABEL[it.dataType] || '기타';
+        return '<a class="learning-card" href="/wiki/learning/' + encodeURIComponent(it.wikiLearningMaterialId) + '">'
+          + '<span class="learning-badge">' + escapeHtml(label) + '</span>'
+          + '<b>' + escapeHtml(it.title) + '</b>'
+          + '<span class="learning-meta">고' + it.grade + ' · ' + escapeHtml(it.uploaderName || '회원') + ' · ' + fileMeta(it) + '</span>'
+          + '</a>';
+      }).join('');
+    } catch (_) {
+      box.innerHTML = '<p class="error">학습 자료를 불러오지 못했습니다.</p>';
+    }
   }
 
   async function loadOriginals() {

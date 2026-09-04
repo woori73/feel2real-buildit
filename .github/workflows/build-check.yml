@@ -70,6 +70,10 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionWikiServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionThreadServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.QuestionWikiContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.controller.WikiLearningMaterialControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.service.WikiVisitServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.controller.WikiStatsControllerWebMvcTest"
 
       - name: Upload test report
         if: always()

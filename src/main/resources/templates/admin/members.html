@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 회원 전체 보기</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_students.css">
+  <style>
+    .member-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .member-table th, .member-table td { text-align: left; padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #edf2f7; }
+    .member-table th { background: #f7fafc; color: #4a5568; font-weight: 700; }
+    .member-table tr:last-child td { border-bottom: none; }
+    .member-table .login { color: #a0aec0; font-size: 12px; }
+    .member-role { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; background: #edf2f7; color: #4a5568; }
+    .member-empty { padding: 40px; text-align: center; color: #a0aec0; }
+    .table-scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('members')}"></th:block>
+
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">회원 전체 보기</div>
+      <div class="section-subtitle" id="sectionSubtitle">기존 회원 DB 기준. 회원 · 가입일 · 구분만 표시합니다.</div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="member-table">
+        <thead>
+          <tr><th>회원</th><th>구분</th><th>가입일</th></tr>
+        </thead>
+        <tbody id="memberBody">
+          <tr><td colspan="3" class="member-empty">불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_members.js"></script>
+</body>
+</html>

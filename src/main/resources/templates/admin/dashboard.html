@@ -6,6 +6,22 @@
   <title>F2R - 관리자 대시보드</title>
   <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
   <link rel="stylesheet" href="/css/admin_dashboard.css">
+  <style>
+    .wiki-ops-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .wiki-ops-stat { background: #f7fafc; border: 1px solid #edf2f7; border-radius: 10px; padding: 14px; text-align: center; }
+    .wiki-ops-stat .n { font-size: 22px; font-weight: 800; color: #1a202c; }
+    .wiki-ops-stat .l { font-size: 12px; color: #718096; margin-top: 4px; }
+    .wiki-ops-sub { font-size: 12px; color: #a0aec0; margin: -8px 0 16px; }
+    .wiki-ops-members { list-style: none; padding: 0; margin: 0 0 16px; }
+    .wiki-ops-members li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #edf2f7; font-size: 13px; }
+    .wiki-ops-members li:last-child { border-bottom: none; }
+    .wiki-ops-members .who { color: #2d3748; font-weight: 600; }
+    .wiki-ops-members .who small { color: #a0aec0; font-weight: 400; margin-left: 6px; }
+    .wiki-ops-members .when { color: #718096; }
+    .wiki-ops-more { display: inline-block; font-size: 13px; font-weight: 600; color: #2d3748; text-decoration: none; }
+    .wiki-ops-more:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .wiki-ops-stats { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
   <th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
@@ -38,6 +54,14 @@
 
       <div class="result" id="result"></div>
     </div>
+
+    <div class="card">
+      <h2>Wiki 운영 현황</h2>
+      <p class="desc">공개 BuildIt Wiki(/wiki) 방문 지표와 회원 가입 현황입니다.</p>
+      <div id="wikiOps">
+        <p class="field-hint">불러오는 중...</p>
+      </div>
+    </div>
   </div>
 
   <script src="/js/api.js"></script>
@@ -68,7 +92,45 @@
       if (!currentUser || currentUser.role !== 'ADMIN') { location.href = '/admin/login'; return; }
       document.getElementById('userName').textContent = window.userDisplayName(currentUser);
       loadSubjects();
+      loadWikiOps();
     })();
+
+    function fmtDate(v) {
+      if (!v) return '';
+      const d = new Date(v);
+      if (isNaN(d)) return '';
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    async function loadWikiOps() {
+      const box = document.getElementById('wikiOps');
+      try {
+        const res = await fetchAuth('/api/admin/wiki/ops-overview');
+        if (!res.ok) throw new Error();
+        const d = await res.json();
+        const v = d.visits || {}, m = d.members || {};
+        const recent7 = (v.recentDays || []).reduce((sum, x) => sum + (x.count || 0), 0);
+        const members = (m.recent || []).map(r =>
+          `<li><span class="who">${escapeHtml(r.displayName)}<small>${escapeHtml(r.loginId)} · ${escapeHtml(r.role)}</small></span>`
+          + `<span class="when">${fmtDate(r.joinedAt)}</span></li>`).join('') || '<li>아직 가입 회원이 없습니다.</li>';
+        box.innerHTML =
+          '<div class="wiki-ops-stats">'
+          + `<div class="wiki-ops-stat"><div class="n">${v.today ?? 0}</div><div class="l">오늘 방문</div></div>`
+          + `<div class="wiki-ops-stat"><div class="n">${v.total ?? 0}</div><div class="l">누적 방문</div></div>`
+          + `<div class="wiki-ops-stat"><div class="n">${m.total ?? 0}</div><div class="l">전체 회원</div></div>`
+          + '</div>'
+          + `<p class="wiki-ops-sub">최근 7일 방문 ${recent7} · 오늘 신규 가입 ${m.todayNew ?? 0}명</p>`
+          + '<ul class="wiki-ops-members">' + members + '</ul>'
+          + '<a class="wiki-ops-more" href="/admin/members">회원 전체 보기 →</a>';
+      } catch {
+        box.innerHTML = '<p class="field-hint">Wiki 운영 현황을 불러오지 못했습니다.</p>';
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     async function handleImport() {
       const subjectId = document.getElementById('subjectId').value;

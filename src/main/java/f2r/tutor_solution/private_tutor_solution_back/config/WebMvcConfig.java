@@ -61,6 +61,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/analyzes/{id}", "public/analyze_detail");
         // /wiki, /wiki/originals, /wiki/analysis 는 Cache-Control: no-store 때문에 WikiPageController 가 담당.
         // (업로드 버튼/모달은 role 무관하게 항상 렌더 — 권한은 wiki_admin_upload.js + /api/admin/wiki/** 서버 게이트)
+        view(registry, "/wiki/learning", "public/wiki_learning");
+        view(registry, "/wiki/learning/{id}", "public/wiki_learning_detail");
         view(registry, "/wiki/board/{boardKey}", "public/wiki_board");
         view(registry, "/wiki/board/{boardKey}/new", "public/wiki_post_new");
         view(registry, "/wiki/posts/{postId}", "public/wiki_post");
@@ -79,6 +81,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/admin/login", "admin/login");
         view(registry, "/admin/dashboard", "admin/dashboard");
         view(registry, "/admin/students", "admin/students");
+        view(registry, "/admin/members", "admin/members");
         view(registry, "/admin/academies", "admin/academies");
         view(registry, "/admin/analyzes", "admin/analyzes");
         view(registry, "/admin/wiki-originals", "admin/wiki_originals");
