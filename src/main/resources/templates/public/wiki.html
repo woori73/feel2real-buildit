@@ -67,6 +67,18 @@
     </section>
 
     <section class="wiki-block">
+      <div class="block-head">
+        <h2>모의고사 학습 자료</h2>
+        <div class="block-actions">
+          <button type="button" class="upload-link" id="btnUploadLearning">＋ 자료 올리기</button>
+          <a class="more-link" href="/wiki/learning">전체 보기 →</a>
+        </div>
+      </div>
+      <p class="muted">회원이 함께 나누는 어휘 · Workbook · 변형문제 자료입니다. 다운로드는 로그인 후 이용할 수 있습니다.</p>
+      <div id="learningList" class="learning-list"><p class="muted">불러오는 중...</p></div>
+    </section>
+
+    <section class="wiki-block">
       <div class="block-head"><h2>커뮤니티</h2></div>
       <div class="board-grid">
         <article class="board-col" data-board="EXAM_REVIEW" data-key="review">
@@ -103,12 +115,14 @@
 
   </main>
 
-  <!-- 자료 업로드 모달 — 항상 HTML에 존재. 권한은 wiki_admin_upload.js 클릭 시 /api/auth/me + 서버 API가 최종 결정. -->
+  <!-- 자료 업로드 모달 — 항상 HTML에 존재. 권한은 클릭 시 /api/auth/me + 서버 API가 최종 결정. -->
   <th:block th:replace="~{fragments/_wiki_admin_upload :: modal}"></th:block>
+  <!-- 모의고사 학습 자료(회원) 업로드 모달 — 비회원 클릭 시 회원가입 안내. -->
+  <th:block th:replace="~{fragments/_wiki_learning_upload :: modal}"></th:block>
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/wiki.js?v=20260903-4"></script>
+  <script src="/js/wiki.js?v=20260904-1"></script>
 </th:block>
 </body>
 </html>

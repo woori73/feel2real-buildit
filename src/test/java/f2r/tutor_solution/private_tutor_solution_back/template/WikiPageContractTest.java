@@ -40,7 +40,7 @@ class WikiPageContractTest {
 
     for (String view : new String[] {
         "public/wiki", "public/wiki_board", "public/wiki_post_new", "public/wiki_post",
-        "public/wiki_originals", "public/wiki_analysis"}) {
+        "public/wiki_originals", "public/wiki_analysis", "public/wiki_learning"}) {
       String html = engine.process(view, new Context());
       assertThat(html)
           .as(view)
@@ -63,6 +63,15 @@ class WikiPageContractTest {
     String analysis = engine.process("public/wiki_analysis", new Context());
     assertThat(analysis).as("analysis 업로드 버튼")
         .contains("id=\"btnUploadAnalysis\"", "id=\"wikiUploadModal\"", "wiki_admin_upload.js")
+        .doesNotContain("${wikiAdmin}", "${role");
+
+    // "모의고사 학습 자료"(회원) 진입점도 principal 무관하게 항상 렌더. 다운로드/업로드 권한은 서버가 결정.
+    assertThat(hub).as("hub 학습 자료 섹션")
+        .contains("모의고사 학습 자료", "id=\"btnUploadLearning\"", "id=\"learningList\"",
+            "id=\"wikiLearningModal\"", "wiki_learning_upload.js", "href=\"/wiki/learning\"");
+    String learning = engine.process("public/wiki_learning", new Context());
+    assertThat(learning).as("학습 자료 전체보기")
+        .contains("id=\"btnUploadLearning\"", "id=\"wikiLearningModal\"", "wiki_learning.js")
         .doesNotContain("${wikiAdmin}", "${role");
 
     String admin = engine.process("admin/wiki_analysis", new Context());
@@ -91,6 +100,8 @@ class WikiPageContractTest {
 
     assertThat(js).contains("/api/wiki/originals?grade=");
     assertThat(js).contains("/api/wiki/analysis-materials?grade=");
+    assertThat(js).contains("/api/wiki/learning-materials?grade=");
+    assertThat(js).contains("/api/wiki/visits");   // 방문 비컨
     assertThat(js).contains("/api/open-community/posts?scope=wiki");
     assertThat(js).contains("/wiki/board/", "/new");
     assertThat(js).contains("/wiki/posts/");

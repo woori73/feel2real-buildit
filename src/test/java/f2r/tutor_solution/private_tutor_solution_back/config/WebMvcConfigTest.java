@@ -38,6 +38,7 @@ class WebMvcConfigTest {
       "/academies/sample-academy, public/academy_public",
       "/analyzes, public/analyzes",
       "/analyzes/10, public/analyze_detail",
+      "/wiki/learning, public/wiki_learning",
       "/wiki/board/review, public/wiki_board",
       "/wiki/board/review/new, public/wiki_post_new",
       "/wiki/posts/42, public/wiki_post",
@@ -55,6 +56,7 @@ class WebMvcConfigTest {
       "/admin/login, admin/login",
       "/admin/dashboard, admin/dashboard",
       "/admin/students, admin/students",
+      "/admin/members, admin/members",
       "/admin/analyzes, admin/analyzes",
       "/admin/landing, admin/landing"
   })

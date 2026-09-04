@@ -217,6 +217,7 @@ public class SecurityConfig {
                 "/admin/login",
                 "/admin/dashboard",
                 "/admin/students",
+                "/admin/members",
                 "/admin/academies",
                 "/admin/analyzes",
                 "/admin/lesson-communities",
@@ -256,6 +257,11 @@ public class SecurityConfig {
             // 문항별 Question Wiki: 목록/상세/Context/첨부 다운로드는 비로그인 read. write(글/답글/수정/삭제/첨부)는
             // 아래 /api/** catch-all 로 인증, 자료 링크 관리는 /api/admin/wiki/questions/** (ROLE_ADMIN).
             .requestMatchers(HttpMethod.GET, "/api/wiki/questions", "/api/wiki/questions/**").permitAll()  // 공개 문항 Wiki 조회/Context/첨부 다운로드
+            // 모의고사 학습 자료(회원 업로드): 목록/제목만 공개. 다운로드(/{id}/download)·업로드(POST)는
+            // 아래 /api/** catch-all 로 인증(회원 전용). 삭제/관리는 /api/admin/wiki/learning-materials (ROLE_ADMIN).
+            // ⚠ 정확 경로만 — "/**" 로 넓히면 다운로드까지 공개돼 안 된다.
+            .requestMatchers(HttpMethod.GET, "/api/wiki/learning-materials").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/wiki/visits").permitAll()  // /wiki 방문 비컨(익명 포함)
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.
