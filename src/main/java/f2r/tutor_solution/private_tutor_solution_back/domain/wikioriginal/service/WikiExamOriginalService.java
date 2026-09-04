@@ -44,7 +44,12 @@ public class WikiExamOriginalService {
     this.maxDocumentBytes = maxDocumentBytes;
   }
 
-  public record DownloadFile(byte[] bytes, String fileName) {}
+  public record DownloadFile(byte[] bytes, String fileName, String title) {
+    /** 하위호환: 다운로드 통계용 title 없이 생성 — fileName을 title로 사용. */
+    public DownloadFile(byte[] bytes, String fileName) {
+      this(bytes, fileName, fileName);
+    }
+  }
 
   @Transactional(readOnly = true)
   public List<WikiExamOriginalResponse> searchPublic(Integer grade) {
@@ -57,7 +62,7 @@ public class WikiExamOriginalService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 원본 자료를 찾을 수 없습니다."));
     try {
       byte[] bytes = fileStorage.readSingleLimited(original.getStorageKey(), RAW_FILE_TYPE, maxDocumentBytes);
-      return new DownloadFile(bytes, original.getOriginalFileName());
+      return new DownloadFile(bytes, original.getOriginalFileName(), original.getTitle());
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "원본 파일을 찾을 수 없습니다.", e);
     }

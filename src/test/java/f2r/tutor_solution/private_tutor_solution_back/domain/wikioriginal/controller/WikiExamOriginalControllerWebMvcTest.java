@@ -4,6 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,6 +18,8 @@ import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiMaterialCategory;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.WikiDownloadRecordingService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.dto.WikiExamOriginalResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.service.WikiExamOriginalService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.service.WikiExamOriginalService.DownloadFile;
@@ -51,6 +56,7 @@ class WikiExamOriginalControllerWebMvcTest {
 
   @MockitoBean WikiExamOriginalService service;
   @MockitoBean AcademyRepository academyRepository;
+  @MockitoBean WikiDownloadRecordingService downloadRecordingService;
 
   @BeforeEach
   void stubs() {
@@ -68,13 +74,16 @@ class WikiExamOriginalControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 익명 when 다운로드 then 200 + attachment 헤더")
+  @DisplayName("given 익명 when 다운로드 then 200 + attachment 헤더 + 다운로드 기록(GUEST)")
   void publicDownload_anonymous_ok() throws Exception {
     mockMvc.perform(get("/api/wiki/originals/1/download"))
         .andExpect(status().isOk())
         .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE))
         .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
             org.hamcrest.Matchers.containsString("attachment")));
+
+    verify(downloadRecordingService).record(
+        eq(WikiMaterialCategory.ORIGINAL), eq(1L), anyString(), isNull(), isNull());
   }
 
   @Test

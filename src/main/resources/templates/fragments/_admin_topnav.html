@@ -19,6 +19,7 @@
       <nav class="admin-nav" aria-label="관리자 메뉴">
         <a class="admin-nav-link" th:classappend="${activeMenu == 'students'} ? ' active' : ''" href="/admin/students">학생 목록</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'members'} ? ' active' : ''" href="/admin/members">회원 전체</a>
+        <a class="admin-nav-link" th:classappend="${activeMenu == 'analytics'} ? ' active' : ''" href="/admin/analytics">통합 Analytics</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'academies'} ? ' active' : ''" href="/admin/academies">Academy 노출 관리</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'chart'} ? ' active' : ''" href="/admin/chart">BUILD IT CHART</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'analyzes'} ? ' active' : ''" href="/admin/analyzes">시험 분석 자료 관리</a>

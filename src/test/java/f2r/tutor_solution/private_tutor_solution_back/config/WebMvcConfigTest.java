@@ -58,6 +58,7 @@ class WebMvcConfigTest {
       "/admin/dashboard, admin/dashboard",
       "/admin/students, admin/students",
       "/admin/members, admin/members",
+      "/admin/analytics, admin/analytics",
       "/admin/analyzes, admin/analyzes",
       "/admin/landing, admin/landing"
   })
