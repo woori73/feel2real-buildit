@@ -69,13 +69,12 @@ class WikiLearningMaterialServiceTest {
       return m;
     });
 
-    // 요청 본문이 다른 uploader 를 주장해도 무시된다 — 서비스는 uploaderUserId 파라미터(=principal)만 믿는다.
     WikiLearningMaterialResponse res = service.upload(7L, "vocab", 2, "  ", file);
 
     assertThat(res.wikiLearningMaterialId()).isEqualTo(3L);
     assertThat(res.dataType()).isEqualTo("VOCAB");
     assertThat(res.grade()).isEqualTo(2);
-    assertThat(res.title()).isEqualTo("2026년 9월 고2 어휘정리");   // 파일명 → '_' 공백 + 확장자 제거
+    assertThat(res.title()).isEqualTo("2026년 9월 고2 어휘정리");
     assertThat(res.uploaderName()).isEqualTo("홍길동");
     assertThat(res.downloadUrl()).isEqualTo("/api/wiki/learning-materials/3/download");
 
@@ -111,11 +110,35 @@ class WikiLearningMaterialServiceTest {
   }
 
   @Test
+  @DisplayName("given HTML when upload then 허용 + text/html 저장")
+  void upload_acceptsHtml() throws Exception {
+    when(userRepository.findById(1L)).thenReturn(Optional.of(member(1L, "n")));
+    MockMultipartFile html = new MockMultipartFile("file", "x.html", "text/html",
+        "<!DOCTYPE html><html><body>자료</body></html>".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("html-key");
+    when(repository.save(any(WikiLearningMaterial.class))).thenAnswer(inv -> {
+      WikiLearningMaterial m = inv.getArgument(0);
+      ReflectionTestUtils.setField(m, "wikiLearningMaterialId", 9L);
+      return m;
+    });
+
+    WikiLearningMaterialResponse res = service.upload(1L, "ETC", 1, null, html);
+
+    assertThat(res.wikiLearningMaterialId()).isEqualTo(9L);
+    assertThat(res.title()).isEqualTo("x");
+    org.mockito.ArgumentCaptor<WikiLearningMaterial> captor =
+        org.mockito.ArgumentCaptor.forClass(WikiLearningMaterial.class);
+    verify(repository).save(captor.capture());
+    assertThat(captor.getValue().getContentType()).isEqualTo("text/html");
+    assertThat(captor.getValue().getOriginalFileName()).isEqualTo("x.html");
+  }
+
+  @Test
   @DisplayName("given 허용 외 확장자 when upload then 400")
   void upload_rejectsBadExtension() {
     when(userRepository.findById(1L)).thenReturn(Optional.of(member(1L, "n")));
-    MockMultipartFile html = new MockMultipartFile("file", "x.html", "text/html", "<html>".getBytes());
-    assertThatThrownBy(() -> service.upload(1L, "ETC", 1, null, html))
+    MockMultipartFile txt = new MockMultipartFile("file", "x.txt", "text/plain", "plain text".getBytes());
+    assertThatThrownBy(() -> service.upload(1L, "ETC", 1, null, txt))
         .isInstanceOf(ResponseStatusException.class);
   }
 

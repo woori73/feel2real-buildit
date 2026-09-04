@@ -14,7 +14,7 @@
     <div class="section-header">
       <div>
         <h2 class="section-title">분석 자료</h2>
-        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 분석 자료 문서(PDF/HWP/HWPX/DOCX 등)를 관리합니다.</span>
+        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 분석 자료 문서(PDF/HWP/HWPX/DOCX/HTML 등)를 관리합니다.</span>
       </div>
       <button class="btn btn-primary" onclick="openCreateModal()">+ 새 분석 자료</button>
     </div>
@@ -42,7 +42,7 @@
             <div class="field"><label for="semester">학기</label><input id="semester" required placeholder="1학기"></div>
             <div class="field"><label for="examType">시험</label><input id="examType" required placeholder="기말"></div>
             <div class="field"><label for="subject">과목 <span class="muted">(기본 영어)</span></label><input id="subject" placeholder="영어"></div>
-            <div class="field full"><label for="file">파일 <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"></div>
+            <div class="field full"><label for="file">파일 <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,text/html"></div>
             <label class="check-row"><input id="visible" type="checkbox" checked> 공개</label>
           </div>
           <div class="form-actions">

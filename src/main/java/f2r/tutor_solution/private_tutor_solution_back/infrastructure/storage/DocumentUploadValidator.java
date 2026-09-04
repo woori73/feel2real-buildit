@@ -15,28 +15,28 @@ import org.springframework.web.server.ResponseStatusException;
  * 공개 BuildIt Wiki 자료실·커뮤니티 첨부의 문서 파일 업로드 검증.
  *
  * <p>확장자 화이트리스트 + 매직바이트(파일 시그니처) 교차검증 + 실행파일 차단 + 용량 상한.
- * Tika 등 별도 라이브러리 없이 문서 계열(PDF / OLE2(hwp·doc·xls·ppt) / ZIP(hwpx·docx·xlsx·pptx·zip))과
- * 일반 이미지(JPEG / PNG / WebP)만 허용한다.
+ * Tika 등 별도 라이브러리 없이 문서 계열(PDF / OLE2(hwp·doc·xls·ppt) / ZIP(hwpx·docx·xlsx·pptx·zip)),
+ * HTML, 일반 이미지(JPEG / PNG / WebP)를 허용한다.
  */
 @Component
 public class DocumentUploadValidator {
 
-  /** 문서 계열 허용 확장자(소문자, 점 없음) — 자료실(모의고사 원본·분석 자료) 기본 화이트리스트. */
-  private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-      "pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip");
-
-  /** 일반 이미지 확장자. 게시글 첨부(변형문제·자료 공유·요청)에서만 문서와 함께 허용한다. */
-  private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
-
-  /** 게시글 첨부(변형문제·자료 공유·요청)용 화이트리스트 = 문서 + 이미지. */
-  private static final Set<String> ATTACHMENT_EXTENSIONS = union(ALLOWED_EXTENSIONS, IMAGE_EXTENSIONS);
-
-  /** HTML 확장자. 전역 자료실 정책에는 절대 포함하지 않는다 — 아래 별도 세트로만 노출. */
+  /** HTML 확장자. Wiki의 모든 문서 업로드 경로에서 허용한다. */
   private static final Set<String> HTML_EXTENSIONS = Set.of("html", "htm");
 
+  /** 문서 계열 허용 확장자(소문자, 점 없음) — 자료실 기본 화이트리스트. HTML 포함. */
+  private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+      "pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "html", "htm");
+
+  /** 일반 이미지 확장자. 게시글 첨부(변형문제·자료 공유·요청)에서 문서와 함께 허용한다. */
+  private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
+
+  /** 게시글 첨부용 화이트리스트 = 문서(HTML 포함) + 이미지. */
+  private static final Set<String> ATTACHMENT_EXTENSIONS = union(ALLOWED_EXTENSIONS, IMAGE_EXTENSIONS);
+
   /**
-   * Question Wiki ADMIN "직접 올리기" 전용 화이트리스트 = 문서 + HTML.
-   * 전역 자료실({@link #validate(MultipartFile)})은 그대로 두고, 이 경로에서만 HTML 을 허용한다.
+   * 호환용 상수. 과거 Question Wiki ADMIN "직접 올리기" 전용으로 사용했지만,
+   * 이제 기본 문서 정책 자체가 HTML 을 허용하므로 ALLOWED_EXTENSIONS 와 동일하다.
    */
   public static final Set<String> DOCUMENT_WITH_HTML_EXTENSIONS = union(ALLOWED_EXTENSIONS, HTML_EXTENSIONS);
 
@@ -62,17 +62,17 @@ public class DocumentUploadValidator {
     this.uploadSizeGuard = uploadSizeGuard;
   }
 
-  /** 문서 파일이 아니거나 위험 파일이면 400. (자료실 기본 — 이미지 불허) */
+  /** Wiki 자료실 기본: 문서 + HTML. 이미지 불허. */
   public void validate(MultipartFile file) {
     validate(file, ALLOWED_EXTENSIONS);
   }
 
-  /** 게시글 첨부(변형문제·자료 공유·요청): 문서 + 이미지(JPEG/PNG/WebP) 허용. 실행파일 위장은 계속 차단. */
+  /** 게시글 첨부: 문서 + HTML + 이미지(JPEG/PNG/WebP). 실행파일 위장은 계속 차단. */
   public void validateAttachment(MultipartFile file) {
     validate(file, ATTACHMENT_EXTENSIONS);
   }
 
-  /** 확장자 화이트리스트를 좁혀서 검증한다(예: 모의고사 원본은 pdf만). */
+  /** 확장자 화이트리스트를 좁혀서 검증한다. */
   public void validate(MultipartFile file, Set<String> allowedExtensions) {
     if (file == null || file.isEmpty()) {
       throw badRequest("파일을 업로드해주세요.");
@@ -98,13 +98,13 @@ public class DocumentUploadValidator {
 
   /**
    * HTML 은 매직바이트가 없는 텍스트 포맷이라, 실행파일 위장(MZ/ELF/{@code #!})을 배제한 뒤
-   * 선행 공백/BOM 을 건너뛴 첫 바이트가 {@code '<'} 인지로만 판별한다(WHATWG sniff 와 동일 취지).
+   * 선행 공백/BOM 을 건너뛴 첫 바이트가 {@code '<'} 인지로 판별한다.
    */
   private static boolean looksLikeHtml(byte[] head) {
     int i = 0;
     if (head.length >= 3
         && (head[0] & 0xFF) == 0xEF && (head[1] & 0xFF) == 0xBB && (head[2] & 0xFF) == 0xBF) {
-      i = 3;  // UTF-8 BOM
+      i = 3;
     }
     while (i < head.length
         && (head[i] == ' ' || head[i] == '\t' || head[i] == '\r' || head[i] == '\n')) {
@@ -154,7 +154,7 @@ public class DocumentUploadValidator {
 
   private byte[] readHead(MultipartFile file) {
     try (InputStream in = file.getInputStream()) {
-      return in.readNBytes(16);  // WebP는 RIFF(0..3) + WEBP(8..11) 확인이 필요해 8B로는 부족하다
+      return in.readNBytes(16);
     } catch (IOException e) {
       throw badRequest("파일을 읽을 수 없습니다.");
     }
@@ -197,12 +197,12 @@ public class DocumentUploadValidator {
 
   /** 화면·서비스에서 accept 속성/안내에 쓸 문서 허용 확장자 목록. */
   public static List<String> allowedExtensions() {
-    return List.of("pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip");
+    return List.of("pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "html", "htm");
   }
 
-  /** 게시글 첨부 accept 속성/안내에 쓸 허용 확장자 목록(문서 + 이미지). */
+  /** 게시글 첨부 accept 속성/안내에 쓸 허용 확장자 목록(문서 + HTML + 이미지). */
   public static List<String> attachmentAllowedExtensions() {
     return List.of("pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip",
-        "jpg", "jpeg", "png", "webp");
+        "html", "htm", "jpg", "jpeg", "png", "webp");
   }
 }

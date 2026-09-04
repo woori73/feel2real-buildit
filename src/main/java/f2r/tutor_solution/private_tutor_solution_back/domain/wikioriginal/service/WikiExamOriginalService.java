@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * 공개 BuildIt Wiki 모의고사 원본(PDF) 관리. {@code ExamAnalysisService} 패턴을 따른다.
+ * 공개 BuildIt Wiki 모의고사 원본 관리. {@code ExamAnalysisService} 패턴을 따른다.
  * 공개: 학년별 목록 + 다운로드. 관리(ADMIN): 등록/수정/공개전환/삭제.
  */
 @Service
@@ -27,8 +27,8 @@ public class WikiExamOriginalService {
   private static final String RAW_FILE_TYPE = "UNKNOWN";
   private static final long STORAGE_OWNER_ID = 0L;
 
-  /** 모의고사 원본 문서 — PDF 및 한글(HWP/HWPX)만. 이미지·오피스 등은 받지 않는다(원본 자료 성격). */
-  private static final Set<String> ORIGINAL_EXTENSIONS = Set.of("pdf", "hwp", "hwpx");
+  /** 모의고사 원본 문서 — PDF/HWP/HWPX + HTML. */
+  private static final Set<String> ORIGINAL_EXTENSIONS = Set.of("pdf", "hwp", "hwpx", "html", "htm");
 
   private final WikiExamOriginalRepository repository;
   private final FileStorage fileStorage;

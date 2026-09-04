@@ -23,6 +23,8 @@ class DocumentUploadValidatorTest {
   private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
   private static final byte[] WEBP =
       {0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20};
+  private static final byte[] HTML = "<!DOCTYPE html><html><body>x</body></html>".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+  private static final byte[] HTML_BOM_WS = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF, '\n', ' ', '<', 'h', 't', 'm', 'l', '>'};
 
   private final DocumentUploadValidator validator =
       new DocumentUploadValidator(new UploadSizeGuard(20L * 1024 * 1024));
@@ -44,6 +46,8 @@ class DocumentUploadValidatorTest {
     assertThatCode(() -> validator.validate(file("a.xlsx", ZIP))).doesNotThrowAnyException();
     assertThatCode(() -> validator.validate(file("a.pptx", ZIP))).doesNotThrowAnyException();
     assertThatCode(() -> validator.validate(file("a.zip", ZIP))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validate(file("a.html", HTML))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validate(file("a.htm", HTML_BOM_WS))).doesNotThrowAnyException();
   }
 
   @Test
@@ -53,6 +57,8 @@ class DocumentUploadValidatorTest {
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
     assertThatThrownBy(() -> validator.validate(file("a.docx", PDF)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
+    assertThatThrownBy(() -> validator.validate(file("a.html", "not html".getBytes(java.nio.charset.StandardCharsets.UTF_8))))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
   }
 
   @Test
@@ -61,6 +67,8 @@ class DocumentUploadValidatorTest {
     assertThatThrownBy(() -> validator.validate(file("a.pdf", MZ)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
     assertThatThrownBy(() -> validator.validate(file("a.zip", ELF)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
+    assertThatThrownBy(() -> validator.validate(file("a.html", MZ)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
   }
 
@@ -92,49 +100,49 @@ class DocumentUploadValidatorTest {
   }
 
   @Test
-  @DisplayName("given 좁힌 화이트리스트(pdf만) when hwp then 400")
+  @DisplayName("given 좁힌 화이트리스트(pdf만) when hwp/html then 400")
   void rejects_outsideNarrowedWhitelist() {
     assertThatThrownBy(() -> validator.validate(file("a.hwp", OLE2), Set.of("pdf")))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
+    assertThatThrownBy(() -> validator.validate(file("a.html", HTML), Set.of("pdf")))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
   }
 
   @Test
-  @DisplayName("게시글 첨부: 이미지(JPEG/PNG/WebP)는 매직바이트 일치 시 통과")
-  void validateAttachment_acceptsImages() {
+  @DisplayName("게시글 첨부: 이미지와 HTML은 매직/내용 일치 시 통과")
+  void validateAttachment_acceptsImagesAndHtml() {
     assertThatCode(() -> validator.validateAttachment(file("a.jpg", JPEG))).doesNotThrowAnyException();
     assertThatCode(() -> validator.validateAttachment(file("a.jpeg", JPEG))).doesNotThrowAnyException();
     assertThatCode(() -> validator.validateAttachment(file("a.png", PNG))).doesNotThrowAnyException();
     assertThatCode(() -> validator.validateAttachment(file("a.webp", WEBP))).doesNotThrowAnyException();
-    // 문서 계열도 그대로 통과
+    assertThatCode(() -> validator.validateAttachment(file("a.html", HTML))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.validateAttachment(file("a.htm", HTML_BOM_WS))).doesNotThrowAnyException();
     assertThatCode(() -> validator.validateAttachment(file("a.pdf", PDF))).doesNotThrowAnyException();
   }
 
   @Test
-  @DisplayName("게시글 첨부: 이미지 확장자 + 실행파일/문서 매직 위장은 400")
-  void validateAttachment_rejectsDisguisedImages() {
+  @DisplayName("게시글 첨부: 이미지/HTML 확장자 + 실행파일/다른 매직 위장은 400")
+  void validateAttachment_rejectsDisguisedFiles() {
     assertThatThrownBy(() -> validator.validateAttachment(file("a.jpg", MZ)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
     assertThatThrownBy(() -> validator.validateAttachment(file("a.png", PDF)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
     assertThatThrownBy(() -> validator.validateAttachment(file("a.webp", JPEG)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
+    assertThatThrownBy(() -> validator.validateAttachment(file("a.html", MZ)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
   }
 
   @Test
-  @DisplayName("자료실 기본 validate()는 이미지를 계속 거부한다(문서 전용)")
+  @DisplayName("자료실 기본 validate()는 이미지를 계속 거부한다")
   void defaultValidate_stillRejectsImages() {
     assertThatThrownBy(() -> validator.validate(file("a.jpg", JPEG)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
   }
 
-  // ── HTML: Question Wiki ADMIN "직접 올리기" 전용 세트에서만 허용 ──
-
-  private static final byte[] HTML = "<!DOCTYPE html><html><body>x</body></html>".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-  private static final byte[] HTML_BOM_WS = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF, '\n', ' ', '<', 'h', 't', 'm', 'l', '>'};
-
   @Test
-  @DisplayName("given HTML + DOCUMENT_WITH_HTML_EXTENSIONS when validate then 통과, 기존 문서도 그대로 통과")
-  void html_allowedOnlyWithHtmlSet() {
+  @DisplayName("DOCUMENT_WITH_HTML_EXTENSIONS 호환 상수는 문서와 HTML을 모두 허용")
+  void htmlCompatibilitySet_acceptsDocumentsAndHtml() {
     var set = DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS;
     assertThatCode(() -> validator.validate(file("a.html", HTML), set)).doesNotThrowAnyException();
     assertThatCode(() -> validator.validate(file("a.htm", HTML_BOM_WS), set)).doesNotThrowAnyException();
@@ -143,25 +151,10 @@ class DocumentUploadValidatorTest {
   }
 
   @Test
-  @DisplayName("given HTML + 기본 자료실 정책 when validate then 400 (전역 정책 불변)")
-  void html_rejectedByGlobalPolicy() {
-    assertThatThrownBy(() -> validator.validate(file("a.html", HTML)))
-        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
-    assertThatThrownBy(() -> validator.validate(
-            file("a.html", HTML), Set.copyOf(DocumentUploadValidator.allowedExtensions())))
-        .isInstanceOf(ResponseStatusException.class);
-  }
-
-  @Test
-  @DisplayName("given .html 로 위장한 실행파일/비-HTML when validate(HTML set) then 400")
-  void html_rejectsDisguised() {
-    assertThatThrownBy(() -> validator.validate(file("x.html", MZ), DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS))
-        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("실행 파일");
-    // '<' 로 시작하지 않는 텍스트 → 확장자 불일치
-    assertThatThrownBy(() -> validator.validate(
-            file("x.html", "not html".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-            DocumentUploadValidator.DOCUMENT_WITH_HTML_EXTENSIONS))
-        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("확장자와");
+  @DisplayName("allowedExtensions/attachmentAllowedExtensions 모두 html/htm 포함")
+  void advertisedExtensions_includeHtml() {
+    assertThat(DocumentUploadValidator.allowedExtensions()).contains("html", "htm");
+    assertThat(DocumentUploadValidator.attachmentAllowedExtensions()).contains("html", "htm");
   }
 
   @Test
