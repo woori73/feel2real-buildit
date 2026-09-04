@@ -102,7 +102,7 @@ class WikiLearningMaterialServiceTest {
 
   @Test
   @DisplayName("given 실행파일 위장 when upload then 400 + storage 미호출")
-  void upload_rejectsExecutable() {
+  void upload_rejectsExecutable() throws Exception {
     when(userRepository.findById(1L)).thenReturn(Optional.of(member(1L, "n")));
     MockMultipartFile exe = new MockMultipartFile("file", "a.pdf", "application/pdf", new byte[] {0x4D, 0x5A, 0, 0});
     assertThatThrownBy(() -> service.upload(1L, "ETC", 1, null, exe))

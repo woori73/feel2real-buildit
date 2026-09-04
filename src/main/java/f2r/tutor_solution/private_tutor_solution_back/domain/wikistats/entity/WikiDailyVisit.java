@@ -37,4 +37,13 @@ public class WikiDailyVisit extends BaseEntity {
 
   @Column(name = "visit_count", nullable = false)
   private long visitCount;
+
+  private WikiDailyVisit(LocalDate visitDate, long visitCount) {
+    this.visitDate = visitDate;
+    this.visitCount = visitCount;
+  }
+
+  public static WikiDailyVisit of(LocalDate visitDate, long visitCount) {
+    return new WikiDailyVisit(visitDate, visitCount);
+  }
 }

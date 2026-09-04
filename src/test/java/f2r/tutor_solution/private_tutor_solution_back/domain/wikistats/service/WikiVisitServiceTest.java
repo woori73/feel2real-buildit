@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @DisplayName("WikiVisitService — 세션/일 단위 중복 방지 + 최근 7일 요약")
 class WikiVisitServiceTest {
@@ -76,9 +75,6 @@ class WikiVisitServiceTest {
   }
 
   private WikiDailyVisit daily(LocalDate date, long count) {
-    WikiDailyVisit v = new WikiDailyVisit();
-    ReflectionTestUtils.setField(v, "visitDate", date);
-    ReflectionTestUtils.setField(v, "visitCount", count);
-    return v;
+    return WikiDailyVisit.of(date, count);
   }
 }
