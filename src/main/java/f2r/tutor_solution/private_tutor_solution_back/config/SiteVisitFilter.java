@@ -58,6 +58,21 @@ public class SiteVisitFilter extends OncePerRequestFilter {
         && !EXCLUDED_EXACT.contains(uri)
         && EXCLUDED_PREFIXES.stream().noneMatch(uri::startsWith);
 
+    // Resolve identity before the downstream handler can commit the response.
+    // Creating a session after chain.doFilter() may throw
+    // "Cannot create a session after the response has been committed".
+    Long userId = null;
+    String role = null;
+    String visitorKey = null;
+    if (candidate) {
+      Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+      if (auth != null && auth.getPrincipal() instanceof JwtTokenProvider.AuthenticatedPrincipal principal) {
+        userId = principal.userId();
+        role = principal.role();
+      }
+      visitorKey = userId != null ? "U:" + userId : "S:" + request.getSession(true).getId();
+    }
+
     chain.doFilter(request, response);
 
     if (!candidate) {
@@ -74,15 +89,6 @@ public class SiteVisitFilter extends OncePerRequestFilter {
     if (service == null) {
       return;
     }
-
-    Long userId = null;
-    String role = null;
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null && auth.getPrincipal() instanceof JwtTokenProvider.AuthenticatedPrincipal principal) {
-      userId = principal.userId();
-      role = principal.role();
-    }
-    String visitorKey = userId != null ? "U:" + userId : "S:" + request.getSession(true).getId();
 
     service.record(uri, uri.startsWith(WIKI_PREFIX), visitorKey, userId, role);
   }
