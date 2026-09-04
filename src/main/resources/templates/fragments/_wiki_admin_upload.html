@@ -27,8 +27,8 @@
           </label>
           <label class="uf">연도<input type="number" name="year" min="2000" max="2100" value="2026" required></label>
           <label class="uf">시행월/회차<input type="text" name="exam" value="9월 모의고사" required></label>
-          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX)</span><input type="file" name="file"
-                 accept=".pdf,.hwp,.hwpx,application/pdf" required></label>
+          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · HTML)</span><input type="file" name="file"
+                 accept=".pdf,.hwp,.hwpx,.html,.htm,application/pdf,text/html" required></label>
         </div>
         <p class="uf-msg" data-upload-msg></p>
         <div class="uf-actions">
@@ -49,8 +49,8 @@
           <label class="uf">학기<input type="text" name="semester" value="1학기" required></label>
           <label class="uf">시험<input type="text" name="examType" value="기말" required></label>
           <label class="uf">과목<input type="text" name="subject" value="영어"></label>
-          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · DOCX 등 문서)</span><input type="file" name="file"
-                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" required></label>
+          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · DOCX · HTML 등 문서)</span><input type="file" name="file"
+                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,text/html" required></label>
         </div>
         <p class="uf-msg" data-upload-msg></p>
         <div class="uf-actions">
@@ -60,7 +60,7 @@
       </form>
     </div>
   </div>
-  <script src="/js/wiki_admin_upload.js?v=20260903-4"></script>
+  <script src="/js/wiki_admin_upload.js?v=20260904-5"></script>
 </th:block>
 </body>
 </html>
