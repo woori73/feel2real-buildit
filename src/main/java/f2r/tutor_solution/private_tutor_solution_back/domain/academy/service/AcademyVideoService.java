@@ -4,6 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyVideoResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideo;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoPurpose;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoLifecycleStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoOptimizationStatus;
@@ -106,7 +107,13 @@ public class AcademyVideoService {
    */
   public AcademyVideoResponse upload(
       JwtTokenProvider.AuthenticatedPrincipal principal, MultipartFile file) {
+    return upload(principal, file, null);
+  }
+
+  public AcademyVideoResponse upload(
+      JwtTokenProvider.AuthenticatedPrincipal principal, MultipartFile file, String purposeRaw) {
     Academy academy = academyService.requireMyAcademy(principal);
+    AcademyVideoPurpose purpose = parsePurpose(purposeRaw);
 
     if (file == null || file.isEmpty()) {
       throw badRequest("업로드할 영상 파일이 없습니다.");
@@ -136,7 +143,7 @@ public class AcademyVideoService {
       if (result.sizeBytes() > maxOutputBytes) {
         throw badRequest("변환된 영상이 너무 큽니다. 더 짧거나 작은 영상을 올려 주세요.");
       }
-      return persist(academy, file.getOriginalFilename(), result);
+      return persist(academy, file.getOriginalFilename(), result, purpose);
     } catch (IOException e) {
       throw serverError("영상 업로드 처리에 실패했습니다.", e);
     } finally {
@@ -152,7 +159,8 @@ public class AcademyVideoService {
    * 보상 로직을 호출자 쪽으로 빼야 한다.
    */
   private AcademyVideoResponse persist(
-      Academy academy, String originalFilename, TranscodeResult result) throws IOException {
+      Academy academy, String originalFilename, TranscodeResult result,
+      AcademyVideoPurpose purpose) throws IOException {
     Long ownerUserId = academy.getTutor().getUserId();
     String storageKey = null;
     String thumbnailKey = null;
@@ -174,6 +182,7 @@ public class AcademyVideoService {
           .width(result.width())
           .height(result.height())
           .status(VideoStatus.READY)
+          .purpose(purpose)
           .build());
       return AcademyVideoResponse.of(saved, academy.getSlug());
     } catch (RuntimeException | IOException e) {
@@ -301,6 +310,18 @@ public class AcademyVideoService {
       });
     } catch (IOException e) {
       log.warn("임시 디렉터리 정리 실패: {}", directory, e);
+    }
+  }
+
+  /** 빈 값은 레거시와 같은 "용도 미상"(null)으로 둔다 — 강제 선택은 아니다. */
+  private static AcademyVideoPurpose parsePurpose(String purposeRaw) {
+    if (purposeRaw == null || purposeRaw.isBlank()) {
+      return null;
+    }
+    try {
+      return AcademyVideoPurpose.valueOf(purposeRaw.trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException e) {
+      throw badRequest("영상 용도는 DIRECTOR 또는 LESSON만 가능합니다.");
     }
   }
 

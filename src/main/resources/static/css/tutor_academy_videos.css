@@ -1,6 +1,38 @@
 /* 수업 영상 관리 페이지. 레이아웃 톤은 tutor_academy.css의 card/btn을 그대로 쓰고
    영상 목록 관련 스타일만 여기에 둔다. */
 
+.video-upload-purpose {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #3d4a6b;
+}
+
+.video-upload-purpose legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.video-upload-purpose label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.video-card-purpose {
+  color: #0C238A;
+  background: rgba(74, 127, 212, .12);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
 .video-upload-row {
   display: flex;
   gap: 10px;

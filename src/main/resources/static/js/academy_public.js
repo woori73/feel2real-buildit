@@ -109,6 +109,7 @@
       renderGnb(academy, topBtn)
       + renderOrderedSections(academy, primarySubject, regionText)
       + renderFooter(academy);
+    SECTIONS.applyImageMediaAspect(root);
     wireReveal();
     wireSceneFlow();
     wireCinematic();

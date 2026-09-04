@@ -653,8 +653,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .principal-inner{max-width:860px;margin:0 auto;}
 .principal-head{text-align:center;margin-bottom:18px;}
 .principal-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:stretch;}
-.principal-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f8;padding:22px;box-shadow:0 4px 14px rgba(12,35,138,.06);display:flex;gap:16px;align-items:flex-start;}
-.principal-avatar{width:64px;height:64px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#0C238A,#4A7FD4);display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:#fff;box-shadow:0 4px 14px rgba(12,35,138,.2);}
+.principal-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f8;padding:22px;box-shadow:0 4px 14px rgba(12,35,138,.06);display:flex;align-items:flex-start;}
 .principal-info{flex:1;min-width:0;}
 .principal-name{font-size:1.1rem;font-weight:900;color:#0a0f2e;margin-bottom:3px;}
 .principal-role{font-size:.80rem;color:#4A7FD4;font-weight:700;background:rgba(74,127,212,.1);border-radius:999px;padding:2px 9px;display:inline-block;margin-bottom:8px;}
@@ -746,8 +745,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
   .section-title{font-size:1.28rem;}
   .section-sub{font-size:.86rem;line-height:1.6;}
   .principal-desc{overflow-wrap:anywhere;}
-  .principal-card{flex-direction:column;gap:12px;padding:18px;}
-  .principal-avatar{width:54px;height:54px;font-size:1.4rem;}
+  .principal-card{padding:18px;}
   .principal-info{width:100%;}
   .principal-video-box.is-portrait{max-width:220px;}
   .subject-grid,.blog-grid{grid-template-columns:1fr;}
@@ -821,8 +819,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
   .builder-public-preview .section-title{font-size:1.28rem;}
   .builder-public-preview .section-sub{font-size:.86rem;line-height:1.6;}
   .builder-public-preview .intro-grid{gap:20px;}
-  .builder-public-preview .principal-card{flex-direction:column;gap:12px;padding:18px;}
-  .builder-public-preview .principal-avatar{width:54px;height:54px;font-size:1.4rem;}
+  .builder-public-preview .principal-card{padding:18px;}
   .builder-public-preview .principal-info{width:100%;}
   .builder-public-preview .principal-video-box.is-portrait{max-width:220px;}
   .builder-public-preview .subject-grid,.builder-public-preview .blog-grid{grid-template-columns:1fr;}

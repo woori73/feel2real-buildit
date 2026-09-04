@@ -12,8 +12,8 @@
   <main class="page">
     <div class="topbar">
       <div>
-        <div class="brand">수업 영상</div>
-        <p class="muted">학원 공개 페이지의 <strong>수업 영상</strong> 섹션에 노출됩니다.</p>
+        <div class="brand">학원 영상 관리</div>
+        <p class="muted">대표 원장 소개 영상과 수업 영상을 함께 관리합니다. 업로드 시 용도를 선택해 주세요.</p>
       </div>
       <div class="topbar-actions">
         <a class="btn btn-ghost" href="/tutor/academy">내 Academy</a>
@@ -27,6 +27,11 @@
         휴대폰에서 촬영한 MP4 또는 MOV 영상만 올려 주세요.
         영상은 120초 이하 · 200MiB 이하이며, 학원당 최대 10개까지 보관됩니다.
       </p>
+      <fieldset class="video-upload-purpose">
+        <legend class="muted">이 영상은 무엇인가요?</legend>
+        <label><input type="radio" name="videoPurpose" value="LESSON" checked> 수업 영상 (대표 수업·수업 영상 목록에 노출)</label>
+        <label><input type="radio" name="videoPurpose" value="DIRECTOR"> 대표 원장 소개 영상 (원장 소개 목록에만 노출)</label>
+      </fieldset>
       <div class="video-upload-row">
         <input id="videoInput" type="file" accept=".mp4,.mov,video/mp4,video/quicktime" />
         <button id="uploadButton" class="btn btn-primary" type="button">업로드</button>
@@ -38,6 +43,11 @@
     <section class="card">
       <div class="topbar">
         <h2>등록된 영상 <span id="videoCount" class="muted"></span></h2>
+        <select id="purposeFilter" class="btn btn-ghost">
+          <option value="ALL">전체 보기</option>
+          <option value="DIRECTOR">원장 소개 영상만</option>
+          <option value="LESSON">수업 영상만</option>
+        </select>
       </div>
       <div id="videoList" class="video-grid"></div>
       <p id="emptyState" class="muted hidden">아직 등록된 영상이 없습니다.</p>

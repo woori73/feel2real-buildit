@@ -927,6 +927,31 @@ class AcademyServiceTest {
   }
 
   @Test
+  void update_preservesExistingBuilderDraftWhenFullRequestOmitsIt() {
+    // given: 원장 소개/철학 등 builderDraft는 별도 UI(원장 영상 선택 등)가 전체 pageSettings를
+    // 다시 조립해 이 엔드포인트로 보낼 때 실수로 null을 보내도 통째로 사라지면 안 된다.
+    // (updatePageSettings 부분 업데이트 엔드포인트가 이미 지키는 것과 같은 보존 규칙.)
+    Academy academy = academy("old/logo.jpg", null);
+    Map<String, String> existingDraft = Map.of(
+        "principalName", "박정민 원장", "principalDesc", "학생 개개인에 맞춘 지도");
+    academy.updatePageSettings(new AcademyPageSettings(
+        null, null, null, null, null, null, existingDraft, null));
+    AcademyPageSettings requestedSettings = new AcademyPageSettings(
+        "https://new-blog.example.com", null, null, null, null, null, null, null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(subjectRepository.findAllById(Set.of(1))).thenReturn(List.of(subject()));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+
+    // when
+    AcademyResponse response = service.update(
+        principal, validRequestWithPageSettings(requestedSettings), null, null);
+
+    // then
+    assertThat(response.pageSettings().blogUrl()).isEqualTo("https://new-blog.example.com");
+    assertThat(response.pageSettings().builderDraft()).isEqualTo(existingDraft);
+  }
+
+  @Test
   void update_storesExplicitBlankBusinessFieldsAndClearsDerivedUrl() {
     // given: 7개 direct field를 명시적으로 blank로 보내 clear한다.
     Academy academy = academy("old/logo.jpg", null);

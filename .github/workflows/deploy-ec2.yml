@@ -7,10 +7,17 @@ permissions:
   id-token: write
   contents: read
 
+# 두 배포가 동시에 같은 EC2 인스턴스/jar/systemd 유닛을 건드리지 않게 한다. 이미 진행 중인
+# 배포를 취소하지 않고(cancel-in-progress: false) 다음 실행을 큐에 세워 순차 실행되게 한다 —
+# 진행 중인 배포를 취소하면 절반만 적용된 상태로 그 배포 자체가 "동시 배포" 문제를 만든다.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -46,10 +53,57 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x gradlew
+
+      # Production Deploy는 Build Check보다 먼저 실행되지 않는다: main으로 push될 때 도는
+      # build-check.yml과 같은(MySQL 불필요) 테스트 목록을 여기서도 다시 게이트로 돌려,
+      # main의 Build Check 결과를 확인하지 않고 수동으로 배포를 눌러도 깨진 빌드가 그대로
+      # Production까지 가지 않게 한다. 이 목록은 build-check.yml과 같이 유지한다.
+      - name: Run non-MySQL unit & contract tests (deploy gate)
+        run: >-
+          ./gradlew clean test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartCandidateEnrichmentServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartEducatorSearchServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.RankingComputationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartRankingServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.controller.ChartPublicControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartSiteToolsContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartPublicPageContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartDiscoveryServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyBuilderTemplateContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.WebMvcConfigTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.service.WikiExamOriginalServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.controller.WikiExamOriginalControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.WikiPersistenceVerificationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.WikiPageContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidatorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.controller.WikiAnalysisMaterialControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.community.controller.CommunityAttachmentControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wiki.controller.WikiPageControllerRenderTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionWikiServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionThreadServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.QuestionWikiContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.controller.WikiLearningMaterialControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.service.WikiVisitServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.controller.WikiStatsControllerWebMvcTest"
+
+      - name: Upload deploy-gate test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-gate-test-report
+          path: build/reports/tests/test
+          if-no-files-found: ignore
+
       - name: Build bootJar
-        run: |
-          chmod +x gradlew
-          ./gradlew clean bootJar --no-daemon
+        run: ./gradlew bootJar --no-daemon
 
       - name: Locate jar
         id: jar
@@ -66,8 +120,10 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           BUCKET=feel2real-buildit-deploy
+          # 새 jar는 여기서 받아만 두고, 실제로 /home/ec2-user/app.jar 자리에 넣는 건
+          # f2r_deploy_with_rollback(스크립트 하단)이 담당한다 — 그래야 기존 정상 jar를
+          # 먼저 백업한 뒤 교체하고, health 실패 시 되돌릴 수 있다.
           aws s3 cp s3://$BUCKET/app.jar /tmp/app-new.jar
-          mv /tmp/app-new.jar /home/ec2-user/app.jar
 
           mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
           aws s3 cp s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
@@ -161,11 +217,26 @@ jobs:
           systemctl daemon-reload
           systemctl enable buildit-wiki.service
           systemctl restart buildit-wiki.service
-          systemctl restart f2r-app.service
-          sleep 6
+          sleep 3
           systemctl is-active buildit-wiki.service
-          systemctl is-active f2r-app.service
           curl -fsS http://127.0.0.1:8000/api/health
+          SCRIPT
+
+          # f2r-app.service(Spring) 배포 가드를 그대로 이어 붙인다. scripts/deploy/f2r_app_guard.sh는
+          # 소싱 전용(함수 정의만, 최상위 실행 없음)이라 안전하게 잘라 넣을 수 있고,
+          # scripts/deploy/f2r_app_guard.test.sh가 로컬에서 검증하는 코드와 완전히 같은 소스다 —
+          # "테스트한 코드"와 "실제 배포되는 코드"가 갈라질 위험이 없다.
+          cat scripts/deploy/f2r_app_guard.sh >> /tmp/deploy-buildit.sh
+
+          cat >> /tmp/deploy-buildit.sh <<'SCRIPT'
+
+          # ---- f2r-app.service 배포: 백업 → 교체 → 재시작 → health 재시도(최대 120초) ----
+          # 실패하면 자동으로 이전 jar로 되돌리고, 그래도 안 되면 exit code 2로 명확히 구분한다
+          # (사람이 EC2에 직접 들어가야 한다는 뜻). 이 명령이 스크립트의 마지막 문장이라
+          # set -e 아래에서 이 함수의 반환값이 곧 deploy-buildit.sh 전체의 종료 코드가 된다.
+          f2r_deploy_with_rollback \
+            /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
+            f2r-app.service http://127.0.0.1:8080/actuator/health 24 5
           SCRIPT
           chmod +x /tmp/deploy-buildit.sh
 

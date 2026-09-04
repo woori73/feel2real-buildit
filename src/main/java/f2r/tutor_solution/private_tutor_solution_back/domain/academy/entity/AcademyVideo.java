@@ -88,6 +88,14 @@ public class AcademyVideo extends BaseEntity {
   @Column(name = "raw_cleanup_status", nullable = false, length = 20)
   private VideoRawCleanupStatus rawCleanupStatus;
 
+  /**
+   * 업로드 시점에 고른 용도(원장 소개 vs 수업). null이면 이 필드 도입 전 업로드된
+   * 레거시 행이라 용도 미상 — 두 선택 목록 모두에 계속 노출한다({@link AcademyVideoPurpose}).
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "purpose", length = 20)
+  private AcademyVideoPurpose purpose;
+
   @Builder
   private AcademyVideo(
       Academy academy,
@@ -106,6 +114,7 @@ public class AcademyVideo extends BaseEntity {
       Integer height,
       Long sourceVersion,
       VideoRawCleanupStatus rawCleanupStatus,
+      AcademyVideoPurpose purpose,
       // V930 synchronous callers remain source-compatible until their story removes the old endpoint.
       String storageKey,
       Integer durationSec,
@@ -113,6 +122,7 @@ public class AcademyVideo extends BaseEntity {
       VideoStatus status) {
     this.academy = academy;
     this.originalFilename = originalFilename;
+    this.purpose = purpose;
     this.lifecycleStatus = lifecycleStatus != null
         ? lifecycleStatus
         : status == VideoStatus.FAILED

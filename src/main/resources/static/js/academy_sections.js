@@ -527,7 +527,6 @@
           <div class="principal-head"><span class="section-badge">🎓 대표 원장 소개</span></div>
           <div class="principal-grid">
             <div class="principal-card">
-              <div class="principal-avatar" aria-hidden="true">👤</div>
               <div class="principal-info">
                 ${ctx.editableText({ tag: 'div', className: 'principal-name', draftKey: 'principalName', value: name })}
                 ${ctx.editableText({ tag: 'div', className: 'principal-role', draftKey: 'principalRole', value: role })}
@@ -688,6 +687,29 @@
     // 9:16(세로) ~ 16:9(가로) 범위로 클램프 — 카드가 극단적으로 길거나 납작해지지 않게.
     const ratio = Math.max(9 / 16, Math.min(16 / 9, w / h));
     return `${Math.round(ratio * 1000)} / 1000`;
+  }
+
+  /**
+   * 대표 수업 IMAGE 미디어는 업로드 시점에 width/height 를 저장하지 않으므로
+   * 렌더 후 <img> 가 로드된 시점에 naturalWidth/Height 를 측정해 컨테이너의
+   * --f2r-media-aspect 를 채운다(영상 stage와 동일한 클램프 로직 재사용).
+   * 이미 처리된 박스는 data-media-fit-done 으로 건너뛴다(재렌더 시 중복 바인딩 방지).
+   */
+  function applyImageMediaAspect(scopeEl) {
+    const root = scopeEl || (typeof document !== 'undefined' ? document : null);
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('.f2r-program-card-media[data-media-fit="image"]:not([data-media-fit-done])')
+      .forEach((box) => {
+        const img = box.querySelector('img');
+        if (!img) return;
+        const apply = () => {
+          const aspect = mediaAspectRatio(img.naturalWidth, img.naturalHeight);
+          if (aspect) box.style.setProperty('--f2r-media-aspect', aspect);
+          box.setAttribute('data-media-fit-done', '1');
+        };
+        if (img.complete && img.naturalWidth) apply();
+        else img.addEventListener('load', apply, { once: true });
+      });
   }
 
   /**
@@ -1071,7 +1093,7 @@
         const id = lesson.lessonId;
         if (lesson.mediaType === 'IMAGE' && id != null) {
           const slug = encodeURIComponent(resolve(options.slug));
-          return `<div class="f2r-program-card-media"><img src="/api/academies/${slug}/lessons/${encodeURIComponent(id)}/hero-image" alt="" loading="lazy"></div>`;
+          return `<div class="f2r-program-card-media" data-media-fit="image"><img src="/api/academies/${slug}/lessons/${encodeURIComponent(id)}/hero-image" alt="" loading="lazy"></div>`;
         }
         if (lesson.mediaType === 'VIDEO' && lesson.mediaVideoId != null) {
           const slug = encodeURIComponent(resolve(options.slug));
@@ -1285,7 +1307,7 @@
       programCardMedia(lesson) {
         const id = lesson.lessonId;
         if (lesson.mediaType === 'IMAGE' && id != null) {
-          return `<div class="f2r-program-card-media"><img src="/api/tutor/academy/lessons/${encodeURIComponent(id)}/hero-image" alt="" loading="lazy"></div>`;
+          return `<div class="f2r-program-card-media" data-media-fit="image"><img src="/api/tutor/academy/lessons/${encodeURIComponent(id)}/hero-image" alt="" loading="lazy"></div>`;
         }
         if (lesson.mediaType === 'VIDEO' && lesson.mediaVideoId != null) {
           const found = (resolve(options.videos) || []).find((v) => String(v.videoId) === String(lesson.mediaVideoId));
@@ -1466,6 +1488,7 @@
     renderCollectionShell,
     mediaViewportHtml,
     mediaAspectRatio,
+    applyImageMediaAspect,
     programCardHtml,
     videoCardHtml,
     miniLectureItems,

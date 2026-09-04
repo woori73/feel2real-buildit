@@ -331,6 +331,7 @@
         <div class="builder-public-preview-ribbon">빌더 미리보기 — 저장된 입력값 기반으로 공개 페이지와 같은 레이아웃을 표시합니다</div>
         <main class="page"><section id="publicView">${renderPublicPage(academy)}</section></main>
       </div>`;
+    SECTIONS.applyImageMediaAspect(pageContent);
     if (highlightField || activeTextField) highlightTextTargets(highlightField || activeTextField);
     if (scrollToSection) scrollPreviewToSection(scrollToSection);
   }
@@ -454,6 +455,15 @@
   function findUploadedVideo(videoId) {
     const id = String(videoId || '').trim();
     return id ? builderVideos.find((video) => String(video.videoId) === id) || null : null;
+  }
+
+  /**
+   * 원장 소개/히어로 영상 목록과 대표 수업(미니 강의) 영상 목록이 섞이던 버그 수정.
+   * purpose가 없는 레거시 업로드(이 필드 도입 전)는 어느 쪽 목록인지 알 수 없으므로
+   * 임의로 배정하지 않고 두 목록 모두에 계속 노출한다(하위 호환).
+   */
+  function videosForPurpose(purpose) {
+    return builderVideos.filter((video) => !video.purpose || video.purpose === purpose);
   }
 
   function uploadedVideoPlayer(video, className, title) {
@@ -2130,11 +2140,13 @@
   function renderHomeVideoList(kind, selectedId) {
     const list = document.querySelector(`[data-home-video-list="${kind}"]`);
     if (!list) return;
-    if (!builderVideos.length) {
-      list.innerHTML = '<p class="builder-home-video-empty">업로드된 영상이 없습니다. 영상 관리에서 먼저 업로드해 주세요.</p>';
+    // hero(학원 소개)와 principal(원장 소개)은 둘 다 "원장/학원 브랜딩" 용도라 DIRECTOR로 묶는다.
+    const videos = videosForPurpose('DIRECTOR');
+    if (!videos.length) {
+      list.innerHTML = '<p class="builder-home-video-empty">업로드된 영상이 없습니다. 영상 관리에서 대표 원장 소개 영상을 먼저 업로드해 주세요.</p>';
       return;
     }
-    list.innerHTML = builderVideos.map((video) => {
+    list.innerHTML = videos.map((video) => {
       const selected = String(video.videoId) === String(selectedId || '');
       const preview = video.thumbnailUrl
         ? `<img src="${escapeAttr(video.thumbnailUrl)}" alt="" loading="lazy">`
@@ -3481,7 +3493,8 @@
     if (!modal || !options || !currentPreview) return;
     const saved = parsedMiniLectures();
     const savedById = new Map(saved.map((e) => [String(e.v), e]));
-    const videos = (builderVideos || []).filter((video) => video && video.videoId != null);
+    // 원장 소개 영상이 미니 강의 목록에 섞이지 않도록 LESSON(+용도 미상 레거시)만 보여준다.
+    const videos = videosForPurpose('LESSON').filter((video) => video && video.videoId != null);
     // 저장된 순서 → 그 외 영상 순으로 나열한다(모달 안 재정렬은 이번 범위 밖).
     const ordered = saved
       .map((e) => videos.find((v) => String(v.videoId) === String(e.v)))
@@ -4228,6 +4241,8 @@
     escapeAttr,
     setPreview(preview) { currentPreview = preview || null; },
     setVideos(list) { builderVideos = Array.isArray(list) ? list : []; },
+    // 원장 소개/수업 영상 목록 분리 검증용 — 순수 필터라 DOM 없이도 단언할 수 있다.
+    videosForPurpose,
     // 저장 전 업로드 슬롯. 캔버스가 로컬 objectURL로 미리보기를 그리는지 검증하는 데 쓴다.
     setPendingHeroMedia(map) { pendingHeroMedia = map || {}; },
     // 캔버스 재렌더가 편집 상태를 끊는지 검증하기 위한 접근자.

@@ -54,8 +54,9 @@ public class AcademyVideoController {
   @PostMapping(value = "/api/tutor/academy/videos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<AcademyVideoResponse> upload(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
-      @RequestPart("video") MultipartFile video) {
-    return ResponseEntity.ok(academyVideoService.upload(principal, video));
+      @RequestPart("video") MultipartFile video,
+      @RequestParam(value = "purpose", required = false) String purpose) {
+    return ResponseEntity.ok(academyVideoService.upload(principal, video, purpose));
   }
 
   @GetMapping("/api/tutor/academy/videos")
