@@ -25,6 +25,7 @@ class WikiWeeklyAiContextContractTest {
 
     assertThat(standard)
         .contains("14문항")
+        .contains("수능 29번형 함축 의미")
         .contains("수능 29번형 — 어법")
         .contains("수능 30번형 — 문맥상 어휘")
         .contains("Fixed Typography + Fixed Margin + Flexible Pagination")
@@ -35,7 +36,8 @@ class WikiWeeklyAiContextContractTest {
         .contains("WEEKLY 01 · 고3")
         .contains("9.8pt")
         .contains("Flexible Pagination")
-        .contains("data-q=\"3\"").doesNotContain("font-weight:600");
+        .contains("class=\"target\"")
+        .contains("font-weight:400");
   }
 
   private static String read(String classpath) throws IOException {
