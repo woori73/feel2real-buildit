@@ -1,6 +1,9 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admin.dto.AdminVisibilityUpdateRequest;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiMaterialCategory;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.WikiDownloadRecordingService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.dto.WikiAnalysisMaterialResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService.DownloadFile;
@@ -9,6 +12,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class WikiAnalysisMaterialController {
 
   private final WikiAnalysisMaterialService service;
+  private final WikiDownloadRecordingService downloadRecordingService;
 
   @GetMapping("/api/wiki/analysis-materials")
   public ResponseEntity<List<WikiAnalysisMaterialResponse>> listPublic(
@@ -26,8 +31,11 @@ public class WikiAnalysisMaterialController {
   }
 
   @GetMapping("/api/wiki/analysis-materials/{id}/download")
-  public ResponseEntity<byte[]> download(@PathVariable Long id) {
+  public ResponseEntity<byte[]> download(
+      @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     DownloadFile file = service.getPublicDownload(id);
+    downloadRecordingService.record(WikiMaterialCategory.ANALYSIS, id, file.title(),
+        principal == null ? null : principal.userId(), principal == null ? null : principal.role());
     return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
   }
 

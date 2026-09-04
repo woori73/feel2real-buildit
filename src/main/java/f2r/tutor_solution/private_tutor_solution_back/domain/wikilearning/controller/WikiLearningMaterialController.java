@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiMaterialCategory;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.WikiDownloadRecordingService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.dto.WikiLearningMaterialResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialService.DownloadFile;
@@ -18,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class WikiLearningMaterialController {
   private final WikiLearningMaterialService service;
+  private final WikiDownloadRecordingService downloadRecordingService;
 
   @GetMapping("/api/wiki/learning-materials")
   public ResponseEntity<List<WikiLearningMaterialResponse>> listPublic(@RequestParam(required = false) Integer grade) {
@@ -57,8 +60,12 @@ public class WikiLearningMaterialController {
   }
 
   @GetMapping("/api/wiki/learning-materials/{id}/download")
-  public ResponseEntity<byte[]> download(@PathVariable Long id) {
-    DownloadFile file = service.getDownload(id); return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
+  public ResponseEntity<byte[]> download(
+      @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    DownloadFile file = service.getDownload(id);
+    downloadRecordingService.record(WikiMaterialCategory.LEARNING, id, file.title(),
+        principal == null ? null : principal.userId(), principal == null ? null : principal.role());
+    return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
   }
   @GetMapping("/api/admin/wiki/learning-materials")
   public ResponseEntity<List<WikiLearningMaterialResponse>> listAdmin() { return ResponseEntity.ok(service.listAdmin()); }

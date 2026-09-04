@@ -1141,6 +1141,40 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 
 권한: 읽기 공개(비로그인), write(글/답글/수정/삭제/첨부)는 인증(STUDENT/TUTOR/ADMIN 누구나). 작성자만 수정, 작성자·ADMIN 만 숨김. 전부 `@AuthenticationPrincipal` 기준 — request body user id 불신뢰.
 
+### 4.48 site_page_visits / wiki_download_logs ✅ 관리자 통합 Analytics (V962)
+
+`docs/API.md §19` 참고. `academy_daily_visits`(§4.41)와 달리 날짜당 집계 row가 아니라 **1건 = 1 이벤트** 로그다 — PV는 row 수, UV는 `visitor_key` distinct count로 계산한다. 기존 `wiki_daily_visits`(V960, Wiki 운영 현황 카드 전용)는 그대로 유지되며 이 테이블들과 무관하게 독립 동작한다.
+
+**`site_page_visits`** — F2R 전체 실제 페이지 진입(PV). `SiteVisitFilter`가 정적 리소스/API를 제외하고 응답이 `200` + `text/html`인 GET에서만 기록.
+
+| column | type | note |
+|---|---|---|
+| site_page_visit_id | BIGINT PK AUTO_INCREMENT | |
+| visit_date | DATE NOT NULL | `Asia/Seoul` 기준, 기간 집계용 |
+| visited_at | DATETIME(6) NOT NULL | 최근 방문 목록 정렬용 |
+| is_wiki | BIT(1) NOT NULL DEFAULT 0 | `path`가 `/wiki`로 시작하면 true(F2R 전체 집계에도 포함되는 부분집합) |
+| path | VARCHAR(255) NOT NULL | 쿼리스트링 제외 |
+| user_id | BIGINT NULL | 비로그인 NULL. FK 제약 없음(스냅샷 로그) |
+| role | VARCHAR(20) NOT NULL | STUDENT\|TUTOR\|ADMIN\|GUEST |
+| display_name | VARCHAR(60) NOT NULL | 방문 시점 `users.name`(실명) 스냅샷, 비회원 "비회원" |
+| visitor_key | VARCHAR(64) NOT NULL | UV 식별자: 로그인 `"U:{userId}"`, 비로그인 `"S:{session id}"`. IP 미저장 |
+
+**`wiki_download_logs`** — Wiki 자료(ORIGINAL/ANALYSIS/LEARNING) 다운로드 이벤트. 다운로드 endpoint가 파일을 정상적으로 읽어온 시점에만 기록(버튼 클릭 카운트 아님).
+
+| column | type | note |
+|---|---|---|
+| wiki_download_log_id | BIGINT PK AUTO_INCREMENT | |
+| download_date | DATE NOT NULL | 기간 집계용 |
+| downloaded_at | DATETIME(6) NOT NULL | 최근 다운로드 목록 정렬용 |
+| material_category | VARCHAR(20) NOT NULL | ORIGINAL\|ANALYSIS\|LEARNING |
+| material_id | BIGINT NOT NULL | 각 카테고리 테이블의 PK(FK 제약 없음) |
+| material_title | VARCHAR(255) NOT NULL | 다운로드 시점 제목 스냅샷 |
+| user_id | BIGINT NULL | 비회원 다운로드 허용 자료(ORIGINAL/ANALYSIS)는 NULL 가능 |
+| role | VARCHAR(20) NOT NULL | STUDENT\|TUTOR\|ADMIN\|GUEST |
+| display_name | VARCHAR(60) NOT NULL | 다운로드 시점 `users.name`(실명) 스냅샷 |
+
+인덱스: `site_page_visits`는 `(visit_date)`, `(is_wiki, visit_date)`, `(visitor_key)`, `(user_id)`. `wiki_download_logs`는 `(download_date)`, `(material_category, material_id)`, `(user_id)` — 관리자 화면 집계 쿼리가 기존 페이지 응답을 늦추지 않도록.
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과

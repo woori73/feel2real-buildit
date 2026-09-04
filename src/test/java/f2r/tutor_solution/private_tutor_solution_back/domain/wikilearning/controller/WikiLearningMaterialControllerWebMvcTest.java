@@ -3,6 +3,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.contr
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,6 +16,8 @@ import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiMaterialCategory;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.WikiDownloadRecordingService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.dto.WikiLearningMaterialResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialService.DownloadFile;
@@ -49,6 +53,7 @@ class WikiLearningMaterialControllerWebMvcTest {
 
   @MockitoBean WikiLearningMaterialService service;
   @MockitoBean AcademyRepository academyRepository;
+  @MockitoBean WikiDownloadRecordingService downloadRecordingService;
 
   @BeforeEach
   void stubs() {
@@ -91,7 +96,7 @@ class WikiLearningMaterialControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 회원(STUDENT) when 업로드/다운로드 then 200 + attachment 헤더")
+  @DisplayName("given 회원(STUDENT) when 업로드/다운로드 then 200 + attachment 헤더 + 다운로드 기록(STUDENT)")
   void memberUploadAndDownload_ok() throws Exception {
     mockMvc.perform(multipart("/api/wiki/learning-materials").file("file", "%PDF".getBytes())
             .param("dataType", "VOCAB").param("grade", "2").param("title", "고2 어휘")
@@ -101,6 +106,9 @@ class WikiLearningMaterialControllerWebMvcTest {
         .andExpect(status().isOk())
         .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
             org.hamcrest.Matchers.containsString("attachment")));
+
+    verify(downloadRecordingService).record(
+        eq(WikiMaterialCategory.LEARNING), eq(1L), anyString(), eq(1L), eq("STUDENT"));
   }
 
   @Test

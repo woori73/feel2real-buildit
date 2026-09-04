@@ -3554,3 +3554,29 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/admin/workspaces` lists workspace catalog metadata and members; database paths are never returned. `GET /problem-generator/wiki/api/admin/workspaces/{workspaceId}` returns one workspace or `404`. Both require the signed Spring principal to be the canonical `admin` account with `ADMIN` role.
 - A normal Wiki API request may include `X-BuildIt-Wiki-Workspace: {workspaceId}` as an explicit target selector. FastAPI honors it only for that signed `admin` identity. `modu` and ordinary users receive `403`; an unknown target receives `404`. Omitting or clearing the header restores admin to `legacy`.
 - Principal-less external MCP requests retain `MCP_API_KEY` authentication and are explicitly bound to the legacy workspace; they never fall through browser HMAC identity resolution.
+
+## 19. 통합 Analytics API (`/api/admin/analytics`) — F2R 전체/Wiki 방문 + Wiki 다운로드 (V962)
+
+관리자 "통합 Analytics" 화면(`/admin/analytics`) 전용. F2R 전체 페이지 방문(PV/UV), 그 중 Wiki 하위 방문, Wiki 자료(ORIGINAL/ANALYSIS/LEARNING) 다운로드를 한 곳에서 집계한다. 기존 `wiki_daily_visits`(§Wiki 운영 현황, 날짜당 UV 집계 1행)와는 별개 테이블(`site_page_visits`, `wiki_download_logs`)이다 — 둘 다 계속 독립적으로 동작하며 서로 대체하지 않는다.
+
+**보안 경계**: `GET /api/admin/analytics/summary` 는 `/api/admin/**` → ROLE_ADMIN (SecurityConfig). STUDENT/TUTOR 는 403.
+
+### 방문 기록 (자동, 클라이언트 호출 없음)
+- `SiteVisitFilter`(SecurityConfig 필터체인, JwtAuthenticationFilter 뒤)가 모든 실제 GET 페이지 응답에서 자동 기록한다. `/api/**`, `/css/**`, `/js/**`, `/img/**`, `/video/**` 등은 경로로 우선 제외하고, 남은 요청도 응답이 `200` + `Content-Type: text/html` 인 경우에만 기록 — 정적 리소스/리다이렉트/API 응답은 집계되지 않는다.
+- UV(순 방문자) 식별: 로그인 `"U:{userId}"`, 비로그인 `"S:{HttpSession id}"`. IP는 저장하지 않는다.
+- `path` 가 `/wiki` 로 시작하면 `is_wiki=true`(Wiki 화면 방문이자 F2R 전체 방문에도 포함 — Wiki 방문자는 전체 방문자의 부분집합).
+- 로그인 사용자는 `users.name`(실명)을 방문 시점 스냅샷으로 `display_name` 에 저장한다(닉네임 아님 — TUTOR도 동일).
+
+### 다운로드 기록 (자동, 다운로드 endpoint 내부)
+- `WikiExamOriginalController`/`WikiAnalysisMaterialController`/`WikiLearningMaterialController` 의 기존 `/{id}/download` 가 파일을 정상적으로 읽어온 직후 `WikiDownloadRecordingService.record(...)` 를 호출한다. 프론트 버튼 클릭은 집계하지 않는다. 기존 다운로드 응답(바이트/파일명/Content-Type)은 변경하지 않는다.
+- category: `ORIGINAL`/`ANALYSIS`/`LEARNING`. GUEST 다운로드가 허용되는 자료(ORIGINAL/ANALYSIS)는 `user_id=NULL, role=GUEST` 로 기록된다. LEARNING은 회원 전용이라 항상 로그인 사용자로 기록된다.
+
+### `GET /api/admin/analytics/summary`
+→ `AdminAnalyticsResponse`:
+- `siteVisitors`/`siteViews`/`wikiVisitors`/`wikiViews`/`wikiDownloads`: 각 `{today, recent7, recent30, total}` (UV 또는 PV 또는 다운로드 건수, `today/recent7/recent30` 는 Asia/Seoul 기준 오늘/최근 7일/최근 30일, `total` 은 누적 전체).
+- `statsSince`: 최초 방문 기록 날짜(`site_page_visits` 최솟값). 기록이 없으면 `null` — 프론트가 "통계 수집 시작일 이후 데이터"임을 안내한다.
+- `recentWikiVisits`: 최근 Wiki 방문 20건 — `{displayName, role, area("WIKI"|"F2R"), path, visitedAt}`.
+- `recentDownloads`: 최근 다운로드 20건 — `{displayName, role, materialCategory, materialTitle, downloadedAt}`.
+- `topDownloads`: 자료별 누적 다운로드 수 TOP 10 — `{materialCategory, materialTitle, downloadCount}`.
+
+- 관련 코드: `domain/analytics/*`(SitePageVisit, WikiDownloadLog, SiteVisitRecordingService, WikiDownloadRecordingService, AdminAnalyticsService, AdminAnalyticsController), `config/SiteVisitFilter`. 마이그레이션 **`V962`**(신규 테이블 `site_page_visits`, `wiki_download_logs`).

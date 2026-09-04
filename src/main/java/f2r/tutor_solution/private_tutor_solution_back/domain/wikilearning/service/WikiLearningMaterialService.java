@@ -36,7 +36,12 @@ public class WikiLearningMaterialService {
     this.documentUploadValidator = documentUploadValidator; this.maxDocumentBytes = maxDocumentBytes;
   }
 
-  public record DownloadFile(byte[] bytes, String fileName, String contentType) {}
+  public record DownloadFile(byte[] bytes, String fileName, String contentType, String title) {
+    /** 하위호환: 다운로드 통계용 title 없이 생성(미리보기 등) — fileName을 title로 사용. */
+    public DownloadFile(byte[] bytes, String fileName, String contentType) {
+      this(bytes, fileName, contentType, fileName);
+    }
+  }
 
   @Transactional(readOnly = true)
   public List<WikiLearningMaterialResponse> searchPublic(Integer grade) {
@@ -69,7 +74,7 @@ public class WikiLearningMaterialService {
   private DownloadFile readFile(WikiLearningMaterial material) {
     try {
       byte[] bytes = fileStorage.readSingleLimited(material.getStorageKey(), RAW_FILE_TYPE, maxDocumentBytes);
-      return new DownloadFile(bytes, material.getOriginalFileName(), material.getContentType());
+      return new DownloadFile(bytes, material.getOriginalFileName(), material.getContentType(), material.getTitle());
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "학습 자료 파일을 찾을 수 없습니다.", e);
     }

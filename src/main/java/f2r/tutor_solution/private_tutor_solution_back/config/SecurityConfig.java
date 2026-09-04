@@ -4,6 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtAuthenticationFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteVisitRecordingService;
 import jakarta.servlet.DispatcherType;
 import java.util.regex.Pattern;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -61,6 +62,7 @@ public class SecurityConfig {
       CookieUtil cookieUtil,
       org.springframework.beans.factory.ObjectProvider<
           f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository> academyRepository,
+      org.springframework.beans.factory.ObjectProvider<SiteVisitRecordingService> siteVisitRecordingService,
       PublicSiteProperties publicSiteProperties,
       WebSecurityProperties webSecurityProperties,
       ArchivedRoutesProperties archivedRoutesProperties) throws Exception {
@@ -83,6 +85,7 @@ public class SecurityConfig {
     UsernamePasswordAuthenticationFilter usernamePasswordAuthenticationFilter =
         new UsernamePasswordAuthenticationFilter();
     usernamePasswordAuthenticationFilter.setRequiresAuthenticationRequestMatcher(request -> false);
+    SiteVisitFilter siteVisitFilter = new SiteVisitFilter(siteVisitRecordingService);
 
     http
         .csrf(AbstractHttpConfigurer::disable)
@@ -296,7 +299,8 @@ public class SecurityConfig {
         .addFilterAfter(jwtAuthenticationFilter, ArchivedRouteAliasFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
-        .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class);
+        .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
+        .addFilterAfter(siteVisitFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
