@@ -74,6 +74,54 @@ test('given existing lessons when adding then a stable keyed draft is appended l
   assert.equal(state.items[1].draft.theme, 'NAVY');
 });
 
+// 간소화된 편집 화면(카드 라벨/수업명/한 줄 설명/이런 학생에게/핵심 특징/대상)은 lessonType,
+// targetGroup, maxCapacity, scheduleType, weeklyCount, weekdays, startDate, endDate,
+// durationWeeks, durationMonths, scheduleSummary, status 에 대한 입력 control이 없다.
+// lesson_product_editor.js의 readForm()은 폼에 없는 필드를 patch 객체에서 아예 생략하므로
+// (form.elements.namedItem(field)가 null이면 continue), 그 결과를 updateActiveDraft에 넘겨도
+// 서버에서 불러온 기존 값이 null로 덮어써지면 안 된다.
+test('given a lesson with server-only fields when the form omits those keys then existing values survive the merge', () => {
+  const serverLesson = lesson(1, '기존 수업', {
+    lessonType: 'SUBSCRIPTION',
+    targetGroup: 'MIDDLE',
+    maxCapacity: 12,
+    scheduleType: 'WEEKLY',
+    weeklyCount: 2,
+    weekdays: ['MON', 'WED'],
+    startDate: '2026-03-02',
+    endDate: '2026-07-31',
+    durationWeeks: 20,
+    durationMonths: null,
+    scheduleSummary: '매주 월/수 저녁 7시',
+    status: 'PUBLISHED'
+  });
+  let state = editorState.createState([serverLesson]);
+  // readForm()이 만드는 patch: 화면에 있는 필드만 담고, 위 서버 전용 필드는 키 자체가 없다.
+  const formOnlyPatch = {
+    tabShortName: 'F2R Starter',
+    name: '기존 수업 (수정됨)',
+    kicker: '한 줄 설명',
+    learnerNeed: '이런 학생에게',
+    highlight: '핵심 특징',
+    gradeLabel: '고등학교 1학년'
+  };
+  state = editorState.updateActiveDraft(state, formOnlyPatch);
+  const draft = editorState.getActiveItem(state).draft;
+
+  assert.equal(draft.name, '기존 수업 (수정됨)');
+  assert.equal(draft.lessonType, 'SUBSCRIPTION');
+  assert.equal(draft.targetGroup, 'MIDDLE');
+  assert.equal(draft.maxCapacity, 12);
+  assert.equal(draft.scheduleType, 'WEEKLY');
+  assert.equal(draft.weeklyCount, 2);
+  assert.deepEqual(draft.weekdays, ['MON', 'WED']);
+  assert.equal(draft.startDate, '2026-03-02');
+  assert.equal(draft.endDate, '2026-07-31');
+  assert.equal(draft.durationWeeks, 20);
+  assert.equal(draft.scheduleSummary, '매주 월/수 저녁 7시');
+  assert.equal(draft.status, 'PUBLISHED');
+});
+
 test('given six-plus lessons when creating state then no state cap is imposed', () => {
   const lessons = Array.from({ length: 8 }, (_, index) => lesson(index + 1, `L${index + 1}`));
   const state = editorState.createState(lessons);

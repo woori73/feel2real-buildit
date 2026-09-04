@@ -33,6 +33,11 @@
   let editorState = null;
   let myVideos = [];
   let mediaTarget = 'hero';
+  // imageKey -> blob URL. 업로드 직후에는 서버 lesson row가 아직 새 mediaImageKey를 모른다
+  // (컬렉션 저장 전까지). lessonId 기반 hero-image URL만 쓰면 저장 전에는 항상 예전 이미지가
+  // 되돌아온다 — 그래서 방금 고른 파일의 로컬 미리보기를 imageKey로 붙들어 두고, 그게 있으면
+  // 그걸 최우선으로 보여준다. 저장 후 새로고침하면 맵이 비므로 자연히 서버 URL로 넘어간다.
+  const localImagePreviews = new Map();
 
   const NUMBER_FIELDS = new Set([
     'priceAmount',
@@ -182,7 +187,13 @@
     const draft = {};
     for (const field of stateApi.AUTHORING_FIELDS) {
       if (field === 'weekdays') {
-        draft.weekdays = Array.from(form.querySelectorAll('[name="weekdays"]:checked'))
+        // 간소화된 화면에는 요일 체크박스가 없다. querySelectorAll은 없어도 빈 NodeList를
+        // 돌려주므로, 존재 여부를 먼저 확인하지 않으면 매 입력마다 기존 요일 값이 빈 배열로
+        // 덮어써진다 — 다른 필드처럼 control이 없으면 patch에서 아예 생략해 기존 값을 지킨다.
+        const weekdayInputs = form.querySelectorAll('[name="weekdays"]');
+        if (weekdayInputs.length === 0) continue;
+        draft.weekdays = Array.from(weekdayInputs)
+          .filter((input) => input.checked)
           .map((input) => input.value);
         continue;
       }
@@ -247,6 +258,7 @@
         setBusy(false);
       }
     }
+    releaseLocalImagePreviewFor(active);
     editorState = stateApi.removeItem(editorState, active.clientKey);
     renderAll();
     statusBox.textContent = `'${label}'을(를) 삭제했습니다.`;
@@ -301,12 +313,15 @@
    */
   const EDITOR_CARD_CTX = {
     programCardMedia(lesson) {
-      if (lesson.mediaType === 'IMAGE' && lesson.lessonId != null) {
-        return `<button type="button" class="f2r-program-card-media" data-editor-media="hero" aria-label="대표 이미지 변경">`
-          + `<img src="/api/tutor/academy/lessons/${encodeURIComponent(lesson.lessonId)}/hero-image" alt="" loading="lazy"></button>`;
-      }
       if (lesson.mediaType === 'IMAGE') {
-        // 미저장 신규 수업: lessonId 기반 이미지 URL을 아직 만들 수 없다.
+        // 저장 전에는 방금 고른 파일의 로컬 미리보기(blob)를 우선 쓴다 — lessonId가 있어도
+        // 서버 hero-image는 저장 전까지 예전 이미지를 돌려주기 때문이다.
+        const src = heroImageSrc(lesson.mediaImageKey, lesson.lessonId);
+        if (src) {
+          return `<button type="button" class="f2r-program-card-media" data-editor-media="hero" aria-label="대표 이미지 변경">`
+            + `<img src="${escapeAttr(src)}" alt="" loading="lazy"></button>`;
+        }
+        // 미저장 신규 수업 + 로컬 미리보기도 없는 경우(예: 새로고침 직후)만 안내 문구로 대체한다.
         return '<button type="button" class="f2r-program-card-media f2r-program-card-media-empty" data-editor-media="hero">'
           + '이미지가 등록되었습니다.<br>저장하면 카드에 표시됩니다.</button>';
       }
@@ -339,6 +354,7 @@
       gradeLabel: value.gradeLabel,
       tabGuidanceLabel: value.tabGuidanceLabel,
       mediaType: value.mediaVideoId != null ? 'VIDEO' : (value.mediaImageKey ? 'IMAGE' : null),
+      mediaImageKey: value.mediaImageKey,
       mediaVideoId: value.mediaVideoId
     };
     programCardSlot.innerHTML = SECTIONS.programCardHtml(lesson, EDITOR_CARD_CTX);
@@ -363,6 +379,10 @@
    * dirty 추적과 낙관적 락이 두 갈래가 된다.
    */
   function setMedia(imageKey, videoId) {
+    const previousImageKey = currentMedia().imageKey;
+    if (previousImageKey && previousImageKey !== imageKey) {
+      revokeLocalImagePreview(previousImageKey);
+    }
     const imageField = form.elements.namedItem('mediaImageKey');
     const videoField = form.elements.namedItem('mediaVideoId');
     if (imageField) imageField.value = imageKey || '';
@@ -370,6 +390,35 @@
     // captureDraft가 draft 반영 + 미리보기 적용까지 한다. 별도의 "미리보기 반영" 단계는 없다.
     captureDraft();
     renderAll();
+  }
+
+  /**
+   * 방금 고른 파일을 imageKey에 붙여 즉시 미리보기 가능한 blob URL로 등록한다.
+   * 서버 저장(컬렉션 PUT) 전에도 미리보기가 새 이미지를 보여줄 수 있는 유일한 방법 —
+   * lessonId 기반 hero-image 엔드포인트는 저장 전까지 예전 이미지만 돌려준다.
+   */
+  function registerLocalImagePreview(imageKey, file) {
+    if (!imageKey || !file) return;
+    localImagePreviews.set(imageKey, URL.createObjectURL(file));
+  }
+
+  function revokeLocalImagePreview(imageKey) {
+    const url = imageKey ? localImagePreviews.get(imageKey) : null;
+    if (!url) return;
+    URL.revokeObjectURL(url);
+    localImagePreviews.delete(imageKey);
+  }
+
+  /**
+   * 히어로 이미지 표시용 src 하나로 통일. 방금 올린 로컬 미리보기가 있으면 그걸 우선하고,
+   * 없으면(저장된 지 오래된 이미지, 또는 새로고침 이후) lessonId 기반 서버 URL로 폴백한다.
+   * 저장된 수업만 서버 URL을 만들 수 있어 lessonId가 없으면 null(호출부가 placeholder 처리).
+   */
+  function heroImageSrc(imageKey, lessonId) {
+    const local = imageKey ? localImagePreviews.get(imageKey) : null;
+    if (local) return local;
+    if (lessonId == null) return null;
+    return `/api/tutor/academy/lessons/${lessonId}/hero-image?v=${encodeURIComponent(imageKey || '')}`;
   }
 
   function setOtVideo(videoId) {
@@ -433,10 +482,11 @@
       return;
     }
     if (imageKey) {
-      // 저장된 수업만 이미지 조회 URL을 만들 수 있다(lessonId 기반). 미저장 신규 수업은
-      // 안내 문구로 대체한다 — 저장 후 실제 이미지가 뜬다.
-      mediaArea.innerHTML = active?.lessonId != null
-        ? `<img class="course-media-image" src="/api/tutor/academy/lessons/${active.lessonId}/hero-image?v=${encodeURIComponent(imageKey)}" alt="">`
+      // 방금 고른 파일의 로컬 미리보기(blob)가 있으면 그걸 우선 쓴다. 없으면 저장된 수업만
+      // lessonId 기반 조회 URL을 만들 수 있다 — 미저장 신규 수업은 안내 문구로 대체한다.
+      const src = heroImageSrc(imageKey, active?.lessonId ?? null);
+      mediaArea.innerHTML = src
+        ? `<img class="course-media-image" src="${escapeAttr(src)}" alt="">`
         : '<div class="course-media-placeholder">이미지가 등록되었습니다.<br>저장하면 미리보기에 표시됩니다.</div>';
       return;
     }
@@ -478,6 +528,12 @@
       setMedia(null, null);
     }
     mediaModal?.close();
+  }
+
+  // 수업 삭제/전환 시 그 수업의 로컬 미리보기 blob URL을 정리해 메모리를 남기지 않는다.
+  function releaseLocalImagePreviewFor(item) {
+    const key = item?.draft?.mediaImageKey;
+    if (key) revokeLocalImagePreview(key);
   }
 
   async function loadMyVideos() {
@@ -536,6 +592,7 @@
         return;
       }
       if (isImage) {
+        registerLocalImagePreview(payload.imageKey, file);
         setMedia(payload.imageKey, null);
       } else {
         myVideos = [payload].concat(myVideos);
