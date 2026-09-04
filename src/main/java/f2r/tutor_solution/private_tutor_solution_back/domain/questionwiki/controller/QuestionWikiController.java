@@ -24,23 +24,17 @@ import java.util.List;
 public class QuestionWikiController {
 
   /*
-   * Mobile preview deliberately keeps the worksheet's desktop layout intact.
-   * The 1100px layout viewport and 0.3 initial scale are preserved.  Some
-   * worksheets center an oversized top-level A4 wrapper with margin:auto,
-   * which places its left edge outside the mobile scroll origin.  Anchor only
-   * top-level rendered worksheet nodes to x=0; do not reflow their contents.
+   * Keep the worksheet's desktop geometry intact.  Mobile fit is performed by
+   * the parent page on the sandbox iframe itself, so the child viewport starts
+   * at its real x=0 instead of relying on Chrome's visual-viewport centering.
    */
   private static final String MOBILE_PREVIEW_HEAD = """
-      <meta name="viewport" content="width=1100, initial-scale=0.3, minimum-scale=0.25, maximum-scale=5, user-scalable=yes">
+      <meta name="viewport" content="width=1100, initial-scale=1, minimum-scale=0.25, maximum-scale=5, user-scalable=yes">
       <style id="f2r-mobile-scale-fit">
         html, body {
           margin-left: 0 !important;
           margin-right: 0 !important;
           touch-action: pan-x pan-y pinch-zoom;
-        }
-        body > :not(style):not(script):not(link):not(meta) {
-          margin-left: 0 !important;
-          margin-right: auto !important;
         }
       </style>
       """;
