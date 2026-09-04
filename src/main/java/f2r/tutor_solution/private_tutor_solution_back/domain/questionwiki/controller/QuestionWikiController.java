@@ -32,9 +32,29 @@ import java.util.List;
 public class QuestionWikiController {
 
   private static final String MOBILE_PREVIEW_HEAD = """
-      <meta name="viewport" content="width=1100, initial-scale=1">
-      <style>
-        html, body { margin-left: 0 !important; margin-right: 0 !important; }
+      <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=5, user-scalable=yes">
+      <style id="f2r-mobile-reflow">
+        html, body {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          overflow-x: hidden !important;
+          -webkit-text-size-adjust: 100%;
+        }
+        body > *, main, article, section, .sheet, .page, .daily-page, .container, .wrapper, .content {
+          width: auto !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+        img, svg, video, canvas { max-width: 100% !important; height: auto !important; }
+        p, li, div, span, td, th { overflow-wrap: break-word; word-wrap: break-word; }
+        table { width: 100% !important; max-width: 100% !important; }
+        pre, code { white-space: pre-wrap !important; overflow-wrap: anywhere; }
       </style>
       """;
 
@@ -166,8 +186,8 @@ public class QuestionWikiController {
 
   private byte[] mobileFitHtml(byte[] original) {
     String html = new String(original, StandardCharsets.UTF_8);
-    // The uploaded worksheets often have desktop fixed widths. A wider layout viewport makes
-    // mobile Chrome scale the whole worksheet into the iframe instead of clipping both sides.
+    // Mobile preview reflows fixed-width worksheet HTML to the device viewport while preserving
+    // readable text. user-scalable viewport keeps native pinch zoom/pan available in the iframe.
     html = html.replaceAll("(?is)<meta\\s+[^>]*name\\s*=\\s*['\"]viewport['\"][^>]*>", "");
     int headEnd = html.toLowerCase().indexOf("</head>");
     if (headEnd >= 0) {
