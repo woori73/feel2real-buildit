@@ -25,10 +25,10 @@ public class QuestionWikiController {
 
   /*
    * Mobile preview deliberately keeps the worksheet's desktop layout intact.
-   * The 1100px layout viewport covers the fixed A4 worksheet geometry.  An
-   * explicit 0.3 initial scale makes that full viewport visible on common
-   * phone-sized iframe viewports; users can then pinch-zoom as needed.
-   * Do not add width/height overrides for worksheet/page elements here.
+   * The 1100px layout viewport and 0.3 initial scale are preserved.  Some
+   * worksheets center an oversized top-level A4 wrapper with margin:auto,
+   * which places its left edge outside the mobile scroll origin.  Anchor only
+   * top-level rendered worksheet nodes to x=0; do not reflow their contents.
    */
   private static final String MOBILE_PREVIEW_HEAD = """
       <meta name="viewport" content="width=1100, initial-scale=0.3, minimum-scale=0.25, maximum-scale=5, user-scalable=yes">
@@ -37,6 +37,10 @@ public class QuestionWikiController {
           margin-left: 0 !important;
           margin-right: 0 !important;
           touch-action: pan-x pan-y pinch-zoom;
+        }
+        body > :not(style):not(script):not(link):not(meta) {
+          margin-left: 0 !important;
+          margin-right: auto !important;
         }
       </style>
       """;
