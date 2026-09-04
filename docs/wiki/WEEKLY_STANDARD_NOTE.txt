@@ -1,1 +1,0 @@
-Scope: existing Wiki Learning WEEKLY area only. No new material type or database schema.
