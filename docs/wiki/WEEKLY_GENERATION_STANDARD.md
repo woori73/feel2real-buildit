@@ -66,3 +66,4 @@ WEEKLY 제작 요청을 받으면 GitHub 연결을 통해 아래 순서로 실�
 - 이 MD와 `WEEKLY_REFERENCE.html` 두 파일을 WEEKLY 제작의 공식 기준으로 관리한다.
 - 기준이 변경되면 이 두 파일을 함께 갱신한다.
 - Wiki 화면의 DOM/sessionStorage 자동 주입은 공식 기준이 아니며 필요하지 않다.
+- 이 저장소 문서는 ChatGPT가 GitHub 연결을 통해 명시적으로 조회하는 canonical reference다. 저장소에 있다는 사실만으로 모든 새 채팅에 자동 첨부되는 것은 아니므로, WEEKLY 제작 작업에서는 반드시 위 조회 절차를 수행한다.
