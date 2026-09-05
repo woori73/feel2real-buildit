@@ -11,13 +11,15 @@ import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.Doc
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
-/** 공개 BuildIt Wiki 모의고사 원본 API. 공개 목록/다운로드 + ADMIN CRUD. */
+/** BuildIt Wiki 모의고사 원본 API. 공개 목록 + 회원 다운로드 + ADMIN CRUD. */
 @RestController
 @RequiredArgsConstructor
 public class WikiExamOriginalController {
@@ -34,9 +36,12 @@ public class WikiExamOriginalController {
   @GetMapping("/api/wiki/originals/{id}/download")
   public ResponseEntity<byte[]> download(
       @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    }
     DownloadFile file = service.getPublicDownload(id);
     downloadRecordingService.record(WikiMaterialCategory.ORIGINAL, id, file.title(),
-        principal == null ? null : principal.userId(), principal == null ? null : principal.role());
+        principal.userId(), principal.role());
     // 항상 attachment(브라우저 뷰어 X) + 확장자로 content-type 추론(pdf/hwp/hwpx) + RFC5987 파일명.
     return FileDownloadResponses.attachment(
         file.bytes(), DocumentUploadValidator.contentType(file.fileName()), file.fileName());

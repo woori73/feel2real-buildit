@@ -255,8 +255,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/open-community/images/**").permitAll()  // 본문 이미지 공개 serve
             .requestMatchers(HttpMethod.GET, "/api/open-community/attachments/*/file").permitAll()  // 게시글 첨부 공개 serve (add/delete는 인증)
             .requestMatchers(HttpMethod.GET, "/api/analyzes", "/api/analyzes/**").permitAll()  // 공개 시험 분석 조회
-            .requestMatchers(HttpMethod.GET, "/api/wiki/originals", "/api/wiki/originals/**").permitAll()  // 공개 모의고사 원본 조회/다운로드
-            .requestMatchers(HttpMethod.GET, "/api/wiki/analysis-materials", "/api/wiki/analysis-materials/**").permitAll()  // 공개 분석 자료 조회/다운로드
+            // ORIGINAL/ANALYSIS 목록은 공개하되 실제 파일 다운로드는 아래 /api/** 인증 규칙으로 막는다.
+            .requestMatchers(HttpMethod.GET, "/api/wiki/originals").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/wiki/analysis-materials").permitAll()
             // 문항별 Question Wiki: 목록/상세/Context/첨부 다운로드는 비로그인 read. write(글/답글/수정/삭제/첨부)는
             // 아래 /api/** catch-all 로 인증, 자료 링크 관리는 /api/admin/wiki/questions/** (ROLE_ADMIN).
             .requestMatchers(HttpMethod.GET, "/api/wiki/questions", "/api/wiki/questions/**").permitAll()  // 공개 문항 Wiki 조회/Context/첨부 다운로드
