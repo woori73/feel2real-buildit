@@ -3,6 +3,7 @@ import type { Page } from '../App'
 import { api } from '../lib/api'
 import { fetchQuestions, fetchTextbookQuestions, StoredQuestion } from '../lib/types'
 import { registerChromeQuestionTools } from '../lib/chromeQuestionWebMcp'
+import { generateWithChromeBuiltInAi, getChromeAiRuntimeStatus, type QuestionPreset, type ChromeAiRuntimeStatus } from '../lib/chromeBuiltInAi'
 import { buildTransformProvenance, questionOrigin, type SourceKind } from '../lib/questionSource'
 import { normalizeChromeQuestionResult, normalizeChromeQuestion, WikiQuestionV1, wikiQuestionToLegacy } from '../lib/wikiQuestion'
 import QuestionCard from './QuestionCard'
@@ -32,6 +33,8 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
   const [expanded,setExpanded]=useState<Set<string>>(()=>new Set(['twin']))
   const [preview,setPreview]=useState<StoredQuestion|null>(null),[revisionNote,setRevisionNote]=useState('')
   const [resultInput,setResultInput]=useState('')
+  const [preset,setPreset]=useState<QuestionPreset>('similar'),[freeRequest,setFreeRequest]=useState(''),[schoolPattern,setSchoolPattern]=useState('')
+  const [runtime,setRuntime]=useState<ChromeAiRuntimeStatus>({prompt:'unavailable',koToEn:'unavailable',enToKo:'unavailable'}),[generating,setGenerating]=useState(false)
   const [view,setView]=useState<'original'|'transformed'>('original'),[status,setStatus]=useState('자료를 불러오는 중입니다.')
   const current=questions[index]
   useEffect(()=>{
@@ -53,6 +56,7 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
     }).catch(e=>setStatus(e instanceof Error?e.message:'문제를 불러오지 못했습니다.'))
   },[context,source,tbFilter])
   useEffect(()=>{void registerChromeQuestionTools().then(ok=>{if(ok)setStatus(s=>`${s} Chrome AI 연결 준비가 완료되었습니다.`)},()=>setStatus(s=>`${s} WebMCP 연결은 사용할 수 없습니다. 변형 결과 입력을 사용하세요.`))},[])
+  useEffect(()=>{void getChromeAiRuntimeStatus().then(setRuntime)},[])
   const toggleReference=(key:string)=>setExpanded(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const included=useMemo(()=>({
     exam_context:context,digital_twin:workspace?.digital_twin||null,
@@ -78,6 +82,16 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
     if(!current){setStatus('Preview할 원본 문제를 먼저 불러와 주세요.');return}
     try{showPreview(normalizeChromeQuestionResult(resultInput));setStatus('입력한 변형 결과를 검증하여 Preview에 반영했습니다.')}
     catch(error){setStatus(error instanceof Error?error.message:'변형 결과 JSON을 확인해 주세요.')}
+  }
+  const generate=async()=>{
+    if(!current)return
+    setGenerating(true);setStatus('Chrome 기기 내 AI로 문제를 생성하는 중입니다.')
+    try{
+      const result=await generateWithChromeBuiltInAi({preset,freeRequest,schoolPatternReference:schoolPattern,contextPack:included,sourceQuestionId:current.id,onDownloadProgress:(name,loaded)=>setStatus(`${name} 모델 다운로드 ${Math.round(loaded*100)}%`)})
+      const canonical=normalizeChromeQuestion({...result.question,explanation:result.question.explanationKo||result.question.explanation})
+      const note=JSON.stringify({generationMode:'CHROME_BUILT_IN_AI',requestedType:preset,userInstruction:freeRequest,schoolPatternReferenceUsed:Boolean(schoolPattern),englishExplanation:result.question.explanation})
+      showPreview(canonical,note);setResultInput(JSON.stringify(result.question,null,2));setStatus(result.notice||'Chrome 기기 내 AI 생성 결과를 Preview에 반영했습니다. 저장 전 내용을 확인하세요.')
+    }catch(error){setStatus(error instanceof Error?error.message:'Chrome AI 문제 생성에 실패했습니다.')}finally{setGenerating(false)}
   }
   const save=async()=>{
     if(!current||!preview?.canonical)return
@@ -116,7 +130,11 @@ export default function ChromeQuestionWorkbench({onNavigate}:{onNavigate:(page:P
           <div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="question-list">{(view==='transformed'?preview:current)&&<QuestionCard q={(view==='transformed'?preview:current)!} index={1}/>}</div></div></div>
         </section>
       </div>
-      <aside className="chrome-ai-pane"><h3>Chrome AI 작업 영역</h3><p>Chrome AI가 만든 구조화 결과를 아래에 붙여넣어 Preview합니다. 지원되는 WebMCP 도구는 기존 호환 경로로 유지됩니다.</p><div className="included-context"><b>현재 AI Context</b><span>Digital Twin {workspace?.digital_twin?'포함':'없음'}</span><span>Insight {insightIds.length}개</span><span>학습지 {materialIds.length}개</span><span>원본 QID {current?.id||'-'}</span></div>
+      <aside className="chrome-ai-pane"><h3>✨ AI 문제제작</h3><p>현재 문항 Context만 사용하여 Chrome 기기 안에서 문제를 만듭니다. Preview 전에는 저장되지 않습니다.</p><div className="chrome-runtime-status" aria-label="Chrome AI runtime 상태"><b>기기 내 AI 상태</b><span>Prompt AI: {runtime.prompt}</span><span>번역 ko→en: {runtime.koToEn}</span><span>번역 en→ko: {runtime.enToKo}</span></div><div className="included-context"><b>현재 AI Context</b><span>Digital Twin {workspace?.digital_twin?'포함':'없음'}</span><span>Insight {insightIds.length}개</span><span>학습지 {materialIds.length}개</span><span>원본 QID {current?.id||'-'}</span></div>
+        <label><b>문제 유형</b><select aria-label="문제 유형" value={preset} onChange={e=>setPreset(e.target.value as QuestionPreset)}>{[['similar','유사 변형'],['grammar','어법'],['vocabulary','어휘'],['blank','빈칸'],['order','글의 순서'],['insertion','문장 삽입'],['title-topic','제목/주제'],['subjective','서술형']].map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label><b>자유 요청</b><textarea aria-label="자유 요청" rows={3} value={freeRequest} onChange={e=>setFreeRequest(e.target.value)} placeholder="예: 학교 시험처럼 어법 5지선다 문제를 만들어줘"/></label>
+        <label><b>학교 유형 예시</b><span>내용 출처가 아니라 문제 구조 참고용으로만 사용합니다.</span><textarea aria-label="학교 유형 예시" rows={5} value={schoolPattern} onChange={e=>setSchoolPattern(e.target.value)} placeholder="학교의 독특한 발문·선택지·답안 형식 예시를 붙여넣으세요."/></label>
+        <button className="primary-action" disabled={!current||generating||runtime.prompt==='unavailable'||runtime.prompt==='error'} onClick={()=>void generate()}>{generating?'생성 중…':'문제 생성'}</button>
         <label className="chrome-result-input"><b>변형 결과 입력</b><span>Chrome AI가 생성한 JSON을 붙여넣으세요.</span><textarea value={resultInput} onChange={event=>setResultInput(event.target.value)} rows={14} placeholder={'{"type":"서답형","instruction":"...","passage":{"text":"...","html":"...","status":"complete"},"model_answer":"..."}'}/></label>
         <details className="chrome-output-format"><summary>Chrome AI 출력 형식</summary><pre>{`직접 문항 JSON
 { "type": "서답형", "instruction": "...", "passage": {...}, "model_answer": "..." }
