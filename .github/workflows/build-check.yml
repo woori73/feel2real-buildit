@@ -3,7 +3,7 @@ name: Build Check
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, fix/wiki-member-only-download ]
     paths:
       - 'src/**'
       - 'build.gradle'
