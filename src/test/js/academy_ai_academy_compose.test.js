@@ -469,3 +469,67 @@ test('given 렌더된 proposal 카드의 실제 [적용] 버튼 when 클릭 then
 
   assert.equal(academy.pageSettings.builderDraft.principalDesc, '20년간 지역 학생들과 함께한 원장이 직접 지도합니다.');
 });
+
+// ── 긴 추천안 목록에서 모달이 viewport를 넘지 않고 본문이 스크롤되는지 (CSS 계약) ──
+
+const BUILDER_TEMPLATE = fs.readFileSync(
+  path.resolve(__dirname, '../../main/resources/templates/tutor/academy_builder.html'), 'utf8');
+
+test('given AI Academy Builder 모달 마크업 when 확인 then 전용 스크롤 클래스(builder-compose-modal)를 갖는다', () => {
+  // #builderAcademyComposeModal의 내부 컨테이너 div가 builder-compose-modal 클래스를 갖는지.
+  const modalBlock = BUILDER_TEMPLATE.slice(
+    BUILDER_TEMPLATE.indexOf('id="builderAcademyComposeModal"'),
+    BUILDER_TEMPLATE.indexOf('id="builderComposeTitle"'));
+  assert.match(
+    modalBlock,
+    /class="builder-text-modal [^"]*\bbuilder-compose-modal\b[^"]*"/,
+    '모달에 builder-compose-modal 클래스가 없어 긴 콘텐츠 스크롤 규칙이 적용되지 않는다');
+});
+
+test('given 모달 CSS when 확인 then max-height는 viewport 기준이고 본문만 overflow-y:auto로 스크롤된다', () => {
+  // 배경(html,body{overflow:hidden})이 아니라 "모달 콘텐츠 영역"이 스크롤되어야 한다.
+  assert.match(
+    BUILDER_TEMPLATE,
+    /\.builder-compose-modal\{[^}]*max-height:min\(90vh,[^}]*\}/,
+    'modal max-height가 viewport(vh) 기준으로 제한되지 않았다');
+  assert.match(
+    BUILDER_TEMPLATE,
+    /\.builder-compose-modal\{[^}]*display:flex;flex-direction:column;[^}]*\}/,
+    'modal이 flex column이 아니면 head/actions 고정 + body 스크롤이 불가능하다');
+  assert.match(
+    BUILDER_TEMPLATE,
+    /\.builder-compose-modal \.builder-text-modal-body\{[^}]*min-height:0;overflow-y:auto;[^}]*\}/,
+    'modal body에 min-height:0 + overflow-y:auto가 없어 긴 추천안을 끝까지 스크롤할 수 없다');
+});
+
+test('given 모달 CSS when 확인 then head/action 영역은 고정되고 툴바는 본문 상단에 sticky다', () => {
+  assert.match(
+    BUILDER_TEMPLATE,
+    /\.builder-compose-modal \.builder-text-modal-head\{[^}]*flex-shrink:0;[^}]*\}/,
+    '제목/닫기 영역이 flex-shrink:0로 고정되지 않았다');
+  assert.match(
+    BUILDER_TEMPLATE,
+    /\.builder-compose-modal \.builder-text-modal-actions\{[^}]*flex-shrink:0;[^}]*\}/,
+    '하단 action(닫기·분석하기) 영역이 고정되지 않았다');
+  assert.match(
+    BUILDER_TEMPLATE,
+    /\.builder-compose-modal \.builder-compose-toolbar\{[^}]*position:sticky;top:0;[^}]*\}/,
+    '추천안 전체 적용/되돌리기 툴바가 sticky가 아니라 스크롤 시 접근 불가해질 수 있다');
+});
+
+test('given 모바일 CSS when 확인 then 좁은 화면에서도 모달이 viewport 안에 유지된다', () => {
+  assert.match(
+    BUILDER_TEMPLATE,
+    /@media \(max-width:768px\)\{\s*\.builder-compose-modal\{[^}]*max-height:calc\(100dvh - 24px\)[^}]*\}/,
+    '모바일에서 모달 max-height가 viewport 기준으로 제한되지 않았다');
+});
+
+test('given 하단 필수 action when 확인 then 전체 적용·되돌리기·닫기 버튼이 모두 존재한다(회귀 방지)', () => {
+  const modalBlock = BUILDER_TEMPLATE.slice(
+    BUILDER_TEMPLATE.indexOf('id="builderAcademyComposeModal"'),
+    BUILDER_TEMPLATE.indexOf('id="builderLogoModal"'));
+  assert.match(modalBlock, /id="builderComposeApplyAllBtn"/, '추천안 전체 적용 버튼 누락');
+  assert.match(modalBlock, /id="builderComposeRevertBtn"/, '되돌리기 버튼 누락');
+  assert.match(modalBlock, /id="builderComposeAnalyzeBtn"/, '분석하기 버튼 누락');
+  assert.match(modalBlock, /data-compose-close/, '닫기 버튼 누락');
+});
