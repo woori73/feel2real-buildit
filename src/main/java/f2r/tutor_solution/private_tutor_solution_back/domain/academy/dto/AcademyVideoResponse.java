@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideo;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoPurpose;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoActiveSource;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoLifecycleStatus;
@@ -24,6 +25,7 @@ public record AcademyVideoResponse(
     VideoLifecycleStatus availabilityStatus,
     VideoOptimizationStatus optimizationStatus,
     VideoActiveSource activeSource,
+    AcademyVideoPurpose purpose,
     LocalDateTime createdAt) {
 
   /**
@@ -49,6 +51,7 @@ public record AcademyVideoResponse(
         video.getLifecycleStatus(),
         optimizationStatus,
         video.getActiveSource(),
+        video.getPurpose(),
         video.getCreatedAt());
   }
 }

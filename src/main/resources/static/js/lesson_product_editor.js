@@ -318,7 +318,7 @@
         // 서버 hero-image는 저장 전까지 예전 이미지를 돌려주기 때문이다.
         const src = heroImageSrc(lesson.mediaImageKey, lesson.lessonId);
         if (src) {
-          return `<button type="button" class="f2r-program-card-media" data-editor-media="hero" aria-label="대표 이미지 변경">`
+          return `<button type="button" class="f2r-program-card-media" data-editor-media="hero" data-media-fit="image" aria-label="대표 이미지 변경">`
             + `<img src="${escapeAttr(src)}" alt="" loading="lazy"></button>`;
         }
         // 미저장 신규 수업 + 로컬 미리보기도 없는 경우(예: 새로고침 직후)만 안내 문구로 대체한다.
@@ -358,6 +358,7 @@
       mediaVideoId: value.mediaVideoId
     };
     programCardSlot.innerHTML = SECTIONS.programCardHtml(lesson, EDITOR_CARD_CTX);
+    if (typeof SECTIONS.applyImageMediaAspect === 'function') SECTIONS.applyImageMediaAspect(programCardSlot);
     renderProgramCardOt(value.otVideoId);
   }
 
@@ -540,7 +541,10 @@
     if (!mediaVideoList) return;
     try {
       const response = await window.fetchAuth('/api/tutor/academy/videos');
-      myVideos = response.ok ? await response.json() : [];
+      const videos = response.ok ? await response.json() : [];
+      // 원장 소개 영상은 수업상품 미디어 선택 목록에 섞이지 않는다. 용도 미상(레거시) 영상은
+      // 어느 쪽이었는지 알 수 없으므로 계속 노출한다(하위 호환, 임의 마이그레이션 없음).
+      myVideos = videos.filter((video) => !video.purpose || video.purpose === 'LESSON');
     } catch (error) {
       myVideos = [];
     }
@@ -583,6 +587,8 @@
     try {
       const body = new FormData();
       body.append(isImage ? 'image' : 'video', file);
+      // 수업상품 편집기에서 올리는 영상은 전부 수업 용도다 — 원장 소개 목록에 섞이지 않게 표시해 둔다.
+      if (!isImage) body.append('purpose', 'LESSON');
       const response = await window.fetchAuth(
         isImage ? '/api/tutor/academy/media/lesson-hero' : '/api/tutor/academy/videos',
         { method: 'POST', body });

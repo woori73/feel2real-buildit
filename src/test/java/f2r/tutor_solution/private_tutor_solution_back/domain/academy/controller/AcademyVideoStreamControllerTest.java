@@ -9,6 +9,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Aca
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoDeliveryService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyVideoResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoPurpose;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoActiveSource;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoLifecycleStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoStatus;
@@ -100,11 +101,11 @@ class AcademyVideoStreamControllerTest {
   void tutorMultipartUploadUsesServerSideVideoService() throws Exception {
     Cookie tutor = new Cookie(
         "ACCESS_TOKEN", tokenProvider.issue(1L, "tutor", "TUTOR"));
-    when(videoService.upload(any(), any())).thenReturn(new AcademyVideoResponse(
+    when(videoService.upload(any(), any(), any())).thenReturn(new AcademyVideoResponse(
         7L, "clip.mp4", "/api/academies/my/videos/7/stream",
         "/api/academies/my/videos/7/thumbnail", 8, 8_000L, 720, 1280,
         VideoStatus.READY, VideoLifecycleStatus.READY, null,
-        VideoActiveSource.NORMALIZED, LocalDateTime.now()));
+        VideoActiveSource.NORMALIZED, AcademyVideoPurpose.LESSON, LocalDateTime.now()));
 
     mockMvc.perform(multipart("/api/tutor/academy/videos")
             .file("video", new byte[] {1, 2, 3})

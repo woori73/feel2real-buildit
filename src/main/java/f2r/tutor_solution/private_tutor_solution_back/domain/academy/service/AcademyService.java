@@ -662,7 +662,13 @@ public class AcademyService {
         requested.heroYoutubeUrl(),
         requested.sectionVisibility(),
         normalizeSectionOrderForWrite(requested.sectionOrder()),
-        requested.builderDraft(),
+        // updatePageSettings()(부분 업데이트)와 같은 보존 규칙: null이면 기존 값을 지키고,
+        // 요청이 명시적으로 값(빈 맵 포함)을 보내면 그 값을 따른다. 이 필드만 fallback이
+        // 없었다면 이 메서드를 호출하는 어떤 향후 caller가 builderDraft를 생략/null로
+        // 보내는 순간 원장 소개·철학·대표수업 등 모든 텍스트가 통째로 사라진다.
+        requested.builderDraft() == null && current != null
+            ? current.builderDraft()
+            : requested.builderDraft(),
         businessInfo);
   }
 

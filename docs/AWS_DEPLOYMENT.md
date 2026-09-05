@@ -311,6 +311,48 @@ APP_VIDEO_FFPROBE_PATH=/usr/local/bin/ffprobe
 적용된 V936~V938 파일은 수정·재번호하지 않는다. checksum/out-of-order/validation 실패 시 배포를
 중단하고 새 migration으로 보정한다. 상세 브랜치·DB 명령은 `docs/WORKFLOW.md`를 따른다.
 
+### 9-1. f2r-app.service 무중단 배포 가드 (자동 backup/rollback)
+
+배경: 기능 PR을 merge/deploy한 뒤 Spring이 기동 실패하거나 기동 직후 종료돼 production이 죽은
+채로 남는 사고가 반복돼, `deploy-ec2.yml`의 EC2 배포 스크립트에 자동 backup/health-check/rollback을
+추가했다(`scripts/deploy/f2r_app_guard.sh`).
+
+- **백업**: 새 jar를 `/home/ec2-user/app.jar`에 넣기 전, 기존 jar를 `/home/ec2-user/app.jar.previous`로
+  복사해 둔다. 이 EC2에서의 첫 배포처럼 백업 대상이 없으면 경고만 남기고 진행한다(롤백 불가 상태임을
+  나중에 구분할 수 있다).
+- **health 재시도**: `systemctl restart f2r-app.service` 직후 바로 확인하지 않는다. 내부
+  `http://127.0.0.1:8080/actuator/health`(ALB 타깃 헬스체크와 같은 endpoint)를 5초 간격, 최대 24회
+  (120초)까지 재시도한다.
+- **자동 rollback**: 120초 안에 health가 한 번도 통과하지 못하면 `app.jar.previous`로 되돌려
+  다시 재시작하고, 같은 방식으로 다시 health를 확인한다. 롤백된 버전이 정상이면 배포는 "실패"로
+  기록되지만 **production은 자동으로 복구된 상태**로 끝난다.
+- **진단 로그 자동 출력**: 새 버전이 실패했을 때, 그리고 롤백까지 실패했을 때 각각
+  `systemctl status f2r-app.service`와 `journalctl -u f2r-app.service -n 200`을 GitHub Actions 로그에
+  그대로 남긴다. `EnvironmentFile`(시크릿 포함) 내용 자체는 어디에도 출력하지 않는다.
+- **완전 실패 구분**: 롤백까지 실패하면(예: 백업이 아예 없었거나, 롤백한 버전도 unhealthy) 별도
+  종료 코드로 구분해 "사람이 EC2에 직접 들어가야 하는 상황"임을 로그에서 바로 알 수 있게 한다.
+- **테스트**: `bash scripts/deploy/f2r_app_guard.test.sh`가 curl/systemctl/journalctl만 스텁으로
+  바꿔 CASE 1(정상)/2(첫 배포 실패, 백업 없음)/3(실패 후 롤백 성공)/4(롤백까지 실패)를 로컬에서
+  검증한다. `.github/workflows/deploy-ec2.yml`은 이 파일을 그대로 잘라 넣어(cat) EC2에서 실행되는
+  스크립트를 만들므로, 테스트한 코드와 실제 배포되는 코드가 갈라질 위험이 없다.
+- **동시 배포 방지**: `deploy-ec2.yml`에 `concurrency: { group: production-deploy, cancel-in-progress:
+  false }`를 걸어, 두 번째 수동 실행이 첫 번째를 취소하지 않고 순서를 기다리게 한다.
+- **배포 전 테스트 게이트**: `deploy-ec2.yml`이 `build-check.yml`과 같은(MySQL 불필요) 테스트 목록을
+  bootJar 전에 다시 돌린다 — main의 Build Check를 보지 않고 수동으로 배포를 눌러도 깨진 빌드가
+  production까지 가지 않는다.
+
+**알려진 한계(추측하지 않고 명시)**:
+- Flyway migration은 롤백 대상이 아니다. 새 jar가 실행한 migration은 jar를 되돌려도 원상복구되지
+  않는다 — migration이 포함된 배포는 이 가드만으로 안전하다고 보지 않고 별도로 더 엄격히
+  검증한다(§9 순서를 그대로 따른다).
+- 단일 EC2 인스턴스이므로 `systemctl restart`는 재시작 수 초간 요청을 못 받는 순간이 있다(하드
+  블루/그린이 아니다) — 이 가드가 없애는 것은 "기동 실패가 영구 장애로 남는 것"이지, 재시작
+  자체의 순간적 공백이 아니다.
+- `buildit-wiki.service`(Python FastAPI)는 이번 가드 범위 밖이다 — 기존 `Restart=always` +
+  자체 `/api/health` 확인만 유지한다(이번 작업은 Spring DOWN 반복 문제가 대상이었다).
+- 실제 EC2 인스턴스에서 f2r-app.service unit 파일 내용, `/etc/f2r/env` 실값, ALB 헬스체크
+  타임아웃 설정을 이 리포지토리만으로는 확인할 수 없다 — 다음 실제 배포에서 대조 확인이 필요하다.
+
 ## 10. 관찰성·알람
 
 Actuator health와 JVM/process/disk 지표 외에 다음 Micrometer 이름을 기준으로 대시보드를 만든다.

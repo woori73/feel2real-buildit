@@ -11,27 +11,38 @@
   const list = document.getElementById('videoList');
   const emptyState = document.getElementById('emptyState');
   const countLabel = document.getElementById('videoCount');
+  const purposeFilter = document.getElementById('purposeFilter');
+
+  /** 마지막으로 불러온 전체 목록. 필터는 재조회 없이 이 배열을 다시 그린다. */
+  let allVideos = [];
+
+  const PURPOSE_LABEL = { DIRECTOR: '원장 소개', LESSON: '수업 영상' };
 
   document.addEventListener('DOMContentLoaded', async () => {
     await window.ensureCurrentUser();
     uploadButton.addEventListener('click', upload);
     list.addEventListener('click', onListClick);
     list.addEventListener('error', onThumbnailError, true);
+    if (purposeFilter) purposeFilter.addEventListener('change', () => render(allVideos));
     await refresh();
   });
 
   async function refresh() {
     const res = await window.fetchAuth('/api/tutor/academy/videos');
     if (!res.ok) return showStatus('영상 목록을 불러오지 못했습니다.', 'error');
-    render(await res.json());
+    allVideos = await res.json();
+    render(allVideos);
   }
 
   function render(videos) {
     countLabel.textContent = `(${videos.length}/10)`;
-    emptyState.classList.toggle('hidden', videos.length > 0);
-    list.innerHTML = videos.map((video) => `<article class="video-card">
+    const filterValue = purposeFilter ? purposeFilter.value : 'ALL';
+    const shown = filterValue === 'ALL' ? videos : videos.filter((video) => video.purpose === filterValue);
+    emptyState.classList.toggle('hidden', shown.length > 0);
+    list.innerHTML = shown.map((video) => `<article class="video-card">
       ${thumbnailMarkup(video)}
       <div class="video-card-body">
+        <span class="video-card-purpose">${escapeHtml(PURPOSE_LABEL[video.purpose] || '용도 미지정')}</span>
         <span class="video-card-duration">${formatDuration(video.durationSec)}</span>
         <span class="video-card-size">${escapeHtml(String(video.width || '—'))}×${escapeHtml(String(video.height || '—'))}</span>
         <span class="video-card-ready">Ready</span>
@@ -93,6 +104,7 @@
 
     const body = new FormData();
     body.append('video', file);
+    body.append('purpose', selectedPurpose());
     setBusy(true);
     setProgress(5);
     showStatus('영상을 업로드하고 변환하고 있습니다. 창을 닫지 말고 잠시 기다려 주세요…', 'busy');
@@ -108,6 +120,11 @@
     } finally {
       setBusy(false);
     }
+  }
+
+  function selectedPurpose() {
+    const checked = document.querySelector('input[name="videoPurpose"]:checked');
+    return checked ? checked.value : 'LESSON';
   }
 
   function isSupportedFile(file) {

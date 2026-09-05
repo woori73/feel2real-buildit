@@ -215,6 +215,13 @@ html.js-collection .f2r-collection-card.is-active { z-index: 1; }
   object-fit: cover;
   display: block;
 }
+/* 대표 이미지(IMAGE, VIDEO 아님)만 crop 대신 contain으로 전체를 보여준다.
+   --f2r-media-aspect는 academy_sections.js applyImageMediaAspect()가 실제 이미지
+   비율(9:16~16:9 클램프)로 채우므로 대부분 letterbox 없이 꽉 찬다 — 값을 못 구한
+   극단적 비율일 때만 여백이 생긴다. VIDEO 썸네일은 기존 cover 동작을 유지한다. */
+.f2r-program-card-media[data-media-fit="image"] img {
+  object-fit: contain;
+}
 .f2r-program-card-media .f2r-video-play {
   width: 46px;
   height: 46px;
