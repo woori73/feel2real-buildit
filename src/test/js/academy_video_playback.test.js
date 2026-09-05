@@ -75,7 +75,7 @@ test('Actual Class 는 폰 프레임(9:19)을 유지하고 그 안에서 재생�
     pageSettings: { sectionVisibility: {}, builderDraft: { videosLayout: 'horizontal' } }
   });
   const pub = Object.fromEntries(bothRenderers()).public;
-  primeRenderer(pub, academy, [{ videoId: 8, videoUrl: '/api/academies/x/videos/8/stream', thumbnailUrl: '/t', durationSec: 17, width: 406, height: 720 }]);
+  primeRenderer(pub, academy, [{ videoId: 8, videoUrl: '/api/academies/x/videos/8/stream', thumbnailUrl: '/t', durationSec: 17, width: 406, height: 720, purpose: 'LESSON' }]);
   const html = pub.renderVideos(academy);
   // 프레임 유지 + 스크린이 뷰포트 + 그 안 재생 버튼
   assert.match(html, /class="f2r-phone-frame"/);
@@ -116,7 +116,7 @@ test('빌더 캔버스 영상 카드는 재생 트리거 없이 뷰포트만 렌
     pageSettings: { sectionVisibility: {}, builderDraft: { videosLayout: 'horizontal' } }
   });
   const bld = Object.fromEntries(bothRenderers()).builder;
-  primeRenderer(bld, academy, [{ videoId: 8, thumbnailUrl: '/t', width: 406, height: 720 }]);
+  primeRenderer(bld, academy, [{ videoId: 8, thumbnailUrl: '/t', width: 406, height: 720, purpose: 'LESSON' }]);
   const html = bld.renderVideos(academy);
   assert.match(html, /class="f2r-phone-screen f2r-media-viewport"/);
   assert.doesNotMatch(html, /data-collection-play/);

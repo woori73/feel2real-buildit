@@ -185,6 +185,18 @@ public class AcademyVideo extends BaseEntity {
     return academyId != null && academy != null && academyId.equals(academy.getAcademyId());
   }
 
+  /**
+   * 영상 관리 화면에서 용도를 명시적으로 (재)지정한다. 레거시 {@code purpose IS NULL}
+   * ("용도 미지정") 영상의 최초 분류도 이 경로로 이루어진다 — 파일명/썸네일 등으로 자동
+   * 추측하지 않고 사용자가 직접 고른 값만 받는다(Phase 3 정책).
+   */
+  public void reassignPurpose(AcademyVideoPurpose purpose) {
+    if (purpose == null) {
+      throw new IllegalArgumentException("purpose is required");
+    }
+    this.purpose = purpose;
+  }
+
   /** 새 source resolution을 즉시 막고 stale worker publication CAS를 무효화한다. */
   public void markDeleting() {
     if (lifecycleStatus != VideoLifecycleStatus.DELETING) {

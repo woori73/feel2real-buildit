@@ -44,8 +44,8 @@ class AcademyBuilderTemplateContractTest {
     assertThat(html)
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
-            "<script src=\"/js/academy_sections.js?v=20260905-2\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260905-2\"></script>");
+            "<script src=\"/js/academy_sections.js?v=20260905-3\"></script>",
+            "<script src=\"/js/academy_builder.js?v=20260905-3\"></script>");
   }
 
   @Test
@@ -495,15 +495,19 @@ class AcademyBuilderTemplateContractTest {
 
     // then
     assertThat(html)
-        // Academy 데이터 섹션 순서: hero → featured → AI Native 교육 과정 → intro → principal → lessons → social
+        // Academy 데이터 섹션 순서(Phase 3 단순화): 항상 켜져 있는 핵심 콘텐츠(hero → intro →
+        // principal → lessons → social)를 먼저 보여주고, 기본 OFF인 선택 기능(featured/AI
+        // Native/미니 강의)은 "선택 기능 더보기" details 뒤로 접어 둔다.
         .containsSubsequence(
             "data-section-id=\"sec-hero\"",
-            "data-section-toggle=\"sec-featured\"",
-            "data-section-toggle=\"sec-digitaltwin\"",
             "data-section-toggle=\"sec-intro\"",
             "data-section-toggle=\"sec-principal\"",
             "data-section-toggle=\"sec-lessons\"",
-            "data-section-toggle=\"sec-social\"")
+            "data-section-toggle=\"sec-social\"",
+            "data-section-toggle=\"sec-featured\"",
+            "data-section-toggle=\"sec-digitaltwin\"")
+        .contains("<details class=\"block-advanced-group\">")
+        .contains("선택 기능 더보기")
         .contains("수업상품<br/>강의 목록")
         // 원장소개(sec-principal)는 is-data-backed 데이터 섹션 카드다
         .contains("is-data-backed is-section-toggle\" data-section-id=\"sec-principal\"")

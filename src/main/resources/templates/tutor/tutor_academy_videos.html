@@ -28,8 +28,8 @@
         영상은 120초 이하 · 200MiB 이하이며, 학원당 최대 10개까지 보관됩니다.
       </p>
       <fieldset class="video-upload-purpose">
-        <legend class="muted">이 영상은 무엇인가요?</legend>
-        <label><input type="radio" name="videoPurpose" value="LESSON" checked> 수업 영상 (대표 수업·수업 영상 목록에 노출)</label>
+        <legend class="muted">이 영상은 무엇인가요? (필수)</legend>
+        <label><input type="radio" name="videoPurpose" value="LESSON"> 수업 영상 (대표 수업·수업 영상 목록에 노출)</label>
         <label><input type="radio" name="videoPurpose" value="DIRECTOR"> 대표 원장 소개 영상 (원장 소개 목록에만 노출)</label>
       </fieldset>
       <div class="video-upload-row">
@@ -43,18 +43,16 @@
     <section class="card">
       <div class="topbar">
         <h2>등록된 영상 <span id="videoCount" class="muted"></span></h2>
-        <select id="purposeFilter" class="btn btn-ghost">
-          <option value="ALL">전체 보기</option>
-          <option value="DIRECTOR">원장 소개 영상만</option>
-          <option value="LESSON">수업 영상만</option>
-        </select>
       </div>
-      <div id="videoList" class="video-grid"></div>
+      <p class="muted">대표 원장 소개 영상과 수업 영상을 용도별로 분리해서 관리합니다. 각 영상 카드의
+        용도를 바꾸면 즉시 공개 Academy와 Builder에 반영됩니다.</p>
+      <div id="videoGroups"></div>
       <p id="emptyState" class="muted hidden">아직 등록된 영상이 없습니다.</p>
     </section>
   </main>
 
+  <script src="/js/academy_sections.js?v=20260905-3"></script>
   <script src="/js/api.js"></script>
-  <script src="/js/tutor_academy_videos.js"></script>
+  <script src="/js/tutor_academy_videos.js?v=20260905-3"></script>
 </body>
 </html>
