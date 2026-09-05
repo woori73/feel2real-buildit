@@ -1652,6 +1652,32 @@ def assistant_chat(payload: AssistantRequest):
     return {'text': text, 'state': next_state, 'context': context, 'page': route, 'action': action, 'provider': result.provider if 'result' in locals() else 'rules-fallback', 'model': result.model if 'result' in locals() else model}
 
 
+class AiCompleteRequest(BaseModel):
+    system: str = ''
+    prompt: str
+    provider: str = 'auto'
+    max_output_chars: int = 0
+
+
+@app.post('/api/ai/complete')
+def ai_complete(payload: AiCompleteRequest):
+    # 범용 텍스트 생성 래퍼 — 다른 외부 소비자(예: Academy Builder "AI로 다듬기")가 이 Wiki AI
+    # Router의 기존 ai_router.generate()/provider='auto' 정책을 그대로 재사용하기 위한 것이다.
+    # 새 provider나 모델 선택 로직을 추가하지 않는다 — generate()에 위임할 뿐이다.
+    prompt = payload.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail='프롬프트를 입력해 주세요.')
+    try:
+        result = ai_router.generate(payload.provider, payload.system, prompt, temperature=0.25, allow_noncritical_fallback=True)
+    except Exception as exc:
+        _handle_gemini_error(exc)
+        return
+    text = result.text.strip()
+    if payload.max_output_chars > 0:
+        text = text[:payload.max_output_chars]
+    return {'text': text, 'provider': result.provider, 'model': result.model}
+
+
 # ==================================================================================
 # 문제 생성 / 기존 문제 변형 — 기존 HTML의 AI 프롬프트 로직을 그대로 사용 (prompt_logic.py)
 # ==================================================================================
