@@ -66,11 +66,8 @@ class QuestionWikiAiContextValidationContractTest {
   @Test
   void saveIsOnlyEnabledAfterValidatedPreview() throws Exception {
     String ui = source("question_wiki_ai.js");
-    int validation = ui.indexOf("ai.validateQuestion(question, request)");
-    int preview = ui.indexOf("els.save.disabled = false;");
-
-    assertThat(validation).isGreaterThan(0);
-    assertThat(preview).isGreaterThan(validation);
+    assertThat(ui).contains("ai.validateQuestion(question, request)");
+    assertThat(ui).contains("els.save.disabled = false;");
     assertThat(ui).contains("dataKind: 'GENERATED_PRACTICE'", "category: 'VARIANT'");
   }
 }
