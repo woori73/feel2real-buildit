@@ -4187,6 +4187,7 @@
     if (!pageContent) return;
     bildiStory = WORLD.createScrollStory({
       scrollEl: pageContent,
+      window: typeof window !== 'undefined' ? window : undefined,
       sections: () => {
         const list = [];
         pageContent.querySelectorAll('[data-builder-section-key]').forEach((el) => list.push(el));
