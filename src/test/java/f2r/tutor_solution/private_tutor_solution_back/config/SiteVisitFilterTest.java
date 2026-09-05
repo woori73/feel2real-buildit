@@ -2,7 +2,6 @@ package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -12,9 +11,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsTrafficKind;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteVisitRecordingService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,9 +56,13 @@ class SiteVisitFilterTest {
 
     filter.doFilter(request, response, chainSettingHtml(response));
 
-    ArgumentCaptor<Boolean> wikiCaptor = ArgumentCaptor.forClass(Boolean.class);
-    verify(recordingService).record(eq("/wiki"), wikiCaptor.capture(), anyString(), isNull(), isNull());
-    assertThat(wikiCaptor.getValue()).isTrue();
+    ArgumentCaptor<String> visitorCaptor = ArgumentCaptor.forClass(String.class);
+    verify(recordingService).record(eq("/wiki"), visitorCaptor.capture(), isNull(), isNull(),
+        eq(AnalyticsTrafficKind.HUMAN));
+    assertThat(visitorCaptor.getValue()).startsWith("V:");
+    assertThat(response.getHeader("Set-Cookie"))
+        .contains("F2R_VISITOR=").contains("Max-Age=7776000").contains("Path=/")
+        .contains("Secure").contains("HttpOnly").contains("SameSite=Lax");
   }
 
   @Test
@@ -68,7 +73,8 @@ class SiteVisitFilterTest {
 
     filter.doFilter(request, response, chainSettingHtml(response));
 
-    verify(recordingService).record(eq("/community"), eq(false), anyString(), isNull(), isNull());
+    verify(recordingService).record(eq("/community"), anyString(), isNull(), isNull(),
+        eq(AnalyticsTrafficKind.HUMAN));
   }
 
   @Test
@@ -84,7 +90,56 @@ class SiteVisitFilterTest {
 
     filter.doFilter(request, response, chainSettingHtml(response));
 
-    verify(recordingService).record("/wiki/analysis", true, "U:7", 7L, "TUTOR");
+    verify(recordingService).record(
+        "/wiki/analysis", "U:7", 7L, "TUTOR", AnalyticsTrafficKind.HUMAN);
+    assertThat(response.getHeader("Set-Cookie")).isNull();
+  }
+
+  @Test
+  @DisplayName("유효한 비회원 cookie를 재사용하고 새 session을 생성하지 않는다")
+  void guest_reusesVisitorCookie() throws Exception {
+    String uuid = "0f12a5be-7d4c-4b36-9e20-38b18d143be1";
+    MockHttpServletRequest request = htmlGet("/home");
+    request.setCookies(new Cookie(SiteVisitFilter.VISITOR_COOKIE_NAME, uuid));
+    MockHttpServletResponse response = htmlResponse();
+
+    filter.doFilter(request, response, chainSettingHtml(response));
+
+    verify(recordingService).record(
+        "/home", "V:" + uuid, null, null, AnalyticsTrafficKind.HUMAN);
+    assertThat(request.getSession(false)).isNull();
+    assertThat(response.getHeader("Set-Cookie")).isNull();
+  }
+
+  @Test
+  @DisplayName("서로 다른 visitor cookie는 서로 다른 UV key로 전달된다")
+  void guest_differentCookies_useDifferentKeys() throws Exception {
+    String first = "0f12a5be-7d4c-4b36-9e20-38b18d143be1";
+    String second = "fa3c6fa1-a927-4635-bf6f-e18a118af931";
+    MockHttpServletRequest one = htmlGet("/home");
+    one.setCookies(new Cookie(SiteVisitFilter.VISITOR_COOKIE_NAME, first));
+    MockHttpServletResponse oneResponse = htmlResponse();
+    filter.doFilter(one, oneResponse, chainSettingHtml(oneResponse));
+    MockHttpServletRequest two = htmlGet("/home");
+    two.setCookies(new Cookie(SiteVisitFilter.VISITOR_COOKIE_NAME, second));
+    MockHttpServletResponse twoResponse = htmlResponse();
+    filter.doFilter(two, twoResponse, chainSettingHtml(twoResponse));
+
+    verify(recordingService).record("/home", "V:" + first, null, null, AnalyticsTrafficKind.HUMAN);
+    verify(recordingService).record("/home", "V:" + second, null, null, AnalyticsTrafficKind.HUMAN);
+  }
+
+  @Test
+  @DisplayName("명확한 crawler User-Agent는 BOT으로 분리하고 visitor cookie를 만들지 않는다")
+  void bot_separated() throws Exception {
+    MockHttpServletRequest request = htmlGet("/chart");
+    request.addHeader("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1)");
+    MockHttpServletResponse response = htmlResponse();
+
+    filter.doFilter(request, response, chainSettingHtml(response));
+
+    verify(recordingService).record("/chart", "B:BOT", null, null, AnalyticsTrafficKind.BOT);
+    assertThat(response.getHeader("Set-Cookie")).isNull();
   }
 
   @Test
@@ -97,7 +152,7 @@ class SiteVisitFilterTest {
 
     filter.doFilter(request, response, (req, res) -> {});
 
-    verify(recordingService, never()).record(anyString(), anyBoolean(), anyString(), any(), any());
+    verify(recordingService, never()).record(anyString(), anyString(), any(), any(), any());
   }
 
   @Test
@@ -110,7 +165,18 @@ class SiteVisitFilterTest {
 
     filter.doFilter(request, response, (req, res) -> {});
 
-    verify(recordingService, never()).record(anyString(), anyBoolean(), anyString(), any(), any());
+    verify(recordingService, never()).record(anyString(), anyString(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("actuator health는 기록하지 않는다")
+  void health_notRecorded() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/actuator/health");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, (req, res) -> {});
+
+    verify(recordingService, never()).record(anyString(), anyString(), any(), any(), any());
   }
 
   @Test
@@ -121,7 +187,7 @@ class SiteVisitFilterTest {
 
     filter.doFilter(request, response, chainSettingHtml(response));
 
-    verify(recordingService, never()).record(anyString(), anyBoolean(), anyString(), any(), any());
+    verify(recordingService, never()).record(anyString(), anyString(), any(), any(), any());
   }
 
   @Test
@@ -134,7 +200,7 @@ class SiteVisitFilterTest {
       ((HttpServletResponse) res).setStatus(HttpServletResponse.SC_FOUND);
     });
 
-    verify(recordingService, never()).record(anyString(), anyBoolean(), anyString(), any(), any());
+    verify(recordingService, never()).record(anyString(), anyString(), any(), any(), any());
   }
 
   private MockHttpServletRequest htmlGet(String uri) {

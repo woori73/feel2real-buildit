@@ -1,16 +1,24 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsTrafficKind;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteVisitRecordingService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -22,8 +30,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <p>{@code JwtAuthenticationFilter} 뒤에 등록되어(SecurityConfig) {@link SecurityContextHolder}에
  * principal이 이미 채워진 상태로 동작한다. UV(순 방문자) 식별은 로그인 "U:{userId}", 비로그인은
- * {@link jakarta.servlet.http.HttpSession} id("S:{sessionId}") — IP는 전혀 사용하지 않는다
- * ({@code WikiVisitService}와 동일한 개인정보 최소화 원칙).
+ * first-party 장기 cookie의 UUID("V:{uuid}")를 쓴다. 기존 "S:{sessionId}" 행은 그대로 집계한다.
+ * IP와 fingerprint는 사용하지 않는다.
  *
  * <p>{@code @Component}가 아니라 {@link SecurityConfig}에서 직접 생성해 필터체인에 넣는다
  * (Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로 — {@link SubdomainAcademyFilter} 참고).
@@ -38,7 +46,11 @@ public class SiteVisitFilter extends OncePerRequestFilter {
   private static final Set<String> EXCLUDED_EXACT = Set.of(
       "/favicon.ico", "/robots.txt", "/sitemap.xml");
 
-  private static final String WIKI_PREFIX = "/wiki";
+  static final String VISITOR_COOKIE_NAME = "F2R_VISITOR";
+  private static final Duration VISITOR_COOKIE_MAX_AGE = Duration.ofDays(90);
+  private static final Pattern BOT_USER_AGENT = Pattern.compile(
+      "(?i)(?:bot|crawler|spider|googlebot|bingbot|yandexbot|duckduckbot|"
+          + "facebookexternalhit|twitterbot|slackbot|discordbot|bytespider|gptbot|claudebot)");
 
   // ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포/서비스 없음)가 SecurityConfig를
   // import해도 컨텍스트가 뜨도록(SubdomainAcademyFilter와 동일 패턴).
@@ -58,19 +70,31 @@ public class SiteVisitFilter extends OncePerRequestFilter {
         && !EXCLUDED_EXACT.contains(uri)
         && EXCLUDED_PREFIXES.stream().noneMatch(uri::startsWith);
 
-    // Resolve identity before the downstream handler can commit the response.
-    // Creating a session after chain.doFilter() may throw
-    // "Cannot create a session after the response has been committed".
+    // Resolve identity and attach a new visitor cookie before the downstream handler can commit.
     Long userId = null;
     String role = null;
     String visitorKey = null;
+    AnalyticsTrafficKind trafficKind = AnalyticsTrafficKind.HUMAN;
     if (candidate) {
+      trafficKind = isBot(request.getHeader("User-Agent"))
+          ? AnalyticsTrafficKind.BOT : AnalyticsTrafficKind.HUMAN;
       Authentication auth = SecurityContextHolder.getContext().getAuthentication();
       if (auth != null && auth.getPrincipal() instanceof JwtTokenProvider.AuthenticatedPrincipal principal) {
         userId = principal.userId();
         role = principal.role();
       }
-      visitorKey = userId != null ? "U:" + userId : "S:" + request.getSession(true).getId();
+      if (userId != null) {
+        visitorKey = "U:" + userId;
+      } else if (trafficKind == AnalyticsTrafficKind.BOT) {
+        visitorKey = "B:BOT";
+      } else {
+        String visitorId = validVisitorId(request);
+        if (visitorId == null) {
+          visitorId = UUID.randomUUID().toString();
+          response.addHeader(HttpHeaders.SET_COOKIE, visitorCookie(visitorId).toString());
+        }
+        visitorKey = "V:" + visitorId;
+      }
     }
 
     chain.doFilter(request, response);
@@ -90,6 +114,39 @@ public class SiteVisitFilter extends OncePerRequestFilter {
       return;
     }
 
-    service.record(uri, uri.startsWith(WIKI_PREFIX), visitorKey, userId, role);
+    service.record(uri, visitorKey, userId, role, trafficKind);
+  }
+
+  private boolean isBot(String userAgent) {
+    return userAgent != null && BOT_USER_AGENT.matcher(userAgent).find();
+  }
+
+  private String validVisitorId(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) return null;
+    return Arrays.stream(cookies)
+        .filter(cookie -> VISITOR_COOKIE_NAME.equals(cookie.getName()))
+        .map(Cookie::getValue)
+        .filter(this::isUuid)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private boolean isUuid(String value) {
+    try {
+      return value != null && UUID.fromString(value).toString().equalsIgnoreCase(value);
+    } catch (IllegalArgumentException ignored) {
+      return false;
+    }
+  }
+
+  private ResponseCookie visitorCookie(String visitorId) {
+    return ResponseCookie.from(VISITOR_COOKIE_NAME, visitorId)
+        .httpOnly(true)
+        .secure(true)
+        .sameSite("Lax")
+        .path("/")
+        .maxAge(VISITOR_COOKIE_MAX_AGE)
+        .build();
   }
 }

@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.SitePageVisit;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsServiceArea;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsTrafficKind;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.repository.SitePageVisitRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
@@ -53,6 +55,8 @@ class SiteVisitRecordingServiceTest {
     assertThat(saved.isWiki()).isTrue();
     assertThat(saved.getPath()).isEqualTo("/wiki");
     assertThat(saved.getVisitorKey()).isEqualTo("S:session-1");
+    assertThat(saved.getServiceArea()).isEqualTo(AnalyticsServiceArea.WIKI);
+    assertThat(saved.getTrafficKind()).isEqualTo(AnalyticsTrafficKind.HUMAN);
     verify(userRepository, never()).findById(any());
   }
 
@@ -81,6 +85,22 @@ class SiteVisitRecordingServiceTest {
     ArgumentCaptor<SitePageVisit> captor = ArgumentCaptor.forClass(SitePageVisit.class);
     verify(visitRepository).save(captor.capture());
     assertThat(captor.getValue().isWiki()).isFalse();
+    assertThat(captor.getValue().getServiceArea()).isEqualTo(AnalyticsServiceArea.OTHER);
+  }
+
+  @Test
+  @DisplayName("새 비회원 V: key와 BOT 요청을 서비스 영역과 함께 저장한다")
+  void record_newVisitorAndBot() {
+    service.record("/chart", "V:0f12a5be-7d4c-4b36-9e20-38b18d143be1", null, null,
+        AnalyticsTrafficKind.HUMAN);
+    service.record("/home", "B:BOT", null, null, AnalyticsTrafficKind.BOT);
+
+    ArgumentCaptor<SitePageVisit> captor = ArgumentCaptor.forClass(SitePageVisit.class);
+    verify(visitRepository, times(2)).save(captor.capture());
+    assertThat(captor.getAllValues().get(0).getServiceArea()).isEqualTo(AnalyticsServiceArea.CHART);
+    assertThat(captor.getAllValues().get(0).getTrafficKind()).isEqualTo(AnalyticsTrafficKind.HUMAN);
+    assertThat(captor.getAllValues().get(1).getServiceArea()).isEqualTo(AnalyticsServiceArea.HOME);
+    assertThat(captor.getAllValues().get(1).getTrafficKind()).isEqualTo(AnalyticsTrafficKind.BOT);
   }
 
   @Test

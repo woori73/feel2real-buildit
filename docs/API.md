@@ -3555,7 +3555,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - A normal Wiki API request may include `X-BuildIt-Wiki-Workspace: {workspaceId}` as an explicit target selector. FastAPI honors it only for that signed `admin` identity. `modu` and ordinary users receive `403`; an unknown target receives `404`. Omitting or clearing the header restores admin to `legacy`.
 - Principal-less external MCP requests retain `MCP_API_KEY` authentication and are explicitly bound to the legacy workspace; they never fall through browser HMAC identity resolution.
 
-## 19. 통합 Analytics API (`/api/admin/analytics`) — F2R 전체/Wiki 방문 + Wiki 다운로드 (V962)
+## 19. 통합 Analytics API (`/api/admin/analytics`) — 서비스별 방문 + Wiki 다운로드 (V962, V964~V966)
 
 관리자 "통합 Analytics" 화면(`/admin/analytics`) 전용. F2R 전체 페이지 방문(PV/UV), 그 중 Wiki 하위 방문, Wiki 자료(ORIGINAL/ANALYSIS/LEARNING) 다운로드를 한 곳에서 집계한다. 기존 `wiki_daily_visits`(§Wiki 운영 현황, 날짜당 UV 집계 1행)와는 별개 테이블(`site_page_visits`, `wiki_download_logs`)이다 — 둘 다 계속 독립적으로 동작하며 서로 대체하지 않는다.
 
@@ -3563,8 +3563,9 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 ### 방문 기록 (자동, 클라이언트 호출 없음)
 - `SiteVisitFilter`(SecurityConfig 필터체인, JwtAuthenticationFilter 뒤)가 모든 실제 GET 페이지 응답에서 자동 기록한다. `/api/**`, `/css/**`, `/js/**`, `/img/**`, `/video/**` 등은 경로로 우선 제외하고, 남은 요청도 응답이 `200` + `Content-Type: text/html` 인 경우에만 기록 — 정적 리소스/리다이렉트/API 응답은 집계되지 않는다.
-- UV(순 방문자) 식별: 로그인 `"U:{userId}"`, 비로그인 `"S:{HttpSession id}"`. IP는 저장하지 않는다.
-- `path` 가 `/wiki` 로 시작하면 `is_wiki=true`(Wiki 화면 방문이자 F2R 전체 방문에도 포함 — Wiki 방문자는 전체 방문자의 부분집합).
+- UV 식별: 로그인 `"U:{userId}"`, 비로그인 `F2R_VISITOR` first-party cookie의 UUID(`"V:{uuid}"`). cookie는 Secure, HttpOnly, SameSite=Lax, Path=/, 90일이다. 기존 `"S:{HttpSession id}"` 행은 삭제·변환하지 않고 호환 집계한다. IP/fingerprint는 사용하지 않는다.
+- 명확한 bot/crawler User-Agent는 `traffic_kind=BOT`으로 저장하고 일반 UV/PV에서는 제외한다. 관리자 화면의 `botRequests`에서 별도 요청 수를 본다. 개선 이전 행은 식별 불가능하므로 HUMAN으로 보존된다.
+- `service_area`: 실제 route를 HOME(`/`, `/home`), CHART(`/chart/**`), WEB(`/academies/**`, `/academy-posts/**`, `/subdomain-home`), ACADEMY(`/builder`, `/lessons/**`, `/tutor/academy/**`, `/lms/**`), WIKI(`/wiki/**`), OTHER(그 외)로 분류한다.
 - 로그인 사용자는 `users.name`(실명)을 방문 시점 스냅샷으로 `display_name` 에 저장한다(닉네임 아님 — TUTOR도 동일).
 
 ### 다운로드 기록 (자동, 다운로드 endpoint 내부)
@@ -3573,10 +3574,13 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 ### `GET /api/admin/analytics/summary`
 → `AdminAnalyticsResponse`:
-- `siteVisitors`/`siteViews`/`wikiVisitors`/`wikiViews`/`wikiDownloads`: 각 `{today, recent7, recent30, total}` (UV 또는 PV 또는 다운로드 건수, `today/recent7/recent30` 는 Asia/Seoul 기준 오늘/최근 7일/최근 30일, `total` 은 누적 전체).
+- `siteVisitors`/`siteViews`/`wikiVisitors`/`wikiViews`: HUMAN만 계산한다. `wikiDownloads`는 기존 다운로드 건수이며, 각 값은 `{today, recent7, recent30, total}`이다.
+- `botRequests`: 일반 방문에서 제외된 BOT PV의 `{today, recent7, recent30, total}`.
+- `serviceTraffic`: HOME/CHART/WEB/ACADEMY/WIKI/OTHER별 `{service, visitors, views}`. visitors/views는 각각 기간별 metric이다.
 - `statsSince`: 최초 방문 기록 날짜(`site_page_visits` 최솟값). 기록이 없으면 `null` — 프론트가 "통계 수집 시작일 이후 데이터"임을 안내한다.
 - `recentWikiVisits`: 최근 Wiki 방문 20건 — `{displayName, role, area("WIKI"|"F2R"), path, visitedAt}`.
+- `recentVisits`: 최근 HUMAN 전체 방문 20건 — `{displayName, role, area(HOME|CHART|WEB|ACADEMY|WIKI|OTHER), path, visitedAt}`. visitor key 원문은 반환하지 않는다.
 - `recentDownloads`: 최근 다운로드 20건 — `{displayName, role, materialCategory, materialTitle, downloadedAt}`.
 - `topDownloads`: 자료별 누적 다운로드 수 TOP 10 — `{materialCategory, materialTitle, downloadCount}`.
 
-- 관련 코드: `domain/analytics/*`(SitePageVisit, WikiDownloadLog, SiteVisitRecordingService, WikiDownloadRecordingService, AdminAnalyticsService, AdminAnalyticsController), `config/SiteVisitFilter`. 마이그레이션 **`V962`**(신규 테이블 `site_page_visits`, `wiki_download_logs`).
+- 관련 코드: `domain/analytics/*`, `config/SiteVisitFilter`. 마이그레이션 `V962`(기본 로그 테이블), `V964~V966`(nullable 추가 → 기존 path backfill → NOT NULL/인덱스).

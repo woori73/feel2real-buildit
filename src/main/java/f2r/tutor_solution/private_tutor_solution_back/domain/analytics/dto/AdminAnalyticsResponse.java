@@ -14,12 +14,17 @@ public record AdminAnalyticsResponse(
     PeriodMetric wikiVisitors,
     PeriodMetric wikiViews,
     PeriodMetric wikiDownloads,
+    PeriodMetric botRequests,
     LocalDate statsSince,
+    List<ServiceTraffic> serviceTraffic,
+    List<RecentVisit> recentVisits,
     List<RecentVisit> recentWikiVisits,
     List<RecentDownload> recentDownloads,
     List<TopDownload> topDownloads) {
 
   public record PeriodMetric(long today, long recent7, long recent30, long total) {}
+
+  public record ServiceTraffic(String service, PeriodMetric visitors, PeriodMetric views) {}
 
   public record RecentVisit(String displayName, String role, String area, String path, LocalDateTime visitedAt) {}
 

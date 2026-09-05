@@ -1141,7 +1141,7 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 
 권한: 읽기 공개(비로그인), write(글/답글/수정/삭제/첨부)는 인증(STUDENT/TUTOR/ADMIN 누구나). 작성자만 수정, 작성자·ADMIN 만 숨김. 전부 `@AuthenticationPrincipal` 기준 — request body user id 불신뢰.
 
-### 4.48 site_page_visits / wiki_download_logs ✅ 관리자 통합 Analytics (V962)
+### 4.48 site_page_visits / wiki_download_logs ✅ 관리자 통합 Analytics (V962, V964~V966)
 
 `docs/API.md §19` 참고. `academy_daily_visits`(§4.41)와 달리 날짜당 집계 row가 아니라 **1건 = 1 이벤트** 로그다 — PV는 row 수, UV는 `visitor_key` distinct count로 계산한다. 기존 `wiki_daily_visits`(V960, Wiki 운영 현황 카드 전용)는 그대로 유지되며 이 테이블들과 무관하게 독립 동작한다.
 
@@ -1157,7 +1157,9 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 | user_id | BIGINT NULL | 비로그인 NULL. FK 제약 없음(스냅샷 로그) |
 | role | VARCHAR(20) NOT NULL | STUDENT\|TUTOR\|ADMIN\|GUEST |
 | display_name | VARCHAR(60) NOT NULL | 방문 시점 `users.name`(실명) 스냅샷, 비회원 "비회원" |
-| visitor_key | VARCHAR(64) NOT NULL | UV 식별자: 로그인 `"U:{userId}"`, 비로그인 `"S:{session id}"`. IP 미저장 |
+| visitor_key | VARCHAR(64) NOT NULL | UV 식별자: 로그인 `"U:{userId}"`, 비로그인 `"V:{90일 cookie UUID}"`; legacy `"S:{session id}"` 호환. IP/fingerprint 미저장 |
+| service_area | VARCHAR(16) NOT NULL | HOME\|CHART\|WEB\|ACADEMY\|WIKI\|OTHER. 기존 row는 path로 backfill |
+| traffic_kind | VARCHAR(10) NOT NULL | HUMAN\|BOT. 일반 UV/PV는 HUMAN만, BOT 요청 수는 별도 집계 |
 
 **`wiki_download_logs`** — Wiki 자료(ORIGINAL/ANALYSIS/LEARNING) 다운로드 이벤트. 다운로드 endpoint가 파일을 정상적으로 읽어온 시점에만 기록(버튼 클릭 카운트 아님).
 
@@ -1173,7 +1175,7 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 | role | VARCHAR(20) NOT NULL | STUDENT\|TUTOR\|ADMIN\|GUEST |
 | display_name | VARCHAR(60) NOT NULL | 다운로드 시점 `users.name`(실명) 스냅샷 |
 
-인덱스: `site_page_visits`는 `(visit_date)`, `(is_wiki, visit_date)`, `(visitor_key)`, `(user_id)`. `wiki_download_logs`는 `(download_date)`, `(material_category, material_id)`, `(user_id)` — 관리자 화면 집계 쿼리가 기존 페이지 응답을 늦추지 않도록.
+인덱스: `site_page_visits`는 기존 인덱스에 `(service_area, traffic_kind, visit_date)`, `(traffic_kind, visit_date)`가 추가된다. `wiki_download_logs`는 `(download_date)`, `(material_category, material_id)`, `(user_id)` — 관리자 화면 집계 쿼리가 기존 페이지 응답을 늦추지 않도록.
 
 # 내신 Wiki V1 최소 데이터 확장
 
