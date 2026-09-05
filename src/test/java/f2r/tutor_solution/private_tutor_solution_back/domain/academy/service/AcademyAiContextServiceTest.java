@@ -6,6 +6,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Acad
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.LessonProduct;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoLifecycleStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyVideoRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.LessonProductRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.subject.entity.Subject;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
@@ -27,6 +29,7 @@ class AcademyAiContextServiceTest {
 
   private AcademyService academyService;
   private LessonProductRepository lessonProductRepository;
+  private AcademyVideoRepository academyVideoRepository;
   private AcademyAiContextService service;
   private Academy academy;
   private JwtTokenProvider.AuthenticatedPrincipal principal;
@@ -35,7 +38,14 @@ class AcademyAiContextServiceTest {
   void setUp() {
     academyService = mock(AcademyService.class);
     lessonProductRepository = mock(LessonProductRepository.class);
-    service = new AcademyAiContextService(academyService, lessonProductRepository);
+    academyVideoRepository = mock(AcademyVideoRepository.class);
+    AcademyCompletionCheckService completionCheckService = new AcademyCompletionCheckService(
+        academyService, lessonProductRepository, academyVideoRepository);
+    service = new AcademyAiContextService(
+        academyService, lessonProductRepository, academyVideoRepository, completionCheckService);
+    when(academyVideoRepository.findByAcademy_AcademyIdAndLifecycleStatusOrderByCreatedAtDesc(
+        org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.eq(VideoLifecycleStatus.READY)))
+        .thenReturn(List.of());
 
     User tutor = User.builder().loginId("tutor").password("pw").name("강사").phone("010").build();
     ReflectionTestUtils.setField(tutor, "userId", 10L);
@@ -128,6 +138,46 @@ class AcademyAiContextServiceTest {
         .thenReturn(List.of());
     AcademyAiContext context = service.buildContext(principal);
     assertThat(context.lessons()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given Academy when composition 조립 then 섹션 순서/노출·콘텐츠 플래그·완성도 요약이 담긴다")
+  void buildContext_includes_composition() {
+    LessonProduct lesson = LessonProduct.builder().academy(academy).name("중등 영어").build();
+    when(lessonProductRepository.findByAcademy_AcademyIdOrderByCreatedAtDesc(100L))
+        .thenReturn(List.of(lesson));
+
+    AcademyAiContext.Composition composition = service.buildContext(principal).composition();
+
+    assertThat(composition).isNotNull();
+    // sec-hero는 항상 0번, 총 15개 관리 섹션.
+    assertThat(composition.sections()).hasSize(15);
+    assertThat(composition.sections().get(0).key()).isEqualTo("sec-hero");
+    // opt-in 섹션(sec-featured 등)은 명시적 ON이 없으므로 숨김.
+    assertThat(composition.sections().stream()
+        .filter(s -> s.key().equals("sec-featured")).findFirst().orElseThrow().visible()).isFalse();
+    // 미구현 섹션은 editable=false.
+    assertThat(composition.sections().stream()
+        .filter(s -> s.key().equals("sec-reviews")).findFirst().orElseThrow().editable()).isFalse();
+    // 대표 수업이 1건 있으므로 sec-lessons는 콘텐츠 있음.
+    assertThat(composition.sections().stream()
+        .filter(s -> s.key().equals("sec-lessons")).findFirst().orElseThrow().hasContent()).isTrue();
+    assertThat(composition.programCardCount()).isEqualTo(1);
+    assertThat(composition.hasDirectorVideo()).isFalse();
+    assertThat(composition.editableTextTargets()).contains("principalDesc", "featuredCtaLabel");
+    // 완성도 요약은 completion 서비스의 deterministic 결과를 그대로 쓴다.
+    assertThat(composition.completionScorePercent()).isBetween(0, 100);
+    assertThat(composition.completionMissing()).isNotNull();
+  }
+
+  @Test
+  @DisplayName("given editableTextTargets when allowlist와 대조 then 위험 필드(가격/연락처/원장 이름)를 포함하지 않는다")
+  void editableTextTargets_excludes_dangerous_fields() {
+    when(lessonProductRepository.findByAcademy_AcademyIdOrderByCreatedAtDesc(100L)).thenReturn(List.of());
+    List<String> targets = service.buildContext(principal).composition().editableTextTargets();
+    assertThat(targets).doesNotContain(
+        "monthlyTuition", "operationYears", "scoreImprovement",
+        "principalName", "principalRole", "headerTitle");
   }
 
   /** AcademyBusinessInfo 생성자 파라미터가 많아 테스트 가독성을 위해 감싼 헬퍼. */

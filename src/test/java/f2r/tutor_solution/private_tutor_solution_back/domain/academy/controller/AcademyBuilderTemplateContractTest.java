@@ -45,7 +45,7 @@ class AcademyBuilderTemplateContractTest {
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
             "<script src=\"/js/academy_sections.js?v=20260905-4\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260905-6\"></script>");
+            "<script src=\"/js/academy_builder.js?v=20260905-7\"></script>");
   }
 
   @Test

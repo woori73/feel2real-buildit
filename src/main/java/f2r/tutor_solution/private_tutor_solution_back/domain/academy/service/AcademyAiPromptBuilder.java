@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext.Composition;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,7 +24,118 @@ public class AcademyAiPromptBuilder {
     return switch (task) {
       case PRINCIPAL_INTRO -> principalIntroPrompt(context, currentValue, instructions);
       case PHILOSOPHY_ITEM -> philosophyItemPrompt(context, currentValue, instructions);
+      case ACADEMY_COMPOSE -> academyComposePrompt(context, instructions);
     };
+  }
+
+  /**
+   * Phase 5A: Academy 전체 진단 + 안전한 개선안 묶음을 <b>JSON 하나</b>로만 요청한다.
+   * allowlist(문구 개선 target · 섹션 순서)를 프롬프트에 명시하고, 그 밖의 변경(새 영상/자료
+   * 생성, 가격/연락처/원장 이름 변경, 미구현 섹션 콘텐츠 작성)은 절대 제안하지 말라고 못박는다.
+   * 실제 방어는 {@code AcademyAiProposalService}가 응답 JSON을 파싱·검증하며 한 번 더 한다.
+   */
+  private String academyComposePrompt(AcademyAiContext context, String instructions) {
+    Composition composition = context.composition();
+    String sectionLines = composition == null || composition.sections() == null
+        ? "(정보 없음)"
+        : composition.sections().stream()
+            .map(s -> "- " + s.key() + " (" + s.label() + "): "
+                + (s.visible() ? "노출" : "숨김")
+                + ", " + (s.hasContent() ? "콘텐츠 있음" : "콘텐츠 비어 있음")
+                + (s.editable() ? "" : ", [AI 변경 금지 섹션]"))
+            .collect(Collectors.joining("\n"));
+    String editableTargets = composition == null || composition.editableTextTargets() == null
+        ? "(없음)"
+        : String.join(", ", composition.editableTextTargets());
+    String currentOrder = composition == null || composition.sections() == null
+        ? "(정보 없음)"
+        : composition.sections().stream()
+            .map(AcademyAiContext.Composition.SectionState::key)
+            .collect(Collectors.joining(", "));
+    String missing = composition == null || composition.completionMissing() == null
+            || composition.completionMissing().isEmpty()
+        ? "(없음)"
+        : String.join(", ", composition.completionMissing());
+
+    return """
+        너는 학원 홈페이지를 통째로 진단하고 안전한 개선안을 제안하는 컨설턴트다.
+        아래 학원의 현재 상태를 보고 (1) 전체 진단 2~4문장과 (2) 개별 개선 proposal 목록을 만든다.
+
+        [학원 기본 정보]
+        학원명: %s
+        학원 소개: %s
+        대표 과목: %s
+        대상: %s
+        원장 이름: %s / 직함: %s
+        원장 소개문: %s
+        학습 철학 항목: %s
+
+        [콘텐츠 현황]
+        대표 원장 영상: %s
+        수업 영상 개수: %d
+        미니 강의 개수: %d
+        대표 수업(Program) 카드: %d개 (이미지/영상 있는 카드 %d개)
+        Featured CTA 문구: %s
+        완성도 점수: %d%% / 아직 비어 있는 항목: %s
+
+        [현재 섹션 구성/순서 — 위에서 아래로 노출됨]
+        %s
+
+        [사용자 요구사항 — 있으면 진단·우선순위에 최우선 반영]
+        %s
+
+        너가 제안할 수 있는 것은 딱 두 종류뿐이다:
+        1) TEXT  — 아래 target 중 하나의 문구를 더 자연스럽게 다듬기.
+           허용 target: %s
+           그 밖의 target(학원명, 원장 이름/직함, 가격, 연락처, 학원 소개 본문 등)은 절대 제안하지 않는다.
+        2) SECTION_ORDER — 기존 섹션의 순서만 재배열. 섹션을 새로 만들거나 지우지 않는다.
+           sec-hero는 항상 맨 앞. [AI 변경 금지 섹션] 표시가 있는 섹션은 이동 대상으로 삼지 않는다.
+           현재 순서: %s
+
+        금지: 새 영상/자료/수업 생성, 데이터 삭제, 가격·연락처·원장 이름 변경,
+        지금 콘텐츠가 없는 미구현 섹션에 내용 채우기, 현재 Builder가 지원하지 않는 기능 제안.
+
+        출력은 아래 스키마의 JSON 하나만. 마크다운/설명/코드펜스 없이 순수 JSON만 출력한다.
+        {
+          "diagnosis": "전체 진단 2~4문장 (한국어)",
+          "proposals": [
+            {
+              "id": "p1",
+              "type": "TEXT" | "SECTION_ORDER",
+              "title": "짧은 제목 (예: 원장 소개, 섹션 순서)",
+              "current": "현재 상태 요약 한 문장",
+              "suggestion": "무엇을 어떻게 바꾸는지 한 문장",
+              "target": "TEXT면 위 허용 target 중 하나, SECTION_ORDER면 null",
+              "suggestedValue": "TEXT면 새 문구 문자열, SECTION_ORDER면 sec-* 키 전체 배열",
+              "safeToApply": true
+            }
+          ]
+        }
+        proposal은 최대 6개. 정말 개선이 필요한 것만. 바꿀 게 없으면 proposals는 빈 배열로 둔다.
+        TEXT proposal의 suggestedValue는 원장 소개문이면 200자, 그 외 문구는 60자 이내로 짧게.
+        """
+        .formatted(
+            blank(context.academyName()),
+            blank(context.intro()),
+            joinOrNone(context.subjects()),
+            joinOrNone(context.targetGroups()),
+            blank(context.principalName()),
+            blank(context.principalRole()),
+            blank(context.principalDesc()),
+            joinOrNone(context.philosophyItems()),
+            composition != null && composition.hasDirectorVideo() ? "있음" : "없음",
+            composition == null ? 0 : composition.lessonVideoCount(),
+            composition == null ? 0 : composition.miniLectureCount(),
+            composition == null ? 0 : composition.programCardCount(),
+            composition == null ? 0 : composition.programCardWithMediaCount(),
+            composition == null || composition.ctaLabel() == null || composition.ctaLabel().isBlank()
+                ? "(없음)" : composition.ctaLabel(),
+            composition == null ? 0 : composition.completionScorePercent(),
+            missing,
+            sectionLines,
+            blankInstructions(instructions),
+            editableTargets,
+            currentOrder);
   }
 
   private String principalIntroPrompt(AcademyAiContext context, String currentValue, String instructions) {

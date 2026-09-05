@@ -26,7 +26,7 @@ class AcademyAiSuggestionServiceTest {
   private JwtTokenProvider.AuthenticatedPrincipal principal;
   private final AcademyAiContext fixtureContext = new AcademyAiContext(
       "우리학원", "소개", List.of("영어"), List.of("MIDDLE"),
-      "김원장", "대표원장", "기존 소개문", List.of("철학1", "", "", ""), List.of());
+      "김원장", "대표원장", "기존 소개문", List.of("철학1", "", "", ""), List.of(), null);
 
   @BeforeEach
   void setUp() {

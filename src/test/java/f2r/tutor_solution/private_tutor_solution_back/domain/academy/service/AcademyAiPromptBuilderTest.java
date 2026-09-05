@@ -19,7 +19,17 @@ class AcademyAiPromptBuilderTest {
   private final AcademyAiPromptBuilder builder = new AcademyAiPromptBuilder();
   private final AcademyAiContext context = new AcademyAiContext(
       "우리학원", "소개", List.of("영어"), List.of("MIDDLE"),
-      "김원장", "대표원장", "기존 소개문", List.of("철학1", "", "", ""), List.of());
+      "김원장", "대표원장", "기존 소개문", List.of("철학1", "", "", ""), List.of(), null);
+
+  private static AcademyAiContext.Composition composition() {
+    return new AcademyAiContext.Composition(
+        List.of(
+            new AcademyAiContext.Composition.SectionState("sec-hero", "히어로", true, true, true),
+            new AcademyAiContext.Composition.SectionState("sec-principal", "원장 소개", true, true, false),
+            new AcademyAiContext.Composition.SectionState("sec-reviews", "수강 후기", true, false, false)),
+        false, 0, 2, 3, 1, "상담 신청하기",
+        List.of("principalDesc", "philosophyItem1"), 40, List.of("원장 소개", "수업 영상"));
+  }
 
   @Test
   @DisplayName("given PRINCIPAL_INTRO when 요구사항 없음 then '(없음)'으로 표시하고 문단형 길이 규칙(200자)을 명시한다")
@@ -65,5 +75,36 @@ class AcademyAiPromptBuilderTest {
 
     assertThat(principalPrompt).doesNotContain("60자 이내");
     assertThat(philosophyPrompt).doesNotContain("200자 이내");
+  }
+
+  @Test
+  @DisplayName("given ACADEMY_COMPOSE when 프롬프트 생성 then JSON 스키마·allowlist·섹션 목록·금지 규칙이 포함된다")
+  void academyCompose_prompt_contains_schema_and_guardrails() {
+    AcademyAiContext composeContext = new AcademyAiContext(
+        "우리학원", "소개", List.of("영어"), List.of("MIDDLE"),
+        "김원장", "대표원장", "기존 소개문", List.of("철학1", "", "", ""), List.of(), composition());
+
+    String prompt = builder.build(
+        AcademyAiTaskType.ACADEMY_COMPOSE, composeContext, null, null, "수업 영상을 중심으로 보여줘");
+
+    // 사용자 요구사항이 그대로 실린다.
+    assertThat(prompt).contains("수업 영상을 중심으로 보여줘");
+    // 구조화 출력(JSON 스키마)을 요구한다.
+    assertThat(prompt).contains("\"diagnosis\"").contains("\"proposals\"");
+    assertThat(prompt).contains("TEXT").contains("SECTION_ORDER");
+    // allowlist target이 프롬프트에 노출된다.
+    assertThat(prompt).contains("principalDesc");
+    // 현재 섹션 구성/순서가 들어간다 + 미구현 섹션은 변경 금지로 표시된다.
+    assertThat(prompt).contains("sec-hero").contains("sec-reviews");
+    assertThat(prompt).contains("[AI 변경 금지 섹션]");
+    // 금지 규칙(새 영상 생성/가격·연락처 변경)을 못박는다.
+    assertThat(prompt).contains("금지");
+  }
+
+  @Test
+  @DisplayName("given ACADEMY_COMPOSE + composition이 null when 프롬프트 생성 then NPE 없이 안전하게 만든다")
+  void academyCompose_handles_null_composition() {
+    String prompt = builder.build(AcademyAiTaskType.ACADEMY_COMPOSE, context, null, null, null);
+    assertThat(prompt).contains("\"proposals\"");
   }
 }

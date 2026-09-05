@@ -2,10 +2,12 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiSuggestion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyCompletionResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiProposalService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiSuggestionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyCompletionCheckService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider;
@@ -32,6 +34,7 @@ public class AcademyAiController {
 
   private final AcademyAiContextService contextService;
   private final AcademyAiSuggestionService suggestionService;
+  private final AcademyAiProposalService proposalService;
   private final AcademyCompletionCheckService completionCheckService;
   private final AiProvider aiProvider;
 
@@ -62,6 +65,20 @@ public class AcademyAiController {
         principal, task, request.target(), request.currentValue(), request.instructions()));
   }
 
+  /**
+   * Phase 5A — Academy 전체를 분석하고 안전한 개선안 묶음을 돌려준다. READ 전용이다:
+   * 이 호출만으로는 {@code builderDraft}도 Production도 바뀌지 않는다. 실제 반영은 사용자가
+   * Builder에서 proposal별 "적용"을 눌렀을 때 기존 {@code PUT /api/tutor/academy} 경로로만
+   * 이뤄진다. academyId를 받지 않는다.
+   */
+  @PostMapping("/academy-proposal")
+  public ResponseEntity<AcademyAiProposal> academyProposal(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody(required = false) AcademyProposalRequest request) {
+    String instructions = request == null ? null : request.instructions();
+    return ResponseEntity.ok(proposalService.generate(principal, instructions));
+  }
+
   @GetMapping("/completion")
   public ResponseEntity<AcademyCompletionResult> completion(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
@@ -82,4 +99,7 @@ public class AcademyAiController {
    *     취급한다 — 길이 제한 자체는 AcademyAiSuggestionService가 검증한다.
    */
   public record AiSuggestionRequest(String task, String target, String currentValue, String instructions) {}
+
+  /** @param instructions 사용자가 "어떤 Academy로 만들고 싶은지" 자유 입력(선택, 200자 제한은 서비스가 검증). */
+  public record AcademyProposalRequest(String instructions) {}
 }

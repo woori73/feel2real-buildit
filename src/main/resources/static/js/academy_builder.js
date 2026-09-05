@@ -209,6 +209,7 @@
     wireMiniLecturesEditing();
     wireAiSuggestionEditing();
     wireAiAssistTriggers();
+    wireAcademyComposeModal();
     wirePrincipalVideoEditing(preview);
     wirePrincipalCareerEditing(preview);
     wireIntroFeatureEditing(preview);
@@ -3705,6 +3706,308 @@
     if (apply) apply.addEventListener('click', applyAiSuggestionToBuilder);
   }
 
+  // ── AI Academy Builder (Phase 5A) ────────────────────────────────────────
+  // "✨ AI로 Academy 구성하기" — AI가 Academy 전체를 진단하고 안전한 개선안(문구 개선 · 섹션
+  // 순서 변경)을 구조화된 proposal로 제안한다. 절대 원칙(Phase 4와 동일):
+  //   1) [Academy 분석하기]는 읽기 전용이다 — currentPreview도 Academy DB도 절대 바뀌지 않는다.
+  //   2) proposal "적용"을 눌러야만 기존 인라인 편집과 완전히 같은 경로
+  //      (currentPreview.pageSettings.builderDraft / sectionOrder → applyAcademyToLivePreview →
+  //      persistTextChangesAfterApply)로 반영된다. 별도 AI 저장 API가 없다.
+  //   3) Publish는 AI가 절대 실행하지 않는다 — 사용자가 기존 [발행] 버튼을 눌러야 한다.
+  //   4) 서버가 이미 allowlist를 검증하지만, 여기서도 target/섹션 순서를 한 번 더 검증해
+  //      손상·악의적 응답이 임의 key를 쓰지 못하게 한다.
+  const COMPOSE_TEXT_TARGETS = [
+    'principalDesc', 'principalQuote',
+    'philosophyItem1', 'philosophyItem2', 'philosophyItem3', 'philosophyItem4',
+    'philosophyKeyword', 'philosophyTitle',
+    'introHeading', 'introMotto', 'introBodySecondary',
+    'featuredEyebrow', 'featuredTitle', 'featuredDescription', 'featuredCtaLabel',
+    'videosSectionTitle', 'socialSectionTitle', 'miniLecturesSectionTitle'
+  ];
+  // { proposals: [], applied: Set<id>, textKeys: Set<key>, orderTouched: bool, snapshot: {...}|null }
+  let academyComposeState = null;
+
+  function wireAcademyComposeModal() {
+    const trigger = document.getElementById('builderComposeTrigger');
+    if (trigger && trigger.dataset.wired !== 'true') {
+      trigger.dataset.wired = 'true';
+      trigger.addEventListener('click', openAcademyComposeModal);
+    }
+    const modal = document.getElementById('builderAcademyComposeModal');
+    if (!modal || modal.dataset.wired === 'true') return;
+    modal.dataset.wired = 'true';
+    modal.querySelectorAll('[data-compose-close]').forEach((button) => {
+      button.addEventListener('click', closeAcademyComposeModal);
+    });
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeAcademyComposeModal();
+    });
+    const analyze = document.getElementById('builderComposeAnalyzeBtn');
+    if (analyze) analyze.addEventListener('click', requestAcademyProposal);
+    const applyAll = document.getElementById('builderComposeApplyAllBtn');
+    if (applyAll) applyAll.addEventListener('click', applyAllComposeProposals);
+    const revert = document.getElementById('builderComposeRevertBtn');
+    if (revert) revert.addEventListener('click', revertComposeChanges);
+    const cards = document.getElementById('builderComposeCards');
+    if (cards) cards.addEventListener('click', (event) => {
+      const button = event.target && event.target.closest
+        ? event.target.closest('[data-compose-apply]') : null;
+      if (!button || !cards.contains(button)) return;
+      applyComposeProposalById(button.dataset.composeApply);
+    });
+  }
+
+  function openAcademyComposeModal() {
+    const modal = document.getElementById('builderAcademyComposeModal');
+    if (!modal || !currentPreview) return;
+    academyComposeState = {
+      proposals: [], applied: new Set(), textKeys: new Set(), orderTouched: false, snapshot: null
+    };
+    const instructions = document.getElementById('builderComposeInstructions');
+    if (instructions) instructions.value = '';
+    setComposeError('');
+    setComposeLoading(false);
+    setComposeAnalyzeLabel('Academy 분석하기');
+    const results = document.getElementById('builderComposeResults');
+    if (results) results.hidden = true;
+    const cards = document.getElementById('builderComposeCards');
+    if (cards) cards.innerHTML = '';
+    const toolbar = document.getElementById('builderComposeToolbar');
+    if (toolbar) toolbar.hidden = true;
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeAcademyComposeModal() {
+    const modal = document.getElementById('builderAcademyComposeModal');
+    if (modal) {
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    academyComposeState = null;
+  }
+
+  function setComposeLoading(loading) {
+    const el = document.getElementById('builderComposeLoading');
+    const analyze = document.getElementById('builderComposeAnalyzeBtn');
+    if (el) el.hidden = !loading;
+    if (analyze) analyze.disabled = loading;
+  }
+
+  function setComposeError(message) {
+    const el = document.getElementById('builderComposeError');
+    if (!el) return;
+    el.textContent = message || '';
+    el.hidden = !message;
+  }
+
+  function setComposeAnalyzeLabel(text) {
+    const btn = document.getElementById('builderComposeAnalyzeBtn');
+    if (btn) btn.textContent = text;
+  }
+
+  /** [Academy 분석하기]/[다시 분석하기] — 읽기 전용. 어떤 데이터도 저장하지 않는다. */
+  async function requestAcademyProposal() {
+    if (!academyComposeState) return;
+    const requested = academyComposeState;
+    const el = document.getElementById('builderComposeInstructions');
+    const instructions = el ? String(el.value || '').trim() : '';
+    setComposeLoading(true);
+    setComposeError('');
+    try {
+      const res = await fetch('/api/tutor/academy/ai/academy-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ instructions: instructions })
+      });
+      if (academyComposeState !== requested) return;
+      if (!res.ok) {
+        setComposeError(await aiErrorMessage(res, 'AI 분석에 실패했습니다.'));
+        return;
+      }
+      const proposal = await res.json();
+      if (academyComposeState !== requested) return;
+      academyComposeState.proposals = Array.isArray(proposal.proposals) ? proposal.proposals : [];
+      renderAcademyProposal(proposal.diagnosis, academyComposeState.proposals);
+      setComposeAnalyzeLabel('다시 분석하기');
+    } catch (_) {
+      if (academyComposeState === requested) {
+        setComposeError('네트워크 연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      if (academyComposeState === requested) setComposeLoading(false);
+    }
+  }
+
+  function renderAcademyProposal(diagnosis, proposals) {
+    const results = document.getElementById('builderComposeResults');
+    const diagEl = document.getElementById('builderComposeDiagnosis');
+    const cardsEl = document.getElementById('builderComposeCards');
+    const toolbar = document.getElementById('builderComposeToolbar');
+    if (!results || !diagEl || !cardsEl) return;
+    diagEl.textContent = diagnosis || '';
+    const valid = (proposals || []).filter(isApplicableComposeProposal);
+    if (!valid.length) {
+      cardsEl.innerHTML = '<p class="builder-compose-empty">지금 바로 적용할 만한 개선안은 없습니다. 현재 구성이 안정적입니다.</p>';
+      if (toolbar) toolbar.hidden = true;
+    } else {
+      cardsEl.innerHTML = valid.map(composeCardHtml).join('');
+      if (toolbar) toolbar.hidden = false;
+      syncComposeToolbar();
+    }
+    results.hidden = false;
+  }
+
+  function composeCardHtml(item) {
+    const applied = !!(academyComposeState && academyComposeState.applied.has(item.id));
+    const typeLabel = item.type === 'SECTION_ORDER' ? '섹션 순서' : '문구';
+    const newTextLine = item.type === 'TEXT' && item.textValue
+      ? `<p class="builder-compose-card-line"><b>새 문구 →</b> ${escapeHtml(item.textValue)}</p>` : '';
+    return `<div class="builder-compose-card${applied ? ' is-applied' : ''}" data-compose-card="${escapeAttr(item.id)}">`
+      + `<p class="builder-compose-card-title">${escapeHtml(item.title || typeLabel)}</p>`
+      + `<p class="builder-compose-card-line"><b>현재 →</b> ${escapeHtml(item.current || '-')}</p>`
+      + `<p class="builder-compose-card-line"><b>제안 →</b> ${escapeHtml(item.suggestion || '-')}</p>`
+      + newTextLine
+      + '<div class="builder-compose-card-actions">'
+      + `<button type="button" class="${applied ? 'secondary' : 'primary'}" data-compose-apply="${escapeAttr(item.id)}"${applied ? ' disabled' : ''}>${applied ? '적용됨' : '적용'}</button>`
+      + '</div></div>';
+  }
+
+  /** 서버 검증과 별개로 프론트에서도 target/섹션 순서를 다시 확인한다(방어적 이중화). */
+  function isApplicableComposeProposal(item) {
+    if (!item || !item.id) return false;
+    if (item.type === 'TEXT') {
+      return COMPOSE_TEXT_TARGETS.indexOf(item.target) >= 0
+        && typeof item.textValue === 'string' && item.textValue.trim() !== '';
+    }
+    if (item.type === 'SECTION_ORDER') return isValidComposeSectionOrder(item.sectionOrder);
+    return false;
+  }
+
+  function isValidComposeSectionOrder(order) {
+    if (!Array.isArray(order) || order.length !== DEFAULT_SECTION_ORDER.length) return false;
+    if (order[0] !== 'sec-hero') return false;
+    const seen = new Set(order);
+    if (seen.size !== order.length) return false;
+    return DEFAULT_SECTION_ORDER.every((id) => seen.has(id));
+  }
+
+  /** 이 compose 세션에서 처음 "적용"하기 직전에 원상복구용 스냅샷을 1번 찍는다. */
+  function captureComposeSnapshot() {
+    if (!academyComposeState || academyComposeState.snapshot || !currentPreview) return;
+    const pageSettings = currentPreview.pageSettings || {};
+    academyComposeState.snapshot = {
+      builderDraft: Object.assign({}, pageSettings.builderDraft || {}),
+      sectionOrder: sectionOrderFrom(currentPreview).slice()
+    };
+  }
+
+  /**
+   * proposal 적용 = 기존 인라인 편집과 같은 경로. builderDraft(문구) / sectionOrder(섹션 순서)만
+   * currentPreview에 반영하고 미리보기를 즉시 재렌더한 뒤, 발행 여부에 따라
+   * persistTextChangesAfterApply가 "발행 필요" 표시(발행됨) 또는 pending 저장(미발행)을 한다.
+   */
+  function applyComposeChanges(items) {
+    if (!currentPreview || !items.length) return;
+    captureComposeSnapshot();
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    pageSettings.builderDraft = Object.assign({}, pageSettings.builderDraft || {});
+    let orderChanged = false;
+    items.forEach((item) => {
+      if (item.type === 'TEXT') {
+        pageSettings.builderDraft[item.target] = item.textValue;
+        if (academyComposeState) academyComposeState.textKeys.add(item.target);
+      } else if (item.type === 'SECTION_ORDER') {
+        pageSettings.sectionOrder = item.sectionOrder.slice();
+        orderChanged = true;
+        if (academyComposeState) academyComposeState.orderTouched = true;
+      }
+      if (academyComposeState) academyComposeState.applied.add(item.id);
+    });
+    currentPreview.pageSettings = pageSettings;
+    if (orderChanged) currentPreview.sectionOrder = pageSettings.sectionOrder.slice();
+    applyAcademyToLivePreview(currentPreview, 'sec-hero');
+    persistTextChangesAfterApply({});
+    refreshComposeCards();
+  }
+
+  function applyComposeProposalById(id) {
+    if (!academyComposeState) return;
+    const item = academyComposeState.proposals.find((proposal) => proposal.id === id);
+    if (!item || !isApplicableComposeProposal(item) || academyComposeState.applied.has(id)) return;
+    applyComposeChanges([item]);
+  }
+
+  function applyAllComposeProposals() {
+    if (!academyComposeState) return;
+    const pending = academyComposeState.proposals.filter((proposal) =>
+      isApplicableComposeProposal(proposal)
+      && proposal.safeToApply === true
+      && !academyComposeState.applied.has(proposal.id));
+    if (!pending.length) {
+      toast('적용할 추천안이 없습니다.', 'fa-circle-info');
+      return;
+    }
+    applyComposeChanges(pending);
+  }
+
+  /** 이 세션에서 적용한 변경만 스냅샷 기준으로 되돌린다(그 사이 사용자가 직접 한 편집은 보존). */
+  function revertComposeChanges() {
+    if (!academyComposeState || !academyComposeState.snapshot || !currentPreview) return;
+    const snap = academyComposeState.snapshot;
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    const draft = Object.assign({}, pageSettings.builderDraft || {});
+    academyComposeState.textKeys.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(snap.builderDraft, key)) {
+        draft[key] = snap.builderDraft[key];
+      } else {
+        delete draft[key];
+      }
+    });
+    pageSettings.builderDraft = draft;
+    if (academyComposeState.orderTouched) {
+      pageSettings.sectionOrder = snap.sectionOrder.slice();
+      currentPreview.sectionOrder = snap.sectionOrder.slice();
+    }
+    currentPreview.pageSettings = pageSettings;
+    academyComposeState.applied.clear();
+    academyComposeState.textKeys.clear();
+    academyComposeState.orderTouched = false;
+    academyComposeState.snapshot = null;
+    applyAcademyToLivePreview(currentPreview, 'sec-hero');
+    persistTextChangesAfterApply({});
+    refreshComposeCards();
+    toast('AI 추천 적용을 되돌렸습니다.', 'fa-rotate-left');
+  }
+
+  function refreshComposeCards() {
+    if (!academyComposeState) return;
+    const cardsEl = document.getElementById('builderComposeCards');
+    const valid = academyComposeState.proposals.filter(isApplicableComposeProposal);
+    if (cardsEl && valid.length) cardsEl.innerHTML = valid.map(composeCardHtml).join('');
+    syncComposeToolbar();
+  }
+
+  function syncComposeToolbar() {
+    const revert = document.getElementById('builderComposeRevertBtn');
+    const tag = document.getElementById('builderComposeAppliedTag');
+    const applyAll = document.getElementById('builderComposeApplyAllBtn');
+    const appliedCount = academyComposeState ? academyComposeState.applied.size : 0;
+    if (revert) revert.hidden = appliedCount === 0;
+    if (tag) {
+      tag.hidden = appliedCount === 0;
+      tag.textContent = appliedCount ? `${appliedCount}개 적용됨 · 발행 전` : '';
+    }
+    const pending = academyComposeState
+      ? academyComposeState.proposals.filter((proposal) =>
+          isApplicableComposeProposal(proposal)
+          && proposal.safeToApply === true
+          && !academyComposeState.applied.has(proposal.id)).length
+      : 0;
+    if (applyAll) applyAll.disabled = pending === 0;
+  }
+
   function wireMiniLecturesEditing() {
     const pageContent = document.getElementById('pageContent');
     if (pageContent && pageContent.dataset.miniLecturesWired !== 'true') {
@@ -4544,6 +4847,17 @@
     // (내부 함수를 직접 호출하는 우회가 아니라) 검증하는 회귀 테스트 전용 훅.
     wireAiAssistTriggers,
     wireAiSuggestionEditing,
+    // Phase 5A: AI Academy Builder(전체 진단 + proposal). 절대 원칙 — requestAcademyProposal은
+    // 읽기 전용이고, applyComposeProposalById / applyAllComposeProposals 를 호출해야만
+    // currentPreview가 바뀐다. Publish는 어떤 경로로도 자동 실행되지 않는다.
+    wireAcademyComposeModal,
+    openAcademyComposeModal,
+    requestAcademyProposal,
+    renderAcademyProposal,
+    applyComposeProposalById,
+    applyAllComposeProposals,
+    revertComposeChanges,
+    getAcademyComposeState: () => academyComposeState,
     wireTextEditing,
     wirePreviewSectionSelection,
     enterSectionTextEditMode
