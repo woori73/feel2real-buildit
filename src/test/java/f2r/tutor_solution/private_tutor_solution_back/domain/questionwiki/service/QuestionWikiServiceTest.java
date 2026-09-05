@@ -179,6 +179,36 @@ class QuestionWikiServiceTest {
   }
 
   @Test
+  @DisplayName("given 현재 문항에 연결된 HTML when getContext then AI 원문 text를 같은 문항 Context에 포함한다")
+  void getContext_includesCurrentQuestionHtmlForAi() {
+    QuestionWikiMaterialLink link = QuestionWikiMaterialLink.builder()
+        .questionWiki(question).materialKind(QuestionWikiMaterialKind.ANALYSIS_MATERIAL)
+        .materialId(20L).label("20번 원문 및 분석").build();
+    ReflectionTestUtils.setField(link, "linkId", 20L);
+    when(materialLinkRepository.findByQuestionWiki_QuestionWikiIdOrderByLinkIdAsc(1L))
+        .thenReturn(List.of(link));
+
+    WikiAnalysisMaterial mat = WikiAnalysisMaterial.builder()
+        .title("2026 고2 9월 20번").description("문항별 분석")
+        .schoolName("전국연합").grade(2).year(2026).semester("공통").examType("9월 전국연합학력평가")
+        .subject("영어").contentType("text/html").originalFileName("question-20.html")
+        .storageKey("q20").fileSize(2048L).visible(true).build();
+    ReflectionTestUtils.setField(mat, "wikiAnalysisMaterialId", 20L);
+    when(wikiAnalysisMaterialRepository.findById(20L)).thenReturn(Optional.of(mat));
+    when(wikiAnalysisMaterialService.getPublicDownload(20L)).thenReturn(
+        new WikiAnalysisMaterialService.DownloadFile(
+            "<article><h2>20. 다음 글의 목적으로 가장 적절한 것은?</h2><p>Dear residents, our community library will reopen next Monday after renovations.</p></article>".getBytes(),
+            "question-20.html", "text/html", "2026 고2 9월 20번"));
+
+    QuestionWikiContextResponse ctx = service.getContext(1L, null);
+
+    assertThat(ctx.question().questionWikiId()).isEqualTo(1L);
+    assertThat(ctx.materials()).hasSize(1);
+    assertThat(ctx.materials().get(0).aiText())
+        .contains("Dear residents", "community library", "reopen next Monday");
+  }
+
+  @Test
   @DisplayName("given 검색어 when searchLinkableMaterials(ADMIN) then 제목·학교·파일명 매칭만 반환")
   void searchLinkableMaterials_filters() {
     WikiExamOriginal original = WikiExamOriginal.builder()
