@@ -208,6 +208,7 @@
     wireFeaturedLessonsEditing();
     wireMiniLecturesEditing();
     wireAiSuggestionEditing();
+    wireAiAssistTriggers();
     wirePrincipalVideoEditing(preview);
     wirePrincipalCareerEditing(preview);
     wireIntroFeatureEditing(preview);
@@ -3415,7 +3416,6 @@
     controls.appendChild(sectionControlButton('fa-check', '적용', '', () => applySectionTextChanges(section)));
     appendCollectionLayoutControl(controls, section);
     appendMiniLecturesControl(controls, section);
-    appendAiAssistControl(controls, section);
     if (!isHeader) {
       controls.appendChild(sectionControlButton('fa-trash', '삭제', 'danger', () => hideSelectedSection(section)));
     }
@@ -3488,45 +3488,42 @@
     controls.appendChild(sectionControlButton('fa-graduation-cap', '미니 강의 편집', '', openMiniLecturesModal));
   }
 
-  // ── AI Suggestion (Phase 4) ──────────────────────────────────────────────
+  // ── AI Suggestion (Phase 4, 마크업 회귀 수정 Phase 4.1) ────────────────────
   // 절대 원칙: 여기서 만드는 건 "제안"뿐이다. 생성만으로는 currentPreview.pageSettings도,
   // Academy DB도 절대 바뀌지 않는다 — 사용자가 이 모달의 "적용"을 눌러야만 기존 인라인 텍스트
   // 편집과 완전히 같은 경로(pageSettings.builderDraft 갱신 → populatePreview →
   // persistTextChangesAfterApply, 즉 발행 전이면 미리보기 반영, 발행 후면 "발행" 버튼으로
   // 저장 안내)로 반영된다. AI 전용 저장 경로를 새로 만들지 않는다.
-  const AI_ASSIST_SECTIONS = {
-    'sec-principal': { task: 'PRINCIPAL_INTRO', defaultTarget: 'principalDesc' },
-    'sec-philosophy': {
-      task: 'PHILOSOPHY_ITEM',
-      defaultTarget: 'philosophyItem1',
-      targets: ['philosophyItem1', 'philosophyItem2', 'philosophyItem3', 'philosophyItem4']
-    }
-  };
+  //
+  // Phase 4.1 회귀 수정: 원래는 섹션을 클릭해 "텍스트 편집 모드"에 들어가야만 나타나는
+  // 플로팅 툴바(renderSectionTextApply → appendAiAssistControl)에만 AI 버튼을 달았다.
+  // 로직 자체(canonicalSectionId/AI_ASSIST_SECTIONS 연결)는 정상이었지만 — 편집 모드 진입은
+  // 직전 섹션의 검증 실패 등으로 막힐 수 있고, 무엇보다 클릭하지 않으면 버튼 존재 자체를 알
+  // 방법이 없었다. 이제 academy_sections.js(ctx.aiAssistButton)가 정적 마크업에 항상
+  // 렌더한다 — 편집 모드 진입 여부와 무관하게 항상 보이고 항상 클릭 가능하다. task/target도
+  // 버튼의 data 속성에서 직접 읽어 activeTextField 추론(activeAiTarget) 같은 간접 로직을
+  // 없앴다.
   let aiSuggestionState = null;
 
-  function appendAiAssistControl(controls, section) {
-    const sectionId = canonicalSectionId(section.dataset.builderSectionKey);
-    const cfg = AI_ASSIST_SECTIONS[sectionId];
-    if (!cfg || !currentPreview) return;
-    controls.appendChild(
-      sectionControlButton('fa-wand-magic-sparkles', 'AI로 다듬기', '', () => openAiSuggestionModal(cfg)));
+  /** pageContent 전체에 위임 — innerHTML이 통째로 재렌더돼도(발행/섹션전환) 다시 배선할 필요 없다. */
+  function wireAiAssistTriggers() {
+    const pageContent = document.getElementById('pageContent');
+    if (!pageContent || pageContent.dataset.aiAssistWired === 'true') return;
+    pageContent.dataset.aiAssistWired = 'true';
+    pageContent.addEventListener('click', (event) => {
+      const trigger = event.target && event.target.closest ? event.target.closest('[data-ai-suggest-trigger]') : null;
+      if (!trigger || !pageContent.contains(trigger)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openAiSuggestionModal(trigger.dataset.aiSuggestTask, trigger.dataset.aiSuggestTarget);
+    });
   }
 
-  /** 철학 항목처럼 target이 여러 개인 Task는 지금 커서가 있는 항목을 우선한다. */
-  function activeAiTarget(cfg) {
-    if (!cfg.targets) return cfg.defaultTarget;
-    const active = activeTextField && activeTextField.indexOf('draft:') === 0
-      ? activeTextField.slice('draft:'.length)
-      : null;
-    return active && cfg.targets.indexOf(active) !== -1 ? active : cfg.defaultTarget;
-  }
-
-  function openAiSuggestionModal(cfg) {
+  function openAiSuggestionModal(task, target) {
     const modal = document.getElementById('builderAiSuggestionModal');
-    if (!modal || !currentPreview) return;
-    const target = activeAiTarget(cfg);
+    if (!modal || !currentPreview || !task || !target) return;
     const currentValue = draftText(currentPreview, target, '');
-    aiSuggestionState = { task: cfg.task, target, currentValue, suggestedValue: null };
+    aiSuggestionState = { task, target, currentValue, suggestedValue: null };
     setAiSuggestionCurrentText(currentValue);
     setAiSuggestionResultText('');
     clearAiSuggestionError();
@@ -4496,12 +4493,20 @@
     getActiveTextEditSection() { return activeTextEditSection; },
     // Phase 4 AI Suggestion 워크플로 검증용. 절대 원칙: openAiSuggestionModal(생성)만으로는
     // currentPreview가 바뀌지 않는다 — applyAiSuggestionToBuilder를 호출해야만 바뀐다.
+    // task/target은 이제 트리거 버튼의 data 속성에서 직접 오므로 openAiSuggestionModal이
+    // 두 값을 인자로 받는다(더 이상 AI_ASSIST_SECTIONS 같은 간접 조회 테이블이 없다).
     openAiSuggestionModal,
     applyAiSuggestionToBuilder,
     getAiSuggestionState: () => aiSuggestionState,
-    aiAssistSectionsForTest: AI_ASSIST_SECTIONS,
     loadCompletionCheck,
-    renderCompletionCheck
+    renderCompletionCheck,
+    // 실제 클릭 위임 배선. "AI로 다듬기" 버튼이 실제 렌더 마크업에서 클릭으로 도달 가능한지
+    // (내부 함수를 직접 호출하는 우회가 아니라) 검증하는 회귀 테스트 전용 훅.
+    wireAiAssistTriggers,
+    wireAiSuggestionEditing,
+    wireTextEditing,
+    wirePreviewSectionSelection,
+    enterSectionTextEditMode
   });
 
   function readJson(key) {

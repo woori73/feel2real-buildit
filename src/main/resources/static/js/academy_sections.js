@@ -550,6 +550,7 @@
                 ${ctx.editableText({ tag: 'div', className: 'principal-name', draftKey: 'principalName', value: name })}
                 ${ctx.editableText({ tag: 'div', className: 'principal-role', draftKey: 'principalRole', value: role })}
                 ${ctx.editableText({ tag: 'div', className: 'principal-desc', draftKey: 'principalDesc', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text' })}
+                ${ctx.aiAssistButton('PRINCIPAL_INTRO', 'principalDesc')}
                 <ul class="principal-career"${ctx.principalCareerListAttrs()}>${careerItems}</ul>
                 ${ctx.principalCareerFooter()}
                 ${ctx.editableText({ tag: 'div', className: 'principal-bottom', draftKey: 'principalQuote', value: quote, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text' })}
@@ -1263,7 +1264,9 @@
       principalCareerItem(text) {
         return `<li><span class="li-check" aria-hidden="true">✓</span><span class="principal-career-text">${escapeHtml(text)}</span></li>`;
       },
-      principalCareerFooter() { return ''; }
+      principalCareerFooter() { return ''; },
+      // 공개 페이지에는 편집 진입점이 나가면 안 된다(방문자에게 "AI로 다듬기" 버튼이 보이면 안 됨).
+      aiAssistButton() { return ''; }
     });
   }
 
@@ -1435,7 +1438,7 @@
       },
       philosophyCard(text, index) {
         const draftKey = 'philosophyItem' + (index + 1);
-        return `<div class="p-card" data-reveal-item><span class="n">원칙 ${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p></div>`;
+        return `<div class="p-card" data-reveal-item><span class="n">원칙 ${String(index + 1).padStart(2, '0')}</span><p data-builder-draft="${draftKey}" contenteditable="false" spellcheck="false">${escapeHtml(text)}</p>${this.aiAssistButton('PHILOSOPHY_ITEM', draftKey)}</div>`;
       },
       // 빌더 캔버스: 편집 UX 우선 — 정적 그리드로 프리뷰(공개 페이지는 횡스크롤 컬렉션).
       philosophyCards(items) {
@@ -1491,6 +1494,17 @@
       },
       principalCareerFooter() {
         return '<button type="button" class="principal-career-add" data-principal-career-add>＋ 약력 추가</button>';
+      },
+      /**
+       * Phase 4 버그 회귀 수정: 이전에는 섹션을 클릭해 "편집 모드"에 들어가야만 나타나는
+       * 플로팅 툴바(renderSectionTextApply)에만 AI 버튼을 달았다 — 발견하기 어렵고, 그
+       * 진입 자체가 막히는 경로(직전 섹션 검증 실패 등)가 있으면 아예 나타나지 않았다.
+       * 이제는 정적 마크업에 항상 렌더한다 — 클릭 한 번으로 바로 보이고 항상 클릭 가능하다.
+       * task/target은 data 속성에 그대로 실어 보내 academy_builder.js가 별도 매핑 없이
+       * 클릭된 버튼에서 직접 읽는다(AI_ASSIST_SECTIONS 같은 간접 조회를 없앰).
+       */
+      aiAssistButton(task, target) {
+        return `<button type="button" class="builder-ai-assist-inline" data-ai-suggest-trigger data-ai-suggest-task="${escapeAttr(task)}" data-ai-suggest-target="${escapeAttr(target)}" aria-label="AI로 다듬기">✨ AI로 다듬기</button>`;
       }
     });
   }

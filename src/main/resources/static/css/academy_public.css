@@ -683,6 +683,14 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .builder-public-preview [data-principal-career-item]{cursor:text;border-radius:6px;outline:2px dashed transparent;outline-offset:2px;transition:outline .15s ease,background .15s ease;}
 .builder-public-preview [data-principal-career-item]:hover{outline-color:rgba(250,204,21,.6);background:rgba(250,204,21,.1);}
 .builder-public-preview [data-principal-career-item]:focus{outline:3px solid #facc15;background:rgba(250,204,21,.16);}
+
+/* Phase 4.1: AI 제안 트리거. 정적 마크업에 항상 렌더하되(편집 모드 진입 여부와 무관하게
+   항상 클릭 가능), 공개 페이지에서는 절대 나오면 안 된다 — ctx.aiAssistButton()이 공개
+   페이지에서는 애초에 빈 문자열을 반환하지만, career-add/intro-feature-add와 같은 이중
+   안전장치로 기본 숨김 + .builder-public-preview 안에서만 노출한다. */
+.builder-ai-assist-inline{display:none;}
+.builder-public-preview .builder-ai-assist-inline{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 11px;border:1px solid #4A7FD4;border-radius:999px;background:rgba(74,127,212,.1);color:#0C238A;font-size:.78rem;font-weight:800;cursor:pointer;}
+.builder-public-preview .builder-ai-assist-inline:hover{background:rgba(74,127,212,.2);}
 /* ── sec-videos 수업 영상 재생목록 ── 세로 숏폼 기준이라 메인 플레이어를 세로 비율로 두고,
    오른쪽 리스트는 스크롤시킨다. 좁은 화면에서는 리스트를 아래로 내려 가로 스크롤로 바꾼다. */
 .video-playlist-layout{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;align-items:start;}
