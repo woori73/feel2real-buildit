@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.c
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiIdentitySigner;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -10,10 +11,6 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,16 +31,13 @@ public class BuildItWikiProxyController {
   private static final String WIKI_WORKSPACE_HEADER = "X-BuildIt-Wiki-Workspace";
   private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   private final AuthenticatedUserResolver authenticatedUserResolver;
-  private final byte[] identitySecret;
+  private final WikiIdentitySigner identitySigner;
 
   public BuildItWikiProxyController(
       AuthenticatedUserResolver authenticatedUserResolver,
-      @Value("${app.wiki.identity-secret:${app.jwt.secret}}") String identitySecret) {
+      WikiIdentitySigner identitySigner) {
     this.authenticatedUserResolver = authenticatedUserResolver;
-    this.identitySecret = identitySecret.getBytes(StandardCharsets.UTF_8);
-    if (this.identitySecret.length < 32) {
-      throw new IllegalStateException("Wiki identity secret must be at least 32 bytes");
-    }
+    this.identitySigner = identitySigner;
   }
 
   @RequestMapping("/problem-generator/wiki/api/**")
@@ -65,7 +59,7 @@ public class BuildItWikiProxyController {
         .method(request.getMethod(), body.length == 0 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(body));
     String contentType = request.getHeader("Content-Type");
     if (contentType != null) builder.header("Content-Type", contentType);
-    if (principal != null) addTrustedIdentity(builder, principal);
+    if (principal != null) identitySigner.sign(builder, principal);
     if (principal != null) {
       String workspaceOverride = request.getHeader(WIKI_WORKSPACE_HEADER);
       if (workspaceOverride != null && !workspaceOverride.isBlank()) {
@@ -93,22 +87,6 @@ public class BuildItWikiProxyController {
       response.headers().firstValue("mcp-session-id").ifPresent(v -> out.header("Mcp-Session-Id", v));
     }
     return out.body(response.body());
-  }
-
-  private void addTrustedIdentity(
-      HttpRequest.Builder builder, JwtTokenProvider.AuthenticatedPrincipal principal) throws Exception {
-    String timestamp = Long.toString(Instant.now().getEpochSecond());
-    String payload = principal.userId() + "\n" + principal.loginId() + "\n"
-        + principal.role() + "\n" + timestamp;
-    Mac mac = Mac.getInstance("HmacSHA256");
-    mac.init(new SecretKeySpec(identitySecret, "HmacSHA256"));
-    String signature = java.util.HexFormat.of().formatHex(
-        mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
-    builder.header("X-BuildIt-User-Id", principal.userId().toString());
-    builder.header("X-BuildIt-Login-Id", principal.loginId());
-    builder.header("X-BuildIt-Role", principal.role());
-    builder.header("X-BuildIt-Timestamp", timestamp);
-    builder.header("X-BuildIt-Signature", signature);
   }
 
   private boolean isMcpPath(String targetPath) {

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.sun.net.httpserver.HttpServer;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiIdentitySigner;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +59,7 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
           new JwtTokenProvider.AuthenticatedPrincipal(1L, "test-user", "STUDENT")));
       return new BuildItWikiProxyController(
           resolver,
-          "wiki-proxy-test-identity-secret-32-bytes-minimum");
+          new WikiIdentitySigner("wiki-proxy-test-identity-secret-32-bytes-minimum"));
     }
 
     @Bean
