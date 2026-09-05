@@ -43,27 +43,33 @@ class AcademyBuilderTemplateContractTest {
     // then — 섹션 마크업 정본(academy_sections.js)이 소비자보다 먼저 로드되어야 한다.
     // Phase 5B: AI Guide 순수 헬퍼 모듈도 academy_builder.js보다 먼저 로드된다
     // (academy_builder_editable_guide.js 와 같은 분리·로드 순서 규칙).
+    // Phase 5B.1: Bildi Sidekick 공용 엔진(academy_world.js)과 reveal primitive도 그 앞에 로드된다.
     assertThat(html)
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
             "<script src=\"/js/academy_sections.js?v=20260905-4\"></script>",
-            "<script src=\"/js/academy_builder_ai_guide.js?v=20260906-1\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260906-1\"></script>");
+            "<script src=\"/js/academy_reveal.js?v=20260901-5\"></script>",
+            "<script src=\"/js/academy_world.js?v=20260907-1\"></script>",
+            "<script src=\"/js/academy_builder_ai_guide.js?v=20260907-1\"></script>",
+            "<script src=\"/js/academy_builder.js?v=20260907-1\"></script>");
   }
 
   @Test
-  @DisplayName("given academy builder template when 읽기 then AI Guide 패널·토글 골격과 CSS가 있고 기존 AI 기능 진입점은 그대로다")
+  @DisplayName("given academy builder template when 읽기 then AI Guide/Bildi 골격·CSS가 있고 기존 AI 기능 진입점은 그대로다")
   void builder_template_contains_ai_guide_scaffold_without_replacing_existing_ai() throws Exception {
     // given
     String html = Files.readString(Path.of("src/main/resources/templates/tutor/academy_builder.html"));
 
-    // when & then — Phase 5B AI Guide는 새 골격만 추가하고 기존 진입점을 대체하지 않는다.
+    // when & then — Phase 5B / 5B.1 은 새 골격만 추가하고 기존 진입점을 대체하지 않는다.
     assertThat(html)
         .contains("/css/academy_builder_ai_guide.css")
+        .contains("/css/academy_world.css")
         .contains("id=\"builderAiGuideToggle\"")
         .contains("id=\"builderAiGuidePanel\"")
         .contains("id=\"builderAiGuideBody\"")
         .contains("id=\"builderAiGuideSteps\"")
+        // Phase 5B.1: Bildi Sidekick 스테이지(canvas-frame 오버레이)
+        .contains("id=\"builderBildiStage\"")
         // 우측 고정 패널이지만 예전에 제거된 rightPanel 배선을 되살리지 않는다.
         .doesNotContain("id=\"rightPanel\"")
         // 기존 Phase 4 / 5A AI 진입점은 유지

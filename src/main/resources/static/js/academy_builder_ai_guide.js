@@ -119,6 +119,23 @@
     .filter(function (step) { return step.kind === 'text' && step.target; })
     .map(function (step) { return step.target; });
 
+  // Phase 5B.1 — 각 Guide step이 암시하는 World Environment scene(academy_world.js SCENES id).
+  // Bildi가 그 step 섹션으로 날아갈 때 하늘이 함께 바뀐다. STEP 객체를 건드리지 않고 분리 map
+  // 으로 둔다(기존 STEPS 계약 유지).
+  var STEP_SCENES = Object.freeze({
+    style: 'morning',
+    hero: 'day',
+    principal: 'day',
+    philosophy: 'clouds',
+    intro: 'clouds',
+    programs: 'sunset',
+    videos: 'night',
+    review: 'stars'
+  });
+  function sceneForStep(id) {
+    return STEP_SCENES[id] || 'day';
+  }
+
   function stepById(id) {
     return STEPS.find(function (step) { return step.id === id; }) || null;
   }
@@ -314,6 +331,8 @@
     STEPS,
     STEP_IDS,
     TEXT_TARGETS,
+    STEP_SCENES,
+    sceneForStep,
     stepById,
     stepIndex,
     firstStepId,
