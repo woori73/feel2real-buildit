@@ -6,12 +6,14 @@ import f2r.tutor_solution.private_tutor_solution_back.config.WebMvcConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiGuideSuggestion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiSuggestion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyCompletionResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiGenerationException;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiGuideService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiProposalService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiSuggestionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyCompletionCheckService;
@@ -61,6 +63,7 @@ class AcademyAiControllerTest {
   @MockitoBean AcademyAiContextService contextService;
   @MockitoBean AcademyAiSuggestionService suggestionService;
   @MockitoBean AcademyAiProposalService proposalService;
+  @MockitoBean AcademyAiGuideService guideService;
   @MockitoBean AcademyCompletionCheckService completionCheckService;
   @MockitoBean AiProvider aiProvider;
 
@@ -112,6 +115,51 @@ class AcademyAiControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"task\":\"DELETE_ACADEMY\",\"target\":\"principalDesc\",\"currentValue\":\"x\"}"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void anonymousRequestToGuideSuggestionsIsRejected() throws Exception {
+    mockMvc.perform(post("/api/tutor/academy/ai/guide-suggestions")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"target\":\"principalDesc\",\"answer\":\"학교별 내신 분석\"}"))
+        .andExpect(status().is4xxClientError());
+  }
+
+  @Test
+  void authenticatedTutorCanRequestGuideSuggestions() throws Exception {
+    when(guideService.generate(any(), any(), any(), any())).thenReturn(
+        new AcademyAiGuideSuggestion("principalDesc", List.of("후보 A", "후보 B", "후보 C")));
+
+    mockMvc.perform(post("/api/tutor/academy/ai/guide-suggestions")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"target\":\"principalDesc\",\"answer\":\"학교별 내신 분석\",\"style\":\"전문적이지만 친근하게\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.target").value("principalDesc"))
+        .andExpect(jsonPath("$.candidates[0]").value("후보 A"))
+        .andExpect(jsonPath("$.candidates.length()").value(3));
+  }
+
+  @Test
+  void guideSuggestionsWithoutTargetIsRejected() throws Exception {
+    mockMvc.perform(post("/api/tutor/academy/ai/guide-suggestions")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"answer\":\"학교별 내신 분석\"}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void guideSuggestionsSurfaceGenerationFailureAsServiceUnavailable() throws Exception {
+    when(guideService.generate(any(), any(), any(), any()))
+        .thenThrow(new AcademyAiGenerationException("AI가 사용할 만한 추천 문구를 만들지 못했습니다."));
+
+    mockMvc.perform(post("/api/tutor/academy/ai/guide-suggestions")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"target\":\"principalDesc\",\"answer\":\"x\"}"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("AI가 사용할 만한 추천 문구를 만들지 못했습니다."));
   }
 
   @Test

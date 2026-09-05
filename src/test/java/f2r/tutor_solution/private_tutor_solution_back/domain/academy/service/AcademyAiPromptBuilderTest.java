@@ -107,4 +107,29 @@ class AcademyAiPromptBuilderTest {
     String prompt = builder.build(AcademyAiTaskType.ACADEMY_COMPOSE, context, null, null, null);
     assertThat(prompt).contains("\"proposals\"");
   }
+
+  @Test
+  @DisplayName("given GUIDE_TEXT 카드형 target when 프롬프트 생성 then 후보 배열·짧은 길이 규칙·hallucination 금지가 포함된다")
+  void guideText_shortTarget_prompt() {
+    String prompt = builder.build(
+        AcademyAiTaskType.GUIDE_TEXT, context, "philosophyItem1", "", "이 영역에서 강조하려는 것: 학교별 내신 분석");
+
+    assertThat(prompt).contains("JSON 배열");
+    assertThat(prompt).contains("45자 이내");
+    assertThat(prompt).contains("학교별 내신 분석");
+    // 사용자가 말하지 않은 실적/수치/경력을 지어내지 말라는 제약을 못박는다.
+    assertThat(prompt).contains("지어내지").contains("합격 실적");
+  }
+
+  @Test
+  @DisplayName("given GUIDE_TEXT 문단형 target(principalDesc/intro) when 프롬프트 생성 then 카드형보다 긴 길이 규칙을 쓴다")
+  void guideText_longTarget_prompt() {
+    String shortPrompt = builder.build(AcademyAiTaskType.GUIDE_TEXT, context, "philosophyItem1", "", "x");
+    String longPrompt = builder.build(AcademyAiTaskType.GUIDE_TEXT, context, "principalDesc", "", "x");
+    String heroPrompt = builder.build(AcademyAiTaskType.GUIDE_TEXT, context, "intro", "", "x");
+
+    assertThat(shortPrompt).contains("45자 이내");
+    assertThat(longPrompt).contains("180자 이내").doesNotContain("45자 이내");
+    assertThat(heroPrompt).contains("180자 이내");
+  }
 }

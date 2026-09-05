@@ -2,11 +2,13 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiGuideSuggestion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiSuggestion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyCompletionResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiGuideService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiProposalService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiSuggestionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyCompletionCheckService;
@@ -35,6 +37,7 @@ public class AcademyAiController {
   private final AcademyAiContextService contextService;
   private final AcademyAiSuggestionService suggestionService;
   private final AcademyAiProposalService proposalService;
+  private final AcademyAiGuideService guideService;
   private final AcademyCompletionCheckService completionCheckService;
   private final AiProvider aiProvider;
 
@@ -79,6 +82,23 @@ public class AcademyAiController {
     return ResponseEntity.ok(proposalService.generate(principal, instructions));
   }
 
+  /**
+   * Phase 5B — AI Guided Builder 한 단계의 문구 후보 2~3개를 돌려준다. READ 전용이다: 이 호출
+   * 만으로는 {@code builderDraft}도 Production도 바뀌지 않는다. 실제 반영은 사용자가 Guide
+   * 패널에서 후보의 "적용"을 눌렀을 때 기존 인라인 편집과 같은 경로로만 이뤄진다.
+   * academyId를 받지 않는다.
+   */
+  @PostMapping("/guide-suggestions")
+  public ResponseEntity<AcademyAiGuideSuggestion> guideSuggestions(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody GuideSuggestionRequest request) {
+    if (request == null || request.target() == null) {
+      throw new IllegalArgumentException("target이 필요합니다.");
+    }
+    return ResponseEntity.ok(guideService.generate(
+        principal, request.target(), request.answer(), request.style()));
+  }
+
   @GetMapping("/completion")
   public ResponseEntity<AcademyCompletionResult> completion(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
@@ -102,4 +122,11 @@ public class AcademyAiController {
 
   /** @param instructions 사용자가 "어떤 Academy로 만들고 싶은지" 자유 입력(선택, 200자 제한은 서비스가 검증). */
   public record AcademyProposalRequest(String instructions) {}
+
+  /**
+   * @param target 추천 대상 builderDraft key(또는 top-level {@code intro}). allowlist 밖이면 서비스가 거부한다.
+   * @param answer 사용자가 이 Guide 단계에서 답한 강조점(선택).
+   * @param style Guide 세션에서 정한 홈페이지 스타일/톤(선택).
+   */
+  public record GuideSuggestionRequest(String target, String answer, String style) {}
 }

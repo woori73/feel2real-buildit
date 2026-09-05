@@ -223,6 +223,7 @@
     wireLessonScheduleToggle();
     wirePreviewSectionSelection();
     wireEditableGuide();
+    wireAiGuide(preview);
     wireHeaderSectionApply();
     if (preview && preview.name) toast(`👋 ${preview.name} 빌더에 오신 걸 환영합니다!`, 'fa-graduation-cap');
     wirePublish(request);
@@ -1183,10 +1184,17 @@
       if (!target || !pageContent.contains(target)) return;
       const section = target.closest('[data-builder-section-key]');
       if (!section) return;
+      // 이미 편집 중인 대상을 다시 클릭한 경우: preventDefault 하지 않고 브라우저가
+      // 클릭 위치에 caret을 놓게 그대로 둔다. 여기서 재진입 처리를 하면 caret이 매번
+      // 문장 끝/전체로 튀어 "원하는 글자 위치에서 못 고치는" 기존 버그가 재현된다.
+      if (target.getAttribute('contenteditable') === 'true' && activeTextEditSection === section) {
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
+      const point = { x: event.clientX, y: event.clientY };
       if (!enterSectionTextEditMode(section)) return;
-      focusEditableTarget(target);
+      focusEditableTarget(target, point);
     });
     pageContent.addEventListener('focusin', (event) => {
       const target = editableTextTarget(event.target);
@@ -3368,6 +3376,49 @@
     selection.addRange(range);
   }
 
+  /**
+   * 클릭 좌표(x,y)를 그 지점의 caret 위치로 변환한다. 브라우저마다 API가 갈려
+   * (Chrome/Safari는 caretRangeFromPoint, Firefox는 caretPositionFromPoint) 둘 다 시도한다.
+   * 좌표 정보가 없거나 지원되지 않으면 null.
+   */
+  function caretRangeFromPoint(x, y) {
+    if (typeof x !== 'number' || typeof y !== 'number') return null;
+    if (document.caretRangeFromPoint) {
+      return document.caretRangeFromPoint(x, y);
+    }
+    if (document.caretPositionFromPoint) {
+      const pos = document.caretPositionFromPoint(x, y);
+      if (!pos || !pos.offsetNode) return null;
+      const range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.collapse(true);
+      return range;
+    }
+    return null;
+  }
+
+  /**
+   * Direct Text Editing UX(Phase 5B): 편집 진입 시 기존 문구 "전체"를 selection 하지 않는다.
+   * 사용자가 클릭한 글자 위치에 caret 하나만 놓아, 일반 문서 편집기처럼 그 자리에서 바로
+   * 수정할 수 있게 한다. 클릭 좌표가 대상 밖이거나 좌표가 없으면 문장 끝으로 collapse 한다
+   * (여전히 전체 선택은 아니다).
+   */
+  function placeCaretAtPoint(target, point) {
+    const selection = window.getSelection && window.getSelection();
+    if (!selection || !target) return;
+    let range = point ? caretRangeFromPoint(point.x, point.y) : null;
+    if (range && (!range.startContainer || !target.contains(range.startContainer))) {
+      range = null;
+    }
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(target);
+      range.collapse(false);
+    }
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
   function enterSectionTextEditMode(section) {
     const pageContent = document.getElementById('pageContent');
     if (!pageContent || !section) return false;
@@ -4008,6 +4059,423 @@
     if (applyAll) applyAll.disabled = pending === 0;
   }
 
+  // ── AI Guided Academy Builder (Phase 5B) ─────────────────────────────────
+  // "Academy 홈페이지 제작 전용 AI Guide". 기존 [AI로 다듬기](문장 편집자) / [AI로 Academy
+  // 구성하기](전체 진단자)와 역할이 겹치지 않는 세 번째 기능 = 제작 진행자다.
+  //
+  // 절대 원칙(Phase 4 / 5A와 동일):
+  //   1) Guide는 자동 Publish 하지 않는다. 자동 section visibility 변경도 안 한다. section 삭제 안 한다.
+  //   2) 문구 "적용"은 사용자가 눌러야만, 기존 인라인 편집과 완전히 같은 경로
+  //      (currentPreview.pageSettings.builderDraft / intro → applyAcademyToLivePreview →
+  //       persistTextChangesAfterApply)로 반영된다. 별도 AI 저장 API가 없다.
+  //   3) 문구 추천은 새 AI 아키텍처가 아니라 기존 파이프라인(Context→Prompt→Provider)을 재사용한
+  //      POST /api/tutor/academy/ai/guide-suggestions 하나만 쓴다.
+  //   4) 순수 로직(스텝 정의·세션 상태·진행률·후보 파싱)은 academy_builder_ai_guide.js가 갖는다.
+  const AI_GUIDE = typeof window !== 'undefined' ? window.F2RAcademyAiGuide : null;
+  let aiGuideSession = null;
+  let aiGuidePending = null; // { target, candidates: [] } — 현재 스텝의 마지막 추천 결과
+  let aiGuideError = '';
+  let aiGuideBusy = false;
+  let aiGuideFocusTimer = null;
+  let aiGuideExistingSteps = [];
+
+  function readAiGuideSession() {
+    if (!AI_GUIDE) return null;
+    try { return JSON.parse(sessionStorage.getItem(AI_GUIDE.SESSION_STORAGE_KEY) || 'null'); }
+    catch (_) { return null; }
+  }
+  function writeAiGuideSession() {
+    if (!AI_GUIDE || !aiGuideSession) return;
+    try { sessionStorage.setItem(AI_GUIDE.SESSION_STORAGE_KEY, JSON.stringify(aiGuideSession)); }
+    catch (_) { /* privacy 모드 등 — Guide는 저장 실패해도 계속 동작한다 */ }
+  }
+  function readAiGuidePanelOpen() {
+    if (!AI_GUIDE) return null;
+    try {
+      const raw = JSON.parse(sessionStorage.getItem(AI_GUIDE.PANEL_STATE_STORAGE_KEY) || 'null');
+      return raw && typeof raw.open === 'boolean' ? raw.open : null;
+    } catch (_) { return null; }
+  }
+  function writeAiGuidePanelOpen(open) {
+    if (!AI_GUIDE) return;
+    try { sessionStorage.setItem(AI_GUIDE.PANEL_STATE_STORAGE_KEY, JSON.stringify({ open: !!open })); }
+    catch (_) { /* no-op */ }
+  }
+
+  function wireAiGuide(preview) {
+    if (!AI_GUIDE) return; // 모듈 미로드 시 조용히 비활성 — Builder 자체는 계속 동작한다.
+    const panel = document.getElementById('builderAiGuidePanel');
+    const toggle = document.getElementById('builderAiGuideToggle');
+    if (!panel || !toggle || panel.dataset.wired === 'true') return;
+    panel.dataset.wired = 'true';
+
+    aiGuideSession = AI_GUIDE.createSession(readAiGuideSession());
+    aiGuideExistingSteps = AI_GUIDE.stepsWithExistingContent(preview || currentPreview);
+
+    toggle.addEventListener('click', () => setAiGuideOpen(!panel.classList.contains('is-open')));
+    bindClick('builderAiGuideClose', () => setAiGuideOpen(false));
+    bindClick('builderAiGuideRestart', restartAiGuide);
+    bindClick('builderAiGuidePrev', () => moveAiGuideStep('prev'));
+    bindClick('builderAiGuideNext', () => moveAiGuideStep('next'));
+    bindClick('builderAiGuideSkip', skipAiGuideStep);
+
+    const steps = document.getElementById('builderAiGuideSteps');
+    if (steps) steps.addEventListener('click', (event) => {
+      const chip = event.target && event.target.closest ? event.target.closest('[data-guide-step]') : null;
+      if (chip) goAiGuideStep(chip.dataset.guideStep);
+    });
+    const body = document.getElementById('builderAiGuideBody');
+    if (body) body.addEventListener('click', onAiGuideBodyClick);
+
+    // 최초 진입은 패널을 연다(§4/§5). 이전에 접었으면 접힌 채로 둔다.
+    const savedOpen = readAiGuidePanelOpen();
+    setAiGuideOpen(savedOpen == null ? true : savedOpen, { skipPersist: savedOpen == null });
+    renderAiGuide();
+    const step = currentAiGuideStep();
+    if (panel.classList.contains('is-open') && step.sectionKey) focusAiGuideSection(step.sectionKey);
+  }
+
+  function bindClick(id, handler) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', handler);
+  }
+
+  function setAiGuideOpen(open, options) {
+    const opts = options || {};
+    const panel = document.getElementById('builderAiGuidePanel');
+    const toggle = document.getElementById('builderAiGuideToggle');
+    if (!panel || !toggle) return;
+    panel.classList.toggle('is-open', !!open);
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    toggle.setAttribute('aria-pressed', open ? 'true' : 'false');
+    document.body.classList.toggle('ai-guide-open', !!open);
+    if (!opts.skipPersist) writeAiGuidePanelOpen(!!open);
+    if (open) {
+      renderAiGuide();
+      if (!opts.skipPersist) {
+        const step = currentAiGuideStep();
+        if (step.sectionKey) focusAiGuideSection(step.sectionKey);
+      }
+    } else {
+      clearAiGuideSectionFocus();
+    }
+  }
+
+  function currentAiGuideStep() {
+    return AI_GUIDE.stepById(aiGuideSession && aiGuideSession.currentStepId) || AI_GUIDE.STEPS[0];
+  }
+
+  function restartAiGuide() {
+    aiGuideSession = AI_GUIDE.createSession(null);
+    aiGuidePending = null;
+    aiGuideError = '';
+    writeAiGuideSession();
+    renderAiGuide();
+    const step = currentAiGuideStep();
+    if (step.sectionKey) focusAiGuideSection(step.sectionKey);
+    toast('가이드를 처음부터 다시 시작합니다.', 'fa-compass');
+  }
+
+  function goAiGuideStep(stepId) {
+    aiGuideSession = AI_GUIDE.goToStep(aiGuideSession, stepId);
+    aiGuidePending = null;
+    aiGuideError = '';
+    writeAiGuideSession();
+    renderAiGuide();
+    const step = currentAiGuideStep();
+    if (step.sectionKey) focusAiGuideSection(step.sectionKey);
+  }
+
+  function moveAiGuideStep(direction) {
+    const current = currentAiGuideStep();
+    const targetId = direction === 'prev'
+      ? AI_GUIDE.prevStepId(current.id)
+      : AI_GUIDE.nextStepId(current.id);
+    if (!targetId) {
+      if (direction === 'next') {
+        aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, current.id);
+        writeAiGuideSession();
+        toast('가이드를 모두 마쳤습니다. 상단 발행 버튼으로 저장하세요.', 'fa-flag-checkered');
+        renderAiGuide();
+      }
+      return;
+    }
+    if (direction === 'next') {
+      aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, current.id);
+    }
+    goAiGuideStep(targetId);
+  }
+
+  function skipAiGuideStep() {
+    const current = currentAiGuideStep();
+    aiGuideSession = AI_GUIDE.markSkipped(aiGuideSession, current.id);
+    const nextId = AI_GUIDE.nextStepId(current.id);
+    aiGuidePending = null;
+    if (nextId) {
+      goAiGuideStep(nextId);
+    } else {
+      writeAiGuideSession();
+      renderAiGuide();
+    }
+  }
+
+  function clearAiGuideSectionFocus() {
+    if (aiGuideFocusTimer) { clearTimeout(aiGuideFocusTimer); aiGuideFocusTimer = null; }
+    const pageContent = document.getElementById('pageContent');
+    if (!pageContent) return;
+    pageContent.querySelectorAll('.ai-guide-section-focus')
+      .forEach((el) => el.classList.remove('ai-guide-section-focus'));
+  }
+
+  /** Guide가 "이제 이 영역입니다"라고 하면 해당 미리보기 섹션으로 이동하고 잠깐 강조한다(§8). */
+  function focusAiGuideSection(sectionKey) {
+    if (!sectionKey) return;
+    clearAiGuideSectionFocus();
+    scrollPreviewToSection(sectionKey);
+    const target = previewSectionTarget(sectionKey);
+    if (!target) return;
+    target.classList.add('ai-guide-section-focus');
+    aiGuideFocusTimer = setTimeout(() => {
+      target.classList.remove('ai-guide-section-focus');
+      aiGuideFocusTimer = null;
+    }, 2600);
+  }
+
+  function onAiGuideBodyClick(event) {
+    const el = event.target && event.target.closest ? event.target.closest('[data-guide-action]') : null;
+    if (!el) return;
+    const action = el.dataset.guideAction;
+    if (action === 'style') {
+      selectAiGuideStyle(el.dataset.guideValue || '');
+    } else if (action === 'recommend') {
+      requestAiGuideRecommendations();
+    } else if (action === 'apply') {
+      applyAiGuideCandidate(Number(el.dataset.guideIndex));
+    } else if (action === 'manual-focus') {
+      const step = currentAiGuideStep();
+      setAiGuideOpen(true);
+      focusAiGuideSection(step.sectionKey);
+      toast('미리보기에서 해당 영역을 직접 클릭해 수정할 수 있습니다.', 'fa-pen');
+    } else if (action === 'open-compose') {
+      const trigger = document.getElementById('builderComposeTrigger');
+      if (trigger) trigger.click();
+    } else if (action === 'keep-existing') {
+      const step = currentAiGuideStep();
+      aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, step.id);
+      const nextId = AI_GUIDE.nextStepId(step.id);
+      if (nextId) goAiGuideStep(nextId); else { writeAiGuideSession(); renderAiGuide(); }
+    } else if (action === 'review-existing') {
+      const step = currentAiGuideStep();
+      aiGuideExistingSteps = aiGuideExistingSteps.filter((id) => id !== step.id);
+      renderAiGuide();
+    }
+  }
+
+  function selectAiGuideStyle(value) {
+    const input = document.getElementById('builderAiGuideStyleInput');
+    const typed = input ? String(input.value || '').trim() : '';
+    const chosen = value || typed;
+    if (!chosen) { toast('원하는 느낌을 골라주시거나 직접 적어주세요.', 'fa-circle-info'); return; }
+    aiGuideSession.desiredStyle = chosen.slice(0, 200);
+    aiGuideSession.tone = chosen.slice(0, 200);
+    aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, 'style');
+    writeAiGuideSession();
+    const nextId = AI_GUIDE.nextStepId('style');
+    if (nextId) goAiGuideStep(nextId); else renderAiGuide();
+  }
+
+  async function requestAiGuideRecommendations() {
+    if (aiGuideBusy) return;
+    const step = currentAiGuideStep();
+    if (!step.target || !currentPreview) return;
+    const answerInput = document.getElementById('builderAiGuideAnswer');
+    const answer = answerInput ? String(answerInput.value || '').trim() : '';
+    if (step.id !== 'style') aiGuideSession.strongestPoint = answer.slice(0, 400);
+    writeAiGuideSession();
+    aiGuideBusy = true;
+    aiGuidePending = null;
+    aiGuideError = '';
+    renderAiGuide();
+    try {
+      const res = await fetch('/api/tutor/academy/ai/guide-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          target: step.target,
+          answer: answer,
+          style: aiGuideSession.desiredStyle || ''
+        })
+      });
+      if (!res.ok) {
+        aiGuideRenderError(await aiErrorMessage(res, 'AI 추천을 만들지 못했습니다.'));
+        return;
+      }
+      const payload = await res.json();
+      const list = AI_GUIDE.parseCandidates(payload && payload.candidates, {
+        maxLength: step.long ? 220 : 70,
+        limit: 3
+      });
+      if (!list.length) {
+        aiGuideRenderError('추천 문구를 이해하지 못했습니다. 다시 시도해 주세요.');
+        return;
+      }
+      aiGuidePending = { target: step.target, candidates: list };
+      renderAiGuide();
+    } catch (_) {
+      aiGuideRenderError('네트워크 연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      aiGuideBusy = false;
+    }
+  }
+
+  function aiGuideRenderError(message) {
+    aiGuideBusy = false;
+    aiGuideError = message || 'AI 추천을 만들지 못했습니다.';
+    renderAiGuide();
+  }
+
+  /**
+   * 후보 "적용" = 기존 인라인 편집과 완전히 같은 경로. builderDraft(또는 top-level intro)만
+   * currentPreview에 반영하고 미리보기를 재렌더한 뒤, 발행 여부에 따라 persistTextChangesAfterApply가
+   * "발행 필요" 안내 / pending 저장으로 갈린다. Publish는 절대 자동 실행하지 않는다.
+   */
+  function applyAiGuideCandidate(index) {
+    if (!aiGuidePending || !currentPreview) return;
+    const value = aiGuidePending.candidates[index];
+    const target = aiGuidePending.target;
+    if (!value || !target) return;
+    // 서버 allowlist와 별개로 프론트에서도 target을 한 번 더 확인한다(방어적 이중화).
+    if (target !== 'intro' && !AI_GUIDE.isGuideTextTarget(target)) {
+      toast('이 영역에는 자동 적용할 수 없습니다.', 'fa-triangle-exclamation');
+      return;
+    }
+    const changed = target === 'intro'
+      ? setGuideInlineText('intro', value)
+      : setGuideDraftText(target, value);
+    if (!changed) {
+      toast('이미 같은 문구입니다.', 'fa-circle-info');
+      return;
+    }
+    const step = currentAiGuideStep();
+    applyAcademyToLivePreview(currentPreview, step.sectionKey || 'sec-hero');
+    persistTextChangesAfterApply({});
+    aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, step.id);
+    writeAiGuideSession();
+    aiGuideExistingSteps = AI_GUIDE.stepsWithExistingContent(currentPreview);
+    aiGuidePending = null;
+    focusAiGuideSection(step.sectionKey);
+    toast('추천 문구를 미리보기에 반영했습니다. 상단 발행 버튼으로 저장하세요.', 'fa-wand-magic-sparkles');
+    renderAiGuide();
+  }
+
+  function setGuideInlineText(field, value) {
+    if (String(currentPreview[field] == null ? '' : currentPreview[field]) === value) return false;
+    currentPreview[field] = value;
+    return true;
+  }
+
+  function setGuideDraftText(key, value) {
+    if (draftText(currentPreview, key, '') === value) return false;
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    pageSettings.builderDraft = Object.assign({}, pageSettings.builderDraft || {}, { [key]: value });
+    currentPreview.pageSettings = pageSettings;
+    return true;
+  }
+
+  function renderAiGuide() {
+    if (!AI_GUIDE || !aiGuideSession) return;
+    const body = document.getElementById('builderAiGuideBody');
+    const stepsEl = document.getElementById('builderAiGuideSteps');
+    if (!body || !stepsEl) return;
+    const step = currentAiGuideStep();
+    const info = AI_GUIDE.progress(aiGuideSession);
+
+    const fill = document.getElementById('builderAiGuideProgressFill');
+    if (fill) fill.style.width = Math.round((info.doneCount / info.total) * 100) + '%';
+    setText('#builderAiGuideProgressText', info.position + ' / ' + info.total);
+    setText('#builderAiGuideProgressStep', step.title);
+
+    stepsEl.innerHTML = AI_GUIDE.STEPS.map((s) => {
+      let cls = 'ai-guide-step-chip';
+      if (s.id === step.id) cls += ' is-current';
+      else if (aiGuideSession.completedStepIds.indexOf(s.id) >= 0) cls += ' is-done';
+      else if (aiGuideSession.skippedStepIds.indexOf(s.id) >= 0) cls += ' is-skipped';
+      return `<button type="button" class="${cls}" data-guide-step="${escapeAttr(s.id)}">${escapeHtml(s.title)}</button>`;
+    }).join('');
+
+    const onboardingBubble = aiGuideSession.onboarded ? '' :
+      `<div class="ai-guide-bubble">Academy 홈페이지를 함께 만들어 보겠습니다. 완성된 Academy처럼 첫 화면 → 원장 소개 → 교육철학 → 프로그램 → 수업 콘텐츠 순서로 구성할 수 있습니다. 왼쪽 미리보기를 보면서 한 단계씩 진행해요.</div>`;
+    if (!aiGuideSession.onboarded) {
+      aiGuideSession.onboarded = true;
+      writeAiGuideSession();
+    }
+
+    let html = onboardingBubble
+      + `<div class="ai-guide-step-title">STEP ${info.position} · ${escapeHtml(step.title)}</div>`
+      + `<div class="ai-guide-bubble">${escapeHtml(step.guidance)}</div>`;
+
+    if (step.kind === 'style') {
+      html += renderAiGuideStyleStep();
+    } else if (step.kind === 'text') {
+      html += renderAiGuideTextStep(step);
+    } else if (step.kind === 'guidance') {
+      html += `<div class="ai-guide-actions">`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="manual-focus">이 영역 보기</button>`
+        + `</div><p class="ai-guide-note">이 영역은 전용 관리 화면에서 편집합니다. 준비되면 [다음]으로 넘어가세요.</p>`;
+    } else if (step.kind === 'finish') {
+      html += `<div class="ai-guide-actions">`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="open-compose">AI로 Academy 전체 점검</button>`
+        + `</div><p class="ai-guide-note">전체 진단은 기존 [AI로 Academy 구성하기] 기능을 그대로 사용합니다. 발행은 상단 [발행] 버튼으로 직접 하셔야 합니다.</p>`;
+    }
+
+    if (aiGuideBusy) html += `<div class="ai-guide-loading">AI가 문구를 만들고 있습니다…</div>`;
+    if (aiGuideError) html += `<div class="ai-guide-error">${escapeHtml(aiGuideError)}</div>`;
+
+    body.innerHTML = html;
+    // 스크롤/강조는 스텝이 바뀔 때만 한다(renderAiGuide는 타이핑·로딩 토글로도 불려서,
+    // 매번 미리보기를 스크롤하면 편집을 방해한다).
+  }
+
+  function renderAiGuideStyleStep() {
+    const selected = aiGuideSession.desiredStyle || '';
+    const options = AI_GUIDE.STYLE_OPTIONS.map((label) => {
+      const isSel = label === selected ? ' is-selected' : '';
+      return `<button type="button" class="ai-guide-style-option${isSel}" data-guide-action="style" data-guide-value="${escapeAttr(label)}">${escapeHtml(label)}</button>`;
+    }).join('');
+    return `<div class="ai-guide-question">${escapeHtml(currentAiGuideStep().question)}</div>`
+      + `<div class="ai-guide-style-options">${options}</div>`
+      + `<input type="text" id="builderAiGuideStyleInput" class="ai-guide-input" style="min-height:auto" maxlength="200" placeholder="예: 전문적인데 너무 딱딱하지 않게" value="${escapeAttr(selected)}">`
+      + `<div class="ai-guide-actions"><button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="style">이 방향으로 시작</button></div>`;
+  }
+
+  function renderAiGuideTextStep(step) {
+    // 이미 채워진 영역이면 먼저 "기존 유지 / 다시 검토"를 물어본다(§15) — AI가 덮어쓰지 않는다.
+    if (aiGuideExistingSteps.indexOf(step.id) >= 0) {
+      return `<div class="ai-guide-bubble">이 영역에는 이미 작성된 내용이 있습니다. 기존 내용을 유지하고 다음으로 넘어가거나, 다시 검토할 수 있습니다.</div>`
+        + `<div class="ai-guide-actions">`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="keep-existing">기존 유지하고 다음</button>`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="review-existing">다시 검토</button>`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="manual-focus">직접 수정</button>`
+        + `</div>`;
+    }
+    const answer = aiGuideSession.strongestPoint || '';
+    let html = `<div class="ai-guide-question">${escapeHtml(step.question)}</div>`
+      + `<textarea id="builderAiGuideAnswer" class="ai-guide-input" maxlength="400" placeholder="답을 적으면 AI가 문구를 추천합니다">${escapeHtml(answer)}</textarea>`
+      + `<div class="ai-guide-actions">`
+      + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="recommend"${aiGuideBusy ? ' disabled' : ''}>${aiGuidePending ? '다시 추천' : '문구 추천받기'}</button>`
+      + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="manual-focus">직접 작성</button>`
+      + `</div>`;
+    if (aiGuidePending && aiGuidePending.target === step.target) {
+      html += `<div class="ai-guide-candidates">` + aiGuidePending.candidates.map((text, index) =>
+        `<div class="ai-guide-candidate"><p>${escapeHtml(text)}</p>`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="apply" data-guide-index="${index}">적용</button></div>`
+      ).join('') + `</div>`
+      + `<p class="ai-guide-note">적용해도 발행되지 않습니다. 미리보기에만 반영되고, 저장은 상단 [발행] 버튼으로 직접 하셔야 합니다.</p>`;
+    }
+    return html;
+  }
+
   function wireMiniLecturesEditing() {
     const pageContent = document.getElementById('pageContent');
     if (pageContent && pageContent.dataset.miniLecturesWired !== 'true') {
@@ -4231,12 +4699,17 @@
     if (controls) controls.remove();
   }
 
-  function focusEditableTarget(target) {
+  /**
+   * @param point (선택) 사용자가 클릭한 좌표 {x, y}. 주면 그 지점에 caret 하나만 놓는다.
+   *     없으면(툴바 버튼 등 좌표가 없는 진입) 문장 끝으로 collapse 한다. 어느 경우에도
+   *     기존 문구 전체를 selection 하지 않는다(Phase 5B Direct Text Editing UX).
+   */
+  function focusEditableTarget(target, point) {
     if (!target) return;
     target.classList.remove('builder-text-invalid');
     target.setAttribute('contenteditable', 'true');
-    target.focus();
-    selectEditableText(target);
+    try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
+    placeCaretAtPoint(target, point);
     activeTextField = textFieldIdentity(target);
     highlightTextTargets(activeTextField);
   }
@@ -4860,7 +5333,24 @@
     getAcademyComposeState: () => academyComposeState,
     wireTextEditing,
     wirePreviewSectionSelection,
-    enterSectionTextEditMode
+    enterSectionTextEditMode,
+    // Phase 5B Direct Text Editing UX — 클릭 위치에 caret을 놓고 전체 선택은 하지 않는다.
+    caretRangeFromPoint,
+    placeCaretAtPoint,
+    focusEditableTarget,
+    // Phase 5B AI Guide. 절대 원칙 — requestAiGuideRecommendations는 읽기 전용이고,
+    // applyAiGuideCandidate를 호출해야만 currentPreview가 바뀐다. Publish는 자동 실행되지 않는다.
+    wireAiGuide,
+    renderAiGuide,
+    setAiGuideOpen,
+    moveAiGuideStep,
+    skipAiGuideStep,
+    goAiGuideStep,
+    requestAiGuideRecommendations,
+    applyAiGuideCandidate,
+    restartAiGuide,
+    getAiGuideSession: () => aiGuideSession,
+    getAiGuidePending: () => aiGuidePending
   });
 
   function readJson(key) {

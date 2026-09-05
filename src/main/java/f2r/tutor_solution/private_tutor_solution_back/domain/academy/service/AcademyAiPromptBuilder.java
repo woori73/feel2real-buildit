@@ -25,7 +25,57 @@ public class AcademyAiPromptBuilder {
       case PRINCIPAL_INTRO -> principalIntroPrompt(context, currentValue, instructions);
       case PHILOSOPHY_ITEM -> philosophyItemPrompt(context, currentValue, instructions);
       case ACADEMY_COMPOSE -> academyComposePrompt(context, instructions);
+      case GUIDE_TEXT -> guideTextPrompt(context, target, currentValue, instructions);
     };
+  }
+
+  /** 문단형(길게 허용) target — 나머지는 카드/슬로건이라 짧게 강제한다. */
+  private static final List<String> GUIDE_LONG_TARGETS = List.of(
+      "intro", "principalDesc", "principalQuote", "introMotto", "introBodySecondary",
+      "featuredDescription", "philosophyTitle");
+
+  /**
+   * Phase 5B — AI Guided Builder 한 단계의 문구 후보 2~3개를 <b>JSON 배열 하나</b>로 요청한다.
+   * 단일 target을 다듬는 다른 Task와 달리 여러 후보를 돌려주지만, "지어내지 말 것"(합격 실적·
+   * 수치·경력·학력·수상·가격·후기) 제약은 동일하게 못박는다. 실제 검증(배열 파싱·target
+   * allowlist·길이)은 {@code AcademyAiGuideService}가 한 번 더 한다.
+   */
+  private String guideTextPrompt(
+      AcademyAiContext context, String target, String currentValue, String instructions) {
+    boolean isLong = GUIDE_LONG_TARGETS.contains(target);
+    String lengthRule = isLong
+        ? "각 후보는 2~3문장, 180자 이내의 한국어 문단."
+        : "각 후보는 1문장, 45자 이내의 한국어 한 줄 문구(문단 금지 — 카드/제목 자리다).";
+    return """
+        너는 학원 홈페이지 제작을 돕는 AI Guide다. 지금 사용자는 홈페이지의 한 영역을 작성하는
+        단계에 있고, 방금 이 영역에서 강조하고 싶은 것을 알려줬다. 그 내용만 활용해 자연스러운
+        문구 후보 3개를 만들어라.
+
+        학원명: %s
+        대표 과목: %s
+        대상: %s
+        원장 이름: %s
+        지금 작성 중인 영역(내부 키): %s
+        이 영역의 현재 문구(있으면 참고, 없으면 새로 작성): %s
+        사용자가 이 영역에서 강조하려는 것 / 원하는 톤: %s
+
+        규칙:
+        - %s
+        - 후보 3개는 서로 표현이 뚜렷이 달라야 한다(같은 문장 조금 바꾼 수준 금지).
+        - 사용자가 말하지 않은 사실(합격 실적, 학생 수, 성적 상승 수치, 경력, 학력, 출신 학교,
+          수상, 가격, 후기, 연락처)을 절대 새로 지어내지 않는다. 근거가 없으면 쓰지 않는다.
+        - 과장·단정 대신 학원이 실제로 할 수 있는 것을 담담하게 쓴다.
+        - 출력은 JSON 배열 하나만. 마크다운/설명/코드펜스 없이 ["후보1","후보2","후보3"] 형식만.
+        """
+        .formatted(
+            blank(context.academyName()),
+            joinOrNone(context.subjects()),
+            joinOrNone(context.targetGroups()),
+            blank(context.principalName()),
+            blank(target),
+            blank(currentValue),
+            blankInstructions(instructions),
+            lengthRule);
   }
 
   /**
