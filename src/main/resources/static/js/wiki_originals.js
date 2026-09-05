@@ -9,7 +9,19 @@
     if (!b) return;
     tabs.querySelectorAll('.grade-tab').forEach(function (t) { t.classList.toggle('active', t === b); });
     grade = b.dataset.grade;
-    load();
+    list.addEventListener('click', async function (e) {
+    var link = e.target.closest('[data-member-download]');
+    if (!link) return;
+    e.preventDefault();
+    try {
+      var me = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (me.ok) { window.location.href = link.href; return; }
+    } catch (_) {}
+    alert('자료 다운로드는 로그인 회원만 이용할 수 있습니다.');
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+  });
+
+  load();
   });
 
   load();
@@ -25,7 +37,7 @@
       var items = await res.json();
       if (!items.length) { list.innerHTML = '<p class="list-empty">등록된 원본이 없습니다.</p>'; return; }
       list.innerHTML = items.map(function (it) {
-        return '<a class="file-card" href="' + escapeAttr(it.downloadUrl) + '">'
+        return '<a class="file-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<span class="file-badge">' + escapeHtml(it.docTypeLabel) + '</span>'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="file-meta">' + escapeHtml(it.examLabel) + ' · 고' + it.grade + ' · ' + meta(it) + '</span>'
