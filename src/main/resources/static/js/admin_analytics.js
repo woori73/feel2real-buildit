@@ -3,6 +3,14 @@
   let currentUser = null;
 
   const CATEGORY_LABELS = { ORIGINAL: '모의고사 원본', ANALYSIS: '분석 자료', LEARNING: '학습 자료' };
+  const SERVICE_LABELS = {
+    HOME: '메인/랜딩', CHART: 'BuildIt Chart', WEB: 'BuildIt Web',
+    ACADEMY: 'Academy', WIKI: 'Wiki', OTHER: '기타'
+  };
+
+  function fmtNumber(v) {
+    return Number(v || 0).toLocaleString('ko-KR');
+  }
 
   function fmtDate(v) {
     if (!v) return '';
@@ -36,7 +44,7 @@
     const m = metric || {};
     document.getElementById(elId).innerHTML = [
       ['오늘', m.today], ['7일', m.recent7], ['30일', m.recent30], ['누적', m.total]
-    ].map(([label, n]) => `<div class="analytics-metric"><div class="n">${n ?? 0}</div><div class="l">${label}</div></div>`).join('');
+    ].map(([label, n]) => `<div class="analytics-metric"><div class="n">${fmtNumber(n)}</div><div class="l">${label}</div></div>`).join('');
   }
 
   async function loadAnalytics() {
@@ -50,13 +58,31 @@
       renderMetrics('wikiDownloadsMetrics', d.wikiDownloads);
       renderMetrics('sitePvMetrics', d.siteViews);
       renderMetrics('wikiPvMetrics', d.wikiViews);
+      renderMetrics('botRequestsMetrics', d.botRequests);
 
       document.getElementById('statsSince').textContent = d.statsSince
-        ? `통계 수집 시작일(${fmtDate(d.statsSince)}) 이후 데이터입니다.`
+        ? `통계 수집 시작일(${fmtDate(d.statsSince)}) 이후 데이터입니다. 방문자 식별 방식 개선 이전 데이터에는 세션 기준 집계와 Bot 방문이 포함될 수 있습니다.`
         : '아직 수집된 방문 데이터가 없습니다.';
 
+      const serviceBody = document.getElementById('serviceTrafficBody');
+      const serviceTraffic = d.serviceTraffic || [];
+      serviceBody.innerHTML = serviceTraffic.length
+        ? serviceTraffic.map(v => `
+            <tr>
+              <td><span class="area-badge">${escapeHtml(SERVICE_LABELS[v.service] || v.service)}</span></td>
+              <td class="num">${fmtNumber(v.visitors?.today)}</td>
+              <td class="num">${fmtNumber(v.views?.today)}</td>
+              <td class="num">${fmtNumber(v.visitors?.recent7)}</td>
+              <td class="num">${fmtNumber(v.views?.recent7)}</td>
+              <td class="num">${fmtNumber(v.visitors?.recent30)}</td>
+              <td class="num">${fmtNumber(v.views?.recent30)}</td>
+              <td class="num">${fmtNumber(v.visitors?.total)}</td>
+              <td class="num">${fmtNumber(v.views?.total)}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="9" class="analytics-empty">아직 서비스별 방문 기록이 없습니다.</td></tr>';
+
       const visitsBody = document.getElementById('recentVisitsBody');
-      const visits = d.recentWikiVisits || [];
+      const visits = d.recentVisits || [];
       visitsBody.innerHTML = visits.length
         ? visits.map(v => `
             <tr>
@@ -66,7 +92,7 @@
               <td>${escapeHtml(v.path)}</td>
               <td>${fmtDateTime(v.visitedAt)}</td>
             </tr>`).join('')
-        : '<tr><td colspan="5" class="analytics-empty">아직 Wiki 방문 기록이 없습니다.</td></tr>';
+        : '<tr><td colspan="5" class="analytics-empty">아직 방문 기록이 없습니다.</td></tr>';
 
       const downloadsBody = document.getElementById('recentDownloadsBody');
       const downloads = d.recentDownloads || [];

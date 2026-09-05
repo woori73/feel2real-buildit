@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.SitePageVisit;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsServiceArea;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiDownloadLog;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiMaterialCategory;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.repository.SitePageVisitRepository;
@@ -50,8 +51,17 @@ class AdminAnalyticsServiceTest {
     when(visitRepository.countDistinctWikiVisitorsAllTime()).thenReturn(0L);
     when(visitRepository.countWikiPageViewsAllTime()).thenReturn(0L);
     when(downloadRepository.countDownloadsAllTime()).thenReturn(0L);
+    when(visitRepository.countBotRequests(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(0L);
+    when(visitRepository.countBotRequestsAllTime()).thenReturn(0L);
+    when(visitRepository.countDistinctVisitorsByArea(
+        ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(0L);
+    when(visitRepository.countPageViewsByArea(
+        ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(0L);
+    when(visitRepository.countDistinctVisitorsByAreaAllTime(ArgumentMatchers.any())).thenReturn(0L);
+    when(visitRepository.countPageViewsByAreaAllTime(ArgumentMatchers.any())).thenReturn(0L);
     when(visitRepository.findEarliestVisitDate()).thenReturn(Optional.empty());
     when(visitRepository.findRecentWiki(ArgumentMatchers.any())).thenReturn(List.of());
+    when(visitRepository.findRecentHuman(ArgumentMatchers.any())).thenReturn(List.of());
     when(downloadRepository.findRecent(ArgumentMatchers.any())).thenReturn(List.of());
     when(downloadRepository.findTopDownloads(ArgumentMatchers.any())).thenReturn(List.of());
   }
@@ -78,12 +88,30 @@ class AdminAnalyticsServiceTest {
   }
 
   @Test
+  @DisplayName("HOME~OTHER 6개 서비스의 UV/PV 기간별 집계를 응답한다")
+  void summary_serviceTraffic() {
+    when(visitRepository.countDistinctVisitorsByArea(
+        AnalyticsServiceArea.CHART, TODAY, TODAY)).thenReturn(12L);
+    when(visitRepository.countPageViewsByArea(
+        AnalyticsServiceArea.CHART, TODAY, TODAY)).thenReturn(34L);
+
+    var chart = service.summary().serviceTraffic().stream()
+        .filter(row -> row.service().equals("CHART"))
+        .findFirst().orElseThrow();
+
+    assertThat(service.summary().serviceTraffic()).hasSize(6);
+    assertThat(chart.visitors().today()).isEqualTo(12L);
+    assertThat(chart.views().today()).isEqualTo(34L);
+  }
+
+  @Test
   @DisplayName("최근 Wiki 방문은 displayName/role/area/path/visitedAt으로 매핑된다")
   void summary_recentWikiVisitsMapping() {
     SitePageVisit visit = SitePageVisit.of(
         TODAY, LocalDateTime.of(2026, 9, 5, 14, 32), true, "/wiki/analysis",
         7L, "TUTOR", "박정민", "U:7");
     when(visitRepository.findRecentWiki(ArgumentMatchers.any())).thenReturn(List.of(visit));
+    when(visitRepository.findRecentHuman(ArgumentMatchers.any())).thenReturn(List.of(visit));
 
     var recent = service.summary().recentWikiVisits();
 
@@ -92,6 +120,7 @@ class AdminAnalyticsServiceTest {
     assertThat(recent.get(0).role()).isEqualTo("TUTOR");
     assertThat(recent.get(0).area()).isEqualTo("WIKI");
     assertThat(recent.get(0).path()).isEqualTo("/wiki/analysis");
+    assertThat(service.summary().recentVisits().get(0).area()).isEqualTo("WIKI");
   }
 
   @Test

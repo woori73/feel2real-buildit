@@ -5,11 +5,14 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.Admin
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse.RecentDownload;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse.RecentVisit;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse.TopDownload;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse.ServiceTraffic;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsServiceArea;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.repository.SitePageVisitRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.repository.WikiDownloadLogRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -79,11 +82,36 @@ public class AdminAnalyticsService {
         downloadRepository.countDownloads(from30, today),
         downloadRepository.countDownloadsAllTime());
 
+    PeriodMetric botRequests = new PeriodMetric(
+        visitRepository.countBotRequests(today, today),
+        visitRepository.countBotRequests(from7, today),
+        visitRepository.countBotRequests(from30, today),
+        visitRepository.countBotRequestsAllTime());
+
+    var serviceTraffic = Arrays.stream(AnalyticsServiceArea.values())
+        .map(area -> new ServiceTraffic(area.name(),
+            new PeriodMetric(
+                visitRepository.countDistinctVisitorsByArea(area, today, today),
+                visitRepository.countDistinctVisitorsByArea(area, from7, today),
+                visitRepository.countDistinctVisitorsByArea(area, from30, today),
+                visitRepository.countDistinctVisitorsByAreaAllTime(area)),
+            new PeriodMetric(
+                visitRepository.countPageViewsByArea(area, today, today),
+                visitRepository.countPageViewsByArea(area, from7, today),
+                visitRepository.countPageViewsByArea(area, from30, today),
+                visitRepository.countPageViewsByAreaAllTime(area))))
+        .toList();
+
     LocalDate statsSince = visitRepository.findEarliestVisitDate().orElse(null);
 
     var recentVisits = visitRepository.findRecentWiki(PageRequest.of(0, RECENT_VISIT_COUNT)).stream()
         .map(v -> new RecentVisit(
             v.getDisplayName(), v.getRole(), v.isWiki() ? "WIKI" : "F2R", v.getPath(), v.getVisitedAt()))
+        .toList();
+
+    var recentAllVisits = visitRepository.findRecentHuman(PageRequest.of(0, RECENT_VISIT_COUNT)).stream()
+        .map(v -> new RecentVisit(
+            v.getDisplayName(), v.getRole(), v.getServiceArea().name(), v.getPath(), v.getVisitedAt()))
         .toList();
 
     var recentDownloads = downloadRepository.findRecent(PageRequest.of(0, RECENT_DOWNLOAD_COUNT)).stream()
@@ -97,7 +125,7 @@ public class AdminAnalyticsService {
         .toList();
 
     return new AdminAnalyticsResponse(
-        siteVisitors, siteViews, wikiVisitors, wikiViews, wikiDownloads, statsSince,
-        recentVisits, recentDownloads, topDownloads);
+        siteVisitors, siteViews, wikiVisitors, wikiViews, wikiDownloads, botRequests, statsSince,
+        serviceTraffic, recentAllVisits, recentVisits, recentDownloads, topDownloads);
   }
 }

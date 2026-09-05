@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.SitePageVisit;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsServiceArea;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsTrafficKind;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.repository.SitePageVisitRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
@@ -41,6 +43,12 @@ public class SiteVisitRecordingService {
 
   @Transactional
   public void record(String path, boolean wiki, String visitorKey, Long userId, String role) {
+    record(path, visitorKey, userId, role, AnalyticsTrafficKind.HUMAN);
+  }
+
+  @Transactional
+  public void record(String path, String visitorKey, Long userId, String role,
+      AnalyticsTrafficKind trafficKind) {
     try {
       String resolvedRole = GUEST_ROLE;
       String displayName = GUEST_DISPLAY_NAME;
@@ -49,8 +57,10 @@ public class SiteVisitRecordingService {
         displayName = userRepository.findById(userId).map(User::getName).orElse(GUEST_DISPLAY_NAME);
       }
       LocalDateTime now = LocalDateTime.now(clock);
+      AnalyticsServiceArea serviceArea = AnalyticsServiceAreaClassifier.classify(path);
       SitePageVisit visit = SitePageVisit.of(
-          now.toLocalDate(), now, wiki, truncatePath(path), userId, resolvedRole, displayName, visitorKey);
+          now.toLocalDate(), now, serviceArea == AnalyticsServiceArea.WIKI, truncatePath(path),
+          userId, resolvedRole, displayName, visitorKey, serviceArea, trafficKind);
       visitRepository.save(visit);
     } catch (Exception e) {
       log.warn("사이트 방문 기록 실패(path={}): {}", path, e.getMessage());
