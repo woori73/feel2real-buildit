@@ -40,15 +40,28 @@ function fixture(builderDraft) {
   });
 }
 
-test('레이아웃 키가 없으면 기존 레이아웃을 그대로 쓴다(회귀 방지)', () => {
+test('레이아웃 키가 없으면 가로 컬렉션(기본값)을 쓴다', () => {
+  // Phase 2부터 가로 컬렉션이 기본이다(Eduholic 한 곳만 opt-in 검증하던 Phase 3-B와 반대).
+  // 세로(레거시) 레이아웃은 명시적 'vertical'로만 남는다 — 아래 별도 테스트로 검증.
   for (const [kind, hooks] of bothRenderers()) {
     const academy = fixture({});
     primeRenderer(hooks, academy, VIDEOS);
     const lessons = hooks.renderLessons(academy);
     const videos = hooks.renderVideos(academy);
-    assert.doesNotMatch(lessons, /f2r-collection/, `${kind}: lessons 기본은 컬렉션 아님`);
-    assert.doesNotMatch(videos, /f2r-collection/, `${kind}: videos 기본은 컬렉션 아님`);
-    // 기존 골격은 유지
+    assert.match(lessons, /f2r-collection--programs/, `${kind}: lessons 기본이 가로 컬렉션이 아님`);
+    assert.match(videos, /f2r-collection--videos/, `${kind}: videos 기본이 가로 컬렉션이 아님`);
+    assert.doesNotMatch(videos, /video-playlist-layout/, `${kind}: 기존 재생목록이 남음`);
+  }
+});
+
+test("videosLayout/lessonsLayout='vertical'이면 기존(세로) 레이아웃으로 되돌아간다(하위 호환 escape hatch)", () => {
+  for (const [kind, hooks] of bothRenderers()) {
+    const academy = fixture({ lessonsLayout: 'vertical', videosLayout: 'vertical' });
+    primeRenderer(hooks, academy, VIDEOS);
+    const lessons = hooks.renderLessons(academy);
+    const videos = hooks.renderVideos(academy);
+    assert.doesNotMatch(lessons, /f2r-collection/, `${kind}: lessons가 'vertical'인데 컬렉션으로 렌더됨`);
+    assert.doesNotMatch(videos, /f2r-collection/, `${kind}: videos가 'vertical'인데 컬렉션으로 렌더됨`);
     assert.match(lessons, /lesson-product-slot/, `${kind}: 기존 showcase slot`);
     assert.match(videos, /video-playlist-layout/, `${kind}: 기존 재생목록`);
   }

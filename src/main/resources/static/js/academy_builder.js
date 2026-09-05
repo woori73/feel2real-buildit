@@ -3389,30 +3389,32 @@
   // opt-in(그 외/미설정이면 기존 레이아웃). 다른 학원 사이트는 이 키가 없으므로 그대로 유지된다.
   const COLLECTION_LAYOUT_KEYS = { 'sec-lessons': 'lessonsLayout', 'sec-videos': 'videosLayout' };
 
+  // Phase 2부터 가로 컬렉션이 기본이다. 미설정/'horizontal'은 가로, 명시적 'vertical'만
+  // 기존 세로 레이아웃으로 되돌아간다(academy_sections.js isHorizontalCollection과 동일 규칙).
   function isHorizontalLayout(draftKey) {
-    return String(draftText(currentPreview, draftKey, '') || '').trim().toLowerCase() === 'horizontal';
+    return String(draftText(currentPreview, draftKey, '') || '').trim().toLowerCase() !== 'vertical';
   }
 
   function appendCollectionLayoutControl(controls, section) {
     const sectionId = canonicalSectionId(section.dataset.builderSectionKey);
     const draftKey = COLLECTION_LAYOUT_KEYS[sectionId];
     if (!draftKey || !currentPreview) return;
-    const label = isHorizontalLayout(draftKey) ? '레이아웃: 가로' : '레이아웃: 기본';
+    const label = isHorizontalLayout(draftKey) ? '레이아웃: 가로(기본)' : '레이아웃: 세로';
     controls.appendChild(sectionControlButton('fa-table-columns', label, '', () => toggleCollectionLayout(sectionId, draftKey)));
   }
 
   function toggleCollectionLayout(sectionId, draftKey) {
     if (!currentPreview) return;
-    const next = isHorizontalLayout(draftKey) ? '' : 'horizontal';
+    const next = isHorizontalLayout(draftKey) ? 'vertical' : '';
     const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
     pageSettings.builderDraft = Object.assign({}, pageSettings.builderDraft || {}, { [draftKey]: next });
     currentPreview.pageSettings = pageSettings;
     populatePreview(currentPreview);
     persistVariableListChange();
     toast(
-      next === 'horizontal'
-        ? '가로 컬렉션 레이아웃으로 전환했습니다. 발행 시 저장됩니다.'
-        : '기본 레이아웃으로 되돌렸습니다. 발행 시 저장됩니다.',
+      next === 'vertical'
+        ? '세로 레이아웃으로 되돌렸습니다. 발행 시 저장됩니다.'
+        : '가로 컬렉션 레이아웃(기본)으로 전환했습니다. 발행 시 저장됩니다.',
       'fa-table-columns'
     );
   }
