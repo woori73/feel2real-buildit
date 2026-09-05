@@ -123,6 +123,35 @@
     .builder-completion-item.is-done .builder-completion-mark{color:#6ee7b7;}
     .builder-completion-item:not(.is-done) .builder-completion-mark{color:#fbbf24;}
 
+    /* Phase 5A: AI Academy Builder 진입 버튼 + 진단/제안 모달. */
+    .builder-compose-trigger{
+      display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:10px;
+      padding:9px 12px;border-radius:9px;border:1px solid rgba(122,174,240,.45);
+      background:linear-gradient(135deg,rgba(12,35,138,.55),rgba(74,127,212,.4));
+      color:#eaf1ff;font-size:.76rem;font-weight:800;cursor:pointer;transition:filter .15s;
+    }
+    .builder-compose-trigger:hover{filter:brightness(1.12);}
+    .builder-compose-trigger:disabled{opacity:.5;cursor:progress;}
+    .builder-compose-diagnosis{
+      margin:0 0 12px;padding:12px 14px;border-radius:10px;
+      background:rgba(74,127,212,.1);border:1px solid rgba(74,127,212,.28);
+      font-size:.82rem;line-height:1.6;color:#1f2d55;white-space:pre-line;
+    }
+    .builder-compose-card{
+      border:1px solid #e2e6ef;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff;
+    }
+    .builder-compose-card.is-applied{border-color:#6ee7b7;background:#f2fbf6;}
+    .builder-compose-card-title{font-size:.85rem;font-weight:800;margin:0 0 6px;color:#111827;}
+    .builder-compose-card-line{font-size:.78rem;line-height:1.55;color:#4b5563;margin:2px 0;}
+    .builder-compose-card-line b{color:#374151;}
+    .builder-compose-card-actions{display:flex;gap:8px;align-items:center;margin-top:9px;}
+    .builder-compose-empty{font-size:.82rem;color:#6b7280;padding:10px 0;}
+    .builder-compose-toolbar{
+      display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+      margin:4px 0 12px;padding-bottom:12px;border-bottom:1px solid #e5e7eb;
+    }
+    .builder-compose-applied-tag{font-size:.72rem;font-weight:800;color:#059669;}
+
     /* Phase 3: 기본 OFF 선택 기능을 접어 두는 details/summary. 순수 CSS — 여닫아도
        data-section-toggle 등 하위 DOM/속성은 그대로라 토글·저장 배선에 영향이 없다. */
     .block-advanced-group{margin:10px 0 4px;}
@@ -1080,6 +1109,9 @@
           <span class="builder-completion-score" id="builderCompletionScore">—</span>
         </div>
         <ul class="builder-completion-list" id="builderCompletionList"></ul>
+        <!-- Phase 5A: AI가 Academy 전체를 진단하고 안전한 개선안을 제안한다. 클릭 즉시 아무것도
+             수정하지 않고 먼저 모달을 연다. -->
+        <button type="button" class="builder-compose-trigger" id="builderComposeTrigger">✨ AI로 Academy 구성하기</button>
       </div>
 
       <!-- ── Academy DB 기반 공개 페이지 섹션 ── -->
@@ -1496,6 +1528,43 @@ function setView(mode, btn){
   </div>
 </div>
 
+<!-- Phase 5A: AI Academy Builder. 절대 원칙 — [Academy 분석하기]는 읽기 전용 분석이고, proposal
+     "적용"을 눌러야만 기존 인라인 편집과 같은 경로(builderDraft/sectionOrder → 발행/미리보기)로
+     반영된다. Publish는 AI가 절대 실행하지 않는다. -->
+<div class="builder-text-modal-backdrop" id="builderAcademyComposeModal" aria-hidden="true">
+  <div class="builder-text-modal builder-ai-suggestion-modal" role="dialog" aria-modal="true" aria-labelledby="builderComposeTitle">
+    <div class="builder-text-modal-head">
+      <div>
+        <h3 id="builderComposeTitle">AI Academy Builder</h3>
+        <p>어떤 Academy로 만들고 싶은지 알려주세요. 분석만으로는 아무것도 바뀌지 않습니다.</p>
+      </div>
+      <button type="button" class="builder-text-modal-close" data-compose-close aria-label="닫기">×</button>
+    </div>
+    <div class="builder-text-modal-body">
+      <div class="builder-text-field">
+        <label for="builderComposeInstructions">어떤 Academy로 만들고 싶은지 (선택)</label>
+        <textarea id="builderComposeInstructions" rows="3" maxlength="200"
+          placeholder="예: 중등 내신 전문성을 가장 강조해줘 / 학부모가 신뢰할 수 있는 Academy로 구성해줘 / 수업 영상을 중심으로 보여줘 / 너무 많은 내용은 줄이고 핵심만 보여줘"></textarea>
+      </div>
+      <div class="builder-ai-suggestion-loading" id="builderComposeLoading" hidden>AI가 Academy 전체를 분석하고 있습니다…</div>
+      <div class="builder-text-modal-error" id="builderComposeError" hidden></div>
+      <div id="builderComposeResults" hidden>
+        <p class="builder-compose-diagnosis" id="builderComposeDiagnosis"></p>
+        <div class="builder-compose-toolbar" id="builderComposeToolbar" hidden>
+          <button type="button" class="primary" id="builderComposeApplyAllBtn">추천안 전체 적용</button>
+          <button type="button" class="secondary" id="builderComposeRevertBtn" hidden>되돌리기</button>
+          <span class="builder-compose-applied-tag" id="builderComposeAppliedTag" hidden></span>
+        </div>
+        <div id="builderComposeCards"></div>
+      </div>
+    </div>
+    <div class="builder-text-modal-actions">
+      <button type="button" class="secondary" data-compose-close>닫기</button>
+      <button type="button" class="primary" id="builderComposeAnalyzeBtn">Academy 분석하기</button>
+    </div>
+  </div>
+</div>
+
 
 <div class="builder-text-modal-backdrop" id="builderLogoModal" aria-hidden="true">
   <div class="builder-text-modal" role="dialog" aria-modal="true" aria-labelledby="builderLogoTitle">
@@ -1686,7 +1755,7 @@ function setView(mode, btn){
 <script src="/js/lesson_product_showcase.js?v=20260810-1"></script>
 <!-- 섹션 마크업 정본. academy_builder.js보다 먼저 로드해야 한다. -->
 <script src="/js/academy_sections.js?v=20260905-4"></script>
-<script src="/js/academy_builder.js?v=20260905-6"></script>
+<script src="/js/academy_builder.js?v=20260905-7"></script>
 
 </body>
 </html>

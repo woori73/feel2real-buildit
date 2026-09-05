@@ -6,10 +6,13 @@ import f2r.tutor_solution.private_tutor_solution_back.config.WebMvcConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiSuggestion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyCompletionResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiGenerationException;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiProposalService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiSuggestionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyCompletionCheckService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider;
@@ -57,6 +60,7 @@ class AcademyAiControllerTest {
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean AcademyAiContextService contextService;
   @MockitoBean AcademyAiSuggestionService suggestionService;
+  @MockitoBean AcademyAiProposalService proposalService;
   @MockitoBean AcademyCompletionCheckService completionCheckService;
   @MockitoBean AiProvider aiProvider;
 
@@ -81,7 +85,7 @@ class AcademyAiControllerTest {
   @Test
   void authenticatedTutorCanReadOwnContext() throws Exception {
     when(contextService.buildContext(any())).thenReturn(new AcademyAiContext(
-        "학원", "소개", List.of("영어"), List.of("MIDDLE"), "김원장", "원장", "소개문", List.of("", "", "", ""), List.of()));
+        "학원", "소개", List.of("영어"), List.of("MIDDLE"), "김원장", "원장", "소개문", List.of("", "", "", ""), List.of(), null));
 
     mockMvc.perform(get("/api/tutor/academy/ai/context").cookie(tutorCookie()))
         .andExpect(status().isOk())
@@ -119,6 +123,44 @@ class AcademyAiControllerTest {
     mockMvc.perform(get("/api/tutor/academy/ai/completion").cookie(tutorCookie()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.scorePercent").value(50));
+  }
+
+  @Test
+  void anonymousRequestToAcademyProposalIsRejected() throws Exception {
+    mockMvc.perform(post("/api/tutor/academy/ai/academy-proposal")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"instructions\":\"중등 내신 강조\"}"))
+        .andExpect(status().is4xxClientError());
+  }
+
+  @Test
+  void authenticatedTutorCanRequestAcademyProposal() throws Exception {
+    when(proposalService.generate(any(), any())).thenReturn(new AcademyAiProposal(
+        "현재 Academy는 수업 콘텐츠가 뒤쪽에 있습니다.",
+        List.of(new AcademyAiProposal.Item(
+            "p1", AcademyAiProposal.Type.TEXT, "원장 소개", "비어 있음", "신뢰감 있게 작성",
+            "principalDesc", "20년 경력의 원장이 직접 지도합니다.", null, true))));
+
+    mockMvc.perform(post("/api/tutor/academy/ai/academy-proposal")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"instructions\":\"학부모가 신뢰할 수 있게\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.diagnosis").exists())
+        .andExpect(jsonPath("$.proposals[0].target").value("principalDesc"));
+  }
+
+  @Test
+  void academyProposalSurfacesGenerationFailureAsServiceUnavailable() throws Exception {
+    when(proposalService.generate(any(), any()))
+        .thenThrow(new AcademyAiGenerationException("AI 응답을 이해하지 못했습니다."));
+
+    mockMvc.perform(post("/api/tutor/academy/ai/academy-proposal")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"instructions\":\"\"}"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("AI 응답을 이해하지 못했습니다."));
   }
 
   @Test
