@@ -121,6 +121,38 @@ class QuestionWikiContractTest {
     assertThat(js).doesNotContain("htmlFrame.srcdoc").doesNotContain("innerHTML = html");
   }
 
+  @Test
+  @DisplayName("모든 문항 상세에 공통 Chrome AI 진입점이 있고 현재 Context만 사용해 기존 Variant로 저장한다")
+  void detailTemplate_hasSharedChromeAiEntrypoint() throws IOException {
+    String html = read("templates/public/question_wiki.html");
+    assertThat(html)
+        .contains("id=\"qwAiSection\"", "id=\"qwAiToggle\"", "✨ AI 문제제작")
+        .contains("data-ai-preset=\"grammar\"", "id=\"qwAiRequest\"", "id=\"qwAiPattern\"")
+        .contains("/js/chrome_built_in_ai.js", "/js/question_wiki_ai.js");
+
+    String detailJs = read("static/js/question_wiki.js");
+    assertThat(detailJs)
+        .contains("questionwiki:context", "questionWikiId: questionWikiId", "context: cache")
+        .contains("questionwiki:reload");
+
+    String aiJs = read("static/js/question_wiki_ai.js");
+    assertThat(aiJs)
+        .contains("window.ChromeBuiltInQuestionAi")
+        .contains("sourceQuestionId: Number(questionWikiId)")
+        .contains("dataKind: 'GENERATED_PRACTICE'", "category: 'VARIANT'", "variant:")
+        .contains("questionwiki:reload")
+        .doesNotContain("/context")
+        .doesNotContain("openai", "claude", "gemini", "googleapis");
+
+    String engineJs = read("static/js/chrome_built_in_ai.js");
+    assertThat(engineJs)
+        .contains("LanguageModel.availability", "LanguageModel.create")
+        .contains("sourceLanguage: 'ko', targetLanguage: 'en'")
+        .contains("sourceLanguage: 'en', targetLanguage: 'ko'")
+        .contains("PATTERN REFERENCE ONLY", "CURRENT_WIKI_CONTEXT is the only content source")
+        .doesNotContain("fetch(");
+  }
+
   private static String read(String classpath) throws IOException {
     try (var in = new ClassPathResource(classpath).getInputStream()) {
       return new String(in.readAllBytes(), StandardCharsets.UTF_8);
