@@ -76,6 +76,7 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
 
     window.addEventListener('f2r:login', function (e) { me = (e && e.detail) || readUser(); syncAuthUi(); render(); });
+    window.addEventListener('questionwiki:reload', function () { load(); });
     syncAuthUi();
     await load();
   }
@@ -87,6 +88,10 @@
       if (!res.ok) throw new Error();
       cache = await res.json();
       render();
+      // A single common bridge supplies exactly this question's Context to the AI panel.
+      window.dispatchEvent(new CustomEvent('questionwiki:context', {
+        detail: { questionWikiId: questionWikiId, context: cache }
+      }));
     } catch (_) {
       els.context.textContent = '';
       els.opinionList.innerHTML = '<p class="qw-error">불러오지 못했습니다.</p>';
