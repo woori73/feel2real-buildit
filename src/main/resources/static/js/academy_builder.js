@@ -195,6 +195,7 @@
     currentPreview = preview;
 
     builderVideos = await loadBuilderVideos(preview);
+    loadCompletionCheck(); // fire-and-forget — 실패해도 Builder 진입을 막지 않는다.
     populatePreview(preview);
     renderPublicPreview(preview);
     wireSectionVisibility(preview);
@@ -206,6 +207,7 @@
     wireHeroMediaEditing();
     wireFeaturedLessonsEditing();
     wireMiniLecturesEditing();
+    wireAiSuggestionEditing();
     wirePrincipalVideoEditing(preview);
     wirePrincipalCareerEditing(preview);
     wireIntroFeatureEditing(preview);
@@ -236,6 +238,40 @@
     } catch (_) {
       return [];
     }
+  }
+
+  /**
+   * Academy 완성도 진단(deterministic, AI 아님) — GET /api/tutor/academy/ai/completion.
+   * 신규(아직 서버에 저장 전) Academy는 조회가 실패할 수 있는데(§starterDraftForDirectBuilder),
+   * 그 경우 패널을 조용히 숨긴다 — Builder 진입 자체를 막으면 안 된다.
+   */
+  async function loadCompletionCheck() {
+    const panel = document.getElementById('builderCompletionPanel');
+    if (!panel) return;
+    try {
+      const res = await fetch('/api/tutor/academy/ai/completion', { credentials: 'same-origin' });
+      if (!res.ok) {
+        panel.hidden = true;
+        return;
+      }
+      renderCompletionCheck(await res.json());
+    } catch (_) {
+      panel.hidden = true;
+    }
+  }
+
+  function renderCompletionCheck(result) {
+    const panel = document.getElementById('builderCompletionPanel');
+    const scoreEl = document.getElementById('builderCompletionScore');
+    const listEl = document.getElementById('builderCompletionList');
+    if (!panel || !scoreEl || !listEl || !result) return;
+    scoreEl.textContent = result.scorePercent + '%';
+    listEl.innerHTML = (result.items || []).map((item) => {
+      const mark = item.done ? '✓' : '△';
+      return `<li class="builder-completion-item${item.done ? ' is-done' : ''}">`
+        + `<span class="builder-completion-mark">${mark}</span>${escapeHtml(item.label)}</li>`;
+    }).join('');
+    panel.hidden = false;
   }
 
   async function starterDraftForDirectBuilder() {
@@ -3379,6 +3415,7 @@
     controls.appendChild(sectionControlButton('fa-check', '적용', '', () => applySectionTextChanges(section)));
     appendCollectionLayoutControl(controls, section);
     appendMiniLecturesControl(controls, section);
+    appendAiAssistControl(controls, section);
     if (!isHeader) {
       controls.appendChild(sectionControlButton('fa-trash', '삭제', 'danger', () => hideSelectedSection(section)));
     }
@@ -3449,6 +3486,188 @@
     const sectionId = canonicalSectionId(section.dataset.builderSectionKey);
     if (sectionId !== 'sec-minilectures' || !currentPreview) return;
     controls.appendChild(sectionControlButton('fa-graduation-cap', '미니 강의 편집', '', openMiniLecturesModal));
+  }
+
+  // ── AI Suggestion (Phase 4) ──────────────────────────────────────────────
+  // 절대 원칙: 여기서 만드는 건 "제안"뿐이다. 생성만으로는 currentPreview.pageSettings도,
+  // Academy DB도 절대 바뀌지 않는다 — 사용자가 이 모달의 "적용"을 눌러야만 기존 인라인 텍스트
+  // 편집과 완전히 같은 경로(pageSettings.builderDraft 갱신 → populatePreview →
+  // persistTextChangesAfterApply, 즉 발행 전이면 미리보기 반영, 발행 후면 "발행" 버튼으로
+  // 저장 안내)로 반영된다. AI 전용 저장 경로를 새로 만들지 않는다.
+  const AI_ASSIST_SECTIONS = {
+    'sec-principal': { task: 'PRINCIPAL_INTRO', defaultTarget: 'principalDesc' },
+    'sec-philosophy': {
+      task: 'PHILOSOPHY_ITEM',
+      defaultTarget: 'philosophyItem1',
+      targets: ['philosophyItem1', 'philosophyItem2', 'philosophyItem3', 'philosophyItem4']
+    }
+  };
+  let aiSuggestionState = null;
+
+  function appendAiAssistControl(controls, section) {
+    const sectionId = canonicalSectionId(section.dataset.builderSectionKey);
+    const cfg = AI_ASSIST_SECTIONS[sectionId];
+    if (!cfg || !currentPreview) return;
+    controls.appendChild(
+      sectionControlButton('fa-wand-magic-sparkles', 'AI로 다듬기', '', () => openAiSuggestionModal(cfg)));
+  }
+
+  /** 철학 항목처럼 target이 여러 개인 Task는 지금 커서가 있는 항목을 우선한다. */
+  function activeAiTarget(cfg) {
+    if (!cfg.targets) return cfg.defaultTarget;
+    const active = activeTextField && activeTextField.indexOf('draft:') === 0
+      ? activeTextField.slice('draft:'.length)
+      : null;
+    return active && cfg.targets.indexOf(active) !== -1 ? active : cfg.defaultTarget;
+  }
+
+  function openAiSuggestionModal(cfg) {
+    const modal = document.getElementById('builderAiSuggestionModal');
+    if (!modal || !currentPreview) return;
+    const target = activeAiTarget(cfg);
+    const currentValue = draftText(currentPreview, target, '');
+    aiSuggestionState = { task: cfg.task, target, currentValue, suggestedValue: null };
+    setAiSuggestionCurrentText(currentValue);
+    setAiSuggestionResultText('');
+    clearAiSuggestionError();
+    setAiSuggestionApplyEnabled(false);
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    requestAiSuggestion();
+  }
+
+  function closeAiSuggestionModal() {
+    const modal = document.getElementById('builderAiSuggestionModal');
+    if (modal) {
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    aiSuggestionState = null;
+  }
+
+  function setAiSuggestionCurrentText(text) {
+    const el = document.getElementById('builderAiSuggestionCurrent');
+    if (el) el.textContent = text || '(비어 있음)';
+  }
+
+  function setAiSuggestionResultText(text) {
+    const el = document.getElementById('builderAiSuggestionResult');
+    if (el) el.textContent = text || '';
+  }
+
+  function setAiSuggestionApplyEnabled(enabled) {
+    const btn = document.getElementById('builderAiSuggestionApplyBtn');
+    if (btn) btn.disabled = !enabled;
+  }
+
+  function setAiSuggestionLoading(loading) {
+    const loadingEl = document.getElementById('builderAiSuggestionLoading');
+    const regenBtn = document.getElementById('builderAiSuggestionRegenerateBtn');
+    if (loadingEl) loadingEl.hidden = !loading;
+    if (regenBtn) regenBtn.disabled = loading;
+    setAiSuggestionApplyEnabled(false);
+  }
+
+  function setAiSuggestionError(message) {
+    const error = document.getElementById('builderAiSuggestionError');
+    if (!error) return;
+    error.textContent = message || '';
+    error.hidden = !message;
+  }
+
+  function clearAiSuggestionError() {
+    setAiSuggestionError('');
+  }
+
+  /** "다시 생성"도 이 함수를 그대로 다시 호출한다 — 새 suggestion으로 교체될 뿐 어떤 데이터도 저장하지 않는다. */
+  async function requestAiSuggestion() {
+    if (!aiSuggestionState) return;
+    const requested = aiSuggestionState;
+    setAiSuggestionLoading(true);
+    clearAiSuggestionError();
+    setAiSuggestionResultText('');
+    try {
+      const res = await fetch('/api/tutor/academy/ai/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          task: requested.task,
+          target: requested.target,
+          currentValue: requested.currentValue
+        })
+      });
+      if (aiSuggestionState !== requested) return; // 응답이 오기 전에 모달이 닫힘/전환됨
+      if (!res.ok) {
+        setAiSuggestionError(await aiErrorMessage(res, 'AI 제안을 만들지 못했습니다.'));
+        return;
+      }
+      const suggestion = await res.json();
+      if (aiSuggestionState !== requested) return;
+      aiSuggestionState.suggestedValue = suggestion.suggestedValue;
+      setAiSuggestionResultText(suggestion.suggestedValue);
+      setAiSuggestionApplyEnabled(true);
+    } catch (_) {
+      if (aiSuggestionState === requested) {
+        setAiSuggestionError('네트워크 연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      if (aiSuggestionState === requested) setAiSuggestionLoading(false);
+    }
+  }
+
+  async function aiErrorMessage(res, fallback) {
+    try {
+      const body = await res.json();
+      if (body && body.message) return body.message;
+    } catch (_) { /* JSON 오류가 아니면 기본 문구를 사용한다. */ }
+    return fallback;
+  }
+
+  /**
+   * "적용" — 기존 인라인 텍스트 편집(commitDraftText)과 완전히 같은 방식으로
+   * currentPreview.pageSettings.builderDraft만 갱신한다. 별도 AI 적용 API가 없다: 이후
+   * populatePreview + persistTextChangesAfterApply는 사람이 직접 타이핑했을 때와 동일하게
+   * 발행 여부에 따라 "미리보기 반영" 또는 "발행 버튼으로 저장 안내"로 갈린다 — AI가 기존
+   * Publish 절차를 우회하지 않는다.
+   */
+  function applyAiSuggestionToBuilder() {
+    if (!aiSuggestionState || !aiSuggestionState.suggestedValue || !currentPreview) return;
+    const key = aiSuggestionState.target;
+    const value = aiSuggestionState.suggestedValue;
+    const previous = draftText(currentPreview, key, '');
+    if (value === previous) {
+      closeAiSuggestionModal();
+      return;
+    }
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    pageSettings.builderDraft = Object.assign({}, pageSettings.builderDraft || {}, { [key]: value });
+    currentPreview.pageSettings = pageSettings;
+    const target = document.querySelector('[data-builder-draft="' + cssAttrEscape(key) + '"]');
+    if (target) {
+      target.textContent = value;
+      target.dataset.beforeEdit = value;
+    }
+    populatePreview(currentPreview);
+    persistTextChangesAfterApply({});
+    closeAiSuggestionModal();
+    toast('AI 제안을 적용했습니다.', 'fa-wand-magic-sparkles');
+  }
+
+  function wireAiSuggestionEditing() {
+    const modal = document.getElementById('builderAiSuggestionModal');
+    if (!modal || modal.dataset.wired === 'true') return;
+    modal.dataset.wired = 'true';
+    modal.querySelectorAll('[data-ai-suggestion-close]').forEach((button) => {
+      button.addEventListener('click', closeAiSuggestionModal);
+    });
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeAiSuggestionModal();
+    });
+    const regenerate = document.getElementById('builderAiSuggestionRegenerateBtn');
+    if (regenerate) regenerate.addEventListener('click', requestAiSuggestion);
+    const apply = document.getElementById('builderAiSuggestionApplyBtn');
+    if (apply) apply.addEventListener('click', applyAiSuggestionToBuilder);
   }
 
   function wireMiniLecturesEditing() {
@@ -4274,7 +4493,15 @@
     // 캔버스 재렌더가 편집 상태를 끊는지 검증하기 위한 접근자.
     renderPublicPreview,
     setActiveTextEditSection,
-    getActiveTextEditSection() { return activeTextEditSection; }
+    getActiveTextEditSection() { return activeTextEditSection; },
+    // Phase 4 AI Suggestion 워크플로 검증용. 절대 원칙: openAiSuggestionModal(생성)만으로는
+    // currentPreview가 바뀌지 않는다 — applyAiSuggestionToBuilder를 호출해야만 바뀐다.
+    openAiSuggestionModal,
+    applyAiSuggestionToBuilder,
+    getAiSuggestionState: () => aiSuggestionState,
+    aiAssistSectionsForTest: AI_ASSIST_SECTIONS,
+    loadCompletionCheck,
+    renderCompletionCheck
   });
 
   function readJson(key) {

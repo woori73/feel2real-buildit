@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiGenerationException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VideoUploadRejectedException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.source.exception.RejectedFilesException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.source.exception.SourceProcessingNotCompleteException;
@@ -53,6 +54,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VideoUploadRejectedException.class)
     public ResponseEntity<Map<String, Object>> handleVideoUploadRejected(VideoUploadRejectedException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "message", e.getMessage()));
+    }
+
+    /**
+     * Academy Builder AI 제안 생성 실패(provider 미구성/오류/빈·손상 응답/허용 길이 초과).
+     * 이 예외가 나도 Academy 데이터·builderDraft는 손대지 않은 상태다 — 503으로 안내한다.
+     */
+    @ExceptionHandler(AcademyAiGenerationException.class)
+    public ResponseEntity<Map<String, Object>> handleAcademyAiGeneration(AcademyAiGenerationException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
                 "message", e.getMessage()));
     }
 
