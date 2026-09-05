@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1"/>
   <link rel="stylesheet" href="/css/academy_collection.css?v=20260905-1"/>
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1"/>
+  <link rel="stylesheet" href="/css/academy_builder_ai_guide.css?v=20260906-1"/>
 
   <script>
     tailwind.config = {
@@ -1085,6 +1086,11 @@
     <button class="tb-btn tb-btn-apply" id="builderSectionApplyBtn" type="button" hidden>
       <i class="fa-solid fa-check"></i> <span data-section-apply-label>적용</span>
     </button>
+    <!-- Phase 5B: AI Guided Academy Builder 진행자 패널 토글. Preview/기존 Builder 조작을
+         가리지 않도록 접기/펼치기가 가능하다(§4). -->
+    <button class="ai-guide-toggle" id="builderAiGuideToggle" type="button" aria-pressed="false" aria-controls="builderAiGuidePanel">
+      <i class="fa-solid fa-compass"></i> <span>AI Guide</span>
+    </button>
     <button class="tb-btn tb-btn-green" id="builderPublishBtn" type="button">
       <i class="fa-solid fa-rocket"></i> 발행
     </button>
@@ -1355,6 +1361,39 @@
   <!-- ════ CANVAS END ════ -->
 
 </div><!-- /builder-body -->
+
+
+<!-- ════════════════════════════════════════════════════
+  AI GUIDED ACADEMY BUILDER (Phase 5B)
+  Builder 입장부터 홈페이지 완성까지 단계별로 안내하는 전용 진행자 패널.
+  position:fixed 로 얹어 기존 3-region 레이아웃을 건드리지 않는다. 접으면 완전히 사라진다.
+  DOM은 골격만 두고 실제 내용은 academy_builder.js wireAiGuide 가 렌더한다.
+════════════════════════════════════════════════════ -->
+<aside class="ai-guide-panel" id="builderAiGuidePanel" aria-hidden="true" aria-label="AI 홈페이지 제작 가이드">
+  <div class="ai-guide-head">
+    <div>
+      <strong>AI Guide</strong>
+      <div class="ai-guide-sub">홈페이지 제작 안내</div>
+    </div>
+    <div class="ai-guide-head-spacer"></div>
+    <button type="button" class="ai-guide-icon-btn" id="builderAiGuideRestart" title="처음부터 다시 안내" aria-label="처음부터 다시 안내">↺</button>
+    <button type="button" class="ai-guide-icon-btn" id="builderAiGuideClose" title="가이드 접기" aria-label="가이드 접기">✕</button>
+  </div>
+  <div class="ai-guide-progress">
+    <div class="ai-guide-progress-bar"><div class="ai-guide-progress-fill" id="builderAiGuideProgressFill" style="width:0"></div></div>
+    <div class="ai-guide-progress-label">
+      <span id="builderAiGuideProgressText">1 / 8</span>
+      <span id="builderAiGuideProgressStep">홈페이지 스타일</span>
+    </div>
+  </div>
+  <div class="ai-guide-steps" id="builderAiGuideSteps"></div>
+  <div class="ai-guide-body" id="builderAiGuideBody"></div>
+  <div class="ai-guide-foot">
+    <button type="button" class="ai-guide-btn ai-guide-btn-ghost" id="builderAiGuidePrev">← 이전</button>
+    <button type="button" class="ai-guide-btn ai-guide-btn-ghost" id="builderAiGuideSkip">건너뛰기</button>
+    <button type="button" class="ai-guide-btn ai-guide-btn-primary" id="builderAiGuideNext">다음 →</button>
+  </div>
+</aside>
 
 
 <!-- ════════════════════════════════════════════════════
@@ -1766,7 +1805,8 @@ function setView(mode, btn){
 <script src="/js/lesson_product_showcase.js?v=20260810-1"></script>
 <!-- 섹션 마크업 정본. academy_builder.js보다 먼저 로드해야 한다. -->
 <script src="/js/academy_sections.js?v=20260905-4"></script>
-<script src="/js/academy_builder.js?v=20260905-7"></script>
+<script src="/js/academy_builder_ai_guide.js?v=20260906-1"></script>
+<script src="/js/academy_builder.js?v=20260906-1"></script>
 
 </body>
 </html>

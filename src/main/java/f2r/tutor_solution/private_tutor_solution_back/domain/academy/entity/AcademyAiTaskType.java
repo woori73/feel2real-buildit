@@ -16,5 +16,15 @@ public enum AcademyAiTaskType {
    * 묶음으로 제안한다(Phase 5A). 단일 target을 다듬는 위 두 Task와 달리
    * {@code AcademyAiProposalService}가 JSON 응답을 파싱하고 proposal별 allowlist를 검증한다.
    */
-  ACADEMY_COMPOSE
+  ACADEMY_COMPOSE,
+
+  /**
+   * AI Guided Academy Builder(Phase 5B) — Guide가 진행하는 한 단계에서, 사용자가 방금 답한
+   * 내용을 바탕으로 해당 영역의 문구 후보 2~3개를 제안한다. {@code PRINCIPAL_INTRO}/
+   * {@code PHILOSOPHY_ITEM}과 같은 "단일 target 다듬기" 계약을 공유하되, 응답이 <b>후보 배열</b>
+   * 이라는 점만 다르다({@code AcademyAiGuideService}가 JSON 배열을 파싱하고 target allowlist·
+   * 길이를 검증한다). 이 Task도 절대 Academy/builderDraft를 수정하지 않는다 — "적용"은 기존
+   * 인라인 편집과 같은 경로로만 이뤄진다.
+   */
+  GUIDE_TEXT
 }

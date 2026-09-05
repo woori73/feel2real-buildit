@@ -1,0 +1,237 @@
+const assert = require('node:assert/strict');
+const test = require('node:test');
+const { loadRenderHooks, academyFixture } = require('./helpers/academy_render_hooks');
+
+/**
+ * Phase 5B — AI Guide 배선(실제 academy_builder.js 코드 실행).
+ *
+ * 절대 원칙:
+ *   1) requestAiGuideRecommendations(=[문구 추천받기])은 읽기 전용 — currentPreview가 안 바뀐다.
+ *   2) applyAiGuideCandidate 를 호출해야만 builderDraft(또는 intro)만 바뀐다.
+ *   3) Publish/PUT는 어떤 경로로도 자동 실행되지 않는다.
+ *   4) 기존 [AI로 다듬기]/[AI로 Academy 구성하기] 훅은 그대로 노출된다(대체하지 않는다).
+ */
+
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+const GUIDE_IDS = [
+  'builderAiGuidePanel', 'builderAiGuideToggle', 'builderAiGuideClose', 'builderAiGuideRestart',
+  'builderAiGuidePrev', 'builderAiGuideNext', 'builderAiGuideSkip', 'builderAiGuideSteps',
+  'builderAiGuideBody', 'builderAiGuideProgressFill', 'builderComposeTrigger', 'pageContent'
+];
+
+function fakeElement() {
+  const el = {
+    textContent: '', hidden: false, disabled: false, value: '', innerHTML: '',
+    style: {}, dataset: {},
+    classList: {
+      _s: new Set(),
+      add(n) { this._s.add(n); }, remove(n) { this._s.delete(n); },
+      toggle(n, f) { const v = f === undefined ? !this._s.has(n) : f; if (v) this._s.add(n); else this._s.delete(n); return v; },
+      contains(n) { return this._s.has(n); }
+    },
+    setAttribute(k, v) { this.dataset['_attr_' + k] = v; },
+    getAttribute(k) { return this.dataset['_attr_' + k] == null ? null : this.dataset['_attr_' + k]; },
+    addEventListener() {},
+    appendChild() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return false; },
+    focus() {},
+    scrollTo() {}
+  };
+  return el;
+}
+
+function buildGuideDocument() {
+  const elements = new Map(GUIDE_IDS.map((id) => [id, fakeElement()]));
+  const body = fakeElement();
+  return {
+    body, head: fakeElement(), title: '',
+    addEventListener() {},
+    getElementById(id) { return elements.has(id) ? elements.get(id) : null; },
+    querySelector(sel) {
+      if (typeof sel === 'string' && sel[0] === '#') return this.getElementById(sel.slice(1));
+      return null;
+    },
+    querySelectorAll() { return []; },
+    createElement() { return fakeElement(); },
+    createRange() { return { selectNodeContents() {}, collapse() {}, setStart() {} }; },
+    elements
+  };
+}
+
+function loadGuide(options = {}) {
+  const document = buildGuideDocument();
+  const fetchCalls = [];
+  const hooks = loadRenderHooks('builder', {
+    document,
+    window: { getComputedStyle: () => ({}), getSelection: () => ({ removeAllRanges() {}, addRange() {} }) },
+    fetch: async (url, init) => {
+      fetchCalls.push({ url, init });
+      if (options.fetch) return options.fetch(url, init);
+      return new Promise(() => {});
+    }
+  });
+  return { hooks, document, fetchCalls };
+}
+
+test('wireAiGuide 후 첫 진입은 스타일 스텝을 렌더하고 세션을 sessionStorage에 저장한다', () => {
+  const { hooks, document } = loadGuide();
+  hooks.setPreview(academyFixture({ publicPathUrl: '/academies/x' }));
+  hooks.wireAiGuide(academyFixture({ publicPathUrl: '/academies/x' }));
+
+  const body = document.getElementById('builderAiGuideBody');
+  assert.match(body.innerHTML, /홈페이지 스타일|어떤 느낌/);
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'style');
+});
+
+test('[문구 추천받기]는 읽기 전용 — POST만 나가고 currentPreview는 안 바뀐다', async () => {
+  const { hooks, document, fetchCalls } = loadGuide({
+    fetch: async () => ({ ok: true, json: async () => ({ target: 'intro', candidates: ['후보 1', '후보 2', '후보 3'] }) })
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', intro: '원래 히어로 소개' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('hero'); // intro target
+
+  hooks.requestAiGuideRecommendations();
+  await flush();
+
+  assert.equal(fetchCalls.length, 1);
+  assert.equal(fetchCalls[0].url, '/api/tutor/academy/ai/guide-suggestions');
+  assert.equal(JSON.parse(fetchCalls[0].init.body).target, 'intro');
+  assert.equal(academy.intro, '원래 히어로 소개', '추천만 받았는데 intro가 바뀌었다');
+  assert.deepEqual(hooks.getAiGuidePending().candidates, ['후보 1', '후보 2', '후보 3']);
+});
+
+test('후보 [적용] → builderDraft/intro만 바뀌고 PUT(발행)은 안 나간다', async () => {
+  const putCalls = [];
+  const { hooks } = loadGuide({
+    fetch: async (url, init) => {
+      if (init && init.method === 'PUT') { putCalls.push(url); return { ok: true, json: async () => ({}) }; }
+      return { ok: true, json: async () => ({ target: 'principalDesc', candidates: ['20년간 지역 학생을 지도한 원장이 직접 가르칩니다.'] }) };
+    }
+  });
+  const academy = academyFixture({
+    publicPathUrl: '/academies/x',
+    pageSettings: { builderDraft: { principalDesc: '', philosophyItem1: '건드리면 안 됨' } }
+  });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('principal');
+
+  hooks.requestAiGuideRecommendations();
+  await flush();
+  hooks.applyAiGuideCandidate(0);
+
+  assert.equal(academy.pageSettings.builderDraft.principalDesc, '20년간 지역 학생을 지도한 원장이 직접 가르칩니다.');
+  assert.equal(academy.pageSettings.builderDraft.philosophyItem1, '건드리면 안 됨');
+  assert.equal(putCalls.length, 0, 'Guide 적용이 발행 PUT을 자동 실행하면 안 된다');
+  assert.ok(hooks.getAiGuideSession().completedStepIds.indexOf('principal') >= 0);
+});
+
+test('발행된 Academy에서 후보 적용 시 Production PUT 없이 builderDraft만 갱신(dirty 표시)', async () => {
+  const putCalls = [];
+  const { hooks } = loadGuide({
+    fetch: async (url, init) => {
+      if (init && init.method === 'PUT') { putCalls.push(url); return { ok: true, json: async () => ({}) }; }
+      return { ok: true, json: async () => ({ target: 'philosophyTitle', candidates: ['문장을 직접 조립하며 배우는 영어'] }) };
+    }
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/live', pageSettings: { builderDraft: {} } });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('philosophy');
+  hooks.requestAiGuideRecommendations();
+  await flush();
+  hooks.applyAiGuideCandidate(0);
+
+  assert.equal(academy.pageSettings.builderDraft.philosophyTitle, '문장을 직접 조립하며 배우는 영어');
+  assert.equal(putCalls.length, 0);
+});
+
+test('malformed AI 응답(candidates 누락) → 적용 대상이 생기지 않고 currentPreview 불변', async () => {
+  const { hooks } = loadGuide({
+    fetch: async () => ({ ok: true, json: async () => ({ target: 'principalDesc' }) })
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', pageSettings: { builderDraft: { principalDesc: '기존' } } });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('principal');
+  hooks.requestAiGuideRecommendations();
+  await flush();
+
+  assert.equal(hooks.getAiGuidePending(), null);
+  assert.equal(academy.pageSettings.builderDraft.principalDesc, '기존');
+});
+
+test('AI Router 장애(HTTP 503) → 에러 표시하고 Academy 보존', async () => {
+  const { hooks, document } = loadGuide({
+    fetch: async () => ({ ok: false, json: async () => ({ message: 'AI 서비스 연결에 실패했습니다.' }) })
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', pageSettings: { builderDraft: { principalDesc: '기존' } } });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('principal');
+  hooks.requestAiGuideRecommendations();
+  await flush();
+
+  assert.match(document.getElementById('builderAiGuideBody').innerHTML, /AI 서비스 연결에 실패|다시 시도/);
+  assert.equal(academy.pageSettings.builderDraft.principalDesc, '기존');
+  assert.equal(hooks.getAiGuidePending(), null);
+});
+
+test('스텝 이동: 다음/이전/건너뛰기가 세션 진행 상태에 반영된다', () => {
+  const { hooks } = loadGuide();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+
+  hooks.moveAiGuideStep('next'); // style -> hero, style completed
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'hero');
+  assert.ok(hooks.getAiGuideSession().completedStepIds.indexOf('style') >= 0);
+
+  hooks.skipAiGuideStep(); // hero skipped -> principal
+  assert.ok(hooks.getAiGuideSession().skippedStepIds.indexOf('hero') >= 0);
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'principal');
+
+  hooks.moveAiGuideStep('prev'); // principal -> hero
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'hero');
+});
+
+test('restartAiGuide는 세션을 초기화한다', () => {
+  const { hooks } = loadGuide();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('philosophy');
+  hooks.restartAiGuide();
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'style');
+  assert.deepEqual(hooks.getAiGuideSession().completedStepIds, []);
+});
+
+test('허용되지 않은 target으로는 후보 적용이 거부된다(프론트 이중 방어)', async () => {
+  const { hooks } = loadGuide({
+    fetch: async () => ({ ok: true, json: async () => ({ target: 'principalDesc', candidates: ['정상 후보'] }) })
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', pageSettings: { builderDraft: { monthlyTuition: '30만원' } } });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('principal');
+  hooks.requestAiGuideRecommendations();
+  await flush();
+  // pending을 손상시켜 위험 target을 강제로 넣어도 적용이 안 되는지
+  const pending = hooks.getAiGuidePending();
+  pending.target = 'monthlyTuition';
+  hooks.applyAiGuideCandidate(0);
+  assert.equal(academy.pageSettings.builderDraft.monthlyTuition, '30만원');
+});
+
+test('기존 AI 훅(다듬기 / Academy 구성하기)은 Guide 추가 후에도 그대로 노출된다', () => {
+  const { hooks } = loadGuide();
+  ['openAiSuggestionModal', 'applyAiSuggestionToBuilder', 'wireAcademyComposeModal',
+   'openAcademyComposeModal', 'applyComposeProposalById'].forEach((name) => {
+    assert.equal(typeof hooks[name], 'function', `${name} 훅이 사라졌다(기존 AI 기능 회귀)`);
+  });
+});
