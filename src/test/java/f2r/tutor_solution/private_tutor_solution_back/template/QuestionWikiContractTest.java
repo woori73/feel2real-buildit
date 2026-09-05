@@ -149,7 +149,8 @@ class QuestionWikiContractTest {
         .contains("LanguageModel.availability", "LanguageModel.create")
         .contains("sourceLanguage: 'ko', targetLanguage: 'en'")
         .contains("sourceLanguage: 'en', targetLanguage: 'ko'")
-        .contains("PATTERN REFERENCE ONLY", "CURRENT_WIKI_CONTEXT is the only content source")
+        .contains("PATTERN REFERENCE ONLY", "CURRENT_QUESTION.passage is the only content source")
+        .contains("REFERENCE_CONTEXT (supporting analysis only; never a replacement passage)")
         .doesNotContain("fetch(");
   }
 
