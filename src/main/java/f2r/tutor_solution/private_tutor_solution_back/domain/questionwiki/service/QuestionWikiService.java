@@ -15,6 +15,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.repository.WikiExamOriginalRepository;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -288,9 +290,23 @@ public class QuestionWikiService {
           .map(o -> QuestionWikiMaterialLinkResponse.of(link, o.getTitle(), null, o.getOriginalFileName()));
       case ANALYSIS_MATERIAL -> wikiAnalysisMaterialRepository.findById(link.getMaterialId())
           .filter(m -> !m.isDeleted())
-          .map(m -> QuestionWikiMaterialLinkResponse.of(
-              link, m.getTitle(), m.getDescription(), m.getOriginalFileName()));
+          .map(m -> withAiSourceText(QuestionWikiMaterialLinkResponse.of(
+              link, m.getTitle(), m.getDescription(), m.getOriginalFileName())));
     };
+  }
+
+  private QuestionWikiMaterialLinkResponse withAiSourceText(QuestionWikiMaterialLinkResponse card) {
+    if (!QuestionWikiMaterialLinkResponse.isHtml(card.fileName())) {
+      return card;
+    }
+    try {
+      DownloadFile file = wikiAnalysisMaterialService.getPublicDownload(card.materialId());
+      String text = Jsoup.parse(new String(file.bytes(), StandardCharsets.UTF_8)).text();
+      return card.withAiText(truncate(text.replaceAll("\\s+", " ").trim(), 60_000));
+    } catch (RuntimeException ignored) {
+      // A missing source document must not break normal Wiki reading; AI validates it before generation.
+      return card;
+    }
   }
 
   private void ensureMaterialExists(QuestionWikiMaterialKind kind, Long materialId) {

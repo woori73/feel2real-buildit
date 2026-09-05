@@ -23,7 +23,8 @@ public record QuestionWikiMaterialLinkResponse(
     String fileName,
     String viewUrl,
     String previewKind,
-    String previewUrl) {
+    String previewUrl,
+    String aiText) {
 
   public static QuestionWikiMaterialLinkResponse of(
       QuestionWikiMaterialLink link, String title, String description, String fileName) {
@@ -40,7 +41,14 @@ public record QuestionWikiMaterialLinkResponse(
         fileName,
         viewUrl(kind, link.getMaterialId()),
         html ? "HTML" : null,
-        html ? "/api/wiki/questions/materials/" + link.getLinkId() + "/preview" : null);
+        html ? "/api/wiki/questions/materials/" + link.getLinkId() + "/preview" : null,
+        null);
+  }
+
+  public QuestionWikiMaterialLinkResponse withAiText(String text) {
+    return new QuestionWikiMaterialLinkResponse(
+        linkId, materialKind, materialId, kindLabel, label, title, description, fileName,
+        viewUrl, previewKind, previewUrl, text);
   }
 
   public static boolean isHtml(String fileName) {
