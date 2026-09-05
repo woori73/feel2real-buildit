@@ -100,7 +100,7 @@ test('given footer 저장 검증 when 전화·이메일을 확인하면 then 모
 
 test('given 빌더 JS when 캐시버스팅을 확인 then template이 갱신된 버전을 로드한다', () => {
   // given / when / then
-  assert.match(builderTemplate, /academy_builder\.js\?v=20260905-2/);
+  assert.match(builderTemplate, /academy_builder\.js\?v=20260905-3/);
   // 섹션 정본 모듈은 소비자보다 먼저 로드되어야 한다(src 속성 기준 — 주석 문구에 걸리지 않게 /js/를 붙인다).
   assert.ok(
     builderTemplate.indexOf('/js/academy_sections.js') < builderTemplate.indexOf('/js/academy_builder.js'),

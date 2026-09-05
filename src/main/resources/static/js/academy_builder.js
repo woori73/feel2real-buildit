@@ -458,12 +458,14 @@
   }
 
   /**
-   * 원장 소개/히어로 영상 목록과 대표 수업(미니 강의) 영상 목록이 섞이던 버그 수정.
-   * purpose가 없는 레거시 업로드(이 필드 도입 전)는 어느 쪽 목록인지 알 수 없으므로
-   * 임의로 배정하지 않고 두 목록 모두에 계속 노출한다(하위 호환).
+   * 원장 소개/히어로 영상 picker와 대표 수업(미니 강의) 영상 picker가 섞이던 버그 수정.
+   * Phase 3: purpose가 없는 레거시 업로드("용도 미지정")는 더 이상 두 picker 모두에 노출하지
+   * 않는다 — 영상 관리 화면에서 명시적으로 분류해야 어느 picker에든 나타난다. 판정은
+   * academy_sections.js(taxonomy 단일 소스)의 predicate를 그대로 쓴다.
    */
   function videosForPurpose(purpose) {
-    return builderVideos.filter((video) => !video.purpose || video.purpose === purpose);
+    const predicate = purpose === 'DIRECTOR' ? SECTIONS.isDirectorVideo : SECTIONS.isLessonVideo;
+    return builderVideos.filter(predicate);
   }
 
   function uploadedVideoPlayer(video, className, title) {
@@ -3486,6 +3488,21 @@
           row.classList.toggle('is-selected', event.target.checked);
         }
       });
+      // 노출 순서 변경: 저장 순서는 collectMiniLecturesFromModal()이 DOM 순서를 그대로 읽으므로
+      // 행을 실제로 앞뒤로 옮기는 것만으로 재정렬이 끝난다(별도 순서 상태를 두지 않는다).
+      list.addEventListener('click', (event) => {
+        const button = event.target && event.target.closest ? event.target.closest('[data-lecture-move]') : null;
+        if (!button) return;
+        const row = button.closest('.builder-lecture-row');
+        if (!row) return;
+        if (button.dataset.lectureMove === 'up') {
+          const prev = row.previousElementSibling;
+          if (prev) row.parentNode.insertBefore(row, prev);
+        } else {
+          const next = row.nextElementSibling;
+          if (next) row.parentNode.insertBefore(next, row);
+        }
+      });
     }
   }
 
@@ -3497,7 +3514,8 @@
     const savedById = new Map(saved.map((e) => [String(e.v), e]));
     // 원장 소개 영상이 미니 강의 목록에 섞이지 않도록 LESSON(+용도 미상 레거시)만 보여준다.
     const videos = videosForPurpose('LESSON').filter((video) => video && video.videoId != null);
-    // 저장된 순서 → 그 외 영상 순으로 나열한다(모달 안 재정렬은 이번 범위 밖).
+    // 초기 나열은 저장된 순서 → 그 외 영상 순이다. 이후 ▲▼ 버튼으로 행을 옮기면
+    // 그 순서 그대로 저장된다(Phase 3: 모달 안 재정렬 지원).
     const ordered = saved
       .map((e) => videos.find((v) => String(v.videoId) === String(e.v)))
       .filter(Boolean)
@@ -3511,11 +3529,17 @@
             ? `<img src="${escapeHtml(video.thumbnailUrl)}" alt="">`
             : '<span class="builder-lecture-thumb-ph">🎓</span>';
           return `<div class="builder-lecture-row${entry ? ' is-selected' : ''}" data-video-id="${escapeHtml(String(video.videoId))}">
-            <label class="builder-lecture-pick">
-              <input type="checkbox" ${checked}>
-              ${thumb}
-              <span class="builder-lecture-file">${escapeHtml(video.originalFilename || '이름 없는 영상')}</span>
-            </label>
+            <div class="builder-lecture-row-top">
+              <label class="builder-lecture-pick">
+                <input type="checkbox" ${checked}>
+                ${thumb}
+                <span class="builder-lecture-file">${escapeHtml(video.originalFilename || '이름 없는 영상')}</span>
+              </label>
+              <div class="builder-lecture-order">
+                <button type="button" class="builder-lecture-move" data-lecture-move="up" aria-label="노출 순서 위로 이동">▲</button>
+                <button type="button" class="builder-lecture-move" data-lecture-move="down" aria-label="노출 순서 아래로 이동">▼</button>
+              </div>
+            </div>
             <div class="builder-lecture-fields">
               <input type="text" data-lecture-field="t" maxlength="80" placeholder="강의 제목 (예: 관계대명사 한 번에 정리)" value="${escapeHtml(entry ? entry.t : '')}">
               <input type="text" data-lecture-field="n" maxlength="160" placeholder="학습 포인트 (예: which·that 헷갈릴 때 판단 기준)" value="${escapeHtml(entry ? entry.n : '')}">

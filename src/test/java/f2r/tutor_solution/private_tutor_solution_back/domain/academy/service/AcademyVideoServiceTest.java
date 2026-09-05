@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideo;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoPurpose;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoOptimizationJob;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoStatus;
@@ -119,7 +120,7 @@ class AcademyVideoServiceTest {
     when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(10L);
 
     // when / then
-    assertThatThrownBy(() -> service.upload(principal, videoFile(1024)))
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "LESSON"))
         .isInstanceOf(VideoUploadRejectedException.class)
         .hasMessageContaining("최대 10개");
     verify(videoTranscoder, never()).probe(any());
@@ -132,7 +133,7 @@ class AcademyVideoServiceTest {
     when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(0L);
 
     // when / then
-    assertThatThrownBy(() -> service.upload(principal, videoFile(MAX_BYTES + 1)))
+    assertThatThrownBy(() -> service.upload(principal, videoFile(MAX_BYTES + 1), "LESSON"))
         .isInstanceOf(VideoUploadRejectedException.class)
         .hasMessageContaining("200MB");
     verify(videoTranscoder, never()).probe(any());
@@ -146,7 +147,7 @@ class AcademyVideoServiceTest {
     when(videoTranscoder.probe(any())).thenReturn(new VideoProbe(1080, 1920, "hevc", 121.0));
 
     // when / then
-    assertThatThrownBy(() -> service.upload(principal, videoFile(1024)))
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "LESSON"))
         .isInstanceOf(VideoUploadRejectedException.class)
         .hasMessageContaining("120초");
     verify(videoTranscoder, never()).transcode(any(), any(), any());
@@ -160,7 +161,7 @@ class AcademyVideoServiceTest {
     when(videoTranscoder.probe(any())).thenReturn(new VideoProbe(640, 480, "wmv3", 10.0));
 
     // when / then
-    assertThatThrownBy(() -> service.upload(principal, videoFile(1024)))
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "LESSON"))
         .isInstanceOf(VideoUploadRejectedException.class)
         .hasMessageContaining("지원하지 않는");
     verify(videoTranscoder, never()).transcode(any(), any(), any());
@@ -176,7 +177,7 @@ class AcademyVideoServiceTest {
     stubSuccessfulTranscode(dir, MAX_BYTES + 1);
 
     // when / then
-    assertThatThrownBy(() -> service.upload(principal, videoFile(1024)))
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "LESSON"))
         .isInstanceOf(VideoUploadRejectedException.class)
         .hasMessageContaining("너무 큽니다");
     verify(fileStorage, never()).saveRaw(anyLong(), anyString(), any(), anyLong());
@@ -194,7 +195,7 @@ class AcademyVideoServiceTest {
     when(academyVideoRepository.save(any())).thenThrow(new IllegalStateException("commit 실패"));
 
     // when / then
-    assertThatThrownBy(() -> service.upload(principal, videoFile(1024)))
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "LESSON"))
         .isInstanceOf(IllegalStateException.class);
     verify(fileStorage).delete("mp4-key", "VIDEO");
     verify(fileStorage).delete("thumb-key", "IMAGE");
@@ -215,7 +216,7 @@ class AcademyVideoServiceTest {
     });
 
     // when
-    var response = service.upload(principal, videoFile(1024));
+    var response = service.upload(principal, videoFile(1024), "LESSON");
 
     // then
     assertThat(response.videoId()).isEqualTo(7L);
@@ -225,6 +226,112 @@ class AcademyVideoServiceTest {
     assertThat(response.thumbnailUrl()).isEqualTo("/api/academies/my-academy/videos/7/thumbnail");
     assertThat(response.width()).isEqualTo(720);
     assertThat(response.height()).isEqualTo(1280);
+    assertThat(response.purpose()).isEqualTo(AcademyVideoPurpose.LESSON);
+  }
+
+  /* ── Phase 3: 영상 용도(purpose) 필수화 + 재지정 ──────────────── */
+
+  @Test
+  @DisplayName("given purpose를 보내지 않음 when 업로드 then 400 + 변환을 시도하지 않는다(NULL 신규 생성 차단)")
+  void upload_rejects_missing_purpose_before_any_processing() throws IOException {
+    // given — 개수/용량 등 다른 검증보다 먼저 걸려야 한다(순서와 무관하게 신규 NULL을 만들지 않음)
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(0L);
+
+    // when / then
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), null))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("영상 용도");
+    verify(videoTranscoder, never()).probe(any());
+    verify(academyVideoRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("given purpose가 공백 문자열 when 업로드 then 400(빈 값을 용도 미상으로 조용히 허용하지 않는다)")
+  void upload_rejects_blank_purpose() throws IOException {
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(0L);
+
+    assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "   "))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("영상 용도");
+    verify(videoTranscoder, never()).probe(any());
+  }
+
+  @Test
+  @DisplayName("given DIRECTOR로 업로드 when 저장 then purpose=DIRECTOR로 저장된다")
+  void upload_persists_director_purpose(@TempDir Path dir) throws IOException {
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(0L);
+    stubSuccessfulTranscode(dir, 1024L);
+    when(fileStorage.saveRaw(eq(10L), anyString(), any(), anyLong())).thenReturn("mp4-key");
+    when(fileStorage.saveImage(eq(10L), anyString(), any())).thenReturn("thumb-key");
+    when(academyVideoRepository.save(any())).thenAnswer(invocation -> {
+      AcademyVideo saved = invocation.getArgument(0);
+      ReflectionTestUtils.setField(saved, "videoId", 8L);
+      return saved;
+    });
+
+    var response = service.upload(principal, videoFile(1024), "director");
+
+    assertThat(response.purpose()).isEqualTo(AcademyVideoPurpose.DIRECTOR);
+  }
+
+  @Test
+  @DisplayName("given 미지정(purpose=NULL) 레거시 영상 when DIRECTOR로 재지정 then purpose가 갱신된다")
+  void updatePurpose_classifies_legacy_null_video() {
+    // given — purpose 컬럼 도입 이전 업로드를 흉내낸다(purpose 미설정)
+    AcademyVideo legacy = AcademyVideo.builder()
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY).build();
+    ReflectionTestUtils.setField(legacy, "videoId", 9L);
+    when(academyVideoRepository.findByVideoIdAndAcademy_AcademyId(9L, 100L))
+        .thenReturn(Optional.of(legacy));
+
+    // when
+    var response = service.updatePurpose(principal, 9L, "DIRECTOR");
+
+    // then
+    assertThat(response.purpose()).isEqualTo(AcademyVideoPurpose.DIRECTOR);
+    assertThat(legacy.getPurpose()).isEqualTo(AcademyVideoPurpose.DIRECTOR);
+  }
+
+  @Test
+  @DisplayName("given 기존 LESSON 영상 when DIRECTOR로 재지정 then 반대 방향도 허용된다")
+  void updatePurpose_allows_lesson_to_director() {
+    AcademyVideo video = AcademyVideo.builder()
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+        .purpose(AcademyVideoPurpose.LESSON).build();
+    ReflectionTestUtils.setField(video, "videoId", 10L);
+    when(academyVideoRepository.findByVideoIdAndAcademy_AcademyId(10L, 100L))
+        .thenReturn(Optional.of(video));
+
+    service.updatePurpose(principal, 10L, "DIRECTOR");
+
+    assertThat(video.getPurpose()).isEqualTo(AcademyVideoPurpose.DIRECTOR);
+  }
+
+  @Test
+  @DisplayName("given 용도 재지정 요청에 값이 없을 때 then 400 + 기존 purpose를 바꾸지 않는다")
+  void updatePurpose_rejects_blank_value() {
+    AcademyVideo video = AcademyVideo.builder()
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+        .purpose(AcademyVideoPurpose.LESSON).build();
+    ReflectionTestUtils.setField(video, "videoId", 11L);
+    when(academyVideoRepository.findByVideoIdAndAcademy_AcademyId(11L, 100L))
+        .thenReturn(Optional.of(video));
+
+    assertThatThrownBy(() -> service.updatePurpose(principal, 11L, ""))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("영상 용도");
+    assertThat(video.getPurpose()).isEqualTo(AcademyVideoPurpose.LESSON);
+  }
+
+  @Test
+  @DisplayName("given 다른 학원의 영상 id when 용도 재지정 then 404 + 값을 바꾸지 않는다")
+  void updatePurpose_rejects_other_academy_video() {
+    when(academyVideoRepository.findByVideoIdAndAcademy_AcademyId(999L, 100L))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.updatePurpose(principal, 999L, "LESSON"))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("찾을 수 없습니다");
   }
 
   /* ── 삭제 (AC #7, #14) ────────────────────────────────────── */

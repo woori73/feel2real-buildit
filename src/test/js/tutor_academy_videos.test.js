@@ -31,7 +31,7 @@ test('upload UI accepts only MP4 and MOV and reports server errors', () => {
 });
 
 test('missing or broken thumbnail falls back to the video preview', () => {
-  assert.match(source, /list\.addEventListener\('error', onThumbnailError, true\)/);
+  assert.match(source, /groups\.addEventListener\('error', onThumbnailError, true\)/);
   assert.match(source, /preview\.src = image\.dataset\.videoUrl/);
   assert.match(source, /image\.replaceWith\(preview\)/);
 });

@@ -31,10 +31,12 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -113,5 +115,24 @@ class AcademyVideoStreamControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.videoId").value(7))
         .andExpect(jsonPath("$.activeSource").value("NORMALIZED"));
+  }
+
+  @Test
+  void tutorPatchPurposeReassignsExistingVideo() throws Exception {
+    Cookie tutor = new Cookie(
+        "ACCESS_TOKEN", tokenProvider.issue(1L, "tutor", "TUTOR"));
+    when(videoService.updatePurpose(any(), eq(7L), eq("DIRECTOR"))).thenReturn(new AcademyVideoResponse(
+        7L, "clip.mp4", "/api/academies/my/videos/7/stream",
+        "/api/academies/my/videos/7/thumbnail", 8, 8_000L, 720, 1280,
+        VideoStatus.READY, VideoLifecycleStatus.READY, null,
+        VideoActiveSource.NORMALIZED, AcademyVideoPurpose.DIRECTOR, LocalDateTime.now()));
+
+    mockMvc.perform(patch("/api/tutor/academy/videos/7/purpose")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"purpose\":\"DIRECTOR\"}")
+            .cookie(tutor))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.videoId").value(7))
+        .andExpect(jsonPath("$.purpose").value("DIRECTOR"));
   }
 }

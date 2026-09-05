@@ -42,6 +42,25 @@
     'sec-minilectures'
   ]);
 
+  // ── Video Taxonomy (Phase 3) ─────────────────────────────────────────────
+  // academy_videos.purpose 는 세 상태다: 'DIRECTOR' | 'LESSON' | 미지정(null/빈 문자열).
+  // Phase 1/2는 미지정을 "두 목록 모두에 노출"로 하위호환 처리했는데, 이게 production에서
+  // 실제 분리 실패의 원인이었다 — purpose 도입 이전에 올라간 레거시 원장 영상이 미지정 상태로
+  // 남아 계속 "실제 수업 현장"에 노출됐다. Phase 3부터 미지정은 "관리자가 아직 분류하지 않은
+  // 미완료 상태"로 취급해 공개 화면·양쪽 picker 어디에도 자동 노출하지 않는다 — 영상 관리
+  // 화면에서 명시적으로 분류해야 노출된다. 이 세 predicate가 유일한 정의다: 다른 파일
+  // (academy_builder.js, lesson_product_editor.js, tutor_academy_videos.js)은 문자열 비교를
+  // 다시 구현하지 않고 이 함수들을 그대로 가져다 쓴다.
+  function isDirectorVideo(video) {
+    return !!video && video.purpose === 'DIRECTOR';
+  }
+  function isLessonVideo(video) {
+    return !!video && video.purpose === 'LESSON';
+  }
+  function isUnclassifiedVideo(video) {
+    return !!video && !isDirectorVideo(video) && !isLessonVideo(video);
+  }
+
   // ── 공용 헬퍼 ──────────────────────────────────────────────────────────────
   // String(value || '')을 쓰면 숫자 0과 false가 빈 문자열로 지워진다. null/undefined만 거른다.
   function escapeHtml(value) {
@@ -861,19 +880,12 @@
     return name ? name + '의 수업 현장' : '수업 현장';
   }
 
-  /**
-   * sec-videos(수업 현장)는 LESSON 용도만 노출한다. purpose가 없는 레거시 업로드(이 필드
-   * 도입 전)는 용도 미상이라 계속 노출하고(하위 호환), DIRECTOR로 확정된 원장 소개 영상만
-   * 제외한다. Builder DIRECTOR/LESSON picker(videosForPurpose)는 이미 이렇게 걸러졌는데
-   * 이 섹션의 콘텐츠 목록(ctx.videoList())만 걸러지지 않아 원장 영상이 섞여 나왔었다.
-   */
-  function excludeDirectorPurpose(videos) {
-    return (videos || []).filter((video) => video && video.purpose !== 'DIRECTOR');
-  }
-
   function renderVideos(view, ctx) {
     if (!view.sectionVisible('sec-videos')) return '';
-    const videos = excludeDirectorPurpose(ctx.videoList());
+    // sec-videos(수업 현장)는 명시적으로 LESSON 분류된 영상만 노출한다(Phase 3). 미지정
+    // (purpose 도입 이전 레거시 포함)은 "아직 분류 안 됨"으로 취급해 공개 화면에 자동
+    // 노출하지 않는다 — 영상 관리에서 분류해야 나타난다.
+    const videos = (ctx.videoList() || []).filter(isLessonVideo);
     const body = isHorizontalCollection(view, 'videosLayout')
       ? ctx.videoCollection(videos)
       : (videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER);
@@ -945,7 +957,11 @@
 
   function renderMiniLectures(view, ctx) {
     if (!view.sectionVisible('sec-minilectures')) return '';
-    const videosById = new Map((ctx.videoList() || []).map((v) => [String(v.videoId), v]));
+    // Mini Lectures 풀도 LESSON 분류 영상만 허용한다(Phase 3) — 저장된 항목이 이후 DIRECTOR로
+    // 재지정되거나 미지정으로 되돌아갈 일은 없지만(재지정은 DIRECTOR/LESSON 사이에서만
+    // 일어난다), 방어적으로 여기서도 동일 규칙을 적용해 taxonomy 단일 소스를 유지한다.
+    const videosById = new Map(
+      (ctx.videoList() || []).filter(isLessonVideo).map((v) => [String(v.videoId), v]));
     // 영상이 삭제된 항목은 렌더하지 않는다(가짜 카드 만들지 않음).
     const usable = miniLectureItems(view).filter((it) => videosById.has(String(it.v)));
     const body = usable.length
@@ -1482,6 +1498,9 @@
   global.F2RAcademySections = Object.freeze({
     FUTURE_SECTION_IDS,
     OPT_IN_SECTION_IDS,
+    isDirectorVideo,
+    isLessonVideo,
+    isUnclassifiedVideo,
     escapeHtml,
     escapeAttr,
     safeUrl,

@@ -544,9 +544,9 @@
     try {
       const response = await window.fetchAuth('/api/tutor/academy/videos');
       const videos = response.ok ? await response.json() : [];
-      // 원장 소개 영상은 수업상품 미디어 선택 목록에 섞이지 않는다. 용도 미상(레거시) 영상은
-      // 어느 쪽이었는지 알 수 없으므로 계속 노출한다(하위 호환, 임의 마이그레이션 없음).
-      myVideos = videos.filter((video) => !video.purpose || video.purpose === 'LESSON');
+      // 원장 소개 영상은 수업상품 미디어 선택 목록에 섞이지 않는다. Phase 3: 용도 미상(레거시)
+      // 영상도 더 이상 노출하지 않는다 — 영상 관리에서 LESSON으로 분류해야 여기 나타난다.
+      myVideos = SECTIONS ? videos.filter(SECTIONS.isLessonVideo) : videos.filter((v) => v.purpose === 'LESSON');
     } catch (error) {
       myVideos = [];
     }

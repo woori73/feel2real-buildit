@@ -19,9 +19,11 @@ const BUILDER_JS = fs.readFileSync(
 const BUILDER_HTML = fs.readFileSync(
   path.resolve(__dirname, '../../main/resources/templates/tutor/academy_builder.html'), 'utf8');
 
+// Phase 3: Mini Lectures 풀은 LESSON으로 명시 분류된 영상만 허용한다 — purpose 없이는
+// (미지정 취급되어) 더 이상 노출되지 않는다.
 const LECTURE_VIDEOS = [
-  { videoId: 21, videoUrl: '/api/academies/x/videos/21/stream', thumbnailUrl: '/t21', durationSec: 92, width: 1280, height: 720 },
-  { videoId: 22, videoUrl: '/api/academies/x/videos/22/stream', thumbnailUrl: '/t22', durationSec: 140, width: 720, height: 1280 }
+  { videoId: 21, videoUrl: '/api/academies/x/videos/21/stream', thumbnailUrl: '/t21', durationSec: 92, width: 1280, height: 720, purpose: 'LESSON' },
+  { videoId: 22, videoUrl: '/api/academies/x/videos/22/stream', thumbnailUrl: '/t22', durationSec: 140, width: 720, height: 1280, purpose: 'LESSON' }
 ];
 
 function fixture(builderDraft, visibility) {
@@ -118,6 +120,39 @@ test('SSoT: 공개/빌더가 같은 renderMiniLectures + 카드 구조를 쓴다
   assert.match(pub, /data-collection-play/);
   assert.doesNotMatch(bld, /data-collection-play/);
   assert.match(bld, /data-collection-static/, 'builder 는 정적 wrap');
+});
+
+test('Phase 3: DIRECTOR 또는 미지정 영상은 miniLectures에 저장돼 있어도 카드로 렌더하지 않는다', () => {
+  // 픽커(videosForPurpose('LESSON'))가 이미 걸러주지만, 예전에 저장된 값(재지정 이전)이
+  // 남아 있는 경우까지 방어한다 — 렌더 경로 자체가 taxonomy 규칙을 다시 검증해야 한다.
+  const videos = [
+    { videoId: 21, videoUrl: '/x/21', thumbnailUrl: '/t21', durationSec: 92, width: 1280, height: 720, purpose: 'DIRECTOR' },
+    { videoId: 23, videoUrl: '/x/23', thumbnailUrl: '/t23', durationSec: 40, width: 1280, height: 720, purpose: null }
+  ];
+  const pub = Object.fromEntries(bothRenderers()).public;
+  const academy = fixture(
+    { miniLectures: JSON.stringify([{ v: 21, t: '원장 영상 오분류' }, { v: 23, t: '미지정 영상' }]) },
+    { 'sec-minilectures': true }
+  );
+  primeRenderer(pub, academy, videos);
+  const html = pub.renderMiniLectures(academy);
+  // 렌더할 카드가 하나도 없으므로(둘 다 LESSON 아님) 섹션 자체를 내지 않는다(가짜 콘텐츠 금지)
+  assert.equal(html, '', 'DIRECTOR/미지정 영상으로 카드가 렌더되면 안 된다');
+});
+
+test('Phase 3: 미니 강의 모달에 노출 순서 변경(▲▼) 버튼이 있고, 저장은 DOM 순서를 그대로 읽는다', () => {
+  // 모달 안 재정렬은 Phase 1에서 "이번 범위 밖"으로 명시적으로 미뤄졌던 항목이다.
+  // 별도 순서 상태를 두지 않고, 버튼이 행 자체를 옮기면 collectMiniLecturesFromModal()이
+  // 그 DOM 순서를 그대로 저장 순서로 읽는 방식이라 데이터 모델 변경이 없다.
+  assert.match(BUILDER_JS, /data-lecture-move="up"/);
+  assert.match(BUILDER_JS, /data-lecture-move="down"/);
+  assert.match(BUILDER_JS,
+    /const button = event\.target && event\.target\.closest \? event\.target\.closest\('\[data-lecture-move\]'\) : null;/);
+  assert.match(BUILDER_JS, /row\.parentNode\.insertBefore\(row, prev\)/, '위로 이동: 이전 형제 앞에 자기 자신을 끼워 넣는다');
+  assert.match(BUILDER_JS, /row\.parentNode\.insertBefore\(next, row\)/, '아래로 이동: 다음 형제를 자기 자신 앞으로 끌어온다(=자신이 뒤로 밀림)');
+  // 저장 로직은 여전히 순수 DOM 순서 읽기다 — 별도 order 필드를 새로 만들지 않았다.
+  assert.match(BUILDER_JS,
+    /Array\.from\(document\.querySelectorAll\('#builderMiniLecturesOptions \.builder-lecture-row'\)\)/);
 });
 
 test('빌더: 미니 강의 편집 모달·배선·블록이 존재한다', () => {

@@ -65,6 +65,22 @@ public class AcademyVideoController {
     return ResponseEntity.ok(academyVideoService.listMine(principal));
   }
 
+  /**
+   * 영상 용도(재)지정. {@code purpose IS NULL}("용도 미지정") 레거시 영상의 최초 분류와
+   * DIRECTOR↔LESSON 재지정을 모두 이 하나의 엔드포인트로 처리한다.
+   */
+  @PatchMapping("/api/tutor/academy/videos/{videoId}/purpose")
+  public ResponseEntity<AcademyVideoResponse> updatePurpose(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable Long videoId,
+      @RequestBody VideoPurposeUpdateRequest request) {
+    return ResponseEntity.ok(
+        academyVideoService.updatePurpose(principal, videoId, request == null ? null : request.purpose()));
+  }
+
+  /** @param purpose {@code "DIRECTOR"} 또는 {@code "LESSON"}. 빈 값은 서비스 레이어에서 거부한다. */
+  public record VideoPurposeUpdateRequest(String purpose) {}
+
   @DeleteMapping("/api/tutor/academy/videos/{videoId}")
   public ResponseEntity<Void> delete(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,

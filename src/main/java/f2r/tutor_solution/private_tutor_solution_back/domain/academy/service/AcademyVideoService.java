@@ -104,16 +104,15 @@ public class AcademyVideoService {
 
   /**
    * 업로드 → 변환 → 저장. 클라이언트가 보낸 길이/용량은 신뢰하지 않고 ffprobe 결과로 재판정한다.
+   *
+   * <p>Phase 3부터 {@code purpose}는 신규 업로드에서 필수다 — 값이 없으면 이 메서드가 즉시
+   * 거부한다({@link #parsePurposeRequired}). {@code purpose IS NULL}("용도 미지정") 행은 이
+   * 필드 도입 이전(Phase 1) 레거시로만 존재해야 하고, 새로 만들어지면 안 된다.
    */
-  public AcademyVideoResponse upload(
-      JwtTokenProvider.AuthenticatedPrincipal principal, MultipartFile file) {
-    return upload(principal, file, null);
-  }
-
   public AcademyVideoResponse upload(
       JwtTokenProvider.AuthenticatedPrincipal principal, MultipartFile file, String purposeRaw) {
     Academy academy = academyService.requireMyAcademy(principal);
-    AcademyVideoPurpose purpose = parsePurpose(purposeRaw);
+    AcademyVideoPurpose purpose = parsePurposeRequired(purposeRaw);
 
     if (file == null || file.isEmpty()) {
       throw badRequest("업로드할 영상 파일이 없습니다.");
@@ -256,6 +255,24 @@ public class AcademyVideoService {
     cleanupTransactions.tombstoneLocked(video);
   }
 
+  /**
+   * 영상 관리 화면에서 용도를 (재)지정한다. {@code purpose IS NULL}("용도 미지정") 레거시
+   * 행의 최초 분류, 그리고 DIRECTOR↔LESSON 간 재지정 모두 이 경로 하나로 처리한다 — 값은
+   * 항상 사용자가 명시적으로 고른 것만 받고(자동 추측 없음), 단순 필드 갱신이라 read 시점의
+   * lock 없이 JPA dirty checking으로 반영한다({@code @Transactional}).
+   */
+  @Transactional
+  public AcademyVideoResponse updatePurpose(
+      JwtTokenProvider.AuthenticatedPrincipal principal, Long videoId, String purposeRaw) {
+    Academy academy = academyService.requireMyAcademy(principal);
+    AcademyVideoPurpose purpose = parsePurposeRequired(purposeRaw);
+    AcademyVideo video = academyVideoRepository
+        .findByVideoIdAndAcademy_AcademyId(videoId, academy.getAcademyId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "영상을 찾을 수 없습니다."));
+    video.reassignPurpose(purpose);
+    return AcademyVideoResponse.of(video, academy.getSlug());
+  }
+
   private List<String> homepagePlacementsUsing(Academy academy, Long videoId) {
     if (academy.getPageSettings() == null || academy.getPageSettings().builderDraft() == null) {
       return List.of();
@@ -313,10 +330,15 @@ public class AcademyVideoService {
     }
   }
 
-  /** 빈 값은 레거시와 같은 "용도 미상"(null)으로 둔다 — 강제 선택은 아니다. */
-  private static AcademyVideoPurpose parsePurpose(String purposeRaw) {
+  /**
+   * Phase 3부터 purpose는 항상 필수다 — 신규 업로드도, 기존 영상의 용도 재지정도 빈 값을
+   * "용도 미상"으로 조용히 받아주지 않는다(과거엔 이게 legacy NULL 행이 계속 새로 생기는
+   * 구멍이었다). {@code purpose IS NULL} 레거시 행은 오직 이 컬럼 도입 이전(Phase 1) 업로드로만
+   * 존재해야 하고, 그 행들도 이 메서드를 거쳐 재지정되면 다시는 NULL로 돌아가지 않는다.
+   */
+  private static AcademyVideoPurpose parsePurposeRequired(String purposeRaw) {
     if (purposeRaw == null || purposeRaw.isBlank()) {
-      return null;
+      throw badRequest("영상 용도(대표 원장 소개 영상 또는 수업 영상)를 선택해 주세요.");
     }
     try {
       return AcademyVideoPurpose.valueOf(purposeRaw.trim().toUpperCase(Locale.ROOT));

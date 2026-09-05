@@ -27,9 +27,11 @@ const LESSONS = [
     mediaType: 'VIDEO', mediaVideoId: 6
   }
 ];
+// Phase 3: sec-videos는 LESSON으로 명시 분류된 영상만 노출한다 — purpose 없이는
+// (미지정 취급되어) 더 이상 콘텐츠 목록에 나타나지 않는다.
 const VIDEOS = [
-  { videoId: 8, videoUrl: '/api/academies/x/videos/8/stream', thumbnailUrl: '/api/academies/x/videos/8/thumbnail', durationSec: 17, width: 406, height: 720 },
-  { videoId: 6, videoUrl: '/api/academies/x/videos/6/stream', thumbnailUrl: null, durationSec: 55, width: 640, height: 360 }
+  { videoId: 8, videoUrl: '/api/academies/x/videos/8/stream', thumbnailUrl: '/api/academies/x/videos/8/thumbnail', durationSec: 17, width: 406, height: 720, purpose: 'LESSON' },
+  { videoId: 6, videoUrl: '/api/academies/x/videos/6/stream', thumbnailUrl: null, durationSec: 55, width: 640, height: 360, purpose: 'LESSON' }
 ];
 
 function fixture(builderDraft) {
