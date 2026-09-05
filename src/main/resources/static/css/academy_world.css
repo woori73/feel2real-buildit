@@ -82,19 +82,28 @@
 .world-sky-reduced { transition: none !important; }
 
 /* ── Bildi 캐릭터 ──────────────────────────────────────────────────────────── */
+/* .bildi       = 화면 위치(scroll waypoint 이동) 전용. transform 은 오직 translate3d 이며
+ *               CSS 애니메이션을 걸지 않는다 — 걸면 keyframe 의 transform 이 이동을 삼킨다(회귀 원인).
+ * .bildi-inner = 캐릭터 애니메이션(호흡/비행 bob/착지/hop/반응) 전용. 위치와 완전히 분리.
+ */
 .bildi {
   position: absolute; top: 0; left: 0; width: 84px; height: 84px; z-index: 40;
   pointer-events: none; will-change: transform;
-  transform: translate3d(24px, 24px, 0);
-  transition: transform 640ms cubic-bezier(.34, 1.2, .3, 1);
+  /* 초기값을 브라우저 목업 바 + 리본 아래로 잡아, JS가 좌표를 계산하기 전에도
+     상단 UI 위로 튀어나오지 않는다. */
+  transform: translate3d(28px, 104px, 0);
+  /* 위치는 스크롤을 1:1로 따라가므로 짧게만 스무딩한다 — 길게 잡으면 스크롤이 빠를 때
+     Bildi가 뒤처져 "고정된 것처럼" 보인다. 스텝 이동 시의 "날아가는" 연출은 부드러운
+     스크롤 자체가 위치를 끌고 가므로 이 값으로 충분하다. */
+  transition: transform 200ms cubic-bezier(.33, 1, .68, 1);
   filter: drop-shadow(0 10px 14px rgba(12, 35, 138, .28));
 }
+.bildi-inner { position: absolute; inset: 0; }
 .bildi-svg { width: 100%; height: 100%; overflow: visible; display: block; }
 .bildi-shadow { transition: transform .3s ease; }
 
 /* Production asset(<img>) vs 인라인 fallback SVG. 이미지가 로드되면 .bildi-has-sprite 가 붙어
-   sprite 를 보이고 fallback 을 숨긴다. 로드 실패/미존재 → fallback SVG(data-state CSS 포즈).
-   컨테이너(.bildi) 레벨 애니메이션(bob/hop/land, transform 이동)은 둘 다에 그대로 적용된다. */
+   sprite 를 보이고 fallback 을 숨긴다. 로드 실패/미존재 → fallback SVG(data-state CSS 포즈). */
 .bildi-art { position: absolute; inset: 0; }
 .bildi-sprite {
   width: 100%; height: 100%; object-fit: contain; display: none;
@@ -104,7 +113,7 @@
 .bildi.bildi-has-sprite .bildi-sprite { display: block; }
 .bildi.bildi-has-sprite .bildi-fallback { display: none; }
 
-/* 날개: 평소 접힘, FLY/WINGS_OPEN 에서 펴고 퍼덕임 (§2 signature) */
+/* 날개: 평소 접힘, FLY/WINGS_OPEN 에서 펴고 퍼덕임 (§2 signature) — fallback SVG 파트 */
 .bildi-wing { transform-box: fill-box; transform-origin: 20% 60%; transition: transform .3s ease; }
 .bildi-wing-front { transform: scale(.62) rotate(6deg); }
 .bildi-wing-back { transform: scale(.55) rotate(-8deg); }
@@ -116,13 +125,16 @@
 
 .bildi[data-state="fly"] .bildi-wing-front { animation: bildiFlapF 260ms ease-in-out infinite; }
 .bildi[data-state="fly"] .bildi-wing-back { animation: bildiFlapB 260ms ease-in-out infinite; }
-.bildi[data-state="fly"] { animation: bildiBob 900ms ease-in-out infinite; }
-.bildi[data-state="fly"][data-facing="up"] { transform: translate3d(var(--bx,0), var(--by,0), 0); }
 
-.bildi[data-state="idle"] { animation: bildiBreathe 3.2s ease-in-out infinite; }
-.bildi[data-state="wait"] { animation: bildiBreathe 3.2s ease-in-out infinite; opacity: .92; }
-.bildi[data-state="land"] { animation: bildiLand 420ms cubic-bezier(.2,.8,.2,1) 1; }
-.bildi[data-state="happy"] { animation: bildiHop 520ms ease 1; }
+/* 상태별 캐릭터 애니메이션은 전부 .bildi-inner 에 건다(.bildi 의 위치 transform 을 건드리지 않는다) */
+.bildi[data-state="fly"] .bildi-inner { animation: bildiBob 900ms ease-in-out infinite; }
+.bildi[data-state="idle"] .bildi-inner { animation: bildiBreathe 3.2s ease-in-out infinite; }
+.bildi[data-state="wings_open"] .bildi-inner { animation: bildiBreathe 2.4s ease-in-out infinite; }
+.bildi[data-state="wait"] .bildi-inner { animation: bildiBreathe 3.2s ease-in-out infinite; }
+.bildi[data-state="wait"] { opacity: .92; }
+.bildi[data-state="land"] .bildi-inner { animation: bildiLand 420ms cubic-bezier(.2,.8,.2,1) 1; }
+.bildi[data-state="happy"] .bildi-inner { animation: bildiHop 520ms ease 1; }
+.bildi[data-state="run"] .bildi-inner { animation: bildiBob 500ms ease-in-out infinite; }
 .bildi[data-state="think"] .bildi-mouth { d: path("M58 84 Q64 82 70 84"); }
 .bildi[data-state="point"] .bildi-wing-front { transform: scale(1) rotate(-38deg) translateX(4px); }
 .bildi[data-state="talk"] .bildi-mouth { animation: bildiTalk 320ms ease-in-out infinite; }
@@ -132,12 +144,12 @@
 .bildi[data-expr="wink"] .bildi-eye:nth-of-type(2) { ry: 1.5; }
 .bildi[data-expr="think"] .bildi-eye-glint { opacity: .3; }
 
-/* scene 반응(§7) — 확장 지점. 강도는 절제. */
-.bildi[data-react="shake"] { animation: bildiShake 500ms ease 1; }
+/* scene 반응(§7) — 확장 지점. 강도는 절제. 전부 .bildi-inner 에 건다. */
+.bildi[data-react="shake"] .bildi-inner { animation: bildiShake 500ms ease 1; }
 .bildi[data-react="gaze"] .bildi-face { transform: translateY(-2px); }
-.bildi[data-react="drift"] { animation: bildiBob 1400ms ease-in-out infinite; }
-.bildi[data-react="dust"] { animation: bildiShake 600ms ease 2; }
-.bildi[data-react="float"] { animation: bildiFloat 3.6s ease-in-out infinite; }
+.bildi[data-react="drift"] .bildi-inner { animation: bildiBob 1400ms ease-in-out infinite; }
+.bildi[data-react="dust"] .bildi-inner { animation: bildiShake 600ms ease 2; }
+.bildi[data-react="float"] .bildi-inner { animation: bildiFloat 3.6s ease-in-out infinite; }
 .bildi[data-react="float"] .bildi-wing { animation: none; transform: scale(.7); }
 
 @keyframes bildiFlapF { 0%,100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1) rotate(-30deg); } }

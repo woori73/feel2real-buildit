@@ -380,8 +380,9 @@
     if (highlightField || activeTextField) highlightTextTargets(highlightField || activeTextField);
     if (scrollToSection) scrollPreviewToSection(scrollToSection);
     if (bildiActive()) {
-      positionBildiToStep();
+      // DOM 교체로 섹션 노드가 새로 생겼다 — waypoint reference 를 다시 잡고 위치를 재계산한다.
       if (bildiStory && typeof bildiStory.refresh === 'function') bildiStory.refresh();
+      refreshBildiFlight();
     }
   }
 
@@ -4092,11 +4093,32 @@
   let aiGuideBusy = false;
   let aiGuideFocusTimer = null;
   let aiGuideExistingSteps = [];
-  let bildi = null;        // { setState, moveToRect, react, ... }
+  let bildi = null;        // { setState, moveToXY, react, ... }
   let bildiBubble = null;  // { say, moveToXY, el, body }
   let bildiSky = null;     // { setScene, setProgress }
   let bildiStory = null;   // scroll story controller
-  let bildiTravelTimer = null;
+  let bildiStopTimer = null;
+  let bildiSettleTimer = null;
+  let bildiGuideTargetKey = null; // Guide가 "이 섹션을 보라"고 한 섹션 — 착지 시 POINT/TALK
+  let lastBildiFlightPos = null;
+
+  // 섹션별 waypoint(Preview safe area 기준 프랙션). 좌우를 번갈아 두고 y를 흩어, 스크롤하면
+  // Bildi의 화면 X/Y가 눈에 띄게 이동한다(§목표). 없는 섹션은 index 기반 교차 패턴으로 폴백.
+  const BILDI_WAYPOINTS = {
+    'sec-hero':         { x: 0.14, y: 0.24 },
+    'sec-featured':     { x: 0.74, y: 0.46 },
+    'sec-intro':        { x: 0.22, y: 0.58 },
+    'sec-principal':    { x: 0.72, y: 0.28 },
+    'sec-philosophy':   { x: 0.18, y: 0.52 },
+    'sec-videos':       { x: 0.68, y: 0.62 },
+    'sec-minilectures': { x: 0.30, y: 0.32 },
+    'sec-lessons':      { x: 0.74, y: 0.50 },
+    'sec-social':       { x: 0.22, y: 0.40 }
+  };
+  function bildiWaypoint(key, index, total) {
+    if (BILDI_WAYPOINTS[key]) return BILDI_WAYPOINTS[key];
+    return { x: index % 2 === 0 ? 0.20 : 0.72, y: 0.26 + (index % 3) * 0.16 };
+  }
 
   function readAiGuideSession() {
     if (!AI_GUIDE) return null;
@@ -4180,7 +4202,10 @@
     return !!(bildi && document.body && document.body.classList.contains('bildi-active'));
   }
 
-  /** #pageContent 스크롤에 맞춰 Bildi가 현재 step 섹션을 따라다니고 하늘이 진행도에 반응한다(§6). */
+  /**
+   * #pageContent 스크롤 = 세계 진행. Bildi는 섹션 waypoint 사이를 실제로 날아 이동하고(§목표),
+   * 하늘 scene은 progress에 따라 바뀐다. 이 둘은 별개로 계산한다.
+   */
   function attachBildiStory() {
     if (!WORLD || !bildi || bildiStory || typeof WORLD.createScrollStory !== 'function') return;
     const pageContent = document.getElementById('pageContent');
@@ -4188,25 +4213,187 @@
     bildiStory = WORLD.createScrollStory({
       scrollEl: pageContent,
       window: typeof window !== 'undefined' ? window : undefined,
-      sections: () => {
-        const list = [];
-        pageContent.querySelectorAll('[data-builder-section-key]').forEach((el) => list.push(el));
-        return list;
-      },
+      sections: () => orderedBildiSectionEls(),
       onUpdate: (state) => {
+        // Environment scene = scroll progress (viewport 고정, 상태만 변화)
         if (bildiSky && typeof bildiSky.setProgress === 'function') bildiSky.setProgress(state.progress);
-        if (typeof bildi.face === 'function') bildi.face(state.direction === 'up' ? 'up' : 'down');
-        positionBildiToStep();
+        // Bildi position = scroll 에 따라 실제 이동
+        updateBildiFlight(state);
         if (bildiSky && typeof bildi.react === 'function') {
           bildi.react(WORLD.reactionForScene ? WORLD.reactionForScene(bildiSky.getScene && bildiSky.getScene()) : null);
         }
       }
     });
+    // 레이아웃이 아직 안 잡혀 safe area 계산이 실패할 수 있으므로 초기 위치를 몇 번 재시도한다.
+    refreshBildiFlight();
+    var w = typeof window !== 'undefined' ? window : null;
+    if (w && w.requestAnimationFrame) w.requestAnimationFrame(refreshBildiFlight);
+    setTimeout(refreshBildiFlight, 120);
+    setTimeout(refreshBildiFlight, 400);
   }
 
   function detachBildiStory() {
     if (bildiStory && typeof bildiStory.detach === 'function') bildiStory.detach();
     bildiStory = null;
+    if (bildiStopTimer) { clearTimeout(bildiStopTimer); bildiStopTimer = null; }
+    if (bildiSettleTimer) { clearTimeout(bildiSettleTimer); bildiSettleTimer = null; }
+  }
+
+  function orderedBildiSectionEls() {
+    const pageContent = document.getElementById('pageContent');
+    if (!pageContent) return [];
+    return Array.prototype.slice.call(pageContent.querySelectorAll('[data-builder-section-key]'));
+  }
+  function orderedBildiSectionKeys() {
+    return orderedBildiSectionEls().map((el) => el.getAttribute('data-builder-section-key') || '');
+  }
+
+  /**
+   * Bildi가 이동할 수 있는 안전 영역(stage 좌표계 px). Preview 콘텐츠 뷰포트(#pageContent) 안쪽으로
+   * 제한하고, sticky 리본과 브라우저 목업 바 아래로 top inset을 둔다 — 상단 UI에 겹치거나 잘리지 않는다.
+   * z-index로 해결하지 않고 좌표 자체를 유효 콘텐츠 영역 안에 둔다.
+   */
+  function bildiSafeArea() {
+    const stage = document.getElementById('builderBildiStage');
+    const pc = document.getElementById('pageContent');
+    if (!stage || !pc || typeof stage.getBoundingClientRect !== 'function' || typeof pc.getBoundingClientRect !== 'function') return null;
+    const sR = stage.getBoundingClientRect();
+    const pR = pc.getBoundingClientRect();
+    if (!pR.width || !pR.height) return null;
+    const ribbon = pc.querySelector('.builder-public-preview-ribbon');
+    const ribbonBottom = ribbon && typeof ribbon.getBoundingClientRect === 'function'
+      ? ribbon.getBoundingClientRect().bottom : pR.top;
+    const PAD = 14;
+    return {
+      x0: (pR.left - sR.left) + PAD,
+      y0: (Math.max(pR.top, ribbonBottom) - sR.top) + PAD,
+      x1: (pR.right - sR.left) - PAD,
+      y1: (pR.bottom - sR.top) - PAD
+    };
+  }
+
+  function bildiSize() {
+    const el = bildi && bildi.el;
+    const w = el && el.offsetWidth ? el.offsetWidth : 84;
+    const h = el && el.offsetHeight ? el.offsetHeight : 84;
+    return { w: w, h: h };
+  }
+
+  /** 현재 스크롤 상태를 합성해 flight 위치/상태를 다시 계산(DOM 교체·스텝 이동·초기 진입 시). */
+  function refreshBildiFlight() {
+    if (!bildi || !bildi.el) return;
+    const pc = document.getElementById('pageContent');
+    let progress = 0;
+    let direction = 'none';
+    if (pc && typeof pc.scrollTop === 'number') {
+      const extent = Math.max(1, (pc.scrollHeight || 0) - (pc.clientHeight || 0));
+      progress = Math.max(0, Math.min(1, pc.scrollTop / extent));
+    }
+    updateBildiFlight({ progress: progress, direction: direction, speed: 'slow', activeSection: null });
+  }
+
+  /** onUpdate 핸들러: scroll progress → Bildi 화면 위치(waypoint 보간) + 비행 상태머신. */
+  function updateBildiFlight(story) {
+    if (!bildi || !bildi.el || typeof bildi.moveToXY !== 'function') return;
+    const safe = bildiSafeArea();
+    if (!safe || safe.x1 <= safe.x0 || safe.y1 <= safe.y0) return;
+    const keys = orderedBildiSectionKeys();
+    const n = Math.max(1, keys.length);
+    const waypoints = keys.length
+      ? keys.map((k, i) => bildiWaypoint(k, i, n))
+      : [bildiWaypoint('sec-hero', 0, 1)];
+    const size = bildiSize();
+    const reduced = typeof bildi.isReduced === 'function' && bildi.isReduced();
+    const pos = WORLD.flightPosition({
+      progress: story.progress,
+      count: waypoints.length,
+      waypoints: waypoints,
+      safe: safe,
+      size: size,
+      arc: reduced ? 0 : 0.12
+    });
+    bildi.moveToXY(pos.x, pos.y);
+    positionBildiBubble(pos, safe, size);
+    if (typeof bildi.face === 'function') bildi.face(story.direction === 'up' ? 'up' : 'down');
+    updateBildiFlightState(pos, story);
+    lastBildiFlightPos = pos;
+  }
+
+  /** 이동/정지에 따라 fly ↔ land ↔ idle/point/talk 를 전이한다(상태머신은 academy_world.js). */
+  function updateBildiFlightState(pos, story) {
+    const scrolling = story && story.direction && story.direction !== 'none';
+    const moving = scrolling || (pos && pos.moving);
+    if (moving) {
+      if (bildiSettleTimer) { clearTimeout(bildiSettleTimer); bildiSettleTimer = null; }
+      const st = bildi.getState && bildi.getState();
+      if (st !== 'fly' && st !== 'wings_open') {
+        if (typeof bildi.dispatch === 'function') { bildi.dispatch('scrollStart'); bildi.dispatch('move'); }
+        else if (typeof bildi.setState === 'function') bildi.setState('fly');
+      } else if (st === 'wings_open' && typeof bildi.dispatch === 'function') {
+        bildi.dispatch('move');
+      }
+    }
+    if (bildiStopTimer) clearTimeout(bildiStopTimer);
+    bildiStopTimer = setTimeout(onBildiScrollStop, 180);
+  }
+
+  function onBildiScrollStop() {
+    bildiStopTimer = null;
+    if (!bildi) return;
+    const st = bildi.getState && bildi.getState();
+    if (st === 'fly' || st === 'wings_open') {
+      if (typeof bildi.dispatch === 'function') bildi.dispatch('arrive'); // → land
+      else if (typeof bildi.setState === 'function') bildi.setState('land');
+    }
+    if (bildiSettleTimer) clearTimeout(bildiSettleTimer);
+    bildiSettleTimer = setTimeout(() => {
+      bildiSettleTimer = null;
+      if (!bildi || !bildi.getState) return;
+      const atGuide = bildiGuideTargetKey && bildiNearestSectionKey() === bildiGuideTargetKey;
+      if (typeof bildi.setState === 'function') bildi.setState(atGuide ? 'point' : 'idle');
+      if (atGuide) {
+        setTimeout(() => {
+          if (bildi && bildi.getState && bildi.getState() === 'point' && typeof bildi.setState === 'function') {
+            bildi.setState('talk');
+          }
+        }, 380);
+      }
+    }, 320);
+  }
+
+  /** 현재 pageContent 뷰포트 중앙(약 42%)에 가장 가까운 섹션 key. */
+  function bildiNearestSectionKey() {
+    const pc = document.getElementById('pageContent');
+    if (!pc || typeof pc.getBoundingClientRect !== 'function') return null;
+    const pR = pc.getBoundingClientRect();
+    const focusY = pR.top + pR.height * 0.42;
+    let bestKey = null;
+    let bestDist = Infinity;
+    orderedBildiSectionEls().forEach((el) => {
+      if (typeof el.getBoundingClientRect !== 'function') return;
+      const r = el.getBoundingClientRect();
+      const mid = r.top + r.height / 2;
+      const d = Math.abs(mid - focusY);
+      if (d < bestDist) { bestDist = d; bestKey = el.getAttribute('data-builder-section-key'); }
+    });
+    return bestKey;
+  }
+
+  /** 말풍선을 Bildi 옆에 두되 safe area 를 벗어나면 반대쪽으로 뒤집는다. */
+  function positionBildiBubble(pos, safe, size) {
+    if (!bildiBubble || typeof bildiBubble.moveToXY !== 'function') return;
+    const BUBBLE_W = 264;
+    const GAP = 12;
+    let bx = pos.x + size.w + GAP;
+    let side = 'right';
+    if (bx + BUBBLE_W > safe.x1) { bx = pos.x - GAP - BUBBLE_W; side = 'left'; }
+    if (bx < safe.x0) bx = safe.x0;
+    let by = pos.y - 8;
+    by = Math.max(safe.y0, Math.min(by, safe.y1 - 120));
+    if (bildiBubble.el && typeof bildiBubble.el.setAttribute === 'function') {
+      bildiBubble.el.setAttribute('data-side', side === 'left' ? 'right' : 'left');
+    }
+    bildiBubble.moveToXY(bx, by);
   }
 
   function bindClick(id, handler) {
@@ -4327,12 +4514,23 @@
       .forEach((el) => el.classList.remove('ai-guide-section-focus'));
   }
 
-  /** Guide가 "이제 이 영역입니다"라고 하면 Bildi가 그 섹션으로 날아가고 콘텐츠가 reveal된다(§8). */
+  /**
+   * Guide가 "이제 이 영역입니다"라고 하면: 프리뷰를 그 섹션으로 스크롤하고(→ scroll story가
+   * Bildi를 waypoint 사이로 실제 비행시킨다), 도착 후 POINT/TALK 하도록 목표 섹션을 표시한다.
+   */
   function focusAiGuideSection(sectionKey) {
     if (!sectionKey) return;
     clearAiGuideSectionFocus();
+    bildiGuideTargetKey = sectionKey;
+    if (bildiSky && typeof bildiSky.setScene === 'function' && AI_GUIDE && typeof AI_GUIDE.sceneForStep === 'function') {
+      const step = currentAiGuideStep();
+      bildiSky.setScene(AI_GUIDE.sceneForStep(step && step.id));
+    }
     scrollPreviewToSection(sectionKey);
-    bildiTravelTo(sectionKey);
+    // 스크롤이 짧아 이벤트가 거의 안 나오는 경우를 대비해 한 번 직접 갱신한다(스크롤이 나면
+    // scroll story가 이어받아 부드럽게 비행시킨다).
+    setTimeout(refreshBildiFlight, 60);
+    setTimeout(onBildiScrollStop, 520);
     const target = previewSectionTarget(sectionKey);
     if (!target) return;
     target.classList.add('ai-guide-section-focus');
@@ -4342,58 +4540,9 @@
     }, 2600);
   }
 
-  /** step 섹션 rect를 stage 좌표계로 변환해 Bildi/말풍선을 그 위에 놓는다(스크롤 중에도 호출). */
-  function positionBildiToStep(sectionKey) {
-    if (!bildi || !bildi.el) return;
-    const stage = document.getElementById('builderBildiStage');
-    if (!stage || typeof stage.getBoundingClientRect !== 'function') return;
-    const key = sectionKey || (currentAiGuideStep() && currentAiGuideStep().sectionKey);
-    const target = key ? previewSectionTarget(key) : null;
-    const anchor = target || document.getElementById('pageContent');
-    if (!anchor || typeof anchor.getBoundingClientRect !== 'function') return;
-    const sRect = stage.getBoundingClientRect();
-    const tRect = anchor.getBoundingClientRect();
-    if (typeof bildi.moveToRect === 'function') {
-      bildi.moveToRect(tRect, sRect, { x: Math.min(tRect.width * 0.5, sRect.width - 96), y: 18 });
-    }
-    if (bildiBubble && typeof bildiBubble.moveToXY === 'function' && bildi.el) {
-      // 말풍선은 Bildi 오른쪽. 스테이지 폭을 넘으면 왼쪽으로.
-      const bx = clampNumber((tRect.left - sRect.left) + Math.min(tRect.width * 0.5, sRect.width - 96), 8, sRect.width - 8);
-      const by = clampNumber((tRect.top - sRect.top) + 18, 8, Math.max(8, sRect.height - 120));
-      const side = bx + 260 > sRect.width ? 'left' : 'right';
-      if (bildiBubble.el) bildiBubble.el.setAttribute('data-side', side === 'left' ? 'right' : 'left');
-      bildiBubble.moveToXY(side === 'left' ? Math.max(8, bx - 250) : bx + 84, by);
-    }
-  }
-
   function clampNumber(n, min, max) {
     n = Number(n) || 0;
     return n < min ? min : (n > max ? max : n);
-  }
-
-  /** Bildi가 sectionKey 섹션으로 날아간다: wings_open → fly → land → point/talk. reduced면 즉시. */
-  function bildiTravelTo(sectionKey) {
-    if (!bildi || !bildiActive()) return;
-    if (bildiTravelTimer) { clearTimeout(bildiTravelTimer); bildiTravelTimer = null; }
-    const step = currentAiGuideStep();
-    if (bildiSky && typeof bildiSky.setScene === 'function' && AI_GUIDE && typeof AI_GUIDE.sceneForStep === 'function') {
-      bildiSky.setScene(AI_GUIDE.sceneForStep(step && step.id));
-    }
-    const reduced = typeof bildi.isReduced === 'function' && bildi.isReduced();
-    if (typeof bildi.dispatch === 'function') bildi.dispatch('scrollStart');
-    if (typeof bildi.dispatch === 'function') bildi.dispatch('move');
-    // 스크롤 애니메이션이 끝날 즈음 위치를 다시 잡고 착지시킨다.
-    bildiTravelTimer = setTimeout(() => {
-      positionBildiToStep(sectionKey);
-      if (typeof bildi.dispatch === 'function') bildi.dispatch('arrive');
-      if (typeof bildi.setState === 'function') bildi.setState(bildi.STATES ? bildi.STATES.POINT : 'point');
-      bildiTravelTimer = setTimeout(() => {
-        if (typeof bildi.setState === 'function') bildi.setState(bildi.STATES ? bildi.STATES.TALK : 'talk');
-        bildiTravelTimer = null;
-      }, 420);
-    }, reduced ? 0 : 360);
-    // 즉시 한 번 위치를 잡아 fly 궤적이 목표 방향으로 시작되게 한다.
-    positionBildiToStep(sectionKey);
   }
 
   function onAiGuideBodyClick(event) {
@@ -4634,7 +4783,10 @@
       + `<div class="bildi-bubble-step-inner">${stepInner}</div>`
       + nav
     );
-    positionBildiToStep(step.sectionKey);
+    // 말풍선 내용만 바뀌었으니 마지막 flight 위치 기준으로 다시 붙인다(스크롤/비행은 안 건드림).
+    const safe = bildiSafeArea();
+    if (safe && lastBildiFlightPos) positionBildiBubble(lastBildiFlightPos, safe, bildiSize());
+    else refreshBildiFlight();
   }
 
   function renderAiGuideStyleStep() {
@@ -5550,7 +5702,17 @@
     applyAiGuideCandidate,
     restartAiGuide,
     getAiGuideSession: () => aiGuideSession,
-    getAiGuidePending: () => aiGuidePending
+    getAiGuidePending: () => aiGuidePending,
+    // Phase 5B.1b — Bildi Scroll Story waypoint positioning. Bildi 위치는 스크롤 progress에 따라
+    // 실제로 이동해야 한다(고정 chatbot 금지). 아래 훅으로 좌표 이동을 직접 검증한다.
+    getBildi: () => bildi,
+    getBildiBubble: () => bildiBubble,
+    bildiSafeArea,
+    updateBildiFlight,
+    refreshBildiFlight,
+    orderedBildiSectionKeys,
+    bildiWaypoint,
+    getLastBildiFlightPos: () => lastBildiFlightPos
   });
 
   function readJson(key) {

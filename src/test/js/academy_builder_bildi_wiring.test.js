@@ -195,3 +195,102 @@ test('#builderBildiStage 자체가 없으면(구버전 템플릿) 조용히 패�
   assert.equal(doc.getElementById('builderAiGuidePanel').classList.contains('is-open'), true);
   assert.match(doc.getElementById('builderAiGuideBody').innerHTML, /STEP 1/);
 });
+
+// ── Phase 5B.1b: Bildi 위치가 스크롤 progress 에 따라 실제로 이동한다 ──────────
+function fakeSection(key, rect) {
+  const s = fakeEl('section');
+  s.setAttribute('data-builder-section-key', key);
+  s.getAttribute = (k) => (k === 'data-builder-section-key' ? key : (s._attrs[k] == null ? null : s._attrs[k]));
+  s._rect = rect;
+  return s;
+}
+
+function primeBildiGeometry(doc, sectionKeys) {
+  const stage = doc.getElementById('builderBildiStage');
+  const pc = doc.getElementById('pageContent');
+  // 실제 Builder 좌표계 근사: stage 가 canvas-frame 전체(0..680×520), pageContent 는 브라우저바
+  // 아래(y 44..520). Bildi safe area = pageContent inset.
+  stage._rect = { left: 0, top: 0, width: 680, height: 520, right: 680, bottom: 520 };
+  pc._rect = { left: 0, top: 44, width: 680, height: 476, right: 680, bottom: 520 };
+  pc.scrollTop = 0; pc.scrollHeight = 4000; pc.clientHeight = 476;
+  const sections = sectionKeys.map((k, i) =>
+    fakeSection(k, { left: 0, top: 44 + i * 400, width: 680, height: 400, right: 680, bottom: 44 + (i + 1) * 400 }));
+  pc.querySelectorAll = (sel) => (String(sel).indexOf('data-builder-section-key') >= 0 ? sections : []);
+  pc.querySelector = (sel) => (String(sel).indexOf('ribbon') >= 0 ? null : null);
+  return { stage, pc, sections };
+}
+
+test('updateBildiFlight: 스크롤 progress 가 달라지면 Bildi 화면 좌표가 실제로 달라진다 (고정 금지)', () => {
+  const { hooks, doc } = loadBildi();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  primeBildiGeometry(doc, ['sec-hero', 'sec-principal', 'sec-philosophy', 'sec-videos', 'sec-lessons']);
+
+  const bildiEl = hooks.getBildi().el;
+  const seen = [];
+  [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].forEach((p) => {
+    hooks.updateBildiFlight({ progress: p, direction: 'down', speed: 'normal', activeSection: null });
+    seen.push(bildiEl.style.transform);
+  });
+
+  // 같은 transform 이 계속 반복되면 실패 (viewport 고정 chatbot)
+  const unique = new Set(seen);
+  assert.ok(unique.size >= 6, `progress 별로 위치가 바뀌어야 한다: ${JSON.stringify(seen)}`);
+  assert.notEqual(seen[0], seen[seen.length - 1], '시작과 끝 좌표가 다르다');
+
+  // 파싱해서 X 가 좌우로 크게 움직이는지
+  const xs = seen.map((t) => Number((t.match(/translate3d\((-?\d+)px/) || [])[1]));
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 150, `X 이동폭이 커야 한다 (${xs})`);
+});
+
+test('updateBildiFlight: 위로 스크롤하면 Bildi 가 반대 방향으로 이동하고 data-facing=up', () => {
+  const { hooks, doc } = loadBildi();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  primeBildiGeometry(doc, ['sec-hero', 'sec-principal', 'sec-philosophy']);
+  const bildiEl = hooks.getBildi().el;
+
+  hooks.updateBildiFlight({ progress: 0.8, direction: 'down', speed: 'normal' });
+  const down = bildiEl.style.transform;
+  hooks.updateBildiFlight({ progress: 0.2, direction: 'up', speed: 'normal' });
+  const up = bildiEl.style.transform;
+
+  assert.notEqual(down, up, '스크롤 방향에 따라 위치가 되돌아간다');
+  assert.equal(bildiEl.getAttribute('data-facing'), 'up');
+});
+
+test('updateBildiFlight: Bildi 좌표가 safe area(브라우저바 아래) 안에 머문다 — 상단 UI overlap 없음', () => {
+  const { hooks, doc } = loadBildi();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  primeBildiGeometry(doc, ['sec-hero', 'sec-principal', 'sec-philosophy', 'sec-videos']);
+  const bildiEl = hooks.getBildi().el;
+
+  for (let p = 0; p <= 1.0001; p += 0.05) {
+    hooks.updateBildiFlight({ progress: p, direction: 'down', speed: 'fast' });
+    const m = bildiEl.style.transform.match(/translate3d\((-?\d+)px,(-?\d+)px/);
+    const x = Number(m[1]); const y = Number(m[2]);
+    // safe area: pageContent inset (top 44 + PAD 14 = 58 이상), 아래로 476-14-84
+    assert.ok(y >= 44 + 14 - 1, `y(${y}) 가 브라우저바+리본 아래여야 한다 @p=${p.toFixed(2)}`);
+    assert.ok(y <= 520 - 14 - 84 + 1, `y(${y}) 가 하단 safe area 안이어야 한다 @p=${p.toFixed(2)}`);
+    assert.ok(x >= 14 - 1 && x <= 680 - 14 - 84 + 1, `x(${x}) 가 좌우 safe area 안 @p=${p.toFixed(2)}`);
+  }
+});
+
+test('updateBildiFlight: 스크롤 중 fly 상태, 멈추면 land→idle/point (상태머신 유지)', async () => {
+  const { hooks, doc } = loadBildi();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  primeBildiGeometry(doc, ['sec-hero', 'sec-principal', 'sec-philosophy']);
+  const b = hooks.getBildi();
+
+  hooks.updateBildiFlight({ progress: 0.4, direction: 'down', speed: 'normal' });
+  assert.ok(['fly', 'wings_open'].includes(b.getState()), '스크롤 중엔 비행: ' + b.getState());
+  // 멈춤 디바운스(180ms) + settle(320ms) 대기
+  await new Promise((r) => setTimeout(r, 600));
+  assert.ok(['land', 'idle', 'point', 'talk'].includes(b.getState()), '멈추면 착지/대기: ' + b.getState());
+});
