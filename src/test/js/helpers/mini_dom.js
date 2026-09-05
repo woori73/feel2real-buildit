@@ -54,6 +54,17 @@ class MiniElement {
       set(_, prop, value) { self.setAttribute('data-' + camelToKebab(String(prop)), String(value)); return true; }
     });
     this.style = {};
+    // 실제 <button disabled>는 클릭 이벤트 자체가 발생하지 않는다(dispatchClick이 아래에서
+    // 이를 검사한다). 속성 반영 없이 그냥 plain property로 두면 el.disabled = true를 써도
+    // 클릭이 계속 통과해, "코드는 버튼을 껐다고 믿지만 실제로는 안 꺼진" 회귀를 테스트가
+    // 못 잡는다 — 이 프로젝트가 실제로 한 번 겪은 사각지대(setAiSuggestionLoading 버그)다.
+    Object.defineProperty(this, 'disabled', {
+      get() { return self._attrs.has('disabled'); },
+      set(value) {
+        if (value) self._attrs.set('disabled', '');
+        else self._attrs.delete('disabled');
+      }
+    });
   }
 
   _classSet() {
@@ -230,6 +241,9 @@ function parseHtml(html) {
  * 올라가며 각 노드에 등록된 'click' 리스너를 순서대로 실행하고, stopPropagation()이
  * 호출되면 더 올라가지 않는다. 캡처 단계는 다루지 않는다(이 프로젝트의 관련 코드가
  * 캡처 리스너에 의존하지 않는다).
+ *
+ * disabled인 버튼/입력 요소는 실제 브라우저에서 click 이벤트 자체가 발생하지 않는다 —
+ * 여기서도 target 자신이 disabled면 아무 리스너도 실행하지 않고 그대로 돌려준다.
  */
 function dispatchClick(target, root) {
   const event = {
@@ -240,6 +254,7 @@ function dispatchClick(target, root) {
     preventDefault() { this.defaultPrevented = true; },
     stopPropagation() { this._propagationStopped = true; }
   };
+  if (target && target.disabled) return event;
   let node = target;
   while (node) {
     const listeners = node._listeners && node._listeners.get('click');

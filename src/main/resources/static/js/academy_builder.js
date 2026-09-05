@@ -3562,7 +3562,13 @@
     const regenBtn = document.getElementById('builderAiSuggestionRegenerateBtn');
     if (loadingEl) loadingEl.hidden = !loading;
     if (regenBtn) regenBtn.disabled = loading;
-    setAiSuggestionApplyEnabled(false);
+    // 로딩 시작(loading=true) 때만 강제로 잠근다. 로딩이 끝난 뒤(loading=false)는 여기서
+    // 건드리지 않는다 — 실제 활성화 여부는 호출부(requestAiSuggestion 성공/실패 분기)가
+    // setAiSuggestionApplyEnabled로 이미 정확히 결정했다. 예전에는 여기서 무조건 false로
+    // 되돌려, 생성 성공 직후 켠 적용 버튼을 finally에서 곧바로 다시 꺼버렸다(버튼은
+    // 그대로 보여도 disabled라 실제 클릭은 브라우저가 아예 막는다 — 콘솔 에러도 없이
+    // "눌러도 반응 없음"으로 보였다).
+    if (loading) setAiSuggestionApplyEnabled(false);
   }
 
   function setAiSuggestionError(message) {

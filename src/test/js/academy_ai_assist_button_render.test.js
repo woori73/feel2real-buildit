@@ -242,6 +242,80 @@ test('given 원장 소개 when 실제 버튼으로 생성→적용까지 끝까�
   assert.equal(modal.classList.contains('is-open'), false, '적용 후 모달이 닫혀야 한다');
 });
 
+/**
+ * 회귀: Production에서 AI 추천이 정상 표시되는데도 [적용]을 눌러도 아무 반응이 없었다(모달도
+ * 안 닫힘). Root cause — setAiSuggestionLoading(false)가 loading 인자와 무관하게 항상
+ * setAiSuggestionApplyEnabled(false)를 불렀다: 생성 성공 시 requestAiSuggestion이 Apply를
+ * 켜자마자(setAiSuggestionApplyEnabled(true)), 바로 뒤 finally의 setAiSuggestionLoading(false)가
+ * 곧바로 다시 꺼버렸다. 버튼은 화면엔 그대로 보이지만 실제 DOM은 disabled라 실제 브라우저는
+ * 클릭 이벤트 자체를 발생시키지 않는다(콘솔 에러도 없다) — 그래서 "눌러도 반응 없음"으로
+ * 보였다. 기존 mini_dom의 dispatchClick은 disabled를 검사하지 않아 이 버그를 통과시켰다
+ * (그래서 disabled 반영 + 클릭 차단을 mini_dom.js 자체에 추가했다). 이 테스트는 실제
+ * dispatchClick으로 Apply를 눌러 값이 실제로 반영되는지 + disabled 상태 자체를 함께
+ * 확인한다 — 하나라도 회귀하면 여기서 잡힌다.
+ */
+test('given 생성 성공 직후 when 적용 버튼 상태를 확인 then disabled가 아니라 실제 클릭이 통과한다(로딩 종료가 다시 잠그면 안 됨)', async () => {
+  const academy = academyFixture();
+  const { document, pageContent } = buildRealPageContent(academy, 'builder');
+  const { modal, builderAiSuggestionApplyBtn } = buildFullModal(document);
+
+  const hooks = loadRenderHooks('builder', {
+    document,
+    window: FAKE_WINDOW,
+    fetch: async () => ({ ok: true, json: async () => ({ suggestedValue: '다듬은 문구 1차' }) })
+  });
+  hooks.setPreview(academy);
+  hooks.wireAiAssistTriggers();
+  hooks.wireAiSuggestionEditing();
+
+  const principal = findSection(pageContent, 'sec-principal');
+  dispatchClick(findAiButtons(principal)[0], pageContent);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(builderAiSuggestionApplyBtn.disabled, false,
+    '생성 성공 직후 적용 버튼이 disabled로 남아 있다(loading 종료 처리가 다시 잠갔을 가능성)');
+
+  dispatchClick(builderAiSuggestionApplyBtn, document.body);
+  assert.equal(academy.pageSettings.builderDraft.principalDesc, '다듬은 문구 1차',
+    '실제 클릭이 disabled에 막혀 적용되지 않음');
+  assert.equal(modal.classList.contains('is-open'), false);
+});
+
+test('given [다시 생성]으로 두 번째 제안을 받음 when 적용 버튼 상태를 확인 then 재생성 후에도 클릭이 통과한다', async () => {
+  const academy = academyFixture();
+  const { document, pageContent } = buildRealPageContent(academy, 'builder');
+  const { modal, builderAiSuggestionApplyBtn, builderAiSuggestionRegenerateBtn } = buildFullModal(document);
+
+  let call = 0;
+  const hooks = loadRenderHooks('builder', {
+    document,
+    window: FAKE_WINDOW,
+    fetch: async () => {
+      call += 1;
+      return { ok: true, json: async () => ({ suggestedValue: call === 1 ? '1차 제안' : '2차 제안' }) };
+    }
+  });
+  hooks.setPreview(academy);
+  hooks.wireAiAssistTriggers();
+  hooks.wireAiSuggestionEditing();
+
+  const principal = findSection(pageContent, 'sec-principal');
+  dispatchClick(findAiButtons(principal)[0], pageContent);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(hooks.getAiSuggestionState().suggestedValue, '1차 제안');
+
+  // 실제 [다시 생성] 버튼을 클릭한다.
+  dispatchClick(builderAiSuggestionRegenerateBtn, document.body);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(hooks.getAiSuggestionState().suggestedValue, '2차 제안');
+
+  assert.equal(builderAiSuggestionApplyBtn.disabled, false,
+    '다시 생성 후 적용 버튼이 disabled로 남아 있다');
+  dispatchClick(builderAiSuggestionApplyBtn, document.body);
+  assert.equal(academy.pageSettings.builderDraft.principalDesc, '2차 제안');
+  assert.equal(modal.classList.contains('is-open'), false);
+});
+
 test('given 학습 철학 항목 when 실제 버튼으로 생성 후 [취소]를 실제로 클릭 then builderDraft는 바뀌지 않고 모달만 닫힌다', async () => {
   const academy = academyFixture();
   const { document, pageContent } = buildRealPageContent(academy, 'builder');
