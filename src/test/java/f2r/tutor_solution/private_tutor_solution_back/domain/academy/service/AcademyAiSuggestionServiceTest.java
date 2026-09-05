@@ -36,7 +36,7 @@ class AcademyAiSuggestionServiceTest {
     service = new AcademyAiSuggestionService(contextService, promptBuilder, provider);
     principal = mock(JwtTokenProvider.AuthenticatedPrincipal.class);
     when(contextService.buildContext(principal)).thenReturn(fixtureContext);
-    when(promptBuilder.build(any(), any(), any(), any())).thenReturn("PROMPT");
+    when(promptBuilder.build(any(), any(), any(), any(), any())).thenReturn("PROMPT");
   }
 
   @Test
@@ -45,7 +45,7 @@ class AcademyAiSuggestionServiceTest {
     provider.respondWith("```\n\"다듬어진 소개문입니다\"\n```");
 
     AcademyAiSuggestion suggestion = service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "기존 소개문");
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "기존 소개문", null);
 
     assertThat(suggestion.task()).isEqualTo(AcademyAiTaskType.PRINCIPAL_INTRO);
     assertThat(suggestion.target()).isEqualTo("principalDesc");
@@ -59,7 +59,7 @@ class AcademyAiSuggestionServiceTest {
   @DisplayName("given task에 허용되지 않은 target when 생성 then 400 성격의 예외 + provider를 호출하지 않는다")
   void generate_rejects_target_not_in_allowlist_for_task() {
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "philosophyItem1", "x"))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "philosophyItem1", "x", null))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("허용되지 않는 target");
     assertThat(provider.callCount).isZero();
@@ -69,10 +69,10 @@ class AcademyAiSuggestionServiceTest {
   @DisplayName("given 완전히 임의의 target(academyId 등) when 생성 then 거부된다")
   void generate_rejects_arbitrary_target() {
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "academyId", "x"))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "academyId", "x", null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PHILOSOPHY_ITEM, "published", "x"))
+        principal, AcademyAiTaskType.PHILOSOPHY_ITEM, "published", "x", null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(provider.callCount).isZero();
   }
@@ -80,7 +80,7 @@ class AcademyAiSuggestionServiceTest {
   @Test
   @DisplayName("given task가 null when 생성 then 거부된다")
   void generate_rejects_null_task() {
-    assertThatThrownBy(() -> service.generate(principal, null, "principalDesc", "x"))
+    assertThatThrownBy(() -> service.generate(principal, null, "principalDesc", "x", null))
         .isInstanceOf(IllegalArgumentException.class);
     verifyNoInteractions(contextService);
   }
@@ -90,7 +90,7 @@ class AcademyAiSuggestionServiceTest {
   void generate_surfaces_provider_not_ready() {
     provider.setReady(false);
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x"))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null))
         .isInstanceOf(AcademyAiGenerationException.class);
   }
 
@@ -99,7 +99,7 @@ class AcademyAiSuggestionServiceTest {
   void generate_surfaces_provider_error_message() {
     provider.failWith("REQUEST_PROCESSING_ERROR: 네트워크 오류");
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x"))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null))
         .isInstanceOf(AcademyAiGenerationException.class)
         .hasMessageContaining("네트워크 오류");
   }
@@ -109,7 +109,7 @@ class AcademyAiSuggestionServiceTest {
   void generate_rejects_blank_response() {
     provider.respondWith("   ");
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x"))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null))
         .isInstanceOf(AcademyAiGenerationException.class);
   }
 
@@ -118,7 +118,7 @@ class AcademyAiSuggestionServiceTest {
   void generate_rejects_oversized_response() {
     provider.respondWith("가".repeat(1000));
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x"))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null))
         .isInstanceOf(AcademyAiGenerationException.class)
         .hasMessageContaining("허용 길이");
   }
@@ -128,7 +128,7 @@ class AcademyAiSuggestionServiceTest {
   void generate_rejects_oversized_current_value() {
     String huge = "가".repeat(5000);
     assertThatThrownBy(() -> service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", huge))
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", huge, null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(provider.callCount).isZero();
   }
@@ -138,7 +138,7 @@ class AcademyAiSuggestionServiceTest {
   void generate_handles_null_current_value() {
     provider.respondWith("새로 작성된 소개문");
     AcademyAiSuggestion suggestion = service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", null);
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", null, null);
     assertThat(suggestion.currentValue()).isEmpty();
   }
 
@@ -147,10 +147,10 @@ class AcademyAiSuggestionServiceTest {
   void regenerate_calls_provider_again() {
     provider.respondWith("첫 번째 제안");
     AcademyAiSuggestion first = service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x");
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null);
     provider.respondWith("두 번째 제안");
     AcademyAiSuggestion second = service.generate(
-        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x");
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null);
 
     assertThat(first.suggestedValue()).isEqualTo("첫 번째 제안");
     assertThat(second.suggestedValue()).isEqualTo("두 번째 제안");
@@ -163,8 +163,41 @@ class AcademyAiSuggestionServiceTest {
     provider.respondWith("다듬은 철학 문구");
     for (String target : List.of("philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4")) {
       AcademyAiSuggestion suggestion = service.generate(
-          principal, AcademyAiTaskType.PHILOSOPHY_ITEM, target, "x");
+          principal, AcademyAiTaskType.PHILOSOPHY_ITEM, target, "x", null);
       assertThat(suggestion.target()).isEqualTo(target);
     }
+  }
+
+  @Test
+  @DisplayName("given 사용자 요구사항 when 생성 then promptBuilder에 그대로 전달된다")
+  void generate_passes_instructions_to_prompt_builder() {
+    provider.respondWith("다듬은 소개문");
+    service.generate(
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", "더 짧게, 한 문장으로");
+
+    org.mockito.ArgumentCaptor<String> captor = org.mockito.ArgumentCaptor.forClass(String.class);
+    org.mockito.Mockito.verify(promptBuilder).build(any(), any(), any(), any(), captor.capture());
+    assertThat(captor.getValue()).isEqualTo("더 짧게, 한 문장으로");
+  }
+
+  @Test
+  @DisplayName("given 요구사항이 없음(null) when 생성 then promptBuilder에는 빈 문자열이 전달된다(NPE 없음)")
+  void generate_handles_null_instructions() {
+    provider.respondWith("다듬은 소개문");
+    service.generate(principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", null);
+
+    org.mockito.ArgumentCaptor<String> captor = org.mockito.ArgumentCaptor.forClass(String.class);
+    org.mockito.Mockito.verify(promptBuilder).build(any(), any(), any(), any(), captor.capture());
+    assertThat(captor.getValue()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given 요구사항이 지나치게 김 when 생성 then provider 호출 전에 거부한다")
+  void generate_rejects_oversized_instructions() {
+    String huge = "가".repeat(500);
+    assertThatThrownBy(() -> service.generate(
+        principal, AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "x", huge))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(provider.callCount).isZero();
   }
 }

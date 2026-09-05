@@ -162,6 +162,17 @@ class MiniElement {
     walkText(this, (t) => { out += t; });
     return out;
   }
+
+  /**
+   * 실제 DOM처럼 대입 가능해야 한다 — 자식을 전부 지우고 텍스트 노드 하나로 대체한다.
+   * 예전엔 getter만 있어서 el.textContent = 'x'가 (호출부가 비-strict 모드면) 조용히
+   * 무시됐다 — 버튼 라벨을 바꾸는 코드가 실제로는 아무 효과가 없는데도 테스트가 이를
+   * 잡아내지 못하는 사각지대였다.
+   */
+  set textContent(value) {
+    this.children = [];
+    this._textParts = [String(value == null ? '' : value)];
+  }
 }
 
 function walkText(node, cb) {

@@ -14,12 +14,19 @@ const SUGGESTION_SERVICE_JAVA = fs.readFileSync(
  * 절대 원칙: 생성(Generate)만으로는 currentPreview.pageSettings가 절대 바뀌지 않는다.
  * "적용"을 호출해야만 기존 인라인 텍스트 편집과 같은 경로(pageSettings.builderDraft 갱신 →
  * populatePreview → persistTextChangesAfterApply)로 반영된다.
+ *
+ * Phase 4.2: 모달을 여는 것(openAiSuggestionModal)만으로는 더 이상 자동으로 생성 요청이
+ * 나가지 않는다 — 사용자가 "AI에게 요청할 내용"을 먼저 적을 기회를 주기 위해서다. 실제 요청은
+ * [제안 생성]/[다시 생성] 클릭(requestAiSuggestion)에서만 나간다. 아래 테스트들은 그래서
+ * openAiSuggestionModal 뒤에 requestAiSuggestion을 명시적으로 호출한다(실제 버튼 클릭
+ * 자체의 배선 검증은 mini_dom 기반 academy_ai_assist_button_render.test.js가 담당한다).
  */
 function fakeElement() {
   return {
     textContent: '',
     hidden: false,
     disabled: false,
+    value: '',
     dataset: {},
     classList: { add() {}, remove() {} },
     setAttribute() {},
@@ -31,6 +38,7 @@ function fakeElement() {
 function buildAiModalDocument() {
   const elements = new Map([
     ['builderAiSuggestionModal', fakeElement()],
+    ['builderAiSuggestionInstructions', fakeElement()],
     ['builderAiSuggestionCurrent', fakeElement()],
     ['builderAiSuggestionResult', fakeElement()],
     ['builderAiSuggestionApplyBtn', fakeElement()],
@@ -50,6 +58,22 @@ function buildAiModalDocument() {
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
+test('given AI로 다듬기 모달을 염 when 아직 [제안 생성]을 누르지 않음 then 요청이 전혀 나가지 않는다(자동생성 금지)', async () => {
+  const document = buildAiModalDocument();
+  const fetchCalls = [];
+  const hooks = loadRenderHooks('builder', { document, fetch: async (url, init) => { fetchCalls.push({ url, init }); return new Promise(() => {}); } });
+  const academy = academyFixture({
+    publicPathUrl: '/academies/test-academy',
+    pageSettings: { builderDraft: { principalDesc: '기존 원장 소개문' } }
+  });
+  hooks.setPreview(academy);
+
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  await flush();
+
+  assert.equal(fetchCalls.length, 0, '모달을 열기만 했는데 요청이 나갔다(자동생성 회귀)');
+});
+
 test('given 원장 소개 AI 제안을 생성 when 응답이 아직 오지 않음 then currentPreview는 전혀 바뀌지 않는다(생성=적용 아님)', async () => {
   const document = buildAiModalDocument();
   const fetchCalls = [];
@@ -65,14 +89,40 @@ test('given 원장 소개 AI 제안을 생성 when 응답이 아직 오지 않�
   hooks.setPreview(academy);
 
   hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  hooks.requestAiSuggestion(); // 실제로는 [제안 생성] 클릭에 해당
   await flush();
 
   // then — 요청은 나갔지만(POST /api/tutor/academy/ai/suggestions) 응답 전이라 아무것도 안 바뀜
   assert.equal(fetchCalls.length, 1);
   assert.equal(fetchCalls[0].url, '/api/tutor/academy/ai/suggestions');
   const body = JSON.parse(fetchCalls[0].init.body);
-  assert.deepEqual(body, { task: 'PRINCIPAL_INTRO', target: 'principalDesc', currentValue: '기존 원장 소개문' });
+  assert.deepEqual(body, { task: 'PRINCIPAL_INTRO', target: 'principalDesc', currentValue: '기존 원장 소개문', instructions: '' });
   assert.equal(academy.pageSettings.builderDraft.principalDesc, '기존 원장 소개문');
+});
+
+test('given 사용자가 "요구사항" textarea에 입력함 when [제안 생성]을 누르면 then 요청 body에 그대로 실린다', async () => {
+  const document = buildAiModalDocument();
+  const fetchCalls = [];
+  const hooks = loadRenderHooks('builder', {
+    document,
+    fetch: async (url, init) => { fetchCalls.push({ url, init }); return new Promise(() => {}); }
+  });
+  const academy = academyFixture({
+    publicPathUrl: '/academies/test-academy',
+    pageSettings: { builderDraft: { principalDesc: '기존 원장 소개문' } }
+  });
+  hooks.setPreview(academy);
+
+  // 모달을 연 "뒤에" 입력해야 한다 — openAiSuggestionModal은 새 세션을 위해 이전 요구사항을
+  // 비운다(resetAiSuggestionInstructions), 실제 사용자도 모달이 뜬 뒤에 타이핑한다.
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  document.elements.get('builderAiSuggestionInstructions').value = '  더 짧게, 한 문장으로  ';
+  hooks.requestAiSuggestion();
+  await flush();
+
+  const body = JSON.parse(fetchCalls[0].init.body);
+  // 앞뒤 공백은 트리밍되어야 한다.
+  assert.equal(body.instructions, '더 짧게, 한 문장으로');
 });
 
 test('given AI 제안이 도착 when 적용을 누르지 않음 then builderDraft는 그대로다', async () => {
@@ -86,6 +136,7 @@ test('given AI 제안이 도착 when 적용을 누르지 않음 then builderDraf
   hooks.setPreview(academy);
 
   hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  hooks.requestAiSuggestion();
   await flush();
 
   assert.equal(hooks.getAiSuggestionState().suggestedValue, 'AI가 다듬은 소개문');
@@ -104,6 +155,7 @@ test('given AI 제안이 도착 when 적용을 누르면 then builderDraft의 �
   hooks.setPreview(academy);
 
   hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  hooks.requestAiSuggestion();
   await flush();
   hooks.applyAiSuggestionToBuilder();
 
@@ -116,7 +168,6 @@ test('given 발행된 Academy when AI 제안을 적용 then Production을 직접
   const document = buildAiModalDocument();
   const fetchImpl = async () => ({ ok: true, json: async () => ({ suggestedValue: '새 소개문' }) });
   const hooks = loadRenderHooks('builder', { document, fetch: fetchImpl });
-  const putCalls = [];
   // window.fetch(전역)로 실제 PUT이 나가는지까지 감시한다 — 나가면 안 된다.
   const academy = academyFixture({
     publicPathUrl: '/academies/test-academy', // 이미 발행됨
@@ -125,6 +176,7 @@ test('given 발행된 Academy when AI 제안을 적용 then Production을 직접
   hooks.setPreview(academy);
 
   hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  hooks.requestAiSuggestion();
   await flush();
   hooks.applyAiSuggestionToBuilder();
 
@@ -151,6 +203,7 @@ test('given 철학 카드 4개 각각의 버튼 when target을 명시적으로 �
     hooks.setPreview(academy);
 
     hooks.openAiSuggestionModal('PHILOSOPHY_ITEM', target);
+    hooks.requestAiSuggestion();
     await flush();
 
     const body = JSON.parse(fetchCalls[0].init.body);
@@ -170,6 +223,7 @@ test('given provider 오류 응답 when 생성 then 에러만 표시하고 build
   hooks.setPreview(academy);
 
   hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
+  hooks.requestAiSuggestion();
   await flush();
 
   assert.equal(document.elements.get('builderAiSuggestionError').textContent, 'AI provider가 구성되어 있지 않습니다.');

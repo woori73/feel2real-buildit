@@ -3519,6 +3519,10 @@
     });
   }
 
+  /**
+   * 모달을 열어도 곧바로 생성하지 않는다(Phase 4.2) — 사용자가 "AI에게 요청할 내용"을
+   * 먼저 적을 기회를 준다. 실제 요청은 [제안 생성] 클릭(requestAiSuggestion)에서만 나간다.
+   */
   function openAiSuggestionModal(task, target) {
     const modal = document.getElementById('builderAiSuggestionModal');
     if (!modal || !currentPreview || !task || !target) return;
@@ -3528,9 +3532,10 @@
     setAiSuggestionResultText('');
     clearAiSuggestionError();
     setAiSuggestionApplyEnabled(false);
+    resetAiSuggestionInstructions();
+    setAiSuggestionGenerateLabel('제안 생성');
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
-    requestAiSuggestion();
   }
 
   function closeAiSuggestionModal() {
@@ -3555,6 +3560,23 @@
   function setAiSuggestionApplyEnabled(enabled) {
     const btn = document.getElementById('builderAiSuggestionApplyBtn');
     if (btn) btn.disabled = !enabled;
+  }
+
+  /** 모달을 새로 열 때마다 이전 세션의 요구사항이 남지 않도록 비운다. */
+  function resetAiSuggestionInstructions() {
+    const el = document.getElementById('builderAiSuggestionInstructions');
+    if (el) el.value = '';
+  }
+
+  function aiSuggestionInstructions() {
+    const el = document.getElementById('builderAiSuggestionInstructions');
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  /** [제안 생성]→[다시 생성] 라벨 전환. 버튼 자체(및 클릭 핸들러)는 하나만 쓴다. */
+  function setAiSuggestionGenerateLabel(text) {
+    const btn = document.getElementById('builderAiSuggestionRegenerateBtn');
+    if (btn) btn.textContent = text;
   }
 
   function setAiSuggestionLoading(loading) {
@@ -3582,10 +3604,16 @@
     setAiSuggestionError('');
   }
 
-  /** "다시 생성"도 이 함수를 그대로 다시 호출한다 — 새 suggestion으로 교체될 뿐 어떤 데이터도 저장하지 않는다. */
+  /**
+   * [제안 생성]/[다시 생성] 둘 다 이 함수를 그대로 호출한다 — 새 suggestion으로 교체될 뿐
+   * 어떤 데이터도 저장하지 않는다. "다시 생성"을 눌러도 textarea는 비우지 않으므로(모달을
+   * 새로 열 때만 resetAiSuggestionInstructions가 비운다) 사용자가 입력한 요구사항은 그대로
+   * 유지된 채 재요청에 실린다.
+   */
   async function requestAiSuggestion() {
     if (!aiSuggestionState) return;
     const requested = aiSuggestionState;
+    const instructions = aiSuggestionInstructions();
     setAiSuggestionLoading(true);
     clearAiSuggestionError();
     setAiSuggestionResultText('');
@@ -3597,7 +3625,8 @@
         body: JSON.stringify({
           task: requested.task,
           target: requested.target,
-          currentValue: requested.currentValue
+          currentValue: requested.currentValue,
+          instructions: instructions
         })
       });
       if (aiSuggestionState !== requested) return; // 응답이 오기 전에 모달이 닫힘/전환됨
@@ -3668,7 +3697,10 @@
       if (event.target === modal) closeAiSuggestionModal();
     });
     const regenerate = document.getElementById('builderAiSuggestionRegenerateBtn');
-    if (regenerate) regenerate.addEventListener('click', requestAiSuggestion);
+    if (regenerate) regenerate.addEventListener('click', () => {
+      setAiSuggestionGenerateLabel('다시 생성');
+      requestAiSuggestion();
+    });
     const apply = document.getElementById('builderAiSuggestionApplyBtn');
     if (apply) apply.addEventListener('click', applyAiSuggestionToBuilder);
   }
@@ -4504,6 +4536,8 @@
     openAiSuggestionModal,
     applyAiSuggestionToBuilder,
     getAiSuggestionState: () => aiSuggestionState,
+    // Phase 4.2: 생성 전 "요구사항" 입력 + [제안 생성]/[다시 생성] 분리 검증용.
+    requestAiSuggestion,
     loadCompletionCheck,
     renderCompletionCheck,
     // 실제 클릭 위임 배선. "AI로 다듬기" 버튼이 실제 렌더 마크업에서 클릭으로 도달 가능한지
