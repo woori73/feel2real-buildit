@@ -86,8 +86,10 @@
 
       const academy = await response.json();
       const builderDraft = (academy.pageSettings && academy.pageSettings.builderDraft) || {};
+      // 가로 컬렉션이 기본이다 — 명시적 'vertical'일 때만 기존 세로 레이아웃(academy_sections.js
+      // isHorizontalCollection과 동일 규칙).
       horizontalLayout = SECTIONS != null
-        && String(builderDraft.lessonsLayout || '').trim().toLowerCase() === 'horizontal';
+        && String(builderDraft.lessonsLayout || '').trim().toLowerCase() !== 'vertical';
       document.querySelector('.lesson-editor-app')
         ?.classList.toggle('is-horizontal-layout', horizontalLayout);
       const params = new URLSearchParams(location.search);

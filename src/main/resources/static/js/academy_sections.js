@@ -658,9 +658,14 @@
   // 렌더는 순수 문자열이고, 배선(화살표 스크롤·카드 클릭 재생)은 academy_collection.js가 담당한다.
   // 다음 단계에서 Mini Lectures / School Exam Contents 등도 같은 shell + card type으로 올린다.
 
-  /** 섹션 레이아웃 선택. draft 값이 'horizontal'이면 opt-in, 그 외/미설정이면 기존 레이아웃. */
+  /**
+   * 섹션 레이아웃 선택. Phase 2부터 가로 컬렉션이 기본이다 — draft 값이 명시적으로
+   * 'vertical'일 때만 기존(세로) 레이아웃으로 되돌아간다. 미설정/'horizontal' 모두 가로.
+   * (Phase 3-B 도입 당시엔 반대로 'horizontal'만 opt-in이었다 — Eduholic 한 곳만 검증한
+   * 뒤 전체 기본값으로 승격했다.)
+   */
   function isHorizontalCollection(view, key) {
-    return String(draftText(view, key, '') || '').trim().toLowerCase() === 'horizontal';
+    return String(draftText(view, key, '') || '').trim().toLowerCase() !== 'vertical';
   }
 
   function textValue(value) {
@@ -856,9 +861,19 @@
     return name ? name + '의 수업 현장' : '수업 현장';
   }
 
+  /**
+   * sec-videos(수업 현장)는 LESSON 용도만 노출한다. purpose가 없는 레거시 업로드(이 필드
+   * 도입 전)는 용도 미상이라 계속 노출하고(하위 호환), DIRECTOR로 확정된 원장 소개 영상만
+   * 제외한다. Builder DIRECTOR/LESSON picker(videosForPurpose)는 이미 이렇게 걸러졌는데
+   * 이 섹션의 콘텐츠 목록(ctx.videoList())만 걸러지지 않아 원장 영상이 섞여 나왔었다.
+   */
+  function excludeDirectorPurpose(videos) {
+    return (videos || []).filter((video) => video && video.purpose !== 'DIRECTOR');
+  }
+
   function renderVideos(view, ctx) {
     if (!view.sectionVisible('sec-videos')) return '';
-    const videos = ctx.videoList();
+    const videos = excludeDirectorPurpose(ctx.videoList());
     const body = isHorizontalCollection(view, 'videosLayout')
       ? ctx.videoCollection(videos)
       : (videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER);

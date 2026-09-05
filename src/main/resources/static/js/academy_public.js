@@ -422,7 +422,15 @@
       if (!item || !root.contains(item)) return;
       const player = document.getElementById('academyVideoPlayer');
       if (!player) return;
-      player.src = item.dataset.videoSelect;
+      // 첫 영상은 서버 렌더 HTML이 이미 <video src>로 로드해 둔 상태다. 여기서 같은 URL을
+      // .src에 다시 대입하면(문자열이 같아도) 브라우저가 media element load algorithm을
+      // 재실행해 진행 중이던 최초 로드를 스스로 중단시킨다(play()가 AbortError로 조용히
+      // 실패) — "새로고침 후 첫 영상 첫 클릭만 재생 안 됨" 버그의 원인. 실제로 바뀔 때만
+      // 대입하고, 재생 시도는(이미 로드된 영상이라도) 매번 한다.
+      const nextSrc = item.dataset.videoSelect;
+      if (player.getAttribute('src') !== nextSrc) {
+        player.src = nextSrc;
+      }
       player.play().catch(() => { /* 자동재생 차단은 무시하고 사용자가 재생 버튼을 누르게 둔다 */ });
       root.querySelectorAll('[data-video-select]').forEach((el) => el.classList.remove('active'));
       item.classList.add('active');

@@ -93,9 +93,11 @@ test('given RAW Ready 영상에 thumbnail이 없을 때 then 공개·빌더 모�
     { videoId: 2, videoUrl: '/media/2.mp4', thumbnailUrl: '/media/2.jpg', durationSec: 30 }
   ];
 
+  // 이 마크업(video-playlist-*)은 세로(레거시) 레이아웃 전용이다 — Phase 2부터 기본은
+  // 가로 컬렉션이라 명시적으로 'vertical'을 지정해야 이 경로를 렌더한다.
   for (const [name, hooks] of bothRenderers()) {
     // when
-    const academy = academyFixture();
+    const academy = academyFixture({ pageSettings: { builderDraft: { videosLayout: 'vertical' } } });
     const html = primeRenderer(hooks, academy, videos).renderVideos(academy);
 
     // then — 썸네일 없는 항목은 중립 placeholder
@@ -129,9 +131,9 @@ test('given sec-videos 섹션 골격 when 공개·빌더를 렌더 then 제목�
 });
 
 test('given 재생목록 when 공개·빌더를 렌더 then 공개만 클릭 재생이 되고 빌더는 비인터랙티브다', () => {
-  // given
+  // given — 이 재생목록(video-playlist-*) 마크업은 세로(레거시) 레이아웃 전용이다.
   const videos = [{ videoId: 1, videoUrl: '/media/1.mp4', thumbnailUrl: '/media/1.jpg', durationSec: 75 }];
-  const academy = academyFixture();
+  const academy = academyFixture({ pageSettings: { builderDraft: { videosLayout: 'vertical' } } });
 
   // when
   const publicHtml = primeRenderer(loadRenderHooks('public'), academy, videos).renderVideos(academy);
@@ -146,6 +148,65 @@ test('given 재생목록 when 공개·빌더를 렌더 then 공개만 클릭 재
   assert.match(builderHtml, /<div class="video-playlist-item active">/);
   assert.doesNotMatch(builderHtml, /data-video-select/);
   assert.doesNotMatch(builderHtml, /id="academyVideoPlayer"/);
+});
+
+test('given DIRECTOR/LESSON/용도미상 영상이 섞여 있을 때 when sec-videos를 렌더 then DIRECTOR 영상만 제외된다', () => {
+  // 회귀: 업로드/저장/API/피커는 모두 purpose로 걸러지는데 sec-videos 콘텐츠 목록만
+  // ctx.videoList()를 그대로 써서 원장 소개 영상이 "수업 현장" 목록에 섞여 나왔었다.
+  // 빌더 캔버스는 재생목록 항목에 영상 URL을 노출하지 않으므로(비인터랙티브) 재생시간으로
+  // 어느 영상이 남았는지 판별한다 — durationSec을 서로 다르게 둬 식별자로 쓴다.
+  const videos = [
+    { videoId: 1, videoUrl: '/media/1.mp4', originalFilename: '원장님 인터뷰.mp4', purpose: 'DIRECTOR', durationSec: 11 },
+    { videoId: 2, videoUrl: '/media/2.mp4', originalFilename: '문법 강의.mp4', purpose: 'LESSON', durationSec: 22 },
+    { videoId: 3, videoUrl: '/media/3.mp4', originalFilename: '옛날 업로드.mp4', purpose: null, durationSec: 33 }
+  ];
+
+  // 필터링은 레이아웃과 무관한 콘텐츠 규칙이지만, 마크업 단언을 단순하게 유지하려고
+  // 세로(레거시) 레이아웃으로 고정한다 — 가로 컬렉션에서도 동일 함수(excludeDirectorPurpose)를
+  // 거치므로 별도로 재검증할 필요는 없다.
+  const withVerticalLayout = (overrides) => academyFixture({
+    pageSettings: { builderDraft: { videosLayout: 'vertical' } },
+    ...overrides
+  });
+
+  for (const [name, hooks] of bothRenderers()) {
+    // given
+    const academy = withVerticalLayout();
+
+    // when
+    const html = primeRenderer(hooks, academy, videos).renderVideos(academy);
+
+    // then — DIRECTOR(1)는 빠지고 LESSON(2) + 용도 미상 레거시(3)만 남는다(총 2건)
+    assert.doesNotMatch(html, /0:11/, `${name}: DIRECTOR 영상이 sec-videos에 섞임`);
+    assert.match(html, /0:22/, `${name}: LESSON 영상이 빠짐`);
+    assert.match(html, /0:33/, `${name}: 용도 미상 레거시 영상이 빠짐(하위 호환 위반)`);
+    const indexCount = (html.match(/class="video-playlist-index"/g) || []).length;
+    assert.equal(indexCount, 2, `${name}: 재생목록 항목 수가 2건이 아님(DIRECTOR가 섞였을 가능성)`);
+  }
+
+  // then — public 렌더는 URL로도 직접 확인할 수 있다(공개 페이지는 data-video-select에 URL 노출)
+  const publicHtml = primeRenderer(loadRenderHooks('public'), withVerticalLayout(), videos).renderVideos(withVerticalLayout());
+  assert.doesNotMatch(publicHtml, /\/media\/1\.mp4/, 'public: DIRECTOR 영상 URL이 sec-videos에 섞임');
+  assert.match(publicHtml, /\/media\/2\.mp4/, 'public: LESSON 영상 URL이 빠짐');
+  assert.match(publicHtml, /\/media\/3\.mp4/, 'public: 용도 미상 레거시 영상 URL이 빠짐');
+});
+
+test('given DIRECTOR/LESSON/용도미상 영상이 섞여 있을 때 when 가로 컬렉션(기본)으로 sec-videos를 렌더 then 동일하게 DIRECTOR만 제외된다', () => {
+  // 가로 컬렉션이 기본 레이아웃이 됐으므로 그 경로에서도 같은 필터가 적용되는지 확인한다.
+  const videos = [
+    { videoId: 1, videoUrl: '/media/1.mp4', purpose: 'DIRECTOR', durationSec: 11 },
+    { videoId: 2, videoUrl: '/media/2.mp4', purpose: 'LESSON', durationSec: 22 },
+    { videoId: 3, videoUrl: '/media/3.mp4', purpose: null, durationSec: 33 }
+  ];
+  for (const [name, hooks] of bothRenderers()) {
+    const academy = academyFixture(); // 기본 레이아웃 = 가로 컬렉션
+    const html = primeRenderer(hooks, academy, videos).renderVideos(academy);
+    assert.doesNotMatch(html, /0:11/, `${name}: DIRECTOR 영상이 가로 컬렉션에 섞임`);
+    assert.match(html, /0:22/, `${name}: LESSON 영상이 빠짐`);
+    assert.match(html, /0:33/, `${name}: 용도 미상 레거시 영상이 빠짐`);
+    const cardCount = (html.match(/class="f2r-collection-card"/g) || []).length;
+    assert.equal(cardCount, 2, `${name}: 가로 컬렉션 카드 수가 2건이 아님`);
+  }
 });
 
 test('given 강사 Academy 화면 when 진입점을 확인 then 영상 관리 페이지로 가는 링크가 있다', () => {
@@ -292,7 +353,8 @@ test('given sec-intro when 공개·빌더를 렌더 then 입력 안내 라벨과
 });
 
 test('given 영상 플레이리스트 when 공개·빌더를 렌더 then 양쪽 모두 순번과 재생시간을 표시한다', () => {
-  // 빌더 캔버스에만 meta가 빠져 발행 화면과 다르게 보였던 적이 있다.
+  // 빌더 캔버스에만 meta가 빠져 발행 화면과 다르게 보였던 적이 있다. 재생목록(video-playlist-*)
+  // 마크업은 세로(레거시) 레이아웃 전용이라 명시적으로 지정한다.
   const videos = [
     { videoId: 1, videoUrl: '/media/1.mp4', thumbnailUrl: null, durationSec: 75 },
     { videoId: 2, videoUrl: '/media/2.mp4', thumbnailUrl: null, durationSec: 5 }
@@ -300,7 +362,7 @@ test('given 영상 플레이리스트 when 공개·빌더를 렌더 then 양쪽 
 
   for (const [name, hooks] of bothRenderers()) {
     // when
-    const academy = academyFixture();
+    const academy = academyFixture({ pageSettings: { builderDraft: { videosLayout: 'vertical' } } });
     const html = primeRenderer(hooks, academy, videos).renderVideos(academy);
 
     // then
