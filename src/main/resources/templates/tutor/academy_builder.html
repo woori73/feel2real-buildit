@@ -124,6 +124,17 @@
     .builder-completion-item:not(.is-done) .builder-completion-mark{color:#fbbf24;}
 
     /* Phase 5A: AI Academy Builder 진입 버튼 + 진단/제안 모달. */
+    /* 긴 추천안에서도 모달이 viewport를 넘지 않고, 배경이 아니라 모달 본문이 스크롤되게 한다.
+       제목/닫기(head)와 하단 action(닫기·분석하기)은 고정, 본문(진단+추천안 목록)만 스크롤. */
+    .builder-compose-modal{display:flex;flex-direction:column;max-height:min(90vh,880px);}
+    .builder-compose-modal .builder-text-modal-head{flex-shrink:0;}
+    .builder-compose-modal .builder-text-modal-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+    .builder-compose-modal .builder-text-modal-actions{flex-shrink:0;}
+    /* 전체 적용/되돌리기 툴바는 추천안을 스크롤하는 동안에도 항상 보이도록 본문 상단에 고정. */
+    .builder-compose-modal .builder-compose-toolbar{position:sticky;top:0;z-index:2;background:#fff;margin-top:0;padding-top:6px;}
+    @media (max-width:768px){
+      .builder-compose-modal{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);width:min(520px,calc(100vw - 20px));}
+    }
     .builder-compose-trigger{
       display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:10px;
       padding:9px 12px;border-radius:9px;border:1px solid rgba(122,174,240,.45);
@@ -1532,7 +1543,7 @@ function setView(mode, btn){
      "적용"을 눌러야만 기존 인라인 편집과 같은 경로(builderDraft/sectionOrder → 발행/미리보기)로
      반영된다. Publish는 AI가 절대 실행하지 않는다. -->
 <div class="builder-text-modal-backdrop" id="builderAcademyComposeModal" aria-hidden="true">
-  <div class="builder-text-modal builder-ai-suggestion-modal" role="dialog" aria-modal="true" aria-labelledby="builderComposeTitle">
+  <div class="builder-text-modal builder-ai-suggestion-modal builder-compose-modal" role="dialog" aria-modal="true" aria-labelledby="builderComposeTitle">
     <div class="builder-text-modal-head">
       <div>
         <h3 id="builderComposeTitle">AI Academy Builder</h3>
