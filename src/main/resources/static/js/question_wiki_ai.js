@@ -104,7 +104,7 @@
       setStatus(error && error.message ? error.message : '무료 AI 문제 생성에 실패했습니다.');
     } finally {
       els.generate.disabled = !contextPack;
-      els.regenerate.disabled = false;
+      els.regenerate.disabled = !preview;
     }
   }
 
