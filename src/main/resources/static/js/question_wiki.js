@@ -1,7 +1,7 @@
 /**
  * 공개 BuildIt Wiki 문항 상세(/wiki/questions/{id}).
  *
- * 화면은 2개 영역만 명확하게: [학습자료] / [이 문항에 대한 의견].
+ * 화면은 [학습자료] / [AI 문제제작] / [이 문항에 대한 의견] 흐름으로 구성한다.
  * 내부 개념(data_kind / DISCUSSION / enum 등)은 사용자에게 노출하지 않는다.
  * 읽기는 누구나. 로그인하면 의견 작성. 학습자료 연결/업로드는 ADMIN. 권한은 서버가 최종 결정한다.
  *
@@ -76,6 +76,7 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
 
     window.addEventListener('f2r:login', function (e) { me = (e && e.detail) || readUser(); syncAuthUi(); render(); });
+    window.addEventListener('questionwiki:reload', function () { load(); });
     syncAuthUi();
     await load();
   }
@@ -87,6 +88,10 @@
       if (!res.ok) throw new Error();
       cache = await res.json();
       render();
+      // A single common bridge supplies exactly this question's Context to the AI panel.
+      window.dispatchEvent(new CustomEvent('questionwiki:context', {
+        detail: { questionWikiId: questionWikiId, context: cache }
+      }));
     } catch (_) {
       els.context.textContent = '';
       els.opinionList.innerHTML = '<p class="qw-error">불러오지 못했습니다.</p>';

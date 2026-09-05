@@ -16,7 +16,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 /**
  * 공개 BuildIt Wiki 문항 상세 화면 계약.
  *
- * <p>단순화 원칙(스펙): 화면은 [학습자료] / [이 문항에 대한 의견] 두 영역만 명확히 보인다.
+ * <p>단순화 원칙(스펙): 화면은 [학습자료] / [AI 문제제작] / [이 문항에 대한 의견] 흐름으로 보인다.
  * 작성폼은 기본으로 펼쳐져 있지 않고, 내부 개념(data_kind / DISCUSSION 등)을 사용자에게 노출하지 않는다.
  */
 class QuestionWikiContractTest {
@@ -54,7 +54,7 @@ class QuestionWikiContractTest {
   }
 
   @Test
-  @DisplayName("상세 화면은 [학습자료]/[이 문항에 대한 의견] 두 영역 + '의견 남기기' 버튼이 있고, 작성폼은 모달(기본 숨김)이다")
+  @DisplayName("상세 화면은 [학습자료]/[AI 문제제작]/[이 문항에 대한 의견] 흐름이며 작성폼은 모달(기본 숨김)이다")
   void detailTemplate_twoAreasAndNoInlineForm() throws IOException {
     String html = read("templates/public/question_wiki.html");
 
@@ -119,6 +119,38 @@ class QuestionWikiContractTest {
     assertThat(js).contains("els.htmlFrame.setAttribute('src'");
     // iframe src 로만 연다(srcdoc/innerHTML 로 부모에 삽입하지 않음)
     assertThat(js).doesNotContain("htmlFrame.srcdoc").doesNotContain("innerHTML = html");
+  }
+
+  @Test
+  @DisplayName("모든 문항 상세에 공통 Chrome AI 진입점이 있고 현재 Context만 사용해 기존 Variant로 저장한다")
+  void detailTemplate_hasSharedChromeAiEntrypoint() throws IOException {
+    String html = read("templates/public/question_wiki.html");
+    assertThat(html)
+        .contains("id=\"qwAiSection\"", "id=\"qwAiToggle\"", "✨ AI 문제제작")
+        .contains("data-ai-preset=\"grammar\"", "id=\"qwAiRequest\"", "id=\"qwAiPattern\"")
+        .contains("/js/chrome_built_in_ai.js", "/js/question_wiki_ai.js");
+
+    String detailJs = read("static/js/question_wiki.js");
+    assertThat(detailJs)
+        .contains("questionwiki:context", "questionWikiId: questionWikiId", "context: cache")
+        .contains("questionwiki:reload");
+
+    String aiJs = read("static/js/question_wiki_ai.js");
+    assertThat(aiJs)
+        .contains("window.ChromeBuiltInQuestionAi")
+        .contains("sourceQuestionId: Number(questionWikiId)")
+        .contains("dataKind: 'GENERATED_PRACTICE'", "category: 'VARIANT'", "variant:")
+        .contains("questionwiki:reload")
+        .doesNotContain("/context")
+        .doesNotContain("openai", "claude", "gemini", "googleapis");
+
+    String engineJs = read("static/js/chrome_built_in_ai.js");
+    assertThat(engineJs)
+        .contains("LanguageModel.availability", "LanguageModel.create")
+        .contains("sourceLanguage: 'ko', targetLanguage: 'en'")
+        .contains("sourceLanguage: 'en', targetLanguage: 'ko'")
+        .contains("PATTERN REFERENCE ONLY", "CURRENT_WIKI_CONTEXT is the only content source")
+        .doesNotContain("fetch(");
   }
 
   private static String read(String classpath) throws IOException {

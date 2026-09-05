@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="stylesheet" href="/css/wiki.css?v=20260903-3">
-  <link rel="stylesheet" href="/css/question_wiki.css?v=20260904-1">
+  <link rel="stylesheet" href="/css/question_wiki.css?v=20260906-1">
 </head>
 <body class="wiki-body">
 <th:block layout:fragment="content">
@@ -37,6 +37,33 @@
       <div id="qwMaterialAdmin" class="qw-material-admin" hidden>
         <button type="button" id="qwFindMaterialBtn" class="qw-btn-outline">Wiki 자료에서 찾기</button>
         <button type="button" id="qwUploadMaterialBtn" class="qw-btn-outline">직접 올리기</button>
+      </div>
+    </section>
+
+    <section class="qw-section qw-ai-section" id="qwAiSection">
+      <div class="qw-section-head">
+        <div><h2>AI 문제제작</h2><p class="muted">현재 문항만 사용해 Chrome 기기 안에서 문제를 만듭니다.</p></div>
+        <button type="button" id="qwAiToggle" class="qw-btn-primary" aria-expanded="false">✨ AI 문제제작</button>
+      </div>
+      <div id="qwAiPanel" class="qw-ai-panel" hidden>
+        <div class="qw-ai-runtime" aria-label="Chrome AI runtime 상태">
+          <b>기기 내 AI 상태</b>
+          <span>Prompt API <em id="qwAiPromptStatus">확인 전</em></span>
+          <span>번역 ko→en <em id="qwAiKoEnStatus">확인 전</em></span>
+          <span>번역 en→ko <em id="qwAiEnKoStatus">확인 전</em></span>
+        </div>
+        <fieldset class="qw-ai-fieldset"><legend>문제 유형</legend><div id="qwAiPresets" class="qw-chips">
+          <button type="button" class="qw-chip active" data-ai-preset="similar">유사 변형</button><button type="button" class="qw-chip" data-ai-preset="grammar">어법</button><button type="button" class="qw-chip" data-ai-preset="vocabulary">어휘</button><button type="button" class="qw-chip" data-ai-preset="blank">빈칸</button><button type="button" class="qw-chip" data-ai-preset="order">글의 순서</button><button type="button" class="qw-chip" data-ai-preset="insertion">문장 삽입</button><button type="button" class="qw-chip" data-ai-preset="title-topic">제목/주제</button><button type="button" class="qw-chip" data-ai-preset="subjective">서술형</button>
+        </div></fieldset>
+        <label class="qw-field"><span>추가 요청 <span class="muted">(선택)</span></span><textarea id="qwAiRequest" rows="3" placeholder="예: 이 문항을 우리 학교 스타일로 더 어렵게 만들어줘"></textarea></label>
+        <label class="qw-field"><span>학교 유형 예시 <span class="muted">(선택 · PATTERN REFERENCE ONLY)</span></span><textarea id="qwAiPattern" rows="5" placeholder="학교 문제의 발문·선택지·답안 형식 예시를 붙여넣으세요. 예시 내용은 문제 소재로 사용하지 않습니다."></textarea></label>
+        <p id="qwAiStatus" class="qw-msg" role="status">AI 상태를 확인하려면 문제제작 버튼을 여세요.</p>
+        <button type="button" id="qwAiGenerate" class="qw-btn-primary" disabled>문제 생성</button>
+        <article id="qwAiPreview" class="qw-ai-preview" hidden>
+          <div class="qw-ai-preview-head"><h3>Preview</h3><span>저장 전 검수</span></div>
+          <div id="qwAiPreviewBody"></div>
+          <div class="qw-ai-actions"><button type="button" id="qwAiRegenerate" class="qw-btn-outline">다시 생성</button><button type="button" id="qwAiSave" class="qw-btn-primary">저장</button></div>
+        </article>
       </div>
     </section>
 
@@ -75,7 +102,9 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/question_wiki.js?v=20260904-2"></script>
+  <script src="/js/chrome_built_in_ai.js?v=20260906-1"></script>
+  <script src="/js/question_wiki_ai.js?v=20260906-1"></script>
+  <script src="/js/question_wiki.js?v=20260906-1"></script>
   <script src="/js/question_wiki_mobile_preview.js?v=20260904-1"></script>
 </th:block>
 </body>
