@@ -81,7 +81,9 @@
         subject: q.subject || '', grade: q.grade, examYear: q.examYear,
         examLabel: q.examLabel || '', questionNumber: q.questionNumber,
         title: q.title || '', displayContext: q.displayContext || '',
-        passage: sourceText, sourceDocuments: documents.map(function (d) {
+        passage: sourceText, sourceText: sourceText,
+        originalInstruction: '', originalChoices: [], originalAnswer: '', originalExplanation: '',
+        sourceDocuments: documents.map(function (d) {
           return { linkId: d.linkId, label: d.label, title: d.title };
         })
       },
