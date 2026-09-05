@@ -22,7 +22,19 @@
     if (!b) return;
     gradeTabs.querySelectorAll('.grade-tab').forEach(function (t) { t.classList.toggle('active', t === b); });
     grade = Number(b.dataset.grade);
-    render();
+    document.addEventListener('click', async function (e) {
+    var link = e.target.closest('[data-member-download]');
+    if (!link) return;
+    e.preventDefault();
+    try {
+      var me = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (me.ok) { window.location.href = link.href; return; }
+    } catch (_) {}
+    alert('자료 다운로드는 로그인 회원만 이용할 수 있습니다.');
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+  });
+
+  render();
   });
 
   document.querySelectorAll('.board-write').forEach(function (btn) {
@@ -101,7 +113,7 @@
         return;
       }
       box.innerHTML = items.map(function (it) {
-        return '<a class="file-card" href="' + escapeAttr(it.downloadUrl) + '">'
+        return '<a class="file-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<span class="file-badge">' + escapeHtml(it.docTypeLabel) + '</span>'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="file-meta">' + escapeHtml(it.examLabel) + ' · 고' + it.grade + ' · ' + fileMeta(it) + '</span>'
@@ -126,7 +138,7 @@
       }
       box.innerHTML = items.map(function (it) {
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
-        return '<a class="analysis-card" href="' + escapeAttr(it.downloadUrl) + '">'
+        return '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
           + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + ' · ' + fileMeta(it) + '</span>'

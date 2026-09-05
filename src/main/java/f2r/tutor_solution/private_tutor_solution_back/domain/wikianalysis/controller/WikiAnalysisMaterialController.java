@@ -10,13 +10,15 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.servic
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
-/** 공개 BuildIt Wiki 분석 자료 API. 공개 목록/다운로드 + ADMIN CRUD. */
+/** BuildIt Wiki 분석 자료 API. 공개 목록 + 회원 다운로드 + ADMIN CRUD. */
 @RestController
 @RequiredArgsConstructor
 public class WikiAnalysisMaterialController {
@@ -33,9 +35,12 @@ public class WikiAnalysisMaterialController {
   @GetMapping("/api/wiki/analysis-materials/{id}/download")
   public ResponseEntity<byte[]> download(
       @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    }
     DownloadFile file = service.getPublicDownload(id);
     downloadRecordingService.record(WikiMaterialCategory.ANALYSIS, id, file.title(),
-        principal == null ? null : principal.userId(), principal == null ? null : principal.role());
+        principal.userId(), principal.role());
     return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
   }
 

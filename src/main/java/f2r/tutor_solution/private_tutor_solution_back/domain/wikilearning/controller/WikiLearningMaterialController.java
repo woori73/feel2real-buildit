@@ -10,11 +10,13 @@ import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDow
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
@@ -62,9 +64,12 @@ public class WikiLearningMaterialController {
   @GetMapping("/api/wiki/learning-materials/{id}/download")
   public ResponseEntity<byte[]> download(
       @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    }
     DownloadFile file = service.getDownload(id);
     downloadRecordingService.record(WikiMaterialCategory.LEARNING, id, file.title(),
-        principal == null ? null : principal.userId(), principal == null ? null : principal.role());
+        principal.userId(), principal.role());
     return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
   }
   @GetMapping("/api/admin/wiki/learning-materials")

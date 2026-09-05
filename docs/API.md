@@ -2725,7 +2725,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 공개
 - `GET /api/wiki/originals?grade=` — deleted=false·visible=true, grade(1~3, null=전체) 필터, 최신순. → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examLabel, docType, docTypeLabel, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/originals/{id}/download` — 공개 자료만. `Content-Disposition: attachment` + 확장자로 추론한 content-type(pdf/hwp/hwpx) + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
+- `GET /api/wiki/originals/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 `Content-Disposition: attachment` + 확장자로 추론한 content-type(pdf/hwp/hwpx) + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/originals` — deleted=false 전체(비공개 포함).
@@ -2745,7 +2745,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 공개
 - `GET /api/wiki/analysis-materials?grade=` — deleted=false·visible=true, grade(1~3, null=전체), 최신순. → `WikiAnalysisMaterialResponse[]`(wikiAnalysisMaterialId, title, description, schoolName, grade, year, semester, examType, subject, contentType, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/analysis-materials/{id}/download` — 공개 자료만. 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404.
+- `GET /api/wiki/analysis-materials/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404.
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/analysis-materials` — deleted=false 전체.
@@ -3570,7 +3570,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 ### 다운로드 기록 (자동, 다운로드 endpoint 내부)
 - `WikiExamOriginalController`/`WikiAnalysisMaterialController`/`WikiLearningMaterialController` 의 기존 `/{id}/download` 가 파일을 정상적으로 읽어온 직후 `WikiDownloadRecordingService.record(...)` 를 호출한다. 프론트 버튼 클릭은 집계하지 않는다. 기존 다운로드 응답(바이트/파일명/Content-Type)은 변경하지 않는다.
-- category: `ORIGINAL`/`ANALYSIS`/`LEARNING`. GUEST 다운로드가 허용되는 자료(ORIGINAL/ANALYSIS)는 `user_id=NULL, role=GUEST` 로 기록된다. LEARNING은 회원 전용이라 항상 로그인 사용자로 기록된다.
+- category: `ORIGINAL`/`ANALYSIS`/`LEARNING`. 세 종류 모두 로그인 회원만 다운로드할 수 있으며 성공한 다운로드만 로그인 사용자 정보로 기록된다. 인증이 차단한 GUEST 요청은 로그에 기록하지 않는다. 기존 GUEST 과거 로그는 삭제하거나 변경하지 않는다.
 
 ### `GET /api/admin/analytics/summary`
 → `AdminAnalyticsResponse`:

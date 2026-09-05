@@ -3,10 +3,12 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.contr
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -38,7 +40,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@DisplayName("WikiAnalysisMaterialController — 공개 조회는 permitAll, 관리 CRUD는 ADMIN")
+@DisplayName("WikiAnalysisMaterialController — 공개 조회 / 회원 다운로드 / 관리 ADMIN")
 @WebMvcTest(controllers = WikiAnalysisMaterialController.class)
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -67,16 +69,28 @@ class WikiAnalysisMaterialControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 익명 when 공개 목록/다운로드 then 200 + attachment 헤더 + 다운로드 기록(GUEST)")
-  void publicRead_anonymous_ok() throws Exception {
+  @DisplayName("given 익명 when 공개 목록 조회 then 200")
+  void publicList_anonymous_ok() throws Exception {
     mockMvc.perform(get("/api/wiki/analysis-materials").param("grade", "3")).andExpect(status().isOk());
-    mockMvc.perform(get("/api/wiki/analysis-materials/1/download"))
+  }
+
+  @Test
+  @DisplayName("given 익명 when 다운로드 URL 직접 호출 then 401 + 파일 조회/로그 기록 없음")
+  void download_anonymous_unauthorizedWithoutLog() throws Exception {
+    mockMvc.perform(get("/api/wiki/analysis-materials/1/download")).andExpect(status().isUnauthorized());
+    verify(service, never()).getPublicDownload(anyLong());
+    verifyNoInteractions(downloadRecordingService);
+  }
+
+  @Test
+  @DisplayName("given 회원 when 다운로드 then 200 + attachment 헤더 + 다운로드 기록")
+  void download_member_okAndRecorded() throws Exception {
+    mockMvc.perform(get("/api/wiki/analysis-materials/1/download").cookie(token("STUDENT")))
         .andExpect(status().isOk())
         .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
             org.hamcrest.Matchers.containsString("attachment")));
-
     verify(downloadRecordingService).record(
-        eq(WikiMaterialCategory.ANALYSIS), eq(1L), anyString(), isNull(), isNull());
+        eq(WikiMaterialCategory.ANALYSIS), eq(1L), anyString(), eq(1L), eq("STUDENT"));
   }
 
   @Test
@@ -109,7 +123,7 @@ class WikiAnalysisMaterialControllerWebMvcTest {
     when(service.getPublicDownload(999L)).thenThrow(
         new org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.NOT_FOUND, "no"));
-    mockMvc.perform(get("/api/wiki/analysis-materials/999/download")).andExpect(status().isNotFound());
+    mockMvc.perform(get("/api/wiki/analysis-materials/999/download").cookie(token("STUDENT"))).andExpect(status().isNotFound());
   }
 
   private Cookie token(String role) {
