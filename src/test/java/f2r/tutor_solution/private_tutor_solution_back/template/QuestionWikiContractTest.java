@@ -16,7 +16,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 /**
  * 공개 BuildIt Wiki 문항 상세 화면 계약.
  *
- * <p>단순화 원칙(스펙): 화면은 [학습자료] / [이 문항에 대한 의견] 두 영역만 명확히 보인다.
+ * <p>단순화 원칙(스펙): 화면은 [학습자료] / [AI 문제제작] / [이 문항에 대한 의견] 흐름으로 보인다.
  * 작성폼은 기본으로 펼쳐져 있지 않고, 내부 개념(data_kind / DISCUSSION 등)을 사용자에게 노출하지 않는다.
  */
 class QuestionWikiContractTest {
@@ -54,7 +54,7 @@ class QuestionWikiContractTest {
   }
 
   @Test
-  @DisplayName("상세 화면은 [학습자료]/[이 문항에 대한 의견] 두 영역 + '의견 남기기' 버튼이 있고, 작성폼은 모달(기본 숨김)이다")
+  @DisplayName("상세 화면은 [학습자료]/[AI 문제제작]/[이 문항에 대한 의견] 흐름이며 작성폼은 모달(기본 숨김)이다")
   void detailTemplate_twoAreasAndNoInlineForm() throws IOException {
     String html = read("templates/public/question_wiki.html");
 
