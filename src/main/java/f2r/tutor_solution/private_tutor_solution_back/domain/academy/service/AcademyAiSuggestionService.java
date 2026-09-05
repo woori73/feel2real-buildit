@@ -39,6 +39,12 @@ public class AcademyAiSuggestionService {
           Set.of("philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4"));
 
   private static final int MAX_CURRENT_VALUE_LENGTH = 2000;
+  private static final int MAX_INSTRUCTIONS_LENGTH = 200;
+  // 프롬프트가 요청하는 목표 길이(원장 소개 200자/철학 카드 60자)보다 약간 여유를 둔 하드
+  // 상한이다 — 모델이 목표를 살짝 넘겨도 무조건 실패시키지는 않되, 짧은 philosophy 카드에
+  // 장문 문단이 그대로 들어가는 사고는 확실히 막는다. 넘겼다고 잘라내지 않고 통째로
+  // 거부한다(sanitize는 코드펜스/따옴표 제거일 뿐 길이를 줄이지 않는다) — 어중간하게
+  // 잘린 문장이 저장되는 것을 막기 위해서다.
   private static final Map<AcademyAiTaskType, Integer> MAX_OUTPUT_CHARS = Map.of(
       AcademyAiTaskType.PRINCIPAL_INTRO, 220,
       AcademyAiTaskType.PHILOSOPHY_ITEM, 80);
@@ -60,7 +66,8 @@ public class AcademyAiSuggestionService {
       JwtTokenProvider.AuthenticatedPrincipal principal,
       AcademyAiTaskType task,
       String target,
-      String currentValue) {
+      String currentValue,
+      String instructions) {
     if (task == null) {
       throw new IllegalArgumentException("task가 필요합니다.");
     }
@@ -73,10 +80,15 @@ public class AcademyAiSuggestionService {
       throw new IllegalArgumentException(
           "currentValue가 너무 깁니다(" + MAX_CURRENT_VALUE_LENGTH + "자 제한).");
     }
+    String safeInstructions = instructions == null ? "" : instructions.trim();
+    if (safeInstructions.length() > MAX_INSTRUCTIONS_LENGTH) {
+      throw new IllegalArgumentException(
+          "요구사항이 너무 깁니다(" + MAX_INSTRUCTIONS_LENGTH + "자 제한).");
+    }
 
     // academyId를 절대 파라미터로 받지 않는다 — principal 기준으로만 본인 Academy를 조회한다.
     AcademyAiContext context = contextService.buildContext(principal);
-    String prompt = promptBuilder.build(task, context, target, safeCurrentValue);
+    String prompt = promptBuilder.build(task, context, target, safeCurrentValue, safeInstructions);
 
     int maxOutputChars = MAX_OUTPUT_CHARS.getOrDefault(task, 200);
     AiCompletion completion = aiProvider.complete(prompt, new AiTaskLimits(maxOutputChars));

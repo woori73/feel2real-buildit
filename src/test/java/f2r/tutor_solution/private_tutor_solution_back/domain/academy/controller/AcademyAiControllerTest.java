@@ -90,7 +90,7 @@ class AcademyAiControllerTest {
 
   @Test
   void authenticatedTutorCanGenerateSuggestion() throws Exception {
-    when(suggestionService.generate(any(), any(), any(), any())).thenReturn(
+    when(suggestionService.generate(any(), any(), any(), any(), any())).thenReturn(
         new AcademyAiSuggestion(AcademyAiTaskType.PRINCIPAL_INTRO, "principalDesc", "현재", "추천"));
 
     mockMvc.perform(post("/api/tutor/academy/ai/suggestions")

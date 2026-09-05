@@ -58,8 +58,8 @@ public class AcademyAiController {
       throw new IllegalArgumentException("task가 필요합니다.");
     }
     AcademyAiTaskType task = parseTask(request.task());
-    return ResponseEntity.ok(
-        suggestionService.generate(principal, task, request.target(), request.currentValue()));
+    return ResponseEntity.ok(suggestionService.generate(
+        principal, task, request.target(), request.currentValue(), request.instructions()));
   }
 
   @GetMapping("/completion")
@@ -76,6 +76,10 @@ public class AcademyAiController {
     }
   }
 
-  /** @param task {@link AcademyAiTaskType} 이름. @param target builderDraft key. */
-  public record AiSuggestionRequest(String task, String target, String currentValue) {}
+  /**
+   * @param task {@link AcademyAiTaskType} 이름. @param target builderDraft key.
+   * @param instructions 사용자가 AI에게 추가로 요청한 내용(선택, 예: "더 짧게"). null이면 없음으로
+   *     취급한다 — 길이 제한 자체는 AcademyAiSuggestionService가 검증한다.
+   */
+  public record AiSuggestionRequest(String task, String target, String currentValue, String instructions) {}
 }

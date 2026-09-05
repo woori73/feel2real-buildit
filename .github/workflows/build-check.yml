@@ -57,6 +57,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyBuilderTemplateContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiSuggestionServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiPromptBuilderTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyCompletionCheckServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAiControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.WikiRouterAcademyAiProviderTest"
