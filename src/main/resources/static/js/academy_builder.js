@@ -4575,13 +4575,17 @@
     }
 
     const stepInner = guideStepInnerHtml(step);
+    // Bildi가 주 UI일 때는 상호작용 입력(textarea/버튼)을 말풍선에만 둔다 — 패널에 중복
+    // 렌더하면 같은 id가 둘 생겨 getElementById가 숨겨진 패널 쪽을 읽는다. 패널은 이때
+    // "말풍선에서 진행" 안내 + 단계 칩만 보여준다(폴백/명시적 '단계 목록' 열람용).
+    const panelInner = bildiActive()
+      ? `<p class="ai-guide-note">빌디 말풍선에서 이 단계를 진행하세요. 여기(단계 목록)는 전체 진행 상황만 보여줍니다.</p>`
+      : stepInner;
 
-    let html = onboardingBubble
+    body.innerHTML = onboardingBubble
       + `<div class="ai-guide-step-title">STEP ${info.position} · ${escapeHtml(step.title)}</div>`
       + `<div class="ai-guide-bubble">${escapeHtml(step.guidance)}</div>`
-      + stepInner;
-
-    body.innerHTML = html;
+      + panelInner;
     renderBildiBubble(step, info, stepInner);
     // 스크롤/강조는 스텝이 바뀔 때만 한다(renderAiGuide는 타이핑·로딩 토글로도 불려서,
     // 매번 미리보기를 스크롤하면 편집을 방해한다).
