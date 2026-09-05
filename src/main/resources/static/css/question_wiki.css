@@ -157,3 +157,32 @@ body.qw-modal-open { overflow: hidden; }
     padding-top: 0;
   }
 }
+
+
+/* Question Wiki common Chrome AI entry point */
+.qw-ai-section .qw-section-head .muted { margin: 4px 0 0; font-size: .82rem; }
+.qw-ai-panel { border-top: 1px solid #e2e6e4; padding-top: 18px; }
+.qw-ai-runtime { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 12px; margin-bottom: 16px; border-radius: 10px; background: #f6faf8; font-size: .82rem; }
+.qw-ai-runtime b { flex-basis: 100%; color: #27312d; }
+.qw-ai-runtime span { color: #66706c; }
+.qw-ai-runtime em { margin-left: 4px; color: #14705a; font-style: normal; font-weight: 700; }
+.qw-ai-fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+.qw-ai-fieldset legend { margin-bottom: 7px; color: #5b6360; font-size: .85rem; }
+.qw-ai-fieldset .qw-chips { margin-top: 0; }
+.qw-ai-preview { margin-top: 18px; padding: 18px; border: 1px solid #cdded7; border-radius: 12px; background: #fbfdfc; }
+.qw-ai-preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.qw-ai-preview-head h3 { margin: 0; }
+.qw-ai-preview-head span { color: #8a918e; font-size: .76rem; }
+.qw-ai-preview h4 { margin: 0 0 12px; line-height: 1.6; }
+.qw-ai-passage { padding: 14px; border-radius: 8px; background: #fff; line-height: 1.75; white-space: normal; }
+.qw-ai-choices { margin: 12px 0; padding-left: 24px; }
+.qw-ai-choices li { margin: 6px 0; line-height: 1.55; }
+.qw-ai-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+@media (max-width: 600px) {
+  .qw-ai-section .qw-section-head { gap: 10px; }
+  .qw-ai-section #qwAiToggle { flex: 0 0 auto; }
+  .qw-ai-runtime { flex-direction: column; gap: 6px; }
+  .qw-ai-actions { flex-direction: column-reverse; }
+  .qw-ai-actions button { width: 100%; }
+}
