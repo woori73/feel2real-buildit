@@ -4,8 +4,10 @@ const vm = require('node:vm');
 
 const SECTIONS_PATH = path.resolve(__dirname, '../../../main/resources/static/js/academy_sections.js');
 const AI_GUIDE_PATH = path.resolve(__dirname, '../../../main/resources/static/js/academy_builder_ai_guide.js');
+const WORLD_PATH = path.resolve(__dirname, '../../../main/resources/static/js/academy_world.js');
 let sectionsModule = null;
 let aiGuideModule = null;
+let worldModule = null;
 
 /**
  * 섹션 마크업 정본(academy_sections.js)을 실제로 실행해 돌려준다.
@@ -31,6 +33,16 @@ function loadAiGuideModule() {
   if (aiGuideModule) return aiGuideModule;
   aiGuideModule = require(AI_GUIDE_PATH);
   return aiGuideModule;
+}
+
+/**
+ * Academy World Engine(academy_world.js) 실제 모듈. academy_builder.js가 window.F2RAcademyWorld로
+ * 읽는다(Bildi Sidekick). 순수 로직 + DOM 헬퍼라 UMD require로 로드 가능.
+ */
+function loadWorldModule() {
+  if (worldModule) return worldModule;
+  worldModule = require(WORLD_PATH);
+  return worldModule;
 }
 
 function memoryStorage(seed = {}) {
@@ -122,6 +134,7 @@ function loadBrowserScript(path, options = {}) {
     F2RAcademySections: loadSectionsModule(),
     // 스텁이 아니라 실제 모듈이다 — AI Guide 스텝 정의/세션 로직 정본.
     F2RAcademyAiGuide: loadAiGuideModule(),
+    F2RAcademyWorld: loadWorldModule(),
     CSS: { escape: (value) => String(value) },
     addEventListener() {},
     showToast() {},
@@ -149,4 +162,4 @@ function loadBrowserScript(path, options = {}) {
   return { context, document, fetchCalls, readyCallbacks, storage, window };
 }
 
-module.exports = { loadBrowserScript, memoryStorage, loadSectionsModule, loadAiGuideModule };
+module.exports = { loadBrowserScript, memoryStorage, loadSectionsModule, loadAiGuideModule, loadWorldModule };

@@ -371,8 +371,18 @@
         <main class="page"><section id="publicView">${renderPublicPage(academy)}</section></main>
       </div>`;
     SECTIONS.applyImageMediaAspect(pageContent);
+    // Phase 5B.1: 공개 페이지와 같은 staged reveal(F2RReveal)을 프리뷰에도 건다 — Bildi가 섹션에
+    // 도착 = 섹션이 뷰포트 진입 = reveal 발화가 자연히 동기화된다(§8). 1회성·reduced-motion 즉시·
+    // 3초 failsafe이므로 편집을 방해하지 않는다. 모듈 미로드 시 no-op(콘텐츠는 정적으로 완전 노출).
+    if (window.F2RReveal && typeof window.F2RReveal.wire === 'function') {
+      try { window.F2RReveal.wire(pageContent); } catch (_) { /* 콘텐츠 노출에 영향 없음 */ }
+    }
     if (highlightField || activeTextField) highlightTextTargets(highlightField || activeTextField);
     if (scrollToSection) scrollPreviewToSection(scrollToSection);
+    if (bildiActive()) {
+      positionBildiToStep();
+      if (bildiStory && typeof bildiStory.refresh === 'function') bildiStory.refresh();
+    }
   }
 
   function renderPublicPage(academy) {
@@ -4072,12 +4082,21 @@
   //      POST /api/tutor/academy/ai/guide-suggestions 하나만 쓴다.
   //   4) 순수 로직(스텝 정의·세션 상태·진행률·후보 파싱)은 academy_builder_ai_guide.js가 갖는다.
   const AI_GUIDE = typeof window !== 'undefined' ? window.F2RAcademyAiGuide : null;
+  // Phase 5B.1 — Bildi(빌디) Sidekick. Guide state를 정적 패널이 아니라 살아 움직이는 캐릭터의
+  // 대화·행동으로 표현한다. 엔진(하늘/캐릭터/스크롤스토리/말풍선)은 academy_world.js가 소유한다.
+  // 미로드/reduced-motion → 패널(#builderAiGuidePanel)로 안전하게 폴백(모든 step 동작 동일).
+  const WORLD = typeof window !== 'undefined' ? window.F2RAcademyWorld : null;
   let aiGuideSession = null;
   let aiGuidePending = null; // { target, candidates: [] } — 현재 스텝의 마지막 추천 결과
   let aiGuideError = '';
   let aiGuideBusy = false;
   let aiGuideFocusTimer = null;
   let aiGuideExistingSteps = [];
+  let bildi = null;        // { setState, moveToRect, react, ... }
+  let bildiBubble = null;  // { say, moveToXY, el, body }
+  let bildiSky = null;     // { setScene, setProgress }
+  let bildiStory = null;   // scroll story controller
+  let bildiTravelTimer = null;
 
   function readAiGuideSession() {
     if (!AI_GUIDE) return null;
@@ -4127,12 +4146,67 @@
     const body = document.getElementById('builderAiGuideBody');
     if (body) body.addEventListener('click', onAiGuideBodyClick);
 
-    // 최초 진입은 패널을 연다(§4/§5). 이전에 접었으면 접힌 채로 둔다.
+    mountBildiSidekick();
+
+    // 최초 진입은 Bildi를 켠다(§4/§5). 이전에 접었으면 접힌 채로 둔다. Bildi 미탑재 시엔
+    // 기존처럼 패널을 연다(폴백).
     const savedOpen = readAiGuidePanelOpen();
     setAiGuideOpen(savedOpen == null ? true : savedOpen, { skipPersist: savedOpen == null });
     renderAiGuide();
     const step = currentAiGuideStep();
-    if (panel.classList.contains('is-open') && step.sectionKey) focusAiGuideSection(step.sectionKey);
+    syncBildiSceneToStep();
+    if (bildiActive() && step.sectionKey) focusAiGuideSection(step.sectionKey);
+  }
+
+  /** Bildi(하늘·캐릭터·말풍선·스크롤스토리)를 canvas-frame 오버레이에 mount. WORLD 미로드 시 no-op. */
+  function mountBildiSidekick() {
+    if (!WORLD || bildi) return;
+    const stage = document.getElementById('builderBildiStage');
+    if (!stage) return;
+    try {
+      bildiSky = typeof WORLD.createSky === 'function' ? WORLD.createSky(stage, { className: 'world-sky-builder' }) : null;
+      bildi = typeof WORLD.createBildi === 'function' ? WORLD.createBildi(stage) : null;
+      bildiBubble = typeof WORLD.createDialogue === 'function' ? WORLD.createDialogue(stage) : null;
+    } catch (_) {
+      bildi = null; bildiBubble = null; bildiSky = null;
+      return;
+    }
+    if (bildiBubble && bildiBubble.body) {
+      bildiBubble.body.addEventListener('click', onAiGuideBodyClick);
+    }
+  }
+
+  function bildiActive() {
+    return !!(bildi && document.body && document.body.classList.contains('bildi-active'));
+  }
+
+  /** #pageContent 스크롤에 맞춰 Bildi가 현재 step 섹션을 따라다니고 하늘이 진행도에 반응한다(§6). */
+  function attachBildiStory() {
+    if (!WORLD || !bildi || bildiStory || typeof WORLD.createScrollStory !== 'function') return;
+    const pageContent = document.getElementById('pageContent');
+    if (!pageContent) return;
+    bildiStory = WORLD.createScrollStory({
+      scrollEl: pageContent,
+      window: typeof window !== 'undefined' ? window : undefined,
+      sections: () => {
+        const list = [];
+        pageContent.querySelectorAll('[data-builder-section-key]').forEach((el) => list.push(el));
+        return list;
+      },
+      onUpdate: (state) => {
+        if (bildiSky && typeof bildiSky.setProgress === 'function') bildiSky.setProgress(state.progress);
+        if (typeof bildi.face === 'function') bildi.face(state.direction === 'up' ? 'up' : 'down');
+        positionBildiToStep();
+        if (bildiSky && typeof bildi.react === 'function') {
+          bildi.react(WORLD.reactionForScene ? WORLD.reactionForScene(bildiSky.getScene && bildiSky.getScene()) : null);
+        }
+      }
+    });
+  }
+
+  function detachBildiStory() {
+    if (bildiStory && typeof bildiStory.detach === 'function') bildiStory.detach();
+    bildiStory = null;
   }
 
   function bindClick(id, handler) {
@@ -4140,24 +4214,42 @@
     if (el) el.addEventListener('click', handler);
   }
 
+  /**
+   * Bildi Sidekick(+ 폴백 패널)의 표시/숨김. Bildi가 탑재됐으면 스테이지를, 아니면 기존 패널을
+   * 연다. "단계 전체 보기"는 opts.panel=true로 패널까지 함께 편다.
+   */
   function setAiGuideOpen(open, options) {
     const opts = options || {};
     const panel = document.getElementById('builderAiGuidePanel');
     const toggle = document.getElementById('builderAiGuideToggle');
+    const stage = document.getElementById('builderBildiStage');
     if (!panel || !toggle) return;
-    panel.classList.toggle('is-open', !!open);
-    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    const hasBildi = !!bildi && !!stage;
+
+    if (stage) stage.classList.toggle('is-hidden', !(open && hasBildi));
+    if (document.body) {
+      document.body.classList.toggle('bildi-active', !!(open && hasBildi));
+      // Bildi가 없을 때만(폴백) 예전 방식대로 캔버스에 오른쪽 여백을 준다.
+      document.body.classList.toggle('ai-guide-open', !!open && (!hasBildi || opts.panel === true));
+    }
+    // 패널은 Bildi 폴백이거나 "단계 목록"을 명시적으로 요청했을 때만 슬라이드인.
+    const panelOpen = !!open && (!hasBildi || opts.panel === true);
+    panel.classList.toggle('is-open', panelOpen);
+    panel.setAttribute('aria-hidden', panelOpen ? 'false' : 'true');
     toggle.setAttribute('aria-pressed', open ? 'true' : 'false');
-    document.body.classList.toggle('ai-guide-open', !!open);
     if (!opts.skipPersist) writeAiGuidePanelOpen(!!open);
+
     if (open) {
       renderAiGuide();
+      if (hasBildi) attachBildiStory();
       if (!opts.skipPersist) {
         const step = currentAiGuideStep();
         if (step.sectionKey) focusAiGuideSection(step.sectionKey);
       }
     } else {
+      detachBildiStory();
       clearAiGuideSectionFocus();
+      if (bildiBubble && typeof bildiBubble.hide === 'function') bildiBubble.hide();
     }
   }
 
@@ -4183,7 +4275,15 @@
     writeAiGuideSession();
     renderAiGuide();
     const step = currentAiGuideStep();
+    syncBildiSceneToStep();
     if (step.sectionKey) focusAiGuideSection(step.sectionKey);
+  }
+
+  /** step이 암시하는 World scene으로 하늘을 옮긴다(섹션이 없는 finish step 포함). */
+  function syncBildiSceneToStep() {
+    if (!bildiSky || typeof bildiSky.setScene !== 'function' || !AI_GUIDE || typeof AI_GUIDE.sceneForStep !== 'function') return;
+    const step = currentAiGuideStep();
+    bildiSky.setScene(AI_GUIDE.sceneForStep(step && step.id));
   }
 
   function moveAiGuideStep(direction) {
@@ -4227,11 +4327,12 @@
       .forEach((el) => el.classList.remove('ai-guide-section-focus'));
   }
 
-  /** Guide가 "이제 이 영역입니다"라고 하면 해당 미리보기 섹션으로 이동하고 잠깐 강조한다(§8). */
+  /** Guide가 "이제 이 영역입니다"라고 하면 Bildi가 그 섹션으로 날아가고 콘텐츠가 reveal된다(§8). */
   function focusAiGuideSection(sectionKey) {
     if (!sectionKey) return;
     clearAiGuideSectionFocus();
     scrollPreviewToSection(sectionKey);
+    bildiTravelTo(sectionKey);
     const target = previewSectionTarget(sectionKey);
     if (!target) return;
     target.classList.add('ai-guide-section-focus');
@@ -4241,11 +4342,73 @@
     }, 2600);
   }
 
+  /** step 섹션 rect를 stage 좌표계로 변환해 Bildi/말풍선을 그 위에 놓는다(스크롤 중에도 호출). */
+  function positionBildiToStep(sectionKey) {
+    if (!bildi || !bildi.el) return;
+    const stage = document.getElementById('builderBildiStage');
+    if (!stage || typeof stage.getBoundingClientRect !== 'function') return;
+    const key = sectionKey || (currentAiGuideStep() && currentAiGuideStep().sectionKey);
+    const target = key ? previewSectionTarget(key) : null;
+    const anchor = target || document.getElementById('pageContent');
+    if (!anchor || typeof anchor.getBoundingClientRect !== 'function') return;
+    const sRect = stage.getBoundingClientRect();
+    const tRect = anchor.getBoundingClientRect();
+    if (typeof bildi.moveToRect === 'function') {
+      bildi.moveToRect(tRect, sRect, { x: Math.min(tRect.width * 0.5, sRect.width - 96), y: 18 });
+    }
+    if (bildiBubble && typeof bildiBubble.moveToXY === 'function' && bildi.el) {
+      // 말풍선은 Bildi 오른쪽. 스테이지 폭을 넘으면 왼쪽으로.
+      const bx = clampNumber((tRect.left - sRect.left) + Math.min(tRect.width * 0.5, sRect.width - 96), 8, sRect.width - 8);
+      const by = clampNumber((tRect.top - sRect.top) + 18, 8, Math.max(8, sRect.height - 120));
+      const side = bx + 260 > sRect.width ? 'left' : 'right';
+      if (bildiBubble.el) bildiBubble.el.setAttribute('data-side', side === 'left' ? 'right' : 'left');
+      bildiBubble.moveToXY(side === 'left' ? Math.max(8, bx - 250) : bx + 84, by);
+    }
+  }
+
+  function clampNumber(n, min, max) {
+    n = Number(n) || 0;
+    return n < min ? min : (n > max ? max : n);
+  }
+
+  /** Bildi가 sectionKey 섹션으로 날아간다: wings_open → fly → land → point/talk. reduced면 즉시. */
+  function bildiTravelTo(sectionKey) {
+    if (!bildi || !bildiActive()) return;
+    if (bildiTravelTimer) { clearTimeout(bildiTravelTimer); bildiTravelTimer = null; }
+    const step = currentAiGuideStep();
+    if (bildiSky && typeof bildiSky.setScene === 'function' && AI_GUIDE && typeof AI_GUIDE.sceneForStep === 'function') {
+      bildiSky.setScene(AI_GUIDE.sceneForStep(step && step.id));
+    }
+    const reduced = typeof bildi.isReduced === 'function' && bildi.isReduced();
+    if (typeof bildi.dispatch === 'function') bildi.dispatch('scrollStart');
+    if (typeof bildi.dispatch === 'function') bildi.dispatch('move');
+    // 스크롤 애니메이션이 끝날 즈음 위치를 다시 잡고 착지시킨다.
+    bildiTravelTimer = setTimeout(() => {
+      positionBildiToStep(sectionKey);
+      if (typeof bildi.dispatch === 'function') bildi.dispatch('arrive');
+      if (typeof bildi.setState === 'function') bildi.setState(bildi.STATES ? bildi.STATES.POINT : 'point');
+      bildiTravelTimer = setTimeout(() => {
+        if (typeof bildi.setState === 'function') bildi.setState(bildi.STATES ? bildi.STATES.TALK : 'talk');
+        bildiTravelTimer = null;
+      }, 420);
+    }, reduced ? 0 : 360);
+    // 즉시 한 번 위치를 잡아 fly 궤적이 목표 방향으로 시작되게 한다.
+    positionBildiToStep(sectionKey);
+  }
+
   function onAiGuideBodyClick(event) {
     const el = event.target && event.target.closest ? event.target.closest('[data-guide-action]') : null;
     if (!el) return;
     const action = el.dataset.guideAction;
-    if (action === 'style') {
+    if (action === 'prev') {
+      moveAiGuideStep('prev');
+    } else if (action === 'next') {
+      moveAiGuideStep('next');
+    } else if (action === 'skip') {
+      skipAiGuideStep();
+    } else if (action === 'panel') {
+      setAiGuideOpen(true, { panel: true });
+    } else if (action === 'style') {
       selectAiGuideStyle(el.dataset.guideValue || '');
     } else if (action === 'recommend') {
       requestAiGuideRecommendations();
@@ -4411,10 +4574,26 @@
       writeAiGuideSession();
     }
 
-    let html = onboardingBubble
-      + `<div class="ai-guide-step-title">STEP ${info.position} · ${escapeHtml(step.title)}</div>`
-      + `<div class="ai-guide-bubble">${escapeHtml(step.guidance)}</div>`;
+    const stepInner = guideStepInnerHtml(step);
+    // Bildi가 주 UI일 때는 상호작용 입력(textarea/버튼)을 말풍선에만 둔다 — 패널에 중복
+    // 렌더하면 같은 id가 둘 생겨 getElementById가 숨겨진 패널 쪽을 읽는다. 패널은 이때
+    // "말풍선에서 진행" 안내 + 단계 칩만 보여준다(폴백/명시적 '단계 목록' 열람용).
+    const panelInner = bildiActive()
+      ? `<p class="ai-guide-note">빌디 말풍선에서 이 단계를 진행하세요. 여기(단계 목록)는 전체 진행 상황만 보여줍니다.</p>`
+      : stepInner;
 
+    body.innerHTML = onboardingBubble
+      + `<div class="ai-guide-step-title">STEP ${info.position} · ${escapeHtml(step.title)}</div>`
+      + `<div class="ai-guide-bubble">${escapeHtml(step.guidance)}</div>`
+      + panelInner;
+    renderBildiBubble(step, info, stepInner);
+    // 스크롤/강조는 스텝이 바뀔 때만 한다(renderAiGuide는 타이핑·로딩 토글로도 불려서,
+    // 매번 미리보기를 스크롤하면 편집을 방해한다).
+  }
+
+  /** style/text/guidance/finish + busy/error 공통 마크업(패널·Bildi 말풍선이 같이 쓴다). */
+  function guideStepInnerHtml(step) {
+    let html = '';
     if (step.kind === 'style') {
       html += renderAiGuideStyleStep();
     } else if (step.kind === 'text') {
@@ -4428,13 +4607,34 @@
         + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="open-compose">AI로 Academy 전체 점검</button>`
         + `</div><p class="ai-guide-note">전체 진단은 기존 [AI로 Academy 구성하기] 기능을 그대로 사용합니다. 발행은 상단 [발행] 버튼으로 직접 하셔야 합니다.</p>`;
     }
-
     if (aiGuideBusy) html += `<div class="ai-guide-loading">AI가 문구를 만들고 있습니다…</div>`;
     if (aiGuideError) html += `<div class="ai-guide-error">${escapeHtml(aiGuideError)}</div>`;
+    return html;
+  }
 
-    body.innerHTML = html;
-    // 스크롤/강조는 스텝이 바뀔 때만 한다(renderAiGuide는 타이핑·로딩 토글로도 불려서,
-    // 매번 미리보기를 스크롤하면 편집을 방해한다).
+  /**
+   * Bildi 말풍선 = 이제 Guide의 주 UI. 정적 8-step chip을 늘어놓지 않고 현재 단계와 진행률만
+   * 간결히 보여준다(§3). 액션 버튼은 패널과 동일한 data-guide-action을 공유한다.
+   */
+  function renderBildiBubble(step, info, stepInner) {
+    if (!bildiBubble || typeof bildiBubble.say !== 'function') return;
+    if (!bildiActive()) { if (typeof bildiBubble.hide === 'function') bildiBubble.hide(); return; }
+    syncBildiSceneToStep();
+    const pct = Math.round((info.doneCount / info.total) * 100);
+    const nav = `<div class="bildi-bubble-actions" style="margin-top:8px">`
+      + (AI_GUIDE.prevStepId(step.id) ? `<button type="button" class="bildi-bubble-btn is-ghost" data-guide-action="prev">← 이전</button>` : '')
+      + `<button type="button" class="bildi-bubble-btn is-ghost" data-guide-action="skip">건너뛰기</button>`
+      + `<button type="button" class="bildi-bubble-btn is-primary" data-guide-action="next">다음 →</button>`
+      + `<button type="button" class="bildi-bubble-btn is-ghost" data-guide-action="panel">단계 목록</button>`
+      + `</div>`;
+    bildiBubble.say(
+      `<div class="bildi-bubble-title">STEP ${info.position} / ${info.total}`
+      + `<span class="bildi-bubble-progress"><i style="width:${pct}%"></i></span></div>`
+      + `<p class="bildi-bubble-text">${escapeHtml(step.title)} — ${escapeHtml(step.guidance)}</p>`
+      + `<div class="bildi-bubble-step-inner">${stepInner}</div>`
+      + nav
+    );
+    positionBildiToStep(step.sectionKey);
   }
 
   function renderAiGuideStyleStep() {

@@ -1,0 +1,500 @@
+/**
+ * Academy World Engine — BuildIt Academy 전용 캐릭터형 AI Sidekick "Bildi(빌디)"의 공용 엔진.
+ *
+ * 하나의 파일에 4개 엔진을 담는다(러닝게임의 "환경이 연속 전환되는 stage" 경험을 grammar로만
+ * 차용 — 외부 게임 asset/이미지는 일절 쓰지 않는다. 캐릭터·배경은 BuildIt 고유 SVG다).
+ *
+ *   ├─ Environment Engine : createSky() — 스크롤 진행도(0..1)에 따라 하늘/날씨 scene 크로스페이드
+ *   ├─ Bildi Character    : createBildi() — 인라인 SVG + 상태머신(IDLE/RUN/WINGS_OPEN/FLY/LAND/
+ *   │                        POINT/TALK/THINK/HAPPY/WAIT), scene 반응 hook
+ *   ├─ Scroll Story       : createScrollStory() — 스크롤 = 세계 진행. rAF-coalesced scroll +
+ *   │                        IntersectionObserver, 방향/속도 감지, 매 프레임 루프 없음
+ *   └─ Dialogue           : createDialogue() — Bildi에 tether된 말풍선(say + actions)
+ *
+ * 원칙(§11):
+ *   - CSS transform/opacity 우선. rAF는 scroll 이벤트 coalescing에만.
+ *   - prefers-reduced-motion / 저사양 → 이동/파티클 없이 즉시 최종 상태.
+ *   - Bildi는 pointer-events:none(말풍선 버튼만 auto) — 실제 버튼 클릭을 막지 않는다.
+ *   - 이 모듈이 로드 실패해도 홈페이지/빌더 콘텐츠는 그대로 읽힌다(소비자가 null 가드).
+ *
+ * Creator Mode(Builder) / Visitor Mode(Published) 둘 다 이 엔진을 쓴다. 이번 PR은 Creator Mode만
+ * 실제 배선하고, Visitor Mode 연결 지점은 docs/academy/BILDI_WORLD_ENGINE.md 에 설계로 남긴다.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.F2RAcademyWorld = api;
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+
+  // ── Environment Engine ────────────────────────────────────────────────────
+  // 스크롤 progress 구간별 scene. 확장 가능한 registry — registerScene()으로 추가한다.
+  // from/to는 0..1 스크롤 진행도. 정확한 비율은 소비자가 override 가능(createSky({scenes})).
+  var DEFAULT_SCENES = [
+    { id: 'morning', label: '맑은 아침', from: 0.00, to: 0.14 },
+    { id: 'day', label: '화창한 낮', from: 0.14, to: 0.30 },
+    { id: 'clouds', label: '구름', from: 0.30, to: 0.44 },
+    { id: 'rain', label: '비', from: 0.44, to: 0.56 },
+    { id: 'sunset', label: '비 갠 노을', from: 0.56, to: 0.70 },
+    { id: 'night', label: '밤', from: 0.70, to: 0.86 },
+    { id: 'stars', label: '별 / 우주', from: 0.86, to: 1.01 }
+  ];
+
+  function normalizeScenes(scenes) {
+    var list = Array.isArray(scenes) && scenes.length ? scenes.slice() : DEFAULT_SCENES.slice();
+    return list
+      .filter(function (s) { return s && typeof s.id === 'string'; })
+      .sort(function (a, b) { return (a.from || 0) - (b.from || 0); });
+  }
+
+  function sceneForProgress(progress, scenes) {
+    var list = normalizeScenes(scenes);
+    var p = clamp01(progress);
+    for (var i = 0; i < list.length; i += 1) {
+      if (p >= list[i].from && p < list[i].to) return list[i].id;
+    }
+    return list.length ? list[list.length - 1].id : 'day';
+  }
+
+  /**
+   * scene별 Bildi 반응 hint(§7). 이번 PR은 shake/gaze/drift/dust/float만 정의하고
+   * 실제 모션 강도는 CSS(.bildi[data-react=...])가 담당한다. 확장 여지를 남긴 map이다.
+   */
+  var SCENE_REACTIONS = {
+    rain: 'shake',
+    night: 'gaze',
+    stars: 'gaze',
+    clouds: 'drift',
+    wind: 'drift',
+    ash: 'dust',
+    space: 'float'
+  };
+  function reactionForScene(sceneId) {
+    return SCENE_REACTIONS[sceneId] || null;
+  }
+
+  function createSky(host, options) {
+    var opts = options || {};
+    var scenes = normalizeScenes(opts.scenes);
+    var doc = host && host.ownerDocument ? host.ownerDocument : (typeof document !== 'undefined' ? document : null);
+    var el = null;
+    var current = null;
+    if (host && doc && typeof doc.createElement === 'function') {
+      el = doc.createElement('div');
+      el.className = 'world-sky' + (opts.className ? ' ' + opts.className : '');
+      el.setAttribute('aria-hidden', 'true');
+      if (reducedOrLowPower()) el.classList.add('world-sky-reduced');
+      host.insertBefore(el, host.firstChild || null);
+    }
+    function setScene(id) {
+      if (!id || id === current) return;
+      current = id;
+      if (el) el.setAttribute('data-scene', id);
+    }
+    function setProgress(progress) {
+      setScene(sceneForProgress(progress, scenes));
+      if (el) el.style.setProperty('--world-progress', String(clamp01(progress)));
+    }
+    return {
+      el: el,
+      scenes: scenes,
+      getScene: function () { return current; },
+      setScene: setScene,
+      setProgress: setProgress,
+      destroy: function () { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
+    };
+  }
+
+  // ── Bildi Character Engine ────────────────────────────────────────────────
+  var BILDI_STATES = Object.freeze({
+    IDLE: 'idle', RUN: 'run', WINGS_OPEN: 'wings_open', FLY: 'fly', LAND: 'land',
+    POINT: 'point', TALK: 'talk', THINK: 'think', HAPPY: 'happy', WAIT: 'wait'
+  });
+
+  // 상태 전이표(§4). 정의되지 않은 event는 현재 상태 유지.
+  var BILDI_TRANSITIONS = Object.freeze({
+    idle: { scrollStart: 'wings_open', point: 'point', talk: 'talk', think: 'think', happy: 'happy', wait: 'wait' },
+    wait: { scrollStart: 'wings_open', talk: 'talk', settle: 'idle' },
+    wings_open: { move: 'fly', scrollStop: 'idle', settle: 'idle' },
+    fly: { arrive: 'land', scrollStop: 'land', faster: 'fly', slower: 'fly' },
+    land: { settle: 'idle', point: 'point', talk: 'talk', scrollStart: 'wings_open' },
+    run: { move: 'fly', scrollStop: 'idle', settle: 'idle' },
+    point: { talk: 'talk', settle: 'idle', scrollStart: 'wings_open' },
+    talk: { point: 'point', settle: 'idle', happy: 'happy', scrollStart: 'wings_open' },
+    think: { talk: 'talk', settle: 'idle' },
+    happy: { settle: 'idle', talk: 'talk' }
+  });
+
+  function nextBildiState(state, event) {
+    var from = BILDI_TRANSITIONS[state] || BILDI_TRANSITIONS.idle;
+    return (from && from[event]) || state;
+  }
+
+  // ── Bildi visual asset 구조 (Phase 5B.1a) ────────────────────────────────
+  // Production visual = state별 transparent 이미지(<img>). academy_world.js는 이 asset을
+  // "연결"만 하고, 파일이 없거나 로드 실패하면 아래 인라인 fallback SVG(BILDI_SVG)로 떨어진다.
+  //   1차: src/main/resources/static/img/bildi/bildi-<state>.svg  (dev-assets/bildi/generate.mjs 생성)
+  //   교체: 같은 파일명의 WebP/PNG(@2x, 투명)로 덮으면 코드 변경 없이 반영 (BILDI_WORLD_ENGINE.md §7)
+  //   fallback: 이미지 미로드/비활성 → BILDI_SVG (data-state로 CSS 포즈, 상태머신·이동 로직 동일)
+  var BILDI_ASSET_BASE = '/img/bildi/';
+  var BILDI_STATE_ASSETS = Object.freeze({
+    idle: 'bildi-idle.svg',
+    wings_open: 'bildi-wings-open.svg',
+    fly: 'bildi-fly.svg',
+    land: 'bildi-land.svg',
+    point: 'bildi-point.svg',
+    talk: 'bildi-talk.svg',
+    think: 'bildi-think.svg',
+    happy: 'bildi-happy.svg'
+  });
+  // 전용 asset이 없는 상태는 근사 asset으로 매핑(상태머신은 그대로 — visual만 근사).
+  var BILDI_ASSET_ALIASES = Object.freeze({ run: 'fly', wait: 'idle' });
+
+  /** state → asset URL(없으면 null). opts.assets(state→url) / opts.assetBase 로 override 가능. */
+  function bildiAssetUrl(state, opts) {
+    var o = opts || {};
+    if (o.assets && typeof o.assets[state] === 'string') return o.assets[state];
+    var key = BILDI_STATE_ASSETS[state] ? state : (BILDI_ASSET_ALIASES[state] || state);
+    var file = BILDI_STATE_ASSETS[key];
+    if (!file) return null;
+    var base = typeof o.assetBase === 'string' ? o.assetBase : BILDI_ASSET_BASE;
+    return base + file;
+  }
+
+  // 인라인 fallback 캐릭터(reference 시안 기준: 큰 머리·큰 눈·이마 고글·BuildIt-blue 스카프+배지·
+  // 비행 시 크게 펴지는 날개). 파트가 <g>로 분리돼 CSS가 날갯짓/눈깜빡을 준다. emoji/원형 아님.
+  var BILDI_SVG = [
+    '<svg class="bildi-svg" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="빌디">',
+    '<defs>',
+    '<radialGradient id="bildiBody" cx="42%" cy="34%" r="72%">',
+    '<stop offset="0%" stop-color="#ffe27a"/><stop offset="55%" stop-color="#ffd23f"/><stop offset="100%" stop-color="#f5b716"/>',
+    '</radialGradient>',
+    '<linearGradient id="bildiScarf" x1="0" y1="0" x2="1" y2="1">',
+    '<stop offset="0%" stop-color="#4A7FD4"/><stop offset="100%" stop-color="#0C238A"/>',
+    '</linearGradient>',
+    '</defs>',
+    '<g class="bildi-wing bildi-wing-back" transform="translate(28 66)">',
+    '<path d="M0 0 C-20 -6 -30 10 -20 22 C-10 30 6 22 8 8 Z" fill="#f5b716"/></g>',
+    '<ellipse class="bildi-shadow" cx="64" cy="118" rx="26" ry="6" fill="rgba(12,35,138,.18)"/>',
+    '<path class="bildi-tuft" d="M60 26 Q64 12 68 26 Q72 16 74 28 Q66 22 60 26 Z" fill="#f5b716"/>',
+    '<path class="bildi-body" d="M64 30 C92 30 106 52 106 78 C106 104 88 118 64 118 C40 118 22 104 22 78 C22 52 36 30 64 30 Z" fill="url(#bildiBody)"/>',
+    '<path class="bildi-cheek" d="M40 84 a7 5 0 1 0 0.1 0Z" fill="#ff9db0" opacity="0.7"/>',
+    '<path class="bildi-cheek" d="M88 84 a7 5 0 1 0 0.1 0Z" fill="#ff9db0" opacity="0.7"/>',
+    '<g class="bildi-face">',
+    '<ellipse class="bildi-eye" cx="52" cy="68" rx="7.5" ry="9" fill="#22252b"/>',
+    '<ellipse class="bildi-eye" cx="78" cy="68" rx="7.5" ry="9" fill="#22252b"/>',
+    '<circle class="bildi-eye-glint" cx="49.5" cy="64" r="2.4" fill="#fff"/>',
+    '<circle class="bildi-eye-glint" cx="75.5" cy="64" r="2.4" fill="#fff"/>',
+    '<path class="bildi-mouth" d="M58 82 Q64 88 70 82" stroke="#c2790f" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    '<path class="bildi-beak" d="M60 76 L68 76 L64 83 Z" fill="#ff9f1c"/>',
+    '</g>',
+    '<g class="bildi-goggles" transform="translate(64 50)">',
+    '<path d="M-26 0 Q0 -9 26 0 L26 6 Q0 -3 -26 6 Z" fill="#6b5636" opacity="0.55"/>',
+    '<circle cx="-11" cy="1" r="9" fill="#2b2b33" stroke="#e0bd6a" stroke-width="3"/>',
+    '<circle cx="11" cy="1" r="9" fill="#2b2b33" stroke="#e0bd6a" stroke-width="3"/>',
+    '<circle cx="-13" cy="-2" r="2.6" fill="#9ec5ff"/><circle cx="9" cy="-2" r="2.6" fill="#9ec5ff"/>',
+    '</g>',
+    '<g class="bildi-scarf" transform="translate(64 100)">',
+    '<path d="M-22 -6 Q0 8 22 -6 L20 6 Q0 16 -20 6 Z" fill="url(#bildiScarf)"/>',
+    '<path class="bildi-scarf-tail" d="M14 2 Q30 8 26 24 L16 18 Q12 10 10 6 Z" fill="url(#bildiScarf)"/>',
+    '<path d="M-7 -2 L7 -2 L4 8 L-4 8 Z" fill="#eaf1ff" opacity="0.92"/>',
+    '<path d="M-3.5 0 L3.5 0 L2 5 L-2 5 Z" fill="#0C238A"/>',
+    '</g>',
+    '<g class="bildi-wing bildi-wing-front" transform="translate(100 66)">',
+    '<path d="M0 0 C20 -6 30 10 20 22 C10 30 -6 22 -8 8 Z" fill="#ffd23f" stroke="#f5b716" stroke-width="1.5"/></g>',
+    '</svg>'
+  ].join('');
+
+  function createBildi(host, options) {
+    var opts = options || {};
+    var doc = host && host.ownerDocument ? host.ownerDocument : (typeof document !== 'undefined' ? document : null);
+    var el = null;
+    var sprite = null;      // <img> — state별 production asset
+    var fallback = null;    // 인라인 SVG — 이미지 미로드 시
+    var pendingSrc = '';
+    var state = BILDI_STATES.IDLE;
+    var reduced = reducedOrLowPower();
+    if (host && doc && typeof doc.createElement === 'function') {
+      el = doc.createElement('div');
+      el.className = 'bildi' + (opts.className ? ' ' + opts.className : '');
+      el.setAttribute('aria-hidden', 'true');
+      if (reduced) el.classList.add('bildi-reduced');
+
+      var art = doc.createElement('div');
+      art.className = 'bildi-art';
+
+      sprite = doc.createElement('img');
+      sprite.className = 'bildi-sprite';
+      sprite.setAttribute('alt', '');
+      sprite.setAttribute('decoding', 'async');
+      sprite.setAttribute('draggable', 'false');
+      if (typeof sprite.addEventListener === 'function') {
+        sprite.addEventListener('load', function () {
+          if (sprite.getAttribute('src') === pendingSrc && el) el.classList.add('bildi-has-sprite');
+        });
+        sprite.addEventListener('error', function () {
+          if (el) el.classList.remove('bildi-has-sprite'); // → CSS가 fallback SVG를 보여준다
+        });
+      }
+
+      fallback = doc.createElement('div');
+      fallback.className = 'bildi-fallback';
+      fallback.setAttribute('aria-hidden', 'true');
+      fallback.innerHTML = BILDI_SVG;
+
+      art.appendChild(sprite);
+      art.appendChild(fallback);
+      el.appendChild(art);
+      el.setAttribute('data-state', state);
+      host.appendChild(el);
+      applySpriteFor(state);
+    }
+
+    /** 현재 state에 맞는 production asset을 <img>에 건다. 없으면 fallback SVG를 쓴다. */
+    function applySpriteFor(next) {
+      if (!sprite) return;
+      var url = bildiAssetUrl(next, opts);
+      if (!url) { if (el) el.classList.remove('bildi-has-sprite'); return; }
+      pendingSrc = url;
+      sprite.setAttribute('src', url);
+    }
+
+    function setState(next) {
+      if (!next || next === state) return state;
+      state = next;
+      if (el) el.setAttribute('data-state', next);
+      applySpriteFor(next);
+      return state;
+    }
+    function dispatch(event) { return setState(nextBildiState(state, event)); }
+    function face(dir) { if (el) el.setAttribute('data-facing', dir === 'up' ? 'up' : 'down'); }
+    function setExpression(expr) { if (el) el.setAttribute('data-expr', expr || 'default'); }
+    function react(name) {
+      if (!el) return;
+      if (reduced || !name) { el.removeAttribute('data-react'); return; }
+      el.setAttribute('data-react', name);
+    }
+    /**
+     * host 좌표계 안에서 targetRect(뷰포트 기준) 위치로 Bildi를 이동한다. reduced-motion이면
+     * transition 없이 즉시(‥CSS가 .bildi-reduced에서 transition:none). offset으로 캐릭터를
+     * 섹션 모서리에 살짝 얹는다.
+     */
+    function moveToRect(targetRect, hostRect, offset) {
+      if (!el || !targetRect || !hostRect) return;
+      var off = offset || {};
+      var x = (targetRect.left - hostRect.left) + (typeof off.x === 'number' ? off.x : targetRect.width * 0.5);
+      var y = (targetRect.top - hostRect.top) + (typeof off.y === 'number' ? off.y : 24);
+      x = Math.max(6, Math.min(x, hostRect.width - 6));
+      y = Math.max(6, Math.min(y, hostRect.height - 6));
+      el.style.transform = 'translate3d(' + Math.round(x) + 'px,' + Math.round(y) + 'px,0)';
+    }
+    function moveToXY(x, y) {
+      if (!el) return;
+      el.style.transform = 'translate3d(' + Math.round(x) + 'px,' + Math.round(y) + 'px,0)';
+    }
+
+    return {
+      el: el,
+      sprite: sprite,
+      fallback: fallback,
+      STATES: BILDI_STATES,
+      getState: function () { return state; },
+      setState: setState,
+      dispatch: dispatch,
+      face: face,
+      setExpression: setExpression,
+      react: react,
+      moveToRect: moveToRect,
+      moveToXY: moveToXY,
+      assetUrlFor: function (s) { return bildiAssetUrl(s, opts); },
+      hasSprite: function () { return !!(el && el.classList && el.classList.contains('bildi-has-sprite')); },
+      isReduced: function () { return reduced; },
+      destroy: function () { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
+    };
+  }
+
+  // ── Dialogue Engine ──────────────────────────────────────────────────────
+  function createDialogue(host, options) {
+    var opts = options || {};
+    var doc = host && host.ownerDocument ? host.ownerDocument : (typeof document !== 'undefined' ? document : null);
+    var el = null;
+    var bodyEl = null;
+    if (host && doc && typeof doc.createElement === 'function') {
+      el = doc.createElement('div');
+      el.className = 'bildi-bubble' + (opts.className ? ' ' + opts.className : '');
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
+      el.hidden = true;
+      bodyEl = doc.createElement('div');
+      bodyEl.className = 'bildi-bubble-body';
+      el.appendChild(bodyEl);
+      host.appendChild(el);
+    }
+    function say(html) {
+      if (!el || !bodyEl) return;
+      bodyEl.innerHTML = html == null ? '' : String(html);
+      el.hidden = false;
+    }
+    function hide() { if (el) el.hidden = true; }
+    function moveToXY(x, y) {
+      if (!el) return;
+      el.style.transform = 'translate3d(' + Math.round(x) + 'px,' + Math.round(y) + 'px,0)';
+    }
+    return {
+      el: el,
+      body: bodyEl,
+      say: say,
+      hide: hide,
+      moveToXY: moveToXY,
+      isVisible: function () { return !!el && !el.hidden; },
+      destroy: function () { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; bodyEl = null; }
+    };
+  }
+
+  // ── Scroll Story Engine ──────────────────────────────────────────────────
+  // Scroll = 세계 진행. Time = 세계가 살아 움직이는 CSS 애니메이션(scene 내부). 여기선 진행도만.
+  function createScrollStory(config) {
+    var cfg = config || {};
+    var scrollEl = cfg.scrollEl || null;
+    var win = cfg.window || (typeof window !== 'undefined' ? window : null);
+    var getSections = typeof cfg.sections === 'function' ? cfg.sections : function () { return []; };
+    var onUpdate = typeof cfg.onUpdate === 'function' ? cfg.onUpdate : function () {};
+    var reduced = reducedOrLowPower();
+    var frame = 0;
+    var lastTop = readScrollTop();
+    var lastTs = now();
+    var activeIo = null;
+    var activeSection = null;
+    var detached = false;
+
+    function now() { return (win && win.performance && win.performance.now) ? win.performance.now() : Date.now(); }
+    function readScrollTop() {
+      if (scrollEl && typeof scrollEl.scrollTop === 'number') return scrollEl.scrollTop;
+      if (win) return win.pageYOffset || (win.document && win.document.documentElement && win.document.documentElement.scrollTop) || 0;
+      return 0;
+    }
+    function scrollExtent() {
+      if (scrollEl) return Math.max(1, scrollEl.scrollHeight - scrollEl.clientHeight);
+      if (win && win.document) {
+        var d = win.document.documentElement;
+        return Math.max(1, (d.scrollHeight || 0) - (win.innerHeight || 0));
+      }
+      return 1;
+    }
+
+    function compute() {
+      frame = 0;
+      if (detached) return;
+      var top = readScrollTop();
+      var progress = clamp01(top / scrollExtent());
+      var ts = now();
+      var dt = Math.max(1, ts - lastTs);
+      var velocity = Math.abs(top - lastTop) / dt; // px/ms
+      var direction = top === lastTop ? 'none' : (top > lastTop ? 'down' : 'up');
+      var speed = velocity > 1.6 ? 'fast' : (velocity > 0.15 ? 'normal' : 'slow');
+      lastTop = top; lastTs = ts;
+      onUpdate({
+        progress: progress,
+        direction: direction,
+        speed: reduced ? 'slow' : speed,
+        activeSection: activeSection,
+        reduced: reduced
+      });
+    }
+
+    function onScroll() {
+      if (frame || detached) return;
+      var raf = win && win.requestAnimationFrame ? win.requestAnimationFrame : function (fn) { return setTimeout(fn, 16); };
+      frame = raf(compute);
+    }
+
+    function observeSections() {
+      var HAS_IO = win && typeof win.IntersectionObserver === 'function';
+      var sections = (getSections() || []).filter(Boolean);
+      if (activeIo && activeIo.disconnect) { activeIo.disconnect(); activeIo = null; }
+      if (!HAS_IO || !sections.length) {
+        activeSection = sections[0] || null;
+        return;
+      }
+      activeIo = new win.IntersectionObserver(function (entries) {
+        var best = null;
+        for (var i = 0; i < entries.length; i += 1) {
+          if (!entries[i].isIntersecting) continue;
+          if (!best || entries[i].intersectionRatio > best.intersectionRatio) best = entries[i];
+        }
+        if (best && best.target !== activeSection) {
+          activeSection = best.target;
+          compute();
+        }
+      }, { threshold: [0.25, 0.5, 0.75], root: scrollEl || null });
+      sections.forEach(function (s) { activeIo.observe(s); });
+    }
+
+    var scrollTarget = scrollEl || win;
+    if (scrollTarget && scrollTarget.addEventListener) {
+      scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+    }
+    observeSections();
+    compute();
+
+    return {
+      refresh: function () { lastTop = readScrollTop(); observeSections(); compute(); },
+      getActiveSection: function () { return activeSection; },
+      detach: function () {
+        detached = true;
+        if (scrollTarget && scrollTarget.removeEventListener) scrollTarget.removeEventListener('scroll', onScroll);
+        if (activeIo && activeIo.disconnect) activeIo.disconnect();
+        activeIo = null;
+      }
+    };
+  }
+
+  // ── shared helpers ───────────────────────────────────────────────────────
+  function clamp01(n) {
+    n = Number(n);
+    if (isNaN(n)) return 0;
+    return n < 0 ? 0 : (n > 1 ? 1 : n);
+  }
+  function prefersReducedMotion() {
+    try {
+      return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (_) { return false; }
+  }
+  /** 저사양 힌트: 하드웨어 동시성 낮거나 deviceMemory 작으면 파티클/이동 강도를 낮춘다. */
+  function isLowPowerHint() {
+    try {
+      var nav = typeof navigator !== 'undefined' ? navigator : null;
+      if (!nav) return false;
+      if (typeof nav.deviceMemory === 'number' && nav.deviceMemory > 0 && nav.deviceMemory <= 2) return true;
+      if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 2) return true;
+      return false;
+    } catch (_) { return false; }
+  }
+  function reducedOrLowPower() { return prefersReducedMotion() || isLowPowerHint(); }
+
+  return Object.freeze({
+    // Environment
+    DEFAULT_SCENES: DEFAULT_SCENES,
+    sceneForProgress: function (p, scenes) { return sceneForProgress(p, scenes); },
+    reactionForScene: reactionForScene,
+    createSky: createSky,
+    // Bildi
+    BILDI_STATES: BILDI_STATES,
+    BILDI_TRANSITIONS: BILDI_TRANSITIONS,
+    nextBildiState: nextBildiState,
+    BILDI_SVG: BILDI_SVG,
+    BILDI_ASSET_BASE: BILDI_ASSET_BASE,
+    BILDI_STATE_ASSETS: BILDI_STATE_ASSETS,
+    bildiAssetUrl: bildiAssetUrl,
+    createBildi: createBildi,
+    // Dialogue
+    createDialogue: createDialogue,
+    // Scroll Story
+    createScrollStory: createScrollStory,
+    // env
+    prefersReducedMotion: prefersReducedMotion,
+    isLowPowerHint: isLowPowerHint,
+    reducedOrLowPower: reducedOrLowPower
+  });
+});
