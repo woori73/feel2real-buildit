@@ -64,7 +64,7 @@ test('given 원장 소개 AI 제안을 생성 when 응답이 아직 오지 않�
   });
   hooks.setPreview(academy);
 
-  hooks.openAiSuggestionModal(hooks.aiAssistSectionsForTest['sec-principal']);
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
   await flush();
 
   // then — 요청은 나갔지만(POST /api/tutor/academy/ai/suggestions) 응답 전이라 아무것도 안 바뀜
@@ -85,7 +85,7 @@ test('given AI 제안이 도착 when 적용을 누르지 않음 then builderDraf
   });
   hooks.setPreview(academy);
 
-  hooks.openAiSuggestionModal(hooks.aiAssistSectionsForTest['sec-principal']);
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
   await flush();
 
   assert.equal(hooks.getAiSuggestionState().suggestedValue, 'AI가 다듬은 소개문');
@@ -103,7 +103,7 @@ test('given AI 제안이 도착 when 적용을 누르면 then builderDraft의 �
   });
   hooks.setPreview(academy);
 
-  hooks.openAiSuggestionModal(hooks.aiAssistSectionsForTest['sec-principal']);
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
   await flush();
   hooks.applyAiSuggestionToBuilder();
 
@@ -124,7 +124,7 @@ test('given 발행된 Academy when AI 제안을 적용 then Production을 직접
   });
   hooks.setPreview(academy);
 
-  hooks.openAiSuggestionModal(hooks.aiAssistSectionsForTest['sec-principal']);
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
   await flush();
   hooks.applyAiSuggestionToBuilder();
 
@@ -133,26 +133,30 @@ test('given 발행된 Academy when AI 제안을 적용 then Production을 직접
   assert.equal(academy.pageSettings.builderDraft.principalDesc, '새 소개문');
 });
 
-test('given 철학 항목 Task when target을 명시하지 않음 then 기본값(philosophyItem1)을 쓴다', async () => {
+test('given 철학 카드 4개 각각의 버튼 when target을 명시적으로 열면 then 그 카드의 target으로만 요청한다(추론 없음)', async () => {
+  // Phase 4.1: activeTextField로 "지금 커서가 있는 항목"을 추론하던 activeAiTarget()을
+  // 없앴다 — 각 카드 버튼이 자기 target을 data 속성으로 직접 들고 있어 추론이 필요 없다.
   const document = buildAiModalDocument();
-  const fetchCalls = [];
-  const fetchImpl = async (url, init) => {
-    fetchCalls.push({ url, init });
-    return { ok: true, json: async () => ({ suggestedValue: '다듬은 철학' }) };
-  };
-  const hooks = loadRenderHooks('builder', { document, fetch: fetchImpl });
-  const academy = academyFixture({
-    publicPathUrl: '/academies/test-academy',
-    pageSettings: { builderDraft: { philosophyItem1: '기존 철학1' } }
-  });
-  hooks.setPreview(academy);
+  for (const target of ['philosophyItem1', 'philosophyItem2', 'philosophyItem3', 'philosophyItem4']) {
+    const fetchCalls = [];
+    const fetchImpl = async (url, init) => {
+      fetchCalls.push({ url, init });
+      return { ok: true, json: async () => ({ suggestedValue: '다듬은 철학' }) };
+    };
+    const hooks = loadRenderHooks('builder', { document, fetch: fetchImpl });
+    const academy = academyFixture({
+      publicPathUrl: '/academies/test-academy',
+      pageSettings: { builderDraft: { [target]: '기존 철학 문구' } }
+    });
+    hooks.setPreview(academy);
 
-  hooks.openAiSuggestionModal(hooks.aiAssistSectionsForTest['sec-philosophy']);
-  await flush();
+    hooks.openAiSuggestionModal('PHILOSOPHY_ITEM', target);
+    await flush();
 
-  const body = JSON.parse(fetchCalls[0].init.body);
-  assert.equal(body.task, 'PHILOSOPHY_ITEM');
-  assert.equal(body.target, 'philosophyItem1');
+    const body = JSON.parse(fetchCalls[0].init.body);
+    assert.equal(body.task, 'PHILOSOPHY_ITEM');
+    assert.equal(body.target, target);
+  }
 });
 
 test('given provider 오류 응답 when 생성 then 에러만 표시하고 builderDraft는 손대지 않는다', async () => {
@@ -165,7 +169,7 @@ test('given provider 오류 응답 when 생성 then 에러만 표시하고 build
   });
   hooks.setPreview(academy);
 
-  hooks.openAiSuggestionModal(hooks.aiAssistSectionsForTest['sec-principal']);
+  hooks.openAiSuggestionModal('PRINCIPAL_INTRO', 'principalDesc');
   await flush();
 
   assert.equal(document.elements.get('builderAiSuggestionError').textContent, 'AI provider가 구성되어 있지 않습니다.');
@@ -174,22 +178,32 @@ test('given provider 오류 응답 when 생성 then 에러만 표시하고 build
   assert.equal(document.elements.get('builderAiSuggestionApplyBtn').disabled, true);
 });
 
-test('given 프론트 AI_ASSIST_SECTIONS when 백엔드 ALLOWED_TARGETS와 비교 then task/target이 정확히 일치한다', () => {
-  // 프론트가 백엔드 allowlist보다 넓은 target을 요청하면 매번 400을 받고, 더 좁으면 실제로는
-  // 쓸 수 있는 target을 못 쓰게 된다 — 두 allowlist가 서로 어긋나지 않는지 직접 대조한다.
-  const hooks = loadRenderHooks('builder');
-  const frontendSections = hooks.aiAssistSectionsForTest;
+test('given 실제 렌더된 AI 버튼들의 task/target when 백엔드 ALLOWED_TARGETS와 비교 then 정확히 일치한다', () => {
+  // Phase 4.1: 프론트에 별도 allowlist 객체(AI_ASSIST_SECTIONS)가 더 이상 없다 — 버튼 자체의
+  // data 속성이 유일한 소스다. 그래서 "실제 렌더된 버튼들이 요청하는 task/target 조합"을
+  // 백엔드 allowlist와 직접 대조한다(내부 JS 객체가 아니라 진짜 마크업 기준).
+  const { loadSectionsModule } = require('./helpers/browser_script_harness');
+  const { parseHtml } = require('./helpers/mini_dom');
+  const SECTIONS = loadSectionsModule();
+  const academy = academyFixture();
+  const view = SECTIONS.toSectionView(academy);
+  const ctx = SECTIONS.createBuilderContext({ slug: () => 'x', showcase: () => ({ render: () => '' }), videos: () => [] });
+  const principalHtml = SECTIONS.renderPrincipal(view, ctx);
+  const philosophyHtml = SECTIONS.renderPhilosophy(view, ctx);
+
+  const principalButtons = parseHtml(principalHtml).querySelectorAll('[data-ai-suggest-trigger]');
+  const philosophyButtons = parseHtml(philosophyHtml).querySelectorAll('[data-ai-suggest-trigger]');
+
+  assert.equal(principalButtons.length, 1);
+  assert.equal(principalButtons[0].getAttribute('data-ai-suggest-task'), 'PRINCIPAL_INTRO');
+  assert.equal(principalButtons[0].getAttribute('data-ai-suggest-target'), 'principalDesc');
+
+  assert.equal(philosophyButtons.length, 4);
+  const philosophyTargets = philosophyButtons.map((b) => b.getAttribute('data-ai-suggest-target'));
 
   assert.match(SUGGESTION_SERVICE_JAVA, /AcademyAiTaskType\.PRINCIPAL_INTRO, Set\.of\("principalDesc"\)/);
   assert.match(SUGGESTION_SERVICE_JAVA,
     /AcademyAiTaskType\.PHILOSOPHY_ITEM,\s*\n\s*Set\.of\("philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4"\)/);
-
-  assert.equal(frontendSections['sec-principal'].task, 'PRINCIPAL_INTRO');
-  assert.equal(frontendSections['sec-principal'].defaultTarget, 'principalDesc');
-  assert.equal(frontendSections['sec-philosophy'].task, 'PHILOSOPHY_ITEM');
-  // Array.from: targets는 vm 샌드박스(다른 realm) 안에서 만들어진 배열이라 deepEqual이
-  // Array.prototype 정체성 차이로 실패한다 — 값만 비교하도록 host realm 배열로 옮겨 담는다.
-  assert.deepEqual(
-    Array.from(frontendSections['sec-philosophy'].targets),
-    ['philosophyItem1', 'philosophyItem2', 'philosophyItem3', 'philosophyItem4']);
+  philosophyButtons.forEach((b) => assert.equal(b.getAttribute('data-ai-suggest-task'), 'PHILOSOPHY_ITEM'));
+  assert.deepEqual(philosophyTargets, ['philosophyItem1', 'philosophyItem2', 'philosophyItem3', 'philosophyItem4']);
 });

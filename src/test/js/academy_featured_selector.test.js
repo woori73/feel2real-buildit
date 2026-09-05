@@ -149,11 +149,11 @@ test('캐시버스팅: 변경된 storefront 자산 버전이 함께 올라간다
   assert.match(PUBLIC_HTML, /academy_cinematic\.js\?v=20260901-7/);
   // 모바일 카드 디자인 시스템 + Scene 설명 + Digital Twin 복구로 함께 올라간 자산.
   assert.match(PUBLIC_HTML, /academy_public\.js\?v=20260905-3/);
-  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260905-1/);
+  assert.match(PUBLIC_HTML, /academy_public\.css\?v=20260905-2/);
   assert.match(PUBLIC_HTML, /academy_cinematic\.css\?v=20260901-8/);
   assert.match(PUBLIC_HTML, /academy_collection\.css\?v=20260905-1/);
-  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260905-3/);
-  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260905-3/);
+  assert.match(PUBLIC_HTML, /academy_sections\.js\?v=20260905-4/);
+  assert.match(BUILDER_HTML, /academy_sections\.js\?v=20260905-4/);
 });
 
 test('sections.js featured 영역에 학교/연도/시즌 하드코딩이 없다', () => {
