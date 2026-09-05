@@ -92,6 +92,18 @@
 .bildi-svg { width: 100%; height: 100%; overflow: visible; display: block; }
 .bildi-shadow { transition: transform .3s ease; }
 
+/* Production asset(<img>) vs 인라인 fallback SVG. 이미지가 로드되면 .bildi-has-sprite 가 붙어
+   sprite 를 보이고 fallback 을 숨긴다. 로드 실패/미존재 → fallback SVG(data-state CSS 포즈).
+   컨테이너(.bildi) 레벨 애니메이션(bob/hop/land, transform 이동)은 둘 다에 그대로 적용된다. */
+.bildi-art { position: absolute; inset: 0; }
+.bildi-sprite {
+  width: 100%; height: 100%; object-fit: contain; display: none;
+  -webkit-user-drag: none; user-select: none;
+}
+.bildi-fallback { position: absolute; inset: 0; }
+.bildi.bildi-has-sprite .bildi-sprite { display: block; }
+.bildi.bildi-has-sprite .bildi-fallback { display: none; }
+
 /* 날개: 평소 접힘, FLY/WINGS_OPEN 에서 펴고 퍼덕임 (§2 signature) */
 .bildi-wing { transform-box: fill-box; transform-origin: 20% 60%; transition: transform .3s ease; }
 .bildi-wing-front { transform: scale(.62) rotate(6deg); }

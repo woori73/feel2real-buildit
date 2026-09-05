@@ -130,10 +130,39 @@
     return (from && from[event]) || state;
   }
 
-  // 캐릭터 정본(reference 시안 기준: 큰 머리·작은 몸·큰 눈·작은 날개, BuildIt-blue 스카프,
-  // 이마 고글, 볼터치). 파트가 <g>로 분리돼 CSS가 날갯짓/눈깜빡을 준다. 최종 캐릭터 asset이며
-  // emoji/원형 placeholder가 아니다. 래스터 스프라이트가 필요하면 BILDI_WORLD_ENGINE.md의
-  // manifest 참고(이 SVG로 v1 출시, 아트 패스에서 교체 가능).
+  // ── Bildi visual asset 구조 (Phase 5B.1a) ────────────────────────────────
+  // Production visual = state별 transparent 이미지(<img>). academy_world.js는 이 asset을
+  // "연결"만 하고, 파일이 없거나 로드 실패하면 아래 인라인 fallback SVG(BILDI_SVG)로 떨어진다.
+  //   1차: src/main/resources/static/img/bildi/bildi-<state>.svg  (dev-assets/bildi/generate.mjs 생성)
+  //   교체: 같은 파일명의 WebP/PNG(@2x, 투명)로 덮으면 코드 변경 없이 반영 (BILDI_WORLD_ENGINE.md §7)
+  //   fallback: 이미지 미로드/비활성 → BILDI_SVG (data-state로 CSS 포즈, 상태머신·이동 로직 동일)
+  var BILDI_ASSET_BASE = '/img/bildi/';
+  var BILDI_STATE_ASSETS = Object.freeze({
+    idle: 'bildi-idle.svg',
+    wings_open: 'bildi-wings-open.svg',
+    fly: 'bildi-fly.svg',
+    land: 'bildi-land.svg',
+    point: 'bildi-point.svg',
+    talk: 'bildi-talk.svg',
+    think: 'bildi-think.svg',
+    happy: 'bildi-happy.svg'
+  });
+  // 전용 asset이 없는 상태는 근사 asset으로 매핑(상태머신은 그대로 — visual만 근사).
+  var BILDI_ASSET_ALIASES = Object.freeze({ run: 'fly', wait: 'idle' });
+
+  /** state → asset URL(없으면 null). opts.assets(state→url) / opts.assetBase 로 override 가능. */
+  function bildiAssetUrl(state, opts) {
+    var o = opts || {};
+    if (o.assets && typeof o.assets[state] === 'string') return o.assets[state];
+    var key = BILDI_STATE_ASSETS[state] ? state : (BILDI_ASSET_ALIASES[state] || state);
+    var file = BILDI_STATE_ASSETS[key];
+    if (!file) return null;
+    var base = typeof o.assetBase === 'string' ? o.assetBase : BILDI_ASSET_BASE;
+    return base + file;
+  }
+
+  // 인라인 fallback 캐릭터(reference 시안 기준: 큰 머리·큰 눈·이마 고글·BuildIt-blue 스카프+배지·
+  // 비행 시 크게 펴지는 날개). 파트가 <g>로 분리돼 CSS가 날갯짓/눈깜빡을 준다. emoji/원형 아님.
   var BILDI_SVG = [
     '<svg class="bildi-svg" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="빌디">',
     '<defs>',
@@ -180,6 +209,9 @@
     var opts = options || {};
     var doc = host && host.ownerDocument ? host.ownerDocument : (typeof document !== 'undefined' ? document : null);
     var el = null;
+    var sprite = null;      // <img> — state별 production asset
+    var fallback = null;    // 인라인 SVG — 이미지 미로드 시
+    var pendingSrc = '';
     var state = BILDI_STATES.IDLE;
     var reduced = reducedOrLowPower();
     if (host && doc && typeof doc.createElement === 'function') {
@@ -187,15 +219,51 @@
       el.className = 'bildi' + (opts.className ? ' ' + opts.className : '');
       el.setAttribute('aria-hidden', 'true');
       if (reduced) el.classList.add('bildi-reduced');
-      el.innerHTML = BILDI_SVG;
+
+      var art = doc.createElement('div');
+      art.className = 'bildi-art';
+
+      sprite = doc.createElement('img');
+      sprite.className = 'bildi-sprite';
+      sprite.setAttribute('alt', '');
+      sprite.setAttribute('decoding', 'async');
+      sprite.setAttribute('draggable', 'false');
+      if (typeof sprite.addEventListener === 'function') {
+        sprite.addEventListener('load', function () {
+          if (sprite.getAttribute('src') === pendingSrc && el) el.classList.add('bildi-has-sprite');
+        });
+        sprite.addEventListener('error', function () {
+          if (el) el.classList.remove('bildi-has-sprite'); // → CSS가 fallback SVG를 보여준다
+        });
+      }
+
+      fallback = doc.createElement('div');
+      fallback.className = 'bildi-fallback';
+      fallback.setAttribute('aria-hidden', 'true');
+      fallback.innerHTML = BILDI_SVG;
+
+      art.appendChild(sprite);
+      art.appendChild(fallback);
+      el.appendChild(art);
       el.setAttribute('data-state', state);
       host.appendChild(el);
+      applySpriteFor(state);
+    }
+
+    /** 현재 state에 맞는 production asset을 <img>에 건다. 없으면 fallback SVG를 쓴다. */
+    function applySpriteFor(next) {
+      if (!sprite) return;
+      var url = bildiAssetUrl(next, opts);
+      if (!url) { if (el) el.classList.remove('bildi-has-sprite'); return; }
+      pendingSrc = url;
+      sprite.setAttribute('src', url);
     }
 
     function setState(next) {
       if (!next || next === state) return state;
       state = next;
       if (el) el.setAttribute('data-state', next);
+      applySpriteFor(next);
       return state;
     }
     function dispatch(event) { return setState(nextBildiState(state, event)); }
@@ -227,6 +295,8 @@
 
     return {
       el: el,
+      sprite: sprite,
+      fallback: fallback,
       STATES: BILDI_STATES,
       getState: function () { return state; },
       setState: setState,
@@ -236,6 +306,8 @@
       react: react,
       moveToRect: moveToRect,
       moveToXY: moveToXY,
+      assetUrlFor: function (s) { return bildiAssetUrl(s, opts); },
+      hasSprite: function () { return !!(el && el.classList && el.classList.contains('bildi-has-sprite')); },
       isReduced: function () { return reduced; },
       destroy: function () { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
     };
@@ -412,6 +484,9 @@
     BILDI_TRANSITIONS: BILDI_TRANSITIONS,
     nextBildiState: nextBildiState,
     BILDI_SVG: BILDI_SVG,
+    BILDI_ASSET_BASE: BILDI_ASSET_BASE,
+    BILDI_STATE_ASSETS: BILDI_STATE_ASSETS,
+    bildiAssetUrl: bildiAssetUrl,
     createBildi: createBildi,
     // Dialogue
     createDialogue: createDialogue,

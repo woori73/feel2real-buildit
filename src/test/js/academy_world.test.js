@@ -148,6 +148,74 @@ test('createBildi.moveToRect: host 좌표계로 변환해 transform을 건다(�
   assert.match(b.el.style.transform || '', /translate3d\(210px,140px,0\)/);
 });
 
+// ── Bildi visual asset 구조 (Phase 5B.1a) ───────────────────────────────────
+test('bildiAssetUrl: state → /img/bildi/bildi-<state>.svg, run/wait alias, 미정의 → null', () => {
+  assert.equal(world.bildiAssetUrl('idle'), '/img/bildi/bildi-idle.svg');
+  assert.equal(world.bildiAssetUrl('wings_open'), '/img/bildi/bildi-wings-open.svg');
+  assert.equal(world.bildiAssetUrl('fly'), '/img/bildi/bildi-fly.svg');
+  assert.equal(world.bildiAssetUrl('run'), '/img/bildi/bildi-fly.svg', 'run → fly asset alias');
+  assert.equal(world.bildiAssetUrl('wait'), '/img/bildi/bildi-idle.svg', 'wait → idle asset alias');
+  assert.equal(world.bildiAssetUrl('bogus'), null);
+});
+
+test('bildiAssetUrl: assetBase / assets override (아트 패스에서 WebP 교체용)', () => {
+  assert.equal(world.bildiAssetUrl('fly', { assetBase: '/cdn/bildi/' }), '/cdn/bildi/bildi-fly.svg');
+  assert.equal(
+    world.bildiAssetUrl('fly', { assets: { fly: '/img/bildi/bildi-fly.webp' } }),
+    '/img/bildi/bildi-fly.webp');
+});
+
+test('8개 필수 state에 모두 asset 파일명이 있다', () => {
+  ['idle', 'wings_open', 'fly', 'land', 'point', 'talk', 'think', 'happy'].forEach((s) => {
+    assert.ok(world.BILDI_STATE_ASSETS[s], `${s} asset 파일명 누락`);
+  });
+});
+
+test('createBildi: sprite <img> + fallback SVG 3층 구조를 만든다', () => {
+  const b = world.createBildi(host());
+  // .bildi > .bildi-art > (img.bildi-sprite + .bildi-fallback)
+  assert.equal((b.el.className||'').indexOf('bildi'), 0);
+  const art = b.el.children[0];
+  assert.equal(art.className, 'bildi-art');
+  const sprite = art.children[0];
+  const fb = art.children[1];
+  assert.equal(sprite.tagName, 'IMG');
+  assert.equal(sprite.className, 'bildi-sprite');
+  assert.equal(sprite.getAttribute('alt'), '');
+  assert.equal(fb.className, 'bildi-fallback');
+  assert.match(fb.innerHTML, /^<svg/, 'fallback 은 인라인 BILDI_SVG');
+  assert.equal(b.sprite, sprite);
+});
+
+test('setState → sprite.src 가 해당 state asset 으로 바뀐다', () => {
+  const b = world.createBildi(host());
+  assert.equal(b.sprite.getAttribute('src'), '/img/bildi/bildi-idle.svg');
+  b.setState('fly');
+  assert.equal(b.sprite.getAttribute('src'), '/img/bildi/bildi-fly.svg');
+  b.dispatch('arrive'); // fly → land
+  assert.equal(b.getState(), 'land');
+  assert.equal(b.sprite.getAttribute('src'), '/img/bildi/bildi-land.svg');
+});
+
+test('sprite load → bildi-has-sprite(스프라이트 표시), error → 제거(fallback SVG 표시)', () => {
+  const b = world.createBildi(host());
+  b.setState('fly');
+  assert.equal(b.hasSprite(), false, '로드 전에는 fallback');
+  // 이미지 로드 성공 시뮬레이션
+  (b.sprite._listeners.load || []).forEach((fn) => fn());
+  assert.equal(b.hasSprite(), true, '로드되면 sprite 표시');
+  // 이후 상태에서 이미지 로드 실패 시뮬레이션
+  b.setState('point');
+  (b.sprite._listeners.error || []).forEach((fn) => fn());
+  assert.equal(b.hasSprite(), false, '로드 실패하면 fallback SVG 로 폴백');
+});
+
+test('controller.assetUrlFor / hasSprite 노출', () => {
+  const b = world.createBildi(host());
+  assert.equal(b.assetUrlFor('happy'), '/img/bildi/bildi-happy.svg');
+  assert.equal(typeof b.hasSprite(), 'boolean');
+});
+
 // ── Dialogue ────────────────────────────────────────────────────────────────
 test('createDialogue: say가 본문 innerHTML을 채우고 표시, hide가 숨긴다', () => {
   const d = world.createDialogue(host());

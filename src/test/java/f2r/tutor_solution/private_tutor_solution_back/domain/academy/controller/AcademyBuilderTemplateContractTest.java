@@ -49,7 +49,7 @@ class AcademyBuilderTemplateContractTest {
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
             "<script src=\"/js/academy_sections.js?v=20260905-4\"></script>",
             "<script src=\"/js/academy_reveal.js?v=20260901-5\"></script>",
-            "<script src=\"/js/academy_world.js?v=20260907-1\"></script>",
+            "<script src=\"/js/academy_world.js?v=20260907-2\"></script>",
             "<script src=\"/js/academy_builder_ai_guide.js?v=20260907-1\"></script>",
             "<script src=\"/js/academy_builder.js?v=20260907-1\"></script>");
   }

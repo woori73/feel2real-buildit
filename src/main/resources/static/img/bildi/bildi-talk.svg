@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="빌디 talk">
+  <defs>
+  <radialGradient id="b-body" cx="40%" cy="32%" r="75%">
+  <stop offset="0%" stop-color="#ffe487"/><stop offset="55%" stop-color="#ffd23f"/><stop offset="100%" stop-color="#f4b813"/>
+  </radialGradient>
+  <linearGradient id="b-scarf" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0%" stop-color="#5A8FE0"/><stop offset="100%" stop-color="#0C238A"/>
+  </linearGradient>
+  </defs>
+  <path d="M90 30 Q95 12 100 28 Q105 10 111 28 Q117 14 122 30 Q108 22 90 30 Z" fill="#f4b813"/>
+  <g class="b-wing b-wing-l" transform="translate(40 108)"><path d="M0 0 C-26 -10 -44 2 -46 20 C-32 24 -12 22 6 6 Z" fill="#ffcf3a" stroke="#f2b415" stroke-width="2"/></g>
+  <g class="b-wing b-wing-r" transform="translate(160 108)"><path d="M0 0 C26 -10 44 2 46 20 C32 24 12 22 -6 6 Z" fill="#ffcf3a" stroke="#f2b415" stroke-width="2"/></g>
+  <ellipse cx="86" cy="176" rx="10" ry="5" fill="#ff9f1c"/><ellipse cx="114" cy="176" rx="10" ry="5" fill="#ff9f1c"/>
+  <g transform="rotate(0 100 110) translate(0 0)">
+  <path class="b-body" d="M100 30 C142 30 168 60 168 104 C168 152 142 176 100 176 C58 176 32 152 32 104 C32 60 58 30 100 30 Z" fill="url(#b-body)"/>
+  <ellipse cx="66" cy="120" rx="10" ry="6.5" fill="#ffa7bd" opacity="0.75"/><ellipse cx="134" cy="120" rx="10" ry="6.5" fill="#ffa7bd" opacity="0.75"/>
+  <ellipse cx="82" cy="98" rx="12.5" ry="15.5" fill="#23242c"/>
+  <ellipse cx="118" cy="98" rx="12.5" ry="15.5" fill="#23242c"/>
+  <circle cx="77" cy="91" r="4.6" fill="#fff"/><circle cx="113" cy="91" r="4.6" fill="#fff"/>
+  <circle cx="86" cy="103" r="2.4" fill="#fff" opacity="0.7"/><circle cx="122" cy="103" r="2.4" fill="#fff" opacity="0.7"/>
+  <path d="M92 112 L108 112 L100 126 Z" fill="#ff9f1c"/><path d="M92 112 L108 112" stroke="#e07d0c" stroke-width="2"/>
+  <path d="M88 118 Q100 138 112 118 Q100 128 88 118 Z" fill="#b5680a"/>
+  <g class="b-goggles" transform="translate(100 66)">
+  <path d="M-36 4 Q0 -8 36 4 L34 12 Q0 2 -34 12 Z" fill="#6f5f42"/>
+  <rect x="-5" y="-1" width="10" height="6" rx="2" fill="#c9a24b"/>
+  <circle cx="-15" cy="2" r="10.5" fill="#2c2e38" stroke="#e6c877" stroke-width="3.5"/>
+  <circle cx="15" cy="2" r="10.5" fill="#2c2e38" stroke="#e6c877" stroke-width="3.5"/>
+  <path d="M-19 -3 A8 8 0 0 1 -10 -4" stroke="#9ec5ff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M11 -3 A8 8 0 0 1 20 -4" stroke="#9ec5ff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  </g>
+  <g class="b-scarf" transform="translate(100 140)">
+  <path d="M-32 -8 Q0 8 32 -8 L28 8 Q0 22 -28 8 Z" fill="url(#b-scarf)"/>
+  <path d="M18 2 Q44 8 40 34 Q36 40 26 34 Q20 18 14 6 Z" fill="url(#b-scarf)"/>
+  <circle cx="0" cy="1" r="12" fill="#eef3ff"/>
+  <path d="M0 -8 L9 1 L0 10 L-9 1 Z" fill="#0C238A"/>
+  </g>
+  </g>
+  </svg>

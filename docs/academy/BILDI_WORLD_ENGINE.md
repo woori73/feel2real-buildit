@@ -23,8 +23,11 @@ World/Environment layer의 설계 문서.
 | 톤 | 활기찬 판타지 러닝게임 캐릭터의 역동성 (윈드러너류는 **grammar만** 연구, asset·그래픽 복제 없음) |
 | 이름 | Bildi / 빌디 |
 
-정본 asset: `academy_world.js` 안 `BILDI_SVG` 문자열(파트가 `<g>`로 분리 — CSS가 날갯짓/눈깜빡/
-표정 override). 이것이 최종 v1 캐릭터다(emoji/🐣/CSS 원 아님). 래스터가 필요하면 §7 manifest.
+Visual asset 구조(§7): `createBildi()` 가 `img.bildi-sprite`(state별 Production asset) + 인라인
+`BILDI_SVG` fallback 을 함께 만든다. 1차 asset 은 `src/main/resources/static/img/bildi/bildi-<state>.svg`
+8종(`dev-assets/bildi/generate.mjs` 생성, transparent, 커밋됨). 아트 패스에서 같은 파일명의
+transparent WebP/PNG(@2x)로 덮으면 코드 변경 없이 반영된다. **state machine · scroll story ·
+movement 로직은 visual 교체와 무관하게 그대로.** emoji/🐣/CSS 원 아님.
 
 ### Signature interaction (§2)
 평소 날개 접힘 → 사용자가 스크롤 시작 → `WINGS_OPEN` → 날개 크게 펴고 `FLY` → 다음 섹션 접근
@@ -150,24 +153,48 @@ if (WORLD && !ownAcademy) {
 
 ---
 
-## 7. 캐릭터 Asset Manifest (아트 패스용)
+## 7. 캐릭터 Visual Asset 구조
 
-현재 v1은 `BILDI_SVG` 인라인 벡터 하나로 모든 상태를 CSS 변형해 커버한다. 더 풍부한 아트가
-필요해지면 아래를 **transparent PNG(@2x) 또는 WebP, 또는 상태별 SVG**로 발주한다.
-권장 캔버스 256×256(캐릭터 여백 12%), 시선/무게중심 일관.
+### 7.0 로딩 구조 (Phase 5B.1a)
 
-### 7.1 상태별 (필수)
-| key | 설명 |
-|---|---|
-| `bildi-idle` | 대기(날개 접힘, 가벼운 호흡) |
-| `bildi-wings-open` | 날개 펴는 순간 |
-| `bildi-fly-down` / `bildi-fly-up` | 비행(아래로/위로 진행) |
-| `bildi-land` | 착지 |
-| `bildi-point` | 한쪽 날개로 가리키기 |
-| `bildi-talk` | 말하는 표정(입 열림) |
-| `bildi-think` | 갸웃 + 물음표 |
-| `bildi-happy` | 기뻐 폴짝 |
-| `bildi-wait` | 살짝 흐린 대기 |
+`createBildi()` 는 캐릭터를 3층으로 만든다:
+
+```
+.bildi                         ← 이동/상태(transform, data-state) — 여기에 상태머신·movement 로직
+└ .bildi-art
+  ├ img.bildi-sprite           ← Production asset. state 마다 src 교체
+  └ .bildi-fallback > svg      ← 인라인 fallback (BILDI_SVG). 이미지 미로드/비활성 시
+```
+
+- `setState(s)` → `img.src = bildiAssetUrl(s)` → `load` 되면 `.bildi.bildi-has-sprite` (sprite 표시, fallback 숨김), `error` 면 클래스 제거(fallback SVG 표시).
+- `bildiAssetUrl(state, {assetBase, assets})` — `assets` (state→url) 또는 `assetBase + BILDI_STATE_ASSETS[state]`.
+- `.bildi` 컨테이너 애니메이션(bob/hop/land, 이동 transform)은 sprite/fallback **양쪽에** 적용된다 → **state machine · scroll story · movement 로직은 visual 교체와 무관하게 그대로**.
+
+### 7.1 상태별 asset (1차 — 벡터, 커밋됨)
+
+`dev-assets/bildi/generate.mjs` 로 생성 → `src/main/resources/static/img/bildi/` :
+
+| 파일 | state | 포즈 |
+|---|---|---|
+| `bildi-idle.svg` | idle (+ `wait` alias) | 날개 접힘, 발 딛고 서서 |
+| `bildi-wings-open.svg` | wings_open | 날개 반쯤 펴는 순간, 눈 크게 |
+| `bildi-fly.svg` | fly (+ `run` alias) | **날개 크게 펼침**, 앞으로 기울임, 발 오므림, 속도선 |
+| `bildi-land.svg` | land | 착지(반 접힘, 발 벌림, 먼지) |
+| `bildi-point.svg` | point | 한쪽 날개 들어 가리킴, 시선 위 |
+| `bildi-talk.svg` | talk | 입 벌리고 말하기, 날개 살짝 앞 |
+| `bildi-think.svg` | think | 갸웃 + 생각 방울, 시선 위 |
+| `bildi-happy.svg` | happy | 날개 위로, 눈 웃음(^ ^), 폴짝, 반짝 |
+
+전부 200×200 viewBox, transparent. 캐릭터: 노란 병아리 · 큰 눈 · 이마 aviator 고글 · BuildIt-blue 스카프 + 흰 원 안 navy 다이아 배지 · 정수리 tuft. **비행 시 날개가 크게 펼쳐지는 것이 signature.**
+
+### 7.2 Production 래스터 교체 (아트 패스)
+
+같은 파일명으로 **transparent WebP(권장) 또는 PNG @2x** 를 `img/bildi/` 에 덮으면 코드 변경 없이 반영된다:
+
+- 파일명 유지 + 확장자만 바꾸려면 `createBildi(host, { assetBase, assets: { fly: '/img/bildi/bildi-fly.webp', … } })` 로 넘기거나, `BILDI_STATE_ASSETS` 파일명을 `.webp` 로 수정.
+- 권장 캔버스 **256×256**(캐릭터 여백 ~12%), 8개 state 간 무게중심·시선·스카프 위치 일관.
+- 프레임 애니메이션이 필요하면 sprite sheet + `background-image` steps 로 확장(현재는 state당 1장).
+- 이미지가 하나라도 없으면 그 state만 자동으로 인라인 fallback SVG.
 
 ### 7.2 표정 스프라이트 (선택 — 눈/입만 교체)
 `expr-default` `expr-happy` `expr-wink` `expr-think` `expr-surprised`
