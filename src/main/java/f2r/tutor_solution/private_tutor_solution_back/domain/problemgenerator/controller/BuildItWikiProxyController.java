@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class BuildItWikiProxyController {
   private static final Duration WIKI_REQUEST_TIMEOUT = Duration.ofSeconds(280);
-  private static final Duration QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(52);
+  private static final Duration QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(120);
   private static final Duration QUESTION_WIKI_AI_WINDOW = Duration.ofHours(1);
   private static final int QUESTION_WIKI_AI_SUCCESS_LIMIT = 20;
   private static final String MCP_PATH = "/api/mcp";
