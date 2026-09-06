@@ -2,7 +2,7 @@
 import json,gzip,re,logging,time
 from functools import lru_cache
 from pathlib import Path
-from . import insight_type_reference
+import insight_type_reference
 _LOG=logging.getLogger(__name__)
 class ReferenceNotFoundError(Exception):pass
 _CORPUS_DIR=Path(__file__).with_name("private-reference")

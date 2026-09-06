@@ -1,17 +1,15 @@
 import importlib.util
 import json
 import sys
-import types
 import unittest
 from unittest.mock import patch
 from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-pkg=types.ModuleType("backend")
-pkg.__path__=[str(HERE)]
-sys.modules.setdefault("backend",pkg)
-spec=importlib.util.spec_from_file_location("backend.private_reference_bank",HERE/"private_reference_bank.py")
+if str(HERE) not in sys.path:
+    sys.path.insert(0,str(HERE))
+spec=importlib.util.spec_from_file_location("private_reference_bank",HERE/"private_reference_bank.py")
 bank=importlib.util.module_from_spec(spec)
 sys.modules[spec.name]=bank
 spec.loader.exec_module(bank)
@@ -93,7 +91,7 @@ class PrivateReferenceCorpusTest(unittest.TestCase):
         enriched_missing=bank.enrich_prompt(prompt(9,99,"vocabulary"))
         self.assertIn("no requested-type Insight section was found",enriched_missing)
         enriched=bank.enrich_prompt(prompt(2,31,"vocabulary"))
-        self.assertNotIn('"rawLayout":',enriched);self.assertNotIn('"bbox":',enriched);self.assertNotIn('"provenance":',enriched);self.assertLess(len(enriched),30000)
+        self.assertNotIn('\"rawLayout\":',enriched);self.assertNotIn('\"bbox\":',enriched);self.assertNotIn('\"provenance\":',enriched);self.assertLess(len(enriched),30000)
 
 
 class QuestionWikiSchemaTest(unittest.TestCase):
