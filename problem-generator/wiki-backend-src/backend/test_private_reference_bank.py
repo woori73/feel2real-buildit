@@ -39,17 +39,22 @@ class PrivateReferenceCorpusTest(unittest.TestCase):
 
     def test_exact_source_and_type_priority(self):
         for qno in (30,31):
+            same=bank._same_question(2,qno)
             refs=bank.select(prompt(2,qno,"vocabulary"))
-            self.assertTrue(refs)
-            self.assertTrue(all(r["grade"]==2 and qno in r["sourceQuestionNos"] for r in refs))
-            if any(r["type"]=="vocabulary" for r in bank._same_question(2,qno)):
+            if any(r["type"]=="vocabulary" for r in same):
+                self.assertTrue(refs)
+                self.assertTrue(all(r["grade"]==2 and qno in r["sourceQuestionNos"] for r in refs))
                 self.assertTrue(all(r["type"]=="vocabulary" for r in refs))
+            else:
+                self.assertEqual([],refs)
 
-    def test_fallback_never_crosses_source_or_grade(self):
+    def test_missing_exact_type_never_uses_different_db_type(self):
         refs=bank.select(prompt(2,31,"nonexistent-type"))
-        self.assertTrue(refs)
-        self.assertTrue(all(r["grade"]==2 and r["sourceQuestionNo"]==31 for r in refs))
-        self.assertFalse(any(r in bank.select(prompt(1,31,"nonexistent-type")) for r in refs))
+        self.assertEqual([],refs)
+        enriched=bank.enrich_prompt(prompt(2,31,"nonexistent-type"))
+        self.assertIn("EXACT-TYPE DB REFERENCE: unavailable",enriched)
+        self.assertIn("REFERENCE_CONTEXT.sourceAnalysis",enriched)
+        self.assertIn("A DB variant of a different type is also forbidden",enriched)
 
     def test_type_structures(self):
         records=records_for_grade(1)+records_for_grade(2)
@@ -80,13 +85,10 @@ class PrivateReferenceCorpusTest(unittest.TestCase):
             paths=[Path(call.args[0]).name for call in opened.call_args_list]
         self.assertEqual(["g2-q31.json.gz"],paths)
 
-    def test_missing_reference_fails_fast_and_prompt_is_compact(self):
-        with self.assertRaises(bank.ReferenceNotFoundError):
-            bank.enrich_prompt(prompt(9, 99, "vocabulary"))
+    def test_missing_corpus_uses_insight_fallback_and_prompt_is_compact(self):
+        enriched_missing=bank.enrich_prompt(prompt(9,99,"vocabulary"))
+        self.assertIn("EXACT-TYPE DB REFERENCE: unavailable",enriched_missing)
         enriched=bank.enrich_prompt(prompt(2,31,"vocabulary"))
-        self.assertEqual(2, bank.select(prompt(2,31,"vocabulary"))[0]["grade"])
-        # Forbidden field names may appear in the safety instructions themselves; ensure
-        # the private reference payload never serializes those metadata fields.
         self.assertNotIn('"rawLayout":', enriched)
         self.assertNotIn('"bbox":', enriched)
         self.assertNotIn('"provenance":', enriched)
