@@ -27,6 +27,19 @@ class QuestionWikiAiContextValidationContractTest {
   }
 
   @Test
+  void linkedAnalysisIsExplicitStrategyContextNotReplacementPassage() throws Exception {
+    String engine = source("chrome_built_in_ai.js");
+    String ui = source("question_wiki_ai.js");
+
+    assertThat(engine).contains("sourceAnalysis: documents.map");
+    assertThat(engine).contains("REFERENCE_CONTEXT.sourceAnalysis");
+    assertThat(engine).contains("mandatory ANALYSIS/STRATEGY context");
+    assertThat(engine).contains("Choose the target for the selected type from that exam-worthy point");
+    assertThat(engine).contains("Build distractors from the passage logic and likely learner misconceptions");
+    assertThat(ui).contains("Use REFERENCE_CONTEXT to identify the source question reasoning, exam point, distractor logic, and transformation strategy");
+  }
+
+  @Test
   void missingPassageStopsBeforeEitherAiCallAndChangingQuestionClearsPreview() throws Exception {
     String engine = source("chrome_built_in_ai.js");
     String ui = source("question_wiki_ai.js");
@@ -53,6 +66,18 @@ class QuestionWikiAiContextValidationContractTest {
   }
 
   @Test
+  void choicesAreNormalizedAndRenderedWithOneCircledNumberOnly() throws Exception {
+    String engine = source("chrome_built_in_ai.js");
+    String ui = source("question_wiki_ai.js");
+
+    assertThat(engine).contains("function normalizeChoice(choice)", "question.choices = question.choices.map(normalizeChoice)");
+    assertThat(engine).contains("Never put choice numbers such as 1., (1), ① in choices values");
+    assertThat(ui).contains("var CIRCLED = ['①', '②', '③', '④', '⑤'];");
+    assertThat(ui).contains("function stripChoicePrefix(value)", "CIRCLED[index] + '</span> '");
+    assertThat(ui).doesNotContain("'<li><b>' + (index + 1) + '.</b> '");
+  }
+
+  @Test
   void freeFallbackIsExplicitAndHasNoPaidRetry() throws Exception {
     String ui = source("question_wiki_ai.js");
 
@@ -69,5 +94,6 @@ class QuestionWikiAiContextValidationContractTest {
     assertThat(ui).contains("ai.validateQuestion(question, request)");
     assertThat(ui).contains("els.save.disabled = false;");
     assertThat(ui).contains("dataKind: 'GENERATED_PRACTICE'", "category: 'VARIANT'");
+    assertThat(ui).contains("parts.push(CIRCLED[index] + ' ' + choiceText(choice))");
   }
 }
