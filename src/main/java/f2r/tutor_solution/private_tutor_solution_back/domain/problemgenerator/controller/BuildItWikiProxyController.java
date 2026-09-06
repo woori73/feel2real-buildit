@@ -54,7 +54,9 @@ public class BuildItWikiProxyController {
       return normalizedGatewayError(HttpStatus.UNAUTHORIZED.value(), "로그인이 필요합니다.");
     }
     boolean questionWikiAi = isQuestionWikiAi(targetPath);
-    if (questionWikiAi && principal != null && hasReachedQuestionWikiAiLimit(principal.userId(), Instant.now())) {
+    boolean quotaExempt = isQuestionWikiAiQuotaExempt(principal);
+    if (questionWikiAi && principal != null && !quotaExempt
+        && hasReachedQuestionWikiAiLimit(principal.userId(), Instant.now())) {
       return normalizedGatewayError(HttpStatus.TOO_MANY_REQUESTS.value(),
           "AI 문제제작은 1인당 1시간에 최대 20회까지 이용할 수 있습니다.");
     }
@@ -86,7 +88,8 @@ public class BuildItWikiProxyController {
     } catch (java.io.IOException exception) {
       return normalizedGatewayError(502, "AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     }
-    if (questionWikiAi && principal != null && response.statusCode() >= 200 && response.statusCode() < 300) {
+    if (questionWikiAi && principal != null && !quotaExempt
+        && response.statusCode() >= 200 && response.statusCode() < 300) {
       recordQuestionWikiAiSuccess(principal.userId(), Instant.now());
     }
     ResponseEntity.BodyBuilder out = ResponseEntity.status(response.statusCode());
@@ -94,6 +97,10 @@ public class BuildItWikiProxyController {
     response.headers().firstValue("content-disposition").ifPresent(v -> out.header(HttpHeaders.CONTENT_DISPOSITION, v));
     if (isMcpPath(targetPath)) response.headers().firstValue("mcp-session-id").ifPresent(v -> out.header("Mcp-Session-Id", v));
     return out.body(response.body());
+  }
+
+  private boolean isQuestionWikiAiQuotaExempt(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return principal != null && "ADMIN".equals(principal.role());
   }
 
   private boolean hasReachedQuestionWikiAiLimit(Long userId, Instant now) {
