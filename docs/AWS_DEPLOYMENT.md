@@ -36,8 +36,10 @@ Cleanup worker ── abort/delete/head-confirm ── durable cleanup outbox
 - 원본/정규화 산출물 `<=209715200` bytes, duration `<=120000ms`, Academy당 최대 10개다.
 - 요청 안에서 정규화와 thumbnail 생성까지 끝낸 뒤 `READY + NORMALIZED`를 저장한다.
 - 최적화 attempt budget은 600초, stall은 90초, 최대 attempt는 2, worker permit은 1이다.
-- stable public URL은 active source의 실제 media type을 사용한다. S3 GET 서명은 30초 이하이며
-  `Cache-Control: no-store`다.
+- stable public URL은 active source의 실제 media type을 사용한다. S3 GET 서명은 1시간 이하
+  (기본 15분 — 방문자가 페이지를 읽는 동안 preload URL이 클릭까지 살아 있어야 콜드 재연결이 없다.
+  EC2 instance-profile 자격증명 갱신 주기보다 짧게 유지)이며, 정규화본은 key 당 불변이라
+  `Cache-Control: private, max-age=604800, immutable`로 서명한다(app `302`는 서명 TTL 안에서 재사용).
 
 Spring `spring.servlet.multipart.*`는 문서/이미지/랜딩 영상과 Academy 영상의 servlet multipart
 하드컷이다. Academy 원본 200MiB와 multipart 경계 오버헤드를 수용하도록 file 200MB/request 205MB를

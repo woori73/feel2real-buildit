@@ -1973,8 +1973,8 @@ LMS 주소가 성립하지 않는다(404).
 - 목적: 현재 활성 소스(RAW 또는 정규화 MP4)를 progressive streaming으로 전달한다.
 - 인증/권한: 없음(permitAll). 공개 Academy의 `READY` 영상만.
 - `Content-Type`은 활성 소스에 저장된 canonical media type을 사용한다. RAW WebM/MOV는 각각 `video/webm`/`video/quicktime`, 정규화본은 `video/mp4`다.
-- local profile은 단일 `Range`를 지원한다. 정상 범위는 `206` + `Content-Range`, 범위 없음은 bounded streaming `200`, 만족 불가능하거나 다중 범위는 `416` + `Content-Range: bytes */{length}`다. 어떤 경우에도 전체 영상을 JVM `byte[]`로 만들지 않는다.
-- S3 profile은 `302`로 TTL 30초 이하의 opaque signed GET에 연결한다. stable 응답과 signed target override 모두 `Cache-Control: no-store`; 브라우저의 `Range`는 redirect target으로 전달된다. TTL은 새 요청 인가 시한이며 이미 S3가 수락한 전송의 중단 시한이 아니다.
+- local profile은 단일 `Range`를 지원한다. 정상 범위는 `206` + `Content-Range`, 범위 없음은 bounded streaming `200`, 만족 불가능하거나 다중 범위는 `416` + `Content-Range: bytes */{length}`다. 어떤 경우에도 전체 영상을 JVM `byte[]`로 만들지 않는다. `200`/`206` 응답은 `Cache-Control: private, max-age=604800, immutable`(정규화본은 videoId 당 불변).
+- S3 profile은 `302`로 TTL 1시간 이하(기본 15분)의 opaque signed GET에 연결한다. `302`는 그 TTL(-60s 안전마진) 안에서 `Cache-Control: private, max-age`로 재사용되고 signed target은 `private, max-age=604800, immutable`이다 — `<video preload="metadata">`로 받은 앞부분을 나중의 첫 클릭 재생이 그대로 재사용해 "첫 영상 첫 클릭 버퍼링"을 없앤다. 브라우저의 `Range`는 redirect target으로 전달된다. TTL은 새 요청 인가 시한이며 이미 S3가 수락한 전송의 중단 시한이 아니다.
 - Response: local `200|206|416`, S3 `302`, 권한/상태/소스 누락 `404`.
 
 ### ✅ HEAD /api/academies/{slug}/videos/{videoId}/stream

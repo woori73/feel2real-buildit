@@ -71,6 +71,37 @@ test('isNamingComplete: 발행 + 실제 handle + 이름이면 naming 을 건너�
   assert.equal(guide.isNamingComplete({ name: '압구정에듀홀릭', handle: 'apgujeong-eduholic', publicPathUrl: '/academies/x' }), true);
 });
 
+test('isNamingConfigured: 발행 전이라도 이름 + 실제 handle 이면 설정된 것으로 본다(§6)', () => {
+  assert.equal(guide.isNamingConfigured(null), false);
+  assert.equal(guide.isNamingConfigured({ name: '새 학원', handle: 'apgujeong-eduholic' }), false, 'placeholder 이름');
+  assert.equal(guide.isNamingConfigured({ name: '압구정에듀홀릭', handle: 'academy-a1b2c3' }), false, '임시 handle');
+  assert.equal(guide.isNamingConfigured({ name: '압구정에듀홀릭', handle: '' }), false, 'handle 없음');
+  // 발행 안 됐어도(publicPathUrl 없음) 이름 + 실제 handle 이면 true — 진행 중이던 사용자를 존중한다.
+  assert.equal(guide.isNamingConfigured({ name: '압구정에듀홀릭', handle: 'apgujeong-eduholic' }), true);
+});
+
+test('shouldStartAtNaming: §7·§8 — 이름/주소 미설정 + 세션이 naming 을 지나쳐 있으면 STEP 1 로 되돌린다', () => {
+  const newAcademy = { name: '새 학원', handle: '' };
+  const configured = { name: '압구정에듀홀릭', handle: 'apgujeong-eduholic', publicPathUrl: '/academies/x' };
+
+  // #195 이전 세션: currentStepId 가 style, completedStepIds 에 naming 없음 → 되돌린다.
+  const legacySession = { currentStepId: 'style', onboarded: true, completedStepIds: ['style'] };
+  assert.equal(guide.shouldStartAtNaming(newAcademy, legacySession), true);
+
+  // 다른 academy 로 진행하던 세션을 신규 academy 가 물려받은 경우(키가 academy 별이 아님) → 되돌린다.
+  assert.equal(guide.shouldStartAtNaming(newAcademy, { currentStepId: 'philosophy', completedStepIds: ['style', 'hero'] }), true);
+
+  // 이미 이름/주소가 설정돼 있으면 저장된 진행 상태를 존중한다.
+  assert.equal(guide.shouldStartAtNaming(configured, legacySession), false);
+
+  // 사용자가 이미 naming 을 완료/건너뛴 세션은 존중한다.
+  assert.equal(guide.shouldStartAtNaming(newAcademy, { currentStepId: 'style', completedStepIds: ['naming'] }), false);
+  assert.equal(guide.shouldStartAtNaming(newAcademy, { currentStepId: 'style', skippedStepIds: ['naming'] }), false);
+
+  // 이미 naming 에 있으면 no-op.
+  assert.equal(guide.shouldStartAtNaming(newAcademy, guide.createSession(null)), false);
+});
+
 test('markCompleted / markSkipped는 상호 배타적이며 진행률에 반영된다', () => {
   let s = guide.createSession(null);
   s = guide.markCompleted(s, 'naming');

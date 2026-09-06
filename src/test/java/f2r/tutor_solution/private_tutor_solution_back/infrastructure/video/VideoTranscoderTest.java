@@ -295,21 +295,22 @@ class VideoTranscoderTest {
   }
 
   @Nested
-  @DisplayName("thumbnailSeekSeconds — 빈 프레임 방지")
+  @DisplayName("thumbnailSeekSeconds — 첫 유효 프레임")
   class ThumbnailSeek {
 
     @Test
-    @DisplayName("given 2초 이상 영상 when 계산 then 1초 지점을 쓴다")
-    void normal_video_seeks_to_one_second() {
-      // given / when / then
-      assertThat(VideoTranscoder.thumbnailSeekSeconds(30.0)).isEqualTo("1.000");
+    @DisplayName("given 일반 영상 when 계산 then 시작부 0.1초(첫 유효 프레임)를 쓴다")
+    void normal_video_seeks_to_first_valid_frame() {
+      // 시작 1초에 제작 썸네일을 넣은 영상(원장 소개 등)의 화면을 poster 로 잡아야 한다.
+      // 과거의 1초 고정 지점은 그 화면을 지나쳐 인터뷰 중간 프레임을 잡았다.
+      assertThat(VideoTranscoder.thumbnailSeekSeconds(30.0)).isEqualTo("0.100");
+      assertThat(VideoTranscoder.thumbnailSeekSeconds(2.0)).isEqualTo("0.100");
     }
 
     @Test
-    @DisplayName("given 1초 미만 영상 when 계산 then 중간 지점을 써서 빈 프레임을 피한다")
+    @DisplayName("given 0.2초 미만 영상 when 계산 then 중간 지점을 써서 빈 프레임을 피한다")
     void very_short_video_seeks_to_midpoint() {
-      // given / when / then — 0.8초 영상에서 1초를 찾으면 프레임이 나오지 않는다
-      assertThat(VideoTranscoder.thumbnailSeekSeconds(0.8)).isEqualTo("0.400");
+      assertThat(VideoTranscoder.thumbnailSeekSeconds(0.1)).isEqualTo("0.050");
     }
   }
 }

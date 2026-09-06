@@ -188,6 +188,15 @@
     node.className = 'f2r-media-player';
     viewport.appendChild(node);
     trigger.hidden = true;
+    // 모바일 Chrome/Safari 는 autoplay 속성만으로는 소리 있는 영상을 막는다. 클릭은 유효한
+    // user gesture 이므로 그 안에서 play() 를 직접 호출해야 첫 tap 으로 재생된다(§J). src 는
+    // 방금 만든 새 요소에 한 번만 지정했다 — load()/src 재대입으로 최초 로드를 끊지 않는다(§10).
+    if (node.tagName === 'VIDEO' && typeof node.play === 'function') {
+      var played = node.play();
+      if (played && typeof played.catch === 'function') {
+        played.catch(function () { /* 차단 시 사용자가 컨트롤로 재생 */ });
+      }
+    }
   }
 
   var wired = false;

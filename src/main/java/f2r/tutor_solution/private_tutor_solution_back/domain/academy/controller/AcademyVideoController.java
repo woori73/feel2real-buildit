@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Aca
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoDeliveryService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -114,7 +115,10 @@ public class AcademyVideoController {
       value = "/api/academies/{slug}/videos/{videoId}/thumbnail",
       produces = MediaType.IMAGE_JPEG_VALUE)
   public ResponseEntity<byte[]> thumbnail(@PathVariable String slug, @PathVariable Long videoId) {
-    return ResponseEntity.ok(academyVideoService.readPublicThumbnail(slug, videoId));
+    // poster 는 videoId 당 불변이다 — 매 요청 재다운로드하면 "poster 먼저 표시"가 늦는다.
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)).cachePrivate().immutable())
+        .body(academyVideoService.readPublicThumbnail(slug, videoId));
   }
 
   /** 공개 수업상품 히어로 이미지. 응답 DTO에 storage key를 싣지 않으므로 이 경로로만 노출된다. */

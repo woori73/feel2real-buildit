@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { loadRenderHooks, academyFixture } = require('./helpers/academy_render_hooks');
+const { memoryStorage } = require('./helpers/browser_script_harness');
+const AI_GUIDE = require('../../main/resources/static/js/academy_builder_ai_guide.js');
 
 /**
  * Phase 5B — AI Guide 배선(실제 academy_builder.js 코드 실행).
@@ -64,8 +66,12 @@ function buildGuideDocument() {
 function loadGuide(options = {}) {
   const document = buildGuideDocument();
   const fetchCalls = [];
+  const sessionStorage = options.savedSession
+    ? memoryStorage({ [AI_GUIDE.SESSION_STORAGE_KEY]: options.savedSession })
+    : undefined;
   const hooks = loadRenderHooks('builder', {
     document,
+    sessionStorage,
     window: { getComputedStyle: () => ({}), getSelection: () => ({ removeAllRanges() {}, addRange() {} }) },
     fetch: async (url, init) => {
       fetchCalls.push({ url, init });
@@ -96,6 +102,68 @@ test('이미 확정된 이름/주소가 있는 Academy는 naming 을 건너뛰�
   assert.equal(hooks.getAiGuideSession().currentStepId, 'style');
   assert.ok(hooks.getAiGuideSession().completedStepIds.indexOf('naming') >= 0);
   assert.match(document.getElementById('builderAiGuideBody').innerHTML, /홈페이지 스타일|어떤 느낌/);
+});
+
+test('Scenario B — #195 이전 sessionStorage(currentStepId=style) + 이름/주소 미설정 → naming STEP 1 부터 시작', () => {
+  const { hooks, document } = loadGuide({
+    savedSession: { currentStepId: 'style', onboarded: true, completedStepIds: ['style'] }
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x' }); // handle 없음 = 미설정
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'naming', 'CSS가 아니라 진행 상태를 교정해야 한다');
+  assert.match(document.getElementById('builderAiGuideBody').innerHTML, /학원명|홈페이지 주소/);
+});
+
+test('Scenario C — 기존 Academy(이름+실제 handle) 는 저장된 진행 상태를 존중한다(naming 강제 안 함)', () => {
+  const { hooks } = loadGuide({
+    savedSession: { currentStepId: 'philosophy', onboarded: true, completedStepIds: ['naming', 'style', 'hero', 'principal'] }
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', handle: 'apgujeong-eduholic' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'philosophy', '진행 중이던 사용자를 되돌리면 안 된다');
+});
+
+test('Scenario D — 긴 추천안 3개는 캐러셀로 한 번에 1개만, [적용]·이전/다음 추천이 항상 노출된다', async () => {
+  const long = (n) => `추천안${n} 원장은 20년간 지역 학생을 지도하며 실력을 끌어올린 교육자로 이 배경을 한 문단으로 풀어 학부모에게 신뢰를 줍니다`;
+  const { hooks, document } = loadGuide({
+    fetch: async () => ({ ok: true, json: async () => ({ target: 'principalDesc', candidates: [long(1), long(2), long(3)] }) })
+  });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', handle: 'apgujeong-eduholic', pageSettings: { builderDraft: { principalDesc: '' } } });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('principal');
+  hooks.requestAiGuideRecommendations();
+  await flush();
+
+  const body = () => document.getElementById('builderAiGuideBody').innerHTML;
+  assert.match(body(), /추천안 1 \/ 3/);
+  assert.match(body(), /data-guide-action="apply"/, '[적용]은 항상 노출');
+  assert.match(body(), /data-guide-action="cand-next"/);
+  // 첫 화면에는 후보 1만 — 3개를 세로로 다 쌓지 않는다.
+  assert.equal((body().match(/data-guide-action="apply"/g) || []).length, 1);
+  assert.ok(body().indexOf(long(1)) >= 0 && body().indexOf(long(2)) < 0, '후보 2는 아직 렌더 안 함');
+
+  // 다음 추천 → 후보 2 표시, [적용]은 여전히 1개, index 갱신
+  hooks.stepAiGuideCandidate(1);
+  assert.equal(hooks.getAiGuideCandidateIndex(), 1);
+  assert.match(body(), /추천안 2 \/ 3/);
+  assert.ok(body().indexOf(long(2)) >= 0 && body().indexOf(long(1)) < 0);
+  assert.equal((body().match(/data-guide-action="apply"/g) || []).length, 1);
+
+  // 경계에서 clamp
+  hooks.stepAiGuideCandidate(1);
+  hooks.stepAiGuideCandidate(1);
+  assert.equal(hooks.getAiGuideCandidateIndex(), 2);
+
+  // 적용은 현재 보이는 후보(index 2)를 반영한다
+  hooks.applyAiGuideCandidate(2);
+  assert.equal(academy.pageSettings.builderDraft.principalDesc, long(3));
+  assert.equal(hooks.getAiGuidePending(), null);
+  assert.equal(hooks.getAiGuideCandidateIndex(), 0, '적용 후 index 초기화');
 });
 
 test('[문구 추천받기]는 읽기 전용 — POST만 나가고 currentPreview는 안 바뀐다', async () => {

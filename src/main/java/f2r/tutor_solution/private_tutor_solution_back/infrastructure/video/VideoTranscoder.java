@@ -161,8 +161,9 @@ public class VideoTranscoder {
       runFfmpeg(List.of(
           ffmpegPath,
           "-y",
-          "-ss", thumbnailSeekSeconds(probe.durationSec()),
+          // -ss 를 -i 뒤에 둬 프레임 정확 seek 을 한다(작은 offset 이라 첫 GOP 만 디코드 — 저렴).
           "-i", mp4.toString(),
+          "-ss", thumbnailSeekSeconds(probe.durationSec()),
           "-frames:v", "1",
           "-q:v", "3",
           thumbnail.toString()), "썸네일 추출에 실패했습니다.");
@@ -224,8 +225,9 @@ public class VideoTranscoder {
         "-y",
         "-nostats",
         "-progress", ProcessRunner.PROGRESS_FILE_TOKEN,
-        "-ss", thumbnailSeekSeconds(probe.durationSec()),
+        // -ss 를 -i 뒤에 둬 프레임 정확 seek(작은 offset 이라 첫 GOP 만 디코드).
         "-i", mp4.toString(),
+        "-ss", thumbnailSeekSeconds(probe.durationSec()),
         "-frames:v", "1",
         "-q:v", "3",
         thumbnail.toString()), remaining.get(), cancelled, mediaProgressObserved,
@@ -329,9 +331,14 @@ public class VideoTranscoder {
     return rounded % 2 == 0 ? rounded : rounded - 1;
   }
 
-  /** 1초 지점을 쓰되, 그보다 짧은 영상이면 중간 지점을 쓴다(빈 프레임 방지). */
+  /**
+   * poster 는 영상의 "첫 유효 프레임"을 쓴다. 정확히 0.000초는 코덱/브라우저에 따라 검은
+   * 프레임이 될 수 있어 아주 짧은 offset(0.1초)만 준다. 과거처럼 1초 고정 지점을 쓰면,
+   * 시작 1초에 제작 썸네일 화면을 넣어 만든 영상(예: 원장 소개)에서 poster 가 그 화면을 놓치고
+   * 인터뷰 중간의 임의 프레임처럼 잡힌다. 0.1초보다 짧은 영상만 중간 지점으로 폴백한다.
+   */
   static String thumbnailSeekSeconds(double durationSec) {
-    double seek = durationSec > 0 && durationSec < 2 ? durationSec / 2 : 1.0;
+    double seek = durationSec > 0 && durationSec < 0.2 ? durationSec / 2 : 0.1;
     return String.format(Locale.ROOT, "%.3f", seek);
   }
 

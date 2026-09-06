@@ -26,6 +26,15 @@ import java.time.Duration;
 public class AcademyVideoDeliveryService {
   private static final int COPY_BUFFER_BYTES = 64 * 1024;
 
+  /**
+   * 정규화된 영상 바이트는 videoId 당 불변이다(재업로드는 새 id 를 만든다). 그래서 브라우저가
+   * 오래 캐시해도 안전하고, {@code <video preload="metadata">} 로 받아둔 앞부분을 나중의 첫
+   * 클릭 재생이 그대로 재사용한다 → "첫 영상 첫 클릭 버퍼링" 제거. shared proxy 는 피하려고
+   * private 로 둔다(발행 학원의 공개 콘텐츠지만 URL 이 슬러그별이라 공유 이득이 작다).
+   */
+  private static final CacheControl IMMUTABLE_MEDIA =
+      CacheControl.maxAge(Duration.ofDays(7)).cachePrivate().immutable();
+
   private final AcademyService academyService;
   private final AcademyVideoRepository videoRepository;
   private final AcademyVideoDeliveryStorage storage;
@@ -48,9 +57,14 @@ public class AcademyVideoDeliveryService {
       ByteRange range = parseRange(rangeHeader, source.length());
       var target = storage.resolve(source.key(), source.mediaType(), signedUrlTtl);
       if (target instanceof RedirectTarget redirect) {
+        // 302 자체를 signed-URL 유효시간 안에서 재사용하게 한다 — 그래야 preload 와 첫 재생이
+        // "같은" presigned URL 을 받아 브라우저 미디어 캐시(URL 키)가 적중한다. 매 클릭마다
+        // 새 URL 을 발급하면 캐시가 미스되고 S3 로 콜드 재연결이 일어난다("첫 클릭 버퍼링").
+        Duration redirectCache = signedUrlTtl.minusSeconds(60);
+        if (redirectCache.isZero() || redirectCache.isNegative()) redirectCache = Duration.ofSeconds(1);
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(redirect.location())
-            .cacheControl(CacheControl.noStore())
+            .cacheControl(CacheControl.maxAge(redirectCache).cachePrivate())
             .header(HttpHeaders.ACCEPT_RANGES, "bytes")
             .build();
       }
@@ -81,7 +95,7 @@ public class AcademyVideoDeliveryService {
   public ResponseEntity<Void> head(String slug, Long videoId) {
     ActiveVideo source = resolveAuthorizedSource(slug, videoId);
     return ResponseEntity.ok()
-        .cacheControl(CacheControl.noStore())
+        .cacheControl(IMMUTABLE_MEDIA)
         .contentType(MediaType.parseMediaType(source.mediaType()))
         .contentLength(source.length())
         .header(HttpHeaders.ACCEPT_RANGES, "bytes")
@@ -132,7 +146,7 @@ public class AcademyVideoDeliveryService {
       }
     };
     var response = ResponseEntity.status(status)
-        .cacheControl(CacheControl.noStore())
+        .cacheControl(IMMUTABLE_MEDIA)
         .contentType(MediaType.parseMediaType(source.mediaType()))
         .contentLength(length)
         .header(HttpHeaders.ACCEPT_RANGES, "bytes");
