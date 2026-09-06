@@ -70,14 +70,14 @@ class QuestionWikiContractTest {
     assertThat(js).doesNotContain("htmlFrame.srcdoc").doesNotContain("innerHTML = html");
   }
 
-  @Test @DisplayName("AI 문제제작은 exact-source 비공개 Reference를 서버 무료 AI로 생성하고 기존 Variant로 저장한다")
+  @Test @DisplayName("AI 문제제작은 exact-source 비공개 Reference를 서버 Qwen3.7 Flash로 생성하고 기존 Variant로 저장한다")
   void detailTemplate_hasExactSourceServerFirstAiEntrypoint() throws IOException {
     String html = read("templates/public/question_wiki.html");
     assertThat(html).contains("id=\"qwAiSection\"", "id=\"qwAiToggle\"", "✨ AI 문제제작").contains("data-ai-preset=\"grammar\"", "id=\"qwAiRequest\"", "id=\"qwAiPattern\"").contains("/js/chrome_built_in_ai.js", "/js/question_wiki_ai.js");
     String detailJs = read("static/js/question_wiki.js");
     assertThat(detailJs).contains("questionwiki:context", "questionWikiId: questionWikiId", "context: cache").contains("questionwiki:reload");
     String aiJs = read("static/js/question_wiki_ai.js");
-    assertThat(aiJs).contains("window.ChromeBuiltInQuestionAi").contains("FREE_PROVIDER='openrouter-free'").contains("QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST").contains("EXACT-SOURCE REFERENCE").contains("generateFreeServer()").contains("questionWikiId:Number(questionWikiId)").contains("validateServerQuestion(q)").contains("dataKind:'GENERATED_PRACTICE'", "category:'VARIANT'", "variant:").contains("questionwiki:reload").doesNotContain("ai.generate(request)").doesNotContain("provider:'auto'", "provider: 'auto'", "qwen", "gemini", "claude", "openai");
+    assertThat(aiJs).contains("window.ChromeBuiltInQuestionAi").contains("AI_PROVIDER='openrouter-free'").contains("QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST").contains("EXACT-SOURCE REFERENCE").contains("generateServer()").contains("questionWikiId:Number(questionWikiId)").contains("validateServerQuestion(q)").contains("QWEN_3_7_FLASH").contains("dataKind:'GENERATED_PRACTICE'", "category:'VARIANT'", "variant:").contains("questionwiki:reload").doesNotContain("ai.generate(request)").doesNotContain("provider:'auto'", "provider: 'auto'", "gemini", "claude", "openai");
     String engineJs = read("static/js/chrome_built_in_ai.js");
     assertThat(engineJs).contains("LanguageModel.availability", "LanguageModel.create").contains("sourceLanguage: 'ko', targetLanguage: 'en'").contains("sourceLanguage: 'en', targetLanguage: 'ko'").contains("PATTERN REFERENCE ONLY", "CURRENT_QUESTION.passage is the only content source").contains("REFERENCE_CONTEXT (MANDATORY supporting analysis/strategy; never a replacement passage)").doesNotContain("fetch(");
   }
