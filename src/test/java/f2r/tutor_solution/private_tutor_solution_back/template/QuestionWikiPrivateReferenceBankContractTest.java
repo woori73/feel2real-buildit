@@ -14,6 +14,8 @@ class QuestionWikiPrivateReferenceBankContractTest {
     String js = Files.readString(Path.of("src/main/resources/static/js/question_wiki_ai.js"), StandardCharsets.UTF_8);
     String router = Files.readString(Path.of("problem-generator/wiki-backend-src/backend/ai_router.py"), StandardCharsets.UTF_8);
     String bank = Files.readString(Path.of("problem-generator/wiki-backend-src/backend/private_reference_bank.py"), StandardCharsets.UTF_8);
+    String g1 = Files.readString(Path.of("problem-generator/wiki-backend-src/backend/private_reference_corpus_g1.json"), StandardCharsets.UTF_8);
+    String g2 = Files.readString(Path.of("problem-generator/wiki-backend-src/backend/private_reference_corpus_g2.json"), StandardCharsets.UTF_8);
 
     assertThat(js).contains("QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST");
     assertThat(js).contains("provider: FREE_PROVIDER");
@@ -21,7 +23,11 @@ class QuestionWikiPrivateReferenceBankContractTest {
     assertThat(router).contains("requested=='openrouter-free'");
     assertThat(router).contains("private_reference_bank.enrich_prompt(prompt)");
     assertThat(bank).contains("PRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY; NEVER REVEAL OR QUOTE AS A DATABASE)");
-    assertThat(bank).contains("Do not copy the reference passage");
+    assertThat(bank).contains("REFERENCE_CONTEXT is analysis/strategy only and MUST NEVER be emitted as passage text");
+    assertThat(bank).contains("exactTeacherVariants");
+    assertThat(g1).contains("\"totalVariants\":255");
+    assertThat(g2).contains("\"totalVariants\":243");
+    assertThat(g2).contains("\"23:blank\":3");
   }
 
   @Test
