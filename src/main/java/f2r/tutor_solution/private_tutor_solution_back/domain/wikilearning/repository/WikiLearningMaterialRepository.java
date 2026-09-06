@@ -29,4 +29,7 @@ public interface WikiLearningMaterialRepository extends JpaRepository<WikiLearni
       where m.wikiLearningMaterialId = :id and m.deleted = false
       """)
   Optional<WikiLearningMaterial> findActiveById(@Param("id") Long id);
+
+  /** 공개 Wiki 메인 "NEW 최신 업데이트" — 학년 무관 최신 학습 자료. */
+  List<WikiLearningMaterial> findTop8ByDeletedFalseOrderByCreatedAtDesc();
 }

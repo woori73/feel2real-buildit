@@ -35,4 +35,7 @@ public interface WikiExamOriginalRepository extends JpaRepository<WikiExamOrigin
       where w.wikiExamOriginalId = :id and w.deleted = false
       """)
   Optional<WikiExamOriginal> findAdminById(@Param("id") Long id);
+
+  /** 공개 Wiki 메인 "NEW 최신 업데이트" — 학년 무관 최신 공개 원본. */
+  List<WikiExamOriginal> findTop8ByDeletedFalseAndVisibleTrueOrderByCreatedAtDesc();
 }

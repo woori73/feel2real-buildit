@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.user.repository;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,4 +23,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   /** Wiki 운영 현황 — 최근 가입 회원(가입일 내림차순). Pageable 로 개수 제한. */
   List<User> findByOrderByCreatedAtDesc(Pageable pageable);
+
+  /** 공개 Wiki 메인 "새로 함께한 회원" — 특정 역할(ADMIN) 제외 최근 가입 회원. */
+  List<User> findByRoleNotOrderByCreatedAtDesc(Role role, Pageable pageable);
 }

@@ -121,6 +121,41 @@ class WikiPageContractTest {
   }
 
   @Test
+  @DisplayName("허브 개편: 학년 고1→고2→고3 순 + NEW/인기다운로드/Wiki Thread 4단계/WIKI LIVE + home-feed 연결")
+  void wikiHub_revamp_hasNewSectionsAndOrder() throws IOException {
+    String html = read("templates/public/wiki.html");
+    String js = read("static/js/wiki.js");
+
+    // 학년 바: 고1 → 고2 → 고3 순서(첫 탭이 고1, active)
+    int g1 = html.indexOf("data-grade=\"1\"");
+    int g2 = html.indexOf("data-grade=\"2\"");
+    int g3 = html.indexOf("data-grade=\"3\"");
+    assertThat(g1).isGreaterThan(0);
+    assertThat(g1).isLessThan(g2);
+    assertThat(g2).isLessThan(g3);
+    assertThat(html).contains("data-grade=\"1\">고1<small>내신 · 모의고사</small>");
+    assertThat(html).contains("data-grade=\"3\">고3<small>수능 · 모의고사</small>");
+
+    // NEW 최신 업데이트 / 인기 다운로드 / Wiki Thread 4단계 / WIKI LIVE 영역
+    assertThat(html).contains("id=\"latestUpdates\"", "id=\"popularDownloads\"", "id=\"popularPeriod\"");
+    assertThat(html).contains("WIKI THREAD", "01", "02", "03", "04", "AI 변형문제 제작", "id=\"recentThreads\"");
+    assertThat(html).contains("WIKI LIVE", "id=\"liveMessages\"", "id=\"recentMembers\"",
+        "id=\"liveForm\"", "id=\"liveInput\"");
+    // 기존 자료실 3종은 유지된다(개편으로 삭제 금지)
+    assertThat(html).contains("모의고사 원본", "분석 자료", "모의고사 학습 자료", "커뮤니티");
+
+    // JS: aggregate + 실시간(폴링) 엔드포인트 사용, admin analytics 직접 호출 없음
+    assertThat(js).contains("/api/wiki/home-feed");
+    assertThat(js).contains("/api/wiki/live-messages");
+    assertThat(js).contains("/api/wiki/popular-downloads");
+    assertThat(js).contains("sinceId=");
+    assertThat(js).doesNotContain("/api/admin/");
+    // 폴링 방식(SSE/WebSocket 미사용)
+    assertThat(js).doesNotContain("EventSource", "WebSocket");
+    assertThat(js).contains("setInterval(pollLive", "grade = 1");
+  }
+
+  @Test
   @DisplayName("게시판 목록·작성 화면은 /wiki 문맥에서만 움직인다")
   void wikiBoardAndCompose_stayInWikiContext() throws IOException {
     String boardJs = read("static/js/wiki_board.js");
