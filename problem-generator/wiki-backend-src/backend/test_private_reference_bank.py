@@ -91,4 +91,43 @@ class PrivateReferenceCorpusTest(unittest.TestCase):
         self.assertLess(len(enriched), 30000)
 
 
+class QuestionWikiSchemaTest(unittest.TestCase):
+    def _prompt(self, wiki_id=31, kind="vocabulary"):
+        marker = {"questionWiki": True, "questionWikiId": wiki_id, "grade": 2,
+                  "questionNo": 31, "type": kind}
+        return ("desc\nQUESTION_WIKI_PRIVATE_REFERENCE_REQUEST:"
+                + json.dumps(marker, separators=(",", ":")) + "\nRequested type: " + kind)
+
+    def test_returns_none_without_marker(self):
+        self.assertIsNone(bank.question_wiki_schema("plain prompt without any marker"))
+
+    def test_fixes_type_and_source_id_and_generation_mode_as_enums(self):
+        schema = bank.question_wiki_schema(self._prompt(wiki_id=31, kind="vocabulary"))
+        props = schema["properties"]
+        self.assertEqual(["vocabulary"], props["type"]["enum"])
+        self.assertEqual([31], props["sourceQuestionId"]["enum"])
+        self.assertEqual("integer", props["sourceQuestionId"]["type"])
+        self.assertEqual(["OPENROUTER_FREE"], props["generationMode"]["enum"])
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(
+            {"type", "instruction", "passage", "choices", "answer",
+             "explanation", "sourceQuestionId", "generationMode"},
+            set(schema["required"]))
+        self.assertEqual("array", props["choices"]["type"])
+        self.assertEqual("string", props["choices"]["items"]["type"])
+        self.assertEqual("string", props["answer"]["type"])
+
+    def test_subjective_type_is_still_pinned(self):
+        schema = bank.question_wiki_schema(self._prompt(kind="subjective"))
+        self.assertEqual(["subjective"], schema["properties"]["type"]["enum"])
+
+    def test_non_numeric_wiki_id_falls_back_to_plain_integer(self):
+        marker = {"questionWiki": True, "questionWikiId": "abc", "type": "grammar"}
+        prompt = "QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST:" + json.dumps(marker)
+        schema = bank.question_wiki_schema(prompt)
+        self.assertEqual("integer", schema["properties"]["sourceQuestionId"]["type"])
+        self.assertNotIn("enum", schema["properties"]["sourceQuestionId"])
+        self.assertEqual(["grammar"], schema["properties"]["type"]["enum"])
+
+
 if __name__ == "__main__": unittest.main()

@@ -26,6 +26,7 @@ from docx.shared import Mm, Pt
 
 import prompt_logic as pl
 import ai_router
+import private_reference_bank
 import question_contract as qc
 import workspace as wiki_workspace
 
@@ -1657,6 +1658,11 @@ class AiCompleteRequest(BaseModel):
     prompt: str
     provider: str = 'auto'
     max_output_chars: int = 0
+    # optional·backward-compatible. 기존 호출자는 이 필드를 보내지 않으므로 동작이 변하지
+    # 않는다. Question Wiki 요청은 아래에서 서버가 marker 기반 스키마를 우선 적용한다.
+    request_schema: Optional[dict] = Field(default=None, alias='schema')
+
+    model_config = {'populate_by_name': True}
 
 
 @app.post('/api/ai/complete')
@@ -1667,8 +1673,12 @@ def ai_complete(payload: AiCompleteRequest):
     prompt = payload.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=400, detail='프롬프트를 입력해 주세요.')
+    # Question Wiki AI 변형 요청(QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST marker)만 서버가
+    # 구조화 출력 계약을 강제한다. type·sourceQuestionId는 요청에서 이미 확정된 값이라
+    # 스키마 enum으로 고정한다. 다른 모든 호출자는 marker가 없어 schema=None → 기존 동작.
+    schema = private_reference_bank.question_wiki_schema(prompt) or payload.request_schema
     try:
-        result = ai_router.generate(payload.provider, payload.system, prompt, temperature=0.25, allow_noncritical_fallback=True)
+        result = ai_router.generate(payload.provider, payload.system, prompt, schema=schema, temperature=0.25, allow_noncritical_fallback=True)
     except Exception as exc:
         _handle_gemini_error(exc)
         return

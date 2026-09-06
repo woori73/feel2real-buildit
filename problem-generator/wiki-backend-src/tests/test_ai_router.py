@@ -164,6 +164,92 @@ class AiRouterTest(unittest.TestCase):
         self.assertIn('because 사용 금지 조건과 채점 기준이 모순됨', issues)
 
 
+class QuestionWikiStructuredOutputTest(unittest.TestCase):
+    MARKER = ('QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST: '
+              '{"questionWiki":true,"questionWikiId":31,"grade":2,"examYear":2024,'
+              '"questionNo":31,"type":"vocabulary"}')
+
+    def _ok(self, content, model='free/model'):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps(
+            {'model': model, 'choices': [{'message': {'content': content}}]}).encode()
+        return response
+
+    def _valid_question(self):
+        return json.dumps({'type': 'vocabulary', 'instruction': 'stem', 'passage': 'passage',
+                           'choices': ['a', 'b', 'c', 'd', 'e'], 'answer': '1',
+                           'explanation': 'why', 'sourceQuestionId': 31,
+                           'generationMode': 'OPENROUTER_FREE'})
+
+    def test_marker_request_sends_strict_schema_pinned_to_type_and_source_id(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), \
+             patch('private_reference_bank.enrich_prompt', side_effect=lambda p: p), \
+             patch('urllib.request.urlopen', return_value=self._ok(self._valid_question())) as call:
+            result = main.ai_complete(main.AiCompleteRequest(
+                system='s', prompt='new variant\n' + self.MARKER, provider='openrouter-free'))
+        body = json.loads(call.call_args.args[0].data)
+        self.assertEqual(ai_router.FREE_ROUTER, body['model'])
+        response_format = body['response_format']
+        self.assertEqual('json_schema', response_format['type'])
+        self.assertTrue(response_format['json_schema']['strict'])
+        schema = response_format['json_schema']['schema']
+        self.assertEqual(['vocabulary'], schema['properties']['type']['enum'])
+        self.assertEqual([31], schema['properties']['sourceQuestionId']['enum'])
+        self.assertFalse(schema['additionalProperties'])
+        self.assertEqual('free/model', result['model'])
+        self.assertEqual(1, call.call_count)
+
+    def test_generic_caller_without_marker_keeps_the_old_contract(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), \
+             patch('urllib.request.urlopen', return_value=self._ok('plain text', model='q')) as call:
+            main.ai_complete(main.AiCompleteRequest(
+                system='s', prompt='summarize this sentence', provider='auto'))
+        body = json.loads(call.call_args.args[0].data)
+        self.assertNotIn('response_format', body)
+        self.assertEqual(ai_router.QWEN_MODEL, body['model'])
+
+    def test_marker_request_never_falls_back_to_a_paid_provider(self):
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'g', 'OPENROUTER_API_KEY': 'server-key'}), \
+             patch('private_reference_bank.enrich_prompt', side_effect=lambda p: p), \
+             patch.object(ai_router.pl, 'call_gemini_text') as gemini, \
+             patch.object(ai_router.pl, 'call_gemini_structured') as gemini_structured, \
+             patch('urllib.request.urlopen', side_effect=TimeoutError()) as call:
+            with self.assertRaises(main.HTTPException):
+                main.ai_complete(main.AiCompleteRequest(
+                    system='s', prompt='variant\n' + self.MARKER, provider='openrouter-free'))
+        gemini.assert_not_called()
+        gemini_structured.assert_not_called()
+        for request in (c.args[0] for c in call.call_args_list):
+            self.assertEqual(ai_router.FREE_ROUTER, json.loads(request.data)['model'])
+
+    def test_free_model_rejecting_json_schema_downgrades_to_json_object_once(self):
+        import urllib.error
+        http_error = urllib.error.HTTPError('u', 400, 'Bad Request', {}, None)
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), \
+             patch('private_reference_bank.enrich_prompt', side_effect=lambda p: p), \
+             patch('urllib.request.urlopen',
+                   side_effect=[http_error, self._ok(self._valid_question())]) as call:
+            result = main.ai_complete(main.AiCompleteRequest(
+                system='s', prompt='variant\n' + self.MARKER, provider='openrouter-free'))
+        self.assertEqual(2, call.call_count)
+        first = json.loads(call.call_args_list[0].args[0].data)
+        second = json.loads(call.call_args_list[1].args[0].data)
+        self.assertEqual('json_schema', first['response_format']['type'])
+        self.assertEqual('json_object', second['response_format']['type'])
+        self.assertEqual(ai_router.FREE_ROUTER, second['model'])
+        self.assertEqual('free/model', result['model'])
+
+    def test_optional_schema_field_is_accepted_and_marker_schema_wins(self):
+        with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'server-key'}), \
+             patch('private_reference_bank.enrich_prompt', side_effect=lambda p: p), \
+             patch('urllib.request.urlopen', return_value=self._ok(self._valid_question())) as call:
+            main.ai_complete(main.AiCompleteRequest.model_validate({
+                'system': 's', 'prompt': 'variant\n' + self.MARKER, 'provider': 'openrouter-free',
+                'schema': {'type': 'object', 'properties': {'x': {'type': 'string'}}, 'required': ['x']}}))
+        schema = json.loads(call.call_args.args[0].data)['response_format']['json_schema']['schema']
+        self.assertIn('sourceQuestionId', schema['properties'])
+
+
 if __name__ == '__main__':
     unittest.main()
 
