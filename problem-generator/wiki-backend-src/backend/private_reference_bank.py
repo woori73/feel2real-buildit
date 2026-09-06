@@ -68,7 +68,7 @@ def question_wiki_schema(prompt):
     choices={"type":"array","items":{"type":"string"}}
     if requested_type in _SCHEMA_MC_TYPES:choices.update({"minItems":5,"maxItems":5})
     elif requested_type in _WRITTEN_TYPES:choices.update({"maxItems":0})
-    return {"type":"object","additionalProperties":False,"properties":{"type":type_schema,"instruction":{"type":"string","minLength":1},"passage":{"type":"string","minLength":1},"choices":choices,"answer":{"type":"string","minLength":1},"explanation":{"type":"string","minLength":1},"sourceQuestionId":source_schema,"generationMode":{"type":"string","enum":["OPENROUTER_FREE"]}},"required":["type","instruction","passage","choices","answer","explanation","sourceQuestionId","generationMode"]}
+    return {"type":"object","additionalProperties":False,"properties":{"type":type_schema,"instruction":{"type":"string","minLength":1},"passage":{"type":"string","minLength":1},"choices":choices,"answer":{"type":"string","minLength":1},"explanation":{"type":"string","minLength":1},"sourceQuestionId":source_schema,"generationMode":{"type":"string","enum":["QWEN_3_7_FLASH"]}},"required":["type","instruction","passage","choices","answer","explanation","sourceQuestionId","generationMode"]}
 
 def output_issues(prompt,text):
     """Cheap server-side type/consistency guard before a Question Wiki result reaches Preview."""
@@ -81,6 +81,7 @@ def output_issues(prompt,text):
     try:
         if int(q.get('sourceQuestionId'))!=int(req.get('questionWikiId')):issues.append('SOURCE_QUESTION_ID_MISMATCH')
     except (TypeError,ValueError):issues.append('SOURCE_QUESTION_ID_MISMATCH')
+    if q.get('generationMode')!='QWEN_3_7_FLASH':issues.append('GENERATION_MODE_MISMATCH')
     for key in ('instruction','passage','answer','explanation'):
         if not str(q.get(key) or '').strip():issues.append(key.upper()+'_EMPTY')
     passage=str(q.get('passage') or '');instruction=str(q.get('instruction') or '')
