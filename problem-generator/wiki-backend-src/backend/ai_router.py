@@ -3,6 +3,7 @@ import json, os, socket, time, urllib.error, urllib.request
 from dataclasses import dataclass
 from typing import Optional
 import prompt_logic as pl
+import private_reference_bank
 
 DEFAULT_PROVIDER_TIMEOUT_SECONDS=90.0
 MODELS_URL='https://openrouter.ai/api/v1/models'
@@ -116,9 +117,15 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
     question generation cannot silently degrade to a free model. Callers may
     opt into the Ox/free backup chain only for non-critical assistance.
     Browser-supplied keys remain accepted for API compatibility but are ignored.
+
+    Question Wiki free-only requests may carry a compact server-reference marker.
+    Only explicit openrouter-free requests are enriched with private examples;
+    the reference bank is never returned to the browser.
     """
     requested=provider or 'auto'; gemini_server,openrouter_server=_server_keys()
     gemini=gemini_server; openrouter=openrouter_server
+    if requested=='openrouter-free' and private_reference_bank.has_request(prompt):
+        prompt=private_reference_bank.enrich_prompt(prompt)
     candidates=['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested]; last_error=None
     for candidate in candidates:
         try:
@@ -138,5 +145,3 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
             last_error=exc
             if requested!='auto':raise
     raise last_error or ProviderError('사용 가능한 서버 AI credential이 없습니다.',requested)
-
-
