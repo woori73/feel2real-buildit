@@ -26,7 +26,7 @@ class QuestionWikiPrivateReferenceCorpusContractTest {
     assertThat(js).contains("AI_PROVIDER='openrouter-free'", "provider:AI_PROVIDER", "QWEN_3_7_FLASH");
     assertThat(js).doesNotContain("provider:'auto'", "qwen/qwen3.7-flash", "gemini-3.7-flash", "d.slice(0,120)");
     assertThat(router).contains("DEFAULT_PROVIDER_TIMEOUT_SECONDS=45.0", "QUESTION_WIKI_REFERENCE_NOT_FOUND", "QUESTION_WIKI_FREE_AI_TIMEOUT", "model=QWEN_MODEL", "provider_name=QWEN_PROVIDER");
-    assertThat(proxy).contains("QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(52)", "isQuestionWikiAi(targetPath)");
+    assertThat(proxy).contains("QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(120)", "isQuestionWikiAi(targetPath)");
   }
 
   @Test
