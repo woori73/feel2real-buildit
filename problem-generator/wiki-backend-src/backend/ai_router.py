@@ -10,6 +10,9 @@ _LOG=logging.getLogger(__name__)
 MODELS_URL='https://openrouter.ai/api/v1/models'
 CHAT_URL='https://openrouter.ai/api/v1/chat/completions'
 FREE_ROUTER='openrouter/free'
+# Question Wiki must never use the random free router or any paid fallback.
+# These explicit :free models are zero-cost and support JSON-schema structured output.
+QUESTION_WIKI_FREE_MODELS=('z-ai/glm-5.2:free','liquid/lfm-2.5-2.6b:free')
 QWEN_PROVIDER='openrouter'
 QWEN_MODEL='qwen/qwen3.7-flash'
 GEMINI_PROBLEM_MODEL='google/gemini-3.7-flash'
@@ -79,28 +82,29 @@ def availability():
       'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},
       'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')}}}
 
-def _openrouter(key,model,provider,system,prompt,schema,temperature):
+def _openrouter(key,model,provider,system,prompt,schema,temperature,models=None):
     schema=strict_object_schema(schema) if schema else None
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
     try:
-        return _openrouter_request(key,model,provider,system,prompt,schema,temperature)
+        return _openrouter_request(key,model,provider,system,prompt,schema,temperature,models=models)
     except ProviderError as exc:
         # 일부 무료 모델은 strict json_schema response_format를 거부한다(4xx). 그 경우에만
         # 한 번, 스키마 텍스트는 프롬프트에 남긴 채 response_format=json_object로 재시도한다.
-        # 유료 provider fallback이 아니라 같은 (무료) 모델의 출력 형식만 낮추는 것이다.
+        # 유료 provider fallback이 아니라 같은 무료 allowlist의 출력 형식만 낮추는 것이다.
         if schema and exc.status in (400,404,415,422,501):
             _LOG.warning("ai_provider_schema_downgrade provider=%s model=%s status=%s",provider,model,exc.status)
-            return _openrouter_request(key,model,provider,system,prompt,None,temperature,force_json_object=True)
+            return _openrouter_request(key,model,provider,system,prompt,None,temperature,force_json_object=True,models=models)
         raise
 
-def _openrouter_request(key,model,provider,system,prompt,schema,temperature,force_json_object=False):
+def _openrouter_request(key,model,provider,system,prompt,schema,temperature,force_json_object=False,models=None):
     body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':prompt}],'temperature':temperature}
+    if models:body['models']=list(models)
     if schema:body['response_format']={'type':'json_schema','json_schema':{'name':'buildit_response','strict':True,'schema':schema}}
     elif force_json_object:body['response_format']={'type':'json_object'}
     request_bytes=json.dumps(body,ensure_ascii=False).encode()
     request=urllib.request.Request(CHAT_URL,data=request_bytes,method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
     started=time.perf_counter()
-    _LOG.info("ai_provider_start provider=%s model=%s prompt_chars=%s estimated_tokens=%s request_bytes=%s timeout_seconds=%s", provider, model, len(prompt), (len(prompt)+3)//4, len(request_bytes), provider_timeout_seconds())
+    _LOG.info("ai_provider_start provider=%s model=%s models=%s prompt_chars=%s estimated_tokens=%s request_bytes=%s timeout_seconds=%s", provider, model, list(models) if models else None, len(prompt), (len(prompt)+3)//4, len(request_bytes), provider_timeout_seconds())
     try:
         with urllib.request.urlopen(request,timeout=provider_timeout_seconds()) as response:payload=json.loads(response.read().decode())
         text=payload.get('choices',[{}])[0].get('message',{}).get('content','')
@@ -142,7 +146,8 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
     """
     requested=provider or 'auto'; gemini_server,openrouter_server=_server_keys()
     gemini=gemini_server; openrouter=openrouter_server
-    if requested=='openrouter-free' and private_reference_bank.has_request(prompt):
+    question_wiki_free=requested=='openrouter-free' and private_reference_bank.has_request(prompt)
+    if question_wiki_free:
         try: prompt=private_reference_bank.enrich_prompt(prompt)
         except private_reference_bank.ReferenceNotFoundError as exc:
             raise ProviderError('현재 문항의 변형 Reference를 찾지 못했습니다.',requested,422,'QUESTION_WIKI_REFERENCE_NOT_FOUND',False) from exc
@@ -157,9 +162,18 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
                 raise ProviderError('GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장용이며 아직 연결되지 않았습니다.',candidate,503)
             if candidate in ('qwen','ox-alpha','openrouter-free') or candidate.startswith('openrouter:'):
                 if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.',candidate)
-                model=QWEN_MODEL if candidate=='qwen' else os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha') if candidate=='ox-alpha' else FREE_ROUTER if candidate=='openrouter-free' else candidate.removeprefix('openrouter:')
+                if candidate=='qwen':
+                    model=QWEN_MODEL; models=None
+                elif candidate=='ox-alpha':
+                    model=os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha'); models=None
+                elif candidate=='openrouter-free' and question_wiki_free:
+                    model=QUESTION_WIKI_FREE_MODELS[0]; models=QUESTION_WIKI_FREE_MODELS[1:]
+                elif candidate=='openrouter-free':
+                    model=FREE_ROUTER; models=None
+                else:
+                    model=candidate.removeprefix('openrouter:'); models=None
                 provider_name=QWEN_PROVIDER if candidate=='qwen' else candidate
-                return _openrouter(openrouter,model,provider_name,system,prompt,schema,temperature)
+                return _openrouter(openrouter,model,provider_name,system,prompt,schema,temperature,models=models)
             raise ProviderError('지원하지 않는 AI provider입니다.',candidate,400)
         except Exception as exc:
             last_error=exc
