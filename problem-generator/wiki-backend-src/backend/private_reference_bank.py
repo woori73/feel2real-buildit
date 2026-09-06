@@ -25,8 +25,7 @@ def _load_question(grade,qno):
         with gzip.open(path,"rt",encoding="utf-8") as stream:return tuple(json.load(stream).get("records") or ())
     except (OSError,json.JSONDecodeError,KeyError):return ()
 @lru_cache(maxsize=64)
-def _same_question(grade, qno):
-    return tuple(r for r in _load_question(grade,qno) if qno in (r.get("sourceQuestionNos") or [r.get("sourceQuestionNo")]))
+def _same_question(grade, qno):return tuple(r for r in _load_question(grade,qno) if qno in (r.get("sourceQuestionNos") or [r.get("sourceQuestionNo")]))
 def _request(prompt):
     match=_MARKER_RE.search(prompt or "")
     if not match:return None
@@ -43,22 +42,21 @@ def select(prompt,limit=2):
     """STRICT: exact grade/source question only; exact requested type first."""
     req,grade,qno,wanted=_fields(prompt)
     if not req:return []
-    same=list(_same_question(grade, qno));exact=[r for r in same if r.get("type")==wanted]
-    return (exact or same)[:max(1, min(int(limit), 2))]
+    same=list(_same_question(grade,qno));exact=[r for r in same if r.get("type")==wanted]
+    return (exact or same)[:max(1,min(int(limit),2))]
 def _reference_text(item):return (f"Instruction: {item.get('instruction','')}\nType: {item.get('type','')}\nProblem mechanics example:\n{item.get('rawText','')}").strip()
 def enrich_prompt(prompt):
     req,grade,qno,wanted=_fields(prompt)
     if not req:return prompt
-    started=time.perf_counter();refs=select(prompt);select_ms=(time.perf_counter()-started)*1000
+    started=time.perf_counter();refs=select(prompt,limit=1);select_ms=(time.perf_counter()-started)*1000
     if not refs:raise ReferenceNotFoundError(f"No exact reference for grade={grade}, sourceNo={qno}, type={wanted}")
     blocks=[f"EXACT-SOURCE REFERENCE {i} (grade={r['grade']}, sourceNo={r['sourceQuestionNo']}, type={r['type']}):\n{_reference_text(r)}" for i,r in enumerate(refs,1)]
-    guidance=("\n\nPRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY):\nCURRENT QUESTION is the only content source. PRIVATE REFERENCE controls only exam mechanics, structure, difficulty and distractor design. Never copy its topic, facts, names, sentences, choices or answer. Never expose database metadata.\n"+f"PRIVATE_REFERENCE_SCOPE: grade={grade}, sourceNo={qno}, requestedType={wanted}.\nMECHANICS: {_TYPE_MECHANICS.get(wanted,_TYPE_MECHANICS['other'])}\n"+"HARD RULE: references from any other sourceQuestionNo are forbidden. If exact type is unavailable, transform only another variant from this same source question.\nTYPE CONTRACT OVERRIDES the reference example when the reference is only a same-question fallback. The final problem, answer, and explanation must all implement the requested type and the same student task.")
+    guidance=("\n\nPRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY):\nCURRENT QUESTION is the only content source. PRIVATE REFERENCE is a DESIGN REFERENCE ONLY. Learn its exam mechanics, structure, difficulty, tested relationship and distractor strategy, then CREATE A NEW VARIANT from CURRENT QUESTION. Do NOT reproduce or lightly edit the database problem. Never copy its passage wording, topic-specific sentences, names, facts, answer, choices, citation/source line, bracketed attribution, or explanation. Never expose database metadata.\n"+f"PRIVATE_REFERENCE_SCOPE: grade={grade}, sourceNo={qno}, requestedType={wanted}.\nMECHANICS: {_TYPE_MECHANICS.get(wanted,_TYPE_MECHANICS['other'])}\n"+"HARD RULE: references from any other sourceQuestionNo are forbidden. If exact type is unavailable, use another variant from this same source question only to infer mechanics, then independently transform CURRENT QUESTION.\nOUTPUT FORMAT RULES: Never add a citation, source, author/book attribution, or bracketed source line below the passage. If the generated passage uses labeled blanks such as (A) and (B), EVERY answer choice must explicitly show both labels in the form '(A) ... - (B) ...'.\nTYPE CONTRACT OVERRIDES the reference example when the reference is only a same-question fallback. The final problem, answer, and explanation must all implement the requested type and the same student task.")
     enriched=prompt+guidance+"\n\n"+"\n\n".join(blocks);shard=resolve_shard(grade,qno)
     _LOG.info("question_wiki_reference grade=%s source_no=%s type=%s shard=%s refs=%s variants=%s reference_select_ms=%.2f prompt_build_ms=%.2f final_prompt_chars=%s estimated_tokens=%s",grade,qno,wanted,shard.name if shard else None,len(refs),[r.get('variantIndex') for r in refs],select_ms,(time.perf_counter()-started)*1000-select_ms,len(enriched),(len(enriched)+3)//4)
     return enriched
 def has_request(prompt):return _request(prompt) is not None
-_SCHEMA_MC_TYPES={"similar","grammar","vocabulary","blank","order","insertion","title-topic"}
-_WRITTEN_TYPES={"written","descriptive","subjective"}
+_SCHEMA_MC_TYPES={"similar","grammar","vocabulary","blank","order","insertion","title-topic"};_WRITTEN_TYPES={"written","descriptive","subjective"}
 def question_wiki_schema(prompt):
     req=_request(prompt)
     if not req:return None
@@ -69,9 +67,8 @@ def question_wiki_schema(prompt):
     if requested_type in _SCHEMA_MC_TYPES:choices.update({"minItems":5,"maxItems":5})
     elif requested_type in _WRITTEN_TYPES:choices.update({"maxItems":0})
     return {"type":"object","additionalProperties":False,"properties":{"type":type_schema,"instruction":{"type":"string","minLength":1},"passage":{"type":"string","minLength":1},"choices":choices,"answer":{"type":"string","minLength":1},"explanation":{"type":"string","minLength":1},"sourceQuestionId":source_schema,"generationMode":{"type":"string","enum":["QWEN_3_7_FLASH"]}},"required":["type","instruction","passage","choices","answer","explanation","sourceQuestionId","generationMode"]}
-
 def output_issues(prompt,text):
-    """Cheap server-side type/consistency guard before a Question Wiki result reaches Preview."""
+    """Server-side format/quality guard before a Question Wiki result reaches Preview."""
     req=_request(prompt)
     if not req:return []
     try:q=json.loads(str(text).strip().removeprefix('```json').removeprefix('```').removesuffix('```').strip())
@@ -85,6 +82,9 @@ def output_issues(prompt,text):
     for key in ('instruction','passage','answer','explanation'):
         if not str(q.get(key) or '').strip():issues.append(key.upper()+'_EMPTY')
     passage=str(q.get('passage') or '');instruction=str(q.get('instruction') or '')
+    if re.search(r'(?im)^\s*\[(?:from|source|adapted\s+from|출처)\b[^\]]*\]\s*$',passage) or re.search(r'(?im)^\s*(?:source|출처)\s*:',passage):issues.append('CITATION_NOT_ALLOWED')
+    has_ab='(A)' in passage and '(B)' in passage
+    if has_ab and choices and any('(A)' not in str(c) or '(B)' not in str(c) for c in choices):issues.append('AB_LABELS_MISSING_IN_CHOICES')
     if wanted in _SCHEMA_MC_TYPES and len(choices)!=5:issues.append('CHOICES_COUNT')
     if wanted in _WRITTEN_TYPES:
         if choices:issues.append('WRITTEN_HAS_CHOICES')
