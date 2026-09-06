@@ -17,9 +17,9 @@ class QuestionWikiPrivateReferenceBankContractTest {
     assertThat(js).contains("QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST", "provider:AI_PROVIDER", "EXACT-SOURCE", "QWEN_3_7_FLASH");
     assertThat(js).doesNotContain("result = await generateChrome()", "provider:'auto'", "qwen/qwen3.7-flash", "gemini-3.7-flash");
     assertThat(router).contains("private_reference_bank.enrich_prompt(prompt)", "model=QWEN_MODEL", "provider_name=QWEN_PROVIDER");
-    assertThat(bank).contains("references from any other sourceQuestionNo are forbidden", "exact requested type first",
-      "resolve_shard(grade,qno)", "_load_question(grade,qno)");
-    assertThat(bank).doesNotContain("_load_grade(grade)");
+    assertThat(bank).contains("References from any other sourceQuestionNo are forbidden", "exact requested type first",
+      "resolve_shard(grade,qno)", "_load_question(grade,qno)", "INSIGHT FALLBACK");
+    assertThat(bank).doesNotContain("_load_grade(grade)", "return (exact or same)");
     assertThat(g2).contains("\"recordCount\": 243", "g2-q30.json.gz", "g2-q31.json.gz");
   }
 }
