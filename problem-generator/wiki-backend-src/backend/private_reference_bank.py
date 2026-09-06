@@ -8,11 +8,12 @@ class ReferenceNotFoundError(Exception):pass
 _CORPUS_DIR=Path(__file__).with_name("private-reference")
 _MARKER_RE=re.compile(r"QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST\s*:\s*(\{[^\n]+\})")
 _TYPE_ALIASES={"similar":"other","grammar":"grammar","vocabulary":"vocabulary","blank":"blank","order":"order","insertion":"insertion","title-topic":"title_topic","title_topic":"title_topic","descriptive":"written","subjective":"written","written":"written","summary":"summary"}
+_ORDER_CHOICES=["(A) - (C) - (B)","(B) - (A) - (C)","(B) - (C) - (A)","(C) - (A) - (B)","(C) - (B) - (A)"]
 _TYPE_MECHANICS={
 "grammar":"Create a five-choice grammar/usage task from CURRENT QUESTION. Mark exactly five tested forms/phrases in the passage with ①-⑤. The student must judge the marked language, and answer/explanation must identify the correct numbered item.",
 "vocabulary":"Create a five-choice vocabulary task from CURRENT QUESTION. If the task uses five directly tested words/phrases, mark them ①-⑤ in the passage. If the task uses multiple labelled positions such as (A)/(B)/(C), keep those labels in the passage and use them as choice-column headers only; each choice contains the answer combination in label order.",
 "blank":"Create a five-choice blank task from CURRENT QUESTION. Put a real visible blank at an idea-bearing position in the passage and make all five choices compete for that same blank. If multiple labelled blanks (A)/(B)/(C) are used, labels are column headers once above choices, not repeated in every choice.",
-"order":"Create a five-choice paragraph-order task. The passage must contain actual (A), (B), (C) blocks derived from CURRENT QUESTION, and the five choices must be order combinations of those blocks. Each choice must contain all three labels exactly once in a valid permutation, such as '(B) - (A) - (C)'.",
+"order":"Create a five-choice paragraph-order task. The passage must contain actual (A), (B), (C) blocks derived from CURRENT QUESTION. The choices are FIXED and MUST be returned in exactly this order with no numbering inside the choice strings: (A) - (C) - (B); (B) - (A) - (C); (B) - (C) - (A); (C) - (A) - (B); (C) - (B) - (A). Do not return (A) - (B) - (C) as a choice. The correct answer must be one of these five fixed choices.",
 "insertion":"Create a five-choice sentence-insertion task. Provide one sentence to insert and exactly five clearly identifiable insertion positions ①-⑤ in the passage; answer/explanation must point to one of those positions.",
 "title_topic":"Create exactly one title/topic/main-idea task from CURRENT QUESTION with five concise, discriminating choices. Do not invent a different topic.",
 "written":"CONSTRUCTED RESPONSE ONLY. Create a genuine written-response instruction based on CURRENT QUESTION. No multiple-choice choices, no ①-⑤ choice numbers, and no 'choose the best answer' wording. Provide a model answer and explanation that solve that exact instruction.",
@@ -123,7 +124,8 @@ def output_issues(prompt,text):
     if wanted=='blank' and not re.search(r'_{3,}|\[\s*blank\s*\]|\(\s*blank\s*\)|…{2,}|□{2,}|\([A-E]\)',passage,re.I):issues.append('BLANK_MARKER_MISSING')
     if wanted=='order':
         if not all(x in passage for x in ('(A)','(B)','(C)')):issues.append('ORDER_BLOCKS_MISSING')
-        if choices and any(not all(x in str(c) for x in ('(A)','(B)','(C)')) for c in choices):issues.append('ORDER_CHOICE_PERMUTATION_MISSING')
+        normalized=[re.sub(r'^\s*(?:[①②③④⑤]|\(?[1-5]\)?[.)]?|[1-5]\s*[·:-])\s*','',str(c)).strip() for c in choices]
+        if normalized!=_ORDER_CHOICES:issues.append('ORDER_CHOICES_NOT_FIXED')
     if wanted=='insertion' and not re.search(r'[①②③④⑤]',passage):issues.append('INSERTION_POSITIONS_MISSING')
     if wanted in ('grammar','vocabulary') and not (re.search(r'[①②③④⑤]',passage) or len(labels)>=2):issues.append('TESTED_POSITIONS_MISSING')
     if not explanation.strip():issues.append('EXPLANATION_EMPTY')
