@@ -49,29 +49,31 @@ def _fields(prompt):
     except (TypeError,ValueError):grade,qno=0,0
     raw=str(req.get("type") or "").strip();return req,grade,qno,_TYPE_ALIASES.get(raw,raw)
 def select(prompt,limit=2):
-    """STRICT: exact grade/source question only; exact requested type first."""
+    """STRICT: exact grade/source question and exact requested type only."""
     req,grade,qno,wanted=_fields(prompt)
     if not req:return []
-    same=list(_same_question(grade,qno));exact=[r for r in same if r.get("type")==wanted]
-    return (exact or same)[:max(1,min(int(limit),2))]
+    exact=[r for r in _same_question(grade,qno) if r.get("type")==wanted]
+    return exact[:max(1,min(int(limit),2))]
 def _reference_text(item):return (f"Instruction: {item.get('instruction','')}\nType: {item.get('type','')}\nProblem mechanics example:\n{item.get('rawText','')}").strip()
 def enrich_prompt(prompt):
     req,grade,qno,wanted=_fields(prompt)
     if not req:return prompt
     started=time.perf_counter();refs=select(prompt,limit=1);select_ms=(time.perf_counter()-started)*1000
-    if not refs:raise ReferenceNotFoundError(f"No exact reference for grade={grade}, sourceNo={qno}, type={wanted}")
     blocks=[f"EXACT-SOURCE REFERENCE {i} (grade={r['grade']}, sourceNo={r['sourceQuestionNo']}, type={r['type']}):\n{_reference_text(r)}" for i,r in enumerate(refs,1)]
+    fallback=("EXACT-TYPE DB REFERENCE: unavailable for this source question. Do NOT use a different DB problem type as a substitute. Use the current question's REFERENCE_CONTEXT.sourceAnalysis / linked 변형문제 인사이트 as DESIGN GUIDANCE for the requested type, together with REQUESTED TYPE CONTRACT below. CURRENT QUESTION remains the only content source."
+              if not refs else "EXACT-TYPE DB REFERENCE: available and supplied below.")
     guidance=("\n\nPRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY):\n"
       "CONTENT CONTRACT: CURRENT QUESTION is the ONLY content/material source for the new problem. PRIVATE REFERENCE is DESIGN REFERENCE ONLY. Learn only its question mechanics, layout relationship, difficulty, tested relationship, and distractor strategy. Then independently CREATE A NEW VARIANT from CURRENT QUESTION. Do NOT reproduce, paraphrase line-by-line, lightly edit, or re-send the database problem. Never copy reference passage wording, topic-specific sentences, names, facts, question number, choices, answer, explanation, citation/source line, author/book attribution, or database metadata.\n"
       +f"PRIVATE_REFERENCE_SCOPE: grade={grade}, sourceNo={qno}, requestedType={wanted}.\n"
       +f"REQUESTED TYPE CONTRACT: {_TYPE_MECHANICS.get(wanted,_TYPE_MECHANICS['other'])}\n"
-      +"SOURCE SCOPE: references from any other sourceQuestionNo are forbidden. If the exact requested type is unavailable, another variant from THIS SAME source question may be used only to infer mechanics; the final problem must still implement REQUESTED TYPE CONTRACT.\n"
+      +fallback+"\n"
+      +"SOURCE SCOPE: references from any other sourceQuestionNo are forbidden. A DB variant of a different type is also forbidden as fallback. If exact-type DB reference is absent, use only the current question's linked analysis/변형문제 인사이트 for construction guidance and obey REQUESTED TYPE CONTRACT.\n"
       +"CLEAN OUTPUT CONTRACT: Never add a standalone original question number such as [31], 31., or 'Question 31'. Never add [from ...], [source ...], adapted-from, 출처, author/book attribution, or any citation/source line below the passage. Do not expose PRIVATE_REFERENCE, REFERENCE_CONTEXT, DB labels, provenance, rawLayout, bbox, metadata, 상세 해설지, or 변형문제 인사이트.\n"
       +"MULTIPLE-LABEL CHOICE CONTRACT: When the passage contains two or more labelled positions such as (A), (B), (C), those labels must appear as ONE header row above the five numbered choices. Do NOT repeat (A)/(B)/(C) inside each choice. Each choice string contains only the corresponding answers in label order separated by ' - '. Example visual layout: '(A)        (B)        (C)' followed by '① clear - volatility - feasible', '② unclear - stability - feasible'.\n"
       +"ANSWER CONTRACT: answer and explanation must solve the NEWLY GENERATED problem exactly. Never reuse the reference DB answer/explanation merely because the mechanics are similar. For multiple choice, the answer must resolve to one of the five generated choices; for written response, provide the model response required by the generated instruction.\n"
       +"FINAL SELF-CHECK BEFORE OUTPUT: verify requested type, current-question-only content, no source/question-number leakage, correct five-choice structure where applicable, correct (A)/(B)/(C) column layout where applicable, and answer/explanation consistency. If any check fails, fix the generated problem before returning JSON.")
-    enriched=prompt+guidance+"\n\n"+"\n\n".join(blocks);shard=resolve_shard(grade,qno)
-    _LOG.info("question_wiki_reference grade=%s source_no=%s type=%s shard=%s refs=%s variants=%s reference_select_ms=%.2f prompt_build_ms=%.2f final_prompt_chars=%s estimated_tokens=%s",grade,qno,wanted,shard.name if shard else None,len(refs),[r.get('variantIndex') for r in refs],select_ms,(time.perf_counter()-started)*1000-select_ms,len(enriched),(len(enriched)+3)//4)
+    enriched=prompt+guidance+("\n\n"+"\n\n".join(blocks) if blocks else "");shard=resolve_shard(grade,qno)
+    _LOG.info("question_wiki_reference grade=%s source_no=%s type=%s shard=%s refs=%s fallback=%s variants=%s reference_select_ms=%.2f prompt_build_ms=%.2f final_prompt_chars=%s estimated_tokens=%s",grade,qno,wanted,shard.name if shard else None,len(refs),"insight" if not refs else "db",[r.get('variantIndex') for r in refs],select_ms,(time.perf_counter()-started)*1000-select_ms,len(enriched),(len(enriched)+3)//4)
     return enriched
 def has_request(prompt):return _request(prompt) is not None
 _SCHEMA_MC_TYPES={"similar","grammar","vocabulary","blank","order","insertion","title-topic"};_WRITTEN_TYPES={"written","descriptive","subjective"}
