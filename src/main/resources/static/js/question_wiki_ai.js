@@ -140,14 +140,32 @@
     var value = typeof choice === 'object' ? (choice.text || choice.html || JSON.stringify(choice)) : choice;
     return stripChoicePrefix(value);
   }
+  function answerText(question) {
+    var raw = textOf(question.answer).trim();
+    var match = raw.match(/^\s*([①②③④⑤]|[1-5])(?:\s*[.)·:-])?\s*(.*)$/);
+    var index = -1;
+    var body = raw;
+    if (match) {
+      index = CIRCLED.indexOf(match[1]);
+      if (index < 0) index = Number(match[1]) - 1;
+      body = match[2].trim();
+    }
+    if (index < 0 && Array.isArray(question.choices)) {
+      var normalized = stripChoicePrefix(raw);
+      index = question.choices.findIndex(function (choice) { return choiceText(choice) === normalized; });
+    }
+    if (index < 0 || index >= CIRCLED.length) return raw;
+    if (!body && question.choices[index] != null) body = choiceText(question.choices[index]);
+    return CIRCLED[index] + (body ? ' ' + body : '');
+  }
   function renderPreview(question) {
     var choices = (question.choices || []).map(function (choice, index) {
-      return '<li><span class="qw-ai-choice-no">' + CIRCLED[index] + '</span> ' + esc(choiceText(choice)) + '</li>';
+      return '<div class="qw-ai-choice"><span class="qw-ai-choice-no">' + CIRCLED[index] + '</span> ' + esc(choiceText(choice)) + '</div>';
     }).join('');
     els.previewBody.innerHTML = '<h4>' + esc(question.instruction) + '</h4>'
       + '<div class="qw-ai-passage">' + nl2br(esc(textOf(question.passage))) + '</div>'
-      + (choices ? '<ol class="qw-ai-choices">' + choices + '</ol>' : '')
-      + '<dl class="qw-kv"><dt>정답</dt><dd>' + nl2br(esc(textOf(question.answer))) + '</dd>'
+      + (choices ? '<div class="qw-ai-choices">' + choices + '</div>' : '')
+      + '<dl class="qw-kv"><dt>정답</dt><dd>' + nl2br(esc(answerText(question))) + '</dd>'
       + '<dt>해설</dt><dd>' + nl2br(esc(question.explanationKo || question.explanation)) + '</dd></dl>';
   }
 
@@ -162,7 +180,7 @@
     try {
       var response = await fetchAuth('/api/wiki/questions/' + encodeURIComponent(questionWikiId) + '/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, redirectOnAuthError: false,
         body: JSON.stringify({ category: 'VARIANT', dataKind: 'GENERATED_PRACTICE', title: mode === 'OPENROUTER_FREE' ? '무료 AI 변형문제' : 'Chrome AI 변형문제', content: provenance,
-          variant: { questionText: questionText(preview), questionType: preview.type, answer: textOf(preview.answer), explanation: preview.explanationKo || preview.explanation,
+          variant: { questionText: questionText(preview), questionType: preview.type, answer: answerText(preview), explanation: preview.explanationKo || preview.explanation,
             sourceSentence: '', sourceQuestion: source.displayContext || ((source.questionNumber || '') + '번'), difficulty: els.freeRequest.value.trim() } }) });
       if (response.status === 401 || response.status === 403) { if (typeof openLoginModal === 'function') openLoginModal(); setStatus('저장하려면 로그인해 주세요.'); return; }
       if (!response.ok) throw new Error((await response.text()) || '저장하지 못했습니다.');
@@ -184,5 +202,5 @@
   function setStatus(message) { els.status.textContent = message; }
   function readUser() { try { return JSON.parse(sessionStorage.getItem('currentUser')); } catch (_) { return null; } }
   function nl2br(value) { return String(value).replace(/\n/g, '<br>'); }
-  function esc(value) { return String(value == null ? '' : value).replace(/[&<>'"]/g, function (char) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]; }); }
+  function esc(value) { return String(value == null ? '' : value).replace(/[&<>'\"]/g, function (char) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]; }); }
 })();
