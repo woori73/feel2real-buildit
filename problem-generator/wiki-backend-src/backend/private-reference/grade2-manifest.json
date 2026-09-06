@@ -8,11 +8,19 @@
     "grammar": 19,
     "summary": 19,
     "blank": 35,
-    "other": 49,
+    "content_mismatch": 17,
+    "comprehension": 4,
+    "irrelevant_sentence": 7,
     "title_topic": 38,
     "order": 16,
     "insertion": 33,
-    "written": 13
+    "content_match": 9,
+    "written": 13,
+    "claim": 1,
+    "function": 1,
+    "implication": 6,
+    "purpose": 2,
+    "definition": 2
   },
   "validationCounts": {
     "PASS": 243

@@ -22,26 +22,38 @@ _TYPE_MECHANICS = {"grammar":"Mark tested forms in the passage.",
 
 
 @lru_cache(maxsize=2)
-def _load_grade(grade):
+def _load_manifest(grade):
     try:
-        manifest=json.loads((_CORPUS_DIR/f"grade{grade}-manifest.json").read_text(encoding="utf-8"))
+        return json.loads((_CORPUS_DIR/f"grade{grade}-manifest.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def resolve_shard(grade,qno):
+    """Resolve exactly one shard. Only 41/42 share the explicit common shard."""
+    source="41-42" if qno in (41,42) else str(qno)
+    for shard in _load_manifest(grade).get("shards") or []:
+        if str(shard.get("sourceQuestionNo"))==source:
+            return _CORPUS_DIR/shard["file"]
+    return None
+
+
+@lru_cache(maxsize=64)
+def _load_question(grade,qno):
+    path=resolve_shard(grade,qno)
+    if not path:return ()
+    try:
+        with gzip.open(path,"rt",encoding="utf-8") as stream:
+            return tuple(json.load(stream).get("records") or ())
+    except (OSError,json.JSONDecodeError,KeyError):
         return ()
-    records=[]
-    for shard in manifest.get("shards") or []:
-        try:
-            with gzip.open(_CORPUS_DIR/shard["file"],"rt",encoding="utf-8") as stream:
-                records.extend(json.load(stream).get("records") or [])
-        except (OSError,json.JSONDecodeError,KeyError):
-            continue
-    return tuple(records)
 
 
 @lru_cache(maxsize=64)
 def _same_question(grade, qno):
     # 41-42 is a single common-passage source and explicitly aliases both Wiki
     # question numbers; no other cross-question lookup is permitted.
-    return tuple(r for r in _load_grade(grade)
+    return tuple(r for r in _load_question(grade,qno)
                  if qno in (r.get("sourceQuestionNos") or [r.get("sourceQuestionNo")]))
 
 

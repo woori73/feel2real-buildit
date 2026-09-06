@@ -5,14 +5,23 @@
   "recordCount": 255,
   "typeCounts": {
     "title_topic": 42,
-    "other": 62,
+    "content_match": 12,
+    "content_mismatch": 18,
+    "implication": 12,
     "blank": 32,
-    "grammar": 23,
+    "irrelevant_sentence": 7,
+    "grammar": 22,
     "vocabulary": 21,
-    "summary": 21,
+    "summary": 22,
     "insertion": 17,
     "order": 19,
-    "written": 18
+    "purpose": 3,
+    "other": 1,
+    "reference": 2,
+    "comprehension": 3,
+    "claim": 2,
+    "written": 18,
+    "definition": 2
   },
   "validationCounts": {
     "PASS": 255

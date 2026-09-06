@@ -1,0 +1,198 @@
+{
+  "method": "JSON-only debug HTML reconstruction compared against source PDF embedded text, word coordinates, underline drawings and rendered source-page crops",
+  "samples": [
+    {
+      "sample": "g2 q30 grammar",
+      "grade": 2,
+      "variantIndex": 90,
+      "sourceQuestionNo": 30,
+      "type": "grammar",
+      "pdfPages": [
+        25
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    },
+    {
+      "sample": "g2 q30 blank",
+      "grade": 2,
+      "variantIndex": 89,
+      "sourceQuestionNo": 30,
+      "type": "blank",
+      "pdfPages": [
+        24
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    },
+    {
+      "sample": "g2 q31 vocabulary",
+      "grade": 2,
+      "variantIndex": 104,
+      "sourceQuestionNo": 31,
+      "type": "vocabulary",
+      "pdfPages": [
+        28,
+        29
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH",
+      "note": "Original is an (A)/(B)/(C) vocabulary-choice form, not an underlined ①-⑤ form; all five choices are preserved."
+    },
+    {
+      "sample": "g1 q30 insertion",
+      "grade": 1,
+      "variantIndex": 98,
+      "sourceQuestionNo": 30,
+      "type": "insertion",
+      "pdfPages": [
+        28
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    },
+    {
+      "sample": "g1 q31 order",
+      "grade": 1,
+      "variantIndex": 110,
+      "sourceQuestionNo": 31,
+      "type": "order",
+      "pdfPages": [
+        31,
+        32
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    },
+    {
+      "sample": "g2 q31 summary",
+      "grade": 2,
+      "variantIndex": 100,
+      "sourceQuestionNo": 31,
+      "type": "summary",
+      "pdfPages": [
+        27,
+        28
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    },
+    {
+      "sample": "g2 q24 written",
+      "grade": 2,
+      "variantIndex": 58,
+      "sourceQuestionNo": 24,
+      "type": "written",
+      "pdfPages": [
+        15
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    },
+    {
+      "sample": "g2 q30 title/topic",
+      "grade": 2,
+      "variantIndex": 81,
+      "sourceQuestionNo": 30,
+      "type": "title_topic",
+      "pdfPages": [
+        22
+      ],
+      "checks": {
+        "instruction": true,
+        "passageBody": true,
+        "pdfPages": true,
+        "answer": true,
+        "choices": true,
+        "underline": true,
+        "blank": true,
+        "insertion": true,
+        "order": true,
+        "summaryWritten": true
+      },
+      "result": "MATCH"
+    }
+  ],
+  "counts": {
+    "MATCH": 8,
+    "REVIEW": 0,
+    "MISMATCH": 0
+  }
+}
