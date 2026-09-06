@@ -2,7 +2,7 @@
  * 공개 BuildIt Wiki 허브(/wiki).
  * - 학년 탭(고1/고2/고3)으로 모의고사 원본·분석·학습 자료를 필터
  * - 메인 진입 시 /api/wiki/home-feed 1회로 상단 실시간 영역(최신 업데이트·인기 다운로드·최근 문항·WIKI LIVE·최근 회원)을 채움
- * - WIKI LIVE / 인기 다운로드는 경량 폴링으로 갱신 (SSE/WebSocket 미사용)
+ * - WIKI LIVE / 인기 다운로드는 경량 폴링으로 갱신 (서버 푸시 미사용, sinceId 증분)
  * - 자료는 새 Wiki 자료실 시스템(/api/wiki/originals, /api/wiki/analysis-materials, /api/wiki/learning-materials)
  * - 게시판 글쓰기/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id})
  */

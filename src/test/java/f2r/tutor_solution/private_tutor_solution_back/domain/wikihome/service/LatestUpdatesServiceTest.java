@@ -43,12 +43,16 @@ class LatestUpdatesServiceTest {
   @Test
   @DisplayName("세 자료 유형을 createdAt 최신순으로 합치고, 48시간 이내만 isNew=true")
   void latestUpdates_mergedAndSortedWithNewFlag() {
+    // 엔티티 mock 은 when(...).thenReturn(...) 밖에서 먼저 조립한다(중첩 스터빙 방지).
+    List<WikiExamOriginal> originals = List.of(original(1L, 3, "원본 오래됨", NOW.minusDays(5)));
+    List<WikiAnalysisMaterial> analyses = List.of(analysis(2L, 2, "분석 방금", NOW.minusHours(1)));
+    List<WikiLearningMaterial> learnings = List.of(learning(3L, 1, "학습 어제", NOW.minusHours(30)));
     when(originalRepository.findTop8ByDeletedFalseAndVisibleTrueOrderByCreatedAtDesc())
-        .thenReturn(List.of(original(1L, 3, "원본 오래됨", NOW.minusDays(5))));
+        .thenReturn(originals);
     when(analysisRepository.findTop8ByDeletedFalseAndVisibleTrueOrderByCreatedAtDesc())
-        .thenReturn(List.of(analysis(2L, 2, "분석 방금", NOW.minusHours(1))));
+        .thenReturn(analyses);
     when(learningRepository.findTop8ByDeletedFalseOrderByCreatedAtDesc())
-        .thenReturn(List.of(learning(3L, 1, "학습 어제", NOW.minusHours(30))));
+        .thenReturn(learnings);
 
     List<LatestUpdateItem> items = service.latestUpdates();
 
