@@ -35,4 +35,7 @@ public interface WikiAnalysisMaterialRepository extends JpaRepository<WikiAnalys
       where w.wikiAnalysisMaterialId = :id and w.deleted = false
       """)
   Optional<WikiAnalysisMaterial> findAdminById(@Param("id") Long id);
+
+  /** 공개 Wiki 메인 "NEW 최신 업데이트" — 학년 무관 최신 공개 분석 자료. */
+  List<WikiAnalysisMaterial> findTop8ByDeletedFalseAndVisibleTrueOrderByCreatedAtDesc();
 }

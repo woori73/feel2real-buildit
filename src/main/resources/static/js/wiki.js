@@ -1,28 +1,39 @@
 /**
  * 공개 BuildIt Wiki 허브(/wiki).
- * - 학년 탭(고3/고2/고1)으로 모의고사 원본·분석 자료를 필터
- * - 커뮤니티 3개 게시판(시험 후기 / 변형문제 / 자료 공유·요청) 최신글 미리보기
- * - 자료는 새 Wiki 자료실 시스템(/api/wiki/originals, /api/wiki/analysis-materials) — /analyzes 재사용 안 함
+ * - 학년 탭(고1/고2/고3)으로 모의고사 원본·분석·학습 자료를 필터
+ * - 메인 진입 시 /api/wiki/home-feed 1회로 상단 실시간 영역(최신 업데이트·인기 다운로드·최근 문항·WIKI LIVE·최근 회원)을 채움
+ * - WIKI LIVE / 인기 다운로드는 경량 폴링으로 갱신 (SSE/WebSocket 미사용)
+ * - 자료는 새 Wiki 자료실 시스템(/api/wiki/originals, /api/wiki/analysis-materials, /api/wiki/learning-materials)
  * - 게시판 글쓰기/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id})
  */
 (function () {
-  var grade = 3;
+  var grade = 1;
+  var liveMaxId = 0;
+  var LIVE_POLL_MS = 8000;
+  var POPULAR_POLL_MS = 45000;
 
   var gradeTabs = document.getElementById('gradeTabs');
   var gradeNote = document.getElementById('gradeNote');
-  var LEARNING_TYPE_LABEL = { VOCAB: '어휘', WORKBOOK: 'Workbook', VARIANT: '변형문제', ETC: '기타' };
+
+  var LEARNING_TYPE_LABEL = { VOCAB: '어휘', WORKBOOK: 'Workbook', VARIANT: '변형문제', WEEKLY: 'WEEKLY', ETC: '기타' };
+  var UPDATE_KIND_LABEL = { ORIGINAL: '모의고사 원본', ANALYSIS: '분석 자료', LEARNING: '학습 자료' };
   var GRADE_NOTE = {
-    3: '9월 모의평가 현장 분석과 함께, 11월 수능까지 매주 유사 패턴의 새 문제를 무료로 제공합니다.',
+    1: '9월 모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
     2: '9월 모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
-    1: '9월 모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.'
+    3: '9월 모의평가 현장 분석과 함께, 11월 수능까지 매주 유사 패턴의 새 문제를 무료로 제공합니다.'
   };
 
+  // ── 학년 탭 ──────────────────────────────────────────────
   gradeTabs.addEventListener('click', function (e) {
     var b = e.target.closest('.grade-tab');
     if (!b) return;
     gradeTabs.querySelectorAll('.grade-tab').forEach(function (t) { t.classList.toggle('active', t === b); });
     grade = Number(b.dataset.grade);
-    document.addEventListener('click', async function (e) {
+    renderGradeLists();
+  });
+
+  // ── 회원 전용 다운로드 게이트 (문서 전역에 한 번만) ────────
+  document.addEventListener('click', async function (e) {
     var link = e.target.closest('[data-member-download]');
     if (!link) return;
     e.preventDefault();
@@ -34,9 +45,7 @@
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
   });
 
-  render();
-  });
-
+  // ── 게시판 글쓰기 게이트 ─────────────────────────────────
   document.querySelectorAll('.board-write').forEach(function (btn) {
     btn.addEventListener('click', function () {
       if (!readUser()) {
@@ -48,11 +57,42 @@
     });
   });
 
-  render();
-  recordVisit();
+  // ── WIKI LIVE 작성 ──────────────────────────────────────
+  var liveForm = document.getElementById('liveForm');
+  var liveInput = document.getElementById('liveInput');
+  var liveMsg = document.getElementById('liveMsg');
+  liveForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var text = (liveInput.value || '').trim();
+    if (!text) { liveMsg.textContent = '내용을 입력해 주세요.'; return; }
+    document.getElementById('liveSubmit').disabled = true;
+    try {
+      var res = await fetch('/api/wiki/live-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ message: text })
+      });
+      if (res.status === 401) {
+        liveMsg.textContent = '로그인 후 한 줄 인사를 남길 수 있습니다.';
+        if (typeof window.openLoginModal === 'function') window.openLoginModal();
+        return;
+      }
+      if (res.status === 429) { liveMsg.textContent = '잠시 후 다시 시도해 주세요.'; return; }
+      if (!res.ok) { liveMsg.textContent = '등록하지 못했습니다.'; return; }
+      liveInput.value = '';
+      liveMsg.textContent = '';
+      await pollLive();
+    } catch (_) {
+      liveMsg.textContent = '등록하지 못했습니다.';
+    } finally {
+      document.getElementById('liveSubmit').disabled = false;
+    }
+  });
 
-  // 업로드 UI(wiki_admin_upload.js / wiki_learning_upload.js)가 현재 학년을 읽고
-  // 업로드 후 목록만 새로고침하도록 노출.
+  document.getElementById('liveMore').addEventListener('click', loadLiveHistory);
+
+  // 업로드 UI(wiki_admin_upload.js / wiki_learning_upload.js)가 현재 학년을 읽도록 노출.
   window.wikiHub = {
     currentGrade: function () { return grade; },
     reloadOriginals: loadOriginals,
@@ -60,12 +100,19 @@
     reloadLearning: loadLearningMaterials,
   };
 
-  function render() {
+  // ── 부팅 ────────────────────────────────────────────────
+  renderGradeLists();
+  loadBoards();
+  loadHomeFeed();
+  recordVisit();
+  setInterval(pollLive, LIVE_POLL_MS);
+  setInterval(loadPopularDownloads, POPULAR_POLL_MS);
+
+  function renderGradeLists() {
     gradeNote.textContent = GRADE_NOTE[grade] || '';
     loadOriginals();
     loadAnalyses();
     loadLearningMaterials();
-    loadBoards();
   }
 
   /** /wiki 방문 집계 비컨. 같은 세션·같은 날 중복은 서버(HttpSession)가 무시한다. */
@@ -75,6 +122,154 @@
     } catch (_) { /* 집계 실패는 무시 */ }
   }
 
+  // ── 메인 aggregate ──────────────────────────────────────
+  async function loadHomeFeed() {
+    try {
+      var res = await fetch('/api/wiki/home-feed');
+      if (!res.ok) throw new Error();
+      var feed = await res.json();
+      renderLatestUpdates(feed.latestUpdates || []);
+      renderRecentThreads(feed.latestThreads || []);
+      renderRecentMembers(feed.recentMembers || []);
+      renderLive(feed.liveMessages || []);
+      renderPopular(feed.popularDownloads || null);
+    } catch (_) {
+      document.getElementById('latestUpdates').innerHTML = '<p class="error">최신 업데이트를 불러오지 못했습니다.</p>';
+    }
+  }
+
+  function renderLatestUpdates(items) {
+    var box = document.getElementById('latestUpdates');
+    if (!items.length) {
+      box.innerHTML = '<p class="muted">최근 등록된 자료가 아직 없습니다.</p>';
+      return;
+    }
+    box.innerHTML = items.map(function (it) {
+      var kind = UPDATE_KIND_LABEL[it.kind] || '자료';
+      var g = it.grade ? '고' + it.grade + ' · ' : '';
+      return '<a class="update-row' + (it.isNew ? ' is-new' : '') + '" href="' + escapeAttr(it.href) + '">'
+        + (it.isNew ? '<span class="new-badge">NEW</span>' : '<span class="new-badge ghost">·</span>')
+        + '<span class="update-title">' + escapeHtml(it.title) + '</span>'
+        + '<span class="update-sub">' + escapeHtml(g + kind) + ' · ' + relTime(it.updatedAt) + '</span>'
+        + '</a>';
+    }).join('');
+  }
+
+  function renderRecentThreads(items) {
+    var box = document.getElementById('recentThreads');
+    if (!items.length) {
+      box.innerHTML = '<p class="muted">아직 문항 분석 활동이 없습니다.</p>';
+      return;
+    }
+    box.innerHTML = items.map(function (it) {
+      return '<a class="thread-row" href="' + escapeAttr(it.href) + '">'
+        + '<b>고' + it.grade + ' ' + escapeHtml(it.examLabel) + ' ' + it.questionNumber + '번</b>'
+        + '<span>분석 · 해설 · Insight · AI 제작</span>'
+        + '</a>';
+    }).join('');
+  }
+
+  function renderRecentMembers(items) {
+    var box = document.getElementById('recentMembers');
+    if (!items.length) { box.innerHTML = '<span class="muted">-</span>'; return; }
+    box.innerHTML = items.map(function (m) {
+      return '<span class="member-chip">' + escapeHtml(m.displayName) + '</span>';
+    }).join('');
+  }
+
+  // ── WIKI LIVE ───────────────────────────────────────────
+  function renderLive(items) {
+    var box = document.getElementById('liveMessages');
+    if (!items.length) {
+      box.innerHTML = '<li class="muted">첫 한 줄을 남겨보세요.</li>';
+    } else {
+      box.innerHTML = items.map(liveRow).join('');
+    }
+    items.forEach(function (m) { if (m.id > liveMaxId) liveMaxId = m.id; });
+    document.getElementById('liveMore').hidden = items.length < 6;
+  }
+
+  function liveRow(m) {
+    // m.message 는 서버에서 이미 HTML escape 되어 저장/전달된다 — 여기서 재이스케이프하지 않는다.
+    return '<li class="live-row">'
+      + '<span class="live-name">' + escapeHtml(m.displayName) + '</span>'
+      + '<span class="live-text">' + String(m.message == null ? '' : m.message) + '</span>'
+      + '<span class="live-time">' + relTime(m.createdAt) + '</span>'
+      + '</li>';
+  }
+
+  async function pollLive() {
+    try {
+      var res = await fetch('/api/wiki/live-messages?sinceId=' + liveMaxId);
+      if (!res.ok) return;
+      var items = await res.json();
+      if (!items.length) return;
+      var box = document.getElementById('liveMessages');
+      var placeholder = box.querySelector('.muted');
+      if (placeholder) box.innerHTML = '';
+      items.forEach(function (m) {
+        box.insertAdjacentHTML('beforeend', liveRow(m));
+        if (m.id > liveMaxId) liveMaxId = m.id;
+      });
+      while (box.children.length > 40) box.removeChild(box.firstChild);
+    } catch (_) { /* 폴링 실패는 조용히 무시 */ }
+  }
+
+  async function loadLiveHistory() {
+    try {
+      var res = await fetch('/api/wiki/live-messages');
+      if (!res.ok) return;
+      var items = await res.json();
+      var box = document.getElementById('liveMessages');
+      box.innerHTML = items.length ? items.map(liveRow).join('') : '<li class="muted">첫 한 줄을 남겨보세요.</li>';
+      liveMaxId = 0;
+      items.forEach(function (m) { if (m.id > liveMaxId) liveMaxId = m.id; });
+      document.getElementById('liveMore').hidden = true;
+    } catch (_) {}
+  }
+
+  // ── 인기 다운로드 TOP 10 ────────────────────────────────
+  async function loadPopularDownloads() {
+    try {
+      var res = await fetch('/api/wiki/popular-downloads');
+      if (!res.ok) return;
+      renderPopular(await res.json());
+    } catch (_) {}
+  }
+
+  function renderPopular(data) {
+    var box = document.getElementById('popularDownloads');
+    var period = document.getElementById('popularPeriod');
+    if (!data || !data.items || !data.items.length) {
+      box.innerHTML = '<li class="muted">최근 다운로드 데이터가 아직 충분하지 않습니다.</li>';
+      return;
+    }
+    if (period) period.textContent = (data.periodLabel || '') + ' 기준';
+    box.innerHTML = data.items.map(function (it) {
+      var g = it.grade ? '고' + it.grade : '학년 미상';
+      return '<li class="popular-row' + (it.rank <= 3 ? ' top' : '') + '">'
+        + '<span class="pop-rank">' + String(it.rank).padStart(2, '0') + '</span>'
+        + '<span class="pop-trend ' + trendClass(it.trend) + '">' + trendLabel(it.trend, it.trendAmount) + '</span>'
+        + '<a class="pop-main" href="' + escapeAttr(it.href) + '">'
+        + '<span class="pop-cat">' + escapeHtml(g + ' · ' + (it.categoryLabel || '')) + '</span>'
+        + '<span class="pop-title">' + escapeHtml(it.title) + '</span>'
+        + '</a>'
+        + '<span class="pop-count">' + it.downloadCount + '회</span>'
+        + '</li>';
+    }).join('');
+  }
+
+  function trendClass(t) {
+    return t === 'UP' ? 'up' : t === 'DOWN' ? 'down' : t === 'NEW' ? 'new' : 'same';
+  }
+  function trendLabel(t, n) {
+    if (t === 'NEW') return 'NEW';
+    if (t === 'UP') return '▲' + n;
+    if (t === 'DOWN') return '▼' + n;
+    return '―';
+  }
+
+  // ── 자료 목록 (학년별) ──────────────────────────────────
   async function loadLearningMaterials() {
     var box = document.getElementById('learningList');
     if (!box) return;
@@ -87,7 +282,6 @@
         box.innerHTML = '<p class="muted">이 학년의 학습 자료가 아직 없습니다. 첫 자료를 올려보세요.</p>';
         return;
       }
-      // 카드 클릭 = 즉시 다운로드가 아니라 Wiki 안의 상세/미리보기 화면으로 이동한다.
       box.innerHTML = items.map(function (it) {
         var label = it.dataTypeLabel || LEARNING_TYPE_LABEL[it.dataType] || '기타';
         return '<a class="learning-card" href="/wiki/learning/' + encodeURIComponent(it.wikiLearningMaterialId) + '">'
@@ -176,6 +370,7 @@
     }
   }
 
+  // ── helpers ─────────────────────────────────────────────
   function fileMeta(it) {
     var ext = (it.originalFileName || '').split('.').pop().toUpperCase();
     var mb = it.fileSize ? (it.fileSize / (1024 * 1024)).toFixed(1) + 'MB' : '';
@@ -187,8 +382,19 @@
     var d = new Date(v);
     return (d.getMonth() + 1).toString().padStart(2, '0') + '.' + d.getDate().toString().padStart(2, '0');
   }
+  function relTime(v) {
+    if (!v) return '';
+    var then = new Date(v).getTime();
+    if (isNaN(then)) return '';
+    var diff = Math.floor((Date.now() - then) / 1000);
+    if (diff < 60) return '방금';
+    if (diff < 3600) return Math.floor(diff / 60) + '분 전';
+    if (diff < 86400) return Math.floor(diff / 3600) + '시간 전';
+    if (diff < 604800) return Math.floor(diff / 86400) + '일 전';
+    return fmtDay(v);
+  }
   function escapeHtml(v) {
-    return String(v || '').replace(/[&<>'"]/g, function (c) {
+    return String(v == null ? '' : v).replace(/[&<>'"]/g, function (c) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c];
     });
   }

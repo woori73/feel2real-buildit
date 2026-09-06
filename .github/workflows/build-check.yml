@@ -86,6 +86,12 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.controller.WikiLearningMaterialControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.service.WikiVisitServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.controller.WikiStatsControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wiki.support.PublicDisplayNameTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilive.service.WikiLiveMessageServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilive.controller.WikiLiveMessageControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service.PopularDownloadServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service.LatestUpdatesServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.controller.WikiHomeFeedControllerWebMvcTest"
 
       - name: Upload test report
         if: always()

@@ -31,4 +31,16 @@ public interface QuestionThreadPostRepository extends JpaRepository<QuestionThre
   Optional<QuestionThreadPost> findDetailById(@Param("postId") Long postId);
 
   long countByQuestionWiki_QuestionWikiIdAndVisibleTrue(Long questionWikiId);
+
+  /**
+   * 공개 Wiki 메인 "최근 문항 분석" — 최근 활동(visible 글)이 있는 문항을 최신순으로.
+   * 서비스가 questionWiki 단위로 중복 제거해 상위 N개를 남긴다.
+   */
+  @Query("""
+      select p from QuestionThreadPost p
+      join fetch p.questionWiki q
+      where p.visible = true and q.visible = true
+      order by p.createdAt desc, p.postId desc
+      """)
+  List<QuestionThreadPost> findRecentActivity(org.springframework.data.domain.Pageable pageable);
 }

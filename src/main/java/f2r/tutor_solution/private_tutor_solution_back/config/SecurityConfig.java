@@ -270,6 +270,12 @@ public class SecurityConfig {
                 "/api/wiki/learning-materials/*",
                 "/api/wiki/learning-materials/*/preview").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/wiki/visits").permitAll()  // /wiki 방문 비컨(익명 포함)
+            // 공개 Wiki 메인(/wiki) 데이터: 메인 aggregate + WIKI LIVE 조회 + 인기 다운로드는 비회원 공개.
+            // LIVE 작성(POST /api/wiki/live-messages)은 아래 /api/** catch-all 로 인증(회원 전용),
+            // LIVE 삭제(DELETE /api/admin/wiki/live-messages/*)는 /api/admin/** (ROLE_ADMIN).
+            .requestMatchers(HttpMethod.GET, "/api/wiki/home-feed").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/wiki/live-messages").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.
