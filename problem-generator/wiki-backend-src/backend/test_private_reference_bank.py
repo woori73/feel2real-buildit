@@ -80,5 +80,15 @@ class PrivateReferenceCorpusTest(unittest.TestCase):
             paths=[Path(call.args[0]).name for call in opened.call_args_list]
         self.assertEqual(["g2-q31.json.gz"],paths)
 
+    def test_missing_reference_fails_fast_and_prompt_is_compact(self):
+        with self.assertRaises(bank.ReferenceNotFoundError):
+            bank.enrich_prompt(prompt(9, 99, "vocabulary"))
+        enriched=bank.enrich_prompt(prompt(2,31,"vocabulary"))
+        self.assertEqual(2, bank.select(prompt(2,31,"vocabulary"))[0]["grade"])
+        self.assertNotIn("rawLayout", enriched)
+        self.assertNotIn("bbox", enriched)
+        self.assertNotIn("provenance", enriched)
+        self.assertLess(len(enriched), 30000)
+
 
 if __name__ == "__main__": unittest.main()

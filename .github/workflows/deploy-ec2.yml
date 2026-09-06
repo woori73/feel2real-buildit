@@ -182,7 +182,7 @@ jobs:
           WorkingDirectory=/opt/buildit-wiki/app/backend
           Environment=BUILDIT_WIKI_DB_PATH=/opt/buildit-wiki/data/app.db
           Environment=BUILDIT_WIKI_WORKSPACE=/opt/buildit-wiki
-          Environment=AI_PROVIDER_TIMEOUT_SECONDS=90
+          Environment=AI_PROVIDER_TIMEOUT_SECONDS=45
           EnvironmentFile=-/etc/buildit-wiki.env
           EnvironmentFile=-/etc/buildit-wiki-identity.env
           ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000

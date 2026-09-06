@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class BuildItWikiProxyController {
   private static final Duration WIKI_REQUEST_TIMEOUT = Duration.ofSeconds(280);
+  private static final Duration QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(52);
   private static final String MCP_PATH = "/api/mcp";
   // MCP Streamable HTTP 스펙(및 mcp_server.py의 Bearer/X-Api-Key 미들웨어)이 요구하는 헤더만
   // 골라 전달한다. X-Api-Key는 Authorization 헤더를 커스텀 값으로 못 보내는 MCP client(예:
@@ -55,7 +56,7 @@ public class BuildItWikiProxyController {
     URI uri = URI.create("http://127.0.0.1:8000" + targetPath + (query == null ? "" : "?" + query));
     byte[] body = request.getInputStream().readAllBytes();
     HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
-        .timeout(WIKI_REQUEST_TIMEOUT)
+        .timeout(isQuestionWikiAi(targetPath) ? QUESTION_WIKI_AI_TIMEOUT : WIKI_REQUEST_TIMEOUT)
         .method(request.getMethod(), body.length == 0 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(body));
     String contentType = request.getHeader("Content-Type");
     if (contentType != null) builder.header("Content-Type", contentType);
@@ -87,6 +88,10 @@ public class BuildItWikiProxyController {
       response.headers().firstValue("mcp-session-id").ifPresent(v -> out.header("Mcp-Session-Id", v));
     }
     return out.body(response.body());
+  }
+
+  private boolean isQuestionWikiAi(String targetPath) {
+    return targetPath.equals("/api/ai/complete");
   }
 
   private boolean isMcpPath(String targetPath) {

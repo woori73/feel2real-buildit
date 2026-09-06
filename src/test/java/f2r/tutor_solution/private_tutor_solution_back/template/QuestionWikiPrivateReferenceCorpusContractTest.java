@@ -13,6 +13,8 @@ class QuestionWikiPrivateReferenceCorpusContractTest {
     Path root=Path.of("problem-generator/wiki-backend-src/backend");
     String bank=Files.readString(root.resolve("private_reference_bank.py"),StandardCharsets.UTF_8);
     String js=Files.readString(Path.of("src/main/resources/static/js/question_wiki_ai.js"),StandardCharsets.UTF_8);
+    String router=Files.readString(root.resolve("ai_router.py"),StandardCharsets.UTF_8);
+    String proxy=Files.readString(Path.of("src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/problemgenerator/controller/BuildItWikiProxyController.java"),StandardCharsets.UTF_8);
     String g1=Files.readString(root.resolve("private-reference/grade1-manifest.json"),StandardCharsets.UTF_8);
     String g2=Files.readString(root.resolve("private-reference/grade2-manifest.json"),StandardCharsets.UTF_8);
     assertThat(g1).contains("\"recordCount\": 255", "\"PASS\": 255");
@@ -22,7 +24,9 @@ class QuestionWikiPrivateReferenceCorpusContractTest {
     assertThat(bank).doesNotContain("_load_grade(grade)");
     assertThat(bank).doesNotContain("private_reference_exact_g2", "private_reference_corpus_g1");
     assertThat(js).contains("FREE_PROVIDER='openrouter-free'", "provider:FREE_PROVIDER");
-    assertThat(js).doesNotContain("provider:'auto'", "qwen/qwen3.7-flash", "gemini-3.7-flash");
+    assertThat(js).doesNotContain("provider:'auto'", "qwen/qwen3.7-flash", "gemini-3.7-flash", "d.slice(0,120)");
+    assertThat(router).contains("DEFAULT_PROVIDER_TIMEOUT_SECONDS=45.0", "QUESTION_WIKI_REFERENCE_NOT_FOUND", "QUESTION_WIKI_FREE_AI_TIMEOUT");
+    assertThat(proxy).contains("QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(52)", "isQuestionWikiAi(targetPath)");
   }
 
   @Test

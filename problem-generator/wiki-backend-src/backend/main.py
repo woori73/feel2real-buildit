@@ -1779,7 +1779,7 @@ def _save_generated(conn, twin: Optional[dict], mode: str, questions: list[dict]
 
 def _handle_gemini_error(exc):
     if isinstance(exc, ai_router.ProviderError):
-        status = exc.status if exc.status in (401, 403, 429, 502, 503, 504) else 502
+        status = exc.status if exc.status in (401, 403, 422, 429, 502, 503, 504) else 502
         message = str(exc)
         if status == 429:
             message = 'AI 요청이 많아 잠시 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'
@@ -1787,7 +1787,7 @@ def _handle_gemini_error(exc):
             message = 'AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.'
         elif status in (502, 503) and exc.provider == 'ox-alpha':
             message = 'Ox Alpha 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.'
-        raise HTTPException(status_code=status, detail={'message': message, 'provider': exc.provider, 'status': status})
+        raise HTTPException(status_code=status, detail={'code': getattr(exc, 'code', 'QUESTION_WIKI_AI_ERROR'), 'message': message, 'provider': exc.provider, 'status': status, 'retryable': getattr(exc, 'retryable', False)})
     if isinstance(exc, pl.GeminiCallError):
         if exc.http_status in (401, 403):
             raise HTTPException(status_code=401, detail='잘못된 API Key입니다. 설정에서 키를 다시 확인해 주세요.')
