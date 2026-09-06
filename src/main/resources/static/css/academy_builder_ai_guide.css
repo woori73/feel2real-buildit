@@ -123,13 +123,21 @@ body.ai-guide-open .canvas-area { padding-right: calc(var(--ai-guide-width) + 24
 .ai-guide-btn-ghost:hover { background: rgba(255, 255, 255, .12); }
 .ai-guide-btn:disabled { opacity: .5; cursor: progress; }
 
+/* §2 — 추천안 캐러셀. 한 번에 1개만. 세로로 길게 쌓지 않으므로 말풍선이 뷰포트 밖으로 밀리지 않는다. */
 .ai-guide-candidates { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.ai-guide-candidate-counter {
+  font-size: .64rem; font-weight: 800; letter-spacing: .04em; color: rgba(255, 255, 255, .55);
+}
 .ai-guide-candidate {
   border: 1px solid rgba(255, 255, 255, .14); border-radius: 11px; padding: 10px 12px;
   background: rgba(255, 255, 255, .04);
 }
-.ai-guide-candidate p { font-size: .8rem; line-height: 1.55; margin: 0 0 8px; color: rgba(255, 255, 255, .92); }
+/* 읽기 전용 추천 문구 — 일반 text block(§3). 자체 스크롤바를 만들지 않는다: 캐러셀이라 길어지지 않고,
+   그래도 길면 말풍선 단일 스크롤이 처리한다(§5). */
+.ai-guide-candidate p { font-size: .8rem; line-height: 1.55; margin: 0 0 8px; color: rgba(255, 255, 255, .92); white-space: pre-line; }
 .ai-guide-candidate .ai-guide-btn { padding: 6px 10px; font-size: .7rem; }
+.ai-guide-candidate-nav { display: flex; gap: 6px; }
+.ai-guide-candidate-nav .ai-guide-btn { flex: 1; justify-content: center; padding: 6px 8px; font-size: .68rem; }
 
 .ai-guide-loading { font-size: .76rem; color: rgba(255, 255, 255, .6); padding: 8px 0; }
 .ai-guide-error {
@@ -254,6 +262,11 @@ body.ai-guide-open .canvas-area { padding-right: calc(var(--ai-guide-width) + 24
   border-color: var(--aig-line); background: var(--aig-surface);
 }
 .bildi-bubble-step-inner .ai-guide-candidate p { color: var(--aig-ink); }
+.bildi-bubble-step-inner .ai-guide-candidate-counter { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-candidate-nav .ai-guide-btn {
+  color: var(--aig-ink); background: #eef2ff; border-color: var(--aig-line);
+}
+.bildi-bubble-step-inner .ai-guide-candidate-nav .ai-guide-btn:disabled { opacity: .45; }
 
 .bildi-bubble-step-inner .ai-guide-error {
   color: #b42318; background: #fef2f2; border-color: #fecaca;

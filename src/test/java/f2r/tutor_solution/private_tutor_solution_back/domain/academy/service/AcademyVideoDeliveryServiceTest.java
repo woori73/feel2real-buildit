@@ -42,7 +42,7 @@ class AcademyVideoDeliveryServiceTest {
     videoRepository = mock(AcademyVideoRepository.class);
     storage = mock(AcademyVideoDeliveryStorage.class);
     AcademyVideoUploadProperties properties = new AcademyVideoUploadProperties();
-    properties.setDeliverySignedUrlTtlMs(30_000);
+    properties.setDeliverySignedUrlTtlMs(900_000);
     service = new AcademyVideoDeliveryService(
         academyService, videoRepository, storage, properties);
     academy = Academy.builder().slug("published").name("Published").build();
@@ -68,7 +68,8 @@ class AcademyVideoDeliveryServiceTest {
     assertThat(response.getHeaders().getContentType().toString()).isEqualTo("video/webm");
     assertThat(response.getHeaders().getContentLength()).isEqualTo(bytes.length);
     assertThat(response.getHeaders().getFirst(HttpHeaders.ACCEPT_RANGES)).isEqualTo("bytes");
-    assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");
+    assertThat(response.getHeaders().getCacheControl())
+        .isEqualTo("max-age=604800, private, immutable");
     assertThat(body.toByteArray()).isEqualTo(bytes);
   }
 
@@ -117,9 +118,9 @@ class AcademyVideoDeliveryServiceTest {
   }
 
   @Test
-  void givenS3Delivery_whenGet_thenReturnsShortLivedNoStoreRedirect() throws Exception {
+  void givenS3Delivery_whenGet_thenReturnsRedirectCacheableWithinSignedUrlTtl() throws Exception {
     rawVideo("video/webm", 10);
-    when(storage.resolve(any(), eq("video/webm"), eq(java.time.Duration.ofSeconds(30))))
+    when(storage.resolve(any(), eq("video/webm"), eq(java.time.Duration.ofMillis(900_000))))
         .thenReturn(new AcademyVideoDeliveryStorage.RedirectTarget(
             URI.create("https://bucket.example/signed")));
 
@@ -128,7 +129,8 @@ class AcademyVideoDeliveryServiceTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
     assertThat(response.getHeaders().getLocation())
         .isEqualTo(URI.create("https://bucket.example/signed"));
-    assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");
+    // 302 를 signed-URL 유효시간(-60s 안전마진) 안에서 재사용 → preload 와 첫 재생이 같은 URL 을 받는다.
+    assertThat(response.getHeaders().getCacheControl()).isEqualTo("max-age=840, private");
     assertThat(response.getBody()).isNull();
   }
 

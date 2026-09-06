@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class S3AcademyVideoDeliveryStorageTest {
 
   @Test
-  void signsPrivateGetWithCanonicalTypeNoStoreAndThirtySecondMaximum() throws Exception {
+  void signsPrivateGetWithCanonicalTypeCacheableAndTtlPassedThrough() throws Exception {
     S3Presigner presigner = mock(S3Presigner.class);
     PresignedGetObjectRequest signed = PresignedGetObjectRequest.builder()
         .httpRequest(SdkHttpRequest.builder()
@@ -54,15 +54,17 @@ class S3AcademyVideoDeliveryStorageTest {
     assertThat(captor.getValue().getObjectRequest().key())
         .isEqualTo("academy-video/staging/session/raw");
     assertThat(captor.getValue().getObjectRequest().responseContentType()).isEqualTo("video/webm");
-    assertThat(captor.getValue().getObjectRequest().responseCacheControl()).isEqualTo("no-store");
+    // 불변 객체(key 당) — 브라우저가 캐시해 preload 를 첫 재생이 재사용. no-store 면 매 클릭 콜드 재다운로드.
+    assertThat(captor.getValue().getObjectRequest().responseCacheControl())
+        .isEqualTo("private, max-age=604800, immutable");
   }
 
   @Test
-  void rejectsSigningTtlOverThirtySeconds() {
+  void rejectsSigningTtlOverOneHour() {
     S3AcademyVideoDeliveryStorage storage = new S3AcademyVideoDeliveryStorage();
 
     assertThatThrownBy(() -> storage.resolve(
-        "key", "video/mp4", Duration.ofSeconds(31)))
+        "key", "video/mp4", Duration.ofSeconds(3_601)))
         .isInstanceOf(AcademyVideoStorageException.class)
         .hasMessage("INVALID_DELIVERY_REQUEST");
   }

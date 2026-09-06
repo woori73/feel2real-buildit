@@ -43,7 +43,9 @@ public class AcademyVideoUploadProperties {
   private long cleanupRetryBaseMs = 5_000;
   private long cleanupOrphanMinAgeMs = 300_000;
   private int cleanupReconciliationBatchSize = 100;
-  private long deliverySignedUrlTtlMs = 30_000;
+  // 방문자가 페이지를 읽는 동안 preload 로 받은 signed URL / 302 가 클릭 시점까지 살아 있어야
+  // "첫 영상 첫 클릭 버퍼링"이 사라진다. S3 자격증명 갱신 주기보다 짧은 15분으로 둔다(상한 1시간).
+  private long deliverySignedUrlTtlMs = 900_000;
 
   @PostConstruct
   void validate() {
@@ -79,7 +81,7 @@ public class AcademyVideoUploadProperties {
         || cleanupReconciliationBatchSize < 1
         || cleanupReconciliationBatchSize > 1_000
         || deliverySignedUrlTtlMs < 1_000
-        || deliverySignedUrlTtlMs > 30_000) {
+        || deliverySignedUrlTtlMs > 3_600_000) {
       throw new IllegalStateException("Academy video cleanup settings are invalid");
     }
   }

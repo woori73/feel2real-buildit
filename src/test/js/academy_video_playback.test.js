@@ -94,6 +94,11 @@ test('onPlayClick: 트리거를 치환하지 않고 .f2r-media-viewport 안에 .
   assert.match(COLLECTION_JS, /autoplay=1/);
   // 중복 재생 방지
   assert.match(COLLECTION_JS, /querySelector\(['"]\.f2r-media-player['"]\)/);
+  // §J·§10 — 클릭(user gesture) 안에서 play() 를 직접 부른다(모바일 autoplay 정책 대응).
+  // src 는 새 <video> 에 한 번만 지정하고, load() 재호출/재대입으로 최초 로드를 끊지 않는다.
+  assert.match(COLLECTION_JS, /node\.play\(\)/, 'user gesture 안에서 play() 직접 호출');
+  assert.doesNotMatch(COLLECTION_JS, /node\.load\(\)/, 'load() 재호출 금지(최초 로드 중단)');
+  assert.doesNotMatch(COLLECTION_JS, /node\.src\s*=\s*node\.src/, 'src 재대입 금지');
 });
 
 test('CSS: 플레이어는 뷰포트를 채우고(inset:0) 원본 비율은 object-fit:contain 으로 보존(crop 금지)', () => {

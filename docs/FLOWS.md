@@ -634,7 +634,8 @@ TUTOR click
 - 변환과 S3 저장은 DB 트랜잭션 밖에서 수행하고 마지막 READY row insert만 저장한다. DB 저장 실패 시
   이미 저장한 영상/thumbnail을 보상 삭제한다.
 - 공개 stable GET/HEAD는 published Academy + READY만 허용한다. local은 bounded Range stream,
-  production은 30초 이하 no-store signed S3 redirect다.
+  production은 1시간 이하(기본 15분) signed S3 redirect다. 정규화본은 불변이라 응답/서명 모두
+  `private, max-age`로 캐시 가능 — preload로 받은 앞부분을 첫 클릭 재생이 재사용한다.
 - 삭제는 DELETING tombstone + cleanup outbox이며, 수업상품이 참조 중인 video는 먼저 참조를 해제한다.
 
 운영·배포 gate는 [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md), HTTP 상세 계약은 [API.md](API.md)를 따른다.

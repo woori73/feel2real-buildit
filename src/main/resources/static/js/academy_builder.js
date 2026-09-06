@@ -4089,6 +4089,7 @@
   const WORLD = typeof window !== 'undefined' ? window.F2RAcademyWorld : null;
   let aiGuideSession = null;
   let aiGuidePending = null; // { target, candidates: [] } — 현재 스텝의 마지막 추천 결과
+  let aiGuideCandidateIndex = 0; // 추천안 캐러셀 — 한 번에 1개만 보여준다(§2). 말풍선 안에 스크롤을 쌓지 않는다.
   let aiGuideError = '';
   let aiGuideBusy = false;
   let aiGuideFocusTimer = null;
@@ -4153,6 +4154,7 @@
 
     aiGuideSession = AI_GUIDE.createSession(readAiGuideSession());
     aiGuideExistingSteps = AI_GUIDE.stepsWithExistingContent(preview || currentPreview);
+    let forcedNamingStart = false;
     // 이미 이름/주소가 확정된 Academy는 naming 온보딩을 건너뛴다(신규/미설정만 첫 단계).
     // 진행 중이던 사용자는 건드리지 않는다.
     if (typeof AI_GUIDE.isNamingComplete === 'function'
@@ -4163,6 +4165,13 @@
         && !aiGuideSession.onboarded) {
       aiGuideSession = AI_GUIDE.goToStep(AI_GUIDE.markCompleted(aiGuideSession, 'naming'), 'style');
       writeAiGuideSession();
+    } else if (typeof AI_GUIDE.shouldStartAtNaming === 'function'
+        && AI_GUIDE.shouldStartAtNaming(preview || currentPreview, aiGuideSession)) {
+      // §7·§8 — 이름/주소 미설정인데 (구 세션 마이그레이션·academy 미스코프 등으로) 세션이
+      // naming 을 지나쳐 있으면 STEP 1 로 되돌린다. CSS 강제 노출이 아니라 진행 상태 자체를 교정한다.
+      aiGuideSession = AI_GUIDE.goToStep(aiGuideSession, 'naming');
+      writeAiGuideSession();
+      forcedNamingStart = true;
     }
 
     toggle.addEventListener('click', () => setAiGuideOpen(!panel.classList.contains('is-open')));
@@ -4186,9 +4195,11 @@
     mountBildiSidekick();
 
     // 최초 진입은 Bildi를 켠다(§4/§5). 이전에 접었으면 접힌 채로 둔다. Bildi 미탑재 시엔
-    // 기존처럼 패널을 연다(폴백).
+    // 기존처럼 패널을 연다(폴백). 단, 이름/주소 미설정이라 naming 으로 되돌린 경우(§4)는
+    // 저장된 접힘 상태와 무관하게 자동으로 연다 — 신규 Academy 는 진입 즉시 STEP 1 을 봐야 한다.
     const savedOpen = readAiGuidePanelOpen();
-    setAiGuideOpen(savedOpen == null ? true : savedOpen, { skipPersist: savedOpen == null });
+    const openOnEntry = forcedNamingStart ? true : (savedOpen == null ? true : savedOpen);
+    setAiGuideOpen(openOnEntry, { skipPersist: savedOpen == null && !forcedNamingStart });
     renderAiGuide();
     const step = currentAiGuideStep();
     syncBildiSceneToStep();
@@ -4401,19 +4412,31 @@
     return bestKey;
   }
 
-  /** 말풍선을 Bildi 옆에 두되 safe area 를 벗어나면 반대쪽으로 뒤집는다. */
+  /**
+   * 말풍선을 Bildi 옆에 두되 safe area(=뷰포트 콘텐츠 영역)를 벗어나면 반대쪽/안쪽으로 당긴다.
+   * §2·§4 — 말풍선의 실제 렌더 높이를 재서 아래가 프레임 밖으로 내려가 잘리지 않게 y 를 clamp 한다.
+   * 말풍선이 safe area 보다 크면 위에 붙이고(스크롤은 CSS max-height 가 담당), 그 외에는 통째로 안에 넣는다.
+   */
   function positionBildiBubble(pos, safe, size) {
     if (!bildiBubble || typeof bildiBubble.moveToXY !== 'function') return;
-    const BUBBLE_W = 264;
+    const el = bildiBubble.el;
+    const BUBBLE_W = (el && el.offsetWidth) ? el.offsetWidth : 264;
+    const BUBBLE_H = (el && el.offsetHeight) ? el.offsetHeight : 160;
     const GAP = 12;
     let bx = pos.x + size.w + GAP;
     let side = 'right';
     if (bx + BUBBLE_W > safe.x1) { bx = pos.x - GAP - BUBBLE_W; side = 'left'; }
     if (bx < safe.x0) bx = safe.x0;
+    if (bx + BUBBLE_W > safe.x1) bx = Math.max(safe.x0, safe.x1 - BUBBLE_W);
+    const safeH = Math.max(0, safe.y1 - safe.y0);
     let by = pos.y - 8;
-    by = Math.max(safe.y0, Math.min(by, safe.y1 - 120));
-    if (bildiBubble.el && typeof bildiBubble.el.setAttribute === 'function') {
-      bildiBubble.el.setAttribute('data-side', side === 'left' ? 'right' : 'left');
+    if (BUBBLE_H >= safeH) {
+      by = safe.y0;
+    } else {
+      by = Math.max(safe.y0, Math.min(by, safe.y1 - BUBBLE_H));
+    }
+    if (el && typeof el.setAttribute === 'function') {
+      el.setAttribute('data-side', side === 'left' ? 'right' : 'left');
     }
     bildiBubble.moveToXY(bx, by);
   }
@@ -4469,6 +4492,7 @@
   function restartAiGuide() {
     aiGuideSession = AI_GUIDE.createSession(null);
     aiGuidePending = null;
+    aiGuideCandidateIndex = 0;
     aiGuideError = '';
     writeAiGuideSession();
     renderAiGuide();
@@ -4480,6 +4504,7 @@
   function goAiGuideStep(stepId) {
     aiGuideSession = AI_GUIDE.goToStep(aiGuideSession, stepId);
     aiGuidePending = null;
+    aiGuideCandidateIndex = 0;
     aiGuideError = '';
     writeAiGuideSession();
     renderAiGuide();
@@ -4522,6 +4547,7 @@
     aiGuideSession = AI_GUIDE.markSkipped(aiGuideSession, current.id);
     const nextId = AI_GUIDE.nextStepId(current.id);
     aiGuidePending = null;
+    aiGuideCandidateIndex = 0;
     if (nextId) {
       goAiGuideStep(nextId);
     } else {
@@ -4586,6 +4612,10 @@
       requestAiGuideRecommendations();
     } else if (action === 'apply') {
       applyAiGuideCandidate(Number(el.dataset.guideIndex));
+    } else if (action === 'cand-prev') {
+      stepAiGuideCandidate(-1);
+    } else if (action === 'cand-next') {
+      stepAiGuideCandidate(1);
     } else if (action === 'manual-focus') {
       const step = currentAiGuideStep();
       setAiGuideOpen(true);
@@ -4656,6 +4686,7 @@
         return;
       }
       aiGuidePending = { target: step.target, candidates: list };
+      aiGuideCandidateIndex = 0;
       renderAiGuide();
     } catch (_) {
       aiGuideRenderError('네트워크 연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.');
@@ -4699,6 +4730,7 @@
     writeAiGuideSession();
     aiGuideExistingSteps = AI_GUIDE.stepsWithExistingContent(currentPreview);
     aiGuidePending = null;
+    aiGuideCandidateIndex = 0;
     focusAiGuideSection(step.sectionKey);
     toast('추천 문구를 미리보기에 반영했습니다. 상단 발행 버튼으로 저장하세요.', 'fa-wand-magic-sparkles');
     renderAiGuide();
@@ -4956,14 +4988,48 @@
       + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="recommend"${aiGuideBusy ? ' disabled' : ''}>${aiGuidePending ? '다시 추천' : '문구 추천받기'}</button>`
       + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="manual-focus">직접 작성</button>`
       + `</div>`;
-    if (aiGuidePending && aiGuidePending.target === step.target) {
-      html += `<div class="ai-guide-candidates">` + aiGuidePending.candidates.map((text, index) =>
-        `<div class="ai-guide-candidate"><p>${escapeHtml(text)}</p>`
-        + `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="apply" data-guide-index="${index}">적용</button></div>`
-      ).join('') + `</div>`
+    if (aiGuidePending && aiGuidePending.target === step.target && aiGuidePending.candidates.length) {
+      html += renderAiGuideCandidateCarousel(aiGuidePending.candidates)
       + `<p class="ai-guide-note">적용해도 발행되지 않습니다. 미리보기에만 반영되고, 저장은 상단 [발행] 버튼으로 직접 하셔야 합니다.</p>`;
     }
     return html;
+  }
+
+  /**
+   * §2 — 추천안 캐러셀. 여러 추천안을 세로로 길게 쌓지 않고 현재 1개만 보여준다. 읽기 전용
+   * 문구라 textarea 가 아니라 일반 text block 이며(§3), [적용] 은 항상 카드 안에 노출된다(§2).
+   * 말풍선/패널 공통 마크업이라 여기서 스크롤 컨테이너를 만들지 않는다 — "스크롤 안의 스크롤"(§2·§5) 금지.
+   */
+  function renderAiGuideCandidateCarousel(candidates) {
+    const total = candidates.length;
+    if (aiGuideCandidateIndex >= total) aiGuideCandidateIndex = total - 1;
+    if (aiGuideCandidateIndex < 0) aiGuideCandidateIndex = 0;
+    const index = aiGuideCandidateIndex;
+    const text = candidates[index];
+    const counter = total > 1 ? `<div class="ai-guide-candidate-counter">추천안 ${index + 1} / ${total}</div>` : '';
+    const nav = total > 1
+      ? `<div class="ai-guide-candidate-nav">`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="cand-prev"${index === 0 ? ' disabled' : ''}>← 이전 추천</button>`
+        + `<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="cand-next"${index === total - 1 ? ' disabled' : ''}>다음 추천 →</button>`
+        + `</div>`
+      : '';
+    return `<div class="ai-guide-candidates" data-guide-candidate-carousel>`
+      + counter
+      + `<div class="ai-guide-candidate">`
+      +   `<p>${escapeHtml(text)}</p>`
+      +   `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="apply" data-guide-index="${index}">적용</button>`
+      + `</div>`
+      + nav
+      + `</div>`;
+  }
+
+  function stepAiGuideCandidate(delta) {
+    if (!aiGuidePending || !aiGuidePending.candidates.length) return;
+    const total = aiGuidePending.candidates.length;
+    const next = Math.max(0, Math.min(total - 1, aiGuideCandidateIndex + delta));
+    if (next === aiGuideCandidateIndex) return;
+    aiGuideCandidateIndex = next;
+    renderAiGuide();
   }
 
   function wireMiniLecturesEditing() {
@@ -5839,6 +5905,9 @@
     requestAiGuideRecommendations,
     applyAiGuideCandidate,
     restartAiGuide,
+    // §2 추천안 캐러셀 — 한 번에 1개만 노출. 여러 추천안을 세로로 쌓아 말풍선이 뷰포트 밖으로 밀리는 것을 막는다.
+    stepAiGuideCandidate,
+    getAiGuideCandidateIndex: () => aiGuideCandidateIndex,
     getAiGuideSession: () => aiGuideSession,
     getAiGuidePending: () => aiGuidePending,
     // Phase 5B.1b — Bildi Scroll Story waypoint positioning. Bildi 위치는 스크롤 progress에 따라

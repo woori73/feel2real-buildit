@@ -183,17 +183,60 @@
     return out;
   }
 
+  var TEMP_HANDLE_RE = /^academy-[a-z0-9]{6,24}$/;
+  var REAL_HANDLE_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
+  // starterDraftForDirectBuilder() 가 신규 Academy 에 넣는 placeholder 이름 — "설정됨"으로 보지 않는다.
+  var PLACEHOLDER_NAMES = Object.freeze(['새 학원']);
+
+  function namingName(preview) {
+    return preview ? String(preview.name == null ? '' : preview.name).trim() : '';
+  }
+  function namingHandle(preview) {
+    return preview ? String(preview.handle == null ? '' : preview.handle).trim().toLowerCase() : '';
+  }
+  function hasRealHandle(preview) {
+    var handle = namingHandle(preview);
+    return REAL_HANDLE_RE.test(handle) && !TEMP_HANDLE_RE.test(handle);
+  }
+
   /**
    * 이미 확정된 이름/주소가 있으면 naming 온보딩 단계를 건너뛴다. "발행된 Academy + 실제
    * handle(임시 academy-xxxxxx 아님) + 이름" 이면 확정으로 본다. 신규/미설정은 첫 단계로 노출.
    */
   function isNamingComplete(preview) {
     if (!preview) return false;
-    var name = String(preview.name == null ? '' : preview.name).trim();
-    var handle = String(preview.handle == null ? '' : preview.handle).trim();
     var published = !!(preview.publicPathUrl || preview.publicUrl);
-    var realHandle = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(handle) && !/^academy-[a-z0-9]{6,24}$/.test(handle);
-    return published && name.length > 0 && realHandle;
+    return published && namingName(preview).length > 0 && hasRealHandle(preview);
+  }
+
+  /**
+   * "이름 + 실제 handle 이 이미 설정된" Academy 인가(발행 여부 무관). 여기 해당하면 §6 대로
+   * naming 을 강제로 다시 보여주지 않고 저장된 Guide 진행 상태를 존중한다.
+   */
+  function isNamingConfigured(preview) {
+    var name = namingName(preview);
+    if (name.length < 2 || PLACEHOLDER_NAMES.indexOf(name) >= 0) return false;
+    return hasRealHandle(preview);
+  }
+
+  /**
+   * §7·§8 — Builder 진입 시 naming(STEP 1)부터 시작해야 하는가.
+   *
+   * 근본 원인: Guide 세션은 academy 로 스코프되지 않은 단일 sessionStorage 키에 저장된다.
+   *   (1) #195 이전에 Builder 를 연 사용자는 currentStepId 가 style/hero 등인 세션을 갖고 있고,
+   *       createSession() 은 그 값을 유효한 스텝으로 clamp 할 뿐 새로 생긴 naming 으로 되돌리지 않는다.
+   *   (2) 키가 academy 별이 아니라, 다른 academy 로 Guide 를 진행한 브라우저에서 신규 academy 를
+   *       열면 그 진행 상태를 그대로 물려받아 naming 을 건너뛴다.
+   * → 이름/주소가 아직 설정되지 않았고 세션이 naming 을 완료/건너뛴 적도 없다면 naming 으로 되돌린다.
+   *   이미 이름/주소가 설정돼 있으면(isNamingConfigured) 저장된 진행 상태를 존중한다.
+   */
+  function shouldStartAtNaming(preview, session) {
+    var safe = createSession(session);
+    if (safe.currentStepId === 'naming') return false; // 이미 naming
+    if (safe.completedStepIds.indexOf('naming') >= 0) return false;
+    if (safe.skippedStepIds.indexOf('naming') >= 0) return false;
+    if (isNamingConfigured(preview)) return false;
+    return true;
   }
 
   function trimTo(value, max) {
@@ -360,6 +403,9 @@
     migrateStepId,
     sceneForStep,
     isNamingComplete,
+    isNamingConfigured,
+    shouldStartAtNaming,
+    hasRealHandle,
     stepById,
     stepIndex,
     firstStepId,

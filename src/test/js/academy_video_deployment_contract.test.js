@@ -14,7 +14,8 @@ test('server multipart video product invariants remain explicit in application c
   for (const expected of [
     'max-duration-sec: 120', 'max-upload-bytes: 209715200',
     'max-output-bytes: 209715200', 'max-count: 10',
-    'delivery-signed-url-ttl-ms: 30000'
+    // preload 로 받은 signed URL / 302 가 방문자의 첫 클릭까지 살아 있어야 콜드 재연결이 없다(§9~11).
+    'delivery-signed-url-ttl-ms: 900000'
   ]) assert.ok(app.includes(expected), `missing config: ${expected}`);
   assert.match(production, /max-file-size: 200MB/);
   assert.match(production, /max-request-size: 205MB/);
