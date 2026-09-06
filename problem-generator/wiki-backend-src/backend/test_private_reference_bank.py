@@ -107,7 +107,7 @@ class QuestionWikiSchemaTest(unittest.TestCase):
         self.assertEqual(["vocabulary"], props["type"]["enum"])
         self.assertEqual([31], props["sourceQuestionId"]["enum"])
         self.assertEqual("integer", props["sourceQuestionId"]["type"])
-        self.assertEqual(["OPENROUTER_FREE"], props["generationMode"]["enum"])
+        self.assertEqual(["QWEN_3_7_FLASH"], props["generationMode"]["enum"])
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(
             {"type", "instruction", "passage", "choices", "answer",
