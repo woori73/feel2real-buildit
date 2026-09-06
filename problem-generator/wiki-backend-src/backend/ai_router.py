@@ -82,8 +82,21 @@ def availability():
 def _openrouter(key,model,provider,system,prompt,schema,temperature):
     schema=strict_object_schema(schema) if schema else None
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
+    try:
+        return _openrouter_request(key,model,provider,system,prompt,schema,temperature)
+    except ProviderError as exc:
+        # 일부 무료 모델은 strict json_schema response_format를 거부한다(4xx). 그 경우에만
+        # 한 번, 스키마 텍스트는 프롬프트에 남긴 채 response_format=json_object로 재시도한다.
+        # 유료 provider fallback이 아니라 같은 (무료) 모델의 출력 형식만 낮추는 것이다.
+        if schema and exc.status in (400,404,415,422,501):
+            _LOG.warning("ai_provider_schema_downgrade provider=%s model=%s status=%s",provider,model,exc.status)
+            return _openrouter_request(key,model,provider,system,prompt,None,temperature,force_json_object=True)
+        raise
+
+def _openrouter_request(key,model,provider,system,prompt,schema,temperature,force_json_object=False):
     body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':prompt}],'temperature':temperature}
     if schema:body['response_format']={'type':'json_schema','json_schema':{'name':'buildit_response','strict':True,'schema':schema}}
+    elif force_json_object:body['response_format']={'type':'json_object'}
     request_bytes=json.dumps(body,ensure_ascii=False).encode()
     request=urllib.request.Request(CHAT_URL,data=request_bytes,method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
     started=time.perf_counter()

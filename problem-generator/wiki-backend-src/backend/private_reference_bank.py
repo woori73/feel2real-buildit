@@ -133,3 +133,45 @@ def enrich_prompt(prompt):
 
 def has_request(prompt):
     return _request(prompt) is not None
+
+
+# 객관식 Question Wiki 유형은 정확히 5개의 문자열 선택지를 요구한다. 서술형(subjective)은
+# choices=[] 를 허용한다. "정확히 5개" 개수 검증은 브라우저 validateServerQuestion()이
+# 담당하고, 이 스키마는 응답의 형태와 요청에서 이미 확정된 두 스칼라(type, sourceQuestionId)
+# 만 강제한다 — AI가 만든 passage/choices/answer는 서버가 조작하지 않는다.
+_SCHEMA_MC_TYPES = {"similar", "grammar", "vocabulary", "blank",
+                    "order", "insertion", "title-topic"}
+
+
+def question_wiki_schema(prompt):
+    """Question Wiki AI 변형 응답의 strict structured-output 스키마.
+
+    Question Wiki marker가 없으면 None을 돌려주므로, 범용 /api/ai/complete 호출자는
+    스키마 없이 기존 계약을 그대로 유지한다.
+    """
+    req = _request(prompt)
+    if not req:
+        return None
+    requested_type = str(req.get("type") or "").strip()
+    type_schema = {"type": "string", "enum": [requested_type]} if requested_type else {"type": "string"}
+    source_schema = {"type": "integer"}
+    try:
+        source_schema = {"type": "integer", "enum": [int(req.get("questionWikiId"))]}
+    except (TypeError, ValueError):
+        pass
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "type": type_schema,
+            "instruction": {"type": "string"},
+            "passage": {"type": "string"},
+            "choices": {"type": "array", "items": {"type": "string"}},
+            "answer": {"type": "string"},
+            "explanation": {"type": "string"},
+            "sourceQuestionId": source_schema,
+            "generationMode": {"type": "string", "enum": ["OPENROUTER_FREE"]},
+        },
+        "required": ["type", "instruction", "passage", "choices", "answer",
+                     "explanation", "sourceQuestionId", "generationMode"],
+    }
