@@ -76,7 +76,7 @@
       if (ai && canUseChrome()) {
         setStatus('Chrome 기기 내 AI로 문제를 생성하는 중입니다.'); result = await generateChrome(); generationMode = 'CHROME_BUILT_IN_AI';
       } else {
-        setStatus('Chrome AI를 사용할 수 없어 OpenRouter 무료 AI로 생성하는 중입니다.'); result = await generateFreeServer(); generationMode = 'OPENROUTER_FREE';
+        setStatus('비공개 출제 예시 DB를 참고해 OpenRouter 무료 AI로 생성하는 중입니다.'); result = await generateFreeServer(); generationMode = 'OPENROUTER_FREE';
       }
       preview = result.question; renderPreview(preview); els.preview.hidden = false; els.save.disabled = false;
       setStatus(result.notice || '생성 결과를 확인하세요. 아직 저장되지 않았습니다.');
@@ -89,14 +89,26 @@
       sourceQuestionId: Number(questionWikiId), onDownloadProgress: function (name, loaded) { setStatus(name + ' 모델 다운로드 ' + Math.round(loaded * 100) + '%'); } });
   }
 
+  function privateReferenceMarker() {
+    var current = contextPack && contextPack.currentQuestion ? contextPack.currentQuestion : {};
+    var marker = {
+      questionWiki: true,
+      grade: Number(current.grade || current.gradeNumber || 0),
+      examYear: Number(current.examYear || 0),
+      questionNo: Number(current.questionNumber || current.questionNo || 0),
+      type: selectedPreset()
+    };
+    return 'QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST: ' + JSON.stringify(marker);
+  }
+
   async function generateFreeServer() {
     if (!readUser()) { if (typeof openLoginModal === 'function') openLoginModal(); throw new Error('Chrome AI 미지원 기기에서 무료 서버 AI를 사용하려면 로그인해 주세요.'); }
     var request = { preset: selectedPreset(), freeRequest: els.freeRequest.value.trim(), schoolPatternReference: els.pattern.value.trim(), contextPack: contextPack,
       sourceQuestionId: Number(questionWikiId), cloudMode: true };
-    var prompt = ai.buildPrompt(request);
+    var prompt = ai.buildPrompt(request) + '\n\n' + privateReferenceMarker();
     var response = await fetchAuth(FREE_AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, redirectOnAuthError: false,
       body: JSON.stringify({ provider: FREE_PROVIDER,
-        system: 'Create exactly one Korean-instruction English-exam question from CURRENT_QUESTION only. Use REFERENCE_CONTEXT to identify the source question reasoning, exam point, distractor logic, and transformation strategy, but never as replacement passage content. Keep English source content in English and write the explanation in Korean. Return JSON only. The selected type and sourceQuestionId are mandatory. SCHOOL_PATTERN_REFERENCE is mechanics-only and never a content source.',
+        system: 'Create exactly one Korean-instruction English-exam question from CURRENT_QUESTION only. Before generating, study any PRIVATE_REFERENCE_PROBLEMS injected by the server and follow their mechanics, layout, marking style, distractor design, and answer format. Never copy their content. Use REFERENCE_CONTEXT explanation/insight to choose the exam point. Keep English source content in English and write the explanation in Korean. Return JSON only. The selected type and sourceQuestionId are mandatory. SCHOOL_PATTERN_REFERENCE is mechanics-only and never a content source.',
         prompt: prompt, max_output_chars: 16000 }) });
     if (response.status === 401 || response.status === 403) { if (typeof openLoginModal === 'function') openLoginModal(); throw new Error('무료 서버 AI를 사용하려면 로그인해 주세요.'); }
     if (!response.ok) {
@@ -108,7 +120,7 @@
     var question = parseQuestion(payload.text || payload.content || payload.result || '');
     ai.validateQuestion(question, request);
     question.generationMode = 'OPENROUTER_FREE';
-    return { question: question, notice: 'OpenRouter 무료 AI로 생성했습니다. 유료 AI는 사용하지 않았습니다. 저장 전 결과를 확인하세요.' };
+    return { question: question, notice: '비공개 출제 예시 DB와 현재 문항 Context를 참고해 OpenRouter 무료 AI로 생성했습니다. 유료 AI는 사용하지 않았습니다.' };
   }
 
   function parseQuestion(raw) {
