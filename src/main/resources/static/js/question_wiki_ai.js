@@ -17,10 +17,12 @@
   function renderRuntime(){if(els.promptStatus)els.promptStatus.textContent=runtime.prompt;if(els.koEnStatus)els.koEnStatus.textContent=runtime.koToEn;if(els.enKoStatus)els.enKoStatus.textContent=runtime.enToKo;els.generate.disabled=!contextPack;}
   function selectedPreset(){var s=els.presets.querySelector('[data-ai-preset].active');return s?s.dataset.aiPreset:'similar';}
   function privateReferenceMarker(){var c=contextPack&&contextPack.currentQuestion?contextPack.currentQuestion:{};return 'QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST: '+JSON.stringify({questionWiki:true,questionWikiId:Number(questionWikiId),grade:Number(c.grade||c.gradeNumber||0),examYear:Number(c.examYear||0),questionNo:Number(c.questionNumber||c.questionNo||0),type:selectedPreset()});}
+  function currentQuestionText(){var q=contextPack&&contextPack.currentQuestion?contextPack.currentQuestion:{};return clean(q.passage||q.sourceText||'').slice(0,12000);}
   function compactPrompt(){return [
     'QUESTION WIKI EXACT-SOURCE VARIANT GENERATION.',
     privateReferenceMarker(),
     'Requested type: '+selectedPreset()+'.',
+    'CURRENT_QUESTION (ONLY CONTENT SOURCE):\n'+currentQuestionText(),
     'sourceQuestionId must be exactly '+Number(questionWikiId)+'.',
     'PRIMARY RULE: the server-injected EXACT-SOURCE REFERENCE from the same grade and same source question number is the generation basis.',
     'Transform that reference into a NEW problem of the requested type. Preserve its exam mechanics, source-question content relationship, and difficulty, but change the tested detail/distractors enough to make a new variant.',
