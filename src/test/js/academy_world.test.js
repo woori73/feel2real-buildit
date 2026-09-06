@@ -171,11 +171,12 @@ test('8개 필수 state에 모두 asset 파일명이 있다', () => {
   });
 });
 
-test('createBildi: sprite <img> + fallback SVG 3층 구조를 만든다', () => {
+test('createBildi: .bildi > .bildi-inner > .bildi-art > (img.bildi-sprite + .bildi-fallback) 구조', () => {
   const b = world.createBildi(host());
-  // .bildi > .bildi-art > (img.bildi-sprite + .bildi-fallback)
-  assert.equal((b.el.className||'').indexOf('bildi'), 0);
-  const art = b.el.children[0];
+  assert.equal((b.el.className || '').indexOf('bildi'), 0);
+  const inner = b.el.children[0];
+  assert.equal(inner.className, 'bildi-inner', '위치 transform 과 분리된 애니메이션 레이어');
+  const art = inner.children[0];
   assert.equal(art.className, 'bildi-art');
   const sprite = art.children[0];
   const fb = art.children[1];
@@ -185,6 +186,22 @@ test('createBildi: sprite <img> + fallback SVG 3층 구조를 만든다', () => 
   assert.equal(fb.className, 'bildi-fallback');
   assert.match(fb.innerHTML, /^<svg/, 'fallback 은 인라인 BILDI_SVG');
   assert.equal(b.sprite, sprite);
+});
+
+test('academy_world.css: 상태/반응 애니메이션은 .bildi-inner 에만 걸린다 (.bildi 위치 transform 보호)', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const css = fs.readFileSync(
+    path.resolve(__dirname, '../../main/resources/static/css/academy_world.css'), 'utf8');
+  // .bildi[data-state=...] { animation: ... } 처럼 .bildi 자체에 animation 을 걸면 안 된다
+  assert.doesNotMatch(css, /\.bildi\[data-state="[a-z_]+"\]\s*\{[^}]*animation:/,
+    '.bildi 자체에 상태 애니메이션을 걸면 keyframe transform 이 이동을 삼킨다');
+  assert.doesNotMatch(css, /\.bildi\[data-react="[a-z]+"\]\s*\{[^}]*animation:/,
+    '.bildi 자체에 반응 애니메이션 금지');
+  assert.doesNotMatch(css, /\.bildi\[data-state="fly"\]\[data-facing="up"\]\s*\{\s*transform:/,
+    '.bildi 에 위치 override transform 을 걸면 안 된다');
+  assert.match(css, /\.bildi\[data-state="idle"\] \.bildi-inner\s*\{[^}]*bildiBreathe/);
+  assert.match(css, /\.bildi\[data-state="fly"\] \.bildi-inner\s*\{[^}]*bildiBob/);
 });
 
 test('setState → sprite.src 가 해당 state asset 으로 바뀐다', () => {
@@ -263,4 +280,72 @@ test('reducedOrLowPower / prefersReducedMotion: navigator/matchMedia 없어도 t
   assert.equal(typeof world.prefersReducedMotion(), 'boolean');
   assert.equal(typeof world.isLowPowerHint(), 'boolean');
   assert.equal(typeof world.reducedOrLowPower(), 'boolean');
+});
+
+// ── flightPosition: scroll progress → waypoint 보간 위치 (Phase 5B.1b) ──────
+const SAFE = { x0: 20, y0: 60, x1: 620, y1: 460 }; // 600×400 usable
+const SIZE = { w: 84, h: 84 };
+const WPS = [
+  { x: 0.14, y: 0.24 }, { x: 0.74, y: 0.46 }, { x: 0.22, y: 0.58 }, { x: 0.72, y: 0.28 }
+];
+
+test('flightPosition: progress 0 → 첫 waypoint, progress 1 → 마지막 waypoint (safe area 안)', () => {
+  const start = world.flightPosition({ progress: 0, waypoints: WPS, safe: SAFE, size: SIZE, arc: 0 });
+  const end = world.flightPosition({ progress: 1, waypoints: WPS, safe: SAFE, size: SIZE, arc: 0 });
+  // 첫 waypoint x ≈ x0 + 0.14*(600-84)
+  assert.ok(Math.abs(start.x - (20 + 0.14 * (600 - 84))) < 2, 'start x @ wp0');
+  assert.ok(Math.abs(end.x - (20 + 0.72 * (600 - 84))) < 2, 'end x @ wp3');
+  // safe area 안
+  [start, end].forEach((p) => {
+    assert.ok(p.x >= SAFE.x0 && p.x <= SAFE.x1 - SIZE.w, 'x in safe');
+    assert.ok(p.y >= SAFE.y0 && p.y <= SAFE.y1 - SIZE.h, 'y in safe');
+  });
+});
+
+test('flightPosition: 스크롤에 따라 X/Y가 실제로 이동한다 (같은 좌표 반복 = 실패)', () => {
+  const samples = [0, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1].map((p) =>
+    world.flightPosition({ progress: p, waypoints: WPS, safe: SAFE, size: SIZE }));
+  // 인접 샘플이 전부 동일하면 "고정 chatbot" — 실패로 간주
+  let moved = 0;
+  for (let i = 1; i < samples.length; i += 1) {
+    if (samples[i].x !== samples[i - 1].x || samples[i].y !== samples[i - 1].y) moved += 1;
+  }
+  assert.ok(moved >= samples.length - 2, `대부분의 구간에서 위치가 바뀌어야 한다 (moved=${moved})`);
+  // 시작과 끝은 확실히 다르다
+  assert.notDeepEqual(
+    { x: samples[0].x, y: samples[0].y },
+    { x: samples[samples.length - 1].x, y: samples[samples.length - 1].y });
+  // X 범위가 실제로 넓게 쓰인다 (좌↔우 교차 waypoint)
+  const xs = samples.map((s) => s.x);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 200, 'X가 좌우로 크게 움직인다');
+});
+
+test('flightPosition: segment 경계(frac≈0)에서 moving=false, 중간(frac≈0.5)에서 moving=true', () => {
+  const atWp = world.flightPosition({ progress: 0, waypoints: WPS, safe: SAFE, size: SIZE });
+  const mid = world.flightPosition({ progress: 1 / (WPS.length - 1) / 2, waypoints: WPS, safe: SAFE, size: SIZE });
+  assert.equal(atWp.moving, false, 'waypoint 위에서는 착지 상태');
+  assert.equal(mid.moving, true, '구간 중간에서는 비행 상태');
+  assert.equal(atWp.segIndex, 0);
+});
+
+test('flightPosition: arc 는 비행 중 위로 솟는다(직선 대비 y가 작아진다)', () => {
+  const straight = world.flightPosition({ progress: 0.16, waypoints: WPS, safe: SAFE, size: SIZE, arc: 0 });
+  const arced = world.flightPosition({ progress: 0.16, waypoints: WPS, safe: SAFE, size: SIZE, arc: 0.15 });
+  assert.ok(arced.y < straight.y, 'arc 가 있으면 같은 progress에서 더 위(작은 y)');
+});
+
+test('flightPosition: size 가 safe area 를 넘어도 좌표는 safe 안에 clamp 된다', () => {
+  const p = world.flightPosition({
+    progress: 1, waypoints: [{ x: 2, y: 2 }], count: 1,
+    safe: { x0: 0, y0: 0, x1: 100, y1: 100 }, size: { w: 60, h: 60 }
+  });
+  assert.ok(p.x >= 0 && p.x <= 40);
+  assert.ok(p.y >= 0 && p.y <= 40);
+});
+
+test('flightPosition: waypoints 없거나 progress NaN 이어도 throw 안 함', () => {
+  const a = world.flightPosition({});
+  assert.equal(typeof a.x, 'number');
+  const b = world.flightPosition({ progress: NaN, waypoints: [], safe: SAFE, size: SIZE });
+  assert.equal(typeof b.y, 'number');
 });

@@ -220,6 +220,12 @@
       el.setAttribute('aria-hidden', 'true');
       if (reduced) el.classList.add('bildi-reduced');
 
+      // .bildi        = 위치(이동) 전용 transform. 절대 CSS 애니메이션으로 덮이지 않게 한다.
+      // .bildi-inner  = 캐릭터 애니메이션(호흡/비행 bob/착지/반응) 전용. 위치 transform과 분리해
+      //                 CSS animation(transform: scale/rotate)이 이동을 삼키지 않도록 한다.
+      var inner = doc.createElement('div');
+      inner.className = 'bildi-inner';
+
       var art = doc.createElement('div');
       art.className = 'bildi-art';
 
@@ -244,7 +250,8 @@
 
       art.appendChild(sprite);
       art.appendChild(fallback);
-      el.appendChild(art);
+      inner.appendChild(art);
+      el.appendChild(inner);
       el.setAttribute('data-state', state);
       host.appendChild(el);
       applySpriteFor(state);
@@ -449,6 +456,48 @@
     };
   }
 
+  /**
+   * 스크롤 progress(0..1) → Bildi 화면 위치(px). 순수 함수 — 소비자가 waypoint 목록(섹션 프랙션)과
+   * safe area(px), Bildi 크기(px)를 넘기면 그 사이를 보간해 돌려준다. "다음 섹션 waypoint 로
+   * 날아가 착지" 궤적: segment 안에서 easeInOut + 위로 솟는 arc.
+   *
+   * @param opts.progress  전체 스크롤 진행도 0..1
+   * @param opts.waypoints [{x,y}, …] safe area 기준 프랙션(0..1). 길이 = 섹션 수(count 로 override 가능)
+   * @param opts.safe      { x0,y0,x1,y1 } stage 좌표계 px (Bildi 이동 허용 영역)
+   * @param opts.size      { w,h } Bildi px. safe 안에 완전히 들어오도록 range 를 줄인다
+   * @param opts.arc       비행 arc 세기(safe.h 대비 비율, 기본 0.10). 0 이면 직선 이동
+   * @returns { x, y, frac, segIndex, moving }
+   */
+  function flightPosition(opts) {
+    var o = opts || {};
+    var wps = Array.isArray(o.waypoints) ? o.waypoints : [];
+    var n = Math.max(1, o.count || wps.length || 1);
+    var p = clamp01(o.progress);
+    var seg = p * (n - 1);
+    var i = Math.min(Math.max(0, n - 2), Math.max(0, Math.floor(seg)));
+    var frac = n > 1 ? clamp01(seg - i) : 0;
+    var a = wps[i] || { x: 0.2, y: 0.3 };
+    var b = wps[Math.min(i + 1, n - 1)] || a;
+    // easeInOutQuad
+    var e = frac < 0.5 ? 2 * frac * frac : 1 - Math.pow(-2 * frac + 2, 2) / 2;
+    var arc = o.arc == null ? 0.10 : Number(o.arc) || 0;
+    var fx = a.x + (b.x - a.x) * e;
+    var fy = a.y + (b.y - a.y) * e - Math.sin(clamp01(frac) * Math.PI) * arc;
+    var safe = o.safe || { x0: 0, y0: 0, x1: 100, y1: 100 };
+    var size = o.size || { w: 0, h: 0 };
+    var rangeW = Math.max(0, (safe.x1 - safe.x0) - (size.w || 0));
+    var rangeH = Math.max(0, (safe.y1 - safe.y0) - (size.h || 0));
+    var x = safe.x0 + clamp01(fx) * rangeW;
+    var y = safe.y0 + clamp01(fy) * rangeH;
+    return {
+      x: Math.round(Math.max(safe.x0, Math.min(x, safe.x1 - (size.w || 0)))),
+      y: Math.round(Math.max(safe.y0, Math.min(y, safe.y1 - (size.h || 0)))),
+      frac: frac,
+      segIndex: i,
+      moving: frac > 0.06 && frac < 0.94
+    };
+  }
+
   // ── shared helpers ───────────────────────────────────────────────────────
   function clamp01(n) {
     n = Number(n);
@@ -492,6 +541,7 @@
     createDialogue: createDialogue,
     // Scroll Story
     createScrollStory: createScrollStory,
+    flightPosition: flightPosition,
     // env
     prefersReducedMotion: prefersReducedMotion,
     isLowPowerHint: isLowPowerHint,
