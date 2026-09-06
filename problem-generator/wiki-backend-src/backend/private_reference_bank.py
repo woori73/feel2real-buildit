@@ -2,6 +2,7 @@
 import json,gzip,re,logging,time
 from functools import lru_cache
 from pathlib import Path
+from . import insight_type_reference
 _LOG=logging.getLogger(__name__)
 class ReferenceNotFoundError(Exception):pass
 _CORPUS_DIR=Path(__file__).with_name("private-reference")
@@ -11,7 +12,7 @@ _TYPE_MECHANICS={
 "grammar":"Create a five-choice grammar/usage task from CURRENT QUESTION. Mark exactly five tested forms/phrases in the passage with ①-⑤. The student must judge the marked language, and answer/explanation must identify the correct numbered item.",
 "vocabulary":"Create a five-choice vocabulary task from CURRENT QUESTION. If the task uses five directly tested words/phrases, mark them ①-⑤ in the passage. If the task uses multiple labelled positions such as (A)/(B)/(C), keep those labels in the passage and use them as choice-column headers only; each choice contains the answer combination in label order.",
 "blank":"Create a five-choice blank task from CURRENT QUESTION. Put a real visible blank at an idea-bearing position in the passage and make all five choices compete for that same blank. If multiple labelled blanks (A)/(B)/(C) are used, labels are column headers once above choices, not repeated in every choice.",
-"order":"Create a five-choice paragraph-order task. The passage must contain actual (A), (B), (C) blocks derived from CURRENT QUESTION, and the five choices must be order combinations of those blocks.",
+"order":"Create a five-choice paragraph-order task. The passage must contain actual (A), (B), (C) blocks derived from CURRENT QUESTION, and the five choices must be order combinations of those blocks. Each choice must contain all three labels exactly once in a valid permutation, such as '(B) - (A) - (C)'.",
 "insertion":"Create a five-choice sentence-insertion task. Provide one sentence to insert and exactly five clearly identifiable insertion positions ①-⑤ in the passage; answer/explanation must point to one of those positions.",
 "title_topic":"Create exactly one title/topic/main-idea task from CURRENT QUESTION with five concise, discriminating choices. Do not invent a different topic.",
 "written":"CONSTRUCTED RESPONSE ONLY. Create a genuine written-response instruction based on CURRENT QUESTION. No multiple-choice choices, no ①-⑤ choice numbers, and no 'choose the best answer' wording. Provide a model answer and explanation that solve that exact instruction.",
@@ -60,20 +61,25 @@ def enrich_prompt(prompt):
     if not req:return prompt
     started=time.perf_counter();refs=select(prompt,limit=1);select_ms=(time.perf_counter()-started)*1000
     blocks=[f"EXACT-SOURCE REFERENCE {i} (grade={r['grade']}, sourceNo={r['sourceQuestionNo']}, type={r['type']}):\n{_reference_text(r)}" for i,r in enumerate(refs,1)]
-    fallback=("EXACT-TYPE DB REFERENCE: unavailable for this source question. Do NOT use a different DB problem type as a substitute. Use the current question's REFERENCE_CONTEXT.sourceAnalysis / linked 변형문제 인사이트 as DESIGN GUIDANCE for the requested type, together with REQUESTED TYPE CONTRACT below. CURRENT QUESTION remains the only content source."
-              if not refs else "EXACT-TYPE DB REFERENCE: available and supplied below.")
+    insight="" if refs else insight_type_reference.extract(prompt,wanted)
+    if refs:
+        fallback="EXACT-TYPE DB REFERENCE: available and supplied below."
+    elif insight:
+        fallback=("EXACT-TYPE DB REFERENCE: unavailable for this source question. Use ONLY the requested-type INSIGHT excerpt below as DESIGN/PATTERN guidance. CURRENT QUESTION remains the only content source. Never copy the Insight's passage, answer, choices, names, facts, or citations.\n\nREQUESTED-TYPE INSIGHT (PATTERN ONLY):\n"+insight)
+    else:
+        fallback="EXACT-TYPE DB REFERENCE: unavailable and no requested-type Insight section was found. Do NOT substitute a different DB type. Obey REQUESTED TYPE CONTRACT using CURRENT QUESTION as the only content source."
     guidance=("\n\nPRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY):\n"
-      "CONTENT CONTRACT: CURRENT QUESTION is the ONLY content/material source for the new problem. PRIVATE REFERENCE is DESIGN REFERENCE ONLY. Learn only its question mechanics, layout relationship, difficulty, tested relationship, and distractor strategy. Then independently CREATE A NEW VARIANT from CURRENT QUESTION. Do NOT reproduce, paraphrase line-by-line, lightly edit, or re-send the database problem. Never copy reference passage wording, topic-specific sentences, names, facts, question number, choices, answer, explanation, citation/source line, author/book attribution, or database metadata.\n"
+      "CONTENT CONTRACT: CURRENT QUESTION is the ONLY content/material source for the new problem. PRIVATE REFERENCE and INSIGHT are DESIGN REFERENCE ONLY. Learn only question mechanics, layout relationship, difficulty, tested relationship, and distractor strategy. Then independently CREATE A NEW VARIANT from CURRENT QUESTION. Do NOT reproduce, paraphrase line-by-line, lightly edit, or re-send reference material. Never copy reference passage wording, topic-specific sentences, names, facts, question number, choices, answer, explanation, citation/source line, author/book attribution, or database metadata.\n"
       +f"PRIVATE_REFERENCE_SCOPE: grade={grade}, sourceNo={qno}, requestedType={wanted}.\n"
       +f"REQUESTED TYPE CONTRACT: {_TYPE_MECHANICS.get(wanted,_TYPE_MECHANICS['other'])}\n"
       +fallback+"\n"
-      +"SOURCE SCOPE: references from any other sourceQuestionNo are forbidden. A DB variant of a different type is also forbidden as fallback. If exact-type DB reference is absent, use only the current question's linked analysis/변형문제 인사이트 for construction guidance and obey REQUESTED TYPE CONTRACT.\n"
+      +"SOURCE SCOPE: references from any other sourceQuestionNo are forbidden. A DB variant of a different type is forbidden as fallback. Exact-type DB wins; only when absent may the current question's same-type Insight excerpt guide construction.\n"
       +"CLEAN OUTPUT CONTRACT: Never add a standalone original question number such as [31], 31., or 'Question 31'. Never add [from ...], [source ...], adapted-from, 출처, author/book attribution, or any citation/source line below the passage. Do not expose PRIVATE_REFERENCE, REFERENCE_CONTEXT, DB labels, provenance, rawLayout, bbox, metadata, 상세 해설지, or 변형문제 인사이트.\n"
-      +"MULTIPLE-LABEL CHOICE CONTRACT: When the passage contains two or more labelled positions such as (A), (B), (C), those labels must appear as ONE header row above the five numbered choices. Do NOT repeat (A)/(B)/(C) inside each choice. Each choice string contains only the corresponding answers in label order separated by ' - '. Example visual layout: '(A)        (B)        (C)' followed by '① clear - volatility - feasible', '② unclear - stability - feasible'.\n"
-      +"ANSWER CONTRACT: answer and explanation must solve the NEWLY GENERATED problem exactly. Never reuse the reference DB answer/explanation merely because the mechanics are similar. For multiple choice, the answer must resolve to one of the five generated choices; for written response, provide the model response required by the generated instruction.\n"
-      +"FINAL SELF-CHECK BEFORE OUTPUT: verify requested type, current-question-only content, no source/question-number leakage, correct five-choice structure where applicable, correct (A)/(B)/(C) column layout where applicable, and answer/explanation consistency. If any check fails, fix the generated problem before returning JSON.")
+      +"MULTIPLE-LABEL CHOICE CONTRACT: When the passage contains two or more labelled blank positions such as (A), (B), (C), those labels must appear as ONE header row above the five numbered choices. Do NOT repeat labels inside each vocabulary/blank choice. This rule does NOT apply to paragraph-order choices, where each choice must explicitly contain the (A)/(B)/(C) permutation.\n"
+      +"ANSWER CONTRACT: answer and explanation must solve the NEWLY GENERATED problem exactly. Never reuse the reference DB/Insight answer or explanation. For multiple choice, the answer must resolve to one of the five generated choices; for written response, provide the model response required by the generated instruction.\n"
+      +"FINAL SELF-CHECK BEFORE OUTPUT: verify requested type, current-question-only content, no source/question-number leakage, correct five-choice structure where applicable, correct label layout for the selected type, and answer/explanation consistency. If any check fails, fix the generated problem before returning JSON.")
     enriched=prompt+guidance+("\n\n"+"\n\n".join(blocks) if blocks else "");shard=resolve_shard(grade,qno)
-    _LOG.info("question_wiki_reference grade=%s source_no=%s type=%s shard=%s refs=%s fallback=%s variants=%s reference_select_ms=%.2f prompt_build_ms=%.2f final_prompt_chars=%s estimated_tokens=%s",grade,qno,wanted,shard.name if shard else None,len(refs),"insight" if not refs else "db",[r.get('variantIndex') for r in refs],select_ms,(time.perf_counter()-started)*1000-select_ms,len(enriched),(len(enriched)+3)//4)
+    _LOG.info("question_wiki_reference grade=%s source_no=%s type=%s shard=%s refs=%s fallback=%s variants=%s insight_chars=%s reference_select_ms=%.2f prompt_build_ms=%.2f final_prompt_chars=%s estimated_tokens=%s",grade,qno,wanted,shard.name if shard else None,len(refs),"db" if refs else ("insight" if insight else "contract"),[r.get('variantIndex') for r in refs],len(insight),select_ms,(time.perf_counter()-started)*1000-select_ms,len(enriched),(len(enriched)+3)//4)
     return enriched
 def has_request(prompt):return _request(prompt) is not None
 _SCHEMA_MC_TYPES={"similar","grammar","vocabulary","blank","order","insertion","title-topic"};_WRITTEN_TYPES={"written","descriptive","subjective"}
@@ -106,8 +112,8 @@ def output_issues(prompt,text):
     if re.search(r'(?im)^\s*\[(?:from|source|adapted\s+from|출처)\b[^\]]*\]\s*$',passage) or re.search(r'(?im)^\s*(?:source|출처)\s*:',passage):issues.append('CITATION_NOT_ALLOWED')
     if re.search(r'(?:PRIVATE_REFERENCE|REFERENCE_CONTEXT|rawLayout|bbox|provenance|metadata|상세\s*해설지|변형문제\s*인사이트)',passage+' '+instruction,re.I):issues.append('REFERENCE_METADATA_LEAK')
     labels=[label for label in ('(A)','(B)','(C)','(D)','(E)') if label in passage]
-    if len(labels)>=2 and choices and any(any(label in str(c) for label in labels) for c in choices):issues.append('BLANK_LABELS_REPEATED_IN_CHOICES')
-    if len(labels)>=2 and choices and any(str(c).count(' - ')<len(labels)-1 for c in choices):issues.append('BLANK_CHOICE_COLUMNS_MISSING')
+    if wanted!='order' and len(labels)>=2 and choices and any(any(label in str(c) for label in labels) for c in choices):issues.append('BLANK_LABELS_REPEATED_IN_CHOICES')
+    if wanted!='order' and len(labels)>=2 and choices and any(str(c).count(' - ')<len(labels)-1 for c in choices):issues.append('BLANK_CHOICE_COLUMNS_MISSING')
     if wanted in _SCHEMA_MC_TYPES:
         if len(choices)!=5:issues.append('CHOICES_COUNT')
         if not answer.strip():issues.append('ANSWER_EMPTY')
@@ -115,7 +121,9 @@ def output_issues(prompt,text):
         if choices:issues.append('WRITTEN_HAS_CHOICES')
         if re.search(r'[①②③④⑤]|(?:5|다섯)\s*(?:개|가지).*선택|고르시오|적절한\s*것',instruction):issues.append('WRITTEN_MC_INSTRUCTION')
     if wanted=='blank' and not re.search(r'_{3,}|\[\s*blank\s*\]|\(\s*blank\s*\)|…{2,}|□{2,}|\([A-E]\)',passage,re.I):issues.append('BLANK_MARKER_MISSING')
-    if wanted=='order' and not all(x in passage for x in ('(A)','(B)','(C)')):issues.append('ORDER_BLOCKS_MISSING')
+    if wanted=='order':
+        if not all(x in passage for x in ('(A)','(B)','(C)')):issues.append('ORDER_BLOCKS_MISSING')
+        if choices and any(not all(x in str(c) for x in ('(A)','(B)','(C)')) for c in choices):issues.append('ORDER_CHOICE_PERMUTATION_MISSING')
     if wanted=='insertion' and not re.search(r'[①②③④⑤]',passage):issues.append('INSERTION_POSITIONS_MISSING')
     if wanted in ('grammar','vocabulary') and not (re.search(r'[①②③④⑤]',passage) or len(labels)>=2):issues.append('TESTED_POSITIONS_MISSING')
     if not explanation.strip():issues.append('EXPLANATION_EMPTY')
