@@ -39,21 +39,22 @@ def openrouter_free_models(force=False):
     except Exception:return _models_cache[1]
 def availability():
     gemini,openrouter=_server_keys();return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')}}}
-def _openrouter(key,model,provider,system,prompt,schema,temperature,models=None):
+def _openrouter(key,model,provider,system,prompt,schema,temperature,models=None,provider_routing=None):
     schema=strict_object_schema(schema) if schema else None
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
-    try:return _openrouter_request(key,model,provider,system,prompt,schema,temperature,models=models)
+    try:return _openrouter_request(key,model,provider,system,prompt,schema,temperature,models=models,provider_routing=provider_routing)
     except ProviderError as exc:
         if schema and exc.status in (400,404,415,422,501):
-            _LOG.warning('ai_provider_schema_downgrade provider=%s model=%s status=%s',provider,model,exc.status);return _openrouter_request(key,model,provider,system,prompt,None,temperature,force_json_object=True,models=models)
+            _LOG.warning('ai_provider_schema_downgrade provider=%s model=%s status=%s',provider,model,exc.status);return _openrouter_request(key,model,provider,system,prompt,None,temperature,force_json_object=True,models=models,provider_routing=provider_routing)
         raise
-def _openrouter_request(key,model,provider,system,prompt,schema,temperature,force_json_object=False,models=None):
+def _openrouter_request(key,model,provider,system,prompt,schema,temperature,force_json_object=False,models=None,provider_routing=None):
     body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':prompt}],'temperature':temperature}
     if models:body['models']=list(models)
+    if provider_routing:body['provider']=dict(provider_routing)
     if schema:body['response_format']={'type':'json_schema','json_schema':{'name':'buildit_response','strict':True,'schema':schema}}
     elif force_json_object:body['response_format']={'type':'json_object'}
     request_bytes=json.dumps(body,ensure_ascii=False).encode();request=urllib.request.Request(CHAT_URL,data=request_bytes,method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'});started=time.perf_counter()
-    _LOG.info('ai_provider_start provider=%s model=%s models=%s prompt_chars=%s estimated_tokens=%s request_bytes=%s timeout_seconds=%s',provider,model,list(models) if models else None,len(prompt),(len(prompt)+3)//4,len(request_bytes),provider_timeout_seconds())
+    _LOG.info('ai_provider_start provider=%s model=%s models=%s routing=%s prompt_chars=%s estimated_tokens=%s request_bytes=%s timeout_seconds=%s',provider,model,list(models) if models else None,provider_routing,len(prompt),(len(prompt)+3)//4,len(request_bytes),provider_timeout_seconds())
     try:
         with urllib.request.urlopen(request,timeout=provider_timeout_seconds()) as response:payload=json.loads(response.read().decode())
         text=payload.get('choices',[{}])[0].get('message',{}).get('content','')
@@ -64,7 +65,7 @@ def _openrouter_request(key,model,provider,system,prompt,schema,temperature,forc
     except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.',provider,504,'QUESTION_WIKI_FREE_AI_TIMEOUT',True) from exc
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
     except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True) from exc
-    finally:_LOG.info('ai_provider_done provider=%s model=%s provider_total_ms=%.2f',provider,model,(time.perf_counter()-started)*1000)
+    finally:_LOG.info('ai_provider_done provider=%s model=%s routing=%s provider_total_ms=%.2f',provider,model,provider_routing,(time.perf_counter()-started)*1000)
 def generate_multimodal(model,system,content,temperature=.15):
     _,openrouter=_server_keys()
     if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.','openrouter',503)
@@ -78,11 +79,12 @@ def generate_multimodal(model,system,content,temperature=.15):
     except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 다시 시도해 주세요.','openrouter',504) from exc
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.','openrouter',502) from exc
 def _question_wiki_checked_call(openrouter,model,provider_name,system,prompt,schema,temperature,models):
-    result=_openrouter(openrouter,model,provider_name,system,prompt,schema,temperature,models=models);issues=private_reference_bank.output_issues(prompt,result.text)
+    routing={'sort':'throughput','allow_fallbacks':True}
+    call_started=time.perf_counter();result=_openrouter(openrouter,model,provider_name,system,prompt,schema,temperature,models=models,provider_routing=routing);_LOG.info('question_wiki_generation_attempt attempt=1 total_ms=%.2f provider=%s model=%s',(time.perf_counter()-call_started)*1000,result.provider,result.model);issues=private_reference_bank.output_issues(prompt,result.text)
     if not issues:return result
     _LOG.warning('question_wiki_output_rejected issues=%s model=%s',issues,result.model)
     retry_prompt=prompt+'\n\nQUALITY RETRY: the previous output was rejected for '+','.join(issues)+'. Regenerate ONCE. Obey the requested TYPE CONTRACT exactly; make instruction, problem, answer and explanation describe the same student task.'
-    result=_openrouter(openrouter,model,provider_name,system,retry_prompt,schema,temperature,models=models);issues=private_reference_bank.output_issues(prompt,result.text)
+    call_started=time.perf_counter();result=_openrouter(openrouter,model,provider_name,system,retry_prompt,schema,temperature,models=models,provider_routing=routing);_LOG.info('question_wiki_generation_attempt attempt=2 total_ms=%.2f provider=%s model=%s',(time.perf_counter()-call_started)*1000,result.provider,result.model);issues=private_reference_bank.output_issues(prompt,result.text)
     if issues:
         _LOG.warning('question_wiki_output_rejected_final issues=%s model=%s',issues,result.model);raise ProviderError('선택한 문제 유형과 생성 결과가 일치하지 않아 차단했습니다. 다시 생성해 주세요.',provider_name,422,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True)
     return result
