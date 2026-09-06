@@ -6,6 +6,8 @@ on:
     branches: [ main ]
     paths:
       - 'src/**'
+      - 'problem-generator/wiki-backend-src/backend/**'
+      - 'tools/build_private_reference_corpus.py'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle/**'
@@ -82,6 +84,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionWikiServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionThreadServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.QuestionWikiContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.QuestionWikiPrivateReferenceBankContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.QuestionWikiPrivateReferenceCorpusContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.service.WikiLearningMaterialServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.controller.WikiLearningMaterialControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.service.WikiVisitServiceTest"

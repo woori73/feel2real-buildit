@@ -1,68 +1,110 @@
-"""Server-only reference examples/index for Question Wiki generation."""
+"""Server-only, exact-source Question Wiki private reference selector."""
 import json
+import gzip
 import re
+from functools import lru_cache
 from pathlib import Path
 
-_BANK_PATH = Path(__file__).with_name('private_reference_bank.json')
-_EXACT_PATHS = [Path(__file__).with_name('private_reference_exact_g2.json')]
-_INDEX_PATHS = {1: Path(__file__).with_name('private_reference_corpus_g1.json'), 2: Path(__file__).with_name('private_reference_corpus_g2.json')}
-_MARKER_RE = re.compile(r'QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST\s*:\s*(\{[^\n]+\})')
-_TYPE_ALIASES = {'similar':'other','grammar':'grammar','vocabulary':'vocabulary','blank':'blank','order':'order','insertion':'insertion','title-topic':'title_topic','title_topic':'title_topic','descriptive':'written','subjective':'written','written':'written','summary':'summary'}
-_TYPE_MECHANICS = {'grammar':'Mark the tested forms inside the passage. Never repeat five whole passage excerpts below as choices.','vocabulary':'Place ①-⑤ directly on target words/phrases inside the passage. Do not duplicate whole sentences as choices.','blank':'Use an idea-bearing blank and five discriminating choices.','order':'Use coherent (A)/(B)/(C) discourse blocks and five order combinations.','insertion':'Use one sentence and five in-passage insertion positions ①-⑤.','title_topic':'Use five concise title/topic choices with plausible distractors.','written':'Follow the teacher-bank constructed-response mechanics and explicit conditions.','summary':'Follow the teacher-bank summary mechanics.','other':'Follow the selected source question bank mechanics.'}
+_CORPUS_DIR = Path(__file__).with_name("private-reference")
+_MARKER_RE = re.compile(r"QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST\s*:\s*(\{[^\n]+\})")
+_TYPE_ALIASES = {"similar":"other","grammar":"grammar","vocabulary":"vocabulary",
+ "blank":"blank","order":"order","insertion":"insertion","title-topic":"title_topic",
+ "title_topic":"title_topic","descriptive":"written","subjective":"written",
+ "written":"written","summary":"summary"}
+_TYPE_MECHANICS = {"grammar":"Mark tested forms in the passage.",
+ "vocabulary":"Place ①-⑤ directly on tested words/phrases.",
+ "blank":"Use an idea-bearing blank and five discriminating choices.",
+ "order":"Use (A)/(B)/(C) blocks and five order combinations.",
+ "insertion":"Use one given sentence and five in-passage positions.",
+ "title_topic":"Use five concise title/topic choices.",
+ "written":"Preserve the constructed-response conditions.",
+ "summary":"Preserve the summary blanks and conditions.","other":"Preserve this source question's mechanics."}
 
-def _read_entries(path):
- try:return json.loads(path.read_text(encoding='utf-8')).get('entries') or []
- except (OSError,json.JSONDecodeError):return []
 
-def _load_entries():
- entries=[]
- for path in _EXACT_PATHS:entries.extend(_read_entries(path))
- entries.extend(_read_entries(_BANK_PATH))
- return entries
+@lru_cache(maxsize=2)
+def _load_grade(grade):
+    try:
+        manifest=json.loads((_CORPUS_DIR/f"grade{grade}-manifest.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ()
+    records=[]
+    for shard in manifest.get("shards") or []:
+        try:
+            with gzip.open(_CORPUS_DIR/shard["file"],"rt",encoding="utf-8") as stream:
+                records.extend(json.load(stream).get("records") or [])
+        except (OSError,json.JSONDecodeError,KeyError):
+            continue
+    return tuple(records)
 
-def _load_index(grade):
- path=_INDEX_PATHS.get(grade)
- if not path:return {'totalVariants':0,'counts':{}}
- try:return json.loads(path.read_text(encoding='utf-8'))
- except (OSError,json.JSONDecodeError):return {'totalVariants':0,'counts':{}}
+
+@lru_cache(maxsize=64)
+def _same_question(grade, qno):
+    # 41-42 is a single common-passage source and explicitly aliases both Wiki
+    # question numbers; no other cross-question lookup is permitted.
+    return tuple(r for r in _load_grade(grade)
+                 if qno in (r.get("sourceQuestionNos") or [r.get("sourceQuestionNo")]))
+
 
 def _request(prompt):
- match=_MARKER_RE.search(prompt or '')
- if not match:return None
- try:value=json.loads(match.group(1))
- except json.JSONDecodeError:return None
- return value if value.get('questionWiki') else None
+    match = _MARKER_RE.search(prompt or "")
+    if not match:
+        return None
+    try:
+        value = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
+    return value if value.get("questionWiki") else None
+
 
 def _fields(prompt):
- req=_request(prompt)
- if not req:return None,0,0,''
- try:grade=int(req.get('grade') or 0)
- except (TypeError,ValueError):grade=0
- try:qno=int(req.get('questionNo') or 0)
- except (TypeError,ValueError):qno=0
- raw=str(req.get('type') or '').strip();return req,grade,qno,_TYPE_ALIASES.get(raw,raw)
+    req = _request(prompt)
+    if not req:
+        return None, 0, 0, ""
+    try:
+        grade, qno = int(req.get("grade") or 0), int(req.get("questionNo") or 0)
+    except (TypeError, ValueError):
+        grade, qno = 0, 0
+    raw = str(req.get("type") or "").strip()
+    return req, grade, qno, _TYPE_ALIASES.get(raw, raw)
 
-def select(prompt,limit=2):
- """STRICT: exact grade/source question only; exact requested type first."""
- req,grade,qno,wanted=_fields(prompt)
- if not req:return []
- same=[x for x in _load_entries() if int(x.get('grade') or 0)==grade and int(x.get('sourceQuestionNo') or 0)==qno]
- exact=[x for x in same if str(x.get('type') or '')==wanted]
- return (exact or same)[:max(1,min(limit,2))]
 
-def _corpus_note(prompt):
- req,grade,qno,wanted=_fields(prompt)
- if not req:return ''
- idx=_load_index(grade);counts=idx.get('counts') or {};exact=int(counts.get(f'{qno}:{wanted}') or 0);same=sum(int(v or 0) for k,v in counts.items() if k.startswith(f'{qno}:'))
- return (f'PRIVATE_REFERENCE_SCOPE: grade={grade}, sourceNo={qno}, requestedType={wanted}, exactTypeCount={exact}, sameQuestionCount={same}.\nMECHANICS: {_TYPE_MECHANICS.get(wanted,_TYPE_MECHANICS["other"])}\nHARD RULE: references from any other sourceQuestionNo are forbidden. Generate by transforming a reference from THIS source question only. If exact type is unavailable, transform another reference from this same source question into the requested type. Never search another question.')
+def select(prompt, limit=2):
+    """STRICT: exact grade/source question only; exact requested type first."""
+    req, grade, qno, wanted = _fields(prompt)
+    if not req:
+        return []
+    same = list(_same_question(grade, qno))
+    exact = [r for r in same if r.get("type") == wanted]
+    return (exact or same)[:max(1, min(int(limit), 2))]
+
+
+def _reference_text(item):
+    # rawLayout/provenance remain in the server DB for reconstruction and QA,
+    # but only the chosen problem text is placed in the model prompt.
+    answer = item.get("answer") or {}
+    return (f"Instruction: {item.get('instruction','')}\n"
+            f"Problem:\n{item.get('rawText','')}\n"
+            f"Original answer/explanation: {answer.get('raw','')}").strip()
+
 
 def enrich_prompt(prompt):
- if not _request(prompt):return prompt
- refs=select(prompt);blocks=[]
- for i,item in enumerate(refs,1):blocks.append(f"EXACT-SOURCE REFERENCE {i} (grade={item.get('grade')}, sourceNo={item.get('sourceQuestionNo')}, type={item.get('type')}):\n"+str(item.get('referenceText') or '').strip())
- guidance='''\n\nPRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY):\nThe selected source-question reference is the PRIMARY generation basis. Make a new variant by preserving its exam mechanics and difficulty while changing the tested detail/distractors enough to be a new problem. Never use a reference from another question. Do not expose database metadata. REFERENCE_CONTEXT/상세 해설지/인사이트 are not problem text and must never be emitted into passage.\n\n'''
- suffix=_corpus_note(prompt)
- if blocks:suffix+='\n\n'+'\n\n'.join(blocks)
- return prompt+guidance+suffix
+    req, grade, qno, wanted = _fields(prompt)
+    if not req:
+        return prompt
+    refs = select(prompt)
+    blocks = [f"EXACT-SOURCE REFERENCE {i} (grade={r['grade']}, "
+              f"sourceNo={r['sourceQuestionNo']}, type={r['type']}):\n{_reference_text(r)}"
+              for i, r in enumerate(refs, 1)]
+    guidance = ("\n\nPRIVATE_REFERENCE_PROBLEMS (SERVER-ONLY):\n"
+      "CURRENT QUESTION is the only content source. PRIVATE REFERENCE controls only "
+      "exam mechanics, structure, difficulty and distractor design. Never copy its topic, "
+      "facts, names, sentences, choices or answer. Never expose database metadata.\n"
+      f"PRIVATE_REFERENCE_SCOPE: grade={grade}, sourceNo={qno}, requestedType={wanted}.\n"
+      f"MECHANICS: {_TYPE_MECHANICS.get(wanted, _TYPE_MECHANICS['other'])}\n"
+      "HARD RULE: references from any other sourceQuestionNo are forbidden. "
+      "If exact type is unavailable, transform only another variant from this same source question.")
+    return prompt + guidance + (("\n\n" + "\n\n".join(blocks)) if blocks else "")
 
-def has_request(prompt):return _request(prompt) is not None
+
+def has_request(prompt):
+    return _request(prompt) is not None
