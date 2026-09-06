@@ -18,7 +18,7 @@ class QuestionWikiPrivateReferenceBankContractTest {
     assertThat(js).doesNotContain("result = await generateChrome()", "provider:'auto'", "qwen/qwen3.7-flash", "gemini-3.7-flash");
     assertThat(router).contains("requested=='openrouter-free'", "private_reference_bank.enrich_prompt(prompt)");
     assertThat(bank).contains("references from any other sourceQuestionNo are forbidden", "exact requested type first",
-      "resolve_shard(grade, qno)", "_load_question(grade, qno)");
+      "resolve_shard(grade,qno)", "_load_question(grade,qno)");
     assertThat(bank).doesNotContain("_load_grade(grade)");
     assertThat(g2).contains("\"recordCount\": 243", "g2-q30.json.gz", "g2-q31.json.gz");
   }
