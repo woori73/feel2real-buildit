@@ -49,9 +49,9 @@ class AcademyBuilderTemplateContractTest {
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
             "<script src=\"/js/academy_sections.js?v=20260905-4\"></script>",
             "<script src=\"/js/academy_reveal.js?v=20260901-5\"></script>",
-            "<script src=\"/js/academy_world.js?v=20260907-3\"></script>",
-            "<script src=\"/js/academy_builder_ai_guide.js?v=20260907-1\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260907-3\"></script>");
+            "<script src=\"/js/academy_world.js?v=20260907-4\"></script>",
+            "<script src=\"/js/academy_builder_ai_guide.js?v=20260907-2\"></script>",
+            "<script src=\"/js/academy_builder.js?v=20260907-4\"></script>");
   }
 
   @Test
@@ -70,6 +70,8 @@ class AcademyBuilderTemplateContractTest {
         .contains("id=\"builderAiGuideSteps\"")
         // Phase 5B.1: Bildi Sidekick 스테이지(canvas-frame 오버레이)
         .contains("id=\"builderBildiStage\"")
+        // Phase 5B.2 Problem 4: World BACK 레이어(실제 하늘)
+        .contains("id=\"builderWorldSky\"")
         // 우측 고정 패널이지만 예전에 제거된 rightPanel 배선을 되살리지 않는다.
         .doesNotContain("id=\"rightPanel\"")
         // 기존 Phase 4 / 5A AI 진입점은 유지

@@ -7,31 +7,26 @@
   <stop offset="0%" stop-color="#5A8FE0"/><stop offset="100%" stop-color="#0C238A"/>
   </linearGradient>
   </defs>
-  <path d="M90 30 Q95 12 100 28 Q105 10 111 28 Q117 14 122 30 Q108 22 90 30 Z" fill="#f4b813"/>
-  <g class="b-wing b-wing-l" transform="translate(36 118)"><path d="M0 0 C-16 -4 -24 12 -16 26 C-8 34 6 26 8 8 Z" fill="#ffcf3a" stroke="#f2b415" stroke-width="2"/></g>
-  <g class="b-wing b-wing-r" transform="translate(162 108)"><path d="M0 0 C22 -20 30 -34 22 -46 C12 -50 -2 -40 -4 -20 Z" fill="#ffd23f" stroke="#f2b415" stroke-width="2.5"/></g>
-  <ellipse cx="86" cy="176" rx="10" ry="5" fill="#ff9f1c"/><ellipse cx="114" cy="176" rx="10" ry="5" fill="#ff9f1c"/>
+  <path d="M86 30 Q88 8 98 24 Q101 4 108 24 Q116 8 118 30 Q102 20 86 30 Z" fill="#f4b813"/>
+  <path d="M98 24 Q100 14 102 24 Z" fill="#e8a90c"/>
+  <g class="b-wing b-wing-l" transform="translate(40 110)"><path d="M6 -2 C-14 -6 -26 6 -24 20 C-22 30 -6 30 4 22 C10 16 12 4 6 -2 Z" fill="#ffcf3a" stroke="#f2b415" stroke-width="2"/></g>
+  <g class="b-wing b-wing-r" transform="translate(158 104)"><path d="M-4 8 C6 -14 20 -30 40 -34 C48 -24 46 -6 26 8 C16 14 2 16 -4 8 Z" fill="#ffd23f" stroke="#f2b415" stroke-width="2.5"/></g>
+  <path d="M82 170 l-5 8 m5 -8 l0 9 m0 -9 l5 8" stroke="#ef8f12" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M118 170 l-5 8 m5 -8 l0 9 m0 -9 l5 8" stroke="#ef8f12" stroke-width="3" stroke-linecap="round" fill="none"/>
   <g transform="rotate(0 100 110) translate(0 0)">
-  <path class="b-body" d="M100 30 C142 30 168 60 168 104 C168 152 142 176 100 176 C58 176 32 152 32 104 C32 60 58 30 100 30 Z" fill="url(#b-body)"/>
-  <ellipse cx="66" cy="120" rx="10" ry="6.5" fill="#ffa7bd" opacity="0.75"/><ellipse cx="134" cy="120" rx="10" ry="6.5" fill="#ffa7bd" opacity="0.75"/>
+  <path class="b-body" d="M100 26 C144 26 170 58 170 100 C170 140 146 170 116 174 Q100 176 84 174 C54 170 30 140 30 100 C30 58 56 26 100 26 Z" fill="url(#b-body)"/>
+  <path class="b-belly" d="M100 96 C124 96 138 112 138 134 C138 156 120 170 100 170 C80 170 62 156 62 134 C62 112 76 96 100 96 Z" fill="#ffe08a" opacity="0.55"/>
+  <ellipse cx="62" cy="116" rx="11" ry="7" fill="#ffa7bd" opacity="0.8"/><ellipse cx="138" cy="116" rx="11" ry="7" fill="#ffa7bd" opacity="0.8"/>
   <ellipse cx="82" cy="96" rx="12.5" ry="15.5" fill="#23242c"/>
   <ellipse cx="118" cy="96" rx="12.5" ry="15.5" fill="#23242c"/>
   <circle cx="84" cy="86" r="5" fill="#fff"/><circle cx="120" cy="86" r="5" fill="#fff"/>
-  <path d="M92 112 L108 112 L100 126 Z" fill="#ff9f1c"/><path d="M92 112 L108 112" stroke="#e07d0c" stroke-width="2"/>
+  <path d="M91 108 Q100 104 109 108 L100 120 Z" fill="#ff9f1c"/><path d="M91 108 Q100 111 109 108" stroke="#e07d0c" stroke-width="1.8" fill="none"/>
   <path d="M92 120 Q100 128 108 120" stroke="#c2790f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-  <g class="b-goggles" transform="translate(100 66)">
-  <path d="M-36 4 Q0 -8 36 4 L34 12 Q0 2 -34 12 Z" fill="#6f5f42"/>
-  <rect x="-5" y="-1" width="10" height="6" rx="2" fill="#c9a24b"/>
-  <circle cx="-15" cy="2" r="10.5" fill="#2c2e38" stroke="#e6c877" stroke-width="3.5"/>
-  <circle cx="15" cy="2" r="10.5" fill="#2c2e38" stroke="#e6c877" stroke-width="3.5"/>
-  <path d="M-19 -3 A8 8 0 0 1 -10 -4" stroke="#9ec5ff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-  <path d="M11 -3 A8 8 0 0 1 20 -4" stroke="#9ec5ff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-  </g>
-  <g class="b-scarf" transform="translate(100 140)">
-  <path d="M-32 -8 Q0 8 32 -8 L28 8 Q0 22 -28 8 Z" fill="url(#b-scarf)"/>
+  <g class="b-scarf" transform="translate(100 130)">
+  <path d="M-30 -9 Q0 6 30 -9 L26 7 Q0 19 -26 7 Z" fill="url(#b-scarf)"/>
   <path d="M18 2 Q44 8 40 34 Q36 40 26 34 Q20 18 14 6 Z" fill="url(#b-scarf)"/>
-  <circle cx="0" cy="1" r="12" fill="#eef3ff"/>
-  <path d="M0 -8 L9 1 L0 10 L-9 1 Z" fill="#0C238A"/>
+  <circle cx="0" cy="0" r="10.5" fill="#eef3ff"/>
+  <path d="M0 -7 L8 0 L0 8 L-8 0 Z" fill="#0C238A"/>
   </g>
   </g>
   </svg>

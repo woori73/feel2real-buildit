@@ -37,13 +37,22 @@
    */
   const STEPS = Object.freeze([
     {
+      id: 'naming',
+      kind: 'naming',
+      title: 'Academy 이름 / 주소',
+      sectionKey: 'sec-hero',
+      target: null,
+      question: '먼저 우리 학원의 이름과 홈페이지 주소부터 정해볼까요?',
+      guidance: '반가워요! 방문자가 가장 먼저 보는 건 학원 이름이고, 홈페이지 주소는 한번 정하면 잘 안 바꾸는 값이에요. 여기부터 시작할게요.'
+    },
+    {
       id: 'style',
       kind: 'style',
       title: '홈페이지 스타일',
       sectionKey: 'sec-hero',
       target: null,
       question: '어떤 느낌의 홈페이지를 만들고 싶으신가요? 아래에서 고르거나 직접 설명해 주세요.',
-      guidance: '완성된 Academy처럼 첫 화면 → 원장 소개 → 교육철학 → 프로그램 → 수업 콘텐츠 순서로 함께 구성해 보겠습니다.'
+      guidance: '좋아요! 이제 우리 학원 홈페이지의 첫인상을 만들어볼게요. 첫 화면 → 원장 소개 → 교육철학 → 학원 소개 → 대표 수업 순서로 함께 구성합니다.'
     },
     {
       id: 'hero',
@@ -88,20 +97,11 @@
     {
       id: 'programs',
       kind: 'guidance',
-      title: '프로그램 · 수업',
+      title: '대표 수업 · 영상',
       sectionKey: 'sec-lessons',
       target: null,
       question: '',
-      guidance: '대표 수업은 "수업상품 관리"에서 등록·수정합니다. 미리보기의 수업 카드를 클릭하면 관리 화면이 열립니다. 각 수업의 한 줄 소개는 카드에서 바로 편집할 수 있습니다.'
-    },
-    {
-      id: 'videos',
-      kind: 'guidance',
-      title: '영상 · 콘텐츠',
-      sectionKey: 'sec-videos',
-      target: null,
-      question: '',
-      guidance: '수업 영상이 있다면 "수업 영상" 섹션에서 관리합니다. 영상이 아직 없다면 이 단계는 건너뛰고 나중에 추가해도 됩니다.'
+      guidance: '대표 수업은 "수업상품 관리"에서 등록·수정합니다(미리보기의 수업 카드를 클릭). 수업 영상이 있으면 "수업 영상" 섹션에서 관리하고, 없으면 나중에 추가해도 됩니다.'
     },
     {
       id: 'review',
@@ -123,21 +123,30 @@
   // Bildi가 그 step 섹션으로 날아갈 때 하늘이 함께 바뀐다. STEP 객체를 건드리지 않고 분리 map
   // 으로 둔다(기존 STEPS 계약 유지).
   var STEP_SCENES = Object.freeze({
+    naming: 'morning',
     style: 'morning',
     hero: 'day',
     principal: 'day',
     philosophy: 'clouds',
     intro: 'clouds',
     programs: 'sunset',
-    videos: 'night',
+    videos: 'sunset',
     review: 'stars'
   });
   function sceneForStep(id) {
-    return STEP_SCENES[id] || 'day';
+    return STEP_SCENES[migrateStepId(id)] || 'day';
+  }
+
+  // Phase 5B.2 — step 재정렬. 기존 세션의 step id 를 새 구조로 매핑해 진행 상태가 깨지지 않게 한다.
+  // 'videos'(별도 단계) → 'programs'(대표 수업·영상 통합)로 흡수. 'style'/'hero' 등은 그대로.
+  var STEP_ID_MIGRATIONS = Object.freeze({ videos: 'programs' });
+  function migrateStepId(id) {
+    return STEP_ID_MIGRATIONS[id] || id;
   }
 
   function stepById(id) {
-    return STEPS.find(function (step) { return step.id === id; }) || null;
+    var mapped = migrateStepId(id);
+    return STEPS.find(function (step) { return step.id === mapped; }) || null;
   }
 
   function stepIndex(id) {
@@ -149,7 +158,8 @@
   }
 
   function clampStepId(id) {
-    return stepIndex(id) >= 0 ? id : firstStepId();
+    var mapped = migrateStepId(id);
+    return stepIndex(mapped) >= 0 ? mapped : firstStepId();
   }
 
   function nextStepId(id) {
@@ -167,9 +177,23 @@
     const out = [];
     if (!Array.isArray(values)) return out;
     values.forEach(function (value) {
-      if (STEP_IDS.indexOf(value) >= 0 && out.indexOf(value) < 0) out.push(value);
+      var id = migrateStepId(value);
+      if (STEP_IDS.indexOf(id) >= 0 && out.indexOf(id) < 0) out.push(id);
     });
     return out;
+  }
+
+  /**
+   * 이미 확정된 이름/주소가 있으면 naming 온보딩 단계를 건너뛴다. "발행된 Academy + 실제
+   * handle(임시 academy-xxxxxx 아님) + 이름" 이면 확정으로 본다. 신규/미설정은 첫 단계로 노출.
+   */
+  function isNamingComplete(preview) {
+    if (!preview) return false;
+    var name = String(preview.name == null ? '' : preview.name).trim();
+    var handle = String(preview.handle == null ? '' : preview.handle).trim();
+    var published = !!(preview.publicPathUrl || preview.publicUrl);
+    var realHandle = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(handle) && !/^academy-[a-z0-9]{6,24}$/.test(handle);
+    return published && name.length > 0 && realHandle;
   }
 
   function trimTo(value, max) {
@@ -332,7 +356,10 @@
     STEP_IDS,
     TEXT_TARGETS,
     STEP_SCENES,
+    STEP_ID_MIGRATIONS,
+    migrateStepId,
     sceneForStep,
+    isNamingComplete,
     stepById,
     stepIndex,
     firstStepId,
