@@ -25,7 +25,8 @@ def _load_question(grade,qno):
         with gzip.open(path,"rt",encoding="utf-8") as stream:return tuple(json.load(stream).get("records") or ())
     except (OSError,json.JSONDecodeError,KeyError):return ()
 @lru_cache(maxsize=64)
-def _same_question(grade,qno):return tuple(r for r in _load_question(grade,qno) if qno in (r.get("sourceQuestionNos") or [r.get("sourceQuestionNo")]))
+def _same_question(grade, qno):
+    return tuple(r for r in _load_question(grade,qno) if qno in (r.get("sourceQuestionNos") or [r.get("sourceQuestionNo")]))
 def _request(prompt):
     match=_MARKER_RE.search(prompt or "")
     if not match:return None
@@ -39,10 +40,11 @@ def _fields(prompt):
     except (TypeError,ValueError):grade,qno=0,0
     raw=str(req.get("type") or "").strip();return req,grade,qno,_TYPE_ALIASES.get(raw,raw)
 def select(prompt,limit=2):
+    """STRICT: exact grade/source question only; exact requested type first."""
     req,grade,qno,wanted=_fields(prompt)
     if not req:return []
-    same=list(_same_question(grade,qno));exact=[r for r in same if r.get("type")==wanted]
-    return (exact or same)[:max(1,min(int(limit),2))]
+    same=list(_same_question(grade, qno));exact=[r for r in same if r.get("type")==wanted]
+    return (exact or same)[:max(1, min(int(limit), 2))]
 def _reference_text(item):return (f"Instruction: {item.get('instruction','')}\nType: {item.get('type','')}\nProblem mechanics example:\n{item.get('rawText','')}").strip()
 def enrich_prompt(prompt):
     req,grade,qno,wanted=_fields(prompt)
