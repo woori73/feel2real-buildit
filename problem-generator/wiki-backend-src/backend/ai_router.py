@@ -61,7 +61,7 @@ def _openrouter_request(key,model,provider,system,prompt,schema,temperature,forc
         if not str(text).strip():raise ProviderError('OpenRouter 응답 내용이 없습니다.',provider)
         return ProviderResult(str(text),payload.get('provider') or provider,payload.get('model') or model,'server')
     except urllib.error.HTTPError as exc:raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})',provider,exc.code,'QUESTION_WIKI_FREE_AI_RATE_LIMIT' if exc.code==429 else 'QUESTION_WIKI_FREE_AI_UPSTREAM',exc.code in (429,502,503,504)) from exc
-    except (TimeoutError,socket.timeout) as exc:raise ProviderError('무료 AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.',provider,504,'QUESTION_WIKI_FREE_AI_TIMEOUT',True) from exc
+    except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.',provider,504,'QUESTION_WIKI_FREE_AI_TIMEOUT',True) from exc
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
     except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True) from exc
     finally:_LOG.info('ai_provider_done provider=%s model=%s provider_total_ms=%.2f',provider,model,(time.perf_counter()-started)*1000)
@@ -87,8 +87,8 @@ def _question_wiki_checked_call(openrouter,model,provider_name,system,prompt,sch
         _LOG.warning('question_wiki_output_rejected_final issues=%s model=%s',issues,result.model);raise ProviderError('선택한 문제 유형과 생성 결과가 일치하지 않아 차단했습니다. 다시 생성해 주세요.',provider_name,422,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True)
     return result
 def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',openrouter_key='',allow_noncritical_fallback=False):
-    requested=provider or 'auto';gemini_server,openrouter_server=_server_keys();gemini=gemini_server;openrouter=openrouter_server;question_wiki_free=requested=='openrouter-free' and private_reference_bank.has_request(prompt)
-    if question_wiki_free:
+    requested=provider or 'auto';gemini_server,openrouter_server=_server_keys();gemini=gemini_server;openrouter=openrouter_server;question_wiki=requested=='openrouter-free' and private_reference_bank.has_request(prompt)
+    if question_wiki:
         try:prompt=private_reference_bank.enrich_prompt(prompt)
         except private_reference_bank.ReferenceNotFoundError as exc:raise ProviderError('현재 문항의 변형 Reference를 찾지 못했습니다.',requested,422,'QUESTION_WIKI_REFERENCE_NOT_FOUND',False) from exc
     candidates=['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested];last_error=None
@@ -100,13 +100,13 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
             if candidate=='gpt-5.6-luna':raise ProviderError('GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장용이며 아직 연결되지 않았습니다.',candidate,503)
             if candidate in ('qwen','ox-alpha','openrouter-free') or candidate.startswith('openrouter:'):
                 if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.',candidate)
-                if candidate=='qwen':model=QWEN_MODEL;models=None
-                elif candidate=='ox-alpha':model=os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha');models=None
-                elif candidate=='openrouter-free' and question_wiki_free:model=QUESTION_WIKI_FREE_MODELS[0];models=QUESTION_WIKI_FREE_MODELS[1:]
-                elif candidate=='openrouter-free':model=FREE_ROUTER;models=None
-                else:model=candidate.removeprefix('openrouter:');models=None
-                provider_name=QWEN_PROVIDER if candidate=='qwen' else candidate
-                if question_wiki_free:return _question_wiki_checked_call(openrouter,model,provider_name,system,prompt,schema,temperature,models)
+                if question_wiki:
+                    model=QWEN_MODEL;models=None;provider_name=QWEN_PROVIDER
+                elif candidate=='qwen':model=QWEN_MODEL;models=None;provider_name=QWEN_PROVIDER
+                elif candidate=='ox-alpha':model=os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha');models=None;provider_name=candidate
+                elif candidate=='openrouter-free':model=FREE_ROUTER;models=None;provider_name=candidate
+                else:model=candidate.removeprefix('openrouter:');models=None;provider_name=candidate
+                if question_wiki:return _question_wiki_checked_call(openrouter,model,provider_name,system,prompt,schema,temperature,models)
                 return _openrouter(openrouter,model,provider_name,system,prompt,schema,temperature,models=models)
             raise ProviderError('지원하지 않는 AI provider입니다.',candidate,400)
         except Exception as exc:
