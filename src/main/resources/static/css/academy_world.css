@@ -211,19 +211,101 @@
   .bildi *, .world-sky::before, .world-sky::after { animation: none !important; }
 }
 
-/* ── Builder(Creator Mode) 전용 배치 ─────────────────────────────────────── */
-/* Bildi 스테이지 = canvas-frame 을 덮는 오버레이. frame 의 overflow:hidden 이 클립하고,
-   pointer-events:none 이라 프리뷰 클릭을 투과한다. */
+/* ══════════════════════════════════════════════════════════════════════════
+   Builder(Creator Mode) — 3-layer World
+
+   Problem 4 근본 원인: 예전에는 하늘(.world-sky)이 #builderBildiStage(z-index:6) 안에서
+   본문 "위"에 opacity:.16 로만 얹혀 있었다. 16% tint 는 morning→night 그라데이션 변화가
+   육안으로 거의 안 보였고, #pageContent(#f0f4f8)와 .section-wrap(#fff)이 불투명이라 뒤에
+   하늘을 깔 수도 없었다. data-scene 은 정상적으로 바뀌고 있었지만(=순수 시각/레이어 문제).
+
+   해결: 레이어를 3개로 분리한다.
+     BACK   #builderWorldSky (z-index:0)      실제 하늘 — 전체 프레임, 100% 강도. 해/달/별.
+     MIDDLE #pageContent      (z-index:1)      Academy 본문 — 배경만 살짝 투명(뒤 하늘 ~12% 비침)
+     FRONT  #builderBildiStage(z-index:6)      Bildi + 날씨 연출(가장자리 vignette + 실제 빗줄기/별)
+   본문 중앙은 FRONT vignette 가 완전히 투명이라 텍스트 대비는 유지된다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── BACK: 실제 하늘 ─────────────────────────────────────────────────────── */
+#builderWorldSky {
+  position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+}
+#builderWorldSky > .world-sky { opacity: 1; }
+/* 해 / 달 — scene 별로 하늘 그라데이션 위에 원반 하나를 얹는다(빌더 한정). */
+#builderWorldSky > .world-sky[data-scene="morning"] {
+  background:
+    radial-gradient(circle 46px at 78% 22%, #fff4d6 0%, #ffe6a6 46%, rgba(255,230,166,0) 62%),
+    linear-gradient(180deg, #cfe9ff 0%, #eaf4ff 55%, #fff3d9 100%);
+}
+#builderWorldSky > .world-sky[data-scene="day"] {
+  background:
+    radial-gradient(circle 54px at 82% 18%, #fffdf3 0%, #ffe9a0 44%, rgba(255,233,160,0) 60%),
+    linear-gradient(180deg, #a9d7ff 0%, #d6ecff 60%, #f2f8ff 100%);
+}
+#builderWorldSky > .world-sky[data-scene="sunset"] {
+  background:
+    radial-gradient(circle 60px at 74% 46%, #fff1d0 0%, #ffb06a 44%, rgba(255,176,106,0) 62%),
+    linear-gradient(180deg, #6a86c9 0%, #f2a774 55%, #ffd9a8 100%);
+}
+#builderWorldSky > .world-sky[data-scene="night"] {
+  background:
+    radial-gradient(circle 34px at 80% 20%, #f6f8ff 0%, #dbe3f6 55%, rgba(219,227,246,0) 60%),
+    linear-gradient(180deg, #12183a 0%, #253066 55%, #3b4a86 100%);
+}
+#builderWorldSky > .world-sky[data-scene="stars"] {
+  background:
+    radial-gradient(circle 30px at 82% 16%, #eef2ff 0%, #c9d3ef 55%, rgba(201,211,239,0) 60%),
+    linear-gradient(180deg, #05061a 0%, #0d1440 55%, #1a2260 100%);
+}
+
+/* ── MIDDLE: 본문 배경만 살짝 투명하게(텍스트 대비는 유지) ─────────────────── */
+.canvas-frame > #pageContent { position: relative; z-index: 1; }
+.builder-public-preview .section-wrap,
+.builder-public-preview .principal-wrap,
+.builder-public-preview .cv-gnb { background-color: rgba(255, 255, 255, .88); }
+.builder-public-preview .hero { background-color: rgba(255, 255, 255, .82); }
+.builder-public-preview .section-wrap.classes-wrap { background-color: rgba(255, 255, 255, .9); }
+
+/* ── FRONT: Bildi 스테이지 = 날씨 연출 오버레이 ───────────────────────────── */
 #builderBildiStage {
   position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: hidden;
 }
 #builderBildiStage.is-hidden { display: none; }
-/* Builder 에서는 하늘을 "약한 주변광/날씨 tint" 로만 얹는다 — 프리뷰 콘텐츠 가독성을 해치지 않는다.
-   전체 화면 하늘(러닝게임 느낌)은 Published Visitor Mode 용이다(BILDI_WORLD_ENGINE.md §6). */
-#builderBildiStage > .world-sky { opacity: .16; }
-#builderBildiStage > .world-sky[data-scene="rain"],
-#builderBildiStage > .world-sky[data-scene="night"],
-#builderBildiStage > .world-sky[data-scene="stars"] { opacity: .22; }
+/* 스테이지 하늘은 배경 그라데이션을 버리고, 가장자리 vignette + 파티클만 남긴다. */
+#builderBildiStage > .world-sky { background: none; opacity: 1; transition: none; }
+#builderBildiStage > .world-sky::before {
+  inset: 0; opacity: 1; animation: none;
+  background: radial-gradient(ellipse 130% 96% at 50% 38%, transparent 44%, var(--sky-edge, transparent) 100%);
+}
+#builderBildiStage > .world-sky::after { inset: 0; }
+#builderBildiStage > .world-sky[data-scene="morning"] { --sky-edge: rgba(255, 220, 150, .14); }
+#builderBildiStage > .world-sky[data-scene="day"]     { --sky-edge: rgba(120, 180, 255, .16); }
+#builderBildiStage > .world-sky[data-scene="clouds"]  { --sky-edge: rgba(115, 130, 152, .32); }
+#builderBildiStage > .world-sky[data-scene="rain"]    { --sky-edge: rgba(64, 84, 110, .42); }
+#builderBildiStage > .world-sky[data-scene="sunset"]  { --sky-edge: rgba(240, 132, 84, .34); }
+#builderBildiStage > .world-sky[data-scene="night"]   { --sky-edge: rgba(16, 24, 66, .54); }
+#builderBildiStage > .world-sky[data-scene="stars"]   { --sky-edge: rgba(6, 10, 44, .64); }
+/* 비: 본문 위로 실제 빗줄기가 흐른다(장식 tint 아님). 밝은 본문 위에서도 보이도록
+   푸른 회색 빗줄기를 두 겹(굵은 것 + 가는 것)으로 얹는다. */
+#builderBildiStage > .world-sky[data-scene="rain"]::after {
+  opacity: .7;
+  background-image:
+    repeating-linear-gradient(101deg, rgba(52, 70, 100, .5) 0 1.5px, transparent 1.5px 13px),
+    repeating-linear-gradient(101deg, rgba(115, 140, 175, .36) 6px 7px, transparent 7px 22px);
+  background-size: 30px 30px, 44px 44px;
+  animation: worldRain 560ms linear infinite;
+}
+/* 밤 / 별: 본문 위에도 옅은 별빛 */
+#builderBildiStage > .world-sky[data-scene="night"]::after { opacity: .72; }
+#builderBildiStage > .world-sky[data-scene="stars"]::after { opacity: .95; }
+/* 구름: 본문 위 옅은 구름 흐름 */
+#builderBildiStage > .world-sky[data-scene="clouds"]::before {
+  background:
+    radial-gradient(ellipse 130% 96% at 50% 38%, transparent 44%, var(--sky-edge) 100%),
+    radial-gradient(80px 30px at 22% 26%, rgba(255,255,255,.5), transparent 70%),
+    radial-gradient(110px 38px at 66% 20%, rgba(255,255,255,.42), transparent 72%);
+  animation: worldDrift 30s linear infinite;
+}
 
 /* Guide 패널은 이제 기본으로 접힌다 — Bildi 말풍선이 주 UI. 패널은 "단계 전체 보기" 용도로만
    토글해서 연다. (기존 #builderAiGuidePanel 마크업/ID/renderAiGuide 는 그대로 유지) */

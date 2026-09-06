@@ -22,15 +22,18 @@ test('STEPS의 text 단계 target은 전부 실제 builderDraft key(또는 intro
   });
 });
 
-test('첫 단계는 스타일 질문이고, 마지막 단계는 마무리(전체 점검 연결)다', () => {
-  assert.equal(guide.STEPS[0].kind, 'style');
-  assert.equal(guide.firstStepId(), 'style');
+test('첫 단계는 이름/주소 온보딩, 두 번째가 스타일, 마지막이 마무리다 (Phase 5B.2 재정렬)', () => {
+  assert.equal(guide.STEPS[0].kind, 'naming');
+  assert.equal(guide.STEPS[0].id, 'naming');
+  assert.equal(guide.firstStepId(), 'naming');
+  assert.equal(guide.STEPS[1].kind, 'style');
   assert.equal(guide.STEPS[guide.STEPS.length - 1].kind, 'finish');
+  assert.equal(guide.STEP_IDS.length, 8, '권장 8단계');
 });
 
 test('createSession은 저장값이 없거나 손상돼도 안전한 기본 세션을 만든다', () => {
   const fresh = guide.createSession(null);
-  assert.equal(fresh.currentStepId, 'style');
+  assert.equal(fresh.currentStepId, 'naming');
   assert.deepEqual(fresh.completedStepIds, []);
   assert.deepEqual(fresh.skippedStepIds, []);
   assert.equal(fresh.onboarded, false);
@@ -41,31 +44,54 @@ test('createSession은 저장값이 없거나 손상돼도 안전한 기본 세�
     skippedStepIds: 'not-an-array',
     desiredStyle: 'x'.repeat(500)
   });
-  assert.equal(dirty.currentStepId, 'style', '알 수 없는 스텝은 첫 스텝으로 clamp');
+  assert.equal(dirty.currentStepId, 'naming', '알 수 없는 스텝은 첫 스텝으로 clamp');
   assert.deepEqual(dirty.completedStepIds, ['style'], '알 수 없는/중복 스텝 제거');
   assert.deepEqual(dirty.skippedStepIds, []);
   assert.ok(dirty.desiredStyle.length <= 200, 'desiredStyle 길이 제한');
 });
 
+test('기존 세션 호환: videos 단계 진행 상태가 programs 로 마이그레이션된다', () => {
+  const legacy = guide.createSession({
+    currentStepId: 'videos',
+    completedStepIds: ['style', 'hero', 'videos'],
+    skippedStepIds: ['videos'],
+    onboarded: true
+  });
+  assert.equal(legacy.currentStepId, 'programs', 'videos → programs');
+  assert.ok(legacy.completedStepIds.indexOf('programs') >= 0);
+  assert.ok(legacy.completedStepIds.indexOf('videos') < 0, 'videos id 는 더 이상 없다');
+  assert.equal(guide.migrateStepId('videos'), 'programs');
+  assert.equal(guide.stepById('videos').id, 'programs', 'stepById 도 마이그레이션');
+});
+
+test('isNamingComplete: 발행 + 실제 handle + 이름이면 naming 을 건너뛴다', () => {
+  assert.equal(guide.isNamingComplete(null), false);
+  assert.equal(guide.isNamingComplete({ name: '학원', handle: '', publicPathUrl: null }), false, '미발행/미설정');
+  assert.equal(guide.isNamingComplete({ name: '학원', handle: 'academy-a1b2c3', publicPathUrl: '/academies/x' }), false, '임시 handle');
+  assert.equal(guide.isNamingComplete({ name: '압구정에듀홀릭', handle: 'apgujeong-eduholic', publicPathUrl: '/academies/x' }), true);
+});
+
 test('markCompleted / markSkipped는 상호 배타적이며 진행률에 반영된다', () => {
   let s = guide.createSession(null);
+  s = guide.markCompleted(s, 'naming');
   s = guide.markCompleted(s, 'style');
   s = guide.markCompleted(s, 'hero');
   s = guide.markSkipped(s, 'hero'); // 같은 스텝을 skip하면 completed에서 빠진다
-  assert.deepEqual(s.completedStepIds, ['style']);
+  assert.deepEqual(s.completedStepIds, ['naming', 'style']);
   assert.deepEqual(s.skippedStepIds, ['hero']);
 
   const info = guide.progress(guide.goToStep(s, 'principal'));
   assert.equal(info.total, guide.STEP_IDS.length);
   assert.equal(info.position, guide.stepIndex('principal') + 1);
-  assert.equal(info.doneCount, 1);
+  assert.equal(info.doneCount, 2);
   assert.ok(info.remaining.indexOf('principal') < 0, '현재 스텝은 remaining에 없다');
 });
 
 test('nextStepId / prevStepId는 경계에서 null을 준다', () => {
-  assert.equal(guide.prevStepId('style'), null);
+  assert.equal(guide.prevStepId('naming'), null);
   assert.equal(guide.nextStepId(guide.STEP_IDS[guide.STEP_IDS.length - 1]), null);
-  assert.equal(guide.nextStepId('style'), guide.STEP_IDS[1]);
+  assert.equal(guide.nextStepId('naming'), 'style');
+  assert.equal(guide.nextStepId('style'), guide.STEP_IDS[2]);
 });
 
 test('stepsWithExistingContent는 이미 채워진 target 단계만 집어낸다(기존 사용자 보호)', () => {

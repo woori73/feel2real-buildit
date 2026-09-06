@@ -4095,7 +4095,8 @@
   let aiGuideExistingSteps = [];
   let bildi = null;        // { setState, moveToXY, react, ... }
   let bildiBubble = null;  // { say, moveToXY, el, body }
-  let bildiSky = null;     // { setScene, setProgress }
+  let bildiSky = null;     // FRONT 날씨 연출(스테이지 vignette/파티클) { setScene, setProgress }
+  let bildiWorldSky = null; // BACK 실제 하늘(#builderWorldSky) { setScene, setProgress }
   let bildiStory = null;   // scroll story controller
   let bildiStopTimer = null;
   let bildiSettleTimer = null;
@@ -4152,6 +4153,17 @@
 
     aiGuideSession = AI_GUIDE.createSession(readAiGuideSession());
     aiGuideExistingSteps = AI_GUIDE.stepsWithExistingContent(preview || currentPreview);
+    // 이미 이름/주소가 확정된 Academy는 naming 온보딩을 건너뛴다(신규/미설정만 첫 단계).
+    // 진행 중이던 사용자는 건드리지 않는다.
+    if (typeof AI_GUIDE.isNamingComplete === 'function'
+        && AI_GUIDE.isNamingComplete(preview || currentPreview)
+        && aiGuideSession.currentStepId === 'naming'
+        && aiGuideSession.completedStepIds.indexOf('naming') < 0
+        && aiGuideSession.skippedStepIds.indexOf('naming') < 0
+        && !aiGuideSession.onboarded) {
+      aiGuideSession = AI_GUIDE.goToStep(AI_GUIDE.markCompleted(aiGuideSession, 'naming'), 'style');
+      writeAiGuideSession();
+    }
 
     toggle.addEventListener('click', () => setAiGuideOpen(!panel.classList.contains('is-open')));
     bindClick('builderAiGuideClose', () => setAiGuideOpen(false));
@@ -4166,7 +4178,10 @@
       if (chip) goAiGuideStep(chip.dataset.guideStep);
     });
     const body = document.getElementById('builderAiGuideBody');
-    if (body) body.addEventListener('click', onAiGuideBodyClick);
+    if (body) {
+      body.addEventListener('click', onAiGuideBodyClick);
+      body.addEventListener('input', onAiGuideBodyInput);
+    }
 
     mountBildiSidekick();
 
@@ -4186,15 +4201,21 @@
     const stage = document.getElementById('builderBildiStage');
     if (!stage) return;
     try {
+      // BACK: 실제 하늘(전체 프레임, 100% 강도). #builderWorldSky 가 있으면 거기에, 없으면 생략.
+      const worldHost = document.getElementById('builderWorldSky');
+      bildiWorldSky = (worldHost && typeof WORLD.createSky === 'function')
+        ? WORLD.createSky(worldHost, { className: 'world-sky-back' }) : null;
+      // FRONT: 스테이지 날씨 연출(가장자리 vignette + 실제 빗줄기/별).
       bildiSky = typeof WORLD.createSky === 'function' ? WORLD.createSky(stage, { className: 'world-sky-builder' }) : null;
       bildi = typeof WORLD.createBildi === 'function' ? WORLD.createBildi(stage) : null;
       bildiBubble = typeof WORLD.createDialogue === 'function' ? WORLD.createDialogue(stage) : null;
     } catch (_) {
-      bildi = null; bildiBubble = null; bildiSky = null;
+      bildi = null; bildiBubble = null; bildiSky = null; bildiWorldSky = null;
       return;
     }
     if (bildiBubble && bildiBubble.body) {
       bildiBubble.body.addEventListener('click', onAiGuideBodyClick);
+      bildiBubble.body.addEventListener('input', onAiGuideBodyInput);
     }
   }
 
@@ -4217,6 +4238,7 @@
       onUpdate: (state) => {
         // Environment scene = scroll progress (viewport 고정, 상태만 변화)
         if (bildiSky && typeof bildiSky.setProgress === 'function') bildiSky.setProgress(state.progress);
+        if (bildiWorldSky && typeof bildiWorldSky.setProgress === 'function') bildiWorldSky.setProgress(state.progress);
         // Bildi position = scroll 에 따라 실제 이동
         updateBildiFlight(state);
         if (bildiSky && typeof bildi.react === 'function') {
@@ -4468,9 +4490,11 @@
 
   /** step이 암시하는 World scene으로 하늘을 옮긴다(섹션이 없는 finish step 포함). */
   function syncBildiSceneToStep() {
-    if (!bildiSky || typeof bildiSky.setScene !== 'function' || !AI_GUIDE || typeof AI_GUIDE.sceneForStep !== 'function') return;
+    if (!AI_GUIDE || typeof AI_GUIDE.sceneForStep !== 'function') return;
     const step = currentAiGuideStep();
-    bildiSky.setScene(AI_GUIDE.sceneForStep(step && step.id));
+    const scene = AI_GUIDE.sceneForStep(step && step.id);
+    if (bildiSky && typeof bildiSky.setScene === 'function') bildiSky.setScene(scene);
+    if (bildiWorldSky && typeof bildiWorldSky.setScene === 'function') bildiWorldSky.setScene(scene);
   }
 
   function moveAiGuideStep(direction) {
@@ -4522,10 +4546,7 @@
     if (!sectionKey) return;
     clearAiGuideSectionFocus();
     bildiGuideTargetKey = sectionKey;
-    if (bildiSky && typeof bildiSky.setScene === 'function' && AI_GUIDE && typeof AI_GUIDE.sceneForStep === 'function') {
-      const step = currentAiGuideStep();
-      bildiSky.setScene(AI_GUIDE.sceneForStep(step && step.id));
-    }
+    syncBildiSceneToStep();
     scrollPreviewToSection(sectionKey);
     // 스크롤이 짧아 이벤트가 거의 안 나오는 경우를 대비해 한 번 직접 갱신한다(스크롤이 나면
     // scroll story가 이어받아 부드럽게 비행시킨다).
@@ -4557,6 +4578,8 @@
       skipAiGuideStep();
     } else if (action === 'panel') {
       setAiGuideOpen(true, { panel: true });
+    } else if (action === 'naming') {
+      applyAiGuideNaming();
     } else if (action === 'style') {
       selectAiGuideStyle(el.dataset.guideValue || '');
     } else if (action === 'recommend') {
@@ -4743,7 +4766,9 @@
   /** style/text/guidance/finish + busy/error 공통 마크업(패널·Bildi 말풍선이 같이 쓴다). */
   function guideStepInnerHtml(step) {
     let html = '';
-    if (step.kind === 'style') {
+    if (step.kind === 'naming') {
+      html += renderAiGuideNamingStep();
+    } else if (step.kind === 'style') {
       html += renderAiGuideStyleStep();
     } else if (step.kind === 'text') {
       html += renderAiGuideTextStep(step);
@@ -4787,6 +4812,119 @@
     const safe = bildiSafeArea();
     if (safe && lastBildiFlightPos) positionBildiBubble(lastBildiFlightPos, safe, bildiSize());
     else refreshBildiFlight();
+  }
+
+  /**
+   * STEP 1 (신규 Academy 온보딩): 학원명 + 홈페이지 주소(handle). 별도 저장 기능을 새로 만들지
+   * 않고 기존 name 인라인 편집 + handle 편집 경로(/handle-available, persistPendingHandle,
+   * dirty 플래그)를 그대로 재사용한다. 발행 자동 실행 없음.
+   */
+  function renderAiGuideNamingStep() {
+    const name = (currentPreview && currentPreview.name) || '';
+    const rawHandle = normalizeHandle(currentPreview && currentPreview.handle) || '';
+    // 임시 handle(academy-xxxxxx)은 비워서 사용자가 직접 정하게 유도한다.
+    const handle = /^academy-[a-z0-9]{6,24}$/.test(rawHandle) ? '' : rawHandle;
+    const previewHost = handle || 'apgujeong-eduholic';
+    return `<div class="ai-guide-question">${escapeHtml(currentAiGuideStep().question)}</div>`
+      + `<label class="ai-guide-field-label" for="builderAiGuideName">학원명</label>`
+      + `<input type="text" id="builderAiGuideName" class="ai-guide-input" style="min-height:auto" maxlength="100" placeholder="예: 압구정에듀홀릭학원" value="${escapeAttr(name)}">`
+      + `<label class="ai-guide-field-label" for="builderAiGuideHandle">홈페이지 주소</label>`
+      + `<div class="ai-guide-handle-row">`
+      +   `<input type="text" id="builderAiGuideHandle" class="ai-guide-input" style="min-height:auto" maxlength="30" inputmode="url" autocomplete="off" spellcheck="false" placeholder="apgujeong-eduholic" value="${escapeAttr(handle)}">`
+      +   `<span class="ai-guide-handle-suffix">.feel2real.co.kr</span>`
+      + `</div>`
+      + `<p class="ai-guide-handle-preview">예: <b id="builderAiGuideHandlePreview">${escapeHtml(previewHost + '.feel2real.co.kr')}</b></p>`
+      + `<p class="ai-guide-handle-status" id="builderAiGuideHandleStatus" hidden></p>`
+      + `<div class="ai-guide-actions">`
+      +   `<button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="naming"${aiGuideBusy ? ' disabled' : ''}>이 이름과 주소로 시작하기</button>`
+      + `</div>`
+      + `<p class="ai-guide-note">주소는 소문자·숫자·하이픈 3~30자입니다. 발행 전까지는 언제든 바꿀 수 있어요.</p>`;
+  }
+
+  function setAiGuideNamingStatus(message, tone) {
+    const el = document.getElementById('builderAiGuideHandleStatus');
+    if (!el) return;
+    el.textContent = message || '';
+    el.hidden = !message;
+    el.dataset.tone = tone || 'muted';
+  }
+
+  /** 말풍선 입력 위임 — handle 을 타이핑하면 미리보기 주소를 즉시 갱신한다. */
+  function onAiGuideBodyInput(event) {
+    const t = event.target;
+    if (!t || t.id !== 'builderAiGuideHandle') return;
+    const normalized = normalizeHandle(t.value);
+    if (t.value !== normalized) {
+      const pos = t.selectionStart;
+      t.value = normalized;
+      try { t.setSelectionRange(pos, pos); } catch (_) { /* noop */ }
+    }
+    const prev = document.getElementById('builderAiGuideHandlePreview');
+    if (prev) prev.textContent = (normalized || 'apgujeong-eduholic') + '.feel2real.co.kr';
+    setAiGuideNamingStatus('', 'muted');
+  }
+
+  async function namingHandleAvailable(handle) {
+    const shouldCheck = !!(currentPreview && currentPreview.publicPathUrl) || !!(await getUser());
+    if (!shouldCheck) return null; // 미로그인/발행 전 — 발행 시 서버가 확인
+    try { return await isHandleAvailable(handle); } catch (_) { return null; }
+  }
+
+  async function applyAiGuideNaming() {
+    if (aiGuideBusy || !currentPreview) return;
+    const nameEl = document.getElementById('builderAiGuideName');
+    const handleEl = document.getElementById('builderAiGuideHandle');
+    const name = nameEl ? String(nameEl.value || '').trim() : '';
+    const handle = normalizeHandle(handleEl ? handleEl.value : '');
+    if (name.length < 2) { setAiGuideNamingStatus('학원명을 2자 이상 입력해 주세요.', 'error'); return; }
+    if (!isValidHandle(handle)) {
+      setAiGuideNamingStatus('주소는 소문자·숫자·하이픈 3~30자, 앞뒤는 하이픈이 될 수 없어요.', 'error');
+      return;
+    }
+    aiGuideBusy = true;
+    setAiGuideNamingStatus('주소를 확인하고 있어요…', 'checking');
+    try {
+      const sameHandle = handle === normalizeHandle(currentPreview.handle);
+      if (!sameHandle) {
+        const available = await namingHandleAvailable(handle);
+        if (available === false) {
+          setAiGuideNamingStatus('이미 사용 중인 주소예요. 다른 주소를 입력해 주세요.', 'error');
+          return;
+        }
+      }
+      let changed = false;
+      if (name !== (currentPreview.name || '')) {
+        currentPreview.name = name;
+        syncInlineTextMirrors('name', name);
+        syncInlineInitials();
+        changed = true;
+      }
+      if (!sameHandle) {
+        currentPreview.handle = handle;
+        currentPreview.displayUrl = handle + '.feel2real.co.kr';
+        changed = true;
+      }
+      if (changed) {
+        populatePreview(currentPreview);
+        if (currentPreview.publicPathUrl) {
+          dirtyTextChanges = true;
+          toast('학원 이름과 주소를 미리보기에 반영했어요. 상단 발행 버튼으로 저장하세요.', 'fa-link');
+        } else {
+          persistPendingHandle(handle);
+          persistPendingTextChanges(currentPreview);
+        }
+      }
+      aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, 'naming');
+      aiGuideSession.academyName = name.slice(0, 100);
+      writeAiGuideSession();
+      const nextId = AI_GUIDE.nextStepId('naming');
+      aiGuideBusy = false;
+      if (nextId) goAiGuideStep(nextId); else renderAiGuide();
+    } catch (_) {
+      setAiGuideNamingStatus('주소 확인에 실패했어요. 잠시 후 다시 시도해 주세요.', 'error');
+    } finally {
+      aiGuideBusy = false;
+    }
   }
 
   function renderAiGuideStyleStep() {

@@ -174,7 +174,7 @@ test('후보 적용은 Bildi 경로에서도 PUT/Publish 없이 builderDraft만 
 
 test('F2RAcademyWorld 미로드 → 기존 정적 패널로 폴백(회귀 없음)', () => {
   const { hooks, doc } = loadBildi({ noWorld: true });
-  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', handle: 'apgujeong-eduholic' });
   hooks.setPreview(academy);
   hooks.wireAiGuide(academy);
 
@@ -183,7 +183,7 @@ test('F2RAcademyWorld 미로드 → 기존 정적 패널로 폴백(회귀 없음
   // 폴백: 패널이 열리고 body.ai-guide-open
   assert.equal(doc.getElementById('builderAiGuidePanel').classList.contains('is-open'), true);
   assert.equal(doc.body.classList.contains('bildi-active'), false);
-  // guide 본문은 여전히 렌더된다
+  // guide 본문은 여전히 렌더된다(이름/주소 확정된 Academy → 스타일 단계)
   assert.match(doc.getElementById('builderAiGuideBody').innerHTML, /홈페이지 스타일|어떤 느낌/);
 });
 

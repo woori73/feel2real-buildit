@@ -166,3 +166,105 @@ body.ai-guide-open .canvas-area { padding-right: calc(var(--ai-guide-width) + 24
 @media (prefers-reduced-motion: reduce) {
   .ai-guide-panel { transition: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STEP 1 — 학원명 / 홈페이지 주소 필드 (dark 패널 기준)
+   ══════════════════════════════════════════════════════════════════════════ */
+.ai-guide-field-label {
+  display: block; font-size: .64rem; font-weight: 800; letter-spacing: .02em;
+  color: rgba(255, 255, 255, .62); margin: 10px 0 4px;
+}
+.ai-guide-field-label:first-child { margin-top: 0; }
+.ai-guide-handle-row { display: flex; align-items: center; gap: 6px; }
+.ai-guide-handle-row .ai-guide-input { flex: 1; min-width: 0; }
+.ai-guide-handle-suffix {
+  font-size: .76rem; font-weight: 700; color: rgba(255, 255, 255, .58); white-space: nowrap;
+}
+.ai-guide-handle-preview {
+  margin: 8px 0 0; font-size: .72rem; color: rgba(255, 255, 255, .55); line-height: 1.5;
+}
+.ai-guide-handle-preview b { color: #eaf1ff; font-weight: 800; }
+.ai-guide-handle-status {
+  margin: 8px 0 0; font-size: .72rem; font-weight: 700; line-height: 1.45;
+  border-radius: 8px; padding: 6px 9px;
+}
+.ai-guide-handle-status[data-tone="muted"],
+.ai-guide-handle-status[data-tone="checking"] {
+  color: rgba(255, 255, 255, .7); background: rgba(255, 255, 255, .06);
+}
+.ai-guide-handle-status[data-tone="error"] {
+  color: #fecaca; background: rgba(239, 68, 68, .14); border: 1px solid rgba(248, 113, 113, .32);
+}
+.ai-guide-handle-status[data-tone="ok"] {
+  color: #a7f3d0; background: rgba(16, 185, 129, .14); border: 1px solid rgba(52, 211, 153, .32);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   밝은 표면(빌디 말풍선) 위 재색상 — Problem 1 근본 원인 수정.
+
+   guideStepInnerHtml() 이 만드는 .ai-guide-* 마크업은 원래 오른쪽 dark 패널
+   (#0f172a)용이라 글자색이 흰색 계열이다. 같은 마크업이 흰색 .bildi-bubble 안
+   .bildi-bubble-step-inner 로 주입되면서 "흰 글씨 on 흰 배경"으로 읽을 수 없었다.
+   여기서 그 컨테이너 안에서만 어두운 잉크로 다시 칠한다(!important 없이 specificity 로).
+   normal / hover / selected / disabled 모두 대비를 확보한다.
+   ══════════════════════════════════════════════════════════════════════════ */
+.bildi-bubble-step-inner {
+  --aig-ink: #1c2742;      /* 본문 텍스트 (on #fff ≈ 13.6:1) */
+  --aig-muted: #55607a;    /* 보조 텍스트 (on #fff ≈ 6.0:1) */
+  --aig-line: rgba(20, 32, 63, .18);
+  --aig-line-strong: rgba(20, 32, 63, .34);
+  --aig-accent: #2f4fb0;
+  --aig-surface: #f4f7ff;
+  color: var(--aig-ink);
+}
+.bildi-bubble-step-inner .ai-guide-question { color: var(--aig-ink); }
+.bildi-bubble-step-inner .ai-guide-note { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-loading { color: var(--aig-muted); }
+
+.bildi-bubble-step-inner .ai-guide-field-label { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-handle-suffix { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-handle-preview { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-handle-preview b { color: var(--aig-accent); }
+
+.bildi-bubble-step-inner .ai-guide-input {
+  color: var(--aig-ink); background: #fff; border-color: var(--aig-line-strong);
+}
+.bildi-bubble-step-inner .ai-guide-input::placeholder { color: rgba(20, 32, 63, .42); }
+.bildi-bubble-step-inner .ai-guide-input:focus {
+  border-color: var(--aig-accent); box-shadow: 0 0 0 3px rgba(47, 79, 176, .16);
+}
+
+.bildi-bubble-step-inner .ai-guide-style-option {
+  color: var(--aig-ink); background: var(--aig-surface); border-color: var(--aig-line);
+}
+.bildi-bubble-step-inner .ai-guide-style-option:hover {
+  border-color: var(--aig-accent); background: #e8effc;
+}
+.bildi-bubble-step-inner .ai-guide-style-option.is-selected {
+  border-color: var(--aig-accent); background: #dfe8fb; color: var(--aig-ink);
+}
+
+.bildi-bubble-step-inner .ai-guide-btn-ghost {
+  color: var(--aig-ink); background: #eef2ff; border-color: var(--aig-line);
+}
+.bildi-bubble-step-inner .ai-guide-btn-ghost:hover { background: #e0e8ff; }
+.bildi-bubble-step-inner .ai-guide-btn:disabled { opacity: .55; }
+
+.bildi-bubble-step-inner .ai-guide-candidate {
+  border-color: var(--aig-line); background: var(--aig-surface);
+}
+.bildi-bubble-step-inner .ai-guide-candidate p { color: var(--aig-ink); }
+
+.bildi-bubble-step-inner .ai-guide-error {
+  color: #b42318; background: #fef2f2; border-color: #fecaca;
+}
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="muted"],
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="checking"] {
+  color: var(--aig-muted); background: rgba(20, 32, 63, .06);
+}
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="error"] {
+  color: #b42318; background: #fef2f2; border-color: #fecaca;
+}
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="ok"] {
+  color: #047857; background: #ecfdf5; border-color: #a7f3d0;
+}

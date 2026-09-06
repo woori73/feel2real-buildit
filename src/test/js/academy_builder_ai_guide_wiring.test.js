@@ -76,14 +76,26 @@ function loadGuide(options = {}) {
   return { hooks, document, fetchCalls };
 }
 
-test('wireAiGuide 후 첫 진입은 스타일 스텝을 렌더하고 세션을 sessionStorage에 저장한다', () => {
+test('신규 Academy 첫 진입 = 이름/주소 단계, 주소 preview = xxx.feel2real.co.kr', () => {
   const { hooks, document } = loadGuide();
-  hooks.setPreview(academyFixture({ publicPathUrl: '/academies/x' }));
+  hooks.setPreview(academyFixture({ publicPathUrl: '/academies/x' })); // handle 없음 = 신규/미설정
   hooks.wireAiGuide(academyFixture({ publicPathUrl: '/academies/x' }));
 
   const body = document.getElementById('builderAiGuideBody');
-  assert.match(body.innerHTML, /홈페이지 스타일|어떤 느낌/);
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'naming');
+  assert.match(body.innerHTML, /학원명|홈페이지 주소/);
+  assert.match(body.innerHTML, /\.feel2real\.co\.kr/);
+  assert.match(body.innerHTML, /이 이름과 주소로 시작하기/);
+});
+
+test('이미 확정된 이름/주소가 있는 Academy는 naming 을 건너뛰고 스타일부터 시작한다', () => {
+  const { hooks, document } = loadGuide();
+  const academy = academyFixture({ publicPathUrl: '/academies/x', handle: 'apgujeong-eduholic' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
   assert.equal(hooks.getAiGuideSession().currentStepId, 'style');
+  assert.ok(hooks.getAiGuideSession().completedStepIds.indexOf('naming') >= 0);
+  assert.match(document.getElementById('builderAiGuideBody').innerHTML, /홈페이지 스타일|어떤 느낌/);
 });
 
 test('[문구 추천받기]는 읽기 전용 — POST만 나가고 currentPreview는 안 바뀐다', async () => {
@@ -184,9 +196,9 @@ test('AI Router 장애(HTTP 503) → 에러 표시하고 Academy 보존', async 
 
 test('스텝 이동: 다음/이전/건너뛰기가 세션 진행 상태에 반영된다', () => {
   const { hooks } = loadGuide();
-  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  const academy = academyFixture({ publicPathUrl: '/academies/x', handle: 'apgujeong-eduholic' });
   hooks.setPreview(academy);
-  hooks.wireAiGuide(academy);
+  hooks.wireAiGuide(academy); // 이름/주소 확정 → style 부터 시작
 
   hooks.moveAiGuideStep('next'); // style -> hero, style completed
   assert.equal(hooks.getAiGuideSession().currentStepId, 'hero');
@@ -207,7 +219,7 @@ test('restartAiGuide는 세션을 초기화한다', () => {
   hooks.wireAiGuide(academy);
   hooks.goAiGuideStep('philosophy');
   hooks.restartAiGuide();
-  assert.equal(hooks.getAiGuideSession().currentStepId, 'style');
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'naming');
   assert.deepEqual(hooks.getAiGuideSession().completedStepIds, []);
 });
 
