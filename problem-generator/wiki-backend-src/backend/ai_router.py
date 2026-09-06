@@ -1,11 +1,12 @@
 """Server-side AI router. Secret values never leave this process."""
-import json, os, socket, time, urllib.error, urllib.request
+import json, logging, os, socket, time, urllib.error, urllib.request
 from dataclasses import dataclass
 from typing import Optional
 import prompt_logic as pl
 import private_reference_bank
 
-DEFAULT_PROVIDER_TIMEOUT_SECONDS=90.0
+DEFAULT_PROVIDER_TIMEOUT_SECONDS=45.0
+_LOG=logging.getLogger(__name__)
 MODELS_URL='https://openrouter.ai/api/v1/models'
 CHAT_URL='https://openrouter.ai/api/v1/chat/completions'
 FREE_ROUTER='openrouter/free'
@@ -21,8 +22,8 @@ def provider_timeout_seconds():
     return max(10.0,min(value,120.0))
 
 class ProviderError(Exception):
-    def __init__(self,message,provider,status=None):
-        super().__init__(message); self.provider=provider; self.status=status
+    def __init__(self,message,provider,status=None,code='QUESTION_WIKI_AI_ERROR',retryable=False):
+        super().__init__(message); self.provider=provider; self.status=status; self.code=code; self.retryable=retryable
 
 @dataclass
 class ProviderResult:
@@ -83,17 +84,21 @@ def _openrouter(key,model,provider,system,prompt,schema,temperature):
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
     body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':prompt}],'temperature':temperature}
     if schema:body['response_format']={'type':'json_schema','json_schema':{'name':'buildit_response','strict':True,'schema':schema}}
-    request=urllib.request.Request(CHAT_URL,data=json.dumps(body,ensure_ascii=False).encode(),method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
+    request_bytes=json.dumps(body,ensure_ascii=False).encode()
+    request=urllib.request.Request(CHAT_URL,data=request_bytes,method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
+    started=time.perf_counter()
+    _LOG.info("ai_provider_start provider=%s model=%s prompt_chars=%s estimated_tokens=%s request_bytes=%s timeout_seconds=%s", provider, model, len(prompt), (len(prompt)+3)//4, len(request_bytes), provider_timeout_seconds())
     try:
         with urllib.request.urlopen(request,timeout=provider_timeout_seconds()) as response:payload=json.loads(response.read().decode())
         text=payload.get('choices',[{}])[0].get('message',{}).get('content','')
         if isinstance(text,list):text=''.join(x.get('text','') for x in text if isinstance(x,dict))
         if not str(text).strip():raise ProviderError('OpenRouter 응답 내용이 없습니다.',provider)
         return ProviderResult(str(text),payload.get('provider') or provider,payload.get('model') or model,'server')
-    except urllib.error.HTTPError as exc:raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})',provider,exc.code) from exc
-    except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 다시 시도해 주세요.',provider,504) from exc
+    except urllib.error.HTTPError as exc:raise ProviderError(f'OpenRouter 요청 실패 ({exc.code})',provider,exc.code, 'QUESTION_WIKI_FREE_AI_RATE_LIMIT' if exc.code==429 else 'QUESTION_WIKI_FREE_AI_UPSTREAM', exc.code in (429,502,503,504)) from exc
+    except (TimeoutError,socket.timeout) as exc:raise ProviderError('무료 AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.',provider,504,'QUESTION_WIKI_FREE_AI_TIMEOUT',True) from exc
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
-    except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502) from exc
+    except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True) from exc
+    finally:_LOG.info("ai_provider_done provider=%s model=%s provider_total_ms=%.2f",provider,model,(time.perf_counter()-started)*1000)
 
 def generate_multimodal(model,system,content,temperature=.15):
     """Server-key OpenRouter vision call for school-print reconstruction; never falls back."""
@@ -125,7 +130,9 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
     requested=provider or 'auto'; gemini_server,openrouter_server=_server_keys()
     gemini=gemini_server; openrouter=openrouter_server
     if requested=='openrouter-free' and private_reference_bank.has_request(prompt):
-        prompt=private_reference_bank.enrich_prompt(prompt)
+        try: prompt=private_reference_bank.enrich_prompt(prompt)
+        except private_reference_bank.ReferenceNotFoundError as exc:
+            raise ProviderError('현재 문항의 변형 Reference를 찾지 못했습니다.',requested,422,'QUESTION_WIKI_REFERENCE_NOT_FOUND',False) from exc
     candidates=['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested]; last_error=None
     for candidate in candidates:
         try:

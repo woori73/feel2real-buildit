@@ -463,4 +463,4 @@ PR #134 이후 브라우저 Wiki API는 Spring proxy(`BuildItWikiProxyController
 
 ## BuildIt Wiki AI timeout 순서
 
-운영 Wiki AI 요청은 안쪽부터 OpenRouter 90초(`AI_PROVIDER_TIMEOUT_SECONDS`) → Spring Wiki proxy 280초 → nginx 290초 → React 300초로 제한한다. 바깥 계층이 먼저 끊겨 HTML 504를 만들지 않도록 이 순서를 유지하며, 무한 대기는 허용하지 않는다. 배포 workflow가 systemd 환경과 `/etc/nginx/conf.d/buildit-wiki-timeouts.conf`를 설정하고 `nginx -t` 후 reload한다.
+운영 Question Wiki AI 요청은 안쪽부터 OpenRouter 45초(`AI_PROVIDER_TIMEOUT_SECONDS`) → Spring AI proxy 52초 → 외부 ALB 순으로 제한한다. 일반 Wiki proxy의 280초 제한은 파일 처리 호환을 위해 유지한다. 외부 게이트웨이보다 내부 오류가 먼저 JSON으로 반환되며 무한 대기는 허용하지 않는다. 배포 workflow가 systemd 환경과 `/etc/nginx/conf.d/buildit-wiki-timeouts.conf`를 설정하고 `nginx -t` 후 reload한다.

@@ -2,8 +2,15 @@
 import json
 import gzip
 import re
+import logging
+import time
 from functools import lru_cache
 from pathlib import Path
+
+_LOG = logging.getLogger(__name__)
+
+class ReferenceNotFoundError(Exception):
+    pass
 
 _CORPUS_DIR = Path(__file__).with_name("private-reference")
 _MARKER_RE = re.compile(r"QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST\s*:\s*(\{[^\n]+\})")
@@ -93,17 +100,20 @@ def select(prompt, limit=2):
 def _reference_text(item):
     # rawLayout/provenance remain in the server DB for reconstruction and QA,
     # but only the chosen problem text is placed in the model prompt.
-    answer = item.get("answer") or {}
     return (f"Instruction: {item.get('instruction','')}\n"
-            f"Problem:\n{item.get('rawText','')}\n"
-            f"Original answer/explanation: {answer.get('raw','')}").strip()
+            f"Type: {item.get('type','')}\n"
+            f"Problem mechanics example:\n{item.get('rawText','')}").strip()
 
 
 def enrich_prompt(prompt):
     req, grade, qno, wanted = _fields(prompt)
     if not req:
         return prompt
+    select_started = time.perf_counter()
     refs = select(prompt)
+    select_ms = (time.perf_counter() - select_started) * 1000
+    if not refs:
+        raise ReferenceNotFoundError(f"No exact reference for grade={grade}, sourceNo={qno}, type={wanted}")
     blocks = [f"EXACT-SOURCE REFERENCE {i} (grade={r['grade']}, "
               f"sourceNo={r['sourceQuestionNo']}, type={r['type']}):\n{_reference_text(r)}"
               for i, r in enumerate(refs, 1)]
@@ -115,7 +125,10 @@ def enrich_prompt(prompt):
       f"MECHANICS: {_TYPE_MECHANICS.get(wanted, _TYPE_MECHANICS['other'])}\n"
       "HARD RULE: references from any other sourceQuestionNo are forbidden. "
       "If exact type is unavailable, transform only another variant from this same source question.")
-    return prompt + guidance + (("\n\n" + "\n\n".join(blocks)) if blocks else "")
+    enriched = prompt + guidance + "\n\n" + "\n\n".join(blocks)
+    shard = resolve_shard(grade, qno)
+    _LOG.info("question_wiki_reference grade=%s source_no=%s type=%s shard=%s refs=%s variants=%s reference_select_ms=%.2f prompt_build_ms=%.2f final_prompt_chars=%s estimated_tokens=%s", grade, qno, wanted, shard.name if shard else None, len(refs), [r.get('variantIndex') for r in refs], select_ms, (time.perf_counter() - select_started) * 1000 - select_ms, len(enriched), (len(enriched)+3)//4)
+    return enriched
 
 
 def has_request(prompt):
