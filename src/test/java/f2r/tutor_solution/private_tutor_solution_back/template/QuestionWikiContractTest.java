@@ -61,12 +61,9 @@ class QuestionWikiContractTest {
     assertThat(html).contains("id=\"qwMaterialSection\"", "id=\"qwOpinionSection\"");
     assertThat(html).contains(">학습자료<", "이 문항에 대한 의견");
     assertThat(html).contains("id=\"qwWriteBtn\"").contains("+ 의견 남기기");
-    // 학습자료 등록 두 갈래
     assertThat(html).contains("Wiki 자료에서 찾기", "직접 올리기");
-    // 작성폼(qwComposer)은 모달(qwComposerModal) 안에 있다 — 전면 노출 금지
     assertThat(html).contains("id=\"qwComposerModal\"", "id=\"qwComposer\"");
     assertThat(html.indexOf("id=\"qwComposerModal\"")).isLessThan(html.indexOf("id=\"qwComposer\""));
-    // 내부 분류 개념을 사용자에게 노출하지 않는다
     assertThat(html)
         .doesNotContain("데이터 성격")
         .doesNotContain("GENERATED_PRACTICE")
@@ -96,7 +93,6 @@ class QuestionWikiContractTest {
     assertThat(js).contains("/materials/upload");
     assertThat(js).doesNotContain("'/home'").doesNotContain("\"/home\"");
     assertThat(js).doesNotContain("/community/posts/");
-    // 새 글은 분류를 보내지 않는다(서버 기본값 ETC + 향후 AI 자동분류)
     assertThat(js).contains("JSON.stringify({ content: content })");
 
     String listJs = read("static/js/question_wiki_list.js");
@@ -108,16 +104,14 @@ class QuestionWikiContractTest {
   @DisplayName("HTML 직접 올리기: accept 에 .html + 학습자료 카드는 [HTML] 미리보기를 격리 iframe 으로 연다")
   void htmlUpload_acceptAndSandboxedPreview() throws IOException {
     String html = read("templates/public/question_wiki.html");
-    assertThat(html).contains(".html,.htm");           // 파일 선택 accept
+    assertThat(html).contains(".html,.htm");
     assertThat(html).contains("id=\"qwHtmlPreviewModal\"", "id=\"qwHtmlFrame\"");
-    // 부모 DOM 삽입이 아니라 sandbox iframe
     assertThat(html).contains("<iframe id=\"qwHtmlFrame\"").contains("sandbox");
 
     String js = read("static/js/question_wiki.js");
     assertThat(js).contains("previewKind === 'HTML'");
     assertThat(js).contains("data-html-preview", "openHtmlPreview");
     assertThat(js).contains("els.htmlFrame.setAttribute('src'");
-    // iframe src 로만 연다(srcdoc/innerHTML 로 부모에 삽입하지 않음)
     assertThat(js).doesNotContain("htmlFrame.srcdoc").doesNotContain("innerHTML = html");
   }
 
@@ -150,7 +144,7 @@ class QuestionWikiContractTest {
         .contains("sourceLanguage: 'ko', targetLanguage: 'en'")
         .contains("sourceLanguage: 'en', targetLanguage: 'ko'")
         .contains("PATTERN REFERENCE ONLY", "CURRENT_QUESTION.passage is the only content source")
-        .contains("REFERENCE_CONTEXT (supporting analysis only; never a replacement passage)")
+        .contains("REFERENCE_CONTEXT (MANDATORY supporting analysis/strategy; never a replacement passage)")
         .doesNotContain("fetch(");
   }
 
