@@ -19,8 +19,8 @@ class QuestionWikiPrivateReferenceCorpusContractTest {
     String g2=Files.readString(root.resolve("private-reference/grade2-manifest.json"),StandardCharsets.UTF_8);
     assertThat(g1).contains("\"recordCount\": 255", "\"PASS\": 255");
     assertThat(g2).contains("\"recordCount\": 243", "\"PASS\": 243");
-    assertThat(bank).contains("exact requested type first", "_same_question(grade, qno)",
-      "resolve_shard(grade,qno)", "_load_question(grade,qno)", "[:max(1, min(int(limit), 2))]");
+    assertThat(bank).contains("exact requested type first", "_same_question(grade,qno)",
+      "resolve_shard(grade,qno)", "_load_question(grade,qno)", "refs=select(prompt,limit=1)");
     assertThat(bank).doesNotContain("_load_grade(grade)");
     assertThat(bank).doesNotContain("private_reference_exact_g2", "private_reference_corpus_g1");
     assertThat(js).contains("AI_PROVIDER='openrouter-free'", "provider:AI_PROVIDER", "QWEN_3_7_FLASH");
