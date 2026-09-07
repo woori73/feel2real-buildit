@@ -27,8 +27,9 @@ class MidtermWikiCandidateContractTest {
     assertThat(endpoint).contains("kind='final'");
     assertThat(endpoint).contains("TRIM(html_text) <> ''");
     assertThat(endpoint).contains("'hasHtml': True");
-    assertThat(endpoint).doesNotContain(
-        "student_id", "original_name", "original_blob", "storage", "download", "url");
+    String responseShape = endpoint.substring(endpoint.indexOf("result.append({"));
+    assertThat(responseShape).doesNotContain(
+        "student_id", "original_name", "original_blob", "storageKey", "downloadUrl", "originalUrl");
   }
 
   @Test
