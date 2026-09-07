@@ -18,6 +18,27 @@ _TYPE_TERMS = {
 }
 _INSIGHT_TERMS = ("변형문제 인사이트", "변형 문제 인사이트", "insight", "변형문제", "출제 인사이트")
 
+# Recovered from the original variant-Insight authoring rules: Insight is a
+# construction manual, not another content source. These rules are deliberately
+# mechanics-only and are applied only when the exact same-type DB reference is absent.
+_TYPE_DESIGN_RULES = {
+    "grammar": "Test meaningful grammar/usage contrasts in the current passage. Keep the English natural, make the keyed error/correct form uniquely defensible, and make the explanation identify the exact grammatical evidence.",
+    "vocabulary": "Test contextual lexical appropriateness or a defensible replacement/contrast. Distractors must be plausible in isolation but wrong in the current context; preserve the passage's original logic and meaning.",
+    "blank": "Choose an idea-bearing blank whose answer is recoverable from discourse logic. Build distractors from nearby concepts or plausible logical misreadings, while leaving exactly one answer supported by the passage.",
+    "order": "Use chronology, causality, contrast, reference, lexical cohesion, and transition signals to divide the current passage into coherent (A)/(B)/(C) blocks. The correct order must be uniquely recoverable from those discourse clues; obey the separate fixed-choice order contract.",
+    "insertion": "Choose an insertion sentence and position using demonstratives, pronouns, connectives, repetition, topic continuity, and local cohesion. Exactly one of the five positions must satisfy both forward and backward context.",
+    "title_topic": "Derive the answer from the whole passage's central claim, not one detail. Distractors may be too broad, too narrow, reversed, or detail-only, but must remain topically plausible.",
+    "written": "Create a genuine constructed-response task from the current passage. Conditions, labels, and required wording must match the model answer exactly; do not turn it into multiple choice.",
+    "summary": "Compress the passage's central relation into a summary without changing its causal/contrast structure. Any blanks and conditions must have uniquely supported answers and the explanation must cite the decisive passage logic.",
+    "similar": "Preserve the current question's tested relationship, difficulty, and exam mechanics while creating a genuinely new variant from the current passage only.",
+    "other": "Preserve the current question's tested relationship, difficulty, and exam mechanics while creating a genuinely new variant from the current passage only.",
+}
+_QA_RULE = (
+    "QA before output: (1) exactly one defensible answer, (2) preserve the current passage's core thesis, causality and contrast, "
+    "(3) keep grammar/vocabulary transformations natural, (4) explanation must state the decisive textual or linguistic evidence, "
+    "and (5) every distractor must be plausible but provably wrong."
+)
+
 
 def _reference_context(prompt):
     text = str(prompt or "")
@@ -63,7 +84,8 @@ def _compact_window(text, terms, max_chars=6000):
 
 def extract(prompt, requested_type):
     """Return requested-type mechanics from the current question's linked Insight only."""
-    terms = _TYPE_TERMS.get(str(requested_type or "").strip(), ())
+    requested_type = str(requested_type or "").strip()
+    terms = _TYPE_TERMS.get(requested_type, ())
     if not terms:
         return ""
     docs = _documents(prompt)
@@ -74,7 +96,10 @@ def extract(prompt, requested_type):
         section = _compact_window(doc.get("text"), terms)
         if len(section) > len(best):
             best = section
-    return best
+    if not best:
+        return ""
+    design_rule = _TYPE_DESIGN_RULES.get(requested_type, _TYPE_DESIGN_RULES["other"])
+    return "TYPE-SPECIFIC DESIGN RULE:\n" + design_rule + "\n" + _QA_RULE + "\n\nSAME-QUESTION INSIGHT EXCERPT:\n" + best
 
 
 def guidance(prompt, requested_type):
