@@ -175,6 +175,12 @@
       var fig = el('div', 'mt-hero-figure');
       var im = document.createElement('img');
       im.src = img; im.alt = ''; im.loading = 'eager'; im.decoding = 'async';
+      im.addEventListener('load', function () {
+        if (im.naturalWidth && im.naturalHeight) {
+          var ar = Math.min(1.7, Math.max(0.86, im.naturalWidth / im.naturalHeight));
+          fig.style.setProperty('--hero-ar', ar.toFixed(4));
+        }
+      });
       fig.appendChild(im);
       s.appendChild(fig);
     }
@@ -310,13 +316,10 @@
     return card;
   }
 
-  function renderBriefingMoment(col) {
-    var b = col.briefing;
-    var s = el('section', 'mt-block mt-briefing');
-    var w = el('div', 'mt-wrap');
-    w.setAttribute('data-reveal', '');
+  // 영상 프레임 — 실제 영상 비율에 맞춘다(억지 crop 없음). metadata 로드/poster 자연 크기로
+  // --mt-video-ar 을 채우고, 세로가 너무 길거나 가로가 너무 넓으면 [0.7, 1.9] 로 클램프.
+  function videoFrame(b, ariaLabel) {
     var frame = el('div', 'mt-video');
-    frame.setAttribute('data-reveal-item', '');
     var v = document.createElement('video');
     v.preload = 'none'; v.playsInline = true; v.controls = false; v.setAttribute('playsinline', '');
     if (b.thumbnailUrl) v.poster = b.thumbnailUrl;
@@ -324,16 +327,38 @@
     src.src = b.videoUrl; src.type = 'video/mp4';
     v.appendChild(src);
     frame.appendChild(v);
+    function setAR(w, h) {
+      if (!w || !h) return;
+      var ar = Math.min(1.9, Math.max(0.7, w / h));
+      frame.style.setProperty('--mt-video-ar', w + ' / ' + h);
+      if (ar !== w / h) frame.style.setProperty('--mt-video-ar', ar.toFixed(4));
+    }
+    v.addEventListener('loadedmetadata', function () { setAR(v.videoWidth, v.videoHeight); });
+    if (b.thumbnailUrl) {
+      var probe = new Image();
+      probe.onload = function () { if (!v.videoWidth) setAR(probe.naturalWidth, probe.naturalHeight); };
+      probe.src = b.thumbnailUrl;
+    }
     var play = el('button', 'mt-video-play');
     play.type = 'button';
-    play.setAttribute('aria-label', schoolTitle(col) + ' 브리핑 영상 재생');
+    play.setAttribute('aria-label', ariaLabel);
     play.appendChild(el('span', null, '▶'));
     play.addEventListener('click', function () {
-      v.controls = true; play.remove();
+      v.controls = true; v.preload = 'auto'; play.remove();
       var r = v.play();
       if (r && r.catch) r.catch(function () { v.controls = true; });
     });
     frame.appendChild(play);
+    return frame;
+  }
+
+  function renderBriefingMoment(col) {
+    var b = col.briefing;
+    var s = el('section', 'mt-block mt-briefing');
+    var w = el('div', 'mt-wrap');
+    w.setAttribute('data-reveal', '');
+    var frame = videoFrame(b, schoolTitle(col) + ' 브리핑 영상 재생');
+    frame.setAttribute('data-reveal-item', '');
     w.appendChild(frame);
 
     var cap = el('div', 'mt-briefing-cap');
@@ -590,23 +615,7 @@
     var box = el('div', 'mt-feature');
     box.appendChild(el('h2', 'mt-h2', '원장 브리핑'));
     if (b.videoUrl) {
-      var frame = el('div', 'mt-video');
-      var v = document.createElement('video');
-      v.preload = 'none'; v.playsInline = true; v.controls = false; v.setAttribute('playsinline', '');
-      if (b.thumbnailUrl) v.poster = b.thumbnailUrl;
-      var src = document.createElement('source');
-      src.src = b.videoUrl; src.type = 'video/mp4';
-      v.appendChild(src);
-      frame.appendChild(v);
-      var play = el('button', 'mt-video-play');
-      play.type = 'button';
-      play.setAttribute('aria-label', '브리핑 영상 재생');
-      play.appendChild(el('span', null, '▶'));
-      play.addEventListener('click', function () {
-        v.controls = true; play.remove(); var r = v.play(); if (r && r.catch) r.catch(function () {});
-      });
-      frame.appendChild(play);
-      box.appendChild(frame);
+      box.appendChild(videoFrame(b, '브리핑 영상 재생'));
     } else if (b.thumbnailUrl) {
       var img = document.createElement('img');
       img.src = b.thumbnailUrl; img.loading = 'lazy'; img.alt = '';
