@@ -1,0 +1,252 @@
+/* 2026 2학기 내신 LIVE — 모바일 우선 D2C 캠페인 페이지.
+   PC를 줄인 것이 아니라 375/390/430 을 먼저 완성하고 넓은 화면으로 확장한다. */
+
+:root {
+  --ink: #14161a;
+  --ink-soft: #55606c;
+  --line: #e4e1da;
+  --paper: #f6f4ef;
+  --card: #ffffff;
+  --accent: #1f2b52;          /* deep navy — 유일한 강조색. 빨강/노랑 없음 */
+  --accent-soft: #eef0f6;
+  --live: #1f7a4d;            /* LIVE 도트에만 쓰는 차분한 초록 */
+  --radius: 18px;
+  --pad: 20px;
+  --maxw: 720px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+img, video { max-width: 100%; display: block; }
+a { color: inherit; }
+
+.mt-boot { padding: 30vh 24px; text-align: center; color: var(--ink-soft); }
+
+.mt-wrap { width: min(100%, var(--maxw)); margin: 0 auto; padding: 0 var(--pad); }
+
+.mt-serif { font-family: "Playfair Display", "Nanum Myeongjo", serif; }
+
+/* ── HERO ─────────────────────────────────────────────────────────── */
+.mt-hero {
+  padding: calc(46px + var(--safe-t)) 0 40px;
+  background: linear-gradient(180deg, #fbfaf7 0%, var(--paper) 100%);
+  border-bottom: 1px solid var(--line);
+}
+.mt-eyebrow {
+  font-size: 12px; font-weight: 800; letter-spacing: .16em;
+  color: var(--accent); text-transform: uppercase; margin: 0 0 14px;
+}
+.mt-hero h1 {
+  font-size: clamp(28px, 8.5vw, 40px); line-height: 1.22; letter-spacing: -.02em;
+  margin: 0 0 16px; font-weight: 700;
+}
+.mt-hero p { font-size: 15px; color: var(--ink-soft); margin: 0 0 22px; }
+.mt-live-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.mt-live-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--card); font-size: 12.5px; font-weight: 600;
+}
+.mt-live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--live);
+  box-shadow: 0 0 0 0 rgba(31,122,77,.5); animation: mt-pulse 2.4s infinite;
+}
+@keyframes mt-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(31,122,77,.45); }
+  70% { box-shadow: 0 0 0 7px rgba(31,122,77,0); }
+  100% { box-shadow: 0 0 0 0 rgba(31,122,77,0); }
+}
+.mt-live-chip time { color: var(--ink-soft); font-weight: 500; }
+
+/* ── section shell ───────────────────────────────────────────────── */
+.mt-section { padding: 44px 0; border-bottom: 1px solid var(--line); }
+.mt-section:last-of-type { border-bottom: 0; }
+.mt-kicker {
+  font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 8px;
+}
+.mt-section h2 { font-size: clamp(21px, 5.5vw, 26px); letter-spacing: -.02em; margin: 0 0 6px; }
+.mt-section .mt-lead { color: var(--ink-soft); font-size: 14px; margin: 0 0 22px; }
+
+/* ── SCHOOL COLLECTIONS (가로 스와이프) ──────────────────────────── */
+.mt-collections {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; padding: 4px 0 12px; margin: 0 calc(-1 * var(--pad));
+  padding-left: var(--pad); padding-right: var(--pad); scrollbar-width: none;
+}
+.mt-collections::-webkit-scrollbar { display: none; }
+.mt-collection-card {
+  scroll-snap-align: start; flex: 0 0 82%; max-width: 320px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 20px; text-align: left; cursor: pointer; font: inherit; color: inherit;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.mt-collection-card .mt-school { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.mt-collection-card .mt-exam-title { font-size: 12px; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; }
+.mt-collection-card .mt-meta { font-size: 13px; color: var(--ink-soft); }
+.mt-collection-card .mt-meta strong { color: var(--ink); font-weight: 700; }
+.mt-collection-card .mt-view {
+  margin-top: auto; font-size: 13px; font-weight: 700; color: var(--accent);
+}
+.mt-count-dots { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
+.mt-count-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.mt-count-dots i.on { background: var(--accent); }
+
+/* ── COLLECTION DETAIL (해시 라우팅) ─────────────────────────────── */
+.mt-detail { display: none; }
+.mt-detail.active { display: block; }
+.mt-home.hidden { display: none; }
+.mt-back {
+  display: inline-flex; align-items: center; gap: 6px; margin: 22px 0 4px;
+  background: none; border: 0; font: inherit; font-weight: 700; color: var(--accent); cursor: pointer;
+}
+.mt-detail-head { padding: 8px 0 8px; }
+.mt-detail-head h1 { font-size: clamp(24px, 6.5vw, 32px); margin: 6px 0 4px; letter-spacing: -.02em; }
+.mt-detail-head .mt-exam-title { font-size: 12px; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; }
+
+.mt-status-list { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; }
+.mt-status-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  font-size: 14px;
+}
+.mt-badge { font-size: 11px; font-weight: 800; letter-spacing: .06em; padding: 4px 8px; border-radius: 6px; }
+.mt-badge.DONE { background: #e7f2ec; color: var(--live); }
+.mt-badge.IN_PROGRESS { background: var(--accent-soft); color: var(--accent); }
+.mt-badge.NOT_STARTED { background: #efece6; color: var(--ink-soft); }
+
+/* ── BRIEFING VIDEO ──────────────────────────────────────────────── */
+.mt-briefing { margin-top: 14px; }
+.mt-video-frame {
+  position: relative; border-radius: var(--radius); overflow: hidden; background: #0d1220;
+  aspect-ratio: 16 / 10;
+}
+.mt-video-frame video, .mt-video-frame img { width: 100%; height: 100%; object-fit: cover; }
+.mt-video-play {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(10,14,26,.28); border: 0; cursor: pointer; color: #fff;
+}
+.mt-video-play span {
+  width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,.92);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.mt-briefing h3 { font-size: 17px; margin: 14px 0 4px; }
+.mt-briefing p { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.mt-briefing .mt-shoot { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+/* ── MATERIAL SHOWCASE ──────────────────────────────────────────── */
+.mt-materials { display: grid; gap: 12px; margin-top: 14px; }
+.mt-material-card {
+  width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.mt-material-card .mt-thumb {
+  flex: 0 0 68px; width: 68px; height: 68px; border-radius: 10px; object-fit: cover;
+  background: var(--accent-soft);
+}
+.mt-material-card .mt-thumb.ph { display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 22px; }
+.mt-material-card .mt-cat { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; }
+.mt-material-card h4 { font-size: 15px; margin: 4px 0 4px; }
+.mt-material-card p { font-size: 13px; color: var(--ink-soft); margin: 0; }
+.mt-lock { font-size: 11px; color: var(--ink-soft); margin-top: 6px; display: inline-block; }
+
+/* ── UPDATE LOG ─────────────────────────────────────────────────── */
+.mt-log { list-style: none; padding: 0; margin: 14px 0 0; }
+.mt-log li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.mt-log li:last-child { border-bottom: 0; }
+.mt-log time { font-size: 12px; font-weight: 700; color: var(--accent); }
+.mt-log .mt-log-h { font-size: 14px; font-weight: 600; }
+.mt-log .mt-log-b { font-size: 13px; color: var(--ink-soft); }
+
+/* ── HOW WE PREPARE (정적 카피) ─────────────────────────────────── */
+.mt-steps { display: grid; gap: 10px; margin-top: 14px; counter-reset: step; }
+.mt-steps li {
+  list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; position: relative;
+}
+.mt-steps li::before {
+  counter-increment: step; content: "0" counter(step);
+  font-family: "Playfair Display", serif; font-size: 13px; color: var(--accent); font-weight: 700;
+}
+.mt-steps li b { display: block; margin: 2px 0 3px; font-size: 14px; }
+.mt-steps li span { font-size: 13px; color: var(--ink-soft); }
+
+/* ── NEXT EXAM ─────────────────────────────────────────────────── */
+.mt-next {
+  background: var(--accent); color: #fff; border-radius: var(--radius); padding: 26px 22px; margin-top: 8px;
+}
+.mt-next .mt-kicker { color: #aeb9dd; }
+.mt-next h2 { color: #fff; }
+.mt-next p { color: #d6dcef; font-size: 14px; }
+.mt-next a { display: inline-block; margin-top: 14px; background: #fff; color: var(--accent);
+  padding: 13px 20px; border-radius: 11px; text-decoration: none; font-weight: 800; font-size: 14px; }
+
+/* ── sticky bottom CTA ─────────────────────────────────────────── */
+.mt-sticky {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  padding: 10px var(--pad) calc(10px + var(--safe-b));
+  background: rgba(246,244,239,.92); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+}
+.mt-sticky .mt-wrap { padding: 0; }
+.mt-sticky a {
+  display: flex; align-items: center; justify-content: center; min-height: 48px;
+  background: var(--accent); color: #fff; border-radius: 12px; text-decoration: none;
+  font-weight: 800; font-size: 15px;
+}
+#mtRoot.has-sticky .mt-section:last-of-type { padding-bottom: 96px; }
+
+/* ── footer ────────────────────────────────────────────────────── */
+.mt-footer { padding: 28px var(--pad) calc(90px + var(--safe-b)); text-align: center; color: var(--ink-soft); font-size: 12px; }
+
+/* ── preview panel (자료 상세) ─────────────────────────────────── */
+.mt-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60; background: rgba(12,15,24,.5);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.mt-sheet {
+  width: min(100%, var(--maxw)); max-height: 88vh; overflow-y: auto;
+  background: var(--card); border-radius: 22px 22px 0 0;
+  padding: 22px var(--pad) calc(24px + var(--safe-b));
+}
+.mt-sheet-close {
+  float: right; background: none; border: 0; font-size: 24px; line-height: 1; color: var(--ink-soft); cursor: pointer;
+}
+.mt-sheet .mt-cat { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; }
+.mt-sheet h3 { font-size: 20px; margin: 6px 0 10px; }
+.mt-sheet .mt-comment {
+  border-left: 3px solid var(--accent); padding: 8px 0 8px 14px; margin: 14px 0;
+  font-size: 14px; color: var(--ink); background: var(--accent-soft); border-radius: 0 8px 8px 0;
+}
+.mt-sheet ul.mt-check { list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 6px; }
+.mt-sheet ul.mt-check li { font-size: 14px; padding-left: 22px; position: relative; }
+.mt-sheet ul.mt-check li::before { content: "✓"; position: absolute; left: 0; color: var(--live); font-weight: 800; }
+.mt-sheet .mt-file-btn {
+  display: block; text-align: center; margin-top: 8px; background: var(--accent); color: #fff;
+  padding: 13px; border-radius: 11px; text-decoration: none; font-weight: 800; font-size: 14px;
+}
+.mt-sheet .mt-file-note { text-align: center; font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+@media (min-width: 760px) {
+  .mt-collection-card { flex-basis: 300px; }
+  .mt-materials { grid-template-columns: 1fr 1fr; }
+  .mt-sheet { align-self: center; border-radius: 22px; margin-bottom: 5vh; }
+  .mt-sheet-backdrop { align-items: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-live-dot { animation: none; }
+  * { scroll-behavior: auto !important; }
+}

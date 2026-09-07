@@ -56,6 +56,9 @@
        th:classappend="${activeMenu == 'manage'} ? 'active'">🛠 강좌관리</a>
     <a th:if="${lmsIsOwner}" th:href="${lmsBase} + '/contents'"
        th:classappend="${activeMenu == 'contents'} ? 'active'">🎬 콘텐츠 관리</a>
+    <!-- 캠페인 행이 있는 학원(에듀홀릭)에만 노출. 접근 통제는 SecurityConfig + 컨트롤러 requireOwner. -->
+    <a th:if="${lmsIsOwner and lmsMidtermEnabled}" th:href="${lmsBase} + '/midterm-live'"
+       th:classappend="${activeMenu == 'midterm-live'} ? 'active'">📣 내신 LIVE 관리</a>
   </aside>
 </th:block>
 

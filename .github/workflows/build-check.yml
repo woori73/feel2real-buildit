@@ -97,6 +97,10 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service.PopularDownloadServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service.LatestUpdatesServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.controller.WikiHomeFeedControllerWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermMaterialAccessServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignPublicServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller.MidtermCampaignAdminAuthWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.MidtermLiveTemplateContractTest"
 
       - name: Upload test report
         if: always()
