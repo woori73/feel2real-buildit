@@ -53,3 +53,15 @@
   window.addEventListener('orientationchange', fit);
   fit();
 })();
+
+// Question Wiki AI layout rules are isolated from the mobile iframe fitter.
+// Load after question_wiki_ai.js so the normalizer can wrap generation/save fetches
+// before the user starts a generation request.
+(function () {
+  if (document.querySelector('script[data-qw-ai-layout-fix]')) return;
+  var script = document.createElement('script');
+  script.src = '/js/question_wiki_ai_layout_fix.js?v=20260907-1';
+  script.defer = true;
+  script.dataset.qwAiLayoutFix = '1';
+  document.head.appendChild(script);
+})();
