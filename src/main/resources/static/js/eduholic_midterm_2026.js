@@ -1,6 +1,7 @@
 /* 2026 2학기 중간고사 공개 LIVE.
  * GET .../wiki-sources 의 최신 eligible HTML 한 건만 read-only visual 로 사용한다.
  * API/preview 보안 경계는 서버가 소유하며 이 스크립트는 previewUrl 외 파일 정보를 사용하지 않는다.
+ * 첫 화면 composition 은 Shopify Atelier: 실제 자료(media)가 지배하고 copy 는 작게 옆에 둔다.
  */
 (function () {
   'use strict';
@@ -13,6 +14,8 @@
     + '/midterm-campaign/wiki-sources';
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var SEASON = '2026 2학기 중간고사';
+  var TITLE = '중간고사 준비 중';
+  var NOTE = '학교 프린트 내용을 반영했습니다.';
 
   fetch(SOURCES_API, {
     headers: { Accept: 'application/json' },
@@ -86,8 +89,15 @@
     root.appendChild(renderTopbar());
 
     var main = el('main', 'mt-main');
+    if (source) main.classList.add('mt-main--feature');
+
     var intro = el('div', 'mt-intro');
-    intro.appendChild(el('h1', 'mt-title', '중간고사, 지금 준비하고 있습니다.'));
+    if (source) {
+      var meta = metadata(source);
+      if (meta) intro.appendChild(el('p', 'midterm-feature__meta', meta));
+    }
+    intro.appendChild(el('h1', 'mt-title', source ? TITLE : SEASON));
+    if (source) intro.appendChild(el('p', 'mt-note', NOTE));
     main.appendChild(intro);
 
     if (source) main.appendChild(renderFeature(source));
@@ -98,9 +108,6 @@
   function renderFeature(source) {
     var section = el('section', 'midterm-feature');
     section.setAttribute('aria-label', '실제 중간고사 준비 자료');
-
-    var meta = metadata(source);
-    if (meta) section.appendChild(el('div', 'midterm-feature__meta', meta));
 
     var visual = el('div', 'midterm-feature__visual');
     var frame = document.createElement('iframe');
