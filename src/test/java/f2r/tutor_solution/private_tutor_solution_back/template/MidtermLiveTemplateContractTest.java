@@ -162,4 +162,44 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("thumbnailKey");
     assertThat(js).doesNotContain("imageKey");
   }
+
+  /** Phase 2 — Shopify Motion "evolving collections": featured hero 아래 최근 자료 collage. */
+  @Test
+  void recentSection_isMotionCollageFromExposedSourcesOnly() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    // Recent = public wiki-sources 에서 hero(featured)를 뺀 나머지. 순서는 서버 canonical.
+    assertThat(js).contains("recentSources(sources, hero)");
+    assertThat(js).contains("source.sourceId !== heroId");
+    assertThat(js).contains("midterm-recent__collection");
+    assertThat(js).contains("midterm-recent__doc");
+
+    // public JS 는 절대 admin/candidate/Python 경로를 직접 호출하지 않는다.
+    assertThat(js).doesNotContain("/api/tutor");
+    assertThat(js).doesNotContain("wiki-candidates");
+    assertThat(js).doesNotContain("live-material-candidates");
+    assertThat(js).doesNotContain(":8000");
+
+    // 0건이면 섹션 자체가 없다 — 빈 자리/"준비 중" 더미 카드 없음.
+    assertThat(js).contains("if (!sources.length) return;");
+    assertThat(js).doesNotContain("준비 중 카드");
+
+    // crop role 은 CSS presentation 전용 (DB/DTO taxonomy 아님).
+    assertThat(css).contains(".midterm-recent__item.is-role-b");
+    assertThat(js).doesNotContain("\"grammar\"");
+    assertThat(js).doesNotContain("\"exercise\"");
+    assertThat(js).doesNotContain("\"analysis\"");
+
+    // 모바일 = horizontal browse rail, 무한 carousel 아님. 데스크톱 = 비대칭 collage.
+    assertThat(css).contains("scroll-snap-type: x mandatory");
+    assertThat(css).contains("midterm-recent--n1");
+    assertThat(css).contains("midterm-recent--n2");
+    assertThat(css).doesNotContain("infinite");
+
+    // Recent iframe 도 동일 보안 계약(공유 safeFrame). previewUrl 외 파일 정보 미사용.
+    assertThat(js).contains("function safeFrame(previewUrl");
+    assertThat(js).doesNotContain("originalUrl");
+    assertThat(js).doesNotContain("blob:");
+  }
 }

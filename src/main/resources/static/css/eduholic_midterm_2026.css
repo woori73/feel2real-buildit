@@ -202,3 +202,191 @@ a { color: inherit; }
     animation: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Shopify Motion — "Showcase evolving collections"
+   featured hero 를 뺀 최근 자료를, 균일 grid 가 아닌 비대칭 collage(데스크톱) /
+   mobile-first horizontal browse rail(모바일)로 잇는다. 실제 HTML 자체가 media 다.
+   crop role(a/b/c/d)은 CSS presentation 전용 — DB/DTO taxonomy 아님. 전부 첫 내용
+   sheet 안에 착지시켜 어떤 school-print 든 빈 카드가 나오지 않게 한다.
+   ══════════════════════════════════════════════════════════════════════════ */
+.midterm-recent {
+  --r-w: 380px;
+  --r-h: 1960px;
+  --r-scale: 1;
+  --r-nudge: 6px;
+  --r-top: -1250px;
+  padding: 18px 0 34px;
+}
+.midterm-recent__head {
+  padding: 0 var(--page-pad);
+  margin-bottom: 13px;
+}
+.midterm-recent__title {
+  margin: 0;
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 720;
+  letter-spacing: -.04em;
+}
+
+/* mobile / tablet: horizontal browse rail, 다음 자료가 오른쪽에서 살짝 보인다.
+   세로 페이지 스크롤은 그대로, rail 안에서 문서 자체 스크롤은 없다. */
+.midterm-recent__collection {
+  display: flex;
+  gap: 12px;
+  padding: 0 var(--page-pad);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.midterm-recent__collection::-webkit-scrollbar { width: 0; height: 0; }
+.midterm-recent__item {
+  flex: 0 0 82vw;
+  max-width: 430px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .55s ease, transform .55s ease;
+}
+.midterm-recent.is-in-view .midterm-recent__item {
+  opacity: 1;
+  transform: none;
+}
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(2) { transition-delay: .06s; }
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(3) { transition-delay: .12s; }
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(4) { transition-delay: .18s; }
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(5) { transition-delay: .24s; }
+
+/* 최근 자료 1건 = Motion "single collection callout" — rail 이 아니라 single large visual */
+.midterm-recent--n1 .midterm-recent__collection {
+  display: block;
+  overflow: visible;
+  padding-inline: 8px;
+}
+.midterm-recent--n1 .midterm-recent__item {
+  flex: none;
+  max-width: none;
+}
+
+.midterm-recent__media {
+  position: relative;
+  height: clamp(288px, 42svh, 372px);
+  overflow: hidden;
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow: 0 14px 34px rgba(24, 24, 20, .12);
+  isolation: isolate;
+  pointer-events: none;
+}
+.midterm-recent--n1 .midterm-recent__media {
+  height: clamp(392px, 54svh, 480px);
+}
+.midterm-recent__doc {
+  position: absolute;
+  top: var(--r-top);
+  left: 50%;
+  width: var(--r-w);
+  height: var(--r-h);
+  border: 0;
+  background: var(--paper);
+  pointer-events: none;
+  transform-origin: top center;
+  transform: translate3d(calc(-50% + var(--r-nudge)), 0, 0) scale(var(--r-scale));
+}
+
+/* crop role — 같은 편집본의 서로 다른 영역/배율. 전부 첫 내용 sheet 범위 안. */
+.midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.12; --r-top: -1440px; }
+.midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.4; --r-top: -1920px; }
+.midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.9; --r-top: -1170px; }
+
+.midterm-recent__meta {
+  margin: 9px 2px 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -.015em;
+}
+
+@media (min-width: 431px) and (max-width: 1079px) {
+  .midterm-recent { --r-w: 460px; }
+  .midterm-recent__item { flex: 0 0 62vw; max-width: 480px; }
+  .midterm-recent__media { height: clamp(320px, 44svh, 420px); }
+}
+
+/* desktop: 비대칭 collage. 동일 비율 반복 없음. 하나는 크게, 하나는 세로, 하나는
+   detail, 하나는 wide. 자료가 visual surface, metadata 는 작게. */
+@media (min-width: 1080px) {
+  .midterm-recent {
+    --r-w: 640px;
+    --r-h: 2400px;
+    --r-scale: 1.06;
+    --r-nudge: 16px;
+    --r-top: -1420px;
+    width: min(100%, 1420px);
+    margin: 0 auto;
+    padding: 12px 42px 60px;
+  }
+  .midterm-recent__head { padding: 0; margin-bottom: 22px; }
+  .midterm-recent__title { font-size: clamp(17px, 1.3vw, 20px); }
+  .midterm-recent__collection {
+    display: grid;
+    overflow: visible;
+    padding: 0;
+    gap: clamp(16px, 1.8vw, 28px);
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: clamp(150px, 15vw, 210px);
+    grid-auto-flow: dense;
+  }
+  .midterm-recent__item {
+    flex: none;
+    max-width: none;
+    transform: translateY(24px);
+  }
+  .midterm-recent__media { height: auto; flex: 1 1 auto; min-height: 0; }
+
+  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.4; --r-top: -1900px; }
+  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.78; --r-top: -2440px; }
+  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.92; --r-top: -1300px; }
+
+  /* n2 — asymmetric pair (과장된 collage 아님) */
+  .midterm-recent--n2 .midterm-recent__collection { grid-auto-rows: clamp(220px, 22vw, 320px); }
+  .midterm-recent--n2 .midterm-recent__item:nth-child(1) { grid-column: span 4; grid-row: span 1; }
+  .midterm-recent--n2 .midterm-recent__item:nth-child(2) { grid-column: span 2; grid-row: span 1; }
+
+  /* n3+ — collage: 큰 것 하나 + 세로 하나 + 나머지 */
+  .midterm-recent--n3 .midterm-recent__item:nth-child(1),
+  .midterm-recent--n4 .midterm-recent__item:nth-child(1),
+  .midterm-recent--n5 .midterm-recent__item:nth-child(1) { grid-column: span 4; grid-row: span 2; }
+
+  .midterm-recent--n3 .midterm-recent__item:nth-child(2),
+  .midterm-recent--n4 .midterm-recent__item:nth-child(2),
+  .midterm-recent--n5 .midterm-recent__item:nth-child(2) { grid-column: span 2; grid-row: span 2; }
+
+  .midterm-recent--n3 .midterm-recent__item:nth-child(3) { grid-column: span 6; grid-row: span 1; }
+
+  .midterm-recent--n4 .midterm-recent__item:nth-child(3) { grid-column: span 2; grid-row: span 1; }
+  .midterm-recent--n4 .midterm-recent__item:nth-child(4) { grid-column: span 4; grid-row: span 1; }
+
+  .midterm-recent--n5 .midterm-recent__item:nth-child(3) { grid-column: span 3; grid-row: span 1; }
+  .midterm-recent--n5 .midterm-recent__item:nth-child(4) { grid-column: span 3; grid-row: span 1; }
+  .midterm-recent--n5 .midterm-recent__item:nth-child(5) { grid-column: span 6; grid-row: span 1; }
+}
+
+@media (min-width: 1360px) {
+  .midterm-recent { --r-scale: 1.16; --r-top: -1560px; }
+  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.5; --r-top: -2060px; }
+  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.92; --r-top: -2680px; }
+  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 1; --r-top: -1420px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .midterm-recent__item {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
