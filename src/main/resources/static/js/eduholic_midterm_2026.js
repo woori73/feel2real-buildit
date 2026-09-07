@@ -83,16 +83,13 @@
     var m = (col.materials || []).filter(function (x) { return x.thumbnailUrl; })[0];
     return m ? m.thumbnailUrl : null;
   }
+  // HERO media 는 실제 "사람/현장"(원장 브리핑 영상 썸네일)만 쓴다(§15·§20). 문서 썸네일을
+  // 풀블리드 cover 로 늘리면 약해 보인다 — 자료는 아래 showcase 에서 통째로 크게 보여준다.
+  // 브리핑 영상이 아직 없으면 절제된 타이포 히어로(빈 화면 아님).
   function pickHeroImage(c) {
     var s = (c.schoolCollections || []);
     for (var i = 0; i < s.length; i++) {
       if (s[i].briefing && s[i].briefing.thumbnailUrl) return s[i].briefing.thumbnailUrl;
-    }
-    var cm = (c.campaignMaterials || []).filter(function (x) { return x.thumbnailUrl; })[0];
-    if (cm) return cm.thumbnailUrl;
-    for (var j = 0; j < s.length; j++) {
-      var t = firstSchoolThumb(s[j]);
-      if (t) return t;
     }
     return null;
   }
