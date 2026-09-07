@@ -103,6 +103,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignAdminImageSecurityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller.MidtermCampaignAdminAuthWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.MidtermLiveTemplateContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.EduholicFeaturedCtaContractTest"
 
       - name: Upload test report
         if: always()
