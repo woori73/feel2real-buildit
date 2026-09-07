@@ -60,12 +60,19 @@
     });
     return s;
   }
+  // <label> 을 반환한다. 상태는 cbVal(labelEl) 로 읽는다 — DOM 요소에 프로퍼티를 대입하지
+  // 않는다. (label.control / input.form / element.style 등은 native read-only 라 대입하면
+  // "Cannot set property … which has only a getter" 로 렌더 전체가 중단된다.)
   function checkbox(label, checked) {
     var w = el('label', 'mtx-check');
     var c = input('checkbox'); c.checked = !!checked;
     w.appendChild(c); w.appendChild(document.createTextNode(label));
-    w.control = c;
     return w;
+  }
+  /** checkbox(...) 가 만든 <label> 의 현재 체크 상태. */
+  function cbVal(labelEl) {
+    var i = labelEl && labelEl.querySelector('input[type="checkbox"]');
+    return !!(i && i.checked);
   }
   function num(v) { return v === '' || v == null ? null : Number(v); }
   function str(v) { return v === '' ? null : v; }
@@ -191,7 +198,7 @@
         examType: examType.value.trim(), periodStart: str(pStart.value), periodEnd: str(pEnd.value),
         state: stateSel.value, heroEyebrow: str(hEyebrow.value), heroTitle: str(hTitle.value),
         heroBody: str(hBody.value), heroCtaLabel: str(hCta.value),
-        popupEnabled: popEnabled.control.checked, popupHeadline: str(popHead.value), popupBody: str(popBody.value)
+        popupEnabled: cbVal(popEnabled), popupHeadline: str(popHead.value), popupBody: str(popBody.value)
       };
       apply(req('PUT', '', payload), '캠페인을 저장했습니다.');
     });
@@ -271,7 +278,7 @@
       apply(req('PUT', '/school-collections/' + c.id, {
         schoolName: c.schoolName, grade: c.grade, examTitle: str(examTitle.value),
         statusLabel: str(statusLabel.value), prepHeadline: str(prepHead.value),
-        examFeatureNote: str(feat.value), sortOrder: num(sort.value), published: pub.control.checked
+        examFeatureNote: str(feat.value), sortOrder: num(sort.value), published: cbVal(pub)
       }), '저장했습니다.');
     });
     var delBtn = el('button', 'mtx-btn danger', '학교 삭제');
@@ -308,7 +315,7 @@
         briefingVideoId: vidSel.value ? Number(vidSel.value) : null,
         briefingTitle: str(bTitle.value), briefingDescription: str(bDesc.value),
         briefingShootDate: str(bShoot.value), briefingPublishDate: str(bPubDate.value),
-        briefingPublished: bPub.control.checked
+        briefingPublished: cbVal(bPub)
       }), '브리핑을 저장했습니다.');
     });
     body.appendChild(bSave);
@@ -360,7 +367,7 @@
     aeSave.addEventListener('click', function () {
       apply(req('PUT', '/school-collections/' + c.id + '/after-exam', {
         examFeature: str(aeFeat.value), preparedNote: str(aePrep.value),
-        connectionNote: str(aeConn.value), nextImprovement: str(aeNext.value), published: aePub.control.checked
+        connectionNote: str(aeConn.value), nextImprovement: str(aeNext.value), published: cbVal(aePub)
       }), 'After Exam 을 저장했습니다.');
     });
     body.appendChild(aeSave);
@@ -461,7 +468,7 @@
         principalComment: str(comment.value), checklist: str(checklist.value),
         sourceType: wikiSel.value ? 'WIKI_ANALYSIS' : 'NONE',
         sourceMaterialId: wikiSel.value ? Number(wikiSel.value) : null,
-        visibility: visSel.value, sortOrder: num(sort.value), published: pub.control.checked
+        visibility: visSel.value, sortOrder: num(sort.value), published: cbVal(pub)
       });
     });
     var row = el('div', 'mtx-btn-row');
@@ -511,7 +518,7 @@
     saveBtn.addEventListener('click', function () {
       onSave({
         schoolCollectionId: colSel.value ? Number(colSel.value) : null, logDate: str(date.value),
-        headline: head.value.trim(), body: str(body.value), sortOrder: num(sort.value), published: pub.control.checked
+        headline: head.value.trim(), body: str(body.value), sortOrder: num(sort.value), published: cbVal(pub)
       });
     });
     var row = el('div', 'mtx-btn-row'); row.appendChild(saveBtn);
@@ -557,7 +564,7 @@
     saveBtn.addEventListener('click', function () {
       onSave({
         schoolCollectionId: colSel.value ? Number(colSel.value) : null, stage: stageSel.value,
-        caption: str(caption.value), sortOrder: num(sort.value), published: pub.control.checked
+        caption: str(caption.value), sortOrder: num(sort.value), published: cbVal(pub)
       });
     });
     var row = el('div', 'mtx-btn-row'); row.appendChild(saveBtn);
@@ -591,7 +598,7 @@
     saveBtn.type = 'button';
     saveBtn.addEventListener('click', function () {
       apply(req('PUT', '/next-exam', {
-        enabled: enabled.control.checked, nextExamName: str(name.value), headline: str(head.value),
+        enabled: cbVal(enabled), nextExamName: str(name.value), headline: str(head.value),
         description: str(desc.value), ctaLabel: str(cta.value), ctaDestination: str(dest.value)
       }), '저장했습니다.');
     });
