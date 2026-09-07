@@ -33,22 +33,72 @@ class MidtermLiveTemplateContractTest {
     // 캠페인 데이터는 전용 공개 API 에서 온다(Wiki workspace 아님).
     assertThat(js).contains("/api/academies/");
     assertThat(js).contains("/midterm-campaign");
+    // 렌더러는 공개 DTO 만 소비한다(Wiki 원본을 직접 조회하지 않는다) — PR #220 보안 경계 유지.
+    assertThat(js).doesNotContain("/api/analyzes");
+    assertThat(js).doesNotContain("wiki-analysis");
 
     // 어떤 파일에서도 제작/관리 workspace 로 보내지 않는다.
     assertThat(html).doesNotContain("/problem-generator");
     assertThat(js).doesNotContain("/problem-generator");
     assertThat(js).doesNotContain("/wiki/index.html");
 
-    // 모바일 필수: safe-area + sticky CTA + reduced-motion.
+    // 모바일 필수: safe-area + sticky CTA + reduced-motion + 횡스크롤(같은 종류 탐색) + 다음 카드 peek.
     assertThat(css).contains("safe-area-inset");
     assertThat(css).contains("mt-sticky");
     assertThat(css).contains("prefers-reduced-motion");
+    assertThat(css).contains("scroll-snap-type");
+    assertThat(css).contains("--card-w");
   }
 
   /**
-   * 회귀: 하단 sticky CTA "학교별 준비 현황 보기" 가 죽은 버튼이 아니다.
-   * 학교 컬렉션이 0개여도 안내 문구가 있는 섹션(id="mt-collections")이 항상 존재하고,
-   * CTA 는 그 섹션으로 이동한다. keyboard(Enter/Space) 와 실제 {@code <a href>} 도 지원.
+   * 이 페이지는 기존 Eduholic 공개 페이지(academy_public.css)와 같은 브랜드로 보여야 한다.
+   * 생성형 AI 랜딩페이지 문법(장식 영어 eyebrow·번호+영어 소제목·"A가 아니라 B"·beige+serif
+   * 독립 디자인 시스템)이 남아 있으면 안 된다(작업지시서 §7~§10·§15~§19·§45·§46).
+   */
+  @Test
+  void publicPage_hasNoAiLandingArtifacts_andInheritsBuildItTokens() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+    String html = read("static/eduholic-midterm-2026.html");
+
+    // beige + serif 독립 디자인 시스템 제거 → BuildIt 토큰 승계.
+    assertThat(css).doesNotContain("Playfair");
+    assertThat(css).doesNotContain("#f6f4ef");
+    assertThat(html).doesNotContain("Playfair");
+    assertThat(html).doesNotContain("fonts.googleapis");
+    assertThat(css).contains("--ink: #0a0a0c");     // academy_public.css :root 와 동일
+    assertThat(css).contains("--accent: #2563eb");
+    assertThat(css).contains("--reveal-duration");  // academy_reveal 계열 1회 reveal
+
+    // "01 SOURCE / 02 ANALYZE / 03 BUILD …" + 영어 eyebrow/section label 제거.
+    assertThat(js).doesNotContain("SOURCE");
+    assertThat(js).doesNotContain("ANALYZE");
+    assertThat(js).doesNotContain("VARIATION");
+    assertThat(js).doesNotContain("HOW WE PREPARE");
+    assertThat(js).doesNotContain("How We Prepare");
+    assertThat(js).doesNotContain("VIEW COLLECTION");
+    assertThat(js).doesNotContain("MIDTERM LOG");
+    assertThat(js).doesNotContain("mt-serif");
+
+    // AI 식 대비 카피("A가 아니라 B") 금지.
+    assertThat(js).doesNotContain("것이 아니라");
+    assertThat(js).doesNotContain("단순한");
+    assertThat(js).doesNotContain("그 이상");
+    assertThat(js).doesNotContain("새로운 기준");
+
+    // 스크롤 진입 1회 reveal — 무거운 라이브러리/자동 캐러셀 없이 IntersectionObserver + reduced-motion.
+    assertThat(js).contains("IntersectionObserver");
+    assertThat(js).contains("prefers-reduced-motion");
+    assertThat(js).doesNotContain("gsap");
+    assertThat(js).doesNotContain("setInterval");   // 자동 캐러셀 없음
+  }
+
+  /**
+   * PR #225 regression preserved (별도 cherry-pick 아님 — #225 는 이미 main 에 merge 됨).
+   * 하단 sticky CTA 가 죽은 버튼이 아니다: 학교 컬렉션이 0개여도 안내 문구가 있는
+   * 섹션(id="mt-collections")이 항상 존재하고, CTA 는 그 섹션으로 이동한다.
+   * keyboard(Enter/Space) 와 실제 {@code <a href>}, 상세→홈 복귀, reduced-motion 도 유지.
+   * 재설계 후 DOM 이 바뀌었으므로 문구/클래스는 새 구조에 맞추되 동작 계약은 그대로 승계한다.
    */
   @Test
   void publicPage_stickyCtaAlwaysResolves_evenWithZeroSchoolCollections() throws Exception {
@@ -63,10 +113,11 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("a.href = '#collections'");
     assertThat(js).doesNotContain("querySelector('.mt-collections')");
 
-    // 0개일 때 dead-end 가 아니라 명확한 안내 + 대체 동선.
+    // 0개일 때 dead-end 가 아니라 짧은 안내 + 대체 동선(상담). 대형 홍보 section 이 아니다(§13).
     assertThat(js).contains("if (!collections.length)");
-    assertThat(js).contains("아직 등록되지 않았습니다");
+    assertThat(js).contains("아직 등록된 학교가 없습니다");
     assertThat(js).contains("mt-collections-empty");
+    assertThat(js).contains("mt-empty-cta");
     assertThat(css).contains(".mt-collections-empty");
 
     // CTA 는 실제 <a href="#mt-collections"> + 스크롤 이동 + 키보드(Enter/Space).
@@ -75,8 +126,9 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("scrollIntoView");
     assertThat(js).contains("addEventListener('keydown'");
     assertThat(js).contains("'Spacebar'");
-    // 상세 화면에서도 홈으로 복귀 후 스크롤.
+    // 상세 화면(#school-*)에서도 홈으로 복귀 후 스크롤 + reduced-motion 존중.
     assertThat(js).contains("#school-");
+    assertThat(js).contains("prefers-reduced-motion");
 
     // 팝업 CTA 목적지는 유지.
     assertThat(js).doesNotContain("/problem-generator");
