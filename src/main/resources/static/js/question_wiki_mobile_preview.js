@@ -58,6 +58,13 @@
 // Load after question_wiki_ai.js so the normalizer can wrap generation/save fetches
 // before the user starts a generation request.
 (function () {
+  if (!document.querySelector('link[data-qw-ai-layout-fix]')) {
+    var style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = '/css/question_wiki_ai_layout_fix.css?v=20260907-1';
+    style.dataset.qwAiLayoutFix = '1';
+    document.head.appendChild(style);
+  }
   if (document.querySelector('script[data-qw-ai-layout-fix]')) return;
   var script = document.createElement('script');
   script.src = '/js/question_wiki_ai_layout_fix.js?v=20260907-1';
