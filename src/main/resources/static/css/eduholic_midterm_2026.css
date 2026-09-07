@@ -1,10 +1,16 @@
-/* 2026 2학기 중간고사 공개 LIVE — Shopify Atelier reference 기반 첫 화면.
-   실제 TUTOR Wiki HTML 하나가 첫 viewport 를 지배하는 media 가 되고, copy 는 작게 옆에 둔다.
-   별도 dashboard/card/taxonomy/파일 UI 는 없다.
+/* 2026 2학기 중간고사 공개 LIVE.
+   실제 TUTOR Wiki HTML = 상품 본체. 바깥 frame = 패키지. LIVE = 진열대.
+   (docs/eduholic-midterm-live-knowledge-product-packaging.md)
 
-   Crop 좌표계(실측한 school-print preview): 상단 에디터 툴바 + 표지(거의 빈 페이지)를 건너뛰고
-   내용 두 번째 sheet "문법 5-1 · A 가정법" (문서 로컬 y ≈ 1.2k~1.3k) 에 착지시킨다.
-   iframe 은 정상 문서 폭으로 렌더하고, 바깥 viewport 가 그 상단 일부만 확대해 crop 한다.
+   첫 화면 = Shopify Atelier hero(featured 자료). 그 아래 = Shopify Motion
+   "evolving collections"(최근 자료 collage / 모바일 rail). 모든 자료는 동일한
+   지식상품 패키지 grammar 안에 놓인다:
+
+     page background  →  product surface(패키지)  →  clipped media window  →  실제 Wiki HTML
+
+   움직이는 것은 media window 안의 document 뿐(surface/frame/metadata 는 고정).
+   실측한 school-print preview 좌표계: 상단 에디터 툴바 + 표지(거의 빈 페이지)를
+   건너뛰고 첫 내용 sheet "문법 5-1 · A 가정법"(문서 로컬 y ≈ 1.15k~1.3k)에 착지.
    A4 한 장 전체를 축소해 보여주지 않는다. */
 :root {
   --bg: #f5f5f1;
@@ -18,12 +24,24 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --page-pad: 22px;
 
-  --doc-w: 468px;      /* iframe intrinsic width — 모바일 축약 레이아웃이 아닌 정상 문서 레이아웃 유지 */
-  --doc-h: 2200px;     /* sheet[1] 상단부 + drift 여유까지 렌더되는 높이 */
-  --doc-scale: 0.9;    /* 문서 폭을 화면에 맞춤. 세로 hard-crop 이 "확대된 부분"을 만든다 */
-  --doc-nudge: 6px;    /* 좌측 문항 번호/머리글이 안 잘리게 살짝 우측으로 */
-  --doc-top: -1120px;  /* sheet[1] "문법 5-1" 머리글이 visual 상단 근처에 오도록 */
-  --doc-drift: 74px;   /* one-time pan 종료점(§10). 무한 반복 아님 */
+  /* 지식상품 패키지 — 고정 palette(색은 taxonomy 아님, index % 4 presentation 변주만) */
+  --surface-a: #f2f0eb;   /* warm neutral */
+  --surface-b: #eef1f4;   /* cool gray */
+  --surface-c: #edf2ef;   /* pale sage */
+  --surface-d: #f3f1f5;   /* muted cool */
+  --surface-edge: rgba(15, 23, 42, .1);
+  --window-edge: rgba(15, 23, 42, .06);
+  --surface-shadow: 0 12px 30px rgba(15, 23, 42, .05);
+  --surface-radius: 16px;
+  --window-radius: 7px;
+  --surface-pad: 15px 16px;
+
+  --doc-w: 468px;
+  --doc-h: 2200px;
+  --doc-scale: 0.92;
+  --doc-nudge: 6px;
+  --doc-top: -1128px;
+  --doc-drift: 50px;      /* one-time pan 종료점 — 무한 반복 아님 */
 }
 
 * { box-sizing: border-box; }
@@ -74,7 +92,7 @@ a { color: inherit; }
   white-space: nowrap;
 }
 
-/* Mobile: metadata → short title → note → large real document → next content peek. */
+/* Mobile: metadata → short title → note → 지식상품 hero → 최근 자료 collection peek. */
 .mt-main {
   padding: 20px 0 30px;
 }
@@ -107,18 +125,26 @@ a { color: inherit; }
   letter-spacing: -.01em;
 }
 
-/* The real HTML is the product image. The frame shows an enlarged region of page 2. */
+/* ── hero 지식상품 — Atelier composition 안의 packaged product ─────────────── */
 .midterm-feature {
   margin-top: 16px;
 }
+.midterm-feature__surface {
+  margin-inline: 8px;
+  padding: var(--surface-pad);
+  height: clamp(468px, 62svh, 552px);
+  background: var(--surface-a);
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
 .midterm-feature__visual {
   position: relative;
-  height: clamp(440px, 58svh, 520px);
-  margin-inline: 8px;
+  height: 100%;
   overflow: hidden;
   background: var(--paper);
-  border-radius: 2px;
-  box-shadow: 0 22px 54px rgba(24, 24, 20, .14);
+  border: 1px solid var(--window-edge);
+  border-radius: var(--window-radius);
   isolation: isolate;
   pointer-events: none;
 }
@@ -143,20 +169,22 @@ a { color: inherit; }
 }
 
 @media (min-width: 431px) and (max-width: 1079px) {
-  :root { --doc-w: 520px; --doc-scale: 1; --doc-top: -1230px; --doc-drift: 88px; }
-  .midterm-feature__visual { height: clamp(452px, 60svh, 560px); }
+  :root { --doc-w: 520px; --doc-scale: 1.02; --doc-top: -1300px; --doc-drift: 76px; }
+  .midterm-feature__surface { height: clamp(486px, 64svh, 596px); }
 }
 
-/* Desktop: Atelier — compact copy column, dominant media column. Not a 50:50 split. */
+/* Desktop: Atelier — compact copy column, dominant packaged product. Not a 50:50 split. */
 @media (min-width: 1080px) {
   :root {
     --page-pad: 42px;
+    /* 상하 padding 은 넓고 짧은 strip tile 에서 window 가 사라지지 않게 clamp 로 상한. */
+    --surface-pad: clamp(22px, 4.6%, 40px) clamp(22px, 5.4%, 50px);
     --doc-w: 680px;
     --doc-h: 2600px;
-    --doc-scale: 1.14;
+    --doc-scale: 1.18;
     --doc-nudge: 22px;
     --doc-top: -1360px;
-    --doc-drift: 112px;
+    --doc-drift: 74px;
   }
   .mt-topbar {
     height: calc(66px + var(--safe-t));
@@ -184,30 +212,23 @@ a { color: inherit; }
   }
   .mt-note { font-size: 14px; }
   .midterm-feature { margin-top: 0; }
-  .midterm-feature__visual {
+  .midterm-feature__surface {
     width: 100%;
-    height: min(74vh, 726px);
-    min-height: 540px;
+    height: min(76vh, 760px);
+    min-height: 560px;
     margin: 0;
   }
 }
 
 @media (min-width: 1360px) {
-  :root { --doc-scale: 1.26; --doc-nudge: 26px; --doc-top: -1500px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .midterm-feature__document,
-  .midterm-feature.is-in-view .midterm-feature__document {
-    animation: none !important;
-  }
+  :root { --doc-scale: 1.3; --doc-nudge: 26px; --doc-top: -1640px; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    Shopify Motion — "Showcase evolving collections"
-   featured hero 를 뺀 최근 자료를, 균일 grid 가 아닌 비대칭 collage(데스크톱) /
-   mobile-first horizontal browse rail(모바일)로 잇는다. 실제 HTML 자체가 media 다.
-   crop role(a/b/c/d)은 CSS presentation 전용 — DB/DTO taxonomy 아님. 전부 첫 내용
+   featured 를 뺀 최근 자료. 데스크톱 = 비대칭 collage, 모바일 = horizontal browse
+   rail. collection geometry 는 자료마다 달라도 packaging grammar 는 하나다.
+   crop role(a/b/c/d)은 CSS presentation 전용(DB/DTO taxonomy 아님) — 전부 첫 내용
    sheet 안에 착지시켜 어떤 school-print 든 빈 카드가 나오지 않게 한다.
    ══════════════════════════════════════════════════════════════════════════ */
 .midterm-recent {
@@ -215,7 +236,8 @@ a { color: inherit; }
   --r-h: 1960px;
   --r-scale: 1;
   --r-nudge: 6px;
-  --r-top: -1250px;
+  --r-top: -1205px;
+  --r-drift: 32px;
   padding: 18px 0 34px;
 }
 .midterm-recent__head {
@@ -261,7 +283,7 @@ a { color: inherit; }
 .midterm-recent.is-in-view .midterm-recent__item:nth-child(4) { transition-delay: .18s; }
 .midterm-recent.is-in-view .midterm-recent__item:nth-child(5) { transition-delay: .24s; }
 
-/* 최근 자료 1건 = Motion "single collection callout" — rail 이 아니라 single large visual */
+/* 최근 자료 1건 = Motion "single collection callout" — rail 이 아니라 single large product */
 .midterm-recent--n1 .midterm-recent__collection {
   display: block;
   overflow: visible;
@@ -272,18 +294,29 @@ a { color: inherit; }
   max-width: none;
 }
 
+/* 같은 Eduholic packaging system — 내용물(자료)과 aspect ratio 만 달라진다 */
+.midterm-recent__surface {
+  padding: var(--surface-pad);
+  height: clamp(320px, 46svh, 404px);
+  background: var(--surface-b);
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
+.midterm-recent__item:nth-child(4n + 2) .midterm-recent__surface { background: var(--surface-c); }
+.midterm-recent__item:nth-child(4n + 3) .midterm-recent__surface { background: var(--surface-d); }
+.midterm-recent__item:nth-child(4n + 4) .midterm-recent__surface { background: var(--surface-a); }
+.midterm-recent--n1 .midterm-recent__surface { height: clamp(420px, 56svh, 508px); }
+
 .midterm-recent__media {
   position: relative;
-  height: clamp(288px, 42svh, 372px);
+  height: 100%;
   overflow: hidden;
   background: var(--paper);
-  border-radius: 2px;
-  box-shadow: 0 14px 34px rgba(24, 24, 20, .12);
+  border: 1px solid var(--window-edge);
+  border-radius: var(--window-radius);
   isolation: isolate;
   pointer-events: none;
-}
-.midterm-recent--n1 .midterm-recent__media {
-  height: clamp(392px, 54svh, 480px);
 }
 .midterm-recent__doc {
   position: absolute;
@@ -298,10 +331,24 @@ a { color: inherit; }
   transform: translate3d(calc(-50% + var(--r-nudge)), 0, 0) scale(var(--r-scale));
 }
 
+/* 진열대 안 각 상품의 detail 이 shop-window 처럼 천천히 지나간다(한 방향, 1회).
+   deterministic slot delay — 전부 동시에 움직이지 않게. random JS 아님. */
+.midterm-recent.is-in-view .midterm-recent__doc {
+  animation: midterm-product-drift 8s ease-in-out 1 both;
+}
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(2) .midterm-recent__doc { animation-delay: .35s; }
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(3) .midterm-recent__doc { animation-delay: .7s; }
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(4) .midterm-recent__doc { animation-delay: 1.05s; }
+.midterm-recent.is-in-view .midterm-recent__item:nth-child(5) .midterm-recent__doc { animation-delay: 1.4s; }
+@keyframes midterm-product-drift {
+  from { transform: translate3d(calc(-50% + var(--r-nudge)), 0, 0) scale(var(--r-scale)); }
+  to { transform: translate3d(calc(-50% + var(--r-nudge)), calc(-1 * var(--r-drift)), 0) scale(var(--r-scale)); }
+}
+
 /* crop role — 같은 편집본의 서로 다른 영역/배율. 전부 첫 내용 sheet 범위 안. */
-.midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.12; --r-top: -1440px; }
-.midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.4; --r-top: -1920px; }
-.midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.9; --r-top: -1170px; }
+.midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.06; --r-top: -1285px; }
+.midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.26; --r-top: -1700px; }
+.midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.98; --r-top: -1190px; }
 
 .midterm-recent__meta {
   margin: 9px 2px 0;
@@ -314,21 +361,22 @@ a { color: inherit; }
 @media (min-width: 431px) and (max-width: 1079px) {
   .midterm-recent { --r-w: 460px; }
   .midterm-recent__item { flex: 0 0 62vw; max-width: 480px; }
-  .midterm-recent__media { height: clamp(320px, 44svh, 420px); }
+  .midterm-recent__surface { height: clamp(352px, 48svh, 452px); }
 }
 
-/* desktop: 비대칭 collage. 동일 비율 반복 없음. 하나는 크게, 하나는 세로, 하나는
-   detail, 하나는 wide. 자료가 visual surface, metadata 는 작게. */
+/* desktop: 비대칭 collage. 동일 비율 반복 없음. collection geometry 는 달라도
+   packaging(surface/border/padding/window/metadata)은 하나다. */
 @media (min-width: 1080px) {
   .midterm-recent {
     --r-w: 640px;
     --r-h: 2400px;
-    --r-scale: 1.06;
+    --r-scale: 1.08;
     --r-nudge: 16px;
-    --r-top: -1420px;
+    --r-top: -1230px;
+    --r-drift: 48px;
     width: min(100%, 1420px);
     margin: 0 auto;
-    padding: 12px 42px 60px;
+    padding: 14px 42px 60px;
   }
   .midterm-recent__head { padding: 0; margin-bottom: 22px; }
   .midterm-recent__title { font-size: clamp(17px, 1.3vw, 20px); }
@@ -336,9 +384,9 @@ a { color: inherit; }
     display: grid;
     overflow: visible;
     padding: 0;
-    gap: clamp(16px, 1.8vw, 28px);
+    gap: clamp(18px, 1.9vw, 30px);
     grid-template-columns: repeat(6, 1fr);
-    grid-auto-rows: clamp(150px, 15vw, 210px);
+    grid-auto-rows: clamp(190px, 17vw, 250px);
     grid-auto-flow: dense;
   }
   .midterm-recent__item {
@@ -346,14 +394,38 @@ a { color: inherit; }
     max-width: none;
     transform: translateY(24px);
   }
-  .midterm-recent__media { height: auto; flex: 1 1 auto; min-height: 0; }
+  .midterm-recent__surface {
+    height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 
-  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.4; --r-top: -1900px; }
-  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.78; --r-top: -2440px; }
-  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.92; --r-top: -1300px; }
+  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.26; --r-top: -1580px; }
+  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.5; --r-top: -2080px; }
+  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.98; --r-top: -1180px; }
+
+  /* 넓고 짧은 strip tile: 상하 padding 을 줄이고, 과확대 대신 wide 한 low-zoom 밴드로
+     — 큰 tile(row span 2)은 role 별 crop 을 유지하고, 짧은 tile 은 통일된 wide 상품샷. */
+  .midterm-recent--n3 .midterm-recent__item:nth-child(3) .midterm-recent__surface,
+  .midterm-recent--n4 .midterm-recent__item:nth-child(3) .midterm-recent__surface,
+  .midterm-recent--n4 .midterm-recent__item:nth-child(4) .midterm-recent__surface,
+  .midterm-recent--n5 .midterm-recent__item:nth-child(3) .midterm-recent__surface,
+  .midterm-recent--n5 .midterm-recent__item:nth-child(4) .midterm-recent__surface,
+  .midterm-recent--n5 .midterm-recent__item:nth-child(5) .midterm-recent__surface {
+    padding-block: 20px;
+  }
+  .midterm-recent--n3 .midterm-recent__item:nth-child(3) .midterm-recent__doc,
+  .midterm-recent--n4 .midterm-recent__item:nth-child(3) .midterm-recent__doc,
+  .midterm-recent--n4 .midterm-recent__item:nth-child(4) .midterm-recent__doc,
+  .midterm-recent--n5 .midterm-recent__item:nth-child(3) .midterm-recent__doc,
+  .midterm-recent--n5 .midterm-recent__item:nth-child(4) .midterm-recent__doc,
+  .midterm-recent--n5 .midterm-recent__item:nth-child(5) .midterm-recent__doc {
+    --r-scale: 0.9;
+    --r-top: -1140px;
+  }
 
   /* n2 — asymmetric pair (과장된 collage 아님) */
-  .midterm-recent--n2 .midterm-recent__collection { grid-auto-rows: clamp(220px, 22vw, 320px); }
+  .midterm-recent--n2 .midterm-recent__collection { grid-auto-rows: clamp(240px, 24vw, 340px); }
   .midterm-recent--n2 .midterm-recent__item:nth-child(1) { grid-column: span 4; grid-row: span 1; }
   .midterm-recent--n2 .midterm-recent__item:nth-child(2) { grid-column: span 2; grid-row: span 1; }
 
@@ -377,13 +449,20 @@ a { color: inherit; }
 }
 
 @media (min-width: 1360px) {
-  .midterm-recent { --r-scale: 1.16; --r-top: -1560px; }
-  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.5; --r-top: -2060px; }
-  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.92; --r-top: -2680px; }
-  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 1; --r-top: -1420px; }
+  .midterm-recent { --r-scale: 1.14; --r-top: -1320px; }
+  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.34; --r-top: -1720px; }
+  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.6; --r-top: -2260px; }
+  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 1.04; --r-top: -1280px; }
 }
 
+/* 자료 내부만 움직인다 — surface/frame/metadata 는 고정. reduced-motion 이면 정적 crop. */
 @media (prefers-reduced-motion: reduce) {
+  .midterm-feature__document,
+  .midterm-feature.is-in-view .midterm-feature__document,
+  .midterm-recent__doc,
+  .midterm-recent.is-in-view .midterm-recent__doc {
+    animation: none !important;
+  }
   .midterm-recent__item {
     opacity: 1 !important;
     transform: none !important;
