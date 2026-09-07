@@ -1,11 +1,14 @@
-/* 2026 2학기 중간고사 내신 LIVE — 압구정에듀홀릭 공개 쇼윈도 렌더러.
+/* 2026 2학기 중간고사 내신 LIVE — 압구정에듀홀릭 공개 페이지 렌더러.
  *
  * 데이터: GET /api/academies/{handle}/midterm-campaign (미발행/부재 → 404 → 간결한 폴백).
  * 이 페이지는 프레젠테이션만 담당한다 — 제작/관리 workspace 로 보내지 않는다.
  *
- * 역할 구분: Wiki = 자료 저장소 / Midterm Campaign = 이번 시험 큐레이션 / 이 페이지 = 학부모 쇼윈도.
- * Wiki 원본을 직접 조회하지 않는다 — 운영자가 관리화면에서 이번 시험에 보여줄 자료만 골라
- * 서버가 안전한 공개 DTO(thumbnailUrl/fileUrl/access)로 내려준 것만 그린다(PR #220 보안 유지).
+ * 역할 구분: Wiki = 자료 저장소 / Midterm Campaign = 이번 시험 큐레이션 / 이 페이지 = 공개 화면.
+ * Wiki 원본을 직접 조회하지 않는다 — 서버가 안전한 공개 DTO(thumbnailUrl/fileUrl/access)로
+ * 내려준 것만 그린다(PR #220 보안 유지).
+ *
+ * 2026-09: 학교 컬렉션 섹션 / 학교별 상세 라우팅 / sticky CTA / 큰 히어로를 제거했다.
+ * 학교 정보는 자료에 붙는 작은 metadata 로만 노출한다. 공개 표현은 다음 단계 시안에서 재정의한다.
  */
 (function () {
   'use strict';
@@ -31,8 +34,6 @@
       if (!data) { renderFallback(); return; }
       state.campaign = data;
       render();
-      window.addEventListener('hashchange', route);
-      route();
     })
     .catch(function () { renderFallback(); });
 
@@ -43,7 +44,6 @@
     if (text != null) n.textContent = text;
     return n;
   }
-  function frag() { return document.createDocumentFragment(); }
   function firstSentence(s, cap) {
     if (!s) return '';
     var t = String(s).trim().split(/(?<=[.!?。])\s|\n/)[0].trim();
@@ -56,7 +56,7 @@
   }
   function dParts(iso) {
     var p = String(iso || '').split('-');
-    return p.length >= 3 ? { m: parseInt(p[1], 10), d: parseInt(p[2], 10), iso: iso } : null;
+    return p.length >= 3 ? { m: parseInt(p[1], 10), d: parseInt(p[2], 10) } : null;
   }
   function shortDate(iso) { var x = dParts(iso); return x ? x.m + '.' + x.d : ''; }
   function humanDate(iso) {
@@ -79,39 +79,36 @@
   function isLocked(access) { return access === 'MEMBER_LOCKED' || access === 'PREVIEW'; }
   function lockText(access) { return access === 'PREVIEW' ? '미리보기' : '로그인 회원 자료'; }
 
-  function firstSchoolThumb(col) {
-    var m = (col.materials || []).filter(function (x) { return x.thumbnailUrl; })[0];
-    return m ? m.thumbnailUrl : null;
-  }
-  // HERO media 는 실제 "사람/현장"(원장 브리핑 영상 썸네일)만 쓴다(§15·§20). 문서 썸네일을
-  // 풀블리드 cover 로 늘리면 약해 보인다 — 자료는 아래 showcase 에서 통째로 크게 보여준다.
-  // 브리핑 영상이 아직 없으면 절제된 타이포 히어로(빈 화면 아님).
-  function pickHeroImage(c) {
-    var s = (c.schoolCollections || []);
-    for (var i = 0; i < s.length; i++) {
-      if (s[i].briefing && s[i].briefing.thumbnailUrl) return s[i].briefing.thumbnailUrl;
-    }
-    return null;
-  }
   function firstBriefingSchool(c) {
     return (c.schoolCollections || []).filter(function (s) {
       return s.briefing && s.briefing.videoUrl;
     })[0] || null;
   }
 
+  // 공개 자료 목록 — 캠페인 자료 + 학교별 자료를 한 줄로 모은다. 학교별 자료는 학교 정보를
+  // '자료에 붙는 작은 metadata'(예: "신구중 2학년 · 9.7 업데이트")로만 표시한다. 별도 학교 섹션 없음.
+  function collectMaterials(c) {
+    var out = [];
+    (c.campaignMaterials || []).forEach(function (m) { out.push({ mat: m, meta: '' }); });
+    (c.schoolCollections || []).forEach(function (col) {
+      var tag = schoolTitle(col);
+      if (col.lastUpdate) tag += ' · ' + shortDate(col.lastUpdate) + ' 업데이트';
+      (col.materials || []).forEach(function (m) { out.push({ mat: m, meta: tag }); });
+    });
+    return out;
+  }
+
   // ── 폴백 (미발행/부재) — 짧게 ──────────────────────────────────────────
   function renderFallback() {
     root.innerHTML = '';
     root.appendChild(renderTopbar());
-    var s = el('section', 'mt-hero mt-hero--plain');
-    var b = el('div', 'mt-hero-body');
-    b.appendChild(el('h1', null, '2학기 중간고사 준비를 곧 공개합니다.'));
-    b.appendChild(el('p', null, '학교별 준비 현황과 자료가 준비되는 대로 이곳에 올라옵니다.'));
-    var a = el('a', 'mt-empty-cta', '상담 문의');
+    var s = el('section', 'mt-head');
+    var w = el('div', 'mt-wrap');
+    w.appendChild(el('h1', 'mt-head-title', '2학기 중간고사 준비를 곧 공개합니다.'));
+    var a = el('a', 'mt-textlink', '상담 문의');
     a.href = CONSULT_URL; a.rel = 'noopener';
-    a.style.marginTop = '18px';
-    b.appendChild(a);
-    s.appendChild(b);
+    w.appendChild(a);
+    s.appendChild(w);
     root.appendChild(s);
   }
 
@@ -119,18 +116,14 @@
   function render() {
     var c = state.campaign;
     root.innerHTML = '';
-    root.classList.add('has-sticky');
     root.appendChild(renderTopbar());
 
     var home = el('div', 'mt-home');
-    home.appendChild(renderHero(c));
-    // 학교 컬렉션 섹션은 항상 렌더한다(id="mt-collections"). 0개여도 안내가 있어야
-    // sticky CTA 의 목적지가 죽지 않는다(PR #225 regression).
-    home.appendChild(renderCollections(c.schoolCollections || []));
+    home.appendChild(renderHead(c));
 
-    if (c.campaignMaterials && c.campaignMaterials.length) {
-      home.appendChild(renderMaterialShowcase(c.campaignMaterials));
-    }
+    var mats = collectMaterials(c);
+    if (mats.length) home.appendChild(renderMaterialShowcase(mats));
+
     var bfSchool = firstBriefingSchool(c);
     if (bfSchool) home.appendChild(renderBriefingMoment(bfSchool));
 
@@ -138,19 +131,10 @@
       home.appendChild(renderUpdates(c.campaignUpdateLogs));
     }
     if (c.nextExam) home.appendChild(renderNextExam(c.nextExam));
-    // 학교 컬렉션이 0개면 위 "우리 학교" 안내에 이미 상담 동선이 있으므로 별도 상담 섹션은 생략(§13).
-    var hasContent = (c.schoolCollections && c.schoolCollections.length)
-      || (c.campaignMaterials && c.campaignMaterials.length);
-    if (hasContent) home.appendChild(renderConsult(c));
+    if (mats.length) home.appendChild(renderConsult(c));
     root.appendChild(home);
 
-    var detail = el('div', 'mt-detail');
-    detail.id = 'mtDetail';
-    root.appendChild(detail);
-
     root.appendChild(renderFooter(c));
-    root.appendChild(renderSticky());
-
     wireReveal(root);
   }
 
@@ -166,118 +150,18 @@
     return bar;
   }
 
-  function renderHero(c) {
-    var img = pickHeroImage(c);
-    var s = el('section', 'mt-hero ' + (img ? 'mt-hero--media' : 'mt-hero--plain'));
-    s.setAttribute('data-reveal', '');
-
-    if (img) {
-      var fig = el('div', 'mt-hero-figure');
-      var im = document.createElement('img');
-      im.src = img; im.alt = ''; im.loading = 'eager'; im.decoding = 'async';
-      im.addEventListener('load', function () {
-        if (im.naturalWidth && im.naturalHeight) {
-          var ar = Math.min(1.7, Math.max(0.86, im.naturalWidth / im.naturalHeight));
-          fig.style.setProperty('--hero-ar', ar.toFixed(4));
-        }
-      });
-      fig.appendChild(im);
-      s.appendChild(fig);
-    }
-
-    var body = el('div', 'mt-hero-body');
-    var h1 = el('h1', null, (c.hero && c.hero.title && c.hero.title.trim())
-      ? c.hero.title.trim()
-      : '2학기 중간고사, 지금 준비하고 있습니다.');
-    h1.setAttribute('data-reveal-item', '');
-    body.appendChild(h1);
-
-    // media 히어로는 copy 를 최소화한다(설명하지 않는다). plain 히어로만 한 문장을 둔다.
-    var sub = img ? '' : firstSentence(c.hero && c.hero.body, 64);
-    if (sub) {
-      var p = el('p', null, sub);
-      p.setAttribute('data-reveal-item', '');
-      body.appendChild(p);
-    }
-
-    var chips = (c.liveChips || []).filter(function (ch) { return ch.updatedOn; }).slice(0, 4);
-    if (chips.length) {
-      var strip = el('div', 'mt-livestrip');
-      strip.setAttribute('data-reveal-item', '');
-      chips.forEach(function (ch) {
-        var span = el('span');
-        span.appendChild(el('i'));
-        span.appendChild(document.createTextNode(String(ch.label || '').replace(/\s*(\d+)\s*$/, ' $1학년')));
-        var t = el('time', null, ' ' + shortDate(ch.updatedOn));
-        t.dateTime = ch.updatedOn;
-        span.appendChild(t);
-        strip.appendChild(span);
-      });
-      body.appendChild(strip);
-    }
-    s.appendChild(body);
-    return s;
-  }
-
-  function renderCollections(collections) {
-    var s = el('section', 'mt-block mt-block--tight');
-    s.id = 'mt-collections';
+  // 큰 회색 히어로 제거 — 페이지 제목 한 줄만. 별도 media / 설명 문단 / 학교 칩 없음.
+  function renderHead(c) {
+    var s = el('section', 'mt-head');
     var w = el('div', 'mt-wrap');
-    w.setAttribute('data-reveal', '');
-    var h2 = el('h2', 'mt-h2', '우리 학교');
-    h2.setAttribute('data-reveal-item', '');
-    w.appendChild(h2);
-
-    if (!collections.length) {
-      var note = el('p', 'mt-collections-empty', '아직 등록된 학교가 없습니다. 학교별 준비가 시작되면 이곳에서 확인할 수 있습니다.');
-      note.setAttribute('data-reveal-item', '');
-      var cta = el('a', 'mt-empty-cta', '상담 문의');
-      cta.href = CONSULT_URL; cta.rel = 'noopener';
-      note.appendChild(document.createElement('br'));
-      note.appendChild(cta);
-      w.appendChild(note);
-      s.appendChild(w);
-      return s;
-    }
-
-    var note2 = el('p', 'mt-note', '학교와 학년을 고르면 준비 현황과 실제 자료가 열립니다.');
-    note2.setAttribute('data-reveal-item', '');
-    w.appendChild(note2);
-
-    var railwrap = el('div', 'mt-railwrap');
-    railwrap.setAttribute('data-reveal-item', '');
-    var rail = el('div', 'mt-rail');
-    collections.forEach(function (col) {
-      var card = el('button', 'mt-school-card');
-      card.type = 'button';
-      var thumb = firstSchoolThumb(col);
-      if (thumb) {
-        var im = document.createElement('img');
-        im.className = 'mt-thumb'; im.src = thumb; im.alt = ''; im.loading = 'lazy';
-        card.appendChild(im);
-      } else {
-        card.appendChild(el('span', 'mt-thumb ph', '자료 준비 중'));
-      }
-      var cb = el('div', 'mt-card-body');
-      cb.appendChild(el('span', 'mt-school-name', schoolTitle(col)));
-      if (col.statusLabel) cb.appendChild(el('span', 'mt-status', col.statusLabel));
-      var meta = el('span', 'mt-card-meta');
-      meta.appendChild(document.createTextNode('자료 '));
-      meta.appendChild(el('strong', null, String(col.materialCount || 0)));
-      if (col.lastUpdate) meta.appendChild(document.createTextNode('  ·  최근 ' + shortDate(col.lastUpdate)));
-      cb.appendChild(meta);
-      card.appendChild(cb);
-      card.addEventListener('click', function () { location.hash = '#school-' + col.id; });
-      rail.appendChild(card);
-    });
-    railwrap.appendChild(rail);
-    railwrap.appendChild(railNav(rail));
-    w.appendChild(railwrap);
+    w.appendChild(el('h1', 'mt-head-title', (c.hero && c.hero.title && c.hero.title.trim())
+      ? c.hero.title.trim()
+      : '2학기 중간고사, 지금 준비하고 있습니다.'));
     s.appendChild(w);
     return s;
   }
 
-  function renderMaterialShowcase(materials) {
+  function renderMaterialShowcase(items) {
     var s = el('section', 'mt-block mt-block--soft');
     var w = el('div', 'mt-wrap');
     w.setAttribute('data-reveal', '');
@@ -287,7 +171,7 @@
     var railwrap = el('div', 'mt-railwrap');
     railwrap.setAttribute('data-reveal-item', '');
     var rail = el('div', 'mt-rail mt-rail--docs');
-    materials.forEach(function (mat) { rail.appendChild(docCard(mat)); });
+    items.forEach(function (it) { rail.appendChild(docCard(it.mat, it.meta)); });
     railwrap.appendChild(rail);
     railwrap.appendChild(railNav(rail));
     w.appendChild(railwrap);
@@ -295,7 +179,7 @@
     return s;
   }
 
-  function docCard(mat) {
+  function docCard(mat, meta) {
     var card = el('button', 'mt-doc');
     card.type = 'button';
     var sheet = el('div', 'mt-doc-sheet' + (mat.thumbnailUrl ? '' : ' ph'), mat.thumbnailUrl ? null : '📄');
@@ -309,6 +193,7 @@
     var cap = el('div', 'mt-doc-cap');
     cap.appendChild(el('span', 'mt-cat', catLabel(mat.category)));
     cap.appendChild(el('span', 'mt-doc-title', mat.displayTitle || ''));
+    if (meta) cap.appendChild(el('span', 'mt-doc-meta', meta));
     var sub = firstSentence(mat.blurb, 40);
     if (sub) cap.appendChild(el('span', 'mt-doc-sub', sub));
     card.appendChild(cap);
@@ -317,7 +202,7 @@
   }
 
   // 영상 프레임 — 실제 영상 비율에 맞춘다(억지 crop 없음). metadata 로드/poster 자연 크기로
-  // --mt-video-ar 을 채우고, 세로가 너무 길거나 가로가 너무 넓으면 [0.7, 1.9] 로 클램프.
+  // --mt-video-ar 을 채우고 [0.7, 1.9] 로 클램프.
   function videoFrame(b, ariaLabel) {
     var frame = el('div', 'mt-video');
     var v = document.createElement('video');
@@ -330,8 +215,7 @@
     function setAR(w, h) {
       if (!w || !h) return;
       var ar = Math.min(1.9, Math.max(0.7, w / h));
-      frame.style.setProperty('--mt-video-ar', w + ' / ' + h);
-      if (ar !== w / h) frame.style.setProperty('--mt-video-ar', ar.toFixed(4));
+      frame.style.setProperty('--mt-video-ar', ar.toFixed(4));
     }
     v.addEventListener('loadedmetadata', function () { setAR(v.videoWidth, v.videoHeight); });
     if (b.thumbnailUrl) {
@@ -423,7 +307,7 @@
     var s = el('section', 'mt-block mt-block--tight mt-consult');
     var w = el('div', 'mt-read');
     w.setAttribute('data-reveal', '');
-    var h2 = el('h2', 'mt-h2', '우리 아이 학교로 상담하기');
+    var h2 = el('h2', 'mt-h2', '상담 문의');
     h2.setAttribute('data-reveal-item', '');
     w.appendChild(h2);
     var p = el('p', null, '학교와 학년을 알려주시면 현재 준비 현황을 함께 봅니다.');
@@ -465,174 +349,6 @@
     setTimeout(sync, 0);
     nav.appendChild(prev); nav.appendChild(next);
     return nav;
-  }
-
-  // ── sticky 하단 CTA — 실제 <a href="#mt-collections"> ──────────────────
-  function renderSticky() {
-    var d = el('div', 'mt-sticky');
-    var label = (state.campaign && state.campaign.hero && state.campaign.hero.ctaLabel)
-      ? state.campaign.hero.ctaLabel : '우리 학교 보기';
-    var a = el('a', null, label);
-    a.href = '#mt-collections';
-    a.setAttribute('aria-label', label);
-    a.addEventListener('click', function (e) { e.preventDefault(); goToCollections(); });
-    a.addEventListener('keydown', function (e) {
-      if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') { e.preventDefault(); goToCollections(); }
-    });
-    d.appendChild(a);
-    return d;
-  }
-
-  /**
-   * 학교 섹션(id="mt-collections")으로 이동한다. 0개여도 안내 섹션이 존재하므로 목적지가 항상 있다.
-   * 상세(#school-*) 화면이면 먼저 홈으로 돌아간 뒤(route() 태스크 이후) 스크롤한다.
-   */
-  function goToCollections() {
-    var wasDetail = (location.hash || '').indexOf('#school-') === 0;
-    if (location.hash) { location.hash = ''; }
-    var run = function () {
-      var target = document.getElementById('mt-collections')
-        || (root && root.querySelector('.mt-home'));
-      if (target && target.scrollIntoView) {
-        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-      }
-      var h = target && target.querySelector('h2');
-      if (h) {
-        h.setAttribute('tabindex', '-1');
-        try { h.focus({ preventScroll: true }); } catch (_) { h.focus(); }
-      }
-    };
-    if (wasDetail) { setTimeout(run, 0); } else { run(); }
-  }
-
-  // ── 라우팅: 학교 상세 ─────────────────────────────────────────────────
-  function route() {
-    var m = /^#school-(\d+)$/.exec(location.hash || '');
-    var home = root.querySelector('.mt-home');
-    var detail = document.getElementById('mtDetail');
-    if (!home || !detail) return;
-    if (!m) {
-      home.classList.remove('hidden');
-      detail.classList.remove('active');
-      detail.innerHTML = '';
-      return;
-    }
-    var id = Number(m[1]);
-    var col = (state.campaign.schoolCollections || []).filter(function (x) { return x.id === id; })[0];
-    if (!col) { location.hash = ''; return; }
-    home.classList.add('hidden');
-    detail.classList.add('active');
-    renderDetail(detail, col);
-    window.scrollTo(0, 0);
-    wireReveal(detail);
-  }
-
-  function renderDetail(container, col) {
-    container.innerHTML = '';
-    var s = el('section', 'mt-block');
-    var w = el('div', 'mt-wrap');
-
-    var back = el('button', 'mt-back', '← 전체 학교');
-    back.type = 'button';
-    back.addEventListener('click', function () { location.hash = ''; });
-    w.appendChild(back);
-
-    var head = el('div', 'mt-detail-head');
-    head.setAttribute('data-reveal', '');
-    var ex = el('span', 'mt-exam', col.examTitle || (state.campaign.examYear + ' ' + state.campaign.examType));
-    ex.setAttribute('data-reveal-item', '');
-    head.appendChild(ex);
-    var h1 = el('h1', null, schoolTitle(col));
-    h1.setAttribute('data-reveal-item', '');
-    head.appendChild(h1);
-    if (col.prepHeadline || col.statusLabel) {
-      var lead = el('p', 'mt-lead', col.prepHeadline || col.statusLabel);
-      lead.setAttribute('data-reveal-item', '');
-      head.appendChild(lead);
-    }
-    w.appendChild(head);
-
-    if (col.prepStatuses && col.prepStatuses.length) {
-      var ul = el('ul', 'mt-prep');
-      col.prepStatuses.forEach(function (p) {
-        var li = el('li');
-        li.appendChild(el('span', null, p.label));
-        li.appendChild(el('span', 'mt-badge ' + p.state, badgeText(p.state)));
-        ul.appendChild(li);
-      });
-      w.appendChild(ul);
-    }
-
-    if (col.briefing) w.appendChild(detailBriefing(col));
-
-    if (col.examFeatureNote) {
-      var fs = el('div', 'mt-feature');
-      fs.appendChild(el('h2', 'mt-h2', '이번 시험'));
-      col.examFeatureNote.split(/\n+/).forEach(function (line) {
-        if (line.trim()) fs.appendChild(el('p', null, line.trim()));
-      });
-      w.appendChild(fs);
-    }
-
-    if (col.materials && col.materials.length) {
-      var ms = el('div', 'mt-feature');
-      ms.appendChild(el('h2', 'mt-h2', '준비한 자료'));
-      var railwrap = el('div', 'mt-railwrap');
-      var rail = el('div', 'mt-rail mt-rail--docs');
-      col.materials.forEach(function (mat) { rail.appendChild(docCard(mat)); });
-      railwrap.appendChild(rail);
-      railwrap.appendChild(railNav(rail));
-      ms.appendChild(railwrap);
-      w.appendChild(ms);
-    }
-
-    if (col.updateLogs && col.updateLogs.length) {
-      var ls = el('div', 'mt-feature');
-      ls.appendChild(el('h2', 'mt-h2', '업데이트'));
-      var lul = el('ul', 'mt-log');
-      col.updateLogs.forEach(function (lg) {
-        var li = el('li');
-        var t = el('time', null, humanDate(lg.date));
-        if (lg.date) t.dateTime = lg.date;
-        li.appendChild(t);
-        var box = el('div');
-        box.appendChild(el('div', 'mt-log-h', lg.headline || ''));
-        if (lg.body) box.appendChild(el('div', 'mt-log-b', lg.body));
-        li.appendChild(box);
-        lul.appendChild(li);
-      });
-      ls.appendChild(lul);
-      w.appendChild(ls);
-    }
-
-    s.appendChild(w);
-    container.appendChild(s);
-  }
-
-  function detailBriefing(col) {
-    var b = col.briefing;
-    var box = el('div', 'mt-feature');
-    box.appendChild(el('h2', 'mt-h2', '원장 브리핑'));
-    if (b.videoUrl) {
-      box.appendChild(videoFrame(b, '브리핑 영상 재생'));
-    } else if (b.thumbnailUrl) {
-      var img = document.createElement('img');
-      img.src = b.thumbnailUrl; img.loading = 'lazy'; img.alt = '';
-      img.style.borderRadius = 'var(--device-radius)';
-      box.appendChild(img);
-    }
-    var cap = el('div', 'mt-briefing-cap');
-    cap.style.marginTop = '12px';
-    if (b.title) cap.appendChild(el('b', null, b.title));
-    if (b.description) cap.appendChild(el('span', null, b.description));
-    if (b.shootDate) cap.appendChild(el('span', null, '촬영 ' + shortDate(b.shootDate)));
-    box.appendChild(cap);
-    return box;
-  }
-
-  function badgeText(st) {
-    return st === 'DONE' ? '완료' : st === 'IN_PROGRESS' ? '진행 중' : '준비 예정';
   }
 
   // ── 자료 미리보기 시트 ────────────────────────────────────────────────
@@ -702,9 +418,7 @@
   }
 
   // ── 스크롤 진입 1회 reveal (IntersectionObserver + 안전한 폴백, prefers-reduced-motion 존중) ──
-  // 자동 캐러셀·타임라인 없음. reveal 은 되돌리지 않는다(지나간 섹션을 흐리게 하지 않는다).
-  // IO 콜백이 유실되어도(짧은 페이지·앵커 진입·백그라운드 탭) 콘텐츠가 영영 숨지 않도록
-  // scroll/resize 확인 + 지연 catch-all 을 둔다.
+  // 자동 캐러셀·타임라인 없음. reveal 은 되돌리지 않는다.
   function wireReveal(scope) {
     var groups = [].slice.call(scope.querySelectorAll('[data-reveal]:not([data-reveal-wired])'));
     if (!groups.length) return;
@@ -747,7 +461,6 @@
     sweep();
     requestAnimationFrame(sweep);
     setTimeout(sweep, 300);
-    // catch-all: IO/scroll 이 모두 조용해도(짧은 페이지·백그라운드 탭) 남은 그룹을 곧 보여준다.
     setTimeout(function () { pending.slice().forEach(function (g) { reveal(g); io.unobserve(g); drop(g); }); }, 2500);
   }
 })();
