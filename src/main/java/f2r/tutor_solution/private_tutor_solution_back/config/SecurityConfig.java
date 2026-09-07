@@ -143,7 +143,8 @@ public class SecurityConfig {
             //   실제 owner 검증은 AcademyLmsManagePageController가 담당한다.
             .requestMatchers(
                 "/lms/*/manage",
-                "/lms/*/contents")
+                "/lms/*/contents",
+                "/lms/*/midterm-live")
             .hasRole("TUTOR")
             .requestMatchers(
                 "/lms/*/cart",

@@ -1,61 +1,161 @@
+/* 압구정에듀홀릭 홈페이지 "내신 LIVE" 캠페인 announcement.
+ *
+ * 한국 학원 광고가 아니라 Shopify 브랜드의 NEW COLLECTION announcement 톤을 목표로 한다(§24).
+ * - eduholic.feel2real.co.kr 에서만 노출(다른 Academy subdomain·apex 미노출).
+ * - 서버가 popup_enabled && published 로 판정 — 데이터가 없으면 아무것도 mount 하지 않는다(fake 금지, §5).
+ * - 모바일 bottom sheet + safe-area + ESC(desktop) + focus trap + body scroll lock.
+ */
 (function () {
   'use strict';
 
-  const EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
-  const LANDING_PATH = '/eduholic-midterm-2026.html';
-  const DISMISS_KEY = 'eduholic-midterm-2026-dismissed-date';
+  var EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
+  var LANDING_PATH = '/eduholic-midterm-2026.html';
+  var DISMISS_KEY = 'eduholic-midterm-2026-dismissed-date';
+  var POPUP_API = '/api/academies/eduholic/midterm-campaign/popup';
 
   if (window.location.hostname !== EDUHOLIC_HOST) return;
   if (window.location.pathname === LANDING_PATH) return;
 
-  const today = new Date().toISOString().slice(0, 10);
+  var today = new Date().toISOString().slice(0, 10);
   try {
     if (window.localStorage.getItem(DISMISS_KEY) === today) return;
-  } catch (_) {
-    // Storage 차단 환경에서도 팝업은 정상 노출한다.
+  } catch (_) { /* storage 차단 환경에서도 진행 */ }
+
+  fetch(POPUP_API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data) return;
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { mount(data); });
+      } else {
+        mount(data);
+      }
+    })
+    .catch(function () { /* 조용히 무시 — 팝업은 부가 요소 */ });
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
   }
 
   function dismissForToday() {
     try { window.localStorage.setItem(DISMISS_KEY, today); } catch (_) {}
-    const overlay = document.getElementById('eduholicMidtermPopup');
-    if (overlay) overlay.remove();
   }
 
-  function mount() {
+  function mount(data) {
     if (document.getElementById('eduholicMidtermPopup')) return;
-    const overlay = document.createElement('div');
+
+    injectStyle();
+    var lastFocus = document.activeElement;
+
+    var overlay = el('div');
     overlay.id = 'eduholicMidtermPopup';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', '2026 2학기 중간고사 내신대비 안내');
-    overlay.innerHTML = `
-      <div class="eduholic-midterm-card">
-        <button class="eduholic-midterm-close" type="button" aria-label="닫기">×</button>
-        <div class="eduholic-midterm-kicker">NOW · 2026 2학기 중간고사</div>
-        <h2>학교별 내신대비<br>지금 진행 중입니다.</h2>
-        <p>학교 프린트와 교과서 분석부터 학습자료·변형문제·시험 직전 교재까지, 압구정에듀홀릭의 실제 내신 준비 과정을 공개합니다.</p>
-        <a class="eduholic-midterm-cta" href="${LANDING_PATH}">내신대비 현장 보기 →</a>
-        <button class="eduholic-midterm-today" type="button">오늘은 그만 보기</button>
-      </div>`;
-    const style = document.createElement('style');
-    style.textContent = `
-      #eduholicMidtermPopup{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,15,30,.48);backdrop-filter:blur(5px)}
-      .eduholic-midterm-card{position:relative;width:min(440px,100%);padding:34px 30px 24px;border-radius:24px;background:#fff;box-shadow:0 24px 80px rgba(0,0,0,.24);text-align:left}
-      .eduholic-midterm-kicker{font-size:12px;font-weight:800;letter-spacing:.12em;color:#3157d5;margin-bottom:12px}
-      .eduholic-midterm-card h2{margin:0 0 14px;font-size:30px;line-height:1.18;letter-spacing:-.04em;color:#101828}
-      .eduholic-midterm-card p{margin:0 0 22px;font-size:15px;line-height:1.7;color:#475467;word-break:keep-all}
-      .eduholic-midterm-cta{display:block;padding:14px 18px;border-radius:12px;background:#172b4d;color:#fff;text-align:center;text-decoration:none;font-size:15px;font-weight:800}
-      .eduholic-midterm-close{position:absolute;right:18px;top:16px;border:0;background:transparent;color:#667085;font-size:28px;line-height:1;cursor:pointer}
-      .eduholic-midterm-today{display:block;margin:15px auto 0;border:0;background:transparent;color:#98a2b3;font-size:13px;text-decoration:underline;cursor:pointer}
-      @media(max-width:520px){#eduholicMidtermPopup{align-items:flex-end;padding:12px}.eduholic-midterm-card{border-radius:22px;padding:30px 22px 22px}.eduholic-midterm-card h2{font-size:27px}}
-    `;
-    document.head.appendChild(style);
+    overlay.setAttribute('aria-label', '2026 2학기 내신 LIVE 안내');
+
+    var card = el('div', 'emp-card');
+
+    var closeX = el('button', 'emp-close', '×');
+    closeX.type = 'button';
+    closeX.setAttribute('aria-label', '닫기');
+    card.appendChild(closeX);
+
+    if (data.visualUrl) {
+      var fig = el('div', 'emp-visual');
+      var img = document.createElement('img');
+      img.src = data.visualUrl;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      fig.appendChild(img);
+      card.appendChild(fig);
+    }
+
+    var bodyWrap = el('div', 'emp-body');
+    var kicker = el('div', 'emp-kicker');
+    kicker.appendChild(el('span', 'emp-dot'));
+    kicker.appendChild(document.createTextNode('MIDTERM LIVE'));
+    bodyWrap.appendChild(kicker);
+
+    bodyWrap.appendChild(el('h2', null, data.headline || '학교별 중간고사 준비, 지금 진행 중입니다.'));
+    bodyWrap.appendChild(el('p', null, data.body
+      || '학교 프린트 분석부터 학습자료·변형문제·시험 직전 대비까지. 박정민 원장이 실제 준비 과정을 보여드립니다.'));
+
+    if (data.schoolChips && data.schoolChips.length) {
+      var chips = el('div', 'emp-chips');
+      data.schoolChips.slice(0, 4).forEach(function (label) {
+        chips.appendChild(el('span', 'emp-chip', label));
+      });
+      bodyWrap.appendChild(chips);
+    }
+
+    var cta = el('a', 'emp-cta', '준비 현장 보기 →');
+    cta.href = LANDING_PATH;
+    bodyWrap.appendChild(cta);
+
+    var later = el('button', 'emp-later', '오늘은 그만 보기');
+    later.type = 'button';
+    bodyWrap.appendChild(later);
+
+    card.appendChild(bodyWrap);
+    overlay.appendChild(card);
     document.body.appendChild(overlay);
-    overlay.querySelector('.eduholic-midterm-close').addEventListener('click', () => overlay.remove());
-    overlay.querySelector('.eduholic-midterm-today').addEventListener('click', dismissForToday);
-    overlay.addEventListener('click', (event) => { if (event.target === overlay) overlay.remove(); });
+    document.body.classList.add('emp-lock');
+
+    closeX.focus();
+
+    function close() {
+      overlay.remove();
+      document.body.classList.remove('emp-lock');
+      document.removeEventListener('keydown', onKey);
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    function closeToday() { dismissForToday(); close(); }
+    function onKey(e) {
+      if (e.key === 'Escape') { close(); return; }
+      if (e.key === 'Tab') {
+        var f = card.querySelectorAll('button, a[href]');
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+
+    closeX.addEventListener('click', close);
+    later.addEventListener('click', closeToday);
+    cta.addEventListener('click', dismissForToday);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onKey);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
-  else mount();
+  function injectStyle() {
+    if (document.getElementById('eduholicMidtermPopupStyle')) return;
+    var style = el('style');
+    style.id = 'eduholicMidtermPopupStyle';
+    style.textContent = [
+      'body.emp-lock{overflow:hidden}',
+      '#eduholicMidtermPopup{position:fixed;inset:0;z-index:12000;display:flex;align-items:flex-end;justify-content:center;background:rgba(12,15,24,.5);backdrop-filter:blur(4px)}',
+      '#eduholicMidtermPopup .emp-card{position:relative;width:min(460px,100%);background:#fff;border-radius:22px 22px 0 0;overflow:hidden;box-shadow:0 -12px 44px rgba(0,0,0,.22);animation:emp-up .28s ease}',
+      '@keyframes emp-up{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}',
+      '#eduholicMidtermPopup .emp-close{position:absolute;right:12px;top:10px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.85);color:#333;font-size:22px;line-height:1;cursor:pointer}',
+      '#eduholicMidtermPopup .emp-visual{aspect-ratio:16/9;background:#eef0f6}',
+      '#eduholicMidtermPopup .emp-visual img{width:100%;height:100%;object-fit:cover;display:block}',
+      '#eduholicMidtermPopup .emp-body{padding:22px 22px calc(20px + env(safe-area-inset-bottom,0px))}',
+      '#eduholicMidtermPopup .emp-kicker{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.12em;color:#1f2b52;margin-bottom:12px}',
+      '#eduholicMidtermPopup .emp-dot{width:7px;height:7px;border-radius:50%;background:#1f7a4d}',
+      '#eduholicMidtermPopup h2{margin:0 0 10px;font-size:22px;line-height:1.3;letter-spacing:-.02em;color:#14161a;word-break:keep-all}',
+      '#eduholicMidtermPopup p{margin:0 0 16px;font-size:14px;line-height:1.65;color:#55606c;word-break:keep-all}',
+      '#eduholicMidtermPopup .emp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}',
+      '#eduholicMidtermPopup .emp-chip{font-size:12px;font-weight:600;padding:5px 10px;border:1px solid #e4e1da;border-radius:999px;color:#14161a}',
+      '#eduholicMidtermPopup .emp-cta{display:flex;align-items:center;justify-content:center;min-height:48px;background:#1f2b52;color:#fff;border-radius:12px;text-decoration:none;font-weight:800;font-size:15px}',
+      '#eduholicMidtermPopup .emp-later{display:block;width:100%;margin-top:10px;padding:10px;border:0;background:none;color:#98a2b3;font-size:13px;text-decoration:underline;cursor:pointer}',
+      '@media(min-width:560px){#eduholicMidtermPopup{align-items:center}#eduholicMidtermPopup .emp-card{border-radius:22px}}',
+      '@media(prefers-reduced-motion:reduce){#eduholicMidtermPopup .emp-card{animation:none}}'
+    ].join('');
+    document.head.appendChild(style);
+  }
 })();

@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,7 @@ public class AcademyLmsShellModel {
   private static final String ANONYMOUS_USER_KEY = "anon";
 
   private final AuthenticatedUserResolver authResolver;
+  private final MidtermCampaignRepository midtermCampaignRepository;
 
   public void populate(Model model, Academy academy, String handle) {
     Optional<JwtTokenProvider.AuthenticatedPrincipal> principal = authResolver.currentPrincipal();
@@ -43,6 +45,9 @@ public class AcademyLmsShellModel {
     model.addAttribute("lmsAuthenticated", principal.isPresent());
     model.addAttribute("lmsUserKey", userKey(principal));
     model.addAttribute("lmsIsOwner", isOwner(principal, academy));
+    // "내신 LIVE 관리" 사이드바 항목은 캠페인 행이 있는 학원(에듀홀릭)에만 노출한다(§40).
+    model.addAttribute("lmsMidtermEnabled",
+        midtermCampaignRepository.existsByAcademy_AcademyId(academy.getAcademyId()));
   }
 
   /**
