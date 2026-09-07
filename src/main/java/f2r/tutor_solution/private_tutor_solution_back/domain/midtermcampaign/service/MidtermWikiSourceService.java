@@ -3,19 +3,19 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.se
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
-import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiExamContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiCampaignScope;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceListResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceRow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaign;
-import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermSchoolCollection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermWikiSourceExposure;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermSchoolCollectionRepository;
-import java.util.ArrayList;
-import java.util.HashSet;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermWikiSourceExposureRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,13 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * TUTOR Wiki(Python) HTML 자료를 Midterm LIVE 의 read-only visual source 로 연결한다.
- * <b>데이터 연결만</b> — 자료를 복제하지 않고, {@code MidtermMaterial} authoring 을 확장하지 않으며,
- * 공개 페이지에 아직 표시하지 않는다.
- *
- * <p>allowlist = 발행 캠페인의 <b>발행된 school collection</b> 이 가진 (school, grade) +
- * 캠페인 (examYear, semester, examType) 컨텍스트와 <b>정확히 일치</b>하는 Wiki 자료.
- * 값을 저장된 그대로 비교하고, 일치하지 않으면 노출하지 않는다(정규화·fallback·전체 공개 없음).
+ * Public LIVE source = current campaign-scoped Wiki candidate ∩ visible exposure.
+ * SchoolCollection은 이 경로의 prerequisite가 아니며, exposure 부재/불일치는 항상 fail closed다.
  */
 @Service
 @RequiredArgsConstructor
@@ -37,69 +32,57 @@ public class MidtermWikiSourceService {
 
   private final AcademyRepository academyRepository;
   private final MidtermCampaignRepository campaignRepository;
-  private final MidtermSchoolCollectionRepository schoolCollectionRepository;
+  private final MidtermWikiSourceExposureRepository exposureRepository;
   private final MidtermWikiSourceGateway gateway;
 
   @Transactional(readOnly = true)
   public WikiSourceListResult listSources(String handle) {
     Context context = requirePublishedCampaign(handle);
-    AuthenticatedPrincipal tutor = tutorPrincipal(context.academy());
+    WikiCampaignScope scope = scope(context.campaign());
+    List<WikiSourceRow> candidates =
+        gateway.listCandidates(tutorPrincipal(context.academy()), scope);
+    Map<String, WikiSourceRow> byKey = candidates.stream().collect(Collectors.toMap(
+        row -> key(row.kind(), row.id()), Function.identity(), (first, ignored) -> first));
 
-    List<MidtermSchoolCollection> collections = schoolCollectionRepository
-        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(
-            context.campaign().getCampaignId());
-
-    List<WikiSourceView> views = new ArrayList<>();
-    List<WikiExamContext> unmatched = new ArrayList<>();
-    Set<String> seenSourceIds = new HashSet<>();
-    Set<String> seenContexts = new HashSet<>();
-
-    for (MidtermSchoolCollection collection : collections) {
-      WikiExamContext ctx = new WikiExamContext(
-          collection.getSchoolName(),
-          String.valueOf(collection.getGrade()),
-          context.campaign().getExamYear(),
-          context.campaign().getSemester(),
-          context.campaign().getExamType());
-      if (!seenContexts.add(ctx.toString())) {
-        continue;
-      }
-      List<WikiSourceRow> rows = gateway.listByContext(tutor, ctx);
-      if (rows.isEmpty()) {
-        unmatched.add(ctx);
-        continue;
-      }
-      for (WikiSourceRow row : rows) {
-        String sourceId = sourceId(row.kind(), row.id());
-        if (seenSourceIds.add(sourceId)) {
-          views.add(toView(handle, sourceId, row));
-        }
-      }
-    }
-    return new WikiSourceListResult(views, unmatched);
+    List<WikiSourceView> views = exposureRepository
+        .findByCampaignIdAndVisibleTrueOrderBySortOrderAscExposureIdAsc(
+            context.campaign().getCampaignId())
+        .stream()
+        .map(exposure -> byKey.get(key(exposure.getSourceKind(), exposure.getSourceId())))
+        .filter(java.util.Objects::nonNull)
+        .map(row -> toView(handle, sourceId(row.kind(), row.id()), row))
+        .toList();
+    return new WikiSourceListResult(views, candidates.isEmpty() ? List.of(scope) : List.of());
   }
 
-  /** allowlist 안의 자료만. body(HTML) bytes 만 돌려준다 — 헤더는 컨트롤러가 새로 구성한다. */
+  /** Preview 요청마다 published campaign, current candidate, visible exposure를 모두 재검증한다. */
   @Transactional(readOnly = true)
   public byte[] previewHtml(String handle, String sourceId) {
     ParsedSourceId parsed = parseSourceId(sourceId);
-    WikiSourceListResult allowed = listSources(handle);
-    boolean inAllowlist = allowed.views().stream()
-        .anyMatch(view -> view.sourceId().equals(sourceId));
-    if (!inAllowlist) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 대상 자료가 아닙니다.");
-    }
     Context context = requirePublishedCampaign(handle);
-    return gateway.fetchHtml(tutorPrincipal(context.academy()), parsed.kind(), parsed.id())
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "자료를 찾을 수 없습니다."));
+    boolean visible = exposureRepository
+        .findByCampaignIdAndSourceKindAndSourceId(
+            context.campaign().getCampaignId(), parsed.kind(), parsed.id())
+        .map(MidtermWikiSourceExposure::isVisible)
+        .orElse(false);
+    if (!visible) {
+      throw notFound();
+    }
+
+    AuthenticatedPrincipal tutor = tutorPrincipal(context.academy());
+    boolean currentCandidate = gateway.listCandidates(tutor, scope(context.campaign())).stream()
+        .anyMatch(row -> row.kind().equals(parsed.kind()) && row.id() == parsed.id());
+    if (!currentCandidate) {
+      throw notFound();
+    }
+    return gateway.fetchHtml(tutor, parsed.kind(), parsed.id())
+        .orElseThrow(MidtermWikiSourceService::notFound);
   }
 
-  // ── 내부 ──────────────────────────────────────────────────────────────────
-  private record Context(Academy academy, MidtermCampaign campaign) {}
+  record Context(Academy academy, MidtermCampaign campaign) {}
+  record ParsedSourceId(String kind, long id) {}
 
-  private record ParsedSourceId(String kind, long id) {}
-
-  private Context requirePublishedCampaign(String handle) {
+  Context requirePublishedCampaign(String handle) {
     Academy academy = academyRepository.findByHandle(handle)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "학원을 찾을 수 없습니다."));
     MidtermCampaign campaign = campaignRepository.findByAcademy_AcademyId(academy.getAcademyId())
@@ -108,7 +91,12 @@ public class MidtermWikiSourceService {
     return new Context(academy, campaign);
   }
 
-  private AuthenticatedPrincipal tutorPrincipal(Academy academy) {
+  static WikiCampaignScope scope(MidtermCampaign campaign) {
+    return new WikiCampaignScope(
+        campaign.getExamYear(), campaign.getSemester(), campaign.getExamType());
+  }
+
+  static AuthenticatedPrincipal tutorPrincipal(Academy academy) {
     User tutor = academy.getTutor();
     if (tutor == null || tutor.getUserId() == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "학원 소유자를 확인할 수 없습니다.");
@@ -116,29 +104,36 @@ public class MidtermWikiSourceService {
     return new AuthenticatedPrincipal(tutor.getUserId(), tutor.getLoginId(), tutor.getRole().name());
   }
 
-  private static String sourceId(String kind, long id) {
+  static String sourceId(String kind, long id) {
     return kind + "-" + id;
   }
 
-  private static ParsedSourceId parseSourceId(String sourceId) {
+  static ParsedSourceId parseSourceId(String sourceId) {
     int sep = sourceId == null ? -1 : sourceId.lastIndexOf('-');
     if (sep <= 0) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "자료 식별자가 올바르지 않습니다.");
+      throw notFound();
     }
     String kind = sourceId.substring(0, sep);
     if (!"school-print".equals(kind) && !"final".equals(kind)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "자료 식별자가 올바르지 않습니다.");
+      throw notFound();
     }
-    long id;
     try {
-      id = Long.parseLong(sourceId.substring(sep + 1));
+      long id = Long.parseLong(sourceId.substring(sep + 1));
+      if (id <= 0) {
+        throw notFound();
+      }
+      return new ParsedSourceId(kind, id);
     } catch (NumberFormatException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "자료 식별자가 올바르지 않습니다.");
+      throw notFound();
     }
-    if (id <= 0) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "자료 식별자가 올바르지 않습니다.");
-    }
-    return new ParsedSourceId(kind, id);
+  }
+
+  private static String key(String kind, long id) {
+    return kind + ":" + id;
+  }
+
+  private static ResponseStatusException notFound() {
+    return new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 대상 자료가 아닙니다.");
   }
 
   private static WikiSourceView toView(String handle, String sourceId, WikiSourceRow row) {
