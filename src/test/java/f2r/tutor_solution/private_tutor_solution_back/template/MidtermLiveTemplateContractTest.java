@@ -45,7 +45,10 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("IntersectionObserver");
     assertThat(js).contains("prefers-reduced-motion: reduce");
     assertThat(css).contains("8s ease-in-out 1 both");
-    assertThat(css).contains("translate3d(-50%, -10%, 0)");
+    // One-time document pan: a single keyframe drift by a bounded pixel amount, never a loop.
+    assertThat(css).contains("@keyframes midterm-document-drift");
+    assertThat(css).contains("calc(-1 * var(--doc-drift))");
+    assertThat(css).doesNotContain("infinite");
     assertThat(css).contains("@media (prefers-reduced-motion: reduce)");
     assertThat(css).contains("animation: none !important");
     assertThat(js).doesNotContain("setInterval");
