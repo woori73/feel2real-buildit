@@ -81,11 +81,18 @@ class MidtermWikiSourceServiceTest {
     return campaign;
   }
 
+  /** 반드시 outer when(...) 밖에서 호출한다 — 내부 stubbing 이 완결돼야 한다. */
   private MidtermSchoolCollection collection(String school, int grade) {
     MidtermSchoolCollection collection = mock(MidtermSchoolCollection.class);
     when(collection.getSchoolName()).thenReturn(school);
     when(collection.getGrade()).thenReturn(grade);
     return collection;
+  }
+
+  private void stubPublishedCollections(MidtermSchoolCollection... cols) {
+    when(schoolCollectionRepository
+        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(9L))
+        .thenReturn(List.of(cols));
   }
 
   private WikiSourceRow row(String kind, long id) {
@@ -95,9 +102,9 @@ class MidtermWikiSourceServiceTest {
   @Test
   void listSources_returnsOnlyMaterialsMatchingPublishedCollectionContext() {
     campaign(true);
-    when(schoolCollectionRepository
-        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(9L))
-        .thenReturn(List.of(collection("신구중학교", 2), collection("압구정중학교", 3)));
+    MidtermSchoolCollection shingu = collection("신구중학교", 2);
+    MidtermSchoolCollection apgujeong = collection("압구정중학교", 3);
+    stubPublishedCollections(shingu, apgujeong);
     when(gateway.listByContext(any(), eq(new WikiExamContext("신구중학교", "2", 2026, "2학기", "중간고사"))))
         .thenReturn(List.of(row("school-print", 11), row("final", 22)));
     when(gateway.listByContext(any(), eq(new WikiExamContext("압구정중학교", "3", 2026, "2학기", "중간고사"))))
@@ -121,9 +128,8 @@ class MidtermWikiSourceServiceTest {
   @Test
   void listSources_queriesPythonWithSynthesizedTutorIdentity() {
     campaign(true);
-    when(schoolCollectionRepository
-        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(9L))
-        .thenReturn(List.of(collection("신구중학교", 2)));
+    MidtermSchoolCollection shingu = collection("신구중학교", 2);
+    stubPublishedCollections(shingu);
     when(gateway.listByContext(any(), any())).thenReturn(List.of());
 
     service.listSources("eduholic");
@@ -162,9 +168,8 @@ class MidtermWikiSourceServiceTest {
   @Test
   void previewHtml_returnsBodyBytes_onlyForAllowlistedSource() {
     campaign(true);
-    when(schoolCollectionRepository
-        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(9L))
-        .thenReturn(List.of(collection("신구중학교", 2)));
+    MidtermSchoolCollection shingu = collection("신구중학교", 2);
+    stubPublishedCollections(shingu);
     when(gateway.listByContext(any(), any())).thenReturn(List.of(row("school-print", 11)));
     byte[] bytes = "<html><body>ok</body></html>".getBytes();
     when(gateway.fetchHtml(any(), eq("school-print"), eq(11L))).thenReturn(Optional.of(bytes));
@@ -175,9 +180,8 @@ class MidtermWikiSourceServiceTest {
   @Test
   void previewHtml_rejectsSourceNotInAllowlist_withoutFetchingHtml() {
     campaign(true);
-    when(schoolCollectionRepository
-        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(9L))
-        .thenReturn(List.of(collection("신구중학교", 2)));
+    MidtermSchoolCollection shingu = collection("신구중학교", 2);
+    stubPublishedCollections(shingu);
     when(gateway.listByContext(any(), any())).thenReturn(List.of(row("school-print", 11)));
 
     assertThatThrownBy(() -> service.previewHtml("eduholic", "school-print-999"))
@@ -201,9 +205,8 @@ class MidtermWikiSourceServiceTest {
   @Test
   void previewHtml_emptyBodyFromPython_404() {
     campaign(true);
-    when(schoolCollectionRepository
-        .findByCampaignIdAndPublishedTrueOrderBySortOrderAscSchoolCollectionIdAsc(9L))
-        .thenReturn(List.of(collection("신구중학교", 2)));
+    MidtermSchoolCollection shingu = collection("신구중학교", 2);
+    stubPublishedCollections(shingu);
     when(gateway.listByContext(any(), any())).thenReturn(List.of(row("school-print", 11)));
     when(gateway.fetchHtml(any(), eq("school-print"), eq(11L))).thenReturn(Optional.empty());
 
