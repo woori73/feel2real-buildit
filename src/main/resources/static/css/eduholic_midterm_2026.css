@@ -1,287 +1,185 @@
-/* 2026 2학기 중간고사 내신 LIVE — 압구정에듀홀릭 공개 페이지.
-   Design Source of Truth = 기존 Eduholic/Academy 공개 페이지(academy_public.css BuildIt 토큰,
-   academy_collection.css 횡스크롤 규격, academy_reveal.css 1회 reveal).
-
-   2026-09: 학교 컬렉션 섹션 / 학교별 상세 / sticky CTA / 큰 회색 히어로를 제거했다.
-   공개 표현은 다음 단계 시안에서 재정의한다 — 여기서는 잘못된 UI 만 걷어낸 상태다. */
-
+/* 2026 2학기 중간고사 공개 LIVE — Shopify reference 기반 첫 화면.
+   실제 TUTOR Wiki HTML 하나가 가장 강한 media가 되며 별도 dashboard/card/taxonomy UI는 없다. */
 :root {
-  /* ── BuildIt 토큰 (academy_public.css :root 와 동일) ── */
-  --bg: #ffffff;
-  --bg-soft: #f6f7f9;
-  --bg-deep: #f1f3f6;
-  --ink: #0a0a0c;
-  --ink-soft: #67707c;
-  --ink-faint: #a4abb5;
-  --line: #e8eaee;
-  --accent: #2563eb;
-  --accent-soft: #eaf0fe;
-  --ultramarine: #2b3a9e;
-  --gold: #c9a13b;
-  --live: #1f7a4d;
-  --radius: 20px;
-  --radius-sm: 12px;
-  --shadow-sm: 0 12px 32px rgba(10, 12, 20, .05);
-  --ease: cubic-bezier(.16, .84, .44, 1);
+  --bg: #f5f5f1;
+  --paper: #fff;
+  --ink: #11110f;
+  --ink-soft: #6f706b;
+  --line: rgba(17, 17, 15, .12);
   --font: -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard,
     "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Helvetica, Arial, sans-serif;
-
-  /* 스크롤 진입 1회 reveal — academy_reveal 계열(감속 이징, 작은 stagger) */
-  --reveal-distance: 26px;
-  --reveal-duration: 550ms;
-  --reveal-ease: cubic-bezier(0, 0, .3, 1);
-  --reveal-stagger: 80ms;
-  --hover-duration: 180ms;
-
-  /* 실물 종이/문서 프레임 */
-  --paper-edge: #dfe2e8;
-  --paper-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 18px 40px rgba(10, 12, 20, .12);
-  --device-radius: 22px;
-  --device-shadow: 0 0 0 1px rgba(15, 23, 42, .06), inset 0 0 0 1.5px rgba(255, 255, 255, .9),
-    0 2px 6px rgba(15, 23, 42, .06), 0 16px 34px rgba(10, 12, 20, .13);
-
-  --pad: 20px;
-  --maxw: 960px;
-  --readw: 620px;
-  --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --page-pad: 24px;
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
 body {
   margin: 0;
+  min-width: 320px;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
   font-size: 16px;
-  line-height: 1.62;
-  letter-spacing: -.02em;
+  line-height: 1.45;
+  letter-spacing: -.025em;
   word-break: keep-all;
-  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
 }
-img, video { max-width: 100%; display: block; }
 a { color: inherit; }
-:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; border-radius: 4px; }
+.mt-boot {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
 
-.mt-boot { padding: 24vh 24px; text-align: center; color: var(--ink-faint); font-size: 14px; }
-
-.mt-wrap { width: min(100%, var(--maxw)); margin: 0 auto; padding: 0 var(--pad); }
-.mt-read { width: min(100%, var(--readw)); margin: 0 auto; padding: 0 var(--pad); }
-
-/* ══════════════ 헤더 ══════════════ */
+/* Brand + season only. There is no campaign navigation. */
 .mt-topbar {
-  position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: calc(10px + var(--safe-t)) var(--pad) 10px;
-  background: rgba(255, 255, 255, .86);
-  backdrop-filter: saturate(1.4) blur(10px);
+  height: calc(58px + var(--safe-t));
+  padding: var(--safe-t) var(--page-pad) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   border-bottom: 1px solid var(--line);
 }
-.mt-wordmark { display: inline-flex; align-items: baseline; gap: 8px; text-decoration: none; font-weight: 800; }
-.mt-wordmark b { font-size: 15px; letter-spacing: -.03em; }
-.mt-topbar .mt-season { font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
-
-/* ══════════════ 페이지 제목 — 큰 히어로 대신 한 줄 ══════════════ */
-.mt-head { background: var(--bg); }
-.mt-head .mt-wrap { padding-top: 22px; padding-bottom: 12px; }
-.mt-head-title {
-  margin: 0; font-weight: 800; letter-spacing: -.035em; line-height: 1.25;
-  font-size: clamp(19px, 4.8vw, 24px);
+.mt-wordmark {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 760;
+  letter-spacing: -.035em;
 }
-.mt-textlink {
-  display: inline-block; margin-top: 12px; font-size: 13.5px; font-weight: 700;
-  color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
-}
-
-/* ══════════════ 섹션 리듬 ══════════════ */
-.mt-block { padding: 36px 0; }
-.mt-block--tight { padding: 26px 0; }
-.mt-block--soft { background: var(--bg-soft); border-top: 1px solid var(--line); }
-.mt-block--soft + .mt-block, .mt-block + .mt-block--soft { border-top: 1px solid var(--line); }
-.mt-h2 { margin: 0; font-size: clamp(18px, 4.8vw, 22px); font-weight: 800; letter-spacing: -.03em; }
-.mt-block > .mt-wrap > .mt-h2 + .mt-railwrap { margin-top: 18px; }
-
-/* ══════════════ 횡스크롤 rail ══════════════ */
-/* academy_collection.css 규격: 카드 + 다음 카드 peek + scroll-snap. 자동 캐러셀·dot 없음. */
-.mt-railwrap { position: relative; }
-.mt-rail {
-  --card-w: 72vw;
-  display: flex; gap: 14px; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain; scrollbar-width: none;
-  padding: 4px var(--pad) 14px;
-  margin: 0 calc(-1 * var(--pad));
-}
-.mt-rail::-webkit-scrollbar { display: none; }
-.mt-rail > * { scroll-snap-align: start; flex: 0 0 var(--card-w); }
-.mt-rail-nav { display: none; }
-
-/* 자료 = 상품. 실제 문서가 프레임이다(흰색 rounded UI 카드 아님). */
-.mt-doc {
-  background: transparent; border: 0; padding: 0; font: inherit; color: inherit; text-align: left;
-  cursor: pointer; display: flex; flex-direction: column; gap: 10px;
-}
-.mt-doc-sheet {
-  position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden;
-  background: #fff; border: 1px solid var(--paper-edge); border-radius: 4px;
-  box-shadow: var(--paper-shadow);
-}
-.mt-doc-sheet img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-.mt-doc-sheet.ph {
-  display: flex; align-items: center; justify-content: center; color: var(--ink-faint); font-size: 30px;
-  background: repeating-linear-gradient(135deg, #eef0f3 0 14px, #f5f6f8 14px 28px);
-}
-.mt-doc-sheet .mt-lockchip {
-  position: absolute; left: 10px; bottom: 10px;
-  font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px;
-  background: rgba(10, 12, 20, .72); color: #fff; backdrop-filter: blur(4px);
-}
-.mt-doc-cap { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
-.mt-doc-cap .mt-cat { font-size: 11.5px; font-weight: 700; color: var(--ultramarine); }
-.mt-doc-cap .mt-doc-title { font-size: 13.5px; font-weight: 700; letter-spacing: -.02em; }
-.mt-doc-cap .mt-doc-meta { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
-.mt-doc-cap .mt-doc-sub { font-size: 12px; color: var(--ink-soft); }
-
-.mt-rail--docs { --card-w: 72vw; }
-
-/* ══════════════ 원장 브리핑 ══════════════ */
-/* 비율은 JS 가 실제 영상 metadata(--mt-video-ar)로 맞춘다. */
-.mt-briefing { padding: 8px 0 22px; }
-.mt-briefing .mt-wrap { display: flex; flex-direction: column; gap: 14px; padding: 0; }
-.mt-briefing .mt-briefing-cap { padding: 0 var(--pad); }
-.mt-video {
-  position: relative; width: 100%; aspect-ratio: var(--mt-video-ar, 16 / 10); overflow: hidden;
-  background: #0b0d12;
-}
-.mt-briefing .mt-video { box-shadow: 0 20px 44px rgba(10, 12, 20, .16); }
-.mt-video video, .mt-video img { width: 100%; height: 100%; object-fit: contain; }
-.mt-video-play {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(8, 10, 18, .22); border: 0; cursor: pointer; color: #fff;
-}
-.mt-video-play span {
-  width: 62px; height: 62px; border-radius: 50%; background: rgba(255, 255, 255, .94); color: var(--ink);
-  display: flex; align-items: center; justify-content: center; font-size: 20px; padding-left: 4px;
-}
-.mt-briefing-cap { display: flex; flex-direction: column; gap: 3px; }
-.mt-briefing-cap b { font-size: 15px; font-weight: 800; letter-spacing: -.03em; }
-.mt-briefing-cap span { font-size: 12.5px; color: var(--ink-soft); }
-
-/* ══════════════ 업데이트 로그 — editorial 리스트 ══════════════ */
-.mt-log { list-style: none; margin: 16px 0 0; padding: 0; }
-.mt-log li { display: grid; grid-template-columns: 52px 1fr; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
-.mt-log li:first-child { border-top: 1px solid var(--line); }
-.mt-log time { font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; padding-top: 1px; }
-.mt-log .mt-log-h { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
-.mt-log .mt-log-b { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
-
-/* ══════════════ 다음 시험 ══════════════ */
-.mt-next { background: var(--ultramarine); color: #fff; }
-.mt-next .mt-wrap { padding-top: 34px; padding-bottom: 34px; }
-.mt-next .mt-h2 { color: #fff; }
-.mt-next p { margin: 8px 0 0; font-size: 13.5px; color: rgba(255, 255, 255, .82); }
-.mt-next a {
-  display: inline-flex; align-items: center; min-height: 44px; margin-top: 18px; padding: 0 20px;
-  background: #fff; color: var(--ultramarine); border-radius: 999px; text-decoration: none;
-  font-weight: 800; font-size: 14px;
+.mt-season {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+  white-space: nowrap;
 }
 
-/* ══════════════ 상담 ══════════════ */
-.mt-consult { text-align: center; }
-.mt-consult .mt-h2 { font-size: clamp(18px, 4.8vw, 22px); }
-.mt-consult p { margin: 8px auto 0; font-size: 13.5px; color: var(--ink-soft); max-width: 24em; }
-.mt-consult a {
-  display: inline-flex; align-items: center; min-height: 46px; margin-top: 18px; padding: 0 24px;
-  background: var(--ink); color: #fff; border-radius: 999px; text-decoration: none;
-  font-weight: 800; font-size: 14px;
+/* The short copy and the real document share the first viewport. */
+.mt-main {
+  min-height: calc(100svh - 58px - var(--safe-t));
+  padding: 34px 0 calc(44px + var(--safe-b));
+}
+.mt-intro {
+  padding: 0 var(--page-pad);
+}
+.mt-title {
+  max-width: 11em;
+  margin: 0;
+  font-size: clamp(30px, 9.2vw, 44px);
+  font-weight: 720;
+  letter-spacing: -.065em;
+  line-height: 1.04;
+}
+.midterm-feature {
+  margin-top: 26px;
+}
+.midterm-feature__meta {
+  min-height: 21px;
+  padding: 0 var(--page-pad);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -.015em;
+}
+.midterm-feature__visual {
+  position: relative;
+  height: clamp(430px, 56svh, 560px);
+  margin-top: 11px;
+  margin-inline: 12px;
+  overflow: hidden;
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow: 0 20px 52px rgba(24, 24, 20, .13);
+  isolation: isolate;
+  pointer-events: none;
+}
+.midterm-feature__document {
+  position: absolute;
+  top: -42px;
+  left: 50%;
+  width: 780px;
+  height: 1120px;
+  border: 0;
+  background: var(--paper);
+  pointer-events: none;
+  transform-origin: top center;
+  transform: translate3d(-50%, 0, 0) scale(.72);
+}
+.midterm-feature.is-in-view .midterm-feature__document {
+  animation: midterm-document-drift 8s ease-in-out 1 both;
+}
+@keyframes midterm-document-drift {
+  from { transform: translate3d(-50%, 0, 0) scale(.72); }
+  to { transform: translate3d(-50%, -10%, 0) scale(.72); }
 }
 
-/* ══════════════ footer ══════════════ */
-.mt-footer { padding: 26px var(--pad) calc(30px + var(--safe-b)); text-align: center; color: var(--ink-faint); font-size: 11.5px; }
-
-/* ══════════════ 자료 미리보기 시트 ══════════════ */
-.mt-sheet-backdrop {
-  position: fixed; inset: 0; z-index: 60; background: rgba(8, 10, 18, .5);
-  display: flex; align-items: flex-end; justify-content: center;
-}
-.mt-sheet {
-  width: min(100%, 560px); max-height: 88vh; overflow-y: auto;
-  background: var(--bg); border-radius: 20px 20px 0 0;
-  padding: 22px var(--pad) calc(26px + var(--safe-b));
-}
-.mt-sheet-close {
-  float: right; background: none; border: 0; font-size: 26px; line-height: 1; color: var(--ink-faint); cursor: pointer;
-}
-.mt-sheet .mt-cat { font-size: 11.5px; font-weight: 700; color: var(--ultramarine); }
-.mt-sheet h3 { margin: 6px 0 8px; font-size: 19px; font-weight: 800; letter-spacing: -.03em; }
-.mt-sheet p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
-.mt-sheet .mt-comment {
-  margin: 16px 0; padding: 12px 14px; background: var(--bg-soft); border-left: 3px solid var(--ultramarine);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 13.5px; color: var(--ink);
-}
-.mt-sheet .mt-comment b { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
-.mt-sheet ul.mt-check { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 7px; }
-.mt-sheet ul.mt-check li { font-size: 13.5px; padding-left: 22px; position: relative; }
-.mt-sheet ul.mt-check li::before { content: "✓"; position: absolute; left: 0; color: var(--live); font-weight: 800; }
-.mt-sheet .mt-file-btn {
-  display: flex; align-items: center; justify-content: center; min-height: 46px; margin-top: 12px;
-  background: var(--ink); color: #fff; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 13.5px;
-}
-.mt-sheet .mt-file-note { margin-top: 12px; font-size: 12px; color: var(--ink-soft); text-align: center; }
-
-/* ══════════════ 스크롤 진입 1회 reveal ══════════════ */
-.mt-js [data-reveal] > [data-reveal-item] {
-  opacity: 0; transform: translateY(var(--reveal-distance));
-  transition: opacity var(--reveal-duration) var(--reveal-ease),
-    transform var(--reveal-duration) var(--reveal-ease);
-  transition-delay: calc(var(--reveal-order, 0) * var(--reveal-stagger));
-}
-.mt-js [data-reveal].is-revealed > [data-reveal-item] { opacity: 1; transform: none; }
-
-/* ══════════════ hover (데스크톱 포인터) ══════════════ */
-@media (hover: hover) and (pointer: fine) {
-  .mt-doc:hover .mt-doc-sheet { box-shadow: var(--paper-shadow), 0 0 0 1px var(--accent); }
+/* 390px: copy remains compact; document starts within the first viewport and fills most of it. */
+@media (max-width: 430px) {
+  :root { --page-pad: 22px; }
+  .mt-main { padding-top: 28px; }
+  .mt-title { font-size: clamp(29px, 8.7vw, 37px); }
+  .midterm-feature { margin-top: 22px; }
+  .midterm-feature__visual {
+    height: clamp(420px, 55svh, 500px);
+    margin-inline: 10px;
+  }
 }
 
-/* ══════════════ 데스크톱 확장 ══════════════ */
+/* Desktop uses an editorial text/media split instead of enlarging the mobile stack. */
 @media (min-width: 900px) {
-  :root { --pad: 40px; }
-  .mt-block { padding: 60px 0; }
-  .mt-block--tight { padding: 40px 0; }
-  .mt-h2 { font-size: 24px; }
-
-  .mt-head .mt-wrap { padding-top: 34px; padding-bottom: 8px; }
-  .mt-head-title { font-size: clamp(22px, 2.4vw, 28px); }
-
-  .mt-rail { --card-w: 300px; gap: 20px; scroll-snap-type: none; }
-  .mt-rail--docs { --card-w: 288px; }
-  .mt-rail-nav { display: flex; gap: 8px; position: absolute; right: var(--pad); top: -46px; }
-  .mt-rail-nav button {
-    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg);
-    color: var(--ink); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  :root { --page-pad: 42px; }
+  .mt-topbar {
+    height: calc(70px + var(--safe-t));
+    padding-inline: max(42px, calc((100vw - 1440px) / 2));
   }
-  .mt-rail-nav button[disabled] { opacity: .35; cursor: default; }
-
-  .mt-briefing { padding: 60px 0; }
-  .mt-briefing .mt-wrap {
-    width: min(100%, var(--maxw)); margin: 0 auto; padding: 0 var(--pad);
-    flex-direction: row-reverse; align-items: center; gap: 44px;
+  .mt-main {
+    width: min(100%, 1440px);
+    min-height: calc(100svh - 70px - var(--safe-t));
+    margin: 0 auto;
+    padding: 58px 42px 72px;
+    display: grid;
+    grid-template-columns: minmax(230px, 29%) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(50px, 7vw, 112px);
   }
-  .mt-briefing .mt-video { flex: 0 0 54%; border-radius: var(--device-radius); box-shadow: var(--device-shadow); }
-  .mt-briefing .mt-briefing-cap { flex: 1; padding: 0; }
-  .mt-briefing-cap b { font-size: 22px; }
-
-  .mt-log { max-width: var(--readw); }
-  .mt-log li { grid-template-columns: 64px 1fr; }
-
-  .mt-sheet-backdrop { align-items: center; }
-  .mt-sheet { border-radius: 22px; max-width: 540px; }
+  .mt-intro { padding: 7vh 0 0; }
+  .mt-title {
+    max-width: 7.5em;
+    font-size: clamp(42px, 4.3vw, 67px);
+  }
+  .midterm-feature { margin-top: 0; }
+  .midterm-feature__meta { padding: 0; font-size: 13px; }
+  .midterm-feature__visual {
+    width: 100%;
+    height: min(72vh, 720px);
+    min-height: 590px;
+    margin: 14px 0 0;
+  }
+  .midterm-feature__document {
+    top: -76px;
+    width: 1180px;
+    height: 1668px;
+    transform: translate3d(-50%, 0, 0) scale(.78);
+  }
+  .midterm-feature.is-in-view .midterm-feature__document {
+    animation-name: midterm-document-drift-desktop;
+  }
+  @keyframes midterm-document-drift-desktop {
+    from { transform: translate3d(-50%, 0, 0) scale(.78); }
+    to { transform: translate3d(-50%, -10%, 0) scale(.78); }
+  }
 }
 
-/* ══════════════ prefers-reduced-motion ══════════════ */
 @media (prefers-reduced-motion: reduce) {
-  .mt-js [data-reveal] > [data-reveal-item] { opacity: 1 !important; transform: none !important; transition: none; }
-  * { scroll-behavior: auto !important; }
+  .midterm-feature__document,
+  .midterm-feature.is-in-view .midterm-feature__document {
+    animation: none !important;
+  }
 }
