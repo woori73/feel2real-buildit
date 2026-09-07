@@ -141,7 +141,7 @@ class MidtermWikiSourceServiceTest {
 
   @Test
   void unpublishedCampaign_failsClosed() {
-    campaign.setPublished(false);
+    campaign.updatePublished(false);
     assertThatThrownBy(() -> service.listSources("eduholic"))
         .isInstanceOf(ResponseStatusException.class);
   }
