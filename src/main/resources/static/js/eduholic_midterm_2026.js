@@ -129,10 +129,12 @@
     var section = el('section', 'midterm-feature');
     section.setAttribute('aria-label', '실제 중간고사 준비 자료');
 
+    // 지식상품 패키지: page bg → product surface → clipped media window → 실제 Wiki HTML.
+    var surface = el('div', 'midterm-feature__surface');
     var visual = el('div', 'midterm-feature__visual');
-    var frame = safeFrame(source.previewUrl, 'midterm-feature__document', '중간고사 준비 자료');
-    visual.appendChild(frame);
-    section.appendChild(visual);
+    visual.appendChild(safeFrame(source.previewUrl, 'midterm-feature__document', '중간고사 준비 자료'));
+    surface.appendChild(visual);
+    section.appendChild(surface);
 
     wireDocumentMotion(section);
     return section;
@@ -165,9 +167,12 @@
     var item = el('article', 'midterm-recent__item');
     item.classList.add('is-role-' + ROLES[index % ROLES.length]);
 
+    // hero 와 동일한 패키지 grammar: surface → clipped media window → 실제 Wiki HTML.
+    var surface = el('div', 'midterm-recent__surface');
     var media = el('div', 'midterm-recent__media');
     media.appendChild(safeFrame(source.previewUrl, 'midterm-recent__doc', '중간고사 준비 자료'));
-    item.appendChild(media);
+    surface.appendChild(media);
+    item.appendChild(surface);
 
     var meta = metadata(source);
     if (meta) item.appendChild(el('p', 'midterm-recent__meta', meta));

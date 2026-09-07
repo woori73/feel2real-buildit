@@ -202,4 +202,51 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("originalUrl");
     assertThat(js).doesNotContain("blob:");
   }
+
+  /** Phase 3A — Knowledge Product Packaging: 자료 = 상품 본체, 바깥 frame = 패키지.
+   *  page bg → product surface → clipped media window → 실제 Wiki HTML. */
+  @Test
+  void knowledgeProduct_wrapsEachDocumentInFixedPackagingSurface() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+    String html = read("static/eduholic-midterm-2026.html");
+    String frontend = html + "\n" + js;
+
+    // hero·recent 자료 모두 동일 packaging surface 안에 놓인다(raw iframe 아님).
+    assertThat(js).contains("midterm-feature__surface");
+    assertThat(js).contains("midterm-recent__surface");
+    assertThat(css).contains(".midterm-feature__surface");
+    assertThat(css).contains(".midterm-recent__surface");
+    assertThat(css).contains("--surface-a");     // 고정 palette (index % 4) — 색은 taxonomy 아님
+    assertThat(css).contains("--window-radius");
+    assertThat(css).contains("var(--surface-pad)");
+
+    // 움직이는 것은 media window 안 document 뿐 — surface/frame 애니메이션 없음.
+    assertThat(css).contains("@keyframes midterm-product-drift");
+    assertThat(css).contains("midterm-product-drift 8s ease-in-out 1 both");
+    assertThat(css).doesNotContain("infinite");
+    assertThat(css).doesNotContain("midterm-surface-drift");
+    assertThat(css).doesNotContain("midterm-frame-drift");
+
+    // 자료 밖에 학습 내용/상품명/뱃지/e-commerce UI 를 생성하지 않는다(§2·§25·§26).
+    assertThat(frontend).doesNotContain("가정법");
+    assertThat(frontend).doesNotContain("관계대명사");
+    assertThat(frontend).doesNotContain("Vocabulary");
+    assertThat(frontend).doesNotContain("핵심 정리");
+    assertThat(frontend).doesNotContain("학습 포인트");
+    assertThat(frontend).doesNotContain("추천 자료");
+    assertThat(frontend).doesNotContain("전체 자료 보기");
+    assertThat(frontend).doesNotContain("장바구니");
+    assertThat(frontend).doesNotContain("quickAdd");
+    assertThat(js).doesNotContain("badge");
+    assertThat(js).doesNotContain("NEW");
+
+    // 외부 metadata = 실제 school/grade/date 만.
+    assertThat(js).contains("function metadata(source)");
+    assertThat(js).doesNotContain("difficulty");
+
+    // reduced-motion: 자료 정지, 자료가 사라지지 않는다.
+    assertThat(css).contains("prefers-reduced-motion: reduce");
+    assertThat(css).contains("animation: none !important");
+  }
 }
