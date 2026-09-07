@@ -64,14 +64,22 @@ public class MidtermMakingOf extends BaseEntity {
     this.sortOrder = sortOrder;
   }
 
-  public void update(Long schoolCollectionId, String stage, String caption, String imageKey,
+  public void update(Long schoolCollectionId, String stage, String caption,
       Long videoId, boolean published, int sortOrder) {
     this.schoolCollectionId = schoolCollectionId;
     this.stage = stage;
     this.caption = caption;
-    this.imageKey = imageKey;
     this.videoId = videoId;
     this.published = published;
     this.sortOrder = sortOrder;
+    // imageKey 는 여기서 건드리지 않는다 — metadata update 가 기존 이미지를 지우지 않도록(§5).
+  }
+
+  /**
+   * Making-of 이미지 storage key 교체. 인증된 서버 upload flow(전용 multipart endpoint)에서만
+   * 호출된다. null 이면 슬롯을 비운다.
+   */
+  public void updateImage(String imageKey) {
+    this.imageKey = imageKey;
   }
 }

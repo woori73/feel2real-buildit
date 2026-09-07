@@ -132,11 +132,17 @@ public class MidtermCampaign extends BaseEntity {
     this.heroCtaLabel = heroCtaLabel;
   }
 
-  public void updatePopup(boolean popupEnabled, String popupHeadline, String popupBody,
-      String popupVisualKey) {
+  public void updatePopup(boolean popupEnabled, String popupHeadline, String popupBody) {
     this.popupEnabled = popupEnabled;
     this.popupHeadline = popupHeadline;
     this.popupBody = popupBody;
+  }
+
+  /**
+   * 팝업 비주얼 storage key 교체. 인증된 서버 upload flow(전용 multipart endpoint)에서만 호출된다
+   * — upsert payload 로는 절대 설정하지 않는다. null 이면 슬롯을 비운다.
+   */
+  public void updatePopupVisual(String popupVisualKey) {
     this.popupVisualKey = popupVisualKey;
   }
 

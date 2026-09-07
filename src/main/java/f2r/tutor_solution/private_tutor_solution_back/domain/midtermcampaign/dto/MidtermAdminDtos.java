@@ -109,6 +109,11 @@ public final class MidtermAdminDtos {
       String ctaDestination) {}
 
   // ── 전송(요청) ──────────────────────────────────────────────────────────
+  //
+  // 보안: raw storage key(popupVisualKey/thumbnailKey/imageKey)는 upsert payload 에서 제거했다.
+  // 클라이언트가 storage key 를 지정할 수 있으면 다른 owner 파일·임의 로컬 경로를 공개 endpoint 에
+  // 연결하는 파일 노출 취약점이 된다. 이미지는 전용 multipart upload(POST .../popup-visual 등)로만
+  // 붙는다 — 서버가 인증·소유권 확인 후 FileStorage 로 key 를 생성하고 엔티티에 직접 연결한다.
   public record CampaignUpsert(
       String examName,
       Integer examYear,
@@ -123,8 +128,7 @@ public final class MidtermAdminDtos {
       String heroCtaLabel,
       Boolean popupEnabled,
       String popupHeadline,
-      String popupBody,
-      String popupVisualKey) {}
+      String popupBody) {}
 
   public record PublishRequest(boolean published) {}
 
@@ -159,7 +163,6 @@ public final class MidtermAdminDtos {
       Long sourceMaterialId,
       String visibility,
       Integer previewPageCap,
-      String thumbnailKey,
       Integer sortOrder,
       Boolean published) {}
 
@@ -175,7 +178,6 @@ public final class MidtermAdminDtos {
       Long schoolCollectionId,
       String stage,
       String caption,
-      String imageKey,
       Long videoId,
       Boolean published,
       Integer sortOrder) {}

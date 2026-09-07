@@ -103,7 +103,7 @@ public class MidtermMaterial extends BaseEntity {
 
   public void update(String category, String displayTitle, String blurb, String principalComment,
       String checklist, MidtermMaterialSourceType sourceType, Long sourceMaterialId,
-      MidtermMaterialVisibility visibility, Integer previewPageCap, String thumbnailKey,
+      MidtermMaterialVisibility visibility, Integer previewPageCap,
       int sortOrder, boolean published) {
     this.category = category != null ? category : "OTHER";
     this.displayTitle = displayTitle;
@@ -114,8 +114,16 @@ public class MidtermMaterial extends BaseEntity {
     this.sourceMaterialId = sourceMaterialId;
     this.visibility = visibility != null ? visibility : MidtermMaterialVisibility.PRIVATE;
     this.previewPageCap = previewPageCap;
-    this.thumbnailKey = thumbnailKey;
     this.sortOrder = sortOrder;
     this.published = published;
+    // thumbnailKey 는 여기서 건드리지 않는다 — metadata update 가 기존 이미지를 지우지 않도록(§5).
+  }
+
+  /**
+   * 썸네일 storage key 교체. 인증된 서버 upload flow(전용 multipart endpoint)에서만 호출된다.
+   * null 이면 슬롯을 비운다.
+   */
+  public void updateThumbnail(String thumbnailKey) {
+    this.thumbnailKey = thumbnailKey;
   }
 }

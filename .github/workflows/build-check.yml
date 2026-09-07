@@ -99,6 +99,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.controller.WikiHomeFeedControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermMaterialAccessServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignPublicServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermImageSecurityTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignAdminImageSecurityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller.MidtermCampaignAdminAuthWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.MidtermLiveTemplateContractTest"
 

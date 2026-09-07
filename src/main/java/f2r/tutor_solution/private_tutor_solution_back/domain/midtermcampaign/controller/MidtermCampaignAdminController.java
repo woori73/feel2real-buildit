@@ -2,7 +2,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.co
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermAdminDtos.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignAdminService;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,12 +46,40 @@ public class MidtermCampaignAdminController {
     return ResponseEntity.ok(service.setPublished(handle, req.published()));
   }
 
-  @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<Map<String, String>> uploadImage(
-      @PathVariable String handle,
-      @RequestParam(value = "kind", required = false) String kind,
-      @RequestPart("image") MultipartFile image) {
-    return ResponseEntity.ok(Map.of("imageKey", service.uploadImage(handle, kind, image)));
+  // ── 이미지: 업로드+연결이 한 번의 서버 호출 (raw key 입력 불가) ─────────
+  @PostMapping(value = "/popup-visual", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<AdminView> uploadPopupVisual(
+      @PathVariable String handle, @RequestPart("image") MultipartFile image) {
+    return ResponseEntity.ok(service.uploadPopupVisual(handle, image));
+  }
+
+  @DeleteMapping("/popup-visual")
+  public ResponseEntity<AdminView> clearPopupVisual(@PathVariable String handle) {
+    return ResponseEntity.ok(service.clearPopupVisual(handle));
+  }
+
+  @PostMapping(value = "/materials/{id}/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<AdminView> uploadMaterialThumbnail(
+      @PathVariable String handle, @PathVariable Long id, @RequestPart("image") MultipartFile image) {
+    return ResponseEntity.ok(service.uploadMaterialThumbnail(handle, id, image));
+  }
+
+  @DeleteMapping("/materials/{id}/thumbnail")
+  public ResponseEntity<AdminView> clearMaterialThumbnail(
+      @PathVariable String handle, @PathVariable Long id) {
+    return ResponseEntity.ok(service.clearMaterialThumbnail(handle, id));
+  }
+
+  @PostMapping(value = "/making-of/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<AdminView> uploadMakingOfImage(
+      @PathVariable String handle, @PathVariable Long id, @RequestPart("image") MultipartFile image) {
+    return ResponseEntity.ok(service.uploadMakingOfImage(handle, id, image));
+  }
+
+  @DeleteMapping("/making-of/{id}/image")
+  public ResponseEntity<AdminView> clearMakingOfImage(
+      @PathVariable String handle, @PathVariable Long id) {
+    return ResponseEntity.ok(service.clearMakingOfImage(handle, id));
   }
 
   // ── 학교 컬렉션 ─────────────────────────────────────────────────────────

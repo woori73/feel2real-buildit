@@ -114,28 +114,41 @@ public class MidtermCampaignPublicService {
 
   @Transactional(readOnly = true)
   public MidtermImageService.ServedImage readPopupVisual(String handle) {
-    MidtermCampaign campaign = requirePublishedCampaign(handle);
+    Academy academy = requirePublishedAcademy(handle);
+    MidtermCampaign campaign = requirePublishedCampaign(academy);
     if (!campaign.isPopupEnabled() || campaign.getPopupVisualKey() == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "팝업 이미지가 없습니다.");
     }
-    return midtermImageService.read(campaign.getPopupVisualKey());
+    // key 는 캠페인 엔티티에 저장돼 있던 값 + 소유 학원 tutor namespace 재확인(§4).
+    return midtermImageService.read(campaign.getPopupVisualKey(), ownerUserId(academy));
   }
 
   @Transactional(readOnly = true)
   public MidtermImageService.ServedImage readMaterialThumbnail(String handle, Long materialId) {
-    MidtermMaterial material = requirePublishedMaterial(handle, materialId);
+    Academy academy = requirePublishedAcademy(handle);
+    MidtermCampaign campaign = requirePublishedCampaign(academy);
+    MidtermMaterial material = materialRepository
+        .findByMidtermMaterialIdAndCampaignId(materialId, campaign.getCampaignId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "자료를 찾을 수 없습니다."));
     if (!materialAccessService.isListable(material) || material.getThumbnailKey() == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "썸네일이 없습니다.");
     }
-    return midtermImageService.read(material.getThumbnailKey());
+    return midtermImageService.read(material.getThumbnailKey(), ownerUserId(academy));
   }
 
-  private MidtermCampaign requirePublishedCampaign(String handle) {
-    Academy academy = academyRepository.findByHandle(handle)
+  private Academy requirePublishedAcademy(String handle) {
+    return academyRepository.findByHandle(handle)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
+  }
+
+  private MidtermCampaign requirePublishedCampaign(Academy academy) {
     return campaignRepository.findByAcademy_AcademyId(academy.getAcademyId())
         .filter(MidtermCampaign::isPublished)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
+  }
+
+  private static Long ownerUserId(Academy academy) {
+    return academy.getTutor() == null ? null : academy.getTutor().getUserId();
   }
 
   // ── 내부 조립 ───────────────────────────────────────────────────────────
@@ -250,10 +263,11 @@ public class MidtermCampaignPublicService {
     String base = "/api/academies/" + handle + "/midterm-campaign/materials/" + m.getMidtermMaterialId();
     String fileUrl = materialAccessService.canExposeFileUrl(access) ? base + "/file" : null;
     String thumbnailUrl = m.getThumbnailKey() == null ? null : base + "/thumbnail";
+    // sourceLabel(Wiki 원본 제목)은 공개 payload 에 넣지 않는다 — 비공개 Wiki 자료 metadata 유출 방지(§6).
     return new MaterialCard(
         m.getMidtermMaterialId(), m.getCategory(), m.getDisplayTitle(), m.getBlurb(),
         m.getPrincipalComment(), splitChecklist(m.getChecklist()), m.getVisibility().name(),
-        access.name(), thumbnailUrl, fileUrl, materialAccessService.sourceLabel(m));
+        access.name(), thumbnailUrl, fileUrl);
   }
 
   static List<String> splitChecklist(String raw) {

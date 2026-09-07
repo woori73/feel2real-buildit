@@ -157,9 +157,31 @@
     }
     var file = input('file'); file.accept = 'image/*';
     visualWrap.appendChild(file);
+    if (v.exists) {
+      var upBtn = el('button', 'mtx-btn ghost', '팝업 이미지 업로드');
+      upBtn.type = 'button';
+      upBtn.addEventListener('click', function () {
+        if (!file.files || !file.files[0]) { say('이미지 파일을 선택해 주세요.', true); return; }
+        var fd = new FormData(); fd.append('image', file.files[0]);
+        apply(
+          fetchAuth(BASE + '/popup-visual', { method: 'POST', credentials: 'same-origin', body: fd })
+            .then(function (r) { if (!r.ok) return r.text().then(function (t) { throw new Error(t || '업로드 실패'); }); return r.json(); }),
+          '팝업 이미지를 업로드했습니다.');
+      });
+      visualWrap.appendChild(upBtn);
+      if (v.popupVisualUrl) {
+        var rmBtn = el('button', 'mtx-btn danger', '이미지 제거');
+        rmBtn.type = 'button';
+        rmBtn.style.marginLeft = '6px';
+        rmBtn.addEventListener('click', function () {
+          apply(req('DELETE', '/popup-visual'), '팝업 이미지를 제거했습니다.');
+        });
+        visualWrap.appendChild(rmBtn);
+      }
+    } else {
+      visualWrap.appendChild(el('p', 'mtx-sub', '캠페인을 먼저 만든 뒤 이미지를 업로드할 수 있습니다.'));
+    }
     card.appendChild(visualWrap);
-
-    var pubState = checkbox('공개 (학부모 페이지·팝업 노출)', v.published);
 
     var saveBtn = el('button', 'mtx-btn', v.exists ? '캠페인 저장' : '캠페인 만들기');
     saveBtn.type = 'button';
@@ -171,14 +193,7 @@
         heroBody: str(hBody.value), heroCtaLabel: str(hCta.value),
         popupEnabled: popEnabled.control.checked, popupHeadline: str(popHead.value), popupBody: str(popBody.value)
       };
-      var chain = Promise.resolve();
-      if (file.files && file.files[0]) {
-        var fd = new FormData(); fd.append('image', file.files[0]); fd.append('kind', 'popup');
-        chain = fetchAuth(BASE + '/images', { method: 'POST', credentials: 'same-origin', body: fd })
-          .then(function (r) { if (!r.ok) throw new Error('이미지 업로드 실패'); return r.json(); })
-          .then(function (j) { payload.popupVisualKey = j.imageKey; });
-      }
-      apply(chain.then(function () { return req('PUT', '', payload); }), '캠페인을 저장했습니다.');
+      apply(req('PUT', '', payload), '캠페인을 저장했습니다.');
     });
 
     var pubBtn = el('button', 'mtx-btn ' + (v.published ? 'danger' : ''), v.published ? '비공개로 전환' : '공개하기');

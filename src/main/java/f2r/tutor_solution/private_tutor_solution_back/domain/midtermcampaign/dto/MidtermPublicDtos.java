@@ -56,7 +56,12 @@ public final class MidtermPublicDtos {
 
   public record PrepStep(String stepKey, String label, String state) {}
 
-  /** 목록 카드. 파일 접근 가능 여부는 {@link #access} 로만 판단(URL 유무가 아님). */
+  /**
+   * 목록 카드. 파일 접근 가능 여부는 {@link #access} 로만 판단(URL 유무가 아님).
+   *
+   * <p>연결된 Wiki 원본의 제목/metadata 는 <b>절대 싣지 않는다</b> — 비공개(ADMIN·hidden) Wiki 자료의
+   * 제목이 공개 응답으로 새는 것을 막는다(§6). 운영자 화면(AdminView)에서만 sourceLabel 을 본다.
+   */
   public record MaterialCard(
       Long id,
       String category,
@@ -67,8 +72,7 @@ public final class MidtermPublicDtos {
       String visibility,
       String access,
       String thumbnailUrl,
-      String fileUrl,
-      String sourceLabel) {}
+      String fileUrl) {}
 
   public record UpdateLogView(LocalDate date, String headline, String body, String scope) {}
 

@@ -68,7 +68,11 @@ public class MidtermMaterialAccessService {
     return access == Access.PUBLIC || access == Access.MEMBER;
   }
 
-  /** 운영자 편집 화면에 보여줄 원본 자료 라벨(없으면 null). */
+  /**
+   * <b>운영자(AdminView) 전용</b> 원본 자료 라벨(없으면 null). 연결한 자료가 무엇인지 owner 가
+   * 확인하는 용도라 {@code findAdminById}(비가시 포함)를 쓴다 — <b>공개 응답에는 절대 넣지 않는다</b>
+   * (비공개 Wiki 자료 제목 유출, §6). 공개 카드는 {@code MidtermCampaignPublicService.card()} 참고.
+   */
   public String sourceLabel(MidtermMaterial material) {
     if (material.getSourceType() == MidtermMaterialSourceType.WIKI_ANALYSIS
         && material.getSourceMaterialId() != null) {

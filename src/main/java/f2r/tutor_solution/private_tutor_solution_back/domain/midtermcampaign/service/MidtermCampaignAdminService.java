@@ -149,7 +149,6 @@ public class MidtermCampaignAdminService {
           .popupEnabled(Boolean.TRUE.equals(req.popupEnabled()))
           .popupHeadline(req.popupHeadline())
           .popupBody(req.popupBody())
-          .popupVisualKey(req.popupVisualKey())
           .build());
     } else {
       campaign.updateBasics(required(req.examName(), "시험명"),
@@ -159,8 +158,8 @@ public class MidtermCampaignAdminService {
       campaign.updateHero(req.heroEyebrow(), req.heroTitle(), req.heroBody(), req.heroCtaLabel());
       campaign.updatePopup(
           req.popupEnabled() != null ? req.popupEnabled() : campaign.isPopupEnabled(),
-          req.popupHeadline(), req.popupBody(),
-          req.popupVisualKey() != null ? req.popupVisualKey() : campaign.getPopupVisualKey());
+          req.popupHeadline(), req.popupBody());
+      // 팝업 비주얼 key 는 여기서 바뀌지 않는다 — 전용 upload endpoint 전담.
     }
     return getView(handle);
   }
@@ -172,11 +171,78 @@ public class MidtermCampaignAdminService {
     return getView(handle);
   }
 
+  // ── 이미지: 업로드+연결을 하나의 서버 operation 으로 (§3) ────────────────
+  //
+  // 클라이언트는 storage key 를 지정하지 않는다. 서버가 인증된 tutor 로 소유권을 확인한 뒤
+  // FileStorage 로 key 를 만들고 소유 엔티티에 직접 붙인다. 새 key 저장이 성공한 뒤에만 기존
+  // 파일을 지운다(§5 — 교체 실패 시 기존 이미지 손실 방지).
   @Transactional
-  public String uploadImage(String handle, String kind, MultipartFile image) {
+  public AdminView uploadPopupVisual(String handle, MultipartFile image) {
     Academy academy = academyService.requireOwnedAcademyByHandle(handle);
-    String hint = "midterm-" + (kind == null ? "image" : kind.replaceAll("[^a-z0-9-]", ""));
-    return midtermImageService.save(academy.getTutor().getUserId(), hint, image);
+    MidtermCampaign campaign = requireCampaign(academy);
+    String oldKey = campaign.getPopupVisualKey();
+    String newKey = midtermImageService.save(academy.getTutor().getUserId(), "midterm-popup", image);
+    campaign.updatePopupVisual(newKey);
+    if (oldKey != null && !oldKey.equals(newKey)) {
+      midtermImageService.delete(oldKey);
+    }
+    return getView(handle);
+  }
+
+  @Transactional
+  public AdminView clearPopupVisual(String handle) {
+    Academy academy = academyService.requireOwnedAcademyByHandle(handle);
+    MidtermCampaign campaign = requireCampaign(academy);
+    String oldKey = campaign.getPopupVisualKey();
+    campaign.updatePopupVisual(null);
+    midtermImageService.delete(oldKey);
+    return getView(handle);
+  }
+
+  @Transactional
+  public AdminView uploadMaterialThumbnail(String handle, Long id, MultipartFile image) {
+    Academy academy = academyService.requireOwnedAcademyByHandle(handle);
+    MidtermMaterial m = requireMaterial(academy, id);
+    String oldKey = m.getThumbnailKey();
+    String newKey = midtermImageService.save(academy.getTutor().getUserId(), "midterm-material", image);
+    m.updateThumbnail(newKey);
+    if (oldKey != null && !oldKey.equals(newKey)) {
+      midtermImageService.delete(oldKey);
+    }
+    return getView(handle);
+  }
+
+  @Transactional
+  public AdminView clearMaterialThumbnail(String handle, Long id) {
+    Academy academy = academyService.requireOwnedAcademyByHandle(handle);
+    MidtermMaterial m = requireMaterial(academy, id);
+    String oldKey = m.getThumbnailKey();
+    m.updateThumbnail(null);
+    midtermImageService.delete(oldKey);
+    return getView(handle);
+  }
+
+  @Transactional
+  public AdminView uploadMakingOfImage(String handle, Long id, MultipartFile image) {
+    Academy academy = academyService.requireOwnedAcademyByHandle(handle);
+    MidtermMakingOf mo = requireMakingOf(academy, id);
+    String oldKey = mo.getImageKey();
+    String newKey = midtermImageService.save(academy.getTutor().getUserId(), "midterm-makingof", image);
+    mo.updateImage(newKey);
+    if (oldKey != null && !oldKey.equals(newKey)) {
+      midtermImageService.delete(oldKey);
+    }
+    return getView(handle);
+  }
+
+  @Transactional
+  public AdminView clearMakingOfImage(String handle, Long id) {
+    Academy academy = academyService.requireOwnedAcademyByHandle(handle);
+    MidtermMakingOf mo = requireMakingOf(academy, id);
+    String oldKey = mo.getImageKey();
+    mo.updateImage(null);
+    midtermImageService.delete(oldKey);
+    return getView(handle);
   }
 
   // ── 학교 컬렉션 ─────────────────────────────────────────────────────────
@@ -297,7 +363,6 @@ public class MidtermCampaignAdminService {
         .visibility(parseEnum(MidtermMaterialVisibility.class, req.visibility(),
             MidtermMaterialVisibility.PRIVATE))
         .previewPageCap(req.previewPageCap())
-        .thumbnailKey(req.thumbnailKey())
         .sortOrder(req.sortOrder() != null ? req.sortOrder() : 0)
         .published(Boolean.TRUE.equals(req.published()))
         .build());
@@ -317,7 +382,6 @@ public class MidtermCampaignAdminService {
         req.sourceMaterialId(),
         parseEnum(MidtermMaterialVisibility.class, req.visibility(), m.getVisibility()),
         req.previewPageCap(),
-        req.thumbnailKey() != null ? req.thumbnailKey() : m.getThumbnailKey(),
         req.sortOrder() != null ? req.sortOrder() : m.getSortOrder(),
         req.published() != null ? req.published() : m.isPublished());
     return getView(handle);
@@ -379,7 +443,6 @@ public class MidtermCampaignAdminService {
         .schoolCollectionId(collectionId)
         .stage(required(req.stage(), "단계"))
         .caption(req.caption())
-        .imageKey(req.imageKey())
         .videoId(videoId)
         .published(Boolean.TRUE.equals(req.published()))
         .sortOrder(req.sortOrder() != null ? req.sortOrder() : 0)
@@ -393,8 +456,7 @@ public class MidtermCampaignAdminService {
     MidtermMakingOf mo = requireMakingOf(academy, id);
     Long collectionId = validateOptionalCollection(academy, req.schoolCollectionId());
     Long videoId = validateOptionalVideo(academy, req.videoId());
-    mo.update(collectionId, required(req.stage(), "단계"), req.caption(),
-        req.imageKey() != null ? req.imageKey() : mo.getImageKey(), videoId,
+    mo.update(collectionId, required(req.stage(), "단계"), req.caption(), videoId,
         req.published() != null ? req.published() : mo.isPublished(),
         req.sortOrder() != null ? req.sortOrder() : mo.getSortOrder());
     return getView(handle);
