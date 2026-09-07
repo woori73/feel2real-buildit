@@ -42,12 +42,55 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("/problem-generator");
     assertThat(js).doesNotContain("/wiki/index.html");
 
-    // 모바일 필수: safe-area + sticky CTA + reduced-motion + 횡스크롤(같은 종류 탐색) + 다음 카드 peek.
+    // 모바일 필수: safe-area + reduced-motion + 횡스크롤(같은 종류 탐색) + 다음 카드 peek.
     assertThat(css).contains("safe-area-inset");
-    assertThat(css).contains("mt-sticky");
     assertThat(css).contains("prefers-reduced-motion");
     assertThat(css).contains("scroll-snap-type");
     assertThat(css).contains("--card-w");
+  }
+
+  /**
+   * 2026-09 정리: 잘못 만들어진 공개 UI(학교 컬렉션 섹션 / 학교별 상세 라우팅 / sticky CTA /
+   * 큰 회색 히어로)를 제거한다. 학교 정보는 자료에 붙는 작은 metadata 로만 노출한다.
+   * 공개 표현은 다음 단계 시안에서 재정의하므로, 여기서는 제거만 못박는다.
+   */
+  @Test
+  void publicPage_schoolCollectionNavAndStickyCtaAreRemoved() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    // 학교 컬렉션 섹션 / "우리 학교" / 빈 상태 문구 제거.
+    assertThat(js).doesNotContain("renderCollections");
+    assertThat(js).doesNotContain("우리 학교");
+    assertThat(js).doesNotContain("아직 등록된 학교가 없습니다");
+    assertThat(js).doesNotContain("mt-collections-empty");
+    assertThat(css).doesNotContain(".mt-school-card");
+    assertThat(css).doesNotContain("#mt-collections");
+
+    // sticky CTA 제거.
+    assertThat(js).doesNotContain("mt-sticky");
+    assertThat(js).doesNotContain("renderSticky");
+    assertThat(js).doesNotContain("goToCollections");
+    assertThat(css).doesNotContain(".mt-sticky");
+
+    // 학교별 상세 해시 라우팅 제거.
+    assertThat(js).doesNotContain("#school-");
+    assertThat(js).doesNotContain("hashchange");
+    assertThat(js).doesNotContain("renderDetail");
+
+    // 큰 회색 히어로 제거 — media/figure/설명문단/학교 칩 없음.
+    assertThat(js).doesNotContain("mt-hero");
+    assertThat(js).doesNotContain("mt-livestrip");
+    assertThat(css).doesNotContain(".mt-hero-figure");
+
+    // 학교 정보는 자료에 붙는 작은 metadata 로만.
+    assertThat(js).contains("mt-doc-meta");
+    assertThat(js).contains("업데이트'");
+
+    // 자료 미리보기 / 원장 브리핑 / 업데이트 로그 표현은 유지.
+    assertThat(js).contains("openSheet");
+    assertThat(js).contains("videoFrame");
+    assertThat(js).contains("renderUpdates");
   }
 
   /**
@@ -94,46 +137,17 @@ class MidtermLiveTemplateContractTest {
   }
 
   /**
-   * PR #225 regression preserved (별도 cherry-pick 아님 — #225 는 이미 main 에 merge 됨).
-   * 하단 sticky CTA 가 죽은 버튼이 아니다: 학교 컬렉션이 0개여도 안내 문구가 있는
-   * 섹션(id="mt-collections")이 항상 존재하고, CTA 는 그 섹션으로 이동한다.
-   * keyboard(Enter/Space) 와 실제 {@code <a href>}, 상세→홈 복귀, reduced-motion 도 유지.
-   * 재설계 후 DOM 이 바뀌었으므로 문구/클래스는 새 구조에 맞추되 동작 계약은 그대로 승계한다.
+   * 팝업 CTA 목적지는 유지(제작/관리 workspace 로 새지 않는다).
+   * PR #225 의 "sticky CTA dead-link" 회귀 대상은 sticky CTA 자체를 제거하면서 해소됐다
+   * (더 이상 죽을 버튼이 없다) — 관련 계약은 publicPage_schoolCollectionNavAndStickyCtaAreRemoved 로 대체.
    */
   @Test
-  void publicPage_stickyCtaAlwaysResolves_evenWithZeroSchoolCollections() throws Exception {
+  void publicPage_neverLeaksToWorkspace_andPopupCtaDestinationHeld() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
-    String css = read("static/css/eduholic_midterm_2026.css");
-
-    // 학교 컬렉션 섹션은 항상 렌더 + 안정적인 앵커 id.
-    assertThat(js).contains("renderCollections(c.schoolCollections || [])");
-    assertThat(js).contains("s.id = 'mt-collections'");
-    assertThat(js).contains("#mt-collections");
-    // 예전 죽은 목적지(#collections, 존재하지 않는 id)는 제거됐다.
-    assertThat(js).doesNotContain("a.href = '#collections'");
-    assertThat(js).doesNotContain("querySelector('.mt-collections')");
-
-    // 0개일 때 dead-end 가 아니라 짧은 안내 + 대체 동선(상담). 대형 홍보 section 이 아니다(§13).
-    assertThat(js).contains("if (!collections.length)");
-    assertThat(js).contains("아직 등록된 학교가 없습니다");
-    assertThat(js).contains("mt-collections-empty");
-    assertThat(js).contains("mt-empty-cta");
-    assertThat(css).contains(".mt-collections-empty");
-
-    // CTA 는 실제 <a href="#mt-collections"> + 스크롤 이동 + 키보드(Enter/Space).
-    assertThat(js).contains("a.href = '#mt-collections'");
-    assertThat(js).contains("function goToCollections()");
-    assertThat(js).contains("scrollIntoView");
-    assertThat(js).contains("addEventListener('keydown'");
-    assertThat(js).contains("'Spacebar'");
-    // 상세 화면(#school-*)에서도 홈으로 복귀 후 스크롤 + reduced-motion 존중.
-    assertThat(js).contains("#school-");
-    assertThat(js).contains("prefers-reduced-motion");
-
-    // 팝업 CTA 목적지는 유지.
     assertThat(js).doesNotContain("/problem-generator");
     String popup = read("static/js/eduholic_midterm_popup.js");
     assertThat(popup).contains("/eduholic-midterm-2026.html");
+    assertThat(popup).doesNotContain("/problem-generator");
   }
 
   @Test
