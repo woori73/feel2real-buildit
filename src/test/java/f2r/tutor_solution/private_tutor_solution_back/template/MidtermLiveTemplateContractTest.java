@@ -69,4 +69,39 @@ class MidtermLiveTemplateContractTest {
     assertThat(api).isGreaterThan(-1);
     assertThat(page).isGreaterThan(api);
   }
+
+  /**
+   * 회귀: 운영자 관리 스크립트가 DOM 요소의 native read-only 프로퍼티에 값을 대입하지 않는다.
+   * {@code <label>.control = ...} 는 getter-only 라 대입 시 "Cannot set property control of
+   * #<HTMLLabelElement>" 로 렌더 전체가 중단됐다(Production /lms/eduholic/midterm-live 장애).
+   */
+  @Test
+  void adminScript_neverAssignsNativeReadOnlyDomProperties() throws Exception {
+    String js = read("static/js/lms_midterm_live.js");
+
+    // 이 장애의 직접 원인 — 어떤 형태로도 다시 나타나면 실패.
+    assertThat(js).doesNotContain(".control =");
+    assertThat(js).doesNotContain(".control=");
+    // 같은 계열(대입 시 예외 또는 무시되는 native 접근자)도 함께 봉쇄.
+    assertThat(js).doesNotContainPattern("\\.(control|form|labels|validity|files|options|elements)\\s*=\\s*[^=]");
+    assertThat(js).doesNotContain("Object.assign(");
+
+    // 체크박스 상태는 요소에 프로퍼티를 붙이지 않고 helper 로 읽는다.
+    assertThat(js).contains("function cbVal(");
+    assertThat(js).contains("querySelector('input[type=\"checkbox\"]')");
+    assertThat(js).contains("cbVal(popEnabled)");
+    // 옛 패턴이 남아있지 않다.
+    assertThat(js).doesNotContain(".control.checked");
+  }
+
+  @Test
+  void adminScript_keepsPr220ImageSecurity_noRawStorageKeyInPayload() throws Exception {
+    String js = read("static/js/lms_midterm_live.js");
+
+    // PR #220 보안 수정 유지: 이미지는 전용 multipart endpoint 로만, key 를 payload 에 싣지 않는다.
+    assertThat(js).contains("/popup-visual");
+    assertThat(js).doesNotContain("popupVisualKey");
+    assertThat(js).doesNotContain("thumbnailKey");
+    assertThat(js).doesNotContain("imageKey");
+  }
 }
