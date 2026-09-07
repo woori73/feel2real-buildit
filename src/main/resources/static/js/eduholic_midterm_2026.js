@@ -1,7 +1,8 @@
 /* 2026 2학기 중간고사 공개 LIVE.
- * GET .../wiki-sources 의 최신 eligible HTML 한 건만 read-only visual 로 사용한다.
+ * GET .../wiki-sources 의 public exposed source 만 read-only visual 로 사용한다.
  * API/preview 보안 경계는 서버가 소유하며 이 스크립트는 previewUrl 외 파일 정보를 사용하지 않는다.
- * 첫 화면 composition 은 Shopify Atelier: 실제 자료(media)가 지배하고 copy 는 작게 옆에 둔다.
+ * 첫 화면 = Shopify Atelier hero(featured 자료 1건). 그 아래 = Shopify Motion
+ * "evolving collections" — 나머지 최근 자료가 비대칭 collage / 모바일 rail 로 이어진다.
  */
 (function () {
   'use strict';
@@ -16,6 +17,12 @@
   var SEASON = '2026 2학기 중간고사';
   var TITLE = '중간고사 준비 중';
   var NOTE = '학교 프린트 내용을 반영했습니다.';
+  var RECENT_TITLE = '최근 준비 자료';
+  var RECENT_MAX = 5;                 // Motion collage 는 최대 5장까지 배치한다.
+  var ROLES = ['a', 'b', 'c', 'd'];   // crop presentation role (DB taxonomy 아님).
+
+  var reduceMotion = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   fetch(SOURCES_API, {
     headers: { Accept: 'application/json' },
@@ -26,8 +33,11 @@
       if (!response.ok) throw new Error('wiki sources load failed: ' + response.status);
       return response.json();
     })
-    .then(function (sources) {
-      render(Array.isArray(sources) ? latestSource(sources) : null);
+    .then(function (payload) {
+      var sources = Array.isArray(payload) ? payload : [];
+      var hero = latestSource(sources);
+      render(hero);
+      renderRecent(recentSources(sources, hero));
     })
     .catch(function () {
       render(null);
@@ -51,6 +61,16 @@
       })
       .slice()
       .sort(function (a, b) { return timestamp(b) - timestamp(a); })[0] || null;
+  }
+
+  /** hero 로 쓰는 sourceId 는 제외한다. 순서는 서버가 반환한 canonical order 를 존중한다. */
+  function recentSources(sources, hero) {
+    var heroId = hero && hero.sourceId;
+    return sources.filter(function (source) {
+      return source
+        && typeof source.previewUrl === 'string' && source.previewUrl
+        && source.sourceId && source.sourceId !== heroId;
+    }).slice(0, RECENT_MAX);
   }
 
   function gradeLabel(grade) {
@@ -110,14 +130,7 @@
     section.setAttribute('aria-label', '실제 중간고사 준비 자료');
 
     var visual = el('div', 'midterm-feature__visual');
-    var frame = document.createElement('iframe');
-    frame.className = 'midterm-feature__document';
-    frame.src = source.previewUrl;
-    frame.title = '중간고사 준비 자료';
-    frame.setAttribute('sandbox', '');
-    frame.setAttribute('tabindex', '-1');
-    frame.setAttribute('aria-hidden', 'true');
-    frame.setAttribute('scrolling', 'no');
+    var frame = safeFrame(source.previewUrl, 'midterm-feature__document', '중간고사 준비 자료');
     visual.appendChild(frame);
     section.appendChild(visual);
 
@@ -125,10 +138,58 @@
     return section;
   }
 
+  /** Motion "evolving collections": featured 를 뺀 최근 자료를 비대칭 collage 로 잇는다.
+   *  0건이면 이 섹션 자체를 렌더하지 않는다("준비 중" 더미 카드 없음). */
+  function renderRecent(sources) {
+    if (!sources.length) return;
+
+    var section = el('section', 'midterm-recent');
+    section.classList.add('midterm-recent--n' + Math.min(sources.length, RECENT_MAX));
+    section.setAttribute('aria-label', '최근 중간고사 준비 자료');
+
+    var head = el('header', 'midterm-recent__head');
+    head.appendChild(el('h2', 'midterm-recent__title', RECENT_TITLE));
+    section.appendChild(head);
+
+    var collection = el('div', 'midterm-recent__collection');
+    sources.forEach(function (source, index) {
+      collection.appendChild(renderRecentItem(source, index));
+    });
+    section.appendChild(collection);
+
+    root.appendChild(section);
+    revealOnView(section);
+  }
+
+  function renderRecentItem(source, index) {
+    var item = el('article', 'midterm-recent__item');
+    item.classList.add('is-role-' + ROLES[index % ROLES.length]);
+
+    var media = el('div', 'midterm-recent__media');
+    media.appendChild(safeFrame(source.previewUrl, 'midterm-recent__doc', '중간고사 준비 자료'));
+    item.appendChild(media);
+
+    var meta = metadata(source);
+    if (meta) item.appendChild(el('p', 'midterm-recent__meta', meta));
+
+    return item;
+  }
+
+  /** preview 보안 계약: server-controlled previewUrl 만, sandbox / no interaction / no scroll. */
+  function safeFrame(previewUrl, className, title) {
+    var frame = document.createElement('iframe');
+    frame.className = className;
+    frame.src = previewUrl;
+    frame.title = title;
+    frame.setAttribute('sandbox', '');
+    frame.setAttribute('tabindex', '-1');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.setAttribute('scrolling', 'no');
+    return frame;
+  }
+
   function wireDocumentMotion(section) {
-    var reduce = window.matchMedia
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) return;
+    if (reduceMotion) return;
 
     function start() {
       if (!section.classList.contains('is-in-view')) {
@@ -150,5 +211,23 @@
       });
     }, { threshold: 0.28 });
     observer.observe(section);
+  }
+
+  /** 그룹이 뷰포트에 처음 닿으면 한 번만 is-in-view (하위 item 은 CSS stagger).
+   *  reduced-motion / IO 미지원이면 즉시 최종 상태. */
+  function revealOnView(node) {
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      node.classList.add('is-in-view');
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          node.classList.add('is-in-view');
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.05 });
+    observer.observe(node);
   }
 })();
