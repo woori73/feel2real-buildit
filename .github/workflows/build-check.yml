@@ -102,6 +102,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermImageSecurityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignAdminImageSecurityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller.MidtermCampaignAdminAuthWebMvcTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermWikiSourceServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller.MidtermWikiSourcePublicControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.MidtermLiveTemplateContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.EduholicFeaturedCtaContractTest"
 
