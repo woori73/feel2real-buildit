@@ -73,9 +73,9 @@
 
     var home = el('div', 'mt-home');
     home.appendChild(renderHero(c));
-    if (c.schoolCollections && c.schoolCollections.length) {
-      home.appendChild(renderCollections(c.schoolCollections));
-    }
+    // 학교 컬렉션 섹션은 항상 렌더한다(id="mt-collections"). 0개여도 안내를 보여줘야
+    // sticky CTA "학교별 준비 현황 보기"가 죽은 버튼이 되지 않는다.
+    home.appendChild(renderCollections(c.schoolCollections || []));
     home.appendChild(renderHowWePrepare());
     if (c.campaignUpdateLogs && c.campaignUpdateLogs.length) {
       home.appendChild(renderLogSection('MIDTERM LOG', '시험기간 동안 자료가 계속 업데이트됩니다.', c.campaignUpdateLogs));
@@ -123,9 +123,25 @@
 
   function renderCollections(collections) {
     var s = el('section', 'mt-section');
+    s.id = 'mt-collections';
     var w = el('div', 'mt-wrap');
     w.appendChild(el('p', 'mt-kicker', 'Midterm Collections'));
-    w.appendChild(el('h2', null, '우리 학교 찾기'));
+    w.appendChild(el('h2', null, '학교별 준비 현황'));
+
+    if (!collections.length) {
+      w.appendChild(el('p', 'mt-lead',
+        '학교별 준비 현황이 아직 등록되지 않았습니다. 준비가 시작되면 이곳에서 학교·학년별로 확인할 수 있어요.'));
+      var box = el('div', 'mt-collections-empty');
+      box.appendChild(el('p', null, '아래 「HOW WE PREPARE」에서 에듀홀릭이 시험을 준비하는 방식을 먼저 볼 수 있습니다.'));
+      var ca = el('a', 'mt-empty-cta', '상담 문의 →');
+      ca.href = CONSULT_URL;
+      ca.rel = 'noopener';
+      box.appendChild(ca);
+      w.appendChild(box);
+      s.appendChild(w);
+      return s;
+    }
+
     w.appendChild(el('p', 'mt-lead', '학교와 학년을 고르면 준비 현황과 실제 자료가 열립니다.'));
     var scroller = el('div', 'mt-collections');
     collections.forEach(function (col) {
@@ -220,18 +236,53 @@
   function renderSticky() {
     var d = el('div', 'mt-sticky');
     var w = el('div', 'mt-wrap');
-    var a = el('a', null, state.campaign.hero && state.campaign.hero.ctaLabel
-      ? state.campaign.hero.ctaLabel : '우리 학교 준비 보기');
-    a.href = '#collections';
+    var label = (state.campaign.hero && state.campaign.hero.ctaLabel)
+      ? state.campaign.hero.ctaLabel : '학교별 준비 현황 보기';
+    // 실제 <a href="#mt-collections"> — JS 없이도 앵커 스크롤이 되고 Enter 는 기본 동작.
+    var a = el('a', null, label);
+    a.href = '#mt-collections';
+    a.setAttribute('aria-label', label);
     a.addEventListener('click', function (e) {
       e.preventDefault();
-      if (location.hash && location.hash.indexOf('#school-') === 0) { location.hash = ''; }
-      var target = document.querySelector('.mt-collections');
-      if (target) target.scrollIntoView({ block: 'center' });
+      goToCollections();
+    });
+    a.addEventListener('keydown', function (e) {
+      // 링크는 Space 로 활성화되지 않으므로 직접 처리(Enter 는 브라우저 기본).
+      if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
+        e.preventDefault();
+        goToCollections();
+      }
     });
     w.appendChild(a);
     d.appendChild(w);
     return d;
+  }
+
+  /**
+   * 학교별 준비 현황 섹션으로 이동한다. 학교 컬렉션이 0개여도 섹션(안내 문구)이 존재하므로
+   * 항상 목적지가 있다. 상세(#school-*) 화면이면 먼저 홈으로 돌아간 뒤 스크롤한다.
+   */
+  function goToCollections() {
+    var wasDetail = (location.hash || '').indexOf('#school-') === 0;
+    if (location.hash) { location.hash = ''; } // hashchange → route() 가 홈을 다시 보여준다
+
+    var run = function () {
+      var target = document.getElementById('mt-collections')
+        || (root && root.querySelector('.mt-home'));
+      if (target && target.scrollIntoView) {
+        var reduce = window.matchMedia
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      }
+      // 스크린리더 사용자가 목적지(안내 포함)에서 컨텍스트를 잃지 않도록 제목에 포커스.
+      var h = target && target.querySelector('h2');
+      if (h) {
+        h.setAttribute('tabindex', '-1');
+        try { h.focus({ preventScroll: true }); } catch (_) { h.focus(); }
+      }
+    };
+    // 상세 화면이었으면 route()(hashchange 태스크)가 홈을 다시 보인 뒤 스크롤해야 한다.
+    if (wasDetail) { setTimeout(run, 0); } else { run(); }
   }
 
   // ── routing: collection detail ─────────────────────────────────────

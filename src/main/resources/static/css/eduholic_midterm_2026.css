@@ -103,6 +103,22 @@ a { color: inherit; }
 .mt-count-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
 .mt-count-dots i.on { background: var(--accent); }
 
+/* 학교 컬렉션이 아직 0개일 때 — 죽은 CTA 대신 명확한 안내 + 대체 동선 */
+.mt-collections-empty {
+  background: var(--card); border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 20px; text-align: center;
+}
+.mt-collections-empty p { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); }
+.mt-collections-empty .mt-empty-cta {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px;
+  border: 1px solid var(--accent); border-radius: 10px; color: var(--accent);
+  font-weight: 700; font-size: 13px; text-decoration: none;
+}
+.mt-collections-empty .mt-empty-cta:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+/* 스크롤 목적지가 sticky bar 뒤로 가려지지 않도록 */
+#mt-collections { scroll-margin-top: 12px; }
+#mt-collections h2:focus { outline: none; }
+
 /* ── COLLECTION DETAIL (해시 라우팅) ─────────────────────────────── */
 .mt-detail { display: none; }
 .mt-detail.active { display: block; }

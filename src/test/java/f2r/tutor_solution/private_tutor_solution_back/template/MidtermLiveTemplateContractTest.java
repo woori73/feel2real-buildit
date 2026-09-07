@@ -45,6 +45,45 @@ class MidtermLiveTemplateContractTest {
     assertThat(css).contains("prefers-reduced-motion");
   }
 
+  /**
+   * 회귀: 하단 sticky CTA "학교별 준비 현황 보기" 가 죽은 버튼이 아니다.
+   * 학교 컬렉션이 0개여도 안내 문구가 있는 섹션(id="mt-collections")이 항상 존재하고,
+   * CTA 는 그 섹션으로 이동한다. keyboard(Enter/Space) 와 실제 {@code <a href>} 도 지원.
+   */
+  @Test
+  void publicPage_stickyCtaAlwaysResolves_evenWithZeroSchoolCollections() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    // 학교 컬렉션 섹션은 항상 렌더 + 안정적인 앵커 id.
+    assertThat(js).contains("renderCollections(c.schoolCollections || [])");
+    assertThat(js).contains("s.id = 'mt-collections'");
+    assertThat(js).contains("#mt-collections");
+    // 예전 죽은 목적지(#collections, 존재하지 않는 id)는 제거됐다.
+    assertThat(js).doesNotContain("a.href = '#collections'");
+    assertThat(js).doesNotContain("querySelector('.mt-collections')");
+
+    // 0개일 때 dead-end 가 아니라 명확한 안내 + 대체 동선.
+    assertThat(js).contains("if (!collections.length)");
+    assertThat(js).contains("아직 등록되지 않았습니다");
+    assertThat(js).contains("mt-collections-empty");
+    assertThat(css).contains(".mt-collections-empty");
+
+    // CTA 는 실제 <a href="#mt-collections"> + 스크롤 이동 + 키보드(Enter/Space).
+    assertThat(js).contains("a.href = '#mt-collections'");
+    assertThat(js).contains("function goToCollections()");
+    assertThat(js).contains("scrollIntoView");
+    assertThat(js).contains("addEventListener('keydown'");
+    assertThat(js).contains("'Spacebar'");
+    // 상세 화면에서도 홈으로 복귀 후 스크롤.
+    assertThat(js).contains("#school-");
+
+    // 팝업 CTA 목적지는 유지.
+    assertThat(js).doesNotContain("/problem-generator");
+    String popup = read("static/js/eduholic_midterm_popup.js");
+    assertThat(popup).contains("/eduholic-midterm-2026.html");
+  }
+
   @Test
   void popup_keepsHostGate_usesServerFlag_andHasAccessibleDismiss() throws Exception {
     String js = read("static/js/eduholic_midterm_popup.js");
