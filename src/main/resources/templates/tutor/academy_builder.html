@@ -14,8 +14,8 @@
   <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1"/>
   <link rel="stylesheet" href="/css/academy_collection.css?v=20260905-1"/>
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1"/>
-  <link rel="stylesheet" href="/css/academy_builder_ai_guide.css?v=20260908-1"/>
-  <link rel="stylesheet" href="/css/academy_world.css?v=20260908-1"/>
+  <link rel="stylesheet" href="/css/academy_builder_ai_guide.css?v=20260908-2"/>
+  <link rel="stylesheet" href="/css/academy_world.css?v=20260908-2"/>
 
   <script>
     tailwind.config = {
@@ -1090,10 +1090,9 @@
     <button class="tb-btn tb-btn-apply" id="builderSectionApplyBtn" type="button" hidden>
       <i class="fa-solid fa-check"></i> <span data-section-apply-label>적용</span>
     </button>
-    <!-- Phase 5B.1: Bildi(빌디) Sidekick 토글. 켜면 Bildi가 프리뷰 위에서 사용자를 데리고
-         다니며 안내한다. 끄면 완전히 사라진다(Preview/기존 Builder 조작 무영향). -->
+    <!-- Bildi 표시 상태와 Guide 진행 상태는 분리한다. OFF해도 진행 데이터는 보존된다. -->
     <button class="ai-guide-toggle" id="builderAiGuideToggle" type="button" aria-pressed="false" aria-controls="builderBildiStage builderAiGuidePanel">
-      <i class="fa-solid fa-dove"></i> <span>빌디</span>
+      <i class="fa-solid fa-dove"></i> <span id="builderAiGuideToggleLabel">빌디 OFF</span>
     </button>
     <button class="tb-btn tb-btn-green" id="builderPublishBtn" type="button">
       <i class="fa-solid fa-rocket"></i> 발행
@@ -1365,10 +1364,6 @@
         <div class="builder-preview-empty"><strong>미리보기를 준비하고 있습니다</strong>저장된 Academy 데이터를 불러오면 실제 공개 페이지가 표시됩니다.</div>
       </div><!-- /pageContent -->
 
-      <!-- Phase 5B.1: Bildi(빌디) Sidekick 스테이지 — canvas-frame 을 덮는 pointer-events:none 오버레이.
-           academy_builder.js wireAiGuide 가 F2RAcademyWorld 로 하늘/캐릭터/말풍선을 mount 한다.
-           스크립트 미로드/실패 시 이 div 는 비어 있고 프리뷰는 정상. -->
-      <div id="builderBildiStage" class="is-hidden" aria-hidden="true"></div>
     </div><!-- /canvas-frame -->
   </main>
   <!-- ════ CANVAS END ════ -->
@@ -1407,6 +1402,13 @@
     <button type="button" class="ai-guide-btn ai-guide-btn-primary" id="builderAiGuideNext">다음 →</button>
   </div>
 </aside>
+
+<!-- ON + COLLAPSED launcher. 전용 surface 안에서만 움직여 Preview를 덮지 않는다. -->
+<button type="button" class="bildi-launcher" id="builderBildiLauncher" aria-label="빌디 가이드 열기"
+        aria-controls="builderAiGuidePanel" aria-expanded="false" hidden>
+  <span id="builderBildiStage" aria-hidden="true"></span>
+  <span class="bildi-launcher-label">빌디 열기</span>
+</button>
 
 
 <!-- ════════════════════════════════════════════════════
@@ -1821,7 +1823,7 @@ function setView(mode, btn){
 <script src="/js/academy_reveal.js?v=20260901-5"></script>
 <script src="/js/academy_world.js?v=20260907-4"></script>
 <script src="/js/academy_builder_ai_guide.js?v=20260908-1"></script>
-<script src="/js/academy_builder.js?v=20260908-1"></script>
+<script src="/js/academy_builder.js?v=20260908-2"></script>
 
 </body>
 </html>
