@@ -13,6 +13,7 @@
   var view = null;
   var videos = [];
   var wikiMaterials = [];
+  var wikiCandidates = null;     // BuildIt Wiki 연결 자료(exposure 포함, OFF 도 항상 포함). null=로딩 전.
 
   var CATS = ['SCHOOL_PRINT', 'ANALYSIS', 'WORKSHEET', 'VOCABULARY', 'GRAMMAR', 'VARIANT', 'FINAL_REVIEW', 'OTHER'];
   var VIS = ['PRIVATE', 'PREVIEW', 'PUBLIC', 'MEMBER'];
@@ -99,8 +100,43 @@
   ]).then(function (res) {
     view = res[0]; videos = res[1] || []; wikiMaterials = res[2] || [];
     renderAll();
+    loadWikiCandidates();
     loadLiveVideos();
   }).catch(function (e) { say(e.message || '불러오지 못했습니다.', true); });
+
+  // BuildIt Wiki 연결 자료 — 캠페인 scope 에 매칭된 후보 + 현재 LIVE 공개(exposure) 상태.
+  // exposure OFF 자료도 항상 포함한다(운영자가 다시 켤 수 있어야 한다). 실패해도 다른 탭은 동작.
+  function deriveLiveFrameCandidates() {
+    var seen = {};
+    liveFrameCandidates = (Array.isArray(wikiCandidates) ? wikiCandidates : [])
+      .filter(function (c) { return c && c.visible; })
+      .map(function (c) {
+        var g = String(c.grade == null ? '' : c.grade).match(/\d+/);
+        return { school: String(c.school || '').trim(), grade: g ? parseInt(g[0], 10) : null };
+      })
+      .filter(function (c) { return c.school && c.grade; })
+      .filter(function (c) {
+        var k = c.school + '|' + c.grade;
+        if (seen[k]) return false;
+        seen[k] = true;
+        return true;
+      });
+  }
+  function loadWikiCandidates() {
+    return fetchAuth(BASE + '/wiki-candidates', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        wikiCandidates = Array.isArray(rows) ? rows : [];
+        deriveLiveFrameCandidates();
+        renderMaterials();
+        renderLiveVideos();
+      })
+      .catch(function () {
+        wikiCandidates = [];
+        deriveLiveFrameCandidates();
+        renderMaterials();
+      });
+  }
 
   function renderAll() {
     renderCampaign();
@@ -405,16 +441,118 @@
     return { opts: opts, labels: labels };
   }
 
+  function wikiKindLabel(kind) {
+    return kind === 'school-print' ? '학교 프린트' : (kind === 'final' ? '완성 자료' : '자료');
+  }
+  function gradeText(g) {
+    var s = String(g == null ? '' : g).trim();
+    if (!s) return '';
+    return /학년$/.test(s) ? s : s + '학년';
+  }
+  function dateText(iso) {
+    var p = String(iso || '').slice(0, 10).split('-');
+    return p.length >= 3 ? (parseInt(p[1], 10) + '.' + parseInt(p[2], 10)) : '';
+  }
+
+  /** BuildIt Wiki 연결 자료 카드 — 원본 재등록 폼이 아니라 LIVE 공개(exposure) 토글만. */
+  function wikiCandidateCard(c) {
+    var card = el('div', 'mtx-card mtx-wiki-src');
+    var school = String(c.school || '').trim();
+    var h = el('h3', null, (school || '(학교 미상)') + (gradeText(c.grade) ? ' · ' + gradeText(c.grade) : ''));
+    h.appendChild(el('span', 'mtx-pill ' + (c.visible ? 'on' : 'off'), c.visible ? 'LIVE 공개' : '비공개'));
+    card.appendChild(h);
+
+    var meta = [String(c.year || '').trim(), String(c.semester || '').trim(), String(c.exam || '').trim()]
+      .filter(Boolean).join(' ');
+    var line = [meta, wikiKindLabel(c.sourceKind)].filter(Boolean).join(' · ');
+    card.appendChild(el('p', 'mtx-sub', line));
+    // 실제 DTO 에 제목이 없다 — 내부 식별자를 보조 정보로만 표시(가짜 제목 생성 안 함).
+    var idLine = 'Wiki 식별자: ' + c.sourceId + (dateText(c.createdAt) ? '  ·  등록 ' + dateText(c.createdAt) : '');
+    card.appendChild(el('p', 'mtx-src-id', idLine));
+
+    var toggle = checkbox('학부모 LIVE 페이지에 공개', c.visible);
+    var cb = toggle.querySelector('input[type="checkbox"]');
+    cb.addEventListener('change', function () {
+      var next = cb.checked;
+      cb.disabled = true;
+      patchWikiExposure(c, next).catch(function () {}).then(function () { cb.disabled = false; });
+    });
+    card.appendChild(toggle);
+    return card;
+  }
+
+  function patchWikiExposure(c, visible) {
+    var body = JSON.stringify({
+      visible: visible,
+      featured: !!(c.featured && visible),
+      sortOrder: c.sortOrder || 0
+    });
+    return fetchAuth(BASE + '/wiki-candidates/' + encodeURIComponent(c.sourceId) + '/exposure',
+        { method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: body })
+      .then(function (r) {
+        if (!r.ok) return r.text().then(function (t) { throw new Error(t || ('요청 실패 ' + r.status)); });
+        return r.json();
+      })
+      .then(function (rows) {
+        wikiCandidates = Array.isArray(rows) ? rows : wikiCandidates;
+        deriveLiveFrameCandidates();
+        renderMaterials();
+        renderLiveVideos();
+        say(visible ? 'LIVE 페이지에 공개했습니다.' : 'LIVE 페이지에서 숨겼습니다.');
+      })
+      .catch(function (e) {
+        say(e.message || '공개 상태를 바꾸지 못했습니다.', true);
+        renderMaterials();   // 서버 상태로 되돌린다(체크박스 원복).
+        throw e;
+      });
+  }
+
+  function renderWikiCandidateSection(host) {
+    var wrap = el('div', 'mtx-card mtx-wiki-head');
+    wrap.appendChild(el('h3', null, 'BuildIt Wiki 연결 자료 · LIVE 공개'));
+    wrap.appendChild(el('p', 'mtx-sub',
+      'BuildIt Wiki 에서 이 캠페인 범위와 매칭된 자료입니다. 원본은 Wiki 가 관리하며, 여기서는 '
+      + '학부모 LIVE 페이지 공개 여부만 켜고 끕니다. (아래 "직접 등록 자료"와는 별개입니다.)'));
+    host.appendChild(wrap);
+
+    if (wikiCandidates === null) {
+      host.appendChild(el('p', 'mtx-empty', 'Wiki 연결 자료를 불러오는 중…'));
+      return;
+    }
+    if (!wikiCandidates.length) {
+      var scope = [view.examYear, view.semester, view.examType].filter(Boolean).join(' ');
+      host.appendChild(el('p', 'mtx-empty',
+        '현재 캠페인 범위(' + (scope || '연도/학기/시험') + ')에 매칭되는 Wiki 자료가 없습니다. '
+        + 'BuildIt Wiki 에 해당 학교·학년·시험 자료가 올라오면 여기에 자동으로 나타납니다.'));
+      return;
+    }
+    wikiCandidates
+      .slice()
+      .sort(function (a, b) {
+        if (!!b.visible !== !!a.visible) return b.visible ? 1 : -1;   // 공개 먼저
+        return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+      })
+      .forEach(function (c) { host.appendChild(wikiCandidateCard(c)); });
+  }
+
   function renderMaterials() {
     var host = document.querySelector('[data-mtx-materials]');
+    if (!host) return;
     host.innerHTML = '';
     if (!view || !view.exists) { host.appendChild(el('p', 'mtx-empty', '먼저 캠페인을 만들어 주세요.')); return; }
-    host.appendChild(el('p', 'mtx-empty', '자료 원본은 BuildIt Wiki 분석자료를 참조합니다. 공개 범위(PRIVATE/PREVIEW/PUBLIC/MEMBER)는 서버가 강제합니다.'));
 
+    // 1) BuildIt Wiki 연결 자료 — 모바일/데스크톱 모두 맨 위. exposure OFF 도 항상 표시.
+    renderWikiCandidateSection(host);
+
+    // 2) 운영자가 직접 등록한 Showcase 자료(별도 개념).
+    host.appendChild(el('div', 'mtx-divider'));
+    host.appendChild(el('p', 'mtx-empty',
+      '아래는 운영자가 직접 등록한 Showcase 자료입니다. 공개 범위(PRIVATE/PREVIEW/PUBLIC/MEMBER)는 서버가 강제합니다.'));
     (view.materials || []).forEach(function (m) { host.appendChild(materialCard(m)); });
 
     var addCard = el('div', 'mtx-card');
-    addCard.appendChild(el('h3', null, '새 자료 추가'));
+    addCard.appendChild(el('h3', null, '새 자료 직접 추가'));
+    addCard.appendChild(el('p', 'mtx-sub', 'BuildIt Wiki 원본을 다시 올리는 곳이 아닙니다 — 위 "Wiki 연결 자료"를 사용하세요.'));
     addCard.appendChild(materialForm({}, function (payload) {
       apply(req('POST', '/materials', payload), '자료를 추가했습니다.');
     }, '추가'));
@@ -615,29 +753,8 @@
 
   // ── LIVE 수업 영상 탭 (Phase 4c) ──────────────────────────────────
   // 기존 AcademyVideo 를 학교/학년/역할 scene 에 "연결"만 한다. 새 업로드/편집/트림 UI 없음.
+  // FRAME 후보(liveFrameCandidates)는 loadWikiCandidates() 가 채운다 — 여기서 재조회하지 않는다.
   function loadLiveVideos() {
-    // wiki-candidates(공개 대상 자료)에서 (학교, 학년) FRAME 후보를 뽑는다 — 학교 CMS 가 아니라
-    // 이미 존재하는 FRAME 을 선택지로 제공하기 위함. 실패해도 직접 입력으로 동작한다.
-    fetchAuth(BASE + '/wiki-candidates', { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (rows) {
-        var seen = {};
-        liveFrameCandidates = (Array.isArray(rows) ? rows : [])
-          .filter(function (c) { return c && c.visible; })
-          .map(function (c) {
-            var g = String(c.grade == null ? '' : c.grade).match(/\d+/);
-            return { school: String(c.school || '').trim(), grade: g ? parseInt(g[0], 10) : null };
-          })
-          .filter(function (c) { return c.school && c.grade; })
-          .filter(function (c) {
-            var k = c.school + '|' + c.grade;
-            if (seen[k]) return false;
-            seen[k] = true;
-            return true;
-          });
-        renderLiveVideos();
-      })
-      .catch(function () { liveFrameCandidates = []; });
     return fetchAuth(BASE + '/live-videos', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : { links: [], linkableVideos: [] }; })
       .then(function (d) { liveVideoData = d || { links: [], linkableVideos: [] }; renderLiveVideos(); })

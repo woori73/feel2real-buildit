@@ -385,6 +385,68 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("imageKey");
   }
 
+  /**
+   * bugfix(2026-09) — 자료 Showcase 탭에서 운영자가 BuildIt Wiki 연결 자료의 LIVE 공개(exposure)를
+   * 직접 켜고 끌 수 있어야 한다. 기존 서버 API 만 사용하고(GET/PATCH wiki-candidates), OFF 자료도
+   * 목록에서 숨기지 않는다. Wiki 원본 재등록 폼이 아니다.
+   */
+  @Test
+  void adminScript_hasWikiCandidateExposureToggle_showsOffCandidates() throws Exception {
+    String js = read("static/js/lms_midterm_live.js");
+
+    // 기존 owner-guarded API 그대로 사용.
+    assertThat(js).contains("BASE + '/wiki-candidates'");
+    assertThat(js).contains("/wiki-candidates/' + encodeURIComponent(c.sourceId) + '/exposure'");
+    assertThat(js).contains("method: 'PATCH'");
+
+    // 자료 Showcase 탭에 Wiki 연결 자료 섹션이 새로 렌더된다.
+    assertThat(js).contains("function renderWikiCandidateSection(");
+    assertThat(js).contains("function wikiCandidateCard(");
+    assertThat(js).contains("function patchWikiExposure(");
+    assertThat(js).contains("BuildIt Wiki 연결 자료");
+
+    // exposure OFF 자료도 항상 목록에 있어야 다시 켤 수 있다 — render 에서 visible 로 거르지 않는다.
+    int secStart = js.indexOf("function renderWikiCandidateSection(");
+    int secEnd = js.indexOf("function renderMaterials(", secStart);
+    assertThat(secStart).isGreaterThan(-1);
+    assertThat(js.substring(secStart, secEnd)).doesNotContain("filter(function (c) { return c && c.visible");
+
+    // 실패 시 목록을 서버 상태로 되돌린다(체크박스 원복).
+    assertThat(js).contains("renderMaterials();   // 서버 상태로 되돌린다");
+
+    // 가짜 제목을 만들지 않는다 — 내부 식별자만 보조 표기.
+    assertThat(js).contains("Wiki 식별자: ' + c.sourceId");
+
+    // 캐시버스팅.
+    String html = read("templates/lms/lms_midterm_live.html");
+    assertThat(html).contains("/js/lms_midterm_live.js?v=20260914");
+    assertThat(html).contains("/css/lms_midterm_live.css?v=20260914");
+  }
+
+  /**
+   * bugfix(2026-09) — 자료(Wiki source)가 없는 캠페인 학교(pending FRAME)도 그 학교의 공개
+   * 출제 경향 분석(analyze)이 있으면 DIGITAL_TWIN scene 을 보여준다. grade 미지정이라 학교만 일치,
+   * semester 는 보지 않는다(이번 시험 유형 우선 정렬).
+   */
+  @Test
+  void publicPage_pendingFrameShowsDigitalTwinFromAnalyze() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+
+    // twinContentUrl 이 grade 미지정(pending)을 허용한다.
+    assertThat(js).contains("frame.grade == null || gradeNumber(a.grade) === frame.grade");
+    // pending scene 을 scenes 배열에 넣고, early return 없이 아래 twinContentUrl 경로로 이어진다.
+    assertThat(js).contains("scenes.push({ el: pend, kind: 'pending'");
+    int pendIdx = js.indexOf("scenes.push({ el: pend, kind: 'pending'");
+    int twinIdx = js.indexOf("twinContentUrl(frame).then(", pendIdx);
+    assertThat(twinIdx).isGreaterThan(pendIdx);
+    assertThat(js.substring(pendIdx, twinIdx)).doesNotContain("return article;");
+    assertThat(js).contains("data-kind', 'pending'");
+    // 여전히 실제 analyze contentUrl 만, 없으면 아무 것도 안 그린다.
+    assertThat(js).contains("if (!contentUrl) return;");
+    // pending frame 에는 학원 ambient 영상을 붙이지 않는다.
+    assertThat(js).contains("if (frame.pending) { ambientForFrame = null; }");
+  }
+
   /** Phase 4a — School LIVE Mixed Scene Collection: hero 아래 (school, grade) FRAME.
    *  FRAME 외곽 고정, 안에서 MATERIAL / DIGITAL_TWIN scene 이 자동 전환. 페이지 carousel 없음. */
   @Test
