@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.co
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermLiveVideoDtos.LiveVideoView;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermShowcaseDtos.ShowcaseScene;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.CampaignView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.MaterialCard;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.PopupView;
@@ -10,6 +11,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.ser
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermImageService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermMaterialAccessService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermShowcaseService;
 import java.util.List;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService.DownloadFile;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
@@ -38,6 +40,7 @@ public class MidtermCampaignPublicController {
 
   private final MidtermCampaignPublicService publicService;
   private final MidtermLiveVideoService liveVideoService;
+  private final MidtermShowcaseService showcaseService;
   private final MidtermMaterialAccessService materialAccessService;
   private final AuthenticatedUserResolver authResolver;
 
@@ -55,6 +58,16 @@ public class MidtermCampaignPublicController {
   @GetMapping("/api/academies/{handle}/midterm-campaign/live-videos")
   public ResponseEntity<List<LiveVideoView>> liveVideos(@PathVariable String handle) {
     return ResponseEntity.ok(liveVideoService.listPublic(handle));
+  }
+
+  /**
+   * 상단 "중간고사 준비 중" Showcase(Phase 4e) — visible Wiki 자료에서 서버가 추출한 학교별
+   * 시험범위 텍스트(lesson / 문법 포인트 / 예문). HTML 원문·파일 URL 은 싣지 않는다. 자료가
+   * 없거나 캠페인 미발행이면 빈 배열(프런트가 짧은 시즌 화면으로 폴백).
+   */
+  @GetMapping("/api/academies/{handle}/midterm-campaign/showcase")
+  public ResponseEntity<List<ShowcaseScene>> showcase(@PathVariable String handle) {
+    return ResponseEntity.ok(showcaseService.getShowcase(handle));
   }
 
   @GetMapping("/api/academies/{handle}/midterm-campaign/popup")

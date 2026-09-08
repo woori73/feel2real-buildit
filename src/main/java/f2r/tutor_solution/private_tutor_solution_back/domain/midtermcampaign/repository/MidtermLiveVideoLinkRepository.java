@@ -25,4 +25,7 @@ public interface MidtermLiveVideoLinkRepository
       Long campaignId, String schoolName, int grade,
       f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermLiveVideoRole role,
       Long academyVideoId);
+
+  /** 영상 관리 "LIVE 사용 중" 배지용 배치 조회. 생성 시 영상 소유가 검증되므로 학원 스코프다. */
+  List<MidtermLiveVideoLink> findByAcademyVideoIdIn(java.util.Collection<Long> academyVideoIds);
 }

@@ -66,7 +66,10 @@
     countLabel.textContent = `(${videos.length}/10)`;
     emptyState.classList.toggle('hidden', videos.length > 0);
 
-    const unclassified = videos.filter(SECTIONS.isUnclassifiedVideo);
+    // NONE = 운영자가 명시적으로 고른 "용도 지정 안 함"(보관). 레거시 null(분류 필요)과 나눈다.
+    const noneVideos = videos.filter((v) => v && v.purpose === 'NONE');
+    const unclassified = videos.filter(
+      (v) => SECTIONS.isUnclassifiedVideo(v) && !(v && v.purpose === 'NONE'));
     const directorVideos = videos.filter(SECTIONS.isDirectorVideo);
     const lessonVideos = videos.filter(SECTIONS.isLessonVideo);
 
@@ -77,6 +80,14 @@
             title: `⚠️ 용도 미지정 (${unclassified.length})`,
             hint: '아래에서 대표 원장 소개 영상인지 수업 영상인지 지정해 주세요. 지정하기 전까지 공개 Academy에 노출되지 않습니다.',
             videos: unclassified
+          })
+        : '',
+      noneVideos.length
+        ? videoGroupHtml({
+            groupClass: 'video-group-none',
+            title: `용도 지정 안 함 (${noneVideos.length})`,
+            hint: '영상 관리에는 보관되지만 홈페이지 대표 영역에는 노출되지 않습니다. LIVE 연결은 그대로 유지됩니다.',
+            videos: noneVideos
           })
         : '',
       videoGroupHtml({
@@ -109,6 +120,10 @@
 
   function videoCardHtml(video) {
     const purpose = video.purpose || '';
+    const liveLabels = Array.isArray(video.liveUsageLabels) ? video.liveUsageLabels : [];
+    const liveBadges = liveLabels
+      .map((l) => `<span class="video-card-usage video-card-usage-live">LIVE · ${escapeHtml(String(l))}</span>`)
+      .join('');
     return `<article class="video-card">
       ${thumbnailMarkup(video)}
       <div class="video-card-body">
@@ -118,8 +133,11 @@
             <option value="" ${purpose ? '' : 'selected'} disabled hidden>선택 안 함</option>
             <option value="LESSON" ${purpose === 'LESSON' ? 'selected' : ''}>수업 영상</option>
             <option value="DIRECTOR" ${purpose === 'DIRECTOR' ? 'selected' : ''}>대표 원장 소개 영상</option>
+            <option value="NONE" ${purpose === 'NONE' ? 'selected' : ''}>용도 지정 안 함</option>
           </select>
         </label>
+        <p class="muted video-card-purpose-note">용도 지정 안 함으로 두면 영상 관리에는 보관되지만 홈페이지 대표 영역에는 노출되지 않습니다.</p>
+        <div class="video-card-usages">${liveBadges}</div>
         <span class="video-card-duration">${formatDuration(video.durationSec)}</span>
         <span class="video-card-size">${escapeHtml(String(video.width || '—'))}×${escapeHtml(String(video.height || '—'))}</span>
         <span class="video-card-ready">Ready</span>
@@ -198,7 +216,7 @@
     if (!file) return showStatus('업로드할 영상을 선택해 주세요.', 'error');
     const purpose = selectedPurpose();
     if (!purpose) {
-      return showStatus('영상 용도(수업 영상 / 대표 원장 소개 영상)를 선택해 주세요.', 'error');
+      return showStatus('영상 용도(수업 영상 · 대표 원장 소개 영상 · 용도 지정 안 함)를 선택해 주세요.', 'error');
     }
     if (!isSupportedFile(file)) {
       return showStatus('휴대폰에서 촬영한 MP4 또는 MOV 영상만 업로드할 수 있습니다.', 'error');

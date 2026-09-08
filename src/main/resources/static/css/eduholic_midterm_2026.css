@@ -226,6 +226,174 @@ a { color: inherit; }
 
 
 /* ══════════════════════════════════════════════════════════════════════════
+   상단 Showcase — 학교별 시험범위(Wiki 추출 텍스트) rotation (Phase 4e)
+   원본 HTML 을 축소(transform: scale)해서 넣지 않는다. 실제 responsive text layout.
+   한 scene 이 모바일 viewport 안에서 완결되고, 학교/학년/시험 identity 는 항상 상단 고정.
+   ══════════════════════════════════════════════════════════════════════════ */
+.midterm-showcase {
+  margin: 16px 0 0;
+  padding: 0 var(--page-pad);
+  position: relative;
+}
+.midterm-showcase__surface {
+  position: relative;
+  margin-inline: 8px;
+  height: clamp(300px, 56svh, 440px);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
+.midterm-showcase__scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(18px, 5vw, 26px);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .45s ease, transform .45s ease;
+  pointer-events: none;
+}
+.midterm-showcase__scene.is-active { opacity: 1; transform: none; }
+
+.midterm-showcase__id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.midterm-showcase__school {
+  font-size: clamp(17px, 5vw, 21px);
+  font-weight: 760;
+  letter-spacing: -.04em;
+  color: var(--ink);
+}
+.midterm-showcase__exam {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  letter-spacing: -.01em;
+}
+
+.midterm-showcase__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.midterm-showcase__lesson {
+  margin: 0 0 4px;
+  font-size: clamp(15px, 4.4vw, 18px);
+  font-weight: 720;
+  letter-spacing: -.03em;
+  color: var(--ink);
+}
+.midterm-showcase__label {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink-soft);
+}
+.midterm-showcase__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.midterm-showcase__chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-b);
+  border: 1px solid var(--surface-edge);
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+.midterm-showcase__sentences {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.midterm-showcase__sentence {
+  margin: 0;
+  font-size: clamp(12.5px, 3.6vw, 14px);
+  line-height: 1.42;
+  color: var(--ink);
+  padding-left: 10px;
+  border-left: 2px solid var(--surface-edge);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.midterm-showcase__pending {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.midterm-showcase__foot {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: var(--ink-soft);
+}
+
+.midterm-showcase__dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 0 2px;
+}
+.midterm-showcase__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, .2);
+  transition: background .3s ease;
+}
+.midterm-showcase__dot.is-on { background: rgba(15, 23, 42, .5); }
+
+@media (min-width: 431px) and (max-width: 1079px) {
+  .midterm-showcase__surface { height: clamp(340px, 52svh, 460px); }
+}
+@media (min-width: 1080px) {
+  .midterm-showcase { margin: 0; padding: 0; }
+  .midterm-showcase__surface {
+    width: 100%;
+    margin: 0;
+    height: min(52vh, 468px);
+    min-height: 360px;
+  }
+  .midterm-showcase__id { padding-bottom: 16px; }
+  .midterm-showcase__dots {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .midterm-showcase__scene {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .midterm-showcase__scene:not(.is-active) { display: none; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
    학교/학년 LIVE FRAME collection  (Phase 4d — Shopify Motion collection frame)
 
    Reference: Shopify Motion collection(themes.shopify.com/themes/motion).
