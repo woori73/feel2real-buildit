@@ -19,7 +19,8 @@
   var LV_ROLES = ['STUDENT_STUDY', 'LESSON_INTERACTION'];
   var LV_ROLE_LABELS = ['학생 학습', '박원장 상호작용'];
   var LV_GRADES = ['1', '2', '3'];
-  var liveVideoData = null;   // { links: [...], linkableVideos: [...] } — Phase 4c 전용 payload
+  var liveVideoData = null;      // { links: [...], linkableVideos: [...] } — Phase 4c 전용 payload
+  var liveFrameCandidates = [];  // 공개 LIVE 에 실제로 뜨는 (학교, 학년) FRAME 후보 — 직접 입력 대신 선택
   var PREP_STEPS = ['SCHOOL_PRINT', 'ANALYSIS', 'WORKSHEET', 'VARIANT', 'FINAL_REVIEW'];
   var PREP_STATE = ['NOT_STARTED', 'IN_PROGRESS', 'DONE'];
   var MAKING_STAGES = ['SOURCE', 'ANALYSIS', 'WORKSHEET', 'VARIATION', 'FINAL'];
@@ -615,6 +616,28 @@
   // ── LIVE 수업 영상 탭 (Phase 4c) ──────────────────────────────────
   // 기존 AcademyVideo 를 학교/학년/역할 scene 에 "연결"만 한다. 새 업로드/편집/트림 UI 없음.
   function loadLiveVideos() {
+    // wiki-candidates(공개 대상 자료)에서 (학교, 학년) FRAME 후보를 뽑는다 — 학교 CMS 가 아니라
+    // 이미 존재하는 FRAME 을 선택지로 제공하기 위함. 실패해도 직접 입력으로 동작한다.
+    fetchAuth(BASE + '/wiki-candidates', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        var seen = {};
+        liveFrameCandidates = (Array.isArray(rows) ? rows : [])
+          .filter(function (c) { return c && c.visible; })
+          .map(function (c) {
+            var g = String(c.grade == null ? '' : c.grade).match(/\d+/);
+            return { school: String(c.school || '').trim(), grade: g ? parseInt(g[0], 10) : null };
+          })
+          .filter(function (c) { return c.school && c.grade; })
+          .filter(function (c) {
+            var k = c.school + '|' + c.grade;
+            if (seen[k]) return false;
+            seen[k] = true;
+            return true;
+          });
+        renderLiveVideos();
+      })
+      .catch(function () { liveFrameCandidates = []; });
     return fetchAuth(BASE + '/live-videos', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : { links: [], linkableVideos: [] }; })
       .then(function (d) { liveVideoData = d || { links: [], linkableVideos: [] }; renderLiveVideos(); })
@@ -719,6 +742,22 @@
     var roleSel = select(LV_ROLES, link.role || 'STUDENT_STUDY', LV_ROLE_LABELS);
     var sort = input('number', link.sortOrder || 0);
     var vis = checkbox('공개 (LIVE 페이지에 노출)', link.visible);
+
+    // FRAME 후보 선택 — 고르면 학교/학년을 채운다. 후보에 없으면 아래 칸에 직접 입력.
+    if (liveFrameCandidates.length) {
+      var candVals = [''].concat(liveFrameCandidates.map(function (c) { return c.school + '|' + c.grade; }));
+      var candLabels = ['직접 입력'].concat(liveFrameCandidates.map(function (c) { return c.school + ' · ' + c.grade + '학년'; }));
+      var cur = link.school ? (link.school + '|' + link.grade) : '';
+      var candSel = select(candVals, candVals.indexOf(cur) >= 0 ? cur : '', candLabels);
+      candSel.addEventListener('change', function () {
+        if (!candSel.value) return;
+        var parts = candSel.value.split('|');
+        school.value = parts[0];
+        gradeSel.value = parts[1];
+      });
+      box.appendChild(field('학교·학년 (LIVE FRAME)', candSel));
+    }
+
     var r1 = el('div', 'mtx-row');
     r1.appendChild(field('학교 (예: 신구중)', school));
     r1.appendChild(field('학년', gradeSel));

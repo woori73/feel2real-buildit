@@ -26,8 +26,29 @@
     groups.addEventListener('click', onDeleteClick);
     groups.addEventListener('change', onPurposeChange);
     groups.addEventListener('error', onThumbnailError, true);
+    addMidtermLiveLink();
     await refresh();
   });
+
+  /**
+   * 업로드한 영상을 학교/학년 scene 에 연결하는 곳(내신 LIVE 관리)으로 가는 링크.
+   * 여기서 학교/학년을 관리하지 않는다 — 연결 UX 는 LIVE 관리 화면에만 있다.
+   */
+  async function addMidtermLiveLink() {
+    try {
+      const res = await window.fetchAuth('/api/tutor/academy/me');
+      if (!res.ok) return;
+      const academy = await res.json();
+      const handle = academy && academy.handle;
+      const actions = document.querySelector('.topbar-actions');
+      if (!handle || !actions || actions.querySelector('.js-midterm-live-link')) return;
+      const link = document.createElement('a');
+      link.className = 'btn btn-ghost js-midterm-live-link';
+      link.href = `/lms/${encodeURIComponent(handle)}/midterm-live`;
+      link.textContent = '내신 LIVE에서 연결';
+      actions.prepend(link);
+    } catch (e) { /* 링크는 부가 기능이라 실패해도 무시 */ }
+  }
 
   async function refresh() {
     const res = await window.fetchAuth('/api/tutor/academy/videos');

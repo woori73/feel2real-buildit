@@ -226,28 +226,46 @@ a { color: inherit; }
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   학교/학년 LIVE FRAME collection
-   Atelier — FRAME 의 product composition (tinted media panel + 아래 작은 metadata).
-   Motion  — collection 배치(비대칭 collage / 모바일 rail+peek) + image-rollover 로 scene 교체.
-   Heritage — MATERIAL·DIGITAL_TWIN scene 안의 확대 detail crop.
-   FRAME 외곽은 고정, media(scene)만 crossfade 로 바뀐다. 페이지 전체 carousel 없음.
-   crop role(a/b/c/d)은 CSS presentation 전용(DB taxonomy 아님).
+   학교/학년 LIVE FRAME collection  (Phase 4d — Shopify Motion collection frame)
+
+   Reference: Shopify Motion collection(themes.shopify.com/themes/motion).
+   3 layer 를 눈으로 구별할 수 있어야 한다:
+     collection band(page 보다 차분한 neutral)  →  white product frame(1px border·radius·약한
+     shadow·padding, page 위에 놓인 독립 상품 오브젝트)  →  tinted media stage(고정 비율).
+
+   같은 tier 의 모든 학교/학년 FRAME 은 동일한 outer geometry — width / height / radius /
+   border / stage 비율 / metadata 위치. 내용에 따라 카드 크기가 달라지지 않는다.
+   scene(MATERIAL / VIDEO / DIGITAL_TWIN)만 type-aware presentation.
+   crop role(a/b/c/d)은 MATERIAL doc crop presentation 전용(DB taxonomy 아님).
    ══════════════════════════════════════════════════════════════════════════ */
 .midterm-live {
-  --m-w: 380px;
-  --m-scale: 1;
+  --m-w: 372px;
+  --m-scale: 1.04;
   --m-nudge: 6px;
-  --m-top: -1205px;
+  --m-top: -1336px;
   --m-drift: 30px;
-  --twin-w: 400px;
-  --twin-scale: 0.8;
+  --twin-w: 392px;
+  --twin-scale: 0.82;
   --twin-top: -12px;
-  --stage-inset: 13px;
-  padding: 16px 0 34px;
+  --stage-inset: 12px;
+
+  /* 3-layer packaging tokens (neutral only — 색으로 자료 taxonomy 를 만들지 않는다) */
+  --live-band: #ececeb;                 /* collection surface — page --bg(#f5f5f1) 보다 한 단계 차분 */
+  --frame-bg: var(--paper);             /* white product body */
+  --frame-border: 1px solid rgba(15, 23, 42, .16);
+  --frame-radius: 18px;
+  --frame-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 12px 26px rgba(15, 23, 42, .07);
+  --frame-pad: 12px;
+  --stage-bg: #e7eaef;                  /* slightly tinted cool neutral — white frame·white doc 와 구분 */
+  --stage-radius: 10px;
+  --stage-ratio: 3 / 2;                 /* 모든 FRAME 동일. 16:9 landscape 는 좌우 ~8% 만 crop. */
+
+  background: var(--live-band);
+  padding: 26px 0 34px;
 }
 .midterm-live__head {
   padding: 0 var(--page-pad);
-  margin-bottom: 13px;
+  margin-bottom: 14px;
 }
 .midterm-live__title {
   margin: 0;
@@ -256,10 +274,10 @@ a { color: inherit; }
   letter-spacing: -.04em;
 }
 
-/* mobile / tablet: horizontal browse rail — 다음 FRAME 의 media panel 이 오른쪽에서 살짝 보인다. */
+/* mobile / tablet: horizontal browse rail — 모든 FRAME width/height 동일, 다음 FRAME peek. */
 .midterm-live__collection {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   padding: 0 var(--page-pad);
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -268,35 +286,36 @@ a { color: inherit; }
   scrollbar-width: none;
 }
 .midterm-live__collection::-webkit-scrollbar { width: 0; height: 0; }
+
+/* OUTER PRODUCT FRAME — page 위에 놓인 독립 상품 오브젝트. */
 .midterm-live__frame {
-  flex: 0 0 82vw;
-  max-width: 440px;
+  flex: 0 0 84vw;
+  max-width: 460px;
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
+  background: var(--frame-bg);
+  border: var(--frame-border);
+  border-radius: var(--frame-radius);
+  box-shadow: var(--frame-shadow);
+  padding: var(--frame-pad);
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(18px);
   transition: opacity .55s ease, transform .55s ease;
 }
 .midterm-live__frame.is-in-view { opacity: 1; transform: none; }
-.midterm-live--n1 .midterm-live__collection { display: block; overflow: visible; padding-inline: 8px; }
-.midterm-live--n1 .midterm-live__frame { flex: none; max-width: none; }
+.midterm-live--n1 .midterm-live__collection { display: block; overflow: visible; padding-inline: var(--page-pad); }
+.midterm-live--n1 .midterm-live__frame { flex: none; max-width: 560px; margin: 0 auto; }
 
-/* FRAME = Shopify product unit. tinted media panel + 육안으로 분명한 edge. */
+/* MEDIA STAGE — frame 안에서 고정 비율. 실제 media 가 frame 에 직접 닿지 않는다. */
 .midterm-live__stage {
   position: relative;
-  height: clamp(326px, 46svh, 410px);
+  aspect-ratio: var(--stage-ratio);
   overflow: hidden;
-  background: var(--surface-b);
-  border: 1px solid rgba(15, 23, 42, .14);
-  border-radius: var(--surface-radius);
-  box-shadow: var(--surface-shadow);
+  background: var(--stage-bg);
+  border-radius: var(--stage-radius);
   isolation: isolate;
 }
-.midterm-live__frame:nth-child(4n + 2) .midterm-live__stage { background: var(--surface-c); }
-.midterm-live__frame:nth-child(4n + 3) .midterm-live__stage { background: var(--surface-d); }
-.midterm-live__frame:nth-child(4n + 4) .midterm-live__stage { background: var(--surface-a); }
-.midterm-live--n1 .midterm-live__stage { height: clamp(420px, 56svh, 512px); }
 
 /* scene = media stage 안에서 교체되는 실제 콘텐츠. 하나만 .is-active. */
 .midterm-live__scene {
@@ -304,14 +323,15 @@ a { color: inherit; }
   inset: var(--stage-inset);
   overflow: hidden;
   background: var(--paper);
-  border: 1px solid var(--window-edge);
-  border-radius: var(--window-radius);
+  border-radius: 5px;
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity .45s ease, transform .45s ease;
+  transform: translateY(8px);
+  transition: opacity .42s ease, transform .42s ease;
   pointer-events: none;
 }
 .midterm-live__scene.is-active { opacity: 1; transform: none; }
+/* video scene 은 letterbox 를 stage tint 로 채운다 — white page 가 아니다. */
+.midterm-live__scene[data-kind="video"] { inset: 0; background: var(--stage-bg); }
 
 .midterm-live__doc {
   position: absolute;
@@ -351,20 +371,24 @@ a { color: inherit; }
 .midterm-live__twin[data-twin-view="1"] { --twin-top: -400px; }
 .midterm-live__twin[data-twin-view="2"] { --twin-top: -880px; }
 
-/* ACADEMY AMBIENT — 학원 현장 ambient visual. 특정 학교/학년 귀속 아님(§8·§12).
-   scene window 를 그대로 채운다 — 별도 video card / 검은 cinema 영역 없음. FRAME geometry 불변.
-   player chrome / 자막 / 카테고리 라벨 없음(실제 footage 자체만). */
+/* VIDEO — OUTER FRAME / MEDIA STAGE 크기는 그대로. video element 의 fit 만 방향에 대응한다.
+   panorama strip 에 cover 로 넣어 상체만 크게 잘리는 실패를 만들지 않는다. 남는 공간은
+   stage 배경으로 채운다(blurred duplicate video background 금지). player chrome / 자막 없음. */
 .midterm-live__video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-  background: #0b0b0b;
+  background: var(--stage-bg);
   pointer-events: none;
 }
+/* landscape(예: 1280×720 수업 영상) — 3:2 stage 라 좌우 ~8% 만 crop, 교사·학생·책상 유지. */
+.midterm-live__scene.is-landscape .midterm-live__video { object-fit: cover; }
+/* portrait / phone footage — cover 금지. 전체 학습 맥락 유지, 남는 폭은 stage 배경. */
+.midterm-live__scene.is-portrait .midterm-live__video { object-fit: contain; }
 
 /* §33 아주 작은 관찰 표시. tabs / 버튼 / 슬라이더 UI 아님. */
 .midterm-live__dots {
@@ -385,15 +409,19 @@ a { color: inherit; }
 }
 .midterm-live__dot.is-on { background: rgba(15, 23, 42, .5); }
 
+/* SMALL PRODUCT META — frame padding 안, stage 아래. 학교/학년 = 상품 정보(navigator 아님). */
+.midterm-live__info {
+  padding: 11px 4px 2px;
+}
 .midterm-live__meta {
-  margin: 10px 2px 0;
+  margin: 0;
   color: var(--ink);
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -.02em;
 }
 .midterm-live__sub {
-  margin: 2px 2px 0;
+  margin: 2px 0 0;
   color: var(--ink-soft);
   font-size: 11.5px;
   font-weight: 600;
@@ -401,31 +429,32 @@ a { color: inherit; }
 }
 
 /* crop role — 같은 편집본의 서로 다른 영역/배율. 전부 첫 내용 sheet 범위 안. */
-.midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.06; --m-top: -1285px; }
-.midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.24; --m-top: -1680px; }
-.midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 0.98; --m-top: -1180px; }
+.midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.12; --m-top: -1470px; }
+.midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.28; --m-top: -1830px; }
+.midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1; --m-top: -1300px; }
 
 @media (min-width: 431px) and (max-width: 1079px) {
-  .midterm-live { --m-w: 460px; --twin-w: 520px; }
-  .midterm-live__frame { flex: 0 0 62vw; max-width: 520px; }
-  .midterm-live__stage { height: clamp(360px, 48svh, 460px); }
+  .midterm-live { --m-w: 452px; --twin-w: 476px; }
+  .midterm-live__frame { flex: 0 0 66vw; max-width: 520px; }
 }
 
-/* desktop: 비대칭 collage. 균일 grid / 학교 카드 grid 아님. packaging grammar 는 하나. */
+/* desktop: 균일한 2-column collection grid. 카드별 arbitrary span 없음 —
+   모든 학교 FRAME outer box 가 같은 크기로 정렬된다. */
 @media (min-width: 1080px) {
   .midterm-live {
-    --m-w: 640px;
-    --m-scale: 1.08;
-    --m-nudge: 16px;
-    --m-top: -1230px;
-    --m-drift: 46px;
-    --twin-w: 640px;
-    --twin-scale: 1;
-    --twin-top: -18px;
-    --stage-inset: clamp(16px, 1.6vw, 26px);
-    width: min(100%, 1420px);
+    --m-w: 540px;
+    --m-scale: 1.1;
+    --m-nudge: 14px;
+    --m-top: -1356px;
+    --m-drift: 40px;
+    --twin-w: 540px;
+    --twin-scale: 0.94;
+    --twin-top: -16px;
+    --stage-inset: clamp(14px, 1.4vw, 22px);
+    --frame-pad: clamp(14px, 1.2vw, 20px);
+    width: min(100%, 1180px);
     margin: 0 auto;
-    padding: 14px 42px 62px;
+    padding: 28px 40px 66px;
   }
   .midterm-live__head { padding: 0; margin-bottom: 22px; }
   .midterm-live__title { font-size: clamp(17px, 1.3vw, 20px); }
@@ -433,57 +462,29 @@ a { color: inherit; }
     display: grid;
     overflow: visible;
     padding: 0;
-    gap: clamp(18px, 1.9vw, 30px);
-    grid-template-columns: repeat(6, 1fr);
-    grid-auto-rows: clamp(196px, 17vw, 256px);
-    grid-auto-flow: dense;
+    gap: clamp(24px, 2.2vw, 32px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .midterm-live__frame { flex: none; max-width: none; transform: translateY(24px); }
-  .midterm-live__stage { height: auto; flex: 1 1 auto; min-height: 0; }
-  .midterm-live__twin[data-twin-view="1"] { --twin-top: -460px; }
-  .midterm-live__twin[data-twin-view="2"] { --twin-top: -960px; }
+  .midterm-live__frame { flex: none; max-width: none; transform: translateY(22px); }
+  .midterm-live--n1 .midterm-live__collection {
+    display: grid;
+    grid-template-columns: minmax(0, 620px);
+    justify-content: center;
+  }
+  .midterm-live--n1 .midterm-live__frame { max-width: none; margin: 0; }
+  .midterm-live__twin[data-twin-view="1"] { --twin-top: -430px; }
+  .midterm-live__twin[data-twin-view="2"] { --twin-top: -900px; }
 
-  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.24; --m-top: -1560px; }
-  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.44; --m-top: -1960px; }
-  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 0.98; --m-top: -1200px; }
-
-  /* n2 — asymmetric pair */
-  .midterm-live--n2 .midterm-live__collection { grid-auto-rows: clamp(250px, 24vw, 350px); }
-  .midterm-live--n2 .midterm-live__frame:nth-child(1) { grid-column: span 4; }
-  .midterm-live--n2 .midterm-live__frame:nth-child(2) { grid-column: span 2; }
-
-  /* n3+ — collage: 큰 것 하나 + portrait 하나 + wide */
-  .midterm-live--n3 .midterm-live__frame:nth-child(1),
-  .midterm-live--n4 .midterm-live__frame:nth-child(1),
-  .midterm-live--n5 .midterm-live__frame:nth-child(1),
-  .midterm-live--n6 .midterm-live__frame:nth-child(1) { grid-column: span 4; grid-row: span 2; }
-
-  .midterm-live--n3 .midterm-live__frame:nth-child(2),
-  .midterm-live--n4 .midterm-live__frame:nth-child(2),
-  .midterm-live--n5 .midterm-live__frame:nth-child(2),
-  .midterm-live--n6 .midterm-live__frame:nth-child(2) { grid-column: span 2; grid-row: span 2; }
-
-  .midterm-live--n3 .midterm-live__collection { grid-auto-rows: clamp(228px, 19vw, 288px); }
-  .midterm-live--n3 .midterm-live__frame:nth-child(3) { grid-column: span 6; }
-
-  .midterm-live--n4 .midterm-live__frame:nth-child(3) { grid-column: span 2; }
-  .midterm-live--n4 .midterm-live__frame:nth-child(4) { grid-column: span 4; }
-
-  .midterm-live--n5 .midterm-live__frame:nth-child(3) { grid-column: span 3; }
-  .midterm-live--n5 .midterm-live__frame:nth-child(4) { grid-column: span 3; }
-  .midterm-live--n5 .midterm-live__frame:nth-child(5) { grid-column: span 6; }
-
-  .midterm-live--n6 .midterm-live__frame:nth-child(3) { grid-column: span 3; }
-  .midterm-live--n6 .midterm-live__frame:nth-child(4) { grid-column: span 3; }
-  .midterm-live--n6 .midterm-live__frame:nth-child(5) { grid-column: span 3; }
-  .midterm-live--n6 .midterm-live__frame:nth-child(6) { grid-column: span 3; }
+  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.18; --m-top: -1500px; }
+  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.34; --m-top: -1900px; }
+  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.02; --m-top: -1276px; }
 }
 
 @media (min-width: 1360px) {
-  .midterm-live { --m-scale: 1.14; --m-top: -1320px; --twin-scale: 1.08; }
-  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.32; --m-top: -1700px; }
-  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.54; --m-top: -2160px; }
-  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.04; --m-top: -1300px; }
+  .midterm-live { width: min(100%, 1280px); --m-scale: 1.16; --m-top: -1432px; --twin-scale: 1; }
+  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.24; --m-top: -1580px; }
+  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.4; --m-top: -1988px; }
+  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.08; --m-top: -1352px; }
 }
 
 /* reduced-motion: auto scene cycle·drift·twin crop·crossfade 정지. 첫 MATERIAL 정적 crop.

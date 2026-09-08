@@ -382,4 +382,75 @@ class MidtermLiveTemplateContractTest {
     // Phase 4b ambient fallback 유지(§22).
     assertThat(html).contains("data-ambient-video-starts=");
   }
+
+  /** Phase 4d — LIVE Collection Layout + Shopify Product Frame + Video fit.
+   *  모든 학교 FRAME 은 동일한 outer geometry. 3 layer packaging. video fit 은 방향 대응. */
+  @Test
+  void liveCollection_uniformProductFrameAndDirectionAwareVideo() throws Exception {
+    String css = read("static/css/eduholic_midterm_2026.css");
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String html = read("static/eduholic-midterm-2026.html");
+
+    // A — 내용/데이터에 따라 카드 크기가 달라지는 asymmetric span 제거. 균일 2-column grid.
+    assertThat(css).doesNotContain("grid-column: span 4");
+    assertThat(css).doesNotContain("grid-column: span 6");
+    assertThat(css).doesNotContain("grid-row: span 2");
+    assertThat(css).doesNotContain("grid-auto-flow: dense");
+    assertThat(css).doesNotContain("repeat(6, 1fr)");
+    assertThat(css).contains("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    // stage 고정 비율 → 모든 stage 가 같은 크기(scene 전환 layout shift 없음).
+    assertThat(css).contains("aspect-ratio: var(--stage-ratio)");
+    assertThat(css).contains("--stage-ratio:");
+
+    // C/D — 3 layer: collection band → white product frame(visible border·padding) → tinted stage.
+    assertThat(css).contains("--live-band:");
+    assertThat(css).contains("--stage-bg:");
+    assertThat(css).contains("--frame-border: 1px solid");
+    assertThat(css).contains("border: var(--frame-border)");
+    assertThat(css).contains("background: var(--live-band)");
+    assertThat(css).contains("padding: var(--frame-pad)");
+    // 새 DOM 계층: frame > stage > scene + info(meta 아래 작은 상품 정보).
+    assertThat(js).contains("midterm-live__info");
+
+    // B — VIDEO fit 은 runtime 영상 dimension 으로 판정(videoId 하드코딩 없음). panorama cover 실패 방지.
+    assertThat(js).contains("video.videoHeight > video.videoWidth");
+    assertThat(js).contains("is-portrait");
+    assertThat(js).contains("is-landscape");
+    assertThat(css).contains(".midterm-live__scene.is-portrait .midterm-live__video");
+    assertThat(css).contains(".midterm-live__scene.is-landscape .midterm-live__video");
+    assertThat(css).contains("object-fit: contain");        // 기본 = contain, letterbox = stage bg
+    assertThat(js).doesNotContain("videoId ===");
+    assertThat(js).doesNotContain("=== 14");
+    assertThat(css).doesNotContain("blur(");                // blurred duplicate video background 금지
+    assertThat(css).doesNotContain("backdrop-filter");
+
+    // §24 금지 — school navigator / 홈페이지 리디자인 / e-commerce.
+    String frontend = html + "\n" + js + "\n" + css;
+    assertThat(frontend).doesNotContain("우리 학교");
+    assertThat(frontend).doesNotContain("2026 FALL");
+    assertThat(frontend).doesNotContain("장바구니");
+
+    // 기존 motion 계약 유지.
+    assertThat(css).contains("midterm-product-drift 8s ease-in-out 1 both");
+    assertThat(css).doesNotContain("infinite");
+  }
+
+  /** Phase 4d §16 — 대표수업(lesson_products.media_video_id / builderDraft)과 LIVE 연결
+   *  (midterm_live_video_links)은 독립. LIVE 서비스가 lesson 상태를 읽거나 쓰지 않는다. */
+  @Test
+  void liveVideoAssociation_isIndependentFromRepresentativeLesson() throws Exception {
+    String adminSvc = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/midtermcampaign/service/MidtermLiveVideoAdminService.java"));
+    String pubSvc = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/midtermcampaign/service/MidtermLiveVideoService.java"));
+
+    for (String svc : new String[] { adminSvc, pubSvc }) {
+      assertThat(svc).doesNotContain("LessonProduct");
+      assertThat(svc).doesNotContain("lessonProductRepository");
+      assertThat(svc).doesNotContain("builderDraft");
+      assertThat(svc).doesNotContain("PageSettings");
+      assertThat(svc).doesNotContain("featuredLessonIds");
+      assertThat(svc).doesNotContain("mediaVideoId");
+    }
+  }
 }
