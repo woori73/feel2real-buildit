@@ -15,6 +15,7 @@
 5. **발행** — Builder "발행" 버튼 → 보유 client 데이터를 `academy` JSON part + 선택 `logo` part의 multipart `POST /api/tutor/academy` 1회 호출 → `AcademyService.create()` → `status=PUBLISHED`, handle=`academy-{hash}` 자동 → 서브도메인 즉시 활성.
 
 ## 2. 확정된 결정
+- **Bildi Guide 표시 상태:** Guide 진행 데이터(currentStepId, 완료/건너뜀, 추천 상태)와 UI 표시 상태(enabled, panelOpen)는 분리한다. OFF 또는 접기는 Guide 세션을 초기화하지 않는다. 충분한 desktop(1281px 이상)은 오른쪽 dock 폭 300~360px을 workspace에서 실제 확보하고, tablet/좁은 desktop(721~1280px)은 기본 COLLAPSED + 우측 compact drawer, mobile(720px 이하)은 작은 launcher + 요청 시 bottom sheet로 동작한다. Guide 대화·입력·추천은 panel에만 렌더하며 Preview에는 현재 Guide section의 scroll/highlight만 유지한다.
 - **DRAFT = client-side only.** 발행 전까지 서버 저장 없음. 신규 발행 요청은 `/builder`의 JS/sessionStorage가 유일한 보관처. 기존 Academy 조회용 초기값은 `/builder` SSR 모델로 주입한다. DB DRAFT 상태·별도 publish 엔드포인트 **도입 안 함** → [academy-publish-design.md](academy-publish-design.md) §1-1(단일 write) 존중.
 - **발행 = 기존 `create()` 호출.** `/builder`는 로고가 없어도 `academy` JSON part를 담은 multipart로 호출하고, 로고가 있으면 같은 요청의 `logo` part에 포함한다. 별도 publish/temp-upload 엔드포인트는 만들지 않는다.
 - **URL 식별자 = `handle`** (`academy-{hash}`, SHA-256 base36 · tutorUserId 기반, `AcademyService.resolveCreateHandle`). slug 아님. 자동 생성.
