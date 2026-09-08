@@ -445,7 +445,7 @@ Academy에 노출되는 수업 상품. “주 3회”, “한 달”, “100만�
 - **XOR 불변식**: `media_image_key`와 `media_video_id`는 동시에 non-null일 수 없다. 둘 다 null이면 "미디어 없음"이다. 엔티티(`updateAuthoringDetails`)와 collection 저장 양쪽에서 검증한다.
 - **OT 영상은 별도 객체**: `ot_video_id`는 대표 이미지/영상과 독립적으로 저장·교체·해제한다. 대표 미디어 XOR에 포함하지 않으며 같은 학원 소유 영상만 참조할 수 있다.
 - **`media_type` 컬럼은 없다.** 위 두 컬럼에서 파생하며 응답 DTO(`LessonResponse.mediaType`)에서만 표현한다. 컬럼으로 만들면 동기화 지점만 늘어난다.
-- **영상은 학원 풀 공유**: durable upload 예약을 포함해 Academy당 최대 10개다. `academy_videos`에 `lesson_id`를 두는 양방향 참조는 쓰지 않는다 — 두 컬럼이 서로 다른 동시성 계약으로 쓰이는데 화해자가 없어 드리프트가 남는다.
+- **영상은 학원 풀 공유**: durable upload 예약과 외부 링크 영상(`source_kind='EXTERNAL_LINK'`)을 포함해 Academy당 최대 30개다. `academy_videos`에 `lesson_id`를 두는 양방향 참조는 쓰지 않는다 — 두 컬럼이 서로 다른 동시성 계약으로 쓰이는데 화해자가 없어 드리프트가 남는다.
 - **FK가 RESTRICT가 아닌 이유**: `lesson_products`(V3)와 `academy_videos`(V930)가 **둘 다** `academies`에서 `ON DELETE CASCADE`다. 여기에 RESTRICT를 걸면 InnoDB가 형제 캐스케이드 순서를 보장하지 않아 `DELETE FROM academies`가 errno 1451로 실패한다. 회원 탈퇴(`UserService.withdraw()`)는 `users → academies` 2단계라 함께 깨지고, `Academy`에 `@OneToMany`가 없어 JPA로 순서를 조정할 seam도 없다.
 - **사용자 대면 삭제 차단은 서비스 계층**: `AcademyVideoService.delete()`가 대표 미디어 또는 OT 영상으로 참조 중인 수업상품이 있으면 `400`으로 막는다. 그 판정이 read-then-write라 해당 메서드만 `@Transactional`이고 참조 행에 락을 잡는다. FK는 최후 방어선일 뿐이다.
 - **silent detach 경로**: 서비스를 우회한 직접 SQL로 영상 row를 지우면 참조가 조용히 null이 되어 "미디어 없음"으로 degrade된다. 현재 프로덕션 경로 중 그런 것은 없다(학원/회원 삭제는 두 테이블을 함께 캐스케이드하고, `db/dev-seed/R__*`에는 DELETE/TRUNCATE가 없다). 네 번째 경로를 추가하지 말 것.
@@ -821,8 +821,8 @@ V930 `FAILED`는 공개하지 않는 `UNAVAILABLE + NORMALIZED + FAILED + DONE`�
 인덱스는 공개 목록용 `idx_academy_videos_academy_lifecycle_created(academy_id, lifecycle_status, created_at DESC)`와 bounded cleanup reconciliation용 `idx_academy_videos_cleanup_reconcile(lifecycle_status, active_source, raw_cleanup_status, video_id)`를 둔다.
 
 **durable raw 제한값** (`app.video.*`, 시작 시 정확한 product invariant로 검증):
-raw `<=209715200` bytes, duration `<=120000ms`, 한 Academy의 non-DELETING 영상 +
-만료되지 않은 `INITIATED|COMPLETING` 예약 합계 최대 10개, workflow deadline 180000ms.
+raw `<=209715200` bytes, duration `<=120000ms`, 한 Academy의 non-DELETING 영상(직접 업로드 + 외부 링크) +
+만료되지 않은 `INITIATED|COMPLETING` 예약 합계 최대 30개, workflow deadline 180000ms.
 정규화 산출물 상한은 기존 100MiB를 유지한다. 클라이언트 사전검증은 UX용일 뿐이고
 저장소 Head/stream counter/ffprobe와 DB `CURRENT_TIMESTAMP(6)`가 최종 판정한다.
 

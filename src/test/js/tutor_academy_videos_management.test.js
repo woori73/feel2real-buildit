@@ -38,20 +38,26 @@ function runVideosPage(options) {
     }
     return elements.get(id);
   };
-  ['videoInput', 'uploadButton', 'uploadStatus', 'uploadProgress', 'videoGroups', 'emptyState', 'videoCount']
+  ['videoInput', 'uploadButton', 'uploadStatus', 'uploadProgress', 'videoGroups', 'emptyState', 'videoCount',
+    'videoLinkUrl', 'videoLinkTitle', 'videoLinkButton', 'videoLinkStatus']
     .forEach(element);
 
   const purposeState = { checked: null };
+  const linkPurposeState = { checked: null };
   let domReadyCb = null;
 
   const document = {
     addEventListener(type, cb) { if (type === 'DOMContentLoaded') domReadyCb = cb; },
     getElementById(id) { return elements.has(id) ? element(id) : null; },
     querySelector(selector) {
-      return selector === 'input[name="videoPurpose"]:checked' ? purposeState.checked : null;
+      if (selector === 'input[name="videoPurpose"]:checked') return purposeState.checked;
+      if (selector === 'input[name="videoLinkPurpose"]:checked') return linkPurposeState.checked;
+      return null;
     },
     querySelectorAll(selector) {
-      return selector === 'input[name="videoPurpose"]' ? (purposeState.all || []) : [];
+      if (selector === 'input[name="videoPurpose"]') return purposeState.all || [];
+      if (selector === 'input[name="videoLinkPurpose"]') return linkPurposeState.all || [];
+      return [];
     },
     createElement() {
       return {
@@ -87,6 +93,7 @@ function runVideosPage(options) {
     element,
     fetchCalls,
     purposeState,
+    linkPurposeState,
     async ready() {
       if (!domReadyCb) throw new Error('DOMContentLoaded 핸들러가 등록되지 않았다');
       await domReadyCb();
@@ -159,7 +166,7 @@ test('given 용도를 아무것도 선택하지 않음 when 업로드 버튼을 
 
   const uploadCall = page.fetchCalls.find((c) => c.url === '/api/tutor/academy/videos' && c.init && c.init.method === 'POST');
   assert.equal(uploadCall, undefined, '용도 미선택인데 업로드 요청이 나갔다');
-  assert.equal(page.element('uploadStatus').textContent, '영상 용도(수업 영상 / 대표 원장 소개 영상)를 선택해 주세요.');
+  assert.equal(page.element('uploadStatus').textContent, '영상 용도(수업 영상 · 대표 원장 소개 영상 · 용도 지정 안 함)를 선택해 주세요.');
 });
 
 test('given 영상이 없을 때 when 관리 화면을 렌더 then 세 영역 모두 빈 상태 문구를 보여준다', async () => {
@@ -170,4 +177,57 @@ test('given 영상이 없을 때 when 관리 화면을 렌더 then 세 영역 �
   assert.doesNotMatch(html, /용도 미지정/, '영상이 없으면 미지정 영역 자체가 없어야 한다');
   assert.match(html, /아직 지정된 대표 원장 소개 영상이 없습니다/);
   assert.match(html, /아직 지정된 수업 영상이 없습니다/);
+});
+
+const MIXED_VIDEOS = [
+  { videoId: 1, originalFilename: '문법 강의.mp4', purpose: 'LESSON', durationSec: 45, width: 720, height: 1280,
+    sourceKind: 'DIRECT_UPLOAD', videoUrl: '/api/academies/x/videos/1/stream' },
+  { videoId: 2, originalFilename: '네이버 공개수업', purpose: 'LESSON', sourceKind: 'EXTERNAL_LINK',
+    provider: 'NAVER', externalUrl: 'https://naver.me/F4WnDovq', videoUrl: null, thumbnailUrl: null }
+];
+
+test('given 직접 업로드 + 외부 링크가 섞였을 때 when 렌더 then 카드마다 출처 배지와 카운트가 30 기준이다', async () => {
+  const page = runVideosPage({ videos: MIXED_VIDEOS });
+  await page.ready();
+
+  const html = page.element('videoGroups').innerHTML;
+  assert.match(html, /직접 업로드/);
+  assert.match(html, /외부 링크 · 네이버/);
+  assert.match(html, /href="https:\/\/naver\.me\/F4WnDovq"[^>]*target="_blank"/);
+  assert.doesNotMatch(html, /<video class="video-card-thumb" src="null"/, '외부 링크에 <video src=null> 를 만들면 안 된다');
+  assert.equal(page.element('videoCount').textContent, '(2/30)');
+});
+
+test('given 외부 링크 등록 폼 when https URL·제목·용도를 채우고 등록 then link 엔드포인트로 JSON POST 한다', async () => {
+  const page = runVideosPage({ videos: [] });
+  await page.ready();
+  page.element('videoLinkUrl').value = 'https://naver.me/F4WnDovq';
+  page.element('videoLinkTitle').value = '6월 공개수업';
+  page.linkPurposeState.checked = { value: 'LESSON' };
+  page.linkPurposeState.all = [{ checked: true }];
+  page.fetchCalls.length = 0;
+
+  page.click('videoLinkButton');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const call = page.fetchCalls.find((c) => c.url === '/api/tutor/academy/videos/link');
+  assert.ok(call, 'link 엔드포인트로 요청이 나가지 않았다');
+  assert.equal(call.init.method, 'POST');
+  assert.deepEqual(JSON.parse(call.init.body),
+    { url: 'https://naver.me/F4WnDovq', title: '6월 공개수업', purpose: 'LESSON' });
+});
+
+test('given http:// URL when 외부 링크 등록 then 요청을 보내지 않고 오류를 표시한다', async () => {
+  const page = runVideosPage({ videos: [] });
+  await page.ready();
+  page.element('videoLinkUrl').value = 'http://naver.me/x';
+  page.element('videoLinkTitle').value = '제목';
+  page.linkPurposeState.checked = { value: 'LESSON' };
+  page.fetchCalls.length = 0;
+
+  page.click('videoLinkButton');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(page.fetchCalls.find((c) => c.url === '/api/tutor/academy/videos/link'), undefined);
+  assert.match(page.element('videoLinkStatus').textContent, /https/);
 });

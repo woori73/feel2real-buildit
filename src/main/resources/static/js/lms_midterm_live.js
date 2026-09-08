@@ -772,9 +772,14 @@
     return promise.then(function () { if (okMsg) say(okMsg); })
       .catch(function (e) { say(e.message || '오류가 발생했습니다.', true); });
   }
+  function sourceLabel(v) {
+    return v && v.sourceKind === 'EXTERNAL_LINK' ? '외부 링크' : '';
+  }
   function videoLabel(v) {
+    var src = sourceLabel(v);
     return (v.originalFilename || ('영상 ' + v.academyVideoId))
-      + (v.purpose ? ' · ' + v.purpose : '');
+      + (v.purpose ? ' · ' + v.purpose : '')
+      + (src ? ' · ' + src : '');
   }
   function videoOptions(current) {
     var list = (liveVideoData && liveVideoData.linkableVideos) || [];
@@ -832,6 +837,14 @@
       img.src = link.thumbnailUrl; img.alt = ''; img.loading = 'lazy';
       img.style.maxWidth = '160px'; img.style.borderRadius = '6px'; img.style.display = 'block';
       card.appendChild(img);
+    } else if (link.sourceKind === 'EXTERNAL_LINK' && link.externalUrl) {
+      var ext = el('p', 'mtx-sub');
+      ext.appendChild(el('span', 'mtx-pill off', '외부 링크'));
+      var a = document.createElement('a');
+      a.href = link.externalUrl; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = ' 영상 보기 →';
+      ext.appendChild(a);
+      card.appendChild(ext);
     }
     card.appendChild(lvForm(link, function (payload) {
       lvApply(lvReq('PATCH', '/' + link.linkId, payload), '저장했습니다.');

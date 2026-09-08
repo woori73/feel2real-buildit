@@ -9,6 +9,8 @@
     throw new Error('F2RAcademySections must be loaded before tutor_academy_videos.js');
   }
 
+  const MAX_VIDEO_COUNT = 30;
+
   const input = document.getElementById('videoInput');
   const uploadButton = document.getElementById('uploadButton');
   const status = document.getElementById('uploadStatus');
@@ -16,6 +18,12 @@
   const groups = document.getElementById('videoGroups');
   const emptyState = document.getElementById('emptyState');
   const countLabel = document.getElementById('videoCount');
+
+  // 외부 링크 등록 카드(별도 section). 화면에 없을 수도 있으므로 전부 null-guard 한다.
+  const linkUrl = document.getElementById('videoLinkUrl');
+  const linkTitle = document.getElementById('videoLinkTitle');
+  const linkButton = document.getElementById('videoLinkButton');
+  const linkStatus = document.getElementById('videoLinkStatus');
 
   /** 마지막으로 불러온 전체 목록. 용도 변경 후 재조회로만 갱신한다(낙관적 갱신 없음). */
   let allVideos = [];
@@ -26,6 +34,7 @@
     groups.addEventListener('click', onDeleteClick);
     groups.addEventListener('change', onPurposeChange);
     groups.addEventListener('error', onThumbnailError, true);
+    if (linkButton) linkButton.addEventListener('click', registerLink);
     addMidtermLiveLink();
     await refresh();
   });
@@ -63,7 +72,7 @@
    * 미지정 영역은 분류할 것이 있을 때만 맨 위에 나타나 주의를 끈다.
    */
   function render(videos) {
-    countLabel.textContent = `(${videos.length}/10)`;
+    countLabel.textContent = `(${videos.length}/${MAX_VIDEO_COUNT})`;
     emptyState.classList.toggle('hidden', videos.length > 0);
 
     // NONE = 운영자가 명시적으로 고른 "용도 지정 안 함"(보관). 레거시 null(분류 필요)과 나눈다.
@@ -118,15 +127,33 @@
     </section>`;
   }
 
+  function isExternal(video) {
+    return video && video.sourceKind === 'EXTERNAL_LINK';
+  }
+
+  function providerLabel(video) {
+    switch (video && video.provider) {
+      case 'NAVER': return '네이버';
+      case 'YOUTUBE': return 'YouTube';
+      default: return '외부 링크';
+    }
+  }
+
   function videoCardHtml(video) {
     const purpose = video.purpose || '';
     const liveLabels = Array.isArray(video.liveUsageLabels) ? video.liveUsageLabels : [];
     const liveBadges = liveLabels
       .map((l) => `<span class="video-card-usage video-card-usage-live">LIVE · ${escapeHtml(String(l))}</span>`)
       .join('');
-    return `<article class="video-card">
+    const sourceBadge = isExternal(video)
+      ? `<span class="video-card-source video-card-source-external">외부 링크${
+          video.provider === 'NAVER' || video.provider === 'YOUTUBE'
+            ? ' · ' + escapeHtml(providerLabel(video)) : ''}</span>`
+      : `<span class="video-card-source video-card-source-upload">직접 업로드</span>`;
+    return `<article class="video-card${isExternal(video) ? ' video-card-external' : ''}">
       ${thumbnailMarkup(video)}
       <div class="video-card-body">
+        ${sourceBadge}
         <label class="video-card-purpose-label">
           용도
           <select class="video-card-purpose-select" data-purpose-select="${escapeHtml(String(video.videoId))}">
@@ -139,9 +166,12 @@
         <p class="muted video-card-purpose-note">용도 지정 안 함으로 두면 영상 관리에는 보관되지만 홈페이지 대표 영역에는 노출되지 않습니다.</p>
         <div class="video-card-usages">${liveBadges}</div>
         <div class="video-card-meta">
-          <span class="video-card-duration">${formatDuration(video.durationSec)}</span>
-          <span class="video-card-size">${escapeHtml(String(video.width || '—'))}×${escapeHtml(String(video.height || '—'))}</span>
-          <span class="video-card-ready">Ready</span>
+          ${isExternal(video)
+            ? `<a class="video-card-external-link" href="${escapeAttr(video.externalUrl || '#')}"
+                  target="_blank" rel="noopener noreferrer">영상 보기 →</a>`
+            : `<span class="video-card-duration">${formatDuration(video.durationSec)}</span>
+               <span class="video-card-size">${escapeHtml(String(video.width || '—'))}×${escapeHtml(String(video.height || '—'))}</span>
+               <span class="video-card-ready">Ready</span>`}
         </div>
       </div>
       <button class="btn btn-danger video-card-delete" type="button"
@@ -150,11 +180,20 @@
   }
 
   function thumbnailMarkup(video) {
+    if (isExternal(video)) {
+      return `<div class="video-card-thumb video-card-thumb-external" aria-hidden="true">
+                <span class="video-card-thumb-provider">${escapeHtml(providerLabel(video))}</span>
+              </div>`;
+    }
     return video.thumbnailUrl
       ? `<img class="video-card-thumb" src="${escapeHtml(video.thumbnailUrl)}"
               data-video-url="${escapeHtml(video.videoUrl)}" alt="" loading="lazy" />`
       : `<video class="video-card-thumb" src="${escapeHtml(video.videoUrl)}"
                 preload="metadata" muted playsinline aria-label="영상 미리보기"></video>`;
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value);
   }
 
   function onThumbnailError(event) {
@@ -250,6 +289,61 @@
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * 외부에 이미 올라간 영상을 URL 로만 등록한다(§3). 서버가 scheme/host 검증·provider 분류의
+   * 정본이며 여기서는 필수값 · https 형태만 가볍게 막는다.
+   */
+  async function registerLink() {
+    if (!linkUrl || !linkTitle || !linkButton) return;
+    const url = (linkUrl.value || '').trim();
+    const title = (linkTitle.value || '').trim();
+    const purpose = selectedLinkPurpose();
+    if (!url) return showLinkStatus('영상 URL을 입력해 주세요.', 'error');
+    if (!/^https:\/\//i.test(url)) {
+      return showLinkStatus('영상 URL은 https:// 주소만 등록할 수 있습니다.', 'error');
+    }
+    if (!title) return showLinkStatus('영상 제목을 입력해 주세요.', 'error');
+    if (!purpose) return showLinkStatus('영상 용도를 선택해 주세요.', 'error');
+
+    linkButton.disabled = true;
+    showLinkStatus('영상 링크를 등록하고 있습니다…', 'busy');
+    try {
+      const res = await window.fetchAuth('/api/tutor/academy/videos/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, title, purpose })
+      });
+      if (!res.ok) {
+        return showLinkStatus(await errorMessage(res, '영상 링크 등록에 실패했습니다.'), 'error');
+      }
+      linkUrl.value = '';
+      linkTitle.value = '';
+      clearSelectedLinkPurpose();
+      showLinkStatus('영상 링크를 등록했습니다.', 'ok');
+      await refresh();
+    } catch (_) {
+      showLinkStatus('등록 중 네트워크 연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.', 'error');
+    } finally {
+      linkButton.disabled = false;
+    }
+  }
+
+  function selectedLinkPurpose() {
+    const checked = document.querySelector('input[name="videoLinkPurpose"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function clearSelectedLinkPurpose() {
+    document.querySelectorAll('input[name="videoLinkPurpose"]').forEach((el) => { el.checked = false; });
+  }
+
+  function showLinkStatus(message, tone) {
+    if (!linkStatus) return;
+    linkStatus.textContent = message;
+    linkStatus.dataset.tone = tone;
+    linkStatus.classList.remove('hidden');
   }
 
   /** 이번 업로드부터 용도는 필수 선택이다 — 기본 선택값을 두지 않는다(강제 클릭 유도). */

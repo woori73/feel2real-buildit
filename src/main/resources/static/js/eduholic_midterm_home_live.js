@@ -19,10 +19,35 @@
   var EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
   var LANDING_PATH = '/eduholic-midterm-2026.html';
   var MIDTERM_LIVE_URL = '/eduholic-midterm-2026.html';
+  // 캠페인 스코프 1회 조회(카드마다가 아님 — N+1 아님). 서버가 visible + READY + 소유를 이미
+  // 판정한 학교/학년 현장 영상. 실패/미설정이면 영상 scene 없이 기존 3-scene 흐름 그대로.
+  var LIVE_VIDEOS_API = '/api/academies/eduholic/midterm-campaign/live-videos';
   var SCENE_MS = 4500;
 
   if (window.location.hostname !== EDUHOLIC_HOST) return;
   if (window.location.pathname === LANDING_PATH) return;
+
+  // school(문자열) → 그 학교에 연결된 영상 link 배열. null = 아직 미조회, {} = 조회 완료·없음.
+  var videosBySchool = null;
+  var liveVideosRequested = false;
+
+  function loadLiveVideos(afterLoad) {
+    if (liveVideosRequested) return;
+    liveVideosRequested = true;
+    fetch(LIVE_VIDEOS_API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) {
+        var map = {};
+        (Array.isArray(list) ? list : []).forEach(function (v) {
+          var s = String(v && v.school || '').trim();
+          if (!s) return;
+          (map[s] = map[s] || []).push(v);
+        });
+        videosBySchool = map;
+      })
+      .catch(function () { videosBySchool = {}; })
+      .then(function () { if (typeof afterLoad === 'function') afterLoad(); });
+  }
 
   function reduceMotion() {
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -71,7 +96,7 @@
     var gradeMatch = firstRow.match(/(\d+)\s*학년/);
     var gradeLabel = gradeMatch ? gradeMatch[1] + '학년' : '';
 
-    return [
+    var scenes = [
       { tag: '● LIVE', head: school + (gradeLabel ? ' · ' + gradeLabel : ''),
         lines: ['이번 시험 범위 확인', '학교별 시험자료 분석 중'] },
       { tag: '출제 경향', head: school + ' 출제 경향 분석',
@@ -79,6 +104,24 @@
       { tag: '수업 반영', head: school + ' 수업 준비',
         lines: ['분석 결과를 수업에 반영합니다'], href: href, hrefLabel: '준비 현황 보기 →' }
     ];
+
+    // 그 학교에 연결된 실제 현장 영상이 있으면 마지막 scene 으로 추가한다(§8·§9). iframe embed
+    // 하지 않고 링크만 — 외부 링크는 그 URL 로, 직접 업로드는 LIVE 페이지로 연다. 없으면 생략(§17).
+    var vids = videosBySchool && videosBySchool[school];
+    if (vids && vids.length) {
+      var ext = null;
+      for (var i = 0; i < vids.length; i++) {
+        if (vids[i] && vids[i].externalUrl) { ext = vids[i]; break; }
+      }
+      scenes.push({
+        tag: '현장',
+        head: school + ' 수업 현장',
+        lines: ['실제 수업 장면을 확인하세요'],
+        href: ext ? ext.externalUrl : MIDTERM_LIVE_URL,
+        hrefLabel: '영상 보기 →'
+      });
+    }
+    return scenes;
   }
 
   function renderScene(stage, scene) {
@@ -184,6 +227,14 @@
 
   function start() {
     injectStyle();
+    // 캠페인 영상은 1회만 조회한다. 도착하면 이미 그려진 카드에도 현장 scene 을 더하기 위해
+    // mtHomeLive 표식을 지우고 한 번 더 scan 한다(초기 1회, 카드마다 fetch 아님).
+    loadLiveVideos(function () {
+      Array.prototype.slice
+        .call(document.querySelectorAll('#sec-featured [data-featured-card]'))
+        .forEach(function (c) { delete c.dataset.mtHomeLive; });
+      scan();
+    });
     scan();
     var pv = document.getElementById('publicView');
     if (pv && window.MutationObserver) {

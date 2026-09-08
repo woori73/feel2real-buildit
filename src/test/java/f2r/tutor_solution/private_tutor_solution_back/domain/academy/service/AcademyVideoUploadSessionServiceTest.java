@@ -174,11 +174,11 @@ class AcademyVideoUploadSessionServiceTest {
   }
 
   @Test
-  @DisplayName("given ten committed videos when initiate then reject before multipart creation")
+  @DisplayName("given thirty committed videos when initiate then reject before multipart creation")
   void initiate_rejects_quota_before_storage() {
     // given
     when(videoRepository.countByAcademy_AcademyIdAndLifecycleStatusNot(
-        100L, VideoLifecycleStatus.DELETING)).thenReturn(10L);
+        100L, VideoLifecycleStatus.DELETING)).thenReturn(30L);
 
     // when / then
     assertThatThrownBy(() -> service.initiate(

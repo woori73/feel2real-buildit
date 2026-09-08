@@ -23,9 +23,9 @@ class AcademyVideoUploadPropertiesTest {
     assertThat(properties.getMaxDurationMs()).isEqualTo(120_000L);
     assertThat(properties.getUploadDeadlineMs()).isEqualTo(180_000L);
     assertThat(properties.getUploadPartSizeBytes()).isEqualTo(20L * 1024 * 1024);
-    assertThat(properties.getUploadMaxCount()).isEqualTo(10);
+    assertThat(properties.getUploadMaxCount()).isEqualTo(30);
     assertThat(properties.getMaxOutputBytes()).isEqualTo(209_715_200L);
-    assertThat(properties.getDeliverySignedUrlTtlMs()).isEqualTo(30_000);
+    assertThat(properties.getDeliverySignedUrlTtlMs()).isEqualTo(900_000);
   }
 
   @Test
@@ -42,10 +42,10 @@ class AcademyVideoUploadPropertiesTest {
   }
 
   @Test
-  @DisplayName("given playback signing TTL over 30 seconds when validated then startup fails")
-  void delivery_ttl_over_thirty_seconds_is_rejected() {
+  @DisplayName("given playback signing TTL over one hour when validated then startup fails")
+  void delivery_ttl_over_one_hour_is_rejected() {
     AcademyVideoUploadProperties properties = new AcademyVideoUploadProperties();
-    properties.setDeliverySignedUrlTtlMs(30_001);
+    properties.setDeliverySignedUrlTtlMs(3_600_001);
 
     assertThatThrownBy(properties::validate)
         .isInstanceOf(IllegalStateException.class)

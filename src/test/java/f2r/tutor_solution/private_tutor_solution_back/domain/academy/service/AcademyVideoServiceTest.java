@@ -56,6 +56,7 @@ class AcademyVideoServiceTest {
   private LessonMediaReferenceGuard lessonMediaReferenceGuard;
   private AcademyVideoCleanupTransactions cleanupTransactions;
   private f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup liveVideoUsageLookup;
+  private final ExternalVideoUrlValidator externalVideoUrlValidator = new ExternalVideoUrlValidator();
   private AcademyVideoService service;
 
   private Academy academy;
@@ -76,9 +77,9 @@ class AcademyVideoServiceTest {
         .thenReturn(java.util.Map.of());
     service = new AcademyVideoService(
         academyService, academyVideoRepository, optimizationJobRepository, lessonMediaReferenceGuard,
-        cleanupTransactions, liveVideoUsageLookup,
+        cleanupTransactions, liveVideoUsageLookup, externalVideoUrlValidator,
         fileStorage, videoTranscoder,
-        120, MAX_BYTES, MAX_BYTES, 10);
+        120, MAX_BYTES, MAX_BYTES, 30);
 
     User tutor = User.builder().loginId("tutor").password("pw").name("강사").phone("010").build();
     ReflectionTestUtils.setField(tutor, "userId", 10L);
@@ -119,15 +120,15 @@ class AcademyVideoServiceTest {
   /* ── 서버 재검증 (AC #4, #10) ─────────────────────────────── */
 
   @Test
-  @DisplayName("given 이미 10개를 등록한 학원 when 11번째 업로드 then 400 + 변환하지 않는다")
+  @DisplayName("given 이미 30개를 등록한 학원 when 31번째 업로드 then 400 + 변환하지 않는다")
   void upload_rejects_video_over_max_count() throws IOException {
     // given
-    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(10L);
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(30L);
 
     // when / then
     assertThatThrownBy(() -> service.upload(principal, videoFile(1024), "LESSON"))
         .isInstanceOf(VideoUploadRejectedException.class)
-        .hasMessageContaining("최대 10개");
+        .hasMessageContaining("최대 30개");
     verify(videoTranscoder, never()).probe(any());
   }
 
@@ -506,5 +507,119 @@ class AcademyVideoServiceTest {
     // then
     assertThat(videos).hasSize(1);
     assertThat(videos.get(0).status()).isEqualTo(VideoStatus.READY);
+  }
+
+  @Test
+  @DisplayName("given 외부 링크 영상이 섞인 목록 when 공개 스토어프론트 조회 then 직접 업로드만 노출한다")
+  void listPublicReady_excludes_external_links() {
+    AcademyVideo upload = AcademyVideo.builder()
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY).build();
+    ReflectionTestUtils.setField(upload, "videoId", 1L);
+    AcademyVideo external = AcademyVideo.externalLink(
+        academy, "네이버 수업 영상", "https://naver.me/F4WnDovq",
+        f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyExternalVideoProvider.NAVER,
+        null, AcademyVideoPurpose.LESSON);
+    ReflectionTestUtils.setField(external, "videoId", 2L);
+    when(academyVideoRepository.findTop10ByAcademy_AcademyIdAndStatusOrderByCreatedAtDesc(
+        100L, VideoStatus.READY)).thenReturn(List.of(upload, external));
+
+    var videos = service.listPublicReady(academy);
+
+    assertThat(videos).extracting(r -> r.videoId()).containsExactly(1L);
+  }
+
+  /* ── 외부 링크 등록 (AC #2, #3) ───────────────────────────── */
+
+  @Test
+  @DisplayName("given naver.me URL when 외부 링크 등록 then EXTERNAL_LINK/NAVER 로 저장하고 embed 는 없다")
+  void registerExternalLink_saves_naver_short_url() {
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(6L);
+    when(academyVideoRepository.save(any(AcademyVideo.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    var response = service.registerExternalLink(
+        principal, "https://naver.me/F4WnDovq", "6월 공개수업 하이라이트", "LESSON");
+
+    assertThat(response.sourceKind())
+        .isEqualTo(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoSourceKind.EXTERNAL_LINK);
+    assertThat(response.provider())
+        .isEqualTo(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyExternalVideoProvider.NAVER);
+    assertThat(response.externalUrl()).isEqualTo("https://naver.me/F4WnDovq");
+    assertThat(response.embedUrl()).isNull();
+    assertThat(response.videoUrl()).isNull();
+    assertThat(response.purpose()).isEqualTo(AcademyVideoPurpose.LESSON);
+  }
+
+  @Test
+  @DisplayName("given YouTube watch URL when 외부 링크 등록 then embed URL 이 함께 저장된다")
+  void registerExternalLink_builds_youtube_embed() {
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(0L);
+    when(academyVideoRepository.save(any(AcademyVideo.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    var response = service.registerExternalLink(
+        principal, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "설명회", "DIRECTOR");
+
+    assertThat(response.provider())
+        .isEqualTo(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyExternalVideoProvider.YOUTUBE);
+    assertThat(response.embedUrl()).isEqualTo("https://www.youtube.com/embed/dQw4w9WgXcQ");
+  }
+
+  @Test
+  @DisplayName("given http:// URL when 외부 링크 등록 then 400 (https 만 허용)")
+  void registerExternalLink_rejects_non_https() {
+    assertThatThrownBy(() -> service.registerExternalLink(
+        principal, "http://example.com/v", "제목", "LESSON"))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("https");
+    verify(academyVideoRepository, never()).save(any(AcademyVideo.class));
+  }
+
+  @Test
+  @DisplayName("given javascript: scheme when 외부 링크 등록 then 400")
+  void registerExternalLink_rejects_dangerous_scheme() {
+    assertThatThrownBy(() -> service.registerExternalLink(
+        principal, "javascript:alert(1)", "제목", "LESSON"))
+        .isInstanceOf(VideoUploadRejectedException.class);
+    verify(academyVideoRepository, never()).save(any(AcademyVideo.class));
+  }
+
+  @Test
+  @DisplayName("given 제목 없음 when 외부 링크 등록 then 400")
+  void registerExternalLink_requires_title() {
+    assertThatThrownBy(() -> service.registerExternalLink(
+        principal, "https://naver.me/F4WnDovq", "   ", "LESSON"))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("제목");
+  }
+
+  @Test
+  @DisplayName("given 이미 30개(업로드+링크 합산) when 외부 링크 등록 then 400")
+  void registerExternalLink_counts_against_shared_limit() {
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(30L);
+
+    assertThatThrownBy(() -> service.registerExternalLink(
+        principal, "https://naver.me/F4WnDovq", "제목", "LESSON"))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("최대 30개");
+    verify(academyVideoRepository, never()).save(any(AcademyVideo.class));
+  }
+
+  @Test
+  @DisplayName("given 외부 링크 영상 when 삭제 then tombstone 없이 행을 직접 삭제한다")
+  void delete_external_link_hard_deletes_row() {
+    AcademyVideo external = AcademyVideo.externalLink(
+        academy, "네이버 영상", "https://naver.me/F4WnDovq",
+        f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyExternalVideoProvider.NAVER,
+        null, AcademyVideoPurpose.LESSON);
+    ReflectionTestUtils.setField(external, "videoId", 7L);
+    when(academyVideoRepository.findForUpdateByVideoIdAndAcademyId(7L, 100L))
+        .thenReturn(Optional.of(external));
+    when(lessonMediaReferenceGuard.lessonNamesUsingForUpdate(7L)).thenReturn(List.of());
+
+    service.delete(principal, 7L);
+
+    verify(academyVideoRepository).delete(external);
+    verify(cleanupTransactions, never()).tombstoneLocked(any());
   }
 }

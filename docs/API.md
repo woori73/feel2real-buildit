@@ -1839,19 +1839,36 @@ LMS 주소가 성립하지 않는다(404).
   검증, H.264/AAC MP4 정규화, JPEG thumbnail 생성을 마친 뒤 private storage와 READY row를 저장한다.
 - 인증/권한: `ROLE_TUTOR` + Academy owner guard.
 - Request: `multipart/form-data`, part 이름 `video`.
-- 제한: 원본/변환 산출물 각각 `<=209715200` bytes, 길이 `<=120초`, 학원당 최대 10개.
+- 제한: 원본/변환 산출물 각각 `<=209715200` bytes, 길이 `<=120초`, 학원당 최대 30개(직접 업로드 + 외부 링크 합산).
   화면은 MP4/MOV만 선택하게 하고 서버는 실제 codec과 길이를 다시 검사한다.
 - 저장 정합: 변환과 storage IO는 DB transaction 밖에서 수행한다. 마지막 row insert가 실패하면 이미
   저장한 MP4/thumbnail을 보상 삭제한다.
 - Response: `200 AcademyVideoResponse` / 제한·변환 실패 `400` / 동시 변환 permit 초과 `503`.
 - 현재 사용처: `static/js/tutor_academy_videos.js`.
 
+### ✅ POST /api/tutor/academy/videos/link
+
+- 목적: 네이버·YouTube 등에 이미 올라간 학원 영상을 **URL 자체만** Academy 영상 자산으로 등록한다.
+  BuildIt 서버로 다운로드·복제·트랜스코딩하지 않는다.
+- 인증/권한: `ROLE_TUTOR` + Academy owner guard (`/api/tutor/**` 기존 규칙, 신규 SecurityConfig 없음).
+- Request: `application/json` `{ "url": "https://...", "title": "표시 제목", "purpose": "LESSON|DIRECTOR|NONE" }`.
+- 검증(`ExternalVideoUrlValidator`, 네트워크 호출 없음 = SSRF-safe): `https` scheme만 허용
+  (`http`/`javascript:`/`data:` 거부), host로 provider 분류(`NAVER`=naver.me·`*.naver.com` / `YOUTUBE` /
+  `GENERIC`). YouTube는 video id를 뽑아 `external_embed_url=https://www.youtube.com/embed/<id>`를 저장하고,
+  그 외 provider는 embed 없이 `[영상 보기]` CTA로만 노출한다(`naver.me` redirect는 따라가지 않는다).
+- 저장: `academy_videos` 행 하나(`source_kind='EXTERNAL_LINK'`, `active_source='EXTERNAL'`,
+  `lifecycle_status='READY'`, storage key 없음). 개수 상한은 직접 업로드와 합산(최대 30개).
+- Response: `200 AcademyVideoResponse`(`sourceKind`·`externalUrl`·`embedUrl`·`provider`, `videoUrl`/`thumbnailUrl`는 null) / 검증·개수 실패 `400`.
+- 삭제: `DELETE /api/tutor/academy/videos/{videoId}` 동일 엔드포인트. 외부 링크는 자산이 없어 tombstone 없이
+  행을 직접 삭제하며 `midterm_live_video_links`는 FK `ON DELETE CASCADE`로 정리된다.
+- 현재 사용처: `static/js/tutor_academy_videos.js` "영상 링크 등록" 카드.
+
 ### ⚠ 호환성 전용 POST /api/tutor/academy/videos/uploads
 
 - 현재 브라우저 UI는 사용하지 않는다. 배포 전 생성된 terminal session의 cleanup/recovery 호환을 위해
   서버 모델과 endpoint만 유지한다. 신규 화면은 위 same-origin multipart endpoint만 호출한다.
 - 목적: 200MiB 이하 원본 영상의 durable multipart 업로드 세션을 시작한다. 한 세션의 승인 deadline은 DB `CURRENT_TIMESTAMP(6)` 기준 생성 시각부터 정확히 180초다.
-- 인증/권한: `ROLE_TUTOR` + owner guard. Academy 행을 잠근 짧은 트랜잭션에서 `DELETING`이 아닌 영상 + 만료되지 않은 `INITIATED|COMPLETING` 예약을 합산하며 최대 10개다.
+- 인증/권한: `ROLE_TUTOR` + owner guard. Academy 행을 잠근 짧은 트랜잭션에서 `DELETING`이 아닌 영상(직접 업로드 + 외부 링크) + 만료되지 않은 `INITIATED|COMPLETING` 예약을 합산하며 최대 30개다.
 - Request JSON: `{ "filename": string, "declaredSizeBytes": long }`.
   - 허용 크기: `1..209715200`(inclusive).
 - Response `200`: `{sessionId, serverNow, deadlineAt, partSizeBytes:20971520, parts:[{partNumber,uploadUrl}]}`.

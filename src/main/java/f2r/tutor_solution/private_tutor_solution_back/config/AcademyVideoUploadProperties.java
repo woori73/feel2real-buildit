@@ -12,7 +12,9 @@ public class AcademyVideoUploadProperties {
   public static final long REQUIRED_MAX_DURATION_MS = 120_000L;
   public static final long REQUIRED_UPLOAD_DEADLINE_MS = 180_000L;
   public static final long REQUIRED_PART_SIZE_BYTES = 20L * 1024 * 1024;
-  public static final int REQUIRED_MAX_COUNT = 10;
+  // 학원당 영상 개수 상한(직접 업로드 + 외부 링크 합산). 상향 시 application.yaml 의
+  // max-count / upload-max-count 도 함께 바꾸고 deployment contract 테스트를 갱신한다.
+  public static final int REQUIRED_MAX_COUNT = 30;
 
   private long maxRawBytes = REQUIRED_MAX_RAW_BYTES;
   private long maxDurationMs = REQUIRED_MAX_DURATION_MS;

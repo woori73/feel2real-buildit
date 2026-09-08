@@ -566,15 +566,47 @@
       .catch(function () { return []; });
   }
 
-  /** frameLinks 에서 role 의 대표(첫) 영상. 서버 정렬을 그대로 신뢰한다. */
+  /**
+   * frameLinks 에서 role 의 대표(첫) 영상. 서버 정렬을 그대로 신뢰한다. 직접 업로드(videoUrl)
+   * 와 외부 링크(externalUrl) 를 모두 인식한다 — 외부 링크는 서버 storage 가 없어 재생 대신
+   * "[영상 보기]" CTA scene 으로 나온다(iframe 차단 URL 로 카드가 깨지지 않는다).
+   */
   function pickRole(frameLinks, role) {
     for (var i = 0; i < frameLinks.length; i++) {
-      if (frameLinks[i] && frameLinks[i].role === role
-        && typeof frameLinks[i].videoUrl === 'string' && frameLinks[i].videoUrl) {
-        return frameLinks[i];
+      var l = frameLinks[i];
+      if (l && l.role === role
+        && ((typeof l.videoUrl === 'string' && l.videoUrl)
+          || (typeof l.externalUrl === 'string' && l.externalUrl))) {
+        return l;
       }
     }
     return null;
+  }
+
+  function isExternalClip(link) {
+    return !!(link && !link.videoUrl && link.externalUrl);
+  }
+
+  /**
+   * 외부 링크 영상 CTA scene 1개를 stage 에 추가한다. iframe embed 하지 않는다(§13) — 서버가
+   * 준 externalUrl 로 새 탭을 여는 링크만. 자동 재생/소리 없음. MATERIAL 과 같은 표시 시간.
+   */
+  function addExternalScene(stage, scenes, link) {
+    var scene = el('div', 'midterm-live__scene');
+    scene.setAttribute('data-kind', 'external');
+    var box = el('div', 'midterm-live__external');
+    var title = String(link.title || '').trim();
+    if (title) box.appendChild(el('p', 'midterm-live__external-title', title));
+    var a = document.createElement('a');
+    a.className = 'midterm-live__external-cta';
+    a.href = link.externalUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = '영상 보기 →';
+    box.appendChild(a);
+    scene.appendChild(box);
+    stage.appendChild(scene);
+    scenes.push({ el: scene, kind: 'external', ms: MATERIAL_MS, sub: SEASON });
   }
 
   /**
@@ -776,10 +808,12 @@
       var studyClip = pickRole(links, 'STUDENT_STUDY');
       var interactionClip = pickRole(links, 'LESSON_INTERACTION');
       if (studyClip) {
-        addVideoScene(stage, scenes, studyClip.videoUrl, studyClip.thumbnailUrl, 0);
+        if (isExternalClip(studyClip)) addExternalScene(stage, scenes, studyClip);
+        else addVideoScene(stage, scenes, studyClip.videoUrl, studyClip.thumbnailUrl, 0);
       }
       if (interactionClip) {
-        addVideoScene(stage, scenes, interactionClip.videoUrl, interactionClip.thumbnailUrl, 0);
+        if (isExternalClip(interactionClip)) addExternalScene(stage, scenes, interactionClip);
+        else addVideoScene(stage, scenes, interactionClip.videoUrl, interactionClip.thumbnailUrl, 0);
       }
       if (!studyClip && !interactionClip && ambientVideo && ambientVideo.videoUrl) {
         addVideoScene(stage, scenes, ambientVideo.videoUrl, ambientVideo.thumbnailUrl,

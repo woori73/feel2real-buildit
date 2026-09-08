@@ -637,7 +637,8 @@ TUTOR click
 
 - 브라우저는 S3 presigned URL을 받거나 S3에 직접 PUT하지 않는다. 업로드 CORS가 사용자 경로의
   선행 조건이 되지 않도록 same-origin application endpoint로 복원했다.
-- 원본/변환 산출물은 각각 200MiB 이하, 길이는 120초 이하, 학원당 최대 10개다.
+- 원본/변환 산출물은 각각 200MiB 이하, 길이는 120초 이하, 학원당 최대 30개다(직접 업로드 + 외부 링크 합산).
+- 외부 링크 영상(`POST /api/tutor/academy/videos/link`)은 네이버·YouTube 등 URL 만 저장하고 파일을 서버로 복제하지 않는다. `academy_videos.source_kind='EXTERNAL_LINK'`, `external_url`/`external_provider`/`external_embed_url`. 삭제는 tombstone 없이 행 직접 삭제(자산 0). 내신 LIVE 연결은 직접 업로드와 동일 경로.
 - 변환과 S3 저장은 DB 트랜잭션 밖에서 수행하고 마지막 READY row insert만 저장한다. DB 저장 실패 시
   이미 저장한 영상/thumbnail을 보상 삭제한다.
 - 공개 stable GET/HEAD는 published Academy + READY만 허용한다. local은 bounded Range stream,

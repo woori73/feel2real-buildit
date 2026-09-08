@@ -6,14 +6,14 @@
   <title>수업 영상 관리</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/tutor_academy.css">
-  <link rel="stylesheet" href="/css/tutor_academy_videos.css?v=20260908-1">
+  <link rel="stylesheet" href="/css/tutor_academy_videos.css?v=20260916-1">
 </head>
 <body>
   <main class="page">
     <div class="topbar">
       <div>
         <div class="brand">학원 영상 관리</div>
-        <p class="muted">대표 원장 소개 영상과 수업 영상을 함께 관리합니다. 업로드 시 용도를 선택해 주세요.</p>
+        <p class="muted">직접 업로드 영상과 외부 링크 영상(네이버·YouTube 등)을 함께 관리합니다. 등록 시 용도를 선택해 주세요.</p>
       </div>
       <div class="topbar-actions">
         <a class="btn btn-ghost" href="/tutor/academy">내 Academy</a>
@@ -25,7 +25,7 @@
       <h2>영상 올리기</h2>
       <p class="muted" id="uploadHint">
         휴대폰에서 촬영한 MP4 또는 MOV 영상만 올려 주세요.
-        영상은 120초 이하 · 200MiB 이하이며, 학원당 최대 10개까지 보관됩니다.
+        영상은 120초 이하 · 200MiB 이하이며, 학원당 최대 30개까지 보관됩니다(직접 업로드 + 외부 링크 합산).
       </p>
       <fieldset class="video-upload-purpose">
         <legend class="muted">이 영상은 무엇인가요? (필수)</legend>
@@ -42,6 +42,31 @@
     </section>
 
     <section class="card">
+      <h2>영상 링크 등록</h2>
+      <p class="muted">
+        네이버·YouTube 등에 이미 올라간 학원 영상을 <b>주소(URL)</b>로 등록합니다. 영상 파일은
+        서버에 복제되지 않고 링크만 저장됩니다. 직접 업로드 영상과 같은 목록에서 관리되고 내신
+        LIVE 연결에도 그대로 쓸 수 있습니다. (https:// 주소만 등록됩니다.)
+      </p>
+      <fieldset class="video-upload-purpose">
+        <legend class="muted">이 영상은 무엇인가요? (필수)</legend>
+        <label><input type="radio" name="videoLinkPurpose" value="LESSON"> 수업 영상</label>
+        <label><input type="radio" name="videoLinkPurpose" value="DIRECTOR"> 대표 원장 소개 영상</label>
+        <label><input type="radio" name="videoLinkPurpose" value="NONE"> 용도 지정 안 함</label>
+      </fieldset>
+      <div class="video-link-row">
+        <label class="video-link-field">영상 URL
+          <input id="videoLinkUrl" type="url" inputmode="url" placeholder="https://naver.me/... 또는 https://youtu.be/..." />
+        </label>
+        <label class="video-link-field">영상 제목
+          <input id="videoLinkTitle" type="text" maxlength="255" placeholder="예: 6월 공개수업 하이라이트" />
+        </label>
+        <button id="videoLinkButton" class="btn btn-primary" type="button">링크 등록</button>
+      </div>
+      <p id="videoLinkStatus" class="video-upload-status hidden"></p>
+    </section>
+
+    <section class="card">
       <div class="topbar">
         <h2>등록된 영상 <span id="videoCount" class="muted"></span></h2>
       </div>
@@ -54,6 +79,6 @@
 
   <script src="/js/academy_sections.js?v=20260905-4"></script>
   <script src="/js/api.js"></script>
-  <script src="/js/tutor_academy_videos.js?v=20260908-1"></script>
+  <script src="/js/tutor_academy_videos.js?v=20260916-1"></script>
 </body>
 </html>

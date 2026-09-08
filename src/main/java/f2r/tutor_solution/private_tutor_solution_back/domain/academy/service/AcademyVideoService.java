@@ -70,6 +70,7 @@ public class AcademyVideoService {
   private final LessonMediaReferenceGuard lessonMediaReferenceGuard;
   private final AcademyVideoCleanupTransactions cleanupTransactions;
   private final f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup liveVideoUsageLookup;
+  private final ExternalVideoUrlValidator externalVideoUrlValidator;
   private final FileStorage fileStorage;
   private final VideoTranscoder videoTranscoder;
 
@@ -85,18 +86,20 @@ public class AcademyVideoService {
       LessonMediaReferenceGuard lessonMediaReferenceGuard,
       AcademyVideoCleanupTransactions cleanupTransactions,
       f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup liveVideoUsageLookup,
+      ExternalVideoUrlValidator externalVideoUrlValidator,
       FileStorage fileStorage,
       VideoTranscoder videoTranscoder,
       @Value("${app.video.max-duration-sec:60}") int maxDurationSec,
       @Value("${app.video.max-upload-bytes:104857600}") long maxUploadBytes,
       @Value("${app.video.max-output-bytes:104857600}") long maxOutputBytes,
-      @Value("${app.video.max-count:25}") int maxCount) {
+      @Value("${app.video.max-count:30}") int maxCount) {
     this.academyService = academyService;
     this.academyVideoRepository = academyVideoRepository;
     this.optimizationJobRepository = optimizationJobRepository;
     this.lessonMediaReferenceGuard = lessonMediaReferenceGuard;
     this.cleanupTransactions = cleanupTransactions;
     this.liveVideoUsageLookup = liveVideoUsageLookup;
+    this.externalVideoUrlValidator = externalVideoUrlValidator;
     this.fileStorage = fileStorage;
     this.videoTranscoder = videoTranscoder;
     this.maxDurationSec = maxDurationSec;
@@ -194,6 +197,41 @@ public class AcademyVideoService {
     }
   }
 
+  /**
+   * 외부에 이미 올라간 영상(네이버·YouTube 등)을 URL 자산으로만 등록한다(작업지시서 §3·§4).
+   *
+   * <p>BuildIt 서버로 다운로드·복제·트랜스코딩하지 않는다 — {@link ExternalVideoUrlValidator} 로
+   * scheme/host 만 검증·분류한 뒤 {@code academy_videos} 행 하나를 저장한다. 개수 상한은 직접
+   * 업로드 영상과 <b>합산</b>되며({@code countByAcademy_AcademyId}), 용도는 업로드와 동일하게
+   * 필수다({@link #parsePurposeRequired}).
+   */
+  public AcademyVideoResponse registerExternalLink(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String url, String title, String purposeRaw) {
+    Academy academy = academyService.requireMyAcademy(principal);
+    AcademyVideoPurpose purpose = parsePurposeRequired(purposeRaw);
+
+    String cleanTitle = title == null ? "" : title.trim();
+    if (cleanTitle.isEmpty()) {
+      throw badRequest("영상 제목을 입력해 주세요.");
+    }
+    if (cleanTitle.length() > 255) {
+      throw badRequest("영상 제목은 255자 이하여야 합니다.");
+    }
+
+    ExternalVideoUrlValidator.Resolved resolved = externalVideoUrlValidator.validate(url);
+
+    if (academyVideoRepository.countByAcademy_AcademyId(academy.getAcademyId()) >= maxCount) {
+      throw badRequest("영상은 학원당 최대 " + maxCount + "개까지 등록할 수 있습니다."
+          + " (직접 업로드 + 외부 링크 합산)");
+    }
+
+    AcademyVideo saved = academyVideoRepository.save(AcademyVideo.externalLink(
+        academy, cleanTitle, resolved.normalizedUrl(), resolved.provider(),
+        resolved.embedUrl(), purpose));
+    return AcademyVideoResponse.of(saved, academy.getSlug());
+  }
+
   /** 강사 대시보드 목록. 실패 건도 상태와 함께 보여준다. */
   public List<AcademyVideoResponse> listMine(JwtTokenProvider.AuthenticatedPrincipal principal) {
     Academy academy = academyService.requireMyAcademy(principal);
@@ -227,6 +265,9 @@ public class AcademyVideoService {
         .findTop10ByAcademy_AcademyIdAndStatusOrderByCreatedAtDesc(
             academy.getAcademyId(), VideoStatus.READY)
         .stream()
+        // 공개 Academy 스토어프론트 영상 캐러셀은 <video src=stream> 재생이라 직접 업로드 전용이다.
+        // 외부 링크 영상은 내신 LIVE 연결 경로(midterm-campaign/live-videos)로만 노출한다(§5·§13).
+        .filter(video -> !video.isExternal())
         .map(video -> AcademyVideoResponse.of(video, academy.getSlug()))
         .toList();
   }
@@ -256,6 +297,14 @@ public class AcademyVideoService {
     if (!usedBy.isEmpty()) {
       throw badRequest("수업상품 '" + String.join("', '", usedBy)
           + "'에서 영상으로 사용 중입니다. 대표 미디어 또는 OT 영상을 먼저 해제해 주세요.");
+    }
+
+    if (video.isExternal()) {
+      // 외부 링크 영상은 S3 산출물·optimization job·업로드 세션이 없다. tombstone + cleanup
+      // outbox 파이프라인은 자산이 있어야 finalize 하므로(cleanup row 0개면 하드삭제를 건너뜀)
+      // 여기서 행을 직접 삭제한다. midterm_live_video_links 는 FK ON DELETE CASCADE 로 정리된다.
+      academyVideoRepository.delete(video);
+      return;
     }
 
     cleanupTransactions.tombstoneLocked(video);

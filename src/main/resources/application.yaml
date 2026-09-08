@@ -89,7 +89,7 @@ app:
     max-duration-ms: 120000
     upload-deadline-ms: 180000
     upload-part-size-bytes: 20971520
-    upload-max-count: 10
+    upload-max-count: 30
     validation-materialization-permits: 1
     upload-recovery-poll-ms: 1000
     upload-recovery-retry-ms: 5000
@@ -122,10 +122,10 @@ app:
     max-duration-sec: 120
     max-upload-bytes: 209715200    # 200MiB — 업로드 원본 상한
     max-output-bytes: 209715200    # 200MiB — 변환 산출물 상한(저장 전 거부)
-    # 학원당 영상 개수. 수업상품마다 대표 영상을 걸 수 있어 수업이 늘면 비례해 필요해진다.
-    # 향후 유료 상향 대상이므로 코드에 하드코딩하지 말 것(@Value 주입 유지).
-    # 주의: 공개 학원 페이지의 영상 섹션은 최신 10개만 노출한다(findTop10By...).
-    max-count: 10                  # 학원당 영상 개수
+    # 학원당 영상 개수(직접 업로드 + 외부 링크 합산). 수업상품마다 대표 영상을 걸 수 있어
+    # 수업이 늘면 비례해 필요해진다. 향후 유료 상향 대상이므로 코드에 하드코딩하지 말 것
+    # (@Value 주입 유지). 주의: 공개 학원 페이지의 영상 섹션은 최신 10개만 노출한다(findTop10By...).
+    max-count: 30                  # 학원당 영상 개수
   landing-video:
     max-duration-sec: 60
     max-upload-bytes: 104857600
