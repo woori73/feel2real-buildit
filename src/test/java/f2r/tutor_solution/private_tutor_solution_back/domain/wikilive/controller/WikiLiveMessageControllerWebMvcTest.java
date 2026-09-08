@@ -28,7 +28,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@DisplayName("WIKI LIVE API — 조회는 공개, 작성은 회원, 삭제는 ADMIN")
+@DisplayName("WIKI LIVE API — 조회/작성은 회원, 삭제는 ADMIN")
 @WebMvcTest(controllers = WikiLiveMessageController.class)
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -47,17 +47,17 @@ class WikiLiveMessageControllerWebMvcTest {
   @MockitoBean AcademyRepository academyRepository;
 
   @Test
-  @DisplayName("GET /api/wiki/live-messages — 익명 200")
-  void list_anonymous_ok() throws Exception {
-    when(service.recent()).thenReturn(List.of());
-    mockMvc.perform(get("/api/wiki/live-messages")).andExpect(status().isOk());
+  @DisplayName("GET /api/wiki/live-messages — 익명 401")
+  void list_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(get("/api/wiki/live-messages")).andExpect(status().isUnauthorized());
   }
 
   @Test
-  @DisplayName("GET ?sinceId= — 폴링도 익명 200")
-  void listSince_anonymous_ok() throws Exception {
+  @DisplayName("GET ?sinceId= — 회원 폴링 200")
+  void listSince_member_ok() throws Exception {
     when(service.since(eq(3L))).thenReturn(List.of());
-    mockMvc.perform(get("/api/wiki/live-messages").param("sinceId", "3")).andExpect(status().isOk());
+    mockMvc.perform(get("/api/wiki/live-messages").param("sinceId", "3").cookie(token("STUDENT")))
+        .andExpect(status().isOk());
   }
 
   @Test
