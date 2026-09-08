@@ -351,6 +351,21 @@ a { color: inherit; }
 .midterm-live__twin[data-twin-view="1"] { --twin-top: -400px; }
 .midterm-live__twin[data-twin-view="2"] { --twin-top: -880px; }
 
+/* ACADEMY AMBIENT — 학원 현장 ambient visual. 특정 학교/학년 귀속 아님(§8·§12).
+   scene window 를 그대로 채운다 — 별도 video card / 검은 cinema 영역 없음. FRAME geometry 불변.
+   player chrome / 자막 / 카테고리 라벨 없음(실제 footage 자체만). */
+.midterm-live__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+  object-position: center;
+  background: #0b0b0b;
+  pointer-events: none;
+}
+
 /* §33 아주 작은 관찰 표시. tabs / 버튼 / 슬라이더 UI 아님. */
 .midterm-live__dots {
   position: absolute;
@@ -471,12 +486,14 @@ a { color: inherit; }
   .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.04; --m-top: -1300px; }
 }
 
-/* reduced-motion: auto scene cycle·drift·twin crop·crossfade 정지. 첫 MATERIAL 정적 crop. */
+/* reduced-motion: auto scene cycle·drift·twin crop·crossfade 정지. 첫 MATERIAL 정적 crop.
+   ambient 영상은 JS 가 play() 자체를 호출하지 않는다(정책 우회 없음) — poster 프레임만 남는다. */
 @media (prefers-reduced-motion: reduce) {
   .midterm-feature__document,
   .midterm-feature.is-in-view .midterm-feature__document,
   .midterm-live__doc,
-  .midterm-live__twin {
+  .midterm-live__twin,
+  .midterm-live__video {
     animation: none !important;
     transition: none !important;
   }

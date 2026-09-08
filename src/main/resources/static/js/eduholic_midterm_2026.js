@@ -2,10 +2,13 @@
  * 첫 화면 = Shopify Atelier hero(featured 자료 1건).
  * 그 아래 = 학교/학년 LIVE FRAME collection — wiki-sources 를 (school, grade) 로 groupBy 한
  *   Shopify product frame 안에서 실제 scene 이 자동 전환된다:
- *     MATERIAL(실제 Wiki HTML preview)  →  DIGITAL_TWIN(그 학교 출제 경향 분석)
+ *     MATERIAL(실제 Wiki HTML preview)  →  ACADEMY AMBIENT(학원 현장 영상, 있을 때만)  →
+ *     DIGITAL_TWIN(그 학교 출제 경향 분석)
  * FRAME 외곽은 고정, media 만 crossfade 로 교체(image-rollover 문법). 페이지 전체 carousel 없음.
- * API/preview 보안 경계는 서버가 소유하며 이 스크립트는 previewUrl / 공개 analyze contentUrl 외
- * 파일 정보를 사용하지 않는다.
+ * ACADEMY AMBIENT 는 academy-level 현장 visual 이다 — 특정 학교/학년에 귀속되지 않고, 없으면
+ *   MATERIAL → 분석 흐름이 그대로 동작한다(optional scene).
+ * API/preview 보안 경계는 서버가 소유하며 이 스크립트는 previewUrl / 공개 analyze contentUrl /
+ *   공개 AcademyVideo API 가 준 videoUrl 외 파일 정보를 사용하지 않는다.
  */
 (function () {
   'use strict';
@@ -16,6 +19,18 @@
   var HANDLE = root.getAttribute('data-handle') || 'eduholic';
   var SOURCES_API = '/api/academies/' + encodeURIComponent(HANDLE)
     + '/midterm-campaign/wiki-sources';
+  // 공개 AcademyVideo API 는 handle 이 아니라 slug 로 키잉된다. slug 는 이미 모든 공개 이미지/영상
+  // URL 에 노출돼 있어 정적 config 로 둔다(신규 DTO/필드/엔드포인트 없음).
+  var SLUG = root.getAttribute('data-slug') || '';
+  var VIDEOS_API = SLUG
+    ? '/api/academies/' + encodeURIComponent(SLUG) + '/videos'
+    : null;
+  // 운영자가 LIVE ambient 로 허용한 AcademyVideo id 목록. 파일명/영상 용도/길이로 자동 분류하지
+  // 않는다 — 명시적으로 나열된 id 만 쓴다. 비면 ambient scene 없음(video 는 optional).
+  var AMBIENT_IDS = (root.getAttribute('data-ambient-video-ids') || '')
+    .split(',')
+    .map(function (s) { return parseInt(s, 10); })
+    .filter(function (n) { return n > 0; });
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var SEASON = '2026 2학기 중간고사';
   var TITLE = '중간고사 준비 중';
@@ -28,6 +43,7 @@
   var TWIN_MS = 18000;                // DIGITAL_TWIN scene 표시 시간(내부 crop 3뷰 순환).
   var TWIN_VIEW_MS = 4500;            // DIGITAL_TWIN 내부 crop 전환 간격.
   var TWIN_VIEWS = 3;
+  var VIDEO_MS = 9000;               // ACADEMY AMBIENT scene 표시 시간(약 8~10초). 영상은 loop.
 
   var reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -48,7 +64,10 @@
       render(latestSource(sources));
       // LIVE collection = 전체 exposed 자료를 (school, grade) FRAME 으로. hero 도 자기 학교
       // FRAME 에 자연스럽게 포함된다(Shopify featured product 가 collection 에도 있는 것과 같다).
-      renderLiveCollection(sources);
+      // ambient video 는 실패해도 자료 흐름을 막지 않는다 — 없으면 MATERIAL → 분석 그대로.
+      ambientVideos().then(function (videos) {
+        renderLiveCollection(sources, videos);
+      });
     })
     .catch(function () {
       render(null);
@@ -179,6 +198,28 @@
     return analyzeCache[school];
   }
 
+  /**
+   * 운영자가 허용한(AMBIENT_IDS) READY AcademyVideo 만, 나열 순서대로. 실패/미설정 시 [].
+   * 공개 목록 응답이 준 videoUrl(= slug 경로)만 쓰고 영상 용도/파일명/길이로 선별하지 않는다.
+   */
+  function ambientVideos() {
+    if (!VIDEOS_API || !AMBIENT_IDS.length) return Promise.resolve([]);
+    return fetch(VIDEOS_API, {
+      headers: { Accept: 'application/json' }, credentials: 'same-origin'
+    })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) {
+        var byId = {};
+        (Array.isArray(list) ? list : []).forEach(function (v) {
+          if (v && v.status === 'READY' && typeof v.videoUrl === 'string' && v.videoUrl) {
+            byId[v.videoId] = v;
+          }
+        });
+        return AMBIENT_IDS.map(function (id) { return byId[id]; }).filter(Boolean);
+      })
+      .catch(function () { return []; });
+  }
+
   /** school + grade 정확 일치하는 최신 analyze 의 공개 contentUrl. 없으면 null. */
   function twinContentUrl(frame) {
     return analyzesForSchool(frame.school).then(function (list) {
@@ -194,9 +235,10 @@
     });
   }
 
-  function renderLiveCollection(sources) {
+  function renderLiveCollection(sources, ambient) {
     var frames = resolveFrames(sources);
     if (!frames.length) return;
+    var videos = Array.isArray(ambient) ? ambient : [];
 
     var section = el('section', 'midterm-live');
     section.setAttribute('aria-label', '학교별 중간고사 준비 현황');
@@ -208,14 +250,16 @@
 
     var collection = el('div', 'midterm-live__collection');
     frames.forEach(function (frame, index) {
-      collection.appendChild(renderFrame(frame, index));
+      // §11 — deterministic 배정: 같은 영상을 여러 FRAME 에 반복하지 않는다. 영상보다 FRAME 이
+      // 많으면 남는 FRAME 은 video scene 없이(null) MATERIAL → 분석만.
+      collection.appendChild(renderFrame(frame, index, videos[index] || null));
     });
     section.appendChild(collection);
 
     root.appendChild(section);
   }
 
-  function renderFrame(frame, index) {
+  function renderFrame(frame, index, ambientVideo) {
     var article = el('article', 'midterm-live__frame');
     article.classList.add('is-role-' + ROLES[index % ROLES.length]);
     article.setAttribute('aria-label', frame.school + ' ' + frame.gradeLabel + ' 준비 현황');
@@ -239,6 +283,30 @@
       scenes.push({ el: scene, kind: 'material', ms: MATERIAL_MS, sub: SEASON });
     });
     if (scenes.length) scenes[0].el.classList.add('is-active');
+
+    // ACADEMY AMBIENT scene — academy-level 학원 현장 visual. 특정 학교/학년 귀속 아님.
+    // 기존 공개 재생 경로(videoUrl / thumbnailUrl)만 재사용, player chrome / 자막 / 카테고리
+    // 라벨 없음. 없으면 이 scene 자체가 없다(optional).
+    if (ambientVideo && ambientVideo.videoUrl) {
+      var vscene = el('div', 'midterm-live__scene');
+      vscene.setAttribute('data-kind', 'video');
+      var video = document.createElement('video');
+      video.className = 'midterm-live__video';
+      video.src = ambientVideo.videoUrl;
+      if (ambientVideo.thumbnailUrl) video.poster = ambientVideo.thumbnailUrl;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('aria-hidden', 'true');
+      video.setAttribute('tabindex', '-1');
+      vscene.appendChild(video);
+      stage.appendChild(vscene);
+      scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video });
+    }
 
     // DIGITAL_TWIN scene — 공개 analyze contentUrl(그 학교 출제 경향 분석). school+grade 정확 일치만.
     twinContentUrl(frame).then(function (contentUrl) {
@@ -286,17 +354,37 @@
       dots.forEach(function (d, di) { d.classList.toggle('is-on', di === index); });
     }
 
+    // 한 FRAME 안에서 동시에 두 영상이 재생되지 않게 — scene 이 바뀌거나 FRAME 이 뷰포트를
+    // 벗어나면 이 FRAME 의 모든 ambient 영상을 멈춘다(§19·§20).
+    function pauseVideos() {
+      article.querySelectorAll('.midterm-live__video').forEach(function (v) {
+        try { v.pause(); } catch (e) {}
+      });
+    }
+
+    function playVideo(v) {
+      try {
+        v.currentTime = 0;                // 재활성화 시 처음부터(homepage 현장 영상과 동일).
+        var p = v.play();
+        if (p && typeof p.catch === 'function') p.catch(function () {});
+      } catch (e) {}
+    }
+
     function activateScene(i) {
       clearTimeout(twinTimer);
       var list = article.querySelectorAll('.midterm-live__scene');
       if (!list.length) return;
       index = ((i % list.length) + list.length) % list.length;
       list.forEach(function (s, si) { s.classList.toggle('is-active', si === index); });
+      pauseVideos();
       var current = scenes[index];
       if (current && subEl) subEl.textContent = current.sub;
       syncDots();
       if (current && current.kind === 'twin' && current.frame && !reduceMotion) {
         cycleTwinViews(current.frame);
+      }
+      if (current && current.kind === 'video' && current.video && !reduceMotion) {
+        playVideo(current.video);
       }
     }
 
@@ -322,13 +410,14 @@
       if (active || reduceMotion) return;
       active = true;
       article.classList.add('is-live');
-      var count = article.querySelectorAll('.midterm-live__scene').length;
-      if (count < 2) return;
-      var ms = (scenes[index] && scenes[index].ms) || MATERIAL_MS;
-      sceneTimer = setTimeout(next, ms);
-      // 활성 twin scene 이면 내부 crop 도 재개.
+      // 활성 scene 이 twin 이면 내부 crop 을, video 면 재생을 재개(뷰포트 재진입).
       var current = scenes[index];
       if (current && current.kind === 'twin' && current.frame) cycleTwinViews(current.frame);
+      if (current && current.kind === 'video' && current.video) playVideo(current.video);
+      var count = article.querySelectorAll('.midterm-live__scene').length;
+      if (count < 2) return;
+      var ms = (current && current.ms) || MATERIAL_MS;
+      sceneTimer = setTimeout(next, ms);
     }
 
     function pause() {
@@ -336,6 +425,7 @@
       article.classList.remove('is-live');
       clearTimeout(sceneTimer);
       clearTimeout(twinTimer);
+      pauseVideos();                       // 뷰포트 밖 FRAME 의 영상은 항상 정지(§19).
     }
 
     if (reduceMotion || !hasIO) {
