@@ -19,6 +19,10 @@
   var HANDLE = root.getAttribute('data-handle') || 'eduholic';
   var SOURCES_API = '/api/academies/' + encodeURIComponent(HANDLE)
     + '/midterm-campaign/wiki-sources';
+  // Phase 4c — (학교, 학년, 역할) 로 연결된 학교·학년 현장 영상. 서버가 이미 visible + READY +
+  // ownership 을 판정해 내려준다. 없으면 FRAME 은 자료 → 분석 흐름 그대로.
+  var LIVE_VIDEOS_API = '/api/academies/' + encodeURIComponent(HANDLE)
+    + '/midterm-campaign/live-videos';
   // 공개 AcademyVideo API 는 handle 이 아니라 slug 로 키잉된다. slug 는 이미 모든 공개 이미지/영상
   // URL 에 노출돼 있어 정적 config 로 둔다(신규 DTO/필드/엔드포인트 없음).
   var SLUG = root.getAttribute('data-slug') || '';
@@ -52,7 +56,7 @@
   var TWIN_MS = 18000;                // DIGITAL_TWIN scene 표시 시간(내부 crop 3뷰 순환).
   var TWIN_VIEW_MS = 4500;            // DIGITAL_TWIN 내부 crop 전환 간격.
   var TWIN_VIEWS = 3;
-  var VIDEO_MS = 9000;               // ACADEMY AMBIENT scene 표시 시간(약 8~10초). 영상은 loop.
+  var VIDEO_MS = 9000;               // video scene(STUDENT_STUDY / LESSON_INTERACTION / AMBIENT) 표시 시간. 영상은 loop.
 
   var reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -73,9 +77,9 @@
       render(latestSource(sources));
       // LIVE collection = 전체 exposed 자료를 (school, grade) FRAME 으로. hero 도 자기 학교
       // FRAME 에 자연스럽게 포함된다(Shopify featured product 가 collection 에도 있는 것과 같다).
-      // ambient video 는 실패해도 자료 흐름을 막지 않는다 — 없으면 MATERIAL → 분석 그대로.
-      ambientVideos().then(function (videos) {
-        renderLiveCollection(sources, videos);
+      // 영상(specific / ambient)은 실패해도 자료 흐름을 막지 않는다 — 없으면 MATERIAL → 분석 그대로.
+      Promise.all([ambientVideos(), liveVideos()]).then(function (r) {
+        renderLiveCollection(sources, r[0], r[1]);
       });
     })
     .catch(function () {
@@ -229,6 +233,53 @@
       .catch(function () { return []; });
   }
 
+  /**
+   * (학교, 학년, 역할) 로 연결된 학교·학년 현장 영상. 서버가 visible + READY + ownership 을 이미
+   * 판정했고 여기서는 순서만 신뢰한다(sort_order → link_id tie-break 는 서버 정렬). 실패 시 [].
+   */
+  function liveVideos() {
+    return fetch(LIVE_VIDEOS_API, {
+      headers: { Accept: 'application/json' }, credentials: 'same-origin'
+    })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) { return Array.isArray(list) ? list : []; })
+      .catch(function () { return []; });
+  }
+
+  /** frameLinks 에서 role 의 대표(첫) 영상. 서버 정렬을 그대로 신뢰한다. */
+  function pickRole(frameLinks, role) {
+    for (var i = 0; i < frameLinks.length; i++) {
+      if (frameLinks[i] && frameLinks[i].role === role
+        && typeof frameLinks[i].videoUrl === 'string' && frameLinks[i].videoUrl) {
+        return frameLinks[i];
+      }
+    }
+    return null;
+  }
+
+  /** video scene 1개를 stage 에 추가한다. 세 종류(STUDENT_STUDY/LESSON_INTERACTION/AMBIENT) 공통. */
+  function addVideoScene(stage, scenes, url, poster, startAt) {
+    var vscene = el('div', 'midterm-live__scene');
+    vscene.setAttribute('data-kind', 'video');
+    var video = document.createElement('video');
+    video.className = 'midterm-live__video';
+    video.src = url;
+    if (poster) video.poster = poster;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('aria-hidden', 'true');
+    video.setAttribute('tabindex', '-1');
+    vscene.appendChild(video);
+    stage.appendChild(vscene);
+    scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video,
+      startAt: startAt > 0 ? startAt : 0 });
+  }
+
   /** school + grade 정확 일치하는 최신 analyze 의 공개 contentUrl. 없으면 null. */
   function twinContentUrl(frame) {
     return analyzesForSchool(frame.school).then(function (list) {
@@ -244,10 +295,11 @@
     });
   }
 
-  function renderLiveCollection(sources, ambient) {
+  function renderLiveCollection(sources, ambient, liveLinks) {
     var frames = resolveFrames(sources);
     if (!frames.length) return;
     var videos = Array.isArray(ambient) ? ambient : [];
+    var links = Array.isArray(liveLinks) ? liveLinks : [];
 
     var section = el('section', 'midterm-live');
     section.setAttribute('aria-label', '학교별 중간고사 준비 현황');
@@ -258,17 +310,24 @@
     section.appendChild(head);
 
     var collection = el('div', 'midterm-live__collection');
+    var ambientQueue = videos.slice();     // specific 이 없는 FRAME 에만, 순서대로, 반복 없이 배정.
     frames.forEach(function (frame, index) {
-      // §11 — deterministic 배정: 같은 영상을 여러 FRAME 에 반복하지 않는다. 영상보다 FRAME 이
-      // 많으면 남는 FRAME 은 video scene 없이(null) MATERIAL → 분석만.
-      collection.appendChild(renderFrame(frame, index, videos[index] || null));
+      var frameLinks = links.filter(function (l) {
+        return l && String(l.school || '').trim() === frame.school
+          && gradeNumber(l.grade) === frame.grade;
+      });
+      var hasSpecific = frameLinks.some(function (l) {
+        return l && (l.role === 'STUDENT_STUDY' || l.role === 'LESSON_INTERACTION');
+      });
+      var ambientForFrame = hasSpecific ? null : (ambientQueue.shift() || null);
+      collection.appendChild(renderFrame(frame, index, ambientForFrame, frameLinks));
     });
     section.appendChild(collection);
 
     root.appendChild(section);
   }
 
-  function renderFrame(frame, index, ambientVideo) {
+  function renderFrame(frame, index, ambientVideo, frameLinks) {
     var article = el('article', 'midterm-live__frame');
     article.classList.add('is-role-' + ROLES[index % ROLES.length]);
     article.setAttribute('aria-label', frame.school + ' ' + frame.gradeLabel + ' 준비 현황');
@@ -293,29 +352,24 @@
     });
     if (scenes.length) scenes[0].el.classList.add('is-active');
 
-    // ACADEMY AMBIENT scene — academy-level 학원 현장 visual. 특정 학교/학년 귀속 아님.
-    // 기존 공개 재생 경로(videoUrl / thumbnailUrl)만 재사용, player chrome / 자막 / 카테고리
-    // 라벨 없음. 없으면 이 scene 자체가 없다(optional).
-    if (ambientVideo && ambientVideo.videoUrl) {
-      var vscene = el('div', 'midterm-live__scene');
-      vscene.setAttribute('data-kind', 'video');
-      var video = document.createElement('video');
-      video.className = 'midterm-live__video';
-      video.src = ambientVideo.videoUrl;
-      if (ambientVideo.thumbnailUrl) video.poster = ambientVideo.thumbnailUrl;
-      video.muted = true;
-      video.defaultMuted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.preload = 'metadata';
-      video.setAttribute('muted', '');
-      video.setAttribute('playsinline', '');
-      video.setAttribute('aria-hidden', 'true');
-      video.setAttribute('tabindex', '-1');
-      vscene.appendChild(video);
-      stage.appendChild(vscene);
-      var startAt = AMBIENT_STARTS[ambientVideo.videoId] || 0;
-      scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video, startAt: startAt });
+    // video scene(들) — 우선순위: 그 학교/학년의 specific 영상 > academy ambient > 없음.
+    //   specific STUDENT_STUDY 대표 1개 있으면        → STUDENT_STUDY scene
+    //   specific LESSON_INTERACTION 대표 1개 있으면    → LESSON_INTERACTION scene
+    //   specific 이 하나도 없고 ambient 배정 가능하면  → AMBIENT scene
+    // 역할 이름은 scene 순서 결정용 내부 값일 뿐 화면에 표시하지 않는다. specific 영상은 별도
+    // 시작 offset 이 없으므로 0 부터.
+    var links = Array.isArray(frameLinks) ? frameLinks : [];
+    var studyClip = pickRole(links, 'STUDENT_STUDY');
+    var interactionClip = pickRole(links, 'LESSON_INTERACTION');
+    if (studyClip) {
+      addVideoScene(stage, scenes, studyClip.videoUrl, studyClip.thumbnailUrl, 0);
+    }
+    if (interactionClip) {
+      addVideoScene(stage, scenes, interactionClip.videoUrl, interactionClip.thumbnailUrl, 0);
+    }
+    if (!studyClip && !interactionClip && ambientVideo && ambientVideo.videoUrl) {
+      addVideoScene(stage, scenes, ambientVideo.videoUrl, ambientVideo.thumbnailUrl,
+        AMBIENT_STARTS[ambientVideo.videoId] || 0);
     }
 
     // DIGITAL_TWIN scene — 공개 analyze contentUrl(그 학교 출제 경향 분석). school+grade 정확 일치만.

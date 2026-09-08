@@ -288,9 +288,11 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("rawStorageKey");
     assertThat(js).doesNotContain("normalizedStorageKey");
 
-    // 자동 content 분류 없음 — purpose / 파일명 / 길이로 "수업 영상"을 추론하지 않는다.
+    // 자동 content 분류 없음 — purpose / 파일명 / 길이로 영상을 추론하지 않는다.
+    // (Phase 4c 는 'LESSON_INTERACTION' 을 scene 역할명으로 쓰므로 purpose enum 값 자체만 금지.)
     assertThat(js).doesNotContain("purpose");
-    assertThat(js).doesNotContain("LESSON");
+    assertThat(js).doesNotContain("=== 'LESSON'");
+    assertThat(js).doesNotContain("'DIRECTOR'");
     assertThat(js).doesNotContain("LIVE_VISIBLE");
 
     // ambient <video> — muted loop playsinline preload=metadata. player chrome / autoplay 속성 없음.
@@ -302,7 +304,8 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain(".autoplay = true");
 
     // optional scene — 없으면 그냥 없다. 가짜 / 스톡 / 복제 영상 없음.
-    assertThat(js).contains("videos[index] || null");
+    // deterministic 배정: specific 없는 FRAME 에만 ambient 를 순서대로, 반복 없이.
+    assertThat(js).contains("ambientQueue.shift()");
     assertThat(js).contains("data-kind', 'video'");
     assertThat(js).doesNotContain("stock");
 
@@ -332,11 +335,51 @@ class MidtermLiveTemplateContractTest {
     assertThat(css).contains(".midterm-live__video");
     assertThat(css).contains("object-fit: cover");
 
-    // Phase 4c 아티팩트를 미리 만들지 않는다(§15·§16).
-    String all = html + "\n" + js + "\n" + css;
-    assertThat(all).doesNotContain("midterm_live_scene_video");
-    assertThat(all).doesNotContain("scene_video");
-    assertThat(all).doesNotContain("STUDENT_STUDY");
-    assertThat(all).doesNotContain("LESSON_INTERACTION");
+    // ambient fallback config 는 정적 HTML 에 남아 있다(specific 없는 FRAME 용, Phase 4c §22).
+    assertThat(html).contains("data-ambient-video-ids=");
+  }
+
+  /** Phase 4c — School / Grade Real Class Video Association: 서버가 판정한 (학교,학년,역할)
+   *  연결만 받아 FRAME scene 을 MATERIAL → STUDENT_STUDY → LESSON_INTERACTION → TWIN 으로 확장. */
+  @Test
+  void liveCollection_schoolGradeVideoAssociationExtendsSceneOrder() throws Exception {
+    String html = read("static/eduholic-midterm-2026.html");
+    String js = read("static/js/eduholic_midterm_2026.js");
+
+    // 전용 공개 endpoint — 서버가 visible + READY + ownership 을 이미 판정한다.
+    assertThat(js).contains("/midterm-campaign/live-videos");
+    assertThat(js).contains("function liveVideos(");
+
+    // FRAME 매칭 = school + grade exact (fuzzy 없음, Phase 4a 규칙 유지).
+    assertThat(js).contains("=== frame.school");
+    assertThat(js).contains("gradeNumber(l.grade) === frame.grade");
+
+    // 역할별 대표 1개, 서버 정렬(sort_order → link_id) 을 그대로 신뢰한다.
+    assertThat(js).contains("pickRole(links, 'STUDENT_STUDY')");
+    assertThat(js).contains("pickRole(links, 'LESSON_INTERACTION')");
+
+    // resolver 우선순위: specific 있으면 그 FRAME 에서 ambient 는 쓰지 않는다(§10·§22).
+    assertThat(js).contains("!studyClip && !interactionClip && ambientVideo");
+    assertThat(js).contains("hasSpecific ? null");
+
+    // 세 종류 video scene 은 Phase 4b <video> 빌더 하나로 — player chrome / autoplay 속성 없음.
+    assertThat(js).contains("function addVideoScene(");
+    assertThat(js).doesNotContain("video.controls");
+    assertThat(js).doesNotContain(".autoplay = true");
+
+    // 화면에 역할/카테고리 라벨을 만들지 않는다(§9). 역할명은 내부 상수로만 존재.
+    assertThat(js).doesNotContain("학생 학습");
+    assertThat(js).doesNotContain("박원장 피드백");
+    assertThat(js).doesNotContain("LESSON INTERACTION");
+    assertThat(js).doesNotContain("수업 중");
+
+    // Phase 1 CMS / school navigator 를 부활시키지 않는다(§32).
+    assertThat(js).doesNotContain("schoolCollections");
+    assertThat(js).doesNotContain("briefing");
+    assertThat(js).doesNotContain("makingOf");
+    assertThat(js).doesNotContain("우리 학교");
+
+    // Phase 4b ambient fallback 유지(§22).
+    assertThat(html).contains("data-ambient-video-starts=");
   }
 }

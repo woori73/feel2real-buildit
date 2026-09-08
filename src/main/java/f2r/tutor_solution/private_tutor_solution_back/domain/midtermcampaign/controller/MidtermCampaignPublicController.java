@@ -1,13 +1,16 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermLiveVideoDtos.LiveVideoView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.CampaignView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.MaterialCard;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.PopupView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignPublicService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermImageService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermMaterialAccessService;
+import java.util.List;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService.DownloadFile;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import java.time.Duration;
@@ -34,6 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class MidtermCampaignPublicController {
 
   private final MidtermCampaignPublicService publicService;
+  private final MidtermLiveVideoService liveVideoService;
   private final MidtermMaterialAccessService materialAccessService;
   private final AuthenticatedUserResolver authResolver;
 
@@ -42,6 +46,15 @@ public class MidtermCampaignPublicController {
     return publicService.findPublishedByHandle(handle)
         .map(ResponseEntity::ok)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개된 캠페인이 없습니다."));
+  }
+
+  /**
+   * 학교/학년 LIVE FRAME 에 연결된 실제 수업 영상(Phase 4c). 캠페인 미발행/부재면 빈 배열 —
+   * 이 목록이 없어도 FRAME 은 자료 → 분석 흐름으로 정상 동작한다.
+   */
+  @GetMapping("/api/academies/{handle}/midterm-campaign/live-videos")
+  public ResponseEntity<List<LiveVideoView>> liveVideos(@PathVariable String handle) {
+    return ResponseEntity.ok(liveVideoService.listPublic(handle));
   }
 
   @GetMapping("/api/academies/{handle}/midterm-campaign/popup")
