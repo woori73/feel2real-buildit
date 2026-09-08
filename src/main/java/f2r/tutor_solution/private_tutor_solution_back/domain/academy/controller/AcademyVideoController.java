@@ -60,6 +60,28 @@ public class AcademyVideoController {
     return ResponseEntity.ok(academyVideoService.upload(principal, video, purpose));
   }
 
+  /**
+   * 외부에 이미 올라간 영상(네이버·YouTube 등)을 URL 로만 등록한다(작업지시서 §3). 파일을
+   * 받지 않는 JSON 요청이며 서버로 다운로드/복제하지 않는다 — 개수 상한은 직접 업로드와 합산된다.
+   */
+  @PostMapping(
+      value = "/api/tutor/academy/videos/link",
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<AcademyVideoResponse> registerExternalLink(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody(required = false) ExternalVideoLinkRequest request) {
+    ExternalVideoLinkRequest req = request == null
+        ? new ExternalVideoLinkRequest(null, null, null) : request;
+    return ResponseEntity.ok(academyVideoService.registerExternalLink(
+        principal, req.url(), req.title(), req.purpose()));
+  }
+
+  /**
+   * @param url 외부 영상/콘텐츠 페이지 URL(https 만). @param title 목록에 표시할 제목.
+   *            @param purpose {@code "LESSON"} | {@code "DIRECTOR"} | {@code "NONE"}.
+   */
+  public record ExternalVideoLinkRequest(String url, String title, String purpose) {}
+
   @GetMapping("/api/tutor/academy/videos")
   public ResponseEntity<List<AcademyVideoResponse>> listMine(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {

@@ -49,6 +49,31 @@ public class AcademyVideo extends BaseEntity {
   @Column(name = "active_source", nullable = false, length = 20)
   private VideoActiveSource activeSource;
 
+  /**
+   * 직접 업로드 영상인지 외부 링크 영상인지. 도입 이전(이 컬럼 이전) 행은 마이그레이션이
+   * {@code DIRECT_UPLOAD} 로 backfill 하며, null 로 새로 만들어지지 않는다.
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "source_kind", nullable = false, length = 20)
+  private AcademyVideoSourceKind sourceKind;
+
+  /** {@code EXTERNAL_LINK} 전용 — 외부 영상/콘텐츠 페이지 URL. 서버로 복제하지 않고 이 값만 저장한다. */
+  @Column(name = "external_url", length = 2048)
+  private String externalUrl;
+
+  /** {@code EXTERNAL_LINK} 전용 — host 로만 판정한 출처 분류. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "external_provider", length = 20)
+  private AcademyExternalVideoProvider externalProvider;
+
+  /**
+   * {@code EXTERNAL_LINK} 전용 — provider 가 공식적으로 iframe embed 를 허용할 때만 채워지는
+   * 카드 내부 재생 URL(예: {@code https://www.youtube.com/embed/<id>}). null 이면 "[영상 보기]"
+   * CTA 로만 노출한다(작업지시서 §13).
+   */
+  @Column(name = "external_embed_url", length = 2048)
+  private String externalEmbedUrl;
+
   @Column(name = "raw_storage_key", length = 500)
   private String rawStorageKey;
 
@@ -115,6 +140,10 @@ public class AcademyVideo extends BaseEntity {
       Long sourceVersion,
       VideoRawCleanupStatus rawCleanupStatus,
       AcademyVideoPurpose purpose,
+      AcademyVideoSourceKind sourceKind,
+      String externalUrl,
+      AcademyExternalVideoProvider externalProvider,
+      String externalEmbedUrl,
       // V930 synchronous callers remain source-compatible until their story removes the old endpoint.
       String storageKey,
       Integer durationSec,
@@ -123,6 +152,10 @@ public class AcademyVideo extends BaseEntity {
     this.academy = academy;
     this.originalFilename = originalFilename;
     this.purpose = purpose;
+    this.sourceKind = sourceKind != null ? sourceKind : AcademyVideoSourceKind.DIRECT_UPLOAD;
+    this.externalUrl = externalUrl;
+    this.externalProvider = externalProvider;
+    this.externalEmbedUrl = externalEmbedUrl;
     this.lifecycleStatus = lifecycleStatus != null
         ? lifecycleStatus
         : status == VideoStatus.FAILED
@@ -181,8 +214,40 @@ public class AcademyVideo extends BaseEntity {
         .build();
   }
 
+  /**
+   * 외부에 이미 올라간 영상을 URL 자산으로만 등록한다(작업지시서 §3·§4). 서버로 다운로드/복제하지
+   * 않으므로 storage key·트랜스코딩·썸네일이 없고 즉시 공개 가능(READY)하다. {@code embedUrl} 은
+   * provider 가 iframe embed 를 공식 허용할 때만 넘긴다(없으면 CTA 링크로만 노출).
+   */
+  public static AcademyVideo externalLink(
+      Academy academy,
+      String title,
+      String externalUrl,
+      AcademyExternalVideoProvider provider,
+      String embedUrl,
+      AcademyVideoPurpose purpose) {
+    return AcademyVideo.builder()
+        .academy(academy)
+        .originalFilename(title)
+        .lifecycleStatus(VideoLifecycleStatus.READY)
+        .activeSource(VideoActiveSource.EXTERNAL)
+        .sourceKind(AcademyVideoSourceKind.EXTERNAL_LINK)
+        .externalUrl(externalUrl)
+        .externalProvider(provider)
+        .externalEmbedUrl(embedUrl)
+        .sourceVersion(0L)
+        .rawCleanupStatus(VideoRawCleanupStatus.NOT_REQUIRED)
+        .purpose(purpose)
+        .build();
+  }
+
   public boolean belongsToAcademy(Long academyId) {
     return academyId != null && academy != null && academyId.equals(academy.getAcademyId());
+  }
+
+  /** 외부 링크 영상이면 true — storage/스트리밍/tombstone 파이프라인 대신 URL 자산으로 다룬다. */
+  public boolean isExternal() {
+    return sourceKind == AcademyVideoSourceKind.EXTERNAL_LINK;
   }
 
   /**
@@ -258,6 +323,28 @@ public class AcademyVideo extends BaseEntity {
     }
     if (sourceVersion < 0) {
       throw new IllegalArgumentException("sourceVersion must be non-negative");
+    }
+    if (activeSource == VideoActiveSource.EXTERNAL) {
+      if (sourceKind != AcademyVideoSourceKind.EXTERNAL_LINK) {
+        throw new IllegalArgumentException("EXTERNAL active source requires EXTERNAL_LINK source kind");
+      }
+      if (isBlank(externalUrl)) {
+        throw new IllegalArgumentException("external video URL is required");
+      }
+      if (!isBlank(rawStorageKey) || !isBlank(normalizedStorageKey) || !isBlank(thumbnailKey)) {
+        throw new IllegalArgumentException("external video must not carry storage keys");
+      }
+      if (rawCleanupStatus != VideoRawCleanupStatus.NOT_REQUIRED) {
+        throw new IllegalArgumentException("external video has no raw cleanup");
+      }
+      if (lifecycleStatus != VideoLifecycleStatus.READY
+          && lifecycleStatus != VideoLifecycleStatus.DELETING) {
+        throw new IllegalArgumentException("external video lifecycle must be READY or DELETING");
+      }
+      return;
+    }
+    if (sourceKind == AcademyVideoSourceKind.EXTERNAL_LINK) {
+      throw new IllegalArgumentException("EXTERNAL_LINK source kind requires EXTERNAL active source");
     }
     if (activeSource == VideoActiveSource.RAW) {
       boolean validRawLifecycle =

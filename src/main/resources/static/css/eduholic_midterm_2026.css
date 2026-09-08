@@ -682,6 +682,32 @@ a { color: inherit; }
   letter-spacing: -.01em;
 }
 
+/* 외부 링크 영상 — iframe embed 하지 않고 CTA 링크만(§13). 차단 URL 로 카드가 깨지지 않는다. */
+.midterm-live__scene[data-kind="external"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  background: var(--paper);
+}
+.midterm-live__external-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+.midterm-live__external-cta {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+.midterm-live__external-cta:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+
 .midterm-live__doc {
   position: absolute;
   top: var(--m-top);

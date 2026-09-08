@@ -12,13 +12,24 @@ public final class MidtermLiveVideoDtos {
 
   private MidtermLiveVideoDtos() {}
 
-  /** 공개 LIVE 페이지가 소비하는 최소 뷰. role 은 scene 순서 결정용이며 화면에 표시하지 않는다. */
+  /**
+   * 공개 LIVE 페이지가 소비하는 최소 뷰. role 은 scene 순서 결정용이며 화면에 표시하지 않는다.
+   *
+   * <p>{@code sourceKind == "EXTERNAL_LINK"} 면 서버 storage 가 없어 {@code videoUrl}·
+   * {@code thumbnailUrl} 은 null 이다. {@code externalUrl}(외부 페이지) / {@code embedUrl}(iframe
+   * 가능 provider 만) / {@code provider} / {@code title} 로 카드 안에서 embed 또는 CTA 를 정한다.
+   */
   public record LiveVideoView(
       String school,
       int grade,
       String role,
       String videoUrl,
       String thumbnailUrl,
+      String sourceKind,
+      String externalUrl,
+      String embedUrl,
+      String provider,
+      String title,
       int sortOrder) {}
 
   /** 운영자 화면: 연결된 link 1건(소유자라 videoId/파일명 노출 가능). */
@@ -31,7 +42,9 @@ public final class MidtermLiveVideoDtos {
       boolean visible,
       int sortOrder,
       String thumbnailUrl,
-      String originalFilename) {}
+      String originalFilename,
+      String sourceKind,
+      String externalUrl) {}
 
   /** 운영자 화면: 연결 가능한 공개 준비된 AcademyVideo 1건. */
   public record LinkableVideoView(
@@ -39,7 +52,9 @@ public final class MidtermLiveVideoDtos {
       String originalFilename,
       String thumbnailUrl,
       Long durationMs,
-      String purpose) {}
+      String purpose,
+      String sourceKind,
+      String externalUrl) {}
 
   /** 운영자 GET 응답: 현재 link 목록 + 연결 가능한 영상 목록. */
   public record LiveVideoAdminPayload(

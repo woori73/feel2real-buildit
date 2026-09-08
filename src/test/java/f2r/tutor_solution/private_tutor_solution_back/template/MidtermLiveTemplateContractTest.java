@@ -175,10 +175,12 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("2학기 영어 내신 LIVE");
     assertThat(js).contains("#sec-featured");
 
-    // 데이터는 이미 렌더된 카드 본문에서 읽는다 — 새 API 호출 없음(N+1 금지).
-    assertThat(js).doesNotContain("fetch(");
+    // 출제 경향 데이터는 이미 렌더된 카드 본문에서 읽는다(카드마다 fetch 금지 = N+1 금지).
     assertThat(js).contains("data-featured-card-body");
     assertThat(js).contains("featured-schoolcard-row");
+    // 학교/학년 현장 영상만 캠페인 스코프로 딱 1회 조회한다(카드 수와 무관). 그 외 fetch 없음.
+    assertThat(countOccurrences(js, "fetch(")).isEqualTo(1);
+    assertThat(js).contains("/midterm-campaign/live-videos");
 
     // 공용 섹션의 다른 부분·상담 신청 버튼·pill CTA·공용 마크업 정본은 건드리지 않는다.
     assertThat(js).doesNotContain("requestConsult");
@@ -419,7 +421,7 @@ class MidtermLiveTemplateContractTest {
 
     // 캐시버스팅.
     String html = read("templates/lms/lms_midterm_live.html");
-    assertThat(html).contains("/js/lms_midterm_live.js?v=20260914");
+    assertThat(html).contains("/js/lms_midterm_live.js?v=20260916-1");
     assertThat(html).contains("/css/lms_midterm_live.css?v=20260914");
   }
 

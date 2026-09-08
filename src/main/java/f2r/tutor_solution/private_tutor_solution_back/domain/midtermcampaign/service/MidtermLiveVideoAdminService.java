@@ -124,7 +124,9 @@ public class MidtermLiveVideoAdminService {
               link.getSchoolName(), link.getGrade(), link.getRole().name(),
               link.isVisible(), link.getSortOrder(),
               thumbnailUrl(slug, link.getAcademyVideoId(), v),
-              v == null ? null : v.getOriginalFilename());
+              v == null ? null : v.getOriginalFilename(),
+              v == null ? null : v.getSourceKind().name(),
+              v == null ? null : v.getExternalUrl());
         })
         .toList();
 
@@ -133,7 +135,9 @@ public class MidtermLiveVideoAdminService {
             v.getVideoId(), v.getOriginalFilename(),
             thumbnailUrl(slug, v.getVideoId(), v),
             v.getDurationMs(),
-            v.getPurpose() == null ? null : v.getPurpose().name()))
+            v.getPurpose() == null ? null : v.getPurpose().name(),
+            v.getSourceKind().name(),
+            v.getExternalUrl()))
         .toList();
     return new LiveVideoAdminPayload(links, linkable);
   }

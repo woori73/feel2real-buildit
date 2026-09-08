@@ -215,3 +215,62 @@
 .video-card-thumb-placeholder{display:grid;place-items:center;font-size:2rem;background:#eef1f7;color:#667085;}
 .video-card-ready{color:#16794b;font-weight:700;}
 .video-card-optimization{color:#667085;font-size:.82rem;}
+
+/* ── 영상 링크 등록 (외부 URL) ─────────────────────────────────── */
+.video-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.video-link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 220px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #3d4a6b;
+}
+.video-link-field input {
+  padding: 8px 10px;
+  border: 1px solid #cdd5e4;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 500;
+}
+@media (max-width: 520px) {
+  .video-link-row { flex-direction: column; align-items: stretch; }
+  .video-link-row .btn { width: 100%; }
+}
+
+/* ── 카드 출처 배지 · 외부 링크 카드 ───────────────────────────── */
+.video-card-source {
+  align-self: flex-start;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.video-card-source-upload { background: #eef2fb; color: #33459e; }
+.video-card-source-external { background: #eafaf1; color: #12734a; }
+.video-card-thumb-external {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, #eef2f9, #e2e9f5);
+}
+.video-card-thumb-provider {
+  font-size: .8rem;
+  font-weight: 800;
+  color: #5a6785;
+}
+.video-card-external-link {
+  font-weight: 800;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+.video-card-external-link:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }

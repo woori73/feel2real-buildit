@@ -108,6 +108,10 @@ public class AcademyVideoDeliveryService {
         .findByVideoIdAndAcademy_AcademyId(videoId, academy.getAcademyId())
         .filter(found -> found.getLifecycleStatus() == VideoLifecycleStatus.READY)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "영상을 찾을 수 없습니다."));
+    if (video.isExternal()) {
+      // 외부 링크 영상은 서버 storage 가 없다 — 재생은 외부 URL(embed/CTA)로만 이루어진다.
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "외부 링크 영상은 스트리밍 대상이 아닙니다.");
+    }
     if (video.getActiveSource() == VideoActiveSource.RAW) {
       return requireSource(video.getRawStorageKey(), video.getRawMediaType(), video.getRawSizeBytes());
     }

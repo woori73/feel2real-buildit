@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.se
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideo;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoSourceKind;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VideoLifecycleStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyVideoRepository;
@@ -60,6 +61,20 @@ public class MidtermLiveVideoService {
       if (video == null) {
         continue;
       }
+      if (video.isExternal()) {
+        // 외부 링크 영상: 서버 storage 가 없다 — 외부 URL / embed / provider 로 프론트가
+        // 카드 안 embed 또는 "[영상 보기]" CTA 를 정한다. 파일명은 CTA 라벨로만 쓴다.
+        out.add(new LiveVideoView(
+            link.getSchoolName(), link.getGrade(), link.getRole().name(),
+            null, null,
+            video.getSourceKind().name(),
+            video.getExternalUrl(),
+            video.getExternalEmbedUrl(),
+            video.getExternalProvider() == null ? null : video.getExternalProvider().name(),
+            video.getOriginalFilename(),
+            link.getSortOrder()));
+        continue;
+      }
       String base = "/api/academies/" + urlEncode(slug) + "/videos/" + video.getVideoId();
       out.add(new LiveVideoView(
           link.getSchoolName(),
@@ -67,6 +82,9 @@ public class MidtermLiveVideoService {
           link.getRole().name(),
           base + "/stream",
           video.getThumbnailKey() == null ? null : base + "/thumbnail",
+          AcademyVideoSourceKind.DIRECT_UPLOAD.name(),
+          null, null, null,
+          video.getOriginalFilename(),
           link.getSortOrder()));
     }
     return out;
