@@ -16,7 +16,22 @@
   if (window.location.hostname !== EDUHOLIC_HOST) return;
   if (window.location.pathname === LANDING_PATH) return;
 
-  var today = new Date().toISOString().slice(0, 10);
+  // "오늘은 그만 보기" = 한국 달력 기준 하루. toISOString() 은 UTC 라 KST 로는 자정이 아니라
+  // 오전 9시가 경계가 돼(전날 밤에 닫으면 다음날 오전까지 안 뜸) 운영자가 "팝업이 안 나온다"고
+  // 오해하게 된다. Asia/Seoul 로컬 날짜(YYYY-MM-DD)를 쓴다.
+  function seoulDate() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date());
+    } catch (_) {
+      // Intl/timeZone 미지원 환경 폴백 — UTC+9 로 근사.
+      var kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      return kst.toISOString().slice(0, 10);
+    }
+  }
+
+  var today = seoulDate();
   try {
     if (window.localStorage.getItem(DISMISS_KEY) === today) return;
   } catch (_) { /* storage 차단 환경에서도 진행 */ }

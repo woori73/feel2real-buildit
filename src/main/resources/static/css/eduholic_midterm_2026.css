@@ -253,6 +253,8 @@ a { color: inherit; }
   letter-spacing: .01em;
   color: var(--ink-soft);
 }
+/* 자료 없는 학교(준비 중)에서는 "실제 시험자료 기반" 문구를 감춘다. */
+.mt-wiki.is-idle .mt-wiki__foot { display: none; }
 
 /* ── hero 지식상품 — Atelier composition 안의 packaged product ─────────────── */
 .midterm-feature {
@@ -471,6 +473,13 @@ a { color: inherit; }
   font-size: 13px;
   color: var(--ink-soft);
 }
+/* 자료 없는 캠페인 학교 — 본문을 비우지 않고 "준비 중"을 가운데 정렬. */
+.midterm-showcase__scene.is-pending .midterm-showcase__body {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.midterm-showcase__scene.is-pending .midterm-showcase__pending { margin: 0; }
 .midterm-showcase__foot {
   margin: 10px 0 0;
   font-size: 10.5px;
@@ -658,6 +667,20 @@ a { color: inherit; }
 .midterm-live__scene.is-active { opacity: 1; transform: none; }
 /* video scene 은 letterbox 를 stage tint 로 채운다 — white page 가 아니다. */
 .midterm-live__scene[data-kind="video"] { inset: 0; background: var(--stage-bg); }
+/* 자료 없는 캠페인 학교 — "준비 중" 정적 표시. media 없음. */
+.midterm-live__scene[data-kind="pending"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+}
+.midterm-live__pending {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
 
 .midterm-live__doc {
   position: absolute;
