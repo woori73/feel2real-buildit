@@ -55,27 +55,20 @@
   function normalizedSchool(value) {
     return String(value || '').replace(/중학교/g, '중').replace(/\s+/g, '').toLowerCase();
   }
-  function loadSchoolVideos() {
-    var root = document.getElementById('publicView');
-    var slug = root && root.getAttribute('data-slug');
-    if (!slug) {
-      var parts = window.location.pathname.split('/').filter(Boolean);
-      slug = parts[parts.length - 1] || '';
-    }
-    if (!slug) { videosReady = true; return Promise.resolve(); }
-    return fetch('/api/academies/' + encodeURIComponent(slug) + '/videos', { credentials:'same-origin' })
-      .then(function (res) { return res.ok ? res.json() : []; })
-      .then(function (items) {
-        (Array.isArray(items) ? items : []).filter(function (v) {
-          return v && v.purpose === 'LESSON' && v.availabilityStatus === 'READY' && v.videoUrl;
-        }).forEach(function (video) {
-          var name = normalizedSchool(video.originalFilename);
-          Array.prototype.slice.call(document.querySelectorAll('#sec-featured [data-featured-card]')).forEach(function (card) {
-            var school = (card.getAttribute('data-school') || '').trim();
-            if (!schoolVideos[school] && name.indexOf(normalizedSchool(school)) >= 0) schoolVideos[school] = video;
-          });
-        });
-      }).catch(function () { schoolVideos = {}; }).then(function () { videosReady = true; });
+  function indexSchoolVideos() {
+    var items = window.F2RAcademyPublicVideos;
+    if (!Array.isArray(items)) return false;
+    (items || []).filter(function (v) {
+      return v && v.purpose === 'LESSON' && v.availabilityStatus === 'READY' && v.videoUrl;
+    }).forEach(function (video) {
+      var name = normalizedSchool(video.originalFilename);
+      Array.prototype.slice.call(document.querySelectorAll('#sec-featured [data-featured-card]')).forEach(function (card) {
+        var school = (card.getAttribute('data-school') || '').trim();
+        if (!schoolVideos[school] && name.indexOf(normalizedSchool(school)) >= 0) schoolVideos[school] = video;
+      });
+    });
+    videosReady = true;
+    return true;
   }
 
   function pauseOtherVideos(active) {
@@ -211,6 +204,7 @@
   function scan() {
     if (window.location.hostname !== EDUHOLIC_HOST) return;
     applyHeading();
+    if (!videosReady) indexSchoolVideos();
     if (!videosReady) return;
     Array.prototype.slice.call(document.querySelectorAll('#sec-featured [data-featured-card]'))
       .forEach(upgradeCard);
@@ -241,7 +235,8 @@
 
   function start() {
     injectStyle();
-    loadSchoolVideos().then(scan);
+    indexSchoolVideos();
+    scan();
     var pv = document.getElementById('publicView');
     if (pv && window.MutationObserver) {
       var mo = new MutationObserver(function () { scan(); });

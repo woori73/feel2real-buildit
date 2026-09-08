@@ -63,6 +63,7 @@
       if (!res.ok) throw new Error('공개 Academy를 찾을 수 없습니다.');
       const academy = await res.json();
       academyVideos = await loadVideos();
+      window.F2RAcademyPublicVideos = academyVideos;
       render(academy, await isOwnAcademy(academy.slug));
     } catch (err) {
       errorMsg.textContent = err.message || 'Academy 조회에 실패했습니다.';
