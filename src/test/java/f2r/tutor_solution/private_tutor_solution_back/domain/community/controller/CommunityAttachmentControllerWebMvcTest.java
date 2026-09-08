@@ -31,7 +31,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@DisplayName("CommunityController 첨부 — GET file은 permitAll, add/delete는 인증·작성자")
+@DisplayName("CommunityController 첨부 — Wiki 공유 파일 우회 방지를 위해 전체 회원 전용")
 @WebMvcTest(controllers = CommunityController.class)
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -61,9 +61,9 @@ class CommunityAttachmentControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 익명 when PDF 첨부 다운로드 then 200 + Content-Disposition: attachment + 파일명 보존")
+  @DisplayName("given 회원 when PDF 첨부 다운로드 then 200 + Content-Disposition: attachment + 파일명 보존")
   void download_pdf_forcesAttachment() throws Exception {
-    mockMvc.perform(get("/api/open-community/attachments/1/file"))
+    mockMvc.perform(get("/api/open-community/attachments/1/file").cookie(token("STUDENT")))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/pdf"))
         .andExpect(header().string("Content-Disposition",
@@ -74,9 +74,9 @@ class CommunityAttachmentControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 익명 when JPG 첨부 다운로드 then image/jpeg + attachment (브라우저 뷰어 X) + 한글 파일명")
+  @DisplayName("given 회원 when JPG 첨부 다운로드 then image/jpeg + attachment (브라우저 뷰어 X) + 한글 파일명")
   void download_jpg_forcesAttachmentNotInline() throws Exception {
-    mockMvc.perform(get("/api/open-community/attachments/2/file"))
+    mockMvc.perform(get("/api/open-community/attachments/2/file").cookie(token("TUTOR")))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "image/jpeg"))
         .andExpect(header().string("X-Content-Type-Options", "nosniff"))
@@ -87,12 +87,19 @@ class CommunityAttachmentControllerWebMvcTest {
   }
 
   @Test
+  @DisplayName("given 익명 when 첨부 URL 직접 호출 then 401")
+  void download_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(get("/api/open-community/attachments/1/file"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   @DisplayName("given 없는 첨부 when 다운로드 then 404")
   void download_missing_notFound() throws Exception {
     when(attachmentService.getAttachmentFile(999L)).thenThrow(
         new org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.NOT_FOUND, "no"));
-    mockMvc.perform(get("/api/open-community/attachments/999/file")).andExpect(status().isNotFound());
+    mockMvc.perform(get("/api/open-community/attachments/999/file").cookie(token("STUDENT")).andExpect(status().isNotFound());
   }
 
   @Test
