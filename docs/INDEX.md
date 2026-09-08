@@ -8,6 +8,7 @@
 | 작업 | 먼저 읽을 문서 |
 |---|---|
 | **모든 BuildIt 제품·기능 설계 및 수정** | [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md) |
+| **내신 예상문제 / 학교별 시험지 / 인쇄용 문제지 HTML 제작·수정** | **[exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — 작업 전 필독 + 완성 후 체크리스트 검수 필수** |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |
 | **로컬 실행 / DB 자동 생성 / PR / 배포** | [WORKFLOW.md](WORKFLOW.md) |
 | **ChatGPT Work / Codex 세션에서 repo 열기 (stale checkout·`origin/main` 오판 방지)** | [WORK_GIT_WORKSPACE_WORKFLOW.md](WORK_GIT_WORKSPACE_WORKFLOW.md) |
@@ -31,9 +32,11 @@
 - 스키마 변경 → `db/migration` V_파일 + Entity + [DOMAIN.md](DOMAIN.md) **셋 동시**
 - 플로우/엔드포인트 변경 → 코드 + [FLOWS.md](FLOWS.md) / [API.md](API.md)
 - 워크플로/마이그레이션 정책 변경 → [WORKFLOW.md](WORKFLOW.md) (CLAUDE.md·AGENTS.md는 포인터만)
+- 내신 시험지 제작/조판 규칙 변경 → [exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) 동시 갱신
 
 ## 작업 전 필수 확인 (모든 에이전트)
 1. BuildIt 관련 작업이면 [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md)를 먼저 읽기
 2. 이 인덱스에서 해당 작업 문서 로드
-3. 현재 git 상태 / 브랜치 확인
-4. DB/마이그레이션 건드리면 [WORKFLOW.md](WORKFLOW.md) §4 번호정책 **반드시** 확인
+3. 내신 시험지 작업이면 [exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md)를 작업 전 읽고 완성 후 체크리스트 검수
+4. 현재 git 상태 / 브랜치 확인
+5. DB/마이그레이션 건드리면 [WORKFLOW.md](WORKFLOW.md) §4 번호정책 **반드시** 확인
