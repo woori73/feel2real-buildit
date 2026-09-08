@@ -141,6 +141,91 @@ class MidtermLiveTemplateContractTest {
    * PR #225 의 "sticky CTA dead-link" 회귀 대상은 sticky CTA 자체를 제거하면서 해소됐다
    * (더 이상 죽을 버튼이 없다) — 관련 계약은 publicPage_schoolCollectionNavAndStickyCtaAreRemoved 로 대체.
    */
+  /**
+   * LIVE Experience 개편(작업지시서 §2~§7·§21): 첫 화면 = 왼쪽 "왜 이렇게 준비하는가"
+   * (20년+ 현장 경험 × 학교별 시험자료 × AI Wiki) + 오른쪽 AI Wiki activity 시뮬레이션.
+   * 시뮬레이션 내용은 실제 데이터(wiki-sources / 학교 컬렉션)에서만 오고, 없는
+   * 학교/Lesson/문법/문장을 만들어내지 않는다.
+   */
+  @Test
+  void publicPage_hasLiveOpeningAndWikiSimulation_fromRealDataOnly() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    // Hero(왼쪽) + AI Wiki activity(오른쪽) 마크업이 존재한다.
+    assertThat(js).contains("mt-lead-title");
+    assertThat(js).contains("renderLiveOpening");
+    assertThat(js).contains("mt-wiki");
+    assertThat(js).contains("wireWikiSimulation");
+    assertThat(css).contains(".mt-wiki-step");
+    assertThat(css).contains(".mt-lead-grid");
+
+    // 시뮬레이션 데이터 소스 = 실제 wiki-sources API + 발행 학교 컬렉션. 별도 fake JSON 없음.
+    assertThat(js).contains("/midterm-campaign/wiki-sources");
+    assertThat(js).contains("buildWikiScenes");
+    assertThat(js).contains("state.wikiSources");
+    assertThat(js).contains("schoolCollections");
+
+    // Fake AI 금지(§5): 작업지시서가 예시로 든 시험범위/문법/문장을 코드에 리터럴로 심지 않는다.
+    assertThat(js).doesNotContain("간접의문문");
+    assertThat(js).doesNotContain("5형식");
+    assertThat(js).doesNotContain("Lesson 5");
+    assertThat(js).doesNotContain("Lesson 6");
+
+    // 옛 "페이지 제목 한 줄" 폴백 문구는 첫 화면에서 사라졌다.
+    assertThat(js).doesNotContain("지금 준비하고 있습니다.");
+
+    // 자동 순환 = setTimeout 체인(라이브러리·setInterval 없음), 화면 밖/reduced-motion 정지.
+    assertThat(js).contains("setTimeout");
+    assertThat(js).doesNotContain("setInterval");
+    assertThat(js).contains("IntersectionObserver");
+    assertThat(js).contains("visibilitychange");
+    assertThat(js).contains("reduceMotion");
+
+    // 기존 오른쪽 자료 Showcase / 학교별 준비 LIVE(브리핑·업데이트) 는 유지된다(§8).
+    assertThat(js).contains("renderMaterialShowcase");
+    assertThat(js).contains("renderBriefingMoment");
+    assertThat(js).contains("renderUpdates");
+  }
+
+  /**
+   * 홈페이지 「2학기 영어내신」 → "2학기 영어 내신 LIVE" 전환 스크립트(§9~§12·§21).
+   * hostname gate, 추가 fetch 없이 wireFeaturedSchoolCards 결과 재사용, 공용 렌더러·상담 CTA 무변경.
+   */
+  @Test
+  void homeLiveScript_transformsFeaturedSectionWithoutTouchingSharedRenderer() throws Exception {
+    String html = read("templates/public/academy_public.html");
+    assertThat(html).contains("/js/eduholic_midterm_home_live.js");
+
+    String js = read("static/js/eduholic_midterm_home_live.js");
+
+    // eduholic 홈에서만, 랜딩 페이지 자체에서는 미실행.
+    assertThat(js).contains("eduholic.feel2real.co.kr");
+    assertThat(js).contains("/eduholic-midterm-2026.html");
+    assertThat(js).doesNotContain("/problem-generator");
+    assertThat(js).doesNotContain("fetchAuth");
+
+    // 제목/부제 전환.
+    assertThat(js).contains("2학기 영어 내신 LIVE");
+    assertThat(js).contains("#sec-featured");
+
+    // 데이터는 이미 렌더된 카드 본문에서 읽는다 — 새 API 호출 없음(N+1 금지).
+    assertThat(js).doesNotContain("fetch(");
+    assertThat(js).contains("data-featured-card-body");
+    assertThat(js).contains("featured-schoolcard-row");
+
+    // 공용 섹션의 다른 부분(상담 신청 버튼·pill CTA·공용 마크업 정본)은 건드리지 않는다.
+    assertThat(js).doesNotContain("requestConsult");
+    assertThat(js).doesNotContain("featured-cta");
+    assertThat(js).doesNotContain("academy_sections");
+
+    // 자동 scene 순환 = setTimeout 체인, 화면 밖/reduced-motion 정지.
+    assertThat(js).contains("setTimeout");
+    assertThat(js).doesNotContain("setInterval");
+    assertThat(js).contains("IntersectionObserver");
+    assertThat(js).contains("prefers-reduced-motion");
+  }
+
   @Test
   void publicPage_neverLeaksToWorkspace_andPopupCtaDestinationHeld() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");

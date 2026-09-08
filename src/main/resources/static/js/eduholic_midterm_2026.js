@@ -1,14 +1,20 @@
 /* 2026 2학기 중간고사 내신 LIVE — 압구정에듀홀릭 공개 페이지 렌더러.
  *
  * 데이터: GET /api/academies/{handle}/midterm-campaign (미발행/부재 → 404 → 간결한 폴백).
+ *         GET /api/academies/{handle}/midterm-campaign/wiki-sources
+ *           → 발행된 학교 컬렉션 컨텍스트와 정확히 일치하는 실제 TUTOR Wiki 자료 목록(read-only).
+ *             실패/부재 시 [] — 페이지는 계속 동작한다.
  * 이 페이지는 프레젠테이션만 담당한다 — 제작/관리 workspace 로 보내지 않는다.
  *
  * 역할 구분: Wiki = 자료 저장소 / Midterm Campaign = 이번 시험 큐레이션 / 이 페이지 = 공개 화면.
- * Wiki 원본을 직접 조회하지 않는다 — 서버가 안전한 공개 DTO(thumbnailUrl/fileUrl/access)로
- * 내려준 것만 그린다(PR #220 보안 유지).
+ * Wiki 원본을 직접 조회하지 않는다 — 서버가 안전한 공개 DTO(thumbnailUrl/fileUrl/access,
+ * wiki-sources 는 title/school/grade/exam + previewUrl)로 내려준 것만 그린다(PR #220 보안 유지).
  *
- * 2026-09: 학교 컬렉션 섹션 / 학교별 상세 라우팅 / sticky CTA / 큰 히어로를 제거했다.
- * 학교 정보는 자료에 붙는 작은 metadata 로만 노출한다. 공개 표현은 다음 단계 시안에서 재정의한다.
+ * 2026-09 (LIVE Experience 개편):
+ *  - 첫 화면 = 왼쪽 "왜 이렇게 준비하는가"(20년+ 현장 경험 × 학교별 시험자료 × AI Wiki) +
+ *    AI Wiki activity 패널(실제 wiki-sources / 학교 컬렉션 데이터로 학교별 분석 흐름을 순환).
+ *  - 없는 학교/Lesson/문법/문장을 만들어내지 않는다. 데이터가 없으면 "학교 자료 확인 중" 정적 상태.
+ *  - 자동 순환은 setTimeout 체인. prefers-reduced-motion → 첫 상태 고정. 화면 밖 → 타이머 정지.
  */
 (function () {
   'use strict';
@@ -19,20 +25,31 @@
   if (!root) return;
   var HANDLE = root.getAttribute('data-handle') || 'eduholic';
   var API = '/api/academies/' + encodeURIComponent(HANDLE) + '/midterm-campaign';
+  var WIKI_SOURCES_API = API + '/wiki-sources';
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var CONSULT_URL = 'https://eduholic.feel2real.co.kr/';
 
-  var state = { campaign: null };
+  var state = { campaign: null, wikiSources: [] };
 
-  fetch(API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-    .then(function (r) {
-      if (r.status === 404) return null;
-      if (!r.ok) throw new Error('load failed: ' + r.status);
-      return r.json();
-    })
-    .then(function (data) {
-      if (!data) { renderFallback(); return; }
-      state.campaign = data;
+  function loadJson(url) {
+    return fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error('load failed: ' + r.status);
+        return r.json();
+      });
+  }
+
+  Promise.all([
+    loadJson(API),
+    // wiki-sources 는 부가 데이터 — 어떤 실패도 페이지를 막지 않는다.
+    loadJson(WIKI_SOURCES_API).catch(function () { return []; })
+  ])
+    .then(function (results) {
+      var campaign = results[0];
+      if (!campaign) { renderFallback(); return; }
+      state.campaign = campaign;
+      state.wikiSources = Array.isArray(results[1]) ? results[1] : [];
       render();
     })
     .catch(function () { renderFallback(); });
@@ -49,6 +66,10 @@
     var t = String(s).trim().split(/(?<=[.!?。])\s|\n/)[0].trim();
     if (cap && t.length > cap) t = t.slice(0, cap).trim() + '…';
     return t;
+  }
+  function clip(s, cap) {
+    var t = String(s == null ? '' : s).trim();
+    return cap && t.length > cap ? t.slice(0, cap).trim() + '…' : t;
   }
   function schoolTitle(col) {
     var g = col.grade ? col.grade + '학년' : '';
@@ -78,6 +99,9 @@
   function catLabel(c) { return CAT_LABEL[c] || '학습자료'; }
   function isLocked(access) { return access === 'MEMBER_LOCKED' || access === 'PREVIEW'; }
   function lockText(access) { return access === 'PREVIEW' ? '미리보기' : '로그인 회원 자료'; }
+  function reduceMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
 
   function firstBriefingSchool(c) {
     return (c.schoolCollections || []).filter(function (s) {
@@ -89,13 +113,86 @@
   // '자료에 붙는 작은 metadata'(예: "신구중 2학년 · 9.7 업데이트")로만 표시한다. 별도 학교 섹션 없음.
   function collectMaterials(c) {
     var out = [];
-    (c.campaignMaterials || []).forEach(function (m) { out.push({ mat: m, meta: '' }); });
+    (c.campaignMaterials || []).forEach(function (m) { out.push({ mat: m, meta: '', school: '' }); });
     (c.schoolCollections || []).forEach(function (col) {
       var tag = schoolTitle(col);
       if (col.lastUpdate) tag += ' · ' + shortDate(col.lastUpdate) + ' 업데이트';
-      (col.materials || []).forEach(function (m) { out.push({ mat: m, meta: tag }); });
+      (col.materials || []).forEach(function (m) {
+        out.push({ mat: m, meta: tag, school: (col.schoolName || '').trim() });
+      });
     });
     return out;
+  }
+
+  // ── AI Wiki activity — 실제 데이터로만 학교별 분석 흐름(scene)을 만든다 ──────────
+  // scene = 한 학교·학년의 (실제 wiki-source 제목 + 실제 학교 컬렉션 출제 특징/준비 단계).
+  // 없는 학교/Lesson/문법/문장을 생성하지 않는다.
+  function buildWikiScenes(c) {
+    var order = [];
+    var byKey = {};
+    function ensure(school, grade, examLabel) {
+      var key = school + '|' + grade;
+      if (!byKey[key]) {
+        byKey[key] = { school: school, grade: String(grade || ''), examLabel: examLabel || '',
+          sources: [], note: '', prep: [] };
+        order.push(key);
+      }
+      return byKey[key];
+    }
+
+    (state.wikiSources || []).forEach(function (s) {
+      var school = (s.school || '').trim();
+      if (!school) return;
+      var examLabel = [s.year, s.semester, s.exam].filter(Boolean).join(' ');
+      var sc = ensure(school, s.grade, examLabel);
+      if (!sc.examLabel) sc.examLabel = examLabel;
+      sc.sources.push({ label: (s.kindLabel || '자료').trim(), title: (s.title || '').trim() });
+    });
+
+    var campaignExam = [c.examYear, c.semester, c.examType].filter(Boolean).join(' ');
+    (c.schoolCollections || []).forEach(function (col) {
+      var school = (col.schoolName || '').trim();
+      if (!school) return;
+      var sc = ensure(school, col.grade, campaignExam);
+      if (!sc.note) sc.note = (col.examFeatureNote || '').trim();
+      var prep = (col.prepStatuses || []).map(function (p) { return (p.label || '').trim(); }).filter(Boolean);
+      if (prep.length) sc.prep = prep;
+      (col.materials || []).forEach(function (m) {
+        sc.sources.push({ label: catLabel(m.category), title: (m.displayTitle || '').trim() });
+      });
+    });
+
+    return order.map(function (k) { return byKey[k]; });
+  }
+
+  // scene → 진행 단계. 학교/학년/자료 제목/출제 특징/준비 단계 라벨은 전부 실제 데이터.
+  // 데이터가 없는 연결부만 일반 문구("핵심 문장·어법 정리")를 쓴다.
+  function sceneSteps(scene) {
+    var head = scene.school + (scene.grade ? ' ' + scene.grade + '학년' : '');
+    var steps = [{ k: 'scan', t: head + ' · 시험범위 Wiki 확인' }];
+    var src = scene.sources.filter(function (s) { return s.label || s.title; })[0];
+    if (src) {
+      steps.push({ k: 'open', t: src.label + ' 열람' });
+      if (src.title) steps.push({ k: 'read', t: clip(src.title, 42) });
+    }
+    if (scene.note) {
+      steps.push({ k: 'note', t: '출제 특징 · ' + clip(scene.note, 40) });
+    } else if (scene.prep.length) {
+      scene.prep.slice(0, 2).forEach(function (p) { steps.push({ k: 'note', t: clip(p, 40) }); });
+    } else {
+      steps.push({ k: 'note', t: '핵심 문장·어법 정리' });
+    }
+    steps.push({ k: 'apply', t: '출제 포인트 수업 준비에 반영' });
+    return steps;
+  }
+
+  function sceneSchoolNames(scenes) {
+    var seen = {};
+    var names = [];
+    scenes.forEach(function (s) {
+      if (s.school && !seen[s.school]) { seen[s.school] = 1; names.push(s.school); }
+    });
+    return names;
   }
 
   // ── 폴백 (미발행/부재) — 짧게 ──────────────────────────────────────────
@@ -115,11 +212,12 @@
   // ── 렌더 ──────────────────────────────────────────────────────────────
   function render() {
     var c = state.campaign;
+    var scenes = buildWikiScenes(c);
     root.innerHTML = '';
     root.appendChild(renderTopbar());
 
     var home = el('div', 'mt-home');
-    home.appendChild(renderHead(c));
+    home.appendChild(renderLiveOpening(c, scenes));
 
     var mats = collectMaterials(c);
     if (mats.length) home.appendChild(renderMaterialShowcase(mats));
@@ -136,6 +234,7 @@
 
     root.appendChild(renderFooter(c));
     wireReveal(root);
+    wireWikiSimulation(root, scenes);
   }
 
   function renderTopbar() {
@@ -150,15 +249,155 @@
     return bar;
   }
 
-  // 큰 회색 히어로 제거 — 페이지 제목 한 줄만. 별도 media / 설명 문단 / 학교 칩 없음.
-  function renderHead(c) {
-    var s = el('section', 'mt-head');
+  // ── 첫 화면 — 왼쪽 "왜 이렇게 준비하는가" + 오른쪽 AI Wiki activity ─────────
+  function renderLiveOpening(c, scenes) {
+    var s = el('section', 'mt-block mt-lead');
     var w = el('div', 'mt-wrap');
-    w.appendChild(el('h1', 'mt-head-title', (c.hero && c.hero.title && c.hero.title.trim())
-      ? c.hero.title.trim()
-      : '2학기 중간고사, 지금 준비하고 있습니다.'));
+    w.setAttribute('data-reveal', '');
+    var grid = el('div', 'mt-lead-grid');
+
+    var why = el('div', 'mt-lead-why');
+    why.setAttribute('data-reveal-item', '');
+    why.appendChild(el('p', 'mt-lead-kicker', c.examYear + '년 ' + c.semester + ' ' + c.examType));
+
+    var schools = sceneSchoolNames(scenes);
+    var h1 = el('h1', 'mt-lead-title');
+    h1.textContent = schools.length
+      ? schools.join(' · ') + '\n시험 준비가 시작됐습니다'
+      : ((c.hero && c.hero.title && c.hero.title.trim()) || '학교별 시험 준비가 시작됐습니다');
+    why.appendChild(h1);
+
+    var body = (c.hero && c.hero.body && c.hero.body.trim())
+      || '20년 이상 현장을 지켜온 박정민 원장의 내신 경험과, 학교별 시험자료를 분석하는 AI Wiki 시스템을 함께 씁니다.';
+    why.appendChild(el('p', 'mt-lead-body', body));
+
+    var proof = el('div', 'mt-lead-proof');
+    ['20년+ 현장 경험', '학교별 시험자료', 'AI Wiki'].forEach(function (t) {
+      proof.appendChild(el('span', 'mt-lead-chip', t));
+    });
+    why.appendChild(proof);
+    grid.appendChild(why);
+
+    grid.appendChild(buildWikiPanel(scenes));
+    w.appendChild(grid);
     s.appendChild(w);
     return s;
+  }
+
+  function buildWikiPanel(scenes) {
+    var panel = el('div', 'mt-wiki');
+    panel.setAttribute('data-reveal-item', '');
+    panel.setAttribute('data-mt-wiki', '');
+
+    var top = el('div', 'mt-wiki-top');
+    var live = el('span', 'mt-wiki-live');
+    live.appendChild(el('i', null, null));
+    live.appendChild(document.createTextNode('AI Wiki'));
+    top.appendChild(live);
+    top.appendChild(el('span', 'mt-wiki-school', scenes.length ? '' : '학교 자료 확인 중'));
+    panel.appendChild(top);
+
+    if (!scenes.length) {
+      panel.appendChild(el('p', 'mt-wiki-idle', '학교별 시험 자료를 확인하고 있습니다.'));
+      return panel;
+    }
+    panel.appendChild(el('ol', 'mt-wiki-steps'));
+    return panel;
+  }
+
+  // 순환 엔진 — setTimeout 체인(자동 캐러셀 라이브러리 없음). 화면 밖·reduced-motion 정지.
+  function wireWikiSimulation(scope, scenes) {
+    var panel = scope.querySelector('[data-mt-wiki]');
+    if (!panel || !scenes.length) return;
+    var schoolEl = panel.querySelector('.mt-wiki-school');
+    var stepsEl = panel.querySelector('.mt-wiki-steps');
+    if (!stepsEl) return;
+
+    var si = 0;
+    var timer = null;
+    var running = false;
+
+    function paintScene(scene, revealAll) {
+      var steps = sceneSteps(scene);
+      schoolEl.textContent = scene.school
+        + (scene.grade ? ' ' + scene.grade + '학년' : '')
+        + (scene.examLabel ? ' · ' + scene.examLabel : '');
+      stepsEl.innerHTML = '';
+      steps.forEach(function (st) {
+        var li = el('li', 'mt-wiki-step' + (revealAll ? ' is-on' : ''));
+        li.setAttribute('data-k', st.k);
+        li.appendChild(el('span', 'mt-wiki-mark', null));
+        li.appendChild(el('span', 'mt-wiki-text', st.t));
+        stepsEl.appendChild(li);
+      });
+      return steps.length;
+    }
+
+    function focusDocs(school) {
+      var cards = scope.querySelectorAll('[data-mt-school]');
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.toggle('is-focus', cards[i].getAttribute('data-mt-school') === school);
+      }
+    }
+
+    function runScene() {
+      var scene = scenes[si];
+      var total = paintScene(scene, false);
+      focusDocs(scene.school);
+      var lis = stepsEl.querySelectorAll('.mt-wiki-step');
+      var k = 0;
+      function tick() {
+        if (!running) return;
+        if (k > 0 && lis[k - 1]) { lis[k - 1].classList.remove('is-on'); lis[k - 1].classList.add('is-done'); }
+        if (k < total) {
+          if (lis[k]) lis[k].classList.add('is-on');
+          k++;
+          timer = setTimeout(tick, 1300);
+        } else {
+          timer = setTimeout(function () {
+            si = (si + 1) % scenes.length;
+            runScene();
+          }, 1700);
+        }
+      }
+      tick();
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      runScene();
+    }
+    function stop() {
+      running = false;
+      if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    if (reduceMotion() || scenes.length === 1 && sceneSteps(scenes[0]).length <= 1) {
+      paintScene(scenes[0], true);
+      focusDocs(scenes[0].school);
+      return;
+    }
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) start(); else stop();
+        });
+      }, { threshold: 0.15 });
+      io.observe(panel);
+    } else {
+      start();
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stop();
+      else if (isInView(panel)) start();
+    });
+  }
+
+  function isInView(node) {
+    var r = node.getBoundingClientRect();
+    return r.bottom > 0 && r.top < (window.innerHeight || 0);
   }
 
   function renderMaterialShowcase(items) {
@@ -171,7 +410,7 @@
     var railwrap = el('div', 'mt-railwrap');
     railwrap.setAttribute('data-reveal-item', '');
     var rail = el('div', 'mt-rail mt-rail--docs');
-    items.forEach(function (it) { rail.appendChild(docCard(it.mat, it.meta)); });
+    items.forEach(function (it) { rail.appendChild(docCard(it.mat, it.meta, it.school)); });
     railwrap.appendChild(rail);
     railwrap.appendChild(railNav(rail));
     w.appendChild(railwrap);
@@ -179,9 +418,10 @@
     return s;
   }
 
-  function docCard(mat, meta) {
+  function docCard(mat, meta, school) {
     var card = el('button', 'mt-doc');
     card.type = 'button';
+    if (school) card.setAttribute('data-mt-school', school);
     var sheet = el('div', 'mt-doc-sheet' + (mat.thumbnailUrl ? '' : ' ph'), mat.thumbnailUrl ? null : '📄');
     if (mat.thumbnailUrl) {
       var im = document.createElement('img');
