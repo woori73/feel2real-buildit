@@ -1288,3 +1288,14 @@ frame·playback 구조/데이터 **미변경**(`academy_collection.{js,css}` dif
 - **검증 기준**: given handle=NULL Academy + request.handle=null → when `update()` 발행 → then 자동 `academy-{hash}` 부여 + 저장 성공(200). AcademyServiceTest에 given/when/then 케이스 추가.
 - **범위 밖**: 이번 원장 소개(sec-principal) 작업과 무관한 선재 버그이며, 원장 영상 발행을 검증하려다 드러났다. 원장 영상 임베드(`principalYoutubeUrl` → `youtube.com/embed/{id}` 정규화)는 정상 동작 확인됨.
 - **관련**: `AcademyService.java`(resolveCreateHandle/resolveUpdateHandle), `HandlePolicy.java`, `V926__add_academy_handle.sql`, `academy-publish-design.md`.
+
+
+## Mobile-first brand typography and Bildi design intent
+
+- 공개 Academy와 Builder Mobile Preview는 `academy_brand.js`의 동일한 registry/preset 및 `academy_brand.css`의 동일한 design token을 사용한다. PC CSS를 축소해 흉내 내지 않고 mobile token을 기본값으로 두며 769px 이상에서 desktop logo token으로 확장한다.
+- 저장 위치는 기존 `pageSettings.builderDraft`다: `typographyPreset`, `headingFont`, `bodyFont`, `logoSizeDesktop`, `logoSizeMobile`, `headingSizeMobile`, `bodySizeMobile`. 서버는 preset/font registry ID와 숫자 크기 token만 허용하며 임의 font-family/CSS는 거부한다.
+- preset은 `MODERN`, `PREMIUM`, `CLEAN`, `FRIENDLY`, `ACADEMIC` 다섯 개다. Serif는 heading에만 사용하고 body는 Sans를 유지한다. 선택한 heading/body에 필요한 registry font link만 동적으로 유지하며 `font-display: swap` 제공 CSS만 사용한다.
+- 빌디 style step은 자연어 전체 문맥을 안전한 preset으로 해석하고 즉시 변경하지 않는다. 사용자는 미리보기/적용/다른 느낌을 선택하며 적용 후 기존 draft/publish 경로로 저장한다. undo는 적용 직전 builderDraft snapshot을 복원한다.
+- 브랜드 패널은 font 이름과 실제 한글 sample을 함께 표시하고 Desktop/Mobile logo size 및 Mobile heading/body size를 직접 조절한다.
+- 에듀홀릭 HOME LIVE card는 Wiki → 출제 경향 → 실제 수업 영상 순서를 사용한다. 실제 공개 LESSON 영상 중 filename에 학교명이 확인되는 경우만 영상 scene을 추가하며, preload=none/muted/playsinline, viewport 밖 pause, 한 번에 한 영상 재생 정책을 적용한다.
+- 회귀 검증 viewport: 360/375/390/412/430px portrait. 가로 overflow, Header logo/title 겹침, 긴 학교명, touch scroll snap, video aspect ratio와 layout shift를 확인한다.

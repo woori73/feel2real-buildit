@@ -21,6 +21,7 @@
   const BUSINESS_INFO = window.F2RAcademyBusinessInfo;
   // 섹션 마크업 정본. 공개/빌더가 같은 모듈을 쓰고 화면 차이는 ctx가 흡수한다.
   const SECTIONS = window.F2RAcademySections;
+  const BRAND = typeof window !== 'undefined' ? window.F2RAcademyBrand : null;
   // deps는 지연 평가한다 — slug는 이 시점에 아직 계산 전이고, 쇼케이스 모듈은 정본 모듈과
   // 다른 컨텍스트에 있을 수 있다.
   const PUBLIC_CTX = SECTIONS.createPublicContext({
@@ -62,6 +63,7 @@
       if (!res.ok) throw new Error('공개 Academy를 찾을 수 없습니다.');
       const academy = await res.json();
       academyVideos = await loadVideos();
+      window.F2RAcademyPublicVideos = academyVideos;
       render(academy, await isOwnAcademy(academy.slug));
     } catch (err) {
       errorMsg.textContent = err.message || 'Academy 조회에 실패했습니다.';
@@ -94,6 +96,7 @@
   }
 
   function render(academy, ownAcademy) {
+    if (BRAND) BRAND.apply(root, academy);
     const primarySubject = (academy.subjects && academy.subjects[0])
       ? (academy.subjects[0].nameKo || academy.subjects[0].nameEn) : '';
     const regionText = (academy.regions && academy.regions[0]) ? academy.regions[0].displayName : '';

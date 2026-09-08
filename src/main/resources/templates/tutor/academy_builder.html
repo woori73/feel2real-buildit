@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1"/>
   <link rel="stylesheet" href="/css/academy_builder_ai_guide.css?v=20260908-2"/>
   <link rel="stylesheet" href="/css/academy_world.css?v=20260908-2"/>
+  <link rel="stylesheet" href="/css/academy_brand.css?v=20260908-1"/>
 
   <script>
     tailwind.config = {
@@ -74,7 +75,7 @@
       border-bottom:1px solid rgba(255,255,255,.06);
       flex-shrink:0;
     }
-    .panel-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;}
+    .panel-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
     .panel-tab{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.64);border-radius:10px;padding:8px 10px;font-size:.72rem;font-weight:800;cursor:pointer;}
     .panel-tab.active{background:linear-gradient(135deg,rgba(74,127,212,.28),rgba(12,35,138,.18));border-color:rgba(74,127,212,.65);color:#fff;box-shadow:0 8px 18px rgba(12,35,138,.22);}
     .panel-pane[hidden]{display:none!important;}
@@ -1113,6 +1114,7 @@
       <div class="panel-tabs" role="tablist" aria-label="빌더 패널">
         <button type="button" class="panel-tab active" data-builder-panel-tab="blocks" role="tab" aria-selected="true">블록</button>
         <button type="button" class="panel-tab" data-builder-panel-tab="layout" role="tab" aria-selected="false">레이아웃</button>
+        <button type="button" class="panel-tab" data-builder-panel-tab="brand" role="tab" aria-selected="false">브랜드</button>
       </div>
     </div>
 
@@ -1301,6 +1303,29 @@
 
       </div>
       </div><!-- /blocks pane -->
+
+      <div class="panel-pane builder-brand-panel" data-builder-panel-pane="brand" hidden>
+        <div class="block-section-label">Typography <span class="label-chip">MOBILE FIRST</span></div>
+        <p class="builder-brand-help">폰트 이름을 몰라도 분위기를 선택할 수 있습니다. 선택 즉시 Mobile Preview와 같은 렌더러에 반영됩니다.</p>
+        <div class="builder-brand-grid">
+          <button class="builder-brand-option" data-brand-preset="MODERN"><b>MODERN</b><span>깔끔하고 현대적인 학원</span></button>
+          <button class="builder-brand-option" data-brand-preset="PREMIUM"><b>PREMIUM</b><span>고급·신뢰·전문성</span></button>
+          <button class="builder-brand-option" data-brand-preset="CLEAN"><b>CLEAN</b><span>정돈된 전문 과목 학원</span></button>
+          <button class="builder-brand-option" data-brand-preset="FRIENDLY"><b>FRIENDLY</b><span>초등·저학년 친화</span></button>
+          <button class="builder-brand-option" data-brand-preset="ACADEMIC"><b>ACADEMIC</b><span>입시·논술·고등 전문</span></button>
+        </div>
+        <div class="block-section-label">실제 글꼴 미리보기</div>
+        <div class="builder-brand-fonts">
+          <button class="builder-brand-font" data-brand-font="PRETENDARD" data-brand-role="body"><b>Pretendard</b><small style="font-family:Pretendard,sans-serif">압구정에듀홀릭학원</small></button>
+          <button class="builder-brand-font" data-brand-font="SUIT" data-brand-role="body"><b>SUIT</b><small style="font-family:SUIT,sans-serif">압구정에듀홀릭학원</small></button>
+          <button class="builder-brand-font" data-brand-font="NOTO_SERIF_KR" data-brand-role="heading"><b>Noto Serif KR</b><small style="font-family:'Noto Serif KR',serif">압구정에듀홀릭학원</small></button>
+        </div>
+        <div class="block-section-label">크기 조절</div>
+        <label class="builder-brand-control"><span>로고 Desktop</span><output data-brand-output="logoSizeDesktop">88px</output><input type="range" min="52" max="160" value="88" data-brand-key="logoSizeDesktop"></label>
+        <label class="builder-brand-control"><span>로고 Mobile</span><output data-brand-output="logoSizeMobile">68px</output><input type="range" min="44" max="104" value="68" data-brand-key="logoSizeMobile"></label>
+        <label class="builder-brand-control"><span>제목 Mobile</span><output data-brand-output="headingSizeMobile">34px</output><input type="range" min="24" max="44" value="34" data-brand-key="headingSizeMobile"></label>
+        <label class="builder-brand-control"><span>본문 Mobile</span><output data-brand-output="bodySizeMobile">16px</output><input type="range" min="15" max="20" value="16" data-brand-key="bodySizeMobile"></label>
+      </div>
 
       <div class="panel-pane" data-builder-panel-pane="layout" hidden>
         <div class="block-section-label">섹션 순서 <span class="label-chip">ON 섹션</span></div>
@@ -1823,6 +1848,7 @@ function setView(mode, btn){
 <script src="/js/academy_reveal.js?v=20260901-5"></script>
 <script src="/js/academy_world.js?v=20260907-4"></script>
 <script src="/js/academy_builder_ai_guide.js?v=20260908-1"></script>
+<script src="/js/academy_brand.js?v=20260908-1"></script>
 <script src="/js/academy_builder.js?v=20260908-2"></script>
 
 </body>

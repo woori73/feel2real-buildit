@@ -1,0 +1,53 @@
+/* Academy brand tokens: mobile-first source of truth shared by Builder preview/public. */
+#publicView,.builder-public-preview{
+  --academy-heading-font:'Pretendard','Noto Sans KR',sans-serif;
+  --academy-body-font:'Pretendard','Noto Sans KR',sans-serif;
+  --academy-heading-weight:800;--academy-body-weight:500;
+  --academy-heading-line-height:1.24;--academy-body-line-height:1.7;
+  --academy-heading-letter-spacing:-.035em;--academy-body-letter-spacing:-.012em;
+  --academy-logo-mobile:68px;--academy-logo-desktop:88px;
+  --academy-heading-mobile:34px;--academy-body-mobile:16px;
+  font-family:var(--academy-body-font);font-weight:var(--academy-body-weight);
+  line-height:var(--academy-body-line-height);letter-spacing:var(--academy-body-letter-spacing);
+  overflow-x:clip;
+}
+#publicView :is(h1,h2,h3,.eh-logo-title,.featured-schoolcard-name,.featured-title,.collection-title,.cv-section-title){
+  font-family:var(--academy-heading-font);font-weight:var(--academy-heading-weight);
+  line-height:var(--academy-heading-line-height);letter-spacing:var(--academy-heading-letter-spacing);
+  overflow-wrap:anywhere;word-break:keep-all;
+}
+#publicView :is(p,button,a,.featured-desc,.featured-schoolcard-kind){font-family:var(--academy-body-font);}
+#publicView .eh-logo-component{min-width:0;display:flex;align-items:center;gap:10px;}
+#publicView .eh-logo-symbol{width:var(--academy-logo-mobile)!important;height:var(--academy-logo-mobile)!important;min-width:var(--academy-logo-mobile);flex:0 0 var(--academy-logo-mobile);}
+#publicView .eh-logo-symbol img{width:100%;height:100%;object-fit:contain;display:block;}
+#publicView .eh-logo-title{font-size:clamp(16px,4.8vw,21px);white-space:normal;max-width:min(62vw,280px);}
+#publicView :is(.cv-hero h1,.hero-title,.featured-title,.collection-title){font-size:var(--academy-heading-mobile);}
+#publicView :is(.cv-hero p,.hero-copy,.featured-desc,.collection-desc){font-size:var(--academy-body-mobile);}
+#publicView :is(button,.btn,[class*="-btn"]){min-height:44px;}
+#publicView video{max-width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;}
+.builder-brand-panel{display:flex;flex-direction:column;gap:12px;color:#e5e7eb;}
+.builder-brand-help{font-size:.69rem;line-height:1.55;color:rgba(255,255,255,.55);}
+.builder-brand-grid{display:grid;gap:8px;}
+.builder-brand-option{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;border-radius:10px;padding:10px;text-align:left;cursor:pointer;}
+.builder-brand-option.is-selected{border-color:#7aaef0;background:rgba(74,127,212,.18);}
+.builder-brand-option b,.builder-brand-option span{display:block}.builder-brand-option span{margin-top:3px;font-size:.65rem;color:rgba(255,255,255,.55);}
+.builder-brand-control{display:grid;grid-template-columns:1fr auto;gap:5px 8px;align-items:center;font-size:.7rem;}
+.builder-brand-control input{grid-column:1/-1;width:100%;accent-color:#7aaef0;}
+.builder-brand-fonts{display:grid;gap:7px;}
+.builder-brand-font{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);color:#fff;text-align:left;cursor:pointer;}
+.builder-brand-font small{display:block;margin-top:4px;font-size:.78rem;}
+@media (min-width:769px){
+  #publicView .eh-logo-symbol{width:var(--academy-logo-desktop)!important;height:var(--academy-logo-desktop)!important;min-width:var(--academy-logo-desktop);flex-basis:var(--academy-logo-desktop);}
+  #publicView .eh-logo-title{max-width:420px;}
+  #publicView :is(.cv-hero h1,.hero-title,.featured-title,.collection-title){font-size:clamp(38px,4.5vw,68px);}
+}
+@media (max-width:600px){
+  #publicView .cv-gnb{padding:10px 14px;min-height:76px;}
+  #publicView .cv-nav{flex-shrink:0}
+  #publicView .cv-nav :is(button,a){font-size:12px;padding-inline:10px;}
+  #publicView .featured-schoolcards{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 16px 8px;scroll-padding-left:16px;-webkit-overflow-scrolling:touch;}
+  #publicView .featured-schoolcard{flex:0 0 calc(100vw - 48px);max-width:380px;scroll-snap-align:start;overflow:hidden;}
+}
+@media (max-width:900px){
+  .builder-body{overflow:auto!important}.left-panel{width:min(92vw,340px)!important}.panel-tabs{grid-template-columns:repeat(3,1fr)!important}
+}
