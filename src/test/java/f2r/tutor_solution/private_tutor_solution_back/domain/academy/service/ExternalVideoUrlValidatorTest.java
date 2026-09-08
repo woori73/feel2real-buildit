@@ -22,10 +22,93 @@ class ExternalVideoUrlValidatorTest {
   }
 
   @Test
-  @DisplayName("tv.naver.com → NAVER, embed 없음")
-  void naverTv() {
-    assertThat(validator.validate("https://tv.naver.com/v/12345").provider())
+  @DisplayName("tv.naver.com/v/<clipNo> → NAVER + tv.naver.com/embed 주소")
+  void naverTvClip() {
+    var v = validator.validate("https://tv.naver.com/v/12345");
+    assertThat(v.provider()).isEqualTo(AcademyExternalVideoProvider.NAVER);
+    assertThat(v.embedUrl()).isEqualTo("https://tv.naver.com/embed/12345");
+    assertThat(validator.validate("https://tv.naver.com/clip/98765?query=1").embedUrl())
+        .isEqualTo("https://tv.naver.com/embed/98765");
+    assertThat(validator.validate("https://tv.naver.com/embed/55555?autoPlay=false").embedUrl())
+        .isEqualTo("https://tv.naver.com/embed/55555");
+  }
+
+  @Test
+  @DisplayName("tv.naver.com 채널 등 clip 번호 없음 → NAVER, embed 없음")
+  void naverTvNonClip() {
+    var v = validator.validate("https://tv.naver.com/eduholic");
+    assertThat(v.provider()).isEqualTo(AcademyExternalVideoProvider.NAVER);
+    assertThat(v.embedUrl()).isNull();
+  }
+
+  @Test
+  @DisplayName("naver.me 단축주소 / m.naver.com/shorts(GUID) → NAVER, embed 없음(공식 경로 없음)")
+  void naverShareLinksHaveNoEmbed() {
+    assertThat(validator.validate("https://naver.me/F4WnDovq").embedUrl()).isNull();
+    assertThat(validator.validate(
+        "https://m.naver.com/shorts?mediaId=3B84EA2409259B3619D13D9748298262888E&serviceType=NAVER_TV")
+        .embedUrl()).isNull();
+    assertThat(validator.validate("https://m.naver.com/shorts?mediaId=ABC").provider())
         .isEqualTo(AcademyExternalVideoProvider.NAVER);
+  }
+
+  @Test
+  @DisplayName("clip-viewer.naver.com/oembed/ (공유>소스코드 iframe src) → NAVER + canonical embed URL")
+  void naverClipViewerOembed() {
+    String[] seeds = {
+      "3B84EA2409259B3619D13D9748298262888E",
+      "7EC5EB4A7C09B448379F094D0787416655BF",
+      "139CB1F7A8E070D6B2119B4AE236E28DA6E2"
+    };
+    for (String seed : seeds) {
+      var v = validator.validate(
+          "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+          + "&mediaType=SHORT_FORM&serviceType=NTV");
+      assertThat(v.provider()).isEqualTo(AcademyExternalVideoProvider.NAVER);
+      assertThat(v.embedUrl()).isEqualTo(
+          "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+          + "&mediaType=SHORT_FORM&serviceType=NTV");
+    }
+    // 파라미터 순서/여분 파라미터가 달라도 canonical 로 재구성한다.
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?serviceType=NTV&extra=1"
+        + "&seedMediaId=139CB1F7A8E070D6B2119B4AE236E28DA6E2&mediaType=SHORT_FORM").embedUrl())
+        .isEqualTo("https://clip-viewer.naver.com/oembed/?seedMediaId="
+        + "139CB1F7A8E070D6B2119B4AE236E28DA6E2&mediaType=SHORT_FORM&serviceType=NTV");
+  }
+
+  @Test
+  @DisplayName("clip-viewer.naver.com — allowlist 조건 하나라도 어긋나면 embed 없음(CTA)")
+  void naverClipViewerStrictAllowlist() {
+    String seed = "3B84EA2409259B3619D13D9748298262888E";
+    // seedMediaId 없음
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?mediaType=SHORT_FORM&serviceType=NTV").embedUrl()).isNull();
+    // mediaType 불일치
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=LONG_FORM&serviceType=NTV").embedUrl()).isNull();
+    // serviceType 불일치
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NAVER_TV").embedUrl()).isNull();
+    // path 불일치
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/player/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NTV").embedUrl()).isNull();
+    // host 불일치(서브도메인 위장)
+    assertThat(validator.validate(
+        "https://evil.clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NTV").embedUrl()).isNull();
+    // seedMediaId 형식 불량
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?seedMediaId=../../etc&mediaType=SHORT_FORM&serviceType=NTV")
+        .embedUrl()).isNull();
+    // http
+    assertThatThrownBy(() -> validator.validate(
+        "http://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NTV"))
+        .isInstanceOf(VideoUploadRejectedException.class);
   }
 
   @Test

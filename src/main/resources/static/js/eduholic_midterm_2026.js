@@ -71,8 +71,33 @@
   var TWIN_MS = 18000;                // DIGITAL_TWIN scene 표시 시간(내부 crop 3뷰 순환).
   var TWIN_VIEW_MS = 4500;            // DIGITAL_TWIN 내부 crop 전환 간격.
   var TWIN_VIEWS = 3;
-  var VIDEO_MS = 9000;               // video scene(STUDENT_STUDY / LESSON_INTERACTION / AMBIENT) 표시 시간. 영상은 loop.
+  var VIDEO_MS = 9000;               // 직접 업로드 영상 scene 안전 상한(ended 가 안 오면 이 시간 뒤 전환).
+  var VIDEO_CAP_MS = 90000;          // embed 영상(YouTube 등) ended 미수신 시 안전 상한.
+  var NAVERTV_MS = 20000;            // 네이버 TV embed — 재생 제어 불가라 클릭할 시간을 주고 전환.
   var SHOWCASE_MS = 7000;            // 상단 Showcase 학교 scene 표시 시간.
+  var YT_IFRAME_API = 'https://www.youtube.com/iframe_api';
+
+  // YouTube IFrame Player API — 영상 종료 감지(다음 scene) + viewport 밖 pause 를 위해 필요하다.
+  // 실제 YouTube 링크가 있는 FRAME 이 하나라도 있을 때만 lazy 로 로드한다(초기 렌더 무영향).
+  var ytApiState = 0;               // 0 미로드 · 1 로딩중 · 2 준비됨
+  var ytReadyQueue = [];
+  function ensureYouTubeApi(cb) {
+    if (window.YT && window.YT.Player) { ytApiState = 2; }
+    if (ytApiState === 2) { cb(); return; }
+    ytReadyQueue.push(cb);
+    if (ytApiState === 1) return;
+    ytApiState = 1;
+    var prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function () {
+      if (typeof prev === 'function') { try { prev(); } catch (e) {} }
+      ytApiState = 2;
+      ytReadyQueue.splice(0).forEach(function (fn) { try { fn(); } catch (e) {} });
+    };
+    var s = document.createElement('script');
+    s.src = YT_IFRAME_API;
+    s.async = true;
+    (document.head || document.documentElement).appendChild(s);
+  }
 
   var reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -583,38 +608,37 @@
     return null;
   }
 
-  function isExternalClip(link) {
-    return !!(link && !link.videoUrl && link.externalUrl);
+  /** YouTube embed URL(www.youtube.com/embed/<id>)에서 video id 를 뽑는다. */
+  function youtubeId(embedUrl) {
+    var m = String(embedUrl || '').match(/\/embed\/([A-Za-z0-9_-]{6,20})/);
+    return m ? m[1] : null;
   }
 
   /**
-   * 외부 링크 영상 CTA scene 1개를 stage 에 추가한다. iframe embed 하지 않는다(§13) — 서버가
-   * 준 externalUrl 로 새 탭을 여는 링크만. 자동 재생/소리 없음. MATERIAL 과 같은 표시 시간.
+   * link(서버 정렬 순 대표 항목) 하나를 적절한 scene 으로 stage 에 추가한다.
+   *  - videoUrl(직접 업로드)        → 인라인 <video>
+   *  - provider=YOUTUBE + embedUrl  → 인라인 YouTube 플레이어(IFrame API 로 종료/일시정지 제어)
+   *  - provider=NAVER + embedUrl    → 인라인 tv.naver.com/embed iframe(재생 제어 불가 → 시간제 scene)
+   *  - 그 외(embed 불가 외부 링크)  → 작은 콘텐츠 카드 + "영상 보기" CTA (거대한 빈 프레임 아님)
    */
-  function addExternalScene(stage, scenes, link) {
-    var scene = el('div', 'midterm-live__scene');
-    scene.setAttribute('data-kind', 'external');
-    var box = el('div', 'midterm-live__external');
-    var title = String(link.title || '').trim();
-    if (title) box.appendChild(el('p', 'midterm-live__external-title', title));
-    var a = document.createElement('a');
-    a.className = 'midterm-live__external-cta';
-    a.href = link.externalUrl;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.textContent = '영상 보기 →';
-    box.appendChild(a);
-    scene.appendChild(box);
-    stage.appendChild(scene);
-    scenes.push({ el: scene, kind: 'external', ms: MATERIAL_MS, sub: SEASON });
+  function addClipScene(stage, scenes, link) {
+    if (typeof link.videoUrl === 'string' && link.videoUrl) {
+      addVideoScene(stage, scenes, link.videoUrl, link.thumbnailUrl, 0);
+      return;
+    }
+    var ytId = link.provider === 'YOUTUBE' ? youtubeId(link.embedUrl) : null;
+    if (ytId) { addYouTubeScene(stage, scenes, link, ytId); return; }
+    if (link.provider === 'NAVER' && typeof link.embedUrl === 'string' && link.embedUrl) {
+      addNaverTvScene(stage, scenes, link);
+      return;
+    }
+    addLinkCardScene(stage, scenes, link);
   }
 
   /**
-   * video scene 1개를 stage 에 추가한다. 세 종류(STUDENT_STUDY/LESSON_INTERACTION/AMBIENT) 공통.
-   * OUTER FRAME · MEDIA STAGE 크기는 그대로 두고 video element 의 fit 만 방향에 맞춘다 —
-   * portrait/phone footage 는 contain(수업 맥락 유지, 남는 공간은 stage 배경), landscape 는
-   * stage 비율에 가깝게 contain. cover 로 상체만 크게 잘리는 panorama 실패를 만들지 않는다.
-   * videoId 하드코딩 없이 runtime videoWidth/videoHeight 로만 판정한다.
+   * 인라인 <video> scene(직접 업로드 · academy ambient 공통). player controls 를 제공한다 —
+   * muted autoplay 가 브라우저에서 막혀도 방문자가 직접 재생할 수 있어야 한다(작업지시서 §3).
+   * loop 하지 않는다: 종료되면 scene engine 이 다음 scene 으로 넘어간다.
    */
   function addVideoScene(stage, scenes, url, poster, startAt) {
     var vscene = el('div', 'midterm-live__scene');
@@ -625,13 +649,11 @@
     if (poster) video.poster = poster;
     video.muted = true;
     video.defaultMuted = true;
-    video.loop = true;
     video.playsInline = true;
+    video.controls = true;
     video.preload = 'metadata';
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
-    video.setAttribute('aria-hidden', 'true');
-    video.setAttribute('tabindex', '-1');
     function markOrientation() {
       if (!video.videoWidth || !video.videoHeight) return;
       var portrait = video.videoHeight > video.videoWidth;
@@ -644,6 +666,104 @@
     stage.appendChild(vscene);
     scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video,
       startAt: startAt > 0 ? startAt : 0 });
+  }
+
+  /** 인라인 YouTube scene. IFrame API 로 muted autoplay · 종료 감지 · pause 를 제어한다. */
+  function addYouTubeScene(stage, scenes, link, ytId) {
+    var scene = el('div', 'midterm-live__scene');
+    scene.setAttribute('data-kind', 'embed');
+    scene.classList.add('is-landscape');
+    var holder = el('div', 'midterm-live__embed');
+    var mount = document.createElement('div');
+    holder.appendChild(mount);
+    scene.appendChild(holder);
+    stage.appendChild(scene);
+    var entry = { el: scene, kind: 'embed', embed: 'yt', ms: VIDEO_CAP_MS, sub: SEASON,
+      ytId: ytId, player: null, ended: false };
+    scenes.push(entry);
+    ensureYouTubeApi(function () {
+      if (!mount.isConnected) return;
+      entry.player = new window.YT.Player(mount, {
+        videoId: ytId,
+        host: 'https://www.youtube-nocookie.com',
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1, mute: 1, controls: 1 },
+        events: {
+          onReady: function (e) {
+            try { e.target.mute(); } catch (err) {}
+            // player 준비가 scene 활성화보다 늦으면 여기서 따라잡는다(muted 라 autoplay 허용).
+            if (entry.el.classList.contains('is-active')) {
+              try { e.target.playVideo(); } catch (err) {}
+            }
+          },
+          onStateChange: function (e) {
+            if (e.data === window.YT.PlayerState.ENDED && typeof entry.onEnd === 'function') {
+              entry.onEnd();
+            }
+          }
+        }
+      });
+    });
+  }
+
+  /** 인라인 네이버 TV scene(tv.naver.com/embed). 재생 상태를 JS 로 못 읽어 시간제 scene 이다.
+   *  viewport 밖에서는 src 를 비워 재생을 확실히 멈춘다. iframe 로드 실패 시 링크 카드로 폴백. */
+  function addNaverTvScene(stage, scenes, link) {
+    var scene = el('div', 'midterm-live__scene');
+    scene.setAttribute('data-kind', 'embed');
+    scene.classList.add('is-landscape');
+    var holder = el('div', 'midterm-live__embed');
+    var iframe = document.createElement('iframe');
+    iframe.className = 'midterm-live__embed-frame';
+    iframe.title = '현장 영상';
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
+    iframe.setAttribute('allowfullscreen', '');
+    var src = link.embedUrl + (link.embedUrl.indexOf('?') >= 0 ? '&' : '?') + 'autoPlay=false';
+    holder.appendChild(iframe);
+    scene.appendChild(holder);
+    stage.appendChild(scene);
+    var entry = { el: scene, kind: 'embed', embed: 'navertv', ms: NAVERTV_MS, sub: SEASON,
+      iframe: iframe, src: src };
+    scenes.push(entry);
+    var failed = false;
+    iframe.addEventListener('error', function () {
+      if (failed) return;
+      failed = true;
+      holder.replaceWith(linkCard(link));
+      entry.embed = null;
+      entry.ms = MATERIAL_MS;
+    });
+  }
+
+  function linkCard(link) {
+    var box = el('div', 'midterm-live__linkcard');
+    if (link.thumbnailUrl) {
+      var img = document.createElement('img');
+      img.className = 'midterm-live__linkcard-thumb';
+      img.src = link.thumbnailUrl;
+      img.alt = '';
+      img.loading = 'lazy';
+      box.appendChild(img);
+    }
+    var title = String(link.title || '').trim();
+    box.appendChild(el('p', 'midterm-live__linkcard-title', title || '현장 영상'));
+    var a = document.createElement('a');
+    a.className = 'midterm-live__linkcard-cta';
+    a.href = link.externalUrl || link.embedUrl || '#';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = '영상 보기 →';
+    box.appendChild(a);
+    return box;
+  }
+
+  /** embed 불가 외부 링크 — 작은 콘텐츠 카드(썸네일 + 제목 + CTA). 거대한 빈 프레임 아님. */
+  function addLinkCardScene(stage, scenes, link) {
+    var scene = el('div', 'midterm-live__scene');
+    scene.setAttribute('data-kind', 'linkcard');
+    scene.appendChild(linkCard(link));
+    stage.appendChild(scene);
+    scenes.push({ el: scene, kind: 'linkcard', ms: MATERIAL_MS, sub: SEASON });
   }
 
   /**
@@ -807,14 +927,8 @@
       var links = Array.isArray(frameLinks) ? frameLinks : [];
       var studyClip = pickRole(links, 'STUDENT_STUDY');
       var interactionClip = pickRole(links, 'LESSON_INTERACTION');
-      if (studyClip) {
-        if (isExternalClip(studyClip)) addExternalScene(stage, scenes, studyClip);
-        else addVideoScene(stage, scenes, studyClip.videoUrl, studyClip.thumbnailUrl, 0);
-      }
-      if (interactionClip) {
-        if (isExternalClip(interactionClip)) addExternalScene(stage, scenes, interactionClip);
-        else addVideoScene(stage, scenes, interactionClip.videoUrl, interactionClip.thumbnailUrl, 0);
-      }
+      if (studyClip) addClipScene(stage, scenes, studyClip);
+      if (interactionClip) addClipScene(stage, scenes, interactionClip);
       if (!studyClip && !interactionClip && ambientVideo && ambientVideo.videoUrl) {
         addVideoScene(stage, scenes, ambientVideo.videoUrl, ambientVideo.thumbnailUrl,
           AMBIENT_STARTS[ambientVideo.videoId] || 0);
@@ -822,11 +936,20 @@
     }
     if (scenes.length) scenes[0].el.classList.add('is-active');
 
-    // DIGITAL_TWIN scene — 그 학교 "가장 최근 완료된 시험"의 공개 출제 경향 분석. 자료 있는 frame 은
-    // school+grade 일치, pending frame 은 학교만 일치(twinContentUrl 참조).
+    // 출제 경향 scene — 그 학교 "가장 최근 완료된 시험"의 공개 분석. Wiki(시험범위) scene 과
+    // 반드시 다른 자료여야 한다: 노출된 Wiki 자료가 이미 분석 완성본(sourceId 'final-…')이면
+    // "출제 경향"은 그 자료와 사실상 동일하므로 중복 scene 을 만들지 않는다(작업지시서 §2).
+    var materialIds = (frame.materials || []).map(function (s) {
+      return String((s && s.sourceId) || '');
+    });
+    var wikiIsAnalysis = materialIds.some(function (id) { return id.indexOf('final-') === 0; });
+    var materialUrls = (frame.materials || []).map(function (s) {
+      return String((s && s.previewUrl) || '');
+    });
     var TWIN_SUB = '최근 시험 출제 경향 분석';
     twinContentUrl(frame).then(function (result) {
-      if (!result || !result.url) return;
+      if (!result || !result.url) return;                 // 분석이 없으면 가짜 scene 을 만들지 않는다.
+      if (wikiIsAnalysis || materialUrls.indexOf(result.url) !== -1) return;  // Wiki 와 동일 자료 → 중복 금지.
       var scene = el('div', 'midterm-live__scene');
       scene.setAttribute('data-kind', 'twin');
       var twin = safeFrame(result.url, 'midterm-live__twin', TWIN_SUB);
@@ -849,68 +972,81 @@
     return article;
   }
 
+  /** scene 선택 dot. reduced-motion 사용자도 직접 scene 을 고를 수 있어야 한다(작업지시서 §3).
+   *  선택 동작은 article.__mtSelectScene(엔진이 배선) 를 통해 하므로 re-render 후에도 유지된다. */
   function renderDots(article, count) {
     var existing = article.querySelector('.midterm-live__dots');
     if (existing) existing.remove();
     if (count < 2) return;
     var dots = el('div', 'midterm-live__dots');
-    dots.setAttribute('aria-hidden', 'true');
+    dots.setAttribute('role', 'tablist');
+    dots.setAttribute('aria-label', '준비 단계 선택');
     for (var i = 0; i < count; i++) {
-      dots.appendChild(el('span', 'midterm-live__dot' + (i === 0 ? ' is-on' : '')));
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'midterm-live__dot' + (i === 0 ? ' is-on' : '');
+      b.setAttribute('aria-label', (i + 1) + '단계');
+      b.dataset.sceneIndex = String(i);
+      b.addEventListener('click', function (ev) {
+        if (typeof article.__mtSelectScene === 'function') {
+          article.__mtSelectScene(parseInt(ev.currentTarget.dataset.sceneIndex, 10));
+        }
+      });
+      dots.appendChild(b);
     }
     (article.querySelector('.midterm-live__stage') || article).appendChild(dots);
   }
 
-  /** FRAME 내부 scene 만 자동 전환. 뷰포트 밖이면 모든 타이머 정지. reduced-motion 이면 정적. */
+  /**
+   * FRAME 내부 scene 자동 전환 엔진.
+   *  - Wiki(시험범위) → 출제 경향 → 실제 현장 영상 순으로 자동 전환한다.
+   *  - 영상 scene(직접 업로드 / YouTube)은 도달 시 muted autoplay 를 시도하고, 종료(ended)되면
+   *    다음 scene 으로 넘어간다 — 재생 중에는 고정 4.5초로 강제 전환하지 않는다(§3).
+   *  - autoplay 가 차단돼도 player controls 는 그대로라 방문자가 직접 재생할 수 있다.
+   *  - viewport 밖이면 모든 timer 와 영상을 멈춘다. 동시에 두 영상이 재생되지 않는다.
+   *  - reduced-motion: 자동 전환 안 함(첫 scene 정적). dot 으로 직접 선택은 가능.
+   */
   function wireSceneEngine(article, subEl, scenes) {
     var sceneTimer = null;
     var twinTimer = null;
-    var active = false;
+    var active = false;              // viewport 안 + 자동 진행 중
     var index = 0;
 
+    function sceneEls() { return article.querySelectorAll('.midterm-live__scene'); }
     function syncDots() {
-      var dots = article.querySelectorAll('.midterm-live__dot');
-      dots.forEach(function (d, di) { d.classList.toggle('is-on', di === index); });
+      article.querySelectorAll('.midterm-live__dot').forEach(function (d, di) {
+        d.classList.toggle('is-on', di === index);
+        d.setAttribute('aria-selected', di === index ? 'true' : 'false');
+      });
     }
 
-    // 한 FRAME 안에서 동시에 두 영상이 재생되지 않게 — scene 이 바뀌거나 FRAME 이 뷰포트를
-    // 벗어나면 이 FRAME 의 모든 ambient 영상을 멈춘다(§19·§20).
-    function pauseVideos() {
+    function stopAllMedia() {
       article.querySelectorAll('.midterm-live__video').forEach(function (v) {
         try { v.pause(); } catch (e) {}
+      });
+      scenes.forEach(function (s) {
+        if (s.embed === 'yt' && s.player && typeof s.player.pauseVideo === 'function') {
+          try { s.player.pauseVideo(); } catch (e) {}
+        }
+        if (s.embed === 'navertv' && s.iframe) {
+          try { if (s.iframe.getAttribute('src')) s.iframe.setAttribute('src', 'about:blank'); } catch (e) {}
+        }
       });
     }
 
     function playVideo(v, startAt) {
       try {
         var t = startAt > 0 ? startAt : 0;
-        var d = v.duration;                // metadata 로딩 전이면 NaN — 그대로 best-effort seek.
-        if (d && t >= d) t = 0;            // 설정 시작점이 실제 길이 이상이면 안전 fallback.
-        v.currentTime = t;                 // 재활성화마다 설정 시작점(없으면 0)부터.
+        var d = v.duration;
+        if (d && t >= d) t = 0;
+        v.currentTime = t;
         var p = v.play();
-        if (p && typeof p.catch === 'function') p.catch(function () {});
+        if (p && typeof p.catch === 'function') p.catch(function () {});  // 차단돼도 controls 로 재생 가능
       } catch (e) {}
     }
 
-    function activateScene(i) {
-      clearTimeout(twinTimer);
-      var list = article.querySelectorAll('.midterm-live__scene');
-      if (!list.length) return;
-      index = ((i % list.length) + list.length) % list.length;
-      list.forEach(function (s, si) { s.classList.toggle('is-active', si === index); });
-      pauseVideos();
-      var current = scenes[index];
-      if (current && subEl) subEl.textContent = current.sub;
-      syncDots();
-      if (current && current.kind === 'twin' && current.frame && !reduceMotion) {
-        cycleTwinViews(current.frame);
-      }
-      if (current && current.kind === 'video' && current.video && !reduceMotion) {
-        playVideo(current.video, current.startAt);
-      }
-    }
-
     function cycleTwinViews(twin) {
+      clearTimeout(twinTimer);
       var view = 0;
       function step() {
         view = (view + 1) % TWIN_VIEWS;
@@ -920,26 +1056,69 @@
       twinTimer = setTimeout(step, TWIN_VIEW_MS);
     }
 
-    function next() {
-      var count = article.querySelectorAll('.midterm-live__scene').length;
-      if (count < 2) return;
+    // 현재 scene 이 스스로 다음으로 넘어가도록 타이머/이벤트를 건다. 영상 scene 은 ended 로,
+    // 나머지는 scene.ms 로 넘어간다(영상엔 ended 미수신 대비 긴 안전 상한만).
+    function armAdvance(current) {
+      clearTimeout(sceneTimer);
+      if (!active || sceneEls().length < 2) return;
+      if (current && current.kind === 'video' && current.video) {
+        var vid = current.video;
+        var onEnded = function () { vid.removeEventListener('ended', onEnded); advance(); };
+        vid.addEventListener('ended', onEnded);
+        sceneTimer = setTimeout(function () { vid.removeEventListener('ended', onEnded); advance(); },
+          Math.max(VIDEO_MS, (vid.duration ? vid.duration * 1000 + 2000 : VIDEO_CAP_MS)));
+        return;
+      }
+      if (current && current.embed === 'yt') {
+        current.onEnd = function () { current.onEnd = null; advance(); };
+        sceneTimer = setTimeout(advance, VIDEO_CAP_MS);
+        return;
+      }
+      sceneTimer = setTimeout(advance, (current && current.ms) || MATERIAL_MS);
+    }
+
+    function activateScene(i, manual) {
+      clearTimeout(sceneTimer);
+      clearTimeout(twinTimer);
+      var list = sceneEls();
+      if (!list.length) return;
+      index = ((i % list.length) + list.length) % list.length;
+      list.forEach(function (s, si) { s.classList.toggle('is-active', si === index); });
+      stopAllMedia();
+      var current = scenes[index];
+      if (current && subEl) subEl.textContent = current.sub;
+      syncDots();
+
+      var motionOk = !reduceMotion || manual === 'keepMotion';
+      if (current && current.kind === 'twin' && current.frame && !reduceMotion) cycleTwinViews(current.frame);
+      if (current && current.kind === 'video' && current.video && (active || manual)) {
+        playVideo(current.video, current.startAt);
+      }
+      if (current && current.embed === 'yt' && current.player
+        && typeof current.player.playVideo === 'function' && (active || manual)) {
+        try { current.player.playVideo(); } catch (e) {}
+      }
+      if (current && current.embed === 'navertv' && current.iframe) {
+        try {
+          if (current.iframe.getAttribute('src') === 'about:blank' || !current.iframe.getAttribute('src')) {
+            current.iframe.setAttribute('src', current.src);
+          }
+        } catch (e) {}
+      }
+      if (active) armAdvance(current);
+      return motionOk;
+    }
+
+    function advance() {
+      if (!active) return;
       activateScene(index + 1);
-      var ms = (scenes[index] && scenes[index].ms) || MATERIAL_MS;
-      sceneTimer = setTimeout(next, ms);
     }
 
     function play() {
       if (active || reduceMotion) return;
       active = true;
       article.classList.add('is-live');
-      // 활성 scene 이 twin 이면 내부 crop 을, video 면 재생을 재개(뷰포트 재진입).
-      var current = scenes[index];
-      if (current && current.kind === 'twin' && current.frame) cycleTwinViews(current.frame);
-      if (current && current.kind === 'video' && current.video) playVideo(current.video, current.startAt);
-      var count = article.querySelectorAll('.midterm-live__scene').length;
-      if (count < 2) return;
-      var ms = (current && current.ms) || MATERIAL_MS;
-      sceneTimer = setTimeout(next, ms);
+      activateScene(index);   // 현재 scene 재생/타이머 재개
     }
 
     function pause() {
@@ -947,22 +1126,21 @@
       article.classList.remove('is-live');
       clearTimeout(sceneTimer);
       clearTimeout(twinTimer);
-      pauseVideos();                       // 뷰포트 밖 FRAME 의 영상은 항상 정지(§19).
+      stopAllMedia();
     }
 
+    // dot 직접 선택 — 자동 진행 중이면 그 scene 부터 이어서, reduced-motion 이면 그 scene 만 표시.
+    article.__mtSelectScene = function (i) { activateScene(i, 'manual'); };
+
     if (reduceMotion || !hasIO) {
-      article.classList.add('is-in-view');       // 첫 scene 정적 표시
+      article.classList.add('is-in-view');   // 첫 scene 정적 표시. dot 으로 직접 선택 가능.
       return;
     }
 
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          article.classList.add('is-in-view');
-          play();
-        } else {
-          pause();
-        }
+        if (entry.isIntersecting) { article.classList.add('is-in-view'); play(); }
+        else pause();
       });
     }, { threshold: 0.4 });
     observer.observe(article);

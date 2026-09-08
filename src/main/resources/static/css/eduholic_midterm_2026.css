@@ -682,31 +682,69 @@ a { color: inherit; }
   letter-spacing: -.01em;
 }
 
-/* 외부 링크 영상 — iframe embed 하지 않고 CTA 링크만(§13). 차단 URL 로 카드가 깨지지 않는다. */
-.midterm-live__scene[data-kind="external"] {
+/* 인라인 embed(YouTube / 네이버 TV) — stage 를 꽉 채운다. player 자체가 controls 를 갖는다. */
+.midterm-live__scene[data-kind="embed"] { inset: 0; background: #000; }
+.midterm-live__embed {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+.midterm-live__embed > iframe,
+.midterm-live__embed-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* embed 불가 외부 링크 — 작은 콘텐츠 카드(썸네일 + 제목 + CTA). 거대한 빈 프레임 아님. */
+.midterm-live__scene[data-kind="linkcard"] {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 20px;
+  gap: 8px;
+  padding: 16px;
   text-align: center;
   background: var(--paper);
 }
-.midterm-live__external-title {
+.midterm-live__linkcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  width: 82%;
+  max-width: 320px;
+}
+.midterm-live__linkcard-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid rgba(15, 23, 42, .1);
+  background: #e7eaef;
+}
+.midterm-live__linkcard-title {
   margin: 0;
   color: var(--ink);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -.01em;
+  line-height: 1.4;
 }
-.midterm-live__external-cta {
+.midterm-live__linkcard-cta {
   font-size: 12.5px;
   font-weight: 800;
   color: #1d4ed8;
   text-decoration: none;
 }
-.midterm-live__external-cta:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.midterm-live__linkcard-cta:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+
+/* 인라인 재생/링크 scene 은 활성일 때 상호작용 가능(MATERIAL / TWIN 은 그대로 비상호작용). */
+.midterm-live__scene.is-active[data-kind="video"],
+.midterm-live__scene.is-active[data-kind="embed"],
+.midterm-live__scene.is-active[data-kind="linkcard"] { pointer-events: auto; }
 
 .midterm-live__doc {
   position: absolute;
@@ -774,7 +812,6 @@ a { color: inherit; }
   object-fit: contain;
   object-position: center;
   background: var(--stage-bg);
-  pointer-events: none;
 }
 /* landscape(예: 1280×720 수업 영상) — 3:2 stage 라 좌우 ~8% 만 crop, 교사·학생·책상 유지. */
 .midterm-live__scene.is-landscape .midterm-live__video { object-fit: cover; }
@@ -792,13 +829,28 @@ a { color: inherit; }
   z-index: 2;
 }
 .midterm-live__dot {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.midterm-live__dot::before {
+  content: "";
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: rgba(15, 23, 42, .2);
   transition: background .3s ease;
 }
-.midterm-live__dot.is-on { background: rgba(15, 23, 42, .5); }
+.midterm-live__dot.is-on::before { background: rgba(15, 23, 42, .5); }
+.midterm-live__dot:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
 
 /* SMALL PRODUCT META — frame padding 안, stage 아래. 학교/학년 = 상품 정보(navigator 아님). */
 .midterm-live__info {
