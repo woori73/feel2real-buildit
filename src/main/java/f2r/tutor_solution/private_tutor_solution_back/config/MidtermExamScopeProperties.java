@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>명시하지 않은 (학교, 학년)은 캠페인의 {@code exam_type}(예: 중간고사)만 허용한다. override 는
  * "이 (학교, 학년)만 다른 시험(예: 기말고사)을 준비 중" 을 <b>명시적으로</b> 선언한다 —
- * wildcard / cross-exam fallback 이 아니다(#232 fail-closed 유지). override 의 {@code exam} 은
+ * 임의(any-scope) / cross-exam fallback 이 아니다(#232 fail-closed 유지). override 의 {@code exam} 은
  * 실제 Wiki 자료의 {@code exam} 문자열과 정확히 일치해야 노출된다(불일치 시 "준비 중" 폴백).
  *
  * <pre>

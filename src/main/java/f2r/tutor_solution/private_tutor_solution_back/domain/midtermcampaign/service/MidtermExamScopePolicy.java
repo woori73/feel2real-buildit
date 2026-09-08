@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
  *   <li>기본 scope = 캠페인 (examYear, semester, examType).</li>
  *   <li>{@link MidtermExamScopeProperties} override 가 있는 (학교, 학년) 은 그 override exam 만 허용.</li>
  *   <li>gateway 를 각 scope 로 조회해 union 하고, 각 candidate 는 <b>그 (학교, 학년) 이 허용하는
- *       exam 과 정확히 일치</b>할 때만 통과한다(#232 fail-closed — wildcard 없음).</li>
+ *       exam 과 정확히 일치</b>할 때만 통과한다(#232 fail-closed — 임의 scope 통과 없음).</li>
  * </ul>
  * exam 문자열은 Wiki(Python) 정규화 규칙(중간→중간고사, 기말→기말고사)에 맞춰 비교한다.
  */
