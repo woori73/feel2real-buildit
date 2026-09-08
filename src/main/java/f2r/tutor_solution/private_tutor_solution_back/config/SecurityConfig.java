@@ -185,7 +185,7 @@ public class SecurityConfig {
             .requestMatchers("/lms/**").authenticated()
 
             // Wiki 랜딩만 공개한다. 자료·문항·Thread 화면은 로그인 회원 전용이다.
-            .requestMatchers(request -> request.getServletPath().startsWith("/wiki/"))
+            .requestMatchers(request -> request.getRequestURI().startsWith("/wiki/"))
             .authenticated()
 
             // 정적 리소스 + SSR 뷰 모두 public
@@ -268,7 +268,7 @@ public class SecurityConfig {
             // Wiki 게시글 상세는 데이터의 boardType을 알아야 하므로 CommunityController가 2차 방어한다.
             .requestMatchers(request ->
                 HttpMethod.GET.matches(request.getMethod())
-                    && "/api/open-community/posts".equals(request.getServletPath())
+                    && "/api/open-community/posts".equals(request.getRequestURI())
                     && "wiki".equalsIgnoreCase(request.getParameter("scope")))
             .authenticated()
             .requestMatchers(HttpMethod.GET, "/api/open-community/posts", "/api/open-community/posts/**").permitAll()
