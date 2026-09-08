@@ -1,8 +1,11 @@
 /* 2026 2학기 중간고사 공개 LIVE.
- * GET .../wiki-sources 의 public exposed source 만 read-only visual 로 사용한다.
- * API/preview 보안 경계는 서버가 소유하며 이 스크립트는 previewUrl 외 파일 정보를 사용하지 않는다.
- * 첫 화면 = Shopify Atelier hero(featured 자료 1건). 그 아래 = Shopify Motion
- * "evolving collections" — 나머지 최근 자료가 비대칭 collage / 모바일 rail 로 이어진다.
+ * 첫 화면 = Shopify Atelier hero(featured 자료 1건).
+ * 그 아래 = 학교/학년 LIVE FRAME collection — wiki-sources 를 (school, grade) 로 groupBy 한
+ *   Shopify product frame 안에서 실제 scene 이 자동 전환된다:
+ *     MATERIAL(실제 Wiki HTML preview)  →  DIGITAL_TWIN(그 학교 출제 경향 분석)
+ * FRAME 외곽은 고정, media 만 crossfade 로 교체(image-rollover 문법). 페이지 전체 carousel 없음.
+ * API/preview 보안 경계는 서버가 소유하며 이 스크립트는 previewUrl / 공개 analyze contentUrl 외
+ * 파일 정보를 사용하지 않는다.
  */
 (function () {
   'use strict';
@@ -17,12 +20,19 @@
   var SEASON = '2026 2학기 중간고사';
   var TITLE = '중간고사 준비 중';
   var NOTE = '학교 프린트 내용을 반영했습니다.';
-  var RECENT_TITLE = '최근 준비 자료';
-  var RECENT_MAX = 5;                 // Motion collage 는 최대 5장까지 배치한다.
-  var ROLES = ['a', 'b', 'c', 'd'];   // crop presentation role (DB taxonomy 아님).
+  var LIVE_TITLE = '학교별 준비 LIVE';
+  var FRAME_MAX = 6;                  // 화면에 배치하는 학교/학년 FRAME 상한.
+  var MATERIAL_MAX = 3;               // FRAME 당 MATERIAL scene 상한(자료 복제 금지).
+  var ROLES = ['a', 'b', 'c', 'd'];   // collage presentation role (DB taxonomy 아님).
+  var MATERIAL_MS = 8000;             // MATERIAL scene 표시 시간.
+  var TWIN_MS = 18000;                // DIGITAL_TWIN scene 표시 시간(내부 crop 3뷰 순환).
+  var TWIN_VIEW_MS = 4500;            // DIGITAL_TWIN 내부 crop 전환 간격.
+  var TWIN_VIEWS = 3;
 
   var reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hasIO = 'IntersectionObserver' in window;
+  var analyzeCache = {};              // schoolName → Promise<analyze[]>
 
   fetch(SOURCES_API, {
     headers: { Accept: 'application/json' },
@@ -35,9 +45,10 @@
     })
     .then(function (payload) {
       var sources = Array.isArray(payload) ? payload : [];
-      var hero = latestSource(sources);
-      render(hero);
-      renderRecent(recentSources(sources, hero));
+      render(latestSource(sources));
+      // LIVE collection = 전체 exposed 자료를 (school, grade) FRAME 으로. hero 도 자기 학교
+      // FRAME 에 자연스럽게 포함된다(Shopify featured product 가 collection 에도 있는 것과 같다).
+      renderLiveCollection(sources);
     })
     .catch(function () {
       render(null);
@@ -63,14 +74,9 @@
       .sort(function (a, b) { return timestamp(b) - timestamp(a); })[0] || null;
   }
 
-  /** hero 로 쓰는 sourceId 는 제외한다. 순서는 서버가 반환한 canonical order 를 존중한다. */
-  function recentSources(sources, hero) {
-    var heroId = hero && hero.sourceId;
-    return sources.filter(function (source) {
-      return source
-        && typeof source.previewUrl === 'string' && source.previewUrl
-        && source.sourceId && source.sourceId !== heroId;
-    }).slice(0, RECENT_MAX);
+  function gradeNumber(value) {
+    var m = String(value == null ? '' : value).match(/\d+/);
+    return m ? parseInt(m[0], 10) : null;
   }
 
   function gradeLabel(grade) {
@@ -140,56 +146,227 @@
     return section;
   }
 
-  /** Motion "evolving collections": featured 를 뺀 최근 자료를 비대칭 collage 로 잇는다.
-   *  0건이면 이 섹션 자체를 렌더하지 않는다("준비 중" 더미 카드 없음). */
-  function renderRecent(sources) {
-    if (!sources.length) return;
+  /* ── 학교/학년 LIVE FRAME collection ─────────────────────────────────────── */
 
-    var section = el('section', 'midterm-recent');
-    section.classList.add('midterm-recent--n' + Math.min(sources.length, RECENT_MAX));
-    section.setAttribute('aria-label', '최근 중간고사 준비 자료');
+  /** wiki-sources 를 (school, grade) 로 groupBy. 순서 = 각 group 첫 등장 순. */
+  function resolveFrames(sources) {
+    var order = [];
+    var byKey = {};
+    sources.forEach(function (source) {
+      var school = String(source.school || '').trim();
+      var grade = gradeNumber(source.grade);
+      if (!school || !grade) return;
+      var key = school + '|' + grade;
+      if (!byKey[key]) {
+        byKey[key] = { school: school, grade: grade, gradeLabel: gradeLabel(source.grade), materials: [] };
+        order.push(key);
+      }
+      byKey[key].materials.push(source);
+    });
+    return order.slice(0, FRAME_MAX).map(function (key) { return byKey[key]; });
+  }
 
-    var head = el('header', 'midterm-recent__head');
-    head.appendChild(el('h2', 'midterm-recent__title', RECENT_TITLE));
+  /** school 당 1회 캐시. Wiki-sources 의 school 문자열로 부분일치 조회된다. */
+  function analyzesForSchool(school) {
+    if (!analyzeCache[school]) {
+      analyzeCache[school] = fetch('/api/analyzes?schoolName=' + encodeURIComponent(school), {
+        headers: { Accept: 'application/json' }, credentials: 'same-origin'
+      })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (list) { return Array.isArray(list) ? list : []; })
+        .catch(function () { return []; });
+    }
+    return analyzeCache[school];
+  }
+
+  /** school + grade 정확 일치하는 최신 analyze 의 공개 contentUrl. 없으면 null. */
+  function twinContentUrl(frame) {
+    return analyzesForSchool(frame.school).then(function (list) {
+      var match = list
+        .filter(function (a) {
+          var s = a && a.subject;
+          var englishOk = !s || s.nameEn === 'english' || s.nameKo === '영어';
+          return englishOk && gradeNumber(a.grade) === frame.grade
+            && typeof a.contentUrl === 'string' && a.contentUrl;
+        })
+        .sort(function (a, b) { return timestamp(b) - timestamp(a); })[0];
+      return match ? match.contentUrl : null;
+    });
+  }
+
+  function renderLiveCollection(sources) {
+    var frames = resolveFrames(sources);
+    if (!frames.length) return;
+
+    var section = el('section', 'midterm-live');
+    section.setAttribute('aria-label', '학교별 중간고사 준비 현황');
+    section.classList.add('midterm-live--n' + frames.length);
+
+    var head = el('header', 'midterm-live__head');
+    head.appendChild(el('h2', 'midterm-live__title', LIVE_TITLE));
     section.appendChild(head);
 
-    var collection = el('div', 'midterm-recent__collection');
-    sources.forEach(function (source, index) {
-      collection.appendChild(renderRecentItem(source, index));
+    var collection = el('div', 'midterm-live__collection');
+    frames.forEach(function (frame, index) {
+      collection.appendChild(renderFrame(frame, index));
     });
     section.appendChild(collection);
 
     root.appendChild(section);
-    revealOnView(section);
   }
 
-  function renderRecentItem(source, index) {
-    var item = el('article', 'midterm-recent__item');
-    item.classList.add('is-role-' + ROLES[index % ROLES.length]);
+  function renderFrame(frame, index) {
+    var article = el('article', 'midterm-live__frame');
+    article.classList.add('is-role-' + ROLES[index % ROLES.length]);
+    article.setAttribute('aria-label', frame.school + ' ' + frame.gradeLabel + ' 준비 현황');
 
-    // hero 와 동일한 패키지 grammar: surface → clipped media window → 실제 Wiki HTML.
-    var surface = el('div', 'midterm-recent__surface');
-    var media = el('div', 'midterm-recent__media');
-    media.appendChild(safeFrame(source.previewUrl, 'midterm-recent__doc', '중간고사 준비 자료'));
-    surface.appendChild(media);
-    item.appendChild(surface);
+    var stage = el('div', 'midterm-live__stage');
+    article.appendChild(stage);
 
-    var meta = metadata(source);
-    if (meta) item.appendChild(el('p', 'midterm-recent__meta', meta));
+    var meta = el('p', 'midterm-live__meta', frame.school + ' · ' + frame.gradeLabel);
+    var sub = el('p', 'midterm-live__sub', SEASON);
+    article.appendChild(meta);
+    article.appendChild(sub);
 
-    return item;
+    // MATERIAL scene(들) — 자료 복제 없이 실제 exposed 자료만.
+    var scenes = [];
+    frame.materials.slice(0, MATERIAL_MAX).forEach(function (source, i) {
+      var scene = el('div', 'midterm-live__scene');
+      scene.setAttribute('data-kind', 'material');
+      scene.classList.add('is-role-' + ROLES[i % ROLES.length]);
+      scene.appendChild(safeFrame(source.previewUrl, 'midterm-live__doc', '중간고사 준비 자료'));
+      stage.appendChild(scene);
+      scenes.push({ el: scene, kind: 'material', ms: MATERIAL_MS, sub: SEASON });
+    });
+    if (scenes.length) scenes[0].el.classList.add('is-active');
+
+    // DIGITAL_TWIN scene — 공개 analyze contentUrl(그 학교 출제 경향 분석). school+grade 정확 일치만.
+    twinContentUrl(frame).then(function (contentUrl) {
+      if (!contentUrl) return;
+      var scene = el('div', 'midterm-live__scene');
+      scene.setAttribute('data-kind', 'twin');
+      var twin = safeFrame(contentUrl, 'midterm-live__twin', '출제 경향 분석');
+      twin.setAttribute('data-twin-view', '0');
+      scene.appendChild(twin);
+      stage.appendChild(scene);
+      scenes.push({ el: scene, kind: 'twin', ms: TWIN_MS, sub: '출제 경향 분석', frame: twin });
+      if (scenes.length === 1) {
+        scene.classList.add('is-active');
+        sub.textContent = '출제 경향 분석';
+      }
+      renderDots(article, scenes.length);
+    });
+
+    renderDots(article, scenes.length);
+    wireSceneEngine(article, sub, scenes);
+    return article;
   }
 
-  /** preview 보안 계약: server-controlled previewUrl 만, sandbox / no interaction / no scroll. */
-  function safeFrame(previewUrl, className, title) {
+  function renderDots(article, count) {
+    var existing = article.querySelector('.midterm-live__dots');
+    if (existing) existing.remove();
+    if (count < 2) return;
+    var dots = el('div', 'midterm-live__dots');
+    dots.setAttribute('aria-hidden', 'true');
+    for (var i = 0; i < count; i++) {
+      dots.appendChild(el('span', 'midterm-live__dot' + (i === 0 ? ' is-on' : '')));
+    }
+    (article.querySelector('.midterm-live__stage') || article).appendChild(dots);
+  }
+
+  /** FRAME 내부 scene 만 자동 전환. 뷰포트 밖이면 모든 타이머 정지. reduced-motion 이면 정적. */
+  function wireSceneEngine(article, subEl, scenes) {
+    var sceneTimer = null;
+    var twinTimer = null;
+    var active = false;
+    var index = 0;
+
+    function syncDots() {
+      var dots = article.querySelectorAll('.midterm-live__dot');
+      dots.forEach(function (d, di) { d.classList.toggle('is-on', di === index); });
+    }
+
+    function activateScene(i) {
+      clearTimeout(twinTimer);
+      var list = article.querySelectorAll('.midterm-live__scene');
+      if (!list.length) return;
+      index = ((i % list.length) + list.length) % list.length;
+      list.forEach(function (s, si) { s.classList.toggle('is-active', si === index); });
+      var current = scenes[index];
+      if (current && subEl) subEl.textContent = current.sub;
+      syncDots();
+      if (current && current.kind === 'twin' && current.frame && !reduceMotion) {
+        cycleTwinViews(current.frame);
+      }
+    }
+
+    function cycleTwinViews(twin) {
+      var view = 0;
+      function step() {
+        view = (view + 1) % TWIN_VIEWS;
+        twin.setAttribute('data-twin-view', String(view));
+        twinTimer = setTimeout(step, TWIN_VIEW_MS);
+      }
+      twinTimer = setTimeout(step, TWIN_VIEW_MS);
+    }
+
+    function next() {
+      var count = article.querySelectorAll('.midterm-live__scene').length;
+      if (count < 2) return;
+      activateScene(index + 1);
+      var ms = (scenes[index] && scenes[index].ms) || MATERIAL_MS;
+      sceneTimer = setTimeout(next, ms);
+    }
+
+    function play() {
+      if (active || reduceMotion) return;
+      active = true;
+      article.classList.add('is-live');
+      var count = article.querySelectorAll('.midterm-live__scene').length;
+      if (count < 2) return;
+      var ms = (scenes[index] && scenes[index].ms) || MATERIAL_MS;
+      sceneTimer = setTimeout(next, ms);
+      // 활성 twin scene 이면 내부 crop 도 재개.
+      var current = scenes[index];
+      if (current && current.kind === 'twin' && current.frame) cycleTwinViews(current.frame);
+    }
+
+    function pause() {
+      active = false;
+      article.classList.remove('is-live');
+      clearTimeout(sceneTimer);
+      clearTimeout(twinTimer);
+    }
+
+    if (reduceMotion || !hasIO) {
+      article.classList.add('is-in-view');       // 첫 scene 정적 표시
+      return;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          article.classList.add('is-in-view');
+          play();
+        } else {
+          pause();
+        }
+      });
+    }, { threshold: 0.4 });
+    observer.observe(article);
+  }
+
+  /** preview 보안 계약: server-controlled URL 만, sandbox / no interaction / no scroll. */
+  function safeFrame(src, className, title) {
     var frame = document.createElement('iframe');
     frame.className = className;
-    frame.src = previewUrl;
+    frame.src = src;
     frame.title = title;
     frame.setAttribute('sandbox', '');
     frame.setAttribute('tabindex', '-1');
     frame.setAttribute('aria-hidden', 'true');
     frame.setAttribute('scrolling', 'no');
+    frame.setAttribute('loading', 'lazy');
     return frame;
   }
 
@@ -202,7 +379,7 @@
       }
     }
 
-    if (!('IntersectionObserver' in window)) {
+    if (!hasIO) {
       start();
       return;
     }
@@ -216,23 +393,5 @@
       });
     }, { threshold: 0.28 });
     observer.observe(section);
-  }
-
-  /** 그룹이 뷰포트에 처음 닿으면 한 번만 is-in-view (하위 item 은 CSS stagger).
-   *  reduced-motion / IO 미지원이면 즉시 최종 상태. */
-  function revealOnView(node) {
-    if (reduceMotion || !('IntersectionObserver' in window)) {
-      node.classList.add('is-in-view');
-      return;
-    }
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          node.classList.add('is-in-view');
-          observer.disconnect();
-        }
-      });
-    }, { threshold: 0.05 });
-    observer.observe(node);
   }
 })();

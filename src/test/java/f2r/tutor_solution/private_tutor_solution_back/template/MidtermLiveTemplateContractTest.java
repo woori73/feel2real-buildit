@@ -97,12 +97,16 @@ class MidtermLiveTemplateContractTest {
   void publicPage_keepsPr228SecurityBoundary() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
 
-    assertThat(js).doesNotContain("/api/analyzes");
+    // Phase 4a: DIGITAL_TWIN scene 은 공개 analyze content(permitAll · script 0 · 학생 PII 없음)를
+    // 학교+학년 정확 일치로만 임베드한다. TUTOR/candidate/Python/storageKey/download 는 여전히 금지.
+    assertThat(js).contains("/api/analyzes?schoolName=");
+    assertThat(js).doesNotContain("/api/admin/analyzes");
     assertThat(js).doesNotContain("wiki-analysis");
     assertThat(js).doesNotContain("storageKey");
     assertThat(js).doesNotContain("download");
     assertThat(js).doesNotContain("signed");
     assertThat(js).doesNotContain("Authorization");
+    assertThat(js).doesNotContain("/api/tutor");
   }
 
   @Test
@@ -163,42 +167,53 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("imageKey");
   }
 
-  /** Phase 2 — Shopify Motion "evolving collections": featured hero 아래 최근 자료 collage. */
+  /** Phase 4a — School LIVE Mixed Scene Collection: hero 아래 (school, grade) FRAME.
+   *  FRAME 외곽 고정, 안에서 MATERIAL / DIGITAL_TWIN scene 이 자동 전환. 페이지 carousel 없음. */
   @Test
-  void recentSection_isMotionCollageFromExposedSourcesOnly() throws Exception {
+  void liveCollection_isSchoolGradeFrameWithSceneCycle() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
     String css = read("static/css/eduholic_midterm_2026.css");
 
-    // Recent = public wiki-sources 에서 hero(featured)를 뺀 나머지. 순서는 서버 canonical.
-    assertThat(js).contains("recentSources(sources, hero)");
-    assertThat(js).contains("source.sourceId !== heroId");
-    assertThat(js).contains("midterm-recent__collection");
-    assertThat(js).contains("midterm-recent__doc");
+    // FRAME = wiki-sources 를 (school, grade) 로 groupBy. 자료 목록 UI 가 아니다.
+    assertThat(js).contains("function resolveFrames(");
+    assertThat(js).contains("school + '|' + grade");
+    assertThat(js).contains("midterm-live__collection");
+    assertThat(js).contains("midterm-live__stage");
+    assertThat(js).contains("midterm-live__scene");
 
-    // public JS 는 절대 admin/candidate/Python 경로를 직접 호출하지 않는다.
-    assertThat(js).doesNotContain("/api/tutor");
-    assertThat(js).doesNotContain("wiki-candidates");
-    assertThat(js).doesNotContain("live-material-candidates");
-    assertThat(js).doesNotContain(":8000");
+    // MATERIAL scene = server-controlled previewUrl (공유 safeFrame, sandbox / no interaction).
+    assertThat(js).contains("function safeFrame(");
+    assertThat(js).contains("frame.setAttribute('sandbox', '')");
+    assertThat(js).contains("data-kind', 'material'");
 
-    // 0건이면 섹션 자체가 없다 — 빈 자리/"준비 중" 더미 카드 없음.
-    assertThat(js).contains("if (!sources.length) return;");
-    assertThat(js).doesNotContain("준비 중 카드");
+    // DIGITAL_TWIN scene = 공개 analyze content, school + grade 정확 일치만. 가짜 fallback 없음.
+    assertThat(js).contains("data-kind', 'twin'");
+    assertThat(js).contains("gradeNumber(a.grade) === frame.grade");
+    assertThat(js).contains("if (!contentUrl) return;");
+    assertThat(js).doesNotContain("student");
+    assertThat(js).doesNotContain("학생 Digital");
 
-    // crop role 은 CSS presentation 전용 (DB/DTO taxonomy 아님).
-    assertThat(css).contains(".midterm-recent__item.is-role-b");
-    assertThat(js).doesNotContain("\"grammar\"");
-    assertThat(js).doesNotContain("\"exercise\"");
-    assertThat(js).doesNotContain("\"analysis\"");
-
-    // 모바일 = horizontal browse rail, 무한 carousel 아님. 데스크톱 = 비대칭 collage.
-    assertThat(css).contains("scroll-snap-type: x mandatory");
-    assertThat(css).contains("midterm-recent--n1");
-    assertThat(css).contains("midterm-recent--n2");
+    // FRAME 내부 scene 만 자동 전환 — 페이지 전체 carousel / progress bar / slider library 없음.
+    assertThat(js).contains("IntersectionObserver");
+    assertThat(js).doesNotContain("setInterval");
+    assertThat(js).doesNotContain("scrollBy");
     assertThat(css).doesNotContain("infinite");
+    assertThat(css).doesNotContain("progress");
+    assertThat(css).contains("scroll-snap-type: x mandatory");   // mobile browse rail
+    assertThat(css).contains("midterm-live--n1");
+    assertThat(css).contains(".midterm-live__scene.is-active");
 
-    // Recent iframe 도 동일 보안 계약(공유 safeFrame). previewUrl 외 파일 정보 미사용.
-    assertThat(js).contains("function safeFrame(previewUrl");
+    // 0 frame 이면 섹션 자체가 없다 — 더미 카드 없음.
+    assertThat(js).contains("if (!frames.length) return;");
+
+    // 뷰포트 밖 FRAME 은 타이머 정지(모바일 성능). reduced-motion 이면 정적.
+    assertThat(js).contains("clearTimeout(sceneTimer)");
+    assertThat(js).contains("if (reduceMotion");
+
+    // crop role 은 CSS presentation 전용 (DB taxonomy 아님).
+    assertThat(css).contains(".midterm-live__scene.is-role-b");
+    assertThat(js).doesNotContain("\"grammar\"");
+    assertThat(js).doesNotContain("\"analysis\"");
     assertThat(js).doesNotContain("originalUrl");
     assertThat(js).doesNotContain("blob:");
   }
@@ -212,23 +227,23 @@ class MidtermLiveTemplateContractTest {
     String html = read("static/eduholic-midterm-2026.html");
     String frontend = html + "\n" + js;
 
-    // hero·recent 자료 모두 동일 packaging surface 안에 놓인다(raw iframe 아님).
+    // hero = product surface, LIVE FRAME = product stage — 같은 packaging grammar(raw iframe 아님).
     assertThat(js).contains("midterm-feature__surface");
-    assertThat(js).contains("midterm-recent__surface");
+    assertThat(js).contains("midterm-live__stage");
     assertThat(css).contains(".midterm-feature__surface");
-    assertThat(css).contains(".midterm-recent__surface");
+    assertThat(css).contains(".midterm-live__stage");
     assertThat(css).contains("--surface-a");     // 고정 palette (index % 4) — 색은 taxonomy 아님
     assertThat(css).contains("--window-radius");
-    assertThat(css).contains("var(--surface-pad)");
 
-    // 움직이는 것은 media window 안 document 뿐 — surface/frame 애니메이션 없음.
+    // media 만 움직인다 — surface/frame/stage 애니메이션 없음.
     assertThat(css).contains("@keyframes midterm-product-drift");
     assertThat(css).contains("midterm-product-drift 8s ease-in-out 1 both");
     assertThat(css).doesNotContain("infinite");
     assertThat(css).doesNotContain("midterm-surface-drift");
+    assertThat(css).doesNotContain("midterm-stage-drift");
     assertThat(css).doesNotContain("midterm-frame-drift");
 
-    // 자료 밖에 학습 내용/상품명/뱃지/e-commerce UI 를 생성하지 않는다(§2·§25·§26).
+    // 화면에 학습 내용/카테고리 label/상품명/뱃지/e-commerce UI 를 생성하지 않는다(§2·§25·§26·§32).
     assertThat(frontend).doesNotContain("가정법");
     assertThat(frontend).doesNotContain("관계대명사");
     assertThat(frontend).doesNotContain("Vocabulary");
@@ -240,6 +255,9 @@ class MidtermLiveTemplateContractTest {
     assertThat(frontend).doesNotContain("quickAdd");
     assertThat(js).doesNotContain("badge");
     assertThat(js).doesNotContain("NEW");
+    // scene 카테고리 label 을 화면에 쓰지 않는다(§32) — data 속성/변수명만.
+    assertThat(js).doesNotContain("'MATERIAL'");
+    assertThat(js).doesNotContain("'STUDENT'");
 
     // 외부 metadata = 실제 school/grade/date 만.
     assertThat(js).contains("function metadata(source)");
