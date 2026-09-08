@@ -668,8 +668,16 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
    기본은 가로(16:9), YouTube Shorts 링크면 세로(9:16). align-self:start로 카드 높이에 늘어나지 않고
    자기 비율을 지킨다(둘 중 큰 쪽이 행 높이를 정하고, 짧은 쪽은 여백을 둔다). */
 .principal-video-box{position:relative;align-self:start;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1.5px solid #e2e8f8;box-shadow:0 4px 14px rgba(12,35,138,.06);background:#0a0f2e;display:flex;align-items:center;justify-content:center;}
-.principal-video-box.is-portrait{aspect-ratio:9/16;max-width:250px;margin:0 auto;}
+.principal-video-box.is-portrait{aspect-ratio:9/16;max-width:250px;max-height:min(72svh,460px);margin:0 auto;}
 .principal-video-frame{position:absolute;inset:0;width:100%;height:100%;border:0;}
+/* academy_brand.css 의 광역 규칙 `#publicView video{height:auto;aspect-ratio:16/9;object-fit:cover}`
+   가 자기 비율을 관리하는 원장 소개 영상까지 덮어써(세로 영상이 16/9 로 강제되고 height:auto 로
+   position:absolute inset:0 fill 이 깨져) 박스 상단에만 영상이 뜨고 아래에 큰 빈 남색 배경이
+   생겼다. 비율은 박스(.is-portrait 9/16 · 기본 16/9)가 정하고 video 는 그 박스를 채운다. */
+#publicView .principal-video-box video.principal-video-frame{
+  position:absolute;inset:0;width:100%;height:100%;
+  aspect-ratio:auto;object-fit:cover;
+}
 .principal-video-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,15,46,.55);z-index:2;padding:0 14px;text-align:center;}
 .pv-play{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;}
 .pv-caption{font-size:.84rem;color:rgba(255,255,255,.78);}

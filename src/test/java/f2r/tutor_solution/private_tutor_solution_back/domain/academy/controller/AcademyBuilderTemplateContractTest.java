@@ -658,6 +658,29 @@ class AcademyBuilderTemplateContractTest {
         .doesNotContain(".review-dev-badge");
   }
 
+  /**
+   * Production 회귀 방지: academy_brand.css 의 광역 규칙 `#publicView video{height:auto;
+   * aspect-ratio:16/9;object-fit:cover}` 이 원장 소개 영상(.principal-video-frame)까지 덮어써
+   * 세로 영상이 박스 상단에만 뜨고 아래에 큰 빈 배경이 생겼다. 원장 영상 박스는 자기 비율
+   * (.is-portrait 9/16 · 기본 16/9)을 유지하고 video 는 그 박스를 채워야 한다.
+   */
+  @Test
+  @DisplayName("given public css when 읽기 then 원장 소개 영상은 박스 비율을 채우고 letterbox 빈공간이 없다")
+  void public_css_principal_video_fills_box_without_letterbox() throws Exception {
+    // given
+    String css = Files.readString(Path.of("src/main/resources/static/css/academy_public.css"));
+
+    // then — 광역 #publicView video 규칙을 무력화하는 원장 영상 전용 override 가 있다.
+    assertThat(css)
+        .contains("#publicView .principal-video-box video.principal-video-frame")
+        .containsPattern(
+            "#publicView \\.principal-video-box video\\.principal-video-frame\\s*\\{[^}]*aspect-ratio:auto")
+        .containsPattern(
+            "#publicView \\.principal-video-box video\\.principal-video-frame\\s*\\{[^}]*object-fit:cover");
+    // 세로 박스는 카드가 과도하게 길어지지 않게 max-height 상한이 있다.
+    assertThat(css).containsPattern("\\.principal-video-box\\.is-portrait\\{[^}]*max-height:");
+  }
+
 
   @Test
   @DisplayName("given builder section renderer when 읽기 then 섹션 이름이 중복돼도 canonical key로 토글/스크롤한다")

@@ -231,3 +231,41 @@ test('given http:// URL when 외부 링크 등록 then 요청을 보내지 않�
   assert.equal(page.fetchCalls.find((c) => c.url === '/api/tutor/academy/videos/link'), undefined);
   assert.match(page.element('videoLinkStatus').textContent, /https/);
 });
+
+test('given 서버가 {message} JSON 오류를 반환 when 외부 링크 등록 then 그 메시지를 그대로 표시한다', async () => {
+  const page = runVideosPage({
+    videos: [],
+    fetchAuth: async (url, init) => {
+      if (!init || !init.method) return { ok: true, json: async () => [] };
+      return { ok: false, text: async () => JSON.stringify({ message: '영상 링크를 저장하지 못했습니다. 관리자에게 문의해 주세요.' }) };
+    }
+  });
+  await page.ready();
+  page.element('videoLinkUrl').value = 'https://naver.me/F4WnDovq';
+  page.element('videoLinkTitle').value = '제목';
+  page.linkPurposeState.checked = { value: 'LESSON' };
+
+  page.click('videoLinkButton');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.match(page.element('videoLinkStatus').textContent, /저장하지 못했습니다/);
+});
+
+test('given 서버가 평문 오류 본문을 반환 when 외부 링크 등록 then 평문 사유를 표시한다', async () => {
+  const page = runVideosPage({
+    videos: [],
+    fetchAuth: async (url, init) => {
+      if (!init || !init.method) return { ok: true, json: async () => [] };
+      return { ok: false, text: async () => '영상 URL의 주소를 확인할 수 없습니다.' };
+    }
+  });
+  await page.ready();
+  page.element('videoLinkUrl').value = 'https://naver.me/F4WnDovq';
+  page.element('videoLinkTitle').value = '제목';
+  page.linkPurposeState.checked = { value: 'LESSON' };
+
+  page.click('videoLinkButton');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.match(page.element('videoLinkStatus').textContent, /주소를 확인할 수 없습니다/);
+});
