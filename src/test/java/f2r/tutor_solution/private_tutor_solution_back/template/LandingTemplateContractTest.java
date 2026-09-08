@@ -273,6 +273,19 @@ class LandingTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given Wiki 보호 화면에서 이동 when 로그인하면 then 안전한 원래 Wiki URL로 복귀한다")
+  void wiki_login_prompt_preservesSafeReturnUrl() throws Exception {
+    String js = Files.readString(LANDING_JS);
+
+    assertThat(js)
+        .contains("회원 전용 자료입니다.")
+        .contains("safeInternalReturnUrl(rawReturnUrl)")
+        .contains("wikiPostLoginReturnUrl")
+        .contains("window.addEventListener('f2r:login'")
+        .contains("location.href = window.safeInternalReturnUrl(returnUrl)");
+  }
+
+  @Test
   @DisplayName("given GSAP 로드 실패 when 스크립트를 읽으면 then 정적 폴백으로 빈 화면을 막는다")
   void landing_script_has_static_fallback_without_gsap() throws Exception {
     // given

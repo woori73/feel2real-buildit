@@ -41,7 +41,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@DisplayName("WikiExamOriginalController — 공개 조회 / 회원 다운로드 / 관리 ADMIN")
+@DisplayName("WikiExamOriginalController — 회원 조회·다운로드 / 관리 ADMIN")
 @WebMvcTest(controllers = WikiExamOriginalController.class)
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -69,10 +69,10 @@ class WikiExamOriginalControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 익명 when 공개 목록 조회 then 200")
-  void publicList_anonymous_ok() throws Exception {
+  @DisplayName("given 익명 when 목록 직접 조회 then 401")
+  void list_anonymous_unauthorized() throws Exception {
     mockMvc.perform(get("/api/wiki/originals").param("grade", "3"))
-        .andExpect(status().isOk());
+        .andExpect(status().isUnauthorized());
   }
 
   @Test

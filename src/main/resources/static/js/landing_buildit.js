@@ -62,12 +62,36 @@
   function promptLoginAfterRedirect() {
     const params = new URLSearchParams(location.search);
     if (params.get('login') !== 'required') return;
+
+    const rawReturnUrl = params.get('returnUrl');
+    const returnUrl = rawReturnUrl && typeof window.safeInternalReturnUrl === 'function'
+      ? window.safeInternalReturnUrl(rawReturnUrl)
+      : null;
+    if (returnUrl && returnUrl.startsWith('/wiki/')) {
+      try { sessionStorage.setItem('wikiPostLoginReturnUrl', returnUrl); } catch (_) {}
+      document.querySelectorAll('[data-auth-signup]').forEach((link) => {
+        link.href = '/register?returnUrl=' + encodeURIComponent(returnUrl);
+      });
+    }
+
     params.delete('login');
+    params.delete('returnUrl');
     const query = params.toString();
     history.replaceState({}, '', location.pathname + (query ? '?' + query : '') + location.hash);
-    alert('로그인 후 이용할 수 있습니다.');
+    alert('회원 전용 자료입니다. 로그인 또는 무료 회원가입 후 모든 Wiki 자료를 이용할 수 있습니다.');
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
   }
+
+  window.addEventListener('f2r:login', () => {
+    let returnUrl = null;
+    try {
+      returnUrl = sessionStorage.getItem('wikiPostLoginReturnUrl');
+      sessionStorage.removeItem('wikiPostLoginReturnUrl');
+    } catch (_) {}
+    if (returnUrl && typeof window.safeInternalReturnUrl === 'function') {
+      location.href = window.safeInternalReturnUrl(returnUrl);
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', promptLoginAfterRedirect);
 

@@ -21,11 +21,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * /wiki · /wiki/originals · /wiki/analysis 의 자료 업로드 진입점은 <b>authentication 여부와 무관하게</b>
- * HTML 응답 자체에 존재해야 한다("UI 표시 ≠ 권한 부여"). 실제 권한은 API(WikiExamOriginal/WikiAnalysis
- * ControllerWebMvcTest) 가 검증한다.
+ * /wiki 랜딩은 공개하고 실제 자료 화면은 로그인 회원에게만 렌더링한다.
+ * 관리자 업로드 UI와 API 권한 계약은 로그인 후 기존 동작을 유지한다.
  */
-@DisplayName("WikiPageController — 업로드 버튼/모달/스크립트가 익명 응답 HTML 에도 항상 존재")
+@DisplayName("WikiPageController — 공개 랜딩 / 회원 전용 자료 화면")
 @WebMvcTest(controllers = WikiPageController.class)
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
 @TestPropertySource(properties = {
@@ -71,23 +70,32 @@ class WikiPageControllerRenderTest {
   }
 
   @Test
-  @DisplayName("익명 GET /wiki/originals → 원본 업로드 버튼 존재")
-  void anonymous_originalsPage_hasUploadButton() throws Exception {
-    mockMvc.perform(get("/wiki/originals"))
-        .andExpect(status().isOk())
-        .andExpect(content().string(containsString("id=\"btnUploadOriginal\"")))
-        .andExpect(content().string(containsString("id=\"wikiUploadModal\"")))
-        .andExpect(content().string(containsString("＋ 원본 업로드")));
+  @DisplayName("익명 GET /wiki/originals → 본문 없이 로그인 안내 랜딩으로 이동")
+  void anonymous_originalsPage_redirectsToLogin() throws Exception {
+    mockMvc.perform(get("/wiki/originals").header("Accept", "text/html"))
+        .andExpect(status().isFound())
+        .andExpect(header().string("Location",
+            "/?login=required&returnUrl=%2Fwiki%2Foriginals"));
   }
 
   @Test
-  @DisplayName("익명 GET /wiki/analysis → 분석 자료 업로드 버튼 존재")
-  void anonymous_analysisPage_hasUploadButton() throws Exception {
-    mockMvc.perform(get("/wiki/analysis"))
+  @DisplayName("익명 GET /wiki/analysis → 본문 없이 로그인 안내 랜딩으로 이동")
+  void anonymous_analysisPage_redirectsToLogin() throws Exception {
+    mockMvc.perform(get("/wiki/analysis").header("Accept", "text/html"))
+        .andExpect(status().isFound())
+        .andExpect(header().string("Location",
+            "/?login=required&returnUrl=%2Fwiki%2Fanalysis"));
+  }
+
+  @Test
+  @DisplayName("회원 GET /wiki 자료 화면 → 기존 렌더링 유지")
+  void member_materialPages_renderNormally() throws Exception {
+    mockMvc.perform(get("/wiki/originals").cookie(token("STUDENT")))
         .andExpect(status().isOk())
-        .andExpect(content().string(containsString("id=\"btnUploadAnalysis\"")))
-        .andExpect(content().string(containsString("id=\"wikiUploadModal\"")))
-        .andExpect(content().string(containsString("＋ 분석 자료 업로드")));
+        .andExpect(content().string(containsString("id=\"btnUploadOriginal\"")));
+    mockMvc.perform(get("/wiki/analysis").cookie(token("TUTOR")))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("id=\"btnUploadAnalysis\"")));
   }
 
   @Test

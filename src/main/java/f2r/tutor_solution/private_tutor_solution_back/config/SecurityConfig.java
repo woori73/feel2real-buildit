@@ -107,6 +107,18 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/lms/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // Wiki 랜딩(/wiki)은 공개하지만 실제 자료 화면(/wiki/**)은 회원 전용이다.
+            // 원래 내부 경로를 안전하게 URL-encode해 랜딩 로그인 모달로 전달한다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> {
+                  String target = request.getRequestURI();
+                  if (request.getQueryString() != null) target += "?" + request.getQueryString();
+                  response.sendRedirect("/?login=required&returnUrl="
+                      + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
+                },
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/wiki/**"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // Problem Generator 화면은 목적지를 "/"로 유지하되(비로그인 목적지 통일) 이유를 실어 보낸다.
             // 마커가 없으면 사용자는 아무 안내 없이 랜딩으로 튕겨 원인을 알 수 없다.
             // 랜딩(static/js/landing_buildit.js)이 이 값을 읽어 안내 + 공통 로그인 모달을 연다.
@@ -172,6 +184,10 @@ public class SecurityConfig {
             // 이 줄이 없으면 catch-all permitAll로 떨어진다.
             .requestMatchers("/lms/**").authenticated()
 
+            // Wiki 랜딩만 공개한다. 자료·문항·Thread 화면은 로그인 회원 전용이다.
+            .requestMatchers(request -> request.getRequestURI().startsWith("/wiki/"))
+            .authenticated()
+
             // 정적 리소스 + SSR 뷰 모두 public
             .requestMatchers(
                 "/", "/home",
@@ -201,7 +217,6 @@ public class SecurityConfig {
                 "/analyzes",
                 "/analyzes/**",
                 "/wiki",
-                "/wiki/**",
                 "/admin/wiki-originals",
                 "/admin/wiki-analysis",
                 "/chart",
@@ -249,34 +264,27 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
             .requestMatchers(HttpMethod.POST, "/api/academies/*/visits").permitAll()  // 공개 방문 집계
             .requestMatchers(HttpMethod.GET, "/api/academy-posts").permitAll()  // 공개 Academy 블로그 포스트 모아보기
-            // 전체 공개 커뮤니티 read만 permitAll(목록/상세). write/comment/like는 아래 /api/** catch-all로 인증.
-            // base가 /api/open-community인 이유는 /api/community/**를 LessonCommunityController가 점유 중이기 때문.
-            // ⚠ posts 한정 — /api/open-community/** 로 넓히면 comment 경로까지 공개돼 안 됨.
+            // 일반 공개 커뮤니티 read는 유지하되 Wiki scope 목록은 회원 전용으로 먼저 닫는다.
+            // Wiki 게시글 상세는 데이터의 boardType을 알아야 하므로 CommunityController가 2차 방어한다.
+            .requestMatchers(request ->
+                HttpMethod.GET.matches(request.getMethod())
+                    && "/api/open-community/posts".equals(request.getRequestURI())
+                    && "wiki".equalsIgnoreCase(request.getParameter("scope")))
+            .authenticated()
             .requestMatchers(HttpMethod.GET, "/api/open-community/posts", "/api/open-community/posts/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/open-community/images/**").permitAll()  // 본문 이미지 공개 serve
-            .requestMatchers(HttpMethod.GET, "/api/open-community/attachments/*/file").permitAll()  // 게시글 첨부 공개 serve (add/delete는 인증)
-            .requestMatchers(HttpMethod.GET, "/api/analyzes", "/api/analyzes/**").permitAll()  // 공개 시험 분석 조회
-            // ORIGINAL/ANALYSIS 목록은 공개하되 실제 파일 다운로드는 아래 /api/** 인증 규칙으로 막는다.
-            .requestMatchers(HttpMethod.GET, "/api/wiki/originals").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/wiki/analysis-materials").permitAll()
-            // 문항별 Question Wiki: 목록/상세/Context/첨부 다운로드는 비로그인 read. write(글/답글/수정/삭제/첨부)는
-            // 아래 /api/** catch-all 로 인증, 자료 링크 관리는 /api/admin/wiki/questions/** (ROLE_ADMIN).
-            .requestMatchers(HttpMethod.GET, "/api/wiki/questions", "/api/wiki/questions/**").permitAll()  // 공개 문항 Wiki 조회/Context/첨부 다운로드
-            // 모의고사 학습 자료(회원 업로드): 목록·상세·인라인 미리보기(PDF)는 비회원 공개.
-            // 다운로드(/{id}/download)·업로드(POST)는 아래 /api/** catch-all 로 인증(회원 전용).
-            // 삭제/관리는 /api/admin/wiki/learning-materials (ROLE_ADMIN).
-            // ⚠ "/*" 는 한 세그먼트만 매칭 → /{id} 만 열리고 /{id}/download 는 여기 안 걸린다(2세그먼트).
+            // Wiki 게시글과 일반 커뮤니티가 파일 저장 endpoint를 공유하며 URL만으로 소유 scope를 판별할 수 없다.
+            // 보호 자료 우회 노출을 막기 위해 이미지/첨부 원본 serve는 로그인 회원에게 통일한다.
             .requestMatchers(HttpMethod.GET,
-                "/api/wiki/learning-materials",
-                "/api/wiki/learning-materials/*",
-                "/api/wiki/learning-materials/*/preview").permitAll()
+                "/api/open-community/images/**",
+                "/api/open-community/attachments/*/file").authenticated()
+            .requestMatchers(HttpMethod.GET, "/api/analyzes", "/api/analyzes/**").permitAll()  // 공개 시험 분석 조회
+            // /api/wiki/** 실제 자료·문항·Thread·미리보기·다운로드는 아래
+            // /api/** catch-all에서 모두 인증한다. 종류별 GUEST 예외를 두지 않는다.
             .requestMatchers(HttpMethod.POST, "/api/wiki/visits").permitAll()  // /wiki 방문 비컨(익명 포함)
-            // 공개 Wiki 메인(/wiki) 데이터: 메인 aggregate + WIKI LIVE 조회 + 인기 다운로드는 비회원 공개.
-            // LIVE 작성(POST /api/wiki/live-messages)은 아래 /api/** catch-all 로 인증(회원 전용),
-            // LIVE 삭제(DELETE /api/admin/wiki/live-messages/*)는 /api/admin/** (ROLE_ADMIN).
+            // 공개 /wiki 소개에 필요한 메타 aggregate만 허용한다.
+            // home-feed는 controller에서 익명 응답의 Thread/LIVE/회원 활동을 제거한다.
             .requestMatchers(HttpMethod.GET, "/api/wiki/home-feed").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/wiki/live-messages").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.

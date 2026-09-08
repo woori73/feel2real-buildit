@@ -18,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service.Wi
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilive.dto.WikiLiveMessageResponse;
 import java.time.LocalDateTime;
 import java.util.List;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@DisplayName("Wiki 메인 home-feed — 비회원 조회 가능, 개인정보 없음")
+@DisplayName("Wiki 메인 home-feed — 공개 메타데이터와 회원 활동 분리")
 @WebMvcTest(controllers = WikiHomeFeedController.class)
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -41,14 +42,15 @@ import org.springframework.test.web.servlet.MockMvc;
 class WikiHomeFeedControllerWebMvcTest {
 
   @Autowired MockMvc mockMvc;
+  @Autowired JwtTokenProvider tokenProvider;
 
   @MockitoBean WikiHomeFeedService homeFeedService;
   @MockitoBean PopularDownloadService popularDownloadService;
   @MockitoBean AcademyRepository academyRepository;
 
   @Test
-  @DisplayName("GET /api/wiki/home-feed — 익명 200, 회원은 마스킹 표시명 + 가입일까지만")
-  void homeFeed_anonymous_noPii() throws Exception {
+  @DisplayName("GET /api/wiki/home-feed — 익명 응답에는 Thread/LIVE/회원 활동이 없다")
+  void homeFeed_anonymous_containsOnlyPublicMetadata() throws Exception {
     when(homeFeedService.homeFeed()).thenReturn(new WikiHomeFeedResponse(
         List.of(),
         List.of(),
@@ -60,14 +62,26 @@ class WikiHomeFeedControllerWebMvcTest {
 
     mockMvc.perform(get("/api/wiki/home-feed"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.recentMembers[0].displayName").value("김OO"))
-        .andExpect(jsonPath("$.recentMembers[0].loginId").doesNotExist())
-        .andExpect(jsonPath("$.recentMembers[0].email").doesNotExist())
-        .andExpect(jsonPath("$.recentMembers[0].name").doesNotExist())
-        .andExpect(jsonPath("$.liveMessages[0].displayName").value("박OO"))
-        .andExpect(jsonPath("$.liveMessages[0].userId").doesNotExist())
+        .andExpect(jsonPath("$.latestThreads").isEmpty())
+        .andExpect(jsonPath("$.recentMembers").isEmpty())
+        .andExpect(jsonPath("$.liveMessages").isEmpty())
         .andExpect(jsonPath("$.popularDownloads.periodLabel").value("최근 24시간"))
         .andExpect(jsonPath("$.popularDownloads.items[0].downloadCount").value(8));
+  }
+
+  @Test
+  @DisplayName("GET /api/wiki/home-feed — 로그인 회원은 기존 활동 피드를 받는다")
+  void homeFeed_member_keepsExistingFeed() throws Exception {
+    when(homeFeedService.homeFeed()).thenReturn(new WikiHomeFeedResponse(
+        List.of(), List.of(), List.of(new RecentMemberItem("김OO", LocalDateTime.now())),
+        List.of(new WikiLiveMessageResponse(1L, "박OO", "안녕하세요", LocalDateTime.now())),
+        new PopularDownloads("최근 24시간", 24, List.of())));
+
+    Cookie token = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "member", "STUDENT"));
+    mockMvc.perform(get("/api/wiki/home-feed").cookie(token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.recentMembers[0].displayName").value("김OO"))
+        .andExpect(jsonPath("$.liveMessages[0].message").value("안녕하세요"));
   }
 
   @Test

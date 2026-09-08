@@ -8,11 +8,13 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.C
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.util.List;
@@ -39,17 +41,23 @@ public class CommunityController {
 
   @GetMapping("/posts")
   public ResponseEntity<List<CommunityPostListResponse>> list(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestParam(required = false) String scope,
       @RequestParam(required = false) String boardType,
       @RequestParam(required = false) Integer subjectId,
       @RequestParam(required = false) String keyword,
       @RequestParam(required = false, defaultValue = "latest") String sort) {
+    requireWikiMember(principal, "wiki".equalsIgnoreCase(scope));
     return ResponseEntity.ok(communityService.list(scope, boardType, subjectId, keyword, sort));
   }
 
   @GetMapping("/posts/{postId}")
-  public ResponseEntity<CommunityPostDetailResponse> detail(@PathVariable Long postId) {
-    return ResponseEntity.ok(communityService.detail(postId));
+  public ResponseEntity<CommunityPostDetailResponse> detail(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable Long postId) {
+    CommunityPostDetailResponse detail = communityService.detail(postId);
+    requireWikiMember(principal, isWikiBoard(detail.boardType()));
+    return ResponseEntity.ok(detail);
   }
 
   @PostMapping(value = "/posts", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -177,6 +185,19 @@ public class CommunityController {
     CommunityPostAttachmentService.AttachmentFileBundle bundle =
         communityPostAttachmentService.getAttachmentFile(attachmentId);
     return FileDownloadResponses.attachment(bundle.bytes(), bundle.contentType(), bundle.filename());
+  }
+
+  private boolean isWikiBoard(String boardType) {
+    return "EXAM_REVIEW".equals(boardType)
+        || "VARIANT".equals(boardType)
+        || "MATERIAL".equals(boardType);
+  }
+
+  private void requireWikiMember(
+      JwtTokenProvider.AuthenticatedPrincipal principal, boolean wikiContent) {
+    if (wikiContent && principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    }
   }
 
   private List<MultipartFile> mergeFiles(List<MultipartFile> files, List<MultipartFile> bracketFiles) {

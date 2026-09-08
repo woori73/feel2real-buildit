@@ -1,3 +1,11 @@
+## Wiki 접근 정책 (2026-09)
+
+- 공개: `GET /wiki`, `GET /api/wiki/home-feed`(비회원은 최신 자료/인기 자료 메타데이터만), `GET /api/wiki/popular-downloads`, `POST /api/wiki/visits`.
+- 회원 전용: `/wiki/**` 실제 화면, `/api/wiki/**` 자료·문항·Thread·미리보기·파일(위 공개 예외 제외), `/problem-generator/wiki/api/**`.
+- Wiki가 공유하는 open-community 경로도 `scope=wiki` 목록과 Wiki 게시글 상세를 회원 전용으로 검사한다. 공유 이미지/첨부 원본 endpoint는 Wiki 파일 우회를 막기 위해 로그인 회원 전용이다.
+- 비회원 HTML 직접 접근은 `/?login=required&returnUrl=...`로 이동하고, JSON/API는 401을 반환한다. 로그인 성공 후 안전한 내부 Wiki URL로 복귀한다.
+- ADMIN/TUTOR의 기존 역할 권한과 데이터 모델은 변경하지 않는다.
+
 # API 명세
 
 ## BuildIt Wiki 학교 프린트·문제 모델
@@ -2717,13 +2725,13 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 - 관련 코드: `CommunityController`, `CommunityService`/`CommunityImageService`, `domain/community/*`(CommunityPost=질문/Answer/CommunityImage, BoardType), `CommunityProperties`(`app.community.*`). 마이그레이션: **`V914`(원본, 불변) + `V915`(Q&A 전환) + `V916`(board_type+subject_id) + `V917`(community_comments DROP — 댓글 폐기)**, 모두 in-place 업그레이드. ※ 적용된 V_파일 재작성 금지, 신규 번호로 추가.
 
-## 15-1. 모의고사 원본 API (`/api/wiki/originals`) — 공개 BuildIt Wiki
+## 15-1. 모의고사 원본 API (`/api/wiki/originals`) — 로그인 회원 BuildIt Wiki
 
 공개 `/wiki` 의 모의고사 원본 PDF(문제지/정답지). `exam_analyses`(HTML 분석 리포트)와 목적이 달라 별도 테이블(`wiki_exam_originals`, V956)·도메인(`domain/wikioriginal/*`). 파일은 `FileStorage.saveRaw` 원본 저장, 다운로드로만 제공.
 
 **보안 경계**: `GET /api/wiki/originals`·`/originals/**` 만 permitAll. `/api/admin/wiki/originals*` 는 `/api/admin/**` → ROLE_ADMIN.
 
-### 공개
+### 로그인 회원
 - `GET /api/wiki/originals?grade=` — deleted=false·visible=true, grade(1~3, null=전체) 필터, 최신순. → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examLabel, docType, docTypeLabel, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
 - `GET /api/wiki/originals/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 `Content-Disposition: attachment` + 확장자로 추론한 content-type(pdf/hwp/hwpx) + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
 
