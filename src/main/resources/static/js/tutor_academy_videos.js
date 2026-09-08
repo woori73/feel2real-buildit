@@ -138,9 +138,11 @@
         </label>
         <p class="muted video-card-purpose-note">용도 지정 안 함으로 두면 영상 관리에는 보관되지만 홈페이지 대표 영역에는 노출되지 않습니다.</p>
         <div class="video-card-usages">${liveBadges}</div>
-        <span class="video-card-duration">${formatDuration(video.durationSec)}</span>
-        <span class="video-card-size">${escapeHtml(String(video.width || '—'))}×${escapeHtml(String(video.height || '—'))}</span>
-        <span class="video-card-ready">Ready</span>
+        <div class="video-card-meta">
+          <span class="video-card-duration">${formatDuration(video.durationSec)}</span>
+          <span class="video-card-size">${escapeHtml(String(video.width || '—'))}×${escapeHtml(String(video.height || '—'))}</span>
+          <span class="video-card-ready">Ready</span>
+        </div>
       </div>
       <button class="btn btn-danger video-card-delete" type="button"
               data-delete-video="${escapeHtml(String(video.videoId))}">삭제</button>

@@ -93,6 +93,52 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("fake");
   }
 
+  /**
+   * Bugfix — Phase 4e 회귀: showcase 응답과 live/ambient 응답이 독립 Promise 로 경쟁해,
+   * LIVE 가 먼저 append 된 뒤 늦게 온 showcase 가 render() 의 root.innerHTML='' 로 LIVE 를
+   * 지워 "학교별 준비 LIVE" 가 통째로 사라졌다. 초기 렌더를 단일 파이프라인으로 고정한다.
+   */
+  @Test
+  void publicPage_initialRenderIsSinglePipeline_liveNotWipedByLateShowcase() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+
+    // showcase / ambient / live 세 helper 를 한 Promise.all 로 모아 순서를 고정한다.
+    assertThat(js).contains("Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])");
+    // render() → renderLiveCollection() 을 그 콜백 안에서 정확히 1회씩, 이 순서로 호출.
+    assertThat(js).containsOnlyOnce("render(latestSource(sources), r[0])");
+    assertThat(js).containsOnlyOnce("renderLiveCollection(sources, r[1], r[2])");
+    int chainIdx = js.indexOf("Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])");
+    int renderIdx = js.indexOf("render(latestSource(sources), r[0])", chainIdx);
+    int liveIdx = js.indexOf("renderLiveCollection(sources, r[1], r[2])", chainIdx);
+    assertThat(renderIdx).isGreaterThan(chainIdx);
+    assertThat(liveIdx).isGreaterThan(renderIdx);   // root 를 비우는 render 가 반드시 먼저
+
+    // showcase / live 가 각자 render 를 부르던 옛 경쟁 경로가 남아 있으면 안 된다.
+    assertThat(js).doesNotContain("showcaseScenes().then(function (scenes) {");
+    assertThat(js).doesNotContain("Promise.all([ambientVideos(), liveVideos()])");
+    // timing workaround 금지.
+    assertThat(js).doesNotContain("setTimeout(function () { renderLiveCollection");
+
+    // 각 helper 는 실패를 [] 로 흡수해 파이프라인을 막지 않는다(부분 실패 내성).
+    assertThat(js).contains("function showcaseScenes()");
+    assertThat(js).contains("function ambientVideos()");
+    assertThat(js).contains("function liveVideos()");
+    assertThat(countOccurrences(js, ".catch(function () { return []; })"))
+        .as("showcase/ambient/live/analyzes helpers all swallow failure to []")
+        .isGreaterThanOrEqualTo(4);
+    // LIVE 렌더가 던져도 이미 그려진 hero/showcase 는 지우지 않는다.
+    assertThat(js).contains("try {");
+    assertThat(js.indexOf("try {")).isLessThan(js.indexOf("renderLiveCollection(sources, r[1], r[2])"));
+  }
+
+  private static int countOccurrences(String haystack, String needle) {
+    int n = 0;
+    for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + needle.length())) {
+      n++;
+    }
+    return n;
+  }
+
   @Test
   void publicPage_keepsPr228SecurityBoundary() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
@@ -532,5 +578,54 @@ class MidtermLiveTemplateContractTest {
 
     String videoHtml = read("templates/tutor/tutor_academy_videos.html");
     assertThat(videoHtml).contains("value=\"NONE\"");
+  }
+
+  /**
+   * Bugfix — Phase 4e 가 좁은 그리드 열의 가로 flex 행(.video-card-body)에 긴 한글 안내문과
+   * LIVE 배지를 flex 형제로 넣어 카드 텍스트가 글자 단위로 세로로 접혔다. 본문을 세로 스택으로
+   * 되돌리고, 안내문 한 줄이 흐를 최소 열 폭을 확보하고, 모바일은 카드 한 장씩 쌓는다.
+   */
+  @Test
+  void videoCard_bodyStacksVertically_noPerCharColumnCollapse() throws Exception {
+    String css = read("static/css/tutor_academy_videos.css");
+
+    // 근본 원인 수정: 본문은 더 이상 space-between 가로 행이 아니라 세로 스택이다.
+    int bodyIdx = css.indexOf(".video-card-body {");
+    assertThat(bodyIdx).isGreaterThan(-1);
+    String bodyBlock = css.substring(bodyIdx, css.indexOf('}', bodyIdx));
+    assertThat(bodyBlock).contains("flex-direction: column");
+    assertThat(bodyBlock).doesNotContain("justify-content: space-between");
+    assertThat(bodyBlock).contains("min-width: 0");
+    // flex/grid 자식이 min-content 아래로 줄어들 수 있어야 글자 단위 줄바꿈이 사라진다.
+    int childIdx = css.indexOf(".video-card-body > *");
+    assertThat(childIdx).isGreaterThan(-1);
+    assertThat(css.substring(childIdx, css.indexOf('}', childIdx))).contains("min-width: 0");
+
+    // 안내문은 한글 단어를 지키며 정상 문장으로 흐른다(증상만 가리는 word-break:break-all 아님).
+    int noteIdx = css.indexOf(".video-card-purpose-note {");
+    assertThat(noteIdx).isGreaterThan(-1);
+    String noteBlock = css.substring(noteIdx, css.indexOf('}', noteIdx));
+    assertThat(noteBlock).contains("white-space: normal");
+    assertThat(noteBlock).contains("word-break: keep-all");
+    assertThat(noteBlock).doesNotContain("break-all");
+
+    // 셀렉트는 열 폭을 넘지 않는다.
+    int selIdx = css.indexOf(".video-card-purpose-select {");
+    String selBlock = css.substring(selIdx, css.indexOf('}', selIdx));
+    assertThat(selBlock).contains("max-width: 100%");
+    assertThat(selBlock).contains("min-width: 0");
+
+    // 안내문 한 줄을 담을 최소 열 폭 확보 + 모바일은 카드 1장씩.
+    assertThat(css).contains("minmax(240px, 1fr)");
+    assertThat(css).doesNotContain("minmax(160px, 1fr)");
+    int mqIdx = css.indexOf("@media (max-width: 520px)");
+    assertThat(mqIdx).isGreaterThan(-1);
+    assertThat(css.substring(mqIdx, css.indexOf('}', css.indexOf('}', mqIdx) + 1)))
+        .contains("grid-template-columns: 1fr");
+
+    // 메타(길이·해상도·Ready)는 한 줄로 감싸는 래퍼가 있다.
+    String videoJs = read("static/js/tutor_academy_videos.js");
+    assertThat(videoJs).contains("video-card-meta");
+    assertThat(css).contains(".video-card-meta {");
   }
 }

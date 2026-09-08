@@ -79,16 +79,22 @@
     })
     .then(function (payload) {
       var sources = Array.isArray(payload) ? payload : [];
-      // showcase(상단) 는 실패해도 자료/영상 흐름을 막지 않는다 — 없으면 iframe hero 로 폴백.
-      showcaseScenes().then(function (scenes) {
-        render(latestSource(sources), scenes);
-      });
-      // 영상(specific / ambient)은 실패해도 자료 흐름을 막지 않는다 — 없으면 MATERIAL → 분석 그대로.
-      Promise.all([ambientVideos(), liveVideos()]).then(function (r) {
-        renderLiveCollection(sources, r[0], r[1]);
-      });
+      // 초기 렌더는 단일 파이프라인이다. render() 는 root 를 비우고(root.innerHTML=''),
+      // renderLiveCollection() 은 root 에 append 한다 — 이 둘이 독립 Promise 로 경쟁하면
+      // LIVE 가 먼저 붙은 뒤 늦게 도착한 showcase 응답이 render() 로 LIVE 를 지운다.
+      // showcase / ambient / live 세 helper 는 모두 실패 시 [] 를 반환하므로(reject 없음)
+      // Promise.all 로 모아 순서를 고정한다: 항상 render() → renderLiveCollection().
+      return Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])
+        .then(function (r) {
+          render(latestSource(sources), r[0]);
+          // LIVE 렌더 중 예기치 못한 오류가 나도 이미 그려진 hero/showcase 는 지우지 않는다.
+          try {
+            renderLiveCollection(sources, r[1], r[2]);
+          } catch (e) { /* MATERIAL frame 없이도 상단은 유지 */ }
+        });
     })
     .catch(function () {
+      // wiki-sources 자체 실패만 여기로 온다(helper 들은 [] 로 흡수). 짧은 시즌 화면.
       render(null, []);
     });
 
