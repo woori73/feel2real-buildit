@@ -310,7 +310,17 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("function pauseVideos(");
     assertThat(js).contains("v.pause()");
     assertThat(js).contains("p.catch(function () {})");
-    assertThat(js).contains("v.currentTime = 0");
+
+    // 영상별 LIVE 시작 구간 = 정적 config("id:sec"). 임의 business logic 하드코딩 아님.
+    assertThat(html).contains("data-ambient-video-starts=");
+    assertThat(js).contains("data-ambient-video-starts");
+    assertThat(js).contains("AMBIENT_STARTS");
+    assertThat(js).contains("current.startAt");            // 활성 + 재진입 모두 설정 시작점 사용
+    assertThat(js).contains("t >= d");                     // 시작점 >= 길이면 안전 fallback
+    assertThat(js).doesNotContain("videoId === 8");
+    assertThat(js).doesNotContain("=== 8)");
+    assertThat(js).doesNotContain("trimVideo");
+    assertThat(js).doesNotContain("timeline");
 
     // 학교 귀속 조작 / 카테고리 라벨 생성 없음(§8·§12·§25).
     assertThat(js).doesNotContain("수업 영상");

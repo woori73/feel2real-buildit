@@ -31,6 +31,15 @@
     .split(',')
     .map(function (s) { return parseInt(s, 10); })
     .filter(function (n) { return n > 0; });
+  // 영상별 LIVE scene 시작 초. 형식 "id:sec,id:sec" — 편집기가 아니라, 승인된 영상을 어느
+  // 구간부터 보여줄지 지정하는 정적 config. 없으면 0초부터.
+  var AMBIENT_STARTS = {};
+  (root.getAttribute('data-ambient-video-starts') || '').split(',').forEach(function (pair) {
+    var kv = pair.split(':');
+    var id = parseInt(kv[0], 10);
+    var sec = parseFloat(kv[1]);
+    if (id > 0 && sec >= 0) AMBIENT_STARTS[id] = sec;
+  });
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var SEASON = '2026 2학기 중간고사';
   var TITLE = '중간고사 준비 중';
@@ -305,7 +314,8 @@
       video.setAttribute('tabindex', '-1');
       vscene.appendChild(video);
       stage.appendChild(vscene);
-      scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video });
+      var startAt = AMBIENT_STARTS[ambientVideo.videoId] || 0;
+      scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video, startAt: startAt });
     }
 
     // DIGITAL_TWIN scene — 공개 analyze contentUrl(그 학교 출제 경향 분석). school+grade 정확 일치만.
@@ -362,9 +372,12 @@
       });
     }
 
-    function playVideo(v) {
+    function playVideo(v, startAt) {
       try {
-        v.currentTime = 0;                // 재활성화 시 처음부터(homepage 현장 영상과 동일).
+        var t = startAt > 0 ? startAt : 0;
+        var d = v.duration;                // metadata 로딩 전이면 NaN — 그대로 best-effort seek.
+        if (d && t >= d) t = 0;            // 설정 시작점이 실제 길이 이상이면 안전 fallback.
+        v.currentTime = t;                 // 재활성화마다 설정 시작점(없으면 0)부터.
         var p = v.play();
         if (p && typeof p.catch === 'function') p.catch(function () {});
       } catch (e) {}
@@ -384,7 +397,7 @@
         cycleTwinViews(current.frame);
       }
       if (current && current.kind === 'video' && current.video && !reduceMotion) {
-        playVideo(current.video);
+        playVideo(current.video, current.startAt);
       }
     }
 
@@ -413,7 +426,7 @@
       // 활성 scene 이 twin 이면 내부 crop 을, video 면 재생을 재개(뷰포트 재진입).
       var current = scenes[index];
       if (current && current.kind === 'twin' && current.frame) cycleTwinViews(current.frame);
-      if (current && current.kind === 'video' && current.video) playVideo(current.video);
+      if (current && current.kind === 'video' && current.video) playVideo(current.video, current.startAt);
       var count = article.querySelectorAll('.midterm-live__scene').length;
       if (count < 2) return;
       var ms = (current && current.ms) || MATERIAL_MS;
