@@ -615,10 +615,12 @@
   }
 
   /**
-   * 그 학교 출제 경향 분석(공개 analyze)의 contentUrl. 없으면 null.
+   * 그 학교 "가장 최근 완료된 시험"의 공개 출제 경향 분석. { url, basis } 또는 null.
+   * 이번 시험 유형(중간/기말)과 같은지가 아니라, 분석 대상 시험이 최근일수록 우선한다
+   * (학년도 > 학기 > 기말/중간). 현재 데이터로는 1학기 기말이 가장 최근이다. semester 는
+   * 관대하게 본다 — 2학기 분석이 아직 없어도 지난 학기 출제 경향은 참고 근거다.
    * - 자료(Wiki) frame: school + grade 정확 일치.
-   * - 자료 없는(pending) 캠페인 학교 frame: grade 미지정 → 학교만 일치(영어), 이번 시험 유형(중간)을
-   *   우선하고 그다음 최신. semester 는 보지 않는다(2학기 분석이 아직 없어도 출제 경향은 참고 가능).
+   * - 자료 없는(pending) 캠페인 학교 frame: grade 미지정 → 학교만 일치(영어).
    */
   function twinContentUrl(frame) {
     return analyzesForSchool(frame.school).then(function (list) {
@@ -628,19 +630,25 @@
         var gradeOk = frame.grade == null || gradeNumber(a.grade) === frame.grade;
         return englishOk && gradeOk && typeof a.contentUrl === 'string' && a.contentUrl;
       });
-      var campaignExam = String(SEASON_EXAM || '');
-      function matchesExam(a) {
-        var t = String(a.examType || '').trim();
-        return t && campaignExam.indexOf(t) === 0;   // "중간고사" starts with "중간"
+      function examRank(a) {
+        var year = parseInt((String(a.examYear || a.year || '').match(/\d{4}/) || ['0'])[0], 10) || 0;
+        var sem = /2\s*학기/.test(String(a.semester || '')) ? 2
+          : (/1\s*학기/.test(String(a.semester || '')) ? 1 : 0);
+        var type = /기말/.test(String(a.examType || '')) ? 2
+          : (/중간/.test(String(a.examType || '')) ? 1 : 0);
+        return year * 100 + sem * 10 + type;
       }
       eligible.sort(function (a, b) {
-        var am = matchesExam(a) ? 1 : 0;
-        var bm = matchesExam(b) ? 1 : 0;
-        if (am !== bm) return bm - am;
-        return timestamp(b) - timestamp(a);
+        var d = examRank(b) - examRank(a);
+        return d !== 0 ? d : timestamp(b) - timestamp(a);
       });
       var match = eligible[0];
-      return match ? match.contentUrl : null;
+      if (!match) return null;
+      var sem = String(match.semester || '').trim();
+      var typeRaw = String(match.examType || '').trim();
+      var type = /기말/.test(typeRaw) ? '기말고사' : (/중간/.test(typeRaw) ? '중간고사' : typeRaw);
+      var basis = [sem, type].filter(Boolean).join(' ');
+      return { url: match.contentUrl, basis: basis ? basis + ' 분석 기준' : '' };
     });
   }
 
@@ -780,20 +788,24 @@
     }
     if (scenes.length) scenes[0].el.classList.add('is-active');
 
-    // DIGITAL_TWIN scene — 그 학교 공개 출제 경향 분석(analyze contentUrl). 자료 있는 frame 은
+    // DIGITAL_TWIN scene — 그 학교 "가장 최근 완료된 시험"의 공개 출제 경향 분석. 자료 있는 frame 은
     // school+grade 일치, pending frame 은 학교만 일치(twinContentUrl 참조).
-    twinContentUrl(frame).then(function (contentUrl) {
-      if (!contentUrl) return;
+    var TWIN_SUB = '최근 시험 출제 경향 분석';
+    twinContentUrl(frame).then(function (result) {
+      if (!result || !result.url) return;
       var scene = el('div', 'midterm-live__scene');
       scene.setAttribute('data-kind', 'twin');
-      var twin = safeFrame(contentUrl, 'midterm-live__twin', '출제 경향 분석');
+      var twin = safeFrame(result.url, 'midterm-live__twin', TWIN_SUB);
       twin.setAttribute('data-twin-view', '0');
       scene.appendChild(twin);
+      if (result.basis) {
+        scene.appendChild(el('p', 'midterm-live__twin-basis', result.basis));
+      }
       stage.appendChild(scene);
-      scenes.push({ el: scene, kind: 'twin', ms: TWIN_MS, sub: '출제 경향 분석', frame: twin });
+      scenes.push({ el: scene, kind: 'twin', ms: TWIN_MS, sub: TWIN_SUB, frame: twin });
       if (scenes.length === 1) {
         scene.classList.add('is-active');
-        sub.textContent = '출제 경향 분석';
+        sub.textContent = TWIN_SUB;
       }
       renderDots(article, scenes.length);
     });

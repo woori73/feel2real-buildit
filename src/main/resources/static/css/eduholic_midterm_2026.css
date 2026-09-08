@@ -719,6 +719,22 @@ a { color: inherit; }
 }
 .midterm-live__twin[data-twin-view="1"] { --twin-top: -400px; }
 .midterm-live__twin[data-twin-view="2"] { --twin-top: -880px; }
+/* "1학기 기말고사 분석 기준" 같은 보조 캡션 — twin scene 하단 위에 얇게. */
+.midterm-live__twin-basis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, .82);
+  text-align: center;
+  z-index: 3;
+}
 
 /* VIDEO — OUTER FRAME / MEDIA STAGE 크기는 그대로. video element 의 fit 만 방향에 대응한다.
    panorama strip 에 cover 로 넣어 상체만 크게 잘리는 실패를 만들지 않는다. 남는 공간은

@@ -4,7 +4,6 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermShowcaseDtos.ShowcaseScene;
-import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiCampaignScope;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceRow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaign;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermWikiSourceExposure;
@@ -46,6 +45,7 @@ public class MidtermShowcaseService {
   private final MidtermCampaignRepository campaignRepository;
   private final MidtermWikiSourceExposureRepository exposureRepository;
   private final MidtermWikiSourceGateway gateway;
+  private final MidtermExamScopePolicy examScopePolicy;
 
   private final Map<String, MidtermShowcaseExtractor.Extract> cache = new ConcurrentHashMap<>();
 
@@ -62,11 +62,10 @@ public class MidtermShowcaseService {
       return List.of();
     }
 
-    WikiCampaignScope scope = MidtermWikiSourceService.scope(campaign);
     AuthenticatedPrincipal tutor = MidtermWikiSourceService.tutorPrincipal(academy);
     Map<String, WikiSourceRow> byKey;
     try {
-      byKey = gateway.listCandidates(tutor, scope).stream()
+      byKey = examScopePolicy.discover(tutor, handle, campaign).stream()
           .collect(Collectors.toMap(r -> r.kind() + ":" + r.id(), Function.identity(),
               (first, ignored) -> first));
     } catch (RuntimeException e) {

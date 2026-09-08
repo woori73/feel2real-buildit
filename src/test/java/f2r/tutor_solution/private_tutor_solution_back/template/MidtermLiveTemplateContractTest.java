@@ -425,12 +425,13 @@ class MidtermLiveTemplateContractTest {
 
   /**
    * bugfix(2026-09) — 자료(Wiki source)가 없는 캠페인 학교(pending FRAME)도 그 학교의 공개
-   * 출제 경향 분석(analyze)이 있으면 DIGITAL_TWIN scene 을 보여준다. grade 미지정이라 학교만 일치,
-   * semester 는 보지 않는다(이번 시험 유형 우선 정렬).
+   * 출제 경향 분석(analyze)이 있으면 DIGITAL_TWIN scene 을 보여준다. grade 미지정이라 학교만 일치.
+   * Digital Twin 선택 = "가장 최근 완료된 시험"(학년도>학기>기말/중간). 이번 시험 유형 우선 아님.
    */
   @Test
   void publicPage_pendingFrameShowsDigitalTwinFromAnalyze() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
 
     // twinContentUrl 이 grade 미지정(pending)을 허용한다.
     assertThat(js).contains("frame.grade == null || gradeNumber(a.grade) === frame.grade");
@@ -442,9 +443,66 @@ class MidtermLiveTemplateContractTest {
     assertThat(js.substring(pendIdx, twinIdx)).doesNotContain("return article;");
     assertThat(js).contains("data-kind', 'pending'");
     // 여전히 실제 analyze contentUrl 만, 없으면 아무 것도 안 그린다.
-    assertThat(js).contains("if (!contentUrl) return;");
+    assertThat(js).contains("if (!result || !result.url) return;");
     // pending frame 에는 학원 ambient 영상을 붙이지 않는다.
     assertThat(js).contains("if (frame.pending) { ambientForFrame = null; }");
+
+    // Digital Twin 선택 = 시험 recency 순. "이번 시험 유형(중간) 우선" 로직은 제거됐다.
+    assertThat(js).contains("function examRank(a)");
+    assertThat(js).doesNotContain("function matchesExam(a)");
+    assertThat(js).doesNotContain("campaignExam.indexOf(t) === 0");
+    // 학부모 화면 표기 — 기술 용어 없이 "최근 시험 출제 경향 분석" + "1학기 기말고사 분석 기준" 보조.
+    assertThat(js).contains("최근 시험 출제 경향 분석");
+    assertThat(js).contains("분석 기준");
+    assertThat(js).contains("midterm-live__twin-basis");
+    assertThat(css).contains(".midterm-live__twin-basis");
+  }
+
+  /**
+   * bugfix(2026-09) — (학교, 학년) 별 "이번에 준비 중인 실제 시험"을 명시적으로 결정한다.
+   * 명시 안 된 조합은 캠페인 exam_type 만 허용(#232 fail-closed — cross-exam wildcard 아님).
+   * exam 문자열은 실제 Wiki 자료와 일치해야 노출(불일치 시 "준비 중" 폴백).
+   */
+  @Test
+  void midtermExamScope_isPerSchoolGradeExplicitPolicy_notWildcard() throws Exception {
+    String policy = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/"
+            + "midtermcampaign/service/MidtermExamScopePolicy.java"));
+    String props = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/config/"
+            + "MidtermExamScopeProperties.java"));
+    String yaml = Files.readString(Path.of("src/main/resources/application.yaml"));
+
+    // 정책 = (기본 scope) ∪ (override scope), candidate 는 그 (학교, 학년) 허용 exam 과 정확 일치만.
+    assertThat(policy).contains("gateway.listCandidates(tutor, scope)");
+    assertThat(policy).contains(".equals(normalizeExam(row.exam()))");
+    assertThat(policy).contains("allowedExam(handle, row.school(), gradeNumber(row.grade())");
+    assertThat(policy).doesNotContain("wildcard");
+    // Wiki(Python) 정규화 규칙과 동일하게 비교(중간→중간고사, 기말→기말고사).
+    assertThat(policy).contains("\"중간\"");
+    assertThat(policy).contains("\"기말고사\"");
+    assertThat(policy).contains("normalizeSchool");   // "압구정중학교"/"압구정중" 동일 취급
+
+    assertThat(props).contains("app.midterm");
+    assertThat(props).contains("examScopeOverrides");
+    assertThat(yaml).contains("exam-scope-overrides");
+    assertThat(yaml).contains("{ school: \"압구정중\", grade: 3, exam: \"기말고사\" }");
+    assertThat(yaml).contains("{ school: \"신사중\", grade: 3, exam: \"기말고사\" }");
+
+    // gateway 는 여전히 scope 당 exact 재검증(#232) — 계약을 느슨하게 만들지 않는다.
+    String gateway = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/"
+            + "midtermcampaign/service/HttpMidtermWikiSourceGateway.java"));
+    assertThat(gateway).contains("!scope.exam().equals(exam)");
+
+    // 서비스 3곳이 정책을 통과(직접 gateway.listCandidates(단일 scope) 호출을 남기지 않는다).
+    for (String svc : new String[] { "MidtermWikiSourceService", "MidtermShowcaseService",
+        "MidtermWikiSourceAdminService" }) {
+      String src = Files.readString(Path.of(
+          "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/"
+              + "midtermcampaign/service/" + svc + ".java"));
+      assertThat(src).contains("examScopePolicy.discover(");
+    }
   }
 
   /** Phase 4a — School LIVE Mixed Scene Collection: hero 아래 (school, grade) FRAME.
@@ -469,7 +527,7 @@ class MidtermLiveTemplateContractTest {
     // DIGITAL_TWIN scene = 공개 analyze content, school + grade 정확 일치만. 가짜 fallback 없음.
     assertThat(js).contains("data-kind', 'twin'");
     assertThat(js).contains("gradeNumber(a.grade) === frame.grade");
-    assertThat(js).contains("if (!contentUrl) return;");
+    assertThat(js).contains("if (!result || !result.url) return;");
     assertThat(js).doesNotContain("student");
     assertThat(js).doesNotContain("학생 Digital");
 

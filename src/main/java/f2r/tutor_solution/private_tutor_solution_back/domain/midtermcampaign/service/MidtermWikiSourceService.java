@@ -34,13 +34,13 @@ public class MidtermWikiSourceService {
   private final MidtermCampaignRepository campaignRepository;
   private final MidtermWikiSourceExposureRepository exposureRepository;
   private final MidtermWikiSourceGateway gateway;
+  private final MidtermExamScopePolicy examScopePolicy;
 
   @Transactional(readOnly = true)
   public WikiSourceListResult listSources(String handle) {
     Context context = requirePublishedCampaign(handle);
-    WikiCampaignScope scope = scope(context.campaign());
-    List<WikiSourceRow> candidates =
-        gateway.listCandidates(tutorPrincipal(context.academy()), scope);
+    List<WikiSourceRow> candidates = examScopePolicy.discover(
+        tutorPrincipal(context.academy()), handle, context.campaign());
     Map<String, WikiSourceRow> byKey = candidates.stream().collect(Collectors.toMap(
         row -> key(row.kind(), row.id()), Function.identity(), (first, ignored) -> first));
 
@@ -52,7 +52,8 @@ public class MidtermWikiSourceService {
         .filter(java.util.Objects::nonNull)
         .map(row -> toView(handle, sourceId(row.kind(), row.id()), row))
         .toList();
-    return new WikiSourceListResult(views, candidates.isEmpty() ? List.of(scope) : List.of());
+    return new WikiSourceListResult(views,
+        candidates.isEmpty() ? examScopePolicy.scopes(handle, context.campaign()) : List.of());
   }
 
   /** Preview 요청마다 published campaign, current candidate, visible exposure를 모두 재검증한다. */
@@ -70,7 +71,8 @@ public class MidtermWikiSourceService {
     }
 
     AuthenticatedPrincipal tutor = tutorPrincipal(context.academy());
-    boolean currentCandidate = gateway.listCandidates(tutor, scope(context.campaign())).stream()
+    boolean currentCandidate = examScopePolicy.discover(tutor, handle, context.campaign())
+        .stream()
         .anyMatch(row -> row.kind().equals(parsed.kind()) && row.id() == parsed.id());
     if (!currentCandidate) {
       throw notFound();

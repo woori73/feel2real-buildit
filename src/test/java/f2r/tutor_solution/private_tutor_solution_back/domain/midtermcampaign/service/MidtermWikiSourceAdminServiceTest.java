@@ -13,6 +13,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaign;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaignState;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermWikiSourceExposure;
+import f2r.tutor_solution.private_tutor_solution_back.config.MidtermExamScopeProperties;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermWikiSourceExposureRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
@@ -39,7 +40,8 @@ class MidtermWikiSourceAdminServiceTest {
     gateway = mock(MidtermWikiSourceGateway.class);
     EntityManager entityManager = mock(EntityManager.class);
     service = new MidtermWikiSourceAdminService(
-        academyService, campaigns, exposures, gateway, entityManager);
+        academyService, campaigns, exposures, entityManager,
+        new MidtermExamScopePolicy(new MidtermExamScopeProperties(), gateway));
 
     Academy academy = mock(Academy.class);
     User tutor = mock(User.class);

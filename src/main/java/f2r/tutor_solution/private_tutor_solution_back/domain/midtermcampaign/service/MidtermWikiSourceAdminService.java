@@ -30,8 +30,8 @@ public class MidtermWikiSourceAdminService {
   private final AcademyService academyService;
   private final MidtermCampaignRepository campaignRepository;
   private final MidtermWikiSourceExposureRepository exposureRepository;
-  private final MidtermWikiSourceGateway gateway;
   private final EntityManager entityManager;
+  private final MidtermExamScopePolicy examScopePolicy;
 
   @Transactional(readOnly = true)
   public List<WikiCandidateAdminView> listCandidates(String handle) {
@@ -48,8 +48,8 @@ public class MidtermWikiSourceAdminService {
     MidtermWikiSourceService.ParsedSourceId parsed =
         MidtermWikiSourceService.parseSourceId(opaqueSourceId);
     AuthenticatedPrincipal tutor = MidtermWikiSourceService.tutorPrincipal(context.academy());
-    WikiSourceRow candidate = gateway
-        .listCandidates(tutor, MidtermWikiSourceService.scope(context.campaign())).stream()
+    WikiSourceRow candidate = examScopePolicy
+        .discover(tutor, handle, context.campaign()).stream()
         .filter(row -> row.kind().equals(parsed.kind()) && row.id() == parsed.id())
         .findFirst()
         .orElseThrow(() -> new ResponseStatusException(
@@ -83,9 +83,10 @@ public class MidtermWikiSourceAdminService {
         .findByCampaignId(context.campaign().getCampaignId()).stream()
         .collect(Collectors.toMap(
             e -> key(e.getSourceKind(), e.getSourceId()), Function.identity()));
-    return gateway.listCandidates(
+    return examScopePolicy.discover(
             MidtermWikiSourceService.tutorPrincipal(context.academy()),
-            MidtermWikiSourceService.scope(context.campaign())).stream()
+            context.academy().getHandle(),
+            context.campaign()).stream()
         .map(row -> {
           MidtermWikiSourceExposure exposure = exposures.get(key(row.kind(), row.id()));
           return new WikiCandidateAdminView(
