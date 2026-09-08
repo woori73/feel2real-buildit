@@ -533,4 +533,53 @@ class MidtermLiveTemplateContractTest {
     String videoHtml = read("templates/tutor/tutor_academy_videos.html");
     assertThat(videoHtml).contains("value=\"NONE\"");
   }
+
+  /**
+   * Bugfix — Phase 4e 가 좁은 그리드 열의 가로 flex 행(.video-card-body)에 긴 한글 안내문과
+   * LIVE 배지를 flex 형제로 넣어 카드 텍스트가 글자 단위로 세로로 접혔다. 본문을 세로 스택으로
+   * 되돌리고, 안내문 한 줄이 흐를 최소 열 폭을 확보하고, 모바일은 카드 한 장씩 쌓는다.
+   */
+  @Test
+  void videoCard_bodyStacksVertically_noPerCharColumnCollapse() throws Exception {
+    String css = read("static/css/tutor_academy_videos.css");
+
+    // 근본 원인 수정: 본문은 더 이상 space-between 가로 행이 아니라 세로 스택이다.
+    int bodyIdx = css.indexOf(".video-card-body {");
+    assertThat(bodyIdx).isGreaterThan(-1);
+    String bodyBlock = css.substring(bodyIdx, css.indexOf('}', bodyIdx));
+    assertThat(bodyBlock).contains("flex-direction: column");
+    assertThat(bodyBlock).doesNotContain("justify-content: space-between");
+    assertThat(bodyBlock).contains("min-width: 0");
+    // flex/grid 자식이 min-content 아래로 줄어들 수 있어야 글자 단위 줄바꿈이 사라진다.
+    int childIdx = css.indexOf(".video-card-body > *");
+    assertThat(childIdx).isGreaterThan(-1);
+    assertThat(css.substring(childIdx, css.indexOf('}', childIdx))).contains("min-width: 0");
+
+    // 안내문은 한글 단어를 지키며 정상 문장으로 흐른다(증상만 가리는 word-break:break-all 아님).
+    int noteIdx = css.indexOf(".video-card-purpose-note {");
+    assertThat(noteIdx).isGreaterThan(-1);
+    String noteBlock = css.substring(noteIdx, css.indexOf('}', noteIdx));
+    assertThat(noteBlock).contains("white-space: normal");
+    assertThat(noteBlock).contains("word-break: keep-all");
+    assertThat(noteBlock).doesNotContain("break-all");
+
+    // 셀렉트는 열 폭을 넘지 않는다.
+    int selIdx = css.indexOf(".video-card-purpose-select {");
+    String selBlock = css.substring(selIdx, css.indexOf('}', selIdx));
+    assertThat(selBlock).contains("max-width: 100%");
+    assertThat(selBlock).contains("min-width: 0");
+
+    // 안내문 한 줄을 담을 최소 열 폭 확보 + 모바일은 카드 1장씩.
+    assertThat(css).contains("minmax(240px, 1fr)");
+    assertThat(css).doesNotContain("minmax(160px, 1fr)");
+    int mqIdx = css.indexOf("@media (max-width: 520px)");
+    assertThat(mqIdx).isGreaterThan(-1);
+    assertThat(css.substring(mqIdx, css.indexOf('}', css.indexOf('}', mqIdx) + 1)))
+        .contains("grid-template-columns: 1fr");
+
+    // 메타(길이·해상도·Ready)는 한 줄로 감싸는 래퍼가 있다.
+    String videoJs = read("static/js/tutor_academy_videos.js");
+    assertThat(videoJs).contains("video-card-meta");
+    assertThat(css).contains(".video-card-meta {");
+  }
 }

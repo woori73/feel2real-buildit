@@ -63,6 +63,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-weight: 600;
   color: #3d4a6b;
 }
@@ -76,6 +77,50 @@
   border-radius: 999px;
   padding: 2px 8px;
   cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Phase 4e 안내문 — 카드 본문이 세로 스택이라 정상 문장으로 흐른다. */
+.video-card-purpose-note {
+  margin: 0;
+  font-weight: 500;
+  font-size: .68rem;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.video-card-usages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.video-card-usages:empty { display: none; }
+.video-card-usage {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.video-card-usage-live {
+  background: rgba(74, 127, 212, .14);
+  color: #0C238A;
+}
+
+.video-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: #667085;
+  font-weight: 600;
 }
 
 .video-card-purpose-select:disabled {
@@ -108,7 +153,10 @@
 
 .video-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* Phase 4e 로 카드 본문(용도 셀렉트 + 안내문 + LIVE 배지 + 메타)이 늘어나
+     좁은 열에서는 한글이 글자 단위로 접힌다. 안내문 한 줄이 자연스럽게 흐를
+     최소 폭을 확보한다. */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
   margin-top: 12px;
 }
@@ -135,14 +183,23 @@
   background: #e8ecf5;
 }
 
+/* 근본 원인: 좁은 그리드 열(≈160px) 안에서 가로 flex(space-between) 행이었기 때문에
+   Phase 4e 가 추가한 긴 한글 안내문·LIVE 배지가 각각 min-content 로 짜부라져
+   글자 단위 세로 줄바꿈이 났다. 세로 스택으로 바꿔 각 자식이 카드 전체 폭을 쓴다. */
 .video-card-body {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   padding: 8px 10px;
+  min-width: 0;
   font-size: .72rem;
   font-weight: 700;
   color: #3d4a6b;
+}
+
+.video-card-body > * {
+  min-width: 0;
 }
 
 .video-card-delete {
@@ -151,7 +208,8 @@
 }
 
 @media (max-width: 520px) {
-  .video-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  /* 모바일은 카드 내부 열을 강제하지 않고 한 장씩 세로로 쌓는다. */
+  .video-grid { grid-template-columns: 1fr; }
 }
 .video-upload-progress{display:block;width:100%;margin-top:12px;accent-color:#3157d5;}
 .video-card-thumb-placeholder{display:grid;place-items:center;font-size:2rem;background:#eef1f7;color:#667085;}
