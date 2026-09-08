@@ -107,7 +107,7 @@ class AcademyVideoStreamControllerTest {
         7L, "clip.mp4", "/api/academies/my/videos/7/stream",
         "/api/academies/my/videos/7/thumbnail", 8, 8_000L, 720, 1280,
         VideoStatus.READY, VideoLifecycleStatus.READY, null,
-        VideoActiveSource.NORMALIZED, AcademyVideoPurpose.LESSON, LocalDateTime.now()));
+        VideoActiveSource.NORMALIZED, AcademyVideoPurpose.LESSON, false, java.util.List.of(), LocalDateTime.now()));
 
     mockMvc.perform(multipart("/api/tutor/academy/videos")
             .file("video", new byte[] {1, 2, 3})
@@ -125,7 +125,7 @@ class AcademyVideoStreamControllerTest {
         7L, "clip.mp4", "/api/academies/my/videos/7/stream",
         "/api/academies/my/videos/7/thumbnail", 8, 8_000L, 720, 1280,
         VideoStatus.READY, VideoLifecycleStatus.READY, null,
-        VideoActiveSource.NORMALIZED, AcademyVideoPurpose.DIRECTOR, LocalDateTime.now()));
+        VideoActiveSource.NORMALIZED, AcademyVideoPurpose.DIRECTOR, false, java.util.List.of(), LocalDateTime.now()));
 
     mockMvc.perform(patch("/api/tutor/academy/videos/7/purpose")
             .contentType(MediaType.APPLICATION_JSON)

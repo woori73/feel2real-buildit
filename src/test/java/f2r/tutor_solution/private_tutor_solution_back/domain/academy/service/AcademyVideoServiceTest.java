@@ -55,6 +55,7 @@ class AcademyVideoServiceTest {
   private VideoTranscoder videoTranscoder;
   private LessonMediaReferenceGuard lessonMediaReferenceGuard;
   private AcademyVideoCleanupTransactions cleanupTransactions;
+  private f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup liveVideoUsageLookup;
   private AcademyVideoService service;
 
   private Academy academy;
@@ -69,9 +70,13 @@ class AcademyVideoServiceTest {
     videoTranscoder = mock(VideoTranscoder.class);
     lessonMediaReferenceGuard = mock(LessonMediaReferenceGuard.class);
     cleanupTransactions = mock(AcademyVideoCleanupTransactions.class);
+    liveVideoUsageLookup = mock(
+        f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup.class);
+    when(liveVideoUsageLookup.labelsByVideoId(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(java.util.Map.of());
     service = new AcademyVideoService(
         academyService, academyVideoRepository, optimizationJobRepository, lessonMediaReferenceGuard,
-        cleanupTransactions,
+        cleanupTransactions, liveVideoUsageLookup,
         fileStorage, videoTranscoder,
         120, MAX_BYTES, MAX_BYTES, 10);
 
@@ -332,6 +337,32 @@ class AcademyVideoServiceTest {
     assertThatThrownBy(() -> service.updatePurpose(principal, 999L, "LESSON"))
         .isInstanceOf(ResponseStatusException.class)
         .hasMessageContaining("찾을 수 없습니다");
+  }
+
+  @Test
+  @DisplayName("given 수업/원장 영상 when NONE(용도 지정 안 함)으로 재지정 then purpose=NONE, 행/파일은 그대로")
+  void updatePurpose_allows_setting_none() {
+    AcademyVideo lesson = AcademyVideo.builder()
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+        .purpose(AcademyVideoPurpose.LESSON).build();
+    ReflectionTestUtils.setField(lesson, "videoId", 20L);
+    when(academyVideoRepository.findByVideoIdAndAcademy_AcademyId(20L, 100L))
+        .thenReturn(Optional.of(lesson));
+    AcademyVideo director = AcademyVideo.builder()
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+        .purpose(AcademyVideoPurpose.DIRECTOR).build();
+    ReflectionTestUtils.setField(director, "videoId", 21L);
+    when(academyVideoRepository.findByVideoIdAndAcademy_AcademyId(21L, 100L))
+        .thenReturn(Optional.of(director));
+
+    service.updatePurpose(principal, 20L, "NONE");
+    service.updatePurpose(principal, 21L, "none");   // 대소문자 무관
+
+    assertThat(lesson.getPurpose()).isEqualTo(AcademyVideoPurpose.NONE);
+    assertThat(director.getPurpose()).isEqualTo(AcademyVideoPurpose.NONE);
+    verify(academyVideoRepository, never()).delete(org.mockito.ArgumentMatchers.any());
+    verify(fileStorage, never())
+        .delete(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
   }
 
   /* ── 삭제 (AC #7, #14) ────────────────────────────────────── */

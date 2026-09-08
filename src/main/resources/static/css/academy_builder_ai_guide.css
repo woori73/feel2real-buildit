@@ -281,3 +281,41 @@ body.ai-guide-open .canvas-area { padding-right: calc(var(--ai-guide-width) + 24
 .bildi-bubble-step-inner .ai-guide-handle-status[data-tone="ok"] {
   color: #047857; background: #ecfdf5; border-color: #a7f3d0;
 }
+
+
+/* Bildi responsive workspace — Guide session과 표시 상태를 분리하고 Preview를 우선한다. */
+.ai-guide-toggle[aria-pressed="false"] { background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.68); }
+.ai-guide-toggle[aria-pressed="true"] { background:linear-gradient(135deg,rgba(12,35,138,.86),rgba(74,127,212,.72)); }
+.bildi-launcher { position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:179;width:82px;min-height:88px;padding:4px 4px 8px;border:1px solid rgba(122,174,240,.55);border-radius:22px;background:rgba(15,23,42,.92);box-shadow:0 16px 42px rgba(0,0,0,.36);color:#eaf1ff;cursor:pointer; }
+.bildi-launcher[hidden],body.ai-guide-open .bildi-launcher { display:none; }
+.bildi-launcher-label { display:block;margin-top:-4px;font-size:.65rem;line-height:1;font-weight:900;white-space:nowrap; }
+#builderBildiStage { position:relative;display:block;width:72px;height:66px;overflow:hidden;pointer-events:none; }
+#builderBildiStage.is-hidden { display:none; }
+#builderBildiStage>.bildi { left:4px!important;top:0!important;width:64px;height:64px;transform:none!important; }
+#builderBildiStage>.world-sky,#builderBildiStage>.bildi-bubble { display:none!important; }
+
+/* 충분한 desktop: 오른쪽 dock 폭만큼 workspace를 실제 확보한다. */
+@media (min-width:1281px) {
+  .ai-guide-panel { top:48px;width:clamp(300px,22vw,360px);transform:translateX(100%);box-shadow:none; }
+  .ai-guide-panel.is-open { transform:translateX(0); }
+  body.ai-guide-open .canvas-area { padding-right:calc(clamp(300px, 22vw, 360px) + 24px); }
+}
+/* Tablet / 좁은 desktop: 기본 collapsed, 요청할 때만 compact drawer. */
+@media (min-width:721px) and (max-width:1280px) {
+  body.ai-guide-open .canvas-area { padding-right:24px; }
+  .ai-guide-panel { top:48px;left:auto;right:0;bottom:0;width:min(360px, 42vw);height:auto;border-radius:16px 0 0 0;transform:translateX(100%);box-shadow:-18px 0 48px rgba(0,0,0,.42); }
+  .ai-guide-panel.is-open { transform:translateX(0); }
+}
+/* Mobile: 작은 launcher, 명시적으로 열었을 때만 bounded bottom sheet. */
+@media (max-width:720px) {
+  .ai-guide-toggle { padding-inline:9px; }
+  .bildi-launcher { right:10px;bottom:max(10px,env(safe-area-inset-bottom));width:68px;min-height:72px;border-radius:19px; }
+  #builderBildiStage { width:58px;height:53px; }
+  #builderBildiStage>.bildi { width:52px;height:52px; }
+  .bildi-launcher-label { font-size:.58rem; }
+  body.ai-guide-open .canvas-area { padding-right:12px; }
+  .ai-guide-panel { top:auto;left:0;right:0;bottom:0;width:100%;height:min(62dvh, 520px);border-radius:18px 18px 0 0;transform:translateY(100%);box-shadow:0 -18px 48px rgba(0,0,0,.44); }
+  .ai-guide-panel.is-open { transform:translateY(0); }
+  .ai-guide-head { padding-block:9px; }
+  .ai-guide-steps { flex-wrap:nowrap;overflow-x:auto; }
+}

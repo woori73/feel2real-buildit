@@ -1,13 +1,18 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermLiveVideoDtos.LiveVideoView;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermShowcaseDtos.ShowcaseScene;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.CampaignView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.MaterialCard;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermPublicDtos.PopupView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermCampaignPublicService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermImageService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermMaterialAccessService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermShowcaseService;
+import java.util.List;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService.DownloadFile;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
 import java.time.Duration;
@@ -34,6 +39,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class MidtermCampaignPublicController {
 
   private final MidtermCampaignPublicService publicService;
+  private final MidtermLiveVideoService liveVideoService;
+  private final MidtermShowcaseService showcaseService;
   private final MidtermMaterialAccessService materialAccessService;
   private final AuthenticatedUserResolver authResolver;
 
@@ -42,6 +49,25 @@ public class MidtermCampaignPublicController {
     return publicService.findPublishedByHandle(handle)
         .map(ResponseEntity::ok)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개된 캠페인이 없습니다."));
+  }
+
+  /**
+   * 학교/학년 LIVE FRAME 에 연결된 실제 수업 영상(Phase 4c). 캠페인 미발행/부재면 빈 배열 —
+   * 이 목록이 없어도 FRAME 은 자료 → 분석 흐름으로 정상 동작한다.
+   */
+  @GetMapping("/api/academies/{handle}/midterm-campaign/live-videos")
+  public ResponseEntity<List<LiveVideoView>> liveVideos(@PathVariable String handle) {
+    return ResponseEntity.ok(liveVideoService.listPublic(handle));
+  }
+
+  /**
+   * 상단 "중간고사 준비 중" Showcase(Phase 4e) — visible Wiki 자료에서 서버가 추출한 학교별
+   * 시험범위 텍스트(lesson / 문법 포인트 / 예문). HTML 원문·파일 URL 은 싣지 않는다. 자료가
+   * 없거나 캠페인 미발행이면 빈 배열(프런트가 짧은 시즌 화면으로 폴백).
+   */
+  @GetMapping("/api/academies/{handle}/midterm-campaign/showcase")
+  public ResponseEntity<List<ShowcaseScene>> showcase(@PathVariable String handle) {
+    return ResponseEntity.ok(showcaseService.getShowcase(handle));
   }
 
   @GetMapping("/api/academies/{handle}/midterm-campaign/popup")

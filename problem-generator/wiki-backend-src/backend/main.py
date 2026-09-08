@@ -1320,6 +1320,42 @@ def list_final_deliverables(school: str, grade: str, year: int, semester: str, e
         return [dict(row) for row in rows]
 
 
+@app.get('/api/live-material-candidates')
+def list_live_material_candidates(year: int, semester: str, exam: str):
+    """현재 signed tutor workspace에서 campaign exact scope의 공개 후보 metadata만 반환한다.
+
+    school/grade는 요청 권한이 아니라 upstream metadata다. 원본 파일명/blob/storage locator와
+    student_id는 선택하지 않으며, HTML이 있는 school_print/final만 eligible하다.
+    """
+    with get_db() as conn:
+        school_prints = conn.execute('''SELECT id,school,grade,year,semester,exam,created_at
+            FROM exam_material_sets
+            WHERE year=? AND semester=? AND exam=? AND core_type='school_print'
+              AND html_text IS NOT NULL AND TRIM(html_text) <> ''
+            ORDER BY id DESC''', (year, semester, exam)).fetchall()
+        finals = conn.execute('''SELECT id,school,grade,year,semester,exam,created_at
+            FROM final_deliverables
+            WHERE year=? AND semester=? AND exam=? AND kind='final'
+              AND html_text IS NOT NULL AND TRIM(html_text) <> ''
+            ORDER BY id DESC''', (year, semester, exam)).fetchall()
+
+    result = []
+    for source_kind, rows in (('school-print', school_prints), ('final', finals)):
+        for row in rows:
+            result.append({
+                'sourceKind': source_kind,
+                'sourceId': row['id'],
+                'school': row['school'],
+                'grade': row['grade'],
+                'year': row['year'],
+                'semester': row['semester'],
+                'exam': row['exam'],
+                'createdAt': row['created_at'],
+                'hasHtml': True,
+            })
+    return result
+
+
 @app.get('/api/final-deliverables/{deliverable_id}/original')
 def open_final_deliverable_original(deliverable_id: int):
     with get_db() as conn:

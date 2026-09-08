@@ -1,348 +1,676 @@
-/* 2026 2학기 중간고사 내신 LIVE — 압구정에듀홀릭 공개 페이지.
-   Design Source of Truth = 기존 Eduholic/Academy 공개 페이지(academy_public.css BuildIt 토큰,
-   academy_collection.css 횡스크롤 규격, academy_reveal.css 1회 reveal).
+/* 2026 2학기 중간고사 공개 LIVE.
+   실제 TUTOR Wiki HTML = 상품 본체. 바깥 frame = 패키지. LIVE = 진열대.
+   (docs/eduholic-midterm-live-knowledge-product-packaging.md)
 
-   2026-09: 학교 컬렉션 섹션 / 학교별 상세 / sticky CTA / 큰 회색 히어로를 제거했다.
-   공개 표현은 다음 단계 시안에서 재정의한다 — 여기서는 잘못된 UI 만 걷어낸 상태다. */
+   첫 화면 = Shopify Atelier hero(featured 자료). 그 아래 = Shopify Motion
+   "evolving collections"(최근 자료 collage / 모바일 rail). 모든 자료는 동일한
+   지식상품 패키지 grammar 안에 놓인다:
 
+     page background  →  product surface(패키지)  →  clipped media window  →  실제 Wiki HTML
+
+   움직이는 것은 media window 안의 document 뿐(surface/frame/metadata 는 고정).
+   실측한 school-print preview 좌표계: 상단 에디터 툴바 + 표지(거의 빈 페이지)를
+   건너뛰고 첫 내용 sheet "문법 5-1 · A 가정법"(문서 로컬 y ≈ 1.15k~1.3k)에 착지.
+   A4 한 장 전체를 축소해 보여주지 않는다. */
 :root {
-  /* ── BuildIt 토큰 (academy_public.css :root 와 동일) ── */
-  --bg: #ffffff;
-  --bg-soft: #f6f7f9;
-  --bg-deep: #f1f3f6;
-  --ink: #0a0a0c;
-  --ink-soft: #67707c;
-  --ink-faint: #a4abb5;
-  --line: #e8eaee;
-  --accent: #2563eb;
-  --accent-soft: #eaf0fe;
-  --ultramarine: #2b3a9e;
-  --gold: #c9a13b;
-  --live: #1f7a4d;
-  --radius: 20px;
-  --radius-sm: 12px;
-  --shadow-sm: 0 12px 32px rgba(10, 12, 20, .05);
-  --ease: cubic-bezier(.16, .84, .44, 1);
+  --bg: #f5f5f1;
+  --paper: #fff;
+  --ink: #11110f;
+  --ink-soft: #6f706b;
+  --line: rgba(17, 17, 15, .12);
   --font: -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard,
     "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Helvetica, Arial, sans-serif;
-
-  /* 스크롤 진입 1회 reveal — academy_reveal 계열(감속 이징, 작은 stagger) */
-  --reveal-distance: 26px;
-  --reveal-duration: 550ms;
-  --reveal-ease: cubic-bezier(0, 0, .3, 1);
-  --reveal-stagger: 80ms;
-  --hover-duration: 180ms;
-
-  /* 실물 종이/문서 프레임 */
-  --paper-edge: #dfe2e8;
-  --paper-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 18px 40px rgba(10, 12, 20, .12);
-  --device-radius: 22px;
-  --device-shadow: 0 0 0 1px rgba(15, 23, 42, .06), inset 0 0 0 1.5px rgba(255, 255, 255, .9),
-    0 2px 6px rgba(15, 23, 42, .06), 0 16px 34px rgba(10, 12, 20, .13);
-
-  --pad: 20px;
-  --maxw: 960px;
-  --readw: 620px;
-  --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --page-pad: 22px;
+
+  /* 지식상품 패키지 — 고정 palette(색은 taxonomy 아님, index % 4 presentation 변주만) */
+  --surface-a: #f2f0eb;   /* warm neutral */
+  --surface-b: #eef1f4;   /* cool gray */
+  --surface-c: #edf2ef;   /* pale sage */
+  --surface-d: #f3f1f5;   /* muted cool */
+  --surface-edge: rgba(15, 23, 42, .1);
+  --window-edge: rgba(15, 23, 42, .06);
+  --surface-shadow: 0 12px 30px rgba(15, 23, 42, .05);
+  --surface-radius: 16px;
+  --window-radius: 7px;
+  --surface-pad: 15px 16px;
+
+  --doc-w: 468px;
+  --doc-h: 2200px;
+  --doc-scale: 0.92;
+  --doc-nudge: 6px;
+  --doc-top: -1128px;
+  --doc-drift: 50px;      /* one-time pan 종료점 — 무한 반복 아님 */
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
 body {
   margin: 0;
+  min-width: 320px;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
   font-size: 16px;
-  line-height: 1.62;
-  letter-spacing: -.02em;
+  line-height: 1.45;
+  letter-spacing: -.025em;
   word-break: keep-all;
-  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
 }
-img, video { max-width: 100%; display: block; }
 a { color: inherit; }
-:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; border-radius: 4px; }
+.mt-boot {
+  min-height: 60svh;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
 
-.mt-boot { padding: 24vh 24px; text-align: center; color: var(--ink-faint); font-size: 14px; }
-
-.mt-wrap { width: min(100%, var(--maxw)); margin: 0 auto; padding: 0 var(--pad); }
-.mt-read { width: min(100%, var(--readw)); margin: 0 auto; padding: 0 var(--pad); }
-
-/* ══════════════ 헤더 ══════════════ */
+/* Brand + season only. There is no campaign navigation. */
 .mt-topbar {
-  position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: calc(10px + var(--safe-t)) var(--pad) 10px;
-  background: rgba(255, 255, 255, .86);
-  backdrop-filter: saturate(1.4) blur(10px);
+  height: calc(56px + var(--safe-t));
+  padding: var(--safe-t) var(--page-pad) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   border-bottom: 1px solid var(--line);
 }
-.mt-wordmark { display: inline-flex; align-items: baseline; gap: 8px; text-decoration: none; font-weight: 800; }
-.mt-wordmark b { font-size: 15px; letter-spacing: -.03em; }
-.mt-topbar .mt-season { font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
-
-/* ══════════════ 페이지 제목 — 큰 히어로 대신 한 줄 ══════════════ */
-.mt-head { background: var(--bg); }
-.mt-head .mt-wrap { padding-top: 22px; padding-bottom: 12px; }
-.mt-head-title {
-  margin: 0; font-weight: 800; letter-spacing: -.035em; line-height: 1.25;
-  font-size: clamp(19px, 4.8vw, 24px);
+.mt-wordmark {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 760;
+  letter-spacing: -.035em;
 }
-.mt-textlink {
-  display: inline-block; margin-top: 12px; font-size: 13.5px; font-weight: 700;
-  color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
-}
-
-/* ══════════════ 첫 화면 — 왜 이렇게 준비하는가 × AI Wiki ══════════════ */
-.mt-lead { padding: 26px 0 34px; }
-.mt-lead-grid { display: flex; flex-direction: column; gap: 22px; }
-.mt-lead-kicker { margin: 0 0 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; color: var(--ink-soft); }
-.mt-lead-title {
-  margin: 0; font-weight: 800; letter-spacing: -.035em; line-height: 1.28;
-  font-size: clamp(21px, 5.6vw, 27px); white-space: pre-line;
-}
-.mt-lead-body { margin: 12px 0 0; font-size: 13.5px; line-height: 1.68; color: var(--ink-soft); max-width: 30em; }
-.mt-lead-proof { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.mt-lead-chip {
-  font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 999px;
-  background: var(--accent-soft); color: var(--ultramarine);
+.mt-season {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+  white-space: nowrap;
 }
 
-/* AI Wiki activity 패널 — 실제 Wiki 자료 분석 흐름. 개발자 dashboard 톤을 피한다. */
-.mt-wiki {
-  background: var(--bg-soft); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 16px 16px 18px; box-shadow: var(--shadow-sm);
+/* Mobile: metadata → short title → note → 지식상품 hero → 최근 자료 collection peek. */
+.mt-main {
+  padding: 20px 0 30px;
 }
-.mt-wiki-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.mt-wiki-live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--ink); }
-.mt-wiki-live i {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--live);
-  box-shadow: 0 0 0 0 rgba(31, 122, 77, .45); animation: mt-wiki-pulse 2.4s var(--ease) infinite;
+.mt-intro {
+  padding: 0 var(--page-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
-@keyframes mt-wiki-pulse { 0% { box-shadow: 0 0 0 0 rgba(31, 122, 77, .4); } 70% { box-shadow: 0 0 0 7px rgba(31, 122, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(31, 122, 77, 0); } }
-.mt-wiki-school { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
-.mt-wiki-idle { margin: 12px 0 2px; font-size: 13px; color: var(--ink-soft); }
-.mt-wiki-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 2px; }
-.mt-wiki-step {
-  display: grid; grid-template-columns: 18px 1fr; align-items: start; gap: 9px;
-  padding: 7px 0; font-size: 13px; line-height: 1.5; color: var(--ink-faint);
-  opacity: .5; transition: opacity .35s var(--ease), color .35s var(--ease);
+.midterm-feature__meta {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -.015em;
 }
-.mt-wiki-mark {
-  width: 10px; height: 10px; margin-top: 5px; border-radius: 50%;
-  border: 1.5px solid currentColor; background: transparent; transition: background .35s var(--ease);
+.mt-title {
+  margin: 0;
+  font-size: clamp(20px, 5.4vw, 24px);
+  font-weight: 720;
+  letter-spacing: -.045em;
+  line-height: 1.16;
 }
-.mt-wiki-step.is-on { opacity: 1; color: var(--ink); }
-.mt-wiki-step.is-on .mt-wiki-mark { background: var(--accent); border-color: var(--accent); }
-.mt-wiki-step.is-done { opacity: .9; color: var(--ink-soft); }
-.mt-wiki-step.is-done .mt-wiki-mark { background: var(--live); border-color: var(--live); }
-.mt-wiki-step[data-k="apply"].is-on .mt-wiki-mark,
-.mt-wiki-step[data-k="apply"].is-done .mt-wiki-mark { background: var(--live); border-color: var(--live); }
-
-/* 왼쪽 Wiki activity 학교 ↔ 오른쪽 자료 카드 강조 동기화(§7). */
-.mt-doc.is-focus .mt-doc-sheet { box-shadow: var(--paper-shadow), 0 0 0 2px var(--accent); }
-
-/* ══════════════ 섹션 리듬 ══════════════ */
-.mt-block { padding: 36px 0; }
-.mt-block--tight { padding: 26px 0; }
-.mt-block--soft { background: var(--bg-soft); border-top: 1px solid var(--line); }
-.mt-block--soft + .mt-block, .mt-block + .mt-block--soft { border-top: 1px solid var(--line); }
-.mt-h2 { margin: 0; font-size: clamp(18px, 4.8vw, 22px); font-weight: 800; letter-spacing: -.03em; }
-.mt-block > .mt-wrap > .mt-h2 + .mt-railwrap { margin-top: 18px; }
-
-/* ══════════════ 횡스크롤 rail ══════════════ */
-/* academy_collection.css 규격: 카드 + 다음 카드 peek + scroll-snap. 자동 캐러셀·dot 없음. */
-.mt-railwrap { position: relative; }
-.mt-rail {
-  --card-w: 72vw;
-  display: flex; gap: 14px; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain; scrollbar-width: none;
-  padding: 4px var(--pad) 14px;
-  margin: 0 calc(-1 * var(--pad));
-}
-.mt-rail::-webkit-scrollbar { display: none; }
-.mt-rail > * { scroll-snap-align: start; flex: 0 0 var(--card-w); }
-.mt-rail-nav { display: none; }
-
-/* 자료 = 상품. 실제 문서가 프레임이다(흰색 rounded UI 카드 아님). */
-.mt-doc {
-  background: transparent; border: 0; padding: 0; font: inherit; color: inherit; text-align: left;
-  cursor: pointer; display: flex; flex-direction: column; gap: 10px;
-}
-.mt-doc-sheet {
-  position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden;
-  background: #fff; border: 1px solid var(--paper-edge); border-radius: 4px;
-  box-shadow: var(--paper-shadow);
-}
-.mt-doc-sheet img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-.mt-doc-sheet.ph {
-  display: flex; align-items: center; justify-content: center; color: var(--ink-faint); font-size: 30px;
-  background: repeating-linear-gradient(135deg, #eef0f3 0 14px, #f5f6f8 14px 28px);
-}
-.mt-doc-sheet .mt-lockchip {
-  position: absolute; left: 10px; bottom: 10px;
-  font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px;
-  background: rgba(10, 12, 20, .72); color: #fff; backdrop-filter: blur(4px);
-}
-.mt-doc-cap { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
-.mt-doc-cap .mt-cat { font-size: 11.5px; font-weight: 700; color: var(--ultramarine); }
-.mt-doc-cap .mt-doc-title { font-size: 13.5px; font-weight: 700; letter-spacing: -.02em; }
-.mt-doc-cap .mt-doc-meta { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
-.mt-doc-cap .mt-doc-sub { font-size: 12px; color: var(--ink-soft); }
-
-.mt-rail--docs { --card-w: 72vw; }
-
-/* ══════════════ 원장 브리핑 ══════════════ */
-/* 비율은 JS 가 실제 영상 metadata(--mt-video-ar)로 맞춘다. */
-.mt-briefing { padding: 8px 0 22px; }
-.mt-briefing .mt-wrap { display: flex; flex-direction: column; gap: 14px; padding: 0; }
-.mt-briefing .mt-briefing-cap { padding: 0 var(--pad); }
-.mt-video {
-  position: relative; width: 100%; aspect-ratio: var(--mt-video-ar, 16 / 10); overflow: hidden;
-  background: #0b0d12;
-}
-.mt-briefing .mt-video { box-shadow: 0 20px 44px rgba(10, 12, 20, .16); }
-.mt-video video, .mt-video img { width: 100%; height: 100%; object-fit: contain; }
-.mt-video-play {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(8, 10, 18, .22); border: 0; cursor: pointer; color: #fff;
-}
-.mt-video-play span {
-  width: 62px; height: 62px; border-radius: 50%; background: rgba(255, 255, 255, .94); color: var(--ink);
-  display: flex; align-items: center; justify-content: center; font-size: 20px; padding-left: 4px;
-}
-.mt-briefing-cap { display: flex; flex-direction: column; gap: 3px; }
-.mt-briefing-cap b { font-size: 15px; font-weight: 800; letter-spacing: -.03em; }
-.mt-briefing-cap span { font-size: 12.5px; color: var(--ink-soft); }
-
-/* ══════════════ 업데이트 로그 — editorial 리스트 ══════════════ */
-.mt-log { list-style: none; margin: 16px 0 0; padding: 0; }
-.mt-log li { display: grid; grid-template-columns: 52px 1fr; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
-.mt-log li:first-child { border-top: 1px solid var(--line); }
-.mt-log time { font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; padding-top: 1px; }
-.mt-log .mt-log-h { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
-.mt-log .mt-log-b { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
-
-/* ══════════════ 다음 시험 ══════════════ */
-.mt-next { background: var(--ultramarine); color: #fff; }
-.mt-next .mt-wrap { padding-top: 34px; padding-bottom: 34px; }
-.mt-next .mt-h2 { color: #fff; }
-.mt-next p { margin: 8px 0 0; font-size: 13.5px; color: rgba(255, 255, 255, .82); }
-.mt-next a {
-  display: inline-flex; align-items: center; min-height: 44px; margin-top: 18px; padding: 0 20px;
-  background: #fff; color: var(--ultramarine); border-radius: 999px; text-decoration: none;
-  font-weight: 800; font-size: 14px;
+.mt-note {
+  margin: 0;
+  max-width: 22em;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -.01em;
 }
 
-/* ══════════════ 상담 ══════════════ */
-.mt-consult { text-align: center; }
-.mt-consult .mt-h2 { font-size: clamp(18px, 4.8vw, 22px); }
-.mt-consult p { margin: 8px auto 0; font-size: 13.5px; color: var(--ink-soft); max-width: 24em; }
-.mt-consult a {
-  display: inline-flex; align-items: center; min-height: 46px; margin-top: 18px; padding: 0 24px;
-  background: var(--ink); color: #fff; border-radius: 999px; text-decoration: none;
-  font-weight: 800; font-size: 14px;
+/* ── hero 지식상품 — Atelier composition 안의 packaged product ─────────────── */
+.midterm-feature {
+  margin-top: 16px;
+}
+.midterm-feature__surface {
+  margin-inline: 8px;
+  padding: var(--surface-pad);
+  height: clamp(468px, 62svh, 552px);
+  background: var(--surface-a);
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
+.midterm-feature__visual {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--window-edge);
+  border-radius: var(--window-radius);
+  isolation: isolate;
+  pointer-events: none;
+}
+.midterm-feature__document {
+  position: absolute;
+  top: var(--doc-top);
+  left: 50%;
+  width: var(--doc-w);
+  height: var(--doc-h);
+  border: 0;
+  background: var(--paper);
+  pointer-events: none;
+  transform-origin: top center;
+  transform: translate3d(calc(-50% + var(--doc-nudge)), 0, 0) scale(var(--doc-scale));
+}
+.midterm-feature.is-in-view .midterm-feature__document {
+  animation: midterm-document-drift 8s ease-in-out 1 both;
+}
+@keyframes midterm-document-drift {
+  from { transform: translate3d(calc(-50% + var(--doc-nudge)), 0, 0) scale(var(--doc-scale)); }
+  to { transform: translate3d(calc(-50% + var(--doc-nudge)), calc(-1 * var(--doc-drift)), 0) scale(var(--doc-scale)); }
 }
 
-/* ══════════════ footer ══════════════ */
-.mt-footer { padding: 26px var(--pad) calc(30px + var(--safe-b)); text-align: center; color: var(--ink-faint); font-size: 11.5px; }
-
-/* ══════════════ 자료 미리보기 시트 ══════════════ */
-.mt-sheet-backdrop {
-  position: fixed; inset: 0; z-index: 60; background: rgba(8, 10, 18, .5);
-  display: flex; align-items: flex-end; justify-content: center;
-}
-.mt-sheet {
-  width: min(100%, 560px); max-height: 88vh; overflow-y: auto;
-  background: var(--bg); border-radius: 20px 20px 0 0;
-  padding: 22px var(--pad) calc(26px + var(--safe-b));
-}
-.mt-sheet-close {
-  float: right; background: none; border: 0; font-size: 26px; line-height: 1; color: var(--ink-faint); cursor: pointer;
-}
-.mt-sheet .mt-cat { font-size: 11.5px; font-weight: 700; color: var(--ultramarine); }
-.mt-sheet h3 { margin: 6px 0 8px; font-size: 19px; font-weight: 800; letter-spacing: -.03em; }
-.mt-sheet p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
-.mt-sheet .mt-comment {
-  margin: 16px 0; padding: 12px 14px; background: var(--bg-soft); border-left: 3px solid var(--ultramarine);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 13.5px; color: var(--ink);
-}
-.mt-sheet .mt-comment b { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
-.mt-sheet ul.mt-check { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 7px; }
-.mt-sheet ul.mt-check li { font-size: 13.5px; padding-left: 22px; position: relative; }
-.mt-sheet ul.mt-check li::before { content: "✓"; position: absolute; left: 0; color: var(--live); font-weight: 800; }
-.mt-sheet .mt-file-btn {
-  display: flex; align-items: center; justify-content: center; min-height: 46px; margin-top: 12px;
-  background: var(--ink); color: #fff; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 13.5px;
-}
-.mt-sheet .mt-file-note { margin-top: 12px; font-size: 12px; color: var(--ink-soft); text-align: center; }
-
-/* ══════════════ 스크롤 진입 1회 reveal ══════════════ */
-.mt-js [data-reveal] > [data-reveal-item] {
-  opacity: 0; transform: translateY(var(--reveal-distance));
-  transition: opacity var(--reveal-duration) var(--reveal-ease),
-    transform var(--reveal-duration) var(--reveal-ease);
-  transition-delay: calc(var(--reveal-order, 0) * var(--reveal-stagger));
-}
-.mt-js [data-reveal].is-revealed > [data-reveal-item] { opacity: 1; transform: none; }
-
-/* ══════════════ hover (데스크톱 포인터) ══════════════ */
-@media (hover: hover) and (pointer: fine) {
-  .mt-doc:hover .mt-doc-sheet { box-shadow: var(--paper-shadow), 0 0 0 1px var(--accent); }
+@media (min-width: 431px) and (max-width: 1079px) {
+  :root { --doc-w: 520px; --doc-scale: 1.02; --doc-top: -1300px; --doc-drift: 76px; }
+  .midterm-feature__surface { height: clamp(486px, 64svh, 596px); }
 }
 
-/* ══════════════ 데스크톱 확장 ══════════════ */
-@media (min-width: 900px) {
-  :root { --pad: 40px; }
-  .mt-block { padding: 60px 0; }
-  .mt-block--tight { padding: 40px 0; }
-  .mt-h2 { font-size: 24px; }
-
-  .mt-head .mt-wrap { padding-top: 34px; padding-bottom: 8px; }
-  .mt-head-title { font-size: clamp(22px, 2.4vw, 28px); }
-
-  .mt-lead { padding: 52px 0 44px; }
-  .mt-lead-grid { flex-direction: row; align-items: start; gap: 48px; }
-  .mt-lead-why { flex: 1 1 46%; }
-  .mt-lead-title { font-size: clamp(24px, 2.5vw, 30px); }
-  .mt-lead-body { font-size: 14.5px; }
-  .mt-wiki { flex: 1 1 54%; padding: 20px 22px 22px; position: sticky; top: 78px; }
-  .mt-wiki-steps { gap: 4px; }
-  .mt-wiki-step { font-size: 13.5px; }
-
-  .mt-rail { --card-w: 300px; gap: 20px; scroll-snap-type: none; }
-  .mt-rail--docs { --card-w: 288px; }
-  .mt-rail-nav { display: flex; gap: 8px; position: absolute; right: var(--pad); top: -46px; }
-  .mt-rail-nav button {
-    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg);
-    color: var(--ink); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+/* Desktop: Atelier — compact copy column, dominant packaged product. Not a 50:50 split. */
+@media (min-width: 1080px) {
+  :root {
+    --page-pad: 42px;
+    /* 상하 padding 은 넓고 짧은 strip tile 에서 window 가 사라지지 않게 clamp 로 상한. */
+    --surface-pad: clamp(22px, 4.6%, 40px) clamp(22px, 5.4%, 50px);
+    --doc-w: 680px;
+    --doc-h: 2600px;
+    --doc-scale: 1.18;
+    --doc-nudge: 22px;
+    --doc-top: -1360px;
+    --doc-drift: 74px;
   }
-  .mt-rail-nav button[disabled] { opacity: .35; cursor: default; }
-
-  .mt-briefing { padding: 60px 0; }
-  .mt-briefing .mt-wrap {
-    width: min(100%, var(--maxw)); margin: 0 auto; padding: 0 var(--pad);
-    flex-direction: row-reverse; align-items: center; gap: 44px;
+  .mt-topbar {
+    height: calc(66px + var(--safe-t));
+    padding-inline: max(42px, calc((100vw - 1420px) / 2));
   }
-  .mt-briefing .mt-video { flex: 0 0 54%; border-radius: var(--device-radius); box-shadow: var(--device-shadow); }
-  .mt-briefing .mt-briefing-cap { flex: 1; padding: 0; }
-  .mt-briefing-cap b { font-size: 22px; }
-
-  .mt-log { max-width: var(--readw); }
-  .mt-log li { grid-template-columns: 64px 1fr; }
-
-  .mt-sheet-backdrop { align-items: center; }
-  .mt-sheet { border-radius: 22px; max-width: 540px; }
+  .mt-main {
+    width: min(100%, 1420px);
+    margin: 0 auto;
+    padding: 44px 42px 40px;
+  }
+  .mt-main--feature {
+    display: grid;
+    grid-template-columns: minmax(236px, 32%) minmax(0, 1fr);
+    align-items: center;
+    column-gap: clamp(40px, 5vw, 80px);
+  }
+  .mt-main--feature .mt-intro {
+    padding: 0;
+    gap: 12px;
+  }
+  .midterm-feature__meta { font-size: 13px; }
+  .mt-title {
+    font-size: clamp(23px, 1.9vw, 29px);
+    line-height: 1.18;
+  }
+  .mt-note { font-size: 14px; }
+  .midterm-feature { margin-top: 0; }
+  .midterm-feature__surface {
+    width: 100%;
+    height: min(76vh, 760px);
+    min-height: 560px;
+    margin: 0;
+  }
 }
 
-/* ══════════════ prefers-reduced-motion ══════════════ */
+@media (min-width: 1360px) {
+  :root { --doc-scale: 1.3; --doc-nudge: 26px; --doc-top: -1640px; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   상단 Showcase — 학교별 시험범위(Wiki 추출 텍스트) rotation (Phase 4e)
+   원본 HTML 을 축소(transform: scale)해서 넣지 않는다. 실제 responsive text layout.
+   한 scene 이 모바일 viewport 안에서 완결되고, 학교/학년/시험 identity 는 항상 상단 고정.
+   ══════════════════════════════════════════════════════════════════════════ */
+.midterm-showcase {
+  margin: 16px 0 0;
+  padding: 0 var(--page-pad);
+  position: relative;
+}
+.midterm-showcase__surface {
+  position: relative;
+  margin-inline: 8px;
+  height: clamp(300px, 56svh, 440px);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
+.midterm-showcase__scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(18px, 5vw, 26px);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .45s ease, transform .45s ease;
+  pointer-events: none;
+}
+.midterm-showcase__scene.is-active { opacity: 1; transform: none; }
+
+.midterm-showcase__id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.midterm-showcase__school {
+  font-size: clamp(17px, 5vw, 21px);
+  font-weight: 760;
+  letter-spacing: -.04em;
+  color: var(--ink);
+}
+.midterm-showcase__exam {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  letter-spacing: -.01em;
+}
+
+.midterm-showcase__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.midterm-showcase__lesson {
+  margin: 0 0 4px;
+  font-size: clamp(15px, 4.4vw, 18px);
+  font-weight: 720;
+  letter-spacing: -.03em;
+  color: var(--ink);
+}
+.midterm-showcase__label {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink-soft);
+}
+.midterm-showcase__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.midterm-showcase__chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-b);
+  border: 1px solid var(--surface-edge);
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+.midterm-showcase__sentences {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.midterm-showcase__sentence {
+  margin: 0;
+  font-size: clamp(12.5px, 3.6vw, 14px);
+  line-height: 1.42;
+  color: var(--ink);
+  padding-left: 10px;
+  border-left: 2px solid var(--surface-edge);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.midterm-showcase__pending {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.midterm-showcase__foot {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: var(--ink-soft);
+}
+
+.midterm-showcase__dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 0 2px;
+}
+.midterm-showcase__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, .2);
+  transition: background .3s ease;
+}
+.midterm-showcase__dot.is-on { background: rgba(15, 23, 42, .5); }
+
+@media (min-width: 431px) and (max-width: 1079px) {
+  .midterm-showcase__surface { height: clamp(340px, 52svh, 460px); }
+}
+@media (min-width: 1080px) {
+  .midterm-showcase { margin: 0; padding: 0; }
+  .midterm-showcase__surface {
+    width: 100%;
+    margin: 0;
+    height: min(52vh, 468px);
+    min-height: 360px;
+  }
+  .midterm-showcase__id { padding-bottom: 16px; }
+  .midterm-showcase__dots {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    padding: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .mt-js [data-reveal] > [data-reveal-item] { opacity: 1 !important; transform: none !important; transition: none; }
-  * { scroll-behavior: auto !important; }
-  .mt-wiki-live i { animation: none; }
-  .mt-wiki-step { opacity: 1; color: var(--ink-soft); transition: none; }
-  .mt-wiki-step .mt-wiki-mark { background: var(--ink-faint); border-color: var(--ink-faint); }
+  .midterm-showcase__scene {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .midterm-showcase__scene:not(.is-active) { display: none; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   학교/학년 LIVE FRAME collection  (Phase 4d — Shopify Motion collection frame)
+
+   Reference: Shopify Motion collection(themes.shopify.com/themes/motion).
+   3 layer 를 눈으로 구별할 수 있어야 한다:
+     collection band(page 보다 차분한 neutral)  →  white product frame(1px border·radius·약한
+     shadow·padding, page 위에 놓인 독립 상품 오브젝트)  →  tinted media stage(고정 비율).
+
+   같은 tier 의 모든 학교/학년 FRAME 은 동일한 outer geometry — width / height / radius /
+   border / stage 비율 / metadata 위치. 내용에 따라 카드 크기가 달라지지 않는다.
+   scene(MATERIAL / VIDEO / DIGITAL_TWIN)만 type-aware presentation.
+   crop role(a/b/c/d)은 MATERIAL doc crop presentation 전용(DB taxonomy 아님).
+   ══════════════════════════════════════════════════════════════════════════ */
+.midterm-live {
+  --m-w: 372px;
+  --m-scale: 1.04;
+  --m-nudge: 6px;
+  --m-top: -1336px;
+  --m-drift: 30px;
+  --twin-w: 392px;
+  --twin-scale: 0.82;
+  --twin-top: -12px;
+  --stage-inset: 12px;
+
+  /* 3-layer packaging tokens (neutral only — 색으로 자료 taxonomy 를 만들지 않는다) */
+  --live-band: #ececeb;                 /* collection surface — page --bg(#f5f5f1) 보다 한 단계 차분 */
+  --frame-bg: var(--paper);             /* white product body */
+  --frame-border: 1px solid rgba(15, 23, 42, .16);
+  --frame-radius: 18px;
+  --frame-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 12px 26px rgba(15, 23, 42, .07);
+  --frame-pad: 12px;
+  --stage-bg: #e7eaef;                  /* slightly tinted cool neutral — white frame·white doc 와 구분 */
+  --stage-radius: 10px;
+  --stage-ratio: 3 / 2;                 /* 모든 FRAME 동일. 16:9 landscape 는 좌우 ~8% 만 crop. */
+
+  background: var(--live-band);
+  padding: 26px 0 34px;
+}
+.midterm-live__head {
+  padding: 0 var(--page-pad);
+  margin-bottom: 14px;
+}
+.midterm-live__title {
+  margin: 0;
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 720;
+  letter-spacing: -.04em;
+}
+
+/* mobile / tablet: horizontal browse rail — 모든 FRAME width/height 동일, 다음 FRAME peek. */
+.midterm-live__collection {
+  display: flex;
+  gap: 14px;
+  padding: 0 var(--page-pad);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.midterm-live__collection::-webkit-scrollbar { width: 0; height: 0; }
+
+/* OUTER PRODUCT FRAME — page 위에 놓인 독립 상품 오브젝트. */
+.midterm-live__frame {
+  flex: 0 0 84vw;
+  max-width: 460px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  background: var(--frame-bg);
+  border: var(--frame-border);
+  border-radius: var(--frame-radius);
+  box-shadow: var(--frame-shadow);
+  padding: var(--frame-pad);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .55s ease, transform .55s ease;
+}
+.midterm-live__frame.is-in-view { opacity: 1; transform: none; }
+.midterm-live--n1 .midterm-live__collection { display: block; overflow: visible; padding-inline: var(--page-pad); }
+.midterm-live--n1 .midterm-live__frame { flex: none; max-width: 560px; margin: 0 auto; }
+
+/* MEDIA STAGE — frame 안에서 고정 비율. 실제 media 가 frame 에 직접 닿지 않는다. */
+.midterm-live__stage {
+  position: relative;
+  aspect-ratio: var(--stage-ratio);
+  overflow: hidden;
+  background: var(--stage-bg);
+  border-radius: var(--stage-radius);
+  isolation: isolate;
+}
+
+/* scene = media stage 안에서 교체되는 실제 콘텐츠. 하나만 .is-active. */
+.midterm-live__scene {
+  position: absolute;
+  inset: var(--stage-inset);
+  overflow: hidden;
+  background: var(--paper);
+  border-radius: 5px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .42s ease, transform .42s ease;
+  pointer-events: none;
+}
+.midterm-live__scene.is-active { opacity: 1; transform: none; }
+/* video scene 은 letterbox 를 stage tint 로 채운다 — white page 가 아니다. */
+.midterm-live__scene[data-kind="video"] { inset: 0; background: var(--stage-bg); }
+
+.midterm-live__doc {
+  position: absolute;
+  top: var(--m-top);
+  left: 50%;
+  width: var(--m-w);
+  height: 2100px;
+  border: 0;
+  background: var(--paper);
+  pointer-events: none;
+  transform-origin: top center;
+  transform: translate3d(calc(-50% + var(--m-nudge)), 0, 0) scale(var(--m-scale));
+}
+/* MATERIAL scene 이 활성이고 FRAME 이 뷰포트 안일 때만 자료 내부가 한 방향으로 천천히 지나간다. */
+.midterm-live__frame.is-live .midterm-live__scene[data-kind="material"].is-active .midterm-live__doc {
+  animation: midterm-product-drift 8s ease-in-out 1 both;
+}
+@keyframes midterm-product-drift {
+  from { transform: translate3d(calc(-50% + var(--m-nudge)), 0, 0) scale(var(--m-scale)); }
+  to { transform: translate3d(calc(-50% + var(--m-nudge)), calc(-1 * var(--m-drift)), 0) scale(var(--m-scale)); }
+}
+
+/* DIGITAL_TWIN — 그 학교 출제 경향 분석(공개 analyze). 5초마다 관찰 위치가 바뀐다(Heritage). */
+.midterm-live__twin {
+  position: absolute;
+  top: var(--twin-top);
+  left: 50%;
+  width: var(--twin-w);
+  height: 3200px;
+  border: 0;
+  background: var(--paper);
+  pointer-events: none;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(var(--twin-scale));
+  transition: top .55s ease, transform .55s ease;
+}
+.midterm-live__twin[data-twin-view="1"] { --twin-top: -400px; }
+.midterm-live__twin[data-twin-view="2"] { --twin-top: -880px; }
+
+/* VIDEO — OUTER FRAME / MEDIA STAGE 크기는 그대로. video element 의 fit 만 방향에 대응한다.
+   panorama strip 에 cover 로 넣어 상체만 크게 잘리는 실패를 만들지 않는다. 남는 공간은
+   stage 배경으로 채운다(blurred duplicate video background 금지). player chrome / 자막 없음. */
+.midterm-live__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: contain;
+  object-position: center;
+  background: var(--stage-bg);
+  pointer-events: none;
+}
+/* landscape(예: 1280×720 수업 영상) — 3:2 stage 라 좌우 ~8% 만 crop, 교사·학생·책상 유지. */
+.midterm-live__scene.is-landscape .midterm-live__video { object-fit: cover; }
+/* portrait / phone footage — cover 금지. 전체 학습 맥락 유지, 남는 폭은 stage 배경. */
+.midterm-live__scene.is-portrait .midterm-live__video { object-fit: contain; }
+
+/* §33 아주 작은 관찰 표시. tabs / 버튼 / 슬라이더 UI 아님. */
+.midterm-live__dots {
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 2;
+}
+.midterm-live__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, .2);
+  transition: background .3s ease;
+}
+.midterm-live__dot.is-on { background: rgba(15, 23, 42, .5); }
+
+/* SMALL PRODUCT META — frame padding 안, stage 아래. 학교/학년 = 상품 정보(navigator 아님). */
+.midterm-live__info {
+  padding: 11px 4px 2px;
+}
+.midterm-live__meta {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.midterm-live__sub {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+/* crop role — 같은 편집본의 서로 다른 영역/배율. 전부 첫 내용 sheet 범위 안. */
+.midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.12; --m-top: -1470px; }
+.midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.28; --m-top: -1830px; }
+.midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1; --m-top: -1300px; }
+
+@media (min-width: 431px) and (max-width: 1079px) {
+  .midterm-live { --m-w: 452px; --twin-w: 476px; }
+  .midterm-live__frame { flex: 0 0 66vw; max-width: 520px; }
+}
+
+/* desktop: 균일한 2-column collection grid. 카드별 arbitrary span 없음 —
+   모든 학교 FRAME outer box 가 같은 크기로 정렬된다. */
+@media (min-width: 1080px) {
+  .midterm-live {
+    --m-w: 540px;
+    --m-scale: 1.1;
+    --m-nudge: 14px;
+    --m-top: -1356px;
+    --m-drift: 40px;
+    --twin-w: 540px;
+    --twin-scale: 0.94;
+    --twin-top: -16px;
+    --stage-inset: clamp(14px, 1.4vw, 22px);
+    --frame-pad: clamp(14px, 1.2vw, 20px);
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: 28px 40px 66px;
+  }
+  .midterm-live__head { padding: 0; margin-bottom: 22px; }
+  .midterm-live__title { font-size: clamp(17px, 1.3vw, 20px); }
+  .midterm-live__collection {
+    display: grid;
+    overflow: visible;
+    padding: 0;
+    gap: clamp(24px, 2.2vw, 32px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .midterm-live__frame { flex: none; max-width: none; transform: translateY(22px); }
+  .midterm-live--n1 .midterm-live__collection {
+    display: grid;
+    grid-template-columns: minmax(0, 620px);
+    justify-content: center;
+  }
+  .midterm-live--n1 .midterm-live__frame { max-width: none; margin: 0; }
+  .midterm-live__twin[data-twin-view="1"] { --twin-top: -430px; }
+  .midterm-live__twin[data-twin-view="2"] { --twin-top: -900px; }
+
+  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.18; --m-top: -1500px; }
+  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.34; --m-top: -1900px; }
+  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.02; --m-top: -1276px; }
+}
+
+@media (min-width: 1360px) {
+  .midterm-live { width: min(100%, 1280px); --m-scale: 1.16; --m-top: -1432px; --twin-scale: 1; }
+  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.24; --m-top: -1580px; }
+  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.4; --m-top: -1988px; }
+  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.08; --m-top: -1352px; }
+}
+
+/* reduced-motion: auto scene cycle·drift·twin crop·crossfade 정지. 첫 MATERIAL 정적 crop.
+   ambient 영상은 JS 가 play() 자체를 호출하지 않는다(정책 우회 없음) — poster 프레임만 남는다. */
+@media (prefers-reduced-motion: reduce) {
+  .midterm-feature__document,
+  .midterm-feature.is-in-view .midterm-feature__document,
+  .midterm-live__doc,
+  .midterm-live__twin,
+  .midterm-live__video {
+    animation: none !important;
+    transition: none !important;
+  }
+  .midterm-live__frame,
+  .midterm-live__scene {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .midterm-live__scene:not(.is-active) { display: none; }
 }

@@ -24,6 +24,20 @@ class QuestionWikiPrivateReferenceCorpusContractTest {
     assertThat(router).contains("DEFAULT_PROVIDER_TIMEOUT_SECONDS=45.0","QUESTION_WIKI_REFERENCE_NOT_FOUND","QUESTION_WIKI_FREE_AI_TIMEOUT","model=QWEN_MODEL","provider_name=QWEN_PROVIDER");
     assertThat(proxy).contains("QUESTION_WIKI_AI_TIMEOUT = Duration.ofSeconds(120)","isQuestionWikiAi(targetPath)","isQuestionWikiAiQuotaExempt(principal)","\"ADMIN\".equals(principal.role())");
   }
+
+  @Test void questionWikiPreviewUsesInlineGrammarVocabularyMarksAndConsistentSubjectiveBlanks() throws Exception {
+    String js=Files.readString(Path.of("src/main/resources/static/js/question_wiki_ai.js"),StandardCharsets.UTF_8);
+    assertThat(js).contains(
+        "INLINE_MARK_TYPES=['grammar','vocabulary']",
+        "INLINE MARK RULE: passage must contain ① ② ③ ④ ⑤",
+        "SUBJECTIVE BLANK RULE: every labeled blank named in the instruction",
+        "SUBJECTIVE_BLANK_MISMATCH",
+        "INLINE_MARK_MISSING",
+        "qw-ai-inline-mark",
+        "var choices=inline?'':",
+        "if(INLINE_MARK_TYPES.indexOf(q.type)<0)(q.choices||[])");
+  }
+
   @Test void pythonCorpusValidationAndSelectorTestsPass() throws Exception {
     Process process=new ProcessBuilder("python3","-m","unittest","problem-generator/wiki-backend-src/backend/test_private_reference_bank.py").redirectErrorStream(true).start();
     String output=new String(process.getInputStream().readAllBytes(),StandardCharsets.UTF_8);assertThat(process.waitFor()).as(output).isZero();

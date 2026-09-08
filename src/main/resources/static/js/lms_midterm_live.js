@@ -16,6 +16,11 @@
 
   var CATS = ['SCHOOL_PRINT', 'ANALYSIS', 'WORKSHEET', 'VOCABULARY', 'GRAMMAR', 'VARIANT', 'FINAL_REVIEW', 'OTHER'];
   var VIS = ['PRIVATE', 'PREVIEW', 'PUBLIC', 'MEMBER'];
+  var LV_ROLES = ['STUDENT_STUDY', 'LESSON_INTERACTION'];
+  var LV_ROLE_LABELS = ['학생 학습', '박원장 상호작용'];
+  var LV_GRADES = ['1', '2', '3'];
+  var liveVideoData = null;      // { links: [...], linkableVideos: [...] } — Phase 4c 전용 payload
+  var liveFrameCandidates = [];  // 공개 LIVE 에 실제로 뜨는 (학교, 학년) FRAME 후보 — 직접 입력 대신 선택
   var PREP_STEPS = ['SCHOOL_PRINT', 'ANALYSIS', 'WORKSHEET', 'VARIANT', 'FINAL_REVIEW'];
   var PREP_STATE = ['NOT_STARTED', 'IN_PROGRESS', 'DONE'];
   var MAKING_STAGES = ['SOURCE', 'ANALYSIS', 'WORKSHEET', 'VARIATION', 'FINAL'];
@@ -94,6 +99,7 @@
   ]).then(function (res) {
     view = res[0]; videos = res[1] || []; wikiMaterials = res[2] || [];
     renderAll();
+    loadLiveVideos();
   }).catch(function (e) { say(e.message || '불러오지 못했습니다.', true); });
 
   function renderAll() {
@@ -103,6 +109,7 @@
     renderLogs();
     renderMaking();
     renderNext();
+    renderLiveVideos();
   }
 
   // ── 캠페인 탭 ───────────────────────────────────────────────────────
@@ -604,5 +611,176 @@
     });
     card.appendChild(saveBtn);
     host.appendChild(card);
+  }
+
+  // ── LIVE 수업 영상 탭 (Phase 4c) ──────────────────────────────────
+  // 기존 AcademyVideo 를 학교/학년/역할 scene 에 "연결"만 한다. 새 업로드/편집/트림 UI 없음.
+  function loadLiveVideos() {
+    // wiki-candidates(공개 대상 자료)에서 (학교, 학년) FRAME 후보를 뽑는다 — 학교 CMS 가 아니라
+    // 이미 존재하는 FRAME 을 선택지로 제공하기 위함. 실패해도 직접 입력으로 동작한다.
+    fetchAuth(BASE + '/wiki-candidates', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        var seen = {};
+        liveFrameCandidates = (Array.isArray(rows) ? rows : [])
+          .filter(function (c) { return c && c.visible; })
+          .map(function (c) {
+            var g = String(c.grade == null ? '' : c.grade).match(/\d+/);
+            return { school: String(c.school || '').trim(), grade: g ? parseInt(g[0], 10) : null };
+          })
+          .filter(function (c) { return c.school && c.grade; })
+          .filter(function (c) {
+            var k = c.school + '|' + c.grade;
+            if (seen[k]) return false;
+            seen[k] = true;
+            return true;
+          });
+        renderLiveVideos();
+      })
+      .catch(function () { liveFrameCandidates = []; });
+    return fetchAuth(BASE + '/live-videos', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : { links: [], linkableVideos: [] }; })
+      .then(function (d) { liveVideoData = d || { links: [], linkableVideos: [] }; renderLiveVideos(); })
+      .catch(function () { liveVideoData = { links: [], linkableVideos: [] }; renderLiveVideos(); });
+  }
+  function lvReq(method, path, body) {
+    var opts = { method: method, credentials: 'same-origin', headers: {} };
+    if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    return fetchAuth(BASE + '/live-videos' + (path || ''), opts).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error(t || ('요청 실패 ' + r.status)); });
+      return r.status === 204 ? null : r.json();
+    }).then(function (d) { if (d) { liveVideoData = d; renderLiveVideos(); } });
+  }
+  function lvApply(promise, okMsg) {
+    return promise.then(function () { if (okMsg) say(okMsg); })
+      .catch(function (e) { say(e.message || '오류가 발생했습니다.', true); });
+  }
+  function videoLabel(v) {
+    return (v.originalFilename || ('영상 ' + v.academyVideoId))
+      + (v.purpose ? ' · ' + v.purpose : '');
+  }
+  function videoOptions(current) {
+    var list = (liveVideoData && liveVideoData.linkableVideos) || [];
+    var ids = list.map(function (v) { return String(v.academyVideoId); });
+    var labels = list.map(videoLabel);
+    if (current != null && ids.indexOf(String(current)) === -1) {
+      ids.unshift(String(current)); labels.unshift('영상 ' + current + ' (목록에 없음)');
+    }
+    return { ids: ids, labels: labels };
+  }
+
+  function renderLiveVideos() {
+    var host = document.querySelector('[data-mtx-live-videos]');
+    if (!host) return;
+    host.innerHTML = '';
+    if (!view || !view.exists) { host.appendChild(el('p', 'mtx-empty', '먼저 캠페인을 만들어 주세요.')); return; }
+    var d = liveVideoData;
+    if (!d) { host.appendChild(el('p', 'mtx-empty', '불러오는 중…')); return; }
+
+    var intro = el('div', 'mtx-card');
+    intro.appendChild(el('h3', null, 'LIVE 수업 영상'));
+    var p = el('p', 'mtx-sub',
+      '이미 업로드한 영상을 학교·학년·역할에 연결하면, 공개 LIVE 페이지의 그 학교/학년 FRAME 에 '
+      + '자료 → 학생 학습 → 상호작용 → 출제 분석 순서로 나옵니다. 연결이 없는 FRAME 은 자료 → 분석만 나옵니다.');
+    intro.appendChild(p);
+    var manage = el('a', null, '영상 업로드/삭제는 여기(영상 관리)');
+    manage.href = '/tutor/academy/videos'; manage.target = '_blank'; manage.rel = 'noopener';
+    intro.appendChild(manage);
+    if (!(d.linkableVideos || []).length) {
+      intro.appendChild(el('p', 'mtx-empty', '연결할 수 있는 공개 영상이 없습니다. 먼저 영상을 업로드하세요.'));
+    }
+    host.appendChild(intro);
+
+    (d.links || []).forEach(function (link) { host.appendChild(lvCard(link)); });
+
+    var addCard = el('div', 'mtx-card');
+    addCard.appendChild(el('h3', null, '새 영상 연결'));
+    if ((d.linkableVideos || []).length) {
+      addCard.appendChild(lvForm({}, function (payload) {
+        lvApply(lvReq('POST', '', payload), '연결했습니다.');
+      }, '연결'));
+    } else {
+      addCard.appendChild(el('p', 'mtx-empty', '먼저 영상을 업로드하세요.'));
+    }
+    host.appendChild(addCard);
+  }
+  function lvCard(link) {
+    var card = el('div', 'mtx-card');
+    var roleLabel = LV_ROLE_LABELS[LV_ROLES.indexOf(link.role)] || link.role;
+    var h = el('h3', null, link.school + ' ' + link.grade + '학년 · ' + roleLabel);
+    h.appendChild(el('span', 'mtx-pill ' + (link.visible ? 'on' : 'off'), link.visible ? '공개' : '비공개'));
+    card.appendChild(h);
+    if (link.thumbnailUrl) {
+      var img = document.createElement('img');
+      img.src = link.thumbnailUrl; img.alt = ''; img.loading = 'lazy';
+      img.style.maxWidth = '160px'; img.style.borderRadius = '6px'; img.style.display = 'block';
+      card.appendChild(img);
+    }
+    card.appendChild(lvForm(link, function (payload) {
+      lvApply(lvReq('PATCH', '/' + link.linkId, payload), '저장했습니다.');
+    }, '저장', function () {
+      if (window.confirm('이 연결을 삭제할까요? (영상 자체는 삭제되지 않습니다)')) {
+        lvApply(lvReq('DELETE', '/' + link.linkId), '삭제했습니다.');
+      }
+    }));
+    return card;
+  }
+  function lvForm(link, onSave, saveLabel, onDelete) {
+    var box = el('div');
+    var isNew = link.linkId == null;
+    var videoSel = null;
+    if (isNew) {
+      var vo = videoOptions(null);
+      videoSel = select(vo.ids, vo.ids[0] || '', vo.labels);
+      box.appendChild(field('영상', videoSel));
+    } else {
+      // 연결된 영상 교체는 삭제 후 재연결로 한다(편집기 아님).
+      box.appendChild(field('영상', el('span', 'mtx-static', '영상 #' + link.academyVideoId)));
+    }
+    var school = input('text', link.school || '');
+    var gradeSel = select(LV_GRADES, String(link.grade || '2'));
+    var roleSel = select(LV_ROLES, link.role || 'STUDENT_STUDY', LV_ROLE_LABELS);
+    var sort = input('number', link.sortOrder || 0);
+    var vis = checkbox('공개 (LIVE 페이지에 노출)', link.visible);
+
+    // FRAME 후보 선택 — 고르면 학교/학년을 채운다. 후보에 없으면 아래 칸에 직접 입력.
+    if (liveFrameCandidates.length) {
+      var candVals = [''].concat(liveFrameCandidates.map(function (c) { return c.school + '|' + c.grade; }));
+      var candLabels = ['직접 입력'].concat(liveFrameCandidates.map(function (c) { return c.school + ' · ' + c.grade + '학년'; }));
+      var cur = link.school ? (link.school + '|' + link.grade) : '';
+      var candSel = select(candVals, candVals.indexOf(cur) >= 0 ? cur : '', candLabels);
+      candSel.addEventListener('change', function () {
+        if (!candSel.value) return;
+        var parts = candSel.value.split('|');
+        school.value = parts[0];
+        gradeSel.value = parts[1];
+      });
+      box.appendChild(field('학교·학년 (LIVE FRAME)', candSel));
+    }
+
+    var r1 = el('div', 'mtx-row');
+    r1.appendChild(field('학교 (예: 신구중)', school));
+    r1.appendChild(field('학년', gradeSel));
+    box.appendChild(r1);
+    var r2 = el('div', 'mtx-row');
+    r2.appendChild(field('역할', roleSel));
+    r2.appendChild(field('표시 순서', sort));
+    box.appendChild(r2);
+    box.appendChild(vis);
+
+    var saveBtn = el('button', 'mtx-btn', saveLabel);
+    saveBtn.type = 'button';
+    saveBtn.addEventListener('click', function () {
+      var payload = {
+        school: school.value.trim(), grade: Number(gradeSel.value),
+        role: roleSel.value, visible: cbVal(vis), sortOrder: num(sort.value)
+      };
+      if (isNew) payload.academyVideoId = videoSel.value ? Number(videoSel.value) : null;
+      onSave(payload);
+    });
+    var row = el('div', 'mtx-btn-row'); row.appendChild(saveBtn);
+    if (onDelete) { var db = el('button', 'mtx-btn danger', '삭제'); db.type = 'button'; db.addEventListener('click', onDelete); row.appendChild(db); }
+    box.appendChild(row);
+    return box;
   }
 })();

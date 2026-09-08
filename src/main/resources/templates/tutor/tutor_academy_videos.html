@@ -6,7 +6,7 @@
   <title>수업 영상 관리</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/tutor_academy.css">
-  <link rel="stylesheet" href="/css/tutor_academy_videos.css">
+  <link rel="stylesheet" href="/css/tutor_academy_videos.css?v=20260908-1">
 </head>
 <body>
   <main class="page">
@@ -31,6 +31,7 @@
         <legend class="muted">이 영상은 무엇인가요? (필수)</legend>
         <label><input type="radio" name="videoPurpose" value="LESSON"> 수업 영상 (대표 수업·수업 영상 목록에 노출)</label>
         <label><input type="radio" name="videoPurpose" value="DIRECTOR"> 대표 원장 소개 영상 (원장 소개 목록에만 노출)</label>
+        <label><input type="radio" name="videoPurpose" value="NONE"> 용도 지정 안 함 (영상 관리에만 보관, 홈페이지 대표 영역 미노출)</label>
       </fieldset>
       <div class="video-upload-row">
         <input id="videoInput" type="file" accept=".mp4,.mov,video/mp4,video/quicktime" />
@@ -53,6 +54,6 @@
 
   <script src="/js/academy_sections.js?v=20260905-4"></script>
   <script src="/js/api.js"></script>
-  <script src="/js/tutor_academy_videos.js?v=20260905-3"></script>
+  <script src="/js/tutor_academy_videos.js?v=20260908-1"></script>
 </body>
 </html>
