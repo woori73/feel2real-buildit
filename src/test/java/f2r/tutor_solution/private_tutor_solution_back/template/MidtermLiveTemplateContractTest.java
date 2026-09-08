@@ -192,6 +192,79 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("prefers-reduced-motion");
   }
 
+  /**
+   * 후속 개편(2026-09) — 첫 화면 왼쪽 = 약한 문구("중간고사 준비 중" / "학교 프린트 내용을
+   * 반영했습니다") 대신 브랜드 메시지 + AI Wiki activity. activity 는 Showcase scene 데이터를
+   * 재사용하고 독립 school-rotation timer 를 두지 않는다(왼/오 학교 동기화).
+   */
+  @Test
+  void publicPage_leftHeroIsBrandMessagePlusWikiActivity_sharedWithShowcase() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+    String all = js + "\n" + css;
+
+    // 약한 옛 문구는 primary hero copy 로 존재하지 않는다.
+    assertThat(all).doesNotContain("중간고사 준비 중");
+    assertThat(all).doesNotContain("학교 프린트 내용을 반영했습니다");
+
+    // 브랜드 메시지 — 현장 경험 × 학교별 시험자료 × AI Wiki.
+    assertThat(js).contains("20년 이상 현장을 지켜온 박정민 원장");
+    assertThat(js).contains("AI Wiki");
+    assertThat(js).contains("시험 준비가 시작됐습니다");
+    assertThat(js).contains("mt-kicker");
+    assertThat(js).contains("mt-proof");
+
+    // AI Wiki activity 는 별도 fetch 없이 showcase scene(scenes 배열)을 그대로 받는다.
+    assertThat(js).contains("function buildWikiActivity(scenes)");
+    assertThat(js).contains("scene.lesson");
+    assertThat(js).contains("scene.grammarPoints");
+    assertThat(js).contains("scene.sampleSentences");
+    // showcase API 호출은 한 곳(showcaseScenes) 뿐 — activity 가 두 번째 호출을 만들지 않는다.
+    assertThat(countOccurrences(js, "/midterm-campaign/showcase")).isEqualTo(1);
+
+    // 학교 순환은 wireShowcaseRotation 하나만 — activity 는 showScene(index) 로 따라간다.
+    assertThat(js).contains("wireShowcaseRotation(section, built, wikiPanel)");
+    assertThat(js).contains("wikiPanel.showScene(index)");
+    assertThat(countOccurrences(js, "setTimeout(next, SHOWCASE_MS)")).isEqualTo(2);   // play + next, activity 아님
+    assertThat(js).doesNotContain("setInterval");
+
+    // 자료가 없는 항목은 생략, 아무 것도 없으면 정적 문구(fake 금지).
+    assertThat(js).contains("학교 자료 확인 중");
+    assertThat(js).doesNotContain("fake");
+
+    // reduced-motion — activity 단계 애니메이션 정지.
+    assertThat(css).contains(".mt-wiki__step");
+    assertThat(css).contains("prefers-reduced-motion: reduce");
+  }
+
+  /**
+   * 후속 개편(2026-09) — 모바일 "학교별 준비 LIVE" 가로 스와이프 안내. 데스크톱(2-column grid)에는
+   * 표시하지 않는다. 다음 카드 일부가 보이도록 카드 폭 유지, 화살표 motion 은 유한(무한/깜빡임 금지).
+   */
+  @Test
+  void publicPage_liveCollectionHasMobileSwipeAffordance_hiddenOnDesktop() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    assertThat(js).contains("옆으로 밀어 학교별 준비 보기");
+    assertThat(js).contains("midterm-live__hint");
+    assertThat(js).contains("midterm-live__lead");           // 학교명 부제
+    assertThat(js).contains("frames.length > 1");            // 카드 2장 이상일 때만
+
+    // 데스크톱 grid 에서는 hint 를 숨긴다.
+    assertThat(css).contains(".midterm-live__hint { display: none; }");
+
+    // 화살표 motion 은 유한 — 무한 반복/깜빡임 없음.
+    assertThat(css).contains("midterm-live-hint-nudge");
+    assertThat(css).doesNotContain("infinite");
+    assertThat(css).contains("animation: none !important");  // reduced-motion 정지
+
+    // 다음 카드 peek 유지 — frame 은 뷰포트 폭보다 좁다(scroll-snap 유지).
+    assertThat(css).contains("flex: 0 0 80vw");
+    assertThat(css).contains("scroll-snap-align: start");
+    assertThat(css).contains("scroll-snap-type: x mandatory");
+  }
+
   @Test
   void publicPage_neverLeaksToWorkspace_andPopupCtaDestinationHeld() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");

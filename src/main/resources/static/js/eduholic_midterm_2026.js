@@ -50,9 +50,11 @@
   });
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var SEASON = '2026 2학기 중간고사';
-  var TITLE = '중간고사 준비 중';
-  var NOTE = '학교 프린트 내용을 반영했습니다.';
+  var KICKER = '2026년 2학기 중간고사';
+  var LEAD = '20년 이상 현장을 지켜온 박정민 원장의 내신 경험과, 학교별 시험자료를 분석하는 AI Wiki 시스템을 결합합니다.';
+  var PROOF = ['20년+ 현장 경험', '학교별 시험자료', 'AI Wiki'];
   var LIVE_TITLE = '학교별 준비 LIVE';
+  var SWIPE_HINT = '옆으로 밀어 학교별 준비 보기';
   var FRAME_MAX = 6;                  // 화면에 배치하는 학교/학년 FRAME 상한.
   var MATERIAL_MAX = 3;               // FRAME 당 MATERIAL scene 상한(자료 복제 금지).
   var ROLES = ['a', 'b', 'c', 'd'];   // collage presentation role (DB taxonomy 아님).
@@ -162,6 +164,16 @@
     return topbar;
   }
 
+  function uniqueSchools(scenes) {
+    var seen = {};
+    var out = [];
+    scenes.forEach(function (s) {
+      var name = String(s && s.school || '').trim();
+      if (name && !seen[name]) { seen[name] = 1; out.push(name); }
+    });
+    return out;
+  }
+
   function render(source, scenes) {
     scenes = Array.isArray(scenes) ? scenes.filter(function (s) { return s && s.school; }) : [];
     var hasHero = !!source || scenes.length > 0;
@@ -177,17 +189,134 @@
       var meta = metadata(source);
       if (meta) intro.appendChild(el('p', 'midterm-feature__meta', meta));
     }
-    intro.appendChild(el('h1', 'mt-title', hasHero ? TITLE : SEASON));
-    if (hasHero) intro.appendChild(el('p', 'mt-note', NOTE));
+
+    // 첫 화면 브랜드 메시지 — 20년 현장 경험 × 학교별 시험자료 × AI Wiki. 긴 홍보문구가 아니라
+    // 아래 AI Wiki activity 와 결합한다.
+    intro.appendChild(el('p', 'mt-kicker', KICKER));
+    var schools = uniqueSchools(scenes);
+    var headline = (schools.length ? schools.join(' · ') : SEASON) + '\n시험 준비가 시작됐습니다';
+    intro.appendChild(el('h1', 'mt-title', headline));
+    intro.appendChild(el('p', 'mt-lead', LEAD));
+    var proof = el('div', 'mt-proof');
+    PROOF.forEach(function (label, i) {
+      if (i) proof.appendChild(el('span', 'mt-proof__x', '×'));
+      proof.appendChild(el('span', 'mt-proof__item', label));
+    });
+    intro.appendChild(proof);
+
+    // AI Wiki activity — 실제 Showcase scene 데이터를 재사용(추가 API 호출 없음). 오른쪽 Showcase 와
+    // 동일한 scene index 를 공유한다(독립 rotation timer 없음).
+    var wikiPanel = scenes.length ? buildWikiActivity(scenes) : null;
+    if (wikiPanel) intro.appendChild(wikiPanel.el);
+
     main.appendChild(intro);
 
     if (scenes.length) {
-      main.appendChild(renderShowcase(scenes));         // Phase 4e — 학교별 시험범위 rotation
+      main.appendChild(renderShowcase(scenes, wikiPanel));  // Phase 4e — 학교별 시험범위 rotation
     } else if (source) {
       main.appendChild(renderFeature(source));          // 폴백 — 기존 iframe hero
     }
 
     root.appendChild(main);
+
+    if (wikiPanel) wikiPanel.showScene(0, reduceMotion);
+  }
+
+  /* ── AI Wiki activity — "내신 Wiki 가 지금 이 학교 시험을 준비하는 모습" ──────────
+     실제 scene(school / grade / lesson / grammarPoints / sampleSentences)에서만 단계를 만든다.
+     없는 값은 생략하고, 아무 것도 없으면 "학교 자료 확인 중". 학교 순환은 이 패널이 하지 않는다 —
+     wireShowcaseRotation 이 showScene(index) 로 알려주면 그 scene 의 단계만 순차 표시한다. */
+  function buildWikiActivity(scenes) {
+    var panel = el('section', 'mt-wiki');
+    panel.setAttribute('aria-label', '내신 Wiki 준비 현황');
+
+    var head = el('div', 'mt-wiki__head');
+    head.appendChild(el('span', 'mt-wiki__dot'));
+    head.appendChild(el('span', 'mt-wiki__brand', '내신 Wiki'));
+    var who = el('span', 'mt-wiki__who');
+    head.appendChild(who);
+    panel.appendChild(head);
+
+    var list = el('ol', 'mt-wiki__steps');
+    panel.appendChild(list);
+    panel.appendChild(el('p', 'mt-wiki__foot', '실제 학교 시험자료 기반'));
+
+    var stepTimer = null;
+    function stop() { if (stepTimer) { clearTimeout(stepTimer); stepTimer = null; } }
+
+    function stepsFor(scene) {
+      var steps = ['시험범위 자료 확인'];
+      var lesson = String(scene.lesson || '').trim();
+      if (lesson) steps.push(lesson);
+      var grammar = (Array.isArray(scene.grammarPoints) ? scene.grammarPoints : []).filter(Boolean);
+      var sentences = (Array.isArray(scene.sampleSentences) ? scene.sampleSentences : []).filter(Boolean);
+      if (sentences.length) steps.push('핵심 문장 분석');
+      if (grammar.length) steps.push(grammar.slice(0, 3).join(' · '));
+      steps.push('출제 포인트 정리');
+      steps.push('수업 준비에 반영');
+      return steps;
+    }
+
+    function paint(scene, staticAll) {
+      stop();
+      var school = String(scene.school || '').trim();
+      who.textContent = [school, gradeLabel(scene.grade)].filter(Boolean).join(' · ');
+      list.innerHTML = '';
+
+      var hasContent = !!(String(scene.lesson || '').trim()
+        || (Array.isArray(scene.grammarPoints) && scene.grammarPoints.filter(Boolean).length)
+        || (Array.isArray(scene.sampleSentences) && scene.sampleSentences.filter(Boolean).length));
+      if (!school || !hasContent) {
+        var idle = el('li', 'mt-wiki__step is-current');
+        idle.appendChild(el('span', 'mt-wiki__mark'));
+        idle.appendChild(el('span', 'mt-wiki__text', '학교 자료 확인 중'));
+        list.appendChild(idle);
+        return;
+      }
+
+      var texts = stepsFor(scene);
+      var items = texts.map(function (t) {
+        var li = el('li', 'mt-wiki__step');
+        li.appendChild(el('span', 'mt-wiki__mark'));
+        li.appendChild(el('span', 'mt-wiki__text', t));
+        list.appendChild(li);
+        return li;
+      });
+
+      if (staticAll || reduceMotion) {
+        items.forEach(function (li) { li.classList.add('is-done'); });
+        return;
+      }
+
+      var cur = 0;
+      var gap = Math.max(700, Math.min(1300, Math.round((SHOWCASE_MS - 800) / items.length)));
+      function tick() {
+        items.forEach(function (li, i) {
+          li.classList.toggle('is-done', i < cur);
+          li.classList.toggle('is-current', i === cur);
+        });
+        if (cur < items.length) {
+          cur += 1;
+          stepTimer = setTimeout(tick, gap);
+        } else {
+          items.forEach(function (li) {
+            li.classList.add('is-done');
+            li.classList.remove('is-current');
+          });
+        }
+      }
+      tick();
+    }
+
+    return {
+      el: panel,
+      showScene: function (i, staticAll) {
+        var n = scenes.length;
+        var scene = scenes[((i % n) + n) % n];
+        if (scene) paint(scene, staticAll);
+      },
+      pause: stop
+    };
   }
 
   /* ── 상단 Showcase — 학교별 시험범위(Wiki 추출 텍스트) rotation ────────────── */
@@ -237,7 +366,7 @@
     return card;
   }
 
-  function renderShowcase(scenes) {
+  function renderShowcase(scenes, wikiPanel) {
     var section = el('section', 'midterm-showcase');
     section.setAttribute('aria-label', '학교별 중간고사 시험범위');
 
@@ -257,13 +386,14 @@
         dots.appendChild(el('span', 'midterm-showcase__dot' + (i === 0 ? ' is-on' : '')));
       });
       section.appendChild(dots);
-      wireShowcaseRotation(section, built);
+      wireShowcaseRotation(section, built, wikiPanel);
     }
     return section;
   }
 
-  /** 학교 scene 자동 순환. 뷰포트 밖이면 정지. reduced-motion 이면 첫 scene 정적. */
-  function wireShowcaseRotation(section, cards) {
+  /** 학교 scene 자동 순환. 왼쪽 AI Wiki activity 와 같은 index 를 쓴다(독립 timer 없음).
+   *  뷰포트 밖이면 정지. reduced-motion 이면 첫 scene 정적. */
+  function wireShowcaseRotation(section, cards, wikiPanel) {
     var timer = null;
     var active = false;
     var index = 0;
@@ -273,6 +403,7 @@
       cards.forEach(function (c, ci) { c.classList.toggle('is-active', ci === index); });
       var dots = section.querySelectorAll('.midterm-showcase__dot');
       dots.forEach(function (d, di) { d.classList.toggle('is-on', di === index); });
+      if (wikiPanel) wikiPanel.showScene(index);
     }
     function next() {
       if (!active) return;
@@ -282,12 +413,14 @@
     function play() {
       if (active || reduceMotion) return;
       active = true;
+      if (wikiPanel) wikiPanel.showScene(index);
       timer = setTimeout(next, SHOWCASE_MS);
     }
     function pause() {
       active = false;
       clearTimeout(timer);
       timer = null;
+      if (wikiPanel) wikiPanel.pause();
     }
 
     if (reduceMotion || !hasIO) return;
@@ -456,6 +589,22 @@
 
     var head = el('header', 'midterm-live__head');
     head.appendChild(el('h2', 'midterm-live__title', LIVE_TITLE));
+    var liveSchools = [];
+    frames.forEach(function (f) {
+      if (liveSchools.indexOf(f.school) === -1) liveSchools.push(f.school);
+    });
+    if (liveSchools.length) {
+      head.appendChild(el('p', 'midterm-live__lead',
+        liveSchools.join(' · ') + '의 현재 준비 모습을 확인하세요.'));
+    }
+    // 모바일 가로 스와이프 안내(§10~§12) — CSS 로 데스크톱에서는 숨긴다. 카드가 2장 이상일 때만.
+    if (frames.length > 1) {
+      var hint = el('p', 'midterm-live__hint');
+      hint.setAttribute('aria-hidden', 'true');
+      hint.appendChild(el('span', 'midterm-live__hint-text', SWIPE_HINT));
+      hint.appendChild(el('span', 'midterm-live__hint-arrow', '→'));
+      head.appendChild(hint);
+    }
     section.appendChild(head);
 
     var collection = el('div', 'midterm-live__collection');
