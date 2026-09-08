@@ -14,6 +14,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.community.dto.CommunityPostDetailResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityImageService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.service.CommunityPostAttachmentService.AttachmentFileBundle;
@@ -58,6 +59,17 @@ class CommunityAttachmentControllerWebMvcTest {
     when(attachmentService.getAttachmentFile(2L))
         .thenReturn(new AttachmentFileBundle(new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF},
             "image/jpeg", "5과 영영단어.jpg"));
+  }
+
+  @Test
+  @DisplayName("given 익명 when Wiki 게시글 ID 직접 조회 then 본문 없이 401")
+  void detail_wikiPost_anonymousUnauthorized() throws Exception {
+    CommunityPostDetailResponse detail = org.mockito.Mockito.mock(CommunityPostDetailResponse.class);
+    when(detail.boardType()).thenReturn("VARIANT");
+    when(communityService.detail(7L)).thenReturn(detail);
+
+    mockMvc.perform(get("/api/open-community/posts/7"))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
