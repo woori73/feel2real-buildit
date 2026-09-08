@@ -263,12 +263,19 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
             .requestMatchers(HttpMethod.POST, "/api/academies/*/visits").permitAll()  // 공개 방문 집계
             .requestMatchers(HttpMethod.GET, "/api/academy-posts").permitAll()  // 공개 Academy 블로그 포스트 모아보기
-            // 전체 공개 커뮤니티 read만 permitAll(목록/상세). write/comment/like는 아래 /api/** catch-all로 인증.
-            // base가 /api/open-community인 이유는 /api/community/**를 LessonCommunityController가 점유 중이기 때문.
-            // ⚠ posts 한정 — /api/open-community/** 로 넓히면 comment 경로까지 공개돼 안 됨.
+            // 일반 공개 커뮤니티 read는 유지하되 Wiki scope 목록은 회원 전용으로 먼저 닫는다.
+            // Wiki 게시글 상세는 데이터의 boardType을 알아야 하므로 CommunityController가 2차 방어한다.
+            .requestMatchers(request ->
+                HttpMethod.GET.matches(request.getMethod())
+                    && "/api/open-community/posts".equals(request.getServletPath())
+                    && "wiki".equalsIgnoreCase(request.getParameter("scope")))
+            .authenticated()
             .requestMatchers(HttpMethod.GET, "/api/open-community/posts", "/api/open-community/posts/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/open-community/images/**").permitAll()  // 본문 이미지 공개 serve
-            .requestMatchers(HttpMethod.GET, "/api/open-community/attachments/*/file").permitAll()  // 게시글 첨부 공개 serve (add/delete는 인증)
+            // Wiki 게시글과 일반 커뮤니티가 파일 저장 endpoint를 공유하며 URL만으로 소유 scope를 판별할 수 없다.
+            // 보호 자료 우회 노출을 막기 위해 이미지/첨부 원본 serve는 로그인 회원에게 통일한다.
+            .requestMatchers(HttpMethod.GET,
+                "/api/open-community/images/**",
+                "/api/open-community/attachments/*/file").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/analyzes", "/api/analyzes/**").permitAll()  // 공개 시험 분석 조회
             // /api/wiki/** 실제 자료·문항·Thread·미리보기·다운로드는 아래
             // /api/** catch-all에서 모두 인증한다. 종류별 GUEST 예외를 두지 않는다.
