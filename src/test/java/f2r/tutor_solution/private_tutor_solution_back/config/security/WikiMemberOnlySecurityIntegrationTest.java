@@ -60,6 +60,8 @@ class WikiMemberOnlySecurityIntegrationTest {
         Arguments.of("/api/wiki/questions/attachments/1/file", "thread-file"),
         Arguments.of("/api/wiki/questions/materials/1/preview", "question-material"),
         Arguments.of("/api/wiki/live-messages", "live-thread"),
+        Arguments.of("/api/open-community/images/1", "wiki-shared-image"),
+        Arguments.of("/api/open-community/attachments/1/file", "wiki-shared-file"),
         Arguments.of("/problem-generator/wiki/api/questions", "wiki-ai"));
   }
 
@@ -73,6 +75,13 @@ class WikiMemberOnlySecurityIntegrationTest {
     mockMvc.perform(get("/wiki")).andExpect(status().isOk()).andExpect(content().string("landing"));
     mockMvc.perform(get("/api/wiki/home-feed")).andExpect(status().isOk());
     mockMvc.perform(get("/api/wiki/popular-downloads")).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("GUEST shared community API의 Wiki scope 목록은 401")
+  void guest_wikiScopedCommunityListReturns401() throws Exception {
+    mockMvc.perform(get("/api/open-community/posts").param("scope", "wiki"))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
@@ -168,6 +177,15 @@ class WikiMemberOnlySecurityIntegrationTest {
 
     @GetMapping("/api/wiki/live-messages")
     ResponseEntity<String> live() { return ResponseEntity.ok("live-thread"); }
+
+    @GetMapping("/api/open-community/posts")
+    ResponseEntity<String> communityPosts() { return ResponseEntity.ok("community"); }
+
+    @GetMapping("/api/open-community/images/1")
+    ResponseEntity<String> sharedImage() { return ResponseEntity.ok("wiki-shared-image"); }
+
+    @GetMapping("/api/open-community/attachments/1/file")
+    ResponseEntity<String> sharedFile() { return ResponseEntity.ok("wiki-shared-file"); }
 
     @GetMapping("/problem-generator/wiki/api/questions")
     ResponseEntity<String> ai() { return ResponseEntity.ok("wiki-ai"); }
