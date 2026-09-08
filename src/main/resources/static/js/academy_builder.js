@@ -4103,6 +4103,8 @@
   let bildiSettleTimer = null;
   let bildiGuideTargetKey = null; // Guide가 "이 섹션을 보라"고 한 섹션 — 착지 시 POINT/TALK
   let lastBildiFlightPos = null;
+  let aiGuideEnabled = true;      // UI visibility only — aiGuideSession과 절대 합치지 않는다.
+  let aiGuidePanelOpen = false;   // enabled 상태 안의 OPEN / COLLAPSED
 
   // 섹션별 waypoint(Preview safe area 기준 프랙션). 좌우를 번갈아 두고 y를 흩어, 스크롤하면
   // Bildi의 화면 X/Y가 눈에 띄게 이동한다(§목표). 없는 섹션은 index 기반 교차 패턴으로 폴백.
@@ -4132,17 +4134,31 @@
     try { sessionStorage.setItem(AI_GUIDE.SESSION_STORAGE_KEY, JSON.stringify(aiGuideSession)); }
     catch (_) { /* privacy 모드 등 — Guide는 저장 실패해도 계속 동작한다 */ }
   }
-  function readAiGuidePanelOpen() {
+  function readAiGuideUiState() {
     if (!AI_GUIDE) return null;
     try {
       const raw = JSON.parse(sessionStorage.getItem(AI_GUIDE.PANEL_STATE_STORAGE_KEY) || 'null');
-      return raw && typeof raw.open === 'boolean' ? raw.open : null;
+      if (!raw) return null;
+      if (typeof raw.enabled !== 'boolean' && typeof raw.open === 'boolean') {
+        return { enabled: true, panelOpen: raw.open };
+      }
+      return typeof raw.enabled === 'boolean'
+        ? { enabled: raw.enabled, panelOpen: !!raw.panelOpen }
+        : null;
     } catch (_) { return null; }
   }
-  function writeAiGuidePanelOpen(open) {
+  function writeAiGuideUiState() {
     if (!AI_GUIDE) return;
-    try { sessionStorage.setItem(AI_GUIDE.PANEL_STATE_STORAGE_KEY, JSON.stringify({ open: !!open })); }
-    catch (_) { /* no-op */ }
+    try {
+      sessionStorage.setItem(AI_GUIDE.PANEL_STATE_STORAGE_KEY, JSON.stringify({
+        enabled: !!aiGuideEnabled,
+        panelOpen: !!aiGuidePanelOpen
+      }));
+    } catch (_) { /* no-op */ }
+  }
+  function wideDesktopGuideDefault() {
+    return !!(typeof window !== 'undefined' && window.matchMedia
+      && window.matchMedia('(min-width: 1281px)').matches);
   }
 
   function wireAiGuide(preview) {
@@ -4174,8 +4190,9 @@
       forcedNamingStart = true;
     }
 
-    toggle.addEventListener('click', () => setAiGuideOpen(!panel.classList.contains('is-open')));
-    bindClick('builderAiGuideClose', () => setAiGuideOpen(false));
+    toggle.addEventListener('click', () => setAiGuideEnabled(!aiGuideEnabled));
+    bindClick('builderAiGuideClose', () => setAiGuidePanelOpen(false));
+    bindClick('builderBildiLauncher', () => setAiGuidePanelOpen(true));
     bindClick('builderAiGuideRestart', restartAiGuide);
     bindClick('builderAiGuidePrev', () => moveAiGuideStep('prev'));
     bindClick('builderAiGuideNext', () => moveAiGuideStep('next'));
@@ -4194,44 +4211,41 @@
 
     mountBildiSidekick();
 
-    // 최초 진입은 Bildi를 켠다(§4/§5). 이전에 접었으면 접힌 채로 둔다. Bildi 미탑재 시엔
-    // 기존처럼 패널을 연다(폴백). 단, 이름/주소 미설정이라 naming 으로 되돌린 경우(§4)는
-    // 저장된 접힘 상태와 무관하게 자동으로 연다 — 신규 Academy 는 진입 즉시 STEP 1 을 봐야 한다.
-    const savedOpen = readAiGuidePanelOpen();
-    const openOnEntry = forcedNamingStart ? true : (savedOpen == null ? true : savedOpen);
-    setAiGuideOpen(openOnEntry, { skipPersist: savedOpen == null && !forcedNamingStart });
+    // UI state는 Guide 진행 상태와 별도 보존한다. 넓은 desktop만 최초 OPEN, tablet/mobile은
+    // 기본 COLLAPSED로 Preview 면적을 우선한다. naming 강제도 좁은 화면에서 자동 overlay하지 않는다.
+    const savedUi = readAiGuideUiState();
+    aiGuideEnabled = savedUi ? savedUi.enabled : true;
+    aiGuidePanelOpen = savedUi ? savedUi.panelOpen : wideDesktopGuideDefault();
+    if (!bildi && aiGuideEnabled) aiGuidePanelOpen = true;
+    if (forcedNamingStart && wideDesktopGuideDefault()) aiGuidePanelOpen = true;
+    setAiGuideEnabled(aiGuideEnabled, { skipPersist: savedUi == null, panelOpen: aiGuidePanelOpen });
     renderAiGuide();
     const step = currentAiGuideStep();
     syncBildiSceneToStep();
     if (bildiActive() && step.sectionKey) focusAiGuideSection(step.sectionKey);
   }
 
-  /** Bildi(하늘·캐릭터·말풍선·스크롤스토리)를 canvas-frame 오버레이에 mount. WORLD 미로드 시 no-op. */
+  /** Bildi 캐릭터를 Preview 밖 collapsed launcher에 mount. WORLD 미로드 시 panel만 동작한다. */
   function mountBildiSidekick() {
     if (!WORLD || bildi) return;
     const stage = document.getElementById('builderBildiStage');
     if (!stage) return;
     try {
-      // BACK: 실제 하늘(전체 프레임, 100% 강도). #builderWorldSky 가 있으면 거기에, 없으면 생략.
+      // World 배경은 기존 Preview 장식으로 유지하되, Guide 대화와 캐릭터는 Preview에 올리지 않는다.
       const worldHost = document.getElementById('builderWorldSky');
       bildiWorldSky = (worldHost && typeof WORLD.createSky === 'function')
         ? WORLD.createSky(worldHost, { className: 'world-sky-back' }) : null;
-      // FRONT: 스테이지 날씨 연출(가장자리 vignette + 실제 빗줄기/별).
-      bildiSky = typeof WORLD.createSky === 'function' ? WORLD.createSky(stage, { className: 'world-sky-builder' }) : null;
+      bildiSky = null;
       bildi = typeof WORLD.createBildi === 'function' ? WORLD.createBildi(stage) : null;
-      bildiBubble = typeof WORLD.createDialogue === 'function' ? WORLD.createDialogue(stage) : null;
+      bildiBubble = null;
     } catch (_) {
       bildi = null; bildiBubble = null; bildiSky = null; bildiWorldSky = null;
       return;
     }
-    if (bildiBubble && bildiBubble.body) {
-      bildiBubble.body.addEventListener('click', onAiGuideBodyClick);
-      bildiBubble.body.addEventListener('input', onAiGuideBodyInput);
-    }
-  }
+   }
 
   function bildiActive() {
-    return !!(bildi && document.body && document.body.classList.contains('bildi-active'));
+    return !!(bildi && aiGuideEnabled);
   }
 
   /**
@@ -4446,43 +4460,58 @@
     if (el) el.addEventListener('click', handler);
   }
 
-  /**
-   * Bildi Sidekick(+ 폴백 패널)의 표시/숨김. Bildi가 탑재됐으면 스테이지를, 아니면 기존 패널을
-   * 연다. "단계 전체 보기"는 opts.panel=true로 패널까지 함께 편다.
-   */
-  function setAiGuideOpen(open, options) {
+  /** ON/OFF. OFF는 표시만 숨기며 aiGuideSession/currentGuideStep을 삭제하지 않는다. */
+  function setAiGuideEnabled(enabled, options) {
+    const opts = options || {};
+    const toggle = document.getElementById('builderAiGuideToggle');
+    const label = document.getElementById('builderAiGuideToggleLabel');
+    const launcher = document.getElementById('builderBildiLauncher');
+    aiGuideEnabled = !!enabled;
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', aiGuideEnabled ? 'true' : 'false');
+      toggle.setAttribute('aria-label', aiGuideEnabled ? '빌디 끄기' : '빌디 켜기');
+    }
+    if (label) label.textContent = aiGuideEnabled ? '빌디 ON' : '빌디 OFF';
+    if (document.body) document.body.classList.toggle('bildi-enabled', aiGuideEnabled);
+    if (!aiGuideEnabled) aiGuidePanelOpen = false;
+    else if (typeof opts.panelOpen === 'boolean') aiGuidePanelOpen = opts.panelOpen;
+    setAiGuidePanelOpen(aiGuidePanelOpen, { skipPersist: true });
+    if (launcher) launcher.hidden = !aiGuideEnabled || aiGuidePanelOpen;
+    if (!opts.skipPersist) writeAiGuideUiState();
+  }
+
+  /** ON 안의 OPEN/COLLAPSED. 패널을 접어도 Guide 데이터와 현재 step은 그대로다. */
+  function setAiGuidePanelOpen(open, options) {
     const opts = options || {};
     const panel = document.getElementById('builderAiGuidePanel');
-    const toggle = document.getElementById('builderAiGuideToggle');
-    const stage = document.getElementById('builderBildiStage');
-    if (!panel || !toggle) return;
-    const hasBildi = !!bildi && !!stage;
-
-    if (stage) stage.classList.toggle('is-hidden', !(open && hasBildi));
+    const launcher = document.getElementById('builderBildiLauncher');
+    if (!panel) return;
+    aiGuidePanelOpen = !!open && aiGuideEnabled;
+    panel.classList.toggle('is-open', aiGuidePanelOpen);
+    panel.setAttribute('aria-hidden', aiGuidePanelOpen ? 'false' : 'true');
+    if (launcher) {
+      launcher.hidden = !aiGuideEnabled || aiGuidePanelOpen;
+      launcher.setAttribute('aria-expanded', aiGuidePanelOpen ? 'true' : 'false');
+    }
     if (document.body) {
-      document.body.classList.toggle('bildi-active', !!(open && hasBildi));
-      // Bildi가 없을 때만(폴백) 예전 방식대로 캔버스에 오른쪽 여백을 준다.
-      document.body.classList.toggle('ai-guide-open', !!open && (!hasBildi || opts.panel === true));
+      document.body.classList.toggle('bildi-active', aiGuideEnabled && !!bildi);
+      document.body.classList.toggle('ai-guide-open', aiGuidePanelOpen);
     }
-    // 패널은 Bildi 폴백이거나 "단계 목록"을 명시적으로 요청했을 때만 슬라이드인.
-    const panelOpen = !!open && (!hasBildi || opts.panel === true);
-    panel.classList.toggle('is-open', panelOpen);
-    panel.setAttribute('aria-hidden', panelOpen ? 'false' : 'true');
-    toggle.setAttribute('aria-pressed', open ? 'true' : 'false');
-    if (!opts.skipPersist) writeAiGuidePanelOpen(!!open);
-
-    if (open) {
+    if (aiGuidePanelOpen) {
       renderAiGuide();
-      if (hasBildi) attachBildiStory();
-      if (!opts.skipPersist) {
-        const step = currentAiGuideStep();
-        if (step.sectionKey) focusAiGuideSection(step.sectionKey);
-      }
+      const step = currentAiGuideStep();
+      if (!opts.skipFocus && step.sectionKey) focusAiGuideSection(step.sectionKey);
     } else {
-      detachBildiStory();
       clearAiGuideSectionFocus();
-      if (bildiBubble && typeof bildiBubble.hide === 'function') bildiBubble.hide();
     }
+    if (!opts.skipPersist) writeAiGuideUiState();
+  }
+
+  /** 기존 내부 호출/테스트 호환 alias. open=false는 OFF가 아니라 COLLAPSED다. */
+  function setAiGuideOpen(open, options) {
+    const opts = options || {};
+    if (open && !aiGuideEnabled) setAiGuideEnabled(true, { skipPersist: true });
+    setAiGuidePanelOpen(!!open, opts);
   }
 
   function currentAiGuideStep() {
@@ -4779,17 +4808,10 @@
     }
 
     const stepInner = guideStepInnerHtml(step);
-    // Bildi가 주 UI일 때는 상호작용 입력(textarea/버튼)을 말풍선에만 둔다 — 패널에 중복
-    // 렌더하면 같은 id가 둘 생겨 getElementById가 숨겨진 패널 쪽을 읽는다. 패널은 이때
-    // "말풍선에서 진행" 안내 + 단계 칩만 보여준다(폴백/명시적 '단계 목록' 열람용).
-    const panelInner = bildiActive()
-      ? `<p class="ai-guide-note">빌디 말풍선에서 이 단계를 진행하세요. 여기(단계 목록)는 전체 진행 상황만 보여줍니다.</p>`
-      : stepInner;
-
-    body.innerHTML = onboardingBubble
+     body.innerHTML = onboardingBubble
       + `<div class="ai-guide-step-title">STEP ${info.position} · ${escapeHtml(step.title)}</div>`
       + `<div class="ai-guide-bubble">${escapeHtml(step.guidance)}</div>`
-      + panelInner;
+      + stepInner;
     renderBildiBubble(step, info, stepInner);
     // 스크롤/강조는 스텝이 바뀔 때만 한다(renderAiGuide는 타이핑·로딩 토글로도 불려서,
     // 매번 미리보기를 스크롤하면 편집을 방해한다).
@@ -4818,32 +4840,11 @@
     return html;
   }
 
-  /**
-   * Bildi 말풍선 = 이제 Guide의 주 UI. 정적 8-step chip을 늘어놓지 않고 현재 단계와 진행률만
-   * 간결히 보여준다(§3). 액션 버튼은 패널과 동일한 data-guide-action을 공유한다.
-   */
+  /** Preview overlay 말풍선은 사용하지 않는다. 모든 Guide 대화/입력은 side panel에서 렌더한다. */
   function renderBildiBubble(step, info, stepInner) {
-    if (!bildiBubble || typeof bildiBubble.say !== 'function') return;
-    if (!bildiActive()) { if (typeof bildiBubble.hide === 'function') bildiBubble.hide(); return; }
     syncBildiSceneToStep();
-    const pct = Math.round((info.doneCount / info.total) * 100);
-    const nav = `<div class="bildi-bubble-actions" style="margin-top:8px">`
-      + (AI_GUIDE.prevStepId(step.id) ? `<button type="button" class="bildi-bubble-btn is-ghost" data-guide-action="prev">← 이전</button>` : '')
-      + `<button type="button" class="bildi-bubble-btn is-ghost" data-guide-action="skip">건너뛰기</button>`
-      + `<button type="button" class="bildi-bubble-btn is-primary" data-guide-action="next">다음 →</button>`
-      + `<button type="button" class="bildi-bubble-btn is-ghost" data-guide-action="panel">단계 목록</button>`
-      + `</div>`;
-    bildiBubble.say(
-      `<div class="bildi-bubble-title">STEP ${info.position} / ${info.total}`
-      + `<span class="bildi-bubble-progress"><i style="width:${pct}%"></i></span></div>`
-      + `<p class="bildi-bubble-text">${escapeHtml(step.title)} — ${escapeHtml(step.guidance)}</p>`
-      + `<div class="bildi-bubble-step-inner">${stepInner}</div>`
-      + nav
-    );
-    // 말풍선 내용만 바뀌었으니 마지막 flight 위치 기준으로 다시 붙인다(스크롤/비행은 안 건드림).
-    const safe = bildiSafeArea();
-    if (safe && lastBildiFlightPos) positionBildiBubble(lastBildiFlightPos, safe, bildiSize());
-    else refreshBildiFlight();
+    if (bildiBubble && typeof bildiBubble.hide === 'function') bildiBubble.hide();
+    if (bildi && typeof bildi.setState === 'function') bildi.setState(aiGuideBusy ? 'think' : 'idle');
   }
 
   /**
@@ -5899,6 +5900,8 @@
     wireAiGuide,
     renderAiGuide,
     setAiGuideOpen,
+    setAiGuideEnabled,
+    setAiGuidePanelOpen,
     moveAiGuideStep,
     skipAiGuideStep,
     goAiGuideStep,
@@ -5910,6 +5913,7 @@
     getAiGuideCandidateIndex: () => aiGuideCandidateIndex,
     getAiGuideSession: () => aiGuideSession,
     getAiGuidePending: () => aiGuidePending,
+    getAiGuideUiState: () => ({ enabled: aiGuideEnabled, panelOpen: aiGuidePanelOpen }),
     // Phase 5B.1b — Bildi Scroll Story waypoint positioning. Bildi 위치는 스크롤 progress에 따라
     // 실제로 이동해야 한다(고정 chatbot 금지). 아래 훅으로 좌표 이동을 직접 검증한다.
     getBildi: () => bildi,
