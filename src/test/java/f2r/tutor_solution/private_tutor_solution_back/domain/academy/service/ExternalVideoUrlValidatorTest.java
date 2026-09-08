@@ -53,6 +53,65 @@ class ExternalVideoUrlValidatorTest {
   }
 
   @Test
+  @DisplayName("clip-viewer.naver.com/oembed/ (공유>소스코드 iframe src) → NAVER + canonical embed URL")
+  void naverClipViewerOembed() {
+    String[] seeds = {
+      "3B84EA2409259B3619D13D9748298262888E",
+      "7EC5EB4A7C09B448379F094D0787416655BF",
+      "139CB1F7A8E070D6B2119B4AE236E28DA6E2"
+    };
+    for (String seed : seeds) {
+      var v = validator.validate(
+          "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+          + "&mediaType=SHORT_FORM&serviceType=NTV");
+      assertThat(v.provider()).isEqualTo(AcademyExternalVideoProvider.NAVER);
+      assertThat(v.embedUrl()).isEqualTo(
+          "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+          + "&mediaType=SHORT_FORM&serviceType=NTV");
+    }
+    // 파라미터 순서/여분 파라미터가 달라도 canonical 로 재구성한다.
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?serviceType=NTV&extra=1"
+        + "&seedMediaId=139CB1F7A8E070D6B2119B4AE236E28DA6E2&mediaType=SHORT_FORM").embedUrl())
+        .isEqualTo("https://clip-viewer.naver.com/oembed/?seedMediaId="
+        + "139CB1F7A8E070D6B2119B4AE236E28DA6E2&mediaType=SHORT_FORM&serviceType=NTV");
+  }
+
+  @Test
+  @DisplayName("clip-viewer.naver.com — allowlist 조건 하나라도 어긋나면 embed 없음(CTA)")
+  void naverClipViewerStrictAllowlist() {
+    String seed = "3B84EA2409259B3619D13D9748298262888E";
+    // seedMediaId 없음
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?mediaType=SHORT_FORM&serviceType=NTV").embedUrl()).isNull();
+    // mediaType 불일치
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=LONG_FORM&serviceType=NTV").embedUrl()).isNull();
+    // serviceType 불일치
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NAVER_TV").embedUrl()).isNull();
+    // path 불일치
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/player/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NTV").embedUrl()).isNull();
+    // host 불일치(서브도메인 위장)
+    assertThat(validator.validate(
+        "https://evil.clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NTV").embedUrl()).isNull();
+    // seedMediaId 형식 불량
+    assertThat(validator.validate(
+        "https://clip-viewer.naver.com/oembed/?seedMediaId=../../etc&mediaType=SHORT_FORM&serviceType=NTV")
+        .embedUrl()).isNull();
+    // http
+    assertThatThrownBy(() -> validator.validate(
+        "http://clip-viewer.naver.com/oembed/?seedMediaId=" + seed
+        + "&mediaType=SHORT_FORM&serviceType=NTV"))
+        .isInstanceOf(VideoUploadRejectedException.class);
+  }
+
+  @Test
   @DisplayName("youtube watch?v= → YOUTUBE + embed URL")
   void youtubeWatch() {
     var r = validator.validate("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10s");

@@ -721,6 +721,10 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("function addYouTubeScene(");
     assertThat(js).contains("function addNaverTvScene(");
     assertThat(js).contains("function addLinkCardScene(");
+    // NAVER embed(tv.naver.com/embed · clip-viewer.naver.com/oembed 쇼츠)는 host 를 가리지 않고
+    // provider + embedUrl 만으로 인라인 iframe scene 으로 라우팅한다 — validator 가 이미 좁게
+    // allowlist 했으므로 프론트는 clip-viewer 를 링크 카드로 강등하지 않는다.
+    assertThat(js).contains("link.provider === 'NAVER' && typeof link.embedUrl === 'string' && link.embedUrl");
     assertThat(js).doesNotContain("data-kind', 'external'");   // 옛 거대 CTA 프레임 제거
     assertThat(js).contains("YT.PlayerState.ENDED");           // YouTube 종료 → 다음 scene
     assertThat(js).contains("youtube.com/iframe_api");

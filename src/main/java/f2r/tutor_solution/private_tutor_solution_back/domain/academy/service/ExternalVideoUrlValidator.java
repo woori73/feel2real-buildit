@@ -33,10 +33,18 @@ public class ExternalVideoUrlValidator {
   /**
    * 네이버 TV 클립만 공식 embed 가 있다: {@code tv.naver.com/{v|clip|embed}/<clipNo>} →
    * {@code https://tv.naver.com/embed/<clipNo>}. clipNo 는 숫자다. naver.me 단축주소와
-   * {@code m.naver.com/shorts}(GUID mediaId) 는 공식 embed 경로가 없어 embed 하지 않는다.
+   * {@code m.naver.com/shorts}(GUID mediaId) 자체는 공식 embed 경로가 없어 embed 하지 않는다.
    */
   private static final Pattern NAVER_TV_CLIP_NO =
       Pattern.compile("^/(?:v|clip|embed)/(\\d{1,15})(?:[/?#]|$)");
+
+  /**
+   * 네이버 쇼츠 공식 oembed player. "공유 → 소스코드" 의 iframe src 형식:
+   * {@code https://clip-viewer.naver.com/oembed/?seedMediaId=<HEX>&mediaType=SHORT_FORM&serviceType=NTV}.
+   * 보안상 매우 좁게 allowlist 한다 — host/path 정확 일치 + 세 쿼리 파라미터가 정확히 이 값일 때만.
+   */
+  private static final String NAVER_OEMBED_HOST = "clip-viewer.naver.com";
+  private static final Pattern NAVER_OEMBED_SEED_ID = Pattern.compile("^[0-9A-Fa-f]{16,64}$");
 
   public record Resolved(
       String normalizedUrl,
@@ -77,6 +85,10 @@ public class ExternalVideoUrlValidator {
       // YouTube 도메인이지만 재생 id 를 못 뽑으면(채널/재생목록 등) embed 하지 않는다.
       return new Resolved(url, AcademyExternalVideoProvider.GENERIC, null);
     }
+    if (host.equals(NAVER_OEMBED_HOST)) {
+      String seedEmbed = naverOembedEmbedUrl(uri);
+      return new Resolved(url, AcademyExternalVideoProvider.NAVER, seedEmbed);  // 불일치면 null → CTA
+    }
     if (isNaverTvHost(host)) {
       String clipNo = extractNaverTvClipNo(uri);
       if (clipNo != null) {
@@ -91,6 +103,53 @@ public class ExternalVideoUrlValidator {
       return new Resolved(url, AcademyExternalVideoProvider.NAVER, null);
     }
     return new Resolved(url, AcademyExternalVideoProvider.GENERIC, null);
+  }
+
+  /**
+   * clip-viewer.naver.com/oembed/ 를 매우 좁게 검증한다: path 가 정확히 {@code /oembed/}(또는
+   * {@code /oembed}) 이고, {@code seedMediaId} 가 HEX 이며, {@code mediaType=SHORT_FORM} +
+   * {@code serviceType=NTV} 일 때만 canonical embed URL 을 재구성해 돌려준다(입력의 여분
+   * 파라미터·순서는 버린다). 하나라도 어긋나면 null → CTA fallback.
+   */
+  private static String naverOembedEmbedUrl(URI uri) {
+    String path = uri.getPath() == null ? "" : uri.getPath();
+    if (!path.equals("/oembed/") && !path.equals("/oembed")) {
+      return null;
+    }
+    String query = uri.getRawQuery();
+    if (query == null || query.isEmpty()) {
+      return null;
+    }
+    String seedMediaId = null;
+    boolean shortForm = false;
+    boolean ntv = false;
+    for (String pair : query.split("&")) {
+      int eq = pair.indexOf('=');
+      if (eq <= 0) continue;
+      String k = pair.substring(0, eq);
+      String v = urlDecode(pair.substring(eq + 1));
+      if ("seedMediaId".equals(k)) {
+        seedMediaId = v;
+      } else if ("mediaType".equals(k)) {
+        shortForm = "SHORT_FORM".equals(v);
+      } else if ("serviceType".equals(k)) {
+        ntv = "NTV".equals(v);
+      }
+    }
+    if (seedMediaId == null || !NAVER_OEMBED_SEED_ID.matcher(seedMediaId).matches()
+        || !shortForm || !ntv) {
+      return null;
+    }
+    return "https://clip-viewer.naver.com/oembed/?seedMediaId=" + seedMediaId
+        + "&mediaType=SHORT_FORM&serviceType=NTV";
+  }
+
+  private static String urlDecode(String value) {
+    try {
+      return java.net.URLDecoder.decode(value, java.nio.charset.StandardCharsets.UTF_8);
+    } catch (RuntimeException e) {
+      return value;
+    }
   }
 
   private static boolean isNaverTvHost(String host) {

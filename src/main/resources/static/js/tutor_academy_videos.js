@@ -295,14 +295,26 @@
    * 외부에 이미 올라간 영상을 URL 로만 등록한다(§3). 서버가 scheme/host 검증·provider 분류의
    * 정본이며 여기서는 필수값 · https 형태만 가볍게 막는다.
    */
+  /**
+   * 사용자가 "공유 > 소스코드" 의 `<iframe ...>` 전체를 붙여넣을 수 있다(네이버 쇼츠 등).
+   * raw HTML 은 저장하지 않는다 — src 의 https:// URL 만 안전하게 뽑아 쓴다. iframe 이 아니면
+   * 입력 그대로 반환.
+   */
+  function extractIframeSrc(raw) {
+    if (!/<iframe[\s>]/i.test(raw)) return raw;
+    const m = raw.match(/<iframe[^>]*\ssrc\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/i);
+    const src = m ? (m[2] || m[3] || m[4] || '') : '';
+    return /^https:\/\//i.test(src) ? src.trim() : raw;
+  }
+
   async function registerLink() {
     if (!linkUrl || !linkTitle || !linkButton) return;
-    const url = (linkUrl.value || '').trim();
+    const url = extractIframeSrc((linkUrl.value || '').trim());
     const title = (linkTitle.value || '').trim();
     const purpose = selectedLinkPurpose();
     if (!url) return showLinkStatus('영상 URL을 입력해 주세요.', 'error');
     if (!/^https:\/\//i.test(url)) {
-      return showLinkStatus('영상 URL은 https:// 주소만 등록할 수 있습니다.', 'error');
+      return showLinkStatus('영상 URL 또는 iframe 코드를 https:// 주소로 입력해 주세요.', 'error');
     }
     if (!title) return showLinkStatus('영상 제목을 입력해 주세요.', 'error');
     if (!purpose) return showLinkStatus('영상 용도를 선택해 주세요.', 'error');
@@ -411,6 +423,6 @@
   }
 
   window.__academyVideoUploadTestApi = {
-    MAX_DURATION_SEC, MAX_SIZE_BYTES, thumbnailMarkup, isSupportedFile
+    MAX_DURATION_SEC, MAX_SIZE_BYTES, thumbnailMarkup, isSupportedFile, extractIframeSrc
   };
 })();

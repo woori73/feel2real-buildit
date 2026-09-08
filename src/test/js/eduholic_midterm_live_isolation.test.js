@@ -131,6 +131,14 @@ test('EXTERNAL 영상: embedUrl 있으면 인라인 embed scene, 없으면 작�
   await new Promise((r) => setImmediate(r)); await new Promise((r) => setImmediate(r));
   assert.equal(mediaScenes(frameFor(root, '신구중'))[0].getAttribute('data-kind'), 'embed', '네이버TV → 인라인 embed');
 
+  root = frameWith({ provider: 'NAVER',
+    embedUrl: 'https://clip-viewer.naver.com/oembed/?seedMediaId=3B84EA2409259B3619D13D9748298262888E&mediaType=SHORT_FORM&serviceType=NTV',
+    externalUrl: 'https://naver.me/F4WnDovq', title: '네이버 쇼츠 수업' });
+  await new Promise((r) => setImmediate(r)); await new Promise((r) => setImmediate(r));
+  var scNaverShorts = mediaScenes(frameFor(root, '신구중'))[0];
+  assert.equal(scNaverShorts.getAttribute('data-kind'), 'embed', '네이버 쇼츠 oembed → 인라인 embed(linkcard 아님)');
+  assert.ok(scNaverShorts.querySelectorAll('.midterm-live__embed-frame').length === 1, 'iframe 1개');
+
   root = frameWith({ provider: 'NAVER', embedUrl: null,
     externalUrl: 'https://naver.me/F4WnDovq', title: '네이버 쇼츠' });
   await new Promise((r) => setImmediate(r)); await new Promise((r) => setImmediate(r));

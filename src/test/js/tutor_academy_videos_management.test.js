@@ -94,6 +94,7 @@ function runVideosPage(options) {
     fetchCalls,
     purposeState,
     linkPurposeState,
+    testApi: context.window.__academyVideoUploadTestApi,
     async ready() {
       if (!domReadyCb) throw new Error('DOMContentLoaded 핸들러가 등록되지 않았다');
       await domReadyCb();
@@ -249,6 +250,42 @@ test('given 서버가 {message} JSON 오류를 반환 when 외부 링크 등록 
   await new Promise((resolve) => setImmediate(resolve));
 
   assert.match(page.element('videoLinkStatus').textContent, /저장하지 못했습니다/);
+});
+
+test('extractIframeSrc: 공유>소스코드의 <iframe> 를 붙여넣으면 src https URL 만 뽑고 raw HTML 은 버린다', async () => {
+  const { testApi } = runVideosPage({ videos: [] });
+  const CLIP = 'https://clip-viewer.naver.com/oembed/?seedMediaId='
+    + '139CB1F7A8E070D6B2119B4AE236E28DA6E2&mediaType=SHORT_FORM&serviceType=NTV';
+  // 네이버 "공유 > 소스코드" 가 주는 형태
+  assert.equal(
+    testApi.extractIframeSrc('<iframe width="360" height="640" src="' + CLIP + '" frameborder="0" allowfullscreen></iframe>'),
+    CLIP);
+  assert.equal(testApi.extractIframeSrc("<iframe src='" + CLIP + "'></iframe>"), CLIP);
+  // iframe 이 아닌 평범한 URL 은 그대로 통과
+  assert.equal(testApi.extractIframeSrc('https://youtu.be/dQw4w9WgXcQ'), 'https://youtu.be/dQw4w9WgXcQ');
+  // src 가 https 가 아니면(또는 없으면) 원문 유지 → 뒤의 https 검증에서 걸러진다
+  assert.equal(testApi.extractIframeSrc('<iframe src="http://evil/x"></iframe>'), '<iframe src="http://evil/x"></iframe>');
+  assert.equal(testApi.extractIframeSrc('<iframe></iframe>'), '<iframe></iframe>');
+});
+
+test('given <iframe> 코드를 URL 칸에 붙여넣음 when 외부 링크 등록 then raw HTML 이 아니라 src URL 만 POST 한다', async () => {
+  const page = runVideosPage({ videos: [] });
+  await page.ready();
+  const CLIP = 'https://clip-viewer.naver.com/oembed/?seedMediaId='
+    + '3B84EA2409259B3619D13D9748298262888E&mediaType=SHORT_FORM&serviceType=NTV';
+  page.element('videoLinkUrl').value = '<iframe src="' + CLIP + '" allowfullscreen></iframe>';
+  page.element('videoLinkTitle').value = '네이버 쇼츠 수업';
+  page.linkPurposeState.checked = { value: 'LESSON' };
+  page.fetchCalls.length = 0;
+
+  page.click('videoLinkButton');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const call = page.fetchCalls.find((c) => c.url === '/api/tutor/academy/videos/link');
+  assert.ok(call, 'link 엔드포인트로 요청이 나가지 않았다');
+  const body = JSON.parse(call.init.body);
+  assert.equal(body.url, CLIP, 'src URL 만 전송해야 한다');
+  assert.ok(body.url.indexOf('<iframe') === -1, 'raw HTML 을 전송하면 안 된다');
 });
 
 test('given 서버가 평문 오류 본문을 반환 when 외부 링크 등록 then 평문 사유를 표시한다', async () => {
