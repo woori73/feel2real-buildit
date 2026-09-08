@@ -267,4 +267,76 @@ class MidtermLiveTemplateContractTest {
     assertThat(css).contains("prefers-reduced-motion: reduce");
     assertThat(css).contains("animation: none !important");
   }
+
+  /** Phase 4b — Academy Ambient Video: 기존 public AcademyVideo API 재사용, 운영자 허용 id 만,
+   *  특정 학교 귀속 없이 academy-level ambient scene. 없으면 MATERIAL → 분석 흐름 그대로. */
+  @Test
+  void liveCollection_ambientVideoIsOptionalAcademyLevelScene() throws Exception {
+    String html = read("static/eduholic-midterm-2026.html");
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    // B1 — 백엔드 무변경. slug / 허용 id 는 정적 HTML config(신규 DTO / 필드 / 엔드포인트 없음).
+    assertThat(html).contains("data-slug=");
+    assertThat(html).contains("data-ambient-video-ids=");
+    assertThat(js).contains("data-ambient-video-ids");
+    assertThat(js).contains("/videos");
+
+    // 공개 목록 응답이 준 videoUrl / thumbnailUrl 만 재사용 — storage key / raw / 파일명 안 씀.
+    assertThat(js).contains("ambientVideo.videoUrl");
+    assertThat(js).doesNotContain("originalFilename");
+    assertThat(js).doesNotContain("rawStorageKey");
+    assertThat(js).doesNotContain("normalizedStorageKey");
+
+    // 자동 content 분류 없음 — purpose / 파일명 / 길이로 "수업 영상"을 추론하지 않는다.
+    assertThat(js).doesNotContain("purpose");
+    assertThat(js).doesNotContain("LESSON");
+    assertThat(js).doesNotContain("LIVE_VISIBLE");
+
+    // ambient <video> — muted loop playsinline preload=metadata. player chrome / autoplay 속성 없음.
+    assertThat(js).contains("video.muted = true");
+    assertThat(js).contains("video.loop = true");
+    assertThat(js).contains("video.playsInline = true");
+    assertThat(js).contains("video.preload = 'metadata'");
+    assertThat(js).doesNotContain("video.controls");
+    assertThat(js).doesNotContain(".autoplay = true");
+
+    // optional scene — 없으면 그냥 없다. 가짜 / 스톡 / 복제 영상 없음.
+    assertThat(js).contains("videos[index] || null");
+    assertThat(js).contains("data-kind', 'video'");
+    assertThat(js).doesNotContain("stock");
+
+    // offscreen + inactive pause, autoplay reject 안전(§10·§19·§20·§21).
+    assertThat(js).contains("function pauseVideos(");
+    assertThat(js).contains("v.pause()");
+    assertThat(js).contains("p.catch(function () {})");
+
+    // 영상별 LIVE 시작 구간 = 정적 config("id:sec"). 임의 business logic 하드코딩 아님.
+    assertThat(html).contains("data-ambient-video-starts=");
+    assertThat(js).contains("data-ambient-video-starts");
+    assertThat(js).contains("AMBIENT_STARTS");
+    assertThat(js).contains("current.startAt");            // 활성 + 재진입 모두 설정 시작점 사용
+    assertThat(js).contains("t >= d");                     // 시작점 >= 길이면 안전 fallback
+    assertThat(js).doesNotContain("videoId === 8");
+    assertThat(js).doesNotContain("=== 8)");
+    assertThat(js).doesNotContain("trimVideo");
+    assertThat(js).doesNotContain("timeline");
+
+    // 학교 귀속 조작 / 카테고리 라벨 생성 없음(§8·§12·§25).
+    assertThat(js).doesNotContain("수업 영상");
+    assertThat(js).doesNotContain("수업 현장");
+    assertThat(js).doesNotContain("학생 학습");
+
+    // reduced-motion 정책 유지(§14) — ambient 도 정지, 정책 우회 없음.
+    assertThat(css).contains("prefers-reduced-motion: reduce");
+    assertThat(css).contains(".midterm-live__video");
+    assertThat(css).contains("object-fit: cover");
+
+    // Phase 4c 아티팩트를 미리 만들지 않는다(§15·§16).
+    String all = html + "\n" + js + "\n" + css;
+    assertThat(all).doesNotContain("midterm_live_scene_video");
+    assertThat(all).doesNotContain("scene_video");
+    assertThat(all).doesNotContain("STUDENT_STUDY");
+    assertThat(all).doesNotContain("LESSON_INTERACTION");
+  }
 }
