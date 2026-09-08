@@ -224,36 +224,40 @@ a { color: inherit; }
   :root { --doc-scale: 1.3; --doc-nudge: 26px; --doc-top: -1640px; }
 }
 
+
 /* ══════════════════════════════════════════════════════════════════════════
-   Shopify Motion — "Showcase evolving collections"
-   featured 를 뺀 최근 자료. 데스크톱 = 비대칭 collage, 모바일 = horizontal browse
-   rail. collection geometry 는 자료마다 달라도 packaging grammar 는 하나다.
-   crop role(a/b/c/d)은 CSS presentation 전용(DB/DTO taxonomy 아님) — 전부 첫 내용
-   sheet 안에 착지시켜 어떤 school-print 든 빈 카드가 나오지 않게 한다.
+   학교/학년 LIVE FRAME collection
+   Atelier — FRAME 의 product composition (tinted media panel + 아래 작은 metadata).
+   Motion  — collection 배치(비대칭 collage / 모바일 rail+peek) + image-rollover 로 scene 교체.
+   Heritage — MATERIAL·DIGITAL_TWIN scene 안의 확대 detail crop.
+   FRAME 외곽은 고정, media(scene)만 crossfade 로 바뀐다. 페이지 전체 carousel 없음.
+   crop role(a/b/c/d)은 CSS presentation 전용(DB taxonomy 아님).
    ══════════════════════════════════════════════════════════════════════════ */
-.midterm-recent {
-  --r-w: 380px;
-  --r-h: 1960px;
-  --r-scale: 1;
-  --r-nudge: 6px;
-  --r-top: -1205px;
-  --r-drift: 32px;
-  padding: 18px 0 34px;
+.midterm-live {
+  --m-w: 380px;
+  --m-scale: 1;
+  --m-nudge: 6px;
+  --m-top: -1205px;
+  --m-drift: 30px;
+  --twin-w: 400px;
+  --twin-scale: 0.8;
+  --twin-top: -12px;
+  --stage-inset: 13px;
+  padding: 16px 0 34px;
 }
-.midterm-recent__head {
+.midterm-live__head {
   padding: 0 var(--page-pad);
   margin-bottom: 13px;
 }
-.midterm-recent__title {
+.midterm-live__title {
   margin: 0;
   font-size: clamp(15px, 4vw, 17px);
   font-weight: 720;
   letter-spacing: -.04em;
 }
 
-/* mobile / tablet: horizontal browse rail, 다음 자료가 오른쪽에서 살짝 보인다.
-   세로 페이지 스크롤은 그대로, rail 안에서 문서 자체 스크롤은 없다. */
-.midterm-recent__collection {
+/* mobile / tablet: horizontal browse rail — 다음 FRAME 의 media panel 이 오른쪽에서 살짝 보인다. */
+.midterm-live__collection {
   display: flex;
   gap: 12px;
   padding: 0 var(--page-pad);
@@ -263,10 +267,10 @@ a { color: inherit; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.midterm-recent__collection::-webkit-scrollbar { width: 0; height: 0; }
-.midterm-recent__item {
+.midterm-live__collection::-webkit-scrollbar { width: 0; height: 0; }
+.midterm-live__frame {
   flex: 0 0 82vw;
-  max-width: 430px;
+  max-width: 440px;
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
@@ -274,198 +278,213 @@ a { color: inherit; }
   transform: translateY(20px);
   transition: opacity .55s ease, transform .55s ease;
 }
-.midterm-recent.is-in-view .midterm-recent__item {
-  opacity: 1;
-  transform: none;
-}
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(2) { transition-delay: .06s; }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(3) { transition-delay: .12s; }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(4) { transition-delay: .18s; }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(5) { transition-delay: .24s; }
+.midterm-live__frame.is-in-view { opacity: 1; transform: none; }
+.midterm-live--n1 .midterm-live__collection { display: block; overflow: visible; padding-inline: 8px; }
+.midterm-live--n1 .midterm-live__frame { flex: none; max-width: none; }
 
-/* 최근 자료 1건 = Motion "single collection callout" — rail 이 아니라 single large product */
-.midterm-recent--n1 .midterm-recent__collection {
-  display: block;
-  overflow: visible;
-  padding-inline: 8px;
-}
-.midterm-recent--n1 .midterm-recent__item {
-  flex: none;
-  max-width: none;
-}
-
-/* 같은 Eduholic packaging system — 내용물(자료)과 aspect ratio 만 달라진다 */
-.midterm-recent__surface {
-  padding: var(--surface-pad);
-  height: clamp(320px, 46svh, 404px);
+/* FRAME = Shopify product unit. tinted media panel + 육안으로 분명한 edge. */
+.midterm-live__stage {
+  position: relative;
+  height: clamp(326px, 46svh, 410px);
+  overflow: hidden;
   background: var(--surface-b);
-  border: 1px solid var(--surface-edge);
+  border: 1px solid rgba(15, 23, 42, .14);
   border-radius: var(--surface-radius);
   box-shadow: var(--surface-shadow);
+  isolation: isolate;
 }
-.midterm-recent__item:nth-child(4n + 2) .midterm-recent__surface { background: var(--surface-c); }
-.midterm-recent__item:nth-child(4n + 3) .midterm-recent__surface { background: var(--surface-d); }
-.midterm-recent__item:nth-child(4n + 4) .midterm-recent__surface { background: var(--surface-a); }
-.midterm-recent--n1 .midterm-recent__surface { height: clamp(420px, 56svh, 508px); }
+.midterm-live__frame:nth-child(4n + 2) .midterm-live__stage { background: var(--surface-c); }
+.midterm-live__frame:nth-child(4n + 3) .midterm-live__stage { background: var(--surface-d); }
+.midterm-live__frame:nth-child(4n + 4) .midterm-live__stage { background: var(--surface-a); }
+.midterm-live--n1 .midterm-live__stage { height: clamp(420px, 56svh, 512px); }
 
-.midterm-recent__media {
-  position: relative;
-  height: 100%;
+/* scene = media stage 안에서 교체되는 실제 콘텐츠. 하나만 .is-active. */
+.midterm-live__scene {
+  position: absolute;
+  inset: var(--stage-inset);
   overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--window-edge);
   border-radius: var(--window-radius);
-  isolation: isolate;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .45s ease, transform .45s ease;
   pointer-events: none;
 }
-.midterm-recent__doc {
+.midterm-live__scene.is-active { opacity: 1; transform: none; }
+
+.midterm-live__doc {
   position: absolute;
-  top: var(--r-top);
+  top: var(--m-top);
   left: 50%;
-  width: var(--r-w);
-  height: var(--r-h);
+  width: var(--m-w);
+  height: 2100px;
   border: 0;
   background: var(--paper);
   pointer-events: none;
   transform-origin: top center;
-  transform: translate3d(calc(-50% + var(--r-nudge)), 0, 0) scale(var(--r-scale));
+  transform: translate3d(calc(-50% + var(--m-nudge)), 0, 0) scale(var(--m-scale));
 }
-
-/* 진열대 안 각 상품의 detail 이 shop-window 처럼 천천히 지나간다(한 방향, 1회).
-   deterministic slot delay — 전부 동시에 움직이지 않게. random JS 아님. */
-.midterm-recent.is-in-view .midterm-recent__doc {
+/* MATERIAL scene 이 활성이고 FRAME 이 뷰포트 안일 때만 자료 내부가 한 방향으로 천천히 지나간다. */
+.midterm-live__frame.is-live .midterm-live__scene[data-kind="material"].is-active .midterm-live__doc {
   animation: midterm-product-drift 8s ease-in-out 1 both;
 }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(2) .midterm-recent__doc { animation-delay: .35s; }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(3) .midterm-recent__doc { animation-delay: .7s; }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(4) .midterm-recent__doc { animation-delay: 1.05s; }
-.midterm-recent.is-in-view .midterm-recent__item:nth-child(5) .midterm-recent__doc { animation-delay: 1.4s; }
 @keyframes midterm-product-drift {
-  from { transform: translate3d(calc(-50% + var(--r-nudge)), 0, 0) scale(var(--r-scale)); }
-  to { transform: translate3d(calc(-50% + var(--r-nudge)), calc(-1 * var(--r-drift)), 0) scale(var(--r-scale)); }
+  from { transform: translate3d(calc(-50% + var(--m-nudge)), 0, 0) scale(var(--m-scale)); }
+  to { transform: translate3d(calc(-50% + var(--m-nudge)), calc(-1 * var(--m-drift)), 0) scale(var(--m-scale)); }
+}
+
+/* DIGITAL_TWIN — 그 학교 출제 경향 분석(공개 analyze). 5초마다 관찰 위치가 바뀐다(Heritage). */
+.midterm-live__twin {
+  position: absolute;
+  top: var(--twin-top);
+  left: 50%;
+  width: var(--twin-w);
+  height: 3200px;
+  border: 0;
+  background: var(--paper);
+  pointer-events: none;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(var(--twin-scale));
+  transition: top .55s ease, transform .55s ease;
+}
+.midterm-live__twin[data-twin-view="1"] { --twin-top: -400px; }
+.midterm-live__twin[data-twin-view="2"] { --twin-top: -880px; }
+
+/* §33 아주 작은 관찰 표시. tabs / 버튼 / 슬라이더 UI 아님. */
+.midterm-live__dots {
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 2;
+}
+.midterm-live__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, .2);
+  transition: background .3s ease;
+}
+.midterm-live__dot.is-on { background: rgba(15, 23, 42, .5); }
+
+.midterm-live__meta {
+  margin: 10px 2px 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.midterm-live__sub {
+  margin: 2px 2px 0;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
 /* crop role — 같은 편집본의 서로 다른 영역/배율. 전부 첫 내용 sheet 범위 안. */
-.midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.06; --r-top: -1285px; }
-.midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.26; --r-top: -1700px; }
-.midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.98; --r-top: -1190px; }
-
-.midterm-recent__meta {
-  margin: 9px 2px 0;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: -.015em;
-}
+.midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.06; --m-top: -1285px; }
+.midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.24; --m-top: -1680px; }
+.midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 0.98; --m-top: -1180px; }
 
 @media (min-width: 431px) and (max-width: 1079px) {
-  .midterm-recent { --r-w: 460px; }
-  .midterm-recent__item { flex: 0 0 62vw; max-width: 480px; }
-  .midterm-recent__surface { height: clamp(352px, 48svh, 452px); }
+  .midterm-live { --m-w: 460px; --twin-w: 520px; }
+  .midterm-live__frame { flex: 0 0 62vw; max-width: 520px; }
+  .midterm-live__stage { height: clamp(360px, 48svh, 460px); }
 }
 
-/* desktop: 비대칭 collage. 동일 비율 반복 없음. collection geometry 는 달라도
-   packaging(surface/border/padding/window/metadata)은 하나다. */
+/* desktop: 비대칭 collage. 균일 grid / 학교 카드 grid 아님. packaging grammar 는 하나. */
 @media (min-width: 1080px) {
-  .midterm-recent {
-    --r-w: 640px;
-    --r-h: 2400px;
-    --r-scale: 1.08;
-    --r-nudge: 16px;
-    --r-top: -1230px;
-    --r-drift: 48px;
+  .midterm-live {
+    --m-w: 640px;
+    --m-scale: 1.08;
+    --m-nudge: 16px;
+    --m-top: -1230px;
+    --m-drift: 46px;
+    --twin-w: 640px;
+    --twin-scale: 1;
+    --twin-top: -18px;
+    --stage-inset: clamp(16px, 1.6vw, 26px);
     width: min(100%, 1420px);
     margin: 0 auto;
-    padding: 14px 42px 60px;
+    padding: 14px 42px 62px;
   }
-  .midterm-recent__head { padding: 0; margin-bottom: 22px; }
-  .midterm-recent__title { font-size: clamp(17px, 1.3vw, 20px); }
-  .midterm-recent__collection {
+  .midterm-live__head { padding: 0; margin-bottom: 22px; }
+  .midterm-live__title { font-size: clamp(17px, 1.3vw, 20px); }
+  .midterm-live__collection {
     display: grid;
     overflow: visible;
     padding: 0;
     gap: clamp(18px, 1.9vw, 30px);
     grid-template-columns: repeat(6, 1fr);
-    grid-auto-rows: clamp(190px, 17vw, 250px);
+    grid-auto-rows: clamp(196px, 17vw, 256px);
     grid-auto-flow: dense;
   }
-  .midterm-recent__item {
-    flex: none;
-    max-width: none;
-    transform: translateY(24px);
-  }
-  .midterm-recent__surface {
-    height: auto;
-    flex: 1 1 auto;
-    min-height: 0;
-  }
+  .midterm-live__frame { flex: none; max-width: none; transform: translateY(24px); }
+  .midterm-live__stage { height: auto; flex: 1 1 auto; min-height: 0; }
+  .midterm-live__twin[data-twin-view="1"] { --twin-top: -460px; }
+  .midterm-live__twin[data-twin-view="2"] { --twin-top: -960px; }
 
-  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.26; --r-top: -1580px; }
-  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.5; --r-top: -2080px; }
-  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 0.98; --r-top: -1180px; }
+  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.24; --m-top: -1560px; }
+  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.44; --m-top: -1960px; }
+  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 0.98; --m-top: -1200px; }
 
-  /* 넓고 짧은 strip tile: 상하 padding 을 줄이고, 과확대 대신 wide 한 low-zoom 밴드로
-     — 큰 tile(row span 2)은 role 별 crop 을 유지하고, 짧은 tile 은 통일된 wide 상품샷. */
-  .midterm-recent--n3 .midterm-recent__item:nth-child(3) .midterm-recent__surface,
-  .midterm-recent--n4 .midterm-recent__item:nth-child(3) .midterm-recent__surface,
-  .midterm-recent--n4 .midterm-recent__item:nth-child(4) .midterm-recent__surface,
-  .midterm-recent--n5 .midterm-recent__item:nth-child(3) .midterm-recent__surface,
-  .midterm-recent--n5 .midterm-recent__item:nth-child(4) .midterm-recent__surface,
-  .midterm-recent--n5 .midterm-recent__item:nth-child(5) .midterm-recent__surface {
-    padding-block: 20px;
-  }
-  .midterm-recent--n3 .midterm-recent__item:nth-child(3) .midterm-recent__doc,
-  .midterm-recent--n4 .midterm-recent__item:nth-child(3) .midterm-recent__doc,
-  .midterm-recent--n4 .midterm-recent__item:nth-child(4) .midterm-recent__doc,
-  .midterm-recent--n5 .midterm-recent__item:nth-child(3) .midterm-recent__doc,
-  .midterm-recent--n5 .midterm-recent__item:nth-child(4) .midterm-recent__doc,
-  .midterm-recent--n5 .midterm-recent__item:nth-child(5) .midterm-recent__doc {
-    --r-scale: 0.9;
-    --r-top: -1140px;
-  }
+  /* n2 — asymmetric pair */
+  .midterm-live--n2 .midterm-live__collection { grid-auto-rows: clamp(250px, 24vw, 350px); }
+  .midterm-live--n2 .midterm-live__frame:nth-child(1) { grid-column: span 4; }
+  .midterm-live--n2 .midterm-live__frame:nth-child(2) { grid-column: span 2; }
 
-  /* n2 — asymmetric pair (과장된 collage 아님) */
-  .midterm-recent--n2 .midterm-recent__collection { grid-auto-rows: clamp(240px, 24vw, 340px); }
-  .midterm-recent--n2 .midterm-recent__item:nth-child(1) { grid-column: span 4; grid-row: span 1; }
-  .midterm-recent--n2 .midterm-recent__item:nth-child(2) { grid-column: span 2; grid-row: span 1; }
+  /* n3+ — collage: 큰 것 하나 + portrait 하나 + wide */
+  .midterm-live--n3 .midterm-live__frame:nth-child(1),
+  .midterm-live--n4 .midterm-live__frame:nth-child(1),
+  .midterm-live--n5 .midterm-live__frame:nth-child(1),
+  .midterm-live--n6 .midterm-live__frame:nth-child(1) { grid-column: span 4; grid-row: span 2; }
 
-  /* n3+ — collage: 큰 것 하나 + 세로 하나 + 나머지 */
-  .midterm-recent--n3 .midterm-recent__item:nth-child(1),
-  .midterm-recent--n4 .midterm-recent__item:nth-child(1),
-  .midterm-recent--n5 .midterm-recent__item:nth-child(1) { grid-column: span 4; grid-row: span 2; }
+  .midterm-live--n3 .midterm-live__frame:nth-child(2),
+  .midterm-live--n4 .midterm-live__frame:nth-child(2),
+  .midterm-live--n5 .midterm-live__frame:nth-child(2),
+  .midterm-live--n6 .midterm-live__frame:nth-child(2) { grid-column: span 2; grid-row: span 2; }
 
-  .midterm-recent--n3 .midterm-recent__item:nth-child(2),
-  .midterm-recent--n4 .midterm-recent__item:nth-child(2),
-  .midterm-recent--n5 .midterm-recent__item:nth-child(2) { grid-column: span 2; grid-row: span 2; }
+  .midterm-live--n3 .midterm-live__collection { grid-auto-rows: clamp(228px, 19vw, 288px); }
+  .midterm-live--n3 .midterm-live__frame:nth-child(3) { grid-column: span 6; }
 
-  .midterm-recent--n3 .midterm-recent__item:nth-child(3) { grid-column: span 6; grid-row: span 1; }
+  .midterm-live--n4 .midterm-live__frame:nth-child(3) { grid-column: span 2; }
+  .midterm-live--n4 .midterm-live__frame:nth-child(4) { grid-column: span 4; }
 
-  .midterm-recent--n4 .midterm-recent__item:nth-child(3) { grid-column: span 2; grid-row: span 1; }
-  .midterm-recent--n4 .midterm-recent__item:nth-child(4) { grid-column: span 4; grid-row: span 1; }
+  .midterm-live--n5 .midterm-live__frame:nth-child(3) { grid-column: span 3; }
+  .midterm-live--n5 .midterm-live__frame:nth-child(4) { grid-column: span 3; }
+  .midterm-live--n5 .midterm-live__frame:nth-child(5) { grid-column: span 6; }
 
-  .midterm-recent--n5 .midterm-recent__item:nth-child(3) { grid-column: span 3; grid-row: span 1; }
-  .midterm-recent--n5 .midterm-recent__item:nth-child(4) { grid-column: span 3; grid-row: span 1; }
-  .midterm-recent--n5 .midterm-recent__item:nth-child(5) { grid-column: span 6; grid-row: span 1; }
+  .midterm-live--n6 .midterm-live__frame:nth-child(3) { grid-column: span 3; }
+  .midterm-live--n6 .midterm-live__frame:nth-child(4) { grid-column: span 3; }
+  .midterm-live--n6 .midterm-live__frame:nth-child(5) { grid-column: span 3; }
+  .midterm-live--n6 .midterm-live__frame:nth-child(6) { grid-column: span 3; }
 }
 
 @media (min-width: 1360px) {
-  .midterm-recent { --r-scale: 1.14; --r-top: -1320px; }
-  .midterm-recent__item.is-role-b .midterm-recent__doc { --r-scale: 1.34; --r-top: -1720px; }
-  .midterm-recent__item.is-role-c .midterm-recent__doc { --r-scale: 1.6; --r-top: -2260px; }
-  .midterm-recent__item.is-role-d .midterm-recent__doc { --r-scale: 1.04; --r-top: -1280px; }
+  .midterm-live { --m-scale: 1.14; --m-top: -1320px; --twin-scale: 1.08; }
+  .midterm-live__scene.is-role-b .midterm-live__doc { --m-scale: 1.32; --m-top: -1700px; }
+  .midterm-live__scene.is-role-c .midterm-live__doc { --m-scale: 1.54; --m-top: -2160px; }
+  .midterm-live__scene.is-role-d .midterm-live__doc { --m-scale: 1.04; --m-top: -1300px; }
 }
 
-/* 자료 내부만 움직인다 — surface/frame/metadata 는 고정. reduced-motion 이면 정적 crop. */
+/* reduced-motion: auto scene cycle·drift·twin crop·crossfade 정지. 첫 MATERIAL 정적 crop. */
 @media (prefers-reduced-motion: reduce) {
   .midterm-feature__document,
   .midterm-feature.is-in-view .midterm-feature__document,
-  .midterm-recent__doc,
-  .midterm-recent.is-in-view .midterm-recent__doc {
+  .midterm-live__doc,
+  .midterm-live__twin {
     animation: none !important;
+    transition: none !important;
   }
-  .midterm-recent__item {
+  .midterm-live__frame,
+  .midterm-live__scene {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
   }
+  .midterm-live__scene:not(.is-active) { display: none; }
 }
