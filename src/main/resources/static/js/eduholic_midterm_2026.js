@@ -257,7 +257,13 @@
     return null;
   }
 
-  /** video scene 1개를 stage 에 추가한다. 세 종류(STUDENT_STUDY/LESSON_INTERACTION/AMBIENT) 공통. */
+  /**
+   * video scene 1개를 stage 에 추가한다. 세 종류(STUDENT_STUDY/LESSON_INTERACTION/AMBIENT) 공통.
+   * OUTER FRAME · MEDIA STAGE 크기는 그대로 두고 video element 의 fit 만 방향에 맞춘다 —
+   * portrait/phone footage 는 contain(수업 맥락 유지, 남는 공간은 stage 배경), landscape 는
+   * stage 비율에 가깝게 contain. cover 로 상체만 크게 잘리는 panorama 실패를 만들지 않는다.
+   * videoId 하드코딩 없이 runtime videoWidth/videoHeight 로만 판정한다.
+   */
   function addVideoScene(stage, scenes, url, poster, startAt) {
     var vscene = el('div', 'midterm-live__scene');
     vscene.setAttribute('data-kind', 'video');
@@ -274,6 +280,14 @@
     video.setAttribute('playsinline', '');
     video.setAttribute('aria-hidden', 'true');
     video.setAttribute('tabindex', '-1');
+    function markOrientation() {
+      if (!video.videoWidth || !video.videoHeight) return;
+      var portrait = video.videoHeight > video.videoWidth;
+      vscene.classList.toggle('is-portrait', portrait);
+      vscene.classList.toggle('is-landscape', !portrait);
+    }
+    video.addEventListener('loadedmetadata', markOrientation);
+    markOrientation();
     vscene.appendChild(video);
     stage.appendChild(vscene);
     scenes.push({ el: vscene, kind: 'video', ms: VIDEO_MS, sub: SEASON, video: video,
@@ -332,13 +346,16 @@
     article.classList.add('is-role-' + ROLES[index % ROLES.length]);
     article.setAttribute('aria-label', frame.school + ' ' + frame.gradeLabel + ' 준비 현황');
 
+    // OUTER PRODUCT FRAME(article) → MEDIA STAGE(stage) → SCENE → 실제 media / 아래 작은 product meta.
     var stage = el('div', 'midterm-live__stage');
     article.appendChild(stage);
 
+    var info = el('div', 'midterm-live__info');
     var meta = el('p', 'midterm-live__meta', frame.school + ' · ' + frame.gradeLabel);
     var sub = el('p', 'midterm-live__sub', SEASON);
-    article.appendChild(meta);
-    article.appendChild(sub);
+    info.appendChild(meta);
+    info.appendChild(sub);
+    article.appendChild(info);
 
     // MATERIAL scene(들) — 자료 복제 없이 실제 exposed 자료만.
     var scenes = [];
