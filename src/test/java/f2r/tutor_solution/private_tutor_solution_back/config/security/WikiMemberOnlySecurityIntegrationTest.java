@@ -124,70 +124,70 @@ class WikiMemberOnlySecurityIntegrationTest {
   }
 
   @RestController
-  static class ProbeController {
+  public static class ProbeController {
     @GetMapping("/wiki") ResponseEntity<String> landing() { return ResponseEntity.ok("landing"); }
 
     @GetMapping({"/wiki/originals", "/wiki/questions/1"})
-    ResponseEntity<String> page() { return ResponseEntity.ok("question"); }
+    public ResponseEntity<String> page() { return ResponseEntity.ok("question"); }
 
     @GetMapping("/api/wiki/home-feed")
-    ResponseEntity<String> homeFeed() { return ResponseEntity.ok("metadata"); }
+    public ResponseEntity<String> homeFeed() { return ResponseEntity.ok("metadata"); }
 
     @GetMapping("/api/wiki/popular-downloads")
-    ResponseEntity<String> popular() { return ResponseEntity.ok("metadata"); }
+    public ResponseEntity<String> popular() { return ResponseEntity.ok("metadata"); }
 
     @GetMapping("/api/wiki/originals")
-    ResponseEntity<String> originals() { return ResponseEntity.ok("original-list"); }
+    public ResponseEntity<String> originals() { return ResponseEntity.ok("original-list"); }
 
     @GetMapping("/api/wiki/originals/1/download")
-    ResponseEntity<String> originalFile() { return ResponseEntity.ok("original-file"); }
+    public ResponseEntity<String> originalFile() { return ResponseEntity.ok("original-file"); }
 
     @GetMapping("/api/wiki/analysis-materials")
-    ResponseEntity<String> analyses() { return ResponseEntity.ok("analysis-list"); }
+    public ResponseEntity<String> analyses() { return ResponseEntity.ok("analysis-list"); }
 
     @GetMapping("/api/wiki/analysis-materials/1/download")
-    ResponseEntity<String> analysisFile() { return ResponseEntity.ok("analysis-file"); }
+    public ResponseEntity<String> analysisFile() { return ResponseEntity.ok("analysis-file"); }
 
     @GetMapping("/api/wiki/learning-materials")
-    ResponseEntity<String> learning() { return ResponseEntity.ok("learning-list"); }
+    public ResponseEntity<String> learning() { return ResponseEntity.ok("learning-list"); }
 
     @GetMapping("/api/wiki/learning-materials/1")
-    ResponseEntity<String> learningDetail() { return ResponseEntity.ok("learning-detail"); }
+    public ResponseEntity<String> learningDetail() { return ResponseEntity.ok("learning-detail"); }
 
     @GetMapping("/api/wiki/learning-materials/1/preview")
-    ResponseEntity<String> learningPreview() { return ResponseEntity.ok("learning-preview"); }
+    public ResponseEntity<String> learningPreview() { return ResponseEntity.ok("learning-preview"); }
 
     @GetMapping("/api/wiki/learning-materials/1/download")
-    ResponseEntity<String> learningFile() { return ResponseEntity.ok("learning-file"); }
+    public ResponseEntity<String> learningFile() { return ResponseEntity.ok("learning-file"); }
 
     @GetMapping("/api/wiki/questions")
-    ResponseEntity<String> questions() { return ResponseEntity.ok("question-list"); }
+    public ResponseEntity<String> questions() { return ResponseEntity.ok("question-list"); }
 
     @GetMapping("/api/wiki/questions/1")
-    ResponseEntity<String> question() { return ResponseEntity.ok("question-detail"); }
+    public ResponseEntity<String> question() { return ResponseEntity.ok("question-detail"); }
 
     @GetMapping("/api/wiki/questions/1/context")
-    ResponseEntity<String> context() { return ResponseEntity.ok("thread-context"); }
+    public ResponseEntity<String> context() { return ResponseEntity.ok("thread-context"); }
 
     @GetMapping("/api/wiki/questions/attachments/1/file")
-    ResponseEntity<String> threadFile() { return ResponseEntity.ok("thread-file"); }
+    public ResponseEntity<String> threadFile() { return ResponseEntity.ok("thread-file"); }
 
     @GetMapping("/api/wiki/questions/materials/1/preview")
-    ResponseEntity<String> questionMaterial() { return ResponseEntity.ok("question-material"); }
+    public ResponseEntity<String> questionMaterial() { return ResponseEntity.ok("question-material"); }
 
     @GetMapping("/api/wiki/live-messages")
-    ResponseEntity<String> live() { return ResponseEntity.ok("live-thread"); }
+    public ResponseEntity<String> live() { return ResponseEntity.ok("live-thread"); }
 
     @GetMapping("/api/open-community/posts")
-    ResponseEntity<String> communityPosts() { return ResponseEntity.ok("community"); }
+    public ResponseEntity<String> communityPosts() { return ResponseEntity.ok("community"); }
 
     @GetMapping("/api/open-community/images/1")
-    ResponseEntity<String> sharedImage() { return ResponseEntity.ok("wiki-shared-image"); }
+    public ResponseEntity<String> sharedImage() { return ResponseEntity.ok("wiki-shared-image"); }
 
     @GetMapping("/api/open-community/attachments/1/file")
-    ResponseEntity<String> sharedFile() { return ResponseEntity.ok("wiki-shared-file"); }
+    public ResponseEntity<String> sharedFile() { return ResponseEntity.ok("wiki-shared-file"); }
 
     @GetMapping("/problem-generator/wiki/api/questions")
-    ResponseEntity<String> ai() { return ResponseEntity.ok("wiki-ai"); }
+    public ResponseEntity<String> ai() { return ResponseEntity.ok("wiki-ai"); }
   }
 }
