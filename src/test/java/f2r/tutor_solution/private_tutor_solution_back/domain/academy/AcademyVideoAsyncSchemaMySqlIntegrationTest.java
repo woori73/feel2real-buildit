@@ -50,8 +50,11 @@ class AcademyVideoAsyncSchemaMySqlIntegrationTest {
     flyway.clean();
     var result = flyway.migrate();
 
-    // then
-    assertThat(result.targetSchemaVersion).hasToString("938");
+    // then — academy_videos 스키마는 V938 이후로도 계속 진화한다(V963/V971/V972 …). 정확한 최신
+    // 버전이 아니라 async source 계약(V938) 이상까지 마이그레이션됐는지만 본다.
+    assertThat(org.flywaydb.core.api.MigrationVersion.fromVersion(result.targetSchemaVersion)
+        .compareTo(org.flywaydb.core.api.MigrationVersion.fromVersion("938")))
+        .isGreaterThanOrEqualTo(0);
     try (Connection connection = connection();
          Statement statement = connection.createStatement();
          var rows = statement.executeQuery(
@@ -181,6 +184,56 @@ class AcademyVideoAsyncSchemaMySqlIntegrationTest {
             duration_ms, source_version, raw_cleanup_status
         ) VALUES (?, 'bad-lifecycle', 'PROCESSING', 'RAW',
             'raw/bad-lifecycle', 'video/quicktime', 100, 1000, 0, 'NOT_REQUIRED')
+        """, academyId);
+  }
+
+  /**
+   * Production 회귀 방지(외부 링크 영상): V938 의 chk_academy_videos_active_source /
+   * chk_academy_videos_source_metadata 가 active_source='EXTERNAL' 을 거부해 링크 등록이
+   * 항상 실패했다. V972 가 두 CHECK 를 EXTERNAL shape 로 확장한다.
+   */
+  @Test
+  void givenExternalLinkVideo_whenValidShapeInserted_thenChecksAccept_andRejectInvalidShapes()
+      throws Exception {
+    // given / when / then — 유효한 EXTERNAL 링크 영상은 이제 저장된다.
+    long externalId = insertVideo("""
+        INSERT INTO academy_videos (
+            academy_id, original_filename, lifecycle_status, active_source, source_kind,
+            external_url, external_provider, external_embed_url,
+            source_version, raw_cleanup_status, purpose
+        ) VALUES (?, ?, 'READY', 'EXTERNAL', 'EXTERNAL_LINK',
+            'https://naver.me/F4WnDovq', 'NAVER', NULL,
+            0, 'NOT_REQUIRED', 'LESSON')
+        """, "external-naver");
+    assertThat(externalId).isPositive();
+
+    // storage key 를 달고 오는 EXTERNAL row 는 여전히 거부한다.
+    assertSqlRejected("""
+        INSERT INTO academy_videos (
+            academy_id, original_filename, lifecycle_status, active_source, source_kind,
+            external_url, raw_storage_key, raw_media_type, raw_size_bytes,
+            source_version, raw_cleanup_status
+        ) VALUES (?, 'external-with-raw-key', 'READY', 'EXTERNAL', 'EXTERNAL_LINK',
+            'https://youtu.be/dQw4w9WgXcQ', 'raw/should-not-exist', 'video/quicktime', 100,
+            0, 'NOT_REQUIRED')
+        """, academyId);
+
+    // external_url 없는 EXTERNAL row 는 거부한다.
+    assertSqlRejected("""
+        INSERT INTO academy_videos (
+            academy_id, original_filename, lifecycle_status, active_source, source_kind,
+            source_version, raw_cleanup_status
+        ) VALUES (?, 'external-without-url', 'READY', 'EXTERNAL', 'EXTERNAL_LINK',
+            0, 'NOT_REQUIRED')
+        """, academyId);
+
+    // 알 수 없는 active_source 는 여전히 거부한다.
+    assertSqlRejected("""
+        INSERT INTO academy_videos (
+            academy_id, original_filename, lifecycle_status, active_source, source_kind,
+            external_url, source_version, raw_cleanup_status
+        ) VALUES (?, 'bogus-source', 'READY', 'BOGUS', 'EXTERNAL_LINK',
+            'https://example.com/x', 0, 'NOT_REQUIRED')
         """, academyId);
   }
 

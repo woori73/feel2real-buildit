@@ -16,6 +16,7 @@ import f2r.tutor_solution.private_tutor_solution_back.infrastructure.video.Video
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.video.VideoTranscoder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -226,9 +227,18 @@ public class AcademyVideoService {
           + " (직접 업로드 + 외부 링크 합산)");
     }
 
-    AcademyVideo saved = academyVideoRepository.save(AcademyVideo.externalLink(
-        academy, cleanTitle, resolved.normalizedUrl(), resolved.provider(),
-        resolved.embedUrl(), purpose));
+    AcademyVideo saved;
+    try {
+      saved = academyVideoRepository.save(AcademyVideo.externalLink(
+          academy, cleanTitle, resolved.normalizedUrl(), resolved.provider(),
+          resolved.embedUrl(), purpose));
+    } catch (DataIntegrityViolationException e) {
+      // 저장 자체가 거부되면(스키마·제약 문제 등) 사유 없는 500 대신 화면에 표시 가능한 메시지를
+      // 준다. 사용자가 입력을 고쳐 될 문제가 아니므로 재시도/문의를 안내한다.
+      log.warn("외부 링크 영상 저장 실패: academyId={}, provider={}",
+          academy.getAcademyId(), resolved.provider(), e);
+      throw badRequest("영상 링크를 저장하지 못했습니다. 잠시 후 다시 시도하거나 관리자에게 문의해 주세요.");
+    }
     return AcademyVideoResponse.of(saved, academy.getSlug());
   }
 

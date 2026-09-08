@@ -606,6 +606,19 @@ class AcademyVideoServiceTest {
   }
 
   @Test
+  @DisplayName("given save 가 DB 제약으로 거부될 때 when 외부 링크 등록 then 사유 없는 500 대신 표시 가능한 400 메시지")
+  void registerExternalLink_maps_data_integrity_violation_to_message() {
+    when(academyVideoRepository.countByAcademy_AcademyId(100L)).thenReturn(0L);
+    when(academyVideoRepository.save(any(AcademyVideo.class)))
+        .thenThrow(new org.springframework.dao.DataIntegrityViolationException("check constraint"));
+
+    assertThatThrownBy(() -> service.registerExternalLink(
+        principal, "https://naver.me/F4WnDovq", "제목", "LESSON"))
+        .isInstanceOf(VideoUploadRejectedException.class)
+        .hasMessageContaining("저장하지 못했습니다");
+  }
+
+  @Test
   @DisplayName("given 외부 링크 영상 when 삭제 then tombstone 없이 행을 직접 삭제한다")
   void delete_external_link_hard_deletes_row() {
     AcademyVideo external = AcademyVideo.externalLink(

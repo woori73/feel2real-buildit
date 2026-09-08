@@ -373,10 +373,21 @@
   }
 
   async function errorMessage(res, fallback) {
+    let raw = '';
     try {
-      const body = await res.json();
-      if (body && body.message) return body.message;
-    } catch (_) { /* JSON 오류가 아니면 기본 문구를 사용한다. */ }
+      raw = await res.text();
+    } catch (_) { return fallback; }
+    if (!raw) return fallback;
+    // 핸들러에 따라 {"message": "..."} JSON 또는 평문 사유를 준다. 둘 다 화면에 그대로 보여준다.
+    try {
+      const body = JSON.parse(raw);
+      if (body && typeof body.message === 'string' && body.message) return body.message;
+      if (typeof body === 'string' && body) return body;
+    } catch (_) {
+      // JSON 이 아니면 평문 사유일 수 있다. HTML 오류 페이지·과도하게 긴 본문은 fallback.
+      const text = raw.trim();
+      if (text && text.length <= 200 && text[0] !== '<') return text;
+    }
     return fallback;
   }
 
