@@ -19,6 +19,10 @@
   var HANDLE = root.getAttribute('data-handle') || 'eduholic';
   var SOURCES_API = '/api/academies/' + encodeURIComponent(HANDLE)
     + '/midterm-campaign/wiki-sources';
+  // Phase 4e — 상단 Showcase: 서버가 실제 Wiki 자료 HTML 에서 bounded parsing 으로 뽑은 학교별
+  // 시험범위 텍스트(lesson / 문법 포인트 / 예문). 비면 기존 iframe hero 로 폴백.
+  var SHOWCASE_API = '/api/academies/' + encodeURIComponent(HANDLE)
+    + '/midterm-campaign/showcase';
   // Phase 4c — (학교, 학년, 역할) 로 연결된 학교·학년 현장 영상. 서버가 이미 visible + READY +
   // ownership 을 판정해 내려준다. 없으면 FRAME 은 자료 → 분석 흐름 그대로.
   var LIVE_VIDEOS_API = '/api/academies/' + encodeURIComponent(HANDLE)
@@ -57,6 +61,7 @@
   var TWIN_VIEW_MS = 4500;            // DIGITAL_TWIN 내부 crop 전환 간격.
   var TWIN_VIEWS = 3;
   var VIDEO_MS = 9000;               // video scene(STUDENT_STUDY / LESSON_INTERACTION / AMBIENT) 표시 시간. 영상은 loop.
+  var SHOWCASE_MS = 7000;            // 상단 Showcase 학교 scene 표시 시간.
 
   var reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -74,17 +79,26 @@
     })
     .then(function (payload) {
       var sources = Array.isArray(payload) ? payload : [];
-      render(latestSource(sources));
-      // LIVE collection = 전체 exposed 자료를 (school, grade) FRAME 으로. hero 도 자기 학교
-      // FRAME 에 자연스럽게 포함된다(Shopify featured product 가 collection 에도 있는 것과 같다).
+      // showcase(상단) 는 실패해도 자료/영상 흐름을 막지 않는다 — 없으면 iframe hero 로 폴백.
+      showcaseScenes().then(function (scenes) {
+        render(latestSource(sources), scenes);
+      });
       // 영상(specific / ambient)은 실패해도 자료 흐름을 막지 않는다 — 없으면 MATERIAL → 분석 그대로.
       Promise.all([ambientVideos(), liveVideos()]).then(function (r) {
         renderLiveCollection(sources, r[0], r[1]);
       });
     })
     .catch(function () {
-      render(null);
+      render(null, []);
     });
+
+  /** 서버가 Wiki HTML 에서 추출한 학교별 시험범위 scene. 실패/미설정 시 []. */
+  function showcaseScenes() {
+    return fetch(SHOWCASE_API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) { return Array.isArray(list) ? list : []; })
+      .catch(function () { return []; });
+  }
 
   function el(tag, className, text) {
     var node = document.createElement(tag);
@@ -142,25 +156,140 @@
     return topbar;
   }
 
-  function render(source) {
+  function render(source, scenes) {
+    scenes = Array.isArray(scenes) ? scenes.filter(function (s) { return s && s.school; }) : [];
+    var hasHero = !!source || scenes.length > 0;
+
     root.innerHTML = '';
     root.appendChild(renderTopbar());
 
     var main = el('main', 'mt-main');
-    if (source) main.classList.add('mt-main--feature');
+    if (hasHero) main.classList.add('mt-main--feature');
 
     var intro = el('div', 'mt-intro');
-    if (source) {
+    if (source && !scenes.length) {
       var meta = metadata(source);
       if (meta) intro.appendChild(el('p', 'midterm-feature__meta', meta));
     }
-    intro.appendChild(el('h1', 'mt-title', source ? TITLE : SEASON));
-    if (source) intro.appendChild(el('p', 'mt-note', NOTE));
+    intro.appendChild(el('h1', 'mt-title', hasHero ? TITLE : SEASON));
+    if (hasHero) intro.appendChild(el('p', 'mt-note', NOTE));
     main.appendChild(intro);
 
-    if (source) main.appendChild(renderFeature(source));
+    if (scenes.length) {
+      main.appendChild(renderShowcase(scenes));         // Phase 4e — 학교별 시험범위 rotation
+    } else if (source) {
+      main.appendChild(renderFeature(source));          // 폴백 — 기존 iframe hero
+    }
 
     root.appendChild(main);
+  }
+
+  /* ── 상단 Showcase — 학교별 시험범위(Wiki 추출 텍스트) rotation ────────────── */
+
+  function chip(text) {
+    return el('span', 'midterm-showcase__chip', text);
+  }
+
+  function renderShowcaseScene(scene) {
+    var card = el('div', 'midterm-showcase__scene');
+
+    var id = el('div', 'midterm-showcase__id');
+    var school = String(scene.school || '').trim();
+    id.appendChild(el('span', 'midterm-showcase__school',
+      /(중학교|고등학교|중$|고$|초등학교)/.test(school) ? school : school + '학교'));
+    var gl = gradeLabel(scene.grade);
+    var right = [gl, String(scene.examLabel || '').trim()].filter(Boolean).join(' · ');
+    if (right) id.appendChild(el('span', 'midterm-showcase__exam', right));
+    card.appendChild(id);
+
+    var body = el('div', 'midterm-showcase__body');
+    var lesson = String(scene.lesson || '').trim();
+    if (lesson) body.appendChild(el('p', 'midterm-showcase__lesson', lesson));
+
+    var grammar = Array.isArray(scene.grammarPoints) ? scene.grammarPoints.filter(Boolean) : [];
+    var sentences = Array.isArray(scene.sampleSentences) ? scene.sampleSentences.filter(Boolean) : [];
+
+    if (grammar.length) {
+      body.appendChild(el('p', 'midterm-showcase__label', '핵심 문법'));
+      var chips = el('div', 'midterm-showcase__chips');
+      grammar.slice(0, 3).forEach(function (g) { chips.appendChild(chip(g)); });
+      body.appendChild(chips);
+    }
+    if (sentences.length) {
+      body.appendChild(el('p', 'midterm-showcase__label', '핵심 문장'));
+      var list = el('div', 'midterm-showcase__sentences');
+      sentences.slice(0, 3).forEach(function (s) {
+        list.appendChild(el('p', 'midterm-showcase__sentence', s));
+      });
+      body.appendChild(list);
+    }
+    if (!lesson && !grammar.length && !sentences.length) {
+      body.appendChild(el('p', 'midterm-showcase__pending', '시험범위 자료 준비 중'));
+    }
+    card.appendChild(body);
+    card.appendChild(el('p', 'midterm-showcase__foot', '실제 학교 시험범위 자료 기반'));
+    return card;
+  }
+
+  function renderShowcase(scenes) {
+    var section = el('section', 'midterm-showcase');
+    section.setAttribute('aria-label', '학교별 중간고사 시험범위');
+
+    var surface = el('div', 'midterm-showcase__surface');
+    var built = scenes.map(function (scene, i) {
+      var card = renderShowcaseScene(scene);
+      if (i === 0) card.classList.add('is-active');
+      surface.appendChild(card);
+      return card;
+    });
+    section.appendChild(surface);
+
+    if (built.length > 1) {
+      var dots = el('div', 'midterm-showcase__dots');
+      dots.setAttribute('aria-hidden', 'true');
+      built.forEach(function (_, i) {
+        dots.appendChild(el('span', 'midterm-showcase__dot' + (i === 0 ? ' is-on' : '')));
+      });
+      section.appendChild(dots);
+      wireShowcaseRotation(section, built);
+    }
+    return section;
+  }
+
+  /** 학교 scene 자동 순환. 뷰포트 밖이면 정지. reduced-motion 이면 첫 scene 정적. */
+  function wireShowcaseRotation(section, cards) {
+    var timer = null;
+    var active = false;
+    var index = 0;
+
+    function show(i) {
+      index = ((i % cards.length) + cards.length) % cards.length;
+      cards.forEach(function (c, ci) { c.classList.toggle('is-active', ci === index); });
+      var dots = section.querySelectorAll('.midterm-showcase__dot');
+      dots.forEach(function (d, di) { d.classList.toggle('is-on', di === index); });
+    }
+    function next() {
+      if (!active) return;
+      show(index + 1);
+      timer = setTimeout(next, SHOWCASE_MS);
+    }
+    function play() {
+      if (active || reduceMotion) return;
+      active = true;
+      timer = setTimeout(next, SHOWCASE_MS);
+    }
+    function pause() {
+      active = false;
+      clearTimeout(timer);
+      timer = null;
+    }
+
+    if (reduceMotion || !hasIO) return;
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) play(); else pause();
+      });
+    }, { threshold: 0.25 }).observe(section);
   }
 
   function renderFeature(source) {

@@ -86,8 +86,8 @@ class MidtermLiveTemplateContractTest {
   void publicPage_zeroSourcesLeavesOnlyShortSeasonScreen() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
 
-    assertThat(js).contains("render(null)");
-    assertThat(js).contains("if (source) main.appendChild(renderFeature(source))");
+    assertThat(js).contains("render(null, [])");                  // 자료·showcase 모두 없음
+    assertThat(js).contains("main.appendChild(renderFeature(source))");   // showcase 없을 때 iframe 폴백
     assertThat(js).contains("2026 2학기 중간고사");
     assertThat(js).doesNotContain("placeholder");
     assertThat(js).doesNotContain("fake");
@@ -452,5 +452,85 @@ class MidtermLiveTemplateContractTest {
       assertThat(svc).doesNotContain("featuredLessonIds");
       assertThat(svc).doesNotContain("mediaVideoId");
     }
+  }
+
+  /** Phase 4e — 상단 Showcase = 학교별 시험범위(서버가 Wiki HTML 에서 bounded 추출한 텍스트)
+   *  rotation. transform: scale 로 문서를 축소하지 않는다. 학교/학년/시험 identity 항상 표시. */
+  @Test
+  void showcase_isSchoolRotationFromExtractedWikiText_notScaledDocument() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String css = read("static/css/eduholic_midterm_2026.css");
+
+    // 전용 read-only endpoint 에서 서버가 추출한 scene 만 받는다.
+    assertThat(js).contains("/midterm-campaign/showcase");
+    assertThat(js).contains("function showcaseScenes(");
+    assertThat(js).contains("function renderShowcase(");
+
+    // 학교/학년/시험 identity 는 각 scene 상단에 항상.
+    assertThat(js).contains("midterm-showcase__school");
+    assertThat(js).contains("midterm-showcase__exam");
+    assertThat(js).contains("scene.grammarPoints");
+    assertThat(js).contains("scene.sampleSentences");
+    assertThat(js).contains("시험범위 자료 준비 중");   // fallback
+
+    // rotation — 하단 LIVE 처럼 offscreen pause / reduced-motion.
+    assertThat(js).contains("function wireShowcaseRotation(");
+    assertThat(js).contains("IntersectionObserver");
+    assertThat(js).contains("reduceMotion");
+
+    // 원본 문서를 iframe 으로 넣거나 scale() 로 축소하지 않는다 — 실제 text layout.
+    assertThat(js).doesNotContain("midterm-showcase__document");
+    assertThat(css).contains(".midterm-showcase__surface");
+    assertThat(css).containsPattern("\\.midterm-showcase__surface\\s*\\{[^}]*height:[^;]*svh");  // responsive height
+    assertThat(css).doesNotContainPattern("\\.midterm-showcase[\\s\\S]{0,400}transform:\\s*scale");
+
+    // 추출은 서버(jsoup)에서만 — 프런트가 원본 HTML 을 파싱하지 않는다.
+    assertThat(js).doesNotContain("DOMParser");
+
+    // reduced-motion 정책.
+    assertThat(css).contains(".midterm-showcase__scene:not(.is-active)");
+  }
+
+  /** Phase 4e §4 — 시험범위를 AI/검색/추측으로 만들지 않는다. 서버 추출은 Wiki HTML 파싱만. */
+  @Test
+  void showcaseExtractor_parsesOnly_noNetworkNoGuess() throws Exception {
+    String ext = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/midtermcampaign/service/MidtermShowcaseExtractor.java"));
+    assertThat(ext).contains("Jsoup.parse");
+    assertThat(ext).doesNotContain("Jsoup.connect");
+    assertThat(ext).doesNotContain("HttpClient");
+    assertThat(ext).doesNotContain("openai");
+    assertThat(ext).doesNotContain("WebSearch");
+    String svc = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/midtermcampaign/service/MidtermShowcaseService.java"));
+    assertThat(svc).doesNotContain("Jsoup.connect");
+    assertThat(svc).contains("gateway.fetchHtml");   // 이미 인가된 Wiki HTML 만
+  }
+
+  /** Phase 4e §10~12 — 영상 용도 "용도 지정 안 함"(NONE). NULL 재사용 아님, LIVE 연결 독립. */
+  @Test
+  void videoPurpose_hasExplicitNone_keptIndependentFromLive() throws Exception {
+    String enumSrc = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/entity/AcademyVideoPurpose.java"));
+    assertThat(enumSrc).contains("LESSON,");
+    assertThat(enumSrc).contains("NONE");
+    assertThat(enumSrc.lastIndexOf("NONE")).isGreaterThan(enumSrc.lastIndexOf("LESSON,"));
+
+    String svc = Files.readString(Path.of(
+        "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoService.java"));
+    // 빈 값은 여전히 거부(새 null 유입 차단 유지) — NONE 은 명시적 선택이라 통과.
+    assertThat(svc).contains("purposeRaw.isBlank()");
+    assertThat(svc).contains("DIRECTOR, LESSON, NONE");
+    // updatePurpose 는 lesson_products / builderDraft 를 건드리지 않는다.
+    assertThat(svc).doesNotContain("lessonProductRepository");
+
+    String videoJs = read("static/js/tutor_academy_videos.js");
+    assertThat(videoJs).contains("value=\"NONE\"");
+    assertThat(videoJs).contains("용도 지정 안 함");
+    assertThat(videoJs).contains("liveUsageLabels");
+    assertThat(videoJs).contains("내신 LIVE에서 연결");
+
+    String videoHtml = read("templates/tutor/tutor_academy_videos.html");
+    assertThat(videoHtml).contains("value=\"NONE\"");
   }
 }

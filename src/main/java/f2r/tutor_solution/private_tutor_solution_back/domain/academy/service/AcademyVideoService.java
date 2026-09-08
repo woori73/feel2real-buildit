@@ -69,6 +69,7 @@ public class AcademyVideoService {
   private final AcademyVideoOptimizationJobRepository optimizationJobRepository;
   private final LessonMediaReferenceGuard lessonMediaReferenceGuard;
   private final AcademyVideoCleanupTransactions cleanupTransactions;
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup liveVideoUsageLookup;
   private final FileStorage fileStorage;
   private final VideoTranscoder videoTranscoder;
 
@@ -83,6 +84,7 @@ public class AcademyVideoService {
       AcademyVideoOptimizationJobRepository optimizationJobRepository,
       LessonMediaReferenceGuard lessonMediaReferenceGuard,
       AcademyVideoCleanupTransactions cleanupTransactions,
+      f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermLiveVideoUsageLookup liveVideoUsageLookup,
       FileStorage fileStorage,
       VideoTranscoder videoTranscoder,
       @Value("${app.video.max-duration-sec:60}") int maxDurationSec,
@@ -94,6 +96,7 @@ public class AcademyVideoService {
     this.optimizationJobRepository = optimizationJobRepository;
     this.lessonMediaReferenceGuard = lessonMediaReferenceGuard;
     this.cleanupTransactions = cleanupTransactions;
+    this.liveVideoUsageLookup = liveVideoUsageLookup;
     this.fileStorage = fileStorage;
     this.videoTranscoder = videoTranscoder;
     this.maxDurationSec = maxDurationSec;
@@ -197,16 +200,19 @@ public class AcademyVideoService {
     List<AcademyVideo> videos = academyVideoRepository
         .findByAcademy_AcademyIdAndLifecycleStatusOrderByCreatedAtDesc(
             academy.getAcademyId(), VideoLifecycleStatus.READY);
+    List<Long> videoIds = videos.stream().map(AcademyVideo::getVideoId).toList();
     Map<Long, VideoOptimizationStatus> optimizationByVideo = videos.isEmpty()
             ? Map.of()
             : optimizationJobRepository
-                .findByVideo_VideoIdIn(videos.stream().map(AcademyVideo::getVideoId).toList())
+                .findByVideo_VideoIdIn(videoIds)
                 .stream()
                 .collect(Collectors.toMap(job -> job.getVideo().getVideoId(),
                     job -> job.getStatus(), (left, right) -> left));
+    Map<Long, List<String>> liveUsage = liveVideoUsageLookup.labelsByVideoId(videoIds);
     return videos.stream()
         .map(video -> AcademyVideoResponse.of(
-            video, academy.getSlug(), optimizationByVideo.get(video.getVideoId())))
+            video, academy.getSlug(), optimizationByVideo.get(video.getVideoId()),
+            liveUsage.getOrDefault(video.getVideoId(), List.of())))
         .toList();
   }
 
@@ -331,19 +337,20 @@ public class AcademyVideoService {
   }
 
   /**
-   * Phase 3부터 purpose는 항상 필수다 — 신규 업로드도, 기존 영상의 용도 재지정도 빈 값을
-   * "용도 미상"으로 조용히 받아주지 않는다(과거엔 이게 legacy NULL 행이 계속 새로 생기는
-   * 구멍이었다). {@code purpose IS NULL} 레거시 행은 오직 이 컬럼 도입 이전(Phase 1) 업로드로만
-   * 존재해야 하고, 그 행들도 이 메서드를 거쳐 재지정되면 다시는 NULL로 돌아가지 않는다.
+   * Phase 3부터 purpose는 항상 <b>명시적 선택</b>이다 — 빈 값을 "용도 미상"으로 조용히 받아주지
+   * 않는다(과거엔 이게 legacy NULL 행이 계속 새로 생기는 구멍이었다). Phase 4e부터 유효한
+   * 선택은 {@code DIRECTOR | LESSON | NONE} 세 가지다. {@code NONE}("용도 지정 안 함")은
+   * 운영자가 명시적으로 고른 값이라 이 게이트를 통과하며, 레거시 {@code purpose IS NULL}과는
+   * 구분된다(null은 여전히 "이 컬럼 도입 이전 업로드"만을 뜻한다).
    */
   private static AcademyVideoPurpose parsePurposeRequired(String purposeRaw) {
     if (purposeRaw == null || purposeRaw.isBlank()) {
-      throw badRequest("영상 용도(대표 원장 소개 영상 또는 수업 영상)를 선택해 주세요.");
+      throw badRequest("영상 용도(수업 영상 · 대표 원장 소개 영상 · 용도 지정 안 함)를 선택해 주세요.");
     }
     try {
       return AcademyVideoPurpose.valueOf(purposeRaw.trim().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
-      throw badRequest("영상 용도는 DIRECTOR 또는 LESSON만 가능합니다.");
+      throw badRequest("영상 용도는 DIRECTOR, LESSON, NONE만 가능합니다.");
     }
   }
 
