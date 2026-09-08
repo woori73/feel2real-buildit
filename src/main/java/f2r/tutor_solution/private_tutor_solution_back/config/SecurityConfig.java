@@ -185,7 +185,8 @@ public class SecurityConfig {
             .requestMatchers("/lms/**").authenticated()
 
             // Wiki 랜딩만 공개한다. 자료·문항·Thread 화면은 로그인 회원 전용이다.
-            .requestMatchers("/wiki/**").authenticated()
+            .requestMatchers(request -> request.getServletPath().startsWith("/wiki/"))
+            .authenticated()
 
             // 정적 리소스 + SSR 뷰 모두 public
             .requestMatchers(
