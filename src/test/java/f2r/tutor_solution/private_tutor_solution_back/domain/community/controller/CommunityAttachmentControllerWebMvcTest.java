@@ -111,7 +111,8 @@ class CommunityAttachmentControllerWebMvcTest {
     when(attachmentService.getAttachmentFile(999L)).thenThrow(
         new org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.NOT_FOUND, "no"));
-    mockMvc.perform(get("/api/open-community/attachments/999/file").cookie(token("STUDENT")).andExpect(status().isNotFound());
+    mockMvc.perform(get("/api/open-community/attachments/999/file").cookie(token("STUDENT")))
+        .andExpect(status().isNotFound());
   }
 
   @Test
