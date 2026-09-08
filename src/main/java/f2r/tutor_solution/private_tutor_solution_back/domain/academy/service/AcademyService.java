@@ -121,7 +121,10 @@ public class AcademyService {
       // sec-minilectures 콘텐츠. academy_videos 를 재사용하고, 강의별 제목/학습포인트/대상은
       // JSON 배열 문자열로 이 키에 담는다([{"v":<videoId>,"t":..,"n":..,"g":..}]). 스키마 변경 없음.
       "miniLectures",
-      "miniLecturesSectionTitle");
+      "miniLecturesSectionTitle",
+      // Mobile-first brand/typography tokens. Values are registry IDs or bounded pixel numbers.
+      "typographyPreset", "headingFont", "bodyFont",
+      "logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
@@ -741,6 +744,18 @@ public class AcademyService {
           : MAX_BUILDER_DRAFT_VALUE_LENGTH;
       if (value.length() > maxLength) {
         throw new IllegalArgumentException("Builder draft 값은 " + maxLength + "자 이하로 입력해야 합니다: " + key);
+      }
+      if ("typographyPreset".equals(key) && !value.isBlank()
+          && !Set.of("MODERN", "PREMIUM", "CLEAN", "FRIENDLY", "ACADEMIC").contains(value)) {
+        throw new IllegalArgumentException("등록되지 않은 typography preset입니다.");
+      }
+      if (("headingFont".equals(key) || "bodyFont".equals(key)) && !value.isBlank()
+          && !Set.of("PRETENDARD", "SUIT", "NOTO_SANS_KR", "NOTO_SERIF_KR").contains(value)) {
+        throw new IllegalArgumentException("등록되지 않은 Builder font입니다.");
+      }
+      if (Set.of("logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile").contains(key)
+          && !value.isBlank() && !value.matches("\\d{2,3}")) {
+        throw new IllegalArgumentException("Builder 크기 token은 숫자 px 값이어야 합니다.");
       }
       if ("featuredLessonIds".equals(key) && !value.isBlank()) {
         String[] ids = value.split(",", -1);
