@@ -274,3 +274,9 @@
   text-decoration: none;
 }
 .video-card-external-link:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+.video-link-embed-note { margin-top: 6px; font-size: .78rem; line-height: 1.6; }
+.video-link-embed-note code {
+  background: #eef2fb; color: #33459e; border-radius: 4px;
+  padding: 0 4px; font-size: .92em;
+}

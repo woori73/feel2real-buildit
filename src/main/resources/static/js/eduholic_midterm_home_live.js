@@ -1,16 +1,20 @@
 /* 압구정에듀홀릭 홈페이지 — 「2학기 영어내신」(#sec-featured) 를 "2학기 영어 내신 LIVE" 로 전환한다.
  *
- * 목적(작업지시서 §8~§12):
+ * 목적(작업지시서 §2·§8~§12):
  *  - 섹션 제목/부제를 "2학기 영어 내신 LIVE" 로 바꾸고, 학교 카드를 작은 LIVE window 로 만든다.
- *  - 카드 내부 scene(Wiki 자료 → 출제 경향 분석 → 실제 수업 영상)이 자동으로 바뀐다.
- *  - 출제 경향 데이터는 academy_public.js 가 이미 채운 카드 본문(Digital Twin, /api/analyzes)을
- *    그대로 재사용한다 — 카드마다 재조회하지 않는다(N+1 금지).
+ *  - 카드 내부 scene: 시험범위 Wiki → 최근 시험 출제 경향 → 실제 수업 영상.
+ *    각 단계는 **실제로 서로 다른 데이터가 존재할 때만** 만든다(가짜 scene 금지).
+ *  - 시험범위 Wiki = 캠페인 showcase(서버가 Wiki 자료에서 추출한 이번 학기 시험범위 텍스트).
+ *  - 출제 경향 = academy_public.js 가 이미 채운 카드 본문(출제자 분석) 재사용 — 카드마다
+ *    재조회하지 않는다(N+1 금지).
+ *  - showcase 의 sourceId 가 'final-'(분석 완성본)이면 출제 경향과 사실상 동일 자료이므로
+ *    별도 시험범위 scene 을 만들지 않는다(source identity 비교, §2).
  *
  * 실제 수업 영상 scene 의 소스 (우선순위):
  *  1) 그 학교/학년에 **명시적으로 연결된** 내신 LIVE 영상(midterm_live_video_links) = source of truth.
  *     캠페인 스코프 /live-videos 를 1회만 조회한다(카드마다 fetch 아님). 서버가 visible + READY +
- *     소유 + school/grade 를 이미 판정했다. 외부 링크(URL만)면 iframe embed 없이 CTA 로,
- *     직접 업로드면 인라인 <video> 로 보여준다.
+ *     소유 + school/grade 를 이미 판정했다. 직접 업로드는 인라인 <video>, YouTube·네이버TV 는
+ *     카드 안 embed player, embed 불가한 외부 링크만 "영상 보기" 링크.
  *  2) 명시적 연결이 없으면 academy_public.js 가 넘겨준(F2RAcademyPublicVideos) LESSON 영상 중
  *     파일명이 학교명을 포함하는 것을 fallback 으로 쓴다(#249, 추가 fetch 없음).
  *
@@ -27,8 +31,9 @@
   var EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
   var LANDING_PATH = '/eduholic-midterm-2026.html';
   var MIDTERM_LIVE_URL = '/eduholic-midterm-2026.html';
-  // 캠페인 스코프 1회 조회(카드마다가 아님). 서버가 visible + READY + 소유 + school/grade 를 판정.
+  // 캠페인 스코프 조회 2개(카드마다가 아님 — N+1 아님). 서버가 visible/READY/소유/scope 를 판정.
   var LIVE_VIDEOS_API = '/api/academies/eduholic/midterm-campaign/live-videos';
+  var SHOWCASE_API = '/api/academies/eduholic/midterm-campaign/showcase';
   var SCENE_MS = 4500;
   var schoolVideos = {};        // school → 파일명으로 매칭된 LESSON 영상(fallback, #249)
   var videosReady = false;      // F2RAcademyPublicVideos 색인 완료 여부
@@ -36,14 +41,17 @@
   if (window.location.hostname !== EDUHOLIC_HOST) return;
   if (window.location.pathname === LANDING_PATH) return;
 
-  // school(문자열) → 그 학교에 명시적으로 연결된 내신 LIVE 영상 link 배열(서버 정렬 유지).
-  // null = 아직 미조회, {} = 조회 완료·없음.
+  // school → 명시적으로 연결된 내신 LIVE 영상 link 배열 / 시험범위 showcase scene.
+  // null = 미조회, {} = 조회 완료·없음.
   var liveVideosBySchool = null;
-  var liveVideosRequested = false;
+  var showcaseBySchool = null;
+  var campaignRequested = false;
 
-  function loadLiveVideos(afterLoad) {
-    if (liveVideosRequested) return;
-    liveVideosRequested = true;
+  function loadCampaign(afterLoad) {
+    if (campaignRequested) return;
+    campaignRequested = true;
+    var done = 0;
+    function tick() { if (++done === 2 && typeof afterLoad === 'function') afterLoad(); }
     fetch(LIVE_VIDEOS_API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (list) {
@@ -56,13 +64,42 @@
         liveVideosBySchool = map;
       })
       .catch(function () { liveVideosBySchool = {}; })
-      .then(function () { if (typeof afterLoad === 'function') afterLoad(); });
+      .then(tick);
+    fetch(SHOWCASE_API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) {
+        var map = {};
+        (Array.isArray(list) ? list : []).forEach(function (s) {
+          var k = String(s && s.school || '').trim();
+          if (k && !map[k]) map[k] = s;      // 학교당 첫(대표) scene
+        });
+        showcaseBySchool = map;
+      })
+      .catch(function () { showcaseBySchool = {}; })
+      .then(tick);
   }
 
   /** 그 학교의 대표 LIVE 링크(서버 정렬 sort_order → link_id 의 첫 항목). 없으면 null. */
   function pickLiveLink(school) {
     var list = liveVideosBySchool && liveVideosBySchool[school];
     return list && list.length ? list[0] : null;
+  }
+
+  /** 그 학교의 시험범위 showcase — 실제 추출 내용이 있고 분석 완성본이 아닐 때만(§2). */
+  function pickSyllabus(school) {
+    var s = showcaseBySchool && showcaseBySchool[school];
+    if (!s) return null;
+    if (String(s.sourceId || '').indexOf('final-') === 0) return null;   // 출제 경향과 동일 자료.
+    var lesson = String(s.lesson || '').trim();
+    var grammar = (Array.isArray(s.grammarPoints) ? s.grammarPoints : []).filter(Boolean);
+    var sentences = (Array.isArray(s.sampleSentences) ? s.sampleSentences : []).filter(Boolean);
+    if (!lesson && !grammar.length && !sentences.length) return null;     // 추출 내용 없음 → scene 없음.
+    return { lesson: lesson, grammar: grammar, sentences: sentences, grade: s.grade };
+  }
+
+  function youtubeIdFromEmbed(embedUrl) {
+    var m = String(embedUrl || '').match(/\/embed\/([A-Za-z0-9_-]{6,20})/);
+    return m ? m[1] : null;
   }
 
   function reduceMotion() {
@@ -110,52 +147,96 @@
     return true;
   }
 
+  // 동시에 여러 학교 영상 재생 금지(§3·§14) — 다른 카드의 <video> 는 멈추고 embed 는 src 를 비운다.
   function pauseOtherVideos(active) {
     Array.prototype.slice.call(document.querySelectorAll('#sec-featured .mt-hl-video')).forEach(function (video) {
-      if (video !== active) video.pause();
+      if (video !== active) { try { video.pause(); } catch (e) {} }
+    });
+    Array.prototype.slice.call(document.querySelectorAll('#sec-featured .mt-hl-embed')).forEach(function (frame) {
+      if (frame.getAttribute('src') && frame.getAttribute('src') !== 'about:blank') {
+        frame.setAttribute('src', 'about:blank');
+      }
     });
   }
 
-  // 카드 본문(academy_public.js 가 채움)에서 실제 분석 행을 읽어 scene 배열로 만든다.
+  /**
+   * scene 배열 구성 — 시험범위 Wiki → 출제 경향 → 실제 수업 영상. 각 단계는 실제로 서로 다른
+   * 데이터가 있을 때만 넣는다(§2). 출제 경향 데이터는 academy_public.js 가 이미 채운 카드
+   * 본문의 분석 행에서만 읽는다(재조회 없음).
+   */
   function readScenes(card) {
     var school = (card.getAttribute('data-school') || '').trim();
     var body = card.querySelector('[data-featured-card-body]');
     if (!body) return null;
 
     if (body.querySelector('.featured-schoolcard-loading')) return 'pending';
-    if (body.querySelector('.featured-schoolcard-empty')) {
+    var rows = Array.prototype.slice.call(body.querySelectorAll('.featured-schoolcard-row'));
+    var empty = !!body.querySelector('.featured-schoolcard-empty');
+    if (!rows.length && !empty) return null;
+
+    var scenes = [];
+
+    // 1) 시험범위 Wiki — 캠페인 showcase(추출된 이번 학기 시험범위). 없으면 이 scene 을 만들지 않는다.
+    var syllabus = pickSyllabus(school);
+    if (syllabus) {
+      var lines = [];
+      if (syllabus.lesson) lines.push(syllabus.lesson);
+      if (syllabus.grammar.length) lines.push('핵심 문법 · ' + syllabus.grammar.slice(0, 2).join(' · '));
+      if (!lines.length && syllabus.sentences.length) lines.push(syllabus.sentences[0]);
+      scenes.push({
+        tag: '시험범위', head: school + (syllabus.grade ? ' · ' + gradeText(syllabus.grade) : ''),
+        lines: lines.slice(0, 2),
+        href: MIDTERM_LIVE_URL, hrefLabel: '시험범위 Wiki 보기 →'
+      });
+    }
+
+    // 2) 최근 시험 출제 경향 — academy_public.js 가 채운 분석 행. 없으면 만들지 않는다.
+    if (rows.length) {
+      var countEl = body.querySelector('.featured-schoolcard-count');
+      var count = countEl ? (countEl.textContent.match(/\d+/) || ['0'])[0] : String(rows.length);
+      var firstRow = rows[0].textContent.replace(/[›»]/g, '').trim();
+      var firstLink = rows[0].querySelector('a');
+      var href = firstLink ? firstLink.getAttribute('href') : MIDTERM_LIVE_URL;
+      scenes.push({ tag: '출제 경향', head: school + ' 최근 시험 출제 경향',
+        lines: ['출제자 분석 ' + count + '건', firstRow],
+        href: href, hrefLabel: '분석 보기 →' });
+    }
+
+    // 3) 실제 수업 영상 — 명시적 LIVE 연결(source of truth) 우선, 없으면 파일명 매칭 fallback.
+    //    embed 가능(YouTube / 네이버TV)하면 카드 안 player, 아니면 링크 카드.
+    var liveLink = pickLiveLink(school);
+    if (liveLink && (liveLink.videoUrl || liveLink.embedUrl || liveLink.externalUrl)) {
+      scenes.push(videoScene(school, liveLink));
+    } else if (schoolVideos[school]) {
+      scenes.push({ tag: '수업 영상', head: school + ' 실제 수업', lines: [], video: schoolVideos[school] });
+    }
+
+    if (!scenes.length) {
       return [{ tag: '준비 중', head: school + ' 시험 준비', lines: ['출제 자료를 확인하고 있습니다'] }];
     }
-    var rows = Array.prototype.slice.call(body.querySelectorAll('.featured-schoolcard-row'));
-    if (!rows.length) return null;
-
-    var countEl = body.querySelector('.featured-schoolcard-count');
-    var count = countEl ? (countEl.textContent.match(/\d+/) || ['0'])[0] : String(rows.length);
-    var firstRow = rows[0].textContent.replace(/[›»]/g, '').trim();
-    var firstLink = rows[0].querySelector('a');
-    var href = firstLink ? firstLink.getAttribute('href') : MIDTERM_LIVE_URL;
-    var gradeMatch = firstRow.match(/(\d+)\s*학년/);
-    var gradeLabel = gradeMatch ? gradeMatch[1] + '학년' : '';
-
-    var scenes = [
-      { tag: 'Wiki', head: school + (gradeLabel ? ' · ' + gradeLabel : ''),
-        lines: ['최근 시험 자료', '학교별 시험자료 분석 중'], href: href, hrefLabel: 'Wiki 자료 보기 →' },
-      { tag: '출제 경향', head: school + ' 출제 경향 분석',
-        lines: ['출제자 Digital Twin ' + count + '건', firstRow] }
-    ];
-
-    // 실제 수업 영상 scene — 명시적 LIVE 연결(source of truth) 우선, 없으면 파일명 매칭 fallback.
-    var liveLink = pickLiveLink(school);
-    if (liveLink && liveLink.externalUrl && !liveLink.videoUrl) {
-      // 외부 링크: iframe embed 하지 않고 CTA 로만(§13). 차단 URL 로 카드가 깨지지 않는다.
-      scenes.push({ tag:'실제 수업 영상', head: school + ' 수업 현장', lines: [],
-        href: liveLink.externalUrl, hrefLabel: '영상 보기 →' });
-    } else if (liveLink && liveLink.videoUrl) {
-      scenes.push({ tag:'실제 수업 영상', head: school + ' 수업 현장', lines: [], video: liveLink });
-    } else if (schoolVideos[school]) {
-      scenes.push({ tag:'실제 수업 영상', head: school + ' 수업 현장', lines: [], video: schoolVideos[school] });
-    }
     return scenes;
+  }
+
+  function gradeText(g) {
+    var m = String(g == null ? '' : g).match(/\d+/);
+    return m ? m[0] + '학년' : '';
+  }
+
+  function videoScene(school, link) {
+    if (link.videoUrl) {
+      return { tag: '수업 영상', head: school + ' 실제 수업', lines: [], video: link };
+    }
+    var ytId = link.provider === 'YOUTUBE' ? youtubeIdFromEmbed(link.embedUrl) : null;
+    if (ytId) {
+      return { tag: '수업 영상', head: school + ' 실제 수업', lines: [],
+        embed: 'https://www.youtube-nocookie.com/embed/' + ytId + '?mute=1&playsinline=1&rel=0&modestbranding=1' };
+    }
+    if (link.provider === 'NAVER' && link.embedUrl) {
+      return { tag: '수업 영상', head: school + ' 실제 수업', lines: [],
+        embed: link.embedUrl + (link.embedUrl.indexOf('?') >= 0 ? '&' : '?') + 'autoPlay=false' };
+    }
+    return { tag: '수업 영상', head: school + ' 실제 수업', lines: [],
+      href: link.externalUrl || link.embedUrl, hrefLabel: '영상 보기 →' };
   }
 
   function renderScene(stage, scene) {
@@ -185,6 +266,19 @@
       if (scene.video.thumbnailUrl) video.poster = scene.video.thumbnailUrl;
       video.addEventListener('play', function () { pauseOtherVideos(video); });
       media.appendChild(video); stage.appendChild(media);
+    }
+    if (scene.embed) {
+      // 카드 안 embed player(YouTube / 네이버TV). lazy: 보일 때 data-src → src, 안 보이면 src 비움.
+      var box = document.createElement('div');
+      box.className = 'mt-hl-media';
+      var frame = document.createElement('iframe');
+      frame.className = 'mt-hl-embed';
+      frame.title = '수업 영상';
+      frame.setAttribute('data-src', scene.embed);
+      frame.setAttribute('loading', 'lazy');
+      frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+      frame.setAttribute('allowfullscreen', '');
+      box.appendChild(frame); stage.appendChild(box);
     }
     if (scene.href) {
       var a = document.createElement('a');
@@ -216,11 +310,24 @@
 
     var i = 0;
     renderScene(stage, scenes[i]);
+    // 보이는 scene 의 영상/embed 만 로드/재생하고, 안 보이면 정지한다(§3·§14 — lazy·offscreen pause).
     function prepareVisibleVideo(near) {
       var video = stage.querySelector('.mt-hl-video');
-      if (!video) return;
-      if (!near) { video.pause(); return; }
-      if (!video.getAttribute('src') && video.dataset.src) video.setAttribute('src', video.dataset.src);
+      if (video) {
+        if (!near) { try { video.pause(); } catch (e) {} }
+        else if (!video.getAttribute('src') && video.dataset.src) {
+          video.setAttribute('src', video.dataset.src);
+        }
+      }
+      var frame = stage.querySelector('.mt-hl-embed');
+      if (frame) {
+        if (!near) frame.setAttribute('src', 'about:blank');
+        else if ((!frame.getAttribute('src') || frame.getAttribute('src') === 'about:blank')
+          && frame.dataset.src) {
+          pauseOtherVideos(null);          // 동시 재생 금지 — 다른 카드 영상/embed 정지
+          frame.setAttribute('src', frame.dataset.src);
+        }
+      }
     }
 
     if (reduceMotion() || scenes.length < 2) return;
@@ -277,6 +384,7 @@
       '#sec-featured .mt-hl-link:focus-visible{outline:3px solid #93c5fd;outline-offset:3px;}',
       '#sec-featured .mt-hl-media{width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#090d18;}',
       '#sec-featured .mt-hl-video{display:block;width:100%;height:100%;object-fit:contain;background:#090d18;}',
+      '#sec-featured .mt-hl-embed{display:block;width:100%;height:100%;border:0;background:#090d18;}',
       '@media (prefers-reduced-motion:reduce){#sec-featured .mt-hl-stage{transition:none;}}'
     ].join('');
     document.head.appendChild(style);
@@ -285,9 +393,9 @@
   function start() {
     injectStyle();
     indexSchoolVideos();
-    // 명시적 LIVE 연결은 캠페인 스코프로 1회만 조회한다. 뒤늦게 도착하면 이미 그린 카드도
-    // 표식을 지우고 한 번 더 올려 "실제 수업 영상" scene 을 더한다(초기 1회, 카드마다 fetch 아님).
-    loadLiveVideos(function () {
+    // 시험범위 showcase + 명시적 LIVE 연결을 캠페인 스코프로 각각 1회만 조회한다(카드마다 fetch
+    // 아님). 도착하면 이미 그린 카드도 표식을 지우고 한 번 더 올려 시험범위/영상 scene 을 더한다.
+    loadCampaign(function () {
       Array.prototype.slice
         .call(document.querySelectorAll('#sec-featured [data-featured-card]'))
         .forEach(function (c) { delete c.dataset.mtHomeLive; });

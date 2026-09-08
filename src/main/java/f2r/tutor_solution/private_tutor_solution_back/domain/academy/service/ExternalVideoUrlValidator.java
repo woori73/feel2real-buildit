@@ -30,6 +30,14 @@ public class ExternalVideoUrlValidator {
   private static final Pattern YOUTUBE_PATH_ID =
       Pattern.compile("^/(?:shorts|embed|live|v)/([A-Za-z0-9_-]{6,20})");
 
+  /**
+   * 네이버 TV 클립만 공식 embed 가 있다: {@code tv.naver.com/{v|clip|embed}/<clipNo>} →
+   * {@code https://tv.naver.com/embed/<clipNo>}. clipNo 는 숫자다. naver.me 단축주소와
+   * {@code m.naver.com/shorts}(GUID mediaId) 는 공식 embed 경로가 없어 embed 하지 않는다.
+   */
+  private static final Pattern NAVER_TV_CLIP_NO =
+      Pattern.compile("^/(?:v|clip|embed)/(\\d{1,15})(?:[/?#]|$)");
+
   public record Resolved(
       String normalizedUrl,
       AcademyExternalVideoProvider provider,
@@ -69,10 +77,30 @@ public class ExternalVideoUrlValidator {
       // YouTube 도메인이지만 재생 id 를 못 뽑으면(채널/재생목록 등) embed 하지 않는다.
       return new Resolved(url, AcademyExternalVideoProvider.GENERIC, null);
     }
+    if (isNaverTvHost(host)) {
+      String clipNo = extractNaverTvClipNo(uri);
+      if (clipNo != null) {
+        return new Resolved(url, AcademyExternalVideoProvider.NAVER,
+            "https://tv.naver.com/embed/" + clipNo);
+      }
+      // tv.naver.com 이지만 clip 번호를 못 뽑으면(채널 등) embed 하지 않는다.
+      return new Resolved(url, AcademyExternalVideoProvider.NAVER, null);
+    }
     if (isNaverHost(host)) {
+      // naver.me 단축주소 / m.naver.com/shorts(GUID) 등 — 공식 embed 없음. CTA 로만 노출한다.
       return new Resolved(url, AcademyExternalVideoProvider.NAVER, null);
     }
     return new Resolved(url, AcademyExternalVideoProvider.GENERIC, null);
+  }
+
+  private static boolean isNaverTvHost(String host) {
+    return host.equals("tv.naver.com") || host.equals("m.tv.naver.com");
+  }
+
+  private static String extractNaverTvClipNo(URI uri) {
+    String path = uri.getPath() == null ? "" : uri.getPath();
+    Matcher m = NAVER_TV_CLIP_NO.matcher(path);
+    return m.find() ? m.group(1) : null;
   }
 
   private static boolean isYoutubeHost(String host) {

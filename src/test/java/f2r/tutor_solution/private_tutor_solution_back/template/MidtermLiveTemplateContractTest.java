@@ -178,9 +178,15 @@ class MidtermLiveTemplateContractTest {
     // 출제 경향 데이터는 이미 렌더된 카드 본문에서 읽는다(카드마다 fetch 금지 = N+1 금지).
     assertThat(js).contains("data-featured-card-body");
     assertThat(js).contains("featured-schoolcard-row");
-    // 학교/학년 현장 영상만 캠페인 스코프로 딱 1회 조회한다(카드 수와 무관). 그 외 fetch 없음.
-    assertThat(countOccurrences(js, "fetch(")).isEqualTo(1);
+    // 캠페인 스코프 조회는 정확히 2개(showcase 시험범위 + live-videos). 카드 수와 무관 — N+1 아님.
+    assertThat(countOccurrences(js, "fetch(")).isEqualTo(2);
     assertThat(js).contains("/midterm-campaign/live-videos");
+    assertThat(js).contains("/midterm-campaign/showcase");
+    // §2 — 시험범위 Wiki 와 출제 경향 분석은 서로 다른 소스일 때만 각각 scene 을 만든다.
+    assertThat(js).contains("function pickSyllabus(");
+    assertThat(js).contains("indexOf('final-') === 0");
+    // 카드마다 analyze 재조회 금지(academy_public.js 가 이미 함).
+    assertThat(js).doesNotContain("/api/analyzes");
 
     // 공용 섹션의 다른 부분·상담 신청 버튼·pill CTA·공용 마크업 정본은 건드리지 않는다.
     assertThat(js).doesNotContain("requestConsult");
@@ -635,13 +641,16 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("'DIRECTOR'");
     assertThat(js).doesNotContain("LIVE_VISIBLE");
 
-    // ambient <video> — muted loop playsinline preload=metadata. player chrome / autoplay 속성 없음.
+    // 인라인 <video> — muted playsinline preload=metadata + player controls(autoplay 차단 대비).
+    // loop 하지 않는다: 종료(ended)되면 다음 scene 으로 넘어간다. autoplay 속성이 아니라 engine 이
+    // play() 를 호출한다(정책 우회 없음 — 차단되면 controls 로 재생).
     assertThat(js).contains("video.muted = true");
-    assertThat(js).contains("video.loop = true");
+    assertThat(js).doesNotContain("video.loop = true");
     assertThat(js).contains("video.playsInline = true");
     assertThat(js).contains("video.preload = 'metadata'");
-    assertThat(js).doesNotContain("video.controls");
+    assertThat(js).contains("video.controls = true");
     assertThat(js).doesNotContain(".autoplay = true");
+    assertThat(js).contains("addEventListener('ended'");
 
     // optional scene — 없으면 그냥 없다. 가짜 / 스톡 / 복제 영상 없음.
     // deterministic 배정: specific 없는 FRAME 에만 ambient 를 순서대로, 반복 없이.
@@ -649,9 +658,12 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("data-kind', 'video'");
     assertThat(js).doesNotContain("stock");
 
-    // offscreen + inactive pause, autoplay reject 안전(§10·§19·§20·§21).
-    assertThat(js).contains("function pauseVideos(");
+    // offscreen + inactive pause, autoplay reject 안전(§10·§19·§20·§21). embed(YouTube/네이버TV)도
+    // viewport 밖이면 멈춘다.
+    assertThat(js).contains("function stopAllMedia(");
     assertThat(js).contains("v.pause()");
+    assertThat(js).contains("pauseVideo()");
+    assertThat(js).contains("about:blank");
     assertThat(js).contains("p.catch(function () {})");
 
     // 영상별 LIVE 시작 구간 = 정적 config("id:sec"). 임의 business logic 하드코딩 아님.
@@ -702,10 +714,26 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("!studyClip && !interactionClip && ambientVideo");
     assertThat(js).contains("hasSpecific ? null");
 
-    // 세 종류 video scene 은 Phase 4b <video> 빌더 하나로 — player chrome / autoplay 속성 없음.
+    // link 하나를 종류에 맞는 scene 으로: 직접 업로드 <video> · YouTube 인라인 플레이어 ·
+    // 네이버TV tv.naver.com/embed iframe · embed 불가면 작은 링크 카드(거대한 빈 프레임 아님).
     assertThat(js).contains("function addVideoScene(");
-    assertThat(js).doesNotContain("video.controls");
+    assertThat(js).contains("function addClipScene(");
+    assertThat(js).contains("function addYouTubeScene(");
+    assertThat(js).contains("function addNaverTvScene(");
+    assertThat(js).contains("function addLinkCardScene(");
+    assertThat(js).doesNotContain("data-kind', 'external'");   // 옛 거대 CTA 프레임 제거
+    assertThat(js).contains("YT.PlayerState.ENDED");           // YouTube 종료 → 다음 scene
+    assertThat(js).contains("youtube.com/iframe_api");
+    assertThat(js).contains("video.controls = true");
     assertThat(js).doesNotContain(".autoplay = true");
+
+    // 자동 전환: 영상 재생 중에는 고정 시간(4.5초 등)으로 강제로 넘기지 않는다(§3).
+    assertThat(js).contains("function armAdvance(");
+    assertThat(js).contains("removeEventListener('ended'");
+
+    // reduced-motion: 자동 전환 없이도 dot 으로 직접 scene 을 선택할 수 있어야 한다(§3).
+    assertThat(js).contains("__mtSelectScene");
+    assertThat(js).contains("document.createElement('button')");
 
     // 화면에 역할/카테고리 라벨을 만들지 않는다(§9). 역할명은 내부 상수로만 존재.
     assertThat(js).doesNotContain("학생 학습");

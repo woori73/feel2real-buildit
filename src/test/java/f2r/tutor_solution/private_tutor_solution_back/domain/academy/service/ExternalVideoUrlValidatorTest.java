@@ -22,9 +22,33 @@ class ExternalVideoUrlValidatorTest {
   }
 
   @Test
-  @DisplayName("tv.naver.com → NAVER, embed 없음")
-  void naverTv() {
-    assertThat(validator.validate("https://tv.naver.com/v/12345").provider())
+  @DisplayName("tv.naver.com/v/<clipNo> → NAVER + tv.naver.com/embed 주소")
+  void naverTvClip() {
+    var v = validator.validate("https://tv.naver.com/v/12345");
+    assertThat(v.provider()).isEqualTo(AcademyExternalVideoProvider.NAVER);
+    assertThat(v.embedUrl()).isEqualTo("https://tv.naver.com/embed/12345");
+    assertThat(validator.validate("https://tv.naver.com/clip/98765?query=1").embedUrl())
+        .isEqualTo("https://tv.naver.com/embed/98765");
+    assertThat(validator.validate("https://tv.naver.com/embed/55555?autoPlay=false").embedUrl())
+        .isEqualTo("https://tv.naver.com/embed/55555");
+  }
+
+  @Test
+  @DisplayName("tv.naver.com 채널 등 clip 번호 없음 → NAVER, embed 없음")
+  void naverTvNonClip() {
+    var v = validator.validate("https://tv.naver.com/eduholic");
+    assertThat(v.provider()).isEqualTo(AcademyExternalVideoProvider.NAVER);
+    assertThat(v.embedUrl()).isNull();
+  }
+
+  @Test
+  @DisplayName("naver.me 단축주소 / m.naver.com/shorts(GUID) → NAVER, embed 없음(공식 경로 없음)")
+  void naverShareLinksHaveNoEmbed() {
+    assertThat(validator.validate("https://naver.me/F4WnDovq").embedUrl()).isNull();
+    assertThat(validator.validate(
+        "https://m.naver.com/shorts?mediaId=3B84EA2409259B3619D13D9748298262888E&serviceType=NAVER_TV")
+        .embedUrl()).isNull();
+    assertThat(validator.validate("https://m.naver.com/shorts?mediaId=ABC").provider())
         .isEqualTo(AcademyExternalVideoProvider.NAVER);
   }
 
