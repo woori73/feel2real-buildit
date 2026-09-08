@@ -614,18 +614,41 @@
       startAt: startAt > 0 ? startAt : 0 });
   }
 
-  /** school + grade 정확 일치하는 최신 analyze 의 공개 contentUrl. 없으면 null. */
+  /**
+   * 그 학교 "가장 최근 완료된 시험"의 공개 출제 경향 분석. { url, basis } 또는 null.
+   * 이번 시험 유형(중간/기말)과 같은지가 아니라, 분석 대상 시험이 최근일수록 우선한다
+   * (학년도 > 학기 > 기말/중간). 현재 데이터로는 1학기 기말이 가장 최근이다. semester 는
+   * 관대하게 본다 — 2학기 분석이 아직 없어도 지난 학기 출제 경향은 참고 근거다.
+   * - 자료(Wiki) frame: school + grade 정확 일치.
+   * - 자료 없는(pending) 캠페인 학교 frame: grade 미지정 → 학교만 일치(영어).
+   */
   function twinContentUrl(frame) {
     return analyzesForSchool(frame.school).then(function (list) {
-      var match = list
-        .filter(function (a) {
-          var s = a && a.subject;
-          var englishOk = !s || s.nameEn === 'english' || s.nameKo === '영어';
-          return englishOk && gradeNumber(a.grade) === frame.grade
-            && typeof a.contentUrl === 'string' && a.contentUrl;
-        })
-        .sort(function (a, b) { return timestamp(b) - timestamp(a); })[0];
-      return match ? match.contentUrl : null;
+      var eligible = list.filter(function (a) {
+        var s = a && a.subject;
+        var englishOk = !s || s.nameEn === 'english' || s.nameKo === '영어';
+        var gradeOk = frame.grade == null || gradeNumber(a.grade) === frame.grade;
+        return englishOk && gradeOk && typeof a.contentUrl === 'string' && a.contentUrl;
+      });
+      function examRank(a) {
+        var year = parseInt((String(a.examYear || a.year || '').match(/\d{4}/) || ['0'])[0], 10) || 0;
+        var sem = /2\s*학기/.test(String(a.semester || '')) ? 2
+          : (/1\s*학기/.test(String(a.semester || '')) ? 1 : 0);
+        var type = /기말/.test(String(a.examType || '')) ? 2
+          : (/중간/.test(String(a.examType || '')) ? 1 : 0);
+        return year * 100 + sem * 10 + type;
+      }
+      eligible.sort(function (a, b) {
+        var d = examRank(b) - examRank(a);
+        return d !== 0 ? d : timestamp(b) - timestamp(a);
+      });
+      var match = eligible[0];
+      if (!match) return null;
+      var sem = String(match.semester || '').trim();
+      var typeRaw = String(match.examType || '').trim();
+      var type = /기말/.test(typeRaw) ? '기말고사' : (/중간/.test(typeRaw) ? '중간고사' : typeRaw);
+      var basis = [sem, type].filter(Boolean).join(' ');
+      return { url: match.contentUrl, basis: basis ? basis + ' 분석 기준' : '' };
     });
   }
 
@@ -693,7 +716,8 @@
         return l && (l.role === 'STUDENT_STUDY' || l.role === 'LESSON_INTERACTION');
       });
       var ambientForFrame = hasSpecific ? null : (ambientQueue.shift() || null);
-      // 자료 없는(준비 중) FRAME 에는 영상/analyze 를 붙이지 않는다.
+      // 자료 없는(준비 중) FRAME 에는 학원 ambient 영상을 붙이지 않는다(그 학교 콘텐츠가 아니다).
+      // 단, 그 학교 공개 출제 경향 분석(analyze)은 renderFrame 에서 붙일 수 있다.
       if (frame.pending) { ambientForFrame = null; }
       collection.appendChild(renderFrame(frame, index, ambientForFrame, frameLinks));
     });
@@ -720,61 +744,68 @@
     info.appendChild(sub);
     article.appendChild(info);
 
-    // 자료 없는 캠페인 학교 — "준비 중" 정적 scene 하나만(영상/analyze/scene engine 없음).
+    var scenes = [];
+
     if (frame.pending) {
-      article.classList.add('is-in-view', 'is-pending');
-      var pend = el('div', 'midterm-live__scene is-active');
+      // 자료 없는 캠페인 학교 — "준비 중" scene. MATERIAL / 영상은 없지만, 아래에서 그 학교
+      // 공개 출제 경향 분석(analyze)이 있으면 DIGITAL_TWIN scene 이 추가된다.
+      article.classList.add('is-pending');
+      var pend = el('div', 'midterm-live__scene');
       pend.setAttribute('data-kind', 'pending');
       pend.appendChild(el('p', 'midterm-live__pending', PENDING_TEXT));
       stage.appendChild(pend);
-      return article;
-    }
+      scenes.push({ el: pend, kind: 'pending', ms: MATERIAL_MS, sub: SEASON });
+    } else {
+      // MATERIAL scene(들) — 자료 복제 없이 실제 exposed 자료만.
+      frame.materials.slice(0, MATERIAL_MAX).forEach(function (source, i) {
+        var scene = el('div', 'midterm-live__scene');
+        scene.setAttribute('data-kind', 'material');
+        scene.classList.add('is-role-' + ROLES[i % ROLES.length]);
+        scene.appendChild(safeFrame(source.previewUrl, 'midterm-live__doc', '중간고사 준비 자료'));
+        stage.appendChild(scene);
+        scenes.push({ el: scene, kind: 'material', ms: MATERIAL_MS, sub: SEASON });
+      });
 
-    // MATERIAL scene(들) — 자료 복제 없이 실제 exposed 자료만.
-    var scenes = [];
-    frame.materials.slice(0, MATERIAL_MAX).forEach(function (source, i) {
-      var scene = el('div', 'midterm-live__scene');
-      scene.setAttribute('data-kind', 'material');
-      scene.classList.add('is-role-' + ROLES[i % ROLES.length]);
-      scene.appendChild(safeFrame(source.previewUrl, 'midterm-live__doc', '중간고사 준비 자료'));
-      stage.appendChild(scene);
-      scenes.push({ el: scene, kind: 'material', ms: MATERIAL_MS, sub: SEASON });
-    });
+      // video scene(들) — 우선순위: 그 학교/학년의 specific 영상 > academy ambient > 없음.
+      //   specific STUDENT_STUDY 대표 1개 있으면        → STUDENT_STUDY scene
+      //   specific LESSON_INTERACTION 대표 1개 있으면    → LESSON_INTERACTION scene
+      //   specific 이 하나도 없고 ambient 배정 가능하면  → AMBIENT scene
+      // 역할 이름은 scene 순서 결정용 내부 값일 뿐 화면에 표시하지 않는다. specific 영상은 별도
+      // 시작 offset 이 없으므로 0 부터.
+      var links = Array.isArray(frameLinks) ? frameLinks : [];
+      var studyClip = pickRole(links, 'STUDENT_STUDY');
+      var interactionClip = pickRole(links, 'LESSON_INTERACTION');
+      if (studyClip) {
+        addVideoScene(stage, scenes, studyClip.videoUrl, studyClip.thumbnailUrl, 0);
+      }
+      if (interactionClip) {
+        addVideoScene(stage, scenes, interactionClip.videoUrl, interactionClip.thumbnailUrl, 0);
+      }
+      if (!studyClip && !interactionClip && ambientVideo && ambientVideo.videoUrl) {
+        addVideoScene(stage, scenes, ambientVideo.videoUrl, ambientVideo.thumbnailUrl,
+          AMBIENT_STARTS[ambientVideo.videoId] || 0);
+      }
+    }
     if (scenes.length) scenes[0].el.classList.add('is-active');
 
-    // video scene(들) — 우선순위: 그 학교/학년의 specific 영상 > academy ambient > 없음.
-    //   specific STUDENT_STUDY 대표 1개 있으면        → STUDENT_STUDY scene
-    //   specific LESSON_INTERACTION 대표 1개 있으면    → LESSON_INTERACTION scene
-    //   specific 이 하나도 없고 ambient 배정 가능하면  → AMBIENT scene
-    // 역할 이름은 scene 순서 결정용 내부 값일 뿐 화면에 표시하지 않는다. specific 영상은 별도
-    // 시작 offset 이 없으므로 0 부터.
-    var links = Array.isArray(frameLinks) ? frameLinks : [];
-    var studyClip = pickRole(links, 'STUDENT_STUDY');
-    var interactionClip = pickRole(links, 'LESSON_INTERACTION');
-    if (studyClip) {
-      addVideoScene(stage, scenes, studyClip.videoUrl, studyClip.thumbnailUrl, 0);
-    }
-    if (interactionClip) {
-      addVideoScene(stage, scenes, interactionClip.videoUrl, interactionClip.thumbnailUrl, 0);
-    }
-    if (!studyClip && !interactionClip && ambientVideo && ambientVideo.videoUrl) {
-      addVideoScene(stage, scenes, ambientVideo.videoUrl, ambientVideo.thumbnailUrl,
-        AMBIENT_STARTS[ambientVideo.videoId] || 0);
-    }
-
-    // DIGITAL_TWIN scene — 공개 analyze contentUrl(그 학교 출제 경향 분석). school+grade 정확 일치만.
-    twinContentUrl(frame).then(function (contentUrl) {
-      if (!contentUrl) return;
+    // DIGITAL_TWIN scene — 그 학교 "가장 최근 완료된 시험"의 공개 출제 경향 분석. 자료 있는 frame 은
+    // school+grade 일치, pending frame 은 학교만 일치(twinContentUrl 참조).
+    var TWIN_SUB = '최근 시험 출제 경향 분석';
+    twinContentUrl(frame).then(function (result) {
+      if (!result || !result.url) return;
       var scene = el('div', 'midterm-live__scene');
       scene.setAttribute('data-kind', 'twin');
-      var twin = safeFrame(contentUrl, 'midterm-live__twin', '출제 경향 분석');
+      var twin = safeFrame(result.url, 'midterm-live__twin', TWIN_SUB);
       twin.setAttribute('data-twin-view', '0');
       scene.appendChild(twin);
+      if (result.basis) {
+        scene.appendChild(el('p', 'midterm-live__twin-basis', result.basis));
+      }
       stage.appendChild(scene);
-      scenes.push({ el: scene, kind: 'twin', ms: TWIN_MS, sub: '출제 경향 분석', frame: twin });
+      scenes.push({ el: scene, kind: 'twin', ms: TWIN_MS, sub: TWIN_SUB, frame: twin });
       if (scenes.length === 1) {
         scene.classList.add('is-active');
-        sub.textContent = '출제 경향 분석';
+        sub.textContent = TWIN_SUB;
       }
       renderDots(article, scenes.length);
     });

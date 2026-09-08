@@ -46,6 +46,16 @@ app:
       webhook-url: ${N8N_BUILDIT_WEBHOOK_URL:https://n8n.aitestbed.kr:5678/webhook/buildit-question-generate}
       connect-timeout-ms: ${N8N_BUILDIT_CONNECT_TIMEOUT_MS:5000}
       read-timeout-ms: ${N8N_BUILDIT_READ_TIMEOUT_MS:60000}
+  midterm:
+    # 내신 LIVE 캠페인의 (학교, 학년) 별 "이번에 준비 중인 실제 시험". 명시 안 된 조합은
+    # 캠페인 exam_type(중간고사)만 허용한다. override 는 이 (학교, 학년)만 다른 시험을 준비 중임을
+    # 명시적으로 선언한다 — cross-exam 임의 허용이 아니다(#232 fail-closed). exam 문자열은 실제
+    # Wiki 자료의 exam 과 같아야 노출된다(불일치 시 "시험범위 자료 준비 중" 폴백).
+    # 2026 2학기: 압구정중2·신구중2·신구중3 = 2학기 중간고사(기본), 압구정중3·신사중3 = 2학기 기말고사.
+    exam-scope-overrides:
+      eduholic:
+        - { school: "압구정중", grade: 3, exam: "기말고사" }
+        - { school: "신사중", grade: 3, exam: "기말고사" }
   archived:
     # 삭제 보류/상용 숨김 기능을 소스 복사 없이 단일 REQUEST의 /archived/** alias로 보존한다.
     # 기본은 ADMIN 전용. 완전히 끄려면 enabled=false로 override.

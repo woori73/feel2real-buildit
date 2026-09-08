@@ -56,6 +56,14 @@ details.mtx-collection > .mtx-collection-body { padding: 0 16px 16px; }
 
 .mtx-prep-row { display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; margin-bottom: 6px; align-items: center; }
 
+/* BuildIt Wiki 연결 자료 — 새 자료 등록 폼과 시각적으로 분리. */
+.mtx-wiki-head { background: #f3f6fb; border-color: #d7e0ef; }
+.mtx-wiki-head h3 { color: #1f2b52; }
+.mtx-card.mtx-wiki-src { border-left: 3px solid #1f2b52; }
+.mtx-card.mtx-wiki-src .mtx-check { margin-bottom: 0; }
+.mtx-src-id { font-size: 11.5px; color: #7a7367; margin: 2px 0 10px; font-variant-numeric: tabular-nums; }
+.mtx-divider { height: 1px; background: #e4e1da; margin: 22px 0 14px; }
+
 @media (max-width: 620px) {
   .mtx-row, .mtx-prep-row { grid-template-columns: 1fr; }
 }
