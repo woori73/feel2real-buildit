@@ -155,6 +155,43 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("/api/tutor");
   }
 
+  /**
+   * 홈페이지 「2학기 영어내신」 → "2학기 영어 내신 LIVE" 전환 스크립트(PR #244).
+   * eduholic hostname gate, 추가 fetch 없이 wireFeaturedSchoolCards 결과 재사용,
+   * 공용 섹션 렌더러 정본·상담 CTA·pill CTA 무변경.
+   */
+  @Test
+  void homeLiveScript_transformsFeaturedSectionWithoutTouchingSharedRenderer() throws Exception {
+    String html = read("templates/public/academy_public.html");
+    assertThat(html).contains("/js/eduholic_midterm_home_live.js");
+
+    String js = read("static/js/eduholic_midterm_home_live.js");
+
+    assertThat(js).contains("eduholic.feel2real.co.kr");
+    assertThat(js).contains("/eduholic-midterm-2026.html");
+    assertThat(js).doesNotContain("/problem-generator");
+    assertThat(js).doesNotContain("fetchAuth");
+
+    assertThat(js).contains("2학기 영어 내신 LIVE");
+    assertThat(js).contains("#sec-featured");
+
+    // 데이터는 이미 렌더된 카드 본문에서 읽는다 — 새 API 호출 없음(N+1 금지).
+    assertThat(js).doesNotContain("fetch(");
+    assertThat(js).contains("data-featured-card-body");
+    assertThat(js).contains("featured-schoolcard-row");
+
+    // 공용 섹션의 다른 부분·상담 신청 버튼·pill CTA·공용 마크업 정본은 건드리지 않는다.
+    assertThat(js).doesNotContain("requestConsult");
+    assertThat(js).doesNotContain("featured-cta");
+    assertThat(js).doesNotContain("academy_sections");
+
+    // 자동 scene 순환 = setTimeout 체인, 화면 밖/reduced-motion 정지.
+    assertThat(js).contains("setTimeout");
+    assertThat(js).doesNotContain("setInterval");
+    assertThat(js).contains("IntersectionObserver");
+    assertThat(js).contains("prefers-reduced-motion");
+  }
+
   @Test
   void publicPage_neverLeaksToWorkspace_andPopupCtaDestinationHeld() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
