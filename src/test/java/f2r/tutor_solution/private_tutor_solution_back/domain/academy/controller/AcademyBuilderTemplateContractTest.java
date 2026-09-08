@@ -51,7 +51,7 @@ class AcademyBuilderTemplateContractTest {
             "<script src=\"/js/academy_reveal.js?v=20260901-5\"></script>",
             "<script src=\"/js/academy_world.js?v=20260907-4\"></script>",
             "<script src=\"/js/academy_builder_ai_guide.js?v=20260908-1\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20260908-1\"></script>");
+            "<script src=\"/js/academy_builder.js?v=20260908-2\"></script>");
   }
 
   @Test
@@ -68,8 +68,10 @@ class AcademyBuilderTemplateContractTest {
         .contains("id=\"builderAiGuidePanel\"")
         .contains("id=\"builderAiGuideBody\"")
         .contains("id=\"builderAiGuideSteps\"")
-        // Phase 5B.1: Bildi Sidekick 스테이지(canvas-frame 오버레이)
+        // Bildi는 Preview 밖 collapsed launcher에 mount한다.
         .contains("id=\"builderBildiStage\"")
+        .contains("id=\"builderBildiLauncher\"")
+        .contains("id=\"builderAiGuideToggleLabel\"")
         // Phase 5B.2 Problem 4: World BACK 레이어(실제 하늘)
         .contains("id=\"builderWorldSky\"")
         // 우측 고정 패널이지만 예전에 제거된 rightPanel 배선을 되살리지 않는다.

@@ -6,9 +6,9 @@ const { loadRenderHooks, academyFixture } = require('./helpers/academy_render_ho
  * Phase 5B.1 — Bildi(빌디) Sidekick 배선(실제 academy_builder.js + academy_world.js 실행).
  *
  * 검증:
- *   1) #builderBildiStage + F2RAcademyWorld 있으면 wireAiGuide가 하늘/캐릭터/말풍선을 mount 한다.
- *   2) 켜면 body.bildi-active, 정적 패널은 접힌 채(§3: 캐릭터가 주 UI).
- *   3) 스텝 이동 → Bildi 말풍선 갱신 + step별 하늘 scene 전환(§6).
+ *   1) #builderBildiStage + F2RAcademyWorld 있으면 launcher에 캐릭터만 mount 한다.
+ *   2) ON/COLLAPSED/OPEN 표시 상태는 Guide 진행 상태와 독립적이다.
+ *   3) 스텝 이동 → side panel 갱신 + step별 하늘 scene 전환.
  *   4) 후보 적용은 여전히 PUT/Publish 없이 builderDraft만(§10 안전장치 유지).
  *   5) F2RAcademyWorld 미로드 → 기존 패널 폴백(회귀 없음).
  */
@@ -48,7 +48,7 @@ const IDS = [
   'builderAiGuidePanel', 'builderAiGuideToggle', 'builderAiGuideClose', 'builderAiGuideRestart',
   'builderAiGuidePrev', 'builderAiGuideNext', 'builderAiGuideSkip', 'builderAiGuideSteps',
   'builderAiGuideBody', 'builderAiGuideProgressFill', 'builderComposeTrigger', 'pageContent',
-  'builderBildiStage'
+  'builderBildiStage', 'builderBildiLauncher', 'builderAiGuideToggleLabel', 'builderWorldSky'
 ];
 
 function buildDoc(opts = {}) {
@@ -104,7 +104,7 @@ function loadBildi(opts = {}) {
   return { hooks, doc, fetchCalls };
 }
 
-test('wireAiGuide + #builderBildiStage → 하늘/캐릭터/말풍선이 mount 된다', () => {
+test('wireAiGuide + #builderBildiStage → Preview 밖 launcher에 캐릭터만 mount 된다', () => {
   const { hooks, doc } = loadBildi();
   const academy = academyFixture({ publicPathUrl: '/academies/x' });
   hooks.setPreview(academy);
@@ -112,41 +112,57 @@ test('wireAiGuide + #builderBildiStage → 하늘/캐릭터/말풍선이 mount �
 
   const stage = doc.getElementById('builderBildiStage');
   const classes = stage.children.map((c) => (c.className || ''));
-  assert.ok(classes.some((c) => c.indexOf('world-sky') >= 0), '하늘 레이어 mount');
   assert.ok(classes.some((c) => c.indexOf('bildi') >= 0 && c.indexOf('bubble') < 0), 'Bildi 캐릭터 mount');
-  assert.ok(classes.some((c) => c.indexOf('bildi-bubble') >= 0), '말풍선 mount');
+  assert.equal(classes.some((c) => c.indexOf('bildi-bubble') >= 0), false, 'Preview overlay 말풍선 금지');
 });
 
-test('켜면 body.bildi-active, 정적 패널은 접힌 채(캐릭터가 주 UI)', () => {
+test('ON + COLLAPSED → launcher만 표시, OPEN → side panel 표시', () => {
   const { hooks, doc } = loadBildi();
   const academy = academyFixture({ publicPathUrl: '/academies/x' });
   hooks.setPreview(academy);
   hooks.wireAiGuide(academy);
 
   assert.equal(doc.body.classList.contains('bildi-active'), true);
-  assert.equal(doc.getElementById('builderAiGuidePanel').classList.contains('is-open'), false,
-    'Bildi 모드에서 정적 8-step 패널은 기본으로 열지 않는다');
-  // "단계 목록" 요청 시에만 패널을 편다
+  assert.equal(hooks.getAiGuideUiState().enabled, true);
+  assert.equal(hooks.getAiGuideUiState().panelOpen, false);
+  assert.equal(doc.getElementById('builderBildiLauncher').hidden, false);
   hooks.setAiGuideOpen(true, { panel: true });
   assert.equal(doc.getElementById('builderAiGuidePanel').classList.contains('is-open'), true);
+  assert.equal(doc.getElementById('builderBildiLauncher').hidden, true);
 });
 
-test('스텝 이동 → Bildi 말풍선 갱신 + step별 하늘 scene 전환', () => {
+test('스텝 이동 → side panel 갱신 + step별 하늘 scene 전환', () => {
   const { hooks, doc } = loadBildi();
   const academy = academyFixture({ publicPathUrl: '/academies/x' });
   hooks.setPreview(academy);
   hooks.wireAiGuide(academy);
 
-  const stage = doc.getElementById('builderBildiStage');
-  const sky = stage.children.find((c) => (c.className || '').indexOf('world-sky') >= 0);
-  const bubble = stage.children.find((c) => (c.className || '').indexOf('bildi-bubble') >= 0);
+  const skyHost = doc.getElementById('builderWorldSky');
+  const sky = skyHost.children.find((c) => (c.className || '').indexOf('world-sky') >= 0);
 
   hooks.goAiGuideStep('philosophy'); // sceneForStep('philosophy') === 'clouds'
   assert.equal(sky.getAttribute('data-scene'), 'clouds');
-  assert.match(bubble.children[0].innerHTML, /교육철학|이 학원이 가르치는/);
+  assert.match(doc.getElementById('builderAiGuideBody').innerHTML, /교육철학|이 학원이 가르치는/);
 
   hooks.goAiGuideStep('review'); // 'stars'
   assert.equal(sky.getAttribute('data-scene'), 'stars');
+});
+
+test('OFF → 캐릭터와 panel만 숨기고 Guide current step은 보존, 다시 ON하면 복원', () => {
+  const { hooks, doc } = loadBildi();
+  const academy = academyFixture({ publicPathUrl: '/academies/x' });
+  hooks.setPreview(academy);
+  hooks.wireAiGuide(academy);
+  hooks.goAiGuideStep('philosophy');
+  hooks.setAiGuideEnabled(false);
+  assert.equal(hooks.getAiGuideUiState().enabled, false);
+  assert.equal(hooks.getAiGuideUiState().panelOpen, false);
+  assert.equal(doc.body.classList.contains('bildi-active'), false);
+  assert.equal(doc.getElementById('builderBildiLauncher').hidden, true);
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'philosophy');
+  hooks.setAiGuideEnabled(true);
+  assert.equal(hooks.getAiGuideSession().currentStepId, 'philosophy');
+  assert.equal(doc.getElementById('builderBildiLauncher').hidden, false);
 });
 
 test('후보 적용은 Bildi 경로에서도 PUT/Publish 없이 builderDraft만 바꾼다', async () => {

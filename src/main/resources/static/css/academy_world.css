@@ -328,3 +328,13 @@ body.bildi-active.ai-guide-open .canvas-area { padding-right: calc(var(--ai-guid
   .bildi-bubble { max-width: min(86vw, 320px); min-width: 0; }
   .bildi-bubble-body { max-height: max(200px, calc(100dvh - 234px)); }
 }
+
+
+/* Builder Bildi stage는 Preview overlay가 아니라 전용 collapsed launcher surface다. */
+#builderBildiStage { position:relative;inset:auto;z-index:auto;display:block;width:72px;height:66px;overflow:hidden;pointer-events:none; }
+#builderBildiStage>.world-sky,#builderBildiStage>.bildi-bubble { display:none!important; }
+#builderBildiStage>.bildi { left:4px!important;top:0!important;width:64px;height:64px;transform:none!important; }
+@media (max-width:720px) {
+  #builderBildiStage { width:58px;height:53px; }
+  #builderBildiStage>.bildi { width:52px;height:52px; }
+}
