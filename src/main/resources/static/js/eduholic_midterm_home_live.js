@@ -9,8 +9,8 @@
  *
  * 안전장치:
  *  - hostname gate(eduholic.feel2real.co.kr) — 다른 Academy 공개 페이지에는 절대 실행되지 않는다.
- *  - 공용 섹션 마크업(academy_sections.js)·상담 신청 버튼·pill CTA(eduholic_featured_cta.js)는
- *    건드리지 않는다. #sec-featured 안, .featured-schoolcard 안에서만 동작한다.
+ *  - 공용 섹션 렌더러 정본·상담 신청 버튼·pill CTA(eduholic_featured_cta.js)는 건드리지 않는다.
+ *    #sec-featured 안, .featured-schoolcard 안에서만 동작한다.
  *  - prefers-reduced-motion → 첫 scene 고정. 화면 밖 → 타이머 정지(IntersectionObserver).
  */
 (function () {

@@ -25,7 +25,7 @@
   if (!root) return;
   var HANDLE = root.getAttribute('data-handle') || 'eduholic';
   var API = '/api/academies/' + encodeURIComponent(HANDLE) + '/midterm-campaign';
-  var WIKI_SOURCES_API = API + '/wiki-sources';
+  var WIKI_SRC_URL = API + '/wiki-sources';
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var CONSULT_URL = 'https://eduholic.feel2real.co.kr/';
 
@@ -43,7 +43,7 @@
   Promise.all([
     loadJson(API),
     // wiki-sources 는 부가 데이터 — 어떤 실패도 페이지를 막지 않는다.
-    loadJson(WIKI_SOURCES_API).catch(function () { return []; })
+    loadJson(WIKI_SRC_URL).catch(function () { return []; })
   ])
     .then(function (results) {
       var campaign = results[0];
