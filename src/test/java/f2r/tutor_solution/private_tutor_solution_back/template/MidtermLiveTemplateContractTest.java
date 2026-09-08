@@ -214,7 +214,7 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).contains("mt-kicker");
     assertThat(js).contains("mt-proof");
 
-    // AI Wiki activity 는 별도 fetch 없이 showcase scene(scenes 배열)을 그대로 받는다.
+    // AI Wiki activity 는 별도 fetch 없이 displayScenes 배열을 그대로 받는다.
     assertThat(js).contains("function buildWikiActivity(scenes)");
     assertThat(js).contains("scene.lesson");
     assertThat(js).contains("scene.grammarPoints");
@@ -228,8 +228,8 @@ class MidtermLiveTemplateContractTest {
     assertThat(countOccurrences(js, "setTimeout(next, SHOWCASE_MS)")).isEqualTo(2);   // play + next, activity 아님
     assertThat(js).doesNotContain("setInterval");
 
-    // 자료가 없는 항목은 생략, 아무 것도 없으면 정적 문구(fake 금지).
-    assertThat(js).contains("학교 자료 확인 중");
+    // 자료가 없는 항목은 생략, 아무 것도 없으면 정적 "준비 중" 문구(fake 금지).
+    assertThat(js).contains("학교별 시험자료 준비 중");
     assertThat(js).doesNotContain("fake");
 
     // reduced-motion — activity 단계 애니메이션 정지.
@@ -265,6 +265,48 @@ class MidtermLiveTemplateContractTest {
     assertThat(css).contains("scroll-snap-type: x mandatory");
   }
 
+  /**
+   * 긴급 bugfix(2026-09) — Hero/rotation 의 학교 identity 는 캠페인 대상 학교(정적 config,
+   * data-campaign-schools) 로 고정한다. Showcase API 가 특정 학교 자료만 반환해도 Hero 가
+   * 그 학교로 축소되지 않는다. 자료 없는 학교는 "준비 중" placeholder — 가상 시험범위 생성 없음.
+   */
+  @Test
+  void publicPage_heroAndRotationUseFixedCampaignSchools_notShowcaseApiEcho() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+    String html = read("static/eduholic-midterm-2026.html");
+
+    // 캠페인 대상 학교 = 정적 config(신규 API/DTO 없음). 세 학교가 고정 순서로 들어 있다.
+    assertThat(html).contains("data-campaign-schools=\"압구정중,신구중,신사중\"");
+    assertThat(js).contains("data-campaign-schools");
+    assertThat(js).contains("var CAMPAIGN_SCHOOLS");
+
+    // Hero 제목은 CAMPAIGN_SCHOOLS 우선 — Showcase scene 에서 join 하지 않는다.
+    assertThat(js).contains("function heroSchools(scenes)");
+    assertThat(js).contains("CAMPAIGN_SCHOOLS.length ? CAMPAIGN_SCHOOLS.slice() : uniqueSchools(scenes)");
+    assertThat(js).contains("heroSchools(scenes)");
+    // 옛 방식(uniqueSchools(scenes) 를 곧장 headline 으로) 이 남아 있으면 안 된다.
+    assertThat(js).doesNotContain("var schools = uniqueSchools(scenes);");
+
+    // Showcase / LIVE 는 캠페인 학교 순서로 정렬하고, 자료 없는 학교엔 "준비 중" 카드 1장.
+    assertThat(js).contains("function buildDisplayScenes(");
+    assertThat(js).contains("function withCampaignFrames(");
+    assertThat(js).contains("pending: true");
+    assertThat(js).contains("CAMPAIGN_SCHOOLS.forEach(function (school)");
+
+    // 실제 FRAME 이 0 이면 "준비 중"만으로 섹션을 만들지 않는다(기존 계약 유지).
+    assertThat(js).contains("if (!realFrames.length || !CAMPAIGN_SCHOOLS.length) return realFrames;");
+    assertThat(js).contains("if (!frames.length) return;");
+
+    // "준비 중" scene 은 lesson/문법/문장을 만들어내지 않는다.
+    assertThat(js).contains("학교별 시험자료 준비 중");
+    assertThat(js).doesNotContain("fake");
+    assertThat(js).doesNotContain("placeholder");   // §17 — 더미 filler 금지, "준비 중" 실상태만
+
+    // 자료 없는 FRAME 엔 영상/analyze 를 붙이지 않는다.
+    assertThat(js).contains("if (frame.pending) { ambientForFrame = null; }");
+    assertThat(js).contains("if (frame.pending) {");   // renderFrame 정적 "준비 중" 분기
+  }
+
   @Test
   void publicPage_neverLeaksToWorkspace_andPopupCtaDestinationHeld() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
@@ -272,6 +314,26 @@ class MidtermLiveTemplateContractTest {
     String popup = read("static/js/eduholic_midterm_popup.js");
     assertThat(popup).contains("/eduholic-midterm-2026.html");
     assertThat(popup).doesNotContain("/problem-generator");
+  }
+
+  /**
+   * 긴급 bugfix(2026-09) — "오늘은 그만 보기" dismiss 날짜는 한국 달력(Asia/Seoul) 기준이어야
+   * 한다. toISOString()(UTC) 은 KST 로 자정이 아니라 오전 9시를 경계로 만들어(전날 밤에 닫으면
+   * 다음날 오전까지 안 뜸) 운영자가 "팝업이 안 나온다"고 오해하게 된다.
+   */
+  @Test
+  void popup_dismissDateIsSeoulLocal_notUtc() throws Exception {
+    String js = read("static/js/eduholic_midterm_popup.js");
+
+    assertThat(js).contains("Asia/Seoul");
+    assertThat(js).contains("function seoulDate(");
+    assertThat(js).contains("var today = seoulDate();");
+    // 날짜 계산에 raw toISOString().slice(0, 10) 을 그대로 쓰지 않는다(폴백 제외).
+    assertThat(js).doesNotContain("var today = new Date().toISOString().slice(0, 10);");
+    // 여전히 date-keyed 1일 1회, host/pathname gate 유지.
+    assertThat(js).contains("eduholic-midterm-2026-dismissed-date");
+    assertThat(js).contains("EDUHOLIC_HOST");
+    assertThat(js).contains("LANDING_PATH");
   }
 
   @Test

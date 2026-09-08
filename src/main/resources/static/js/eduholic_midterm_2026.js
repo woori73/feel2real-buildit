@@ -50,11 +50,20 @@
   });
   var HOME_URL = 'https://eduholic.feel2real.co.kr/';
   var SEASON = '2026 2학기 중간고사';
+  var SEASON_EXAM = '중간고사';
   var KICKER = '2026년 2학기 중간고사';
   var LEAD = '20년 이상 현장을 지켜온 박정민 원장의 내신 경험과, 학교별 시험자료를 분석하는 AI Wiki 시스템을 결합합니다.';
   var PROOF = ['20년+ 현장 경험', '학교별 시험자료', 'AI Wiki'];
   var LIVE_TITLE = '학교별 준비 LIVE';
   var SWIPE_HINT = '옆으로 밀어 학교별 준비 보기';
+  var PENDING_TEXT = '학교별 시험자료 준비 중';
+  // 캠페인 대상 학교 = 정적 config(신규 DTO/필드/엔드포인트 없음). Showcase API 가 특정 학교
+  // 자료만 반환해도 Hero / rotation 은 이 목록을 동등하게 고정 표시한다. 자료 유무는 별개 —
+  // 자료가 없는 학교는 "준비 중" 상태로만 표시하고 가상 시험범위를 만들지 않는다(§7).
+  var CAMPAIGN_SCHOOLS = (root.getAttribute('data-campaign-schools') || '')
+    .split(',')
+    .map(function (s) { return s.trim(); })
+    .filter(Boolean);
   var FRAME_MAX = 6;                  // 화면에 배치하는 학교/학년 FRAME 상한.
   var MATERIAL_MAX = 3;               // FRAME 당 MATERIAL scene 상한(자료 복제 금지).
   var ROLES = ['a', 'b', 'c', 'd'];   // collage presentation role (DB taxonomy 아님).
@@ -174,9 +183,47 @@
     return out;
   }
 
+  /** Hero 제목에 표시할 학교 목록 — 캠페인 대상 학교(고정)를 우선한다. 없으면 실제 자료 학교. */
+  function heroSchools(scenes) {
+    return CAMPAIGN_SCHOOLS.length ? CAMPAIGN_SCHOOLS.slice() : uniqueSchools(scenes);
+  }
+
+  /**
+   * 화면에 순환시킬 scene 목록. 캠페인 대상 학교(고정 순서)를 기준으로:
+   *   그 학교의 실제 showcase scene(들)이 있으면 그대로, 없으면 "준비 중" 카드 1장(pending).
+   * 캠페인 목록 밖의 실제 scene 은 뒤에 이어붙인다(자료를 숨기지 않는다).
+   * 캠페인 context 가 없으면(캠페인 미설정/미발행) 실제 scene 만 그대로 쓴다 — 더미 없음.
+   */
+  function buildDisplayScenes(scenes, hasCampaignContent) {
+    if (!CAMPAIGN_SCHOOLS.length || !hasCampaignContent) {
+      return scenes.slice();
+    }
+    var bySchool = {};
+    scenes.forEach(function (s) {
+      var k = String(s.school || '').trim();
+      if (!k) return;
+      (bySchool[k] = bySchool[k] || []).push(s);
+    });
+    var out = [];
+    var used = {};
+    CAMPAIGN_SCHOOLS.forEach(function (school) {
+      used[school] = true;
+      if (bySchool[school] && bySchool[school].length) {
+        bySchool[school].forEach(function (s) { out.push(s); });
+      } else {
+        out.push({ school: school, grade: null, examLabel: SEASON_EXAM, pending: true });
+      }
+    });
+    Object.keys(bySchool).forEach(function (school) {
+      if (!used[school]) bySchool[school].forEach(function (s) { out.push(s); });
+    });
+    return out;
+  }
+
   function render(source, scenes) {
     scenes = Array.isArray(scenes) ? scenes.filter(function (s) { return s && s.school; }) : [];
     var hasHero = !!source || scenes.length > 0;
+    var displayScenes = buildDisplayScenes(scenes, hasHero);
 
     root.innerHTML = '';
     root.appendChild(renderTopbar());
@@ -185,15 +232,15 @@
     if (hasHero) main.classList.add('mt-main--feature');
 
     var intro = el('div', 'mt-intro');
-    if (source && !scenes.length) {
+    if (source && !displayScenes.length) {
       var meta = metadata(source);
       if (meta) intro.appendChild(el('p', 'midterm-feature__meta', meta));
     }
 
     // 첫 화면 브랜드 메시지 — 20년 현장 경험 × 학교별 시험자료 × AI Wiki. 긴 홍보문구가 아니라
-    // 아래 AI Wiki activity 와 결합한다.
+    // 아래 AI Wiki activity 와 결합한다. Hero 학교명 = 캠페인 대상(고정), Showcase 자료 유무와 무관.
     intro.appendChild(el('p', 'mt-kicker', KICKER));
-    var schools = uniqueSchools(scenes);
+    var schools = heroSchools(scenes);
     var headline = (schools.length ? schools.join(' · ') : SEASON) + '\n시험 준비가 시작됐습니다';
     intro.appendChild(el('h1', 'mt-title', headline));
     intro.appendChild(el('p', 'mt-lead', LEAD));
@@ -204,15 +251,15 @@
     });
     intro.appendChild(proof);
 
-    // AI Wiki activity — 실제 Showcase scene 데이터를 재사용(추가 API 호출 없음). 오른쪽 Showcase 와
-    // 동일한 scene index 를 공유한다(독립 rotation timer 없음).
-    var wikiPanel = scenes.length ? buildWikiActivity(scenes) : null;
+    // AI Wiki activity — displayScenes(실제 + "준비 중")를 재사용(추가 API 호출 없음). 오른쪽
+    // Showcase 와 동일한 scene index 를 공유한다(독립 rotation timer 없음).
+    var wikiPanel = displayScenes.length ? buildWikiActivity(displayScenes) : null;
     if (wikiPanel) intro.appendChild(wikiPanel.el);
 
     main.appendChild(intro);
 
-    if (scenes.length) {
-      main.appendChild(renderShowcase(scenes, wikiPanel));  // Phase 4e — 학교별 시험범위 rotation
+    if (displayScenes.length) {
+      main.appendChild(renderShowcase(displayScenes, wikiPanel));  // Phase 4e — 학교별 시험범위 rotation
     } else if (source) {
       main.appendChild(renderFeature(source));          // 폴백 — 기존 iframe hero
     }
@@ -263,13 +310,14 @@
       who.textContent = [school, gradeLabel(scene.grade)].filter(Boolean).join(' · ');
       list.innerHTML = '';
 
-      var hasContent = !!(String(scene.lesson || '').trim()
+      var hasContent = !scene.pending && !!(String(scene.lesson || '').trim()
         || (Array.isArray(scene.grammarPoints) && scene.grammarPoints.filter(Boolean).length)
         || (Array.isArray(scene.sampleSentences) && scene.sampleSentences.filter(Boolean).length));
+      panel.classList.toggle('is-idle', !(school && hasContent));
       if (!school || !hasContent) {
         var idle = el('li', 'mt-wiki__step is-current');
         idle.appendChild(el('span', 'mt-wiki__mark'));
-        idle.appendChild(el('span', 'mt-wiki__text', '학교 자료 확인 중'));
+        idle.appendChild(el('span', 'mt-wiki__text', PENDING_TEXT));
         list.appendChild(idle);
         return;
       }
@@ -358,11 +406,15 @@
       });
       body.appendChild(list);
     }
-    if (!lesson && !grammar.length && !sentences.length) {
+    var pending = !lesson && !grammar.length && !sentences.length;
+    if (pending) {
+      card.classList.add('is-pending');
       body.appendChild(el('p', 'midterm-showcase__pending', '시험범위 자료 준비 중'));
     }
     card.appendChild(body);
-    card.appendChild(el('p', 'midterm-showcase__foot', '실제 학교 시험범위 자료 기반'));
+    if (!pending) {
+      card.appendChild(el('p', 'midterm-showcase__foot', '실제 학교 시험범위 자료 기반'));
+    }
     return card;
   }
 
@@ -577,8 +629,31 @@
     });
   }
 
+  /**
+   * 실제 (school, grade) FRAME 목록에 캠페인 대상 학교(자료 없는 학교) "준비 중" FRAME 을
+   * 더해 캠페인 순서로 정렬한다. 실제 FRAME 이 하나도 없으면(§ 계약) 아무 것도 하지 않는다 —
+   * 더미만으로 섹션을 만들지 않는다.
+   */
+  function withCampaignFrames(realFrames) {
+    if (!realFrames.length || !CAMPAIGN_SCHOOLS.length) return realFrames;
+    var bySchool = {};
+    realFrames.forEach(function (f) { (bySchool[f.school] = bySchool[f.school] || []).push(f); });
+    var out = [];
+    var used = {};
+    CAMPAIGN_SCHOOLS.forEach(function (school) {
+      used[school] = true;
+      if (bySchool[school]) {
+        bySchool[school].forEach(function (f) { out.push(f); });
+      } else {
+        out.push({ school: school, grade: null, gradeLabel: '', materials: [], pending: true });
+      }
+    });
+    realFrames.forEach(function (f) { if (!used[f.school]) out.push(f); });
+    return out.slice(0, FRAME_MAX);
+  }
+
   function renderLiveCollection(sources, ambient, liveLinks) {
-    var frames = resolveFrames(sources);
+    var frames = withCampaignFrames(resolveFrames(sources));
     if (!frames.length) return;
     var videos = Array.isArray(ambient) ? ambient : [];
     var links = Array.isArray(liveLinks) ? liveLinks : [];
@@ -618,6 +693,8 @@
         return l && (l.role === 'STUDENT_STUDY' || l.role === 'LESSON_INTERACTION');
       });
       var ambientForFrame = hasSpecific ? null : (ambientQueue.shift() || null);
+      // 자료 없는(준비 중) FRAME 에는 영상/analyze 를 붙이지 않는다.
+      if (frame.pending) { ambientForFrame = null; }
       collection.appendChild(renderFrame(frame, index, ambientForFrame, frameLinks));
     });
     section.appendChild(collection);
@@ -628,18 +705,30 @@
   function renderFrame(frame, index, ambientVideo, frameLinks) {
     var article = el('article', 'midterm-live__frame');
     article.classList.add('is-role-' + ROLES[index % ROLES.length]);
-    article.setAttribute('aria-label', frame.school + ' ' + frame.gradeLabel + ' 준비 현황');
+    var idLabel = frame.school + (frame.gradeLabel ? ' ' + frame.gradeLabel : '');
+    article.setAttribute('aria-label', idLabel + ' 준비 현황');
 
     // OUTER PRODUCT FRAME(article) → MEDIA STAGE(stage) → SCENE → 실제 media / 아래 작은 product meta.
     var stage = el('div', 'midterm-live__stage');
     article.appendChild(stage);
 
     var info = el('div', 'midterm-live__info');
-    var meta = el('p', 'midterm-live__meta', frame.school + ' · ' + frame.gradeLabel);
+    var meta = el('p', 'midterm-live__meta',
+      frame.school + (frame.gradeLabel ? ' · ' + frame.gradeLabel : ''));
     var sub = el('p', 'midterm-live__sub', SEASON);
     info.appendChild(meta);
     info.appendChild(sub);
     article.appendChild(info);
+
+    // 자료 없는 캠페인 학교 — "준비 중" 정적 scene 하나만(영상/analyze/scene engine 없음).
+    if (frame.pending) {
+      article.classList.add('is-in-view', 'is-pending');
+      var pend = el('div', 'midterm-live__scene is-active');
+      pend.setAttribute('data-kind', 'pending');
+      pend.appendChild(el('p', 'midterm-live__pending', PENDING_TEXT));
+      stage.appendChild(pend);
+      return article;
+    }
 
     // MATERIAL scene(들) — 자료 복제 없이 실제 exposed 자료만.
     var scenes = [];
