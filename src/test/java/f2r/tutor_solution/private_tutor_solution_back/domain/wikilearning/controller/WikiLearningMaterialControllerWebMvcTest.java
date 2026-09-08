@@ -38,7 +38,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@DisplayName("WikiLearningMaterialController — 목록 공개 / 다운로드·업로드 회원 / 관리 ADMIN")
+@DisplayName("WikiLearningMaterialController — 조회·다운로드·업로드 회원 / 관리 ADMIN")
 @WebMvcTest(controllers = WikiLearningMaterialController.class)
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -68,15 +68,14 @@ class WikiLearningMaterialControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 익명 when 목록/상세/미리보기 then 200 (미리보기는 inline+nosniff)")
-  void publicRead_anonymous_ok() throws Exception {
-    mockMvc.perform(get("/api/wiki/learning-materials").param("grade", "2")).andExpect(status().isOk());
-    mockMvc.perform(get("/api/wiki/learning-materials/1")).andExpect(status().isOk());
+  @DisplayName("given 익명 when 목록/상세/미리보기 직접 호출 then 모두 401")
+  void read_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(get("/api/wiki/learning-materials").param("grade", "2"))
+        .andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/wiki/learning-materials/1"))
+        .andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/wiki/learning-materials/1/preview"))
-        .andExpect(status().isOk())
-        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("inline")))
-        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
-        .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("frame-ancestors 'self'")));
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
@@ -84,7 +83,7 @@ class WikiLearningMaterialControllerWebMvcTest {
   void preview_unsupported_type() throws Exception {
     when(service.getPreview(2L)).thenThrow(new org.springframework.web.server.ResponseStatusException(
         org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE, "no"));
-    mockMvc.perform(get("/api/wiki/learning-materials/2/preview"))
+    mockMvc.perform(get("/api/wiki/learning-materials/2/preview").cookie(token("STUDENT")))
         .andExpect(status().isUnsupportedMediaType());
   }
 
