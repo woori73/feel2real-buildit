@@ -29,7 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @WebMvcTest(controllers = WikiMemberOnlySecurityIntegrationTest.ProbeController.class)
 @AutoConfigureMockMvc
-@Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
+@Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class,
+    WikiMemberOnlySecurityIntegrationTest.ProbeController.class})
 @TestPropertySource(properties = {
     "app.jwt.secret=12345678901234567890123456789012",
     "app.jwt.expiration-seconds=86400",
