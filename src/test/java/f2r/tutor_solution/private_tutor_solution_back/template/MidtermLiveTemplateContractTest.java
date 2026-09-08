@@ -93,6 +93,52 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("fake");
   }
 
+  /**
+   * Bugfix — Phase 4e 회귀: showcase 응답과 live/ambient 응답이 독립 Promise 로 경쟁해,
+   * LIVE 가 먼저 append 된 뒤 늦게 온 showcase 가 render() 의 root.innerHTML='' 로 LIVE 를
+   * 지워 "학교별 준비 LIVE" 가 통째로 사라졌다. 초기 렌더를 단일 파이프라인으로 고정한다.
+   */
+  @Test
+  void publicPage_initialRenderIsSinglePipeline_liveNotWipedByLateShowcase() throws Exception {
+    String js = read("static/js/eduholic_midterm_2026.js");
+
+    // showcase / ambient / live 세 helper 를 한 Promise.all 로 모아 순서를 고정한다.
+    assertThat(js).contains("Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])");
+    // render() → renderLiveCollection() 을 그 콜백 안에서 정확히 1회씩, 이 순서로 호출.
+    assertThat(js).containsOnlyOnce("render(latestSource(sources), r[0])");
+    assertThat(js).containsOnlyOnce("renderLiveCollection(sources, r[1], r[2])");
+    int chainIdx = js.indexOf("Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])");
+    int renderIdx = js.indexOf("render(latestSource(sources), r[0])", chainIdx);
+    int liveIdx = js.indexOf("renderLiveCollection(sources, r[1], r[2])", chainIdx);
+    assertThat(renderIdx).isGreaterThan(chainIdx);
+    assertThat(liveIdx).isGreaterThan(renderIdx);   // root 를 비우는 render 가 반드시 먼저
+
+    // showcase / live 가 각자 render 를 부르던 옛 경쟁 경로가 남아 있으면 안 된다.
+    assertThat(js).doesNotContain("showcaseScenes().then(function (scenes) {");
+    assertThat(js).doesNotContain("Promise.all([ambientVideos(), liveVideos()])");
+    // timing workaround 금지.
+    assertThat(js).doesNotContain("setTimeout(function () { renderLiveCollection");
+
+    // 각 helper 는 실패를 [] 로 흡수해 파이프라인을 막지 않는다(부분 실패 내성).
+    assertThat(js).contains("function showcaseScenes()");
+    assertThat(js).contains("function ambientVideos()");
+    assertThat(js).contains("function liveVideos()");
+    assertThat(countOccurrences(js, ".catch(function () { return []; })"))
+        .as("showcase/ambient/live/analyzes helpers all swallow failure to []")
+        .isGreaterThanOrEqualTo(4);
+    // LIVE 렌더가 던져도 이미 그려진 hero/showcase 는 지우지 않는다.
+    assertThat(js).contains("try {");
+    assertThat(js.indexOf("try {")).isLessThan(js.indexOf("renderLiveCollection(sources, r[1], r[2])"));
+  }
+
+  private static int countOccurrences(String haystack, String needle) {
+    int n = 0;
+    for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + needle.length())) {
+      n++;
+    }
+    return n;
+  }
+
   @Test
   void publicPage_keepsPr228SecurityBoundary() throws Exception {
     String js = read("static/js/eduholic_midterm_2026.js");
