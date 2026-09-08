@@ -20,6 +20,8 @@
   var LANDING_PATH = '/eduholic-midterm-2026.html';
   var MIDTERM_LIVE_URL = '/eduholic-midterm-2026.html';
   var SCENE_MS = 4500;
+  var schoolVideos = {};
+  var videosReady = false;
 
   if (window.location.hostname !== EDUHOLIC_HOST) return;
   if (window.location.pathname === LANDING_PATH) return;
@@ -50,6 +52,31 @@
     }
   }
 
+  function normalizedSchool(value) {
+    return String(value || '').replace(/중학교/g, '중').replace(/\s+/g, '').toLowerCase();
+  }
+  function indexSchoolVideos() {
+    var items = window.F2RAcademyPublicVideos;
+    if (!Array.isArray(items)) return false;
+    (items || []).filter(function (v) {
+      return v && v.purpose === 'LESSON' && v.availabilityStatus === 'READY' && v.videoUrl;
+    }).forEach(function (video) {
+      var name = normalizedSchool(video.originalFilename);
+      Array.prototype.slice.call(document.querySelectorAll('#sec-featured [data-featured-card]')).forEach(function (card) {
+        var school = (card.getAttribute('data-school') || '').trim();
+        if (!schoolVideos[school] && name.indexOf(normalizedSchool(school)) >= 0) schoolVideos[school] = video;
+      });
+    });
+    videosReady = true;
+    return true;
+  }
+
+  function pauseOtherVideos(active) {
+    Array.prototype.slice.call(document.querySelectorAll('#sec-featured .mt-hl-video')).forEach(function (video) {
+      if (video !== active) video.pause();
+    });
+  }
+
   // 카드 본문(academy_public.js 가 채움)에서 실제 분석 행을 읽어 scene 배열로 만든다.
   function readScenes(card) {
     var school = (card.getAttribute('data-school') || '').trim();
@@ -71,14 +98,15 @@
     var gradeMatch = firstRow.match(/(\d+)\s*학년/);
     var gradeLabel = gradeMatch ? gradeMatch[1] + '학년' : '';
 
-    return [
-      { tag: '● LIVE', head: school + (gradeLabel ? ' · ' + gradeLabel : ''),
-        lines: ['이번 시험 범위 확인', '학교별 시험자료 분석 중'] },
+    var scenes = [
+      { tag: 'Wiki', head: school + (gradeLabel ? ' · ' + gradeLabel : ''),
+        lines: ['최근 시험 자료', '학교별 시험자료 분석 중'], href: href, hrefLabel: 'Wiki 자료 보기 →' },
       { tag: '출제 경향', head: school + ' 출제 경향 분석',
-        lines: ['출제자 Digital Twin ' + count + '건', firstRow] },
-      { tag: '수업 반영', head: school + ' 수업 준비',
-        lines: ['분석 결과를 수업에 반영합니다'], href: href, hrefLabel: '준비 현황 보기 →' }
+        lines: ['출제자 Digital Twin ' + count + '건', firstRow] }
     ];
+    var video = schoolVideos[school];
+    if (video) scenes.push({ tag:'실제 수업 영상', head:school + ' 수업 현장', lines:[], video:video });
+    return scenes;
   }
 
   function renderScene(stage, scene) {
@@ -97,6 +125,18 @@
       p.textContent = l;
       stage.appendChild(p);
     });
+    if (scene.video) {
+      var media = document.createElement('div');
+      media.className = 'mt-hl-media';
+      var video = document.createElement('video');
+      video.className = 'mt-hl-video';
+      video.controls = true; video.muted = true; video.defaultMuted = true;
+      video.playsInline = true; video.preload = 'none';
+      video.setAttribute('data-src', scene.video.videoUrl);
+      if (scene.video.thumbnailUrl) video.poster = scene.video.thumbnailUrl;
+      video.addEventListener('play', function () { pauseOtherVideos(video); });
+      media.appendChild(video); stage.appendChild(media);
+    }
     if (scene.href) {
       var a = document.createElement('a');
       a.className = 'mt-hl-link';
@@ -127,6 +167,12 @@
 
     var i = 0;
     renderScene(stage, scenes[i]);
+    function prepareVisibleVideo(near) {
+      var video = stage.querySelector('.mt-hl-video');
+      if (!video) return;
+      if (!near) { video.pause(); return; }
+      if (!video.getAttribute('src') && video.dataset.src) video.setAttribute('src', video.dataset.src);
+    }
 
     if (reduceMotion() || scenes.length < 2) return;
 
@@ -138,6 +184,7 @@
       stage.classList.add('is-swap');
       timer = setTimeout(function () {
         renderScene(stage, scenes[i]);
+        prepareVisibleVideo(true);
         stage.classList.remove('is-swap');
         timer = setTimeout(step, SCENE_MS);
       }, 260);
@@ -147,7 +194,7 @@
 
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) { if (e.isIntersecting) start(); else stop(); });
+        entries.forEach(function (e) { if (e.isIntersecting) { prepareVisibleVideo(true); start(); } else { prepareVisibleVideo(false); stop(); } });
       }, { threshold: 0.2 }).observe(card);
     } else {
       start();
@@ -157,6 +204,8 @@
   function scan() {
     if (window.location.hostname !== EDUHOLIC_HOST) return;
     applyHeading();
+    if (!videosReady) indexSchoolVideos();
+    if (!videosReady) return;
     Array.prototype.slice.call(document.querySelectorAll('#sec-featured [data-featured-card]'))
       .forEach(upgradeCard);
   }
@@ -177,6 +226,8 @@
       '#sec-featured .mt-hl-link{margin-top:4px;align-self:flex-start;font-size:12.5px;font-weight:800;',
       '  color:#1d4ed8;text-decoration:none;}',
       '#sec-featured .mt-hl-link:focus-visible{outline:3px solid #93c5fd;outline-offset:3px;}',
+      '#sec-featured .mt-hl-media{width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#090d18;}',
+      '#sec-featured .mt-hl-video{display:block;width:100%;height:100%;object-fit:contain;background:#090d18;}',
       '@media (prefers-reduced-motion:reduce){#sec-featured .mt-hl-stage{transition:none;}}'
     ].join('');
     document.head.appendChild(style);
@@ -184,6 +235,7 @@
 
   function start() {
     injectStyle();
+    indexSchoolVideos();
     scan();
     var pv = document.getElementById('publicView');
     if (pv && window.MutationObserver) {

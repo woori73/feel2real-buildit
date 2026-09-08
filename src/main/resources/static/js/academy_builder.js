@@ -24,6 +24,7 @@
   }
   // 섹션 마크업 정본. 공개 페이지와 같은 모듈을 쓰고 편집 크롬만 ctx가 얹는다.
   const SECTIONS = window.F2RAcademySections;
+  const BRAND = typeof window !== 'undefined' ? window.F2RAcademyBrand : null;
   // 쇼케이스는 지연 평가한다 — 정본 모듈이 소비자와 다른 컨텍스트에 있을 수 있다.
   const BUILDER_CTX = SECTIONS.createBuilderContext({
     showcase: () => window.F2RLessonProductShowcase,
@@ -223,6 +224,7 @@
     wireLessonScheduleToggle();
     wirePreviewSectionSelection();
     wireEditableGuide();
+    wireBrandDesign(preview);
     wireAiGuide(preview);
     wireHeaderSectionApply();
     if (preview && preview.name) toast(`👋 ${preview.name} 빌더에 오신 걸 환영합니다!`, 'fa-graduation-cap');
@@ -371,6 +373,7 @@
         <main class="page"><section id="publicView">${renderPublicPage(academy)}</section></main>
       </div>`;
     SECTIONS.applyImageMediaAspect(pageContent);
+    if (BRAND) BRAND.apply(pageContent.querySelector('#publicView'), preview);
     // Phase 5B.1: 공개 페이지와 같은 staged reveal(F2RReveal)을 프리뷰에도 건다 — Bildi가 섹션에
     // 도착 = 섹션이 뷰포트 진입 = reveal 발화가 자연히 동기화된다(§8). 1회성·reduced-motion 즉시·
     // 3초 failsafe이므로 편집을 방해하지 않는다. 모듈 미로드 시 no-op(콘텐츠는 정적으로 완전 노출).
@@ -4088,6 +4091,8 @@
   // 미로드/reduced-motion → 패널(#builderAiGuidePanel)로 안전하게 폴백(모든 step 동작 동일).
   const WORLD = typeof window !== 'undefined' ? window.F2RAcademyWorld : null;
   let aiGuideSession = null;
+  let brandProposal = null;
+  let brandUndoSnapshot = null;
   let aiGuidePending = null; // { target, candidates: [] } — 현재 스텝의 마지막 추천 결과
   let aiGuideCandidateIndex = 0; // 추천안 캐러셀 — 한 번에 1개만 보여준다(§2). 말풍선 안에 스크롤을 쌓지 않는다.
   let aiGuideError = '';
@@ -4637,6 +4642,14 @@
       applyAiGuideNaming();
     } else if (action === 'style') {
       selectAiGuideStyle(el.dataset.guideValue || '');
+    } else if (action === 'brand-preview') {
+      previewBrandProposal();
+    } else if (action === 'brand-apply') {
+      applyBrandProposal();
+    } else if (action === 'brand-other') {
+      cycleBrandProposal();
+    } else if (action === 'brand-undo') {
+      undoBrandDesign();
     } else if (action === 'recommend') {
       requestAiGuideRecommendations();
     } else if (action === 'apply') {
@@ -4672,10 +4685,64 @@
     if (!chosen) { toast('원하는 느낌을 골라주시거나 직접 적어주세요.', 'fa-circle-info'); return; }
     aiGuideSession.desiredStyle = chosen.slice(0, 200);
     aiGuideSession.tone = chosen.slice(0, 200);
+    brandProposal = BRAND ? BRAND.recommendation(chosen) : null;
+    writeAiGuideSession();
+    renderAiGuide();
+  }
+
+  function currentBrandDraft() {
+    return Object.assign({}, currentPreview && currentPreview.pageSettings && currentPreview.pageSettings.builderDraft || {});
+  }
+  function replaceBrandDraft(next) {
+    if (!currentPreview) return;
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    pageSettings.builderDraft = Object.assign({}, pageSettings.builderDraft || {}, next || {});
+    currentPreview.pageSettings = pageSettings;
+  }
+  function previewBrandProposal() {
+    if (!BRAND || !brandProposal || !currentPreview) return;
+    const draft = BRAND.presetDraft(brandProposal.presetId, currentBrandDraft());
+    const root = document.querySelector('#pageContent #publicView');
+    if (root) BRAND.apply(root, draft);
+    toast('모바일 미리보기에 임시 적용했습니다. 적용을 눌러야 설정에 반영됩니다.', 'fa-mobile-screen');
+  }
+  function applyBrandProposal() {
+    if (!BRAND || !brandProposal || !currentPreview) return;
+    brandUndoSnapshot = currentBrandDraft();
+    replaceBrandDraft(BRAND.presetDraft(brandProposal.presetId, currentBrandDraft()));
+    renderPublicPreview(currentPreview);
+    persistTextChangesAfterApply({});
     aiGuideSession = AI_GUIDE.markCompleted(aiGuideSession, 'style');
     writeAiGuideSession();
+    brandProposal = null;
+    toast('Typography preset을 반영했습니다. 상단 발행 버튼으로 저장하세요.', 'fa-wand-magic-sparkles');
     const nextId = AI_GUIDE.nextStepId('style');
     if (nextId) goAiGuideStep(nextId); else renderAiGuide();
+  }
+  function cycleBrandProposal() {
+    if (!BRAND || !brandProposal) return;
+    const ids = Object.keys(BRAND.PRESETS);
+    const at = ids.indexOf(brandProposal.presetId);
+    const id = ids[(at + 1) % ids.length];
+    brandProposal = { presetId:id, label:BRAND.PRESETS[id].label, description:BRAND.PRESETS[id].description, message:BRAND.PRESETS[id].label + ' 스타일을 제안합니다.' };
+    renderAiGuide();
+  }
+  function undoBrandDesign() {
+    if (!brandUndoSnapshot || !currentPreview) return;
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    pageSettings.builderDraft = Object.assign({}, brandUndoSnapshot);
+    currentPreview.pageSettings = pageSettings;
+    brandUndoSnapshot = null;
+    renderPublicPreview(currentPreview);
+    persistTextChangesAfterApply({});
+    renderAiGuide();
+  }
+  function brandProposalHtml() {
+    if (!brandProposal) return '';
+    return '<div class="ai-guide-candidate"><p><b>' + escapeHtml(brandProposal.label) + '</b><br>' + escapeHtml(brandProposal.message) + '<br><small>' + escapeHtml(brandProposal.description) + '</small></p>'
+      + '<div class="ai-guide-actions"><button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="brand-apply">스타일 적용</button>'
+      + '<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="brand-preview">미리보기</button>'
+      + '<button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="brand-other">다른 느낌 보기</button></div></div>';
   }
 
   async function requestAiGuideRecommendations() {
@@ -4969,7 +5036,9 @@
     return `<div class="ai-guide-question">${escapeHtml(currentAiGuideStep().question)}</div>`
       + `<div class="ai-guide-style-options">${options}</div>`
       + `<input type="text" id="builderAiGuideStyleInput" class="ai-guide-input" style="min-height:auto" maxlength="200" placeholder="예: 전문적인데 너무 딱딱하지 않게" value="${escapeAttr(selected)}">`
-      + `<div class="ai-guide-actions"><button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="style">이 방향으로 시작</button></div>`;
+      + `<div class="ai-guide-actions"><button type="button" class="ai-guide-btn ai-guide-btn-primary" data-guide-action="style">이 방향으로 제안받기</button></div>`
+      + brandProposalHtml()
+      + (brandUndoSnapshot ? `<div class="ai-guide-actions"><button type="button" class="ai-guide-btn ai-guide-btn-ghost" data-guide-action="brand-undo">이전 스타일 되돌리기</button></div>` : '');
   }
 
   function renderAiGuideTextStep(step) {
@@ -5816,6 +5885,42 @@
   }
 
 
+  function wireBrandDesign() {
+    if (!BRAND) return;
+    const pane = document.querySelector('[data-builder-panel-pane="brand"]');
+    if (!pane || pane.dataset.wired === 'true') return;
+    pane.dataset.wired = 'true';
+    const sync = function () {
+      const draft = currentBrandDraft();
+      pane.querySelectorAll('[data-brand-preset]').forEach(function (el) { el.classList.toggle('is-selected', el.dataset.brandPreset === (draft.typographyPreset || 'MODERN')); });
+      pane.querySelectorAll('[data-brand-key]').forEach(function (input) { if (draft[input.dataset.brandKey] != null) input.value = draft[input.dataset.brandKey]; });
+    };
+    pane.addEventListener('click', function (event) {
+      const preset = event.target.closest && event.target.closest('[data-brand-preset]');
+      const font = event.target.closest && event.target.closest('[data-brand-font]');
+      if (!preset && !font) return;
+      brandUndoSnapshot = currentBrandDraft();
+      let next = currentBrandDraft();
+      if (preset) next = BRAND.presetDraft(preset.dataset.brandPreset, next);
+      if (font) next[font.dataset.brandRole === 'body' ? 'bodyFont' : 'headingFont'] = font.dataset.brandFont;
+      replaceBrandDraft(next); renderPublicPreview(currentPreview); persistTextChangesAfterApply({}); sync();
+    });
+    pane.addEventListener('input', function (event) {
+      const input = event.target.closest && event.target.closest('[data-brand-key]');
+      if (!input) return;
+      if (!brandUndoSnapshot) brandUndoSnapshot = currentBrandDraft();
+      const next = {}; next[input.dataset.brandKey] = String(input.value);
+      replaceBrandDraft(next);
+      const output = pane.querySelector('[data-brand-output="'+input.dataset.brandKey+'"]');
+      if (output) output.textContent = input.value + 'px';
+      const root = document.querySelector('#pageContent #publicView');
+      if (root) BRAND.apply(root, currentPreview);
+      persistTextChangesAfterApply({});
+    });
+    BRAND.apply(document.querySelector('#pageContent #publicView'), currentPreview);
+    sync();
+  }
+
   window.F2RAcademyBuilderTestHooks = window.F2RAcademySectionOrderTestHooks = Object.freeze({
     normalizeSectionVisibility,
     normalizeSectionOrder,
@@ -5914,6 +6019,10 @@
     getAiGuideSession: () => aiGuideSession,
     getAiGuidePending: () => aiGuidePending,
     getAiGuideUiState: () => ({ enabled: aiGuideEnabled, panelOpen: aiGuidePanelOpen }),
+    previewBrandProposal,
+    applyBrandProposal,
+    undoBrandDesign,
+    wireBrandDesign,
     // Phase 5B.1b — Bildi Scroll Story waypoint positioning. Bildi 위치는 스크롤 progress에 따라
     // 실제로 이동해야 한다(고정 chatbot 금지). 아래 훅으로 좌표 이동을 직접 검증한다.
     getBildi: () => bildi,
