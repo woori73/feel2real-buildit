@@ -17,6 +17,10 @@ const COLLECTION_JS = fs.readFileSync(
   path.resolve(__dirname, '../../main/resources/static/js/academy_collection.js'), 'utf8');
 const COLLECTION_CSS = fs.readFileSync(
   path.resolve(__dirname, '../../main/resources/static/css/academy_collection.css'), 'utf8');
+const BRAND_CSS = fs.readFileSync(
+  path.resolve(__dirname, '../../main/resources/static/css/academy_brand.css'), 'utf8');
+const EDUHOLIC_FILTER_JS = fs.readFileSync(
+  path.resolve(__dirname, '../../main/resources/static/js/eduholic_actual_class_video_filter.js'), 'utf8');
 
 test('mediaAspectRatio: 세로/가로 영상 비율을 9:16~16:9 로 클램프하고, 모르면 null', () => {
   const s = loadSectionsModule();
@@ -31,6 +35,13 @@ test('mediaAspectRatio: 세로/가로 영상 비율을 9:16~16:9 로 클램프�
   // 모름
   assert.equal(s.mediaAspectRatio(null, null), null);
   assert.equal(s.mediaAspectRatio(0, 100), null);
+});
+
+test('실제 수업 세로 원본 406x720·540x960은 모두 portrait 비율로 보존한다', () => {
+  const s = loadSectionsModule();
+  const ratio = (value) => Number(value.split(' / ')[0]) / 1000;
+  assert.ok(ratio(s.mediaAspectRatio(406, 720)) < 1, '406x720이 landscape로 분류됨');
+  assert.ok(ratio(s.mediaAspectRatio(540, 960)) < 1, '540x960이 landscape로 분류됨');
 });
 
 test('mediaViewportHtml: playable 이면 뷰포트 div + 내부 재생 버튼, 정적이면 div 만', () => {
@@ -113,6 +124,17 @@ test('CSS: 플레이어는 뷰포트를 채우고(inset:0) 원본 비율은 obje
   assert.match(compact, /\.f2r-program-card-media\{[^}]*aspect-ratio:var\(--f2r-media-aspect,16\/10\)/);
   // 재생 트리거 버튼은 뷰포트를 꽉 채운다
   assert.match(compact, /\.f2r-media-play\{[^}]*position:absolute;[^}]*inset:0/);
+});
+
+test('Academy 브랜드 기본 video 규칙이 playback viewport의 크기·비율 계약을 덮어쓰지 않는다', () => {
+  const compactBrand = BRAND_CSS.replace(/\s+/g, '');
+  assert.match(compactBrand,
+    /#publicViewvideo:not\(\.f2r-media-player\)\{[^}]*height:auto;[^}]*aspect-ratio:16\/9;[^}]*object-fit:cover/,
+    '브랜드 기본 16:9 규칙은 collection playback video를 제외해야 한다');
+  assert.doesNotMatch(compactBrand, /#publicViewvideo\{/,
+    'ID specificity의 전역 video 규칙이 f2r-media-player height:100%를 덮어쓰면 안 된다');
+  assert.doesNotMatch(EDUHOLIC_FILTER_JS, /f2r-eduholic-actual-class-fill|object-fit:cover/,
+    '에듀홀릭 runtime style이 실제 수업 영상을 다시 crop하면 안 된다');
 });
 
 test('빌더 캔버스 영상 카드는 재생 트리거 없이 뷰포트만 렌더한다(정적)', () => {
