@@ -1,5 +1,11 @@
 # Academy Builder 페이지 (`/builder`) 설계 노트
 
+> 에듀홀릭 공개 홈페이지의 sec-featured는 공용 학교 카드 renderer를 그대로 사용한다.
+> eduholic_midterm_home_live.js가 에듀홀릭 hostname에서만 midterm_live_video_links의
+> 신구중 3학년 대표 연결(sort order 첫 항목)을 MAIN FEATURE로 덧붙인다. 영상 파일명이나
+> 길이로 추론하지 않으며, 기존 Academy 영상 저장/S3 서빙 URL과 thumbnail을 재사용한다.
+> Builder의 텍스트 편집·섹션 toggle·대표수업 media_video_id 계약에는 영향을 주지 않는다.
+
 > 출처: 2026-07-13 deep-interview (5라운드, 최종 ambiguity ~13%). 원문 스펙: `.omc/specs/deep-interview-academy-builder.md`.
 > 관련: [academy-publish-design.md](academy-publish-design.md)(발행 API 계약), [FLOWS.md](FLOWS.md), [API.md](API.md).
 > 상태: **1차 구현 진행 중**. 착수 전 이 문서 로드.
