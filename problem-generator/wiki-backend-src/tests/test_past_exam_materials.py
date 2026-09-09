@@ -67,7 +67,7 @@ class PastExamMaterialsTest(unittest.TestCase):
                 UploadFile(filename='generated.docx', file=io.BytesIO(b'not-an-exam')),
                 None, '', '', 'PAST_EXAM')
         self.assertEqual(400, raised.exception.status_code)
-        self.assertIn('PDF, HWP, HWPX, HTML, JPG, PNG', raised.exception.detail)
+        self.assertIn('PDF, HWP, HWPX, HTML, MD, JPG, PNG', raised.exception.detail)
 
     def test_hwpx_requires_the_official_container_shape(self):
         invalid = io.BytesIO()

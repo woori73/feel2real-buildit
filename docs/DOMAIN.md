@@ -1191,6 +1191,8 @@ Every user-owned Wiki table is migrated idempotently with a nullable `workspace_
 
 Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.
 
-### exam_material_sets — PAST_EXAM 확장
+### exam_material_sets — PAST_EXAM + AI_WORK_LOG 확장
 
-기존 workspace별 원본 BLOB 저장 계약을 유지한다. `material_type`은 `SCHOOL_PRINT`, `STUDENT_WRONG_NOTE`, `PAST_EXAM`을 구분하고, 기존 행은 core_type에 따라 안전하게 backfill한다. `PAST_EXAM`은 실제 시행된 학교 기출 원본이며 `year`가 시험연도, `uploaded_by`와 `created_at`이 업로더/업로드 시각 provenance다. 같은 학교·학년·학기·시험에서도 연도별·파일별 독립 행을 저장하므로 새 업로드가 이전 기출을 덮어쓰지 않는다. SQLite 시작 migration은 컬럼 추가와 backfill만 수행하며 기존 자료/경로를 변경하지 않는다.
+기존 workspace별 원본 BLOB 저장 계약을 유지한다. `material_type`은 `SCHOOL_PRINT`, `STUDENT_WRONG_NOTE`, `PAST_EXAM`, `AI_WORK_LOG`를 구분하고, 기존 행은 core_type에 따라 안전하게 backfill한다. `PAST_EXAM`은 실제 시행된 학교 기출 원본이며 `year`가 시험연도, `uploaded_by`와 `created_at`이 업로더/업로드 시각 provenance다. 같은 학교·학년·학기·시험에서도 연도별·파일별 독립 행을 저장하므로 새 업로드가 이전 기출을 덮어쓰지 않는다.
+
+`body_text`/`body_format` 컬럼은 HTML/MD/TXT 업로드에서 추출한 본문 원문과 그 포맷(`html`|`markdown`|`text`)을 담는다. `PAST_EXAM` HTML/MD와 `AI_WORK_LOG`(MD/MARKDOWN/TXT/HTML, 파일당 10MB)가 이 컬럼을 채우고, PDF·이미지·HWP(X)는 빈 값으로 둔다. `AI_WORK_LOG`는 Claude/ChatGPT 등이 시험 준비 과정에서 남긴 작업 로그로, FINAL Context의 `ai_work_logs`로 노출되어 다음 세션에서 MCP가 이어서 읽는다. SQLite 시작 migration은 컬럼 추가와 backfill만 수행하며 기존 자료/경로를 변경하지 않는다.

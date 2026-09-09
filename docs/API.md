@@ -3610,10 +3610,12 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 - 관련 코드: `domain/analytics/*`, `config/SiteVisitFilter`. 마이그레이션 `V962`(기본 로그 테이블), `V964~V966`(nullable 추가 → 기존 path backfill → NOT NULL/인덱스).
 
-## Wiki 학교별 실제 기출 원본 (PAST_EXAM)
+## Wiki 학교별 실제 기출 원본 (PAST_EXAM) + AI 작업기록 (AI_WORK_LOG)
 
-- `POST /problem-generator/wiki/api/exam-materials`: 기존 multipart 저장 계약을 재사용한다. `core_type=school_print`, `material_type=PAST_EXAM`, school/grade/year/semester/exam/title/original을 전송한다. 실제 기출은 PDF/HWP/HWPX/HTML/JPG/JPEG/PNG 원본을 허용하며 파일당 30MB 제한을 유지한다. HTML은 같은 origin에서 실행되지 않도록 attachment로만 제공한다.
-- `GET /problem-generator/wiki/api/exam-materials?...&material_type=PAST_EXAM&all_years=true`: 같은 학교·학년·학기·시험의 연도별 실제 기출 목록을 최신 연도순으로 반환한다. 기존 기본 조회는 선택 연도만 반환한다.
-- `GET /problem-generator/wiki/api/exam-materials/{id}/original`, `DELETE /problem-generator/wiki/api/exam-materials/{id}`: 기존 원본 접근·삭제 및 workspace/로그인 권한 계약을 그대로 사용한다.
-- `GET /problem-generator/wiki/api/workspaces/final/context`와 MCP `get_final_context`는 `past_exams`에 material_type, exam_year, original_api_path, uploaded_by/uploaded_at, provenance를 반환한다. 원본 BLOB 전체는 Context에 넣지 않는다.
+- `POST /problem-generator/wiki/api/exam-materials`: 기존 multipart 저장 계약을 재사용한다. `core_type=school_print`, `material_type=PAST_EXAM`, school/grade/year/semester/exam/title/original을 전송한다. 실제 기출은 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 원본을 허용하며 파일당 30MB 제한을 유지한다. HTML은 같은 origin에서 실행되지 않도록 attachment로만 제공한다.
+- HTML/MD 업로드는 본문 원문을 `body_text`(포맷 `body_format` = `html`|`markdown`)로 함께 저장한다. PDF·이미지·HWP(X)는 본문 추출 대상이 아니라 원본 BLOB만 보관하고 `body_text`는 비운다.
+- `material_type=AI_WORK_LOG`: Claude/ChatGPT 등이 시험 준비 과정에서 남긴 작업 로그. `core_type=school_print`로 등록하고 MD/MARKDOWN/TXT/HTML(파일당 10MB) 원본만 허용한다. 본문을 `body_text`로 저장해 다음 세션에서 MCP가 이어서 읽는다.
+- `GET /problem-generator/wiki/api/exam-materials?...&material_type=PAST_EXAM&all_years=true`(또는 `AI_WORK_LOG`): 같은 학교·학년·학기·시험의 연도별 목록을 최신 연도순으로 반환하며 `has_body`/`body_format`을 포함한다. 기존 기본 조회는 선택 연도만 반환한다.
+- `GET /problem-generator/wiki/api/exam-materials/{id}/original`, `GET .../{id}/body`(추출 본문 원문; HTML은 attachment), `DELETE .../{id}`: 기존 원본 접근·삭제 및 workspace/로그인 권한 계약을 그대로 사용한다.
+- `GET /problem-generator/wiki/api/workspaces/final/context`와 MCP `get_final_context`는 `past_exams`·`ai_work_logs`에 material_type, exam_year, original_api_path, body_api_path, has_body, body_format, uploaded_by/uploaded_at, provenance를 반환한다. HTML/MD 항목은 `body_text`(본문 원문)를 함께 싣되, `_CONTEXT_BODY_MAX_CHARS`(200,000자)를 넘으면 잘라내고 `body_truncated=true`·`body_length`(원문 전체 길이)로 명시한다. 원본 BLOB 전체는 Context에 넣지 않는다.
 - JPG/JPEG/PNG와 PDF는 기존 원본 endpoint에서 inline 확인할 수 있고, 사용자 HTML은 script 실행 방지를 위해 attachment 다운로드로만 제공한다.

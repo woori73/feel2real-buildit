@@ -273,8 +273,9 @@ class WorkspaceContextTest(unittest.TestCase):
 
         self.assertEqual(1, len(result['school_prints']))
         print_item = result['school_prints'][0]
-        self.assertEqual({'id', 'type', 'title', 'created_at', 'source', 'student_id', 'student_name',
-                           'has_original', 'original_name', 'has_html', 'html_text', 'json_text'}, set(print_item.keys()))
+        self.assertEqual({'id', 'type', 'material_type', 'title', 'created_at', 'uploaded_by', 'source',
+                           'provenance', 'student_id', 'student_name', 'has_original', 'original_name',
+                           'original_api_path', 'has_html', 'html_text', 'json_text'}, set(print_item.keys()))
         self.assertTrue(print_item['has_html'])
         self.assertIn('학교 프린트 HTML', print_item['html_text'])
         self.assertEqual({'items': [1]}, print_item['json_text'])

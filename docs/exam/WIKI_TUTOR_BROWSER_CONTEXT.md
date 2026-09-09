@@ -260,6 +260,8 @@ Context 기반 문제 생성이 끝나면 `docs/exam/내신_시험지_제작원�
 
 MCP와 TUTOR 브라우저가 서로 다른 결과를 보이면 실제 운영 TUTOR 세션에서 확인되는 자료를 기준으로 원인을 구분하고, 자료가 확인되기 전에는 학교별 출제경향을 추측해서 채우지 않는다.
 
-## 15. 실제 기출 원본 PAST_EXAM 계약
+## 15. 실제 기출 원본 PAST_EXAM 계약 + AI 작업기록 AI_WORK_LOG
 
-학교별 Context의 `PAST_EXAM`은 AI 예상문제나 Digital Twin이 아니라 실제 학교에서 시행된 PDF/HWP/HWPX/HTML/JPG/JPEG/PNG 시험지 원본 증거다. Context/MCP는 학교·학년·학기·시험·시험연도·업로더·업로드시각·원본 접근 식별자를 provenance와 함께 노출한다. 원본 전체를 대량 생성 batch마다 반복 주입하지 않고, 1회 집중 분석으로 Digital Twin/SCHOOL_CONTEXT_PACK을 만든 뒤 특정 근거 확인이 필요할 때만 선택적으로 다시 연다. 자동 분석과 Digital Twin 자동 갱신은 별도 후속 범위다.
+학교별 Context의 `PAST_EXAM`은 AI 예상문제나 Digital Twin이 아니라 실제 학교에서 시행된 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 시험지 원본 증거다. Context/MCP는 학교·학년·학기·시험·시험연도·업로더·업로드시각·원본 접근 식별자를 provenance와 함께 노출한다. HTML/MD로 올린 기출은 `body_text`(본문 원문)를 함께 실어 1번·10번 실제 발문, 서답형 작성요령 같은 문면을 metadata가 아니라 원문 그대로 읽을 수 있다. `body_format`이 `html`|`markdown`이고, 200,000자를 넘으면 `body_truncated=true`·`body_length`로 잘림을 명시한다. PDF·이미지·HWP(X) 기출은 여전히 원본 접근 식별자만 노출하므로, 1회 집중 분석으로 Digital Twin/SCHOOL_CONTEXT_PACK을 만든 뒤 특정 근거 확인이 필요할 때만 선택적으로 다시 연다.
+
+`AI_WORK_LOG`는 Claude/ChatGPT가 이 시험 준비 과정에서 남긴 작업 로그(MD/MARKDOWN/TXT/HTML)다. FINAL Context의 `ai_work_logs`로 본문이 그대로 전달되어, 다음 세션에서 이전 분석·할 일을 이어받는다. 자동 분석과 Digital Twin 자동 갱신은 별도 후속 범위다.

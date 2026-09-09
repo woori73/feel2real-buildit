@@ -67,12 +67,14 @@ mcp = MCPServer(
 
 @mcp.tool()
 def get_final_context(school: str, grade: str, year: int, semester: str, exam: str) -> dict:
-    """FINAL Workspace Context를 반환한다. 실제 기출 원본(PAST_EXAM), 출제자 Digital Twin, 학교 프린트, 학생 오답,
-    수업 인사이트, 기존 제작 문제, 기존 FINAL 완성본을 시험 Context(학교/학년/연도/학기/시험)
-    기준으로 한 번에 담아 반환한다. 운영 GET /api/workspaces/final/context와 완전히
-    같은 데이터이며, 화면을 다시 조립하지 않고 DB 원본 그대로 전달한다. past_exams는
-    같은 학교/학년/학기/시험의 연도별 증거 목록과 원본 API 식별자/provenance만 노출하며,
-    원본 전체를 batch마다 반복 주입하지 않는다."""
+    """FINAL Workspace Context를 반환한다. 실제 기출 원본(PAST_EXAM), AI 작업기록(AI_WORK_LOG),
+    출제자 Digital Twin, 학교 프린트, 학생 오답, 수업 인사이트, 기존 제작 문제, 기존 FINAL 완성본을
+    시험 Context(학교/학년/연도/학기/시험) 기준으로 한 번에 담아 반환한다. 운영
+    GET /api/workspaces/final/context와 완전히 같은 데이터이며, 화면을 다시 조립하지 않고 DB 원본
+    그대로 전달한다. past_exams·ai_work_logs 항목은 연도별 증거 목록과 provenance에 더해, HTML/MD
+    원본이면 body_text(본문 원문)를 그대로 포함한다 — body_format('html'|'markdown'|'text'),
+    본문이 _CONTEXT_BODY_MAX_CHARS를 넘으면 body_truncated=true와 body_length(원문 전체 길이).
+    PDF·이미지·HWP(X) 기출은 body_text 없이 original_api_path만 노출한다."""
     from main import get_final_workspace_context
     return get_final_workspace_context(school=school, grade=grade, year=year, semester=semester, exam=exam)
 
