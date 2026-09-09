@@ -66,7 +66,6 @@
       && String(video.originalFilename || '').indexOf(MAIN_FEATURE_MARKER) >= 0);
   }
 
-  /* Hero는 LIVE FRAME 연결과 완전히 분리한다. 영상관리에서 업로드된 53초 전용 자산만 사용한다. */
   function pickMainFeatureLink() {
     var items = window.F2RAcademyPublicVideos;
     if (!Array.isArray(items)) return null;
@@ -88,6 +87,7 @@
     var video = document.createElement('video');
     video.className = 'mt-main-feature__video';
     video.controls = true;
+    video.setAttribute('controlsList', 'nodownload');
     video.playsInline = true;
     video.preload = 'metadata';
     video.setAttribute('aria-label', '신구중3 2학기 내신 대비 실제 제작 과정');
