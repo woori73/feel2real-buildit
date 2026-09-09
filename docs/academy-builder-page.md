@@ -1,5 +1,12 @@
 # Academy Builder 페이지 (`/builder`) 설계 노트
 
+> 2026-09-09 Actual Class playback 회귀: 공용 playback은 media viewport 안에서
+> width/height 100% + object-fit:contain 계약이지만, academy_brand.css의 ID selector
+> `#publicView video`가 height:auto + aspect-ratio:16/9 + cover로 이를 덮어썼다.
+> 브랜드 기본 video 규칙에서 `.f2r-media-player`를 제외하고, 에듀홀릭 runtime cover
+> override를 제거했다. 따라서 406x720·540x960 세로 영상은 poster와 같은 phone-screen
+> viewport를 유지하며 재생되고, 영상관리·저장·Public API·LIVE 연결은 변경하지 않는다.
+
 > 에듀홀릭 공개 홈페이지의 sec-featured는 공용 학교 카드 renderer를 그대로 사용한다.
 > eduholic_midterm_home_live.js가 에듀홀릭 hostname에서만 midterm_live_video_links의
 > 신구중 3학년 대표 연결(sort order 첫 항목)을 MAIN FEATURE로 덧붙인다. 영상 파일명이나
