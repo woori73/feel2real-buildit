@@ -3616,3 +3616,4 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/exam-materials?...&material_type=PAST_EXAM&all_years=true`: 같은 학교·학년·학기·시험의 연도별 실제 기출 목록을 최신 연도순으로 반환한다. 기존 기본 조회는 선택 연도만 반환한다.
 - `GET /problem-generator/wiki/api/exam-materials/{id}/original`, `DELETE /problem-generator/wiki/api/exam-materials/{id}`: 기존 원본 접근·삭제 및 workspace/로그인 권한 계약을 그대로 사용한다.
 - `GET /problem-generator/wiki/api/workspaces/final/context`와 MCP `get_final_context`는 `past_exams`에 material_type, exam_year, original_api_path, uploaded_by/uploaded_at, provenance를 반환한다. 원본 BLOB 전체는 Context에 넣지 않는다.
+- JPG/JPEG/PNG와 PDF는 기존 원본 endpoint에서 inline 확인할 수 있고, 사용자 HTML은 script 실행 방지를 위해 attachment 다운로드로만 제공한다.
