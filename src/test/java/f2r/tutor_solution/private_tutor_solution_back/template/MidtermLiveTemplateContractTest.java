@@ -906,6 +906,26 @@ class MidtermLiveTemplateContractTest {
     assertThat(videoHtml).contains("value=\"NONE\"");
   }
 
+  @Test
+  void academyHomeLive_mainFeatureUsesExplicitLinkedVideoWithoutCroppingOrAutoplay() throws Exception {
+    String js = read("static/js/eduholic_midterm_home_live.js");
+    String html = read("templates/public/academy_public.html");
+
+    assertThat(js).contains("function pickMainFeatureLink()");
+    assertThat(js).contains("liveVideosBySchool");
+    assertThat(js).contains("scene.video.videoUrl");
+    assertThat(js).contains("scene.video.thumbnailUrl");
+    assertThat(js).doesNotContain("신구중3_2학기_내신대비_라이브_최종_53초.mp4");
+    assertThat(js).contains("aspect-ratio:16/9");
+    assertThat(js).contains("object-fit:contain");
+    assertThat(js).contains("video.controls = true");
+    assertThat(js).contains("video.preload = 'metadata'");
+    assertThat(js).doesNotContain("video.autoplay");
+    assertThat(js).contains("head.insertAdjacentElement('afterend', feature)");
+    assertThat(js).contains("학교별 내신 대비");
+    assertThat(html).contains("eduholic_midterm_home_live.js?v=20260918-2");
+  }
+
   /**
    * Bugfix — Phase 4e 가 좁은 그리드 열의 가로 flex 행(.video-card-body)에 긴 한글 안내문과
    * LIVE 배지를 flex 형제로 넣어 카드 텍스트가 글자 단위로 세로로 접혔다. 본문을 세로 스택으로
