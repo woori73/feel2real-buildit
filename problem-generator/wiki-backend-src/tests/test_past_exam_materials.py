@@ -67,7 +67,7 @@ class PastExamMaterialsTest(unittest.TestCase):
                 UploadFile(filename='generated.docx', file=io.BytesIO(b'not-an-exam')),
                 None, '', '', 'PAST_EXAM')
         self.assertEqual(400, raised.exception.status_code)
-        self.assertIn('PDF, HWP, HWPX', raised.exception.detail)
+        self.assertIn('PDF, HWP, HWPX, HTML, JPG, PNG', raised.exception.detail)
 
     def test_hwpx_requires_the_official_container_shape(self):
         invalid = io.BytesIO()
@@ -79,6 +79,24 @@ class PastExamMaterialsTest(unittest.TestCase):
                 self.CTX['semester'], self.CTX['exam'], '가짜 HWPX', None,
                 UploadFile(filename='exam.hwpx', file=io.BytesIO(invalid.getvalue())),
                 None, '', '', 'PAST_EXAM')
+
+    def test_jpg_png_and_html_past_exam_originals_are_supported(self):
+        fixtures = (
+            ('exam.jpg', b'\xff\xd8\xff\xe0photo', 'image/jpeg'),
+            ('exam.png', b'\x89PNG\r\n\x1a\nphoto', 'image/png'),
+            ('exam.html', b'<!doctype html><html><body>exam</body></html>', 'text/html'),
+        )
+        for name, data, content_type in fixtures:
+            with self.subTest(name=name):
+                created = main.create_exam_material(
+                    'school_print', self.CTX['school'], self.CTX['grade'], 2025,
+                    self.CTX['semester'], self.CTX['exam'], name, None,
+                    UploadFile(filename=name, file=io.BytesIO(data), headers={'content-type': content_type}),
+                    None, '', '', 'PAST_EXAM')
+                response = main.open_exam_material_original(created['id'])
+                self.assertEqual(data, response.body)
+                expected = 'attachment' if name.endswith('.html') else 'inline'
+                self.assertTrue(response.headers['content-disposition'].startswith(expected))
 
 
 if __name__ == '__main__':
