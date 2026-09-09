@@ -92,11 +92,18 @@ class FrontendContractTest(unittest.TestCase):
     def test_naesin_context_has_distinct_mobile_past_exam_management(self):
         source = (ROOT / 'components' / 'NaesinWikiV1.tsx').read_text(encoding='utf-8')
         css = (ROOT / 'styles' / 'generator.css').read_text(encoding='utf-8')
-        for contract in ('PAST_EXAM', '기출시험지 업로드 · 관리', '실제 기출', '.pdf,.hwp,.hwpx,.html,.htm,.jpg,.jpeg,.png',
+        for contract in ('PAST_EXAM', '기출시험지 업로드 · 관리', '실제 기출',
+                         '.pdf,.hwp,.hwpx,.html,.htm,.md,.markdown,.jpg,.jpeg,.png',
                          'all_years=true', '원본 열기/다운로드'):
             self.assertIn(contract, source)
         self.assertIn('@media(max-width:640px)', css)
-        self.assertIn('.past-exam-panel .material-list article>button{width:100%}', css)
+        self.assertIn('.past-exam-panel .material-list article>button,.ai-work-log-panel .material-list article>button{width:100%}', css)
+
+    def test_naesin_context_has_ai_work_log_material_type(self):
+        source = (ROOT / 'components' / 'NaesinWikiV1.tsx').read_text(encoding='utf-8')
+        for contract in ('AI_WORK_LOG', 'AI 작업기록 업로드 · 관리', "material_type=AI_WORK_LOG&all_years=true",
+                         "'.md,.markdown,.txt,.html,.htm'", 'exam-materials/${m.id}/body', '본문 보기'):
+            self.assertIn(contract, source)
 
 
 if __name__ == '__main__':

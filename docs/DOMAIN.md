@@ -1191,6 +1191,10 @@ Every user-owned Wiki table is migrated idempotently with a nullable `workspace_
 
 Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.
 
-### exam_material_sets — PAST_EXAM 확장
+### exam_material_sets — PAST_EXAM + AI_WORK_LOG 확장
 
-기존 workspace별 원본 BLOB 저장 계약을 유지한다. `material_type`은 `SCHOOL_PRINT`, `STUDENT_WRONG_NOTE`, `PAST_EXAM`을 구분하고, 기존 행은 core_type에 따라 안전하게 backfill한다. `PAST_EXAM`은 실제 시행된 학교 기출 원본이며 `year`가 시험연도, `uploaded_by`와 `created_at`이 업로더/업로드 시각 provenance다. 같은 학교·학년·학기·시험에서도 연도별·파일별 독립 행을 저장하므로 새 업로드가 이전 기출을 덮어쓰지 않는다. SQLite 시작 migration은 컬럼 추가와 backfill만 수행하며 기존 자료/경로를 변경하지 않는다.
+기존 workspace별 원본 BLOB 저장 계약을 유지한다. `material_type`은 `SCHOOL_PRINT`, `STUDENT_WRONG_NOTE`, `PAST_EXAM`, `AI_WORK_LOG`를 구분하고, 기존 행은 core_type에 따라 안전하게 backfill한다. `PAST_EXAM`은 실제 시행된 학교 기출 원본이며 `year`가 시험연도, `uploaded_by`와 `created_at`이 업로더/업로드 시각 provenance다. 같은 학교·학년·학기·시험에서도 연도별·파일별 독립 행을 저장하므로 새 업로드가 이전 기출을 덮어쓰지 않는다.
+
+`body_text`/`body_format` 컬럼은 업로드에서 추출한 본문과 포맷(`html`|`markdown`|`text`)을 담는다. HTML은 `_sanitize_exam_html`(표준 라이브러리 `html.parser` 기반 allowlist 정제기, idempotent)로 `<script>`/`<style>`/편집기 toolbar·화면전용 UI를 제거하고 제목·문항·지문·선택지·표·보기·밑줄/강조·서답형 작성요령만 남긴 정제본을 저장한다. MD/TXT는 원문 그대로다. `PAST_EXAM` HTML/MD와 `AI_WORK_LOG`(MD/MARKDOWN/TXT/HTML, 파일당 10MB)가 이 컬럼을 채우고, PDF·이미지·HWP(X)는 빈 값으로 둔다. **원본 파일(`original_blob`)은 정제와 무관하게 그대로 보존한다.** `AI_WORK_LOG`는 Claude/ChatGPT 등이 시험 준비 과정에서 남긴 작업 로그로, FINAL Context의 `ai_work_logs`로 노출되어 다음 세션에서 MCP가 이어서 읽는다.
+
+FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합산 600,000자(`_CONTEXT_BODY_TOTAL_BUDGET`)로 제한하고 저장 순서(year DESC, id DESC)대로 deterministic 하게 배분하며, 축약·제외분을 응답 `context_budget.truncated_items`/`omitted_items`로 명시한다(silent omission 금지). SQLite 시작 migration은 컬럼 추가와 backfill만 수행하며 기존 자료/경로를 변경하지 않는다.
