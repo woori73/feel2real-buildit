@@ -886,3 +886,7 @@ Wiki 홈
 6. External MCP clients without a Spring principal continue through Bearer/X-Api-Key authentication and are explicitly scoped to the legacy workspace. Browser API requests remain HMAC-only.
 7. Signed `admin` starts in `legacy` and can list the catalog, then explicitly select a target workspace. The frontend sends only the selected workspace ID; FastAPI re-checks the signed principal before binding the request context. Clearing the selection removes the override and returns to `legacy`.
 8. `modu` and ordinary users cannot override workspace context, even with `?role=ADMIN`, client state, request-body identity fields, or a directly supplied workspace header.
+
+## Wiki 학교별 기출시험지 원본
+
+학교 → 학년 → 학기 → 시험을 선택한 TUTOR는 STEP 1의 기출시험지 영역에서 시험연도와 함께 PDF/HWP/HWPX 원본을 등록한다. 자료는 기존 workspace별 `exam_material_sets` 저장소를 사용하되 `material_type=PAST_EXAM`으로 학교 프린트(`SCHOOL_PRINT`)와 분리된다. 같은 Context의 여러 연도 파일은 행 단위로 누적되며 덮어쓰지 않는다. FINAL Context/MCP에는 연도별 provenance와 선택적 원본 접근 식별자만 전달하고, Digital Twin/Context Pack 생성의 증거 자료로 사용할 수 있게 한다. 자동 기출 분석이나 Digital Twin 갱신은 이 흐름에 포함하지 않는다.

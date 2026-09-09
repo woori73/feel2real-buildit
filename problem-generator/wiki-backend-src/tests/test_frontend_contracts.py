@@ -89,6 +89,15 @@ class FrontendContractTest(unittest.TestCase):
         for contract in ('1차 원문 추출 완료', '2차 HTML 복원 완료', '1차 추출 완료 · HTML 구조 복원 필요', "restorationStatus:'extracted-only'", 'extractedText', 'previewDataUrl'):
             self.assertIn(contract, source)
 
+    def test_naesin_context_has_distinct_mobile_past_exam_management(self):
+        source = (ROOT / 'components' / 'NaesinWikiV1.tsx').read_text(encoding='utf-8')
+        css = (ROOT / 'styles' / 'generator.css').read_text(encoding='utf-8')
+        for contract in ('PAST_EXAM', '기출시험지 업로드 · 관리', '실제 기출', '.pdf,.hwp,.hwpx',
+                         'all_years=true', '원본 열기/다운로드'):
+            self.assertIn(contract, source)
+        self.assertIn('@media(max-width:640px)', css)
+        self.assertIn('.past-exam-panel .material-list article>button{width:100%}', css)
+
 
 if __name__ == '__main__':
     unittest.main()

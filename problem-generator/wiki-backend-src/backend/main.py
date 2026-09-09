@@ -1,3 +1,4 @@
+import io
 import json
 import contextlib
 import hashlib
@@ -158,12 +159,13 @@ def init_db():
         conn.execute('''CREATE TABLE IF NOT EXISTS exam_material_sets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             core_type TEXT NOT NULL CHECK (core_type IN ('school_print','student_wrong_note')),
+            material_type TEXT NOT NULL DEFAULT '',
             school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '',
             year INTEGER NOT NULL, semester TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
             student_id INTEGER, title TEXT NOT NULL DEFAULT '',
             original_name TEXT NOT NULL, original_type TEXT NOT NULL DEFAULT 'application/octet-stream',
             original_blob BLOB NOT NULL, json_text TEXT NOT NULL DEFAULT '{}',
-            html_text TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
+            html_text TEXT NOT NULL DEFAULT '', uploaded_by TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
             FOREIGN KEY (student_id) REFERENCES students(id)
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_exam_material_context ON exam_material_sets(school, grade, year, semester, exam, core_type)')
@@ -461,6 +463,11 @@ def migrate_schema():
         material_cols = {row['name'] for row in conn.execute("PRAGMA table_info(exam_material_sets)").fetchall()}
         if 'html_text' not in material_cols:
             conn.execute("ALTER TABLE exam_material_sets ADD COLUMN html_text TEXT NOT NULL DEFAULT ''")
+        if 'material_type' not in material_cols:
+            conn.execute("ALTER TABLE exam_material_sets ADD COLUMN material_type TEXT NOT NULL DEFAULT ''")
+        if 'uploaded_by' not in material_cols:
+            conn.execute("ALTER TABLE exam_material_sets ADD COLUMN uploaded_by TEXT NOT NULL DEFAULT ''")
+        conn.execute("UPDATE exam_material_sets SET material_type=CASE WHEN core_type='school_print' THEN 'SCHOOL_PRINT' ELSE 'STUDENT_WRONG_NOTE' END WHERE material_type='' OR material_type IS NULL")
         source_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_question_sources)").fetchall()}
         for name, definition in (
             ('source_hash', "TEXT NOT NULL DEFAULT ''"),
@@ -728,6 +735,7 @@ async def authenticated_workspace(request: Request, call_next):
     else:
         resolved = wiki_workspace.resolve_workspace(identity, DB_PATH)
     token = wiki_workspace.set_current_workspace(resolved)
+    identity_token = wiki_workspace.set_current_identity(identity)
     try:
         if not Path(resolved.database_path).exists():
             init_db()
@@ -738,6 +746,7 @@ async def authenticated_workspace(request: Request, call_next):
         request.state.wiki_workspace = resolved
         return await call_next(request)
     finally:
+        wiki_workspace.reset_current_identity(identity_token)
         wiki_workspace.reset_current_workspace(token)
 
 
@@ -904,13 +913,46 @@ def _validate_json_upload(json_file: Optional[UploadFile], json_text: str, requi
     return json.dumps(parsed, ensure_ascii=False)
 
 
+_PAST_EXAM_EXTENSIONS = {'.pdf', '.hwp', '.hwpx'}
+_PAST_EXAM_MAX_BYTES = 30 * 1024 * 1024
+
+
+def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str, bytes]:
+    if not original or not original.filename:
+        raise HTTPException(status_code=400, detail='기출시험지 원본 파일을 올려 주세요.')
+    suffix = Path(original.filename).suffix.lower()
+    if suffix not in _PAST_EXAM_EXTENSIONS:
+        raise HTTPException(status_code=400, detail='기출시험지는 PDF, HWP, HWPX 파일만 지원합니다.')
+    data = original.file.read()
+    if not data or len(data) > _PAST_EXAM_MAX_BYTES:
+        raise HTTPException(status_code=400, detail='기출시험지 원본은 30MB 이하의 파일이어야 합니다.')
+    if suffix == '.pdf' and not data.startswith(b'%PDF-'):
+        raise HTTPException(status_code=400, detail='올바른 PDF 파일인지 확인해 주세요.')
+    if suffix == '.hwp' and not data.startswith(bytes.fromhex('D0CF11E0A1B11AE1')):
+        raise HTTPException(status_code=400, detail='올바른 HWP 파일인지 확인해 주세요.')
+    if suffix == '.hwpx':
+        try:
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                names = set(archive.namelist())
+                if 'mimetype' not in names or not any(name.startswith('Contents/') for name in names):
+                    raise ValueError
+        except (ValueError, zipfile.BadZipFile):
+            raise HTTPException(status_code=400, detail='올바른 HWPX 파일인지 확인해 주세요.')
+    return original.filename[:255], original.content_type or 'application/octet-stream', data
+
+
 @app.post('/api/exam-materials', status_code=201)
 def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'] = Form(...),
                          school: str = Form(...), grade: str = Form(...), year: int = Form(...),
                          semester: str = Form(...), exam: str = Form(...), title: str = Form(''),
                          student_id: Optional[int] = Form(None), original: Optional[UploadFile] = File(None),
                          json_file: Optional[UploadFile] = File(None), json_text: str = Form(''),
-                         html_text: str = Form('')):
+                         html_text: str = Form(''), material_type: str = Form('')):
+    normalized_material_type = material_type.strip().upper() or ('SCHOOL_PRINT' if core_type == 'school_print' else 'STUDENT_WRONG_NOTE')
+    if normalized_material_type not in ('SCHOOL_PRINT', 'STUDENT_WRONG_NOTE', 'PAST_EXAM'):
+        raise HTTPException(status_code=400, detail='지원하지 않는 자료 유형입니다.')
+    if normalized_material_type == 'PAST_EXAM' and core_type != 'school_print':
+        raise HTTPException(status_code=400, detail='실제 기출은 학교 자료로만 등록할 수 있습니다.')
     if core_type == 'student_wrong_note' and student_id is None:
         raise HTTPException(status_code=400, detail='학생을 선택해 주세요.')
     has_original = bool(original and original.filename)
@@ -920,7 +962,9 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     if core_type == 'school_print' and not has_original and not canonical_html:
         raise HTTPException(status_code=400, detail='HTML 자료를 올리거나 붙여넣어 주세요.')
     original_name, original_type, original_bytes = '', 'application/octet-stream', b''
-    if has_original:
+    if normalized_material_type == 'PAST_EXAM':
+        original_name, original_type, original_bytes = _validate_past_exam_upload(original)
+    elif has_original:
         original_bytes = original.file.read()
         if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:
             raise HTTPException(status_code=400, detail='원본은 30MB 이하의 파일이어야 합니다.')
@@ -928,27 +972,36 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     canonical_json = _validate_json_upload(json_file, json_text, required=core_type == 'student_wrong_note')
     now = datetime.now().isoformat()
     with get_db() as conn:
+        identity = wiki_workspace.current_identity()
+        uploaded_by = identity.login_id if identity else ''
         cursor = conn.execute('''INSERT INTO exam_material_sets
-            (core_type, school, grade, year, semester, exam, student_id, title, original_name,
-             original_type, original_blob, json_text, html_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-            (core_type, school.strip(), grade.strip(), year, semester.strip(), exam.strip(), student_id,
+            (core_type, material_type, school, grade, year, semester, exam, student_id, title, original_name,
+             original_type, original_blob, json_text, html_text, uploaded_by, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (core_type, normalized_material_type, school.strip(), grade.strip(), year, semester.strip(), exam.strip(), student_id,
              title.strip()[:150], original_name, original_type,
-             original_bytes, canonical_json, canonical_html, now))
-        row = conn.execute('''SELECT m.id,m.core_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
-            s.name student_name,m.title,m.original_name,m.original_type,m.html_text,m.created_at
+             original_bytes, canonical_json, canonical_html, uploaded_by, now))
+        row = conn.execute('''SELECT m.id,m.core_type,m.material_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
+            s.name student_name,m.title,m.original_name,m.original_type,m.html_text,m.uploaded_by,m.created_at
             FROM exam_material_sets m LEFT JOIN students s ON s.id=m.student_id WHERE m.id=?''', (cursor.lastrowid,)).fetchone()
         return dict(row)
 
 
 @app.get('/api/exam-materials')
-def list_exam_materials(school: str, grade: str, year: int, semester: str, exam: str):
+def list_exam_materials(school: str, grade: str, year: int, semester: str, exam: str,
+                        material_type: str = '', all_years: bool = False):
     with get_db() as conn:
-        rows = conn.execute('''SELECT m.id,m.core_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
-            s.name student_name,m.title,m.original_name,m.original_type,m.created_at,
+        query = '''SELECT m.id,m.core_type,m.material_type,m.school,m.grade,m.year,m.semester,m.exam,m.student_id,
+            s.name student_name,m.title,m.original_name,m.original_type,m.uploaded_by,m.created_at,
             (CASE WHEN m.html_text <> '' THEN 1 ELSE 0 END) AS has_html
             FROM exam_material_sets m LEFT JOIN students s ON s.id=m.student_id
-            WHERE m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=? ORDER BY m.id DESC''',
-            (school, grade, year, semester, exam)).fetchall()
+            WHERE m.school=? AND m.grade=? AND m.semester=? AND m.exam=?'''
+        values = [school, grade, semester, exam]
+        if not all_years:
+            query += ' AND m.year=?'; values.append(year)
+        if material_type:
+            query += ' AND m.material_type=?'; values.append(material_type.strip().upper())
+        query += ' ORDER BY m.year DESC,m.id DESC'
+        rows = conn.execute(query, values).fetchall()
         return [dict(row) for row in rows]
 
 
@@ -2530,8 +2583,8 @@ def _material_context_items(conn, core_type: str, school: str, grade: str, year:
     """exam_material_sets를 list_exam_materials와 같은 Context 조건으로 조회하되, 목록 화면과
     달리 AI가 실제로 읽을 수 있도록 html_text/json_text 원문까지 그대로 포함한다."""
     rows = conn.execute(
-        '''SELECT m.id, m.core_type, m.school, m.grade, m.year, m.semester, m.exam, m.student_id,
-            s.name student_name, m.title, m.original_name, m.html_text, m.json_text, m.created_at
+        '''SELECT m.id, m.core_type, m.material_type, m.school, m.grade, m.year, m.semester, m.exam, m.student_id,
+            s.name student_name, m.title, m.original_name, m.html_text, m.json_text, m.uploaded_by, m.created_at
             FROM exam_material_sets m LEFT JOIN students s ON s.id = m.student_id
             WHERE m.core_type=? AND m.school=? AND m.grade=? AND m.year=? AND m.semester=? AND m.exam=?
             ORDER BY m.id DESC''',
@@ -2545,14 +2598,41 @@ def _material_context_items(conn, core_type: str, school: str, grade: str, year:
         except (TypeError, json.JSONDecodeError):
             parsed_json = {}
         items.append({
-            'id': row['id'], 'type': core_type, 'title': row['title'] or row['original_name'] or default_title,
-            'created_at': row['created_at'], 'source': 'exam_material_sets',
+            'id': row['id'], 'type': core_type, 'material_type': row['material_type'],
+            'title': row['title'] or row['original_name'] or default_title,
+            'created_at': row['created_at'], 'uploaded_by': row['uploaded_by'], 'source': 'exam_material_sets',
+            'provenance': {'school': school, 'grade': grade, 'semester': semester, 'exam': exam,
+                           'exam_year': row['year'], 'material_type': row['material_type'],
+                           'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at']},
             'student_id': row['student_id'], 'student_name': row['student_name'],
             'has_original': bool(row['original_name']), 'original_name': row['original_name'],
+            'original_api_path': f"/api/exam-materials/{row['id']}/original" if row['original_name'] else None,
             'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
             'json_text': parsed_json,
         })
     return items
+
+
+def _past_exam_context_items(conn, school: str, grade: str, semester: str, exam: str) -> list:
+    rows = conn.execute(
+        '''SELECT m.id, m.core_type, m.material_type, m.school, m.grade, m.year, m.semester, m.exam,
+                  m.title, m.original_name, m.uploaded_by, m.created_at
+           FROM exam_material_sets m
+           WHERE m.material_type='PAST_EXAM' AND m.school=? AND m.grade=? AND m.semester=? AND m.exam=?
+           ORDER BY m.year DESC, m.id DESC''',
+        (school, grade, semester, exam),
+    ).fetchall()
+    return [{
+        'id': row['id'], 'type': 'past_exam', 'material_type': 'PAST_EXAM',
+        'title': row['title'] or row['original_name'] or '기출시험지', 'source': 'exam_material_sets',
+        'school': row['school'], 'grade': row['grade'], 'semester': row['semester'], 'exam': row['exam'],
+        'exam_year': row['year'], 'original_name': row['original_name'],
+        'original_api_path': f"/api/exam-materials/{row['id']}/original",
+        'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at'],
+        'provenance': {'school': row['school'], 'grade': row['grade'], 'semester': row['semester'],
+                       'exam': row['exam'], 'exam_year': row['year'], 'material_type': 'PAST_EXAM',
+                       'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at']},
+    } for row in rows]
 
 
 def _final_deliverable_context_items(conn, kind: str, school: str, grade: str, year: int, semester: str, exam: str) -> list:
@@ -2627,12 +2707,15 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
     with get_db() as conn:
         digital_twin = _match_digital_twin(conn, school, grade, exam)
         school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
+        school_prints = [item for item in school_prints if item['material_type'] != 'PAST_EXAM']
+        past_exams = _past_exam_context_items(conn, school, grade, semester, exam)
         student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         generated_tests = _generated_test_context_items(conn, school, grade, exam)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
         'digital_twin': digital_twin,
+        'past_exams': past_exams,
         'school_prints': school_prints,
         'student_errors': student_errors,
         'class_insights': _insight_context_items(school, grade, year, semester, exam),

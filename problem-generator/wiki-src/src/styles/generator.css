@@ -70,4 +70,6 @@
 .manual-edit-row label{display:grid;gap:4px;font-size:11px;font-weight:700;color:#7a857e}
 .manual-edit-row label:last-child{flex:1;min-width:160px}
 .link-button{background:none;border:0;padding:0;color:#3f6b53;font:inherit;font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer}
+.past-exam-action{border-color:#8b5a2b!important;background:#fff8eb!important;color:#6b3f18!important}.past-exam-panel{border-color:#d5b07b}.past-exam-meta{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:7px 9px;min-width:0}.past-exam-meta p{grid-column:1/-1;margin:0}.past-exam-badge,.past-exam-year{display:inline-flex;width:max-content;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800}.past-exam-badge{background:#7a421d;color:#fff}.past-exam-year{background:#f5dfbd;color:#603813}
+@media(max-width:640px){.past-exam-panel .material-list article{align-items:stretch}.past-exam-panel .material-list article>button{width:100%}.past-exam-meta{grid-template-columns:auto auto}.past-exam-meta b{grid-column:1/-1}.past-exam-action{width:100%}}
 
