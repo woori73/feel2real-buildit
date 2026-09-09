@@ -6,27 +6,39 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/eduholic_actual_class_video_filter.js'), 'utf8');
 
-function run(hostname) {
-  let received;
-  const sections = { renderVideos(_view, ctx) { received = ctx.videoList(); return 'ok'; } };
+function run(hostname, videos) {
+  const sections = {
+    createPublicContext() {
+      return {
+        videoList: () => videos,
+        programCardMedia: (lesson) => `media:${lesson.mediaVideoId}`
+      };
+    }
+  };
   vm.runInNewContext(source, { window: { location: { hostname }, F2RAcademySections: sections } });
-  return { sections, received: () => received };
+  return sections.createPublicContext({});
 }
 
+const videos = [
+  { videoId: 19, purpose: 'LESSON', originalFilename: '신구중3_박원장_상호작용.mp4' },
+  { videoId: 20, purpose: 'LESSON', originalFilename: '신구중3_2학기_내신대비_라이브_최종_53초.mp4' },
+  { videoId: 21, purpose: 'LESSON', originalFilename: '압구정중2_학생학습.mp4' }
+];
+
 test('Eduholic Actual Class excludes only the dedicated 53-second Hero asset', () => {
-  const app = run('eduholic.feel2real.co.kr');
-  const videos = [
-    { videoId: 19, purpose: 'LESSON', originalFilename: '신구중3_박원장_상호작용.mp4' },
-    { videoId: 20, purpose: 'LESSON', originalFilename: '신구중3_2학기_내신대비_라이브_최종_53초.mp4' },
-    { videoId: 21, purpose: 'LESSON', originalFilename: '압구정중2_학생학습.mp4' }
-  ];
-  app.sections.renderVideos({}, { videoList: () => videos });
-  assert.deepEqual(Array.from(app.received(), v => v.videoId), [19, 21]);
+  const ctx = run('eduholic.feel2real.co.kr', videos);
+  assert.deepEqual(Array.from(ctx.videoList(), v => v.videoId), [19, 21]);
 });
 
-test('other academy hosts keep the shared renderer unchanged', () => {
-  const app = run('another.feel2real.co.kr');
-  const videos = [{ videoId: 20, purpose: 'LESSON', originalFilename: '신구중3_2학기_내신대비_라이브_최종_53초.mp4' }];
-  app.sections.renderVideos({}, { videoList: () => videos });
-  assert.deepEqual(Array.from(app.received(), v => v.videoId), [20]);
+test('Eduholic representative lesson does not render the 53-second Hero as program media', () => {
+  const ctx = run('eduholic.feel2real.co.kr', videos);
+  assert.equal(ctx.programCardMedia({ mediaVideoId: 20 }), '');
+  assert.equal(ctx.programCardMedia({ mediaVideoId: 19 }), 'media:19');
+  assert.equal(ctx.programCardMedia({ mediaVideoId: 21 }), 'media:21');
+});
+
+test('other academy hosts keep the shared public context unchanged', () => {
+  const ctx = run('another.feel2real.co.kr', videos);
+  assert.deepEqual(Array.from(ctx.videoList(), v => v.videoId), [19, 20, 21]);
+  assert.equal(ctx.programCardMedia({ mediaVideoId: 20 }), 'media:20');
 });
