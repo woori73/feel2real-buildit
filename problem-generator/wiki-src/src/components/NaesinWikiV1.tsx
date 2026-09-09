@@ -342,8 +342,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
       <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.pdf,.hwp,.hwpx,.html,.htm,.md,.markdown,.jpg,.jpeg,.png':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>
-      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. PDF·HWP·HWPX·HTML·MD·JPG·PNG, 파일당 30MB 이하. HTML·MD는 본문이 그대로 MCP Context에 전달됩니다.</small>}
-      {core==='ai_work_log'&&<small className="field-hint">Claude·ChatGPT가 이 시험 준비 과정에서 남긴 작업 로그를 올리세요. MD·MARKDOWN·TXT·HTML, 파일당 10MB 이하. 본문이 그대로 MCP Context에 전달되어 다음 세션에서 이어서 읽힙니다.</small>}
+      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. PDF·HWP·HWPX·HTML·MD·JPG·PNG, 파일당 30MB 이하. HTML은 편집기 toolbar·스크립트를 걷어낸 시험 본문만, MD는 원문 그대로 MCP Context에 전달됩니다(원본 파일은 그대로 보관).</small>}
+      {core==='ai_work_log'&&<small className="field-hint">Claude·ChatGPT가 이 시험 준비 과정에서 남긴 작업 로그를 올리세요. MD·MARKDOWN·TXT·HTML, 파일당 10MB 이하. 본문이 MCP Context에 전달되어 다음 세션에서 이어서 읽힙니다.</small>}
       <small className="field-hint">원본 자료는 한 번에 최대 {MAX_ORIGINALS}개까지 선택할 수 있습니다.</small>
       {originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}
     </>}

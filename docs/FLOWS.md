@@ -889,6 +889,6 @@ Wiki 홈
 
 ## Wiki 학교별 기출시험지 원본 + AI 작업기록
 
-학교 → 학년 → 학기 → 시험을 선택한 TUTOR는 STEP 1의 기출시험지 영역에서 시험연도와 함께 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 원본을 등록한다. 자료는 기존 workspace별 `exam_material_sets` 저장소를 사용하되 `material_type=PAST_EXAM`으로 학교 프린트(`SCHOOL_PRINT`)와 분리된다. 같은 Context의 여러 연도 파일은 행 단위로 누적되며 덮어쓰지 않는다. HTML/MD 원본은 본문(`body_text`)을 함께 저장해 FINAL Context/MCP `past_exams[].body_text`로 실제 발문·작성요령까지 그대로 전달한다(200,000자 초과 시 `body_truncated`/`body_length`로 명시). PDF·이미지·HWP(X)는 연도별 provenance와 원본 접근 식별자만 전달한다.
+학교 → 학년 → 학기 → 시험을 선택한 TUTOR는 STEP 1의 기출시험지 영역에서 시험연도와 함께 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 원본을 등록한다. 자료는 기존 workspace별 `exam_material_sets` 저장소를 사용하되 `material_type=PAST_EXAM`으로 학교 프린트(`SCHOOL_PRINT`)와 분리된다. 같은 Context의 여러 연도 파일은 행 단위로 누적되며 덮어쓰지 않는다. HTML 원본은 script/style/편집기 toolbar를 제거하고 시험 본문(제목·문항·지문·선택지·표·보기·밑줄·서답형 작성요령)만 남긴 정제본을, MD는 원문을 `body_text`로 저장해 FINAL Context/MCP `past_exams[].body_text`로 실제 1번·10번 발문과 작성요령까지 전달한다(원본 파일은 `/original`로 그대로 보존). 항목당 200,000자·`past_exams`+`ai_work_logs` 합산 600,000자를 넘으면 저장 순서대로 deterministic 하게 배분하고, 축약·제외분은 응답 `context_budget.truncated_items`/`omitted_items`로 명시한다. PDF·이미지·HWP(X)는 연도별 provenance와 원본 접근 식별자만 전달한다.
 
 STEP 1의 AI 작업기록 영역에서는 Claude/ChatGPT가 남긴 작업 로그(MD/MARKDOWN/TXT/HTML, 10MB)를 등록한다. `material_type=AI_WORK_LOG`로 분리 저장되고 본문이 FINAL Context의 `ai_work_logs[].body_text`로 실려, 다음 세션에서 MCP가 이전 작업을 이어서 읽는다. 자동 기출 분석이나 Digital Twin 갱신은 이 흐름에 포함하지 않는다.

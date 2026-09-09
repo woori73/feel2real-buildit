@@ -3,6 +3,7 @@ import json
 import contextlib
 import hashlib
 import html
+import html.parser
 import os
 import re
 import sqlite3
@@ -928,6 +929,136 @@ _AI_WORK_LOG_MAX_BYTES = 10 * 1024 * 1024
 # MCP Context 1건에 담는 본문 최대 길이. 넘으면 조용히 잘라내지 않고 body_truncated=true +
 # body_length(원문 전체 길이)로 명시해 누락을 감지할 수 있게 한다.
 _CONTEXT_BODY_MAX_CHARS = 200_000
+# past_exams + ai_work_logs 본문 합산 상한(deterministic). 항목은 저장 순서(year DESC, id DESC)대로
+# 배분되며, 상한 때문에 축약/제외되면 context_budget.truncated_items/omitted_items로 명시한다.
+_CONTEXT_BODY_TOTAL_BUDGET = 600_000
+# 남은 budget이 이보다 작으면 본문을 조금 담는 대신 통째로 제외한다(조각만 남기지 않음).
+_CONTEXT_BODY_MIN_SLICE = 2_000
+
+# ---- 시험 HTML 정제 --------------------------------------------------------------
+# 편집형(WYSIWYG) HTML 기출에는 toolbar/CSS/스크립트가 함께 들어온다. MCP Context에는
+# script/style/편집 UI를 넣지 않고, 시맨틱 본문(제목·문항·지문·선택지·표·보기·밑줄·서답형
+# 작성요령)만 최소 마크업으로 남긴다. 원본 파일(original_blob)은 그대로 보존한다.
+_HTML_DROP_SUBTREE_TAGS = frozenset({
+    'script', 'style', 'noscript', 'template', 'svg', 'math', 'head', 'title', 'link', 'meta',
+    'button', 'input', 'select', 'option', 'optgroup', 'datalist', 'textarea',
+    'form', 'fieldset', 'nav', 'iframe', 'audio', 'video', 'canvas', 'object', 'embed', 'dialog', 'menu',
+})
+_HTML_KEEP_TAGS = frozenset({
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span', 'section', 'article', 'main', 'header', 'footer',
+    'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+    'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'col',
+    'u', 'b', 'strong', 'em', 'i', 'mark', 'sup', 'sub', 's', 'del', 'ins', 'small',
+    'br', 'hr', 'blockquote', 'pre', 'code', 'figure', 'figcaption', 'img', 'ruby', 'rt', 'rp',
+})
+_HTML_VOID_TAGS = frozenset({'br', 'hr', 'img', 'col'})
+_HTML_KEEP_ATTRS = {
+    'td': ('colspan', 'rowspan'), 'th': ('colspan', 'rowspan', 'scope'),
+    'ol': ('start', 'type'), 'img': ('alt',), 'col': ('span',), 'colgroup': ('span',),
+}
+# class/id/role 에 이 조각이 있으면 subtree 를 통째로 버린다(대표 에디터 toolbar·chrome·화면전용 요소).
+_HTML_CHROME_HINTS = (
+    'toolbar', 'menubar', 'statusbar', 'ribbon', 'gutter', 'navbar', 'breadcrumb', 'pagination',
+    'cke_', 'ck-toolbar', 'ck-balloon', 'tox-', 'mce-', 'mceeditor', 'ql-toolbar', 'ql-tooltip',
+    'prosemirror-menu', 'prosemirror-prompt', 'editor-toolbar', 'editor-controls', 'editor-menu',
+    'wysiwyg-toolbar', 'note-toolbar', 'note-popover', 'note-statusbar', 'fr-toolbar', 'fr-popup',
+    'trumbowyg-button-pane', 'medium-editor-toolbar', 'tui-toolbar', 'se-toolbar',
+    'no-print', 'noprint', 'print-hide', 'screen-only', 'watermark', 'sr-only', 'visually-hidden',
+    'a11y-hidden', 'skip-link',
+)
+_HTML_CHROME_ROLES = frozenset({'toolbar', 'menubar', 'menu', 'navigation', 'banner', 'search', 'tablist'})
+
+
+class _ExamHtmlSanitizer(html.parser.HTMLParser):
+    """allowlist 기반 HTML 정제기. 표준 라이브러리만 사용한다(배포 시 추가 의존성 없음).
+    - _HTML_DROP_SUBTREE_TAGS / 편집 UI(chrome)는 여는 태그부터 닫는 태그까지 통째로 버린다.
+    - _HTML_KEEP_TAGS 는 허용 속성만 남겨 유지, 그 외 태그는 벗겨내되 자식/텍스트는 보존한다.
+    같은 입력에 두 번 적용해도 결과가 같도록(idempotent) 설계한다."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._out: list[str] = []
+        self._drop_stack: list[str] = []
+
+    @staticmethod
+    def _is_chrome(attrs) -> bool:
+        for name, value in attrs:
+            if not value:
+                continue
+            low = value.lower()
+            if name == 'role' and low.strip() in _HTML_CHROME_ROLES:
+                return True
+            if name in ('class', 'id') and any(hint in low for hint in _HTML_CHROME_HINTS):
+                return True
+        return False
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if self._drop_stack:
+            if tag not in _HTML_VOID_TAGS:
+                self._drop_stack.append(tag)
+            return
+        if tag in _HTML_DROP_SUBTREE_TAGS or self._is_chrome(attrs):
+            if tag not in _HTML_VOID_TAGS:
+                self._drop_stack.append(tag)
+            return
+        if tag not in _HTML_KEEP_TAGS:
+            return
+        kept = _HTML_KEEP_ATTRS.get(tag, ())
+        rendered = ''.join(
+            f' {name}="{html.escape(value, quote=True)}"'
+            for name, value in attrs if name in kept and value
+        )
+        self._out.append(f'<{tag}{rendered}>')
+
+    def handle_startendtag(self, tag, attrs):
+        tag = tag.lower()
+        if self._drop_stack or tag not in _HTML_KEEP_TAGS or self._is_chrome(attrs):
+            return
+        kept = _HTML_KEEP_ATTRS.get(tag, ())
+        rendered = ''.join(
+            f' {name}="{html.escape(value, quote=True)}"'
+            for name, value in attrs if name in kept and value
+        )
+        self._out.append(f'<{tag}{rendered}>')
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if self._drop_stack:
+            if tag in self._drop_stack:
+                while self._drop_stack:
+                    if self._drop_stack.pop() == tag:
+                        break
+            return
+        if tag in _HTML_KEEP_TAGS and tag not in _HTML_VOID_TAGS:
+            self._out.append(f'</{tag}>')
+
+    def handle_data(self, data):
+        if self._drop_stack:
+            return
+        self._out.append(html.escape(data, quote=False))
+
+    def result(self) -> str:
+        text = ''.join(self._out)
+        text = re.sub(r'[ \t]+\n', '\n', text)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        return text.strip()
+
+
+def _sanitize_exam_html(raw_html: str) -> str:
+    """편집형 HTML 기출을 MCP Context 용 본문으로 정제한다. 파싱이 깨지면 태그를 벗겨 텍스트만 남긴다."""
+    source = raw_html or ''
+    parser = _ExamHtmlSanitizer()
+    try:
+        parser.feed(source)
+        parser.close()
+        cleaned = parser.result()
+    except Exception:
+        cleaned = ''
+    if cleaned:
+        return cleaned
+    stripped = re.sub(r'(?is)<(script|style)\b.*?</\1>', ' ', source)
+    return re.sub(r'<[^>]+>', ' ', stripped).strip()
 
 
 def _decode_text_upload(data: bytes, label: str) -> str:
@@ -938,10 +1069,14 @@ def _decode_text_upload(data: bytes, label: str) -> str:
 
 
 def _extract_uploaded_body(suffix: str, data: bytes, *, label: str) -> tuple[str, str]:
-    """업로드 원본에서 MCP가 그대로 읽을 본문과 그 포맷을 뽑는다. HTML/MD/TXT는 원문을 보존하고,
-    PDF·이미지·HWP(X)는 본문 추출 대상이 아니라 빈 값('','')을 돌려준다(원본 파일만 보관)."""
+    """업로드 원본에서 MCP가 읽을 본문과 그 포맷을 뽑는다. HTML은 script/style/편집 UI를 제거하고
+    시맨틱 본문만 남기며, MD/TXT는 원문을 유지한다. PDF·이미지·HWP(X)는 본문 추출 대상이 아니라
+    빈 값('','')을 돌려준다(원본 파일만 보관)."""
     if suffix in ('.html', '.htm'):
-        return _decode_text_upload(data, label), 'html'
+        cleaned = _sanitize_exam_html(_decode_text_upload(data, label))
+        if not cleaned.strip():
+            raise HTTPException(status_code=400, detail=f'{label} HTML에서 시험 본문을 찾지 못했습니다.')
+        return cleaned, 'html'
     if suffix in ('.md', '.markdown'):
         text = _decode_text_upload(data, label).strip()
         if not text:
@@ -1107,8 +1242,9 @@ def open_exam_material_html(material_id: int):
 
 @app.get('/api/exam-materials/{material_id}/body')
 def open_exam_material_body(material_id: int):
-    """PAST_EXAM(HTML/MD)·AI_WORK_LOG(MD/TXT/HTML)에서 추출한 본문 원문. MCP Context가 담는 것과 같은
-    body_text이며, HTML은 attachment로만 내려 같은 origin inline 실행을 막는다."""
+    """PAST_EXAM(HTML/MD)·AI_WORK_LOG(MD/TXT/HTML)에서 추출한 본문. HTML은 업로드 시 script/style/
+    편집 UI를 제거하고 시맨틱 본문만 남긴 정제본이며(원본 파일은 /original 로 그대로 보존), MCP Context가
+    담는 body_text와 같다(단 Context budget 축약 전 전체). HTML은 attachment로만 내려 inline 실행을 막는다."""
     with get_db() as conn:
         row = conn.execute('SELECT body_text, body_format FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
         if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
@@ -2701,13 +2837,49 @@ def _material_context_items(conn, core_type: str, school: str, grade: str, year:
     return items
 
 
-def _context_body_fields(body_text: str) -> dict:
-    """MCP Context 1건에 본문을 그대로 싣되, _CONTEXT_BODY_MAX_CHARS를 넘으면 조용히 자르지 않고
-    body_truncated=true + body_length(원문 전체 길이)로 잘림을 명시한다(silent omission 방지)."""
-    text = body_text or ''
-    if len(text) <= _CONTEXT_BODY_MAX_CHARS:
-        return {'body_text': text or None, 'body_truncated': False, 'body_length': len(text)}
-    return {'body_text': text[:_CONTEXT_BODY_MAX_CHARS], 'body_truncated': True, 'body_length': len(text)}
+def _apply_context_body_budget(*item_lists) -> dict:
+    """past_exams + ai_work_logs 항목에 본문을 배분한다. 각 항목의 임시 키 '_body_full'(정제된 본문
+    전체)을 저장 순서대로 소비하며 다음 규칙을 deterministic 하게 적용한다.
+
+      - 항목당 최대 _CONTEXT_BODY_MAX_CHARS.
+      - past_exams + ai_work_logs 합산 최대 _CONTEXT_BODY_TOTAL_BUDGET.
+      - 남은 budget 이 _CONTEXT_BODY_MIN_SLICE 미만이면 본문을 조금 담지 않고 통째로 제외한다.
+
+    각 항목에 body_text / body_included / body_truncated / body_length(원문 전체) / body_chars(실린 길이)를
+    기록하고, 축약·제외된 항목을 truncated_items / omitted_items 로 명시해 silent omission 을 막는다."""
+    remaining = _CONTEXT_BODY_TOTAL_BUDGET
+    truncated: list = []
+    omitted: list = []
+    for items in item_lists:
+        for item in items:
+            full = item.pop('_body_full', '') or ''
+            total = len(full)
+            item['body_length'] = total
+            if total == 0:
+                item.update(body_text=None, body_included=False, body_truncated=False, body_chars=0)
+                continue
+            allow = min(total, _CONTEXT_BODY_MAX_CHARS, remaining)
+            if allow < total and allow < _CONTEXT_BODY_MIN_SLICE:
+                item.update(body_text=None, body_included=False, body_truncated=False, body_chars=0)
+                omitted.append({'type': item['type'], 'id': item['id'], 'title': item['title'],
+                                'body_length': total, 'reason': 'context_body_budget_exhausted'})
+                continue
+            body = full[:allow]
+            remaining -= len(body)
+            is_truncated = len(body) < total
+            item.update(body_text=body, body_included=True, body_truncated=is_truncated, body_chars=len(body))
+            if is_truncated:
+                reason = 'per_item_char_limit' if total > _CONTEXT_BODY_MAX_CHARS and len(body) == _CONTEXT_BODY_MAX_CHARS else 'context_body_budget'
+                truncated.append({'type': item['type'], 'id': item['id'], 'title': item['title'],
+                                  'body_length': total, 'body_chars': len(body), 'reason': reason})
+    return {
+        'body_char_limit_per_item': _CONTEXT_BODY_MAX_CHARS,
+        'body_char_budget_total': _CONTEXT_BODY_TOTAL_BUDGET,
+        'body_chars_used': _CONTEXT_BODY_TOTAL_BUDGET - remaining,
+        'body_chars_remaining': remaining,
+        'truncated_items': truncated,
+        'omitted_items': omitted,
+    }
 
 
 def _past_exam_context_items(conn, school: str, grade: str, semester: str, exam: str) -> list:
@@ -2731,7 +2903,7 @@ def _past_exam_context_items(conn, school: str, grade: str, semester: str, exam:
         'provenance': {'school': row['school'], 'grade': row['grade'], 'semester': row['semester'],
                        'exam': row['exam'], 'exam_year': row['year'], 'material_type': 'PAST_EXAM',
                        'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at']},
-        **_context_body_fields(row['body_text']),
+        '_body_full': row['body_text'] or '',
     } for row in rows]
 
 
@@ -2759,7 +2931,7 @@ def _ai_work_log_context_items(conn, school: str, grade: str, semester: str, exa
         'provenance': {'school': row['school'], 'grade': row['grade'], 'semester': row['semester'],
                        'exam': row['exam'], 'exam_year': row['year'], 'material_type': 'AI_WORK_LOG',
                        'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at']},
-        **_context_body_fields(row['body_text']),
+        '_body_full': row['body_text'] or '',
     } for row in rows]
 
 
@@ -2841,11 +3013,13 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         generated_tests = _generated_test_context_items(conn, school, grade, exam)
+    context_budget = _apply_context_body_budget(past_exams, ai_work_logs)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
         'digital_twin': digital_twin,
         'past_exams': past_exams,
         'ai_work_logs': ai_work_logs,
+        'context_budget': context_budget,
         'school_prints': school_prints,
         'student_errors': student_errors,
         'class_insights': _insight_context_items(school, grade, year, semester, exam),
