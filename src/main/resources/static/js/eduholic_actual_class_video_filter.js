@@ -1,7 +1,12 @@
 /* Eduholic homepage placement guard.
  * The dedicated 53-second midterm production video belongs only to the homepage
  * MAIN FEATURE. It must not leak into Actual Class (sec-videos) or a representative
- * lesson/program card merely because the uploaded asset is classified as LESSON. */
+ * lesson/program card merely because the uploaded asset is classified as LESSON.
+ *
+ * Important: F2RAcademySections and the contexts it creates are Object.freeze()'d.
+ * Do not monkey-patch properties on those frozen objects. Build replacement facades
+ * instead, then let academy_public.js consume the replacement before it creates ctx.
+ */
 (function () {
   'use strict';
   var EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
@@ -21,15 +26,17 @@
     return hero && hero.videoId != null ? String(hero.videoId) : null;
   }
 
-  /* Patch the public context before academy_public.js creates it.  This is the
-   * shared data boundary used by both Actual Class and representative Program
-   * Cards; the global F2RAcademyPublicVideos array remains untouched so the
-   * dedicated MAIN FEATURE can still select and render the same asset. */
-  sections.createPublicContext = function (deps) {
+  /* academy_sections.js exports Object.freeze({...}), so assigning
+   * sections.createPublicContext = ... is a no-op/TypeError and was the reason the
+   * previous production fixes had no effect. Replace the exported facade itself. */
+  var facade = Object.assign({}, sections);
+  facade.createPublicContext = function (deps) {
     var base = originalCreatePublicContext(deps);
     if (!base) return base;
 
-    var scoped = Object.create(base);
+    /* createPublicContext also returns Object.freeze({...}). Object.create(base)
+     * cannot shadow inherited non-writable properties, so make an own-property copy. */
+    var scoped = Object.assign({}, base);
     scoped.videoList = function () {
       return (base.videoList() || []).filter(function (video) { return !isHomepageHero(video); });
     };
@@ -39,6 +46,8 @@
       if (id && heroId && id === heroId) return '';
       return base.programCardMedia(lesson);
     };
-    return scoped;
+    return Object.freeze(scoped);
   };
+
+  window.F2RAcademySections = Object.freeze(facade);
 })();
