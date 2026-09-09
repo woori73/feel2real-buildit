@@ -85,6 +85,84 @@
     return list && list.length ? list[0] : null;
   }
 
+  /**
+   * MAIN FEATURE는 카드 정렬을 바꾸지 않고 신구중 3학년에 명시 연결된 첫 LIVE 자산을 쓴다.
+   * 파일명/길이로 추론하지 않으며 관리자 sort_order가 대표 자산 선택의 source of truth다.
+   */
+  function pickMainFeatureLink() {
+    var entries = [];
+    Object.keys(liveVideosBySchool || {}).forEach(function (school) {
+      (liveVideosBySchool[school] || []).forEach(function (link) { entries.push(link); });
+    });
+    return entries.find(function (link) {
+      return normalizedSchool(link && link.school) === normalizedSchool('신구중')
+        && Number(String(link && link.grade || '').replace(/[^0-9]/g, '')) === 3
+        && !!(link.videoUrl || link.embedUrl || link.externalUrl);
+    }) || null;
+  }
+
+  function renderMainFeature() {
+    var section = document.getElementById('sec-featured');
+    var head = section && section.querySelector('.featured-head');
+    if (!section || !head || section.querySelector('[data-midterm-main-feature]')) return;
+    var link = pickMainFeatureLink();
+    if (!link) return;
+
+    var scene = videoScene('신구중3', link);
+    var feature = document.createElement('article');
+    feature.className = 'mt-main-feature';
+    feature.setAttribute('data-midterm-main-feature', '');
+    var media = document.createElement('div');
+    media.className = 'mt-main-feature__media';
+
+    if (scene.video) {
+      var video = document.createElement('video');
+      video.className = 'mt-main-feature__video';
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.setAttribute('aria-label', '신구중3 2학기 내신 대비 실제 제작 과정');
+      video.src = scene.video.videoUrl;
+      if (scene.video.thumbnailUrl) video.poster = scene.video.thumbnailUrl;
+      video.addEventListener('play', function () { pauseOtherVideos(video); });
+      media.appendChild(video);
+    } else if (scene.embed) {
+      var frame = document.createElement('iframe');
+      frame.className = 'mt-main-feature__embed';
+      frame.title = '신구중3 2학기 내신 대비 실제 제작 과정';
+      frame.src = scene.embed;
+      frame.loading = 'lazy';
+      frame.setAttribute('allow', 'encrypted-media; picture-in-picture');
+      frame.setAttribute('allowfullscreen', '');
+      media.appendChild(frame);
+    } else {
+      var mediaLink = document.createElement('a');
+      mediaLink.className = 'mt-main-feature__link';
+      mediaLink.href = scene.href;
+      mediaLink.target = '_blank';
+      mediaLink.rel = 'noopener';
+      mediaLink.textContent = '53초 제작 영상 보기 →';
+      media.appendChild(mediaLink);
+    }
+    feature.appendChild(media);
+
+    var copy = document.createElement('div');
+    copy.className = 'mt-main-feature__copy';
+    copy.innerHTML = '<strong>신구중3 실제 제작 과정 · 53초</strong>'
+      + '<span>학교 자료 × Digital Twin × AI</span>'
+      + '<small>학교 프린트와 수업 Insight를 읽고, 출제 패턴을 분석해 예상문제·정답·해설을 만듭니다.</small>';
+    feature.appendChild(copy);
+    head.insertAdjacentElement('afterend', feature);
+
+    var cards = section.querySelector('[data-featured-cards]');
+    if (cards && !section.querySelector('.mt-main-feature__schools-title')) {
+      var schoolsTitle = document.createElement('h3');
+      schoolsTitle.className = 'mt-main-feature__schools-title';
+      schoolsTitle.textContent = '학교별 내신 대비';
+      cards.insertAdjacentElement('beforebegin', schoolsTitle);
+    }
+  }
+
   /** 그 학교의 시험범위 showcase — 실제 추출 내용이 있고 분석 완성본이 아닐 때만(§2). */
   function pickSyllabus(school) {
     var s = showcaseBySchool && showcaseBySchool[school];
@@ -117,14 +195,9 @@
     text(head.querySelector('.featured-eyebrow-text'), '내신 LIVE');
     text(title, '2학기 영어 내신 LIVE');
 
-    var schools = Array.prototype.slice
-      .call(document.querySelectorAll('#sec-featured [data-featured-card]'))
-      .map(function (c) { return (c.getAttribute('data-school') || '').trim(); })
-      .filter(Boolean);
     var desc = head.querySelector('.featured-desc');
     if (desc) {
-      desc.textContent = (schools.length ? schools.join(' · ') + ' — ' : '')
-        + '학교별 시험 준비가 지금 진행되고 있습니다.';
+      desc.textContent = '학교별 실제 자료를 읽고, 학교에 맞는 예상문제를 만듭니다.';
     }
   }
 
@@ -385,6 +458,23 @@
       '#sec-featured .mt-hl-media{width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#090d18;}',
       '#sec-featured .mt-hl-video{display:block;width:100%;height:100%;object-fit:contain;background:#090d18;}',
       '#sec-featured .mt-hl-embed{display:block;width:100%;height:100%;border:0;background:#090d18;}',
+      '#sec-featured .mt-main-feature{width:min(100%,980px);margin:34px auto 44px;}',
+      '#sec-featured .mt-main-feature__media{width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:24px;',
+      '  background:#090d18;box-shadow:0 24px 60px rgba(15,23,42,.18);}',
+      '#sec-featured .mt-main-feature__video,#sec-featured .mt-main-feature__embed{display:block;width:100%;',
+      '  height:100%;border:0;object-fit:contain;background:#090d18;}',
+      '#sec-featured .mt-main-feature__link{display:flex;width:100%;height:100%;align-items:center;justify-content:center;',
+      '  color:#fff;font-weight:800;text-decoration:none;}',
+      '#sec-featured .mt-main-feature__copy{display:grid;gap:5px;margin-top:18px;text-align:left;}',
+      '#sec-featured .mt-main-feature__copy strong{font-size:20px;line-height:1.35;color:#111827;}',
+      '#sec-featured .mt-main-feature__copy span{font-size:14px;font-weight:800;color:#2b3a9e;}',
+      '#sec-featured .mt-main-feature__copy small{font-size:14px;line-height:1.65;color:#67707c;}',
+      '#sec-featured .mt-main-feature__schools-title{width:min(100%,980px);margin:0 auto 18px;font-size:20px;',
+      '  line-height:1.35;color:#111827;}',
+      '@media(max-width:768px){#sec-featured .mt-main-feature{margin:26px auto 34px;}',
+      '  #sec-featured .mt-main-feature__media{border-radius:16px;box-shadow:0 14px 34px rgba(15,23,42,.16);}',
+      '  #sec-featured .mt-main-feature__copy{margin-top:14px;}',
+      '  #sec-featured .mt-main-feature__copy strong,#sec-featured .mt-main-feature__schools-title{font-size:18px;}}',
       '@media (prefers-reduced-motion:reduce){#sec-featured .mt-hl-stage{transition:none;}}'
     ].join('');
     document.head.appendChild(style);
@@ -399,6 +489,7 @@
       Array.prototype.slice
         .call(document.querySelectorAll('#sec-featured [data-featured-card]'))
         .forEach(function (c) { delete c.dataset.mtHomeLive; });
+      renderMainFeature();
       scan();
     });
     scan();
