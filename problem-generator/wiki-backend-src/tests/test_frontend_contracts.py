@@ -92,7 +92,7 @@ class FrontendContractTest(unittest.TestCase):
     def test_naesin_context_has_distinct_mobile_past_exam_management(self):
         source = (ROOT / 'components' / 'NaesinWikiV1.tsx').read_text(encoding='utf-8')
         css = (ROOT / 'styles' / 'generator.css').read_text(encoding='utf-8')
-        for contract in ('PAST_EXAM', '기출시험지 업로드 · 관리', '실제 기출', '.pdf,.hwp,.hwpx',
+        for contract in ('PAST_EXAM', '기출시험지 업로드 · 관리', '실제 기출', '.pdf,.hwp,.hwpx,.html,.htm,.jpg,.jpeg,.png',
                          'all_years=true', '원본 열기/다운로드'):
             self.assertIn(contract, source)
         self.assertIn('@media(max-width:640px)', css)
@@ -101,4 +101,3 @@ class FrontendContractTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

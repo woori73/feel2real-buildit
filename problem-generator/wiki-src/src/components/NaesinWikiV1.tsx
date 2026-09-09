@@ -323,8 +323,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       <label>HTML 자료 파일 선택<input type="file" accept=".html,.htm,text/html" onChange={chooseHtmlFile}/></label>
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
-      <label>{core==='past_exam'?'기출시험지 원본 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.pdf,.hwp,.hwpx':undefined} onChange={chooseOriginals}/></label>
-      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. PDF·HWP·HWPX, 파일당 30MB 이하.</small>}
+      <label>{core==='past_exam'?'기출시험지 원본 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.pdf,.hwp,.hwpx,.html,.htm,.jpg,.jpeg,.png':undefined} onChange={chooseOriginals}/></label>
+      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. PDF·HWP·HWPX·HTML·JPG·PNG, 파일당 30MB 이하.</small>}
       <small className="field-hint">원본 자료는 한 번에 최대 {MAX_ORIGINALS}개까지 선택할 수 있습니다.</small>
       {originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}
     </>}

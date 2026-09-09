@@ -913,7 +913,7 @@ def _validate_json_upload(json_file: Optional[UploadFile], json_text: str, requi
     return json.dumps(parsed, ensure_ascii=False)
 
 
-_PAST_EXAM_EXTENSIONS = {'.pdf', '.hwp', '.hwpx'}
+_PAST_EXAM_EXTENSIONS = {'.pdf', '.hwp', '.hwpx', '.html', '.htm', '.jpg', '.jpeg', '.png'}
 _PAST_EXAM_MAX_BYTES = 30 * 1024 * 1024
 
 
@@ -922,7 +922,7 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
         raise HTTPException(status_code=400, detail='기출시험지 원본 파일을 올려 주세요.')
     suffix = Path(original.filename).suffix.lower()
     if suffix not in _PAST_EXAM_EXTENSIONS:
-        raise HTTPException(status_code=400, detail='기출시험지는 PDF, HWP, HWPX 파일만 지원합니다.')
+        raise HTTPException(status_code=400, detail='기출시험지는 PDF, HWP, HWPX, HTML, JPG, PNG 파일만 지원합니다.')
     data = original.file.read()
     if not data or len(data) > _PAST_EXAM_MAX_BYTES:
         raise HTTPException(status_code=400, detail='기출시험지 원본은 30MB 이하의 파일이어야 합니다.')
@@ -938,6 +938,17 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
                     raise ValueError
         except (ValueError, zipfile.BadZipFile):
             raise HTTPException(status_code=400, detail='올바른 HWPX 파일인지 확인해 주세요.')
+    if suffix in ('.jpg', '.jpeg') and not data.startswith(b'\xff\xd8\xff'):
+        raise HTTPException(status_code=400, detail='올바른 JPG 파일인지 확인해 주세요.')
+    if suffix == '.png' and not data.startswith(b'\x89PNG\r\n\x1a\n'):
+        raise HTTPException(status_code=400, detail='올바른 PNG 파일인지 확인해 주세요.')
+    if suffix in ('.html', '.htm'):
+        try:
+            html_source = data.decode('utf-8-sig').lstrip().lower()
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail='HTML 파일은 UTF-8 형식이어야 합니다.')
+        if not re.search(r'<!doctype\s+html|<html(?:\s|>)|<body(?:\s|>)', html_source):
+            raise HTTPException(status_code=400, detail='올바른 HTML 파일인지 확인해 주세요.')
     return original.filename[:255], original.content_type or 'application/octet-stream', data
 
 
@@ -1011,7 +1022,10 @@ def open_exam_material_original(material_id: int):
         row = conn.execute('SELECT original_blob,original_type,original_name FROM exam_material_sets WHERE id=?', (material_id,)).fetchone()
         if not row: raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
         safe_name = re.sub(r'[^0-9A-Za-z._-]', '_', row['original_name'])
-        return Response(row['original_blob'], media_type=row['original_type'], headers={'Content-Disposition': f'inline; filename="{safe_name}"'})
+        # 사용자 HTML을 같은 origin에서 inline 실행하지 않는다. HTML은 원본 그대로 보존하되
+        # attachment로만 내려주고, PDF/이미지는 기존처럼 브라우저에서 열 수 있게 유지한다.
+        disposition = 'attachment' if Path(row['original_name']).suffix.lower() in ('.html', '.htm') else 'inline'
+        return Response(row['original_blob'], media_type=row['original_type'], headers={'Content-Disposition': f'{disposition}; filename="{safe_name}"'})
 
 
 @app.get('/api/exam-materials/{material_id}/json')
