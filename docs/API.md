@@ -3609,3 +3609,10 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `topDownloads`: 자료별 누적 다운로드 수 TOP 10 — `{materialCategory, materialTitle, downloadCount}`.
 
 - 관련 코드: `domain/analytics/*`, `config/SiteVisitFilter`. 마이그레이션 `V962`(기본 로그 테이블), `V964~V966`(nullable 추가 → 기존 path backfill → NOT NULL/인덱스).
+
+## Wiki 학교별 실제 기출 원본 (PAST_EXAM)
+
+- `POST /problem-generator/wiki/api/exam-materials`: 기존 multipart 저장 계약을 재사용한다. `core_type=school_print`, `material_type=PAST_EXAM`, school/grade/year/semester/exam/title/original을 전송한다. 실제 기출은 PDF/HWP/HWPX 원본만 허용하며 파일당 30MB 제한을 유지한다.
+- `GET /problem-generator/wiki/api/exam-materials?...&material_type=PAST_EXAM&all_years=true`: 같은 학교·학년·학기·시험의 연도별 실제 기출 목록을 최신 연도순으로 반환한다. 기존 기본 조회는 선택 연도만 반환한다.
+- `GET /problem-generator/wiki/api/exam-materials/{id}/original`, `DELETE /problem-generator/wiki/api/exam-materials/{id}`: 기존 원본 접근·삭제 및 workspace/로그인 권한 계약을 그대로 사용한다.
+- `GET /problem-generator/wiki/api/workspaces/final/context`와 MCP `get_final_context`는 `past_exams`에 material_type, exam_year, original_api_path, uploaded_by/uploaded_at, provenance를 반환한다. 원본 BLOB 전체는 Context에 넣지 않는다.

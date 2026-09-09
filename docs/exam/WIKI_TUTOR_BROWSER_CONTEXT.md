@@ -259,3 +259,7 @@ Context 기반 문제 생성이 끝나면 `docs/exam/내신_시험지_제작원�
 **특정 학교 예상문제의 품질은 일반적인 영어 문제 생성 능력보다 실제 학교 Context의 정확한 확인과 provenance 추적을 우선한다.**
 
 MCP와 TUTOR 브라우저가 서로 다른 결과를 보이면 실제 운영 TUTOR 세션에서 확인되는 자료를 기준으로 원인을 구분하고, 자료가 확인되기 전에는 학교별 출제경향을 추측해서 채우지 않는다.
+
+## 15. 실제 기출 원본 PAST_EXAM 계약
+
+학교별 Context의 `PAST_EXAM`은 AI 예상문제나 Digital Twin이 아니라 실제 학교에서 시행된 시험지 원본 증거다. Context/MCP는 학교·학년·학기·시험·시험연도·업로더·업로드시각·원본 접근 식별자를 provenance와 함께 노출한다. 원본 전체를 대량 생성 batch마다 반복 주입하지 않고, 1회 집중 분석으로 Digital Twin/SCHOOL_CONTEXT_PACK을 만든 뒤 특정 근거 확인이 필요할 때만 선택적으로 다시 연다. 자동 분석과 Digital Twin 자동 갱신은 별도 후속 범위다.

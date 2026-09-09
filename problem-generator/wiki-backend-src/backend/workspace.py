@@ -50,6 +50,9 @@ class WikiWorkspace:
 _workspace_context: contextvars.ContextVar[WikiWorkspace | None] = contextvars.ContextVar(
     "wiki_workspace", default=None
 )
+_identity_context: contextvars.ContextVar[WikiIdentity | None] = contextvars.ContextVar(
+    "wiki_identity", default=None
+)
 
 
 def identity_secret() -> str:
@@ -215,6 +218,18 @@ def reset_current_workspace(token) -> None:
 
 def current_workspace() -> WikiWorkspace | None:
     return _workspace_context.get()
+
+
+def set_current_identity(identity: WikiIdentity):
+    return _identity_context.set(identity)
+
+
+def reset_current_identity(token) -> None:
+    _identity_context.reset(token)
+
+
+def current_identity() -> WikiIdentity | None:
+    return _identity_context.get()
 
 
 def legacy_workspace(legacy_database_path: str) -> WikiWorkspace:

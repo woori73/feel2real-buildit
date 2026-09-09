@@ -5,7 +5,7 @@ import { loadExamContext, resolveSavedContext, saveExamContext } from '../lib/wi
 import type { Page } from '../App'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
-type Material = { id:number; core_type:'school_print'|'student_wrong_note'; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number }
+type Material = { id:number; core_type:'school_print'|'student_wrong_note'; material_type:'SCHOOL_PRINT'|'STUDENT_WRONG_NOTE'|'PAST_EXAM'; school:string; grade:string; year:number; semester:string; exam:string; uploaded_by:string; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number }
 type Insight = { id:number; content:string; source:'director'|'school_teacher'; created_at:string }
 type FinalDeliverable = { id:number; kind:'final'|'jikbo'; school:string; grade:string; year:number; semester:string; exam:string; title:string; original_name:string; created_at:string; has_html?:number }
 type Workspace = 'final'|'jikbo'|null
@@ -47,9 +47,9 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   // 마지막으로 선택한 Context를 localStorage(workspace별 분리)에서 우선 복원한다. 트리 로드 후
   // 더 이상 존재하지 않는 학교/학년이면 resolveSavedContext가 기본값으로 되돌린다.
   const [context,setContext]=useState<Context>(()=>({school:'',grade:'',year:years[0],semester:'1학기',exam:'전체',...loadExamContext()}))
-  const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
+  const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [pastExams,setPastExams]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
   const [finals,setFinals]=useState<FinalDeliverable[]>([]), [twinProfile,setTwinProfile]=useState<DigitalTwinProfile|null>(null)
-  const [core,setCore]=useState<'school_print'|'student_wrong_note'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
+  const [core,setCore]=useState<'school_print'|'student_wrong_note'|'past_exam'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
   const [studentId,setStudentId]=useState(''), [title,setTitle]=useState(''), [originals,setOriginals]=useState<File[]>([]), [jsonFile,setJsonFile]=useState<File|null>(null), [jsonText,setJsonText]=useState('')
   const [htmlText,setHtmlText]=useState('')
   const [finalTitle,setFinalTitle]=useState(''), [finalHtmlText,setFinalHtmlText]=useState(''), [finalOriginal,setFinalOriginal]=useState<File|null>(null), [finalJsonFile,setFinalJsonFile]=useState<File|null>(null), [finalJsonText,setFinalJsonText]=useState('')
@@ -79,9 +79,10 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const load=async(targetContext:Context)=>{
     if(!targetContext.school||!targetContext.grade||!targetContext.exam)return false
     const query=contextQuery(targetContext)
-    const [q,materialResponse,i,finalRows]=await Promise.all([
+    const [q,materialResponse,pastExamResponse,i,finalRows]=await Promise.all([
       fetchQuestions({school:targetContext.school,grade:targetContext.grade,exam:targetContext.exam}),
       api(`exam-materials?${query}`),
+      api(`exam-materials?${query}&material_type=PAST_EXAM&all_years=true`),
       api(`educator-insights?limit=100&${query}`).then(r=>r.ok?r.json():[]),
       api(`final-deliverables?kind=final&${query}`).then(r=>r.ok?r.json():[]),
     ])
@@ -91,7 +92,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       setQuestions(q);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[]);return false
     }
     const m=await materialResponse.json()
-    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[])
+    const p=pastExamResponse.ok?await pastExamResponse.json():[]
+    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setPastExams(Array.isArray(p)?p:[]);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[])
     return true
   }
   useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);if(!nodes.length)return;const t=touchedRef.current;setContext(c=>{
@@ -115,7 +117,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   // behavior:'auto'는 애니메이션 없이 즉시 오프셋을 적용해 신뢰성 있게 동작한다.
   useEffect(()=>{if(core)document.getElementById('material-set-form')?.scrollIntoView({behavior:'auto',block:'start'})},[core])
   const filteredStudents=students.filter(s=>(!s.school||s.school===context.school)&&(!s.grade||s.grade===context.grade))
-  const prints=materials.filter(m=>m.core_type==='school_print'), wrongs=materials.filter(m=>m.core_type==='student_wrong_note')
+  const prints=materials.filter(m=>m.material_type==='SCHOOL_PRINT'), wrongs=materials.filter(m=>m.material_type==='STUDENT_WRONG_NOTE')
   const resetUpload=()=>{setOriginals([]);setJsonFile(null);setJsonText('');setTitle('');setHtmlText('')}
   const chooseOriginals=(e:ChangeEvent<HTMLInputElement>)=>{const selected=Array.from(e.target.files||[]);e.target.value='';if(!selected.length)return;const merged=[...originals];let added=0,skipped=0;for(const file of selected){const duplicate=merged.some(item=>item.name===file.name&&item.size===file.size&&item.lastModified===file.lastModified);if(duplicate)continue;if(merged.length>=MAX_ORIGINALS){skipped+=1;continue}merged.push(file);added+=1}setOriginals(merged);setNotice(skipped?`원본 자료는 한 번에 최대 ${MAX_ORIGINALS}개까지 선택할 수 있습니다. ${skipped}개를 제외했습니다.`:added?`${added}개 파일을 선택했습니다.`:'')}
   const removeOriginal=(index:number)=>setOriginals(current=>current.filter((_,i)=>i!==index))
@@ -170,7 +172,22 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     setNotice(failed?`원본 ${saved}개를 저장했습니다. ${failed}개는 저장하지 못했습니다.`:`원본 ${saved}개와 JSON을 한 세트로 저장했습니다.`)
     await load({...context})
   }
-  const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):saveStudentWrongNote(e)
+  const savePastExam=async(e:FormEvent)=>{
+    e.preventDefault();if(!originals.length)return
+    let failed=0
+    for(const file of originals){
+      const form=new FormData()
+      Object.entries(context).forEach(([k,v])=>form.append(k,String(v)))
+      form.append('core_type','school_print');form.append('material_type','PAST_EXAM')
+      form.append('title',title||file.name);form.append('original',file)
+      const r=await api('exam-materials',{method:'POST',body:form})
+      if(!r.ok){failed+=1;const b=await r.json().catch(()=>({}));setNotice(apiErrorMessage(b,'기출시험지를 저장하지 못했습니다.'))}
+    }
+    if(failed===originals.length)return
+    const saved=originals.length-failed;resetUpload();setCore(null);await load({...context})
+    setNotice(failed?`실제 기출 ${saved}건을 저장했습니다. ${failed}건은 저장하지 못했습니다.`:`실제 기출 ${saved}건을 저장했습니다.`)
+  }
+  const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):core==='past_exam'?savePastExam(e):saveStudentWrongNote(e)
   // 기존 저장 학교 프린트: 현재 Context 것만 목록/다운로드/삭제. 다른 학교·학년·시험 자료는
   // list가 애초에 반환하지 않고, 다른 workspace 자료는 서버 get_db()가 라우팅을 분리한다.
   const [downloadingId,setDownloadingId]=useState<number|null>(null)
@@ -186,11 +203,11 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     finally{setDownloadingId(null)}
   }
   const deleteMaterial=async(m:Material)=>{
-    if(!window.confirm(`"${m.title||m.original_name||'이 학교 프린트'}"를 삭제할까요? 삭제하면 되돌릴 수 없습니다.`))return
+    if(!window.confirm(`"${m.title||m.original_name||'이 자료'}"를 삭제할까요? 삭제하면 되돌릴 수 없습니다.`))return
     try{
       const r=await api(`exam-materials/${m.id}`,{method:'DELETE'})
       if(!r.ok&&r.status!==204){const b=await r.json().catch(()=>({}));setNotice(apiErrorMessage(b,'삭제하지 못했습니다.'));return}
-      setNotice('학교 프린트를 삭제했습니다.')
+      setNotice(m.material_type==='PAST_EXAM'?'기출시험지를 삭제했습니다.':'학교 프린트를 삭제했습니다.')
       await load(context)
     }catch(error){setNotice(error instanceof Error?`삭제 실패: ${error.message}`:'삭제에 실패했습니다.')}
   }
@@ -271,6 +288,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       <li className="wiki-step">
         <div className="panel-heading"><div><p className="kicker">STEP 1</p><h2>자료 모으기</h2><p>시험 준비에 필요한 자료부터 모아주세요.</p></div></div>
         <div className="twin-actions">
+          <button className="primary-action past-exam-action" onClick={()=>setCore('past_exam')}>기출시험지 업로드 · 관리 <strong>{pastExams.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('school_print')}>학교 프린트 추가 · 저장 <strong>{prints.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('student_wrong_note')}>학생 오답 추가 · 저장 <strong>{wrongs.length}</strong>건</button>
         </div>
@@ -298,19 +316,23 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       </li>
     </ol>
 
-    {core&&<><form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">{core==='school_print'?'HTML + JSON SET':'ORIGINAL + JSON SET'}</p><h2>{core==='school_print'?'학교 프린트':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>
+    {core&&<><form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">{core==='school_print'?'HTML + JSON SET':core==='past_exam'?'PAST EXAM · ORIGINAL':'ORIGINAL + JSON SET'}</p><h2>{core==='school_print'?'학교 프린트':core==='past_exam'?'기출시험지':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>
     {core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}
-    {core==='school_print'&&<label>자료 제목<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
+    {(core==='school_print'||core==='past_exam')&&<label>{core==='past_exam'?'관리 메모 / 자료 제목':'자료 제목'}<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
     {core==='school_print'?<>
       <label>HTML 자료 파일 선택<input type="file" accept=".html,.htm,text/html" onChange={chooseHtmlFile}/></label>
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
-      <label>오답 원본 파일<input type="file" multiple onChange={chooseOriginals}/></label>
+      <label>{core==='past_exam'?'기출시험지 원본 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.pdf,.hwp,.hwpx':undefined} onChange={chooseOriginals}/></label>
+      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. PDF·HWP·HWPX, 파일당 30MB 이하.</small>}
       <small className="field-hint">원본 자료는 한 번에 최대 {MAX_ORIGINALS}개까지 선택할 수 있습니다.</small>
       {originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}
     </>}
-    <label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label>
-    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||!htmlText.trim():(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>
+    {core!=='past_exam'&&<><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label></>}
+    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||!htmlText.trim():core==='past_exam'?!originals.length:(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>
+    {core==='past_exam'&&<section className="work-panel past-exam-panel" aria-label="저장된 기출시험지 관리"><div className="panel-heading"><div><p className="kicker">ACTUAL PAST EXAMS</p><h2>기출시험지 <strong>{pastExams.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.semester} {examLabel}의 연도별 실제 기출입니다.</p></div></div>
+      {pastExams.length?<div className="material-list">{pastExams.map(m=><article key={m.id}><div className="past-exam-meta"><span className="past-exam-badge">실제 기출</span><span className="past-exam-year">{m.year}</span><b>{m.title||m.original_name}</b><p>{m.school} {m.grade} · {m.semester} {examLabel} · {m.original_name}</p><p>{m.uploaded_by||'TUTOR'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div><button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 열기/다운로드'}</button><button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button></article>)}</div>:<div className="empty-state"><b>이 학교·학년·학기·시험에 저장된 실제 기출이 없습니다.</b></div>}
+    </section>}
     {core==='school_print'&&<section className="work-panel" aria-label="저장된 학교 프린트 관리"><div className="panel-heading"><div><p className="kicker">SAVED SCHOOL PRINTS</p><h2>저장된 학교 프린트 <strong>{prints.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel} 자료입니다.</p></div></div>
     {prints.length?<div className="material-list">{prints.map(m=><article key={m.id}><div><b>{m.title||m.original_name||'학교 프린트'}</b><p>{m.has_html?'HTML':m.original_name||'원본'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div>
       {m.has_html?<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'html')}>{downloadingId===m.id?'내려받는 중...':'HTML 다운로드'}</button>:null}
@@ -322,6 +344,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('final')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
       {aiContext?.workspace==='final'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/final/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}
       <Core title="출제자 Digital Twin" count={twinProfile?1:0}>{twinProfile&&<Row checked={false} onToggle={()=>undefined} label={`${twinProfile.description||twinProfile.dna||'Digital Twin'} · v${twinProfile.version}`} actions={<button onClick={()=>open(`digital-twins/${twinProfile.id}`)}>JSON 보기</button>}/>}</Core>
+      <Core title="실제 기출시험지" count={pastExams.length}>{pastExams.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`실제 기출 · ${m.year} · ${m.school} ${m.grade} · ${m.semester} ${examLabel} · ${m.original_name}`} actions={<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}/>)}</Core>
       <Core title="제작 문제" count={questions.length}>{questions.map(q=><Row key={q.id} checked={selected.has(`q-${q.id}`)} onToggle={()=>toggle(`q-${q.id}`)} label={`${q.question_type||'문항'} · ${q.stem.slice(0,70)}`} actions={<button onClick={()=>onNavigate('database')}>상세 열기</button>}/>)}</Core>
       <Core title="학교 프린트" count={prints.length}>{prints.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={m.title||m.original_name||'학교 프린트'} actions={<>{m.has_html?<button onClick={()=>open(`exam-materials/${m.id}/html`)}>HTML 보기</button>:m.original_name&&<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}<button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON 보기</button></>}/>)}</Core>
       <Core title="학생 오답" count={wrongs.length}>{wrongs.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`${m.student_name||'학생'} · ${m.title||m.original_name}`} actions={<><button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button><button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON</button></>}/>)}</Core>
@@ -354,4 +377,3 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
 
 function Core({title,count,children}:{title:string;count:number;children:ReactNode}){return <div className="admin-core"><h3>{title} <span>{count}</span></h3>{count?children:<p className="field-hint">현재 시험에 저장된 자료가 없습니다.</p>}</div>}
 function Row({checked,onToggle,label,actions}:{checked:boolean;onToggle:()=>void;label:string;actions:ReactNode}){return <div className="admin-source-row"><input type="checkbox" checked={checked} onChange={onToggle}/><span>{label}</span><div>{actions}</div></div>}
-
