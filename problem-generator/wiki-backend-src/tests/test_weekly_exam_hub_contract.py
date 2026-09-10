@@ -32,7 +32,7 @@ class WeeklyExamHubContractTest(unittest.TestCase):
     def test_private_draft_final_workflow_is_explicit(self):
         for phrase in ('DRAFT', 'FINAL 확정', 'FINAL은 학생 공개를 의미하지 않습니다.'):
             self.assertIn(phrase, self.hub)
-        for removed in ('학생 공개', "transition(item.id,'publish')", "transition(item.id,'approve')"):
+        for removed in ("transition(item.id,'publish')", "transition(item.id,'approve')"):
             self.assertNotIn(removed, self.hub)
 
     def test_context_is_living_and_partial_is_visible(self):
