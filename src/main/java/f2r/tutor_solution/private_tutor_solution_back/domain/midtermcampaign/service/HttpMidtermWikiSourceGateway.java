@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiCampaignScope;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceRow;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiLiveUpdateView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiIdentitySigner;
 import java.io.IOException;
 import java.net.URI;
@@ -101,6 +102,45 @@ public class HttpMidtermWikiSourceGateway implements MidtermWikiSourceGateway {
       return List.of();
     }
     return rows;
+  }
+
+
+  @Override
+  public List<WikiLiveUpdateView> listLiveUpdates(
+      AuthenticatedPrincipal tutor, WikiCampaignScope scope) {
+    String path = "/api/live-update-metadata?year=" + scope.year()
+        + "&semester=" + enc(scope.semester()) + "&exam=" + enc(scope.exam());
+    try {
+      HttpResponse<byte[]> response = send(tutor, path, "GET");
+      if (response.statusCode() / 100 != 2) {
+        log.warn("TUTOR Wiki LIVE metadata 조회 비정상 status={}", response.statusCode());
+        return List.of();
+      }
+      JsonNode array = objectMapper.readTree(response.body());
+      if (!array.isArray()) return List.of();
+      List<WikiLiveUpdateView> rows = new ArrayList<>();
+      for (JsonNode node : array) {
+        int itemYear = node.path("year").asInt(0);
+        String itemSemester = node.path("semester").asText("");
+        String itemExam = node.path("examType").asText("");
+        if (itemYear != scope.year() || !scope.semester().equals(itemSemester)
+            || !scope.exam().equals(itemExam)) continue;
+        rows.add(new WikiLiveUpdateView(
+            node.path("school").asText(""), node.path("grade").asText(""), itemYear,
+            itemSemester, itemExam, node.path("kind").asText(""),
+            node.path("label").asText(""), node.has("round") ? node.path("round").asInt() : null,
+            node.has("setType") ? node.path("setType").asText() : null,
+            node.has("questionCount") ? node.path("questionCount").asInt() : null,
+            node.path("updatedAt").asText("")));
+      }
+      return rows;
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      return List.of();
+    } catch (IOException exception) {
+      log.warn("TUTOR Wiki LIVE metadata 조회 실패: {}", exception.toString());
+      return List.of();
+    }
   }
 
   @Override
