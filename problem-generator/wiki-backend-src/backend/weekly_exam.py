@@ -151,6 +151,7 @@ def _snapshot(payload: WeeklyExamReviewRequest) -> tuple[str, str]:
                    ('past_exams', 'school_prints', 'ai_work_logs', 'student_errors',
                     'class_insights', 'generated_questions', 'generated_tests')},
         'contextBudget': current.get('context_budget', {}),
+        'previousFinals': current.get('weekly_exam_finals', [])[:10],
     }
     text = json.dumps(snapshot, ensure_ascii=False, sort_keys=True)
     return text, _sha(text)
@@ -223,6 +224,26 @@ def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = N
 
 # Compatibility alias: old clients keep working, but the effective state is DRAFT.
 register_review = register_draft
+
+
+def final_context_items(school: str, grade: str, year: int, semester: str, exam: str) -> list[dict]:
+    """Private, bounded production history for Living Context and the next-round blueprint."""
+    with _db() as conn:
+        rows = conn.execute("""SELECT id,school,grade,year,semester,exam,round,set_type,
+          question_count,version,status,verification_md,verification_hash,context_hash,updated_at
+          FROM weekly_exam_sets WHERE school=? AND grade=? AND year=? AND semester=? AND exam=?
+          AND status IN ('APPROVED','FINAL','PUBLISHED')
+          ORDER BY round DESC,set_type,version DESC LIMIT 20""",
+          (school, grade, year, semester, exam)).fetchall()
+    return [{
+        'id': row['id'], 'school': row['school'], 'grade': row['grade'], 'year': row['year'],
+        'semester': row['semester'], 'exam': row['exam'], 'round': row['round'],
+        'set_type': row['set_type'], 'question_count': row['question_count'],
+        'version': row['version'], 'status': 'FINAL',
+        'production_verification_md': row['verification_md'][:12000],
+        'verification_hash': row['verification_hash'], 'context_hash': row['context_hash'],
+        'updated_at': row['updated_at'],
+    } for row in rows]
 
 
 @router.post('/draft', status_code=201)
