@@ -82,7 +82,7 @@ class WeeklyExamReviewRequest(BaseModel):
     studentPaperName: str = 'student-paper.html'
     answerExplanationName: str = 'answer-explanation.html'
     productionVerificationName: str = 'production-verification.md'
-    sourceMaterialIds: list[int] = []
+    sourceMaterialIds: list[int] = Field(default_factory=list)
     contextStatus: Literal['PARTIAL', 'LIVING', 'COMPLETE'] = 'LIVING'
 
 
