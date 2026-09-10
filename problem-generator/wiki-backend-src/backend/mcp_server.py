@@ -51,7 +51,7 @@ mcp = MCPServer(
     name='buildit-wiki',
     # save_generated_test 추가 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='2',
+    version='3',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -246,6 +246,38 @@ def save_class_insights(content: str, source: str, school: str = '', grade: str 
         raise ValueError('인사이트 검증 실패: ' + qc.validation_fields(exc)) from exc
     try:
         return create_educator_insight(payload)
+    except HTTPException as exc:
+        raise ValueError(str(exc.detail)) from exc
+
+
+@mcp.tool()
+def register_weekly_exam_review(
+    school: str, grade: str, year: int, semester: str, exam_type: str,
+    round: int, set_type: str, question_count: int,
+    student_paper_html: str, answer_explanation_html: str, production_verification_md: str,
+    context_status: str = 'LIVING', student_paper_name: str = 'student-paper.html',
+    answer_explanation_name: str = 'answer-explanation.html',
+    production_verification_name: str = 'production-verification.md',
+    source_material_ids: list[int] | None = None,
+) -> dict:
+    """[쓰기 도구] Work/Claude가 완성한 3종 산출물을 하나의 Weekly Exam으로 등록한다.
+    서버가 현재 Living Context를 Snapshot으로 고정하며 상태는 언제나 REVIEW다.
+    이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다."""
+    from fastapi import HTTPException
+    from weekly_exam import WeeklyExamReviewRequest, register_review
+    try:
+        payload = WeeklyExamReviewRequest(
+            school=school, grade=grade, year=year, semester=semester, examType=exam_type,
+            round=round, setType=set_type, questionCount=question_count,
+            studentPaper=student_paper_html, answerExplanation=answer_explanation_html,
+            productionVerification=production_verification_md, contextStatus=context_status,
+            studentPaperName=student_paper_name, answerExplanationName=answer_explanation_name,
+            productionVerificationName=production_verification_name,
+            sourceMaterialIds=source_material_ids or [],
+        )
+        return register_review(payload, actor='mcp-agent')
+    except ValidationError as exc:
+        raise ValueError('Weekly Exam 검증 실패: ' + str(exc)) from exc
     except HTTPException as exc:
         raise ValueError(str(exc.detail)) from exc
 
