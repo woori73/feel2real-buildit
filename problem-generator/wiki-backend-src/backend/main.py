@@ -3018,6 +3018,7 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         generated_tests = _generated_test_context_items(conn, school, grade, exam)
+    weekly_exam_finals = weekly_exam.final_context_items(school, grade, year, semester, exam)
     context_budget = _apply_context_body_budget(past_exams, ai_work_logs)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
@@ -3031,6 +3032,7 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         'generated_questions': _question_context_items(school, grade, exam),
         'generated_tests': generated_tests,
         'final_deliverables': final_deliverables,
+        'weekly_exam_finals': weekly_exam_finals,
     }
 
 
