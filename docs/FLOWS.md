@@ -892,3 +892,10 @@ Wiki 홈
 학교 → 학년 → 학기 → 시험을 선택한 TUTOR는 STEP 1의 기출시험지 영역에서 시험연도와 함께 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 원본을 등록한다. 자료는 기존 workspace별 `exam_material_sets` 저장소를 사용하되 `material_type=PAST_EXAM`으로 학교 프린트(`SCHOOL_PRINT`)와 분리된다. 같은 Context의 여러 연도 파일은 행 단위로 누적되며 덮어쓰지 않는다. HTML 원본은 script/style/편집기 toolbar를 제거하고 시험 본문(제목·문항·지문·선택지·표·보기·밑줄·서답형 작성요령)만 남긴 정제본을, MD는 원문을 `body_text`로 저장해 FINAL Context/MCP `past_exams[].body_text`로 실제 1번·10번 발문과 작성요령까지 전달한다(원본 파일은 `/original`로 그대로 보존). 항목당 200,000자·`past_exams`+`ai_work_logs` 합산 600,000자를 넘으면 저장 순서대로 deterministic 하게 배분하고, 축약·제외분은 응답 `context_budget.truncated_items`/`omitted_items`로 명시한다. PDF·이미지·HWP(X)는 연도별 provenance와 원본 접근 식별자만 전달한다.
 
 STEP 1의 AI 작업기록 영역에서는 Claude/ChatGPT가 남긴 작업 로그(MD/MARKDOWN/TXT/HTML, 10MB)를 등록한다. `material_type=AI_WORK_LOG`로 분리 저장되고 본문이 FINAL Context의 `ai_work_logs[].body_text`로 실려, 다음 세션에서 MCP가 이전 작업을 이어서 읽는다. 자동 기출 분석이나 Digital Twin 갱신은 이 흐름에 포함하지 않는다.
+
+
+## 학교별 내신 주간 실전 모의고사 승인 흐름
+
+`exam_material_sets`와 Digital Twin은 계속 변하는 Living Context의 source of truth다. Work/Claude 또는 관리자 UI는 문제지 HTML·정답해설 HTML·제작검수 MD를 동일 `register_review` service에 전달한다. 서버는 현재 Context reference/hash를 Snapshot으로 고정하고 `REVIEW`로만 등록한다. 동일 학교·학년·연도·학기·시험·회차·setType에 REJECTED가 아닌 세트가 있으면 409로 막아 FINAL/PUBLISHED를 조용히 덮어쓰지 않는다.
+
+관리자만 `REVIEW → APPROVED → FINAL → PUBLISHED` 순서로 전이할 수 있다. 수정 요청과 반려도 audit에 기록한다. 학생용 조회는 frontend hide가 아니라 `status='PUBLISHED'` backend query를 사용한다. 세 산출물은 다운로드 없이 CSP sandbox View로 열며 저장 전 기존 기출 HTML allowlist sanitizer를 재사용한다.

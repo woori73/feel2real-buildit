@@ -31,6 +31,7 @@ import ai_router
 import private_reference_bank
 import question_contract as qc
 import workspace as wiki_workspace
+import weekly_exam
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -356,6 +357,8 @@ def init_db():
         conn.execute('CREATE INDEX IF NOT EXISTS idx_generated_test_material ON generated_tests(source_material_id)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_generated_test_context ON generated_tests(school, grade, exam)')
 
+        weekly_exam.init_schema(conn)
+
 
 def _legacy_markup_html(text: str) -> str:
     escaped = html.escape(text or '').replace('\n', '<br>')
@@ -448,6 +451,7 @@ def migrate_schema():
     """기존에 만들어져 있던 DB에는 없는 컬럼을 안전하게 추가한다.
     기존 데이터/테이블은 그대로 두고 누락된 컬럼만 ALTER TABLE로 보강한다 (데이터 삭제·재생성 없음)."""
     with get_db() as conn:
+        weekly_exam.init_schema(conn)
         cols = {row['name'] for row in conn.execute("PRAGMA table_info(student_wrong_notes)").fetchall()}
         if 'source_text' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN source_text TEXT NOT NULL DEFAULT ''")
@@ -702,6 +706,7 @@ async def _lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=_lifespan)
+app.include_router(weekly_exam.router)
 init_db()
 migrate_schema()
 with get_db() as _legacy_conn:
@@ -5248,6 +5253,8 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
 # 전부 이 파일에 그대로 있고,
 # mcp_server.py는 그 함수들을 호출만 한다(자세한 설계는 mcp_server.py 모듈 docstring).
 # ==================================================================================
+weekly_exam.configure(get_db, get_final_workspace_context, _sanitize_exam_html)
+
 from mcp_server import McpEndpointMiddleware, build_mcp_asgi_app  # noqa: E402
 app.add_middleware(
     McpEndpointMiddleware,

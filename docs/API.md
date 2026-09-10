@@ -3619,3 +3619,14 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/exam-materials/{id}/original`(원본 BLOB), `GET .../{id}/body`(정제 본문; HTML은 attachment), `DELETE .../{id}`: 기존 원본 접근·삭제 및 workspace/로그인 권한 계약을 그대로 사용한다.
 - `GET /problem-generator/wiki/api/workspaces/final/context`와 MCP `get_final_context`는 `past_exams`·`ai_work_logs`에 material_type, exam_year, original_api_path, body_api_path, has_body, body_format, uploaded_by/uploaded_at, provenance를 반환하고, 각 항목에 `body_included`/`body_truncated`/`body_length`(원문 전체)/`body_chars`(실린 길이)를 붙인다. 본문은 항목당 `_CONTEXT_BODY_MAX_CHARS`(200,000자), `past_exams`+`ai_work_logs` 합산 `_CONTEXT_BODY_TOTAL_BUDGET`(600,000자)로 제한하며, 저장 순서(year DESC, id DESC → past_exams 다음 ai_work_logs)대로 deterministic 하게 배분한다. 응답 최상위 `context_budget`에 `body_char_limit_per_item`/`body_char_budget_total`/`body_chars_used`/`truncated_items`/`omitted_items`를 담아 budget 때문에 잘리거나 빠진 자료를 명시한다(silent omission 금지). 원본 BLOB 전체는 Context에 넣지 않는다.
 - JPG/JPEG/PNG와 PDF는 기존 원본 endpoint에서 inline 확인할 수 있고, 사용자 HTML은 script 실행 방지를 위해 attachment 다운로드로만 제공한다.
+
+
+## 학교별 내신 Weekly Exam API
+
+- `POST /problem-generator/wiki/api/weekly-exams/review`: 로그인된 Wiki 사용자가 문제지 HTML, 정답해설 HTML, 제작·검수 Markdown을 한 세트로 등록한다. 상태 입력 필드는 없으며 서버가 항상 `REVIEW`로 저장한다. 현재 Living Context의 material ID, Digital Twin version, 항목별 count와 context status를 immutable Snapshot/hash로 함께 기록한다.
+- `GET /problem-generator/wiki/api/weekly-exams`: 선택한 school/grade/year/semester/exam의 모든 내부 상태를 조회한다.
+- `GET /problem-generator/wiki/api/weekly-exams/published`: 같은 Context에서 backend가 `PUBLISHED`만 필터링한다.
+- `GET /problem-generator/wiki/api/weekly-exams/{id}/artifacts/{student-paper|answer-explanation|production-verification}`: allowlist 정제 HTML 또는 escaped Markdown View를 CSP sandbox와 함께 반환한다.
+- `GET /problem-generator/wiki/api/weekly-exams/{id}/context-snapshot`: 제작 당시 immutable Context와 hash를 반환한다.
+- `POST /problem-generator/wiki/api/weekly-exams/{id}/transition`: workspace ADMIN 전용. `REVIEW→APPROVED|CHANGES_REQUESTED|REJECTED`, `APPROVED→FINAL`, `FINAL→PUBLISHED`만 허용한다.
+- MCP `register_weekly_exam_review`: HTTP 등록과 동일 service를 호출하며 상태는 항상 `REVIEW`다. MCP에는 승인·FINAL·PUBLISHED tool이 없다.
