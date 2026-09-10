@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-import wiki_workspace
+import workspace as wiki_workspace
 
 router = APIRouter(prefix='/api/weekly-exams', tags=['weekly-exams'])
 _get_db: Optional[Callable] = None
