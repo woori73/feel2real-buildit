@@ -51,7 +51,7 @@ mcp = MCPServer(
     name='buildit-wiki',
     # save_generated_test 추가 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='3',
+    version='4',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -251,7 +251,7 @@ def save_class_insights(content: str, source: str, school: str = '', grade: str 
 
 
 @mcp.tool()
-def register_weekly_exam_review(
+def register_weekly_exam_draft(
     school: str, grade: str, year: int, semester: str, exam_type: str,
     round: int, set_type: str, question_count: int,
     student_paper_html: str, answer_explanation_html: str, production_verification_md: str,
@@ -264,7 +264,7 @@ def register_weekly_exam_review(
     서버가 현재 Living Context를 Snapshot으로 고정하며 상태는 언제나 REVIEW다.
     이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다."""
     from fastapi import HTTPException
-    from weekly_exam import WeeklyExamReviewRequest, register_review
+    from weekly_exam import WeeklyExamReviewRequest, register_draft
     try:
         payload = WeeklyExamReviewRequest(
             school=school, grade=grade, year=year, semester=semester, examType=exam_type,
@@ -275,9 +275,9 @@ def register_weekly_exam_review(
             productionVerificationName=production_verification_name,
             sourceMaterialIds=source_material_ids or [],
         )
-        return register_review(payload, actor='mcp-agent')
+        return register_draft(payload, actor='mcp-agent')
     except ValidationError as exc:
-        raise ValueError('Weekly Exam 검증 실패: ' + str(exc)) from exc
+        raise ValueError('Weekly Exam DRAFT 검증 실패: ' + str(exc)) from exc
     except HTTPException as exc:
         raise ValueError(str(exc.detail)) from exc
 
