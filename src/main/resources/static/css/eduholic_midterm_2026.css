@@ -958,3 +958,20 @@ a { color: inherit; }
   }
   .midterm-live__hint-arrow { animation: none !important; }
 }
+
+
+/* Public-safe activity feed: metadata only; no private Wiki URLs or payloads. */
+.midterm-updates{max-width:1180px;margin:18px auto;padding:0 var(--page-pad);overflow:hidden}
+.midterm-updates__head{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:14px}
+.midterm-updates__live{color:#dc2626;font-size:12px;font-weight:850;letter-spacing:.08em}
+.midterm-updates__rail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:3px}
+.midterm-updates__rail::-webkit-scrollbar{display:none}
+.midterm-updates__item{flex:0 0 min(82vw,360px);scroll-snap-align:start;display:grid;grid-template-columns:auto 1fr;gap:3px 9px;padding:12px 14px;border:1px solid var(--surface-edge);border-radius:12px;background:var(--paper)}
+.midterm-updates__item b{font-size:12px}.midterm-updates__item span{font-size:12px;overflow-wrap:anywhere}
+.midterm-updates__item time{grid-column:1/-1;color:var(--ink-soft);font-size:10.5px}
+.midterm-live__updates{display:grid;gap:5px;margin:10px 0 0;padding:9px 0 0;border-top:1px solid var(--line);list-style:none}
+.midterm-live__updates li{display:grid;grid-template-columns:64px minmax(0,1fr);gap:7px;font-size:11px;line-height:1.4}
+.midterm-live__updates time{color:#dc2626;font-weight:750}.midterm-live__updates span{overflow-wrap:anywhere}
+@media(min-width:1080px){.midterm-updates__rail{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.midterm-updates__item{min-width:0}}
+@media(max-width:375px){.midterm-updates{min-width:0}.midterm-updates__item{flex-basis:86vw}.midterm-live__updates li{grid-template-columns:58px minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.midterm-updates__rail{scroll-behavior:auto}.midterm-updates__item{transition:none!important}}
