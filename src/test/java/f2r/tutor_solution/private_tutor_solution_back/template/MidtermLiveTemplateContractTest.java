@@ -103,13 +103,13 @@ class MidtermLiveTemplateContractTest {
     String js = read("static/js/eduholic_midterm_2026.js");
 
     // showcase / ambient / live 세 helper 를 한 Promise.all 로 모아 순서를 고정한다.
-    assertThat(js).contains("Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])");
+    assertThat(js).contains("Promise.all([showcaseScenes(), ambientVideos(), liveVideos(), liveUpdates()])");
     // render() → renderLiveCollection() 을 그 콜백 안에서 정확히 1회씩, 이 순서로 호출.
     assertThat(js).containsOnlyOnce("render(latestSource(sources), r[0])");
-    assertThat(js).containsOnlyOnce("renderLiveCollection(sources, r[1], r[2])");
-    int chainIdx = js.indexOf("Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])");
+    assertThat(js).containsOnlyOnce("renderLiveCollection(sources, r[1], r[2], r[3])");
+    int chainIdx = js.indexOf("Promise.all([showcaseScenes(), ambientVideos(), liveVideos(), liveUpdates()])");
     int renderIdx = js.indexOf("render(latestSource(sources), r[0])", chainIdx);
-    int liveIdx = js.indexOf("renderLiveCollection(sources, r[1], r[2])", chainIdx);
+    int liveIdx = js.indexOf("renderLiveCollection(sources, r[1], r[2], r[3])", chainIdx);
     assertThat(renderIdx).isGreaterThan(chainIdx);
     assertThat(liveIdx).isGreaterThan(renderIdx);   // root 를 비우는 render 가 반드시 먼저
 
@@ -128,7 +128,7 @@ class MidtermLiveTemplateContractTest {
         .isGreaterThanOrEqualTo(4);
     // LIVE 렌더가 던져도 이미 그려진 hero/showcase 는 지우지 않는다.
     assertThat(js).contains("try {");
-    assertThat(js.indexOf("try {")).isLessThan(js.indexOf("renderLiveCollection(sources, r[1], r[2])"));
+    assertThat(js.indexOf("try {")).isLessThan(js.indexOf("renderLiveCollection(sources, r[1], r[2], r[3])"));
   }
 
   private static int countOccurrences(String haystack, String needle) {
@@ -311,8 +311,8 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("placeholder");   // §17 — 더미 filler 금지, "준비 중" 실상태만
 
     // 자료 없는 FRAME 엔 영상/analyze 를 붙이지 않는다.
-    assertThat(js).contains("if (frame.pending) { ambientForFrame = null; }");
-    assertThat(js).contains("if (frame.pending) {");   // renderFrame 정적 "준비 중" 분기
+    assertThat(js).contains("if (frame.pending || frame.metadataOnly) { ambientForFrame = null; }");
+    assertThat(js).contains("if (frame.pending || frame.metadataOnly) {"); // 실제 metadata 전용 frame 포함
   }
 
   @Test
@@ -453,7 +453,7 @@ class MidtermLiveTemplateContractTest {
     // 여전히 실제 analyze contentUrl 만, 없으면 아무 것도 안 그린다.
     assertThat(js).contains("if (!result || !result.url) return;");
     // pending frame 에는 학원 ambient 영상을 붙이지 않는다.
-    assertThat(js).contains("if (frame.pending) { ambientForFrame = null; }");
+    assertThat(js).contains("if (frame.pending || frame.metadataOnly) { ambientForFrame = null; }");
 
     // Digital Twin 선택 = 시험 recency 순. "이번 시험 유형(중간) 우선" 로직은 제거됐다.
     assertThat(js).contains("function examRank(a)");
