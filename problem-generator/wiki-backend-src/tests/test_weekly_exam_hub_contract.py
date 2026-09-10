@@ -29,10 +29,11 @@ class WeeklyExamHubContractTest(unittest.TestCase):
         self.assertIn("setWorkspace('final')", self.naesin)
         self.assertIn("setCore('student_wrong_note')", self.naesin)
 
-    def test_human_approval_gate_is_explicit(self):
-        for status in ('DRAFT', 'REVIEW', 'APPROVED', 'FINAL/PUBLISHED'):
-            self.assertIn(status, self.hub)
-        self.assertIn('AI 제작 완료는 공개가 아닙니다.', self.hub)
+    def test_private_draft_final_workflow_is_explicit(self):
+        for phrase in ('DRAFT', 'FINAL 확정', 'FINAL은 학생 공개를 의미하지 않습니다.'):
+            self.assertIn(phrase, self.hub)
+        for removed in ('학생 공개', "transition(item.id,'publish')", "transition(item.id,'approve')"):
+            self.assertNotIn(removed, self.hub)
 
     def test_context_is_living_and_partial_is_visible(self):
         self.assertIn('Context PARTIAL', self.hub)
