@@ -123,6 +123,6 @@ export default function WeeklyExamHub(props:Props){
       <p className="field-hint">세 파일은 하나의 세트로 저장됩니다. 서버가 현재 Living Context Snapshot을 만들고 상태를 REVIEW로 고정합니다.</p>
       <button className="primary-action" disabled={!studentPaper||!answerExplanation||!verification} onClick={()=>void register()}>REVIEW 등록</button>
     </section>}
-    <p className="approval-gate-note">AI 제작 완료는 공개가 아닙니다. REVIEW → 사용자 승인 → APPROVED → FINAL → PUBLISHED 순서를 서버가 검증합니다.</p>
+    <p className="approval-gate-note">DRAFT 준비 전 · AI 제작 완료는 공개가 아닙니다. REVIEW → 사용자 승인 → APPROVED → FINAL/PUBLISHED 순서를 서버가 검증합니다.</p>
   </section>
 }
