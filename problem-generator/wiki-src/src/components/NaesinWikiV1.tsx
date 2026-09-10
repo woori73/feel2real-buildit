@@ -279,7 +279,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   }
   const sortedInsights=[...insights].sort((a,b)=>(a.source==='school_teacher'?0:1)-(b.source==='school_teacher'?0:1))
   const contextDates=[...materials,...pastExams,...aiWorkLogs].map(item=>item.created_at).filter(Boolean).sort()
-  const lastContextUpdate=contextDates.at(-1)
+  const lastContextUpdate=contextDates.length?contextDates[contextDates.length-1]:undefined
   // "화면에는 자료가 있는데 AI에는 전달되지 않는" 문제를 확인하기 위한 디버깅 장치.
   // 화면을 다시 조합하지 않고 MCP가 실제로 호출할 Context read API를 그대로 호출해 그 응답을 보여준다.
   const showAiContext=async(kind:'final'|'jikbo')=>{
