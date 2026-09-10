@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceView;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiLiveUpdateView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.service.MidtermWikiSourceService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,14 @@ public class MidtermWikiSourcePublicController {
   @GetMapping("/api/academies/{handle}/midterm-campaign/wiki-sources")
   public ResponseEntity<List<WikiSourceView>> list(@PathVariable String handle) {
     return ResponseEntity.ok(service.listSources(handle).views());
+  }
+
+
+  @GetMapping("/api/academies/{handle}/midterm-campaign/live-updates")
+  public ResponseEntity<List<WikiLiveUpdateView>> liveUpdates(@PathVariable String handle) {
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=60")
+        .body(service.listLiveUpdates(handle));
   }
 
   @GetMapping("/api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview")
