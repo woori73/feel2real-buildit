@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.se
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiCampaignScope;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceRow;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiLiveUpdateView;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,8 @@ public interface MidtermWikiSourceGateway {
    * school/grade는 query authority가 아니라 upstream metadata다.
    */
   List<WikiSourceRow> listCandidates(AuthenticatedPrincipal tutor, WikiCampaignScope scope);
+
+  List<WikiLiveUpdateView> listLiveUpdates(AuthenticatedPrincipal tutor, WikiCampaignScope scope);
 
   Optional<byte[]> fetchHtml(AuthenticatedPrincipal tutor, String kind, long id);
 }
