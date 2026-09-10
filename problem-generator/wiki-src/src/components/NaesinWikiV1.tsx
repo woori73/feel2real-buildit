@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import { DigitalTwinProfile, exportExamMaterialWrongNotesOffice, fetchQuestions, fetchSchoolTree, fetchStudents, SchoolNode, StoredQuestion, Student } from '../lib/types'
 import { loadExamContext, resolveSavedContext, saveExamContext } from '../lib/wikiContext'
 import type { Page } from '../App'
+import WeeklyExamHub from './WeeklyExamHub'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
 type Material = { id:number; core_type:'school_print'|'student_wrong_note'; material_type:'SCHOOL_PRINT'|'STUDENT_WRONG_NOTE'|'PAST_EXAM'|'AI_WORK_LOG'; school:string; grade:string; year:number; semester:string; exam:string; uploaded_by:string; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number; has_body?:number; body_format?:string }
@@ -277,6 +278,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     }catch(err){setNotice(err instanceof Error?err.message:'학생 오답 복습 문제지를 내보내지 못했습니다.')}finally{setExportingWrong(false)}
   }
   const sortedInsights=[...insights].sort((a,b)=>(a.source==='school_teacher'?0:1)-(b.source==='school_teacher'?0:1))
+  const contextDates=[...materials,...pastExams,...aiWorkLogs].map(item=>item.created_at).filter(Boolean).sort()
+  const lastContextUpdate=contextDates.length?contextDates[contextDates.length-1]:undefined
   // "화면에는 자료가 있는데 AI에는 전달되지 않는" 문제를 확인하기 위한 디버깅 장치.
   // 화면을 다시 조합하지 않고 MCP가 실제로 호출할 Context read API를 그대로 호출해 그 응답을 보여준다.
   const showAiContext=async(kind:'final'|'jikbo')=>{
@@ -300,6 +303,19 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       <label>시험<select value={context.exam} onChange={e=>{touchedRef.current.exam=true;setContext(c=>({...c,exam:e.target.value}))}}>{EXAM_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></label>
     </div>
     <div className="context-summary"><b>{context.school} · {context.grade}</b><span>{context.year}년 · {context.semester} · {examLabel}</span></div>
+
+    <WeeklyExamHub
+      context={context}
+      pastExamCount={pastExams.length}
+      schoolPrintCount={prints.length}
+      wrongCount={wrongs.length}
+      aiWorkLogCount={aiWorkLogs.length}
+      hasDigitalTwin={Boolean(twinProfile)}
+      lastContextUpdate={lastContextUpdate}
+      onOpenContext={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
+      onOpenWeeklyWorkspace={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
+      onOpenWrongReview={()=>setCore('student_wrong_note')}
+    />
 
     <ol className="wiki-steps">
       <li className="wiki-step">

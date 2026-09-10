@@ -74,3 +74,41 @@
 .ai-work-log-action{border-color:#3f5a8b!important;background:#eef2fb!important;color:#243a63!important}.ai-work-log-panel{border-color:#7b93d5}.ai-work-log-panel .past-exam-badge{background:#2f4a7a}.ai-work-log-panel .past-exam-year{background:#dbe4f7;color:#243a63}
 @media(max-width:640px){.past-exam-panel .material-list article,.ai-work-log-panel .material-list article{align-items:stretch}.past-exam-panel .material-list article>button,.ai-work-log-panel .material-list article>button{width:100%}.past-exam-meta{grid-template-columns:auto auto}.past-exam-meta b{grid-column:1/-1}.past-exam-action,.ai-work-log-action{width:100%}}
 
+
+
+/* Naesin Wiki repeat-production entry points share the existing context source of truth. */
+.naesin-repeat-hub{display:grid;gap:16px;margin:18px 0 24px}
+.current-context-card,.repeat-entry-card{border:1px solid #dbe3ef;border-radius:18px;background:#fff;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.05)}
+.current-context-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,auto) auto;gap:16px;align-items:center}
+.current-context-card h2,.repeat-entry-card h2{margin:2px 0 6px}
+.context-health{display:flex;flex-direction:column;gap:4px;min-width:0}
+.context-status{width:max-content;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800}
+.context-status.partial{color:#92400e;background:#fef3c7}
+.context-status.living{color:#166534;background:#dcfce7}
+.repeat-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.repeat-entry-card{display:flex;min-width:0;flex-direction:column}
+.repeat-entry-card.weekly{border-color:#bfdbfe;background:linear-gradient(145deg,#fff,#eff6ff)}
+.repeat-entry-card.wrong-review{border-color:#ddd6fe;background:linear-gradient(145deg,#fff,#f5f3ff)}
+.weekly-set-list{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.weekly-set-list span{display:flex;align-items:center;gap:7px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:8px 10px}
+.weekly-set-list b{font-size:18px}.weekly-set-list small{color:#64748b}
+.weekly-meta-preview{display:grid;gap:7px;margin:0 0 14px}
+.weekly-meta-preview div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px}
+.weekly-meta-preview dt{color:#64748b}.weekly-meta-preview dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.wrong-summary{display:flex;align-items:baseline;gap:8px;margin:12px 0}
+.wrong-summary strong{font-size:30px}.wrong-summary span{color:#475569}
+.repeat-entry-card ul{margin:0 0 14px;padding-left:20px;color:#475569}
+.repeat-entry-card .primary-action{margin-top:auto}
+.approval-gate-note{margin:0;border-left:4px solid #2563eb;padding:10px 12px;background:#eff6ff;color:#1e3a8a;font-size:13px}
+@media(max-width:720px){
+  .current-context-card{grid-template-columns:1fr}
+  .current-context-card .secondary-button{width:100%;white-space:normal}
+  .repeat-entry-grid{grid-template-columns:1fr}
+  .current-context-card,.repeat-entry-card{padding:15px;border-radius:15px}
+  .weekly-meta-preview div{grid-template-columns:64px minmax(0,1fr)}
+}
+@media(max-width:375px){
+  .naesin-repeat-hub{min-width:0}
+  .weekly-set-list span{flex:1 1 calc(50% - 8px);min-width:0}
+  .repeat-entry-card .primary-action{width:100%;white-space:normal}
+}
