@@ -11,6 +11,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Acad
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiCampaignScope;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceRow;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiLiveUpdateView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaign;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaignState;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermWikiSourceExposure;
@@ -146,6 +147,30 @@ class MidtermWikiSourceServiceTest {
     campaign.updatePublished(false);
     assertThatThrownBy(() -> service.listSources("eduholic"))
         .isInstanceOf(ResponseStatusException.class);
+  }
+
+
+  @Test
+  void liveUpdates_areAutomaticSafeMetadataAndRespectSchoolExamOverride() {
+    WikiLiveUpdateView safe = new WikiLiveUpdateView(
+        "신구중", "3학년", 2026, "2학기", "중간고사",
+        "WEEKLY_EXAM", "1회 · 40A 세트 · 40문항 제작 완료",
+        1, "40A", 40, "2026-09-10T09:30:00");
+    when(gateway.listLiveUpdates(
+        org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.eq(new WikiCampaignScope(2026, "2학기", "중간고사"))))
+        .thenReturn(List.of(safe));
+
+    assertThat(service.listLiveUpdates("eduholic"))
+        .singleElement()
+        .satisfies(row -> {
+          assertThat(row.school()).isEqualTo("신구중");
+          assertThat(row.label()).contains("제작 완료");
+          assertThat(row.toString()).doesNotContain("html").doesNotContain("sourceId");
+        });
+    verify(exposureRepository, never())
+        .findByCampaignIdAndVisibleTrueOrderBySortOrderAscExposureIdAsc(
+            org.mockito.ArgumentMatchers.anyLong());
   }
 
   private MidtermWikiSourceExposure exposure(boolean visible) {

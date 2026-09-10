@@ -3630,3 +3630,16 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/weekly-exams/{id}/context-snapshot`: 제작 당시 immutable Context와 hash를 반환한다.
 - `POST /problem-generator/wiki/api/weekly-exams/{id}/transition`: workspace ADMIN 전용. `REVIEW→APPROVED|CHANGES_REQUESTED|REJECTED`, `APPROVED→FINAL`, `FINAL→PUBLISHED`만 허용한다.
 - MCP `register_weekly_exam_review`: HTTP 등록과 동일 service를 호출하며 상태는 항상 `REVIEW`다. MCP에는 승인·FINAL·PUBLISHED tool이 없다.
+
+
+## Academy Midterm LIVE update feed
+`GET /api/academies/{handle}/midterm-campaign/live-updates`는 published campaign과 signed tutor workspace의 실제 Wiki metadata를 결합한다. school, grade, year, semester, examType, kind, label, round, setType, questionCount, updatedAt만 반환하며 원문·정답·검수 MD·source ID·경로·Context snapshot은 반환하지 않는다.
+
+
+## Weekly Exam private workflow
+- `POST /problem-generator/wiki/api/weekly-exams/draft`: signed operator only; effective state DRAFT.
+- `GET /problem-generator/wiki/api/weekly-exams`: current signed workspace only.
+- artifact/context-snapshot URLs: signed operator workspace only; no download endpoint.
+- `POST .../{id}/transition`: `finalize|reopen` only.
+- `GET .../public-metadata`: FINAL public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
+Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.

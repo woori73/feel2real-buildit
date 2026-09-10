@@ -23,6 +23,8 @@
   // 시험범위 텍스트(lesson / 문법 포인트 / 예문). 비면 기존 iframe hero 로 폴백.
   var SHOWCASE_API = '/api/academies/' + encodeURIComponent(HANDLE)
     + '/midterm-campaign/showcase';
+  var LIVE_UPDATES_API = '/api/academies/' + encodeURIComponent(HANDLE)
+    + '/midterm-campaign/live-updates';
   // Phase 4c — (학교, 학년, 역할) 로 연결된 학교·학년 현장 영상. 서버가 이미 visible + READY +
   // ownership 을 판정해 내려준다. 없으면 FRAME 은 자료 → 분석 흐름 그대로.
   var LIVE_VIDEOS_API = '/api/academies/' + encodeURIComponent(HANDLE)
@@ -120,12 +122,13 @@
       // LIVE 가 먼저 붙은 뒤 늦게 도착한 showcase 응답이 render() 로 LIVE 를 지운다.
       // showcase / ambient / live 세 helper 는 모두 실패 시 [] 를 반환하므로(reject 없음)
       // Promise.all 로 모아 순서를 고정한다: 항상 render() → renderLiveCollection().
-      return Promise.all([showcaseScenes(), ambientVideos(), liveVideos()])
+      return Promise.all([showcaseScenes(), ambientVideos(), liveVideos(), liveUpdates()])
         .then(function (r) {
           render(latestSource(sources), r[0]);
+          renderUpdateFeed(r[3]);
           // LIVE 렌더 중 예기치 못한 오류가 나도 이미 그려진 hero/showcase 는 지우지 않는다.
           try {
-            renderLiveCollection(sources, r[1], r[2]);
+            renderLiveCollection(sources, r[1], r[2], r[3]);
           } catch (e) { /* MATERIAL frame 없이도 상단은 유지 */ }
         });
     })
@@ -140,6 +143,62 @@
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (list) { return Array.isArray(list) ? list : []; })
       .catch(function () { return []; });
+  }
+
+
+  function liveUpdates() {
+    return fetch(LIVE_UPDATES_API, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) { return Array.isArray(list) ? list : []; })
+      .catch(function () { return []; });
+  }
+
+  function sameLocalDay(value, now) {
+    var date = new Date(value);
+    return !Number.isNaN(date.getTime())
+      && date.getFullYear() === now.getFullYear()
+      && date.getMonth() === now.getMonth()
+      && date.getDate() === now.getDate();
+  }
+
+  function relativeUpdateTime(value) {
+    var date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    var now = new Date();
+    if (sameLocalDay(value, now)) {
+      return 'TODAY ' + String(date.getHours()).padStart(2, '0') + ':'
+        + String(date.getMinutes()).padStart(2, '0');
+    }
+    var yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    if (sameLocalDay(value, yesterday)) return '어제';
+    return String(date.getMonth() + 1).padStart(2, '0') + '.'
+      + String(date.getDate()).padStart(2, '0');
+  }
+
+  function renderUpdateFeed(updates) {
+    updates = Array.isArray(updates) ? updates.filter(function (u) {
+      return u && u.school && u.label && u.updatedAt;
+    }) : [];
+    var now = new Date();
+    var todayCount = updates.filter(function (u) { return sameLocalDay(u.updatedAt, now); }).length;
+    var section = el('section', 'midterm-updates');
+    section.setAttribute('aria-label', '오늘의 내신 자료 업데이트');
+    var head = el('div', 'midterm-updates__head');
+    head.appendChild(el('span', 'midterm-updates__live', '● LIVE'));
+    head.appendChild(el('strong', '', todayCount ? '오늘 ' + todayCount + '건 업데이트' : '오늘 업데이트 없음'));
+    section.appendChild(head);
+    if (updates.length) {
+      var rail = el('div', 'midterm-updates__rail');
+      updates.slice(0, 10).forEach(function (u) {
+        var item = el('article', 'midterm-updates__item');
+        item.appendChild(el('b', '', [u.school, gradeLabel(u.grade)].filter(Boolean).join(' ')));
+        item.appendChild(el('span', '', u.label));
+        item.appendChild(el('time', '', relativeUpdateTime(u.updatedAt)));
+        rail.appendChild(item);
+      });
+      section.appendChild(rail);
+    }
+    root.appendChild(section);
   }
 
   function el(tag, className, text) {
@@ -827,8 +886,18 @@
     return out.slice(0, FRAME_MAX);
   }
 
-  function renderLiveCollection(sources, ambient, liveLinks) {
-    var frames = withCampaignFrames(resolveFrames(sources));
+  function renderLiveCollection(sources, ambient, liveLinks, updates) {
+    var realFrames = resolveFrames(sources);
+    var frameKeys = {};
+    realFrames.forEach(function (f) { frameKeys[f.school + '|' + f.grade] = true; });
+    (Array.isArray(updates) ? updates : []).forEach(function (u) {
+      var school = String(u.school || '').trim(), grade = gradeNumber(u.grade);
+      if (!school || grade == null || frameKeys[school + '|' + grade]) return;
+      frameKeys[school + '|' + grade] = true;
+      realFrames.push({ school: school, grade: grade, gradeLabel: gradeLabel(u.grade),
+        materials: [], metadataOnly: true });
+    });
+    var frames = withCampaignFrames(realFrames);
     if (!frames.length) return;
     var videos = Array.isArray(ambient) ? ambient : [];
     var links = Array.isArray(liveLinks) ? liveLinks : [];
@@ -870,15 +939,18 @@
       var ambientForFrame = hasSpecific ? null : (ambientQueue.shift() || null);
       // 자료 없는(준비 중) FRAME 에는 학원 ambient 영상을 붙이지 않는다(그 학교 콘텐츠가 아니다).
       // 단, 그 학교 공개 출제 경향 분석(analyze)은 renderFrame 에서 붙일 수 있다.
-      if (frame.pending) { ambientForFrame = null; }
-      collection.appendChild(renderFrame(frame, index, ambientForFrame, frameLinks));
+      if (frame.pending || frame.metadataOnly) { ambientForFrame = null; }
+            var frameUpdates = (Array.isArray(updates) ? updates : []).filter(function (u) {
+        return String(u.school || '').trim() === frame.school && gradeNumber(u.grade) === frame.grade;
+      }).slice(0, 3);
+      collection.appendChild(renderFrame(frame, index, ambientForFrame, frameLinks, frameUpdates));
     });
     section.appendChild(collection);
 
     root.appendChild(section);
   }
 
-  function renderFrame(frame, index, ambientVideo, frameLinks) {
+  function renderFrame(frame, index, ambientVideo, frameLinks, frameUpdates) {
     var article = el('article', 'midterm-live__frame');
     article.classList.add('is-role-' + ROLES[index % ROLES.length]);
     var idLabel = frame.school + (frame.gradeLabel ? ' ' + frame.gradeLabel : '');
@@ -894,17 +966,27 @@
     var sub = el('p', 'midterm-live__sub', SEASON);
     info.appendChild(meta);
     info.appendChild(sub);
+    if (Array.isArray(frameUpdates) && frameUpdates.length) {
+      var updateList = el('ul', 'midterm-live__updates');
+      frameUpdates.forEach(function (u) {
+        var li = el('li', '');
+        li.appendChild(el('time', '', relativeUpdateTime(u.updatedAt)));
+        li.appendChild(el('span', '', u.label));
+        updateList.appendChild(li);
+      });
+      info.appendChild(updateList);
+    }
     article.appendChild(info);
 
     var scenes = [];
 
-    if (frame.pending) {
+    if (frame.pending || frame.metadataOnly) {
       // 자료 없는 캠페인 학교 — "준비 중" scene. MATERIAL / 영상은 없지만, 아래에서 그 학교
       // 공개 출제 경향 분석(analyze)이 있으면 DIGITAL_TWIN scene 이 추가된다.
       article.classList.add('is-pending');
       var pend = el('div', 'midterm-live__scene');
       pend.setAttribute('data-kind', 'pending');
-      pend.appendChild(el('p', 'midterm-live__pending', PENDING_TEXT));
+      pend.appendChild(el('p', 'midterm-live__pending', frame.metadataOnly ? '최신 자료 업데이트 반영 중' : PENDING_TEXT));
       stage.appendChild(pend);
       scenes.push({ el: pend, kind: 'pending', ms: MATERIAL_MS, sub: SEASON });
     } else {

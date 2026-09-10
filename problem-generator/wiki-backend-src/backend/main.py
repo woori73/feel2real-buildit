@@ -1638,6 +1638,45 @@ def list_live_material_candidates(year: int, semester: str, exam: str):
     return result
 
 
+@app.get('/api/live-update-metadata')
+def list_live_update_metadata(year: int, semester: str, exam: str):
+    """Signed workspace source -> public-safe activity candidates. No body, ID, filename or locator."""
+    with get_db() as conn:
+        materials = conn.execute("""SELECT school,grade,year,semester,exam,material_type,created_at
+            FROM exam_material_sets WHERE year=? AND semester=? AND exam=?
+              AND core_type='school_print' ORDER BY created_at DESC""",
+            (year, semester, exam)).fetchall()
+        exams = conn.execute("""SELECT school,grade,year,semester,exam,round,set_type,
+              question_count,updated_at FROM weekly_exam_sets
+            WHERE year=? AND semester=? AND exam=? AND status IN ('APPROVED','FINAL','PUBLISHED')
+            ORDER BY updated_at DESC""", (year, semester, exam)).fetchall()
+    updates = []
+    for row in materials:
+        material_type = (row['material_type'] or '').upper()
+        if material_type == 'PAST_EXAM':
+            kind, label = 'PAST_EXAM', '기출·출제패턴 분석 업데이트'
+        elif material_type == 'AI_WORK_LOG':
+            kind, label = 'PRODUCTION_LOG', '제작·검수 기록 업데이트'
+        elif 'NOTE' in material_type or 'HANDWRIT' in material_type:
+            kind, label = 'SCHOOL_NOTE', '학교 필기·시험범위 업데이트'
+        else:
+            kind, label = 'SCHOOL_MATERIAL', '학교 학습자료 업데이트'
+        updates.append({
+            'school': row['school'], 'grade': row['grade'], 'year': row['year'],
+            'semester': row['semester'], 'examType': row['exam'], 'kind': kind,
+            'label': label, 'updatedAt': row['created_at'],
+        })
+    for row in exams:
+        updates.append({
+            'school': row['school'], 'grade': row['grade'], 'year': row['year'],
+            'semester': row['semester'], 'examType': row['exam'], 'kind': 'WEEKLY_EXAM',
+            'label': f"{row['round']}회 · {row['set_type']} 세트 · {row['question_count']}문항 제작 완료",
+            'round': row['round'], 'setType': row['set_type'],
+            'questionCount': row['question_count'], 'updatedAt': row['updated_at'],
+        })
+    return sorted(updates, key=lambda item: item['updatedAt'] or '', reverse=True)[:100]
+
+
 @app.get('/api/final-deliverables/{deliverable_id}/original')
 def open_final_deliverable_original(deliverable_id: int):
     with get_db() as conn:
@@ -3018,6 +3057,7 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         generated_tests = _generated_test_context_items(conn, school, grade, exam)
+    weekly_exam_finals = weekly_exam.final_context_items(school, grade, year, semester, exam)
     context_budget = _apply_context_body_budget(past_exams, ai_work_logs)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
@@ -3031,6 +3071,7 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
         'generated_questions': _question_context_items(school, grade, exam),
         'generated_tests': generated_tests,
         'final_deliverables': final_deliverables,
+        'weekly_exam_finals': weekly_exam_finals,
     }
 
 

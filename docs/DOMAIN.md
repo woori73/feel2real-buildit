@@ -1203,3 +1203,7 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 ### weekly_exam_sets / weekly_exam_audit
 
 학교별 주간 실전 모의고사 완성 세트와 승인 이력을 저장하는 workspace 소유 SQLite 테이블이다. `exam_material_sets`는 학교자료·기출·오답·AI 작업기록의 Living Context이므로 산출물 상태를 섞지 않는다. 세트는 school/grade/year/semester/exam/round/set_type/question_count, 문제지·정답해설·검수 MD 본문과 SHA-256, source material ID 목록, immutable context_snapshot/context_hash, version/status, 생성·검토·공개 주체/시각을 가진다. status는 REVIEW, CHANGES_REQUESTED, REJECTED, APPROVED, FINAL, PUBLISHED이며 승인 전이는 서버 ADMIN Gate를 거친다. `weekly_exam_audit`는 등록과 상태 전이를 append-only로 기록한다.
+
+
+## Weekly Exam compatibility
+`weekly_exam_sets`와 `weekly_exam_audit`를 그대로 사용한다. 데이터 migration 없이 legacy 상태를 DRAFT/FINAL로 해석한다. 원문 3종, source IDs, hashes, snapshot과 기존 audit는 변경·삭제하지 않는다. 신규 audit action은 CREATED, FINALIZED, REOPENED다.

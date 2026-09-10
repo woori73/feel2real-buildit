@@ -7,11 +7,15 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceListResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceRow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiSourceView;
+import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.dto.MidtermWikiSourceDtos.WikiLiveUpdateView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermCampaign;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.entity.MidtermWikiSourceExposure;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermWikiSourceExposureRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -54,6 +58,28 @@ public class MidtermWikiSourceService {
         .toList();
     return new WikiSourceListResult(views,
         candidates.isEmpty() ? examScopePolicy.scopes(handle, context.campaign()) : List.of());
+  }
+
+
+  /** Exposure 없이 자동 반영되는 public-safe metadata. Wiki 원문/ID/URL은 DTO에 존재하지 않는다. */
+  @Transactional(readOnly = true)
+  public List<WikiLiveUpdateView> listLiveUpdates(String handle) {
+    Context context = requirePublishedCampaign(handle);
+    AuthenticatedPrincipal tutor = tutorPrincipal(context.academy());
+    Map<String, WikiLiveUpdateView> unique = new LinkedHashMap<>();
+    for (WikiCampaignScope scope : examScopePolicy.scopes(handle, context.campaign())) {
+      for (WikiLiveUpdateView row : gateway.listLiveUpdates(tutor, scope)) {
+        Integer grade = MidtermExamScopePolicy.gradeNumber(row.grade());
+        if (!examScopePolicy.allowedExam(handle, row.school(), grade, context.campaign().getExamType())
+            .equals(MidtermExamScopePolicy.normalizeExam(row.examType()))) continue;
+        String key = String.join("|", row.school(), row.grade(), row.kind(), row.label(), row.updatedAt());
+        unique.putIfAbsent(key, row);
+      }
+    }
+    List<WikiLiveUpdateView> result = new ArrayList<>(unique.values());
+    result.sort(Comparator.comparing(
+        WikiLiveUpdateView::updatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+    return result.stream().limit(100).toList();
   }
 
   /** Preview 요청마다 published campaign, current candidate, visible exposure를 모두 재검증한다. */

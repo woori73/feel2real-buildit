@@ -24,6 +24,12 @@ public final class MidtermWikiSourceDtos {
       String createdAt,
       String previewUrl) {}
 
+  /** LIVE에 공개할 수 있는 활동 metadata. 원문 식별자·경로·본문은 의도적으로 없다. */
+  public record WikiLiveUpdateView(
+      String school, String grade, Integer year, String semester, String examType,
+      String kind, String label, Integer round, String setType, Integer questionCount,
+      String updatedAt) {}
+
   /** Signed TUTOR Wiki candidate endpoint의 eligible row. */
   public record WikiSourceRow(
       String kind,
