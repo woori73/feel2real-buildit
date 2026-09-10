@@ -980,7 +980,7 @@
 
     var scenes = [];
 
-    if (frame.pending) {
+    if (frame.pending || frame.metadataOnly) {
       // 자료 없는 캠페인 학교 — "준비 중" scene. MATERIAL / 영상은 없지만, 아래에서 그 학교
       // 공개 출제 경향 분석(analyze)이 있으면 DIGITAL_TWIN scene 이 추가된다.
       article.classList.add('is-pending');
