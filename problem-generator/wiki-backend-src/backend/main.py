@@ -1670,7 +1670,7 @@ def list_live_update_metadata(year: int, semester: str, exam: str):
         updates.append({
             'school': row['school'], 'grade': row['grade'], 'year': row['year'],
             'semester': row['semester'], 'examType': row['exam'], 'kind': 'WEEKLY_EXAM',
-            'label': f"{row['round']}회 · {row['set_type']}문항 제작 완료",
+            'label': f"{row['round']}회 · {row['set_type']} 세트 · {row['question_count']}문항 제작 완료",
             'round': row['round'], 'setType': row['set_type'],
             'questionCount': row['question_count'], 'updatedAt': row['updated_at'],
         })
