@@ -30,15 +30,15 @@ class WeeklyExamHubContractTest(unittest.TestCase):
         self.assertIn("setCore('student_wrong_note')", self.naesin)
 
     def test_private_draft_final_workflow_is_explicit(self):
-        for phrase in ('DRAFT', 'FINAL 확정', 'FINAL은 학생 공개를 의미하지 않습니다.'):
+        for phrase in ('DRAFT', 'FINAL 확정', 'FINAL은 외부 공개를 의미하지 않습니다.'):
             self.assertIn(phrase, self.hub)
         for removed in ("transition(item.id,'publish')", "transition(item.id,'approve')"):
             self.assertNotIn(removed, self.hub)
 
     def test_context_is_living_and_partial_is_visible(self):
-        self.assertIn('Context PARTIAL', self.hub)
-        self.assertIn('Context LIVING', self.hub)
-        self.assertIn('새 자료 등록 시 갱신', self.hub)
+        self.assertIn("'PARTIAL'|'LIVING'|'COMPLETE'", self.hub)
+        self.assertIn('context_snapshot', self.hub)
+        self.assertIn('currentStatus', self.hub)
         self.assertIn('자료 보기 · AI Context', self.hub)
 
     def test_mobile_layout_has_single_column_and_no_fixed_width(self):
