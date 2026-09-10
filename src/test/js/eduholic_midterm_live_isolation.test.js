@@ -32,7 +32,7 @@ function makeDoc() {
   return document;
 }
 
-function run(sources, liveVideos, showcase) {
+function run(sources, liveVideos, showcase, liveUpdates) {
   const document = makeDoc();
   const mtRoot = new MiniElement('div');
   mtRoot.setAttribute('id', 'mtRoot');
@@ -46,6 +46,7 @@ function run(sources, liveVideos, showcase) {
     '/midterm-campaign/wiki-sources': sources,
     '/midterm-campaign/showcase': showcase || [],
     '/midterm-campaign/live-videos': liveVideos,
+    '/midterm-campaign/live-updates': liveUpdates || [],
     '/api/analyzes': []                // 출제 경향 없음 → twin scene 없음(가짜 금지)
   };
   function fetchStub(url) {
@@ -162,4 +163,32 @@ test('grade 불일치(압구정중3)면 압구정중2 FRAME 에도 안 붙는다
   await new Promise((r) => setImmediate(r));
 
   assert.equal(mediaScenes(frameFor(mtRoot, '압구정중 2학년')).length, 0, 'grade 2 FRAME 에 grade 3 링크 안 붙음');
+});
+
+
+test('LIVE feed renders only public-safe metadata and attaches updates to exact school-grade frame', async () => {
+  const sources = [
+    { sourceId: 'school-print-1', kind: 'school-print', school: '압구정중', grade: '2학년',
+      previewUrl: '/x/school-print-1/preview', createdAt: '2026-09-01T00:00:00Z' },
+    { sourceId: 'school-print-2', kind: 'school-print', school: '신사중', grade: '3학년',
+      previewUrl: '/x/school-print-2/preview', createdAt: '2026-09-02T00:00:00Z' }
+  ];
+  const updates = [
+    { school: '압구정중', grade: '2학년', year: 2026, semester: '2학기',
+      examType: '중간고사', kind: 'WEEKLY_EXAM', label: '3회 · 70문항 제작 완료',
+      round: 3, setType: '70', questionCount: 70, updatedAt: new Date().toISOString() },
+    { school: '신사중', grade: '3학년', year: 2026, semester: '2학기',
+      examType: '기말고사', kind: 'SCHOOL_MATERIAL', label: '학교 학습자료 업데이트',
+      updatedAt: new Date().toISOString() }
+  ];
+  const { mtRoot } = run(sources, [], [], updates);
+  await new Promise((r) => setImmediate(r)); await new Promise((r) => setImmediate(r));
+
+  assert.equal(mtRoot.querySelectorAll('.midterm-updates__item').length, 2);
+  assert.equal(frameFor(mtRoot, '압구정중').querySelectorAll('.midterm-live__updates li').length, 1);
+  assert.equal(frameFor(mtRoot, '신사중').querySelectorAll('.midterm-live__updates li').length, 1);
+  const serialized = JSON.stringify(updates);
+  assert.equal(serialized.includes('studentPaperHtml'), false);
+  assert.equal(serialized.includes('contextSnapshot'), false);
+  assert.equal(serialized.includes('sourceMaterialIds'), false);
 });
