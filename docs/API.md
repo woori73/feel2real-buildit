@@ -3415,7 +3415,9 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 🧪 Chart Site tool 1차 계약 (`/api/admin/chart/tools/**`)
 
-모든 endpoint는 `ROLE_ADMIN` 전용이다. ChatGPT가 공개 웹 조사를 담당하며 이 API가 다시 Gemini/OpenAI 검색을 호출하지 않는다.
+모든 endpoint는 기본 `ROLE_ADMIN` 전용이다. 단, 조사 파이프라인 최소 범위는 Research Agent도
+`CHART_AGENT_TOKEN` Bearer 토큰으로 호출할 수 있다(신규 인증 연결, 기존 JWT 쿠키·WebMCP 경로 유지).
+ChatGPT가 공개 웹 조사를 담당하며 이 API가 다시 Gemini/OpenAI 검색을 호출하지 않는다.
 
 `/admin/chart`는 지원 브라우저에서 `document.modelContext.registerTool()`로 아래 REST 계약을 WebMCP Site tools로 등록한다. Site tools는 현재 페이지의 ADMIN 로그인 세션과 `fetchAuth` 인증을 그대로 사용하며 별도 API key, MCP 서버 또는 우회 권한을 만들지 않는다. 페이지를 닫거나 로그아웃하면 도구도 사용할 수 없다.
 
@@ -3433,6 +3435,20 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 | `revert_chart_review_batch` | Recovery Write | `POST /review-batches/{reviewBatchId}/revert` (잘못 발행 batch 되돌리기) |
 
 publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접 명령으로 만들 수 없고(`POST /publications`는 항상 `409`), 정상 조사 파이프라인 완료(`complete_region`) 시 서버 내부 workflow가 전국 누적 snapshot을 발행한다.
+
+#### Research Agent 인증 (`CHART_AGENT_TOKEN`)
+
+- 브라우저가 없는 Research Agent(Muse/OpenCode)는 관리자 JWT 쿠키를 가질 수 없으므로, 서버 환경변수
+  `CHART_AGENT_TOKEN` 과 일치하는 `Authorization: Bearer <token>` 헤더로 조사 파이프라인만 호출한다.
+- 허용 범위(그 외는 `ROLE_ADMIN` 전용으로 401/403): `GET /context`, `GET /regions/next`,
+  `POST /regions/{id}/claim`, `POST /educators/search-existing`, `POST /research-drafts`,
+  `GET /scores/preview`, `POST /review-batches`, `GET /review-batches`,
+  `GET /review-batches/{id}`, `POST /regions/{id}/complete`.
+- 제외(allowlist 밖 — 토큰이 무시되어 익명과 동일하게 401): `decision`/`finalize`/`revert`/`rebuild`/
+  `publications`/`web-draft-requests` 및 `/api/admin/chart` 일반 관리 API.
+- 토큰 미설정 시 에이전트 경로는 완전히 비활성화된다(fail-closed). 토큰은 코드·저장소에 넣지 않고
+  운영 환경변수(EC2 `/etc/f2r/env` 등)로만 주입한다. 감사 추적용 principal은 `chart-agent`.
+- 기존 Service·validation·scoring·duplicate check를 그대로 통과하므로 별도 import API를 만들지 않는다.
 
 - `GET /context`: 조사 파이프라인, 저장 최소 게이트 / 평가 게이트, 제외 정책(학원 규모·프랜차이즈·광고량·유명세는 제외 사유 아님), Score 가중치, 비평가 신호, 개인정보·공개 고지를 조회한다. 범위: 대한민국 초·중·고 영어교육. read.
 - `GET /regions/next?limit=1`: 신규 조사 또는 재조사 예정(`DUE`)/오류 지역만 조회한다. `RESEARCHED`는 제외. `chart_regions`는 V952로 대한민국 전국 시·군·구가 seed되어 있고 지역 추가는 migration seed로만 한다. read.
