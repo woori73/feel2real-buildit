@@ -887,7 +887,17 @@
   }
 
   function renderLiveCollection(sources, ambient, liveLinks, updates) {
-    var frames = withCampaignFrames(resolveFrames(sources));
+    var realFrames = resolveFrames(sources);
+    var frameKeys = {};
+    realFrames.forEach(function (f) { frameKeys[f.school + '|' + f.grade] = true; });
+    (Array.isArray(updates) ? updates : []).forEach(function (u) {
+      var school = String(u.school || '').trim(), grade = gradeNumber(u.grade);
+      if (!school || grade == null || frameKeys[school + '|' + grade]) return;
+      frameKeys[school + '|' + grade] = true;
+      realFrames.push({ school: school, grade: grade, gradeLabel: gradeLabel(u.grade),
+        materials: [], metadataOnly: true });
+    });
+    var frames = withCampaignFrames(realFrames);
     if (!frames.length) return;
     var videos = Array.isArray(ambient) ? ambient : [];
     var links = Array.isArray(liveLinks) ? liveLinks : [];
@@ -929,7 +939,7 @@
       var ambientForFrame = hasSpecific ? null : (ambientQueue.shift() || null);
       // 자료 없는(준비 중) FRAME 에는 학원 ambient 영상을 붙이지 않는다(그 학교 콘텐츠가 아니다).
       // 단, 그 학교 공개 출제 경향 분석(analyze)은 renderFrame 에서 붙일 수 있다.
-      if (frame.pending) { ambientForFrame = null; }
+      if (frame.pending || frame.metadataOnly) { ambientForFrame = null; }
             var frameUpdates = (Array.isArray(updates) ? updates : []).filter(function (u) {
         return String(u.school || '').trim() === frame.school && gradeNumber(u.grade) === frame.grade;
       }).slice(0, 3);
@@ -976,7 +986,7 @@
       article.classList.add('is-pending');
       var pend = el('div', 'midterm-live__scene');
       pend.setAttribute('data-kind', 'pending');
-      pend.appendChild(el('p', 'midterm-live__pending', PENDING_TEXT));
+      pend.appendChild(el('p', 'midterm-live__pending', frame.metadataOnly ? '최신 자료 업데이트 반영 중' : PENDING_TEXT));
       stage.appendChild(pend);
       scenes.push({ el: pend, kind: 'pending', ms: MATERIAL_MS, sub: SEASON });
     } else {
