@@ -451,6 +451,7 @@ def migrate_schema():
     """기존에 만들어져 있던 DB에는 없는 컬럼을 안전하게 추가한다.
     기존 데이터/테이블은 그대로 두고 누락된 컬럼만 ALTER TABLE로 보강한다 (데이터 삭제·재생성 없음)."""
     with get_db() as conn:
+        weekly_exam.init_schema(conn)
         cols = {row['name'] for row in conn.execute("PRAGMA table_info(student_wrong_notes)").fetchall()}
         if 'source_text' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN source_text TEXT NOT NULL DEFAULT ''")
