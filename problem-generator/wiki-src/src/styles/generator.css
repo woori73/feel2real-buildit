@@ -115,7 +115,7 @@
 
 
 .weekly-set-list span{flex-direction:column;align-items:flex-start}.weekly-set-list .weekly-status{border-width:2px}
-.weekly-set-list .weekly-status.review,.status-badge.review{border-color:#f59e0b;background:#fffbeb;color:#92400e}
+.weekly-set-list .weekly-status.review,.status-badge.review,.weekly-set-list .weekly-status.draft,.status-badge.draft{border-color:#f59e0b;background:#fffbeb;color:#92400e}
 .weekly-set-list .weekly-status.approved,.status-badge.approved{border-color:#22c55e;background:#f0fdf4;color:#166534}
 .weekly-set-list .weekly-status.final,.status-badge.final{border-color:#2563eb;background:#eff6ff;color:#1e3a8a}
 .weekly-set-list .weekly-status.published,.status-badge.published{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6}
