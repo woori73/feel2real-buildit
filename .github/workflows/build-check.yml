@@ -48,6 +48,8 @@ jobs:
         run: >-
           ./gradlew test --no-daemon
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilterTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.controller.ChartSiteToolAgentAuthWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartCandidateEnrichmentServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartEducatorSearchServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.RankingComputationTest"

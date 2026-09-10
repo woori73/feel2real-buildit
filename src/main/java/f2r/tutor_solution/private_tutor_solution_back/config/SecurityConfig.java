@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtAuthenticationFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
@@ -60,6 +61,7 @@ public class SecurityConfig {
       HttpSecurity http,
       JwtTokenProvider tokenProvider,
       CookieUtil cookieUtil,
+      org.springframework.core.env.Environment environment,
       org.springframework.beans.factory.ObjectProvider<
           f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository> academyRepository,
       org.springframework.beans.factory.ObjectProvider<SiteVisitRecordingService> siteVisitRecordingService,
@@ -75,6 +77,11 @@ public class SecurityConfig {
         new ArchivedRouteAliasFilter(archivedRoutesProperties);
     JwtAuthenticationFilter jwtAuthenticationFilter =
         new JwtAuthenticationFilter(tokenProvider, cookieUtil);
+    // Chart Research Agent 전용 Bearer 토큰 필터. CHART_AGENT_TOKEN 미설정 시 비활성화.
+    // 서블릿 자동 등록 이중 실행 방지 + @WebMvcTest 슬라이스 호환을 위해 여기서 직접 생성한다.
+    // 테스트에서는 TestPropertySource의 CHART_AGENT_TOKEN 으로 주입된다.
+    ChartAgentTokenFilter chartAgentTokenFilter =
+        new ChartAgentTokenFilter(environment.getProperty(ChartAgentTokenFilter.ENV_VAR));
     ArchivedRouteAccessFilter archivedRouteAccessFilter =
         new ArchivedRouteAccessFilter(archivedRoutesProperties);
     OriginWhitelistFilter originWhitelistFilter =
@@ -290,6 +297,24 @@ public class SecurityConfig {
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.
             .requestMatchers(HttpMethod.GET, "/api/landing/videos/*/stream").permitAll()
 
+            // Chart Research Agent (ROLE_CHART_AGENT) — 조사 파이프라인 최소 범위만 허용.
+            // Bearer 토큰은 CHART_AGENT_TOKEN 환경변수로 주입되며 미설정 시 이 규칙은
+            // 사실상 ADMIN 전용과 동일해진다 (필터가 인증을 설정하지 않으므로).
+            // decision/finalize/revert/rebuild/web-draft-requests 는 아래 /api/admin/** 로
+            // 떨어져 ROLE_ADMIN 전용으로 남는다. 반드시 /api/admin/** 보다 먼저(좁은 것 우선).
+            .requestMatchers(HttpMethod.GET,
+                "/api/admin/chart/tools/context",
+                "/api/admin/chart/tools/regions/next",
+                "/api/admin/chart/tools/scores/preview",
+                "/api/admin/chart/tools/review-batches",
+                "/api/admin/chart/tools/review-batches/{reviewBatchId}").hasAnyRole("ADMIN", "CHART_AGENT")
+            .requestMatchers(HttpMethod.POST,
+                "/api/admin/chart/tools/regions/{regionId}/claim",
+                "/api/admin/chart/tools/regions/{regionId}/complete",
+                "/api/admin/chart/tools/educators/search-existing",
+                "/api/admin/chart/tools/research-drafts",
+                "/api/admin/chart/tools/review-batches").hasAnyRole("ADMIN", "CHART_AGENT")
+
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
@@ -313,6 +338,7 @@ public class SecurityConfig {
         .addFilterBefore(subdomainAcademyFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(archivedRouteAliasFilter, SubdomainAcademyFilter.class)
         .addFilterAfter(jwtAuthenticationFilter, ArchivedRouteAliasFilter.class)
+        .addFilterAfter(chartAgentTokenFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
