@@ -26,6 +26,12 @@ _context_reader: Optional[Callable] = None
 _html_sanitizer: Optional[Callable[[str], str]] = None
 
 STATUSES = ('REVIEW', 'CHANGES_REQUESTED', 'REJECTED', 'APPROVED', 'FINAL', 'PUBLISHED')
+# Storage stays backward compatible with the PR #270 CHECK constraint. Public/product state is
+# deliberately only DRAFT/FINAL: legacy rows are interpreted without a destructive migration.
+EFFECTIVE_STATUS = {
+    'REVIEW': 'DRAFT', 'CHANGES_REQUESTED': 'DRAFT', 'REJECTED': 'DRAFT',
+    'APPROVED': 'FINAL', 'FINAL': 'FINAL', 'PUBLISHED': 'FINAL',
+}
 SET_TYPES = ('40', '70', '40A', '40B')
 ARTIFACTS = ('student-paper', 'answer-explanation', 'production-verification')
 
@@ -87,7 +93,7 @@ class WeeklyExamReviewRequest(BaseModel):
 
 
 class TransitionRequest(BaseModel):
-    action: Literal['approve', 'request_changes', 'reject', 'finalize', 'publish']
+    action: Literal['finalize', 'reopen']
     note: str = ''
 
 
@@ -154,13 +160,31 @@ def _row(row) -> dict:
     item = dict(row)
     item['source_material_ids'] = json.loads(item.pop('source_material_ids') or '[]')
     item['context_snapshot'] = json.loads(item['context_snapshot'])
+    item['legacy_status'] = item['status']
+    item['status'] = EFFECTIVE_STATUS.get(item['status'], 'DRAFT')
     for key in ('student_paper_html', 'answer_explanation_html', 'verification_md'):
         item.pop(key, None)
     return item
 
 
-def register_review(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = None) -> dict:
-    """The only agent-write contract. Status is server-owned and always REVIEW."""
+def _require_operator() -> None:
+    """Private assets require a signed human identity. MCP calls services directly under API-key auth."""
+    if wiki_workspace.current_identity() is None:
+        raise HTTPException(status_code=401, detail='로그인이 필요한 운영자 자료입니다.')
+
+
+def _public_row(row) -> dict:
+    """Searchable projection. Never add identifiers, locators, source refs or private bodies here."""
+    return {
+        'school': row['school'], 'grade': row['grade'], 'year': row['year'],
+        'semester': row['semester'], 'examType': row['exam'], 'round': row['round'],
+        'setType': row['set_type'], 'questionCount': row['question_count'],
+        'available': True, 'updatedAt': row['updated_at'],
+    }
+
+
+def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = None) -> dict:
+    """The only agent-write contract. Physical REVIEW preserves legacy schema; effective state is DRAFT."""
     student_html = _clean_html(payload.studentPaper)
     answer_html = _clean_html(payload.answerExplanation)
     snapshot, snapshot_hash = _snapshot(payload)
@@ -192,18 +216,30 @@ def register_review(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = 
            json.dumps(payload.sourceMaterialIds), snapshot, snapshot_hash, version, creator, now, now))
         exam_id = cursor.lastrowid
         conn.execute("""INSERT INTO weekly_exam_audit
-          (weekly_exam_id,action,to_status,actor,created_at) VALUES (?,'REGISTER_REVIEW','REVIEW',?,?)""",
+          (weekly_exam_id,action,to_status,actor,created_at) VALUES (?,'CREATED','DRAFT',?,?)""",
           (exam_id, creator, now))
         return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
 
 
-@router.post('/review', status_code=201)
-def create_review(payload: WeeklyExamReviewRequest):
-    return register_review(payload)
+# Compatibility alias: old clients keep working, but the effective state is DRAFT.
+register_review = register_draft
+
+
+@router.post('/draft', status_code=201)
+def create_draft(payload: WeeklyExamReviewRequest):
+    _require_operator()
+    return register_draft(payload)
+
+
+@router.post('/review', status_code=201, deprecated=True)
+def create_review_compat(payload: WeeklyExamReviewRequest):
+    _require_operator()
+    return register_draft(payload)
 
 
 @router.get('')
 def list_weekly_exams(school: str, grade: str, year: int, semester: str, exam: str):
+    _require_operator()
     with _db() as conn:
         rows = conn.execute("""SELECT * FROM weekly_exam_sets
           WHERE school=? AND grade=? AND year=? AND semester=? AND exam=?
@@ -212,17 +248,32 @@ def list_weekly_exams(school: str, grade: str, year: int, semester: str, exam: s
         return [_row(row) for row in rows]
 
 
-@router.get('/published')
-def list_published_weekly_exams(school: str, grade: str, year: int, semester: str, exam: str):
+@router.get('/public-metadata')
+@router.get('/published', deprecated=True)
+def list_public_weekly_metadata(
+    school: str = '', grade: str = '', year: Optional[int] = None,
+    semester: str = '', exam: str = '',
+):
+    """Anonymous-safe projection. FINAL includes legacy APPROVED/FINAL/PUBLISHED; DRAFT is excluded."""
+    clauses = ["status IN ('APPROVED','FINAL','PUBLISHED')"]
+    params: list[object] = []
+    for column, value in (
+        ('school', school), ('grade', grade), ('year', year),
+        ('semester', semester), ('exam', exam),
+    ):
+        if value not in ('', None):
+            clauses.append(f'{column}=?')
+            params.append(value)
     with _db() as conn:
-        rows = conn.execute("""SELECT * FROM weekly_exam_sets
-          WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND status='PUBLISHED'
-          ORDER BY round DESC,set_type""", (school, grade, year, semester, exam)).fetchall()
-        return [_row(row) for row in rows]
+        rows = conn.execute(
+            'SELECT * FROM weekly_exam_sets WHERE ' + ' AND '.join(clauses)
+            + ' ORDER BY updated_at DESC,round DESC,set_type', params).fetchall()
+        return [_public_row(row) for row in rows]
 
 
 @router.get('/{exam_id}/artifacts/{kind}')
 def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation', 'production-verification']):
+    _require_operator()
     with _db() as conn:
         row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
         if not row:
@@ -248,6 +299,7 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
 
 @router.get('/{exam_id}/context-snapshot')
 def view_context_snapshot(exam_id: int):
+    _require_operator()
     with _db() as conn:
         row = conn.execute('SELECT context_snapshot,context_hash FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
         if not row:
@@ -257,30 +309,23 @@ def view_context_snapshot(exam_id: int):
 
 @router.post('/{exam_id}/transition')
 def transition_weekly_exam(exam_id: int, payload: TransitionRequest, request: Request):
-    if not _is_admin():
-        raise HTTPException(status_code=403, detail='사용자 관리자 승인 권한이 필요합니다.')
-    transitions = {
-        ('REVIEW', 'approve'): 'APPROVED',
-        ('REVIEW', 'request_changes'): 'CHANGES_REQUESTED',
-        ('REVIEW', 'reject'): 'REJECTED',
-        ('CHANGES_REQUESTED', 'reject'): 'REJECTED',
-        ('APPROVED', 'finalize'): 'FINAL',
-        ('FINAL', 'publish'): 'PUBLISHED',
-    }
+    _require_operator()
     with _db() as conn:
         row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
-        target = transitions.get((row['status'], payload.action))
-        if not target:
-            raise HTTPException(status_code=409, detail=f"{row['status']} 상태에서 {payload.action} 전이는 허용되지 않습니다.")
+        effective = EFFECTIVE_STATUS.get(row['status'], 'DRAFT')
+        if payload.action == 'finalize' and effective == 'DRAFT':
+            target, public_target, audit_action = 'FINAL', 'FINAL', 'FINALIZED'
+        elif payload.action == 'reopen' and effective == 'FINAL':
+            target, public_target, audit_action = 'REVIEW', 'DRAFT', 'REOPENED'
+        else:
+            raise HTTPException(
+                status_code=409, detail=f"{effective} 상태에서 {payload.action} 전이는 허용되지 않습니다.")
         now, actor = datetime.now().isoformat(), _actor()
-        reviewed_by, reviewed_at = (actor, now) if target in ('APPROVED','CHANGES_REQUESTED','REJECTED') else (row['reviewed_by'], row['reviewed_at'])
-        published_by, published_at = (actor, now) if target == 'PUBLISHED' else (row['published_by'], row['published_at'])
-        conn.execute("""UPDATE weekly_exam_sets SET status=?,updated_at=?,reviewed_by=?,reviewed_at=?,
-          published_by=?,published_at=? WHERE id=?""",
-          (target, now, reviewed_by, reviewed_at, published_by, published_at, exam_id))
+        conn.execute("""UPDATE weekly_exam_sets SET status=?,updated_at=?,reviewed_by=?,reviewed_at=?
+          WHERE id=?""", (target, now, actor, now, exam_id))
         conn.execute("""INSERT INTO weekly_exam_audit
           (weekly_exam_id,action,from_status,to_status,actor,note,created_at) VALUES (?,?,?,?,?,?,?)""",
-          (exam_id, payload.action.upper(), row['status'], target, actor, payload.note[:1000], now))
+          (exam_id, audit_action, effective, public_target, actor, payload.note[:1000], now))
         return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
