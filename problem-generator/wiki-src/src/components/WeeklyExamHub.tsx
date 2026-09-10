@@ -8,6 +8,7 @@ type WeeklyExam = {
   id:number; school:string; grade:string; year:number; semester:string; exam:string
   round:number; set_type:SetType; question_count:number; status:WeeklyStatus; version:number
   created_by:string; created_at:string; context_hash:string
+  context_snapshot?:{contextStatus?:'PARTIAL'|'LIVING'|'COMPLETE'}
 }
 type Props = {
   context:ExamContext; pastExamCount:number; schoolPrintCount:number; wrongCount:number
@@ -31,9 +32,10 @@ const statusLabel=(status:WeeklyStatus)=>status==='FINAL'?'제작 완료':'제�
 
 export default function WeeklyExamHub(props:Props){
   const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview}=props
-  const setTypes=setTypesFor(context),isPartial=context.school.includes('압구정')&&context.grade.includes('2')
+  const setTypes=setTypesFor(context)
   const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
+  const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
   const load=async()=>{
     if(!context.school||!context.grade)return
@@ -49,7 +51,7 @@ export default function WeeklyExamHub(props:Props){
     const response=await api('weekly-exams/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       school:context.school,grade:context.grade,year:context.year,semester:context.semester,examType:context.exam,
       round,setType,questionCount:Number(setType.replace(/\D/g,'')),studentPaper,answerExplanation,
-      productionVerification:verification,contextStatus:isPartial?'PARTIAL':'LIVING',
+      productionVerification:verification,contextStatus,
     })})
     const body=await response.json().catch(()=>({}))
     if(!response.ok){setNotice(body.detail||'DRAFT 등록에 실패했습니다.');return}
@@ -62,13 +64,16 @@ export default function WeeklyExamHub(props:Props){
     setNotice(response.ok?'상태를 변경했습니다.':body.detail||'상태를 변경하지 못했습니다.');if(response.ok)await load()
   }
   const latestFor=(type:SetType)=>items.filter(item=>item.set_type===type).sort((a,b)=>b.round-a.round||b.version-a.version)[0]
+  const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
+  const currentStatus=items.slice().sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0]?.context_snapshot?.contextStatus||'PARTIAL'
+  const nextRound=Math.max(0,...items.map(item=>item.round))+1
 
   return <section className="naesin-repeat-hub" aria-label="반복 제작 허브">
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="current-context-card">
       <div><p className="kicker">CURRENT EXAM CONTEXT</p><h2>{context.school} · {context.grade}</h2><p>{context.year}년 · {context.semester} · {context.exam}</p></div>
       <div className="context-health">
-        <span className={isPartial?'context-status partial':'context-status living'}>Context {isPartial?'PARTIAL':'LIVING'}</span>
+        <span className={currentStatus==='COMPLETE'?'context-status living':'context-status partial'}>Context {currentStatus}</span>
         <small>기출 {pastExamCount} · 학습지/필기 {schoolPrintCount} · Digital Twin {hasDigitalTwin?'연결':'미연결'}</small>
         <small>제작·검수 기록 {aiWorkLogCount} · 학생 오답 {wrongCount}</small>
         {lastContextUpdate&&<small>마지막 Context 업데이트 {new Date(lastContextUpdate).toLocaleString('ko-KR')}</small>}
@@ -80,6 +85,11 @@ export default function WeeklyExamHub(props:Props){
       <article className="repeat-entry-card weekly">
         <p className="kicker">WEEKLY EXAM</p><h2>주간 실전 모의고사</h2>
         <p>문제지·정답해설·출제근거를 운영자 전용으로 보관하고 DRAFT에서 FINAL로 확정합니다.</p>
+        <div className="next-round-summary"><b>다음 회차 준비 · {nextRound}회</b>
+          <span>현재 Context 전체를 다시 계산해 {setTypes.join(' / ')} Blueprint를 준비합니다.</span>
+          <small>최근 FINAL {latestFinal?latestFinal.round+'회 · '+latestFinal.set_type:'없음'} · 학생 오답 {wrongCount}건</small>
+          {latestFinal&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
+        </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
           {setTypes.map(type=>{const item=latestFor(type);return <span key={type} className={item?`weekly-status ${item.status.toLowerCase()}`:''}>
             <b>{type}</b><small>{item?`${item.round}회 · ${item.status} · ${statusLabel(item.status)}`:'준비 전'}</small>
@@ -113,7 +123,7 @@ export default function WeeklyExamHub(props:Props){
 
     {showRegister&&<section className="work-panel weekly-register" aria-label="Weekly Exam DRAFT 등록">
       <div className="panel-heading"><div><p className="kicker">ONE SET · THREE ARTIFACTS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
-      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>세트<select value={setType} onChange={e=>setSetType(e.target.value as SetType)}>{setTypes.map(type=><option key={type}>{type}</option>)}</select></label></div>
+      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>세트<select value={setType} onChange={e=>setSetType(e.target.value as SetType)}>{setTypes.map(type=><option key={type}>{type}</option>)}</select></label><label>Context 상태<select value={contextStatus} onChange={e=>setContextStatus(e.target.value as 'PARTIAL'|'LIVING'|'COMPLETE')}><option>PARTIAL</option><option>LIVING</option><option>COMPLETE</option></select></label></div>
       <label>학생용 문제지 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setStudentPaper)}/></label>
       <label>정답·해설 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setAnswerExplanation)}/></label>
       <label>제작·검수 MD<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setVerification)}/></label>
