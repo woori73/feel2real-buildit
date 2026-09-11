@@ -1270,6 +1270,44 @@ def delete_exam_material(material_id: int):
     return Response(status_code=204)
 
 
+@app.post('/api/exam-materials/{material_id}/reprocess-body')
+def reprocess_exam_material_body(material_id: int, request: Request):
+    """Legacy PAST_EXAM 본문 복구(admin 전용). body_text/body_format 저장 계약이 생기기 전에
+    등록된 기출 row의 original_blob을 읽어 현재 업로드와 동일한 extraction/sanitizer
+    (_extract_uploaded_body + _sanitize_exam_html, HTML 최소구조 검증 포함)로 본문을 다시
+    생성한다. UPDATE 대상은 body_text/body_format 두 컬럼뿐이며 id·original_blob을 포함한
+    나머지 필드는 건드리지 않는다. extraction 실패 시 기존 body를 훼손하지 않고 그대로 둔다
+    (UPDATE는 검증된 본문이 확보된 뒤에만 실행되며, 예외 시 connection이 rollback된다)."""
+    _require_workspace_admin(request)
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT id, material_type, original_name, original_blob FROM exam_material_sets WHERE id=?',
+            (material_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        if (row['material_type'] or '').upper() != 'PAST_EXAM':
+            raise HTTPException(status_code=400, detail='실제 기출(PAST_EXAM) 자료만 본문을 다시 생성할 수 있습니다.')
+        blob = bytes(row['original_blob']) if row['original_blob'] else b''
+        if not blob:
+            raise HTTPException(status_code=400, detail='원본 파일이 없어 본문을 다시 생성할 수 없습니다.')
+        suffix = Path(row['original_name'] or '').suffix.lower()
+        if suffix in ('.html', '.htm'):
+            html_source = _decode_text_upload(blob, 'HTML').lstrip().lower()
+            if not re.search(r'<!doctype\s+html|<html(?:\s|>)|<body(?:\s|>)', html_source):
+                raise HTTPException(status_code=400, detail='올바른 HTML 파일인지 확인해 주세요.')
+        body_text, body_format = _extract_uploaded_body(suffix, blob, label='기출시험지')
+        if not (body_text or '').strip():
+            raise HTTPException(status_code=400, detail='기출시험지 원본에서 본문을 추출할 수 없습니다.')
+        conn.execute('UPDATE exam_material_sets SET body_text=?, body_format=? WHERE id=?',
+                     (body_text, body_format, material_id))
+        updated = conn.execute(
+            '''SELECT m.id, m.material_type, m.body_format,
+                (CASE WHEN m.body_text <> '' THEN 1 ELSE 0 END) AS has_body,
+                length(m.body_text) AS body_chars
+                FROM exam_material_sets m WHERE m.id=?''', (material_id,)).fetchone()
+        return dict(updated)
+
+
 # ==================================================================================
 # 교과서 DB — 원본 파일 + 추출 HTML을 서버에 영구 저장한다(예전 브라우저 전용 저장 구조의 소실 대체).
 # 학교 프린트(exam_material_sets)와 같은 원본 blob 방식이며, 부분 추출을 page_total/page_extracted로
