@@ -17,6 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 from fastapi import HTTPException, UploadFile
 
@@ -25,6 +26,7 @@ sys.path.insert(0, str(BACKEND))
 os.environ['BUILDIT_WIKI_DB_PATH'] = str(Path(tempfile.gettempdir()) / 'buildit-wiki-reprocess-body.db')
 os.environ['BUILDIT_WIKI_WORKSPACE'] = tempfile.gettempdir()
 
+import ai_router  # noqa: E402
 import main  # noqa: E402
 import workspace  # noqa: E402
 
@@ -213,6 +215,144 @@ class ReprocessBodyTest(unittest.TestCase):
         main.reprocess_exam_material_body(legacy_id, _request())
         reprocessed_body = main.open_exam_material_body(legacy_id).body
         self.assertEqual(fresh_body, reprocessed_body)
+
+
+FAKE_JPEG = b'\xff\xd8\xff\xe0' + b'fake-jpeg-exam-page-1'
+FAKE_PNG = b'\x89PNG\r\n\x1a\n' + b'fake-png-exam-page-1'
+
+VISION_HTML = (
+    '```html\n'
+    '<section><h2>[문항 1] (배점 3점)</h2>\n'
+    '<p>발문: 빈칸에 들어갈 말로 가장 적절한 것은?</p>\n'
+    '<p>① <u>밑줄 친 부분</u> 선택지 문장</p>\n'
+    '<p>서답형 조건: 축약형을 쓰지 말 것</p></section>\n'
+    '<script>alert("x")</script>\n'
+    '```'
+)
+
+
+def _vision_result(text=VISION_HTML):
+    return ai_router.ProviderResult(text, 'openrouter', ai_router.QWEN_MODEL, 'server')
+
+
+class ReprocessImageBodyTest(unittest.TestCase):
+    """IMAGE PAST_EXAM(JPG/JPEG/PNG) reprocess 회귀. vision 호출은 mock한다."""
+    CTX = dict(school='신구중', grade='2학년', semester='2학기', exam='중간고사')
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        main.DB_PATH = str(Path(self.temp_dir.name) / 'test.db')
+        main.init_db(); main.migrate_schema()
+        self.identity_token = workspace.set_current_identity(workspace.WikiIdentity('7', 'modu', 'TUTOR'))
+
+    def tearDown(self):
+        workspace.reset_current_identity(self.identity_token)
+        self.temp_dir.cleanup()
+
+    def _insert_image(self, name='exam1.jpg', blob=FAKE_JPEG, body_text='', body_format=''):
+        with main.get_db() as conn:
+            cursor = conn.execute(
+                '''INSERT INTO exam_material_sets
+                    (core_type, material_type, school, grade, year, semester, exam, title,
+                     original_name, original_type, original_blob, json_text, html_text,
+                     body_text, body_format, uploaded_by, created_at)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                ('school_print', 'PAST_EXAM', self.CTX['school'], self.CTX['grade'], 2026,
+                 self.CTX['semester'], self.CTX['exam'], 'legacy 이미지 업로드',
+                 name, 'image/jpeg', blob, '{}', '', body_text, body_format, 'admin-f2r',
+                 '2026-09-11T08:14:31'))
+            return cursor.lastrowid
+
+    def _row(self, material_id):
+        with main.get_db() as conn:
+            return dict(conn.execute(
+                'SELECT * FROM exam_material_sets WHERE id=?', (material_id,)).fetchone())
+
+    def test_jpg_is_extracted_and_sanitized_in_place(self):
+        material_id = self._insert_image()
+        with mock.patch.object(main.ai_router, 'generate_multimodal',
+                               return_value=_vision_result()) as vision:
+            result = main.reprocess_exam_material_body(material_id, _request())
+        self.assertEqual(material_id, result['id'])
+        self.assertEqual('html', result['body_format'])
+        self.assertEqual(1, result['has_body'])
+        self.assertGreater(result['body_chars'], 0)
+        # vision에는 data URL(JPEG)로 전달되고 기존 QWEN 모델을 재사용한다.
+        model, _, content = vision.call_args.args
+        self.assertEqual(ai_router.QWEN_MODEL, model)
+        image_parts = [p for p in content if p.get('type') == 'image_url']
+        self.assertEqual(1, len(image_parts))
+        self.assertTrue(image_parts[0]['image_url']['url'].startswith('data:image/jpeg;base64,'))
+        after = self._row(material_id)
+        self.assertIn('[문항 1]', after['body_text'])
+        self.assertIn('<u>', after['body_text'])  # 밑줄 보존
+        self.assertNotIn('<script', after['body_text'])  # 정제기 적용
+        self.assertEqual(FAKE_JPEG, bytes(after['original_blob']))  # 원본 불변
+        self.assertEqual('exam1.jpg', after['original_name'])
+
+    def test_jpeg_and_png_suffixes_share_the_contract(self):
+        jpeg_id = self._insert_image(name='exam2.jpeg', blob=FAKE_JPEG)
+        png_id = self._insert_image(name='exam3.png', blob=FAKE_PNG)
+        with mock.patch.object(main.ai_router, 'generate_multimodal',
+                               return_value=_vision_result()):
+            jpeg_result = main.reprocess_exam_material_body(jpeg_id, _request())
+            png_result = main.reprocess_exam_material_body(png_id, _request())
+        self.assertEqual('html', jpeg_result['body_format'])
+        self.assertEqual('html', png_result['body_format'])
+        self.assertIn('[문항 1]', self._row(png_id)['body_text'])
+
+    def test_image_body_reaches_final_context(self):
+        material_id = self._insert_image()
+        with mock.patch.object(main.ai_router, 'generate_multimodal',
+                               return_value=_vision_result()):
+            main.reprocess_exam_material_body(material_id, _request())
+        ctx = main.get_final_workspace_context(year=2026, **self.CTX)
+        item = next(i for i in ctx['past_exams'] if i['id'] == material_id)
+        self.assertTrue(item['has_body'])
+        self.assertTrue(item['body_included'])
+        self.assertEqual('html', item['body_format'])
+        self.assertIn('[문항 1]', item['body_text'])
+
+    def test_image_with_bad_magic_is_rejected_without_touching_body(self):
+        material_id = self._insert_image(blob=b'not-an-image', body_text='기존본문', body_format='text')
+        with mock.patch.object(main.ai_router, 'generate_multimodal',
+                               return_value=_vision_result()) as vision:
+            with self.assertRaises(HTTPException) as raised:
+                main.reprocess_exam_material_body(material_id, _request())
+        self.assertEqual(400, raised.exception.status_code)
+        vision.assert_not_called()
+        after = self._row(material_id)
+        self.assertEqual('기존본문', after['body_text'])
+        self.assertEqual('text', after['body_format'])
+
+    def test_oversized_image_is_rejected(self):
+        big = b'\xff\xd8\xff\xe0' + b'x' * (main._IMAGE_PAST_EXAM_MAX_BYTES + 1)
+        material_id = self._insert_image(blob=big)
+        with mock.patch.object(main.ai_router, 'generate_multimodal',
+                               return_value=_vision_result()) as vision:
+            with self.assertRaises(HTTPException) as raised:
+                main.reprocess_exam_material_body(material_id, _request())
+        self.assertEqual(400, raised.exception.status_code)
+        vision.assert_not_called()
+        self.assertEqual('', self._row(material_id)['body_text'])
+
+    def test_vision_provider_failure_keeps_existing_body(self):
+        material_id = self._insert_image(body_text='기존본문', body_format='html')
+        failure = ai_router.ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.', 'openrouter', 503)
+        with mock.patch.object(main.ai_router, 'generate_multimodal', side_effect=failure):
+            with self.assertRaises(HTTPException) as raised:
+                main.reprocess_exam_material_body(material_id, _request())
+        self.assertEqual(503, raised.exception.status_code)
+        self.assertEqual('기존본문', self._row(material_id)['body_text'])
+
+    def test_empty_vision_result_is_rejected(self):
+        material_id = self._insert_image()
+        with mock.patch.object(main.ai_router, 'generate_multimodal',
+                               return_value=_vision_result(text='   \n  ')):
+            with self.assertRaises(HTTPException) as raised:
+                main.reprocess_exam_material_body(material_id, _request())
+        self.assertEqual(400, raised.exception.status_code)
+        self.assertEqual('', self._row(material_id)['body_text'])
 
 
 if __name__ == '__main__':

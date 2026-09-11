@@ -1,4 +1,5 @@
 import io
+import base64
 import json
 import contextlib
 import hashlib
@@ -1270,12 +1271,66 @@ def delete_exam_material(material_id: int):
     return Response(status_code=204)
 
 
+# ---- IMAGE PAST_EXAM 본문 추출 -----------------------------------------------------
+# JPG/JPEG/PNG 기출은 _extract_uploaded_body가 본문을 만들지 않으므로(원본만 보관),
+# 명시적 admin reprocess에서만 1회 vision 추출→저장→이후 Context/MCP 재사용 원칙으로
+# 처리한다. 업로드 시점 동기 vision은 timeout/latency/비용/실패 처리상 하지 않는다.
+# 기존 자산을 재사용한다: ai_router.generate_multimodal(OpenRouter image_url),
+# _sanitize_exam_html(동일 정제 계약), _handle_gemini_error(동일 에러 계약).
+# 정제기가 class 속성을 제거하므로 밑줄/빈칸/판독불가 표시는 정제 후에도 남는
+# 텍스트+allowlist 태그(u, table, section, h2, p, li, strong)로만 표현하도록 지시한다.
+_IMAGE_PAST_EXAM_SUFFIXES = ('.jpg', '.jpeg', '.png')
+_IMAGE_PAST_EXAM_MAX_BYTES = 10 * 1024 * 1024
+_IMAGE_EXAM_SYSTEM = (
+    '영어 내신 기출시험지 이미지 1페이지를 구조화 HTML로 옮기는 추출기다. '
+    '이미지에 보이는 문제 번호, 발문, 지문, 선택지(①②③④⑤), 보기 박스, (A)/(B)/(C), '
+    '빈칸(____ 또는 [빈칸] 텍스트로 표기), 밑줄 범위(<u> 태그로 표시), 서답형 조건과 배점, '
+    '공통지문과 관련 문항의 연결을 빠짐없이 보존한다. '
+    '문항별로 <section><h2>[문항 N] (배점 M점)</h2>...' 
+    '형태로 구분하고 공통지문은 별도 <section>으로 먼저 둔다. '
+    '내용을 창작·요약·변형·누락하지 않고, 판독이 불가능한 곳은 [판독 필요] 텍스트를 남긴다. '
+    'script/style/이미지 삽입/background는 금지한다. semantic HTML 본문만 반환한다.'
+)
+
+
+def _image_past_exam_data_url(blob: bytes) -> str:
+    """magic bytes로 JPEG/PNG를 구분해 data URL을 만든다. 확장자만 믿지 않는다."""
+    if blob.startswith(b'\xff\xd8\xff'):
+        mime = 'image/jpeg'
+    elif blob.startswith(b'\x89PNG\r\n\x1a\n'):
+        mime = 'image/png'
+    else:
+        raise HTTPException(status_code=400, detail='올바른 JPG/PNG 파일인지 확인해 주세요.')
+    return 'data:' + mime + ';base64,' + base64.b64encode(blob).decode('ascii')
+
+
+def _extract_image_past_exam_body(blob: bytes, source_name: str) -> tuple[str, str]:
+    """IMAGE PAST_EXAM 1회 추출. 성공 시 (정제 HTML, 'html'), 실패 시 예외(DB 불변)."""
+    if len(blob) > _IMAGE_PAST_EXAM_MAX_BYTES:
+        raise HTTPException(status_code=400, detail='이미지 기출 원본은 10MB 이하의 파일이어야 합니다.')
+    data_url = _image_past_exam_data_url(blob)
+    content = [
+        {'type': 'text', 'text': f'SOURCE FILE: {source_name}\n위 시험지 이미지 1페이지를 구조화 HTML로 추출하라.'},
+        {'type': 'image_url', 'image_url': {'url': data_url}},
+    ]
+    try:
+        ai = ai_router.generate_multimodal(ai_router.QWEN_MODEL, _IMAGE_EXAM_SYSTEM, content)
+    except Exception as exc:
+        _handle_gemini_error(exc)
+    html_text = re.sub(r'^\s*```(?:html)?|```\s*$', '', (ai.text or '').strip(), flags=re.I)
+    cleaned = _sanitize_exam_html(html_text)
+    if not cleaned.strip():
+        raise HTTPException(status_code=400, detail='기출시험지 이미지에서 시험 본문을 찾지 못했습니다.')
+    return cleaned, 'html'
+
+
 @app.post('/api/exam-materials/{material_id}/reprocess-body')
 def reprocess_exam_material_body(material_id: int, request: Request):
     """Legacy PAST_EXAM 본문 복구(admin 전용). body_text/body_format 저장 계약이 생기기 전에
-    등록된 기출 row의 original_blob을 읽어 현재 업로드와 동일한 extraction/sanitizer
-    (_extract_uploaded_body + _sanitize_exam_html, HTML 최소구조 검증 포함)로 본문을 다시
-    생성한다. UPDATE 대상은 body_text/body_format 두 컬럼뿐이며 id·original_blob을 포함한
+    등록된 기출 row의 original_blob을 읽어 현재 업로드와 동일한 extraction/sanitizer로 본문을
+    다시 생성한다. HTML/MD는 _extract_uploaded_body, IMAGE(JPG/JPEG/PNG)는
+    _extract_image_past_exam_body(기존 generate_multimodal 재사용, 1회 추출→저장→재사용)를
+    사용한다. UPDATE 대상은 body_text/body_format 두 컬럼뿐이며 id·original_blob을 포함한
     나머지 필드는 건드리지 않는다. extraction 실패 시 기존 body를 훼손하지 않고 그대로 둔다
     (UPDATE는 검증된 본문이 확보된 뒤에만 실행되며, 예외 시 connection이 rollback된다)."""
     _require_workspace_admin(request)
@@ -1291,11 +1346,14 @@ def reprocess_exam_material_body(material_id: int, request: Request):
         if not blob:
             raise HTTPException(status_code=400, detail='원본 파일이 없어 본문을 다시 생성할 수 없습니다.')
         suffix = Path(row['original_name'] or '').suffix.lower()
-        if suffix in ('.html', '.htm'):
-            html_source = _decode_text_upload(blob, 'HTML').lstrip().lower()
-            if not re.search(r'<!doctype\s+html|<html(?:\s|>)|<body(?:\s|>)', html_source):
-                raise HTTPException(status_code=400, detail='올바른 HTML 파일인지 확인해 주세요.')
-        body_text, body_format = _extract_uploaded_body(suffix, blob, label='기출시험지')
+        if suffix in _IMAGE_PAST_EXAM_SUFFIXES:
+            body_text, body_format = _extract_image_past_exam_body(blob, row['original_name'] or '')
+        else:
+            if suffix in ('.html', '.htm'):
+                html_source = _decode_text_upload(blob, 'HTML').lstrip().lower()
+                if not re.search(r'<!doctype\s+html|<html(?:\s|>)|<body(?:\s|>)', html_source):
+                    raise HTTPException(status_code=400, detail='올바른 HTML 파일인지 확인해 주세요.')
+            body_text, body_format = _extract_uploaded_body(suffix, blob, label='기출시험지')
         if not (body_text or '').strip():
             raise HTTPException(status_code=400, detail='기출시험지 원본에서 본문을 추출할 수 없습니다.')
         conn.execute('UPDATE exam_material_sets SET body_text=?, body_format=? WHERE id=?',
