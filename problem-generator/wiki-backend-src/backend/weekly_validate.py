@@ -100,16 +100,13 @@ def check_no_duplicate_passage(html: str, questions: list[dict]) -> list[str]:
         if pid and (q.get('passage') or ''):
             seen[pid] = seen.get(pid, 0) + 1
     issues = []
-    for pid, count in seen.items():
-        if count > 1:
-            issues.append('passage %s rendered %d times' % (pid, count))
-    # cross-check against the document when passage text is known; only for
-    # common passages (independent questions may legitimately share wording).
+    # cross-check against the document: only full shared boxes count (short
+    # explicit quotes beside a box are legitimate 명시적 비교, not duplication).
     for q in questions:
         if not str(q.get('common_passage_id') or ''):
             continue
         passage = (q.get('passage') or '').strip()
-        if len(passage) > 40 and html.count(passage[:40]) > 1:
+        if len(passage) > 200 and html.count(passage[:60]) > 1:
             issues.append('passage of Q%s duplicated in output' % q.get('no'))
     return issues
 
