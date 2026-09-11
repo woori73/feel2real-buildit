@@ -11,9 +11,10 @@ import weekly_paper
 def mc(no, prompt='다음 빈칸에 들어갈 말로 가장 적절한 것은?',
        passage='Modern street art comes in many different ______.',
        choices=('① forms', '② dots', '③ clues', '④ walls', '⑤ figures'),
-       layout='row', section=None, passage_class='prose'):
+       layout='row', section=None, passage_class='prose', group=None):
     return {'no': no, 'prompt': prompt, 'passage': passage, 'choices': list(choices),
-            'layout': layout, 'section': section, 'passage_class': passage_class}
+            'layout': layout, 'section': section, 'passage_class': passage_class,
+            'group': group}
 
 
 class WeeklyPaperRendererTest(unittest.TestCase):
@@ -51,9 +52,38 @@ class WeeklyPaperRendererTest(unittest.TestCase):
                          re.findall(r'data-qnum="(\d+)"', out))
         pages = re.findall(r'<div class="page">', out)
         self.assertTrue(4 <= len(pages) <= 12, len(pages))
-        cols = re.findall(r'<div class="col">(.*?)</div></div>', out, flags=re.S)
-        for col in cols:
-            self.assertNotIn('data-qnum=""', col)
+        self.assertNotIn('data-qnum=""', out)
+
+    def test_grouped_items_stay_together_with_group_end_gap(self):
+        # given: 지문 공유 그룹(Q1 지문박스 + Q2~Q4 윗글)
+        box = 'Shared-box line one.<br>Second line here.'
+        questions = [mc(1, passage=box, passage_class='box', group='gA'),
+                     mc(2, passage='', group='gA'),
+                     mc(3, passage='', group='gA'),
+                     mc(4, passage='', group='gA'),
+                     mc(5)]
+        # when: 문제지 렌더
+        out = weekly_paper.render_student_paper(
+            title_row='T', sub_row='S', run_header_left='L', run_header_right='R',
+            maker='M', questions=questions)
+        # then: 그룹 마지막에만 group-end 여백, 박스는 1회만 출력
+        self.assertEqual(1, out.count('Shared-box'))
+        self.assertEqual(1, len(re.findall(r'class="qblock group-end"', out)))
+        self.assertIn('class="qblock group-end" data-qnum="4"', out)
+
+    def test_slack_is_spread_as_item_spacing(self):
+        # given: 짧은 3문항
+        questions = [mc(1, passage='Short ______ blank.'),
+                     mc(2, passage='Short ______ blank.'),
+                     mc(3, passage='Short ______ blank.')]
+        # when: 문제지 렌더
+        out = weekly_paper.render_student_paper(
+            title_row='T', sub_row='S', run_header_left='L', run_header_right='R',
+            maker='M', questions=questions)
+        # then: 남는 공간이 --xgap으로 분배되고 2.2mm를 넘지 않는다
+        gaps = [float(v) for v in re.findall(r'--xgap:([\d.]+)mm', out)]
+        self.assertTrue(gaps)
+        self.assertTrue(all(0 < v <= 2.2 for v in gaps), gaps)
 
     def test_seventy_items_share_the_same_renderer(self):
         # given: 70문항

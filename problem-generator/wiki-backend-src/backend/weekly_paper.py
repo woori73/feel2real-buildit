@@ -35,6 +35,9 @@ body { margin:0; padding:0; font-family: "Noto Sans KR","Malgun Gothic","Nanum G
 .section-title { font-size: 11pt; font-weight:700; margin: 3mm 0 2mm 0; padding-bottom:1mm; border-bottom: 1.2pt solid #000; }
 .section-title.cont { font-size: 10pt; color:#333; }
 .qblock { margin-bottom: 3.2mm; page-break-inside: avoid; }
+.qblock.group-end { margin-bottom: 6mm; }
+.col.spread .qblock { margin-bottom: calc(3.2mm + var(--xgap, 0mm)); }
+.col.spread .qblock.group-end { margin-bottom: calc(6mm + var(--xgap, 0mm)); }
 .qhead { display:flex; gap: 1.3mm; align-items:baseline; }
 .qnum { font-weight:700; flex-shrink:0; }
 .qprompt { font-weight:500; }
@@ -68,8 +71,10 @@ table.quick td, table.quick th { border:0.6pt solid #999; padding:1.2mm 2.6mm; t
 _TAG_RE = re.compile(r'<[^>]+>')
 _WS_RE = re.compile(r'\s+')
 
-# Line-budget packing tuned to round-1 FINAL density (roughly 7-9 short mc
-# items per A4 page, fewer when shared passage boxes are present).
+# 하단 여백 흡수: 한 column에 남는 slack을 문항 간격으로 분배한다. 절대 금지인
+# 글씨 축소·행간 압축 대신 사용하며, 문항당 최대 2.2mm까지만 넓힌다.
+_MAX_XGAP_MM = 2.2
+_MM_PER_LINE = 4.8
 _CHARS_PER_LINE = 62
 _LINES_PER_COL_FIRST = 48
 _LINES_PER_COL = 56
@@ -100,7 +105,8 @@ def _render_question(question: dict) -> str:
     parts = []
     if question.get('section'):
         parts.append('<div class="section-title">%s</div>' % question['section'])
-    parts.append('<div class="qblock" data-qnum="%s">' % _html.escape(str(question['no'])))
+    classes = 'qblock group-end' if question.get('_group_end') else 'qblock'
+    parts.append('<div class="%s" data-qnum="%s">' % (classes, _html.escape(str(question['no']))))
     parts.append('  <div class="qhead"><span class="qnum">%s.</span><span class="qprompt">%s</span></div>'
                  % (_html.escape(str(question['no'])), question['prompt']))
     if question.get('passage'):
@@ -118,32 +124,70 @@ def _render_question(question: dict) -> str:
     return ''.join(parts)
 
 
-def _pack_columns(questions: list[dict]) -> list[list[list[dict]]]:
+def _mark_groups(questions: list[dict]) -> list[dict]:
+    """같은 group이 연속되면 하나의 시각적 unit으로 묶는다. unit의 마지막 문항에만
+    group-end 여백을 주어 다음 독립 문항과 구분한다. 입력 dict는 변경하지 않고
+    복사본에 표시한다."""
+    marked = [dict(q) for q in questions]
+    for i, q in enumerate(marked):
+        nxt = marked[i + 1] if i + 1 < len(marked) else None
+        q['_group_end'] = bool(q.get('group')) and (
+            nxt is None or nxt.get('group') != q.get('group'))
+    return marked
+
+
+def _pack_columns(questions: list[dict]) -> list[tuple[list[dict], float, list[dict], float]]:
     """Pack questions into pages of two columns, left -> right -> next page.
-    A question block never splits across columns (page-break-inside: avoid)."""
-    pages: list[list[list[dict]]] = []
+    A question block never splits across columns (page-break-inside: avoid).
+    같은 group unit은 들어갈 때 함께 이동한다. 각 column의 남는 slack은 문항 간격으로
+    분배한다(xgap, 문항당 최대 2.2mm). 반환: [(left, left_xgap, right, right_xgap)]."""
+    marked = _mark_groups(questions)
+    units: list[list[dict]] = []
+    for q in marked:
+        if q.get('group') and units and units[-1][0].get('group') == q['group']:
+            units[-1].append(q)
+        else:
+            units.append([q])
+    pages: list[tuple[list[dict], float, list[dict], float]] = []
     current: list[list[dict]] = [[], []]
     budgets = [_LINES_PER_COL_FIRST, _LINES_PER_COL_FIRST]
     used = [0, 0]
     col = 0
-    first_page = True
-    for question in questions:
-        need = estimate_lines(question)
+
+    def flush_page():
+        pages.append(_spread(current[0], budgets[0], used[0]) +
+                     _spread(current[1], budgets[1], used[1]))
+
+    for unit in units:
+        need = sum(estimate_lines(q) for q in unit)
         if used[col] + need > budgets[col] and used[col] > 0:
             if col == 0:
                 col = 1
             else:
-                pages.append(current)
+                flush_page()
                 current, used, col = [[], []], [0, 0], 0
-                first_page = False
                 budgets = [_LINES_PER_COL, _LINES_PER_COL]
-        if used[col] + need > budgets[col] and used[col] == 0:
-            pass  # single oversized block still placed whole (never split)
-        current[col].append(question)
+                # 새 페이지 첫 column에도 unit이 통째로 안 들어가면 그대로 둔다(절대 분리 금지)
+        current[col].extend(unit)
         used[col] += need
     if current[0] or current[1]:
-        pages.append(current)
+        flush_page()
     return pages
+
+
+def _spread(items: list[dict], budget: int, used: int) -> tuple[list[dict], float]:
+    slack = budget - used
+    if not items or slack < 3:
+        return (items, 0.0)
+    xgap = round(min(_MAX_XGAP_MM, slack * _MM_PER_LINE / len(items) / 4), 1)
+    return (items, xgap)
+
+
+def _render_col(items: list[dict], xgap: float) -> str:
+    if xgap > 0:
+        return '<div class="col spread" style="--xgap:%smm">%s</div>' % (
+            xgap, ''.join(_render_question(q) for q in items))
+    return '<div class="col">%s</div>' % ''.join(_render_question(q) for q in items)
 
 
 def render_student_paper(*, title_row: str, sub_row: str, run_header_left: str,
@@ -156,7 +200,7 @@ def render_student_paper(*, title_row: str, sub_row: str, run_header_left: str,
     total = len(pages)
     out = ['<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n<title>%s</title>\n<style>%s</style>\n</head>\n<body>'
            % (_html.escape(title_row), PAPER_CSS)]
-    for index, (left, right) in enumerate(pages):
+    for index, (left, left_gap, right, right_gap) in enumerate(pages):
         num = index + 1
         out.append('<div class="page">')
         if index == 0:
@@ -170,9 +214,8 @@ def render_student_paper(*, title_row: str, sub_row: str, run_header_left: str,
         else:
             out.append('<div class="run-header"><span>%s</span><span>%s</span></div>'
                        % (run_header_left, run_header_right))
-        out.append('<div class="cols"><div class="col">%s</div><div class="col">%s</div></div>'
-                   % (''.join(_render_question(q) for q in left),
-                      ''.join(_render_question(q) for q in right)))
+        out.append('<div class="cols">%s%s</div>'
+                   % (_render_col(left, left_gap), _render_col(right, right_gap)))
         out.append('<div class="page-footer">%s &nbsp;|&nbsp; %d / %d</div>' % (maker, num, total))
         out.append('</div>')
     out.append('</body>\n</html>')
