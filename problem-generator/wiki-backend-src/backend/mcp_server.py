@@ -262,7 +262,10 @@ def register_weekly_exam_draft(
 ) -> dict:
     """[쓰기 도구] Work/Claude가 완성한 3종 산출물을 하나의 Weekly Exam으로 등록한다.
     서버가 현재 Living Context를 Snapshot으로 고정하며 상태는 언제나 REVIEW다.
-    이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다."""
+    이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다.
+    student_paper_html/answer_explanation_html은 완성 A4 시험지 canonical HTML이어야
+    한다(기존 FINAL과 동일한 A4 2단 CSS·헤더·문항 구조 — backend/weekly_paper.py
+    renderer 산출물을 그대로 전달할 것). 단순 본문 나열 HTML은 FINAL 품질이 아니다."""
     from fastapi import HTTPException
     from weekly_exam import WeeklyExamReviewRequest, register_draft
     try:
