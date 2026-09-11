@@ -3642,7 +3642,8 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `POST /problem-generator/wiki/api/weekly-exams/review`: 로그인된 Wiki 사용자가 문제지 HTML, 정답해설 HTML, 제작·검수 Markdown을 한 세트로 등록한다. 상태 입력 필드는 없으며 서버가 항상 `REVIEW`로 저장한다. 현재 Living Context의 material ID, Digital Twin version, 항목별 count와 context status를 immutable Snapshot/hash로 함께 기록한다.
 - `GET /problem-generator/wiki/api/weekly-exams`: 선택한 school/grade/year/semester/exam의 모든 내부 상태를 조회한다.
 - `GET /problem-generator/wiki/api/weekly-exams/published`: 같은 Context에서 backend가 `PUBLISHED`만 필터링한다.
-- `GET /problem-generator/wiki/api/weekly-exams/{id}/artifacts/{student-paper|answer-explanation|production-verification}`: allowlist 정제 HTML 또는 escaped Markdown View를 CSP sandbox와 함께 반환한다.
+- `GET /problem-generator/wiki/api/weekly-exams/{id}/artifacts/{student-paper|answer-explanation}`: 저장된 canonical HTML 원본을 `text/html; charset=utf-8`로 그대로 렌더링한다(보기=다운로드=등록 당시 바이트, script만 제거). `production-verification`은 escaped Markdown View를 CSP sandbox와 함께 반환한다(기존 유지).
+- `GET /problem-generator/wiki/api/weekly-exams/{id}/artifacts/{student-paper|answer-explanation}/download`: 동일 canonical 바이트를 `Content-Disposition: attachment` + RFC 5987 한글 파일명으로 다운로드한다. MD는 다운로드 대상이 아니다.
 - `GET /problem-generator/wiki/api/weekly-exams/{id}/context-snapshot`: 제작 당시 immutable Context와 hash를 반환한다.
 - `POST /problem-generator/wiki/api/weekly-exams/{id}/transition`: workspace ADMIN 전용. `REVIEW→APPROVED|CHANGES_REQUESTED|REJECTED`, `APPROVED→FINAL`, `FINAL→PUBLISHED`만 허용한다.
 - MCP `register_weekly_exam_review`: HTTP 등록과 동일 service를 호출하며 상태는 항상 `REVIEW`다. MCP에는 승인·FINAL·PUBLISHED tool이 없다.
@@ -3655,7 +3656,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 ## Weekly Exam private workflow
 - `POST /problem-generator/wiki/api/weekly-exams/draft`: signed operator only; effective state DRAFT.
 - `GET /problem-generator/wiki/api/weekly-exams`: current signed workspace only.
-- artifact/context-snapshot URLs: signed operator workspace only; no download endpoint.
+- artifact/context-snapshot URLs: signed operator workspace only; HTML download endpoint included (operator only, no public exposure).
 - `POST .../{id}/transition`: `finalize|reopen` only.
 - `GET .../public-metadata`: FINAL public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.

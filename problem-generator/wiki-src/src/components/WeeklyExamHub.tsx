@@ -100,7 +100,9 @@ export default function WeeklyExamHub(props:Props){
             <small>{item.question_count}문항 · v{item.version} · {item.created_by||'미상'} · {new Date(item.created_at).toLocaleDateString('ko-KR')}</small></div>
           <div className="artifact-actions">
             <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/student-paper`)}>문제지 보기</button>
+            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/student-paper/download`)}>문제지 HTML 다운로드</button>
             <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/answer-explanation`)}>정답해설 보기</button>
+            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/answer-explanation/download`)}>정답해설 HTML 다운로드</button>
             <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/production-verification`)}>출제근거 보기</button>
             <button onClick={()=>open(`weekly-exams/${item.id}/context-snapshot`)}>제작 당시 Context</button>
           </div>
