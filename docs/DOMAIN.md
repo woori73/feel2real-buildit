@@ -1197,7 +1197,7 @@ Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `
 
 `body_text`/`body_format` 컬럼은 업로드에서 추출한 본문과 포맷(`html`|`markdown`|`text`)을 담는다. HTML은 `_sanitize_exam_html`(표준 라이브러리 `html.parser` 기반 allowlist 정제기, idempotent)로 `<script>`/`<style>`/편집기 toolbar·화면전용 UI를 제거하고 제목·문항·지문·선택지·표·보기·밑줄/강조·서답형 작성요령만 남긴 정제본을 저장한다. MD/TXT는 원문 그대로다. `PAST_EXAM` HTML/MD와 `AI_WORK_LOG`(MD/MARKDOWN/TXT/HTML, 파일당 10MB)가 이 컬럼을 채우고, PDF·이미지·HWP(X)는 빈 값으로 둔다. **원본 파일(`original_blob`)은 정제와 무관하게 그대로 보존한다.** `AI_WORK_LOG`는 Claude/ChatGPT 등이 시험 준비 과정에서 남긴 작업 로그로, FINAL Context의 `ai_work_logs`로 노출되어 다음 세션에서 MCP가 이어서 읽는다.
 
-FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합산 600,000자(`_CONTEXT_BODY_TOTAL_BUDGET`)로 제한하고 저장 순서(year DESC, id DESC)대로 deterministic 하게 배분하며, 축약·제외분을 응답 `context_budget.truncated_items`/`omitted_items`로 명시한다(silent omission 금지). SQLite 시작 migration은 컬럼 추가와 backfill만 수행하며 기존 자료/경로를 변경하지 않는다.
+FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합산 600,000자(`_CONTEXT_BODY_TOTAL_BUDGET`)로 제한하고 저장 순서(year DESC, id DESC)대로 deterministic 하게 배분하며, 축약·제외분을 응답 `context_budget.truncated_items`/`omitted_items`로 명시한다(silent omission 금지). SQLite 시작 migration은 컬럼 추가와 backfill만 수행하며 기존 자료/경로를 변경하지 않는다. `body_text` 저장 계약 이전의 legacy PAST_EXAM row는 `POST /api/exam-materials/{id}/reprocess-body`(admin 전용)로 `original_blob`을 재추출해 `body_text`/`body_format`만 복구한다(id·원본 불변, 새 migration 없음).
 
 
 ### weekly_exam_sets / weekly_exam_audit
