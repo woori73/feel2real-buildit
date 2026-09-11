@@ -15,8 +15,9 @@ from datetime import datetime
 from typing import Callable, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel, Field
+from urllib.parse import quote
 
 import workspace as wiki_workspace
 
@@ -34,9 +35,14 @@ EFFECTIVE_STATUS = {
 }
 SET_TYPES = ('40', '70', '40A', '40B')
 ARTIFACTS = ('student-paper', 'answer-explanation', 'production-verification')
+HTML_ARTIFACTS = ('student-paper', 'answer-explanation')
+
+_SCRIPT_SUBTREE_RE = re.compile(r'<script\b[^>]*>.*?</script\s*>|<script\b[^>]*/>', re.IGNORECASE | re.DOTALL)
 
 
 def configure(get_db: Callable, context_reader: Callable, html_sanitizer: Callable[[str], str]) -> None:
+    # html_sanitizer는 과거 Weekly paper에도 적용되던 기출 본문 추출기다. Weekly artifact는
+    # canonical 보존(_preserve_paper_html)이 계약이므로 더 이상 사용하지 않고 시그니처만 유지한다.
     global _get_db, _context_reader, _html_sanitizer
     _get_db, _context_reader, _html_sanitizer = get_db, context_reader, html_sanitizer
 
@@ -117,11 +123,19 @@ def _is_admin() -> bool:
     return bool(identity and wiki_workspace.is_workspace_admin(identity))
 
 
-def _clean_html(value: str) -> str:
-    cleaned = _html_sanitizer(value) if _html_sanitizer else value
+def _preserve_paper_html(value: str) -> str:
+    """Weekly Exam HTML canonical 보존. A4/print CSS·2단 class·문서 구조를 그대로 저장하고
+    script subtree만 제거한다. 기출 본문 추출용 sanitizer(의미 본문만 남기고 style/class를
+    버림)를 Weekly artifact에 적용하면 완성 시험지가 깨지므로(paper 훼손 regression) 여기서는
+    사용하지 않는다. 저장된 바이트가 곧 보기/다운로드 정본이다."""
+    cleaned = _SCRIPT_SUBTREE_RE.sub('', (value or '').strip())
     if not cleaned.strip():
         raise HTTPException(status_code=400, detail='HTML 본문이 비어 있습니다.')
     return cleaned
+
+
+def _clean_html(value: str) -> str:
+    return _preserve_paper_html(value)
 
 
 def _source_refs(context: dict, requested_ids: list[int]) -> dict:
@@ -299,23 +313,63 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
         row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
+    # HTML artifact는 저장된 canonical 원본을 그대로 렌더링한다. 별도 shell로 감싸거나
+    # JSON으로 노출하지 않는다(final_deliverables /html 조회와 같은 contract).
     if kind == 'student-paper':
-        body, title = row['student_paper_html'], row['student_paper_name']
-    elif kind == 'answer-explanation':
-        body, title = row['answer_explanation_html'], row['answer_explanation_name']
-    else:
-        escaped = html.escape(row['verification_md'])
-        escaped = re.sub(r'^### (.+)$', r'<h3>\1</h3>', escaped, flags=re.M)
-        escaped = re.sub(r'^## (.+)$', r'<h2>\1</h2>', escaped, flags=re.M)
-        escaped = re.sub(r'^# (.+)$', r'<h1>\1</h1>', escaped, flags=re.M)
-        escaped = re.sub(r'^[-*] (.+)$', r'<li>\1</li>', escaped, flags=re.M)
-        body, title = f'<article class="markdown-view">{escaped.replace(chr(10), "<br>")}</article>', row['verification_name']
+        return Response(row['student_paper_html'], media_type='text/html; charset=utf-8')
+    if kind == 'answer-explanation':
+        return Response(row['answer_explanation_html'], media_type='text/html; charset=utf-8')
+    escaped = html.escape(row['verification_md'])
+    escaped = re.sub(r'^### (.+)$', r'<h3>\1</h3>', escaped, flags=re.M)
+    escaped = re.sub(r'^## (.+)$', r'<h2>\1</h2>', escaped, flags=re.M)
+    escaped = re.sub(r'^# (.+)$', r'<h1>\1</h1>', escaped, flags=re.M)
+    escaped = re.sub(r'^[-*] (.+)$', r'<li>\1</li>', escaped, flags=re.M)
+    body, title = f'<article class="markdown-view">{escaped.replace(chr(10), "<br>")}</article>', row['verification_name']
     document = f"""<!doctype html><html><head><meta charset="utf-8"><title>{html.escape(title)}</title>
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">
       <style>body{{font-family:Arial,'Malgun Gothic',sans-serif;margin:24px;line-height:1.65;overflow-wrap:anywhere}}
       table{{border-collapse:collapse;max-width:100%}}td,th{{border:1px solid #bbb;padding:6px}}@media(max-width:600px){{body{{margin:12px}}}}</style>
       </head><body>{body}</body></html>"""
     return HTMLResponse(document, headers={'Content-Security-Policy': "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:"})
+
+
+_ARTIFACT_DOWNLOAD_LABELS = {'student-paper': '문제지', 'answer-explanation': '정답해설'}
+
+
+def _download_filename(row, kind: str) -> tuple[str, str]:
+    """다운로드 파일명. 한글 원본명은 RFC 5987 filename*로, 구형 클라이언트용으로 ASCII
+    대체명을 함께 제공한다. 내용은 저장 canonical과 동일하며 파일명만 파생한다."""
+    label = _ARTIFACT_DOWNLOAD_LABELS[kind]
+    original = (f"{row['school']}_{row['grade']}_{row['year']}_{row['semester']}_"
+                f"{row['exam']}_{row['round']}회_{row['set_type']}_{label}.html")
+    ascii_name = re.sub(r'[^0-9A-Za-z._-]', '_', original)
+    if not ascii_name.lower().endswith('.html'):
+        ascii_name += '.html'
+    if not ascii_name.strip('._') or ascii_name in ('.html', '_.html'):
+        ascii_name = f"weekly-exam-{row['id']}-{kind}.html"
+    return ascii_name, original
+
+
+@router.get('/{exam_id}/artifacts/{kind}/download')
+def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation']):
+    """HTML artifact 원본 다운로드. 보기와 동일한 저장 canonical 바이트를 attachment로
+    내려준다. MD artifact는 기존 보기 방식을 유지하므로 다운로드 대상이 아니다(404).
+    운영자 전용(_require_operator)이며 Public endpoint로 노출하지 않는다."""
+    _require_operator()
+    with _db() as conn:
+        row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
+    if kind == 'student-paper':
+        body = row['student_paper_html']
+    elif kind == 'answer-explanation':
+        body = row['answer_explanation_html']
+    else:
+        raise HTTPException(status_code=404, detail='HTML 다운로드 대상이 아닙니다.')
+    ascii_name, original = _download_filename(row, kind)
+    disposition = f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(original, safe="")}'
+    return Response(body, media_type='text/html; charset=utf-8',
+                    headers={'Content-Disposition': disposition})
 
 
 @router.get('/{exam_id}/context-snapshot')
