@@ -35,6 +35,8 @@ export default function WeeklyExamHub(props:Props){
   const setTypes=setTypesFor(context)
   const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
+  const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null)
+  const [replacePaper,setReplacePaper]=useState(''),[replaceExpl,setReplaceExpl]=useState(''),[replaceMd,setReplaceMd]=useState('')
   const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
   const load=async()=>{
@@ -62,6 +64,21 @@ export default function WeeklyExamHub(props:Props){
     const response=await api(`weekly-exams/${id}/transition`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})})
     const body=await response.json().catch(()=>({}))
     setNotice(response.ok?'상태를 변경했습니다.':body.detail||'상태를 변경하지 못했습니다.');if(response.ok)await load()
+  }
+  const removeDraft=async(id:number)=>{
+    const response=await api(`weekly-exams/${id}`,{method:'DELETE'})
+    const body=await response.json().catch(()=>({}))
+    setNotice(response.ok?'DRAFT 세트를 삭제했습니다.':body.detail||'삭제하지 못했습니다.')
+    setConfirmDeleteId(null);if(response.ok)await load()
+  }
+  const replaceArtifacts=async(id:number)=>{
+    const response=await api(`weekly-exams/${id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      studentPaper:replacePaper,answerExplanation:replaceExpl,productionVerification:replaceMd,
+    })})
+    const body=await response.json().catch(()=>({}))
+    if(!response.ok){setNotice(body.detail||'자료 교체에 실패했습니다.');return}
+    setReplacePaper('');setReplaceExpl('');setReplaceMd('');setReplaceId(null)
+    setNotice('3종 자료를 교체했습니다. 상태는 DRAFT로 유지됩니다.');await load()
   }
   const latestFor=(type:SetType)=>items.filter(item=>item.set_type===type).sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
@@ -108,8 +125,19 @@ export default function WeeklyExamHub(props:Props){
           </div>
           {canManage&&<div className="approval-actions">
             {item.status==='DRAFT'
-              ? <button onClick={()=>void transition(item.id,'finalize')}>FINAL 확정</button>
+              ? <><button onClick={()=>void transition(item.id,'finalize')}>FINAL 확정</button>
+                <button onClick={()=>{setReplaceId(replaceId===item.id?null:item.id);setReplacePaper('');setReplaceExpl('');setReplaceMd('')}}>자료 교체</button>
+                {confirmDeleteId===item.id
+                  ? <><span>정말 삭제할까요?</span><button onClick={()=>void removeDraft(item.id)}>삭제 확인</button><button onClick={()=>setConfirmDeleteId(null)}>취소</button></>
+                  : <button onClick={()=>setConfirmDeleteId(item.id)}>삭제</button>}</>
               : <button onClick={()=>void transition(item.id,'reopen')}>DRAFT로 다시 열기</button>}
+          </div>}
+          {replaceId===item.id&&item.status==='DRAFT'&&<div className="artifact-actions">
+            <label>문제지 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplacePaper)}/></label>
+            <label>정답해설 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplaceExpl)}/></label>
+            <label>출제근거 MD<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setReplaceMd)}/></label>
+            <button className="primary-action" disabled={!replacePaper||!replaceExpl||!replaceMd} onClick={()=>void replaceArtifacts(item.id)}>3종 교체 저장</button>
+            <button onClick={()=>setReplaceId(null)}>닫기</button>
           </div>}
         </article>)}</div>}
         <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>제작물 3종 DRAFT 등록</button>
