@@ -103,6 +103,16 @@ class TransitionRequest(BaseModel):
     note: str = ''
 
 
+class WeeklyExamArtifactsUpdate(BaseModel):
+    studentPaper: str = Field(min_length=1)
+    answerExplanation: str = Field(min_length=1)
+    productionVerification: str = Field(min_length=1)
+    studentPaperName: str = ''
+    answerExplanationName: str = ''
+    productionVerificationName: str = ''
+    sourceMaterialIds: Optional[list[int]] = None
+
+
 def _db():
     if _get_db is None:
         raise RuntimeError('weekly exam service is not configured')
@@ -404,3 +414,79 @@ def transition_weekly_exam(exam_id: int, payload: TransitionRequest, request: Re
           (weekly_exam_id,action,from_status,to_status,actor,note,created_at) VALUES (?,?,?,?,?,?,?)""",
           (exam_id, audit_action, effective, public_target, actor, payload.note[:1000], now))
         return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+
+
+def _draft_row_or_409(conn, exam_id: int):
+    """DRAFT 계열만 관리(삭제/교체)한다. FINAL 이상은 409로 거부한다."""
+    row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
+    if EFFECTIVE_STATUS.get(row['status'], 'DRAFT') != 'DRAFT':
+        raise HTTPException(
+            status_code=409, detail=f"{EFFECTIVE_STATUS.get(row['status'])} 상태는 관리(삭제/교체)할 수 없습니다.")
+    return row
+
+
+def delete_draft(exam_id: int, *, actor: Optional[str] = None) -> dict:
+    """DRAFT 세트 삭제. 자식 audit 행을 먼저 지운 뒤 세트를 지운다(단일 트랜잭션).
+
+    get_db()는 FK pragma를 켜지 않지만, 자식→부모 순서로 지우면 pragma 설정과
+    무관하게 무결성이 깨지지 않는다. 삭제된 id는 응답에 그대로 담는다."""
+    with _db() as conn:
+        row = _draft_row_or_409(conn, exam_id)
+        now, who = datetime.now().isoformat(), actor or _actor()
+        summary = {'id': row['id'], 'school': row['school'], 'grade': row['grade'],
+                   'year': row['year'], 'semester': row['semester'], 'exam': row['exam'],
+                   'round': row['round'], 'set_type': row['set_type'],
+                   'question_count': row['question_count'], 'version': row['version'],
+                   'deleted_by': who, 'deleted_at': now}
+        conn.execute('DELETE FROM weekly_exam_audit WHERE weekly_exam_id=?', (exam_id,))
+        conn.execute('DELETE FROM weekly_exam_sets WHERE id=?', (exam_id,))
+        return summary
+
+
+def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
+                      *, actor: Optional[str] = None) -> dict:
+    """DRAFT 세트의 3종 artifact 교체. 회차·세트 유형·status·version은 유지하고
+    filename/hash와 본문만 다시 계산한다. sourceMaterialIds가 주어지면
+    _source_refs 기존 검증으로 현재 Context에 속한 ID인지 확인한다."""
+    student_html = _clean_html(payload.studentPaper)
+    answer_html = _clean_html(payload.answerExplanation)
+    with _db() as conn:
+        row = _draft_row_or_409(conn, exam_id)
+        refs = json.loads(row['source_material_ids'] or '[]')
+        if payload.sourceMaterialIds is not None:
+            if _context_reader is None:
+                raise RuntimeError('weekly exam context reader is not configured')
+            current = _context_reader(row['school'], row['grade'], row['year'],
+                                      row['semester'], row['exam'])
+            refs = [item['id'] for item in
+                    _source_refs(current, payload.sourceMaterialIds)['requested']]
+        now, who = datetime.now().isoformat(), actor or _actor()
+        conn.execute("""UPDATE weekly_exam_sets SET student_paper_name=?,student_paper_html=?,
+          student_paper_hash=?,answer_explanation_name=?,answer_explanation_html=?,
+          answer_explanation_hash=?,verification_name=?,verification_md=?,verification_hash=?,
+          source_material_ids=?,updated_at=? WHERE id=?""",
+          ((payload.studentPaperName.strip() or row['student_paper_name'])[:255], student_html,
+           _sha(student_html),
+           (payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255],
+           answer_html, _sha(answer_html),
+           (payload.productionVerificationName.strip() or row['verification_name'])[:255],
+           payload.productionVerification, _sha(payload.productionVerification),
+           json.dumps(refs), now, exam_id))
+        conn.execute("""INSERT INTO weekly_exam_audit
+          (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
+          (exam_id, who, now))
+        return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+
+
+@router.delete('/{exam_id}')
+def delete_weekly_exam(exam_id: int):
+    _require_operator()
+    return delete_draft(exam_id)
+
+
+@router.put('/{exam_id}/artifacts')
+def replace_weekly_exam_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate):
+    _require_operator()
+    return replace_artifacts(exam_id, payload)

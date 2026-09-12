@@ -3660,5 +3660,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/weekly-exams`: current signed workspace only.
 - artifact/context-snapshot URLs: signed operator workspace only; HTML download endpoint included (operator only, no public exposure).
 - `POST .../{id}/transition`: `finalize|reopen` only.
+- `DELETE .../{id}`: signed operator only; effective DRAFT(REVIEW/CHANGES_REQUESTED/REJECTED)만 삭제, FINAL 계열은 409 거부. 자식 audit 행을 먼저 지우는 단일 트랜잭션.
+- `PUT .../{id}/artifacts`: signed operator only; DRAFT 한정 3종 교체. 회차·세트·status·version 유지, filename/hash 재계산, sourceMaterialIds 지정 시 기존 `_source_refs` 검증 재사용.
 - `GET .../public-metadata`: FINAL public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
