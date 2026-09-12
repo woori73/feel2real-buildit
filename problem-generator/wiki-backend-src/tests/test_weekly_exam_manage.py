@@ -155,6 +155,60 @@ class WeeklyExamManageTest(unittest.TestCase):
             weekly_exam.replace_weekly_exam_artifacts(9999, self.update_payload())
         self.assertEqual(404, missing.exception.status_code)
 
+    def test_partial_replace_paper_only_keeps_others(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        before = self.hashes(saved['id'])
+        out = weekly_exam.replace_weekly_exam_artifacts(
+            saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                studentPaper='<h1>문제지</h1><p>Q1 v2</p>'))
+        self.assertEqual(saved['id'], out['id'])
+        self.assertEqual('DRAFT', out['status'])
+        self.assertEqual(saved['version'], out['version'])
+        after = self.hashes(saved['id'])
+        self.assertEqual(_sha('<h1>문제지</h1><p>Q1 v2</p>'), after[0])
+        self.assertEqual(before[1], after[1])
+        self.assertEqual(before[2], after[2])
+        body = weekly_exam.view_artifact(saved['id'], 'student-paper').body.decode()
+        self.assertIn('Q1 v2', body)
+        expl = weekly_exam.view_artifact(saved['id'], 'answer-explanation').body.decode()
+        self.assertIn('1. ①', expl)
+
+    def test_partial_replace_explanation_only_keeps_paper(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        before = self.hashes(saved['id'])
+        weekly_exam.replace_weekly_exam_artifacts(
+            saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                answerExplanation='<h1>해설</h1><p>1. ③</p>'))
+        after = self.hashes(saved['id'])
+        self.assertEqual(before[0], after[0])
+        self.assertEqual(_sha('<h1>해설</h1><p>1. ③</p>'), after[1])
+        self.assertEqual(before[2], after[2])
+
+    def test_replace_with_no_files_is_rejected(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        before = self.hashes(saved['id'])
+        with self.assertRaises(HTTPException) as bad:
+            weekly_exam.replace_weekly_exam_artifacts(
+                saved['id'], weekly_exam.WeeklyExamArtifactsUpdate())
+        self.assertEqual(400, bad.exception.status_code)
+        self.assertEqual(before, self.hashes(saved['id']))
+
+    def test_final_partial_replace_is_rejected(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        weekly_exam.transition_weekly_exam(
+            saved['id'], weekly_exam.TransitionRequest(action='finalize'), None)
+        with self.assertRaises(HTTPException) as denied:
+            weekly_exam.replace_weekly_exam_artifacts(
+                saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                    studentPaper='<h1>문제지</h1><p>Q1 v2</p>'))
+        self.assertEqual(409, denied.exception.status_code)
+
+    def test_view_artifact_is_no_store(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        for kind in ('student-paper', 'answer-explanation'):
+            response = weekly_exam.view_artifact(saved['id'], kind)
+            self.assertEqual('no-store', response.headers.get('Cache-Control'))
+
     def test_deleted_key_can_be_registered_again_without_duplicate(self):
         saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
         weekly_exam.delete_weekly_exam(saved['id'])

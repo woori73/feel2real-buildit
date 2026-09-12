@@ -71,14 +71,17 @@ export default function WeeklyExamHub(props:Props){
     setNotice(response.ok?'DRAFT 세트를 삭제했습니다.':body.detail||'삭제하지 못했습니다.')
     setConfirmDeleteId(null);if(response.ok)await load()
   }
-  const replaceArtifacts=async(id:number)=>{
-    const response=await api(`weekly-exams/${id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      studentPaper:replacePaper,answerExplanation:replaceExpl,productionVerification:replaceMd,
-    })})
-    const body=await response.json().catch(()=>({}))
-    if(!response.ok){setNotice(body.detail||'자료 교체에 실패했습니다.');return}
+  const replaceArtifact=async(id:number,kind:'paper'|'expl'|'md')=>{
+    const body:Record<string,string>={}
+    if(kind==='paper'&&replacePaper)body.studentPaper=replacePaper
+    if(kind==='expl'&&replaceExpl)body.answerExplanation=replaceExpl
+    if(kind==='md'&&replaceMd)body.productionVerification=replaceMd
+    if(Object.keys(body).length===0)return
+    const response=await api(`weekly-exams/${id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    const data=await response.json().catch(()=>({}))
+    if(!response.ok){setNotice(data.detail||'자료 교체에 실패했습니다.');return}
     setReplacePaper('');setReplaceExpl('');setReplaceMd('');setReplaceId(null)
-    setNotice('3종 자료를 교체했습니다. 상태는 DRAFT로 유지됩니다.');await load()
+    setNotice('선택한 자료를 교체했습니다. 회차·세트·상태는 그대로 유지됩니다.');await load()
   }
   const latestFor=(type:SetType)=>items.filter(item=>item.set_type===type).sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
@@ -132,11 +135,13 @@ export default function WeeklyExamHub(props:Props){
                   : <button onClick={()=>setConfirmDeleteId(item.id)}>삭제</button>}</>
               : <button onClick={()=>void transition(item.id,'reopen')}>DRAFT로 다시 열기</button>}
           </div>}
-          {replaceId===item.id&&item.status==='DRAFT'&&<div className="artifact-actions">
-            <label>문제지 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplacePaper)}/></label>
-            <label>정답해설 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplaceExpl)}/></label>
-            <label>출제근거 MD<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setReplaceMd)}/></label>
-            <button className="primary-action" disabled={!replacePaper||!replaceExpl||!replaceMd} onClick={()=>void replaceArtifacts(item.id)}>3종 교체 저장</button>
+          {replaceId===item.id&&item.status==='DRAFT'&&<div className="artifact-actions replace-panel">
+            <label>문제지 교체<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplacePaper)}/></label>
+            <button className="primary-action" disabled={!replacePaper} onClick={()=>void replaceArtifact(item.id,'paper')}>문제지 교체 저장</button>
+            <label>정답해설 교체<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplaceExpl)}/></label>
+            <button className="primary-action" disabled={!replaceExpl} onClick={()=>void replaceArtifact(item.id,'expl')}>정답해설 교체 저장</button>
+            <label>출제근거 교체<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setReplaceMd)}/></label>
+            <button className="primary-action" disabled={!replaceMd} onClick={()=>void replaceArtifact(item.id,'md')}>출제근거 교체 저장</button>
             <button onClick={()=>setReplaceId(null)}>닫기</button>
           </div>}
         </article>)}</div>}
