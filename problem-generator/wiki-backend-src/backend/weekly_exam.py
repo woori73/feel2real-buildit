@@ -104,9 +104,9 @@ class TransitionRequest(BaseModel):
 
 
 class WeeklyExamArtifactsUpdate(BaseModel):
-    studentPaper: str = Field(min_length=1)
-    answerExplanation: str = Field(min_length=1)
-    productionVerification: str = Field(min_length=1)
+    studentPaper: Optional[str] = None
+    answerExplanation: Optional[str] = None
+    productionVerification: Optional[str] = None
     studentPaperName: str = ''
     answerExplanationName: str = ''
     productionVerificationName: str = ''
@@ -325,10 +325,13 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
     # HTML artifact는 저장된 canonical 원본을 그대로 렌더링한다. 별도 shell로 감싸거나
     # JSON으로 노출하지 않는다(final_deliverables /html 조회와 같은 contract).
+    # 교체 직후 보기에서 과거 파일이 보이지 않도록 캐시를 저장하지 않는다.
     if kind == 'student-paper':
-        return Response(row['student_paper_html'], media_type='text/html; charset=utf-8')
+        return Response(row['student_paper_html'], media_type='text/html; charset=utf-8',
+                        headers={'Cache-Control': 'no-store'})
     if kind == 'answer-explanation':
-        return Response(row['answer_explanation_html'], media_type='text/html; charset=utf-8')
+        return Response(row['answer_explanation_html'], media_type='text/html; charset=utf-8',
+                        headers={'Cache-Control': 'no-store'})
     escaped = html.escape(row['verification_md'])
     escaped = re.sub(r'^### (.+)$', r'<h3>\1</h3>', escaped, flags=re.M)
     escaped = re.sub(r'^## (.+)$', r'<h2>\1</h2>', escaped, flags=re.M)
@@ -379,7 +382,7 @@ def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-expla
     ascii_name, original = _download_filename(row, kind)
     disposition = f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(original, safe="")}'
     return Response(body, media_type='text/html; charset=utf-8',
-                    headers={'Content-Disposition': disposition})
+                    headers={'Content-Disposition': disposition, 'Cache-Control': 'no-store'})
 
 
 @router.get('/{exam_id}/context-snapshot')
@@ -447,11 +450,26 @@ def delete_draft(exam_id: int, *, actor: Optional[str] = None) -> dict:
 
 def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
                       *, actor: Optional[str] = None) -> dict:
-    """DRAFT 세트의 3종 artifact 교체. 회차·세트 유형·status·version은 유지하고
-    filename/hash와 본문만 다시 계산한다. sourceMaterialIds가 주어지면
+    """DRAFT 세트의 artifact 교체. 제공된 파일만 교체하고 나머지는 유지한다.
+    회차·세트 유형·status·version·identity는 유지하고 filename/hash와 본문만
+    다시 계산한다. 세 파일이 모두 없으면 400. sourceMaterialIds가 주어지면
     _source_refs 기존 검증으로 현재 Context에 속한 ID인지 확인한다."""
-    student_html = _clean_html(payload.studentPaper)
-    answer_html = _clean_html(payload.answerExplanation)
+    provided = [name for name, value in (
+        ('studentPaper', payload.studentPaper),
+        ('answerExplanation', payload.answerExplanation),
+        ('productionVerification', payload.productionVerification),
+    ) if value is not None]
+    if not provided:
+        raise HTTPException(status_code=400, detail='교체할 파일을 하나 이상 지정해야 합니다.')
+    cleaned = {}
+    for name in provided:
+        value = getattr(payload, name)
+        if name == 'productionVerification':
+            if not (value or '').strip():
+                raise HTTPException(status_code=400, detail='교체 본문이 비어 있습니다.')
+            cleaned[name] = value
+        else:
+            cleaned[name] = _clean_html(value)
     with _db() as conn:
         row = _draft_row_or_409(conn, exam_id)
         refs = json.loads(row['source_material_ids'] or '[]')
@@ -463,16 +481,22 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
             refs = [item['id'] for item in
                     _source_refs(current, payload.sourceMaterialIds)['requested']]
         now, who = datetime.now().isoformat(), actor or _actor()
+        student_html = cleaned.get('studentPaper', row['student_paper_html'])
+        answer_html = cleaned.get('answerExplanation', row['answer_explanation_html'])
+        verification_md = cleaned.get('productionVerification', row['verification_md'])
         conn.execute("""UPDATE weekly_exam_sets SET student_paper_name=?,student_paper_html=?,
           student_paper_hash=?,answer_explanation_name=?,answer_explanation_html=?,
           answer_explanation_hash=?,verification_name=?,verification_md=?,verification_hash=?,
           source_material_ids=?,updated_at=? WHERE id=?""",
-          ((payload.studentPaperName.strip() or row['student_paper_name'])[:255], student_html,
+          ((payload.studentPaperName.strip() or row['student_paper_name'])[:255]
+           if 'studentPaper' in cleaned else row['student_paper_name'], student_html,
            _sha(student_html),
-           (payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255],
+           (payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255]
+           if 'answerExplanation' in cleaned else row['answer_explanation_name'],
            answer_html, _sha(answer_html),
-           (payload.productionVerificationName.strip() or row['verification_name'])[:255],
-           payload.productionVerification, _sha(payload.productionVerification),
+           (payload.productionVerificationName.strip() or row['verification_name'])[:255]
+           if 'productionVerification' in cleaned else row['verification_name'],
+           verification_md, _sha(verification_md),
            json.dumps(refs), now, exam_id))
         conn.execute("""INSERT INTO weekly_exam_audit
           (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
