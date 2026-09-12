@@ -244,9 +244,125 @@ def pdf_text_completeness(html: str, pdf_text: str) -> list[str]:
     return misses
 
 
+_CIRCLED = {'①': 1, '②': 2, '③': 3, '④': 4, '⑤': 5}
+
+# 명확히 파싱 가능한 해설 내 선택지 언급 패턴: "~과 같은", "~뿐이다",
+# "~가/이 적절하다", "~가/이 틀렸다", "~가 일치하지 않는다" 등.
+_EXPL_MENTION_RE = re.compile(
+    r'([①②③④⑤])\s*(?:과 같은|뿐이다|뿐이|가 적절하다|이 적절하다|가 틀렸다|이 틀렸다|'
+    r'가 일치하지 않는다|이 일치하지 않는다|가 정답이다|이 정답이다)')
+
+
+def check_answer_key_consistency(final_answers: dict, quick_answers: dict,
+                                 badge_answers: dict) -> list[str]:
+    """ANSWER: 빠른 정답·문항별 badge는 최종 정답과 일치해야 한다.
+
+    2026-09 round4-70 사고(빠른 정답·badge가 ①→②→③→④→⑤ 기계적 순환으로
+    채워져 60/70문항 불일치) 재발 방지 게이트. machines don't guess answers.
+    """
+    issues = []
+    for key, final in (final_answers or {}).items():
+        quick = (quick_answers or {}).get(key)
+        if quick is not None and quick != final:
+            issues.append('Q%s: quick answer %s != final answer %s' % (key, quick, final))
+        badge = (badge_answers or {}).get(key)
+        if badge is not None and badge != final:
+            issues.append('Q%s: explanation badge %s != final answer %s' % (key, badge, final))
+    return issues
+
+
+def check_expl_mention_consistency(expl_texts: dict, final_answers: dict) -> list[str]:
+    """ANSWER: 해설 문장에 명시된 선택지 번호도 최종 정답과 일치해야 한다.
+
+    예: "①과 같은 쓰임이다"라고 적혀 있는데 badge가 ③이면 FAIL.
+    명확히 파싱 가능한 패턴(_EXPL_MENTION_RE)만 검사하고, 애매한 서술은
+    건드리지 않는다(never guessed).
+    """
+    issues = []
+    for key, text in (expl_texts or {}).items():
+        final = (final_answers or {}).get(key)
+        if final is None:
+            continue
+        for match in _EXPL_MENTION_RE.finditer(text or ''):
+            mentioned = _CIRCLED.get(match.group(1))
+            if mentioned is not None and mentioned != final:
+                issues.append('Q%s: explanation mentions %s but final answer is %s (%s)'
+                              % (key, match.group(0), final, (text or '')[:40]))
+    return issues
+
+
+_COMBO_CHOICE_RE = re.compile(r'\b[a-d](?:\s*,\s*[a-d])+\b|\b[ABC](?:\s*,\s*[ABC])+\b')
+
+
+def check_view_box_present(block_html: str, question_no=None) -> list[str]:
+    """DATA: 보기 발문인데 보기 block이 없으면 FAIL.
+
+    발문에 '보기'가 있고 선택지가 a~d/A~C 조합형인데, 블록에
+    cond-box/passage box/given-sentence/보기 본문이 없으면 검출한다.
+    (round4-70 Q7·Q30 사고: 조합 선택지만 있고 a~d 본체 누락)
+    """
+    prompt_match = re.search(r'<span class="qprompt">(.*?)</span>', block_html or '', flags=re.S)
+    prompt = _strip_tags(prompt_match.group(1)) if prompt_match else ''
+    if '보기' not in prompt:
+        return []
+    choices = re.findall(r'<span class="choice-item">(.*?)</span>|<div class="opt">(.*?)</div>',
+                         block_html or '', flags=re.S)
+    choice_text = ' '.join((a or b) for a, b in choices)
+    if not _COMBO_CHOICE_RE.search(choice_text):
+        return []
+    body = block_html or ''
+    if ('cond-box' in body or 'given-sentence' in body or 'passage box' in body
+            or '보기' in _strip_tags(re.sub(r'<span class="qprompt">.*?</span>', '', body, flags=re.S))):
+        return []
+    label = 'Q%s: ' % question_no if question_no is not None else ''
+    return ['%s보기 발문+조합 선택지인데 보기 block 없음' % label]
+
+
+def check_underline_rendered(block_html: str, group_html: str = '', question_no=None) -> list[str]:
+    """RENDER: "밑줄 친"이라고 물으면 실제 <u> target이 있어야 한다.
+
+    윗글 공유형(밑줄이 공유 지문 박스에 있음)을 허용하기 위해 group_html
+    (같은 passage group 전체 HTML)까지 함께 검사한다.
+    """
+    prompt_match = re.search(r'<span class="qprompt">(.*?)</span>', block_html or '', flags=re.S)
+    prompt = _strip_tags(prompt_match.group(1)) if prompt_match else ''
+    if '밑줄' not in prompt and 'underlined' not in prompt:
+        return []
+    hay = '%s %s' % (block_html or '', group_html or '')
+    if re.search(r'<u(?:\s|>)', hay, re.I):
+        return []
+    label = 'Q%s: ' % question_no if question_no is not None else ''
+    return ['%s밑줄 발문인데 <u> target 없음' % label]
+
+
+def check_blank_target_rendered(block_html: str, question_no=None) -> list[str]:
+    """RENDER: (A)/(B)/(C)·빈칸 발문이면 본문에 실제 target이 있어야 한다."""
+    prompt_match = re.search(r'<span class="qprompt">(.*?)</span>', block_html or '', flags=re.S)
+    prompt = _strip_tags(prompt_match.group(1)) if prompt_match else ''
+    body_text = _strip_tags(block_html or '')
+    needed = [tok for tok in _BLANK_TOKENS if tok in prompt]
+    issues = []
+    label = 'Q%s: ' % question_no if question_no is not None else ''
+    for tok in needed:
+        if tok not in body_text:
+            issues.append('%sblank %s target 없음' % (label, tok))
+    if ('빈칸' in prompt and '____' not in (block_html or '')
+            and not needed and '보기' not in prompt):
+        issues.append('%s빈칸 발문인데 빈칸 target 없음' % label)
+    return issues
+
+
 def validate_document(questions: list[dict], html: str, pdf_text: str = '',
-                      min_answer_lines: int = 2) -> dict:
-    """Run all gates; returns {gate: [issues]}. Empty lists mean PASS."""
+                      min_answer_lines: int = 2, final_answers: dict = None,
+                      quick_answers: dict = None, badge_answers: dict = None,
+                      expl_texts: dict = None, blocks_html: dict = None,
+                      groups_html: dict = None) -> dict:
+    """Run all gates; returns {gate: [issues]}. Empty lists mean PASS.
+
+    ANSWER 게이트(final/quick/badge/expl-mention)는 round4-70 정답 순환
+    사고 재발 방지용이다. 새 인자가 없으면(기존 호출) 기존 3개 게이트만
+    동작하므로 backward compatible하다.
+    """
     data_issues = list(check_numbering(questions)) + list(check_group_refs(questions))
     for q in questions:
         data_issues += ['Q%s: %s' % (q.get('no'), i) for i in
@@ -257,7 +373,21 @@ def validate_document(questions: list[dict], html: str, pdf_text: str = '',
                      + check_group_preserved(html, questions)
                      + check_boxes_once(html, questions)
                      + check_markup_present(html, questions))
+    answer_issues: list[str] = []
+    if final_answers is not None and (quick_answers is not None or badge_answers is not None):
+        answer_issues += check_answer_key_consistency(final_answers, quick_answers, badge_answers)
+    if expl_texts is not None and final_answers is not None:
+        answer_issues += check_expl_mention_consistency(expl_texts, final_answers)
+    if blocks_html:
+        for key, block in blocks_html.items():
+            answer_issues += check_view_box_present(block, key)
+            answer_issues += check_blank_target_rendered(block, key)
+            answer_issues += check_underline_rendered(
+                block, (groups_html or {}).get(key, ''), key)
     print_issues = check_bottom_overflow(html) + check_footer_continuity(html)
     if pdf_text:
         print_issues += pdf_text_completeness(html, pdf_text)
-    return {'DATA': data_issues, 'RENDER': render_issues, 'PRINT': print_issues}
+    result = {'DATA': data_issues, 'RENDER': render_issues, 'PRINT': print_issues}
+    if answer_issues or final_answers is not None:
+        result['ANSWER'] = answer_issues
+    return result
