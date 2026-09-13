@@ -113,6 +113,12 @@ class WeeklyExamArtifactsUpdate(BaseModel):
     sourceMaterialIds: Optional[list[int]] = None
 
 
+class WeeklyExamMetadataUpdate(BaseModel):
+    round: Optional[int] = Field(default=None, ge=1)
+    setType: Optional[Literal['40', '70', '40A', '40B']] = None
+    questionCount: Optional[int] = Field(default=None, ge=1, le=200)
+
+
 def _db():
     if _get_db is None:
         raise RuntimeError('weekly exam service is not configured')
@@ -446,6 +452,56 @@ def delete_draft(exam_id: int, *, actor: Optional[str] = None) -> dict:
         conn.execute('DELETE FROM weekly_exam_audit WHERE weekly_exam_id=?', (exam_id,))
         conn.execute('DELETE FROM weekly_exam_sets WHERE id=?', (exam_id,))
         return summary
+
+
+def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
+                    *, actor: Optional[str] = None) -> dict:
+    """관리자가 세트의 식별 메타데이터만 수정한다.
+
+    문제지·정답해설·검수 MD와 version은 건드리지 않는다. 세트 유형이 문항 수의
+    source of truth이므로 70은 70문항, 40/40A/40B는 40문항으로 함께 정규화한다.
+    """
+    if payload.round is None and payload.setType is None and payload.questionCount is None:
+        raise HTTPException(status_code=400, detail='수정할 세트 정보를 하나 이상 지정해야 합니다.')
+    with _db() as conn:
+        row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
+        new_round = payload.round if payload.round is not None else row['round']
+        new_set_type = payload.setType or row['set_type']
+        expected_count = 70 if new_set_type == '70' else 40
+        if payload.questionCount is not None and payload.questionCount != expected_count:
+            raise HTTPException(
+                status_code=400,
+                detail=f'{new_set_type} 세트의 문항 수는 {expected_count}이어야 합니다.',
+            )
+        duplicate = conn.execute("""SELECT id FROM weekly_exam_sets
+          WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND round=?
+            AND set_type=? AND version=? AND id<>?""",
+          (row['school'], row['grade'], row['year'], row['semester'], row['exam'],
+           new_round, new_set_type, row['version'], exam_id)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail='동일 회차·세트·버전이 이미 존재합니다.')
+        now, who = datetime.now().isoformat(), actor or _actor()
+        conn.execute("""UPDATE weekly_exam_sets
+          SET round=?,set_type=?,question_count=?,updated_at=? WHERE id=?""",
+          (new_round, new_set_type, expected_count, now, exam_id))
+        effective = EFFECTIVE_STATUS.get(row['status'], 'DRAFT')
+        conn.execute("""INSERT INTO weekly_exam_audit
+          (weekly_exam_id,action,from_status,to_status,actor,note,created_at)
+          VALUES (?,'METADATA_UPDATED',?,?,?, ?,?)""",
+          (exam_id, effective, effective, who,
+           f"round {row['round']}→{new_round}; set_type {row['set_type']}→{new_set_type}; "
+           f"question_count {row['question_count']}→{expected_count}", now))
+        return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+
+
+@router.patch('/{exam_id}/metadata')
+def update_weekly_exam_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate):
+    _require_operator()
+    if not _is_admin():
+        raise HTTPException(status_code=403, detail='admin workspace access required')
+    return update_metadata(exam_id, payload)
 
 
 def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,

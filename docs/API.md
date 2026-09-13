@@ -3665,6 +3665,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `DELETE .../{id}`: signed operator only; effective DRAFT(REVIEW/CHANGES_REQUESTED/REJECTED)만 삭제, FINAL 계열은 409 거부. 자식 audit 행을 먼저 지우는 단일 트랜잭션.
 - `PUT .../{id}/artifacts`: signed operator only; DRAFT 한정 파일별 교체(문제지·정답해설·출제근거 중 제공된 것만 교체, 나머지 유지, identity·회차·세트·status·version 유지, filename/hash 재계산, sourceMaterialIds 지정 시 기존 `_source_refs` 검증 재사용, 교체 파일 0건이면 400). 교체 후 보기·다운로드는 `Cache-Control: no-store`라 즉시 새 파일이 보인다.
 - `GET .../public-metadata`: FINAL public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
+- `PATCH .../{id}/metadata`: signed workspace ADMIN only. `round`·`setType`(40|70|40A|40B)만 수정하고 artifact 본문·status·version은 유지한다. `setType`이 문항 수의 source of truth다: 70은 `question_count=70`, 40·40A·40B는 40으로 정규화하며, `questionCount` 입력이 정규화 값과 어긋나면 400, 수정 결과가 동일 identity·회차·세트·version의 기존 행과 겹치면 409. 수정은 `METADATA_UPDATED` audit 행으로 기록한다.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
 
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import WeeklyExamHub from './WeeklyExamHub'
 
@@ -62,6 +62,48 @@ describe.each(contexts)('WeeklyExamHub 공통 관리 버튼 ($school $grade)', (
     expect(screen.queryByRole('button', { name: '자료 교체' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'DRAFT로 다시 열기' })).toBeInTheDocument()
+  })
+})
+
+describe('WeeklyExamHub 세트 정보 수정', () => {
+  const context = contexts[0]
+  const adminApi = (items: unknown[], calls: { url: string; init?: RequestInit }[]) => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const u = String(url)
+      calls.push({ url: u, init })
+      if (u.includes('weekly-exams?')) return new Response(JSON.stringify(items), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (u.includes('workspace/me')) return new Response(JSON.stringify({ user_id: 't', workspace_admin: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (/weekly-exams\/\d+\/metadata$/.test(u) && init?.method === 'PATCH') return new Response(JSON.stringify({ id: 21, set_type: '70', question_count: 70 }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }))
+  }
+
+  it('관리자는 세트 정보 수정 패널에서 round·set_type을 PATCH한다', async () => {
+    const calls: { url: string; init?: RequestInit }[] = []
+    adminApi([draftItem(21)], calls)
+    render(<WeeklyExamHub context={context} {...baseProps} />)
+    await screen.findByText('5회 · 40')
+    fireEvent.click(screen.getByRole('button', { name: '세트 정보 수정' }))
+    const panel = screen.getByLabelText('세트 정보 수정')
+    expect(panel).toBeInTheDocument()
+    const roundInput = within(panel).getByLabelText('회차') as HTMLInputElement
+    expect(roundInput.value).toBe('5')
+    fireEvent.change(roundInput, { target: { value: '6' } })
+    fireEvent.change(within(panel).getByLabelText('세트 유형'), { target: { value: '70' } })
+    fireEvent.click(within(panel).getByRole('button', { name: '세트 정보 저장' }))
+    await waitFor(() => expect(calls.some(c => /weekly-exams\/21\/metadata$/.test(c.url) && c.init?.method === 'PATCH')).toBe(true))
+    const patch = calls.find(c => /weekly-exams\/21\/metadata$/.test(c.url))!
+    expect(JSON.parse(String(patch.init!.body))).toEqual({ round: 6, setType: '70' })
+    await screen.findByText(/세트 정보를 수정했습니다/)
+  })
+
+  it('관리자가 아니면 세트 정보 수정 버튼이 없다', async () => {
+    const calls: { url: string; init?: RequestInit }[] = []
+    mockApi([draftItem(22)], calls)
+    render(<WeeklyExamHub context={context} {...baseProps} />)
+    await screen.findByText('5회 · 40')
+    expect(screen.queryByRole('button', { name: '세트 정보 수정' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('세트 정보 수정')).not.toBeInTheDocument()
   })
 })
 
