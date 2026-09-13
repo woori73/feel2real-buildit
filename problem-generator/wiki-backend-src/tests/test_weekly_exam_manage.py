@@ -209,6 +209,37 @@ class WeeklyExamManageTest(unittest.TestCase):
             response = weekly_exam.view_artifact(saved['id'], kind)
             self.assertEqual('no-store', response.headers.get('Cache-Control'))
 
+    def test_metadata_update_normalizes_70_and_preserves_artifacts(self):
+        saved = weekly_exam.register_draft(self.payload(setType='40', questionCount=40), actor='mcp-agent')
+        before_hashes = self.hashes(saved['id'])
+        out = weekly_exam.update_metadata(
+            saved['id'], weekly_exam.WeeklyExamMetadataUpdate(setType='70'), actor='admin')
+        self.assertEqual('70', out['set_type'])
+        self.assertEqual(70, out['question_count'])
+        self.assertEqual(before_hashes, self.hashes(saved['id']))
+        self.assertEqual(4, out['round'])
+        with main.get_db() as conn:
+            audit = conn.execute(
+                "SELECT action,note FROM weekly_exam_audit WHERE weekly_exam_id=? ORDER BY id DESC LIMIT 1",
+                (saved['id'],),
+            ).fetchone()
+        self.assertEqual('METADATA_UPDATED', audit['action'])
+        self.assertIn('question_count 40→70', audit['note'])
+
+    def test_metadata_update_rejects_inconsistent_question_count_and_duplicates(self):
+        saved = weekly_exam.register_draft(self.payload(setType='40', questionCount=40), actor='mcp-agent')
+        with self.assertRaises(HTTPException) as mismatch:
+            weekly_exam.update_metadata(
+                saved['id'], weekly_exam.WeeklyExamMetadataUpdate(setType='70', questionCount=40))
+        self.assertEqual(400, mismatch.exception.status_code)
+        other = weekly_exam.register_draft(self.payload(round=5, setType='70', questionCount=70), actor='mcp-agent')
+        with self.assertRaises(HTTPException) as duplicate:
+            weekly_exam.update_metadata(
+                saved['id'], weekly_exam.WeeklyExamMetadataUpdate(round=5, setType='70'))
+        self.assertEqual(409, duplicate.exception.status_code)
+        self.assertEqual('70', other['set_type'])
+        self.assertEqual(70, other['question_count'])
+
     def test_deleted_key_can_be_registered_again_without_duplicate(self):
         saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
         weekly_exam.delete_weekly_exam(saved['id'])
@@ -217,6 +248,25 @@ class WeeklyExamManageTest(unittest.TestCase):
         rows = weekly_exam.list_weekly_exams('신구중', '2학년', 2026, '2학기', '중간고사')
         self.assertEqual(1, len(rows))
         self.assertEqual('DRAFT', rows[0]['status'])
+
+    def test_metadata_update_requires_admin(self):
+        saved = weekly_exam.register_draft(self.payload(setType='40', questionCount=40), actor='mcp-agent')
+        wiki_workspace.reset_current_identity(self.identity_token)
+        self.identity_token = wiki_workspace.set_current_identity(
+            wiki_workspace.WikiIdentity('2', 'teacher', 'TUTOR'))
+        with self.assertRaises(HTTPException) as denied:
+            weekly_exam.update_weekly_exam_metadata(
+                saved['id'], weekly_exam.WeeklyExamMetadataUpdate(setType='70'))
+        self.assertEqual(403, denied.exception.status_code)
+        with main.get_db() as conn:
+            row = conn.execute('SELECT set_type,question_count FROM weekly_exam_sets WHERE id=?',
+                               (saved['id'],)).fetchone()
+        self.assertEqual('40', row['set_type'])
+        self.assertEqual(40, row['question_count'])
+        with self.assertRaises(HTTPException) as empty:
+            weekly_exam.update_metadata(
+                saved['id'], weekly_exam.WeeklyExamMetadataUpdate())
+        self.assertEqual(400, empty.exception.status_code)
 
 
 if __name__ == '__main__':

@@ -14,6 +14,7 @@ type Props = {
   context:ExamContext; pastExamCount:number; schoolPrintCount:number; wrongCount:number
   aiWorkLogCount:number; hasDigitalTwin:boolean; lastContextUpdate?:string
   onOpenContext:()=>void; onOpenWeeklyWorkspace:()=>void; onOpenWrongReview:()=>void; onOpenWrongMock:()=>void
+  studentTotalWrongCount?:number|null; onOpenStudentWrongAnswers?:()=>void
 }
 
 const SET_POLICY:Record<string,SetType[]>={
@@ -33,9 +34,9 @@ const statusLabel=(status:WeeklyStatus)=>status==='FINAL'?'제작 완료':'제�
 export default function WeeklyExamHub(props:Props){
   const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview,onOpenWrongMock}=props
   const setTypes=setTypesFor(context)
-  const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
+  const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[canAdmin,setCanAdmin]=useState(false),[notice,setNotice]=useState('')
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
-  const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null)
+  const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null),[metadataId,setMetadataId]=useState<number|null>(null),[metadataRound,setMetadataRound]=useState(1),[metadataSetType,setMetadataSetType]=useState<SetType>(setTypes[0])
   const [replacePaper,setReplacePaper]=useState(''),[replaceExpl,setReplaceExpl]=useState(''),[replaceMd,setReplaceMd]=useState('')
   const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
@@ -45,7 +46,7 @@ export default function WeeklyExamHub(props:Props){
       api(`weekly-exams?${query(context)}`).then(r=>r.ok?r.json():[]),
       api('workspace/me').then(r=>r.ok?r.json():{}),
     ])
-    setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean(me.user_id))
+    setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean((me as {user_id?:number|string}).user_id));setCanAdmin(Boolean((me as {workspace_admin?:boolean}).workspace_admin))
   }
   useEffect(()=>{setSetType(setTypesFor(context)[0]);void load()},[context.school,context.grade,context.year,context.semester,context.exam])
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
@@ -82,6 +83,12 @@ export default function WeeklyExamHub(props:Props){
     if(!response.ok){setNotice(data.detail||'자료 교체에 실패했습니다.');return}
     setReplacePaper('');setReplaceExpl('');setReplaceMd('');setReplaceId(null)
     setNotice('선택한 자료를 교체했습니다. 회차·세트·상태는 그대로 유지됩니다.');await load()
+  }
+  const updateMetadata=async(id:number)=>{
+    const response=await api(`weekly-exams/${id}/metadata`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({round:metadataRound,setType:metadataSetType})})
+    const data=await response.json().catch(()=>({}))
+    setNotice(response.ok?'세트 정보를 수정했습니다.':data.detail||'세트 정보 수정에 실패했습니다.')
+    if(response.ok){setMetadataId(null);await load()}
   }
   const latestFor=(type:SetType)=>items.filter(item=>item.set_type===type).sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
@@ -134,6 +141,14 @@ export default function WeeklyExamHub(props:Props){
                   ? <><span>정말 삭제할까요?</span><button onClick={()=>void removeDraft(item.id)}>삭제 확인</button><button onClick={()=>setConfirmDeleteId(null)}>취소</button></>
                   : <button onClick={()=>setConfirmDeleteId(item.id)}>삭제</button>}</>
               : <button onClick={()=>void transition(item.id,'reopen')}>DRAFT로 다시 열기</button>}
+            {canAdmin&&<button onClick={()=>{setMetadataId(metadataId===item.id?null:item.id);setMetadataRound(item.round);setMetadataSetType(item.set_type)}}>세트 정보 수정</button>}
+          </div>}
+          {metadataId===item.id&&canAdmin&&<div className="metadata-panel" aria-label="세트 정보 수정">
+            <label>회차<input type="number" min="1" value={metadataRound} onChange={e=>setMetadataRound(Number(e.target.value))}/></label>
+            <label>세트 유형<select value={metadataSetType} onChange={e=>setMetadataSetType(e.target.value as SetType)}>{setTypes.map(type=><option key={type}>{type}</option>)}</select></label>
+            <p className="field-hint">70 세트는 70문항, 40·40A·40B 세트는 40문항으로 표시됩니다. 문제지와 정답해설 내용은 바뀌지 않습니다.</p>
+            <button className="primary-action" onClick={()=>void updateMetadata(item.id)}>세트 정보 저장</button>
+            <button onClick={()=>setMetadataId(null)}>취소</button>
           </div>}
           {replaceId===item.id&&item.status==='DRAFT'&&<div className="artifact-actions replace-panel">
             <label>문제지 교체<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplacePaper)}/></label>

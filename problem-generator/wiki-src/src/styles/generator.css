@@ -130,10 +130,11 @@
 .artifact-actions,.approval-actions{display:flex;flex-wrap:wrap;gap:6px}
 .artifact-actions button,.approval-actions button{min-height:38px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;padding:7px 10px}
 .approval-actions{border-top:1px dashed #cbd5e1;padding-top:9px}.approval-actions button:first-child{border-color:#2563eb;color:#1d4ed8;font-weight:700}
+.metadata-panel{display:grid;gap:9px;border:1px dashed #93b4f2;border-radius:12px;background:#f5f8ff;padding:12px}.metadata-panel label{display:grid;gap:6px;font-size:13px;font-weight:600;color:#475569}.metadata-panel input,.metadata-panel select{max-width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:8px 10px;font:inherit;background:#fff}.metadata-panel .field-hint{margin:0;font-size:12px;color:#64748b}.metadata-panel button{min-height:38px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;padding:7px 10px;cursor:pointer}
 .weekly-register{display:grid;gap:12px}.weekly-register-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .weekly-register label{display:grid;gap:6px;min-width:0}.weekly-register input,.weekly-register select{max-width:100%}
-@media(max-width:720px){.weekly-register-meta{grid-template-columns:1fr}.artifact-actions button,.approval-actions button{flex:1 1 calc(50% - 6px);white-space:normal}.weekly-exam-row{min-width:0}}
-@media(max-width:375px){.artifact-actions,.approval-actions{display:grid;grid-template-columns:1fr}.artifact-actions button,.approval-actions button{width:100%}.artifact-actions label{min-width:0;overflow-wrap:anywhere}.artifact-actions input[type=file]{max-width:100%;min-width:0}}
+@media(max-width:720px){.weekly-register-meta{grid-template-columns:1fr}.artifact-actions button,.approval-actions button{flex:1 1 calc(50% - 6px);white-space:normal}.weekly-exam-row{min-width:0}.metadata-panel input,.metadata-panel select{width:100%}}
+@media(max-width:375px){.artifact-actions,.approval-actions{display:grid;grid-template-columns:1fr}.artifact-actions button,.approval-actions button{width:100%}.artifact-actions label{min-width:0;overflow-wrap:anywhere}.artifact-actions input[type=file]{max-width:100%;min-width:0}.metadata-panel{padding:10px}.metadata-panel button{width:100%}}
 
 .next-round-summary{display:grid;gap:5px;margin:12px 0;padding:12px;border:1px solid #bfdbfe;border-radius:12px;background:#f8fbff}
 .next-round-summary span,.next-round-summary small{overflow-wrap:anywhere;color:#475569}.next-round-summary button{justify-self:start;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:7px 10px}
