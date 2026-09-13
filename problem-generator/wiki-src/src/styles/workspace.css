@@ -110,3 +110,18 @@ body, button, input, select, textarea { font-family: var(--wiki-font-sans); }
 .school-print-steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.school-print-steps span{padding:7px 11px;border:1px solid #dce2dd;border-radius:999px;background:#f6f8f6;color:#667069;font-size:12px;font-weight:800}.school-print-steps span.active{border-color:#244c37;background:#244c37;color:#fff}
 .wiki-home-shell .wiki-steps{list-style:none;margin:20px 0;padding:0;display:grid;gap:14px}.wiki-home-shell .wiki-step{padding:16px 18px;border:1px solid #e0e6e1;border-radius:14px;background:#fff}.wiki-home-shell .link-button{background:none;border:0;padding:0;margin:0;color:#2563eb;text-decoration:underline;cursor:pointer;font:inherit}.wiki-home-shell .link-button:hover{color:#1d4ed8}
 
+/* 오답 사진 AI 복원 — 모바일 우선(375px에서 업로드→복원→미리보기→승인 저장까지 사용) */
+.wrong-workspace > article { min-width: 0; }
+.wrong-restore-steps{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding:0;list-style:none}
+.wrong-restore-steps span{flex:0 0 auto;padding:7px 11px;border:1px solid #dce2dd;border-radius:999px;background:#fff;color:#536159;font-size:12px;font-weight:700;white-space:nowrap}
+.wrong-restore-steps span.active{background:#244c37;border-color:#244c37;color:#fff}
+.wrong-restore-canvas{min-height:420px;padding:clamp(16px,4vw,42px);margin-top:14px}
+.wrong-restore-canvas mark{background:#fff3cd;color:#6b4d00;padding:1px 4px;border-radius:3px}
+.wrong-restore-canvas table{width:100%;border-collapse:collapse;margin:10px 0}
+.wrong-restore-canvas th,.wrong-restore-canvas td,.wrong-restore-canvas .box,.wrong-restore-canvas .definition-box{border:1px solid #222;padding:6px}
+.wrong-restore-canvas .blank{display:inline-block;min-width:90px;border-bottom:1px solid}
+.wrong-restore-canvas .answer-line{min-height:24px;border-bottom:1px solid #777}
+.wrong-restore-ocr{max-height:220px;overflow:auto;margin:8px 0 0;padding:12px;border:1px solid #e0e6e1;border-radius:10px;background:#fafcfb;font-size:12px;line-height:1.5;white-space:pre-wrap}
+.wrong-restore-ocr mark{background:#fff3cd;color:#6b4d00}
+@media(max-width:720px){.wrong-restore-canvas{min-height:340px;padding:14px}.wrong-restore-steps{gap:5px}.wrong-restore-steps span{padding:6px 9px;font-size:11px}}
+

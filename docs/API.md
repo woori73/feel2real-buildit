@@ -3498,6 +3498,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `GET /problem-generator/wiki/api/exam-materials`: `school`, `grade`, `year`, `semester`, `exam`이 모두 같은 세트만 조회한다.
 - `GET /problem-generator/wiki/api/exam-materials/{id}/original`: 원본을 inline으로 연다.
 - `GET /problem-generator/wiki/api/exam-materials/{id}/json`: canonical JSON을 연다.
+- `POST /problem-generator/wiki/api/students/wrong-restore` (JSON): 오답 사진 AI 복원. 브라우저 OCR(tesseract.js/pdfjs-dist)로 1차 추출한 `pages[{filename, ocrText}]`와 선택 학생 정보를 받아 school-print reconstruct와 동일한 멀티모달 패턴(ai_router, 이미지 있으면 image_data_url 포함)로 **원래 시험 문제 구조**를 복원한 편집 가능 `html`과 `canonicalJson`을 반환한다. 응답은 `reviewMarkCount`/`reviewMarkText`(판독 불확실 표시 개수·안내)와 실제 `provider`/`model`을 포함한다. AI는 새 문제를 만들지 않으며 지문·발문·보기·선택지·밑줄·빈칸을 그대로 복원하고, 불확실 부분은 `<mark class="review-required">검토 필요</mark>`로 남긴다. 이 엔드포인트는 저장하지 않는다(순수 변환). 누적 저장은 승인 후 기존 계약(`POST /exam-materials` `core_type=student_wrong_note` 원본+JSON, `POST /students/{student_id}/wrong-notes` 누적)으로만 수행한다.
 - 수업 인사이트 생성/조회는 기존 `educator-insights` API에 `year`, `semester`, `exam`,
   `source=director|school_teacher`를 선택적으로 추가한다. 과거 row의 빈 Context도 안전하게 유지한다.
 
