@@ -5134,6 +5134,85 @@ def patch_school_print_html(payload: SchoolPrintPatchRequest):
 
 
 # ==================================================================================
+# 학생 오답 사진 → AI 복원 문제지(HTML) 1차 구현.
+# 학교 프린트 2단계 복원기(school-prints/reconstruct)와 동일한 자산을 재사용한다:
+# ai_router.generate_multimodal(OpenRouter image_url), _school_print_json, _sanitize_exam_html,
+# _handle_gemini_error. 차이는 목적 하나다 — 새 문제를 만드는 게 아니라 사진 속 "원래 시험 문제"의
+# 지문·발문·보기·선택지·밑줄·빈칸 구조를 최대한 그대로 복원한다. OCR이 불확실한 곳은 임의 확정하지
+# 않고 <mark>판독 필요: ...</mark> 텍스트로 남겨 사용자 검토를 유도한다.
+# 여기서는 DB에 아무것도 저장하지 않는다. 승인 저장은 기존 계약(create_wrong_note,
+# create_exam_material core_type=student_wrong_note)로만 한다 — "자동 생성 직후 바로 확정 저장
+# 금지" 원칙과, 저장 시점에 AI를 재호출하지 않는 기존 학생 오답 규칙(문제2, 6차)를 모두 유지한다.
+# ==================================================================================
+_WRONG_RESTORE_REVIEW_MARK = '판독 필요'
+_WRONG_RESTORE_SYSTEM = (
+    '학생 오답 사진 복원기다. 입력은 브라우저 OCR로 확보한 PAGE별 OCR TEXT(원문 기준 source of truth)와 '
+    '원본 이미지(배치·시각 구조 기준)다. 사진에 보이는 원래 시험 문제를 새 문제로 바꾸거나 창작·요약·변형·누락하지 '
+    '않고 문항별로 semantic HTML로 그대로 복원한다. 문항 번호, 발문, 지문, 선택지(①②③④⑤), 보기 박스, '
+    '(A)/(B)/(C), 빈칸(____ 또는 [빈칸] 텍스트), 밑줄(<u> 태그), 표, 서답형 작성요령과 배점을 빠짐없이 보존한다. '
+    '여러 문항이 한 페이지에 있으면 문항별 <section><h2>문항 N</h2>...</section>으로 분리한다. '
+    'OCR이 불확실하거나 이미지에서 판돕이 불가능한 곳은 임의로 확정하지 말고 원문 후보를 유지한 채 '
+    '<mark>판독 필요: 해당 부분</mark> 텍스트로 표시해 사람이 검토하게 남긴다. '
+    'script/style/이미지 삽입/background는 금지한다. semantic HTML 본문만 담은 {"html":string,"canonicalJson":object} JSON만 반환한다. '
+    'canonicalJson은 source/pages/sections/blocks(type,order,content,page,reviewRequired)/sourceLinkage/restorationStatus/restorationVersion/version/editedHtml/model을 포함한다.'
+)
+
+
+class WrongRestorePage(BaseModel):
+    page: int
+    name: str
+    ocr_text: str = ''
+    image_data_url: str = ''
+
+
+class WrongRestoreRequest(BaseModel):
+    model: str = ai_router.QWEN_MODEL
+    metadata: dict = Field(default_factory=dict)
+    pages: list[WrongRestorePage]
+
+
+def _wrong_restore_review_marks(html_text: str) -> int:
+    return len(re.findall(r'<mark\b[^>]*>' + re.escape(_WRONG_RESTORE_REVIEW_MARK), html_text or ''))
+
+
+@app.post('/api/students/wrong-restore')
+def restore_student_wrong_photo(payload: WrongRestoreRequest):
+    if not payload.pages:
+        raise HTTPException(status_code=400, detail='복원할 오답 페이지가 없습니다.')
+    if not any(page.ocr_text.strip() for page in payload.pages):
+        raise HTTPException(status_code=400, detail='추출된 OCR 텍스트가 없어 복원을 진행할 수 없습니다. 사진이 선명한지 확인해 주세요.')
+    content = [{'type': 'text', 'text': 'metadata: ' + json.dumps(payload.metadata, ensure_ascii=False)}]
+    for page in payload.pages:
+        content.append({'type': 'text', 'text': f'PAGE {page.page} / {page.name}\nOCR TEXT (CONTENT SOURCE OF TRUTH):\n{page.ocr_text}'})
+        if page.image_data_url.startswith('data:image/'):
+            content.append({'type': 'image_url', 'image_url': {'url': page.image_data_url}})
+    try:
+        ai = ai_router.generate_multimodal(payload.model, _WRONG_RESTORE_SYSTEM, content)
+    except Exception as exc:
+        _handle_gemini_error(exc)
+    result = _school_print_json(ai.text)
+    html_text = str(result.get('html') or '').strip()
+    if not html_text:
+        raise HTTPException(status_code=502, detail='선택한 모델이 복원 HTML을 반환하지 않았습니다.')
+    cleaned = _sanitize_exam_html(html_text)
+    if not cleaned.strip():
+        raise HTTPException(status_code=400, detail='오답 사진에서 문제 본문을 찾지 못했습니다.')
+    canonical = result.get('canonicalJson') if isinstance(result.get('canonicalJson'), dict) else {}
+    extracted_text = [{'page': page.page, 'sourceName': page.name, 'text': page.ocr_text} for page in payload.pages]
+    source = {**payload.metadata, 'fileNames': [page.name for page in payload.pages]}
+    source.update(canonical.get('source') if isinstance(canonical.get('source'), dict) else {})
+    canonical_pages = canonical.get('pages') if isinstance(canonical.get('pages'), list) else []
+    by_page = {item.get('page'): item for item in canonical_pages if isinstance(item, dict)}
+    canonical_pages = [{**by_page.get(page.page, {}), 'page': page.page, 'sourceName': page.name, 'extractedText': page.ocr_text, 'sections': by_page.get(page.page, {}).get('sections', [])} for page in payload.pages]
+    canonical.update({'source': source, 'pages': canonical_pages, 'extractedText': extracted_text,
+                      'sourceLinkage': canonical.get('sourceLinkage') or {'pageCount': len(payload.pages), 'uploadedAt': datetime.now().isoformat()},
+                      'restorationStatus': 'structured', 'restorationVersion': 2,
+                      'version': int(canonical.get('version') or 1), 'editedHtml': cleaned, 'model': ai.model})
+    return {'html': cleaned, 'canonicalJson': canonical, 'reviewMarkCount': _wrong_restore_review_marks(cleaned),
+            'reviewMarkText': _WRONG_RESTORE_REVIEW_MARK, 'provider': ai.provider, 'model': ai.model}
+
+
+# ==================================================================================
 # 학생 오답 관리 — 사진/PDF에서 브라우저 OCR + Gemini로 정리한 "최종 추출 텍스트"를
 # 사용자가 화면에서 확인·수정한 뒤 저장한다. 이 저장 단계에서는 더 이상 AI를 호출하지
 # 않는다(문제2, 6차): 예전에는 저장 버튼을 누르면 서버가 다시 한 번 Gemini를 호출해

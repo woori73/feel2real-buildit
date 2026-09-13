@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import MiddleSchoolExamGenerator from './components/MiddleSchoolExamGenerator'
 import StudentWrongNoteDashboard from './components/StudentWrongNoteDashboard'
+import WrongPhotoAiRestore from './components/WrongPhotoAiRestore'
 import type { WrongReviewMaterial } from './components/StudentWrongNoteDashboard'
 import PassageWorkspace from './components/PassageWorkspace'
 import TextbookDatabase from './components/TextbookDatabase'
@@ -26,7 +27,7 @@ import { storageKey } from './lib/workspaceStorage'
 import './styles/generator.css'
 import './styles/chrome-workbench.css'
 
-export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'chrometransform' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
+export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'chrometransform' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'wrongrestore' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
 
 // role=ADMIN 같은 query parameter는 권한 컨텍스트일 뿐 Wiki의 초기 화면을 바꾸지 않는다.
 const initialPage = (): Page => 'state'
@@ -40,6 +41,7 @@ const menu: { id: Page; label: string; icon: string }[] = [
   { id: 'gentests', label: '생성 문제', icon: '❖' },
   { id: 'exam', label: '내신 실전 제작', icon: '▧' },
   { id: 'wrongextract', label: '오답 기록·추출', icon: '◉' },
+  { id: 'wrongrestore', label: '오답 사진 AI 복원', icon: '✧' },
   { id: 'wrongnote', label: '학생별 오답노트', icon: '◎' },
   { id: 'passagememory', label: '지문 암기', icon: '▥' },
   { id: 'passageanalysis', label: '지문 정리 + 내용일치 문제', icon: '▨' },
@@ -61,6 +63,7 @@ const descriptions: Record<Page, string> = {
   gentests: '학습자료별로 MCP가 생성·저장한 시험을 학생용 문제·정답/해설·출제 정보로 다시 확인합니다.',
   exam: '선택한 문항으로 실전 시험지를 구성합니다.',
   wrongnote: '학생별 오답을 누적하고 맞춤 복습 자료를 준비합니다.',
+  wrongrestore: '오답 사진에서 AI가 원래 문제 구조를 복원하고, 승인 후 학생별로 누적합니다.',
   wrongextract: '채점지 사진·PDF에서 오답을 추출하고 학생 기록으로 저장합니다.',
   passagememory: '외부 영어 지문을 문장별 영문·한글 대조표로 정리해 암기 자료로 만듭니다.',
   passageanalysis: '외부 지문을 슬래시 원문, 직독직해, 정식 해석, 문법 가이드와 내용일치 문제로 정리합니다.',
@@ -72,7 +75,7 @@ const descriptions: Record<Page, string> = {
 const storageLabels: Partial<Record<Page, string>> = {
   home: '문제 DB', database: '문제 DB', gentests: 'Generated Question Store', exam: '문제 DB / exam_draft',
   chrometransform: '기존 문제 DB · 변형본은 문제 DB에 별도 저장',
-  wrongextract: '학생 오답 기록', wrongnote: '학생 오답 기록', passagememory: '현재 작업 · 다운로드 가능', passageanalysis: '현재 작업 · 다운로드 가능', csat: '수능 문항·오답 SQLite 영구 저장', brain: 'Educator Brain · 수업 인사이트',
+  wrongextract: '학생 오답 기록', wrongrestore: '학생 오답 기록 · 원본 보관', wrongnote: '학생 오답 기록', passagememory: '현재 작업 · 다운로드 가능', passageanalysis: '현재 작업 · 다운로드 가능', csat: '수능 문항·오답 SQLite 영구 저장', brain: 'Educator Brain · 수업 인사이트',
   twin: '학교별 Digital Twin', school: '이 브라우저 · 학교별 DB', textbook: '교과서 DB · SQLite 영구 저장',
 }
 
@@ -141,7 +144,7 @@ export default function App() {
 
   const isHome = page === 'state'
   const isHub = page === 'create' || page === 'student' || page === 'intelligence'
-  const parentHub: Page = ['wrongextract', 'wrongnote'].includes(page) ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
+  const parentHub: Page = ['wrongextract', 'wrongrestore', 'wrongnote'].includes(page) ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
   return <div className={`tool-shell${isHome ? ' wiki-home-shell' : ''}${isHub ? ' category-shell' : ''}`}>
     {!isHome && !isHub && <aside className="side-nav compact-nav"><button className="side-wiki-home" onClick={() => setPage('state')}><span>BuildIt</span> Wiki</button><nav aria-label="현재 작업 내비게이션"><button onClick={() => setPage(parentHub)}>← {parentHub === 'student' ? '학생' : parentHub === 'intelligence' ? '지능' : '만들기'}</button></nav><div className="side-bottom"><button onClick={() => setSettingsOpen(true)}>⚙ 설정</button><a className="side-export-link" href={`${import.meta.env.BASE_URL}api/export/project`}>⇩ 내보내기</a></div></aside>}
     <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}><AdminWorkspaceSelector />{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
@@ -155,6 +158,7 @@ export default function App() {
       {page === 'chrometransform' && <ChromeQuestionWorkbench onNavigate={setPage} />}
       {page === 'twin' && <DigitalTwinImport onApplied={profile => { setPage('home'); setNotice(`${profile.school} Digital Twin을 저장했습니다. 문제 생성기에서 학교를 선택하면 자동 적용됩니다.`) }} />}
       {page === 'wrongextract' && <StudentWrongNoteDashboard apiSettings={apiSettings} mode="extract" />}
+      {page === 'wrongrestore' && <WrongPhotoAiRestore />}
       {page === 'wrongnote' && <StudentWrongNoteDashboard apiSettings={apiSettings} mode="notebook" />}
       {page === 'passagememory' && <PassageWorkspace mode="memory" apiSettings={apiSettings} />}
       {page === 'passageanalysis' && <PassageWorkspace mode="analysis" apiSettings={apiSettings} />}

@@ -325,6 +325,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
           <button className="primary-action ai-work-log-action" onClick={()=>setCore('ai_work_log')}>AI 작업기록 업로드 · 관리 <strong>{aiWorkLogs.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('school_print')}>학교 프린트 추가 · 저장 <strong>{prints.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('student_wrong_note')}>학생 오답 추가 · 저장 <strong>{wrongs.length}</strong>건</button>
+          <button className="primary-action wrong-restore-action" onClick={()=>onNavigate('wrongrestore')}>오답 사진 AI 복원 · 승인 저장</button>
         </div>
       </li>
       <li className="wiki-step">
