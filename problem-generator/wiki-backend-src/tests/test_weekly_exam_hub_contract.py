@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1] / 'src'
+ROOT = Path(__file__).resolve().parents[2] / 'wiki-src' / 'src'
 
 
 class WeeklyExamHubContractTest(unittest.TestCase):
@@ -13,12 +13,12 @@ class WeeklyExamHubContractTest(unittest.TestCase):
 
     def test_supported_school_grade_set_policies(self):
         for school, grade, expected in (
-            ('압구정중학교', '2학년', "['40', '70']"),
-            ('신구중학교', '2학년', "['40', '70']"),
-            ('신구중학교', '3학년', "['40A', '40B']"),
-            ('신사중학교', '3학년', "['40A', '40B']"),
+            ('압구정중학교', '2학년', "['40','70']"),
+            ('신구중학교', '2학년', "['40','70']"),
+            ('신구중학교', '3학년', "['40A','40B']"),
+            ('신사중학교', '3학년', "['40A','40B']"),
         ):
-            self.assertIn(f"'{school}|{grade}': {expected}", self.hub)
+            self.assertIn(f"'{school}|{grade}':{expected}", self.hub)
 
     def test_entry_points_share_selected_exam_context(self):
         self.assertIn('<WeeklyExamHub', self.naesin)
