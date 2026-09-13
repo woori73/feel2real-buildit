@@ -120,7 +120,14 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   // behavior:'auto'는 애니메이션 없이 즉시 오프셋을 적용해 신뢰성 있게 동작한다.
   useEffect(()=>{if(core)document.getElementById('material-set-form')?.scrollIntoView({behavior:'auto',block:'start'})},[core])
   const filteredStudents=students.filter(s=>(!s.school||s.school===context.school)&&(!s.grade||s.grade===context.grade))
-  const prints=materials.filter(m=>m.material_type==='SCHOOL_PRINT'), wrongs=materials.filter(m=>m.material_type==='STUDENT_WRONG_NOTE')
+  const prints=materials.filter(m=>m.material_type==='SCHOOL_PRINT'||(!m.material_type&&m.core_type==='school_print')), wrongs=materials.filter(m=>m.material_type==='STUDENT_WRONG_NOTE'||(!m.material_type&&m.core_type==='student_wrong_note'))
+  const [studentTotalWrongCount,setStudentTotalWrongCount]=useState<number|null>(null)
+  useEffect(()=>{api('students').then(r=>r.ok?r.json():[]).then((list:Student[])=>{
+    if(!Array.isArray(list)||!list.length){setStudentTotalWrongCount(null);return}
+    Promise.all(list.map((s:Student)=>api(`students/${s.id}/wrong-notes`).then(r=>r.ok?r.json():[]).catch(()=>[] as unknown[]))).then(results=>{
+      setStudentTotalWrongCount(results.reduce((sum:number,rows:unknown)=>sum+(Array.isArray(rows)?rows.length:0),0))
+    })
+  }).catch(()=>setStudentTotalWrongCount(null))},[])
   const resetUpload=()=>{setOriginals([]);setJsonFile(null);setJsonText('');setTitle('');setHtmlText('')}
   const chooseOriginals=(e:ChangeEvent<HTMLInputElement>)=>{const selected=Array.from(e.target.files||[]);e.target.value='';if(!selected.length)return;const merged=[...originals];let added=0,skipped=0;for(const file of selected){const duplicate=merged.some(item=>item.name===file.name&&item.size===file.size&&item.lastModified===file.lastModified);if(duplicate)continue;if(merged.length>=MAX_ORIGINALS){skipped+=1;continue}merged.push(file);added+=1}setOriginals(merged);setNotice(skipped?`원본 자료는 한 번에 최대 ${MAX_ORIGINALS}개까지 선택할 수 있습니다. ${skipped}개를 제외했습니다.`:added?`${added}개 파일을 선택했습니다.`:'')}
   const removeOriginal=(index:number)=>setOriginals(current=>current.filter((_,i)=>i!==index))
@@ -312,6 +319,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       aiWorkLogCount={aiWorkLogs.length}
       hasDigitalTwin={Boolean(twinProfile)}
       lastContextUpdate={lastContextUpdate}
+      studentTotalWrongCount={studentTotalWrongCount}
+      onOpenStudentWrongAnswers={()=>onNavigate('wronghub')}
       onOpenContext={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
       onOpenWeeklyWorkspace={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
       onOpenWrongReview={()=>setCore('student_wrong_note')}
@@ -325,7 +334,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
           <button className="primary-action ai-work-log-action" onClick={()=>setCore('ai_work_log')}>AI 작업기록 업로드 · 관리 <strong>{aiWorkLogs.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('school_print')}>학교 프린트 추가 · 저장 <strong>{prints.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('student_wrong_note')}>학생 오답 추가 · 저장 <strong>{wrongs.length}</strong>건</button>
-          <button className="primary-action wrong-restore-action" onClick={()=>onNavigate('wrongrestore')}>오답 사진 AI 복원 · 승인 저장</button>
+          <button className="primary-action wrong-restore-action" onClick={()=>onNavigate('wronghub')}>학생 오답 · 사진 AI 복원 · 복습</button>
         </div>
       </li>
       <li className="wiki-step">
