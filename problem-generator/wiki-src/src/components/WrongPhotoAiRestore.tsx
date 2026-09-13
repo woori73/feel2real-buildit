@@ -6,6 +6,7 @@ import { buildRestorePayload, countReviewMarks, htmlToPlainText } from '../lib/w
 
 type RestoreResponse = { html: string; canonicalJson: Record<string, unknown>; reviewMarkCount: number; reviewMarkText: string; provider: string; model: string }
 type Stage = 'idle' | 'extracting' | 'restoring' | 'review' | 'saving'
+type Props = { studentId?: number | null; onStudentChange?: (id: number | null) => void }
 
 // 학생 오답 등록 form의 exam_type 값('중간'/'기말')과 exam_material_sets 관례('중간고사'/'기말고사')를 맞춘다.
 const examNameOf = (student: Student | null) => {
@@ -17,9 +18,12 @@ const examNameOf = (student: Student | null) => {
 
 // 1차 흐름: 학생 선택 → 사진/PDF 업로드(OCR) → AI 복원 → 미리보기·수정 → 승인 저장.
 // 자동 생성 직후 확정 저장하지 않는다. 승인 전에는 서버 DB에 아무것도 쓰지 않는다.
-export default function WrongPhotoAiRestore() {
+export default function WrongPhotoAiRestore({ studentId, onStudentChange }: Props = {}) {
   const [students, setStudents] = useState<Student[]>([])
-  const [selectedId, setSelectedId] = useState<string>('')
+  // 학생 오답 통합 화면에서는 상단 선택을 공유한다. 단독 화면은 기존 내부 선택 상태를 그대로 쓴다.
+  const [internalSelectedId, setInternalSelectedId] = useState<string>('')
+  const selectedId = studentId !== undefined ? (studentId === null ? '' : String(studentId)) : internalSelectedId
+  const setSelectedId = (id: string) => { if (onStudentChange) onStudentChange(id ? Number(id) : null); else setInternalSelectedId(id) }
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [examLabel, setExamLabel] = useState('')
@@ -40,7 +44,6 @@ export default function WrongPhotoAiRestore() {
   const [savedLoading, setSavedLoading] = useState(false)
   const [freshNoteId, setFreshNoteId] = useState<number | null>(null)
   const [zoomedMaterialId, setZoomedMaterialId] = useState<number | null>(null)
-  const [zoomedPreview, setZoomedPreview] = useState('')
   const canvasRef = useRef<HTMLDivElement>(null)
 
   const selected = students.find(item => String(item.id) === selectedId) || null
@@ -63,6 +66,11 @@ export default function WrongPhotoAiRestore() {
     setRestoredHtml(''); setCanonicalJson(null); setPages([]); setFiles([]); setStage('idle'); setExtractStatus(''); setError(''); setNotice('')
     setFreshNoteId(null)
   }
+  // 학생 변경(공유 선택) 시에도 진행 중 복원 상태를 초기화한다.
+  useEffect(() => {
+    setRestoredHtml(''); setCanonicalJson(null); setPages([]); setFiles([]); setStage('idle'); setExtractStatus(''); setNotice('')
+    setFreshNoteId(null)
+  }, [studentId])
 
   const runRestore = async (extracted: ExtractedPage[], originals: File[]) => {
     if (!extracted.some(page => page.ok && page.text.trim())) {
@@ -160,7 +168,7 @@ export default function WrongPhotoAiRestore() {
 
     <article className="work-panel"><div className="panel-heading"><div><p className="kicker">STEP 1 · STUDENT</p><h2>학생 선택</h2></div></div>
       <div className="metadata-grid">
-        <label>학생<select value={selectedId} onChange={event => chooseStudent(event.target.value)}><option value="">학생 선택</option>{students.map(student => <option key={student.id} value={student.id}>{student.name} · {student.school || '학교 미입력'} · {student.grade || '학년 미입력'}</option>)}</select></label>
+        <label>학생<select value={selectedId} onChange={event => chooseStudent(event.target.value)} disabled={studentId !== undefined}><option value="">학생 선택</option>{students.map(student => <option key={student.id} value={student.id}>{student.name} · {student.school || '학교 미입력'} · {student.grade || '학년 미입력'}</option>)}</select></label>
         <label>시험명 (선택)<input value={examLabel} onChange={event => setExamLabel(event.target.value)} placeholder="예: 2026 2학기 중간고사" /></label>
       </div>
     </article>
@@ -190,13 +198,13 @@ export default function WrongPhotoAiRestore() {
 
     {selected && <article className="work-panel"><div className="panel-heading"><div><p className="kicker">SAVED WRONG NOTES</p><h2>저장된 오답 자료 · {selected.name}</h2><p>승인 저장한 문제는 이 목록에 즉시 반영되고 새로고침 후에도 유지됩니다. 학생별 오답노트에서도 동일하게 조회됩니다.</p></div></div>
       {savedLoading ? <p className="field-hint">불러오는 중…</p> : savedNotes.length ? <div className="db-list">{savedNotes.map(note => <article key={note.id} style={{ flexWrap: 'wrap' }} className={note.id === freshNoteId ? 'fresh-row' : ''}><div><b>{note.question_type || '문항'} · {note.title || note.wrong_text.slice(0, 40)}</b><p>{note.exam_label || '시험명 미입력'}</p><small>{new Date(note.created_at).toLocaleString('ko-KR')}</small>{note.id === freshNoteId && <span className="fresh-badge">방금 저장</span>}</div><details className="wrong-note-text-details"><summary className="field-hint">복원 텍스트</summary><pre className="wrong-restore-ocr">{note.wrong_text}</pre></details></article>)}</div> : <div className="empty-state"><b>저장된 오답 자료가 없습니다.</b><p>사진을 업로드해 복원한 뒤 승인 저장하면 이곳에 누적됩니다.</p></div>}
-      {savedMaterials.length > 0 && <details className="wrong-materials-box" style={{ marginTop: 14 }} open={savedMaterials.length <= 6}><summary>보관 원본 사진/PDF {savedMaterials.length}건 — 클릭해 열기</summary><div className="wrong-material-thumb-grid">{savedMaterials.map(material => { const previewPage = pages.find(page => page.name === material.original_name); const previewSrc = previewPage?.previewUrl || ''; return <figure key={material.id} className="wrong-material-thumb"><button type="button" onClick={() => { setZoomedMaterialId(material.id); setZoomedPreview(previewSrc) }} aria-label={`${material.original_name} 미리보기 확대`} disabled={!previewSrc}>{previewSrc ? <img src={previewSrc} alt={material.original_name} /> : <span className="wrong-material-fileicon">📎</span>}</button><figcaption><a href={apiUrl(`exam-materials/${material.id}/original`)} target="_blank" rel="noreferrer">{material.original_name || '원본'}</a><span>{new Date(material.created_at).toLocaleDateString('ko-KR')}</span></figcaption></figure> })}</div></details>}
+      {savedMaterials.length > 0 && <details className="wrong-materials-box" style={{ marginTop: 14 }} open={savedMaterials.length <= 6}><summary>보관 원본 사진/PDF {savedMaterials.length}건 — 클릭해 열기</summary><div className="wrong-material-thumb-grid">{savedMaterials.map(material => { const isImage = (material.original_type || '').startsWith('image/'); const originalUrl = apiUrl(`exam-materials/${material.id}/original`); return <figure key={material.id} className="wrong-material-thumb">{isImage ? <button type="button" onClick={() => { setZoomedMaterialId(material.id) }} aria-label={`${material.original_name} 확대`}><img src={originalUrl} alt={material.original_name} loading="lazy" /></button> : <a className="wrong-material-filelink" href={originalUrl} target="_blank" rel="noreferrer" aria-label={`${material.original_name} 열기`}><span className="wrong-material-fileicon">📎</span></a>}<figcaption><span>{material.original_name || '원본'}</span><span>{new Date(material.created_at).toLocaleDateString('ko-KR')}</span></figcaption></figure> })}</div></details>}
     </article>}
 
     {zoomedMaterialId !== null && <div className="wrong-zoom-overlay" role="dialog" aria-modal="true" aria-label="원본 사진 확대" onClick={() => setZoomedMaterialId(null)}>
       <figure className="wrong-zoom-body" onClick={event => event.stopPropagation()}>
-        <figcaption>{savedMaterials.find(material => material.id === zoomedMaterialId)?.original_name || '원본'}{zoomedPreview ? ' — 세션 미리보기' : ''} <a href={apiUrl(`exam-materials/${zoomedMaterialId}/original`)} target="_blank" rel="noreferrer">원본 새 창에서 열기 ↗</a></figcaption>
-        {zoomedPreview ? <img src={zoomedPreview} alt="원본 사진 확대" /> : <p className="empty-state">이 세션의 미리보기가 없습니다. 원본은 새 창에서 여세요.</p>}
+        <figcaption>{savedMaterials.find(material => material.id === zoomedMaterialId)?.original_name || '원본'} <a href={apiUrl(`exam-materials/${zoomedMaterialId}/original`)} target="_blank" rel="noreferrer">원본 새 창에서 열기 ↗</a></figcaption>
+        {zoomedMaterialId !== null && <img src={apiUrl(`exam-materials/${zoomedMaterialId}/original`)} alt="원본 사진 확대" />}
         <button className="secondary-button" onClick={() => setZoomedMaterialId(null)}>닫기</button>
       </figure>
     </div>}

@@ -585,16 +585,33 @@
 
   // 상세는 sec-lessons가 담당하고 여기서는 네비게이션만 한다(클릭 → 스크롤).
 
-  /** 시안 우측 컬럼 — iPad 프레임 안에 원장 사진. 캡션은 원장명 + 학원명. */
+  /** 시안 우측 컬럼 — iPad 프레임 안에 원장 사진/영상 순환. 캡션은 원장명 + 학원명. */
   function renderPortraitTablet(view, ctx) {
     const name = draftText(view, 'principalName', '원장');
-    const body = ctx.hasHeroMedia(view, 'principal')
-      ? `<img src="${escapeHtml(ctx.heroMediaUrl('principal'))}" alt="${escapeHtml(view.name)} 원장 사진">`
+    const photoUrl = ctx.hasHeroMedia(view, 'principal')
+      ? ctx.heroMediaUrl('principal')
+      : null;
+    const videoUrl = '/video/eduholic/principal-intro.mp4';
+
+    const photoHtml = photoUrl
+      ? `<img class="tablet-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(view.name)} 원장 사진">`
       : '<div class="tablet-empty"><span>원장 대표사진</span></div>';
+    const videoHtml = `<video class="tablet-video" playsinline muted preload="metadata" poster="${escapeHtml(photoUrl || '')}">
+      <source src="${escapeHtml(videoUrl)}" type="video/mp4">
+    </video>`;
+
+    const soundToggleHtml = `<button type="button" class="tablet-sound-toggle" aria-label="소리 켜기/끄기" aria-pressed="false" title="소리 켜기">🔇</button>`;
+    const soundHintHtml = `<div class="tablet-sound-hint" aria-hidden="true">소리와 함께 보기 🔊</div>`;
+
     return `<div class="tablet" data-reveal-item${ctx.portraitClusterAttrs()}>
             <div class="cam"></div>
             <div class="tablet-screen">
-              ${body}
+              <div class="tablet-media-stack">
+                ${photoHtml}
+                ${videoHtml}
+              </div>
+              ${soundToggleHtml}
+              ${soundHintHtml}
               <div class="tablet-cap"><b>${escapeHtml(name)}</b>${escapeHtml(view.name)}</div>
             </div>
             ${ctx.portraitClusterExtra()}

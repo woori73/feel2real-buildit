@@ -119,6 +119,7 @@
     wireContentCollections();
     wireAiNative();
     wireFeaturedSchoolCards();
+    wireHeroTabletCycle();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
@@ -300,6 +301,203 @@
       });
     });
     setCurrent(0);
+  }
+
+
+  /**
+   * Hero 섹션 우측 태블릿 프레임 — 원장 사진 ↔ 영상 순환 재생
+   * 사진 2초 → 영상 자동재생(음소거) → 영상 종료 후 사진 2~3초 → 반복
+   * 전환은 fade, 영상 프레임 내 🔇/🔊 버튼으로 음소거 토글, 사용자 선택 상태 반복 시 유지
+   */
+  function wireHeroTabletCycle() {
+    if (!root) return;
+    const tablet = root.querySelector('.tablet');
+    if (!tablet) return;
+    if (tablet.dataset.heroCycleWired === 'true') return;
+    tablet.dataset.heroCycleWired = 'true';
+
+    const mediaStack = tablet.querySelector('.tablet-media-stack');
+    const photo = tablet.querySelector('.tablet-photo');
+    const video = tablet.querySelector('.tablet-video');
+    const soundToggle = tablet.querySelector('.tablet-sound-toggle');
+    const soundHint = tablet.querySelector('.tablet-sound-hint');
+
+    if (!mediaStack || !video) return;
+
+    // 사용자 음소거 선택 저장 (sessionStorage로 세션 내 유지)
+    const STORAGE_KEY = 'eduholic-hero-sound-' + (root.dataset.slug || 'default');
+    let userWantsSound = false;
+    try {
+      const stored = sessionStorage.getItem(STORAGE_KEY);
+      if (stored !== null) userWantsSound = stored === 'true';
+    } catch (_) {}
+
+    // 초기 상태: 사진 표시, 영상 숨김
+    let currentPhase = 'photo'; // 'photo' | 'video' | 'photo-after-video'
+    let cycleTimer = null;
+    let videoEnded = false;
+    let hintHidden = false;
+
+    function showPhoto() {
+      photo.style.opacity = '1';
+      photo.style.zIndex = '2';
+      video.style.opacity = '0';
+      video.style.zIndex = '1';
+      currentPhase = 'photo';
+    }
+
+    function showVideo() {
+      photo.style.opacity = '0';
+      photo.style.zIndex = '1';
+      video.style.opacity = '1';
+      video.style.zIndex = '2';
+      currentPhase = 'video';
+      video.currentTime = 0;
+      video.muted = !userWantsSound;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // 자동재생 차단 시 음소거로 재시도
+          video.muted = true;
+          video.play().catch(() => {});
+        });
+      }
+      // 사운드 힌트 잠시 표시
+      if (!hintHidden && soundHint && !userWantsSound) {
+        soundHint.style.opacity = '1';
+        soundHint.style.transform = 'translateY(0)';
+        setTimeout(() => {
+          soundHint.style.opacity = '0';
+          soundHint.style.transform = 'translateY(8px)';
+        }, 3000);
+      }
+    }
+
+    function onVideoEnded() {
+      videoEnded = true;
+      showPhoto();
+      currentPhase = 'photo-after-video';
+      // 영상 종료 후 사진 2~3초 표시
+      cycleTimer = setTimeout(startCycle, 2500);
+    }
+
+    function startCycle() {
+      if (currentPhase === 'photo-after-video') {
+        showVideo();
+      } else {
+        // 최초 진입: 사진 2초
+        showPhoto();
+        cycleTimer = setTimeout(() => {
+          showVideo();
+        }, 2000);
+      }
+    }
+
+    // 영상 종료 이벤트
+    video.addEventListener('ended', onVideoEnded);
+
+    // 사운드 토글 버튼
+    if (soundToggle) {
+      soundToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userWantsSound = !userWantsSound;
+        video.muted = !userWantsSound;
+        soundToggle.textContent = userWantsSound ? '🔊' : '🔇';
+        soundToggle.setAttribute('aria-pressed', userWantsSound ? 'true' : 'false');
+        soundToggle.setAttribute('title', userWantsSound ? '소리 끄기' : '소리 켜기');
+        try {
+          sessionStorage.setItem(STORAGE_KEY, String(userWantsSound));
+        } catch (_) {}
+        // 힌트 영구 숨김
+        hintHidden = true;
+        if (soundHint) {
+          soundHint.style.opacity = '0';
+          soundHint.style.transform = 'translateY(8px)';
+        }
+      });
+    }
+
+    // 초기 스타일 설정 (CSS transition을 위해)
+    if (photo) {
+      photo.style.transition = 'opacity 0.4s ease';
+      photo.style.position = 'absolute';
+      photo.style.inset = '0';
+      photo.style.width = '100%';
+      photo.style.height = '100%';
+      photo.style.objectFit = 'cover';
+    }
+    video.style.transition = 'opacity 0.4s ease';
+    video.style.position = 'absolute';
+    video.style.inset = '0';
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    video.style.zIndex = '1';
+    video.style.opacity = '0';
+
+    mediaStack.style.position = 'relative';
+    mediaStack.style.width = '100%';
+    mediaStack.style.height = '100%';
+
+    // 사운드 힌트 초기 스타일
+    if (soundHint) {
+      soundHint.style.position = 'absolute';
+      soundHint.style.bottom = '44px';
+      soundHint.style.left = '50%';
+      soundHint.style.transform = 'translateX(-50%) translateY(8px)';
+      soundHint.style.background = 'rgba(10,10,20,.85)';
+      soundHint.style.color = '#fff';
+      soundHint.style.padding = '6px 12px';
+      soundHint.style.borderRadius = '999px';
+      soundHint.style.fontSize = '11px';
+      soundHint.style.fontWeight = '700';
+      soundHint.style.whiteSpace = 'nowrap';
+      soundHint.style.opacity = '0';
+      soundHint.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      soundHint.style.zIndex = '3';
+      soundHint.style.pointerEvents = 'none';
+    }
+
+    // 사운드 토글 버튼 초기 스타일
+    if (soundToggle) {
+      soundToggle.style.position = 'absolute';
+      soundToggle.style.bottom = '12px';
+      soundToggle.style.right = '12px';
+      soundToggle.style.zIndex = '4';
+      soundToggle.style.width = '36px';
+      soundToggle.style.height = '36px';
+      soundToggle.style.borderRadius = '50%';
+      soundToggle.style.background = 'rgba(10,10,20,.7)';
+      soundToggle.style.border = 'none';
+      soundToggle.style.color = '#fff';
+      soundToggle.style.fontSize = '16px';
+      soundToggle.style.display = 'flex';
+      soundToggle.style.alignItems = 'center';
+      soundToggle.style.justifyContent = 'center';
+      soundToggle.style.cursor = 'pointer';
+      soundToggle.style.boxShadow = '0 2px 8px rgba(0,0,0,.3)';
+      soundToggle.style.transition = 'background 0.2s ease, transform 0.15s ease';
+    }
+
+    // 페이지 언로드/언마운트 시 정리
+    const cleanup = () => {
+      if (cycleTimer) clearTimeout(cycleTimer);
+      video.removeEventListener('ended', onVideoEnded);
+    };
+    window.addEventListener('pagehide', cleanup, { once: true });
+    // MutationObserver로 태블릿이 DOM에서 제거될 때도 정리
+    if (window.MutationObserver) {
+      const mo = new MutationObserver(() => {
+        if (!document.body.contains(tablet)) {
+          cleanup();
+          mo.disconnect();
+        }
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // 사이클 시작
+    startCycle();
   }
 
 

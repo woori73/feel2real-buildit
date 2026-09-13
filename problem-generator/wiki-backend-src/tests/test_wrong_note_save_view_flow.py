@@ -101,6 +101,22 @@ class WrongNoteSaveViewFlowTest(unittest.TestCase):
         self.assertEqual({'photo-1.jpg', 'photo-6.jpg'}, {m['original_name'] for m in materials_first} & {'photo-1.jpg', 'photo-6.jpg'})
         self.assertTrue(all(m['id'] in self.saved_material_ids for m in materials_first))
 
+    def test_wrong_materials_metadata_distinguishes_images_from_files(self):
+        # given: 학생 원본을 이미지 1건 + PDF 1건으로 승인 저장한다.
+        json_payload = json.dumps({'kind': 'wrong-photo-ai-restore', 'restoredHtml': '<p>x</p>'}, ensure_ascii=False)
+        for name, ctype in (('photo-1.jpg', 'image/jpeg'), ('worksheet.pdf', 'application/pdf')):
+            main.create_exam_material(
+                core_type='student_wrong_note', school='세화고', grade='3학년', year=2026, semester='2학기',
+                exam='기말고사', title='최승원 오답 복원 문제', student_id=self.student_id,
+                original=_upload(name, b'BYTES', ctype), json_file=None, json_text=json_payload, html_text='')
+
+        # when: 보관 원본 메타데이터를 조회한다.
+        materials = main.list_student_wrong_materials(self.student_id)
+
+        # then: original_type이 그대로 노출되어 UI가 이미지 썸네일/파일 링크를 구분할 수 있다.
+        by_name = {m['original_name']: m['original_type'] for m in materials}
+        self.assertEqual({'photo-1.jpg': 'image/jpeg', 'worksheet.pdf': 'application/pdf'}, by_name)
+
     def test_original_blob_endpoint_serves_a_preserved_photo(self):
         # given: 승인 저장된 원본 1건.
         self._approve_save_like_ui(photo_count=1)
