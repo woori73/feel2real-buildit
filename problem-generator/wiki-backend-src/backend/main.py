@@ -33,6 +33,7 @@ import private_reference_bank
 import question_contract as qc
 import workspace as wiki_workspace
 import weekly_exam
+import wrong_mock
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -359,6 +360,7 @@ def init_db():
         conn.execute('CREATE INDEX IF NOT EXISTS idx_generated_test_context ON generated_tests(school, grade, exam)')
 
         weekly_exam.init_schema(conn)
+        wrong_mock.init_schema(conn)
 
 
 def _legacy_markup_html(text: str) -> str:
@@ -453,6 +455,7 @@ def migrate_schema():
     기존 데이터/테이블은 그대로 두고 누락된 컬럼만 ALTER TABLE로 보강한다 (데이터 삭제·재생성 없음)."""
     with get_db() as conn:
         weekly_exam.init_schema(conn)
+        wrong_mock.init_schema(conn)
         cols = {row['name'] for row in conn.execute("PRAGMA table_info(student_wrong_notes)").fetchall()}
         if 'source_text' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN source_text TEXT NOT NULL DEFAULT ''")
@@ -708,6 +711,7 @@ async def _lifespan(_app: FastAPI):
 
 app = FastAPI(lifespan=_lifespan)
 app.include_router(weekly_exam.router)
+app.include_router(wrong_mock.router)
 init_db()
 migrate_schema()
 with get_db() as _legacy_conn:
@@ -5484,6 +5488,7 @@ def export_school_prints_docx(payload: SchoolPrintExportRequest):
 # mcp_server.py는 그 함수들을 호출만 한다(자세한 설계는 mcp_server.py 모듈 docstring).
 # ==================================================================================
 weekly_exam.configure(get_db, get_final_workspace_context, _sanitize_exam_html)
+wrong_mock.configure(get_db)
 
 from mcp_server import McpEndpointMiddleware, build_mcp_asgi_app  # noqa: E402
 app.add_middleware(

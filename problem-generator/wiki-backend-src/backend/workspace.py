@@ -30,6 +30,7 @@ OWNED_TABLES = (
     "csat_wrong_answers", "csat_assessments", "csat_assessment_items",
     "csat_question_usage", "source_materials", "generated_tests", "ai_ab_evaluations",
     "textbook_materials", "textbook_questions", "weekly_exam_sets", "weekly_exam_audit",
+    "wrong_mock_rounds", "wrong_mock_photos", "wrong_mock_audit",
 )
 
 
