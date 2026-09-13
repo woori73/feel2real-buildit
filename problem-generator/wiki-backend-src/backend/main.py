@@ -5274,6 +5274,20 @@ def list_wrong_notes(student_id: int):
         rows = conn.execute('SELECT * FROM student_wrong_notes WHERE student_id = ? ORDER BY id DESC', (student_id,)).fetchall()
         return [_wrong_note_response(dict(row), dict(student)) for row in rows]
 
+@app.get('/api/students/{student_id}/wrong-materials')
+def list_student_wrong_materials(student_id: int):
+    """학생별 보관 원본 조회(읽기 전용, 신규 DDL 없음). 오답 사진 AI 복원 승인 저장 시
+    exam_material_sets(core_type=student_wrong_note)에 사진별로 보관된 원본 메타데이터를 반환한다.
+    blob은 응답에 담지 않고, 원본 열기는 기존 GET /exam-materials/{id}/original 계약을 그대로 쓴다."""
+    with get_db() as conn:
+        student = conn.execute('SELECT * FROM students WHERE id = ?', (student_id,)).fetchone()
+        if not student:
+            raise HTTPException(status_code=404, detail='학생 프로필을 찾지 못했습니다.')
+        rows = conn.execute('''SELECT id, title, original_name, original_type, created_at FROM exam_material_sets
+            WHERE student_id = ? AND core_type = 'student_wrong_note' ORDER BY id DESC''', (student_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
 
 class WrongNoteUpdate(BaseModel):
     exam_label: Optional[str] = None

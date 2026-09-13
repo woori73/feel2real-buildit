@@ -10,6 +10,9 @@ export function selectWorkspace(workspaceId: string): void {
   else sessionStorage.removeItem(WORKSPACE_SELECTION_KEY)
 }
 
+// 저장된 원본(blob)을 여는 등 href로 직접 링크할 때 사용한다(api와 같은 base 계약).
+export const apiUrl = (path: string) => '/problem-generator/wiki/api/' + path.replace(/^\/+/, '')
+
 export const api = (path: string, init: RequestInit = {}) => {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
