@@ -6,7 +6,7 @@ import WeeklyExamHub from './WeeklyExamHub'
 const baseProps = {
   pastExamCount: 1, schoolPrintCount: 1, wrongCount: 0, aiWorkLogCount: 0,
   hasDigitalTwin: false, onOpenContext: () => undefined, onOpenWeeklyWorkspace: () => undefined,
-  onOpenWrongReview: () => undefined,
+  onOpenWrongReview: () => undefined, onOpenWrongMock: () => undefined,
 }
 
 const draftItem = (id: number) => ({

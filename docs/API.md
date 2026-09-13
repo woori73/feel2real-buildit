@@ -3666,3 +3666,19 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `PUT .../{id}/artifacts`: signed operator only; DRAFT 한정 파일별 교체(문제지·정답해설·출제근거 중 제공된 것만 교체, 나머지 유지, identity·회차·세트·status·version 유지, filename/hash 재계산, sourceMaterialIds 지정 시 기존 `_source_refs` 검증 재사용, 교체 파일 0건이면 400). 교체 후 보기·다운로드는 `Cache-Control: no-store`라 즉시 새 파일이 보인다.
 - `GET .../public-metadata`: FINAL public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
+
+
+## 오답 모의고사 (Wrong Mock) API
+
+- `POST /problem-generator/wiki/api/wrong-mock/rounds`: signed operator only. 회차를 먼저 생성한다(`{school,grade,year,semester,exam,round?,title?}`). `round`를 비우면 같은 Context 마지막 회차 다음 번호를 제안하고, `title`을 비우면 `오답 {N}회`가 된다. 같은 Context 중복 회차는 409. 상태는 항상 `COLLECTING`(사진 등록 중)으로 시작한다.
+- `GET /problem-generator/wiki/api/wrong-mock/rounds?...`: 같은 시험 Context의 회차 목록(사진 개수·문제지/해설 보유 여부·편집 잠금 포함, BLOB 제외).
+- `GET /problem-generator/wiki/api/wrong-mock/rounds/{id}`: 회차 상세 + 원본 사진 목록(제목 metadata·파일명·크기·hash·순서·`original_api_path`, BLOB 제외).
+- `POST .../rounds/{id}/photos`(multipart `files[]` + `titles` JSON + `force`): 사진 등록. 제목은 원본 그대로 보존한다. 같은 회차 동일 이미지(SHA-256)는 409 `이미 등록된 사진입니다.` 다른 회차 동일 이미지는 409 경고(이미 등록된 회차 표시)이며 `force=true`로 계속 등록할 수 있다. 사진 개수와 문항 개수를 동일시하는 constraint가 없다.
+- `GET /problem-generator/wiki/api/wrong-mock/photos/{id}/original`: 원본 사진 바이트. 이미지/PDF는 inline, HTML은 attachment, `Cache-Control: no-store`.
+- `PATCH .../photos/{id}`(제목 수정), `POST .../rounds/{id}/photos/reorder`(`orderedIds`), `DELETE .../photos/{id}`, `PUT .../photos/{id}`(교체, id·순서 유지): 사진 관리. `COLLECTING`이 아니면서 편집이 잠겨 있으면(편집 OFF) 409.
+- `POST .../rounds/{id}/complete-photos`: 사진 등록 완료. `COLLECTING→READY`(제작대기)로 바꾸고 편집을 잠근다. 사진 개수와 무관하게 선생님이 직접 확정한다(개수로 자동 전이하지 않음).
+- `PUT .../rounds/{id}/artifacts`(`{paperHtml?,paperName?,explHtml?,explName?}`): 문제지·간략해설 HTML 등록·교체. 사람 업로드와 OpenCode 자동 등록이 같은 저장 contract를 쓴다. 저장 시 script subtree만 제거하고 canonical을 그대로 보존한다. 두 artifact가 모두 갖춰지면 `COMPLETED`(제작완료) + 편집 잠금. `COLLECTING` 상태 등록과 잠금 상태 등록·교체는 409.
+- `POST .../rounds/{id}/edit-lock`(`{locked}`): 편집 OFF/ON 전환.
+- `DELETE .../rounds/{id}`: `COLLECTING` 상태에서만 회차 삭제(사진·audit 함께 삭제, 단일 트랜잭션). `READY`/`COMPLETED`는 409.
+- `GET .../rounds/{id}/artifacts/{paper|explanation}`(보기, `text/html; charset=utf-8` + `no-store`), `GET .../artifacts/{kind}/download`(RFC 5987 한글 파일명): 완성본 확인·인쇄는 브라우저 보기가 중심이다.
+- `GET /problem-generator/wiki/api/wrong-mock/ready?...`: 제작대기(READY) 회차 목록 + 사진 제목 metadata + 원본 경로 + 제작규격(spec). 향후 OpenCode가 가져갈 읽기 계약이다. Living Context(`student_errors`)에는 오답모의고사 사진을 섞지 않는다.

@@ -13,8 +13,7 @@ type WeeklyExam = {
 type Props = {
   context:ExamContext; pastExamCount:number; schoolPrintCount:number; wrongCount:number
   aiWorkLogCount:number; hasDigitalTwin:boolean; lastContextUpdate?:string
-  onOpenContext:()=>void; onOpenWeeklyWorkspace:()=>void; onOpenWrongReview:()=>void
-  studentTotalWrongCount?:number|null; onOpenStudentWrongAnswers?:()=>void
+  onOpenContext:()=>void; onOpenWeeklyWorkspace:()=>void; onOpenWrongReview:()=>void; onOpenWrongMock:()=>void
 }
 
 const SET_POLICY:Record<string,SetType[]>={
@@ -32,7 +31,7 @@ const readFile=(event:ChangeEvent<HTMLInputElement>,setter:(value:string)=>void)
 const statusLabel=(status:WeeklyStatus)=>status==='FINAL'?'제작 완료':'제작·수정 중'
 
 export default function WeeklyExamHub(props:Props){
-  const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview,studentTotalWrongCount,onOpenStudentWrongAnswers}=props
+  const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview,onOpenWrongMock}=props
   const setTypes=setTypesFor(context)
   const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
@@ -44,9 +43,9 @@ export default function WeeklyExamHub(props:Props){
     if(!context.school||!context.grade)return
     const [rows,me]=await Promise.all([
       api(`weekly-exams?${query(context)}`).then(r=>r.ok?r.json():[]),
-      api('workspace/me').then(r=>r.ok?r.json() as Promise<{user_id?:number|string}>:{}),
+      api('workspace/me').then(r=>r.ok?r.json():{}),
     ])
-    setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean((me as {user_id?:number|string}).user_id))
+    setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean(me.user_id))
   }
   useEffect(()=>{setSetType(setTypesFor(context)[0]);void load()},[context.school,context.grade,context.year,context.semester,context.exam])
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
@@ -152,11 +151,14 @@ export default function WeeklyExamHub(props:Props){
       <article className="repeat-entry-card wrong-review">
         <p className="kicker">STUDENT ERROR CONTEXT</p><h2>오답 복습</h2>
         <p>학교 공통 Context와 섞지 않고 학생별 100발100중 오답을 누적합니다.</p>
-        {/* 학생 전체 누적 오답과 현재 시험 Context에 연결된 오답은 같은 숫자가 아니다. 범위를 명시한다. */}
-        <div className="wrong-summary"><strong>{wrongCount}</strong><span>이 시험 범위와 연결된 오답</span></div>
-        {studentTotalWrongCount !== null && studentTotalWrongCount !== undefined && wrongCount !== studentTotalWrongCount && <p className="field-hint">현재 Context와 무관한 학생 전체 누적 오답은 {studentTotalWrongCount}건입니다.</p>}
-        {onOpenStudentWrongAnswers && <button type="button" className="secondary-button" onClick={onOpenStudentWrongAnswers}>학생 전체 오답 보기</button>}
-        <button type="button" className="primary-action" onClick={onOpenWrongReview}>이 시험 범위 오답 보기</button>
+        <div className="wrong-summary"><strong>{wrongCount}</strong><span>현재 시험 Context 오답 자료</span></div>
+        <button type="button" className="primary-action" onClick={onOpenWrongReview}>오답 복습 열기</button>
+      </article>
+
+      <article className="repeat-entry-card wrong-mock">
+        <p className="kicker">WRONG MOCK · 20 QUESTIONS</p><h2>오답 모의고사</h2>
+        <p>회차별 20문항 사진을 직접 등록하고 문제지·간략해설 완성본을 관리합니다.</p>
+        <button type="button" className="primary-action" onClick={onOpenWrongMock}>오답 모의고사 열기</button>
       </article>
     </div>
 
