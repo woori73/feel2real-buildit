@@ -163,3 +163,27 @@
 .wrong-mock-upload input[type=file],.wrong-mock-artifacts input[type=file]{max-width:100%;min-width:0}
 @media(max-width:720px){.wrong-mock-photos{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}.wrong-mock-hub .twin-actions button{flex:1 1 calc(50% - 8px);white-space:normal}}
 @media(max-width:375px){.wrong-mock-hub{min-width:0}.wrong-mock-photos{grid-template-columns:1fr}.wrong-mock-hub .twin-actions{display:grid;grid-template-columns:1fr}.wrong-mock-hub .twin-actions button{width:100%}}
+/* Weekly Exam artifact inline editor (보기 화면 위 오버레이). AI 없는 직접 편집. */
+.weekly-editor-overlay{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;background:rgba(15,23,42,.55)}
+.weekly-editor-header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 14px}
+.weekly-editor-title{display:flex;flex-direction:column;gap:2px;min-width:0}.weekly-editor-title strong{font-size:15px}.weekly-editor-hint{font-size:12px;color:#64748b}
+.weekly-editor-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.weekly-editor-actions button{min-height:38px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;padding:7px 12px;font:inherit;font-weight:600;cursor:pointer}
+.weekly-editor-actions button:disabled{opacity:.45;cursor:not-allowed}
+.weekly-editor-actions .primary-action{background:#2563eb;color:#fff;border-color:#2563eb}
+.weekly-editor-busy{font-size:12px;color:#2563eb}.weekly-editor-error{font-size:12px;color:#dc2626;font-weight:600}
+.weekly-editor-frame{flex:1 1 auto;width:100%;border:0;background:#fff}
+.weekly-editor-layout,.weekly-editor-ops{display:grid;gap:8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;font-size:13px}
+.weekly-editor-layout ul{margin:0;padding-left:18px}.layout-check-summary li{color:#b91c1c}
+.weekly-editor-layout button,.weekly-editor-ops button{justify-self:start;min-height:34px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:5px 10px;cursor:pointer}
+.weekly-editor-ops textarea{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:8px 10px;font:12px/1.5 ui-monospace,monospace;background:#fff;resize:vertical}
+.weekly-editor-ops .field-hint{margin:0;font-size:12px;color:#64748b}
+/* iframe 내부 편집 UI (sandbox 아님 — 같은 오리진 문서에 직접 주입) */
+.weekly-editor-frame .qe-toolbar{display:inline-flex;gap:4px;align-items:center;margin:0 0 6px;padding:4px 6px;border:1px dashed #93b4f2;border-radius:8px;background:#f5f8ff;font:700 12px/1 inherit}
+.weekly-editor-frame .qe-toolbar button{border:1px solid #cbd5e1;border-radius:6px;background:#fff;min-width:28px;min-height:26px;cursor:pointer;font:inherit}
+.weekly-editor-frame .qe-qnum{padding:0 2px}
+.weekly-editor-frame [contenteditable="true"]{outline:1px dashed #4d78c4;outline-offset:2px;cursor:text}
+.weekly-editor-frame [contenteditable="true"]:hover{outline-color:#2563eb;background:#fffdf0}
+.weekly-editor-frame [contenteditable="true"]:focus{outline:2px solid #2563eb;background:#fff}
+@media(max-width:720px){.weekly-editor-header{padding:8px 10px}.weekly-editor-actions button{flex:1 1 auto;white-space:normal;padding:7px 9px}}
+@media(max-width:375px){.weekly-editor-actions{display:grid;grid-template-columns:1fr 1fr}.weekly-editor-actions .btn-save{grid-column:1/-1}.weekly-editor-hint{display:none}}

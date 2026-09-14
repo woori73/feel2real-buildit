@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useState } from 'react'
 import { api } from '../lib/api'
+import WeeklyExamEditor, { WeeklyEditorArtifact } from './WeeklyExamEditor'
 
 type ExamContext = { school:string; grade:string; year:number; semester:string; exam:string }
 type SetType = '40'|'70'|'40A'|'40B'
@@ -38,6 +39,7 @@ export default function WeeklyExamHub(props:Props){
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
   const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null),[metadataId,setMetadataId]=useState<number|null>(null),[metadataRound,setMetadataRound]=useState(1),[metadataSetType,setMetadataSetType]=useState<SetType>(setTypes[0])
   const [replacePaper,setReplacePaper]=useState(''),[replaceExpl,setReplaceExpl]=useState(''),[replaceMd,setReplaceMd]=useState('')
+  const [editing,setEditing]=useState<{id:number;kind:WeeklyEditorArtifact}|null>(null)
   const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
   const load=async()=>{
@@ -71,6 +73,13 @@ export default function WeeklyExamHub(props:Props){
     const body=await response.json().catch(()=>({}))
     setNotice(response.ok?'DRAFT 세트를 삭제했습니다.':body.detail||'삭제하지 못했습니다.')
     setConfirmDeleteId(null);if(response.ok)await load()
+  }
+  const reopenForEdit=async(id:number)=>{
+    const response=await api(`weekly-exams/${id}/transition`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reopen'})})
+    const body=await response.json().catch(()=>({}))
+    if(!response.ok){setNotice(body.detail||'편집을 위해 DRAFT로 전환하지 못했습니다.');return false}
+    await load()
+    return true
   }
   const replaceArtifact=async(id:number,kind:'paper'|'expl'|'md')=>{
     const body:Record<string,string>={}
@@ -132,6 +141,8 @@ export default function WeeklyExamHub(props:Props){
             <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/answer-explanation/download`)}>정답해설 HTML 다운로드</button>
             <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/production-verification`)}>출제근거 보기</button>
             <button onClick={()=>open(`weekly-exams/${item.id}/context-snapshot`)}>제작 당시 Context</button>
+            <button onClick={()=>setEditing({id:item.id,kind:'student-paper'})}>문제지 편집</button>
+            <button onClick={()=>setEditing({id:item.id,kind:'answer-explanation'})}>정답해설 편집</button>
           </div>
           {canManage&&<div className="approval-actions">
             {item.status==='DRAFT'
@@ -187,5 +198,11 @@ export default function WeeklyExamHub(props:Props){
       <button className="primary-action" disabled={!studentPaper||!answerExplanation||!verification} onClick={()=>void register()}>DRAFT 등록</button>
     </section>}
     <p className="approval-gate-note">원문은 운영자 전용입니다. Agent 등록은 DRAFT이며 운영자가 FINAL을 확정합니다. FINAL은 외부 공개를 의미하지 않습니다.</p>
+    {editing&&<WeeklyExamEditor
+      examId={editing.id}
+      kind={editing.kind}
+      onSaved={()=>{setEditing(null);setNotice('편집 내용을 저장했습니다. 문제지·정답해설 보기에서 바로 확인할 수 있습니다.');void load()}}
+      onClose={()=>setEditing(null)}
+    />}
   </section>
 }

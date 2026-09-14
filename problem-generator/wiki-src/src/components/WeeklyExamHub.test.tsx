@@ -144,3 +144,26 @@ describe('WeeklyExamHub 파일별 교체', () => {
     await waitFor(() => expect(calls.filter(c => /weekly-exams\/31$/.test(c.url) && c.init?.method === 'DELETE')).toHaveLength(1))
   })
 })
+
+describe('WeeklyExamHub 인라인 편집 진입', () => {
+  const context = contexts[0]
+
+  it('문제지/정답해설 편집 버튼으로 WeeklyExamEditor 오버레이를 연다', async () => {
+    // given: DRAFT 세트가 있는 허브
+    const calls: { url: string; init?: RequestInit }[] = []
+    mockApi([draftItem(41)], calls)
+    render(<WeeklyExamHub context={context} {...baseProps} />)
+    await screen.findByText('5회 · 40')
+    // when: 문제지 편집 클릭
+    fireEvent.click(screen.getByRole('button', { name: '문제지 편집' }))
+    // then: 오버레이가 뜬다
+    const dialog = await screen.findByRole('dialog', { name: /주간 실전 모의고사 문제지 편집/ })
+    expect(dialog).toBeInTheDocument()
+    // when: 취소로 닫기
+    fireEvent.click(within(dialog).getByRole('button', { name: '취소' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    // when: 정답해설 편집 클릭
+    fireEvent.click(screen.getByRole('button', { name: '정답해설 편집' }))
+    expect(await screen.findByRole('dialog', { name: /주간 실전 모의고사 정답해설 편집/ })).toBeInTheDocument()
+  })
+})
