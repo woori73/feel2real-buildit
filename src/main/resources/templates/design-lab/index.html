@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildIt Design Lab · Experiments</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/css/design-lab/index.css">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="dl-page" role="main">
+
+  <header class="dl-header">
+    <div class="dl-header-inner">
+      <div class="dl-brand">
+        <span class="dl-badge">EXPERIMENT</span>
+        <h1>BuildIt Design Lab</h1>
+        <p class="dl-subtitle">Frontend Architecture Experiments for BuildIt / Bildi</p>
+      </div>
+      <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+    </div>
+  </header>
+
+  <main class="dl-main">
+    <section class="dl-notice" aria-label="실험 안내">
+      <div class="dl-notice-icon" aria-hidden="true">🧪</div>
+      <div>
+        <strong>이 페이지는 개발/관리자 전용 실험 영역입니다.</strong>
+        <p>Production 홈페이지(<a href="/home">/home</a>, <a href="/">/</a>)와 완전히 분리되어 운영됩니다. 검색엔진에 노출되지 않으며(noindex, nofollow), 일반 사용자는 접근할 수 없습니다.</p>
+      </div>
+    </section>
+
+    <section class="dl-grid" aria-label="실험 변형 목록">
+      <article class="dl-card" onclick="location.href='/design-lab/home-a'">
+        <div class="dl-card-header">
+          <span class="dl-card-type">TYPE A</span>
+          <h2>Vanilla HTML/CSS/JS</h2>
+        </div>
+        <p class="dl-card-desc">현재 BuildIt 스택 유지 + 21st.dev 디자인 레퍼런스만 적용</p>
+        <ul class="dl-card-features">
+          <li>Thymeleaf + Vanilla JS</li>
+          <li>CSS Variables + Modern CSS</li>
+          <li>React/Tailwind 없음</li>
+          <li>디자인만 현대화</li>
+        </ul>
+        <div class="dl-card-cta">열기 →</div>
+      </article>
+
+      <article class="dl-card" onclick="location.href='/design-lab/home-b'">
+        <div class="dl-card-header">
+          <span class="dl-card-type">TYPE B</span>
+          <h2>React + Tailwind + shadcn/ui</h2>
+        </div>
+        <p class="dl-card-desc">21st.dev 생태계 완전 적용 (MCP, Registry, CLI)</p>
+        <ul class="dl-card-features">
+          <li>React 18 + Vite + TypeScript</li>
+          <li>Tailwind CSS + shadcn/ui</li>
+          <li>21st.dev MCP / Registry 연동</li>
+          <li>AI Agent가 컴포넌트 직접 조합</li>
+        </ul>
+        <div class="dl-card-cta">열기 →</div>
+      </article>
+
+      <article class="dl-card" onclick="location.href='/design-lab/home-c'">
+        <div class="dl-card-header">
+          <span class="dl-card-type">TYPE C</span>
+          <h2>Best Hybrid</h2>
+        </div>
+        <p class="dl-card-desc">A와 B 구현 후 장점만 합친 최적 조합 (구현 후 결정)</p>
+        <ul class="dl-card-features">
+          <li>A의 브랜드 안정성</li>
+          <li>B의 인터랙티브 요소</li>
+          <li>기술 스택은 결과 보고 결정</li>
+        </ul>
+        <div class="dl-card-cta">준비 중</div>
+      </article>
+    </section>
+
+    <section class="dl-comparison" aria-label="비교 기준">
+      <h2>공통 비교 기준</h2>
+      <div class="dl-criteria">
+        <div class="dl-criterion">
+          <strong>동일 콘텐츠</strong>
+          <span>브랜드, 로고, Hero 문구, 대표 영상, 학교 카드, CTA, 링크 모두 동일</span>
+        </div>
+        <div class="dl-criterion">
+          <strong>Mobile First</strong>
+          <span>375px → 390px → 768px → 1440px 순서로 검증</span>
+        </div>
+        <div class="dl-criterion">
+          <strong>범위</strong>
+          <span>Hero → 대표 영상 → 학교별 카드 3개 까지</span>
+        </div>
+        <div class="dl-criterion">
+          <strong>격리</strong>
+          <span>Production CSS/JS/Template 영향 없음</span>
+        </div>
+      </div>
+    </section>
+
+    <th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
+</div>
+</th:block>
+</body>
+</html>

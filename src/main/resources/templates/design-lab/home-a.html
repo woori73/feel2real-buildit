@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${pageTitle}">Design Lab · TYPE A</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/css/design-lab/home-a.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="dl-page dl-a" role="main">
+
+  <!-- Header / Nav -->
+  <header class="dl-header">
+    <div class="dl-header-inner">
+      <a href="/design-lab" class="dl-back-link" aria-label="Design Lab 인덱스로 돌아가기">
+        <i class="ti ti-chevron-left" aria-hidden="true"></i>
+        <span>Design Lab</span>
+      </a>
+      <div class="dl-brand">
+        <span class="dl-badge">TYPE A</span>
+        <span class="dl-variant-name">Vanilla HTML/CSS/JS</span>
+      </div>
+      <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+    </div>
+  </header>
+
+  <main class="dl-main">
+
+    <!-- HERO -->
+    <section class="dl-hero" aria-labelledby="hero-title">
+      <div class="dl-hero-inner">
+        <div class="dl-hero-content">
+          <div class="dl-hero-badge">
+            <span class="dl-badge-dot" aria-hidden="true"></span>
+            AI 기반 · 학교별 맞춤 내신 영어 학습
+          </div>
+          <h1 id="hero-title" class="dl-hero-title">
+            데이터로 더 정확하게,<br>
+            AI로 더 스마트하게,<br>
+            <span class="dl-accent">성적을 현실로!</span>
+          </h1>
+          <p class="dl-hero-desc">
+            학생의 실제 학교 학습자료와 오답 데이터를 기반으로 AI 분석과 전문가 피드백을 결합하여 학교별 맞춤 내신 영어 학습자료를 제공하는 교육 AX 서비스입니다.
+          </p>
+          <div class="dl-hero-actions">
+            <button class="dl-btn dl-btn-primary" onclick="goToService()">서비스 이용하기</button>
+            <button class="dl-btn dl-btn-secondary" onclick="openSampleReport()">샘플 리포트 보기</button>
+          </div>
+          <div class="dl-hero-trust">
+            <span class="dl-trust-label">이미 검증된 학원들과 함께합니다</span>
+            <div class="dl-trust-logos" aria-hidden="true">
+              <span>압구정에듀홀릭</span>
+              <span>신사중</span>
+              <span>신구중</span>
+              <span>압구정중</span>
+              <span>현대고</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Card -->
+        <div class="dl-hero-video" aria-label="F2R 소개 영상">
+          <div class="dl-video-frame">
+            <iframe
+              src="https://www.youtube.com/embed/cLieSj8YxYA?si=5csXW-ahg_yXhILZ"
+              title="F2R AI 기반 내신 영어 학습 플랫폼 소개 영상"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+              loading="lazy">
+            </iframe>
+          </div>
+          <div class="dl-video-caption">
+            <strong>영상으로 먼저 보는 F2R</strong>
+            <span>AI 분석과 전문가 피드백이 어떻게 연결되는지 확인해보세요.</span>
+            <a class="dl-video-link" href="https://www.youtube.com/watch?v=cLieSj8YxYA" target="_blank" rel="noopener noreferrer">YouTube에서 보기 <i class="ti ti-external-link" aria-hidden="true"></i></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCHOOL CARDS -->
+    <section class="dl-schools" aria-labelledby="schools-title">
+      <div class="dl-section-header">
+        <div>
+          <div class="dl-section-label">Learning marketplace</div>
+          <h2 id="schools-title" class="dl-section-title">지금 바로 시작할 수 있는 학습 선택지</h2>
+          <p class="dl-section-desc">학원 탐색, 시험 분석, 블로그, 커뮤니티를 한 화면에서 연결합니다.</p>
+        </div>
+      </div>
+
+      <div class="dl-schools-grid" role="list">
+        <article class="dl-school-card" role="listitem">
+          <a href="/academies" class="dl-school-link">
+            <div class="dl-school-media">
+              <div class="dl-school-cover">Academy</div>
+            </div>
+            <div class="dl-school-body">
+              <h3>공개 학원 둘러보기</h3>
+              <p>지역, 과목, 수업 상품을 기준으로 내게 맞는 Academy를 찾아보세요.</p>
+              <div class="dl-school-tags">
+                <span>학원</span><span>수업</span>
+              </div>
+            </div>
+            <span class="dl-school-arrow" aria-hidden="true"><i class="ti ti-chevron-right"></i></span>
+          </a>
+        </article>
+
+        <article class="dl-school-card" role="listitem">
+          <a href="/academy-posts" class="dl-school-link">
+            <div class="dl-school-media">
+              <div class="dl-school-cover">Blog</div>
+            </div>
+            <div class="dl-school-body">
+              <h3>내신 전략 글 모아보기</h3>
+              <p>최근 공개된 블로그 글을 통해 학교별 학습 방향을 빠르게 파악합니다.</p>
+              <div class="dl-school-tags">
+                <span>블로그</span><span>추천</span>
+              </div>
+            </div>
+            <span class="dl-school-arrow" aria-hidden="true"><i class="ti ti-chevron-right"></i></span>
+          </a>
+        </article>
+
+        <article class="dl-school-card" role="listitem">
+          <a href="/community" class="dl-school-link">
+            <div class="dl-school-media">
+              <div class="dl-school-cover">Community</div>
+            </div>
+            <div class="dl-school-body">
+              <h3>학습 Q&A 참여하기</h3>
+              <p>궁금한 학습 질문을 남기고 공개 답변을 통해 함께 학습합니다.</p>
+              <div class="dl-school-tags">
+                <span>Q&A</span><span>공개</span>
+              </div>
+            </div>
+            <span class="dl-school-arrow" aria-hidden="true"><i class="ti ti-chevron-right"></i></span>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="dl-cta-section" aria-labelledby="cta-title">
+      <div class="dl-cta-card">
+        <div class="dl-cta-content">
+          <h2 id="cta-title" class="dl-cta-title">이제, 당신의 브랜드를 만들 시간입니다</h2>
+          <p class="dl-cta-desc">Build It으로 학원 홈페이지부터 학생 모집까지 한 번에 해결하세요.</p>
+        </div>
+        <a href="/builder" class="dl-btn dl-btn-primary dl-btn-lg" data-buildit-start>
+          Build It 시작하기
+          <i class="ti ti-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sample Report Modal -->
+  <div class="dl-modal" id="sampleReportModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="sampleReportTitle">
+    <div class="dl-modal-backdrop" tabindex="-1"></div>
+    <div class="dl-modal-dialog">
+      <div class="dl-modal-header">
+        <h3 id="sampleReportTitle">F2R 성과분석 샘플 리포트</h3>
+        <button class="dl-modal-close" type="button" onclick="closeSampleReport()" aria-label="샘플 리포트 닫기">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dl-modal-body">
+        <iframe class="dl-modal-frame" id="sampleReportFrame" title="F2R 성과분석 샘플 리포트 PDF"></iframe>
+      </div>
+      <div class="dl-modal-footer">
+        <a class="dl-modal-link" href="/img/sample-report.pdf" target="_blank" rel="noopener">새 창으로 보기 <i class="ti ti-external-link"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
+
+  <script src="/js/api.js"></script>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
+
+  <script th:inline="javascript">
+    const currentRole = /*[[${role}]]*/ null;
+
+    function goToService() {
+      const path = currentRole === 'STUDENT' ? '/stdt_dashboard' :
+                   currentRole === 'TUTOR' ? '/tutor/academy' :
+                   currentRole === 'ADMIN' ? '/admin/students' : null;
+      if (path) { location.href = path; return; }
+      if (typeof openLoginModal === 'function') openLoginModal();
+    }
+
+    function openSampleReport() {
+      const modal = document.getElementById('sampleReportModal');
+      const frame = document.getElementById('sampleReportFrame');
+      if (frame && !frame.src) frame.src = '/img/sample-report.pdf';
+      if (modal) {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeSampleReport() {
+      const modal = document.getElementById('sampleReportModal');
+      if (modal) {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    }
+
+    document.getElementById('sampleReportModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'sampleReportModal') closeSampleReport();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSampleReport();
+    });
+  </script>
+</th:block>
+</body>
+</html>

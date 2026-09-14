@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${pageTitle}">Design Lab · TYPE B</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/design-lab-b/assets/main-DfzmO1-s.css">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="dl-page dl-b" role="main">
+  <!-- React App Mount Point -->
+  <div id="design-lab-b-root"></div>
+</div>
+</th:block>
+
+<!-- Sample Report Modal (reuse from Production) -->
+<div class="sample-report-modal" id="sampleReportModal" aria-hidden="true">
+  <div class="sample-report-dialog" role="dialog" aria-modal="true" aria-labelledby="sampleReportTitle">
+    <div class="sample-report-header">
+      <div class="sample-report-title" id="sampleReportTitle">F2R 성과분석 샘플 리포트</div>
+      <div class="sample-report-actions">
+        <a class="sample-report-link" href="/img/sample-report.pdf" target="_blank" rel="noopener">새 창으로 보기</a>
+        <button class="sample-report-close" type="button" onclick="closeSampleReport()" aria-label="샘플 리포트 닫기">×</button>
+      </div>
+    </div>
+    <iframe class="sample-report-frame" id="sampleReportFrame" title="F2R 성과분석 샘플 리포트 PDF"></iframe>
+  </div>
+</div>
+
+<th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
+<th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
+<th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+
+<script src="/js/api.js"></script>
+<th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
+
+<script type="module" src="/design-lab-b/assets/main-1GWUwROW.js"></script>
+
+<script th:inline="javascript">
+  const currentRole = /*[[${role}]]*/ null;
+
+  function goToService() {
+    const path = currentRole === 'STUDENT' ? '/stdt_dashboard' :
+                 currentRole === 'TUTOR' ? '/tutor/academy' :
+                 currentRole === 'ADMIN' ? '/admin/students' : null;
+    if (path) { location.href = path; return; }
+    if (typeof openLoginModal === 'function') openLoginModal();
+  }
+
+  function openSampleReport() {
+    const modal = document.getElementById('sampleReportModal');
+    const frame = document.getElementById('sampleReportFrame');
+    if (frame && !frame.src) frame.src = '/img/sample-report.pdf';
+    if (modal) {
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeSampleReport() {
+    const modal = document.getElementById('sampleReportModal');
+    if (modal) {
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.getElementById('sampleReportModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'sampleReportModal') closeSampleReport();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSampleReport();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${pageTitle}">Design Lab · TYPE C</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/css/design-lab/home-c.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="dl-page dl-c" role="main">
+
+  <header class="dl-header">
+    <div class="dl-header-inner">
+      <a href="/design-lab" class="dl-back-link" aria-label="Design Lab 인덱스로 돌아가기">
+        <i class="ti ti-chevron-left" aria-hidden="true"></i>
+        <span>Design Lab</span>
+      </a>
+      <div class="dl-brand">
+        <span class="dl-badge">TYPE C</span>
+        <span class="dl-variant-name">Best Hybrid (준비 중)</span>
+      </div>
+      <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+    </div>
+  </header>
+
+  <main class="dl-main">
+    <section class="dl-coming-soon" aria-label="준비 중 안내">
+      <div class="dl-coming-icon" aria-hidden="true">🏗️</div>
+      <h2>TYPE C는 A와 B 구현 후 결정됩니다</h2>
+      <p>TYPE A(Vanilla)와 TYPE B(React+Tailwind)를 모두 구현하고<br>실제 브라우저에서 375px/1440px 비교 검증한 뒤<br>장점만 합친 최적 조합으로 구현할 예정입니다.</p>
+
+      <div class="dl-coming-steps">
+        <div class="dl-step done">
+          <span class="dl-step-num">1</span>
+          <div>
+            <strong>TYPE A 완료</strong>
+            <span>Vanilla + Modern CSS 디자인</span>
+          </div>
+        </div>
+        <div class="dl-step done">
+          <span class="dl-step-num">2</span>
+          <div>
+            <strong>TYPE B 완료</strong>
+            <span>React + Tailwind + shadcn/ui + 21st.dev</span>
+          </div>
+        </div>
+        <div class="dl-step current">
+          <span class="dl-step-num">3</span>
+          <div>
+            <strong>비교 평가</strong>
+            <span>375px/1440px 실사용 테스트</span>
+          </div>
+        </div>
+        <div class="dl-step pending">
+          <span class="dl-step-num">4</span>
+          <div>
+            <strong>TYPE C 구현</strong>
+            <span>Best Hybrid 조합</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dl-coming-links">
+        <a href="/design-lab/home-a" class="dl-coming-link">
+          <i class="ti ti-chevron-left"></i>
+          TYPE A 보기
+        </a>
+        <a href="/design-lab/home-b" class="dl-coming-link">
+          TYPE B 보기
+          <i class="ti ti-chevron-right"></i>
+        </a>
+      </div>
+    </section>
+
+    <th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
+  </main>
+</div>
+</th:block>
+</body>
+</html>
