@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8">
+    <title>BuildIt — 다음 시험의 시작점 (1080x1920 / 15s)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Pretendard"; src: local("Pretendard"), local("Pretendard Variable"); }
+      @font-face { font-family: "Noto Sans KR"; src: local("Noto Sans KR"); }
+      @font-face { font-family: "Malgun Gothic"; src: local("Malgun Gothic"); }
+      @font-face { font-family: "Apple SD Gothic Neo"; src: local("Apple SD Gothic Neo"); }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #0e0e0e;
+        overflow: hidden;
+        width: 1080px;
+        height: 1920px;
+        font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      }
+
+      #buildit-root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        background: #ffffff;
+        overflow: hidden;
+      }
+
+      /* ---- scenes (timed clips; framework owns their visibility) ---- */
+      .scene {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1080px;
+        height: 1920px;
+      }
+      .scene-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 160px 90px;
+      }
+      .scene.navy .scene-inner {
+        background: #16213a;
+      }
+      .scene.paper .scene-inner {
+        background: #ffffff;
+      }
+
+      /* ---- typography ---- */
+      .eyebrow {
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: 10px;
+        margin-bottom: 48px;
+      }
+      .paper .eyebrow { color: #cc0000; }
+      .navy .eyebrow { color: #ff6b6b; }
+
+      .h-line {
+        display: block;
+        font-size: 96px;
+        font-weight: 900;
+        line-height: 1.22;
+        letter-spacing: -1px;
+        word-break: keep-all;
+      }
+      .paper .h-line { color: #111111; }
+      .navy .h-line { color: #ffffff; }
+      .h-line .accent { color: #cc0000; }
+      .navy .h-line .accent { color: #ffb3b3; }
+
+      .sub {
+        display: block;
+        margin-top: 44px;
+        font-size: 44px;
+        font-weight: 500;
+        line-height: 1.5;
+        word-break: keep-all;
+      }
+      .paper .sub { color: #555555; }
+      .navy .sub { color: #c9d2e3; }
+
+      .rule {
+        width: 180px;
+        height: 12px;
+        background: #cc0000;
+        margin-top: 56px;
+      }
+
+      /* ---- scene 2: converging chips + wiki card ---- */
+      #s2-title {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+      #s2-stage {
+        position: relative;
+        width: 900px;
+        height: 900px;
+      }
+      .chip {
+        position: absolute;
+        left: 170px;
+        top: 375px;
+        width: 560px;
+        padding: 34px 0;
+        text-align: center;
+        font-size: 54px;
+        font-weight: 800;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        border: 3px solid rgba(255, 255, 255, 0.55);
+        border-radius: 999px;
+        word-break: keep-all;
+      }
+      #wiki-card {
+        position: absolute;
+        left: 120px;
+        top: 300px;
+        width: 660px;
+        padding: 64px 40px;
+        text-align: center;
+        background: #ffffff;
+        border-radius: 28px;
+      }
+      #wiki-card .wiki-name {
+        display: block;
+        font-size: 62px;
+        font-weight: 900;
+        color: #111111;
+        letter-spacing: -1px;
+      }
+      #wiki-card .wiki-tag {
+        display: block;
+        margin-top: 18px;
+        font-size: 38px;
+        font-weight: 700;
+        color: #cc0000;
+      }
+
+      /* ---- scene 4: exam numbers ---- */
+      #s4-numbers {
+        text-align: center;
+      }
+      #s4-numbers .big {
+        display: block;
+        font-size: 148px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: -2px;
+        line-height: 1.1;
+      }
+      #s4-numbers .big .accent { color: #ffb3b3; }
+      #s4-label {
+        text-align: center;
+        margin-top: 30px;
+      }
+
+      /* ---- scene 5: closing logo ---- */
+      #s5-logo {
+        margin-top: 72px;
+        font-size: 88px;
+        font-weight: 900;
+        letter-spacing: 22px;
+        color: #111111;
+      }
+
+      /* ---- progress rail (explicit timing readout) ---- */
+      #progress-rail {
+        position: absolute;
+        left: 90px;
+        right: 90px;
+        bottom: 84px;
+        height: 8px;
+        background: rgba(0, 0, 0, 0.14);
+        border-radius: 4px;
+        z-index: 50;
+      }
+      #progress-fill {
+        width: 100%;
+        height: 100%;
+        background: #cc0000;
+        border-radius: 4px;
+        transform-origin: left center;
+      }
+      #scene-ticks {
+        position: absolute;
+        left: 90px;
+        right: 90px;
+        bottom: 48px;
+        display: flex;
+        justify-content: space-between;
+        z-index: 50;
+        font-size: 24px;
+        font-weight: 700;
+        color: #4d4d4d;
+        background: #ffffff;
+        border-radius: 999px;
+        padding: 10px 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-za1h" id="buildit-root" data-composition-id="buildit-vertical" data-width="1080" data-height="1920" data-start="0" data-duration="15">
+      <!-- S1 0.0–2.6 hook -->
+      <div data-hf-id="hf-kiip" id="s1" class="scene paper clip" data-start="0" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-bbya" id="s1-inner" class="scene-inner">
+          <div data-hf-id="hf-1nsa" id="s1-eyebrow" class="eyebrow">BUILDIT 내신 WIKI</div>
+          <div data-hf-id="hf-1k4b" id="s1-l1" class="h-line">다음 시험도</div>
+          <div data-hf-id="hf-ulug" id="s1-l2" class="h-line"><span data-hf-id="hf-p36z" class="accent">처음부터</span></div>
+          <div data-hf-id="hf-6md2" id="s1-l3" class="h-line">준비하시나요?</div>
+          <div data-hf-id="hf-tv16" id="s1-sub" class="sub">기출·학습지·노하우가 흩어져 있다면</div>
+        </div>
+      </div>
+
+      <!-- S2 2.6–5.6 converge to wiki (navy) -->
+      <div data-hf-id="hf-ymmv" id="s2" class="scene navy clip" data-start="2.6" data-duration="3" data-track-index="1">
+        <div data-hf-id="hf-gs0d" id="s2-inner" class="scene-inner">
+          <div data-hf-id="hf-rvmz" id="s2-eyebrow" class="eyebrow">SCATTERED → ONE</div>
+          <div data-hf-id="hf-kz03" id="s2-title">
+            <span data-hf-id="hf-hsb3" class="h-line">세 조각이</span>
+            <span data-hf-id="hf-o649" class="h-line">한곳에 모인다</span>
+          </div>
+          <div data-hf-id="hf-pmtr" id="s2-stage">
+            <div data-hf-id="hf-w1wp" id="chip-1" class="chip" data-layout-allow-overlap="">학교 기출</div>
+            <div data-hf-id="hf-40wi" id="chip-2" class="chip" data-layout-allow-overlap="">학교 학습지</div>
+            <div data-hf-id="hf-my8w" id="chip-3" class="chip" data-layout-allow-overlap="">강사의 경험</div>
+            <div data-hf-id="hf-6gzs" id="wiki-card">
+              <span data-hf-id="hf-g2r0" class="wiki-name">BuildIt 내신 Wiki</span>
+              <span data-hf-id="hf-ggrq" class="wiki-tag">다음 시험의 베이스캠프</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S3 5.6–8.6 AI reads & analyzes -->
+      <div data-hf-id="hf-bxwd" id="s3" class="scene paper clip" data-start="5.6" data-duration="3" data-track-index="1">
+        <div data-hf-id="hf-tktc" id="s3-inner" class="scene-inner">
+          <div data-hf-id="hf-78o7" id="s3-eyebrow" class="eyebrow">AI RE-READS EVERYTHING</div>
+          <div data-hf-id="hf-e9nk" id="s3-l1" class="h-line">AI가 다시 읽고,</div>
+          <div data-hf-id="hf-fy8j" id="s3-l2" class="h-line">분석하고,</div>
+          <div data-hf-id="hf-y47f" id="s3-l3" class="h-line"><span data-hf-id="hf-xk4h" class="accent">다음 시험</span>에 활용합니다</div>
+          <div data-hf-id="hf-qkwl" id="s3-rule" class="rule"></div>
+        </div>
+      </div>
+
+      <!-- S4 8.6–12.0 mock exams (navy) -->
+      <div data-hf-id="hf-9o8d" id="s4" class="scene navy clip" data-start="8.6" data-duration="3.4" data-track-index="1">
+        <div data-hf-id="hf-qvcj" id="s4-inner" class="scene-inner">
+          <div data-hf-id="hf-31au" id="s4-eyebrow" class="eyebrow">REAL-EXAM DRILLS</div>
+          <div data-hf-id="hf-jxod" id="s4-numbers">
+            <span data-hf-id="hf-52oy" class="big">40문항</span>
+            <span data-hf-id="hf-qjdt" class="big accent">70문항</span>
+          </div>
+          <div data-hf-id="hf-4cbp" id="s4-label">
+            <span data-hf-id="hf-prsu" class="h-line">실전 모의고사</span>
+          </div>
+          <div data-hf-id="hf-cemv" id="s4-sub" class="sub" style="text-align: center;">시험 직전, 실전처럼 풀어봅니다</div>
+        </div>
+      </div>
+
+      <!-- S5 12.0–15.0 closing -->
+      <div data-hf-id="hf-5awd" id="s5" class="scene paper clip" data-start="12" data-duration="3" data-track-index="1">
+        <div data-hf-id="hf-jl7y" id="s5-inner" class="scene-inner">
+          <div data-hf-id="hf-dv8o" id="s5-eyebrow" class="eyebrow">COMPOUNDING KNOWLEDGE</div>
+          <div data-hf-id="hf-nfm6" id="s5-l1" class="h-line">한 번 만든 지식이</div>
+          <div data-hf-id="hf-4n4w" id="s5-l2" class="h-line"><span data-hf-id="hf-1jxx" class="accent">다음 시험</span>의 시작점이 됩니다</div>
+          <div data-hf-id="hf-r8de" id="s5-logo">BUILD IT</div>
+          <div data-hf-id="hf-mvwv" id="s5-rule" class="rule"></div>
+        </div>
+      </div>
+
+      <!-- explicit timing readout -->
+      <div data-hf-id="hf-0n0t" id="progress-rail"><div data-hf-id="hf-c4bu" id="progress-fill"></div></div>
+      <div data-hf-id="hf-p3c6" id="scene-ticks">
+        <span data-hf-id="hf-fg9c">0s</span><span data-hf-id="hf-iz9q">2.6s</span><span data-hf-id="hf-vobt">5.6s</span><span data-hf-id="hf-b9bs">8.6s</span><span data-hf-id="hf-iqxb">12s</span><span data-hf-id="hf-luis">15s</span>
+      </div>
+
+      <script>
+        // Single paused seekable root timeline. All positions are explicit
+        // seconds on the 15s master clock; tweens target inner wrappers only
+        // (framework owns .clip visibility). No clocks, no random, no repeat:-1.
+        var tl = gsap.timeline({ paused: true });
+
+        // Master progress: 0 -> 1 across the full 15s.
+        tl.fromTo("#progress-fill", { scaleX: 0 }, { scaleX: 1, duration: 15, ease: "none" }, 0);
+
+        // ---- S1 (0.0–2.6): hook rises, then lifts away ----
+        tl.fromTo("#s1-eyebrow", { y: 36, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 0.15);
+        tl.fromTo("#s1-l1", { y: 70, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 0.3);
+        tl.fromTo("#s1-l2", { y: 70, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 0.48);
+        tl.fromTo("#s1-l3", { y: 70, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 0.66);
+        tl.fromTo("#s1-sub", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 1.0);
+        tl.to("#s1-inner", { y: -60, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 2.25);
+
+        // ---- S2 (2.6–5.6): chips fly in spread, converge, wiki card lands ----
+        tl.fromTo("#s2-eyebrow", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.35, ease: "expo.out" }, 2.7);
+        tl.fromTo("#s2-title", { y: 50, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 2.8);
+        tl.fromTo("#chip-1", { x: -180, y: -320, autoAlpha: 0 }, { x: 0, y: -190, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 3.0);
+        tl.fromTo("#chip-2", { x: 180, y: 320, autoAlpha: 0 }, { x: 0, y: 190, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 3.12);
+        tl.fromTo("#chip-3", { x: 0, y: 0, autoAlpha: 0, scale: 0.8 }, { x: 0, y: 0, autoAlpha: 1, scale: 1, duration: 0.45, ease: "expo.out" }, 3.24);
+        // gather: outer chips draw toward the stack, then hand off staggered to the wiki card
+        tl.to("#chip-1", { y: -150, duration: 0.4, ease: "power3.inOut" }, 3.8);
+        tl.to("#chip-2", { y: 150, duration: 0.4, ease: "power3.inOut" }, 3.8);
+        // chips hand off to the wiki card (staggered, never fully stacked)
+        tl.to("#chip-1", { autoAlpha: 0, y: -90, duration: 0.25, ease: "power2.in" }, 4.2);
+        tl.to("#chip-2", { autoAlpha: 0, y: 90, duration: 0.25, ease: "power2.in" }, 4.25);
+        tl.to("#chip-3", { autoAlpha: 0, scale: 0.85, duration: 0.25, ease: "power2.in" }, 4.3);
+        tl.fromTo("#wiki-card", { scale: 0.85, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.5, ease: "back.out(1.4)" }, 4.45);
+        tl.to("#s2-inner", { y: -60, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 5.25);
+        tl.set("#s2-inner", { autoAlpha: 0 }, 5.6);
+
+        // ---- S3 (5.6–8.6): three reading beats + rule ----
+        tl.fromTo("#s3-eyebrow", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.35, ease: "expo.out" }, 5.7);
+        tl.fromTo("#s3-l1", { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 5.85);
+        tl.fromTo("#s3-l2", { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 6.15);
+        tl.fromTo("#s3-l3", { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 6.45);
+        tl.fromTo("#s3-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "expo.out" }, 6.85);
+        tl.to("#s3-inner", { y: -60, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 8.25);
+        tl.set("#s3-inner", { autoAlpha: 0 }, 8.6);
+
+        // ---- S4 (8.6–12.0): exam numbers hit, hold, exit ----
+        tl.fromTo("#s4-eyebrow", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.35, ease: "expo.out" }, 8.7);
+        tl.fromTo("#s4-numbers", { scale: 0.9, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.5, ease: "expo.out" }, 8.85);
+        tl.fromTo("#s4-label", { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 9.15);
+        tl.fromTo("#s4-sub", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: "expo.out" }, 9.5);
+        // single restrained emphasis pulse (not a loop)
+        tl.to("#s4-numbers", { scale: 1.045, duration: 0.22, ease: "power2.out" }, 10.6);
+        tl.to("#s4-numbers", { scale: 1, duration: 0.28, ease: "power2.inOut" }, 10.82);
+        tl.to("#s4-inner", { y: -60, autoAlpha: 0, duration: 0.3, ease: "power2.in" }, 11.65);
+        tl.set("#s4-inner", { autoAlpha: 0 }, 12.0);
+
+        // ---- S5 (12.0–15.0): closing lockup, holds to the final frame ----
+        tl.fromTo("#s5-eyebrow", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.35, ease: "expo.out" }, 12.1);
+        tl.fromTo("#s5-l1", { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 12.25);
+        tl.fromTo("#s5-l2", { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "expo.out" }, 12.55);
+        tl.fromTo("#s5-logo", { y: 40, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.5, ease: "expo.out" }, 13.0);
+        tl.fromTo("#s5-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "expo.out" }, 13.3);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["buildit-vertical"] = tl;
+      </script>
+    </div>
+  </body>
+</html>
