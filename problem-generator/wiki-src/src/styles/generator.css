@@ -187,3 +187,29 @@
 .weekly-editor-frame [contenteditable="true"]:focus{outline:2px solid #2563eb;background:#fff}
 @media(max-width:720px){.weekly-editor-header{padding:8px 10px}.weekly-editor-actions button{flex:1 1 auto;white-space:normal;padding:7px 9px}}
 @media(max-width:375px){.weekly-editor-actions{display:grid;grid-template-columns:1fr 1fr}.weekly-editor-actions .btn-save{grid-column:1/-1}.weekly-editor-hint{display:none}}
+
+/* Weekly 관리 버튼 공통 variant 정리.
+   원인: `.artifact-actions button`(배경 #fff)이 `.primary-action`(글자 #fff)보다
+   선택자가 강해 활성 교체 버튼이 흰 글자+흰 배경이 됐다. 아래 규칙을 파일 끝에 둬
+   동일 요소에서는 variant가 항상 이기도록 한다. 임시 인라인 스타일은 쓰지 않는다. */
+.artifact-actions button.primary-action,.approval-actions button.primary-action{background:#17211b;color:#fff;border:1px solid #17211b;font-weight:800;opacity:1}
+.artifact-actions button.primary-action:hover,.approval-actions button.primary-action:hover{background:#244c37;border-color:#244c37}
+.artifact-actions button.primary-action:focus-visible,.approval-actions button.primary-action:focus-visible{outline:3px solid rgba(37,99,235,.45);outline-offset:2px}
+.artifact-actions button.primary-action:disabled,.approval-actions button.primary-action:disabled{background:#d9dfdb;color:#536159;border-color:#cbd2cd;opacity:1;cursor:not-allowed}
+.artifact-actions button.secondary-button,.approval-actions button.secondary-button{background:#fff;color:#263c30;border:1px solid #9eada3;font-weight:700;opacity:1}
+.artifact-actions button.secondary-button:hover,.approval-actions button.secondary-button:hover{background:#f1f5f2;border-color:#5b846c}
+.artifact-actions button.secondary-button:focus-visible,.approval-actions button.secondary-button:focus-visible{outline:3px solid rgba(37,99,235,.35);outline-offset:2px}
+.artifact-actions button.danger-button,.approval-actions button.danger-button,
+.tool-shell .artifact-actions button.danger-button,.tool-shell .approval-actions button.danger-button{background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;font-weight:800;opacity:1}
+.artifact-actions button.danger-button:hover,.approval-actions button.danger-button:hover{background:#fee2e2;border-color:#ef4444}
+.artifact-actions button.danger-button:focus-visible,.approval-actions button.danger-button:focus-visible{outline:3px solid rgba(185,28,28,.35);outline-offset:2px}
+
+/* 자료 교체 패널: 파일 선택·파일명·단일 실행 버튼을 한 카드에 묶는다. */
+.replace-panel{display:grid;gap:8px;border:1px dashed #93b4a1;border-radius:12px;background:#f8fbf9;padding:12px}
+.replace-hint{margin:0;color:#40594b;font-size:12px;line-height:1.6}
+small.replace-hint{color:#536159}
+.replace-file-row{display:grid;gap:4px;min-width:0;font-size:13px;font-weight:700;color:#263c30}
+.replace-file-row input[type=file]{max-width:100%;min-width:0;font-weight:400}
+.replace-file-name{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:400;color:#536159}
+.replace-submit{min-height:44px;font-size:14px}
+@media(max-width:375px){.replace-panel{padding:10px}.replace-file-name{white-space:normal;overflow-wrap:anywhere}.replace-submit{width:100%;white-space:normal}}

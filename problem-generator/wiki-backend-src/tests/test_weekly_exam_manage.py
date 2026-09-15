@@ -240,6 +240,68 @@ class WeeklyExamManageTest(unittest.TestCase):
         self.assertEqual('70', other['set_type'])
         self.assertEqual(70, other['question_count'])
 
+    def test_partial_replace_md_only_keeps_html(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        before = self.hashes(saved['id'])
+        weekly_exam.replace_weekly_exam_artifacts(
+            saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                productionVerification='# 근거\n- v9'))
+        after = self.hashes(saved['id'])
+        self.assertEqual(before[0], after[0])
+        self.assertEqual(before[1], after[1])
+        self.assertEqual(_sha('# 근거\n- v9'), after[2])
+        expl = weekly_exam.view_artifact(saved['id'], 'answer-explanation').body.decode()
+        self.assertIn('1. ①', expl)
+
+    def test_partial_replace_two_combo_keeps_third(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        before = self.hashes(saved['id'])
+        weekly_exam.replace_weekly_exam_artifacts(
+            saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                studentPaper='<h1>문제지</h1><p>Q1 v2</p>',
+                answerExplanation='<h1>해설</h1><p>1. ②</p>'))
+        after = self.hashes(saved['id'])
+        self.assertEqual(_sha('<h1>문제지</h1><p>Q1 v2</p>'), after[0])
+        self.assertEqual(_sha('<h1>해설</h1><p>1. ②</p>'), after[1])
+        self.assertEqual(before[2], after[2])
+
+    def test_missing_fields_are_not_nulled(self):
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+        weekly_exam.replace_weekly_exam_artifacts(
+            saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                studentPaper='<h1>문제지</h1><p>Q1 v2</p>'))
+        with main.get_db() as conn:
+            row = conn.execute(
+                'SELECT student_paper_name,student_paper_html,answer_explanation_name,'
+                'answer_explanation_html,verification_name,verification_md '
+                'FROM weekly_exam_sets WHERE id=?', (saved['id'],)).fetchone()
+        self.assertTrue(row['student_paper_name'])
+        self.assertIn('Q1 v2', row['student_paper_html'])
+        self.assertTrue(row['answer_explanation_name'])
+        self.assertIn('1. ①', row['answer_explanation_html'])
+        self.assertTrue(row['verification_name'])
+        self.assertIn('v1', row['verification_md'])
+        for key in ('student_paper_html', 'answer_explanation_html', 'verification_md'):
+            self.assertIsNotNone(row[key])
+
+    def test_replace_does_not_touch_other_sets(self):
+        first = weekly_exam.register_draft(self.payload(round=4), actor='mcp-agent')
+        second = weekly_exam.register_draft(self.payload(round=5), actor='mcp-agent')
+        other_before = self.hashes(second['id'])
+        with main.get_db() as conn:
+            other_row_before = dict(conn.execute(
+                'SELECT round,set_type,status,version,school,grade FROM weekly_exam_sets WHERE id=?',
+                (second['id'],)).fetchone())
+        weekly_exam.replace_weekly_exam_artifacts(
+            first['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                studentPaper='<h1>문제지</h1><p>Q1 v2</p>'))
+        self.assertEqual(other_before, self.hashes(second['id']))
+        with main.get_db() as conn:
+            other_row_after = dict(conn.execute(
+                'SELECT round,set_type,status,version,school,grade FROM weekly_exam_sets WHERE id=?',
+                (second['id'],)).fetchone())
+        self.assertEqual(other_row_before, other_row_after)
+
     def test_deleted_key_can_be_registered_again_without_duplicate(self):
         saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
         weekly_exam.delete_weekly_exam(saved['id'])
