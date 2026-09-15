@@ -65,3 +65,17 @@
 - 과사용 6종은 발문 구조를 반드시 교체/TRANSFORM·INTEGRATED·ADVANCED 중 1개 이상.
 - 동일 Source라도 판단 구조를 바꾼다(paraphrase 수준 변경 금지).
 - REPEAT-RISK 판정: 사고과정 동일이면 REPEAT. 1~3회는 Wiki 열람 후 추가 대조(본 MAP에 추기).
+
+## 부록 A. 1~3회 교차검증 (Q1~Q10 대상, 2026-09-15)
+- 근거: 2회 출제편집 MD(70Q 구조·핵심어휘 13종·함정 목록), 3회 Q1~Q40 매트릭스(원천·유형·판단점·1·2회 중복란), 1회 검수 메모(Q8/Q9/Q16/Q19/Q24/Q37/Q39).
+- 전지(전문) 미열람이므로 ROUNDS 1-3 FULL REVIEW = PARTIAL. Q11 착수 전 또는 FINAL 전 Wiki 운영자 화면 열람 조건.
+- Q1: 3회 Q27(표현-뜻 오짝)·2회 Communication 암기형과 축 다름(화용 paraphrase 복수선택). 통과.
+- Q2: 3회 Q1(ballet)·Q2(dirty)와 단어 겹침 금지. 제외: ballet, dirty, station + 2회 13종(artwork, canvas, chew, clue, dot, figure, leafless, modern, opinion, pleasure, represent, spray, station). 제작 시 미사용어 선정.
+- Q3: 3회 Q21~25·4회 Q13~17과 대화 원천·판단구조 다름(2조건 결합). 통과.
+- Q4: 3회 Q30(목적어중복)·2회 중복목적어 함정과 축 다름(to부정사 목적보어). 통과.
+- Q5: 2회 Q57~70·3회 Q1~8과 단어 겹침 금지(Q2 제외목록과 동일). 제작 시 미사용어 선정.
+- Q6: 구동사 어휘는 제작 시 2·3회 사용어와 대조 후 선정.
+- Q7: 1회 Q16(Wilson) 회피 → STIK 소재 사용. 3회 Q14(hard time)와 축 다름. 통과.
+- Q8: 1회 Q9·3회 Q7/16/19와 구조 다름(개수세기 vs 집합). 통과.
+- Q9: 2회 수동/능동 함정 타입과 문장 다름. 제작 시 문장 선정 후 2회 함정 सूची와 대조.
+- Q10: WATCH. 3회 Q28~33(격·생략·결합)과 오류점 분리 — 수일치 중심 2오류로 고정. 제작 시 3회 오류점과 대조 기록.
