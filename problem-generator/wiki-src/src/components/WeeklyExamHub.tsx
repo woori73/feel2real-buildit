@@ -26,9 +26,16 @@ const SET_POLICY:Record<string,SetType[]>={
 }
 const setTypesFor=(context:ExamContext)=>SET_POLICY[`${context.school}|${context.grade}`]||['40']
 const query=(context:ExamContext)=>new URLSearchParams({...context,year:String(context.year)}).toString()
-const readFile=(event:ChangeEvent<HTMLInputElement>,setter:(value:string)=>void)=>{
+const readFile=(event:ChangeEvent<HTMLInputElement>,setter:(value:string)=>void,setterName?:(value:string)=>void)=>{
   const file=event.target.files?.[0];if(!file)return
+  if(setterName)setterName(file.name)
   const reader=new FileReader();reader.onload=()=>setter(String(reader.result||''));reader.readAsText(file)
+}
+const REPLACE_LABELS={paper:'문제지',expl:'정답·해설',md:'출제근거'} as const
+const joinReplaced=(labels:string[])=>{
+  if(labels.length===1)return `${labels[0]}를 교체했습니다.`
+  if(labels.length===2)return `${labels[0]}와 ${labels[1]}를 교체했습니다.`
+  return `${labels[0]}, ${labels[1]}와 ${labels[2]}를 교체했습니다.`
 }
 const statusLabel=(status:WeeklyStatus)=>status==='FINAL'?'제작 완료':'제작·수정 중'
 
@@ -39,6 +46,9 @@ export default function WeeklyExamHub(props:Props){
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
   const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null),[metadataId,setMetadataId]=useState<number|null>(null),[metadataRound,setMetadataRound]=useState(1),[metadataSetType,setMetadataSetType]=useState<SetType>(setTypes[0])
   const [replacePaper,setReplacePaper]=useState(''),[replaceExpl,setReplaceExpl]=useState(''),[replaceMd,setReplaceMd]=useState('')
+  const [replacePaperName,setReplacePaperName]=useState(''),[replaceExplName,setReplaceExplName]=useState(''),[replaceMdName,setReplaceMdName]=useState('')
+  const [replacing,setReplacing]=useState(false)
+  const resetReplace=()=>{setReplacePaper('');setReplaceExpl('');setReplaceMd('');setReplacePaperName('');setReplaceExplName('');setReplaceMdName('');setReplacing(false)}
   const [editing,setEditing]=useState<{id:number;kind:WeeklyEditorArtifact}|null>(null)
   const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
@@ -81,17 +91,26 @@ export default function WeeklyExamHub(props:Props){
     await load()
     return true
   }
-  const replaceArtifact=async(id:number,kind:'paper'|'expl'|'md')=>{
+  const replaceSelected=async(id:number)=>{
+    if(replacing)return
     const body:Record<string,string>={}
-    if(kind==='paper'&&replacePaper)body.studentPaper=replacePaper
-    if(kind==='expl'&&replaceExpl)body.answerExplanation=replaceExpl
-    if(kind==='md'&&replaceMd)body.productionVerification=replaceMd
-    if(Object.keys(body).length===0)return
-    const response=await api(`weekly-exams/${id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    const data=await response.json().catch(()=>({}))
-    if(!response.ok){setNotice(data.detail||'자료 교체에 실패했습니다.');return}
-    setReplacePaper('');setReplaceExpl('');setReplaceMd('');setReplaceId(null)
-    setNotice('선택한 자료를 교체했습니다. 회차·세트·상태는 그대로 유지됩니다.');await load()
+    const labels:string[]=[]
+    // 선택한 파일만 전송한다. 선택하지 않은 필드는 키 자체를 추가하지 않아
+    // 서버가 기존 경로·파일명·URL·메타데이터를 그대로 유지한다.
+    if(replacePaper){body.studentPaper=replacePaper;if(replacePaperName)body.studentPaperName=replacePaperName;labels.push(REPLACE_LABELS.paper)}
+    if(replaceExpl){body.answerExplanation=replaceExpl;if(replaceExplName)body.answerExplanationName=replaceExplName;labels.push(REPLACE_LABELS.expl)}
+    if(replaceMd){body.productionVerification=replaceMd;if(replaceMdName)body.productionVerificationName=replaceMdName;labels.push(REPLACE_LABELS.md)}
+    if(Object.keys(body).length===0||labels.length===0)return
+    setReplacing(true)
+    try{
+      const response=await api(`weekly-exams/${id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      const data=await response.json().catch(()=>({}))
+      if(!response.ok){setNotice(`교체에 실패했습니다: ${data.detail||'자료 교체에 실패했습니다.'}`);return}
+      resetReplace();setReplaceId(null)
+      setNotice(`${joinReplaced(labels)} 회차·세트·상태는 그대로 유지됩니다.`);await load()
+    }finally{
+      setReplacing(false)
+    }
   }
   const updateMetadata=async(id:number)=>{
     const response=await api(`weekly-exams/${id}/metadata`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({round:metadataRound,setType:metadataSetType})})
@@ -147,10 +166,10 @@ export default function WeeklyExamHub(props:Props){
           {canManage&&<div className="approval-actions">
             {item.status==='DRAFT'
               ? <><button onClick={()=>void transition(item.id,'finalize')}>FINAL 확정</button>
-                <button onClick={()=>{setReplaceId(replaceId===item.id?null:item.id);setReplacePaper('');setReplaceExpl('');setReplaceMd('')}}>자료 교체</button>
+                <button onClick={()=>{if(replaceId===item.id){setReplaceId(null);resetReplace()}else{setReplaceId(item.id);resetReplace()}}}>자료 교체</button>
                 {confirmDeleteId===item.id
-                  ? <><span>정말 삭제할까요?</span><button onClick={()=>void removeDraft(item.id)}>삭제 확인</button><button onClick={()=>setConfirmDeleteId(null)}>취소</button></>
-                  : <button onClick={()=>setConfirmDeleteId(item.id)}>삭제</button>}</>
+                  ? <><span>정말 삭제할까요?</span><button type="button" className="danger-button" onClick={()=>void removeDraft(item.id)}>삭제 확인</button><button type="button" className="secondary-button" onClick={()=>setConfirmDeleteId(null)}>취소</button></>
+                  : <button type="button" className="danger-button" onClick={()=>setConfirmDeleteId(item.id)}>삭제</button>}</>
               : <button onClick={()=>void transition(item.id,'reopen')}>DRAFT로 다시 열기</button>}
             {canAdmin&&<button onClick={()=>{setMetadataId(metadataId===item.id?null:item.id);setMetadataRound(item.round);setMetadataSetType(item.set_type)}}>세트 정보 수정</button>}
           </div>}
@@ -162,13 +181,13 @@ export default function WeeklyExamHub(props:Props){
             <button onClick={()=>setMetadataId(null)}>취소</button>
           </div>}
           {replaceId===item.id&&item.status==='DRAFT'&&<div className="artifact-actions replace-panel">
-            <label>문제지 교체<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplacePaper)}/></label>
-            <button className="primary-action" disabled={!replacePaper} onClick={()=>void replaceArtifact(item.id,'paper')}>문제지 교체 저장</button>
-            <label>정답해설 교체<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setReplaceExpl)}/></label>
-            <button className="primary-action" disabled={!replaceExpl} onClick={()=>void replaceArtifact(item.id,'expl')}>정답해설 교체 저장</button>
-            <label>출제근거 교체<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setReplaceMd)}/></label>
-            <button className="primary-action" disabled={!replaceMd} onClick={()=>void replaceArtifact(item.id,'md')}>출제근거 교체 저장</button>
-            <button onClick={()=>setReplaceId(null)}>닫기</button>
+            <p className="replace-hint">교체할 파일만 선택하세요. 선택하지 않은 기존 자료는 그대로 유지됩니다.</p>
+            <label className="replace-file-row">문제지 교체<input type="file" accept=".html,.htm,text/html" aria-label="문제지 교체 파일 선택" onChange={e=>readFile(e,setReplacePaper,setReplacePaperName)}/><span className="replace-file-name">{replacePaperName?`선택됨: ${replacePaperName}`:'미선택 · 기존 문제지 유지'}</span></label>
+            <label className="replace-file-row">정답·해설 교체<input type="file" accept=".html,.htm,text/html" aria-label="정답·해설 교체 파일 선택" onChange={e=>readFile(e,setReplaceExpl,setReplaceExplName)}/><span className="replace-file-name">{replaceExplName?`선택됨: ${replaceExplName}`:'미선택 · 기존 정답·해설 유지'}</span></label>
+            <label className="replace-file-row">출제근거 교체<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" aria-label="출제근거 교체 파일 선택" onChange={e=>readFile(e,setReplaceMd,setReplaceMdName)}/><span className="replace-file-name">{replaceMdName?`선택됨: ${replaceMdName}`:'미선택 · 기존 출제근거 유지'}</span></label>
+            {(!replacePaper&&!replaceExpl&&!replaceMd)&&<small className="replace-hint">파일을 하나 이상 선택하세요.</small>}
+            <button type="button" className="primary-action replace-submit" disabled={(!replacePaper&&!replaceExpl&&!replaceMd)||replacing} onClick={()=>void replaceSelected(item.id)}>{replacing?'교체 중…':'선택한 자료 교체'}</button>
+            <button type="button" className="secondary-button" onClick={()=>{setReplaceId(null);resetReplace()}}>닫기</button>
           </div>}
         </article>)}</div>}
         <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>제작물 3종 DRAFT 등록</button>
