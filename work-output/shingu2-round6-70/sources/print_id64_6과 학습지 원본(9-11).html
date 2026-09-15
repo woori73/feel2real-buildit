@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>신구중 2학년 6과 학습지 원본 FINAL · WIKI EDITOR · 사진대조수정</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e9edf0;color:#17212b;font-family:"Malgun Gothic",Arial,sans-serif}
+.toolbar{position:sticky;top:0;z-index:50;background:#17324d;color:white;padding:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.toolbar button,.toolbar select,.toolbar input{height:36px;border:0;border-radius:5px;padding:0 10px}.toolbar button{font-weight:700;cursor:pointer}
+.toolbar .sep{width:1px;height:26px;background:#ffffff55;margin:0 3px}#status{font-size:12px;margin-left:4px}
+.sheet{width:min(210mm,calc(100% - 24px));min-height:277mm;margin:14px auto;padding:13mm;background:white;box-shadow:0 2px 12px #0002}
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+h1{text-align:center}h2{border-bottom:3px solid #2e6f87;padding-bottom:6px}.rule{padding:10px 12px;background:#f1f7f9;border-left:4px solid #2e6f87}
+.question,.dialogue{margin:10px 0;line-height:1.8}.paragraph{font-family:Georgia,serif;font-size:16px;line-height:2;text-align:justify}
+.blank{display:inline-block;min-width:125px;border-bottom:1.5px solid #17212b;min-height:1.2em}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #52606c;padding:6px}th{background:#dceaf0}
+.page-edit:focus{outline:3px solid #70b7d1}td:focus,.blank:focus{outline:2px solid #f0a000}
+@media print{body{background:white}.toolbar{display:none}.sheet{margin:0;box-shadow:none;width:auto;page-break-after:always}}
+
+
+.header-a{font-size:34px;font-weight:800;margin-bottom:12px}
+.lesson-title{font-size:20px;font-weight:800;margin:0 0 4px}
+.student-line{font-size:13px;margin:8px 0 16px}
+.band{background:#c9cdd0;border-left:9px solid #333;padding:7px 10px;font-weight:800;font-size:17px;margin:14px 0 8px}
+.vocab-original th{background:#2f3438;color:#fff;text-align:center}
+.vocab-original td:nth-child(1){width:9%;text-align:center}
+.vocab-original td:nth-child(2){width:43%}
+.vocab-original td:nth-child(3){width:48%}
+.reading-item{margin:12px 0 15px}
+.reading-line{font-family:Arial,sans-serif;font-size:16px;line-height:1.8}
+.qnum{display:inline-block;width:24px;font-weight:700}
+.print-note{font-size:12.5px;font-style:italic;margin:2px 0 2px 24px;line-height:1.55}
+.translation{font-size:14px;margin:3px 0 0 24px;line-height:1.6}
+.comp-row{font-size:14px;line-height:1.65;margin:9px 0}
+.answer{margin-left:30px;min-height:25px}
+.longblank{display:block;width:92%;min-width:0;margin-top:5px}
+.tf{font-weight:700;margin-left:10px}
+.sheet{padding:11mm 13mm}
+@media print{.sheet{min-height:297mm}}
+</style>
+<style>
+.wordlist-head{margin-bottom:5px;font-size:14px}
+.wordlist-head th{background:#fff;color:#111;border:1px solid #52606c;padding:6px}
+.wordlist-table{font-size:12px;table-layout:fixed}
+.wordlist-table th{background:#c9cdd0;color:#111;text-align:center}
+.wordlist-table th:nth-child(1){width:13%}.wordlist-table th:nth-child(2){width:16%}
+.wordlist-table th:nth-child(3){width:34%}.wordlist-table th:nth-child(4){width:37%}
+.wordlist-table td{vertical-align:top;line-height:1.45;padding:5px}
+.word-answer{display:inline-block;min-width:78px;width:92%}
+.example-cell .blank{min-width:85px}
+.example-ko{font-size:10.5px;font-weight:700;margin-top:3px;line-height:1.35}
+.meaning-cell,.definition-cell{font-family:Arial,"Malgun Gothic",sans-serif}
+.wordlist-sheet{padding:10mm}
+</style>
+<style>
+.dictation-sheet{padding:12mm 15mm;font-family:Arial,"Malgun Gothic",sans-serif}
+.dict-top{display:grid;grid-template-columns:1.6fr .55fr 1fr;gap:14px;align-items:center;
+border-top:38px solid #9acb79;padding-top:8px;margin-bottom:10px}
+.dict-title{font-size:26px;font-weight:800;margin-top:-42px;padding-left:8px}
+.dict-grade{font-size:18px;font-weight:800;margin-top:16px}
+.dict-badge{background:#4e9b69;color:#ffe48a;border-radius:30px;padding:12px 20px;text-align:center;
+font-size:22px;font-weight:800;margin-top:-48px}
+.dict-lesson{text-align:center;font-size:18px;margin-top:-40px}
+.dict-lesson span{font-size:14px;line-height:2.2}
+.dict-section{font-size:15px;margin:9px 0 5px}
+.dict-section span{font-size:12px}
+.dict-dialog{display:grid;grid-template-columns:24px 1fr;gap:3px;margin:5px 0 10px}
+.dict-num{font-weight:700;padding-top:2px}
+.dict-line{font-size:13px;line-height:1.72;margin:0}
+.dict-blank{min-width:82px;height:1.15em;vertical-align:baseline}
+.bsec{margin-top:17px}
+.dict-b-dialog{margin-left:12px}
+</style>
+<style>
+.grammar-sheet{padding:11mm 13mm;font-family:Arial,"Malgun Gothic",sans-serif;font-size:13px;line-height:1.55}
+.grammar-head{margin-bottom:12px}.grammar-head th{background:#fff;color:#111;border:1px solid #555;padding:5px;font-size:14px}
+.grammar-box{border:1px solid #777;padding:10px;margin-top:10px}.grammar-box h3{margin:0 0 7px}
+.grammar-examples ol{margin-top:3px;margin-bottom:8px}.rel-table{margin:18px 0 12px}.rel-table th{background:#eee;color:#111}
+.rel-practice p{font-size:15px;margin:14px 0}.gram-blank{min-width:90px}
+.exercise-block{margin-bottom:18px}.exercise-block h3{font-size:14px;margin-bottom:7px}.exercise-block li{margin:5px 0}
+.arrange{margin:4px 0 8px 12px}.grammarplus-top{display:flex;justify-content:space-between;align-items:center;background:#a8d1e5;border-radius:28px;padding:10px 28px}
+.gp-title{font-size:28px;font-weight:800}.gp-lesson{font-size:20px;font-weight:800}.gp-sub{display:inline-block;background:#f1c36f;padding:10px 25px;margin-top:-2px}
+.used-sheet p{margin:7px 0}.exercise-title{display:flex;justify-content:space-between;border:1px solid #555;padding:5px 10px;font-size:15px;margin-bottom:0}
+.exercise-title b{font-size:28px}.two-col{display:grid;grid-template-columns:1fr 1fr;border:1px solid #555}.two-col>div{padding:10px;border-right:1px solid #777}.two-col>div:last-child{border-right:0}
+.exq{margin:8px 0 18px}.boxed{border:1px solid #888;padding:7px;margin:6px 0}.circled{padding-left:22px}.circled li{margin:3px 0}
+.exercise-b-sheet{font-size:12px}
+</style>
+<style>
+.handwrite{color:#1769aa!important;font-weight:700;font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif;
+  font-size:.96em;letter-spacing:.1px}
+.handwrite.red{color:#d32f2f!important}
+.handwrite.green{color:#188038!important}
+.hand-note{display:inline-block;color:#1769aa;font-weight:700;font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif;
+  margin-left:5px;font-size:.9em}
+.blank.hand-filled{color:#1769aa;font-weight:700;border-bottom:1.5px solid #1769aa;text-align:center}
+td .hand-note{margin-left:7px}
+@media print{.handwrite,.hand-note,.blank.hand-filled{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style><style>
+.ai-filled{color:#d32f2f!important;font-weight:800;font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif}
+.ai-badge{display:inline-block;margin-left:4px;color:#d32f2f!important;font-size:.72em;font-weight:800;
+border:1px solid #d32f2f;border-radius:8px;padding:0 4px;vertical-align:middle;white-space:nowrap}
+</style><style>
+.ai-answer{color:#d32f2f!important;font-weight:800;font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif}
+</style><style>
+.ai-answer,.rel-answer{color:#d32f2f!important;font-weight:800!important;
+font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif}
+</style>
+<style>
+.photo-note{color:#1769aa;font-weight:700;font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif}
+.lesson6-title{font-size:19px;font-weight:800;margin-bottom:5px}
+.source-label{font-size:11px;color:#56636f;margin:2px 0 8px}
+.wl6{font-size:11.5px;table-layout:fixed}.wl6 th{background:#c9cdd0;color:#111}
+.wl6 th:nth-child(1){width:13%}.wl6 th:nth-child(2){width:16%}.wl6 th:nth-child(3){width:34%}.wl6 th:nth-child(4){width:37%}
+.wl6 td{padding:5px;vertical-align:top;line-height:1.42}
+.read6{font-size:13.5px}.read6 td{vertical-align:top;line-height:1.55}.read6 th{background:#333;color:#fff}
+.g6 p{margin:7px 0}.g6 li{margin:7px 0}.blue{color:#1769aa;font-weight:700}
+@media print{.source-label{display:none}}
+</style>
+
+<style>
+.correction{color:#d32f2f!important;font-weight:800;font-family:"Malgun Gothic",Arial,sans-serif}
+.correct-answer{color:#d32f2f!important;font-weight:800}
+.answer-blue{color:#1769aa!important;font-weight:800;font-family:"Comic Sans MS","Segoe Print","Malgun Gothic",sans-serif}
+.legend6{font-size:12px;padding:7px 10px;margin:6px 0 10px;border:1px solid #b7c4ce;background:#f7fafc}
+</style>
+<style>
+.wiki-source{font-size:11px;color:#52606c;margin:4px 0 9px}
+.review-note{font-size:11px;border-left:4px solid #d32f2f;background:#fff5f5;padding:6px 8px;margin:6px 0}
+@media print{.wiki-source,.legend6{display:none!important}}
+</style>
+</head><body><div class="toolbar" contenteditable="false">
+<button data-cmd="undo">↶</button><button data-cmd="redo">↷</button><span class="sep"></span>
+<button data-cmd="bold"><b>B</b></button><button data-cmd="italic"><i>I</i></button><button data-cmd="underline"><u>U</u></button>
+<select id="fontSize"><option value="">글자크기</option><option value="2">작게</option><option value="3">보통</option><option value="4">크게</option><option value="5">매우 크게</option></select>
+<label>글자색 <input id="foreColor" type="color" value="#17212b"/></label><label>형광 <input id="hiliteColor" type="color" value="#fff59d"/></label>
+<span class="sep"></span><button id="addRow">행 추가</button><button id="delRow">행 삭제</button>
+<span class="sep"></span><button id="saveHtml">💾 HTML 저장</button><button id="saveJson">⬇ JSON 저장</button><button id="printBtn">인쇄/PDF</button><span id="status">편집 가능</span>
+</div>
+<div class="legend6" contenteditable="false">파란색 = 학생 필기·학생 답　/　빨간색 = 오답으로 판단되는 답의 교정 및 정답</div>
+<div class="wiki-source" contenteditable="false">WIKI source: 신구중2 · 6과 · 학교 학습지 사진 대조본 · 사진 원본 기준: 학생 필기·학생 답 제거 / 인쇄된 빈칸 유지</div>
+<section class="sheet page-edit wordlist-sheet" contenteditable="true" data-wiki-lesson="6" data-wiki-page="1">
+<div class="lesson6-title">English 2　 L6. The Greatest Love for All</div>
+<div class="student-line">(　)학년 (　)반 (　)번　 이름 ____________</div>
+<div class="band">Word List　 Grade 2 Lesson 6</div>
+<table class="editable-table wl6"><tr><th>어휘</th><th>뜻</th><th>영어 뜻풀이</th><th>예문</th></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. (신문·잡지의) 글, 기사</td><td>n. a piece of writing on a particular subject in a newspaper or magazine</td><td>I read an interesting <span class="blank" style="min-width:82px"></span> about space travel.<div class='example-ko'>나는 우주여행에 관한 흥미로운 기사를 하나 읽었다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 묻다</td><td>v. to put something into a hole in the ground and cover it</td><td>Tommy and I buried the time capsule under the tree.<div class='example-ko'>Tommy와 나는 나무 아래에 타임캡슐을 묻었다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 묘지</td><td>n. a place where people put dead bodies in the ground</td><td>There is an old <span class="blank" style="min-width:82px"></span> near my house.<div class='example-ko'>내 집 근처에 오래된 묘지가 있다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 계속하다</td><td>v. to keep doing something without stopping</td><td>They continued to play soccer in the rain.<div class='example-ko'>그들은 비가 오는 중에도 축구를 계속했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 카레</td><td>n. a South Asian dish of meat, vegetables, etc., cooked in a hot spicy sauce</td><td>I love eating <span class="blank" style="min-width:82px"></span> with rice.<div class='example-ko'>나는 밥과 함께 카레를 먹는 것을 정말 좋아한다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>a. 외국의</td><td>a. in or from a country that is not your own</td><td>I want to work in a <span class="blank" style="min-width:82px"></span> country in the future.<div class='example-ko'>나는 미래에 외국에서 일하고 싶다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 모이다</td><td>v. to come together in a group in one place</td><td>We will <span class="blank" style="min-width:82px"></span> at the park for running.<div class='example-ko'>우리는 달리기를 하러 공원에 모일 것이다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 정부</td><td>n. the group of people who officially control a country</td><td>The <span class="blank" style="min-width:82px"></span> decided to build a new hospital.<div class='example-ko'>정부는 새로운 병원을 짓기로 결정했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 숨다</td><td>v. to go somewhere where you hope you will not be seen or found</td><td>The children were hiding under the bed.<div class='example-ko'>그 아이들은 침대 아래에 숨어 있었다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>a. 역사적으로 중요한</td><td>a. important in history</td><td>Rome is famous for its <span class="blank" style="min-width:82px"></span> buildings.<div class='example-ko'>로마는 역사적인 건물들로 유명하다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 독립</td><td>n. freedom from political control by other countries</td><td>Students played an important role in the <span class="blank" style="min-width:82px"></span> <span class="blank" style="min-width:82px"></span>.<div class='example-ko'>학생들은 독립운동에서 중요한 역할을 했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 초청</td><td>n. a written or spoken request for asking someone to come to an event</td><td>He gave me an <span class="blank" style="min-width:82px"></span> to the party.<div class='example-ko'>그는 나에게 파티 초대장을 줬다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 의학</td><td>n. the study and treatment of diseases and injuries</td><td>She decided to study <span class="blank" style="min-width:82px"></span> to become a doctor.<div class='example-ko'>그녀는 의사가 되기 위해 의학을 공부하기로 결심했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 운동</td><td>n. an action that a group of people take to change something in society</td><td>Let&#x27;s join the environmental <span class="blank" style="min-width:82px"></span> to protect the Earth.<div class='example-ko'>지구를 보호하기 위해 환경 운동에 참여하자.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. (장편) 소설</td><td>n. a long story about imaginary characters and events</td><td>She enjoys reading historical novels in her free time.<div class='example-ko'>그녀는 여가 시간에 역사 소설을 읽는 것을 즐긴다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 추천하다</td><td>v. to suggest that someone or something would be good</td><td>Which dish do you <span class="blank" style="min-width:82px"></span> for lunch?<div class='example-ko'>점심으로 어떤 요리를 추천하시나요?</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 조사하다</td><td>v. to collect information about or for something</td><td>They researched many restaurants before they ate out.<div class='example-ko'>그들은 외식하기 전에 많은 레스토랑을 조사했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>a. 이타적인</td><td>a. caring more about other people&#x27;s needs and interests than about your own</td><td>She is a <span class="blank" style="min-width:82px"></span> person who always helps others.<div class='example-ko'>그녀는 항상 다른 사람을 돕는 이타적인 사람이다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>n. 강세</td><td>n. an extra force used when pronouncing a particular word or syllable</td><td>The teacher explained the importance of <span class="blank" style="min-width:82px"></span> in speaking clearly.<div class='example-ko'>선생님은 명확하게 말하는 데 있어 강세의 중요성을 설명했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>a. 믿기 어려울 정도인</td><td>a. not able to be believed because it is unlikely</td><td>We had an <span class="blank" style="min-width:82px"></span> time in London.<div class='example-ko'>우리는 런던에서 믿기 어려울 정도로 멋진 시간을 보냈다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>~의 감시 아래에서</td><td>while being watched carefully by somebody</td><td>The soccer players trained <span class="blank" style="min-width:82px"></span> their coach.<div class='example-ko'>축구 선수들은 코치의 감시 아래에서 훈련을 했다.</div></td></tr><tr><td><span class="blank" style="min-width:95px"></span></td><td>v. 자원봉사하다 / n. 자원봉사자</td><td>v. to do a job without being paid for it / n. a person who does a job without being paid for it</td><td>He plans to <span class="blank" style="min-width:82px"></span> at the hospital next summer. / The <span class="blank" style="min-width:82px"></span> worked together to clean up the beach.<div class='example-ko'>그는 내년 여름에 병원에서 자원봉사를 할 계획이다. / 자원봉사자들은 해변을 청소하기 위해 함께 일했다.</div></td></tr></table>
+<div class="source-label">사진 원본의 학생 필기 어휘를 파란색 필기체로 반영</div>
+</section>
+<section class="sheet page-edit" contenteditable="true" data-wiki-lesson="6" data-wiki-page="2">
+<div class="lesson6-title">6과. Dr. Schofield, <i>a Foreigner Who Loved Korea</i></div>
+<div class="student-line">The March 1st Movement　 학번 ______ 이름 ______ 날짜 ______</div>
+<div class="band">▣ Vocabulary</div>
+<table class="vocab-original"><tr><th>No.</th><th>단어 / 표현</th><th>뜻 (초성 힌트) / 단어 두번씩 써보기</th></tr>
+<tr><td>1</td><td>hide </td><td>숨다</td></tr>
+<tr><td>2</td><td>unbelievable </td><td>믿을 수 없는</td></tr>
+<tr><td>3</td><td>article </td><td>기사</td></tr>
+<tr><td>4</td><td>historic </td><td>역사적인</td></tr>
+<tr><td>5</td><td>foreign </td><td>외국의</td></tr>
+<tr><td>6</td><td>continue </td><td>계속하다</td></tr>
+<tr><td>7</td><td>under the watchful eye of</td><td>감시 아래 </td></tr></table>
+<div class="band">▣ Reading &amp; Interpreting</div>
+<table class="read6"><tr><th>영어 문장 (빈칸 채우기)</th><th>문법 포인트 / 해석</th></tr><tr><td>1. On February 28, 1919, a man came to Dr. Schofield's house and said, “I have a special <span class="blank" style="min-width:95px"></span> to ask you.”</td><td>1919년 2월 28일, 한 남자가 Schofield 박사의 집에 찾아와 “부탁드릴 특별한 일이 있습니다.”라고 말했습니다.</td></tr><tr><td>2. What can I do <span class="blank" style="min-width:95px"></span> you?</td><td>제가 뭘 도와 드릴까요?</td></tr><tr><td>3. “Many people are going to <span class="blank" style="min-width:95px"></span> tomorrow for the independence of Korea. Could you take pictures of the event and share them with the world?”</td><td>“내일 많은 사람들이 한국의 독립을 위해 모일 것입니다. 그 행사의 사진을 찍어서 전 세계에 알려주실 수 있나요?”</td></tr><tr><td>4. At 2 p.m. on March 1, Dr. Schofield was <span class="blank" style="min-width:95px"></span> in a building and saw a large group of people gathering outside.</td><td>3월 1일 오후 2시, Schofield 박사는 한 건물에 숨어서 밖에 많은 사람들이 모여 있는 것을 보았습니다.</td></tr><tr><td>5. He began to take pictures.</td><td>그는 사진을 찍기 시작했습니다.</td></tr><tr><td>6. “<span class="blank" style="min-width:95px"></span>! There are so many people here. I hope the world will learn about this important event through my pictures.”</td><td>“믿을 수 없어! 여기 정말 많은 사람들이 있구나. 내 사진을 통해 전 세계가 이 중요한 사건에 대해 알게 되기를 바라.”</td></tr><tr><td>7. On March 1, 1919, Dr. Schofield heard people shouting for Korean independence in Tapgol Park.</td><td>1919년 3월 1일, Schofield 박사는 탑골공원에서 사람들이 한국의 독립을 외치는 소리를 들었습니다.</td></tr><tr><td>8. He took pictures of the event with his camera.</td><td>그는 카메라로 그 사건의 사진을 찍었습니다.</td></tr><tr><td>9. He then wrote an <span class="blank" style="min-width:95px"></span> about the historic event and sent it to foreign newspapers with his pictures.</td><td>그런 다음 그는 그 역사적인 사건에 대한 기사를 써서 사진과 함께 해외 신문사로 보냈습니다.</td></tr></table>
+<div class="band">☑ Comprehension Check</div>
+<div class="comp-row"><b>Q3.</b> What did Dr. Schofield do with his pictures of the event?<div class="answer"></div></div>
+<div class="comp-row"><b>Q4.</b> Why did Dr. Schofield have to go back to Canada in 1920?<div class="answer">
+</div></div>
+</section>
+<section class="sheet page-edit" contenteditable="true" data-wiki-lesson="6" data-wiki-page="3">
+<div class="lesson6-title">6과. Dr. Schofield, <i>a Foreigner Who Loved Korea</i></div>
+<div class="student-line">Who Is Dr. Schofield?　 학번 ______ 이름 ______ Group ____</div>
+<div class="band">▣ Vocabulary</div>
+<table class="vocab-original"><tr><th>No.</th><th>단어 / 표현</th><th>뜻 (초성 힌트)　단어 두번씩 써보기</th></tr>
+<tr><td>1</td><td>foreigner</td><td>외국인</td></tr><tr><td>2</td><td>medicine</td><td>의학</td></tr>
+<tr><td>3</td><td>independent</td><td>독립된</td></tr><tr><td>4</td><td>movement</td><td>운동</td></tr>
+<tr><td>5</td><td>gather</td><td>모이다</td></tr><tr><td>6</td><td>independence</td><td>독립</td></tr><tr><td>7</td><td>favor</td><td>부탁</td></tr></table>
+<div class="band">▣ Reading &amp; Interpreting</div>
+<table class="read6"><tr><th>영어 문장 (빈칸 채우기)</th><th>문법 포인트 / 해석</th></tr><tr><td><b>1.</b> Dr. Schofield, a (　　) Who Loved Korea</td><td>한국을 사랑한 외국인, Schofield 박사</td></tr><tr><td><b>2.</b> Do you (　　) Seok Hopil?</td><td>여러분은 석호필을 아시나요?</td></tr><tr><td><b>3.</b> His English name was Frank W. Schofield, (　　) he loved his Korean name.</td><td>그의 영어 이름은 Frank W. Schofield였지만, 그는 자신의 한국 이름을 사랑했습니다.</td></tr><tr><td><b>4.</b> It sounded (　　　　) his real name, and it also had a good meaning.</td><td>그 이름은 그의 진짜 이름과 발음이 비슷했고, 좋은 의미도 담고 있었습니다.</td></tr><tr><td><b>5.</b> Dr. Schofield was a Canadian doctor, and he first came to Korea in 1916 (　　) teach medicine.</td><td>Schofield 박사는 캐나다인 의사였고, 1916년에 의학을 가르치기 위해 처음 한국에 왔습니다.</td></tr><tr><td><b>6.</b> He wanted to teach in Korean, (　　) he began to learn Korean (　　　　　).</td><td>그는 한국어로 가르치고 싶어서, 곧바로 한국어를 배우기 시작했습니다.</td></tr><tr><td><b>7.</b> He studied so hard (　　) he was able to teach in Korean after only a few years.</td><td>그는 정말 열심히 공부해서 몇 년 만에 한국어로 가르칠 수 있게 되었습니다.</td></tr><tr><td><b>8.</b> He believed (　　) every country has the right to be independent, so he helped the Korean independence movement.</td><td>그는 모든 나라가 독립할 권리가 있다고 믿었고, 그래서 한국의 독립운동을 도왔습니다.</td></tr></table>
+<div class="band">☑ Comprehension Check</div>
+<div class="comp-row"><b>Q1.</b> What favor did the man ask Dr. Schofield on February 28, 1919?<div class="answer"><span class="blank editable-field " contenteditable="true"></span></div></div>
+<div class="comp-row"><b>Q2.</b> Why did Dr. Schofield help the Korean independence movement?<div class="answer"><span class="blank editable-field " contenteditable="true"></span></div></div>
+<div class="comp-row"><b>Think.</b> Why do you think Dr. Schofield wanted to teach medicine in Korean?<div class="answer"><span class="blank editable-field " contenteditable="true"></span></div></div>
+</section>
+
+<section class="sheet page-edit dictation-sheet" contenteditable="true" data-wiki-lesson="6" data-wiki-page="4">
+<div class="dict-top"><div><div class="dict-title">Dictation Worksheet</div><div class="dict-grade">Grade 2　Lesson 6</div></div><div class="dict-badge">Basic</div><div class="dict-lesson">Lesson 6<br><span>이름 ______ 반 2 번호 22</span></div></div>
+<div class="dict-section"><b>A　Listen to the dialogs and fill in the blanks.</b>　<span>➜ 교과서 102쪽 A번</span></div>
+<div class="g6">
+<p><b>1.</b> B: What  books do you usually read?<br>
+G: I usually read sci-fi novels.<br>B: Then, <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> a good sci-fi novel for me?<br>
+G: How about <i>The Time Machine</i>? I think it's <span class="blank dict-blank"></span> <span class="blank dict-blank"></span>.</p>
+<p><b>2.</b> G: What <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> soft drinks do you usually have?<br>
+B: I <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> apple soda, but today, I want to <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> else. Can you recommend some new soft drinks?<br>
+G: <span class="blank dict-blank"></span> a cherry soda. The cherry soda here is good.<br>
+B: OK. I'll give <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> then.</p>
+<p><b>3.</b> B: What kinds of movies <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> <span class="blank dict-blank"></span>?<br>
+G: I like <span class="blank dict-blank"></span> <span class="blank dict-blank"></span>. <i>Spider-Man</i> is my favorite.<br>
+B: Oh, I <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> it.<br>
+G: <span class="blank dict-blank"></span> <span class="blank dict-blank"></span>. It's <span class="blank dict-blank"></span> <span class="blank dict-blank"></span>. I strongly recommend it.</p>
+<p><b>4.</b> B: What kinds <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> do you have?<br>
+G: <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> all kinds of magazines.<br>
+B: I'm really <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> science. Can <span class="blank dict-blank"></span> <span class="blank dict-blank"></span> a science magazine for me?<br>
+G: Sure. You'll love <span class="blank dict-blank"></span> <span class="blank dict-blank"></span>, <i>Teen's Science</i>.</p>
+</div>
+<div class="dict-section bsec"><b>B　Listen to the dialog and fill in the blanks.</b>　<span>➜ 교과서 103쪽 C번</span></div>
+<div class="dict-b-dialog g6">
+<p>G: Liam, can you please ______ ______? I ______ ______ find some books for my homework.</p>
+<p>B: ______ ______ of books are you looking for, Somi?</p>
+<p>G: I'm ______ ______ books on famous people who helped others. I need ______ ______ an essay.</p>
+<p>B: Who do you ______ ______ write about?</p>
+<p>G: I ______ ______ about Dr. Schweitzer, but can you ______ ______ else for me?</p>
+<p>B: What about Audrey Hepburn?</p>
+<p>G: I know she was a famous actor, but what did she do ______ ______ others?</p>
+<p>B: She did a lot of ______ ______, especially for children.</p>
+<p>G: Really? Then, I ______ ______ about her. ______ ______!</p>
+</div></section>
+
+<section class="sheet page-edit grammar-sheet g6" contenteditable="true" data-wiki-lesson="6" data-wiki-page="5">
+<table class="grammar-head"><tr><th>신구중　Lesson 6. The Greatest Love for All</th><th>2학년 2반 22번</th></tr><tr><th>Grade 2　어법 2. so ~ that</th><th>이름: ______</th></tr></table>
+<div class="grammar-box"><b>[어법 예문]</b>
+<ol><li>The movie is <b>so boring that</b> I want to cry.</li><li>Last night, Nick was <b>so tired that</b> he went to bed early.</li><li>The book is <b>so difficult that</b> children can't understand it.</li></ol>
+<b>[어법 설명]</b><p>「so+형용사/부사+that...」은 ‘너무[매우] ~해서 …하다’의 뜻으로, 어떤 원인 때문에 발생한 결과를 나타낼 때 사용한다.</p>
+<p>so+형용사/부사+that+주어+can't[couldn't]+동사원형 → too+형용사/부사+to+동사원형</p>
+<p>so+형용사/부사+that+주어+can[could]+동사원형 → 형용사/부사+enough to+동사원형</p>
+<div class="boxed" style="margin:8px 0 10px">
+<p>I’m so tired that I can’t play soccer with you.</p>
+<p>→ I’m ( <span class="blank" style="min-width:70px"></span> ) tired ( <span class="blank" style="min-width:55px"></span> ) play soccer with you.</p>
+<p style="margin-top:10px">The water was so clear that we could see the fish.</p>
+<p>→ The water was ( <span class="blank" style="min-width:130px"></span> ) see the fish.</p>
+</div>
+</div>
+<div class="exercise-block"><h3>A　다음 괄호 안에 주어진 단어를 바르게 배열하여 문장을 완성해 봅시다.</h3>
+<ol><li>The orange was  I had three more. (delicious, that, so)</li>
+<li>This computer is  I can carry it. (so, that, small)</li>
+<li>I was  I couldn't answer the phone. (busy, that, so)</li>
+<li>You are  you can't see the movie. (young, so, that)</li>
+<li>The weather is  I can't stay at home. (so, that, beautiful)</li>
+<li>John was  he couldn't do his homework. (tired, that, so)</li></ol></div>
+<div class="exercise-block"><h3>B　다음 우리말과 뜻이 같도록 주어진 단어를 사용하여 영작해 봅시다.</h3>
+<ol><li>나는 너무 피곤해서 어젯밤에 일찍 잠자리에 들었다. </li>
+<li>그들은 너무 더워서 더 이상 일할 수가 없었다. </li>
+<li>파도가 매우 높아서 우리는 바다에서 수영할 수 없다. </li>
+<li>그 상자는 너무 무거워서 내가 그것을 옮길 수 없었다. </li>
+<li>그녀는 매우 열심히 공부해서 그 시험에 합격했다. 
+        </li></ol></div>
+<div class="exercise-block"><h3>C　다음 문장을 “too ... to ...”, “enough to ...” 형태로 바꾸세요.</h3>
+<ol><li>The box is so heavy that I can't lift it. → </li>
+<li>The homework is so difficult that he can't finish it. → </li>
+<li>The coffee was so hot that I couldn't drink it. → </li>
+<li>The noise was so loud that we couldn't sleep. → 
+        </li>
+<li>She was so tired that she couldn't continue working. → </li>
+<li>The cake was so delicious that I could eat the whole thing. → </li>
+<li>The car is so fast that it can win the race. → </li></ol></div>
+</section>
+<section class="sheet page-edit grammar-sheet g6" contenteditable="true" data-wiki-lesson="6" data-wiki-page="6">
+<table class="grammar-head"><tr><th>신구중　L6. The Greatest Love for All</th><th>(　)학년 (　)반 (　)번</th></tr><tr><th>English 2　Grammar1 지각동사</th><th>이름 ______</th></tr></table>
+<div class="grammar-box"><b>지각동사:</b> 감각을 나타내는 동사(목적보어 자리에 동사원형을 취하는 특이한 동사)
+<div class="two-col"><div><b>보다</b><br>see<br>look at<br>watch</div><div><b>듣다</b><br>hear<br>listen to<br><br><b>느끼다</b><br>feel</div></div>
+<p><b>지각동사 + 목적어 + 동사원형 or ~ing (5형식)</b></p>
+<p>큰 의미 차이는 없지만, ~ing를 쓰면 <b>진행</b>의 의미가 좀 더 강조된다.</p>
+<p>e.g. I saw my brother [ do / doing / to do ] his homework.</p></div>
+<div class="exercise-block"><h3>그림을 보고, see 또는 hear와 괄호 안의 표현을 사용해 Andy가 보거나 들은 것을 예시와 같이 쓰시오.</h3>
+<p>e.g. Andy heard Julie call(ing) her dog's name.</p>
+<ol><li>Andy heard[saw]  (the guitar)</li>
+<li>Andy saw  (in the sea)</li>
+<li>Andy  (on the phone)</li>
+<li>Andy  (a sandcastle)</li></ol></div>
+<div class="exercise-block"><h3>4. 괄호 안에 알맞은 형태의 단어를 고르시오.</h3>
+<ol><li>I saw ( they / them ) swim in the lake.</li><li>She heard the doorbell ( ring / to ring ).</li>
+<li>Did you see ( he / him ) climbing up the tree?</li><li>We felt the ground ( shaking / to shake ) for a few seconds.</li></ol></div>
+<div class="exercise-block"><h3>5. 다음 문장을 주어진 단어로 시작하는 문장으로 바꿔 써 봅시다.</h3>
+<ol><li>The dog was coming to me. → I saw </li>
+<li>My heart was beating fast. → I felt </li>
+<li>She was crying in the next room. → I heard </li></ol></div>
+<div class="exercise-block"><h3>6. 괄호 안의 표현을 활용하여 우리말을 영어로 쓰시오.</h3>
+<ol><li>(she, pull, my hair) → I could feel </li>
+<li>(his poems, recite, the poet) → We were listening to </li>
+<li>(for the first time, walk, their baby) → The parents were watching </li>
+<li>(shine, the stars, brightly) → We enjoy looking at  in the night sky.</li></ol></div>
+</section>
+<script>
+(()=>{
+const status=document.getElementById('status'); let activeCell=null;
+document.querySelectorAll('td').forEach(td=>td.addEventListener('click',()=>activeCell=td));
+document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{document.execCommand(b.dataset.cmd,false,null);status.textContent='수정됨';});
+fontSize.onchange=()=>{if(fontSize.value)document.execCommand('fontSize',false,fontSize.value);};
+foreColor.oninput=()=>document.execCommand('foreColor',false,foreColor.value);
+hiliteColor.oninput=()=>document.execCommand('hiliteColor',false,hiliteColor.value);
+document.querySelectorAll('.page-edit').forEach(x=>x.addEventListener('input',()=>status.textContent='수정됨 · 저장 필요'));
+addRow.onclick=()=>{if(!activeCell)return alert('표의 셀을 먼저 클릭하세요.');let r=activeCell.closest('tr');let n=r.cloneNode(true);n.querySelectorAll('td').forEach(td=>td.innerHTML='');r.after(n);status.textContent='행 추가됨';};
+delRow.onclick=()=>{if(!activeCell)return alert('삭제할 행의 셀을 클릭하세요.');let r=activeCell.closest('tr');if(r&&r.parentElement.rows.length>1)r.remove();status.textContent='행 삭제됨';};
+function dl(name,text,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+saveHtml.onclick=()=>{let clone=document.documentElement.cloneNode(true);dl('신구중_2학년_5과_전체통합_WIKI_EDITOR.html','<!doctype html>\n'+clone.outerHTML,'text/html;charset=utf-8');status.textContent='HTML 저장 완료';};
+function setPath(obj,path,val){let p=path.split('.');let sec=Number(p.shift().slice(1));let cur=obj.lesson.sections[sec];for(let i=0;i<p.length-1;i++){let k=/^\d+$/.test(p[i])?Number(p[i]):p[i];if(cur[k]===undefined)return;cur=cur[k];}let k=p[p.length-1];if(cur&&Object.prototype.hasOwnProperty.call(cur,k))cur[k]=val;}
+saveJson.onclick=()=>{let obj=JSON.parse(document.getElementById('lesson-data').textContent);document.querySelectorAll('.structured[data-path]').forEach(el=>setPath(obj,el.dataset.path,el.innerText));obj.editor_export={edited_at:new Date().toISOString(),blank_values:{}};document.querySelectorAll('.editable-field[data-field]').forEach(el=>obj.editor_export.blank_values[el.dataset.field]=el.innerText.trim());dl('신구중_2학년_5과_전체통합_WIKI.json',JSON.stringify(obj,null,2),'application/json;charset=utf-8');status.textContent='구조화 JSON 저장 완료';};
+printBtn.onclick=()=>window.print();
+})();
+</script>
+</body>
+</html>

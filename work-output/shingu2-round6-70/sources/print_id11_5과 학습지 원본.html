@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>신구중 2학년 5과 전체통합 WIKI EDITOR</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e9edf0;color:#17212b;font-family:"Malgun Gothic",Arial,sans-serif}
+.toolbar{position:sticky;top:0;z-index:50;background:#17324d;color:white;padding:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.toolbar button,.toolbar select,.toolbar input{height:36px;border:0;border-radius:5px;padding:0 10px}.toolbar button{font-weight:700;cursor:pointer}
+.toolbar .sep{width:1px;height:26px;background:#ffffff55;margin:0 3px}#status{font-size:12px;margin-left:4px}
+.sheet{width:min(210mm,calc(100% - 24px));min-height:277mm;margin:14px auto;padding:13mm;background:white;box-shadow:0 2px 12px #0002}
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+h1{text-align:center}h2{border-bottom:3px solid #2e6f87;padding-bottom:6px}.rule{padding:10px 12px;background:#f1f7f9;border-left:4px solid #2e6f87}
+.question,.dialogue{margin:10px 0;line-height:1.8}.paragraph{font-family:Georgia,serif;font-size:16px;line-height:2;text-align:justify}
+.blank{display:inline-block;min-width:125px;border-bottom:1.5px solid #17212b;min-height:1.2em}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #52606c;padding:6px}th{background:#dceaf0}
+.page-edit:focus{outline:3px solid #70b7d1}td:focus,.blank:focus{outline:2px solid #f0a000}
+@media print{body{background:white}.toolbar{display:none}.sheet{margin:0;box-shadow:none;width:auto;page-break-after:always}}
+
+
+.header-a{font-size:34px;font-weight:800;margin-bottom:12px}
+.lesson-title{font-size:20px;font-weight:800;margin:0 0 4px}
+.student-line{font-size:13px;margin:8px 0 16px}
+.band{background:#c9cdd0;border-left:9px solid #333;padding:7px 10px;font-weight:800;font-size:17px;margin:14px 0 8px}
+.vocab-original th{background:#2f3438;color:#fff;text-align:center}
+.vocab-original td:nth-child(1){width:9%;text-align:center}
+.vocab-original td:nth-child(2){width:43%}
+.vocab-original td:nth-child(3){width:48%}
+.reading-item{margin:12px 0 15px}
+.reading-line{font-family:Arial,sans-serif;font-size:16px;line-height:1.8}
+.qnum{display:inline-block;width:24px;font-weight:700}
+.print-note{font-size:12.5px;font-style:italic;margin:2px 0 2px 24px;line-height:1.55}
+.translation{font-size:14px;margin:3px 0 0 24px;line-height:1.6}
+.comp-row{font-size:14px;line-height:1.65;margin:9px 0}
+.answer{margin-left:30px;min-height:25px}
+.longblank{display:block;width:92%;min-width:0;margin-top:5px}
+.tf{font-weight:700;margin-left:10px}
+.sheet{padding:11mm 13mm}
+@media print{.sheet{min-height:297mm}}
+</style>
+
+<style>
+.wordlist-head{margin-bottom:5px;font-size:14px}
+.wordlist-head th{background:#fff;color:#111;border:1px solid #52606c;padding:6px}
+.wordlist-table{font-size:12px;table-layout:fixed}
+.wordlist-table th{background:#c9cdd0;color:#111;text-align:center}
+.wordlist-table th:nth-child(1){width:13%}.wordlist-table th:nth-child(2){width:16%}
+.wordlist-table th:nth-child(3){width:34%}.wordlist-table th:nth-child(4){width:37%}
+.wordlist-table td{vertical-align:top;line-height:1.45;padding:5px}
+.word-answer{display:inline-block;min-width:78px;width:92%}
+.example-cell .blank{min-width:85px}
+.example-ko{font-size:10.5px;font-weight:700;margin-top:3px;line-height:1.35}
+.meaning-cell,.definition-cell{font-family:Arial,"Malgun Gothic",sans-serif}
+.wordlist-sheet{padding:10mm}
+</style>
+
+
+<style>
+.dictation-sheet{padding:12mm 15mm;font-family:Arial,"Malgun Gothic",sans-serif}
+.dict-top{display:grid;grid-template-columns:1.6fr .55fr 1fr;gap:14px;align-items:center;
+border-top:38px solid #9acb79;padding-top:8px;margin-bottom:10px}
+.dict-title{font-size:26px;font-weight:800;margin-top:-42px;padding-left:8px}
+.dict-grade{font-size:18px;font-weight:800;margin-top:16px}
+.dict-badge{background:#4e9b69;color:#ffe48a;border-radius:30px;padding:12px 20px;text-align:center;
+font-size:22px;font-weight:800;margin-top:-48px}
+.dict-lesson{text-align:center;font-size:18px;margin-top:-40px}
+.dict-lesson span{font-size:14px;line-height:2.2}
+.dict-section{font-size:15px;margin:9px 0 5px}
+.dict-section span{font-size:12px}
+.dict-dialog{display:grid;grid-template-columns:24px 1fr;gap:3px;margin:5px 0 10px}
+.dict-num{font-weight:700;padding-top:2px}
+.dict-line{font-size:13px;line-height:1.72;margin:0}
+.dict-blank{min-width:82px;height:1.15em;vertical-align:baseline}
+.bsec{margin-top:17px}
+.dict-b-dialog{margin-left:12px}
+</style>
+
+
+<style>
+.grammar-sheet{padding:11mm 13mm;font-family:Arial,"Malgun Gothic",sans-serif;font-size:13px;line-height:1.55}
+.grammar-head{margin-bottom:12px}.grammar-head th{background:#fff;color:#111;border:1px solid #555;padding:5px;font-size:14px}
+.grammar-box{border:1px solid #777;padding:10px;margin-top:10px}.grammar-box h3{margin:0 0 7px}
+.grammar-examples ol{margin-top:3px;margin-bottom:8px}.rel-table{margin:18px 0 12px}.rel-table th{background:#eee;color:#111}
+.rel-practice p{font-size:15px;margin:14px 0}.gram-blank{min-width:90px}
+.exercise-block{margin-bottom:18px}.exercise-block h3{font-size:14px;margin-bottom:7px}.exercise-block li{margin:5px 0}
+.arrange{margin:4px 0 8px 12px}.grammarplus-top{display:flex;justify-content:space-between;align-items:center;background:#a8d1e5;border-radius:28px;padding:10px 28px}
+.gp-title{font-size:28px;font-weight:800}.gp-lesson{font-size:20px;font-weight:800}.gp-sub{display:inline-block;background:#f1c36f;padding:10px 25px;margin-top:-2px}
+.used-sheet p{margin:7px 0}.exercise-title{display:flex;justify-content:space-between;border:1px solid #555;padding:5px 10px;font-size:15px;margin-bottom:0}
+.exercise-title b{font-size:28px}.two-col{display:grid;grid-template-columns:1fr 1fr;border:1px solid #555}.two-col>div{padding:10px;border-right:1px solid #777}.two-col>div:last-child{border-right:0}
+.exq{margin:8px 0 18px}.boxed{border:1px solid #888;padding:7px;margin:6px 0}.circled{padding-left:22px}.circled li{margin:3px 0}
+.exercise-b-sheet{font-size:12px}
+</style>
+
+</head>
+<body>
+
+<div class="toolbar" contenteditable="false">
+<button data-cmd="undo">↶</button><button data-cmd="redo">↷</button><span class="sep"></span>
+<button data-cmd="bold"><b>B</b></button><button data-cmd="italic"><i>I</i></button><button data-cmd="underline"><u>U</u></button>
+<select id="fontSize"><option value="">글자크기</option><option value="2">작게</option><option value="3">보통</option><option value="4">크게</option><option value="5">매우 크게</option></select>
+<label>글자색 <input id="foreColor" type="color" value="#17212b"></label><label>형광 <input id="hiliteColor" type="color" value="#fff59d"></label>
+<span class="sep"></span><button id="addRow">행 추가</button><button id="delRow">행 삭제</button>
+<span class="sep"></span><button id="saveHtml">💾 HTML 저장</button><button id="saveJson">⬇ JSON 저장</button><button id="printBtn">인쇄/PDF</button><span id="status">편집 가능</span>
+</div>
+<section class="sheet page-edit" contenteditable="true">
+  <div class="header-a">A</div>
+  <div class="lesson-title">5과. The City as a Canvas <i>Street Art in London</i></div>
+  <div class="student-line">학번 ____________ &nbsp;&nbsp;&nbsp; 이름 ____________ &nbsp;&nbsp;&nbsp; 모둠 ____________</div>
+
+  <div class="band">▣ Vocabulary</div>
+  <table class="editable-table vocab-original">
+    <tr><th>번호</th><th>단어 / 표현</th><th>뜻 (초성 힌트)</th></tr>
+    <tr><td>1</td><td class="structured" data-path="s0.items.0.word">form(s)</td><td class="structured" data-path="s0.items.0.meaning">형태</td></tr>
+<tr><td>2</td><td class="structured" data-path="s0.items.1.word">modern</td><td class="structured" data-path="s0.items.1.meaning">현대의</td></tr>
+<tr><td>3</td><td class="structured" data-path="s0.items.2.word">colorful and lively</td><td class="structured" data-path="s0.items.2.meaning">다채롭고 활기 넘치는</td></tr>
+<tr><td>4</td><td class="structured" data-path="s0.items.3.word">be going to+동사원형</td><td class="structured" data-path="s0.items.3.meaning">~할 것이다</td></tr>
+<tr><td>5</td><td class="structured" data-path="s0.items.4.word">well-known</td><td class="structured" data-path="s0.items.4.meaning">잘 알려진</td></tr>
+<tr><td>6</td><td class="structured" data-path="s0.items.5.word">artwork(s)</td><td class="structured" data-path="s0.items.5.meaning">미술품</td></tr>
+<tr><td>7</td><td class="structured" data-path="s0.items.6.word">poor</td><td class="structured" data-path="s0.items.6.meaning">가난한</td></tr>
+<tr><td>8</td><td class="structured" data-path="s0.items.7.word">used to+동사원형</td><td class="structured" data-path="s0.items.7.meaning">~하곤 했다</td></tr>
+<tr><td>9</td><td class="structured" data-path="s0.items.8.word">hip</td><td class="structured" data-path="s0.items.8.meaning">세련된</td></tr>
+<tr><td>10</td><td class="structured" data-path="s0.items.9.word">piece (of street art)</td><td class="structured" data-path="s0.items.9.meaning">작품 한 점</td></tr>
+<tr><td>11</td><td class="structured" data-path="s0.items.10.word">over there</td><td class="structured" data-path="s0.items.10.meaning">저쪽에</td></tr>
+<tr><td>12</td><td class="structured" data-path="s0.items.11.word">be famous for</td><td class="structured" data-path="s0.items.11.meaning">~로 유명하다</td></tr>
+<tr><td>13</td><td class="structured" data-path="s0.items.12.word">dot</td><td class="structured" data-path="s0.items.12.meaning">점</td></tr>
+<tr><td>14</td><td class="structured" data-path="s0.items.13.word">according to</td><td class="structured" data-path="s0.items.13.meaning">~에 따르면</td></tr>
+<tr><td>15</td><td class="structured" data-path="s0.items.14.word">figure</td><td class="structured" data-path="s0.items.14.meaning">인물</td></tr>
+<tr><td>16</td><td class="structured" data-path="s0.items.15.word">represent</td><td class="structured" data-path="s0.items.15.meaning">나타내다</td></tr>
+<tr><td>17</td><td class="structured" data-path="s0.items.16.word">past / present / future</td><td class="structured" data-path="s0.items.16.meaning">과거 / 현재 / 미래</td></tr>
+<tr><td>18</td><td class="structured" data-path="s0.items.17.word">closely</td><td class="structured" data-path="s0.items.17.meaning">자세히</td></tr>
+<tr><td>19</td><td class="structured" data-path="s0.items.18.word">clue</td><td class="structured" data-path="s0.items.18.meaning">단서</td></tr>
+  </table>
+
+  <div class="band">▣ Reading &amp; Interpreting</div>
+  <div class="reading-item">
+      <div class="reading-line"><span class="qnum">1</span>
+      <span class="structured" data-path="s1.items.0.english_text">Street Art in London</span></div>
+      
+      <div class="translation structured" data-path="s1.items.0.korean">런던의 거리 예술</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">2</span>
+      <span class="structured" data-path="s1.items.1.english_text">Modern street art comes in many different <span class="blank editable-field" data-field="s1.items.1.blank1" contenteditable="true"></span>, and it <span class="blank editable-field" data-field="s1.items.1.blank2" contenteditable="true"></span> cities colorful and lively.</span></div>
+      <div class="print-note">※ make+목적어+형용사: (목적어)를 ~하게 만들다</div><div class="print-note">※ 「~, and it makes A B」 구조에 유의하며 해석하기</div>
+      <div class="translation structured" data-path="s1.items.1.korean">현대 거리 예술은 다양한 형태로 존재하며, 도시를 다채롭고 활기차게 만듭니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">3</span>
+      <span class="structured" data-path="s1.items.2.english_text">Today, we <span class="blank editable-field" data-field="s1.items.2.blank1" contenteditable="true"></span> see some well-known street artworks in London.</span></div>
+      <div class="print-note">※ be going to+동사원형: ~할 것이다</div>
+      <div class="translation structured" data-path="s1.items.2.korean">오늘, 우리는 런던의 잘 알려진 거리 예술 작품들을 살펴보겠습니다.</div>
+    </div>
+</section>
+
+<section class="sheet page-edit" contenteditable="true">
+  <div class="reading-item">
+      <div class="reading-line"><span class="qnum">4</span>
+      <span class="structured" data-path="s1.items.3.english_text">The place <span class="blank editable-field" data-field="s1.items.3.blank1" contenteditable="true"></span> we are going to visit is Shoreditch.</span></div>
+      <div class="print-note">※ (that): 목적격 관계대명사 - 뒤에 「주어+동사」가 이어지고 목적어가 빠진 불완전한 절이 옴</div><div class="print-note">※ The place [that we are going to visit] = 우리가 방문할 곳</div>
+      <div class="translation structured" data-path="s1.items.3.korean">우리가 방문할 곳은 Shoreditch입니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">5</span>
+      <span class="structured" data-path="s1.items.4.english_text">Poor workers <span class="blank editable-field" data-field="s1.items.4.blank1" contenteditable="true"></span> live in this area, but now it is one of the hippest areas in London.</span></div>
+      <div class="print-note">※ used to+동사원형: 과거의 상태나 습관 (~하곤 했다)</div><div class="print-note">※ 「one of the+최상급+복수명사」: 가장 ~한 것들 중 하나 → the hippest areas</div>
+      <div class="translation structured" data-path="s1.items.4.korean">가난한 노동자들이 이곳에서 살았었지만, 지금은 런던에서 가장 힙한 지역 중 하나입니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">6</span>
+      <span class="structured" data-path="s1.items.5.english_text">We can find so many great <span class="blank editable-field" data-field="s1.items.5.blank1" contenteditable="true"></span> of street art here.</span></div>
+      
+      <div class="translation structured" data-path="s1.items.5.korean">우리는 이곳에서 정말 많은 멋진 거리 예술 작품들을 볼 수 있습니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">7</span>
+      <span class="structured" data-path="s1.items.6.english_text">Do you see the painting <span class="blank editable-field" data-field="s1.items.6.blank1" contenteditable="true"></span>?</span></div>
+      
+      <div class="translation structured" data-path="s1.items.6.korean">저쪽에 있는 저 그림이 보이시나요?</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">8</span>
+      <span class="structured" data-path="s1.items.7.english_text">It is <span class="blank editable-field" data-field="s1.items.7.blank1" contenteditable="true"></span> the artist STIK.</span></div>
+      <div class="print-note">※ by+행위자: ~가 만든, ~에 의해</div>
+      <div class="translation structured" data-path="s1.items.7.korean">그것은 STIK이라는 예술가의 작품입니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">9</span>
+      <span class="structured" data-path="s1.items.8.english_text">He is <span class="blank editable-field" data-field="s1.items.8.blank1" contenteditable="true"></span> using only lines and dots in his paintings of human bodies.</span></div>
+      <div class="print-note">※ be famous for: ~로 유명하다</div><div class="print-note">※ for 뒤에는 동명사(-ing)가 옴 → using: 전치사 for의 목적어로 쓰인 동명사</div>
+      <div class="translation structured" data-path="s1.items.8.korean">그는 사람의 몸을 그린 그림에서 선과 점만 사용하는 것으로 유명합니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">10</span>
+      <span class="structured" data-path="s1.items.9.english_text"><span class="blank editable-field" data-field="s1.items.9.blank1" contenteditable="true"></span> STIK, the three figures represent the past, present, and future of Shoreditch.</span></div>
+      <div class="print-note">※ According to ~: ~에 따르면</div>
+      <div class="translation structured" data-path="s1.items.9.korean">STIK에 따르면, 저 세 인물은 Shoreditch의 과거, 현재, 그리고 미래를 나타낸다고 합니다.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">11</span>
+      <span class="structured" data-path="s1.items.10.english_text">Which figure <span class="blank editable-field" data-field="s1.items.10.blank1" contenteditable="true"></span> which?</span></div>
+      <div class="print-note">※ 앞의 Which(한정사, 어느/어떤) - 뒤의 which(대명사, 어느 것)</div>
+      <div class="translation structured" data-path="s1.items.10.korean">어느 인물이 어떤 것을 나타낼까요?</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">12</span>
+      <span class="structured" data-path="s1.items.11.english_text">Well, look <span class="blank editable-field" data-field="s1.items.11.blank1" contenteditable="true"></span> at the eyes of the three figures.</span></div>
+      <div class="print-note">※ 명령문: 주어 없이 동사원형으로 시작</div>
+      <div class="translation structured" data-path="s1.items.11.korean">자, 세 인물의 눈을 자세히 살펴보세요.</div>
+    </div>
+<div class="reading-item">
+      <div class="reading-line"><span class="qnum">13</span>
+      <span class="structured" data-path="s1.items.12.english_text">They are just dots, but they will <span class="blank editable-field" data-field="s1.items.12.blank1" contenteditable="true"></span> you a clue.</span></div>
+      <div class="print-note">※ 4형식 문장: give+간접목적어(you)+직접목적어(a clue): ~에게 …을 주다</div>
+      <div class="translation structured" data-path="s1.items.12.korean">그것들은 그저 점일 뿐이지만, 그 점들이 여러분에게 힌트를 줄 것입니다.</div>
+    </div>
+  <div class="band">☑ Comprehension Check</div>
+  <div class="comp-row"><b>Q1.</b> <span class="structured" data-path="s2.items.0.question">According to STIK, what do the three figures in his painting represent?</span><div class="answer"><span class="blank editable-field longblank" data-field="s2.q1.answer" contenteditable="true"></span></div></div>
+<div class="comp-row"><b>Q2.</b> <span class="structured" data-path="s2.items.1.question">Shoreditch used to be an area where rich people lived.</span><div class="answer"><span class="tf">( T / F )</span></div></div>
+<div class="comp-row"><b>Q3.</b> <span class="structured" data-path="s2.items.2.question">STIK is famous for using only lines and dots in his paintings.</span><div class="answer"><span class="tf">( T / F )</span></div></div>
+</section>
+
+
+<section class="sheet page-edit" contenteditable="true">
+  <div class="header-a">B</div>
+  <div class="lesson-title">5과. The City as a Canvas</div>
+  <div style="font-size:16px;font-weight:700;margin-top:4px">Banksy &amp; Finsbury Park</div>
+  <div class="student-line">학번 ____________ &nbsp;&nbsp;&nbsp; 이름 ____________ &nbsp;&nbsp;&nbsp; 모둠 ____________</div>
+  <div class="band">▣ Vocabulary</div>
+  <table class="editable-table vocab-original">
+    <tr><th>번호</th><th>단어 / 표현</th><th>뜻 (초성 힌트)</th></tr>
+    <tr><td>1</td><td class="structured" data-path="s2.items.0.word">internationally</td><td class="structured" data-path="s2.items.0.meaning">국제적으로</td></tr><tr><td>2</td><td class="structured" data-path="s2.items.1.word">carry (a message)</td><td class="structured" data-path="s2.items.1.meaning">(메시지를) 담다</td></tr><tr><td>3</td><td class="structured" data-path="s2.items.2.word">social</td><td class="structured" data-path="s2.items.2.meaning">사회적인</td></tr><tr><td>4</td><td class="structured" data-path="s2.items.3.word">example</td><td class="structured" data-path="s2.items.3.meaning">예</td></tr><tr><td>5</td><td class="structured" data-path="s2.items.4.word">as you can see</td><td class="structured" data-path="s2.items.4.meaning">보시다시피</td></tr><tr><td>6</td><td class="structured" data-path="s2.items.5.word">spray</td><td class="structured" data-path="s2.items.5.meaning">뿌리다</td></tr><tr><td>7</td><td class="structured" data-path="s2.items.6.word">leafless</td><td class="structured" data-path="s2.items.6.meaning">잎이 없는</td></tr><tr><td>8</td><td class="structured" data-path="s2.items.7.word">next to</td><td class="structured" data-path="s2.items.7.meaning">~ 옆에</td></tr><tr><td>9</td><td class="structured" data-path="s2.items.8.word">sprayer</td><td class="structured" data-path="s2.items.8.meaning">분무기</td></tr><tr><td>10</td><td class="structured" data-path="s2.items.9.word">through</td><td class="structured" data-path="s2.items.9.meaning">~을 통해</td></tr><tr><td>11</td><td class="structured" data-path="s2.items.10.word">opinion</td><td class="structured" data-path="s2.items.10.meaning">의견</td></tr><tr><td>12</td><td class="structured" data-path="s2.items.11.word">have a hard time</td><td class="structured" data-path="s2.items.11.meaning">어려움을 겪다</td></tr><tr><td>13</td><td class="structured" data-path="s2.items.12.word">take care of</td><td class="structured" data-path="s2.items.12.meaning">보살피다</td></tr><tr><td>14</td><td class="structured" data-path="s2.items.13.word">final</td><td class="structured" data-path="s2.items.13.meaning">마지막의</td></tr><tr><td>15</td><td class="structured" data-path="s2.items.14.word">look down</td><td class="structured" data-path="s2.items.14.meaning">내려다보다</td></tr>
+  </table>
+  <div class="band">▣ Reading &amp; Interpreting</div>
+  <div class="reading-item">
+<div class="reading-line"><span class="qnum">1</span><span class="structured" data-path="s3.items.0.english_text">We are now in Finsbury Park <span class="blank editable-field" data-field="s3.items.0.blank1" contenteditable="true"></span> see a painting by Banksy, an internationally famous street artist.</span></div>
+<div class="print-note">※ to see ~: 부사적 용법(목적) - ~하기 위해서</div><div class="print-note">※ an internationally famous street artist는 Banksy와 동격(=)</div>
+<div class="translation structured" data-path="s3.items.0.korean">우리는 이제 세계적으로 유명한 거리 예술가 Banksy의 작품을 보러 Finsbury Park에 와 있습니다.</div>
+</div><div class="reading-item">
+<div class="reading-line"><span class="qnum">2</span><span class="structured" data-path="s3.items.1.english_text">Banksy's artworks often <span class="blank editable-field" data-field="s3.items.1.blank1" contenteditable="true"></span> social messages, and the green tree you see over there is a good example.</span></div>
+<div class="print-note">※ carry: (메시지를) 담다</div><div class="print-note">※ the green tree [(that/which) you see over there]: 목적격 관계대명사절 (that/which 생략 가능)</div>
+<div class="translation structured" data-path="s3.items.1.korean">Banksy의 예술 작품은 종종 사회적 메시지를 담고 있으며, 저기 보이는 녹색 나무가 좋은 예입니다.</div>
+</div><div class="reading-item">
+<div class="reading-line"><span class="qnum">3</span><span class="structured" data-path="s3.items.2.english_text">As you can see, he created a green tree <span class="blank editable-field" data-field="s3.items.2.blank1" contenteditable="true"></span> spraying green paint on a wall behind a leafless tree.</span></div>
+<div class="print-note">※ As you can see: 보시다시피</div><div class="print-note">※ by ~ing: ~함으로써</div>
+<div class="translation structured" data-path="s3.items.2.korean">보시다시피, 그는 잎이 없는 나무 뒤 벽에 녹색 페인트를 뿌려 녹색 나무를 만들어 냈습니다.</div>
+</div>
+</section>
+
+<section class="sheet page-edit" contenteditable="true">
+  <div class="reading-item">
+<div class="reading-line"><span class="qnum">4</span><span class="structured" data-path="s3.items.3.english_text">Next to the tree, there is a person <span class="blank editable-field" data-field="s3.items.3.blank1" contenteditable="true"></span> is holding a sprayer.</span></div>
+<div class="print-note">※ (who): 주격 관계대명사 - 뒤에 동사(is)가 바로 이어짐</div>
+<div class="translation structured" data-path="s3.items.3.korean">그 나무 옆에는 스프레이를 들고 있는 한 사람이 있습니다.</div>
+</div><div class="reading-item">
+<div class="reading-line"><span class="qnum">5</span><span class="structured" data-path="s3.items.4.english_text">What message does Banksy want to give us <span class="blank editable-field" data-field="s3.items.4.blank1" contenteditable="true"></span> this painting?</span></div>
+<div class="print-note">※ through: ~을 통해</div>
+<div class="translation structured" data-path="s3.items.4.korean">Banksy는 이 그림을 통해 우리에게 어떤 메시지를 전하고 싶은 걸까요?</div>
+</div><div class="reading-item">
+<div class="reading-line"><span class="qnum">6</span><span class="structured" data-path="s3.items.5.english_text">In many people&apos;s opinion, he is telling us <span class="blank editable-field" data-field="s3.items.5.blank1" contenteditable="true"></span> nature is having a hard time.</span></div>
+<div class="print-note">※ (that): 명사절을 이끄는 접속사 (telling us의 직접목적어인 절)</div><div class="print-note">※ have a hard time: 어려움을 겪다</div>
+<div class="translation structured" data-path="s3.items.5.korean">많은 사람들의 의견에 따르면, 그는 자연이 어려움을 겪고 있다는 것을 말하려는 것 같습니다.</div>
+</div><div class="reading-item">
+<div class="reading-line"><span class="qnum">7</span><span class="structured" data-path="s3.items.6.english_text">They think he <span class="blank editable-field" data-field="s3.items.6.blank1" contenteditable="true"></span> us to take better care of it.</span></div>
+<div class="print-note">※ want+목적어+to부정사: (목적어)가 ~하기를 원하다</div><div class="print-note">※ take care of ~: ~을 보살피다</div>
+<div class="translation structured" data-path="s3.items.6.korean">그들은 Banksy가 우리로 하여금 자연을 더 잘 보살피기를 원하는 것 같다고 생각합니다.</div>
+</div>
+  <div class="band">☑ Comprehension Check</div>
+  <div class="comp-row"><b>Q1.</b> <span class="structured" data-path="s4.items.0.question">How did Banksy create the green tree on the wall?</span>
+    <div class="answer"><span class="blank editable-field longblank" data-field="s4.items.0.answer" contenteditable="true"></span></div>
+  </div>
+  <div class="comp-row"><b>Q2.</b> <span class="structured" data-path="s4.items.1.question">Banksy's artworks often carry social messages.</span> <span class="tf">( T / F )</span></div>
+  <div class="comp-row"><b>Q3.</b> <span class="structured" data-path="s4.items.2.question">According to many people, Banksy's tree painting means that nature needs more care.</span> <span class="tf">( T / F )</span></div>
+</section>
+
+
+<section class="sheet page-edit" contenteditable="true">
+  <div class="header-a">C</div>
+  <div class="lesson-title">5과. The City as a Canvas</div>
+  <div style="font-size:16px;font-weight:700;margin-top:4px">Ben Wilson &amp; Muswell Hill</div>
+  <div class="student-line">학번 ____________ &nbsp;&nbsp;&nbsp; 이름 ____________ &nbsp;&nbsp;&nbsp; 모둠 ____________</div>
+  <div class="band">▣ Vocabulary</div>
+  <table class="editable-table vocab-original">
+    <tr><th>번호</th><th>단어 / 표현</th><th>뜻 (초성 힌트)</th></tr><tr><td>1</td><td class="structured" data-path="s5.items.0.word">chewing gum</td><td class="structured" data-path="s5.items.0.meaning">껌</td></tr><tr><td>2</td><td class="structured" data-path="s5.items.1.word">chew</td><td class="structured" data-path="s5.items.1.meaning">씹다</td></tr><tr><td>3</td><td class="structured" data-path="s5.items.2.word">well known for</td><td class="structured" data-path="s5.items.2.meaning">~로 잘 알려져 있다</td></tr><tr><td>4</td><td class="structured" data-path="s5.items.3.word">drop</td><td class="structured" data-path="s5.items.3.meaning">떨어뜨리다</td></tr><tr><td>5</td><td class="structured" data-path="s5.items.4.word">personal</td><td class="structured" data-path="s5.items.4.meaning">개인적인</td></tr><tr><td>6</td><td class="structured" data-path="s5.items.5.word">for example</td><td class="structured" data-path="s5.items.5.meaning">예를 들어</td></tr><tr><td>7</td><td class="structured" data-path="s5.items.6.word">loved one</td><td class="structured" data-path="s5.items.6.meaning">사랑하는 사람</td></tr><tr><td>8</td><td class="structured" data-path="s5.items.7.word">tiny</td><td class="structured" data-path="s5.items.7.meaning">아주 작은</td></tr><tr><td>9</td><td class="structured" data-path="s5.items.8.word">pleasure</td><td class="structured" data-path="s5.items.8.meaning">기쁨</td></tr><tr><td>10</td><td class="structured" data-path="s5.items.9.word">give A to B</td><td class="structured" data-path="s5.items.9.meaning">A를 B에게 주다</td></tr>
+  </table>
+  <div class="band">▣ Reading &amp; Interpreting</div><div class="reading-item">
+<div class="reading-line"><span class="qnum">1</span><span class="structured" data-path="s6.items.0.english_text">The <span class="blank editable-field" data-field="s6.items.0.blank1" contenteditable="true"></span> stop of our tour today is Muswell Hill.</span></div>
+<div class="print-note">※ final: 마지막의</div><div class="translation structured" data-path="s6.items.0.korean">오늘 우리 투어의 마지막 방문지는 Muswell Hill입니다.</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">2</span><span class="structured" data-path="s6.items.1.english_text">Can’t see any street artworks?</span></div>
+<div class="translation structured" data-path="s6.items.1.korean">어떤 거리 예술 작품도 보이지 않나요?</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">3</span><span class="structured" data-path="s6.items.2.english_text">Well, look <span class="blank editable-field" data-field="s6.items.2.blank1" contenteditable="true"></span> and look closely.</span></div>
+<div class="print-note">※ look down: 내려다보다</div><div class="translation structured" data-path="s6.items.2.korean">그렇다면, 아래를 내려다보고 자세히 살펴보세요.</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">4</span><span class="structured" data-path="s6.items.3.english_text">Do you see the little <span class="blank editable-field" data-field="s6.items.3.blank1" contenteditable="true"></span> paintings?</span></div>
+<div class="print-note">※ chewing gum: 껌 (동명사 chewing + 명사 gum)</div><div class="translation structured" data-path="s6.items.3.korean">여러분은 작은 껌 그림들이 보이나요?</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">5</span><span class="structured" data-path="s6.items.4.english_text">They are by the artist Ben Wilson.</span></div>
+<div class="translation structured" data-path="s6.items.4.korean">이것들은 예술가 Ben Wilson의 작품입니다.</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">6</span><span class="structured" data-path="s6.items.5.english_text">Wilson is <span class="blank editable-field" data-field="s6.items.5.blank1" contenteditable="true"></span> for painting pictures on gum that people drop on the street.</span></div>
+<div class="print-note">※ well known for: ~로 잘 알려져 있다</div><div class="print-note">※ gum [that people drop on the street]: 목적격 관계대명사절 (that/which)</div><div class="translation structured" data-path="s6.items.5.korean">Wilson은 사람들이 길에 버린 껌 위에 그림을 그리는 것으로 잘 알려져 있습니다.</div></div>
+</section>
+<section class="sheet page-edit" contenteditable="true">
+  <div class="reading-item">
+<div class="reading-line"><span class="qnum">7</span><span class="structured" data-path="s6.items.6.english_text">His gum paintings often carry <span class="blank editable-field" data-field="s6.items.6.blank1" contenteditable="true"></span> messages from people he meets on the street.</span></div>
+<div class="print-note">※ personal: 개인적인</div><div class="translation structured" data-path="s6.items.6.korean">그의 껌 그림은 종종 그가 길에서 만난 사람들의 개인적인 메시지를 담고 있습니다.</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">8</span><span class="structured" data-path="s6.items.7.english_text"><span class="blank editable-field" data-field="s6.items.7.blank1" contenteditable="true"></span>, the one over here is a happy birthday wish for a loved one.</span></div>
+<div class="print-note">※ For example: 예를 들어</div><div class="print-note">※ the one = His gum paintings 중 하나</div><div class="translation structured" data-path="s6.items.7.korean">예를 들어, 여기 있는 그림은 사랑하는 사람을 위한 생일 축하 메시지입니다.</div></div><div class="reading-item">
+<div class="reading-line"><span class="qnum">9</span><span class="structured" data-path="s6.items.8.english_text">Wilson&apos;s gum paintings are tiny, but they <span class="blank editable-field" data-field="s6.items.8.blank1" contenteditable="true"></span> great pleasure to many people.</span></div>
+<div class="print-note">※ give A to B: A를 B에게 주다 (give great pleasure to many people)</div><div class="translation structured" data-path="s6.items.8.korean">Wilson의 껌 그림은 정말 작지만, 많은 사람들에게 큰 기쁨을 줍니다.</div></div>
+  <div class="band">☑ Comprehension Check</div>
+  <div class="comp-row"><b>Q1.</b> <span class="structured" data-path="s7.items.0.question">What is Ben Wilson well known for?</span>
+    <div class="answer"><span class="blank editable-field longblank" data-field="s7.items.0.answer" contenteditable="true"></span></div></div>
+  <div class="comp-row"><b>Q2.</b> <span class="structured" data-path="s7.items.1.question">Ben Wilson paints on new, clean gum that he buys himself.</span> <span class="tf">( T / F )</span></div>
+  <div class="comp-row"><b>Q3.</b> <span class="structured" data-path="s7.items.2.question">Wilson's gum paintings often carry personal messages.</span> <span class="tf">( T / F )</span></div>
+</section>
+
+
+<section class="sheet page-edit wordlist-sheet" contenteditable="true">
+<table class="wordlist-head">
+<tr><th>English 2</th><th>[5. The City as a Canvas</th><th>( &nbsp;&nbsp; )학년 ( &nbsp;&nbsp; )반 ( &nbsp;&nbsp; )번</th></tr>
+<tr><th>Word List</th><th>Grade 2 Lesson 5</th><th>이름 __________________</th></tr>
+</table>
+<table class="editable-table wordlist-table">
+<tr><th>어휘</th><th>뜻</th><th>영어 뜻풀이</th><th>예문</th></tr>
+
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.0.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.0.meaning"><b>n.</b> 미술품</td>
+<td class="structured definition-cell" data-path="s8.items.0.definition"><b>n.</b> something made by an artist, like a drawing, painting, or sculpture</td>
+<td class="example-cell"><div>We learned about famous <span class="blank editable-field" data-field="s8.items.0.example_answer" contenteditable="true"></span> in art class.</div><div class="example-ko">우리는 미술 수업에서 유명한 미술 작품들에 대해 배웠다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.1.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.1.meaning"><b>n.</b> 발레</td>
+<td class="structured definition-cell" data-path="s8.items.1.definition"><b>n.</b> a style of dancing that tells a dramatic story with music</td>
+<td class="example-cell"><div>The <span class="blank editable-field" data-field="s8.items.1.example_answer" contenteditable="true"></span> dancer jumped high.</div><div class="example-ko">그 발레 무용수는 높이 뛰었다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.2.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.2.meaning"><b>n.</b> 캔버스</td>
+<td class="structured definition-cell" data-path="s8.items.2.definition"><b>n.</b> a piece of strong, rough cloth used by artists to paint on</td>
+<td class="example-cell"><div>He painted a dog on the <span class="blank editable-field" data-field="s8.items.2.example_answer" contenteditable="true"></span>.</div><div class="example-ko">그는 캔버스에 강아지 한 마리를 그렸다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.3.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.3.meaning"><b>v.</b> (음식을) 씹다</td>
+<td class="structured definition-cell" data-path="s8.items.3.definition"><b>v.</b> to break food into smaller, softer pieces with the teeth</td>
+<td class="example-cell"><div>Please <span class="blank editable-field" data-field="s8.items.3.example_answer" contenteditable="true"></span> your food slowly.</div><div class="example-ko">음식을 천천히 씹으세요.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.4.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.4.meaning"><b>n.</b> 영화관</td>
+<td class="structured definition-cell" data-path="s8.items.4.definition"><b>n.</b> a place where movies are shown</td>
+<td class="example-cell"><div>I like to watch movies at the <span class="blank editable-field" data-field="s8.items.4.example_answer" contenteditable="true"></span>.</div><div class="example-ko">나는 영화관에서 영화를 보는 것을 좋아한다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.5.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.5.meaning"><b>n.</b> 단서</td>
+<td class="structured definition-cell" data-path="s8.items.5.definition"><b>n.</b> a sign or some information that helps you to find the answer to a problem or question</td>
+<td class="example-cell"><div>Can you give me a <span class="blank editable-field" data-field="s8.items.5.example_answer" contenteditable="true"></span> for the answer?</div><div class="example-ko">답에 대한 단서를 줄 수 있나요?</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.6.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.6.meaning"><b>a.</b> 더러운</td>
+<td class="structured definition-cell" data-path="s8.items.6.definition"><b>a.</b> not clean</td>
+<td class="example-cell"><div>My little brother’s hands were so <span class="blank editable-field" data-field="s8.items.6.example_answer" contenteditable="true"></span>.</div><div class="example-ko">내 남동생의 손이 너무 더러웠다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.7.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.7.meaning"><b>n.</b> 점</td>
+<td class="structured definition-cell" data-path="s8.items.7.definition"><b>n.</b> a very small round mark</td>
+<td class="example-cell"><div>I placed a <span class="blank editable-field" data-field="s8.items.7.example_answer" contenteditable="true"></span> at the end of the sentence.</div><div class="example-ko">나는 문장 끝에 점 하나를 찍었다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.8.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.8.meaning"><b>n.</b> 인물 (모습)</td>
+<td class="structured definition-cell" data-path="s8.items.8.definition"><b>n.</b> a person or an animal in a drawing, painting, etc.</td>
+<td class="example-cell"><div>The <span class="blank editable-field" data-field="s8.items.8.example_answer" contenteditable="true"></span> in the drawing is holding a flower.</div><div class="example-ko">그림 속의 인물은 꽃 한 송이를 들고 있다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.9.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.9.meaning"><b>a.</b> 마지막의</td>
+<td class="structured definition-cell" data-path="s8.items.9.definition"><b>a.</b> being or happening at the end of a series of events, actions, etc.</td>
+<td class="example-cell"><div>The <span class="blank editable-field" data-field="s8.items.9.example_answer" contenteditable="true"></span> scene of the movie was very sad.</div><div class="example-ko">그 영화의 마지막 장면은 매우 슬펐다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.10.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.10.meaning"><b>n.</b> (공공의) 건물</td>
+<td class="structured definition-cell" data-path="s8.items.10.definition"><b>n.</b> a building or large room for public meetings, meals, concerts, etc.</td>
+<td class="example-cell"><div>The concert <span class="blank editable-field" data-field="s8.items.10.example_answer" contenteditable="true"></span> was filled with energy when the band played their first song.</div><div class="example-ko">그 밴드가 첫 번째 노래를 연주할 때 콘서트 홀은 에너지로 가득 찼다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.11.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.11.meaning"><b>a.</b> 세련된, 최신 유행에 밝은</td>
+<td class="structured definition-cell" data-path="s8.items.11.definition"><b>a.</b> following the latest fashions in music and clothes</td>
+<td class="example-cell"><div>Her fashion is always so <span class="blank editable-field" data-field="s8.items.11.example_answer" contenteditable="true"></span> and stylish.</div><div class="example-ko">그녀의 패션은 항상 세련되고 멋지다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.12.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.12.meaning"><b>a.</b> 잎이 없는</td>
+<td class="structured definition-cell" data-path="s8.items.12.definition"><b>a.</b> having no leaves</td>
+<td class="example-cell"><div>The tree was <span class="blank editable-field" data-field="s8.items.12.example_answer" contenteditable="true"></span> in the winter.</div><div class="example-ko">그 나무는 겨울에 잎이 없었다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.13.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.13.meaning"><b>a.</b> 활기 넘치는</td>
+<td class="structured definition-cell" data-path="s8.items.13.definition"><b>a.</b> full of life and energy</td>
+<td class="example-cell"><div>The park was <span class="blank editable-field" data-field="s8.items.13.example_answer" contenteditable="true"></span> during the festival.</div><div class="example-ko">공원은 축제 동안 활기가 넘쳤다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.14.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.14.meaning"><b>a.</b> 현대의</td>
+<td class="structured definition-cell" data-path="s8.items.14.definition"><b>a.</b> of the present or recent times</td>
+<td class="example-cell"><div>I like <span class="blank editable-field" data-field="s8.items.14.example_answer" contenteditable="true"></span> music more than old music.</div><div class="example-ko">나는 옛 음악보다 현대 음악을 더 좋아한다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.15.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.15.meaning"><b>n.</b> 의견</td>
+<td class="structured definition-cell" data-path="s8.items.15.definition"><b>n.</b> a thought or belief about something or someone</td>
+<td class="example-cell"><div>Everyone has a different <span class="blank editable-field" data-field="s8.items.15.example_answer" contenteditable="true"></span> on the topic.</div><div class="example-ko">모든 사람이 그 주제에 대해 다른 의견을 갖고 있다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.16.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.16.meaning"><b>n.</b> 과거</td>
+<td class="structured definition-cell" data-path="s8.items.16.definition"><b>n.</b> the period of time before now</td>
+<td class="example-cell"><div>In the <span class="blank editable-field" data-field="s8.items.16.example_answer" contenteditable="true"></span> this area was a quiet village.</div><div class="example-ko">과거에 이 지역은 조용한 마을이었다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.17.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.17.meaning"><b>n.</b> 기쁨, 즐거움</td>
+<td class="structured definition-cell" data-path="s8.items.17.definition"><b>n.</b> a state of feeling or being happy</td>
+<td class="example-cell"><div>Fred gets a lot of <span class="blank editable-field" data-field="s8.items.17.example_answer" contenteditable="true"></span> from helping others.</div><div class="example-ko">Fred는 다른 사람을 돕는 것에서 많은 기쁨을 얻는다.</div></td>
+</tr>
+</table>
+</section>
+
+<section class="sheet page-edit wordlist-sheet" contenteditable="true">
+<table class="editable-table wordlist-table continuation">
+<tr><th>어휘</th><th>뜻</th><th>영어 뜻풀이</th><th>예문</th></tr>
+
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.18.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.18.meaning"><b>v.</b> 나타내다</td>
+<td class="structured definition-cell" data-path="s8.items.18.definition"><b>v.</b> to show something or someone, especially in a picture</td>
+<td class="example-cell"><div>What does this mark <span class="blank editable-field" data-field="s8.items.18.example_answer" contenteditable="true"></span>?</div><div class="example-ko">이 표시는 무엇을 나타내나요?</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.19.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.19.meaning"><b>v.</b> 뿌리다</td>
+<td class="structured definition-cell" data-path="s8.items.19.definition"><b>v.</b> to spread a liquid in small drops over an area</td>
+<td class="example-cell"><div>She <span class="blank editable-field" data-field="s8.items.19.example_answer" contenteditable="true"></span> paint on the wall.</div><div class="example-ko">그녀는 벽에 페인트를 뿌렸다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.20.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.20.meaning"><b>n.</b> 경기장</td>
+<td class="structured definition-cell" data-path="s8.items.20.definition"><b>n.</b> a playing area that is surrounded by seats, for sports, concerts, and other events</td>
+<td class="example-cell"><div>We watched the game from the top of the <span class="blank editable-field" data-field="s8.items.20.example_answer" contenteditable="true"></span>.</div><div class="example-ko">우리는 경기장의 가장 높은 곳에서 경기를 봤다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.21.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.21.meaning"><b>n.</b> 역</td>
+<td class="structured definition-cell" data-path="s8.items.21.definition"><b>n.</b> a building where buses or trains stop so that people can get on or off</td>
+<td class="example-cell"><div>They waited for the train at the <span class="blank editable-field" data-field="s8.items.21.example_answer" contenteditable="true"></span>.</div><div class="example-ko">그들은 역에서 기차를 기다렸다.</div></td>
+</tr>
+<tr>
+<td><span class="blank editable-field word-answer" data-field="s8.items.22.word_answer" contenteditable="true"></span></td>
+<td class="structured meaning-cell" data-path="s8.items.22.meaning"><b>a.</b> 아주 작은</td>
+<td class="structured definition-cell" data-path="s8.items.22.definition"><b>a.</b> very small</td>
+<td class="example-cell"><div>There were <span class="blank editable-field" data-field="s8.items.22.example_answer" contenteditable="true"></span> pieces of glass all over the street.</div><div class="example-ko">거리 곳곳에 아주 작은 유리 조각들이 있었다.</div></td>
+</tr>
+</table>
+</section>
+
+
+<section class="sheet page-edit dictation-sheet" contenteditable="true">
+  <div class="dict-top">
+    <div><div class="dict-title">Dictation Worksheet</div><div class="dict-grade">Grade 2&nbsp;&nbsp; Lesson 5</div></div>
+    <div class="dict-badge">Basic</div>
+    <div class="dict-lesson"><b>Lesson 5</b><br><span>이름 __________ 반 ____ 번호 ____</span></div>
+  </div>
+  <h3 class="dict-section">A&nbsp; Listen to the dialogs and fill in the blanks. <span>➜ 교과서 84쪽 A번</span></h3>
+  <div class="dict-dialog"><span class="dict-num">1.</span><div><div class="dict-line"><b>B:</b> Excuse me, how can I <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.0.blank0" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.0.blank1" contenteditable="true"></span> the Star Stadium?</div><div class="dict-line"><b>G:</b> You <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.1.blank2" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.1.blank3" contenteditable="true"></span> there by subway. Take line 4, the green line, and <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.1.blank4" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.1.blank5" contenteditable="true"></span> at Hangang Station.</div><div class="dict-line"><b>B:</b> Line 4 and Hangang Station. Got <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.2.blank6" contenteditable="true"></span>. <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.2.blank7" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.2.blank8" contenteditable="true"></span> will it take?</div><div class="dict-line"><b>G:</b> A <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.3.blank9" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.0.lines.3.blank10" contenteditable="true"></span> than 30 minutes.</div></div></div><div class="dict-dialog"><span class="dict-num">2.</span><div><div class="dict-line"><b>B:</b> I’m sorry, but how can I <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.0.blank11" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.0.blank12" contenteditable="true"></span> the Sky Cinema?</div><div class="dict-line"><b>G:</b> It’s <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.1.blank13" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.1.blank14" contenteditable="true"></span>, but it’s a little difficult to find. <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.1.blank15" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.1.blank16" contenteditable="true"></span> you take a taxi?</div><div class="dict-line"><b>B:</b> OK. How long will <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.2.blank17" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.2.blank18" contenteditable="true"></span>?</div><div class="dict-line"><b>G:</b> By taxi? About <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.3.blank19" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.1.lines.3.blank20" contenteditable="true"></span>.</div></div></div><div class="dict-dialog"><span class="dict-num">3.</span><div><div class="dict-line"><b>G:</b> Do you <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.0.blank21" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.0.blank22" contenteditable="true"></span>?</div><div class="dict-line"><b>B:</b> Yes. <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.1.blank23" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.1.blank24" contenteditable="true"></span> I <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.1.blank25" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.1.blank26" contenteditable="true"></span> the Dream Shopping Mall from here? Can I walk?</div><div class="dict-line"><b>G:</b> You can, but it’s a <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.2.blank27" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.2.blank28" contenteditable="true"></span>. Why don’t you go <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.2.blank29" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.2.blank30" contenteditable="true"></span>? Take bus No. 12.</div><div class="dict-line"><b>B:</b> OK. <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.3.blank31" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.3.blank32" contenteditable="true"></span> will it take by bus?</div><div class="dict-line"><b>G:</b> Not very long. It’ll take <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.4.blank33" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.2.lines.4.blank34" contenteditable="true"></span> 10 minutes.</div></div></div><div class="dict-dialog"><span class="dict-num">4.</span><div><div class="dict-line"><b>B:</b> Excuse me. I’m <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.0.blank35" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.0.blank36" contenteditable="true"></span> the National Art Museum. What’s the best way <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.0.blank37" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.0.blank38" contenteditable="true"></span> there?</div><div class="dict-line"><b>G:</b> You <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.1.blank39" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.1.blank40" contenteditable="true"></span>. Go straight for about 500 meters and <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.1.blank41" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.1.blank42" contenteditable="true"></span>. It’ll be on <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.1.blank43" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.1.blank44" contenteditable="true"></span>.</div><div class="dict-line"><b>B:</b> I see. <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.2.blank45" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.2.blank46" contenteditable="true"></span> will it take?</div><div class="dict-line"><b>G:</b> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.3.blank47" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.A.3.lines.3.blank48" contenteditable="true"></span> 15 minutes.</div><div class="dict-line"><b>B:</b> Really? Thanks.</div></div></div>
+  <h3 class="dict-section bsec">B&nbsp; Listen to the dialog and fill in the blanks. <span>➜ 교과서 85쪽 C번</span></h3>
+  <div class="dict-b-dialog"><div class="dict-line"><b>B:</b> Somi, I need help. What’s the best way <span class="blank editable-field dict-blank" data-field="s9.B.lines.0.blank49" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.0.blank50" contenteditable="true"></span> to Sebit Park from here?</div><div class="dict-line"><b>G:</b> Sebit Park? Well, you <span class="blank editable-field dict-blank" data-field="s9.B.lines.1.blank51" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.1.blank52" contenteditable="true"></span> there by bus or by subway, but the subway is better.</div><div class="dict-line"><b>B:</b> OK. <span class="blank editable-field dict-blank" data-field="s9.B.lines.2.blank53" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.2.blank54" contenteditable="true"></span> should I take?</div><div class="dict-line"><b>G:</b> <span class="blank editable-field dict-blank" data-field="s9.B.lines.3.blank55" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.3.blank56" contenteditable="true"></span> 3, and <span class="blank editable-field dict-blank" data-field="s9.B.lines.3.blank57" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.3.blank58" contenteditable="true"></span> at Sebit Station.</div><div class="dict-line"><b>B:</b> Line 3 and get off at Sebit Station. <span class="blank editable-field dict-blank" data-field="s9.B.lines.4.blank59" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.4.blank60" contenteditable="true"></span> will it take?</div><div class="dict-line"><b>G:</b> It’ll <span class="blank editable-field dict-blank" data-field="s9.B.lines.5.blank61" contenteditable="true"></span> about 40 minutes.</div><div class="dict-line"><b>B:</b> Is it that far?</div><div class="dict-line"><b>G:</b> Yes. Anyway, why are you <span class="blank editable-field dict-blank" data-field="s9.B.lines.7.blank62" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.7.blank63" contenteditable="true"></span> Sebit Park, Liam?</div><div class="dict-line"><b>B:</b> Oh, there is an <span class="blank editable-field dict-blank" data-field="s9.B.lines.8.blank64" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.8.blank65" contenteditable="true"></span> this Saturday. You can come with me if you want.</div><div class="dict-line"><b>G:</b> Really? <span class="blank editable-field dict-blank" data-field="s9.B.lines.9.blank66" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.9.blank67" contenteditable="true"></span> this Saturday. Let’s go together.</div><div class="dict-line"><b>B:</b> Perfect. Let’s meet <span class="blank editable-field dict-blank" data-field="s9.B.lines.10.blank68" contenteditable="true"></span> <span class="blank editable-field dict-blank" data-field="s9.B.lines.10.blank69" contenteditable="true"></span> 10.</div></div>
+</section>
+
+
+<section class="sheet page-edit grammar-sheet" contenteditable="true">
+<table class="grammar-head">
+<tr><th>신구중</th><th>Lesson 5. The City as a Canvas</th><th>( &nbsp; )학년 &nbsp; 2반 &nbsp; ( &nbsp; )번호</th></tr>
+<tr><th>Grade 2</th><th>어법 1. 목적격관계대명사</th><th>이름: __________________</th></tr>
+</table>
+
+<h3>[어법 예문]</h3>
+<div class="grammar-examples"><b>A.</b>
+<ol><li>I have a friend who lives in Canada.</li><li>The cat that followed us to school was black and white.</li></ol>
+<b>B.</b><ol><li>She is the girl who I met at the concert.</li><li>Chris found the bike that he lost yesterday.</li></ol></div>
+
+<div class="grammar-box">
+<h3>• 관계대명사란?</h3>
+<p>- 관계대명사는 선행사(관계대명사 앞의 <b>명사</b>)를 수식하는 <b>형용사 (절)</b> 역할을 함</p>
+<p>- 앞에 있는 명사가 사람인지 아닌지에 따라 관계대명사의 종류가 결정됨.</p>
+<p><b>1. 주격관계대명사:</b> 관계대명사 다음에 주어가 빠져있으면 주격관계대명사이다.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;관계대명사 바로 뒤에 주로 <b>(동사)</b>가 있다.</p>
+<p><b>2. 목적격관계대명사:</b> 관계대명사 다음에 목적어가 빠져있으면 목적격관계대명사이다.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;관계대명사 바로 뒤에 <b>(주어 + 동사)</b>가 나온다.</p>
+
+<table class="editable-table rel-table">
+<tr><th>선행사</th><th>주격</th><th>목적격</th></tr>
+<tr><th>사람</th><td><span class="blank editable-field gram-blank" data-field="s10.table.person.subject" contenteditable="true"></span></td><td><span class="blank editable-field gram-blank" data-field="s10.table.person.object" contenteditable="true"></span></td></tr>
+<tr><th>사물/동물</th><td><span class="blank editable-field gram-blank" data-field="s10.table.thing.subject" contenteditable="true"></span></td><td><span class="blank editable-field gram-blank" data-field="s10.table.thing.object" contenteditable="true"></span></td></tr>
+<tr><th>사람/사물/동물</th><td><span class="blank editable-field gram-blank" data-field="s10.table.all.subject" contenteditable="true"></span></td><td><span class="blank editable-field gram-blank" data-field="s10.table.all.object" contenteditable="true"></span></td></tr>
+</table>
+
+<div class="rel-practice">
+<p>I want to wear the dress ( <span class="blank editable-field gram-blank" data-field="s10.practice.0" contenteditable="true"></span> ) Jessie made.</p><p>The man ( <span class="blank editable-field gram-blank" data-field="s10.practice.1" contenteditable="true"></span> ) I saw at the coffee shop was Park Jisung.</p><p>The book ( <span class="blank editable-field gram-blank" data-field="s10.practice.2" contenteditable="true"></span> ) you gave me was really interesting.</p><p>The car ( <span class="blank editable-field gram-blank" data-field="s10.practice.3" contenteditable="true"></span> ) he bought last week was expensive.</p><p>This is the restaurant ( <span class="blank editable-field gram-blank" data-field="s10.practice.4" contenteditable="true"></span> ) we had dinner at last night.</p>
+</div>
+</div>
+</section>
+
+<section class="sheet page-edit grammar-sheet" contenteditable="true">
+<div class="exercise-block"><h3>A&nbsp; 다음 괄호 안에서 어법상 알맞은 것을 골라 봅시다.</h3>
+<ol><li>She is the girl (whom / which) I met at the concert.</li><li>Did you find the keys (who / which) you lost?</li><li>I have a friend (which / that) I share everything with.</li><li>I gave her all the money (that / whom) I had.</li><li>I like the shirt (which / whom) Sam is wearing.</li><li>Some of the people (that / which) I invited to my party didn’t come.</li></ol></div>
+
+<div class="exercise-block"><h3>B&nbsp; 다음 우리말과 같은 뜻이 되도록 괄호 안의 단어를 배열해 봅시다.</h3>
+<ol><li><div>내가 (어제 잡은) 나비들을 너에게 줄게. (I, which, yesterday, the butterflies, caught)</div><div class="arrange">→ I’ll give you <span class="blank editable-field longblank" data-field="s11.B.0" contenteditable="true"></span> </div></li><li><div>이 분이 (내가 네게 이야기했던) 이모님이시다. (you, that, told, I, about, my aunt)</div><div class="arrange">→ This is <span class="blank editable-field longblank" data-field="s11.B.1" contenteditable="true"></span> </div></li><li><div>그녀는 그녀의 아이들에게 (그들이 원하는) 모든 것을 준다. (that, everything, want, they)</div><div class="arrange">→ She gives her children <span class="blank editable-field longblank" data-field="s11.B.2" contenteditable="true"></span> </div></li><li><div>(그녀가 읽고 있던) 그 책이 없어졌다. (she, that, was, the book, reading)</div><div class="arrange">→  <span class="blank editable-field longblank" data-field="s11.B.3" contenteditable="true"></span> is missing.</div></li></ol></div>
+
+<div class="exercise-block"><h3>C&nbsp; 다음 꼭 필요한 곳에 who / whom / which / that을 삽입하여 쓰시오. 오류가 없는 문장은 옆에 ‘OK’라 쓰시오.</h3>
+<ol><li>The man _____ has brown hair is a lawyer. &nbsp; <span class="blank editable-field gram-blank" data-field="s11.C.0" contenteditable="true"></span></li><li>The boys _____ we met this morning were very nice. &nbsp; <span class="blank editable-field gram-blank" data-field="s11.C.1" contenteditable="true"></span></li><li>My dad _____ bought the flowers are on the table. &nbsp; <span class="blank editable-field gram-blank" data-field="s11.C.2" contenteditable="true"></span></li><li>Greg found the money _____ I lost yesterday. &nbsp; <span class="blank editable-field gram-blank" data-field="s11.C.3" contenteditable="true"></span></li></ol></div>
+
+<div class="exercise-block"><h3>D&nbsp; 목적격 관계대명사를 사용하여 두 문장을 한 문장으로 연결해 봅시다.</h3>
+<ol><li>He is a great doctor. Everybody respects him.<div class="arrange">→ <span class="blank editable-field longblank" data-field="s11.D.0" contenteditable="true"></span></div></li><li>This is the book. I wanted to have the book.<div class="arrange">→ <span class="blank editable-field longblank" data-field="s11.D.1" contenteditable="true"></span></div></li><li>This is the school. My father went to this school.<div class="arrange">→ <span class="blank editable-field longblank" data-field="s11.D.2" contenteditable="true"></span></div></li></ol></div>
+</section>
+
+<section class="sheet page-edit grammar-sheet used-sheet" contenteditable="true">
+<div class="grammarplus-top"><div class="gp-title">Grammar Plus ⊕</div><div class="gp-lesson">Lesson 5</div></div>
+<div class="gp-sub">목적격 관계대명사&nbsp;&nbsp; | &nbsp;&nbsp;<b>used to</b></div>
+
+<h2>2. used to</h2>
+<h3>1) used to의 의미와 쓰임</h3>
+<p>I played soccer last weekend. (나는 지난 주말에 축구를 했다.)<br>
+I <b><u>used to</u></b> play soccer every weekend. (나는 주말마다 축구를 하곤 했다. (지금은 하지 않는다.))</p>
+
+<p>① ‘used to+동사원형’은 과거의 규칙적인 습관이나 상태를 나타냅니다. 현재의 상태와 대비되어 지금은 그렇지 않음을 나타내는 경우가 많습니다.<br>
+그렇지 않다는 의미를 담고 있습니다. 해석은 ‘예전에 ~하곤 했다, ~였었다’ 등으로 합니다.</p>
+<p>They <b>used to</b> play tennis a lot, but now they don’t.<br>
+(그들은 테니스를 많이 치곤 했지만, 지금은 치지 않는다.)</p>
+<p>My mother <b>used to</b> work as a chef when she was young.<br>
+(내 어머니는 젊었을 때 요리사로 일하셨다.)</p>
+
+<p>② ‘There used to be ~.’는 과거에 무언가 있었다는 상태를 나타냅니다. 해석은 ‘예전에 ~가 있었다(지금은 없다)’로 합니다.</p>
+<p><b>There used to be</b> many apple trees in the garden.<br>(정원에 사과 나무가 많이 있었다.)</p>
+<p><b>There used to be</b> lots of fish in this river.<br>(이 강에는 물고기가 많이 있었다.)</p>
+
+<p>③ ‘be used to+(동)명사’는 현재의 익숙한 상태를 나타내며 ‘~에 익숙하다’라고 해석합니다.</p>
+<p>I’m <b>used to studying</b> late at night.<br>(나는 밤늦게 공부하는 것에 익숙하다.)</p>
+<p>He <b>is used to wearing</b> a mask on the subway.<br>(그는 지하철에서 마스크를 쓰는 것에 익숙하다.)</p>
+</section>
+
+<section class="sheet page-edit grammar-sheet exercise-b-sheet" contenteditable="true">
+<div class="exercise-title"><b>Exercise B</b><span>Lesson 5&nbsp; [used to]</span></div>
+<div class="two-col">
+<div>
+<div class="exq"><b>1. 다음 문장이 의미하는 바로 알맞은 것은?</b><div class="boxed">I used to go camping every weekend.</div>
+
+<ol class="circled"><li>나는 매주 캠핑을 가고 싶다.</li><li>나는 지금도 매주 캠핑을 간다.</li><li>나는 자주 캠핑을 갈 계획이다.</li><li>나는 캠핑을 가는 것을 그만두고 싶다.</li><li>나는 예전에 매주 캠핑을 하러 가곤 했다.</li></ol></div>
+
+<div class="exq"><b>2. 다음 우리말을 영어로 바르게 옮긴 것은?</b><div class="boxed">나는 매일 축구를 하곤 했어.</div>
+<ol class="circled"><li>I use to play soccer every day.</li><li>I used to play soccer every day.</li><li>I used to playing soccer every day.</li><li>I am used to playing soccer every day.</li><li>I was used to playing soccer every day.</li></ol></div>
+
+<div class="exq"><b>3. 다음 빈칸에 들어갈 말로 가장 알맞은 것은?</b>
+<div class="boxed">There ______ a movie theater here, but there is no movie theater now.</div>
+<ol class="circled"><li>uses to</li><li>used to</li><li>used to be</li><li>was used to be</li><li>were used to be</li></ol></div>
+
+<div class="exq"><b>4. 두 문장의 의미가 같도록 빈칸에 들어갈 말로 알맞은 것은?</b>
+<div class="boxed">Mom used to drink coffee every morning.<br>= Mom drank coffee every morning ______.</div>
+<ol class="circled"><li>and she still does</li><li>and now she likes it</li><li>but now she doesn’t</li><li>but now she enjoys it</li><li>and now she drinks more</li></ol></div>
+</div>
+
+<div>
+<div class="exq"><b>5. 두 문장의 의미가 같도록 빈칸에 알맞은 말을 쓰시오.</b>
+<div class="boxed">They lived in a big city, but now they don’t.<br>= They <span class="blank editable-field gram-blank" data-field="s13.q5.0" contenteditable="true"></span> <span class="blank editable-field gram-blank" data-field="s13.q5.1" contenteditable="true"></span> <span class="blank editable-field gram-blank" data-field="s13.q5.2" contenteditable="true"></span> in a big city.</div></div>
+
+<div class="exq"><b>6. 빈칸에 used to를 쓸 수 없는 것은?</b>
+<ol class="circled"><li>I ______ ride a bike to school.</li><li>There ______ a gym near my house.</li><li>They ______ play soccer after school.</li><li>We ______ have a big garden before.</li><li>She ______ visit her grandparents every weekend.</li></ol></div>
+
+<div class="exq"><b>7. 다음 중 어법상 틀린 문장은?</b>
+<ol class="circled"><li>He used to eat meat.</li><li>My sister used to have long hair.</li><li>There used to be a bookstore here.</li><li>We used to gone shopping every weekend.</li><li>I used to wear rain boots on rainy days when I was young.</li></ol></div>
+
+<div class="exq"><b>8. 괄호 안의 우리말과 의미가 같도록 어법상 틀린 부분을 바르게 고쳐 쓰시오.</b>
+<p>(1) She uses to be very shy.<br>(그녀는 예전에 매우 수줍음이 많았다.)<br><span class="blank editable-field gram-blank" data-field="s13.q8.0a" contenteditable="true"></span> → <span class="blank editable-field gram-blank" data-field="s13.q8.0b" contenteditable="true"></span></p>
+<p>(2) They used to having a cat.<br>(그들은 예전에 고양이를 키웠다.)<br><span class="blank editable-field gram-blank" data-field="s13.q8.1a" contenteditable="true"></span> → <span class="blank editable-field gram-blank" data-field="s13.q8.1b" contenteditable="true"></span></p>
+<p>(3) There are used to be many people at the beach.<br>(예전에는 바닷가에 사람들이 많았다.)<br><span class="blank editable-field gram-blank" data-field="s13.q8.2a" contenteditable="true"></span> → <span class="blank editable-field gram-blank" data-field="s13.q8.2b" contenteditable="true"></span></p>
+</div>
+</div>
+</div>
+</section>
+
+<script id="lesson-data" type="application/json">{"lesson": {"school": "신구중", "grade": 2, "number": 5, "title": "The City as a Canvas", "unit_part": "COMPLETE", "subtitle": "Street Art in London / Banksy & Finsbury Park / Ben Wilson & Muswell Hill", "integration_key": "shingu_g2_l5", "source_pages": ["A1", "A2", "B1", "B2", "C1", "C2", "WORD_LIST1", "WORD_LIST2", "DICTATION", "GRAMMAR_OBJECT_RELATIVE_EXPLANATION", "GRAMMAR_OBJECT_RELATIVE_EXERCISE", "GRAMMAR_USED_TO_EXPLANATION", "GRAMMAR_USED_TO_EXERCISE"], "sections": [{"section": "Vocabulary", "type": "vocabulary_chart", "items": [{"seq": 1, "word": "form(s)", "meaning": "형태"}, {"seq": 2, "word": "modern", "meaning": "현대의"}, {"seq": 3, "word": "colorful and lively", "meaning": "다채롭고 활기 넘치는"}, {"seq": 4, "word": "be going to+동사원형", "meaning": "~할 것이다"}, {"seq": 5, "word": "well-known", "meaning": "잘 알려진"}, {"seq": 6, "word": "artwork(s)", "meaning": "미술품"}, {"seq": 7, "word": "poor", "meaning": "가난한"}, {"seq": 8, "word": "used to+동사원형", "meaning": "~하곤 했다"}, {"seq": 9, "word": "hip", "meaning": "세련된"}, {"seq": 10, "word": "piece (of street art)", "meaning": "작품 한 점"}, {"seq": 11, "word": "over there", "meaning": "저쪽에"}, {"seq": 12, "word": "be famous for", "meaning": "~로 유명하다"}, {"seq": 13, "word": "dot", "meaning": "점"}, {"seq": 14, "word": "according to", "meaning": "~에 따르면"}, {"seq": 15, "word": "figure", "meaning": "인물"}, {"seq": 16, "word": "represent", "meaning": "나타내다"}, {"seq": 17, "word": "past / present / future", "meaning": "과거 / 현재 / 미래"}, {"seq": 18, "word": "closely", "meaning": "자세히"}, {"seq": 19, "word": "clue", "meaning": "단서"}]}, {"section": "Reading & Interpreting", "type": "reading_interpreting", "title": "Street Art in London", "items": [{"number": 1, "english_text": "Street Art in London", "korean": "런던의 거리 예술", "notes": []}, {"number": 2, "english_text": "Modern street art comes in many different ________, and it ________ cities colorful and lively.", "korean": "현대 거리 예술은 다양한 형태로 존재하며, 도시를 다채롭고 활기차게 만듭니다.", "notes": ["※ make+목적어+형용사: (목적어)를 ~하게 만들다", "※ 「~, and it makes A B」 구조에 유의하며 해석하기"]}, {"number": 3, "english_text": "Today, we ________ see some well-known street artworks in London.", "korean": "오늘, 우리는 런던의 잘 알려진 거리 예술 작품들을 살펴보겠습니다.", "notes": ["※ be going to+동사원형: ~할 것이다"]}, {"number": 4, "english_text": "The place ________ we are going to visit is Shoreditch.", "korean": "우리가 방문할 곳은 Shoreditch입니다.", "notes": ["※ (that): 목적격 관계대명사 - 뒤에 「주어+동사」가 이어지고 목적어가 빠진 불완전한 절이 옴", "※ The place [that we are going to visit] = 우리가 방문할 곳"]}, {"number": 5, "english_text": "Poor workers ________ live in this area, but now it is one of the hippest areas in London.", "korean": "가난한 노동자들이 이곳에서 살았었지만, 지금은 런던에서 가장 힙한 지역 중 하나입니다.", "notes": ["※ used to+동사원형: 과거의 상태나 습관 (~하곤 했다)", "※ 「one of the+최상급+복수명사」: 가장 ~한 것들 중 하나 → the hippest areas"]}, {"number": 6, "english_text": "We can find so many great ________ of street art here.", "korean": "우리는 이곳에서 정말 많은 멋진 거리 예술 작품들을 볼 수 있습니다.", "notes": []}, {"number": 7, "english_text": "Do you see the painting ________?", "korean": "저쪽에 있는 저 그림이 보이시나요?", "notes": []}, {"number": 8, "english_text": "It is ________ the artist STIK.", "korean": "그것은 STIK이라는 예술가의 작품입니다.", "notes": ["※ by+행위자: ~가 만든, ~에 의해"]}, {"number": 9, "english_text": "He is ________ using only lines and dots in his paintings of human bodies.", "korean": "그는 사람의 몸을 그린 그림에서 선과 점만 사용하는 것으로 유명합니다.", "notes": ["※ be famous for: ~로 유명하다", "※ for 뒤에는 동명사(-ing)가 옴 → using: 전치사 for의 목적어로 쓰인 동명사"]}, {"number": 10, "english_text": "________ STIK, the three figures represent the past, present, and future of Shoreditch.", "korean": "STIK에 따르면, 저 세 인물은 Shoreditch의 과거, 현재, 그리고 미래를 나타낸다고 합니다.", "notes": ["※ According to ~: ~에 따르면"]}, {"number": 11, "english_text": "Which figure ________ which?", "korean": "어느 인물이 어떤 것을 나타낼까요?", "notes": ["※ 앞의 Which(한정사, 어느/어떤) - 뒤의 which(대명사, 어느 것)"]}, {"number": 12, "english_text": "Well, look ________ at the eyes of the three figures.", "korean": "자, 세 인물의 눈을 자세히 살펴보세요.", "notes": ["※ 명령문: 주어 없이 동사원형으로 시작"]}, {"number": 13, "english_text": "They are just dots, but they will ________ you a clue.", "korean": "그것들은 그저 점일 뿐이지만, 그 점들이 여러분에게 힌트를 줄 것입니다.", "notes": ["※ 4형식 문장: give+간접목적어(you)+직접목적어(a clue): ~에게 …을 주다"]}]}, {"section": "Comprehension Check", "type": "comprehension_check", "items": [{"number": 1, "question": "According to STIK, what do the three figures in his painting represent?", "answer": ""}, {"number": 2, "question": "Shoreditch used to be an area where rich people lived.", "answer": "T / F"}, {"number": 3, "question": "STIK is famous for using only lines and dots in his paintings.", "answer": "T / F"}]}, {"section": "B Vocabulary", "unit_part": "B", "type": "vocabulary_chart", "items": [{"seq": 1, "word": "internationally", "meaning": "국제적으로"}, {"seq": 2, "word": "carry (a message)", "meaning": "(메시지를) 담다"}, {"seq": 3, "word": "social", "meaning": "사회적인"}, {"seq": 4, "word": "example", "meaning": "예"}, {"seq": 5, "word": "as you can see", "meaning": "보시다시피"}, {"seq": 6, "word": "spray", "meaning": "뿌리다"}, {"seq": 7, "word": "leafless", "meaning": "잎이 없는"}, {"seq": 8, "word": "next to", "meaning": "~ 옆에"}, {"seq": 9, "word": "sprayer", "meaning": "분무기"}, {"seq": 10, "word": "through", "meaning": "~을 통해"}, {"seq": 11, "word": "opinion", "meaning": "의견"}, {"seq": 12, "word": "have a hard time", "meaning": "어려움을 겪다"}, {"seq": 13, "word": "take care of", "meaning": "보살피다"}, {"seq": 14, "word": "final", "meaning": "마지막의"}, {"seq": 15, "word": "look down", "meaning": "내려다보다"}]}, {"section": "B Reading & Interpreting", "unit_part": "B", "type": "reading_interpreting", "title": "Banksy & Finsbury Park", "items": [{"number": 1, "english_text": "We are now in Finsbury Park ________ see a painting by Banksy, an internationally famous street artist.", "korean": "우리는 이제 세계적으로 유명한 거리 예술가 Banksy의 작품을 보러 Finsbury Park에 와 있습니다.", "notes": ["※ to see ~: 부사적 용법(목적) - ~하기 위해서", "※ an internationally famous street artist는 Banksy와 동격(=)"]}, {"number": 2, "english_text": "Banksy's artworks often ________ social messages, and the green tree you see over there is a good example.", "korean": "Banksy의 예술 작품은 종종 사회적 메시지를 담고 있으며, 저기 보이는 녹색 나무가 좋은 예입니다.", "notes": ["※ carry: (메시지를) 담다", "※ the green tree [(that/which) you see over there]: 목적격 관계대명사절 (that/which 생략 가능)"]}, {"number": 3, "english_text": "As you can see, he created a green tree ________ spraying green paint on a wall behind a leafless tree.", "korean": "보시다시피, 그는 잎이 없는 나무 뒤 벽에 녹색 페인트를 뿌려 녹색 나무를 만들어 냈습니다.", "notes": ["※ As you can see: 보시다시피", "※ by ~ing: ~함으로써"]}, {"number": 4, "english_text": "Next to the tree, there is a person ________ is holding a sprayer.", "korean": "그 나무 옆에는 스프레이를 들고 있는 한 사람이 있습니다.", "notes": ["※ (who): 주격 관계대명사 - 뒤에 동사(is)가 바로 이어짐"]}, {"number": 5, "english_text": "What message does Banksy want to give us ________ this painting?", "korean": "Banksy는 이 그림을 통해 우리에게 어떤 메시지를 전하고 싶은 걸까요?", "notes": ["※ through: ~을 통해"]}, {"number": 6, "english_text": "In many people's opinion, he is telling us ________ nature is having a hard time.", "korean": "많은 사람들의 의견에 따르면, 그는 자연이 어려움을 겪고 있다는 것을 말하려는 것 같습니다.", "notes": ["※ (that): 명사절을 이끄는 접속사 (telling us의 직접목적어인 절)", "※ have a hard time: 어려움을 겪다"]}, {"number": 7, "english_text": "They think he ________ us to take better care of it.", "korean": "그들은 Banksy가 우리로 하여금 자연을 더 잘 보살피기를 원하는 것 같다고 생각합니다.", "notes": ["※ want+목적어+to부정사: (목적어)가 ~하기를 원하다", "※ take care of ~: ~을 보살피다"]}]}, {"section": "B Comprehension Check", "unit_part": "B", "type": "comprehension_check", "items": [{"number": 1, "question": "How did Banksy create the green tree on the wall?", "answer": ""}, {"number": 2, "question": "Banksy's artworks often carry social messages.", "answer": "T / F"}, {"number": 3, "question": "According to many people, Banksy's tree painting means that nature needs more care.", "answer": "T / F"}]}, {"section": "C Vocabulary", "unit_part": "C", "type": "vocabulary_chart", "items": [{"seq": 1, "word": "chewing gum", "meaning": "껌"}, {"seq": 2, "word": "chew", "meaning": "씹다"}, {"seq": 3, "word": "well known for", "meaning": "~로 잘 알려져 있다"}, {"seq": 4, "word": "drop", "meaning": "떨어뜨리다"}, {"seq": 5, "word": "personal", "meaning": "개인적인"}, {"seq": 6, "word": "for example", "meaning": "예를 들어"}, {"seq": 7, "word": "loved one", "meaning": "사랑하는 사람"}, {"seq": 8, "word": "tiny", "meaning": "아주 작은"}, {"seq": 9, "word": "pleasure", "meaning": "기쁨"}, {"seq": 10, "word": "give A to B", "meaning": "A를 B에게 주다"}]}, {"section": "C Reading & Interpreting", "unit_part": "C", "type": "reading_interpreting", "title": "Ben Wilson & Muswell Hill", "items": [{"number": 1, "english_text": "The ________ stop of our tour today is Muswell Hill.", "korean": "오늘 우리 투어의 마지막 방문지는 Muswell Hill입니다.", "notes": ["※ final: 마지막의"]}, {"number": 2, "english_text": "Can’t see any street artworks?", "korean": "어떤 거리 예술 작품도 보이지 않나요?", "notes": []}, {"number": 3, "english_text": "Well, look ________ and look closely.", "korean": "그렇다면, 아래를 내려다보고 자세히 살펴보세요.", "notes": ["※ look down: 내려다보다"]}, {"number": 4, "english_text": "Do you see the little ________ paintings?", "korean": "여러분은 작은 껌 그림들이 보이나요?", "notes": ["※ chewing gum: 껌 (동명사 chewing + 명사 gum)"]}, {"number": 5, "english_text": "They are by the artist Ben Wilson.", "korean": "이것들은 예술가 Ben Wilson의 작품입니다.", "notes": []}, {"number": 6, "english_text": "Wilson is ________ for painting pictures on gum that people drop on the street.", "korean": "Wilson은 사람들이 길에 버린 껌 위에 그림을 그리는 것으로 잘 알려져 있습니다.", "notes": ["※ well known for: ~로 잘 알려져 있다", "※ gum [that people drop on the street]: 목적격 관계대명사절 (that/which)"]}, {"number": 7, "english_text": "His gum paintings often carry ________ messages from people he meets on the street.", "korean": "그의 껌 그림은 종종 그가 길에서 만난 사람들의 개인적인 메시지를 담고 있습니다.", "notes": ["※ personal: 개인적인"]}, {"number": 8, "english_text": "________, the one over here is a happy birthday wish for a loved one.", "korean": "예를 들어, 여기 있는 그림은 사랑하는 사람을 위한 생일 축하 메시지입니다.", "notes": ["※ For example: 예를 들어", "※ the one = His gum paintings 중 하나"]}, {"number": 9, "english_text": "Wilson's gum paintings are tiny, but they ________ great pleasure to many people.", "korean": "Wilson의 껌 그림은 정말 작지만, 많은 사람들에게 큰 기쁨을 줍니다.", "notes": ["※ give A to B: A를 B에게 주다 (give great pleasure to many people)"]}]}, {"section": "C Comprehension Check", "unit_part": "C", "type": "comprehension_check", "items": [{"number": 1, "question": "What is Ben Wilson well known for?", "answer": ""}, {"number": 2, "question": "Ben Wilson paints on new, clean gum that he buys himself.", "answer": "T / F"}, {"number": 3, "question": "Wilson's gum paintings often carry personal messages.", "answer": "T / F"}]}, {"section": "Grade 2 Lesson 5 Word List", "type": "word_list_english_definition", "unit_part": "WORD_LIST", "columns": ["word", "meaning", "english_definition", "example", "example_korean"], "items": [{"word": "artwork", "pos": "n.", "meaning": "미술품", "english_definition": "something made by an artist, like a drawing, painting, or sculpture", "example": "We learned about famous _____ in art class.", "example_korean": "우리는 미술 수업에서 유명한 미술 작품들에 대해 배웠다."}, {"word": "ballet", "pos": "n.", "meaning": "발레", "english_definition": "a style of dancing that tells a dramatic story with music", "example": "The _____ dancer jumped high.", "example_korean": "그 발레 무용수는 높이 뛰었다."}, {"word": "canvas", "pos": "n.", "meaning": "캔버스", "english_definition": "a piece of strong, rough cloth used by artists to paint on", "example": "He painted a dog on the _____.", "example_korean": "그는 캔버스에 강아지 한 마리를 그렸다."}, {"word": "chew", "pos": "v.", "meaning": "(음식을) 씹다", "english_definition": "to break food into smaller, softer pieces with the teeth", "example": "Please _____ your food slowly.", "example_korean": "음식을 천천히 씹으세요."}, {"word": "cinema", "pos": "n.", "meaning": "영화관", "english_definition": "a place where movies are shown", "example": "I like to watch movies at the _____.", "example_korean": "나는 영화관에서 영화를 보는 것을 좋아한다."}, {"word": "clue", "pos": "n.", "meaning": "단서", "english_definition": "a sign or some information that helps you to find the answer to a problem or question", "example": "Can you give me a _____ for the answer?", "example_korean": "답에 대한 단서를 줄 수 있나요?"}, {"word": "dirty", "pos": "a.", "meaning": "더러운", "english_definition": "not clean", "example": "My little brother’s hands were so _____.", "example_korean": "내 남동생의 손이 너무 더러웠다."}, {"word": "dot", "pos": "n.", "meaning": "점", "english_definition": "a very small round mark", "example": "I placed a _____ at the end of the sentence.", "example_korean": "나는 문장 끝에 점 하나를 찍었다."}, {"word": "figure", "pos": "n.", "meaning": "인물 (모습)", "english_definition": "a person or an animal in a drawing, painting, etc.", "example": "The _____ in the drawing is holding a flower.", "example_korean": "그림 속의 인물은 꽃 한 송이를 들고 있다."}, {"word": "final", "pos": "a.", "meaning": "마지막의", "english_definition": "being or happening at the end of a series of events, actions, etc.", "example": "The _____ scene of the movie was very sad.", "example_korean": "그 영화의 마지막 장면은 매우 슬펐다."}, {"word": "hall", "pos": "n.", "meaning": "(공공의) 건물", "english_definition": "a building or large room for public meetings, meals, concerts, etc.", "example": "The concert _____ was filled with energy when the band played their first song.", "example_korean": "그 밴드가 첫 번째 노래를 연주할 때 콘서트 홀은 에너지로 가득 찼다."}, {"word": "hip", "pos": "a.", "meaning": "세련된, 최신 유행에 밝은", "english_definition": "following the latest fashions in music and clothes", "example": "Her fashion is always so _____ and stylish.", "example_korean": "그녀의 패션은 항상 세련되고 멋지다."}, {"word": "leafless", "pos": "a.", "meaning": "잎이 없는", "english_definition": "having no leaves", "example": "The tree was _____ in the winter.", "example_korean": "그 나무는 겨울에 잎이 없었다."}, {"word": "lively", "pos": "a.", "meaning": "활기 넘치는", "english_definition": "full of life and energy", "example": "The park was _____ during the festival.", "example_korean": "공원은 축제 동안 활기가 넘쳤다."}, {"word": "modern", "pos": "a.", "meaning": "현대의", "english_definition": "of the present or recent times", "example": "I like _____ music more than old music.", "example_korean": "나는 옛 음악보다 현대 음악을 더 좋아한다."}, {"word": "opinion", "pos": "n.", "meaning": "의견", "english_definition": "a thought or belief about something or someone", "example": "Everyone has a different _____ on the topic.", "example_korean": "모든 사람이 그 주제에 대해 다른 의견을 갖고 있다."}, {"word": "past", "pos": "n.", "meaning": "과거", "english_definition": "the period of time before now", "example": "In the _____ this area was a quiet village.", "example_korean": "과거에 이 지역은 조용한 마을이었다."}, {"word": "pleasure", "pos": "n.", "meaning": "기쁨, 즐거움", "english_definition": "a state of feeling or being happy", "example": "Fred gets a lot of _____ from helping others.", "example_korean": "Fred는 다른 사람을 돕는 것에서 많은 기쁨을 얻는다."}, {"word": "represent", "pos": "v.", "meaning": "나타내다", "english_definition": "to show something or someone, especially in a picture", "example": "What does this mark _____?", "example_korean": "이 표시는 무엇을 나타내나요?"}, {"word": "spray", "pos": "v.", "meaning": "뿌리다", "english_definition": "to spread a liquid in small drops over an area", "example": "She _____ paint on the wall.", "example_korean": "그녀는 벽에 페인트를 뿌렸다."}, {"word": "stadium", "pos": "n.", "meaning": "경기장", "english_definition": "a playing area that is surrounded by seats, for sports, concerts, and other events", "example": "We watched the game from the top of the _____.", "example_korean": "우리는 경기장의 가장 높은 곳에서 경기를 봤다."}, {"word": "station", "pos": "n.", "meaning": "역", "english_definition": "a building where buses or trains stop so that people can get on or off", "example": "They waited for the train at the _____.", "example_korean": "그들은 역에서 기차를 기다렸다."}, {"word": "tiny", "pos": "a.", "meaning": "아주 작은", "english_definition": "very small", "example": "There were _____ pieces of glass all over the street.", "example_korean": "거리 곳곳에 아주 작은 유리 조각들이 있었다."}]}, {"section": "Dictation Worksheet Basic - Lesson 5", "type": "dictation_fill_in_the_blank", "unit_part": "DICTATION", "source": "교과서 84쪽 A번 / 85쪽 C번", "student_handwriting_excluded": true, "parts": {"A": {"instruction": "Listen to the dialogs and fill in the blanks.", "dialog_count": 4}, "B": {"instruction": "Listen to the dialog and fill in the blanks.", "dialog_count": 1}}}, {"section": "Grammar 1 - 목적격 관계대명사 설명", "type": "grammar_explanation", "topic": "목적격 관계대명사", "student_handwriting_excluded": true}, {"section": "Grammar 1 - 목적격 관계대명사 문제", "type": "grammar_exercise", "topic": "목적격 관계대명사", "parts": ["A 선택", "B 배열", "C 관계대명사 삽입/OK", "D 문장 연결"], "student_handwriting_excluded": true}, {"section": "Grammar Plus - used to 설명", "type": "grammar_explanation", "topic": "used to", "subtopics": ["used to + 동사원형", "There used to be", "be used to + (동)명사"], "student_handwriting_excluded": true}, {"section": "Exercise B - used to", "type": "grammar_exercise", "topic": "used to", "questions": 8, "student_handwriting_excluded": true}], "completion": {"lesson5_school_print_complete": true, "integrated_parts": ["A", "B", "C", "WORD_LIST", "DICTATION", "GRAMMAR_OBJECT_RELATIVE", "GRAMMAR_USED_TO"], "total_source_pages": 13}}, "transcription_policy": {"printed_content_only": true, "student_handwriting_excluded": true, "grading_marks_excluded": true, "printed_blanks_preserved": true, "future_merge_target": "신구중 2학년 Lesson 5 전체 통합본"}}</script>
+<script>
+(()=>{
+const status=document.getElementById('status'); let activeCell=null;
+document.querySelectorAll('td').forEach(td=>td.addEventListener('click',()=>activeCell=td));
+document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{document.execCommand(b.dataset.cmd,false,null);status.textContent='수정됨';});
+fontSize.onchange=()=>{if(fontSize.value)document.execCommand('fontSize',false,fontSize.value);};
+foreColor.oninput=()=>document.execCommand('foreColor',false,foreColor.value);
+hiliteColor.oninput=()=>document.execCommand('hiliteColor',false,hiliteColor.value);
+document.querySelectorAll('.page-edit').forEach(x=>x.addEventListener('input',()=>status.textContent='수정됨 · 저장 필요'));
+addRow.onclick=()=>{if(!activeCell)return alert('표의 셀을 먼저 클릭하세요.');let r=activeCell.closest('tr');let n=r.cloneNode(true);n.querySelectorAll('td').forEach(td=>td.innerHTML='');r.after(n);status.textContent='행 추가됨';};
+delRow.onclick=()=>{if(!activeCell)return alert('삭제할 행의 셀을 클릭하세요.');let r=activeCell.closest('tr');if(r&&r.parentElement.rows.length>1)r.remove();status.textContent='행 삭제됨';};
+function dl(name,text,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+saveHtml.onclick=()=>{let clone=document.documentElement.cloneNode(true);dl('신구중_2학년_5과_전체통합_WIKI_EDITOR.html','<!doctype html>\n'+clone.outerHTML,'text/html;charset=utf-8');status.textContent='HTML 저장 완료';};
+function setPath(obj,path,val){let p=path.split('.');let sec=Number(p.shift().slice(1));let cur=obj.lesson.sections[sec];for(let i=0;i<p.length-1;i++){let k=/^\d+$/.test(p[i])?Number(p[i]):p[i];if(cur[k]===undefined)return;cur=cur[k];}let k=p[p.length-1];if(cur&&Object.prototype.hasOwnProperty.call(cur,k))cur[k]=val;}
+saveJson.onclick=()=>{let obj=JSON.parse(document.getElementById('lesson-data').textContent);document.querySelectorAll('.structured[data-path]').forEach(el=>setPath(obj,el.dataset.path,el.innerText));obj.editor_export={edited_at:new Date().toISOString(),blank_values:{}};document.querySelectorAll('.editable-field[data-field]').forEach(el=>obj.editor_export.blank_values[el.dataset.field]=el.innerText.trim());dl('신구중_2학년_5과_전체통합_WIKI.json',JSON.stringify(obj,null,2),'application/json;charset=utf-8');status.textContent='구조화 JSON 저장 완료';};
+printBtn.onclick=()=>window.print();
+})();
+</script>
+
+</body>
+</html>
