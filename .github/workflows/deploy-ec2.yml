@@ -218,9 +218,36 @@ jobs:
           systemctl daemon-reload
           systemctl enable buildit-wiki.service
           systemctl restart buildit-wiki.service
-          sleep 3
-          systemctl is-active buildit-wiki.service
-          curl -fsS http://127.0.0.1:8000/api/health
+          # buildit-wiki는 재시작 직후 바로 응답하지 않는다. Type=simple 유닛은
+          # Python이 import 중인 동안에도 is-active가 'active'이므로, 단발 curl이나
+          # is-active만으로는 기동 완료를 판정할 수 없다(Deploy #276 실패 원인) —
+          # 실제 /api/health 응답이 올 때까지 재시도한다 (5초 x 18회 = 최대 90초 대기).
+          # 최종 성공 조건은 systemctl 상태가 아니라 이 health 응답 성공이다.
+          WIKI_HEALTH_ATTEMPTS=18
+          WIKI_HEALTH_SLEEP_SECS=5
+          WIKI_HEALTH_OK=0
+          WIKI_HEALTH_TRY=0
+          while [ "$WIKI_HEALTH_TRY" -lt "$WIKI_HEALTH_ATTEMPTS" ]; do
+            WIKI_HEALTH_TRY=$((WIKI_HEALTH_TRY + 1))
+            if curl -fsS --max-time 5 http://127.0.0.1:8000/api/health; then
+              echo
+              echo "buildit-wiki is healthy (attempt ${WIKI_HEALTH_TRY}/${WIKI_HEALTH_ATTEMPTS})."
+              WIKI_HEALTH_OK=1
+              break
+            fi
+            echo "buildit-wiki health not ready yet (attempt ${WIKI_HEALTH_TRY}/${WIKI_HEALTH_ATTEMPTS})"
+            if [ "$WIKI_HEALTH_TRY" -lt "$WIKI_HEALTH_ATTEMPTS" ]; then
+              echo "waiting ${WIKI_HEALTH_SLEEP_SECS}s before next attempt"
+              sleep "$WIKI_HEALTH_SLEEP_SECS"
+            fi
+          done
+          if [ "$WIKI_HEALTH_OK" != "1" ]; then
+            echo '::error::buildit-wiki did not become healthy within 90s — dumping diagnostics'
+            systemctl status buildit-wiki --no-pager -l | head -50 || true
+            ss -ltnp | grep ':8000' || true
+            journalctl -u buildit-wiki --no-pager -n 150 || true
+            exit 1
+          fi
           SCRIPT
 
           # f2r-app.service(Spring) 배포 가드를 그대로 이어 붙인다. scripts/deploy/f2r_app_guard.sh는
