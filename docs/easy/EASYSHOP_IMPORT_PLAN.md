@@ -1,6 +1,14 @@
 # Easy 이지샵 데이터 이전 계획 (문서만, importer 미개발)
 
 > 실제 이지샵 CSV/Excel 파일을 확보한 뒤 별도 작업으로 importer를 만든다.
+> V974 기반(staging·매핑·규칙)이 준비되어 있다. 실제 import는 아직 하지 않는다.
+
+## 현재 준비된 기반 (V974)
+
+- staging: `easy_import_batches` + `easy_import_rows` — 원본은 대기, 확정분만 장부로.
+- 매핑: `easy_account_mappings` — 외부 코드 ↔ 내부 계정 ↔ NTS 표준 (표준은 확정 전).
+- 자동분류: `easy_classification_rules` — 거래처/적요 패턴 + 우선순위 + 금액구간.
+- 내보내기: `GET /api/admin/easy/transactions/export` (CSV BOM, 세무사 전달 기초 형식).
 > 이 문서는 현재 스키마(V973)가 이지샵 항목을 받을 수 있는지 점검한 매핑표다.
 
 ## 매핑표 (이지샵 → Easy)

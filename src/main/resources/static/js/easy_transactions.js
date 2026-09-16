@@ -4,6 +4,7 @@
  */
 (function () {
   let businesses = [];
+  let accounts = [];
   let editingId = null;
 
   function today() {
@@ -15,8 +16,12 @@
   async function init() {
     await Easy.guardAdmin();
     businesses = await Easy.loadBusinesses();
+    accounts = await loadAccounts();
     fillBusinessSelect(document.getElementById('fBusiness'), false);
     fillBusinessSelect(document.getElementById('qBusiness'), true);
+    fillBusinessSelect(document.getElementById('impBusiness'), false);
+    syncAccountOptions();
+    syncCategoryList();
     document.getElementById('fDate').value = today();
     const first = new Date();
     first.setDate(1);
@@ -25,20 +30,84 @@
     document.getElementById('qTo').value = today();
     document.getElementById('btnSave').addEventListener('click', save);
     document.getElementById('btnSearch').addEventListener('click', search);
+    document.getElementById('btnExport').addEventListener('click', exportCsv);
     document.getElementById('toggleForm').addEventListener('click', toggleForm);
-    document.getElementById('fDirection').addEventListener('change', syncCategoryList);
-    syncCategoryList();
+    document.getElementById('fDirection').addEventListener('change', onDirectionChange);
+    document.getElementById('fSupply').addEventListener('input', autoTotal);
+    document.getElementById('fVat').addEventListener('input', autoTotal);
     if (businesses.length) {
       document.getElementById('fBusiness').value = String(businesses[0].businessId);
     }
     await search();
   }
 
-  /** 수입/지출에 따라 분류 후보를 바꾼다 (직접 입력도 가능). */
+  async function loadAccounts() {
+    try {
+      const res = await fetchAuth('/api/admin/easy/accounts');
+      if (!res.ok) return [];
+      return res.json();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function onDirectionChange() {
+    syncAccountOptions();
+    syncCategoryList();
+  }
+
+  /** 수입/지출에 맞는 계정 master 후보 (직접 입력도 가능). */
+  function syncAccountOptions() {
+    const dir = document.getElementById('fDirection').value;
+    const select = document.getElementById('fAccount');
+    const current = select.value;
+    select.innerHTML = '';
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '미지정';
+    select.appendChild(none);
+    accounts
+      .filter(a => !a.direction || a.direction === dir)
+      .forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = String(a.accountId);
+        opt.textContent = a.name;
+        select.appendChild(opt);
+      });
+    if (current) select.value = current;
+  }
+
   function syncCategoryList() {
     const dir = document.getElementById('fDirection').value;
-    document.getElementById('fCategory').setAttribute('list',
-      dir === 'INCOME' ? 'categoryIncomeList' : 'categoryExpenseList');
+    const list = document.getElementById('categoryList');
+    list.innerHTML = '';
+    accounts
+      .filter(a => !a.direction || a.direction === dir)
+      .forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.name;
+        list.appendChild(opt);
+      });
+  }
+
+  /** 공급가액 입력 시 합계 자동 계산 (부가세 미입력은 0). */
+  function autoTotal() {
+    const supplyRaw = document.getElementById('fSupply').value;
+    if (supplyRaw === '') return;
+    const vatRaw = document.getElementById('fVat').value;
+    document.getElementById('fAmount').value =
+      String(Number(supplyRaw) + (vatRaw === '' ? 0 : Number(vatRaw)));
+  }
+
+  function exportCsv() {
+    const params = new URLSearchParams();
+    const from = document.getElementById('qFrom').value;
+    const to = document.getElementById('qTo').value;
+    const biz = document.getElementById('qBusiness').value;
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (biz) params.set('businessId', biz);
+    window.location.href = '/api/admin/easy/transactions/export?' + params.toString();
   }
 
   function toggleForm() {
@@ -66,6 +135,10 @@
   }
 
   function readForm() {
+    const supplyRaw = document.getElementById('fSupply').value;
+    const vatRaw = document.getElementById('fVat').value;
+    const accountRaw = document.getElementById('fAccount').value;
+    const evidenceRaw = document.getElementById('fEvidence').value;
     return {
       businessId: Number(document.getElementById('fBusiness').value),
       occurredOn: document.getElementById('fDate').value,
@@ -76,7 +149,11 @@
       description: document.getElementById('fDesc').value.trim(),
       payMethod: document.getElementById('fPayMethod').value.trim(),
       memo: document.getElementById('fMemo').value.trim(),
-      receiptRef: ''
+      receiptRef: '',
+      accountId: accountRaw === '' ? null : Number(accountRaw),
+      supplyAmount: supplyRaw === '' ? null : Number(supplyRaw),
+      vatAmount: vatRaw === '' ? null : Number(vatRaw),
+      evidenceType: evidenceRaw === '' ? null : evidenceRaw
     };
   }
 
@@ -110,9 +187,11 @@
   function resetForm() {
     editingId = null;
     document.getElementById('btnSave').textContent = '등록하기';
-    ['fAmount', 'fCounterparty', 'fDesc', 'fMemo'].forEach(id => {
+    ['fAmount', 'fCounterparty', 'fDesc', 'fMemo', 'fSupply', 'fVat', 'fCategory'].forEach(id => {
       document.getElementById(id).value = '';
     });
+    document.getElementById('fAccount').value = '';
+    document.getElementById('fEvidence').value = '';
     document.getElementById('fDate').value = today();
   }
 
@@ -157,8 +236,15 @@
       sub.className = 'row';
       const s = document.createElement('span');
       s.className = 's';
-      s.textContent = (t.occurredOn || '') + ' · ' + (t.category || '')
-        + (t.counterparty ? ' · ' + t.counterparty : '');
+      const bits = [(t.occurredOn || ''), (t.accountName || t.category || '')];
+      if (t.accountName && t.category && t.accountName !== t.category) bits.push(t.category);
+      if (t.counterparty) bits.push(t.counterparty);
+      if (t.supplyAmount != null) {
+        bits.push('공급 ' + Easy.fmtWon(t.supplyAmount)
+          + ' + 부가세 ' + Easy.fmtWon(t.vatAmount || 0));
+      }
+      if (t.evidenceType) bits.push(evidenceLabel(t.evidenceType));
+      s.textContent = bits.filter(Boolean).join(' · ');
       const badge = document.createElement('span');
       badge.className = 'badge ' + (t.direction === 'INCOME' ? 'in' : 'out');
       badge.textContent = t.direction === 'INCOME' ? '수입' : '지출';
@@ -191,13 +277,31 @@
     });
   }
 
+  const EVIDENCE_LABEL = {
+    TAX_INVOICE: '세금계산서',
+    CREDIT_CARD: '신용카드',
+    CASH_RECEIPT: '현금영수증',
+    INVOICE: '계산서',
+    NONE: '없음',
+    OTHER: '기타'
+  };
+
+  function evidenceLabel(code) {
+    return EVIDENCE_LABEL[code] || String(code || '');
+  }
+
   function startEdit(t) {
     editingId = t.txnId;
     document.getElementById('fDate').value = t.occurredOn || today();
     document.getElementById('fBusiness').value = String(t.businessId);
     document.getElementById('fDirection').value = t.direction;
+    onDirectionChange();
     document.getElementById('fAmount').value = String(t.amount);
     document.getElementById('fCategory').value = t.category || '';
+    document.getElementById('fAccount').value = t.accountId ? String(t.accountId) : '';
+    document.getElementById('fSupply').value = t.supplyAmount == null ? '' : String(t.supplyAmount);
+    document.getElementById('fVat').value = t.vatAmount == null ? '' : String(t.vatAmount);
+    document.getElementById('fEvidence').value = t.evidenceType || '';
     document.getElementById('fCounterparty').value = t.counterparty || '';
     document.getElementById('fDesc').value = t.description || '';
     document.getElementById('fPayMethod').value = t.payMethod || '';

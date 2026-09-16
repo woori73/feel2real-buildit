@@ -15,6 +15,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStu
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTuitionPayment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyTransactionRepository;
@@ -40,6 +41,7 @@ class EasyLedgerServiceTest {
 
   @Mock EasyTransactionRepository txnRepository;
   @Mock EasyBusinessRepository businessRepository;
+  @Mock EasyAccountRepository accountRepository;
   @Mock EasyTuitionPaymentRepository paymentRepository;
   @Mock EasyStudentRepository studentRepository;
 
@@ -49,7 +51,8 @@ class EasyLedgerServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new EasyLedgerService(txnRepository, businessRepository, paymentRepository, studentRepository);
+    service = new EasyLedgerService(
+        txnRepository, businessRepository, accountRepository, paymentRepository, studentRepository);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     publishing = EasyBusiness.builder().code("PUBLISHING").name("출판사").active(true).sortOrder(2).build();
   }
@@ -170,6 +173,51 @@ class EasyLedgerServiceTest {
         "기타", "", "", "", null, null)))
         .isInstanceOf(IllegalArgumentException.class);
     verify(txnRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("계정·공급가액·부가세·증빙 저장 + 잘못된 증빙 거부")
+  void create_withAccountSplit_ok_badEvidence_rejected() {
+    f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount account =
+        f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount.builder()
+            .code("INCOME_TUITION").name("수강료")
+            .direction(f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity
+                .EasyAccountDirection.INCOME)
+            .sortOrder(1).active(true).build();
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    var response = service.createTxn(new EasyTxnRequest(
+        1L, LocalDate.of(2026, 9, 5), "INCOME", 330000L,
+        "수강료", "김OO", "9월 수강료", "계좌이체", null, null,
+        10L, 300000L, 30000L, "CREDIT_CARD"));
+
+    assertThat(response.accountName()).isEqualTo("수강료");
+    assertThat(response.supplyAmount()).isEqualTo(300000L);
+    assertThat(response.vatAmount()).isEqualTo(30000L);
+    assertThat(response.evidenceType()).isEqualTo("CREDIT_CARD");
+
+    assertThatThrownBy(() -> service.createTxn(new EasyTxnRequest(
+        1L, LocalDate.of(2026, 9, 5), "INCOME", 1000L,
+        "기타", "", "", "", null, null,
+        null, null, null, "WRONG")))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @DisplayName("CSV export — BOM 헤더 + 행")
+  void exportCsv_headerAndRows() {
+    when(txnRepository.findByOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
+        LocalDate.of(2000, 1, 1), LocalDate.of(2100, 12, 31)))
+        .thenReturn(List.of(txn(academy, EasyTxnDirection.INCOME, 500000L)));
+
+    String csv = service.exportCsv(null, null, null);
+
+    assertThat(csv).startsWith("\uFEFF");
+    assertThat(csv).contains("거래일,사업체,구분,금액,공급가액,부가세,계정,분류,거래처,적요,결제수단,증빙,메모");
+    assertThat(csv).contains("수입").contains("500000");
   }
 
   @Test

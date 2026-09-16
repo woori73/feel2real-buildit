@@ -5,8 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.Enumerated;import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -67,10 +66,28 @@ public class EasyTransaction extends BaseEntity {
   @Column(name = "receipt_ref", length = 200)
   private String receiptRef;
 
+  /** 계정 master 연결 — 없으면 category 텍스트를 그대로 쓴다 (v1 호환). */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "account_id")
+  private EasyAccount account;
+
+  /** 공급가액 — 미분리면 NULL. 세율 자동계산은 하지 않는다. */
+  @Column(name = "supply_amount")
+  private Long supplyAmount;
+
+  /** 부가세 — 미분리면 NULL. */
+  @Column(name = "vat_amount")
+  private Long vatAmount;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "evidence_type", length = 30)
+  private EasyEvidenceType evidenceType;
+
   @Builder
   public EasyTransaction(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
-      String payMethod, String memo, String receiptRef) {
+      String payMethod, String memo, String receiptRef,
+      EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -81,11 +98,16 @@ public class EasyTransaction extends BaseEntity {
     this.payMethod = payMethod == null ? "" : payMethod;
     this.memo = memo;
     this.receiptRef = receiptRef;
+    this.account = account;
+    this.supplyAmount = supplyAmount;
+    this.vatAmount = vatAmount;
+    this.evidenceType = evidenceType;
   }
 
   public void update(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
-      String payMethod, String memo, String receiptRef) {
+      String payMethod, String memo, String receiptRef,
+      EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -96,5 +118,9 @@ public class EasyTransaction extends BaseEntity {
     this.payMethod = payMethod == null ? "" : payMethod;
     this.memo = memo;
     this.receiptRef = receiptRef;
+    this.account = account;
+    this.supplyAmount = supplyAmount;
+    this.vatAmount = vatAmount;
+    this.evidenceType = evidenceType;
   }
 }

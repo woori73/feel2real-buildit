@@ -94,11 +94,27 @@ class EasyTemplateContractTest {
   void js_usesAdminApi_andConfirmDelete() throws IOException {
     for (String js : new String[] {
         "js/easy_dashboard.js", "js/easy_transactions.js",
-        "js/easy_students.js", "js/easy_payments.js"}) {
+        "js/easy_students.js", "js/easy_payments.js", "js/easy_import.js"}) {
       assertThat(readStatic(js)).as(js).contains("/api/admin/easy/");
     }
     assertThat(readStatic("js/easy_transactions.js")).contains("confirm(");
     assertThat(readStatic("js/easy_payments.js")).contains("confirm(");
+    assertThat(readStatic("js/easy_import.js"))
+        .contains("/api/admin/easy/imports")
+        .contains("confirm(");
+  }
+
+  @Test
+  @DisplayName("거래 화면은 내보내기·staging·계정·증빙 요소를 갖는다")
+  void transactions_importElements() throws IOException {
+    String html = readTemplate("easy/transactions");
+    assertThat(html)
+        .contains("/js/easy_import.js")
+        .contains("id=\"btnExport\"")
+        .contains("id=\"impFile\"")
+        .contains("id=\"fAccount\"")
+        .contains("id=\"fEvidence\"")
+        .contains("id=\"fSupply\"");
   }
 
   @Test

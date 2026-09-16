@@ -4,11 +4,14 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashbo
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashboardResponse.EasyOverdueStudent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTuitionPayment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyTransactionRepository;
@@ -35,6 +38,7 @@ public class EasyLedgerService {
 
   private final EasyTransactionRepository txnRepository;
   private final EasyBusinessRepository businessRepository;
+  private final EasyAccountRepository accountRepository;
   private final EasyTuitionPaymentRepository paymentRepository;
   private final EasyStudentRepository studentRepository;
 
@@ -159,6 +163,10 @@ public class EasyLedgerService {
         .payMethod(request.payMethod())
         .memo(request.memo())
         .receiptRef(request.receiptRef())
+        .account(requireAccount(request.accountId()))
+        .supplyAmount(optionalNonNegative(request.supplyAmount(), "공급가액"))
+        .vatAmount(optionalNonNegative(request.vatAmount(), "부가세"))
+        .evidenceType(parseEvidence(request.evidenceType()))
         .build();
     return EasyTxnResponse.from(txnRepository.save(txn));
   }
@@ -177,7 +185,11 @@ public class EasyLedgerService {
         request.description(),
         request.payMethod(),
         request.memo(),
-        request.receiptRef());
+        request.receiptRef(),
+        requireAccount(request.accountId()),
+        optionalNonNegative(request.supplyAmount(), "공급가액"),
+        optionalNonNegative(request.vatAmount(), "부가세"),
+        parseEvidence(request.evidenceType()));
     return EasyTxnResponse.from(txn);
   }
 
@@ -186,6 +198,43 @@ public class EasyLedgerService {
     EasyTransaction txn = txnRepository.findById(txnId)
         .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다: txnId=" + txnId));
     txnRepository.delete(txn);
+  }
+
+  /**
+   * 거래 CSV export — Excel 한글 호환(BOM). 세무사 전달용 기초 형식
+   * (korean-jangbu-for 분개 CSV 항목을 참고한 최소 컬럼).
+   */
+  public String exportCsv(Long businessId, LocalDate from, LocalDate to) {
+    List<EasyTxnResponse> txns = listTxns(businessId, from, to, null, null);
+    StringBuilder csv = new StringBuilder("\uFEFF");
+    csv.append("거래일,사업체,구분,금액,공급가액,부가세,계정,분류,거래처,적요,결제수단,증빙,메모\n");
+    for (EasyTxnResponse txn : txns) {
+      csv.append(csvCell(txn.occurredOn() == null ? "" : txn.occurredOn().toString())).append(',');
+      csv.append(csvCell(txn.businessName())).append(',');
+      csv.append("INCOME".equals(txn.direction()) ? "수입" : "지출").append(',');
+      csv.append(txn.amount()).append(',');
+      csv.append(txn.supplyAmount() == null ? "" : String.valueOf(txn.supplyAmount())).append(',');
+      csv.append(txn.vatAmount() == null ? "" : String.valueOf(txn.vatAmount())).append(',');
+      csv.append(csvCell(txn.accountName() == null ? "" : txn.accountName())).append(',');
+      csv.append(csvCell(txn.category())).append(',');
+      csv.append(csvCell(txn.counterparty())).append(',');
+      csv.append(csvCell(txn.description())).append(',');
+      csv.append(csvCell(txn.payMethod())).append(',');
+      csv.append(csvCell(txn.evidenceType() == null ? "" : txn.evidenceType())).append(',');
+      csv.append(csvCell(txn.memo() == null ? "" : txn.memo())).append('\n');
+    }
+    return csv.toString();
+  }
+
+  private String csvCell(String value) {
+    if (value == null) {
+      return "";
+    }
+    String escaped = value.replace("\"", "\"\"");
+    if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+      return "\"" + escaped + "\"";
+    }
+    return escaped;
   }
 
   private EasyBusiness requireActiveBusiness(Long businessId) {
@@ -223,6 +272,36 @@ public class EasyLedgerService {
       throw new IllegalArgumentException(label + "은 0 이상이어야 합니다.");
     }
     return amount;
+  }
+
+  private Long optionalNonNegative(Long amount, String label) {
+    if (amount == null) {
+      return null;
+    }
+    if (amount < 0) {
+      throw new IllegalArgumentException(label + "은 0 이상이어야 합니다.");
+    }
+    return amount;
+  }
+
+  /** 계정 연결 — null이면 category 텍스트 유지 (v1 호환). */
+  private EasyAccount requireAccount(Long accountId) {
+    if (accountId == null) {
+      return null;
+    }
+    EasyAccount account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalArgumentException("계정을 찾을 수 없습니다: " + accountId));
+    if (!account.isActive()) {
+      throw new IllegalArgumentException("비활성 계정은 사용할 수 없습니다.");
+    }
+    return account;
+  }
+
+  private EasyEvidenceType parseEvidence(String evidenceType) {
+    if (evidenceType == null || evidenceType.isBlank()) {
+      return null;
+    }
+    return EasyEvidenceType.parse(evidenceType);
   }
 
   private boolean hasText(String value) {

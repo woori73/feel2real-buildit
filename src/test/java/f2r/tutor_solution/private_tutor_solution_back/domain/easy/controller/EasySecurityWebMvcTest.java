@@ -7,7 +7,9 @@ import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAccountService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLedgerService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyStudentService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTuitionService;
@@ -32,7 +34,9 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyBusinessController.class,
     EasyLedgerController.class,
     EasyStudentController.class,
-    EasyTuitionController.class
+    EasyTuitionController.class,
+    EasyAccountController.class,
+    EasyImportController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -51,6 +55,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyLedgerService ledgerService;
   @MockitoBean EasyStudentService studentService;
   @MockitoBean EasyTuitionService tuitionService;
+  @MockitoBean EasyAccountService accountService;
+  @MockitoBean EasyImportService importService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -58,7 +64,10 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/summary",
       "/api/admin/easy/transactions",
       "/api/admin/easy/students",
-      "/api/admin/easy/payments");
+      "/api/admin/easy/payments",
+      "/api/admin/easy/accounts",
+      "/api/admin/easy/accounts/rules",
+      "/api/admin/easy/imports");
 
   @Test
   @DisplayName("익명 → 401")

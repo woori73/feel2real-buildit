@@ -580,6 +580,40 @@ LMS 주소가 성립하지 않는다(404).
 - 등록 body: `{ studentId, businessId, targetMonth(YYYY-MM), billedAmount, paidAmount, paidOn?, payMethod, memo? }`. 동일 (학생, 사업체, 월) 중복 시 `400`.
 - 관련 코드: `EasyTuitionController`, `EasyTuitionService`.
 
+### ✅ GET/POST /api/admin/easy/accounts, PUT /api/admin/easy/accounts/{accountId}
+
+- 목적: 계정과목 master 조회/등록/수정. Work 실데이터 도착 전 잠정치.
+- 목록 필터: `direction`(INCOME/EXPENSE/ASSET, 생략 시 전체).
+- 관련 코드: `EasyAccountController`, `EasyAccountService`.
+
+### ✅ GET/POST /api/admin/easy/accounts/mappings, DELETE /api/admin/easy/accounts/mappings/{mappingId}
+
+- 목적: 내부 계정 ↔ 외부(이지샵) 코드 ↔ 국세청 표준계정 매핑. 표준 코드/명은 확정 전까지 비워 둘 수 있다.
+- 관련 코드: `EasyAccountController`, `EasyAccountService`.
+
+### ✅ GET/POST /api/admin/easy/accounts/rules, PUT/DELETE /api/admin/easy/accounts/rules/{ruleId}
+
+- 목적: 거래처/적요 패턴 → 내부 계정 자동분류 규칙 (우선순위·금액구간·방향 조건, 잘못된 정규식 스킵).
+- 관련 코드: `EasyAccountController`, `EasyAccountService`.
+
+### ✅ GET/POST /api/admin/easy/imports, GET /api/admin/easy/imports/{batchId}, POST /api/admin/easy/imports/{batchId}/confirm, DELETE /api/admin/easy/imports/{batchId}
+
+- 목적: import staging. 원본 행은 staging에만 두고 검증·확정한 READY 행만 장부로 옮긴다.
+  확정 시 계정 제안(규칙 매칭, 확신도 포함)이 따라간다. 확정/폐기된 배치는 재처리 불가.
+- 등록 body: `{ businessId, sourceName, sourceKind, rows: [{ occurredOn, direction, amount, counterparty, description, payMethod, supplyAmount?, vatAmount?, evidenceType?, rawData? }] }` (최대 2000행).
+- 관련 코드: `EasyImportController`, `EasyImportService`.
+
+### ✅ GET /api/admin/easy/transactions/export?businessId&from&to
+
+- 목적: 거래 CSV 내보내기 (Excel 한글 호환 BOM, 세무사 전달 기초 형식).
+- Response: `200 OK` + `text/csv` attachment.
+- 관련 코드: `EasyLedgerController`, `EasyLedgerService.exportCsv`.
+
+### Easy 거래 확장 필드 (V974, backward compatible)
+
+- `POST/PUT /api/admin/easy/transactions` body 추가 (전부 선택): `accountId`, `supplyAmount`, `vatAmount`, `evidenceType`(TAX_INVOICE/CREDIT_CARD/CASH_RECEIPT/INVOICE/NONE/OTHER).
+- 합계(`amount`) 집계는 기존과 동일. 세율 자동계산은 하지 않는다 (세법 확정 전).
+
 ## 4. User API
 
 ### ✅ GET /api/me
