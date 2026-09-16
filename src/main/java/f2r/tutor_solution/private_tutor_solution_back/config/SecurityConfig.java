@@ -262,6 +262,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/auth/login-id/find").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/request").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/confirm").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/auth/admin/password-change").permitAll()  // 운영 ADMIN 전용 변경(서버가 대상·현재비번 검증)
             .requestMatchers(HttpMethod.POST, "/api/users/students").permitAll()  // 회원가입
             .requestMatchers(HttpMethod.POST, "/api/users/tutors").permitAll()  // 강사 회원가입
             .requestMatchers(HttpMethod.GET, "/api/users/check-login-id").permitAll()  // 아이디 중복 확인
