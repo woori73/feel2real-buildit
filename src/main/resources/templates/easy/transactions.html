@@ -46,23 +46,35 @@
         <div class="form-row">
           <div class="form-group">
             <label for="fCategory">계정/분류</label>
-            <input type="text" id="fCategory" list="categoryIncomeList" placeholder="예: 수강료">
-            <datalist id="categoryIncomeList">
-              <option value="수강료"></option>
-              <option value="교재비"></option>
-              <option value="기타수입"></option>
-            </datalist>
-            <datalist id="categoryExpenseList">
-              <option value="급여/강사비"></option>
-              <option value="임차료"></option>
-              <option value="관리비"></option>
-              <option value="교재·인쇄"></option>
-              <option value="광고비"></option>
-              <option value="소모품"></option>
-              <option value="지급수수료"></option>
-              <option value="세금·공과금"></option>
-              <option value="기타지출"></option>
-            </datalist>
+            <input type="text" id="fCategory" list="categoryList" placeholder="예: 수강료">
+            <datalist id="categoryList"></datalist>
+          </div>
+          <div class="form-group">
+            <label for="fAccount">계정 연결 (선택)</label>
+            <select id="fAccount"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fSupply">공급가액 (선택)</label>
+            <input type="number" id="fSupply" min="0" step="1" placeholder="미분리면 비움">
+          </div>
+          <div class="form-group">
+            <label for="fVat">부가세 (선택)</label>
+            <input type="number" id="fVat" min="0" step="1" placeholder="미분리면 비움">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fEvidence">증빙 유형</label>
+            <select id="fEvidence">
+              <option value="">없음</option>
+              <option value="TAX_INVOICE">세금계산서</option>
+              <option value="CREDIT_CARD">신용카드</option>
+              <option value="CASH_RECEIPT">현금영수증</option>
+              <option value="INVOICE">계산서</option>
+              <option value="OTHER">기타</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="fPayMethod">결제수단</label>
@@ -123,12 +135,45 @@
         <input type="text" id="qCategory" placeholder="전체 (예: 수강료)">
       </div>
       <button class="btn-secondary" id="btnSearch" type="button">조회하기</button>
+      <div class="btn-row">
+        <button class="btn-secondary" id="btnExport" type="button">CSV 내보내기</button>
+      </div>
       <ul class="item-list" id="txnList" style="margin-top:12px"></ul>
+    </div>
+
+    <div class="easy-card">
+      <div class="section-head">
+        <h2>가져오기 (staging)</h2>
+        <span class="s" style="font-size:12px;color:#a0aec0">원본은 대기 후 확정분만 장부로</span>
+      </div>
+      <p class="desc">CSV 파일을 읽어 staging에 올립니다. 확정하기 전에는 장부에 반영되지 않습니다.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="impFile">CSV 파일</label>
+          <input type="file" id="impFile" accept=".csv,text/csv">
+        </div>
+        <div class="form-group">
+          <label for="impEncoding">인코딩</label>
+          <select id="impEncoding">
+            <option value="utf-8">UTF-8</option>
+            <option value="euc-kr">EUC-KR</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="impBusiness">사업체</label>
+        <select id="impBusiness"></select>
+      </div>
+      <button class="btn-primary" id="btnStage" type="button">staging에 올리기</button>
+      <p class="error-msg" id="impError"></p>
+      <p class="success-msg" id="impOk"></p>
+      <ul class="item-list" id="batchList" style="margin-top:12px"></ul>
     </div>
   </div>
 
   <script src="/js/api.js"></script>
   <script src="/js/easy_api.js"></script>
   <script src="/js/easy_transactions.js"></script>
+  <script src="/js/easy_import.js"></script>
 </body>
 </html>

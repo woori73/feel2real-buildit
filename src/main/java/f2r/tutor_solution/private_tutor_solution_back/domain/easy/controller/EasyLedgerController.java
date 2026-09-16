@@ -75,4 +75,19 @@ public class EasyLedgerController {
     ledgerService.deleteTxn(txnId);
     return ResponseEntity.noContent().build();
   }
+
+  /** 거래 CSV export — Excel 한글 호환(BOM), 세무사 전달 기초 형식. */
+  @GetMapping(value = "/transactions/export", produces = "text/csv;charset=UTF-8")
+  public ResponseEntity<String> exportTxns(
+      @RequestParam(value = "businessId", required = false) Long businessId,
+      @RequestParam(value = "from", required = false)
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(value = "to", required = false)
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    String csv = ledgerService.exportCsv(businessId, from, to);
+    String filename = "easy-transactions.csv";
+    return ResponseEntity.ok()
+        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+        .body(csv);
+  }
 }

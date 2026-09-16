@@ -1190,6 +1190,21 @@ ADMIN 전용(`/easy` 화면 + `/api/admin/easy/**`). Wiki `users`와 연결하�
 
 미수금 = `SUM(billed - paid)` (잔액>0만). 대시보드 `businessId` null이면 전체 합산. 복식부기 확장 시 분개 테이블을 추가하되 v1 단식 구조는 유지한다.
 
+### 4.50 easy_* import 기반 (V974) ✅ 계정·공급/부가세·증빙·매핑·staging
+
+V973과 backward compatible — 신규 테이블 + `easy_transactions` NULL 컬럼만 추가한다.
+세율 자동계산 없음 (세법 확정 전). 구조 발상 참고: korean-jangbu-for (Apache-2.0),
+AICassa (공급/부가세 분리·증빙유형), SBS (적격증빙) — 코드 복사 없음.
+
+| table | key columns |
+|---|---|
+| `easy_accounts` | `account_id` PK, `code` UNIQUE, `name`, `direction`(INCOME/EXPENSE/ASSET), `sort_order`, `active` — Work 실데이터 전 잠정 seed 12종 |
+| `easy_account_mappings` | `mapping_id` PK, `account_id` FK, `external_code`/`external_name`(이지샵), `standard_code`/`standard_name`(NTS, 확정 전), UNIQUE(`account_id`,`external_code`) |
+| `easy_classification_rules` | `rule_id` PK, `pattern_type`(COUNTERPARTY_EXACT/REGEX, DESCRIPTION_REGEX), `pattern`, `account_id` FK, `priority`, `amount_min/max?`, `direction?`, `active` |
+| `easy_import_batches` | `batch_id` PK, `business_id` FK, `source_name`, `source_kind`, `status`(STAGED/CONFIRMED/DISCARDED), `total_rows`, `confirmed_rows` |
+| `easy_import_rows` | `row_id` PK, `batch_id` FK CASCADE, `row_no`, 원본 필드(날짜/방향/금액/거래처/적요/수단/공급/부가세/증빙/`raw_data`), `status`(PENDING/READY/ERROR/IMPORTED), `error?`, `matched_account_id`+`confidence?`, `created_txn_id?`, UNIQUE(`batch_id`,`row_no`) |
+| `easy_transactions` 추가 | `account_id` FK NULL(SET NULL), `supply_amount`? / `vat_amount`? (CHECK≥0), `evidence_type`? — 합계(`amount`) 집계 불변 |
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과

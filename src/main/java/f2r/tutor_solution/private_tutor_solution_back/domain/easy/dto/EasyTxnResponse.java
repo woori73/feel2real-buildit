@@ -15,7 +15,12 @@ public record EasyTxnResponse(
     String description,
     String payMethod,
     String memo,
-    String receiptRef
+    String receiptRef,
+    Long accountId,
+    String accountName,
+    Long supplyAmount,
+    Long vatAmount,
+    String evidenceType
 ) {
   public static EasyTxnResponse from(EasyTransaction txn) {
     return new EasyTxnResponse(
@@ -30,6 +35,11 @@ public record EasyTxnResponse(
         txn.getDescription(),
         txn.getPayMethod(),
         txn.getMemo(),
-        txn.getReceiptRef());
+        txn.getReceiptRef(),
+        txn.getAccount() == null ? null : txn.getAccount().getAccountId(),
+        txn.getAccount() == null ? null : txn.getAccount().getName(),
+        txn.getSupplyAmount(),
+        txn.getVatAmount(),
+        txn.getEvidenceType() == null ? null : txn.getEvidenceType().name());
   }
 }

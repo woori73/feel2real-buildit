@@ -1,0 +1,128 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImportBatchRequest;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImportBatchRequest.EasyImportRowInput;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImportBatchResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountDirection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRow;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRowStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportBatchRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportRowRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyTransactionRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAccountService.ClassificationMatch;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+/**
+ * staging — 검증·확정·폐기. 실제 이지샵 데이터는 다루지 않는다.
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("EasyImportService staging 테스트")
+class EasyImportServiceTest {
+
+  @Mock EasyImportBatchRepository batchRepository;
+  @Mock EasyImportRowRepository rowRepository;
+  @Mock EasyBusinessRepository businessRepository;
+  @Mock EasyTransactionRepository txnRepository;
+  @Mock EasyAccountService accountService;
+
+  private EasyImportService service;
+  private EasyBusiness academy;
+  private EasyAccount telecom;
+
+  @BeforeEach
+  void setUp() {
+    service = new EasyImportService(
+        batchRepository, rowRepository, businessRepository, txnRepository, accountService);
+    academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
+    telecom = EasyAccount.builder().code("EXPENSE_TELECOM").name("통신비")
+        .direction(EasyAccountDirection.EXPENSE).sortOrder(1).active(true).build();
+  }
+
+  private EasyImportRowInput input(String date, String direction, Long amount) {
+    return new EasyImportRowInput(date, direction, amount, "KT", "요금",
+        "계좌이체", null, null, null, "{\"raw\":1}");
+  }
+
+  @Test
+  @DisplayName("정상 행 READY + 규칙 제안, 비정상 행 ERROR")
+  void stage_validatesAndSuggests() {
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(batchRepository.save(any(EasyImportBatch.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.save(any(EasyImportRow.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(accountService.classify("KT", "요금", 30000L, EasyTxnDirection.EXPENSE))
+        .thenReturn(Optional.of(new ClassificationMatch(telecom, 0.9)));
+
+    EasyImportBatchResponse response = service.stage(new EasyImportBatchRequest(
+        1L, "bank.csv", "CSV", List.of(
+            input("2026-09-05", "EXPENSE", 30000L),
+            input("잘못된날짜", "EXPENSE", 1000L),
+            input("2026-09-06", "EXPENSE", -500L))));
+
+    assertThat(response.rows()).hasSize(3);
+    assertThat(response.rows().get(0).status()).isEqualTo("READY");
+    assertThat(response.rows().get(0).matchedAccountName()).isEqualTo("통신비");
+    assertThat(response.rows().get(1).status()).isEqualTo("ERROR");
+    assertThat(response.rows().get(2).status()).isEqualTo("ERROR");
+  }
+
+  @Test
+  @DisplayName("확정 — READY만 장부로, 배치 CONFIRMED. 재확정·폐기 후 확정 거부")
+  void confirm_andDiscard() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("bank.csv").sourceKind("CSV").totalRows(1).build();
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+    EasyImportRow ready = EasyImportRow.builder()
+        .batch(batch).rowNo(1)
+        .occurredOn(java.time.LocalDate.of(2026, 9, 5))
+        .direction(EasyTxnDirection.EXPENSE).amount(30000L)
+        .counterparty("KT").description("요금").build();
+    ready.markReady(telecom, 0.9);
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(ready));
+    when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L)).thenReturn(List.of(ready));
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    EasyImportBatchResponse confirmed = service.confirm(9L, null);
+
+    assertThat(confirmed.status()).isEqualTo("CONFIRMED");
+    assertThat(confirmed.confirmedRows()).isEqualTo(1);
+    assertThat(ready.getStatus()).isEqualTo(EasyImportRowStatus.IMPORTED);
+    assertThat(ready.getCreatedTxn()).isNotNull();
+    assertThat(ready.getCreatedTxn().getCategory()).isEqualTo("통신비");
+
+    // 재확정 거부 (이미 CONFIRMED라 상태 검사에서 걸린다)
+    assertThatThrownBy(() -> service.confirm(9L, null))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @DisplayName("빈 행·2000행 초과 거부")
+  void stage_rejectsEmptyAndOversize() {
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+
+    assertThatThrownBy(() -> service.stage(
+        new EasyImportBatchRequest(1L, "x.csv", "CSV", List.of())))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+}
