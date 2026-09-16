@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.user.controller;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.LoginIdFindRequest;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.AdminPasswordChangeRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.LoginRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.PasswordResetConfirmRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.PasswordResetRequest;
@@ -10,6 +11,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.response.L
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.response.LoginResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.response.PasswordResetRequestResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.response.PasswordResetTokenResult;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminPasswordChangeService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.PasswordResetService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +28,7 @@ public class AuthController {
 
     private final UserService userService;
     private final PasswordResetService passwordResetService;
+    private final AdminPasswordChangeService adminPasswordChangeService;
     private final JwtTokenProvider tokenProvider;
     private final CookieUtil cookieUtil;
 
@@ -63,6 +66,22 @@ public class AuthController {
     public ResponseEntity<Void> confirmPasswordReset(
             @RequestBody PasswordResetConfirmRequest request) {
         passwordResetService.confirmReset(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 운영 ADMIN 비밀번호 변경 — {@code /admin/login} 화면의 변경 폼 전용.
+     * 대상은 서버가 admin-f2r ADMIN으로 고정하므로 userId/role 지정이 불가하고,
+     * 기존 비밀번호를 모르면 변경할 수 없다. 성공 시 204.
+     */
+    @PostMapping("/admin/password-change")
+    public ResponseEntity<Void> changeAdminPassword(
+            @RequestBody AdminPasswordChangeRequest request) {
+        adminPasswordChangeService.changePassword(
+                request.loginId(),
+                request.currentPassword(),
+                request.newPassword(),
+                request.confirmPassword());
         return ResponseEntity.noContent().build();
     }
 

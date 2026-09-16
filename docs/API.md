@@ -455,6 +455,37 @@ LMS 주소가 성립하지 않는다(404).
   - `AuthController.confirmPasswordReset`
   - `PasswordResetService.confirmReset`
 
+### ✅ POST /api/auth/admin/password-change
+
+- 목적: 운영 ADMIN(admin-f2r) 비밀번호를 `/admin/login` 화면에서 변경한다. 대상은 서버가 고정하므로 요청에 userId/role이 없고, 기존 비밀번호를 모르면 변경할 수 없다.
+- 현재 사용처:
+  - `templates/admin/login.html`의 비밀번호 변경 폼
+- 향후 사용 가능성:
+  - 없음 (운영 ADMIN 전용)
+- 인증/권한: public (로그인 화면에서 호출). 권한 판정은 서비스가 수행 — 대상이 admin-f2r ADMIN이 아니면 403, 현재 비번 불일치면 401.
+- Request:
+  - JSON body:
+    ```json
+    {
+      "loginId": "admin-f2r",
+      "currentPassword": "current-plain-password",
+      "newPassword": "next-plain-password-16-or-more",
+      "confirmPassword": "next-plain-password-16-or-more"
+    }
+    ```
+- Response:
+  - 성공: `204 No Content`
+  - 실패:
+    - `403` — 대상이 admin-f2r ADMIN이 아님 (STUDENT/TUTOR 포함).
+    - `401` — 현재 비밀번호 불일치.
+    - `400 text/plain` — 새 비밀번호/확인값 불일치, 16자 미만, 72바이트 초과.
+    - `429` — 인증 실패 반복 시 loginId별 sliding window 차단 (기본 10분 내 5회).
+- 관련 코드:
+  - `AuthController.changeAdminPassword`
+  - `AdminPasswordChangeService.changePassword`
+  - `AdminPasswordChangeRequest`
+- 주의: 평문·해시를 로그·응답에 포함하지 않는다. 기존 학생/강사 변경(`PATCH /api/me`)과 무관하며 ADMIN은 해당 경로에서 거부되므로 이 endpoint가 유일한 운영자 변경 경로다.
+
 ### ✅ POST /api/auth/logout
 
 - 목적: access token cookie 삭제.

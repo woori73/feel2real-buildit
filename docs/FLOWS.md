@@ -112,6 +112,7 @@ GET  /api/auth/me                 → 현재 세션 사용자 정보 (인증 필
 POST /api/auth/login-id/find        → 아이디 찾기. body { email } → 200 { email, accounts: [{ loginId, role, roleLabel }] }
 POST /api/auth/password-reset/request → 비밀번호 재설정 요청. body { loginId, email } → 200 { email, temporaryPassword } (운영 포함 임시 모드)
 POST /api/auth/password-reset/confirm → 토큰 검증 후 비밀번호 변경. body { token, newPassword } → 204
+POST /api/auth/admin/password-change → 운영 ADMIN(admin-f2r) 전용 변경. body { loginId, currentPassword, newPassword, confirmPassword } → 204 (403 비대상/401 현재비번 오류/400 검증/429 반복차단)
 POST /api/users/tutors            → 강사 회원가입 (인증 불필요)
 GET  /api/users/students/me       → 학생 본인 프로필 (인증 필요). ADMIN은 ?targetUserId= 로 임퍼소네이트.
 ```
