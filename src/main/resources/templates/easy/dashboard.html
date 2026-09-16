@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy 회계 - 대시보드</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+
+  <div class="easy-container">
+    <div class="easy-title">회계 대시보드</div>
+    <p class="easy-sub" id="scopeLabel">지금 상태를 먼저 보고 필요한 작업으로 이동하세요.</p>
+
+    <div class="biz-switch" id="bizSwitch"></div>
+
+    <div class="month-nav">
+      <button id="prevMonth" type="button">‹ 이전 달</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button id="nextMonth" type="button">다음 달 ›</button>
+    </div>
+
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="easy-card">
+      <div class="section-head">
+        <h2>최근 거래</h2>
+        <a href="/easy/transactions">전체 보기 ›</a>
+      </div>
+      <ul class="item-list" id="recentList"></ul>
+    </div>
+
+    <div class="easy-card">
+      <div class="section-head">
+        <h2>미수 학생</h2>
+        <a href="/easy/payments">수납 관리 ›</a>
+      </div>
+      <ul class="item-list" id="overdueList"></ul>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/easy_api.js"></script>
+  <script src="/js/easy_dashboard.js"></script>
+</body>
+</html>
