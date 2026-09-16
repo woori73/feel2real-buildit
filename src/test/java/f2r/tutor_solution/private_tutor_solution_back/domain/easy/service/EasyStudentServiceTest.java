@@ -82,5 +82,6 @@ class EasyStudentServiceTest {
     assertThat(detail.student().balance()).isEqualTo(100000L);
     assertThat(detail.payments()).hasSize(1);
     assertThat(detail.payments().get(0).status()).isEqualTo("PARTIAL");
+    assertThat(detail.businesses()).containsExactly("학원");
   }
 }

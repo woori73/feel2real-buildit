@@ -66,5 +66,18 @@
     el.style.display = 'block';
   }
 
-  window.Easy = { fmtWon, fmtMonth, statusLabel, statusClass, guardAdmin, loadBusinesses, showError };
+  function showOk(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideMsg(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+  }
+
+  window.Easy = { fmtWon, fmtMonth, statusLabel, statusClass, guardAdmin, loadBusinesses, showError, showOk, hideMsg };
 })();

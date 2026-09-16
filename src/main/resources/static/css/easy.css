@@ -291,6 +291,14 @@ body {
   text-align: center;
 }
 
+.success-msg {
+  display: none;
+  color: #276749;
+  font-size: 13px;
+  margin-top: 12px;
+  text-align: center;
+}
+
 .filter-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -302,5 +310,7 @@ body {
 @media (min-width: 768px) {
   .stat-grid { grid-template-columns: repeat(5, 1fr); }
   .stat-card.full { grid-column: auto; }
+  /* 5열 카드(약 130px)에서는 긴 금액이 어색하게 꺾이지 않게 축소 */
+  .stat-card .n { font-size: 16px; word-break: keep-all; }
   .filter-grid { grid-template-columns: repeat(4, 1fr); }
 }

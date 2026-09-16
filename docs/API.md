@@ -547,6 +547,7 @@ LMS 주소가 성립하지 않는다(404).
 ### ✅ GET /api/admin/easy/summary?businessId&month=YYYY-MM
 
 - 목적: 월 손익 5카드 + 최근 거래 10 + 미수 학생 10. `businessId` 생략 시 전체 합산.
+- 모든 숫자는 같은 scope다. `studentCount`는 전체 조회 시 재원 수, 사업체 선택 시 해당 사업체 수납 이력 학생 수다.
 - Response: `200 OK`
   ```json
   {
@@ -568,7 +569,7 @@ LMS 주소가 성립하지 않는다(404).
 
 ### ✅ GET/POST /api/admin/easy/students, GET /api/admin/easy/students/{studentId}/ledger, PUT /api/admin/easy/students/{studentId}
 
-- 목적: 학생 원장 목록/등록/수정 + 상세(수납 합계 청구액/납부액/미수금 + 월별 내역).
+- 목적: 학생 원장 목록/등록/수정 + 상세(수납 합계 청구액/납부액/미수금 + 월별 내역 + 수납 기준 소속 사업체).
 - 등록 body: `{ name(필수), school, grade, phone?, parentPhone?, status(ENROLLED/WITHDRAWN/GRADUATED), enrolledOn?, memo? }`.
 - 관련 코드: `EasyStudentController`, `EasyStudentService`.
 

@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,6 +99,18 @@ public class EasyLedgerService {
           .orElse("전체");
     }
 
+    // 학생 수도 같은 scope로 — 전체면 재원 수, 사업체 선택이면 해당 사업체 수납 이력 학생 수.
+    // 스코프가 다른 숫자(전체 학생 수 + 사업체 손익)를 한 화면에 섞지 않는다.
+    long studentCount;
+    if (businessId == null) {
+      studentCount = studentRepository.countByStatus(EasyStudentStatus.ENROLLED);
+    } else {
+      studentCount = payments.stream()
+          .map(payment -> payment.getStudent().getStudentId())
+          .collect(Collectors.toSet())
+          .size();
+    }
+
     return new EasyDashboardResponse(
         target.toString(),
         businessId,
@@ -106,7 +119,7 @@ public class EasyLedgerService {
         expense,
         income - expense,
         receivable,
-        studentRepository.countByStatus(EasyStudentStatus.ENROLLED),
+        studentCount,
         recent.stream().map(EasyTxnResponse::from).toList(),
         overdue);
   }

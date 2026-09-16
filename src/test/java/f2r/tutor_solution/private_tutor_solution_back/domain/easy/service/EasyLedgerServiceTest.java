@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * 장부 요약 — 사업체 분리·전체 합산·미수금 + 거래 CRUD 검증.
@@ -169,5 +170,65 @@ class EasyLedgerServiceTest {
         "기타", "", "", "", null, null)))
         .isInstanceOf(IllegalArgumentException.class);
     verify(txnRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("학생 수는 같은 scope로 — 전체면 재원 수, 사업체면 수납 이력 학생 수")
+  void summary_studentCount_scoped() {
+    when(txnRepository.findByOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
+        LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))).thenReturn(List.of());
+    when(txnRepository.findTop10ByOrderByOccurredOnDescTxnIdDesc()).thenReturn(List.of());
+    when(paymentRepository.findAll()).thenReturn(List.of());
+    when(studentRepository.countByStatus(EasyStudentStatus.ENROLLED)).thenReturn(12L);
+
+    assertThat(service.summary(null, YearMonth.of(2026, 9)).studentCount()).isEqualTo(12L);
+
+    EasyStudent s1 = EasyStudent.builder().name("A").build();
+    EasyStudent s2 = EasyStudent.builder().name("B").build();
+    ReflectionTestUtils.setField(s1, "studentId", 101L);
+    ReflectionTestUtils.setField(s2, "studentId", 102L);
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(txnRepository.findByBusiness_BusinessIdAndOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
+        1L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))).thenReturn(List.of());
+    when(txnRepository.findTop10ByBusiness_BusinessIdInOrderByOccurredOnDescTxnIdDesc(List.of(1L)))
+        .thenReturn(List.of());
+    when(paymentRepository.findByBusiness_BusinessId(1L)).thenReturn(List.of(
+        EasyTuitionPayment.builder().student(s1).business(academy)
+            .targetMonth("2026-09").billedAmount(300000L).paidAmount(300000L).build(),
+        EasyTuitionPayment.builder().student(s1).business(academy)
+            .targetMonth("2026-08").billedAmount(300000L).paidAmount(0L).build(),
+        EasyTuitionPayment.builder().student(s2).business(academy)
+            .targetMonth("2026-09").billedAmount(300000L).paidAmount(0L).build()));
+
+    EasyDashboardResponse scoped = service.summary(1L, YearMonth.of(2026, 9));
+    // 수납 이력 학생 2명 (s1이 2건이어도 1명으로 집계)
+    assertThat(scoped.studentCount()).isEqualTo(2L);
+    // 미수금은 잔액>0만: s1 8월 30만 + s2 9월 30만
+    assertThat(scoped.receivable()).isEqualTo(600000L);
+    // 미수 학생은 잔액 내림차순
+    assertThat(scoped.overdueStudents()).hasSize(2);
+    assertThat(scoped.overdueStudents().get(0).balance()).isEqualTo(300000L);
+  }
+
+  @Test
+  @DisplayName("미수금·미수목록은 선택 사업체 수납만 집계 (다른 사업체 섞이지 않음)")
+  void summary_receivable_businessScoped() {
+    EasyStudent student = EasyStudent.builder().name("김OO").build();
+    when(businessRepository.findById(2L)).thenReturn(Optional.of(publishing));
+    when(txnRepository.findByBusiness_BusinessIdAndOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
+        2L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))).thenReturn(List.of());
+    when(txnRepository.findTop10ByBusiness_BusinessIdInOrderByOccurredOnDescTxnIdDesc(List.of(2L)))
+        .thenReturn(List.of());
+    // 출판사 scope 조회는 출판사 수납만 본다 — 학원 미수금이 섞이지 않음
+    when(paymentRepository.findByBusiness_BusinessId(2L)).thenReturn(List.of(
+        EasyTuitionPayment.builder().student(student).business(publishing)
+            .targetMonth("2026-09").billedAmount(100000L).paidAmount(100000L).build()));
+
+    EasyDashboardResponse summary = service.summary(2L, YearMonth.of(2026, 9));
+
+    verify(paymentRepository).findByBusiness_BusinessId(2L);
+    verify(paymentRepository, never()).findAll();
+    assertThat(summary.receivable()).isZero();
+    assertThat(summary.overdueStudents()).isEmpty();
   }
 }

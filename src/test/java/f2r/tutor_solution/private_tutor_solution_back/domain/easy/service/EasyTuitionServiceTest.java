@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,9 +85,37 @@ class EasyTuitionServiceTest {
   }
 
   @Test
-  @DisplayName("잘못된 월 형식·음수·중복 거부")
-  void invalid_rejected() {
+  @DisplayName("초과 납부 → 완납, 미수금 0 (음수 미수 없음)")
+  void overpaid_noNegativeBalance() {
     when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+    when(businessRepository.findById(2L)).thenReturn(Optional.of(academy));
+    when(paymentRepository.existsByStudent_StudentIdAndBusiness_BusinessIdAndTargetMonth(
+        any(), any(), eq("2026-09")))
+        .thenReturn(false);
+    when(paymentRepository.save(any(EasyTuitionPayment.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    EasyPaymentResponse response = service.create(request(300000L, 500000L));
+
+    assertThat(response.status()).isEqualTo("PAID");
+    assertThat(response.balance()).isZero();
+  }
+
+  @Test
+  @DisplayName("목록 조회는 요청 학생 ID로만 조회 (다른 학생 쿼리 없음)")
+  void list_queriesRequestedStudentOnly() {
+    when(paymentRepository.findByStudent_StudentIdOrderByTargetMonthDesc(1L))
+        .thenReturn(List.of());
+
+    service.list(1L, null, null);
+
+    verify(paymentRepository).findByStudent_StudentIdOrderByTargetMonthDesc(1L);
+    verify(paymentRepository, never()).findAll();
+  }
+
+  @Test
+  @DisplayName("잘못된 월 형식·음수·중복 거부")
+  void invalid_rejected() {    when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
     when(businessRepository.findById(2L)).thenReturn(Optional.of(academy));
 
     assertThatThrownBy(() -> service.create(

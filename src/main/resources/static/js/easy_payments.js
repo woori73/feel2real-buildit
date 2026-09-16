@@ -15,6 +15,9 @@
     fillSelect(document.getElementById('fBusiness'), businesses, 'businessId', 'name', false);
     fillSelect(document.getElementById('qStudent'), students, 'studentId', 'name', true);
     fillSelect(document.getElementById('fStudent'), students, 'studentId', 'name', false);
+    if (businesses.length) {
+      document.getElementById('fBusiness').value = String(businesses[0].businessId);
+    }
     const d = new Date();
     document.getElementById('fMonth').value =
       d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
@@ -73,6 +76,7 @@
   async function save() {
     const errEl = document.getElementById('formError');
     errEl.style.display = 'none';
+    Easy.hideMsg('formOk');
     const body = readForm();
     if (!body.studentId || !body.businessId || !body.targetMonth || !(body.billedAmount >= 0)) {
       Easy.showError('formError', '학생·사업체·대상월·청구 금액을 확인해 주세요.');
@@ -90,7 +94,9 @@
       Easy.showError('formError', await res.text() || '저장에 실패했습니다.');
       return;
     }
+    const wasEdit = !!editingId;
     resetForm();
+    Easy.showOk('formOk', wasEdit ? '수납이 수정되었습니다.' : '수납이 등록되었습니다.');
     await search();
   }
 

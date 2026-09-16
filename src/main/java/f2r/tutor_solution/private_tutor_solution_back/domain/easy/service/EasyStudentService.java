@@ -37,7 +37,11 @@ public class EasyStudentService {
         .findByStudent_StudentIdOrderByTargetMonthDesc(studentId).stream()
         .map(EasyPaymentResponse::from)
         .toList();
-    return new EasyStudentDetailResponse(withTotals(student), payments);
+    List<String> businesses = payments.stream()
+        .map(EasyPaymentResponse::businessName)
+        .distinct()
+        .toList();
+    return new EasyStudentDetailResponse(withTotals(student), payments, businesses);
   }
 
   @Transactional

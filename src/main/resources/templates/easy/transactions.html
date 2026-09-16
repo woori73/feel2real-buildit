@@ -46,14 +46,22 @@
         <div class="form-row">
           <div class="form-group">
             <label for="fCategory">계정/분류</label>
-            <input type="text" id="fCategory" list="categoryList" placeholder="예: 수강료">
-            <datalist id="categoryList">
+            <input type="text" id="fCategory" list="categoryIncomeList" placeholder="예: 수강료">
+            <datalist id="categoryIncomeList">
               <option value="수강료"></option>
               <option value="교재비"></option>
-              <option value="임대료"></option>
-              <option value="인건비"></option>
-              <option value="공과금"></option>
-              <option value="기타"></option>
+              <option value="기타수입"></option>
+            </datalist>
+            <datalist id="categoryExpenseList">
+              <option value="급여/강사비"></option>
+              <option value="임차료"></option>
+              <option value="관리비"></option>
+              <option value="교재·인쇄"></option>
+              <option value="광고비"></option>
+              <option value="소모품"></option>
+              <option value="지급수수료"></option>
+              <option value="세금·공과금"></option>
+              <option value="기타지출"></option>
             </datalist>
           </div>
           <div class="form-group">
@@ -81,6 +89,7 @@
         </div>
         <button class="btn-primary" id="btnSave" type="button">등록하기</button>
         <p class="error-msg" id="formError"></p>
+        <p class="success-msg" id="formOk"></p>
       </div>
     </div>
 

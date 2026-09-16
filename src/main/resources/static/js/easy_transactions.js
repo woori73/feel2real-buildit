@@ -26,7 +26,19 @@
     document.getElementById('btnSave').addEventListener('click', save);
     document.getElementById('btnSearch').addEventListener('click', search);
     document.getElementById('toggleForm').addEventListener('click', toggleForm);
+    document.getElementById('fDirection').addEventListener('change', syncCategoryList);
+    syncCategoryList();
+    if (businesses.length) {
+      document.getElementById('fBusiness').value = String(businesses[0].businessId);
+    }
     await search();
+  }
+
+  /** 수입/지출에 따라 분류 후보를 바꾼다 (직접 입력도 가능). */
+  function syncCategoryList() {
+    const dir = document.getElementById('fDirection').value;
+    document.getElementById('fCategory').setAttribute('list',
+      dir === 'INCOME' ? 'categoryIncomeList' : 'categoryExpenseList');
   }
 
   function toggleForm() {
@@ -71,6 +83,7 @@
   async function save() {
     const errEl = document.getElementById('formError');
     errEl.style.display = 'none';
+    Easy.hideMsg('formOk');
     const body = readForm();
     if (!body.occurredOn || !body.businessId || !(body.amount >= 0)) {
       Easy.showError('formError', '거래일·사업체·금액을 확인해 주세요.');
@@ -88,7 +101,9 @@
       Easy.showError('formError', await res.text() || '저장에 실패했습니다.');
       return;
     }
+    const wasEdit = !!editingId;
     resetForm();
+    Easy.showOk('formOk', wasEdit ? '거래가 수정되었습니다.' : '거래가 등록되었습니다.');
     await search();
   }
 

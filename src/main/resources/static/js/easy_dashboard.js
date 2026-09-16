@@ -49,6 +49,11 @@
     const res = await fetchAuth(url);
     if (!res.ok) throw new Error('요약을 불러오지 못했습니다.');
     const s = await res.json();
+    const scopeName = businessId
+      ? (businesses.find(b => b.businessId === businessId) || {}).name || ''
+      : '전체';
+    document.getElementById('scopeLabel').textContent =
+      '범위: ' + scopeName + ' · ' + Easy.fmtMonth(month);
     renderStats(s);
     renderRecent(s.recentTxns || []);
     renderOverdue(s.overdueStudents || []);
