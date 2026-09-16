@@ -49,7 +49,7 @@ public class EasyStudentService {
     EasyStudent student = EasyStudent.builder()
         .name(requireName(request.name()))
         .school(request.school())
-        .grade(request.grade() == null ? 0 : request.grade())
+        .grade(request.grade() == null ? Byte.valueOf((byte) 0) : request.grade())
         .phone(request.phone())
         .parentPhone(request.parentPhone())
         .status(parseStatus(request.status()))
@@ -65,7 +65,7 @@ public class EasyStudentService {
     student.update(
         requireName(request.name()),
         request.school(),
-        request.grade() == null ? 0 : request.grade(),
+        request.grade() == null ? Byte.valueOf((byte) 0) : request.grade(),
         request.phone(),
         request.parentPhone(),
         parseStatus(request.status()),

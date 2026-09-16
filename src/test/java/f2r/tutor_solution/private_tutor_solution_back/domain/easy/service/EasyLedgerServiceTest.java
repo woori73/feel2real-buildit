@@ -105,7 +105,7 @@ class EasyLedgerServiceTest {
   @Test
   @DisplayName("미수금 — 잔액 합산 + 학생별 집계")
   void summary_receivable() {
-    EasyStudent student = EasyStudent.builder().name("김OO").school("압구정중").grade(2).build();
+    EasyStudent student = EasyStudent.builder().name("김OO").school("압구정중").grade((byte) 2).build();
     when(txnRepository.findByOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
         LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))).thenReturn(List.of());
     when(paymentRepository.findAll()).thenReturn(List.of(

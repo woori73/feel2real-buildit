@@ -39,7 +39,7 @@ public class EasyStudent extends BaseEntity {
   private String school = "";
 
   @Column(name = "grade", nullable = false)
-  private int grade;
+  private Byte grade;
 
   @Column(name = "phone", length = 20)
   private String phone;
@@ -58,7 +58,7 @@ public class EasyStudent extends BaseEntity {
   private String memo;
 
   @Builder
-  public EasyStudent(String name, String school, int grade, String phone,
+  public EasyStudent(String name, String school, Byte grade, String phone,
       String parentPhone, EasyStudentStatus status, LocalDate enrolledOn, String memo) {
     this.name = name;
     this.school = school == null ? "" : school;
@@ -70,7 +70,7 @@ public class EasyStudent extends BaseEntity {
     this.memo = memo;
   }
 
-  public void update(String name, String school, int grade, String phone,
+  public void update(String name, String school, Byte grade, String phone,
       String parentPhone, EasyStudentStatus status, LocalDate enrolledOn, String memo) {
     this.name = name;
     this.school = school == null ? "" : school;

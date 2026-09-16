@@ -7,7 +7,7 @@ public record EasyStudentResponse(
     Long studentId,
     String name,
     String school,
-    int grade,
+    Byte grade,
     String phone,
     String parentPhone,
     String status,
