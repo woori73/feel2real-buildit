@@ -17,7 +17,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    # SSM 폴링이 최대 20분까지 기다릴 수 있으므로 job 타임아웃도 그에 맞춘다.
+    timeout-minutes: 50
 
     steps:
       - name: Checkout
@@ -289,10 +290,44 @@ jobs:
             --parameters 'commands=["set -e","aws s3 cp s3://feel2real-buildit-deploy/deploy-buildit.sh /tmp/deploy-buildit.sh","chmod +x /tmp/deploy-buildit.sh","/tmp/deploy-buildit.sh"]' \
             --query 'Command.CommandId' --output text)
           echo "SSM Command ID: $COMMAND_ID"
-          set +e
-          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
-          WAIT_STATUS=$?
-          set -e
-          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
-          exit "$WAIT_STATUS"
+          # EC2 실작업(pip 설치, buildit-wiki 재시작+90초 health, jar 교체+최대 120초 health,
+          # 실패 시 롤백+재health)은 CLI 기본 waiter(약 100초)를 훌쩍 넘긴다. 고정 waiter 대신
+          # terminal 상태까지 직접 폴링한다 — 경과 시간만으로 실패시키지 않는다.
+          SSM_INSTANCE_ID="i-09d7cabb5a42d1135"
+          # 최대 20분. 소진 시에도 최종 상태를 확인하고 판정한다.
+          POLL_INTERVAL_SECS="${POLL_INTERVAL_SECS:-15}"
+          POLL_MAX_ATTEMPTS="${POLL_MAX_ATTEMPTS:-80}"
+          SSM_STATUS="Unknown"
+          ATTEMPT=0
+          while [ "$ATTEMPT" -lt "$POLL_MAX_ATTEMPTS" ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            SSM_STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" --instance-id "$SSM_INSTANCE_ID" \
+              --query 'Status' --output text 2>/dev/null || echo "Unknown")
+            echo "SSM status: $SSM_STATUS (attempt ${ATTEMPT}/${POLL_MAX_ATTEMPTS})"
+            case "$SSM_STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+            sleep "$POLL_INTERVAL_SECS"
+          done
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" --instance-id "$SSM_INSTANCE_ID" \
+            --query 'StandardOutputContent' --output text \
+            || echo "(stdout unavailable)"
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" --instance-id "$SSM_INSTANCE_ID" \
+            --query 'StandardErrorContent' --output text \
+            || echo "(stderr unavailable)"
+          case "$SSM_STATUS" in
+            Success)
+              echo "SSM command succeeded."
+              exit 0
+              ;;
+            *)
+              echo "::error::SSM command ended with status: $SSM_STATUS"
+              exit 1
+              ;;
+          esac
 
