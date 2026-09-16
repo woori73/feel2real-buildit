@@ -44,7 +44,7 @@ class EasyTuitionServiceTest {
   @BeforeEach
   void setUp() {
     service = new EasyTuitionService(paymentRepository, studentRepository, businessRepository);
-    student = EasyStudent.builder().name("김OO").school("압구정중").grade(2).build();
+    student = EasyStudent.builder().name("김OO").school("압구정중").grade((byte) 2).build();
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
   }
 

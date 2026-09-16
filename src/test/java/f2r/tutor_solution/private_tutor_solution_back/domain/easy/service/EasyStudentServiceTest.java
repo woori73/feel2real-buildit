@@ -48,21 +48,21 @@ class EasyStudentServiceTest {
         .thenReturn(List.of());
 
     var response = service.create(new EasyStudentRequest(
-        "김OO", "압구정중", 2, "010-0000-0000", "010-1111-2222",
+        "김OO", "압구정중", (byte) 2, "010-0000-0000", "010-1111-2222",
         "ENROLLED", LocalDate.of(2026, 3, 2), null));
 
     assertThat(response.name()).isEqualTo("김OO");
     assertThat(response.status()).isEqualTo("ENROLLED");
 
     assertThatThrownBy(() -> service.create(new EasyStudentRequest(
-        "  ", "압구정중", 2, null, null, null, null, null)))
+        "  ", "압구정중", (byte) 2, null, null, null, null, null)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   @DisplayName("학생 수정 + 상세 청구/납부/미수 합계")
   void update_and_detailTotals() {
-    EasyStudent student = EasyStudent.builder().name("김OO").school("압구정중").grade(2).build();
+    EasyStudent student = EasyStudent.builder().name("김OO").school("압구정중").grade((byte) 2).build();
     EasyBusiness academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     List<EasyTuitionPayment> payments = List.of(
         EasyTuitionPayment.builder().student(student).business(academy)
@@ -73,7 +73,7 @@ class EasyStudentServiceTest {
     when(paymentRepository.findByStudent_StudentIdOrderByTargetMonthDesc(null)).thenReturn(payments);
 
     var updated = service.update(3L, new EasyStudentRequest(
-        "김OO", "신사중", 3, null, null, "ENROLLED", null, "전학"));
+        "김OO", "신사중", (byte) 3, null, null, "ENROLLED", null, "전학"));
     assertThat(updated.school()).isEqualTo("신사중");
 
     EasyStudentDetailResponse detail = service.detail(3L);

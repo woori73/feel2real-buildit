@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public record EasyStudentRequest(
     String name,
     String school,
-    Integer grade,
+    Byte grade,
     String phone,
     String parentPhone,
     String status,
