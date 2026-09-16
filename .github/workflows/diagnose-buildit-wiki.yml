@@ -35,7 +35,7 @@ jobs:
             "journalctl -u buildit-wiki.service --no-pager -n 300 || true"
             "ss -ltnp | grep -E ':8000|:8080' || true"
             "systemctl show buildit-wiki.service -p ActiveState -p SubState -p ExecMainStatus -p ExecMainCode || true"
-            "systemctl cat buildit-wiki.service 2>/dev/null | grep -E '^(ExecStart|WorkingDirectory|Environment)=' || true"
+            "systemctl cat buildit-wiki.service 2>/dev/null | grep -E '^(ExecStart|WorkingDirectory)=' || true"
           )
 
           # Build the command string for SSM
