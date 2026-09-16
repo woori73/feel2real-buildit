@@ -124,10 +124,15 @@ jobs:
           # 새 jar는 여기서 받아만 두고, 실제로 /home/ec2-user/app.jar 자리에 넣는 건
           # f2r_deploy_with_rollback(스크립트 하단)이 담당한다 — 그래야 기존 정상 jar를
           # 먼저 백업한 뒤 교체하고, health 실패 시 되돌릴 수 있다.
-          aws s3 cp s3://$BUCKET/app.jar /tmp/app-new.jar
+          # --no-progress: app.jar(수백 MB)를 기본 진행률 출력으로 받으면 SSM
+          # StandardOutputContent(24000자 제한)가 이 다운로드 진행률만으로 가득 차
+          # 뒤이은 wiki/Spring 배포 단계 로그가 전부 잘려 나간다(Deploy #282에서 확인:
+          # 캡처된 24000자 전부가 app.jar 다운로드 진행률이었고, 실패 위치를 보여주는
+          # 로그는 하나도 남지 않았다). 완료 여부에는 영향 없음, 출력량만 줄인다.
+          aws s3 cp --no-progress s3://$BUCKET/app.jar /tmp/app-new.jar
 
           mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
-          aws s3 cp s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
+          aws s3 cp --no-progress s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
           rm -rf /opt/buildit-wiki/app/*
           tar -xzf /tmp/buildit-wiki-backend.tgz -C /opt/buildit-wiki/app
 
@@ -218,6 +223,7 @@ jobs:
           systemctl daemon-reload
           systemctl enable buildit-wiki.service
           systemctl restart buildit-wiki.service
+          echo "[DEPLOY] wiki restart"
           # buildit-wiki는 재시작 직후 바로 응답하지 않는다. Type=simple 유닛은
           # Python이 import 중인 동안에도 is-active가 'active'이므로, 단발 curl이나
           # is-active만으로는 기동 완료를 판정할 수 없다(Deploy #276 실패 원인) —
@@ -246,8 +252,10 @@ jobs:
             systemctl status buildit-wiki --no-pager -l | head -50 || true
             ss -ltnp | grep ':8000' || true
             journalctl -u buildit-wiki --no-pager -n 150 || true
+            echo "[DEPLOY] FAILED rc=1 line=wiki_health"
             exit 1
           fi
+          echo "[DEPLOY] wiki health OK"
           SCRIPT
 
           # f2r-app.service(Spring) 배포 가드를 그대로 이어 붙인다. scripts/deploy/f2r_app_guard.sh는
@@ -260,11 +268,19 @@ jobs:
 
           # ---- f2r-app.service 배포: 백업 → 교체 → 재시작 → health 재시도(최대 120초) ----
           # 실패하면 자동으로 이전 jar로 되돌리고, 그래도 안 되면 exit code 2로 명확히 구분한다
-          # (사람이 EC2에 직접 들어가야 한다는 뜻). 이 명령이 스크립트의 마지막 문장이라
-          # set -e 아래에서 이 함수의 반환값이 곧 deploy-buildit.sh 전체의 종료 코드가 된다.
-          f2r_deploy_with_rollback \
+          # (사람이 EC2에 직접 들어가야 한다는 뜻). 반환값(0/1/2)은 f2r_deploy_with_rollback의
+          # 기존 규약 그대로 유지하고, 여기서는 [DEPLOY] 마커만 덧붙인 뒤 같은 코드로 종료한다.
+          echo "[DEPLOY] spring deploy start"
+          if f2r_deploy_with_rollback \
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
-            f2r-app.service http://127.0.0.1:8080/actuator/health 24 5
+            f2r-app.service http://127.0.0.1:8080/actuator/health 24 5; then
+            echo "[DEPLOY] spring health OK"
+            echo "[DEPLOY] SUCCESS"
+          else
+            DEPLOY_RC=$?
+            echo "[DEPLOY] FAILED rc=${DEPLOY_RC} line=f2r_deploy_with_rollback"
+            exit "$DEPLOY_RC"
+          fi
           SCRIPT
           chmod +x /tmp/deploy-buildit.sh
 
