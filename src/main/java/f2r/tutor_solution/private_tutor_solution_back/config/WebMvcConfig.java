@@ -90,6 +90,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/admin/lesson-communities", "admin/lesson_communities");
         view(registry, "/admin/landing", "admin/landing");
 
+        // Easy 회계·학생원장 — ADMIN 전용(SecurityConfig hasRole). 학생 상세는
+        // /easy/students?id= 쿼리로 같은 템플릿에서 처리한다.
+        view(registry, "/easy", "easy/dashboard");
+        view(registry, "/easy/transactions", "easy/transactions");
+        view(registry, "/easy/students", "easy/students");
+        view(registry, "/easy/payments", "easy/payments");
+
         view(registry, "/tutor/lessons/{lessonId}/students", "tutor/lesson_students");
     }
 

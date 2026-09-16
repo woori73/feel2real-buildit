@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy 회계 - 거래 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+
+  <div class="easy-container">
+    <div class="easy-title">수입·지출</div>
+    <p class="easy-sub">모든 거래는 사업체에 연결됩니다.</p>
+
+    <div class="easy-card">
+      <div class="section-head">
+        <h2>거래 등록</h2>
+        <button class="btn-edit-link" id="toggleForm" type="button">접기 ›</button>
+      </div>
+      <div id="txnForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fDate" class="required">거래일</label>
+            <input type="date" id="fDate">
+          </div>
+          <div class="form-group">
+            <label for="fBusiness" class="required">사업체</label>
+            <select id="fBusiness"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fDirection" class="required">수입/지출</label>
+            <select id="fDirection">
+              <option value="INCOME">수입</option>
+              <option value="EXPENSE">지출</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fAmount" class="required">금액 (원)</label>
+            <input type="number" id="fAmount" min="0" step="1" placeholder="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fCategory">계정/분류</label>
+            <input type="text" id="fCategory" list="categoryList" placeholder="예: 수강료">
+            <datalist id="categoryList">
+              <option value="수강료"></option>
+              <option value="교재비"></option>
+              <option value="임대료"></option>
+              <option value="인건비"></option>
+              <option value="공과금"></option>
+              <option value="기타"></option>
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label for="fPayMethod">결제수단</label>
+            <input type="text" id="fPayMethod" list="payMethodList" placeholder="예: 계좌이체">
+            <datalist id="payMethodList">
+              <option value="현금"></option>
+              <option value="계좌이체"></option>
+              <option value="카드"></option>
+              <option value="기타"></option>
+            </datalist>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="fCounterparty">거래처 또는 대상</label>
+          <input type="text" id="fCounterparty" placeholder="예: 김OO 학부모">
+        </div>
+        <div class="form-group">
+          <label for="fDesc">적요</label>
+          <input type="text" id="fDesc" placeholder="예: 9월 수강료">
+        </div>
+        <div class="form-group">
+          <label for="fMemo">메모</label>
+          <input type="text" id="fMemo">
+        </div>
+        <button class="btn-primary" id="btnSave" type="button">등록하기</button>
+        <p class="error-msg" id="formError"></p>
+      </div>
+    </div>
+
+    <div class="easy-card">
+      <h2>거래 목록</h2>
+      <p class="desc">기간·사업체·수입/지출·분류로 필터링할 수 있습니다.</p>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="qFrom">시작일</label>
+          <input type="date" id="qFrom">
+        </div>
+        <div class="form-group">
+          <label for="qTo">종료일</label>
+          <input type="date" id="qTo">
+        </div>
+        <div class="form-group">
+          <label for="qBusiness">사업체</label>
+          <select id="qBusiness"></select>
+        </div>
+        <div class="form-group">
+          <label for="qDirection">수입/지출</label>
+          <select id="qDirection">
+            <option value="">전체</option>
+            <option value="INCOME">수입</option>
+            <option value="EXPENSE">지출</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="qCategory">분류</label>
+        <input type="text" id="qCategory" placeholder="전체 (예: 수강료)">
+      </div>
+      <button class="btn-secondary" id="btnSearch" type="button">조회하기</button>
+      <ul class="item-list" id="txnList" style="margin-top:12px"></ul>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/easy_api.js"></script>
+  <script src="/js/easy_transactions.js"></script>
+</body>
+</html>

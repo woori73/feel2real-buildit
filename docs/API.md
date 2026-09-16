@@ -532,6 +532,53 @@ LMS 주소가 성립하지 않는다(404).
   - `AuthController.me`
   - `LoginResponse`
 
+## 3-2. Easy 회계 API (ADMIN 전용)
+
+- 목적: 에듀홀릭 회계·학생원장 v1. `/easy` 화면 4종이 사용한다.
+- 인증/권한: 전부 `/api/admin/**` → ROLE_ADMIN. SSR `/easy/**`도 `hasRole("ADMIN")`. Wiki `users`와 연결하지 않는다.
+- 금액: 전부 long(원). 상태(미납/일부납/완납)는 저장 없이 청구/납부 기준 자동 계산.
+
+### ✅ GET /api/admin/easy/businesses
+
+- 목적: 활성 사업체 목록 (이름 하드코딩 없이 code/name으로 참조).
+- Response: `200 OK` — `[{ businessId, code, name }]`.
+- 관련 코드: `EasyBusinessController`, `EasyBusinessService`.
+
+### ✅ GET /api/admin/easy/summary?businessId&month=YYYY-MM
+
+- 목적: 월 손익 5카드 + 최근 거래 10 + 미수 학생 10. `businessId` 생략 시 전체 합산.
+- Response: `200 OK`
+  ```json
+  {
+    "month": "2026-09", "businessId": null, "businessName": "전체",
+    "income": 800000, "expense": 100000, "profit": 700000,
+    "receivable": 200000, "studentCount": 12,
+    "recentTxns": [], "overdueStudents": []
+  }
+  ```
+- 관련 코드: `EasyLedgerController.summary`, `EasyLedgerService.summary`.
+
+### ✅ GET/POST /api/admin/easy/transactions, PUT/DELETE /api/admin/easy/transactions/{txnId}
+
+- 목적: 수입·지출 등록/수정/삭제. 삭제는 화면 confirm 후 `204`.
+- 목록 필터(Query, 모두 선택): `businessId`, `from`/`to`(YYYY-MM-DD), `direction`(INCOME/EXPENSE), `category`.
+- 등록 body: `{ businessId, occurredOn, direction, amount(0 이상), category, counterparty, description, payMethod, memo, receiptRef }`.
+- Response: 목록 `200 OK` 배열, 등록/수정 `200 OK` 객체, 삭제 `204 No Content`. 실패 `400 text/plain`.
+- 관련 코드: `EasyLedgerController`, `EasyLedgerService`.
+
+### ✅ GET/POST /api/admin/easy/students, GET /api/admin/easy/students/{studentId}/ledger, PUT /api/admin/easy/students/{studentId}
+
+- 목적: 학생 원장 목록/등록/수정 + 상세(수납 합계 청구액/납부액/미수금 + 월별 내역).
+- 등록 body: `{ name(필수), school, grade, phone?, parentPhone?, status(ENROLLED/WITHDRAWN/GRADUATED), enrolledOn?, memo? }`.
+- 관련 코드: `EasyStudentController`, `EasyStudentService`.
+
+### ✅ GET/POST /api/admin/easy/payments, PUT/DELETE /api/admin/easy/payments/{paymentId}
+
+- 목적: 월 수납 등록/수정/삭제. 상태 자동 계산.
+- 목록 필터(Query, 모두 선택): `studentId`, `month`(YYYY-MM), `status`(UNPAID/PARTIAL/PAID).
+- 등록 body: `{ studentId, businessId, targetMonth(YYYY-MM), billedAmount, paidAmount, paidOn?, payMethod, memo? }`. 동일 (학생, 사업체, 월) 중복 시 `400`.
+- 관련 코드: `EasyTuitionController`, `EasyTuitionService`.
+
 ## 4. User API
 
 ### ✅ GET /api/me

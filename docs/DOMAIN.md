@@ -1177,6 +1177,19 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 
 인덱스: `site_page_visits`는 기존 인덱스에 `(service_area, traffic_kind, visit_date)`, `(traffic_kind, visit_date)`가 추가된다. `wiki_download_logs`는 `(download_date)`, `(material_category, material_id)`, `(user_id)` — 관리자 화면 집계 쿼리가 기존 페이지 응답을 늦추지 않도록.
 
+### 4.49 easy_* ✅ Easy 회계·학생원장 v1 (V973)
+
+ADMIN 전용(`/easy` 화면 + `/api/admin/easy/**`). Wiki `users`와 연결하지 않는 독립 원장이다. 금액은 전부 BIGINT(원) — 부동소수점 금지. 수납 상태(미납/일부납/완납)는 저장하지 않고 청구/납부 기준 앱에서 자동 계산한다.
+
+| table | key columns |
+|---|---|
+| `easy_businesses` | `business_id` PK, `code` UNIQUE(ACADEMY/PUBLISHING 시드 — 추가 확장 가능), `name`, `active`, `sort_order` |
+| `easy_students` | `student_id` PK, `name`, `school`, `grade`, `phone?`, `parent_phone?`, `status`(ENROLLED/WITHDRAWN/GRADUATED), `enrolled_on?`, `memo?` |
+| `easy_transactions` | `txn_id` PK, `business_id` FK NOT NULL(반드시 사업체 연결), `occurred_on`, `direction`(INCOME/EXPENSE), `amount` BIGINT CHECK≥0, `category`, `counterparty`, `description`, `pay_method`, `memo?`, `receipt_ref?`(증빙 참조 텍스트만) |
+| `easy_tuition_payments` | `payment_id` PK, `student_id` FK CASCADE, `business_id` FK, `target_month` CHAR(7) YYYY-MM, `billed_amount`/`paid_amount` BIGINT CHECK≥0, `paid_on?`, `pay_method`, UNIQUE(`student_id`,`business_id`,`target_month`) |
+
+미수금 = `SUM(billed - paid)` (잔액>0만). 대시보드 `businessId` null이면 전체 합산. 복식부기 확장 시 분개 테이블을 추가하되 v1 단식 구조는 유지한다.
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
