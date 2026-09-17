@@ -32,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 class ChartCandidateEnrichmentMySqlTest {
 
   @Autowired ChartCandidateEnrichmentService service;
+  @Autowired ChartSiteToolService siteToolService;
   @Autowired JdbcTemplate jdbcTemplate;
 
   private static final String PHILOSOPHY =
@@ -64,7 +65,7 @@ class ChartCandidateEnrichmentMySqlTest {
                 'LEGACY_V3', 'buildit-chart-v1',
                 'https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIabc', ?, 'Legacy V3 조사 근거',
                 'Legacy V3 선정 이력 승계', '', 'VERIFIED', 'DISCOVERED',
-                'legacy-v3-import', NOW(6), NOW(6), NOW(6))
+                'legacy-v3-import', 'legacy-v3-google', NOW(6), NOW(6), NOW(6))
         """, tag, personKey, tag + "hash");
     Long id = jdbcTemplate.queryForObject(
         "SELECT candidate_id FROM chart_candidates WHERE person_key=?", Long.class, personKey);
@@ -252,5 +253,58 @@ class ChartCandidateEnrichmentMySqlTest {
     assertThat(after.get("education_philosophy_summary")).isEqualTo(PHILOSOPHY);
     assertThat(after.get("curriculum_summary")).isNull();
     assertThat(after.get("distinctive_teaching_summary")).isNull();
+  }
+
+  // ----- 7) 저장 → 즉시 재조회 흐름 (프론트 자동 반영 계약) ---------------------------------
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void enrich_returnsSavedTrueWithRereadResearch_andConflictList() {
+    long id = insertLegacyCandidate();
+
+    // 첫 보완: 빈 필드 채움 + Evidence 1건 → saved:true, conflicts 비어 있음, research가 저장값 그대로
+    Map<String, Object> r1 = service.enrich(id, request(PHILOSOPHY, CURRICULUM, TEACHING,
+        List.of("강점A"), false, List.of(evidence("https://blog.naver.com/legacy/31"))));
+    assertThat(r1).containsEntry("saved", true);
+    assertThat((List<String>) r1.get("conflicts")).isEmpty();
+
+    Map<String, Object> research = (Map<String, Object>) r1.get("research");
+    assertThat(research).containsEntry("educationPhilosophySummary", PHILOSOPHY);
+    assertThat(research).containsEntry("curriculumSummary", CURRICULUM);
+    assertThat(research).containsEntry("distinctiveTeachingSummary", TEACHING);
+    assertThat((List<String>) research.get("strengths")).contains("강점A");
+    assertThat((List<Map<String, Object>>) research.get("evidence"))
+        .anyMatch(e -> "https://blog.naver.com/legacy/31".equals(e.get("sourceUrl")));
+
+    // overwrite=false + 기존값과 다른 값 → 저장 대신 conflicts 표시, 기존값 유지
+    Map<String, Object> r2 = service.enrich(id,
+        request("충돌을 만드는 다른 철학 문장입니다", null, null, null, false, List.of()));
+    assertThat((List<String>) r2.get("conflicts")).containsExactly("education_philosophy_summary");
+    assertThat(row(id).get("education_philosophy_summary")).isEqualTo(PHILOSOPHY);
+
+    // getResearch 재조회(새로고침 경로) → 동일 값 유지
+    Map<String, Object> reloaded = service.getResearch(id);
+    assertThat(reloaded).containsEntry("educationPhilosophySummary", PHILOSOPHY);
+    assertThat(reloaded).containsEntry("eligibilityStatus", "EVALUATABLE");
+    assertThat((List<Map<String, Object>>) reloaded.get("evidence"))
+        .anyMatch(e -> "https://blog.naver.com/legacy/31".equals(e.get("sourceUrl")));
+  }
+
+  // ----- 8) 저장 후 score/preview 가 새 Evidence 를 반영 ------------------------------------
+
+  @Test
+  void previewScore_reflectsNewEvidenceAfterEnrichment() {
+    long id = insertLegacyCandidate();
+    Map<String, Object> before = siteToolService.previewScore(id);
+    int beforeEvidence = ((Number) before.get("evidenceCount")).intValue();
+
+    service.enrich(id, request(null, null, null, null, false,
+        List.of(evidence("https://blog.naver.com/legacy/77"))));
+
+    Map<String, Object> after = siteToolService.previewScore(id);
+    assertThat((Integer) after.get("totalScore"))
+        .isGreaterThanOrEqualTo((Integer) before.get("totalScore"));
+    assertThat(((Number) after.get("evidenceCount")).intValue())
+        .isGreaterThan(beforeEvidence);
   }
 }
