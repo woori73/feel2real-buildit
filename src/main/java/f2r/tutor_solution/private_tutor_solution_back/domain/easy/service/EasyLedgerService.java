@@ -6,7 +6,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnReq
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceReview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyWithholdingReview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTuitionPayment;
@@ -152,11 +154,15 @@ public class EasyLedgerService {
 
   @Transactional
   public EasyTxnResponse createTxn(EasyTxnRequest request) {
+    EasyBusiness business = requireActiveBusiness(request.businessId());
+    LocalDate occurredOn = requireDate(request.occurredOn());
+    EasyTxnDirection direction = requireDirection(request.direction());
+    long amount = requireNonNegative(request.amount(), "금액");
     EasyTransaction txn = EasyTransaction.builder()
-        .business(requireActiveBusiness(request.businessId()))
-        .occurredOn(requireDate(request.occurredOn()))
-        .direction(requireDirection(request.direction()))
-        .amount(requireNonNegative(request.amount(), "금액"))
+        .business(business)
+        .occurredOn(occurredOn)
+        .direction(direction)
+        .amount(amount)
         .category(request.category())
         .counterparty(request.counterparty())
         .description(request.description())
@@ -167,6 +173,13 @@ public class EasyLedgerService {
         .supplyAmount(optionalNonNegative(request.supplyAmount(), "공급가액"))
         .vatAmount(optionalNonNegative(request.vatAmount(), "부가세"))
         .evidenceType(parseEvidence(request.evidenceType()))
+        .sourceKind(normalizeSourceKind(request.sourceKind()))
+        .sourceRef(request.sourceRef())
+        .fingerprint(EasyFingerprint.of(
+            business.getBusinessId(), occurredOn, direction.name(), amount,
+            request.counterparty(), request.description(), request.payMethod()))
+        .evidenceReview(parseEvidenceReview(request.evidenceReview()))
+        .withholdingReview(parseWithholdingReview(request.withholdingReview()))
         .build();
     return EasyTxnResponse.from(txnRepository.save(txn));
   }
@@ -175,11 +188,15 @@ public class EasyLedgerService {
   public EasyTxnResponse updateTxn(Long txnId, EasyTxnRequest request) {
     EasyTransaction txn = txnRepository.findById(txnId)
         .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다: txnId=" + txnId));
+    EasyBusiness business = requireActiveBusiness(request.businessId());
+    LocalDate occurredOn = requireDate(request.occurredOn());
+    EasyTxnDirection direction = requireDirection(request.direction());
+    long amount = requireNonNegative(request.amount(), "금액");
     txn.update(
-        requireActiveBusiness(request.businessId()),
-        requireDate(request.occurredOn()),
-        requireDirection(request.direction()),
-        requireNonNegative(request.amount(), "금액"),
+        business,
+        occurredOn,
+        direction,
+        amount,
         request.category(),
         request.counterparty(),
         request.description(),
@@ -189,7 +206,14 @@ public class EasyLedgerService {
         requireAccount(request.accountId()),
         optionalNonNegative(request.supplyAmount(), "공급가액"),
         optionalNonNegative(request.vatAmount(), "부가세"),
-        parseEvidence(request.evidenceType()));
+        parseEvidence(request.evidenceType()),
+        normalizeSourceKind(request.sourceKind()),
+        request.sourceRef(),
+        EasyFingerprint.of(
+            business.getBusinessId(), occurredOn, direction.name(), amount,
+            request.counterparty(), request.description(), request.payMethod()),
+        parseEvidenceReview(request.evidenceReview()),
+        parseWithholdingReview(request.withholdingReview()));
     return EasyTxnResponse.from(txn);
   }
 
@@ -302,6 +326,30 @@ public class EasyLedgerService {
       return null;
     }
     return EasyEvidenceType.parse(evidenceType);
+  }
+
+  /** 증빙 검토 상태 — null이면 UNKNOWN으로 읽는다 (저장은 NULL 유지). */
+  private EasyEvidenceReview parseEvidenceReview(String evidenceReview) {
+    if (evidenceReview == null || evidenceReview.isBlank()) {
+      return null;
+    }
+    return EasyEvidenceReview.parse(evidenceReview);
+  }
+
+  /** 원천징수 검토 상태 — null이면 NONE으로 읽는다 (저장은 NULL 유지). */
+  private EasyWithholdingReview parseWithholdingReview(String withholdingReview) {
+    if (withholdingReview == null || withholdingReview.isBlank()) {
+      return null;
+    }
+    return EasyWithholdingReview.parse(withholdingReview);
+  }
+
+  /** 출처 표기 — 빈 값은 NULL로 둔다. 수집경로 추적용이라 값 검증은 하지 않는다. */
+  private String normalizeSourceKind(String sourceKind) {
+    if (sourceKind == null || sourceKind.isBlank()) {
+      return null;
+    }
+    return sourceKind.trim();
   }
 
   private boolean hasText(String value) {

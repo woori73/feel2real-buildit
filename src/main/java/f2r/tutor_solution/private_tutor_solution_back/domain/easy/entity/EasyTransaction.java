@@ -83,11 +83,38 @@ public class EasyTransaction extends BaseEntity {
   @Column(name = "evidence_type", length = 30)
   private EasyEvidenceType evidenceType;
 
+  /** 거래 출처 — 여러 source에서 들어오는 동일 경제거래 추적용. */
+  @Column(name = "source_kind", length = 20)
+  private String sourceKind;
+
+  /** 원본 참조 — 파일명+행번호 등. */
+  @Column(name = "source_ref", length = 200)
+  private String sourceRef;
+
+  /**
+   * 중복 의심 탐지용 해시 — 자동합치기에 쓰지 않는다.
+   * 의심만 탐지하고 판단·합치기는 사용자가 한다.
+   */
+  @Column(name = "fingerprint", length = 64)
+  private String fingerprint;
+
+  /** 증빙 검토 상태 — 세법 판정이 아니라 확인 표시다. NULL이면 UNKNOWN. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "evidence_review", length = 20)
+  private EasyEvidenceReview evidenceReview;
+
+  /** 원천징수 검토 상태 — 신고 기능이 아니라 검토 표시다. NULL이면 NONE. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "withholding_review", length = 20)
+  private EasyWithholdingReview withholdingReview;
+
   @Builder
   public EasyTransaction(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
       String payMethod, String memo, String receiptRef,
-      EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType) {
+      EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
+      String sourceKind, String sourceRef, String fingerprint,
+      EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -102,12 +129,19 @@ public class EasyTransaction extends BaseEntity {
     this.supplyAmount = supplyAmount;
     this.vatAmount = vatAmount;
     this.evidenceType = evidenceType;
+    this.sourceKind = sourceKind;
+    this.sourceRef = sourceRef;
+    this.fingerprint = fingerprint;
+    this.evidenceReview = evidenceReview;
+    this.withholdingReview = withholdingReview;
   }
 
   public void update(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
       String payMethod, String memo, String receiptRef,
-      EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType) {
+      EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
+      String sourceKind, String sourceRef, String fingerprint,
+      EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -122,5 +156,10 @@ public class EasyTransaction extends BaseEntity {
     this.supplyAmount = supplyAmount;
     this.vatAmount = vatAmount;
     this.evidenceType = evidenceType;
+    this.sourceKind = sourceKind;
+    this.sourceRef = sourceRef;
+    this.fingerprint = fingerprint;
+    this.evidenceReview = evidenceReview;
+    this.withholdingReview = withholdingReview;
   }
 }

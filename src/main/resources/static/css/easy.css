@@ -306,6 +306,64 @@ body {
   margin-bottom: 12px;
 }
 
+/* 경영 비교 (올해 vs 작년 동기) — 모바일 1열 */
+.yoy-grid { display: grid; gap: 10px; }
+.yoy-row {
+  border: 1px solid #edf2f7;
+  border-radius: 10px;
+  padding: 12px;
+  background: #f7fafc;
+}
+.yoy-head { font-size: 13px; font-weight: 700; color: #4a5568; margin-bottom: 6px; }
+.yoy-nums { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.yoy-cur { font-weight: 800; color: #1a202c; }
+.yoy-prev { color: #718096; }
+.yoy-diff { font-weight: 700; color: #4a5568; }
+.yoy-diff.plus { color: #2b6cb0; }
+.yoy-diff.minus { color: #e53e3e; }
+
+/* AI가 확인할 장부 — 모바일 2열 카드 */
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.review-card {
+  border: 1px solid #edf2f7;
+  border-radius: 10px;
+  padding: 12px;
+  background: #f7fafc;
+  text-align: center;
+}
+.review-card.has { border-color: #feb2b2; background: #fff5f5; }
+.review-card .n { font-size: 18px; font-weight: 800; color: #1a202c; }
+.review-card.has .n { color: #c53030; }
+.review-card .l { font-size: 12px; color: #718096; margin-top: 2px; }
+.review-total {
+  grid-column: 1 / -1;
+  display: block;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  background: #2d3748;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* 경영 브리핑 */
+.brief-list { list-style: none; display: grid; gap: 8px; }
+.brief-list li {
+  font-size: 13px;
+  color: #2d3748;
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+.brief-list li.empty { color: #a0aec0; }
+
 /* PC 확장 */
 @media (min-width: 768px) {
   .stat-grid { grid-template-columns: repeat(5, 1fr); }
@@ -313,4 +371,5 @@ body {
   /* 5열 카드(약 130px)에서는 긴 금액이 어색하게 꺾이지 않게 축소 */
   .stat-card .n { font-size: 16px; word-break: keep-all; }
   .filter-grid { grid-template-columns: repeat(4, 1fr); }
+  .review-grid { grid-template-columns: repeat(3, 1fr); }
 }
