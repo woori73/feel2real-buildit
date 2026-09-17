@@ -122,6 +122,7 @@ public class EasyImportService {
         .evidenceType(evidenceType)
         .rawData(input.rawData())
         .externalAccount(input.externalAccount())
+        .reversal(input.reversal())
         .build();
     EasyImportRow saved = rowRepository.save(row);
     if (error != null) {
@@ -190,6 +191,7 @@ public class EasyImportService {
           .supplyAmount(row.getSupplyAmount())
           .vatAmount(row.getVatAmount())
           .evidenceType(row.getEvidenceType())
+          .expenseReversal(row.isReversal() ? Boolean.TRUE : null)
           .sourceKind(batch.getSourceKind())
           .sourceRef(batch.getSourceName() + "#row-" + row.getRowNo())
           .fingerprint(EasyFingerprint.of(

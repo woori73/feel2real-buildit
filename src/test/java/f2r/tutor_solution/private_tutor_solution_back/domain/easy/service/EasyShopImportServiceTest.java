@@ -56,9 +56,22 @@ class EasyShopImportServiceTest {
     ReflectionTestUtils.setField(publishing, "businessId", 2L);
   }
 
-  private EasyShopRow row(String date, String direction, String amount, String businessCode) {
-    return new EasyShopRow(date, direction, amount, "거래처", "적요", "계좌이체",
-        "수강료", businessCode, "TX-1", null);
+  private EasyShopRow sales(String date, String total, String businessCode) {
+    return new EasyShopRow("sales", date, "현대카드", null, null, null, null, null, null,
+        null, "카드(1)", null, null, null, total, "0", "신용(체크)카드", null,
+        null, null, null, businessCode, null, null, null);
+  }
+
+  private EasyShopRow expense(String date, String total, String category, String businessCode) {
+    return new EasyShopRow("expense", date, "거래처", null, null, null, null, null, null,
+        category, "품목", "9090", "910", "0", total, null, null, "카드",
+        null, null, null, businessCode, null, null, null);
+  }
+
+  private EasyShopRow funds(String date, String deposit, String withdrawal, String memo) {
+    return new EasyShopRow("deposit_withdrawal", date, null, "신한은행 110498250866", memo,
+        "계좌에서 현금으로 출금", deposit, withdrawal, "0", null, null, null, null, null,
+        null, null, null, null, null, null, null, "ACADEMY", null, null, null);
   }
 
   private EasyImportBatchResponse batchResponse(Long batchId, Long businessId,
@@ -83,8 +96,8 @@ class EasyShopImportServiceTest {
 
     List<EasyImportBatchResponse> staged = service.stage(new EasyShopImportRequest(null,
         "easyshop-2024.csv", List.of(
-            row("2024-03-05", "입금", "1,200,000원", "ACADEMY"),
-            row("20240306", "출금", "50000", "PUBLISHING"))));
+            sales("2024-03-05", "540,000", "ACADEMY"),
+            expense("2024-03-06", "10,000", "잡화/소모품", "PUBLISHING"))));
 
     assertThat(staged).hasSize(2);
     ArgumentCaptor<EasyImportBatchRequest> captor =
@@ -100,10 +113,58 @@ class EasyShopImportServiceTest {
     when(businessRepository.findAll()).thenReturn(List.of(academy, publishing));
 
     assertThatThrownBy(() -> service.stage(new EasyShopImportRequest(null,
-        "easyshop.csv", List.of(row("2025-01-05", "수입", "100000", "UNKNOWN")))))
+        "easyshop.csv", List.of(sales("2025-01-05", "100000", "UNKNOWN")))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("사업체");
     verify(importService, never()).stage(any());
+  }
+
+  @Test
+  @DisplayName("음수 비용(환불)은 역분개로 보존 — 누락·절댓값 변환 없음")
+  void stage_negativeExpense_reversal() {
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(importService.stage(any(EasyImportBatchRequest.class)))
+        .thenAnswer(invocation -> {
+          EasyImportBatchRequest req = invocation.getArgument(0);
+          return batchResponse(9L, req.businessId(), List.of());
+        });
+    when(importService.getBatch(9L)).thenReturn(batchResponse(9L, 1L, List.of()));
+
+    service.stage(new EasyShopImportRequest(1L, "easyshop.csv",
+        List.of(expense("2026-07-06", "-330,000", "전화/소모품", null))));
+
+    ArgumentCaptor<EasyImportBatchRequest> captor =
+        ArgumentCaptor.forClass(EasyImportBatchRequest.class);
+    verify(importService).stage(captor.capture());
+    var input = captor.getValue().rows().get(0);
+    assertThat(input.direction()).isEqualTo("INCOME");
+    assertThat(input.amount()).isEqualTo(330000L);
+    assertThat(input.reversal()).isTrue();
+    assertThat(input.supplyAmount()).isEqualTo(9090L);
+    assertThat(input.vatAmount()).isEqualTo(910L);
+  }
+
+  @Test
+  @DisplayName("입출금은 자금 배치로 분리 — P&L 출처와 다름")
+  void stage_funds_separateKind() {
+    when(businessRepository.findAll()).thenReturn(List.of(academy, publishing));
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(importService.stage(any(EasyImportBatchRequest.class)))
+        .thenAnswer(invocation -> {
+          EasyImportBatchRequest req = invocation.getArgument(0);
+          return batchResponse(9L, req.businessId(), List.of());
+        });
+    when(importService.getBatch(9L)).thenReturn(batchResponse(9L, 1L, List.of()));
+
+    service.stage(new EasyShopImportRequest(1L, "easyshop.csv", List.of(
+        funds("2026-06-13", "0", "967,000", "백승민"),
+        sales("2026-06-14", "540,000", null))));
+
+    ArgumentCaptor<EasyImportBatchRequest> captor =
+        ArgumentCaptor.forClass(EasyImportBatchRequest.class);
+    verify(importService, org.mockito.Mockito.times(2)).stage(captor.capture());
+    assertThat(captor.getAllValues()).extracting(EasyImportBatchRequest::sourceKind)
+        .containsExactlyInAnyOrder("EASYSHOP", "EASYSHOP_FUNDS");
   }
 
   @Test
@@ -113,9 +174,9 @@ class EasyShopImportServiceTest {
     EasyImportRow staged = EasyImportRow.builder()
         .batch(null).rowNo(1).occurredOn(LocalDate.of(2025, 3, 5))
         .direction(EasyTxnDirection.INCOME).amount(300000L)
-        .counterparty("거래처").description("적요").payMethod("계좌이체")
+        .counterparty("현대카드").description("카드(1)").payMethod("신용(체크)카드")
         .supplyAmount(null).vatAmount(null).evidenceType(null).rawData(null)
-        .externalAccount("수강료").build();
+        .externalAccount("EASYSHOP:매출").reversal(null).build();
     ReflectionTestUtils.setField(staged, "rowId", 5L);
     staged.markReady(null, 0.0);
     EasyImportBatchResponse response = batchResponse(9L, 1L,
@@ -126,40 +187,16 @@ class EasyShopImportServiceTest {
     EasyTransaction ledgerTxn = EasyTransaction.builder()
         .business(academy).occurredOn(LocalDate.of(2025, 3, 5))
         .direction(EasyTxnDirection.INCOME).amount(300000L)
-        .counterparty("거래처").description("적요").payMethod("계좌이체")
+        .counterparty("현대카드").description("카드(1)").payMethod("신용(체크)카드")
         .fingerprint(EasyFingerprint.of(1L, LocalDate.of(2025, 3, 5), "INCOME", 300000L,
-            "거래처", "적요", "계좌이체"))
+            "현대카드", "카드(1)", "신용(체크)카드"))
         .build();
     when(txnRepository.findByBusiness_BusinessIdAndFingerprintIsNotNull(1L))
         .thenReturn(List.of(ledgerTxn));
 
     service.stage(new EasyShopImportRequest(1L, "easyshop.csv",
-        List.of(row("2025-03-05", "수입", "300000", null))));
+        List.of(sales("2025-03-05", "300000", null))));
 
     assertThat(staged.getStatus()).isEqualTo(EasyImportRowStatus.DUPLICATE);
-  }
-
-  @Test
-  @DisplayName("날짜·방향·금액 표기 변형을 정규화한다")
-  void stage_normalizesVariants() {
-    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
-    when(importService.stage(any(EasyImportBatchRequest.class)))
-        .thenAnswer(invocation -> {
-          EasyImportBatchRequest req = invocation.getArgument(0);
-          return batchResponse(9L, req.businessId(), List.of());
-        });
-    when(importService.getBatch(9L)).thenReturn(batchResponse(9L, 1L, List.of()));
-
-    service.stage(new EasyShopImportRequest(1L, "easyshop.csv", List.of(
-        row("2025.03.05", "입금", "1,200,000원", null))));
-
-    ArgumentCaptor<EasyImportBatchRequest> captor =
-        ArgumentCaptor.forClass(EasyImportBatchRequest.class);
-    verify(importService).stage(captor.capture());
-    var input = captor.getValue().rows().get(0);
-    assertThat(input.occurredOn()).isEqualTo("2025-03-05");
-    assertThat(input.direction()).isEqualTo("INCOME");
-    assertThat(input.amount()).isEqualTo(1200000L);
-    assertThat(input.externalAccount()).isEqualTo("수강료");
   }
 }

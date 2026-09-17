@@ -10,6 +10,7 @@ public record EasyReviewSummaryResponse(
     long withholding,
     long duplicateSuspect,
     long importUnconfirmed,
+    long missingExpense,
     long totalOpen
 ) {
 }

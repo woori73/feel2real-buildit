@@ -108,13 +108,21 @@ public class EasyTransaction extends BaseEntity {
   @Column(name = "withholding_review", length = 20)
   private EasyWithholdingReview withholdingReview;
 
+  /**
+   * 비용 환불 역분개 — 실데이터의 음수 비용(예: -330,000원 환불)을
+   * 누락·절댓값 변환 없이 보존한다. 방향은 INCOME, P&L에서는 비용 차감으로 집계한다.
+   */
+  @Column(name = "is_expense_reversal")
+  private Boolean expenseReversal;
+
   @Builder
   public EasyTransaction(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
       String payMethod, String memo, String receiptRef,
       EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
       String sourceKind, String sourceRef, String fingerprint,
-      EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview) {
+      EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview,
+      Boolean expenseReversal) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -134,6 +142,7 @@ public class EasyTransaction extends BaseEntity {
     this.fingerprint = fingerprint;
     this.evidenceReview = evidenceReview;
     this.withholdingReview = withholdingReview;
+    this.expenseReversal = expenseReversal;
   }
 
   public void update(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
@@ -141,7 +150,8 @@ public class EasyTransaction extends BaseEntity {
       String payMethod, String memo, String receiptRef,
       EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
       String sourceKind, String sourceRef, String fingerprint,
-      EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview) {
+      EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview,
+      Boolean expenseReversal) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -161,5 +171,11 @@ public class EasyTransaction extends BaseEntity {
     this.fingerprint = fingerprint;
     this.evidenceReview = evidenceReview;
     this.withholdingReview = withholdingReview;
+    this.expenseReversal = expenseReversal;
+  }
+
+  /** 환불 역분개 여부 — NULL은 일반 거래로 읽는다. */
+  public boolean isReversal() {
+    return Boolean.TRUE.equals(expenseReversal);
   }
 }

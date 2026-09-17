@@ -64,6 +64,8 @@ public class EasyReportService {
     LedgerTotals ledger = ledgerTotals(businessId, from, to);
     JournalTotals journal = journalTotals(businessId, from, to);
     TrialBalance trial = journalService.trialBalance(businessId, from, to);
+    FundsTotals funds = fundsTotals(businessId, from, to);
+    Coverage coverage = coverage(businessId, from, to);
 
     List<EasyMonthSlice> monthly = new ArrayList<>();
     for (int month = 1; month <= 12; month++) {
@@ -95,7 +97,7 @@ public class EasyReportService {
     }
     List<EasyAccountSlice> accounts = byAccount.values().stream()
         .map(acc -> new EasyAccountSlice(acc.id, acc.name, acc.direction,
-            "INCOME".equals(acc.direction) ? acc.credit : acc.debit))
+            "INCOME".equals(acc.direction) ? acc.credit - acc.debit : acc.debit - acc.credit))
         .sorted((left, right) -> Long.compare(right.total(), left.total()))
         .toList();
 
@@ -114,7 +116,30 @@ public class EasyReportService {
             prev.income() - prev.expense(),
             rate(ledger.income(), prev.income()),
             rate(ledger.expense(), prev.expense()),
-            rate(ledger.income() - ledger.expense(), prev.income() - prev.expense())));
+            rate(ledger.income() - ledger.expense(), prev.income() - prev.expense())),
+        funds.in(), funds.out(),
+        coverage.dataThrough(), coverage.totalRows());
+  }
+
+  private record Coverage(LocalDate dataThrough, long totalRows) {
+  }
+
+  /**
+   * 데이터 커버리지 — 범위 내 장부 기준일(최종 거래일)과 행 수.
+   * 연도 전체가 아님을 오해하지 않도록 기준일을 함께 반환한다
+   * (예: 출판사 2026년 5월 이후 미확보).
+   */
+  Coverage coverage(Long businessId, LocalDate from, LocalDate to) {
+    LocalDate latest = null;
+    long rows = 0L;
+    for (EasyTransaction txn : scopedTxns(businessId, from, to)) {
+      rows++;
+      if (txn.getOccurredOn() != null
+          && (latest == null || txn.getOccurredOn().isAfter(latest))) {
+        latest = txn.getOccurredOn();
+      }
+    }
+    return new Coverage(latest, rows);
   }
 
   private record LedgerTotals(long income, long expense) {
@@ -146,17 +171,62 @@ public class EasyReportService {
             businessId, from, to);
   }
 
+  /**
+   * 장부 합계 — 자금 이동(EASYSHOP_FUNDS)은 P&L에서 제외하고,
+   * 비용 환불 역분개는 비용에서 차감한다 (누락·절댓값 변환 없음).
+   */
   private LedgerTotals ledgerTotals(Long businessId, LocalDate from, LocalDate to) {
     long income = 0L;
     long expense = 0L;
     for (EasyTransaction txn : scopedTxns(businessId, from, to)) {
-      if (txn.getDirection() == EasyTxnDirection.INCOME) {
+      if (EasyShopImportService.SOURCE_KIND_FUNDS.equals(txn.getSourceKind())) {
+        continue;
+      }
+      if (txn.getDirection() == EasyTxnDirection.INCOME && !txn.isReversal()) {
         income += txn.getAmount();
-      } else {
+      } else if (txn.getDirection() == EasyTxnDirection.EXPENSE) {
         expense += txn.getAmount();
+      } else if (txn.isReversal()) {
+        // 환불 역분개 — 계정 방향 쪽에서 차감한다.
+        if (txn.getAccount() != null
+            && txn.getAccount().getDirection() == EasyAccountDirection.INCOME) {
+          income -= txn.getAmount();
+        } else {
+          expense -= txn.getAmount();
+        }
       }
     }
     return new LedgerTotals(income, expense);
+  }
+
+  private record FundsTotals(long in, long out) {
+  }
+
+  /**
+   * 자금 이동 합계 — P&L이 아니라 원천자료 보존 검증용이다.
+   * 음수 면(역분개)은 원래 면에서 차감한다 (CSV 열 합계와 같은 산술).
+   */
+  private FundsTotals fundsTotals(Long businessId, LocalDate from, LocalDate to) {
+    long in = 0L;
+    long out = 0L;
+    for (EasyTransaction txn : scopedTxns(businessId, from, to)) {
+      if (!EasyShopImportService.SOURCE_KIND_FUNDS.equals(txn.getSourceKind())) {
+        continue;
+      }
+      if (txn.getDirection() == EasyTxnDirection.INCOME && !txn.isReversal()) {
+        in += txn.getAmount();
+      } else if (txn.getDirection() == EasyTxnDirection.EXPENSE && !txn.isReversal()) {
+        out += txn.getAmount();
+      } else if (txn.isReversal()) {
+        // 원래 면 차감 (예: 출금 -330,000 → 출금 합계에서 차감)
+        if (txn.getDirection() == EasyTxnDirection.INCOME) {
+          out -= txn.getAmount();
+        } else {
+          in -= txn.getAmount();
+        }
+      }
+    }
+    return new FundsTotals(in, out);
   }
 
   private List<EasyJournalEntry> postedEntries(Long businessId, LocalDate from, LocalDate to) {
@@ -179,10 +249,11 @@ public class EasyReportService {
             || EasyJournalService.SETTLEMENT_CODE.equals(line.getAccount().getCode())) {
           continue;
         }
+        // 환불 역분개(반대편 차대변)까지 네팅한다 — 장부 네팅과 같은 규칙.
         if (line.getAccount().getDirection() == EasyAccountDirection.INCOME) {
-          income += line.getCredit();
+          income += line.getCredit() - line.getDebit();
         } else if (line.getAccount().getDirection() == EasyAccountDirection.EXPENSE) {
-          expense += line.getDebit();
+          expense += line.getDebit() - line.getCredit();
         }
       }
     }

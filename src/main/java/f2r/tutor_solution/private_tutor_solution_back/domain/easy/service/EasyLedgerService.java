@@ -192,6 +192,7 @@ public class EasyLedgerService {
             request.counterparty(), request.description(), request.payMethod()))
         .evidenceReview(parseEvidenceReview(request.evidenceReview()))
         .withholdingReview(parseWithholdingReview(request.withholdingReview()))
+        .expenseReversal(null)
         .build();
     EasyTransaction saved = txnRepository.save(txn);
     journalService.repost(saved);
@@ -228,7 +229,8 @@ public class EasyLedgerService {
             business.getBusinessId(), occurredOn, direction.name(), amount,
             request.counterparty(), request.description(), request.payMethod()),
         parseEvidenceReview(request.evidenceReview()),
-        parseWithholdingReview(request.withholdingReview()));
+        parseWithholdingReview(request.withholdingReview()),
+        txn.isReversal() ? Boolean.TRUE : null);
     correctionService.record(business, txn, "UPDATE", before, EasyTxnSnapshot.of(txn), "admin");
     journalService.repost(txn);
     return EasyTxnResponse.from(txn);

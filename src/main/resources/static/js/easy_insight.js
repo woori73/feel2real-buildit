@@ -150,7 +150,8 @@
   function renderYearPl(p) {
     const label = document.getElementById('yearPlLabel');
     if (label) label.textContent = p.year + '년 · 분개 ' + (p.journalBalanced ? '균형' : '불일치')
-      + (p.matchesLedger ? '' : ' · 장부 불일치(미분류 확인)');
+      + (p.matchesLedger ? '' : ' · 장부 불일치(미분류 확인)')
+      + (p.dataThrough ? ' · 기준일 ' + p.dataThrough + ' (' + p.totalRows + '건)' : '');
     const grid = document.getElementById('yearPlGrid');
     if (!grid) return;
     grid.innerHTML = '';

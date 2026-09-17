@@ -68,6 +68,9 @@ class EasyReportServiceTest {
         .direction(EasyAccountDirection.EXPENSE).sortOrder(16).active(true).build();
     settlement = EasyAccount.builder().code("SETTLEMENT").name("자금정산")
         .direction(EasyAccountDirection.ASSET).sortOrder(0).active(true).build();
+    ReflectionTestUtils.setField(tuition, "accountId", 10L);
+    ReflectionTestUtils.setField(supplies, "accountId", 11L);
+    ReflectionTestUtils.setField(settlement, "accountId", 12L);
   }
 
   private EasyTransaction txn(Long txnId, EasyBusiness business, LocalDate date,

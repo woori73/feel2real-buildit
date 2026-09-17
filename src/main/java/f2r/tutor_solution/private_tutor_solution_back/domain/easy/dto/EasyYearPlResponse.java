@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -21,7 +22,11 @@ public record EasyYearPlResponse(
     long unpostedTxnCount,
     List<EasyMonthSlice> monthly,
     List<EasyAccountSlice> byAccount,
-    EasyPrevYear prevYear
+    EasyPrevYear prevYear,
+    long fundsIn,
+    long fundsOut,
+    LocalDate dataThrough,
+    long totalRows
 ) {
   public record EasyMonthSlice(int month, long income, long expense) {
   }

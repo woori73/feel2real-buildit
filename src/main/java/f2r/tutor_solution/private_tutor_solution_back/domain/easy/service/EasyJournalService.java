@@ -52,6 +52,10 @@ public class EasyJournalService {
     for (EasyJournalEntry active : actives) {
       active.voidEntry();
     }
+    // 자금 이동(EASYSHOP_FUNDS)은 P&L 분개 대상이 아니다 — 원본 보존만 하고 합산하지 않는다.
+    if (EasyShopImportService.SOURCE_KIND_FUNDS.equals(txn.getSourceKind())) {
+      return;
+    }
     if (txn.getAccount() == null || txn.getAmount() <= 0) {
       return;
     }
