@@ -642,7 +642,7 @@ LMS 주소가 성립하지 않는다(404).
 
 ### ✅ GET/POST /api/admin/easy/closings, POST /api/admin/easy/closings/{closingId}/review|close|reopen
 
-- 목적: 연도 마감. 생성 body `{ businessId, fiscalYear }` (사업체+연도 UNIQUE). 마감은 OPEN 검토 항목이 있으면 차단되며 `force:true` + 사유로만 강제 마감한다 (스냅샷에 기록). 마감 해제는 항상 가능하다.
+- 목적: 연도 마감. 생성 body `{ businessId, fiscalYear }` (사업체+연도 UNIQUE). 마감은 해당 귀속연도의 OPEN 검토 항목이 있으면 차단되며 (다른 연도 항목은 차단 안 함) `force:true` + 사유로만 강제 마감한다 (스냅샷에 기록). 귀속연도 미확정 staging은 임의 배정 없이 모든 연도를 차단한다. 마감 해제는 항상 가능하다.
 - 관련 코드: `EasyAuditController`, `EasyAuditService`.
 
 ### Easy 거래 확장 필드 (V975, backward compatible)

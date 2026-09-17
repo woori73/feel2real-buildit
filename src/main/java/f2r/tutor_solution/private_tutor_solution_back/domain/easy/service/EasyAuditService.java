@@ -301,6 +301,9 @@ public class EasyAuditService {
         && !request.businessId().equals(business.getBusinessId())) {
       business = requireActiveBusiness(request.businessId());
     }
+    // easy_accounts는 사업체 FK 없는 공용 마스터(V974)다.
+    // 계정-사업장 조합 제한을 두지 않는다 — 제한을 만들 근거가 없고
+    // 사업장 isolation은 거래의 business_id가 담당한다.
     EasyAccount account = txn.getAccount();
     if (request != null && request.accountId() != null) {
       account = accountRepository.findById(request.accountId())
@@ -440,24 +443,125 @@ public class EasyAuditService {
   }
 
   /**
-   * 연도 마감 — OPEN 검토 항목이 있으면 강제 여부 없이 마감하지 않는다.
-   * force=true면 사유를 스냅샷에 남기고 마감한다. 마감 해제는 항상 가능하다.
+   * 해당 귀속연도의 OPEN 검토 항목 — 마감 차단 대상.
+   * 다른 연도 항목은 마감에 영향을 주지 않는다.
+   */
+  public EasyReviewSummaryResponse openReviewsForYear(Long businessId, int fiscalYear) {
+    EasyBusiness business = businessRepository.findById(businessId)
+        .orElseThrow(() -> new IllegalArgumentException(
+            "사업체를 찾을 수 없습니다: " + businessId));
+    long unclassified = 0L;
+    long evidence = 0L;
+    long businessCount = 0L;
+    long withholding = 0L;
+    long duplicate = 0L;
+    long unconfirmed = 0L;
+    for (EasyReviewItem item : reviewRepository
+        .findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(businessId,
+            EasyReviewStatus.OPEN)) {
+      if (!belongsToYear(item, fiscalYear)) {
+        continue;
+      }
+      switch (item.getKind()) {
+        case UNCLASSIFIED -> unclassified++;
+        case EVIDENCE -> evidence++;
+        case BUSINESS -> businessCount++;
+        case WITHHOLDING -> withholding++;
+        case DUPLICATE_SUSPECT -> duplicate++;
+        case IMPORT_UNCONFIRMED -> unconfirmed++;
+      }
+    }
+    return new EasyReviewSummaryResponse(
+        businessId, business.getName(),
+        unclassified, evidence, businessCount, withholding, duplicate, unconfirmed,
+        unclassified + evidence + businessCount + withholding + duplicate + unconfirmed);
+  }
+
+  /**
+   * 검토 항목의 귀속연도 판별.
+   * - 거래 연결: occurredOn 연도 (장부 귀속 기준)
+   * - staging 행 연결: occurredOn 연도
+   * - 배치 연결: 미확정 행들의 occurredOn 연도 합집합
+   * - 날짜가 없어 귀속연도를 확정할 수 없으면 임의 연도에 배정하지 않고
+   *   모든 연도 마감의 차단 사유로 둔다 (보수적 차단, 스냅샷에 undetermined로 기록).
+   */
+  boolean belongsToYear(EasyReviewItem item, int fiscalYear) {
+    if (item.getTxn() != null) {
+      LocalDate occurredOn = item.getTxn().getOccurredOn();
+      return occurredOn == null || occurredOn.getYear() == fiscalYear;
+    }
+    if (item.getImportRow() != null) {
+      LocalDate occurredOn = item.getImportRow().getOccurredOn();
+      return occurredOn == null || occurredOn.getYear() == fiscalYear;
+    }
+    if (item.getBatch() != null) {
+      java.util.Set<Integer> years = pendingRowYears(item.getBatch().getBatchId());
+      return years.isEmpty() || years.contains(fiscalYear);
+    }
+    return true;
+  }
+
+  private boolean isUndetermined(EasyReviewItem item) {
+    if (item.getTxn() != null) {
+      return item.getTxn().getOccurredOn() == null;
+    }
+    if (item.getImportRow() != null) {
+      return item.getImportRow().getOccurredOn() == null;
+    }
+    if (item.getBatch() != null) {
+      return pendingRowYears(item.getBatch().getBatchId()).isEmpty();
+    }
+    return true;
+  }
+
+  private java.util.Set<Integer> pendingRowYears(Long batchId) {
+    java.util.Set<Integer> years = new java.util.HashSet<>();
+    if (batchId == null) {
+      return years;
+    }
+    for (EasyImportRow row : rowRepository.findByBatch_BatchIdOrderByRowNoAsc(batchId)) {
+      if (row.getStatus() == EasyImportRowStatus.IMPORTED) {
+        continue;
+      }
+      if (row.getOccurredOn() != null) {
+        years.add(row.getOccurredOn().getYear());
+      }
+    }
+    return years;
+  }
+
+  /**
+   * 연도 마감 — 해당 귀속연도의 OPEN 검토 항목이 있으면 강제 여부 없이 마감하지 않는다.
+   * 다른 연도 항목은 차단하지 않는다. force=true면 사유를 스냅샷에 남기고 마감한다.
+   * 마감 해제는 항상 가능하다.
    */
   @Transactional
   public EasyClosingResponse closeClosing(Long closingId, String note, boolean force) {
     EasyAnnualClosing closing = requireClosing(closingId);
-    EasyReviewSummaryResponse open = reviewSummary(closing.getBusiness().getBusinessId());
-    String snapshot = snapshotJson(
-        closing.getBusiness().getBusinessId(), closing.getFiscalYear(), open, force);
+    Long businessId = closing.getBusiness().getBusinessId();
+    int fiscalYear = closing.getFiscalYear();
+    EasyReviewSummaryResponse open = openReviewsForYear(businessId, fiscalYear);
+    long undetermined = undeterminedCount(businessId, fiscalYear);
+    String snapshot = snapshotJson(businessId, fiscalYear, open, undetermined, force);
     if (open.totalOpen() > 0 && !force) {
-      throw new IllegalArgumentException("미확인 항목 " + open.totalOpen() + "건이 있습니다. "
-          + "확인 후 마감하거나 사유와 함께 강제 마감해 주세요. (미분류 " + open.unclassified()
-          + " / 증빙 " + open.evidence() + " / 사업장 " + open.business()
+      throw new IllegalArgumentException(fiscalYear + "년 미확인 항목 " + open.totalOpen()
+          + "건이 있습니다. 확인 후 마감하거나 사유와 함께 강제 마감해 주세요. (미분류 "
+          + open.unclassified() + " / 증빙 " + open.evidence() + " / 사업장 " + open.business()
           + " / 원천징수 " + open.withholding() + " / 중복의심 " + open.duplicateSuspect()
-          + " / 미입력 " + open.importUnconfirmed() + ")");
+          + " / 미입력 " + open.importUnconfirmed()
+          + (undetermined > 0 ? " / 귀속연도 미확정 " + undetermined + "건 포함" : "") + ")");
     }
     closing.close(snapshot, note);
     return EasyClosingResponse.from(closing);
+  }
+
+  private long undeterminedCount(Long businessId, int fiscalYear) {
+    return reviewRepository
+        .findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(businessId,
+            EasyReviewStatus.OPEN)
+        .stream()
+        .filter(item -> belongsToYear(item, fiscalYear) && isUndetermined(item))
+        .count();
   }
 
   @Transactional
@@ -542,7 +646,7 @@ public class EasyAuditService {
   }
 
   private String snapshotJson(Long businessId, int fiscalYear, EasyReviewSummaryResponse open,
-      boolean forced) {
+      long undetermined, boolean forced) {
     return "{\"businessId\":" + businessId
         + ",\"fiscalYear\":" + fiscalYear
         + ",\"open\":{\"UNCLASSIFIED\":" + open.unclassified()
@@ -551,7 +655,7 @@ public class EasyAuditService {
         + ",\"WITHHOLDING\":" + open.withholding()
         + ",\"DUPLICATE_SUSPECT\":" + open.duplicateSuspect()
         + ",\"IMPORT_UNCONFIRMED\":" + open.importUnconfirmed()
-        + "},\"forced\":" + forced + "}";
+        + "},\"undetermined\":" + undetermined + ",\"forced\":" + forced + "}";
   }
 
   private EasyBusiness requireActiveBusiness(Long businessId) {

@@ -151,27 +151,169 @@ class EasyAuditServiceTest {
     assertThat(stored.getAccount()).isNull();
   }
 
+  private f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch batch(
+      Long batchId) {
+    f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch batch =
+        f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch.builder()
+            .business(academy).sourceName("bank.csv").sourceKind("BANK_CSV").totalRows(2).build();
+    ReflectionTestUtils.setField(batch, "batchId", batchId);
+    return batch;
+  }
+
+  private f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRow batchRow(
+      f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch batch,
+      java.time.LocalDate occurredOn) {
+    return f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRow
+        .builder()
+        .batch(batch).rowNo(1).occurredOn(occurredOn)
+        .direction(EasyTxnDirection.EXPENSE).amount(50000L)
+        .counterparty("").description("").payMethod("")
+        .supplyAmount(null).vatAmount(null).evidenceType(null).rawData(null).build();
+  }
+
+  private EasyAnnualClosing closing(Long closingId, int fiscalYear) {
+    EasyAnnualClosing closing = new EasyAnnualClosing(academy, fiscalYear);
+    ReflectionTestUtils.setField(closing, "closingId", closingId);
+    return closing;
+  }
+
   @Test
-  @DisplayName("마감 — 미확인 있으면 차단, 강제 마감·재개방 가능")
+  @DisplayName("마감 — 같은 연도 미확인 있으면 차단, 강제 마감·재개방 가능")
   void closing_blocked_thenForced_thenReopened() {
-    EasyAnnualClosing closing = new EasyAnnualClosing(academy, 2026);
-    ReflectionTestUtils.setField(closing, "closingId", 5L);
+    EasyTransaction open2026 = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        74000L, "8월 운영비", null, null);
+    ReflectionTestUtils.setField(open2026, "occurredOn", LocalDate.of(2026, 8, 23));
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.UNCLASSIFIED).txn(open2026)
+        .title("미분류").build();
+    EasyAnnualClosing closing = closing(5L, 2026);
     when(closingRepository.findById(5L)).thenReturn(Optional.of(closing));
     when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
-    when(reviewRepository.countByBusiness_BusinessIdAndKindAndStatus(
-        any(), any(), any())).thenReturn(1L);
+    when(reviewRepository.findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(
+        1L, EasyReviewStatus.OPEN)).thenReturn(List.of(item));
 
     assertThatThrownBy(() -> service.closeClosing(5L, null, false))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("미확인 항목");
+        .hasMessageContaining("2026년 미확인 항목 1건");
 
-    var closed = service.closeClosing(5L, "6건 확인 후 강제", true);
+    var closed = service.closeClosing(5L, "1건 확인 후 강제", true);
     assertThat(closed.status()).isEqualTo("CLOSED");
     assertThat(closed.checklistSnapshot()).contains("\"forced\":true");
 
     var reopened = service.reopenClosing(5L);
     assertThat(reopened.status()).isEqualTo("OPEN");
     assertThat(closing.getStatus()).isEqualTo(EasyClosingStatus.OPEN);
+  }
+
+  @Test
+  @DisplayName("마감 — 2026 OPEN이 있어도 2025 마감은 차단하지 않음")
+  void closing_2026open_doesNotBlock2025() {
+    EasyTransaction open2026 = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        74000L, "8월 운영비", null, null);
+    ReflectionTestUtils.setField(open2026, "occurredOn", LocalDate.of(2026, 3, 1));
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.UNCLASSIFIED).txn(open2026)
+        .title("미분류").build();
+    EasyAnnualClosing closing2025 = closing(5L, 2025);
+    when(closingRepository.findById(5L)).thenReturn(Optional.of(closing2025));
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(
+        1L, EasyReviewStatus.OPEN)).thenReturn(List.of(item));
+
+    var closed = service.closeClosing(5L, null, false);
+
+    assertThat(closed.status()).isEqualTo("CLOSED");
+    assertThat(closed.checklistSnapshot()).contains("\"fiscalYear\":2025");
+    assertThat(closed.checklistSnapshot()).contains("\"UNCLASSIFIED\":0");
+  }
+
+  @Test
+  @DisplayName("마감 — 2025 OPEN은 2025 마감을 차단함")
+  void closing_2025open_blocks2025() {
+    EasyTransaction open2025 = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        74000L, "1월 운영비", null, null);
+    ReflectionTestUtils.setField(open2025, "occurredOn", LocalDate.of(2025, 1, 15));
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.EVIDENCE).txn(open2025)
+        .title("증빙").build();
+    EasyAnnualClosing closing2025 = closing(5L, 2025);
+    when(closingRepository.findById(5L)).thenReturn(Optional.of(closing2025));
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(
+        1L, EasyReviewStatus.OPEN)).thenReturn(List.of(item));
+
+    assertThatThrownBy(() -> service.closeClosing(5L, null, false))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("2025년 미확인 항목 1건");
+  }
+
+  @Test
+  @DisplayName("마감 — 귀속연도 미확정 staging은 임의 배정 없이 모든 연도를 차단함")
+  void closing_undatedBatch_blocksAllYears_withoutAssignment() {
+    f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch batch =
+        batch(21L);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.IMPORT_UNCONFIRMED).batch(batch)
+        .title("장부 미입력").build();
+    EasyAnnualClosing closing2025 = closing(5L, 2025);
+    when(closingRepository.findById(5L)).thenReturn(Optional.of(closing2025));
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(
+        1L, EasyReviewStatus.OPEN)).thenReturn(List.of(item));
+    when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(21L))
+        .thenReturn(List.of(batchRow(batch, null)));
+
+    assertThatThrownBy(() -> service.closeClosing(5L, null, false))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("귀속연도 미확정 1건");
+  }
+
+  @Test
+  @DisplayName("마감 — 날짜 있는 배치 미확정은 해당 연도만 차단함")
+  void closing_datedBatch_onlyBlocksItsYear() {
+    f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch batch =
+        batch(21L);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.IMPORT_UNCONFIRMED).batch(batch)
+        .title("장부 미입력").build();
+    EasyAnnualClosing closing2025 = closing(5L, 2025);
+    EasyAnnualClosing closing2026 = closing(6L, 2026);
+    when(closingRepository.findById(5L)).thenReturn(Optional.of(closing2025));
+    when(closingRepository.findById(6L)).thenReturn(Optional.of(closing2026));
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(
+        1L, EasyReviewStatus.OPEN)).thenReturn(List.of(item));
+    when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(21L))
+        .thenReturn(List.of(batchRow(batch, LocalDate.of(2025, 5, 1))));
+
+    assertThatThrownBy(() -> service.closeClosing(5L, null, false))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("2025년 미확인 항목 1건");
+
+    var closed2026 = service.closeClosing(6L, null, false);
+    assertThat(closed2026.status()).isEqualTo("CLOSED");
+  }
+
+  @Test
+  @DisplayName("resolve — 공용 계정은 사업장 이동 없이도 연결 가능 (isolation은 거래 business가 담당)")
+  void resolve_sharedAccount_linksWithoutBusinessMove() {
+    // easy_accounts는 사업체 FK 없는 공용 마스터(V974) — 계정·사업장 조합 제한 없음.
+    EasyTransaction stored = txn(publishing, 102L, EasyTxnDirection.EXPENSE,
+        100000L, "소모품", null, null);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(publishing).kind(EasyReviewKind.UNCLASSIFIED).txn(stored)
+        .title("미분류").build();
+    EasyAccount supplies = EasyAccount.builder().code("EXPENSE_SUPPLIES").name("소모품")
+        .direction(EasyAccountDirection.EXPENSE).sortOrder(16).active(true).build();
+    when(reviewRepository.findById(9L)).thenReturn(Optional.of(item));
+    when(accountRepository.findById(10L)).thenReturn(Optional.of(supplies));
+
+    var response = service.resolve(9L, new EasyReviewResolveRequest(
+        "출판사 소모품으로 확인", null, 10L, null, null, null), "admin");
+
+    assertThat(response.status()).isEqualTo("RESOLVED");
+    assertThat(stored.getBusiness().getBusinessId()).isEqualTo(2L);
+    assertThat(stored.getAccount().getName()).isEqualTo("소모품");
   }
 
   @Test
