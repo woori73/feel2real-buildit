@@ -300,6 +300,24 @@
     let dragStartPos = 0;
     let isDragging = false;
 
+    // 카드 너비 계산 (카드 + gap)
+    function getCardWidth() {
+      const card = cards[0];
+      const style = window.getComputedStyle(card);
+      const cardWidth = card.offsetWidth;
+      const gap = parseFloat(window.getComputedStyle(track).gap) || 24;
+      return cardWidth + gap;
+    }
+
+    // 트랙 위치 업데이트 (중앙 카드를 뷰포트 중앙에 위치)
+    function updateTrackPosition() {
+      const cardWidth = getCardWidth();
+      const viewportWidth = viewport.clientWidth;
+      const offset = (viewportWidth - cards[0].offsetWidth) / 2;
+      const translateX = -current * getCardWidth() + offset;
+      track.style.transform = 'translateX(' + translateX + 'px)';
+    }
+
     // 카드 위치 클래스 업데이트
     function updateCardPositions() {
       cards.forEach((card, i) => {
@@ -376,6 +394,7 @@
       animating = true;
       current = index;
       updateCardPositions();
+      updateTrackPosition();
       updateIndicators();
       updateButtons();
       setTimeout(() => { animating = false; }, reduceMotion ? 0 : 500);
@@ -448,8 +467,14 @@
       e.preventDefault();
     }, { passive: false });
 
+    // 리사이즈 시 트랙 위치 재계산
+    window.addEventListener('resize', () => {
+      if (!animating) updateTrackPosition();
+    });
+
     // 초기화
     updateCardPositions();
+    updateTrackPosition();
     updateIndicators();
     updateButtons();
   }
