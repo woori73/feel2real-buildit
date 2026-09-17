@@ -243,7 +243,8 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* Coverflow Viewport & Track */
 .coverflow-viewport{position:relative;margin-top:40px;perspective:1200px;overflow:hidden;}
 .coverflow-track{
-  display:flex;align-items:center;justify-content:center;gap:24px;
+  display:flex;align-items:center;gap:24px;
+  transform-style:preserve-3d;
   transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
   will-change:transform;
   padding:20px 0 40px;
@@ -889,10 +890,10 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
   box-shadow:var(--device-shadow);
 }
 .philosophy-step-progress{
-  position:absolute; top:0; left:0; right:0; height:4px; background:var(--line); border-radius:var(--device-radius) var(--device-radius) 0 0; overflow:hidden;
+  position:absolute; top:0; left:0; right:0; height:4px; display:flex; background:var(--line); border-radius:var(--device-radius) var(--device-radius) 0 0; overflow:hidden;
 }
 .philosophy-step-bar{
-  position:absolute; top:0; height:100%; background:linear-gradient(90deg, var(--ultramarine), var(--gold));
+  flex:1; height:100%; background:linear-gradient(90deg, var(--ultramarine), var(--gold));
   transform-origin:left center; transform:scaleX(0); transition:transform 0.4s var(--ease);
 }
 .philosophy-step-bar.is-active{transform:scaleX(1);}
