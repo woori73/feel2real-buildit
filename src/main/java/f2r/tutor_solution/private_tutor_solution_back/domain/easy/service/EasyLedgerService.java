@@ -43,6 +43,8 @@ public class EasyLedgerService {
   private final EasyAccountRepository accountRepository;
   private final EasyTuitionPaymentRepository paymentRepository;
   private final EasyStudentRepository studentRepository;
+  private final EasyJournalService journalService;
+  private final EasyCorrectionService correctionService;
 
   /** 월 대시보드 — businessId null이면 전체 합산. */
   public EasyDashboardResponse summary(Long businessId, YearMonth month) {
@@ -133,6 +135,12 @@ public class EasyLedgerService {
   /** 거래 목록 — 기간/사업체/방향/분류 필터. null 필터는 전체. */
   public List<EasyTxnResponse> listTxns(Long businessId, LocalDate from, LocalDate to,
       EasyTxnDirection direction, String category) {
+    return listTxns(businessId, from, to, direction, category, null);
+  }
+
+  /** 거래 목록 + 계정 drill-down (P&L 금액 클릭 시 underlying transactions). */
+  public List<EasyTxnResponse> listTxns(Long businessId, LocalDate from, LocalDate to,
+      EasyTxnDirection direction, String category, Long accountId) {
     LocalDate start = from == null ? LocalDate.of(2000, 1, 1) : from;
     LocalDate end = to == null ? LocalDate.of(2100, 12, 31) : to;
     List<EasyTransaction> txns = businessId == null
@@ -145,6 +153,10 @@ public class EasyLedgerService {
         continue;
       }
       if (hasText(category) && !category.equals(txn.getCategory())) {
+        continue;
+      }
+      if (accountId != null && (txn.getAccount() == null
+          || !accountId.equals(txn.getAccount().getAccountId()))) {
         continue;
       }
       result.add(EasyTxnResponse.from(txn));
@@ -180,8 +192,11 @@ public class EasyLedgerService {
             request.counterparty(), request.description(), request.payMethod()))
         .evidenceReview(parseEvidenceReview(request.evidenceReview()))
         .withholdingReview(parseWithholdingReview(request.withholdingReview()))
+        .expenseReversal(null)
         .build();
-    return EasyTxnResponse.from(txnRepository.save(txn));
+    EasyTransaction saved = txnRepository.save(txn);
+    journalService.repost(saved);
+    return EasyTxnResponse.from(saved);
   }
 
   @Transactional
@@ -192,6 +207,7 @@ public class EasyLedgerService {
     LocalDate occurredOn = requireDate(request.occurredOn());
     EasyTxnDirection direction = requireDirection(request.direction());
     long amount = requireNonNegative(request.amount(), "금액");
+    String before = EasyTxnSnapshot.of(txn);
     txn.update(
         business,
         occurredOn,
@@ -213,7 +229,10 @@ public class EasyLedgerService {
             business.getBusinessId(), occurredOn, direction.name(), amount,
             request.counterparty(), request.description(), request.payMethod()),
         parseEvidenceReview(request.evidenceReview()),
-        parseWithholdingReview(request.withholdingReview()));
+        parseWithholdingReview(request.withholdingReview()),
+        txn.isReversal() ? Boolean.TRUE : null);
+    correctionService.record(business, txn, "UPDATE", before, EasyTxnSnapshot.of(txn), "admin");
+    journalService.repost(txn);
     return EasyTxnResponse.from(txn);
   }
 
@@ -221,6 +240,9 @@ public class EasyLedgerService {
   public void deleteTxn(Long txnId) {
     EasyTransaction txn = txnRepository.findById(txnId)
         .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다: txnId=" + txnId));
+    correctionService.record(
+        txn.getBusiness(), txn, "DELETE", EasyTxnSnapshot.of(txn), "{}", "admin");
+    journalService.voidFor(txn);
     txnRepository.delete(txn);
   }
 

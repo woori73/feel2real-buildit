@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyClosingResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCorrectionLogResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCorrectionPreview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewItemResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewResolveRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewSummaryResponse;
@@ -26,6 +28,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyWit
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAnnualClosingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCorrectionLogRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportBatchRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportRowRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyReviewItemRepository;
@@ -70,6 +73,9 @@ public class EasyAuditService {
   private final EasyImportRowRepository rowRepository;
   private final EasyWithholdingRecordRepository withholdingRepository;
   private final EasyAnnualClosingRepository closingRepository;
+  private final EasyJournalService journalService;
+  private final EasyCorrectionService correctionService;
+  private final EasyCorrectionLogRepository correctionLogRepository;
 
   // ================= 검토 요약·목록 =================
 
@@ -83,10 +89,12 @@ public class EasyAuditService {
     long withholding = count(businessId, EasyReviewKind.WITHHOLDING);
     long duplicate = count(businessId, EasyReviewKind.DUPLICATE_SUSPECT);
     long unconfirmed = count(businessId, EasyReviewKind.IMPORT_UNCONFIRMED);
+    long missingExpense = count(businessId, EasyReviewKind.MISSING_EXPENSE);
     return new EasyReviewSummaryResponse(
         businessId, businessName,
-        unclassified, evidence, business, withholding, duplicate, unconfirmed,
-        unclassified + evidence + business + withholding + duplicate + unconfirmed);
+        unclassified, evidence, business, withholding, duplicate, unconfirmed, missingExpense,
+        unclassified + evidence + business + withholding + duplicate + unconfirmed
+            + missingExpense);
   }
 
   public List<EasyReviewItemResponse> listReviews(Long businessId, String kind, String status) {
@@ -190,7 +198,31 @@ public class EasyAuditService {
       }
     }
 
-    // 4. 중복 의심 — 같은 fingerprint가 2건 이상 (자동합치기 없음)
+    // 4. 대응 비용 없음 — 자금 유출인데 비용 장부에 같은 금액 대응거래가 없음.
+    // 임의로 개발비/외주비 등으로 분류하지 않고 누락 확인 후보로만 둔다.
+    // (예: 2026 입출금의 인명 메모 출금 2건 — 비용 대응 없음)
+    for (EasyTransaction txn : txns) {
+      if (!isUnmatchedFundOutflow(businessId, txn, txns)) {
+        continue;
+      }
+      if (reviewRepository.existsByBusiness_BusinessIdAndKindAndStatusAndTxn_TxnId(
+          businessId, EasyReviewKind.MISSING_EXPENSE, EasyReviewStatus.OPEN,
+          txn.getTxnId())) {
+        continue;
+      }
+      reviewRepository.save(EasyReviewItem.builder()
+          .business(business)
+          .kind(EasyReviewKind.MISSING_EXPENSE)
+          .txn(txn)
+          .title("대응 비용 없음 — " + describe(txn))
+          .detail("자금 유출에 대응하는 비용 거래가 ±30일 안에 없습니다. "
+              + "장부 누락인지 확인해 주세요. 임의로 분류하지 않았습니다.")
+          .amount(txn.getAmount())
+          .occurredOn(txn.getOccurredOn())
+          .build());
+    }
+
+    // 6. 중복 의심 — 같은 fingerprint가 2건 이상 (자동합치기 없음)
     List<EasyTransaction> fingerprinted =
         txnRepository.findByBusiness_BusinessIdAndFingerprintIsNotNull(businessId);
     Map<String, List<EasyTransaction>> groups = new HashMap<>();
@@ -219,7 +251,7 @@ public class EasyAuditService {
           .build());
     }
 
-    // 5. 장부 미입력 — STAGED 배치의 미확정 행 (staging 재사용)
+    // 7. 장부 미입력 — STAGED 배치의 미확정 행 (staging 재사용)
     List<EasyImportBatch> batches =
         batchRepository.findAllByBusiness_BusinessIdOrderByBatchIdDesc(businessId);
     for (EasyImportBatch batch : batches) {
@@ -265,7 +297,7 @@ public class EasyAuditService {
       return EasyReviewItemResponse.from(item);
     }
     if (item.getTxn() != null) {
-      applyToTxn(item.getTxn(), request);
+      applyToTxn(item.getTxn(), request, resolvedBy);
     }
     item.resolve(resolution, resolvedBy);
     return EasyReviewItemResponse.from(item);
@@ -295,7 +327,9 @@ public class EasyAuditService {
     return EasyReviewItemResponse.from(item);
   }
 
-  private void applyToTxn(EasyTransaction txn, EasyReviewResolveRequest request) {
+  private void applyToTxn(EasyTransaction txn, EasyReviewResolveRequest request,
+      String resolvedBy) {
+    String before = EasyTxnSnapshot.of(txn);
     EasyBusiness business = txn.getBusiness();
     if (request != null && request.businessId() != null
         && !request.businessId().equals(business.getBusinessId())) {
@@ -344,7 +378,95 @@ public class EasyAuditService {
             business.getBusinessId(), txn.getOccurredOn(), txn.getDirection().name(),
             txn.getAmount(), txn.getCounterparty(), txn.getDescription(), txn.getPayMethod()),
         evidenceReview,
-        withholdingReview);
+        withholdingReview,
+        txn.isReversal() ? Boolean.TRUE : null);
+    correctionService.record(business, txn, "RESOLVE", before, EasyTxnSnapshot.of(txn),
+        resolvedBy);
+    journalService.repost(txn);
+  }
+
+  // ================= 수정 미리보기·감사 로그 =================
+
+  /**
+   * 수정 미리보기 — 적용하지 않고 before/after와 변경점만 보여준다.
+   * 향후 AI 수정 (요청→확인→수정→재분개) 계약의 확인 단계용이다.
+   */
+  public EasyCorrectionPreview previewCorrection(Long txnId, EasyReviewResolveRequest request) {
+    EasyTransaction txn = txnRepository.findById(txnId)
+        .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다: txnId=" + txnId));
+    List<String> changes = new ArrayList<>();
+    List<String> warnings = new ArrayList<>();
+    if (request != null && Boolean.TRUE.equals(request.ignore())) {
+      changes.add("검토 항목만 닫습니다 (장부 변경 없음).");
+      return new EasyCorrectionPreview(txnId, EasyTxnSnapshot.of(txn),
+          EasyTxnSnapshot.of(txn), changes, warnings);
+    }
+    Long afterBusiness = txn.getBusiness().getBusinessId();
+    if (request != null && request.businessId() != null
+        && !request.businessId().equals(afterBusiness)) {
+      String beforeName = txn.getBusiness().getName();
+      String afterName = businessRepository.findById(request.businessId())
+          .map(EasyBusiness::getName).orElse("사업체#" + request.businessId());
+      changes.add("사업장: " + beforeName + " → " + afterName);
+      warnings.add("사업장 이동 시 분개를 다시 작성하고 중복검사용 fingerprint가 바뀝니다.");
+      afterBusiness = request.businessId();
+    }
+    Long afterAccount = txn.getAccount() == null ? null : txn.getAccount().getAccountId();
+    if (request != null && request.accountId() != null
+        && !request.accountId().equals(afterAccount)) {
+      String beforeName = txn.getAccount() == null ? "(미분류)" : txn.getAccount().getName();
+      String afterName = accountRepository.findById(request.accountId())
+          .map(EasyAccount::getName).orElse("계정#" + request.accountId());
+      changes.add("계정: " + beforeName + " → " + afterName);
+      if (txn.getAccount() == null) {
+        warnings.add("미분류 거래에 분개가 새로 생성됩니다.");
+      } else {
+        warnings.add("기존 분개를 void하고 재분개합니다.");
+      }
+      afterAccount = request.accountId();
+    }
+    String afterEvidence = currentName(txn.getEvidenceReview() == null ? null
+        : txn.getEvidenceReview().name());
+    if (request != null && request.evidenceReview() != null
+        && !request.evidenceReview().isBlank()
+        && !request.evidenceReview().trim().equalsIgnoreCase(
+            String.valueOf(afterEvidence))) {
+      changes.add("증빙 검토: " + afterEvidence + " → " + request.evidenceReview().trim());
+      afterEvidence = request.evidenceReview().trim();
+    }
+    String afterWithholding = currentName(txn.getWithholdingReview() == null ? null
+        : txn.getWithholdingReview().name());
+    if (request != null && request.withholdingReview() != null
+        && !request.withholdingReview().isBlank()
+        && !request.withholdingReview().trim().equalsIgnoreCase(
+            String.valueOf(afterWithholding))) {
+      changes.add("원천징수 검토: " + afterWithholding + " → "
+          + request.withholdingReview().trim());
+      afterWithholding = request.withholdingReview().trim();
+    }
+    if (changes.isEmpty()) {
+      changes.add("변경 사항이 없습니다.");
+    }
+    return new EasyCorrectionPreview(txnId, EasyTxnSnapshot.of(txn),
+        EasyTxnSnapshot.of(txn, afterBusiness, afterAccount, afterEvidence, afterWithholding),
+        changes, warnings);
+  }
+
+  private String currentName(String value) {
+    return value == null ? "null" : value;
+  }
+
+  public List<EasyCorrectionLogResponse> listCorrectionLogs(Long businessId, Long txnId) {
+    if (txnId != null) {
+      return correctionLogRepository.findByTxn_TxnIdOrderByLogIdDesc(txnId).stream()
+          .map(EasyCorrectionLogResponse::from).toList();
+    }
+    if (businessId != null) {
+      return correctionLogRepository.findByBusiness_BusinessIdOrderByLogIdDesc(businessId)
+          .stream().map(EasyCorrectionLogResponse::from).toList();
+    }
+    return correctionLogRepository.findAllByOrderByLogIdDesc().stream()
+        .map(EasyCorrectionLogResponse::from).toList();
   }
 
   // ================= 원천징수 검토 기록 =================
@@ -456,6 +578,7 @@ public class EasyAuditService {
     long withholding = 0L;
     long duplicate = 0L;
     long unconfirmed = 0L;
+    long missingExpense = 0L;
     for (EasyReviewItem item : reviewRepository
         .findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(businessId,
             EasyReviewStatus.OPEN)) {
@@ -469,12 +592,15 @@ public class EasyAuditService {
         case WITHHOLDING -> withholding++;
         case DUPLICATE_SUSPECT -> duplicate++;
         case IMPORT_UNCONFIRMED -> unconfirmed++;
+        case MISSING_EXPENSE -> missingExpense++;
       }
     }
     return new EasyReviewSummaryResponse(
         businessId, business.getName(),
         unclassified, evidence, businessCount, withholding, duplicate, unconfirmed,
-        unclassified + evidence + businessCount + withholding + duplicate + unconfirmed);
+        missingExpense,
+        unclassified + evidence + businessCount + withholding + duplicate + unconfirmed
+            + missingExpense);
   }
 
   /**
@@ -549,6 +675,7 @@ public class EasyAuditService {
           + open.unclassified() + " / 증빙 " + open.evidence() + " / 사업장 " + open.business()
           + " / 원천징수 " + open.withholding() + " / 중복의심 " + open.duplicateSuspect()
           + " / 미입력 " + open.importUnconfirmed()
+          + " / 대응비용없음 " + open.missingExpense()
           + (undetermined > 0 ? " / 귀속연도 미확정 " + undetermined + "건 포함" : "") + ")");
     }
     closing.close(snapshot, note);
@@ -589,6 +716,62 @@ public class EasyAuditService {
       return List.of(business);
     }
     return businessRepository.findAll();
+  }
+
+  /**
+   * 대응 없는 자금 유출 여부 — EASYSHOP_FUNDS 출금 중 적요/거래처가 있고 일정 금액 이상인데
+   * 같은 사업장의 비용 장부(자금 제외)에 같은 금액 거래가 ±30일 안에 없는 경우.
+   * 인명·용역 추정 등 임의 분류를 하지 않으며, 존재 여부만 확인 대상으로 올린다.
+   */
+  static final long MISSING_EXPENSE_MIN_AMOUNT = 500000L;
+  static final int MISSING_EXPENSE_WINDOW_DAYS = 30;
+
+  boolean isUnmatchedFundOutflow(Long businessId, EasyTransaction txn,
+      List<EasyTransaction> scopeTxns) {
+    if (txn.getDirection() != EasyTxnDirection.EXPENSE) {
+      return false;
+    }
+    if (txn.isReversal()) {
+      return false;
+    }
+    if (!"EASYSHOP_FUNDS".equals(txn.getSourceKind())) {
+      return false;
+    }
+    if (txn.getAmount() < MISSING_EXPENSE_MIN_AMOUNT) {
+      return false;
+    }
+    String who = (txn.getCounterparty() == null ? "" : txn.getCounterparty())
+        + (txn.getDescription() == null ? "" : txn.getDescription())
+        + (txn.getMemo() == null ? "" : txn.getMemo());
+    if (who.isBlank()) {
+      return false;
+    }
+    if (txn.getOccurredOn() == null) {
+      return false;
+    }
+    for (EasyTransaction candidate : scopeTxns) {
+      if (candidate.getTxnId() != null && candidate.getTxnId().equals(txn.getTxnId())) {
+        continue;
+      }
+      if (candidate.getDirection() != EasyTxnDirection.EXPENSE) {
+        continue;
+      }
+      if ("EASYSHOP_FUNDS".equals(candidate.getSourceKind())) {
+        continue;
+      }
+      if (candidate.getAmount() != txn.getAmount()) {
+        continue;
+      }
+      if (candidate.getOccurredOn() == null) {
+        continue;
+      }
+      long gap = Math.abs(candidate.getOccurredOn().toEpochDay()
+          - txn.getOccurredOn().toEpochDay());
+      if (gap <= MISSING_EXPENSE_WINDOW_DAYS) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private String describe(EasyTransaction txn) {
@@ -655,6 +838,7 @@ public class EasyAuditService {
         + ",\"WITHHOLDING\":" + open.withholding()
         + ",\"DUPLICATE_SUSPECT\":" + open.duplicateSuspect()
         + ",\"IMPORT_UNCONFIRMED\":" + open.importUnconfirmed()
+        + ",\"MISSING_EXPENSE\":" + open.missingExpense()
         + "},\"undetermined\":" + undetermined + ",\"forced\":" + forced + "}";
   }
 

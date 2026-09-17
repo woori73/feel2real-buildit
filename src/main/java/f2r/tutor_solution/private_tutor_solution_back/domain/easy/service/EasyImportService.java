@@ -12,6 +12,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImp
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountMappingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportBatchRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportRowRepository;
@@ -39,6 +41,8 @@ public class EasyImportService {
   private final EasyBusinessRepository businessRepository;
   private final EasyTransactionRepository txnRepository;
   private final EasyAccountService accountService;
+  private final EasyAccountMappingRepository mappingRepository;
+  private final EasyJournalService journalService;
 
   public List<EasyImportBatchResponse> listBatches(Long businessId) {
     if (businessId == null) {
@@ -117,10 +121,18 @@ public class EasyImportService {
         .vatAmount(vatAmount)
         .evidenceType(evidenceType)
         .rawData(input.rawData())
+        .externalAccount(input.externalAccount())
+        .reversal(input.reversal())
         .build();
     EasyImportRow saved = rowRepository.save(row);
     if (error != null) {
       saved.markError(error);
+      return saved;
+    }
+    // 확정 매핑 우선 (이지샵 원본 계정명 → 내부 계정), 불확실하면 규칙 → 미분류(review).
+    Optional<EasyAccount> mapped = resolveMapping(saved.getExternalAccount());
+    if (mapped.isPresent()) {
+      saved.markReady(mapped.get(), 1.0);
       return saved;
     }
     Optional<ClassificationMatch> match = accountService.classify(
@@ -131,6 +143,19 @@ public class EasyImportService {
       saved.markReady(null, 0.0);
     }
     return saved;
+  }
+
+  /**
+   * 외부 계정명 → 내부 계정 확정 매핑. 공식 세무 계정코드를 추측하지 않으며,
+   * 매핑 테이블에 없는 원본 계정명은 empty로 둔다 (review 대상).
+   */
+  public Optional<EasyAccount> resolveMapping(String externalAccount) {
+    if (externalAccount == null || externalAccount.isBlank()) {
+      return Optional.empty();
+    }
+    return mappingRepository.findFirstByExternalCode(externalAccount.trim())
+        .map(mapping -> mapping.getAccount())
+        .filter(EasyAccount::isActive);
   }
 
   /**
@@ -166,6 +191,7 @@ public class EasyImportService {
           .supplyAmount(row.getSupplyAmount())
           .vatAmount(row.getVatAmount())
           .evidenceType(row.getEvidenceType())
+          .expenseReversal(row.isReversal() ? Boolean.TRUE : null)
           .sourceKind(batch.getSourceKind())
           .sourceRef(batch.getSourceName() + "#row-" + row.getRowNo())
           .fingerprint(EasyFingerprint.of(
@@ -173,7 +199,9 @@ public class EasyImportService {
               row.getOccurredOn(), row.getDirection().name(), row.getAmount(),
               row.getCounterparty(), row.getDescription(), row.getPayMethod()))
           .build();
-      row.markImported(txnRepository.save(txn));
+      EasyTransaction saved = txnRepository.save(txn);
+      row.markImported(saved);
+      journalService.repost(saved);
       confirmed++;
     }
     batch.markConfirmed(confirmed);

@@ -103,10 +103,22 @@ public class EasyExecutiveService {
           .findByBusiness_BusinessIdAndOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
               business.getBusinessId(), from, to);
       for (EasyTransaction txn : txns) {
-        if (txn.getDirection() == EasyTxnDirection.INCOME) {
+        // 자금 이동 제외·환불 차감 — EasyReportService.ledgerTotals와 같은 규칙.
+        if (EasyShopImportService.SOURCE_KIND_FUNDS.equals(txn.getSourceKind())) {
+          continue;
+        }
+        if (txn.getDirection() == EasyTxnDirection.INCOME && !txn.isReversal()) {
           income += txn.getAmount();
-        } else {
+        } else if (txn.getDirection() == EasyTxnDirection.EXPENSE) {
           expense += txn.getAmount();
+        } else if (txn.isReversal()) {
+          if (txn.getAccount() != null && txn.getAccount().getDirection()
+              == f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity
+                  .EasyAccountDirection.INCOME) {
+            income -= txn.getAmount();
+          } else {
+            expense -= txn.getAmount();
+          }
         }
       }
     }

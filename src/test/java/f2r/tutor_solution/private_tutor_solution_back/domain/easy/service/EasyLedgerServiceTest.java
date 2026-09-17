@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,6 +45,8 @@ class EasyLedgerServiceTest {
   @Mock EasyAccountRepository accountRepository;
   @Mock EasyTuitionPaymentRepository paymentRepository;
   @Mock EasyStudentRepository studentRepository;
+  @Mock EasyJournalService journalService;
+  @Mock EasyCorrectionService correctionService;
 
   private EasyLedgerService service;
   private EasyBusiness academy;
@@ -52,7 +55,8 @@ class EasyLedgerServiceTest {
   @BeforeEach
   void setUp() {
     service = new EasyLedgerService(
-        txnRepository, businessRepository, accountRepository, paymentRepository, studentRepository);
+        txnRepository, businessRepository, accountRepository, paymentRepository, studentRepository,
+        journalService, correctionService);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     publishing = EasyBusiness.builder().code("PUBLISHING").name("출판사").active(true).sortOrder(2).build();
   }
@@ -278,5 +282,36 @@ class EasyLedgerServiceTest {
     verify(paymentRepository, never()).findAll();
     assertThat(summary.receivable()).isZero();
     assertThat(summary.overdueStudents()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("수정 시 수정로그 기록 + 재분개 위임")
+  void update_logsCorrectionAndReposts() {
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    EasyTransaction stored = txn(academy, EasyTxnDirection.EXPENSE, 100000L);
+    ReflectionTestUtils.setField(stored, "txnId", 7L);
+    when(txnRepository.findById(7L)).thenReturn(Optional.of(stored));
+
+    service.updateTxn(7L, new EasyTxnRequest(
+        1L, LocalDate.of(2026, 9, 6), "EXPENSE", 120000L,
+        "임대료", "건물주", "9월 임대료", "계좌이체", null, null));
+
+    verify(correctionService).record(eq(academy), eq(stored), eq("UPDATE"),
+        any(), any(), any());
+    verify(journalService).repost(stored);
+  }
+
+  @Test
+  @DisplayName("삭제 시 분개 void + 삭제 로그")
+  void delete_voidsJournalAndLogs() {
+    EasyTransaction stored = txn(academy, EasyTxnDirection.EXPENSE, 100000L);
+    when(txnRepository.findById(7L)).thenReturn(Optional.of(stored));
+
+    service.deleteTxn(7L);
+
+    verify(journalService).voidFor(stored);
+    verify(correctionService).record(eq(academy), eq(stored), eq("DELETE"),
+        any(), any(), any());
+    verify(txnRepository).delete(stored);
   }
 }

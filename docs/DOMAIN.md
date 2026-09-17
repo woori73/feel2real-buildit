@@ -1220,6 +1220,19 @@ V973/V974와 backward compatible — 신규 테이블 + `easy_transactions` NULL
 
 상세 흐름·단계 구분은 [docs/easy/AI_ACCOUNTING_ARCHITECTURE.md](easy/AI_ACCOUNTING_ARCHITECTURE.md).
 
+### 4.52 easy_* EasyShop 파이프라인 (V976) ✅ 복식분개·신고대조·수정로그
+
+V973~V975 불변 — 신규 테이블 + `easy_import_rows` NULL 확장(`external_account`, status `DUPLICATE` 추가)만.
+분개는 확정 장부의 이중 표현 (거래당 활성 1건, void+재분개). 신고대조 역산 금지.
+
+| table | key columns |
+|---|---|
+| `easy_accounts` seed | `SETTLEMENT` 자금정산 (ASSET) — 내부 정산 장치, 세무 계정 아님 |
+| `easy_journal_entries` | `entry_id` PK, `business_id` FK, `occurred_on`, `txn_id`? FK SET NULL, `status`(POSTED/VOIDED), `memo?`, `reversed_entry_id`? self FK SET NULL |
+| `easy_journal_lines` | `line_id` PK, `entry_id` FK CASCADE, `account_id` FK, `debit`/`credit` BIGINT CHECK≥0 + 단면 CHECK, sort |
+| `easy_filing_references` | `ref_id` PK, `business_id` FK, `fiscal_year` INT, `revenue`?/`expense`?/`income_amount`?, `source`, `note?`, UNIQUE(`business_id`,`fiscal_year`) |
+| `easy_correction_logs` | `log_id` PK, `business_id` FK, `txn_id`? FK SET NULL, `action`, `before_json`/`after_json` TEXT, `requested_by`?/`confirmed_by`? (append-only) |
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과

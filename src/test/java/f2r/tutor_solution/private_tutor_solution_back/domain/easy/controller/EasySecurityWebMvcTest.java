@@ -9,6 +9,8 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAccountService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAuditService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyReportService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyShopImportService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyExecutiveService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportService;
@@ -40,7 +42,8 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyAccountController.class,
     EasyImportController.class,
     EasyInsightController.class,
-    EasyAuditController.class
+    EasyAuditController.class,
+    EasyReportController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -63,6 +66,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyImportService importService;
   @MockitoBean EasyExecutiveService executiveService;
   @MockitoBean EasyAuditService auditService;
+  @MockitoBean EasyReportService reportService;
+  @MockitoBean EasyShopImportService shopImportService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -78,7 +83,11 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/reviews/summary",
       "/api/admin/easy/reviews",
       "/api/admin/easy/withholdings",
-      "/api/admin/easy/closings");
+      "/api/admin/easy/closings",
+      "/api/admin/easy/pl",
+      "/api/admin/easy/filing-references",
+      "/api/admin/easy/income-tax",
+      "/api/admin/easy/corrections/logs");
 
   @Test
   @DisplayName("익명 → 401")

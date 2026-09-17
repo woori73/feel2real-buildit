@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +23,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxn
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAnnualClosingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCorrectionLogRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportBatchRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportRowRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyReviewItemRepository;
@@ -50,6 +52,9 @@ class EasyAuditServiceTest {
   @Mock EasyImportRowRepository rowRepository;
   @Mock EasyWithholdingRecordRepository withholdingRepository;
   @Mock EasyAnnualClosingRepository closingRepository;
+  @Mock EasyJournalService journalService;
+  @Mock EasyCorrectionService correctionService;
+  @Mock EasyCorrectionLogRepository correctionLogRepository;
 
   private EasyAuditService service;
   private EasyBusiness academy;
@@ -59,7 +64,8 @@ class EasyAuditServiceTest {
   void setUp() {
     service = new EasyAuditService(
         reviewRepository, txnRepository, businessRepository, accountRepository,
-        batchRepository, rowRepository, withholdingRepository, closingRepository);
+        batchRepository, rowRepository, withholdingRepository, closingRepository,
+        journalService, correctionService, correctionLogRepository);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     publishing = EasyBusiness.builder().code("PUBLISHING").name("출판사").active(true)
         .sortOrder(2).build();
@@ -131,6 +137,32 @@ class EasyAuditServiceTest {
     assertThat(stored.getEvidenceReview().name()).isEqualTo("VERIFIED");
     assertThat(stored.getFingerprint()).isEqualTo(EasyFingerprint.of(
         2L, LocalDate.of(2026, 8, 23), "EXPENSE", 74000L, "", "8월 운영비", "계좌이체"));
+    verify(correctionService).record(eq(publishing), eq(stored), eq("RESOLVE"),
+        any(), any(), eq("admin"));
+    verify(journalService).repost(stored);
+  }
+
+  @Test
+  @DisplayName("수정 미리보기 — 적용 없이 before/after와 변경점만 반환")
+  void preview_showsChangesWithoutApplying() {
+    EasyTransaction stored = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        74000L, "8월 운영비", null, null);
+    EasyAccount supplies = EasyAccount.builder().code("EXPENSE_SUPPLIES").name("소모품")
+        .direction(EasyAccountDirection.EXPENSE).sortOrder(16).active(true).build();
+    when(txnRepository.findById(101L)).thenReturn(Optional.of(stored));
+    when(businessRepository.findById(2L)).thenReturn(Optional.of(publishing));
+    when(accountRepository.findById(10L)).thenReturn(Optional.of(supplies));
+
+    var preview = service.previewCorrection(101L, new EasyReviewResolveRequest(
+        "확인", 2L, 10L, "VERIFIED", null, null));
+
+    assertThat(preview.changes()).anyMatch(change -> change.contains("사업장"));
+    assertThat(preview.changes()).anyMatch(change -> change.contains("계정"));
+    assertThat(preview.warnings()).isNotEmpty();
+    assertThat(preview.after()).contains("\"businessId\":2");
+    // 적용되지 않음 — 원본 그대로
+    assertThat(stored.getBusiness().getBusinessId()).isEqualTo(1L);
+    assertThat(stored.getAccount()).isNull();
   }
 
   @Test

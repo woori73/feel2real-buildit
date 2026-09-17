@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EasyAccountMappingRepository extends JpaRepository<EasyAccountMapping, Long> {
   List<EasyAccountMapping> findAllByOrderByMappingIdAsc();
+
+  java.util.Optional<EasyAccountMapping> findFirstByExternalCode(String externalCode);
 }

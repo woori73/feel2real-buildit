@@ -74,6 +74,14 @@ public class EasyImportRow extends BaseEntity {
   @Column(name = "raw_data", columnDefinition = "TEXT")
   private String rawData;
 
+  /** 원본 계정명 (이지샵 등) — 매핑 전 원문 보존, 추측 매핑 없음. */
+  @Column(name = "external_account", length = 100)
+  private String externalAccount;
+
+  /** 비용 환불 역분개 행 — 확정 시 INCOME 방향 + 비용 차감으로 옮긴다. */
+  @Column(name = "reversal")
+  private Boolean reversal;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 10)
   private EasyImportRowStatus status = EasyImportRowStatus.PENDING;
@@ -96,7 +104,7 @@ public class EasyImportRow extends BaseEntity {
   public EasyImportRow(EasyImportBatch batch, int rowNo, LocalDate occurredOn,
       EasyTxnDirection direction, Long amount, String counterparty, String description,
       String payMethod, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
-      String rawData) {
+      String rawData, String externalAccount, Boolean reversal) {
     this.batch = batch;
     this.rowNo = rowNo;
     this.occurredOn = occurredOn;
@@ -109,6 +117,13 @@ public class EasyImportRow extends BaseEntity {
     this.vatAmount = vatAmount;
     this.evidenceType = evidenceType;
     this.rawData = rawData;
+    this.externalAccount = externalAccount;
+    this.reversal = reversal;
+  }
+
+  /** 환불 역분개 여부 — NULL은 일반 행으로 읽는다. */
+  public boolean isReversal() {
+    return Boolean.TRUE.equals(reversal);
   }
 
   public void markReady(EasyAccount matchedAccount, Double confidence) {
@@ -127,5 +142,11 @@ public class EasyImportRow extends BaseEntity {
     this.status = EasyImportRowStatus.IMPORTED;
     this.error = null;
     this.createdTxn = createdTxn;
+  }
+
+  /** 장부 중복 의심 — 확정에서 제외한다 (판정·합치기 아님). */
+  public void markDuplicate(String error) {
+    this.status = EasyImportRowStatus.DUPLICATE;
+    this.error = error;
   }
 }

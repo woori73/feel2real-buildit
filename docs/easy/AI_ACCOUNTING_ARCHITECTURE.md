@@ -55,13 +55,32 @@ BS/PL (향후 — 복식분개 테이블 추가 시)
 - 경영 브리핑: DB 숫자로 계산 가능한 문장만 (`briefing` — LLM 입력용 계약)
 - 종소세 예상: placeholder 계약만 (`PENDING_REAL_DATA`, 가짜 세액 없음)
 
-### Claude 실제 이지샵 자료 확보 후 구현
+### 이번 PR 구현 (V976)
 
-- 실제 이지샵 CSV/Excel 형식에 맞는 importer (형식 추측 금지 — 자료 먼저)
+- EasyShop importer (`source_kind=EASYSHOP`): 위 컬럼 계약으로 정규화 → 사업장별 분리
+  staging → 확정 매핑 우선 → 장부 중복 fingerprint 확정 제외 → 확정 시 분개 생성.
+  실제 CSV 도착 전에는 최소 fixture로 pipeline만 검증한다.
+- 복식엔진: `easy_journal_entries/lines` — 거래당 활성 분개 1건, 차변 합계 == 대변 합계
+  (행 생성자 + DB CHECK + 시산표). 수입 Dr 자금정산/Cr 수익, 지출 Dr 비용/Cr 자금정산.
+  자금정산(SETTLEMENT)은 내부 정산 장치이며 현금잔액 주장·BS가 아니다.
+  수정·삭제 시 void + 재분개 (이력 보존, 이중 계상 없음).
+- 연도 손익 `GET /pl`: 분개 기준 집계 + 장부 교차검증(matchesLedger) + 월별 + 계정별 +
+  전년 비교. 금액 클릭 → 거래 목록 drill-down (`accountId` 필터).
+- 신고자료 대조 `GET /filing-check`: 장부 정상 계산 vs `easy_filing_references`
+  독립 비교 (MATCHED/NEEDS_REVIEW/UNKNOWN). 역산 금지.
+- 종소세 준비 `GET /income-tax`: 사업장별 분리 합산 + 주사업장 표시, 결정세액 미표시(PREPARING).
+- AI 수정 계약: `POST /corrections/preview` (before/after 미적용 표시) +
+  `GET /corrections/logs` (append-only) + 수정·resolve·삭제 시 자동 기록.
+  요청→확인→수정→재분개→재계산 구조이며 LLM·가짜 AI API는 없다.
+
+### Claude 실제 이지샵 자료 후속 (fixture 교체)
+
+- 실제 CSV 도착 시 fixture를 버리고 실데이터 mapping 검증으로 전환
+  (컬럼 계약에 없는 형식은 파서 확장, 추측 매핑 금지)
 - 내부 계정 확정 (현재 12종은 잠정치) + NTS 표준계정 매핑 확정
 - 중복 판정 규칙 고도화 (카드매출→입금 reconciliation 등)
 - BS/PL 생성 (복식분개 테이블 추가 — 단식 v1 구조는 유지)
-- 종소세 예상 계산 로직 (실제 신고서 구조 확인 후)
+- 종소세 예상 계산 로직 (실제 신고서 구조 확인 후 — 현재 합산+PREPARING까지만)
 - LLM 자연어 브리핑 (`briefing` 목록을 입력으로)
 
 ### 향후 금융기관 연동 (이번 범위 밖)

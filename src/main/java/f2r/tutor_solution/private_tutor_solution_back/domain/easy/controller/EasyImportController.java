@@ -2,7 +2,9 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImportBatchRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImportBatchResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyShopImportRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyShopImportService;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EasyImportController {
 
   private final EasyImportService importService;
+  private final EasyShopImportService shopImportService;
 
   @GetMapping
   public ResponseEntity<List<EasyImportBatchResponse>> list(
@@ -41,6 +44,16 @@ public class EasyImportController {
   @PostMapping
   public ResponseEntity<EasyImportBatchResponse> stage(@RequestBody EasyImportBatchRequest request) {
     return ResponseEntity.ok(importService.stage(request));
+  }
+
+  /**
+   * EasyShop 실데이터 staging — source_kind=EASYSHOP.
+   * 사업체 코드가 섞인 파일은 사업장별 배치로 분리한다.
+   */
+  @PostMapping("/easyshop")
+  public ResponseEntity<List<EasyImportBatchResponse>> stageEasyshop(
+      @RequestBody EasyShopImportRequest request) {
+    return ResponseEntity.ok(shopImportService.stage(request));
   }
 
   @PostMapping("/{batchId}/confirm")
