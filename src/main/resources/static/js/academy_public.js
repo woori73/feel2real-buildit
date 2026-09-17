@@ -691,19 +691,13 @@
     if (!root) return;
     const section = root.querySelector('#sec-philosophy');
     if (!section || section.dataset.philosophyWired === 'true') return;
-    section.dataset.philosophyWired = 'true';
 
     const card = section.querySelector('[data-philosophy-step-card]');
     if (!card) return;
 
     const stepsDataEl = section.querySelector('[data-philosophy-steps]');
-    let steps = [];
-    try {
-      steps = stepsDataEl ? JSON.parse(stepsDataEl.textContent) : [];
-    } catch (_) {
-      steps = [];
-    }
-    if (!steps.length) return;
+    const steps = stepsDataEl ? JSON.parse(stepsDataEl.textContent) : [];
+    if (!Array.isArray(steps) || !steps.length) return;
 
     const content = card.querySelector('[data-philosophy-step-content]');
     const labelEl = card.querySelector('[data-step-label]');
@@ -720,9 +714,8 @@
     let touchStartX = null;
 
     function updateUI(index, direction) {
-      if (index === current && direction === undefined) return;
-      const prevIndex = current;
       current = index;
+      card.dataset.activeStep = String(current + 1);
 
       // 진행바
       bars.forEach((bar, i) => {
@@ -751,21 +744,17 @@
 
       // 텍스트 전환
       if (textEl) {
-        const step = steps[current];
-        if (reduceMotion) {
-          textEl.textContent = step;
-          return;
-        }
-        const exitClass = direction === 'prev' ? 'is-exiting' : 'is-exiting';
-        const enterClass = direction === 'prev' ? 'is-entering' : 'is-entering';
-        textEl.classList.add(exitClass);
-        textEl.classList.remove('is-entering');
-        setTimeout(() => {
-          textEl.textContent = step;
-          textEl.classList.remove(exitClass);
-          textEl.classList.add(enterClass);
-          setTimeout(() => textEl.classList.remove(enterClass), 300);
-        }, 150);
+        textEl.textContent = steps[current];
+        if (reduceMotion || !direction) return;
+        const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+        content.animate([
+          { opacity: 0, transform: 'translateX(' + (direction === 'prev' ? 30 : -30) + 'px)' },
+          { opacity: 1, transform: 'translateX(0)' }
+        ], { duration: 350, easing });
+        textEl.animate([
+          { opacity: 0, transform: 'translateY(8px)' },
+          { opacity: 1, transform: 'translateY(0)' }
+        ], { duration: 350, delay: 100, easing, fill: 'backwards' });
       }
     }
 
@@ -809,6 +798,7 @@
 
     // 초기화
     updateUI(0);
+    section.dataset.philosophyWired = 'true';
   }
 
 

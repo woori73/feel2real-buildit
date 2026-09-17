@@ -236,7 +236,7 @@
             </div>
           </div>
         </div>
-        <script type="application/json" data-philosophy-steps>${escapeHtml(JSON.stringify(items))}</script>
+        <script type="application/json" data-philosophy-steps>${JSON.stringify(items).replace(/</g, '\\u003c')}</script>
       </section>`;
   }
 
