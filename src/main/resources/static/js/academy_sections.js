@@ -210,14 +210,33 @@
     if (!view.sectionVisible('sec-philosophy')) return '';
     const keyword = draftText(view, 'philosophyKeyword', PHILOSOPHY_KEYWORD_DEFAULT);
     const title = maskedIntroTitle(draftText(view, 'philosophyTitle', PHILOSOPHY_TITLE_DEFAULT));
-    return `<section id="sec-philosophy" data-builder-section-key="sec-philosophy" class="section-wrap philosophy" data-reveal>
-        <div class="philosophy-inner">
-          <div class="section-head philosophy-head" data-reveal-item>
+    const items = philosophyItems(view);
+    return `<section id="sec-philosophy" data-builder-section-key="sec-philosophy" class="section-wrap philosophy-step" data-reveal>
+        <div class="philosophy-step-inner">
+          <div class="philosophy-step-head" data-reveal-item>
             <div class="eyebrow philosophy-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'philosophy-keyword', draftKey: 'philosophyKeyword', value: keyword, omitWhenEmpty: true })}</div>
-            ${ctx.editableText({ tag: 'h2', className: 'philosophy-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            ${ctx.editableText({ tag: 'h2', className: 'philosophy-step-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${ctx.philosophyCards(philosophyItems(view))}
+          <div class="philosophy-step-card" data-philosophy-step-card>
+            <div class="philosophy-step-progress" aria-hidden="true">
+              ${items.map((_, i) => `<span class="philosophy-step-bar" data-step-bar="${i}"></span>`).join('')}
+            </div>
+            <div class="philosophy-step-content" data-philosophy-step-content>
+              <p class="philosophy-step-meta"><span class="philosophy-step-label" data-step-label></span><span class="philosophy-step-counter" data-step-counter></span></p>
+              <p class="philosophy-step-text" data-step-text></p>
+            </div>
+            <div class="philosophy-step-nav">
+              <div class="philosophy-step-indicators" role="tablist" aria-label="원칙 선택" data-step-indicators>
+                ${items.map((_, i) => `<button type="button" class="philosophy-step-indicator${i === 0 ? ' is-on' : ''}" data-step-indicator="${i}" role="tab" aria-selected="${i === 0}" aria-label="원칙 ${i + 1}">${i + 1}</button>`).join('')}
+              </div>
+              <div class="philosophy-step-arrows">
+                <button type="button" class="philosophy-step-arrow" data-step-prev aria-label="이전 원칙" disabled><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 10L7 10M7 10L11 6M7 10L11 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <button type="button" class="philosophy-step-arrow" data-step-next aria-label="다음 원칙"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 10L13 10M13 10L9 6M13 10L9 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+            </div>
+          </div>
         </div>
+        <script type="application/json" data-philosophy-steps>${escapeHtml(JSON.stringify(items))}</script>
       </section>`;
   }
 
@@ -240,26 +259,61 @@
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).filter(Boolean);
   }
 
-  // sec-featured — eyebrow → 큰 제목 → 짧은 설명 → **학교별 독립 카드 횡스크롤**
-  // (각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA. 학교명은 전부
-  // builderDraft(featuredItemN) 입력값이며 코드에 하드코딩하지 않는다. 배선: academy_public.js
-  // wireFeaturedSchoolCards — query/render/event 모두 #sec-featured 안에서만. sec-lessons(대표수업)
-  // 와 완전히 분리 — 공용 programCardHtml 에 학교 분기 없음, lesson name 파싱 없음.
+  // sec-featured — eyebrow → 큰 제목 → 짧은 설명 → **커버플로우 캐러셀 (승인된 UI)**
+  // (각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA.
+  // 21st.dev @ruixen.ui/coverflow-carousel 스타일: 중앙 카드 확대, 좌우 카드 축소/투명도, 3D 회전 효과
+  // 데스크톱: 마우스 드래그/휠 + 화살표 + 인디케이터
+  // 모바일: 터치 스와이프 + 인디케이터
+  // 배선: academy_public.js wireFeaturedCoverflow — #sec-featured 안에서만
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
-    const schools = featuredItems(view);
-    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-reveal>
+    const schools = featuredItems(view).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
+    if (!schools.length) return '';
+
+    const cards = schools.map((school, i) =>
+      `<article class="coverflow-card" role="listitem" data-coverflow-card data-index="${i}" data-school="${escapeAttr(school)}">
+        <div class="coverflow-card-visual" aria-hidden="true">
+          <div class="coverflow-card-glow"></div>
+          <div class="coverflow-card-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 38C16.27 42 10 35.73 10 28S16.27 14 24 14s14 6.27 14 14-6.27 14-14 14z" stroke="currentColor" stroke-width="2"/><path d="M24 16v16M16 24h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="coverflow-card-content">
+          <div class="coverflow-card-head">
+            <b class="coverflow-card-name">${escapeHtml(school)}</b>
+            <span class="coverflow-card-kind">출제자 Digital Twin</span>
+          </div>
+          <div class="coverflow-card-body" data-coverflow-card-body aria-live="polite">
+            <p class="coverflow-card-loading">${escapeHtml(school)} 출제 분석 불러오는 중…</p>
+          </div>
+          <a class="coverflow-card-more" data-coverflow-card-more href="/analyzes" target="_blank" rel="noopener">출제 분석 보기 →</a>
+        </div>
+      </article>`
+    ).join('');
+
+    const indicators = schools.map((school, i) =>
+      `<button type="button" class="coverflow-indicator${i === 0 ? ' is-on' : ''}" data-coverflow-indicator="${i}" aria-label="${escapeAttr(school)}" role="tab" aria-selected="${i === 0}"></button>`
+    ).join('');
+
+    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-coverflow" data-reveal>
         <div class="section-inner featured-inner">
           <div class="featured-head">
             <div class="eyebrow featured-eyebrow" data-reveal-item><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
             ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
             ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${ctx.featuredSchoolCards(schools)}
+          <div class="coverflow-viewport" data-coverflow-viewport role="list" aria-label="학교별 내신 대비">
+            <div class="coverflow-track" data-coverflow-track>${cards}</div>
+          </div>
+          <div class="coverflow-controls">
+            <button type="button" class="coverflow-arrow" data-coverflow-prev aria-label="이전 학교" disabled><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 12H9M9 12L13 8M9 12L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div class="coverflow-indicators" role="tablist" aria-label="학교 선택">${indicators}</div>
+            <button type="button" class="coverflow-arrow" data-coverflow-next aria-label="다음 학교"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 12H15M15 12L11 8M15 12L11 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
           <div class="featured-cta" data-reveal-item>${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
@@ -416,17 +470,23 @@
     const glyphOf = (i) => AI_NATIVE_GLYPHS[i] || AI_NATIVE_GLYPHS[AI_NATIVE_GLYPHS.length - 1];
     const blocks = items.map((s) => {
       const desc = AI_PROCESS_STEP_DESC_DEFAULTS[s.i] || '';
-      return `<li class="ai-native-step" data-ai-step="${s.i}" data-reveal-item>`
-        + `<span class="ai-native-step-num">${s.i + 1}</span>`
-        + `<div class="ai-native-step-c">`
-        + `<span class="ai-native-step-glyph" aria-hidden="true">${glyphOf(s.i)}</span>`
-        + `<div class="ai-native-step-text">`
-        + `<h3 class="ai-native-step-name">${ctx.aiStepName(s.i, s.name)}</h3>`
-        + (desc ? `<p class="ai-native-step-desc">${escapeHtml(desc)}</p>` : '')
-        + `</div></div></li>`;
+      const isTwin = s.i === 1;
+      const isFinal = s.i === 4;
+      return `<li class="ai-native-step" data-ai-step="${s.i}" data-reveal-item data-ai-step-index="${s.i}">
+        <span class="ai-native-step-num">${s.i + 1}</span>
+        <div class="ai-native-step-c">
+          <span class="ai-native-step-glyph${isTwin ? ' is-twin' : ''}${isFinal ? ' is-final' : ''}" aria-hidden="true">${glyphOf(s.i)}</span>
+          <div class="ai-native-step-text">
+            <h3 class="ai-native-step-name">${ctx.aiStepName(s.i, s.name)}</h3>
+            ${desc ? `<p class="ai-native-step-desc">${escapeHtml(desc)}</p>` : ''}
+          </div>
+          ${isFinal ? '<span class="ai-native-final-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ''}
+        </div>
+        ${s.i < items.length - 1 ? '<span class="ai-native-connection" data-ai-connection></span>' : ''}
+      </li>`;
     }).join('');
-    // 데스크톱: sticky canvas + 5 세로 설명(scroll-linked, academy_cinematic.js 데스크톱 경로).
-    // 모바일: ctx.aiScenesMobile() 가 있으면(공개 페이지) 단계별 횡스크롤 Story 로 대체된다.
+    // 데스크톱: 수평 파이프라인 (sticky visual + 우측 단계 리스트, academy_cinematic.js 스크롤 연동)
+    // 모바일: 수직 스택 + 연결선 + 단계별 횡스크롤 Story (.ai-scenes-mobile)
     return `<div class="ai-native" data-reveal>
         <figure class="ai-native-visual" data-ai-visual aria-hidden="true">
           <div class="ai-stage" data-ai-stage>${AI_PIPELINE_HTML}</div>
@@ -1215,36 +1275,16 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-reveal-item><span class="n">원칙 ${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // 학습 철학 — 모바일에서 대표수업과 동일한 .f2r-collection 횡스크롤(새 carousel 없음).
+      // 학습 철학 — 공개 페이지는 step progression(단일 카드 + 진행바 + 인디케이터 + prev/next + 스와이프).
+      // 빌더 캔버스는 편집 UX를 위해 정적 그리드 프리뷰를 유지.
       philosophyCards(items) {
-        return renderCollectionShell({
-          navLabel: '학습 철학',
-          variant: 'philosophy',
-          hint: '옆으로 밀어 원칙을 확인하세요',
-          cards: (items || []).map((t, i) => this.philosophyCard(t, i))
-        });
+        return '';
       },
       // 학교별 독립 카드 횡스크롤. 각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin.
       // 카드 본문은 빈 상태로 내고 academy_public.js wireFeaturedSchoolCards 가 학교별로 fetch 해 채운다.
       // #sec-featured 안에서만 배선된다 — 대표수업(sec-lessons)과 무관.
       featuredSchoolCards(schools) {
-        const list = (schools || []).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
-        if (!list.length) return '';
-        const cards = list.map((school) =>
-          `<article class="featured-schoolcard" role="listitem" data-featured-card data-school="${escapeAttr(school)}">`
-          + `<div class="featured-schoolcard-head"><b class="featured-schoolcard-name">${escapeHtml(school)}</b>`
-          + `<span class="featured-schoolcard-kind">출제자 Digital Twin</span></div>`
-          + `<div class="featured-schoolcard-body" data-featured-card-body aria-live="polite">`
-          + `<p class="featured-schoolcard-loading">${escapeHtml(school)} 출제 분석 불러오는 중…</p></div>`
-          + `<a class="featured-schoolcard-more" data-featured-card-more href="/analyzes" target="_blank" rel="noopener">출제 분석 보기 →</a>`
-          + `</article>`).join('');
-        const dots = list.map((school, i) =>
-          `<button type="button" class="featured-schoolcards-dot${i === 0 ? ' is-on' : ''}" data-featured-dot="${i}" aria-label="${escapeAttr(school)}"></button>`).join('');
-        return `<div class="featured-schoolcards-wrap" data-reveal-item data-featured-cards>`
-          + `<div class="featured-schoolcards" role="list" data-featured-track>${cards}</div>`
-          + `<div class="featured-schoolcards-bar"><span class="featured-schoolcards-count" data-featured-count>1 / ${list.length}</span>`
-          + `<div class="featured-schoolcards-dots" role="tablist" aria-label="학교 카드 이동">${dots}</div></div>`
-          + `</div>`;
+        return '';
       },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();
