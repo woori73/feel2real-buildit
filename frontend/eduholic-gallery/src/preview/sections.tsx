@@ -1,4 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import {
+  FileText,
+  Brain,
+  Lightbulb,
+  FileCheck,
+  Award,
+} from 'lucide-react';
 import { MapPin, Phone, X } from 'lucide-react';
 import { ACAD_API, eduholic } from '@/data/eduholic';
 
@@ -87,29 +95,291 @@ export function Philosophy() {
 }
 
 const AI_STEPS = [
-  { n: '1', t: '학교 자료', d: '우리 학교 기출·프린트·수업 자료를 모읍니다.' },
-  { n: '2', t: '출제자 Digital Twin', d: 'AI가 반복되는 출제 유형과 배점 패턴을 분석합니다.' },
-  { n: '3', t: '수업 Insight', d: '오랜 현장 수업 경험과 분석 결과를 결합합니다.' },
-  { n: '4', t: '학교별 문제 제작', d: '우리 학교 시험 유형에 맞춘 문항을 만듭니다.' },
-  { n: '5', t: 'FINAL', d: '실전과 같은 시험지로 시험을 대비합니다.' },
+  { n: '1', t: '학교 자료', d: '우리 학교 기출·프린트·수업 자료를 모읍니다.', icon: FileText },
+  { n: '2', t: '출제자 Digital Twin', d: 'AI가 반복되는 출제 유형과 배점 패턴을 분석합니다.', icon: Brain },
+  { n: '3', t: '수업 Insight', d: '오랜 현장 수업 경험과 분석 결과를 결합합니다.', icon: Lightbulb },
+  { n: '4', t: '학교별 문제 제작', d: '우리 학교 시험 유형에 맞춘 문항을 만듭니다.', icon: FileCheck },
+  { n: '5', t: 'FINAL', d: '실전과 같은 시험지로 시험을 대비합니다.', icon: Award },
 ];
 
-export function AiSteps() {
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+  },
+};
+
+const stepVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
+const iconVariants = {
+  hidden: { scale: 0, rotate: -90 },
+  visible: (i: number) => ({
+    scale: 1,
+    rotate: 0,
+    transition: { duration: 0.5, delay: 0.3 + i * 0.1, ease: [0.34, 1.56, 0.64, 1] },
+  }),
+  active: { scale: 1.1, transition: { duration: 0.3 } },
+};
+
+function ConnectionLine({ isMobile, animated, delay = 0, reduceMotion }: { isMobile: boolean; animated: boolean; delay?: number; reduceMotion: boolean }) {
+  const pathRef = useRef<SVGPathElement>(null);
+
+  const d = isMobile ? 'M 0 0 L 0 60' : 'M 0 0 L 60 0';
+
   return (
-    <section className="bg-ink px-4 py-10 text-white sm:py-14" aria-labelledby="ai-title">
+    <svg className="connection-line" width={isMobile ? 2 : 80} height={isMobile ? 80 : 2} style={{ flex: 'none' }}>
+      <motion.path
+        ref={pathRef}
+        d={d}
+        stroke="url(#ai-gradient)"
+        strokeWidth={isMobile ? 2 : 2.5}
+        fill="none"
+        strokeLinecap="round"
+        opacity={0.6}
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: animated && !reduceMotion ? 1 : 0 }}
+        transition={{ duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] }}
+      />
+    </svg>
+  );
+}
+
+function NeuralBrain({ className = '' }) {
+  const nodes = [
+    { x: 50, y: 50, r: 8, delay: 0 },
+    { x: 20, y: 25, r: 5, delay: 0.1 },
+    { x: 80, y: 25, r: 5, delay: 0.2 },
+    { x: 15, y: 65, r: 4, delay: 0.3 },
+    { x: 50, y: 15, r: 4, delay: 0.15 },
+    { x: 85, y: 60, r: 4, delay: 0.25 },
+    { x: 30, y: 80, r: 3, delay: 0.35 },
+    { x: 70, y: 75, r: 3, delay: 0.4 },
+    { x: 50, y: 85, r: 3, delay: 0.3 },
+  ];
+
+  const connections = [
+    [0, 1], [0, 2], [0, 4], [0, 5], [0, 8],
+    [1, 3], [1, 4], [2, 5], [2, 6], [3, 7], [5, 7], [4, 8],
+  ];
+
+  return (
+    <svg className={className} viewBox="0 0 100 100" width="100" height="100" aria-hidden="true">
+      <defs>
+        <radialGradient id="brain-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fbbf24" stopOpacity={0.4} />
+          <stop offset="70%" stopColor="#f59e0b" stopOpacity={0.1} />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+        </radialGradient>
+      </defs>
+      <g className="neural-connections" filter="url(#glow-blur)">
+        {connections.map(([a, b], i) => (
+          <motion.line
+            key={i}
+            x1={nodes[a].x}
+            y1={nodes[a].y}
+            x2={nodes[b].x}
+            y2={nodes[b].y}
+            stroke="#fbbf24"
+            strokeWidth="0.8"
+            strokeOpacity={0.3}
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1.5, delay: 0.5 + i * 0.05, ease: 'easeInOut', repeat: Infinity, repeatType: 'reverse' }}
+          />
+        ))}
+      </g>
+      {nodes.map((node, i) => (
+        <motion.circle
+          key={i}
+          cx={node.x}
+          cy={node.y}
+          r={node.r}
+          fill="#fbbf24"
+          initial={{ scale: 0 }}
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{
+            duration: 2,
+            delay: node.delay,
+            ease: 'easeInOut',
+            repeat: Infinity,
+          }}
+        />
+      ))}
+    </svg>
+  );
+}
+
+function StepCard({
+  step,
+  index,
+  isMobile,
+  isLast,
+  animated,
+  reduceMotion,
+}: {
+  step: (typeof AI_STEPS)[0];
+  index: number;
+  isMobile: boolean;
+  isLast: boolean;
+  animated: boolean;
+  reduceMotion: boolean;
+}) {
+  const Icon = step.icon;
+  const isTwin = index === 1;
+  const isFinal = index === 4;
+
+  return (
+    <motion.li
+      className="relative"
+      variants={stepVariants}
+      custom={index}
+      style={{ flex: isMobile ? 'none' : '1 1 0', minWidth: isMobile ? '100%' : 'auto' }}
+    >
+      {!isMobile && !isLast && <ConnectionLine isMobile={false} animated={animated} delay={index * 0.15} reduceMotion={reduceMotion} />}
+      <div className={`relative flex flex-col items-center ${isMobile ? 'w-full' : ''}`}>
+        <motion.div
+          className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20"
+          variants={iconVariants}
+          animate={animated ? 'visible' : 'hidden'}
+          custom={index}
+          whileHover={isTwin ? undefined : { scale: 1.05 }}
+          transition={reduceMotion ? { duration: 0 } : undefined}
+        >
+          {isTwin ? (
+            <NeuralBrain className="w-12 h-12" />
+          ) : (
+            <Icon className="w-6 h-6 text-accent" aria-hidden="true" />
+          )}
+          {isFinal && animated && (
+            <motion.div
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500"
+              initial={reduceMotion ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 1.5, type: 'spring', stiffness: 200, damping: 15 }}
+            >
+              <Award className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            </motion.div>
+          )}
+        </motion.div>
+        <motion.p
+          className="mt-3 text-center text-sm font-extrabold text-white"
+          style={{ fontSize: isMobile ? '14px' : '13px' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={animated ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: reduceMotion ? 0 : 0.4, delay: 0.4 + index * 0.1 }}
+        >
+          {step.t}
+        </motion.p>
+        <motion.p
+          className="mt-2 text-center text-xs leading-relaxed text-white/65 px-2"
+          style={{ fontSize: isMobile ? '12px' : '11px', maxWidth: isMobile ? 'none' : '160px' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={animated ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: reduceMotion ? 0 : 0.4, delay: 0.5 + index * 0.1 }}
+        >
+          {step.d}
+        </motion.p>
+        {isMobile && index < 4 && (
+          <ConnectionLine isMobile={true} animated={animated} delay={(index + 0.5) * 0.15} reduceMotion={reduceMotion} />
+        )}
+      </div>
+    </motion.li>
+  );
+}
+
+export function AiSteps() {
+  const [animated, setAnimated] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduceMotion(mediaQuery.matches);
+    const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setAnimated(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3, rootMargin: '-50px' }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  return (
+    <section
+      ref={sectionRef}
+      className="bg-ink px-4 py-10 text-white sm:py-14"
+      aria-labelledby="ai-title"
+    >
       <div className="mx-auto max-w-5xl">
         <p className="text-xs font-extrabold uppercase tracking-widest text-accent-light">AI NATIVE 내신</p>
         <h2 id="ai-title" className="mt-2 text-2xl font-extrabold sm:text-3xl">박정민 원장 X AI, 최적의 학교 내신 대비</h2>
         <p className="mt-2 max-w-2xl text-sm text-white/70">시험 직전에 나오는 학교 선생님의 자료까지 AI에 즉시 학습시켜 최고의 적중률을 만드는 wiki내신 시스템</p>
-        <ol className="no-scrollbar mt-6 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
-          {AI_STEPS.map((s) => (
-            <li key={s.n} className="w-52 shrink-0 rounded-2xl bg-white/5 p-4 backdrop-blur sm:w-auto">
-              <p className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-extrabold">{s.n}</p>
-              <p className="mt-3 text-sm font-bold">{s.t}</p>
-              <p className="mt-1 text-xs leading-relaxed text-white/65">{s.d}</p>
-            </li>
+
+        <svg className="sr-only" aria-hidden="true">
+          <defs>
+            <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="50%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#fbbf24" />
+            </linearGradient>
+            <radialGradient id="ai-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#fde047" stopOpacity={1} />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+            </radialGradient>
+            <filter id="glow-blur">
+              <feGaussianBlur stdDeviation="1" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+
+        <motion.ol
+          className={`relative ${isMobile ? 'flex flex-col gap-4' : 'flex items-center gap-0'}`}
+          variants={containerVariants}
+          initial="hidden"
+          animate={animated ? 'visible' : 'hidden'}
+          transition={reduceMotion ? { staggerChildren: 0, delayChildren: 0 } : undefined}
+          role="list"
+          aria-label="AI 내신 5단계 프로세스"
+        >
+          {AI_STEPS.map((step, i) => (
+            <StepCard
+              key={step.n}
+              step={step}
+              index={i}
+              isMobile={isMobile}
+              isLast={i === 4}
+              animated={animated}
+              reduceMotion={reduceMotion}
+            />
           ))}
-        </ol>
+        </motion.ol>
       </div>
     </section>
   );

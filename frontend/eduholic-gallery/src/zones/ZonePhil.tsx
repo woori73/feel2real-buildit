@@ -103,10 +103,34 @@ export function PhilOptionA() {
   );
 }
 
-/** OPTION B — stepper progression (TEMP: spec implementation, NOT 21st real code; quota 0/2). */
+/** OPTION B — stepper progression with smooth transitions (TEMP: spec implementation, NOT 21st real code; quota 0/2). */
 export function PhilOptionB() {
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => 0);
   const touchX = useRef<number | null>(null);
+  const [direction, setDirection] = useState<'next' | 'prev' | null>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduceMotion(mediaQuery.matches);
+    const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const goTo = (i: number) => {
+    setDirection(i > idx ? 'next' : 'prev');
+    setIdx(i);
+    setTimeout(() => setDirection(null), 300);
+  };
+
+  const handleSwipe = (e: React.TouchEvent) => {
+    if (touchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    if (dx < -40) setIdx((i) => Math.min(i + 1, PRINCIPLES.length - 1));
+    else if (dx > 40) setIdx((i) => Math.max(i - 1, 0));
+    touchX.current = null;
+  };
 
   return (
     <div className="bg-navy px-4 py-10 sm:py-14">
@@ -116,48 +140,83 @@ export function PhilOptionB() {
         <div
           className="mt-6 overflow-hidden rounded-2xl bg-white p-6 shadow-xl sm:p-8"
           onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
-            if (touchX.current === null) return;
-            const dx = e.changedTouches[0].clientX - touchX.current;
-            if (dx < -40) setIdx((i) => Math.min(i + 1, PRINCIPLES.length - 1));
-            else if (dx > 40) setIdx((i) => Math.max(i - 1, 0));
-            touchX.current = null;
-          }}
+          onTouchEnd={handleSwipe}
         >
           <div className="flex gap-1.5" aria-hidden>
             {PRINCIPLES.map((p, i) => (
-              <span key={p.n} className={cn('h-1 flex-1 rounded-full', i <= idx ? 'bg-navy' : 'bg-border')} />
+              <motion.span
+                key={p.n}
+                className={cn('h-1 flex-1 rounded-full', i <= idx ? 'bg-navy' : 'bg-border')}
+                animate={{ scaleX: i <= idx ? 1 : 0 }}
+                initial={false}
+                transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
+              />
             ))}
           </div>
           <div className="mt-4 min-h-[7rem]" aria-live="polite">
-            <p className="text-xs font-extrabold text-accent">{PRINCIPLES[idx].n} · {idx + 1} / 4</p>
-            <p className="mt-2 text-xl font-extrabold leading-relaxed sm:text-2xl">{PRINCIPLES[idx].text}</p>
+            <motion.div
+              key={idx}
+              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: direction === 'prev' ? 30 : -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="min-h-[7rem]"
+            >
+              <p className="text-xs font-extrabold text-accent">{PRINCIPLES[idx].n} · {idx + 1} / 4</p>
+              <motion.p
+                className="mt-2 text-xl font-extrabold leading-relaxed sm:text-2xl"
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.16, 1, 0.3, 1], delay: reduceMotion ? 0 : 0.1 }}
+              >
+                {PRINCIPLES[idx].text}
+              </motion.p>
+            </motion.div>
           </div>
           <div className="mt-4 flex items-center justify-between">
             <div className="flex gap-2">
               {PRINCIPLES.map((p, i) => (
-                <button
+                <motion.button
                   key={p.n}
                   type="button"
-                  onClick={() => setIdx(i)}
+                  onClick={() => goTo(i)}
                   aria-label={`${p.n} 보기`}
                   aria-current={i === idx}
                   className={cn(
                     'h-9 w-9 rounded-full text-xs font-extrabold',
                     i === idx ? 'bg-navy text-white' : 'border border-border text-muted-foreground',
                   )}
+                  whileHover={reduceMotion ? {} : { scale: 1.08 }}
+                  whileTap={reduceMotion ? {} : { scale: 0.92 }}
+                  animate={{ scale: i === idx ? 1.08 : 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
                   {i + 1}
-                </button>
+                </motion.button>
               ))}
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setIdx((i) => Math.max(i - 1, 0))} disabled={idx === 0} aria-label="이전 원칙" className="rounded-full border border-border p-2 disabled:opacity-30">
+              <motion.button
+                type="button"
+                onClick={() => goTo(idx - 1)}
+                disabled={idx === 0}
+                aria-label="이전 원칙"
+                className="rounded-full border border-border p-2 disabled:opacity-30"
+                whileHover={reduceMotion ? {} : { scale: 1.05 }}
+                whileTap={reduceMotion ? {} : { scale: 0.95 }}
+              >
                 <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button type="button" onClick={() => setIdx((i) => Math.min(i + 1, PRINCIPLES.length - 1))} disabled={idx === PRINCIPLES.length - 1} aria-label="다음 원칙" className="rounded-full border border-border p-2 disabled:opacity-30">
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => goTo(idx + 1)}
+                disabled={idx === PRINCIPLES.length - 1}
+                aria-label="다음 원칙"
+                className="rounded-full border border-border p-2 disabled:opacity-30"
+                whileHover={reduceMotion ? {} : { scale: 1.05 }}
+                whileTap={reduceMotion ? {} : { scale: 0.95 }}
+              >
                 <ChevronRight className="h-4 w-4" />
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
