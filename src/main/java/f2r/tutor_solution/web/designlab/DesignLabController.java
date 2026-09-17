@@ -30,6 +30,20 @@ public class DesignLabController {
         return "design-lab/home-c";
     }
 
+    @GetMapping("/eduholic-options")
+    public String eduholicOptions(HttpServletRequest request) {
+        request.setAttribute("designLabVariant", "eduholic-options");
+        request.setAttribute("pageTitle", "Design Lab · Eduholic Dynamic UI Gallery");
+        return "design-lab/eduholic-options";
+    }
+
+    @GetMapping("/eduholic-preview")
+    public String eduholicPreview(HttpServletRequest request) {
+        request.setAttribute("designLabVariant", "eduholic-preview");
+        request.setAttribute("pageTitle", "Design Lab · Eduholic Preview");
+        return "design-lab/eduholic-preview";
+    }
+
     @GetMapping("")
     public String index(HttpServletRequest request) {
         request.setAttribute("designLabVariant", "index");

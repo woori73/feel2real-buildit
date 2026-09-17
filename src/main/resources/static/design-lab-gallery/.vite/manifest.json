@@ -1,0 +1,58 @@
+{
+  "_ZonePhil-CgPxWsae.js": {
+    "file": "assets/ZonePhil-CgPxWsae.js",
+    "name": "ZonePhil",
+    "imports": [
+      "_index-9H5_N3Fs.js"
+    ]
+  },
+  "_index-!~{004}~.js": {
+    "file": "assets/index-DvygpOFj.css",
+    "src": "_index-!~{004}~.js"
+  },
+  "_index-9H5_N3Fs.js": {
+    "file": "assets/index-9H5_N3Fs.js",
+    "name": "index",
+    "css": [
+      "assets/index-DvygpOFj.css"
+    ]
+  },
+  "_x-FJS7JxhR.js": {
+    "file": "assets/x-FJS7JxhR.js",
+    "name": "x",
+    "imports": [
+      "_index-9H5_N3Fs.js"
+    ]
+  },
+  "index.html": {
+    "file": "assets/main-BGaDzd0l.js",
+    "name": "main",
+    "src": "index.html",
+    "isEntry": true,
+    "imports": [
+      "_index-9H5_N3Fs.js",
+      "_x-FJS7JxhR.js"
+    ]
+  },
+  "preview.html": {
+    "file": "assets/preview-BRycKkQe.js",
+    "name": "preview",
+    "src": "preview.html",
+    "isEntry": true,
+    "imports": [
+      "_index-9H5_N3Fs.js",
+      "_ZonePhil-CgPxWsae.js",
+      "_x-FJS7JxhR.js"
+    ]
+  },
+  "zones.html": {
+    "file": "assets/zones-h_WNND3_.js",
+    "name": "zones",
+    "src": "zones.html",
+    "isEntry": true,
+    "imports": [
+      "_index-9H5_N3Fs.js",
+      "_ZonePhil-CgPxWsae.js"
+    ]
+  }
+}

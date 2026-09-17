@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #fafbfd;
+  color: #0a0a0c;
+  font-family: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* hide scrollbars for swipe rows while keeping scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* marquee keyframes (UPDATE B / fallback) */
+@keyframes gallery-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-gallery-marquee {
+  animation: gallery-marquee 22s linear infinite;
+}
+.animate-gallery-marquee-fast {
+  animation: gallery-marquee 12s linear infinite;
+}

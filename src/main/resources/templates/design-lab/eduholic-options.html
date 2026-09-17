@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${pageTitle}">Design Lab · Eduholic Dynamic UI Gallery</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/design-lab-gallery/assets/index-DvygpOFj.css">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="dl-page dl-gallery" role="main">
+  <!-- Eduholic Gallery React App Mount Point (Preview only, production untouched) -->
+  <div id="root"></div>
+</div>
+</th:block>
+
+<th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
+<th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
+<th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+
+<script src="/js/api.js"></script>
+<th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
+
+<script type="module" src="/design-lab-gallery/assets/main-BGaDzd0l.js"></script>
+</body>
+</html>
