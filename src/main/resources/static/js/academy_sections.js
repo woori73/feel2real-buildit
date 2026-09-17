@@ -210,14 +210,33 @@
     if (!view.sectionVisible('sec-philosophy')) return '';
     const keyword = draftText(view, 'philosophyKeyword', PHILOSOPHY_KEYWORD_DEFAULT);
     const title = maskedIntroTitle(draftText(view, 'philosophyTitle', PHILOSOPHY_TITLE_DEFAULT));
-    return `<section id="sec-philosophy" data-builder-section-key="sec-philosophy" class="section-wrap philosophy" data-reveal>
-        <div class="philosophy-inner">
-          <div class="section-head philosophy-head" data-reveal-item>
+    const items = philosophyItems(view);
+    return `<section id="sec-philosophy" data-builder-section-key="sec-philosophy" class="section-wrap philosophy-step" data-reveal>
+        <div class="philosophy-step-inner">
+          <div class="philosophy-step-head" data-reveal-item>
             <div class="eyebrow philosophy-eyebrow"><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'philosophy-keyword', draftKey: 'philosophyKeyword', value: keyword, omitWhenEmpty: true })}</div>
-            ${ctx.editableText({ tag: 'h2', className: 'philosophy-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
+            ${ctx.editableText({ tag: 'h2', className: 'philosophy-step-title', draftKey: 'philosophyTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${ctx.philosophyCards(philosophyItems(view))}
+          <div class="philosophy-step-card" data-philosophy-step-card>
+            <div class="philosophy-step-progress" aria-hidden="true">
+              ${items.map((_, i) => `<span class="philosophy-step-bar" data-step-bar="${i}"></span>`).join('')}
+            </div>
+            <div class="philosophy-step-content" data-philosophy-step-content>
+              <p class="philosophy-step-meta"><span class="philosophy-step-label" data-step-label></span><span class="philosophy-step-counter" data-step-counter></span></p>
+              <p class="philosophy-step-text" data-step-text></p>
+            </div>
+            <div class="philosophy-step-nav">
+              <div class="philosophy-step-indicators" role="tablist" aria-label="원칙 선택" data-step-indicators>
+                ${items.map((_, i) => `<button type="button" class="philosophy-step-indicator${i === 0 ? ' is-on' : ''}" data-step-indicator="${i}" role="tab" aria-selected="${i === 0}" aria-label="원칙 ${i + 1}">${i + 1}</button>`).join('')}
+              </div>
+              <div class="philosophy-step-arrows">
+                <button type="button" class="philosophy-step-arrow" data-step-prev aria-label="이전 원칙" disabled><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 10L7 10M7 10L11 6M7 10L11 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <button type="button" class="philosophy-step-arrow" data-step-next aria-label="다음 원칙"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 10L13 10M13 10L9 6M13 10L9 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+            </div>
+          </div>
         </div>
+        <script type="application/json" data-philosophy-steps>${escapeHtml(JSON.stringify(items))}</script>
       </section>`;
   }
 
@@ -240,26 +259,61 @@
     return featuredItems(view).map((l) => String(l == null ? '' : l).trim()).filter(Boolean);
   }
 
-  // sec-featured — eyebrow → 큰 제목 → 짧은 설명 → **학교별 독립 카드 횡스크롤**
-  // (각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA. 학교명은 전부
-  // builderDraft(featuredItemN) 입력값이며 코드에 하드코딩하지 않는다. 배선: academy_public.js
-  // wireFeaturedSchoolCards — query/render/event 모두 #sec-featured 안에서만. sec-lessons(대표수업)
-  // 와 완전히 분리 — 공용 programCardHtml 에 학교 분기 없음, lesson name 파싱 없음.
+  // sec-featured — eyebrow → 큰 제목 → 짧은 설명 → **커버플로우 캐러셀 (승인된 UI)**
+  // (각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA.
+  // 21st.dev @ruixen.ui/coverflow-carousel 스타일: 중앙 카드 확대, 좌우 카드 축소/투명도, 3D 회전 효과
+  // 데스크톱: 마우스 드래그/휠 + 화살표 + 인디케이터
+  // 모바일: 터치 스와이프 + 인디케이터
+  // 배선: academy_public.js wireFeaturedCoverflow — #sec-featured 안에서만
   function renderFeatured(view, ctx) {
     if (!view.sectionVisible('sec-featured')) return '';
     const eyebrow = draftText(view, 'featuredEyebrow', FEATURED_EYEBROW_DEFAULT);
     const title = draftText(view, 'featuredTitle', FEATURED_TITLE_DEFAULT);
     const desc = draftText(view, 'featuredDescription', FEATURED_DESC_DEFAULT);
     const ctaLabel = draftText(view, 'featuredCtaLabel', FEATURED_CTA_DEFAULT);
-    const schools = featuredItems(view);
-    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-wrap" data-reveal>
+    const schools = featuredItems(view).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
+    if (!schools.length) return '';
+
+    const cards = schools.map((school, i) =>
+      `<article class="coverflow-card" role="listitem" data-coverflow-card data-index="${i}" data-school="${escapeAttr(school)}">
+        <div class="coverflow-card-visual" aria-hidden="true">
+          <div class="coverflow-card-glow"></div>
+          <div class="coverflow-card-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 38C16.27 42 10 35.73 10 28S16.27 14 24 14s14 6.27 14 14-6.27 14-14 14z" stroke="currentColor" stroke-width="2"/><path d="M24 16v16M16 24h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="coverflow-card-content">
+          <div class="coverflow-card-head">
+            <b class="coverflow-card-name">${escapeHtml(school)}</b>
+            <span class="coverflow-card-kind">출제자 Digital Twin</span>
+          </div>
+          <div class="coverflow-card-body" data-coverflow-card-body aria-live="polite">
+            <p class="coverflow-card-loading">${escapeHtml(school)} 출제 분석 불러오는 중…</p>
+          </div>
+          <a class="coverflow-card-more" data-coverflow-card-more href="/analyzes" target="_blank" rel="noopener">출제 분석 보기 →</a>
+        </div>
+      </article>`
+    ).join('');
+
+    const indicators = schools.map((school, i) =>
+      `<button type="button" class="coverflow-indicator${i === 0 ? ' is-on' : ''}" data-coverflow-indicator="${i}" aria-label="${escapeAttr(school)}" role="tab" aria-selected="${i === 0}"></button>`
+    ).join('');
+
+    return `<section id="sec-featured" data-builder-section-key="sec-featured" class="section-wrap featured-coverflow" data-reveal>
         <div class="section-inner featured-inner">
           <div class="featured-head">
             <div class="eyebrow featured-eyebrow" data-reveal-item><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'featured-eyebrow-text', draftKey: 'featuredEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
             ${ctx.editableText({ tag: 'h2', className: 'featured-title', draftKey: 'featuredTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
             ${ctx.editableText({ tag: 'p', className: 'featured-desc', draftKey: 'featuredDescription', value: desc, publicClass: 'academy-multiline-text', builderClass: 'builder-multiline-text', omitWhenEmpty: true, extraAttrs: 'data-reveal-item' })}
           </div>
-          ${ctx.featuredSchoolCards(schools)}
+          <div class="coverflow-viewport" data-coverflow-viewport role="list" aria-label="학교별 내신 대비">
+            <div class="coverflow-track" data-coverflow-track>${cards}</div>
+          </div>
+          <div class="coverflow-controls">
+            <button type="button" class="coverflow-arrow" data-coverflow-prev aria-label="이전 학교" disabled><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 12H9M9 12L13 8M9 12L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div class="coverflow-indicators" role="tablist" aria-label="학교 선택">${indicators}</div>
+            <button type="button" class="coverflow-arrow" data-coverflow-next aria-label="다음 학교"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 12H15M15 12L11 8M15 12L11 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
           <div class="featured-cta" data-reveal-item>${ctx.featuredCta(ctaLabel)}</div>
         </div>
       </section>`;
@@ -408,31 +462,118 @@
       + `</div>`;
   }
 
+  // NeuralBrain SVG (9 nodes + 12 connections + radial glow) - from Design Lab Preview
+  const NEURAL_BRAIN_SVG = `
+    <svg class="neural-brain" viewBox="0 0 100 100" width="100" height="100" aria-hidden="true">
+      <defs>
+        <radialGradient id="brain-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.4" />
+          <stop offset="70%" stop-color="#f59e0b" stop-opacity="0.1" />
+          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+        </radialGradient>
+        <filter id="glow-blur">
+          <feGaussianBlur stdDeviation="1" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g class="neural-connections" filter="url(#glow-blur)">
+        <line x1="50" y1="50" x2="20" y2="25" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="50" y1="50" x2="80" y2="25" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="50" y1="50" x2="50" y2="15" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="50" y1="50" x2="85" y2="60" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="50" y1="50" x2="15" y2="65" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="20" y1="25" x2="15" y2="65" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="20" y1="25" x2="50" y2="15" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="80" y1="25" x2="85" y2="60" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="80" y1="25" x2="50" y2="15" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="15" y1="65" x2="30" y2="80" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="85" y1="60" x2="70" y2="75" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+        <line x1="50" y1="15" x2="50" y2="85" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.3" />
+      </g>
+      <circle cx="50" cy="50" r="8" fill="#fbbf24" />
+      <circle cx="20" cy="25" r="5" fill="#fbbf24" />
+      <circle cx="80" cy="25" r="5" fill="#fbbf24" />
+      <circle cx="15" cy="65" r="4" fill="#fbbf24" />
+      <circle cx="50" cy="15" r="4" fill="#fbbf24" />
+      <circle cx="85" cy="60" r="4" fill="#fbbf24" />
+      <circle cx="30" cy="80" r="3" fill="#fbbf24" />
+      <circle cx="70" cy="75" r="3" fill="#fbbf24" />
+      <circle cx="50" cy="85" r="3" fill="#fbbf24" />
+    </svg>
+  `;
+
+  // ConnectionLine SVG - horizontal (desktop) and vertical (mobile)
+  function connectionLineSvg(isMobile) {
+    return isMobile
+      ? '<svg class="connection-line" width="2" height="80" viewBox="0 0 2 80" fill="none" aria-hidden="true"><path d="M1 0 L1 80" stroke="url(#ai-gradient)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6" /></svg>'
+      : '<svg class="connection-line" width="80" height="2" viewBox="0 0 80 2" fill="none" aria-hidden="true"><path d="M0 1 L80 1" stroke="url(#ai-gradient)" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6" /></svg>';
+  }
+
+  // Step icons - inline SVGs matching Design Lab Preview (Lucide icons)
+  const STEP_ICONS = [
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', // FileText
+    '', // NeuralBrain (special, handled separately)
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/></svg>', // Lightbulb
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>', // FileCheck
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>' // Award
+  ];
+
   function aiNativeHtml(steps, ctx) {
     const items = (steps || [])
       .map((s, i) => ({ i, name: textValue(s) || AI_PROCESS_STEP_DEFAULTS[i] || '' }))
       .filter((s) => s.i === 0 || s.name);
     if (!items.length) return '';
-    const glyphOf = (i) => AI_NATIVE_GLYPHS[i] || AI_NATIVE_GLYPHS[AI_NATIVE_GLYPHS.length - 1];
-    const blocks = items.map((s) => {
+
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    // Desktop: horizontal flow with connection lines between steps
+    // Mobile: vertical flow with vertical connection lines between steps
+    const blocks = items.map((s, idx) => {
       const desc = AI_PROCESS_STEP_DESC_DEFAULTS[s.i] || '';
-      return `<li class="ai-native-step" data-ai-step="${s.i}" data-reveal-item>`
-        + `<span class="ai-native-step-num">${s.i + 1}</span>`
-        + `<div class="ai-native-step-c">`
-        + `<span class="ai-native-step-glyph" aria-hidden="true">${glyphOf(s.i)}</span>`
-        + `<div class="ai-native-step-text">`
-        + `<h3 class="ai-native-step-name">${ctx.aiStepName(s.i, s.name)}</h3>`
-        + (desc ? `<p class="ai-native-step-desc">${escapeHtml(desc)}</p>` : '')
-        + `</div></div></li>`;
+      const isTwin = s.i === 1;
+      const isFinal = s.i === 4;
+      const iconHtml = isTwin ? NEURAL_BRAIN_SVG : STEP_ICONS[s.i];
+
+      return `<li class="ai-native-step" data-ai-step="${s.i}" data-ai-step-index="${idx}" data-reveal-item>
+        ${!isMobile && idx < items.length - 1 ? `<div class="ai-native-connection" data-connection-index="${idx}">${connectionLineSvg(false)}</div>` : ''}
+        <div class="ai-native-step-card" style="${isMobile ? 'flex: 1 1 100%;' : 'flex: 1 1 0;'}">
+          <div class="ai-native-step-icon-wrap">
+            <span class="ai-native-step-num">${s.i + 1}</span>
+            <span class="ai-native-step-icon${isTwin ? ' is-twin' : ''}${isFinal ? ' is-final' : ''}" aria-hidden="true">${iconHtml}</span>
+            ${isFinal ? '<span class="ai-native-final-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>' : ''}
+          </div>
+          <div class="ai-native-step-text">
+            <h3 class="ai-native-step-name">${ctx.aiStepName(s.i, s.name)}</h3>
+            ${desc ? `<p class="ai-native-step-desc">${escapeHtml(desc)}</p>` : ''}
+          </div>
+        </div>
+        ${isMobile && idx < items.length - 1 ? `<div class="ai-native-connection" data-connection-index="${idx}">${connectionLineSvg(true)}</div>` : ''}
+      </li>`;
     }).join('');
-    // 데스크톱: sticky canvas + 5 세로 설명(scroll-linked, academy_cinematic.js 데스크톱 경로).
-    // 모바일: ctx.aiScenesMobile() 가 있으면(공개 페이지) 단계별 횡스크롤 Story 로 대체된다.
-    return `<div class="ai-native" data-reveal>
-        <figure class="ai-native-visual" data-ai-visual aria-hidden="true">
-          <div class="ai-stage" data-ai-stage>${AI_PIPELINE_HTML}</div>
-        </figure>
-        <ol class="ai-native-steps">${blocks}</ol>
-      </div>${ctx.aiScenesMobile ? ctx.aiScenesMobile() : ''}`;
+
+    // Gradient definition for connection lines
+    const gradientDefs = `
+      <svg class="sr-only" aria-hidden="true">
+        <defs>
+          <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#fbbf24" />
+            <stop offset="50%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#fbbf24" />
+          </linearGradient>
+        </defs>
+      </svg>
+    `;
+
+    // Desktop: horizontal flex container, Mobile: vertical flex container
+    const containerClass = isMobile ? 'ai-native ai-native--mobile' : 'ai-native ai-native--desktop';
+
+    return `<div class="${containerClass}" data-reveal>
+        ${gradientDefs}
+        <ol class="ai-native-steps" role="list" aria-label="AI 내신 5단계 프로세스">${blocks}</ol>
+      </div>`;
   }
 
   function renderAiProcess(view, ctx) {
@@ -441,7 +582,7 @@
     const title = draftText(view, 'aiProcessTitle', AI_PROCESS_TITLE_DEFAULT);
     const desc = draftText(view, 'aiProcessDescription', AI_PROCESS_DESC_DEFAULT);
     const note = draftText(view, 'aiProcessNote', AI_PROCESS_NOTE_DEFAULT);
-    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-native-wrap">
+    return `<section id="sec-digitaltwin" data-builder-section-key="sec-digitaltwin" class="section-wrap ai-native-wrap" data-reveal>
         <div class="section-inner ai-native-inner">
           <div class="section-header ai-native-head" data-reveal>
             <div class="eyebrow ai-native-eyebrow" data-reveal-item><span class="stroke"></span>${ctx.editableText({ tag: 'span', className: 'ai-native-eyebrow-text', draftKey: 'aiProcessEyebrow', value: eyebrow, omitWhenEmpty: true })}</div>
@@ -1215,36 +1356,14 @@
       philosophyCard(text, index) {
         return `<div class="p-card" data-reveal-item><span class="n">원칙 ${String(index + 1).padStart(2, '0')}</span><p>${escapeHtml(text)}</p></div>`;
       },
-      // 학습 철학 — 모바일에서 대표수업과 동일한 .f2r-collection 횡스크롤(새 carousel 없음).
+      // 학습 철학 — 공개 페이지는 Step Progression (단일 카드 + 진행바 + 인디케이터 + prev/next + 스와이프).
+      // 빌더 캔버스는 편집 UX를 위해 정적 그리드 프리뷰를 유지.
       philosophyCards(items) {
-        return renderCollectionShell({
-          navLabel: '학습 철학',
-          variant: 'philosophy',
-          hint: '옆으로 밀어 원칙을 확인하세요',
-          cards: (items || []).map((t, i) => this.philosophyCard(t, i))
-        });
+        return '';
       },
-      // 학교별 독립 카드 횡스크롤. 각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin.
-      // 카드 본문은 빈 상태로 내고 academy_public.js wireFeaturedSchoolCards 가 학교별로 fetch 해 채운다.
-      // #sec-featured 안에서만 배선된다 — 대표수업(sec-lessons)과 무관.
+      // 학교별 독립 카드 — 커버플로우 캐러셀로 렌더됨 (academy_public.js wireFeaturedCoverflow).
       featuredSchoolCards(schools) {
-        const list = (schools || []).map((s) => String(s == null ? '' : s).trim()).filter(Boolean);
-        if (!list.length) return '';
-        const cards = list.map((school) =>
-          `<article class="featured-schoolcard" role="listitem" data-featured-card data-school="${escapeAttr(school)}">`
-          + `<div class="featured-schoolcard-head"><b class="featured-schoolcard-name">${escapeHtml(school)}</b>`
-          + `<span class="featured-schoolcard-kind">출제자 Digital Twin</span></div>`
-          + `<div class="featured-schoolcard-body" data-featured-card-body aria-live="polite">`
-          + `<p class="featured-schoolcard-loading">${escapeHtml(school)} 출제 분석 불러오는 중…</p></div>`
-          + `<a class="featured-schoolcard-more" data-featured-card-more href="/analyzes" target="_blank" rel="noopener">출제 분석 보기 →</a>`
-          + `</article>`).join('');
-        const dots = list.map((school, i) =>
-          `<button type="button" class="featured-schoolcards-dot${i === 0 ? ' is-on' : ''}" data-featured-dot="${i}" aria-label="${escapeAttr(school)}"></button>`).join('');
-        return `<div class="featured-schoolcards-wrap" data-reveal-item data-featured-cards>`
-          + `<div class="featured-schoolcards" role="list" data-featured-track>${cards}</div>`
-          + `<div class="featured-schoolcards-bar"><span class="featured-schoolcards-count" data-featured-count>1 / ${list.length}</span>`
-          + `<div class="featured-schoolcards-dots" role="tablist" aria-label="학교 카드 이동">${dots}</div></div>`
-          + `</div>`;
+        return '';
       },
       featuredCta(label) {
         const text = String(label == null ? '' : label).trim();

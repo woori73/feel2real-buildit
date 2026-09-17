@@ -226,86 +226,185 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* 수업 상품 카드 스타일은 #244에서 lesson_product_showcase.css 로 이관됐다.
    .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
 
-/* ══════════════ Education Storefront: 「2학기 영어 내신」 (sec-featured) ══════════════
-   eyebrow → 큰 제목 → 짧은 설명 → **학교별 독립 카드 횡스크롤**(압구정중/신구중/신사중/언북중,
-   각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin) → 단일 CTA.
-   배선: academy_public.js wireFeaturedSchoolCards — 전부 #sec-featured 안에서만.
-   대표수업(sec-lessons)·수업 영상(sec-videos)과 무관한 별개 섹션.
-   가로 스와이프 = 학교 카드 이동(세로 섹션 전환 아님 — academy_scene.css 가 이 섹션 자식엔
-   transform 을 안 건다). */
-.section-wrap.featured-wrap{background:linear-gradient(180deg,var(--gold-soft) 0%,#fff 78%);padding:64px 20px;}
-.featured-inner{max-width:900px;margin:0 auto;text-align:center;}
-.featured-head{max-width:640px;margin:0 auto;}
+/* ══════════════ Education Storefront: 「2학기 영어 내신」 Coverflow (승인된 UI) ══════════════
+   eyebrow → 큰 제목 → 짧은 설명 → **커버플로우 캐러셀** (21st.dev @ruixen.ui/coverflow-carousel 스타일)
+   중앙 카드 확대(1.15x), 좌우 카드 축소(0.85x) + 3D Y축 회전 + 투명도 그라데이션
+   데스크톱: 마우스 드래그/휠 + 화살표 + 인디케이터
+   모바일: 터치 스와이프 + 인디케이터
+   배선: academy_public.js wireFeaturedCoverflow — #sec-featured 안에서만. */
+.section-wrap.featured-coverflow{background:linear-gradient(180deg,var(--gold-soft) 0%,#fff 78%);padding:72px 20px;}
+.featured-inner{max-width:1100px;margin:0 auto;text-align:center;}
+.featured-head{max-width:720px;margin:0 auto;}
 .featured-eyebrow{justify-content:center;color:var(--ultramarine);}
 .featured-eyebrow .stroke{background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
 .featured-title{margin:0;color:var(--ink);font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
-.featured-desc{margin:16px auto 0;max-width:560px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
+.featured-desc{margin:16px auto 0;max-width:600px;color:var(--ink-soft);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
 
-/* 학교별 카드 횡스크롤 — 대표수업(.f2r-collection)과 동일한 swipe 감각으로 통일:
-   scroll-snap x proximity + snap-align:start + 카드 78vw + gap 16px → 카드 하나 중심 + 다음 카드 일부 peek.
-   카드는 공통 디바이스형 프레임(--device-*). */
-.featured-schoolcards-wrap{margin-top:28px;}
-.featured-schoolcards{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding-left:4px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 4px 12px;}
-.featured-schoolcards::-webkit-scrollbar{display:none;}
-.featured-schoolcard{flex:0 0 78vw;max-width:86vw;scroll-snap-align:start;display:flex;flex-direction:column;min-height:184px;padding:18px 18px 16px;
-  border:3px solid var(--device-rim);border-radius:var(--device-radius);background:#fff;box-shadow:var(--device-shadow);text-align:left;}
-.featured-schoolcard-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);}
-.featured-schoolcard-name{color:var(--ink);font-size:18px;font-weight:900;letter-spacing:-.02em;}
-.featured-schoolcard-kind{color:var(--ultramarine);font-size:11.5px;font-weight:800;letter-spacing:.02em;}
-.featured-schoolcard-body{flex:1;margin-top:12px;}
-.featured-schoolcard-loading,.featured-schoolcard-empty{margin:0;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.6;word-break:keep-all;}
-.featured-schoolcard-loading code{font-size:.9em;background:var(--bg-soft);padding:1px 5px;border-radius:4px;}
-.featured-schoolcard-count{margin:0 0 8px;color:var(--ultramarine);font-size:12px;font-weight:800;letter-spacing:.02em;}
-.featured-schoolcard-rows{list-style:none;margin:0;padding:0;}
-.featured-schoolcard-row{border-bottom:1px solid var(--line);}
-.featured-schoolcard-row:last-child{border-bottom:0;}
-/* 학년·학기·중간/기말 별 출제자 Digital Twin(분석 상세) 링크 */
-.featured-schoolcard-rowlink{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px;color:var(--ink);font-size:13px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;text-decoration:none;}
-.featured-schoolcard-rowlink.is-plain{color:var(--ink-soft);}
-.featured-schoolcard-rowlink:not(.is-plain):hover{color:var(--ultramarine);}
-.featured-schoolcard-rowgo{flex:none;color:var(--ultramarine);font-weight:900;}
-.featured-schoolcard-more{align-self:flex-start;margin-top:14px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;}
-.featured-schoolcard-more:hover{text-decoration:underline;}
-
-.featured-schoolcards-bar{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:6px;}
-.featured-schoolcards-count{color:var(--ink-faint);font-size:12px;font-weight:800;letter-spacing:.04em;font-variant-numeric:tabular-nums;}
-.featured-schoolcards-dots{display:flex;gap:7px;}
-.featured-schoolcards-dot{width:8px;height:8px;padding:0;border:0;border-radius:999px;background:var(--line);cursor:pointer;transition:background var(--hover-duration) var(--hover-ease),width var(--hover-duration) var(--hover-ease);}
-.featured-schoolcards-dot.is-on{width:20px;background:var(--ultramarine);}
-.featured-schoolcards-dot:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
-
-/* 데스크톱: 카드 폭 고정 + 한 화면에 2~3장, 그래도 자연스러운 horizontal track */
-@media (min-width:900px){
-  .featured-schoolcards{gap:18px;margin:0;padding:4px 2px 10px;}
-  .featured-schoolcard{flex-basis:300px;max-width:none;}
+/* Coverflow Viewport & Track */
+.coverflow-viewport{position:relative;margin-top:40px;perspective:1200px;overflow:hidden;}
+.coverflow-track{
+  display:flex;align-items:center;justify-content:center;gap:24px;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  will-change:transform;
+  padding:20px 0 40px;
 }
 
-/* 빌더 캔버스: 학교명만 편집. fetch 없음. 세로로 쌓아 프리뷰. */
-.featured-schoolcard--builder{flex-basis:auto;}
-.builder-public-preview .featured-schoolcards{display:flex;flex-direction:column;overflow:visible;gap:12px;}
-.featured-chip-label:empty::before{content:'학교';color:var(--ink-faint);}
+/* Coverflow Card - 3D Transform based on position */
+.coverflow-card{
+  position:relative;flex:0 0 auto;
+  width:320px;max-width:320px;
+  min-height:420px;
+  border-radius:24px;
+  background:#fff;
+  box-shadow:
+    0 4px 24px rgba(10,12,20,0.08),
+    0 1px 3px rgba(10,12,20,0.05);
+  border:1px solid var(--line);
+  overflow:hidden;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s cubic-bezier(0.16,1,0.3,1), z-index 0s;
+  will-change:transform,opacity,box-shadow,z-index;
+  transform-origin:center center;
+  cursor:grab;
+  display:flex;flex-direction:column;
+}
+.coverflow-card:active{cursor:grabbing;}
+.coverflow-card.is-center{
+  z-index:10;
+  transform:translateZ(60px) scale(1.15);
+  box-shadow:
+    0 20px 60px rgba(10,12,20,0.15),
+    0 8px 24px rgba(10,12,20,0.1);
+  opacity:1;
+}
+.coverflow-card.is-side{
+  z-index:5;
+  transform:translateZ(0) scale(0.85) rotateY(12deg);
+  opacity:0.6;
+}
+.coverflow-card.is-side-left{transform:translateZ(0) scale(0.85) rotateY(12deg);}
+.coverflow-card.is-side-right{transform:translateZ(0) scale(0.85) rotateY(-12deg);}
+.coverflow-card.is-far{
+  z-index:1;
+  transform:translateZ(-40px) scale(0.7) rotateY(24deg);
+  opacity:0.25;
+}
+.coverflow-card.is-far-left{transform:translateZ(-40px) scale(0.7) rotateY(24deg);}
+.coverflow-card.is-far-right{transform:translateZ(-40px) scale(0.7) rotateY(-24deg);}
 
-.featured-cta{margin-top:26px;}
-.featured-cta-btn{display:inline-block;padding:15px 34px;border-radius:14px;background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;transition:background var(--hover-duration) var(--hover-ease),transform var(--hover-duration) var(--hover-ease);}
-.featured-cta-btn:hover{background:var(--accent);transform:translateY(var(--hover-lift));}
-.builder-public-preview [data-builder-draft="featuredTitle"]:empty::before,
-.builder-public-preview [data-builder-draft="featuredDescription"]:empty::before{content:'문구를 입력하세요';color:var(--ink-faint);}
+.coverflow-card-visual{
+  position:relative;
+  height:200px;
+  background:linear-gradient(135deg,var(--gold-soft) 0%,var(--accent-soft) 100%);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.coverflow-card-glow{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(201,161,59,0.3) 0%,transparent 70%);
+  opacity:0;transition:opacity 0.3s ease;
+}
+.coverflow-card.is-center .coverflow-card-glow{opacity:1;}
+.coverflow-card-icon{
+  position:relative;z-index:1;
+  width:80px;height:80px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ultramarine);
+  filter:drop-shadow(0 8px 24px rgba(43,58,158,0.3));
+}
+.coverflow-card-icon svg{width:100%;height:100%;}
 
-/* ══════════════ Education Storefront: AI Native (sec-digitaltwin) ══════════════
-   AI Native Pipeline. 데스크톱은 왼쪽 Visual Stage(하나의 넓은 canvas)를 CSS position:sticky 로
-   고정하고, 사용자가 오른쪽 5개 설명을 자기 속도로 읽으며 내려간다. canvas 안 오브젝트는
-   academy_cinematic.js(GSAP ScrollTrigger scrub, pin 아님)가 세로 스크롤 progress 0→1 에 직접
-   묶어 왼쪽 자료 → BRAIN → 문제 → FINAL 로 실제 이동시킨다. GSAP 미로드·reduced-motion 이면
-   canvas 기본 배치가 파이프라인 다이어그램으로 정적 표시된다(scene 교체 없음). 모바일은 canvas
-   숨김 + 5개 세로 블록(각자 inline 아이콘 + 이름 + 한 줄). canvas 오브젝트 스타일은 academy_cinematic.css. */
-.section-wrap.ai-native-wrap{background:var(--bg-soft);padding:60px 20px;}
+.coverflow-card-content{padding:24px;display:flex;flex-direction:column;flex:1;text-align:center;}
+.coverflow-card-head{margin-bottom:16px;}
+.coverflow-card-name{display:block;font-size:18px;font-weight:900;color:var(--ink);letter-spacing:-.02em;word-break:keep-all;}
+.coverflow-card-kind{display:block;margin-top:4px;font-size:12px;font-weight:700;color:var(--ultramarine);letter-spacing:.02em;}
+.coverflow-card-body{min-height:80px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.coverflow-card-loading{margin:0;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.6;word-break:keep-all;}
+.coverflow-card-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.coverflow-card-row{border-bottom:1px solid var(--line);padding-bottom:8px;}
+.coverflow-card-row:last-child{border-bottom:0;padding-bottom:0;}
+.coverflow-card-rowlink{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;color:var(--ink);font-size:12px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;text-decoration:none;}
+.coverflow-card-rowlink.is-plain{color:var(--ink-soft);}
+.coverflow-card-rowlink:not(.is-plain):hover{color:var(--ultramarine);}
+.coverflow-card-rowgo{flex:none;color:var(--ultramarine);font-weight:900;}
+.coverflow-card-more{margin-top:16px;display:inline-flex;align-items:center;gap:6px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;transition:gap 0.2s ease;}
+.coverflow-card-more:hover{gap:10px;text-decoration:underline;}
+
+/* Coverflow Controls */
+.coverflow-controls{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:24px;}
+.coverflow-arrow{
+  width:48px;height:48px;border-radius:50%;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background 0.2s var(--hover-ease),border-color 0.2s var(--hover-ease),transform 0.15s var(--hover-ease),opacity 0.2s;
+}
+.coverflow-arrow:hover:not(:disabled){background:var(--accent-soft);border-color:var(--accent);transform:scale(1.05);}
+.coverflow-arrow:disabled{opacity:0.3;cursor:not-allowed;}
+.coverflow-arrow:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+.coverflow-indicators{display:flex;gap:10px;}
+.coverflow-indicator{
+  width:10px;height:10px;border-radius:50%;
+  border:0;background:var(--line);cursor:pointer;
+  transition:background 0.2s var(--hover-ease),transform 0.2s var(--hover-ease),width 0.3s var(--ease);
+}
+.coverflow-indicator:hover{background:var(--accent);transform:scale(1.2);}
+.coverflow-indicator.is-on{width:28px;border-radius:999px;background:var(--ultramarine);}
+.coverflow-indicator:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+
+/* 데스크톱: 더 넓은 영역 활용 */
+@media (min-width:900px){
+  .coverflow-card{width:360px;max-width:360px;min-height:460px;}
+  .coverflow-track{gap:32px;padding:30px 0 50px;}
+  .coverflow-card.is-center{transform:translateZ(80px) scale(1.2);}
+  .coverflow-card.is-side{transform:translateZ(0) scale(0.8) rotateY(15deg);}
+  .coverflow-card.is-side-left{transform:translateZ(0) scale(0.8) rotateY(15deg);}
+  .coverflow-card.is-side-right{transform:translateZ(0) scale(0.8) rotateY(-15deg);}
+  .coverflow-card.is-far{transform:translateZ(-60px) scale(0.65) rotateY(30deg);}
+  .coverflow-card.is-far-left{transform:translateZ(-60px) scale(0.65) rotateY(30deg);}
+  .coverflow-card.is-far-right{transform:translateZ(-60px) scale(0.65) rotateY(-30deg);}
+}
+
+/* 모바일: 터치 최적화, 카드 폭 조정 */
+@media (max-width:640px){
+  .section-wrap.featured-coverflow{padding:56px 16px;}
+  .coverflow-card{width:260px;max-width:260px;min-height:380px;}
+  .coverflow-track{gap:16px;padding:16px 0 32px;}
+  .coverflow-card.is-center{transform:translateZ(40px) scale(1.1);}
+  .coverflow-card.is-side{transform:translateZ(0) scale(0.9) rotateY(10deg);}
+  .coverflow-card.is-side-left{transform:translateZ(0) scale(0.9) rotateY(10deg);}
+  .coverflow-card.is-side-right{transform:translateZ(0) scale(0.9) rotateY(-10deg);}
+  .coverflow-card.is-far{transform:translateZ(-30px) scale(0.75) rotateY(20deg);}
+  .coverflow-card.is-far-left{transform:translateZ(-30px) scale(0.75) rotateY(20deg);}
+  .coverflow-card.is-far-right{transform:translateZ(-30px) scale(0.75) rotateY(-20deg);}
+  .coverflow-arrow{width:40px;height:40px;}
+  .coverflow-indicator{width:8px;height:8px;}
+  .coverflow-indicator.is-on{width:24px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .coverflow-track,.coverflow-card{transition:none !important;}
+}
+
+/* 빌더 캔버스: 세로 스택 프리뷰 */
+.builder-public-preview .coverflow-viewport{perspective:none;}
+.builder-public-preview .coverflow-track{display:flex;flex-direction:column;align-items:center;gap:20px;padding:0;}
+.builder-public-preview .coverflow-card{width:100%;max-width:500px;transform:none !important;opacity:1 !important;box-shadow:var(--shadow-sm);rotate:none;}
+.builder-public-preview .coverflow-controls{display:none;}
+
+/* ══════════════ Education Storefront: AI Native (sec-digitaltwin) - 승인된 Dynamic Process ══════════════
+   AI Native 5단계: 연결선 + 신호 애니메이션 + Digital Twin 뉴럴 브레인 + 단계별 아이콘
+   + 스크롤 트리거 스태거 + FINAL 완료 이펙트
+   데스크톱: 수평 플로우 + 데이터 파티클 (sticky visual + 우측 단계 리스트)
+   모바일: 수직 스택 + 아래 방향 플로우 + 단계별 횡스크롤 Story
+   GSAP ScrollTrigger (academy_cinematic.js) + CSS 애니메이션 폴백 */
+.section-wrap.ai-native-wrap{background:var(--ink);padding:60px 20px;color:var(--bg);}
 .ai-native-inner{max-width:1000px;margin:0 auto;}
 .ai-native-head{text-align:center;max-width:640px;margin:0 auto;}
-.ai-native-eyebrow{justify-content:center;color:var(--ultramarine);}
-.ai-native-title{margin:0;}
-.ai-native-desc{margin:14px auto 0;max-width:620px;color:var(--ink-soft);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
+.ai-native-eyebrow{justify-content:center;color:var(--gold);}
+.ai-native-title{margin:0;color:var(--bg);}
+.ai-native-desc{margin:14px auto 0;max-width:620px;color:rgba(246,244,248,0.7);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
 .ai-native{margin-top:36px;}
 
+/* AI Native SVG 아이콘 */
 .aig-doc{fill:#fff;stroke:currentColor;stroke-width:2.2;}
 .aig-line{stroke:var(--ink-faint);stroke-width:2.4;stroke-linecap:round;}
 .aig-hl{fill:var(--gold);}
@@ -317,65 +416,180 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .aig-badge{fill:var(--accent);}
 .aig-check{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
 
-/* 모바일 기본 — 세로형 Visual Pipeline 을 보여준다(텍스트 5블록은 숨김, 공개 전용).
-   빌더 캔버스는 아래에서 반대로(visual 숨김 + 5블록) 처리한다. */
+/* 연결선 (데스크톱 수평, 모바일 수직) */
+.ai-native-connection{
+  position:absolute;top:50%;width:100%;height:2px;pointer-events:none;
+  background:linear-gradient(90deg,var(--ultramarine),var(--gold));
+  transform-origin:left center;transform:scaleX(0);
+  transition:transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  z-index:-1;
+}
+.ai-native-step[data-ai-step-index="1"] .ai-native-connection{left:0;}
+.ai-native-step[data-ai-step-index="2"] .ai-native-connection{left:0;}
+.ai-native-step[data-ai-step-index="3"] .ai-native-connection{left:0;}
+.ai-native-step[data-ai-step-index="4"] .ai-native-connection{display:none;}
+.ai-native-step.is-active .ai-native-connection{transform:scaleX(1);}
+
+/* 신호 파티클 애니메이션 (데스크톱) */
+.ai-native-signal{
+  position:absolute;top:50%;width:8px;height:8px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 12px var(--gold);
+  transform:translateY(-50%) scale(0);opacity:0;
+  animation:ai-signal-move 2s ease-in-out infinite;
+  pointer-events:none;z-index:5;
+}
+@keyframes ai-signal-move{
+  0%{left:0;transform:translateY(-50%) scale(0);opacity:0;}
+  10%{transform:translateY(-50%) scale(1);opacity:1;}
+  90%{transform:translateY(-50%) scale(1);opacity:1;}
+  100%{left:100%;transform:translateY(-50%) scale(0);opacity:0;}
+}
+
+/* 단계 카드 기본 */
+.ai-native-step{position:relative;}
+.ai-native-step-num{
+  flex:none;width:32px;height:32px;border-radius:999px;
+  background:rgba(251,191,36,0.2);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;
+  transition:background 0.3s var(--ease),transform 0.3s var(--ease);
+}
+.ai-native-step-c{display:flex;align-items:flex-start;gap:16px;}
+.ai-native-step-icon{
+  flex:none;width:56px;height:56px;border-radius:16px;
+  background:rgba(43,58,158,0.08);color:var(--ultramarine);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s var(--ease);
+}
+.ai-native-step-icon svg{width:36px;height:36px;}
+.ai-native-step-icon.is-twin{position:relative;}
+.ai-native-step-icon.is-twin::before{
+  content:'';position:absolute;inset:-8px;border-radius:24px;
+  background:radial-gradient(circle at center,rgba(201,161,59,0.4) 0%,transparent 70%);
+  opacity:0;animation:twin-pulse 3s ease-in-out infinite;
+}
+@keyframes twin-pulse{0%,100%{opacity:0;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}
+.ai-native-step.is-active .ai-native-step-icon{
+  transform:scale(1.1);
+  box-shadow:0 0 24px rgba(43,58,158,0.3);
+}
+.ai-native-step-text{display:flex;flex-direction:column;gap:6px;}
+.ai-native-step-name{color:var(--bg);font-size:16px;font-weight:900;letter-spacing:-.02em;line-height:1.35;word-break:keep-all;}
+.ai-native-step-desc{color:rgba(246,244,248,0.7);font-size:13.5px;font-weight:500;line-height:1.65;word-break:keep-all;}
+
+/* FINAL 배지 */
+.ai-native-final-badge{
+  position:absolute;top:-8px;right:-8px;width:28px;height:28px;
+  border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);
+  display:flex;align-items:center;justify-content:center;
+  transform:scale(0) rotate(-180deg);opacity:0;
+  transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s var(--ease);
+}
+.ai-native-step.is-final-active .ai-native-final-badge{
+  transform:scale(1) rotate(0deg);opacity:1;
+}
+.ai-native-final-badge svg{width:16px;height:16px;color:#fff;}
+
+/* 모바일 기본 — 수직 스택 + 연결선 */
 .ai-native-visual{display:block;margin:0;}
-.ai-native-steps{list-style:none;margin:0;padding:0;display:none;}
-.ai-native-step{position:relative;display:grid;grid-template-columns:28px 1fr;column-gap:16px;padding-bottom:24px;}
-.ai-native-step:last-child{padding-bottom:0;}
-.ai-native-step-num{grid-row:1;width:28px;height:28px;border-radius:999px;background:var(--accent-soft);color:var(--ultramarine);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
-.ai-native-step + .ai-native-step::before{content:"";position:absolute;left:13px;top:-24px;height:24px;width:2px;background:var(--line);}
-.ai-native-step-c{grid-column:2;display:flex;gap:13px;align-items:flex-start;}
-.ai-native-step-glyph{flex:none;width:40px;height:40px;color:var(--ultramarine);}
-.ai-native-step-glyph svg{width:100%;height:100%;display:block;}
-.ai-native-step-text{display:flex;flex-direction:column;gap:4px;padding-top:1px;}
-.ai-native-step-name{color:var(--ink);font-size:15px;font-weight:900;letter-spacing:-.02em;line-height:1.3;word-break:keep-all;}
-.ai-native-step-desc{color:var(--ink-soft);font-size:13px;font-weight:500;line-height:1.6;word-break:keep-all;}
+.ai-native-steps{list-style:none;margin:0;padding:0;display:block;}
+.ai-native-step{
+  display:flex;align-items:flex-start;gap:16px;padding-bottom:32px;
+  opacity:0;transform:translateY(30px);
+  transition:opacity 0.6s cubic-bezier(0.16,1,0.3,1),transform 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.ai-native-step.is-visible{opacity:1;transform:translateY(0);}
+.ai-native-step + .ai-native-step::before{
+  content:"";position:absolute;left:27px;top:32px;bottom:-32px;width:2px;
+  background:linear-gradient(180deg,var(--ultramarine),var(--gold));
+  transform:scaleY(0);transform-origin:top center;
+  transition:transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.2s;
+}
+.ai-native-step.is-visible + .ai-native-step::before{transform:scaleY(1);}
+.ai-native-step-num{width:40px;height:40px;font-size:14px;flex:none;}
+.ai-native-step-c{flex:1;display:flex;gap:16px;align-items:flex-start;}
+.ai-native-step-icon{width:56px;height:56px;}
+.ai-native-step-text{gap:6px;padding-top:2px;}
+.ai-native-step-name{font-size:18px;}
+.ai-native-step-desc{font-size:14.5px;line-height:1.7;}
 .ai-native-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:600;line-height:1.7;word-break:keep-all;}
 
-/* Visual Stage(데스크톱). 하나의 넓은 canvas(.ai-canvas, 좌표계 660×460)를 담는 뷰포트.
-   fitCanvas(academy_public.js / academy_cinematic.js)가 stage 폭에 맞춰 canvas 를 scale 하고
-   stage 높이를 맞춘다. canvas 안 오브젝트는 GSAP(academy_cinematic.js)가 스크롤 progress 에
-   따라 왼쪽 자료 → BRAIN → 문제 → FINAL 로 실제 이동시킨다. GSAP 없음/reduced → 기본 배치가
-   파이프라인 다이어그램으로 정적 표시. */
-.ai-stage{position:relative;width:100%;height:575px;border:1px solid var(--line);border-radius:var(--radius-sm);background:linear-gradient(180deg,#fff,#fafbfe);box-shadow:var(--shadow-sm);overflow:hidden;}
-
-/* 데스크톱 — 큰 왼쪽 sticky Visual Stage + 오른쪽 좁은 설명 열. */
-@media (min-width:900px){
-  .ai-native{display:grid;grid-template-columns:1fr minmax(230px,290px);gap:44px;align-items:start;}
-  .ai-native-visual{display:block;position:sticky;top:88px;align-self:start;}
-  .ai-stage{height:420px;}
-  .ai-native-steps{position:relative;display:block;}
-  .ai-native-steps::before{content:"";position:absolute;left:15px;top:16px;height:calc(100% - 30vh);width:2px;background:var(--line);}
-  .ai-native-step-glyph{display:none;}
-  .ai-native-step{grid-template-columns:32px 1fr;min-height:44vh;align-content:start;padding-bottom:0;}
-  .ai-native-step:last-child{min-height:auto;}
+/* 데스크톱 — 수평: sticky visual + 우측 단계 리스트 */
+@media (min-width:768px){
+  .ai-native{display:grid;grid-template-columns:1fr minmax(280px,340px);gap:56px;align-items:start;}
+  .ai-native-visual{display:block;position:sticky;top:100px;align-self:start;}
+  .ai-stage{height:460px;}
+  .ai-native-steps{position:relative;display:block;padding-left:0;}
+  .ai-native-steps::before{display:none;}
+  .ai-native-step{
+    display:grid;grid-template-columns:40px 1fr;column-gap:20px;
+    min-height:40vh;align-content:center;padding-bottom:0;
+    opacity:0;transform:translateX(-40px);
+    transition:opacity 0.6s cubic-bezier(0.16,1,0.3,1),transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  .ai-native-step.is-visible{opacity:1;transform:translateX(0);}
   .ai-native-step + .ai-native-step::before{display:none;}
-  .ai-native-step-num{width:32px;height:32px;font-size:13px;}
-  .ai-native-step-text{gap:6px;}
-  .ai-native-step-name{font-size:18px;}
-  .ai-native-step-desc{font-size:14px;line-height:1.7;}
+  .ai-native-step-num{width:40px;height:40px;font-size:14px;grid-row:1;}
+  .ai-native-step-c{grid-column:2;gap:16px;}
+  .ai-native-step-icon{display:flex;}
+  .ai-native-step-text{gap:8px;padding-top:4px;}
+  .ai-native-step-name{font-size:19px;}
+  .ai-native-step-desc{font-size:15px;line-height:1.75;}
+  .ai-native-connection{
+    top:20px;left:20px;right:auto;width:auto;height:2px;
+    transform-origin:left center;transform:scaleX(0);
+    transition:transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.3s;
+  }
+  .ai-native-step.is-active .ai-native-connection{transform:scaleX(1);}
+  .ai-native-final-badge{top:-6px;right:-6px;width:32px;height:32px;}
 }
 @media (min-width:1200px){
-  .ai-native{grid-template-columns:1fr 300px;gap:56px;}
+  .ai-native{grid-template-columns:1fr 360px;gap:72px;}
 }
-/* 모바일(<900): 데스크톱 sticky Visual Stage 를 숨긴다 — 대신 단계별 횡스크롤 Story
-   (.ai-scenes-mobile). 그 표시 토글·오브젝트 스타일·배선은 academy_cinematic.{css,js}
-   (한 파일 안에 base+@media 를 둬 로드 순서와 무관하게 동작하도록). */
-@media (max-width:899px){
+
+/* 모바일(<768): 수직 스택 (기본) */
+@media (max-width:767px){
   .ai-native-visual{display:none;}
 }
 
-/* 빌더 캔버스는 Visual Stage 를 쓰지 않는다 — 항상 5개 세로 블록으로 정적 프리뷰. */
+/* 빌더 캔버스: 정적 프리뷰 */
 .builder-public-preview .ai-native{display:block;}
 .builder-public-preview .ai-native-visual{display:none;}
 .builder-public-preview .ai-native-steps{display:block;}
+.builder-public-preview .ai-native-step{opacity:1;transform:none;}
+.builder-public-preview .ai-native-step + .ai-native-step::before{display:block;}
 .builder-public-preview .ai-scenes-mobile{display:none;}
+.builder-public-preview .ai-native-connection{display:none;}
+.builder-public-preview .ai-native-final-badge{display:none;}
+.builder-public-preview .ai-native-signal{display:none;}
 
-@media(max-width:640px){
-  .section-wrap.featured-wrap{padding:48px 18px;}
-  .section-wrap.ai-native-wrap{padding:44px 18px;}
+@media (prefers-reduced-motion: reduce){
+  .ai-native-step,.ai-native-step + .ai-native-step::before,
+  .ai-native-connection,.ai-native-step-icon,.ai-native-final-badge{
+    transition:none !important;animation:none !important;
+  }
+  .ai-native-step,.ai-native-step + .ai-native-step::before{
+    opacity:1 !important;transform:none !important;
+  }
+  .ai-native-connection{transform:scaleX(1) !important;}
+  .ai-native-final-badge{transform:scale(1) rotate(0deg) !important;opacity:1 !important;}
 }
+
+/* NeuralBrain styles (injected via JS) */
+.neural-brain{width:100%;height:100%;}
+.neural-brain circle{transform-origin:center center;transform:scale(0);animation:neural-node-pulse 2s ease-in-out infinite;}
+.neural-brain circle:nth-child(1){animation-delay:0s;}
+.neural-brain circle:nth-child(2){animation-delay:0.1s;}
+.neural-brain circle:nth-child(3){animation-delay:0.2s;}
+.neural-brain circle:nth-child(4){animation-delay:0.3s;}
+.neural-brain circle:nth-child(5){animation-delay:0.15s;}
+.neural-brain circle:nth-child(6){animation-delay:0.25s;}
+.neural-brain circle:nth-child(7){animation-delay:0.35s;}
+.neural-brain circle:nth-child(8){animation-delay:0.4s;}
+.neural-brain circle:nth-child(9){animation-delay:0.3s;}
+@keyframes neural-node-pulse{0%,100%{transform:scale(1);opacity:0.6;}50%{transform:scale(1.3);opacity:1;}}
+.neural-brain line{stroke-dasharray:100;stroke-dashoffset:100;animation:neural-line-draw 1.5s ease-in-out infinite alternate;}
+@keyframes neural-line-draw{0%{stroke-dashoffset:100;opacity:0.3;}100%{stroke-dashoffset:0;opacity:0.3;}}
 
 /* ══════════════ 대표 수업 / 시간표 (Build It 시안) ══════════════ */
 .section-wrap.classes-wrap{padding:0;background:#fff;border-bottom:0;}
@@ -604,24 +818,65 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 .builder-multiline-text,.academy-multiline-text{white-space:pre-line;}
 
 
-/* ══════════════ 학습 철학(philosophy snap) ══════════════ */
-.philosophy{
-  padding:120px 5vw;
+/* ══════════════ 학습 철학 Step Progression (승인된 UI) ══════════════ */
+.section-wrap.philosophy-step{
+  padding:100px 5vw;
   background:var(--bg-soft);
-  color:var(--ink);
 }
-.philosophy-inner{max-width:1120px;margin:0 auto;}
-.philosophy-head{margin:0;max-width:600px;text-align:left;}
-.philosophy-eyebrow{justify-content:flex-start;margin-bottom:18px;}
-.philosophy-head h2{
-  margin:0;
-  color:var(--ink);
-  font-size:clamp(26px,3.6vw,40px);
-  font-weight:800;
-  line-height:1.24;
-  letter-spacing:-.03em;
+.philosophy-step-inner{max-width:720px;margin:0 auto;text-align:center;}
+.philosophy-step-head{margin-bottom:40px;}
+.philosophy-step-title{margin:0;color:var(--ink);font-size:clamp(26px,3.6vw,40px);font-weight:800;line-height:1.24;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
+.philosophy-step-card{
+  position:relative;
+  padding:48px 32px;
+  background:#fff;
+  border:3px solid var(--device-rim);
+  border-radius:var(--device-radius);
+  box-shadow:var(--device-shadow);
 }
-/* 빌더 캔버스 프리뷰 전용 정적 그리드(공개 페이지는 .f2r-collection--philosophy 횡스크롤). */
+.philosophy-step-progress{
+  position:absolute; top:0; left:0; right:0; height:4px; background:var(--line); border-radius:var(--device-radius) var(--device-radius) 0 0; overflow:hidden;
+}
+.philosophy-step-bar{
+  position:absolute; top:0; height:100%; background:linear-gradient(90deg, var(--ultramarine), var(--gold));
+  transform-origin:left center; transform:scaleX(0); transition:transform 0.4s var(--ease);
+}
+.philosophy-step-bar.is-active{transform:scaleX(1);}
+.philosophy-step-content{min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:16px;}
+.philosophy-step-meta{display:flex;align-items:center;justify-content:center;gap:12px;color:var(--ink-faint);font-size:13px;font-weight:700;letter-spacing:.04em;}
+.philosophy-step-label{color:var(--ultramarine);font-weight:900;}
+.philosophy-step-counter{font-variant-numeric:tabular-nums;}
+.philosophy-step-text{color:var(--ink);font-size:clamp(18px,2.8vw,24px);font-weight:800;line-height:1.45;letter-spacing:-.02em;word-break:keep-all;transition:opacity 0.3s var(--ease), transform 0.3s var(--ease);}
+.philosophy-step-text.is-exiting{opacity:0;transform:translateY(10px);}
+.philosophy-step-text.is-entering{opacity:1;transform:translateY(0);}
+.philosophy-step-nav{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:24px;}
+.philosophy-step-indicators{display:flex;gap:8px;}
+.philosophy-step-indicator{
+  width:36px;height:36px;border-radius:50%;border:0;background:var(--line);color:var(--ink-faint);
+  font-size:13px;font-weight:900;cursor:pointer;transition:background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.philosophy-step-indicator:hover{background:var(--accent-soft);color:var(--ultramarine);transform:scale(1.1);}
+.philosophy-step-indicator.is-on{background:var(--ultramarine);color:#fff;box-shadow:0 0 0 4px var(--accent-soft);}
+.philosophy-step-indicator:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+.philosophy-step-arrows{display:flex;gap:8px;}
+.philosophy-step-arrow{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.philosophy-step-arrow:hover:not(:disabled){background:var(--accent-soft);border-color:var(--accent);transform:scale(1.05);}
+.philosophy-step-arrow:disabled{opacity:0.3;cursor:not-allowed;}
+.philosophy-step-arrow:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){
+  .philosophy-step-bar,.philosophy-step-text,.philosophy-step-indicator,.philosophy-step-arrow{transition:none !important;}
+  .philosophy-step-bar.is-active{transform:scaleX(1);}
+}
+@media (max-width:640px){
+  .section-wrap.philosophy-step{padding:72px 20px;}
+  .philosophy-step-card{padding:36px 20px;}
+  .philosophy-step-text{font-size:17px;}
+}
+
+/* 빌더 캔버스 프리뷰 전용 정적 그리드(공개 페이지는 Step Progression). */
 .philosophy-grid{
   margin-top:52px;
   display:grid;
@@ -653,7 +908,6 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
   .f2r-collection--philosophy .f2r-collection-head{display:none;}
   html.js-collection .f2r-collection--philosophy .f2r-collection-card.is-dimmed > *{transform:none;opacity:1;}
 }
-
 /* ══════════════ 원장 소개 (실데이터/시안 이식) ══════════════ */
 /* 좌 카드 + 우 영상 2열. align-items:stretch로 좌우 컬럼을 둘 중 큰 쪽(대개 텍스트가 긴 카드) 높이에
    맞춰 영상 박스가 잘리거나 삐죽 나오지 않게 한다. 영상 박스는 세로(9:16)~가로(16:9) 어느 비율이든
