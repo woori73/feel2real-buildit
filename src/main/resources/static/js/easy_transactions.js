@@ -6,6 +6,7 @@
   let businesses = [];
   let accounts = [];
   let editingId = null;
+  let presetAccountId = null;
 
   function today() {
     const d = new Date();
@@ -38,7 +39,32 @@
     if (businesses.length) {
       document.getElementById('fBusiness').value = String(businesses[0].businessId);
     }
+    applyDrillParams();
     await search();
+  }
+
+  /** P&L drill-down (?from&to&businessId&direction&accountId) — 결과 화면 금액 클릭 진입용. */
+  function applyDrillParams() {
+    const params = new URLSearchParams(location.search);
+    const from = params.get('from');
+    const to = params.get('to');
+    const biz = params.get('businessId');
+    const dir = params.get('direction');
+    const account = params.get('accountId');
+    if (from) document.getElementById('qFrom').value = from;
+    if (to) document.getElementById('qTo').value = to;
+    if (biz) document.getElementById('qBusiness').value = biz;
+    if (dir) document.getElementById('qDirection').value = dir;
+    if (account) {
+      presetAccountId = account;
+      const found = accounts.find(a => String(a.accountId) === String(account));
+      const note = document.getElementById('drillNote');
+      if (note) {
+        note.textContent = '계정 drill-down: ' + (found ? found.name : '#' + account)
+          + ' — underlying transactions';
+        note.style.display = 'block';
+      }
+    }
   }
 
   async function loadAccounts() {
@@ -207,6 +233,7 @@
     if (biz) params.set('businessId', biz);
     if (dir) params.set('direction', dir);
     if (cat) params.set('category', cat);
+    if (presetAccountId) params.set('accountId', presetAccountId);
     const res = await fetchAuth('/api/admin/easy/transactions?' + params.toString());
     if (!res.ok) throw new Error('목록 조회 실패');
     render(await res.json());

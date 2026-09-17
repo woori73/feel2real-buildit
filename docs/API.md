@@ -649,6 +649,39 @@ LMS 주소가 성립하지 않는다(404).
 
 - `POST/PUT /api/admin/easy/transactions` body 추가 (전부 선택): `sourceKind`, `sourceRef`, `evidenceReview`(UNKNOWN/NEEDS_REVIEW/VERIFIED/MISSING/NOT_REQUIRED), `withholdingReview`(NONE/NEEDS_REVIEW/CHECKED). `fingerprint`는 서버가 계산한다.
 - 증빙·원천징수 검토는 확인 표시이며 세법 판정이 아니다.
+- `GET /api/admin/easy/transactions`에 `accountId` 필터 추가 (P&L drill-down용, 생략 시 전체).
+
+### ✅ POST /api/admin/easy/imports/easyshop
+
+- 목적: EasyShop 실데이터 staging (source_kind=EASYSHOP). 컬럼 계약은 `docs/easy/EASYSHOP_IMPORT_PLAN.md`.
+- 등록 body: `{ businessId?(기본 사업체), sourceName, rows: [{ date, direction, amount, counterparty?, description?, payMethod?, accountName?, businessCode?, refNo?, raw? }] }` (최대 2000행).
+- 사업체 코드 혼합 시 사업장별 배치로 분리. 미확정 행이 있으면 staging 전 전체 거부. 장부 중복은 `DUPLICATE`로 확정 제외. 외부 계정명은 확정 매핑만 자동 적용한다.
+- 관련 코드: `EasyImportController`, `EasyShopImportService`.
+
+### ✅ GET /api/admin/easy/pl?businessId&year
+
+- 목적: 연도 손익. 분개 기준 집계 + 장부 교차검증(`matchesLedger`, `journalBalanced`, `unpostedTxnCount`) + 월별 + 계정별 + 전년 비교. `businessId` 생략 시 전체 합산.
+- 관련 코드: `EasyReportController`, `EasyReportService`.
+
+### ✅ GET/POST /api/admin/easy/filing-references, DELETE /api/admin/easy/filing-references/{refId}
+
+- 목적: 과거 신고 기준자료 수동 등록 (Library 자료, seed 없음). upsert body `{ businessId, fiscalYear, revenue?, expense?, incomeAmount?, source?, note? }` (사업체+연도 UNIQUE).
+- 관련 코드: `EasyReportController`, `EasyReportService`.
+
+### ✅ GET /api/admin/easy/filing-check?businessId&fiscalYear
+
+- 목적: 장부 vs 신고자료 독립 비교. 라인별 `cause`(MATCHED/NEEDS_REVIEW/UNKNOWN). 역산하지 않는다.
+- 관련 코드: `EasyReportController`, `EasyReportService`.
+
+### ✅ GET /api/admin/easy/income-tax?year
+
+- 목적: 종소세 준비 — 사업장별 분리 합산 + 주사업장(학원) 표시. `PREPARING`, 결정세액 미표시.
+- 관련 코드: `EasyReportController`, `EasyReportService`.
+
+### ✅ POST /api/admin/easy/corrections/preview, GET /api/admin/easy/corrections/logs?businessId&txnId
+
+- 목적: AI 수정 계약 — preview는 미적용 before/after + 변경점/경고, logs는 append-only 감사 로그. 수정·resolve·삭제 시 자동 기록된다.
+- 관련 코드: `EasyAuditController`, `EasyAuditService`.
 
 ## 4. User API
 

@@ -47,7 +47,8 @@ public class EasyLedgerController {
       @RequestParam(value = "to", required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
       @RequestParam(value = "direction", required = false) String direction,
-      @RequestParam(value = "category", required = false) String category) {
+      @RequestParam(value = "category", required = false) String category,
+      @RequestParam(value = "accountId", required = false) Long accountId) {
     EasyTxnDirection parsed = null;
     if (direction != null && !direction.isBlank()) {
       try {
@@ -56,7 +57,8 @@ public class EasyLedgerController {
         throw new IllegalArgumentException("수입/지출 값이 올바르지 않습니다.");
       }
     }
-    return ResponseEntity.ok(ledgerService.listTxns(businessId, from, to, parsed, category));
+    return ResponseEntity.ok(
+        ledgerService.listTxns(businessId, from, to, parsed, category, accountId));
   }
 
   @PostMapping("/transactions")

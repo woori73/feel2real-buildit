@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyClosingResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCorrectionLogResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCorrectionPreview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewItemResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewResolveRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewSummaryResponse;
@@ -57,6 +59,53 @@ public class EasyAuditController {
       @PathVariable Long reviewId,
       @RequestBody(required = false) EasyReviewResolveRequest request) {
     return ResponseEntity.ok(auditService.resolve(reviewId, request, "admin"));
+  }
+
+  @PostMapping("/corrections/preview")
+  public ResponseEntity<EasyCorrectionPreview> previewCorrection(
+      @RequestBody Map<String, Object> body) {
+    Object rawTxn = body == null ? null : body.get("txnId");
+    if (rawTxn == null) {
+      throw new IllegalArgumentException("거래를 선택해 주세요.");
+    }
+    Long txnId = Long.valueOf(String.valueOf(rawTxn));
+    Object rawChanges = body == null ? null : body.get("changes");
+    EasyReviewResolveRequest changes = null;
+    if (rawChanges instanceof Map<?, ?> map) {
+      changes = new EasyReviewResolveRequest(
+          strOrNull(map.get("resolution")),
+          longOrNull(map.get("businessId")),
+          longOrNull(map.get("accountId")),
+          strOrNull(map.get("evidenceReview")),
+          strOrNull(map.get("withholdingReview")),
+          boolOrNull(map.get("ignore")));
+    }
+    return ResponseEntity.ok(auditService.previewCorrection(txnId, changes));
+  }
+
+  @GetMapping("/corrections/logs")
+  public ResponseEntity<List<EasyCorrectionLogResponse>> correctionLogs(
+      @RequestParam(value = "businessId", required = false) Long businessId,
+      @RequestParam(value = "txnId", required = false) Long txnId) {
+    return ResponseEntity.ok(auditService.listCorrectionLogs(businessId, txnId));
+  }
+
+  private static String strOrNull(Object value) {
+    return value == null ? null : String.valueOf(value);
+  }
+
+  private static Long longOrNull(Object value) {
+    if (value == null || String.valueOf(value).isBlank()) {
+      return null;
+    }
+    return Long.valueOf(String.valueOf(value));
+  }
+
+  private static Boolean boolOrNull(Object value) {
+    if (value == null) {
+      return null;
+    }
+    return Boolean.parseBoolean(String.valueOf(value));
   }
 
   @PostMapping("/reviews/flag-business")

@@ -128,8 +128,87 @@
     el.textContent = preview.note || '';
   }
 
+  async function loadYearPl() {
+    const year = new Date().getFullYear();
+    const res = await fetchAuth('/api/admin/easy/pl' + scopeQuery()
+      + (businessId ? '&year=' + year : '?year=' + year));
+    if (!res.ok) throw new Error('연도 손익을 불러오지 못했습니다.');
+    const p = await res.json();
+    renderYearPl(p);
+  }
+
+  function drillUrl(p, accountId, direction) {
+    const params = new URLSearchParams();
+    if (p.businessId) params.set('businessId', p.businessId);
+    params.set('from', p.year + '-01-01');
+    params.set('to', p.year + '-12-31');
+    if (accountId) params.set('accountId', accountId);
+    if (direction) params.set('direction', direction);
+    return '/easy/transactions?' + params.toString();
+  }
+
+  function renderYearPl(p) {
+    const label = document.getElementById('yearPlLabel');
+    if (label) label.textContent = p.year + '년 · 분개 ' + (p.journalBalanced ? '균형' : '불일치')
+      + (p.matchesLedger ? '' : ' · 장부 불일치(미분류 확인)');
+    const grid = document.getElementById('yearPlGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const totals = [
+      { l: '매출', n: p.income, dir: 'INCOME' },
+      { l: '비용', n: p.expense, dir: 'EXPENSE' },
+      { l: '장부상 손익', n: p.profit, dir: null }
+    ];
+    totals.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'yoy-row';
+      const head = document.createElement('div');
+      head.className = 'yoy-head';
+      head.textContent = t.l;
+      div.appendChild(head);
+      const val = document.createElement('div');
+      if (t.dir) {
+        const a = document.createElement('a');
+        a.className = 'yoy-cur';
+        a.href = drillUrl(p, null, t.dir);
+        a.textContent = Easy.fmtWon(t.n);
+        val.appendChild(a);
+      } else {
+        const s = document.createElement('span');
+        s.className = 'yoy-cur';
+        s.textContent = Easy.fmtWon(t.n);
+        val.appendChild(s);
+      }
+      const prev = document.createElement('div');
+      prev.className = 'yoy-prev';
+      const rate = t.dir === 'INCOME' ? p.prevYear.incomeRate
+        : t.dir === 'EXPENSE' ? p.prevYear.expenseRate : p.prevYear.profitRate;
+      prev.textContent = '전년 ' + Easy.fmtWon(t.dir === 'INCOME' ? p.prevYear.income
+        : t.dir === 'EXPENSE' ? p.prevYear.expense : p.prevYear.profit)
+        + (rate === null || rate === undefined ? ' (비교 기준 없음)' : ' (' + rate.toFixed(1) + '%)');
+      div.appendChild(val);
+      div.appendChild(prev);
+      grid.appendChild(div);
+    });
+    (p.byAccount || []).slice(0, 5).forEach(a => {
+      const div = document.createElement('div');
+      div.className = 'yoy-row';
+      const head = document.createElement('div');
+      head.className = 'yoy-head';
+      head.textContent = '주요 비용·수익: ' + a.accountName;
+      const link = document.createElement('a');
+      link.className = 'yoy-cur';
+      link.href = drillUrl(p, a.accountId, null);
+      link.textContent = Easy.fmtWon(a.total);
+      div.appendChild(head);
+      div.appendChild(link);
+      grid.appendChild(div);
+    });
+  }
+
   async function reload() {
-    await Promise.all([loadExecutive(), loadReviews()]).catch(err => console.error(err));
+    await Promise.all([loadExecutive(), loadReviews(), loadYearPl()])
+      .catch(err => console.error(err));
   }
 
   document.addEventListener('easy-scope', e => {

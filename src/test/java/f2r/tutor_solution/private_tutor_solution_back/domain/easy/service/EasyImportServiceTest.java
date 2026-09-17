@@ -3,6 +3,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImportBatchRequest;
@@ -16,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImp
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRowStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountMappingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportBatchRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyImportRowRepository;
@@ -42,6 +45,8 @@ class EasyImportServiceTest {
   @Mock EasyBusinessRepository businessRepository;
   @Mock EasyTransactionRepository txnRepository;
   @Mock EasyAccountService accountService;
+  @Mock EasyAccountMappingRepository mappingRepository;
+  @Mock EasyJournalService journalService;
 
   private EasyImportService service;
   private EasyBusiness academy;
@@ -50,7 +55,8 @@ class EasyImportServiceTest {
   @BeforeEach
   void setUp() {
     service = new EasyImportService(
-        batchRepository, rowRepository, businessRepository, txnRepository, accountService);
+        batchRepository, rowRepository, businessRepository, txnRepository, accountService,
+        mappingRepository, journalService);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     telecom = EasyAccount.builder().code("EXPENSE_TELECOM").name("통신비")
         .direction(EasyAccountDirection.EXPENSE).sortOrder(1).active(true).build();
@@ -124,5 +130,60 @@ class EasyImportServiceTest {
     assertThatThrownBy(() -> service.stage(
         new EasyImportBatchRequest(1L, "x.csv", "CSV", List.of())))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @DisplayName("외부 계정명 확정 매핑 우선 — 규칙보다 먼저, 확신도 1.0")
+  void stage_mappingFirst() {
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(batchRepository.save(any(EasyImportBatch.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.save(any(EasyImportRow.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountMapping mapping =
+        f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountMapping
+            .builder()
+            .account(telecom).externalCode("통신비").externalName("KT 통신요금")
+            .standardCode(null).standardName(null).note(null).build();
+    when(mappingRepository.findFirstByExternalCode("통신비"))
+        .thenReturn(Optional.of(mapping));
+
+    EasyImportBatchResponse response = service.stage(new EasyImportBatchRequest(
+        1L, "easyshop.csv", "EASYSHOP", List.of(
+            new EasyImportRowInput("2025-03-05", "EXPENSE", 30000L, "KT", "요금",
+                "계좌이체", null, null, null, null, "통신비"))));
+
+    assertThat(response.rows().get(0).status()).isEqualTo("READY");
+    assertThat(response.rows().get(0).matchedAccountName()).isEqualTo("통신비");
+    assertThat(response.rows().get(0).confidence()).isEqualTo(1.0);
+    assertThat(response.rows().get(0).externalAccount()).isEqualTo("통신비");
+    verify(accountService, never()).classify(any(), any(), any(Long.class), any());
+  }
+
+  @Test
+  @DisplayName("확정 시 출처 추적 + 분개 위임")
+  void confirm_postsJournalWithProvenance() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(1).build();
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+    EasyImportRow ready = EasyImportRow.builder()
+        .batch(batch).rowNo(2)
+        .occurredOn(java.time.LocalDate.of(2025, 3, 5))
+        .direction(EasyTxnDirection.INCOME).amount(300000L)
+        .counterparty("학부모").description("수강료").build();
+    ready.markReady(null, 0.0);
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(ready));
+    when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L)).thenReturn(List.of(ready));
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.confirm(9L, null);
+
+    EasyTransaction created = ready.getCreatedTxn();
+    assertThat(created.getSourceKind()).isEqualTo("EASYSHOP");
+    assertThat(created.getSourceRef()).isEqualTo("easyshop.csv#row-2");
+    assertThat(created.getFingerprint()).isNotNull();
+    verify(journalService).repost(created);
   }
 }

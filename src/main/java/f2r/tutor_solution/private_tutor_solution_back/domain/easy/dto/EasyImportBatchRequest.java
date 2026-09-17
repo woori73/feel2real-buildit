@@ -18,7 +18,23 @@ public record EasyImportBatchRequest(
       Long supplyAmount,
       Long vatAmount,
       String evidenceType,
-      String rawData
+      String rawData,
+      String externalAccount
   ) {
+    /** V974 호환 — 원본 계정명 없이 호출할 때 사용. */
+    public EasyImportRowInput(
+        String occurredOn,
+        String direction,
+        Long amount,
+        String counterparty,
+        String description,
+        String payMethod,
+        Long supplyAmount,
+        Long vatAmount,
+        String evidenceType,
+        String rawData) {
+      this(occurredOn, direction, amount, counterparty, description, payMethod,
+          supplyAmount, vatAmount, evidenceType, rawData, null);
+    }
   }
 }

@@ -68,6 +68,7 @@ class EasyTemplateContractTest {
         .contains("id=\"bizSwitch\"")
         .contains("id=\"statGrid\"")
         .contains("id=\"yoyGrid\"")
+        .contains("id=\"yearPlGrid\"")
         .contains("id=\"reviewGrid\"")
         .contains("id=\"btnRebuild\"")
         .contains("id=\"briefList\"")
