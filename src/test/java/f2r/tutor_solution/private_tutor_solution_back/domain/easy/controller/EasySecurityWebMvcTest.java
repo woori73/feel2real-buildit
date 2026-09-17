@@ -8,7 +8,9 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAccountService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAuditService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyExecutiveService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLedgerService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyStudentService;
@@ -36,7 +38,9 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyStudentController.class,
     EasyTuitionController.class,
     EasyAccountController.class,
-    EasyImportController.class
+    EasyImportController.class,
+    EasyInsightController.class,
+    EasyAuditController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -57,6 +61,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyTuitionService tuitionService;
   @MockitoBean EasyAccountService accountService;
   @MockitoBean EasyImportService importService;
+  @MockitoBean EasyExecutiveService executiveService;
+  @MockitoBean EasyAuditService auditService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -67,7 +73,12 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/payments",
       "/api/admin/easy/accounts",
       "/api/admin/easy/accounts/rules",
-      "/api/admin/easy/imports");
+      "/api/admin/easy/imports",
+      "/api/admin/easy/executive-summary",
+      "/api/admin/easy/reviews/summary",
+      "/api/admin/easy/reviews",
+      "/api/admin/easy/withholdings",
+      "/api/admin/easy/closings");
 
   @Test
   @DisplayName("익명 → 401")

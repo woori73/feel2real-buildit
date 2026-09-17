@@ -16,4 +16,8 @@ public interface EasyTransactionRepository extends JpaRepository<EasyTransaction
       List<Long> businessIds);
 
   List<EasyTransaction> findTop10ByOrderByOccurredOnDescTxnIdDesc();
+
+  List<EasyTransaction> findByBusiness_BusinessIdAndFingerprintIsNotNull(Long businessId);
+
+  List<EasyTransaction> findByFingerprintIsNotNull();
 }

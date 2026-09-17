@@ -37,9 +37,21 @@
       btn.type = 'button';
       btn.textContent = t.name;
       if (t.businessId === businessId) btn.classList.add('active');
-      btn.addEventListener('click', () => { businessId = t.businessId; renderSwitch(); load(); });
+      btn.addEventListener('click', () => {
+        businessId = t.businessId;
+        renderSwitch();
+        load();
+        notifyScope();
+      });
       wrap.appendChild(btn);
     });
+    notifyScope();
+  }
+
+  /** 경영·검토 영역(easy_insight.js)과 사업체 선택을 공유한다. */
+  function notifyScope() {
+    window.__easyBusinessId = businessId;
+    document.dispatchEvent(new CustomEvent('easy-scope', { detail: { businessId } }));
   }
 
   async function load() {

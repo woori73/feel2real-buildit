@@ -614,6 +614,42 @@ LMS 주소가 성립하지 않는다(404).
 - `POST/PUT /api/admin/easy/transactions` body 추가 (전부 선택): `accountId`, `supplyAmount`, `vatAmount`, `evidenceType`(TAX_INVOICE/CREDIT_CARD/CASH_RECEIPT/INVOICE/NONE/OTHER).
 - 합계(`amount`) 집계는 기존과 동일. 세율 자동계산은 하지 않는다 (세법 확정 전).
 
+### ✅ GET /api/admin/easy/executive-summary?businessId
+
+- 목적: 경영 대시보드. 올해 1/1~오늘 vs 작년 동기 비교. `businessId` 생략 시 전체 합산.
+- Response: `200 OK` — 올해/작년 매출·비용·손익 + 증감액/증감률(비교 기준 0원이면 null) + 미수금 + 학생 수 + 사업장별 slice + `briefing`(DB 숫자 문장) + `incomeTaxPreview`(현재 `PENDING_REAL_DATA`, 세액 계산 없음).
+- 관련 코드: `EasyInsightController`, `EasyExecutiveService`.
+
+### ✅ GET /api/admin/easy/reviews/summary?businessId, GET /api/admin/easy/reviews?businessId&kind&status
+
+- 목적: "AI가 확인할 장부" 개수·목록. kind(UNCLASSIFIED/EVIDENCE/BUSINESS/WITHHOLDING/DUPLICATE_SUSPECT/IMPORT_UNCONFIRMED), status(OPEN, 생략 시 OPEN).
+- 관련 코드: `EasyAuditController`, `EasyAuditService`.
+
+### ✅ POST /api/admin/easy/reviews/rebuild?businessId
+
+- 목적: 장부 스캔 후 확인 필요 항목 재생성. 이미 OPEN인 항목은 중복 생성하지 않고 RESOLVED/IGNORED는 보존한다. BUSINESS 종류는 자동 생성하지 않는다 (사업장 추측 금지).
+- 관련 코드: `EasyAuditController`, `EasyAuditService.rebuild`.
+
+### ✅ POST /api/admin/easy/reviews/{reviewId}/resolve, POST /api/admin/easy/reviews/flag-business
+
+- 목적: 검토 확인. body `{ resolution, businessId?, accountId?, evidenceReview?, withholdingReview?, ignore? }` — 연결 거래의 사업장·계정·검토 상태를 장부에 반영하고 항목을 닫는다. import 확정은 기존 staging API를 재사용한다. `flag-business` body `{ txnId, note? }`는 "어느 사업장 거래입니까?" 저장용이다.
+- 관련 코드: `EasyAuditController`, `EasyAuditService`.
+
+### ✅ GET/POST /api/admin/easy/withholdings?businessId, PUT/DELETE /api/admin/easy/withholdings/{recordId}
+
+- 목적: 원천징수 검토 기록 최소 기반 (신고 기능 아님). body `{ businessId, payee, grossAmount, netAmount?, withholdingAmount?, paidOn?, txnId?(같은 사업체만), filingChecked?, statementChecked?, memo? }`. 타 사업체 거래 연결 거부.
+- 관련 코드: `EasyAuditController`, `EasyAuditService`.
+
+### ✅ GET/POST /api/admin/easy/closings, POST /api/admin/easy/closings/{closingId}/review|close|reopen
+
+- 목적: 연도 마감. 생성 body `{ businessId, fiscalYear }` (사업체+연도 UNIQUE). 마감은 OPEN 검토 항목이 있으면 차단되며 `force:true` + 사유로만 강제 마감한다 (스냅샷에 기록). 마감 해제는 항상 가능하다.
+- 관련 코드: `EasyAuditController`, `EasyAuditService`.
+
+### Easy 거래 확장 필드 (V975, backward compatible)
+
+- `POST/PUT /api/admin/easy/transactions` body 추가 (전부 선택): `sourceKind`, `sourceRef`, `evidenceReview`(UNKNOWN/NEEDS_REVIEW/VERIFIED/MISSING/NOT_REQUIRED), `withholdingReview`(NONE/NEEDS_REVIEW/CHECKED). `fingerprint`는 서버가 계산한다.
+- 증빙·원천징수 검토는 확인 표시이며 세법 판정이 아니다.
+
 ## 4. User API
 
 ### ✅ GET /api/me

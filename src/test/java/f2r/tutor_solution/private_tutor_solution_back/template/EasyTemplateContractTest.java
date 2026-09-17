@@ -61,15 +61,21 @@ class EasyTemplateContractTest {
   }
 
   @Test
-  @DisplayName("대시보드는 사업체 전환·5카드·최근거래·미수 영역을 갖는다")
+  @DisplayName("대시보드는 사업체 전환·5카드·경영비교·검토큐·브리핑·최근거래·미수 영역을 갖는다")
   void dashboard_structure() {
     String html = engine().process("easy/dashboard", new Context());
     assertThat(html)
         .contains("id=\"bizSwitch\"")
         .contains("id=\"statGrid\"")
+        .contains("id=\"yoyGrid\"")
+        .contains("id=\"reviewGrid\"")
+        .contains("id=\"btnRebuild\"")
+        .contains("id=\"briefList\"")
+        .contains("id=\"taxPreview\"")
         .contains("id=\"recentList\"")
         .contains("id=\"overdueList\"")
-        .contains("/js/easy_dashboard.js");
+        .contains("/js/easy_dashboard.js")
+        .contains("/js/easy_insight.js");
   }
 
   @Test
@@ -83,8 +89,8 @@ class EasyTemplateContractTest {
           .doesNotContain("압구정에듀홀릭");
     }
     for (String js : new String[] {
-        "js/easy_api.js", "js/easy_dashboard.js", "js/easy_transactions.js",
-        "js/easy_students.js", "js/easy_payments.js"}) {
+        "js/easy_api.js", "js/easy_dashboard.js", "js/easy_insight.js",
+        "js/easy_transactions.js", "js/easy_students.js", "js/easy_payments.js"}) {
       assertThat(readStatic(js)).as(js).doesNotContain("압구정에듀홀릭");
     }
   }
@@ -93,7 +99,7 @@ class EasyTemplateContractTest {
   @DisplayName("JS는 ADMIN API만 호출하고 삭제는 확인 절차를 거친다")
   void js_usesAdminApi_andConfirmDelete() throws IOException {
     for (String js : new String[] {
-        "js/easy_dashboard.js", "js/easy_transactions.js",
+        "js/easy_dashboard.js", "js/easy_insight.js", "js/easy_transactions.js",
         "js/easy_students.js", "js/easy_payments.js", "js/easy_import.js"}) {
       assertThat(readStatic(js)).as(js).contains("/api/admin/easy/");
     }

@@ -166,6 +166,12 @@ public class EasyImportService {
           .supplyAmount(row.getSupplyAmount())
           .vatAmount(row.getVatAmount())
           .evidenceType(row.getEvidenceType())
+          .sourceKind(batch.getSourceKind())
+          .sourceRef(batch.getSourceName() + "#row-" + row.getRowNo())
+          .fingerprint(EasyFingerprint.of(
+              batch.getBusiness().getBusinessId(),
+              row.getOccurredOn(), row.getDirection().name(), row.getAmount(),
+              row.getCounterparty(), row.getDescription(), row.getPayMethod()))
           .build();
       row.markImported(txnRepository.save(txn));
       confirmed++;

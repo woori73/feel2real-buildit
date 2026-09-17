@@ -1205,6 +1205,21 @@ AICassa (공급/부가세 분리·증빙유형), SBS (적격증빙) — 코드 �
 | `easy_import_rows` | `row_id` PK, `batch_id` FK CASCADE, `row_no`, 원본 필드(날짜/방향/금액/거래처/적요/수단/공급/부가세/증빙/`raw_data`), `status`(PENDING/READY/ERROR/IMPORTED), `error?`, `matched_account_id`+`confidence?`, `created_txn_id?`, UNIQUE(`batch_id`,`row_no`) |
 | `easy_transactions` 추가 | `account_id` FK NULL(SET NULL), `supply_amount`? / `vat_amount`? (CHECK≥0), `evidence_type`? — 합계(`amount`) 집계 불변 |
 
+### 4.51 easy_* AI 자동장부 기반 (V975) ✅ 경영 대시보드·검토큐·원천징수·마감
+
+V973/V974와 backward compatible — 신규 테이블 + `easy_transactions` NULL 컬럼만 추가한다.
+세법 자동판정 없음 ("확인 필요"만), 중복 자동합치기 없음 (의심 탐지만), 종소세 계산 없음.
+설계 발상 참고: korean-jangbu-for (Apache-2.0, source/source_ref·rule 우선·사용자 확인) — 코드 복사 없음.
+
+| table | key columns |
+|---|---|
+| `easy_transactions` 추가 | `source_kind`?/`source_ref`? (출처 추적), `fingerprint`? VARCHAR(64) SHA-256 (의심 탐지용), `evidence_review`?(UNKNOWN/NEEDS_REVIEW/VERIFIED/MISSING/NOT_REQUIRED), `withholding_review`?(NONE/NEEDS_REVIEW/CHECKED) |
+| `easy_review_items` | `review_id` PK, `business_id` FK, `kind`(UNCLASSIFIED/EVIDENCE/BUSINESS/WITHHOLDING/DUPLICATE_SUSPECT/IMPORT_UNCONFIRMED), `status`(OPEN/RESOLVED/IGNORED), `txn_id`?/`import_row_id`?/`batch_id`? (CASCADE, 셋 중 하나 필수), `title`, `detail?`, `amount?`, `occurred_on?`, `resolution?`/`resolved_by?`/`resolved_at?` |
+| `easy_withholding_records` | `record_id` PK, `business_id` FK, `payee`, `gross_amount` BIGINT CHECK≥0, `net_amount`?/`withholding_amount`?, `paid_on?`, `txn_id`? FK SET NULL(같은 사업체만), `filing_checked`, `statement_checked`, `memo?` |
+| `easy_annual_closings` | `closing_id` PK, `business_id` FK, `fiscal_year` INT, `status`(OPEN/REVIEW/CLOSED), `checklist_snapshot`? TEXT(JSON), `note?`, `closed_at?`, UNIQUE(`business_id`,`fiscal_year`) |
+
+상세 흐름·단계 구분은 [docs/easy/AI_ACCOUNTING_ARCHITECTURE.md](easy/AI_ACCOUNTING_ARCHITECTURE.md).
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
