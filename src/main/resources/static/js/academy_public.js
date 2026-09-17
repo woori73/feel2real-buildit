@@ -118,8 +118,9 @@
     wireCinematic();
     wireContentCollections();
     wireAiNative();
-    wireFeaturedSchoolCards();
+    wireFeaturedCoverflow();
     wireHeroTabletCycle();
+    wirePhilosophyStep();
     void loadVisitStatistics(academy, ownAcademy);
   }
 
@@ -179,60 +180,165 @@
   }
 
   /**
-   * AI Native pipeline canvas 핏 — 오브젝트 애니메이션(GSAP timeline, scrub)은 academy_cinematic.js
-   * 가 소유한다. 여기서는 좌표계 660×460 고정 canvas 를 stage 실제 폭에 맞춰 transform:scale 하고
-   * stage 높이를 맞춘다(GSAP 유무와 무관 — 정적 폴백도 같은 배치로 보여야 하므로). 타이머·IO·
-   * 자동 sequence 없음. resize 리스너는 한 번만 건다. 모바일은 stage 가 display:none → clientWidth 0
-   * → no-op.
+   * AI Native pipeline canvas 핏 + 스크롤 트리거 애니메이션 (승인된 Dynamic Process)
+   * - Canvas scale fit (기존)
+   * - 단계별 스태거 진입 (IntersectionObserver)
+   * - 연결선 애니메이션 (데스크톱 수평 / 모바일 수직)
+   * - Digital Twin 뉴럴 브레인 펄스 (GSAP 연동 또는 CSS 폴백)
+   * - FINAL 완료 이펙트 (스프링 애니메이션)
+   * - prefers-reduced-motion 대응
    */
   function wireAiNative() {
     if (!root) return;
-    const stage = root.querySelector('#sec-digitaltwin [data-ai-stage]');
+    const section = root.querySelector('#sec-digitaltwin');
+    if (!section) return;
+
+    // Canvas fit (기존)
+    const stage = section.querySelector('[data-ai-stage]');
     const canvas = stage && stage.querySelector('[data-ai-canvas]');
-    if (!stage || !canvas) return;
-    const fit = () => {
-      const w = stage.clientWidth || 0;
-      if (!w) return;
-      // 좌표계: 데스크톱 가로형 660×460, 모바일 세로형 330×560 (academy_cinematic.js 와 동일).
-      const mobile = (window.innerWidth || document.documentElement.clientWidth || 0) < 900;
-      const base = mobile ? 330 : 660;
-      const boxH = mobile ? 560 : 460;
-      const s = w / base;
-      canvas.style.transform = 'scale(' + s + ')';
-      stage.style.height = (boxH * s) + 'px';
-    };
-    fit();
-    if (aiNativeFitBound) return;
-    aiNativeFitBound = true;
-    window.addEventListener('resize', fit);
+    if (stage && canvas) {
+      const fit = () => {
+        const w = stage.clientWidth || 0;
+        if (!w) return;
+        const mobile = (window.innerWidth || document.documentElement.clientWidth || 0) < 900;
+        const base = mobile ? 330 : 660;
+        const boxH = mobile ? 560 : 460;
+        const s = w / base;
+        canvas.style.transform = 'scale(' + s + ')';
+        stage.style.height = (boxH * s) + 'px';
+      };
+      fit();
+      if (!aiNativeFitBound) {
+        aiNativeFitBound = true;
+        window.addEventListener('resize', fit);
+      }
+    }
+
+    // 스크롤 트리거 단계 애니메이션
+    if (section.dataset.aiNativeWired === 'true') return;
+    section.dataset.aiNativeWired = 'true';
+
+    const steps = Array.prototype.slice.call(section.querySelectorAll('.ai-native-step'));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth < 900;
+
+    if (reduceMotion) {
+      steps.forEach((s) => s.classList.add('is-visible', 'is-active'));
+      const finalStep = section.querySelector('[data-ai-step="4"]');
+      if (finalStep) finalStep.classList.add('is-final-active');
+      return;
+    }
+
+    // IntersectionObserver로 단계별 스태거 진입
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const step = entry.target;
+          const index = parseInt(step.getAttribute('data-ai-step-index') || step.getAttribute('data-ai-step'), 10);
+          const delay = index * 150;
+          setTimeout(() => {
+            step.classList.add('is-visible');
+            step.classList.add('is-active');
+            // FINAL 단계 완료 이펙트
+            if (index === 4) {
+              setTimeout(() => step.classList.add('is-final-active'), 400);
+            }
+          }, delay);
+          observer.unobserve(step);
+        }
+      });
+    }, { threshold: 0.3, rootMargin: '-50px' });
+
+    steps.forEach((step) => observer.observe(step));
+
+    // 모바일: 수직 연결선 애니메이션
+    if (isMobile) {
+      const connectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const step = entry.target;
+            const index = parseInt(step.getAttribute('data-ai-step-index') || step.getAttribute('data-ai-step'), 10);
+            if (index > 0) {
+              const prevStep = section.querySelector('[data-ai-step-index="' + (index - 1) + '"]');
+              if (prevStep) prevStep.classList.add('is-active');
+            }
+            connectionObserver.unobserve(step);
+          }
+        });
+      }, { threshold: 0.5 });
+      steps.forEach((step) => connectionObserver.observe(step));
+    }
   }
 
   /**
-   * 「2학기 영어 내신」 섹션(sec-featured) — 학교별 독립 카드 횡스크롤. 각 카드마다 그 학교의 실제
-   * 출제자 Digital Twin 을 /api/analyzes(기존 SSoT/service)에서 가져와 카드 본문에 표시한다.
-   * 가짜 분석 내용 생성 없음, lesson_products highlight 재사용 없음, builderDraft 복제 없음.
-   *
-   * ⚠ query/render/event 는 전부 `#sec-featured` 안에서만. `#sec-lessons`(대표수업)을 fallback
-   *   셀렉터로 쓰지 않는다. 공용 programCardHtml 에 학교 분기 없음.
-   *
-   * 횡스크롤: CSS(overflow-x:auto + scroll-snap). 여기서는 스크롤 위치에 따라 `1 / N` 카운터와
-   * dot 활성만 갱신하고, dot 클릭 시 해당 카드로 스크롤한다. 세로 섹션 전환(sceneFlow)과 무관.
+   * 「2학기 영어 내신」 섹션(sec-featured) — 커버플로우 캐러셀 (승인된 UI, 21st.dev @ruixen.ui/coverflow-carousel 스타일)
+   * 중앙 카드 확대(1.15x), 좌우 카드 축소(0.85x) + 3D Y축 회전 + 투명도 그라데이션
+   * 데스크톱: 마우스 드래그/휠 + 화살표 + 인디케이터
+   * 모바일: 터치 스와이프 + 인디케이터
+   * 각 카드 = 그 학교의 실제 /api/analyzes 출제자 Digital Twin
+   * 배선: #sec-featured 안에서만.
    */
-  function wireFeaturedSchoolCards() {
+  function wireFeaturedCoverflow() {
     if (!root) return;
-    const wrap = root.querySelector('#sec-featured [data-featured-cards]');
-    const track = wrap && wrap.querySelector('[data-featured-track]');
-    if (!wrap || !track || wrap.dataset.cardsWired === 'true') return;
-    const cards = Array.prototype.slice.call(track.querySelectorAll('[data-featured-card]'));
-    if (cards.length === 0) return;
-    wrap.dataset.cardsWired = 'true';
+    const section = root.querySelector('#sec-featured');
+    if (!section || section.dataset.coverflowWired === 'true') return;
+    section.dataset.coverflowWired = 'true';
 
-    // 학교별 출제자 Digital Twin 렌더 (실데이터만)
-    cards.forEach((card) => {
-      const school = (card.getAttribute('data-school') || '').trim();
-      const body = card.querySelector('[data-featured-card-body]');
-      const more = card.querySelector('[data-featured-card-more]');
+    const track = section.querySelector('[data-coverflow-track]');
+    const viewport = section.querySelector('[data-coverflow-viewport]');
+    const cards = Array.prototype.slice.call(section.querySelectorAll('[data-coverflow-card]'));
+    const indicators = Array.prototype.slice.call(section.querySelectorAll('[data-coverflow-indicator]'));
+    const prevBtn = section.querySelector('[data-coverflow-prev]');
+    const nextBtn = section.querySelector('[data-coverflow-next]');
+
+    if (!track || cards.length === 0) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = 0;
+    let animating = false;
+    let dragStartX = null;
+    let dragStartPos = 0;
+    let isDragging = false;
+
+    // 카드 위치 클래스 업데이트
+    function updateCardPositions() {
+      cards.forEach((card, i) => {
+        const diff = i - current;
+        card.classList.remove('is-center', 'is-side', 'is-side-left', 'is-side-right', 'is-far', 'is-far-left', 'is-far-right');
+        if (diff === 0) {
+          card.classList.add('is-center');
+        } else if (Math.abs(diff) === 1) {
+          card.classList.add('is-side');
+          card.classList.add(diff < 0 ? 'is-side-left' : 'is-side-right');
+        } else {
+          card.classList.add('is-far');
+          card.classList.add(diff < 0 ? 'is-far-left' : 'is-far-right');
+        }
+      });
+    }
+
+    // 인디케이터 업데이트
+    function updateIndicators() {
+      indicators.forEach((ind, i) => {
+        const isOn = i === current;
+        ind.classList.toggle('is-on', isOn);
+        ind.setAttribute('aria-selected', isOn);
+      });
+    }
+
+    // 버튼 상태 업데이트
+    function updateButtons() {
+      if (prevBtn) prevBtn.disabled = current === 0;
+      if (nextBtn) nextBtn.disabled = current === cards.length - 1;
+    }
+
+    // 카드 데이터 로드 (학교별 출제자 Digital Twin)
+    function loadCardData(card, index) {
+      const school = card.getAttribute('data-school');
+      const body = card.querySelector('[data-coverflow-card-body]');
+      const more = card.querySelector('[data-coverflow-card-more]');
       if (!school || !body) return;
+
       fetch('/api/analyzes?schoolName=' + encodeURIComponent(school))
         .then((r) => (r.ok ? r.json() : []))
         .then((raw) => (Array.isArray(raw) ? raw : []).filter((a) => {
@@ -242,65 +348,110 @@
         .catch(() => [])
         .then((list) => {
           if (!list.length) {
-            body.innerHTML = '<p class="featured-schoolcard-empty">' + escapeHtml(school)
+            body.innerHTML = '<p class="coverflow-card-loading">' + escapeHtml(school)
               + ' 출제 분석을 준비 중입니다.</p>';
             return;
           }
-          // 학년 → 학기 → 중간/기말 별로 그 출제자 Digital Twin(분석 상세)에 바로 들어갈 수 있게
-          // 각 행을 실제 detailUrl 링크로 만든다. 카드가 길어지지 않게 최대 4건만(전체는 카운트로).
           const rows = list.slice(0, 4).map((a) => {
             const label = escapeHtml(a.grade) + '학년 · ' + escapeHtml(a.semester) + ' · ' + escapeHtml(a.examType);
             const href = a.detailUrl ? escapeAttr(a.detailUrl) : '';
-            return '<li class="featured-schoolcard-row">'
+            return '<li class="coverflow-card-row">'
               + (href
-                ? '<a class="featured-schoolcard-rowlink" href="' + href + '" target="_blank" rel="noopener">'
-                  + label + '<span class="featured-schoolcard-rowgo" aria-hidden="true">›</span></a>'
-                : '<span class="featured-schoolcard-rowlink is-plain">' + label + '</span>')
+                ? '<a class="coverflow-card-rowlink" href="' + href + '" target="_blank" rel="noopener">'
+                  + label + '<span class="coverflow-card-rowgo" aria-hidden="true">›</span></a>'
+                : '<span class="coverflow-card-rowlink is-plain">' + label + '</span>')
               + '</li>';
           }).join('');
           body.innerHTML =
-            '<p class="featured-schoolcard-count">출제자 Digital Twin ' + list.length + '건</p>'
-            + '<ul class="featured-schoolcard-rows">' + rows + '</ul>';
+            '<ul class="coverflow-card-rows">' + rows + '</ul>';
           if (more && list[0] && list[0].detailUrl) more.setAttribute('href', list[0].detailUrl);
         });
+    }
+
+    // 모든 카드 데이터 로드
+    cards.forEach((card, i) => loadCardData(card, i));
+
+    function goTo(index, direction) {
+      if (animating || index < 0 || index >= cards.length || index === current) return;
+      animating = true;
+      current = index;
+      updateCardPositions();
+      updateIndicators();
+      updateButtons();
+      setTimeout(() => { animating = false; }, reduceMotion ? 0 : 500);
+    }
+
+    function goPrev() { goTo(current - 1, 'prev'); }
+    function goNext() { goTo(current + 1, 'next'); }
+
+    // 화살표 버튼
+    if (prevBtn) prevBtn.addEventListener('click', goPrev);
+    if (nextBtn) nextBtn.addEventListener('click', goNext);
+
+    // 인디케이터 클릭
+    indicators.forEach((ind, i) => {
+      ind.addEventListener('click', () => goTo(i));
+      ind.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' && i < cards.length - 1) { e.preventDefault(); goTo(i + 1); indicators[i + 1].focus(); }
+        else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); goTo(i - 1); indicators[i - 1].focus(); }
+      });
     });
 
-    // 횡스크롤 위치 → `1 / N` 카운터 / dot. 스크롤 중앙에 가장 가까운 카드를 현재로 본다
-    // (track scroll 이벤트 기반 — root 있는 IntersectionObserver 지원이 고르지 않아 스크롤로 계산).
-    const countEl = wrap.querySelector('[data-featured-count]');
-    const dots = Array.prototype.slice.call(wrap.querySelectorAll('[data-featured-dot]'));
-    let current = -1;
-    function setCurrent(i) {
-      if (i === current || i < 0 || i >= cards.length) return;
-      current = i;
-      if (countEl) countEl.textContent = (i + 1) + ' / ' + cards.length;
-      dots.forEach((d, di) => d.classList.toggle('is-on', di === i));
+    // 터치/마우스 드래그
+    function onDragStart(clientX) {
+      dragStartX = clientX;
+      dragStartPos = current;
+      isDragging = true;
+      track.style.cursor = 'grabbing';
     }
-    function nearestCard() {
-      const mid = track.scrollLeft + track.clientWidth / 2;
-      let best = 0;
-      let bestDist = Infinity;
-      cards.forEach((c, i) => {
-        const center = c.offsetLeft - track.offsetLeft + c.offsetWidth / 2;
-        const dist = Math.abs(center - mid);
-        if (dist < bestDist) { bestDist = dist; best = i; }
-      });
-      return best;
+
+    function onDragMove(clientX) {
+      if (!isDragging || dragStartX === null) return;
+      const dx = dragStartX - clientX;
+      const threshold = 60;
+      if (dx > threshold && current < cards.length - 1) {
+        goNext();
+        dragStartX = clientX;
+      } else if (dx < -threshold && current > 0) {
+        goPrev();
+        dragStartX = clientX;
+      }
     }
-    let scrollRaf = null;
-    track.addEventListener('scroll', () => {
-      if (scrollRaf) return;
-      scrollRaf = requestAnimationFrame(() => { scrollRaf = null; setCurrent(nearestCard()); });
-    }, { passive: true });
-    dots.forEach((dot, i) => {
-      dot.addEventListener('click', () => {
-        const card = cards[i];
-        if (!card) return;
-        track.scrollTo({ left: card.offsetLeft - track.offsetLeft, behavior: 'smooth' });
-        setCurrent(i);
-      });
+
+    function onDragEnd() {
+      if (isDragging) {
+        isDragging = false;
+        dragStartX = null;
+        track.style.cursor = 'grab';
+      }
+    }
+
+    // 터치 이벤트
+    track.addEventListener('touchstart', (e) => onDragStart(e.changedTouches[0].clientX), { passive: true });
+    track.addEventListener('touchmove', (e) => onDragMove(e.changedTouches[0].clientX), { passive: true });
+    track.addEventListener('touchend', onDragEnd, { passive: true });
+
+    // 마우스 이벤트 (데스크톱)
+    track.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      onDragStart(e.clientX);
+      e.preventDefault();
     });
-    setCurrent(0);
+    window.addEventListener('mousemove', (e) => onDragMove(e.clientX), { passive: true });
+    window.addEventListener('mouseup', onDragEnd, { passive: true });
+
+    // 휠 스크롤 (데스크톱)
+    viewport.addEventListener('wheel', (e) => {
+      if (animating) return;
+      if (e.deltaY > 0) goNext();
+      else if (e.deltaY < 0) goPrev();
+      e.preventDefault();
+    }, { passive: false });
+
+    // 초기화
+    updateCardPositions();
+    updateIndicators();
+    updateButtons();
   }
 
 
@@ -498,6 +649,141 @@
 
     // 사이클 시작
     startCycle();
+  }
+
+
+  /**
+   * 학습 철학 Step Progression (승인된 UI) — 단일 카드 + 진행바 + 인디케이터 + prev/next + 스와이프
+   * - 4개 원칙을 stepper 형태로 순환
+   * - 진행바 애니메이션 (scaleX 0→1)
+   * - 텍스트 slide/fade 전환 (방향 인식)
+   * - 번호 인디케이터 pulse (선택 시)
+   * - prev/next 버튼 + 키보드 접근성
+   * - 터치 스와이프 지원 (모바일)
+   * - prefers-reduced-motion 대응 (즉시 전환)
+   */
+  function wirePhilosophyStep() {
+    if (!root) return;
+    const section = root.querySelector('#sec-philosophy');
+    if (!section || section.dataset.philosophyWired === 'true') return;
+    section.dataset.philosophyWired = 'true';
+
+    const card = section.querySelector('[data-philosophy-step-card]');
+    if (!card) return;
+
+    const stepsDataEl = section.querySelector('[data-philosophy-steps]');
+    let steps = [];
+    try {
+      steps = stepsDataEl ? JSON.parse(stepsDataEl.textContent) : [];
+    } catch (_) {
+      steps = [];
+    }
+    if (!steps.length) return;
+
+    const content = card.querySelector('[data-philosophy-step-content]');
+    const labelEl = card.querySelector('[data-step-label]');
+    const counterEl = card.querySelector('[data-step-counter]');
+    const textEl = card.querySelector('[data-step-text]');
+    const bars = Array.prototype.slice.call(card.querySelectorAll('[data-step-bar]'));
+    const indicators = Array.prototype.slice.call(card.querySelectorAll('[data-step-indicator]'));
+    const prevBtn = card.querySelector('[data-step-prev]');
+    const nextBtn = card.querySelector('[data-step-next]');
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = 0;
+    let animating = false;
+    let touchStartX = null;
+
+    function updateUI(index, direction) {
+      if (index === current && direction === undefined) return;
+      const prevIndex = current;
+      current = index;
+
+      // 진행바
+      bars.forEach((bar, i) => {
+        bar.classList.toggle('is-active', i <= current);
+      });
+
+      // 인디케이터
+      indicators.forEach((ind, i) => {
+        const isOn = i === current;
+        ind.classList.toggle('is-on', isOn);
+        ind.setAttribute('aria-selected', isOn);
+        if (isOn && !reduceMotion) {
+          ind.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], {
+            duration: 300, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+          });
+        }
+      });
+
+      // 버튼 상태
+      if (prevBtn) prevBtn.disabled = current === 0;
+      if (nextBtn) nextBtn.disabled = current === steps.length - 1;
+
+      // 라벨/카운터
+      if (labelEl) labelEl.textContent = '원칙 ' + String(current + 1).padStart(2, '0');
+      if (counterEl) counterEl.textContent = (current + 1) + ' / ' + steps.length;
+
+      // 텍스트 전환
+      if (textEl) {
+        const step = steps[current];
+        if (reduceMotion) {
+          textEl.textContent = step;
+          return;
+        }
+        const exitClass = direction === 'prev' ? 'is-exiting' : 'is-exiting';
+        const enterClass = direction === 'prev' ? 'is-entering' : 'is-entering';
+        textEl.classList.add(exitClass);
+        textEl.classList.remove('is-entering');
+        setTimeout(() => {
+          textEl.textContent = step;
+          textEl.classList.remove(exitClass);
+          textEl.classList.add(enterClass);
+          setTimeout(() => textEl.classList.remove(enterClass), 300);
+        }, 150);
+      }
+    }
+
+    function goTo(index) {
+      if (animating || index < 0 || index >= steps.length || index === current) return;
+      const direction = index > current ? 'next' : 'prev';
+      animating = true;
+      updateUI(index, direction);
+      setTimeout(() => { animating = false; }, 400);
+    }
+
+    function goPrev() { goTo(current - 1); }
+    function goNext() { goTo(current + 1); }
+
+    // 인디케이터 클릭
+    indicators.forEach((ind, i) => {
+      ind.addEventListener('click', () => goTo(i));
+    });
+
+    // prev/next 버튼
+    if (prevBtn) prevBtn.addEventListener('click', goPrev);
+    if (nextBtn) nextBtn.addEventListener('click', goNext);
+
+    // 키보드 (포커스된 인디케이터에서 좌우 화살표)
+    indicators.forEach((ind, i) => {
+      ind.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' && i < steps.length - 1) { e.preventDefault(); goTo(i + 1); indicators[i + 1].focus(); }
+        else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); goTo(i - 1); indicators[i - 1].focus(); }
+      });
+    });
+
+    // 터치 스와이프
+    card.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+    card.addEventListener('touchend', (e) => {
+      if (touchStartX === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      touchStartX = null;
+      if (dx < -40) goNext();
+      else if (dx > 40) goPrev();
+    }, { passive: true });
+
+    // 초기화
+    updateUI(0);
   }
 
 
