@@ -285,6 +285,36 @@ class EasyLedgerServiceTest {
   }
 
   @Test
+  @DisplayName("비용 환불 역분개는 매출이 아니라 비용 차감 (summary 회귀)")
+  void summary_reversalOffsetsExpense() {
+    f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount supplies =
+        f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount.builder()
+            .code("EXPENSE_SUPPLIES").name("소모품")
+            .direction(f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity
+                .EasyAccountDirection.EXPENSE)
+            .sortOrder(16).active(true).build();
+    EasyTransaction income = txn(academy, EasyTxnDirection.INCOME, 1000000L);
+    EasyTransaction expense = txn(academy, EasyTxnDirection.EXPENSE, 500000L);
+    EasyTransaction reversal = EasyTransaction.builder()
+        .business(academy).occurredOn(LocalDate.of(2026, 9, 5))
+        .direction(EasyTxnDirection.INCOME).amount(100000L)
+        .category("소모품").account(supplies).expenseReversal(Boolean.TRUE).build();
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(txnRepository.findByBusiness_BusinessIdAndOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
+        1L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+        .thenReturn(List.of(income, expense, reversal));
+    when(paymentRepository.findByBusiness_BusinessId(1L)).thenReturn(List.of());
+    when(txnRepository.findTop10ByBusiness_BusinessIdInOrderByOccurredOnDescTxnIdDesc(List.of(1L)))
+        .thenReturn(List.of());
+
+    EasyDashboardResponse summary = service.summary(1L, YearMonth.of(2026, 9));
+
+    assertThat(summary.income()).isEqualTo(1000000L);
+    assertThat(summary.expense()).isEqualTo(400000L);
+    assertThat(summary.profit()).isEqualTo(600000L);
+  }
+
+  @Test
   @DisplayName("수정 시 수정로그 기록 + 재분개 위임")
   void update_logsCorrectionAndReposts() {
     when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
