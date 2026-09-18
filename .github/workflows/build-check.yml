@@ -3,17 +3,6 @@ name: Build Check
 on:
   workflow_dispatch:
   pull_request:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'problem-generator/wiki-backend-src/backend/**'
-      - 'tools/build_private_reference_corpus.py'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - 'gradle/**'
-      - 'gradlew'
-      - '.github/workflows/build-check.yml'
 
 permissions:
   contents: read
