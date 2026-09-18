@@ -49,6 +49,23 @@ public class ChartSiteToolController {
   @GetMapping("/scores/preview")
   public Map<String, Object> previewScore(@RequestParam long candidateId) { return service.previewScore(candidateId); }
 
+  /**
+   * 재채점이 필요한 후보 목록(읽기 전용). 최신 profile/evidence 변경이 최신 Score snapshot보다
+   * 새로울 때 review → snapshot → publication 후속 처리 대상이다. 아무 것도 변경하지 않는다.
+   */
+  @GetMapping("/scores/stale")
+  public List<Map<String, Object>> staleScores() { return service.rescoreRequired(); }
+
+  /**
+   * RESEARCH_PENDING 후보를 현재 저장 데이터로 재평가한다. 최초 판정과 동일한 기준으로 PASS일 때만
+   * EVALUATABLE로 전환하고, FAIL이면 유지한다. 기본 {@code dryRun=true}(조회만, 쓰기 없음).
+   */
+  @PostMapping("/candidates/{candidateId}/reevaluate")
+  public Map<String, Object> reevaluateCandidate(@PathVariable long candidateId,
+      @RequestParam(defaultValue = "true") boolean dryRun) {
+    return service.reevaluateEligibility(candidateId, dryRun);
+  }
+
   @PostMapping("/review-batches")
   public Map<String, Object> submitReview(@RequestBody ReviewBatchRequest request) {
     return service.submitReview(request.regionId(), request.candidateIds(), request.summary());

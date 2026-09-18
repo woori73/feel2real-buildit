@@ -928,6 +928,174 @@ public class ChartSiteToolService {
     return !Boolean.TRUE.equals(bit(candidate.get("excluded_from_chart"))) && isEvaluatable(candidate);
   }
 
+  // ----- eligibility re-evaluation (RESEARCH_PENDING → EVALUATABLE) -------------------------
+
+  /**
+   * 저장된 후보를 최초 판정과 동일한 {@link #assess} 기준으로 다시 평가한 결과만으로 승격 여부를 정한다.
+   *
+   * <ul>
+   *   <li>판정 로직은 {@link #assess} 하나뿐이다(복사 없음). enrichment 자체는 승격하지 않는다.</li>
+   *   <li>{@code RESEARCH_PENDING} + {@link Assessment#evaluatable} 일 때만 승격 대상이다.</li>
+   *   <li>제외({@code excluded_from_chart}) 후보는 승격하지 않는다. 이미 EVALUATABLE이면 no-op이다.</li>
+   * </ul>
+   */
+  public record ReevaluationDecision(boolean promote, String before, String after, List<String> reasons) {}
+
+  static ReevaluationDecision decideReevaluation(String currentStatus, boolean excluded, Assessment assessment) {
+    if (excluded) {
+      return new ReevaluationDecision(false, currentStatus, currentStatus,
+          List.of("공개 제외됨(excluded_from_chart) — 승격 불가"));
+    }
+    if (!"RESEARCH_PENDING".equals(currentStatus)) {
+      return new ReevaluationDecision(false, currentStatus, currentStatus,
+          List.of("RESEARCH_PENDING이 아님 — 재평가 대상 아님"));
+    }
+    if (assessment.evaluatable()) {
+      return new ReevaluationDecision(true, currentStatus, "EVALUATABLE", assessment.passReasons());
+    }
+    if (assessment.rejected()) {
+      return new ReevaluationDecision(false, currentStatus, currentStatus, assessment.rejectReasons());
+    }
+    return new ReevaluationDecision(false, currentStatus, currentStatus, assessment.holdReasons());
+  }
+
+  /**
+   * 저장된 profile/evidence를 {@link #assess} 입력으로 재구성한다. kind가 없는 evidence는
+   * kind별 가점·게이트에서 인정하지 않는 대신({@code UNSPECIFIED}) URL 존재 자체는 유지한다.
+   */
+  Assessment reassessStored(Map<String, Object> row, List<Map<String, Object>> activities) {
+    List<EvidenceRequest> evidence = new ArrayList<>();
+    for (Map<String, Object> a : activities) {
+      Object url = a.get("source_url");
+      if (url == null || String.valueOf(url).isBlank()) continue;
+      String kind = str(a.get("evidence_kind"));
+      evidence.add(new EvidenceRequest(
+          str(a.get("content_type")),
+          str(a.get("content_summary")),
+          null,
+          String.valueOf(url).trim(),
+          toLocalDate(a.get("activity_date")),
+          kind == null || kind.isBlank() ? "UNSPECIFIED" : kind,
+          Boolean.TRUE.equals(bit(a.get("educationally_informative")))));
+    }
+    DraftRequest draft = new DraftRequest(
+        str(row.get("zone_id")),
+        str(row.get("name")),
+        str(row.get("role")),
+        str(row.get("academy_name")),
+        str(row.get("activity_province")),
+        str(row.get("activity_city_district")),
+        str(row.get("identity_summary")),
+        str(row.get("education_philosophy_summary")),
+        str(row.get("curriculum_summary")),
+        str(row.get("distinctive_teaching_summary")),
+        str(row.get("recent_activity_summary")),
+        parseStrings(str(row.get("strengths_json"))),
+        parseStrings(str(row.get("improvement_suggestions_json"))),
+        str(row.get("profile_image_url")),
+        str(row.get("profile_image_source_url")),
+        str(row.get("official_homepage")),
+        str(row.get("official_blog")),
+        str(row.get("official_youtube")),
+        str(row.get("official_social")),
+        "re-evaluation from stored candidate data",
+        Boolean.TRUE.equals(bit(row.get("offline_activity_confirmed"))),
+        Boolean.TRUE.equals(bit(row.get("current_year_activity_confirmed"))),
+        Boolean.TRUE.equals(bit(row.get("educator_identity_confirmed"))),
+        Boolean.TRUE.equals(bit(row.get("exclusion_free"))),
+        parseStrings(str(row.get("potential_signals_json"))),
+        evidence);
+    return assess(draft);
+  }
+
+  /**
+   * RESEARCH_PENDING 후보를 현재 저장 데이터로 재평가한다. {@code dryRun=true}면 조회만 하고
+   * 어떤 UPDATE도 실행하지 않는다. 승격 시에도 {@code eligibility_status}·
+   * {@code eligibility_reasons_json}·{@code updated_at} 세 컬럼만 변경한다(profile/evidence 불변).
+   */
+  @Transactional
+  public Map<String, Object> reevaluateEligibility(long candidateId, boolean dryRun) {
+    Map<String, Object> row = candidate(candidateId);
+    List<Map<String, Object>> activities = jdbcTemplate.queryForList(
+        "SELECT content_type, content_summary, source_url, activity_date, evidence_kind,"
+            + " educationally_informative FROM chart_candidate_activities WHERE candidate_id=?",
+        candidateId);
+    Assessment assessment = reassessStored(row, activities);
+    String before = str(row.get("eligibility_status"));
+    ReevaluationDecision decision = decideReevaluation(
+        before, Boolean.TRUE.equals(bit(row.get("excluded_from_chart"))), assessment);
+    boolean applied = false;
+    if (decision.promote() && !dryRun) {
+      LocalDateTime now = LocalDateTime.now(clock);
+      int updated = jdbcTemplate.update(
+          "UPDATE chart_candidates SET eligibility_status=?, eligibility_reasons_json=?, updated_at=?"
+              + " WHERE candidate_id=? AND eligibility_status='RESEARCH_PENDING'",
+          "EVALUATABLE", json(decision.reasons()), now, candidateId);
+      applied = updated > 0;
+    }
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("candidateId", candidateId);
+    out.put("dryRun", dryRun);
+    out.put("assessmentStatus", assessment.status());
+    out.put("promote", decision.promote());
+    out.put("applied", applied);
+    out.put("before", before);
+    out.put("after", applied ? "EVALUATABLE" : before);
+    out.put("reasons", decision.reasons());
+    out.put("passReasons", assessment.passReasons());
+    out.put("holdReasons", assessment.holdReasons());
+    out.put("rejectReasons", assessment.rejectReasons());
+    return out;
+  }
+
+  // ----- stale snapshot detection (read-only) ----------------------------------------------------
+
+  /**
+   * 최신 profile/evidence 변경이 최신 Score snapshot보다 새로우면 true. snapshot이 없으면 true.
+   * 스키마 변경 없이 {@code updated_at}/{@code researched_at} vs {@code calculated_at} 비교다.
+   */
+  static boolean snapshotStale(LocalDateTime lastDataChange, LocalDateTime lastSnapshotAt) {
+    if (lastSnapshotAt == null) return true;
+    if (lastDataChange == null) return false;
+    return lastDataChange.isAfter(lastSnapshotAt);
+  }
+
+  /**
+   * 재채점이 필요한 후보 목록(읽기 전용). enrichment는 Score를 바꾸지 않으므로 이 목록이
+   * review → snapshot → publication 후속 처리 대상이다. 아무 것도 변경하지 않는다.
+   */
+  public List<Map<String, Object>> rescoreRequired() {
+    return jdbcTemplate.queryForList("""
+        SELECT c.candidate_id AS candidateId, c.name AS name, c.academy_name AS academyName,
+               c.eligibility_status AS eligibilityStatus,
+               GREATEST(COALESCE(c.updated_at, '1970-01-01'),
+                        COALESCE((SELECT MAX(GREATEST(COALESCE(a.updated_at, '1970-01-01'),
+                                                       COALESCE(a.researched_at, '1970-01-01')))
+                                    FROM chart_candidate_activities a
+                                   WHERE a.candidate_id = c.candidate_id), '1970-01-01')) AS lastDataChange,
+               (SELECT s.calculated_at FROM chart_score_snapshots s
+                 WHERE s.candidate_id = c.candidate_id
+                 ORDER BY s.calculated_at DESC, s.score_snapshot_id DESC LIMIT 1) AS lastSnapshotAt
+          FROM chart_candidates c
+         WHERE (c.eligibility_status = 'EVALUATABLE' OR c.legacy_source IS NOT NULL)
+           AND (c.excluded_from_chart IS NULL OR c.excluded_from_chart = 0)
+        HAVING lastSnapshotAt IS NULL OR lastDataChange > lastSnapshotAt
+         ORDER BY lastDataChange DESC
+        """);
+  }
+
+  private LocalDate toLocalDate(Object value) {
+    if (value == null) return null;
+    if (value instanceof LocalDate ld) return ld;
+    if (value instanceof java.sql.Date d) return d.toLocalDate();
+    if (value instanceof LocalDateTime ldt) return ldt.toLocalDate();
+    try {
+      return LocalDate.parse(String.valueOf(value).substring(0, 10));
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   // ----- helpers -------------------------------------------------------------------------------
 
   private Map<String, Object> candidate(long id) {
