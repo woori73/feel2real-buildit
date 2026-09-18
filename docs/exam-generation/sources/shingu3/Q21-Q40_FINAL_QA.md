@@ -26,6 +26,26 @@
 | 39 | 서답형 가정법 | p.112 | 모범답안 | — | PASS |
 | 40 | 서답형 that+But | p.111 | 모범답안 | — | PASS |
 
+## 서답형 허용답안 (Q31-Q40)
+
+- Q31: in order that 교체형 허용 (take·enjoy 포함 시).
+- Q32: would hear him 허용. to부정사형은 조건 위반으로 불허.
+- Q33: They resemble trees, don't they? 허용 (tag 고정).
+- Q34: ... protect the contents. 허용 (its → the).
+- Q35: When orange lights shine on the building, ... 허용 (능동 shine, 비교급 유지).
+- Q36-Q39: 허용답안 없음 (bring / has inspired / bring / were·would 고정).
+- Q40: or a sailing boat 병기형 허용.
+- 상세: Q21-Q40_ANSWER_EXPLANATION.md.
+
+## 최종 대조 (Q21-Q40 FINAL CONTENT 재독)
+
+- Q21-Q40 = 20문항. 누락 0. 번호 중복 0.
+- 선택형 정답 유일성: 10문항 전부 1개 (Q21 ① / Q22 ② / Q23 ② / Q24 ② / Q25 ① / Q26 ② / Q27 ⑤ / Q28 ② / Q29 ① / Q30 ①).
+- 서답형 답안 조건: 10문항 전부 작성 조건 + 모범답안 + 허용 여부 명시.
+- 학교자료 원문 일치: 밑줄 대상·지문 문장 전부 9-17 원문 인용.
+- 실제 기출 DNA 반영: 21·22·23·24·25·6·2·1·4번 + 서답형 구조.
+- Q11-Q40 중복 문제: 0.
+
 ## Q1-Q40 중복 감사
 
 - 대조 가능 범위: Q11-Q20 확정분 (Q1-Q10 원문은 repo에 없어 대조 불가).
