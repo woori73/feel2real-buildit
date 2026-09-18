@@ -23,6 +23,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -193,7 +195,7 @@ public class EasyImportService {
           .evidenceType(row.getEvidenceType())
           .expenseReversal(row.isReversal() ? Boolean.TRUE : null)
           .sourceKind(batch.getSourceKind())
-          .sourceRef(batch.getSourceName() + "#row-" + row.getRowNo())
+          .sourceRef(batch.getSourceName() + sourceRefSuffix(row))
           .fingerprint(EasyFingerprint.of(
               batch.getBusiness().getBusinessId(),
               row.getOccurredOn(), row.getDirection().name(), row.getAmount(),
@@ -206,6 +208,38 @@ public class EasyImportService {
     }
     batch.markConfirmed(confirmed);
     return EasyImportBatchResponse.of(batch, rows(batchId));
+  }
+
+  /**
+   * 확정 거래의 원본 추적 표기 — staging 시 rawData에 기록된
+   * CSV 원본 행번호([srow:N])가 있으면 #orig-row-N,
+   * 없으면 기존 #row-N(배치 내 순서)을 유지한다.
+   * 기존 SALES 102건의 sourceRef는 변경하지 않는다.
+   */
+  private String sourceRefSuffix(EasyImportRow row) {
+    Integer sourceRowNo = parseSourceRowNo(row.getRawData());
+    if (sourceRowNo != null) {
+      return "#orig-row-" + sourceRowNo;
+    }
+    return "#row-" + row.getRowNo();
+  }
+
+  private static final Pattern SOURCE_ROW_PATTERN =
+      Pattern.compile("\\[srow:(\\d+)\\]");
+
+  static Integer parseSourceRowNo(String rawData) {
+    if (rawData == null) {
+      return null;
+    }
+    Matcher matcher = SOURCE_ROW_PATTERN.matcher(rawData);
+    if (!matcher.find()) {
+      return null;
+    }
+    try {
+      return Integer.parseInt(matcher.group(1));
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   /** 폐기 — STAGED 배치만 폐기한다. 이미 장부로 간 행은 되돌리지 않는다. */

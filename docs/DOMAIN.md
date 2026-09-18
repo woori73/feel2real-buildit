@@ -1198,7 +1198,7 @@ AICassa (공급/부가세 분리·증빙유형), SBS (적격증빙) — 코드 �
 
 | table | key columns |
 |---|---|
-| `easy_accounts` | `account_id` PK, `code` UNIQUE, `name`, `direction`(INCOME/EXPENSE/ASSET), `sort_order`, `active` — Work 실데이터 전 잠정 seed 12종 |
+| `easy_accounts` | `account_id` PK, `code` UNIQUE, `name`, `direction`(INCOME/EXPENSE/ASSET), `sort_order`, `active` — Work 실데이터 전 잠정 seed 15건(V978: 접대비 보험료 여비교통비 추가)종 |
 | `easy_account_mappings` | `mapping_id` PK, `account_id` FK, `external_code`/`external_name`(이지샵), `standard_code`/`standard_name`(NTS, 확정 전), UNIQUE(`account_id`,`external_code`) |
 | `easy_classification_rules` | `rule_id` PK, `pattern_type`(COUNTERPARTY_EXACT/REGEX, DESCRIPTION_REGEX), `pattern`, `account_id` FK, `priority`, `amount_min/max?`, `direction?`, `active` |
 | `easy_import_batches` | `batch_id` PK, `business_id` FK, `source_name`, `source_kind`, `status`(STAGED/CONFIRMED/DISCARDED), `total_rows`, `confirmed_rows` |
