@@ -305,6 +305,16 @@ public class EasyShopImportService {
 
   private String preservedRaw(EasyShopRow row) {
     StringBuilder raw = new StringBuilder();
+    // CSV provenance용 원본 행번호 — 없으면 생략하고 기존 동작을 유지한다.
+    // 헤더를 제외한 첫 data row = 1. confirm()이 [srow:N]을 보고
+    // sourceRef를 #orig-row-N으로 만든다 (DB 변경 없음).
+    if (row != null && row.sourceRowNo() != null) {
+      if (row.sourceRowNo() <= 0) {
+        throw new IllegalArgumentException(
+            "원본 행번호(sourceRowNo)는 1 이상이어야 합니다: " + row.sourceRowNo());
+      }
+      raw.append("[srow:").append(row.sourceRowNo()).append("]");
+    }
     if (hasText(row.refNo())) {
       raw.append("[ref:").append(row.refNo().trim()).append("]");
     }

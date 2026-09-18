@@ -655,6 +655,7 @@ LMS 주소가 성립하지 않는다(404).
 
 - 목적: EasyShop 실데이터 staging (source_kind=EASYSHOP). 컬럼 계약은 `docs/easy/EASYSHOP_IMPORT_PLAN.md`.
 - 등록 body: `{ businessId?(기본 사업체), sourceName, rows: [{ date, direction, amount, counterparty?, description?, payMethod?, accountName?, businessCode?, refNo?, raw? }] }` (최대 2000행).
+- sourceRowNo?: CSV provenance row number, 1-based excluding header (e.g. 2nd data row only -> 2). Present -> sourceRef #orig-row-N, absent -> legacy #row-N. No DB change.
 - 사업체 코드 혼합 시 사업장별 배치로 분리. 미확정 행이 있으면 staging 전 전체 거부. 장부 중복은 `DUPLICATE`로 확정 제외. 외부 계정명은 확정 매핑만 자동 적용한다.
 - 관련 코드: `EasyImportController`, `EasyShopImportService`.
 

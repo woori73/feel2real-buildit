@@ -161,6 +161,61 @@ class EasyImportServiceTest {
   }
 
   @Test
+  @DisplayName("sourceRowNo 마커 있으면 #orig-row-N (B)")
+  void confirm_usesOrigRowWhenMarked() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(1).build();
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+    EasyImportRow ready = EasyImportRow.builder()
+        .batch(batch).rowNo(1)
+        .occurredOn(java.time.LocalDate.of(2025, 3, 5))
+        .direction(EasyTxnDirection.INCOME).amount(300000L)
+        .counterparty("카드사").description("카드(1)")
+        .rawData("[srow:2] {\"date\":\"2025-03-05\"}").build();
+    ready.markReady(null, 0.0);
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(ready));
+    when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L)).thenReturn(List.of(ready));
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.confirm(9L, null);
+
+    assertThat(ready.getCreatedTxn().getSourceRef()).isEqualTo("easyshop.csv#orig-row-2");
+  }
+
+  @Test
+  @DisplayName("payload 일부만 전송해도 원본 번호 유지 (C)")
+  void confirm_keepsOrigRowForPartialPayload() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(2).build();
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+    EasyImportRow first = EasyImportRow.builder()
+        .batch(batch).rowNo(1)
+        .occurredOn(java.time.LocalDate.of(2025, 3, 5))
+        .direction(EasyTxnDirection.INCOME).amount(300000L)
+        .rawData("[srow:5] {}").build();
+    first.markReady(null, 0.0);
+    EasyImportRow second = EasyImportRow.builder()
+        .batch(batch).rowNo(2)
+        .occurredOn(java.time.LocalDate.of(2025, 3, 6))
+        .direction(EasyTxnDirection.INCOME).amount(310000L)
+        .rawData("[srow:6] {}").build();
+    second.markReady(null, 0.0);
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(first, second));
+    when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L))
+        .thenReturn(List.of(first, second));
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.confirm(9L, null);
+
+    assertThat(first.getCreatedTxn().getSourceRef()).isEqualTo("easyshop.csv#orig-row-5");
+    assertThat(second.getCreatedTxn().getSourceRef()).isEqualTo("easyshop.csv#orig-row-6");
+  }
+
+  @Test
   @DisplayName("확정 시 출처 추적 + 분개 위임")
   void confirm_postsJournalWithProvenance() {
     EasyImportBatch batch = EasyImportBatch.builder()
