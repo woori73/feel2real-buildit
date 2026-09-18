@@ -300,6 +300,24 @@
     let dragStartPos = 0;
     let isDragging = false;
 
+    // 카드 너비 계산 (카드 + gap)
+    function getCardWidth() {
+      const card = cards[0];
+      const style = window.getComputedStyle(card);
+      const cardWidth = card.offsetWidth;
+      const gap = parseFloat(window.getComputedStyle(track).gap) || 24;
+      return cardWidth + gap;
+    }
+
+    // 트랙 위치 업데이트 (중앙 카드를 뷰포트 중앙에 위치)
+    function updateTrackPosition() {
+      const cardWidth = getCardWidth();
+      const viewportWidth = viewport.clientWidth;
+      const offset = (viewportWidth - cards[0].offsetWidth) / 2;
+      const translateX = -current * getCardWidth() + offset;
+      track.style.transform = 'translateX(' + translateX + 'px)';
+    }
+
     // 카드 위치 클래스 업데이트
     function updateCardPositions() {
       cards.forEach((card, i) => {
@@ -376,6 +394,7 @@
       animating = true;
       current = index;
       updateCardPositions();
+      updateTrackPosition();
       updateIndicators();
       updateButtons();
       setTimeout(() => { animating = false; }, reduceMotion ? 0 : 500);
@@ -448,8 +467,14 @@
       e.preventDefault();
     }, { passive: false });
 
+    // 리사이즈 시 트랙 위치 재계산
+    window.addEventListener('resize', () => {
+      if (!animating) updateTrackPosition();
+    });
+
     // 초기화
     updateCardPositions();
+    updateTrackPosition();
     updateIndicators();
     updateButtons();
   }
@@ -666,19 +691,13 @@
     if (!root) return;
     const section = root.querySelector('#sec-philosophy');
     if (!section || section.dataset.philosophyWired === 'true') return;
-    section.dataset.philosophyWired = 'true';
 
     const card = section.querySelector('[data-philosophy-step-card]');
     if (!card) return;
 
     const stepsDataEl = section.querySelector('[data-philosophy-steps]');
-    let steps = [];
-    try {
-      steps = stepsDataEl ? JSON.parse(stepsDataEl.textContent) : [];
-    } catch (_) {
-      steps = [];
-    }
-    if (!steps.length) return;
+    const steps = stepsDataEl ? JSON.parse(stepsDataEl.textContent) : [];
+    if (!Array.isArray(steps) || !steps.length) return;
 
     const content = card.querySelector('[data-philosophy-step-content]');
     const labelEl = card.querySelector('[data-step-label]');
@@ -695,9 +714,8 @@
     let touchStartX = null;
 
     function updateUI(index, direction) {
-      if (index === current && direction === undefined) return;
-      const prevIndex = current;
       current = index;
+      card.dataset.activeStep = String(current + 1);
 
       // 진행바
       bars.forEach((bar, i) => {
@@ -726,21 +744,17 @@
 
       // 텍스트 전환
       if (textEl) {
-        const step = steps[current];
-        if (reduceMotion) {
-          textEl.textContent = step;
-          return;
-        }
-        const exitClass = direction === 'prev' ? 'is-exiting' : 'is-exiting';
-        const enterClass = direction === 'prev' ? 'is-entering' : 'is-entering';
-        textEl.classList.add(exitClass);
-        textEl.classList.remove('is-entering');
-        setTimeout(() => {
-          textEl.textContent = step;
-          textEl.classList.remove(exitClass);
-          textEl.classList.add(enterClass);
-          setTimeout(() => textEl.classList.remove(enterClass), 300);
-        }, 150);
+        textEl.textContent = steps[current];
+        if (reduceMotion || !direction) return;
+        const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+        content.animate([
+          { opacity: 0, transform: 'translateX(' + (direction === 'prev' ? 30 : -30) + 'px)' },
+          { opacity: 1, transform: 'translateX(0)' }
+        ], { duration: 350, easing });
+        textEl.animate([
+          { opacity: 0, transform: 'translateY(8px)' },
+          { opacity: 1, transform: 'translateY(0)' }
+        ], { duration: 350, delay: 100, easing, fill: 'backwards' });
       }
     }
 
@@ -784,6 +798,7 @@
 
     // 초기화
     updateUI(0);
+    section.dataset.philosophyWired = 'true';
   }
 
 
