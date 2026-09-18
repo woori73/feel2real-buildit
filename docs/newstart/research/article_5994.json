@@ -1,0 +1,27 @@
+{
+  "boardName": "초보가이드",
+  "articleNumber": 5994,
+  "title": "햇살론 보증료",
+  "author": {
+    "nickname": "lyrsky",
+    "memberGrade": "인기멤버",
+    "profileUrl": "/ca-fe/cafes/31312978/members/74fOlT5t8neal6LWjp8erA"
+  },
+  "writtenAt": "2026.09.16. 14:20",
+  "viewCount": 14,
+  "url": "https://cafe.naver.com/f-e/cafes/31312978/articles/5994?boardtype=L&menuid=16&referrerAllArticles=false",
+  "originalBody": [
+    "9월 8일 화요일",
+    "[Web발신] 안녕하십니까, 서민금융진흥원입니다",
+    "000님의 햇살론특례 새출발기금 보증조건 변경에 따른 보증료 307,300원을 09월 15일까지 가상계좌 (기업은행): 07700850593696, 예금주: 000 으로 납부하여주시기 바랍니다.",
+    "문의사항은 1397 서민금융진흥원 콜센터로 연락주시기 바랍니다. 감사합니다.",
+    "요거 물어봐도 내야한다는데 궁금합니다",
+    "안내면 부실우려도 취소된다는데..."
+  ],
+  "originalComments": [],
+  "attachments": [],
+  "extractedAt": "2026-09-19T02:09:00+09:00",
+  "extractionMethod": "Playwright MCP (browser automation)",
+  "sessionReused": true,
+  "loginMethod": "Existing Chrome session (user pre-logged in)"
+}

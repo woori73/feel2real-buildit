@@ -1,0 +1,16 @@
+# Raw cafe data - may contain PII
+cafe/raw/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temp
+*.tmp
