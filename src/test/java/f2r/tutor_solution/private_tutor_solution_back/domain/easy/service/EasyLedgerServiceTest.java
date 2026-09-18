@@ -302,16 +302,22 @@ class EasyLedgerServiceTest {
   }
 
   @Test
-  @DisplayName("삭제 시 분개 void + 삭제 로그")
+  @DisplayName("삭제 시 분개 void + 삭제 로그 (txn FK null, snapshot 보존)")
   void delete_voidsJournalAndLogs() {
     EasyTransaction stored = txn(academy, EasyTxnDirection.EXPENSE, 100000L);
+    ReflectionTestUtils.setField(stored, "txnId", 7L);
     when(txnRepository.findById(7L)).thenReturn(Optional.of(stored));
 
     service.deleteTxn(7L);
 
     verify(journalService).voidFor(stored);
-    verify(correctionService).record(eq(academy), eq(stored), eq("DELETE"),
-        any(), any(), any());
+    // 삭제 로그는 삭제된 transaction을 참조하지 않는다 (참조 시 flush 단계에서
+    // TransientPropertyValueException → 운영 DELETE 500). 감사 정보는 snapshot에 보존된다.
+    org.mockito.ArgumentCaptor<String> beforeCaptor =
+        org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(correctionService).record(eq(academy), eq(null), eq("DELETE"),
+        beforeCaptor.capture(), eq("{}"), any());
+    assertThat(beforeCaptor.getValue()).contains("\"txnId\":7").contains("100000");
     verify(txnRepository).delete(stored);
   }
 }

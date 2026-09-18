@@ -240,8 +240,12 @@ public class EasyLedgerService {
   public void deleteTxn(Long txnId) {
     EasyTransaction txn = txnRepository.findById(txnId)
         .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다: txnId=" + txnId));
-    correctionService.record(
-        txn.getBusiness(), txn, "DELETE", EasyTxnSnapshot.of(txn), "{}", "admin");
+    // 삭제 감사 로그는 txn FK 없이 snapshot으로 보존한다.
+    // 삭제 대상을 참조한 채로 같은 persistence context에서 delete하면
+    // flush 시 TransientPropertyValueException(운영 DELETE 500)이 발생한다.
+    // easy_correction_logs.txn_id는 NULL 허용 + ON DELETE SET NULL 설계다.
+    String before = EasyTxnSnapshot.of(txn);
+    correctionService.record(txn.getBusiness(), null, "DELETE", before, "{}", "admin");
     journalService.voidFor(txn);
     txnRepository.delete(txn);
   }
