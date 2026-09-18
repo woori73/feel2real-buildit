@@ -5,6 +5,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashbo
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceReview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType;
@@ -60,10 +61,19 @@ public class EasyLedgerService {
     long income = 0L;
     long expense = 0L;
     for (EasyTransaction txn : txns) {
-      if (txn.getDirection() == EasyTxnDirection.INCOME) {
+      // 역분개(INCOME + expenseReversal)는 매출이 아니라 비용 차감이다
+      // (EasyReportService/EasyExecutiveService와 동일 원칙).
+      if (txn.getDirection() == EasyTxnDirection.INCOME && !txn.isReversal()) {
         income += txn.getAmount();
-      } else {
+      } else if (txn.getDirection() == EasyTxnDirection.EXPENSE) {
         expense += txn.getAmount();
+      } else if (txn.isReversal()) {
+        if (txn.getAccount() != null
+            && txn.getAccount().getDirection() == EasyAccountDirection.INCOME) {
+          income -= txn.getAmount();
+        } else {
+          expense -= txn.getAmount();
+        }
       }
     }
 
