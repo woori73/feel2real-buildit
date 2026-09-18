@@ -7,8 +7,8 @@
 - 결론: 복구 대상이 없어 Q21-Q40 신규 제작으로 진행.
 
 Branch: content/shingu3-round4-q11-q20
-Commit SHA: (push 후 기록)
-Push: (push 후 기록)
+Commit SHA: ef099132e569954a5de8c533780130dcf868c0ef
+Push: SUCCESS (544a83e..ef09913, 원격 SHA 일치 확인)
 
 Canonical Source: docs/exam-generation/sources/shingu3/신구중3_6과_학교프린트_필기(9-17).html
 Actual Past Exam DNA: docs/exam-generation/sources/shingu3/신구중3_2026_1학기말_영어_기출_Claude참조.html
