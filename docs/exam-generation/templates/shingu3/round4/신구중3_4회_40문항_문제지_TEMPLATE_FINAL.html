@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head><meta charset="utf-8"/><style id="clean-final-style">
+
+@page { size:A4 portrait; margin:0; }
+*{box-sizing:border-box}
+html,body{width:100%;margin:0;padding:0}
+body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-size:9.5pt;line-height:1.42;color:#111}
+.page{width:210mm;height:297mm;padding:12mm 11mm 10mm 11mm;position:relative;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.page:last-child{page-break-after:auto}
+.cols{display:flex;gap:7mm;flex:1 1 auto;min-height:0;padding-bottom:5mm}
+.col{width:calc(50% - 3.5mm);overflow:hidden;display:flex;flex-direction:column;gap:var(--qgap,18px)}
+.exam-header{border:1.4pt solid #000;margin-bottom:4mm}
+.exam-header table{width:100%;border-collapse:collapse;font-size:9.5pt}
+.exam-header td,.exam-header th{border:.7pt solid #444;padding:2mm 2.5mm}
+.exam-header .title-row td{text-align:center;font-size:14pt;font-weight:700;padding:3mm;letter-spacing:1px}
+.exam-header .sub-row td{text-align:center;font-size:9.5pt;color:#333}
+.exam-header .info-row td{font-size:9pt}
+.exam-header .label{font-weight:700;background:#f2f2f2;width:16mm;text-align:center}
+.student-info-row .label{width:12mm;text-align:center;white-space:nowrap}
+.student-info-row .student-name{width:72mm}.student-info-row .student-day{width:34mm}.student-info-row .student-score{width:34mm}.student-info-row td{height:9mm;vertical-align:middle}
+.qblock{margin:0;page-break-inside:avoid;break-inside:avoid;flex:0 0 auto}
+.qhead{display:flex;gap:1.3mm;align-items:baseline}.qnum{font-weight:700;flex-shrink:0}.qprompt{font-weight:500}
+.passage{margin:1mm 0 1mm 4.6mm}.passage.box,.passage.dialog{border:.7pt solid #666;padding:1.5mm 2mm;background:#fbfbfb;line-height:1.55}
+.choices{margin-top:1.5mm}.choices.row{margin-left:4.6mm;display:flex;flex-wrap:wrap;column-gap:3.3mm;row-gap:.8mm;align-items:flex-start}
+.choice-item{display:inline-block;white-space:normal;padding-left:1.35em;text-indent:-1.35em}
+.choices.vertical{display:block;margin-left:4.6mm}.choices.vertical .choice-item,.choices.vertical .opt{display:block;width:auto;margin:0 0 1.15mm 0;padding-left:1.45em;text-indent:-1.45em;white-space:normal}
+.cond-box{margin:1.3mm 0 0 4.6mm;border:.7pt solid #666;padding:1mm 2mm;font-size:9pt;background:#fbfbfb}.cond-label{font-weight:700;margin-right:1mm}.view-title{display:block;text-align:center;margin:0 0 1.2mm 0;font-weight:700}.cond-box + .choices{margin-top:3.4mm}
+.choice-table{width:calc(100% - 4.6mm);margin:1.2mm 0 0 4.6mm;border-collapse:collapse;font-size:9pt;text-align:center}.choice-table th,.choice-table td{padding:.55mm 1.2mm;border-bottom:.45pt solid #bbb}.choice-table th{font-weight:700;border-top:.7pt solid #666;border-bottom:.7pt solid #666}.choice-table td:first-child{width:9mm;font-weight:700}
+.blank{display:inline-block;min-width:14mm;border-bottom:.7pt solid #111}
+u{text-underline-offset:1.5px}
+.page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
+@media screen{body{background:#e9e9e9}.page{margin:0 auto 8mm auto}}
+@media print{@page{size:A4 portrait;margin:0}html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:210mm!important;height:296mm!important;margin:0!important;padding:12mm 11mm 12mm 11mm!important;overflow:hidden!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.cols{display:flex!important;width:100%!important;padding-bottom:4mm!important}.col{flex:0 0 calc(50% - 3.5mm)!important;width:calc(50% - 3.5mm)!important}}
+
+.page-footer .page-num { display: inline-block; margin-left: 8px; }
+
+
+
+/* EduHolic logo 2-cell header */
+.exam-header .title-row .logo-cell{
+  width:34mm;
+  padding:0;
+  text-align:center;
+  vertical-align:middle;
+}
+.exam-header .title-row .logo-cell img{
+  width:28mm;
+  height:auto;
+  display:block;
+  margin:2mm auto;
+}
+.exam-header .title-row .title-cell{
+  text-align:left;
+  font-size:14pt;
+  font-weight:700;
+  padding:3mm 4mm;
+  letter-spacing:0.5px;
+}
+@media print{
+  .exam-header .title-row .logo-cell img{
+    width:28mm!important;
+  }
+}
+}
+
+
+/* FINAL header: left 1/4 logo spans title+school rows; right 3/4 title/school */
+.exam-header .title-row td { position: static !important; }
+.exam-header .logo-cell{
+  width:25% !important;
+  padding:0 !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+}
+.exam-header .logo-cell img{
+  width:31mm !important;
+  max-height:13mm !important;
+  height:auto !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin:0 auto !important;
+}
+.exam-header .title-cell{
+  width:75% !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+  font-size:14pt !important;
+  font-weight:700 !important;
+  padding:3mm 4mm !important;
+  letter-spacing:.5px !important;
+}
+.exam-header .school-cell{
+  text-align:center !important;
+  vertical-align:middle !important;
+  font-size:9.5pt !important;
+  color:#333 !important;
+  padding:2mm 2.5mm !important;
+}
+/* rowspan 때문에 로고 영역에는 제목/학교 사이 가로선이 생기지 않는다 */
+
+/* Q01-Q10 two-page review adjustments */
+.q1-sentence-box{
+  margin:2mm 0 2mm 4.6mm;
+  border:.7pt solid #666;
+  padding:2.2mm 2.5mm;
+  line-height:1.9;
+  background:#fbfbfb;
+}
+.q1-sentence-box div{margin:.8mm 0}
+.word-bank-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1.2mm 3mm;
+  margin-top:1mm;
+  text-align:left;
+}
+.word-bank-grid span{display:block}
+.compact-passage{line-height:1.48!important}
+.compact-choices .choice-item{margin-bottom:.75mm!important}
+</style><style id="sinsa-style-page-spacing">
+@media print{
+  .col{gap:var(--qgap,18px)!important;}
+}
+/* 페이지마다 같은 간격을 강제하지 않는다.
+   여유 단만 qgap을 키우고, 밀도가 높은 단은 기존 간격을 유지한다. */
+</style><style id="shingu3-true-independent-column-fill">
+/*
+  신구중3 좌/우 단 완전 독립 균형편집.
+  페이지 전체가 아니라 각 column의 실제 콘텐츠 높이를 기준으로 처리.
+  - 빽빽한 단: 최소 10px 간격 유지
+  - 여유 있는 단: 해당 단의 남는 세로 공간만 문항 사이에 분산
+  - 반대쪽 단의 밀도는 참조하지 않음
+*/
+.cols > .col{
+  display:flex !important;
+  flex-direction:column !important;
+  height:100% !important;
+  min-height:0 !important;
+  gap:var(--qgap,10px) !important;
+  justify-content:space-between !important;
+}
+.cols > .col > .qblock{
+  flex:0 0 auto !important;
+}
+@media print{
+  .cols > .col{
+    height:100% !important;
+    min-height:0 !important;
+    gap:var(--qgap,10px) !important;
+    justify-content:space-between !important;
+  }
+}
+
+/* Q37은 선택지가 잘리지 않도록 한 덩어리로 유지 */
+[data-qnum="37"]{
+  break-inside:avoid !important;
+  page-break-inside:avoid !important;
+}
+</style><style id="logo-fill-cell-final">
+.exam-header .logo-cell{
+  width:25% !important;
+  height:20mm !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+  position:relative !important;
+}
+.exam-header .logo-cell img{
+  position:absolute !important;
+  left:1.5mm !important;
+  right:1.5mm !important;
+  top:1mm !important;
+  bottom:1mm !important;
+  width:calc(100% - 3mm) !important;
+  height:calc(100% - 2mm) !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  margin:0 !important;
+}
+.exam-header .title-cell{
+  width:75% !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+}
+@media print{
+  .exam-header .logo-cell img{
+    width:calc(100% - 3mm) !important;
+    height:calc(100% - 2mm) !important;
+  }
+  .exam-header .title-cell{text-align:center !important;}
+}
+</style><title>신구중3 4회 40문항 문제지 FINAL v30</title><style>
+/* v11: preserve approved original column width/geometry; only prevent bottom clipping */
+.page { overflow: hidden; }
+.qblock { break-inside: avoid; page-break-inside: avoid; }
+</style><style>
+/* v12: Q4/Q6/Q12 only — compact choices horizontally to prevent bottom clipping */
+[data-qnum="4"] .choices,
+[data-qnum="6"] .choices,
+[data-qnum="12"] .choices {
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:wrap !important;
+  align-items:baseline;
+  column-gap:4mm !important;
+  row-gap:1.2mm !important;
+  margin-top:1.5mm !important;
+}
+[data-qnum="4"] .choices .choice-item,
+[data-qnum="6"] .choices .choice-item,
+[data-qnum="12"] .choices .choice-item {
+  display:inline-block !important;
+  width:auto !important;
+  margin:0 !important;
+  white-space:nowrap;
+}
+/* Q4 options are short enough for a single row */
+[data-qnum="4"] .choices { flex-wrap:nowrap !important; column-gap:3.2mm !important; }
+/* Q12 is just ①ⓐ ... ⑤ⓔ: keep all five on one row */
+[data-qnum="12"] .choices { flex-wrap:nowrap !important; column-gap:5mm !important; }
+/* Q6: use the full line; wrap only if the actual option text cannot fit */
+[data-qnum="6"] .choices { column-gap:3mm !important; }
+</style><style>
+/* v14: Q18 onward moved + Q21~Q40 integrated */
+.page{overflow:hidden;}
+.page .cols{padding-bottom:10mm !important;}
+.qblock{break-inside:avoid; page-break-inside:avoid;}
+.qblock .choices{margin-top:2.2mm;}
+.qblock .choices>div{margin:.55mm 0;}
+.prompt-box,.view-box{margin:2.2mm 0; padding:2.4mm 3mm; border:1px solid #999; line-height:1.45;}
+.answer-lines{margin-top:2.4mm;}
+.answer-lines span{display:block;height:7mm;border-bottom:1px solid #777;}
+.written{margin-bottom:5mm;}
+.written .prompt-box{padding:2mm 2.5mm;margin:1.7mm 0;}
+.page:nth-of-type(6) .written{margin-bottom:4mm;}
+.page:nth-of-type(6) .answer-lines span{height:6.5mm;}
+@media print{
+  .page{break-after:page; page-break-after:always; overflow:hidden;}
+  .page:last-of-type{break-after:auto;page-break-after:auto;}
+}
+</style><style id="v16-template-layout">
+/* Q1~Q30 TEMPLATE 재조판 v16: 문제 내용 불변, 배치/선택지 밀도만 조정 */
+.qblock{break-inside:avoid!important;page-break-inside:avoid!important;}
+.choices-one-row .choices{
+  display:grid!important;
+  grid-template-columns:repeat(5,max-content)!important;
+  justify-content:space-between!important;
+  column-gap:2mm!important;
+  row-gap:0!important;
+  align-items:start!important;
+}
+.choices-one-row .choices>div{margin:0!important;white-space:nowrap!important;}
+.choices-two-row .choices{
+  display:grid!important;
+  grid-template-columns:repeat(3,max-content)!important;
+  justify-content:space-between!important;
+  column-gap:3mm!important;
+  row-gap:1mm!important;
+}
+.choices-two-row .choices>div{margin:0!important;}
+.dialog-split .choices>div{margin-bottom:1.6mm!important;line-height:1.35!important;}
+.dialog-split .bline{display:inline-block;padding-left:5mm;}
+.question-box{border:1px solid #999!important;padding:2.5mm 3mm!important;margin:2mm 0!important;line-height:1.4!important;}
+/* 하단 안전영역을 침범하지 않도록 실제 내용 높이를 제한한다. */
+.page .cols{padding-bottom:9mm!important;}
+.page .col{align-content:start!important;}
+.page .qblock{margin-bottom:4mm!important;}
+/* Q6이 이동한 2페이지와 Q12가 이동한 3페이지는 불필요한 간격만 줄임. */
+.page:nth-of-type(2) .qblock,.page:nth-of-type(3) .qblock{margin-bottom:3.4mm!important;}
+.page:nth-of-type(2) .passage,.page:nth-of-type(3) .passage{line-height:1.42!important;}
+@media print{
+  .page{overflow:hidden!important;break-after:page!important;page-break-after:always!important;}
+  .page:last-of-type{break-after:auto!important;page-break-after:auto!important;}
+}
+</style><style id="v17-user-fixes">
+/* v17: content-preserving layout corrections */
+.long-blank{display:inline-block;width:58mm;border-bottom:1.4px solid #111;vertical-align:middle;margin-left:2mm;}
+.lh17{line-height:1.7!important;}
+.source-box,.sentence-box,.dialog-box,.question-box{
+ border:1px solid #888!important;padding:2.5mm 3mm!important;margin:2mm 0!important;background:#fff!important;
+}
+.sentence-box>div,.dialog-box>div{margin-bottom:1.2mm;}
+.sentence-box>div:last-child,.dialog-box>div:last-child{margin-bottom:0;}
+.f-line{display:block!important;margin-left:4mm!important;}
+.q27-three-row .choices{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ column-gap:3mm!important;row-gap:1.2mm!important;
+}
+.q27-three-row .choices>div{white-space:normal!important;margin:0!important;}
+/* Q12 remains on p2; compress only safe inter-item whitespace, not text. */
+.page:nth-of-type(2) .qblock{margin-bottom:2.8mm!important;}
+/* Q15 bottom protection */
+.page:nth-of-type(3) .col{padding-bottom:8mm!important;}
+.page:nth-of-type(3) .qblock{margin-bottom:3mm!important;}
+/* Page 5 balanced columns: 25-27 | 28-30 */
+.page:nth-of-type(5) .qblock{margin-bottom:3.2mm!important;}
+.page:nth-of-type(5) .cols{padding-bottom:9mm!important;}
+@media print{
+ .qblock{break-inside:avoid!important;page-break-inside:avoid!important;}
+ .page{overflow:hidden!important;}
+}
+</style><style id="v18-q24-move">
+/* Q24: 하단 잘림 방지를 위해 다음 페이지로 통째 이동 */
+.page:nth-of-type(5) .qblock{break-inside:avoid!important;page-break-inside:avoid!important;}
+</style><style id="v19-q30-pair">
+.qblock.choices-two-row .q30-pair-table{display:block!important;width:68mm;margin-top:2mm;}
+.q30-pair-table .pair-head,.q30-pair-table .pair-row{
+ display:grid!important;grid-template-columns:8mm 27mm 27mm!important;
+ align-items:center!important;line-height:1.45!important;
+}
+.q30-pair-table .pair-head{font-weight:700!important;text-align:left!important;margin-bottom:.8mm;}
+.q30-pair-table .pair-row{margin-bottom:.5mm!important;}
+.q30-pair-table span{white-space:nowrap!important;}
+</style><style id="v20-q30-nowrap">.keep-pair{white-space:nowrap!important;}</style><style id="v21-q31-40">
+/* Q31-Q40 final objective layout */
+.page:last-of-type .cols{padding-bottom:9mm!important;}
+.page:last-of-type .qblock{margin-bottom:3.0mm!important;break-inside:avoid!important;page-break-inside:avoid!important;}
+.page:last-of-type .passage{line-height:1.62!important;margin-top:1.3mm!important;margin-bottom:1.5mm!important;}
+.page:last-of-type .view-box,.page:last-of-type .dialogue-box{border:1px solid #888;padding:2mm 2.5mm;margin:1.6mm 0;line-height:1.55;}
+.page:last-of-type .one-line .choices{display:grid!important;grid-template-columns:repeat(5,max-content)!important;justify-content:space-between!important;column-gap:1.5mm!important;}
+.page:last-of-type .one-line .choices>div{white-space:nowrap!important;margin:0!important;}
+.page:last-of-type .two-line .choices{display:grid!important;grid-template-columns:1fr 1fr!important;column-gap:3mm!important;row-gap:.7mm!important;}
+.page:last-of-type .two-line .choices>div{margin:0!important;}
+</style><style id="v22-q15-fix">.q15-blank{white-space:nowrap!important;font-weight:600;}</style><style id="v23-fixes">
+/* Requested corrections v23 */
+#v23-fixes{}
+.q15-blank{white-space:nowrap!important}
+.dialogue-aligned{border:1px solid #888!important;padding:2.5mm 3mm!important;line-height:1.55!important}
+.dialogue-aligned .speaker-row{display:grid!important;grid-template-columns:6mm 1fr!important;column-gap:1mm!important;margin-bottom:1.1mm!important}
+.dialogue-aligned .speaker{display:block!important;text-align:left!important}
+.dialogue-aligned .utterance{display:block!important}
+.bare-blank{display:inline-block!important;min-width:28mm!important;border-bottom:1px solid #111!important;white-space:nowrap!important}
+.q33-3plus2 .choices{display:grid!important;grid-template-columns:repeat(6,1fr)!important;column-gap:2mm!important;row-gap:1mm!important}
+.q33-3plus2 .choices>div{white-space:nowrap!important;margin:0!important}
+.q33-3plus2 .choices>div:nth-child(1){grid-column:1/3}
+.q33-3plus2 .choices>div:nth-child(2){grid-column:3/5}
+.q33-3plus2 .choices>div:nth-child(3){grid-column:5/7}
+.q33-3plus2 .choices>div:nth-child(4){grid-column:1/4}
+.q33-3plus2 .choices>div:nth-child(5){grid-column:4/7}
+.page:last-of-type .qblock{break-inside:avoid!important;page-break-inside:avoid!important}
+.page:last-of-type .cols{padding-bottom:10mm!important}
+</style><style id="v24-layout-fixes">
+/* v24 requested layout corrections */
+.q27-choices-cont{margin-top:0!important;}
+.q27-choices-cont .continued-label{font-weight:700;margin-bottom:1.5mm;}
+.q27-choices-cont .choices{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ column-gap:4mm!important;row-gap:1.3mm!important;
+}
+.q27-choices-cont .choices>div{white-space:normal!important;margin:0!important;}
+
+.force-one-row .choices{
+ display:grid!important;
+ grid-template-columns:repeat(5,max-content)!important;
+ justify-content:space-between!important;
+ column-gap:1.2mm!important;row-gap:0!important;
+}
+.force-one-row .choices>div{white-space:nowrap!important;margin:0!important;font-size:9pt!important;}
+
+.page:last-of-type .cols{
+ display:block!important;
+ padding-bottom:10mm!important;
+}
+.page:last-of-type .single-flow-col{
+ width:100%!important;
+ max-width:none!important;
+ display:block!important;
+ column-count:1!important;
+}
+.page:last-of-type .single-flow-col .qblock{
+ width:100%!important;
+ margin:0 0 5mm 0!important;
+ break-inside:avoid!important;
+ page-break-inside:avoid!important;
+}
+.page:last-of-type .single-flow-col .passage{
+ max-width:none!important;
+}
+.page:last-of-type .single-flow-col .choices{
+ max-width:none!important;
+}
+</style><style id="v25-repair">
+/* v25 repair: standard 2-column template restored */
+.page:last-of-type .cols{
+ display:grid!important;
+ grid-template-columns:1fr 1fr!important;
+ column-gap:8mm!important;
+ padding-bottom:10mm!important;
+}
+.page:last-of-type .col{
+ width:auto!important;max-width:none!important;display:block!important;column-count:1!important;
+}
+.page:last-of-type .qblock{
+ width:auto!important;margin-bottom:4mm!important;break-inside:avoid!important;page-break-inside:avoid!important;
+}
+.q40-bare-blank{
+ display:inline-block!important;min-width:28mm!important;border-bottom:1px solid #111!important;
+ white-space:nowrap!important;
+}
+</style><style id="v26-final-template">
+/* FINAL TEMPLATE RULES */
+.qblock{break-inside:avoid!important;page-break-inside:avoid!important;}
+/* Q27 choices belong to the question itself; no repeated '27. 선택지' heading */
+.qblock.dialogue-aligned .choices,
+.qblock.q27-three-row .choices{
+ margin-top:2.5mm!important;
+ display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ column-gap:5mm!important;row-gap:1.2mm!important;
+}
+.qblock.dialogue-aligned .choices>div,
+.qblock.q27-three-row .choices>div{margin:0!important;white-space:normal!important;}
+/* Q28-Q30: template-consistent breathing room */
+.page:nth-of-type(5) .col:nth-child(2) .qblock{margin-bottom:5mm!important;}
+.page:nth-of-type(5) .col:nth-child(2) .qblock:last-child{margin-bottom:0!important;}
+/* Final page: preserve 2-column template, but Q38-Q40 stay sequentially in left column */
+.page:last-of-type .cols{display:grid!important;grid-template-columns:1fr 1fr!important;column-gap:8mm!important;}
+.page:last-of-type .col:first-child .qblock{margin-bottom:6mm!important;}
+.page:last-of-type .col:first-child .qblock:last-child{margin-bottom:0!important;}
+</style><style id="v27-vertical-balance">
+/* v27: page 5 + final page vertical-space balancing.
+   Rule: do not leave a large dead zone at the bottom; distribute spare height
+   through inter-question spacing while preserving bottom safe area. */
+
+/* Page 5: both columns use available printable height.
+   Left: Q24-Q27, Right: Q28-Q30. */
+.page:nth-of-type(5) .cols{
+  align-items:stretch!important;
+}
+.page:nth-of-type(5) .col{
+  height:100%!important;
+  min-height:0!important;
+}
+.page:nth-of-type(5) .col:first-child,
+.page:nth-of-type(5) .col:nth-child(2){
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:space-between!important;
+  padding-bottom:9mm!important;
+}
+.page:nth-of-type(5) .col .qblock{
+  margin-bottom:0!important;
+  flex:0 0 auto!important;
+}
+
+/* Final page: Q38-Q40 remain in the same left column as approved,
+   but use the printable column height rather than bunching at the top. */
+.page:last-of-type .col:first-child{
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:space-between!important;
+  padding-bottom:9mm!important;
+}
+.page:last-of-type .col:first-child .qblock{
+  margin-bottom:0!important;
+  flex:0 0 auto!important;
+}
+/* Keep the standard 2-column template; right column intentionally unused. */
+.page:last-of-type .cols{
+  align-items:stretch!important;
+}
+</style><style id="v28-page5-balance">
+/* Page 5 FINAL balance: left Q24-Q26, right Q27-Q30 */
+.page:nth-of-type(5) .col{
+ display:flex!important;flex-direction:column!important;
+ justify-content:space-between!important;
+ height:100%!important;padding-bottom:9mm!important;
+}
+.page:nth-of-type(5) .col .qblock{
+ margin:0!important;flex:0 0 auto!important;
+ break-inside:avoid!important;page-break-inside:avoid!important;
+}
+.page:nth-of-type(5) .force-one-row .choices{
+ display:grid!important;grid-template-columns:repeat(5,max-content)!important;
+ justify-content:space-between!important;column-gap:1mm!important;
+}
+</style><style id="v29-page5-right-spacing">
+/* v29 — Page 5 right column Q27~Q30:
+   use the full printable column height and distribute ONLY the inter-question
+   whitespace. Keep text/line-height/font unchanged. */
+.page:nth-of-type(5) .col:nth-child(2){
+  height:100%!important;
+  min-height:0!important;
+  padding-bottom:9mm!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:space-between!important;
+}
+.page:nth-of-type(5) .col:nth-child(2) > .qblock{
+  flex:0 0 auto!important;
+  margin-top:0!important;
+  margin-bottom:0!important;
+  break-inside:avoid!important;
+  page-break-inside:avoid!important;
+}
+/* Do not stretch passages/choices themselves. */
+.page:nth-of-type(5) .col:nth-child(2) .passage,
+.page:nth-of-type(5) .col:nth-child(2) .choices,
+.page:nth-of-type(5) .col:nth-child(2) .view-box{
+  flex:none!important;
+}
+</style><style id="v30-real-page5-spacing">
+/* Actual page containing Q24-Q30: explicit targeting, not nth-of-type. */
+.page-q24-30 .p5-left,
+.page-q24-30 .p5-right{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+  gap:0!important;
+  padding-bottom:8mm!important;
+}
+
+/* Right column Q27-Q30: deliberately consume the former dead space
+   with inter-question spacing. Typography/content remains unchanged. */
+.page-q24-30 .p5-right > .qblock:nth-child(1){margin-bottom:16mm!important;}
+.page-q24-30 .p5-right > .qblock:nth-child(2){margin-bottom:16mm!important;}
+.page-q24-30 .p5-right > .qblock:nth-child(3){margin-bottom:16mm!important;}
+.page-q24-30 .p5-right > .qblock:nth-child(4){margin-bottom:0!important;}
+
+/* Left column Q24-Q26: also avoid top bunching, but less aggressively
+   because Q26 dialogue is tall. */
+.page-q24-30 .p5-left > .qblock:nth-child(1){margin-bottom:7mm!important;}
+.page-q24-30 .p5-left > .qblock:nth-child(2){margin-bottom:7mm!important;}
+.page-q24-30 .p5-left > .qblock:nth-child(3){margin-bottom:0!important;}
+</style></head><body><div class="page"><div class="exam-header"><table>
+<tr class="title-row"><td class="logo-cell" rowspan="2"><img alt="EduHolic academy" src="data:image/jpeg;base64,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"/></td><td class="title-cell" colspan="5">2026학년도 2학기 중간고사 대비 4회 40문항</td></tr>
+<tr class="sub-row"><td class="school-cell" colspan="5">신구중학교 3학년 · 영어</td></tr>
+<tr class="info-row student-info-row">
+<td class="label">이름</td><td class="student-name"> </td>
+<td class="label">요일</td><td class="student-day"> </td>
+<td class="label">점수</td><td class="student-score"> </td>
+</tr>
+</table></div><div class="cols"><div class="col"><div class="qblock choices-one-row" data-qnum="1">
+<div class="qhead"><span class="qnum">1.</span><span class="qprompt">다음 문장의 공통으로 들어갈 단어로 가장 적절한 것은?</span></div>
+<div class="q1-sentence-box"><div>Please ____ the tickets online right away.</div><div>I ____ed a table for two at the restaurant.</div><div>Reading ____s is my favorite hobby.</div></div>
+<div class="choices row">
+<span class="choice-item">① capture</span><span class="choice-item">② peel</span>
+<span class="choice-item">③ wave</span><span class="choice-item">④ book</span>
+<span class="choice-item">⑤ exhibit</span>
+</div>
+</div><div class="qblock" data-qnum="2">
+<div class="qhead"><span class="qnum">2.</span><span class="qprompt">A와 B의 대화가 어색한 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① A: My train is leaving in five minutes.<br/>   B: Thank you for showing me around.</span>
+<span class="choice-item">② A: Which place did you like most in my town?<br/>   B: I really liked walking around in hanbok.</span>
+<span class="choice-item">③ A: The tickets for the concert are on sale now.<br/>   B: Let's book the tickets online right away.</span>
+<span class="choice-item">④ A: Do you mind if I bring my little brother?<br/>   B: You are not allowed to bring children under 8.</span>
+<span class="choice-item">⑤ A: I can't wait to see the concert!<br/>   B: The train is leaving in five minutes.</span>
+</div>
+</div><div class="qblock" data-qnum="3">
+<div class="qhead"><span class="qnum">3.</span><span class="qprompt">다음 대화에서 ⓐ~ⓔ의 질문의 요지로 적절하지 <u>않은</u> 것은?</span></div>
+<div class="passage dialog">M: Hi, Amy. Welcome to Korea.<br/>
+    F: Hi, Minho. ⓐ <u>How have you been?</u><br/>
+    M: Great. ⓑ <u>Can I ask how you came here?</u><br/>
+    F: I came here by subway.<br/>
+    M: ⓒ <u>How do you feel about it?</u><br/>
+    F: I think it's very clean. By the way I need to unpack. ⓓ <u>Could you give me a hand?</u><br/>
+    M: Sure. ⓔ <u>What do you want me to do?</u>
+</div>
+<div class="choices vertical">
+<span class="choice-item">① ⓐ: 안부 묻기</span><span class="choice-item">② ⓑ: 교통수단 묻기</span>
+<span class="choice-item">③ ⓒ: 느낌/소감 묻기</span><span class="choice-item">④ ⓓ: 도움 요청하기</span>
+<span class="choice-item">⑤ ⓔ: 기차 시간 확인하기</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="4-5">
+<div class="qhead"><span class="qnum">[4~5]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">Have you heard of the expression, "Art ⓐ <u>imitates</u> nature"? Many artists get their ideas and ⓑ <u>inspirations</u> from the world around them. This is because the natural world is a beautiful place. The shapes in nature are very ⓒ <u>pleasing</u> to the eye. For example, look at the egg. It is ⓓ <u>round</u> and ⓔ <u>delicate</u>, yet strong enough to protect its contents. Such a building actually exists in London.</div>
+</div><div class="qblock choices-one-row" data-qnum="4">
+<div class="qhead"><span class="qnum">4.</span><span class="qprompt">&lt;보기&gt;의 밑줄 친 단어가 ⓐ <u>imitates</u>와 문맥상 가장 가까운 의미로 쓰인 것을 모두 고르면?</span></div>
+<div class="cond-box"><span class="view-title">&lt;보 기&gt;</span>
+    ㄱ. The child <u>imitates</u> his father's way of speaking.<br/>
+    ㄴ. This painting <u>copies</u> the style of Monet.<br/>
+    ㄷ. She <u>mimics</u> the bird's song perfectly.<br/>
+    ㄹ. The building <u>reflects</u> the beauty of nature.
+  </div>
+<div class="choices vertical">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄱ, ㄷ</span>
+<span class="choice-item">③ ㄴ, ㄹ</span><span class="choice-item">④ ㄷ, ㄹ</span>
+<span class="choice-item">⑤ ㄱ, ㄴ, ㄷ</span>
+</div>
+</div><div class="qblock" data-qnum="5">
+<div class="qhead"><span class="qnum">5.</span><span class="qprompt">윗글의 ⓑ <u>inspirations</u>, ⓒ <u>pleasing</u>, ⓔ <u>delicate</u>에 대한 설명으로 적절하지 <u>않은</u> 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① inspirations는 '영감'이라는 뜻으로 ideas와 유사한 의미다.</span>
+<span class="choice-item">② pleasing은 '보기 좋은' 뜻으로 shapes in nature를 수식한다.</span>
+<span class="choice-item">③ delicate는 '섬세한' 뜻이지만 '강한'이라는 의미로도 쓰인다.</span>
+<span class="choice-item">④ imitates는 '모방하다' 뜻으로 copies와 바꿀 수 있다.</span>
+<span class="choice-item">⑤ delicate는 '여린, 섬세한' 뜻으로 egg의 특성을 설명한다.</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki <span class="page-num">1</span></div></div><div class="page"><div class="cols"><div class="col"><div class="qblock choices-two-row" data-qnum="6">
+<div class="qhead"><span class="qnum">6.</span><span class="qprompt">다음 글의 ⓐ, ⓑ, ⓒ에 들어갈 말로 가장 적절한 것만을 &lt;보기&gt;에서 골라 짝지은 것은?</span></div><div class="passage dialog compact-passage">[그림: 콘서트 포스터 앞에서 두 학생이 대화함]<br/>
+    A: The tickets for the World Music Concert are on sale now. Let's ⓐ ____ the tickets online right away.<br/>
+    B: ⓑ ____ you mind if I bring my little brother?<br/>
+    A: Sorry, but you are not ⓒ ____ to bring children under 8.
+  </div>
+<div class="cond-box"><span class="view-title">&lt;보 기&gt;</span><div class="word-bank-grid"><span>ㄱ. book</span><span>ㄴ. Do</span><span>ㄷ. are</span><span>ㄹ. Will</span><span>ㅁ. Can</span><span>ㅂ. allowed</span></div></div>
+<div class="choices vertical">
+<span class="choice-item">① ⓐ-ㄱ / ⓑ-ㄴ / ⓒ-ㄷ</span>
+<span class="choice-item">② ⓐ-ㄱ / ⓑ-ㄴ / ⓒ-ㅂ</span>
+<span class="choice-item">③ ⓐ-ㄷ / ⓑ-ㄹ / ⓒ-ㅁ</span>
+<span class="choice-item">④ ⓐ-ㄱ / ⓑ-ㅁ / ⓒ-ㄷ</span>
+<span class="choice-item">⑤ ⓐ-ㄹ / ⓑ-ㄴ / ⓒ-ㅂ</span>
+</div>
+</div><div class="qblock" data-qnum="7-9">
+<div class="qhead"><span class="qnum">[7~9]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">Nature has inspired many architects. Look at the Sagrada Familia in Spain. The tall columns ⓐ <u>looks like</u> trees, don't they? Gaudi ⓑ <u>brought</u> the beauty of nature indoors. In Australia, the Sydney Opera House ⓒ <u>was inspired by</u> an orange, not waves. Look at the roof ⓓ <u>closely</u>. Can you see the peels? Zaha Hadid ⓔ <u>designed</u> DDP with curved lines from nature so that city people could enjoy them.</div>
+</div><div class="qblock compact-choices" data-qnum="7">
+<div class="qhead"><span class="qnum">7.</span><span class="qprompt">윗글에 대한 감상으로 가장 적절한 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① 건물의 외관이 아름다우면 기능도 좋다.</span>
+<span class="choice-item">② 유명한 건축가들은 자연을 복사하기만 한다.</span>
+<span class="choice-item">③ 자연은 건축가에게 영감을 주어 독창적 디자인을 낳는다.</span>
+<span class="choice-item">④ 오페라 하우스는 파도 모양으로 지어야 한다.</span>
+<span class="choice-item">⑤ DDP는 우주선 모양이라 실용적이지 않다.</span>
+</div>
+</div><div class="qblock compact-choices choices-one-row" data-qnum="8">
+<div class="qhead"><span class="qnum">8.</span><span class="qprompt">윗글의 밑줄 친 ⓐ~ⓔ 중 문맥상 쓰임이 적절하지 <u>않은</u> 것은?</span></div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span><span class="choice-item">⑤ ⓔ</span>
+</div>
+</div><div class="qblock compact-choices choices-one-row" data-qnum="9">
+<div class="qhead"><span class="qnum">9.</span><span class="qprompt">윗글의 밑줄 친 <u>closely</u>와 어법상 유사하게 쓰인 문장을 &lt;보기&gt;에서 고르면?</span></div>
+<div class="cond-box"><span class="view-title">&lt;보 기&gt;</span>
+    ㄱ. He looked <u>closely</u> at the map.<br/>
+    ㄴ. The station is <u>closely</u> located near here.<br/>
+    ㄷ. She <u>closely</u> resembles her mother.<br/>
+    ㄹ. We are <u>closely</u> related by blood.
+  </div>
+<div class="choices row">
+<span class="choice-item">① ㄱ</span><span class="choice-item">② ㄴ</span>
+<span class="choice-item">③ ㄷ</span><span class="choice-item">④ ㄹ</span><span class="choice-item">⑤ ㄱ, ㄷ</span>
+</div>
+</div></div><div class="col"><div class="qblock compact-choices choices-one-row" data-qnum="10">
+<div class="qhead" style="margin-top:2mm"><span class="qnum">10.</span><span class="qprompt">다음 글의 irony 설명을 바탕으로, 윗글에 드러난 irony를 &lt;보기&gt;에서 옳게 골라 짝지은 것을 <u>모두</u> 고르면? (정답 2개)</span></div><div class="passage box">Many people expected the Opera House to be inspired by waves. <u>Ironically</u>, it came from an orange. The DDP looks like a spaceship, but its curved lines come from nature. Irony is a meaningful contrast between expectation and reality.</div>
+<div class="cond-box"><span class="view-title">&lt;보 기&gt;</span>
+    ㄱ. People expected waves, but the answer was an orange.<br/>
+    ㄴ. The Sagrada Familia is in Spain.<br/>
+    ㄷ. DDP looks like a spaceship, but its lines come from nature.<br/>
+    ㄹ. Gaudi brought nature indoors.<br/>
+    ㅁ. The egg building is in London.
+  </div>
+<div class="choices vertical">
+<span class="choice-item">① ㄱ, ㄷ</span><span class="choice-item">② ㄱ, ㄴ</span>
+<span class="choice-item">③ ㄴ, ㄷ</span><span class="choice-item">④ ㄷ, ㄹ</span>
+<span class="choice-item">⑤ ㄱ, ㅁ</span>
+</div>
+</div><div class="qblock" data-qnum="11">
+<div class="qhead"><span class="qnum">11.</span><span class="qprompt">다음 글의 빈칸 ⓐ에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage box">In the first two examples, we can easily see what inspired the architect. But in the next example from Australia, this is not so obvious. Jørn Utzon, the architect of the Sydney Opera House, took a shape from nature and added his imagination. ⓐ ________ Many people think that it is the waves in the ocean or a sailing boat. But interestingly, the inspiration came from an orange. Look at the roof closely. Can you see the peels of an orange? When orange lights are shone on the building, you can see the peels more clearly.</div>
+<div class="choices vertical">
+<span class="choice-item">① What inspired the architect?</span>
+<span class="choice-item">② Where is the Opera House?</span>
+<span class="choice-item">③ Who is Jørn Utzon?</span>
+<span class="choice-item">④ Can you guess what inspired him?</span>
+<span class="choice-item">⑤ How did he build it?</span>
+</div>
+</div><div class="qblock choices-one-row" data-qnum="12">
+<div class="qhead"><span class="qnum">12.</span><span class="qprompt">다음 글의 밑줄 친 ⓐ~ⓔ 중 어법상 틀린 것은?</span></div>
+<div class="passage box">Nature ⓐ <u>has inspired</u> many architects around the world. This is the Sagrada Familia in Spain. It is one of the most famous ⓑ <u>church</u> in the world. Look at the beautiful tall ⓒ <u>columns</u> inside the church. They ⓓ <u>look like</u> trees, don't they? The famous architect Antoni Gaudi used the shape of trees in the Sagrada Familia. That's how he ⓔ <u>brought</u> the beauty of nature indoors.</div>
+<div class="choices vertical">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki <span class="page-num">2</span></div></div><div class="page"><div class="cols"><div class="col"><div class="qblock" data-qnum="13-14">
+<div class="qhead"><span class="qnum">[13~14]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">In the first two examples, we can easily see what inspired the architect. But in the next example from Australia, this is not so obvious. Jørn Utzon, the architect of the Sydney Opera House, took a shape from nature and added his imagination. Many people think that it is the waves in the ocean or a sailing boat. But interestingly, the inspiration came from an orange. Look at the roof closely. Can you see the peels of an orange? When orange lights are shone on the building, you can see the peels more clearly.</div>
+</div><div class="qblock choices-one-row" data-qnum="13">
+<div class="qhead"><span class="qnum">13.</span><span class="qprompt">다음 세 문장을 윗글의 내용 순서대로 바르게 배열한 것은?</span></div>
+<div class="cond-box"><span class="view-title">&lt;보 기&gt;</span>
+(A) Look at the roof closely.<br/>
+(B) Many people think of waves or a sailing boat.<br/>
+(C) The inspiration came from an orange.</div>
+<div class="choices vertical">
+<span class="choice-item">① (A)－(B)－(C)</span><span class="choice-item">② (A)－(C)－(B)</span>
+<span class="choice-item">③ (C)－(A)－(B)</span><span class="choice-item">④ (B)－(C)－(A)</span>
+<span class="choice-item">⑤ (C)－(B)－(A)</span>
+</div>
+</div><div class="qblock" data-qnum="14">
+<div class="qhead"><span class="qnum">14.</span><span class="qprompt">윗글과 Sagrada Familia, DDP 정보를 바탕으로, 건축물 소개글을 구성할 때 적절하지 <u>않은</u> 설명은?</span></div>
+<div class="cond-box"><span class="view-title">&lt;자 료&gt;</span>
+Sagrada Familia: 스페인, Gaudi, 나무 모양 기둥, 자연을 실내로<br/>
+Sydney Opera House: 호주, Utzon, 오렌지 영감, 파도/배 아님<br/>
+DDP: 서울, Zaha Hadid, 우주선 외관, 자연 곡선, so that 도시 사람들이 즐김</div>
+<div class="choices vertical">
+<span class="choice-item">① Sagrada Familia의 기둥은 나무 모양에서 영감을 받았다.</span>
+<span class="choice-item">② Sydney Opera House의 영감은 오렌지에서 왔다.</span>
+<span class="choice-item">③ DDP는 우주선 모양이므로 자연과 무관하게 설계되었다.</span>
+<span class="choice-item">④ 두 건물 모두 자연에서 영감을 받아 설계되었다.</span>
+<span class="choice-item">⑤ Gaudi와 Utzon 모두 자연을 건축에 반영했다.</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="15">
+<div class="qhead"><span class="qnum">15.</span><span class="qprompt">다음 글의 (A)에 들어갈 내용으로 가장 적절한 것은?</span></div>
+<div class="passage box">In the first two examples, we can easily see what inspired the architect. But in the next example from Australia, <span class="q15-blank">(A) ______________________________</span> ________ Jørn Utzon, the architect of the Sydney Opera House, took a shape from nature and added his imagination. Many people think that it is the waves in the ocean or a sailing boat. But interestingly, the inspiration came from an orange.</div>
+<div class="choices vertical">
+<span class="choice-item">① 오페라하우스의 외관은 매우 독특하다.</span>
+<span class="choice-item">② 많은 건축가들이 자연을 모방한다.</span>
+<span class="choice-item">③ 오페라하우스는 파도 모양으로 유명하다.</span>
+<span class="choice-item">④ 오페라하우스의 영감은 명확하지 않다.</span>
+<span class="choice-item">⑤ Utzon은 유명한 건축가이다.</span>
+</div>
+</div><div class="qblock choices-one-row" data-qnum="16">
+<div class="qhead"><span class="qnum">16.</span><span class="qprompt">다음 글의 밑줄 친 ⓐ~ⓔ를 대체한 표현으로 적절하지 <u>않은</u> 것은?</span></div>
+<div class="passage box">Have you heard of the expression, "Art imitates nature"?<br/>
+Many artists get their ideas and inspirations from the world around them.<br/>
+The shapes in nature are very ⓐ <u>pleasing</u> to the eye.<br/>
+For example, look at the egg on the left.<br/>
+It is round and ⓑ <u>delicate</u>, yet strong enough to protect its ⓒ <u>contents</u>.<br/>
+Can you imagine a building that looks like an egg?<br/>
+Such a building actually ⓓ <u>exists</u> in London.<br/>
+Nature has ⓔ <u>inspired</u> many architects around the world.</div>
+<div class="choices vertical"><span class="choice-item">① ⓐ: attractive</span><span class="choice-item">② ⓑ: fragile</span><span class="choice-item">③ ⓒ: insides</span><span class="choice-item">④ ⓓ: is located</span><span class="choice-item">⑤ ⓔ: discouraged</span></div>
+</div><div class="qblock" data-qnum="17">
+<div class="qhead"><span class="qnum">17.</span><span class="qprompt">Jørn Utzon의 설계 과정을 정리한 관람 수칙 중 적절하지 <u>않은</u> 것은?</span></div>
+<div class="passage box">Jørn Utzon, the architect of the Sydney Opera House, took a shape from nature and added his imagination. Can you guess what inspired him? Many people think that it is the waves in the ocean or a sailing boat. But interestingly, the inspiration came from an orange. Look at the roof closely. Can you see the peels of an orange? When orange lights are shone on the building, you can see the peels more clearly. [관람 수칙]</div>
+<div class="choices vertical"><span class="choice-item">① task: 자연의 형태에 상상력을 더한 과정을 살펴본다.</span><span class="choice-item">② guess: 무엇이 영감을 주었는지 먼저 추측해 본다.</span><span class="choice-item">③ waves: 파도나 돛단배가 영감의 원천임을 확인한다.</span><span class="choice-item">④ roof: 지붕을 자세히 보며 오렌지 껍질을 찾아본다.</span><span class="choice-item">⑤ light: 주황색 불빛 아래 껍질이 더 선명해지는지 관찰한다.</span></div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki <span class="page-num">3</span></div></div><div class="page"><div class="cols"><div class="col"><div class="qblock choices-one-row" data-qnum="18">
+<div class="qhead"><span class="qnum">18.</span><span class="qprompt">밑줄 친 ⓐ~ⓔ 중 문맥상 의미가 다른 것은?</span></div>
+<div class="passage box">The shapes ⓐ <u>in</u> nature are very pleasing to the eye.<br/>
+Such a building actually exists ⓑ <u>in</u> London.<br/>
+This is the Sagrada Familia ⓒ <u>in</u> Spain.<br/>
+Have you ever been to Dongdaemun Design Plaza ⓓ <u>in</u> Seoul?<br/>
+Sumin, my train is leaving ⓔ <u>in</u> five minutes.</div>
+<div class="choices vertical"><span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span><span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span><span class="choice-item">⑤ ⓔ</span></div>
+</div><div class="qblock" data-qnum="19">
+<div class="qhead"><span class="qnum">19.</span><span class="qprompt">(A), (B)에 들어갈 내용을 짝지은 것으로 적절하지 <u>않은</u> 것은?</span></div>
+<div class="passage box">A: I want to see the World Music Concert. What should I do?<br/>
+B: Please (A).<br/>
+A: Okay. Anything else to keep in mind?<br/>
+B: Yes. (B).<br/>
+A: Okay, I will.</div>
+<div class="choices vertical"><span class="choice-item">① (A) book the tickets online right away / (B) hurry because they are on sale now</span><span class="choice-item">② (A) bring my little brother to the concert / (B) check first whether he is under 8</span><span class="choice-item">③ (A) ask "Do you mind if I bring my little brother?" / (B) remember that children under 8 are not allowed</span><span class="choice-item">④ (A) wait until the concert day to book the tickets / (B) book them online right away</span><span class="choice-item">⑤ (A) book two tickets for us online / (B) keep the tickets until the concert day</span></div>
+</div><div class="qblock choices-two-row" data-qnum="20">
+<div class="qhead"><span class="qnum">20.</span><span class="qprompt">다음 글의 밑줄 친 ⓐ~ⓔ를 대체한 표현으로 적절하지 <u>않은</u> 것은?</span></div>
+<div class="passage box">Last weekend, I visited Dongdaemun Design Plaza in Seoul.<br/>
+Many people think that the building ⓐ <u>looks like</u> a giant spaceship.<br/>
+But the architect took the ⓑ <u>curved</u> lines from nature ⓒ <u>so that</u> city people could enjoy them.<br/>
+Thanks to its special design, it has become a popular tourist ⓓ <u>attraction</u> in Seoul.<br/>
+As you can see, many buildings try to ⓔ <u>capture</u> the beauty of nature in their design.</div>
+<div class="choices vertical"><span class="choice-item">① ⓐ: resembles</span><span class="choice-item">② ⓑ: straight</span><span class="choice-item">③ ⓒ: in order that</span><span class="choice-item">④ ⓓ: landmark</span><span class="choice-item">⑤ ⓔ: catch</span></div>
+</div></div><div class="col"><div class="qblock"><b>21. 다음 (A)에 들어갈 표현으로 가장 적절한 것은?</b><div class="prompt-box">한 학생이 시드니 오페라하우스 지붕 사진을 보여 주며 말한다. 다른 학생들이 “Wow!”, “Great idea!”라고 반응함.<br/><b>(A)</b> <span class="long-blank"></span></div><div class="choices"><div>① Shall we visit the Opera House on our school trip?</div><div>② How do you feel about this photo?</div><div>③ Let's take a picture together like this!</div><div>④ Do you want to go to Spain for this?</div><div>⑤ What do you say we eat an orange like this?</div></div></div><div class="qblock choices-one-row"><b>22. 본문 내용과 일치하는 것을 &lt;보기&gt;에서 모두 고르면? (정답 2개)</b><div class="passage source-box lh17">Architects often get ideas from nature. The columns of Sagrada Familia look like trees. Many people think that the Sydney Opera House was inspired by waves in the ocean or a sailing boat, but the inspiration actually came from an orange. Zaha Hadid used curved lines from nature for Dongdaemun Design Plaza so that city people could enjoy them. When orange lights are shone on the Opera House, the orange-peel shapes on its roof can be seen more clearly.</div><div class="view-box"><b>&lt;보 기&gt;</b><br/>ㄱ. Sagrada Familia의 기둥은 나무를 닮았다.<br/>ㄴ. 오페라하우스의 영감은 파도이다.<br/>ㄷ. DDP는 자연의 곡선을 사용하였다.<br/>ㄹ. 달걀 모양 건물은 아직 지어지지 않았다.<br/>ㅁ. 주황색 불빛을 비추면 파도 모양이 보인다.</div><div class="choices"><div>① ㄱ, ㄴ</div><div>② ㄱ, ㄷ</div><div>③ ㄱ, ㄹ</div><div>④ ㄷ, ㅁ</div><div>⑤ ㄹ, ㅁ</div></div></div><div class="qblock choices-one-row"><b>23. 밑줄 친 ⓐ~ⓔ 중 어법상 틀린 것은?</b><div class="passage sentence-box lh17"><div>(A) Have you ever ⓐ <u>been</u> to Dongdaemun Design Plaza in Seoul?</div><div>(B) Many people think that the building ⓑ <u>look</u> like a giant spaceship.</div><div>(C) But the architect took the curved lines from nature so that city people ⓒ <u>could</u> enjoy them.</div><div>(D) When orange lights ⓓ <u>are shone</u> on the building, you can see the peels more ⓔ <u>clearly</u>.</div></div><div class="choices"><div>① ⓐ</div><div>② ⓑ</div><div>③ ⓒ</div><div>④ ⓓ</div><div>⑤ ⓔ</div></div></div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki <span class="page-num">4</span></div></div><section class="page page-q24-30"><div class="cols"><div class="col p5-left"><div class="qblock"><b>24. Gaudi와 Utzon을 비교한 내용으로 가장 적절한 것은?</b><div class="choices"><div>① Gaudi는 나무를, Utzon은 파도를 건축에 반영했다.</div><div>② Gaudi는 나무에서, Utzon은 오렌지에서 영감을 받았다.</div><div>③ Gaudi는 자연을 모방했지만, Utzon은 자연과 무관하게 설계했다.</div><div>④ Gaudi는 런던에서, Utzon은 스페인에서 활동했다.</div><div>⑤ Gaudi는 달걀에서, Utzon은 우주선에서 영감을 받았다.</div></div></div><div class="qblock choices-one-row"><b>25. (A)와 (B) 사이의 내용을 자연스럽게 연결하기 위해 필요한 내용만을 &lt;보기&gt;에서 고른 것은?</b><div class="passage">(A) Many people think that it is the waves in the ocean or a sailing boat.<br/>(B) Look at the roof closely.</div><div class="view-box"><b>&lt;보 기&gt;</b><br/>ㄱ. But interestingly, the inspiration came from an orange.<br/>ㄴ. Jørn Utzon added his imagination to a shape from nature.<br/>ㄷ. When orange lights are shone, the peels look clearer.<br/>ㄹ. Can you guess what inspired him?</div><div class="choices"><div>① ㄱ</div><div>② ㄱ, ㄴ</div><div>③ ㄴ, ㄷ</div><div>④ ㄷ, ㄹ</div><div>⑤ ㄱ, ㄷ</div></div></div><div class="qblock choices-one-row q27-three-row"><b>26. ⓐ~ⓔ의 질문 의도로 적절하지 않은 것은?</b><div class="passage dialog-box lh17 dialogue-aligned"><div class="speaker-row"><span class="speaker">M:</span><span class="utterance">ⓐHave you ever been to Dongdaemun Design Plaza in Seoul?</span></div><div class="speaker-row"><span class="speaker">F:</span><span class="utterance">Yes, I went there last year.</span></div><div class="speaker-row"><span class="speaker">M:</span><span class="utterance">ⓑCan you guess what inspired the architect of the Opera House?</span></div><div class="speaker-row"><span class="speaker">F:</span><span class="utterance">The waves? Hmm, maybe an orange?</span></div><div class="speaker-row"><span class="speaker">M:</span><span class="utterance">ⓒCan you see the peels of an orange on the roof?</span></div><div class="speaker-row"><span class="speaker">F:</span><span class="utterance">Yes! I can see them now.</span></div><div class="speaker-row"><span class="speaker">M:</span><span class="utterance">ⓓIf you were an architect, what would you choose from nature?</span></div><div class="speaker-row"><span class="speaker">F:</span><span class="utterance">I would choose the mountains.</span></div><div class="speaker-row"><span class="speaker">M:</span><span class="utterance">ⓔWhich place did you like most in my town?</span></div><div class="speaker-row"><span class="speaker">F:</span><span class="utterance">I really liked walking around in hanbok.</span></div></div><div class="choices"><div>① ⓐ: 경험 묻기</div><div>② ⓑ: 추측 유도</div><div>③ ⓒ: 확인 요청</div><div>④ ⓓ: 상상 질문</div><div>⑤ ⓔ: 이유 묻기</div></div></div></div><div class="col p5-right"><div class="qblock choices-one-row force-one-row"><b>27. 빈칸에 들어갈 말로 가장 적절한 것은?</b><div class="passage">But the architect, Zaha Hadid, took the curved lines from nature so that ( ⓐ ) could enjoy them.</div><div class="choices"><div>① tourists</div><div>② city people</div><div>③ architects</div><div>④ animals</div><div>⑤ orange lights</div></div></div><div class="qblock dialog-split"><b>28. A와 B의 대화가 어색한 것은?</b><div class="choices"><div>① A: Which place did you like most in my town?<br/><span class="bline">B: I really liked walking around in hanbok.</span></div><div>② A: Do you mind if I bring my little brother?<br/><span class="bline">B: Sure. Children under 8 are welcome.</span></div><div>③ A: When are the concert tickets on sale?<br/><span class="bline">B: They are on sale now.</span></div><div>④ A: Can you guess what inspired him?<br/><span class="bline">B: Maybe the waves in the ocean.</span></div><div>⑤ A: Have a safe trip.<br/><span class="bline">B: Thank you.</span></div></div></div><div class="qblock choices-one-row"><b>29. 다음 세 문장의 공통으로 들어갈 단어로 가장 적절한 것은?</b><div class="passage question-box lh17">Let’s ( ____ ) the tickets online right away.<br/>I ( ____ )ed two seats for the concert yesterday.<br/>I read an interesting ( ____ ) about architecture.</div><div class="choices"><div>① book</div><div>② ticket</div><div>③ catch</div><div>④ wave</div><div>⑤ call</div></div></div><div class="qblock choices-two-row"><b>30. ( ⓐ ), ( ⓑ )에 들어갈 단어를 옳게 짝지은 것은?</b><div class="passage">Many buildings try to ( ⓐ ) the beauty of nature in <span class="keep-pair">their ( ⓑ )</span>.</div><div class="choices"><div class="q30-pair-table"><div class="pair-head"><span></span><span>ⓐ</span><span>ⓑ</span></div><div class="pair-row"><span>①</span><span>capture</span><span>design</span></div><div class="pair-row"><span>②</span><span>exhibit</span><span>outdoors</span></div><div class="pair-row"><span>③</span><span>hold</span><span>inside</span></div><div class="pair-row"><span>④</span><span>peel</span><span>roof</span></div><div class="pair-row"><span>⑤</span><span>wave</span><span>ocean</span></div></div></div></div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki <span>5</span></div></section><div class="page"><div class="cols"><div class="col"><div class="qblock"><b>31. 다음 글의 내용과 일치하는 것은?</b><div class="passage">Have you heard of the expression, "Art imitates nature"? Many artists get their ideas and inspirations from the world around them. This is because the natural world is a beautiful place. The shapes in nature are very pleasing to the eye. For example, look at the egg on the left. Isn't it beautiful? It is round and delicate, yet strong enough to protect its contents. Can you imagine a building that looks like an egg? Such a building actually exists in London.</div><div class="choices"><div>① 예술가들은 자연과 무관하게 작품의 영감을 얻는다.</div><div>② 달걀은 둥글고 섬세하지만 내용물을 보호할 만큼 강하지 않다.</div><div>③ 달걀 모양 건물은 실제로 런던에 존재한다.</div><div>④ 자연의 모양은 눈을 불쾌하게 한다.</div><div>⑤ 달걀 모양 건물은 상상 속에만 존재한다.</div></div></div><div class="qblock one-line"><b>32. 빈칸에 들어갈 말로 가장 적절한 것은?</b><div class="passage">Nature has inspired many architects around the world. This is the Sagrada Familia in Spain. Look at the beautiful tall columns inside the church. They look like trees, don't they? The famous architect, Antoni Gaudi, used the shape of trees in the Sagrada Familia. That's how he brought the beauty of nature <span class="blank bare-blank">　　　　　　　　　</span>.</div><div class="choices"><div>① upstairs</div><div>② downtown</div><div>③ abroad</div><div>④ indoors</div><div>⑤ outside</div></div></div><div class="qblock one-line q33-3plus2"><b>33. 밑줄 친 ⓐ~ⓔ를 대체한 표현으로 적절하지 않은 것은?</b><div class="passage">Have you heard of the expression, "Art ⓐ <u>imitates</u> nature"? In the next example from Australia, this is not so ⓑ <u>obvious</u>. Jørn Utzon took a shape from nature and added his ⓒ <u>imagination</u>. Look at the roof ⓓ <u>closely</u>. When orange lights are shone on the building, you can see the peels more ⓔ <u>clearly</u>. Thanks to its special design, it has become a popular tourist attraction in Seoul.</div><div class="choices"><div>① ⓐ: copies</div><div>② ⓑ: clear</div><div>③ ⓒ: creativity</div><div>④ ⓓ: carefully</div><div>⑤ ⓔ: locally</div></div></div><div class="qblock one-line force-one-row"><b>34. 밑줄 친 ⓐ~ⓔ 중 어법상 틀린 것은?</b><div class="passage">Art ⓐ <u>imitates</u> nature in many ways. The egg is round and delicate, yet strong enough to protect its ⓑ <u>contents</u>. The famous architect ⓒ <u>use</u> the shape of trees in the church. When orange lights are shone on the building, you ⓓ <u>can</u> see the peels more clearly. You are not ⓔ <u>allowed</u> to bring children under 8.</div><div class="choices"><div>① ⓐ</div><div>② ⓑ</div><div>③ ⓒ</div><div>④ ⓓ</div><div>⑤ ⓔ</div></div></div></div><div class="col"><div class="qblock one-line force-one-row"><b>35. 밑줄 친 ⓐ와 같은 의미로 쓰인 것을 &lt;보기&gt;에서 모두 고르면?</b><div class="passage">Can you see the ⓐ <u>peels</u> of an orange on the roof?<div class="view-box"><b>&lt;보기&gt;</b><br/>ㄱ. Peel the orange before you eat it.<br/>ㄴ. The banana peels are on the table.<br/>ㄷ. The paint is starting to peel off the wall.<br/>ㄹ. Look at the orange peels on the roof.</div></div><div class="choices"><div>① ㄴ, ㄹ</div><div>② ㄱ, ㄴ</div><div>③ ㄱ, ㄷ</div><div>④ ㄴ, ㄷ</div><div>⑤ ㄷ, ㄹ</div></div></div><div class="qblock one-line force-one-row"><b>36. &lt;보기&gt;의 밑줄 친 단어가 윗글의 ⓓ와 어법상 유사하게 쓰인 문장만을 옳게 고른 것은?</b><div class="passage">Look at the roof closely. Can you see the peels of an orange? When orange lights are shone on the building, you can see the peels more ⓓ <u>clearly</u>.<div class="view-box"><b>&lt;보기&gt;</b><br/>ㄱ. She spoke clearly during the presentation.<br/>ㄴ. Clearly, the building is beautiful.<br/>ㄷ. He could see the numbers clearly.<br/>ㄹ. The teacher explained it clearly.</div></div><div class="choices"><div>① ㄱ, ㄴ</div><div>② ㄴ, ㄷ</div><div>③ ㄴ, ㄹ</div><div>④ ㄱ, ㄷ, ㄹ</div><div>⑤ ㄱ, ㄴ, ㄷ</div></div></div><div class="qblock two-line"><b>37. 다음 대화의 ( ⓐ ), ( ⓑ ), ( ⓒ )에 들어갈 말을 &lt;보기&gt;에서 골라 옳게 짝지은 것은?</b><div class="passage"><div class="dialogue-box">A: Let's ( ⓐ ) the tickets online right away.<br/>B: Good idea. ( ⓑ ).<br/>A: Do you mind if I bring my little brother?<br/>B: ( ⓒ ).</div>
+<div class="view-box"><b>&lt;보기&gt;</b><br/>ㄱ. book<br/>ㄴ. They are on sale now<br/>ㄷ. I can't wait to see the concert<br/>ㄹ. Sure, but you are not allowed to bring children under 8<br/>ㅁ. Children under 8 are welcome<br/>ㅂ. I have to disagree. It is too late</div></div><div class="choices"><div>① ⓐㄱ / ⓑㄴ / ⓒㅁ</div><div>② ⓐㄱ / ⓑㅂ / ⓒㄹ</div><div>③ ⓐㄱ / ⓑㄷ / ⓒㅁ</div><div>④ ⓐㄱ / ⓑㄴ / ⓒㅂ</div><div>⑤ ⓐㄱ / ⓑㄴ / ⓒㄹ</div></div></div></div></div></div><div class="page"><div class="cols"><div class="col"><div class="qblock one-line"><b>38. 밑줄 친 ⓐ~ⓔ 중 문맥상 낱말의 쓰임이 적절하지 않은 것은?</b><div class="passage">Yesterday I visited Dongdaemun Design Plaza in Seoul. Many buildings try to ⓐ <u>capture</u> the beauty of nature in their design. The museum will ⓑ <u>exhibit</u> the new design next week. I tried to ⓒ <u>peel</u> the roof to see the orange. The fans ⓓ <u>waved</u> their hands at the concert. Art ⓔ <u>imitates</u> nature.</div><div class="choices"><div>① ⓐ</div><div>② ⓑ</div><div>③ ⓒ</div><div>④ ⓓ</div><div>⑤ ⓔ</div></div></div><div class="qblock"><b>39. 윗글에 대한 요지로 가장 적절한 것은?</b><div class="passage">Nature has inspired many architects around the world. Antoni Gaudi used the shape of trees in the Sagrada Familia. Jørn Utzon took a shape from nature and added his imagination, and the inspiration came from an orange. Zaha Hadid took the curved lines from nature so that city people could enjoy them. As you can see, many buildings try to capture the beauty of nature in their design.</div><div class="choices"><div>① DDP는 우주선 모양이므로 자연과 무관하게 설계되었다.</div><div>② 오페라하우스의 영감은 파도임이 분명하다.</div><div>③ 달걀 모양 건물은 실제로 존재하지 않는다.</div><div>④ 자연의 모양에 상상력을 더해 도시를 아름답게 만들 수 있다.</div><div>⑤ 건축가들은 자연을 모방하지 않는다.</div></div></div><div class="qblock one-line"><b>40. 빈칸에 들어갈 말로 가장 적절한 것은?</b><div class="passage">He spoke loudly so that everyone could <span class="blank q40-bare-blank">　　　　　　　　　</span> him.</div><div class="choices"><div>① see</div><div>② hear</div><div>③ watch</div><div>④ look</div><div>⑤ listen</div></div></div></div><div class="col"></div></div></div></body></html>
