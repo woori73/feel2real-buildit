@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>회원 채팅 | 새출발기금 부실차주</title>
+  <meta name="description" content="새출발기금·부실차주 정보를 회원들과 교류하는 공용 채팅방">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/newstart.css?v=20260919-4">
+</head>
+<body>
+  <div class="newstart-page newstart-chat-page">
+    <div class="newstart-shell ns-chat-shell">
+
+      <!-- HEADER : 홈과 동일 구조 (서비스명 + 기본 navigation) -->
+      <header class="newstart-top">
+        <a class="newstart-brand" href="/newstart" aria-label="새출발기금 부실차주 홈">새출발기금 부실차주</a>
+        <nav class="newstart-topbar" aria-label="기본 메뉴">
+          <a class="ns-btn ns-btn-ghost" href="/newstart">홈</a>
+          <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/newstart/chat', 'NewStart')}"></th:block>
+        </nav>
+      </header>
+
+      <!-- 채팅방 : 단일 공용방, 모바일 우선 메신저 구조 -->
+      <main class="ns-chat-main" aria-label="회원 채팅">
+        <section class="ns-chat-room ns-card" aria-label="새출발기금 회원 채팅">
+          <div class="ns-chat-head">
+            <div>
+              <h1 class="ns-chat-title">회원 채팅</h1>
+              <p class="ns-chat-sub">새출발기금 회원 채팅 · 로그인 회원 전용</p>
+            </div>
+          </div>
+
+          <!-- 로그인 안내 : 비로그인 방문자용 (기존 로그인 모달로 연결) -->
+          <div id="ns-chat-login" class="ns-chat-login" hidden>
+            <p class="ns-empty">회원 채팅은 로그인 회원만 사용할 수 있습니다.</p>
+            <button id="ns-chat-login-btn" class="ns-btn ns-btn-primary" type="button" data-auth-login>로그인</button>
+          </div>
+
+          <!-- 메시지 목록 -->
+          <div id="ns-chat-list" class="ns-chat-list" aria-live="polite" aria-label="대화 메시지 목록">
+            <button id="ns-chat-more" class="ns-btn ns-btn-ghost ns-chat-more" type="button" hidden>이전 대화 더 보기</button>
+            <p id="ns-chat-empty" class="ns-empty ns-chat-empty" hidden>아직 대화가 없습니다. 첫 메시지를 남겨보세요.</p>
+          </div>
+
+          <!-- 전송 폼 : 하단 고정 -->
+          <form id="ns-chat-form" class="ns-chat-form" hidden>
+            <textarea id="ns-chat-input" class="ns-input ns-chat-input" rows="1"
+              placeholder="메시지를 입력하세요" maxlength="500" aria-label="메시지 입력"></textarea>
+            <button id="ns-chat-send" class="ns-btn ns-btn-primary ns-chat-send" type="submit">전송</button>
+          </form>
+          <p id="ns-chat-status" class="ns-note ns-chat-status" role="status"></p>
+        </section>
+      </main>
+
+      <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+      <script src="/js/return_url.js"></script>
+      <script src="/js/account_menu.js" defer></script>
+      <script src="/js/newstart-chat.js?v=20260919-1" defer></script>
+    </div>
+  </div>
+</body>
+</html>
