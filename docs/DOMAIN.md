@@ -1247,6 +1247,17 @@ V973~V975 불변 — 신규 테이블 + `easy_import_rows` NULL 확장(`external
 공용방 1개 텍스트 채팅(회원 ↔ 회원) 메시지. NewStart AI와 별개이며 회원 대화는 AI 학습·RAG에 사용하지 않는다. 작성자는 서버 principal(JWT)에서만 결정 — 요청값으로 userId를 받지 않는다. 삭제는 soft delete(`deleted=true` + 본문 비움)로 pagination id 안정성을 유지한다. 표시 이름은 저장하지 않고 조회 시 `users.display_name` 규칙(nickname 우선 → loginId, ADMIN=관리자)으로 resolve한다.
 
 - `message_id` PK, `user_id` FK → `users.user_id`(ON DELETE CASCADE), `message` VARCHAR(500) NOT NULL, `deleted` BOOLEAN DEFAULT FALSE, BaseEntity auditing(created_at/updated_at/created_by/updated_by). INDEX `idx_newstart_chat_recent(message_id)` — 최근순/구간 조회.
+
+### 4.54 user_social_accounts ✅ 소셜 로그인 신원 연결 (V982)
+
+Feel2Real 회원(`users`)과 외부 PROVIDER 신원을 1:N으로 연결한다. 최초 구현 provider는 `NAVER`. 별도 회원 시스템이 아니라 기존 `users`/JWT 로그인을 그대로 재사용하고, 이 테이블은 "어떤 provider 신원이 어느 회원을 가리키는지"만 저장한다.
+
+- `social_account_id` PK, `user_id` BIGINT NOT NULL FK → `users.user_id`(ON DELETE CASCADE), `provider` VARCHAR(20)(`NAVER` 등 대문자 enum 문자열), `provider_user_id` VARCHAR(64)(provider별 안정 식별자. NAVER는 `v1/nid/me`의 `result.id`), BaseEntity auditing.
+- UNIQUE `uq_social_provider_identity`(provider, provider_user_id) — provider 신원 1개가 두 회원에 동시 연결되는 것을 차단.
+- UNIQUE `uq_social_user_provider`(user_id, provider) — 한 회원에 같은 provider 연결 1개.
+- 이메일로 자동 병합하지 않는다. 연결 키는 (provider, provider_user_id)뿐이며 `users.email`은 조회·비교 대상이 아니다.
+- 네이버 로그인으로 생성된 회원: `login_id = "naver_" + SHA-256(providerUserId) 앞 16자리`, `password` = 랜덤 bcrypt 해시(비밀번호 로그인 불가 — 의도됨), `role`은 항상 STUDENT(ADMIN 자동 부여 금지 불변 조건).
+
 ## Wiki workspace isolation (FastAPI SQLite)
 
 `wiki_workspaces` and `wiki_workspace_members` live in the Wiki workspace catalog SQLite file. The fixed `legacy` workspace points to the existing Production Wiki database and has only the authenticated `admin` and `modu` members. A non-legacy member receives a deterministic private workspace ID and a separate empty SQLite database on first access.
