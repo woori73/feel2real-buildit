@@ -121,3 +121,39 @@ STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 8
 - 승격 후 #100 포함 `POST /review-batches` → decision APPROVED → `POST /publications/rebuild` (이때는 실제로 rebuild 필요, Publication 35 예상)
 - STEP 3: public count 84 / rank 1~84 연속 / `feel2real.co.kr/chart` UI 84위 표시 검증
 
+## 7. STEP 2 진행중 (2026-09-19 밤, 중간 상태)
+
+**중간 publication rebuild 없음. review-batches / decision / finalize / publications/rebuild 전부 미실행.**
+
+### 7.1 쓰기 기록 (EVALUATABLE 6명)
+
+| id | 이름 | 학원 | 지역 | 경로 | preview |
+|---|---|---|---|---|---|
+| 100 | 강수민 | 링키영어 대원포레나점 | 창원 | `reevaluate?dryRun=false` | 61 |
+| 110 | 조유진 | 리딩온어학원 | 진주 | `research-drafts` | 58 |
+| 111 | 이상민 | 솔민학원 | 함안 | `research-drafts` | 49 |
+| 112 | 윤혜은 | 윤혜은영어학원 | 양산 | `research-drafts` | 61 |
+| 113 | 남경채 | 이지스어학원 | 양산 | `research-drafts` | 61 |
+| 114 | 백승일 | 조슈아영어 통영학원 | 통영 | `research-drafts` | 44 |
+
+→ 기존 공개 83 + 신규 6 = **89명**. `scores/stale` 은 100·110·111·112·113·114 (snapshot 없음, 의도된 상태). 상세 근거·인용은 `research/2026-09-19/02_step2_new_candidates_batch1.md`.
+
+### 7.2 API 제약 2가지 (재현 방지)
+
+1. `DraftRequest.role` 은 `EDUCATOR_ROLES = {원장, 대표, 강사, 선생님}` 밖이면 **400 빈 본문**("원장·대표·강사·선생님만 대상입니다"). `대표원장` → `원장` 으로 저장할 것.
+2. `region` claim 여부와 무관하게 `research-drafts` 는 저장된다. `/api/admin/chart/candidates?zoneId=` 은 구(舊) 서울 zone 만 지원(`gyeongnam-*` 는 400) → 신규 candidate 의 저장 근거를 읽으려면 DB 가 아니라 이 문서·트랜스크립트를 쓸 것.
+
+### 7.3 STRUCTURAL FINDING — confirmation boolean 은 보강으로 못 채운다
+
+`reassessStored()`(:966) 는 `offline_activity_confirmed`·`current_year_activity_confirmed` 를 **chart_candidates 컬럼 값 그대로** assess() 에 넘긴다.
+`ChartCandidateEnrichmentService.SUMMARY_COLUMNS` 는 4개 요약 컬럼뿐이고 evidence 만 추가 가능 → **enrichment 로 두 boolean 을 0→1 로 바꿀 수 없다.** `saveDraft` 는 동일 person_key 에서 409(CONFLICT) 라 재저장 우회도 없다.
+
+- therefore: dryRun holdReasons 에 "현재 오프라인 현장 활동 미확인" 또는 "최근 공개 활동 미확인" 이 포함된 후보는 공식 API 경로로 승격 불가 → **13명**: 51, 52, 53, 55, 78, 79, 90, 93, 101, 102, 106, 108, 109
+- evidence/summary 만으로 게이트 해소가 가능한 후보(=보강 대상) **12명**: 59, 62, 66, 77, 80, 82, 83, 84, 91, 94, 96, 99
+  - 경로: `POST /api/admin/chart/candidates/{id}/enrichment` (원 출처 URL evidence 추가 + 빈 요약 채움) → `POST /candidates/{id}/reevaluate?dryRun=true` → PASS 시 `dryRun=false`
+  - 12명 전원 승격 시 89+12 = **101명 → TOP 100 성립**(100위 밖 1명 DISCOVERED)
+
+### 7.4 남은 절차 (사용자 승인 후 1회)
+
+`POST /review-batches`(신규/변경 후보만) → `decision APPROVED` → `finalize` → `POST /publications/rebuild` → public API·`/chart` UI 에서 RANKED 1~100 + DISCOVERED 검증. `regions/*/complete` 는 자동 게시를 유발하므로 이 단계 전까지 호출 금지.
+
