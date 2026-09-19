@@ -43,7 +43,11 @@ jobs:
             "echo \"=== env file var names only ===\"",
             "grep -oE '^[A-Z][A-Z0-9_]*=' /etc/f2r/env | sort -u",
             "echo \"=== outbound to naver token endpoint (http code only) ===\"",
-            "curl -s -o /dev/null -w 'token_status=%{http_code} time=%{time_total}\\n' --max-time 8 'https://auth.naver.com/oauth2.0/token'",
+            "curl -s -o /dev/null -w 'token_status_old_auth_host=%{http_code} time=%{time_total}\\n' --max-time 8 'https://auth.naver.com/oauth2.0/token'",
+            "curl -s -o /dev/null -w 'token_status_nid=%{http_code} time=%{time_total}\\n' --max-time 8 'https://nid.naver.com/oauth2.0/token'",
+            "curl -s -o /dev/null -w 'token_status_nid_v2=%{http_code} time=%{time_total}\\n' --max-time 8 'https://nid.naver.com/v2/oauth/token'",
+            "echo \"=== DNS A/AAAA for naver hosts (addresses only) ===\"",
+            "for h in auth.naver.com nid.naver.com openapi.naver.com; do echo \"$h A=$(getent ahostsv4 $h 2>/dev/null | awk '{print $1}' | sort -u | tr '\\n' ',') AAAA=$(getent ahostsv6 $h 2>/dev/null | awk '{print $1}' | sort -u | tr '\\n' ',')\"; done",
             "echo \"=== outbound to naver profile endpoint (http code only) ===\"",
             "curl -s -o /dev/null -w 'profile_status=%{http_code} time=%{time_total}\\n' --max-time 8 'https://openapi.naver.com/v1/nid/me'",
             "exit 0"
