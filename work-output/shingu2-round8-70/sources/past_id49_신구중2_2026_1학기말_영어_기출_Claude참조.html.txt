@@ -1,0 +1,187 @@
+PAST EXAM · ACTUAL · AI REFERENCE
+신구중학교 2학년 2026학년도 1학기 기말고사 영어
+표지와 시험지 7쪽의 인쇄 내용을 내신위키/Claude/MCP가 읽기 쉽게 구조화한 실제 기출 참조본입니다. 학생의 손글씨·정답 표시·채점 흔적은 기출 원문에서 제외했습니다. 시험지에 의도적으로 제시된 비문·어법 오류는 임의 교정하지 않았습니다.
+시험 정보
+학교: 신구중학교
+학년: 2학년
+과목: 영어 (과목코드 10)
+시험: 2026학년도 1학기 기말고사
+시험일: 2026년 7월 1일 수요일 2교시
+총점: 100점 / 학기말 반영 25%
+선택형 80점: 3점×12문항 + 4점×9문항 + 2점×4문항
+서답형 20점: 6점×2문항 + 4점×2문항
+원본: 표지 + 시험지 7쪽
+1~3번 공통 대화 — Science Day
+A: Look at this program, Liam. This Saturday is Science Day, and there are lots of interesting activities.
+B: You mean April 21?A: Yes. All the activities look fun, and they're all free.
+B: All of them? ⓐAre you sure?A: Yes, I'm quite sure. I checked the Science Day website.
+B: Great! Then, which activity do you want to take part in?
+A: I want to take the Robot-Making Class in the morning. How about you?
+B: I want to attend Dr. Kim's Lecture on Space in the afternoon.
+A: Oh, I want to attend that lecture, too. Let's go together!
+1번 (3점)
+발문: ⓐ와 바꿔 쓸 수 있는 문장을 모두 고르면? (정답 2개)
+① Is that for real?② Are you certain?③ Do you have any idea?④ Are you interested in it?⑤ What do you think about it?
+2번 (4점)
+발문: 다음 영영 풀이에 해당하는 단어 중 윗글에서 찾을 수 없는 것은?
+① not as good as you hoped or expected② to go to an event, a meeting, or a place③ things that you do, especially for enjoyment and learning④ a talk given to a group of people to teach them about a subject⑤ to look at something carefully to make sure it is right, safe, or correct
+3번 (3점)
+발문: 대화의 내용으로 가장 적절한 것은?
+① 과학의 날 행사는 4월 21일 일요일에 열린다.② 과학의 날 행사 프로그램 중 일부 활동만 무료로 이용이 가능하다.③ 두 학생은 오후에 열리는 우주에 관한 강연에 함께 참여하기로 했다.④ A는 오전에 열리는 로봇 만들기 수업에 B와 함께 참여하기를 원한다.⑤ 과학의 날 행사 프로그램은 웹사이트에서 미리 예약해야 참여할 수 있다.
+4번 (2점)
+발문: ⓐ에 들어갈 말로 가장 적절한 것은?
+A: Look at the sky. It’s so cloudy and dark.B: You are right. You have to take an umbrella with you. It might rain soon.
+A: Oh, I see. By the way, do we need to buy some milk on our way home?
+B: No, there’s still a lot of milk left in the fridge. We ( ⓐ ) buy it today.A: Great! Then we can go straight home.
+① must not ② shouldn’t ③ don’t have to ④ didn’t have to ⑤ doesn’t have to
+5~7번·서답형 1 공통지문 — Whiteout
+ⓐWhiteout was invented by Bette Graham. In 1956, Graham was working at a bank in Texas, USA. At that time, (A)사람들이 한 개의 작은 실수를 했을 때도 전체 쪽을 다시 타자를 쳐야 했다. Graham was a bad typist, so she needed a solution. One day, Graham saw some window painters. When they made a mistake, they corrected it by simply painting over it. The next day, she made her own white paint and used it to ( ⓑ ) her typing mistakes. ⓒSurprisingly, nobody noticed! Soon, everybody at the bank began using it.
+5번 (3점)
+발문: <보기>에서 ⓐ와 어법상 쓰임이 같은 문장을 있는 대로 고른 것은?
+a. English and French are spoken in Canada.b. Alexander Graham Bell invented the telephone in 1876.
+c. The smart students corrected the mistakes on their report.d. The beautiful songs were written by a famous singer last year.
+① a, b ② a, d ③ c, d ④ a, c, d ⑤ b, c, d
+6번 (2점)
+발문: ⓑ에 들어갈 말로 가장 적절한 것은?
+① make ② erase ③ solve ④ write ⑤ collect
+서답형 1 (6점)
+발문: (A)를 조건에 맞춰 영어로 쓰시오.
+조건: retype을 사용할 것 / 축약형을 쓰지 말 것 / 접속사 when을 사용할 것 / 주어+동사가 있는 완벽한 문장으로 쓸 것
+7번 (3점)
+발문: ⓒ를 통해 유추할 수 있는 Bette Graham의 심정으로 가장 적절한 것은?
+① She felt worried because she forgot how to use her white paint.
+② She felt very disappointed because her boss noticed her paint.
+③ She felt bored with her daily bank routines and wanted to be a painter.
+④ She felt satisfied because her invention successfully hid her mistakes.
+⑤ She felt angry because the window painters made a huge mistake in front of the bank.
+8번 (3점)
+발문: <보기>에서 단어의 영영 풀이가 옳은 것만을 있는 대로 고른 것은?
+a. century: a period of 10 yearsb. explode: to make something right
+c. lab: a room or building with scientific equipment for doing scientific tests
+d. crop: a plant such as a rice, fruit, or vegetable that is grown by farmers
+① a, b ② a, d ③ c, d ④ a, c, d ⑤ b, c, d
+9번 (3점)
+발문: 다음 중 어법상 옳은 문장의 개수는?
+○ The toys was made in China last year.○ The packages were sent to her this morning.
+○ The bridge was builded near the river in 1990.○ The wallet was stolen at the crowded park yesterday.
+○ Romeo and Juliet was written by William Shakespeare.
+① 1개 ② 2개 ③ 3개 ④ 4개 ⑤ 5개
+10~11번·서답형 2 공통지문 — Mt. Tambora
+Mt. Tambora, a volcano in Indonesia, exploded in 1815. The explosion created a huge cloud of ash, so crops failed around the world. As a result, people didn't have enough ( ⓐ ) to eat. Surprisingly, this made traveling difficult. Why? In those days, people rode horses, but many horses ( ⓑ ) for food. People needed a new way to travel, and Karl von Drais invented the first bicycle in Germany in 1817.
+10번 (2점)
+발문: ⓐ에 들어갈 단어의 영영 풀이로 옳은 것은?
+① very large in size, amount, or degree② things that people and animals eat, such as meat or bread
+③ a living thing that has leaves and roots and grows in earth④ the soft gray or black powder that is left after something is burned
+⑤ things that people wear to cover their bodies, usually made of cloth
+11번 (2점)
+발문: ⓑ에 들어갈 말로 가장 적절한 것은?
+① killed ② had killed ③ was killed ④ were killed ⑤ were killing
+서답형 2 (6점)
+발문: 아래 질문에 대한 답을 조건에 맞추어 영어로 쓰시오.
+Why did crops fail around the world after the explosion of Mt. Tambora?
+조건: 축약형을 쓰지 말 것 / 접속사 because를 사용할 것 / 대명사 it 또는 that을 사용하지 말 것 / 주어+동사가 있는 완벽한 문장으로 쓸 것
+12~13번 공통지문 — First Webcam
+Do you know where the first webcam came from? It ⓐinvent at a computer lab at Cambridge University in England. The lab members had a coffee pot in a different room. Sometimes they walked to the pot and it was empty. This was very ⓑdisappoint. To solve this problem, Dr. Stafford-Fraser and Dr. Jardetzky came up with a great idea in 1991. They connected a camera to a computer and used special software. Using the software, they could check the coffee pot without (A)leaving their desks. The camera took pictures of the coffee pot three times a minute and ⓒsend them to the computer. It worked very well. Soon, all the members in the lab could see the coffee pot on the local network!
+12번 (3점)
+발문: ⓐ~ⓒ를 어법에 맞게 바꿀 때 옳은 것끼리 짝지은 것은?
+① was invented / disappointing / sent② invented / disappointed / sending③ was invented / disappointing / was sent
+④ is invented / disappointed / was sent⑤ were invented / disappointing / send
+13번 (3점)
+발문: (A)와 문맥상 의미가 가장 유사한 것은?
+① making any coffee ② working with others ③ connecting a camera ④ leaving their coffee pot ⑤ making trips to the coffee pot
+14~15번 공통 대화 — Shopping
+Salesperson: Can I help you?Boy: Yes. I’m looking for a gift for my younger sister. She’s twelve.
+Salesperson: How about this small bag?Boy: Well, ⓐcan you show me something else?
+Salesperson: How about these hairpins, then?Boy: Oh, they’re so pretty! How much are they?
+Salesperson: They are 10 dollars.Boy: That’s reasonable. I’ll take them. By the way, is there any discount?
+Salesperson: I'm afraid not. That is already a discounted price.Boy: Okay. Here is my card.
+14번 (4점)
+발문: <보기>에서 ⓐ와 바꾸어 쓸 수 있는 문장을 있는 대로 고른 것은?
+a. can I try this on?b. do you have anything different?c. could you show me another option?d. is there any other item you can recommend?
+① a, b ② a, d ③ c, d ④ a, c, d ⑤ b, c, d
+15번 (4점)
+발문: 대화의 내용으로 옳은 것을 모두 고르면? (정답 2개)
+① 점원은 처음에 머리핀을 먼저 추천했다.② 소년은 카드로 머리핀 가격을 지불했다.
+③ 소년은 머리핀 세 개를 사기로 결정했다.④ 소년은 12살인 여동생의 선물을 고르고 있다.
+⑤ 소년은 머리핀을 두 개 사는 조건으로 추가 할인을 받았다.
+16번 (4점)
+발문: 주어진 단어의 영영 풀이를 활용한 예문이 적절하지 않은 것은?
+① allowance: money that you are given regularly → My parents increase my allowance if I clean my room.
+② budget: the amount of money you can spend → We need to stay within our budget for the school festival.
+③ discount: a lower price than usual → The store offered a 20% discount on all items.
+④ strategy: a detailed plan for achieving something or reaching a goal → The team came up with a new strategy to win the game.
+⑤ anchor: a suggestion that someone gives you about what you should do in a particular situation → The captain dropped the anchor to keep the ship from moving.
+17번 (4점)
+발문: 어법상 옳은 문장을 모두 고르면? (정답 2개)
+① The girl who is wearing a red cap is my sister.② The laptops which is on the desk belong to the school.
+③ Subways who run during rush hour are always crowded.④ Heavy snow which fell last night blocked all the roads.
+⑤ I bought a book who contains many clean illustrations.
+18~20번·서답형 3 공통지문 — Hunger Marketing
+Do you think you are a smart shopper? Well, you may think you are, but hold on! There are various marketing strategies ⓐ[who / which] influence your decisions. Learning about them will make you a smarter shopper.
+Hunger MarketingJunho: “What? The sale ends in two hours? If I don’t buy the sneakers now, I ⓑ[will / would] have to buy them at a higher price.”
+Dr. M: Stop, Junho! You’re buying the sneakers just because you don’t want to miss the sale. You’re falling for a hunger marketing strategy. If people can buy a product only for a ⓒ[limited / unlimited] time, they often feel “hungry” for it and want to buy it. About missing the sale, don’t worry, Junho. You’ll soon see a similar sale again.
+18번 (3점)
+발문: ⓐ~ⓒ의 주어진 두 단어 중 어법상 알맞은 것끼리 짝지은 것은?
+① who / will / limited② who / would / unlimited③ which / will / unlimited④ which / will / limited⑤ which / would / unlimited
+19번 (4점)
+발문: 다음 영영 풀이에 해당하는 단어 중 윗글에서 찾을 수 없는 것은?
+① to change someone's mind or have an effect on them② to be tricked into believing something that is not true
+③ the amount of money you have to pay for something④ a detailed plan for achieving something or reaching a goal
+⑤ the number that you get when you add everything together
+20번 (4점)
+발문: 윗글의 Hunger Marketing에 대한 내용으로 옳은 것만을 <보기>에서 있는 대로 고른 것은?
+a. 준호는 실제로 운동화가 꼭 필요해서 구매를 서두르고 있다.b. 닥터 M은 이번 세일을 놓치면 다시는 같은 가격에 살 수 없다고 경고한다.
+c. 이 전략에 빠진 소비자들은 기회를 놓치지 않으려는 심리적 압박을 느낀다.d. 소비자가 제품을 구매할 수 있는 시간이 한정되어 있을 때 효과가 극대화된다.
+① a,b ② a,d ③ c,d ④ a,c,d ⑤ b,c,d
+서답형 3 (4점)
+발문: 아래 질문에 대한 답을 조건에 맞추어 영어로 쓰시오.
+According to Dr. M, why is Junho buying the sneakers?
+조건: 축약형을 쓰지 말 것 / 접속사 because를 사용할 것 / 대명사 it 또는 that을 사용하지 말 것 / 주어+동사가 있는 완벽한 문장으로 쓸 것
+21~23번 공통지문 — Viral Marketing / Anchoring Effect
+Viral Marketing
+Wait, Yuna! You only want the T-shirt because you saw it again and again on social media. It isn’t just you. There are a lot of people who ⓐfalls for a viral marketing strategy. Why? Information about a product can spread quickly and widely on the Internet, just like a “virus.” If a product ⓑbecome hot on social media, people naturally want to have it. Yuna, just remember that a popular ⓒproducts isn’t always right for you.
+Anchoring Effect
+Hold on, Somi! Your budget is 50 dollars, but you are buying a 60-dollar lipstick. The 60-dollar lipstick sounds cheap only because the salesperson ⓓshows you a 70-dollar lipstick first. This is an example of the anchoring effect.
+Usually, the first piece of information becomes an “anchor” and ⓔinfluences the shopper’s decision. In your case, the 70-dollar lipstick was the anchor. Somi, don’t just rely on the first piece of information that is given to you.
+21번 (4점)
+발문: Yuna와 Somi의 소비 행태에 대한 분석으로 가장 적절하지 않은 것은?
+① 소미는 물건을 사기 전에 미리 소비 예산을 설정해 두었다.② 소미는 판매원이 처음에 보여준 50달러짜리 립스틱이 비싸다고 느꼈다.
+③ 소미는 처음에 본 립스틱 가격이 기준점으로 작용하여 판단에 영향을 받았다.④ 유나가 충동적인 구매 욕구를 느끼는 것은 Viral Marketing에 넘어간 것이다.
+⑤ 티셔츠를 사려고 하는 유나는 인터넷에서 급속도로 확산된 정보의 영향을 받았다.
+22번 (3점)
+발문: ⓐ~ⓔ 중 의미와 어법이 옳은 것은?
+① ⓐ ② ⓑ ③ ⓒ ④ ⓓ ⑤ ⓔ
+23번 (4점)
+발문: 다음 중 윗글의 Anchoring Effect에 해당하지 않는 것은?
+① A: Let's donate money to Unicef. / B: The web page suggests giving $10. / A: Really? Oh. I only have $5. Now my $5 feels too small. I feel bad.
+② A: I want sell my skateboard for $50. / B: Ask for $100 first. / A: Why? / B: Because when you change it to $50, the buyer will think, “Wow, what a great deal!”
+③ A: This shirt was $100. Now it is $40! / B: Wow, so cheap! You must buy it. / A: Wait. If it was always $40, would it still look cheap? / B: Hmm, maybe not!
+④ A: The sign says: “Limit 10 candy bars.” / B: I only wanted 1 candy bar. / A: But seeing the number 10 makes me want to buy 5. / B: Yeah, me too. Let's get 5.
+⑤ A: Look! This shoe app is so popular right now! / B: Yeah! If you invite 3 friends, the app gives you a $10 coupon! / A: My brother did it yesterday! He sent the link to 3 friends and got $10 off. / B: Wow, everyone is sharing the link.
+24번 (3점)
+발문: <보기>에서 밑줄 친 말의 쓰임이 옳은 것만을 있는 대로 고른 것은?
+a. The fire spread across the field.b. This is a popular restaurant in the city.
+c. This program is wide used by designers.d. The store is offering a discount on all shoes today.
+e. I run on a treadmill every morning to stay healthy.f. These days, many people rely on technology too much.
+① a,b,d ② c,d,f ③ a,b,d,f ④ b,c,d,e ⑤ b,d,e,f
+25번 (3점)
+발문: 주어진 우리말을 영어로 번역한 문장 중 옳지 않은 것은?
+① 우리가 아는 그 사람들은 캐나다에 산다. → We know the people who live in Canada.
+② 바바라는 가구를 만드는 회사에서 일한다. → Babara works for a company which makes furniture.
+③ 나를 도와준 변호사는 친절하고 인내심이 있었다. → The lawyer who helped me was kind and patient.
+④ 어제 고장 난 그 컴퓨터는 지금 잘 작동된다. → The computer which broke down yesterday is working well now.
+⑤ 작년에 붕괴된 그 건물은 재건축이 되고 있다. → The building which was destroyed last year is now being rebuilt.
+서답형 4 (4점)
+발문: ‘engineer’에 해당하는 설명을 <보기>에서 찾은 후 <예시>와 같이 조건에 맞춰 영어로 쓰시오.
+보기: fly an airplane / cook for people / design and build machines
+예시: A teacher is a person who teaches young students at school.
+조건: 축약형을 쓰지 말 것 / 관계대명사를 사용할 것 / 주어+동사가 있는 완벽한 문장으로 쓸 것
+내신위키 기출 원본 텍스트화 기준
+Actual Past Exam과 Digital Twin은 별도 자료로 유지한다.
+발문·지문·선택지·보기·서답형 조건·배점을 원문 구조대로 보존한다.
+공통지문, (A), ⓐ~ⓔ 등 문항 간 참조 관계를 유지한다.
+학생 손글씨·정답 체크·채점 흔적은 핵심 기출 데이터에서 제외한다.
+시험 자체가 출제한 문법 오류·오답 표현은 정답에 맞춰 임의 교정하지 않는다.
+표지와 7쪽을 시험 단위 하나의 HTML로 통합한다.
+Claude는 Digital Twin과 실제 기출을 함께 참조한다.
+MCP Final Context에는 metadata뿐 아니라 이 HTML 본문이 포함되어야 한다.
