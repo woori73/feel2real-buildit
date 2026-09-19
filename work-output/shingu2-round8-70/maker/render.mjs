@@ -110,7 +110,7 @@ if (process.argv[2] === "draft") {
       (u) =>
         `<div class="unit" data-unit-start="${u[0].num}">${u.map(qblockHtml).join("")}</div>`
     )
-    .join("")}</div></div><div class="page-footer">draft</div></div>
+    .join("")}</div><div class="col" style="--qgap:18px"></div></div><div class="page-footer">draft</div></div>
 <script>${EDITOR_SCRIPT}</script></body></html>`;
   fs.writeFileSync(path.join(OUT, "draft.html"), html);
   console.log("draft written", path.join(OUT, "draft.html"), "units", units().length);

@@ -41,7 +41,7 @@ export const QUESTIONS = [
   },
   {
     num: 5,
-    groupLabel: "[5~7] 다음 글을 읽고, 물음에 답하시오.",
+    groupLabel: "[5~7] 다음 글 A를 읽고, 물음에 답하시오.",
     prompt: "주어진 문장이 들어가기에 가장 적절한 곳은?",
     passage: {
       kind: "box",
@@ -78,7 +78,7 @@ export const QUESTIONS = [
   },
   {
     num: 8,
-    groupLabel: "[8~10] 다음 글을 읽고, 물음에 답하시오.",
+    groupLabel: "[8~10] 다음 글 B를 읽고, 물음에 답하시오.",
     prompt: "윗글을 한 문장으로 요약한 것으로 가장 적절한 것은?",
     passage: {
       kind: "box",
@@ -123,7 +123,7 @@ export const QUESTIONS = [
   },
   {
     num: 11,
-    groupLabel: "[11~13] 다음 글을 읽고, 물음에 답하시오.",
+    groupLabel: "[11~13] 다음 글 C를 읽고, 물음에 답하시오.",
     prompt: "이 글의 주된 목적으로 가장 적절한 것은?",
     passage: {
       kind: "box",
@@ -233,7 +233,7 @@ export const QUESTIONS = [
     prompt: "다음 글의 빈칸 (A), (B)에 들어갈 말로 바르게 짝지어진 것은?",
     passage: {
       kind: "box",
-      html: "(A)<span class='blank'></span> she <span class='blank'></span> get up early when she was a child?<br/>(B) Yes, but now she doesn't. She is a night worker.",
+      html: "(A) <span class='blank'></span> she <span class='blank'></span> get up early when she was a child?<br/>(B) Yes, but now she doesn't. She is a night worker.",
     },
     choices: [
       "Did / used to",
@@ -353,7 +353,7 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. The museum is about 500 meters away.<br/>b. B is told to turn left after going straight.<br/>c. Walking there takes about 15 minutes.<br/>d. G advises B to take a bus because it is far.",
+        "a. G tells B that walking there is possible.<br/>b. B is told to turn left after going straight.<br/>c. Walking there takes about 15 minutes.<br/>d. G advises B to take a bus because it is far.",
     },
     choices: ["a, b, c", "a, b, d", "a, c, d", "b, c, d", "a, b, c, d"],
     answer: 1,
@@ -381,7 +381,7 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "(a) He sent the pictures <span class='blank'></span> foreign newspapers.<br/>(b) Can you take a picture <span class='blank'></span> me?<br/>(c) She explained the meaning <span class='blank'></span> us.<br/>(d) He showed his photos <span class='blank'></span> us.<br/>(e) Please pass the sprayer <span class='blank'></span> me.",
+        "(a) He sent the pictures <span class='blank'></span> foreign newspapers.<br/>(b) Could you buy a stamp <span class='blank'></span> me?<br/>(c) She explained the meaning <span class='blank'></span> us.<br/>(d) He showed his photos <span class='blank'></span> us.<br/>(e) Please pass the sprayer <span class='blank'></span> me.",
     },
     choices: ["1개", "2개", "3개", "4개", "5개"],
     answer: 4,
@@ -451,7 +451,7 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "Dr. Schofield was a Canadian doctor, and he first came to Korea in 1916 to teach medicine. <span class='mm'>ⓐ</span> He wanted to teach in Korean, so he began to learn Korean right away. <span class='mm'>ⓑ</span> He studied so hard that he was able to teach in Korean after only a few years. <span class='cc'>ⓒ</span> He believed that every country has the right to be independent, so he helped the Korean independence movement. <span class='mm'>ⓓ</span> For the rest of his life, he worked hard to help Koreans, especially poor students. <span class='mm'>ⓔ</span>",
+        "Dr. Schofield was a Canadian doctor, and he first came to Korea in 1916 to teach medicine. <span class='mm'>ⓐ</span> His English name was Frank W. Schofield, and he loved his Korean name because it sounded similar to his real name. <span class='mm'>ⓑ</span> He wanted to teach in Korean, so he began to learn Korean right away. <span class='cc'>ⓒ</span> He studied so hard that he was able to teach in Korean after only a few years. <span class='mm'>ⓓ</span> He believed that every country has the right to be independent, so he helped the Korean independence movement. <span class='mm'>ⓔ</span> For the rest of his life, he worked hard to help Koreans, especially poor students.",
     },
     cond: {
       title: "보기",
@@ -490,7 +490,7 @@ export const QUESTIONS = [
     prompt: "다음 글에서 밑줄 친 <u>this important event</u>가 가리키는 것으로 가장 적절한 것은?",
     passage: {
       kind: "box",
-      html: "“Unbelievable! There are so many people here. I hope the world will learn about <u>this important event</u> through my pictures.”",
+      html: "Dr. Schofield was looking at the huge crowd that had gathered for the independence of Korea. He said to himself, “I hope the world will learn about <u>this important event</u> through my pictures.”",
     },
     choices: [
       "foreign newspapers' visit to Korea",
@@ -508,7 +508,7 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "On February 28, 1919, a man came to Dr. Schofield's house and said, “I have a special favor to ask you.” “Many people are going to gather tomorrow for the independence of Korea. Could you take pictures of the event and share them with the world?” At 2 p.m. on March 1, Dr. Schofield was hiding in a building and saw a large group of people gathering outside. He began to take pictures. He later wrote an article about the historic event and sent it to foreign newspapers with his pictures.",
+        "On February 28, 1919, a man came to Dr. Schofield's house and said, “I have a special favor to ask you.” “Many people are going to gather tomorrow for the independence of Korea. Could you take pictures of the event and share them with the world?” At 2 p.m. on March 1, Dr. Schofield was hiding in a building and saw a large group of people gathering outside. He began to take pictures, and looking at the crowd, he could not help saying, “<u>Unbelievable!</u>” He later wrote an article about the historic event and sent it to foreign newspapers with his pictures.",
     },
     cond: {
       title: "보기",
@@ -524,7 +524,7 @@ export const QUESTIONS = [
   },
   {
     num: 40,
-    prompt: "그가 행사장 한복판이 아니라 '건물 안에 숨어서' 사진을 찍었다는 사실로부터 추론한 것으로 가장 적절한 것은?",
+    prompt: "그가 행사장 한복판이 아니라 'was hiding in a building'이었다는 사실로부터 추론한 것으로 가장 적절한 것은?",
     choices: [
       "그는 사진 찍는 일을 부끄럽게 생각했다.",
       "그는 사람들이 몰려드는 것이 무서웠다.",
@@ -537,23 +537,22 @@ export const QUESTIONS = [
   },
   {
     num: 41,
-    prompt: "다음 연표의 (a)~(e)를 시간 순서대로 배열한 것으로 가장 적절한 것은? (윗글과 [35~37] 지문을 모두 근거로 한다.)",
+    prompt: "윗글의 내용을 시간 순서대로 배열한 것으로 가장 적절한 것은?",
     table: {
-      head: ["연표", "사건"],
+      head: ["번호", "사건"],
       rows: [
-        ["(a)", "1916년, 의학을 가르치기 위해 처음 한국에 옴"],
-        ["(b)", "1919년, 3·1 운동의 모습을 촬영하고 기사로 세계에 알림"],
-        ["(c)", "1920년, 감시 때문에 캐나다로 돌아가야 함"],
-        ["(d)", "1958년, 한국 정부의 초청으로 다시 한국에 옴"],
-        ["(e)", "1970년, 국립서울현충원에 안장됨"],
+        ["(a)", "그 행사에 대한 기사를 써서 사진과 함께 외국 신문사에 보냈다."],
+        ["(b)", "한 남자가 집을 찾아와 그에게 특별한 부탁을 했다."],
+        ["(c)", "건물 안에 숨어 많은 사람이 모여 드는 모습을 보았다."],
+        ["(d)", "사진기를 들고 촬영을 시작했다."],
       ],
     },
-    choices: ["(a)-(b)-(c)-(d)-(e)", "(b)-(a)-(c)-(e)-(d)", "(a)-(c)-(b)-(d)-(e)", "(b)-(a)-(d)-(c)-(e)", "(a)-(b)-(c)-(e)-(d)"],
+    choices: ["(b)-(c)-(d)-(a)", "(b)-(d)-(c)-(a)", "(c)-(b)-(d)-(a)", "(d)-(b)-(c)-(a)", "(c)-(d)-(b)-(a)"],
     answer: 1,
   },
   {
     num: 42,
-    prompt: "[39~42] 지문의 장면에서 Dr. Schofield이 “<u>Unbelievable!</u>”이라고 말한 것으로 미루어 알 수 있는 심정으로 가장 적절한 것은?",
+    prompt: "윗글의 장면에서 Dr. Schofield이 “<u>Unbelievable!</u>”이라고 말한 것으로 미루어 알 수 있는 심정으로 가장 적절한 것은?",
     choices: ["화가", "놀람과 감탄", "지루함", "후회", "부끄러움"],
     answer: 2,
   },
@@ -821,11 +820,11 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "(a) Give you a clue. → Give a clue to you.<br/>" +
+        "(a) Give me a clue. → Give a clue to me.<br/>" +
         "(b) They give many people great pleasure. → They give great pleasure to many people.<br/>" +
         "(c) The coffee was so hot that I couldn't drink it. → The coffee was too hot to drink it.<br/>" +
         "(d) You are so young that you can't see the movie. → You are young enough to see the movie.<br/>" +
-        "(e) We heard her dog's name called. → I heard her dog's name call.",
+        "(e) She heard her dog's name called. → I heard her dog's name call.",
     },
     choices: ["1개", "2개", "3개", "4개", "5개"],
     answer: 2,
