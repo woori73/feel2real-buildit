@@ -1,0 +1,51 @@
+{
+  "articleId": 5972,
+  "articleNumber": 5972,
+  "boardName": "질문게시판",
+  "breadcrumbsBasis": "article header board link + menuid=1",
+  "clubId": 31312978,
+  "commentBadge": 3,
+  "extractionMethod": "Playwright MCP --extension bridge (read-only)",
+  "extractedAt": "2026-09-19T14:05:00+09:00",
+  "hasImage": false,
+  "imageNote": "none",
+  "memberGrade": "인기멤버",
+  "menuId": 1,
+  "originalBody": [
+    "부실우려중입니다.올해말 정도 차주신청준비중입니다.배우자가 올해 5월 아산병원에서 중대수술을 받았습니다(간경화말기 간이식)",
+    "장애등록도 중증은 아니지만 등록 될 예정이고 현재 회복중이라 저도 묶여있고(소득이 알바정도) 배우자도 면역억제제 때문에 회복을 위해 따로 있습니다.제가 간병도 하고 병원도 아직 일주일에 한번 데리고 다녀옵니다.미성년자녀가 2명이라 한공간에 위험이 있다고해서 오피스텔에서 격리되어 있습니다.임시안이 나왔을때 가족중 이런상황이 있으면 감면율에 도움이 될까요? 내용을 본거 같아서요 ..이런내용을 소명할 기회가 있는지 궁금합니다.아직도 알아야될게 너무많고 막막하네요.",
+    "찾아보니 방장님께서 25.12월에 올려주신 표가 있었어요..장애인을 부양하고 있는 사람에 해당이 될까요? 집이 있어서 전세를 주고 이사를 가게될꺼같은데(생활비와 병원비때문에) 재산가액 계산이 어떻게 될지는 아직 모르겠는데요.위에 내용을 잘 소명한다면 70%감면율이 적용이 될수 있을까요?"
+  ],
+  "originalComments": [
+    {
+      "author": "소상꽁",
+      "order": 1,
+      "role": "MEMBER",
+      "text": "본인의 장애등급이 1급~3급 => 90%\n본인의 장애등급이 4급~6급 => 70%\n\n장애인가족을 부양(등급무관) => 70%",
+      "writtenAt": "2026.09.13. 11:12"
+    },
+    {
+      "author": "호이맘1",
+      "isAuthor": true,
+      "order": 2,
+      "role": "QUESTIONER",
+      "text": "말씀 감사합니다 재산가액도 보인지 궁금합니다",
+      "writtenAt": "2026.09.13. 21:08"
+    },
+    {
+      "author": "소상꽁",
+      "order": 3,
+      "role": "MEMBER",
+      "text": "재산가액도 당연히 보는데 , 감면율이 60%인 일반인이든 90%인 특수감면자이든 상관없이 재산가액을 순부채를 계산할때 반영하는 방식은 동일합니다. 즉, 채무원금-재산가액 = 순부채 이때, 감면액 = 순부채 × 감면율 조정된 채무액 = 채무원금-감면액 또는 순부채×(1-감면율) + 재산가액",
+      "writtenAt": "2026.09.13. 22:23"
+    }
+  ],
+  "originalUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5972",
+  "source": "naver-cafe-newhopero",
+  "title": "부실차주 신청시..",
+  "url": "https://cafe.naver.com/f-e/cafes/31312978/articles/5972?menuid=1&referrerAllArticles=false",
+  "viewCount": 145,
+  "writtenAt": "2026.09.12. 21:56",
+  "writtenBy": "호이맘1",
+  "loginMethod": "existing user-logged-in Chrome session reuse; no credentials/cookies stored"
+}
