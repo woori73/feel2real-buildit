@@ -19,8 +19,8 @@ html,body{width:100%;margin:0;padding:0}
 body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-size:9.5pt;line-height:1.42;color:#111}
 .page{width:210mm;height:297mm;padding:12mm 11mm 10mm 11mm;position:relative;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;background:#fff}
 .page:last-child{page-break-after:auto}
-.cols{display:flex;gap:7mm;flex:1 1 auto;min-height:0;padding-bottom:5mm}
-.col{width:calc(50% - 3.5mm);overflow:hidden;display:flex;flex-direction:column;gap:var(--qgap,18px)}
+.cols{display:flex;gap:6.5mm;flex:1 1 auto;min-height:0;padding-bottom:4mm}
+.col{width:calc(50% - 3.25mm);overflow:hidden;display:flex;flex-direction:column;gap:var(--qgap,18px)}
 .exam-header{border:1.4pt solid #000;margin-bottom:4mm}
 .exam-header table{width:100%;border-collapse:collapse;font-size:9.5pt}
 .exam-header td,.exam-header th{border:.7pt solid #444;padding:2mm 2.5mm}
@@ -33,20 +33,20 @@ body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-s
 .run-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.9pt solid #000;padding-bottom:1.5mm;margin-bottom:3mm;font-size:9pt;color:#333}
 .qblock{margin:0;page-break-inside:avoid;break-inside:avoid;flex:0 0 auto}
 .unit{display:flex;flex-direction:column;gap:18px;flex:0 0 auto}
-.qhead{display:flex;gap:1.3mm;align-items:baseline}.qnum{font-weight:700;flex-shrink:0}.qprompt{font-weight:500}
-.group-label{font-weight:700;margin:0 0 1mm 0}
-.passage{margin:1mm 0 1mm 4.6mm}.passage.box,.passage.dialog{border:.7pt solid #666;padding:1.5mm 2mm;background:#fbfbfb;line-height:1.55}
-.passage.prose{margin-left:4.6mm;line-height:1.55}
-.choices{margin-top:1.5mm}.choices.row{margin-left:4.6mm;display:flex;flex-wrap:wrap;column-gap:3.3mm;row-gap:.8mm;align-items:flex-start}
+.qhead{display:flex;gap:1.3mm;align-items:baseline;line-height:1.35}.qnum{font-weight:700;flex-shrink:0}.qprompt{font-weight:500}
+.group-label{font-weight:700;margin:0 0 .6mm 0}
+.passage{margin:.7mm 0 .7mm 4.6mm}.passage.box,.passage.dialog{border:.7pt solid #666;padding:1.2mm 1.8mm;background:#fbfbfb;line-height:1.42}
+.passage.prose{margin-left:4.6mm;line-height:1.42}
+.choices{margin-top:.9mm}.choices.row{margin-left:4.6mm;display:flex;flex-wrap:wrap;column-gap:3mm;row-gap:.5mm;align-items:flex-start}
 .choice-item{display:inline-block;white-space:normal;padding-left:1.35em;text-indent:-1.35em}
-.choices.vertical{display:block;margin-left:4.6mm}.choices.vertical .choice-item{display:block;width:auto;margin:0 0 1.15mm 0;padding-left:1.45em;text-indent:-1.45em;white-space:normal}
-.cond-box{margin:1.3mm 0 0 4.6mm;border:.7pt solid #666;padding:1mm 2mm;font-size:9pt;background:#fbfbfb}.cond-label{font-weight:700;margin-right:1mm}.view-title{display:block;text-align:center;margin:0 0 1.2mm 0;font-weight:700}.cond-box + .choices{margin-top:3.4mm}
-.choice-table{width:calc(100% - 4.6mm);margin:1.2mm 0 0 4.6mm;border-collapse:collapse;font-size:9pt;text-align:center}.choice-table th,.choice-table td{padding:.55mm 1.2mm;border-bottom:.45pt solid #bbb}.choice-table th{font-weight:700;border-top:.7pt solid #666;border-bottom:.7pt solid #666}.choice-table td:first-child{width:9mm;font-weight:700}
-.blank{display:inline-block;min-width:14mm;border-bottom:.7pt solid #111}.given-sentence{display:block;border:.7pt solid #666;padding:1mm 2mm;margin:1mm 0 0 4.6mm;background:#fff}u{text-underline-offset:1.5px}
+.choices.vertical{display:block;margin-left:4.6mm}.choices.vertical .choice-item{display:block;width:auto;margin:0 0 .7mm 0;padding-left:1.45em;text-indent:-1.45em;white-space:normal}
+.cond-box{margin:.9mm 0 0 4.6mm;border:.7pt solid #666;padding:.8mm 1.8mm;font-size:9pt;line-height:1.4;background:#fbfbfb}.cond-label{font-weight:700;margin-right:1mm}.view-title{display:block;text-align:center;margin:0 0 1.2mm 0;font-weight:700}.cond-box + .choices{margin-top:2mm}
+.choice-table{width:calc(100% - 4.6mm);margin:1.2mm 0 0 4.6mm;border-collapse:collapse;font-size:9pt;text-align:center}.choice-table th,.choice-table td{padding:.4mm 1.1mm;border-bottom:.45pt solid #bbb}.choice-table th{font-weight:700;border-top:.7pt solid #666;border-bottom:.7pt solid #666}.choice-table td:first-child{width:9mm;font-weight:700}
+.blank{display:inline-block;min-width:14mm;border-bottom:.7pt solid #111}.given-sentence{display:block;border:.7pt solid #666;padding:.8mm 1.8mm;margin:.7mm 0 .3mm 4.6mm;background:#fff}u{text-underline-offset:1.5px}
 .page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
 .edit-toolbar{position:fixed;right:14px;top:14px;z-index:9999;display:flex;gap:6px;padding:7px;background:#fff;border:1px solid #aaa;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-family:Arial,sans-serif}.edit-toolbar button{font-size:12px;padding:6px 9px;border:1px solid #888;background:#fff;border-radius:5px;cursor:pointer}body.editing [contenteditable="true"]{outline:1px dashed #4d78c4;outline-offset:2px;background:#fffdf0}
 @media screen{body{background:#e9e9e9}.page{margin:0 auto 8mm auto}}
-@media print{@page{size:A4 portrait;margin:0}html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:210mm!important;height:296mm!important;margin:0!important;padding:12mm 11mm 12mm 11mm!important;overflow:hidden!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.cols{display:flex!important;width:100%!important;padding-bottom:4mm!important}.col{flex:0 0 calc(50% - 3.5mm)!important;width:calc(50% - 3.5mm)!important}.edit-toolbar{display:none!important}}`;
+@media print{@page{size:A4 portrait;margin:0}html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:210mm!important;height:297mm!important;margin:0!important;padding:12mm 11mm 10mm 11mm!important;overflow:hidden!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.cols{display:flex!important;gap:6.5mm!important;width:100%!important;padding-bottom:4mm!important}.col{flex:0 0 calc(50% - 3.25mm)!important;width:calc(50% - 3.25mm)!important}.edit-toolbar{display:none!important}}`;
 
 const EDITOR_SCRIPT = `var TOOLBAR;(function(){var toolbar=document.getElementById('editToolbar');var toggle=document.getElementById('toggleEdit');var save=document.getElementById('saveHtml');var editing=false;
 var SELECTORS='.qprompt,.passage,.cond-box,.choice-table,.given-sentence,.choices,.exam-header table,.run-header';
@@ -116,9 +116,9 @@ if (process.argv[2] === "draft") {
   console.log("draft written", path.join(OUT, "draft.html"), "units", units().length);
 } else if (process.argv[2] === "final") {
   const data = JSON.parse(fs.readFileSync(path.resolve(process.argv[3]), "utf8"));
-  const colFull = (275 - 5) * MM;                       // .page 여백 제외 .cols 유효 높이
-  const page1Avail = colFull - data.headerH - 4 * MM - 8; // exam-header + 하단 여유
-  const otherAvail = colFull - data.runHeaderH - 3 * MM - 8;
+  const colFull = 271 * MM;                       // 인쇄 기준 유효 높이(297 - 12 - 12 - 4)
+  const page1Avail = colFull - data.headerH - 4 * MM - 6; // exam-header + 하단 여유
+  const otherAvail = colFull - data.runHeaderH - 3 * MM - 6;
   const UNITS = units();
   const hmap = new Map(data.units.map((u) => [u.start, u.h]));
   const cols = [];                                       // [{items:[unitIdx..], avail}]
@@ -135,7 +135,7 @@ if (process.argv[2] === "draft") {
     const need = h + (cur.items.length ? 18 : 0);
     const used = cur.items.reduce((s, j) => s + hmap.get(UNITS[j][0].num), 0) + Math.max(0, cur.items.length - 1) * 18;
     if (h > cur.avail) throw new Error("unit " + u[0].num + " too tall: " + h.toFixed(0) + " > " + cur.avail.toFixed(0));
-    if (cur.items.length && used + 18 + h > cur.avail) fresh();
+    if (cur.items.length && used + 14 + h > cur.avail) fresh();
     cur.items.push(i);
   });
   const totalPages = Math.ceil(cols.length / 2);
@@ -146,7 +146,7 @@ if (process.argv[2] === "draft") {
       .map((c) => {
         const hs = c.items.map((j) => hmap.get(UNITS[j][0].num));
         const used = hs.reduce((a, b) => a + b, 0);
-        const gap = c.items.length > 1 ? Math.max(18, Math.min(130, (c.avail - used) / (c.items.length - 1))) : 18;
+        const gap = c.items.length > 1 ? Math.max(14, Math.min(120, (c.avail - used) / (c.items.length - 1))) : 18;
         const inner = c.items
           .map((j) => `<div class="unit">${UNITS[j].map(qblockHtml).join("")}</div>`)
           .join("");

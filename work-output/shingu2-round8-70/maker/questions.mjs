@@ -298,7 +298,7 @@ export const QUESTIONS = [
     cond2: {
       title: "보기",
       html:
-        "a. Our classmates used to meet often at the café near our school, but now they don't.<br/>b. Our classmates are used to meeting often at the café near our school, but now they don't.<br/>c. Our classmates used to meet often at the café, but now they don't.<br/>d. Our classmates used to met often at the café near our school, but now they don't.<br/>e. Our classmates used to meet often near our school at the café, but now they don't.",
+        "a. Our classmates used to meet often at the café near our school, but now they don't.<br/>b. Our classmates are used to meeting at the café near our school.<br/>c. Our classmates used to meet often at the café.<br/>d. Our classmates used to met often at the café near our school.<br/>e. Our classmates used to meet at the café near our school, but now they don't.",
     },
     choices: ["a, b", "b, c", "c, d", "d, e", "a, e"],
     answer: 5,
@@ -396,5 +396,269 @@ export const QUESTIONS = [
     },
     choices: ["A: of ／ B: for ／ C: to", "A: for ／ B: to ／ C: of", "A: by ／ B: with ／ C: to", "A: for ／ B: by ／ C: of", "A: for ／ B: by ／ C: to"],
     answer: 5,
+  },
+
+  // ───────────────── L6 · 통합 (Q31~Q70) ─────────────────
+  {
+    num: 31,
+    prompt: "다음은 L6 Word List에 실린 영어 뜻풀이이다. 빈칸에 들어갈 말로 가장 적절한 것은?",
+    passage: {kind: "box", html: "n. a piece of <span class='blank'></span> on a particular subject in a newspaper or magazine"},
+    choices: ["writing", "news", "meeting", "picture", "question"],
+    answer: 1,
+  },
+  {
+    num: 32,
+    prompt: "다음은 L6 Word List에 실린 영어 뜻풀이이다. 빈칸에 들어갈 말로 가장 적절한 것은?",
+    passage: {kind: "box", html: "v. to come together in a <span class='blank'></span> in one place"},
+    choices: ["line", "circle", "queue", "group", "pair"],
+    answer: 4,
+  },
+  {
+    num: 33,
+    prompt: "다음 <보기>에서 단어·품사·영어 뜻풀이가 <u>모두 옳게</u> 짝지어진 것만을 있는 대로 고른 것은?",
+    cond: {
+      title: "보기",
+      html:
+        "a. cemetery — n. a place where people put dead bodies in the ground<br/>" +
+        "b. stress — n. an extra force used when pronouncing a particular word or syllable<br/>" +
+        "c. independence — a. freedom from political control by other countries<br/>" +
+        "d. medicine — n. the study and treatment of diseases and injuries<br/>" +
+        "e. historic — n. important in history",
+    },
+    choices: ["a, b, c", "a, d, e", "b, c, d", "b, e", "a, b, d"],
+    answer: 5,
+  },
+  {
+    num: 34,
+    prompt: "다음 표에서 영어 표현과 우리말 뜻이 바르게 연결되지 <u>않은</u> 것만을 고른 것은?",
+    table: {
+      head: ["행", "영어 표현", "우리말 뜻"],
+      rows: [
+        ["(a)", "at the invitation of the Korean government", "한국 정부의 초청으로"],
+        ["(b)", "have the right to be independent", "독립할 권리가 있다"],
+        ["(c)", "for the rest of his life", "그의 평생의 절반 동안"],
+        ["(d)", "sound similar to his real name", "그의 본명과 의미가 비슷하다"],
+        ["(e)", "under the watchful eye of the Japanese police", "일본 경찰의 감시 아래에서"],
+      ],
+    },
+    choices: ["(c), (d)", "(a), (b)", "(b), (e)", "(c), (e)", "(a), (d)"],
+    answer: 1,
+  },
+  {
+    num: 35,
+    groupLabel: "[35~37] 다음 글을 읽고, 물음에 답하시오.",
+    prompt: "윗글의 내용과 일치하는 것만을 <보기>에서 있는 대로 고른 것은?",
+    passage: {
+      kind: "box",
+      html:
+        "Dr. Schofield was a Canadian doctor, and he first came to Korea in 1916 to teach medicine. <span class='mm'>ⓐ</span> He wanted to teach in Korean, so he began to learn Korean right away. <span class='mm'>ⓑ</span> He studied so hard that he was able to teach in Korean after only a few years. <span class='cc'>ⓒ</span> He believed that every country has the right to be independent, so he helped the Korean independence movement. <span class='mm'>ⓓ</span> For the rest of his life, he worked hard to help Koreans, especially poor students. <span class='mm'>ⓔ</span>",
+    },
+    cond: {
+      title: "보기",
+      html:
+        "a. Dr. Schofield came to Korea in 1916 to teach medicine.<br/>" +
+        "b. He learned Korean because he wanted to teach in Korean.<br/>" +
+        "c. He kept teaching his classes in English.<br/>" +
+        "d. He helped the Korean independence movement.<br/>" +
+        "e. He was the first Canadian doctor in Korea.",
+    },
+    choices: ["a, b, c", "a, d, e", "b, c, e", "a, b, d", "c, d, e"],
+    answer: 4,
+  },
+  {
+    num: 36,
+    prompt: "그가 한국어를 오래 준비한 뒤에가 아니라 '곧바로' 배우기 시작한 이유와, 그로부터 알 수 있는 그의 태도로 가장 적절한 것은?",
+    choices: [
+      "이유: 한국 이름을 쉽게 부르기 위해서이다 / 태도: 이름을 소중히 여긴다",
+      "이유: 외국 신문사에 기사를 쓰기 위해서이다 / 태도: 글쓰기를 즐긴다",
+      "이유: 학생들에게 한국어로 가르치기 위해서이다 / 태도: 필요한 일을 미루지 않고 바로 실행한다",
+      "이유: 일본 경찰의 감시를 피하기 위해서이다 / 태도: 위험을 피하는 지혜가 있다",
+      "이유: 독립 운동가들과 사귀기 위해서이다 / 태도: 성격이 외향적이다",
+    ],
+    answer: 3,
+    choiceLayout: "vertical",
+  },
+  {
+    num: 37,
+    prompt: "주어진 문장이 들어가기에 가장 적절한 곳은?",
+    given: "His Korean students could follow his classes without an interpreter.",
+    choices: ["ⓐ", "ⓑ", "ⓒ", "ⓓ", "ⓔ"],
+    answer: 4,
+  },
+  {
+    num: 38,
+    prompt: "다음 글에서 밑줄 친 <u>this important event</u>가 가리키는 것으로 가장 적절한 것은?",
+    passage: {
+      kind: "box",
+      html: "“Unbelievable! There are so many people here. I hope the world will learn about <u>this important event</u> through my pictures.”",
+    },
+    choices: [
+      "foreign newspapers' visit to Korea",
+      "a new school opening in Seoul",
+      "people's gathering for the independence of Korea",
+      "a photography show in a park",
+      "the doctor's return to Canada",
+    ],
+    answer: 3,
+  },
+  {
+    num: 39,
+    groupLabel: "[39~42] 다음 글을 읽고, 물음에 답하시오.",
+    prompt: "윗글의 내용으로 옳은 것만을 <보기>에서 있는 대로 고른 것은?",
+    passage: {
+      kind: "box",
+      html:
+        "On February 28, 1919, a man came to Dr. Schofield's house and said, “I have a special favor to ask you.” “Many people are going to gather tomorrow for the independence of Korea. Could you take pictures of the event and share them with the world?” At 2 p.m. on March 1, Dr. Schofield was hiding in a building and saw a large group of people gathering outside. He began to take pictures. He later wrote an article about the historic event and sent it to foreign newspapers with his pictures.",
+    },
+    cond: {
+      title: "보기",
+      html:
+        "a. A man asked Dr. Schofield to take pictures of the event and share them with the world.<br/>" +
+        "b. The man told him exactly how many people would gather.<br/>" +
+        "c. He watched the gathering from inside a building.<br/>" +
+        "d. He wrote an article about the event and sent it to foreign newspapers with his pictures.<br/>" +
+        "e. He refused the favor at first because he was too busy.",
+    },
+    choices: ["a, b, e", "a, c, d", "b, c, e", "b, d", "c, d, e"],
+    answer: 2,
+  },
+  {
+    num: 40,
+    prompt: "그가 행사장 한복판이 아니라 '건물 안에 숨어서' 사진을 찍었다는 사실로부터 추론한 것으로 가장 적절한 것은?",
+    choices: [
+      "그는 사진 찍는 일을 부끄럽게 생각했다.",
+      "그는 사람들이 몰려드는 것이 무서웠다.",
+      "그는 카메라가 고장 날까 조심하고 있었다.",
+      "그의 촬영을 막으려는 감시가 있어 스스로를 드러내지 않아야 했다.",
+      "그는 참여보다 지켜 보는 편을 좋아했다.",
+    ],
+    answer: 4,
+    choiceLayout: "vertical",
+  },
+  {
+    num: 41,
+    prompt: "다음 연표의 (a)~(e)를 시간 순서대로 배열한 것으로 가장 적절한 것은? (윗글과 [35~37] 지문을 모두 근거로 한다.)",
+    table: {
+      head: ["연표", "사건"],
+      rows: [
+        ["(a)", "1916년, 의학을 가르치기 위해 처음 한국에 옴"],
+        ["(b)", "1919년, 3·1 운동의 모습을 촬영하고 기사로 세계에 알림"],
+        ["(c)", "1920년, 감시 때문에 캐나다로 돌아가야 함"],
+        ["(d)", "1958년, 한국 정부의 초청으로 다시 한국에 옴"],
+        ["(e)", "1970년, 국립서울현충원에 안장됨"],
+      ],
+    },
+    choices: ["(a)-(b)-(c)-(d)-(e)", "(b)-(a)-(c)-(e)-(d)", "(a)-(c)-(b)-(d)-(e)", "(b)-(a)-(d)-(c)-(e)", "(a)-(b)-(c)-(e)-(d)"],
+    answer: 1,
+  },
+  {
+    num: 42,
+    prompt: "[39~42] 지문의 장면에서 Dr. Schofield이 “<u>Unbelievable!</u>”이라고 말한 것으로 미루어 알 수 있는 심정으로 가장 적절한 것은?",
+    choices: ["화가", "놀람과 감탄", "지루함", "후회", "부끄러움"],
+    answer: 2,
+  },
+  {
+    num: 43,
+    prompt: "다음은 Dr. Schofield의 생애를 요약한 글이다. 본문 내용과 맞지 <u>않은</u> 부분은?",
+    passage: {
+      kind: "box",
+      html:
+        "Dr. Schofield came to Korea in 1916 <u>(A)</u> to teach medicine. He learned Korean because he wanted to teach <u>(B)</u> in Korean. In 1919 he took pictures of the March 1st Movement and <u>(C)</u> sent them to foreign newspapers. He continued to write about the terrible situation in Korea for <u>(D)</u> rich students' families. In 1958 he returned to Korea <u>(E)</u> at the invitation of the Korean government and never left again.",
+    },
+    choices: ["(A)", "(B)", "(C)", "(D)", "(E)"],
+    answer: 4,
+  },
+  {
+    num: 44,
+    prompt: "selfless의 영어 뜻풀이(caring more about other people's needs and interests than about your own)에 가장 잘 부합하는 Dr. Schofield의 모습으로 가장 적절한 것은?",
+    choices: [
+      "한국 이름을 좋아하며 자신의 본명과 비슷하게 느꼈다.",
+      "외국 신문사에 기사를 보내 자신의 이름을 알렸다.",
+      "캐나다로 돌아간 뒤에는 한국에 관해 말을 아꼈다.",
+      "사진 속 세 인물이 나타내는 시대를 정확히 알고 싶어 했다.",
+      "자신의 신변이 위태로운 상황에서도 한국인의 처지를 계속 알렸고, 가난한 학생을 돕는 일을 멈추지 않았다.",
+    ],
+    answer: 5,
+    choiceLayout: "vertical",
+  },
+  {
+    num: 45,
+    prompt: "다음 요약문에서 밑줄 친 (A)~(E) 중 어법상 <u>틀린</u> 것의 개수는?",
+    passage: {
+      kind: "box",
+      html:
+        "In 1919, Dr. Schofield (A) <u>hiding</u> in a building and saw many people gathering. He (B) <u>took a pictures</u> of the event. He (C) <u>sent</u> the pictures to foreign newspapers. After he left Korea, he (D) <u>continued to write</u> about its terrible situation. He (E) <u>was buried</u> in Seoul National Cemetery in 1970.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 2,
+  },
+  {
+    num: 46,
+    prompt: "다음 표에서 빈칸 (A)·(B)·(C)에 들어갈 말이 모두 알맞은 행은?",
+    table: {
+      head: ["행", "(A) I saw my brother ___ his homework.", "(B) We felt the ground ___ for a few seconds.", "(C) She heard her dog's name ___ by the boy."],
+      rows: [
+        ["A", "do", "shaking", "call"],
+        ["B", "doing", "to shake", "calls"],
+        ["C", "to do", "shook", "to call"],
+        ["D", "did", "shaking", "to call"],
+        ["E", "doing", "shaking", "called"],
+      ],
+    },
+    choices: ["A", "B", "C", "D", "E"],
+    answer: 5,
+  },
+  {
+    num: 47,
+    prompt: "다음 문장의 빈칸에 들어갈 말로 가장 적절한 것은?",
+    passage: {
+      kind: "box",
+      html: "When the teacher read the list, my brother heard his name <span class='blank'></span> in the classroom.",
+    },
+    choices: ["called", "call", "to call", "calls", "calling"],
+    answer: 1,
+  },
+  {
+    num: 48,
+    prompt: "다음 우리말을 <조건>에 맞추어 옮긴 문장으로 옳은 것의 개수는?",
+    cond: {
+      title: "조건",
+      html: "(a) 지각동사 + 목적어 + 동사원형(또는 -ing)의 형식을 사용할 것<br/>(b) “길거리에서”를 on the street으로 나타낼 것",
+    },
+    given: "우리말: 나는 그녀가 길거리에서 노래 부르는 것을 보았다.",
+    passage: {
+      kind: "box",
+      html:
+        "(a) I saw her sing on the street.<br/>(b) I saw her singing on the street.<br/>(c) I saw her to sing on the street.<br/>(d) I saw her sing in street.<br/>(e) She was seen sing on the street.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 2,
+  },
+  {
+    num: 49,
+    prompt: "다음 문장 중 빈칸에 <u>동명사(-ing)</u>가 들어가야 하는 문장의 개수는?",
+    passage: {
+      kind: "box",
+      html:
+        "(a) She enjoys <span class='blank'></span> articles about famous people.<br/>(b) He decided <span class='blank'></span> medicine in Canada.<br/>(c) The reporter kept <span class='blank'></span> about the event for years.<br/>(d) We want <span class='blank'></span> the March 1st Movement Exhibition.<br/>(e) They finished <span class='blank'></span> the old photos last week.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 3,
+  },
+  {
+    num: 50,
+    prompt: "다음 표에서 동사와 뒤에 올 알맞은 형태, 예문이 바르게 짝지어지지 <u>않은</u> 것만을 고른 것은?",
+    table: {
+      head: ["행", "동사(표현)", "제시된 형태", "예문"],
+      rows: [
+        ["(a)", "would like", "동명사", "I would like helping you."],
+        ["(b)", "continue", "to 부정사", "He continued to write about Korea."],
+        ["(c)", "be famous for", "동명사", "STIK is famous for using only dots."],
+        ["(d)", "plan", "동명사", "She plans opening a gallery next year."],
+        ["(e)", "practice", "동명사", "He practices speaking Korean every day."],
+      ],
+    },
+    choices: ["(a), (b)", "(a), (d)", "(b), (c)", "(b), (e)", "(c), (e)"],
+    answer: 2,
   },
 ];
