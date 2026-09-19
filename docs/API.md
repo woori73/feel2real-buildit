@@ -6,6 +6,31 @@
 - 비회원 HTML 직접 접근은 `/?login=required&returnUrl=...`로 이동하고, JSON/API는 401을 반환한다. 로그인 성공 후 안전한 내부 Wiki URL로 복귀한다.
 - ADMIN/TUTOR의 기존 역할 권한과 데이터 모델은 변경하지 않는다.
 
+## NewStart AI (2026-09)
+
+### ✅ POST /api/newstart/ai/chat
+
+- 목적: NewStart 화면의 AI 질문. 기존 BuildIt Wiki AI Router(`ai_router.py`, `provider=auto`)를 서버-서버로 재사용한다(공용 `WikiAiRouterClient`). 새 provider·모델 설정을 만들지 않는다.
+- 현재 사용처: `/newstart` NewStart AI 질문창
+- 인증/권한: 기존 `/api/**` catch-all(로그인 회원)을 따른다. 별도 권한 규칙 없음.
+- Request JSON: `message` (필수, 1~2000자)
+- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용)
+- 성공: `200` + `{"status":"ok","answer":"...","model":"..."}`
+- 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다.
+- 제약: Knowledge DB/RAG 없음 — 카페 사례·공식자료 검색 계약이 아니다. retrieval layer는 향후 service의 prompt 조립 단계에 삽입한다.
+
+
+### NewStart 회원 채팅 (공용방 1개, 텍스트 전용)
+
+회원 ↔ 회원 실시간 채팅. NewStart AI(`POST /api/newstart/ai/chat`)와 무관하며 회원 대화는 AI(Router/RAG/학습)에 사용하지 않는다. 인증은 기존 `/api/**` catch-all(인증 필요)을 따른다 — 비로그인은 401. 작성자·표시 이름은 서버가 principal에서만 결정한다(클라이언트 userId/nickname 전송값 없음). 표시 이름은 `nickname` 우선 → `loginId`(ADMIN=관리자)로 서버에서 resolve해 내려주며 실명·이메일·전화는 노출하지 않는다.
+
+- `GET /api/newstart/chat/messages?before={id}&limit={1~50, 기본 30}` — 최근 메시지(삭제 제외)를 오래된 순으로. `{ "messages": [ { "id", "senderUserId", "displayName", "message", "deleted", "createdAt" } ], "hasMore" }`. `before` 지정 시 해당 id보다 오래된 메시지(위로 스크롤 pagination).
+- `GET /api/newstart/chat/after?after={id}` — 재접속 복구. 해당 id보다 새로운 메시지(오래된 순, 최대 50건).
+- `DELETE /api/newstart/chat/messages/{messageId}` — 본인 메시지 삭제(ADMIN 허용). 타인 메시지는 403. soft delete — 성공 `{ "status": "ok" }`, 실패 `{ "status": "error", "errorMessage" }`.
+- `WS /ws/newstart-chat` — raw WebSocket(동일 origin + 로그인만 handshake 통과, 비로그인 401/교차 origin 403). 클라이언트 → 서버 `{ "message": "본문" }`(500자 상한, 빈 값 거부, 도배 방지 10건/15초). 서버 → 클라이언트 `{ "type": "new", "id", "senderUserId", "displayName", "message", "createdAt" }` / `{ "type": "deleted", "id" }` / `{ "type": "error", "message" }`.
+
+DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_id), `message` VARCHAR(500), `deleted` soft delete flag. 화면: `/newstart/chat`(공개 — 데이터는 전부 인증 뒤, 비로그인 시 로그인 모달 안내).
+
 # API 명세
 
 ## BuildIt Wiki 학교 프린트·문제 모델

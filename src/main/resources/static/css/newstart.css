@@ -1,29 +1,51 @@
-/* NewStart — 개인 채무조정 상황 관리 + AI 안내 + 지식 라이브러리 */
-.newstart-page { --ns-blue: #2563eb; --ns-blue-soft: #eef3ff; --ns-ink: #111827; --ns-muted: #5b6472; --ns-line: #e5e7eb; --ns-warm: #f6f1e7; --ns-warm-line: #e7e0cf; --ns-amber: #b45309; }
+/* NewStart — 새출발기금 부실차주 홈: NewStart AI → 회원 채팅/나의 상태 → 최신 업데이트 */
+.newstart-page { --ns-blue: #2563eb; --ns-blue-soft: #eef3ff; --ns-ink: #111827; --ns-muted: #5b6472; --ns-line: #e5e7eb; --ns-warm: #f6f1e7; --ns-warm-line: #e7e0cf; }
 
-.newstart-shell { max-width: 1100px; margin: 0 auto; padding: 16px 16px 48px; }
-.newstart-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.newstart-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ns-ink); text-decoration: none; }
-.newstart-brand-mark { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #c9a13b 100%); display: inline-block; }
-.newstart-brand-name { font-size: 16px; letter-spacing: -0.2px; }
-.newstart-brand-sub { display: none; }
+.newstart-shell { max-width: 760px; margin: 0 auto; padding: 16px 16px 48px; }
+.newstart-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.newstart-brand { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--ns-ink); text-decoration: none; white-space: nowrap; }
+@media (min-width: 400px) { .newstart-brand { font-size: 20px; } }
 .newstart-topbar { display: flex; gap: 8px; flex-wrap: wrap; }
-.newstart-topbar .ns-btn { flex: 1 1 auto; }
+.newstart-topbar .ns-btn { flex: 0 1 auto; }
 
-.newstart-hero { margin-top: 14px; padding: 18px 18px 14px; border-radius: 14px; background: var(--ns-blue-soft); border: 1px solid #dbe6fd; }
-.newstart-hero-title { font-size: 20px; line-height: 1.35; color: var(--ns-ink); margin: 0 0 6px; }
-.newstart-hero-sub { color: var(--ns-muted); line-height: 1.5; margin: 0; font-size: 14px; }
-.newstart-hero-cta { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+/* NewStart AI — 첫 화면 핵심 영역 */
+.ns-ai-hero { margin-top: 22px; padding: 18px 16px 14px; border: 1.5px solid var(--ns-blue); border-radius: 14px; background: var(--ns-blue-soft); }
+.ns-ai-title { font-size: 20px; font-weight: 800; color: var(--ns-ink); margin: 0 0 12px; }
+.ns-ai-input-row { display: flex; gap: 8px; }
+.ns-ai-input { flex: 1; min-width: 0; font-size: 15px; padding: 11px 12px; }
+.ns-ai-send { flex-shrink: 0; font-size: 14.5px; padding: 10px 20px; }
+.ns-ai-note { margin-top: 8px; }
 
+/* 회원 채팅 / 나의 상태 진입점 */
+.ns-entry-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.ns-entry { display: block; border: 1px solid var(--ns-line); border-radius: 12px; padding: 14px 12px; background: #fff; text-decoration: none; min-height: 44px; }
+.ns-entry:hover { border-color: var(--ns-blue); background: var(--ns-blue-soft); }
+.ns-entry-title { display: block; font-size: 15.5px; font-weight: 700; color: var(--ns-ink); }
+.ns-entry-sub { display: block; margin-top: 2px; font-size: 12px; color: var(--ns-muted); }
+
+/* 나의 상태 패널 (선택 시 표시) */
+.ns-status-panel { margin-top: 10px; }
+.ns-status-inner { padding: 0; border: none; border-top: 1px solid var(--ns-line); border-radius: 0; }
+.ns-status-inner:first-of-type { border-top: none; }
+
+/* 최신 업데이트 (단순 목록 영역) */
+.ns-updates { margin-top: 18px; }
+.ns-updates-title { font-size: 16px; font-weight: 700; color: var(--ns-ink); margin: 0 0 6px; }
+.ns-updates-item { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--ns-line); font-size: 14px; }
+.ns-updates-item:last-child { border-bottom: none; }
+.ns-updates-date { color: var(--ns-muted); font-size: 12.5px; white-space: nowrap; }
+.ns-updates-link { flex: 1; color: var(--ns-ink); text-decoration: none; }
+.ns-updates-link:hover { color: var(--ns-blue); }
+.ns-updates-arrow { color: var(--ns-muted); }
+
+/* 공통 컴포넌트 */
 .ns-card { background: #fff; border: 1px solid var(--ns-line); border-radius: 14px; padding: 14px; }
 .ns-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .ns-card-title { font-size: 14px; font-weight: 700; color: var(--ns-ink); margin: 0; }
 .ns-card-meta { font-size: 12px; color: var(--ns-muted); }
 .ns-empty { color: var(--ns-muted); font-size: 13px; line-height: 1.5; padding: 6px 0 2px; }
-
 .ns-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 760px) { .ns-grid-2 { grid-template-columns: 1fr 1fr; } .ns-grid-3 { grid-template-columns: 1fr 1fr 1fr; } .ns-hero-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; align-items: start; } }
-
+@media (min-width: 760px) { .ns-grid-2 { grid-template-columns: 1fr 1fr; } .ns-grid-3 { grid-template-columns: 1fr 1fr 1fr; } }
 .ns-btn { appearance: none; border-radius: 10px; font-size: 13.5px; font-weight: 600; padding: 8px 12px; border: 1px solid var(--ns-line); background: #fff; color: var(--ns-ink); cursor: pointer; text-decoration: none; display: inline-block; text-align: center; transition: background .15s, border-color .15s, color .15s; }
 .ns-btn:hover { background: #f6f8fc; border-color: #cfd8e6; }
 .ns-btn-primary { background: var(--ns-blue); color: #fff; border-color: var(--ns-blue); }
@@ -31,7 +53,6 @@
 .ns-btn-ghost { background: transparent; border-color: transparent; color: var(--ns-blue); }
 .ns-btn-ghost:hover { background: var(--ns-blue-soft); }
 .ns-btn:disabled { opacity: .55; cursor: not-allowed; }
-
 .ns-input, .ns-textarea, .ns-select { width: 100%; font-size: 13.5px; padding: 8px 10px; border: 1px solid var(--ns-line); border-radius: 9px; background: #fff; color: var(--ns-ink); box-sizing: border-box; }
 .ns-input:focus, .ns-textarea:focus, .ns-select:focus { outline: 2px solid var(--ns-blue); outline-offset: 0; border-color: var(--ns-blue); }
 .ns-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ns-ink); margin-bottom: 4px; }
@@ -52,20 +73,46 @@
 .ns-check-text { flex: 1; }
 .ns-check-time { font-size: 11.5px; color: var(--ns-muted); }
 
-.ns-ai-box { background: #fff; border: 1px solid var(--ns-line); border-radius: 14px; padding: 12px; }
-.ns-ai-input-row { display: flex; gap: 8px; }
-.ns-ai-input-row .ns-input { flex: 1; }
-.ns-ai-say { font-size: 12.5px; color: var(--ns-muted); margin: 0 0 8px; }
-.ns-ai-empty { color: var(--ns-muted); font-size: 13px; line-height: 1.5; }
-.ns-ai-empty strong { color: var(--ns-ink); }
-
-.ns-library { display: grid; grid-template-columns: 1fr; gap: 8px; }
-@media (min-width: 560px) { .ns-library { grid-template-columns: 1fr 1fr; } }
-.ns-library-card { border: 1px solid var(--ns-line); border-radius: 11px; padding: 10px 11px; background: #fff; text-decoration: none; color: var(--ns-ink); display: block; }
-.ns-library-card:hover { border-color: var(--ns-blue); background: var(--ns-blue-soft); }
-.ns-library-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.ns-library-count { font-size: 11.5px; color: var(--ns-muted); }
-
 .ns-footer { margin-top: 22px; font-size: 12px; color: var(--ns-muted); text-align: center; }
-
 .ns-bottom-hint { margin-top: 16px; padding: 10px 12px; background: var(--ns-warm); border: 1px solid var(--ns-warm-line); border-radius: 10px; font-size: 12.5px; color: #5a4517; line-height: 1.5; }
+/* NewStart AI 답변 스레드 — 화려한 채팅 UI 대신 질문/답변 구분만 한다 */
+.ns-ai-thread { margin-top: 12px; display: grid; gap: 8px; }
+.ns-ai-thread:empty { display: none; }
+.ns-ai-block { border: 1px solid var(--ns-line); border-radius: 10px; padding: 10px 12px; background: #fff; }
+.ns-ai-error { border-color: #e8b4b4; background: #fdf6f6; }
+.ns-ai-who { display: block; font-size: 12px; font-weight: 700; color: var(--ns-muted); margin-bottom: 3px; }
+.ns-ai-text { font-size: 14px; line-height: 1.65; color: var(--ns-ink); overflow-wrap: anywhere; white-space: pre-wrap; word-break: break-word; }
+/* ── 회원 채팅 (/newstart/chat) — 모바일 우선 메신저 구조 ─────────────────── */
+.ns-chat-shell { display: flex; flex-direction: column; min-height: 100svh; }
+.ns-chat-main { flex: 1; display: flex; flex-direction: column; margin-top: 14px; min-height: 0; }
+.ns-chat-room { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 12px 12px 10px; }
+.ns-chat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ns-chat-title { font-size: 17px; font-weight: 800; color: var(--ns-ink); margin: 0; }
+.ns-chat-sub { font-size: 12px; color: var(--ns-muted); margin: 2px 0 0; }
+.ns-chat-login { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 26px 8px; }
+.ns-chat-login .ns-btn { min-width: 120px; }
+
+.ns-chat-list { flex: 1; min-height: 180px; overflow-y: auto; padding: 10px 2px 6px; display: flex; flex-direction: column; gap: 10px; -webkit-overflow-scrolling: touch; }
+.ns-chat-more { align-self: center; font-size: 12.5px; padding: 6px 14px; }
+.ns-chat-empty { text-align: center; padding: 18px 0; }
+
+.ns-msg { max-width: 82%; display: flex; flex-direction: column; }
+.ns-msg-meta { display: flex; align-items: baseline; gap: 6px; font-size: 11.5px; color: var(--ns-muted); }
+.ns-msg-name { font-size: 12.5px; font-weight: 700; color: var(--ns-ink); overflow-wrap: anywhere; }
+.ns-msg-time { white-space: nowrap; }
+.ns-msg-body { margin-top: 3px; font-size: 14px; line-height: 1.5; color: var(--ns-ink); background: #fff; border: 1px solid var(--ns-line); border-radius: 12px; border-top-left-radius: 4px; padding: 8px 11px; overflow-wrap: anywhere; }
+.ns-msg-mine { align-self: flex-end; align-items: flex-end; }
+.ns-msg-mine .ns-msg-body { background: var(--ns-blue-soft); border-color: #d5e0f7; border-radius: 12px; border-top-right-radius: 4px; }
+.ns-msg-deleted .ns-msg-body { color: var(--ns-muted); background: #fafafa; border-style: dashed; }
+.ns-msg-del { appearance: none; border: none; background: transparent; color: var(--ns-muted); font-size: 11px; cursor: pointer; padding: 0 2px; text-decoration: underline; }
+.ns-msg-del:hover { color: #b91c1c; }
+
+.ns-chat-form { display: flex; gap: 8px; align-items: flex-end; padding-top: 10px; border-top: 1px solid var(--ns-line); margin-top: 4px; }
+.ns-chat-input { flex: 1; min-width: 0; resize: none; font-size: 15px; padding: 10px 12px; line-height: 1.45; max-height: 96px; }
+.ns-chat-send { flex-shrink: 0; font-size: 14.5px; padding: 10px 18px; }
+.ns-chat-status { min-height: 14px; margin: 4px 2px 0; }
+
+@media (min-width: 640px) {
+  .ns-chat-shell { max-width: 720px; }
+  .ns-msg { max-width: 70%; }
+}

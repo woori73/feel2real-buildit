@@ -1242,6 +1242,11 @@ V973~V975 불변 — 신규 테이블 + `easy_import_rows` NULL 확장(`external
   `school/grade/year/semester/exam`, 선택적 `student_id`로 기존 시험·학생 관계를 보존한다.
 - `educator_insights`: 기존 row를 유지하며 nullable `year`, `semester`, `exam`과
   `source(director/school_teacher)`를 추가한다. 기존 인사이트는 `source=director`, Context 미지정으로 호환한다.
+### 4.53 newstart_chat_messages ✅ NewStart 회원 채팅 (V981)
+
+공용방 1개 텍스트 채팅(회원 ↔ 회원) 메시지. NewStart AI와 별개이며 회원 대화는 AI 학습·RAG에 사용하지 않는다. 작성자는 서버 principal(JWT)에서만 결정 — 요청값으로 userId를 받지 않는다. 삭제는 soft delete(`deleted=true` + 본문 비움)로 pagination id 안정성을 유지한다. 표시 이름은 저장하지 않고 조회 시 `users.display_name` 규칙(nickname 우선 → loginId, ADMIN=관리자)으로 resolve한다.
+
+- `message_id` PK, `user_id` FK → `users.user_id`(ON DELETE CASCADE), `message` VARCHAR(500) NOT NULL, `deleted` BOOLEAN DEFAULT FALSE, BaseEntity auditing(created_at/updated_at/created_by/updated_by). INDEX `idx_newstart_chat_recent(message_id)` — 최근순/구간 조회.
 ## Wiki workspace isolation (FastAPI SQLite)
 
 `wiki_workspaces` and `wiki_workspace_members` live in the Wiki workspace catalog SQLite file. The fixed `legacy` workspace points to the existing Production Wiki database and has only the authenticated `admin` and `modu` members. A non-legacy member receives a deterministic private workspace ID and a separate empty SQLite database on first access.
