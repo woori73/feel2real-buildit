@@ -69,4 +69,12 @@ public class EasyImportController {
     importService.discard(batchId);
     return ResponseEntity.noContent().build();
   }
+
+  @PostMapping("/{batchId}/reclassify")
+  public ResponseEntity<EasyImportBatchResponse> reclassify(
+      @PathVariable Long batchId,
+      @RequestBody Map<String, List<Long>> body) {
+    List<Long> rowIds = body == null ? null : body.get("rowIds");
+    return ResponseEntity.ok(importService.reclassify(batchId, rowIds));
+  }
 }

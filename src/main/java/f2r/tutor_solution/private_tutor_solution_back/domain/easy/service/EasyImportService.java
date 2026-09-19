@@ -242,6 +242,59 @@ public class EasyImportService {
     }
   }
 
+  /**
+   * 대상 READY 행의 계정 매핑을 재계산한다.
+   * - batchId에 속한 rowIds만 허용
+   * - READY 상태만 처리 (CONFIRMED/DUPLICATE/ERROR/IMPORTED 제외)
+   * - 이미 생성된 transaction은 절대 수정하지 않음
+   * - 새 transaction 생성하지 않음
+   * - confirm을 수행하지 않음
+   * - staging 시 사용한 공식 mapping resolution 로직 재사용:
+   *   resolveMapping() -> accountService.classify()
+   */
+  @Transactional
+  public EasyImportBatchResponse reclassify(Long batchId, List<Long> rowIds) {
+    EasyImportBatch batch = requireBatch(batchId);
+    if (batch.getStatus() != EasyImportStatus.STAGED && batch.getStatus() != EasyImportStatus.CONFIRMED) {
+      throw new IllegalArgumentException("STAGED 또는 CONFIRMED 상태의 배치만 처리할 수 있습니다.");
+    }
+    if (rowIds == null || rowIds.isEmpty()) {
+      throw new IllegalArgumentException("재분류할 rowId를 지정해 주세요.");
+    }
+
+    List<EasyImportRow> targets = rowRepository.findByBatch_BatchIdAndRowIdIn(batchId, rowIds);
+    if (targets.size() != rowIds.size()) {
+      throw new IllegalArgumentException("일부 rowId가 이 배치에 속하지 않거나 존재하지 않습니다.");
+    }
+
+    int reclassified = 0;
+    for (EasyImportRow row : targets) {
+      if (row.getStatus() != EasyImportRowStatus.READY) {
+        continue;
+      }
+      if (row.getCreatedTxn() != null) {
+        continue;
+      }
+
+      Optional<EasyAccount> mapped = resolveMapping(row.getExternalAccount());
+      if (mapped.isPresent()) {
+        row.markReady(mapped.get(), 1.0);
+        reclassified++;
+        continue;
+      }
+      Optional<ClassificationMatch> match = accountService.classify(
+          row.getCounterparty(), row.getDescription(), row.getAmount(), row.getDirection());
+      if (match.isPresent()) {
+        row.markReady(match.get().account(), match.get().confidence());
+      } else {
+        row.markReady(null, 0.0);
+      }
+      reclassified++;
+    }
+
+    return EasyImportBatchResponse.of(batch, rows(batchId));
+  }
+
   /** 폐기 — STAGED 배치만 폐기한다. 이미 장부로 간 행은 되돌리지 않는다. */
   @Transactional
   public void discard(Long batchId) {
