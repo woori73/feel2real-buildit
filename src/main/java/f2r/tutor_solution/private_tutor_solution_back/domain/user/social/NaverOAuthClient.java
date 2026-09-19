@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,6 +30,9 @@ public class NaverOAuthClient {
   private final HttpClient http;
   private final ObjectMapper mapper = new ObjectMapper();
 
+  // 운영 컨텍스트가 선택하는 유일한 생성자. 아래 테스트용 2-arg 생성자와 공존하므로
+  // @Autowired로 명시하지 않으면 Spring이 no-arg 생성자를 찾아 기동 실패한다 (Deploy #331 원인).
+  @Autowired
   public NaverOAuthClient(NaverOAuthProperties props) {
     this(props, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
   }
