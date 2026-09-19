@@ -97,7 +97,10 @@ jobs:
           # Deploy #331: NaverOAuthClient 생성자 ambiguity로 prd 기동 실패(자동 롤백). WebMvc/@MockitoBean
           # 슬라이스는 bean을 mock으로 대체해 못 잡으므로, 실제 bean 인스턴스화까지 검증하는
           # ApplicationContextRunner 테스트를 배포 게이트에 반드시 포함한다.
+          # Deploy #333: token endpoint 오경유(auth.naver.com) 침묵 실패 incident —
+          # 실제 요청 URI를 검증하는 NaverOAuthClientTest를 함께 게이트로 돌린다.
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientContextTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientTest"
 
       - name: Upload deploy-gate test report
         if: always()
