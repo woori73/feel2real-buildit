@@ -107,6 +107,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverLoginServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerDisabledTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientContextTest"
 
       - name: Upload test report
         if: always()
