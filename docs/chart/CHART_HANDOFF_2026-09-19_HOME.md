@@ -157,3 +157,13 @@ STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 8
 
 `POST /review-batches`(신규/변경 후보만) → `decision APPROVED` → `finalize` → `POST /publications/rebuild` → public API·`/chart` UI 에서 RANKED 1~100 + DISCOVERED 검증. `regions/*/complete` 는 자동 게시를 유발하므로 이 단계 전까지 호출 금지.
 
+### 7.5 배치 2 진행 (2026-09-19 16:10~16:27, 상세는 `research/2026-09-19/03_step2_batch2_promotions.md`)
+
+- 신규 등록: #117 김지환(에이닷영어 양산, 56)
+- HOLD → EVALUATABLE 승격 4명: #82 정희수(경산, 75), #91 신희진(과천, 65), #96 홍세미(성남 중원, 65), #66 문나경(당진, 79)
+- 진행 합계: 기존 공개 83 + 신규 13 = **96명 공개 가능**, 정지 조건(17명)까지 4명 남음
+- §7.3 의 12명 중 남은 8명: 59, 62, 77, 80, 83, 84, 94, 99 (필요 게이트별 분해는 배치 2 문서 §4 표)
+- STRUCTURAL FINDING 2: `chart_candidate_activities` 는 candidate+source_url 기준 INSERT IGNORE → "오프라인 활동 URL 근거 없음" 계열은 **새 URL 로만** 해소 가능(같은 URL 에 kind 변경 추가 불가). evidence `content_summary` 정정 API 는 없다(알려진 오타 2건: #82·#66 각 1행).
+- 16:25Z 타 세션 수동 EC2 배포로 feel2real.co.kr 전역 502 → 이후 쓰기는 배포 완료 후 재개. 마지막 쓰기(#66 승격)는 성공 기록됨.
+
+
