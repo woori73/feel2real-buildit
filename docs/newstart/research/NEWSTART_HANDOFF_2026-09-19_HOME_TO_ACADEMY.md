@@ -1,13 +1,15 @@
 # NewStart Handoff
 
 ## 1. 목적
-네이버 카페 "새출발기금 부실차주 라이브러리"의 초보가이드 게시판 자료를 조사하여
+네이버 카페 "새출발기금 부실차주 라이브러리"의 질문게시판 자료를 조사하여
 NewStart AI / AI+Human Thread / 사례 Knowledge 구축에 활용.
+
+> **정정 (2026-09-19, 학원 PC)**: article_5994의 실제 breadcrumb이 `질문게시판(menuid=1)`임을 확인. 기존 '초보가이드(menuid=16)' 기록은 referrer menuid 오인. 이하 menuid=16 URL 패턴은 menuid=1로 읽을 것.
 
 ## 2. 조사 대상
 - **카페**: 새출발기금 부실차주 라이브러리
 - **URL**: https://cafe.naver.com/newhopero
-- **게시판**: 초보가이드 (menuid=16, boardtype=L)
+- **게시판**: 질문게시판 (menuid=1, boardtype=L) — 정정済み
 - **클럽 ID**: 31312978
 
 ## 3. 현재까지 한 작업
@@ -22,10 +24,10 @@ NewStart AI / AI+Human Thread / 사례 Knowledge 구축에 활용.
 - ✅ JSON/Markdown 저장 성공
 
 ### 수집 구조 검증
-- 게시판 목록 페이지: https://cafe.naver.com/f-e/cafes/31312978/menus/16?viewType=L
+- 게시판 목록 페이지: https://cafe.naver.com/f-e/cafes/31312978/menus/1?viewType=L (정정: 기존 menus/16)
 - 실제 기사 페이지: iframe(cafe_main) 내부에서 렌더링됨
-- URL 패턴: https://cafe.naver.com/f-e/cafes/31312978/articles/{articleId}?boardtype=L&menuid=16&referrerAllArticles=false
-- 페이지네이션: 페이지당 15개, 버튼 1~7 + "전체기간" 필터
+- URL 패턴: https://cafe.naver.com/f-e/cafes/31312978/articles/{articleId}?boardtype=L&menuid=1&referrerAllArticles=false (정정: 기존 menuid=16)
+- 페이지네이션: 게시글 하단 "'질문게시판' 게시판 글" 영역에 페이지 버튼 1~3 + "전체보기" 링크 확인 (2026-09-19)
 
 ## 4. 생성된 파일
 

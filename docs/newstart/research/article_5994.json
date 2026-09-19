@@ -1,15 +1,18 @@
 {
-  "boardName": "초보가이드",
+  "articleId": 5994,
+  "menuId": 1,
+  "boardName": "질문게시판",
+  "boardCorrection": "2026-09-19 실제 breadcrumb 기준으로 정정 (기존 '초보가이드/menuid=16' 기록은 referrer menuid 오인). 근거: 게시글 상단 '질문게시판' 링크 search.menuid=1.",
   "articleNumber": 5994,
   "title": "햇살론 보증료",
   "author": {
     "nickname": "lyrsky",
-    "memberGrade": "인기멤버",
+    "memberGrade": "감사멤버",
     "profileUrl": "/ca-fe/cafes/31312978/members/74fOlT5t8neal6LWjp8erA"
   },
   "writtenAt": "2026.09.16. 14:20",
-  "viewCount": 14,
-  "url": "https://cafe.naver.com/f-e/cafes/31312978/articles/5994?boardtype=L&menuid=16&referrerAllArticles=false",
+  "viewCount": 19,
+  "url": "https://cafe.naver.com/f-e/cafes/31312978/articles/5994?boardtype=L&menuid=1&referrerAllArticles=false",
   "originalBody": [
     "9월 8일 화요일",
     "[Web발신] 안녕하십니까, 서민금융진흥원입니다",
@@ -18,10 +21,25 @@
     "요거 물어봐도 내야한다는데 궁금합니다",
     "안내면 부실우려도 취소된다는데..."
   ],
-  "originalComments": [],
+  "originalComments": [
+    {
+      "order": 1,
+      "author": "지피지기자산",
+      "writtenAt": "2026.09.19. 09:59",
+      "text": "신복위에 문의하시고 협약이 안되어 내야하면 내셔야 합니다."
+    },
+    {
+      "order": 2,
+      "author": "lyrsky",
+      "isAuthor": true,
+      "writtenAt": "2026.09.19. 10:47",
+      "text": "네 알겠습니다~"
+    }
+  ],
   "attachments": [],
-  "extractedAt": "2026-09-19T02:09:00+09:00",
+  "hasImage": false,
+  "extractedAt": "2026-09-19T12:40:00+09:00",
   "extractionMethod": "Playwright MCP (browser automation)",
   "sessionReused": true,
-  "loginMethod": "Existing Chrome session (user pre-logged in)"
+  "loginMethod": "Existing session reuse (no credential storage)"
 }
