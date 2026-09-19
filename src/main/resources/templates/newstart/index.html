@@ -6,7 +6,7 @@
   <title>새출발기금 부실차주 | 내 채무조정 상황을 한곳에서 관리</title>
   <meta name="description" content="새출발기금·부실차주·채무조정 정보와 개인 상황을 함께 정리하는 Feel2Real NewStart 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260919-2">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260919-3">
 </head>
 <body>
   <div class="newstart-page">
@@ -25,10 +25,11 @@
       <section id="ns-ai" class="ns-ai-hero" aria-label="NewStart AI">
         <h1 class="ns-ai-title">NewStart AI</h1>
         <form class="ns-ai-input-row" id="ns-ai-form">
-          <input class="ns-input ns-ai-input" id="ns-ai-input" type="text" placeholder="궁금한 점을 질문하세요" disabled readonly>
-          <button class="ns-btn ns-btn-primary ns-ai-send" id="ns-ai-send" type="button" disabled>질문</button>
+          <input class="ns-input ns-ai-input" id="ns-ai-input" type="text" placeholder="궁금한 점을 질문하세요" autocomplete="off" maxlength="2000">
+          <button class="ns-btn ns-btn-primary ns-ai-send" id="ns-ai-send" type="submit">질문</button>
         </form>
-        <p class="ns-note ns-ai-note">현재 AI 질문 기능은 연결 준비 중이며, 입력 내용은 전송·저장되지 않습니다.</p>
+        <p class="ns-note ns-ai-note">AI 답변은 참고용입니다. 개인 재무정보는 질문에 넣지 마세요. 확인되지 않은 내용은 관련 기관 안내로 확인하세요.</p>
+        <div id="ns-ai-thread" class="ns-ai-thread" aria-live="polite"></div>
       </section>
 
       <!-- MAIN 2·3 : 회원 채팅 / 나의 상태 진입점 -->
@@ -175,6 +176,6 @@
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
   <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
-  <script src="/js/newstart.js?v=20260919-2" defer></script>
+  <script src="/js/newstart.js?v=20260919-3" defer></script>
 </body>
 </html>

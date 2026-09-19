@@ -75,3 +75,10 @@
 
 .ns-footer { margin-top: 22px; font-size: 12px; color: var(--ns-muted); text-align: center; }
 .ns-bottom-hint { margin-top: 16px; padding: 10px 12px; background: var(--ns-warm); border: 1px solid var(--ns-warm-line); border-radius: 10px; font-size: 12.5px; color: #5a4517; line-height: 1.5; }
+/* NewStart AI 답변 스레드 — 화려한 채팅 UI 대신 질문/답변 구분만 한다 */
+.ns-ai-thread { margin-top: 12px; display: grid; gap: 8px; }
+.ns-ai-thread:empty { display: none; }
+.ns-ai-block { border: 1px solid var(--ns-line); border-radius: 10px; padding: 10px 12px; background: #fff; }
+.ns-ai-error { border-color: #e8b4b4; background: #fdf6f6; }
+.ns-ai-who { display: block; font-size: 12px; font-weight: 700; color: var(--ns-muted); margin-bottom: 3px; }
+.ns-ai-text { font-size: 14px; line-height: 1.65; color: var(--ns-ink); overflow-wrap: anywhere; white-space: pre-wrap; word-break: break-word; }

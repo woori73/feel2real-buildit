@@ -6,6 +6,20 @@
 - 비회원 HTML 직접 접근은 `/?login=required&returnUrl=...`로 이동하고, JSON/API는 401을 반환한다. 로그인 성공 후 안전한 내부 Wiki URL로 복귀한다.
 - ADMIN/TUTOR의 기존 역할 권한과 데이터 모델은 변경하지 않는다.
 
+## NewStart AI (2026-09)
+
+### ✅ POST /api/newstart/ai/chat
+
+- 목적: NewStart 화면의 AI 질문. 기존 BuildIt Wiki AI Router(`ai_router.py`, `provider=auto`)를 서버-서버로 재사용한다(공용 `WikiAiRouterClient`). 새 provider·모델 설정을 만들지 않는다.
+- 현재 사용처: `/newstart` NewStart AI 질문창
+- 인증/권한: 기존 `/api/**` catch-all(로그인 회원)을 따른다. 별도 권한 규칙 없음.
+- Request JSON: `message` (필수, 1~2000자)
+- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용)
+- 성공: `200` + `{"status":"ok","answer":"...","model":"..."}`
+- 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다.
+- 제약: Knowledge DB/RAG 없음 — 카페 사례·공식자료 검색 계약이 아니다. retrieval layer는 향후 service의 prompt 조립 단계에 삽입한다.
+
+
 # API 명세
 
 ## BuildIt Wiki 학교 프린트·문제 모델
