@@ -52,6 +52,35 @@ jobs:
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardErrorContent' --output text
           exit 0
 
+      - name: Batch5 matched IDs narrow via SSM (read-only)
+        shell: bash
+        run: |
+          cat > /tmp/mysql-verify-ids.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "echo \"=== Batch5 matched READY ids (READ ONLY) ===\"",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT r.row_id, r.amount, (SELECT a.code FROM easy_accounts a WHERE a.account_id = r.matched_account_id) AS acct FROM easy_import_rows r WHERE r.batch_id = 5 AND r.status = 'READY' AND r.matched_account_id IS NOT NULL ORDER BY r.row_id; SELECT COUNT(*) AS m_cnt, COALESCE(SUM(amount),0) AS m_sum FROM easy_import_rows WHERE batch_id = 5 AND status = 'READY' AND matched_account_id IS NOT NULL;\" 2>&1 || echo \"mysql_exit=$?\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/mysql-verify-ids.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "wait_exit=$?"
+          echo "===== invocation status ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query '{Status:Status,ResponseCode:ResponseCode}' --output text
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardErrorContent' --output text
+          exit 0
+
       - name: Batch5 READY detail via SSM (read-only)
         shell: bash
         run: |
