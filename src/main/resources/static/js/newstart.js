@@ -3,9 +3,32 @@
   var NS = {
     init: function () {
       NS.bindToggles();
+      NS.bindOpeners();
+      NS.bindEntryGuards();
       NS.bindChecklist();
       NS.bindSituationForm();
       NS.bindLibraryClicks();
+    },
+
+    bindOpeners: function () {
+      var openers = document.querySelectorAll('[data-ns-open]');
+      for (var i = 0; i < openers.length; i++) {
+        openers[i].addEventListener('click', function () {
+          var target = document.getElementById(this.getAttribute('data-ns-open'));
+          if (!target) return;
+          target.removeAttribute('hidden');
+          this.setAttribute('aria-expanded', 'true');
+        });
+      }
+    },
+
+    bindEntryGuards: function () {
+      var disabled = document.querySelectorAll('.ns-entry[aria-disabled="true"]');
+      for (var i = 0; i < disabled.length; i++) {
+        disabled[i].addEventListener('click', function (e) {
+          e.preventDefault();
+        });
+      }
     },
 
     bindToggles: function () {
@@ -54,11 +77,8 @@
       if (!form) return;
       form.addEventListener('submit', function (e) {
         e.preventDefault();
-        var btn = form.querySelector('[type="submit"]');
       });
     },
-
-
 
     bindLibraryClicks: function () {
       var cards = document.querySelectorAll('.ns-library-card');
