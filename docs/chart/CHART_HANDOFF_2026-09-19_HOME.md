@@ -166,4 +166,13 @@ STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 8
 - STRUCTURAL FINDING 2: `chart_candidate_activities` 는 candidate+source_url 기준 INSERT IGNORE → "오프라인 활동 URL 근거 없음" 계열은 **새 URL 로만** 해소 가능(같은 URL 에 kind 변경 추가 불가). evidence `content_summary` 정정 API 는 없다(알려진 오타 2건: #82·#66 각 1행).
 - 16:25Z 타 세션 수동 EC2 배포로 feel2real.co.kr 전역 502 → 이후 쓰기는 배포 완료 후 재개. 마지막 쓰기(#66 승격)는 성공 기록됨.
 
+### 7.6 STOP 조건 달성 (2026-09-19 16:50) — 신규 17명, 상세 `research/2026-09-19/04·05`
+
+- 배치 3 승격: #99 손성하(75), #80 토마스(94), #84 박명숙(70) / 배치 4: #94 장한(67)
+- `GET /scores/stale` = **17건** = 신규 EVALUATABLE 17명(83+17 = **100명**, 전부 `published:false`)
+- 기준을 낮추지 않아 승격하지 않은 후보: **#62 신원경**(2025년·브랜드 본사 매체만 확인), 사천 영어훈련소(실명 근거 없음), 남해(인스타 전용)
+- **PUBLICATION REBUILD: 아직 NO / review-batches·decision·finalize 미실행 / regions/*/complete 미호출 / DEPLOY NO**
+- 승인 후 절차는 §7.4 그대로. 100명 정확히 맞추면 100위 밖 0명 → Goal B(100위 밖 표시) 실증에는 여유 승격 1명이 더 필요.
+
+
 
