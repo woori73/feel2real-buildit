@@ -161,13 +161,19 @@ public class EasyImportService {
   }
 
   /**
-   * 확정 — READY 행만 장부 거래로 변환한다. 이미 확정/폐기된 배치는 거부한다.
+   * 확정 — READY 행만 장부 거래로 변환한다. 이미 폐기된 배치는 거부한다.
    * rowIds 생략 시 READY 전체를 확정한다.
+   * CONFIRMED 상태여도 READY 행을 선택 확정할 수 있다 (partial confirm).
+   * 배치의 confirmedRows는 row-level IMPORTED 건수를 recount한 누적값이다.
+   * 이번 호출분만 덮어쓰지 않으므로, CONFIRMED 배치의 추가 확정에서도
+   * 기존 누적(예: 500)이 손실되지 않는다 (예: 500 + 43 = 543).
    */
   @Transactional
   public EasyImportBatchResponse confirm(Long batchId, List<Long> rowIds) {
     EasyImportBatch batch = requireBatch(batchId);
-    requireStaged(batch);
+    if (batch.getStatus() != EasyImportStatus.STAGED && batch.getStatus() != EasyImportStatus.CONFIRMED) {
+      throw new IllegalArgumentException("STAGED 또는 CONFIRMED 상태의 배치만 처리할 수 있습니다.");
+    }
     List<EasyImportRow> targets = rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(
         batchId, EasyImportRowStatus.READY);
     if (rowIds != null && !rowIds.isEmpty()) {
@@ -176,10 +182,16 @@ public class EasyImportService {
     if (targets.isEmpty()) {
       throw new IllegalArgumentException("확정할 READY 행이 없습니다.");
     }
-    int confirmed = 0;
     for (EasyImportRow row : targets) {
-      String category = row.getMatchedAccount() == null
-          ? "기타" : row.getMatchedAccount().getName();
+      // matchedAccount가 없는 READY 행은 확정하지 않음 (unmatched 보호)
+      if (row.getMatchedAccount() == null) {
+        continue;
+      }
+      // 이미 확정된 행은 건너뜀 (상태/createdTxn 불일치 대비 멱등 가드)
+      if (row.getCreatedTxn() != null) {
+        continue;
+      }
+      String category = row.getMatchedAccount().getName();
       EasyTransaction txn = EasyTransaction.builder()
           .business(batch.getBusiness())
           .occurredOn(row.getOccurredOn())
@@ -204,9 +216,12 @@ public class EasyImportService {
       EasyTransaction saved = txnRepository.save(txn);
       row.markImported(saved);
       journalService.repost(saved);
-      confirmed++;
     }
-    batch.markConfirmed(confirmed);
+    // 요약 카운터는 이번 호출분이 아닌 row-level IMPORTED 실측으로 갱신한다.
+    // 동일 트랜잭션 내 확정분이 flush 후 집계에 포함되므로 누적 불변식이 유지된다.
+    long imported = rowRepository.countByBatch_BatchIdAndStatus(
+        batchId, EasyImportRowStatus.IMPORTED);
+    batch.markConfirmed((int) imported);
     return EasyImportBatchResponse.of(batch, rows(batchId));
   }
 
