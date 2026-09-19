@@ -70,3 +70,54 @@ IDs: `51, 52, 53, 55, 59, 62, 66, 77, 78, 79, 80, 82, 83, 84, 90, 91, 93, 94, 96
 - ❌ 26명 일괄 강제 EVALUATABLE 승격 금지
 - ❌ production DB 직접 초기화/삭제 금지
 
+---
+
+## 6. STEP 1 RESULTS — 2026-09-19 HOME VERIFICATION (COMPLETE)
+
+**STEP 1 STATUS: COMPLETE — 목표 상태는 이미 운영에 반영되어 있었음. 이번 세션에서 쓰기 작업 0건.**
+
+### 6.1 ROOT CAUSE (handoff stale 기록)
+
+이 문서 §2의 "snapshot 미반영, 홈페이지는 기존 snapshot 표시" 및 §4 STEP 1의 "Publication 35 생성 필요" 기록은 **오래된 상태**였다.
+학원 PC가 handoff 문서 push(9/19 19:12 KST) 이전인 **9/19 13:19 KST(04:19 UTC)** 에 이미 STEP 1을 실행 완료한 상태였다:
+
+- Review Batch **197** (`region=seocho`, summary: "2026-09-19 83명 점수 재계산 반영 (공식 산식 재적용)")
+  - submittedAt `2026-09-19T04:19:25` → decision **APPROVED** at `04:19:36` (snapshot 83건 review_status=APPROVED)
+  - Batch 197의 candidateId 83개 집합 == recalc CSV 83개 id 집합 **완전 일치** (차집합 0)
+- **Publication 34** 가 해당 최신 snapshot 기반으로 `04:19:43` 에 생성됨 (`updatedAt=2026-09-19T04:19:43`)
+- 이전 Publication 33은 Batch 196(gyeongnam-gimhae, 9/14) 기반
+
+→ 결론: Publication 번호 35는 불필요. **Publication 34가 이미 83명 재계산 최신 snapshot을 반영 중.**
+
+### 6.2 HOME 검증 결과 (전부 READ-ONLY, 2026-09-19 저녁)
+
+PRE-FLIGHT (public API):
+- `GET /api/chart/publication/current`: publicationId=**34**, entries=**83**, discovered=0, rank 1~83 연속
+- `GET /api/chart/rankings`: total=**83**
+
+SNAPSHOT FRESHNESS (ADMIN 세션, `GET /api/admin/chart/tools/scores/stale`):
+- **stale = 0건** → 83명 전원의 최신 snapshot이 최근 data change 이후 생성된 상태
+- #45/#41/#46: snapshot review_status=APPROVED, score 63/43/39 (Batch 197 소속 확인)
+
+SCORES (`publication/current` live vs `docs/chart/research/2026-09-18/01_chart_recalc_83.csv` recalc_score 전수 대조):
+- **#45=63, #41=43, #46=39** ✓
+- score=17: **25명** ✓ / avg: **45.00** ✓ / min=17, max=95 ✓
+- **83/83 live == recalculated, mismatch 0** ✓
+
+WRITE ACTIONS (이번 홈 세션):
+- score update: **NONE**
+- review batch: **NONE**
+- publication rebuild: **NONE**
+
+### 6.3 인증 방식 (운영 ADMIN API 접근 기록)
+
+- `/api/admin/chart/tools/**` 중 stale/decision/finalize/rebuild는 **ROLE_ADMIN JWT 쿠키(`ACCESS_TOKEN`) 전용** — 브라우저 ADMIN 세션에서 동일 출처 `fetch(credentials:'include')`로 호출 (Secret 미사용·미로그)
+- `CHART_AGENT_TOKEN` Bearer allowlist에는 `POST /review-batches` 등 조사 파이프라인만 포함 — 이번 검증에는 불필요
+
+### 6.4 다음 작업 (STEP 2)
+
+STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 84명 확장) 진행 가능.
+- `POST /api/admin/chart/tools/candidates/100/reevaluate?dryRun=true` → PASS 확인 후 `dryRun=false`
+- 승격 후 #100 포함 `POST /review-batches` → decision APPROVED → `POST /publications/rebuild` (이때는 실제로 rebuild 필요, Publication 35 예상)
+- STEP 3: public count 84 / rank 1~84 연속 / `feel2real.co.kr/chart` UI 84위 표시 검증
+
