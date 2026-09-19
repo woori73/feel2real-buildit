@@ -37,6 +37,15 @@ chart:
   re-research-cron: ${CHART_RE_RESEARCH_CRON:0 15 3 * * *}
 
 app:
+  naver:
+    oauth:
+      # 네이버 OAuth 2.0 로그인. Client ID/Secret은 개발자센터 등록 후 환경변수로만 주입 —
+      # 값이 비어 있으면 기능은 비활성(부팅 영향 없음, /oauth/naver/start만 안내 redirect).
+      client-id: ${NAVER_CLIENT_ID:}
+      client-secret: ${NAVER_CLIENT_SECRET:}
+      # 콜백 절대 URL. 비우면 요청 base URL로 산출(로컬 개발용). 운영은 개발자센터 Callback
+      # 등록값과 정확히 일치하도록 NAVER_OAUTH_REDIRECT_URI를 명시해야 한다.
+      redirect-uri: ${NAVER_OAUTH_REDIRECT_URI:}
   problem-generator:
     n8n:
       # BuildIt Wiki 문제 생성 n8n Production Webhook (Webhook → AI Agent → Gemini 3.5 Flash →

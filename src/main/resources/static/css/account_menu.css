@@ -71,6 +71,18 @@
 .login-modal-social-placeholder::before {
   content: ""; width: 16px; height: 16px; border-radius: 999px; background: #cbd5e1;
 }
+/* NewStart 간편 로그인: 네이버 버튼 (naver_login.js가 NewStart 페이지에서만 주입) */
+.login-modal-social-list { width: 100%; }
+.login-modal-naver {
+  width: 100%; min-height: 46px; border-radius: 14px; background: #03c75a; color: #fff;
+  font-weight: 900; text-decoration: none; display: inline-flex; align-items: center;
+  justify-content: center; gap: 8px; cursor: pointer; border: 0;
+}
+.login-modal-naver:hover { background: #02b254; }
+.login-modal-naver-mark {
+  width: 22px; height: 22px; border-radius: 6px; background: #fff; color: #03c75a;
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px;
+}
 @media (max-height: 640px) {
   .login-modal { align-items: flex-start; }
   .login-modal-card { max-height: none; }
