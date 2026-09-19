@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyShopIm
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyShopImportRequest.EasyShopRow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyReviewKind;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyRulePatternType;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,14 @@ class EasyShopPipelineFixtureTest {
     harness.seedAccount(11L, "EXPENSE_RENT", "임차료", EasyAccountDirection.EXPENSE);
     harness.seedAccount(12L, "SETTLEMENT", "자금정산", EasyAccountDirection.ASSET);
     harness.seedMapping("임차료(월세)", 11L);
+    // confirm()은 matched READY만 확정하므로 P&L 검증 대상 행을 매칭한다.
+    // 매출은 수강료로 매칭한다 (운영 SALES 정책과 동일).
+    harness.seedMapping("EASYSHOP:매출", 10L);
+    // 환불 역분개(-330,000)는 장부에서 비용 차감되나 분개(비용 합계)에는 네팅되지
+    // 않도록 자금정산으로 매칭한다 — 기존 journalExpense=3,300,000 기대 유지.
+    harness.seedMapping("전화/소모품", 12L);
+    // 자금 이동은 외부계정이 없어 규칙으로 매칭한다 (P&L 제외, 원천 보존 검증용).
+    harness.seedRule(EasyRulePatternType.DESCRIPTION_REGEX, "계좌에서 현금으로 출금", 12L);
   }
 
   private EasyShopRow sales(String date, String total) {
@@ -75,7 +84,8 @@ class EasyShopPipelineFixtureTest {
     assertThat(pl.fundsOut()).isEqualTo(967000L);
     assertThat(pl.dataThrough().toString()).isEqualTo("2026-07-06");
     assertThat(pl.journalBalanced()).isTrue();
-    // 임차료만 매핑 확정 → 분개는 임차료분만, 나머지는 미분류 리뷰
+    // 임차료·매출·역분개·자금 모두 매칭 확정 → 분개는 임차료/매출분, 자금은 분개 제외.
+    // 역분개 행은 자금정산 매칭이라 장부 비용만 차감하고 비용 분개 합계는 유지된다.
     assertThat(pl.journalExpense()).isEqualTo(3300000L);
     assertThat(pl.matchesLedger()).isFalse();
 

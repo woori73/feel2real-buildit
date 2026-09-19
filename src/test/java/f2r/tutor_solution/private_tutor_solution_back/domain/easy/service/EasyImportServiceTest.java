@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -112,6 +113,8 @@ class EasyImportServiceTest {
     when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L)).thenReturn(List.of(ready));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(1L);
 
     EasyImportBatchResponse confirmed = service.confirm(9L, null);
 
@@ -166,12 +169,15 @@ class EasyImportServiceTest {
         .thenReturn(List.of(row1, row2, row3));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    // 기존 1건 + 신규 2건 = 누적 3건 (row-level IMPORTED 실측)
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(3L);
 
     // CONFIRMED batch에서 2건만 선택 확정
     EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L, 101L));
 
     assertThat(confirmed.status()).isEqualTo("CONFIRMED");
-    assertThat(confirmed.confirmedRows()).isEqualTo(2);
+    assertThat(confirmed.confirmedRows()).isEqualTo(3);
     assertThat(row1.getStatus()).isEqualTo(EasyImportRowStatus.IMPORTED);
     assertThat(row1.getCreatedTxn()).isNotNull();
     assertThat(row1.getCreatedTxn().getAccount()).isEqualTo(telecom);
@@ -211,11 +217,14 @@ class EasyImportServiceTest {
         .thenReturn(List.of(matched, unmatched));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    // 기존 1건 + 신규 1건 = 누적 2건 (unmatched는 실측에 포함되지 않음)
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(2L);
 
     // 둘 다 rowIds에 포함시켰지만 matchedAccount 없는 unmatched는 확정되지 않음
     EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L, 101L));
 
-    assertThat(confirmed.confirmedRows()).isEqualTo(1);
+    assertThat(confirmed.confirmedRows()).isEqualTo(2);
     assertThat(matched.getStatus()).isEqualTo(EasyImportRowStatus.IMPORTED);
     assertThat(unmatched.getStatus()).isEqualTo(EasyImportRowStatus.READY);
     assertThat(unmatched.getCreatedTxn()).isNull();
@@ -259,13 +268,181 @@ class EasyImportServiceTest {
         .thenReturn(List.of(ready)); // 이미 IMPORTED된 row는 READY 조회에 포함되지 않음
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    // 기존 1건 + 신규 1건 = 누적 2건 (중복 생성 없으므로 증가분은 신규 1건뿐)
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(2L);
 
     // 이미 IMPORTED된 rowId 포함해도 중복 생성 안 됨
     EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L, 101L));
 
-    assertThat(confirmed.confirmedRows()).isEqualTo(1);
+    assertThat(confirmed.confirmedRows()).isEqualTo(2);
     assertThat(alreadyImported.getCreatedTxn()).isSameAs(txn); // 기존 txn 유지
     assertThat(ready.getStatus()).isEqualTo(EasyImportRowStatus.IMPORTED);
+    verify(txnRepository, times(1)).save(any(EasyTransaction.class)); // 신규 1건만 저장
+  }
+
+  @Test
+  @DisplayName("CONFIRMED batch 누적 확정 — 기존 500 + 신규 43 = 543 (Batch 5 기대값)")
+  void confirm_accumulatesCountOnConfirmedBatch() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(579).build();
+    batch.markConfirmed(500);
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+
+    java.util.List<EasyImportRow> targets = new java.util.ArrayList<>();
+    for (int i = 0; i < 43; i++) {
+      EasyImportRow row = EasyImportRow.builder()
+          .batch(batch).rowNo(i + 1)
+          .occurredOn(java.time.LocalDate.of(2026, 1, 5))
+          .direction(EasyTxnDirection.EXPENSE).amount(10000L)
+          .counterparty("KT").description("전화요금").externalAccount("전화/휴대폰/인터넷").build();
+      row.markReady(telecom, 1.0);
+      ReflectionTestUtils.setField(row, "rowId", 1000L + i);
+      targets.add(row);
+    }
+
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(targets);
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    // row-level IMPORTED 실측: 기존 500 + 신규 43
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(543L);
+
+    EasyImportBatchResponse confirmed = service.confirm(9L, null);
+
+    assertThat(confirmed.status()).isEqualTo("CONFIRMED");
+    assertThat(confirmed.confirmedRows()).isEqualTo(543);
+    assertThat(targets).allMatch(row -> row.getStatus() == EasyImportRowStatus.IMPORTED);
+    assertThat(targets).allMatch(row -> row.getCreatedTxn() != null);
+    verify(txnRepository, times(43)).save(any(EasyTransaction.class));
+    verify(rowRepository).countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED);
+  }
+
+  @Test
+  @DisplayName("CONFIRMED batch에서 선택 대상 전부 unmatched — 기존 500 유지, 저장 없음")
+  void confirm_allUnmatchedKeepsCount() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(502).build();
+    batch.markConfirmed(500);
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+
+    EasyImportRow unmatched1 = EasyImportRow.builder()
+        .batch(batch).rowNo(1)
+        .occurredOn(java.time.LocalDate.of(2026, 1, 5))
+        .direction(EasyTxnDirection.EXPENSE).amount(30000L)
+        .counterparty("알수없음").description("분류불가").externalAccount("분류불가").build();
+    unmatched1.markReady(null, 0.0);
+    ReflectionTestUtils.setField(unmatched1, "rowId", 100L);
+
+    EasyImportRow unmatched2 = EasyImportRow.builder()
+        .batch(batch).rowNo(2)
+        .occurredOn(java.time.LocalDate.of(2026, 1, 6))
+        .direction(EasyTxnDirection.EXPENSE).amount(40000L)
+        .counterparty("모름").description("내역없음").externalAccount("내역없음").build();
+    unmatched2.markReady(null, 0.0);
+    ReflectionTestUtils.setField(unmatched2, "rowId", 101L);
+
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(unmatched1, unmatched2));
+    // 신규 확정 0건이므로 실측은 기존 500 그대로
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(500L);
+
+    EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L, 101L));
+
+    assertThat(confirmed.status()).isEqualTo("CONFIRMED");
+    assertThat(confirmed.confirmedRows()).isEqualTo(500);
+    assertThat(unmatched1.getStatus()).isEqualTo(EasyImportRowStatus.READY);
+    assertThat(unmatched2.getStatus()).isEqualTo(EasyImportRowStatus.READY);
+    verify(txnRepository, never()).save(any(EasyTransaction.class));
+  }
+
+  @Test
+  @DisplayName("READY 조회에 섞인 createdTxn 보유 행은 건너뜀 — 중복 transaction 없음")
+  void confirm_skipsReadyRowWithExistingTxn() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(501).build();
+    batch.markConfirmed(500);
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+
+    EasyTransaction existing = EasyTransaction.builder()
+        .business(academy).occurredOn(java.time.LocalDate.of(2026, 1, 5))
+        .direction(EasyTxnDirection.EXPENSE).amount(50000L)
+        .category("통신비").counterparty("KT").description("전화요금").build();
+    ReflectionTestUtils.setField(existing, "txnId", 7L);
+
+    // 상태 불일치 시뮬레이션: READY이지만 createdTxn 보유
+    EasyImportRow inconsistent = EasyImportRow.builder()
+        .batch(batch).rowNo(1)
+        .occurredOn(java.time.LocalDate.of(2026, 1, 5))
+        .direction(EasyTxnDirection.EXPENSE).amount(50000L)
+        .counterparty("KT").description("전화요금").externalAccount("전화/휴대폰/인터넷").build();
+    inconsistent.markReady(telecom, 1.0);
+    ReflectionTestUtils.setField(inconsistent, "rowId", 100L);
+    // READY 유지 + createdTxn 보유라는 불일치 상태 (DB에는 없어야 하나 방어 차원 검증)
+    ReflectionTestUtils.setField(inconsistent, "createdTxn", existing);
+
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(inconsistent));
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(500L);
+
+    EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L));
+
+    assertThat(confirmed.confirmedRows()).isEqualTo(500);
+    assertThat(inconsistent.getStatus()).isEqualTo(EasyImportRowStatus.READY);
+    assertThat(inconsistent.getCreatedTxn()).isSameAs(existing);
+    verify(txnRepository, never()).save(any(EasyTransaction.class));
+  }
+
+  @Test
+  @DisplayName("일부 matched + 일부 unmatched — 실제 새 IMPORTED 수만 누적 (500 → 502)")
+  void confirm_mixedRowsAccumulateOnlyNew() {
+    EasyImportBatch batch = EasyImportBatch.builder()
+        .business(academy).sourceName("easyshop.csv").sourceKind("EASYSHOP").totalRows(503).build();
+    batch.markConfirmed(500);
+    when(batchRepository.findById(9L)).thenReturn(Optional.of(batch));
+
+    EasyImportRow matched1 = EasyImportRow.builder()
+        .batch(batch).rowNo(1)
+        .occurredOn(java.time.LocalDate.of(2026, 1, 5))
+        .direction(EasyTxnDirection.EXPENSE).amount(50000L)
+        .counterparty("KT").description("전화요금").externalAccount("전화/휴대폰/인터넷").build();
+    matched1.markReady(telecom, 1.0);
+    ReflectionTestUtils.setField(matched1, "rowId", 100L);
+
+    EasyImportRow matched2 = EasyImportRow.builder()
+        .batch(batch).rowNo(2)
+        .occurredOn(java.time.LocalDate.of(2026, 1, 6))
+        .direction(EasyTxnDirection.EXPENSE).amount(30000L)
+        .counterparty("네이버").description("서비스 이용료").externalAccount("서비스 이용료").build();
+    matched2.markReady(telecom, 1.0);
+    ReflectionTestUtils.setField(matched2, "rowId", 101L);
+
+    EasyImportRow unmatched = EasyImportRow.builder()
+        .batch(batch).rowNo(3)
+        .occurredOn(java.time.LocalDate.of(2026, 1, 7))
+        .direction(EasyTxnDirection.EXPENSE).amount(100000L)
+        .counterparty("알수없음").description("분류불가").externalAccount("분류불가").build();
+    unmatched.markReady(null, 0.0);
+    ReflectionTestUtils.setField(unmatched, "rowId", 102L);
+
+    when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
+        .thenReturn(List.of(matched1, matched2, unmatched));
+    when(txnRepository.save(any(EasyTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    // 실측: 기존 500 + 신규 2
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(502L);
+
+    EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L, 101L, 102L));
+
+    assertThat(confirmed.confirmedRows()).isEqualTo(502);
+    assertThat(matched1.getStatus()).isEqualTo(EasyImportRowStatus.IMPORTED);
+    assertThat(matched2.getStatus()).isEqualTo(EasyImportRowStatus.IMPORTED);
+    assertThat(unmatched.getStatus()).isEqualTo(EasyImportRowStatus.READY);
+    verify(txnRepository, times(2)).save(any(EasyTransaction.class));
   }
 
   @Test
@@ -344,12 +521,14 @@ class EasyImportServiceTest {
         .direction(EasyTxnDirection.INCOME).amount(300000L)
         .counterparty("카드사").description("카드(1)")
         .rawData("[srow:2] {\"date\":\"2025-03-05\"}").build();
-    ready.markReady(null, 0.0);
+    ready.markReady(telecom, 0.9);
     when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
         .thenReturn(List.of(ready));
     when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L)).thenReturn(List.of(ready));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(1L);
 
     service.confirm(9L, null);
 
@@ -367,19 +546,21 @@ class EasyImportServiceTest {
         .occurredOn(java.time.LocalDate.of(2025, 3, 5))
         .direction(EasyTxnDirection.INCOME).amount(300000L)
         .rawData("[srow:5] {}").build();
-    first.markReady(null, 0.0);
+    first.markReady(telecom, 0.9);
     EasyImportRow second = EasyImportRow.builder()
         .batch(batch).rowNo(2)
         .occurredOn(java.time.LocalDate.of(2025, 3, 6))
         .direction(EasyTxnDirection.INCOME).amount(310000L)
         .rawData("[srow:6] {}").build();
-    second.markReady(null, 0.0);
+    second.markReady(telecom, 0.9);
     when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
         .thenReturn(List.of(first, second));
     when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L))
         .thenReturn(List.of(first, second));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(2L);
 
     service.confirm(9L, null);
 
@@ -398,12 +579,14 @@ class EasyImportServiceTest {
         .occurredOn(java.time.LocalDate.of(2025, 3, 5))
         .direction(EasyTxnDirection.INCOME).amount(300000L)
         .counterparty("학부모").description("수강료").build();
-    ready.markReady(null, 0.0);
+    ready.markReady(telecom, 0.9);
     when(rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(9L, EasyImportRowStatus.READY))
         .thenReturn(List.of(ready));
     when(rowRepository.findByBatch_BatchIdOrderByRowNoAsc(9L)).thenReturn(List.of(ready));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(1L);
 
     service.confirm(9L, null);
 
@@ -601,6 +784,8 @@ class EasyImportServiceTest {
         .thenReturn(List.of(row1));
     when(txnRepository.save(any(EasyTransaction.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(rowRepository.countByBatch_BatchIdAndStatus(9L, EasyImportRowStatus.IMPORTED))
+        .thenReturn(1L);
 
     EasyImportBatchResponse confirmed = service.confirm(9L, List.of(100L));
 

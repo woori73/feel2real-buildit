@@ -9,6 +9,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAcc
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountMapping;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyClassificationRule;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRowStatus;
@@ -17,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJou
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyReviewItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyReviewStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyRulePatternType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountMappingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
@@ -79,6 +81,7 @@ class EasyShopPipelineHarness {
   final Map<Long, EasyBusiness> businesses = new LinkedHashMap<>();
   final Map<Long, EasyAccount> accounts = new LinkedHashMap<>();
   final List<EasyAccountMapping> mappings = new ArrayList<>();
+  final List<EasyClassificationRule> rules = new ArrayList<>();
   final Map<Long, EasyImportBatch> batches = new LinkedHashMap<>();
   final Map<Long, EasyImportRow> rows = new LinkedHashMap<>();
   final Map<Long, EasyTransaction> txns = new LinkedHashMap<>();
@@ -140,6 +143,13 @@ class EasyShopPipelineHarness {
         .standardCode(null).standardName(null).note("harness").build());
   }
 
+  void seedRule(EasyRulePatternType patternType, String pattern, Long accountId) {
+    rules.add(EasyClassificationRule.builder()
+        .patternType(patternType).pattern(pattern)
+        .account(accounts.get(accountId)).priority(50)
+        .amountMin(null).amountMax(null).direction(null).active(true).build());
+  }
+
   private void wire() {
     when(businessRepository.findAll()).thenAnswer(inv -> new ArrayList<>(businesses.values()));
     when(businessRepository.findById(any()))
@@ -152,7 +162,9 @@ class EasyShopPipelineHarness {
 
     when(mappingRepository.findFirstByExternalCode(any())).thenAnswer(inv -> mappings.stream()
         .filter(m -> m.getExternalCode().equals(inv.getArgument(0))).findFirst());
-    when(ruleRepository.findAllByActiveTrueOrderByPriorityAsc()).thenReturn(List.of());
+    when(ruleRepository.findAllByActiveTrueOrderByPriorityAsc()).thenAnswer(inv -> rules.stream()
+        .filter(EasyClassificationRule::isActive)
+        .sorted(Comparator.comparingInt(EasyClassificationRule::getPriority)).toList());
 
     when(batchRepository.save(any(EasyImportBatch.class))).thenAnswer(inv -> {
       EasyImportBatch batch = inv.getArgument(0);
@@ -188,6 +200,14 @@ class EasyShopPipelineHarness {
                 && r.getBatch().getBatchId().equals(inv.getArgument(0))
                 && r.getStatus() == inv.getArgument(1))
             .sorted(Comparator.comparingInt(EasyImportRow::getRowNo)).toList());
+    // row-level IMPORTED 실측 — confirm()의 confirmedRows recount가 실측과 일치하도록
+    // 인메모리 상태를 그대로 집계한다 (운영 JPA의 auto-flush 집계와 동등).
+    when(rowRepository.countByBatch_BatchIdAndStatus(any(), any()))
+        .thenAnswer(inv -> rows.values().stream()
+            .filter(r -> r.getBatch() != null
+                && r.getBatch().getBatchId().equals(inv.getArgument(0))
+                && r.getStatus() == inv.getArgument(1))
+            .count());
 
     when(txnRepository.save(any(EasyTransaction.class))).thenAnswer(inv -> {
       EasyTransaction txn = inv.getArgument(0);

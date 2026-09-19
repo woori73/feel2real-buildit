@@ -12,4 +12,6 @@ public interface EasyImportRowRepository extends JpaRepository<EasyImportRow, Lo
       Long batchId, EasyImportRowStatus status);
 
   List<EasyImportRow> findByBatch_BatchIdAndRowIdIn(Long batchId, List<Long> rowIds);
+
+  long countByBatch_BatchIdAndStatus(Long batchId, EasyImportRowStatus status);
 }
