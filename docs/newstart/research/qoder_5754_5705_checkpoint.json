@@ -1,29 +1,24 @@
 {
   "task": "newstart cafe collection (Qoder window)",
   "branch": "newstart/cafe-qoder-5754-5705",
-  "cafe": {
-    "key": "newhopero",
-    "clubId": 31312978,
-    "name": "새출발기금 부실차주 라이브러리"
-  },
+  "cafe": { "key": "newhopero", "clubId": 31312978, "name": "새출발기금 부실차주 라이브러리" },
   "assignedRange": { "from": 5754, "to": 5705, "count": 50 },
-  "status": "STOPPED_INTERRUPTED",
-  "stoppedAt": "2026-09-20 (emergency checkpoint / multi-session login-access conflict)",
-  "reason": "여러 브라우저 세션의 동시 네이버 접근으로 로그인/접근 문제가 발생. 긴급 중단 지시에 따라 신규 articleId 접근·새로고침·재로그인·세션복구를 즉시 중지.",
-  "articlesSavedByThisWindow": 0,
-  "commentsSavedByThisWindow": 0,
-  "checked": [],
-  "saved": [],
-  "skippedExisting": [],
+  "status": "PAUSED_BROWSER_HUNG",
+  "updatedAt": "2026-09-20T04:50:00+09:00",
+  "method": "logged-in SPA route https://cafe.naver.com/newhopero/{id} -> read #cafe_main iframe DOM (.se-main-container body, li.CommentItem comments with real commentId from data-nlog-params). boardId mapped from boardName.",
+  "saved": [5754, 5753, 5752],
+  "commentsSaved": 3,
   "deleted": [],
   "notFound": [],
   "inaccessible": [],
-  "failed": [],
-  "unfinishedRange": "5754 -> 5705 (entire range not started)",
-  "lastAttemptedArticle": 5754,
-  "lastAttemptResult": "no content extracted: cafe shell resets cafe_main iframe to MyCafeIntro; ArticleRead.nhn bounces top frame to /newhopero; in-page same-origin fetch remained pending/aborted",
-  "note_on_working_tree": "docs/newstart/research/article_5950..5954.json in the working tree belong to a separate concurrent session (range 5954-5905) and are intentionally NOT staged/committed on this branch.",
+  "failed": [{ "articleId": 5751, "reason": "browser renderer hung during collection" }],
+  "checkedSoFar": [5754, 5753, 5752, 5751],
+  "nextResumeId": 5751,
+  "unfinishedRange": "5751 -> 5705",
+  "blockedOn": "Qoder built-in browser renderer unresponsive (evaluate/screenshot/navigate all time out; only CDP target list responds). Manual tab restart required before resuming. Root cause: setting cafe_main.contentWindow.location.href directly desynced the cafe SPA shell router and triggered a hang. RESUME RULE: do NOT manipulate the iframe location directly; navigate the TOP frame to https://cafe.naver.com/newhopero/{id} per article and re-inject the extractor after each navigation (top reload clears window globals).",
+  "note_on_working_tree": "docs/newstart/research/article_5950..5954.json belong to a separate concurrent session (range 5954-5905); NOT staged/committed on this branch.",
   "secretsStored": false,
-  "extractionMethod": "none (no article successfully collected)",
-  "resumeInstruction": "다음 세션은 단일 브라우저 세션만 네이버 카페에 접근하도록 보장한 뒤, 이 파일의 assignedRange(from=5754,to=5705) 기준으로 재개한다. 이미 저장된 articleId 파일이 있으면 SKIP_EXISTING."
+  "resumeFiles": {
+    "extractorHelpers": "board map + kst() + DOM selectors are documented in method above and in each article's extractionMethod field."
+  }
 }
