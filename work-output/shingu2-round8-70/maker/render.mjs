@@ -132,12 +132,30 @@ if (process.argv[2] === "draft") {
       cols.push(cur);
     };
     if (!cur) fresh();
-    const need = h + (cur.items.length ? 18 : 0);
     const used = cur.items.reduce((s, j) => s + hmap.get(UNITS[j][0].num), 0) + Math.max(0, cur.items.length - 1) * 18;
     if (h > cur.avail) throw new Error("unit " + u[0].num + " too tall: " + h.toFixed(0) + " > " + cur.avail.toFixed(0));
     if (cur.items.length && used + 14 + h > cur.avail) fresh();
     cur.items.push(i);
   });
+  // 컬럼 수가 홀수면 마지막 페이지의 왼쪽 컬럼만 쓰이므로 꼬리 두 컬럼의 문항을 다시 나눠 고아 문항을 막는다.
+  if (cols.length % 2 === 1 && cols.length >= 3) {
+    const a = cols[cols.length - 2];
+    const b = cols[cols.length - 1];
+    const H = (j) => hmap.get(UNITS[j][0].num);
+    const items = [...a.items, ...b.items];
+    const keep = [];
+    let used = 0;
+    for (const j of items) {
+      const need = H(j) + (keep.length ? 18 : 0);
+      if (used + need > a.avail * 0.62) break;
+      keep.push(j);
+      used += need;
+    }
+    if (keep.length && keep.length < items.length) {
+      a.items = keep;
+      b.items = items.slice(keep.length);
+    }
+  }
   const totalPages = Math.ceil(cols.length / 2);
   let body = "";
   for (let p = 0; p < totalPages; p++) {
