@@ -161,13 +161,16 @@ public class EasyImportService {
   }
 
   /**
-   * 확정 — READY 행만 장부 거래로 변환한다. 이미 확정/폐기된 배치는 거부한다.
+   * 확정 — READY 행만 장부 거래로 변환한다. 이미 폐기된 배치는 거부한다.
    * rowIds 생략 시 READY 전체를 확정한다.
+   * CONFIRMED 상태여도 READY 행을 선택 확정할 수 있다 (partial confirm).
    */
   @Transactional
   public EasyImportBatchResponse confirm(Long batchId, List<Long> rowIds) {
     EasyImportBatch batch = requireBatch(batchId);
-    requireStaged(batch);
+    if (batch.getStatus() != EasyImportStatus.STAGED && batch.getStatus() != EasyImportStatus.CONFIRMED) {
+      throw new IllegalArgumentException("STAGED 또는 CONFIRMED 상태의 배치만 처리할 수 있습니다.");
+    }
     List<EasyImportRow> targets = rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(
         batchId, EasyImportRowStatus.READY);
     if (rowIds != null && !rowIds.isEmpty()) {
@@ -178,8 +181,11 @@ public class EasyImportService {
     }
     int confirmed = 0;
     for (EasyImportRow row : targets) {
-      String category = row.getMatchedAccount() == null
-          ? "기타" : row.getMatchedAccount().getName();
+      // matchedAccount가 없는 READY 행은 확정하지 않음 (unmatched 보호)
+      if (row.getMatchedAccount() == null) {
+        continue;
+      }
+      String category = row.getMatchedAccount().getName();
       EasyTransaction txn = EasyTransaction.builder()
           .business(batch.getBusiness())
           .occurredOn(row.getOccurredOn())
