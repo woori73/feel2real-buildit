@@ -1,6 +1,6 @@
 # Easy Accounting Batch 5 Selective Confirm Home Handoff — 2026-09-19
 
-> 학원 PC(Academy PC)에서 집 PC(Home PC)로 작업을 인계하기 위한 보존 문서입니다.
+> 학원 PC(Academy PC) 및 집 PC(Home PC) 간 작업 인계 및 선택적 확정(Selective Confirm) 보존 문서입니다.
 
 ---
 
@@ -8,25 +8,27 @@
 
 - **Base Main SHA:** `80ffbddef10ba88f5a60b33d303da4b4667a8f46`
 - **Handoff Branch:** `easy/batch5-confirm-handoff-20260919`
-- **Commit SHA:** `66f4a5bf4dceacae2efae8bb28a05eac55d496a9`
-- **Modified File:** `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/easy/service/EasyImportService.java`
+- **Latest Commit SHA:** To be generated after commit
+- **Modified & Added Files:**
+  - `src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/easy/service/EasyImportService.java`
+  - `src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/easy/service/EasyImportServiceTest.java`
+  - `src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/easy/service/EasyBatch5DryRunVerificationTest.java`
+  - `docs/easy/EASY_HANDOFF_2026-09-19_HOME.md`
 
 ---
 
 ## 2. MODIFICATION DETAILS & RATIONALE
 
-### 변경 파일
-- [EasyImportService.java](file:///c:/Users/VIEW%20LIFE/feel2real-buildit/src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/easy/service/EasyImportService.java)
-
-### 변경 이유
-Batch 5의 579건 중 500건이 이미 확정(CONFIRMED/IMPORTED)된 상태에서, 잔여 79건 READY 행 중 재분류 완료된 43건(4,744,103원)만을 선택적으로 확정(Selective Confirm)하기 위함입니다.
-
-### 핵심 구현 로직 (`confirm()` 메소드)
-1. **배치 상태 검증 유연화:** `STAGED` 뿐만 아니라 `CONFIRMED` 상태의 배치에서도 `confirm()` 실행 가능.
-2. **미선택 & 미분류 행 보호:**
-   - `rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(..., EasyImportRowStatus.READY)`로 `READY` 상태 행만 조회 (이미 `IMPORTED`된 500건 중복 처리 완전 차단).
-   - 명시된 `rowIds`가 존재할 경우 대상 행만 필터링하여 선택되지 않은 READY 행 보호.
-   - `if (row.getMatchedAccount() == null) continue;` 추가로 계정이 매칭되지 않은 unmatched READY 36건(7,656,600원)은 확정하지 않고 `READY` 상태로 안전하게 Skip 및 보존.
+### 변경 내용
+1. **EasyImportService.java:**
+   - `confirm()` 메소드에서 `CONFIRMED` 상태의 배치 처리 허용.
+   - `rowIds` 지정을 통한 Selective Confirm 지원.
+   - `matchedAccount == null`인 행 skip 처리로 unmatched READY 36건 보호.
+2. **EasyImportServiceTest.java:**
+   - 기존 fixture 테스트 중 `markReady(null, 0.0)`으로 되어 있던 부분을 실제 데이터 모델에 맞게 valid `matchedAccount`(`telecom`)로 수정하여 테스트 의도 보존.
+   - Selective Confirm, CONFIRMED 배치 confirm, 미선택 READY 행 보호, unmatched READY 행 보호, 기존 500건 IMPORTED 행 보호 검증 unit test 4건 추가.
+3. **EasyBatch5DryRunVerificationTest.java (신규):**
+   - Batch 5 산술 검증 및 선택적 확정 동작을 READ-ONLY / DRY-RUN 관점에서 프로그램적으로 검증하는 테스트 추가.
 
 ---
 
@@ -40,16 +42,15 @@ Batch 5의 579건 중 500건이 이미 확정(CONFIRMED/IMPORTED)된 상태에�
 | **Classified READY (Target)** | **43** | **4,744,103 원** | V979/V980 적용 완료된 4종 카테고리 (전화/인터넷 2건, 이용료 2건, 이마트24 18건, 선물 21건) → Confirm 대상 |
 | **Unmatched READY (Untouched)** | **36** | **7,656,600 원** | NEED_USER_DECISION (9건) / POSSIBLE_PRIVATE (27건) → **UNTOUCHED (절대 자동 분류/확정 금지)** |
 
-**산술 검증:** 43건 + 36건 = 79건 ✅ | 4,744,103원 + 7,656,600원 = 12,400,703원 ✅
+**산술 검증:** 43건 + 36건 = 79건 ✅ | 4,744,103원 + 7,656,600원 = 12,400,703원 ✅ | 500건 + 79건 = 579건 ✅
 
 ---
 
 ## 4. TEST RESULTS & OBSERVATIONS
 
-- `./gradlew test --tests "*Easy*"` 실행 완료.
-- `EasyImportServiceTest` 실행 중 기존 mock fixture 테스트 일부에서 `ready.markReady(null, 0.0)`으로 `matchedAccount`를 `null`로 세팅한 기존 `confirm()` 검증 시나리오가 실패함.
-- **원인:** 새로운 방어 로직(`matchedAccount == null` 시 skip)으로 인해 `matchedAccount`가 null인 mock 데이터는 `EasyTransaction` 생성을 건너뛰게 되기 때문.
-- **처리:** 지침에 따라 임의로 서비스 코드를 확대 수정하지 않고, 집 PC에서 `EasyImportServiceTest` mock fixture에 `matchedAccount`를 올바르게 설정하는 방향으로 단위 테스트를 보완하기로 기록함.
+- `./gradlew test --tests "*Easy*"` 실행 결과: **62 tests completed, 0 failed (ALL PASS)** ✅
+- `EasyImportServiceTest` mock fixture 수정 완료 및 회귀 테스트 전체 통과.
+- `EasyBatch5DryRunVerificationTest` 실행 완료: READ-ONLY / DRY-RUN 관점에서 43건 target row 확정, 500건 기존 확정 보존, 36건 unmatched READY 보존 검증 완료.
 
 ---
 
@@ -57,7 +58,7 @@ Batch 5의 579건 중 500건이 이미 확정(CONFIRMED/IMPORTED)된 상태에�
 
 - **Production Confirm 실행 여부:** **미실행 (NO)** — 운영 DB 변경 없음, Confirm API 호출 안 함.
 - **Deploy 여부:** **NO**
-- **Safety Invariant:**
+- **Safety Invariants:**
   1. `500건 IMPORTED` 행의 기존 장부 거래(Transaction), 지문(Fingerprint), 분개(Journal)는 절대 수정하거나 삭제하지 않는다.
   2. `36건 unmatched READY` 행은 사용자의 명시적 결정 전까지 `READY` 상태로 보존한다.
 
@@ -66,7 +67,8 @@ Batch 5의 579건 중 500건이 이미 확정(CONFIRMED/IMPORTED)된 상태에�
 ## 6. NEXT STEPS AT HOME (집 PC 작업 순서)
 
 1. `git fetch origin` 및 `git checkout easy/batch5-confirm-handoff-20260919`
-2. `EasyImportServiceTest` 단위 테스트의 mock fixture(`matchedAccount` 세팅) 보완 및 전체 테스트 PASS 확인
-3. 로컬/Staging DB에서 Batch 5 READY 79건 중 43건 target `rowId` 산출 및 selective confirm 시뮬레이션
-4. 이상 없을 시 PR 생성 및 리뷰 → Main Merge → Production Deploy → 운영 43건 confirm 수행
-
+2. `./gradlew test --tests "*Easy*"` 실행하여 전체 EASY 테스트 통과 재검증 (`62 tests completed, 0 failed`)
+3. GitHub PR 생성 및 코드 리뷰 완료 후 main 브랜치 merge
+4. 운영 배포 (수동 GitHub Actions)
+5. 운영 환경에서 batchId=5 대상 43개 rowId selective confirm 실행:
+   `POST /api/admin/easy/imports/5/confirm { "rowIds": [<43개 rowId>] }`
