@@ -23,7 +23,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class NaverOAuthClient {
 
-  private static final String TOKEN_URL = "https://auth.naver.com/oauth2.0/token";
+  // 공식 문서(devs.naver.com 로그인 API 명세)의 token endpoint는 authorize와 동일 호스트(nid.naver.com)다.
+  // auth.naver.com은 연결 자체가 실패해 exchangeCode가 침묵 실패한다(2026-09-20 운영 진단: social count 0).
+  private static final String TOKEN_URL = "https://nid.naver.com/oauth2.0/token";
   private static final String PROFILE_URL = "https://openapi.naver.com/v1/nid/me";
 
   private final NaverOAuthProperties props;
