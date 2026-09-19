@@ -126,7 +126,7 @@ Q65 / L5 / B-2 carry / S20 쓰임 판정 / 중 / ③ / NONE(4회Q3은 make) / ca
 Q66 / L5+L6 / A~C 종합 / S18+T13 진술 개수 / 상 / ④ / LOW / 근거→결론 2단 4진술
 Q67 / L5+L6 / 어법2·Grammar Plus / T9 옳은 문장 개수 / 상 / ⑤ / WATCH / used to+so…that 시제 일치 5문장
 Q68 / L5+L6 / A-2, C-9 / S13 paraphrase 유사+반의 함정 / 중 / ① / NONE / make cities colorful·give great pleasure
-Q69 / L6 / because/so…that 조건영작 / T20 조건 3중 만족 개수 / 상 / ③ / NONE / 단어 수·시제·it 처리
+Q69 / L6 / too…to·enough to·so…that 전환 / T20 조건 2중 만족 개수 / 상 / ③ / NONE / 의미 보존 + 시제 과거 유지 ((d) 현재시제·(e) 구문 오류 오답)
 Q70 / L5+L6 / 본문 전수 / S17+S34 6진술 개수(함정 2) / 상 / ① / LOW(6회Q34 계획과 문항 위치·진술 교체) / ⓐ~ⓕ
 - 같은점: 통합 사고. 변형: 2~3 DNA 결합. 차이: 분리 출제였던 축을 1문항에서 동시 판정.
 
