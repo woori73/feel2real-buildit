@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Configure AWS credentials
@@ -79,4 +79,104 @@ jobs:
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
           echo "===== StandardErrorContent ====="
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardErrorContent' --output text
+          exit 0
+
+      - name: Forensic 43 payload + 506 detail
+        shell: bash
+        run: |
+          cat > /tmp/mysql-forensic.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "echo \"=== FORENSIC: 43 payload rows + 506 ===\"",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT r.row_id, r.row_no, r.status, r.amount, r.matched_account_id, (SELECT a.code FROM easy_accounts a WHERE a.account_id = r.matched_account_id) AS acct, r.created_txn_id FROM easy_import_rows r WHERE r.batch_id = 5 AND r.row_id IN (130,136,137,191,237,271,272,273,274,275,276,279,353,354,360,378,440,441,442,446,448,449,500,512,542,550,569,572,573,576,577,579,595,608,609,610,626,629,632,637,657,663,676,506) ORDER BY r.row_id;\" 2>&1 || echo \"mysql_exit=$?\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/mysql-forensic.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "wait_exit=$?"
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          exit 0
+
+      - name: Forensic payload amount sum
+        shell: bash
+        run: |
+          cat > /tmp/mysql-amount.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "echo \"=== PAYLOAD AMOUNT SUM ===\"",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT COALESCE(SUM(amount),0) FROM easy_import_rows WHERE batch_id = 5 AND row_id IN (130,136,137,191,237,271,272,273,274,275,276,279,353,354,360,378,440,441,442,446,448,449,500,512,542,550,569,572,573,576,577,579,595,608,609,610,626,629,632,637,657,663,676); SELECT amount FROM easy_import_rows WHERE batch_id = 5 AND row_id = 506;\" 2>&1 || echo \"mysql_exit=$?\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/mysql-amount.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "wait_exit=$?"
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          exit 0
+
+      - name: Forensic 42 new transactions check
+        shell: bash
+        run: |
+          cat > /tmp/mysql-txn.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "echo \"=== NEW TRANSACTIONS CHECK ===\"",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS new_txn_cnt, COALESCE(SUM(amount),0) AS new_txn_sum FROM easy_transactions WHERE source_kind = 'CSV' AND source_ref LIKE 'batch5-%' AND source_ref LIKE '%#row-%'; SELECT t.txn_id, t.amount, t.category, t.counterparty, t.fingerprint FROM easy_transactions t WHERE t.source_kind = 'CSV' AND t.source_ref LIKE 'batch5-%' AND t.source_ref LIKE '%#row-%' ORDER BY t.txn_id;\" 2>&1 || echo \"mysql_exit=$?\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/mysql-txn.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "wait_exit=$?"
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          exit 0
+
+      - name: Forensic journal check
+        shell: bash
+        run: |
+          cat > /tmp/mysql-journal.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "echo \"=== JOURNAL CHECK ===\"",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS journal_cnt, SUM(CASE WHEN direction='DEBIT' THEN amount ELSE 0 END) AS debit_sum, SUM(CASE WHEN direction='CREDIT' THEN amount ELSE 0 END) AS credit_sum FROM easy_journal_entries WHERE business_id = (SELECT business_id FROM easy_import_batches WHERE batch_id = 5) AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR);\" 2>&1 || echo \"mysql_exit=$?\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/mysql-journal.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "wait_exit=$?"
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
           exit 0
