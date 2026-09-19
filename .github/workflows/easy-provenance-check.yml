@@ -27,7 +27,7 @@ jobs:
             "set +e",
             "echo \"=== MySQL provenance check for easy_import_rows 272/275 ===\"",
             "source /etc/f2r/env 2>/dev/null || true",
-            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT id, batch_id, row_no, raw_data, occurred_on, counterparty, amount, description, pay_method FROM easy_import_rows WHERE id IN (272, 275);\" 2>&1 || echo \"mysql_exit=$?\"",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT row_id, batch_id, row_no, raw_data, occurred_on, counterparty, amount, description, pay_method FROM easy_import_rows WHERE row_id IN (272, 275);\" 2>&1 || echo \"mysql_exit=$?\"",
             "exit 0"
           ]}
           PARAMS
