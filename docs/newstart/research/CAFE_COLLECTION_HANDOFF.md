@@ -49,3 +49,12 @@
 ## NEXT ACTION
 Batch 4: 5954부터 역순 50건 (5954–5905) → 검증 → commit+push. 세션 안정 시 연속 수집.
 수집 패턴: `ArticleRead.nhn?clubid=31312978&articleid={id}&referrerAllArticles=true` → 4초 대기 → `cafe_main` 프레임 `.title_text`/`.link_board`/`.nickname`/`.article_info`/`.article_viewer`/`.comment_list .CommentItem` 추출 (댓글 전문 slice 없이).
+
+### qoder-batch 5904–5855 (branch newstart/cafe-qoder-5904-5855, 2026-09-20)
+- 범위: 5904→5855 내림차순 50건 검사. NEW 44, 목록부재 6 (5896/5895/5893/5880/5861/5858 — 전체글 8~10p 내부 gap, 삭제/비공개 추정), 댓글 96.
+- 수집 방식: LIST_CLICK 전용(직접 URL 탐색 금지), #cafe_main iframe, 실제 commentId(li id) 확보.
+- 주요 사례: 5866(90% 확정 성공, 신청→완료 5개월, 댓글22), 5884(실효→장기연체→접수 5일 타임라인, 답글스레드14), 5867(신청→1년 대기 30%), 5882(임시안 지연, 담당자배정 ~9개월), 5877(합의서 발급 6~8개월 경험답), 5862(차량담보 오인 사례).
+- 운영자(지피지기자산) 댓글: 5876 c1, 5874 c1 — isOperator=true, 참고용 표기.
+- IMAGE_REQUIRED 신규 없음. 미답변 REVIEW 다수(5898/5883/5879/5872/5869/5868/5860/5857/5856/5855 등).
+- 체크포인트 커밋: af2d785, b761f9b, 46dff20, 64c2d07, bd55983. 세션 안정(CAPTCHA 0/차단 0).
+- NEXT: 5854 이하(전용 워커 범위 5854–5805 병렬), 본 브랜치 범위 완결.
