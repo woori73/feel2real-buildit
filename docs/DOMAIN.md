@@ -1066,6 +1066,9 @@ AI가 전국의 원장·강사를 공개 웹에서 조사해 교육철학·커�
 
 BuildIt Score `buildit-chart-v1`은 최대 100점이다: 교육자 고유성 35, 수업·교육 실천 20, 교육 콘텐츠 지속성 15, 전문성 15, 검증 근거 10, 지역 활동 5. 검색량·광고량·규모·유명세·BuildIt 가입 여부는 입력하지 않는다.
 
+- **RESEARCH_PENDING 재평가 (`reevaluateEligibility`, 스키마 변경 없음)**: `POST /api/admin/chart/tools/candidates/{candidateId}/reevaluate` (기본 `dryRun=true`). 저장된 profile/evidence를 최초 판정과 동일한 `assess` 기준으로 다시 평가하며, PASS일 때만 `EVALUATABLE`로 전환하고 FAIL이면 유지한다. enrichment만으로는 승격되지 않는다. 승격 시에도 `eligibility_status`·`eligibility_reasons_json`·`updated_at` 세 컬럼만 변경한다.
+- **Stale snapshot 감지 (`rescoreRequired`, 읽기 전용, 스키마 변경 없음)**: `GET /api/admin/chart/tools/scores/stale`. 최신 profile/evidence 변경(`updated_at`/`researched_at`)이 최신 Score snapshot(`calculated_at`)보다 새로울 때 review → snapshot → publication 후속 처리 대상을 식별한다. enrichment는 Score를 바꾸지 않으므로 이 목록이 후속 처리의 진입점이다.
+
 Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERIFIED 43명을 `PENDING_CURRENT_RESEARCH` 전송 형식으로 만들 뿐이며 `chart_candidates`, `chart_educators`, Score snapshot 또는 publication에 직접 넣지 않는다. 전화·이메일·상세주소는 전송 형식에 없고, Legacy Score는 `legacy_score_is_current_score=false`인 역사 메타데이터로만 보존한다.
 
 ### 4.44 wiki_exam_originals ✅ 공개 BuildIt Wiki 모의고사 원본 PDF (V956)

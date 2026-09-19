@@ -3596,6 +3596,20 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 오류: 빈 요청(요약·리스트·근거 모두 없음) → 400. 존재하지 않는 `candidateId` → 404. 원 출처 아닌 Evidence URL → 400.
 - Response: `{ candidateId, changedFields: string[], evidenceAdded, evidenceSkippedDuplicate, eligibilityStatus, updatedAt }`.
 
+### ✅ POST /api/admin/chart/tools/candidates/{candidateId}/reevaluate (RESEARCH_PENDING 재평가)
+
+- 목적: RESEARCH_PENDING 후보를 현재 저장 데이터로 재평가한다. 최초 판정과 동일한 `assess` 기준을 재사용하며, PASS일 때만 EVALUATABLE로 전환하고 FAIL이면 유지한다. enrichment만으로는 승격되지 않는다.
+- 인증/권한: `ROLE_ADMIN` 전용 (Research Agent allowlist 밖).
+- Query: `dryRun` (기본 true — 조회만, 쓰기 없음).
+- 변경 (승격 시, dryRun=false): `eligibility_status`·`eligibility_reasons_json`·`updated_at` 세 컬럼만. profile/evidence 불변.
+- Response: `{ candidateId, dryRun, assessmentStatus, promote, applied, before, after, reasons, passReasons, holdReasons, rejectReasons }`.
+
+### ✅ GET /api/admin/chart/tools/scores/stale (재채점 대상 조회, 읽기 전용)
+
+- 목적: 최신 profile/evidence 변경이 최신 Score snapshot보다 새로운 후보(= review → snapshot → publication 후속 처리 대상)를 식별한다. 스키마 변경 없이 `updated_at`/`researched_at` vs `calculated_at` 비교다. 아무 것도 변경하지 않는다.
+- 인증/권한: `ROLE_ADMIN` 전용 (Research Agent allowlist 밖).
+- Response: `[{ candidateId, name, academyName, eligibilityStatus, lastDataChange, lastSnapshotAt }]` (lastSnapshotAt null = snapshot 없음).
+
 ### 🧪 Chart Site tool 1차 계약 (`/api/admin/chart/tools/**`)
 
 모든 endpoint는 기본 `ROLE_ADMIN` 전용이다. 단, 조사 파이프라인 최소 범위는 Research Agent도
