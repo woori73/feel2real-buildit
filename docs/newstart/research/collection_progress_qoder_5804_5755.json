@@ -1,0 +1,29 @@
+{
+  "task": "newstart cafe collection (Qoder window)",
+  "branch": "newstart/cafe-qoder-5804-5755",
+  "baseCommit": "69b4fdd (batch3: articles 5955-6010, index.json, collection_state.json)",
+  "assignedRange": { "from": 5804, "to": 5755, "direction": "descending", "count": 50 },
+  "status": "STOPPED_BY_USER_2026-09-20",
+  "reason": "Multiple browser sessions accessing Naver cafe concurrently caused login/access problems. User ordered immediate checkpoint-only stop; no collection, no refresh, no re-login, no bypass attempted.",
+  "progress": {
+    "checked": 0,
+    "saved": 0,
+    "skippedExisting": 0,
+    "deleted": 0,
+    "notFound": 0,
+    "inaccessible": 0,
+    "failed": 0,
+    "commentsSaved": 0,
+    "lastAttemptedArticle": 5804,
+    "lastSuccessArticle": null,
+    "remainingRange": "5804-5755 (entire range untouched)"
+  },
+  "sessionObservations": [
+    "Qoder embedded browser session was NOT logged in at start of this window (GNB showed 로그인; ArticleRead redirected to MyCafeIntro with 회원만 가입할 수 있습니다 gate).",
+    "No article body or comment data was fetched while gated; nothing partially saved.",
+    "No login credentials were entered or requested in this window."
+  ],
+  "nextWindowInstructions": "Re-open https://cafe.naver.com/newhopero in the Qoder browser, have the owner log in manually (avoid concurrent browser sessions on this cafe), then collect 5804 down to 5755 with per-article immediate save per CAFE_COLLECTION_HANDOFF.md extraction pattern. Do not touch 5805+ or 5754-.",
+  "dataSchemaRef": "docs/newstart/research/index.json + article_6010.json (batch3 schema)",
+  "secretsPolicy": "No cookies/sessions/tokens/passwords/browser profiles stored anywhere in this branch."
+}
