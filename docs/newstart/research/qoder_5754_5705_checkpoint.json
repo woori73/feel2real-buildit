@@ -1,0 +1,24 @@
+{
+  "task": "newstart cafe collection (Qoder window)",
+  "branch": "newstart/cafe-qoder-5754-5705",
+  "cafe": { "key": "newhopero", "clubId": 31312978, "name": "새출발기금 부실차주 라이브러리" },
+  "assignedRange": { "from": 5754, "to": 5705, "count": 50 },
+  "status": "PAUSED_BROWSER_HUNG",
+  "updatedAt": "2026-09-20T04:50:00+09:00",
+  "method": "logged-in SPA route https://cafe.naver.com/newhopero/{id} -> read #cafe_main iframe DOM (.se-main-container body, li.CommentItem comments with real commentId from data-nlog-params). boardId mapped from boardName.",
+  "saved": [5754, 5753, 5752],
+  "commentsSaved": 3,
+  "deleted": [],
+  "notFound": [],
+  "inaccessible": [],
+  "failed": [{ "articleId": 5751, "reason": "browser renderer hung during collection" }],
+  "checkedSoFar": [5754, 5753, 5752, 5751],
+  "nextResumeId": 5751,
+  "unfinishedRange": "5751 -> 5705",
+  "blockedOn": "Qoder built-in browser renderer unresponsive (evaluate/screenshot/navigate all time out; only CDP target list responds). Manual tab restart required before resuming. Root cause: setting cafe_main.contentWindow.location.href directly desynced the cafe SPA shell router and triggered a hang. RESUME RULE: do NOT manipulate the iframe location directly; navigate the TOP frame to https://cafe.naver.com/newhopero/{id} per article and re-inject the extractor after each navigation (top reload clears window globals).",
+  "note_on_working_tree": "docs/newstart/research/article_5950..5954.json belong to a separate concurrent session (range 5954-5905); NOT staged/committed on this branch.",
+  "secretsStored": false,
+  "resumeFiles": {
+    "extractorHelpers": "board map + kst() + DOM selectors are documented in method above and in each article's extractionMethod field."
+  }
+}
