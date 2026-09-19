@@ -116,55 +116,87 @@ if (process.argv[2] === "draft") {
   console.log("draft written", path.join(OUT, "draft.html"), "units", units().length);
 } else if (process.argv[2] === "final") {
   const data = JSON.parse(fs.readFileSync(path.resolve(process.argv[3]), "utf8"));
+  const GAP_MIN = 14;                        // 화면 표시 최소 간격과 패킹 회계를 일치시킨다
   const colFull = 271 * MM;                       // 인쇄 기준 유효 높이(297 - 12 - 12 - 4)
   const page1Avail = colFull - data.headerH - 4 * MM - 6; // exam-header + 하단 여유
   const otherAvail = colFull - data.runHeaderH - 3 * MM - 6;
   const UNITS = units();
   const hmap = new Map(data.units.map((u) => [u.start, u.h]));
-  const cols = [];                                       // [{items:[unitIdx..], avail}]
-  let cur = null;
+  const H = (i) => hmap.get(UNITS[i][0].num);
   UNITS.forEach((u, i) => {
-    const h = hmap.get(u[0].num);
-    if (h === undefined) throw new Error("no height for unit " + u[0].num);
-    const fresh = () => {
-      const pageIndex = Math.floor(cols.length / 2);
-      cur = { items: [], avail: pageIndex === 0 ? page1Avail : otherAvail };
-      cols.push(cur);
-    };
-    if (!cur) fresh();
-    const used = cur.items.reduce((s, j) => s + hmap.get(UNITS[j][0].num), 0) + Math.max(0, cur.items.length - 1) * 18;
-    if (h > cur.avail) throw new Error("unit " + u[0].num + " too tall: " + h.toFixed(0) + " > " + cur.avail.toFixed(0));
-    if (cur.items.length && used + 14 + h > cur.avail) fresh();
-    cur.items.push(i);
+    if (H(i) === undefined) throw new Error("no height for unit " + u[0].num);
   });
-  // 컬럼 수가 홀수면 마지막 페이지의 왼쪽 컬럼만 쓰이므로 꼬리 두 컬럼의 문항을 다시 나눠 고아 문항을 막는다.
-  if (cols.length % 2 === 1 && cols.length >= 3) {
-    const a = cols[cols.length - 2];
-    const b = cols[cols.length - 1];
-    const H = (j) => hmap.get(UNITS[j][0].num);
-    const items = [...a.items, ...b.items];
-    const keep = [];
-    let used = 0;
-    for (const j of items) {
-      const need = H(j) + (keep.length ? 18 : 0);
-      if (used + need > a.avail * 0.62) break;
-      keep.push(j);
-      used += need;
+  const availOf = (colIndex) => (Math.floor(colIndex / 2) === 0 ? page1Avail : otherAvail);
+  const n = UNITS.length;
+  const prefix = [0];
+  for (let i = 0; i < n; i++) prefix.push(prefix[i] + H(i));
+  const load = (i, i2) => prefix[i2] - prefix[i] + (i2 - i - 1) * GAP_MIN; // 문항 i..i2-1을 한 컬럼에 넣을 때 높이
+  // 컬럼 수를 고정하고 '가장 비어 보이는 컬럼의 하단 여백'을 최소화하는 순차 분할을 DP로 찾는다.
+  const balance = (N, maxSlack) => {
+    const parents = [];
+    let reach = new Set([0]);
+    for (let j = 0; j < N; j++) {
+      const avail = availOf(j);
+      const lo = avail - maxSlack;
+      const next = new Map();
+      for (const i of reach) {
+        for (let i2 = i + 1; i2 <= n; i2++) {
+          const L = load(i, i2);
+          if (L > avail) break;
+          if (L >= lo) {
+            if (!next.has(i2)) next.set(i2, i);
+            if (j === N - 1 && i2 === n) break;
+          }
+        }
+      }
+      reach = new Set(next.keys());
+      parents.push(next);
+      if (!reach.size) return null;
     }
-    if (keep.length && keep.length < items.length) {
-      a.items = keep;
-      b.items = items.slice(keep.length);
+    if (!reach.has(n)) return null;
+    const cuts = [];
+    let at = n;
+    for (let j = N - 1; j >= 0; j--) {
+      const prev = parents[j].get(at);
+      if (prev === undefined) return null;
+      cuts.unshift([prev, at]);
+      at = prev;
     }
-  }
+    return cuts.map(([a, b], j) => ({ items: Array.from({ length: b - a }, (_, k) => a + k), avail: availOf(j) }));
+  };
+  // 최대 채움: 컬럼 수의 하한(=페이지 수의 하한)을 구한다.
+  const greedy = () => {
+    const out = [];
+    let cur = null;
+    for (let i = 0; i < n; i++) {
+      if (!cur) cur = { items: [], avail: availOf(out.length) }, out.push(cur);
+      if (load(cur.items[0], i + 1) > cur.avail) {
+        cur = { items: [], avail: availOf(out.length) };
+        out.push(cur);
+      }
+      cur.items.push(i);
+    }
+    return out;
+  };
+  const g = greedy();
+  const N = g.length % 2 ? g.length + 1 : g.length; // 홀수 컬럼이면 마지막 페이지의 오른쪽이 비므로 하나 더 둥근다
+  let cols = null;
+  for (let s = 120; s <= 600 && !cols; s += 10) cols = balance(N, s);
+  if (!cols) throw new Error("no balanced packing for " + N + " columns (greedy " + g.length + ")");
+  if (N / 2 > 10) console.log("NOTE: pages =", N / 2, "(목표 10페이지 초과) — 문항 텍스트 추가 축소가 필요");
+  cols.forEach((c, ci) => {
+    const used = c.items.reduce((s, j) => s + H(j), 0) + Math.max(0, c.items.length - 1) * GAP_MIN;
+    if (used > c.avail) throw new Error("col " + (ci + 1) + " overflows: " + used.toFixed(0) + " > " + c.avail.toFixed(0));
+  });
+  if (cols.reduce((s, c) => s + c.items.length, 0) !== UNITS.length) throw new Error("lost units in packing");
   const totalPages = Math.ceil(cols.length / 2);
   let body = "";
   for (let p = 0; p < totalPages; p++) {
     const pc = cols.slice(p * 2, p * 2 + 2);
     const colsHtml = pc
       .map((c) => {
-        const hs = c.items.map((j) => hmap.get(UNITS[j][0].num));
-        const used = hs.reduce((a, b) => a + b, 0);
-        const gap = c.items.length > 1 ? Math.max(14, Math.min(120, (c.avail - used) / (c.items.length - 1))) : 18;
+        const used = c.items.reduce((s, j) => s + H(j), 0);
+        const gap = c.items.length > 1 ? Math.max(GAP_MIN, Math.min(90, (c.avail - used) / (c.items.length - 1))) : 18;
         const inner = c.items
           .map((j) => `<div class="unit">${UNITS[j].map(qblockHtml).join("")}</div>`)
           .join("");
@@ -178,6 +210,7 @@ if (process.argv[2] === "draft") {
   const file = path.join(OUT, `round8-paper-${QUESTIONS.length}of70.html`);
   fs.writeFileSync(file, html);
   console.log("final written", file, "cols", cols.length, "pages", totalPages);
+  console.log("fill", cols.map((c, ci) => c.items.length + ":" + Math.round(c.avail - c.items.reduce((s, j) => s + H(j), 0) - Math.max(0, c.items.length - 1) * GAP_MIN)).join(" "));
 } else {
   console.log("usage: node render.mjs draft | final <heights.json>");
 }

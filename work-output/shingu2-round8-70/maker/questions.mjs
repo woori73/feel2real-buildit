@@ -29,11 +29,11 @@ export const QUESTIONS = [
   },
   {
     num: 4,
-    prompt: "clue의 영어 뜻풀이는 'a sign or some information that helps you to find the answer to a problem or question'이다. 다음 중 이 뜻풀이에 맞지 않게 사용된 문장은?",
+    prompt: "clue의 영어 뜻풀이는 'a sign or some information that helps you to find the answer to a problem or question'이다. 이 뜻풀이에 맞지 않게 사용된 문장은?",
     choices: [
-      "The guide told us to look closely at the eyes because they would give us a clue.",
-      "The dots in STIK's painting are small, but they are a clue to the answer.",
-      "The police found a clue that helped them understand the case.",
+      "The guide said the eyes would give us a clue.",
+      "The dots in STIK's painting are a clue to the answer.",
+      "The police found a clue to help them solve it.",
       "His white hair was a clue that he was the old doctor.",
       "The artist left a clue of green paint on the floor after painting the wall.",
     ],
@@ -46,7 +46,7 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "Modern street art comes in many different forms, and it makes cities colorful and lively. <span class='mm'>ⓐ</span> Today, we are going to see some well-known street artworks in London. <span class='mm'>ⓑ</span> The place that we are going to visit is Shoreditch. <span class='cc'>ⓒ</span> Poor workers used to live in this area, but now it is one of the hippest areas in London. <span class='mm'>ⓓ</span> We can find so many great pieces of street art here. <span class='mm'>ⓔ</span> Do you see the painting over there? It is by the artist STIK. He is famous for using only lines and dots in his paintings of human bodies. According to STIK, the three figures represent the past, present, and future of Shoreditch. Which figure represents which? Well, look closely at the eyes of the three figures. They are just dots, but they will give you a clue.",
+        "Modern street art comes in many forms and makes cities lively. <span class='mm'>ⓐ</span> Today, we are going to see some well-known street artworks in London. <span class='mm'>ⓑ</span> The place we are going to visit is Shoreditch. <span class='cc'>ⓒ</span> Poor workers used to live here, but now it is one of the hippest areas in London. <span class='mm'>ⓓ</span> We can find great pieces of street art here. <span class='mm'>ⓔ</span> Do you see the painting over there? It is by the artist STIK, who is famous for using only lines and dots in his paintings of human bodies. The three figures represent the past, present, and future of Shoreditch. Which is which? Look closely at the eyes. They are just dots, but they will give you a clue.",
     },
     given: "The first place we visit tells us how a neighborhood can change over time.",
     choices: ["ⓐ", "ⓑ", "ⓒ", "ⓓ", "ⓔ"],
@@ -58,7 +58,7 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. The three figures stand for three different times of Shoreditch.<br/>b. STIK draws human bodies with only lines and dots.<br/>c. Poor workers still live in Shoreditch, so it is now a poor area.<br/>d. The way the eyes are drawn shows which figure is which.<br/>e. The guide tells visitors the exact year the painting was made.",
+        "a. The three figures stand for three times of Shoreditch.<br/>b. STIK draws human bodies with only lines and dots.<br/>c. Poor workers still live in Shoreditch, so it is poor.<br/>d. The way the eyes are drawn shows which figure is which.<br/>e. The guide tells the exact year the painting was made.",
     },
     choices: ["a, b, d", "a, c, d", "b, c, e", "b, d, e", "c, d, e"],
     answer: 1,
@@ -83,14 +83,14 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "We are now in Finsbury Park to see a painting by Banksy, an internationally famous street artist. Banksy's artworks often carry social messages, and the green tree you see over there is a good example. As you can see, he created a green tree by spraying green paint on a wall behind a leafless tree. Next to the tree, there is a person who is holding a sprayer. What message does Banksy want to give us through this painting? In many people's opinion, he is telling us that nature is having a hard time. They think he wants us to take better care of <u>it</u>.",
+        "We are now in Finsbury Park to see a painting by Banksy, a famous street artist. His artworks often carry social messages, and the green tree over there is a good example. He created it by spraying green paint on a wall behind a leafless tree. Next to the tree is a person holding a sprayer. What message does Banksy want to give us? Many people think he is telling us that nature is having a hard time, and that we should take better care of <u>it</u>.",
     },
     choices: [
-      "A leafless tree in Finsbury Park was damaged by a man with a sprayer.",
-      "Banksy is a famous artist who draws human bodies with lines and dots.",
-      "Visitors should take better care of the real trees in Finsbury Park.",
-      "Banksy shows how green paint can be removed from an old wall.",
-      "Banksy made a green tree on a wall to make people think about nature in trouble.",
+      "A leafless tree was damaged by a man with a sprayer.",
+      "Banksy draws human bodies with only lines and dots.",
+      "Visitors should care for the real trees in the park.",
+      "Banksy shows how to clean green paint off a wall.",
+      "Banksy made a green tree to make us think of nature.",
     ],
     answer: 5,
     choiceLayout: "vertical",
@@ -128,14 +128,14 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "The final stop of our tour today is Muswell Hill. Can't see any street artworks? Well, <u>look down and look closely</u>. Do you see the little chewing gum paintings? They are by the artist Ben Wilson. Wilson is well known for painting pictures on gum that people drop on the street. His gum paintings often carry personal messages from people he meets on the street. For example, the one over here is a happy birthday wish for a loved one. Wilson's gum paintings are tiny, but they give great pleasure to many people.",
+        "The final stop of our tour is Muswell Hill. Can't see any street artworks? Well, <u>look down and look closely</u>. Do you see the little chewing gum paintings? They are by the artist Ben Wilson, who is well known for painting pictures on gum that people drop on the street. His gum paintings often carry personal messages from people he meets on the street. Wilson's paintings are tiny, but they give great pleasure to many people.",
     },
     choices: [
-      "거리에 껌을 함부로 버리지 않도록 관람객을 계도하기 위한 것이다.",
-      "Wilson의 그림 값을 매겨 보고 판매를 홍보하기 위한 것이다.",
-      "런던에서 만날 수 있는 또 다른 형태의 거리 예술을 소개하기 위한 것이다.",
-      "Banksy와 Wilson의 작품성 우열을 비교하여 판단하기 위한 것이다.",
-      "껌 그림 만드는 방법을 단계별로 가르치기 위한 것이다.",
+      "거리 예술의 문제점을 지적하기 위한 것이다",
+      "껌 그림의 판매를 홍보하기 위한 것이다",
+      "또 다른 거리 예술을 소개하기 위한 것이다",
+      "두 화가의 작품 우열을 가리기 위한 것이다",
+      "껌 그림 그리는 법을 가르치기 위한 것이다",
     ],
     answer: 3,
     choiceLayout: "vertical",
@@ -202,10 +202,10 @@ export const QUESTIONS = [
   },
   {
     num: 17,
-    prompt: "다음 우리말을 <조건>을 모두 만족하도록 관계대명사를 사용하여 영작한 것을 <보기>에서 모두 고른 것은?",
+    prompt: "다음 우리말을 <조건>을 모두 만족하도록 영작한 것을 <보기>에서 모두 고른 것은?",
     cond: {
       title: "조건",
-      html: "(a) 관계대명사를 사용할 것　(b) '공원에서'를 나타내는 전치사구를 포함할 것　(c) 주절에 주어와 동사를 모두 갖출 것",
+      html: "(a) 관계대명사 사용　(b) '공원에서'의 전치사구 포함　(c) 주절에 주어·동사 모두",
     },
     given: "내가 어제 공원에서 만난 소년은 나를 도와주었다.",
     condAfter: true,
@@ -223,7 +223,7 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "(a) We used to walk to school. → We are used to walking to school.<br/>(b) She used to live alone. → She is used to live alone.<br/>(c) He used to drive at night. → He used to driving at night.<br/>(d) They used to eat bread for breakfast. → They are used to eating bread for breakfast.",
+        "(a) We used to walk. → We are used to walking.<br/>(b) She used to live alone. → She is used to live alone.<br/>(c) He used to drive. → He used to driving at night.<br/>(d) They used to eat out. → They are used to eating out.",
     },
     choices: ["1개", "2개", "3개", "4개", "0개"],
     answer: 2,
@@ -267,9 +267,9 @@ export const QUESTIONS = [
     table: {
       head: ["행", "문장", "설명"],
       rows: [
-        ["A", "The book (that) you gave me was interesting.", "목적격 관계대명사 / 생략 가능"],
+        ["A", "the bike which she lost last year", "목적격 관계대명사 / 생략 가능"],
         ["B", "the people (whom) I invited to my party", "목적격 관계대명사 / 생략 가능"],
-        ["C", "Poor workers used to live in this area.", "과거의 상태 / 지금은 그렇지 않음"],
+        ["C", "He used to get up early, but now he doesn't.", "과거의 습관 / 지금은 하지 않음"],
         ["D", "the man who is talking to my father", "주격 관계대명사 / 생략 가능"],
       ],
     },
@@ -292,13 +292,13 @@ export const QUESTIONS = [
     prompt: "다음 우리말을 <조건>을 모두 만족하도록 영작한 것을 <보기>에서 모두 고른 것은?",
     cond: {
       title: "조건",
-      html: "(a) used to를 사용할 것　(b) '학교 근처 카페'가 나타나도록 할 것　(c) '지금은 그렇지 않다'는 내용을 포함할 것",
+      html: "(a) used to 사용　(b) '학교 근처 카페' 포함　(c) '지금은 그렇지 않다' 포함",
     },
     given: "우리 반 학생들은 예전에는 학교 근처 카페에서 자주 만났지만, 지금은 그렇지 않다.",
     cond2: {
       title: "보기",
       html:
-        "a. Our classmates used to meet often at the café near our school, but now they don't.<br/>b. Our classmates are used to meeting at the café near our school.<br/>c. Our classmates used to meet often at the café.<br/>d. Our classmates used to met often at the café near our school.<br/>e. Our classmates used to meet at the café near our school, but now they don't.",
+        "a. Our classmates used to meet often at the café near school, but now they don't.<br/>b. Our classmates are used to meeting at the café.<br/>c. Our classmates used to meet often at the café.<br/>d. Our classmates used to met often at the café.<br/>e. Our classmates used to meet at the café near school, but now they don't.",
     },
     choices: ["a, b", "b, c", "c, d", "d, e", "a, e"],
     answer: 5,
@@ -322,11 +322,11 @@ export const QUESTIONS = [
       html: "B: Excuse me, how can I get to the Star Stadium?<br/>G: You can get there by subway. Take line 4, the green line, and get off at Hangang Station.<br/>B: Line 4 and Hangang Station. Got it. How long will it take?<br/>G: A little less than 30 minutes.",
     },
     choices: [
-      "확인할 사항: 호선과 하차 역 / 목적: 지하철로 가는 방법을 알려 준다",
-      "확인할 사항: 경기장 이름 / 목적: 지하철 요금이 가장 싸다고 설득한다",
-      "확인할 사항: 환승역 / 목적: 버스를 타도록 권유한다",
-      "확인할 사항: 요금 / 목적: 경기장의 위치를 묻는다",
-      "확인할 사항: 출발 시각 / 목적: 택시를 이용하도록 조언한다",
+      "확인: 호선과 하차 역 / 목적: 가는 법 안내",
+      "확인: 경기장 이름 / 목적: 요금이 싸다",
+      "확인: 환승역 / 목적: 버스 이용 권유",
+      "확인: 요금 / 목적: 경기장 위치 확인",
+      "확인: 출발 시각 / 목적: 택시 이용 조언",
     ],
     answer: 1,
     choiceLayout: "vertical",
@@ -434,11 +434,11 @@ export const QUESTIONS = [
     table: {
       head: ["행", "영어 표현", "우리말 뜻"],
       rows: [
-        ["(a)", "at the invitation of the Korean government", "한국 정부의 초청으로"],
+        ["(a)", "at the invitation of the government", "정부의 초청으로"],
         ["(b)", "have the right to be independent", "독립할 권리가 있다"],
-        ["(c)", "for the rest of his life", "그의 평생의 절반 동안"],
-        ["(d)", "sound similar to his real name", "그의 본명과 의미가 비슷하다"],
-        ["(e)", "under the watchful eye of the Japanese police", "일본 경찰의 감시 아래에서"],
+        ["(c)", "for the rest of his life", "평생의 절반 동안"],
+        ["(d)", "sound similar to his real name", "본명과 의미가 비슷하다"],
+        ["(e)", "under the watchful eye of the police", "경찰의 감시 아래에서"],
       ],
     },
     choices: ["(c), (d)", "(a), (b)", "(b), (e)", "(c), (e)", "(a), (d)"],
@@ -451,13 +451,13 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "Dr. Schofield was a Canadian doctor, and he first came to Korea in 1916 to teach medicine. <span class='mm'>ⓐ</span> His English name was Frank W. Schofield, and he loved his Korean name because it sounded similar to his real name. <span class='mm'>ⓑ</span> He wanted to teach in Korean, so he began to learn Korean right away. <span class='cc'>ⓒ</span> He studied so hard that he was able to teach in Korean after only a few years. <span class='mm'>ⓓ</span> He believed that every country has the right to be independent, so he helped the Korean independence movement. <span class='mm'>ⓔ</span> For the rest of his life, he worked hard to help Koreans, especially poor students.",
+        "Dr. Schofield was a Canadian doctor who first came to Korea in 1916 to teach medicine. <span class='mm'>ⓐ</span> He loved his Korean name because it sounded similar to his real name. <span class='mm'>ⓑ</span> He wanted to teach in Korean, so he began to learn it right away. <span class='cc'>ⓒ</span> He studied so hard that he could teach in Korean within a few years. <span class='mm'>ⓓ</span> He believed every country has the right to be independent, so he helped the Korean independence movement. <span class='mm'>ⓔ</span> For the rest of his life, he worked to help Koreans, especially poor students.",
     },
     cond: {
       title: "보기",
       html:
-        "a. Dr. Schofield came to Korea in 1916 to teach medicine.<br/>" +
-        "b. He learned Korean because he wanted to teach in Korean.<br/>" +
+        "a. He came to Korea in 1916 to teach medicine.<br/>" +
+        "b. He learned Korean to teach his classes in Korean.<br/>" +
         "c. He kept teaching his classes in English.<br/>" +
         "d. He helped the Korean independence movement.<br/>" +
         "e. He was the first Canadian doctor in Korea.",
@@ -508,16 +508,16 @@ export const QUESTIONS = [
     passage: {
       kind: "box",
       html:
-        "On February 28, 1919, a man came to Dr. Schofield's house and said, “I have a special favor to ask you.” “Many people are going to gather tomorrow for the independence of Korea. Could you take pictures of the event and share them with the world?” At 2 p.m. on March 1, Dr. Schofield was hiding in a building and saw a large group of people gathering outside. He began to take pictures, and looking at the crowd, he could not help saying, “<u>Unbelievable!</u>” He later wrote an article about the historic event and sent it to foreign newspapers with his pictures.",
+        "On February 28, 1919, a man came to Dr. Schofield's house and said, “I have a special favor to ask.” “Many people are going to gather tomorrow for the independence of Korea. Could you take pictures of the event and share them with the world?” On March 1, Dr. Schofield was hiding in a building and saw a large group of people gathering outside. He began to take pictures and, looking at the crowd, said, “<u>Unbelievable!</u>” He later wrote an article about the historic event and sent it to foreign newspapers with his pictures.",
     },
     cond: {
       title: "보기",
       html:
-        "a. A man asked Dr. Schofield to take pictures of the event and share them with the world.<br/>" +
-        "b. The man told him exactly how many people would gather.<br/>" +
+        "a. A man asked him to take pictures of the event.<br/>" +
+        "b. The man said exactly how many people would come.<br/>" +
         "c. He watched the gathering from inside a building.<br/>" +
-        "d. He wrote an article about the event and sent it to foreign newspapers with his pictures.<br/>" +
-        "e. He refused the favor at first because he was too busy.",
+        "d. He wrote an article and sent it with his pictures.<br/>" +
+        "e. He refused the favor because he was too busy.",
     },
     choices: ["a, b, e", "a, c, d", "b, c, e", "b, d", "c, d, e"],
     answer: 2,
@@ -541,9 +541,9 @@ export const QUESTIONS = [
     table: {
       head: ["번호", "사건"],
       rows: [
-        ["(a)", "그 행사에 대한 기사를 써서 사진과 함께 외국 신문사에 보냈다."],
-        ["(b)", "한 남자가 집을 찾아와 그에게 특별한 부탁을 했다."],
-        ["(c)", "건물 안에 숨어 많은 사람이 모여 드는 모습을 보았다."],
+        ["(a)", "기사를 써서 사진과 함께 외국 신문사에 보냈다."],
+        ["(b)", "한 남자가 집을 찾아와 특별한 부탁을 했다."],
+        ["(c)", "건물 안에 숨어 많은 사람이 모인 것을 보았다."],
         ["(d)", "사진기를 들고 촬영을 시작했다."],
       ],
     },
@@ -595,7 +595,7 @@ export const QUESTIONS = [
     num: 46,
     prompt: "다음 표에서 빈칸 (A)·(B)·(C)에 들어갈 말이 모두 알맞은 행은?",
     table: {
-      head: ["행", "(A) I saw my brother ___ his homework.", "(B) We felt the ground ___ for a few seconds.", "(C) She heard her dog's name ___ by the boy."],
+      head: ["행", "(A) I saw my brother ___.", "(B) We felt the ground ___.", "(C) She heard the name ___."],
       rows: [
         ["A", "do", "shaking", "call"],
         ["B", "doing", "to shake", "calls"],
@@ -651,10 +651,10 @@ export const QUESTIONS = [
       head: ["행", "동사(표현)", "제시된 형태", "예문"],
       rows: [
         ["(a)", "would like", "동명사", "I would like helping you."],
-        ["(b)", "continue", "to 부정사", "He continued to write about Korea."],
-        ["(c)", "be famous for", "동명사", "STIK is famous for using only dots."],
-        ["(d)", "plan", "동명사", "She plans opening a gallery next year."],
-        ["(e)", "practice", "동명사", "He practices speaking Korean every day."],
+        ["(b)", "continue", "to 부정사", "He continued to write it."],
+        ["(c)", "be famous for", "동명사", "STIK is famous for using dots."],
+        ["(d)", "plan", "동명사", "She plans opening a gallery."],
+        ["(e)", "practice", "동명사", "He practices speaking Korean."],
       ],
     },
     choices: ["(a), (b)", "(a), (d)", "(b), (c)", "(b), (e)", "(c), (e)"],
@@ -678,7 +678,7 @@ export const QUESTIONS = [
       head: ["행", "동사", "뒤에 오는 형태", "예문"],
       rows: [
         ["A", "want", "to 부정사", "He wanted to teach in Korean."],
-        ["B", "finish", "to 부정사", "She finished to research the event."],
+        ["B", "finish", "to 부정사", "She finished to research it."],
         ["C", "enjoy", "동명사", "They enjoy reading his article."],
         ["D", "decide", "동명사", "He decided studying medicine."],
         ["E", "keep", "to 부정사", "He kept to write about Korea."],
@@ -703,15 +703,15 @@ export const QUESTIONS = [
   },
   {
     num: 54,
-    prompt: "원문장을 “형용사/부사 + enough to ...” 또는 “too ~ to”로 바꾼 문장 중 <u>틀린</u> 것의 개수는?",
+    prompt: "원문장을 enough to ... 또는 too ~ to로 바꾼 문장 중 <u>틀린</u> 것의 개수는?",
     cond: {
       title: "원문장 → 바꾼 문장",
       html:
-        "(a) The water was so clear that we could see the fish. → The water was clear enough for us to see the fish.<br/>" +
-        "(b) He was so experienced that he explained the historic event well. → He was experienced enough to explain the historic event well.<br/>" +
-        "(c) The homework was so difficult that he couldn't finish it. → The homework was difficult enough for him to finish it.<br/>" +
-        "(d) I was so busy that I couldn't answer the phone. → I was not busy enough to answer the phone.<br/>" +
-        "(e) The tea was so warm that we could drink it. → The tea was warm enough to drink.",
+        "(a) The water was so clear that we could see the fish. → It was clear enough for us to see the fish.<br/>" +
+        "(b) He was so experienced that he explained it well. → He was experienced enough to explain it well.<br/>" +
+        "(c) The homework was so difficult that he couldn't finish it. → It was difficult enough for him to finish it.<br/>" +
+        "(d) I was so busy that I couldn't answer the phone. → I was not busy enough to answer it.<br/>" +
+        "(e) The tea was so warm that we could drink it. → It was warm enough to drink.",
     },
     choices: ["1개", "2개", "3개", "4개", "5개"],
     answer: 2,
@@ -726,11 +726,11 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. The movie is too boring for me to watch to the end.<br/>" +
-        "b. The movie is not interesting enough for me to watch to the end.<br/>" +
-        "c. The movie is boring enough not to watch it to the end.<br/>" +
-        "d. The movie is too boring for to watch to the end.<br/>" +
-        "e. The movie is so boring that I can watch it to the end.",
+        "a. It is too boring for me to watch to the end.<br/>" +
+        "b. It is not interesting enough to watch to the end.<br/>" +
+        "c. It is boring enough not to watch it to the end.<br/>" +
+        "d. It is too boring for to watch to the end.<br/>" +
+        "e. It is so boring that I can watch it to the end.",
     },
     choices: ["a, b", "a, d", "b, c", "c, e", "d, e"],
     answer: 1,
@@ -763,7 +763,7 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. The boy wants a magazine about science.<br/>b. The shop sells only science magazines.<br/>c. The girl recommends a magazine called <i>Teen's Science</i>.<br/>d. The boy has no interest in science at all.<br/>e. The girl is sure that the boy will like the magazine.",
+        "a. The boy wants a science magazine.<br/>b. The shop sells only science magazines.<br/>c. The girl recommends <i>Teen's Science</i>.<br/>d. The boy has no interest in science.<br/>e. The girl is sure the boy will like it.",
     },
     choices: ["a, b, c", "b, c, d", "b, d, e", "c, d, e", "a, c, e"],
     answer: 5,
@@ -802,9 +802,9 @@ export const QUESTIONS = [
       rows: [
         ["A", "The book (that) you gave me was interesting.", "목적격 관계대명사 / 생략 가능"],
         ["B", "the girl who I met at the museum", "주격 관계대명사 / 생략 불가"],
-        ["C", "Poor workers used to live in this area.", "지금도 이 지역에 살고 있다는 뜻"],
-        ["D", "She is used to getting up early.", "be used to + 동명사 / ~하는 것이 익숙하다"],
-        ["E", "There used to be a large gallery here.", "이곳에 갤러리가 많았다는 뜻"],
+        ["C", "Poor workers used to live in this area.", "지금도 살고 있다는 뜻"],
+        ["D", "She is used to getting up early.", "be used to + 동명사(익숙하다)"],
+        ["E", "There used to be a large gallery here.", "갤러리가 여럿 있었다는 뜻"],
       ],
     },
     choices: ["A, D", "A, E", "B, C", "B, D", "C, E"],
@@ -815,7 +815,7 @@ export const QUESTIONS = [
     prompt: "원문장을 <조건>에 맞추어 바꾼 문장으로 옳은 것의 개수는?",
     cond: {
       title: "조건",
-      html: "원문장의 뜻과 문법 관계를 모두 그대로 유지하면서 바꾼 문장일 것. (4형식 → 3형식 전환의 전치사, so ~ that → too ~ to / enough to 전환에서 문말의 목적어 it 처리에 유의함)",
+      html: "원문장의 뜻과 문법 관계를 그대로 유지하여 바꾼 문장일 것. (4형식→3형식 전환의 전치사, so ~ that → too ~ to / enough to 전환, 문말의 it 처리에 유의)",
     },
     passage: {
       kind: "box",
@@ -835,11 +835,11 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. bury: to put something into a hole in the ground and cover it<br/>" +
-        "b. research: to collect information about or for something<br/>" +
-        "c. government: the study and treatment of diseases and injuries<br/>" +
-        "d. cemetery: a place where people put dead bodies in the ground<br/>" +
-        "e. movement: an action that a group of people take to change something in society",
+        "a. bury: to put something into a hole and cover it<br/>" +
+        "b. research: to collect information about something<br/>" +
+        "c. government: the study and treatment of diseases<br/>" +
+        "d. cemetery: a place where people put dead bodies<br/>" +
+        "e. movement: an action people take to change society",
     },
     choices: ["a, b, c", "b, c, e", "a, b, d, e", "a, d, e", "b, c, d, e"],
     answer: 3,
@@ -894,11 +894,11 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. Ben Wilson의 껌 그림은 개인적인 메시지를, Banksy의 작품은 사회적 메시지를 담고 있다.<br/>" +
-        "b. 가난한 노동자들은 지금도 Shoreditch에 살고 있다.<br/>" +
-        "c. Dr. Schofield은 3·1 운동 이후에도 한국의 끔찍한 상황에 대해 쓰기를 계속했다.<br/>" +
-        "d. “They give great pleasure to many people.”는 “They give many people great pleasure.”와 같은 뜻이다.<br/>" +
-        "e. STIK의 세 인물은 Dr. Schofield을 기념하여 그린 것이다.",
+        "a. Wilson의 껌 그림은 개인적 메시지, Banksy의 작품은 사회적 메시지를 담는다.<br/>" +
+        "b. 가난한 노동자는 지금도 Shoreditch에 산다.<br/>" +
+        "c. Schofield은 3·1 운동 뒤에도 한국의 참혹상을 쓰기를 계속했다.<br/>" +
+        "d. “They give great pleasure to many people.”는 “They give many people great pleasure.”와 같다.<br/>" +
+        "e. STIK의 세 인물은 Schofield을 기념해 그린 것이다.",
     },
     choices: ["a, b, c", "b, d, e", "a, c, e", "a, c, d", "b, c, d"],
     answer: 4,
@@ -923,11 +923,11 @@ export const QUESTIONS = [
     prompt: "다음 문장을 뜻이 같은 문장으로 바르게 바꿔 쓴 것은?",
     given: "Wilson's gum paintings are tiny, but they give great pleasure to many people.",
     choices: [
-      "Although Wilson's gum paintings are very small, they make many people happy.",
-      "Because Wilson's gum paintings are tiny, few people enjoy them.",
-      "Wilson's gum paintings are so big that they give people pleasure.",
-      "Wilson's gum paintings are tiny, so they give pleasure to only a few people.",
-      "Whether Wilson's gum paintings are small or not, people feel unhappy.",
+      "Although they are small, they make many people happy.",
+      "They are tiny, so few people enjoy them.",
+      "They are so big that they give people pleasure.",
+      "They are tiny, so only a few enjoy them.",
+      "Whether they are small or not, people are unhappy.",
     ],
     answer: 1,
     choiceLayout: "vertical",
@@ -939,11 +939,11 @@ export const QUESTIONS = [
       title: "조건",
       html: "(a) 우리말과 같은 뜻으로 바꾼 문장일 것<br/>(b) 시제를 과거로 유지할 것",
     },
-    given: "우리말: 그는 너무 어렸기 때문에 그 영화를 끝까지 볼 수 없었다.",
+    given: "우리말: 그는 너무 어렸기 때문에 그 영화를 볼 수 없었다.",
     passage: {
       kind: "box",
       html:
-        "(a) He was too young to see the movie to the end.<br/>(b) He was not old enough to see the movie to the end.<br/>(c) He was so young that he couldn't see the movie to the end.<br/>(d) He is too young to see the movie to the end.<br/>(e) He was too young that he couldn't see the movie to the end.",
+        "(a) He was too young to see the film.<br/>(b) He was not old enough to see the film.<br/>(c) He was so young that he couldn't see the film.<br/>(d) He is too young to see the film.<br/>(e) He was too young that he couldn't see the film.",
     },
     choices: ["1개", "2개", "3개", "4개", "5개"],
     answer: 3,
@@ -954,12 +954,12 @@ export const QUESTIONS = [
     cond: {
       title: "보기",
       html:
-        "a. 「be famous for + 동명사」: STIK is famous for using only lines and dots.<br/>" +
-        "b. 「give a clue의 전치사」: The dots will give a clue for us.<br/>" +
-        "c. 「과거에는 ~하곤 했다(지금은 아니다)」: There used to be a large gallery in this street.<br/>" +
-        "d. 「지각동사 + 목적어 + to 부정사」: I saw the artist to spray paint on the wall.<br/>" +
+        "a. 「be famous for + 동명사」: STIK is famous for using dots.<br/>" +
+        "b. 「give a clue의 전치사」: Give a clue for us.<br/>" +
+        "c. 「과거에는 ~하곤 했다」: There used to be a gallery here.<br/>" +
+        "d. 「지각동사+목적어+to 부정사」: I saw the artist to spray paint.<br/>" +
         "e. 「so ~ that의 전환」: The box was so heavy to lift.<br/>" +
-        "f. 「주격 관계대명사는 생략할 수 없다」: The man who took the pictures is famous.",
+        "f. 「주격 who는 생략 불가」: The man who came is famous.",
     },
     choices: ["a, c, f", "a, b, e", "b, d, e", "c, d, f", "b, e, f"],
     answer: 1,

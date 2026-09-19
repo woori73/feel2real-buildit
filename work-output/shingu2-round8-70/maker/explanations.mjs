@@ -48,7 +48,7 @@ export const EXPL = [
     key: "안내자가 눈을 보라고 한 이유는 세 인물이 ‘눈을 그린 방식’에서만 차이가 나기 때문이고, 효과는 관람객이 답을 스스로 찾아내게 하는 것이다(give you a clue).",
     wrong: "① 크기, ② 다른 화가 비교, ③ 옷차림, ⑤ 서명·진위 모두 본문에 근거가 없다.",
     rule: "지시 행위의 이유 + 효과를 묻는 2단 추론은 ‘그 행위로 무엇이 해결되는가’를 본문에서 찾는다.",
-    ev: "Which figure represents which? Well, look closely at the eyes of the three figures.",
+    ev: "The three figures represent the past, present, and future of Shoreditch. … Look closely at the eyes.",
   },
   {
     num: 8, ans: 5, axis: "L5 독해 · 한 문장 요약",
@@ -76,14 +76,14 @@ export const EXPL = [
     key: "투어의 마지막 정점에서 Ben Wilson의 껌 그림을 보여주는 안내문이므로 목적은 ‘런던의 또 다른 형태의 거리 예술 소개’.",
     wrong: "① 계도(× 껌 금지 언급 없음), ② 판매 홍보, ④ Banksy와 우열 비교, ⑤ 제작 방법 순서 지도는 모두 글의 전개와 무관.",
     rule: "글의 목적은 화자의 행위(소개·설득·경고·지시)와 본문 정보 범위로 판정한다.",
-    ev: "The final stop of our tour today is Muswell Hill. … Do you see the little chewing gum paintings?",
+    ev: "The final stop of our tour is Muswell Hill. … Do you see the little chewing gum paintings?",
   },
   {
     num: 12, ans: 4, axis: "L5 독해 · A~C 종합 진술",
     key: "b(Banksy가 벽에 분사하여 제작), c(Wilson의 껌 그림에 담은 개인적 메시지), d(Shoreditch의 과거·현재 변화)가 옳다.",
     wrong: "a는 작가 오류 — 세 인물은 STIK의 작품이다. (Ben Wilson이 아님)",
     rule: "공통지문 종합 문항은 ‘작가 ↔ 작품 ↔ 장소’ 대응표로 헷갈림을 막는다.",
-    ev: "It is by the artist STIK. / Wilson … carry personal messages / Poor workers used to live in this area, but now …",
+    ev: "It is by the artist STIK … / Wilson … carry personal messages / Poor workers used to live here, but now …",
   },
   {
     num: 13, ans: 2, axis: "L5 어구 · 밑줄 의미",
@@ -144,7 +144,7 @@ export const EXPL = [
   {
     num: 21, ans: 4, axis: "L5 어법 · 표 진위(생략 조건)",
     key: "D의 설명이 틀렸다. who is talking에서 who는 절의 주어야므로 주격 관계대명사 → 생략할 수 없다.",
-    wrong: "A·B는 목적격(that·whom)으로 생략 가능 설명이 옳고, C는 used to + 동사원형의 과거 상태 설명이 옳다.",
+    wrong: "A·B는 목적격(which·whom)으로 생략 가능 설명이 옳고, C는 used to + 동사원형의 과거 습관(지금은 아님) 설명이 옳다.",
     rule: "주격 관계대명사는 생략 불가, 목적격 관계대명사는 생략 가능.",
     ev: "—",
   },
@@ -157,7 +157,7 @@ export const EXPL = [
   },
   {
     num: 23, ans: 5, axis: "L5 어법 · 3조건 만족 영작",
-    key: "a·e는 used to를 쓰면서 near our school을 살리고 but now they don't로 변화를 넣어 세 조건을 모두 만족한다.",
+    key: "a·e는 used to를 쓰면서 café near school을 살리고 but now they don't로 변화를 넣어 세 조건을 모두 만족한다.",
     wrong: "b는 are used to meeting(‘익숙함’)이라 의미 조건 ✗, c는 학교 근처 카페가 빠짐 ✗, d는 used to met으로 어법 ✗.",
     rule: "조건이 여러 개인 영작 판정형은 각 선지를 조건별로 채점해야 한다.",
     ev: "—",
@@ -237,21 +237,21 @@ export const EXPL = [
     key: "(c) for the rest of his life는 ‘남은 생애 동안’, (d) sound similar to는 ‘~와 발음이 비슷하게 들리다’이므로 두 연결이 틀렸다.",
     wrong: "(a) 초청으로, (b) ~할 권리가 있다, (e) ~의 감시 아래에서 모두 본문 학습지의 풀이와 같다.",
     rule: "sound + 형용사(연결동사) 구문, have the right to V, at the invitation of ~의 숙어성 표현.",
-    ev: "It sounded similar to his real name. / For the rest of his life, he worked hard to help Koreans.",
+    ev: "he loved his Korean name because it sounded similar to his real name. / For the rest of his life, he worked to help Koreans.",
   },
   {
     num: 35, ans: 4, axis: "L6 독해 · 진술真伪 집합",
     key: "a(1916년 의학을 가르치러 내한), b(한국어로 가르치고 싶어 배움), d(독립운동 지원)가 본문과 일치한다.",
     wrong: "c는 반대 — 한국어로 수업할 수 있게 되었다. e는 ‘처음 온 캐나다인’이라는 비교는 본문에 없다(first came to Korea는 그의 첫 내한).",
     rule: "first의 수식 범위를 정확히 읽는다(동사에 걸림).",
-    ev: "he first came to Korea in 1916 to teach medicine. / He studied so hard that he was able to teach in Korean.",
+    ev: "who first came to Korea in 1916 to teach medicine. / He studied so hard that he could teach in Korean within a few years.",
   },
   {
     num: 36, ans: 3, axis: "L6 독해 · 이유+태도 2단 추론",
     key: "He wanted to teach in Korean, so he began to learn Korean right away.에서 이유는 한국어 수업, right away는 미루지 않는 실천 태도.",
     wrong: "이름·기사·감시·사교성은 right away의 근거와 무관하다.",
     rule: "접속사 so 이전(이유)과 이후(행동)를 분리 판정한다.",
-    ev: "He wanted to teach in Korean, so he began to learn Korean right away.",
+    ev: "He wanted to teach in Korean, so he began to learn it right away.",
   },
   {
     num: 37, ans: 4, axis: "L6 독해 · 문장 삽입",
@@ -283,7 +283,7 @@ export const EXPL = [
   },
   {
     num: 41, ans: 1, axis: "L6 독해 · 내용 순서 배열",
-    key: "부탁(2월 28일) → 건물 안에 숨어 집회 관찰(3월 1일 오후 2시) → 촬영 시작 → 기사 작성·외국 신문사 발송 순이다.",
+    key: "부탁(2월 28일) → 건물 안에 숨어 집회 관찰(3월 1일) → 촬영 시작 → 기사 작성·외국 신문사 발송 순이다.",
     wrong: "(a) ‘wrote an article’는 지문 마지막 문장의 ‘later’가 가리키듯 항상 맨 뒤이므로 (a)가 앞에 오는 배열은 모두 틀린다.",
     rule: "시간 부사(later)와 서사 흐름(요청-관찰-실행-기록)으로 순서를 확정한다.",
     ev: "He began to take pictures … He later wrote an article about the historic event and sent it to foreign newspapers with his pictures.",
@@ -318,7 +318,7 @@ export const EXPL = [
   },
   {
     num: 46, ans: 5, axis: "함정 C · 지각동사 목적보어",
-    key: "E: saw + O + doing, felt + O + doing(진행 강조), heard + her dog's name + called(목적어와 call이 수동 관계 → p.p.).",
+    key: "E: saw + O + doing, felt + O + doing(진행 강조), heard + the name + called(목적어와 call이 수동 관계 → p.p.).",
     wrong: "to 부정사는 지각동사 목적보어 자리에 올 수 없고(to shake, to call ✗), (C)에서 name은 '불리는' 입장이므로 called.",
     rule: "지각동사 + 목적어 + 원형/-ing / 목적어와 동사가 수동 관계면 p.p.",
     ev: "I saw him working on it. (L5 프린트 어법) / Andy heard Julie call(ing) her dog's name. (L6 지각동사 프린트)",
@@ -424,14 +424,14 @@ export const EXPL = [
   },
   {
     num: 61, ans: 2, axis: "함정 A·D · 전환 적절성 개수",
-    key: "(a) give a clue to you, (b) give great pleasure to many people는 4형식→3형식(to) 전환이 옳다.",
+    key: "(a) Give a clue to me, (b) give great pleasure to many people는 4형식→3형식(to) 전환이 옳다.",
     wrong: "(c)는 문말의 it을 지워야 하고, (d)는 so young that can't → not old enough to여야 의미가 보존되며, (e)는 heard + O + p.p.(called)를 능동 원형으로 바꿔 의미가 뒤집혔다 → 옳은 것 2개.",
     rule: "4형식→3형식, so~that 전환, 지각동사 목적보어의 수동 관계를 한 문항에서 동시 판정.",
     ev: "Wilson's gum paintings … give great pleasure to many people. (L5 지문 C)",
   },
   {
     num: 62, ans: 3, axis: "L6 어휘 · 정의 옳은 것 모두",
-    key: "a bury, b research, d cemetery, e movement의 뜻풀이가 원문과 같고, c만 government가 아니라 the group of people who officially control a country이다(제시된 정의는 medicine).",
+    key: "a bury, b research, d cemetery, e movement의 뜻풀이가 옳고, c만 government가 아니라 the group of people who officially control a country이다(제시된 정의는 medicine).",
     wrong: "c의 정의를 medicine과 혼동하지 않는 것이 포인트.",
     rule: "Word List L6의 영어 뜻풀이 원문 일치 판정.",
     ev: "—",
@@ -473,7 +473,7 @@ export const EXPL = [
   },
   {
     num: 68, ans: 1, axis: "L5 독해 · paraphrase",
-    key: "tiny → very small, give great pleasure to many people → make many people happy로 바꾸고 but(양보)은 although로 이어 간다.",
+    key: "tiny → small, give great pleasure to many people → make many people happy로 바꾸고 but(양보)은 although로 이어 간다.",
     wrong: "②④는 인과·결과로 왜곡, ③은 크기를 반대로, ⑤는 whether…or로 의미를 잃는다.",
     rule: "but의 양보 관계 = although, give + 사람 + pleasure = make + 사람 + happy.",
     ev: "Wilson's gum paintings are tiny, but they give great pleasure to many people. (L5 지문 C)",
