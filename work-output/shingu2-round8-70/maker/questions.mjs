@@ -179,6 +179,7 @@ export const QUESTIONS = [
     prompt: "다음 표의 분석으로 옳은 것만을 있는 대로 고른 것은?",
     table: {
       head: ["행", "문장", "선행사", "관계대명사의 격", "생략"],
+      widths: [7, 47, 12, 20, 14],
       rows: [
         ["A", "I have a friend <u>that</u> I share everything with.", "사람", "목적격", "가능"],
         ["B", "The cat <u>that</u> followed us to school was black.", "사물", "주격", "불가능"],
@@ -266,6 +267,7 @@ export const QUESTIONS = [
     prompt: "다음 표에서 어법상 옳지 <u>않은</u> 행을 고르면?",
     table: {
       head: ["행", "문장", "설명"],
+      widths: [8, 54, 38],
       rows: [
         ["A", "the bike which she lost last year", "목적격 관계대명사 / 생략 가능"],
         ["B", "the people (whom) I invited to my party", "목적격 관계대명사 / 생략 가능"],
@@ -433,6 +435,7 @@ export const QUESTIONS = [
     prompt: "다음 표에서 영어 표현과 우리말 뜻이 바르게 연결되지 <u>않은</u> 것만을 고른 것은?",
     table: {
       head: ["행", "영어 표현", "우리말 뜻"],
+      widths: [10, 45, 45],
       rows: [
         ["(a)", "at the invitation of the government", "정부의 초청으로"],
         ["(b)", "have the right to be independent", "독립할 권리가 있다"],
@@ -649,6 +652,7 @@ export const QUESTIONS = [
     prompt: "다음 표에서 동사와 뒤에 올 알맞은 형태, 예문이 바르게 짝지어지지 <u>않은</u> 것만을 고른 것은?",
     table: {
       head: ["행", "동사(표현)", "제시된 형태", "예문"],
+      widths: [8, 26, 24, 42],
       rows: [
         ["(a)", "would like", "동명사", "I would like helping you."],
         ["(b)", "continue", "to 부정사", "He continued to write it."],
@@ -676,6 +680,7 @@ export const QUESTIONS = [
     prompt: "다음 표에서 동사와 뒤에 올 형태, 예문이 <u>모두 옳은</u> 행만을 고른 것은?",
     table: {
       head: ["행", "동사", "뒤에 오는 형태", "예문"],
+      widths: [8, 18, 26, 48],
       rows: [
         ["A", "want", "to 부정사", "He wanted to teach in Korean."],
         ["B", "finish", "to 부정사", "She finished to research it."],
@@ -799,6 +804,7 @@ export const QUESTIONS = [
     prompt: "다음 표에서 문장과 그 설명이 <u>모두 옳은</u> 행만을 고른 것은?",
     table: {
       head: ["행", "문장", "설명"],
+      widths: [8, 54, 38],
       rows: [
         ["A", "The book (that) you gave me was interesting.", "목적격 관계대명사 / 생략 가능"],
         ["B", "the girl who I met at the museum", "주격 관계대명사 / 생략 불가"],

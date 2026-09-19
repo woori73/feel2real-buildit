@@ -43,6 +43,7 @@ body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-s
 .cond-box{margin:.9mm 0 0 4.6mm;border:.7pt solid #666;padding:.8mm 1.8mm;font-size:9pt;line-height:1.4;background:#fbfbfb}.cond-label{font-weight:700;margin-right:1mm}.view-title{display:block;text-align:center;margin:0 0 1.2mm 0;font-weight:700}.cond-box + .choices{margin-top:2mm}
 .choice-table{width:calc(100% - 4.6mm);margin:1.2mm 0 0 4.6mm;border-collapse:collapse;font-size:9pt;text-align:center}.choice-table th,.choice-table td{padding:.4mm 1.1mm;border-bottom:.45pt solid #bbb}.choice-table th{font-weight:700;border-top:.7pt solid #666;border-bottom:.7pt solid #666}.choice-table td:first-child{width:9mm;font-weight:700}
 .blank{display:inline-block;min-width:14mm;border-bottom:.7pt solid #111}.given-sentence{display:block;border:.7pt solid #666;padding:.8mm 1.8mm;margin:.7mm 0 .3mm 4.6mm;background:#fff}u{text-underline-offset:1.5px}
+.qprompt,.cond-box,.choice-item,.choice-table th,.choice-table td,.given-sentence,.group-label,.exam-header td,.exam-header th{word-break:keep-all}
 .page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
 .edit-toolbar{position:fixed;right:14px;top:14px;z-index:9999;display:flex;gap:6px;padding:7px;background:#fff;border:1px solid #aaa;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-family:Arial,sans-serif}.edit-toolbar button{font-size:12px;padding:6px 9px;border:1px solid #888;background:#fff;border-radius:5px;cursor:pointer}body.editing [contenteditable="true"]{outline:1px dashed #4d78c4;outline-offset:2px;background:#fffdf0}
 @media screen{body{background:#e9e9e9}.page{margin:0 auto 8mm auto}}
@@ -72,7 +73,8 @@ export function qblockHtml(q) {
   if (q.given) h += `<div class="given-sentence">${q.given}</div>`;
   if (q.cond2) h += `<div class="cond-box"><div class="cond-label view-title">&lt;${q.cond2.title}&gt;</div>${q.cond2.html}</div>`;
   if (q.table) {
-    h += `<table class="choice-table"><tr>${q.table.head.map((x) => `<th>${x}</th>`).join("")}</tr>`;
+    const cols = q.table.widths ? `<colgroup>${q.table.widths.map((w) => `<col style="width:${w}%"/>`).join("")}</colgroup>` : "";
+    h += `<table class="choice-table">${cols}<tr>${q.table.head.map((x) => `<th>${x}</th>`).join("")}</tr>`;
     h += q.table.rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
     h += `</table>`;
   }

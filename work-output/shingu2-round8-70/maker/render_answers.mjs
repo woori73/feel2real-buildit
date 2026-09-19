@@ -28,11 +28,11 @@ h2{font-size:10pt;margin:2mm 0 2mm 0;border-bottom:1pt solid #000;padding-bottom
 table.keys{width:100%;border-collapse:collapse;font-size:9pt}
 table.keys td{border:.5pt solid #999;text-align:center;padding:1mm .3mm}
 table.keys td.n{background:#f2f2f2;font-weight:700}
-.ans{break-inside:avoid;page-break-inside:avoid;flex:0 0 auto;border-bottom:.4pt solid #e0e0e0;padding-bottom:2mm}
+.ans{break-inside:avoid;page-break-inside:avoid;flex:0 0 auto;border-bottom:.4pt solid #e0e0e0;padding-bottom:2mm;word-break:keep-all}
 .ans .head{font-weight:700}
 .ans .axis{display:inline-block;font-size:8.5pt;font-weight:400;color:#444;border:.5pt solid #999;border-radius:2mm;padding:0 1.4mm;margin-left:1.5mm}
-.ans dt{float:left;clear:left;width:15mm;font-weight:700;color:#000}
-.ans dd{margin:0 0 .5mm 16mm;overflow:hidden}
+.ans dt{float:left;clear:left;width:18mm;font-weight:700;color:#000}
+.ans dd{margin:0 0 .5mm 19mm;overflow:hidden}
 .page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
 @media print{html,body{width:210mm!important;background:#fff}
 .page{width:210mm!important;height:297mm!important;margin:0!important;padding:12mm 11mm!important;overflow:hidden!important;break-after:page!important}
@@ -91,13 +91,13 @@ if (MODE === "draft") {
     prefix.push(prefix[i] + h);
   }
   const load = (i, i2) => prefix[i2] - prefix[i] + (i2 - i - 1) * GAP;
-  // 첫 컬럼은 헤더(제목+정답표)가 차지하므로 가용 높이가 더 작다.
-  const availOf = (firstCol) => (firstCol ? colFull - heights.headerH - GAP : colFull);
+  // 헤더(제목+정답표)는 .cols 위에 전폭으로 놓이므로 1페이지의 두 컬럼 모두 높이를 잃는다.
+  const availOf = (colIndex) => (Math.floor(colIndex / 2) === 0 ? colFull - heights.headerH - GAP : colFull);
   const balance = (N, maxSlack) => {
     const parents = [];
     let reach = new Set([0]);
     for (let j = 0; j < N; j++) {
-      const avail = availOf(j === 0);
+      const avail = availOf(j);
       const lo = avail - maxSlack;
       const next = new Map();
       for (const i of reach) {
@@ -120,15 +120,15 @@ if (MODE === "draft") {
       cuts.unshift([prev, at]);
       at = prev;
     }
-    return cuts.map(([a, b], j) => ({ items: Array.from({ length: b - a }, (_, k) => a + k), avail: availOf(j === 0) }));
+    return cuts.map(([a, b], j) => ({ items: Array.from({ length: b - a }, (_, k) => a + k), avail: availOf(j) }));
   };
   const greedy = () => {
     const out = [];
     let cur = null;
     for (let i = 0; i < n; i++) {
-      if (!cur) { cur = { items: [], avail: availOf(!out.length) }; out.push(cur); }
+      if (!cur) { cur = { items: [], avail: availOf(out.length) }; out.push(cur); }
       if (cur.items.length && load(cur.items[0], i + 1) > cur.avail) {
-        cur = { items: [], avail: availOf(!out.length) };
+        cur = { items: [], avail: availOf(out.length) };
         out.push(cur);
       }
       cur.items.push(i);
