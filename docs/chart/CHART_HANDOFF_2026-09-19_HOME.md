@@ -174,5 +174,20 @@ STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 8
 - **PUBLICATION REBUILD: 아직 NO / review-batches·decision·finalize 미실행 / regions/*/complete 미호출 / DEPLOY NO**
 - 승인 후 절차는 §7.4 그대로. 100명 정확히 맞추면 100위 밖 0명 → Goal B(100위 밖 표시) 실증에는 여유 승격 1명이 더 필요.
 
+### 7.7 2026-09-20 라운드 마무리 — HOLD 보강 각하 확정 + 브라우저 차단 (상세 `research/2026-09-19/06·07`)
+
+- **한정화(dossier #18)**: 실명/기관/2026 활동/오프라인/철학/커리큘럼 PASS, IDENTITY CONTINUITY PASS
+  (실명 직접 표기는 2025.11.4 글 하나뿐, 2026 은 동일 블로그 계정 + 동일 연락처 010-7788-3225 + 동일 주소·등록번호 제3863호 + 1인칭 분당→영종 서사로 입증).
+  단 **DB 에 레코드가 없음**: `educators/18` 은 무관한 김현진(동대문구), `educators/search?q=한정화` = 0 건, `search-existing` = [].
+  → 리포트 항목번호를 candidateId 로 오독한 것(candidateId≠rank 규칙과 같은 유형 오류). 승격에 `research-drafts` WRITE 가 선행돼야 하므로 READ ONLY 단계 처분은 **HOLD(보류)**.
+- **HOLD 보강 4건 전부 각하 확정(기준 낮추지 않음)**: 59 김요한(서명이 닉네임 "John 쌤"), 62 신원경(2025·본사 매체만),
+  77 채은숙(디렉터리·지자체·언론 + **불일치 블로그** `the_haydn_piano`: prompie 가 링크했지만 실제로는 강남 피아노학원 글),
+  83 성진경(포항 이엠학원 블로그 `bionda0514` 특정했으나 서명 "이엠쌤").
+- **최종 집계(READ ONLY)**: `publication/current` = publicationId 34, RANKED 83(rank 1~83)·DISCOVERED 0 / 미반영 EVALUATABLE 17
+  → **FINAL EVALUATABLE 100, FINAL HOLD 17**(구조적 불가 13 + 각하 4). TOP100 READY YES, 100 위 밖 예상 0 명.
+- **운영 차단**: Qoder 재시작 후 내장 브라우저 탭 blank(`navigate_page` 타임아웃, `evaluate_script`·`take_snapshot` "page is blank").
+  서버는 정상(`/chart` 200 0.21s, `/admin/chart` 401). ADMIN cookie 세션이 유일한 정당한 쓰기 경로이므로 **이번 라운드 쓰기 0 건**
+  (enrichment·reevaluate·review-batches·rebuild·deploy 전부 미실행). 복구 후 17명 일괄 처리는 §7.4 유지.
+
 
 
