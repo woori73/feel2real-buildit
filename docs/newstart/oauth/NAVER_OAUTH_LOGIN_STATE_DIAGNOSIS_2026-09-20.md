@@ -86,7 +86,7 @@ JWT/쿠키/필터를 거치므로 정상 — naver-only 증상과 일치.
 ## 8. PHASE 3 수정 (최소)
 
 1. `NaverOAuthClient.TOKEN_URL` → `https://nid.naver.com/oauth2.0/token` (1줄 + 근거 comment).
-2. 회귀 테스트 `NaverOAuthClientTest` 신설회: HttpClient만 mock해 **실제 요청 URI/method/Authorization**을
+2. 회귀 테스트 `NaverOAuthClientTest` 신설: HttpClient만 mock해 **실제 요청 URI/method/Authorization**을
    검증 — token=POST nid.naver.com/oauth2.0/token, profile=GET openapi.naver.com/v1/nid/me.
    (기존 컨트롤러 테스트는 client를 mock하므로 URL 오류를 원리적으로 잡을 수 없어 신설)
 3. `deploy-ec2.yml` 게이트에 `NaverOAuthClientTest` 추가(다음 오경유도 배포 전 차단).
@@ -99,3 +99,12 @@ JWT/쿠키/필터를 거치므로 정상 — naver-only 증상과 일치.
   헤더 로그인 상태 표시, `user_social_accounts`에 NAVER 1건 생성 확인(count 조회).
 - 신규 STUDENT 회원은 `naver_` 접두 loginId로 생성될 예정(기존 계정과 email 병합 없음).
 - 진단 임시 워크플로우(`diagnose-naver-oauth-readonly.yml`)는 E2E 확인 후 제거 PR 진행.
+
+## 10. 배포 및 배포 후 실측 (2026-09-19 20:08~20:13 UTC)
+
+- PR #333 CI(build) PASS → main 머지. `Deploy to EC2 (manual)` run 35466456801 **SUCCESS**(자동 health gate 통과).
+- health: `GET /actuator/health` → `status: UP`, `/oauth/naver/start` → 302, `/newstart/chat` → 200.
+- SSM 재진단(run 35466720999): f2r-app active, `app.jar` mtime **20:10**(=신규 수정 빌드),
+  EC2→`nid.naver.com/oauth2.0/token` **200 도달 확인**(기존 auth.naver.com은 000 그대로 — 수정이 유효한 호스트로 우회했음을 실증).
+- `user_social_accounts` / `naver_%` users = 아직 0 (배포 후 실제 네이버 로그인 시도가 없었으므로 정상).
+  **남은 것: 사용자의 실제 1회 E2E 로그인**(동의 → 헤더 로그인 표시 → social 1건). 확인 후 이 섹션에 결과 기록 및 임시 진단 워크플로우 제거 PR 진행.
