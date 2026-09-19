@@ -5,7 +5,6 @@
       NS.bindToggles();
       NS.bindChecklist();
       NS.bindSituationForm();
-      NS.bindAiSend();
       NS.bindLibraryClicks();
     },
 
@@ -59,31 +58,7 @@
       });
     },
 
-    bindAiSend: function () {
-      var input = document.getElementById('ns-ai-input');
-      var send = document.getElementById('ns-ai-send');
-      var box = document.getElementById('ns-ai-empty');
-      if (!input || !send) return;
-      send.addEventListener('click', function () { NS.sendAi(input, box); });
-      input.addEventListener('keydown', function (e) {
-        if (e.keyCode === 13 && !e.shiftKey) {
-          e.preventDefault();
-          NS.sendAi(input, box);
-        }
-      });
-    },
 
-    sendAi: function (input, box) {
-      var q = (input.value || '').trim();
-      if (!q) return;
-      input.value = '';
-      if (box) {
-        var p = document.createElement('p');
-        p.className = 'ns-ai-q';
-        p.textContent = '나: ' + q;
-        box.parentNode.insertBefore(p, box);
-      }
-    },
 
     bindLibraryClicks: function () {
       var cards = document.querySelectorAll('.ns-library-card');
