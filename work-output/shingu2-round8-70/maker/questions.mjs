@@ -661,4 +661,308 @@ export const QUESTIONS = [
     choices: ["(a), (b)", "(a), (d)", "(b), (c)", "(b), (e)", "(c), (e)"],
     answer: 2,
   },
+  {
+    num: 51,
+    prompt: "다음 문장에서 밑줄 친 부분에 들어간 형태로 어법상 <u>옳지 않은</u> 것은?",
+    passage: {
+      kind: "box",
+      html:
+        "(a) He continued <u>to study</u> Korean with his students.<br/>(b) He kept <u>studying</u> Korean every night.<br/>(c) She kept <u>writing</u> articles about Korea.<br/>(d) He continued <u>learn</u> Korean for three years.<br/>(e) They continued <u>to help</u> poor students.",
+    },
+    choices: ["(a)", "(b)", "(c)", "(d)", "(e)"],
+    answer: 4,
+  },
+  {
+    num: 52,
+    prompt: "다음 표에서 동사와 뒤에 올 형태, 예문이 <u>모두 옳은</u> 행만을 고른 것은?",
+    table: {
+      head: ["행", "동사", "뒤에 오는 형태", "예문"],
+      rows: [
+        ["A", "want", "to 부정사", "He wanted to teach in Korean."],
+        ["B", "finish", "to 부정사", "She finished to research the event."],
+        ["C", "enjoy", "동명사", "They enjoy reading his article."],
+        ["D", "decide", "동명사", "He decided studying medicine."],
+        ["E", "keep", "to 부정사", "He kept to write about Korea."],
+      ],
+    },
+    choices: ["A, B", "B, C", "C, D", "D, E", "A, C"],
+    answer: 5,
+  },
+  {
+    num: 53,
+    prompt: "다음 문장을 too ~ to 구문으로 바르게 바꾼 것은?",
+    given: "The box is so heavy that I can't lift it.",
+    choices: [
+      "The box is too heavy to me lift it.",
+      "The box is too heavy that I can't lift.",
+      "The box is too heavy for me to lift.",
+      "The box is heavy too for I to lift.",
+      "The box is too heavy for me to lift it.",
+    ],
+    answer: 3,
+    choiceLayout: "vertical",
+  },
+  {
+    num: 54,
+    prompt: "원문장을 “형용사/부사 + enough to ...” 또는 “too ~ to”로 바꾼 문장 중 <u>틀린</u> 것의 개수는?",
+    cond: {
+      title: "원문장 → 바꾼 문장",
+      html:
+        "(a) The water was so clear that we could see the fish. → The water was clear enough for us to see the fish.<br/>" +
+        "(b) He was so experienced that he explained the historic event well. → He was experienced enough to explain the historic event well.<br/>" +
+        "(c) The homework was so difficult that he couldn't finish it. → The homework was difficult enough for him to finish it.<br/>" +
+        "(d) I was so busy that I couldn't answer the phone. → I was not busy enough to answer the phone.<br/>" +
+        "(e) The tea was so warm that we could drink it. → The tea was warm enough to drink.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 2,
+  },
+  {
+    num: 55,
+    prompt: "다음 문장과 뜻이 같은 것만을 <보기>에서 있는 대로 고른 것은?",
+    passage: {
+      kind: "box",
+      html: "The movie is so boring that I can't watch it to the end.",
+    },
+    cond: {
+      title: "보기",
+      html:
+        "a. The movie is too boring for me to watch to the end.<br/>" +
+        "b. The movie is not interesting enough for me to watch to the end.<br/>" +
+        "c. The movie is boring enough not to watch it to the end.<br/>" +
+        "d. The movie is too boring for to watch to the end.<br/>" +
+        "e. The movie is so boring that I can watch it to the end.",
+    },
+    choices: ["a, b", "a, d", "b, c", "c, e", "d, e"],
+    answer: 1,
+  },
+  {
+    num: 56,
+    prompt: "위 대화의 빈칸에 들어갈 말로 가장 적절한 것은?",
+    passage: {
+      kind: "dialog",
+      html:
+        "G: What kinds of soft drinks do you usually have?<br/>B: I usually drink apple soda, but today I want something different. <span class='blank'></span><br/>G: Try a cherry soda. The cherry soda here is really good.<br/>B: OK. I'll give it a try then.",
+    },
+    choices: [
+      "How much is the cherry soda?",
+      "Where did you buy the soda?",
+      "Do you like apple soda?",
+      "Can you recommend some new soft drinks for me?",
+      "Why are you so busy today?",
+    ],
+    answer: 4,
+  },
+  {
+    num: 57,
+    prompt: "위 대화에 대한 설명으로 옳은 것만을 <보기>에서 있는 대로 고른 것은?",
+    passage: {
+      kind: "dialog",
+      html:
+        "B: What kinds of magazines do you have?<br/>G: We have all kinds of magazines.<br/>B: I'm really interested in science. Can you recommend a science magazine for me?<br/>G: Sure. You'll love this one, Teen's Science.",
+    },
+    cond: {
+      title: "보기",
+      html:
+        "a. The boy wants a magazine about science.<br/>b. The shop sells only science magazines.<br/>c. The girl recommends a magazine called <i>Teen's Science</i>.<br/>d. The boy has no interest in science at all.<br/>e. The girl is sure that the boy will like the magazine.",
+    },
+    choices: ["a, b, c", "b, c, d", "b, d, e", "c, d, e", "a, c, e"],
+    answer: 5,
+  },
+  {
+    num: 58,
+    prompt: "위 대화의 밑줄 친 (A)~(E) 중 어법상 <u>틀린</u> 것의 개수는?",
+    passage: {
+      kind: "dialog",
+      html:
+        "B: I'm looking for books on famous people who helped others.<br/>" +
+        "G: How about (A) <u>reading</u> about Audrey Hepburn?<br/>" +
+        "B: I enjoy (B) <u>to read</u> about her work, but I want (C) <u>read</u> about a doctor.<br/>" +
+        "G: Then I recommend (D) <u>to choose</u> Dr. Schofield. He did so much for (E) <u>children and students</u>.<br/>" +
+        "B: OK. I'll give it a try.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 3,
+  },
+  {
+    num: 59,
+    prompt: "위 대화에서 밑줄 친 <u>it</u>이 가리키는 것으로 가장 적절한 것은?",
+    passage: {
+      kind: "dialog",
+      html:
+        "B: What kinds of movies do you like?<br/>G: I like action movies. <i>Spider-Man</i> is my favorite.<br/>B: Oh, I didn't see <u>it</u>.<br/>G: You should. It's really fun. I strongly recommend it.",
+    },
+    choices: ["액션을 다룬 영화라는 장르", "자주 가는 영화관", "영화 표 한 장", "영화 《스파이더맨》", "소년이 좋아하는 배우"],
+    answer: 4,
+  },
+  {
+    num: 60,
+    prompt: "다음 표에서 문장과 그 설명이 <u>모두 옳은</u> 행만을 고른 것은?",
+    table: {
+      head: ["행", "문장", "설명"],
+      rows: [
+        ["A", "The book (that) you gave me was interesting.", "목적격 관계대명사 / 생략 가능"],
+        ["B", "the girl who I met at the museum", "주격 관계대명사 / 생략 불가"],
+        ["C", "Poor workers used to live in this area.", "지금도 이 지역에 살고 있다는 뜻"],
+        ["D", "She is used to getting up early.", "be used to + 동명사 / ~하는 것이 익숙하다"],
+        ["E", "There used to be a large gallery here.", "이곳에 갤러리가 많았다는 뜻"],
+      ],
+    },
+    choices: ["A, D", "A, E", "B, C", "B, D", "C, E"],
+    answer: 1,
+  },
+  {
+    num: 61,
+    prompt: "원문장을 <조건>에 맞추어 바꾼 문장으로 옳은 것의 개수는?",
+    cond: {
+      title: "조건",
+      html: "원문장의 뜻과 문법 관계를 모두 그대로 유지하면서 바꾼 문장일 것. (4형식 → 3형식 전환의 전치사, so ~ that → too ~ to / enough to 전환에서 문말의 목적어 it 처리에 유의함)",
+    },
+    passage: {
+      kind: "box",
+      html:
+        "(a) Give you a clue. → Give a clue to you.<br/>" +
+        "(b) They give many people great pleasure. → They give great pleasure to many people.<br/>" +
+        "(c) The coffee was so hot that I couldn't drink it. → The coffee was too hot to drink it.<br/>" +
+        "(d) You are so young that you can't see the movie. → You are young enough to see the movie.<br/>" +
+        "(e) We heard her dog's name called. → I heard her dog's name call.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 2,
+  },
+  {
+    num: 62,
+    prompt: "다음 <보기>는 L6 Word List의 영어 뜻풀이이다. 옳은 것만을 있는 대로 고른 것은?",
+    cond: {
+      title: "보기",
+      html:
+        "a. bury: to put something into a hole in the ground and cover it<br/>" +
+        "b. research: to collect information about or for something<br/>" +
+        "c. government: the study and treatment of diseases and injuries<br/>" +
+        "d. cemetery: a place where people put dead bodies in the ground<br/>" +
+        "e. movement: an action that a group of people take to change something in society",
+    },
+    choices: ["a, b, c", "b, c, e", "a, b, d, e", "a, d, e", "b, c, d, e"],
+    answer: 3,
+  },
+  {
+    num: 63,
+    prompt: "다음 (A), (B)의 영어 뜻풀이에 해당하는 단어를 바르게 짝지은 것은?",
+    passage: {
+      kind: "box",
+      html:
+        "(A) n. an action that a group of people take to change something in society<br/>(B) a. caring more about other people's needs and interests than about your own",
+    },
+    choices: ["medicine ／ gather", "stress ／ historic", "research ／ foreign", "invitation ／ unbelievable", "movement ／ selfless"],
+    answer: 5,
+  },
+  {
+    num: 64,
+    prompt: "다음 우리말을 <조건>에 맞추어 옮긴 문장으로 옳은 것의 개수는?",
+    cond: {
+      title: "조건",
+      html: "(a) 목적격 관계대명사를 사용할 것<br/>(b) 지각동사 + 목적어 + 동사원형(또는 -ing)의 형식을 사용할 것",
+    },
+    given: "우리말: 나는 그 사진을 찍은 남성이 벽 뒤에 숨는 것을 보았다.",
+    passage: {
+      kind: "box",
+      html:
+        "(a) I saw the man who took the pictures hide behind the wall.<br/>(b) I saw the man who took the pictures hiding behind the wall.<br/>(c) I saw the man what took the pictures to hide behind the wall.<br/>(d) I saw the man which took the pictures hid behind the wall.<br/>(e) The man who took the pictures I saw to hide behind the wall.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 2,
+  },
+  {
+    num: 65,
+    prompt: "“Banksy's artworks often carry social messages.”에서 밑줄 친 carry의 쓰임과 같은 의미를 나타내는 문장은?",
+    passage: {
+      kind: "box",
+      html: "Banksy's artworks often <u>carry</u> social messages.",
+    },
+    choices: [
+      "This bus carries visitors from the station to the park.",
+      "He carried the heavy canvas up the stairs.",
+      "This poster carries an important message about nature.",
+      "She carried her little brother on her back.",
+      "The workers carried out the plan in three days.",
+    ],
+    answer: 3,
+    choiceLayout: "vertical",
+  },
+  {
+    num: 66,
+    prompt: "5·6과의 지문과 대화를 모두 근거로 할 때, <보기>의 진술 중 옳은 것만을 있는 대로 고른 것은?",
+    cond: {
+      title: "보기",
+      html:
+        "a. Ben Wilson의 껌 그림은 개인적인 메시지를, Banksy의 작품은 사회적 메시지를 담고 있다.<br/>" +
+        "b. 가난한 노동자들은 지금도 Shoreditch에 살고 있다.<br/>" +
+        "c. Dr. Schofield은 3·1 운동 이후에도 한국의 끔찍한 상황에 대해 쓰기를 계속했다.<br/>" +
+        "d. “They give great pleasure to many people.”는 “They give many people great pleasure.”와 같은 뜻이다.<br/>" +
+        "e. STIK의 세 인물은 Dr. Schofield을 기념하여 그린 것이다.",
+    },
+    choices: ["a, b, c", "b, d, e", "a, c, e", "a, c, d", "b, c, d"],
+    answer: 4,
+  },
+  {
+    num: 67,
+    prompt: "다음 문장 중 어법상 옳은 것만을 <보기>에서 있는 대로 고른 것은?",
+    cond: {
+      title: "보기",
+      html:
+        "a. There used to be a small theater near the station.<br/>" +
+        "b. She is used to get up early these days.<br/>" +
+        "c. He continued to write articles about Korea.<br/>" +
+        "d. I want studying medicine in the future.<br/>" +
+        "e. The movie is so boring that I want to cry.",
+    },
+    choices: ["a, b, d", "b, c, d", "c, d, e", "a, b, e", "a, c, e"],
+    answer: 5,
+  },
+  {
+    num: 68,
+    prompt: "다음 문장을 뜻이 같은 문장으로 바르게 바꿔 쓴 것은?",
+    given: "Wilson's gum paintings are tiny, but they give great pleasure to many people.",
+    choices: [
+      "Although Wilson's gum paintings are very small, they make many people happy.",
+      "Because Wilson's gum paintings are tiny, few people enjoy them.",
+      "Wilson's gum paintings are so big that they give people pleasure.",
+      "Wilson's gum paintings are tiny, so they give pleasure to only a few people.",
+      "Whether Wilson's gum paintings are small or not, people feel unhappy.",
+    ],
+    answer: 1,
+    choiceLayout: "vertical",
+  },
+  {
+    num: 69,
+    prompt: "다음 우리말을 <조건>에 맞게 옮긴 문장으로 옳은 것의 개수는?",
+    cond: {
+      title: "조건",
+      html: "(a) 우리말과 같은 뜻으로 바꾼 문장일 것<br/>(b) 시제를 과거로 유지할 것",
+    },
+    given: "우리말: 그는 너무 어렸기 때문에 그 영화를 끝까지 볼 수 없었다.",
+    passage: {
+      kind: "box",
+      html:
+        "(a) He was too young to see the movie to the end.<br/>(b) He was not old enough to see the movie to the end.<br/>(c) He was so young that he couldn't see the movie to the end.<br/>(d) He is too young to see the movie to the end.<br/>(e) He was too young that he couldn't see the movie to the end.",
+    },
+    choices: ["1개", "2개", "3개", "4개", "5개"],
+    answer: 3,
+  },
+  {
+    num: 70,
+    prompt: "다음 <보기>에서 문법 설명과 예문이 바르게 짝지어진 것만을 있는 대로 고른 것은?",
+    cond: {
+      title: "보기",
+      html:
+        "a. 「be famous for + 동명사」: STIK is famous for using only lines and dots.<br/>" +
+        "b. 「give a clue의 전치사」: The dots will give a clue for us.<br/>" +
+        "c. 「과거에는 ~하곤 했다(지금은 아니다)」: There used to be a large gallery in this street.<br/>" +
+        "d. 「지각동사 + 목적어 + to 부정사」: I saw the artist to spray paint on the wall.<br/>" +
+        "e. 「so ~ that의 전환」: The box was so heavy to lift.<br/>" +
+        "f. 「주격 관계대명사는 생략할 수 없다」: The man who took the pictures is famous.",
+    },
+    choices: ["a, c, f", "a, b, e", "b, d, e", "c, d, f", "b, e, f"],
+    answer: 1,
+  },
 ];
