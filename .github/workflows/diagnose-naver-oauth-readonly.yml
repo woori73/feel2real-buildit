@@ -112,3 +112,36 @@ jobs:
           echo "===== StandardOutputContent ====="
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
           exit 0
+
+      - name: E2E verification (READ ONLY, aggregates only, NO PII)
+        shell: bash
+        run: |
+          cat > /tmp/naver-diag-4.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "echo \"=== social account created? (provider count + last_created, NO ids) ===\"",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT provider, COUNT(*) AS cnt, MAX(created_at) AS last_created FROM user_social_accounts GROUP BY provider;\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
+            "echo \"=== linked users role aggregate (STUDENT expected; ADMIN must be 0) ===\"",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT u.role, COUNT(*) AS cnt FROM users u JOIN user_social_accounts s ON s.user_id = u.user_id WHERE s.provider = 'NAVER' GROUP BY u.role;\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
+            "echo \"=== naver_ login_id users role aggregate (email-merge guard: 1 social -> 1 user) ===\"",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT u.role, COUNT(*) AS cnt FROM users u WHERE u.login_id LIKE 'naver\\_%' GROUP BY u.role;\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
+            "echo \"=== one-connection-per-user invariant (should return 0 rows) ===\"",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT user_id, COUNT(*) c FROM user_social_accounts WHERE provider='NAVER' GROUP BY user_id HAVING c > 1;\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
+            "echo \"=== f2r-app active + naver warn in journal since deploy (20:10) ===\"",
+            "systemctl is-active f2r-app.service",
+            "journalctl -u f2r-app.service --since '2026-09-19 20:10:00' --no-pager | grep -iE 'naver callback failed' | tail -20 || echo \"no naver callback failure lines (silent-success expected)\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/naver-diag-4.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          exit 0
