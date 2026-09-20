@@ -112,6 +112,15 @@
 .ns-chat-send { flex-shrink: 0; font-size: 14.5px; padding: 10px 18px; }
 .ns-chat-status { min-height: 14px; margin: 4px 2px 0; }
 
+/* ── 새출발기금 공식 안내 (OFFICIAL DB v2) ─────────────────── */
+.ns-official { margin-top: 18px; }
+.ns-official-grid { margin-top: 4px; }
+.ns-official-h { font-size: 14px; font-weight: 700; color: var(--ns-ink); margin: 0 0 4px; }
+.ns-official-p { font-size: 13px; line-height: 1.6; color: var(--ns-ink); margin: 0 0 6px; overflow-wrap: anywhere; }
+.ns-official-links { margin-top: 6px; }
+.ns-ext::after { content: "↗"; font-size: 11px; margin-left: 3px; color: var(--ns-muted); }
+.ns-fraud { margin-top: 10px; padding: 10px 12px; background: #fef2f2; border: 1px solid #f0caca; border-radius: 10px; font-size: 12.5px; line-height: 1.55; color: #7f1d1d; overflow-wrap: anywhere; }
+
 @media (min-width: 640px) {
   .ns-chat-shell { max-width: 720px; }
   .ns-msg { max-width: 70%; }
