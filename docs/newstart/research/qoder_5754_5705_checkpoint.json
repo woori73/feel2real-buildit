@@ -12,7 +12,7 @@
     "count": 50
   },
   "status": "OPENCODE_SESSION_IN_PROGRESS_BROWSER_OK",
-  "updatedAt": "2026-09-20T17:00:00+09:00",
+  "updatedAt": "2026-09-20T18:25:00+09:00",
   "method": "logged-in top-frame navigation https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid={id}&referrerAllArticles=true -> read #cafe_main iframe DOM (.se-main-container body, li.CommentItem comments with real commentId). boardId mapped from boardName.",
   "collected": [
     5754,
@@ -41,10 +41,15 @@
     5729,
     5728,
     5727,
-    5725
+    5725,
+    5957,
+    5948,
+    5947,
+    5934,
+    5904
   ],
-  "collectedCount": 27,
-  "commentsCollected": 76,
+  "collectedCount": 32,
+  "commentsCollected": 91,
   "pending": [
     5726,
     5724,
@@ -80,7 +85,7 @@
   "notFoundReason": {
     "5736": "NOT_FOUND_IN_LIST — confirmed from article 5737 iframe '전체글' list showing sequence 5739,5738,5737,5735,5734 (5736 absent)"
   },
-  "nextResumeId": 5724,
+  "nextResumeId": 5751,
   "unfinishedRange": "5735 -> 5705 (plus 5751 browser-hang retry)",
   "hardStop": "5705 (do NOT open 5704 or below)",
   "blockedOn": "Playwright MCP server unstable — tools not available in OpenCode session. Browser automation cannot proceed. 5736 confirmed NOT_FOUND_IN_LIST via list evidence (not direct URL probing). 5735 confirmed EXISTS in list. Next: 5735.",

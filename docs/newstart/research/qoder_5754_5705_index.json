@@ -3,8 +3,8 @@
     "from": 5754,
     "to": 5705
   },
-  "collectedCount": 27,
-  "commentsTotal": 76,
+  "collectedCount": 32,
+  "commentsTotal": 91,
   "notFoundCount": 1,
   "notFoundIds": [
     5736
@@ -36,7 +36,12 @@
     5729,
     5728,
     5727,
-    5725
+    5725,
+    5957,
+    5948,
+    5947,
+    5934,
+    5904
   ],
   "articles": [
     {
@@ -373,6 +378,66 @@
       "viewCount": 108,
       "commentCount": 1,
       "file": "article_5725.json",
+      "status": "COLLECTED"
+    },
+    {
+      "articleId": 5957,
+      "boardName": "감면율과 확정금액 예측 게시판",
+      "boardId": null,
+      "title": "감면율 예측 부탁드립니다",
+      "author": "유럽여행",
+      "writtenAt": "2026.09.09. 10:59",
+      "viewCount": 142,
+      "commentCount": 4,
+      "file": "article_5957.json",
+      "status": "COLLECTED"
+    },
+    {
+      "articleId": 5948,
+      "boardName": "감면율과 확정금액 예측 게시판",
+      "boardId": null,
+      "title": "감면율 궁금합니다",
+      "author": "콩콩콩",
+      "writtenAt": "2026.09.06. 16:52",
+      "viewCount": 99,
+      "commentCount": 2,
+      "file": "article_5948.json",
+      "status": "COLLECTED"
+    },
+    {
+      "articleId": 5947,
+      "boardName": "감면율과 확정금액 예측 게시판",
+      "boardId": null,
+      "title": "안녕하세요.. 감면율이 궁금합니다.",
+      "author": "제주J정모시",
+      "writtenAt": "2026.09.05. 10:52",
+      "viewCount": 153,
+      "commentCount": 3,
+      "file": "article_5947.json",
+      "status": "COLLECTED"
+    },
+    {
+      "articleId": 5934,
+      "boardName": "감면율과 확정금액 예측 게시판",
+      "boardId": null,
+      "title": "감면율예측 부탁드립니다",
+      "author": "뭉치00",
+      "writtenAt": "2026.09.02. 21:25",
+      "viewCount": 152,
+      "commentCount": 2,
+      "file": "article_5934.json",
+      "status": "COLLECTED"
+    },
+    {
+      "articleId": 5904,
+      "boardName": "감면율과 확정금액 예측 게시판",
+      "boardId": null,
+      "title": "감면율 궁금합니다",
+      "author": "구름산넘어",
+      "writtenAt": "2026.08.27. 18:38",
+      "viewCount": 204,
+      "commentCount": 4,
+      "file": "article_5904.json",
       "status": "COLLECTED"
     }
   ]
