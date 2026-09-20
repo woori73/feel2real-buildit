@@ -90,7 +90,8 @@ public class NaverOAuthController {
       response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
       response.sendRedirect(target);
     } catch (RuntimeException e) {
-      log.warn("naver callback failed (detail suppressed): {}", e.getClass().getSimpleName());
+      // 회원 식별/생성·social 연결 단계 실패 — 예외 세부는 억제하고 stage만 남긴다(개인정보/토큰 노출 금지).
+      log.warn("NAVER_SOCIAL_LOGIN_FAILED reason={}", e.getClass().getSimpleName());
       if (!response.isCommitted()) {
         response.sendRedirect(target + "?login=naver_failed");
       }

@@ -42,6 +42,7 @@ class NewStartChatPageContractTest {
     assertThat(html).contains("id=\"ns-chat-input\"");               // 입력창
     assertThat(html).contains("/js/newstart-chat.js");               // 채팅 전용 JS
     assertThat(html).contains("data-auth-login");                    // 로그인 안내 버튼
+    assertThat(html).contains("id=\"ns-chat-login-alert\"");          // 네이버 OAuth 실패/취소 알림 영역
     assertThat(html).contains("data-login-modal");                   // 공통 로그인 모달 fragment 치환 완료
     assertThat(html).contains("메시지를 입력하세요");                  // 하단 입력 placeholder
     assertThat(html).doesNotContain("th:replace");                   // 치환 잔여물 없음

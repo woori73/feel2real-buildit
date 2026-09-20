@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
  * <p>브라우저에는 절대 노출되지 않는 client_secret 사용 경로이므로 controller에서 직접
  * 이 컴포넌트만 경유한다. 외부 응답 파싱은 관용적으로 실패 시 empty/예외로 통일한다.
  */
+@Slf4j
 @Component
 public class NaverOAuthClient {
 
@@ -62,11 +64,16 @@ public class NaverOAuthClient {
               .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
               .build(),
           HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-      if (response.statusCode() != 200) return Optional.empty();
+      // 침묵 실패 원인 규명용 stage 로그 — status만 기록하고 요청/응답 본문(code/secret/token)은 절대 남기지 않는다.
+      if (response.statusCode() != 200) {
+        log.warn("NAVER_TOKEN_EXCHANGE_FAILED status={}", response.statusCode());
+        return Optional.empty();
+      }
       JsonNode body = mapper.readTree(response.body());
       return Optional.ofNullable(body.path("access_token").asText(null))
           .filter(token -> !token.isBlank());
     } catch (IOException e) {
+      log.warn("NAVER_TOKEN_EXCHANGE_FAILED error={}", e.getClass().getSimpleName());
       return Optional.empty();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -87,9 +94,16 @@ public class NaverOAuthClient {
               .GET()
               .build(),
           HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-      if (response.statusCode() != 200) return Optional.empty();
+      if (response.statusCode() != 200) {
+        log.warn("NAVER_PROFILE_FETCH_FAILED status={}", response.statusCode());
+        return Optional.empty();
+      }
       JsonNode body = mapper.readTree(response.body());
-      if (!"00".equals(body.path("resultcode").asText())) return Optional.empty();
+      String resultcode = body.path("resultcode").asText();
+      if (!"00".equals(resultcode)) {
+        log.warn("NAVER_PROFILE_FETCH_FAILED resultcode={}", resultcode);
+        return Optional.empty();
+      }
       JsonNode result = body.path("result");
       String id = result.path("id").asText(null);
       if (id == null || id.isBlank()) return Optional.empty();
@@ -99,6 +113,7 @@ public class NaverOAuthClient {
           emptyToNull(result.path("nickname").asText(null)),
           emptyToNull(result.path("email").asText(null))));
     } catch (IOException e) {
+      log.warn("NAVER_PROFILE_FETCH_FAILED error={}", e.getClass().getSimpleName());
       return Optional.empty();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

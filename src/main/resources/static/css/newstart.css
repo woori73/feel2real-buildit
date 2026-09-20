@@ -10,6 +10,7 @@
 
 /* NewStart AI — 첫 화면 핵심 영역 */
 .ns-ai-hero { margin-top: 22px; padding: 18px 16px 14px; border: 1.5px solid var(--ns-blue); border-radius: 14px; background: var(--ns-blue-soft); }
+.ns-chat-login-alert { color: #b91c1c; font-weight: 600; }
 .ns-ai-title { font-size: 20px; font-weight: 800; color: var(--ns-ink); margin: 0 0 12px; }
 .ns-ai-input-row { display: flex; gap: 8px; }
 .ns-ai-input { flex: 1; min-width: 0; font-size: 15px; padding: 11px 12px; }
