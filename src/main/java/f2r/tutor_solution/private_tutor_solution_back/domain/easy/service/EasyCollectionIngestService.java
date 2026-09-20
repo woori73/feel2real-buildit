@@ -238,6 +238,52 @@ public class EasyCollectionIngestService {
   }
 
   /**
+   * connection_ref 업데이트 — 관리자 콘솔에서 가맹점 동의ID 등 참조자 등록/수정.
+   * NEEDS_REAUTH 상태면 ACTIVE로 복구.
+   */
+  @Transactional
+  public void updateConnectionRef(Long businessId, Long connectionId, String connectionRef) {
+    EasyCollectionConnection conn = connectionRepository.findById(connectionId)
+        .orElseThrow(() -> new IllegalArgumentException("연결을 찾을 수 없습니다: " + connectionId));
+    if (!conn.getBusiness().getBusinessId().equals(businessId)) {
+      throw new IllegalArgumentException("사업체 불일치");
+    }
+    conn.updateConnectionRef(connectionRef);
+    connectionRepository.save(conn);
+  }
+
+  /**
+   * 연결 생성 또는 조회 (connection_ref 포함) — 관리자 콘솔에서 초기 등록용.
+   */
+  @Transactional
+  public EasyCollectionConnection createOrUpdateConnection(Long businessId, String sourceCode,
+      String label, String connectionRef) {
+    EasyBusiness business = requireActiveBusiness(businessId);
+    EasyCollectionSource source = sourceRepository.findByCode(sourceCode)
+        .orElseThrow(() -> new IllegalArgumentException("수집원을 찾을 수 없습니다: " + sourceCode));
+    String normalizedLabel = label == null || label.isBlank() ? "default" : label.trim();
+    EasyCollectionConnection conn = connectionRepository
+        .findByBusiness_BusinessIdAndSource_SourceIdAndLabel(businessId, source.getSourceId(), normalizedLabel)
+        .orElseGet(() -> EasyCollectionConnection.builder()
+            .business(business)
+            .source(source)
+            .label(normalizedLabel)
+            .build());
+    if (connectionRef != null && !connectionRef.isBlank()) {
+      conn.updateConnectionRef(connectionRef);
+    }
+    return connectionRepository.save(conn);
+  }
+
+  /**
+   * 연결 단건 조회 — 상세 화면용
+   */
+  public EasyCollectionConnection getConnection(Long connectionId) {
+    return connectionRepository.findById(connectionId)
+        .orElseThrow(() -> new IllegalArgumentException("연결을 찾을 수 없습니다: " + connectionId));
+  }
+
+  /**
    * 기존 import 경계 인계 — rowNo는 accepted 행 순서와 1:1이라 응답 rowNo로 raw 링크를 되매핑한다.
    * rawData 끝부분에 dedupeKey를 박아 원문 raw ↔ import row ↔ (나중의) transaction 역추적 체인을 만든다.
    */

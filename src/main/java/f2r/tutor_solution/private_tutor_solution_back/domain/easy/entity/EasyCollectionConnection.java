@@ -71,4 +71,15 @@ public class EasyCollectionConnection extends BaseEntity {
   public void disable() {
     this.status = EasyCollectionConnectionStatus.DISABLED;
   }
+
+  public void markNeedsReauth() {
+    this.status = EasyCollectionConnectionStatus.NEEDS_REAUTH;
+  }
+
+  public void updateConnectionRef(String connectionRef) {
+    this.connectionRef = connectionRef;
+    if (this.status == EasyCollectionConnectionStatus.NEEDS_REAUTH) {
+      this.status = EasyCollectionConnectionStatus.ACTIVE;
+    }
+  }
 }
