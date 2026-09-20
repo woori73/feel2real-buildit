@@ -1,0 +1,20 @@
+{
+  "board": "감면율",
+  "menuId": "22",
+  "phase": "COLLECTING_ARTICLES",
+  "progress": {
+    "totalArticles": 37,
+    "collected": 15,
+    "failed": 0,
+    "pending": 22
+  },
+  "currentPosition": {
+    "page": 2,
+    "articleIndex": 0,
+    "articleId": "5732"
+  },
+  "lastCommitSha": null,
+  "lastPushAt": null,
+  "checkpointAt": "2026-09-20T14:00:00.000Z",
+  "notes": "Collected 15 articles from page 1. Next: page 2 starting with 5732"
+}

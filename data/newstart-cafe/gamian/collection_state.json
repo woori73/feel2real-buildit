@@ -1,0 +1,17 @@
+{
+  "board": "감면율",
+  "menuId": "22",
+  "totalPages": 3,
+  "totalArticles": 37,
+  "collectedCount": 15,
+  "failedCount": 0,
+  "pendingCount": 22,
+  "currentPage": 2,
+  "currentArticleIndex": 0,
+  "lastCollectedArticleId": "5757",
+  "lastCollectedAt": "2026-09-20T14:00:00.000Z",
+  "status": "IN_PROGRESS",
+  "startedAt": "2026-09-20T10:00:00.000Z",
+  "updatedAt": "2026-09-20T14:00:00.000Z",
+  "errors": []
+}
