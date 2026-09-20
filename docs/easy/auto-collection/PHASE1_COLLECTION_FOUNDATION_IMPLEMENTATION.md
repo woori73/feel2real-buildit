@@ -159,7 +159,7 @@ dedupe_key 충돌 시 IllegalState로 실패하도록 UNIQUE를 모사.)
 
 ### 12-3. PHASE 2 준비 작업 범위 (확인됨 — production write·외부 API 실제 연결 없음)
 
-1. 뒷단 추출: `ingestParsedRows(run, connection, business, sourceCode, rows)` 공통 core로 분리 — FILE_CSV 경로는 동작 불변 리팩터링, TEST A~F로 회귀 증명.
+1. 뒷단 추출: `ingestParsedRows(run, connection, business, sourceCode, rows)` 공통 core로 분리 — FILE_CSV 경로는 동작 불변 리팩터링, TEST A~F로 회귀 증명. **완료(학원 PC): 상수→파라미터화만 수행, easy 도메인 109 tests 0 fail 재통과.** SPI 인터페이스는 실제 두 번째 어댑터 구현 시 도입(추상화先行 금지).
 2. 어댑터 SPI: `parse(...) -> List<CollectionParsedRow>` + adapterCode/version 상수. 파일 어댑터가 첫 구현.
 3. cardsales은 **골격까지만**: connection_ref(참조자) 흐름 + 합성 fixture 파싱 단위 테스트. 실 API 키/호출/발주 없음.
 4. 절대 금지 유지: direct transaction write ✕, confirm 호출 ✕, main merge ✕, migration 실행(로컬 DB 포함 production) ✕.

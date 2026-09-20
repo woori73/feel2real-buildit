@@ -84,7 +84,19 @@ public class EasyCollectionIngestService {
       return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(run),
           List.of(e.getMessage()));
     }
+    return ingestParsedRows(run, connection, business, SOURCE_CODE, IMPORT_SOURCE_KIND, safeName,
+        parsed);
+  }
 
+  /**
+   * 어댑터 공통 수집 코어 — parse된 행만 들어오면 소스와 무관하게 동일하게
+   * 3단계 dedupe → raw 보존 → fingerprint 제외 → stage 인계 → run 완수를 수행한다.
+   * 이후 어댑터(cardsales 등)는 이 메서드 reuse가 확장점이다(direct transaction write 없음).
+   */
+  private EasyCollectionIngestResponse ingestParsedRows(EasyCollectionRun run,
+      EasyCollectionConnection connection, EasyBusiness business, String sourceCode,
+      String importSourceKind, String displayName, List<CollectionParsedRow> parsed) {
+    Long businessId = business.getBusinessId();
     Set<String> ledgerFingerprints = txnRepository
         .findByBusiness_BusinessIdAndFingerprintIsNotNull(businessId).stream()
         .map(EasyTransaction::getFingerprint)
@@ -99,23 +111,23 @@ public class EasyCollectionIngestService {
     int error = 0;
 
     for (CollectionParsedRow row : parsed) {
-      String tupleHash = EasyCollectionDedupeKeys.tupleHash(SOURCE_CODE, businessId,
+      String tupleHash = EasyCollectionDedupeKeys.tupleHash(sourceCode, businessId,
           row.occurredOn(), row.direction(), row.amount(), row.counterparty(),
           row.description(), row.payMethod());
       int seq = seqByTuple.merge(tupleHash, 1, Integer::sum);
       String dedupeKey = row.externalId() == null
-          ? EasyCollectionDedupeKeys.tuple(SOURCE_CODE, businessId, tupleHash, seq)
-          : EasyCollectionDedupeKeys.external(SOURCE_CODE, businessId, row.externalId());
+          ? EasyCollectionDedupeKeys.tuple(sourceCode, businessId, tupleHash, seq)
+          : EasyCollectionDedupeKeys.external(sourceCode, businessId, row.externalId());
 
       if (!seenKeys.add(dedupeKey) || rawRepository.findByDedupeKey(dedupeKey).isPresent()) {
         duplicate++;
         continue;
       }
-      EasyCollectionRawRecord raw = rawRepository.save(EasyCollectionRawRecord.builder()
+      EasyCollectionRawRecord raw = EasyCollectionRawRecord.builder()
           .run(run)
           .connection(connection)
           .business(business)
-          .sourceCode(SOURCE_CODE)
+          .sourceCode(sourceCode)
           .externalRecordId(row.externalId())
           .tupleHash(tupleHash)
           .dedupeKey(dedupeKey)
@@ -124,7 +136,8 @@ public class EasyCollectionIngestService {
           .sourceOccurredOn(row.occurredOn())
           .status(row.isValid() ? EasyCollectionRawStatus.STORED : EasyCollectionRawStatus.ERROR)
           .normalizeError(row.isValid() ? null : row.error())
-          .build());
+          .build();
+      raw = rawRepository.save(raw);
       if (!row.isValid()) {
         error++;
         rowErrors.add("행 " + row.rowNo() + ": " + row.error());
@@ -147,7 +160,8 @@ public class EasyCollectionIngestService {
         throw new IllegalArgumentException(
             "수집 1회당 import 인계는 " + MAX_ACCEPTED_ROWS + "행까지입니다. 파일분할 후 다시 업로드하세요.");
       }
-      batchId = handoffToImport(run, businessId, safeName, accepted, acceptedRows);
+      batchId = handoffToImport(run, businessId, displayName, importSourceKind, accepted,
+          acceptedRows);
     }
     run.finish(parsed.size(), accepted.size(), duplicate, error, batchId, summarize(rowErrors));
     if (run.getStatus() != EasyCollectionRunStatus.FAILED) {
@@ -178,8 +192,8 @@ public class EasyCollectionIngestService {
    * 기존 import 경계 인계 — rowNo는 accepted 행 순서와 1:1이라 응답 rowNo로 raw 링크를 되매핑한다.
    * rawData 끝부분에 dedupeKey를 박아 원문 raw ↔ import row ↔ (나중의) transaction 역추적 체인을 만든다.
    */
-  private Long handoffToImport(EasyCollectionRun run, Long businessId, String filename,
-      List<EasyCollectionRawRecord> accepted, List<CollectionParsedRow> rows) {
+  private Long handoffToImport(EasyCollectionRun run, Long businessId, String displayName,
+      String importSourceKind, List<EasyCollectionRawRecord> accepted, List<CollectionParsedRow> rows) {
     List<EasyImportRowInput> inputs = new ArrayList<>();
     Map<Integer, EasyCollectionRawRecord> rawByRowNo = new HashMap<>();
     for (int i = 0; i < accepted.size(); i++) {
@@ -202,8 +216,8 @@ public class EasyCollectionIngestService {
     }
     EasyImportBatchResponse batch = importService.stage(new EasyImportBatchRequest(
         businessId,
-        filename + "#run:" + run.getRunId(),
-        IMPORT_SOURCE_KIND,
+        displayName + "#run:" + run.getRunId(),
+        importSourceKind,
         inputs));
     for (EasyImportRowResponse staged : batch.rows()) {
       EasyCollectionRawRecord raw = rawByRowNo.get(staged.rowNo());
