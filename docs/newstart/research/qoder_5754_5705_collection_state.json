@@ -12,11 +12,11 @@
     "to": 5705,
     "count": 50
   },
-  "updatedAt": "2026-09-20T18:25:00+09:00",
+  "updatedAt": "2026-09-20T18:30:00+09:00",
   "status": "OPENCODE_SESSION_IN_PROGRESS_BROWSER_OK",
   "method": "logged-in top-frame navigation to https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid={id}&referrerAllArticles=true -> read #cafe_main iframe DOM. NEVER manipulate iframe location directly.",
   "collectStatusCounts": {
-    "COLLECTED": 32,
+    "COLLECTED": 33,
     "PENDING": 22,
     "NOT_FOUND": 1,
     "DELETED": 0
@@ -53,9 +53,10 @@
     5948,
     5947,
     5934,
-    5904
+    5904,
+    5868
   ],
-  "commentsCollected": 91,
+  "commentsCollected": 98,
   "pending": [
     5726,
     5724,
@@ -96,12 +97,12 @@
   "secretsStored": false,
   "nextResumeId": 5751,
   "pendingCount": 22,
-  "collectedCount": 32,
+  "collectedCount": 33,
   "note5726": "5726 delete-dialog on direct access; list evidence pending — left PENDING per policy",
   "boardTarget": {
     "name": "감면율과 확정금액 예측 게시판",
     "menuid": 22
   },
   "inventoryPath": "docs/newstart/research/cafe_board_inventory.json",
-  "note": "Batch 1 (5 articles: 5957,5948,5947,5934,5904) collected. Total collected 32. Pending 22. Page 3 unresolved."
+  "note": "Article 5868 SAVED. Total collected 33. Pending 22. Page 3 unresolved."
 }

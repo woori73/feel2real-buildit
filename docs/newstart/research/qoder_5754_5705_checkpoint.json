@@ -12,7 +12,7 @@
     "count": 50
   },
   "status": "OPENCODE_SESSION_IN_PROGRESS_BROWSER_OK",
-  "updatedAt": "2026-09-20T18:25:00+09:00",
+  "updatedAt": "2026-09-20T18:30:00+09:00",
   "method": "logged-in top-frame navigation https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid={id}&referrerAllArticles=true -> read #cafe_main iframe DOM (.se-main-container body, li.CommentItem comments with real commentId). boardId mapped from boardName.",
   "collected": [
     5754,
@@ -46,10 +46,11 @@
     5948,
     5947,
     5934,
-    5904
+    5904,
+    5868
   ],
-  "collectedCount": 32,
-  "commentsCollected": 91,
+  "collectedCount": 33,
+  "commentsCollected": 98,
   "pending": [
     5726,
     5724,
