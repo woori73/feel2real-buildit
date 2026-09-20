@@ -16,14 +16,19 @@
     if (divider) divider.textContent = '간편 로그인';
     var wrap = document.querySelector('.login-modal-social');
     if (wrap) wrap.removeAttribute('aria-label');
+    list.removeAttribute('aria-hidden');
 
     var link = document.createElement('a');
     link.className = 'login-modal-naver';
-    link.setAttribute('role', 'button');
     var returnUrl = typeof window.safeInternalReturnUrl === 'function'
       ? window.safeInternalReturnUrl(location.pathname + location.search + location.hash)
       : (location.pathname || '/newstart');
     link.href = '/oauth/naver/start?returnUrl=' + encodeURIComponent(returnUrl);
+    // document-level modal handler와 독립적으로 OAuth start로 이동한다.
+    link.addEventListener('click', function (event) {
+      event.preventDefault();
+      window.location.assign(link.href);
+    });
     var mark = document.createElement('span');
     mark.className = 'login-modal-naver-mark';
     mark.setAttribute('aria-hidden', 'true');

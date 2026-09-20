@@ -61,6 +61,19 @@ class FrontendAuthBootstrapTest {
   }
 
   @Test
+  @DisplayName("NewStart 네이버 버튼은 접근 가능한 링크로 OAuth start를 명시적으로 호출한다")
+  void newstart_naver_button_wiring_is_navigable() throws Exception {
+    String script = readClasspathText("static/js/naver_login.js");
+    String fragment = readClasspathText("templates/fragments/_account_menu.html");
+
+    assertThat(fragment).contains("<div class=\"login-modal-social-list\">");
+    assertThat(fragment).doesNotContain("login-modal-social-list\" aria-hidden=\"true\"");
+    assertThat(script).contains("link.href = '/oauth/naver/start?returnUrl=' + encodeURIComponent(returnUrl);");
+    assertThat(script).contains("event.preventDefault();");
+    assertThat(script).contains("window.location.assign(link.href);");
+  }
+
+  @Test
   @DisplayName("공개 작성 액션은 인증 실패를 현재 페이지에서 직접 처리할 수 있다")
   void fetch_auth_supports_manual_public_auth_handling() throws Exception {
     // given
