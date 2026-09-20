@@ -1,20 +1,20 @@
 {
   "board": "감면율",
   "menuId": "22",
-  "phase": "COLLECTING_ARTICLES",
+  "phase": "COMPLETED",
   "progress": {
     "totalArticles": 37,
-    "collected": 15,
+    "collected": 37,
     "failed": 0,
-    "pending": 22
+    "pending": 0
   },
   "currentPosition": {
-    "page": 2,
-    "articleIndex": 0,
-    "articleId": "5732"
+    "page": 3,
+    "articleIndex": 6,
+    "articleId": "5672"
   },
   "lastCommitSha": null,
   "lastPushAt": null,
-  "checkpointAt": "2026-09-20T14:00:00.000Z",
-  "notes": "Collected 15 articles from page 1. Next: page 2 starting with 5732"
+  "checkpointAt": "2026-09-20T15:10:00.000Z",
+  "notes": "All 37 articles collected from 감면율 board. 3 pages fully scraped. Ready for verification."
 }

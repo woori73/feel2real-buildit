@@ -1,0 +1,137 @@
+{
+  "articleId": "5672",
+  "boardName": "감면율",
+  "menuId": "22",
+  "title": "임시안 받았습니다. 자문 부탁드립니다.",
+  "author": {
+    "nickname": "Topcar",
+    "grade": "감사멤버",
+    "isAuthor": true
+  },
+  "createdAt": "2026.07.15. 14:43",
+  "viewCount": 368,
+  "content": "안녕하세요\n\n일단 임시안 0% 이고\n\n현재 재산은, \n\n1. 시세 대략 2억 8천 정도 하는 주거형오피스텔(경기도부천) 보유\n\n실제대출 1순위 신한 약2억2천,  2순위 2천\n\n등기상 근저당권내용 \n\n채권최고금액 1순위신한 2억8천6백   2순위 개인채권자 3500만원\n\n상태이고 2월경에 폐업 후 최근 소득금액증명 (25년귀속) 결정세액 약 590만원대\n\n2. 보증금 500짜리 월룸 (실거주)\n\n& 임시안에 조정된 채무부담액 7760만원은 아직 (경기신보건 같은게 추가가 안되서)\n   대랴 새출발기금통해 조정 신청금액은 대략 1억4천정도됩니다. ( 집 담보대출 이런거, 새출발 포함안되는거 뺀 금액)\n\n물론 임시안이라, 아무것도 확정된건 아니지만,\n\n60% 라도되면 감지덕지였는데 최근 최소 60% 감면이라는게 최근 없어지면서,  \n걱정이 많이 되네요,   자문. 조언 부탁드립니다 감사합니다.",
+  "comments": [
+    {
+      "commentId": "c1",
+      "author": {
+        "nickname": "지피지기자산",
+        "grade": "카페매니저",
+        "isAuthor": false
+      },
+      "createdAt": "2026.07.17. 14:05",
+      "content": "이미 신청이 된 상태라 조언을 줄게 없습니다. 새출발기금애서 시간이 되면 프로세스에 따라 처리를 전자책에 있는대로 선정을 하여 차주에게 확정안때 연락이 가고 끝이 납니다.",
+      "replies": [
+        {
+          "commentId": "c1-r1",
+          "author": {
+            "nickname": "Topcar",
+            "grade": "감사멤버",
+            "isAuthor": true
+          },
+          "createdAt": "2026.07.17. 16:44",
+          "content": "답변 감사드립니다. 최근 감면율 적용이 변경되는 이슈도 있고, 물론, 몇프로 될거다, 등등 이런답변은 누구도 할수없는 그런걸로 당연히 알고 있지만, 지피님에게 정확한 답변을 듣고싶다기보다는 의견을 듣고싶습니다. 현재 제 재산과, 부채와, 소득을 보셨을때, 감면 가능성이 있는지랑, 된다면 40% 이상에대해 가능 정도만이라두여 ㅠㅠ",
+          "parentId": "c1",
+          "replies": [
+            {
+              "commentId": "c1-r1-r1",
+              "author": {
+                "nickname": "지피지기자산",
+                "grade": "카페매니저",
+                "isAuthor": false
+              },
+              "createdAt": "2026.07.17. 20:54",
+              "content": "예상 결과\n항목\n예상\n조정대상 채무\n1억4천\n재산가액\n약4천\n순부채\n약1억\n예상 감면율\n약 76-78%\n\n감면율 76%인 경우\n순부채 감면: 7,600만 원\n순부채 잔액: 2,400만 원\n재산가액: 4,000만 원\n➡️ 최종 변제금: 약 6,400만 원\n감면율 78%인 경우\n순부채 감면: 7,800만 원\n순부채 잔액: 2,200만 원\n재산가액: 4,000만 원\n➡️ 최종 변제금: 약 6,200만 원\n즉, 이 사례라면\n76% 감면 → 약 6,400만 원 상환\n78% 감면 → 약 6,200만 원 상환\n\n다만 확인이 필요한 점\n게시글만으로는 확정할 수 없는 요소가 있습니다.\n오피스텔이 새출발기금 재산평가에서 얼마로 인정되는지\n압류·가압류 등 다른 권리가 있는지\n실제 조정 대상 채무가 최종 1억4천만 원이 맞는지\n최근 6개월 신규채무 비중\n소득 인정 방식 및 취약계층 해당 여부\n이런 요소에 따라 실제 감면율은 달라질 수 있습니다.",
+              "parentId": "c1-r1",
+              "replies": [
+                {
+                  "commentId": "c1-r1-r1-r1",
+                  "author": {
+                    "nickname": "지피지기자산",
+                    "grade": "카페매니저",
+                    "isAuthor": false
+                  },
+                  "createdAt": "2026.07.17. 20:55",
+                  "content": "전자책 내용을 토대로 예측기를 만들었고 예측기에 따른 결과이므로 참고만 하세요",
+                  "parentId": "c1-r1-r1",
+                  "replies": [
+                    {
+                      "commentId": "c1-r1-r1-r1-r1",
+                      "author": {
+                        "nickname": "Topcar",
+                        "grade": "감사멤버",
+                        "isAuthor": true
+                      },
+                      "createdAt": "2026.07.17. 21:28",
+                      "content": "답변 감사합니다. 25년귀속 소득금액증명 결정세액이 약 590만원으로 한달에 590만원 버는걸로 보일텐데, 영향이 많이 갈까요?? 26년 폐업이후에는 근로소득이 최악인데,,,",
+                      "parentId": "c1-r1-r1-r1",
+                      "replies": [
+                        {
+                          "commentId": "c1-r1-r1-r1-r1-r1",
+                          "author": {
+                            "nickname": "지피지기자산",
+                            "grade": "카페매니저",
+                            "isAuthor": false
+                          },
+                          "createdAt": "2026.07.17. 21:29",
+                          "content": "590만원이 연소득이 아니고 월소득이면 계산이 달라집니다.",
+                          "parentId": "c1-r1-r1-r1-r1",
+                          "replies": [
+                            {
+                              "commentId": "c1-r1-r1-r1-r1-r1-r1",
+                              "author": {
+                                "nickname": "Topcar",
+                                "grade": "감사멤버",
+                                "isAuthor": true
+                              },
+                              "createdAt": "2026.07.17. 21:57",
+                              "content": "25년도 귀속 소득금액증명원입니다 월소득 약 497만원",
+                              "parentId": "c1-r1-r1-r1-r1-r1",
+                              "replies": [
+                                {
+                                  "commentId": "c1-r1-r1-r1-r1-r1-r1-r1",
+                                  "author": {
+                                    "nickname": "assi",
+                                    "grade": "감사멤버",
+                                    "isAuthor": false
+                                  },
+                                  "createdAt": "2026.07.17. 21:57",
+                                  "content": "Topcar결정세액은 종합소득세(최종 확정세액)입니다. 즉 590만원은 소득이 아니라 세금이고, 실제 소득은 소득금액 5,967만 원입니다. 12개월로 나누면 월평균 약 497만 원 정도입니다.",
+                                  "parentId": "c1-r1-r1-r1-r1-r1-r1",
+                                  "replies": [
+                                    {
+                                      "commentId": "c1-r1-r1-r1-r1-r1-r1-r1-r1",
+                                      "author": {
+                                        "nickname": "Topcar",
+                                        "grade": "감사멤버",
+                                        "isAuthor": true
+                                      },
+                                      "createdAt": "2026.07.17. 21:56",
+                                      "content": "assi감사합니다!",
+                                      "parentId": "c1-r1-r1-r1-r1-r1-r1-r1",
+                                      "replies": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commentCount": 11,
+  "replyCount": 10,
+  "sourceUrl": "https://m.cafe.naver.com/ca-fe/web/cafes/31312978/articles/5672",
+  "collectedAt": "2026-09-20T15:10:00.000Z",
+  "status": "COLLECTED",
+  "hasImageOnlyData": false
+}
