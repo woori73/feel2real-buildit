@@ -139,17 +139,6 @@ jobs:
             "systemctl show f2r-app.service -p MainPID -p ActiveEnterTimestamp",
             "exit 0"
           ]}
-          PARAMS'
-          {"commands":[
-            "set +e",
-            "source /etc/f2r/env 2>/dev/null || true",
-            "echo \"=== social account created? (provider count + last_created, NO ids) ===\"",
-            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS social_accounts_total FROM user_social_accounts; SELECT COUNT(*) AS naver_prefixed_users FROM users WHERE login_id LIKE 'naver%';\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
-            "echo \"=== f2r-app active + naver warn in journal since deploy (20:10) ===\"",
-            "systemctl is-active f2r-app.service",
-            "journalctl -u f2r-app.service --since '2026-09-19 20:10:00' --no-pager | grep -iE 'naver callback failed' | tail -20 || echo \"no naver callback failure lines (silent-success expected)\"",
-            "exit 0"
-          ]}
           PARAMS
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "i-09d7cabb5a42d1135" \
