@@ -101,6 +101,14 @@ jobs:
           # 실제 요청 URI를 검증하는 NaverOAuthClientTest를 함께 게이트로 돌린다.
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientContextTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientTest"
+          # 2026-09-20 E2E 재조사: state/콜백/회원 매핑/버튼 배선/채팅 페이지 계약은 Build Check(PR)에만
+          # 있었고 배포 게이트에는 빠져 있었다 — naver-only 회귀가 배포를 통과할 수 있었으므로 함께 돌린다.
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthStateServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverLoginServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerDisabledTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.FrontendAuthBootstrapTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.NewStartChatPageContractTest"
 
       - name: Upload deploy-gate test report
         if: always()

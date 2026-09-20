@@ -17,9 +17,12 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.response.L
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClient.NaverProfile;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -27,6 +30,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * /oauth/naver/start·callback 계약 (비로그인 접근 가능 = SecurityConfig anyRequest permitAll 확인,
@@ -50,6 +55,7 @@ import org.springframework.test.web.servlet.MvcResult;
     "app.naver.oauth.client-id=test-client-id",
     "app.naver.oauth.client-secret=test-client-secret"
 })
+@ExtendWith(OutputCaptureExtension.class)
 class NaverOAuthControllerTest {
 
   @TestConfiguration
@@ -75,26 +81,34 @@ class NaverOAuthControllerTest {
   }
 
   @Test
-  void callbackWithoutValidStateNeverCallsNaver() throws Exception {
+  void callbackWithoutValidStateNeverCallsNaver(CapturedOutput output) throws Exception {
     mockMvc.perform(get("/oauth/naver/callback")
             .param("code", "attacker-code").param("state", "forged"))
         .andExpect(status().is3xxRedirection())
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
             .redirectedUrl("/newstart?login=naver_invalid_state"));
     verifyNoInteractions(client, loginService);
+    // 2026-09-20 실기기 재조사: 이 분기가 조용히 지나가면 "콜백이 아예 안 왔다"와 구분이 안 됐다 —
+    // RECEIVED/INVALID_STATE 두 마커가 모두 남는지 회귀 검증한다(값 자체는 로그에 없음).
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_RECEIVED");
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_INVALID_STATE");
+    assertThat(output.getOut()).doesNotContain("attacker-code").doesNotContain("forged");
   }
 
   @Test
-  void callbackAfterUserCancelReturnsGuide() throws Exception {
+  void callbackAfterUserCancelReturnsGuide(CapturedOutput output) throws Exception {
     mockMvc.perform(get("/oauth/naver/callback").param("error", "access_denied"))
         .andExpect(status().is3xxRedirection())
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
             .redirectedUrl("/newstart?login=naver_cancelled"));
     verifyNoInteractions(client, loginService);
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_RECEIVED");
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_CANCELLED");
+    assertThat(output.getOut()).doesNotContain("access_denied");
   }
 
   @Test
-  void successfulCallbackIssuesExistingJwtCookieAndRedirectsToReturnUrl() throws Exception {
+  void successfulCallbackIssuesExistingJwtCookieAndRedirectsToReturnUrl(CapturedOutput output) throws Exception {
     // given — 실제 start 호출로 발급된 state 쿠키 + nonce를 그대로 재사용 (서명 round-trip)
     MvcResult started = mockMvc.perform(get("/oauth/naver/start")
             .param("returnUrl", "/newstart/chat?tab=me"))
@@ -126,10 +140,13 @@ class NaverOAuthControllerTest {
 
     verify(client).exchangeCode(eq("code-123"), eq(state), any());
     verify(loginService).loginOrUpdate(any());
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_RECEIVED");
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_SUCCESS");
+    assertThat(output.getOut()).doesNotContain("code-123").doesNotContain("access-token");
   }
 
   @Test
-  void tokenExchangeFailureDoesNotCreateSession() throws Exception {
+  void tokenExchangeFailureDoesNotCreateSession(CapturedOutput output) throws Exception {
     MvcResult started = mockMvc.perform(get("/oauth/naver/start"))
         .andExpect(status().is3xxRedirection())
         .andReturn();
@@ -144,6 +161,12 @@ class NaverOAuthControllerTest {
         .andExpect(redirectedUrlPattern("/newstart?login=naver_failed"));
 
     verifyNoInteractions(loginService);
+    // state는 유효했으니 RECEIVED는 남지만, 이 분기 자체는 NaverOAuthClient 쪽 로그(별도 클래스,
+    // 여기선 mock이라 미발생) 책임이라 SUCCESS/CANCELLED/INVALID_STATE 마커는 없어야 한다.
+    assertThat(output.getOut()).contains("NAVER_CALLBACK_RECEIVED");
+    assertThat(output.getOut()).doesNotContain("NAVER_CALLBACK_SUCCESS");
+    assertThat(output.getOut()).doesNotContain("NAVER_CALLBACK_CANCELLED");
+    assertThat(output.getOut()).doesNotContain("NAVER_CALLBACK_INVALID_STATE");
   }
 
   private static String extractParam(String url, String name) {
