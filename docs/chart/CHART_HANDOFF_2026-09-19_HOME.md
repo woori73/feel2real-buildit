@@ -176,6 +176,9 @@ STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 8
 
 ### 7.7 2026-09-20 라운드 마무리 — HOLD 보강 각하 확정 + 브라우저 차단 (상세 `research/2026-09-19/06·07`)
 
+
+
+
 - **한정화(dossier #18)**: 실명/기관/2026 활동/오프라인/철학/커리큘럼 PASS, IDENTITY CONTINUITY PASS
   (실명 직접 표기는 2025.11.4 글 하나뿐, 2026 은 동일 블로그 계정 + 동일 연락처 010-7788-3225 + 동일 주소·등록번호 제3863호 + 1인칭 분당→영종 서사로 입증).
   단 **DB 에 레코드가 없음**: `educators/18` 은 무관한 김현진(동대문구), `educators/search?q=한정화` = 0 건, `search-existing` = [].
@@ -188,6 +191,20 @@ STEP 1 완료 확정. 이제 §4 STEP 2 (#100 강수민 EVALUATABLE 승격 → 8
 - **운영 차단**: Qoder 재시작 후 내장 브라우저 탭 blank(`navigate_page` 타임아웃, `evaluate_script`·`take_snapshot` "page is blank").
   서버는 정상(`/chart` 200 0.21s, `/admin/chart` 401). ADMIN cookie 세션이 유일한 정당한 쓰기 경로이므로 **이번 라운드 쓰기 0 건**
   (enrichment·reevaluate·review-batches·rebuild·deploy 전부 미실행). 복구 후 17명 일괄 처리는 §7.4 유지.
+
+### 7.8 STEP 3 실행 완료 (2026-09-20) — publication 35, RANKED 100명
+
+- 상세는 `research/2026-09-19/07_step2_hold_reinforcement_20260920.md` §7. WRITE 직전 17명 재검증(EVALUATABLE / published=false / score 문서 일치 / stale 17건 일치) 후 **공식 API 3회만** 사용:
+  `POST /tools/review-batches` → **batch 198**(AUDIT_RECORDED, snapshot 17) → `decision APPROVED` → `finalize` → **publication 35** 생성.
+- 검증: entries **100 전부 RANKED**, rank **1~100 연속**, candidate **중복 0**, **기존 83명 전원 포함** + **신규 17명 전원 포함**,
+  score 내림차순 정합(min 17 / max 95), candidateId≠rank(예: 80→rank 2, 48→rank 100). `GET /api/chart/rankings` total 100, `/chart` UI 100행 렌더.
+- 신규 17명 rank: 80=2, 66=11, 82=20, 99=21, 84=28, 94=34, 91=39, 96=40, 115=42, 116=43, 100=45, 112=46, 113=47, 110=49, 117=52, 111=55, 114=57.
+- DISCOVERED/PROMISING **0**(정확히 100명) → 100위 밖 라이브 샘플 없음. `/chart` 의 시·도 facet 합계 117 은 publication 100 + RESEARCH_PENDING 17 을 세는 지역 디렉터리 원래 동작(결함 아님).
+- **구조 사실**: `finalizeReviewBatch` 가 `autoPublishNationwide` 를 호출 → finalize 1회가 곧 전국 publication 1회.
+  별도 `POST /tools/publications/rebuild` 는 내용 동일한 publication 36 을 만드는 중복이라 **실행하지 않음**(시도가 실행 단계에서 차단되어 미실행이 확정).
+- direct DB write / 마이그레이션 / site 코드 변경 / deploy 없음. publication 34 는 SUPERSEDED 보존(삭제 아님), batch 197 의 snapshot·entry 83건 그대로.
+  `regions/*/complete` 미호출 → `gyeongnam-namhae`·`gyeongnam-sacheon` 은 IN_PROGRESS 잔존(정리는 별도 지시 필요).
+
 
 
 

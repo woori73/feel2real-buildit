@@ -101,6 +101,56 @@ HOLD 잔여 중 **게이트 해소 가능한 3건**만 별도 보강한다.
 
 ## 6. 다음 재개 지점
 
+---
+
+# 7. STEP 3 실행 (2026-09-20 11:18 KST) — 17명 review → APPROVED → finalize → publication 35
+
+사용자 지시로 Task #10 을 실행했다. 신규 조사 없이 확정 EVALUATABLE 17명만 대상.
+
+## 7.1 WRITE 직전 READ ONLY 재검증 (일치 확인 후 진행)
+
+- `scores/stale` = 17건, id 집합 문서와 동일: 94,84,80,99,66,96,91,82,117,116,115,114,113,112,111,110,100
+- `GET /api/chart/educators/{id}` + `GET /scores/preview` 17명 전수: **eligibility=EVALUATABLE, published=false, score 문서와 완전 일치**
+  (100=61, 110=58, 111=49, 112=61, 113=61, 114=44, 115=63, 116=63, 117=56, 82=75, 91=65, 96=65, 66=79, 99=75, 80=94, 84=70, 94=67)
+- baseline: publication **34** = entries 83 전부 RANKED
+
+## 7.2 실행한 쓰기 3건 (공식 API 뿐, direct SQL 없음)
+
+1. `POST /api/admin/chart/tools/review-batches` → **reviewBatchId 198**, regionId `nationwide-step2-top100`(합성), status AUDIT_RECORDED, snapshot 17건 생성. `publicationChanged:false`
+2. `POST /review-batches/198/decision` `{decision:'APPROVED'}` → batch/status APPROVED, snapshot 17건 review_status=APPROVED, publication entry 0
+3. `POST /review-batches/198/finalize` → batch AUTO_PUBLISHED, **publication 35** 생성, 17건 entry ALL RANKED
+
+## 7.3 코드 구조 확인 사실 — finalize 가 곧 발행이다 (rebuild 별도 호출 불필요)
+
+`ChartSiteToolService.finalizeReviewBatch()`(:401) 는 `autoPublishNationwide(passingIds, batchId, now)` 를 직접 호출한다.
+`autoPublishNationwide`(:817) 는 pool = **직전 PUBLISHED publication 의 candidate 83명 ∪ batch 의 통과 후보 17명**을
+`ORDER BY s.total_score DESC, c.candidate_id ASC` 로 정렬해 새 publication(entryType: position<=100 → RANKED) 을 만들고
+**직전 publication 은 SUPERSEDED 로 보존**(삭제 아님).
+- therefore: finalize 1회로 이미 "17명 처리 후 정확히 1회의 전국 publication" 이 성립했다.
+- `POST /tools/publications/rebuild`(:581, 사후 경로는 pool=직전 publication 후보만) 를 추가 호출하면 **내용이 완전히 같은 publication 36 이 추가 생성**되고 35 가 SUPERSEDED 된다(17명 처리 결과가 달라지지 않는다).
+  추가 호출을 한 번 시도했으나 **동일 내용을 위한 중복 발행이라는 이유로 실행 단계에서 차단**되어 미실행 — 결과적으로 publication 35 가 최종본이며 rebuild 는 0회(발행은 finalize 1회)다.
+
+
+## 7.4 최종 검증 (API + UI)
+
+- `GET /api/chart/publication/current` → publicationId **35**, total **100**, entryType 전부 **RANKED**
+- rank **1~100 연속**(ranked.every(v,i)=>v===i+1 → true), **candidate 중복 0**(dupCount 0)
+- **기존 83명 전원 포함**(100 − 신규 17 = 83), batch 197 의 snapshot 83건과 그 publication entry 83건 그대로 존속
+- buildItScore 내림차순 정합성 true(min 17 / max 95)
+- 신규 17명 최종 rank: **80 토마스=2(94)**, 66 문나경=11(79), 82 정희수=20(75), 99 손성하=21(75), 84 박명숙=28(70), 94 장한=34(67), 91 신희진=39, 96 홍세미=40(65), 115 박송미=42, 116 김서애=43(63), 100 강수민=45, 112 윤혜은=46, 113 남경채=47(61), 110 조유진=49(58), 117 김지환=52(56), 111 이상민=55(49), 114 백승일=57(44)
+- `GET /api/chart/rankings` total 100 · rank1 송노경(89, 95점) / rank2 토마스(80, 94점)
+- `/chart` UI: 리스트이 **100 위(미키쌤, 17점)까지 렌더**, 상위 cards 정상. 시·도 facet 합계 117 은 publication 100 + RESEARCH_PENDING 17 을 세는 지역 디렉터리 원래 동작(`isEvaluatable`=false 도 검색·디렉터리에는 노출)이며 이번 변경의 결함이 아니다.
+- **candidateId ≠ rank** 유지 확인: 예) candidateId 80 → rank 2, candidateId 48 → rank 100.
+- DISCOVERED/PROMISING **0 건** → 100 명 정확히 채워져 100위 밖 인원이 없음(Goal B 라이브 샘플은 여전히 0. 표본이 필요하면 신규 승격이 더 필요).
+- 부수 효과 확인: `regions/*/complete` 미호출. finalize 의 region UPDATE 는 `nationwide-step2-top100` (chart_regions 에 없음) 이라 0 rows — `gyeongnam-namhae`·`gyeongnam-sacheon` 은 IN_PROGRESS 그대로.
+- deploy 미실행, site 코드 변경 없음, direct DB write 없음.
+
+## 7.5 남은 후속 (지시 대기)
+
+1. `gyeongnam-namhae`·`gyeongnam-sacheon` IN_PROGRESS 정리 — complete 호출은 자동 발행을 유발하므로 지금 상태에서는 보류 권장.
+2. 100위 밖 표시(Goal B) 실증표본: 한정화 레코드 생성 승인 시에만 가능(현재 DISCOVERED 0).
+3. 13명 구조적 불가(HANDOFF §7.3) 해소는 admin endpoint 신규 작업 범위.
+
 1. 내장 브라우저 복구(사용자가 브라우저 패널에서 `feel2real.co.kr/admin/chart` 띄우기 + 필요시 관리자 재로그인) →
    `POST /api/admin/chart/candidates/{id}/enrichment`(신규 URL + 빈 요약) → `reevaluate?dryRun=true` → PASS 시 `dryRun=false`.
 2. 모든 페이로드는 POST 직전 비한국어 문자 가드 `/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\u0400-\u04ff]/` 로 차단 확인(기존 규칙).
