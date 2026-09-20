@@ -72,3 +72,15 @@ commit 메시지 예: `data(newstart): collect cafe articles 5735-5726 (+progres
 
 ## QODER RESUME POINT
 **git fetch origin 후 해당 branch 최신 commit을 확인하고, checkpoint/index/collection_state를 읽은 뒤 NEXT ARTICLE(5735)부터 재개한다. 이미 저장된 article(17건)과 NOT_FOUND_IN_LIST(5736)는 재수집하지 않는다.**
+
+---
+
+## FINAL COLLECTION PASS (2026-09-20, scope 변경)
+
+- sequential article-id 하행 수집(5724→5705·5751 retry)은 **종료**. 5704 이하 접근 금지는 유지.
+- 최종 패스 TARGET BOARD: 감면율 예측 게시판 1개 (게시판 LIST를 source of truth로 사용, ID 추측 금지).
+- **게시판명 주의:** 기수집 3건(5732·5731·5727)의 boardName은 `감면율과 확정금액 예측 게시판`으로 기록됨. 지시문의 `감면율 확정금액 예측 게시판`과 한 글자 차이 → 브라우저 복구 후 게시판 목록에서 정식명 확정 후 index/handoff에 반영 (기존 3건 파일은 boardName 유지, 확정 시 일괄 정정).
+- 공지글은 CASE 수집에서 제외(이미 저장분 삭제 금지).
+- 절차: 게시판 목록 inventory(articleId·title·commentCount·date·viewCount) → index 대조(ALREADY_COLLECTED/NEW_TARGET) → NEW_TARGET만 수집 → 5~10건마다 checkpoint commit+push → 최종 대조(UNRESOLVED=0 목표) → dataset snapshot → DB-build handoff.
+- schema: 기존 article_*.json 유지. 감면율 게시판 신규 파일에만 backward-compatible optional `caseFacts` 추가 예정 {predictedRate, confirmedRate, debtSummary, delinquency, businessStatus, creditorTypes, appliedAt, stage, authorFollowUp, aiNotes} (관측 불가 Leh null, 추측 금지). sourceType은 CASE 기본, 단순 의견·잡담은 COMMUNITY. 개별 감면율을 공식 규칙으로 일반화 금지.
+- **차단 상태:** 2026-09-20 17시경 양 Playwright 브리지 모두 timeout 지속 → 확보분(27건)은 `2f9de5d2`에 push済. 브라우저 복구 후 본 패스 재개. 복구되면 "계속 수집해줘" 한 마디로 1) 게시판 목록 inventory부터 재개.
