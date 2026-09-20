@@ -173,3 +173,25 @@ JWT/쿠키/필터를 거치므로 정상 — naver-only 증상과 일치.
 ### 11.7 금지선 준수
 
 비공개 자격증명/D developer센터/env/redirect URI/migration/DB 쓰기/배포/머지·리셋 없음. 다른 프로젝트 파일 비접촉.
+
+## 12. D1 자격증명 유효성 probe (2026-09-20 05:17~05:18 UTC, 승인됨, READ ONLY)
+
+- 구현: 임시 진단 워크플로우에 D1 스텝 추가(커밋 `87f2778`, 이 diagnostic branch 전용).
+  EC2에서 `POST https://nid.naver.com/oauth2.0/token` `grant_type=client_credentials`(로그인/인가코드 미사용).
+  시크릿은 env 변수 참조로만 전송(argv/로그 비노출), 출력은 HTTP status·error 분류값·token 존재 YES/NO만.
+  대조군: 의도적으로 틀린 secret로 동일 요청. run 35491308747.
+
+```
+configured_http=200  error="unsupported_response_type"  access_token_present=NO
+control_http=200     error="unsupported_response_type"  access_token_present=NO
+social_accounts_total=0 (변화 없음)
+```
+
+- 판정: **CASE C — UNKNOWN.** 네이버가 client_credentials grant를 **자격 검증보다 먼저** 거절한다
+  (두 probe가 동일한 분류값). 이 경로로는 id/secret 페어 유효성을 판별할 수 없음.
+  단, **credential rejected(예: unauthorized_client/invalid_client)는 관측되지 않았으므로 CASE A 아님**.
+- secret/token/PII 노출 없음(에러 message·error_description 필드 파싱 단계에서 폐기).
+- 차선 probe 설계(승인 필요, D1b): 같은 endpoint에 **실사용자 코드 없이** 고정 더미 code로
+  `grant_type=authorization_code` 요청 → secret 오답군은 `invalid_client`류, 정답군은 code 자체 오류
+  (`invalid code`/errorcode 15류)로 분류가 갈림. 이 분기차로 페어 유효성 판별 가능.
+  이미 만료·소비된 code이므로 로그인 수행·실code 요구 없음. D1 스텝 교체 형태(워크플로우만 수정, prod 코드·배포 무관).
