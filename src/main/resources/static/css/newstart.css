@@ -192,7 +192,7 @@
 .ns-badge-ccrs { background: #c62828; }
 .ns-feed-date { font-size: 11px; color: var(--ns-muted); margin-left: auto; white-space: nowrap; }
 .ns-feed-card-title { font-size: 17px; font-weight: 700; color: var(--ns-ink); line-height: 1.35; margin: 0; overflow-wrap: anywhere; }
-.ns-feed-card-summary { font-size: 14.5px; color: var(--ns-ink); line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
+.ns-feed-card-summary { font-size: 15px; color: var(--ns-ink); line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
 .ns-feed-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .ns-feed-tag { font-size: 10.5px; color: var(--ns-blue); background: var(--ns-blue-soft); padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
 .ns-feed-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--ns-line); }
