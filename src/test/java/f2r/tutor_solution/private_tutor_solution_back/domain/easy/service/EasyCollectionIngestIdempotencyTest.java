@@ -72,6 +72,12 @@ class EasyCollectionIngestIdempotencyTest {
     ReflectionTestUtils.setField(source, "sourceId", 1L);
     sources.put(1L, source);
 
+    // Cardsales source for adapter tests
+    EasyCollectionSource cardsalesSource = EasyCollectionSource.builder()
+        .code("CARDSales").name("카드사 승인/매입/입금").adapterType("CARDSales").active(true).build();
+    ReflectionTestUtils.setField(cardsalesSource, "sourceId", 2L);
+    sources.put(2L, cardsalesSource);
+
     when(sourceRepository.findByCode(any())).thenAnswer(inv -> sources.values().stream()
         .filter(s -> s.getCode().equals(inv.getArgument(0))).findFirst());
     when(sourceRepository.findAll()).thenAnswer(inv -> new ArrayList<>(sources.values()));
@@ -121,7 +127,7 @@ class EasyCollectionIngestIdempotencyTest {
 
     service = new EasyCollectionIngestService(pipeline.businessRepository, sourceRepository,
         connectionRepository, runRepository, rawRepository, pipeline.txnRepository,
-        new EasyCsvFileAdapter(), pipeline.importService);
+        new EasyCsvFileAdapter(), new EasyCardsalesAdapter(), pipeline.importService);
   }
 
   private static byte[] csv(String... rows) {

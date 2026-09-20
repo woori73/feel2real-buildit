@@ -35,7 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * PHASE 1 수집 파이프라인 오케스트레이션 — 파일 → run → parse → 3단계 dedupe →
+ * PHASE 1 수집 파이프라인 오케스트레이션 — 파일/어댑터 → run → parse → 3단계 dedupe →
  * 기존 EasyImportService.stage() handoff → raw↔import row 링크.
  * 절대 easy_transactions를 직접 INSERT하지 않는다; 장부 확정(confirm)은 기존 경계의 관리자 권한이다.
  * 자동 collect ≠ 자동 confirm.
@@ -56,6 +56,7 @@ public class EasyCollectionIngestService {
   private final EasyCollectionRawRecordRepository rawRepository;
   private final EasyTransactionRepository txnRepository;
   private final EasyCsvFileAdapter csvFileAdapter;
+  private final EasyCardsalesAdapter cardsalesAdapter;
   private final EasyImportService importService;
 
   /** CSV 파일을 수집해 기존 import staging에 인계한다. 같은 파일 재업로드해도 중복 행이 생기지 않는다. */
@@ -89,6 +90,53 @@ public class EasyCollectionIngestService {
   }
 
   /**
+   * 어댑터 기반 수집 — Cardsales 등 외부 API 연동 어댑터를 통해 수집한다.
+   * connectionRef는 {@link EasyCollectionConnection#connectionRef}에 저장된 opaque reference다.
+   * since로 증분 수집 가능(초기 전체 수집 시 null).
+   */
+  @Transactional
+  public EasyCollectionIngestResponse ingestByAdapter(Long businessId, String label,
+      String adapterCode, LocalDateTime since, int limit) {
+    EasyBusiness business = requireActiveBusiness(businessId);
+    EasyCollectionAdapter adapter = resolveAdapter(adapterCode);
+    EasyCollectionSource source = sourceRepository.findByCode(adapterCode)
+        .orElseThrow(() -> new IllegalArgumentException("수집원을 찾을 수 없습니다: " + adapterCode));
+    EasyCollectionConnection connection = findOrCreateConnection(business, source, label);
+    String connectionRef = connection.getConnectionRef();
+    if (connectionRef == null || connectionRef.isBlank()) {
+      throw new IllegalStateException("연결 참조(connectionRef)가 설정되지 않았습니다. 관리자 콘솔에서 등록하세요.");
+    }
+    adapter.validateConnection(connectionRef);
+
+    EasyCollectionRun run = runRepository.save(EasyCollectionRun.builder()
+        .connection(connection)
+        .business(business)
+        .triggerType("SCHEDULED")
+        .sourceFilename(adapterCode + "-" + LocalDateTime.now().toLocalDate())
+        .adapterCode(adapter.adapterCode())
+        .adapterVersion(adapter.adapterVersion())
+        .build());
+
+    List<CollectionParsedRow> parsed;
+    try {
+      parsed = adapter.fetch(connectionRef, since, limit);
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      run.fail(e.getMessage());
+      return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(run),
+          List.of(e.getMessage()));
+    }
+    return ingestParsedRows(run, connection, business, adapterCode, adapterCode, adapterCode,
+        parsed);
+  }
+
+  private EasyCollectionAdapter resolveAdapter(String adapterCode) {
+    return switch (adapterCode) {
+      case EasyCardsalesAdapter.ADAPTER_CODE -> cardsalesAdapter;
+      default -> throw new IllegalArgumentException("지원하지 않는 어댑터: " + adapterCode);
+    };
+  }
+
+  /**
    * 어댑터 공통 수집 코어 — parse된 행만 들어오면 소스와 무관하게 동일하게
    * 3단계 dedupe → raw 보존 → fingerprint 제외 → stage 인계 → run 완수를 수행한다.
    * 이후 어댑터(cardsales 등)는 이 메서드 reuse가 확장점이다(direct transaction write 없음).
@@ -115,9 +163,10 @@ public class EasyCollectionIngestService {
           row.occurredOn(), row.direction(), row.amount(), row.counterparty(),
           row.description(), row.payMethod());
       int seq = seqByTuple.merge(tupleHash, 1, Integer::sum);
+      Long connectionId = connection.getConnectionId();
       String dedupeKey = row.externalId() == null
           ? EasyCollectionDedupeKeys.tuple(sourceCode, businessId, tupleHash, seq)
-          : EasyCollectionDedupeKeys.external(sourceCode, businessId, row.externalId());
+          : EasyCollectionDedupeKeys.external(sourceCode, businessId, connectionId, row.externalId());
 
       if (!seenKeys.add(dedupeKey) || rawRepository.findByDedupeKey(dedupeKey).isPresent()) {
         duplicate++;
