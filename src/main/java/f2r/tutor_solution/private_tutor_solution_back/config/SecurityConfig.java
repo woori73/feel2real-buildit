@@ -20,10 +20,16 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.AndRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
@@ -67,7 +73,19 @@ public class SecurityConfig {
       org.springframework.beans.factory.ObjectProvider<SiteVisitRecordingService> siteVisitRecordingService,
       PublicSiteProperties publicSiteProperties,
       WebSecurityProperties webSecurityProperties,
-      ArchivedRoutesProperties archivedRoutesProperties) throws Exception {
+      ArchivedRoutesProperties archivedRoutesProperties,
+      // NewStart 네이버 로그인(공식 Spring Security OAuth2 Client 표준 흐름) — ObjectProvider로
+      // 지연 주입하는 이유는 위 AcademyRepository/SiteVisitRecordingService와 동일하다:
+      // @WebMvcTest 슬라이스가 이 config/security/oauth2 패키지를 @Import하지 않아도(대부분의
+      // 기존 슬라이스 테스트가 그렇다) filterChain() bean 생성 자체는 계속 성공해야 한다.
+      org.springframework.beans.factory.ObjectProvider<ClientRegistrationRepository>
+          naverClientRegistrationRepository,
+      org.springframework.beans.factory.ObjectProvider<OAuth2UserService<OAuth2UserRequest, OAuth2User>>
+          naverOAuth2UserService,
+      org.springframework.beans.factory.ObjectProvider<AuthenticationSuccessHandler>
+          naverOAuth2LoginSuccessHandler,
+      org.springframework.beans.factory.ObjectProvider<AuthenticationFailureHandler>
+          naverOAuth2LoginFailureHandler) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -349,6 +367,20 @@ public class SecurityConfig {
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
         .addFilterAfter(siteVisitFilter, UsernamePasswordAuthenticationFilter.class);
+
+    // NewStart 네이버 로그인 — 공식 Spring Security OAuth2 Client 표준 흐름
+    // (/oauth2/authorization/naver, /login/oauth2/code/naver). ClientRegistrationRepository가
+    // 없으면(테스트 슬라이스이거나 NAVER_CLIENT_ID/SECRET 미설정) 조용히 건너뛴다 — 기존
+    // /oauth/naver/*(V1)·/auth/naver/v2/*(V2) 손수 작성한 흐름과는 완전히 별개이며 서로
+    // 간섭하지 않는다.
+    ClientRegistrationRepository clientRegistrationRepository =
+        naverClientRegistrationRepository.getIfAvailable();
+    if (clientRegistrationRepository != null) {
+      http.oauth2Login(oauth2 -> oauth2
+          .userInfoEndpoint(endpoint -> endpoint.userService(naverOAuth2UserService.getIfAvailable()))
+          .successHandler(naverOAuth2LoginSuccessHandler.getIfAvailable())
+          .failureHandler(naverOAuth2LoginFailureHandler.getIfAvailable()));
+    }
 
     return http.build();
   }
