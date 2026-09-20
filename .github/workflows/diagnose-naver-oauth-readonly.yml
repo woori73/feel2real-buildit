@@ -120,6 +120,29 @@ jobs:
           {"commands":[
             "set +e",
             "source /etc/f2r/env 2>/dev/null || true",
+            "echo '=== 1. social accounts by provider with created window (counts/ts, NO ids) ==='",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT provider, COUNT(*) AS cnt, MIN(created_at) AS first_created, MAX(created_at) AS last_created FROM user_social_accounts GROUP BY provider;\" 2>&1 | grep -v 'Using a password' || true",
+            "echo '=== 2. totals: social total + created since 2026-09-19 00:00 ===",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS social_total, SUM(created_at >= '2026-09-19 00:00:00') AS social_created_since FROM user_social_accounts;\" 2>&1 | grep -v 'Using a password' || true",
+            "echo '=== 3. users created since 2026-09-19 00:00 by role (STUDENT expected, ADMIN must be 0) ===",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT role, COUNT(*) AS cnt FROM users WHERE created_at >= '2026-09-19 00:00:00' GROUP BY role;\" 2>&1 | grep -v 'Using a password' || true",
+            "echo '=== 4. naver_ login_id users by role ===",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT u.role, COUNT(*) AS cnt FROM users u WHERE u.login_id LIKE 'naver\\\\_%' GROUP BY u.role;\" 2>&1 | grep -v 'Using a password' || true",
+            "echo '=== 5. one-connection-per-user invariant (expect no rows) ===",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT user_id, COUNT(*) c FROM user_social_accounts WHERE provider='NAVER' GROUP BY user_id HAVING c > 1;\" 2>&1 | grep -v 'Using a password' || true",
+            "echo '=== 6. journal since 2026-09-20 00:00 UTC: naver|oauth|callback lines tail 40 ===",
+            "journalctl -u f2r-app.service --since '2026-09-20 00:00:00' --no-pager | grep -iE 'naver|oauth|callback' | tail -40 || echo 'no naver/oauth/callback journal lines in window'",
+            "echo '=== 7. journal last 30 minutes: WARN|ERROR tail 40 ===",
+            "journalctl -u f2r-app.service --since '30 minutes ago' --no-pager | grep -E ' WARN | ERROR ' | tail -40 || echo 'no warn/error lines in last 30 minutes'",
+            "echo '=== 8. f2r-app active + pid start ===",
+            "systemctl is-active f2r-app.service",
+            "systemctl show f2r-app.service -p MainPID -p ActiveEnterTimestamp",
+            "exit 0"
+          ]}
+          PARAMS'
+          {"commands":[
+            "set +e",
+            "source /etc/f2r/env 2>/dev/null || true",
             "echo \"=== social account created? (provider count + last_created, NO ids) ===\"",
             "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS social_accounts_total FROM user_social_accounts; SELECT COUNT(*) AS naver_prefixed_users FROM users WHERE login_id LIKE 'naver%';\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
             "echo \"=== f2r-app active + naver warn in journal since deploy (20:10) ===\"",
