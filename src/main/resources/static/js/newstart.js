@@ -190,12 +190,110 @@
       var h = String(d.getHours()).padStart(2, '0');
       var m = String(d.getMinutes()).padStart(2, '0');
       return h + ':' + m;
+    },
+
+    /* ── 새출발 최신정보 피드 ───────────────────────────────────────── */
+    initFeed: function () {
+      var tabs = document.querySelectorAll('.ns-feed-tab');
+      console.log('initFeed: tabs found', tabs.length);
+      if (!tabs.length) return;
+      var panels = {
+        official: document.querySelector('[data-feed-panel="official"]'),
+        cafe: document.querySelector('[data-feed-panel="cafe"]'),
+        ccrs: document.querySelector('[data-feed-panel="ccrs"]')
+      };
+      var feedUrl = '/data/newstart/feeds/latest_links.json';
+      var allItems = null;
+
+      function loadFeed() {
+        if (allItems) { renderAll(); return; }
+        fetch(feedUrl, { credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+          .then(function (data) { allItems = data.items || []; renderAll(); })
+          .catch(function () { /* silent fail */ });
+      }
+
+      function renderAll() {
+        if (!allItems) return;
+        var bySource = { official: [], cafe: [], ccrs: [] };
+        for (var i = 0; i < allItems.length; i++) {
+          var item = allItems[i];
+          if (bySource[item.sourceType]) bySource[item.sourceType].push(item);
+        }
+        renderPanel('official', bySource['OFFICIAL_NEWSTART'] || []);
+        renderPanel('cafe', bySource['NEWSTART_CAFE'] || []);
+        renderPanel('ccrs', bySource['OFFICIAL_CCRS'] || []);
+      }
+
+      function renderPanel(key, items) {
+        var panel = panels[key];
+        if (!panel) return;
+        panel.innerHTML = '';
+        if (!items.length) {
+          panel.innerHTML = '<p class="ns-feed-empty">표시할 글이 없습니다.</p>';
+          return;
+        }
+        var wrap = document.createElement('div');
+        wrap.className = 'ns-feed-cards';
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          var a = document.createElement('a');
+          a.className = 'ns-feed-card ns-ext';
+          a.href = it.url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          var badgeClass = 'ns-badge-' + key;
+          var tagsHtml = '';
+          if (it.topicTags && it.topicTags.length) {
+            tagsHtml = '<div class="ns-feed-card-tags">' + it.topicTags.map(function(t){ return '<span class="ns-feed-tag">'+escapeHtml(t)+'</span>'; }).join('') + '</div>';
+          }
+          a.innerHTML =
+            '<div class="ns-feed-card-header">' +
+              '<span class="ns-badge ' + badgeClass + '">' + escapeHtml(it.sourceName) + '</span>' +
+              '<span class="ns-feed-date">' + escapeHtml(it.publishedDate) + '</span>' +
+            '</div>' +
+            '<h3 class="ns-feed-card-title">' + escapeHtml(it.title) + '</h3>' +
+            '<p class="ns-feed-card-summary">' + escapeHtml(it.summary) + '</p>' +
+            tagsHtml +
+            '<div class="ns-feed-card-footer">' +
+              '<span class="ns-feed-read">원문 보기</span>' +
+            '</div>';
+          wrap.appendChild(a);
+        }
+        panel.appendChild(wrap);
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c){
+          return {'&':'&','<':'<','>':'>','"':'"',"'":"'"}[c];
+        });
+      }
+
+      // 탭 전환
+      console.log('initFeed: binding click handlers');
+      tabs.forEach(function(tab){
+        tab.addEventListener('click', function(){
+          console.log('TAB CLICK', this.getAttribute('data-feed-tab'));
+          var key = this.getAttribute('data-feed-tab');
+          tabs.forEach(function(t){ t.classList.remove('ns-active'); t.setAttribute('aria-selected','false'); });
+          this.classList.add('ns-active'); this.setAttribute('aria-selected','true');
+          Object.values(panels).forEach(function(p){ p.classList.remove('ns-active'); });
+          if (panels[key]) panels[key].classList.add('ns-active');
+        });
+      });
+
+      // 초기 로드
+      loadFeed();
     }
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', NS.init);
+    document.addEventListener('DOMContentLoaded', function(){
+      NS.init();
+      NS.initFeed();
+    });
   } else {
     NS.init();
+    NS.initFeed();
   }
 })();

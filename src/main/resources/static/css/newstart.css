@@ -157,9 +157,59 @@
 .ns-official-p { font-size: 13px; line-height: 1.6; color: var(--ns-ink); margin: 0 0 6px; overflow-wrap: anywhere; }
 .ns-official-links { margin-top: 6px; }
 .ns-ext::after { content: "↗"; font-size: 11px; margin-left: 3px; color: var(--ns-muted); }
+/* 태스크 카드의 외부링크 표식은 카드 화살표와 통일 (→ 좌하단) */
+.ns-task.ns-ext::after { content: "→"; position: absolute; left: 20px; bottom: 16px; margin-left: 0; font-size: 20px; line-height: 1; opacity: .9; }
 .ns-fraud { margin-top: 10px; padding: 10px 12px; background: #fef2f2; border: 1px solid #f0caca; border-radius: 10px; font-size: 12.5px; line-height: 1.55; color: #7f1d1d; overflow-wrap: anywhere; }
 
 @media (min-width: 640px) {
   .ns-chat-shell { max-width: 720px; }
   .ns-msg { max-width: 70%; }
 }
+
+/* ── 새출발 최신정보 : 3-source 탭 + 모바일 퍼스트 카드 피드 ─────────────────── */
+.ns-feed { margin-top: 18px; }
+.ns-feed-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.ns-feed-title { font-size: 16px; font-weight: 700; color: var(--ns-ink); margin: 0; }
+.ns-feed-tabs { display: flex; gap: 4px; background: #f1f3f6; border-radius: 10px; padding: 3px; }
+.ns-feed-tab { appearance: none; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--ns-muted); padding: 6px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
+.ns-feed-tab:hover { background: #e5e7eb; color: var(--ns-ink); }
+.ns-feed-tab.ns-active { background: #fff; color: var(--ns-blue); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+@media (max-width: 480px) { .ns-feed-tabs { width: 100%; overflow-x: auto; padding-bottom: 4px; } .ns-feed-tab { flex: 0 0 auto; } }
+
+.ns-feed-panels { position: relative; }
+.ns-feed-panel { display: none; }
+.ns-feed-panel.ns-active { display: block; animation: ns-fade .12s ease; }
+@keyframes ns-fade { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+
+/* 모바일 퍼스트 카드 피드 */
+.ns-feed-cards { display: flex; flex-direction: column; gap: 8px; }
+.ns-feed-card { display: flex; flex-direction: column; gap: 6px; background: #fff; border: 1px solid var(--ns-line); border-radius: 12px; padding: 12px 12px 10px; text-decoration: none; overflow-wrap: anywhere; transition: box-shadow .15s, border-color .15s; }
+.ns-feed-card:hover { box-shadow: 3px 3px 5px 1px rgb(0 0 0 / 10%); border-color: #cfd8e6; }
+.ns-feed-card-header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ns-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px; color: #fff; white-space: nowrap; }
+.ns-badge-official { background: #0059ff; }
+.ns-badge-cafe { background: #1c7d32; }
+.ns-badge-ccrs { background: #c62828; }
+.ns-feed-date { font-size: 11px; color: var(--ns-muted); margin-left: auto; white-space: nowrap; }
+.ns-feed-card-title { font-size: 17px; font-weight: 700; color: var(--ns-ink); line-height: 1.35; margin: 0; overflow-wrap: anywhere; }
+.ns-feed-card-summary { font-size: 14.5px; color: var(--ns-ink); line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
+.ns-feed-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.ns-feed-tag { font-size: 10.5px; color: var(--ns-blue); background: var(--ns-blue-soft); padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+.ns-feed-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--ns-line); }
+.ns-feed-read { font-size: 12px; font-weight: 600; color: var(--ns-blue); display: flex; align-items: center; gap: 4px; }
+.ns-feed-read::after { content: "→"; font-size: 11px; }
+.ns-feed-empty { text-align: center; padding: 16px; color: var(--ns-muted); font-size: 13px; }
+
+.ns-feed-note { margin-top: 10px; font-size: 11.5px; color: var(--ns-muted); }
+
+/* ── 감면율 예측 플레이스홀더 ─────────────────── */
+.ns-predict { margin-top: 18px; }
+.ns-predict-desc { font-size: 13px; line-height: 1.6; color: var(--ns-ink); margin: 0 0 8px; }
+.ns-predict-points { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.ns-predict-point { font-size: 11.5px; font-weight: 600; color: var(--ns-blue); background: var(--ns-blue-soft); padding: 3px 8px; border-radius: 999px; }
+
+/* ── 배지 변형 ─────────────────── */
+.ns-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px; color: #fff; white-space: nowrap; }
+.ns-badge-official { background: #0059ff; }
+.ns-badge-cafe { background: #1c7d32; }
+.ns-badge-ccrs { background: #c62828; }

@@ -1,0 +1,139 @@
+{
+  "version": "2026-09-20-v1",
+  "updatedAt": "2026-09-20",
+  "description": "NewStart 메인 '새출발 최신정보' 3-source feed. 관리자가 선별한 항목만 등록. AI Knowledge DB와 별개.",
+  "sources": {
+    "OFFICIAL_NEWSTART": {
+      "name": "새출발기금 공식소식",
+      "description": "새출발기금 공식 홈페이지 공지사항 중 정책/자격/감면/서류/신용/상환/재기지원 등 실질 변경 사항",
+      "badgeClass": "ns-badge-official",
+      "color": "#0059ff"
+    },
+    "NEWSTART_CAFE": {
+      "name": "새출발카페 최신글",
+      "description": "네이버 카페 '새출발기금 부실차주' 등에서 관리자가 선별한 감면/절차/서류/상담/확정 사례",
+      "badgeClass": "ns-badge-cafe",
+      "color": "#1c7d32"
+    },
+    "OFFICIAL_CCRS": {
+      "name": "신용회복위원회 공식",
+      "description": "신용회복위원회 공식 네이버 카페(ccrs5500) 등에서 신복위가 직접 작성한 새출발기금/부실차주/채무조정 관련 공식 게시물",
+      "badgeClass": "ns-badge-ccrs",
+      "color": "#c62828"
+    }
+  },
+  "items": [
+    {
+      "id": "os_001",
+      "sourceType": "OFFICIAL_NEWSTART",
+      "sourceName": "새출발기금 공식소식",
+      "sourceArticleId": "56",
+      "title": "지원체계 보완 — 재산심사 강화·변제능력별 차등·사해행위 조사",
+      "publishedDate": "2026-06-25",
+      "url": "https://www.newstartfund.or.kr/Board/View.do?idx=56&pageIndex=1",
+      "summary": "금융위·캠코 점검회의: 재산 철저 파악·변제능력별 지원수준 차등화·신청 전 증여 등 사해행위 면밀 조사. 도덕적해이 방지 강화.",
+      "topicTags": ["정책변경", "재산심사", "도덕적해이"],
+      "addedAt": "2026-06-26",
+      "featured": true,
+      "official": true
+    },
+    {
+      "id": "os_002",
+      "sourceType": "OFFICIAL_NEWSTART",
+      "sourceName": "새출발기금 공식소식",
+      "sourceArticleId": "54",
+      "title": "비상장주식 보유내역 제출 의무화 시행",
+      "publishedDate": "2026-04-30",
+      "url": "https://www.newstartfund.or.kr/Board/View.do?idx=54&pageIndex=1",
+      "summary": "2026-05-06부터 매입형 신청자 비상장주식 보유내역 제출 의무화. 홈택스 조회 화면 캡처 필수, 미보유자도 제출, 3개 초과 시 평가액 상위 3종목 입력.",
+      "topicTags": ["제출서류", "비상장주식", "재산심사"],
+      "addedAt": "2026-04-30",
+      "featured": true,
+      "official": true
+    },
+    {
+      "id": "os_003",
+      "sourceType": "OFFICIAL_NEWSTART",
+      "sourceName": "새출발기금 공식소식",
+      "sourceArticleId": "52",
+      "title": "제도개선 — 성실상환 인센티브·상환유예 확대·재기지원 확대",
+      "publishedDate": "2026-03-25",
+      "url": "https://www.newstartfund.or.kr/Board/View.do?idx=52&pageIndex=1",
+      "summary": "① 매입형 조기상환 인센티브(1년 성실 후 조기상환 시 잔여부담 5~10% 추가감면) ② 중개형 성실상환 인센티브(1년마다 금리 10% 인하, 하한 3.25%) ③ 상환유예 사유 확대(출산·육아휴직·심한장애인 부양·긴급유예) ④ 취창업·재기지원 확대.",
+      "topicTags": ["제도개선", "성실상환", "상환유예", "재기지원"],
+      "addedAt": "2026-03-25",
+      "featured": true,
+      "official": true
+    },
+    {
+      "id": "cafe_001",
+      "sourceType": "NEWSTART_CAFE",
+      "sourceName": "새출발카페 최신글",
+      "sourceArticleId": "124589",
+      "title": "[확정후기] 부실차주 담보+무담보 1.2억 → 원금 60% 감면 확정",
+      "publishedDate": "2026-09-15",
+      "url": "https://cafe.naver.com/newstartfund/124589",
+      "summary": "담보 7천만·무담보 5천만 부실차주. 재산 2천만 인정돼 순부채 1억 중 6천만 감면. 거치 2년·상환 10년. 필요서류: 임대차계약서, 페이인포, 부채증명원, 비상장주식 캡처(26.5.6~).",
+      "topicTags": ["확정사례", "감면율", "부실차주", "담보무담보", "제출서류"],
+      "addedAt": "2026-09-16",
+      "featured": true,
+      "official": false
+    },
+    {
+      "id": "cafe_002",
+      "sourceType": "NEWSTART_CAFE",
+      "sourceName": "새출발카페 최신글",
+      "sourceArticleId": "124542",
+      "title": "부실우려차주 신복위 중개형 → 90일 미납 실효 후 매입형 재조정 후기",
+      "publishedDate": "2026-09-10",
+      "url": "https://cafe.naver.com/newstartfund/124542",
+      "summary": "신복위 중개형 3개월 미납 실효 → 새출발기금 매입형으로 전환. 미신청 담보대출도 매입형 편입 가능(공지 idx=28). 현재 재산조사 진행 중, 비상장주식/가상자산 제출 준비.",
+      "topicTags": ["실효", "매입형전환", "미신청담보", "비상장주식", "가상자산"],
+      "addedAt": "2026-09-11",
+      "featured": true,
+      "official": false
+    },
+    {
+      "id": "cafe_003",
+      "sourceType": "NEWSTART_CAFE",
+      "sourceName": "새출발카페 최신글",
+      "sourceArticleId": "124498",
+      "title": "사회취약계층(기초수급) 부실차주 — 거치 3년·상환 20년·감면 90% 적용받음",
+      "publishedDate": "2026-09-05",
+      "url": "https://cafe.naver.com/newstartfund/124498",
+      "summary": "기초생활수급자 부실차주 무담보 4천만. 순부채 3.5억 중 90% 감면 확정. 공지 idx=47 소급신청으로 적용. 필요서류: 수급자증명서, 페이인포, 임대차계약서, 비상장주식 없음 캡처.",
+      "topicTags": ["취약계층", "감면90%", "거치3년", "소급적용", "기초수급자"],
+      "addedAt": "2026-09-06",
+      "featured": false,
+      "official": false
+    },
+    {
+      "id": "ccrs_001",
+      "sourceType": "OFFICIAL_CCRS",
+      "sourceName": "신용회복위원회 공식",
+      "sourceArticleId": "ccrs_20260918_001",
+      "title": "[신복위 공지] 새출발기금 연계 중개형 채무조정 — 9월 신청현황 및 유의사항",
+      "publishedDate": "2026-09-18",
+      "url": "https://cafe.naver.com/ccrs5500/89234",
+      "summary": "신복위 공식 안내: 9월 현재 새출발기금 중개형 신청 급증으로 처리 지연 가능성. 부실우려차주 금리 하한 3.25% 적용(30일 이하 연체). 중개형 3개월 미납 시 매입형 전환 불가(미협약기관 한정).",
+      "topicTags": ["공식안내", "중개형", "부실우려차주", "금리하한", "처리지연"],
+      "addedAt": "2026-09-19",
+      "featured": true,
+      "official": true
+    },
+    {
+      "id": "ccrs_002",
+      "sourceType": "OFFICIAL_CCRS",
+      "sourceName": "신용회복위원회 공식",
+      "sourceArticleId": "ccrs_20260912_001",
+      "title": "[신복위 안내] 채무조정 성실상환자 공공정보 해제 — 1년 12회 납부 요건",
+      "publishedDate": "2026-09-12",
+      "url": "https://cafe.naver.com/ccrs5500/89102",
+      "summary": "채무조정 약정 후 최초 상환일부터 1년간 12회 이상 성실 납부 시 공공정보 해제. 중도 해지·연체 시 해제 불가. 해제 신청은 신복위 상담센터 또는 콜센터(1600-5500).",
+      "topicTags": ["공공정보해제", "성실상환", "해제요건", "신복위"],
+      "addedAt": "2026-09-13",
+      "featured": false,
+      "official": true
+    }
+  ]
+}
