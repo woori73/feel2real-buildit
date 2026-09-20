@@ -5,6 +5,8 @@
   },
   "collectedCount": 17,
   "commentsTotal": 54,
+  "notFoundCount": 1,
+  "notFoundIds": [5736],
   "collectedIds": [
     5754,
     5753,
@@ -228,6 +230,18 @@
       "commentCount": 0,
       "file": "article_5737.json",
       "status": "COLLECTED"
+    },
+    {
+      "articleId": 5736,
+      "boardName": "",
+      "boardId": 0,
+      "title": "",
+      "author": "",
+      "writtenAt": "",
+      "viewCount": 0,
+      "commentCount": 0,
+      "file": "",
+      "status": "NOT_FOUND_IN_LIST"
     }
   ]
 }
