@@ -1,0 +1,46 @@
+{
+  "articleId": "5731",
+  "boardName": "감면율",
+  "menuId": "22",
+  "title": "임시안 소름돋네요",
+  "author": {
+    "nickname": "청주 스타",
+    "grade": "감사멤버",
+    "isAuthor": true
+  },
+  "createdAt": "2026.07.23. 15:48",
+  "viewCount": 416,
+  "content": "며칠전 방장님이예측한 75프로 플러스3프로 78프로 받었음니다 정말대단하십니다 막말로 귀신이따로없네요 소름돋았음니다 방장님감사합니다 너무큰도움이되고있네요 확정안나오면 다시올릴께요",
+  "comments": [
+    {
+      "commentId": "c1",
+      "author": {
+        "nickname": "지피지기자산",
+        "grade": "카페매니저",
+        "isAuthor": false
+      },
+      "createdAt": "2026.07.24. 07:51",
+      "content": "축하드립니다",
+      "replies": [
+        {
+          "commentId": "c1-r1",
+          "author": {
+            "nickname": "청주 스타",
+            "grade": "감사멤버",
+            "isAuthor": true
+          },
+          "createdAt": "2026.07.24. 22:02",
+          "content": "감사드림니다 덕분에 고비를 또 넘겻네요",
+          "parentId": "c1",
+          "replies": []
+        }
+      ]
+    }
+  ],
+  "commentCount": 2,
+  "replyCount": 1,
+  "sourceUrl": "https://m.cafe.naver.com/ca-fe/web/cafes/31312978/articles/5731",
+  "collectedAt": "2026-09-20T14:15:00.000Z",
+  "status": "COLLECTED",
+  "hasImageOnlyData": false
+}
