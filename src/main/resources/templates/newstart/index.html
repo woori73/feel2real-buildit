@@ -21,9 +21,43 @@
         </nav>
       </header>
 
+      <!-- HERO : 공식 메인 타이틀 문법 (큰 제목 + 설명), 문구만 NewStart -->
+      <section class="ns-hero" aria-label="새출발 안내">
+        <p class="ns-hero-eyebrow">Feel2Real NewStart · 새출발기금 공식 사이트가 아닌 정보·AI 지원 서비스</p>
+        <h1 class="ns-hero-title">내 새출발, 어디부터 확인할까</h1>
+        <p class="ns-hero-sub">공식 정보를 바탕으로 대상·감면·절차·서류를 정리하고, NewStart AI에게 물어볼 수 있다.</p>
+      </section>
+
+      <!-- TASK CARDS : 공식 대형 카드 문법 (굵은 제목 + 부제 + 화살표), 기능은 NewStart -->
+      <div class="ns-task-row" aria-label="바로 찾기">
+        <a class="ns-task ns-task-navy" href="#ns-official">
+          <h2 class="ns-task-title">나도 대상일까?</h2>
+          <p class="ns-task-sub">지원대상 확인</p>
+        </a>
+        <a class="ns-task ns-task-red" href="#ns-ai">
+          <h2 class="ns-task-title">내 상황 물어보기</h2>
+          <p class="ns-task-sub">NewStart AI</p>
+        </a>
+        <a class="ns-task ns-task-white ns-ext" href="https://www.newstartfund.or.kr/Index.do" target="_blank" rel="noopener">
+          <h2 class="ns-task-title">공식 신청·조회</h2>
+          <p class="ns-task-sub">새출발기금 바로가기</p>
+        </a>
+      </div>
+
+      <!-- QUICK MENU : 공식 퀵메뉴 문법 (흰 카드 + 좌측 제목 + 우측 화살표, 첫 항목 강조) -->
+      <nav class="ns-quick-row" aria-label="빠른 안내">
+        <a class="ns-quick ns-quick-first" href="#ns-official"><span>대상 안내</span></a>
+        <a class="ns-quick" href="#ns-official"><span>감면·상환</span></a>
+        <a class="ns-quick" href="#ns-official"><span>신청 절차</span></a>
+        <a class="ns-quick" href="#ns-official"><span>필요 서류</span></a>
+        <a class="ns-quick ns-ext" href="https://www.newstartfund.or.kr/Faq/List.do" target="_blank" rel="noopener"><span>FAQ</span></a>
+        <a class="ns-quick ns-ext" href="https://www.newstartfund.or.kr/Cntr/List.do" target="_blank" rel="noopener"><span>상담센터</span></a>
+        <a class="ns-quick ns-ext" href="https://www.newstartfund.or.kr/Safc/List.do" target="_blank" rel="noopener"><span>협약 금융기관</span></a>
+      </nav>
+
       <!-- MAIN 1 : NewStart AI (첫 화면 핵심 행동) -->
       <section id="ns-ai" class="ns-ai-hero" aria-label="NewStart AI">
-        <h1 class="ns-ai-title">NewStart AI</h1>
+        <h2 class="ns-ai-title">NewStart AI</h2>
         <form class="ns-ai-input-row" id="ns-ai-form">
           <input class="ns-input ns-ai-input" id="ns-ai-input" type="text" placeholder="궁금한 점을 질문하세요" autocomplete="off" maxlength="2000">
           <button class="ns-btn ns-btn-primary ns-ai-send" id="ns-ai-send" type="submit">질문</button>

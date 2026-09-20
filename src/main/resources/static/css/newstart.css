@@ -1,4 +1,4 @@
-/* NewStart — 새출발기금 부실차주 홈: NewStart AI → 회원 채팅/나의 상태 → 최신 업데이트 */
+/* NewStart — 히어로/태스크카드/퀵메뉴(공식 카드 문법 이식) → NewStart AI → 회원 채팅/나의 상태 → 공식 안내 → 최신 업데이트 */
 .newstart-page { --ns-blue: #2563eb; --ns-blue-soft: #eef3ff; --ns-ink: #111827; --ns-muted: #5b6472; --ns-line: #e5e7eb; --ns-warm: #f6f1e7; --ns-warm-line: #e7e0cf; }
 
 .newstart-shell { max-width: 760px; margin: 0 auto; padding: 16px 16px 48px; }
@@ -111,6 +111,44 @@
 .ns-chat-input { flex: 1; min-width: 0; resize: none; font-size: 15px; padding: 10px 12px; line-height: 1.45; max-height: 96px; }
 .ns-chat-send { flex-shrink: 0; font-size: 14.5px; padding: 10px 18px; }
 .ns-chat-status { min-height: 14px; margin: 4px 2px 0; }
+
+/* ── HERO : 공식 sec01 문법 (좌측 큰 제목 + 설명) ─────────────────── */
+.ns-hero { margin-top: 22px; text-align: left; }
+.ns-hero-eyebrow { font-size: 12px; color: var(--ns-muted); margin: 0 0 6px; }
+.ns-hero-title { font-size: 28px; line-height: 1.25; font-weight: 800; letter-spacing: -0.5px; color: var(--ns-ink); margin: 0; overflow-wrap: anywhere; }
+.ns-hero-sub { font-size: 14.5px; font-weight: 500; color: var(--ns-ink); margin: 8px 0 0; overflow-wrap: anywhere; }
+
+/* ── TASK CARDS : 공식 sec02 문법 (컬러 대형 카드 + 부제 + 화살표) ─────────────────── */
+.ns-task-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 16px; }
+.ns-task { position: relative; display: block; border-radius: 20px; padding: 22px 20px 56px; text-decoration: none; min-height: 44px; overflow-wrap: anywhere; }
+.ns-task-title { font-size: 21px; font-weight: 800; margin: 0; letter-spacing: -0.3px; }
+.ns-task-sub { font-size: 14.5px; margin: 6px 0 0; opacity: .92; }
+.ns-task-navy { background: #001f3b; color: #fff; }
+.ns-task-navy .ns-task-sub { color: #dbe4f0; }
+.ns-task-red { background: #ac0001; color: #fff; }
+.ns-task-red .ns-task-sub { color: #f8dede; }
+.ns-task-white { background: #fff; color: #222; border: 1px solid var(--ns-line); }
+.ns-task-white .ns-task-sub { color: var(--ns-muted); }
+.ns-task::after { content: "→"; position: absolute; left: 20px; bottom: 16px; font-size: 20px; line-height: 1; opacity: .9; transition: transform .2s; }
+.ns-task:hover::after { transform: translateX(4px); }
+.ns-task-navy:hover { background: #0a2c4f; }
+.ns-task-red:hover { background: #8f0001; }
+.ns-task-white:hover { box-shadow: 3px 3px 5px 1px rgb(0 0 0 / 10%); }
+@media (min-width: 760px) {
+  .ns-task-row { grid-template-columns: 1fr 1fr 1fr; }
+  .ns-task { min-height: 150px; }
+}
+
+/* ── QUICK MENU : 공식 sec03 문법 (흰 카드 + 좌측 제목 + 우측 화살표, hover 그림자) ─────────────────── */
+.ns-quick-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.ns-quick { position: relative; display: flex; align-items: center; background: #fff; border: 1px solid var(--ns-line); border-radius: 14px; padding: 13px 34px 13px 14px; font-size: 13.5px; font-weight: 700; color: var(--ns-ink); text-decoration: none; overflow-wrap: anywhere; }
+.ns-quick::after { content: "→"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--ns-muted); transition: transform .2s; }
+.ns-quick:hover { box-shadow: 3px 3px 5px 1px rgb(0 0 0 / 10%); }
+.ns-quick:hover::after { transform: translateY(-50%) translateX(3px); }
+.ns-quick-first { background: #ac0001; border-color: #ac0001; color: #fff; }
+.ns-quick-first::after { color: #fff; }
+.ns-quick-first:hover { background: #8f0001; }
+@media (min-width: 760px) { .ns-quick-row { grid-template-columns: repeat(4, 1fr); } }
 
 /* ── 새출발기금 공식 안내 (OFFICIAL DB v2) ─────────────────── */
 .ns-official { margin-top: 18px; }
