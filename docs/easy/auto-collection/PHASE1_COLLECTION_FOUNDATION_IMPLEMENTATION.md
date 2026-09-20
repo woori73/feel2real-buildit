@@ -130,3 +130,37 @@ dedupe_key 충돌 시 IllegalState로 실패하도록 UNIQUE를 모사.)
 - PHASE 0: `docs/easy/auto-collection/01_ARCHITECTURE.md` 외 8종 (`research/easy-auto-collection-20260920`에서 cherry-pick: 0e6f7e2)
 - 코드: `domain/easy/{controller/EasyCollectionController, service/EasyCollection*, service/EasyCsvFileAdapter, entity/EasyCollection*, repository/EasyCollection*, dto/EasyCollection*, dto/CollectionParsedRow}` + `V983__add_easy_collection_foundation.sql`
 - 계약 문서: `docs/API.md`(자동수집 foundation 섹션), `docs/DOMAIN.md` §4.55
+
+## 12. 학원 PC 복구 + PHASE 2 seam 분석 (2026-09-20, checkpoint 갱신)
+
+### 12-1. 상태 복구 결과 (read-only 확인)
+
+- 기준: remote `feat/easy-collection-foundation-20260920` @ `2aed511` (Phase0 `0ab4b89` 포함·최신).
+- PR #335 OPEN, MERGEABLE, CI build SUCCESS — **main merge·deploy는 이 후속 작업에서 하지 않았다.**
+- 학원 PC 전용 worktree: `Documents/GitHub/easy-collection-academy` (브랜치 동일명, origin 추적).
+  기존 `Documents/GitHub/feel2real-buildit`(Wiki 브랜치)와 `buildit-chart-fresh`는 무접촉.
+- 학원 환경 회귀: `gradlew test --tests "...domain.easy.*"` **109 tests, 0 failures, 0 errors** (TEST A~F 포함 전부 재현 통과).
+- Batch5/confirm/import/accounting 경로 무접촉, production DB 무접촉, secret 무발견.
+
+### 12-2. PHASE 2 착수를 위한 seam (현 코드 대조 확정)
+
+`EasyCollectionIngestService.ingestCsv()`의 구조를 실측한 결과:
+
+| 구간 | 라인 | 성격 |
+|---|---|---|
+| 앞단: connection findOrCreate + run 생성(adapterCode/Version) + `csvFileAdapter.parse()` | :63-86 | 파일 어댑터 특화 |
+| 뒷단: ledger fingerprint 세트 → 3단계 dedupe → raw 저장 → `handoffToImport()` → finish | :88-152, :181-215 | **source-중립(공통 core 후보)** |
+
+- 뒷단은 이미 공통: `SOURCE_CODE` 상수와 `EasyCsvFileAdapter` 주입만 풀면 재사용 가능.
+- dedupe 키/`EasyFingerprint`/stage 계약은 businessId+tuple 기반이라 source 코드만 파라미터화하면 된다.
+- `easy_collection_sources` 카탈로그에 `CARDSALES(OPENAPI)` 등 선등록 완료(active=FALSE) — 어댑터 실장은 등록+시딩만.
+- `EasyImportBatch.sourceKind`는 자유 문자열(기본 "CSV") → cardsales는 `sourceKind="CARD_SALES"` 사용 가능, **import 계약 변경 불필요**.
+- CollectionParsedRow에 externalId 필수화 권장(§8 seq 취약점 보완): cardsales 승인번호/시그널 ID가EXT 키 경로로 안정 dedupe.
+
+### 12-3. PHASE 2 준비 작업 범위 (확인됨 — production write·외부 API 실제 연결 없음)
+
+1. 뒷단 추출: `ingestParsedRows(run, connection, business, sourceCode, rows)` 공통 core로 분리 — FILE_CSV 경로는 동작 불변 리팩터링, TEST A~F로 회귀 증명.
+2. 어댑터 SPI: `parse(...) -> List<CollectionParsedRow>` + adapterCode/version 상수. 파일 어댑터가 첫 구현.
+3. cardsales은 **골격까지만**: connection_ref(참조자) 흐름 + 합성 fixture 파싱 단위 테스트. 실 API 키/호출/발주 없음.
+4. 절대 금지 유지: direct transaction write ✕, confirm 호출 ✕, main merge ✕, migration 실행(로컬 DB 포함 production) ✕.
+
