@@ -108,6 +108,12 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerDisabledTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientContextTest"
+          # Deploy #331/#333 재발 방지: 실제 토큰/프로필 요청 URI를 검증하는 NaverOAuthClientTest와
+          # 프론트 버튼 배선(FrontendAuthBootstrapTest)/채팅 페이지 계약(NewStartChatPageContractTest)은
+          # deploy 게이트에만 있었고 PR 게이트(Build Check)에는 빠져 있었다 — 여기서도 함께 돌린다.
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.FrontendAuthBootstrapTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.NewStartChatPageContractTest"
 
       - name: Upload test report
         if: always()
