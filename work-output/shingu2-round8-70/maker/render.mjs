@@ -12,6 +12,8 @@ const MM = 3.779528; // 1mm = px @96dpi
 const TITLE = "2026학년도 2학기 중간고사 대비 8회 70문항";
 const SUB = "신구중학교 2학년 · 영어 · 70문항 (5·6과)";
 const RUN = "신구중학교 2학년 · 2학기 중간고사 예상문제";
+// 헤더 Source of Truth: 신구중3 4회 문제지(등록본)의 EduHolic 대형 로고 헤더 — 구조·CSS·로고 그대로 사용
+const LOGO_URI = fs.readFileSync(path.resolve("eduholic-logo-datauri.txt"), "utf8").trim();
 
 export const CSS = `@page { size:A4 portrait; margin:0; }
 *{box-sizing:border-box}
@@ -28,6 +30,10 @@ body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-s
 .exam-header .sub-row td{text-align:center;font-size:9.5pt;color:#333}
 .exam-header .info-row td{font-size:9pt}
 .exam-header .label{font-weight:700;background:#f2f2f2;width:16mm;text-align:center}
+.logo-cell{width:25%;height:20mm;padding:0!important;text-align:center;vertical-align:middle}
+.logo-cell img{width:calc(100% - 3mm);height:calc(100% - 2mm);object-fit:contain;display:block;margin:auto}
+.title-cell{width:75%;text-align:center!important;vertical-align:middle;font-size:14pt;font-weight:700;padding:3mm!important;letter-spacing:1px}
+.school-cell{text-align:center;vertical-align:middle;font-size:9.5pt;color:#333}
 .student-info-row .label{width:12mm;text-align:center;white-space:nowrap}
 .student-info-row .student-name{width:72mm}.student-info-row .student-day{width:34mm}.student-info-row .student-score{width:34mm}.student-info-row td{height:9mm;vertical-align:middle}
 .run-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.9pt solid #000;padding-bottom:1.5mm;margin-bottom:3mm;font-size:9pt;color:#333}
@@ -94,8 +100,8 @@ export function units() {
 }
 
 const headerHtml = `<div class="exam-header"><table>
-<tr class="title-row"><td colspan="6">${TITLE}</td></tr>
-<tr class="sub-row"><td colspan="6">${SUB}</td></tr>
+<tr class="title-row"><td class="logo-cell" rowspan="2"><img alt="EduHolic academy" src="${LOGO_URI}"/></td><td class="title-cell" colspan="5">${TITLE}</td></tr>
+<tr class="sub-row"><td class="school-cell" colspan="5">${SUB}</td></tr>
 <tr class="info-row student-info-row">
 <td class="label">이름</td><td class="student-name"> </td>
 <td class="label">요일</td><td class="student-day"> </td>

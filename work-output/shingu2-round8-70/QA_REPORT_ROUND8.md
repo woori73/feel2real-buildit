@@ -53,3 +53,13 @@
 - **해설 항목 구성**: 페이지 목표(10)를 맞추기 위해 해설에서 `발문` 행을 제거하고 필수 4항목(핵심 근거 / 오답 포인트 / 규칙 / 지문 근거)만 유지했다.
 - **시각 검수 방식**: 인앱 브라우저의 스크린샷 API는 `viewport=0x0 / visible=false`로 여전히 사용 불가 → 실제 Chromium 인쇄 출력(`chrome --headless --print-to-pdf`, MediaBox 595×842pt = A4)을 PyMuPDF로 래스터화해 10페이지 컨택트 시트와 원해상도 페이지를 육안 확인하고, 전 20페이지는 `qa_pdf.py`로 기하 검수(PASS). pixel 스크린샷이 별도로 필요하면 브라우저 복구 후 재실행.
 - Wiki(운영 데이터)는 읽기 전용으로만 사용; 등록·수정·승인 동작 없음. **본 문서의 두 HTML은 아직 DRAFT** — 운영 Wiki 등록/FINAL 확정은 별도 승인 필요.
+
+## 5. 학원 PC 세션 (2026-09-20) — EduHolic 대형 로고 헤더 이식 + 재QA
+
+- 복구 지점: `origin/docs/shingu2-round8-70-20260919` HEAD `37a85523` → 전용 worktree `feel2real-buildit-shingu2r8` (브랜치 `docs/shingu2-round8-70-academy-20260920`). 다른 worktree 미접촉.
+- 헤더 Source of Truth: **신구중3 4회 문제지 등록본**의 EduHolic 대형 로고 헤더. 실제 로고(data-URI JPEG 4,199B)·구조(`logo-cell rowspan=2` + `title-cell colspan=5` + `school-cell` + 학생정보 행)·CSS를 `docs/exam-generation/templates/shingu3/round4/신구중3_4회_40문항_문제지_TEMPLATE_FINAL.html`(GitHub canonical)에서 그대로 이식. 로고 신규 생성 없음. `render.mjs`에 LOGO_URI 로드 + 헤더 마크업/CSS 교체, 텍스트만 Round8 정보(8회 70문항 / 신구중학교 2학년 · 영어 · 70문항 (5·6과)).
+- 본문 불변 검증: 이식 후 qblock 70개 전문이 기존 DRAFT와 완전 일치(발문·선택지·공통지문·순서), 2~10페이지 run-header 유지, 정답해설 헤더는 범위 밖이라 미변경.
+- 재실측·재생성: `render.mjs draft` → `measure.mjs paper`(헤드리스 Chrome) → headerH 121.25px·단위합 15,400.82px로 패킹 입력 불변 → `render.mjs final` cols 20 / pages 10.
+- 인쇄 재QA: 두 문서 `--print-to-pdf` 10p씩, `qa_pdf.py` 전 20페이지 RESULT: PASS (breach/clip/colOver/gutter/markerFrag/brokenWord 0, 번호 1~70 연속·무결). 문제지 1쪽 PDF에서 로고 이미지 실재 확인(rect ≈ 33.1×17.7mm, 헤더 좌상단), 1·10쪽·해설 1쪽 래스터 육안 확인.
+- 산출물: `신구중2_8회_70문항_문제지_DRAFT.html`(헤더 반영), `신구중2_8회_70문항_정답해설_DRAFT.html`(무변경), 신규 `신구중2_8회_70문항_출제검수.md`(BLUEPRINT·HTML·QA·Wiki 자료원 실대조 검수 기록).
+- 한계: 학원 PC 내장 브라우저도 조작 타임아웃(unusable) → 브라우저 육안 확인은 PDF 래스터로 대체. 신구중3 4회 Wiki 등록본 바이트 직접 열람은 ADMIN 세션 필요 → GitHub canonical TEMPLATE_FINAL을 원전으로 사용(출제검수 §8-6 기록).
