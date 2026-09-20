@@ -61,14 +61,20 @@ public class NaverOAuthController {
       @RequestParam(name = "error", required = false) String error,
       HttpServletRequest request,
       HttpServletResponse response) throws IOException {
+    // 2026-09-20 실기기 재조사: 이 진입 로그가 없으면 "콜백이 아예 안 왔다"와 "콜백은 왔는데
+    // 아래 두 조용한 분기(취소/state 무효) 중 하나로 빠졌다"를 journal만으로 구분할 수 없었다.
+    log.info("NAVER_CALLBACK_RECEIVED");
     String target = "/newstart";
     try {
       if (error != null || code == null || code.isBlank()) {
+        log.warn("NAVER_CALLBACK_CANCELLED errorPresent={} codePresent={}",
+            error != null, code != null && !code.isBlank());
         response.sendRedirect(target + "?login=naver_cancelled");
         return;
       }
       Optional<String> returnUrl = stateService.validate(request, state);
       if (returnUrl.isEmpty()) {
+        log.warn("NAVER_CALLBACK_INVALID_STATE");
         response.sendRedirect(target + "?login=naver_invalid_state");
         return;
       }
@@ -88,6 +94,7 @@ public class NaverOAuthController {
       String token = tokenProvider.issue(user.userId(), user.loginId(), user.role());
       cookieUtil.writeAccessToken(response, token);
       response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+      log.info("NAVER_CALLBACK_SUCCESS");
       response.sendRedirect(target);
     } catch (RuntimeException e) {
       // 회원 식별/생성·social 연결 단계 실패 — 예외 세부는 억제하고 stage만 남긴다(개인정보/토큰 노출 금지).
