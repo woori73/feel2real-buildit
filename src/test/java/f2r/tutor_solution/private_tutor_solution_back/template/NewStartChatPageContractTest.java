@@ -41,10 +41,15 @@ class NewStartChatPageContractTest {
     assertThat(html).contains("id=\"ns-chat-form\"");                // 전송 폼
     assertThat(html).contains("id=\"ns-chat-input\"");               // 입력창
     assertThat(html).contains("/js/newstart-chat.js");               // 채팅 전용 JS
-    assertThat(html).contains("data-auth-login");                    // 로그인 안내 버튼
     assertThat(html).contains("id=\"ns-chat-login-alert\"");          // 네이버 OAuth 실패/취소 알림 영역
-    assertThat(html).contains("data-login-modal");                   // 공통 로그인 모달 fragment 치환 완료
     assertThat(html).contains("메시지를 입력하세요");                  // 하단 입력 placeholder
     assertThat(html).doesNotContain("th:replace");                   // 치환 잔여물 없음
+
+    // NewStart는 로그인 방법이 "네이버로 로그인" V2 하나뿐이다(#340 방향 전환) — 공용 ID/PW 모달
+    // 기반 로그인은 더 이상 쓰지 않는다.
+    assertThat(html).contains("href=\"/auth/naver/v2/start\"");       // 네이버 로그인 V2 직결 링크
+    assertThat(html).doesNotContain("data-auth-login");               // 공용 모달 오픈 트리거 없음
+    assertThat(html).doesNotContain("data-login-modal");              // 공용 로그인 모달 미포함
+    assertThat(html).doesNotContain("data-auth-signup");              // 회원가입 링크 없음
   }
 }

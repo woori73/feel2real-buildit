@@ -17,7 +17,7 @@
         <a class="newstart-brand" href="/newstart" aria-label="새출발기금 부실차주 홈">새출발기금 부실차주</a>
         <nav class="newstart-topbar" aria-label="기본 메뉴">
           <a class="ns-btn ns-btn-ghost" href="/newstart">홈</a>
-          <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/newstart', 'NewStart')}"></th:block>
+          <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
         </nav>
       </header>
 
@@ -175,8 +175,6 @@
   <th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
-  <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
   <script src="/js/newstart.js?v=20260919-3" defer></script>
-  <script src="/js/naver_login.js?v=20260919-1" defer></script>
 </body>
 </html>

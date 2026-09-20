@@ -98,14 +98,8 @@
     PAGE.more.hidden = true;
     PAGE.empty.hidden = true;
     showLoginAlert();
-    if (PAGE.loginBtn) {
-      PAGE.loginBtn.addEventListener('click', function () {
-        // account_menu.js의 공통 로그인 모달 (로그인 성공 시 f2r:login 이벤트 발생)
-        if (typeof window.openLoginModal === 'function') {
-          window.openLoginModal();
-        }
-      });
-    }
+    // NewStart는 로그인 방법이 "네이버로 로그인" 하나뿐이라 #ns-chat-login-btn은 직접 이동하는
+    // <a href="/auth/naver/v2/start">다 — 공용 로그인 모달(openLoginModal)에 더 이상 의존하지 않는다.
     document.addEventListener('f2r:login', function () {
       loadCurrentUser();
     });
