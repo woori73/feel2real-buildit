@@ -236,3 +236,21 @@ jobs:
           echo "=== GET /oauth/naver/callback junk params via public URL (302 target proves route reachable through front chain) ==="
           curl -s -o /dev/null -D - --max-time 10 "https://feel2real.co.kr/oauth/naver/callback?code=probe&state=probe" | grep -iE "^HTTP/|^location:|^server:|^via:|^x-cache" | cut -c1-160
           exit 0
+
+      - name: Public callback chain repro (runner curl + cookie jar, markers only, NO state values)
+        shell: bash
+        run: |
+          set +e
+          JAR=/tmp/naver-repro.jar
+          BASE=https://feel2real.co.kr
+          HDRS=$(curl -s -c "$JAR" -o /dev/null -D - --max-time 10 "$BASE/oauth/naver/start?returnUrl=%2Fnewstart%2Fchat")
+          echo "--- start Set-Cookie attrs for NAVER_OAUTH_STATE (value hidden) ---"
+          echo "$HDRS" | grep -i "^set-cookie: NAVER_OAUTH_STATE" | sed -E "s/NAVER_OAUTH_STATE=[^;]+/NAVER_OAUTH_STATE=<hidden>/I"
+          STATE=$(echo "$HDRS" | grep -i "^location:" | tr "&" "
+" | grep "^state=" | cut -d= -f2 | tr -d "")
+          echo "state_len=${#STATE}"
+          echo "--- WITH cookie jar + invalid code (state expected VALID, exchange expected to fail at Naver => login=naver_failed marker on signed returnUrl) ---"
+          curl -s -b "$JAR" -o /dev/null -D - --max-time 15 "$BASE/oauth/naver/callback?code=repro_invalid_code&state=$STATE" | grep -iE "^HTTP/|^location:"
+          echo "--- WITHOUT cookie (control: expect login=naver_invalid_state) ---"
+          curl -s -o /dev/null -D - --max-time 15 "$BASE/oauth/naver/callback?code=repro_invalid_code&state=$STATE" | grep -iE "^HTTP/|^location:"
+          exit 0
