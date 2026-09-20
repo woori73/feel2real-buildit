@@ -23,6 +23,7 @@
     PAGE.send = document.getElementById('ns-chat-send');
     PAGE.loginBox = document.getElementById('ns-chat-login');
     PAGE.loginBtn = document.getElementById('ns-chat-login-btn');
+    PAGE.loginAlert = document.getElementById('ns-chat-login-alert');
     PAGE.status = document.getElementById('ns-chat-status');
     if (!PAGE.list) return;
 
@@ -66,11 +67,37 @@
       .catch(function () { showLoginRequired(); });
   }
 
+  /* ── 네이버 OAuth 실패/취소 안내 — callback의 ?login= 마커를 표시 후 URL에서 정리한다.
+     서버 오류 세부(credential/token 등)는 노출하지 않는다. ── */
+  var LOGIN_ALERTS = {
+    naver_failed: '네이버 로그인에 실패했습니다. 다시 로그인해 주세요.',
+    naver_invalid_state: '로그인 정보가 만료되었거나 유효하지 않습니다. 로그인을 다시 시도해 주세요.',
+    naver_cancelled: '네이버 로그인이 취소되었습니다. 다시 시도해 주세요.',
+    naver_unconfigured: '네이버 로그인이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.'
+  };
+
+  function showLoginAlert() {
+    if (!PAGE.loginAlert) return;
+    var code = null;
+    try {
+      code = new URLSearchParams(window.location.search).get('login');
+    } catch (_) {
+      return;
+    }
+    if (!code || !LOGIN_ALERTS[code]) return;
+    PAGE.loginAlert.textContent = LOGIN_ALERTS[code];
+    PAGE.loginAlert.hidden = false;
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }
+
   function showLoginRequired() {
     PAGE.loginBox.hidden = false;
     PAGE.form.hidden = true;
     PAGE.more.hidden = true;
     PAGE.empty.hidden = true;
+    showLoginAlert();
     if (PAGE.loginBtn) {
       PAGE.loginBtn.addEventListener('click', function () {
         // account_menu.js의 공통 로그인 모달 (로그인 성공 시 f2r:login 이벤트 발생)
