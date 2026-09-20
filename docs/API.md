@@ -711,6 +711,14 @@ LMS 주소가 성립하지 않는다(404).
 - 사업체 코드 혼합 시 사업장별 배치로 분리. 미확정 행이 있으면 staging 전 전체 거부. 장부 중복은 `DUPLICATE`로 확정 제외. 외부 계정명은 확정 매핑만 자동 적용한다.
 - 관련 코드: `EasyImportController`, `EasyShopImportService`.
 
+### ✅ 자동수집 foundation (V983) — POST /api/admin/easy/collections/ingest/csv, GET /api/admin/easy/collections/runs?businessId, GET /api/admin/easy/collections/runs/{runId}, GET /api/admin/easy/collections/sources
+
+- 목적: CSV 파일(UTF-8/CP949) 수집 → run → 3단계 dedupe → 기존 import staging 인계(sourceKind=FILE_CSV, sourceName=`파일명#run:{runId}`). **인계만 한다 — 확정은 기존 `/api/admin/easy/imports/{batchId}/confirm`만 유효** (자동 collect ≠ 자동 confirm).
+- ingest: multipart `businessId`, `file`, 선택 `label`. Response `{ run: { status, fetchedCount, acceptedCount, duplicateCount, errorCount, importBatchId, ... }, rowErrors: [] }`.
+- dedupe 3단계: ①외부 ID(승인번호 등) → `EXT` 키(내용이 달라도 동일 ID면 중복) ②정규화 튜플 해시+파일 내 등장 순번 → `T` 키(파일명·행 순서 무관 내용 기반) ③기존 장부 `fingerprint` 충돌 → raw는 `LEDGER_DUPLICATE_EXCLUDED`로 보존하고 import에 넘기지 않는다.
+- 파싱 실패 행은 원문을 raw `ERROR`로 보존하고 run은 `PARTIAL`. XLSX는 미지원(명시 거부). 인계는 수집 1회당 최대 2000행.
+- 관련 코드: `EasyCollectionController`, `EasyCollectionIngestService`, `EasyCsvFileAdapter`, `EasyCollectionDedupeKeys`. 상세: `docs/easy/auto-collection/PHASE1_COLLECTION_FOUNDATION_IMPLEMENTATION.md`.
+
 ### ✅ GET /api/admin/easy/pl?businessId&year
 
 - 목적: 연도 손익. 분개 기준 집계 + 장부 교차검증(`matchesLedger`, `journalBalanced`, `unpostedTxnCount`) + 월별 + 계정별 + 전년 비교. `businessId` 생략 시 전체 합산.
