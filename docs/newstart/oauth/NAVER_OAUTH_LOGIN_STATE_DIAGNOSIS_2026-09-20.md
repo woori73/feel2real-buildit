@@ -108,3 +108,68 @@ JWT/쿠키/필터를 거치므로 정상 — naver-only 증상과 일치.
   EC2→`nid.naver.com/oauth2.0/token` **200 도달 확인**(기존 auth.naver.com은 000 그대로 — 수정이 유효한 호스트로 우회했음을 실증).
 - `user_social_accounts` / `naver_%` users = 아직 0 (배포 후 실제 네이버 로그인 시도가 없었으므로 정상).
   **남은 것: 사용자의 실제 1회 E2E 로그인**(동의 → 헤더 로그인 표시 → social 1건). 확인 후 이 섹션에 결과 기록 및 임시 진단 워크플로우 제거 PR 진행.
+
+## 11. ACADEMY PC 핸드오프 #3 — 배포 후 실사용자 시도 재진단 (2026-09-20 04:52~04:56 UTC, READ ONLY)
+
+> Secret/env 값·PII·client_id 미출력. DB 쓰기·설정 변경·재배포 없음.
+
+### 11.1 GitHub checkpoint 확인
+
+- origin/main HEAD `9def3c7`(PR #334 머지, 문서 checkpoint `d680cb4` 포함)가 최신 authoritative 상태.
+  `main..origin/fix/newstart-naver-e2e-forensics-20260920`에 진단 워크플로우 확장 등 11커밋이 머지 전이나,
+  코드 수정(TOKEN_URL)은 main과 동일 내용. prod 코드 미머지 분기는 없음.
+- `NaverOAuthClient.TOKEN_URL = https://nid.naver.com/oauth2.0/token` (main 소스 28행) 확인.
+
+### 11.2 Production 실측 (academy PC에서 직접)
+
+- `GET /oauth/naver/start?returnUrl=/newstart/chat` → **302** `nid.naver.com/oauth2.0/authorize`,
+  `redirect_uri=https%3A%2F%2Ffeel2real.co.kr%2Foauth%2Fnaver%2Fcallback`,
+  `Set-Cookie: NAVER_OAUTH_STATE`(Secure/HttpOnly/Lax/Path=/, Max-Age=600) 발급. **PASS**
+- `GET /oauth/naver/callback?code=probe&state=probe`(위조) → **302 `/newstart?login=naver_invalid_state`**. 라우팅 **PASS**
+- `/actuator/health` UP, `/newstart/chat` 200.
+- **DNS A레코드 2개**(43.200.109.203 / 3.38.56.228): `--resolve`로 두 IP에 각각 start/callback/health 직접 요청 →
+  응답 동작 동일(각 302 + 동일 마커). **멀티서버 버전 편차 가설 각하.**
+- 구 빌드 잔존 확인: EC2 실행 중 jar(02:59 UTC run 35485408619)의 `NaverOAuthClient.class` 내장 URL =
+  `nid.naver.com/oauth2.0/token` + `openapi.naver.com/v1/nid/me` 2종뿐, `auth.naver.com` 없음.
+  app.jar mtime 9/19 20:10 UTC, f2r-app active 20:11:03 UTC.
+
+### 11.3 DB/로그 (READ ONLY, run 35490280001, 04:53 UTC)
+
+- `user_social_accounts` 총 **0**, `naver_%` users **0** → **CASE A** (callback~프로필 구간 단절).
+- journal 24h `naver|oauth`: 9/19 16:28 이전 Bean 오류(#331에서 해결된 이력)만. callback 관련 라인 0 —
+  `exchangeCode`/`fetchProfile` 실패 경로가 무로그 침묵 실패인 것과 양립.
+- WARN `POST not supported` 2건(02:39, 04:08 UTC)은 경로가 기록되지 않아 귀속 판단 불가.
+- 인스턴스에 nginx/httpd 접근 로그 없음(리스너: 22/8000/8080만) → callback 도달 여부 자체를 로그로 확인할 수 없음.
+
+### 11.4 수정 빌드에서의 체인 실증 (포렌식 브랜치 run 35485408619 repro, 02:59 UTC)
+
+- 쿠키자바(유효 state)+위조 code → **302 `/newstart/chat?login=naver_failed`**: state 검증·returnUrl 서명 통과,
+  code→token 교환에서 싌 마커 도달(위조 code이므로 정상 동작). 무쿠키 → `naver_invalid_state`(대조군 정상).
+- 즉 1~4단계(start→인가 URL→callback 라우팅→state 검증)는 수정 빌드에서 실동작 증명됨.
+
+### 11.5 판정: ROOT CAUSE (배포 후 마지막 실사용자 시도 기준) — **NOT YET CONFIRMED**
+
+기존 증거로 다음을 구별 불가:
+
+- **S1**: 사용자 시도가 9/19 20:11 UTC(=9/20 05:11 KST) 수정 배포 **이전**에 발생
+  (root cause는 §7의 auth.naver.com로 이미 확정·수정됨, 수정 후 E2E 미확잔 상태).
+- **S2**: 수정 배포 **이후** 시도, 실 code→token 교환이 네이버 응답 오류로 침묵 실패
+  (예: client_id/secret 페어 불일치, state/redirect 불일치) → `?login=naver_failed`.
+- **S3**: callback 도달 이전 중단(네이버 동의 화면 오류 종료 등) → 서버 흔적 0과 양립.
+
+### 11.6 최소 진단 장치 설계 (미수용·미구현. 승인 전 code change/deploy 없음)
+
+- **D1 (권장, 코드변경 無·배포無)**: 임시 진단 워크플로우에 네이버 자격 검증 스텝 추가 —
+  EC2에서 `POST nid.naver.com/oauth2.0/token` `grant_type=client_credentials`(네이버가 지원하는 무상한 grant)로
+  client_id/secret 페어 유효성을 사용자 개입 없이 점검. 출력은 `errorcode`/`resultcode` 분류값만, 토큰·env 값 절대 비공개.
+  - 성공 → 자격 유효. S2의 남은 가능성(실 code 경로)으로 좁혀짐.
+  - `Unauthorized Client`/`invalid_client` → **자격증명 페어 불일치 = root cause 확정**.
+  (임시 진단 워크플로우 편집은 prod 코드·배포와 무관 — 승인 시 브랜치에 커밋 후 dispatch)
+- **D2 (D1 후 잔존 시)**: `exchangeCode`/`fetchProfile` 실패 지점에 HTTP status + 네이버 errorcode 전용 WARN 1줄씩
+  (PII/secret/code 비로그). prod 코드 수정+배포 필요 → 별도 승인.
+- **D3 (사용자 협조, 재시도 요구 아님)**: 마지막 시도 시각(9/20 05:11 KST 대비)과 가능하면 브라우저 히스토리의
+  최종 URL 쿼리 꼬리표(`?login=naver_failed`/`?login=` 없음) 확인 — S1/S2/S3 즉시 판별.
+
+### 11.7 금지선 준수
+
+비공개 자격증명/D developer센터/env/redirect URI/migration/DB 쓰기/배포/머지·리셋 없음. 다른 프로젝트 파일 비접촉.
