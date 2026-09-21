@@ -133,7 +133,7 @@ public class EasyCollectionIngestService {
           adapter.validateConnection(context.connectionRef());
           return adapter.fetch(context.connectionRef(), since, limit);
         }, () -> inTransaction(() -> {
-          executionGate.heartbeat(context.runId(), context.leaseToken());
+          executionGate.heartbeat(context.runId(), context.connectionId(), context.leaseToken());
           return Boolean.TRUE;
         }));
       }
@@ -194,7 +194,7 @@ public class EasyCollectionIngestService {
   private EasyCollectionIngestResponse completeAdapterRun(AdapterFetchContext context,
       List<CollectionParsedRow> parsed) {
     if (executionGate != null) {
-      executionGate.requireOwnedRunning(context.runId(), context.leaseToken());
+      executionGate.requireOwnedRunning(context.runId(), context.connectionId(), context.leaseToken());
     }
     EasyCollectionRun run = runRepository.findById(context.runId())
         .orElseThrow(() -> new IllegalStateException(
@@ -211,7 +211,7 @@ public class EasyCollectionIngestService {
       EasyCollectionException failure) {
     if (executionGate != null) {
       try {
-        executionGate.requireOwnedRunning(context.runId(), context.leaseToken());
+        executionGate.requireOwnedRunning(context.runId(), context.connectionId(), context.leaseToken());
       } catch (IllegalStateException ownershipLost) {
         EasyCollectionRun terminal = runRepository.findById(context.runId())
             .orElseThrow(() -> ownershipLost);
