@@ -45,9 +45,13 @@ class NewStartChatPageContractTest {
     assertThat(html).contains("메시지를 입력하세요");                  // 하단 입력 placeholder
     assertThat(html).doesNotContain("th:replace");                   // 치환 잔여물 없음
 
-    // NewStart는 로그인 방법이 "네이버로 로그인" V2 하나뿐이다(#340 방향 전환) — 공용 ID/PW 모달
-    // 기반 로그인은 더 이상 쓰지 않는다.
-    assertThat(html).contains("href=\"/auth/naver/v2/start\"");       // 네이버 로그인 V2 직결 링크
+    // NewStart는 로그인 방법이 "네이버로 로그인" 하나뿐이다 — 공용 ID/PW 모달 기반 로그인은
+    // 더 이상 쓰지 않는다. 로그인 시작점은 공식 Spring Security OAuth2 Client 표준 흐름
+    // /oauth2/authorization/naver 하나로 통일한다(#341 — V2 /auth/naver/v2/start는 실사용자
+    // 검증에서 프로필 파싱 실패로 매번 로그인에 실패해 UI 연결에서 제외했다).
+    assertThat(html).contains("href=\"/oauth2/authorization/naver\""); // 네이버 로그인 공식 흐름 직결 링크
+    assertThat(html).doesNotContain("href=\"/auth/naver/v2/start\"");
+    assertThat(html).doesNotContain("href=\"/oauth/naver/start\"");
     assertThat(html).doesNotContain("data-auth-login");               // 공용 모달 오픈 트리거 없음
     assertThat(html).doesNotContain("data-login-modal");              // 공용 로그인 모달 미포함
     assertThat(html).doesNotContain("data-auth-signup");              // 회원가입 링크 없음

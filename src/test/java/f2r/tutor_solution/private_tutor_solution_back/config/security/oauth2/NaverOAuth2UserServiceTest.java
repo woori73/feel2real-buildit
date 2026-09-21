@@ -91,6 +91,38 @@ class NaverOAuth2UserServiceTest {
   }
 
   @Test
+  @DisplayName("같은 provider id로 다시 로그인하면 USER_FOUND — User를 또 만들지 않는다")
+  void secondLoginWithSameProviderIdFindsExistingUserWithoutDuplication() {
+    // given — 1차 로그인으로 이미 생성된 상태(실사용자 검증 2026-09-21에서 실제로 발생한 시나리오:
+    // NAVER_OAUTH2_USER_CREATED 1건이 이미 DB에 있다)
+    when(socialAccountRepository.findByProviderAndProviderUserId(SocialProvider.NAVER, PROVIDER_ID))
+        .thenReturn(Optional.empty());
+    when(userRepository.existsByLoginId(any())).thenReturn(false);
+    ArgumentCaptor<User> firstSave = ArgumentCaptor.forClass(User.class);
+    service.mapAndLink(rawAttributes(PROVIDER_ID, "김철수", "cheolsu", null));
+    verify(userRepository).save(firstSave.capture());
+    User created = firstSave.getValue();
+
+    // when — 2차 로그인: 이번엔 이미 연결된 SocialAccount가 존재(userId는 IDENTITY 생성이라
+    // mock 환경에선 null이므로, 실제 저장 후의 상태를 흉내내 고정된 id로 재구성한다)
+    Mockito.reset(userRepository, socialAccountRepository);
+    User persisted = User.builder().loginId(created.getLoginId()).password("x")
+        .name(created.getName()).nickname(created.getNickname()).role(Role.STUDENT).build();
+    SocialAccount link = SocialAccount.builder()
+        .userId(7L).provider(SocialProvider.NAVER).providerUserId(PROVIDER_ID).build();
+    when(socialAccountRepository.findByProviderAndProviderUserId(SocialProvider.NAVER, PROVIDER_ID))
+        .thenReturn(Optional.of(link));
+    when(userRepository.findById(7L)).thenReturn(Optional.of(persisted));
+
+    OAuth2User secondLogin = service.mapAndLink(rawAttributes(PROVIDER_ID, "김철수", "cheolsu", null));
+
+    // then — 신규 생성 없음, 같은 loginId 그대로 재사용
+    verify(userRepository, never()).save(any(User.class));
+    verify(socialAccountRepository, never()).save(any(SocialAccount.class));
+    assertThat(secondLogin.<String>getAttribute("f2rLoginId")).isEqualTo(created.getLoginId());
+  }
+
+  @Test
   @DisplayName("이미 V1/V2 등 다른 경로로 연결된 네이버 계정이면 같은 User를 찾아 쓴다(중복 가입 없음)")
   void reusesAlreadyLinkedAccountAcrossAnyNaverLoginPath() {
     User existing = User.builder().loginId("naver_legacy").password("x").name("김철수")

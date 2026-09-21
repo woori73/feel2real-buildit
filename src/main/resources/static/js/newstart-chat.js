@@ -99,7 +99,8 @@
     PAGE.empty.hidden = true;
     showLoginAlert();
     // NewStart는 로그인 방법이 "네이버로 로그인" 하나뿐이라 #ns-chat-login-btn은 직접 이동하는
-    // <a href="/auth/naver/v2/start">다 — 공용 로그인 모달(openLoginModal)에 더 이상 의존하지 않는다.
+    // <a href="/oauth2/authorization/naver">다(#341 공식 Spring Security OAuth2 Client 흐름) —
+    // 공용 로그인 모달(openLoginModal)에 더 이상 의존하지 않는다.
     document.addEventListener('f2r:login', function () {
       loadCurrentUser();
     });

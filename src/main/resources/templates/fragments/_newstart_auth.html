@@ -7,6 +7,12 @@
   방법이 "네이버로 로그인" 하나뿐이라 별도 fragment로 완전히 분리했다 — 회원가입 없음, 학생/강사
   선택 없음, ID/PW 없음.
 
+  로그인 시작점은 /oauth2/authorization/naver(공식 Spring Security OAuth2 Client 표준 흐름,
+  #341) 하나로 통일한다. 손수 작성한 V1(/oauth/naver/start)·V2(/auth/naver/v2/start)는 코드
+  자체는 삭제하지 않았지만, NewStart UI는 더 이상 그쪽을 가리키지 않는다 — 실사용자 검증(PC 직접
+  URL 진입)에서 공식 흐름은 PROFILE_FETCHED→USER_CREATED→LOGIN_SUCCESS까지 완주했고, V2는
+  프로필 파싱("result" 키가 실제 네이버 응답의 "response"와 다름)에서 매번 실패했다.
+
   account_menu.js는 그대로 재사용한다(fragments/_head.html에서 이미 로드됨) — 이 JS는
   [data-auth-actions]/[data-account-menu]/[data-account-menu-trigger]/[data-account-menu-panel]/
   [data-account-logout]을 범용 선택자로만 다루므로 내용(마크업)만 새로 짜도 그대로 동작한다.
@@ -16,7 +22,7 @@
 -->
 <th:block th:fragment="authControls">
   <div class="auth-actions" data-auth-actions hidden>
-    <a class="ns-btn ns-btn-primary" href="/auth/naver/v2/start">네이버로 로그인</a>
+    <a class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버로 로그인</a>
   </div>
 
   <div class="account-menu" data-account-menu hidden>
