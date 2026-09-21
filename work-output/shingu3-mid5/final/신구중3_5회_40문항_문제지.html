@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>신구중3 5회 40문항 문제지</title>
+<style>
+@page { size:A4 portrait; margin:0; }
+*{box-sizing:border-box}
+html,body{width:100%;margin:0;padding:0}
+body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-size:9.5pt;line-height:1.42;color:#111;word-break:keep-all}
+.page{width:210mm;height:297mm;padding:12mm 11mm 8mm 11mm;position:relative;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.page:last-child{page-break-after:auto}
+.cols{display:flex;gap:7mm;flex:1 1 auto;min-height:0;padding-bottom:5mm}
+.col{width:calc(50% - 3.5mm);overflow:hidden;display:flex;flex-direction:column;gap:var(--qgap,14px)}
+.exam-header{border:1.4pt solid #000;margin-bottom:4mm}
+.exam-header table{width:100%;border-collapse:collapse;font-size:9.5pt}
+.exam-header td,.exam-header th{border:.7pt solid #444;padding:2mm 2.5mm}
+.exam-header .title-row td{text-align:center;font-size:14pt;font-weight:700;padding:3mm;letter-spacing:1px}
+.exam-header .sub-row td{text-align:center;font-size:9.5pt;color:#333}
+.exam-header .info-row td{font-size:9pt}
+.exam-header .label{font-weight:700;background:#f2f2f2;width:16mm;text-align:center}
+.exam-header .logo-cell{width:34mm;padding:0;text-align:center;vertical-align:middle}
+.exam-header .logo-cell img{width:28mm;height:auto;display:block;margin:2mm auto}
+.exam-header .title-row .title-cell{text-align:left;font-size:14pt;font-weight:700;padding:3mm 4mm;letter-spacing:0.5px}
+@media print{.exam-header .logo-cell img{width:28mm!important}}
+.student-info-row .label{width:12mm;text-align:center;white-space:nowrap}
+.student-info-row .student-name{width:72mm}.student-info-row .student-day{width:34mm}.student-info-row .student-score{width:34mm}.student-info-row td{height:9mm;vertical-align:middle}
+.run-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.9pt solid #000;padding-bottom:1.5mm;margin-bottom:3mm;font-size:9pt;color:#333}
+.qblock{margin:0;page-break-inside:avoid;break-inside:avoid;flex:0 0 auto}
+.qhead{display:flex;gap:1.3mm;align-items:baseline}.qnum{font-weight:700;flex-shrink:0}.qprompt{font-weight:500}
+.passage{margin:1mm 0 1mm 4.6mm}.passage.box,.passage.dialog{border:.7pt solid #666;padding:1.5mm 2mm;background:#fbfbfb;line-height:1.55}
+.choices{margin-top:1.5mm}.choices.row{margin-left:4.6mm;display:flex;flex-wrap:wrap;column-gap:3.3mm;row-gap:.8mm;align-items:flex-start}
+.choice-item{display:inline-block;white-space:normal;padding-left:1.35em;text-indent:-1.35em}
+.choices.vertical{display:block;margin-left:4.6mm}.choices.vertical .choice-item,.choices.vertical .opt{display:block;width:auto;margin:0 0 1.15mm 0;padding-left:1.45em;text-indent:-1.45em;white-space:normal}
+.cond-box{margin:1.3mm 0 0 4.6mm;border:.7pt solid #666;padding:1mm 2mm;font-size:9pt;background:#fbfbfb}.cond-label{font-weight:700;margin-right:1mm}
+.view-title{display:block;text-align:center;margin:0 0 1.2mm 0;font-weight:700}.cond-box + .choices{margin-top:3.4mm}
+.choice-table{width:calc(100% - 4.6mm);margin:1.2mm 0 0 4.6mm;border-collapse:collapse;font-size:9pt;text-align:center}.choice-table th,.choice-table td{padding:.55mm 1.2mm;border-bottom:.45pt solid #bbb}.choice-table th{font-weight:700;border-top:.7pt solid #666;border-bottom:.7pt solid #666}.choice-table td:first-child{width:9mm;font-weight:700}
+.blank{display:inline-block;min-width:14mm;border-bottom:.7pt solid #111}
+.sent-list{margin:1mm 0 1mm 4.6mm}.sent-list div{margin:0 0 .6mm 0}
+.pic-box{margin:1mm 0 1mm 4.6mm;border:.7pt dashed #888;padding:1.5mm 2mm;background:#fdfdfd;font-size:9pt}
+u{text-underline-offset:1.5px}
+.page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
+@media screen{body{background:#e9e9e9}.page{margin:0 auto 8mm auto}}
+@media print{@page{size:A4 portrait;margin:0}html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:210mm!important;height:296mm!important;margin:0!important;padding:12mm 11mm 12mm 11mm!important;overflow:hidden!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.cols{display:flex!important;width:100%!important;padding-bottom:4mm!important}.col{flex:0 0 calc(50% - 3.5mm)!important;width:calc(50% - 3.5mm)!important}}
+</style></head>
+<body>
+<div class="page"><div class="exam-header"><table>
+<tr class="title-row"><td class="logo-cell" rowspan="2"><img alt="EduHolic academy" src="data:image/jpeg;base64,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"/></td><td class="title-cell" colspan="5">2026학년도 2학기 중간고사 대비 5회 40문항</td></tr>
+<tr class="sub-row"><td class="school-cell" colspan="5">신구중학교 3학년 · 영어</td></tr>
+<tr class="info-row student-info-row">
+<td class="label">이름</td><td class="student-name"> </td>
+<td class="label">요일</td><td class="student-day"> </td>
+<td class="label">점수</td><td class="student-score"> </td>
+</tr>
+</table></div><div class="cols"><div class="col"><div class="qblock" data-qnum="1">
+<div class="qhead"><span class="qnum">1.</span><span class="qprompt">다음 문장의 공통으로 들어갈 단어로 가장 적절한 것은?</span></div>
+<div class="sent-list"><div>My uncle writes a ____ about movies in the newspaper every week.</div><div>The tall stone ____s in the old building hold up its roof.</div><div>Please write your name in the first ____ of the table.</div></div>
+<div class="choices row">
+<span class="choice-item">① post</span><span class="choice-item">② page</span>
+<span class="choice-item">③ column</span><span class="choice-item">④ space</span>
+<span class="choice-item">⑤ roof</span>
+</div>
+</div>
+<div class="qblock" data-qnum="2">
+<div class="qhead"><span class="qnum">2.</span><span class="qprompt">A와 B의 대화가 어색한 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① A: If you were an architect, what would you design?<br>   B: I would design a library shaped like a giant book.</span>
+<span class="choice-item">② A: How was the art museum tour?<br>   B: It was amazing. I've never seen such great artworks.</span>
+<span class="choice-item">③ A: I wish I could play the guitar like Alex.<br>   B: So do I. He is really talented.</span>
+<span class="choice-item">④ A: Would you mind turning down the music?<br>   B: Not at all. I'll turn it down.</span>
+<span class="choice-item">⑤ A: Could you help me carry these drums?<br>   B: Yes, you can.</span>
+</div>
+</div>
+<div class="qblock" data-qnum="3">
+<div class="qhead"><span class="qnum">3.</span><span class="qprompt">ⓐ~ⓔ의 질문의 요지로 적절하지 <u>않은</u> 것은?</span></div>
+<div class="passage dialog">M: ⓐ <u>How long have you lived in Cateura?</u><br>
+F: For about fifteen years.<br>
+M: ⓑ <u>What was Cateura like before the orchestra?</u><br>
+F: There weren't many hopes and dreams here.<br>
+M: ⓒ <u>How do you feel about performing on stage now?</u><br>
+F: I feel thrilled every time.<br>
+M: ⓓ <u>Who taught you to play music first?</u><br>
+F: Mr. Chávez taught us step by step.<br>
+M: ⓔ <u>What do you think of your town now?</u><br>
+F: I'm proud of it.
+</div>
+<div class="choices vertical">
+<span class="choice-item">① ⓐ: length of time</span><span class="choice-item">② ⓑ: cause</span>
+<span class="choice-item">③ ⓒ: feeling</span><span class="choice-item">④ ⓓ: person</span>
+<span class="choice-item">⑤ ⓔ: opinion</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="4-5">
+<div class="qhead"><span class="qnum">[4~5]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">Have you ever heard of an orchestra that plays instruments made of trash? In Cateura, a small town in Paraguay, a musician named Favio Chávez wanted to teach music to local children. The problem was that no one had money for real instruments. So Chávez ⓐ<u>gave up</u> his special plan. He had asked a skillful worker, Nicolás Gómez, to ⓑ<u>build</u> instruments out of the things people ⓒ<u>threw away</u>. Oil drums became cellos, and water pipes became flutes. At the first concert the music was not perfect, but the ⓓ<u>audience</u> jumped to their feet and ⓔ<u>clapped</u> for a long time.</div>
+</div>
+<div class="qblock" data-qnum="4">
+<div class="qhead"><span class="qnum">4.</span><span class="qprompt">ⓐ~ⓔ 중 문맥상 낱말의 쓰임이 적절하지 않은 것은?</span></div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="5">
+<div class="qhead"><span class="qnum">5.</span><span class="qprompt">윗글의 내용과 일치하지 않는 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① The children's town was too poor to buy new instruments.</span>
+<span class="choice-item">② Gómez used trash to make the instruments.</span>
+<span class="choice-item">③ Oil drums and water pipes were changed into instruments.</span>
+<span class="choice-item">④ The audience left the hall without clapping at the first concert.</span>
+<span class="choice-item">⑤ A new plan can help solve a big problem.</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 1/7</div></div>
+<div class="page"><div class="run-header"><span>신구중학교 3학년 · 2학기 중간고사 대비 5회</span><span>영어</span></div><div class="cols"><div class="col"><div class="qblock" data-qnum="6">
+<div class="qhead"><span class="qnum">6.</span><span class="qprompt">ⓐ~ⓒ에 들어갈 말로 가장 적절한 것만을 &lt;보기&gt;에서 골라 옳게 짝지은 것은?</span></div>
+<div class="passage dialog">S1: Hello, everyone! ( ⓐ )<br>
+G: Welcome to our art museum! This museum opened in 1995, and many people have visited it since then.<br>
+S2: That's a long time! Can we take pictures of the artworks?<br>
+G: You can take pictures, but ( ⓑ ). Flash can hurt them.<br>
+S1: Are we going to see the famous paintings in the art books today?<br>
+G: Yes. ( ⓒ ), and don't touch them.
+</div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. Where is the art museum? ㄴ. May I say the name of the artist? ㄷ. I'm glad to be here<br>
+ㄹ. Don't use flash when you take pictures ㅁ. Make sure you follow the rules<br>
+ㅂ. How much is the ticket? ㅅ. Let me show you around
+</div>
+<table class="choice-table">
+<tbody><tr><th></th><th>ⓐ</th><th>ⓑ</th><th>ⓒ</th></tr>
+<tr><td>①</td><td>ㄷ</td><td>ㄹ</td><td>ㅁ</td></tr>
+<tr><td>②</td><td>ㄷ</td><td>ㄹ</td><td>ㅅ</td></tr>
+<tr><td>③</td><td>ㅂ</td><td>ㄴ</td><td>ㅅ</td></tr>
+<tr><td>④</td><td>ㄷ</td><td>ㄱ</td><td>ㅅ</td></tr>
+<tr><td>⑤</td><td>ㅂ</td><td>ㄹ</td><td>ㅁ</td></tr>
+</tbody></table>
+</div>
+<div class="qblock" data-qnum="7-9">
+<div class="qhead"><span class="qnum">[7~9]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">The night of the first real concert finally came. Andrea and her orchestra players were nervous. Her hands were ⓐ<u>shaking</u> so much that she could ⓑ<u>hardly</u> hold her violin. "If I were at home now, I would be sleeping in my warm bed," she thought. When Mr. Chávez ⓒ<u>raised</u> his hands, everyone began to play. The music wasn't perfect, and some notes were even ⓓ<u>in tune</u>. Still, as the last sound faded ⓔ<u>away</u>, the whole audience was on their feet.</div>
+</div>
+<div class="qblock" data-qnum="7">
+<div class="qhead"><span class="qnum">7.</span><span class="qprompt">윗글에 대한 감상으로 가장 적절한 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① Andrea wished the concert had been held at her home.</span>
+<span class="choice-item">② Mr. Chávez worried about the players' shaking hands.</span>
+<span class="choice-item">③ The audience went home before the music ended.</span>
+<span class="choice-item">④ The players felt the music was too perfect to enjoy.</span>
+<span class="choice-item">⑤ Even imperfect music can bring joy to both players and listeners.</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="8">
+<div class="qhead"><span class="qnum">8.</span><span class="qprompt">ⓐ~ⓔ 중 문맥상 낱말의 쓰임이 적절하지 않은 것은?</span></div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="9">
+<div class="qhead"><span class="qnum">9.</span><span class="qprompt">&lt;보기&gt;의 밑줄 친 단어가 윗글의 ⓑ와 어법상 유사하게 쓰인 문장만을 옳게 고른 것은?</span></div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. I could <u>hardly</u> hear the music from the back seat.<br>
+ㄴ. We <u>hardly</u> ever eat fast food at home.<br>
+ㄷ. She could <u>hardly</u> believe she won the contest.<br>
+ㄹ. He worked <u>hardly</u> all night to finish the poster.
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄱ, ㄷ</span>
+<span class="choice-item">③ ㄴ, ㄷ</span><span class="choice-item">④ ㄴ, ㄹ</span>
+<span class="choice-item">⑤ ㄷ, ㄹ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="10">
+<div class="qhead"><span class="qnum">10.</span><span class="qprompt">다음 pun에 대한 설명을 바탕으로, &lt;보기&gt;에서 pun인 것을 모두 고르면? (정답 2개)</span></div>
+<div class="passage box">A pun is a kind of humor that plays on a word with more than one meaning or on words that sound similar.</div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. My brother said the concert was good, but I thought it was so-so.<br>
+ㄴ. The name "Landfill Harmonic Orchestra" reminds us of the instrument harmonica.<br>
+ㄷ. Our baseball team's drum major says he is the most important person in it.<br>
+ㄹ. Andrea's tears of joy rolled down her cheeks.<br>
+ㅁ. Mr. Chávez taught the children with great patience.
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄱ, ㄷ</span>
+<span class="choice-item">③ ㄴ, ㄷ</span><span class="choice-item">④ ㄴ, ㄹ</span>
+<span class="choice-item">⑤ ㄷ, ㄹ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="11">
+<div class="qhead"><span class="qnum">11.</span><span class="qprompt">ⓐ~ⓔ를 대체한 표현으로 적절하지 않은 것은?</span></div>
+<div class="passage box">I still remember the day of our first concert. We were all ⓐ<u>thrilled</u> to stand on a real stage. My family could not ⓑ<u>afford</u> to come to the city, but they watched us on the ⓒ<u>giant</u> screen at school. Mr. Chávez said we were the most ⓓ<u>talented</u> students in Paraguay. I hope to ⓔ<u>perform</u> again someday.</div>
+<div class="choices vertical">
+<span class="choice-item">① ⓐ: excited</span><span class="choice-item">② ⓑ: pay for</span>
+<span class="choice-item">③ ⓒ: enormous</span><span class="choice-item">④ ⓓ: skillful</span>
+<span class="choice-item">⑤ ⓔ: compete</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 2/7</div></div>
+<div class="page"><div class="run-header"><span>신구중학교 3학년 · 2학기 중간고사 대비 5회</span><span>영어</span></div><div class="cols"><div class="col"><div class="qblock" data-qnum="12">
+<div class="qhead"><span class="qnum">12.</span><span class="qprompt">ⓐ~ⓔ 중 어법상 틀린 것은?</span></div>
+<div class="passage box">"If I ⓐ<u>were</u> a bird, I would fly," Andrea often says. She remembers ⓑ<u>her</u> first concert well. "Our songs ⓒ<u>were</u> easy, but one of the pieces ⓓ<u>were</u> like a storm of sound. When the music stopped, the hall ⓔ<u>erupted</u> in cheers."</div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="13">
+<div class="qhead"><span class="qnum">13.</span><span class="qprompt">다음 글을 완성하는 것으로 가장 적절한 것은?</span></div>
+<div class="passage box">1. If I ( ⓐ ) the lottery, I ( ⓑ ) give 100 dollars to you.<br>
+2. If I ( ⓒ ) safely, I ( ⓓ ) in the hospital now, feeling terrible about the accident.</div>
+<table class="choice-table">
+<tbody><tr><th></th><th>ⓐ</th><th>ⓑ</th><th>ⓒ</th><th>ⓓ</th></tr>
+<tr><td>①</td><td>won</td><td>would</td><td>had driven</td><td>would not be</td></tr>
+<tr><td>②</td><td>won</td><td>will</td><td>drove</td><td>would not have been</td></tr>
+<tr><td>③</td><td>win</td><td>would</td><td>had driven</td><td>would not be</td></tr>
+<tr><td>④</td><td>won</td><td>would</td><td>had driven</td><td>would not have been</td></tr>
+<tr><td>⑤</td><td>won</td><td>would</td><td>drove</td><td>would be</td></tr>
+</tbody></table>
+</div>
+<div class="qblock" data-qnum="14">
+<div class="qhead"><span class="qnum">14.</span><span class="qprompt">ⓐ~ⓔ에 대한 설명으로 적절하지 않은 것은?</span></div>
+<div class="passage box">Jack ⓐ<u>wasted</u> his time at school, so he is sorry now. He wishes he ⓑ<u>had studied</u> hard at school. Ted is a nurse, but he wishes he ⓒ<u>were</u> a doctor. Andrea says, "If I ⓓ<u>were</u> a bird, I would fly. I wish I ⓔ<u>could</u> fly like one every day."</div>
+<div class="choices vertical">
+<span class="choice-item">① The past action in ⓐ is the reason for Jack's present regret.</span>
+<span class="choice-item">② ⓑ shows a wish contrary to the past fact that Jack didn't study hard.</span>
+<span class="choice-item">③ ⓒ shows Ted's wish to be a doctor, because he is a doctor now.</span>
+<span class="choice-item">④ ⓓ is an unreal condition of the present, because Andrea is not a bird.</span>
+<span class="choice-item">⑤ ⓔ uses "could" to express a wish for something not possible now.</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="15">
+<div class="qhead"><span class="qnum">15.</span><span class="qprompt">빈 ( ⓐ ), ( ⓑ )에 들어갈 말을 옳게 짝지은 것은?</span></div>
+<div class="passage box">- Sam is twelve years old this year. He wishes he ( ⓐ ) older.<br>
+- Sam missed his birthday party last month. He wishes he ( ⓑ ) it.</div>
+<div class="choices vertical">
+<span class="choice-item">① had / would attend</span>
+<span class="choice-item">② were / had attended</span>
+<span class="choice-item">③ was / attended</span>
+<span class="choice-item">④ had been / would have attended</span>
+<span class="choice-item">⑤ were / would attend</span>
+</div>
+</div>
+<div class="qblock" data-qnum="16">
+<div class="qhead"><span class="qnum">16.</span><span class="qprompt">다음 문장과 의미가 가장 비슷한 문장을 고르시오.</span></div>
+<div class="passage box">As I don't have a problem, I don't call him for help.</div>
+<div class="choices vertical">
+<span class="choice-item">① If I had a problem, I would call him for help.</span>
+<span class="choice-item">② If I have a problem, I would call him for help.</span>
+<span class="choice-item">③ If I had a problem, I will call him for help.</span>
+<span class="choice-item">④ If I had had a problem, I would call him for help.</span>
+<span class="choice-item">⑤ If I didn't have a problem, I would call him for help.</span>
+</div>
+</div>
+<div class="qblock" data-qnum="17">
+<div class="qhead"><span class="qnum">17.</span><span class="qprompt">다음 문장과 의미가 가장 비슷한 문장을 고르시오.</span></div>
+<div class="passage box">I regret that I complained to my mother about everything.</div>
+<div class="choices vertical">
+<span class="choice-item">① I wish I didn't complain to my mother about everything.</span>
+<span class="choice-item">② I wish I wouldn't complain to my mother about everything.</span>
+<span class="choice-item">③ I wish I hadn't complained to my mother about everything.</span>
+<span class="choice-item">④ I wish I could complain to my mother about everything.</span>
+<span class="choice-item">⑤ I hope I won't complain to my mother about everything.</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 3/7</div></div>
+<div class="page"><div class="run-header"><span>신구중학교 3학년 · 2학기 중간고사 대비 5회</span><span>영어</span></div><div class="cols"><div class="col"><div class="qblock" data-qnum="18">
+<div class="qhead"><span class="qnum">18.</span><span class="qprompt">다음은 '의문사 + to부정사' 학습 카드이다. 카드의 ⓐ~ⓔ 중 어법상 옳지 않은 것은?</span></div>
+<div class="cond-box"><span class="cond-label">[학습 카드]</span>
+'의문사 + to부정사'는 주절의 주절과 밑줄 부분의 주어가 같을 때 쓴다.<br>
+ⓐ I don't know <u>why I should leave</u> so early.<br>
+ⓑ Can you tell me <u>where to park</u> my car?<br>
+ⓒ The teacher explained <u>how we should use</u> the machine.<br>
+ⓓ They haven't decided <u>what to do</u> next.<br>
+ⓔ She doesn't know <u>why to listen to</u> the long speech.
+</div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="19">
+<div class="qhead"><span class="qnum">19.</span><span class="qprompt">다음 문장과 의미가 다른 문장을 고르시오.</span></div>
+<div class="passage box">He spoke loudly <u>so that everyone could hear him</u>.</div>
+<div class="choices vertical">
+<span class="choice-item">① He spoke loudly in order that everyone could hear him.</span>
+<span class="choice-item">② He spoke loudly so as to hear everyone.</span>
+<span class="choice-item">③ He spoke loudly in order to make everyone hear him.</span>
+<span class="choice-item">④ He spoke loudly in order for everyone to hear him.</span>
+<span class="choice-item">⑤ He spoke loudly so that everyone would be able to hear him.</span>
+</div>
+</div>
+<div class="qblock" data-qnum="20">
+<div class="qhead"><span class="qnum">20.</span><span class="qprompt">5과 본문을 바탕으로, 정보 상자의 ( ⓐ ), ( ⓑ )에 들어갈 내용을 &lt;보기&gt;에서 모두 고른 것은? (정답 2개)</span></div>
+<div class="cond-box"><span class="cond-label">[Landfill Harmonic Orchestra]</span>
+Members: Children from Cateura, a small town in Paraguay<br>
+Also known as: ( ⓐ )<br>
+Instruments: Made of ( ⓑ )<br>
+Founded by: An environmental educator and a musician<br>
+Craftsman: A talented man who put the idea into practice<br>
+Motto: The world sends us garbage, but we send back music!
+</div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. Recycled Orchestra ㄴ. objects from a landfill ㄷ. oil drums only<br>
+ㄹ. a famous orchestra in Europe ㅁ. water pipes and cellos
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄱ, ㄷ</span>
+<span class="choice-item">③ ㄴ, ㄹ</span><span class="choice-item">④ ㄴ, ㅁ</span>
+<span class="choice-item">⑤ ㄷ, ㅁ</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="21">
+<div class="qhead"><span class="qnum">21.</span><span class="qprompt">다음 대화의 ( ⓐ )에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage dialog">A: How was the music club today?<br>
+B: Great! Our teacher made us play the drums for two hours. My hands still hurt.<br>
+A: ( ⓐ )<br>
+B: No way. I love it even though it hurts.
+</div>
+<div class="choices vertical">
+<span class="choice-item">① Do you really enjoy playing the drums?</span>
+<span class="choice-item">② Why did you join the music club?</span>
+<span class="choice-item">③ Were your hands hurt by the teacher?</span>
+<span class="choice-item">④ Should we practice again tomorrow?</span>
+<span class="choice-item">⑤ Did the concert take place at the club?</span>
+</div>
+</div>
+<div class="qblock" data-qnum="22">
+<div class="qhead"><span class="qnum">[22]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">Favio Chávez was an environmental educator and a musician. When he first came to Cateura, he wanted to teach music to the children there. But there were not enough instruments in the town, and most families could not buy new ones. Nicolás Gómez, a skillful worker, helped him turn the plan into reality. He built instruments from trash, and the children learned to play them one step at a time, though none of them could read music at first.</div>
+<div class="qhead" style="margin-top:1.5mm"><span class="qnum">22.</span><span class="qprompt">윗글의 내용과 일치하는 것을 &lt;보기&gt;에서 모두 고르면? (정답 2개)</span></div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. Gómez was the person who built the instruments.<br>
+ㄴ. Chávez came to Cateura with a famous orchestra.<br>
+ㄷ. The children could read music before they started to play.<br>
+ㄹ. A worker made Chávez's idea real.<br>
+ㅁ. Most families bought new instruments for their children.
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄴ, ㄷ</span>
+<span class="choice-item">③ ㄷ, ㅁ</span><span class="choice-item">④ ㄱ, ㄹ</span>
+<span class="choice-item">⑤ ㄹ, ㅁ</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 4/7</div></div>
+<div class="page"><div class="run-header"><span>신구중학교 3학년 · 2학기 중간고사 대비 5회</span><span>영어</span></div><div class="cols"><div class="col"><div class="qblock" data-qnum="23">
+<div class="qhead"><span class="qnum">23.</span><span class="qprompt">ⓐ~ⓔ 중 어법상 틀린 것은?</span></div>
+<div class="passage box">Last weekend, our school ⓐ<u>held</u> a music festival. The concert lasted <u>for</u> ⓑ<u>about</u> two hours. The students worked hard to prepare the stage before ⓒ<u>it</u> started. When the singer came on the stage, everyone stood up and ⓓ<u>cheered</u>. She sang so ⓔ<u>beautiful</u> that the audience forgot the time.</div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="24">
+<div class="qhead"><span class="qnum">[24]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">In Cateura, everything began to change when the children met Mr. Gómez. He ⓐ<u>turned</u> old trash into musical instruments. For years, nobody thought it could work, so at first the whole town laughed. But when the first concert was announced, it was finally the children's ⓑ<u>turn</u> to show what they could do. The night turned out even better than everyone hoped.</div>
+<div class="qhead" style="margin-top:1.5mm"><span class="qnum">24.</span><span class="qprompt">&lt;보기&gt;의 밑줄 친 단어 중 ⓐ와 같은 방식으로 쓰인 것을 모두 고르면? (정답 2개)</span></div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. The weather <u>turned</u> cold all of a sudden.<br>
+ㄴ. Whose <u>turn</u> is it to sing next?<br>
+ㄷ. She <u>turned</u> off the lights quietly before leaving.<br>
+ㄹ. Their friendship <u>turned</u> into something special.
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄱ, ㄹ</span>
+<span class="choice-item">③ ㄴ, ㄷ</span><span class="choice-item">④ ㄷ, ㄹ</span>
+<span class="choice-item">⑤ ㄴ, ㄹ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="25">
+<div class="qhead"><span class="qnum">25.</span><span class="qprompt">다음 문장을 윗글 (6과 p.112)에 삽입하려 할 때, 가장 알맞은 위치는?</span></div>
+<div class="passage box">"However, Hadid did not copy the shape of any spaceship."</div>
+<div class="passage box">What about Korea? (A) Have you ever been to Dongdaemun Design Plaza in Seoul? (B) Many people think that the building looks like a giant spaceship. (C) But the architect, Zaha Hadid, took the curved lines from nature so that city people could enjoy them. (D) Thanks to its special design, it has become a popular tourist attraction in Seoul.</div>
+<div class="choices row">
+<span class="choice-item">① (A)</span><span class="choice-item">② (B)</span>
+<span class="choice-item">③ (C)</span><span class="choice-item">④ (D)</span>
+<span class="choice-item">⑤ (D) 뒤</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="26">
+<div class="qhead"><span class="qnum">26.</span><span class="qprompt">(A)와 (B) 사이의 내용을 자연스럽게 연결하기 위해 필요한 내용만을 &lt;보기&gt;에서 고른 것은? (단, (A), (B) 모두 옳다고 전제함.)</span></div>
+<div class="passage box">(A) Some notes were off-key, and the piece was very short.<br>
+(B) Still, it was the most beautiful music to the players.</div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. A short piece of music cannot be beautiful at all.<br>
+ㄴ. The audience had expected a much longer piece.<br>
+ㄷ. Music made together with hope can be more valuable than perfect sounds.<br>
+ㄹ. The players had practiced every day, so the music carried their effort.
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄱ, ㄷ</span>
+<span class="choice-item">③ ㄴ, ㄷ</span><span class="choice-item">④ ㄴ, ㄹ</span>
+<span class="choice-item">⑤ ㄷ, ㄹ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="27">
+<div class="qhead"><span class="qnum">27.</span><span class="qprompt">다음 상황을 묘사한 그림에서 Ⓐ에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="pic-box">[그림: 교실. 한 학생이 줄이 끊어진 기타를 들고 상심해 있다. 다음 주에 음악 대회가 예정되어 있고, 친구가 말을 건네는 장면.]</div>
+<div class="choices vertical">
+<span class="choice-item">① You should buy a new guitar right now.</span>
+<span class="choice-item">② What a shame! You have to cancel the contest.</span>
+<span class="choice-item">③ I'd love to. How about tomorrow?</span>
+<span class="choice-item">④ Don't give up. I can help you fix it in time.</span>
+<span class="choice-item">⑤ Excuse me. Is this guitar yours?</span>
+</div>
+</div>
+<div class="qblock" data-qnum="28">
+<div class="qhead"><span class="qnum">28.</span><span class="qprompt">다음 문장을 미술관 견학 순서대로 바르게 배열한 것은?</span></div>
+<div class="passage box">(A) Before the tour begins, the guide asks the students to read the rules.<br>
+(B) The students arrive at the art museum and greet the guide.<br>
+(C) The students take pictures of the artworks without flash.</div>
+<div class="choices row">
+<span class="choice-item">① (A)-(B)-(C)</span><span class="choice-item">② (A)-(C)-(B)</span>
+<span class="choice-item">③ (B)-(A)-(C)</span><span class="choice-item">④ (B)-(C)-(A)</span>
+<span class="choice-item">⑤ (C)-(A)-(B)</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 5/7</div></div>
+<div class="page"><div class="run-header"><span>신구중학교 3학년 · 2학기 중간고사 대비 5회</span><span>영어</span></div><div class="cols"><div class="col"><div class="qblock" data-qnum="29">
+<div class="qhead"><span class="qnum">29.</span><span class="qprompt">다음 문장의 공통으로 들어갈 단어로 가장 적절한 것은?</span></div>
+<div class="sent-list"><div>We listened to the strange ____ of the drums made of oil.</div><div>The plan ____s great, but we still need more practice.</div><div>What was that ____ in the dark forest last night?</div></div>
+<div class="choices row">
+<span class="choice-item">① voice</span><span class="choice-item">② sound</span>
+<span class="choice-item">③ tune</span><span class="choice-item">④ noise</span>
+<span class="choice-item">⑤ song</span>
+</div>
+</div>
+<div class="qblock" data-qnum="30">
+<div class="qhead"><span class="qnum">30.</span><span class="qprompt">윗글에서 추론할 수 있는 것으로 가장 적절한 것은?</span></div>
+<div class="passage box">Zaha Hadid designed Dongdaemun Design Plaza. When it was first built, many people said it looked like a spaceship from the future. But Hadid said that her curved lines came from nature. Today, people from all over the world take pictures in front of the building, and it is one of the most famous places in Seoul.</div>
+<div class="choices vertical">
+<span class="choice-item">① The building's popularity comes from its special design connected to nature.</span>
+<span class="choice-item">② Hadid designed the plaza to look like a real spaceship.</span>
+<span class="choice-item">③ People stopped visiting the plaza after learning about the design.</span>
+<span class="choice-item">④ Hadid copied the shape of a specific mountain near Seoul.</span>
+<span class="choice-item">⑤ The plaza is famous only among foreign visitors.</span>
+</div>
+</div>
+<div class="qblock" data-qnum="31">
+<div class="qhead"><span class="qnum">31.</span><span class="qprompt">ⓐ~ⓔ 중 문맥상 낱말의 쓰임이 적절하지 않은 것은?</span></div>
+<div class="passage box">I was so nervous that I bit my ⓐ<u>cheek</u> before the interview. The ⓑ<u>environmental</u> club picked up trash on the beach last Sunday. He plays the ⓒ<u>drum</u> in the school band, and she plays the piano. The concert was ⓓ<u>mostly</u> over when we arrived, so we missed almost nothing. Everyone says he is ⓔ<u>talented</u> because he makes beautiful music with trash.</div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="32">
+<div class="qhead"><span class="qnum">[32]</span><span class="qprompt">다음 글을 읽고 물음에 답하시오.</span></div>
+<div class="passage box">Nicolás Gómez was not a musician. He was a man who worked with his hands every day in Cateura. When Mr. Chávez asked him to build an instrument from an oil drum, Gómez looked at the drum for a long time and said, "Let me try." No one believed that trash could make real sounds. But Gómez kept trying until his first cello sang. Today, people all over the world know the name of his workshop.</div>
+<div class="qhead" style="margin-top:1.5mm"><span class="qnum">32.</span><span class="qprompt">윗글의 내용과 일치하지 않는 것은?</span></div>
+<div class="choices vertical">
+<span class="choice-item">① Gómez accepted Chávez's request and tried to build an instrument.</span>
+<span class="choice-item">② Gómez had been a famous musician before he came to Cateura.</span>
+<span class="choice-item">③ At first, people doubted that trash could make real sounds.</span>
+<span class="choice-item">④ Gómez continued trying until his cello produced sound.</span>
+<span class="choice-item">⑤ The story shows that a skillful worker can change trash into treasure.</span>
+</div>
+</div>
+<div class="qblock" data-qnum="33">
+<div class="qhead"><span class="qnum">33.</span><span class="qprompt">다음 문장과 의미가 가장 비슷한 문장을 고르시오.</span></div>
+<div class="passage box">I wish I had studied hard at school.</div>
+<div class="choices vertical">
+<span class="choice-item">① I didn't study hard at school, so I regret it now.</span>
+<span class="choice-item">② I studied hard at school, but I regret it now.</span>
+<span class="choice-item">③ I want to study hard at school from now on.</span>
+<span class="choice-item">④ I didn't study hard at school, and I don't care about it.</span>
+<span class="choice-item">⑤ I should study hard at school tomorrow morning.</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 6/7</div></div>
+<div class="page"><div class="run-header"><span>신구중학교 3학년 · 2학기 중간고사 대비 5회</span><span>영어</span></div><div class="cols"><div class="col"><div class="qblock" data-qnum="34">
+<div class="qhead"><span class="qnum">34.</span><span class="qprompt">영어과 어휘 학습 카드이다. ( ⓐ ), ( ⓑ )에 들어갈 내용을 옳게 짝지은 것은?</span></div>
+<div class="cond-box"><span class="cond-label">[학습 카드]</span>
+Word: <b>talented</b> / Part of Speech: ( ⓐ ) / CEFR Level: B1 / Meaning: 재능 있는, 유능한 / Synonym: ( ⓑ )
+</div>
+<table class="choice-table">
+<tbody><tr><th></th><th>ⓐ</th><th>ⓑ</th></tr>
+<tr><td>①</td><td>n</td><td>practice</td></tr>
+<tr><td>②</td><td>ad</td><td>mostly</td></tr>
+<tr><td>③</td><td>v</td><td>capture</td></tr>
+<tr><td>④</td><td>a</td><td>skillful</td></tr>
+<tr><td>⑤</td><td>a</td><td>out of tune</td></tr>
+</tbody></table>
+</div>
+<div class="qblock" data-qnum="35">
+<div class="qhead"><span class="qnum">35.</span><span class="qprompt">다음 역할극 지시문에서 (A), (B)를 짝지은 것으로 적절하지 않은 것은?</span></div>
+<div class="passage dialog">Ms. Lee: Today you will role-play a conversation between a museum visitor and a guard.<br>
+A: Hello! I'm here for the school tour. What should we do first?<br>
+B: Please (A).<br>
+A: Got it. Is there anything to keep in mind?<br>
+B: Yes. Make sure you (B).<br>
+A: Okay, I will.
+</div>
+<div class="choices vertical">
+<span class="choice-item">① follow me and keep your voices down / don't touch the artworks</span>
+<span class="choice-item">② read the rules on this paper first / don't run inside the museum</span>
+<span class="choice-item">③ take pictures with flash to see the artworks clearly / don't touch the artworks</span>
+<span class="choice-item">④ begin the tour in five minutes / don't bring food inside</span>
+<span class="choice-item">⑤ wait for me at the entrance / don't use your phone loudly</span>
+</div>
+</div>
+<div class="qblock" data-qnum="36">
+<div class="qhead"><span class="qnum">36.</span><span class="qprompt">ⓐ~ⓔ 중 문맥상 의미가 다른 것은?</span></div>
+<div class="passage box">① The children learned the song ⓐ<u>by</u> listening to it many times.<br>
+② You can improve your tune ⓑ<u>by</u> practicing with the orchestra.<br>
+③ The instruments in the orchestra were made ⓒ<u>by</u> Mr. Gómez.<br>
+④ The boys kept their hope ⓓ<u>by</u> helping others in the town.<br>
+⑤ We finished the project ⓔ<u>by</u> working together all day.</div>
+<div class="choices row">
+<span class="choice-item">① ⓐ</span><span class="choice-item">② ⓑ</span>
+<span class="choice-item">③ ⓒ</span><span class="choice-item">④ ⓓ</span>
+<span class="choice-item">⑤ ⓔ</span>
+</div>
+</div></div><div class="col"><div class="qblock" data-qnum="37">
+<div class="qhead"><span class="qnum">37.</span><span class="qprompt">윗글의 ⓐ에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage box">Nobody in the town believed that trash could make music. ⓐ ? Mr. Gómez answered with his hands: he built a working cello from an oil drum, and the children's sad days began to change.</div>
+<div class="choices vertical">
+<span class="choice-item">① Why did Mr. Chávez leave the town?</span>
+<span class="choice-item">② When did the first concert begin?</span>
+<span class="choice-item">③ Where did the children buy a cello?</span>
+<span class="choice-item">④ How could trash become an instrument?</span>
+<span class="choice-item">⑤ Who was the first listener of the music?</span>
+</div>
+</div>
+<div class="qblock" data-qnum="38">
+<div class="qhead"><span class="qnum">38.</span><span class="qprompt">빈 ( ⓐ ), ( ⓑ )에 들어갈 말을 옳게 짝지은 것은?</span></div>
+<div class="passage box">Mr. Chávez first had a ( ⓐ ) for the children of Cateura, and a skillful worker helped put it into ( ⓑ ).</div>
+<table class="choice-table">
+<tbody><tr><th></th><th>ⓐ</th><th>ⓑ</th></tr>
+<tr><td>①</td><td>dream</td><td>practice</td></tr>
+<tr><td>②</td><td>concert</td><td>tune</td></tr>
+<tr><td>③</td><td>hand</td><td>journey</td></tr>
+<tr><td>④</td><td>idea</td><td>landfill</td></tr>
+<tr><td>⑤</td><td>drum</td><td>cheek</td></tr>
+</tbody></table>
+</div>
+<div class="qblock" data-qnum="39">
+<div class="qhead"><span class="qnum">39.</span><span class="qprompt">미술관 관리인의 안내를 바탕으로, 관리인의 지시에 맞는 것을 &lt;보기&gt;에서 모두 고르면? (정답 2개)</span></div>
+<div class="passage box">"Welcome! Before we begin, please remember three things. First, you may take pictures, but make sure you do not use flash. Second, keep your voices down, because loud sound can disturb other visitors. Third, stay with the group, and don't touch anything on exhibit."</div>
+<div class="cond-box"><span class="cond-label">&lt;보 기&gt;</span>
+ㄱ. Flash is not allowed when taking pictures.<br>
+ㄴ. Visitors must talk only outside the museum.<br>
+ㄷ. It is okay to walk around the museum by yourself.<br>
+ㄹ. The artworks should be looked at, not touched.<br>
+ㅁ. The guard begins the tour before giving the rules.
+</div>
+<div class="choices row">
+<span class="choice-item">① ㄱ, ㄴ</span><span class="choice-item">② ㄴ, ㄷ</span>
+<span class="choice-item">③ ㄷ, ㅁ</span><span class="choice-item">④ ㄹ, ㅁ</span>
+<span class="choice-item">⑤ ㄱ, ㄹ</span>
+</div>
+</div>
+<div class="qblock" data-qnum="40">
+<div class="qhead"><span class="qnum">40.</span><span class="qprompt">빈 ( ⓐ ), ( ⓑ )에 들어갈 말을 옳게 짝지은 것은?</span></div>
+<div class="passage box">If we ( ⓐ ) the alarm last night, we ( ⓑ ) late for the meeting this morning.</div>
+<div class="choices vertical">
+<span class="choice-item">① didn't set / would be</span>
+<span class="choice-item">② hadn't set / would be</span>
+<span class="choice-item">③ didn't set / would have been</span>
+<span class="choice-item">④ hadn't set / will be</span>
+<span class="choice-item">⑤ hadn't set / would have been</span>
+</div>
+</div></div></div><div class="page-footer">제작 : 압구정에듀홀릭 내신 wiki | 7/7</div></div>
+</body></html>
