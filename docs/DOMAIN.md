@@ -1333,3 +1333,13 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 ### wrong_mock_rounds / wrong_mock_photos / wrong_mock_audit
 
 고3 오답 모의고사 회차(예: 오답 24회)와 원본 사진·완성 artifact를 저장하는 workspace 소유 SQLite 테이블이다. `exam_material_sets`를 재사용하지 않는다 — 회차/상태/편집잠금 개념이 없고, `student_wrong_note` 경로는 `student_id`+JSON을 강제하며(오답모의고사 사진은 회차 귀속), 수집 중 사진이 Living Context(`student_errors`)를 오염시키기 때문이다. `wrong_mock_rounds`는 school/grade/year/semester/exam/round(Context 내 UNIQUE), title, question_count(기본 20), status(`COLLECTING` 사진 등록 중 → `READY` 제작대기 → `COMPLETED` 제작완료), 문제지/간략해설 HTML 본문·파일명·SHA-256, 제작규격 `spec_json`, `edit_locked`, 생성·완성 주체/시각을 가진다. `wrong_mock_photos`는 회차 귀속 원본 사진으로 제목 metadata(원본 그대로 보존)·파일명·MIME·BLOB·SHA-256(중복 검사)·순서를 가지며, 사진 개수와 문항 개수를 동일시하는 constraint가 없다(UNIQUE 없음). 원본 사진은 제작완료 후에도 삭제하지 않는 영구 Source다. `edit_locked`는 READY/COMPLETED 전이 시 자동 잠금되며, 잠금 상태의 사진·artifact 수정은 409로 거부된다(편집 ON으로 풀어야 수정 가능). 회차 자체 삭제는 `COLLECTING` 상태에서만 허용된다. `wrong_mock_audit`는 생성·사진 변경·상태 전이·편집 잠금을 append-only로 기록한다.신규 audit action은 CREATED, PHOTOS_ADDED, PHOTO_RENAMED, PHOTOS_REORDERED, PHOTO_DELETED, PHOTO_REPLACED, PHOTOS_COMPLETED, ARTIFACTS_UPDATED, COMPLETED, EDIT_LOCKED, EDIT_UNLOCKED다.
+
+### 4.57 EASY 자동수집 Phase 3A 안전 불변식
+
+- `easy_collection_runs.trigger_type`은 기존 `VARCHAR(10)`에 `MANUAL` 또는 `SCHEDULED`만 기록한다.
+- provider fetch는 transaction 밖에서 실행하고, run 시작·성공·실패와 raw/staging 저장만 짧은 transaction으로 처리한다.
+- 실패 run의 `error_summary`는 typed error code와 고정된 안전 문구만 저장한다. `AUTH_REQUIRED`만 `easy_collection_connections.status=NEEDS_REAUTH`를 만든다.
+- V983 schema는 변경하지 않는다. 새 migration은 없다.
+- CREFIA source는 inactive이고 real API는 미활성이다. 공식 endpoint 계약과 카드매출 lifecycle 승인 전에는 APPROVAL/PURCHASE/DEPOSIT을 독립 INCOME으로 staging하지 않는다.
+- collection raw/import provenance는 유지되며, transaction/journal 생성은 기존 관리자 confirm 경계 뒤에서만 일어난다.
+
