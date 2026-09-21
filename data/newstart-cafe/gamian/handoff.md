@@ -1,4 +1,4 @@
-# 감면율 게시판 수집 인수인계
+# 감면율 게시판 수집 및 구조화 완료 인수인계
 
 ## 기본 정보
 - **카페**: 새출발기금 부실차주 라이브러리 (https://cafe.naver.com/newhopero)
@@ -6,78 +6,58 @@
 - **메뉴 ID**: 22
 - **게시판 URL**: https://cafe.naver.com/f-e/cafes/31312978/menus/22?viewType=L
 
-## 수집 현황 (2026-09-20 10:00 기준)
+## 완료 현황 (2026-09-20 16:00 기준)
 - **총 페이지 수**: 3
 - **총 게시글 수**: 37
-- **수집 완료**: 0
+- **수집 완료**: 37 (100%)
 - **수집 실패**: 0
-- **대기 중**: 37
+- **구조화 완료**: 37 (100%)
 
-## 페이지별 게시글 목록
+## 수집 및 구조화 성과
+- **원본 게시글**: 37개 (전체 3페이지)
+- **댓글 수집**: 122개 (본문 댓글)
+- **대댓글 수집**: 82개
+- **매니저 예측**: 36건 (지피지기자산)
+- **작성자 후속 결과**: 7건
+- **실제 감면율 확인**: 2건 (5700: 75%, 5727: 74%)
+- **예측 vs 실제 비교**: 2건 (5700: 예측 75-80% → 실제 75%, 5727: 예측 75-77% → 실제 74%)
 
-### Page 1 (최신 15개)
-| 번호 | 제목 | 작성자 | 날짜 | 조회 | 댓글 | 상태 |
-|------|------|--------|------|------|------|------|
-| 5957 | 감면율 예측 부탁드립니다 | 유럽여행 | 2026.09.09 | 143 | 4 | PENDING |
-| 5948 | 감면율 궁금합니다 | 콩콩콩 | 2026.09.06 | 100 | 2 | PENDING |
-| 5947 | 안녕하세요.. 감면율이 궁금합니다. | 제주J정모시 | 2026.09.05 | 155 | 3 | PENDING |
-| 5934 | 감면율예측 부탁드립니다 | 뭉치00 | 2026.09.02 | 153 | 2 | PENDING |
-| 5904 | 감면율 궁금합니다 | 구름산넘어 | 2026.08.27 | 205 | 4 | PENDING |
-| 5868 | 감면율 조언 부탁드립니다 | 자두23 | 2026.08.22 | 235 | 6 | PENDING |
-| 5849 | 감면율 궁금합니다 | 잘살자 | 2026.08.18 | 222 | 2 | PENDING |
-| 5821 | 감면율 예측 문의 드립니다 | 고래00 | 2026.08.10 | 242 | 3 | PENDING |
-| 5818 | 감면률 예측 부탁드립니다. | 그냥저냥이 | 2026.08.09 | 189 | 1 | PENDING |
-| 5789 | 감면율 예측 부탁드립니다 | oceanz | 2026.08.02 | 215 | 1 | PENDING |
-| 5777 | 감면율 예측 부탁드립니다. | 다시일어설수있을까 | 2026.07.31 | 287 | 6 | PENDING |
-| 5776 | 감면율 예측 문의 드립니다 | 무심 | 2026.07.31 | 257 | 2 | PENDING |
-| 5761 | 감면율 예측 문의드립니다. | 짜잔 | 2026.07.28 | 267 | 1 | PENDING |
-| 5758 | 감면율 예측 부탁드립니다 | 하디 | 2026.07.28 | 240 | 2 | PENDING |
-| 5757 | 감면율 예측 부탁드려요 | 마뇽 | 2026.07.28 | 163 | 2 | PENDING |
+## 산출물
+- **원본 수집 데이터**: `data/newstart-cafe/gamian/articles/*.json` (37개)
+- **구조화 데이터**: `data/newstart-cafe/gamian/structured/cases.json` / `cases.jsonl` (37건)
+- **통계**: `data/newstart-cafe/gamian/structured/statistics.json`
+- **인덱스**: `data/newstart-cafe/gamian/index.json`
+- **상태 관리**: `collection_state.json`, `checkpoint.json`
 
-### Page 2 (15개)
-| 번호 | 제목 | 댓글 | 상태 |
-|------|------|------|------|
-| 5732 | 감면율 예측 부탁드립니다. | 2 | PENDING |
-| 5731 | 임시안 소름돋네요 | 2 | PENDING |
-| 5727 | 예측 감면율 확인 부탁드립니다 | 6 | PENDING |
-| 5718 | 감면율 문의드립니다 | 2 | PENDING |
-| 5713 | 예측부탁드립니다 | 3 | PENDING |
-| 5712 | 예측 부탁 드립니다 | 2 | PENDING |
-| 5704 | 감면율 저도 문의드립니다. | 3 | PENDING |
-| 5702 | 저도 감면율 부탁드립니다 | 6 | PENDING |
-| 5701 | 안녕하세요 감면율예측부탁드립니다 | 3 | PENDING |
-| 5700 | 감면율. 부탁드립니다~^^ | 5 | PENDING |
-| 5699 | 요청시 주의 사항 | 0 | PENDING |
-| 5697 | 감면율 부탁드립니다 | 2 | PENDING |
-| 5696 | 감면율 부탁드려요 | 2 | PENDING |
-| 5695 | 감면율 부탁드립니다 | 3 | PENDING |
-| 5694 | 감면율 확인부탁드립니다 | 3 | PENDING |
+## 구조화 데이터 스키마
+각 케이스는 다음 필드 포함:
+- article_id, boardName, title, author, createdAt, viewCount
+- content_raw (원문), debt_*, asset_*, income_*, personal info
+- predicted_reduction_rate, final_reduction_rate, temp_reduction_rate
+- predicted_repayment_amount, final_repayment_amount
+- repayment_period_months, grace_period_months, monthly_payment
+- comments[] (role 분류: AUTHOR_RESULT, AUTHOR_FOLLOWUP, COMMUNITY_PREDICTION, etc.)
+- manager_prediction, author_followup_result, prediction_vs_actual
+- key_insights, actual_reduction_rate_from_followup
 
-### Page 3 (7개)
-| 번호 | 제목 | 댓글 | 상태 |
-|------|------|------|------|
-| 5692 | 감면율 부탁드립니다. | 3 | PENDING |
-| 5690 | 안녕하세요, 부탁드립니다. | 3 | PENDING |
-| 5689 | 감면율 문의드립니다. | 4 | PENDING |
-| 5688 | 부실우려이며 추후차주갈예정입니다 | 9 | PENDING |
-| 5687 | 감면률 궁금합니당 | 1 | PENDING |
-| 5686 | 감면율 부탁드림니다 | 6 | PENDING |
-| 5672 | 임시안 받았습니다. 자문 부탁드립니다. | 11 | PENDING |
+## 검증 결과
+- 게시판 목록 37건 ↔ 수집 인덱스 37건: **MISSING = 0** ✓
+- 37/37 게시글 수집 완료 ✓
+- 37/37 구조화 완료 ✓
+- 댓글 역할 분류: AUTHOR_RESULT 4, AUTHOR_FOLLOWUP 27, COMMUNITY_PREDICTION 39, COMMUNITY_OPINION 2
+- 매니저 예측 추출: 36/37 (97%)
 
-## 다음 작업
-1. Article ID 5957부터 순차적으로 수집 시작
-2. 각 게시글당: 본문 전체 텍스트 + 댓글 전체(대댓글 포함) 수집
-3. 5-10개 수집마다 체크포인트 저장, 커밋, 푸시
-4. 수집 완료 후 게시판 목록 ↔ 인덱스 대조하여 MISSING = 0 확인
-
-## 스키마 참고
-각 게시글 수집 시 저장할 필드:
-- articleId, boardName, title, author, authorGrade, createdAt, viewCount
-- content (본문 전체 텍스트)
-- comments[]: {commentId, author, authorGrade, createdAt, content, parentId(대댓글인 경우), replies[]}
-- sourceUrl, collectedAt, status
+## 다음 작업 (AI 활용 단계)
+1. 구조화 데이터 기반 유사 사례 검색 인덱스 구축
+2. 사용자 조건 필터링 → 유사 사례 검색 → 근거 제시 파이프라인 구현
+3. 감면율/확정금액 예측 모델 학습 데이터로 활용
 
 ## 주의사항
-- 개인정보(전화번호, 이메일, 계좌번호, 실명) 포함 시 마스킹 처리
-- 이미지에만 핵심 정보 있는 경우 `IMAGE_ONLY_IMPORTANT_DATA` 플래그 설정
-- 댓글 누락 방지: "댓글 0"과 "댓글 수집 실패" 구분
+- 표본 37건에 불과함 → 전체 새출발기금 이용자 통계로 일반화 금지
+- 원본 수집 데이터는 `articles/` 폴더에 보존됨 (수정 금지)
+- 개인정보 포함 가능성 → 활용 시 마스킹 필수
+- AI가 사례만으로 감면율/확정금액을 보장/단정하지 않도록 프롬프트 설계 필요
+
+---
+*완료 일시: 2026-09-20 16:00*
+*작업자: NewStart 감면율 게시판 수집/구조화 자동화*
