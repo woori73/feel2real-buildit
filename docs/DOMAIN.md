@@ -1343,3 +1343,13 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - CREFIA source는 inactive이고 real API는 미활성이다. 공식 endpoint 계약과 카드매출 lifecycle 승인 전에는 APPROVAL/PURCHASE/DEPOSIT을 독립 INCOME으로 staging하지 않는다.
 - collection raw/import provenance는 유지되며, transaction/journal 생성은 기존 관리자 confirm 경계 뒤에서만 일어난다.
 
+
+
+### 4.58 EASY 자동수집 Phase 3B lifecycle/checkpoint 불변식
+
+- provider event는 회계 transaction이 아니다. `APPROVAL`, `PURCHASE`, `DEPOSIT`은 하나의 `easy_collection_economic_sales` 항목에 연결될 수 있으며 각각을 독립 INCOME으로 만들지 않는다.
+- `easy_collection_events`는 connection, dataset type, provider external ID, economic key, 원본 raw 참조, 발생시각, provider cursor/version, 취소·정정 원 event 관계를 보존한다.
+- `CANCELLATION`은 원 event를 `REVERSED`로, `CORRECTION`은 원 event를 `SUPERSEDED`로 표시하는 lifecycle 관찰이다. 부분취소 금액 계산은 공식 계약 전에는 구현하지 않는다.
+- `easy_collection_checkpoints`는 connection+dataset 단위다. event persistence 전체가 성공한 같은 짧은 transaction의 마지막 단계에서만 cursor/checkpoint를 advance한다. 실패 시 이전 checkpoint에서 재시도한다.
+- 기존 raw/import/ledger 3-stage dedupe와 사용자 confirm 경계를 유지한다. lifecycle 관찰은 import row나 transaction을 자동 생성하지 않으며 auto-confirm은 금지된다.
+- CREFIA real API와 ACTIVE external collection은 비활성 상태다. 공식 endpoint와 dataset 의미가 확인될 때까지 Phase 3A fail-closed를 유지한다.
