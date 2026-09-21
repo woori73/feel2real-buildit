@@ -33,7 +33,8 @@ class EasyCollectionRunExecutionGateTest {
     source = EasyCollectionSource.builder()
         .code("TEST_READY").name("test").adapterType("TEST").active(true).build();
     connection = EasyCollectionConnection.builder()
-        .business(business).source(source).label("main").connectionRef("opaque-ref").build();
+        .business(business).source(source).label("main").build();
+    connection.updateConnectionRef("opaque-ref");
     ReflectionTestUtils.setField(connection, "connectionId", 7L);
     when(business.getBusinessId()).thenReturn(1L);
     when(connections.findByIdWithLock(7L)).thenReturn(Optional.of(connection));
