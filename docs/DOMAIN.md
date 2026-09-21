@@ -1274,6 +1274,36 @@ EASY 회계 파이프라인 앞단의 공통 수집 기반 — 회계 transactio
 - `easy_collection_raw_records`: 원문 불변 보존. **`dedupe_key` VARCHAR(160) UNIQUE**(1차 방어 — 재수집 멱등), `external_record_id`, `tuple_hash`(SHA-256), `raw_payload`(TEXT, 원문 JSON), `raw_hash`, `source_occurred_on`, `status`(STORED/IMPORT_LINKED/LEDGER_DUPLICATE_EXCLUDED/ERROR), `import_batch_id`/`import_row_id`(raw↔staging row 역링크), INDEX `(business_id, source_code, tuple_hash)`.
 - dedupe 키: `EXT` = `{source}:{businessId}:EXT:{normalize(외부ID)}`, `T` = `{source}:{businessId}:T:{tupleHash 앞16}:{파일 내 등장 순번}` — 정규화는 NFKC+trim+공백축소+소문자.
 
+### 4.56 NewStart 부실차주 Wiki 지식 베이스 ✅ newstartknowledge (V985)
+
+NewStart AI 답변의 근거가 되는 공식/감사/전자책/카페/사례/규칙 지식을 운영자가 관리하는 **ADMIN 전용**
+베이스. 테이블 4개(`newstart_knowledge_items`, `newstart_empirical_cases`,
+`newstart_knowledge_relations`, `newstart_knowledge_status_log`)를 `V985__add_newstart_knowledge_wiki.sql`
+이 생성하고, 코드는 `domain/newstartknowledge/`에 있다.
+
+- **retrieval은 `ACTIVE`만 읽는다**(`NewstartKnowledgeRetrievalService`의 모든 Criteria predicate가
+  `status='ACTIVE'` 고정). `REVIEW`는 ADMIN 검증 전용 상태이며 자동 승격 경로가 없다.
+- `newstart_knowledge_items` — `knowledge_id` PK, `source_type` enum(STRING):
+  `OFFICIAL_CURRENT|OFFICIAL_HISTORICAL|AUDIT|EBOOK|CAFE_ARTICLE|CAFE_COMMENT|CASE|OPERATOR_KNOWLEDGE|DERIVED_RULE`,
+  `category`/`title` NOT NULL, `summary`/`content`(LONGTEXT), `authority`, `tags`, `source_url`,
+  `source_date`, `effective_from`/`effective_to`, `version` DEFAULT 1, `status` enum
+  `DRAFT|REVIEW|ACTIVE|ARCHIVED` DEFAULT `'DRAFT'`, `confidence` `HIGH|MEDIUM|LOW`(UNKNOWN도 사용),
+  `related_case_ids`/`related_rule_ids`(쉼표 구분 — REVIEW ingest에서는 evidence id를 `related_rule_ids`에 저장),
+  BaseEntity auditing. INDEX 5개(status+source_type, category, effective, source_date, created_at).
+  ⚠ SQL 주석의 `OFFICIAL|AUDIT|...|RULE` 목록은 Entity enum과 다르다 — Entity가 기준.
+- `newstart_empirical_cases` — 감면율 카페 게시글 1건 = 1행. `article_id` **UNIQUE**(재collect 멱등 키),
+  `board_name` NOT NULL DEFAULT '감면율', 채무/자산/가구/소득/감면율/확정금액 컬럼, JSON 컬럼
+  (`debt_breakdown`, `manager_prediction`, `prediction_vs_actual`, `special_circumstances`, `key_insights`).
+- `newstart_knowledge_relations` — 지식 간 연결. `relation_type`
+  `CASE|RULE|PREREQUISITE|SIMILAR|CONTRADICTS`, UNIQUE(from,to,type)로 중복 관계 방지.
+  `CONTRADICTS`는 공식자료 내부 충돌(연체 10일 vs 31일)을 추론으로 해소하지 않고 보존하는 용도.
+- `newstart_knowledge_status_log` — 상태 변경 감사 이력(`from_status`/`to_status`/`changed_by`/`change_reason`).
+  `NewstartKnowledgeService.changeStatus`가 쓰기하지만 **전이 허용 범위 가드는 없다** — 임의 상태→임의 상태
+  전환(ACTIVE 승격 포함)이 가능하므로 가드는 별도 작업(PR #353).
+- REVIEW ingest(`NewstartOfficialReviewIngestService`)는 `docs/newstart/research-official/`만 읽고
+  저장 시 `status`를 강제로 `REVIEW`로 둔다(비-REVIEW raw status는 downgraded 카운트). 동일 `title`
+  재ingest는 skip(멱등). `top10_questions.json`·`MANIFEST.md`·`source_registry.json`은 ingest하지 않는다.
+
 ## Wiki workspace isolation (FastAPI SQLite)
 
 `wiki_workspaces` and `wiki_workspace_members` live in the Wiki workspace catalog SQLite file. The fixed `legacy` workspace points to the existing Production Wiki database and has only the authenticated `admin` and `modu` members. A non-legacy member receives a deterministic private workspace ID and a separate empty SQLite database on first access.
