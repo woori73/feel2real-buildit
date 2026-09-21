@@ -1353,3 +1353,13 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - `easy_collection_checkpoints`는 connection+dataset 단위다. event persistence 전체가 성공한 같은 짧은 transaction의 마지막 단계에서만 cursor/checkpoint를 advance한다. 실패 시 이전 checkpoint에서 재시도한다.
 - 기존 raw/import/ledger 3-stage dedupe와 사용자 confirm 경계를 유지한다. lifecycle 관찰은 import row나 transaction을 자동 생성하지 않으며 auto-confirm은 금지된다.
 - CREFIA real API와 ACTIVE external collection은 비활성 상태다. 공식 endpoint와 dataset 의미가 확인될 때까지 Phase 3A fail-closed를 유지한다.
+
+
+### 4.59 EASY 자동수집 Phase 3C readiness 불변식
+
+- connection management 응답은 connection reference의 존재 여부만 제공한다. 원문 credential/reference/token/secret은 write-only이며 GET DTO에 존재하지 않는다.
+- provider readiness는 `READY`, `NOT_CONFIGURED`, `DISABLED`, `UNVERIFIED`, `NEEDS_REAUTH`로 분리한다. source active와 connection active만으로 READY가 되지 않으며 명시적인 provider verification policy가 필요하다.
+- production verification allow-list는 공식 계약·endpoint·credential·lifecycle 승인이 있기 전까지 비어 있다. CREFIA는 `UNVERIFIED`이며 manual/scheduled network 호출로 진입할 수 없다.
+- manual collection은 ADMIN, 소유 business, ACTIVE connection, active source, configured reference, verified provider, non-NEEDS_REAUTH, non-RUNNING 조건을 모두 만족해야 한다. 성공 경로는 기존 ingest pipeline의 `MANUAL` provenance와 짧은 transaction 경계를 재사용한다.
+- checkpoint 조회는 dataset, 존재 여부, hasCursor, 성공/갱신시각만 노출하며 cursor와 checkpoint 원문 수정 API는 제공하지 않는다.
+- Phase 3B lifecycle과 3-stage dedupe를 그대로 유지한다. provider event는 회계 transaction이 아니며 AUTO CONFIRM은 금지된다.

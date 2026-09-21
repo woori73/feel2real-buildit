@@ -72,6 +72,11 @@ public class EasyCollectionConnection extends BaseEntity {
     this.status = EasyCollectionConnectionStatus.DISABLED;
   }
 
+  /** Activation is called only after the management readiness gate passes. */
+  public void enable() {
+    this.status = EasyCollectionConnectionStatus.ACTIVE;
+  }
+
   public void markNeedsReauth() {
     this.status = EasyCollectionConnectionStatus.NEEDS_REAUTH;
   }
