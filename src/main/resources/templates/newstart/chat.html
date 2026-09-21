@@ -31,14 +31,16 @@
             </div>
           </div>
 
-          <!-- 로그인 안내 : 비로그인 방문자용. 2026-09-21 cleanup — 네이버 로그인 V1/V2/공식
-               OAuth2 구현을 전부 제거해 현재는 활성 로그인 수단이 없다(다음 세션에서 재구현).
+          <!-- 로그인 안내 : 비로그인 방문자용. STEP 4(2026-09-21) — 네이버 로그인을
+               /oauth2/authorization/naver(고정 경로)로 연결했다. 로그인 완료 후에는
+               NaverOAuth2LoginSuccessHandler가 항상 /newstart로 redirect한다(이 페이지로
+               돌아오지 않음 — §CONTRACT 고정 redirect, 사용자 지정 목적지 없음).
                #ns-chat-login-alert는 ?login= 마커를 읽어 표시하는 범용 안내 영역으로 남겨둔다
                (지금은 그 마커를 만드는 backend가 없어 항상 hidden). -->
           <div id="ns-chat-login" class="ns-chat-login" hidden>
             <p id="ns-chat-login-alert" class="ns-empty ns-chat-login-alert" role="alert" hidden></p>
             <p class="ns-empty">회원 채팅은 로그인 회원만 사용할 수 있습니다.</p>
-            <button id="ns-chat-login-btn" class="ns-btn ns-btn-primary" type="button" disabled aria-disabled="true">네이버 로그인 준비 중</button>
+            <a id="ns-chat-login-btn" class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버 로그인</a>
           </div>
 
           <!-- 메시지 목록 -->
@@ -58,6 +60,7 @@
       </main>
 
       <script src="/js/newstart-chat.js?v=20260921-1" defer></script>
+      <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
     </div>
   </div>
 </body>

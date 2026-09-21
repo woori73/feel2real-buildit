@@ -6,6 +6,11 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtAuthent
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteVisitRecordingService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.CookieOAuth2AuthorizationRequestRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginFailureHandler;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginSuccessHandler;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2UserService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NoOpOAuth2AuthorizedClientRepository;
 import jakarta.servlet.DispatcherType;
 import java.util.regex.Pattern;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,6 +25,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -67,7 +73,23 @@ public class SecurityConfig {
       org.springframework.beans.factory.ObjectProvider<SiteVisitRecordingService> siteVisitRecordingService,
       PublicSiteProperties publicSiteProperties,
       WebSecurityProperties webSecurityProperties,
-      ArchivedRoutesProperties archivedRoutesProperties) throws Exception {
+      ArchivedRoutesProperties archivedRoutesProperties,
+      JwtProperties jwtProperties,
+      // NewStart 네이버 로그인 STEP 1. spring.security.oauth2.client.registration.naver가 설정된
+      // 프로필(prd만 — application-prd.yaml)에서만 이 빈이 존재한다. ObjectProvider로 지연 조회해
+      // local/dev/stg/테스트 슬라이스에서는 oauth2Login을 아예 구성하지 않고 기존과 동일하게 둔다.
+      org.springframework.beans.factory.ObjectProvider<ClientRegistrationRepository>
+          clientRegistrationRepositoryProvider,
+      // STEP 2. JPA 레포를 갖고 있어 @WebMvcTest 슬라이스엔 없을 수 있다 — 다른 JPA 의존 빈들과
+      // 동일하게 ObjectProvider로 지연 조회한다.
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverAccountResolutionService>
+          naverAccountResolutionServiceProvider,
+      // NewStart 표시 별명(display nickname) seed용. 역시 JPA 레포 의존이라 동일하게 지연 조회한다
+      // (@WebMvcTest 슬라이스에서 없으면 seed를 건너뛸 뿐 로그인 자체는 막지 않는다).
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService>
+          newStartMemberProfileServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -349,6 +371,29 @@ public class SecurityConfig {
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
         .addFilterAfter(siteVisitFilter, UsernamePasswordAuthenticationFilter.class);
+
+    // NewStart 네이버 로그인 STEP 1 (docs/newstart/oauth/NAVER_LOGIN_REBUILD_DESIGN_2026-09-21.md).
+    // ClientRegistrationRepository 빈이 없는 환경(local/dev/stg/대부분의 테스트)에서는 oauth2Login을
+    // 아예 구성하지 않는다 — /oauth2/authorization/naver, /login/oauth2/code/naver는 이미 위
+    // authorizeHttpRequests의 anyRequest().permitAll() catch-all에 걸리므로 별도 인가 규칙 추가가
+    // 필요 없다(광범위 permitAll 확장 없이 기존 catch-all만으로 충분함을 확인했다).
+    ClientRegistrationRepository clientRegistrationRepository =
+        clientRegistrationRepositoryProvider.getIfAvailable();
+    if (clientRegistrationRepository != null) {
+      http.oauth2Login(oauth2 -> oauth2
+          .clientRegistrationRepository(clientRegistrationRepository)
+          .authorizationEndpoint(endpoint -> endpoint.authorizationRequestRepository(
+              // HttpSession 대신 단명 쿠키에 저장 — 앱 전역 STATELESS 정책을 유지한다.
+              new CookieOAuth2AuthorizationRequestRepository(jwtProperties.secureCookie())))
+          // 기본값(HttpSessionOAuth2AuthorizedClientRepository)은 access token을 세션에 저장한다.
+          // response.id만 쓰고 버리면 되므로 access token을 어디에도 남기지 않는다 — STATELESS 유지.
+          .authorizedClientRepository(new NoOpOAuth2AuthorizedClientRepository())
+          .userInfoEndpoint(userInfo -> userInfo.userService(new NaverOAuth2UserService()))
+          .successHandler(new NaverOAuth2LoginSuccessHandler(
+              naverAccountResolutionServiceProvider.getIfAvailable(), tokenProvider, cookieUtil,
+              newStartMemberProfileServiceProvider.getIfAvailable()))
+          .failureHandler(new NaverOAuth2LoginFailureHandler()));
+    }
 
     return http.build();
   }
