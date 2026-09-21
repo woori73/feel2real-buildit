@@ -1,0 +1,93 @@
+{
+  "articleId": 5738,
+  "attachments": [],
+  "author": {
+    "memberGrade": null,
+    "nickname": "호순잉"
+  },
+  "boardId": 13,
+  "boardName": "자유게시판",
+  "bodyNormalized": "부실차주 신청했고 정보를 얻고 싶어 가입했습니다\n\n20년 8월 사업자 등록 21년 6월 폐업\n\n학자금 대출 연체 90일 초과\n\n이후 24년~26년 현재까지 대출 건수가 부담되어 부실차주 신청했고\n\n정보를 얻고싶어 가입했습니다 감사합니다",
+  "bodyRaw": [
+    "부실차주 신청했고 정보를 얻고 싶어 가입했습니다",
+    "20년 8월 사업자 등록 21년 6월 폐업",
+    "학자금 대출 연체 90일 초과",
+    "이후 24년~26년 현재까지 대출 건수가 부담되어 부실차주 신청했고",
+    "정보를 얻고싶어 가입했습니다 감사합니다"
+  ],
+  "cafeClubId": 31312978,
+  "cafeKey": "newhopero",
+  "collectedAt": "2026-09-20T11:56:06+09:00",
+  "collectionStatus": "NEW",
+  "commentCount": 5,
+  "comments": [
+    {
+      "author": "안나 0669",
+      "commentId": 56659864,
+      "commentLocalId": "c1",
+      "createdAt": "2026.07.25. 16:42",
+      "isAuthor": false,
+      "isOperator": false,
+      "parentLocalId": null,
+      "sourceType": "CAFE_COMMENT",
+      "text": "안녕하세요!"
+    },
+    {
+      "author": "호순잉",
+      "commentId": 56660062,
+      "commentLocalId": "c2",
+      "createdAt": "2026.07.25. 17:18",
+      "isAuthor": true,
+      "isOperator": false,
+      "parentLocalId": null,
+      "sourceType": "CAFE_COMMENT",
+      "text": "안녕하세요 잘 부탁드립니다"
+    },
+    {
+      "author": "빵글몬",
+      "commentId": 56660059,
+      "commentLocalId": "c3",
+      "createdAt": "2026.07.25. 17:17",
+      "isAuthor": false,
+      "isOperator": false,
+      "parentLocalId": null,
+      "sourceType": "CAFE_COMMENT",
+      "text": "안녕하세요"
+    },
+    {
+      "author": "호순잉",
+      "commentId": 56660064,
+      "commentLocalId": "c4",
+      "createdAt": "2026.07.25. 17:18",
+      "isAuthor": true,
+      "isOperator": false,
+      "parentLocalId": null,
+      "sourceType": "CAFE_COMMENT",
+      "text": "정보 교류 잘 해봐여"
+    },
+    {
+      "author": "뚜까치",
+      "commentId": 56689942,
+      "commentLocalId": "c5",
+      "createdAt": "2026.07.30. 00:56",
+      "isAuthor": false,
+      "isOperator": false,
+      "parentLocalId": null,
+      "sourceType": "CAFE_COMMENT",
+      "text": "반갑습니다~ 저도 정보얻고자 가입했습니다"
+    }
+  ],
+  "createdAt": "2026-07-25T15:09",
+  "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/cafes/31312978/articles)",
+  "followUpResult": null,
+  "imageRequired": false,
+  "lastVerifiedAt": "2026-09-20T11:56:06+09:00",
+  "likeCount": null,
+  "parseWarnings": [],
+  "sourceType": "CAFE_CASE",
+  "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5738&referrerAllArticles=true",
+  "title": "안녕하세요",
+  "topicTags": [],
+  "viewCount": 26,
+  "writtenAt": "2026.07.25. 15:09"
+}
