@@ -4,6 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.e
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartKnowledgeItem, Long> {
+public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartKnowledgeItem, Long>,
+        JpaSpecificationExecutor<NewstartKnowledgeItem> {
 
     @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status = :status AND k.sourceType = :type ORDER BY k.createdAt DESC")
     List<NewstartKnowledgeItem> findByStatusAndSourceType(@Param("status") String status, @Param("type") String type);

@@ -54,6 +54,20 @@
       </article>
     </div>
 
+    <!-- REVIEW 검토함 (ADMIN 승인 Workflow) -->
+    <section class="review-queue-section" aria-label="REVIEW 검토함">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">REVIEW 검토함 <span class="pill pill-review" id="reviewQueueCount">0</span></h3>
+          <span class="section-hint">신규 지식은 REVIEW로만 등록됩니다. 경고 확인 없이 ACTIVE 승인은 되지 않습니다.</span>
+        </div>
+        <button class="btn btn-secondary" type="button" onclick="loadReviewQueue()">새로고침</button>
+      </div>
+      <div id="reviewQueue" class="review-queue" aria-live="polite">
+        <div class="empty-card">불러오는 중...</div>
+      </div>
+    </section>
+
     <!-- Filters & Search -->
     <div class="filter-bar">
       <div class="search-group">
@@ -173,6 +187,28 @@
             </div>
             <p id="kFormMessage" class="muted" style="margin-top:12px;"></p>
           </form>
+        </div>
+      </div>
+    </div>
+    <!-- Review Detail Modal -->
+    <div id="reviewModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-dialog knowledge-modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+        <div class="modal-header">
+          <h2 id="reviewTitle" class="modal-title">검토</h2>
+          <button class="modal-close" type="button" onclick="closeReviewModal()" aria-label="닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="reviewMeta" class="review-meta"></div>
+          <div id="reviewWarnings" class="review-warnings"></div>
+          <div class="field full"><label>근거(evidence)</label><pre id="reviewEvidence" class="evidence"></pre></div>
+          <div class="field full"><label>Provenance (상태 변경 이력)</label><div id="reviewHistory"></div></div>
+          <div class="field full" id="reviewConfirmBox"><label><input id="reviewConfirmed" type="checkbox"> 위 경고를 모두 확인했습니다. 명시적으로 승인합니다.</label></div>
+          <div class="field full"><label for="reviewReason">사유 (승인/보관 필수)</label><textarea id="reviewReason" rows="2" placeholder="검토 사유를 입력하세요"></textarea></div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="button" onclick="keepReview()">REVIEW 유지</button>
+            <button class="btn btn-secondary" type="button" onclick="archiveReview()">ARCHIVED 처리</button>
+            <button class="btn btn-primary" type="button" onclick="approveReview()">ACTIVE 승인</button>
+          </div>
         </div>
       </div>
     </div>

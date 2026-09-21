@@ -127,7 +127,8 @@ public class SecurityConfig {
             .requestMatchers("/tutor/conversation_dashboard", "/tutor/conversation/dashboard", "/tutor/conversation/chat", "/tutor/conversation/chat.html", "/tutor/conversation/materials", "/tutor/conversation/materials.html", "/tutor/conversations/**")
             .hasRole("TUTOR")
             // 랜딩 편집 화면은 기존 public admin view 그룹보다 먼저 차단한다.
-            .requestMatchers("/admin/landing", "/admin/chart").hasRole("ADMIN")
+            // 부실차주 Wiki 검토 화면도 ADMIN 전용이다. API(/api/admin/**)는 아래에서 별도 차단.
+            .requestMatchers("/admin/landing", "/admin/chart", "/admin/newstart/wiki").hasRole("ADMIN")
 
             // ── 학원 LMS SSR 화면 ──────────────────────────────────────────
             // ⚠ 이 블록은 반드시 아래 .anyRequest().permitAll()보다 위에 있어야 한다.

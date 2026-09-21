@@ -1,15 +1,19 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.controller;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartKnowledgeDtos.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmpiricalCaseService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartKnowledgeService;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -63,7 +67,7 @@ public class NewstartKnowledgeAdminController {
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<StatsResponse> getStats(
+    public ResponseEntity<NewstartKnowledgeStatsResponse> getStats(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
         return ResponseEntity.ok(knowledgeService.getStats());
     }
@@ -72,7 +76,7 @@ public class NewstartKnowledgeAdminController {
     public ResponseEntity<NewstartKnowledgeItemResponse> create(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             @Valid @RequestBody NewstartKnowledgeItemCreateRequest req) {
-        return ResponseEntity.ok(knowledgeService.create(req, principal.getUsername()));
+        return ResponseEntity.ok(knowledgeService.create(req, principal.loginId()));
     }
 
     @PutMapping("/{id}")
@@ -80,7 +84,7 @@ public class NewstartKnowledgeAdminController {
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             @PathVariable Long id,
             @Valid @RequestBody NewstartKnowledgeItemUpdateRequest req) {
-        return ResponseEntity.ok(knowledgeService.update(id, req, principal.getUsername()));
+        return ResponseEntity.ok(knowledgeService.update(id, req, principal.loginId()));
     }
 
     @PutMapping("/{id}/status")
@@ -89,8 +93,103 @@ public class NewstartKnowledgeAdminController {
             @PathVariable Long id,
             @RequestParam String status,
             @RequestParam(required = false) String reason) {
-        knowledgeService.changeStatus(id, status, principal.getUsername(), reason);
+        knowledgeService.changeStatus(id, status, principal.loginId(), reason);
         return ResponseEntity.ok().build();
+    }
+
+    // ── ADMIN Review Workflow ──────────────────────────────────────────
+    // REVIEW 목록 → 상세(경고+provenance) → 승인/유지/보관.
+    // ACTIVE 전환은 approveReview 명시적 action만 허용. 자동 승인 금지.
+
+    /** REVIEW 검토함 목록. */
+    @GetMapping("/review")
+    public ResponseEntity<Page<NewstartKnowledgeItemResponse>> getReviewQueue(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
+        return ResponseEntity.ok(knowledgeService.getReviewQueue(page, size, sort));
+    }
+
+    /** REVIEW 상세: title/source type/authority/effective/source URL/evidence/category/conflict/UNKNOWN/related/provenance. */
+    @GetMapping("/review/{id}")
+    public ResponseEntity<NewstartReviewDetailResponse> getReviewDetail(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(knowledgeService.getReviewDetail(id));
+    }
+
+    /** REVIEW → ACTIVE 명시적 승인. 경고가 있으면 confirmed=true + reason 필수. */
+    @PostMapping("/review/{id}/approve")
+    public ResponseEntity<?> approveReview(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long id,
+            @RequestBody(required = false) NewstartReviewActionRequest req) {
+        String reason = req != null ? req.getReason() : null;
+        boolean confirmed = req != null && Boolean.TRUE.equals(req.getConfirmed());
+        return ResponseEntity.ok(knowledgeService.approveReview(id, principal.loginId(), reason, confirmed));
+    }
+
+    /** REVIEW 유지 (보류). 상태는 그대로, 검토 메모만 이력에 남긴다. */
+    @PostMapping("/review/{id}/keep")
+    public ResponseEntity<NewstartKnowledgeItemResponse> keepReview(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long id,
+            @RequestBody(required = false) NewstartReviewActionRequest req) {
+        String reason = req != null ? req.getReason() : null;
+        return ResponseEntity.ok(knowledgeService.keepReview(id, principal.loginId(), reason));
+    }
+
+    /** REVIEW/ACTIVE → ARCHIVED (반려/보관). reason 필수. */
+    @PostMapping("/review/{id}/archive")
+    public ResponseEntity<NewstartKnowledgeItemResponse> archiveReview(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long id,
+            @RequestBody(required = false) NewstartReviewActionRequest req) {
+        String reason = req != null ? req.getReason() : null;
+        return ResponseEntity.ok(knowledgeService.archiveReview(id, principal.loginId(), reason));
+    }
+
+    /** 상태 변경 이력 = provenance 조회. source URL은 상세 응답에 포함. */
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<NewstartStatusHistoryResponse>> getHistory(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(knowledgeService.getHistory(id));
+    }
+
+    /**
+     * 삭제는 하드 삭제가 아니라 ARCHIVED 처리로 수행한다 (provenance 보존).
+     * 기존 UI의 삭제 버튼과 호환.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long id) {
+        try {
+            knowledgeService.archiveReview(id, principal.loginId(), "ADMIN 삭제 요청 → ARCHIVED 처리");
+        } catch (IllegalStateException e) {
+            // REVIEW/ACTIVE가 아니면 DRAFT 경유로 보관한다.
+            knowledgeService.changeStatus(id, "ARCHIVED", principal.loginId(), "ADMIN 삭제 요청 → ARCHIVED 처리");
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @ExceptionHandler(NewstartKnowledgeService.ReviewConfirmationRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handleConfirmationRequired(
+            NewstartKnowledgeService.ReviewConfirmationRequiredException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "error", "CONFIRMATION_REQUIRED",
+                "message", e.getMessage(),
+                "knowledgeId", e.getKnowledgeId(),
+                "warnings", e.getWarnings()));
+    }
+
+    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
+    public ResponseEntity<Map<String, String>> handleBadReviewRequest(RuntimeException e) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "error", "REVIEW_REQUEST_REJECTED",
+                "message", e.getMessage() == null ? "요청이 거부되었습니다" : e.getMessage()));
     }
 
     // Empirical Cases

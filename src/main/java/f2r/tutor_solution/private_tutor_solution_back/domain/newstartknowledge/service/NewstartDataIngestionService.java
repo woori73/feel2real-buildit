@@ -4,7 +4,12 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.e
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartEmpiricalCaseRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeItemRepository;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -79,6 +85,44 @@ public class NewstartDataIngestionService {
                 .failed(failed)
                 .errors(errors)
                 .build();
+    }
+
+    /**
+     * 수집 JSON 1건을 엔티티로 변환한다. 수집 포맷(articleId/boardName/title/author/createdAt/viewCount/content)에
+     * 없는 구조화 필드(채무/자산/감면율 등)는 null로 두고, 구조화 파이프라인에서 별도 보강한다.
+     */
+    private NewstartEmpiricalCase buildCaseEntity(com.fasterxml.jackson.databind.JsonNode node) {
+        String articleId = node.path("articleId").asText(null);
+        if (articleId == null || articleId.isBlank()) {
+            throw new IllegalArgumentException("articleId가 없는 수집 건은 적재하지 않습니다");
+        }
+        String title = node.path("title").asText("").trim();
+        if (title.length() > 200) title = title.substring(0, 200);
+
+        return NewstartEmpiricalCase.builder()
+                .articleId(articleId)
+                .boardName(node.path("boardName").asText("감면율"))
+                .title(title)
+                .authorNickname(node.path("author").path("nickname").asText(null))
+                .authorGrade(node.path("author").path("grade").asText(null))
+                .writtenAt(parseWrittenAt(node.path("createdAt").asText(null)))
+                .viewCount(node.path("viewCount").isInt() ? node.path("viewCount").asInt() : null)
+                .contentRaw(node.path("content").asText(null))
+                .sourceUrl(node.path("sourceUrl").asText(null))
+                .collectedAt(LocalDateTime.now())
+                .createdBy("INGESTION_BOT")
+                .updatedBy("INGESTION_BOT")
+                .build();
+    }
+
+    /** 수집 포맷 "yyyy.MM.dd. HH:mm"을 best-effort로 파싱한다. 실패 시 null. */
+    private LocalDateTime parseWrittenAt(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return LocalDateTime.parse(s.trim(), DateTimeFormatter.ofPattern("yyyy.MM.dd. HH:mm"));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
