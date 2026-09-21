@@ -67,9 +67,10 @@ Ms. Lee wanted to be a sports statistician because she liked to analyze sports w
 ⑤ Ms. Lee feels good about helping her team with her data.
 정답 ①
 
-**Q9.** 밑줄 친 Ⓐ를 글의 흐름에 맞게 가장 자연스럽게 읽은 것은? (ref 기출Q10)
-① seven zero percent ② seventy percents ③ seven ten percent ④ seventy percent ✔ ⑤ the percent seventy
-정답 ④
+**Q9.** 지문에 나타나는 단어와 영영풀이를 연결한 <보기>에서 옳은 것만을 고른 것은? (FINAL 교정: 구 "숫자 읽기 70 percent" 문항은 DNA 이탈·trivial 판정 폐기. ref DNA §3-4 어휘·영영 우선순위. source: L5 word list — analyze/data/statistician 정의 원문, 지문 C에 세 단어 모두 등장)
+<보기> ㉠ analyze — to study closely and carefully the nature or structure of something / ㉡ data — a very strong feeling of love, hate, anger, etc.(→ passion의 정의) / ㉢ statistician — a person who studies or works with statistics
+① ㉠② ㉡③ ㉠㉡④ ㉠㉢✔ ⑤ ㉡㉢
+정답 ④ (㉠㉢ → ㉡은 passion 정의 오배치)
 
 **Q10.** 다음 영영풀이에 해당하는 단어가 위 글에 나타나 있지 않은 것은? (ref 기출Q11)
 ① to look at somebody/something carefully (watched)
