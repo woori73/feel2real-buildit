@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1">
+<style id="clean-final-style">
+@page { size:A4 portrait; margin:0; }
+*{box-sizing:border-box}
+html,body{width:100%;margin:0;padding:0}
+body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-size:9.5pt;line-height:1.42;color:#111}
+.page{width:210mm;height:297mm;padding:12mm 11mm 10mm 11mm;position:relative;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.page:last-child{page-break-after:auto}
+.cols{display:flex;gap:7mm;flex:1 1 auto;min-height:0;padding-bottom:5mm}
+.col{width:calc(50% - 3.5mm);overflow:hidden;display:flex;flex-direction:column;gap:var(--qgap,18px)}
+.exam-header{border:1.4pt solid #000;margin-bottom:4mm}
+.exam-header table{width:100%;border-collapse:collapse;font-size:9.5pt}
+.exam-header td,.exam-header th{border:.7pt solid #444;padding:2mm 2.5mm}
+.exam-header .title-row td{text-align:center;font-size:14pt;font-weight:700;padding:3mm;letter-spacing:1px}
+.exam-header .sub-row td{text-align:center;font-size:9.5pt;color:#333}
+.exam-header .info-row td{font-size:9pt}
+.student-info-row .label{width:12mm;text-align:center;white-space:nowrap}
+.student-info-row .student-name{width:72mm}.student-info-row .student-day{width:34mm}.student-info-row .student-score{width:34mm}.student-info-row td{height:9mm;vertical-align:middle}
+.qblock{margin:0;page-break-inside:avoid;break-inside:avoid;flex:0 0 auto}
+.qhead{display:flex;gap:1.3mm;align-items:baseline}.qnum{font-weight:700;flex-shrink:0}.qprompt{font-weight:500}
+.passage{margin:1mm 0 1mm 0}.passage.box,.passage.dialog{border:.7pt solid #666;padding:1.5mm 2mm;background:#fbfbfb;line-height:1.55}
+.choices{margin-top:1.5mm}.choices.row{margin-left:4.6mm;display:flex;flex-wrap:wrap;column-gap:3.3mm;row-gap:.8mm;align-items:flex-start}
+.choice-item{display:inline-block;white-space:normal;padding-left:1.35em;text-indent:-1.35em}
+.choices.vertical{display:block;margin-left:4.6mm}.choices.vertical .choice-item,.choices.vertical .opt{display:block;width:auto;margin:0 0 1.15mm 0;padding-left:1.45em;text-indent:-1.45em;white-space:normal}
+.cond-box{margin:1.3mm 0 0 4.6mm;border:.7pt solid #666;padding:1mm 2mm;font-size:9pt;background:#fbfbfb}.cond-label{font-weight:700;margin-right:1mm}.view-title{display:block;text-align:center;margin:0 0 1.2mm 0;font-weight:700}.cond-box + .choices{margin-top:3.4mm}
+.choice-table{width:calc(100% - 4.6mm);margin:1.2mm 0 0 4.6mm;border-collapse:collapse;font-size:9pt;text-align:center}.choice-table th,.choice-table td{padding:.55mm 1.2mm;border-bottom:.45pt solid #bbb}.choice-table th{font-weight:700;border-top:.7pt solid #666;border-bottom:.7pt solid #666}.choice-table td:first-child{width:9mm;font-weight:700}
+.blank{display:inline-block;min-width:14mm;border-bottom:.7pt solid #111}
+u{text-underline-offset:1.5px}
+.page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
+.page-footer .page-num { display: inline-block; margin-left: 8px; }
+@media screen{body{background:#e9e9e9}.page{margin:0 auto 8mm auto}}
+@media print{@page{size:A4 portrait;margin:0}html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:210mm!important;height:296mm!important;margin:0!important;padding:12mm 11mm 12mm 11mm!important;overflow:hidden!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.cols{display:flex!important;width:100%!important;padding-bottom:4mm!important}.col{flex:0 0 calc(50% - 3.5mm)!important;width:calc(50% - 3.5mm)!important}}
+</style>
+<style id="eonbuk-extra">
+.grp-label{font-weight:700;margin:0 0 1mm 0;font-size:9.5pt}
+.grp{display:flex;flex-direction:column;gap:1mm}
+.page,.col,.qblock,.choice-item,.cond-box,.passage{word-break:keep-all;overflow-wrap:break-word}
+.passage.dialog{line-height:1.5}
+.qblock .cond-box{margin-left:4.6mm}
+.qblock .choices.vertical{margin-left:4.6mm}
+.qblock .choices.row{margin-left:4.6mm}
+u{text-decoration:underline;text-underline-offset:1.5px}
+.robot-cat{font-weight:700;margin-top:1.2mm}
+.robot-cat:first-of-type{margin-top:0}
+.robot-list{margin:0 0 0 4mm;padding:0;list-style:none}
+.robot-list li{margin:.3mm 0}
+.speech{margin:.6mm 0}
+</style>
+<title>언북중3 1회 40문항 문제지</title></head>
+<body><div class="page">
+<div class="exam-header"><table>
+<tr class="title-row"><td class="title-cell" colspan="6">2026학년도 2학기 기말고사 대비 1회 40문항</td></tr>
+<tr class="sub-row"><td class="school-cell" colspan="6">언북중학교 3학년 · 영어</td></tr>
+<tr class="info-row student-info-row">
+<td class="label">이름</td><td class="student-name"> </td>
+<td class="label">요일</td><td class="student-day"> </td>
+<td class="label">점수</td><td class="student-score"> </td>
+</tr>
+</table>
+</div>
+<div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="1"><div class="qhead"><span class="qnum">1.</span><span class="qprompt">대화를 읽고 밑줄 친 표현의 의도로 가장 적절한 것은?</span></div><div class="passage dialog"><div class="speech">Minji: I feel so tired after looking at my screen all day.</div><div class="speech">Jinho: <u>Why don't you ask your AI speaker to play some soft music and just rest for a while?</u></div></div>
+<div class="choices vertical"><span class="choice-item">① 상대의 습관을 탓하기 위해</span><span class="choice-item">② 쉬는 방법을 제안하기 위해</span><span class="choice-item">③ 자신의 후회를 나타내기 위해</span><span class="choice-item">④ 사실인지 확인해 달라고 요청하기 위해</span><span class="choice-item">⑤ 무엇에 대해 의심을 표현하기 위해</span></div></div>
+<div class="qblock" data-qnum="2"><div class="qhead"><span class="qnum">2.</span><span class="qprompt">다음 표를 읽고 내용을 올바르게 이해한 사람은?</span></div>
+<div class="cond-box"><span class="view-title">&lt;Eco-Campus Rules&gt;</span>
+• Reduce the use of plastic: Bring reusable bags when you shop.<br/>
+• Prevent the spread of germs: Wash your hands before every meal.<br/>
+• Save water: Turn off the tap while you brush your teeth.<br/>
+• Keep greenery: Do not step on the grass or pick leaves.<br/>
+• Take care of school property: Do not draw on desks or walls.</div>
+<div class="choices vertical"><span class="choice-item">① Hana: We should bring plastic bags when we go shopping.</span><span class="choice-item">② Duri: We don't need to wash our hands before eating.</span><span class="choice-item">③ Seun: You can leave the water running while brushing your teeth.</span><span class="choice-item">④ Jiwon: We can draw pictures on a desk that no one uses.</span><span class="choice-item">⑤ Dawon: We should not walk on the grass or pick leaves at school.</span></div></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="3"><div class="qhead"><span class="qnum">3.</span><span class="qprompt">대화를 읽고 빈칸에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage dialog"><div class="speech">A: You look worried. What's the matter?</div><div class="speech">B: An earthquake hit the mountain village an hour ago, and the rescue robots haven't reached that building yet. <span class="blank">&nbsp;</span> they can find all the survivors in time.</div><div class="speech">A: Don't worry too much. Those robots are really good at their job.</div></div>
+<div class="choices vertical"><span class="choice-item">① I doubt that</span><span class="choice-item">② I'm sure that</span><span class="choice-item">③ I have no doubt that</span><span class="choice-item">④ I believe that</span><span class="choice-item">⑤ I am confident that</span></div></div>
+<div class="qblock" data-qnum="4"><div class="qhead"><span class="qnum">4.</span><span class="qprompt">다음 대화를 읽고 빈칸에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage dialog"><div class="speech">Yeji: Our environmental club needs more members, but most students don't even know what we do.</div><div class="speech">Mingi: I have an idea. Why not <span class="blank">&nbsp;</span>? We could show them the photos from last semester's projects first.</div></div>
+<div class="choices vertical"><span class="choice-item">① give up the club activities from now on</span><span class="choice-item">② ask the teacher to reduce our club budget</span><span class="choice-item">③ put up posters about our projects around the school</span><span class="choice-item">④ keep the results of our work only inside the club room</span><span class="choice-item">⑤ spend all the money on reusable plastic bottles</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">1 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="5"><div class="qhead"><span class="qnum">5.</span><span class="qprompt">다음 대화를 올바르게 배열한 것은?</span></div>
+<div class="passage box"><div class="speech">(A) Sure. The car uses sensors to search for objects around it, and a computer decides how to drive.</div><div class="speech">(B) Really? But how can the car know where to go without a driver?</div><div class="speech">(C) I read that self-driving cars will be common on our streets soon.</div><div class="speech">(D) That's why passengers can just relax or work during the ride instead of driving.</div><div class="speech">(E) Wow, that sounds convenient! I'd love to ride in one someday.</div></div>
+<div class="choices vertical"><span class="choice-item">① (C)-(B)-(A)-(D)-(E)</span><span class="choice-item">② (C)-(D)-(B)-(A)-(E)</span><span class="choice-item">③ (E)-(C)-(A)-(B)-(D)</span><span class="choice-item">④ (B)-(A)-(C)-(D)-(E)</span><span class="choice-item">⑤ (D)-(A)-(C)-(B)-(E)</span></div></div>
+<div class="grp">
+<div class="grp-label">[6~8] 글을 읽고 물음에 답하시오.</div>
+<div class="passage dialog"><div class="speech"><b>Sera:</b> Your new AI pet is so cute! Does it really know when you're sad?</div><div class="speech"><b>Yuna:</b> Yes. It can ㉠<u>recognize my emotions</u> and comes closer when I look unhappy.</div><div class="speech"><b>Sera:</b> That's amazing. ㉡<u>Why don't you keep it on all day?</u></div><div class="speech"><b>Yuna:</b> I can't. ㉢<u>I'm afraid spending too much time with it could be dangerous.</u> My parents say I should ㉣<u>take a break from it sometimes.</u></div><div class="speech"><b>Sera:</b> What do the developers say about that?</div><div class="speech"><b>Yuna:</b> They warn that users ㉤<u>may start to treat robots more kindly than humans.</u> That's why I use it for only an hour a day.</div></div>
+</div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="passage box">Last week I had a fight with my best friend and felt really down. As soon as I came home, my AI pet noticed my sadness and played my favorite music. (가) <u>It</u> even moved its head gently to make me relax. (A) For a moment, I forgot all about my problems. (B) But I knew that a machine could not solve the real problem between my friend and me. (C) So I picked up my phone and sent her a message first. (D) Two hours later, we were laughing together on the phone. (E) Maybe technology helps people relax, but it is humans who truly understand us.</div>
+<div class="qblock" data-qnum="6"><div class="qhead"><span class="qnum">6.</span><span class="qprompt">밑줄 친 ㉠~㉤에서 유추할 수 없는 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① ㉠: Yuna의 AI 펫은 Yuna의 기분 상태를 감지할 수 있다.</span><span class="choice-item">② ㉡: Sera는 Yuna가 AI 펫과 지내는 시간을 줄이라고 조언하고 있다.</span><span class="choice-item">③ ㉢: Yuna는 AI 펫을 지나치게 많이 사용하는 것이 문제를 일으킬까 걱정한다.</span><span class="choice-item">④ ㉣: Yuna의 부모는 AI 펫을 쉬지 않고 계속 쓰는 것은 좋지 않다고 생각한다.</span><span class="choice-item">⑤ ㉤: 개발자들은 사용자가 로봇에게 보이는 태도의 변화를 경고하고 있다.</span></div></div>
+<div class="qblock" data-qnum="7"><div class="qhead"><span class="qnum">7.</span><span class="qprompt">밑줄 친 (가)와 쓰임이 같은 것만을 있는 대로 고른 것은?</span></div>
+<div class="cond-box">ⓐ <u>It</u> is impossible to live without technology these days.<br/>ⓑ My phone is old, but I still take care of <u>it</u> carefully.<br/>ⓒ The AI pet makes <u>it</u> possible for me to relax.<br/>ⓓ <u>It</u> was brave of her to tell the truth to her friend.</div>
+<div class="choices row"><span class="choice-item">① ⓐ, ⓑ</span><span class="choice-item">② ⓐ, ⓓ</span><span class="choice-item">③ ⓑ, ⓓ</span><span class="choice-item">④ ⓑ, ⓒ</span><span class="choice-item">⑤ ⓒ, ⓓ</span></div></div>
+<div class="qblock" data-qnum="8"><div class="qhead"><span class="qnum">8.</span><span class="qprompt">&lt;보기&gt;의 문장이 들어갈 곳으로 가장 적절한 곳은?</span></div>
+<div class="cond-box">&lt;보기&gt; However, I didn't stay in that comfortable feeling for long.</div>
+<div class="choices row"><span class="choice-item">① (A)</span><span class="choice-item">② (B)</span><span class="choice-item">③ (C)</span><span class="choice-item">④ (D)</span><span class="choice-item">⑤ (E)</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">2 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="grp">
+<div class="grp-label">[9~11] 다음 표는 스마트 로봇을 분류한 것이다. 읽고 물음에 답하시오.</div>
+<div class="cond-box"><span class="view-title">&lt;Smart Robot Classification&gt;</span>
+<div class="robot-cat">AI SPEAKERS: "Voice Controllers"</div>
+<ul class="robot-list"><li>• Control home ⓐ<u>electronic</u> devices with the help of your voice</li><li>• Answer questions and give information instantly</li><li>• (가) <u>talk / talk to</u> users about daily plans when they are asked</li></ul>
+<div class="robot-cat">HOME HELPERS: "Invisible Workers"</div>
+<ul class="robot-list"><li>• Carry out daily tasks so busy families need not (다) <u>worry about / worry</u> housework</li><li>• Make life more convenient for busy families</li><li>• Work quietly while their (나) <u>owner / owners</u> are away</li></ul>
+<div class="robot-cat">SELF-DRIVING CARS: "Road Navigators"</div>
+<ul class="robot-list"><li>• Sense nearby objects and avoid danger by themselves</li><li>• Search for the fastest ⓒ<u>route</u> to the destination</li><li>• Allow passengers to ⓑ<u>relax</u> or work during the ride</li></ul>
+<div class="robot-cat">ROBOT SWARMS: "Group Workers"</div>
+<ul class="robot-list"><li>• Move together as one body like a flock of birds</li><li>• Warn ⓓ<u>one another</u> about dangers while working</li><li>• Clean up oil spills and search fields in detail</li></ul>
+<div class="robot-cat">SEARCH-AND-RESCUE ROBOTS: "Disaster Heroes"</div>
+<ul class="robot-list"><li>• Go into broken places where humans cannot enter</li><li>• Find ⓔ<u>survivors</u> trapped in danger with special sensors</li><li>• Continue the search throughout the day</li></ul>
+</div>
+</div>
+<div class="qblock" data-qnum="9"><div class="qhead"><span class="qnum">9.</span><span class="qprompt">밑줄 친 ⓐ~ⓔ의 문맥상 영영풀이로 옳지 않은 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① ⓐ: relating to machines and devices that use electricity</span><span class="choice-item">② ⓑ: to rest and become less tense</span><span class="choice-item">③ ⓒ: the path taken from one place to another</span><span class="choice-item">④ ⓓ: the feeling of knowing other people well</span><span class="choice-item">⑤ ⓔ: people who continue to live after an accident or disaster</span></div></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="10"><div class="qhead"><span class="qnum">10.</span><span class="qprompt">(가)~(다)에 들어갈 말로 바르게 짝지어진 것은?</span></div>
+<table class="choice-table"><tr><th></th><th>(가)</th><th>(나)</th><th>(다)</th></tr>
+<tr><td>①</td><td>talk</td><td>owner</td><td>worry</td></tr>
+<tr><td>②</td><td>talk to</td><td>owner</td><td>worry about</td></tr>
+<tr><td>③</td><td>talk to</td><td>owners</td><td>worry about</td></tr>
+<tr><td>④</td><td>talk</td><td>owners</td><td>worry</td></tr>
+<tr><td>⑤</td><td>talk to</td><td>owners</td><td>worry</td></tr></table></div>
+<div class="qblock" data-qnum="11"><div class="qhead"><span class="qnum">11.</span><span class="qprompt">윗 표를 읽고 두 학생이 나눈 대화이다. 빈칸에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage dialog"><div class="speech">Hana: A small machine worked in a collapsed hotel last month. The place was too narrow for firefighters, so the machine went in alone. With special sensors, it found people who were still alive and guided them out safely.</div><div class="speech">Duri: I think that machine is a true <span class="blank">&nbsp;</span>.</div></div>
+<div class="choices vertical"><span class="choice-item">① Voice Controller</span><span class="choice-item">② Invisible Worker</span><span class="choice-item">③ Road Navigator</span><span class="choice-item">④ Group Worker</span><span class="choice-item">⑤ Disaster Hero</span></div></div>
+<div class="qblock" data-qnum="12"><div class="qhead"><span class="qnum">12.</span><span class="qprompt">우리말을 올바르게 영작한 문장은?</span></div>
+<div class="choices vertical"><span class="choice-item">① 그녀가 혼자 해외여행을 하다니 용감했어. → It was brave for her to travel abroad alone.</span><span class="choice-item">② 네가 그렇게 빨리 영어를 배우는 것은 현명한 일이야. → It is smart of you to learn English so fast.</span><span class="choice-item">③ 아이들은 집까지 혼자 걸어 가기엔 위험하다. → It's dangerous of kids to walk home alone.</span><span class="choice-item">④ 나는 오늘 할 일을 하기에 충분한 돈이 없었다. → I had enough money to do my homework today.</span><span class="choice-item">⑤ 그 정원은 사람들이 방문하기에 너무 아름다웠다. → The garden was too beautiful for people to visit it.</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">3 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="grp">
+<div class="grp-label">[13~15] 글을 읽고 물음에 답하시오.</div>
+<div class="passage box">Singapore is called a "city in nature" because green spaces are found everywhere in its tall buildings. The Oasia Hotel Downtown is covered with more than twenty species of plants, and the plants keep the building cool. At the Parkroyal Collection Pickering, visitors can relax in sky gardens and enjoy the shade.<br/>Mr. Kang is an architect who designs green buildings in the city. When he was young, he thought that tall buildings and nature could never live in harmony. Last month he won an international award for his sky garden design. (가) <u>He became more confident about the future of his city.</u> ⓐ <u>That is why</u> he plans to turn every rooftop into a garden. "Our innovations contribute to cleaner air," he says. "It is important for young architects to design with nature, not against it."</div>
+</div>
+<div class="qblock" data-qnum="13"><div class="qhead"><span class="qnum">13.</span><span class="qprompt">밑줄 친 (가)의 이유로 가장 적절한 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① It is because he was asked to reduce the use of energy in his new building.</span><span class="choice-item">② It is because his design proved that architecture and nature can live together.</span><span class="choice-item">③ It is because the government ordered him to plant more trees in the city.</span><span class="choice-item">④ It is because he found out that green buildings cost less than ordinary ones.</span><span class="choice-item">⑤ It is because his company decided to build more tall offices downtown.</span></div></div>
+<div class="qblock" data-qnum="14"><div class="qhead"><span class="qnum">14.</span><span class="qprompt">밑줄 친 ⓐ와 쓰임이 같은 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① Do you know why the developer cut down the trees?</span><span class="choice-item">② That is the reason why the air quality is improving.</span><span class="choice-item">③ That is why we need more green roofs in the city.</span><span class="choice-item">④ I don't understand why he left the club so early.</span><span class="choice-item">⑤ Is there any reason why plants keep buildings cool?</span></div></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="15"><div class="qhead"><span class="qnum">15.</span><span class="qprompt">다음 대화를 읽고 밑줄 친 ㉠~㉤ 중 의미상 적절하지 않은 것을 고르시오.</span></div>
+<div class="passage dialog"><div class="speech">Jane: I heard your company ㉠<u>came up with</u> a great design for the new library.</div><div class="speech">Peter: Yes. We designed the sky gardens ㉡<u>in harmony with</u> nature, and the rooftop plants ㉢<u>provide</u> shade for the visitors below.</div><div class="speech">Jane: Wonderful! Those green innovations must ㉣<u>contribute</u> air quality in the whole city.</div><div class="speech">Peter: I agree. That's why more developers ㉤<u>work on</u> such projects these days.</div></div>
+<div class="choices row"><span class="choice-item">① ㉠</span><span class="choice-item">② ㉡</span><span class="choice-item">③ ㉢</span><span class="choice-item">④ ㉣</span><span class="choice-item">⑤ ㉤</span></div></div>
+<div class="qblock" data-qnum="16"><div class="qhead"><span class="qnum">16.</span><span class="qprompt">어법상 적절한 문장의 개수는?</span></div>
+<div class="cond-box">• I don't like the way how he talks to the AI speaker.<br/>• It was thoughtful of you to send the survivors warm blankets.<br/>• She turned on the air conditioner so that she will not feel hot.<br/>• Please tell me the reason why plants keep the building cool.</div>
+<div class="choices row"><span class="choice-item">① 1개</span><span class="choice-item">② 2개</span><span class="choice-item">③ 3개</span><span class="choice-item">④ 4개</span><span class="choice-item">⑤ 5개</span></div></div>
+<div class="qblock" data-qnum="17"><div class="qhead"><span class="qnum">17.</span><span class="qprompt">(A)~(E)에 들어갈 말로 적절하지 않은 것은?</span></div>
+<div class="cond-box">• Smart windows let in natural light and (A) <u>increase</u> the temperature of the room.<br/>• Self-driving cars can (B) <u>search for</u> the fastest route to a destination.<br/>• The rescue robot can (C) <u>perform</u> dangerous tasks instead of humans.<br/>• Weather apps on your phone can (D) <u>forecast</u> rain or strong winds.<br/>• AI pets can (E) <u>recognize</u> users' emotions and respond to them.</div>
+<div class="choices row"><span class="choice-item">① (A)</span><span class="choice-item">② (B)</span><span class="choice-item">③ (C)</span><span class="choice-item">④ (D)</span><span class="choice-item">⑤ (E)</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">4 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="grp">
+<div class="grp-label">[18~21] 글을 읽고 물음에 답하시오.</div>
+<div class="passage box">Last summer, a powerful earthquake hit the city where my grandmother lives. I was staying with her at the time. (가) <span class="blank">&nbsp;</span> the shaking started, we were having dinner in the kitchen. The dishes fell to the floor one by one, and the whole house began to shake violently. A picture of our family hung on the wall, and the glass covering ⓐ <u>it</u> broke into pieces. I wanted to run outside right away, (나) <span class="blank">&nbsp;</span> my grandmother stopped me. "Stay calm! We must wait until the shaking stops," she said. We hid under a strong table and covered our heads with our hands. (A) <u>My heart was beating so fast that I could hear it in my ears.</u> I was sure that an old wooden building like ours could not survive a strong quake, but our house held. (다) <span class="blank">&nbsp;</span> the shaking finally stopped, my grandmother called the rescue center. A few minutes later, a small robot arrived at our door. It was a search-and-rescue robot which was equipped with special sensors. The robot went into the broken places around our house to find possible survivors and made sure that no one was trapped inside. Then it told us that the road to the community center was safe and led the way for us. Thanks to my grandmother's calm advice and the robot's hard work, we spent the night safely at the shelter.</div>
+</div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="18"><div class="qhead"><span class="qnum">18.</span><span class="qprompt">윗글의 내용과 일치하지 않는 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① 지진이 일어날 당시 필자는 할머니 댁 부엌에서 저녁을 먹고 있었다.</span><span class="choice-item">② 필자는 즉시 밖으로 나가려 했지만, 할머니는 필자를 만류하셨다.</span><span class="choice-item">③ 필자와 할머니는 단단한 테이블 아래로 들어가 머리를 감싸 보호하였다.</span><span class="choice-item">④ 필자는 할머니의 침착한 충고와 로봇의 활약으로 피난처에서 안전하게 하룻밤을 보냈다.</span><span class="choice-item">⑤ 오래된 나무로 지은 필자의 할머니 댁은 강한 흔들림 끝에 무너졌다.</span></div></div>
+<div class="qblock" data-qnum="19"><div class="qhead"><span class="qnum">19.</span><span class="qprompt">빈칸 (가)~(다)에 들어갈 표현으로 가장 적절한 것은?</span></div>
+<table class="choice-table"><tr><th></th><th>(가)</th><th>(나)</th><th>(다)</th></tr>
+<tr><td>①</td><td>While</td><td>but</td><td>Until</td></tr>
+<tr><td>②</td><td>When</td><td>because</td><td>After</td></tr>
+<tr><td>③</td><td>While</td><td>because</td><td>After</td></tr>
+<tr><td>④</td><td>When</td><td>but</td><td>After</td></tr>
+<tr><td>⑤</td><td>When</td><td>but</td><td>Until</td></tr></table></div>
+<div class="qblock" data-qnum="20"><div class="qhead"><span class="qnum">20.</span><span class="qprompt">윗글의 화자가 밑줄 친 (A)에서 느낀 감정에 대해 가장 적절하게 설명한 사람은?</span></div>
+<div class="choices vertical"><span class="choice-item">① 바람: The writer was full of confidence that the old house would keep her safe.</span><span class="choice-item">② 별빛: The writer was in a state of extreme fear that made her unable to think or act calmly.</span><span class="choice-item">③ 하늘: The writer was deeply curious about what was causing the shaking.</span><span class="choice-item">④ 은하: The writer felt sorry for her grandmother who lived alone in the house.</span><span class="choice-item">⑤ 우주: The writer was disappointed that the dishes on the table were broken.</span></div></div>
+<div class="qblock" data-qnum="21"><div class="qhead"><span class="qnum">21.</span><span class="qprompt">밑줄 친 ⓐ가 가리키는 것은?</span></div>
+<div class="choices row"><span class="choice-item">① the light</span><span class="choice-item">② the table</span><span class="choice-item">③ the kitchen floor</span><span class="choice-item">④ the front door</span><span class="choice-item">⑤ a picture of our family</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">5 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="grp">
+<div class="grp-label">[22~24] 글을 읽고 물음에 답하시오.</div>
+<div class="passage box">Although I had practiced earthquake drills many times at school, I had never thought I would experience a real one. ㉠ <u>That night taught me how important was it to stay calm.</u> My grandmother said the house should be checked by experts ㉡ <u>so that a small crack can turn into a big disaster.</u> Now our family keeps an emergency bag by the door, and I set my AI speaker ㉢ <u>to give a warning signal when the weather app forecasts strong winds or heavy rain.</u> People say that rescue robots will replace human firefighters one day. A robot can search a broken building in detail and work throughout the day without getting tired, but it can never ㉣ <u>take place of</u> the people who care for one another. What we really need is ㉤ <u>to be prepared for the next earthquake, which can be occurred at any time.</u></div>
+</div>
+<div class="qblock" data-qnum="22"><div class="qhead"><span class="qnum">22.</span><span class="qprompt">윗글의 주제로 가장 적절한 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① Rules for Using Rescue Robots Safely</span><span class="choice-item">② How to Prepare an Emergency Bag at Home</span><span class="choice-item">③ The History of Earthquake Drills in Schools</span><span class="choice-item">④ Why Weather Apps Are More Accurate Than Radios</span><span class="choice-item">⑤ A Night of Disaster That Changed My Mind</span></div></div>
+<div class="qblock" data-qnum="23"><div class="qhead"><span class="qnum">23.</span><span class="qprompt">밑줄 친 ㉠~㉤ 중 어법상 올바른 것은?</span></div>
+<div class="choices row"><span class="choice-item">① ㉠</span><span class="choice-item">② ㉡</span><span class="choice-item">③ ㉢</span><span class="choice-item">④ ㉣</span><span class="choice-item">⑤ ㉤</span></div></div>
+<div class="qblock" data-qnum="24"><div class="qhead"><span class="qnum">24.</span><span class="qprompt">윗글을 읽고 답할 수 있는 질문은?</span></div>
+<div class="choices vertical"><span class="choice-item">① Why did the weather app stop working during the quake?</span><span class="choice-item">② Who invented the first search-and-rescue robot?</span><span class="choice-item">③ What does the writer's family keep by the door now?</span><span class="choice-item">④ When is the next earthquake expected to hit the city?</span><span class="choice-item">⑤ How much did the rescue robot cost the center?</span></div></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="25"><div class="qhead"><span class="qnum">25.</span><span class="qprompt">다음 대화를 읽고 빈칸에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="passage dialog"><div class="speech">A: The club members argued again about where to put the new birdhouse.</div><div class="speech">B: As the club leader, it's your job <span class="blank">&nbsp;</span> a fair decision this time.</div></div>
+<div class="choices row"><span class="choice-item">① to make</span><span class="choice-item">② making</span><span class="choice-item">③ makes</span><span class="choice-item">④ made</span><span class="choice-item">⑤ make</span></div></div>
+<div class="grp">
+<div class="grp-label">[26~28] 글을 읽고 물음에 답하시오.</div>
+<div class="passage box">When tourists visit Cancún, Mexico, most of them rush to its beautiful beaches. But few people know about a strange attraction lying quietly under the sea: the underwater museum called MUSA. It holds more than five hundred life-size sculptures. In 2009, marine artist Jason deCaires Taylor created the museum to protect the city's coral reefs. Too many visitors had damaged the reefs near the shore. (A) <span class="blank">&nbsp;</span> The sculptures are made of a special material that is friendly to sea life. Over time, corals and plants grow over them, and small fish make their homes in the statues. (B) <span class="blank">&nbsp;</span> Divers are now led to the museum, so the pressure on the natural reefs is greatly reduced. (C) <span class="blank">&nbsp;</span> ⓑ <u>The museum shows us that it is possible for art and nature to help each other.</u> "I want my work to contribute to the recovery of the ocean," Taylor said. (D) <span class="blank">&nbsp;</span> However, divers still need training before they visit the site. (E) <span class="blank">&nbsp;</span></div>
+</div>
+<div class="qblock" data-qnum="26"><div class="qhead"><span class="qnum">26.</span><span class="qprompt">윗글의 내용과 일치하는 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① The museum was built to replace the beautiful beaches of Cancún.</span><span class="choice-item">② The sculptures are made of a material that is harmful to sea life.</span><span class="choice-item">③ Thanks to the museum, fewer visitors damage the natural reefs near the shore.</span><span class="choice-item">④ Corals are unable to grow on the statues because of the special material.</span><span class="choice-item">⑤ Taylor created the museum because he disliked scuba diving.</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">6 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="27"><div class="qhead"><span class="qnum">27.</span><span class="qprompt">밑줄 친 ⓑ와 의미가 같은 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① The museum shows that it is impossible for art and nature to help each other.</span><span class="choice-item">② The museum shows that only nature can make it possible for art to survive.</span><span class="choice-item">③ The museum shows that art and nature will never work together.</span><span class="choice-item">④ The museum shows that helping each other makes art impossible.</span><span class="choice-item">⑤ The museum shows that art and nature can help each other.</span></div></div>
+<div class="qblock" data-qnum="28"><div class="qhead"><span class="qnum">28.</span><span class="qprompt">&lt;보기&gt;의 문장이 들어갈 곳으로 가장 적절한 곳은?</span></div>
+<div class="cond-box">&lt;보기&gt; So Taylor came up with an unusual solution.</div>
+<div class="choices row"><span class="choice-item">① (A)</span><span class="choice-item">② (B)</span><span class="choice-item">③ (C)</span><span class="choice-item">④ (D)</span><span class="choice-item">⑤ (E)</span></div></div>
+<div class="qblock" data-qnum="29"><div class="qhead"><span class="qnum">29.</span><span class="qprompt">다음 중 어법상 옳은 것만을 있는 대로 고른 것은?</span></div>
+<div class="cond-box">ⓐ I programmed the AI speaker so that it could wake me up early.<br/>ⓑ The developer set an alarm so that to check the weather forecast every morning.<br/>ⓒ He raised his voice so that hear the robot clearly.<br/>ⓓ She lowered her voice so that she wouldn't wake the baby.</div>
+<div class="choices row"><span class="choice-item">① ⓐ, ⓓ</span><span class="choice-item">② ⓐ, ⓑ</span><span class="choice-item">③ ⓑ, ⓒ</span><span class="choice-item">④ ⓑ, ⓓ</span><span class="choice-item">⑤ ⓒ, ⓓ</span></div></div>
+<div class="qblock" data-qnum="30"><div class="qhead"><span class="qnum">30.</span><span class="qprompt">다음 영영풀이에 알맞은 단어는?</span></div>
+<div class="cond-box"><span class="view-title">&lt;정의&gt;</span>something used for making something else</div>
+<div class="choices row"><span class="choice-item">① statue</span><span class="choice-item">② structure</span><span class="choice-item">③ artwork</span><span class="choice-item">④ material</span><span class="choice-item">⑤ shade</span></div></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="31"><div class="qhead"><span class="qnum">31.</span><span class="qprompt">대화를 읽고 밑줄 친 표현의 의도로 가장 적절한 것은?</span></div>
+<div class="passage dialog"><div class="speech">Amy: Your self-driving car model looks fantastic! Did you build it all by yourself?</div><div class="speech">Ben: <u>Actually, my older brother helped me a lot. I couldn't have finished it without him.</u></div></div>
+<div class="choices vertical"><span class="choice-item">① 자신의 발명을 자랑하기 위해</span><span class="choice-item">② 공을 함께한 형과 나누기 위해</span><span class="choice-item">③ 실패에 대해 후회를 나타내기 위해</span><span class="choice-item">④ 형의 조언이 의아하다고 느끼기 위해</span><span class="choice-item">⑤ 모형 자동차의 위험성을 경고하기 위해</span></div></div>
+<div class="qblock" data-qnum="32"><div class="qhead"><span class="qnum">32.</span><span class="qprompt">우리말과 의미가 같은 영어 문장을 고르시오.</span></div>
+<div class="cond-box">이 문제는 너무 어려워서 아무도 풀 수 없다.</div>
+<div class="choices vertical"><span class="choice-item">① This problem is difficult enough for anyone to solve.</span><span class="choice-item">② This problem is not too difficult for anyone to solve.</span><span class="choice-item">③ Anyone can solve this problem without any help.</span><span class="choice-item">④ This problem is so difficult that everyone can solve it.</span><span class="choice-item">⑤ This problem is too difficult for anyone to solve.</span></div></div>
+<div class="qblock" data-qnum="33"><div class="qhead"><span class="qnum">33.</span><span class="qprompt">다음 대화를 읽고 밑줄 친 ㉠~㉤ 중 의미상 적절하지 않은 것을 고르시오.</span></div>
+<div class="passage dialog"><div class="speech">Sean: Last night's fire was scary, but nobody got hurt. We all managed to ㉠<u>escape from</u> the building in time.</div><div class="speech">Mia: I heard a rescue robot helped, too.</div><div class="speech">Sean: Right. It searched the dark rooms ㉡<u>in detail</u> and warned the firefighters about dangers. The doctors were able to ㉢<u>pay for</u> the injured man right away.</div><div class="speech">Mia: What a relief!</div><div class="speech">Sean: Yes. The mayor ㉣<u>praised</u> the rescue team at the ceremony, and our old alarm system will soon be ㉤<u>turned into</u> a smart sensor network.</div></div>
+<div class="choices row"><span class="choice-item">① ㉠</span><span class="choice-item">② ㉡</span><span class="choice-item">③ ㉢</span><span class="choice-item">④ ㉣</span><span class="choice-item">⑤ ㉤</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">7 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="grp">
+<div class="grp-label">[34~36] 글을 읽고 물음에 답하시오.</div>
+<div class="passage box">What will our cities look like in twenty years? Engineers are working on a new plan called the "Smart Green City." In this city, self-driving vehicles will carry people and goods along clean streets, so the air will be much fresher. Smart sensors attached to every building will sense danger and control the temperature, which will help reduce wasted energy. Each home will be equipped with a helper robot that performs daily tasks while its owners are away. (가) <u>For this reason, people will have more free time to spend with their families.</u> Students will study with AI tutors that can recognize their emotions and adjust lessons to their needs. Of course, some people worry that these changes will cost too much. However, city leaders believe (A) <span class="blank">&nbsp;</span> . "Technology should serve everyone, not just the rich," the mayor said. Whether this dream comes true depends on the decisions we make today.</div>
+</div>
+<div class="qblock" data-qnum="34"><div class="qhead"><span class="qnum">34.</span><span class="qprompt">밑줄 친 (가)의 근거로 가장 적절한 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① It is because self-driving vehicles will make people spend more time alone.</span><span class="choice-item">② It is because students will no longer need any tutors in the future.</span><span class="choice-item">③ It is because city leaders will reduce the working hours of everyone.</span><span class="choice-item">④ It is because smart machines will carry out daily tasks in place of people.</span><span class="choice-item">⑤ It is because people will move away from the crowded city center.</span></div></div>
+<div class="qblock" data-qnum="35"><div class="qhead"><span class="qnum">35.</span><span class="qprompt">(A)에 들어갈 말로 가장 적절한 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① the money spent on the plan now will bring bigger benefits later</span><span class="choice-item">② technology had better be sold only to wealthy people</span><span class="choice-item">③ such a dream will never come true no matter what they do</span><span class="choice-item">④ people should move out of the city for cleaner air</span><span class="choice-item">⑤ self-driving vehicles will make the traffic worse</span></div></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="36"><div class="qhead"><span class="qnum">36.</span><span class="qprompt">윗글의 제목으로 가장 적절한 것은?</span></div>
+<div class="choices vertical"><span class="choice-item">① Why Students Dislike AI Tutors at School</span><span class="choice-item">② How to Repair the Broken Sensors in a City</span><span class="choice-item">③ The Mayor's Promise to Build More Roads</span><span class="choice-item">④ A Warning against the Use of Self-Driving Vehicles</span><span class="choice-item">⑤ A Glimpse of the Smart Green City of the Future</span></div></div>
+<div class="qblock" data-qnum="37"><div class="qhead"><span class="qnum">37.</span><span class="qprompt">밑줄 친 ⓐ가 가리키는 것은?</span></div>
+<div class="passage box">Mr. Lee installed a small solar panel on his roof last month. The panel produces enough electricity to run his refrigerator, and the app on his phone shows how much power is being made every day. ⓐ <u>It</u> even warns him when something goes wrong.</div>
+<div class="choices row"><span class="choice-item">① the power station</span><span class="choice-item">② the app</span><span class="choice-item">③ the solar panel</span><span class="choice-item">④ the refrigerator</span><span class="choice-item">⑤ the roof</span></div></div>
+<div class="qblock" data-qnum="38"><div class="qhead"><span class="qnum">38.</span><span class="qprompt">윗글을 읽고 답할 수 있는 질문은?</span></div>
+<div class="passage box">Our school started a "zero-waste week" campaign on Monday. Each class collected the trash that students produced during lunch and weighed it every day. By Friday, the total amount of trash had dropped by thirty percent. The student council plans to run the campaign once a month this term. Ms. Park, the school nurse, helped the students design the weighing chart.</div>
+<div class="choices vertical"><span class="choice-item">① When does the school plan to run the campaign again?</span><span class="choice-item">② How much money did the school spend on the charts?</span><span class="choice-item">③ Why did Ms. Park leave the cafeteria last year?</span><span class="choice-item">④ Which class produces the most trash in the school?</span><span class="choice-item">⑤ What kind of trash do students throw away the most?</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">8 / 9</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="39"><div class="qhead"><span class="qnum">39.</span><span class="qprompt">(가)~(다)에 들어갈 말로 바르게 짝지어진 것은?</span></div>
+<div class="cond-box">It was generous (가) <span class="blank">&nbsp;</span> the local company to support our environmental club for years. The club's projects contribute (나) <span class="blank">&nbsp;</span> a cleaner city, and its new trash bins are equipped (다) <span class="blank">&nbsp;</span> sensors that recognize different kinds of waste.</div>
+<table class="choice-table"><tr><th></th><th>(가)</th><th>(나)</th><th>(다)</th></tr>
+<tr><td>①</td><td>for</td><td>to</td><td>with</td></tr>
+<tr><td>②</td><td>of</td><td>from</td><td>with</td></tr>
+<tr><td>③</td><td>for</td><td>to</td><td>from</td></tr>
+<tr><td>④</td><td>of</td><td>to</td><td>with</td></tr>
+<tr><td>⑤</td><td>of</td><td>from</td><td>in</td></tr></table></div>
+</div>
+<div class="col" style="--qgap:22px">
+<div class="qblock" data-qnum="40"><div class="qhead"><span class="qnum">40.</span><span class="qprompt">윗글을 읽고 밑줄 친 ㉠~㉤에 대한 진술로, 글에서 유추할 수 없는 것은?</span></div>
+<div class="passage box">When my grandfather was young, letters took a week to cross the country. ㉠ <u>Last Sunday, he video-called my aunt in Canada and watched me receive my science award.</u> "I never dreamed I would see a day like this," he said, smiling. ㉡ <u>Later, he told me that people these days communicate through screens more than face to face.</u> ㉢ <u>He isn't against technology; he just hopes we won't forget how to look into each other's eyes.</u> ㉣ <u>I decided to teach him how to use the new app on his phone.</u> ㉤ <u>Now he sends me a photo of his garden every morning.</u></div>
+<div class="choices vertical"><span class="choice-item">① ㉠: 할아버지는 통신 방식의 극적인 변화를 직접 경험하였다.</span><span class="choice-item">② ㉡: 할아버지는 오늘날 사람들이 화면을 통해 더 많이 소통한다고 느낀다.</span><span class="choice-item">③ ㉢: 할아버지는 기술 자체를 막기보다 face-to-face 소통의 가치를 지키려 한다.</span><span class="choice-item">④ ㉣: 필자는 할아버지의 기술 사용 미숙을 탓하며 직접 앱을 설치해 주었다.</span><span class="choice-item">⑤ ㉤: 할아버지는 배운 기술을 이용해 매일 손자와 사진을 공유한다.</span></div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회<span class="page-num">9 / 9</span></div>
+</div>
+</body></html>
