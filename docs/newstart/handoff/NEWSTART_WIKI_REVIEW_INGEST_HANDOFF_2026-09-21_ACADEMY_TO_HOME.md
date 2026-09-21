@@ -49,11 +49,13 @@ MERGE 없음 / DEPLOY 없음 / PRODUCTION DB 변경 없음 / ACTIVE 승격 없�
 
 ## 4. HOME에서 결정해야 할 것 (본인 권한 밖이라 미조치)
 
-1. **V983 버전 충돌(필수 조정).** 이 branch의
-   `V983__add_newstart_knowledge_wiki.sql` 와 EASY branch(PR #335/#348)의
-   `V983__add_easy_collection_foundation.sql` 이 둘 다 main(최대 V982) 위에서 V983을 사용한다.
-   늦게 merge되는 쪽에서 Flyway duplicate-version 오류가 난다(AGENTS.md §4의 "prd 502" 계열).
-   renumber는 merge 순서 조정 사안이라 본 담당(merge 금지)에서는 손대지 않았다.
+1. ~~**V983 버전 충돌(필수 조정)**~~ → **해결됨**: main에 EASY `V983__add_easy_collection_foundation.sql`
+   과 profile `V984__add_newstart_member_profiles.sql` 이 먼저 merge되어 최고 적용 번호가 V984가
+   되었다. 이 branch의 knowledge migration은 미적용 파일이므로
+   `V985__add_newstart_knowledge_wiki.sql`로 renumber했다(SQL 내용 무변경, 파일명/version만).
+   `docs/WORKFLOW.md` §4 "적용 전 V_파일은 직접 수정 가능" 준수.
+   ⚠ 로컬 DB에 이미 구 V983 knowledge를 적용한 사람은 Flyway가 "resolved migration not found"로
+   실패할 수 있다 — 새 로컬 DB로 재시작하거나 `flyway_schema_history` 정리(운영 DB 절대 금지).
 2. `frontend stats.knowledgeGaps` — 백엔드가 계산하지 않아 항상 0 표시. 필드를 임의로 만들지 않았다.
 3. `detectGap` 은 retrieval 경로에 `// 예시` placeholder로 남아 있음(§12 소관 외).
 4. UNKNOWN/CONFLICT 목록 배지 UI 없음(상세 값/tags substring으로만 확인 가능) — 신규 UI scope.

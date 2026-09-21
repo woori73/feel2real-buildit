@@ -3890,6 +3890,45 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
 
 
+## NewStart 부실차주 Wiki ADMIN API (V985)
+
+SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstart_wiki.html`)와
+그 화면이 호출하는 JSON API. `SecurityConfig`의 `/admin/newstart/**`·`/api/admin/**` `hasRole('ADMIN')`
+규칙을 그대로 상속받는다 — 일반 회원/비로그인은 화면·API 모두 접근 불가. actor는 서버 principal
+(`JwtTokenProvider.AuthenticatedPrincipal.loginId()`)에서만 결정하고 요청값으로 받지 않는다.
+
+### 지식 `/api/admin/newstart/wiki`
+
+- `GET ""`(`q`, `sourceType`, `category`, `status`, `page`, `size`(기본 20), `sort`): 페이지 조회.
+  `status`/`sourceType`은 Entity enum 문자열과 동일 값(`REVIEW`, `ACTIVE`, `OFFICIAL_CURRENT` …)을 넘긴다.
+- `GET /{id}`: 단건(없으면 404). `GET /active`: ACTIVE 목록(retrieval과 같은 상태 의미).
+  `GET /source-type/{sourceType}`, `GET /category/{category}`: 필터 목록.
+- `GET /stats`: 상태별·소스별 카운트(`totalKnowledge`, `draftCount`, `reviewCount`, `activeCount`,
+  `archivedCount`, `officialCurrentCount`, `officialHistoricalCount`, `auditCount`, `ebookCount`,
+  `cafeArticleCount`, `cafeCommentCount`, `caseCount`, `operatorKnowledgeCount`, `derivedRuleCount`).
+  프론트의 `knowledgeGaps`는 백엔드가 계산하지 않는다(항상 0 표시).
+- `POST ""` / `PUT /{id}`: 생성·수정. `PUT /{id}/status`(`status`, `reason`): 상태 변경 +
+  `newstart_knowledge_status_log` 기록. **전이 가드가 없어 임의 상태로 바꿀 수 있다** — 승인 워크플로
+  가드는 별도 PR(#353) 소관.
+- `POST /ingest/cases`(`articlesDir`, 기본 `data/newstart-cafe/gamian/articles`),
+  `POST /ingest/generate-rules`: 카페 사례→knowledge 파생(별도 컨트롤러 `NewstartIngestionAdminController`).
+
+### 사례 `/api/admin/newstart/wiki/cases`
+
+- `GET ""`(`articleId`, `authorNickname`, `finalReductionRate`, `householdType`, `minAge`/`maxAge`,
+  `minDebtTotal`/`maxDebtTotal`, `minIncome2025`/`maxIncome2025`, `householdTypeFilter`,
+  `hasFinalReductionRate`, `page`, `size`, `sort`): 감면율 사례 검색.
+- `GET /{articleId}`, `GET /with-actual-rate`, `GET /by-household/{householdType}`, `GET /stats`.
+
+### 공식자료 REVIEW ingest (코드 경유, HTTP endpoint 없음)
+
+`NewstartOfficialReviewIngestService.ingestOfficialReview(docs/newstart/research-official)`가
+`comparison/*.json` + `ccrs/k*.json` + `evidence_*.json` + `concepts.json`을 읽어
+**`status=REVIEW`로만** 적재한다(ACTIVE 생성 경로 없음, 동일 title skip=멱등, UNKNOWN/CONFLICT
+보존). Top10 차주 질문 근거 충분성 판정은 `NewstartTop10Answerability`(AI 생성 없음,
+ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
+
+
 ## 오답 모의고사 (Wrong Mock) API
 
 - `POST /problem-generator/wiki/api/wrong-mock/rounds`: signed operator only. 회차를 먼저 생성한다(`{school,grade,year,semester,exam,round?,title?}`). `round`를 비우면 같은 Context 마지막 회차 다음 번호를 제안하고, `title`을 비우면 `오답 {N}회`가 된다. 같은 Context 중복 회차는 409. 상태는 항상 `COLLECTING`(사진 등록 중)으로 시작한다.
