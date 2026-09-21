@@ -20,6 +20,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCol
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRunStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionSource;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionTriggerType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportRowStatus;
@@ -136,6 +137,8 @@ class EasyCardsalesAdapterIntegrationTest {
             .findFirst());
     when(connectionRepository.findByIdWithLock(anyLong()))
         .thenAnswer(inv -> Optional.ofNullable(connections.get(inv.getArgument(0))));
+    when(connectionRepository.findById(anyLong()))
+        .thenAnswer(inv -> Optional.ofNullable(connections.get(inv.getArgument(0))));
 
     when(runRepository.save(any(EasyCollectionRun.class))).thenAnswer(inv -> {
       EasyCollectionRun r = inv.getArgument(0);
@@ -226,7 +229,7 @@ class EasyCardsalesAdapterIntegrationTest {
   void adapterToIngestToStagingHandoff() {
     setupConnection("default", CONN_REF_A, 200L);
 
-    EasyCollectionIngestResponse response = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    EasyCollectionIngestResponse response = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(response.run().status()).isEqualTo("SUCCESS");
     assertThat(response.run().fetchedCount()).isEqualTo(6);
@@ -251,11 +254,11 @@ class EasyCardsalesAdapterIntegrationTest {
   void sameConnectionRefReingest_allDuplicate() {
     setupConnection("default", CONN_REF_A, 200L);
 
-    EasyCollectionIngestResponse first = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    EasyCollectionIngestResponse first = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     assertThat(first.run().acceptedCount()).isEqualTo(6);
     Long firstBatchId = first.run().importBatchId();
 
-    EasyCollectionIngestResponse second = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    EasyCollectionIngestResponse second = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     assertThat(second.run().status()).isEqualTo("SUCCESS");
     assertThat(second.run().acceptedCount()).isZero();
     assertThat(second.run().duplicateCount()).isEqualTo(6);
@@ -270,11 +273,11 @@ class EasyCardsalesAdapterIntegrationTest {
     setupConnection("account-A", CONN_REF_A, 200L);
     setupConnection("account-B", CONN_REF_B, 201L);
 
-    EasyCollectionIngestResponse responseA = ingestService.ingestByAdapter(BIZ, "account-A", "CARDSales", null, 5000);
+    EasyCollectionIngestResponse responseA = ingestService.ingestByAdapter(BIZ, "account-A", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     assertThat(responseA.run().acceptedCount()).isEqualTo(6);
     Long batchIdA = responseA.run().importBatchId();
 
-    EasyCollectionIngestResponse responseB = ingestService.ingestByAdapter(BIZ, "account-B", "CARDSales", null, 5000);
+    EasyCollectionIngestResponse responseB = ingestService.ingestByAdapter(BIZ, "account-B", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     assertThat(responseB.run().acceptedCount()).isEqualTo(6);
     assertThat(responseB.run().importBatchId()).isNotNull();
     assertThat(responseB.run().importBatchId()).isNotEqualTo(batchIdA);
@@ -292,7 +295,7 @@ class EasyCardsalesAdapterIntegrationTest {
   void noAutoConfirm_noDirectTransactionInsert() {
     setupConnection("default", CONN_REF_A, 200L);
 
-    ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(txns).isEmpty();
   }
@@ -302,7 +305,7 @@ class EasyCardsalesAdapterIntegrationTest {
   void rawImportRowTraceChain() {
     setupConnection("default", CONN_REF_A, 200L);
 
-    EasyCollectionIngestResponse response = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    EasyCollectionIngestResponse response = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     Long batchId = response.run().importBatchId();
 
     assertThat(raws.values()).allSatisfy(raw -> {
@@ -319,10 +322,10 @@ class EasyCardsalesAdapterIntegrationTest {
   void externalIdBasedDedupe() {
     setupConnection("default", CONN_REF_A, 200L);
 
-    ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     int rawCountAfterFirst = raws.size();
 
-    ingestService.ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(raws.size()).isEqualTo(rawCountAfterFirst);
     assertThat(raws.values()).allSatisfy(raw -> 

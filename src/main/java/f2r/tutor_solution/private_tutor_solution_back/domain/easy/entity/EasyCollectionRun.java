@@ -111,6 +111,7 @@ public class EasyCollectionRun extends BaseEntity {
 
   public void fail(String reason) {
     this.status = EasyCollectionRunStatus.FAILED;
+    this.errorCount = 1;
     this.errorSummary = truncate(reason);
     this.completedAt = LocalDateTime.now();
   }

@@ -113,12 +113,12 @@ class CrefiaCardsalesClientTest {
   }
 
   @Test
-  @DisplayName("자격증명 없음 → IllegalStateException (조용히 빈 결과로 속이지 않음)")
+  @DisplayName("missing credentials → typed CONFIGURATION_ERROR")
   void issueToken_noCredentials() {
     assertThatThrownBy(() -> client.issueToken(
         new CrefiaCredentialProvider.Credentials(null, null)))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("자격증명");
+        .isInstanceOfSatisfying(EasyCollectionException.class, e ->
+            assertThat(e.errorCode()).isEqualTo(EasyCollectionErrorCode.CONFIGURATION_ERROR));
   }
 
   @Test
