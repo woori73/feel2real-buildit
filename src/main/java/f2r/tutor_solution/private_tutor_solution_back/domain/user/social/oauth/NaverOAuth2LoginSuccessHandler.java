@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,21 +15,40 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 /**
- * STEP 2 — {@code response.id}를 {@link NaverAccountResolutionService}로 기존/신규 Feel2Real
- * User에 연결하는 데까지만 한다(docs/newstart/oauth/NAVER_LOGIN_REBUILD_DESIGN_2026-09-21.md
- * §PHASE 10). JWT 발급, 로그인 쿠키, {@code /newstart} redirect는 절대 하지 않는다 — STEP 3 범위.
+ * STEP 3 — {@code response.id} → {@link NaverAccountResolutionService}로 User resolve →
+ * {@link JwtTokenProvider}로 발급 → 기존 {@link CookieUtil}로 인증 쿠키 발급 →
+ * {@link #NEWSTART_REDIRECT_PATH}로 redirect(docs/newstart/oauth/NAVER_LOGIN_REBUILD_DESIGN_2026-09-21.md
+ * §PHASE 3의 STEP 3 목표).
  *
- * <p>{@code accountResolutionService}가 없는 극히 예외적인 컨텍스트(일부 슬라이스 테스트)를 대비해
- * null을 방어적으로 처리한다 — 운영(prd)과 전체 Spring 컨텍스트에서는 항상 존재한다.
+ * <p>보안 원칙:
+ * <ul>
+ *   <li>redirect 목적지는 고정 상수 하나뿐이다 — 요청 파라미터/state로 목적지를 받지 않는다
+ *       (open redirect 원천 차단).
+ *   <li>JWT는 절대 URL query parameter에 싣지 않는다 — {@link CookieUtil}이 발급하는 기존 운영
+ *       쿠키 정책(HttpOnly/SameSite=Lax/운영 Secure/운영 Domain) 그대로 재사용한다.
+ *   <li>네이버 access token은 이 핸들러에 도달하기 전에 이미 폐기된다(SecurityConfig가 연결하는
+ *       {@link NoOpOAuth2AuthorizedClientRepository} 참고) — 여기서도 다루지 않는다.
+ *   <li>실패 시에도 예외 상세를 응답에 노출하지 않는다.
+ * </ul>
  */
 public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
   private static final Logger log = LoggerFactory.getLogger(NaverOAuth2LoginSuccessHandler.class);
 
-  private final NaverAccountResolutionService accountResolutionService;
+  /** 고정 내부 경로. 요청/쿼리/state로 override 불가 — open redirect 방지. */
+  static final String NEWSTART_REDIRECT_PATH = "/newstart";
 
-  public NaverOAuth2LoginSuccessHandler(NaverAccountResolutionService accountResolutionService) {
+  private final NaverAccountResolutionService accountResolutionService;
+  private final JwtTokenProvider tokenProvider;
+  private final CookieUtil cookieUtil;
+
+  public NaverOAuth2LoginSuccessHandler(
+      NaverAccountResolutionService accountResolutionService,
+      JwtTokenProvider tokenProvider,
+      CookieUtil cookieUtil) {
     this.accountResolutionService = accountResolutionService;
+    this.tokenProvider = tokenProvider;
+    this.cookieUtil = cookieUtil;
   }
 
   @Override
@@ -37,39 +58,38 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
     OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
     Object idAttr = oauth2User.getAttribute(NaverProfileParser.ID_KEY);
     boolean providerIdPresent = idAttr != null && !String.valueOf(idAttr).isBlank();
-    // 실제 providerUserId 값은 로그/응답 어디에도 남기지 않는다 — 존재 여부만.
+    // 실제 providerUserId/토큰 값은 로그 어디에도 남기지 않는다 — 존재 여부만.
     log.info("NAVER_OAUTH_SUCCESS providerIdPresent={}", providerIdPresent);
 
-    if (accountResolutionService == null) {
-      log.warn("NAVER_OAUTH_FAILURE stage=account_resolution_service_unavailable");
-      writeJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-          "{\"provider\":\"NAVER\",\"accountResolved\":false,\"step\":2}");
+    if (accountResolutionService == null || tokenProvider == null || cookieUtil == null) {
+      log.warn("NAVER_OAUTH_FAILURE stage=step3_dependency_unavailable");
+      writeJsonError(response);
       return;
     }
 
-    boolean accountResolved;
+    User user;
     try {
       NaverProfileIdentity identity = NaverProfileIdentity.from(oauth2User);
-      User user = accountResolutionService.resolveUser(identity);
-      accountResolved = user != null;
+      user = accountResolutionService.resolveUser(identity);
     } catch (RuntimeException ex) {
       // 예외 상세(스택트레이스)는 서버 로그에만 남기고 응답에는 노출하지 않는다.
       log.warn("NAVER_OAUTH_FAILURE stage=account_resolution_failure", ex);
-      writeJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-          "{\"provider\":\"NAVER\",\"accountResolved\":false,\"step\":2}");
+      writeJsonError(response);
       return;
     }
 
-    // STEP 2 범위: JWT/쿠키/redirect 없음 — 계정 resolution 결과만 비식별로 확인한다.
-    writeJson(response, HttpServletResponse.SC_OK,
-        "{\"provider\":\"NAVER\",\"providerIdPresent\":" + providerIdPresent
-            + ",\"accountResolved\":" + accountResolved + ",\"step\":2}");
+    // JWT는 절대 URL에 싣지 않는다 — 기존 쿠키 발급 경로(CookieUtil)만 사용한다.
+    String token = tokenProvider.issue(user.getUserId(), user.getLoginId(), user.getRole().name());
+    cookieUtil.writeAccessToken(response, token);
+
+    log.info("NAVER_OAUTH_LOGIN_COMPLETE");
+    response.sendRedirect(NEWSTART_REDIRECT_PATH);
   }
 
-  private void writeJson(HttpServletResponse response, int status, String body) throws IOException {
-    response.setStatus(status);
+  private void writeJsonError(HttpServletResponse response) throws IOException {
+    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-    response.getWriter().write(body);
+    response.getWriter().write("{\"provider\":\"NAVER\",\"success\":false}");
   }
 }

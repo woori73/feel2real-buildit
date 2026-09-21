@@ -10,6 +10,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.C
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginFailureHandler;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginSuccessHandler;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2UserService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NoOpOAuth2AuthorizedClientRepository;
 import jakarta.servlet.DispatcherType;
 import java.util.regex.Pattern;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -379,9 +380,12 @@ public class SecurityConfig {
           .authorizationEndpoint(endpoint -> endpoint.authorizationRequestRepository(
               // HttpSession 대신 단명 쿠키에 저장 — 앱 전역 STATELESS 정책을 유지한다.
               new CookieOAuth2AuthorizationRequestRepository(jwtProperties.secureCookie())))
+          // 기본값(HttpSessionOAuth2AuthorizedClientRepository)은 access token을 세션에 저장한다.
+          // response.id만 쓰고 버리면 되므로 access token을 어디에도 남기지 않는다 — STATELESS 유지.
+          .authorizedClientRepository(new NoOpOAuth2AuthorizedClientRepository())
           .userInfoEndpoint(userInfo -> userInfo.userService(new NaverOAuth2UserService()))
           .successHandler(new NaverOAuth2LoginSuccessHandler(
-              naverAccountResolutionServiceProvider.getIfAvailable()))
+              naverAccountResolutionServiceProvider.getIfAvailable(), tokenProvider, cookieUtil))
           .failureHandler(new NaverOAuth2LoginFailureHandler()));
     }
 
