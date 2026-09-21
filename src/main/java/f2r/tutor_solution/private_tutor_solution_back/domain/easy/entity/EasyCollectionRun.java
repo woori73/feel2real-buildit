@@ -81,6 +81,18 @@ public class EasyCollectionRun extends BaseEntity {
   @Column(name = "completed_at")
   private LocalDateTime completedAt;
 
+  @Column(name = "lease_token", length = 64)
+  private String leaseToken;
+
+  @Column(name = "lease_acquired_at")
+  private LocalDateTime leaseAcquiredAt;
+
+  @Column(name = "lease_expires_at")
+  private LocalDateTime leaseExpiresAt;
+
+  @Column(name = "heartbeat_at")
+  private LocalDateTime heartbeatAt;
+
   @Builder
   public EasyCollectionRun(EasyCollectionConnection connection, EasyBusiness business,
       String triggerType, String sourceFilename, String adapterCode, String adapterVersion) {
@@ -92,6 +104,28 @@ public class EasyCollectionRun extends BaseEntity {
     this.adapterCode = adapterCode == null ? "" : adapterCode;
     this.adapterVersion = adapterVersion == null ? "" : adapterVersion;
     this.startedAt = LocalDateTime.now();
+  }
+
+  public void claimLease(String token, LocalDateTime acquiredAt, LocalDateTime expiresAt) {
+    if (token == null || token.isBlank()) {
+      throw new IllegalArgumentException("Collection lease token is required.");
+    }
+    this.leaseToken = token;
+    this.leaseAcquiredAt = acquiredAt;
+    this.heartbeatAt = acquiredAt;
+    this.leaseExpiresAt = expiresAt;
+  }
+
+  public void heartbeat(String token, LocalDateTime heartbeatAt, LocalDateTime expiresAt) {
+    if (!isOwnedBy(token) || status != EasyCollectionRunStatus.RUNNING) {
+      throw new IllegalStateException("Collection run lease is not owned by this execution.");
+    }
+    this.heartbeatAt = heartbeatAt;
+    this.leaseExpiresAt = expiresAt;
+  }
+
+  public boolean isOwnedBy(String token) {
+    return token != null && token.equals(this.leaseToken);
   }
 
   public void finish(int fetched, int accepted, int duplicate, int error, Long importBatchId,
