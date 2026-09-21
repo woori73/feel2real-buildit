@@ -78,7 +78,12 @@ public class SecurityConfig {
       // 프로필(prd만 — application-prd.yaml)에서만 이 빈이 존재한다. ObjectProvider로 지연 조회해
       // local/dev/stg/테스트 슬라이스에서는 oauth2Login을 아예 구성하지 않고 기존과 동일하게 둔다.
       org.springframework.beans.factory.ObjectProvider<ClientRegistrationRepository>
-          clientRegistrationRepositoryProvider) throws Exception {
+          clientRegistrationRepositoryProvider,
+      // STEP 2. JPA 레포를 갖고 있어 @WebMvcTest 슬라이스엔 없을 수 있다 — 다른 JPA 의존 빈들과
+      // 동일하게 ObjectProvider로 지연 조회한다.
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverAccountResolutionService>
+          naverAccountResolutionServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -375,7 +380,8 @@ public class SecurityConfig {
               // HttpSession 대신 단명 쿠키에 저장 — 앱 전역 STATELESS 정책을 유지한다.
               new CookieOAuth2AuthorizationRequestRepository(jwtProperties.secureCookie())))
           .userInfoEndpoint(userInfo -> userInfo.userService(new NaverOAuth2UserService()))
-          .successHandler(new NaverOAuth2LoginSuccessHandler())
+          .successHandler(new NaverOAuth2LoginSuccessHandler(
+              naverAccountResolutionServiceProvider.getIfAvailable()))
           .failureHandler(new NaverOAuth2LoginFailureHandler()));
     }
 
