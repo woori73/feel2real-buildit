@@ -21,6 +21,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCol
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRawRecord;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionSource;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionTriggerType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionConnectionRepository;
@@ -173,7 +174,7 @@ class CrefiaCardsalesIngestTest {
     setupConnection("default", "crefia:1234567890", 300L);
 
     EasyCollectionIngestResponse response =
-        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", null, 5000);
+        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(response.run().status()).isEqualTo("SUCCESS");
     assertThat(response.run().fetchedCount()).isEqualTo(2);
@@ -192,9 +193,9 @@ class CrefiaCardsalesIngestTest {
     setupConnection("default", "crefia:1234567890", 300L);
 
     EasyCollectionIngestResponse first =
-        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", null, 5000);
+        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", EasyCollectionTriggerType.MANUAL, null, 5000);
     EasyCollectionIngestResponse second =
-        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", null, 5000);
+        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(first.run().acceptedCount()).isEqualTo(2);
     assertThat(second.run().acceptedCount()).isZero();
@@ -219,7 +220,7 @@ class CrefiaCardsalesIngestTest {
     ledger.add(confirmed);
 
     EasyCollectionIngestResponse response =
-        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", null, 5000);
+        ingestService.ingestByAdapter(BIZ, "default", "CARDSALES", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(response.run().fetchedCount()).isEqualTo(2);
     assertThat(response.run().acceptedCount()).isEqualTo(1);
