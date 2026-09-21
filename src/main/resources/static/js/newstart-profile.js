@@ -66,7 +66,10 @@
           })
           .then(function (result) {
             if (result.ok) {
-              setMessage('별명을 저장했습니다.', false);
+              // 저장 성공: 서버가 확정한 값으로 입력을 맞추고 바로 닫는다(모달이 닫히므로
+              // 성공 메시지를 따로 보여줄 필요가 없다 — 실패 때만 메시지가 의미 있다).
+              if (result.data && result.data.nickname) input.value = result.data.nickname;
+              closeModal();
             } else {
               setMessage((result.data && result.data.errorMessage) || '저장하지 못했습니다.', true);
             }
