@@ -73,6 +73,12 @@ public class EasyCollectionIngestService {
   @Autowired
   private PlatformTransactionManager transactionManager;
 
+  @Autowired
+  private EasyCollectionRunExecutionGate executionGate;
+
+  @Autowired
+  private EasyCollectionExecutionRuntime executionRuntime;
+
   /** CSV 파일을 수집해 기존 import staging에 인계한다. 같은 파일 재업로드해도 중복 행이 생기지 않는다. */
   @Transactional
   public EasyCollectionIngestResponse ingestCsv(Long businessId, String label, String filename,
@@ -118,9 +124,19 @@ public class EasyCollectionIngestService {
         () -> startAdapterRun(businessId, label, adapter, actualTrigger));
 
     try {
-      adapter.validateConnection(context.connectionRef());
-      List<CollectionParsedRow> parsed =
-          adapter.fetch(context.connectionRef(), since, limit);
+      List<CollectionParsedRow> parsed;
+      if (executionRuntime == null) {
+        adapter.validateConnection(context.connectionRef());
+        parsed = adapter.fetch(context.connectionRef(), since, limit);
+      } else {
+        parsed = executionRuntime.execute(() -> {
+          adapter.validateConnection(context.connectionRef());
+          return adapter.fetch(context.connectionRef(), since, limit);
+        }, () -> inTransaction(() -> {
+          executionGate.heartbeat(context.runId(), context.connectionId(), context.leaseToken());
+          return Boolean.TRUE;
+        }));
+      }
       return inTransaction(() -> completeAdapterRun(context, parsed));
     } catch (EasyCollectionException e) {
       return inTransaction(() -> failAdapterRun(context, e));
@@ -139,12 +155,21 @@ public class EasyCollectionIngestService {
         .orElseThrow(() -> new IllegalArgumentException(
             "수집원을 찾을 수 없습니다: " + adapter.adapterCode()));
     EasyCollectionConnection connection = findOrCreateConnection(business, source, label);
+    if (executionGate != null) {
+      EasyCollectionRunExecutionGate.Claim claim = executionGate.claim(
+          connection.getConnectionId(), triggerType, adapter.adapterCode(),
+          adapter.adapterVersion());
+      return new AdapterFetchContext(claim.runId(), claim.businessId(), claim.connectionId(),
+          claim.connectionRef(), claim.sourceCode(), claim.adapterCode(), claim.leaseToken());
+    }
+
+    // Direct-construction fallback retained for legacy unit tests. Spring production always
+    // supplies the DB-backed execution gate above.
     String connectionRef = connection.getConnectionRef();
     if (connectionRef == null || connectionRef.isBlank()) {
       throw new EasyCollectionException(EasyCollectionErrorCode.CONFIGURATION_ERROR,
           "Collection connection is not configured.");
     }
-
     EasyCollectionConnection lockedConnection =
         connectionRepository.findByIdWithLock(connection.getConnectionId())
             .orElseThrow(() -> new IllegalStateException(
@@ -153,7 +178,6 @@ public class EasyCollectionIngestService {
         lockedConnection.getConnectionId(), EasyCollectionRunStatus.RUNNING)) {
       throw new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요.");
     }
-
     EasyCollectionRun run = runRepository.save(EasyCollectionRun.builder()
         .connection(lockedConnection)
         .business(business)
@@ -164,11 +188,14 @@ public class EasyCollectionIngestService {
         .build());
     return new AdapterFetchContext(run.getRunId(), businessId,
         lockedConnection.getConnectionId(), lockedConnection.getConnectionRef(),
-        source.getCode(), adapter.adapterCode());
+        source.getCode(), adapter.adapterCode(), null);
   }
 
   private EasyCollectionIngestResponse completeAdapterRun(AdapterFetchContext context,
       List<CollectionParsedRow> parsed) {
+    if (executionGate != null) {
+      executionGate.requireOwnedRunning(context.runId(), context.connectionId(), context.leaseToken());
+    }
     EasyCollectionRun run = runRepository.findById(context.runId())
         .orElseThrow(() -> new IllegalStateException(
             "수집 실행을 찾을 수 없습니다: " + context.runId()));
@@ -182,6 +209,16 @@ public class EasyCollectionIngestService {
 
   private EasyCollectionIngestResponse failAdapterRun(AdapterFetchContext context,
       EasyCollectionException failure) {
+    if (executionGate != null) {
+      try {
+        executionGate.requireOwnedRunning(context.runId(), context.connectionId(), context.leaseToken());
+      } catch (IllegalStateException ownershipLost) {
+        EasyCollectionRun terminal = runRepository.findById(context.runId())
+            .orElseThrow(() -> ownershipLost);
+        return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(terminal),
+            List.of("Collection execution ownership was lost."));
+      }
+    }
     EasyCollectionRun run = runRepository.findById(context.runId())
         .orElseThrow(() -> new IllegalStateException(
             "수집 실행을 찾을 수 없습니다: " + context.runId()));
@@ -211,7 +248,8 @@ public class EasyCollectionIngestService {
       Long connectionId,
       String connectionRef,
       String sourceCode,
-      String adapterCode
+      String adapterCode,
+      String leaseToken
   ) {}
 
   private EasyCollectionAdapter resolveAdapter(String adapterCode) {

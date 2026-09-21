@@ -1363,3 +1363,14 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - manual collection은 ADMIN, 소유 business, ACTIVE connection, active source, configured reference, verified provider, non-NEEDS_REAUTH, non-RUNNING 조건을 모두 만족해야 한다. 성공 경로는 기존 ingest pipeline의 `MANUAL` provenance와 짧은 transaction 경계를 재사용한다.
 - checkpoint 조회는 dataset, 존재 여부, hasCursor, 성공/갱신시각만 노출하며 cursor와 checkpoint 원문 수정 API는 제공하지 않는다.
 - Phase 3B lifecycle과 3-stage dedupe를 그대로 유지한다. provider event는 회계 transaction이 아니며 AUTO CONFIRM은 금지된다.
+
+
+### 4.60 EASY 자동수집 Phase 4 run ownership
+
+- `easy_collection_runs`의 nullable lease 필드 `lease_token`, `lease_acquired_at`, `lease_expires_at`, `heartbeat_at`은 provider credential이 아닌 실행 소유권 메타데이터다. management DTO에는 노출하지 않는다.
+- 동일 connection의 실행 claim source of truth는 DB connection 행 lock이다. readiness → stale recovery → active RUNNING 검사 → 신규 claim이 하나의 짧은 transaction에서 수행되어 여러 application instance에서도 owner가 하나만 성립한다.
+- 정상 heartbeat는 동일 run/connection/token과 RUNNING 상태를 검증한 뒤 expiry를 연장한다. terminal run 또는 다른 token은 거부한다.
+- lease가 만료된 RUNNING은 FAILED로 종료되고 `STALE_RUN_RECOVERED` 안전 진단을 남긴다. 이전 schema의 lease-null RUNNING은 15분 age threshold 뒤에만 복구한다.
+- provider fetch는 계속 DB transaction 밖에서 실행된다. orchestration deadline 초과는 FAILED이며 checkpoint, lifecycle event, import/transaction/ledger를 성공 처리하지 않는다.
+- Phase 3B의 connection+dataset checkpoint는 성공 persistence transaction에서만 advance한다. provider event는 accounting transaction이 아니며 AUTO CONFIRM은 금지된다.
+- CREFIA verification allow-list는 비어 있고 UNVERIFIED 상태를 유지한다.

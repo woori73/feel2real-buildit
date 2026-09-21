@@ -3983,3 +3983,16 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - `POST /api/admin/easy/collections/connections/{id}/run?businessId={id}`: readiness와 중복 RUNNING 검사를 통과한 연결만 MANUAL 수집한다.
 - readiness: `READY|NOT_CONFIGURED|DISABLED|UNVERIFIED|NEEDS_REAUTH`. 현재 production provider verification allow-list는 비어 있으며 CREFIA는 반드시 `UNVERIFIED`다.
 - 실제 CREFIA/Card API는 비활성이고 provider event는 accounting transaction이 아니다. 자동 confirm은 계속 금지한다.
+
+
+### EASY 자동수집 Phase 4 실행 안전 계약
+
+- MANUAL과 SCHEDULED provider 수집은 동일한 DB-backed execution gate를 통과한다.
+- gate는 connection 행의 `PESSIMISTIC_WRITE` lock 아래에서 readiness 확인, 만료 lease 복구, active RUNNING 확인, 새 ownership claim을 한 transaction으로 처리한다.
+- RUNNING run은 외부에 노출하지 않는 random `lease_token`, `lease_acquired_at`, `lease_expires_at`, `heartbeat_at`을 가진다. heartbeat는 run ID, connection ID, ownership token이 모두 일치하고 RUNNING일 때만 lease를 연장한다.
+- 기본 lease는 300초, heartbeat는 30초, orchestration deadline은 120초다. 각각 `easy.collection.lease-seconds`, `easy.collection.heartbeat-seconds`, `easy.collection.execution-deadline-seconds`로 조정할 수 있다.
+- deadline 초과는 interrupt 요청 후 `FAILED / EXECUTION_TIMEOUT`으로 기록한다. `Thread.stop` 같은 비안전 종료는 사용하지 않으며 provider fetch 중 DB transaction을 열지 않는다.
+- 만료 lease는 `FAILED / STALE_RUN_RECOVERED`로 종료한 후에만 다음 run을 claim한다. legacy `RUNNING + lease NULL`은 기본 900초 age threshold 이후에만 stale로 복구한다.
+- scheduler도 readiness gate를 적용하므로 `DISABLED|NOT_CONFIGURED|UNVERIFIED|NEEDS_REAUTH` provider는 adapter에 진입하지 않는다.
+- CREFIA는 계속 `UNVERIFIED`이며 manual/scheduler 모두 실제 network call에 도달하지 않는다.
+- stale/deadline 실패는 checkpoint를 advance하거나 lifecycle/accounting transaction을 생성하지 않는다. 자동 confirm은 계속 금지한다.
