@@ -25,7 +25,8 @@ class EasyCollectionSchedulerReadinessTest {
     ReflectionTestUtils.setField(source, "sourceId", 3L);
     EasyBusiness business = mock(EasyBusiness.class);
     EasyCollectionConnection connection = EasyCollectionConnection.builder()
-        .business(business).source(source).label("crefia").connectionRef("opaque-ref").build();
+        .business(business).source(source).label("crefia").build();
+    connection.updateConnectionRef("opaque-ref");
 
     when(sources.findAllByActiveTrue()).thenReturn(List.of(source));
     when(connections.findBySource_SourceIdAndStatus(
