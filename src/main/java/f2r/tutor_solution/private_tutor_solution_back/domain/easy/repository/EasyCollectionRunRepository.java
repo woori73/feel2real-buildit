@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface EasyCollectionRunRepository extends JpaRepository<EasyCollectionRun, Long> {
@@ -20,7 +22,8 @@ public interface EasyCollectionRunRepository extends JpaRepository<EasyCollectio
       Long connectionId, EasyCollectionRunStatus status);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  Optional<EasyCollectionRun> findByIdWithLock(Long runId);
+  @Query("SELECT r FROM EasyCollectionRun r WHERE r.runId = :runId")
+  Optional<EasyCollectionRun> findByIdWithLock(@Param("runId") Long runId);
 
   Optional<EasyCollectionRun> findFirstByConnection_ConnectionIdOrderByRunIdDesc(Long connectionId);
 }
