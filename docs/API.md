@@ -3951,3 +3951,13 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - `DELETE .../rounds/{id}`: `COLLECTING` 상태에서만 회차 삭제(사진·audit 함께 삭제, 단일 트랜잭션). `READY`/`COMPLETED`는 409.
 - `GET .../rounds/{id}/artifacts/{paper|explanation}`(보기, `text/html; charset=utf-8` + `no-store`), `GET .../artifacts/{kind}/download`(RFC 5987 한글 파일명): 완성본 확인·인쇄는 브라우저 보기가 중심이다.
 - `GET /problem-generator/wiki/api/wrong-mock/ready?...`: 제작대기(READY) 회차 목록 + 사진 제목 metadata + 원본 경로 + 제작규격(spec). 향후 OpenCode가 가져갈 읽기 계약이다. Living Context(`student_errors`)에는 오답모의고사 사진을 섞지 않는다.
+
+### EASY 자동수집 Phase 3A 안전 계약
+
+- Provider 수집은 `EasyCollectionTriggerType.MANUAL|SCHEDULED`를 명시한다.
+- run 생성·완료·실패만 짧은 DB transaction에서 처리하며, 외부 `adapter.fetch()`는 DB transaction 밖에서 실행한다.
+- provider 실패는 `AUTH_REQUIRED`, `PROVIDER_TEMPORARY`, `INVALID_DATA`, `CONFIGURATION_ERROR`로 분류한다. `AUTH_REQUIRED`만 connection을 `NEEDS_REAUTH`로 바꾼다.
+- 실패해도 run은 `FAILED`, `completedAt`, 안전한 error code/summary와 함께 보존한다. credential/token/cookie/certificate/card number/connectionRef는 응답·로그에 포함하지 않는다.
+- CREFIA real API는 활성화되지 않았다. V983의 `CARDSALES` source는 inactive이며, 공개 확인되지 않은 placeholder endpoint와 APPROVAL/PURCHASE/DEPOSIT 회계 lifecycle은 fail-closed다.
+- collection은 기존 import staging까지만 수행한다. 자동수집은 회계 자동확정이 아니다.
+
