@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCol
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRunStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionSource;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionTriggerType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionConnectionRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository;
@@ -76,6 +77,7 @@ public class EasyCollectionSchedulerService {
               conn.getBusiness().getBusinessId(),
               conn.getLabel(),
               source.getCode(),
+              EasyCollectionTriggerType.SCHEDULED,
               since,
               5000
           );
@@ -84,10 +86,6 @@ public class EasyCollectionSchedulerService {
           log.warn("수집 스킵: connectionId={}, reason={}", conn.getConnectionId(), e.getMessage());
         } catch (Exception e) {
           log.error("자동 수집 실패: connectionId={}, error={}", conn.getConnectionId(), e.getMessage(), e);
-          // 실패 시 연결 상태를 NEEDS_REAUTH로 변경 (인증 오류만 해당)
-          if (isAuthFailure(e)) {
-            markConnectionNeedsReauth(conn.getConnectionId());
-          }
         }
       }
     }
@@ -120,7 +118,8 @@ public class EasyCollectionSchedulerService {
 
     // RUNNING 체크는 ingestByAdapter 내부에서 비관적 락으로 원자적으로 수행
     EasyCollectionSource source = conn.getSource();
-    return ingestService.ingestByAdapter(businessId, conn.getLabel(), source.getCode(), null, 5000).run();
+    return ingestService.ingestByAdapter(businessId, conn.getLabel(), source.getCode(),
+        EasyCollectionTriggerType.MANUAL, null, 5000).run();
   }
 
   /**
@@ -161,36 +160,4 @@ public class EasyCollectionSchedulerService {
       int latestErrorCount
   ) {}
 
-  /**
-   * 인증 실패(401/403)인지 판단한다. 메시지 문자열 매칭이 아닌 예외 타입/상태 코드 기반으로 안전하게 판단한다.
-   * 외부 adapter가 던지는 예외를 래핑한 경우를 고려해 cause 체인까지 검사한다.
-   */
-  private boolean isAuthFailure(Exception e) {
-    Throwable cause = e;
-    while (cause != null) {
-      String msg = cause.getMessage();
-      if (msg != null) {
-        String lower = msg.toLowerCase();
-        // HTTP 401/403 상태 코드 또는 인증/권한 관련 예외만 인증 실패로 간주
-        if (lower.contains("401") || lower.contains("403")
-            || lower.contains("unauthorized") || lower.contains("forbidden")
-            || lower.contains("인증") || lower.contains("권한")) {
-          return true;
-        }
-      }
-      cause = cause.getCause();
-    }
-    return false;
-  }
-
-  /**
-   * 연결을 NEEDS_REAUTH 상태로 변경한다. 별도 트랜잭션에서 실행되어야 한다.
-   */
-  @Transactional
-  public void markConnectionNeedsReauth(Long connectionId) {
-    EasyCollectionConnection conn = connectionRepository.findById(connectionId)
-        .orElseThrow(() -> new IllegalArgumentException("연결을 찾을 수 없습니다: " + connectionId));
-    conn.markNeedsReauth();
-    connectionRepository.save(conn);
-  }
 }
