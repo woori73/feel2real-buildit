@@ -21,6 +21,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// NewStart 네이버 간편로그인 재구축(STEP 1) — Spring Security 공식 OAuth2 Client.
+	// docs/newstart/oauth/NAVER_LOGIN_REBUILD_DESIGN_2026-09-21.md에서 커스텀 REST 구현(V1/V2, 둘 다
+	// 실패)을 기각하고 이 방식을 선정했다.
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:4.0.1'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
