@@ -1,4 +1,27 @@
-# 도메인 모델 (Domain Model)
+# 도메인 모델
+
+## NewStart Official Updates V1 (V988)
+
+`newstart_official_updates`는 NewStart Knowledge/RAG와 분리된 공식 업데이트 게시 모델이다.
+공식기관 자료 후보는 `REVIEW`로 시작하며 관리자 승인 전에는 공개 API에 노출되지 않는다.
+
+| 컬럼 | 의미 |
+|---|---|
+| `update_id` | 공식 업데이트 식별자 |
+| `source_type` / `source_name` | 새출발기금·금융위원회·신용회복위원회 등 출처 |
+| `title` / `summary` | 홈과 목록에 표시할 제목·짧은 요약 |
+| `original_url` | 검증된 공식 원문 URL. 게시 시 필수 |
+| `official_document_id` | 공식 문서 식별자(선택) |
+| `published_at` | 공식기관 발표 시각. `effective_from`과 별개 |
+| `effective_from` / `effective_to` | 정책 적용 기간 |
+| `category` | POLICY / ELIGIBILITY / APPLICATION / DEBT_ADJUSTMENT / NOTICE / OTHER |
+| `review_status` | REVIEW / PUBLISHED / REJECTED / ARCHIVED |
+| `featured` | 게시 자료의 주요 업데이트 여부 |
+| `dedup_key` | 문서 ID → 정규화 URL → 제목+발표일 순으로 계산한 중복 키 |
+| `reviewed_by` / `reviewed_at` | 관리자 검토자·검토 시각 |
+
+`PUBLISHED`만 공개 피드와 NewStart 홈 최신 3건에 포함된다. 자동 수집·자동 게시와 Knowledge ACTIVE 승격은 이 모델에 포함하지 않는다.
+ (Domain Model)
 
 > 과외 솔루션 DB 테이블 스키마. 마이그레이션 파일(`db/migration`)·Entity와 항상 동일해야 한다.
 > 상위 개요: [MVP.md](MVP.md) · 플로우: [FLOWS.md](FLOWS.md)

@@ -255,6 +255,7 @@ public class SecurityConfig {
                 "/admin/wiki-analysis",
                 "/chart",
                 "/chart/educators/**",
+                "/newstart", "/newstart/updates",
                 "/lessons",
                 "/stdt_dashboard",
                 "/tutor_dashboard",
@@ -320,6 +321,8 @@ public class SecurityConfig {
             // home-feed는 controller에서 익명 응답의 Thread/LIVE/회원 활동을 제거한다.
             .requestMatchers(HttpMethod.GET, "/api/wiki/home-feed").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
+            // NewStart 공식 업데이트 공개 피드는 PUBLISHED 자료만 서비스가 반환한다.
+            .requestMatchers(HttpMethod.GET, "/api/newstart/updates", "/api/newstart/updates/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.

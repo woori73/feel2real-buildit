@@ -15,6 +15,13 @@ test('NewStart home exposes exactly four mobile-first core feature cards', () =>
   assert.doesNotMatch(html, /<h3>정보·가이드<\/h3>|<h3>실제 사례<\/h3>/);
 });
 
+test('NewStart home exposes the review-gated official update feed contract', () => {
+  assert.match(html, /id="ns-updates"/);
+  assert.match(html, /latestUpdates/);
+  assert.match(html, /\/newstart\/updates/);
+  assert.doesNotMatch(html, /새출발기금 관련 공식자료를 검토하고 있습니다/);
+});
+
 test('NewStart home keeps verified routes and auth fragment contracts', () => {
   assert.match(html, /href="#ns-status-panel"[^>]*data-ns-open="ns-status-panel"/);
   assert.match(html, /href="#ns-ai"/);
