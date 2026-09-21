@@ -112,8 +112,9 @@ class NaverAccountResolutionServiceTest {
   @DisplayName("동일 email의 기존 User가 있어도 NAVER SocialAccount가 없으면 자동 병합하지 않고 새 User를 만든다")
   void doesNotAutoMergeBySameEmail() {
     String sharedEmail = "collision-" + UUID.randomUUID() + "@example.com";
+    // users.login_id는 VARCHAR(50) — 테스트 helper 값이라도 실제 컬럼 길이 제약을 넘기면 안 된다.
     User existing = userRepository.save(User.builder()
-        .loginId("collision-existing-" + UUID.randomUUID())
+        .loginId("collision-existing-" + UUID.randomUUID().toString().substring(0, 8))
         .password(passwordEncoder.encode("irrelevant"))
         .name("기존회원")
         .nickname("기존회원")
