@@ -685,3 +685,23 @@ lesson 비중: 5과 = Q2,4,12,13,14,15,16(공통5/7),25,26,27,28,30,32,37,38 ≈
 ### 라운드 2 검증
 - data-qnum 1→40 연속, 선택지 ①→⑤ 이상 0(Q10·Q19 choice-table 예외), `passage dialog` 0·`speech` 0
 - 인쇄 PDF 8페이지 = .page 8, 페이지별 qnum 1→40 분포 확인, 푸터 "N / 8" 8/8, tofu 0
+
+## 라운드 3 수정 — 로고 결함·표기·선택지 서식·Q25 교체 (2026-09-22)
+
+사용자 리뷰 7건 조치:
+
+1. **로고 상단 결함 원인 규명·수정**: 헤더 1행에 `<td class="logo-cell" rowspan="2">` 오픈 태그가 **이중 중복**되어 있어 브라우저 자동 정정으로 로고 셀이 밀려 있던 것. 중복 태그 제거로 FORMAT MASTER(압구정2 7회)와 헤더 구조 완전 일치 — 로고 셀(title+sub 2행)이 이름 행 위에 배치됨(PDF 1p 렌더 이미지 1개 확인).
+2. **Q1·Q30 `<Definition>` 표기 생략**: cond-box 안 `view-title` 스팬 삭제, 영영풀이 본문만 유지. (`&lt;Eco-Campus Rules&gt;`·`&lt;Smart Robot Classification&gt;`·`&lt;보기&gt;`는 기출 발문 형식이므로 유지)
+3. **표 내용 학습지 근거 재감사**:
+   - Q2 `<Eco-Campus Rules>`: 3~5번 항목(수도꼭지/잔디/책상 낙서)이 학습지 비출전 → 전부 학습지 근거로 재작성: ①Reduce plastic·reusable bags(5과 어휘 2·3 예문), ②Wash hands·prevent the spread of germs(어휘 12 예문), ③Save energy·turn off the lights and air conditioning(5과 본문 19~20 air conditioning·energy + Grammar turn off 예문), ④Keep greenery·plant small gardens(본문 24~25 greenery·gardens), ⑤Live in harmony with nature·do not pick flowers or leaves(본문 30 in harmony). 선택지도 ⑤정답·나머지 모순 구조 재맞춤(정답 번호 ⑤ 유지).
+   - [9~11] `<Smart Robot Classification>`: 5개 분류명(AI Speakers/Home Helper/Self-Driving/Robot Swarm/Search-and-Rescue)·ⓐ~ 어휘(electronic·relax·route·one another·survivors)·(가)talk to(나)owners(다)worry about 전부 7과 본문 09~23·어휘표·Phrases 목록 확인. 학습지 비출전 사실 2건만 교체: "like a flock of birds"→본문 19 반영 "like a group of bees", "Clean up oil spills and search fields"→본문 20~21 반영 "Work on tasks in many places, including farms, in detail".
+   - 대화문: `passage dialog` 0개 재확인(라운드 2에서 전량 제거).
+4. **Q12 선택지 2줄화**: 한글 문장 다음 줄에 `→ 영어` 배치(`<br/>`). 단, 오답 함정(③ of kids, ④ 충분 부정 누락, ⑤ visit it 목적어 중복)은 원형 유지 — 정답 ② 단독.
+5. **Q25 교체(너무 쉬움)**: `it is your job to make` → **7과 Grammar so that 구문** 출제: "Jason deCaires Taylor created an underwater museum ______ the damaged coral reefs near the shore could recover." 선택지 ①so that ②because ③although ④so ⑤before, 정답 ①(번호 유지→분포 불변). Q29(so that 어법 옳은 것 조합)와 다른 각도(접속사 의미 선택 클로즈).
+6. **Q37 선택지 2/2/1 배치**: `.choices.row` 내 각 item `width:45%` → 1행 ①②, 2행 ③④, 3행 ⑤.
+7. **재조판**: 전 열 gap 0 실측 후 재배분 — p2c2(robot 표) 55px, p7c1 66px, p7c2 70px로 축소, 나머지 80px (p1c2 70→80 확대). measure.mjs 전 16열 over<0 (최소 여유 -4.1 P2 col1 / 최대 -280 P5 col0). 인쇄 PDF 8p·qnum 1→40·푸터 N/8·tofu 0·1p 로고 1개 전부 재확인.
+
+### 라운드 3 검증
+- 정답 분포 8/8/8/8/8 유지(Q25 ①→①, Q2 ⑤→⑤ 번호 불변), 최대 연속 2
+- `<Definition>`/`정의` 표기 0, view-title은 표 제목·보기만 잔존
+- 로고: MASTER와 동일 구조(중복 td 0), PDF p1 header 렌더 확인
