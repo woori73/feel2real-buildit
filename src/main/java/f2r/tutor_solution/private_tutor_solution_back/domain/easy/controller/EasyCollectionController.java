@@ -1,11 +1,14 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionConnectionResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionCheckpointResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionIngestResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionManagementResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionRunResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionSourceResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionConnection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionIngestService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionManagementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionSchedulerService;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,6 +37,7 @@ public class EasyCollectionController {
 
   private final EasyCollectionIngestService ingestService;
   private final EasyCollectionSchedulerService schedulerService;
+  private final EasyCollectionManagementService managementService;
 
   @PostMapping("/ingest/csv")
   public ResponseEntity<EasyCollectionIngestResponse> ingestCsv(
@@ -67,6 +71,37 @@ public class EasyCollectionController {
     return ResponseEntity.ok(ingestService.listSources());
   }
 
+
+  @GetMapping("/connections")
+  public ResponseEntity<List<EasyCollectionManagementResponse>> listConnections(
+      @RequestParam("businessId") Long businessId) {
+    return ResponseEntity.ok(managementService.listConnections(businessId));
+  }
+
+  @PutMapping("/connections/{connectionId}/enabled")
+  public ResponseEntity<EasyCollectionManagementResponse> setConnectionEnabled(
+      @PathVariable Long connectionId,
+      @RequestParam("businessId") Long businessId,
+      @RequestBody ConnectionEnabledRequest request) {
+    return ResponseEntity.ok(request.enabled()
+        ? managementService.enable(businessId, connectionId)
+        : managementService.disable(businessId, connectionId));
+  }
+
+  @GetMapping("/connections/{connectionId}/checkpoints")
+  public ResponseEntity<List<EasyCollectionCheckpointResponse>> listCheckpoints(
+      @PathVariable Long connectionId,
+      @RequestParam("businessId") Long businessId) {
+    return ResponseEntity.ok(managementService.listCheckpoints(businessId, connectionId));
+  }
+
+  @PostMapping("/connections/{connectionId}/run")
+  public ResponseEntity<EasyCollectionRunResponse> triggerManualCollection(
+      @PathVariable Long connectionId,
+      @RequestParam("businessId") Long businessId) {
+    return ResponseEntity.ok(managementService.triggerManual(businessId, connectionId));
+  }
+
   /**
    * 연결 생성 또는 갱신 (connection_ref 포함) — 관리자 콘솔에서 초기 등록용.
    */
@@ -95,4 +130,6 @@ public class EasyCollectionController {
   }
 
   public record ConnectionRefRequest(String connectionRef) {}
+
+  public record ConnectionEnabledRequest(boolean enabled) {}
 }
