@@ -12,13 +12,13 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service.NewStartOfficialUpdateService;
+import jakarta.servlet.http.Cookie;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +35,12 @@ import org.springframework.test.web.servlet.MockMvc;
 class NewStartOfficialUpdateControllerTest {
 
   @Autowired MockMvc mockMvc;
+  @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean NewStartOfficialUpdateService service;
+
+  private Cookie cookie(long userId, String role) {
+    return new Cookie("ACCESS_TOKEN", tokenProvider.issue(userId, "user" + userId, role));
+  }
 
   @Test
   void anonymousCanReadPublicFeed() throws Exception {
@@ -56,9 +61,8 @@ class NewStartOfficialUpdateControllerTest {
   }
 
   @Test
-  @WithMockUser(roles = "USER")
   void regularUserCannotReadAdminFeed() throws Exception {
-    mockMvc.perform(get("/api/admin/newstart/updates"))
+    mockMvc.perform(get("/api/admin/newstart/updates").cookie(cookie(2L, "STUDENT")))
         .andExpect(status().isForbidden());
   }
 }
