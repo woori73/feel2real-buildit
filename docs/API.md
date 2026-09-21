@@ -3961,3 +3961,13 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - CREFIA real API는 활성화되지 않았다. V983의 `CARDSALES` source는 inactive이며, 공개 확인되지 않은 placeholder endpoint와 APPROVAL/PURCHASE/DEPOSIT 회계 lifecycle은 fail-closed다.
 - collection은 기존 import staging까지만 수행한다. 자동수집은 회계 자동확정이 아니다.
 
+
+
+### EASY 자동수집 Phase 3B lifecycle/checkpoint 계약
+
+- provider-neutral dataset type: `APPROVAL|PURCHASE|DEPOSIT|CANCELLATION|CORRECTION|UNKNOWN`. 이는 공식 CREFIA dataset 의미를 확정하는 계약이 아니다.
+- provider event와 회계 transaction은 분리된다. 같은 economic sale에 여러 lifecycle event를 저장할 수 있지만 어느 event도 자동으로 INCOME/import/confirm되지 않는다.
+- cancellation/correction은 original event 관계를 요구하며 정상 매출 event로 취급하지 않는다.
+- checkpoint scope는 connection+dataset이다. event와 관계 저장이 모두 성공한 뒤에만 같은 transaction에서 advance하며 fetch 또는 persistence 실패 시 advance하지 않는다.
+- 동일 external event는 connection+dataset event key로 멱등 처리하고 기존 raw dedupe는 그대로 유지한다.
+- CREFIA real API/endpoint는 활성화하지 않았고 외부 호출도 없다. collection auto-confirm은 계속 금지한다.
