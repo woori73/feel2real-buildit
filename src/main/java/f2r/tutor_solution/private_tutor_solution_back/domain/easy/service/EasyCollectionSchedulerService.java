@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 @Service
@@ -30,6 +31,9 @@ public class EasyCollectionSchedulerService {
   private final EasyCollectionConnectionRepository connectionRepository;
   private final EasyCollectionRunRepository runRepository;
   private final EasyCollectionIngestService ingestService;
+
+  @Autowired
+  private EasyCollectionRunExecutionGate executionGate;
 
 /**
     * 자동 수집 크론 — 환경변수로 오버라이드 가능 (기본 02:30 KST 매일).
@@ -66,6 +70,13 @@ public class EasyCollectionSchedulerService {
         // NEEDS_REAUTH 상태면 자동 실행 안 함
         if (conn.getStatus() == EasyCollectionConnectionStatus.NEEDS_REAUTH) {
           log.warn("재인증 필요 - 자동 실행 건너뜀: connectionId={}", conn.getConnectionId());
+          continue;
+        }
+
+        if (executionGate != null
+            && executionGate.readiness(conn) != EasyCollectionProviderReadiness.READY) {
+          log.info("수집 readiness 미충족 - 건너뜀: connectionId={}, readiness={}",
+              conn.getConnectionId(), executionGate.readiness(conn));
           continue;
         }
 
