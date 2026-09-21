@@ -1,6 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.controller;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartKnowledgeDtos.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmpiricalCaseService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartKnowledgeService;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class NewstartKnowledgeAdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String sort) {
-        return ResponseEntity.ok(knowledgeService.search(q, sourceType, category, status, page, 20, sort));
+        return ResponseEntity.ok(knowledgeService.search(q, sourceType, category, status, page, size, sort));
     }
 
     @GetMapping("/{id}")
@@ -63,7 +65,7 @@ public class NewstartKnowledgeAdminController {
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<StatsResponse> getStats(
+    public ResponseEntity<NewstartKnowledgeStatsResponse> getStats(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
         return ResponseEntity.ok(knowledgeService.getStats());
     }
@@ -72,7 +74,7 @@ public class NewstartKnowledgeAdminController {
     public ResponseEntity<NewstartKnowledgeItemResponse> create(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             @Valid @RequestBody NewstartKnowledgeItemCreateRequest req) {
-        return ResponseEntity.ok(knowledgeService.create(req, principal.getUsername()));
+        return ResponseEntity.ok(knowledgeService.create(req, principal.loginId()));
     }
 
     @PutMapping("/{id}")
@@ -80,7 +82,7 @@ public class NewstartKnowledgeAdminController {
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             @PathVariable Long id,
             @Valid @RequestBody NewstartKnowledgeItemUpdateRequest req) {
-        return ResponseEntity.ok(knowledgeService.update(id, req, principal.getUsername()));
+        return ResponseEntity.ok(knowledgeService.update(id, req, principal.loginId()));
     }
 
     @PutMapping("/{id}/status")
@@ -89,7 +91,7 @@ public class NewstartKnowledgeAdminController {
             @PathVariable Long id,
             @RequestParam String status,
             @RequestParam(required = false) String reason) {
-        knowledgeService.changeStatus(id, status, principal.getUsername(), reason);
+        knowledgeService.changeStatus(id, status, principal.loginId(), reason);
         return ResponseEntity.ok().build();
     }
 

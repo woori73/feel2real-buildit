@@ -1,11 +1,9 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartEmpiricalCaseDtos.*;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartEmpiricalCaseResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartEmpiricalCase;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartEmpiricalCaseRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartEmpiricalCaseDtos.NewstartEmpiricalCaseSearchRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -56,13 +54,13 @@ public class NewstartEmpiricalCaseService {
         return caseRepository.findByArticleId(articleId).map(this::toResponse);
     }
 
-    public StatsResponse getStats() {
+    public NewstartEmpiricalCaseStatsResponse getStats() {
         long total = caseRepository.count();
         long withActual = caseRepository.countByFinalReductionRateIsNotNull();
         long withPrediction = caseRepository.countByPredictedReductionRateIsNotNull();
         long withFollowup = caseRepository.countByAuthorFollowupResultIsNotNull();
 
-        return StatsResponse.builder()
+        return NewstartEmpiricalCaseStatsResponse.builder()
                 .totalCases(caseRepository.count())
                 .casesWithActualRate(withActual)
                 .casesWithPredictedRateOnly(withPrediction)

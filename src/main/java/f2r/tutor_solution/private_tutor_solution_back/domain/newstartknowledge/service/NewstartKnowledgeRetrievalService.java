@@ -1,13 +1,13 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartKnowledgeDtos.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartEmpiricalCase;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartEmpiricalCaseRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeRelationRepository;
 import jakarta.persistence.criteria.Predicate;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -140,7 +140,7 @@ public class NewstartKnowledgeRetrievalService {
         if (keywords.length == 0) return List.of();
 
         LocalDate today = LocalDate.now();
-        Specification<NewstartKnowledgeItem> spec = (root, query, cb) -> {
+        Specification<NewstartKnowledgeItem> spec = (root, crit, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("status"), "ACTIVE"));
             predicates.add(cb.lessThanOrEqualTo(root.get("effectiveFrom"), LocalDate.now()));
@@ -265,7 +265,8 @@ public class NewstartKnowledgeRetrievalService {
         for (String kw : keywords) {
             if (kw.length() < 2) continue;
             List<NewstartKnowledgeItem> matches = knowledgeRepository
-                    .findByStatusAndSourceType("ACTIVE", "OFFICIAL_CURRENT"); // 예시
+                    .findByStatusAndSourceType(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE,
+                            NewstartKnowledgeItem.SourceType.OFFICIAL_CURRENT); // 예시
             if (!matches.isEmpty()) matched++;
         }
 
@@ -283,9 +284,10 @@ public class NewstartKnowledgeRetrievalService {
     private String[] extractKeywords(String text) {
         if (text == null) return new String[0];
         // 간단한 토큰화: 2글자 이상 단어 추출
-        return text.replaceAll("[^가-힣a-zA-Z0-9]", " ")
-                .split("\\s+")
-                .filter(s -> s.length() >= 2);
+        return java.util.Arrays.stream(text.replaceAll("[^가-힣a-zA-Z0-9]", " ")
+                .split("\\s+"))
+                .filter(s -> s.length() >= 2)
+                .toArray(String[]::new);
     }
 
     private NewstartKnowledgeItemResponse toResponse(NewstartKnowledgeItem item) {

@@ -4,7 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.e
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartEmpiricalCaseRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeItemRepository;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -120,6 +120,80 @@ public class NewstartDataIngestionService {
             }
         }
         return created;
+    }
+
+    private NewstartEmpiricalCase buildCaseEntity(com.fasterxml.jackson.databind.JsonNode node) {
+        String boardName = text(node, "boardName");
+        return NewstartEmpiricalCase.builder()
+                .articleId(text(node, "articleId"))
+                .boardName(boardName != null ? boardName : "감면율")
+                .title(text(node, "title"))
+                .authorNickname(text(node, "authorNickname"))
+                .authorGrade(text(node, "authorGrade"))
+                .writtenAt(dateTime(node, "writtenAt"))
+                .viewCount(integer(node, "viewCount"))
+                .debtTotal(longVal(node, "debtTotal"))
+                .debtBreakdown(text(node, "debtBreakdown"))
+                .debtSecured(longVal(node, "debtSecured"))
+                .debtUnsecured(longVal(node, "debtUnsecured"))
+                .debtAcquiredByFund(longVal(node, "debtAcquiredByFund"))
+                .assetProperty(longVal(node, "assetProperty"))
+                .assetVehicle(longVal(node, "assetVehicle"))
+                .assetFinancial(longVal(node, "assetFinancial"))
+                .householdType(text(node, "householdType"))
+                .dependents(integer(node, "dependents"))
+                .age(integer(node, "age"))
+                .income2025(longVal(node, "income2025"))
+                .incomeCurrent(longVal(node, "incomeCurrent"))
+                .employmentStatus(text(node, "employmentStatus"))
+                .businessStatus(text(node, "businessStatus"))
+                .applicationType(text(node, "applicationType"))
+                .predictedReductionRate(text(node, "predictedReductionRate"))
+                .finalReductionRate(text(node, "finalReductionRate"))
+                .tempReductionRate(text(node, "tempReductionRate"))
+                .predictedRepaymentAmount(longVal(node, "predictedRepaymentAmount"))
+                .finalRepaymentAmount(longVal(node, "finalRepaymentAmount"))
+                .repaymentPeriodMonths(integer(node, "repaymentPeriodMonths"))
+                .gracePeriodMonths(integer(node, "gracePeriodMonths"))
+                .monthlyPayment(longVal(node, "monthlyPayment"))
+                .contentRaw(text(node, "contentRaw"))
+                .managerPrediction(text(node, "managerPrediction"))
+                .authorFollowupResult(text(node, "authorFollowupResult"))
+                .predictionVsActual(text(node, "predictionVsActual"))
+                .specialCircumstances(text(node, "specialCircumstances"))
+                .keyInsights(text(node, "keyInsights"))
+                .sourceUrl(text(node, "sourceUrl"))
+                .collectedAt(dateTime(node, "collectedAt"))
+                .createdBy("INGESTION_BOT")
+                .updatedBy("INGESTION_BOT")
+                .build();
+    }
+
+    private static String text(com.fasterxml.jackson.databind.JsonNode node, String field) {
+        com.fasterxml.jackson.databind.JsonNode v = node.get(field);
+        return v == null || v.isNull() ? null : v.asText();
+    }
+
+    private static Long longVal(com.fasterxml.jackson.databind.JsonNode node, String field) {
+        com.fasterxml.jackson.databind.JsonNode v = node.get(field);
+        return v == null || v.isNull() || !v.isNumber() ? null : v.asLong();
+    }
+
+    private static Integer integer(com.fasterxml.jackson.databind.JsonNode node, String field) {
+        Long v = longVal(node, field);
+        return v == null ? null : v.intValue();
+    }
+
+    private static LocalDateTime dateTime(com.fasterxml.jackson.databind.JsonNode node, String field) {
+        String raw = text(node, field);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(raw.trim());
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private String buildRuleSummary(NewstartEmpiricalCase c) {

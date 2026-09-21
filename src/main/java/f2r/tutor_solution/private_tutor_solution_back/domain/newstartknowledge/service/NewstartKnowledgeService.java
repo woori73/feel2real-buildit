@@ -1,7 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.NewstartKnowledgeDtos.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeStatusLog;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeRelationRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeStatusLogRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.criteria.Join;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,7 +54,7 @@ public class NewstartKnowledgeService {
     }
 
     public List<NewstartKnowledgeItemResponse> findBySourceType(String sourceType) {
-        return knowledgeRepository.findBySourceType(sourceType).stream()
+        return knowledgeRepository.findBySourceType(NewstartKnowledgeItem.SourceType.valueOf(sourceType)).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -77,22 +79,22 @@ public class NewstartKnowledgeService {
         return List.of();
     }
 
-    public StatsResponse getStats() {
-        return StatsResponse.builder()
+    public NewstartKnowledgeStatsResponse getStats() {
+        return NewstartKnowledgeStatsResponse.builder()
                 .totalKnowledge(knowledgeRepository.count())
-                .draftCount(knowledgeRepository.countByStatus("DRAFT"))
-                .reviewCount(knowledgeRepository.countByStatus("REVIEW"))
-                .activeCount(knowledgeRepository.countByStatus("ACTIVE"))
-                .archivedCount(knowledgeRepository.countByStatus("ARCHIVED"))
-                .officialCurrentCount(knowledgeRepository.countBySourceType("OFFICIAL_CURRENT"))
-                .officialHistoricalCount(knowledgeRepository.countBySourceType("OFFICIAL_HISTORICAL"))
-                .auditCount(knowledgeRepository.countBySourceType("AUDIT"))
-                .ebookCount(knowledgeRepository.countBySourceType("EBOOK"))
-                .cafeArticleCount(knowledgeRepository.countBySourceType("CAFE_ARTICLE"))
-                .cafeCommentCount(knowledgeRepository.countBySourceType("CAFE_COMMENT"))
-                .caseCount(knowledgeRepository.countBySourceType("CASE"))
-                .operatorKnowledgeCount(knowledgeRepository.countBySourceType("OPERATOR_KNOWLEDGE"))
-                .derivedRuleCount(knowledgeRepository.countBySourceType("DERIVED_RULE"))
+                .draftCount(knowledgeRepository.countByStatus(NewstartKnowledgeItem.KnowledgeStatus.DRAFT))
+                .reviewCount(knowledgeRepository.countByStatus(NewstartKnowledgeItem.KnowledgeStatus.REVIEW))
+                .activeCount(knowledgeRepository.countByStatus(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE))
+                .archivedCount(knowledgeRepository.countByStatus(NewstartKnowledgeItem.KnowledgeStatus.ARCHIVED))
+                .officialCurrentCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.OFFICIAL_CURRENT))
+                .officialHistoricalCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.OFFICIAL_HISTORICAL))
+                .auditCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.AUDIT))
+                .ebookCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.EBOOK))
+                .cafeArticleCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.CAFE_ARTICLE))
+                .cafeCommentCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.CAFE_COMMENT))
+                .caseCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.CASE))
+                .operatorKnowledgeCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.OPERATOR_KNOWLEDGE))
+                .derivedRuleCount(knowledgeRepository.countBySourceType(NewstartKnowledgeItem.SourceType.DERIVED_RULE))
                 .build();
     }
 
@@ -167,6 +169,17 @@ public class NewstartKnowledgeService {
                 .changeReason(reason)
                 .build();
         statusLogRepository.save(log);
+    }
+
+    private LocalDate parseDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private Pageable buildPageable(Integer page, Integer size, String sort) {

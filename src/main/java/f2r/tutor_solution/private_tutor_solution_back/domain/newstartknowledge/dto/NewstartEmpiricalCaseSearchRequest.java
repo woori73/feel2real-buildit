@@ -2,20 +2,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.
 
 import lombok.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class NewstartEmpiricalCaseListResponse {
-
-    private Long totalCount;
-    private List<NewstartEmpiricalCaseResponse> items;
-}
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,22 +26,4 @@ public class NewstartEmpiricalCaseSearchRequest {
     private Integer page;
     private Integer size;
     private String sort;
-}
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class NewstartEmpiricalCaseStatsResponse {
-
-    private Long totalCases;
-    private Long casesWithActualRate;
-    private Long casesWithPredictedRateOnly;
-    private Long casesWithAuthorFollowup;
-    private Long predictionVsActualMatches;
-    private Double avgPredictedRate;
-    private Double avgFinalRate;
-    private Long totalComments;
-    private Long totalReplies;
 }
