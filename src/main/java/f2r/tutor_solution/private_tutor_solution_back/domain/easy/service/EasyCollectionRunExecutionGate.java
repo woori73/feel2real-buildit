@@ -97,7 +97,8 @@ public class EasyCollectionRunExecutionGate {
   }
 
   @Transactional
-  public void heartbeat(Long runId, String token) {
+  public void heartbeat(Long runId, Long connectionId, String token) {
+    lockConnection(connectionId);
     EasyCollectionRun run = lockedRun(runId);
     if (run.getStatus() != EasyCollectionRunStatus.RUNNING) {
       throw new IllegalStateException("Cannot heartbeat a terminal collection run.");
@@ -110,10 +111,10 @@ public class EasyCollectionRunExecutionGate {
     runRepository.save(run);
   }
 
-  @Transactional(readOnly = true)
-  public void requireOwnedRunning(Long runId, String token) {
-    EasyCollectionRun run = runRepository.findById(runId)
-        .orElseThrow(() -> new IllegalStateException("Collection run not found."));
+  @Transactional
+  public void requireOwnedRunning(Long runId, Long connectionId, String token) {
+    lockConnection(connectionId);
+    EasyCollectionRun run = lockedRun(runId);
     if (run.getStatus() != EasyCollectionRunStatus.RUNNING || !run.isOwnedBy(token)) {
       throw new IllegalStateException("Collection run ownership was lost.");
     }
@@ -125,6 +126,11 @@ public class EasyCollectionRunExecutionGate {
     }
     return run.getStartedAt() != null
         && run.getStartedAt().isBefore(now.minusSeconds(legacyStaleSeconds));
+  }
+
+  private void lockConnection(Long connectionId) {
+    connectionRepository.findByIdWithLock(connectionId)
+        .orElseThrow(() -> new IllegalStateException("Collection connection not found."));
   }
 
   private EasyCollectionRun lockedRun(Long runId) {
