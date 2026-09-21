@@ -1250,13 +1250,19 @@ V973~V975 불변 — 신규 테이블 + `easy_import_rows` NULL 확장(`external
 
 ### 4.54 user_social_accounts ✅ 소셜 로그인 신원 연결 (V982)
 
-Feel2Real 회원(`users`)과 외부 PROVIDER 신원을 1:N으로 연결한다. 최초 구현 provider는 `NAVER`. 별도 회원 시스템이 아니라 기존 `users`/JWT 로그인을 그대로 재사용하고, 이 테이블은 "어떤 provider 신원이 어느 회원을 가리키는지"만 저장한다.
+Feel2Real 회원(`users`)과 외부 PROVIDER 신원을 1:N으로 연결하는 공용 테이블/모델이다. 별도 회원
+시스템이 아니라 기존 `users`/JWT 로그인을 그대로 재사용하고, 이 테이블은 "어떤 provider 신원이
+어느 회원을 가리키는지"만 저장한다.
 
-- `social_account_id` PK, `user_id` BIGINT NOT NULL FK → `users.user_id`(ON DELETE CASCADE), `provider` VARCHAR(20)(`NAVER` 등 대문자 enum 문자열), `provider_user_id` VARCHAR(64)(provider별 안정 식별자. NAVER는 `v1/nid/me`의 `result.id`), BaseEntity auditing.
+- `social_account_id` PK, `user_id` BIGINT NOT NULL FK → `users.user_id`(ON DELETE CASCADE), `provider` VARCHAR(20)(대문자 enum 문자열 — 현재 `SocialProvider`에는 `NAVER` 하나뿐), `provider_user_id` VARCHAR(64)(provider별 안정 식별자), BaseEntity auditing.
 - UNIQUE `uq_social_provider_identity`(provider, provider_user_id) — provider 신원 1개가 두 회원에 동시 연결되는 것을 차단.
 - UNIQUE `uq_social_user_provider`(user_id, provider) — 한 회원에 같은 provider 연결 1개.
 - 이메일로 자동 병합하지 않는다. 연결 키는 (provider, provider_user_id)뿐이며 `users.email`은 조회·비교 대상이 아니다.
-- 네이버 로그인으로 생성된 회원: `login_id = "naver_" + SHA-256(providerUserId) 앞 16자리`, `password` = 랜덤 bcrypt 해시(비밀번호 로그인 불가 — 의도됨), `role`은 항상 STUDENT(ADMIN 자동 부여 금지 불변 조건).
+- **2026-09-21 cleanup**: 네이버 로그인 구현(V1 `/oauth/naver/*`, V2 `/auth/naver/v2/*`, 그리고
+  미병합 공식 Spring Security OAuth2 Client 시도)을 전부 제거해 현재 이 테이블을 채우는 코드가
+  없다 — 스키마와 `SocialAccount`/`SocialAccountRepository`/`SocialProvider` 엔티티는 다음 로그인
+  구현(네이버 재구현 포함, 다른 provider 확장도 가능)을 위해 그대로 보존한다. 과거 시도 중 생성된
+  행이 남아있을 수 있으며 이번 cleanup에서 삭제하지 않았다.
 
 ### 4.55 easy_collection_* ✅ 자동수집 foundation (V983)
 

@@ -10,6 +10,7 @@
 
 /* NewStart AI — 첫 화면 핵심 영역 */
 .ns-ai-hero { margin-top: 22px; padding: 18px 16px 14px; border: 1.5px solid var(--ns-blue); border-radius: 14px; background: var(--ns-blue-soft); }
+.ns-chat-login-alert { color: #b91c1c; font-weight: 600; }
 .ns-ai-title { font-size: 20px; font-weight: 800; color: var(--ns-ink); margin: 0 0 12px; }
 .ns-ai-input-row { display: flex; gap: 8px; }
 .ns-ai-input { flex: 1; min-width: 0; font-size: 15px; padding: 11px 12px; }
@@ -116,3 +117,67 @@
   .ns-chat-shell { max-width: 720px; }
   .ns-msg { max-width: 70%; }
 }
+
+
+/* 2026-09-20 final home polish — 4 core services, public-finance tone, mobile first */
+.newstart-page { min-height: 100vh; background: #f7f9fc; color: var(--ns-ink); }
+.newstart-shell { max-width: 1120px; padding: 18px 20px 56px; }
+.newstart-top { min-height: 52px; flex-wrap: nowrap; }
+.newstart-brand { font-size: 19px; }
+.newstart-topbar { align-items: center; justify-content: flex-end; flex-wrap: nowrap; }
+.ns-hero { margin-top: 24px; padding: clamp(28px, 5vw, 58px); border: 1px solid #dbe5f4; border-radius: 24px; background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%); box-shadow: 0 14px 36px rgba(30, 64, 175, .07); }
+.ns-eyebrow, .ns-section-kicker { margin: 0 0 8px; color: #1d4ed8; font-size: 13px; font-weight: 800; letter-spacing: .04em; }
+.ns-hero h1 { max-width: 760px; margin: 0; font-size: clamp(30px, 5vw, 48px); line-height: 1.22; letter-spacing: -.045em; }
+.ns-hero-copy { max-width: 680px; margin: 18px 0 0; color: var(--ns-muted); font-size: clamp(16px, 2vw, 18px); line-height: 1.7; }
+.ns-hero-actions { display: flex; gap: 10px; margin-top: 26px; flex-wrap: wrap; }
+.ns-btn-large { min-height: 48px; padding: 13px 19px; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; }
+.ns-core, .ns-content-section { margin-top: 42px; }
+.ns-section-heading h2, .ns-content-section h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.035em; }
+.ns-core-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; margin-top: 18px; }
+.ns-core-card { min-width: 0; min-height: 220px; padding: 22px; display: flex; flex-direction: column; border: 1px solid #dfe5ee; border-radius: 18px; background: #fff; box-shadow: 0 8px 22px rgba(15,23,42,.04); }
+.ns-core-card-accent { border-color: #b9cff7; background: #f4f7ff; }
+.ns-core-number { color: #3565b8; font-size: 13px; font-weight: 800; }
+.ns-core-card h3, .ns-info-card h3 { margin: 18px 0 8px; font-size: 19px; letter-spacing: -.025em; }
+.ns-core-card p, .ns-info-card p { margin: 0; color: var(--ns-muted); font-size: 14px; line-height: 1.65; }
+.ns-text-link { margin-top: auto; padding-top: 18px; color: #1d4ed8; font-size: 14px; font-weight: 750; text-decoration: none; }
+.ns-text-link:hover { text-decoration: underline; }
+.ns-core-links { display: flex; gap: 14px; margin-top: auto; }
+.ns-core-links .ns-text-link { margin-top: 0; }
+.ns-ai-hero { margin-top: 42px; padding: clamp(22px, 4vw, 34px); border: 1px solid #b9cff7; border-radius: 20px; background: #fff; box-shadow: 0 10px 28px rgba(30,64,175,.06); }
+.ns-ai-title { font-size: 25px; letter-spacing: -.03em; }
+.ns-ai-input { min-height: 48px; }
+.ns-ai-send { min-width: 84px; min-height: 48px; }
+.ns-status-panel { margin-top: 22px; }
+.ns-info-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-top: 18px; }
+.ns-info-card { padding: 20px; border: 1px solid #dfe5ee; border-radius: 16px; background: #fff; }
+.ns-info-card h3 { margin-top: 14px; }
+.ns-cases { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 26px; border: 1px solid #e4dfd2; border-radius: 18px; background: #fbf8f1; }
+.ns-cases p { max-width: 720px; margin: 10px 0 0; color: #665c49; line-height: 1.65; }
+.ns-ready-badge { flex-shrink: 0; padding: 9px 12px; border-radius: 999px; background: #fff; color: #745d2d; font-size: 13px; font-weight: 750; }
+.ns-updates { padding-top: 4px; }
+.ns-updates-title { font-size: clamp(22px,3vw,30px); }
+.ns-bottom-hint { margin-top: 36px; padding: 16px 18px; border-radius: 14px; }
+.ns-footer { display: grid; gap: 4px; padding: 28px 0 10px; border-top: 1px solid var(--ns-line); text-align: left; }
+.ns-footer strong { color: var(--ns-ink); font-size: 13px; }
+@media (max-width: 860px) { .ns-core-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .ns-core-card { min-height: 196px; } }
+@media (max-width: 620px) {
+  .newstart-shell { padding: 12px 14px 40px; }
+  .newstart-top { align-items: flex-start; gap: 8px; }
+  .newstart-brand { max-width: 58%; font-size: 17px; white-space: normal; line-height: 1.25; }
+  .newstart-topbar { gap: 2px; }
+  .newstart-topbar .ns-btn { padding: 8px; font-size: 12.5px; }
+  .ns-hero { margin-top: 14px; padding: 26px 20px; border-radius: 18px; }
+  .ns-hero h1 br { display: none; }
+  .ns-hero-actions { display: grid; grid-template-columns: 1fr; }
+  .ns-core, .ns-content-section, .ns-ai-hero { margin-top: 30px; }
+  .ns-core-grid, .ns-info-grid { grid-template-columns: 1fr; gap: 10px; }
+  .ns-core-card { min-height: auto; padding: 18px; }
+  .ns-core-card h3 { margin-top: 12px; }
+  .ns-text-link { padding-top: 14px; }
+  .ns-ai-input { font-size: 16px; }
+  .ns-ai-send { padding-inline: 15px; }
+  .ns-cases { align-items: flex-start; flex-direction: column; padding: 20px; gap: 16px; }
+  .ns-ready-badge { align-self: flex-start; }
+  .ns-status-panel .ns-card { padding-inline: 0; }
+}
+@media (max-width: 390px) { .newstart-brand { max-width: 52%; font-size: 16px; } .ns-hero { padding: 24px 18px; } .ns-hero h1 { font-size: 28px; } .ns-ai-hero { padding: 20px 16px; } }

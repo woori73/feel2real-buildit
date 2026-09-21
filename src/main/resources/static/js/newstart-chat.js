@@ -23,6 +23,7 @@
     PAGE.send = document.getElementById('ns-chat-send');
     PAGE.loginBox = document.getElementById('ns-chat-login');
     PAGE.loginBtn = document.getElementById('ns-chat-login-btn');
+    PAGE.loginAlert = document.getElementById('ns-chat-login-alert');
     PAGE.status = document.getElementById('ns-chat-status');
     if (!PAGE.list) return;
 
@@ -66,19 +67,36 @@
       .catch(function () { showLoginRequired(); });
   }
 
+  /* ── 로그인 실패/취소 안내 — callback의 ?login= 마커를 표시 후 URL에서 정리한다. 서버 오류
+     세부(credential/token 등)는 노출하지 않는다. 2026-09-21 cleanup: 네이버 로그인 V1/V2/공식
+     OAuth2 구현을 전부 제거해 지금은 이 마커를 만드는 backend가 없다 — 다음 로그인 구현이 자기
+     코드를 여기에 추가할 때까지 비워 둔다(메커니즘 자체는 범용이라 재사용). ── */
+  var LOGIN_ALERTS = {};
+
+  function showLoginAlert() {
+    if (!PAGE.loginAlert) return;
+    var code = null;
+    try {
+      code = new URLSearchParams(window.location.search).get('login');
+    } catch (_) {
+      return;
+    }
+    if (!code || !LOGIN_ALERTS[code]) return;
+    PAGE.loginAlert.textContent = LOGIN_ALERTS[code];
+    PAGE.loginAlert.hidden = false;
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }
+
   function showLoginRequired() {
     PAGE.loginBox.hidden = false;
     PAGE.form.hidden = true;
     PAGE.more.hidden = true;
     PAGE.empty.hidden = true;
-    if (PAGE.loginBtn) {
-      PAGE.loginBtn.addEventListener('click', function () {
-        // account_menu.js의 공통 로그인 모달 (로그인 성공 시 f2r:login 이벤트 발생)
-        if (typeof window.openLoginModal === 'function') {
-          window.openLoginModal();
-        }
-      });
-    }
+    showLoginAlert();
+    // 2026-09-21 cleanup: #ns-chat-login-btn은 현재 disabled 버튼이다(네이버 로그인 V1/V2/공식
+    // OAuth2 구현 전부 제거, 다음 세션에서 재구현) — 클릭해도 아무 일도 일어나지 않는다.
     document.addEventListener('f2r:login', function () {
       loadCurrentUser();
     });

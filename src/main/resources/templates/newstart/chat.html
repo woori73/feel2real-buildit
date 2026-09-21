@@ -17,7 +17,7 @@
         <a class="newstart-brand" href="/newstart" aria-label="새출발기금 부실차주 홈">새출발기금 부실차주</a>
         <nav class="newstart-topbar" aria-label="기본 메뉴">
           <a class="ns-btn ns-btn-ghost" href="/newstart">홈</a>
-          <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/newstart/chat', 'NewStart')}"></th:block>
+          <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
         </nav>
       </header>
 
@@ -31,10 +31,14 @@
             </div>
           </div>
 
-          <!-- 로그인 안내 : 비로그인 방문자용 (기존 로그인 모달로 연결) -->
+          <!-- 로그인 안내 : 비로그인 방문자용. 2026-09-21 cleanup — 네이버 로그인 V1/V2/공식
+               OAuth2 구현을 전부 제거해 현재는 활성 로그인 수단이 없다(다음 세션에서 재구현).
+               #ns-chat-login-alert는 ?login= 마커를 읽어 표시하는 범용 안내 영역으로 남겨둔다
+               (지금은 그 마커를 만드는 backend가 없어 항상 hidden). -->
           <div id="ns-chat-login" class="ns-chat-login" hidden>
+            <p id="ns-chat-login-alert" class="ns-empty ns-chat-login-alert" role="alert" hidden></p>
             <p class="ns-empty">회원 채팅은 로그인 회원만 사용할 수 있습니다.</p>
-            <button id="ns-chat-login-btn" class="ns-btn ns-btn-primary" type="button" data-auth-login>로그인</button>
+            <button id="ns-chat-login-btn" class="ns-btn ns-btn-primary" type="button" disabled aria-disabled="true">네이버 로그인 준비 중</button>
           </div>
 
           <!-- 메시지 목록 -->
@@ -53,11 +57,7 @@
         </section>
       </main>
 
-      <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
-      <script src="/js/return_url.js"></script>
-      <script src="/js/account_menu.js" defer></script>
-      <script src="/js/newstart-chat.js?v=20260919-1" defer></script>
-      <script src="/js/naver_login.js?v=20260919-1" defer></script>
+      <script src="/js/newstart-chat.js?v=20260921-1" defer></script>
     </div>
   </div>
 </body>

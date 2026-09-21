@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  NewStart 전용 인증 UI. 공통 fragments/_account_menu.html(회원가입/학생·강사 회원가입/ID·PW 로그인
+  모달 포함)은 BuildIt/Wiki 등 기존 교육 서비스가 그대로 쓰므로 건드리지 않는다. NewStart는 로그인
+  방법이 네이버 로그인 하나뿐이라는 방향은 유지하되(회원가입 없음, 학생/강사 선택 없음, ID/PW 없음),
+  2026-09-21 cleanup으로 실제 연결은 비활성화했다 — V1(/oauth/naver/*)·V2(/auth/naver/v2/*)·
+  공식 Spring Security OAuth2 Client 방식(/oauth2/authorization/naver, PR #341, 미병합) 전부
+  안정적으로 동작하지 않아 제거했고, 다음 세션에서 완전히 새로 구현한다. 그 전까지 이 버튼은 어떤
+  endpoint도 가리키지 않는 비활성 상태다 — href="#"/javascript:void(0)/가짜 callback 없음.
+
+  account_menu.js는 그대로 재사용한다(fragments/_head.html에서 이미 로드됨) — 이 JS는
+  [data-auth-actions]/[data-account-menu]/[data-account-menu-trigger]/[data-account-menu-panel]/
+  [data-account-logout]을 범용 선택자로만 다루므로 내용(마크업)만 새로 짜도 그대로 동작한다.
+  단, [data-account-home]은 의도적으로 넣지 않는다 — 있으면 account_menu.js의 roleHome()이
+  role=STUDENT를 "학생 홈"(/stdt_dashboard)으로 오해석해 잘못 표시한다(NewStart 사용자는 교육
+  서비스의 학생이 아니다). 로그인 후 홈 이동은 NewStart 자체 링크로 고정한다.
+-->
+<th:block th:fragment="authControls">
+  <div class="auth-actions" data-auth-actions hidden>
+    <button class="ns-btn ns-btn-primary" type="button" disabled aria-disabled="true">네이버 로그인 준비 중</button>
+  </div>
+
+  <div class="account-menu" data-account-menu hidden>
+    <button class="account-menu-trigger" type="button" aria-label="계정 메뉴 열기" aria-haspopup="true" aria-expanded="false" data-account-menu-trigger>
+      <span class="account-menu-icon" aria-hidden="true">👤</span>
+    </button>
+    <div class="account-menu-panel" role="menu" data-account-menu-panel hidden>
+      <a class="account-menu-item" role="menuitem" href="/newstart/chat">회원 채팅</a>
+      <button class="account-menu-item account-menu-logout" role="menuitem" type="button" data-account-logout>로그아웃</button>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>
