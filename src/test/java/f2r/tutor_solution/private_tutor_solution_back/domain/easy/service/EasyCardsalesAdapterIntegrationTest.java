@@ -134,6 +134,8 @@ class EasyCardsalesAdapterIntegrationTest {
                 && c.getSource().getSourceId().equals(inv.getArgument(1))
                 && c.getLabel().equals(inv.getArgument(2)))
             .findFirst());
+    when(connectionRepository.findByIdWithLock(anyLong()))
+        .thenAnswer(inv -> Optional.ofNullable(connections.get(inv.getArgument(0))));
 
     when(runRepository.save(any(EasyCollectionRun.class))).thenAnswer(inv -> {
       EasyCollectionRun r = inv.getArgument(0);

@@ -89,11 +89,11 @@ public class EasyCollectionIngestService {
         parsed);
   }
 
-  /**
-   * 어댑터 기반 수집 — Cardsales 등 외부 API 연동 어댑터를 통해 수집한다.
-   * connectionRef는 {@link EasyCollectionConnection#connectionRef}에 저장된 opaque reference다.
-   * since로 증분 수집 가능(초기 전체 수집 시 null).
-   */
+/**
+    * 어댑터 기반 수집 — Cardsales 등 외부 API 연동 어댑터를 통해 수집한다.
+    * connectionRef는 {@link EasyCollectionConnection#connectionRef}에 저장된 opaque reference다.
+    * since로 증분 수집 가능(초기 전체 수집 시 null).
+    */
   @Transactional
   public EasyCollectionIngestResponse ingestByAdapter(Long businessId, String label,
       String adapterCode, LocalDateTime since, int limit) {
@@ -108,8 +108,17 @@ public class EasyCollectionIngestService {
     }
     adapter.validateConnection(connectionRef);
 
+    // 연결을 비관적 락으로 조회해 동시 collection 실행을 원자적으로 방지
+    EasyCollectionConnection lockedConnection = connectionRepository.findByIdWithLock(connection.getConnectionId())
+        .orElseThrow(() -> new IllegalStateException("연결을 찾을 수 없습니다: " + connection.getConnectionId()));
+
+    // 동일 connection에 RUNNING 중인 run이 있는지 락 안에서 원자적으로 확인
+    if (runRepository.existsByConnection_ConnectionIdAndStatus(lockedConnection.getConnectionId(), EasyCollectionRunStatus.RUNNING)) {
+      throw new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요.");
+    }
+
     EasyCollectionRun run = runRepository.save(EasyCollectionRun.builder()
-        .connection(connection)
+        .connection(lockedConnection)
         .business(business)
         .triggerType("SCHEDULED")
         .sourceFilename(adapterCode + "-" + LocalDateTime.now().toLocalDate())
@@ -125,7 +134,7 @@ public class EasyCollectionIngestService {
       return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(run),
           List.of(e.getMessage()));
     }
-    return ingestParsedRows(run, connection, business, adapterCode, adapterCode, adapterCode,
+    return ingestParsedRows(run, lockedConnection, business, adapterCode, adapterCode, adapterCode,
         parsed);
   }
 

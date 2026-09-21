@@ -30,13 +30,16 @@ public class EasyCollectionSchedulerService {
   private final EasyCollectionRunRepository runRepository;
   private final EasyCollectionIngestService ingestService;
 
-  /**
-   * 자동 수집 크론 — 환경변수로 오버라이드 가능 (기본 02:30 KST 매일).
-   * 활성 연결(ACTIVE, connectionRef 있음)만 순차 실행. 동시 실행 방지는 DB 레이스 컨디션 허용 후
-   * run 단위 락으로 처리(향후 lease 패턴 적용 시 교체).
-   */
+/**
+    * 자동 수집 크론 — 환경변수로 오버라이드 가능 (기본 02:30 KST 매일).
+    * 활성 연결(ACTIVE, connectionRef 있음)만 순차 실행. 동시 실행 방지는 DB 레이스 컨디션 허용 후
+    * run 단위 락으로 처리(향후 lease 패턴 적용 시 교체).
+    * <p>
+    * 이 메서드는 @Transactional이 아니다. 각 연결의 수집은 {@link EasyCollectionIngestService#ingestByAdapter}
+    * 내부에서 독립된 트랜잭션으로 수행된다. 외부 API 호출이 긴 트랜잭션을 점유하지 않도록 분리한다.
+    * </p>
+    */
   @Scheduled(cron = "${easy.collection.cron:0 30 2 * * *}", zone = "Asia/Seoul")
-  @Transactional
   public void runScheduledCollections() {
     log.info("자동 수집 크론 시작: {}", LocalDateTime.now());
 
@@ -59,13 +62,6 @@ public class EasyCollectionSchedulerService {
           continue;
         }
 
-        // 직전 run이 RUNNING이면 중복 실행 방지
-        boolean hasRunning = runRepository.existsByConnection_ConnectionIdAndStatus(conn.getConnectionId(), EasyCollectionRunStatus.RUNNING);
-        if (hasRunning) {
-          log.warn("이전 run이 아직 실행 중 - 건너뜀: connectionId={}", conn.getConnectionId());
-          continue;
-        }
-
         // NEEDS_REAUTH 상태면 자동 실행 안 함
         if (conn.getStatus() == EasyCollectionConnectionStatus.NEEDS_REAUTH) {
           log.warn("재인증 필요 - 자동 실행 건너뜀: connectionId={}", conn.getConnectionId());
@@ -83,12 +79,14 @@ public class EasyCollectionSchedulerService {
               since,
               5000
           );
+        } catch (IllegalStateException e) {
+          // ingestByAdapter에서 RUNNING 중복 등으로 던지는 예외
+          log.warn("수집 스킵: connectionId={}, reason={}", conn.getConnectionId(), e.getMessage());
         } catch (Exception e) {
           log.error("자동 수집 실패: connectionId={}, error={}", conn.getConnectionId(), e.getMessage(), e);
-          // 실패 시 연결 상태를 NEEDS_REAUTH로 변경 (인증 오류 추정)
-          if (e.getMessage() != null && (e.getMessage().contains("401") || e.getMessage().contains("인증") || e.getMessage().contains("auth"))) {
-            conn.markNeedsReauth();
-            connectionRepository.save(conn);
+          // 실패 시 연결 상태를 NEEDS_REAUTH로 변경 (인증 오류만 해당)
+          if (isAuthFailure(e)) {
+            markConnectionNeedsReauth(conn.getConnectionId());
           }
         }
       }
@@ -100,6 +98,8 @@ public class EasyCollectionSchedulerService {
   /**
    * 수동 트리거 — 관리자가 "지금 수집" 버튼으로 즉시 실행.
    * 스케줄과 동일한 파이프라인이나 triggerType=MANUAL로 기록.
+   * 동시 실행 방지는 {@link EasyCollectionIngestService#ingestByAdapter} 내부에서
+   * 비관적 락으로 원자적으로 수행된다.
    */
   @Transactional
   public EasyCollectionRunResponse triggerManualCollection(Long businessId, Long connectionId) {
@@ -118,12 +118,7 @@ public class EasyCollectionSchedulerService {
       throw new IllegalStateException("재인증 필요 상태입니다. 재인증 후 다시 시도하세요.");
     }
 
-    // 이미 실행 중인 run이 있으면 예외
-    boolean hasRunning = runRepository.existsByConnection_ConnectionIdAndStatus(conn.getConnectionId(), EasyCollectionRunStatus.RUNNING);
-    if (hasRunning) {
-      throw new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요.");
-    }
-
+    // RUNNING 체크는 ingestByAdapter 내부에서 비관적 락으로 원자적으로 수행
     EasyCollectionSource source = conn.getSource();
     return ingestService.ingestByAdapter(businessId, conn.getLabel(), source.getCode(), null, 5000).run();
   }
@@ -165,4 +160,37 @@ public class EasyCollectionSchedulerService {
       int latestDuplicateCount,
       int latestErrorCount
   ) {}
+
+  /**
+   * 인증 실패(401/403)인지 판단한다. 메시지 문자열 매칭이 아닌 예외 타입/상태 코드 기반으로 안전하게 판단한다.
+   * 외부 adapter가 던지는 예외를 래핑한 경우를 고려해 cause 체인까지 검사한다.
+   */
+  private boolean isAuthFailure(Exception e) {
+    Throwable cause = e;
+    while (cause != null) {
+      String msg = cause.getMessage();
+      if (msg != null) {
+        String lower = msg.toLowerCase();
+        // HTTP 401/403 상태 코드 또는 인증/권한 관련 예외만 인증 실패로 간주
+        if (lower.contains("401") || lower.contains("403")
+            || lower.contains("unauthorized") || lower.contains("forbidden")
+            || lower.contains("인증") || lower.contains("권한")) {
+          return true;
+        }
+      }
+      cause = cause.getCause();
+    }
+    return false;
+  }
+
+  /**
+   * 연결을 NEEDS_REAUTH 상태로 변경한다. 별도 트랜잭션에서 실행되어야 한다.
+   */
+  @Transactional
+  public void markConnectionNeedsReauth(Long connectionId) {
+    EasyCollectionConnection conn = connectionRepository.findById(connectionId)
+        .orElseThrow(() -> new IllegalArgumentException("연결을 찾을 수 없습니다: " + connectionId));
+    conn.markNeedsReauth();
+    connectionRepository.save(conn);
+  }
 }

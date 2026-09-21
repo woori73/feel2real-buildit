@@ -94,6 +94,8 @@ class EasyCollectionSchedulerServiceTest {
             .toList());
     when(connectionRepository.findById(anyLong()))
         .thenAnswer(inv -> Optional.ofNullable(connections.get(inv.getArgument(0))));
+    when(connectionRepository.findByIdWithLock(anyLong()))
+        .thenAnswer(inv -> Optional.ofNullable(connections.get(inv.getArgument(0))));
 
     when(runRepository.save(any(EasyCollectionRun.class))).thenAnswer(inv -> {
       EasyCollectionRun r = inv.getArgument(0);
@@ -184,11 +186,12 @@ class EasyCollectionSchedulerServiceTest {
   }
 
   @Test
-  @DisplayName("수동 트리거 — 이미 실행 중인 run 있으면 예외")
+  @DisplayName("수동 트리거 — 이미 실행 중인 run 있으면 예외 (ingestByAdapter에서 락으로 처리)")
   void triggerManualConnection_alreadyRunning_throws() {
     setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
-    when(runRepository.existsByConnection_ConnectionIdAndStatus(200L, EasyCollectionRunStatus.RUNNING))
-        .thenReturn(true);
+    // ingestByAdapter 내부에서 락으로 RUNNING 체크 후 예외 던지도록 모킹
+    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
+        .thenThrow(new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요."));
 
     assertThatThrownBy(() -> schedulerService.triggerManualCollection(BIZ, 200L))
         .isInstanceOf(IllegalStateException.class)
@@ -229,26 +232,33 @@ class EasyCollectionSchedulerServiceTest {
   }
 
   @Test
-  @DisplayName("자동 크론 — 이전 run이 RUNNING이면 건너뜀")
+  @DisplayName("자동 크론 — 이전 run이 RUNNING이면 ingestByAdapter에서 예외 발생 후 스킵")
   void runScheduledCollections_skipsRunningRun() {
     setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
-    when(runRepository.existsByConnection_ConnectionIdAndStatus(200L, EasyCollectionRunStatus.RUNNING))
-        .thenReturn(true);
+    // ingestByAdapter에서 RUNNING 감지 시 예외 던지도록 모킹
+    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
+        .thenThrow(new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요."));
 
     schedulerService.runScheduledCollections();
 
-    verify(ingestService, never()).ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt());
+    // ingestByAdapter가 호출되었으나 예외 발생 후 로그만 남기고 계속 진행
+    verify(ingestService).ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt());
   }
 
   @Test
-  @DisplayName("자동 크론 — 401/인증 에러 시 연결을 NEEDS_REAUTH로 변경")
+  @DisplayName("자동 크론 — 401/인증 에러 시 연결을 NEEDS_REAUTH로 변경 (별도 트랜잭션)")
   void runScheduledCollections_authError_marksNeedsReauth() {
     setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
+    // IllegalStateException은 RUNNING 중복 등으로 간주되어 별도 catch 블록에서 처리됨
+    // 인증 실패를 시뮬레이트하려면 다른 예외 타입을 사용해야 함 (RuntimeException 등)
     when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
-        .thenThrow(new IllegalStateException("401 Unauthorized: 인증 실패"));
+        .thenThrow(new RuntimeException("401 Unauthorized: 인증 실패"));
 
     schedulerService.runScheduledCollections();
 
+    // markConnectionNeedsReauth가 별도 트랜잭션으로 호출되어야 함
+    // connectionRepository.findById가 호출되어 연결을 조회하고 상태 변경
+    verify(connectionRepository).findById(200L);
     EasyCollectionConnection conn = connections.get(200L);
     assertThat(conn.getStatus()).isEqualTo(EasyCollectionConnectionStatus.NEEDS_REAUTH);
   }

@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionConnectionResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionIngestResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionRunResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionSourceResponse;
@@ -70,13 +71,13 @@ public class EasyCollectionController {
    * 연결 생성 또는 갱신 (connection_ref 포함) — 관리자 콘솔에서 초기 등록용.
    */
   @PostMapping("/connections")
-  public ResponseEntity<EasyCollectionConnection> createConnection(
+  public ResponseEntity<EasyCollectionConnectionResponse> createConnection(
       @RequestParam("businessId") Long businessId,
       @RequestParam("sourceCode") String sourceCode,
       @RequestParam(value = "label", required = false) String label,
       @RequestParam(value = "connectionRef", required = false) String connectionRef) {
     EasyCollectionConnection conn = ingestService.createOrUpdateConnection(businessId, sourceCode, label, connectionRef);
-    return ResponseEntity.ok(conn);
+    return ResponseEntity.ok(EasyCollectionConnectionResponse.from(conn));
   }
 
   /**
@@ -84,12 +85,13 @@ public class EasyCollectionController {
    * NEEDS_REAUTH 상태면 ACTIVE로 복구.
    */
   @PutMapping("/connections/{connectionId}/ref")
-  public ResponseEntity<Void> updateConnectionRef(
+  public ResponseEntity<EasyCollectionConnectionResponse> updateConnectionRef(
       @PathVariable Long connectionId,
       @RequestBody ConnectionRefRequest request,
       @RequestParam("businessId") Long businessId) {
     ingestService.updateConnectionRef(businessId, connectionId, request.connectionRef());
-    return ResponseEntity.ok().build();
+    EasyCollectionConnection conn = ingestService.getConnection(connectionId);
+    return ResponseEntity.ok(EasyCollectionConnectionResponse.from(conn));
   }
 
   public record ConnectionRefRequest(String connectionRef) {}
