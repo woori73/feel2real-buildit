@@ -3929,6 +3929,10 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   아니라 관리자 확인 대상(`CASE_DERIVED` 포함).
 - `POST /ingest/cases`(`articlesDir`, 기본 `data/newstart-cafe/gamian/articles`),
   `POST /ingest/generate-rules`: 카페 사례→knowledge 파생(별도 컨트롤러 `NewstartIngestionAdminController`).
+- `POST /ingest/curated-review`(`ebookSections` 기본 `docs/newstart/ebook/ebook_sections.json`,
+  `gamianDir` 기본 `data/newstart-cafe/gamian/articles`): Agent3 큐레이션 산출물(EBOOK 19 section +
+  CASE 11건) REVIEW 전용 적재 — ACTIVE 생성 경로 없음, title/articleId 멱등, CONFLICT_REVIEW 태그·
+  CONTRADICTS 관계는 대응 공식 item 존재 시에만 생성.
 
 ### 사례 `/api/admin/newstart/wiki/cases`
 
