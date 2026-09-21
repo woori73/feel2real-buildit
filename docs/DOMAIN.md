@@ -1264,6 +1264,16 @@ Feel2Real 회원(`users`)과 외부 PROVIDER 신원을 1:N으로 연결하는 �
   구현(네이버 재구현 포함, 다른 provider 확장도 가능)을 위해 그대로 보존한다. 과거 시도 중 생성된
   행이 남아있을 수 있으며 이번 cleanup에서 삭제하지 않았다.
 
+### 4.55 easy_collection_* ✅ 자동수집 foundation (V983)
+
+EASY 회계 파이프라인 앞단의 공통 수집 기반 — 회계 transaction이 아니라 **수집 provenance**다. 원문은 `easy_transactions`가 아니라 `easy_collection_raw_records`에 불변 보존되고, 장부 진입은 반드시 기존 `EasyImportService.stage()` 경계를 통해서만 이루어진다(confirm과 무관). credential(ID/PW·공동인증서·OTP·token)은 어떤 컬럼에도 저장하지 않으며 `connection_ref`는 참조자(connectedId/동의ID류) 전용이다(대법 2020도9972).
+
+- `easy_collection_sources`: 수집원 카탈로그. `source_id` PK, `code` UNIQUE(`EXCEL_FILE`/`CARDSALES`/`HOMETAX`/`BANK`/`BUSINESS_CARD`/`PG`), `name`, `adapter_type`, `active`. PHASE 1 시드에서 active는 `EXCEL_FILE`뿐.
+- `easy_collection_connections`: 사업장↔수집원 연결. `business_id`+`source_id`+`label` UNIQUE, `status`(ACTIVE/DISABLED), `connection_ref`(참조자만), `last_success_at`.
+- `easy_collection_runs`: 실행 이력. `trigger_type`(MANUAL), `status`(RUNNING/SUCCESS/PARTIAL/FAILED), `source_filename`, `adapter_code`/`adapter_version`, `fetched_count`/`accepted_count`/`duplicate_count`/`error_count`, `import_batch_id`(만들어진 staging 배치), `error_summary`, `started_at`/`completed_at`.
+- `easy_collection_raw_records`: 원문 불변 보존. **`dedupe_key` VARCHAR(160) UNIQUE**(1차 방어 — 재수집 멱등), `external_record_id`, `tuple_hash`(SHA-256), `raw_payload`(TEXT, 원문 JSON), `raw_hash`, `source_occurred_on`, `status`(STORED/IMPORT_LINKED/LEDGER_DUPLICATE_EXCLUDED/ERROR), `import_batch_id`/`import_row_id`(raw↔staging row 역링크), INDEX `(business_id, source_code, tuple_hash)`.
+- dedupe 키: `EXT` = `{source}:{businessId}:EXT:{normalize(외부ID)}`, `T` = `{source}:{businessId}:T:{tupleHash 앞16}:{파일 내 등장 순번}` — 정규화는 NFKC+trim+공백축소+소문자.
+
 ## Wiki workspace isolation (FastAPI SQLite)
 
 `wiki_workspaces` and `wiki_workspace_members` live in the Wiki workspace catalog SQLite file. The fixed `legacy` workspace points to the existing Production Wiki database and has only the authenticated `admin` and `modu` members. A non-legacy member receives a deterministic private workspace ID and a separate empty SQLite database on first access.
