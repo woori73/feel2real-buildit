@@ -92,6 +92,11 @@
 .ns-chat-sub { font-size: 12px; color: var(--ns-muted); margin: 2px 0 0; }
 .ns-chat-login { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 26px 8px; }
 .ns-chat-login .ns-btn { min-width: 120px; }
+/* [hidden]이 없으면 위 display:flex가 UA 기본 [hidden]{display:none}을 이긴다 — 로그인 상태
+   전환(newstart-chat.js enterRoom())이 loginBox.hidden=true로 정확히 반영돼도 화면에서는
+   "회원 채팅은 로그인 회원만..." 안내가 계속 보이던 회귀의 원인. account_menu.css의
+   .auth-actions[hidden]/.account-menu[hidden]과 동일한 방어 규칙을 여기에도 둔다. */
+.ns-chat-login[hidden], .ns-chat-form[hidden] { display: none !important; }
 
 .ns-chat-list { flex: 1; min-height: 180px; overflow-y: auto; padding: 10px 2px 6px; display: flex; flex-direction: column; gap: 10px; -webkit-overflow-scrolling: touch; }
 .ns-chat-more { align-self: center; font-size: 12.5px; padding: 6px 14px; }
