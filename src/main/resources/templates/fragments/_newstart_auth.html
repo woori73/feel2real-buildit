@@ -17,6 +17,11 @@
   단, [data-account-home]은 의도적으로 넣지 않는다 — 있으면 account_menu.js의 roleHome()이
   role=STUDENT를 "학생 홈"(/stdt_dashboard)으로 오해석해 잘못 표시한다(NewStart 사용자는 교육
   서비스의 학생이 아니다). 로그인 후 홈 이동은 NewStart 자체 링크로 고정한다.
+
+  별명(2026-09-21): "내 프로필" 메뉴 + 모달은 account_menu.js가 아니라 이 페이지들에서만
+  로드하는 별도 js/newstart-profile.js가 담당한다(공용 account_menu.js/css는 건드리지 않는다
+  — BuildIt/Wiki 등 다른 서비스가 그대로 쓰기 때문). users.nickname(공용, 다른 서비스와 공유)과
+  달리 NewStart 표시 별명은 완전히 별도 테이블(newstart_member_profiles)이다.
 -->
 <th:block th:fragment="authControls">
   <div class="auth-actions" data-auth-actions hidden>
@@ -28,8 +33,21 @@
       <span class="account-menu-icon" aria-hidden="true">👤</span>
     </button>
     <div class="account-menu-panel" role="menu" data-account-menu-panel hidden>
+      <button class="account-menu-item" role="menuitem" type="button" data-ns-profile-trigger>내 프로필</button>
       <a class="account-menu-item" role="menuitem" href="/newstart/chat">회원 채팅</a>
       <button class="account-menu-item account-menu-logout" role="menuitem" type="button" data-account-logout>로그아웃</button>
+    </div>
+  </div>
+
+  <div class="ns-profile-modal" data-ns-profile-modal hidden>
+    <div class="ns-profile-modal-card" role="dialog" aria-modal="true" aria-label="내 프로필">
+      <button class="ns-profile-modal-close" type="button" data-ns-profile-close aria-label="닫기">×</button>
+      <h2 class="ns-profile-modal-title">내 프로필</h2>
+      <label class="ns-label" for="ns-profile-nickname">별명</label>
+      <input class="ns-input" id="ns-profile-nickname" type="text" maxlength="20"
+        placeholder="예: 새출발러73" autocomplete="off" data-ns-profile-input>
+      <p class="ns-note ns-profile-modal-message" data-ns-profile-message hidden></p>
+      <button class="ns-btn ns-btn-primary ns-profile-modal-save" type="button" data-ns-profile-save>저장</button>
     </div>
   </div>
 </th:block>
