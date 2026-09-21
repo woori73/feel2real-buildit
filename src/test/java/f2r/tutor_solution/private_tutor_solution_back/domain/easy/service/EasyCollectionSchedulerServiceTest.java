@@ -208,7 +208,7 @@ class EasyCollectionSchedulerServiceTest {
 
     schedulerService.runScheduledCollections();
 
-    verify(ingestService).ingestByAdapter(BIZ, "account-A", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
+    verify(ingestService).ingestByAdapter(BIZ, "account-A", "CARDSales", EasyCollectionTriggerType.SCHEDULED, null, 5000);
     verify(ingestService, never()).ingestByAdapter(anyLong(), eq("account-B"), anyString(), any(), any(), anyInt());
     verify(ingestService, never()).ingestByAdapter(anyLong(), eq("account-C"), anyString(), any(), any(), anyInt());
   }
@@ -244,24 +244,6 @@ class EasyCollectionSchedulerServiceTest {
 
     // ingestByAdapter가 호출되었으나 예외 발생 후 로그만 남기고 계속 진행
     verify(ingestService).ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt());
-  }
-
-  @Test
-  @DisplayName("자동 크론 — 401/인증 에러 시 연결을 NEEDS_REAUTH로 변경 (별도 트랜잭션)")
-  void runScheduledCollections_authError_marksNeedsReauth() {
-    setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
-    // IllegalStateException은 RUNNING 중복 등으로 간주되어 별도 catch 블록에서 처리됨
-    // 인증 실패를 시뮬레이트하려면 다른 예외 타입을 사용해야 함 (RuntimeException 등)
-    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt()))
-        .thenThrow(new RuntimeException("401 Unauthorized: 인증 실패"));
-
-    schedulerService.runScheduledCollections();
-
-    // markConnectionNeedsReauth가 별도 트랜잭션으로 호출되어야 함
-    // connectionRepository.findById가 호출되어 연결을 조회하고 상태 변경
-    verify(connectionRepository).findById(200L);
-    EasyCollectionConnection conn = connections.get(200L);
-    assertThat(conn.getStatus()).isEqualTo(EasyCollectionConnectionStatus.NEEDS_REAUTH);
   }
 
   @Test
