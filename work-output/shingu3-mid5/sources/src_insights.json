@@ -1,0 +1,42 @@
+[
+ {
+  "id": 5,
+  "type": "educator_insight",
+  "title": null,
+  "content": "'요약·핵심문장 영작' 유형은 Digital Twin에 유형 정의는 있으나, 실제 기출의 세부 형식(정확한 단어수 제한, 필수 제시어 유무, 문법조건 강제 여부, 빈칸완성형 vs 전체작문형, 한글제시형 vs 본문요약형)이 저장되어 있지 않음. 이번 제작에서는 유형 정의 중 단어수 제한 요소만 반영한 잠정 형식으로 처리했으며, 실제 기출 샘플 확보 시 형식 재검증이 필요함.",
+  "created_at": "2026-08-26T16:16:58.058630",
+  "source": "claude"
+ },
+ {
+  "id": 4,
+  "type": "educator_insight",
+  "title": null,
+  "content": "Digital Twin의 questionRatio, trapPatterns, choiceStyle, writingStyle이 현재 비어 있어 유형별 실제 출제 비중, 함정 패턴, 선택지 구성 방식, 서답형 채점 기준의 학교 고유 특성을 알 수 없음. 원장·강사의 수업 인사이트나 실제 기출 샘플이 축적되면 최우선으로 반영이 필요한 항목.",
+  "created_at": "2026-08-26T16:16:49.478287",
+  "source": "claude"
+ },
+ {
+  "id": 3,
+  "type": "educator_insight",
+  "title": null,
+  "content": "Digital Twin의 '반어·문학 개념', '역할극·실용 상황' 유형은 이번 5과 자료만으로는 제작 근거가 없음. 다른 과(lesson) 프린트나 부교재에 반어법/문학적 장치, 역할극·만화 형식 자료가 있는지 향후 확인이 필요함.",
+  "created_at": "2026-08-26T16:16:43.593704",
+  "source": "claude"
+ },
+ {
+  "id": 2,
+  "type": "educator_insight",
+  "title": null,
+  "content": "가정법 문장전환 문제 제작 시, 원문이 서술하는 사건이 '과거의 실제 사실'인지 '현재의 실제 상태'인지에 따라 가정법 과거완료/가정법 과거를 엄격히 구분해야 함. 이번 제작 중 과거 사실(As I worked part-time...)을 가정법 과거로 잘못 전환했다가 과거완료로 정정한 사례가 있었음 — 다음 제작 시 프롬프트의 시제를 먼저 확인하는 절차를 우선 적용할 것.",
+  "created_at": "2026-08-26T16:16:38.300268",
+  "source": "claude"
+ },
+ {
+  "id": 1,
+  "type": "educator_insight",
+  "title": null,
+  "content": "5과 프린트의 문법 핵심은 가정법 과거·과거완료·혼합가정이 반복적으로 등장함(문법 5-1 예문 3종, Exercise A 6문항, 5-2 문장전환 10문항 전부 이 범위). 향후 이 lesson의 FINAL 제작 시 어법 오류/조건 영작 유형의 1순위 소재로 우선 고려할 것.",
+  "created_at": "2026-08-26T16:06:02.233757",
+  "source": "claude"
+ }
+]
