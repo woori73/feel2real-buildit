@@ -49,13 +49,22 @@
     PAGE.input.style.height = Math.min(PAGE.input.scrollHeight, 96) + 'px';
   }
 
-  /* ── 로그인 상태: /api/auth/me (account_menu.js와 동일한 응답 계약) ── */
+  /* ── 로그인 상태: 헤더(fragments/_newstart_auth.html)와 동일한 계정 아이콘/메뉴 표시를
+     담당하는 account_menu.js의 window.refreshAccountArea()를 그대로 재사용한다.
+     이 페이지는 favicon fragment(_head.html)로 account_menu.js를 <head>에서 defer 로드하므로
+     이 스크립트(</body> 끝, 역시 defer)가 실행될 때는 이미 정의돼 있다.
+     예전에는 이 함수가 /api/auth/me를 별도로 다시 fetch했다 — 같은 엔드포인트를 부르지만
+     헤더는 sessionStorage 캐시를 우선 신뢰하고(account_menu.js loadCurrentUser) 이 fetch는
+     캐시를 무시한 채 매번 새로 검증하는 서로 다른 판정 소스였다. 그 결과 헤더가 로그인 상태를
+     캐시로 보여주는 순간에도 채팅 화면은 별도의 fresh 호출 결과에 따라 로그인 필요 화면을
+     보여줄 수 있었다(네이버 로그인 직후 관찰된 불일치의 원인). 판정 소스를 하나로 통일한다. */
   function loadCurrentUser() {
-    fetch('/api/auth/me', { credentials: 'same-origin' })
-      .then(function (res) {
-        if (!res.ok) return null;
-        return res.json();
-      })
+    var refresh = window.refreshAccountArea;
+    if (typeof refresh !== 'function') {
+      showLoginRequired();
+      return;
+    }
+    refresh()
       .then(function (user) {
         if (user && user.userId) {
           PAGE.userId = user.userId;
