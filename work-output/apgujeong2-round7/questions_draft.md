@@ -297,5 +297,105 @@ Welcome to my English quiz show! I'm Mr. Kim. Here is the first question. A spor
 
 ## BATCH 3 확정 정답
 Q21⑤ Q22① Q23⑤ Q24① Q25④ Q26② Q27⑤ Q28① Q29③ Q30④
-B3: ①3 ②1 ③1 ④2 ⑤3 (⑤·① 보정 목표 부합)
-B1+B2+B3 누적: ①6 ②6 ③7 ④6 ⑤5 → B4에서 ①2 ②2 ③1 ④2 ⑤3 배분. 3연속 없음 확인.
+B3: ①3 ②1 1 ④2 3 (⑤·① 보정 목표 부합)
+B1+B2+B3 누적: ①6 ②6 7 ④6 5 → B4에서 ①2 ②2 ③1 ④2 ⑤3 배분. 3연속 없음 확인.
+
+---
+
+# BATCH 4 — Q31~Q40
+
+## [31~33] 공통지문 H — 스포츠 매니저 Kate (L5 More Reading 1 재구성)
+source: L5 More Reading 1 'Life as a Sports Manager' 12문장을 3인칭화. ref: 기출 [1-2]류 공통지문(내용일치+연결어)+지문내 어법(옳지 않은 것 방향).
+
+지문 H (ⓐ~ⓔ + (A) 포함):
+Kate is a sports manager for a professional soccer team. ⓐHer job is to give the team the best chance to win. She makes sure everything goes well and helps the team succeed. She hires great coaches, manages the office staff, talks to the media, and solves problems. When she gets to the training ground, she talks to the players first. ⓑShe tells them how well they are doing and encourage them. ( A ) ___, she meets with the head coach to check that everything is on track. ⓒThey have regular meetings to keep things running smoothly. ⓓWatching the team train and seeing the players improve is one of the best parts of her job. ⓔKate enjoys seeing everyone work together as a team.
+(어법 설계: ⓐ 원문 ✓ / ⓑ encourage→encourages 수일치 ✗ (유일한 오류) / ⓒ ✓ / ⓓ 동명사 주어+is 원문 ✓ / ⓔ enjoy+목적어+원형(seeing everyone work) ✓)
+
+**Q31.** 글의 내용과 일치하는 것은? (ref 기출Q1·Q26 계열)
+① Kate manages the office staff only on game days.
+② Kate talks to the players after she meets with the head coach.
+③ The head coach tells the players how well they are doing.
+④ Watching the team train is the hardest part of Kate's job.
+⑤ Kate's job is to help the team succeed by giving players confidence. ✔
+정답 ⑤ (① only 함정, ② 순서 반전, ③ 주체 뒤집기, ④ best→hardest 반전 — More Reading T/F ③ 'only meets on game days=F' 근거 반영)
+
+**Q32.** 밑줄 친 (A)에 들어갈 말로 글의 흐름상 가장 자연스러운 것은? (ref 기출Q2)
+① In short ② For example ③ Next ✔ ④ After all ⑤ On the other hand
+정답 ③ (원문 8번 문장 "Next, I meet with the head coach" 대응 — 훈련장→면담 순서 전환)
+
+**Q33.** ⓐ~ⓔ 중 의미와 어법상 옳지 않은 것은? (ref 기출Q4 — 옳지 않은 것 방향)
+정답 ② (ⓑ) — 주어 She에 대한 동사 수일치(encourages). 나머지 4개는 원문형 그대로 옳음 확인.
+
+**Q34.** <보기>의 뜻을 가진 단어로 알맞은 것은? (ref 기출Q15)
+<보기> the series of jobs that a person has in a particular field of work
+① career ✔ ② business ③ contract ④ client ⑤ deal
+정답 ① (L5 Word List career 원정의 그대로 사용. 오답은 같은 단어장 L5 명사 5개)
+
+**Q35.** 빈칸에 들어갈 말로 자연스럽지 않은 것은? (ref 기출Q3)
+It is almost impossible to ______ the picture after it is spread all over the Internet.
+① delete ② copy ✔ ③ remove ④ erase ⑤ take away
+정답 ② (delete/remove/erase/take away=지우다 동의어군, copy만 의미 부적합 — L6 Word List 어휘)
+
+**Q36.** (A)를 바르게 영작한 것은? (ref 기출Q12)
+(A) "선생님은 우리에게 매일 정보를 확인하라고 말씀하셨다."
+① The teacher told to us check our information every day.
+② The teacher told us for checking our information every day.
+③ The teacher told us check our information every day.
+④ The teacher told us to check our information every day. ✔
+⑤ The teacher told our information to check every day.
+정답 ④ (tell+목적어+to부정사 [L6 Grammar2]. ① 전치사 오첨부, ② for+동명사 구조 오류, ③ 원형부정사 오용, ⑤ 목적어 위치 왜곡)
+
+## [37] 독립 — 세탁 서비스 상담 대화 J
+source: L6 본문 A/C 상황 재구성. ref: 기출Q26 (인터뷰 대화, 내용일치).
+
+대화 J (9턴):
+Sara: Hello, Happy Digital Laundry. How can I help you?
+Mark: Hi. I saw an ad yesterday and filled out a form. Since then, I have received useless calls from unknown numbers.
+Sara: I'm sorry to hear that. Did you give your personal information to the ad company?
+Mark: Yes. I just wanted to get a free gift. My friend told me not to click on that ad, but I didn't listen.
+Sara: We can check your online records and ask the company to delete your information.
+Mark: Thank you. Can you also remove the photos I posted last year?
+Sara: We'll try our best, but some copies may remain on other people's devices.
+Mark: I understand. I've learned my lesson.
+Sara: That's our job. Be careful about what you share online from now on!
+
+**Q37.** 대화의 내용과 일치하는 것은? (ref 기출Q26)
+① Mark filled out the form to look for a job at the laundry.
+② Mark's friend asked him to click on the ad.
+③ The service can remove all the copies on other people's devices.
+④ Mark received useless calls before he saw the ad.
+⑤ The ad company will be asked to delete Mark's personal information. ✔
+정답 ⑤ (① laundry 함정, ② 내용 뒤집기, ③ may remain 반전, ④ 시간 반전)
+
+**Q38.** 글을 요약한 문장이다. 밑줄 친 ⓐ~ⓔ의 어법상 쓰임이 올바르지 않은 것은? (ref 기출Q13)
+Mark asked the service ⓐto removing his personal records, and he was told that some copies might remain ⓑon other devices. Before that, useless calls made ⓒhim very upset, and his friend told him ⓓnot to click on the ad. Now he thinks twice before sharing anything ⓔonline.
+정답 ① (ⓐ) — ask+목적어+to부정사: to remove [L6 Grammar2]
+(ⓑ 전치사구 ✓ / ⓒ make+목적어+형용사(5형식) ✓ / ⓓ tell+목적어+not to부정사 ✓ / ⓔ before+동명사 ✓)
+
+**Q39.** <보기>에서 어법상 옳은 문장의 개수를 고른 것은? (ref 기출Q14)
+<보기>
+○ I heard someone knocking on the door. ✓
+○ She made me to repeat the story. ✗(repeat)
+○ We watched the birds feed their babies. ✓
+○ He wants his friend helping him with the contract. ✗(to help)
+○ I saw the window broken by a stone. ✓
+○ Did you hear your name calling in the hall? ✗(called)
+○ The teacher told us open our books. ✗(to open)
+○ I felt my body shaking after the ride. ✓
+○ They asked the company to delete the records. ✓
+○ I saw him cross the street alone. ✓
+○ My mom wanted me cleaning my room. ✗(to clean)
+① 3개 ② 4개 ③ 5개 ④ 6개 ✔ ⑤ 7개
+정답 ④ (옳은 것: 1·3·5·8·9·10 = 6개. 전부 L6 Grammar1·2 Part 문제 원문/원패턴)
+
+## [40] 독립 — 표기 지식
+ref: 기출Q30 (국명-국적 표기 잘못된 것, 암기형 고정 포지션).
+
+**Q40.** 각 나라와 국적 표현을 영어로 했을 때 잘못된 것은? (ref 기출Q30)
+① Spain-Spanish ② Egypt-Egyptian ③ the Netherlands-Dutch ④ the Philippines-Filipino ⑤ Russia-Rusian ✔
+정답 ⑤ (Russian의 철자 — 기출 Q30 'Portuguise'와 동일한 철자 변형 함정)
+
+## BATCH 4 확정 정답
+Q31⑤ Q32③ Q33② Q34① Q35② Q36④ Q37⑤ Q38① Q39④ Q40⑤
+B4: ①2 ②2 ③1 ④2 ⑤3
+Q1~Q40 최종 누적: ①8 ②8 ③8 ④8 ⑤8 = 40 — 목표 정확 달성. 3연속 없음(최대 2연속 — 기출 원본에도 2연속 4건 실재).
