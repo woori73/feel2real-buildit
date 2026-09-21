@@ -2,12 +2,17 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import java.util.List;
@@ -65,8 +70,9 @@ class NaverOAuth2LoginSuccessHandlerTest {
   void issuesCookieAndRedirectsToFixedPath() throws Exception {
     NaverAccountResolutionService resolutionService = mock(NaverAccountResolutionService.class);
     when(resolutionService.resolveUser(any())).thenReturn(user(42L, Role.STUDENT));
+    NewStartMemberProfileService memberProfileService = mock(NewStartMemberProfileService.class);
     NaverOAuth2LoginSuccessHandler handler =
-        new NaverOAuth2LoginSuccessHandler(resolutionService, tokenProvider, cookieUtil);
+        new NaverOAuth2LoginSuccessHandler(resolutionService, tokenProvider, cookieUtil, memberProfileService);
 
     MockHttpServletRequest request = new MockHttpServletRequest();
     // open redirect 시도 — 핸들러가 이 값을 절대 읽지 않는지 확인한다.
@@ -85,6 +91,29 @@ class NaverOAuth2LoginSuccessHandlerTest {
     assertThat(setCookie).contains("SameSite=Lax");
     // JWT는 URL에 실리지 않는다 — redirect 목적지에 쿼리 파라미터가 전혀 없어야 한다.
     assertThat(response.getRedirectedUrl()).doesNotContain("?");
+
+    // NewStart 표시 별명 seed가 로그인 성공 경로에서 정확히 이 userId로 호출된다.
+    verify(memberProfileService).ensureSeeded(eq(42L), any());
+  }
+
+  @Test
+  @DisplayName("별명 seed가 예외를 던져도 로그인(JWT 쿠키/redirect) 자체는 계속 성공한다")
+  void nicknameSeedFailureDoesNotBlockLogin() throws Exception {
+    NaverAccountResolutionService resolutionService = mock(NaverAccountResolutionService.class);
+    when(resolutionService.resolveUser(any())).thenReturn(user(43L, Role.STUDENT));
+    NewStartMemberProfileService memberProfileService = mock(NewStartMemberProfileService.class);
+    doThrow(new RuntimeException("seed boom")).when(memberProfileService).ensureSeeded(anyLong(), any());
+    NaverOAuth2LoginSuccessHandler handler =
+        new NaverOAuth2LoginSuccessHandler(resolutionService, tokenProvider, cookieUtil, memberProfileService);
+
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    handler.onAuthenticationSuccess(request, response, naverAuthentication("stable-id-4"));
+
+    assertThat(response.getStatus()).isEqualTo(302);
+    assertThat(response.getRedirectedUrl()).isEqualTo("/newstart");
+    assertThat(response.getHeader("Set-Cookie")).contains("ACCESS_TOKEN=");
   }
 
   @Test
@@ -93,7 +122,8 @@ class NaverOAuth2LoginSuccessHandlerTest {
     NaverAccountResolutionService resolutionService = mock(NaverAccountResolutionService.class);
     when(resolutionService.resolveUser(any())).thenThrow(new IllegalStateException("boom"));
     NaverOAuth2LoginSuccessHandler handler =
-        new NaverOAuth2LoginSuccessHandler(resolutionService, tokenProvider, cookieUtil);
+        new NaverOAuth2LoginSuccessHandler(
+            resolutionService, tokenProvider, cookieUtil, mock(NewStartMemberProfileService.class));
 
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
@@ -110,7 +140,7 @@ class NaverOAuth2LoginSuccessHandlerTest {
   @DisplayName("resolutionService가 없으면(방어적 null 처리) 500만 응답하고 쿠키/redirect가 없다")
   void handlesMissingResolutionServiceSafely() throws Exception {
     NaverOAuth2LoginSuccessHandler handler =
-        new NaverOAuth2LoginSuccessHandler(null, tokenProvider, cookieUtil);
+        new NaverOAuth2LoginSuccessHandler(null, tokenProvider, cookieUtil, null);
 
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();

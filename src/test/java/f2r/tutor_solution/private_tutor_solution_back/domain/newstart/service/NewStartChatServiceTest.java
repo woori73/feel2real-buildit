@@ -13,7 +13,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.chat.NewSt
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.chat.NewStartChatMessageEvent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.chat.NewStartChatRateLimiter;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartChatMessage;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartMemberProfile;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.repository.NewStartChatMessageRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.repository.NewStartMemberProfileRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
@@ -46,9 +48,11 @@ class NewStartChatServiceTest {
 
   private NewStartChatMessageRepository messages;
   private UserRepository users;
+  private NewStartMemberProfileRepository profiles;
   private RecordingBroadcaster broadcaster;
   private final List<NewStartChatMessage> saved = new ArrayList<>();
   private final Map<Long, User> usersById = new HashMap<>();
+  private final Map<Long, NewStartMemberProfile> profilesById = new HashMap<>();
   private final AtomicLong idSeq = new AtomicLong(0);
 
   private NewStartChatService service;
@@ -57,11 +61,29 @@ class NewStartChatServiceTest {
   void setUp() {
     messages = mock(NewStartChatMessageRepository.class);
     users = mock(UserRepository.class);
+    profiles = mock(NewStartMemberProfileRepository.class);
     broadcaster = new RecordingBroadcaster();
 
     MutableClock clock = new MutableClock(START);
     NewStartChatRateLimiter limiter = new NewStartChatRateLimiter(clock, 3, Duration.ofSeconds(15));
-    service = new NewStartChatService(messages, users, limiter, broadcaster);
+    NewStartMemberProfileService memberProfileService = new NewStartMemberProfileService(profiles, users);
+    service = new NewStartChatService(messages, users, limiter, broadcaster, memberProfileService);
+
+    // 기본은 아무도 NewStart 별명을 아직 설정하지 않은 상태 — 이 경우 User.getDisplayName()으로
+    // 폴백한다(기존 테스트가 검증해 온 "nickname 우선 → loginId, ADMIN=관리자"와 동일한 결과).
+    lenient().when(profiles.findById(anyLong())).thenAnswer(
+        (Answer<Optional<NewStartMemberProfile>>) invocation ->
+            Optional.ofNullable(profilesById.get(invocation.getArgument(0))));
+    lenient().when(profiles.existsById(anyLong())).thenAnswer(
+        (Answer<Boolean>) invocation -> profilesById.containsKey(invocation.getArgument(0)));
+    lenient().when(profiles.findAllById(anyIterable())).thenAnswer((Answer<List<NewStartMemberProfile>>) invocation -> {
+      List<NewStartMemberProfile> result = new ArrayList<>();
+      for (Object id : (Iterable<?>) invocation.getArgument(0)) {
+        NewStartMemberProfile p = profilesById.get(((Number) id).longValue());
+        if (p != null) result.add(p);
+      }
+      return result;
+    });
 
     // save: id를 붙여 저장한 copy를 돌려준다(테스트 상태는 saved에만).
     when(messages.save(any(NewStartChatMessage.class))).thenAnswer((Answer<NewStartChatMessage>) invocation -> {
@@ -106,6 +128,12 @@ class NewStartChatServiceTest {
         .nickname(nickname).role(Role.STUDENT).build();
     setUserId(user, userId);
     usersById.put(userId, user);
+  }
+
+  /** NewStart 전용 별명이 이미 설정된(=seed됐거나 사용자가 직접 바꾼) 상태를 흉내낸다. */
+  private void addProfile(long userId, String displayNickname) {
+    profilesById.put(userId,
+        NewStartMemberProfile.builder().userId(userId).displayNickname(displayNickname).build());
   }
 
   private JwtTokenProvider.AuthenticatedPrincipal principal(long userId, String role) {
@@ -264,6 +292,49 @@ class NewStartChatServiceTest {
     assertThat(history.messages().get(0).displayName()).isEqualTo("히토");
     assertThat(history.messages().get(0).message()).doesNotContain("실명1");
     assertThat(history.hasMore()).isFalse();
+  }
+
+  @Test
+  @DisplayName("given NewStart 전용 별명이 설정된 회원 when send then users.nickname이 아니라 그 별명으로 broadcast한다")
+  void usesNewStartDisplayNicknameWhenSet() {
+    addUser(1L, "member1", "users공용닉네임");
+    addProfile(1L, "새출발러73");
+
+    NewStartChatService.NewStartChatSendResult result = service.send(principal(1L, "STUDENT"), "안녕하세요");
+
+    assertThat(result.view().displayName()).isEqualTo("새출발러73");
+    assertThat(broadcaster.events.get(0).displayName()).isEqualTo("새출발러73");
+  }
+
+  @Test
+  @DisplayName("given NewStart 전용 별명이 설정된 회원 when history 조회 then 과거 메시지도 현재 별명으로 보인다(메시지에 이름을 저장하지 않으므로 별도 마이그레이션 불필요)")
+  void historyUsesCurrentNewStartNicknameForPastMessages() {
+    addUser(1L, "hist01", "예전닉네임");
+    messages.save(NewStartChatMessage.builder().userId(1L).message("과거 메시지").build());
+
+    // 메시지를 보낸 "이후"에 회원이 NewStart 별명을 바꿨다고 가정 — 저장된 메시지 row에는
+    // 이름이 없으므로 조회 시점에 항상 최신 별명이 반영돼야 한다.
+    addProfile(1L, "바뀐새별명");
+
+    NewStartChatService.NewStartChatHistory history = service.history(null, null);
+
+    assertThat(history.messages().get(0).displayName()).isEqualTo("바뀐새별명");
+  }
+
+  @Test
+  @DisplayName("given NAVER 프로필의 실명(name)이 nickname과 다른 회원 when send then 화면에는 절대 실명이 나오지 않는다")
+  void realNameIsNeverExposedInChat() {
+    User user = User.builder().loginId("naver_abc123").password("x")
+        .name("홍길동") // NAVER response.name — 실제 실명일 수 있는 필드, 절대 표시하면 안 됨
+        .nickname("길동이다") // NAVER response.nickname — 이것만 표시 후보
+        .role(Role.STUDENT).build();
+    setUserId(user, 5L);
+    usersById.put(5L, user);
+
+    NewStartChatService.NewStartChatSendResult result = service.send(principal(5L, "STUDENT"), "가입인사");
+
+    assertThat(result.view().displayName()).isNotEqualTo("홍길동");
+    assertThat(broadcaster.events.get(0).displayName()).doesNotContain("홍길동");
   }
 
   /* ── helpers ────────────────────────────────────────────────────────── */
