@@ -127,7 +127,8 @@ class EasyCollectionIngestIdempotencyTest {
 
     service = new EasyCollectionIngestService(pipeline.businessRepository, sourceRepository,
         connectionRepository, runRepository, rawRepository, pipeline.txnRepository,
-        new EasyCsvFileAdapter(), new EasyCardsalesAdapter(), pipeline.importService);
+        new EasyCsvFileAdapter(), new EasyCardsalesAdapter(), new CrefiaCardsalesAdapter(),
+        pipeline.importService);
   }
 
   private static byte[] csv(String... rows) {

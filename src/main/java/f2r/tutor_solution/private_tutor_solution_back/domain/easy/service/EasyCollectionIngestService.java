@@ -57,6 +57,7 @@ public class EasyCollectionIngestService {
   private final EasyTransactionRepository txnRepository;
   private final EasyCsvFileAdapter csvFileAdapter;
   private final EasyCardsalesAdapter cardsalesAdapter;
+  private final CrefiaCardsalesAdapter crefiaCardsalesAdapter;
   private final EasyImportService importService;
 
   /** CSV 파일을 수집해 기존 import staging에 인계한다. 같은 파일 재업로드해도 중복 행이 생기지 않는다. */
@@ -141,6 +142,7 @@ public class EasyCollectionIngestService {
   private EasyCollectionAdapter resolveAdapter(String adapterCode) {
     return switch (adapterCode) {
       case EasyCardsalesAdapter.ADAPTER_CODE -> cardsalesAdapter;
+      case CrefiaCardsalesAdapter.ADAPTER_CODE -> crefiaCardsalesAdapter;
       default -> throw new IllegalArgumentException("지원하지 않는 어댑터: " + adapterCode);
     };
   }

@@ -205,7 +205,7 @@ class EasyCardsalesAdapterIntegrationTest {
         mappingRepository, journalService);
     ingestService = new EasyCollectionIngestService(businessRepository, sourceRepository,
         connectionRepository, runRepository, rawRepository, txnRepository,
-        new EasyCsvFileAdapter(), adapter, importService);
+        new EasyCsvFileAdapter(), adapter, new CrefiaCardsalesAdapter(), importService);
   }
 
   private void setupConnection(String label, String connectionRef, Long connectionId) {
