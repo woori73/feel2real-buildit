@@ -11,14 +11,17 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 /**
- * NewStart는 로그인 방법이 "네이버로 로그인" 하나뿐이다(#340 — NAVER-only V2 전환).
- * 회원가입·학생/강사 선택·ID/PW 가입은 존재하지 않는다. 실제 Thymeleaf 렌더로
- * fragments/_newstart_auth 치환까지 확인해 fragment 참조 오류도 함께 잡는다.
+ * 2026-09-21 cleanup — NewStart 네이버 로그인 V1({@code /oauth/naver/*})·V2
+ * ({@code /auth/naver/v2/*})·공식 Spring Security OAuth2 Client 구현(PR #341, 미병합)을
+ * 전부 제거하고 clean baseline으로 되돌렸다. 이 테스트는 그 baseline을 고정한다:
+ * NewStart는 여전히 회원가입·학생/강사 선택·ID/PW 로그인이 없고(방향은 유지), 로그인 버튼은
+ * 어떤 endpoint도 가리키지 않는 비활성 상태다. 다음 세션이 새 로그인을 구현하면 이 테스트도
+ * 그 구현에 맞춰 다시 바뀌어야 한다.
  *
  * <p>BuildIt/Wiki 등 다른 서비스가 쓰는 공용 fragments/_account_menu.html(회원가입/학생·강사
  * 가입/ID·PW 로그인 모달)은 이 테스트의 대상이 아니다 — 그쪽은 그대로 유지되어야 한다.
  */
-@DisplayName("NewStart 인증 UI 계약 — 네이버 로그인만 존재")
+@DisplayName("NewStart 인증 UI 계약 — clean baseline(로그인 비활성)")
 class NewStartAuthUiContractTest {
 
   private static TemplateEngine engine() {
@@ -34,33 +37,37 @@ class NewStartAuthUiContractTest {
   }
 
   @Test
-  @DisplayName("/newstart 홈: 네이버 로그인 링크만 있고 회원가입·공용 모달은 없다")
-  void indexHasNaverOnlyAuth() {
+  @DisplayName("/newstart 홈: 로그인 버튼이 비활성 상태이고 회원가입·공용 모달·구 네이버 endpoint가 없다")
+  void indexHasDisabledLoginPlaceholder() {
     String html = engine().process("newstart/index", new Context());
-    assertNaverOnlyAuth(html);
+    assertCleanBaseline(html);
   }
 
   @Test
-  @DisplayName("/newstart/chat: 네이버 로그인 링크만 있고 회원가입·공용 모달은 없다")
-  void chatHasNaverOnlyAuth() {
+  @DisplayName("/newstart/chat: 로그인 버튼이 비활성 상태이고 회원가입·공용 모달·구 네이버 endpoint가 없다")
+  void chatHasDisabledLoginPlaceholder() {
     String html = engine().process("newstart/chat", new Context());
-    assertNaverOnlyAuth(html);
+    assertCleanBaseline(html);
   }
 
-  private void assertNaverOnlyAuth(String html) {
+  private void assertCleanBaseline(String html) {
     assertThat(html).doesNotContain("th:replace"); // 치환 잔여물 없음
 
-    // 네이버 로그인 V2 링크 존재
-    assertThat(html).contains("href=\"/auth/naver/v2/start\"");
-    assertThat(html).contains("네이버로 로그인");
+    // 로그인 버튼은 비활성 상태 문구만 있고, 실제 이동 가능한 링크는 없다
+    assertThat(html).contains("네이버 로그인 준비 중");
 
-    // 공용 회원가입/로그인 모달·구버전 네이버 버튼 주입 대상 없음
+    // 과거/미병합 네이버 로그인 endpoint 중 어느 것도 남아있지 않음
+    assertThat(html).doesNotContain("href=\"/oauth/naver/start\"");
+    assertThat(html).doesNotContain("href=\"/auth/naver/v2/start\"");
+    assertThat(html).doesNotContain("href=\"/oauth2/authorization/naver\"");
+    assertThat(html).doesNotContain("/js/naver_login.js");
+
+    // 공용 회원가입/로그인 모달 없음(NewStart는 여전히 회원가입/ID-PW 없음)
     assertThat(html).doesNotContain("data-auth-signup");
     assertThat(html).doesNotContain("data-login-modal");
     assertThat(html).doesNotContain("login-modal-social");
-    assertThat(html).doesNotContain("/js/naver_login.js");
 
-    // 학생/강사 선택 문구 없음(계정 메뉴 등 NewStart 자체 마크업 범위 내)
+    // 학생/강사 선택 문구 없음
     assertThat(html).doesNotContain("학생 회원가입");
     assertThat(html).doesNotContain("강사 회원가입");
   }

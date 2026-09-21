@@ -67,14 +67,11 @@
       .catch(function () { showLoginRequired(); });
   }
 
-  /* ── 네이버 OAuth 실패/취소 안내 — callback의 ?login= 마커를 표시 후 URL에서 정리한다.
-     서버 오류 세부(credential/token 등)는 노출하지 않는다. ── */
-  var LOGIN_ALERTS = {
-    naver_failed: '네이버 로그인에 실패했습니다. 다시 로그인해 주세요.',
-    naver_invalid_state: '로그인 정보가 만료되었거나 유효하지 않습니다. 로그인을 다시 시도해 주세요.',
-    naver_cancelled: '네이버 로그인이 취소되었습니다. 다시 시도해 주세요.',
-    naver_unconfigured: '네이버 로그인이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.'
-  };
+  /* ── 로그인 실패/취소 안내 — callback의 ?login= 마커를 표시 후 URL에서 정리한다. 서버 오류
+     세부(credential/token 등)는 노출하지 않는다. 2026-09-21 cleanup: 네이버 로그인 V1/V2/공식
+     OAuth2 구현을 전부 제거해 지금은 이 마커를 만드는 backend가 없다 — 다음 로그인 구현이 자기
+     코드를 여기에 추가할 때까지 비워 둔다(메커니즘 자체는 범용이라 재사용). ── */
+  var LOGIN_ALERTS = {};
 
   function showLoginAlert() {
     if (!PAGE.loginAlert) return;
@@ -98,8 +95,8 @@
     PAGE.more.hidden = true;
     PAGE.empty.hidden = true;
     showLoginAlert();
-    // NewStart는 로그인 방법이 "네이버로 로그인" 하나뿐이라 #ns-chat-login-btn은 직접 이동하는
-    // <a href="/auth/naver/v2/start">다 — 공용 로그인 모달(openLoginModal)에 더 이상 의존하지 않는다.
+    // 2026-09-21 cleanup: #ns-chat-login-btn은 현재 disabled 버튼이다(네이버 로그인 V1/V2/공식
+    // OAuth2 구현 전부 제거, 다음 세션에서 재구현) — 클릭해도 아무 일도 일어나지 않는다.
     document.addEventListener('f2r:login', function () {
       loadCurrentUser();
     });

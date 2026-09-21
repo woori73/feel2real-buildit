@@ -201,7 +201,6 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
   - `POST /api/auth/logout`
   - `POST /api/auth/password-reset/request`
   - `POST /api/auth/password-reset/confirm`
-  - `GET /oauth/naver/start`, `GET /oauth/naver/callback` (네이버 소셜 로그인 리다이렉트, §3 참조)
   - `POST /api/users/students`
   - `GET /api/subjects`
 - Admin API:
@@ -392,33 +391,6 @@ LMS 주소가 성립하지 않는다(404).
   - `AuthController.login`
   - `LoginRequest`
   - `LoginResponse`
-
-### ✅ GET /oauth/naver/start
-
-- 목적: 네이버 OAuth 2.0 로그인 시작. CSRF 방지 state(서명값)를 HttpOnly 쿠키 `NAVER_OAUTH_STATE`로 심고 네이버 authorization URL로 302 리다이렉트한다. 서버 세션 없이 stateless(쿠키 서명 = `app.jwt.secret` 기반 HMAC, TTL 10분).
-- 현재 사용처:
-  - `static/js/naver_login.js`가 `/newstart`, `/newstart/chat`의 로그인 모달에 주입하는 "네이버로 로그인" 버튼 링크
-- 인증/권한: public(비로그인 진입).
-- Request:
-  - Query `returnUrl` (선택, 기본 `/newstart`): 로그인 성공 후 복귀할 **站内 경로만**. 서버 측 sanitize — `://`·`//`·백슬래시·제어문자·`|` 거부, 이중 디코딩 반복 검사(open redirect 방어). 외부 도메인은 조용히 `/newstart`로 강등된다.
-- Response:
-  - `NAVER_CLIENT_ID`/`NAVER_CLIENT_SECRET` 미설정: `302 /newstart?login=naver_unconfigured` (환경변수 없어도 부팅·기존 로그인 무영향).
-  - 정상: `302 https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=..&redirect_uri=..&state=..` + `Set-Cookie: NAVER_OAUTH_STATE`(HttpOnly, SameSite=Lax, Path=/, 10분).
-- 관련 코드: `NaverOAuthController.start`, `NaverOAuthStateService`, `NaverOAuthProperties`(`app.naver.oauth.*` ← `NAVER_CLIENT_ID`/`NAVER_CLIENT_SECRET`/`NAVER_OAUTH_REDIRECT_URI`)
-
-### ✅ GET /oauth/naver/callback
-
-- 목적: 네이버 리다이렉트 수신. state 검증 → code/token交換 → 프로필 조회 → `user_social_accounts`(provider=NAVER)로 회원 식별, 없으면 STUDENT 회원 생성 → 기존 `JwtTokenProvider`/`CookieUtil`로 `ACCESS_TOKEN` 쿠키 발급 → 로그인 전 요청한 `returnUrl`로 302. 네이버 회원을 별도 회원 체계로 두지 않고 Feel2Real 로그인을 그대로 재사용한다. role은 생성 시 STUDENT 고정 — ADMIN 자동 부여 없음.
-- 현재 사용처: 네이버 개발자센터에 등록한 redirect URI(환경설정 `NAVER_OAUTH_REDIRECT_URI`).
-- 인증/권한: public.
-- Request:
-  - Query `code`, `state`(네이버가 되돌려주는 start 시 발급값), `error`(취소 시).
-- Response (성공/실패 모두 쿠키 `NAVER_OAUTH_STATE` 삭제):
-  - 성공: `302 {returnUrl}` + `Set-Cookie: ACCESS_TOKEN`(HttpOnly JWT, 기존 로그인과 동일 경로) + `Cache-Control: private, no-store`.
-  - 사용자 취소(`error`/code 누락): `302 /newstart?login=naver_cancelled`.
-  - state 검증 실패(서명 불일치·만료·부정형): `302 /newstart?login=naver_invalid_state`.
-  - token/프로필 조회 실패 등: `302 {returnUrl}?login=naver_failed`(외부 상세 메시지는 노출하지 않는다).
-- 관련 코드: `NaverOAuthController.callback`, `NaverOAuthClient`, `NaverLoginService`, 스키마 [DOMAIN.md](DOMAIN.md) §4.54
 
 ### ✅ POST /api/auth/login-id/find
 

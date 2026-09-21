@@ -94,21 +94,12 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.controller.WikiLearningMaterialControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.service.WikiVisitServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.controller.WikiStatsControllerWebMvcTest"
-          # Deploy #331: NaverOAuthClient 생성자 ambiguity로 prd 기동 실패(자동 롤백). WebMvc/@MockitoBean
-          # 슬라이스는 bean을 mock으로 대체해 못 잡으므로, 실제 bean 인스턴스화까지 검증하는
-          # ApplicationContextRunner 테스트를 배포 게이트에 반드시 포함한다.
-          # Deploy #333: token endpoint 오경유(auth.naver.com) 침묵 실패 incident —
-          # 실제 요청 URI를 검증하는 NaverOAuthClientTest를 함께 게이트로 돌린다.
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientContextTest"
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthClientTest"
-          # 2026-09-20 E2E 재조사: state/콜백/회원 매핑/버튼 배선/채팅 페이지 계약은 Build Check(PR)에만
-          # 있었고 배포 게이트에는 빠져 있었다 — naver-only 회귀가 배포를 통과할 수 있었으므로 함께 돌린다.
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthStateServiceTest"
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverLoginServiceTest"
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerTest"
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.NaverOAuthControllerDisabledTest"
+          # 2026-09-21 cleanup(newstart): NewStart 네이버 로그인 V1/V2 구현을 전부 제거하고
+          # clean baseline으로 되돌렸다 — 위 각주가 가리키던 NaverOAuthClient/NaverOAuthController류
+          # 테스트는 대상 클래스와 함께 삭제됐다. 남은 NewStart 관련 회귀만 계속 게이트에 둔다.
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.FrontendAuthBootstrapTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.NewStartChatPageContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.NewStartAuthUiContractTest"
 
       - name: Upload deploy-gate test report
         if: always()
