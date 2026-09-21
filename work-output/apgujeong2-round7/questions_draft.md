@@ -56,7 +56,7 @@ Ms. Lee wanted to be a sports statistician because she liked to analyze sports w
 
 **Q7.** 글의 흐름에 알맞게 아래의 문장이 들어갈 곳은? (ref 기출Q8)
 "It may look like a quiet job, but the numbers can decide the winner of an important game."
-① ⓐ ② ⓑ ✔ ③ ⓒ(=Ⓐ 직전 위치) ④ ⓓ  ⓔ
+① ⓐ ② ⓑ ✔ ③ ⓒ(=Ⓐ 직전 위치) ④ ⓓ ⑤ ⓔ
 정답 ② — 정의 문장(ⓐ)과 구체적 사례(Last week) 사이의 논평. ⓐ~ⓔ는 지문 내 위치 표시.
 
 **Q8.** 글의 내용으로 유추할 수 있는 것이 아닌 것은? (ref 기출Q9)
@@ -180,3 +180,122 @@ Reporter: Welcome to Sports Voice! Today we meet three people who work in sports
 ## BATCH 2 확정 정답
 Q11① Q12③ Q13① Q14③ Q15② Q16③ Q17② Q18③ Q19④ Q20②
 B1+B2 누적: ①3 ②5 ③6 ④4 ⑤2 → B3/B4에서 ⑤(6개)·①(5개) 중심 보정, ③ 억제.
+
+---
+
+# BATCH 3 — Q21~Q30
+
+## [21~26] 공통지문 F — 디지털 발자국 장문(4문단)
+source: L6 Word List+본문 A/B/C를 3인칭 설명문으로 재구성. ref: 기출 [21-25] Hula 장문 포맷(주제/주제연계 빈칸/영영 순방향/(A)동의미 전환/어법 ⓐ~)+내용 세부 1문항 추가.
+
+지문 F (ⓐ~ⓔ + (A) 포함):
+P1) When you walk on sand, you leave a footprint. Your online life leaves a footprint, too. ⓐA digital footprint is a mark who you leave when you use the Internet. Everything you do online — the photos you share, the comments you write, the forms you fill out — leaves a record, and the record can stay forever.
+P2) How is a bad footprint made? Last year, Bella took a picture of her brother and shared it on social media. (A) The picture was so interesting that someone made a copy of it with bad comments. ⓑThe copies was spread here and there. ⓒShe asked Happy Digital Laundry to removing the copies, but some of them still remained on personal devices.
+P3) Ads are another way to lose your information. Jihun saw an advertisement that said he could get a new smartphone for free. ⓓHe clicked on it without thinking much and filled out his personal information. Instead of a gift, he has received useless emails and phone calls from unknown numbers ever since.
+P4) Can we keep our footprint clean? First, check the source before you click on a link. Second, never fill out a form from an unknown company. Remember that it can be very dangerous to share your information with strangers. ⓔYou should to think twice before you share anything online, because a clean footprint is the best protection.
+(어법 설계: ⓐ 관계대명사 who→that/which ✗ / ⓑ copies was→were 수일치 ✗ / ⓒ ask+목적어+to removing→to remove ✗ / ⓓ 옳음(본문 C ③ 원문형) / ⓔ should to think→should think ✗ → ⓓ만 정답)
+
+**Q21.** 글의 주제로 가장 적절한 것은? (ref 기출Q21)
+① How Bella deleted her post from social media
+② Why people enjoy sharing photos online
+③ A service that cleans online records for people
+④ How to fill out a form to get a free gift
+⑤ What a digital footprint is and how to keep it clean ✔
+정답 ⑤ — ①③④는 본문 세부에 머무는 오답(기출 Q21 오답 설계 방식).
+
+**Q22.** 글의 주제에 알맞게 빈칸에 들어갈 말은? (ref 기출Q22 — 요약문 박스+단어 2열)
+[박스] A digital footprint is the record of what you do online, and it can stay forever. So we should be careful about what we ______ and what we click on.
+① share ② erase
+③ copy ④ delete
+⑤ spread
+정답 ① (본문 B ⑬ "When you share things online, be careful." 대응)
+
+**Q23.** 글에서 찾아볼 수 없는 단어의 영영풀이는? (ref 기출Q23 — 순방향)
+① a remark or message on a post (comment ✓P1·P2)
+② not helpful or effective (useless ✓P3)
+③ likely to cause harm or injury (dangerous ✓P4)
+④ belonging to one person (personal ✓P2·P3)
+⑤ to communicate with someone (contact — 지문 F 없음 ✔; L6 Word List 원정의)
+정답 ⑤
+
+**Q24.** (A)와 같은 의미인 것은? (ref 기출Q24 — so…that 동의미 전환)
+① It was such an interesting picture that someone made a copy of it with bad comments. ✔
+② The picture was too interesting for someone to make a copy of it with bad comments.
+③ The picture was not interesting enough for anyone to make a copy of it.
+④ The picture was interesting enough to make a copy of it with bad comments.
+⑤ The picture was so interesting for someone that made a copy of it with bad comments.
+정답 ① (so+형용사+that = such+a+형용사+명사. ②③ 의미 역전, ⑤ 구조 오류)
+
+**Q25.** ⓐ~ⓔ 중 어법상 옳은 것은? (ref 기출Q25)
+①ⓐ ②ⓑ ③ⓒ ④ⓓ ✔ ⑤ⓔ
+정답 ④
+
+**Q26.** 글의 내용과 일치하는 것은? (ref 기출Q1 계열 — 공통지문 세부)
+① Bella deleted all the copies of the picture on personal devices.
+② Jihun has received useless emails and phone calls after filling out his information. ✔
+③ Happy Digital Laundry is a place where people wash their clothes.
+④ A digital footprint disappears as soon as you delete your post.
+⑤ Bella made a copy of Jihun's information and spread it online.
+정답 ② (①④ 사실 반전, ③ laundry 함정, ⑤ 주체 뒤집기)
+
+## [27] 독립 — 지훈의 온라인 안전 인터뷰 대화
+source: L6 본문 B/C 상황+Grammar1·2 종합 재구성. ref: 기출Q26 (9턴 인터뷰 대화, 내용일치).
+
+대화 G (9턴):
+Reporter: Jihun, many students use social media every day. What do you usually do online?
+Jihun: I like watching short videos and sharing photos with my friends. I often hear my name called in the comments.
+Reporter: Did you ever have a problem with your personal information?
+Jihun: Yes. Last year I filled out a form to get a free game item. Immediately, unknown numbers started calling me.
+Reporter: What did your parents say?
+Jihun: They told me to delete my information and asked me to stop clicking on ads. My mom kept asking me why I clicked on it without thinking.
+Reporter: How do you feel now?
+Jihun: I feel embarrassed every time I see that record. I want my online history to be clean, so now I check the source before I click on a link.
+Reporter: Great advice! Thanks for sharing your story.
+
+**Q27.** 대화의 내용과 일치하는 것은? (ref 기출Q26)
+① Jihun started receiving phone calls before he filled out the form.
+② Jihun's parents told him to keep clicking on the ads.
+③ Jihun deleted all the records about him from the Internet.
+④ Jihun checks the source only when his parents ask him to.
+⑤ Jihun learned to be careful after his personal information caused him trouble. ✔
+정답 ⑤ (① 시간 반전, ② 내용 뒤집기, ④ only 함정 — 기출 Q9/Q26 오답 설계)
+
+**Q28.** 어법상 옳은 것은? (ref 기출Q27 — 독립 5문장; 2학기 문법 지각동사·want/tell/ask)
+① I saw the little boy cross the street alone. ✔
+② Did you hear someone to knock on the door?
+③ The teacher told we should open our books.
+④ We watched the sun risen over the sea.
+⑤ He wants his friend helping him with the contract.
+정답 ① (see+목적어+원형부정사 [L6 Grammar1 B1 원문]. ② hear+목적어+원형/-ing, ③ told us to open, ④ watched+목적어+원형/-ing, ⑤ want+목적어+to부정사)
+
+**Q29.** (A)를 (B)로 바꿨을 때 올바르지 않은 것은? (ref 기출Q28 — (A)(B) 쌍 5, 각 2행)
+① (A) The agent hurried to answer the client's call.
+(B) The agent hurried so that he could answer the client's call.
+② (A) This form is too long for me to fill out.
+(B) This form is so long that I can't fill it out.
+③ (A) Jihun was too embarrassed to share his photos again.
+(B) Jihun was too embarrassed that he didn't share his photos again. ✔
+④ (A) Ms. Lee is skilled enough to analyze the data.
+(B) Ms. Lee is so skilled that she can analyze the data.
+⑤ (A) The file is so large that I can't delete it.
+(B) The file is too large for me to delete.
+정답 ③ (too…that 구조 오류 — 기출 Q28 ⑤ 'too tired that'과 동일 지점)
+
+## [30] 독립 — 영어 퀴즈 쇼 단문
+source: L5 본문C 정의 + L6 본문B ⑪ 원문. ref: 기출Q29 (Eiffel quiz show 단문, 내용 옳은 것).
+
+지문 H:
+Welcome to my English quiz show! I'm Mr. Kim. Here is the first question. A sports statistician is someone who collects data and studies numbers about sports games. Is this true or false? 3, 2, 1. The answer is true! Statistics can decide the winner of an important game. Now the second question. If you delete your post, all the copies of it disappear from the Internet. True or false? The answer is false! Some copies may remain on personal devices even after you delete your post. So think twice before you share anything online.
+
+**Q30.** 글의 내용으로 옳은 것은? (ref 기출Q29)
+① The answer to the first question about the statistician is false.
+② Deleting a post removes all the copies of it on the Internet.
+③ Mr. Kim asks two questions, and both of the answers are true.
+④ According to the show, some copies may remain on personal devices after deletion. ✔
+⑤ Mr. Kim tells the students to share information before checking the source.
+정답 ④ (①③ 사실 반전, ⑤ 지시 왜곡 — 기출 Q29 '수치·방향 함정' 방식)
+
+## BATCH 3 확정 정답
+Q21⑤ Q22① Q23⑤ Q24① Q25④ Q26② Q27⑤ Q28① Q29③ Q30④
+B3: ①3 ②1 ③1 ④2 ⑤3 (⑤·① 보정 목표 부합)
+B1+B2+B3 누적: ①6 ②6 ③7 ④6 ⑤5 → B4에서 ①2 ②2 ③1 ④2 ⑤3 배분. 3연속 없음 확인.
