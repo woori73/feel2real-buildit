@@ -1298,8 +1298,17 @@ NewStart AI 답변의 근거가 되는 공식/감사/전자책/카페/사례/규
   `CASE|RULE|PREREQUISITE|SIMILAR|CONTRADICTS`, UNIQUE(from,to,type)로 중복 관계 방지.
   `CONTRADICTS`는 공식자료 내부 충돌(연체 10일 vs 31일)을 추론으로 해소하지 않고 보존하는 용도.
 - `newstart_knowledge_status_log` — 상태 변경 감사 이력(`from_status`/`to_status`/`changed_by`/`change_reason`).
-  `NewstartKnowledgeService.changeStatus`가 쓰기하지만 **전이 허용 범위 가드는 없다** — 임의 상태→임의 상태
-  전환(ACTIVE 승격 포함)이 가능하므로 가드는 별도 작업(PR #353).
+  승인 계약(Java, migration 없음): 허용 전이는 `DRAFT→REVIEW/ARCHIVED`,
+  `REVIEW→ACTIVE/ARCHIVED/DRAFT`, `ACTIVE→ARCHIVED`, `ARCHIVED→DRAFT/REVIEW`만 통과하고
+  `DRAFT→ACTIVE` 직행·`update()` 경유 ACTIVE 우회는 거부된다. `ACTIVE`/`ARCHIVED` 전환에는
+  `reason` 필수이며 모든 전이는 status_log에 기록된다(`keepReview`는 `REVIEW→REVIEW` 메모 기록).
+  `DELETE`는 하드 삭제가 아니라 `ARCHIVED` 처리다.
+- REVIEW 승인 6종 경고(`CONFLICT_RISK|UNKNOWN_RISK|MISSING_SOURCE|HISTORICAL|CASE_DERIVED|
+  UNCLEAR_AUTHORITY`)는 기존 필드에서 파생하며 차단이 아니라 관리자 확인 대상이다 —
+  `OFFICIAL`/`CASE`/`EBOOK` 모두 동일 `approve(…, confirmed)` workflow로 `ACTIVE` 승격 가능하고,
+  `CONFLICT_REVIEW` 태그·`CONTRADICTS` relation은 승인 후에도 보존된다.
+  경고가 있는데 `confirmed` 없이 승인하면 409(`CONFIRMATION_REQUIRED`).
+  `findEffective()`는 `ACTIVE`로 한정된다(ADMIN 검토함은 `findByStatus(REVIEW)` 별도 경로).
 - REVIEW ingest(`NewstartOfficialReviewIngestService`)는 `docs/newstart/research-official/`만 읽고
   저장 시 `status`를 강제로 `REVIEW`로 둔다(비-REVIEW raw status는 downgraded 카운트). 동일 `title`
   재ingest는 skip(멱등). `top10_questions.json`·`MANIFEST.md`·`source_registry.json`은 ingest하지 않는다.
