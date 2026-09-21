@@ -15,6 +15,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCol
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRunStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionSource;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionTriggerType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionConnectionRepository;
@@ -30,9 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * PHASE 1 수집 파이프라인 오케스트레이션 — 파일/어댑터 → run → parse → 3단계 dedupe →
@@ -59,6 +65,13 @@ public class EasyCollectionIngestService {
   private final EasyCardsalesAdapter cardsalesAdapter;
   private final CrefiaCardsalesAdapter crefiaCardsalesAdapter;
   private final EasyImportService importService;
+
+  /**
+   * Programmatic transactions make the fetch boundary explicit and avoid self-invocation.
+   * Direct unit constructions may omit it; Spring always injects the application manager.
+   */
+  @Autowired
+  private PlatformTransactionManager transactionManager;
 
   /** CSV 파일을 수집해 기존 import staging에 인계한다. 같은 파일 재업로드해도 중복 행이 생기지 않는다. */
   @Transactional
@@ -91,53 +104,115 @@ public class EasyCollectionIngestService {
   }
 
 /**
-    * 어댑터 기반 수집 — Cardsales 등 외부 API 연동 어댑터를 통해 수집한다.
-    * connectionRef는 {@link EasyCollectionConnection#connectionRef}에 저장된 opaque reference다.
-    * since로 증분 수집 가능(초기 전체 수집 시 null).
-    */
-  @Transactional
+   * Provider orchestration. The provider call is always executed with Spring transaction
+   * propagation suspended. Only run creation, completion, and failure recording use short
+   * transactions.
+   */
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public EasyCollectionIngestResponse ingestByAdapter(Long businessId, String label,
-      String adapterCode, LocalDateTime since, int limit) {
-    EasyBusiness business = requireActiveBusiness(businessId);
+      String adapterCode, EasyCollectionTriggerType triggerType, LocalDateTime since, int limit) {
     EasyCollectionAdapter adapter = resolveAdapter(adapterCode);
-    EasyCollectionSource source = sourceRepository.findByCode(adapterCode)
-        .orElseThrow(() -> new IllegalArgumentException("수집원을 찾을 수 없습니다: " + adapterCode));
+    EasyCollectionTriggerType actualTrigger = triggerType == null
+        ? EasyCollectionTriggerType.MANUAL : triggerType;
+    AdapterFetchContext context = inTransaction(
+        () -> startAdapterRun(businessId, label, adapter, actualTrigger));
+
+    try {
+      adapter.validateConnection(context.connectionRef());
+      List<CollectionParsedRow> parsed =
+          adapter.fetch(context.connectionRef(), since, limit);
+      return inTransaction(() -> completeAdapterRun(context, parsed));
+    } catch (EasyCollectionException e) {
+      return inTransaction(() -> failAdapterRun(context, e));
+    } catch (RuntimeException e) {
+      EasyCollectionException safe = new EasyCollectionException(
+          EasyCollectionErrorCode.PROVIDER_TEMPORARY,
+          "Provider collection failed temporarily.", e);
+      return inTransaction(() -> failAdapterRun(context, safe));
+    }
+  }
+
+  private AdapterFetchContext startAdapterRun(Long businessId, String label,
+      EasyCollectionAdapter adapter, EasyCollectionTriggerType triggerType) {
+    EasyBusiness business = requireActiveBusiness(businessId);
+    EasyCollectionSource source = sourceRepository.findByCode(adapter.adapterCode())
+        .orElseThrow(() -> new IllegalArgumentException(
+            "수집원을 찾을 수 없습니다: " + adapter.adapterCode()));
     EasyCollectionConnection connection = findOrCreateConnection(business, source, label);
     String connectionRef = connection.getConnectionRef();
     if (connectionRef == null || connectionRef.isBlank()) {
-      throw new IllegalStateException("연결 참조(connectionRef)가 설정되지 않았습니다. 관리자 콘솔에서 등록하세요.");
+      throw new EasyCollectionException(EasyCollectionErrorCode.CONFIGURATION_ERROR,
+          "Collection connection is not configured.");
     }
-    adapter.validateConnection(connectionRef);
 
-    // 연결을 비관적 락으로 조회해 동시 collection 실행을 원자적으로 방지
-    EasyCollectionConnection lockedConnection = connectionRepository.findByIdWithLock(connection.getConnectionId())
-        .orElseThrow(() -> new IllegalStateException("연결을 찾을 수 없습니다: " + connection.getConnectionId()));
-
-    // 동일 connection에 RUNNING 중인 run이 있는지 락 안에서 원자적으로 확인
-    if (runRepository.existsByConnection_ConnectionIdAndStatus(lockedConnection.getConnectionId(), EasyCollectionRunStatus.RUNNING)) {
+    EasyCollectionConnection lockedConnection =
+        connectionRepository.findByIdWithLock(connection.getConnectionId())
+            .orElseThrow(() -> new IllegalStateException(
+                "연결을 찾을 수 없습니다: " + connection.getConnectionId()));
+    if (runRepository.existsByConnection_ConnectionIdAndStatus(
+        lockedConnection.getConnectionId(), EasyCollectionRunStatus.RUNNING)) {
       throw new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요.");
     }
 
     EasyCollectionRun run = runRepository.save(EasyCollectionRun.builder()
         .connection(lockedConnection)
         .business(business)
-        .triggerType("SCHEDULED")
-        .sourceFilename(adapterCode + "-" + LocalDateTime.now().toLocalDate())
+        .triggerType(triggerType.name())
+        .sourceFilename(adapter.adapterCode() + "-" + LocalDateTime.now().toLocalDate())
         .adapterCode(adapter.adapterCode())
         .adapterVersion(adapter.adapterVersion())
         .build());
-
-    List<CollectionParsedRow> parsed;
-    try {
-      parsed = adapter.fetch(connectionRef, since, limit);
-    } catch (IllegalArgumentException | IllegalStateException e) {
-      run.fail(e.getMessage());
-      return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(run),
-          List.of(e.getMessage()));
-    }
-    return ingestParsedRows(run, lockedConnection, business, adapterCode, adapterCode, adapterCode,
-        parsed);
+    return new AdapterFetchContext(run.getRunId(), businessId,
+        lockedConnection.getConnectionId(), lockedConnection.getConnectionRef(),
+        source.getCode(), adapter.adapterCode());
   }
+
+  private EasyCollectionIngestResponse completeAdapterRun(AdapterFetchContext context,
+      List<CollectionParsedRow> parsed) {
+    EasyCollectionRun run = runRepository.findById(context.runId())
+        .orElseThrow(() -> new IllegalStateException(
+            "수집 실행을 찾을 수 없습니다: " + context.runId()));
+    EasyCollectionConnection connection = connectionRepository.findById(context.connectionId())
+        .orElseThrow(() -> new IllegalStateException(
+            "연결을 찾을 수 없습니다: " + context.connectionId()));
+    EasyBusiness business = requireActiveBusiness(context.businessId());
+    return ingestParsedRows(run, connection, business, context.sourceCode(),
+        context.adapterCode(), context.adapterCode(), parsed);
+  }
+
+  private EasyCollectionIngestResponse failAdapterRun(AdapterFetchContext context,
+      EasyCollectionException failure) {
+    EasyCollectionRun run = runRepository.findById(context.runId())
+        .orElseThrow(() -> new IllegalStateException(
+            "수집 실행을 찾을 수 없습니다: " + context.runId()));
+    EasyCollectionConnection connection = connectionRepository.findById(context.connectionId())
+        .orElseThrow(() -> new IllegalStateException(
+            "연결을 찾을 수 없습니다: " + context.connectionId()));
+    run.fail(failure.safeSummary());
+    if (failure.errorCode() == EasyCollectionErrorCode.AUTH_REQUIRED) {
+      connection.markNeedsReauth();
+      connectionRepository.save(connection);
+    }
+    runRepository.save(run);
+    return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(run),
+        List.of(failure.safeSummary()));
+  }
+
+  private <T> T inTransaction(Supplier<T> action) {
+    if (transactionManager == null) {
+      return action.get();
+    }
+    return new TransactionTemplate(transactionManager).execute(status -> action.get());
+  }
+
+  private record AdapterFetchContext(
+      Long runId,
+      Long businessId,
+      Long connectionId,
+      String connectionRef,
+      String sourceCode,
+      String adapterCode
+  ) {}
 
   private EasyCollectionAdapter resolveAdapter(String adapterCode) {
     return switch (adapterCode) {
