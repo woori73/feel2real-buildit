@@ -6,6 +6,31 @@
 - 비회원 HTML 직접 접근은 `/?login=required&returnUrl=...`로 이동하고, JSON/API는 401을 반환한다. 로그인 성공 후 안전한 내부 Wiki URL로 복귀한다.
 - ADMIN/TUTOR의 기존 역할 권한과 데이터 모델은 변경하지 않는다.
 
+## NewStart Official Updates V1 (2026-09)
+
+### ✅ GET /api/newstart/updates
+
+- 목적: NewStart 홈과 전체 업데이트 화면에 공식 업데이트를 제공한다.
+- 인증/권한: 공개. 서버가 `reviewStatus=PUBLISHED`만 조회한다.
+- Query: `sourceType` 선택값 `NEWSTART_FUND|FSC|CCRS|FSS|PUBLIC_AGENCY`.
+- Response: `[{ updateId, sourceType, sourceName, title, summary, originalUrl, publishedAt, effectiveFrom, effectiveTo, category, reviewStatus, featured }]`.
+- 정렬: `featured DESC`, `publishedAt DESC`, `updateId DESC`.
+- 원문: `originalUrl`은 검토된 공식 URL이며 클라이언트가 URL을 생성하지 않는다.
+- 화면: `/newstart` 최신 3건, `/newstart/updates` 전체 목록.
+
+### ✅ ADMIN /api/admin/newstart/updates
+
+- 인증/권한: `ROLE_ADMIN`.
+- `POST /api/admin/newstart/updates`: 후보를 항상 `REVIEW`로 등록한다. 자동 게시하지 않는다.
+- `GET /api/admin/newstart/updates?sourceType=&status=`: 검토 목록.
+- `POST /api/admin/newstart/updates/{id}/publish`: REVIEW 자료 게시. 공식 원문 URL이 없으면 400.
+- `POST /api/admin/newstart/updates/{id}/reject`: REVIEW 자료 거절.
+- `POST /api/admin/newstart/updates/{id}/review`: REJECTED 자료 재검토.
+- `POST /api/admin/newstart/updates/{id}/archive`: PUBLISHED 자료 보관.
+- `POST /api/admin/newstart/updates/{id}/featured?enabled=true|false`: 게시 자료 주요 표시.
+- 중복 방지 우선순위: 공식 문서 ID → 정규화 URL → 출처 유형+정규화 제목+발표일.
+- DB: `newstart_official_updates` (V988).
+
 ## NewStart AI (2026-09)
 
 ### ✅ POST /api/newstart/ai/chat
