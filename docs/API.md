@@ -3996,3 +3996,14 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - scheduler도 readiness gate를 적용하므로 `DISABLED|NOT_CONFIGURED|UNVERIFIED|NEEDS_REAUTH` provider는 adapter에 진입하지 않는다.
 - CREFIA는 계속 `UNVERIFIED`이며 manual/scheduler 모두 실제 network call에 도달하지 않는다.
 - stale/deadline 실패는 checkpoint를 advance하거나 lifecycle/accounting transaction을 생성하지 않는다. 자동 confirm은 계속 금지한다.
+
+
+### EASY 사업용 카드 Phase 5A 서비스 계약
+
+- `EasyBusinessCardAccountingService`는 provider-neutral 내부 service foundation이며 public/provider API endpoint를 추가하지 않는다.
+- purchase 관찰은 expense candidate와 동일 금액 payable을 생성하지만 `easy_transactions`/journal을 자동 생성하지 않는다.
+- bank payment settlement은 allocation을 통해 payable만 감소시키며 비용을 추가하지 않는다. 하나의 payment→여러 payable, 하나의 payable→여러 payment를 허용한다.
+- cancellation/correction은 original event relation을 보존한다. cancellation은 outstanding을 초과할 수 없다.
+- external ID 우선, 없으면 provider/connection/safe-card-token/type/time/amount/reference 기반 SHA-256 fingerprint로 멱등성을 보장한다.
+- full PAN, credential, raw provider secret을 입력·응답·로그에 노출하지 않는다. 실제 provider endpoint와 network 호출은 Phase 5A 범위 밖이다.
+- 승인 전 상태는 `PENDING_REVIEW`이며 AUTO CONFIRM은 금지된다.

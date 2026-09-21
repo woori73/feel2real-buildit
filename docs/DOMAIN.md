@@ -1374,3 +1374,15 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - provider fetch는 계속 DB transaction 밖에서 실행된다. orchestration deadline 초과는 FAILED이며 checkpoint, lifecycle event, import/transaction/ledger를 성공 처리하지 않는다.
 - Phase 3B의 connection+dataset checkpoint는 성공 persistence transaction에서만 advance한다. provider event는 accounting transaction이 아니며 AUTO CONFIRM은 금지된다.
 - CREFIA verification allow-list는 비어 있고 UNVERIFIED 상태를 유지한다.
+
+
+### 4.61 EASY 사업용 카드 회계 foundation (Phase 5A)
+
+- `easy_card_events`는 provider-neutral 관찰이며 `APPROVAL/PURCHASE/CANCELLATION/CORRECTION/BILLING/PAYMENT_SETTLEMENT`을 구분한다. raw/provider event는 `easy_transactions`가 아니다.
+- 카드 식별은 provider-safe token의 SHA-256, masked identifier, last4만 저장한다. full PAN과 credential은 저장하지 않는다.
+- PURCHASE는 review 상태의 expense candidate와 `easy_card_payables` 의무를 만든다. PAYMENT_SETTLEMENT은 payable을 줄일 뿐 새 expense를 만들지 않는다.
+- payable은 OPEN/PARTIALLY_SETTLED/SETTLED/CANCELLED 상태와 `original = cancelled + settled + outstanding` 불변식을 가진다.
+- `easy_card_settlement_allocations`은 은행 카드대금 출금과 payable의 many-to-many/부분결제를 지원한다. billing group은 묶음 관찰일 뿐 비용이 아니다.
+- 모든 event는 기본 `PENDING_REVIEW`다. Phase 5A는 자동 transaction/journal posting 및 AUTO CONFIRM을 제공하지 않는다.
+- `CARD_PAYABLE`은 LIABILITY 계정 foundation이다. 기존 INCOME/EXPENSE/ASSET transaction posting은 변경하지 않는다.
+- CREFIA와 BUSINESS_CARD 실제 provider는 계속 비활성/미구현이며 외부 network call은 없다.
