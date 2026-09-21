@@ -21,6 +21,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCol
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRunStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionSource;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionTriggerType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionConnectionRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository;
@@ -113,7 +114,7 @@ class EasyCollectionSchedulerServiceTest {
         "CARDSales-2026-09-20", "CARDSales", "v1-skeleton",
         6, 6, 0, 0, null, null,
         LocalDateTime.now(), LocalDateTime.now());
-    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
+    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt()))
         .thenReturn(new EasyCollectionIngestResponse(mockRunResponse, List.of()));
 
     schedulerService = new EasyCollectionSchedulerService(
@@ -155,7 +156,7 @@ class EasyCollectionSchedulerServiceTest {
 
     assertThat(run).isNotNull();
     assertThat(run.status()).isEqualTo("SUCCESS");
-    verify(ingestService).ingestByAdapter(BIZ, "default", "CARDSales", null, 5000);
+    verify(ingestService).ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
   }
 
   @Test
@@ -190,7 +191,7 @@ class EasyCollectionSchedulerServiceTest {
   void triggerManualConnection_alreadyRunning_throws() {
     setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
     // ingestByAdapter 내부에서 락으로 RUNNING 체크 후 예외 던지도록 모킹
-    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
+    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt()))
         .thenThrow(new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요."));
 
     assertThatThrownBy(() -> schedulerService.triggerManualCollection(BIZ, 200L))
@@ -207,9 +208,9 @@ class EasyCollectionSchedulerServiceTest {
 
     schedulerService.runScheduledCollections();
 
-    verify(ingestService).ingestByAdapter(BIZ, "account-A", "CARDSales", null, 5000);
-    verify(ingestService, never()).ingestByAdapter(anyLong(), eq("account-B"), anyString(), any(), anyInt());
-    verify(ingestService, never()).ingestByAdapter(anyLong(), eq("account-C"), anyString(), any(), anyInt());
+    verify(ingestService).ingestByAdapter(BIZ, "account-A", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
+    verify(ingestService, never()).ingestByAdapter(anyLong(), eq("account-B"), anyString(), any(), any(), anyInt());
+    verify(ingestService, never()).ingestByAdapter(anyLong(), eq("account-C"), anyString(), any(), any(), anyInt());
   }
 
   @Test
@@ -228,7 +229,7 @@ class EasyCollectionSchedulerServiceTest {
 
     schedulerService.runScheduledCollections();
 
-    verify(ingestService, never()).ingestByAdapter(anyLong(), eq("no-ref"), anyString(), any(), anyInt());
+    verify(ingestService, never()).ingestByAdapter(anyLong(), eq("no-ref"), anyString(), any(), any(), anyInt());
   }
 
   @Test
@@ -236,13 +237,13 @@ class EasyCollectionSchedulerServiceTest {
   void runScheduledCollections_skipsRunningRun() {
     setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
     // ingestByAdapter에서 RUNNING 감지 시 예외 던지도록 모킹
-    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
+    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt()))
         .thenThrow(new IllegalStateException("이미 실행 중인 수집이 있습니다. 완료 후 다시 시도하세요."));
 
     schedulerService.runScheduledCollections();
 
     // ingestByAdapter가 호출되었으나 예외 발생 후 로그만 남기고 계속 진행
-    verify(ingestService).ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt());
+    verify(ingestService).ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt());
   }
 
   @Test
@@ -251,7 +252,7 @@ class EasyCollectionSchedulerServiceTest {
     setupConnection("default", CONN_REF, EasyCollectionConnectionStatus.ACTIVE, 200L);
     // IllegalStateException은 RUNNING 중복 등으로 간주되어 별도 catch 블록에서 처리됨
     // 인증 실패를 시뮬레이트하려면 다른 예외 타입을 사용해야 함 (RuntimeException 등)
-    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), anyInt()))
+    when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt()))
         .thenThrow(new RuntimeException("401 Unauthorized: 인증 실패"));
 
     schedulerService.runScheduledCollections();
