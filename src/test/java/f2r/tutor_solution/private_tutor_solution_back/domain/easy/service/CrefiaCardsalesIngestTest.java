@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -133,8 +134,8 @@ class CrefiaCardsalesIngestTest {
     for (EasyCollectionErrorCode code : List.of(
         EasyCollectionErrorCode.PROVIDER_TEMPORARY, EasyCollectionErrorCode.INVALID_DATA)) {
       ReflectionTestUtils.setField(connection, "status", EasyCollectionConnectionStatus.ACTIVE);
-      when(crefiaAdapter.fetch(any(), any(), any(Integer.class)))
-          .thenThrow(new EasyCollectionException(code, "Safe provider failure."));
+      doThrow(new EasyCollectionException(code, "Safe provider failure."))
+          .when(crefiaAdapter).fetch(any(), any(), any(Integer.class));
       EasyCollectionIngestResponse result = collect(EasyCollectionTriggerType.MANUAL);
       assertThat(result.run().status()).isEqualTo("FAILED");
       assertThat(result.run().errorSummary()).startsWith(code.name() + ":");
