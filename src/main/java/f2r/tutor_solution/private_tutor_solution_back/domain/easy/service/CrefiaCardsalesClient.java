@@ -55,6 +55,7 @@ public class CrefiaCardsalesClient {
   private final HttpClient http;
   private final ObjectMapper mapper;
   private final Duration requestTimeout;
+  private final boolean endpointContractVerified;
 
   private String cachedToken;
   private long tokenExpiresAtMillis;
@@ -66,6 +67,12 @@ public class CrefiaCardsalesClient {
 
   public CrefiaCardsalesClient(String baseUrl, String approvalPath, String purchasePath,
       String depositPath, HttpClient http, ObjectMapper mapper, Duration requestTimeout) {
+    this(baseUrl, approvalPath, purchasePath, depositPath, http, mapper, requestTimeout, true);
+  }
+
+  private CrefiaCardsalesClient(String baseUrl, String approvalPath, String purchasePath,
+      String depositPath, HttpClient http, ObjectMapper mapper, Duration requestTimeout,
+      boolean endpointContractVerified) {
     this.baseUrl = baseUrl != null && !baseUrl.isBlank() ? baseUrl : DEFAULT_BASE_URL;
     this.approvalPath = approvalPath;
     this.purchasePath = purchasePath;
@@ -73,13 +80,17 @@ public class CrefiaCardsalesClient {
     this.http = http;
     this.mapper = mapper != null ? mapper : new ObjectMapper();
     this.requestTimeout = requestTimeout != null ? requestTimeout : Duration.ofSeconds(15);
+    this.endpointContractVerified = endpointContractVerified;
   }
 
-  /** 기본 클라이언트 (운영 base URL, connect 5초). */
+  /**
+   * Production default is deliberately unverified and therefore cannot make dataset calls.
+   * The placeholder paths remain documentation only until an official contract is supplied.
+   */
   public static CrefiaCardsalesClient createDefault() {
-    return new CrefiaCardsalesClient(DEFAULT_BASE_URL,
+    return new CrefiaCardsalesClient(DEFAULT_BASE_URL, APPROVAL_PATH, PURCHASE_PATH, DEPOSIT_PATH,
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
-        new ObjectMapper(), Duration.ofSeconds(15));
+        new ObjectMapper(), Duration.ofSeconds(15), false);
   }
 
   /** 조회 조건 — 가맹점 식별 + 기간. */
@@ -96,8 +107,8 @@ public class CrefiaCardsalesClient {
    */
   public synchronized String issueToken(CrefiaCredentialProvider.Credentials credentials) {
     if (credentials == null || !credentials.present()) {
-      throw new IllegalStateException(
-          "매통조 이용기관 자격증명이 없습니다. 협회 이용기관 승인 후 CREFIA_CLIENT_ID/SECRET을 등록하세요.");
+      throw new EasyCollectionException(EasyCollectionErrorCode.CONFIGURATION_ERROR,
+          "CREFIA provider credentials are not configured.");
     }
     if (cachedToken != null && System.currentTimeMillis() < tokenExpiresAtMillis) {
       return cachedToken;
@@ -156,6 +167,10 @@ public class CrefiaCardsalesClient {
   private List<Map<String, String>> fetchAll(
       CrefiaCredentialProvider.Credentials credentials, String path, DatasetQuery query,
       int pageSize) {
+    if (!endpointContractVerified) {
+      throw new EasyCollectionException(EasyCollectionErrorCode.CONFIGURATION_ERROR,
+          "CREFIA endpoint contract is not verified; external calls are disabled.");
+    }
     List<Map<String, String>> all = new ArrayList<>();
     int pageIndex = 1;
     boolean refreshed = false;
