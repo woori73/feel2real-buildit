@@ -95,8 +95,9 @@
     PAGE.more.hidden = true;
     PAGE.empty.hidden = true;
     showLoginAlert();
-    // 2026-09-21 cleanup: #ns-chat-login-btn은 현재 disabled 버튼이다(네이버 로그인 V1/V2/공식
-    // OAuth2 구현 전부 제거, 다음 세션에서 재구현) — 클릭해도 아무 일도 일어나지 않는다.
+    // STEP 4: #ns-chat-login-btn은 /oauth2/authorization/naver로 이동하는 일반 링크다(별도
+    // click handler 불필요). 로그인 완료 후에는 항상 /newstart로 redirect되므로(고정 경로) 이
+    // 페이지로 돌아오지 않는다 — f2r:login 리스너는 다른 화면이 발행하는 이벤트를 위해 남겨둔다.
     document.addEventListener('f2r:login', function () {
       loadCurrentUser();
     });
