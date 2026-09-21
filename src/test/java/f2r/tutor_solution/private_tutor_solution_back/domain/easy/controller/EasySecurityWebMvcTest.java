@@ -14,6 +14,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySh
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyExecutiveService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionIngestService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionManagementService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionSchedulerService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLedgerService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyStudentService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTuitionService;
@@ -43,7 +46,8 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyImportController.class,
     EasyInsightController.class,
     EasyAuditController.class,
-    EasyReportController.class
+    EasyReportController.class,
+    EasyCollectionController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -68,6 +72,9 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyAuditService auditService;
   @MockitoBean EasyReportService reportService;
   @MockitoBean EasyShopImportService shopImportService;
+  @MockitoBean EasyCollectionIngestService collectionIngestService;
+  @MockitoBean EasyCollectionManagementService collectionManagementService;
+  @MockitoBean EasyCollectionSchedulerService collectionSchedulerService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -87,7 +94,8 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/pl",
       "/api/admin/easy/filing-references",
       "/api/admin/easy/income-tax",
-      "/api/admin/easy/corrections/logs");
+      "/api/admin/easy/corrections/logs",
+      "/api/admin/easy/collections/connections?businessId=1");
 
   @Test
   @DisplayName("익명 → 401")
