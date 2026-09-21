@@ -3971,3 +3971,15 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - checkpoint scope는 connection+dataset이다. event와 관계 저장이 모두 성공한 뒤에만 같은 transaction에서 advance하며 fetch 또는 persistence 실패 시 advance하지 않는다.
 - 동일 external event는 connection+dataset event key로 멱등 처리하고 기존 raw dedupe는 그대로 유지한다.
 - CREFIA real API/endpoint는 활성화하지 않았고 외부 호출도 없다. collection auto-confirm은 계속 금지한다.
+
+
+### EASY 자동수집 Phase 3C ADMIN readiness API
+
+모든 endpoint는 `ROLE_ADMIN` 전용이며 provider secret, token, credential, `connectionRef`, cursor/checkpoint 원문을 반환하지 않는다.
+
+- `GET /api/admin/easy/collections/connections?businessId={id}`: connection/source/status/readiness/최근 run/checkpoint 존재 여부 조회.
+- `PUT /api/admin/easy/collections/connections/{id}/enabled?businessId={id}` body `{"enabled":true|false}`: connection 활성/비활성. 활성화는 provider readiness가 `READY`일 때만 허용한다.
+- `GET /api/admin/easy/collections/connections/{id}/checkpoints?businessId={id}`: dataset, 존재 여부, `hasCursor`, 성공/갱신시각만 반환한다.
+- `POST /api/admin/easy/collections/connections/{id}/run?businessId={id}`: readiness와 중복 RUNNING 검사를 통과한 연결만 MANUAL 수집한다.
+- readiness: `READY|NOT_CONFIGURED|DISABLED|UNVERIFIED|NEEDS_REAUTH`. 현재 production provider verification allow-list는 비어 있으며 CREFIA는 반드시 `UNVERIFIED`다.
+- 실제 CREFIA/Card API는 비활성이고 provider event는 accounting transaction이 아니다. 자동 confirm은 계속 금지한다.
