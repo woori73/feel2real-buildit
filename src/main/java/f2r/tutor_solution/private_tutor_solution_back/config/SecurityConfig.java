@@ -84,7 +84,12 @@ public class SecurityConfig {
       // 동일하게 ObjectProvider로 지연 조회한다.
       org.springframework.beans.factory.ObjectProvider<
               f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverAccountResolutionService>
-          naverAccountResolutionServiceProvider) throws Exception {
+          naverAccountResolutionServiceProvider,
+      // NewStart 표시 별명(display nickname) seed용. 역시 JPA 레포 의존이라 동일하게 지연 조회한다
+      // (@WebMvcTest 슬라이스에서 없으면 seed를 건너뛸 뿐 로그인 자체는 막지 않는다).
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService>
+          newStartMemberProfileServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -385,7 +390,8 @@ public class SecurityConfig {
           .authorizedClientRepository(new NoOpOAuth2AuthorizedClientRepository())
           .userInfoEndpoint(userInfo -> userInfo.userService(new NaverOAuth2UserService()))
           .successHandler(new NaverOAuth2LoginSuccessHandler(
-              naverAccountResolutionServiceProvider.getIfAvailable(), tokenProvider, cookieUtil))
+              naverAccountResolutionServiceProvider.getIfAvailable(), tokenProvider, cookieUtil,
+              newStartMemberProfileServiceProvider.getIfAvailable()))
           .failureHandler(new NaverOAuth2LoginFailureHandler()));
     }
 

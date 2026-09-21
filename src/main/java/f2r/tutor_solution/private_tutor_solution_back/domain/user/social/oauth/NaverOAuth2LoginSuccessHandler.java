@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,14 +42,17 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
   private final NaverAccountResolutionService accountResolutionService;
   private final JwtTokenProvider tokenProvider;
   private final CookieUtil cookieUtil;
+  private final NewStartMemberProfileService memberProfileService;
 
   public NaverOAuth2LoginSuccessHandler(
       NaverAccountResolutionService accountResolutionService,
       JwtTokenProvider tokenProvider,
-      CookieUtil cookieUtil) {
+      CookieUtil cookieUtil,
+      NewStartMemberProfileService memberProfileService) {
     this.accountResolutionService = accountResolutionService;
     this.tokenProvider = tokenProvider;
     this.cookieUtil = cookieUtil;
+    this.memberProfileService = memberProfileService;
   }
 
   @Override
@@ -71,6 +75,16 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
     try {
       NaverProfileIdentity identity = NaverProfileIdentity.from(oauth2User);
       user = accountResolutionService.resolveUser(identity);
+      // NewStart 표시 별명 최초 1회 seed. 실명(identity.name())은 절대 넘기지 않는다 — NAVER
+      // 프로필 nickname만 후보로 쓰고, 이미 row가 있으면(재로그인/이미 커스텀함) no-op이다.
+      // 별명 seed 실패가 로그인 자체를 막으면 안 된다(§8) — 별도로 감싸 실패해도 계속 진행한다.
+      if (memberProfileService != null) {
+        try {
+          memberProfileService.ensureSeeded(user.getUserId(), identity.nickname());
+        } catch (RuntimeException seedEx) {
+          log.warn("NAVER_OAUTH_NICKNAME_SEED_FAILURE", seedEx);
+        }
+      }
     } catch (RuntimeException ex) {
       // 예외 상세(스택트레이스)는 서버 로그에만 남기고 응답에는 노출하지 않는다.
       log.warn("NAVER_OAUTH_FAILURE stage=account_resolution_failure", ex);

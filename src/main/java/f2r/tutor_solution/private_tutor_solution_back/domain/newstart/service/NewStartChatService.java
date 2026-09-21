@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -50,16 +49,19 @@ public class NewStartChatService {
   private final UserRepository userRepository;
   private final NewStartChatRateLimiter rateLimiter;
   private final NewStartChatBroadcaster broadcaster;
+  private final NewStartMemberProfileService memberProfileService;
 
   public NewStartChatService(
       NewStartChatMessageRepository messageRepository,
       UserRepository userRepository,
       NewStartChatRateLimiter rateLimiter,
-      NewStartChatBroadcaster broadcaster) {
+      NewStartChatBroadcaster broadcaster,
+      NewStartMemberProfileService memberProfileService) {
     this.messageRepository = messageRepository;
     this.userRepository = userRepository;
     this.rateLimiter = rateLimiter;
     this.broadcaster = broadcaster;
+    this.memberProfileService = memberProfileService;
   }
 
   /** 메시지 하나를 저장하고 방 전체에 broadcast한다. 실패는 예외 없이 result-object로 보고한다. */
@@ -82,9 +84,10 @@ public class NewStartChatService {
     }
     NewStartChatMessage saved = messageRepository.save(
         NewStartChatMessage.builder().userId(principal.userId()).message(message).build());
-    NewStartChatMessageEvent event = NewStartChatMessageEvent.created(saved, user.getDisplayName());
+    String displayName = memberProfileService.resolveDisplayNickname(user);
+    NewStartChatMessageEvent event = NewStartChatMessageEvent.created(saved, displayName);
     broadcaster.broadcast(event);
-    return NewStartChatSendResult.success(toView(saved, user.getDisplayName()));
+    return NewStartChatSendResult.success(toView(saved, displayName));
   }
 
   /** 최근 메시지 조회. {@code before}가 있으면 그보다 오래된 메시지(위로 스크롤 pagination). */
@@ -137,11 +140,12 @@ public class NewStartChatService {
     return NewStartChatDeleteResult.success();
   }
 
-  /** 표시 이름을 한 번에 resolve한다(N+1 방지). 조회 시점 기준 최신 닉네임을 쓴다. */
+  /** 표시 이름을 한 번에 resolve한다(N+1 방지). 조회 시점 기준 최신 NewStart 별명을 쓴다 —
+   * 메시지 row에는 이름을 저장하지 않으므로 과거 메시지도 항상 현재 별명으로 보인다. */
   private Map<Long, String> displayNames(List<NewStartChatMessage> messages) {
     List<Long> userIds = messages.stream().map(NewStartChatMessage::getUserId).distinct().toList();
-    return userRepository.findAllById(userIds).stream()
-        .collect(Collectors.toMap(User::getUserId, User::getDisplayName, (a, b) -> a));
+    List<User> users = userRepository.findAllById(userIds);
+    return memberProfileService.resolveDisplayNicknames(users);
   }
 
   private NewStartChatMessageView toView(NewStartChatMessage message, String displayName) {
