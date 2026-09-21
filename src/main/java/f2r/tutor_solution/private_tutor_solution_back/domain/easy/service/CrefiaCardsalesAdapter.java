@@ -75,8 +75,17 @@ public class CrefiaCardsalesAdapter implements EasyCollectionAdapter {
   public List<CollectionParsedRow> fetch(String connectionRef, LocalDateTime since, int limit) {
     String merchantNo = requireMerchantNo(connectionRef);
     if (limit <= 0 || limit > 5000) {
-      throw new IllegalArgumentException("limit은 1~5000 사이여야 합니다.");
+      throw new EasyCollectionException(EasyCollectionErrorCode.INVALID_DATA,
+          "수집 건수 제한이 올바르지 않습니다.");
     }
+
+    // Fail closed until the official contract and the accounting lifecycle are approved.
+    // APPROVAL/PURCHASE/DEPOSIT may describe the same economic sale; staging all three as
+    // independent INCOME rows would permit duplicate revenue. No network call is allowed here.
+    throw new EasyCollectionException(EasyCollectionErrorCode.CONFIGURATION_ERROR,
+        "CREFIA real collection is disabled until the official endpoint and accounting lifecycle are approved.");
+
+    /*
     CrefiaCredentialProvider.Credentials credentials = credentialProvider.credentials();
     if (credentials == null || !credentials.present()) {
       throw new IllegalStateException(
@@ -105,6 +114,7 @@ public class CrefiaCardsalesAdapter implements EasyCollectionAdapter {
         .filter(r -> r.occurredOn() != null && r.occurredOn().atStartOfDay().isAfter(since))
         .limit(limit)
         .toList();
+    */
   }
 
   @Override
