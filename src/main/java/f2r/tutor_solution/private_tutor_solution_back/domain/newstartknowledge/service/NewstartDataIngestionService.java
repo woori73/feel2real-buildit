@@ -212,13 +212,13 @@ public class NewstartDataIngestionService {
     private String buildRuleContent(NewstartEmpiricalCase c) {
         return String.format("""
                 # 감면율 실제 사례 기반 파생 규칙
-                
+
                 ## 사례 개요
                 - 게시글: %s (ID: %s)
                 - 작성자: %s (%s)
                 - 작성일: %s
                 - 실제 확정 감면율: %s
-                
+
                 ## 신청인 조건
                 - 채무 총액: %s 원
                 - 2025년 소득: %s 원
@@ -229,20 +229,20 @@ public class NewstartDataIngestionService {
                 - 금융 자산: %s 원
                 - 고용 상태: %s
                 - 사업 상태: %s
-                
+
                 ## 실제 결과
                 - 확정 감면율: %s
                 - 최종 상환금액: %s 원
                 - 상환 기간: %s 개월
                 - 거치 기간: %s 개월
                 - 월 상환액: %s 원
-                
+
                 ## 특수 상황
                 %s
-                
+
                 ## 핵심 인사이트
                 %s
-                
+
                 ---
                 *출처: 네이버 카페 '새출발기금 부실차주 라이브러리' 감면율 게시판
                 *원문: %s
