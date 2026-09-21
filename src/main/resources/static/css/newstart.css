@@ -202,3 +202,142 @@
   .ns-status-panel .ns-card { padding-inline: 0; }
 }
 @media (max-width: 390px) { .newstart-brand { max-width: 52%; font-size: 16px; } .ns-hero { padding: 24px 18px; } .ns-hero h1 { font-size: 28px; } .ns-ai-hero { padding: 20px 16px; } }
+
+/* ── NewStart home 2026-09-21: mobile-first landing page ───────────── */
+* { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: clip; }
+.newstart-page {
+  --ns-blue: #1558d6;
+  --ns-blue-deep: #0b2f73;
+  --ns-blue-soft: #edf4ff;
+  --ns-ink: #101828;
+  --ns-muted: #586477;
+  --ns-line: #dfe6ef;
+  --ns-surface: #f5f7fa;
+  color: var(--ns-ink);
+  background: linear-gradient(180deg, #f8faff 0, #fff 420px);
+  font-family: Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.newstart-shell { width: 100%; max-width: 1180px; margin: 0 auto; padding: 14px 18px 40px; }
+.newstart-top { min-height: 56px; display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; }
+.newstart-brand { min-width: 0; display: flex; flex-direction: column; color: var(--ns-ink); text-decoration: none; white-space: normal; }
+.newstart-brand-name { font-size: clamp(17px, 4.8vw, 21px); line-height: 1.15; font-weight: 800; letter-spacing: -.045em; }
+.newstart-brand-sub { margin-top: 3px; font-size: 10px; line-height: 1.2; font-weight: 700; letter-spacing: .08em; color: #667085; }
+.newstart-topbar { flex: 0 0 auto; display: flex; align-items: center; }
+.newstart-topbar .ns-btn { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 13px; }
+.newstart-topbar .account-menu-trigger { width: 44px; height: 44px; }
+
+.ns-hero { padding: 48px 0 36px; max-width: 720px; }
+.ns-eyebrow, .ns-section-kicker { margin: 0 0 10px; color: var(--ns-blue); font-size: 11px; line-height: 1.3; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.ns-hero h1 { margin: 0; max-width: 680px; font-size: clamp(32px, 9vw, 62px); line-height: 1.14; font-weight: 850; letter-spacing: -.055em; word-break: keep-all; }
+.ns-hero-copy { max-width: 570px; margin: 18px 0 0; color: var(--ns-muted); font-size: clamp(15px, 4vw, 18px); line-height: 1.65; word-break: keep-all; }
+.ns-hero-cta { width: 100%; min-height: 52px; margin-top: 25px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-size: 15px; }
+
+.ns-core { padding: 16px 0 28px; }
+.ns-section-heading { margin-bottom: 18px; }
+.ns-section-heading h2 { margin: 0; font-size: clamp(24px, 7vw, 38px); line-height: 1.2; font-weight: 800; letter-spacing: -.045em; word-break: keep-all; }
+.ns-core-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; }
+.ns-feature-card { position: relative; min-width: 0; min-height: 218px; padding: 22px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ns-line); border-radius: 20px; color: var(--ns-ink); background: #fff; text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .045); }
+.ns-feature-card:focus-visible { outline: 3px solid rgba(21, 88, 214, .28); outline-offset: 3px; }
+.ns-feature-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--ns-blue); background: var(--ns-blue-soft); }
+.ns-feature-icon svg { display: block; width: 22px; height: 22px; max-width: 22px; max-height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ns-feature-category { margin-top: 19px; color: #667085; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+.ns-feature-card strong { margin-top: 5px; font-size: 25px; line-height: 1.2; letter-spacing: -.04em; }
+.ns-feature-copy { margin-top: 8px; color: var(--ns-muted); font-size: 14px; line-height: 1.55; word-break: keep-all; }
+.ns-feature-cta { min-height: 44px; margin-top: auto; padding-top: 14px; display: flex; align-items: flex-end; color: var(--ns-blue); font-size: 14px; font-weight: 750; }
+.ns-feature-ai { color: #fff; border-color: #1558d6; background: linear-gradient(145deg, #1558d6, #0b347f); box-shadow: 0 16px 32px rgba(21, 88, 214, .2); }
+.ns-feature-ai .ns-feature-icon { color: #fff; background: rgba(255,255,255,.15); }
+.ns-feature-ai .ns-feature-category, .ns-feature-ai .ns-feature-copy { color: #dce8ff; }
+.ns-feature-ai .ns-feature-cta { color: #fff; }
+.ns-feature-status { background: #fbfcff; }
+.ns-feature-chat .ns-feature-icon { color: #176b4d; background: #eaf8f2; }
+.ns-feature-updates { background: #f7f3ea; border-color: #e8dfcf; }
+.ns-feature-updates .ns-feature-icon { color: #76571d; background: #fffaf0; }
+
+.ns-ai-hero { scroll-margin-top: 18px; margin-top: 34px; padding: 25px 20px 20px; border: 0; border-radius: 20px; background: #edf4ff; }
+.ns-ai-title { margin: 0 0 16px; font-size: clamp(25px, 7vw, 35px); line-height: 1.2; letter-spacing: -.04em; }
+.ns-ai-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.ns-ai-input, .ns-ai-send { min-height: 48px; }
+.ns-ai-send { padding-inline: 17px; }
+.ns-ai-thread { margin-top: 14px; }
+.ns-ai-block { padding: 12px 0; border-top: 1px solid #d3def0; }
+.ns-ai-who { display: block; margin-bottom: 4px; font-size: 12px; }
+.ns-ai-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+.ns-status-panel { scroll-margin-top: 18px; margin-top: 24px; padding: 20px; }
+.ns-status-panel[hidden] { display: none !important; }
+.ns-status-panel .ns-card-title { margin: 0; font-size: 24px; line-height: 1.2; }
+.ns-status-panel .ns-grid { margin-top: 18px; }
+.ns-status-panel .ns-row { margin-top: 16px; }
+.ns-status-panel .ns-btn { min-height: 44px; }
+
+.ns-content-section { margin-top: 52px; padding: 0; }
+.ns-update-list { border-top: 1px solid var(--ns-line); }
+.ns-update-item { padding: 15px 0; display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; border-bottom: 1px solid var(--ns-line); }
+.ns-update-item span { color: var(--ns-blue); font-size: 11px; font-weight: 800; }
+.ns-update-item strong { min-width: 0; font-size: 14px; line-height: 1.5; font-weight: 600; word-break: keep-all; }
+.ns-updates-all { min-height: 44px; margin-top: 10px; display: inline-flex; align-items: center; }
+
+.ns-footer { margin-top: 50px; padding: 22px 0; display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--ns-line); color: var(--ns-ink); }
+.ns-footer-mark { width: 28px; height: 28px; min-width: 28px; max-width: 28px; min-height: 28px; max-height: 28px; display: grid; place-items: center; border-radius: 8px; color: #fff; background: var(--ns-blue); font-size: 13px; font-weight: 850; }
+.ns-footer div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ns-footer strong { font-size: 13px; }
+.ns-footer div > span { color: var(--ns-muted); font-size: 11px; line-height: 1.4; word-break: keep-all; }
+
+/* The shared footer stylesheet is now loaded by the home template. These hard
+   limits keep its SVG mark safe even if that stylesheet is changed or cached. */
+.public-footer .footer-logo-box img,
+.public-footer .footer-parent-logo-box img {
+  display: block !important;
+  width: auto !important;
+  height: 28px !important;
+  max-width: 40px !important;
+  max-height: 28px !important;
+  object-fit: contain;
+}
+.public-footer .footer-logo-box,
+.public-footer .footer-parent-logo-box {
+  flex: 0 0 auto;
+  width: auto !important;
+  max-width: 40px !important;
+  max-height: 28px !important;
+  overflow: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ns-feature-card { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+  .ns-feature-card:hover { transform: translateY(-3px); border-color: #b9c9e3; box-shadow: 0 14px 32px rgba(16,24,40,.09); }
+  .ns-feature-ai:hover { border-color: #1558d6; box-shadow: 0 18px 38px rgba(21,88,214,.27); }
+}
+@media (min-width: 560px) {
+  .newstart-shell { padding-inline: 28px; }
+  .ns-hero-cta { width: auto; padding-inline: 24px; }
+  .ns-core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ns-feature-ai { grid-row: span 2; min-height: 449px; }
+}
+@media (min-width: 768px) {
+  .newstart-shell { padding: 20px 38px 58px; }
+  .newstart-top { min-height: 66px; }
+  .ns-hero { padding: 72px 0 54px; }
+  .ns-core { padding-top: 20px; }
+  .ns-feature-card { padding: 26px; }
+  .ns-ai-hero { padding: 32px; }
+  .public-footer .footer-logo-box img,
+  .public-footer .footer-parent-logo-box img { height: 32px !important; max-height: 32px !important; }
+}
+@media (min-width: 1024px) {
+  .newstart-shell { padding-inline: 48px; }
+  .ns-core-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
+  .ns-feature-card, .ns-feature-ai { grid-row: auto; min-height: 278px; }
+  .ns-feature-ai { transform: translateY(-12px); }
+  .ns-feature-ai:hover { transform: translateY(-15px); }
+  .ns-ai-hero { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); column-gap: 30px; align-items: center; }
+  .ns-ai-hero .ns-section-kicker, .ns-ai-hero .ns-ai-title, .ns-ai-hero .ns-ai-note { grid-column: 1; }
+  .ns-ai-hero .ns-ai-input-row, .ns-ai-hero .ns-ai-thread { grid-column: 2; }
+  .ns-ai-hero .ns-ai-input-row { grid-row: 1 / span 2; }
+}
+@media (max-width: 359px) {
+  .newstart-shell { padding-inline: 14px; }
+  .newstart-brand-name { font-size: 16px; }
+  .newstart-brand-sub { font-size: 9px; }
+}
