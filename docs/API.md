@@ -14,10 +14,10 @@
 - 현재 사용처: `/newstart` NewStart AI 질문창
 - 인증/권한: 기존 `/api/**` catch-all(로그인 회원)을 따른다. 별도 권한 규칙 없음.
 - Request JSON: `message` (필수, 1~2000자)
-- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용)
-- 성공: `200` + `{"status":"ok","answer":"...","model":"..."}`
+- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용), `sources`(근거로 쓰인 ACTIVE Knowledge 목록 — `knowledgeId`/`sourceType`/`title`/`sourceUrl`/`sourceDate`/`authority`/`category`, 근거 없으면 빈 배열. additive 필드라 기존 클라이언트는 몰라도 동작한다)
+- 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
 - 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다.
-- 제약: Knowledge DB/RAG 없음 — 카페 사례·공식자료 검색 계약이 아니다. retrieval layer는 향후 service의 prompt 조립 단계에 삽입한다.
+- RAG V1(2026-09-22, `NewStartKnowledgeContextService`): 질문마다 `NewstartKnowledgeRetrievalService.retrieveForQuestion`(ACTIVE만, 최대 20건 pool)을 호출해 OFFICIAL(`OFFICIAL_CURRENT`/`OFFICIAL_HISTORICAL`/`AUDIT`)·EBOOK(`EBOOK`/`OPERATOR_KNOWLEDGE`)·CASE(`CASE`/`CAFE_ARTICLE`/`CAFE_COMMENT`/`DERIVED_RULE`)로 나누고(각 최대 3/2/2건) 키워드 매칭 개수로만 가볍게 ranking한다(vector/embedding/FULLTEXT 없음). `NewstartKnowledgeRelation`의 `CONTRADICTS`가 pool 안에서 양쪽 다 ACTIVE면 순위 가산점을 주고 `[안내]` 문구로 하나로 합치지 말라고 system prompt에 지시한다. 근거가 하나도 없으면(현재 production처럼 ACTIVE 0건 포함) "근거 없음"을 명시하는 block을 그대로 prompt에 붙여 grounded fallback한다. 실증사례 원본 테이블(`NewstartEmpiricalCase`)은 상태 컬럼이 없어 직접 조회하지 않는다 — CASE 근거는 승인 절차를 거쳐 `NewstartKnowledgeItem`으로 파생된 것만 쓴다(PII 필드 자체가 없음).
 
 
 ### NewStart 회원 채팅 (공용방 1개, 텍스트 전용)

@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartKnowledgeContextService.SourceInfo;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,7 +36,7 @@ public class NewStartAiChatController {
     if (!answer.ok()) {
       return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage()));
     }
-    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model()));
+    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), answer.sources()));
   }
 
   /** @param message 사용자가 입력한 질문. 빈 값/길이 초과는 service가 검증한다. */
@@ -44,14 +46,18 @@ public class NewStartAiChatController {
    * @param status "ok" | "error". @param answer 성공 시 AI 답변, 실패 시 빈 문자열.
    * @param errorMessage 실패 시 사용자용 안내 문구(내부 예외·provider 상세 미포함), 성공 시 null.
    * @param model Wiki Router가 반환한 모델 식별자(검증용). UI 표시는 선택이며 실패 시 null.
+   * @param sources 답변 근거로 쓰인 ACTIVE Knowledge 목록(knowledgeId/sourceType/title/sourceUrl/
+   *     sourceDate/authority/category). 근거가 없었다면 빈 리스트 — 없는 URL은 만들지 않는다.
+   *     기존 클라이언트는 이 필드를 몰라도 기존 필드만으로 그대로 동작한다(additive).
    */
-  public record ChatResponse(String status, String answer, String errorMessage, String model) {
-    public static ChatResponse success(String answer, String model) {
-      return new ChatResponse("ok", answer, null, model);
+  public record ChatResponse(
+      String status, String answer, String errorMessage, String model, List<SourceInfo> sources) {
+    public static ChatResponse success(String answer, String model, List<SourceInfo> sources) {
+      return new ChatResponse("ok", answer, null, model, sources);
     }
 
     public static ChatResponse failure(String errorMessage) {
-      return new ChatResponse("error", "", errorMessage, null);
+      return new ChatResponse("error", "", errorMessage, null, List.of());
     }
   }
 }

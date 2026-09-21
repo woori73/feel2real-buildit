@@ -112,7 +112,7 @@
         send.textContent = value ? '답변 중…' : '질문';
       }
 
-      function appendBlock(label, text, kind) {
+      function appendBlock(label, text, kind, sources) {
         if (!thread) return;
         var block = document.createElement('div');
         block.className = 'ns-ai-block' + (kind ? ' ns-ai-' + kind : '');
@@ -124,8 +124,61 @@
         body.textContent = text;
         block.appendChild(who);
         block.appendChild(body);
+        appendSources(block, sources);
         thread.appendChild(block);
         if (block.scrollIntoView) block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      /* ── 근거 자료 표시: 답변 block 안에 최소한으로 덧붙인다(전체 레이아웃 재설계 없음).
+       * 원문 URL이 실제로 있을 때만 링크를 만든다 — 없는 URL을 만들어내지 않는다.
+       * 서버 DTO(knowledgeId/sourceType/title/sourceUrl/sourceDate/authority/category)에는
+       * CASE 근거라도 닉네임 등 개인식별정보 필드가 애초에 없다. */
+      function appendSources(block, sources) {
+        if (!sources || !sources.length) return;
+        var box = document.createElement('div');
+        box.className = 'ns-ai-sources';
+        var label = document.createElement('div');
+        label.className = 'ns-ai-sources-label';
+        label.textContent = '근거 자료';
+        box.appendChild(label);
+        var list = document.createElement('ul');
+        list.className = 'ns-ai-sources-list';
+        sources.forEach(function (src) {
+          if (!src || !src.title) return;
+          var li = document.createElement('li');
+          li.className = 'ns-ai-source-item';
+          var badge = document.createElement('span');
+          badge.className = 'ns-ai-source-badge ' + sourceBadgeClass(src.sourceType);
+          badge.textContent = sourceBadgeLabel(src.sourceType);
+          li.appendChild(badge);
+          if (typeof src.sourceUrl === 'string' && /^https?:\/\//.test(src.sourceUrl)) {
+            var a = document.createElement('a');
+            a.href = src.sourceUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = src.title;
+            li.appendChild(a);
+          } else {
+            var span = document.createElement('span');
+            span.textContent = src.title;
+            li.appendChild(span);
+          }
+          list.appendChild(li);
+        });
+        box.appendChild(list);
+        block.appendChild(box);
+      }
+
+      function sourceBadgeClass(sourceType) {
+        if (sourceType === 'EBOOK' || sourceType === 'OPERATOR_KNOWLEDGE') return 'ns-ai-source-ebook';
+        if (sourceType === 'CASE' || sourceType === 'CAFE_ARTICLE' || sourceType === 'CAFE_COMMENT' || sourceType === 'DERIVED_RULE') return 'ns-ai-source-case';
+        return 'ns-ai-source-official';
+      }
+
+      function sourceBadgeLabel(sourceType) {
+        if (sourceType === 'EBOOK' || sourceType === 'OPERATOR_KNOWLEDGE') return '전자책';
+        if (sourceType === 'CASE' || sourceType === 'CAFE_ARTICLE' || sourceType === 'CAFE_COMMENT' || sourceType === 'DERIVED_RULE') return '실제 사례';
+        return '공식자료';
       }
 
       form.addEventListener('submit', function (e) {
@@ -161,7 +214,7 @@
             window.clearTimeout(timer);
             var data = result.data || {};
             if (result.status === 200 && data.status === 'ok' && data.answer) {
-              appendBlock('NewStart AI', data.answer, null);
+              appendBlock('NewStart AI', data.answer, null, data.sources);
             } else if (result.status === 401) {
               appendBlock('NewStart AI', '로그인 후 질문할 수 있습니다.', 'error');
             } else {

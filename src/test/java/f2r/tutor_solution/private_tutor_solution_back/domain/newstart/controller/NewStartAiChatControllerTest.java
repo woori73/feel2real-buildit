@@ -13,6 +13,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.WebMvcConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartKnowledgeContextService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +64,8 @@ class NewStartAiChatControllerTest {
   @Test
   void chatReturnsOkWithAnswer() throws Exception {
     when(newStartAiChatService.ask(anyString())).thenReturn(
-        new NewStartAiChatService.NewStartAiAnswer(true, "새출발기금은 ...입니다.", null, "qwen/qwen3.7-flash"));
+        new NewStartAiChatService.NewStartAiAnswer(
+            true, "새출발기금은 ...입니다.", null, "qwen/qwen3.7-flash", java.util.List.of()));
 
     mockMvc.perform(post("/api/newstart/ai/chat")
             .cookie(userCookie())
@@ -72,7 +74,30 @@ class NewStartAiChatControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ok"))
         .andExpect(jsonPath("$.answer").value("새출발기금은 ...입니다."))
-        .andExpect(jsonPath("$.model").value("qwen/qwen3.7-flash"));
+        .andExpect(jsonPath("$.model").value("qwen/qwen3.7-flash"))
+        .andExpect(jsonPath("$.sources").isArray())
+        .andExpect(jsonPath("$.sources").isEmpty());
+  }
+
+  @Test
+  void chatReturnsSourcesWhenGroundedOnKnowledge() throws Exception {
+    NewStartKnowledgeContextService.SourceInfo source =
+        new NewStartKnowledgeContextService.SourceInfo(
+            7L, "OFFICIAL_CURRENT", "새출발기금 감면율 기준", "https://www.newstartfund.or.kr/guide",
+            java.time.LocalDate.of(2026, 1, 1), "새출발기금", "감면율");
+    when(newStartAiChatService.ask(anyString())).thenReturn(
+        new NewStartAiChatService.NewStartAiAnswer(
+            true, "감면율 기준은 ...입니다.", null, "qwen/qwen3.7-flash", java.util.List.of(source)));
+
+    mockMvc.perform(post("/api/newstart/ai/chat")
+            .cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"감면율이 어떻게 되나요?\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sources[0].knowledgeId").value(7))
+        .andExpect(jsonPath("$.sources[0].sourceType").value("OFFICIAL_CURRENT"))
+        .andExpect(jsonPath("$.sources[0].title").value("새출발기금 감면율 기준"))
+        .andExpect(jsonPath("$.sources[0].sourceUrl").value("https://www.newstartfund.or.kr/guide"));
   }
 
   @Test

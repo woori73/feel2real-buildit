@@ -83,6 +83,16 @@
 .ns-ai-error { border-color: #e8b4b4; background: #fdf6f6; }
 .ns-ai-who { display: block; font-size: 12px; font-weight: 700; color: var(--ns-muted); margin-bottom: 3px; }
 .ns-ai-text { font-size: 14px; line-height: 1.65; color: var(--ns-ink); overflow-wrap: anywhere; white-space: pre-wrap; word-break: break-word; }
+/* NewStart AI 답변 근거 자료 — 최소 표시(레이아웃 재설계 없음) */
+.ns-ai-sources { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--ns-line); }
+.ns-ai-sources-label { font-size: 11px; font-weight: 700; color: var(--ns-muted); margin-bottom: 4px; }
+.ns-ai-sources-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ns-ai-source-item { font-size: 12.5px; line-height: 1.4; display: flex; align-items: center; gap: 6px; color: var(--ns-ink); }
+.ns-ai-source-badge { flex-shrink: 0; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+.ns-ai-source-official { background: #e6f0ff; color: #1d4ed8; }
+.ns-ai-source-ebook { background: #eaf5ec; color: #227a3a; }
+.ns-ai-source-case { background: #fdf1e2; color: #b25b00; }
+.ns-ai-source-item a { color: inherit; text-decoration: underline; overflow-wrap: anywhere; }
 /* ── 회원 채팅 (/newstart/chat) — 모바일 우선 메신저 구조 ─────────────────── */
 .ns-chat-shell { display: flex; flex-direction: column; min-height: 100svh; }
 .ns-chat-main { flex: 1; display: flex; flex-direction: column; margin-top: 14px; min-height: 0; }
