@@ -1,9 +1,12 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service.NewStartOfficialUpdateService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import lombok.RequiredArgsConstructor;
 
 /**
  * NewStart 공개 페이지(&#47;newstart) 렌더링.
@@ -16,11 +19,15 @@ import org.springframework.web.bind.annotation.GetMapping;
  * 앞단 캐시가 계정 상태에 따라 달라질 수 있는 HTML을 공유하지 않게 하려는 목적이다.
  */
 @Controller
+@RequiredArgsConstructor
 public class NewStartPageController {
 
+  private final NewStartOfficialUpdateService officialUpdateService;
+
   @GetMapping("/newstart")
-  public String newstartHome(HttpServletResponse response) {
+  public String newstartHome(Model model, HttpServletResponse response) {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    model.addAttribute("latestUpdates", officialUpdateService.latestPublished(3));
     return "newstart/index";
   }
 }
