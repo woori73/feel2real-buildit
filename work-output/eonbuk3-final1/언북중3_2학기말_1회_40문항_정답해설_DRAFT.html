@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1">
+<style id="clean-final-style">
+@page { size:A4 portrait; margin:0; }
+*{box-sizing:border-box}
+html,body{width:100%;margin:0;padding:0}
+body{font-family:"Noto Sans KR","Malgun Gothic","Nanum Gothic",sans-serif;font-size:9.5pt;line-height:1.42;color:#111}
+.page{width:210mm;height:297mm;padding:12mm 11mm 10mm 11mm;position:relative;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.page:last-child{page-break-after:auto}
+.cols{display:flex;gap:7mm;flex:1 1 auto;min-height:0;padding-bottom:5mm}
+.col{width:calc(50% - 3.5mm);overflow:hidden;display:flex;flex-direction:column;gap:var(--qgap,18px)}
+.exam-header{border:1.4pt solid #000;margin-bottom:4mm}
+.exam-header table{width:100%;border-collapse:collapse;font-size:9.5pt}
+.exam-header td,.exam-header th{border:.7pt solid #444;padding:2mm 2.5mm}
+.exam-header .title-row td{text-align:center;font-size:14pt;font-weight:700;padding:3mm;letter-spacing:1px}
+.exam-header .sub-row td{text-align:center;font-size:9.5pt;color:#333}
+.exam-header .info-row td{font-size:9pt}
+.exam-header .label{font-weight:700;background:#f2f2f2;width:16mm;text-align:center}
+.student-info-row .label{width:12mm;text-align:center;white-space:nowrap}
+.student-info-row .student-name{width:72mm}.student-info-row .student-day{width:34mm}.student-info-row .student-score{width:34mm}.student-info-row td{height:9mm;vertical-align:middle}
+.qblock{margin:0;page-break-inside:avoid;break-inside:avoid;flex:0 0 auto}
+.qhead{display:flex;gap:1.3mm;align-items:baseline}.qnum{font-weight:700;flex-shrink:0}
+.page-footer{position:absolute;bottom:4mm;left:0;right:0;text-align:center;font-size:8pt;color:#555}
+.page-footer .page-num { display: inline-block; margin-left: 8px; }
+@media screen{body{background:#e9e9e9}.page{margin:0 auto 8mm auto}}
+@media print{@page{size:A4 portrait;margin:0}html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:210mm!important;height:296mm!important;margin:0!important;padding:12mm 11mm 12mm 11mm!important;overflow:hidden!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.cols{display:flex!important;width:100%!important;padding-bottom:4mm!important}.col{flex:0 0 calc(50% - 3.5mm)!important;width:calc(50% - 3.5mm)!important}}
+</style>
+<style id="logo-fill-cell-final">
+.exam-header .logo-cell{
+  width:25% !important;
+  height:20mm !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+  position:relative !important;
+}
+.exam-header .logo-cell img{
+  position:absolute !important;
+  left:1.5mm !important;
+  right:1.5mm !important;
+  top:1mm !important;
+  bottom:1mm !important;
+  width:calc(100% - 3mm) !important;
+  height:calc(100% - 2mm) !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  margin:0 !important;
+}
+.exam-header .title-cell{
+  width:75% !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+}
+@media print{
+  .exam-header .logo-cell img{
+    width:calc(100% - 3mm) !important;
+    height:calc(100% - 2mm) !important;
+  }
+  .exam-header .title-cell{text-align:center !important;}
+}
+</style>
+<style id="eonbuk-ans">
+.page,.col,.qblock,.expl{word-break:keep-all;overflow-wrap:break-word}
+.qans{font-weight:700;color:#b00}
+.expl{font-size:9pt;line-height:1.5;margin:0.6mm 0 0 4.6mm}
+.qblock{margin-bottom:1mm}
+.ans-title{font-weight:700;font-size:11pt;margin:0 0 1.5mm 0}
+.ans-grid{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:3mm}
+.ans-grid td{border:.7pt solid #333;text-align:center;padding:1.1mm 0;font-size:9.5pt}
+.ans-grid td b{color:#b00}
+</style>
+<title>언북중3 1회 40문항 정답해설</title></head>
+<body><div class="page"><div class="exam-header"><table>
+<tr class="title-row"><td class="logo-cell" rowspan="2"><img alt="EduHolic academy" src="data:image/jpeg;base64,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"/></td><td class="title-cell" colspan="5">2026학년도 2학기 기말고사 대비 1회 40문항 정답·해설</td></tr>
+<tr class="sub-row"><td class="school-cell" colspan="5">언북중학교 3학년 · 영어</td></tr>
+<tr class="info-row student-info-row">
+<td class="label">이름</td><td class="student-name"> </td>
+<td class="label">요일</td><td class="student-day"> </td>
+<td class="label">점수</td><td class="student-score"> </td>
+</tr>
+</table>
+</div><div class="ans-wrap">
+<div class="ans-title">정답표</div>
+<table class="ans-grid">
+<tr><td>1 <b>②</b></td><td>2 <b>⑤</b></td><td>3 <b>①</b></td><td>4 <b>③</b></td><td>5 <b>①</b></td><td>6 <b>②</b></td><td>7 <b>④</b></td><td>8 <b>③</b></td><td>9 <b>④</b></td><td>10 <b>③</b></td></tr>
+<tr><td>11 <b>⑤</b></td><td>12 <b>②</b></td><td>13 <b>②</b></td><td>14 <b>③</b></td><td>15 <b>④</b></td><td>16 <b>②</b></td><td>17 <b>①</b></td><td>18 <b>⑤</b></td><td>19 <b>④</b></td><td>20 <b>②</b></td></tr>
+<tr><td>21 <b>⑤</b></td><td>22 <b>⑤</b></td><td>23 <b>③</b></td><td>24 <b>③</b></td><td>25 <b>①</b></td><td>26 <b>③</b></td><td>27 <b>⑤</b></td><td>28 <b>①</b></td><td>29 <b>①</b></td><td>30 <b>④</b></td></tr>
+<tr><td>31 <b>②</b></td><td>32 <b>⑤</b></td><td>33 <b>③</b></td><td>34 <b>④</b></td><td>35 <b>①</b></td><td>36 <b>⑤</b></td><td>37 <b>②</b></td><td>38 <b>①</b></td><td>39 <b>④</b></td><td>40 <b>④</b></td></tr>
+</table>
+</div>
+<div class="cols">
+<div class="col" style="--qgap:0px">
+<div class="qblock"><div class="qhead"><span class="qnum">1.</span><span class="qans">②</span></div><div class="expl">"to stop something from happening(~이 일어나지 않도록 막다)"은 5과 어휘 prevent의 영영풀이 원문이다. ① reduce(줄이다), ③ disappear(사라지다), ④ damage(손상시키다), ⑤ support(돕다)는 정의와 일치하지 않는다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">2.</span><span class="qans">⑤</span></div><div class="expl">다섯 번째 항목 "Do not pick flowers or leaves"를 그대로 읽은 Dawon이 정확하다. ① reusable bags를 plastic bags로 반전, ②③④는 각각 Wash your hands / Turn off the lights / take care of them과 모순.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">3.</span><span class="qans">①</span></div><div class="expl">5과 본문 표현 live in harmony with nature에서 온 "live together in harmony(조화 속에 함께 살다)"가 자연스럽다. ② opinion(의견), ③ awareness(인식), ④ explanation(설명), ⑤ structure(구조)는 '함께 산다'는 문맥과 어울리지 않는다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">4.</span><span class="qans">③</span></div><div class="expl">앞 내용(동아리를 몰랐다 → 사진 포스터를 식당 근처에 붙임)의 결과로 ③ "이제 더 많은 학생이 참여 방법을 묻는다"가 자연스럽다. ① 활동 중단, ⑤ 포스터 제거는 내용 반전, ②④는 글과 무관하다.</div></div>
+</div>
+<div class="col" style="--qgap:0px">
+<div class="qblock"><div class="qhead"><span class="qnum">5.</span><span class="qans">①</span></div><div class="expl">7과 본문·어휘의 AI 스피커 기능 서술 "recognize the words people say and answer questions(말을 인식해 답하다)"에 따라 recognize가 정답이다. ② rescue(구조하다), ③ cause(유발하다), ④ damage, ⑤ prevent는 "the words"와 의미상 어울리지 않는다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">6.</span><span class="qans">②</span></div><div class="expl">㉡은 "고개를 천천히 움직여 나를 이완시켰다"는 내용으로, '지쳐 몸을 가눌 수 없었다'는 진술은 지문에 근거가 없다. ① ㉠ noticed my sadness, ③ ㉢ take a break, ④ ㉣ warn, ⑤ ㉤ may treat robots more kindly는 모두 유추 가능하다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">7.</span><span class="qans">④</span></div><div class="expl">(가)의 It은 앞문장의 Cookie를 받는 인칭대명사(지칭 용법)다. ⓐ(phone를 지칭), ⓓ(Cookie를 지칭)가 같은 용법이고, ⓑ는 to live without technology의 가주어, ⓒ는 for me to relax의 가목적어다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">8.</span><span class="qans">③</span></div><div class="expl">보기의 "that comfortable feeling"은 (A) "forgot all about my problems"를 가리키고, "didn't stay ... for long"이 바로 뒤 "So I picked up my phone and sent her a message first"(문제를 직접 해결하려는 행동)로 이어지므로 (C)가 알맞다.</div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회 정답·해설<span class="page-num">1 / 3</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col">
+<div class="qblock"><div class="qhead"><span class="qnum">9.</span><span class="qans">④</span></div><div class="expl">ⓓ one another는 '서로'라는 대명사인데 ④는 "다른 사람을 잘 아는 감정"이라는 명사 정의 for 왜곡이라 옳지 않다. ① ⓐ electronic, ② ⓑ relax, ③ ⓒ route, ⑤ ⓔ survivors의 영영풀이는 모두 어휘표 정의와 일치한다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">10.</span><span class="qans">③</span></div><div class="expl">(가) 사람이 대상이므로 talk to users, (나) their와 복수 명사 owners, (다) housework(명사)를 데리려면 worry about이 필요하므로 ③(talk to/owners/worry about)이 바르다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">11.</span><span class="qans">⑤</span></div><div class="expl">"무너진 호텔, 소방관이 들어갈 수 없는 좁은 곳, 특수 센서로 still alive한 사람 발견"은 SEARCH-AND-RESCUE ROBOTS "Disaster Heroes"의 세 항목(broken places / find survivors with special sensors)과 그대로 대응한다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">12.</span><span class="qans">②</span></div><div class="expl">주어 사람을 평가하는 형용사(smart)는 It is + 형용사 + of + 사람 + to V가 옳다. ① brave도 평가 형용사인데 for를 썼다, ③ dangerous는 상황 기술이므로 of가 아닌 for가 온다, ④ '하기에 충분하지 않았다'는 부정 의미가 빠져 역전, ⑤ too ... to 구조에서 목적어 it가 중복된다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">13.</span><span class="qans">②</span></div><div class="expl">(가)는 "스카이 가든 디자인으로 국제상을 받았다"는 직후 진술이므로, 수상 사실이 건축과 자연이 공존할 수 있음을 증명했기(②)가 근거다. 어릴 적 "결국 조화할 수 없을 것"이라 믿었던 생각의 반전과도 맞물린다. ①③④⑤는 지문에 근거가 없다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">14.</span><span class="qans">③</span></div><div class="expl">"Oasia Hotel Downtown is covered with more than twenty species of plants, and the plants keep the building cool"과 ③이 일치한다. ① 링크, ② retired, ④ 수상 주체 = 개인 건축가, ⑤ city ordered는 모두 근거 없음.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">15.</span><span class="qans">④</span></div><div class="expl">contribute는 5·7과 필기본 "contribute to + 명사" 구문이므로 ㉣의 "contribute cleaner air"는 전치사 to가 빠져 의미상·구조상 부적절하다. ㉠ came up with(떠올리다), ㉡ in harmony with, ㉢ provide, ㉤ work on은 모두 적절하다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">16.</span><span class="qans">②</span></div><div class="expl">적절한 문장은 2개다. ✗ "the way how"(중복: the way가 how를 포함), ✗ so that she will not(주절 과거와 시제 불일치 → would). ○ It was thoughtful of you to V(평가 형용사+of) ○ the reason why(관계부사) 정상. 따라서 ② 2개.</div></div>
+</div>
+<div class="col">
+<div class="qblock"><div class="qhead"><span class="qnum">17.</span><span class="qans">①</span></div><div class="expl">스마트 창은 자연광을 들이고 온도를 '조절(control)'해 에너지 낭비를 줄이는 장치이므로 (A)의 increase(높이다)는 의미상 적절하지 않다. (B) search for the fastest route, (C) perform dangerous tasks, (D) forecast rain, (E) recognize emotions은 모두 7과 본문·어휘와 일치한다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">18.</span><span class="qans">⑤</span></div><div class="expl">지문은 "I was sure ... could not survive ..., but our house held(하지만 우리 집은 버텼다)"이므로 '무너졌다'는 ⑤가 내용과 정면으로 모순된다. ① 부엌 저녁, ② 즉시 나가려다 만류, ③ 테이블 아래 대피, ④ 피난처 하룻밤은 모두 일치한다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">19.</span><span class="qans">④</span></div><div class="expl">(가) 흔들림이 '시작한' 순간이므로 순간 시점의 When(While은 진행과 충돌). (나) 나가려 했 '하지만' 할머니가 만류 → 역접 but. (다) 흔들림이 마침내 멈춘 '뒤'에 신고 → After(Until을 쓰면 '멈출 때까지 신고했다'로 의미 역전).</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">20.</span><span class="qans">②</span></div><div class="expl">(A) "My heart was beating so fast that I could hear it in my ears"는 극도의 공포로 침착하게 생각·행동할 수 없는 상태를 나타내므로 별빛의 설명(extreme fear ... unable to think or act calmly)이 정확하다. ① confidence는 정반대, ③ 호기심, ④ 할머니에 대한 미안함, ⑤ 그릇에 대한 실망은 모두 (A)의 감정이 아니다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">21.</span><span class="qans">⑤</span></div><div class="expl">"A picture of our family hung on the wall, and the glass covering ⓐit broke"에서 it이 받는 선행사는 바로 앞 '가족 사진'이다(사진을 덮은 유리).</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">22.</span><span class="qans">⑤</span></div><div class="expl">글 전체는 실제 지진 체험을 통해 침착함의 중요성을 깨닫고 대비하게 된 이야기이므로 "A Night of Disaster That Changed My Mind"가 주제다. ① 로봇 규칙, ② 비상가방 준비법, ③ 훈련 역사, ④ 앱 정확도는 부분 내용이다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">23.</span><span class="qans">③</span></div><div class="expl">㉢ "set my AI speaker to give a warning signal"(set A to V)과 when절 시제가 정상이다. ㉠ 간접의문문 어순 오류(how important was it → how important it was), ㉡ 시제 불일치(can → could), ㉣ 관사 누락(take the place of), ㉤ occur는 자동사이므로 수동태 can be occurred 불가.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">24.</span><span class="qans">③</span></div><div class="expl">"Now our family keeps an emergency bag by the door"에 답이 있으므로 ③에 답할 수 있다. ① 앱 고장, ② 로봇 발명자, ④ 다음 지진 시점, ⑤ 로봇 비용은 모두 지문 밖 정보다.</div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회 정답·해설<span class="page-num">2 / 3</span></div>
+</div>
+
+<div class="page"><div class="cols">
+<div class="col">
+<div class="qblock"><div class="qhead"><span class="qnum">25.</span><span class="qans">①</span></div><div class="expl">빈칸 앞은 행동(수중박물관 제작), 뒤는 그 목적(산호초가 회복될 수 있도록)이고 절이므로 so that + 절이 정답이다. ② because는 인과가 뒤집히고, ③ although 역접, ④ so는 '그래서'로 결과 접속(뒤 내용과 문장 자체가 성립 부자연), ⑤ before는 의미 부적합.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">26.</span><span class="qans">③</span></div><div class="expl">"Divers are now led to the museum, so the pressure on the natural reefs is greatly reduced"의 동의 변형이 ③이다. ① 해변 대체 목적 X, ② friendly → harmful 반전, ④ "corals and plants grow over them"과 모순, ⑤ scuba diving 싫음 근거 없음.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">27.</span><span class="qans">⑤</span></div><div class="expl">"It is possible for art and nature to help each other"는 5과 필기본 전환 규칙에 따라 "Art and nature can help each other"와 같다. ① impossible, ③ will never, ④ makes art impossible은 의미 역전이고 ② only nature는 관계 왜곡이다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">28.</span><span class="qans">①</span></div><div class="expl">보기 "So Taylor came up with an unusual solution"은 앞의 문제(Too many visitors had damaged the reefs)와 뒤의 해결책(조각상과 바다 생태 설명)을 연결하는 문장이므로 문제 바로 뒤 (A)가 알맞다. "came up with"은 5과 필기본 숙어다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">29.</span><span class="qans">①</span></div><div class="expl">so that은 반드시 + 절(주어+동사)이 온다. ⓐ so that it could wake ✓, ⓓ so that she wouldn't wake ✓. ⓑ의 "so that to check", ⓒ의 "so that hear"(주어 없는 원형)는 구조 오류. 옳은 것은 ⓐ, ⓓ뿐이므로 ①.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">30.</span><span class="qans">④</span></div><div class="expl">"something used for making something else(다른 것을 만드는 데 쓰이는 것)"은 5과 어휘 material의 영영풀이 원문이다. ① statue(조각상), ② structure(구조물), ③ artwork(예술품), ⑤ shade(그늘)는 정의가 다르다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">31.</span><span class="qans">②</span></div><div class="expl">(B) 자율주행차 정의로 운 → (D) How is this possible?로 질문 전환 → (A) Instead, 카메라·센서·소프트웨어가 대신 작동 → (E) 컴퓨터 프로그램이 경로 결정 → (C) As a result 승객이 relax. B-D-A-E-C이므로 ②.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">32.</span><span class="qans">⑤</span></div><div class="expl">"too + 형용사 + for + 사람 + to V"는 부정 의미('너무 어려워 아무도 풀 수 없음')로 우리말과 정확히 대응한다. ④ so ... that everyone can solve는 '모두 풀 수 있을 만큼 어렵다'로 의미 역전 함정, ① enough to, ② not too difficult, ③ 단순 긍정도 모두 부정이 빠져 역전된다.</div></div>
+</div>
+<div class="col" style="--qgap:10px">
+<div class="qblock"><div class="qhead"><span class="qnum">33.</span><span class="qans">③</span></div><div class="expl">㉢의 문맥은 다친 사람을 즉시 돌보는 상황인데 pay for(~의 비용을 지불하다)는 의미상 부적절하다(treat 등으로 와야 할 자리). ㉠ escape from ✓, ㉡ in detail ✓, ㉣ praised ✓, ㉤ be turned into ✓.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">34.</span><span class="qans">④</span></div><div class="expl">(가) "더 많은 여가 시간"의 근거는 바로 앞 문장 "Each home will be equipped with a helper robot that performs daily tasks while its owners are away" — 스마트 기계가 집안일을 대신 수행하기 때문이다. ① alone 증가와 반대 논리, ② tutor 불필요 단정, ③ 근로시간 단축, ⑤ 도시 이탈은 근거가 없다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">35.</span><span class="qans">①</span></div><div class="expl">직전 "cost too much" 우려에 However로 역접되어 시장 인용문("Technology should serve everyone, not just the rich")으로 이어지므로, (A)는 '지금 쓰는 돈이 뒤에 더 큰 이익을 낳는다'는 낙관적 신념이다. ②③④⑤는 모두 문맥과 모순이다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">36.</span><span class="qans">⑤</span></div><div class="expl">시장은 "not just the rich"(부자만이 아니라 모두를 위해)라고 했으므로 '부자에게만 제공해야 한다'는 ⑤가 내용과 일치하지 않는다. ① 공기 상쾌화, ② 센서 감지·온도 조절, ③ 도우미 로봇 집안일, ④ AI 튜터 감정 인식·수업 조절은 모두 본문 일치.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">37.</span><span class="qans">②</span></div><div class="expl">ⓐ It이 "even warns him when something goes wrong"의 주체이므로, 발전량을 보여주고 경고까지 하는 the app이 정답이다. 직전 문장 주어를 쫓는 함정 ③ solar panel은 전기를 생산만 하는 장치이고, ① power station은 지문에 등장하지 않는다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">38.</span><span class="qans">①</span></div><div class="expl">"plans to run the campaign once a month this term"에 답이 있으므로 ①에 답할 수 있다. ② 차트 제작 비용, ③ Ms. Park의 작년 식당 퇴장, ④ 쓰레기 최다 학급, ⑤ 쓰레기 종류는 모두 지문 밖 정보다.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">39.</span><span class="qans">④</span></div><div class="expl">(D)에서 한옥은 '자연에 친화적인 특별한 구조'를 갖추었다는 서술이 적절하다. material(자재)은 5과 어휘표 예문 "A traditional hanok has a special structure"와 대응하지 않는 용어 오류다. (A) reusable bags, (B) growing awareness, (C) damaging(본문 damaged the reefs 대응), (E) innovations은 모두 용법 적절.</div></div>
+<div class="qblock"><div class="qhead"><span class="qnum">40.</span><span class="qans">④</span></div><div class="expl">㉣은 '할아버지의 기술 미숙을 탓하며'라는 진술에 근거가 없을 뿐 아니라, ㉢ "He isn't against technology"라는 온건한 태도와 모순된다. ① 편지 1주 ↔ 영상통화의 변화 경험, ② 화면 소통 증가 체감, ③ face-to-face 가치 수호, ⑤ 매일 정원 사진 공유는 모두 유추 가능하다.</div></div>
+</div>
+</div>
+<div class="page-footer">언북중학교 3학년 영어 · 2026학년도 2학기 기말고사 대비 1회 정답·해설<span class="page-num">3 / 3</span></div>
+</div>
+
+</body></html>
