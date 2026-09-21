@@ -27,7 +27,9 @@ public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartK
     @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status = 'ACTIVE' ORDER BY k.createdAt DESC")
     List<NewstartKnowledgeItem> findAllActive();
 
-    @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status IN ('ACTIVE', 'REVIEW') ORDER BY k.effectiveFrom ASC")
+    // Production retrieval은 ACTIVE ONLY. REVIEW가 RAG로 유입되지 않도록 ACTIVE로 한정한다.
+    // (ADMIN 검토함은 findByStatus(REVIEW) 별도 경로 사용.)
+    @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status = 'ACTIVE' ORDER BY k.effectiveFrom ASC")
     List<NewstartKnowledgeItem> findEffective();
 
     Page<NewstartKnowledgeItem> findAllByOrderByCreatedAtDesc(org.springframework.data.domain.Pageable pageable);

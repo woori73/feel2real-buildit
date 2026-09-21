@@ -3915,9 +3915,18 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   `archivedCount`, `officialCurrentCount`, `officialHistoricalCount`, `auditCount`, `ebookCount`,
   `cafeArticleCount`, `cafeCommentCount`, `caseCount`, `operatorKnowledgeCount`, `derivedRuleCount`).
   프론트의 `knowledgeGaps`는 백엔드가 계산하지 않는다(항상 0 표시).
-- `POST ""` / `PUT /{id}`: 생성·수정. `PUT /{id}/status`(`status`, `reason`): 상태 변경 +
-  `newstart_knowledge_status_log` 기록. **전이 가드가 없어 임의 상태로 바꿀 수 있다** — 승인 워크플로
-  가드는 별도 PR(#353) 소관.
+- `POST ""` / `PUT /{id}`: 생성·수정. `PUT /{id}`로 ACTIVE 직행은 거부된다(승인 API 경유 필수).
+  `PUT /{id}/status`(`status`, `reason`): 상태 변경 + `newstart_knowledge_status_log` 기록.
+  허용 전이만 통과(`DRAFT→REVIEW/ARCHIVED`, `REVIEW→ACTIVE/ARCHIVED/DRAFT`,
+  `ACTIVE→ARCHIVED`, `ARCHIVED→DRAFT/REVIEW`), `ACTIVE`/`ARCHIVED`에는 `reason` 필수,
+  `REVIEW→ACTIVE` 경고 존재 시 409(`CONFIRMATION_REQUIRED`).
+- 승인 워크플로: `GET /review`(REVIEW 큐), `GET /review/{id}`(본문+경고+이력),
+  `POST /review/{id}/approve`(`reason` 필수, 경고 있으면 `confirmed:true` 필수, 미확인 시 409),
+  `POST /review/{id}/keep`(REVIEW 유지+메모 기록), `POST /review/{id}/archive`
+  (`REVIEW`/`ACTIVE→ARCHIVED`, `reason` 필수), `GET /{id}/history`(provenance),
+  `DELETE /{id}`(하드 삭제 아님, `ARCHIVED` 처리). `IllegalState/Argument` 위반은 400
+  (`REVIEW_REQUEST_REJECTED`). OFFICIAL/CASE/EBOOK 모두 동일 workflow, 경고는 차단이
+  아니라 관리자 확인 대상(`CASE_DERIVED` 포함).
 - `POST /ingest/cases`(`articlesDir`, 기본 `data/newstart-cafe/gamian/articles`),
   `POST /ingest/generate-rules`: 카페 사례→knowledge 파생(별도 컨트롤러 `NewstartIngestionAdminController`).
 
