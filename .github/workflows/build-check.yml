@@ -121,6 +121,10 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingDomainTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardMigrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLedgerServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyReportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyExecutiveServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyShopPipelineFixtureTest"
 
       - name: Upload test report
         if: always()
