@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
  * 않는다) 실제 채팅 데이터는 전부 인증 뒤에 있다: REST(/api/newstart/chat/**)와 WebSocket
  * handshake는 {@code /api/**}·handshake interceptor가 비로그인을 401로 거부한다.
  *
- * <p>2026-09-21 cleanup: 네이버 로그인 V1/V2/공식 Spring Security OAuth2 Client 구현을
- * 전부 제거해 현재 로그인 수단이 없다(다음 세션에서 재구현 예정) — 비로그인 방문자 화면의
- * "네이버 로그인 준비 중" 버튼은 비활성 상태다. 회원가입·ID/PW 로그인은 여전히 없다(NewStart 방향).
+ * <p>STEP 4(2026-09-21): 비로그인 방문자 화면의 네이버 로그인 버튼을 Spring Security OAuth2
+ * Client의 표준 authorization endpoint(/oauth2/authorization/naver)로 연결했다. 회원가입·
+ * ID/PW 로그인은 여전히 없다(NewStart 방향).
  */
 @Controller
 public class NewStartChatPageController {
