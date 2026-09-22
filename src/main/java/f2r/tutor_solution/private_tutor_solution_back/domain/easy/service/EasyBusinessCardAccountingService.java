@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCardClassificationRecommendationResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyMerchantMappingResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.*;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +37,8 @@ public class EasyBusinessCardAccountingService {
   private final EasyTransactionRepository txnRepository;
   private final EasyJournalService journalService;
   private final EasyAccountService accountService;
+  private final EasyCardClassificationRecommendationService recommendationService;
+  private final EasyMerchantAccountMappingRepository merchantMappingRepository;
 
   public record PurchaseCommand(Long businessId, Long connectionId, Long instrumentId,
                                 String providerCode, String externalId,
@@ -199,9 +203,10 @@ public class EasyBusinessCardAccountingService {
         .settlement(settlement).payable(payable).allocatedAmount(amount).build()), false);
   }
 
-  public record PendingReviewItem(EasyCardEvent event, Long suggestedAccountId, String suggestedAccountName) {}
+  public record PendingReviewItem(EasyCardEvent event, Long suggestedAccountId, String suggestedAccountName,
+      EasyCardClassificationRecommendationResponse recommendation) {}
 
-  /** PENDING_REVIEW events for one business, oldest first, each with a rule-based account suggestion. */
+  /** PENDING_REVIEW events for one business, oldest first, each with a classification recommendation. */
   public List<PendingReviewItem> listPendingReview(Long businessId) {
     return eventRepository
         .findByBusiness_BusinessIdAndReviewStatusOrderByOccurredAtAsc(
@@ -209,9 +214,12 @@ public class EasyBusinessCardAccountingService {
         .stream()
         .map(event -> {
           var match = suggest(event);
+          var recommendation = recommendationService.recommend(event);
+          var recommendationResponse = EasyCardClassificationRecommendationResponse.from(recommendation);
           return new PendingReviewItem(event,
               match.map(m -> m.account().getAccountId()).orElse(null),
-              match.map(m -> m.account().getName()).orElse(null));
+              match.map(m -> m.account().getName()).orElse(null),
+              recommendationResponse);
         })
         .toList();
   }
@@ -339,5 +347,78 @@ public class EasyBusinessCardAccountingService {
     } catch (Exception e) {
       throw new IllegalStateException("SHA-256 is unavailable.", e);
     }
+  }
+
+  /**
+   * Save explicit admin merchant → account mapping (Priority 1 source).
+   * Called when admin explicitly chooses "Save as mapping for future" in review UI.
+   * Creates or updates the merchant mapping with source=ADMIN_MAPPING.
+   */
+  @Transactional
+  public EasyMerchantMappingResponse saveMerchantMapping(Long businessId, String rawMerchant,
+      Long accountId, String adminId) {
+    if (adminId == null || adminId.isBlank()) throw new IllegalArgumentException("adminId is required.");
+    EasyBusiness business = business(businessId);
+    EasyAccount account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
+    if (!account.isActive()) throw new IllegalArgumentException("Account is inactive: " + accountId);
+
+    String normalizedMerchant = recommendationService.normalizeMerchant(rawMerchant);
+
+    // Check if mapping already exists for this business + normalized merchant
+    var existing = merchantMappingRepository
+        .findByBusiness_BusinessIdAndNormalizedMerchant(businessId, normalizedMerchant);
+
+    EasyMerchantAccountMapping mapping;
+    if (existing.isPresent()) {
+      mapping = existing.get();
+      // Update existing mapping to ADMIN_MAPPING with HIGH confidence
+      mapping.updateAccount(account, EasyMerchantAccountMapping.Source.ADMIN_MAPPING,
+          EasyMerchantAccountMapping.Confidence.HIGH, adminId);
+      // Also update raw merchant if different
+      mapping = merchantMappingRepository.save(mapping);
+    } else {
+      mapping = merchantMappingRepository.save(EasyMerchantAccountMapping.builder()
+          .business(business)
+          .normalizedMerchant(normalizedMerchant)
+          .rawMerchant(rawMerchant)
+          .account(account)
+          .source(EasyMerchantAccountMapping.Source.ADMIN_MAPPING)
+          .confidence(EasyMerchantAccountMapping.Confidence.HIGH)
+          .createdBy(adminId)
+          .build());
+    }
+    return EasyMerchantMappingResponse.from(mapping);
+  }
+
+  /**
+   * Deactivate a merchant mapping (admin action).
+   */
+  @Transactional
+  public void deactivateMerchantMapping(Long mappingId, String adminId) {
+    EasyMerchantAccountMapping mapping = merchantMappingRepository.findById(mappingId)
+        .orElseThrow(() -> new IllegalArgumentException("Mapping not found: " + mappingId));
+    mapping.deactivate(adminId);
+  }
+
+  /**
+   * Reactivate a merchant mapping (admin action).
+   */
+  @Transactional
+  public void reactivateMerchantMapping(Long mappingId, String adminId) {
+    EasyMerchantAccountMapping mapping = merchantMappingRepository.findById(mappingId)
+        .orElseThrow(() -> new IllegalArgumentException("Mapping not found: " + mappingId));
+    mapping.reactivate(adminId);
+  }
+
+  /**
+   * List all merchant mappings for a business (admin UI).
+   */
+  public List<EasyMerchantMappingResponse> listMerchantMappings(Long businessId) {
+    return merchantMappingRepository
+        .findByBusiness_BusinessIdAndActiveTrueOrderByCreatedAtDesc(businessId)
+        .stream()
+        .map(EasyMerchantMappingResponse::from)
+        .toList();
   }
 }

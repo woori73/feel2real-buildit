@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,11 @@ public interface EasyTransactionRepository extends JpaRepository<EasyTransaction
   List<EasyTransaction> findByBusiness_BusinessIdAndFingerprintIsNotNull(Long businessId);
 
   List<EasyTransaction> findByFingerprintIsNotNull();
+
+  /**
+   * Phase 5A.2: Find posted transactions for historical exact match recommendation.
+   * Used to find consistent account usage for same merchant within a business.
+   */
+  List<EasyTransaction> findByBusiness_BusinessIdAndDirectionAndCounterparty(
+      Long businessId, EasyTxnDirection direction, String counterparty);
 }
