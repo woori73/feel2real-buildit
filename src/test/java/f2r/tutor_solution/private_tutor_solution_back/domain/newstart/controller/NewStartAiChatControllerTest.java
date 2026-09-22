@@ -1,7 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -47,6 +46,8 @@ class NewStartAiChatControllerTest {
   @Autowired MockMvc mockMvc;
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean NewStartAiChatService newStartAiChatService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service
+      .NewstartCanonicalEvidenceComposer evidenceComposer;
 
   private Cookie userCookie() {
     return new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "student", "STUDENT"));
@@ -62,7 +63,7 @@ class NewStartAiChatControllerTest {
 
   @Test
   void chatReturnsOkWithAnswer() throws Exception {
-    when(newStartAiChatService.ask(anyString())).thenReturn(
+    when(newStartAiChatService.askWithEvidence(any(), any())).thenReturn(
         new NewStartAiChatService.NewStartAiAnswer(true, "새출발기금은 ...입니다.", null, "qwen/qwen3.7-flash"));
 
     mockMvc.perform(post("/api/newstart/ai/chat")
@@ -77,7 +78,7 @@ class NewStartAiChatControllerTest {
 
   @Test
   void chatRejectsBlankQuestionWith400() throws Exception {
-    when(newStartAiChatService.ask(anyString())).thenReturn(
+    when(newStartAiChatService.askWithEvidence(any(), any())).thenReturn(
         NewStartAiChatService.NewStartAiAnswer.failed("질문을 입력해 주세요."));
 
     mockMvc.perform(post("/api/newstart/ai/chat")
@@ -91,7 +92,7 @@ class NewStartAiChatControllerTest {
 
   @Test
   void chatFailureMessageDoesNotLeakInternalDetails() throws Exception {
-    when(newStartAiChatService.ask(any())).thenReturn(
+    when(newStartAiChatService.askWithEvidence(any(), any())).thenReturn(
         NewStartAiChatService.NewStartAiAnswer.failed("AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요."));
 
     mockMvc.perform(post("/api/newstart/ai/chat")

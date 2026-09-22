@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartCanonicalEvidenceComposer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,15 +23,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewStartAiChatController {
 
   private final NewStartAiChatService newStartAiChatService;
+  private final NewstartCanonicalEvidenceComposer evidenceComposer;
 
-  public NewStartAiChatController(NewStartAiChatService newStartAiChatService) {
+  public NewStartAiChatController(NewStartAiChatService newStartAiChatService,
+      NewstartCanonicalEvidenceComposer evidenceComposer) {
     this.newStartAiChatService = newStartAiChatService;
+    this.evidenceComposer = evidenceComposer;
   }
 
   @PostMapping("/chat")
   public ResponseEntity<ChatResponse> chat(@RequestBody ChatRequest request) {
+    String message = request == null ? null : request.message();
+    // canonical 근거가 있으면 evidence path, 없으면 composer가 빈 블록 → ask()와 동일 동작.
     NewStartAiChatService.NewStartAiAnswer answer =
-        newStartAiChatService.ask(request == null ? null : request.message());
+        newStartAiChatService.askWithEvidence(message, evidenceComposer.composeForQuestion(message));
     if (!answer.ok()) {
       return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage()));
     }
