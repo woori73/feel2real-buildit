@@ -31,6 +31,19 @@
 - 중복 방지 우선순위: 공식 문서 ID → 정규화 URL → 출처 유형+정규화 제목+발표일.
 - DB: `newstart_official_updates` (V988).
 
+## NewStart Official Discovery Phase 2 (2026-09)
+
+### ✅ ADMIN POST /api/admin/newstart/updates/discovery/run
+
+- 목적: 공식 업데이트 discovery 수동 실행 (관리자).
+- 인증/권한: `ROLE_ADMIN` (기존 `/api/admin/**` 매처 재사용).
+- Query: `sinceDays` 선택값(기본 1) — 지정 일수 이후 게시 항목만 수집.
+- Response: 소스별 합산 결과 JSON (`success`, `discovered`, `newReviews`, `duplicates`, `irrelevant`, `errorMessage`, `subResults`).
+- 계약: 발견 결과는 `REVIEW` 생성까지만. 자동 `PUBLISHED`/`ACTIVE` 승격 없음. 동일 `dedup_key` 재발견은 중복으로 집계되어 REVIEW row를 늘리지 않는다.
+- 어댑터: NSF 게시판·NSF FAQ(eGov), FSC(`po040301`), CCRS(`bbsViewList.do` JSON), 희망리턴패키지는 sbiz24 SPA 이전으로 `NOT_IMPLEMENTED` failure 기록(SUCCESS 위장 금지).
+- 스케줄러: `0 0 11 * * *` / `0 0 21 * * *` (`Asia/Seoul`). `app.newstart.discovery.scheduler-enabled` 기본 `false` — 브랜치 머지만으로 운영 자동 실행되지 않으며 값 명시 설정 시에만 동작.
+- DB: `V991__add_newstart_official_updates_phase2.sql` (main의 V990 EASY 충돌로 번호만 양보, 내용 불변).
+
 ## NewStart AI (2026-09)
 
 ### ✅ POST /api/newstart/ai/chat

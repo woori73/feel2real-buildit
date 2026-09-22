@@ -19,6 +19,23 @@
 | `featured` | 게시 자료의 주요 업데이트 여부 |
 | `dedup_key` | 문서 ID → 정규화 URL → 제목+발표일 순으로 계산한 중복 키 |
 | `reviewed_by` / `reviewed_at` | 관리자 검토자·검토 시각 |
+| `relevance_priority` | CRITICAL / HIGH / NORMAL / IRRELEVANT (V991, discovery 우선순위) |
+| `discovered_at` | discovery로 발견된 시각. 수동 등록은 NULL (V991) |
+
+### newstart_official_discovery_run (V991)
+
+discovery 실행 이력. 소스·실행별 관측과 반복 실행 안전성 확인용.
+
+| 컬럼 | 의미 |
+|---|---|
+| `run_id` | 실행 식별자 |
+| `run_started_at` / `run_finished_at` | 실행 시작·종료 시각 |
+| `source_type` | 대상 출처 |
+| `status` | RUNNING / COMPLETED / FAILED (NOT_IMPLEMENTED·파싱 실패는 FAILED로 기록) |
+| `discovered_count` / `new_review_count` / `duplicate_count` / `irrelevant_count` | 실행 결과 집계 |
+| `error_message` | 실패 사유 |
+
+discovery는 `REVIEW` 생성까지만 수행하며 자동 게시·ACTIVE 승격은 없다. 스케줄러(11:00/21:00 KST)는 `app.newstart.discovery.scheduler-enabled=true` 명시 환경에서만 동작한다.
 
 `PUBLISHED`만 공개 피드와 NewStart 홈 최신 3건에 포함된다. 자동 수집·자동 게시와 Knowledge ACTIVE 승격은 이 모델에 포함하지 않는다.
  (Domain Model)
