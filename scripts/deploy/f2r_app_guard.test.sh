@@ -48,6 +48,8 @@ f2r__service_restart() { RESTART_CALLS=$((RESTART_CALLS + 1)); }
 DIAG_DUMPS=0
 f2r__service_status_dump() { DIAG_DUMPS=$((DIAG_DUMPS + 1)); }
 f2r__service_journal_dump() { :; }
+# CASE 1~4 는 PID가 안 바뀌는 세상을 가정한다 — 항상 같은 값.
+f2r__service_main_pid() { echo "1000"; }
 
 # ── CASE 1: NEW 정상 기동 → rollback 없음 ──────────────────────────────────
 case1() {
@@ -129,6 +131,79 @@ case4() {
 }
 echo "--- CASE 4: rollback itself fails -> clear ERROR + diagnostics, no silent success ---"
 case4
+
+# ── CASE 5: 배포 사고 재현 — PID A가 죽고 systemd가 PID B를 새로 띄우면, B는 A의
+# 남은 카운트다운이 아니라 자기 몫의 새 health window를 받아야 성공한다 ─────────
+# (old f2r_wait_for_health 였다면: 총 attempts=3 을 A/B 합쳐서 나눠 쓰다가 소진되어
+#  실패했을 시나리오 — B가 등장하자마자 healthy인데도 "A 기준 카운트다운 소진"으로
+#  실패 처리되는 게 실제 배포 사고였다.)
+#
+# NOTE on implementation: curl/f2r__service_main_pid run inside f2r_health_ok via
+# command substitution ($(...)), which is a SUBSHELL — plain shell variable mutations
+# made inside these stub functions would NOT be visible to the caller once the
+# subshell exits. State here is tracked in files instead, since file writes are real
+# OS-level side effects that survive subshell boundaries.
+case5_pid_replacement_gets_its_own_health_window() {
+  local state_dir; state_dir=$(mktemp -d)
+  echo 0 > "$state_dir/calls"
+  echo A > "$state_dir/pid"
+  curl() {
+    local n; n=$(($(cat "$state_dir/calls") + 1)); echo "$n" > "$state_dir/calls"
+    if [ "$n" -eq 3 ]; then
+      echo B > "$state_dir/pid"  # A가 3번째 poll 시점에 죽고 systemd가 B를 새로 띄웠다고 가정
+    fi
+    local pid; pid=$(cat "$state_dir/pid")
+    if [ "$pid" = "B" ] && [ "$n" -ge 4 ]; then
+      echo -n 200
+      return 0
+    fi
+    return 1
+  }
+  f2r__service_main_pid() { cat "$state_dir/pid"; }
+  RESTART_CALLS=0
+  # attempts_per_pid=3, max_generations=2 — old(non-pid-aware) 로직이었다면 총 3회
+  # 만에 실패했을 예산. pid-aware 로직은 B에게 3회를 새로 준다.
+  f2r_wait_for_health_pid_aware "f2r-app.service" "http://127.0.0.1:8080/actuator/health" 3 0 2
+  local status=$?
+  assert_eq "0" "$status" "CASE 5: replacement PID becomes healthy using its own fresh window"
+  assert_eq "4" "$(cat "$state_dir/calls")" "CASE 5: succeeded on generation 2's first check (call 4) — old non-pid-aware logic would have exhausted its 3-call total budget on generation 1 and failed before ever reaching this call"
+  rm -rf "$state_dir"
+}
+echo "--- CASE 5: PID replaced mid-wait -> new PID gets its own health window (not old PID's leftover countdown) ---"
+case5_pid_replacement_gets_its_own_health_window
+
+# ── CASE 6: PID이 계속 바뀌기만 하고(=계속 재시작만 되고) 한 번도 healthy가 안 되면,
+# systemd가 계속 재시작을 허용해도 이 가드는 max_generations 에서 확정 실패해야 한다
+# (= systemd의 무한 재시작을 그대로 받아들이지 않는다) ────────────────────────
+case6_bounded_generations_no_infinite_restart_acceptance() {
+  local state_dir; state_dir=$(mktemp -d)
+  echo 0 > "$state_dir/pid_counter"
+  curl() { return 1; }  # 무엇을 하든 절대 healthy가 안 됨
+  f2r__service_main_pid() {
+    local n; n=$(($(cat "$state_dir/pid_counter") + 1)); echo "$n" > "$state_dir/pid_counter"
+    echo "PID-${n}"  # poll마다 다른 pid = 매번 "새로 재시작됨"으로 관찰됨
+  }
+  f2r_wait_for_health_pid_aware "f2r-app.service" "http://127.0.0.1:8080/actuator/health" 2 0 3
+  local status=$?
+  assert_eq "1" "$status" "CASE 6: repeated-exit crash loop fails instead of waiting forever"
+  rm -rf "$state_dir"
+}
+echo "--- CASE 6: PID keeps changing without ever healthy -> bounded failure, not infinite wait ---"
+case6_bounded_generations_no_infinite_restart_acceptance
+
+# CASE 5/6 가 남겨 둔 curl/f2r__service_main_pid 오버라이드를 CASE 1~4 기본값으로 되돌린다
+# (이 파일 안에서 순서를 바꿔도 서로 오염되지 않게).
+curl() {
+  if [ "$FORCE_ALL_UNHEALTHY" = "1" ]; then return 1; fi
+  local content=""
+  [ -f "$CURRENT_JAR_PATH" ] && content=$(cat "$CURRENT_JAR_PATH")
+  if [ "$content" = "GOOD" ]; then
+    echo -n 200
+    return 0
+  fi
+  return 1
+}
+f2r__service_main_pid() { echo "1000"; }
 
 echo
 if [ "$FAILURES" -eq 0 ]; then
