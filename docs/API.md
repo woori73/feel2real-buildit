@@ -21,7 +21,7 @@
 ### ✅ ADMIN /api/admin/newstart/updates
 
 - 인증/권한: `ROLE_ADMIN`.
-- `POST /api/admin/newstart/updates`: 후보를 항상 `REVIEW`로 등록한다. 자동 게시하지 않는다.
+- `POST /api/admin/newstart/updates`: 후보를 항상 `REVIEW`로 등록한다. 수동 등록 경로이며 자동 게시 대상이 아니다.
 - `GET /api/admin/newstart/updates?sourceType=&status=`: 검토 목록.
 - `POST /api/admin/newstart/updates/{id}/publish`: REVIEW 자료 게시. 공식 원문 URL이 없으면 400.
 - `POST /api/admin/newstart/updates/{id}/reject`: REVIEW 자료 거절.
@@ -30,6 +30,20 @@
 - `POST /api/admin/newstart/updates/{id}/featured?enabled=true|false`: 게시 자료 주요 표시.
 - 중복 방지 우선순위: 공식 문서 ID → 정규화 URL → 출처 유형+정규화 제목+발표일.
 - DB: `newstart_official_updates` (V988).
+
+## NewStart Official Discovery Phase 2 (2026-09)
+
+### ✅ ADMIN POST /api/admin/newstart/updates/discovery/run
+
+- 목적: 공식 업데이트 discovery 수동 실행 (관리자).
+- 인증/권한: `ROLE_ADMIN` (기존 `/api/admin/**` 매처 재사용).
+- Query: `sinceDays` 선택값(기본 1) — 지정 일수 이후 게시 항목만 수집.
+- Response: 소스별 합산 결과 JSON (`success`, `discovered`, `newReviews`, `duplicates`, `irrelevant`, `errorMessage`, `subResults`).
+- 계약(2026-09-23 자동 게시 정책): 정상 수집된 공식 항목(제목+원문 URL 확보)은 중요도·관련성과 무관하게 즉시 `PUBLISHED` (`reviewedBy=AUTO_DISCOVERY`). 관리자는 사후 `reject`/`archive`로만 개입한다. 자동 게시는 뉴스 게시판까지이며 Knowledge `ACTIVE`/`OFFICIAL_CURRENT` 승격과 완전히 분리된다.
+- 최소 기술 차단(게시 대상 아님): 소스 조회/파싱 실패, 제목 없음, 원문 URL 없음/invalid, `NOT_IMPLEMENTED`, 동일 `dedup_key` 중복 — 기존 FAILED/duplicate 집계 정책 사용.
+- 어댑터: NSF 게시판·NSF FAQ(eGov), FSC(`po040301`), CCRS(`bbsViewList.do` JSON), 희망리턴패키지는 sbiz24 SPA 이전으로 `NOT_IMPLEMENTED` failure 기록(SUCCESS 위장 금지).
+- 스케줄러: `0 0 11 * * *` / `0 0 21 * * *` (`Asia/Seoul`). `app.newstart.discovery.scheduler-enabled` 기본 `false` — 브랜치 머지만으로 운영 자동 실행되지 않으며 값 명시 설정 시에만 동작.
+- DB: `V991__add_newstart_official_updates_phase2.sql` (main의 V990 EASY 충돌로 번호만 양보, 내용 불변).
 
 ## NewStart AI (2026-09)
 

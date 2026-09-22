@@ -5,6 +5,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialup
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.ReviewStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.RelevancePriority;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.repository.NewStartOfficialUpdateRepository;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -23,8 +24,17 @@ public class NewStartOfficialUpdateService {
 
   private final NewStartOfficialUpdateRepository repository;
 
+  /** 자동 게시된 항목의 reviewedBy 표식 — 관리자 사후 검토(게시취소/보관) 대상 식별용. */
+  public static final String AUTO_PUBLISHED_BY = "AUTO_DISCOVERY";
+
   @Transactional
   public NewStartOfficialUpdateResponse createReview(NewStartOfficialUpdateRequest request) {
+    return createReview(request, RelevancePriority.NORMAL, null);
+  }
+
+  @Transactional
+  public NewStartOfficialUpdateResponse createReview(NewStartOfficialUpdateRequest request,
+      RelevancePriority relevancePriority, LocalDateTime discoveredAt) {
     String url = normalizeUrl(request.originalUrl());
     String title = normalizeTitle(request.title());
     String documentId = normalize(request.officialDocumentId());
@@ -36,8 +46,21 @@ public class NewStartOfficialUpdateService {
     NewStartOfficialUpdate saved = repository.save(NewStartOfficialUpdate.review(
         request.sourceType(), requireText(request.sourceName(), "출처명"), title,
         requireText(request.summary(), "요약"), url, documentId, request.publishedAt(),
-        request.effectiveFrom(), request.effectiveTo(), request.category(), dedupKey));
+        request.effectiveFrom(), request.effectiveTo(), request.category(), relevancePriority, dedupKey, discoveredAt));
     return NewStartOfficialUpdateResponse.from(saved);
+  }
+
+  /**
+   * 자동 게시 정책(2026-09-23): 공식 출처에서 정상 수집된 항목은 중요도·관련성과 무관하게
+   * 즉시 PUBLISHED 한다. 관리자는 사후에 게시취소(reject)/보관(archive)으로 정리한다.
+   * 원문 URL 누락·형식 오류는 entity.publish() 기존 검증이 차단한다(technical block).
+   * 자동 게시는 뉴스 게시판까지만이며 Knowledge ACTIVE/OFFICIAL_CURRENT 승격과 무관하다.
+   */
+  @Transactional
+  public NewStartOfficialUpdateResponse createPublished(NewStartOfficialUpdateRequest request,
+      RelevancePriority relevancePriority, LocalDateTime discoveredAt) {
+    NewStartOfficialUpdateResponse created = createReview(request, relevancePriority, discoveredAt);
+    return publish(created.updateId(), AUTO_PUBLISHED_BY);
   }
 
   @Transactional(readOnly = true)
