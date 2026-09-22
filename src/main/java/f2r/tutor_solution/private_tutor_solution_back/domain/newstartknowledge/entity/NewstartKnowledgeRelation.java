@@ -56,6 +56,7 @@ public class NewstartKnowledgeRelation {
         RELATED_CASE,
         RELATED_FAQ,
         UNEXPLAINED_BY_OFFICIAL,
-        CONFLICT_REVIEW
+        CONFLICT_REVIEW,
+        NEEDS_MORE_CASES
     }
 }

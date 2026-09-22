@@ -35,17 +35,18 @@ public final class NewstartCanonicalAnswerPolicy {
                     + "공식자료에서 찾지 못한 것은 존재하지 않는다는 뜻이 아니다. "
                     + "이 경우 '현재 확보한 공식자료에서는 해당 세부기준을 확인하지 못했습니다.'라고 기록하고, "
                     + "관련 사례가 있으면 '다만 수집된 실제 차주 사례에서는 다음과 같은 처리가 보고되었습니다.' 형태로 이어서 제공한다. "
-                    + "'그런 기준은 없습니다', '그렇게 처리되지 않습니다'라는 단정 표현을 사용하지 않는다. "
+                    + "NOT_FOUND를 '그 기준이 존재하지 않는다'거나 '그렇게 처리되지 않는다'는 식의 단정 답변으로 바꾸지 않는다. "
                     + "실제 사례는 공식 규정이 아니다. 여러 사례에서 반복되어도 "
                     + "'수집된 여러 실제 사례에서 이러한 현상이 반복적으로 관찰됩니다.'로만 표현하고 "
-                    + "'제도상 반드시 이렇게 처리됩니다.'로 변환하지 않는다. "
+                    + "제도가 그 처리를 보장한다는 규칙 단정으로 변환하지 않는다. "
                     + "결과가 확인되지 않은 사례(부분·진행중·미해결·제3자 진술)를 성공·실패 사례로 변환하지 않고, "
                     + "알 수 없는 부분은 UNKNOWN으로 답하며 채우지 않는다. "
                     + "사용자가 자신의 감면율·승인 여부 등 판단을 요구해도 먼저 근거를 분류해서 제공하고, "
                     + "사례 근거 참고 분석을 덧붙일 때만 "
                     + "'현재 확보한 공식 규정에서 확인된 사항은 아니며, 수집된 실제 사례에 근거한 참고 분석입니다.'라는 취지를 반드시 밝힌다. "
                     + "감면율 판정기·승인 가능/불가능 판정기로 동작하지 않는다. "
-                    + "출처가 다른 내용이 충돌하면 한쪽을 삭제하지 않고 공식·운영자·사례를 병렬로 보여주고 차이를 명시한다.";
+                    + "출처가 다른 내용이 충돌하면 한쪽을 삭제하지 않고 공식·운영자·사례를 병렬로 보여주고 차이를 명시한다. "
+                    + "챗팅록(CHAT) 근거는 미검증(REVIEW_ONLY)이 원칙이며 확정 답변·확인된 사례처럼 제시하지 않는다.";
 
     /** CASE 근거 참고 분석 제공 시 의무 포함되는 취지의 문장. */
     public static final String JUDGMENT_LABEL_SENTENCE =
@@ -66,6 +67,18 @@ public final class NewstartCanonicalAnswerPolicy {
     /** 반복 패턴 표시 마커 (officialRule=false 보존). */
     public static final String PATTERN_NOT_RULE_MARKER =
             "반복 관찰일 뿐 공식 규정이 아닙니다.";
+
+    /** CHAT 출처 판별 값 (canonical ID prefix 규칙: CASE-CHAT-*). */
+    public static final String CASE_SOURCE_CAFE = "CAFE_CASE";
+    public static final String CASE_SOURCE_CHAT = "CHAT_CASE";
+
+    /** CHAT(미검증) 사례 section 헤더 — GOLDEN-C/G 금지선: 확정 답변 제시 금지. */
+    public static final String CHAT_UNVERIFIED_SECTION =
+            "[미검증 대화록 사례 — REVIEW_ONLY, 확정 답변으로 제시 금지]";
+
+    /** CHAT 미검증 마커. */
+    public static final String CHAT_UNVERIFIED_MARKER =
+            "미검증 대화록 — 확인된 사실로 단정하지 않습니다.";
 
     /**
      * 답변에 절대 등장하면 안 되는 단정·판정 표현.
@@ -90,7 +103,8 @@ public final class NewstartCanonicalAnswerPolicy {
             List<CaseEvidence> cases,
             List<PatternEvidence> patterns,
             List<DifferenceEvidence> differences,
-            List<String> unknowns) {
+            List<String> unknowns,
+            List<SourceLinkEvidence> sourceLinks) {
 
         public EvidenceBundle {
             official = official == null ? List.of() : List.copyOf(official);
@@ -100,6 +114,20 @@ public final class NewstartCanonicalAnswerPolicy {
             patterns = patterns == null ? List.of() : List.copyOf(patterns);
             differences = differences == null ? List.of() : List.copyOf(differences);
             unknowns = unknowns == null ? List.of() : List.copyOf(unknowns);
+            sourceLinks = sourceLinks == null ? List.of() : List.copyOf(sourceLinks);
+        }
+
+        /** sourceLinks 추가 전 8-arg 호출 호환 (additive 변경). */
+        public EvidenceBundle(
+                String topic,
+                List<String> official,
+                List<String> operator,
+                List<String> ebook,
+                List<CaseEvidence> cases,
+                List<PatternEvidence> patterns,
+                List<DifferenceEvidence> differences,
+                List<String> unknowns) {
+            this(topic, official, operator, ebook, cases, patterns, differences, unknowns, List.of());
         }
 
         public static EvidenceBundle empty(String topic) {
@@ -108,8 +136,39 @@ public final class NewstartCanonicalAnswerPolicy {
         }
     }
 
-    /** 개별 사례 근거. status는 canonical caseStatus 그대로 보존한다. */
-    public record CaseEvidence(String canonicalId, String summary, String caseStatus) {
+    /**
+     * 개별 사례 근거. status는 canonical caseStatus 그대로 보존한다.
+     * caseSource는 CAFE_CASE/CHAT_CASE 구분 값 — provenance를 generic CASE로 뭉개지 않는다.
+     * canonical ID prefix 규칙(NEWSTART_CANONICAL_TO_AGENT1_HANDOFF §1): CASE-CHAT-* 만 CHAT, 나머진 CAFE 계열.
+     */
+    public record CaseEvidence(String canonicalId, String summary, String caseStatus, String caseSource) {
+
+        public CaseEvidence {
+            if (caseSource == null || caseSource.isBlank()) {
+                caseSource = inferCaseSource(canonicalId);
+            }
+        }
+
+        /** caseSource 생략 생성자 — canonicalId prefix로 deterministic하게 추론. */
+        public CaseEvidence(String canonicalId, String summary, String caseStatus) {
+            this(canonicalId, summary, caseStatus, inferCaseSource(canonicalId));
+        }
+
+        public boolean isChatSource() {
+            return CASE_SOURCE_CHAT.equals(caseSource);
+        }
+
+        private static String inferCaseSource(String canonicalId) {
+            return canonicalId != null && canonicalId.startsWith("CASE-CHAT")
+                    ? CASE_SOURCE_CHAT : CASE_SOURCE_CAFE;
+        }
+    }
+
+    /**
+     * 출처 링크 근거. canonical provenance에 실재하는 URL/reference만 사용한다 —
+     * source가 없는 evidence에는 URL을 생성하지 않는다 (url null 허용, 가짜 URL 금지).
+     */
+    public record SourceLinkEvidence(String evidenceId, String label, String url) {
     }
 
     /** 반복 패턴 근거. officialRule은 항상 false로 보존한다. */
@@ -142,13 +201,15 @@ public final class NewstartCanonicalAnswerPolicy {
             sb.append("\n[전자책 정리]\n");
             bundle.ebook().forEach(line -> sb.append("- ").append(line).append("\n"));
         }
-        if (!bundle.cases().isEmpty()) {
+        List<CaseEvidence> cafeCases = bundle.cases().stream().filter(c -> !c.isChatSource()).toList();
+        List<CaseEvidence> chatCases = bundle.cases().stream().filter(CaseEvidence::isChatSource).toList();
+        if (!cafeCases.isEmpty()) {
             if (!hasOfficial) {
                 sb.append("\n").append(OFFICIAL_ABSENCE_SENTENCE).append("\n");
                 sb.append(CASE_BRIDGE_SENTENCE).append("\n");
             }
             sb.append("\n[실제 차주 사례에서 확인되는 내용]\n");
-            for (CaseEvidence c : bundle.cases()) {
+            for (CaseEvidence c : cafeCases) {
                 sb.append("- [").append(c.canonicalId()).append("] ").append(c.summary());
                 if (c.caseStatus() != null && !c.caseStatus().isBlank()) {
                     sb.append(" (").append(c.caseStatus()).append(")");
@@ -157,6 +218,18 @@ public final class NewstartCanonicalAnswerPolicy {
                     sb.append(" — ").append(UNRESOLVED_MARKER);
                 }
                 sb.append("\n");
+            }
+        }
+        if (!chatCases.isEmpty()) {
+            if (!hasOfficial && cafeCases.isEmpty()) {
+                sb.append("\n").append(OFFICIAL_ABSENCE_SENTENCE).append("\n");
+            }
+            sb.append("\n").append(CHAT_UNVERIFIED_SECTION).append("\n");
+            for (CaseEvidence c : chatCases) {
+                sb.append("- [").append(c.canonicalId()).append("] ").append(c.summary())
+                        .append(" (").append(c.caseStatus() == null || c.caseStatus().isBlank()
+                                ? "UNVERIFIED" : c.caseStatus()).append(")")
+                        .append(" — ").append(CHAT_UNVERIFIED_MARKER).append("\n");
             }
         }
         if (!bundle.patterns().isEmpty()) {
@@ -187,6 +260,17 @@ public final class NewstartCanonicalAnswerPolicy {
                 || !bundle.cases().isEmpty()
                 || !bundle.patterns().isEmpty()
                 || !bundle.differences().isEmpty();
+        if (!bundle.sourceLinks().isEmpty()) {
+            sb.append("\n[출처 링크]\n");
+            for (SourceLinkEvidence l : bundle.sourceLinks()) {
+                sb.append("- [").append(l.evidenceId()).append("] ").append(l.label());
+                // URL은 provenance에 실재할 때만 — 없으면 붙이지 않는다(가짜 URL 생성 금지).
+                if (l.url() != null && !l.url().isBlank()) {
+                    sb.append(" (").append(l.url()).append(")");
+                }
+                sb.append("\n");
+            }
+        }
         if (!bundle.unknowns().isEmpty() || !hasAnyEvidence) {
             sb.append("\n[현재 확인되지 않은 부분]\n");
             if (!hasAnyEvidence) {
@@ -205,18 +289,24 @@ public final class NewstartCanonicalAnswerPolicy {
     public static String classifyCaseOutcome(String finalReductionRate,
                                              String authorFollowupResult,
                                              String predictionVsActual) {
-        if (finalReductionRate != null && !finalReductionRate.isBlank()
-                && !"UNKNOWN".equalsIgnoreCase(finalReductionRate.strip())) {
+        if (isKnownValue(finalReductionRate)) {
             return "RESULT_CONFIRMED";
         }
         if (authorFollowupResult != null && !authorFollowupResult.isBlank()) {
             return "RESULT_PARTIAL";
         }
-        if (predictionVsActual != null && !predictionVsActual.isBlank()
-                && !"UNKNOWN".equalsIgnoreCase(predictionVsActual.strip())) {
+        if (isKnownValue(predictionVsActual)) {
             return "RESULT_PARTIAL";
         }
         return "UNRESOLVED_CASE";
+    }
+
+    /** canonical HANDOFF §1: "UNKNOWN" 접두 변형(추적필요 등)은 전부 UNKNOWN으로 취급. */
+    private static boolean isKnownValue(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        return !value.strip().toUpperCase().startsWith("UNKNOWN");
     }
 
     /** TRUE GAP 상태(부분·진행중·미해결·제3자) 여부. */

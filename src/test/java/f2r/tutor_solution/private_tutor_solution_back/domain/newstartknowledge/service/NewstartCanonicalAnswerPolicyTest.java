@@ -152,6 +152,81 @@ class NewstartCanonicalAnswerPolicyTest {
     }
 
     @Test
+    @DisplayName("GOLDEN-C 회귀: CAFE 사례와 CHAT 미검증 사례를 한 묶음으로 뭉개지 않는다")
+    void goldenC_cafeAndChatSourcesStaySeparated() {
+        // given: NOT_FOUND + CAFE 사례 + CHAT 미검증 사례 공존 (V-08 차량 슬롯 형태)
+        var bundle = bundleWith(
+                List.of(),
+                List.of(
+                        new NewstartCanonicalAnswerPolicy.CaseEvidence(
+                                "CASE-CAFE-5997", "Toss 알림으로 연체정보 삭제 확인", "RESULT_PARTIAL"),
+                        new NewstartCanonicalAnswerPolicy.CaseEvidence(
+                                "CASE-CHAT-020", "차량 기준 문답 (answer=null, REVIEW_ONLY)", "UNVERIFIED")));
+
+        // when
+        String block = NewstartCanonicalAnswerPolicy.composeEvidenceBlock(bundle);
+
+        // then: 두 section이 분리되어 있고, CHAT은 미검증 마커, CAFE는 상태 보존
+        assertThat(block).contains("[실제 차주 사례에서 확인되는 내용]");
+        assertThat(block).contains(NewstartCanonicalAnswerPolicy.CHAT_UNVERIFIED_SECTION);
+        assertThat(block).contains(NewstartCanonicalAnswerPolicy.CHAT_UNVERIFIED_MARKER);
+        assertThat(block).contains("CASE-CAFE-5997").contains("CASE-CHAT-020");
+        // ID prefix 없는 4-arg 호출도 caseSource 명시 시 분리 유지 (provenance 불변)
+        var explicit = new NewstartCanonicalAnswerPolicy.CaseEvidence(
+                "X-1", "요약", "UNRESOLVED_CASE",
+                NewstartCanonicalAnswerPolicy.CASE_SOURCE_CHAT);
+        assertThat(explicit.isChatSource()).isTrue();
+    }
+
+    @Test
+    @DisplayName("GOLDEN-C 계약: 3-arg 생성자는 canonical ID prefix로 CAFE/CHAT를 추론한다")
+    void caseSourceInferredFromCanonicalIdPrefix() {
+        assertThat(new NewstartCanonicalAnswerPolicy.CaseEvidence("CASE-CHAT-001", "s", null).isChatSource())
+                .isTrue();
+        assertThat(new NewstartCanonicalAnswerPolicy.CaseEvidence("CASE-CAFE-5904", "s", null).isChatSource())
+                .isFalse();
+        assertThat(new NewstartCanonicalAnswerPolicy.CaseEvidence("CASE-CCRS-01", "s", null).isChatSource())
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("SOURCE_LINKS: provenance에 실재하는 링크만 전달하고 URL이 없으면 만들지 않는다")
+    void sourceLinksCarriedWithoutFabrication() {
+        // given: URL 있는 출처 + URL 없는 출처
+        var bundle = new NewstartCanonicalAnswerPolicy.EvidenceBundle(
+                "차량 기준",
+                List.of("공식: newstartfund 가이드"),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(
+                        new NewstartCanonicalAnswerPolicy.SourceLinkEvidence(
+                                "FAQ-OFFICIAL-V-06", "새출발기금 공식 가이드",
+                                "https://www.newstartfund.or.kr/guide"),
+                        new NewstartCanonicalAnswerPolicy.SourceLinkEvidence(
+                                "CASE-CAFE-5997", "카페 게시글 784675", null)));
+
+        // when
+        String block = NewstartCanonicalAnswerPolicy.composeEvidenceBlock(bundle);
+
+        // then: 섹션 존재, 실재 URL 포함, URL 없는 항목에 빈 괄호·가짜 URL 없음
+        assertThat(block).contains("[출처 링크]");
+        assertThat(block).contains("https://www.newstartfund.or.kr/guide");
+        assertThat(block).contains("[CASE-CAFE-5997] 카페 게시글 784675\n");
+        // 8-arg 호환 생성자: sourceLinks 생략 가능 (additive 변경 검증)
+        var legacy = new NewstartCanonicalAnswerPolicy.EvidenceBundle(
+                "주제", List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+        assertThat(legacy.sourceLinks()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("GOLDEN-G 회귀: UNKNOWN 접두 변형은 확정 값으로 승격되지 않는다")
+    void goldenG_unknownPrefixedValuesStayUnresolved() {
+        assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome(
+                "UNKNOWN (추적 필요)", null, null)).isEqualTo("UNRESOLVED_CASE");
+        assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome(
+                null, null, "unknown_pending")).isEqualTo("UNRESOLVED_CASE");
+    }
+
+    @Test
     @DisplayName("자동 검증: 정책 지침에 금지 표현이 없고 의무 문장이 있다")
     void automated_policyTextGuards() {
         // OFFICIAL_NOT_FOUND_AS_FALSE = 0: 지침이 NOT_FOUND를 FALSE로 해석하지 않음
@@ -175,6 +250,10 @@ class NewstartCanonicalAnswerPolicyTest {
         assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome(null, null, null))
                 .isEqualTo("UNRESOLVED_CASE");
         assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome("", "", "UNKNOWN"))
+                .isEqualTo("UNRESOLVED_CASE");
+        assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome(null, null, "UNKNOWN (추적 필요)"))
+                .isEqualTo("UNRESOLVED_CASE");
+        assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome("unknown", null, null))
                 .isEqualTo("UNRESOLVED_CASE");
         assertThat(NewstartCanonicalAnswerPolicy.classifyCaseOutcome(null, "추가 증빙 예정", null))
                 .isEqualTo("RESULT_PARTIAL");

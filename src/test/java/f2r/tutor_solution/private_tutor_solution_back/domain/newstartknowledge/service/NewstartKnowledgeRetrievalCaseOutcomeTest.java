@@ -102,16 +102,19 @@ class NewstartKnowledgeRetrievalCaseOutcomeTest {
     @Test
     @DisplayName("RelationType이 canonical relation 어휘를 포함하고 DB 컬럼 길이에 맞는다")
     void relationTypeCoversCanonicalVocabulary() {
-        // given/when: canonical relations 어휘 6종
+        // given/when: canonical relations relationVocabulary 8종
+        // (NEWSTART_CANONICAL_RELATIONS_2026-09-22.json, HEAD 4b807bd7)
         List<String> canonical = List.of(
                 "SUPPORTED_BY",
                 "PARTIALLY_SUPPORTED_BY",
                 "RELATED_CASE",
                 "RELATED_FAQ",
+                "CONTRADICTS",
                 "UNEXPLAINED_BY_OFFICIAL",
-                "CONFLICT_REVIEW");
+                "CONFLICT_REVIEW",
+                "NEEDS_MORE_CASES");
 
-        // then: enum에 존재하고 VARCHAR(30)에 들어간다
+        // then: enum에 존재하고 VARCHAR(30)에 들어간다 (EnumType.STRING → 문자열 저장, migration 불필요)
         for (String name : canonical) {
             NewstartKnowledgeRelation.RelationType type =
                     NewstartKnowledgeRelation.RelationType.valueOf(name);
@@ -120,5 +123,33 @@ class NewstartKnowledgeRetrievalCaseOutcomeTest {
         }
         // 기존 값도 그대로 보존된다
         assertThat(NewstartKnowledgeRelation.RelationType.valueOf("CONTRADICTS")).isNotNull();
+        assertThat(NewstartKnowledgeRelation.RelationType.valueOf("CASE")).isNotNull();
+        assertThat(NewstartKnowledgeRelation.RelationType.valueOf("RULE")).isNotNull();
+        assertThat(NewstartKnowledgeRelation.RelationType.valueOf("PREREQUISITE")).isNotNull();
+        assertThat(NewstartKnowledgeRelation.RelationType.valueOf("SIMILAR")).isNotNull();
+        // REPEATED_CASE_PATTERN은 relation이 아니라 canonical patterns 구조(patternId, officialRule=false)로
+        // 유지된다 — relation enum에 포함되면 안 된다.
+        assertThat(NewstartKnowledgeRelation.RelationType.values())
+                .extracting(Enum::name)
+                .doesNotContain("REPEATED_CASE_PATTERN");
+    }
+
+    @Test
+    @DisplayName("RegardlessOfOutcome 경로는 KnowledgeItem repository를 전혀 거치지 않는다 (ACTIVE 게이트 우회 없음)")
+    @SuppressWarnings("unchecked")
+    void regardlessOfOutcomeNeverTouchesKnowledgeItemRepository() {
+        // given: 사례 조회만 발생하도록 mock 설정
+        when(empiricalCaseRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(unresolvedCase())));
+
+        // when: 결과 무관 사례 조회 2종
+        service.findRelatedCasesRegardlessOfOutcome(null, null, null, null, null, null, null, 10);
+        service.findSimilarCasesRegardlessOfOutcome(100000000L, 30000000L, 40, null, 30, 10);
+
+        // then: NewstartKnowledgeItem repository는 호출되지 않는다 —
+        // RegardlessOfOutcome는 EmpiricalCase의 finalReductionRate 조건만 완화하고,
+        // KnowledgeItem의 ACTIVE-only 승인 게이트를 우회하지 않는다.
+        org.mockito.Mockito.verifyNoInteractions(knowledgeRepository);
+        org.mockito.Mockito.verifyNoInteractions(relationRepository);
     }
 }
