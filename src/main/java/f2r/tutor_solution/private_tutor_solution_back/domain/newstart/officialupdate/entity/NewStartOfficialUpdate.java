@@ -69,11 +69,18 @@ public class NewStartOfficialUpdate {
   private Category category;
 
   @Enumerated(EnumType.STRING)
+  @Column(name = "relevance_priority", nullable = false, length = 20)
+  private RelevancePriority relevancePriority = RelevancePriority.NORMAL;
+
+  @Enumerated(EnumType.STRING)
   @Column(name = "review_status", nullable = false, length = 20)
   private ReviewStatus reviewStatus = ReviewStatus.REVIEW;
 
   @Column(name = "featured", nullable = false)
   private boolean featured;
+
+  @Column(name = "discovered_at")
+  private LocalDateTime discoveredAt;
 
   @Column(name = "dedup_key", nullable = false, length = 512, unique = true)
   private String dedupKey;
@@ -94,7 +101,8 @@ public class NewStartOfficialUpdate {
 
   private NewStartOfficialUpdate(SourceType sourceType, String sourceName, String title,
       String summary, String originalUrl, String officialDocumentId, LocalDateTime publishedAt,
-      LocalDateTime effectiveFrom, LocalDateTime effectiveTo, Category category, String dedupKey) {
+      LocalDateTime effectiveFrom, LocalDateTime effectiveTo, Category category,
+      RelevancePriority relevancePriority, String dedupKey, LocalDateTime discoveredAt) {
     this.sourceType = sourceType;
     this.sourceName = sourceName;
     this.title = title;
@@ -105,16 +113,19 @@ public class NewStartOfficialUpdate {
     this.effectiveFrom = effectiveFrom;
     this.effectiveTo = effectiveTo;
     this.category = category;
+    this.relevancePriority = relevancePriority;
     this.dedupKey = dedupKey;
+    this.discoveredAt = discoveredAt;
     this.reviewStatus = ReviewStatus.REVIEW;
     this.featured = false;
   }
 
   public static NewStartOfficialUpdate review(SourceType sourceType, String sourceName, String title,
       String summary, String originalUrl, String officialDocumentId, LocalDateTime publishedAt,
-      LocalDateTime effectiveFrom, LocalDateTime effectiveTo, Category category, String dedupKey) {
+      LocalDateTime effectiveFrom, LocalDateTime effectiveTo, Category category,
+      RelevancePriority relevancePriority, String dedupKey, LocalDateTime discoveredAt) {
     return new NewStartOfficialUpdate(sourceType, sourceName, title, summary, originalUrl,
-        officialDocumentId, publishedAt, effectiveFrom, effectiveTo, category, dedupKey);
+        officialDocumentId, publishedAt, effectiveFrom, effectiveTo, category, relevancePriority, dedupKey, discoveredAt);
   }
 
   public void publish(String reviewer) {
@@ -165,12 +176,21 @@ public class NewStartOfficialUpdate {
     this.featured = featured;
   }
 
+  public void setRelevancePriority(RelevancePriority relevancePriority) {
+    this.relevancePriority = relevancePriority;
+  }
+
+  public void setDiscoveredAt(LocalDateTime discoveredAt) {
+    this.discoveredAt = discoveredAt;
+  }
+
   public enum SourceType {
     NEWSTART_FUND,
     FSC,
     CCRS,
     FSS,
-    PUBLIC_AGENCY
+    PUBLIC_AGENCY,
+    HOPE_RETURN_PACKAGE
   }
 
   public enum Category {
@@ -187,5 +207,12 @@ public class NewStartOfficialUpdate {
     PUBLISHED,
     REJECTED,
     ARCHIVED
+  }
+
+  public enum RelevancePriority {
+    CRITICAL,
+    HIGH,
+    NORMAL,
+    IRRELEVANT
   }
 }
