@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>금감원 민원 도우미 | 새출발기금 부실차주</title>
+  <meta name="description" content="전자책 실제 민원 예시를 참고해 내 상황을 금감원 민원 문장으로 정리하는 도우미">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/newstart.css?v=20260923-1">
+  <style>
+    .ns-fss-steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .ns-fss-step{font-size:13px;padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#475569}
+    .ns-fss-step.is-active{background:#0f172a;color:#fff}
+    .ns-fss-card{border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px;background:#fff}
+    .ns-fss-card.is-selected{border-color:#0f172a;box-shadow:0 0 0 2px rgba(15,23,42,.12)}
+    .ns-fss-card h3{margin:0 0 4px;font-size:16px}
+    .ns-fss-situation{color:#475569;font-size:14px;margin:0 0 8px}
+    .ns-fss-preview{color:#64748b;font-size:13px;margin:0 0 8px}
+    .ns-fss-full{white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px;font-size:13px;color:#334155;margin:0 0 8px}
+    .ns-fss-link{background:none;border:none;color:#2563eb;font-size:13px;padding:0;cursor:pointer}
+    .ns-fss-textarea{width:100%;min-height:160px;border:1px solid #cbd5e1;border-radius:12px;padding:12px;font:inherit;font-size:15px;box-sizing:border-box}
+    .ns-fss-hint{font-size:13px;color:#64748b;margin:6px 0 12px}
+    .ns-fss-label{font-size:13px;font-weight:700;color:#0f172a;margin:14px 0 6px}
+    .ns-fss-original{white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px;font-size:13px;color:#334155}
+    .ns-fss-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .ns-fss-manual li{margin-bottom:10px;font-size:14px}
+    .ns-fss-manual .ns-fss-ebook{display:block;color:#64748b;font-size:13px;margin-top:2px}
+    .ns-fss-manual .ns-fss-caution{display:block;color:#b45309;font-size:12px;margin-top:2px}
+    .ns-fss-err{color:#b91c1c;font-size:13px;margin-top:8px}
+    .ns-fss-note{font-size:12px;color:#64748b;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="newstart-page">
+    <div class="newstart-shell">
+
+      <header class="newstart-top">
+        <a class="newstart-brand" href="/newstart" aria-label="새출발기금 부실차주 홈">새출발기금 부실차주</a>
+        <nav class="newstart-topbar" aria-label="기본 메뉴">
+          <a class="ns-btn ns-btn-ghost" href="/newstart">홈</a>
+          <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
+        </nav>
+      </header>
+
+      <main aria-label="금감원 민원 도우미">
+        <section class="ns-card" aria-labelledby="ns-fss-title">
+          <p class="ns-section-kicker">실전 도우미</p>
+          <h1 id="ns-fss-title" style="margin:0 0 6px">금감원 민원 도우미</h1>
+          <p class="ns-feature-copy">전자책에 실린 실제 민원 예시를 참고해, 경험한 일을 적어 주시면
+            민원 제출용 문장으로 정리해 드립니다. 정리된 문장은 반드시 직접 검토한 뒤,
+            금감원 공식 사이트에서 본인이 직접 제출합니다.</p>
+          <div class="ns-fss-steps" aria-hidden="true">
+            <span class="ns-fss-step is-active" id="ns-fss-tab1">1 예시 선택</span>
+            <span class="ns-fss-step" id="ns-fss-tab2">2 내 상황 작성</span>
+            <span class="ns-fss-step" id="ns-fss-tab3">3 정리·복사</span>
+            <span class="ns-fss-step" id="ns-fss-tab4">4 금감원 접수 안내</span>
+          </div>
+          <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. NewStart AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
+
+          <h2 class="ns-fss-label">1단계 · 저와 비슷한 예시를 선택하세요</h2>
+          <div id="ns-fss-cards"></div>
+
+          <h2 class="ns-fss-label">2단계 · 내 상황 작성</h2>
+          <p class="ns-fss-hint">정리하지 않아도 괜찮습니다. 있었던 일을 사실대로 적어 주세요.
+            (예: "은행에서 이런 말을 들었고, 새출발기금에 전화했는데 이렇게 답했고, 나는 이런 상황이다…")</p>
+          <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
+            placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
+
+          <div class="ns-fss-actions">
+            <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
+          </div>
+          <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
+
+          <div id="ns-fss-result" hidden>
+            <h2 class="ns-fss-label">[내가 작성한 내용]</h2>
+            <div class="ns-fss-original" id="ns-fss-original"></div>
+            <h2 class="ns-fss-label">[AI가 정리한 민원문] — 직접 수정할 수 있습니다</h2>
+            <textarea class="ns-fss-textarea" id="ns-fss-output"></textarea>
+            <div class="ns-fss-actions">
+              <button type="button" class="ns-btn ns-btn-ghost" id="ns-fss-retry">다시 정리</button>
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-copy">전체 복사</button>
+            </div>
+            <p class="ns-fss-note">AI 정리문에 없는 사실이 섞였거나 확인할 값이 있으면
+              [ … 확인 필요 ] 표시를 지우고 직접 고친 뒤 복사하세요. 제출 전 최종 책임은 본인에게 있습니다.</p>
+            <p id="ns-fss-copy-err" class="ns-fss-err" hidden></p>
+          </div>
+
+          <h2 class="ns-fss-label">4단계 · 금감원 접수 안내</h2>
+          <p id="ns-fss-manual-intro" class="ns-fss-hint"></p>
+          <ol class="ns-fss-manual" id="ns-fss-manual"></ol>
+          <h3 class="ns-fss-label">사이트 접수 단계 <small>(부실차주 카페 매뉴얼 — 비공식 실무 안내)</small></h3>
+          <p id="ns-fss-site-image-note" class="ns-fss-note"></p>
+          <ol class="ns-fss-manual" id="ns-fss-site-steps"></ol>
+          <ul class="ns-fss-manual" id="ns-fss-site-tips"></ul>
+          <p id="ns-fss-manual-note" class="ns-fss-note"></p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+    // 프라이버시/보안: 서버·입력 데이터는 전부 textContent로만 렌더(innerHTML 금지).
+    var state = { samples: [], selected: null };
+    function $(id) { return document.getElementById(id); }
+    function text(node, value) { node.textContent = value == null ? '' : value; }
+
+    function setTab(n) {
+      [1, 2, 3, 4].forEach(function (i) {
+        $('ns-fss-tab' + i).classList.toggle('is-active', i <= n);
+      });
+    }
+
+    function renderCards() {
+      var host = $('ns-fss-cards');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      state.samples.forEach(function (s) {
+        var card = document.createElement('div');
+        card.className = 'ns-fss-card';
+        var h = document.createElement('h3'); text(h, s.title); card.appendChild(h);
+        var sit = document.createElement('p'); sit.className = 'ns-fss-situation'; text(sit, s.situation); card.appendChild(sit);
+        var pv = document.createElement('p'); pv.className = 'ns-fss-preview'; text(pv, '미리보기: ' + s.preview); card.appendChild(pv);
+        var full = document.createElement('pre'); full.className = 'ns-fss-full'; full.hidden = true; text(full, '제목: ' + s.subject + '\n' + s.body); card.appendChild(full);
+        var more = document.createElement('button'); more.type = 'button'; more.className = 'ns-fss-link'; text(more, '자세히 보기');
+        more.addEventListener('click', function () {
+          full.hidden = !full.hidden; text(more, full.hidden ? '자세히 보기' : '닫기');
+        });
+        card.appendChild(more);
+        var pick = document.createElement('div'); pick.className = 'ns-fss-actions';
+        var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ns-btn ns-btn-ghost'; text(btn, '이 사례와 비슷해요');
+        btn.addEventListener('click', function () {
+          state.selected = s;
+          Array.prototype.forEach.call(host.children, function (c) { c.classList.remove('is-selected'); });
+          card.classList.add('is-selected');
+          updateCompose();
+          setTab(2);
+        });
+        pick.appendChild(btn); card.appendChild(pick);
+        host.appendChild(card);
+      });
+    }
+
+    function updateCompose() {
+      $('ns-fss-compose').disabled = !(state.selected && $('ns-fss-input').value.trim().length > 0);
+    }
+
+    function renderManual(manual) {
+      if (!manual) return;
+      text($('ns-fss-manual-intro'), manual.intro);
+      text($('ns-fss-manual-note'), manual.note);
+      var host = $('ns-fss-manual');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      (manual.steps || []).forEach(function (st) {
+        var li = document.createElement('li');
+        var b = document.createElement('strong'); text(b, st.action); li.appendChild(b);
+        if (st.ebook) { var e = document.createElement('span'); e.className = 'ns-fss-ebook'; text(e, '전자책 안내: ' + st.ebook); li.appendChild(e); }
+        if (st.caution) { var c = document.createElement('span'); c.className = 'ns-fss-caution'; text(c, '주의: ' + st.caution); li.appendChild(c); }
+        host.appendChild(li);
+      });
+      var g = manual.siteGuide;
+      if (g) {
+        text($('ns-fss-site-image-note'), g.imageNote);
+        var stepsHost = $('ns-fss-site-steps');
+        while (stepsHost.firstChild) stepsHost.removeChild(stepsHost.firstChild);
+        (g.steps || []).forEach(function (st) {
+          var li = document.createElement('li'); text(li, st.text); stepsHost.appendChild(li);
+        });
+        var tipsHost = $('ns-fss-site-tips');
+        while (tipsHost.firstChild) tipsHost.removeChild(tipsHost.firstChild);
+        (g.tips || []).forEach(function (t) {
+          var li = document.createElement('li'); text(li, t); tipsHost.appendChild(li);
+        });
+      }
+    }
+
+    function compose() {
+      $('ns-fss-compose').disabled = true;
+      text($('ns-fss-compose-err'), ''); $('ns-fss-compose-err').hidden = true;
+      fetch('/api/newstart/fss/compose', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sampleId: state.selected.id, situationText: $('ns-fss-input').value })
+      }).then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
+        .then(function (res) {
+          if (res.status === 401) { $('ns-fss-auth').hidden = false; return; }
+          if (res.body.status !== 'ok') {
+            text($('ns-fss-compose-err'), res.body.errorMessage || '정리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+            $('ns-fss-compose-err').hidden = false;
+            return;
+          }
+          text($('ns-fss-original'), $('ns-fss-input').value);
+          $('ns-fss-output').value = res.body.composedText;
+          $('ns-fss-result').hidden = false;
+          setTab(3);
+          $('ns-fss-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        })
+        .catch(function () {
+          text($('ns-fss-compose-err'), 'AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+          $('ns-fss-compose-err').hidden = false;
+        })
+        .finally(function () { updateCompose(); });
+    }
+
+    function copyAll() {
+      var value = $('ns-fss-output').value;
+      text($('ns-fss-copy-err'), ''); $('ns-fss-copy-err').hidden = true;
+      function done() { text($('ns-fss-copy'), '복사되었습니다'); setTimeout(function () { text($('ns-fss-copy'), '전체 복사'); }, 1500); }
+      function fail(e) {
+        text($('ns-fss-copy-err'), '복사가 실패했습니다. 아래 내용을 손으로 선택해 복사해 주세요.');
+        $('ns-fss-copy-err').hidden = false;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(done, function () { legacyCopy(value) ? done() : fail(); });
+      } else {
+        legacyCopy(value) ? done() : fail();
+      }
+    }
+
+    function legacyCopy(value) {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = value; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+
+    $('ns-fss-input').addEventListener('input', updateCompose);
+    $('ns-fss-compose').addEventListener('click', compose);
+    $('ns-fss-retry').addEventListener('click', compose);
+    $('ns-fss-copy').addEventListener('click', copyAll);
+
+    fetch('/api/newstart/fss/companion', { credentials: 'same-origin' })
+      .then(function (r) { return r.status === 401 ? null : r.json(); })
+      .then(function (b) {
+        if (!b) { $('ns-fss-auth').hidden = false; return; }
+        state.samples = b.samples || [];
+        // preview는 서버 record 계산값(JSON 직렬화) 사용.
+        renderCards();
+        renderManual(b.manual);
+      })
+      .catch(function () { $('ns-fss-auth').hidden = false; });
+  })();
+  </script>
+</body>
+</html>
