@@ -177,13 +177,21 @@ class FssComplaintHelperServiceTest {
     }
 
     @Test
-    @DisplayName("K: 프론트 템플릿은 innerHTML 금지·textContent 전용 (XSS 회귀 가드)")
+    @DisplayName("K/P/Q: 템플릿 — textContent 전용(K), 공식 fss.or.kr 링크+noopener(P), 자동 제출 없음(Q)")
     void templateRendersOnlyViaTextContent() throws Exception {
         String html = new String(
             getClass().getResourceAsStream("/templates/newstart/fss-helper.html").readAllBytes(),
             StandardCharsets.UTF_8);
+        // K: XSS — 동적 데이터는 textContent로만
         assertThat(html).doesNotContain(".innerHTML");
         assertThat(html).contains("textContent");
+        // P: 검증된 공식 도메인 진입 링크 + 새 탭(noopener)
+        assertThat(html).contains("https://www.fss.or.kr/fss/minwon/search.jsp");
+        assertThat(html).contains("target=\"_blank\" rel=\"noopener noreferrer\"");
+        // Q: 자동 제출/자동화 부재 — form 없음, script에서 submit/클릭 자동화 없음
+        assertThat(html).doesNotContain("<form");
+        assertThat(html).doesNotContain(".submit(");
+        assertThat(html).doesNotContain("DOMContentLoaded");
     }
 
     private ComplaintSample sample(String id) {
