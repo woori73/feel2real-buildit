@@ -3,6 +3,11 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.controlle
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.entity.ChoonggiPost;
+import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.service.ChoonggiCreatorService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -27,10 +32,16 @@ public class ChoonggiPageController {
       new Episode("match-day", "EP.07", "MATCH DAY — SEP 30", "UPCOMING"),
       new Episode("after-the-match", "EP.08", "AFTER THE MATCH", "COMING SOON"));
 
+  private final ObjectProvider<ChoonggiCreatorService> creatorProvider;
+
+  public ChoonggiPageController(ObjectProvider<ChoonggiCreatorService> creatorProvider) {
+    this.creatorProvider = creatorProvider;
+  }
+
   @GetMapping("/choonggi")
   public String home(Model model, HttpServletResponse response) {
     page(model, response, "home", "CHOONGGI — Korea to India Gamer Vlog");
-    model.addAttribute("episodes", EPISODES);
+    addEpisodesAndPublishedPosts(model);
     model.addAttribute("matchStatus", matchStatus(LocalDate.now()));
     return "choonggi/page";
   }
@@ -38,13 +49,45 @@ public class ChoonggiPageController {
   @GetMapping("/choonggi/{section:vlog|gamer|india|about}")
   public String section(@PathVariable String section, Model model, HttpServletResponse response) {
     page(model, response, section, section.toUpperCase() + " — CHOONGGI");
-    model.addAttribute("episodes", EPISODES);
+    addEpisodesAndPublishedPosts(model);
     model.addAttribute("matchStatus", matchStatus(LocalDate.now()));
     return "choonggi/page";
   }
 
+  /**
+   * A fixed Season 1 episode and a Creator PUBLISHED post can represent the same episode
+   * (matched by episode number). Only the Creator post — the real, up-to-date one — is kept;
+   * the fixed placeholder for that episode number is dropped so the public list never shows both.
+   */
+  private void addEpisodesAndPublishedPosts(Model model) {
+    ChoonggiCreatorService creator = creatorProvider.getIfAvailable();
+    List<ChoonggiPost> publishedPosts = creator == null ? List.of() : creator.published();
+    Set<String> coveredNumbers = publishedPosts.stream()
+        .map(p -> episodeNumberOf(p.getEpisodeCode())).collect(Collectors.toSet());
+    List<Episode> remainingEpisodes = EPISODES.stream()
+        .filter(ep -> !coveredNumbers.contains(ep.number())).toList();
+    model.addAttribute("episodes", remainingEpisodes);
+    model.addAttribute("publishedPosts", publishedPosts);
+  }
+
+  /** "EP01" -> "EP.01", matching the {@link Episode#number()} display format. */
+  private static String episodeNumberOf(String episodeCode) {
+    return episodeCode != null && episodeCode.length() == 4
+        ? "EP." + episodeCode.substring(2) : episodeCode;
+  }
+
   @GetMapping("/choonggi/vlog/{slug}")
   public String episode(@PathVariable String slug, Model model, HttpServletResponse response) {
+    ChoonggiCreatorService creator = creatorProvider.getIfAvailable();
+    if (creator != null) {
+      var published = creator.publicPost(slug);
+      if (published.isPresent()) {
+        page(model, response, "post", published.get().getTitle() + " — CHOONGGI");
+        model.addAttribute("canonical", "https://feel2real.co.kr/choonggi/vlog/" + slug);
+        model.addAttribute("post", published.get());
+        return "choonggi/page";
+      }
+    }
     Episode episode = EPISODES.stream().filter(it -> it.slug().equals(slug)).findFirst()
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     page(model, response, "episode", episode.title() + " — CHOONGGI");

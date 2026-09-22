@@ -4,3 +4,4 @@
 @media(min-width:1024px){header span{display:inline;margin-right:calc(var(--nav-w) + 4vw + 16px)}}
 @media(max-width:374px){header span{display:none}.hero h1,.page>h1{font-size:59px}}
 @media(prefers-reduced-motion:no-preference){[data-reveal]{opacity:0;transform:translateY(16px);transition:.55s}[data-reveal].show{opacity:1;transform:none}}
+.post-media{margin:18px 0;background:#111}.post-media img,.post-media video{display:block;width:100%;max-height:80vh;object-fit:contain}.post-body{white-space:pre-wrap;font-size:18px;line-height:1.75}
