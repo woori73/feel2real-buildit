@@ -1418,3 +1418,10 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - 모든 event는 기본 `PENDING_REVIEW`다. Phase 5A는 자동 transaction/journal posting 및 AUTO CONFIRM을 제공하지 않는다.
 - `CARD_PAYABLE`은 LIABILITY 계정 foundation이다. 기존 INCOME/EXPENSE/ASSET transaction posting은 변경하지 않는다.
 - CREFIA와 BUSINESS_CARD 실제 provider는 계속 비활성/미구현이며 외부 network call은 없다.
+
+
+## CHOONGGI Creator
+
+- `choonggi_posts` (V991): episode_code, title, unique slug, body, DRAFT/PUBLISHED status, published_at, deleted_at and audit timestamps.
+- `choonggi_media` (V991): post FK, opaque storage_key, PHOTO/VIDEO type, MIME, original filename, byte size, optional dimensions/duration, sort order, cover flag and deleted_at.
+- Media binary is never stored in MySQL or Git. Existing FileStorage selects local disk in development and S3 in production.

@@ -4054,3 +4054,12 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - external ID 우선, 없으면 provider/connection/safe-card-token/type/time/amount/reference 기반 SHA-256 fingerprint로 멱등성을 보장한다.
 - full PAN, credential, raw provider secret을 입력·응답·로그에 노출하지 않는다. 실제 provider endpoint와 network 호출은 Phase 5A 범위 밖이다.
 - 승인 전 상태는 `PENDING_REVIEW`이며 AUTO CONFIRM은 금지된다.
+
+
+## CHOONGGI Creator (2026-09)
+
+- Creator SSR: `GET /choonggi/admin`, `/choonggi/admin/posts`, `/choonggi/admin/posts/new`, `/choonggi/admin/posts/{id}/edit|preview` — ROLE_ADMIN.
+- Write API: `/api/admin/choonggi/**` — existing ROLE_ADMIN rule. Draft create/update, media upload, cover selection, publish, unpublish and soft delete.
+- Public media: `GET /api/choonggi/media/{id}`. Metadata is in MySQL; bytes are in existing FileStorage (S3 in prd, local in dev).
+- Photos are decoded, resized and re-encoded by ImageSanitizer, removing EXIF/GPS. Videos accept validated MP4/MOV up to 50MB; no autoplay.
+- DRAFT rows never appear in public queries. Published posts integrate into `/choonggi` and `/choonggi/vlog/{slug}`.
