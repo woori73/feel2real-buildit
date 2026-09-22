@@ -8,14 +8,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Provider-neutral business-card review foundation.
- * No method writes easy_transactions or journal entries; admin confirmation/posting remains a
- * separate future boundary. Settlement allocation reduces liability only and never expense.
+ * Observation methods never write easy_transactions or journal entries. Only
+ * {@link #approveAndPost} crosses that boundary, and only for admin-reviewed PURCHASE events —
+ * settlement allocation still reduces liability only and never books an expense.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,10 @@ public class EasyBusinessCardAccountingService {
   private final EasyCardBillingGroupRepository billingRepository;
   private final EasyCardSettlementRepository settlementRepository;
   private final EasyCardSettlementAllocationRepository allocationRepository;
+  private final EasyAccountRepository accountRepository;
+  private final EasyTransactionRepository txnRepository;
+  private final EasyJournalService journalService;
+  private final EasyAccountService accountService;
 
   public record PurchaseCommand(Long businessId, Long connectionId, Long instrumentId,
                                 String providerCode, String externalId,
@@ -192,11 +198,94 @@ public class EasyBusinessCardAccountingService {
         .settlement(settlement).payable(payable).allocatedAmount(amount).build()), false);
   }
 
+  public record PendingReviewItem(EasyCardEvent event, Long suggestedAccountId, String suggestedAccountName) {}
+
+  /** PENDING_REVIEW events for one business, oldest first, each with a rule-based account suggestion. */
+  public List<PendingReviewItem> listPendingReview(Long businessId) {
+    return eventRepository
+        .findByBusiness_BusinessIdAndReviewStatusOrderByOccurredAtAsc(
+            requireBusinessId(businessId), EasyCardEvent.ReviewStatus.PENDING_REVIEW)
+        .stream()
+        .map(event -> {
+          var match = suggest(event);
+          return new PendingReviewItem(event,
+              match.map(m -> m.account().getAccountId()).orElse(null),
+              match.map(m -> m.account().getName()).orElse(null));
+        })
+        .toList();
+  }
+
+  /**
+   * Admin review → post to the existing EASY ledger (Phase 5A.1 boundary).
+   * Only PURCHASE events are postable in this phase; cancellations/settlements/billing remain
+   * observation-only until a later phase defines their explicit ledger treatment.
+   * Re-approving an already-posted event is a safe no-op (idempotent reprocessing).
+   */
   @Transactional
-  public void approveEvent(Long eventId, String adminActor) {
-    eventRepository.findById(eventId)
-        .orElseThrow(() -> new IllegalArgumentException("Card event not found."))
-        .approve(adminActor);
+  public EasyCardEvent approveAndPost(Long eventId, Long businessId, Long accountId, String reviewer) {
+    if (reviewer == null || reviewer.isBlank()) throw new IllegalArgumentException("reviewer is required.");
+    EasyCardEvent event = eventRepository.findById(eventId)
+        .orElseThrow(() -> new IllegalArgumentException("Card event not found."));
+    requireBusiness(event.getBusiness(), businessId);
+    if (event.getPostedTxn() != null) {
+      return event;
+    }
+    if (event.getReviewStatus() == EasyCardEvent.ReviewStatus.REJECTED) {
+      throw new IllegalArgumentException("Rejected events cannot be posted.");
+    }
+    if (event.getEventType() != EasyCardEvent.Type.PURCHASE) {
+      throw new IllegalArgumentException("Only PURCHASE events can be posted in this phase.");
+    }
+    if (!"KRW".equals(event.getCurrency())) {
+      throw new IllegalArgumentException("Non-KRW card events require an explicit conversion not yet supported.");
+    }
+    if (accountId == null) throw new IllegalArgumentException("accountId is required.");
+    EasyAccount account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
+    if (!account.isActive()) throw new IllegalArgumentException("Account is inactive: " + accountId);
+
+    String sourceRef = "card_event:" + event.getCardEventId();
+    LocalDate occurredOn = event.getOccurredAt().toLocalDate();
+    EasyTransaction txn = EasyTransaction.builder()
+        .business(event.getBusiness())
+        .occurredOn(occurredOn)
+        .direction(EasyTxnDirection.EXPENSE)
+        .amount(event.getAmount())
+        .category(account.getName())
+        .counterparty(event.getInstrument().getIssuer())
+        .description("카드 이벤트 #" + event.getCardEventId())
+        .payMethod("카드")
+        .account(account)
+        .sourceKind("CARD_EVENT")
+        .sourceRef(sourceRef)
+        .fingerprint(EasyFingerprint.of(event.getBusiness().getBusinessId(), occurredOn,
+            EasyTxnDirection.EXPENSE.name(), event.getAmount(), event.getInstrument().getIssuer(),
+            sourceRef, "카드"))
+        .build();
+    EasyTransaction saved = txnRepository.save(txn);
+    event.markPosted(saved, reviewer);
+    journalService.repost(saved);
+    return event;
+  }
+
+  @Transactional
+  public EasyCardEvent rejectEvent(Long eventId, Long businessId, String reviewer) {
+    EasyCardEvent event = eventRepository.findById(eventId)
+        .orElseThrow(() -> new IllegalArgumentException("Card event not found."));
+    requireBusiness(event.getBusiness(), businessId);
+    event.reject(reviewer);
+    return event;
+  }
+
+  private Optional<EasyAccountService.ClassificationMatch> suggest(EasyCardEvent event) {
+    if (event.getEventType() != EasyCardEvent.Type.PURCHASE) return Optional.empty();
+    return accountService.classify(event.getInstrument().getIssuer(), event.getProviderExternalId(),
+        event.getAmount(), EasyTxnDirection.EXPENSE);
+  }
+
+  private Long requireBusinessId(Long businessId) {
+    if (businessId == null) throw new IllegalArgumentException("businessId is required.");
+    return businessId;
   }
 
   public long expenseCandidateTotal(Long businessId) {

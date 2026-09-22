@@ -89,6 +89,30 @@ class EasyBusinessCardAccountingDomainTest {
   }
 
   @Test
+  void markPostedApprovesAndLinksTheTransaction() {
+    Fixture f = fixture();
+    EasyCardEvent event = purchaseEvent(f, 50_000L, HASH_A);
+    EasyTransaction txn = EasyTransaction.builder().business(f.business)
+        .occurredOn(LocalDate.of(2026, 9, 1)).direction(EasyTxnDirection.EXPENSE)
+        .amount(50_000L).build();
+    event.markPosted(txn, "admin");
+    assertThat(event.getReviewStatus()).isEqualTo(EasyCardEvent.ReviewStatus.APPROVED);
+    assertThat(event.getPostedTxn()).isSameAs(txn);
+  }
+
+  @Test
+  void rejectRefusesAnAlreadyPostedEvent() {
+    Fixture f = fixture();
+    EasyCardEvent event = purchaseEvent(f, 50_000L, HASH_A);
+    EasyTransaction txn = EasyTransaction.builder().business(f.business)
+        .occurredOn(LocalDate.of(2026, 9, 1)).direction(EasyTxnDirection.EXPENSE)
+        .amount(50_000L).build();
+    event.markPosted(txn, "admin");
+    assertThatThrownBy(() -> event.reject("admin"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void settlementAndPayableSupportManyToManyPartialAllocation() {
     EasyCardPayable first = payable(70_000L);
     EasyCardPayable second = payable(30_000L);

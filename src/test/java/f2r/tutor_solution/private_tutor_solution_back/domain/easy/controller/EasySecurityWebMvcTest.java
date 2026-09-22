@@ -9,6 +9,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAccountService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAuditService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyReportService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyShopImportService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessService;
@@ -47,7 +48,8 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyInsightController.class,
     EasyAuditController.class,
     EasyReportController.class,
-    EasyCollectionController.class
+    EasyCollectionController.class,
+    EasyCardReviewController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -75,6 +77,7 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyCollectionIngestService collectionIngestService;
   @MockitoBean EasyCollectionManagementService collectionManagementService;
   @MockitoBean EasyCollectionSchedulerService collectionSchedulerService;
+  @MockitoBean EasyBusinessCardAccountingService cardAccountingService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -95,7 +98,8 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/filing-references",
       "/api/admin/easy/income-tax",
       "/api/admin/easy/corrections/logs",
-      "/api/admin/easy/collections/connections?businessId=1");
+      "/api/admin/easy/collections/connections?businessId=1",
+      "/api/admin/easy/card-events?businessId=1");
 
   @Test
   @DisplayName("익명 → 401")
