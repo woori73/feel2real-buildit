@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartCanonicalAnswerPolicy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiAiRouterClient;
 import org.springframework.stereotype.Service;
 
@@ -9,7 +10,8 @@ import org.springframework.stereotype.Service;
  * <p>현재 NewStart에는 Knowledge DB/RAG가 없다. 그래서 이 service는 (1) NewStart 역할에 맞는
  * 최소 system instruction을 붙이고 (2) 공용 {@link WikiAiRouterClient}로 Wiki Router
  * (provider=auto → 현재 기본 모델)에 위임하는 일만 한다. 카페 사례·공식자료 검색을 하는 척하지
- * 않는다 — retrieval layer가 생기면 이 service의 prompt 조립 단계에 끼워 넣으면 된다.
+ * 않는다 — 근거가 있으면 {@link #askWithEvidence(String, String)} 로
+ * {@link NewstartCanonicalAnswerPolicy} 규칙의 근거 블록을 함께 전달한다.
  *
  * <p>모델 정책은 Wiki Router 단일 출처를 따른다. NewStart에 별도 모델 설정이나 model ID
  * hard-code는 두지 않는다.
@@ -35,6 +37,18 @@ public class NewStartAiChatService {
 
   /** 질문 하나를 Wiki AI Router로 전달하고 답변을 돌려준다. 실패는 예외 없이 result-object로 보고한다. */
   public NewStartAiAnswer ask(String rawQuestion) {
+    return askWithEvidence(rawQuestion, null);
+  }
+
+  /**
+   * Canonical 근거 블록을 함께 전달하는 질문 처리 (canonical RAG answer composition).
+   *
+   * <p>{@link NewstartCanonicalAnswerPolicy#composeEvidenceBlock} 으로 만든 블록을 그대로
+   * system prompt 뒤에 붙인다. {@code evidenceBlock} 이 비면 기존 {@link #ask(String)} 와
+   * 동일하게 동작한다. Retrieval 호출 자체는 이 메서드가 하지 않는다 — 호출자가
+   * {@code NewstartKnowledgeRetrievalService} 로 조회·조립한 블록을 넘긴다.
+   */
+  public NewStartAiAnswer askWithEvidence(String rawQuestion, String evidenceBlock) {
     String question = rawQuestion == null ? "" : rawQuestion.strip();
     if (question.isEmpty()) {
       return NewStartAiAnswer.failed("질문을 입력해 주세요.");
@@ -42,8 +56,13 @@ public class NewStartAiChatService {
     if (question.length() > MAX_QUESTION_CHARS) {
       return NewStartAiAnswer.failed("질문이 너무 깁니다. " + MAX_QUESTION_CHARS + "자 이내로 입력해 주세요.");
     }
+    String systemPrompt = SYSTEM_PROMPT + " " + NewstartCanonicalAnswerPolicy.SYSTEM_PROMPT_ADDENDUM;
+    String fullQuestion = question;
+    if (evidenceBlock != null && !evidenceBlock.isBlank()) {
+      fullQuestion = question + "\n\n[검색된 근거 — 아래 층위 구분을 그대로 따라 답한다]\n" + evidenceBlock;
+    }
     WikiAiRouterClient.Completion completion =
-        wikiAiRouterClient.complete(SYSTEM_PROMPT, question, MAX_ANSWER_CHARS);
+        wikiAiRouterClient.complete(systemPrompt, fullQuestion, MAX_ANSWER_CHARS);
     if (!completion.ok()) {
       return NewStartAiAnswer.failed(completion.errorMessage());
     }

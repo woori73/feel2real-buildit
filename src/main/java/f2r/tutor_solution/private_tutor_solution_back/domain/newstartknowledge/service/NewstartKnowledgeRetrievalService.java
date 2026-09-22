@@ -251,6 +251,83 @@ public class NewstartKnowledgeRetrievalService {
     }
 
     /**
+     * 관련 실제 사례 조회 — 결과 확정 여부와 무관하게 전부 조회 (canonical CASE RETRIEVAL).
+     *
+     * <p>공식자료가 없다는 이유로 관련 CASE를 제거하지 않는다. 확정 감면율이 없는
+     * RESULT_PARTIAL/UNRESOLVED/ONGOING 사례도 그대로 반환하며, 호출자가
+     * {@link NewstartCanonicalAnswerPolicy#classifyCaseOutcome} 으로 상태를 표시한다.
+     * 기존 {@link #findRelatedCases} 는 확정 결과 사례만 필요할 때 그대로 사용한다.
+     */
+    public List<NewstartEmpiricalCaseResponse> findRelatedCasesRegardlessOfOutcome(
+            Long debtMin, Long debtMax,
+            Long incomeMin, Long incomeMax,
+            Integer ageMin, Integer ageMax,
+            String householdType,
+            int limit) {
+
+        Specification<NewstartEmpiricalCase> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (debtMin != null) predicates.add(cb.greaterThanOrEqualTo(root.get("debtTotal"), debtMin));
+            if (debtMax != null) predicates.add(cb.lessThanOrEqualTo(root.get("debtTotal"), debtMax));
+            if (incomeMin != null) predicates.add(cb.greaterThanOrEqualTo(root.get("income2025"), incomeMin));
+            if (incomeMax != null) predicates.add(cb.lessThanOrEqualTo(root.get("income2025"), incomeMax));
+            if (ageMin != null) predicates.add(cb.greaterThanOrEqualTo(root.get("age"), ageMin));
+            if (ageMax != null) predicates.add(cb.lessThanOrEqualTo(root.get("age"), ageMax));
+            if (householdType != null && !householdType.isBlank()) {
+                predicates.add(cb.equal(root.get("householdType"), householdType));
+            }
+            // 확정 감면율(finalReductionRate) 조건을 두지 않는다 — 미확정 사례도 보존.
+
+            query.orderBy(cb.desc(root.get("writtenAt")));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return empiricalCaseRepository.findAll(spec, PageRequest.of(0, limit)).stream()
+                .map(this::toCaseResponse)
+                .toList();
+    }
+
+    /**
+     * 유사 조건의 실제 사례 찾기 — 결과 확정 여부와 무관하게 전부 조회 (canonical CASE RETRIEVAL).
+     *
+     * <p>기존 {@link #findSimilarCases} 와 조건은 같고 확정 감면율 조건만 없다.
+     */
+    public List<NewstartEmpiricalCaseResponse> findSimilarCasesRegardlessOfOutcome(
+            Long debtTotal, Long income2025, Integer age, String householdType,
+            int tolerance, int limit) {
+
+        Specification<NewstartEmpiricalCase> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (debtTotal != null) {
+                predicates.add(cb.between(root.get("debtTotal"),
+                        debtTotal - (debtTotal * 30 / 100),
+                        debtTotal + (debtTotal * 30 / 100)));
+            }
+            if (income2025 != null) {
+                predicates.add(cb.between(root.get("income2025"),
+                        income2025 - (income2025 * 30 / 100),
+                        income2025 + (income2025 * 30 / 100)));
+            }
+            if (age != null) {
+                predicates.add(cb.between(root.get("age"), age - 5, age + 5));
+            }
+            if (householdType != null && !householdType.isBlank()) {
+                predicates.add(cb.equal(root.get("householdType"), householdType));
+            }
+            // 확정 감면율(finalReductionRate) 조건을 두지 않는다 — 미확정 사례도 보존.
+
+            query.orderBy(cb.desc(root.get("writtenAt")));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return empiricalCaseRepository.findAll(spec, PageRequest.of(0, limit)).stream()
+                .map(this::toCaseResponse)
+                .toList();
+    }
+
+    /**
      * Knowledge Gap 감지 - 질문에서 Wiki에 없는 정보 발견 시 기록
      */
     @Transactional

@@ -47,6 +47,15 @@ public class NewstartKnowledgeRelation {
         RULE,
         PREREQUISITE,
         SIMILAR,
-        CONTRADICTS
+        CONTRADICTS,
+        // Canonical relation vocabulary
+        // (docs/newstart/knowledge/NEWSTART_CANONICAL_RELATIONS_2026-09-22.json).
+        // VARCHAR(30) 컬럼에 그대로 들어가며 기존 값과 충돌하지 않는다. DB migration 불필요.
+        SUPPORTED_BY,
+        PARTIALLY_SUPPORTED_BY,
+        RELATED_CASE,
+        RELATED_FAQ,
+        UNEXPLAINED_BY_OFFICIAL,
+        CONFLICT_REVIEW
     }
 }
