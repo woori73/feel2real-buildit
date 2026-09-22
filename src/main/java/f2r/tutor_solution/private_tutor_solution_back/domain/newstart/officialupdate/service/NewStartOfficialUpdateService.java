@@ -5,6 +5,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialup
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.ReviewStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.RelevancePriority;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.repository.NewStartOfficialUpdateRepository;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,6 +26,12 @@ public class NewStartOfficialUpdateService {
 
   @Transactional
   public NewStartOfficialUpdateResponse createReview(NewStartOfficialUpdateRequest request) {
+    return createReview(request, RelevancePriority.NORMAL, null);
+  }
+
+  @Transactional
+  public NewStartOfficialUpdateResponse createReview(NewStartOfficialUpdateRequest request,
+      RelevancePriority relevancePriority, LocalDateTime discoveredAt) {
     String url = normalizeUrl(request.originalUrl());
     String title = normalizeTitle(request.title());
     String documentId = normalize(request.officialDocumentId());
@@ -36,7 +43,7 @@ public class NewStartOfficialUpdateService {
     NewStartOfficialUpdate saved = repository.save(NewStartOfficialUpdate.review(
         request.sourceType(), requireText(request.sourceName(), "출처명"), title,
         requireText(request.summary(), "요약"), url, documentId, request.publishedAt(),
-        request.effectiveFrom(), request.effectiveTo(), request.category(), dedupKey));
+        request.effectiveFrom(), request.effectiveTo(), request.category(), relevancePriority, dedupKey, discoveredAt));
     return NewStartOfficialUpdateResponse.from(saved);
   }
 

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.Category;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.RelevancePriority;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.ReviewStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.repository.NewStartOfficialUpdateRepository;
@@ -68,7 +69,8 @@ class NewStartOfficialUpdateServiceTest {
     NewStartOfficialUpdateService service = new NewStartOfficialUpdateService(repository);
     NewStartOfficialUpdate published = NewStartOfficialUpdate.review(
         SourceType.CCRS, "신용회복위원회", "공식 공지", "요약", "https://ccrs.or.kr/a", null,
-        LocalDateTime.of(2026, 9, 21, 9, 0), null, null, Category.NOTICE, "URL:https://ccrs.or.kr/a");
+        LocalDateTime.of(2026, 9, 21, 9, 0), null, null, Category.NOTICE,
+        RelevancePriority.NORMAL, "URL:https://ccrs.or.kr.a", LocalDateTime.now());
     published.publish("admin");
     when(repository.findByReviewStatusAndSourceTypeOrderByFeaturedDescPublishedAtDescUpdateIdDesc(
         ReviewStatus.PUBLISHED, SourceType.CCRS)).thenReturn(List.of(published));
@@ -86,6 +88,7 @@ class NewStartOfficialUpdateServiceTest {
   private static NewStartOfficialUpdate review() {
     return NewStartOfficialUpdate.review(
         SourceType.FSC, "금융위원회", "제도 변경", "요약", null, "DOC-1",
-        LocalDateTime.of(2026, 9, 21, 10, 0), null, null, Category.POLICY, "DOC:FSC:doc-1");
+        LocalDateTime.of(2026, 9, 21, 10, 0), null, null, Category.POLICY,
+        RelevancePriority.NORMAL, "DOC:FSC:doc-1", LocalDateTime.now());
   }
 }
