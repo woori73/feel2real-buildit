@@ -38,8 +38,8 @@ public class EasyBusinessCardAccountingService {
 
   public record PurchaseCommand(Long businessId, Long connectionId, Long instrumentId,
                                 String providerCode, String externalId,
-                                LocalDateTime occurredAt, long amount, String currency,
-                                String approvalReference) {}
+                                LocalDateTime occurredAt, LocalDate confirmationDate,
+                                long amount, String currency, String approvalReference) {}
   public record SettlementCommand(Long businessId, Long connectionId, Long instrumentId,
                                   String providerCode, String externalId, LocalDate paidOn,
                                   long amount, String currency, String bankTransactionRef) {}
@@ -79,7 +79,8 @@ public class EasyBusinessCardAccountingService {
     EasyCardEvent event = eventRepository.save(EasyCardEvent.builder()
         .business(business).connection(connection).instrument(instrument)
         .eventType(EasyCardEvent.Type.PURCHASE).providerExternalId(command.externalId())
-        .fingerprint(fingerprint).occurredAt(command.occurredAt()).amount(command.amount())
+        .fingerprint(fingerprint).occurredAt(command.occurredAt())
+        .confirmationDate(command.confirmationDate()).amount(command.amount())
         .currency(command.currency()).approvalReferenceHash(hashOptional(command.approvalReference()))
         .build());
     EasyCardPayable payable = payableRepository.save(EasyCardPayable.builder()
@@ -90,7 +91,7 @@ public class EasyBusinessCardAccountingService {
 
   @Transactional
   public EventResult observeCancellation(Long originalEventId, String providerCode,
-      String externalId, LocalDateTime occurredAt, long amount) {
+      String externalId, LocalDateTime occurredAt, LocalDate confirmationDate, long amount) {
     EasyCardEvent original = eventRepository.findById(originalEventId)
         .orElseThrow(() -> new IllegalArgumentException("Original card event not found."));
     EasyCardPayable payable = payableRepository.findByPurchaseEvent_CardEventId(originalEventId)
@@ -106,8 +107,8 @@ public class EasyBusinessCardAccountingService {
         .business(original.getBusiness()).connection(original.getConnection())
         .instrument(original.getInstrument()).originalEvent(original)
         .eventType(EasyCardEvent.Type.CANCELLATION).providerExternalId(externalId)
-        .fingerprint(fingerprint).occurredAt(occurredAt).amount(amount)
-        .currency(original.getCurrency()).build());
+        .fingerprint(fingerprint).occurredAt(occurredAt).confirmationDate(confirmationDate)
+        .amount(amount).currency(original.getCurrency()).build());
     payable.cancel(amount);
     return new EventResult(event, payable, false);
   }
