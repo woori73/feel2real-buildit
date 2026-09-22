@@ -1,0 +1,4695 @@
+{
+ "schemaVersion": "newstart-canonical-faq/1.0",
+ "generatedAt": "2026-09-22",
+ "branch": "docs/newstart-canonical-integration-20260922",
+ "policy": "docs/newstart/knowledge/NEWSTART_KNOWLEDGE_AND_ANSWER_POLICY.md",
+ "principles": [
+  "CLASSIFY FIRST. INFORM SECOND. JUDGE ONLY WHEN ASKED.",
+  "CASE를 OFFICIAL로 승격하지 않는다. OFFICIAL 근거 부재로 CASE를 삭제하지 않는다.",
+  "NOT_FOUND는 '현재 확보한 공식자료에서 확인 못 함'이지 FALSE가 아니다.",
+  "없는 값은 null, 추측 금지."
+ ],
+ "officialVerificationSummary": {
+  "OFFICIAL_CURRENT": 15,
+  "INSUFFICIENT_EVIDENCE": [
+   "V-07",
+   "V-11",
+   "V-21"
+  ],
+  "NOT_FOUND": [
+   "V-05",
+   "V-08",
+   "V-20"
+  ],
+  "note": "V-11·V-20은 혼합 판정(원칙 CURRENT, 세부 INSUFFICIENT/NOT_FOUND) — OFFICIAL_VERIFY_PR370 §판정표 원문 우선"
+ },
+ "caseEvidenceByOfficial": {
+  "V-01": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q01",
+    "4451-Q01"
+   ]
+  },
+  "V-02": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q02",
+    "5568-Q03",
+    "4451-Q03",
+    "4451-Q14"
+   ]
+  },
+  "V-03": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q04",
+    "4451-Q06",
+    "4451-Q34"
+   ]
+  },
+  "V-04": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q05",
+    "5568-Q06",
+    "5568-Q07",
+    "4451-Q09",
+    "4451-Q10",
+    "4451-Q11",
+    "4451-Q12"
+   ]
+  },
+  "V-05": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q08",
+    "5568-Q30"
+   ]
+  },
+  "V-06": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q09",
+    "5568-Q32",
+    "4451-Q20",
+    "4451-Q41"
+   ]
+  },
+  "V-07": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q10",
+    "5568-Q12",
+    "5568-Q24",
+    "4451-Q23",
+    "4451-Q24",
+    "4451-Q25",
+    "4451-Q47",
+    "4451-Q50"
+   ]
+  },
+  "V-08": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q11",
+    "4451-Q26"
+   ]
+  },
+  "V-09": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q13",
+    "5568-Q23",
+    "4451-Q02",
+    "4451-Q04"
+   ]
+  },
+  "V-10": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q14",
+    "5568-Q15",
+    "4451-Q22",
+    "4451-Q27",
+    "4451-Q28"
+   ]
+  },
+  "V-11": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q16",
+    "5568-Q17",
+    "5568-Q18",
+    "5568-Q20",
+    "4451-Q29",
+    "4451-Q31",
+    "4451-Q32",
+    "4451-Q49"
+   ]
+  },
+  "V-12": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q19",
+    "4451-Q30"
+   ]
+  },
+  "V-13": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q21",
+    "5568-Q22",
+    "4451-Q05"
+   ]
+  },
+  "V-14": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q25",
+    "4451-Q45",
+    "4451-Q48"
+   ]
+  },
+  "V-15": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q26",
+    "5568-Q27",
+    "5568-Q28",
+    "5568-Q29",
+    "4451-Q15",
+    "4451-Q16"
+   ]
+  },
+  "V-16": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "5568-Q31",
+    "5568-Q33",
+    "4451-Q08",
+    "4451-Q17",
+    "4451-Q21",
+    "4451-Q35"
+   ]
+  },
+  "V-17": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "4451-Q07",
+    "4451-Q13",
+    "4451-Q19",
+    "4451-Q36",
+    "4451-Q39",
+    "4451-Q40",
+    "4451-Q46"
+   ]
+  },
+  "V-18": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "4451-Q18"
+   ]
+  },
+  "V-19": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "4451-Q33"
+   ]
+  },
+  "V-20": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "4451-Q37",
+    "4451-Q38"
+   ]
+  },
+  "V-21": {
+   "caseEvidence": "PRESENT",
+   "operatorSourceIds": [
+    "4451-Q42",
+    "4451-Q43",
+    "4451-Q44"
+   ]
+  }
+ },
+ "counts": {
+  "operator": 83,
+  "chatFaq": 26,
+  "officialClaims": 21,
+  "total": 130
+ },
+ "entries": [
+  {
+   "canonicalId": "FAQ-OP-001",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신청자격",
+   "question": "부실차주 신청자격",
+   "answer": "무담보 5억·담보 10억 한도, 90일 이상·회생종국·장기연체등록 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q01",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-01",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-2-1",
+     "EBK-2-2"
+    ],
+    "official": [
+     "k03",
+     "k02"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q01",
+     "4451-Q02",
+     "4451-Q03",
+     "4451-Q04",
+     "4451-Q05"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-002",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신청자격",
+   "question": "부실우려차주 정의",
+   "answer": "90일 미만 장기연체 우려자, 신청 시 추심·법적조치 일시중단, 5회 미납 시 실효 경로 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q02",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-02",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-8-1",
+     "EBK-8-2"
+    ],
+    "official": [
+     "k09"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q09",
+     "4451-Q10"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-003",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신청자격",
+   "question": "연체 없이 부실차주 가능 여부",
+   "answer": "원칙 90일 이상만 가능, 부실우려는 10일 이후 신청·신청만으로 추심중단 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q03",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-02",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-8-1"
+    ],
+    "official": [
+     "k02"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q03"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-004",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신청자격",
+   "question": "최근 6개월 대출 30% 룰",
+   "answer": "신청일 기준 6개월 내 대출총액이 전체채무 30% 초과 시 자격박탈 서술, 카드사용액은 발급일 기준 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q04",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-03",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k03",
+     "k04"
+    ]
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q06"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-005",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "전환",
+   "question": "안전한 전환법",
+   "answer": "체결 후 5회 연속 미납→실효 경로가 가장 안전하다는 권고 서술, 실효 후 1주 내외 등록 시 신청",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q05",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5823",
+     "5884"
+    ],
+    "ebook": [
+     "EBK-8-1",
+     "EBK-8-3"
+    ],
+    "official": [
+     "k09"
+    ]
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q10"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-006",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "전환",
+   "question": "미서명 단축로",
+   "answer": "2026.3월부터 미서명 경로 거부사례 발생 서술, 해당 경로 금지 권고 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q06",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5988"
+    ],
+    "ebook": [
+     "EBK-8-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q12"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-007",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "전환",
+   "question": "5회 미납실효 소요",
+   "answer": "매월 납입일 미납 누적 총 5회 시 실효, 거치기간 이자 미납도 미납 간주 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q07",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-8-1"
+    ],
+    "official": [
+     "k11"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q10",
+     "4451-Q11"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-008",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "전환",
+   "question": "연도 경과 시 신청",
+   "answer": "올해 부실우려 신청자는 실효가 내년이어도 부실차주 신청 가능하다는 기금 안내 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q08",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-05",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": "NOT_FOUND(종료일 날짜만). '한시적 특별 정책' 문구 존재(FAQ-34)",
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k09",
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-009",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "감면율 결정방식",
+   "answer": "재산·소득 기준 산정, 순부채에 감면율 적용, 재산초과 시 0% 가능, 기본 60~90%·취약 최대90%·6월말 기본30프로 서술 병기",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q09",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-06",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1",
+     "EBK-7-2"
+    ],
+    "official": [
+     "EV-NS-PROP-2026"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q20",
+     "4451-Q41"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-010",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "부동산 보유 시",
+   "answer": "보유 시 신청 가능하나 재산가액만큼 감면 없이 상환, 임시안 0% 가능·확정안 재계산, 생계비 2~3천만원·토지 불가 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q10",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1",
+     "EBK-9-1"
+    ],
+    "official": [
+     "MX-PROPERTY"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q23",
+     "4451-Q24",
+     "4451-Q25"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-011",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "자동차 산정",
+   "answer": "시세 4천만원 이하 제외·초과분만 산정, 배기량 무관(중개형만 기준) 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q11",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-08",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-9-2",
+     "EBK-9-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q26"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-012",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "전세보증금 공제",
+   "answer": "주택시세에서 전세보증금 공제, 예시 4억·3.6억→4천만원 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q12",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q24"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-013",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "사업장 보증금",
+   "answer": "신청 전 폐업 시 보증금 제외, 폐업증명서 제출, 게시자 본인 폐업 후 신청 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q13",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-09",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": [
+     "k03"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q02",
+     "4451-Q03"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-014",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "통장잔고",
+   "answer": "신청시점 잔고 산정, 거래내역 미요구 서술, 직전 대량이체 리스크 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q14",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-10",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q28"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-015",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산감면",
+   "question": "보험",
+   "answer": "해약환급금 산정, 가족변경 시 제외 가능·보장형 문제 적음 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q15",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-10",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q27"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-016",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "연체 후 가압류 여부",
+   "answer": "채권사별 상이, 카드·캐피탈은 민원 해결 서술 vs 신보·보증재단은 신속가압류 주의 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q16",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [
+     "5856"
+    ],
+    "ebook": [
+     "EBK-6-1",
+     "EBK-6-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q29",
+     "4451-Q30"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-017",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "금감원 민원 방법",
+   "answer": "채권사명·담당자번호·정상생활곤란·부실차주준비 명시, 취하요청까지 매일민원 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q17",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [
+     "5856"
+    ],
+    "ebook": [
+     "EBK-6-1",
+     "EBK-6-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q29"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-018",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "신보 민원 효과",
+   "answer": "신보 민원 거의 무효·신문고 별효과 없음 서술, 재산 있을 시 즉시 가압류→신청직전 납유지 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q18",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-6-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q30",
+     "4451-Q39"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-019",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "가압류 후 조치",
+   "answer": "신청 후 권리 기금 이관, 협의 선납 시 해제·3년 자동해제 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q19",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-12",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q30"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-020",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "1금융권 추심",
+   "answer": "1금융권 법적조치 직행 많음·민원효과 낮음→부실우려 선신청 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q20",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-6-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-021",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "서류절차",
+   "question": "원장초기화",
+   "answer": "과거 취소이력 시 재신청 전 초기화 필요, 실효 후 이메일 신청 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q21",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-13",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5823",
+     "5884"
+    ],
+    "ebook": [],
+    "official": [
+     "k11"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-022",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "서류절차",
+   "question": "어카운트인포",
+   "answer": "전 금융계좌 일괄조회, 신청 시 신고·없음화면 캡처 제출 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q22",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-13",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-023",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "서류절차",
+   "question": "폐업 시점",
+   "answer": "직전 폐업 무방·보증금 제외·추가감면 자격, 본인 폐업 후 신청 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q23",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-09",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-3-1",
+     "EBK-3-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q02",
+     "4451-Q03",
+     "4451-Q45"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-024",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "서류절차",
+   "question": "개인채무 공제",
+   "answer": "차용증+근저당·가압류 시 인정 가능, 가족간 불인정 가능·조작 범죄 경고 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q24",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q23",
+     "4451-Q50"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-025",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "서류절차",
+   "question": "추가감면 10%",
+   "answer": "국취+희망리턴 이수 시 최대10%, 폐업증명 필요·택1 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q25",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-14",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5985"
+    ],
+    "ebook": [
+     "EBK-3-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q45"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-026",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "임시안 소요",
+   "answer": "보통 1주~1달, 이후 도덕적해이 1~2개월 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q26",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5823",
+     "5884"
+    ],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q15",
+     "4451-Q16"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-027",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "확정안 소요",
+   "answer": "임시 후 평균 6개월·10개 이하 4개월·양도지연 직접요청 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q27",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5866",
+     "5952"
+    ],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "4451-Q15"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-028",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "확정 전 변경",
+   "answer": "확정안 체결 기준, 사업자·주소 변경 가능·부동산 매도·명의변경 금지 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q28",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q17"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-029",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "체결 후 재산증가",
+   "answer": "체결 이후 재산증가 조건 불변, 상속·당첨 예시 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q29",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-030",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "제도 종료 여부",
+   "answer": "2026년말 운영 예정·7~9월 발표 예정, 올해 부실우려 내년실효 신청가능 안내 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q30",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-05",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": "NOT_FOUND(종료일 날짜만). '한시적 특별 정책' 문구 존재(FAQ-34)",
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k09",
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-031",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "개선안",
+   "question": "재산심사 강화",
+   "answer": "가상자산·비상장·사후검증(신용정보법) 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q31",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "신용정보법-2026-08-13"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-032",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "개선안",
+   "question": "감면율 기준 변경",
+   "answer": "변제능력 높은 최소감면 60→30% 하향·취약 90% 유지 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q32",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-06",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "EV-NS-PROP-2026"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q41"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-033",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "개선안",
+   "question": "사해행위 조사 강화",
+   "answer": "캠코 전담반·국토부·지자체·국세행안부 확대전망·적발 시 조치·은닉위험 경고 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "5568-Q33",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 5568,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-06-29",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "4451-Q04",
+     "4451-Q17"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-034",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "방문판매업 등 특정직종",
+   "answer": "개인사업자+금지업종 아니면 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q01",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-01",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k03"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q01"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-035",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "무실적 유령사업자 폐업 후",
+   "answer": "폐업 시 가능성 높음·등록세 납부내역 방어 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q02",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-09",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k03"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q13",
+     "5568-Q23"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-036",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "폐업사업자 연체없이 부실우려",
+   "answer": "폐업증명서 있으면 연체 없이 부실우려 신청 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q03",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-02",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k09"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q03"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-037",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "부실차주 거절 빈도",
+   "answer": "명의변경·재산초과·무실적 등 소명실패 시 부적격 탈락 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q04",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-09",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5988",
+     "6010"
+    ],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q28",
+     "5568-Q33"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-038",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "온라인 vs 방문",
+   "answer": "차이 없음·방문해도 온라인 대신 신청 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q05",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-13",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-039",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "6개월 30% 계산법",
+   "answer": "최근 6개월 잔액÷총잔액, 후순위 분모분자 포함 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q06",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-03",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k03",
+     "k04"
+    ]
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q04"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-040",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "비협약기관 혼재",
+   "answer": "협약기관 대환 후 포함 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q07",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-2-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-041",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "자격",
+   "question": "주식·코인 채무 탕감",
+   "answer": "매도·현금화 후 타인계좌 이체 안전 서술 (원문 보존, 권고 승격 금지)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q08",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-2-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-042",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실우려",
+   "question": "올부동의 시",
+   "answer": "부동의에도 매입 진행·장기연체 후 이동 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q09",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-8-1"
+    ],
+    "official": [
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q02",
+     "5568-Q05"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-043",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실우려",
+   "question": "안전 전환법",
+   "answer": "5회 미납 자동실효가 가장 안전 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q10",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5823"
+    ],
+    "ebook": [
+     "EBK-8-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q05"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-044",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실우려",
+   "question": "단축로 실효신청서",
+   "answer": "3회 미납 후 실효신청서 강제실효 단축 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q11",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k11"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-045",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실우려",
+   "question": "미서명 시",
+   "answer": "원문: 이 방법이 요즘 문제가 되어 하면 안되게 되었다",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q12",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-8-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q06"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-046",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실우려",
+   "question": "채무 선별 포함",
+   "answer": "전채무 포함 불필요·선별 가능·미포함분 정상상환 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q13",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k04",
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-047",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실차주심사",
+   "question": "90일 즉시신청 여부",
+   "answer": "90일 경과 즉시 아님·장기연체 코드 등록 필요 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q14",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-02",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-5-1"
+    ],
+    "official": [
+     "k02"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-048",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실차주심사",
+   "question": "임시안→확정안 기간",
+   "answer": "도덕적해이 포함 평균 6개월·다수 시 지연 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q15",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5866",
+     "5952",
+     "5823"
+    ],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q26",
+     "5568-Q27"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-049",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실차주심사",
+   "question": "심사통과 확인법",
+   "answer": "임시 후 한달 별연락 없으면 통과로 본다는 경험칙 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q16",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-050",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실차주심사",
+   "question": "비상장주식 배우자 증여",
+   "answer": "감사원 지적·사해·은닉·부적격 위험 + 적발시스템 확인 곤란 병기",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q17",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q28",
+     "5568-Q33"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-051",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실차주심사",
+   "question": "확정 시 신불·회복",
+   "answer": "신불됨·성실상환 1년 후 공공기록 삭제·점수 상승, 사고사 5년 제한 병기",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q18",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-18",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-052",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "부실차주심사",
+   "question": "부적격 시 대안",
+   "answer": "신복위 개인워크아웃 이동 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q19",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-2-2"
+    ],
+    "official": [
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-053",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "탕감액 공식",
+   "answer": "원문 수식 그대로: 무담보대출 부채 × 감면율 + 재산가액, 명의재산 축소 핵심 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q20",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-06",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1",
+     "EBK-7-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q09"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-054",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "주식·코인 정리시점",
+   "answer": "부실우려 신청 시 코인 잔고증명 요청→사전 매도·타인명의 정리 추천 서술 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q21",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-055",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "청약·노란우산",
+   "answer": "재산 포함·해지 대신 담보대출 후 타인계좌 이체 시 공제 서술 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q22",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-10",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-056",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "부동산·임대보증금 방어",
+   "answer": "차용증+개인근저당 시 한도 공제·직전직후 가족명의 단서 병기 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q23",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q24"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-057",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "역전세",
+   "answer": "전세보증금 채무·재산 동시 계상·상계로 0원 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q24",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q12"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-058",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "시세기준",
+   "answer": "아파트 KB·부동산테크·층수 실거래 어필·빌라 공시지가 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q25",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5749",
+     "6010"
+    ],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q10"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-059",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "자동차",
+   "answer": "4천만원 이하 0원 산정 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q26",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-08",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-9-2",
+     "EBK-9-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q11"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-060",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "보험 해지환급금",
+   "answer": "포함·약관대출 현금화 후 타인계좌 이동 시 공제 서술 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q27",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-10",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q15"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-061",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "통장잔고 현금인출",
+   "answer": "현금 이체·사용처 세밀확인 곤란→괜찮다는 서술 (원문 보존, 권고 승격 금지)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q28",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-10",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q14"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-062",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "추심문자·기한이익상실 통보",
+   "answer": "즉시 금감원 민원 가장 효과적·문구 서술·대부분 중단 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q29",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [
+     "5856"
+    ],
+    "ebook": [
+     "EBK-6-1",
+     "EBK-6-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q17"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-063",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "가압류 후 민원",
+   "answer": "카드사 가압류 민원+신청 후 취하多·신보 이관 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q30",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-12",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-6-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q18",
+     "5568-Q19"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-064",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "민원취하 요구 대응",
+   "answer": "소취하·가압류/상계금지 약속+녹음 후 취하 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q31",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-6-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-065",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "연체 대상 선정",
+   "answer": "추심 적은 인터넷은행·신용카드 연체 유리 서술 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q32",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-066",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "상계카드",
+   "question": "카드매출 결제계좌",
+   "answer": "대출은행 계좌 사용 시 임의상계 가능→무대출 타행 변경 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q33",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-19",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-067",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "상계카드",
+   "question": "카드 잔여한도 사용",
+   "answer": "발급일 기준→30% 미포함·최대한도 사용 유리 서술 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q34",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-03",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-068",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "상계카드",
+   "question": "카드깡·현금화",
+   "answer": "대량구매 현금화 무방 사례 존재 서술 + 적발 시 해이 소지→생필품·현금서비스 권장 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q35",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-069",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "상계카드",
+   "question": "세금 카드납부",
+   "answer": "세금 감면불가→카드납부 후 조정 전략·체납증명서 공제 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q36",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-2-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-070",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "기존대출",
+   "question": "정상 주담대 연장거절 리스크",
+   "answer": "장기연체 공유 시 기한이익상실 사유로 연장거절 위험 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q37",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-20",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": "원칙(매입/중개 구분·부동의시 매입)은 OFFICIAL_CURRENT(FAQ-57·62); 주담대 유예·연장 세부 NOT_FOUND",
+   "links": {
+    "case": [
+     "5868",
+     "5968"
+    ],
+    "ebook": [
+     "EBK-9-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-071",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "기존대출",
+   "question": "거절위험 해결",
+   "answer": "은행 설명+약정체결서 신속발급·기록삭제 증빙 시 연장가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q38",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-20",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": "원칙(매입/중개 구분·부동의시 매입)은 OFFICIAL_CURRENT(FAQ-57·62); 주담대 유예·연장 세부 NOT_FOUND",
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": [
+     "k10"
+    ]
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-072",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "기존대출",
+   "question": "신보·기보 감면",
+   "answer": "협약기관→대위변제 후 포함·감면 가능 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q39",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-2-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q18"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-073",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "기존대출",
+   "question": "자동차담보대출",
+   "answer": "확정 후 신복위 중개형·조건 충족 시 장기분할 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q40",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5862"
+    ],
+    "ebook": [
+     "EBK-9-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-074",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면소득",
+   "question": "90% 조건",
+   "answer": "원금 1억 이하+중위60% 이하 또는 기초수급 시 무관 90% 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q41",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-06",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5982"
+    ],
+    "ebook": [
+     "EBK-3-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q09",
+     "5568-Q32"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-075",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면소득",
+   "question": "소득기준 연도",
+   "answer": "국세청 최신 등록소득 기준·무직도 등록소득·7.1 변경·전후 예시 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q42",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-21",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-076",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면소득",
+   "question": "소득감소 반영",
+   "answer": "7.1 변경→유리 연도 위해 체결시기 조율 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q43",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-21",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-2"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-077",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면소득",
+   "question": "수급신청 시 실업급여",
+   "answer": "실업급여 소득 간주·공적사적 입금 모두 처리 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q44",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-21",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-078",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면소득",
+   "question": "추가감면 10%",
+   "answer": "희망리턴+국취 수료 시 최대10% 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q45",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-14",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5985"
+    ],
+    "ebook": [
+     "EBK-3-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "SAME",
+    "with": [
+     "5568-Q25"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-079",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "이의재기",
+   "question": "세금 조정여부",
+   "answer": "세금 자체는 어떤 제도로도 감면·조정 불가 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q46",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-080",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "이의재기",
+   "question": "1차확정안 재산 과다",
+   "answer": "생계비공제 약1,950만원 누락 확인·이의·민원 서술·토지 불가 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q47",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [
+     "5988",
+     "6010"
+    ],
+    "ebook": [
+     "EBK-7-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-081",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "이의재기",
+   "question": "확정 후 재기지원",
+   "answer": "신보 일사천리·재창업 지원금·재도전특례, 저소득 소액 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q48",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-14",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-3-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "UNIQUE",
+    "with": []
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-082",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "이의재기",
+   "question": "부실우려 후 등록전 추심",
+   "answer": "금감원 민원 대응 서술",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q49",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE",
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-6-1"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q17",
+     "4451-Q29"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-OP-083",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "이의재기",
+   "question": "가족간 차용·근저당",
+   "answer": "객관증빙+차용증+근저당 시 공제 가능·담당자 재량 단서 병기 (원문 보존)",
+   "sourceType": "OPERATOR_KNOWLEDGE",
+   "sourceId": "4451-Q50",
+   "provenance": {
+    "source": "CAFE",
+    "cafeKey": "newhopero",
+    "club": "31312978",
+    "sourceArticle": 4451,
+    "board": "초보가이드",
+    "role": "카페매니저",
+    "postDate": "2026-03-06",
+    "collected": "2026-09-22",
+    "rawLocalOnly": true
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null,
+   "links": {
+    "case": [],
+    "ebook": [
+     "EBK-7-3"
+    ],
+    "official": []
+   },
+   "relWith": {
+    "type": "PARTIAL_OVERLAP",
+    "with": [
+     "5568-Q24"
+    ]
+   },
+   "conflictNote": "충돌은 병존 기록이며 정답 판정이 아님"
+  },
+  {
+   "canonicalId": "FAQ-CHAT-001",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신청·전환",
+   "question": "부실우려차주에서 부실차주로 전환할 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-001",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     281,
+     300,
+     451,
+     920,
+     922,
+     1258,
+     1259
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-002",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신청·전환",
+   "question": "중개형 채무조정이 실효된 뒤 무엇을 해야 하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-002",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     428,
+     453
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-003",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "채권",
+   "question": "일부 채권만 연체돼도 다른 채권이 조정에 포함될 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-003",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     112,
+     115,
+     1070,
+     1073
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-004",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "채권",
+   "question": "임시안에 빠진 채권은 나중에 추가될 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-004",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     1070,
+     1073,
+     1245,
+     1246,
+     1400,
+     1403
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-005",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "임시안과 확정안은 왜 달라질 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-005",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     1042,
+     1067
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-006",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "임시안에서 재산가액이나 감면율이 이상하면 어떻게 하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-006",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     481,
+     490
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-007",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "진행",
+   "question": "확정안은 보통 언제 나오나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-007",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     136,
+     137,
+     559,
+     568,
+     1371,
+     1373
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-008",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면",
+   "question": "재산이 있으면 표시 감면율과 실제 상환부담이 달라질 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-008",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     119,
+     121,
+     1042,
+     1067
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-009",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "감면",
+   "question": "임시안 감면율과 확정안 감면율이 달라질 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-009",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     549,
+     566,
+     1042,
+     1067
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-010",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "부동산 재산가액은 어떻게 산정하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-010",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     133,
+     135,
+     1096,
+     1097
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-011",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "배우자 재산도 반영되나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-011",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     549,
+     576,
+     1079,
+     1080
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-012",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "보험 해약환급금은 재산에 포함되나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-012",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     582,
+     614
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-013",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "국민연금 적립액은 재산에 포함되나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-013",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     139,
+     142
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-014",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "재산",
+   "question": "비상장주식·코인은 재산 심사에서 어떻게 보나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-014",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     615,
+     620,
+     625,
+     651
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CONFLICT_REVIEW",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-015",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "소득",
+   "question": "폐업한 경우 소득은 어떻게 산정하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-015",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     12,
+     19
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-016",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "도덕적해이",
+   "question": "고의연체·도덕적 해이는 무엇인가요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-016",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     123,
+     129,
+     205,
+     211,
+     372,
+     376
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-017",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "소명",
+   "question": "최근 부동산을 매도했다면 매각대금 사용처를 소명해야 하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-017",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     461,
+     480
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-018",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "소명",
+   "question": "가족·지인 간 개인채무나 근저당은 재산심사에서 인정되나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-018",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     799,
+     800,
+     1195,
+     1203
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-019",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "보증기관",
+   "question": "신보·신용보증재단 채권에서 가압류가 발생할 수 있나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-019",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     338,
+     341,
+     493,
+     507
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-020",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "담보",
+   "question": "자동차 담보대출은 채무조정에서 어떻게 처리되나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-020",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     328,
+     335,
+     523,
+     538,
+     1040
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-021",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "신용",
+   "question": "공공정보 해제 후 신용카드 발급은 언제 가능한가요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-021",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     94,
+     102
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_ONLY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-022",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "추심",
+   "question": "부실차주 신청 후 채권사 통보나 추심이 오면 어떻게 하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-022",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     1028,
+     1030
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-023",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "상환",
+   "question": "거치기간과 상환기간은 어떻게 정해야 하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-023",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     1076,
+     1077
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-024",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "약정후",
+   "question": "확정안 체결 후 소득이나 재산이 늘면 어떻게 되나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-024",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     233,
+     250,
+     1361,
+     1392
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-025",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "실효·부활",
+   "question": "약정 실효 후 부활 또는 재약정이 가능한가요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-025",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     1209,
+     1230
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "CASE_SUPPORTED",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-CHAT-026",
+   "kind": "FAQ",
+   "classification": "OPERATOR",
+   "topic": "법률",
+   "question": "지급명령·경매개시·가압류 같은 법적 문서를 받으면 어떻게 해야 하나요?",
+   "answer": null,
+   "sourceType": "CHAT_TRANSCRIPT_PRIVATE",
+   "sourceId": "FAQ-CHAT-026",
+   "provenance": {
+    "source": "CHAT_TRANSCRIPT",
+    "file": "부실차주 상담방 대화.txt",
+    "lineRefs": [
+     1142,
+     1154,
+     1290,
+     1335
+    ],
+    "rawUploadToGithub": false,
+    "publicStatus": "REVIEW_ONLY",
+    "collected": "2026-09-22"
+   },
+   "reviewStatus": "OFFICIAL_VERIFY",
+   "officialStatus": null,
+   "notes": [
+    "참여자 식별정보 제거",
+    "상담방 답변은 공식 규정이 아님",
+    "OFFICIAL_VERIFY/CONFLICT_REVIEW는 공식자료 대조 전 확정 금지",
+    "RESULT_CONFIRMED는 참여자가 후속 공유한 실제 결과 범위만 의미"
+   ]
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-01",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "자격·한도",
+   "question": "공식 근거 확인: 자격·한도",
+   "answer": "부실차주/부실우려차주 자격과 채무 한도: 총채무 15억, 담보 10억, 무담보 5억. 한도 내라도 담보·무담보 각각 초과 시 불가. '20.4월 이후 휴·폐업 개인사업자(폐업 법인은 불가), 외국인 가능, 제외업종(부동산임대·금융·전문직 등), 미협약기관(대부업 등) 불가.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-01",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-52",
+     "FAQ-53",
+     "FAQ-54",
+     "FAQ-58",
+     "FAQ-44",
+     "FAQ-56"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-01",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-02",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "연체·등록",
+   "question": "공식 근거 확인: 연체·등록",
+   "answer": "부실차주=1개 이상 대출 3개월 이상 연체. 부실우려차주=연체 10일 이상 89일 이하, 또는 연체 10일 미만이라도 폐업·6개월 이상 휴업/국세·지방세 체납 공공기록 등재자. 연체정보 미등록 시 홈페이지 이의신청+부채증명원. '10일 vs 31일' 카페 논쟁은 공식 원문 병기만, 판정 안 함.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-02",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-32",
+     "FAQ-40",
+     "FAQ-49"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-02",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-03",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "30%룰",
+   "question": "공식 근거 확인: 30%룰",
+   "answer": "6개월 이내 신규 발생 대출이라도 전체 대출 총액의 30% 이하이면 지원 가능(예외).",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-03",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-54"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-03",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-04",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "실효경로",
+   "question": "공식 근거 확인: 실효경로",
+   "answer": "부실우려 약정 실효 시 기금이 채권 매입해 진행, 당시 미포함 대출도 추가 신청 가능(고객센터). 매입형 신청취소는 신청일 익월 15일까지, 이후 제한, 취소 후 90일 재신청 불가. ※ '익월 15일'은 신청취소 기한이지 법정 15일 이의신청 주장의 근거 아님.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-04",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-50",
+     "FAQ-51",
+     "공지 B-28"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-04",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-05",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "제도기한(종료일)",
+   "question": "공식 근거 확인: 제도기한(종료일)",
+   "answer": "조회한 공식 FAQ·공지 49건·홈페이지 어디에도 특정 종료일 명시 없음. '한시적 특별 정책' 문구만 존재. 종료일·기한 변경은 보도자료(FSS/기재부) 원문 대조 이관.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-05",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-34(문구)",
+     "개정 공지 B-21/B-41/B-52/B-56 실존"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-05",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": "NOT_FOUND(종료일 날짜만). '한시적 특별 정책' 문구 존재(FAQ-34)"
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-06",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "감면율",
+   "question": "공식 근거 확인: 감면율",
+   "answer": "원금 감면은 상환능력 없는 부실차주의 무담보 대출 중 순부채(부채-재산가액) 한정, 담보대출은 원금감면 대상 아님. 사회취약계층·저소득(중위소득60% 이하 & 총채무 1억 이하): 순부채 90% 감면, 거치·상환 최대 3년/20년. 취업·재창업 교육 이수 폐업자 최대 10%p 차등(일괄 아님). 자녀 수 기준 감면(70%/90% 류)은 공식 자료에 없음 → C-01 CONTRADICTS 근거.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-06",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-64",
+     "FAQ-65",
+     "FAQ-66",
+     "공지 B-47(감면표 '25.11.17 첨부 PDF)",
+     "B-41",
+     "B-42",
+     "B-52",
+     "B-56"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-06",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-07",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "재산공제",
+   "question": "공식 근거 확인: 재산공제",
+   "answer": "재산가치 추정 평가액에서 선순위·동순위 채권액(압류, (근)저당) 실체납, 채무 잔액, 임차보증금 등 공제(원칙). 임시안은 입력정보 기반 대략산정, 본약정 시 정밀 재산조사. 세부 공제 액수 테이블은 운영 예규 PDF에만 존재.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-07",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-61 각주",
+     "FAQ-64",
+     "FAQ-48"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-07",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-08",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "차량",
+   "question": "공식 근거 확인: 차량",
+   "answer": "조회한 FAQ·공지 목록에 차량 감정·산정 특수반영 기술 없음(FAQ-32/40은 폐업·연체 중심). 감정 규칙은 예규 필요.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-08",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ/공지 목록 전체(2026-09-22 조회)"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-08",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-09",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "폐업",
+   "question": "공식 근거 확인: 폐업",
+   "answer": "부실우려 요건에 폐업 또는 6개월 이상 휴업 포함. 폐업 법인은 배제. 추가감면은 부실차주 중 폐업자 한정.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-09",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-32",
+     "FAQ-52",
+     "FAQ-40",
+     "FAQ-66"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-09",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-10",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "금융재산(가상자산·비상장주식)",
+   "question": "공식 근거 확인: 금융재산(가상자산·비상장주식)",
+   "answer": "신청 시 금융자산·보증금 입력, 오차는 본약정 정밀조사에서 보완. 공식 절차: 가상자산 보유내역 제출('26.1.9), 비상장주식 보유내역 제출 시행('26.4.30, 조회방법 PDF 첨부).",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-10",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund 공지 B-50",
+     "공지 B-54",
+     "FAQ-48"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-10",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-11",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "추심·민원",
+   "question": "공식 근거 확인: 추심·민원",
+   "answer": "신청 익일 채권금융회사 통지·추심중단 요청. 협약기관은 추심 중단·강제집행/임의경매 중지 의무. 단 제3자 추심·경매는 중지 안 됨, 신청 전 지정 매각기일은 개별 협의. 금감원 민원 루틴의 실효성·시한에 대한 공식 언급 없음(C-02 병존, 민원 실효성=INSUFFICIENT_EVIDENCE).",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-11",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-59",
+     "FAQ-60"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-11",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": "추심중단 원칙은 OFFICIAL_CURRENT(FAQ-59); 금감원 민원 실효성은 INSUFFICIENT_EVIDENCE"
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-12",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "가압류",
+   "question": "공식 근거 확인: 가압류",
+   "answer": "신청 전 설정 가압류는 원칙 완제 후 해제, 신청만으론 불가. 예외: 재산가치 이상 변제 후 해제(변제액은 약정 시 산정). 채권기관 사해행위 가처분·소송, 약정 후 정기 재산조사로 은닉재산 발견 시 조정 무효·회수.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-12",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-61",
+     "FAQ-60-4",
+     "FAQ-72"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-12",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-13",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "절차",
+   "question": "공식 근거 확인: 절차",
+   "answer": "매입형=온라인 홈페이지+캠코 18개소, 중개형·담보·부실우려=신복위 50개소 방문. 임시안 약 2주, 매입형 3~4개월, 중개형 평균 2~3개월, 보증부는 대위변제로 +3~4개월. 신청량 증가 시 2주 초과 가능.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-13",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-37",
+     "FAQ-38",
+     "FAQ-63",
+     "FAQ-47"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-13",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-14",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "추가감면·재기",
+   "question": "공식 근거 확인: 추가감면·재기",
+   "answer": "교육 이수 폐업자 최대 10%p 차등. 연계 프로그램 4종: 국민취업지원제도·희망리턴패키지·재기교육(신용보증재단중앙회)·폴리텍. 재기지원 협업 확장 공지 B-55('26.5.26), 노란우산 도약지원금 B-37. ※ 재도전교육 1년 유효기간(카페 주장)은 공식 미발견 NOT_FOUND(조사 이관).",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-14",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-65",
+     "FAQ-66",
+     "공지 B-19",
+     "B-37",
+     "B-55"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-14",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-15",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "기간(거치·상환)",
+   "question": "공식 근거 확인: 기간(거치·상환)",
+   "answer": "거치·상환 최대 3년·20년(사회취약·저소득). 무담보 10년·담보(장기) 등 충분한 상환기간. 상환기간 변경은 동일 감면율 구간 내에서만, 조기상환 가능.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-15",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-65",
+     "FAQ-68",
+     "FAQ-34"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-15",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-16",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "심사·조사(도덕적해이)",
+   "question": "공식 근거 확인: 심사·조사(도덕적해이)",
+   "answer": "전원 도덕적해이 심사, 고의연체·고액자산가 소규모 감면 시도 거절. 이의신청·재심사 1회 이후 불가. 약정 후 정기 재산조사.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-16",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-70",
+     "FAQ-71",
+     "FAQ-72"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-16",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-17",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "제도연계(신복위·회생)",
+   "question": "공식 근거 확인: 제도연계(신복위·회생)",
+   "answer": "신복위·법원 회생과 병행 불가: 상환 중이면 신청 불가, 신청 중이면 취소 후 새출발 가능. 회생 폐지 후 신청 가능. 미협약·대상 제외 시 타 제도 안내.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-17",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-34",
+     "FAQ-41",
+     "FAQ-42",
+     "FAQ-56"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-17",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-18",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "신용회복(공공정보)",
+   "question": "공식 근거 확인: 신용회복(공공정보)",
+   "answer": "약정 시 연체정보 해제→공공정보 등록. 분할상환 1년(12회 이상) 성실납부 시 공공정보 해제. 취업·재창업 성공 시 1회 한정 해제. 신청 후 기존 연체정보로 신규 대출·카드 이용 제한 가능. ※ 카드 발급 가능 '시점' 확정 기준은 공식에 없음(FAQ-CHAT-021 CASE_ONLY 유지).",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-18",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-69",
+     "FAQ-55 각주",
+     "공지 B-30"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-18",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-19",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "상계",
+   "question": "공식 근거 확인: 상계",
+   "answer": "추심중단 후에도 예·적금 상계 가능, 행사기간=부실차주 신청 익일부터 2주. 급여성 계좌·신용카드 매출채권 및 가맹점계좌 상계는 예외.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-19",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-60-1"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-19",
+   "officialStatus": "OFFICIAL_CURRENT",
+   "officialStatusNote": null
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-20",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "주담대",
+   "question": "공식 근거 확인: 주담대",
+   "answer": "원칙은 확인: 부실차주 신용·보증=매입형, 부실차주 담보·부실우려 전반=중개형. 담보채권기관이 부동의하면 기금이 채권 매입해 중개형 참여. 담보 한도 10억, 담보 원금감면 제외. ※ 주담대 상환유예·연장 성공사례·조건은 공식 FAQ·공지에 없음(세부 NOT_FOUND, 실측 성공사례 0과 동일 상태).",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-20",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-57",
+     "FAQ-62",
+     "FAQ-64",
+     "FAQ-58"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-20",
+   "officialStatus": "NOT_FOUND",
+   "officialStatusNote": "원칙(매입/중개 구분·부동의시 매입)은 OFFICIAL_CURRENT(FAQ-57·62); 주담대 유예·연장 세부 NOT_FOUND"
+  },
+  {
+   "canonicalId": "FAQ-OFFICIAL-V-21",
+   "kind": "FAQ",
+   "classification": "OFFICIAL",
+   "topic": "소득",
+   "question": "공식 근거 확인: 소득",
+   "answer": "저소득=중위소득 60% 이하(FAQ-65)가 유일한 공식 소득 수치. 폐업 후 소득 산정(매출·인정액) 방식은 공식 안내 없음.",
+   "sourceType": "OFFICIAL_SITE",
+   "sourceId": "V-21",
+   "provenance": {
+    "source": "OFFICIAL",
+    "site": "newstartfund.or.kr(=새출발기금.kr 미러)",
+    "citations": [
+     "newstartfund FAQ-65"
+    ],
+    "verifiedAt": "2026-09-22",
+    "verificationDoc": "PR #370 docs/newstart/knowledge/NEWSTART_AGENT4_OFFICIAL_VERIFICATION_2026-09-22.md (branch docs/newstart-agent4-official-verify-20260922, commit ee209870)"
+   },
+   "verifyRef": "V-21",
+   "officialStatus": "INSUFFICIENT_EVIDENCE",
+   "officialStatusNote": null
+  }
+ ]
+}
