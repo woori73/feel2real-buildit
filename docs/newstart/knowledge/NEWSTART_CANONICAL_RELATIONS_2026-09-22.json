@@ -1,0 +1,2896 @@
+{
+ "schemaVersion": "newstart-canonical-relations/1.0",
+ "generatedAt": "2026-09-22",
+ "branch": "docs/newstart-canonical-integration-20260922",
+ "policy": "docs/newstart/knowledge/NEWSTART_KNOWLEDGE_AND_ANSWER_POLICY.md",
+ "principles": [
+  "DIFFERENCES ARE KNOWLEDGE — 충돌·차이는 제거 대상이 아닌 병존 기록",
+  "UNEXPLAINED_BY_OFFICIAL: CASE 존재, 공식 미확인. FALSE 해석 금지",
+  "REPEATED_CASE_PATTERN != OFFICIAL_RULE",
+  "모든 relation 은 판정 금지(judgment=PROHIBITED) 전제"
+ ],
+ "relationVocabulary": [
+  "SUPPORTED_BY",
+  "PARTIALLY_SUPPORTED_BY",
+  "RELATED_CASE",
+  "RELATED_FAQ",
+  "CONTRADICTS",
+  "UNEXPLAINED_BY_OFFICIAL",
+  "CONFLICT_REVIEW",
+  "NEEDS_MORE_CASES"
+ ],
+ "counts": {
+  "relations": 186,
+  "patterns": 3,
+  "unresolvedRefs": 108
+ },
+ "conflictRegistry": {
+  "C-01": {
+   "name": "감면율 수치(자녀수·90%·하향)",
+   "members": [
+    "5568-Q09",
+    "5568-Q32",
+    "4451-Q41",
+    "EBK-2-2",
+    "EV-NS-PROP-2026"
+   ],
+   "status": "병존(판정 없음), 공식 원문만 PR #370 §V-06에 제시"
+  },
+  "C-02": {
+   "name": "민원 실효성",
+   "members": [
+    "OPERATOR 가이드",
+    "5856 반론(JSON 댓글0 — CASE_INDEX 서술과 CONFLICT)",
+    "5988 신문고 후 재연락"
+   ],
+   "status": "병존. FSS 풀체인 RESULT_CONFIRMED=0"
+  },
+  "C-03": {
+   "name": "재산축소·은닉 회피 서술군",
+   "members": [
+    "4451-Q08",
+    "4451-Q21",
+    "4451-Q22",
+    "4451-Q23",
+    "4451-Q27",
+    "4451-Q28",
+    "4451-Q34",
+    "4451-Q35",
+    "4451-Q50",
+    "5568-Q31",
+    "5568-Q33",
+    "EBK-7-3"
+   ],
+   "status": "병존(권고 승격 금지). 공식 반대근거 원문 FAQ-60·72만 병기"
+  },
+  "C-04": {
+   "name": "수식 표현",
+   "members": [
+    "4451-Q20"
+   ],
+   "status": "원문 보존(판정 금지) — canonical relation 없음(대상 결측 정상)"
+  }
+ },
+ "patterns": [
+  {
+   "patternId": "PAT-01",
+   "name": "재산가액≥채무 → 0% 임시/확정안 → 체결 보류·워크아웃 문의",
+   "members": [
+    "CASE-CAFE-5988",
+    "CASE-CAFE-5901",
+    "CASE-CAFE-6010",
+    "CASE-CHAT-005",
+    "CASE-CHAT-009",
+    "CASE-CCRS-796984"
+   ],
+   "classification": "REPEATED_CASE_PATTERN",
+   "officialRule": false,
+   "note": "OFFICIAL_RULE 아님. 일반화·권고화 금지(TOP10_3SOURCE_MATRIX·C-03 병존)"
+  },
+  {
+   "patternId": "PAT-02",
+   "name": "예측 감면율(운영자/AI 보조) 제시 후 실제값 미추적",
+   "members": [
+    "CASE-CAFE-5904",
+    "CASE-CAFE-5948",
+    "CASE-CAFE-5957",
+    "CASE-CCRS-785225",
+    "CASE-CCRS-795918",
+    "CASE-CCRS-796449"
+   ],
+   "classification": "NEEDS_MORE_CASES",
+   "officialRule": false,
+   "note": "predictionVsActual=UNKNOWN 추적 대상. 예측값 기준화 금지"
+  },
+  {
+   "patternId": "PAT-03",
+   "name": "장기 소요(1년+)·단계 지연 타임라인",
+   "members": [
+    "CASE-CAFE-5867",
+    "CASE-CAFE-5750",
+    "CASE-CCRS-784675",
+    "CASE-CCRS-792144",
+    "CASE-CCRS-793198"
+   ],
+   "classification": "REPEATED_CASE_PATTERN",
+   "officialRule": false,
+   "note": "공식 처리기간(FAQ-63 약 2주·3~4개월)과 다른 체감 사례 — CONTRADICTS 아닌 병존 inform"
+  }
+ ],
+ "relations": [
+  {
+   "canonicalId": "REL-001",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-001",
+   "to": "FAQ-OFFICIAL-V-01",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-002",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-002",
+   "to": "FAQ-OFFICIAL-V-02",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-003",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-003",
+   "to": "FAQ-OFFICIAL-V-02",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-004",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-004",
+   "to": "FAQ-OFFICIAL-V-03",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-005",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-005",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-006",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-006",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-007",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-007",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-008",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-OP-008",
+   "to": "FAQ-OFFICIAL-V-05",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR 서술 존재, 현행 공식자료에서 세부 확인 불가(OFFICIAL_VERIFY_PR370). NOT_FOUND≠FALSE",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-009",
+   "type": "CONTRADICTS",
+   "from": "FAQ-OP-009",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-01 자녀 수 기준 감면 서술 vs 공식: 자녀수 기준 없음(V-06 PR#370 상세인용: 사회취약계층+저소득+순부채90% 상한). OPERATOR 원문 보존",
+   "conflictTag": "C-01",
+   "note": "CONFLICT 근거 원문은 PR #370 §V-06. 판정 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-010",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-010",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-011",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-OP-011",
+   "to": "FAQ-OFFICIAL-V-08",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR 서술 존재, 현행 공식자료에서 세부 확인 불가(OFFICIAL_VERIFY_PR370). NOT_FOUND≠FALSE",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-012",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-012",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-013",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-013",
+   "to": "FAQ-OFFICIAL-V-09",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-014",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-014",
+   "to": "FAQ-OFFICIAL-V-10",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-015",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-015",
+   "to": "FAQ-OFFICIAL-V-10",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-016",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-016",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-017",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-017",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-018",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-018",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-019",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-019",
+   "to": "FAQ-OFFICIAL-V-12",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-020",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-020",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-021",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-021",
+   "to": "FAQ-OFFICIAL-V-13",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-022",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-022",
+   "to": "FAQ-OFFICIAL-V-13",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-023",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-023",
+   "to": "FAQ-OFFICIAL-V-09",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-024",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-024",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-025",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-025",
+   "to": "FAQ-OFFICIAL-V-14",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-026",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-026",
+   "to": "FAQ-OFFICIAL-V-15",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-027",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-027",
+   "to": "FAQ-OFFICIAL-V-15",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-028",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-028",
+   "to": "FAQ-OFFICIAL-V-15",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-029",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-029",
+   "to": "FAQ-OFFICIAL-V-15",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-030",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-OP-030",
+   "to": "FAQ-OFFICIAL-V-05",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR 서술 존재, 현행 공식자료에서 세부 확인 불가(OFFICIAL_VERIFY_PR370). NOT_FOUND≠FALSE",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-031",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-031",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-032",
+   "type": "CONTRADICTS",
+   "from": "FAQ-OP-032",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-01 자녀 수 기준 감면 서술 vs 공식: 자녀수 기준 없음(V-06 PR#370 상세인용: 사회취약계층+저소득+순부채90% 상한). OPERATOR 원문 보존",
+   "conflictTag": "C-01",
+   "note": "CONFLICT 근거 원문은 PR #370 §V-06. 판정 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-033",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-033",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-034",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-034",
+   "to": "FAQ-OFFICIAL-V-01",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-035",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-035",
+   "to": "FAQ-OFFICIAL-V-09",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-036",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-036",
+   "to": "FAQ-OFFICIAL-V-02",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-037",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-037",
+   "to": "FAQ-OFFICIAL-V-09",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-038",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-038",
+   "to": "FAQ-OFFICIAL-V-13",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-039",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-039",
+   "to": "FAQ-OFFICIAL-V-03",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-040",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-040",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-041",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-041",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-042",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-042",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-043",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-043",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-044",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-044",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-045",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-045",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-046",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-046",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-047",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-047",
+   "to": "FAQ-OFFICIAL-V-02",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-048",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-048",
+   "to": "FAQ-OFFICIAL-V-15",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-049",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-049",
+   "to": "FAQ-OFFICIAL-V-15",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-050",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-050",
+   "to": "FAQ-OFFICIAL-V-16",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-051",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-051",
+   "to": "FAQ-OFFICIAL-V-18",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-052",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-052",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-053",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-054",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-054",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-055",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-055",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-056",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-056",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-057",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-057",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-058",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-058",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-OP-059",
+   "to": "FAQ-OFFICIAL-V-08",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR 서술 존재, 현행 공식자료에서 세부 확인 불가(OFFICIAL_VERIFY_PR370). NOT_FOUND≠FALSE",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-059",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-060",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-060",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-061",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-061",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-062",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-062",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-063",
+   "to": "FAQ-OFFICIAL-V-12",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-063",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-064",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-064",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-065",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-065",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-066",
+   "to": "FAQ-OFFICIAL-V-19",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-066",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-067",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-067",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-068",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-068",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-069",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-069",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-OP-070",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR 서술 존재, 현행 공식자료에서 세부 확인 불가(OFFICIAL_VERIFY_PR370). NOT_FOUND≠FALSE",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-070",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-OP-071",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR 서술 존재, 현행 공식자료에서 세부 확인 불가(OFFICIAL_VERIFY_PR370). NOT_FOUND≠FALSE",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-071",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-072",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-072",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-073",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-073",
+   "type": "CONTRADICTS",
+   "from": "FAQ-OP-074",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-01 자녀 수 기준 감면 서술 vs 공식: 자녀수 기준 없음(V-06 PR#370 상세인용: 사회취약계층+저소득+순부채90% 상한). OPERATOR 원문 보존",
+   "conflictTag": "C-01",
+   "note": "CONFLICT 근거 원문은 PR #370 §V-06. 판정 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-074",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-075",
+   "to": "FAQ-OFFICIAL-V-21",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-075",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-076",
+   "to": "FAQ-OFFICIAL-V-21",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-076",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-077",
+   "to": "FAQ-OFFICIAL-V-21",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-077",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-078",
+   "to": "FAQ-OFFICIAL-V-14",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-078",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-079",
+   "to": "FAQ-OFFICIAL-V-17",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-079",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-080",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-080",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-081",
+   "to": "FAQ-OFFICIAL-V-14",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-081",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "FAQ-OP-082",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "토픽 단위 공식 근거 존재(PR #370 판정표). 문장 단위 대조는 Agent1 단계 과제",
+   "conflictTag": null,
+   "note": "SUPPORTED 판정이 아니라 대조 가능한 공식 슬롯이 확인됨을 inform",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-082",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-OP-083",
+   "to": "FAQ-OFFICIAL-V-07",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "C-03 재산축소·은닉 회피 서술군 vs 공식 반대근거(FAQ-60 사해행위·72 정기재산조사). 권고 승격 금지",
+   "conflictTag": "C-03",
+   "note": "PR #370 §V-12 인용 대조. 병존",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-083",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-001",
+   "to": "FAQ-OP-034",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-084",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-001",
+   "to": "FAQ-OP-035",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-085",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-001",
+   "to": "FAQ-OP-036",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-086",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-001",
+   "to": "FAQ-OP-037",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-087",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-001",
+   "to": "FAQ-OP-038",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-088",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-002",
+   "to": "FAQ-OP-042",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-089",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-002",
+   "to": "FAQ-OP-043",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-090",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-003",
+   "to": "FAQ-OP-036",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-091",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-004",
+   "to": "FAQ-OP-039",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-092",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-005",
+   "to": "FAQ-OP-043",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-093",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-006",
+   "to": "FAQ-OP-045",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-094",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-007",
+   "to": "FAQ-OP-043",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-095",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-007",
+   "to": "FAQ-OP-044",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-096",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-009",
+   "to": "FAQ-OP-053",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-097",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-009",
+   "to": "FAQ-OP-074",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-098",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-010",
+   "to": "FAQ-OP-056",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-099",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-010",
+   "to": "FAQ-OP-057",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-100",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-010",
+   "to": "FAQ-OP-058",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-101",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-011",
+   "to": "FAQ-OP-059",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-102",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-012",
+   "to": "FAQ-OP-057",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-103",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-013",
+   "to": "FAQ-OP-035",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-104",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-013",
+   "to": "FAQ-OP-036",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-105",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-014",
+   "to": "FAQ-OP-061",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-106",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-015",
+   "to": "FAQ-OP-060",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-107",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-016",
+   "to": "FAQ-OP-062",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-108",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-016",
+   "to": "FAQ-OP-063",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-109",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-017",
+   "to": "FAQ-OP-062",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-110",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-018",
+   "to": "FAQ-OP-063",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-111",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-018",
+   "to": "FAQ-OP-072",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-112",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-019",
+   "to": "FAQ-OP-063",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-113",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-023",
+   "to": "FAQ-OP-035",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-114",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-023",
+   "to": "FAQ-OP-036",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-115",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-023",
+   "to": "FAQ-OP-078",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-116",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-024",
+   "to": "FAQ-OP-056",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-117",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-024",
+   "to": "FAQ-OP-083",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-118",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-025",
+   "to": "FAQ-OP-078",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-119",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-026",
+   "to": "FAQ-OP-048",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-120",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-026",
+   "to": "FAQ-OP-049",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-121",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-027",
+   "to": "FAQ-OP-048",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-122",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-028",
+   "to": "FAQ-OP-050",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-123",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-032",
+   "to": "FAQ-OP-074",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-124",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-033",
+   "to": "FAQ-OP-037",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-125",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-033",
+   "to": "FAQ-OP-050",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-126",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-034",
+   "to": "FAQ-OP-001",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-127",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-035",
+   "to": "FAQ-OP-013",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-128",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-035",
+   "to": "FAQ-OP-023",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-129",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-036",
+   "to": "FAQ-OP-003",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-130",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-037",
+   "to": "FAQ-OP-028",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-131",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-037",
+   "to": "FAQ-OP-033",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-132",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-039",
+   "to": "FAQ-OP-004",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-133",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-042",
+   "to": "FAQ-OP-002",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-134",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-042",
+   "to": "FAQ-OP-005",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-135",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-043",
+   "to": "FAQ-OP-005",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-136",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-045",
+   "to": "FAQ-OP-006",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-137",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-048",
+   "to": "FAQ-OP-026",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-138",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-048",
+   "to": "FAQ-OP-027",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-139",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-050",
+   "to": "FAQ-OP-028",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-140",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-050",
+   "to": "FAQ-OP-033",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-141",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-053",
+   "to": "FAQ-OP-009",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-142",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-056",
+   "to": "FAQ-OP-024",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-143",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-057",
+   "to": "FAQ-OP-012",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-144",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-058",
+   "to": "FAQ-OP-010",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-145",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-059",
+   "to": "FAQ-OP-011",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-146",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-060",
+   "to": "FAQ-OP-015",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-147",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-061",
+   "to": "FAQ-OP-014",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-148",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-062",
+   "to": "FAQ-OP-017",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-149",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-063",
+   "to": "FAQ-OP-018",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-150",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-063",
+   "to": "FAQ-OP-019",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-151",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-072",
+   "to": "FAQ-OP-018",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-152",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-074",
+   "to": "FAQ-OP-009",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-153",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-074",
+   "to": "FAQ-OP-032",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-154",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-078",
+   "to": "FAQ-OP-025",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 SAME(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-155",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-082",
+   "to": "FAQ-OP-017",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-156",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-082",
+   "to": "FAQ-OP-062",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-157",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-OP-083",
+   "to": "FAQ-OP-024",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "OPERATOR KB 내 PARTIAL_OVERLAP(의미 기준) — 원 문헌: 4451/5568 Q&A",
+   "conflictTag": null,
+   "note": "중복 질문 병존, 통합 아님",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-158",
+   "type": "CONFLICT_REVIEW",
+   "from": "FAQ-CHAT-014",
+   "to": "FAQ-OFFICIAL-V-10",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "PR #370 §V-10: 가상자산 '26.1.9·비상장주식 '26.4.30 제출 절차 공식 원문 vs 상담방 서술 병존",
+   "conflictTag": null,
+   "note": "판정 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-159",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-CHAT-021",
+   "to": "FAQ-OFFICIAL-V-18",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "PR #370 §V-18: 카드 발급 가능 '시점' 확정 기준 공식에 없음 → CASE_ONLY 유지",
+   "conflictTag": null,
+   "note": "공식 승격 불가",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-160",
+   "type": "RELATED_FAQ",
+   "from": "FAQ-CHAT-026",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "지급명령 등 법적 문서 대응 vs 공식 '익월 15일'(신청취소 기한) — 법정 15일 주장과 구분 필요(PR #370 §V-04)",
+   "conflictTag": null,
+   "note": "오탈자·유사표현 혼동 주의",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-161",
+   "type": "RELATED_CASE",
+   "from": "FAQ-CHAT-004",
+   "to": "CASE-CHAT-012",
+   "fromKind": "FAQ",
+   "toKind": "CASE",
+   "basis": "임시안 누락 채권 추가 — line refs(1070/1073/1245) 공유",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-162",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CAFE-5866",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "90% 사례 vs 공식 상한 텍스트(순부채 90%는 사회취약·저소득 한정 구조) — TRUE GAP §9: 새 증거 없음, 병존 유지",
+   "conflictTag": null,
+   "note": "이 인용을 근거로 CONTRADICTS 관계 설정 시 PR #370 §V-06 인용 사용",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-163",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CAFE-5952",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "90% 사례 vs 공식 상한 텍스트(순부채 90%는 사회취약·저소득 한정 구조) — TRUE GAP §9: 새 증거 없음, 병존 유지",
+   "conflictTag": null,
+   "note": "이 인용을 근거로 CONTRADICTS 관계 설정 시 PR #370 §V-06 인용 사용",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-164",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CHAT-008",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "90% 사례 vs 공식 상한 텍스트(순부채 90%는 사회취약·저소득 한정 구조) — TRUE GAP §9: 새 증거 없음, 병존 유지",
+   "conflictTag": null,
+   "note": "이 인용을 근거로 CONTRADICTS 관계 설정 시 PR #370 §V-06 인용 사용",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-165",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CCRS-784675",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "90% 사례 vs 공식 상한 텍스트(순부채 90%는 사회취약·저소득 한정 구조) — TRUE GAP §9: 새 증거 없음, 병존 유지",
+   "conflictTag": null,
+   "note": "이 인용을 근거로 CONTRADICTS 관계 설정 시 PR #370 §V-06 인용 사용",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-166",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CCRS-794749",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "90% 사례 vs 공식 상한 텍스트(순부채 90%는 사회취약·저소득 한정 구조) — TRUE GAP §9: 새 증거 없음, 병존 유지",
+   "conflictTag": null,
+   "note": "이 인용을 근거로 CONTRADICTS 관계 설정 시 PR #370 §V-06 인용 사용",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-167",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5752",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "지급명령·이의신청 '15일/2주' 서술: 공식 '익월 15일'은 신청취소 기한(별개). 코퍼스 15일 공식 출처 0(TRUE GAP §4)",
+   "conflictTag": null,
+   "note": "COURT 풀체인 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-168",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5987",
+   "to": "FAQ-OFFICIAL-V-04",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "지급명령·이의신청 '15일/2주' 서술: 공식 '익월 15일'은 신청취소 기한(별개). 코퍼스 15일 공식 출처 0(TRUE GAP §4)",
+   "conflictTag": null,
+   "note": "COURT 풀체인 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-169",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CAFE-5988",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "C-02 민원 실효성: 운영자 가이드 vs 5856 반론(JSON 댓글 0 충돌 포함) vs 5988 신문고 후 재연락 병존. FSS 풀체인 0",
+   "conflictTag": "C-02",
+   "note": "금감원 민원 성공사례 승격 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-170",
+   "type": "CONFLICT_REVIEW",
+   "from": "CASE-CAFE-5856",
+   "to": "FAQ-OFFICIAL-V-11",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "C-02 민원 실효성: 운영자 가이드 vs 5856 반론(JSON 댓글 0 충돌 포함) vs 5988 신문고 후 재연락 병존. FSS 풀체인 0",
+   "conflictTag": "C-02",
+   "note": "금감원 민원 성공사례 승격 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-171",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CCRS-784675",
+   "to": "FAQ-OFFICIAL-V-08",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "차량 제외·담보 처리 사례 서술 vs 공식 차량 감정·산정 기술 부재(NOT_FOUND≠FALSE, 예규 이관)",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-172",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5862",
+   "to": "FAQ-OFFICIAL-V-08",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "차량 제외·담보 처리 사례 서술 vs 공식 차량 감정·산정 기술 부재(NOT_FOUND≠FALSE, 예규 이관)",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-173",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CHAT-004",
+   "to": "FAQ-OFFICIAL-V-08",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "차량 제외·담보 처리 사례 서술 vs 공식 차량 감정·산정 기술 부재(NOT_FOUND≠FALSE, 예규 이관)",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-174",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "FAQ-CHAT-020",
+   "to": "FAQ-OFFICIAL-V-08",
+   "fromKind": "FAQ",
+   "toKind": "FAQ",
+   "basis": "차량 제외·담보 처리 사례 서술 vs 공식 차량 감정·산정 기술 부재(NOT_FOUND≠FALSE, 예규 이관)",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-175",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5901",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-176",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-6010",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-177",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5947",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-178",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5957",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-179",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5868",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-180",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5883",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-181",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5749",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-182",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CAFE-5968",
+   "to": "FAQ-OFFICIAL-V-20",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "주담대·근저당·전세대출 연장 세부: 공식 원칙만 확인, 유예·연장 사례·조건 부재(TRUE GAP §6 결과 0)",
+   "conflictTag": null,
+   "note": "HF/주담대 연장 결과를 canonical화 금지",
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-183",
+   "type": "PARTIALLY_SUPPORTED_BY",
+   "from": "CASE-CCRS-784675",
+   "to": "FAQ-OFFICIAL-V-18",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "'1년 이상 성실납부' 개념은 FAQ-69와 접점. 일시납 10% 할인 세부 인센티브는 공식 미확인",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-184",
+   "type": "UNEXPLAINED_BY_OFFICIAL",
+   "from": "CASE-CCRS-784675",
+   "to": "FAQ-OFFICIAL-V-06",
+   "fromKind": "CASE",
+   "toKind": "FAQ",
+   "basis": "약정 2년 후 중위소득60% 이하 '소급적용' 재심사 90%+ — 소급적용 절차 공식 FAQ·공지에 없음(사례 보존)",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-185",
+   "type": "RELATED_CASE",
+   "from": "CASE-CAFE-5743",
+   "to": "CASE-CAFE-5743-P3",
+   "fromKind": "CASE",
+   "toKind": "CASE",
+   "basis": "같은 글의 작성자 체인 vs 제3자(댓글) 체인 — 분리 보관, 병합 금지(TRUE GAP §8)",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  },
+  {
+   "canonicalId": "REL-186",
+   "type": "RELATED_CASE",
+   "from": "CASE-CAFE-5968",
+   "to": "CASE-CAFE-6010",
+   "fromKind": "CASE",
+   "toKind": "CASE",
+   "basis": "전세/아파트 재산 기준 문의 인접(시세 사이트 안내) — 결과 없음 상태 공유",
+   "conflictTag": null,
+   "note": null,
+   "judgment": "PROHIBITED — 판정·정답 확정 금지, 병존 기록"
+  }
+ ],
+ "unresolvedRefs": [
+  {
+   "relationSource": "FAQ-OP-001",
+   "target": "docs/newstart/research-official/ccrs/k03*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-001",
+   "target": "docs/newstart/research-official/ccrs/k02*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-001",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-001",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-002",
+   "target": "docs/newstart/research-official/ccrs/k09*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-002",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-002",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-003",
+   "target": "docs/newstart/research-official/ccrs/k02*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-003",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-004",
+   "target": "docs/newstart/research-official/ccrs/k03*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-004",
+   "target": "docs/newstart/research-official/ccrs/k04*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-005",
+   "target": "cafe-article-5823",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-005",
+   "target": "cafe-article-5884",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-005",
+   "target": "docs/newstart/research-official/ccrs/k09*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-005",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-005",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-006",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-007",
+   "target": "docs/newstart/research-official/ccrs/k11*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-007",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-008",
+   "target": "docs/newstart/research-official/ccrs/k09*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-008",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-009",
+   "target": "docs/newstart/research-official/ccrs/EV-NS-PROP-2026*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-009",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-009",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-010",
+   "target": "docs/newstart/research-official/ccrs/MX-PROPERTY*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-010",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-010",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-011",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-011",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-012",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-013",
+   "target": "docs/newstart/research-official/ccrs/k03*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-013",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-014",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-016",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-016",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-017",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-017",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-018",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-019",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-020",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-021",
+   "target": "cafe-article-5823",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-021",
+   "target": "cafe-article-5884",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-021",
+   "target": "docs/newstart/research-official/ccrs/k11*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-023",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-3-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-023",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-3-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-024",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-025",
+   "target": "cafe-article-5985",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-025",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-3-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-026",
+   "target": "cafe-article-5823",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-026",
+   "target": "cafe-article-5884",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-028",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-029",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-030",
+   "target": "docs/newstart/research-official/ccrs/k09*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-030",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-031",
+   "target": "docs/newstart/research-official/ccrs/신용정보법-2026-08-13*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-032",
+   "target": "docs/newstart/research-official/ccrs/EV-NS-PROP-2026*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-033",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-034",
+   "target": "docs/newstart/research-official/ccrs/k03*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-035",
+   "target": "docs/newstart/research-official/ccrs/k03*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-036",
+   "target": "docs/newstart/research-official/ccrs/k09*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-037",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-039",
+   "target": "docs/newstart/research-official/ccrs/k03*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-039",
+   "target": "docs/newstart/research-official/ccrs/k04*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-040",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-041",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-042",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-042",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-043",
+   "target": "cafe-article-5823",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-043",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-044",
+   "target": "docs/newstart/research-official/ccrs/k11*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-045",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-8-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-046",
+   "target": "docs/newstart/research-official/ccrs/k04*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-046",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-047",
+   "target": "docs/newstart/research-official/ccrs/k02*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-047",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-5-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-048",
+   "target": "cafe-article-5823",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-050",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-052",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-052",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-053",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-053",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-055",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-056",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-057",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-058",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-059",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-059",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-061",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-062",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-062",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-063",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-064",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-068",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-069",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-070",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-071",
+   "target": "docs/newstart/research-official/ccrs/k10*",
+   "why": "공식 조사 k-file(비canonical id) — PR #370/faq_digest로 대조 가능"
+  },
+  {
+   "relationSource": "FAQ-OP-072",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-2-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-073",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-9-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-074",
+   "target": "cafe-article-5982",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-074",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-3-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-075",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-076",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-2",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-078",
+   "target": "cafe-article-5985",
+   "why": "canonical CASE 집합 밖 참조 — 원문 pointer로만 보존, relation 미생성"
+  },
+  {
+   "relationSource": "FAQ-OP-078",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-3-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-080",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-081",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-3-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-082",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-6-1",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  },
+  {
+   "relationSource": "FAQ-OP-083",
+   "target": "docs/newstart/ebook/ebook_sections.json#EBK-7-3",
+   "why": "EBOOK 섹션 — 비canonical id pointer 보존"
+  }
+ ]
+}
