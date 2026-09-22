@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${pageTitle}">CHOONGGI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" th:content="${description}">
+  <link rel="canonical" th:href="${canonical}">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="CHOONGGI">
+  <meta property="og:title" th:content="${pageTitle}"><meta property="og:description" th:content="${description}">
+  <meta property="og:url" th:content="${canonical}">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/choonggi.css}">
+</head>
+<body>
+<header><a href="/choonggi" class="brand">CHOONGGI</a><span>KOREA → INDIA / SEASON 01</span></header>
+<main>
+  <th:block th:if="${page == 'home'}">
+    <section class="hero"><p class="kicker">A GAMER'S NEXT CHAPTER · SEP 2026</p><h1>CHOONGGI</h1><h2>KOREA <i>→</i> INDIA</h2><div class="visual"><b>GAMER<br>VLOG<br>JOURNEY</b><small>VISUAL COMING SOON</small></div></section>
+    <section><p class="eyebrow">01 / JOURNEY</p><h2>ONE DAY.<br>TWO FLIGHTS.<br>A NEW CHAPTER.</h2><div class="timeline"><article><time>SEP 25 · 11:05</time><h3>SEOUL / ICN T1</h3><p>VietJet VJ961 · 4H 30M · Cabin 7kg · Checked 20kg</p></article><article><time>13:35 — 20:05</time><h3>HANOI / HAN T2</h3><p>6H 30M TRANSIT</p></article><article><time>23:40</time><h3>MUMBAI / BOM</h3><p>VietJet VJ907 · 5H 05M · India, new chapter</p></article></div><b>ONE-STOP TRAVEL · 9H 35M</b></section>
+    <section class="split"><div><p class="eyebrow">02 / WHY INDIA</p><h2>WHY<br>INDIA?</h2></div><div><p>The story starts with a choice to move, play and grow somewhere new.</p><a href="/choonggi/vlog/why-india">OPEN EP.00 →</a></div></section>
+    <section class="match"><p class="eyebrow">03 / NEXT MATCH</p><div class="match-grid"><div class="date"><span>SEP</span><strong>30</strong><span>2026</span></div><div><b class="status" th:text="${matchStatus}">UPCOMING</b><h2>TOURNAMENT</h2><p>OFFICIAL NAME · TEAM · VENUE · TIME · OPPONENT</p><strong>TBA</strong></div></div></section>
+    <section><p class="eyebrow">04 / LATEST VLOG</p><div class="feature"><small>EP.01 · UPCOMING</small><h2>GOODBYE<br>KOREA</h2><p>The first episode begins at Incheon. Only the journey as it happens.</p><a href="/choonggi/vlog/goodbye-korea">VIEW EPISODE →</a></div></section>
+    <section class="split"><article><p class="eyebrow">05 / GAMER LIFE</p><h2>PRACTICE.<br>PLAY.<br>REPEAT.</h2><p>Training notes without private team strategy.</p><a href="/choonggi/gamer">GAMER DIARY →</a></article><article><p class="eyebrow">06 / INDIA LIFE</p><h2>FIRST DAYS,<br>REAL NOTES.</h2><p>Personal experience, never a live location feed.</p><a href="/choonggi/india">INDIA JOURNAL →</a></article></section>
+    <section><p class="eyebrow">07 / JOURNAL</p><div class="episodes"><a th:each="ep:${episodes}" th:href="@{/choonggi/vlog/{slug}(slug=${ep.slug})}"><span th:text="${ep.number}"></span><h3 th:text="${ep.title}"></h3><em th:text="${ep.status}"></em></a></div></section>
+  </th:block>
+  <th:block th:if="${page == 'vlog'}"><section class="page"><p class="kicker">SEASON 01 · KOREA → INDIA</p><h1>VLOG<br>JOURNAL</h1><p>Nine real chapters, published only when ready.</p><div class="episodes"><a th:each="ep:${episodes}" th:href="@{/choonggi/vlog/{slug}(slug=${ep.slug})}"><span th:text="${ep.number}"></span><h3 th:text="${ep.title}"></h3><em th:text="${ep.status}"></em></a></div></section></th:block>
+  <th:block th:if="${page == 'episode'}"><section class="page"><a href="/choonggi/vlog">← SEASON 01</a><p class="kicker" th:text="${episode.number+' · '+episode.status}"></p><h1 th:text="${episode.title}"></h1><div class="visual"><b>COMING<br>SOON</b><small>REAL FOOTAGE WILL LIVE HERE</small></div><div class="note"><p class="eyebrow">JOURNAL NOTE</p><h2>THE STORY HASN'T BEEN INVENTED.</h2><p>This page waits for real footage and first-hand notes.</p></div></section></th:block>
+  <th:block th:if="${page == 'gamer'}"><section class="page"><p class="kicker">INDIA GAMER LIFE</p><h1>PRACTICE.<br>PLAY.<br>REPEAT.</h1><div class="visual"><b>FOCUS<br>MODE</b></div><div class="note"><p class="eyebrow">NEXT TOURNAMENT · SEP 30</p><h2 th:text="${matchStatus}"></h2><p>Official name, team, venue, time, opponent and result are TBA.</p></div><div class="note"><p class="eyebrow">GAME</p><h2>王者荣耀</h2><p>The original title is used until an official global name is verified.</p></div></section></th:block>
+  <th:block th:if="${page == 'india'}"><section class="page"><p class="kicker">MUMBAI · PERSONAL JOURNAL</p><h1>INDIA,<br>ONE DAY<br>AT A TIME.</h1><div class="visual"><b>FIRST<br>DAYS</b><small>EXACT LIVE LOCATION NOT SHARED</small></div><div class="note"><p class="eyebrow">WHAT I LEARNED</p><h2>PERSONAL EXPERIENCE, CLEARLY LABELLED.</h2><p>Transit, airport, SIM and transport notes will distinguish personal experience from official information.</p></div></section></th:block>
+  <th:block th:if="${page == 'about'}"><section class="page"><p class="kicker">ABOUT THIS JOURNAL</p><h1>A STORY<br>IN MOTION.</h1><p>A personal vlog about leaving Korea, arriving in India and building a gamer life.</p><div class="note"><p class="eyebrow">THE RULE</p><h2>SHARE THE STORY.<br>PROTECT THE PERSON.</h2><p>Travel documents, private identifiers, exact address or live location, contacts, financial details, teammate information and confidential strategy stay private.</p></div></section></th:block>
+</main>
+<footer><strong>CHOONGGI</strong><span>Personal vlog · Gamer diary · Travel journal</span></footer>
+<nav><a href="/choonggi" th:classappend="${page=='home'}?'on'">HOME</a><a href="/choonggi/vlog" th:classappend="${page=='vlog'||page=='episode'}?'on'">VLOG</a><a href="/choonggi/gamer" th:classappend="${page=='gamer'}?'on'">GAMER</a><a href="/choonggi/india" th:classappend="${page=='india'}?'on'">INDIA</a><a href="/choonggi/about" th:classappend="${page=='about'}?'on'">ABOUT</a></nav>
+<script defer th:src="@{/js/choonggi.js}"></script></body></html>

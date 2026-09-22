@@ -285,6 +285,15 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 - `SourceType`: `STUDENT_MATERIAL`, `HOMEWORK_PROBLEM`, `HOMEWORK_ANSWER`, `TUTOR_MATERIAL`, `HOMEWORK_FEEDBACK` (V11 추가 — 강사 피드백 PDF용, PR2에서 엔티티·엔드포인트 구현 완료), `WRONG_NOTE` (V904 — 오답노트 수동 업로드), `CONSULTATION` (V911 — 강사/Admin 상담 피드백 자료)
 - `LessonApplicationStatus`: `APPROVED`, `CANCELED`
 
+## CHOONGGI public vlog (2026-09)
+
+- `GET /choonggi`: Vlog-first home with confirmed Sep 25 journey, Sep 30 tournament status and Season 1 journal.
+- `GET /choonggi/vlog`: Season 1 episode index.
+- `GET /choonggi/vlog/{slug}`: Episode placeholder/detail; unknown slugs return 404.
+- `GET /choonggi/gamer`, `/choonggi/india`, `/choonggi/about`: public, read-only journal pages.
+- No API or database is added. Unconfirmed facts remain `---`, `TBA` or `RESULT PENDING`.
+- Canonical root: `https://feel2real.co.kr/choonggi`.
+
 ## 2. SSR View Routes
 
 `WebMvcConfig`가 template view를 직접 매핑한다. 대부분 public이며, 페이지 진입 후 JS가 API 인증 상태를 확인한다. AI Chat 화면만 SecurityConfig에서 ADMIN/TUTOR 전용으로 보호한다.
