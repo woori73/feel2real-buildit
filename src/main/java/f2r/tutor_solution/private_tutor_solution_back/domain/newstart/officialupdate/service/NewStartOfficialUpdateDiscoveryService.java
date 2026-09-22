@@ -17,6 +17,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,9 @@ public class NewStartOfficialUpdateDiscoveryService {
   // 소스별 락 - 중복 실행 방지
   private final Lock discoveryLock = new ReentrantLock();
 
-  // 프로덕션 스케줄러 활성화 여부 (기본 false)
+  // 프로덕션 스케줄러 활성화 여부. 기본 false — app.newstart.discovery.scheduler-enabled=true 로
+  // 명시 설정한 환경에서만 11:00/21:00 KST 자동 실행된다 (merge만으로 production 자동실행 금지).
+  @Value("${app.newstart.discovery.scheduler-enabled:false}")
   private boolean schedulerEnabled = false;
 
   // @Transactional 을 붙이지 않는 이유: 어댑터 하나가 실패해도 다른 어댑터/소의 결과와 run 기록이

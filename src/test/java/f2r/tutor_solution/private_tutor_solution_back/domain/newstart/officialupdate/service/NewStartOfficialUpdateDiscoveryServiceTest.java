@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery.DiscoverySourceException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery.OfficialUpdateDiscoveryAdapter;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery.OfficialUpdateDiscoveryAdapter.DiscoveredCandidate;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialDiscoveryRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialDiscoveryRun.RunStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.Category;
@@ -184,6 +185,41 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     assertThat(second.isSuccess()).isTrue();
     assertThat(second.getDuplicates()).isEqualTo(1);
     assertThat(second.getNewReviews()).isZero();
+    verify(updateService, org.mockito.Mockito.times(1)).createReview(any(), any(), any());
+  }
+
+  @Test
+  void repeatedScheduledAndManualRunsOfSameSourceNeverCreateDuplicateReviews() {
+    when(runRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    // dedupKey 저장을 시뮬레이션: createReview 가 실제로 저장하는 것과 동일하게 unique 키를 채운다.
+    java.util.Set<String> store = new java.util.HashSet<>();
+    when(updateRepository.findByDedupKey(anyString())).thenAnswer(inv ->
+        store.contains(inv.getArgument(0)) ? Optional.of(
+            f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate
+                .review(SourceType.NEWSTART_FUND, "새출발기금", "t", "s",
+                    "https://official.example/NSF-B-56", "NSF-B-56", null, null, null,
+                    Category.NOTICE, RelevancePriority.NORMAL, inv.getArgument(0), null))
+            : Optional.empty());
+    org.mockito.Mockito.doAnswer(inv -> {
+      NewStartOfficialUpdateRequest req = inv.getArgument(0);
+      store.add("DOC:NEWSTART_FUND:" + req.officialDocumentId());
+      return null;
+    }).when(updateService).createReview(any(), any(), any());
+
+    StubAdapter adapter = new StubAdapter(SourceType.NEWSTART_FUND, "새출발기금",
+        List.of(candidate("NSF-B-56", "개편 안내")), null);
+    NewStartOfficialUpdateDiscoveryService svc = service(adapter);
+
+    // 11:00 run / 21:00 run / 수동 run 과 동일 패턴의 반복 실행
+    DiscoveryResult first = svc.runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
+    DiscoveryResult second = svc.runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
+    DiscoveryResult third = svc.runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
+
+    assertThat(first.getNewReviews()).isEqualTo(1);
+    assertThat(second.getNewReviews()).isZero();
+    assertThat(second.getDuplicates()).isEqualTo(1);
+    assertThat(third.getNewReviews()).isZero();
+    assertThat(third.getDuplicates()).isEqualTo(1);
     verify(updateService, org.mockito.Mockito.times(1)).createReview(any(), any(), any());
   }
 }

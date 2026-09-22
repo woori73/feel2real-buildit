@@ -5,8 +5,11 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialup
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.ReviewStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service.NewStartOfficialUpdateDiscoveryService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service.NewStartOfficialUpdateDiscoveryService.DiscoveryResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service.NewStartOfficialUpdateService;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewStartOfficialUpdateAdminController {
 
   private final NewStartOfficialUpdateService service;
+  private final NewStartOfficialUpdateDiscoveryService discoveryService;
 
   @GetMapping
   public ResponseEntity<List<NewStartOfficialUpdateResponse>> list(
@@ -72,5 +76,12 @@ public class NewStartOfficialUpdateAdminController {
       @PathVariable Long id,
       @RequestParam boolean enabled) {
     return ResponseEntity.ok(service.setFeatured(id, enabled));
+  }
+
+  /** 관리자 수동 discovery 실행. REVIEW까지만 생성하며 자동 발행은 없다(스케줄러와 동일 계약). */
+  @PostMapping("/discovery/run")
+  public ResponseEntity<DiscoveryResult> runDiscovery(
+      @RequestParam(defaultValue = "1") long sinceDays) {
+    return ResponseEntity.ok(discoveryService.runDiscoveryAllSources(LocalDateTime.now().minusDays(sinceDays)));
   }
 }
