@@ -121,6 +121,11 @@ public class ChartAdminController {
     return chartCandidateEnrichmentService.enrich(candidateId, request);
   }
 
+  @GetMapping("/candidates/{candidateId}/research")
+  public Map<String, Object> candidateResearch(@PathVariable long candidateId) {
+    return chartCandidateEnrichmentService.getResearch(candidateId);
+  }
+
   private ChartSettingsResponse settingsResponse() {
     return ChartSettingsResponse.from(chartDiscoveryService.getOrCreateSettings(), chartGeminiClient.isReady(), chartGeminiClient.apiKeySource(), chartGeminiClient.provider(), chartGeminiClient.model());
   }

@@ -60,6 +60,32 @@ public class ChartCandidateEnrichmentService {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  public Map<String, Object> getResearch(long candidateId) {
+    List<Map<String, Object>> rows = jdbcTemplate.queryForList("""
+        SELECT candidate_id AS candidateId, name, academy_name AS academyName,
+               activity_region AS activityRegion,
+               education_philosophy_summary AS educationPhilosophySummary,
+               curriculum_summary AS curriculumSummary,
+               distinctive_teaching_summary AS distinctiveTeachingSummary,
+               recent_activity_summary AS recentActivitySummary,
+               strengths_json AS strengthsJson, improvement_suggestions_json AS improvementSuggestionsJson,
+               eligibility_status AS eligibilityStatus, updated_at AS updatedAt
+          FROM chart_candidates WHERE candidate_id=?
+        """, candidateId);
+    if (rows.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "교육자를 찾을 수 없습니다.");
+    }
+    Map<String, Object> result = new LinkedHashMap<>(rows.get(0));
+    result.put("strengths", parseStrings(str(result.remove("strengthsJson"))));
+    result.put("improvementSuggestions", parseStrings(str(result.remove("improvementSuggestionsJson"))));
+    result.put("evidence", jdbcTemplate.queryForList("""
+        SELECT content_type AS contentType, content_summary AS contentSummary, source_url AS sourceUrl,
+               activity_date AS activityDate, evidence_kind AS evidenceKind, researched_at AS researchedAt
+          FROM chart_candidate_activities WHERE candidate_id=? ORDER BY activity_id
+        """, candidateId));
+    return result;
+  }
+
   @Transactional
   public Map<String, Object> enrich(long candidateId, EnrichmentRequest request) {
     EnrichmentRequest req = request == null ? EnrichmentRequest.empty() : request;
@@ -69,7 +95,7 @@ public class ChartCandidateEnrichmentService {
     }
 
     List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-        "SELECT * FROM chart_candidates WHERE candidate_id=?", candidateId);
+        "SELECT * FROM chart_candidates WHERE candidate_id=? FOR UPDATE", candidateId);
     if (rows.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND,
           "candidate_id " + candidateId + " 교육자를 찾을 수 없습니다.");
@@ -95,6 +121,7 @@ public class ChartCandidateEnrichmentService {
     List<String> setClauses = new ArrayList<>();
     List<Object> args = new ArrayList<>();
     List<String> changedFields = new ArrayList<>();
+    List<String> conflicts = new ArrayList<>();
 
     Map<String, String> incomingSummaries = new LinkedHashMap<>();
     incomingSummaries.put("education_philosophy_summary", blank(req.educationPhilosophySummary()));
@@ -102,7 +129,12 @@ public class ChartCandidateEnrichmentService {
     incomingSummaries.put("distinctive_teaching_summary", blank(req.distinctiveTeachingSummary()));
     incomingSummaries.put("recent_activity_summary", blank(req.recentActivitySummary()));
     for (String column : SUMMARY_COLUMNS) {
-      String merged = mergeSummary(str(row.get(column)), incomingSummaries.get(column), req.overwrite());
+      String current = blank(str(row.get(column)));
+      String incoming = incomingSummaries.get(column);
+      if (!req.overwrite() && current != null && incoming != null && !current.equals(incoming)) {
+        conflicts.add(column);
+      }
+      String merged = mergeSummary(current, incoming, req.overwrite());
       if (merged != null) {
         setClauses.add(column + "=?");
         args.add(merged);
@@ -162,6 +194,9 @@ public class ChartCandidateEnrichmentService {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("candidateId", candidateId);
     result.put("changedFields", changedFields);
+    result.put("conflicts", conflicts);
+    result.put("saved", true);
+    result.put("research", getResearch(candidateId));
     result.put("evidenceAdded", evidenceAdded);
     result.put("evidenceSkippedDuplicate", evidenceSkippedDuplicate);
     result.put("eligibilityStatus", eligibilityAfter);
