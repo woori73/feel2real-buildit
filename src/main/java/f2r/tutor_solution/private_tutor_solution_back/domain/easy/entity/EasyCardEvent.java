@@ -56,6 +56,9 @@ public class EasyCardEvent extends BaseEntity {
   private LocalDateTime reviewedAt;
   @Column(name = "reviewed_by", length = 50)
   private String reviewedBy;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "posted_txn_id")
+  private EasyTransaction postedTxn;
 
   @Builder
   public EasyCardEvent(EasyBusiness business, EasyCollectionConnection connection,
@@ -86,6 +89,19 @@ public class EasyCardEvent extends BaseEntity {
   public void approve(String reviewer) {
     if (reviewer == null || reviewer.isBlank()) throw new IllegalArgumentException("reviewer is required.");
     this.reviewStatus = ReviewStatus.APPROVED;
+    this.reviewedBy = reviewer.trim();
+    this.reviewedAt = LocalDateTime.now();
+  }
+  /** Approve and link the ledger transaction this event was posted as, atomically. */
+  public void markPosted(EasyTransaction transaction, String reviewer) {
+    if (transaction == null) throw new IllegalArgumentException("transaction is required.");
+    approve(reviewer);
+    this.postedTxn = transaction;
+  }
+  public void reject(String reviewer) {
+    if (reviewer == null || reviewer.isBlank()) throw new IllegalArgumentException("reviewer is required.");
+    if (this.postedTxn != null) throw new IllegalArgumentException("Posted events cannot be rejected.");
+    this.reviewStatus = ReviewStatus.REJECTED;
     this.reviewedBy = reviewer.trim();
     this.reviewedAt = LocalDateTime.now();
   }

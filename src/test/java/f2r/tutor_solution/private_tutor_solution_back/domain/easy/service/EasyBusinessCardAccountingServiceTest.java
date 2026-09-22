@@ -1,11 +1,13 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,10 @@ class EasyBusinessCardAccountingServiceTest {
   private final EasyCardBillingGroupRepository billings = mock(EasyCardBillingGroupRepository.class);
   private final EasyCardSettlementRepository settlements = mock(EasyCardSettlementRepository.class);
   private final EasyCardSettlementAllocationRepository allocations = mock(EasyCardSettlementAllocationRepository.class);
+  private final EasyAccountRepository accounts = mock(EasyAccountRepository.class);
+  private final EasyTransactionRepository txns = mock(EasyTransactionRepository.class);
+  private final EasyJournalService journalService = mock(EasyJournalService.class);
+  private final EasyAccountService accountService = mock(EasyAccountService.class);
   private EasyBusinessCardAccountingService service;
   private EasyBusiness business;
   private EasyCardInstrument instrument;
@@ -27,7 +33,7 @@ class EasyBusinessCardAccountingServiceTest {
   @BeforeEach
   void setUp() {
     service = new EasyBusinessCardAccountingService(businesses, connections, instruments, events,
-        payables, billings, settlements, allocations);
+        payables, billings, settlements, allocations, accounts, txns, journalService, accountService);
     business = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).build();
     ReflectionTestUtils.setField(business, "businessId", 1L);
     instrument = EasyCardInstrument.builder().business(business).providerCode("TEST")
@@ -35,6 +41,7 @@ class EasyBusinessCardAccountingServiceTest {
     ReflectionTestUtils.setField(instrument, "instrumentId", 10L);
     when(businesses.findById(1L)).thenReturn(Optional.of(business));
     when(instruments.findById(10L)).thenReturn(Optional.of(instrument));
+    when(accountService.classify(any(), any(), anyLong(), any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -80,6 +87,143 @@ class EasyBusinessCardAccountingServiceTest {
         .isEqualTo(EasyCardEvent.ReviewStatus.PENDING_REVIEW);
     assertThat(result.payable().getOutstandingAmount()).isEqualTo(50_000L);
     assertThat(result.duplicate()).isFalse();
+  }
+
+  @Test
+  void pendingReviewListsOnlyPendingEventsWithSuggestion() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 200L);
+    when(events.findByBusiness_BusinessIdAndReviewStatusOrderByOccurredAtAsc(
+        1L, EasyCardEvent.ReviewStatus.PENDING_REVIEW)).thenReturn(List.of(event));
+    EasyAccount suggested = account(5L, "카드 지출");
+    when(accountService.classify(eq("TEST"), any(), eq(50_000L), eq(EasyTxnDirection.EXPENSE)))
+        .thenReturn(Optional.of(new EasyAccountService.ClassificationMatch(suggested, 0.9)));
+
+    var items = service.listPendingReview(1L);
+
+    assertThat(items).hasSize(1);
+    assertThat(items.get(0).event()).isSameAs(event);
+    assertThat(items.get(0).suggestedAccountId()).isEqualTo(5L);
+    assertThat(items.get(0).suggestedAccountName()).isEqualTo("카드 지출");
+  }
+
+  @Test
+  void approveCreatesLedgerTransactionAndLinksProvenance() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 201L);
+    when(events.findById(201L)).thenReturn(Optional.of(event));
+    when(accounts.findById(5L)).thenReturn(Optional.of(account(5L, "카드 지출")));
+    when(txns.save(any())).thenAnswer(invocation -> {
+      EasyTransaction txn = invocation.getArgument(0);
+      ReflectionTestUtils.setField(txn, "txnId", 900L);
+      return txn;
+    });
+
+    EasyCardEvent result = service.approveAndPost(201L, 1L, 5L, "admin");
+
+    assertThat(result.getReviewStatus()).isEqualTo(EasyCardEvent.ReviewStatus.APPROVED);
+    assertThat(result.getPostedTxn().getTxnId()).isEqualTo(900L);
+    assertThat(result.getPostedTxn().getSourceRef()).isEqualTo("card_event:201");
+    verify(journalService).repost(result.getPostedTxn());
+    verify(txns, times(1)).save(any());
+  }
+
+  @Test
+  void duplicateApproveDoesNotCreateSecondTransaction() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 202L);
+    when(events.findById(202L)).thenReturn(Optional.of(event));
+    when(accounts.findById(5L)).thenReturn(Optional.of(account(5L, "카드 지출")));
+    when(txns.save(any())).thenAnswer(invocation -> {
+      EasyTransaction txn = invocation.getArgument(0);
+      ReflectionTestUtils.setField(txn, "txnId", 901L);
+      return txn;
+    });
+
+    EasyCardEvent first = service.approveAndPost(202L, 1L, 5L, "admin");
+    EasyCardEvent second = service.approveAndPost(202L, 1L, 5L, "admin");
+
+    assertThat(second.getPostedTxn().getTxnId()).isEqualTo(first.getPostedTxn().getTxnId());
+    verify(txns, times(1)).save(any());
+    verify(journalService, times(1)).repost(any());
+  }
+
+  @Test
+  void reprocessingAlreadyPostedEventKeepsOriginalAccountAndIgnoresNewChoice() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 203L);
+    when(events.findById(203L)).thenReturn(Optional.of(event));
+    when(accounts.findById(5L)).thenReturn(Optional.of(account(5L, "카드 지출")));
+    when(accounts.findById(6L)).thenReturn(Optional.of(account(6L, "다른 계정")));
+    when(txns.save(any())).thenAnswer(invocation -> {
+      EasyTransaction txn = invocation.getArgument(0);
+      ReflectionTestUtils.setField(txn, "txnId", 902L);
+      return txn;
+    });
+
+    service.approveAndPost(203L, 1L, 5L, "admin");
+    EasyCardEvent reprocessed = service.approveAndPost(203L, 1L, 6L, "admin");
+
+    assertThat(reprocessed.getPostedTxn().getAccount().getAccountId()).isEqualTo(5L);
+    verify(txns, times(1)).save(any());
+  }
+
+  @Test
+  void crossBusinessApproveIsRejected() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 204L);
+    when(events.findById(204L)).thenReturn(Optional.of(event));
+
+    assertThatThrownBy(() -> service.approveAndPost(204L, 2L, 5L, "admin"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Cross-business");
+    verify(txns, never()).save(any());
+  }
+
+  @Test
+  void amountIntegrityIsPreservedExactly() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 205L);
+    when(events.findById(205L)).thenReturn(Optional.of(event));
+    when(accounts.findById(5L)).thenReturn(Optional.of(account(5L, "카드 지출")));
+    when(txns.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    EasyCardEvent result = service.approveAndPost(205L, 1L, 5L, "admin");
+
+    assertThat(result.getPostedTxn().getAmount()).isEqualTo(event.getAmount());
+  }
+
+  @Test
+  void nonPurchaseEventTypeCannotBePosted() {
+    EasyCardEvent correction = EasyCardEvent.builder().business(business).instrument(instrument)
+        .originalEvent(purchaseEvent()).eventType(EasyCardEvent.Type.CORRECTION)
+        .fingerprint("c".repeat(64)).occurredAt(LocalDateTime.of(2026, 9, 2, 9, 0))
+        .amount(10_000L).currency("KRW").build();
+    ReflectionTestUtils.setField(correction, "cardEventId", 206L);
+    when(events.findById(206L)).thenReturn(Optional.of(correction));
+
+    assertThatThrownBy(() -> service.approveAndPost(206L, 1L, 5L, "admin"))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(txns, never()).save(any());
+  }
+
+  @Test
+  void rejectMarksEventRejectedWithoutPosting() {
+    EasyCardEvent event = purchaseEvent();
+    ReflectionTestUtils.setField(event, "cardEventId", 207L);
+    when(events.findById(207L)).thenReturn(Optional.of(event));
+
+    EasyCardEvent result = service.rejectEvent(207L, 1L, "admin");
+
+    assertThat(result.getReviewStatus()).isEqualTo(EasyCardEvent.ReviewStatus.REJECTED);
+    verify(txns, never()).save(any());
+  }
+
+  private EasyAccount account(Long id, String name) {
+    EasyAccount account = EasyAccount.builder().code("EXP_" + id).name(name)
+        .direction(EasyAccountDirection.EXPENSE).sortOrder(1).active(true).build();
+    ReflectionTestUtils.setField(account, "accountId", id);
+    return account;
   }
 
   private EasyBusinessCardAccountingService.PurchaseCommand command() {
