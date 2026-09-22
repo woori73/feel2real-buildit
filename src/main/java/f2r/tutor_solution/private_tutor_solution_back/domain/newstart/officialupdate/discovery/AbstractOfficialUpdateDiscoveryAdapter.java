@@ -9,36 +9,51 @@ import java.util.List;
 import java.util.Locale;
 import java.net.URI;
 import java.net.URISyntaxException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Slf4j
 public abstract class AbstractOfficialUpdateDiscoveryAdapter implements OfficialUpdateDiscoveryAdapter {
+
+  @Autowired(required = false)
+  protected DiscoveryHttpClient httpClient;
 
   @Override
   public List<DiscoveredCandidate> discover(LocalDateTime since) {
-    // 기본 구현: 하위 클래스에서 오버라이드
-    return Collections.emptyList();
+    if (httpClient == null) {
+      log.warn("{} HTTP 클라이언트 없음 - 빈 리스트 반환", getSourceName());
+      return Collections.emptyList();
+    }
+    return doDiscover(since);
   }
+
+  protected abstract List<DiscoveredCandidate> doDiscover(LocalDateTime since);
 
   @Override
   public DiscoveredCandidate enrich(DiscoveredCandidate candidate) {
-    // 기본 구현: 상세 페이지 조회가 필요하면 하위 클래스에서 오버라이드
+    if (httpClient == null || candidate.originalUrl() == null) {
+      return candidate;
+    }
+    return doEnrich(candidate);
+  }
+
+  protected DiscoveredCandidate doEnrich(DiscoveredCandidate candidate) {
     return candidate;
   }
 
   @Override
   public RelevancePriority evaluateRelevance(DiscoveredCandidate candidate) {
-    // 기본 구현: 키워드 기반 판단
     String text = (candidate.title() + " " + candidate.summary() + " " + candidate.detailHtml()).toLowerCase(Locale.ROOT);
-    
-    // CRITICAL 키워드
-    if (containsAny(text, 
+
+    if (containsAny(text,
         "추가감면", "감면율", "감면조건", "감면대상", "적용조건 변경",
         "제도시행", "제도종료", "시행일", "종료일",
         "자격변경", "대상변경", "지원자격", "신청기한", "마감임박",
         "감면한도", "우대감면", "10%감면", "10%p")) {
       return RelevancePriority.CRITICAL;
     }
-    
-    // HIGH 키워드 - 재취업/재창업/희망리턴패키지
+
     if (containsAny(text,
         "재취업", "취업교육", "취업지원", "취업프로그램",
         "재창업", "창업교육", "창업지원", "사업화",
@@ -48,8 +63,7 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
         "모집", "신청", "접수", "교육생")) {
       return RelevancePriority.HIGH;
     }
-    
-    // IRRELEVANT 키워드 - 강사/컨설턴트/수행기관 모집 등
+
     if (containsAny(text,
         "강사모집", "컨설턴트모집", "수행기관모집", "PM모집", "프로젝트매니저모집",
         "용역입찰", "위탁운영", "운영기관선정", "평가위원",
@@ -57,7 +71,7 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
         "행사안내", "세미나", "워크숍", "설명회")) {
       return RelevancePriority.IRRELEVANT;
     }
-    
+
     return RelevancePriority.NORMAL;
   }
 
@@ -67,7 +81,7 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
     String url = normalizeUrl(candidate.originalUrl());
     String title = normalizeTitle(candidate.title());
     SourceType sourceType = getSourceType();
-    
+
     if (documentId != null) {
       return "DOC:" + sourceType.name() + ":" + documentId.toLowerCase(Locale.ROOT);
     }
