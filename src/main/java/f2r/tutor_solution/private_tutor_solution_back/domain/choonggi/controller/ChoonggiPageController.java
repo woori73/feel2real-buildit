@@ -3,6 +3,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.controlle
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.List;
+import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.service.ChoonggiCreatorService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -27,11 +29,19 @@ public class ChoonggiPageController {
       new Episode("match-day", "EP.07", "MATCH DAY — SEP 30", "UPCOMING"),
       new Episode("after-the-match", "EP.08", "AFTER THE MATCH", "COMING SOON"));
 
+  private final ObjectProvider<ChoonggiCreatorService> creatorProvider;
+
+  public ChoonggiPageController(ObjectProvider<ChoonggiCreatorService> creatorProvider) {
+    this.creatorProvider = creatorProvider;
+  }
+
   @GetMapping("/choonggi")
   public String home(Model model, HttpServletResponse response) {
     page(model, response, "home", "CHOONGGI — Korea to India Gamer Vlog");
     model.addAttribute("episodes", EPISODES);
     model.addAttribute("matchStatus", matchStatus(LocalDate.now()));
+    ChoonggiCreatorService creator = creatorProvider.getIfAvailable();
+    model.addAttribute("publishedPosts", creator == null ? List.of() : creator.published());
     return "choonggi/page";
   }
 
@@ -40,11 +50,23 @@ public class ChoonggiPageController {
     page(model, response, section, section.toUpperCase() + " — CHOONGGI");
     model.addAttribute("episodes", EPISODES);
     model.addAttribute("matchStatus", matchStatus(LocalDate.now()));
+    ChoonggiCreatorService creator = creatorProvider.getIfAvailable();
+    model.addAttribute("publishedPosts", creator == null ? List.of() : creator.published());
     return "choonggi/page";
   }
 
   @GetMapping("/choonggi/vlog/{slug}")
   public String episode(@PathVariable String slug, Model model, HttpServletResponse response) {
+    ChoonggiCreatorService creator = creatorProvider.getIfAvailable();
+    if (creator != null) {
+      var published = creator.publicPost(slug);
+      if (published.isPresent()) {
+        page(model, response, "post", published.get().getTitle() + " — CHOONGGI");
+        model.addAttribute("canonical", "https://feel2real.co.kr/choonggi/vlog/" + slug);
+        model.addAttribute("post", published.get());
+        return "choonggi/page";
+      }
+    }
     Episode episode = EPISODES.stream().filter(it -> it.slug().equals(slug)).findFirst()
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     page(model, response, "episode", episode.title() + " — CHOONGGI");
