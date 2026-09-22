@@ -1,6 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery.AbstractOfficialUpdateDiscoveryAdapter;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery.DiscoverySourceException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery.OfficialUpdateDiscoveryAdapter;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialDiscoveryRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialDiscoveryRun.RunStatus;
@@ -37,10 +37,13 @@ public class NewStartOfficialUpdateDiscoveryService {
   // 프로덕션 스케줄러 활성화 여부 (기본 false)
   private boolean schedulerEnabled = false;
 
-  @Transactional
+  // @Transactional 을 붙이지 않는 이유: 어댑터 하나가 실패해도 다른 어댑터/소의 결과와 run 기록이
+  // rollback 으로 함께 사라지지 않게 하기 위함 (source별 failure isolation). 각 save 는 자체 커밋된다.
   public DiscoveryResult runDiscoveryForSource(SourceType sourceType, LocalDateTime since) {
-    OfficialUpdateDiscoveryAdapter adapter = findAdapter(sourceType);
-    if (adapter == null) {
+    List<OfficialUpdateDiscoveryAdapter> sourceAdapters = adapters.stream()
+        .filter(a -> a.getSourceType() == sourceType)
+        .toList();
+    if (sourceAdapters.isEmpty()) {
       log.warn("발견 어댑터를 찾을 수 없음: {}", sourceType);
       return DiscoveryResult.failed(sourceType, "어댑터 없음");
     }
@@ -55,64 +58,86 @@ public class NewStartOfficialUpdateDiscoveryService {
     runRepository.save(runRecord);
 
     try {
-      log.info("Discovery 시작: source={}, since={}", sourceType, since);
-      
-      List<OfficialUpdateDiscoveryAdapter.DiscoveredCandidate> candidates = adapter.discover(since);
-      log.info("후보 발견: source={}, count={}", sourceType, candidates.size());
+      log.info("Discovery 시작: source={}, since={}, adapters={}", sourceType, since, sourceAdapters.size());
 
       int discovered = 0;
       int newReviews = 0;
       int duplicates = 0;
       int irrelevant = 0;
+      List<String> errors = new ArrayList<>();
 
-      for (OfficialUpdateDiscoveryAdapter.DiscoveredCandidate candidate : candidates) {
-        discovered++;
-        
-        // 상세 정보 보강
-        OfficialUpdateDiscoveryAdapter.DiscoveredCandidate enriched = adapter.enrich(candidate);
-        
-        // 관련성 평가
-        RelevancePriority priority = adapter.evaluateRelevance(enriched);
-        
-        // IRRELEVANT는 저장하지 않음
-        if (priority == RelevancePriority.IRRELEVANT) {
-          irrelevant++;
-          log.debug("IRRELEVANT로 분류되어 저장 안 함: {}", enriched.title());
-          continue;
-        }
-
-        // 중복 키 생성 및 확인
-        String dedupKey = adapter.buildDedupKey(enriched);
-        if (updateRepository.findByDedupKey(dedupKey).isPresent()) {
-          duplicates++;
-          log.debug("중복으로 저장 안 함: {}", enriched.title());
-          continue;
-        }
-
-        // REVIEW로 저장
+      for (OfficialUpdateDiscoveryAdapter adapter : sourceAdapters) {
         try {
-          var request = new NewStartOfficialUpdateRequest(
-              sourceType,
-              adapter.getSourceName(),
-              enriched.title(),
-              enriched.summary(),
-              enriched.originalUrl(),
-              enriched.officialDocumentId(),
-              enriched.publishedAt(),
-              enriched.effectiveFrom(),
-              enriched.effectiveTo(),
-              enriched.category()
-          );
-          
-          updateService.createReview(request, priority, LocalDateTime.now());
-          newReviews++;
-          log.info("REVIEW 등록 완료: source={}, title={}, priority={}", 
-              sourceType, enriched.title(), priority);
-        } catch (IllegalArgumentException e) {
-          // 중복 등의 이유로 저장 실패
-          duplicates++;
-          log.debug("저장 실패(중복 등): {}", enriched.title());
+          List<OfficialUpdateDiscoveryAdapter.DiscoveredCandidate> candidates = adapter.discover(since);
+          log.info("후보 발견: source={}, adapter={}, count={}", sourceType, adapter.getSourceName(), candidates.size());
+
+          for (OfficialUpdateDiscoveryAdapter.DiscoveredCandidate candidate : candidates) {
+            discovered++;
+
+            OfficialUpdateDiscoveryAdapter.DiscoveredCandidate enriched;
+            try {
+              enriched = adapter.enrich(candidate);
+            } catch (Exception e) {
+              log.warn("상세 보강 실패 - 목록 정보로 계속 진행: {} - {}", candidate.title(), e.getMessage());
+              enriched = candidate;
+            }
+
+            RelevancePriority priority = adapter.evaluateRelevance(enriched);
+
+            if (priority == RelevancePriority.IRRELEVANT) {
+              irrelevant++;
+              log.debug("IRRELEVANT로 분류되어 저장 안 함: {}", enriched.title());
+              continue;
+            }
+
+            String dedupKey = adapter.buildDedupKey(enriched);
+            if (updateRepository.findByDedupKey(dedupKey).isPresent()) {
+              duplicates++;
+              log.debug("중복으로 저장 안 함: {}", enriched.title());
+              continue;
+            }
+
+            try {
+              var request = new NewStartOfficialUpdateRequest(
+                  sourceType,
+                  adapter.getSourceName(),
+                  enriched.title(),
+                  enriched.summary(),
+                  enriched.originalUrl(),
+                  enriched.officialDocumentId(),
+                  enriched.publishedAt(),
+                  enriched.effectiveFrom(),
+                  enriched.effectiveTo(),
+                  enriched.category()
+              );
+
+              updateService.createReview(request, priority, LocalDateTime.now());
+              newReviews++;
+              log.info("REVIEW 등록 완료: source={}, title={}, priority={}",
+                  sourceType, enriched.title(), priority);
+            } catch (IllegalArgumentException e) {
+              duplicates++;
+              log.debug("저장 실패(중복 등): {}", enriched.title());
+            }
+          }
+        } catch (DiscoverySourceException e) {
+          errors.add(e.getMessage());
+          log.error("Adapter discovery 실패 (SUCCESS 처리 금지): source={}, adapter={}", sourceType,
+              adapter.getSourceName(), e);
+        } catch (Exception e) {
+          errors.add("[" + adapter.getSourceName() + "] 예상치 못한 오류: " + e.getMessage());
+          log.error("Adapter discovery 예상치 못한 오류: source={}", sourceType, e);
         }
+      }
+
+      if (!errors.isEmpty()) {
+        String message = String.join(" / ", errors);
+        runRecord.setCounts(discovered, newReviews, duplicates, irrelevant);
+        runRecord.fail(message);
+        runRepository.save(runRecord);
+        log.warn("Discovery FAILED: source={}, discovered={}, newReviews={}, errors={}",
+            sourceType, discovered, newReviews, message);
+        return DiscoveryResult.failed(sourceType, message);
       }
 
       runRecord.complete(discovered, newReviews, duplicates, irrelevant);
@@ -150,17 +175,10 @@ public class NewStartOfficialUpdateDiscoveryService {
   // 수동 실행용
   public DiscoveryResult runDiscoveryAllSources(LocalDateTime since) {
     List<DiscoveryResult> results = new ArrayList<>();
-    for (OfficialUpdateDiscoveryAdapter adapter : adapters) {
-      results.add(runDiscoveryForSource(adapter.getSourceType(), since));
+    for (SourceType sourceType : adapters.stream().map(OfficialUpdateDiscoveryAdapter::getSourceType).distinct().toList()) {
+      results.add(runDiscoveryForSource(sourceType, since));
     }
     return DiscoveryResult.combined(results);
-  }
-
-  private OfficialUpdateDiscoveryAdapter findAdapter(SourceType sourceType) {
-    return adapters.stream()
-        .filter(a -> a.getSourceType() == sourceType)
-        .findFirst()
-        .orElse(null);
   }
 
   // 스케줄러용 메서드 - 프로덕션에서만 활성화

@@ -4,17 +4,24 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialup
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.RelevancePriority;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 @Slf4j
 public abstract class AbstractOfficialUpdateDiscoveryAdapter implements OfficialUpdateDiscoveryAdapter {
+
+  private static final Pattern ISO_DATE_IN_TEXT = Pattern.compile("(20\\d{2})[-.](\\d{1,2})[-.](\\d{1,2})");
 
   @Autowired(required = false)
   protected DiscoveryHttpClient httpClient;
@@ -22,8 +29,8 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
   @Override
   public List<DiscoveredCandidate> discover(LocalDateTime since) {
     if (httpClient == null) {
-      log.warn("{} HTTP 클라이언트 없음 - 빈 리스트 반환", getSourceName());
-      return Collections.emptyList();
+      throw new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.FETCH_FAILED,
+          "DiscoveryHttpClient 가 주입되지 않아 공식 페이지를 조회할 수 없음");
     }
     return doDiscover(since);
   }
@@ -40,6 +47,79 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
 
   protected DiscoveredCandidate doEnrich(DiscoveredCandidate candidate) {
     return candidate;
+  }
+
+  protected String fetchHtmlRequired(String url, int maxRetries) {
+    DiscoverySourceException last = null;
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        return httpClient.fetchHtml(url);
+      } catch (Exception e) {
+        log.debug("시도 {}/{} 실패: {} - {}", i + 1, maxRetries, url, e.getMessage());
+        last = new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.FETCH_FAILED,
+            "목록/상세 페이지 조회 실패 " + url + " (" + e.getMessage() + ")", e);
+      }
+    }
+    throw last;
+  }
+
+  /**
+   * "HTTP 200 인데 항목이 존재하는데 parse 0건" 을 성공으로 넘기지 않기 위한 가드.
+   * structuralRows: 목록 페이지에서 실제로 발견된 행(항목) 수.
+   * parsedRows: 행에서 필수 필드(문서ID/제목)를 뽑아 파싱에 성공한 수 (키워드 필터 제외 순수 파싱 실패만 계산).
+   */
+  protected void guardParsedNotEmpty(int structuralRows, int parsedRows) {
+    if (structuralRows > 0 && parsedRows == 0) {
+      throw new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.PARSE_EMPTY_WITH_ITEMS,
+          "목록 페이지에 행 " + structuralRows + "건이 있는데 파싱 결과 0건 - 셀렉터/사이트 구조 변경 점검 필요");
+    }
+  }
+
+  protected List<String> extractAttachments(org.jsoup.nodes.Document doc, String baseUrl, String... selectors) {
+    List<String> attachments = new ArrayList<>();
+    for (String selector : selectors) {
+      Elements links = doc.select(selector);
+      for (Element a : links) {
+        String href = a.attr("href");
+        if (href.isBlank() || href.startsWith("javascript:") || href.equals("#")) {
+          continue;
+        }
+        String fileName = a.attr("download");
+        if (fileName.isBlank()) {
+          fileName = a.text().trim();
+        }
+        if (fileName.isBlank()) {
+          fileName = href.substring(href.lastIndexOf('/') + 1);
+        }
+        attachments.add(fileName + "|" + resolveUrl(baseUrl, href));
+      }
+      if (!attachments.isEmpty()) {
+        return attachments;
+      }
+    }
+    return attachments;
+  }
+
+  protected static String resolveUrl(String baseUrl, String relativeUrl) {
+    if (relativeUrl.startsWith("http")) return relativeUrl;
+    try {
+      return new URI(baseUrl).resolve(relativeUrl).toString();
+    } catch (Exception e) {
+      return relativeUrl;
+    }
+  }
+
+  /** "2026-09-21", "2026.09.21", "2026. 9. 21." 등混杂 날짜에서 첫 ISO 날짜를 추출한다. */
+  protected static LocalDateTime parseLooseDate(String text) {
+    if (text == null || text.isBlank()) return null;
+    Matcher m = ISO_DATE_IN_TEXT.matcher(text);
+    if (!m.find()) return null;
+    try {
+      return LocalDateTime.of(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
+          Integer.parseInt(m.group(3)), 0, 0, 0);
+    } catch (DateTimeParseException | IllegalArgumentException e) {
+      return null;
+    }
   }
 
   @Override

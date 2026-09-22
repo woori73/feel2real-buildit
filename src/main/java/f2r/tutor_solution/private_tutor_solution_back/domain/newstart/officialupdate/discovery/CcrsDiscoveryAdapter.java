@@ -1,36 +1,43 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.discovery;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.Category;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate.SourceType;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
+/**
+ * 신용회복위원회 공지사항 어댑터.
+ * 2026-09-22 조사 결과 목록 페이지(/cms/com/index.do?MENU_ID=840) 자체는 빈 template 이고
+ * 실제 데이터가 POST /ajaxf/frBoard/bbsViewList.do JSON 으로 내려오는 것이 확인되어 해당 API 를 사용한다.
+ * JSON 응답에 CONTENTS(본문) 와 boardFileList(첨부) 가 포함되어 상세 HTML 조회가 불필요하다.
+ */
 @Component
 @Slf4j
 public class CcrsDiscoveryAdapter extends AbstractOfficialUpdateDiscoveryAdapter {
 
-  private static final String LIST_URL = "https://www.ccrs.or.kr/portal/notice/list.do?menuNo=200019";
-  private static final String DETAIL_URL_BASE = "https://www.ccrs.or.kr";
-  private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-  private static final Pattern SEQ_PATTERN = Pattern.compile("noticeId=(\\d+)");
+  static final String LIST_API_URL = "https://www.ccrs.or.kr/ajaxf/frBoard/bbsViewList.do";
+  static final String DETAIL_URL =
+      "https://www.ccrs.or.kr/cms/board/boardView.do?MENU_ID=840&SITE_NO=2&BOARD_SEQ=41&BBS_SEQ=%d";
+  private static final String LIST_FORM_BODY =
+      "pageNo=1&pagePerCnt=20&recordCountPerPage=20&MENU_ID=840&CONTENTS_NO=1&SITE_NO=2"
+          + "&BOARD_SEQ=41&BBS_SEQ=&PWD=&SEARCH_SEQ=&SEARCH_FLD=&SEARCH=&START_DT=&END_DT=";
 
   private static final String[] RELEVANT_KEYWORDS = {
       "채무조정", "신용회복", "연체", "추심", "금융취약계층", "새출발기금",
       "채무조정제도", "개인워크아웃", "프리워크아웃", "채무자", "지원"
   };
+
+  private final ObjectMapper objectMapper;
+
+  public CcrsDiscoveryAdapter(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public SourceType getSourceType() {
@@ -44,154 +51,122 @@ public class CcrsDiscoveryAdapter extends AbstractOfficialUpdateDiscoveryAdapter
 
   @Override
   protected List<DiscoveredCandidate> doDiscover(LocalDateTime since) {
-    List<DiscoveredCandidate> candidates = new ArrayList<>();
     log.info("신용회복위원회 discovery 실행 (since={})", since);
-
+    String json;
     try {
-      String html = fetchHtmlWithRetry(LIST_URL, 3);
-      if (html == null) {
-        log.warn("신용회복위원회 목록 페이지 조회 실패");
-        return candidates;
-      }
-
-      Document doc = Jsoup.parse(html);
-      Elements rows = doc.select("table.board_list tbody tr, table.tbl_board tbody tr, .board_list tbody tr");
-
-      for (Element row : rows) {
-        try {
-          Element linkEl = row.selectFirst("td.subject a, td.title a, td.tit a, a[href*='noticeId']");
-          if (linkEl == null) continue;
-
-          String href = linkEl.attr("href");
-          Matcher m = SEQ_PATTERN.matcher(href);
-          if (!m.find()) continue;
-          String seq = m.group(1);
-
-          String title = linkEl.text().trim();
-          if (title.isBlank()) continue;
-
-          boolean relevant = false;
-          for (String kw : RELEVANT_KEYWORDS) {
-            if (title.contains(kw)) {
-              relevant = true;
-              break;
-            }
-          }
-          if (!relevant) continue;
-
-          Element dateEl = row.selectFirst("td.date, td.regDt, td:nth-last-child(2)");
-          LocalDateTime publishedAt = parseDate(dateEl != null ? dateEl.text().trim() : null);
-
-          if (since != null && publishedAt != null && publishedAt.isBefore(since)) {
-            continue;
-          }
-
-          String detailUrl = DETAIL_URL_BASE + href;
-          String officialDocId = "CCRS-" + seq;
-
-          DiscoveredCandidate candidate = new DiscoveredCandidate(
-              title,
-              title,
-              detailUrl,
-              officialDocId,
-              publishedAt,
-              null,
-              null,
-              Category.NOTICE,
-              null
-          );
-
-          candidates.add(candidate);
-
-        } catch (Exception e) {
-          log.debug("행 파싱 중 오류: {}", e.getMessage());
-        }
-      }
-
-      log.info("신용회복위원회 관련 후보 {}건 발견", candidates.size());
-
+      json = httpClient.postForm(LIST_API_URL, LIST_FORM_BODY);
     } catch (Exception e) {
-      log.error("신용회복위원회 discovery 실패: {}", e.getMessage(), e);
+      throw new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.FETCH_FAILED,
+          "공지목록 API 조회 실패: " + e.getMessage(), e);
     }
+    List<DiscoveredCandidate> all = parseListJson(json);
 
-    return candidates;
+    List<DiscoveredCandidate> relevant = new ArrayList<>();
+    for (DiscoveredCandidate candidate : all) {
+      if (since != null && candidate.publishedAt() != null && candidate.publishedAt().isBefore(since)) {
+        continue;
+      }
+      if (containsAny(candidate.title(), RELEVANT_KEYWORDS)
+          || containsAny(candidate.summary(), RELEVANT_KEYWORDS)) {
+        relevant.add(candidate);
+      }
+    }
+    log.info("신용회복위원회 관련 후보 {}건 발견 (전체 {}건)", relevant.size(), all.size());
+    return relevant;
   }
 
-  @Override
-  protected DiscoveredCandidate doEnrich(DiscoveredCandidate candidate) {
+  List<DiscoveredCandidate> parseListJson(String json) {
+    JsonNode root;
     try {
-      String html = fetchHtmlWithRetry(candidate.originalUrl(), 2);
-      if (html == null) return candidate;
-
-      Document doc = Jsoup.parse(html);
-      Element contentEl = doc.selectFirst(".board_view .cont, .view_cont, .board_cont, #content");
-      String bodyText = contentEl != null ? contentEl.text() : doc.body().text();
-
-      Elements attachEl = doc.select(".file_down a, .attach a, a[href*='downFile']");
-      StringBuilder attachInfo = new StringBuilder();
-      for (Element a : attachEl) {
-        String fileName = a.text().trim();
-        String fileUrl = a.attr("href");
-        if (!fileName.isBlank()) {
-          if (attachInfo.length() > 0) attachInfo.append("; ");
-          attachInfo.append(fileName).append("|").append(resolveUrl(candidate.originalUrl(), fileUrl));
-        }
-      }
-
-      String summary = bodyText.length() > 300 ? bodyText.substring(0, 300) + "..." : bodyText;
-      if (attachInfo.length() > 0) {
-        summary += " [첨부: " + attachInfo + "]";
-      }
-
-      return new DiscoveredCandidate(
-          candidate.title(),
-          summary,
-          candidate.originalUrl(),
-          candidate.officialDocumentId(),
-          candidate.publishedAt(),
-          candidate.effectiveFrom(),
-          candidate.effectiveTo(),
-          candidate.category(),
-          bodyText
-      );
-
+      root = objectMapper.readTree(json);
     } catch (Exception e) {
-      log.debug("상세 페이지 보강 실패: {}", e.getMessage());
-      return candidate;
+      throw new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.PARSE_EMPTY_WITH_ITEMS,
+          "공지목록 API 응답 JSON 파싱 실패: " + e.getMessage(), e);
     }
+    JsonNode list = root.path("data").path("list");
+    if (!list.isArray()) {
+      throw new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.PARSE_EMPTY_WITH_ITEMS,
+          "공지목록 API 응답에 data.list 가 없음 (응답 형식 변경 가능성)");
+    }
+    if (list.isEmpty()) {
+      JsonNode rowCount = root.path("data").path("recordCountPerPage");
+      log.warn("신용회복위원회 공지목록 0건 응답 (recordCountPerPage={})", rowCount.asInt());
+      return List.of();
+    }
+
+    List<DiscoveredCandidate> parsed = new ArrayList<>();
+    for (JsonNode item : list) {
+      if ("Y".equals(item.path("SECRET_YN").asText())) {
+        continue;
+      }
+      long bbsSeq = item.path("BBS_SEQ").asLong();
+      if (bbsSeq <= 0) {
+        continue;
+      }
+      String subject = cleanText(item.path("SUBJECT").asText(""));
+      if (subject.isBlank()) {
+        continue;
+      }
+      String contents = cleanText(item.path("CONTENTS").asText(""));
+      LocalDateTime publishedAt = parseLooseDate(item.path("WRITE_DT").asText(""));
+
+      StringBuilder summary = new StringBuilder(
+          contents.length() > 300 ? contents.substring(0, 300) + "..." : (contents.isBlank() ? subject : contents));
+      List<String> attachments = readAttachments(item.path("boardFileList"));
+      if (!attachments.isEmpty()) {
+        summary.append(" [첨부: ").append(String.join("; ", attachments)).append("]");
+      }
+
+      parsed.add(new DiscoveredCandidate(
+          subject,
+          summary.toString(),
+          String.format(DETAIL_URL, bbsSeq),
+          "CCRS-BBS-" + bbsSeq,
+          publishedAt,
+          null,
+          null,
+          Category.NOTICE,
+          item.path("CONTENTS").asText(null)));
+    }
+
+    if (parsed.isEmpty() && !list.isEmpty()) {
+      throw new DiscoverySourceException(getSourceName(), DiscoverySourceException.Reason.PARSE_EMPTY_WITH_ITEMS,
+          "API 목록 " + list.size() + "건 중 파싱 성공 0건 - 응답 필드 변경 가능성");
+    }
+    return parsed;
   }
 
-  private String fetchHtmlWithRetry(String url, int maxRetries) {
-    for (int i = 0; i < maxRetries; i++) {
-      try {
-        return httpClient.fetchHtml(url);
-      } catch (Exception e) {
-        log.debug("시도 {}/{} 실패: {} - {}", i + 1, maxRetries, url, e.getMessage());
-        if (i == maxRetries - 1) {
-          log.warn("최대 재시도 초과: {}", url);
-        }
+  private List<String> readAttachments(JsonNode files) {
+    List<String> attachments = new ArrayList<>();
+    if (!files.isArray()) {
+      return attachments;
+    }
+    for (JsonNode file : files) {
+      String name = file.path("FILE_ORG_NM").asText("");
+      if (name.isBlank()) {
+        name = file.path("FILE_NM").asText("");
+      }
+      if (!name.isBlank()) {
+        attachments.add(name + "|상세페이지 첨부");
       }
     }
-    return null;
+    return attachments;
   }
 
-  private LocalDateTime parseDate(String text) {
-    if (text == null || text.isBlank()) return null;
-    try {
-      String cleaned = text.replace(".", "-").replace("/", "-");
-      return LocalDateTime.parse(cleaned + "T00:00:00");
-    } catch (DateTimeParseException e) {
-      return null;
+  private static String cleanText(String html) {
+    if (html == null || html.isBlank()) {
+      return "";
     }
+    return Jsoup.parse(html).text().trim();
   }
 
-  private String resolveUrl(String baseUrl, String relativeUrl) {
-    if (relativeUrl.startsWith("http")) return relativeUrl;
-    try {
-      java.net.URI base = new java.net.URI(baseUrl);
-      return base.resolve(relativeUrl).toString();
-    } catch (Exception e) {
-      return relativeUrl;
+  private static boolean containsAny(String text, String... keywords) {
+    if (text == null) return false;
+    for (String kw : keywords) {
+      if (text.contains(kw)) {
+        return true;
+      }
     }
+    return false;
   }
 }

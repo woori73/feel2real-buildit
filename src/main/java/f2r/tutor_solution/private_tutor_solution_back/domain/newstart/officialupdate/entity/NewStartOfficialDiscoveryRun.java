@@ -77,6 +77,14 @@ public class NewStartOfficialDiscoveryRun {
     this.errorMessage = errorMessage;
   }
 
+  /** 실패한 run 이라도 부분 성공 카운트를 관측 가능하도록 남긴다. */
+  public void setCounts(int discovered, int newReviews, int duplicates, int irrelevant) {
+    this.discoveredCount = discovered;
+    this.newReviewCount = newReviews;
+    this.duplicateCount = duplicates;
+    this.irrelevantCount = irrelevant;
+  }
+
   public enum RunStatus {
     RUNNING,
     COMPLETED,

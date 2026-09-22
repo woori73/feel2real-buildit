@@ -26,15 +26,27 @@ public class DiscoveryHttpClient {
   }
 
   public String fetchHtml(String url) {
+    return send("GET", url, null, null);
+  }
+
+  public String postForm(String url, String formBody) {
+    return send("POST", url, formBody, "application/x-www-form-urlencoded; charset=UTF-8");
+  }
+
+  private String send(String method, String url, String body, String contentType) {
     try {
-      HttpRequest request = HttpRequest.newBuilder()
+      HttpRequest.Builder builder = HttpRequest.newBuilder()
           .uri(URI.create(url))
           .timeout(Duration.ofSeconds(30))
           .header("User-Agent", USER_AGENT)
           .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-          .header("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7")
-          .GET()
-          .build();
+          .header("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7");
+      if (contentType != null) {
+        builder.header("Content-Type", contentType);
+      }
+      HttpRequest request = ("POST".equals(method))
+          ? builder.POST(HttpRequest.BodyPublishers.ofString(body == null ? "" : body)).build()
+          : builder.GET().build();
 
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
