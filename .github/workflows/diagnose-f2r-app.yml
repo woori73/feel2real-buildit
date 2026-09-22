@@ -34,14 +34,12 @@ jobs:
             "set +e",
             "echo \"=== f2r-app active ===\"",
             "systemctl is-active f2r-app.service",
-            "echo \"=== f2r-app status ===\"",
-            "systemctl status f2r-app.service --no-pager -l | head -30 || true",
-            "echo \"=== exception search (last 12h, max 5000 lines) ===\"",
-            "journalctl -u f2r-app.service --since \"12 hours ago\" --no-pager -n 5000 | grep -i -B5 -A60 -E 'EasyLedgerService|easy_transactions|DataIntegrityViolationException|ConstraintViolationException|SQLIntegrityConstraintViolationException|foreign key|Caused by|ERROR' | head -600 || true",
-            "echo \"=== recent err level (last 12h) ===\"",
-            "journalctl -u f2r-app.service --since \"12 hours ago\" --no-pager -p err -n 60 || true",
-            "echo \"=== tail 40 ===\"",
-            "journalctl -u f2r-app.service --no-pager -n 40 || true",
+            "echo \"=== tail 80 (most recent, unfiltered) ===\"",
+            "journalctl -u f2r-app.service --no-pager -n 80 || true",
+            "echo \"=== err-priority only, last 30 minutes ===\"",
+            "journalctl -u f2r-app.service --since \"30 minutes ago\" --no-pager -p err -n 200 || true",
+            "echo \"=== easy transactions path/controller mentions, last 30 minutes (tight context) ===\"",
+            "journalctl -u f2r-app.service --since \"30 minutes ago\" --no-pager | grep -i -B2 -A25 -E 'EasyLedgerController|/api/admin/easy/transactions|EasyLedgerService|easy_transactions|DataIntegrityViolationException|ConstraintViolationException|SQLIntegrityConstraintViolationException|MalformedInputException|foreign key' | head -400 || true",
             "exit 0"
           ]}
           PARAMS
