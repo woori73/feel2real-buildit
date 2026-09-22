@@ -42,7 +42,25 @@ public class ChoonggiCreatorService {
     }catch(IOException e){throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"미디어 저장에 실패했습니다.");}
   }
   @Transactional public void cover(Long postId,Long mediaId){var list=media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(postId);if(list.stream().noneMatch(m->m.getId().equals(mediaId)))throw bad("이 게시물의 미디어가 아닙니다.");list.forEach(m->m.setCover(m.getId().equals(mediaId)));}
-  public ChoonggiMedia requireMedia(Long id){return media.findByIdAndDeletedAtIsNull(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));}
+  @Transactional public void deleteMedia(Long postId,Long mediaId){var m=media.findByIdAndDeletedAtIsNull(mediaId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));if(!m.getPost().getId().equals(postId))throw bad("이 게시물의 미디어가 아닙니다.");m.softDelete();}
+  @Transactional public void moveUp(Long postId,Long mediaId){swap(postId,mediaId,-1);}
+  @Transactional public void moveDown(Long postId,Long mediaId){swap(postId,mediaId,1);}
+  private void swap(Long postId,Long mediaId,int dir){
+    var list=media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(postId);
+    int idx=-1;for(int i=0;i<list.size();i++)if(list.get(i).getId().equals(mediaId)){idx=i;break;}
+    if(idx<0)throw bad("이 게시물의 미디어가 아닙니다.");
+    int swapIdx=idx+dir;if(swapIdx<0||swapIdx>=list.size())return;
+    var a=list.get(idx);var b=list.get(swapIdx);int ao=a.getSortOrder(),bo=b.getSortOrder();a.move(bo);b.move(ao);
+  }
+  /** Anonymous readers may only fetch media on a published, non-deleted post; ADMIN may preview any non-deleted media. */
+  public ChoonggiMedia requireMedia(Long id,String role){
+    ChoonggiMedia m=media.findByIdAndDeletedAtIsNull(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+    if(!"ADMIN".equals(role)){
+      ChoonggiPost post=m.getPost();
+      if(post.getDeletedAt()!=null||post.getStatus()!=ChoonggiPost.Status.PUBLISHED)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+    return m;
+  }
   public byte[] bytes(ChoonggiMedia m){try{return storage.readSingleLimited(m.getStorageKey(),"RAW",m.getType()==ChoonggiMedia.Type.VIDEO?VIDEO_MAX:PHOTO_MAX);}catch(IOException e){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}}
   private String clean(String v,int max,String label){if(v==null||v.isBlank())throw bad(label+"을 입력해 주세요.");String x=v.trim();if(x.length()>max)throw bad(label+"이 너무 깁니다.");return x;}
   private String safeName(String n){String x=n==null?"media":n.replace('\\','/');x=x.substring(x.lastIndexOf('/')+1).replaceAll("[^a-zA-Z0-9._가-힣-]","_");return x.isBlank()?"media":x;}
