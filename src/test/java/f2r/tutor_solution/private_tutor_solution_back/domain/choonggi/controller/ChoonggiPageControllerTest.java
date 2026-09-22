@@ -23,4 +23,10 @@ class ChoonggiPageControllerTest {
     assertThat(ChoonggiPageController.matchStatus(LocalDate.of(2026,9,30))).isEqualTo("MATCH DAY");
     assertThat(ChoonggiPageController.matchStatus(LocalDate.of(2026,10,1))).isEqualTo("RESULT PENDING");
   }
+  @Test void publicHomeNeverExposesFlightNumberOrExactTimes() throws Exception {
+    String body = mockMvc.perform(get("/choonggi")).andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString();
+    for (String forbidden : new String[]{"VJ961","VJ907","VietJet","11:05","13:35","20:05","23:40"})
+      assertThat(body).as("public home must not expose: " + forbidden).doesNotContain(forbidden);
+  }
 }
