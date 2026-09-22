@@ -78,7 +78,11 @@ public class NewStartOfficialUpdateAdminController {
     return ResponseEntity.ok(service.setFeatured(id, enabled));
   }
 
-  /** 관리자 수동 discovery 실행. REVIEW까지만 생성하며 자동 발행은 없다(스케줄러와 동일 계약). */
+  /**
+   * 관리자 수동 discovery 실행. 정상 수집 항목은 자동 게시(PUBLISHED)되며 관리자는
+   * 사후에 reject/archive 로 정리한다. 자동 게시는 뉴스 게시판까지이며 Knowledge
+   * ACTIVE/OFFICIAL_CURRENT 승격과는 완전히 분리된다.
+   */
   @PostMapping("/discovery/run")
   public ResponseEntity<DiscoveryResult> runDiscovery(
       @RequestParam(defaultValue = "1") long sinceDays) {

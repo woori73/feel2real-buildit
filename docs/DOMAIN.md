@@ -3,7 +3,7 @@
 ## NewStart Official Updates V1 (V988)
 
 `newstart_official_updates`는 NewStart Knowledge/RAG와 분리된 공식 업데이트 게시 모델이다.
-공식기관 자료 후보는 `REVIEW`로 시작하며 관리자 승인 전에는 공개 API에 노출되지 않는다.
+수동 등록 후보는 `REVIEW`로 시작하며 관리자 승인 전에는 공개 API에 노출되지 않는다. discovery 자동 수집 항목은 2026-09-23 정책으로 즉시 `PUBLISHED` 된다(아래 discovery 문단 참조).
 
 | 컬럼 | 의미 |
 |---|---|
@@ -32,12 +32,12 @@ discovery 실행 이력. 소스·실행별 관측과 반복 실행 안전성 확
 | `run_started_at` / `run_finished_at` | 실행 시작·종료 시각 |
 | `source_type` | 대상 출처 |
 | `status` | RUNNING / COMPLETED / FAILED (NOT_IMPLEMENTED·파싱 실패는 FAILED로 기록) |
-| `discovered_count` / `new_review_count` / `duplicate_count` / `irrelevant_count` | 실행 결과 집계 |
+| `discovered_count` / `new_review_count` / `duplicate_count` / `irrelevant_count` | 실행 결과 집계 — 자동 게시 정책 이후 `new_review_count`는 PUBLISHED 등록 수, `irrelevant_count`는 최소 기술 차단(제목·URL 결손) 생략 수 (컬럼명 유지) |
 | `error_message` | 실패 사유 |
 
-discovery는 `REVIEW` 생성까지만 수행하며 자동 게시·ACTIVE 승격은 없다. 스케줄러(11:00/21:00 KST)는 `app.newstart.discovery.scheduler-enabled=true` 명시 환경에서만 동작한다.
+discovery는 정상 수집 항목(제목·원문 URL 확보)을 중요도 무관 즉시 `PUBLISHED`(`reviewed_by=AUTO_DISCOVERY`)로 등록하며, 관리자는 사후 `reject`/`archive`(게시취소)로 정리한다(2026-09-23 자동 게시 정책). 최소 기술 차단: 조회·파싱 실패/제목·URL 결손/`NOT_IMPLEMENTED`/dedup 중복. 자동 게시는 뉴스 게시판까지이며 Knowledge `ACTIVE`/`OFFICIAL_CURRENT` 승격과 완전히 분리된다(승격 경로 없음). 스케줄러(11:00/21:00 KST)는 `app.newstart.discovery.scheduler-enabled=true` 명시 환경에서만 동작한다.
 
-`PUBLISHED`만 공개 피드와 NewStart 홈 최신 3건에 포함된다. 자동 수집·자동 게시와 Knowledge ACTIVE 승격은 이 모델에 포함하지 않는다.
+`PUBLISHED`만 공개 피드와 NewStart 홈 최신 3건에 포함된다. 뉴스 자동 게시와 무관하게 Knowledge ACTIVE 승격·Canonical/OFFICIAL_CURRENT promotion은 이 모델에 포함하지 않는다(완전 분리).
  (Domain Model)
 
 > 과외 솔루션 DB 테이블 스키마. 마이그레이션 파일(`db/migration`)·Entity와 항상 동일해야 한다.

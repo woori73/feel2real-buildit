@@ -42,12 +42,18 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     private final String name;
     private final List<DiscoveredCandidate> result;
     private final RuntimeException failure;
+    private RelevancePriority priority = RelevancePriority.NORMAL;
 
     StubAdapter(SourceType sourceType, String name, List<DiscoveredCandidate> result, RuntimeException failure) {
       this.sourceType = sourceType;
       this.name = name;
       this.result = result;
       this.failure = failure;
+    }
+
+    StubAdapter withPriority(RelevancePriority priority) {
+      this.priority = priority;
+      return this;
     }
 
     @Override
@@ -75,7 +81,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
 
     @Override
     public RelevancePriority evaluateRelevance(DiscoveredCandidate candidate) {
-      return RelevancePriority.NORMAL;
+      return priority;
     }
 
     @Override
@@ -106,11 +112,11 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     assertThat(result.isSuccess()).isFalse();
     assertThat(lastRun().getStatus()).isEqualTo(RunStatus.FAILED);
     assertThat(lastRun().getErrorMessage()).contains("PARSE_EMPTY_WITH_ITEMS");
-    verify(updateService, never()).createReview(any(), any(), any());
+    verify(updateService, never()).createPublished(any(), any(), any());
   }
 
   @Test
-  void successfulDiscoveryRegistersReviewOnly() {
+  void successfulDiscoveryAutoPublishes() {
     when(runRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     when(updateRepository.findByDedupKey(anyString())).thenReturn(Optional.empty());
     StubAdapter ok = new StubAdapter(SourceType.NEWSTART_FUND, "새출발기금",
@@ -119,7 +125,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     DiscoveryResult result = service(ok).runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
 
     assertThat(result.isSuccess()).isTrue();
-    verify(updateService).createReview(any(), any(), any());
+    verify(updateService).createPublished(any(), any(), any());
     assertThat(lastRun().getStatus()).isEqualTo(RunStatus.COMPLETED);
     assertThat(lastRun().getDiscoveredCount()).isEqualTo(1);
     assertThat(lastRun().getNewReviewCount()).isEqualTo(1);
@@ -137,7 +143,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     DiscoveryResult result = service(board, faq).runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
 
     assertThat(result.isSuccess()).isFalse();
-    verify(updateService).createReview(any(), any(), any());
+    verify(updateService).createPublished(any(), any(), any());
     assertThat(lastRun().getStatus()).isEqualTo(RunStatus.FAILED);
     assertThat(lastRun().getDiscoveredCount()).isEqualTo(1);
     assertThat(lastRun().getNewReviewCount()).isEqualTo(1);
@@ -159,7 +165,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     assertThat(combined.getSubResults()).hasSize(2);
     assertThat(combined.getSubResults().get(0).isSuccess()).isFalse();
     assertThat(combined.getSubResults().get(1).isSuccess()).isTrue();
-    verify(updateService).createReview(any(), any(), any());
+    verify(updateService).createPublished(any(), any(), any());
   }
 
   @Test
@@ -185,13 +191,13 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     assertThat(second.isSuccess()).isTrue();
     assertThat(second.getDuplicates()).isEqualTo(1);
     assertThat(second.getNewReviews()).isZero();
-    verify(updateService, org.mockito.Mockito.times(1)).createReview(any(), any(), any());
+    verify(updateService, org.mockito.Mockito.times(1)).createPublished(any(), any(), any());
   }
 
   @Test
-  void repeatedScheduledAndManualRunsOfSameSourceNeverCreateDuplicateReviews() {
+  void repeatedScheduledAndManualRunsOfSameSourceNeverCreateDuplicateRows() {
     when(runRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-    // dedupKey 저장을 시뮬레이션: createReview 가 실제로 저장하는 것과 동일하게 unique 키를 채운다.
+    // dedupKey 저장을 시뮬레이션: 자동 게시가 실제로 저장하는 것과 동일하게 unique 키를 채운다.
     java.util.Set<String> store = new java.util.HashSet<>();
     when(updateRepository.findByDedupKey(anyString())).thenAnswer(inv ->
         store.contains(inv.getArgument(0)) ? Optional.of(
@@ -204,7 +210,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
       NewStartOfficialUpdateRequest req = inv.getArgument(0);
       store.add("DOC:NEWSTART_FUND:" + req.officialDocumentId());
       return null;
-    }).when(updateService).createReview(any(), any(), any());
+    }).when(updateService).createPublished(any(), any(), any());
 
     StubAdapter adapter = new StubAdapter(SourceType.NEWSTART_FUND, "새출발기금",
         List.of(candidate("NSF-B-56", "개편 안내")), null);
@@ -220,6 +226,42 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     assertThat(second.getDuplicates()).isEqualTo(1);
     assertThat(third.getNewReviews()).isZero();
     assertThat(third.getDuplicates()).isEqualTo(1);
-    verify(updateService, org.mockito.Mockito.times(1)).createReview(any(), any(), any());
+    verify(updateService, org.mockito.Mockito.times(1)).createPublished(any(), any(), any());
+  }
+
+  @Test
+  void lowRelevanceOfficialItemIsStillPublished() {
+    when(runRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(updateRepository.findByDedupKey(anyString())).thenReturn(Optional.empty());
+    StubAdapter irrelevant = new StubAdapter(SourceType.NEWSTART_FUND, "새출발기금",
+        List.of(candidate("NSF-B-70", "강사모집 공고")), null).withPriority(RelevancePriority.IRRELEVANT);
+
+    DiscoveryResult result = service(irrelevant).runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
+
+    // 자동 게시 정책: 관련성 판정은 필터가 아니라 메타데이터 — IRRELEVANT 도 게시 대상.
+    assertThat(result.isSuccess()).isTrue();
+    ArgumentCaptor<RelevancePriority> priorityCaptor = ArgumentCaptor.forClass(RelevancePriority.class);
+    verify(updateService).createPublished(any(), priorityCaptor.capture(), any());
+    assertThat(priorityCaptor.getValue()).isEqualTo(RelevancePriority.IRRELEVANT);
+    assertThat(result.getIrrelevant()).isZero();
+  }
+
+  @Test
+  void itemMissingTitleOrUrlIsTechnicallyBlockedFromPublishing() {
+    when(runRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(updateRepository.findByDedupKey(anyString())).thenReturn(Optional.empty());
+    DiscoveredCandidate noTitle = new DiscoveredCandidate(" ", "s", "https://official.example/NSF-B-90",
+        "NSF-B-90", null, null, null, Category.NOTICE, null);
+    DiscoveredCandidate noUrl = new DiscoveredCandidate("제목 없음 항목", "s", null,
+        "NSF-B-91", null, null, null, Category.NOTICE, null);
+    StubAdapter adapter = new StubAdapter(SourceType.NEWSTART_FUND, "새출발기금",
+        List.of(noTitle, noUrl), null);
+
+    DiscoveryResult result = service(adapter).runDiscoveryForSource(SourceType.NEWSTART_FUND, null);
+
+    assertThat(result.isSuccess()).isTrue();
+    assertThat(result.getNewReviews()).isZero();
+    assertThat(result.getIrrelevant()).isEqualTo(2);
+    verify(updateService, never()).createPublished(any(), any(), any());
   }
 }

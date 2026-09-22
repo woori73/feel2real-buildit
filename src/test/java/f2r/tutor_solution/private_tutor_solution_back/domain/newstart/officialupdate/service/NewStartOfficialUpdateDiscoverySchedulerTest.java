@@ -127,6 +127,6 @@ class NewStartOfficialUpdateDiscoverySchedulerTest {
     svc.scheduledDiscoveryMorning();
 
     verify(runRepository, org.mockito.Mockito.atLeastOnce()).save(any(NewStartOfficialDiscoveryRun.class));
-    verify(updateService, never()).createReview(any(), any(), any());
+    verify(updateService, never()).createPublished(any(), any(), any());
   }
 }

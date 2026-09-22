@@ -86,17 +86,20 @@ public class NewStartOfficialUpdateDiscoveryService {
             }
 
             RelevancePriority priority = adapter.evaluateRelevance(enriched);
-
-            if (priority == RelevancePriority.IRRELEVANT) {
-              irrelevant++;
-              log.debug("IRRELEVANT로 분류되어 저장 안 함: {}", enriched.title());
-              continue;
-            }
+            // 자동 게시 정책(2026-09-23): 관련성·우선순위는 필터가 아니라 관리자 사후 정리용 메타데이터다.
+            // IRRELEVANT 판정도 게시하며, 최소 기술 차단(제목/원문 URL 결손)만 skipped(irrelevant_count)로 집계한다.
 
             String dedupKey = adapter.buildDedupKey(enriched);
             if (updateRepository.findByDedupKey(dedupKey).isPresent()) {
               duplicates++;
               log.debug("중복으로 저장 안 함: {}", enriched.title());
+              continue;
+            }
+
+            if (enriched.title() == null || enriched.title().isBlank()
+                || enriched.originalUrl() == null || enriched.originalUrl().isBlank()) {
+              irrelevant++;
+              log.warn("최소 기술 차단(제목/원문 URL 결손)으로 게시 생략: source={}, title={}", sourceType, enriched.title());
               continue;
             }
 
@@ -114,13 +117,14 @@ public class NewStartOfficialUpdateDiscoveryService {
                   enriched.category()
               );
 
-              updateService.createReview(request, priority, LocalDateTime.now());
+              updateService.createPublished(request, priority, LocalDateTime.now());
               newReviews++;
-              log.info("REVIEW 등록 완료: source={}, title={}, priority={}",
+              log.info("AUTO PUBLISHED 등록 완료: source={}, title={}, priority={}",
                   sourceType, enriched.title(), priority);
             } catch (IllegalArgumentException e) {
+              // dedup 경합 또는 원문 URL 형식 오류(entity.publish 검증) — 게시 없이 생략
               duplicates++;
-              log.debug("저장 실패(중복 등): {}", enriched.title());
+              log.debug("저장/자동 게시 생략(중복·URL 검증 실패 등): {} - {}", enriched.title(), e.getMessage());
             }
           }
         } catch (DiscoverySourceException e) {
