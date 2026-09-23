@@ -174,8 +174,11 @@ public class SecurityConfig {
             .requestMatchers("/admin/landing", "/admin/chart").hasRole("ADMIN")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
             .requestMatchers("/easy", "/easy/**").hasRole("ADMIN")
-            // CHOONGGI Creator SSR — ADMIN only; public vlog routes remain unchanged.
-            .requestMatchers("/choonggi/admin", "/choonggi/admin/**").hasRole("ADMIN")
+            // CHOONGGI Creator SSR — ADMIN or the scoped CHOONGGI CREATOR role only; public vlog
+            // routes remain unchanged. CREATOR is NOT global admin — it unlocks only this SSR
+            // screen and /api/admin/choonggi/** (matched separately below, before the generic
+            // /api/admin/** ADMIN-only catch-all — first-match-wins per this file's convention).
+            .requestMatchers("/choonggi/admin", "/choonggi/admin/**").hasAnyRole("ADMIN", "CREATOR")
             // NewStart 운영자 화면 — ADMIN 전용. 메뉴 숨김이 아니라 서버 규칙으로 차단한다.
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
@@ -348,6 +351,11 @@ public class SecurityConfig {
                 "/api/admin/chart/tools/educators/search-existing",
                 "/api/admin/chart/tools/research-drafts",
                 "/api/admin/chart/tools/review-batches").hasAnyRole("ADMIN", "CHART_AGENT")
+
+            // CHOONGGI Creator API — scoped CREATOR role (or ADMIN) only. Must stay strictly
+            // above the generic /api/admin/** ADMIN-only catch-all (first-match-wins) so CREATOR
+            // never gains reach into NewStart/EASY/other global admin APIs through that catch-all.
+            .requestMatchers("/api/admin/choonggi/**").hasAnyRole("ADMIN", "CREATOR")
 
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")

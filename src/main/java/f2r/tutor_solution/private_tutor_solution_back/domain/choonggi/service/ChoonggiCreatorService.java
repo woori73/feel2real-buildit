@@ -52,10 +52,10 @@ public class ChoonggiCreatorService {
     int swapIdx=idx+dir;if(swapIdx<0||swapIdx>=list.size())return;
     var a=list.get(idx);var b=list.get(swapIdx);int ao=a.getSortOrder(),bo=b.getSortOrder();a.move(bo);b.move(ao);
   }
-  /** Anonymous readers may only fetch media on a published, non-deleted post; ADMIN may preview any non-deleted media. */
+  /** Anonymous/STUDENT/TUTOR readers may only fetch media on a published, non-deleted post; ADMIN or the scoped CHOONGGI CREATOR role may preview any non-deleted media. */
   public ChoonggiMedia requireMedia(Long id,String role){
     ChoonggiMedia m=media.findByIdAndDeletedAtIsNull(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
-    if(!"ADMIN".equals(role)){
+    if(!"ADMIN".equals(role)&&!"CREATOR".equals(role)){
       ChoonggiPost post=m.getPost();
       if(post.getDeletedAt()!=null||post.getStatus()!=ChoonggiPost.Status.PUBLISHED)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
