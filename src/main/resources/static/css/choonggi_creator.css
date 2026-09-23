@@ -1,6 +1,7 @@
 :root{--ink:#11100e;--paper:#f4f0e7;--lime:#d8ff3e;--red:#b42318}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif;padding-bottom:env(safe-area-inset-bottom)}header{height:60px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid}a{color:inherit;font-weight:700;text-decoration:none}main{max-width:720px;margin:auto;padding:24px 16px}
 .primary{display:block;background:var(--ink);color:white;padding:15px;border:0;text-align:center;font-weight:800}
 .primary.big{padding:20px;font-size:17px;border-radius:2px}
+.secondary-link{display:block;text-align:center;padding:13px;margin-top:8px;border:1px solid var(--ink);background:white}
 .list-title{font-size:13px;font-weight:800;letter-spacing:.08em;margin:28px 0 6px}
 .list{margin-top:6px}
 .list article{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:12px;border-top:1px solid;padding:14px 0}
