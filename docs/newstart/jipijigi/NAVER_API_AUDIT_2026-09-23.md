@@ -1,5 +1,8 @@
 # 지피지기 Agent — NAVER 공식 API 통합 실사 (2026-09-23)
 
+> **필수 참조 — 게시/댓글을 다루기 전에 먼저 읽는다: [`OPERATING_PRINCIPLES_2026-09-23.md`](OPERATING_PRINCIPLES_2026-09-23.md)**
+> 특히 §4(댓글·결과 저장 단위)와 §8(답변 후 자동 축적, 노출 결과는 **운영자 보고만** 저장).
+
 조사 주체: NewStart 지피지기 Agent V1 (branch `feat/newstart-jipijigi-agent-v1`)
 조사 방법: 네이버 개발자 센터 공식 문서 확인(cloud 문서가 아닌 developers.naver.com 원문),
 카페 주소/수집 JSON 실측, 로컬 저장 코드 grep. **추측으로 "될 것 같다"를 쓰지 않는다.**

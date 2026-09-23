@@ -1,5 +1,9 @@
 # NewStart 지식 DB/RAG 실제 상태 (inventory, 2026-09-23)
 
+> **필수 참조 — 작업 전에 먼저 읽는다: [`OPERATING_PRINCIPLES_2026-09-23.md`](OPERATING_PRINCIPLES_2026-09-23.md)**
+> (검색 순서 STEP1..5, 신복위 1순위, 9개 축적 분야, 5단 저장 단위, 내부 충분 시 외부 생략,
+> 축적→검토→재사용, 공식/경험 혼용 금지, 답변 후 자동 DB 축적 규칙)
+
 지피지기 Agent가 "우리 DB를 먼저 검색한다"를 증명하려면 무엇이 실제로 있는지부터 기록해야 한다.
 이 문서는 추측("모아놨을 것")을 배제하고 **코드 위치와 파일 실측**으로만 썼다.
 실행 시점의 행 수는 ADMIN API `GET /api/admin/newstart/jipijigi/inventory`가 반환하는 값이 정본이며
@@ -17,6 +21,7 @@
 | `newstart_official_discovery_run` | V989/V991 | 자동 discovery 실행 이력 | run 단위 감사 |
 | `newstart_chat_messages` | (기존) | 회원 채팅 저장. **RAG 용도로 쓰지 않음(문서 명시)** | — |
 | 지피지기 Agent 6 테이블 | `V999__add_newstart_jipijigi_agent.sql` | allowlist/명령/질문/초안/상태로그/조사추적 | 이 PR에서 추가 |
+| `newstart_jipijigi_answer_sessions` | `V1000__add_newstart_jipijigi_answer_session.sql` | 답변 세션 축적 원장 (질문+최종 답변+근거+노출+후속 연결) | `review_state CANDIDATE\|ACCEPTED\|REJECTED` — **ACCEPTED만 STEP1 RAG 재사용**, `fingerprint` UNIQUE로 dedupe |
 
 `NewstartKnowledgeItem.SourceType`(entity, `NewstartKnowledgeItem.java:98`) =
 `OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, EBOOK, CAFE_ARTICLE, CAFE_COMMENT, CASE, OPERATOR_KNOWLEDGE, DERIVED_RULE`.
