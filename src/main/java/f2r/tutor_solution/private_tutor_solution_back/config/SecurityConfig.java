@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.EasyCollectorAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtAuthenticationFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
@@ -34,6 +35,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import org.springframework.security.web.util.matcher.AndRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -89,7 +91,12 @@ public class SecurityConfig {
       // (@WebMvcTest 슬라이스에서 없으면 seed를 건너뛸 뿐 로그인 자체는 막지 않는다).
       org.springframework.beans.factory.ObjectProvider<
               f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService>
-          newStartMemberProfileServiceProvider) throws Exception {
+          newStartMemberProfileServiceProvider,
+      // EASY Visible Local Browser Collector agent 전용 Bearer 토큰 필터 의존성. JPA 레포 의존이라
+      // 다른 서비스들과 동일하게 ObjectProvider로 지연 조회한다(@WebMvcTest 슬라이스 호환).
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLocalCollectorService>
+          easyLocalCollectorServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -104,6 +111,10 @@ public class SecurityConfig {
     // 테스트에서는 TestPropertySource의 CHART_AGENT_TOKEN 으로 주입된다.
     ChartAgentTokenFilter chartAgentTokenFilter =
         new ChartAgentTokenFilter(environment.getProperty(ChartAgentTokenFilter.ENV_VAR));
+    // EASY Visible Local Browser Collector 전용 Bearer 토큰 필터. 등록된 collector마다 고유 토큰
+    // (SHA-256 해시만 DB 저장)이라, ChartAgentTokenFilter와 달리 요청마다 DB 조회로 검증한다.
+    EasyCollectorAgentTokenFilter easyCollectorAgentTokenFilter =
+        new EasyCollectorAgentTokenFilter(easyLocalCollectorServiceProvider);
     ArchivedRouteAccessFilter archivedRouteAccessFilter =
         new ArchivedRouteAccessFilter(archivedRoutesProperties);
     OriginWhitelistFilter originWhitelistFilter =
@@ -155,6 +166,21 @@ public class SecurityConfig {
                 (request, response, ex) -> response.sendRedirect("/?login=required"),
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/problem-generator/**"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // CHOONGGI Creator SSR(/choonggi/admin/**)도 익명 브라우저 요청에 raw 401을 주지 않는다 —
+            // Wiki와 동일한 returnUrl 패턴(landing_buildit.js가 처리, /api/admin/choonggi/** JSON API는
+            // TEXT_HTML이 아니므로 영향 없음 — 그대로 401).
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> {
+                  String target = request.getRequestURI();
+                  if (request.getQueryString() != null) target += "?" + request.getQueryString();
+                  response.sendRedirect("/?login=required&returnUrl="
+                      + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
+                },
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
@@ -352,6 +378,21 @@ public class SecurityConfig {
                 "/api/admin/chart/tools/research-drafts",
                 "/api/admin/chart/tools/review-batches").hasAnyRole("ADMIN", "CHART_AGENT")
 
+            // EASY Visible Local Browser Collector agent (ROLE_EASY_COLLECTOR_AGENT) — collector
+            // 콜백 경로만 허용. Bearer 토큰은 collector 등록 시 발급되는 개별 토큰(해시만 DB 저장).
+            // 관리 endpoint(register/start/cancel 등)는 아래 /api/admin/** 로 떨어져 ROLE_ADMIN
+            // 전용으로 남는다. 반드시 /api/admin/** 보다 먼저(좁은 것 우선).
+            .requestMatchers(HttpMethod.POST,
+                "/api/admin/easy/collector-agent/heartbeat",
+                "/api/admin/easy/collector-agent/tasks/{taskId}/waiting-for-auth",
+                "/api/admin/easy/collector-agent/tasks/{taskId}/resume",
+                "/api/admin/easy/collector-agent/tasks/{taskId}/collecting",
+                "/api/admin/easy/collector-agent/tasks/{taskId}/downloading",
+                "/api/admin/easy/collector-agent/tasks/{taskId}/completed",
+                "/api/admin/easy/collector-agent/tasks/{taskId}/failed")
+                .hasAnyRole("ADMIN", "EASY_COLLECTOR_AGENT")
+            .requestMatchers(HttpMethod.GET,
+                "/api/admin/easy/collector-agent/next-task").hasAnyRole("ADMIN", "EASY_COLLECTOR_AGENT")
             // CHOONGGI Creator API — scoped CREATOR role (or ADMIN) only. Must stay strictly
             // above the generic /api/admin/** ADMIN-only catch-all (first-match-wins) so CREATOR
             // never gains reach into NewStart/EASY/other global admin APIs through that catch-all.
@@ -381,6 +422,7 @@ public class SecurityConfig {
         .addFilterAfter(archivedRouteAliasFilter, SubdomainAcademyFilter.class)
         .addFilterAfter(jwtAuthenticationFilter, ArchivedRouteAliasFilter.class)
         .addFilterAfter(chartAgentTokenFilter, JwtAuthenticationFilter.class)
+        .addFilterAfter(easyCollectorAgentTokenFilter, ChartAgentTokenFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)

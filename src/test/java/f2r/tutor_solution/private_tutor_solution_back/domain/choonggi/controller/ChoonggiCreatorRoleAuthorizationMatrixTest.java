@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
@@ -91,14 +92,14 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
 
   private void stubChoonggiWrites() {
     ChoonggiPost fake = ChoonggiPost.draft("EP01", "T", "s-" + System.nanoTime(), "b");
-    when(choonggiService.save(any(), any(), any(), any(), any())).thenReturn(fake);
-    when(choonggiService.publish(anyLong())).thenReturn(fake);
-    doNothing().when(choonggiService).unpublish(anyLong());
-    doNothing().when(choonggiService).delete(anyLong());
-    doNothing().when(choonggiService).cover(anyLong(), anyLong());
-    doNothing().when(choonggiService).moveUp(anyLong(), anyLong());
-    doNothing().when(choonggiService).moveDown(anyLong(), anyLong());
-    doNothing().when(choonggiService).deleteMedia(anyLong(), anyLong());
+    when(choonggiService.save(any(), any(), any(), any(), any(), any())).thenReturn(fake);
+    when(choonggiService.publish(anyLong(), any(), any())).thenReturn(fake);
+    doNothing().when(choonggiService).unpublish(anyLong(), any(), any());
+    doNothing().when(choonggiService).delete(anyLong(), any(), any());
+    doNothing().when(choonggiService).cover(anyLong(), anyLong(), any(), any());
+    doNothing().when(choonggiService).moveUp(anyLong(), anyLong(), any(), any());
+    doNothing().when(choonggiService).moveDown(anyLong(), anyLong(), any(), any());
+    doNothing().when(choonggiService).deleteMedia(anyLong(), anyLong(), any(), any());
   }
 
   // ── A. public published read — every role, including anonymous ────────────
@@ -111,11 +112,20 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
     }
   }
 
-  // ── anonymous: everything admin-shaped is 401 ──────────────────────────────
+  // ── anonymous: CHOONGGI admin PAGE is a login-entry redirect (not a raw 401 error
+  // page -- a real user hitting /choonggi/admin cold should land on the login modal, not
+  // an unexplained browser error); every admin-shaped API stays a plain 401 -────────────
   @Test
-  @DisplayName("anonymous -> 401 on CHOONGGI admin, NewStart admin, EASY admin")
+  @DisplayName("anonymous -> login-entry redirect on CHOONGGI admin page")
+  void anonymousChoonggiAdminPageRedirectsToLogin() throws Exception {
+    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fchoonggi%2Fadmin"));
+  }
+
+  @Test
+  @DisplayName("anonymous -> 401 on CHOONGGI admin API, NewStart admin, EASY admin")
   void anonymousUnauthorized() throws Exception {
-    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE)).andExpect(status().isUnauthorized());
     mockMvc.perform(get(CHOONGGI_ADMIN_API)).andExpect(status().isUnauthorized());
     mockMvc.perform(get(NEWSTART_ADMIN_API)).andExpect(status().isUnauthorized());
     mockMvc.perform(get(EASY_ADMIN_API)).andExpect(status().isUnauthorized());
@@ -147,7 +157,7 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
   @DisplayName("B/H. CREATOR -> 200 on /choonggi/admin and /api/admin/choonggi/**")
   void creatorAllowedOnChoonggiAdmin() throws Exception {
     Cookie creator = cookie("CREATOR");
-    when(choonggiService.adminList()).thenReturn(List.of());
+    when(choonggiService.adminList(any(), any())).thenReturn(List.of());
     mockMvc.perform(get(CHOONGGI_ADMIN_PAGE).cookie(creator)).andExpect(status().isOk());
     mockMvc.perform(get(CHOONGGI_ADMIN_API).cookie(creator)).andExpect(status().isOk());
   }
@@ -158,7 +168,7 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
     stubChoonggiWrites();
     mockMvc.perform(post(CHOONGGI_ADMIN_API).cookie(cookie("CREATOR"))
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"episode\":\"EP01\",\"title\":\"T\",\"slug\":\"s\",\"body\":\"b\"}"))
+            .content("{\"title\":\"T\",\"body\":\"b\"}"))
         .andExpect(status().isOk());
   }
 
@@ -168,7 +178,7 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
     stubChoonggiWrites();
     mockMvc.perform(put(CHOONGGI_ADMIN_API + "/1").cookie(cookie("CREATOR"))
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"episode\":\"EP01\",\"title\":\"T\",\"slug\":\"s\",\"body\":\"b\"}"))
+            .content("{\"title\":\"T\",\"body\":\"b\"}"))
         .andExpect(status().isOk());
   }
 
@@ -210,7 +220,7 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
   @DisplayName("ADMIN -> 200 on CHOONGGI admin, NewStart admin, EASY admin (unchanged)")
   void adminAllowedEverywhere() throws Exception {
     Cookie admin = cookie("ADMIN");
-    when(choonggiService.adminList()).thenReturn(List.of());
+    when(choonggiService.adminList(any(), any())).thenReturn(List.of());
     when(newStartService.adminUpdates(any(), any())).thenReturn(List.of());
     when(easyBusinessService.listActive()).thenReturn(List.of());
     mockMvc.perform(get(CHOONGGI_ADMIN_PAGE).cookie(admin)).andExpect(status().isOk());

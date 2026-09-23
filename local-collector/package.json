@@ -1,0 +1,15 @@
+{
+  "name": "easy-local-collector",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EASY Visible Local Browser Collector agent — runs on the business's own PC, drives a visible browser the human authenticates in, then resumes the same session to navigate/download. Free/open-source only (Playwright, MIT). Not part of the Java/Gradle build.",
+  "type": "module",
+  "scripts": {
+    "mock-site": "node mock-site/server.js",
+    "start": "node src/collector.js",
+    "test:e2e-mock": "node test/e2e-mock-lifecycle.js"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}
