@@ -147,6 +147,35 @@ class ShinhanCardImportServiceTest {
   }
 
   @Test
+  void fifoMatchRespectsTransactionDateOrderNotExcelRowOrder() {
+    // Real data has Excel rows sorted by confirmation date DESC.
+    // 09/21 positive appears before 09/19 rows in Excel, but 09/19 negative
+    // should match the 09/19 positive (same transaction date), not the 09/21 one.
+    var rows = List.of(
+        new ShinhanCardExcelTestFixtures.Row11("2026.09.21", "2026.09.22", "본인", "본인111*",
+            "일시불", "쿠팡", 34500, 34500, 0, 0, "105-87-65162"), // appears first in Excel
+        new ShinhanCardExcelTestFixtures.Row11("2026.09.19", "2026.09.21", "본인", "본인111*",
+            "일시불", "쿠팡", 34500, 34500, 0, 0, "105-87-65162"), // same day positive
+        new ShinhanCardExcelTestFixtures.Row11("2026.09.19", "2026.09.22", "본인", "본인111*",
+            "일시불", "쿠팡", -34500, -34500, 0, 0, "105-87-65162"), // same day negative
+        new ShinhanCardExcelTestFixtures.Row11("2026.09.20", "2026.09.22", "본인", "본인111*",
+            "할부3개월", "쿠팡", -34500, -34500, 0, 0, "105-87-65162")); // unmatched negative
+    var result = service.importFor(1L, ShinhanCardExcelTestFixtures.workbook(rows));
+
+    assertThat(result.matchedCancellationPairs()).isEqualTo(1);
+    assertThat(result.unmatchedNegativeCount()).isEqualTo(1);
+    assertThat(result.newPurchaseEvents()).isEqualTo(2);
+    assertThat(result.newCancellationEvents()).isEqualTo(1);
+
+    // Verify the cancellation references the 09/19 positive, not the 09/21 one
+    EasyCardEvent cancellation = eventsByExternalId.values().stream()
+        .filter(e -> e.getEventType() == EasyCardEvent.Type.CANCELLATION).findFirst().orElseThrow();
+    assertThat(cancellation.getOriginalEvent()).isNotNull();
+    assertThat(cancellation.getOriginalEvent().getOccurredAt().toLocalDate())
+        .isEqualTo(LocalDate.of(2026, 9, 19)); // matched to 09/19, not 09/21
+  }
+
+  @Test
   void sameDateDifferentMerchantsAreBothCreatedNotTreatedAsDuplicates() {
     var rows = List.of(
         new ShinhanCardExcelTestFixtures.Row11("2026.09.17", "2026.09.18", "본인", "본인111*",

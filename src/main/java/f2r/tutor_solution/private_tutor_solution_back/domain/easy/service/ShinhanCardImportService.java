@@ -8,6 +8,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.Eas
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -26,10 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
  * inferred from row content.
  *
  * <p>Negative rows (cancellation/refund) are matched to an earlier positive row in the same
- * import batch by (maskedCard, merchant, productType, abs(amount)), FIFO within that group —
- * this reproduces the real source's actual pairing exactly (verified by hand against a real
- * download: 09/19 쿠팡 +34,500/-34,500 pairs; 09/20 쿠팡 할부3개월 -34,500 has no matching
- * positive in-window and is correctly left unmatched). A negative that cannot be matched is
+ * import batch by (maskedCard, merchant, productType, abs(amount)), FIFO by <b>transaction
+ * date</b> (earliest first) — this reproduces the real source's actual pairing exactly
+ * (verified by hand against a real download: 09/19 쿠팡 +34,500/-34,500 pairs; 09/20 쿠팡
+ * 할부3개월 -34,500 has no matching positive in-window and is correctly left unmatched). A negative that cannot be matched is
  * never dropped and never sign-flipped — it is reported in {@link ImportResult#unmatchedNegatives()}
  * for manual reconciliation, and is deliberately NOT turned into an {@code EasyCardEvent}: the
  * entity's own invariant requires a positive amount and, for CANCELLATION, a real original event
@@ -83,17 +84,24 @@ public class ShinhanCardImportService {
     int negativeRows = (int) normalized.stream().filter(t -> t.amount() < 0).count();
 
     // FIFO match within (maskedCard, merchant, productType, |amount|) groups.
+    // Sort positives by transactionDate ASC (earliest first) so matching respects actual
+    // transaction chronology, not Excel row order (which is confirmation date DESC).
     Map<String, Deque<ShinhanCardNormalizedTransaction>> unmatchedPositivesByGroup = new HashMap<>();
     List<ShinhanCardNormalizedTransaction> unmatchedNegatives = new ArrayList<>();
     record Pair(ShinhanCardNormalizedTransaction positive, ShinhanCardNormalizedTransaction negative) {}
     List<Pair> matchedPairs = new ArrayList<>();
 
-    for (ShinhanCardNormalizedTransaction t : normalized) {
-      if (t.amount() > 0) {
-        unmatchedPositivesByGroup
-            .computeIfAbsent(matchGroupKey(t, t.amount()), k -> new ArrayDeque<>())
-            .addLast(t);
-      }
+    List<ShinhanCardNormalizedTransaction> positives = normalized.stream()
+        .filter(t -> t.amount() > 0)
+        .sorted(Comparator.comparing(ShinhanCardNormalizedTransaction::transactionDate)
+            .thenComparing(ShinhanCardNormalizedTransaction::confirmationDate)
+            .thenComparing(ShinhanCardNormalizedTransaction::occurrenceIndex))
+        .toList();
+
+    for (ShinhanCardNormalizedTransaction t : positives) {
+      unmatchedPositivesByGroup
+          .computeIfAbsent(matchGroupKey(t, t.amount()), k -> new ArrayDeque<>())
+          .addLast(t);
     }
     for (ShinhanCardNormalizedTransaction t : normalized) {
       if (t.amount() >= 0) continue;
