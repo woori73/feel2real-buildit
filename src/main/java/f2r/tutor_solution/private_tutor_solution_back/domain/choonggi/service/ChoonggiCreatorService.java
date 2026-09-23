@@ -1,10 +1,12 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyExternalVideoProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.ExternalVideoUrlValidator;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.repository.*;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.image.ImageSanitizer;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage;
-import java.io.*;import java.util.*;import java.util.regex.Pattern;
+import java.io.*;import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;import org.springframework.stereotype.Service;import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;import org.springframework.web.server.ResponseStatusException;
@@ -12,27 +14,68 @@ import org.springframework.web.multipart.MultipartFile;import org.springframewor
 @Service @RequiredArgsConstructor @Transactional(readOnly=true)
 public class ChoonggiCreatorService {
   public static final long PHOTO_MAX=20L*1024*1024, VIDEO_MAX=50L*1024*1024;
-  private static final Pattern SLUG=Pattern.compile("[a-z0-9]+(?:-[a-z0-9]+)*");
-  private static final Set<String> EPISODES=Set.of("EP00","EP01","EP02","EP03","EP04","EP05","EP06","EP07","EP08");
   private final ChoonggiPostRepository posts; private final ChoonggiMediaRepository media;
   private final ImageSanitizer sanitizer; private final FileStorage storage;
+  private final ExternalVideoUrlValidator videoValidator;
 
   public List<ChoonggiPost> adminList(){return posts.findByDeletedAtIsNullOrderByUpdatedAtDesc();}
+  /** CREATOR sees only their own records ("내 기록"); ADMIN sees everyone's. */
+  public List<ChoonggiPost> adminList(String loginId,String role){
+    List<ChoonggiPost> all=adminList();
+    if("ADMIN".equals(role))return all;
+    return all.stream().filter(p->Objects.equals(loginId,p.getCreatedBy())).toList();
+  }
   public List<ChoonggiPost> published(){return posts.findByStatusAndDeletedAtIsNullOrderByPublishedAtDesc(ChoonggiPost.Status.PUBLISHED);}
   public Optional<ChoonggiPost> publicPost(String slug){return posts.findBySlugAndStatusAndDeletedAtIsNull(slug,ChoonggiPost.Status.PUBLISHED);}
   public ChoonggiPost require(Long id){return posts.findByIdAndDeletedAtIsNull(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));}
-  @Transactional public ChoonggiPost save(Long id,String episode,String title,String slug,String body){
-    episode=clean(episode,30,"Episode"); if(!EPISODES.contains(episode)&&!episode.matches("EP\\d{2,3}"))throw bad("Episode 형식이 올바르지 않습니다.");
-    title=clean(title,120,"제목"); slug=clean(slug,140,"slug").toLowerCase(); body=clean(body,5000,"오늘의 기록");
-    if(!SLUG.matcher(slug).matches())throw bad("slug는 영문 소문자, 숫자, 하이픈만 가능합니다.");
-    if(posts.existsBySlugAndIdNot(slug,id==null?-1L:id))throw bad("이미 사용 중인 slug입니다.");
-    ChoonggiPost post=id==null?ChoonggiPost.draft(episode,title,slug,body):require(id); if(id!=null)post.update(episode,title,slug,body); return posts.save(post);
+  public ChoonggiPost requireOwned(Long id,String loginId,String role){return requireOwned(require(id),loginId,role);}
+  /**
+   * One-screen record: title + optional body/photo/YouTube link. Episode code and slug are
+   * internal bookkeeping the creator never sees or types (auto-generated on first save; slug
+   * only needs to be unique, episode code is cosmetic only).
+   */
+  @Transactional public ChoonggiPost save(Long id,String title,String body,String youtubeUrl,String loginId,String role){
+    title=clean(title,120,"제목");
+    body=body==null?"":body.trim(); if(body.length()>5000)throw bad("오늘의 기록이 너무 깁니다.");
+    String videoId=resolveYoutubeId(youtubeUrl);
+    ChoonggiPost post;
+    if(id==null){
+      post=ChoonggiPost.draft(nextEpisodeCode(),title,nextSlug(),body);
+    } else {
+      post=requireOwned(require(id),loginId,role);
+      post.update(post.getEpisodeCode(),title,post.getSlug(),body);
+    }
+    post.setYoutubeVideoId(videoId);
+    return posts.save(post);
   }
-  @Transactional public ChoonggiPost publish(Long id){ChoonggiPost p=require(id);if(media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(id).isEmpty())throw bad("사진 또는 영상을 먼저 추가해 주세요.");p.publish();return p;}
-  @Transactional public void unpublish(Long id){require(id).unpublish();}
-  @Transactional public void delete(Long id){require(id).softDelete();}
-  @Transactional public ChoonggiMedia upload(Long postId,MultipartFile file){
-    ChoonggiPost post=require(postId);if(file==null||file.isEmpty())throw bad("파일을 선택해 주세요.");
+  private String resolveYoutubeId(String youtubeUrl){
+    if(youtubeUrl==null||youtubeUrl.isBlank())return null;
+    ExternalVideoUrlValidator.Resolved resolved;
+    try{resolved=videoValidator.validate(youtubeUrl);}
+    catch(RuntimeException e){throw bad("올바른 YouTube 링크를 넣어주세요.");}
+    if(resolved.provider()!=AcademyExternalVideoProvider.YOUTUBE||resolved.embedUrl()==null)
+      throw bad("올바른 YouTube 링크를 넣어주세요.");
+    String embed=resolved.embedUrl();
+    return embed.substring(embed.lastIndexOf('/')+1);
+  }
+  private String nextEpisodeCode(){return "EP"+String.format("%02d",posts.count()+1);}
+  private String nextSlug(){
+    for(int attempt=0;attempt<5;attempt++){
+      String candidate="log-"+System.currentTimeMillis()+(attempt==0?"":"-"+attempt);
+      if(!posts.existsBySlugAndIdNot(candidate,-1L))return candidate;
+    }
+    return "log-"+UUID.randomUUID();
+  }
+  @Transactional public ChoonggiPost publish(Long id,String loginId,String role){ChoonggiPost p=requireOwned(require(id),loginId,role);p.publish();return p;}
+  @Transactional public void unpublish(Long id,String loginId,String role){requireOwned(require(id),loginId,role).unpublish();}
+  @Transactional public void delete(Long id,String loginId,String role){requireOwned(require(id),loginId,role).softDelete();}
+  private ChoonggiPost requireOwned(ChoonggiPost post,String loginId,String role){
+    if(!"ADMIN".equals(role)&&!Objects.equals(loginId,post.getCreatedBy()))
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN,"본인이 작성한 기록만 수정·삭제할 수 있습니다.");
+    return post;
+  }
+  @Transactional public ChoonggiMedia upload(Long postId,MultipartFile file,String loginId,String role){
+    ChoonggiPost post=requireOwned(require(postId),loginId,role);if(file==null||file.isEmpty())throw bad("파일을 선택해 주세요.");
     String name=safeName(file.getOriginalFilename());String type=Optional.ofNullable(file.getContentType()).orElse("").toLowerCase();
     try{
       List<ChoonggiMedia> current=media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(postId);if(current.size()>=10)throw bad("게시물당 미디어는 최대 10개입니다.");
@@ -41,10 +84,11 @@ public class ChoonggiCreatorService {
       throw bad("사진(JPEG/PNG/WebP/GIF) 또는 MP4/MOV만 업로드할 수 있습니다.");
     }catch(IOException e){throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"미디어 저장에 실패했습니다.");}
   }
-  @Transactional public void cover(Long postId,Long mediaId){var list=media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(postId);if(list.stream().noneMatch(m->m.getId().equals(mediaId)))throw bad("이 게시물의 미디어가 아닙니다.");list.forEach(m->m.setCover(m.getId().equals(mediaId)));}
-  @Transactional public void deleteMedia(Long postId,Long mediaId){var m=media.findByIdAndDeletedAtIsNull(mediaId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));if(!m.getPost().getId().equals(postId))throw bad("이 게시물의 미디어가 아닙니다.");m.softDelete();}
-  @Transactional public void moveUp(Long postId,Long mediaId){swap(postId,mediaId,-1);}
-  @Transactional public void moveDown(Long postId,Long mediaId){swap(postId,mediaId,1);}
+  @Transactional public void cover(Long postId,Long mediaId,String loginId,String role){requireOwned(require(postId),loginId,role);var list=media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(postId);if(list.stream().noneMatch(m->m.getId().equals(mediaId)))throw bad("이 게시물의 미디어가 아닙니다.");list.forEach(m->m.setCover(m.getId().equals(mediaId)));}
+  /** Media rows are never shared across posts (each has its own storageKey) -- a soft delete here can never orphan another post's file. */
+  @Transactional public void deleteMedia(Long postId,Long mediaId,String loginId,String role){requireOwned(require(postId),loginId,role);var m=media.findByIdAndDeletedAtIsNull(mediaId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));if(!m.getPost().getId().equals(postId))throw bad("이 게시물의 미디어가 아닙니다.");m.softDelete();}
+  @Transactional public void moveUp(Long postId,Long mediaId,String loginId,String role){requireOwned(require(postId),loginId,role);swap(postId,mediaId,-1);}
+  @Transactional public void moveDown(Long postId,Long mediaId,String loginId,String role){requireOwned(require(postId),loginId,role);swap(postId,mediaId,1);}
   private void swap(Long postId,Long mediaId,int dir){
     var list=media.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(postId);
     int idx=-1;for(int i=0;i<list.size();i++)if(list.get(i).getId().equals(mediaId)){idx=i;break;}

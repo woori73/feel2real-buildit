@@ -6,3 +6,15 @@
 @media(prefers-reduced-motion:no-preference){[data-reveal]{opacity:0;transform:translateY(16px);transition:.55s}[data-reveal].show{opacity:1;transform:none}}
 .post-media{margin:18px 0;background:#111}.post-media img,.post-media video{display:block;width:100%;max-height:80vh;object-fit:contain}.post-body{white-space:pre-wrap;font-size:18px;line-height:1.75}
 .roster-visual{min-height:0;margin:0;padding:18px;display:flex;flex-direction:column;gap:10px}.roster-visual:before{content:none}.roster-visual img{display:block;width:100%;max-height:80vh;object-fit:contain}.roster-visual small{position:static;text-align:right}
+.team-hero{padding-top:0}.team-photo{margin:0;background:var(--ink)}.team-photo img{display:block;width:100%;max-height:82vh;object-fit:contain}.team-id{padding:22px 18px 0}.team-id h1{font:clamp(50px,17vw,120px)/.8 'Archivo Black';letter-spacing:-.06em;margin:0 0 8px}.team-id p{font-size:11px;font-weight:800;letter-spacing:.1em}
+.why-india h2{font:clamp(30px,9vw,58px)/1.15 'Archivo Black';letter-spacing:-.03em;margin:14px 0 0}
+.journey .route{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font:clamp(24px,8vw,46px)/1 'Archivo Black';margin-top:16px}.journey .route i{color:var(--orange);font-style:normal;font-size:.6em}
+.log-feed{margin-top:30px;display:grid;gap:36px}
+.log-entry{border-top:1px solid;padding-top:24px}
+.log-entry h3{font:26px 'Archivo Black';margin:14px 0 8px}
+.log-body{white-space:pre-wrap;line-height:1.65;max-width:60ch}
+.log-entry time{font-size:10px;font-weight:800;letter-spacing:.1em;opacity:.7}
+.log-yt{position:relative;aspect-ratio:16/9;background:#111}.log-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.log-photos{display:grid;gap:6px}.log-photos img{display:block;width:100%;max-height:70vh;object-fit:contain;background:#111}
+.log-empty{opacity:.7;padding:20px 0}
+@media(min-width:768px){.team-id{padding-left:6vw}}

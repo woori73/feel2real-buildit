@@ -11,25 +11,25 @@ import org.springframework.web.bind.annotation.*;import org.springframework.web.
 @Controller @RequiredArgsConstructor
 public class ChoonggiCreatorController {
   private final ChoonggiCreatorService service;
-  @GetMapping({"/choonggi/admin","/choonggi/admin/posts"}) String list(Model model){model.addAttribute("posts",service.adminList());return "choonggi/admin";}
+  @GetMapping({"/choonggi/admin","/choonggi/admin/posts"}) String list(Model model,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){model.addAttribute("posts",service.adminList(principal.loginId(),principal.role()).stream().map(PostView::of).toList());return "choonggi/admin";}
   @GetMapping("/choonggi/admin/posts/new") String create(Model model){model.addAttribute("post",null);return "choonggi/editor";}
-  @GetMapping("/choonggi/admin/posts/{id}/edit") String edit(@PathVariable Long id,Model model){model.addAttribute("post",PostView.of(service.require(id)));return "choonggi/editor";}
+  @GetMapping("/choonggi/admin/posts/{id}/edit") String edit(@PathVariable Long id,Model model,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){model.addAttribute("post",PostView.of(service.requireOwned(id,principal.loginId(),principal.role())));return "choonggi/editor";}
   @GetMapping("/choonggi/admin/posts/{id}/preview") String preview(@PathVariable Long id,Model model,jakarta.servlet.http.HttpServletResponse response){var post=service.require(id);response.setHeader(HttpHeaders.CACHE_CONTROL,"private, no-store");model.addAttribute("page","post");model.addAttribute("pageTitle",post.getTitle()+" — PREVIEW");model.addAttribute("description","CHOONGGI draft preview");model.addAttribute("canonical","https://feel2real.co.kr/choonggi/vlog/"+post.getSlug());model.addAttribute("post",post);return "choonggi/page";}
 
   @RestController @RequestMapping("/api/admin/choonggi") @RequiredArgsConstructor
   public static class Api {
     private final ChoonggiCreatorService service;
-    @GetMapping("/posts") List<PostView> list(){return service.adminList().stream().map(PostView::of).toList();}
-    @PostMapping("/posts") PostView create(@RequestBody SaveRequest r){return PostView.of(service.save(null,r.episode(),r.title(),r.slug(),r.body()));}
-    @PutMapping("/posts/{id}") PostView update(@PathVariable Long id,@RequestBody SaveRequest r){return PostView.of(service.save(id,r.episode(),r.title(),r.slug(),r.body()));}
-    @PostMapping("/posts/{id}/media") MediaView upload(@PathVariable Long id,@RequestParam("file") MultipartFile file){return MediaView.of(service.upload(id,file));}
-    @PostMapping("/posts/{id}/cover/{mediaId}") void cover(@PathVariable Long id,@PathVariable Long mediaId){service.cover(id,mediaId);}
-    @PostMapping("/posts/{id}/media/{mediaId}/move-up") void moveUp(@PathVariable Long id,@PathVariable Long mediaId){service.moveUp(id,mediaId);}
-    @PostMapping("/posts/{id}/media/{mediaId}/move-down") void moveDown(@PathVariable Long id,@PathVariable Long mediaId){service.moveDown(id,mediaId);}
-    @DeleteMapping("/posts/{id}/media/{mediaId}") void deleteMedia(@PathVariable Long id,@PathVariable Long mediaId){service.deleteMedia(id,mediaId);}
-    @PostMapping("/posts/{id}/publish") PostView publish(@PathVariable Long id){return PostView.of(service.publish(id));}
-    @PostMapping("/posts/{id}/unpublish") void unpublish(@PathVariable Long id){service.unpublish(id);}
-    @DeleteMapping("/posts/{id}") void delete(@PathVariable Long id){service.delete(id);}
+    @GetMapping("/posts") List<PostView> list(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){return service.adminList(principal.loginId(),principal.role()).stream().map(PostView::of).toList();}
+    @PostMapping("/posts") PostView create(@RequestBody SaveRequest r,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){return PostView.of(service.save(null,r.title(),r.body(),r.youtubeUrl(),principal.loginId(),principal.role()));}
+    @PutMapping("/posts/{id}") PostView update(@PathVariable Long id,@RequestBody SaveRequest r,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){return PostView.of(service.save(id,r.title(),r.body(),r.youtubeUrl(),principal.loginId(),principal.role()));}
+    @PostMapping("/posts/{id}/media") MediaView upload(@PathVariable Long id,@RequestParam("file") MultipartFile file,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){return MediaView.of(service.upload(id,file,principal.loginId(),principal.role()));}
+    @PostMapping("/posts/{id}/cover/{mediaId}") void cover(@PathVariable Long id,@PathVariable Long mediaId,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){service.cover(id,mediaId,principal.loginId(),principal.role());}
+    @PostMapping("/posts/{id}/media/{mediaId}/move-up") void moveUp(@PathVariable Long id,@PathVariable Long mediaId,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){service.moveUp(id,mediaId,principal.loginId(),principal.role());}
+    @PostMapping("/posts/{id}/media/{mediaId}/move-down") void moveDown(@PathVariable Long id,@PathVariable Long mediaId,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){service.moveDown(id,mediaId,principal.loginId(),principal.role());}
+    @DeleteMapping("/posts/{id}/media/{mediaId}") void deleteMedia(@PathVariable Long id,@PathVariable Long mediaId,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){service.deleteMedia(id,mediaId,principal.loginId(),principal.role());}
+    @PostMapping("/posts/{id}/publish") PostView publish(@PathVariable Long id,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){return PostView.of(service.publish(id,principal.loginId(),principal.role()));}
+    @PostMapping("/posts/{id}/unpublish") void unpublish(@PathVariable Long id,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){service.unpublish(id,principal.loginId(),principal.role());}
+    @DeleteMapping("/posts/{id}") void delete(@PathVariable Long id,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){service.delete(id,principal.loginId(),principal.role());}
   }
 
   @RestController @RequiredArgsConstructor
@@ -42,7 +42,7 @@ public class ChoonggiCreatorController {
       return ResponseEntity.ok().contentType(MediaType.parseMediaType(m.getContentType())).cacheControl(cache).contentLength(m.getSizeBytes()).body(service.bytes(m));
     }
   }
-  public record SaveRequest(String episode,String title,String slug,String body){}
-  public record PostView(Long id,String episode,String title,String slug,String body,String status,java.time.LocalDateTime publishedAt,List<MediaView> media){static PostView of(ChoonggiPost p){return new PostView(p.getId(),p.getEpisodeCode(),p.getTitle(),p.getSlug(),p.getBody(),p.getStatus().name(),p.getPublishedAt(),p.getMedia().stream().filter(m->m.getDeletedAt()==null).map(MediaView::of).toList());}}
+  public record SaveRequest(String title,String body,String youtubeUrl){}
+  public record PostView(Long id,String title,String body,String youtubeVideoId,String status,String slug,java.time.LocalDateTime publishedAt,List<MediaView> media){static PostView of(ChoonggiPost p){return new PostView(p.getId(),p.getTitle(),p.getBody(),p.getYoutubeVideoId(),p.getStatus().name(),p.getSlug(),p.getPublishedAt(),p.getMedia().stream().filter(m->m.getDeletedAt()==null).map(MediaView::of).toList());}}
   public record MediaView(Long id,String type,String contentType,long sizeBytes,int sortOrder,boolean cover,String url){static MediaView of(ChoonggiMedia m){return new MediaView(m.getId(),m.getType().name(),m.getContentType(),m.getSizeBytes(),m.getSortOrder(),m.isCover(),"/api/choonggi/media/"+m.getId());}}
 }
