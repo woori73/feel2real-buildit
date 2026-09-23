@@ -228,7 +228,7 @@ class EasyBusinessCardAccountingServiceTest {
 
   private EasyBusinessCardAccountingService.PurchaseCommand command() {
     return new EasyBusinessCardAccountingService.PurchaseCommand(1L, null, 10L, "TEST",
-        "purchase-1", LocalDateTime.of(2026, 9, 1, 12, 0), 50_000L, "KRW", "approval-1");
+        "purchase-1", LocalDateTime.of(2026, 9, 1, 12, 0), null, 50_000L, "KRW", "approval-1");
   }
   private EasyCardEvent purchaseEvent() {
     return EasyCardEvent.builder().business(business).instrument(instrument)

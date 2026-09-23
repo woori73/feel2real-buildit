@@ -215,6 +215,30 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
     mockMvc.perform(get(EASY_ADMIN_API).cookie(cookie("CREATOR"))).andExpect(status().isForbidden());
   }
 
+  // ── private detailed journey guide (/choonggi/admin/journey) reuses the exact
+  // /choonggi/admin/** matcher -- same login-entry redirect, same role gate ─────────────
+  @Test
+  @DisplayName("anonymous -> login-entry redirect on private journey guide")
+  void anonymousJourneyDetailRedirectsToLogin() throws Exception {
+    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE + "/journey"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fchoonggi%2Fadmin%2Fjourney"));
+  }
+
+  @Test
+  @DisplayName("STUDENT -> 403 on private journey guide")
+  void studentForbiddenOnJourneyDetail() throws Exception {
+    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE + "/journey").cookie(cookie("STUDENT")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("CREATOR/ADMIN -> 200 on private journey guide")
+  void creatorAndAdminCanReachJourneyDetail() throws Exception {
+    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE + "/journey").cookie(cookie("CREATOR"))).andExpect(status().isOk());
+    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE + "/journey").cookie(cookie("ADMIN"))).andExpect(status().isOk());
+  }
+
   // ── ADMIN: unchanged — 200 everywhere, including generic /api/admin/** ────
   @Test
   @DisplayName("ADMIN -> 200 on CHOONGGI admin, NewStart admin, EASY admin (unchanged)")
