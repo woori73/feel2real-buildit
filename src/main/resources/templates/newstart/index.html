@@ -7,7 +7,7 @@
   <meta name="description" content="내 상황 확인, NewStart AI, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260923-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260924-1">
 </head>
 <body>
   <div class="newstart-page">
@@ -41,8 +41,20 @@
             <a class="ns-feature-card" href="/newstart/tools/status"><strong>신청 후</strong><span class="ns-feature-copy">공식 결과·진행상태 확인</span><span class="ns-feature-cta">진행상태 확인 →</span></a>
             <a class="ns-feature-card" href="/newstart/tools/court"><strong>법원 대응</strong><span class="ns-feature-copy">전자소송·지급명령 대응 정리</span><span class="ns-feature-cta">전자소송 도우미 →</span></a>
           </div>
-          <p><a class="ns-text-link" href="/newstart/a-to-z">새출발기금 A to Z 보기 →</a></p>
-          <p><strong>정보 공유 채팅</strong><br>부실차주 관련 정보를 공유하세요<br><a class="ns-text-link" href="/newstart/chat">채팅 참여하기 →</a></p>
+          <div class="ns-service-grid">
+            <a class="ns-service-card ns-service-atoz" href="/newstart/a-to-z">
+              <p class="ns-section-kicker">A TO Z GUIDE</p>
+              <strong>새출발기금 A to Z</strong>
+              <span class="ns-service-copy">연체가 시작된 순간부터 신청·심사·확정·성실상환 이후까지, 지금 내 단계부터 시작하세요.</span>
+              <span class="ns-service-cta">A to Z 시작하기 →</span>
+            </a>
+            <a class="ns-service-card ns-service-chat" href="/newstart/chat">
+              <p class="ns-section-kicker">COMMUNITY</p>
+              <strong>회원 채팅</strong>
+              <span class="ns-service-copy">실제 진행 경험과 정보를 회원들과 나누세요.</span>
+              <span class="ns-service-cta">채팅방 들어가기 →</span>
+            </a>
+          </div>
         </section>
 
         <section class="ns-core" aria-labelledby="ns-core-title" hidden>

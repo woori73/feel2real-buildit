@@ -238,6 +238,15 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-section-heading h2 { margin: 0; font-size: clamp(24px, 7vw, 38px); line-height: 1.2; font-weight: 800; letter-spacing: -.045em; word-break: keep-all; }
 .ns-core-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; }
 .ns-practical-grid { grid-template-columns: minmax(0, 1fr); }
+.ns-service-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; margin-top: 22px; }
+.ns-service-card { display: flex; flex-direction: column; min-height: 170px; padding: 22px; border-radius: 20px; border: 1.5px solid var(--ns-blue); background: linear-gradient(160deg, var(--ns-blue-soft), #fff 65%); color: var(--ns-ink); text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .05); }
+.ns-service-card .ns-section-kicker { margin: 0; }
+.ns-service-card strong { margin-top: 6px; font-size: 23px; line-height: 1.25; letter-spacing: -.04em; }
+.ns-service-copy { display: block; margin-top: 8px; color: var(--ns-muted); font-size: 14px; line-height: 1.6; word-break: keep-all; }
+.ns-service-cta { margin-top: auto; padding-top: 14px; min-height: 44px; display: flex; align-items: center; color: var(--ns-blue); font-size: 15px; font-weight: 800; }
+.ns-service-chat { border-color: #176b4d; background: linear-gradient(160deg, #eaf8f2, #fff 65%); }
+.ns-service-chat .ns-service-cta, .ns-service-chat .ns-section-kicker { color: #176b4d; }
+@media (min-width: 760px) { .ns-service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ns-feature-card { position: relative; min-width: 0; min-height: 218px; padding: 22px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ns-line); border-radius: 20px; color: var(--ns-ink); background: #fff; text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .045); }
 .ns-feature-card:focus-visible { outline: 3px solid rgba(21, 88, 214, .28); outline-offset: 3px; }
 .ns-feature-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--ns-blue); background: var(--ns-blue-soft); }
