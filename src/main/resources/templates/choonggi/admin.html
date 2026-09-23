@@ -1,0 +1,27 @@
+<!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><title>CHOONGGI CREATOR</title><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><th:block th:replace="~{fragments/_head :: favicon}"></th:block><link rel="stylesheet" th:href="@{/css/choonggi_creator.css}"></head><body>
+<header><b>CHOONGGI CREATOR</b><a href="/choonggi">공개 사이트</a></header>
+<main>
+  <a class="primary big" href="/choonggi/admin/posts/new">＋ 기록 올리기</a>
+  <h1 class="list-title">내 기록</h1>
+  <section class="list">
+    <article th:each="post:${posts}">
+      <a class="thumb" th:href="@{/choonggi/admin/posts/{id}/edit(id=${post.id})}">
+        <img th:if="${!#lists.isEmpty(post.media)}" th:src="${post.media[0].url}" alt="">
+        <span th:if="${#lists.isEmpty(post.media) and post.youtubeVideoId!=null}" class="thumb-yt">▶</span>
+        <span th:if="${#lists.isEmpty(post.media) and post.youtubeVideoId==null}" class="thumb-none">기록</span>
+      </a>
+      <div class="row-body">
+        <span class="badge" th:classappend="${post.status=='PUBLISHED'}?'is-live':'is-draft'" th:text="${post.status=='PUBLISHED'}?'공개됨':'임시저장'"></span>
+        <h2 th:text="${post.title}"></h2>
+      </div>
+      <div class="row-actions">
+        <a th:if="${post.status=='PUBLISHED'}" th:href="@{/choonggi/vlog/{slug}(slug=${post.slug})}" target="_blank" rel="noopener">보기</a>
+        <a th:href="@{/choonggi/admin/posts/{id}/edit(id=${post.id})}">편집</a>
+        <button type="button" class="delete-post danger" th:attr="data-post-id=${post.id}">삭제</button>
+      </div>
+    </article>
+    <p class="empty" th:if="${#lists.isEmpty(posts)}">아직 올린 기록이 없습니다. 위 버튼으로 첫 기록을 올려 보세요.</p>
+  </section>
+</main>
+<script defer th:src="@{/js/choonggi_admin.js}"></script>
+</body></html>

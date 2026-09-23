@@ -46,7 +46,7 @@ class NewStartOfficialUpdateControllerTest {
   void anonymousCanReadPublicFeed() throws Exception {
     when(service.publicUpdates(null)).thenReturn(List.of(new NewStartOfficialUpdateResponse(
         1L, "FSC", "금융위원회", "공지", "요약", "https://fsc.go.kr/a", null,
-        null, null, null, "NOTICE", "PUBLISHED", false, null, null)));
+        null, null, null, "NOTICE", "NORMAL", "PUBLISHED", false, null, null, null)));
 
     mockMvc.perform(get("/api/newstart/updates"))
         .andExpect(status().isOk())

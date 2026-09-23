@@ -1,0 +1,50 @@
+name: EC2 forensic diagnosis (read-only, manual)
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Collect segmented read-only evidence through SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          INSTANCE_ID="i-09d7cabb5a42d1135"
+          run_readonly() {
+            local title="$1" command="$2" params command_id wait_rc
+            echo
+            echo "===== ${title} ====="
+            params=$(jq -cn --arg command "$command" '{commands:[$command]}')
+            command_id=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name "AWS-RunShellScript" --parameters "$params" --query 'Command.CommandId' --output text)
+            echo "SSM Command ID: $command_id"
+            set +e
+            aws ssm wait command-executed --command-id "$command_id" --instance-id "$INSTANCE_ID"
+            wait_rc=$?
+            set -e
+            echo "--- status ---"
+            aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query '{Status:Status,ResponseCode:ResponseCode}' --output text || true
+            echo "--- stdout ---"
+            aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text || true
+            echo "--- stderr ---"
+            aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+            echo "wait_exit=$wait_rc"
+          }
+          run_readonly "SYSTEMD EXACT FIELDS" "systemctl show f2r-app.service -p Restart -p RestartUSec -p NRestarts -p ExecMainCode -p ExecMainStatus -p Result -p MainPID -p ActiveEnterTimestamp -p ExecMainStartTimestamp -p ExecMainExitTimestamp -p TimeoutStartUSec -p TimeoutStopUSec"
+          run_readonly "UNIT, CURRENT SERVICES, PORTS" "echo '--- f2r unit ---'; systemctl cat f2r-app.service; echo '--- f2r status ---'; systemctl status f2r-app.service --no-pager || true; echo '--- wiki status ---'; systemctl status buildit-wiki.service --no-pager || true; echo '--- ports ---'; ss -ltnp | grep -E ':8080|:8000' || true"
+          run_readonly "CURRENT MEMORY" "echo '--- free -m ---'; free -m; echo '--- swap ---'; swapon --show; echo '--- selected meminfo ---'; grep -E 'MemTotal|MemAvailable|SwapTotal|SwapFree' /proc/meminfo"
+          run_readonly "KERNEL OOM WINDOW" "matches=\$(journalctl -k --since '2026-09-22 16:31:15 UTC' --until '2026-09-22 16:33:05 UTC' --no-pager | grep -Ei 'oom|out of memory|killed process|kill process|java|cgroup|memory' || true); if [ -n \"\$matches\" ]; then printf '%s\\n' \"\$matches\"; else echo 'KERNEL OOM MATCHES: 0'; fi"
+          run_readonly "F2R JOURNAL 16:31:15-16:31:40 UTC" "journalctl -u f2r-app.service --since '2026-09-22 16:31:15 UTC' --until '2026-09-22 16:31:40 UTC' --no-pager -o short-precise"
+          run_readonly "F2R JOURNAL 16:31:40-16:32:05 UTC" "journalctl -u f2r-app.service --since '2026-09-22 16:31:40 UTC' --until '2026-09-22 16:32:05 UTC' --no-pager -o short-precise"
+          run_readonly "F2R JOURNAL 16:32:05-16:32:30 UTC" "journalctl -u f2r-app.service --since '2026-09-22 16:32:05 UTC' --until '2026-09-22 16:32:30 UTC' --no-pager -o short-precise"
+          run_readonly "F2R JOURNAL 16:32:30-16:32:55 UTC" "journalctl -u f2r-app.service --since '2026-09-22 16:32:30 UTC' --until '2026-09-22 16:32:55 UTC' --no-pager -o short-precise"
+          run_readonly "F2R JOURNAL 16:32:55-16:33:05 UTC" "journalctl -u f2r-app.service --since '2026-09-22 16:32:55 UTC' --until '2026-09-22 16:33:05 UTC' --no-pager -o short-precise"
+          run_readonly "SYSTEM JOURNAL PID TRANSITION 16:32:45-16:33:05 UTC" "journalctl --since '2026-09-22 16:32:45 UTC' --until '2026-09-22 16:33:05 UTC' --no-pager -o short-precise | grep -Ei '1425357|1425527|f2r-app|systemd.*(start|stop|exit|fail|signal|kill)' || true"
