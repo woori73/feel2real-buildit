@@ -16,6 +16,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.d
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiCommand;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiCommand.CommandStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiCommand.CommandType;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiAnswerSessionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiBoardService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiInventoryService;
@@ -60,6 +61,7 @@ class JipijigiAdminControllerAuthTest {
   @MockitoBean JipijigiCommandService commandService;
   @MockitoBean JipijigiQuestionService questionService;
   @MockitoBean JipijigiWorkflowService workflowService;
+  @MockitoBean JipijigiAnswerSessionService answerSessions;
   @MockitoBean JipijigiBoardService boardService;
   @MockitoBean JipijigiInventoryService inventoryService;
 
@@ -109,6 +111,12 @@ class JipijigiAdminControllerAuthTest {
     mockMvc.perform(get("/api/admin/newstart/jipijigi/inventory").cookie(new jakarta.servlet.http.Cookie("ACCESS_TOKEN", memberToken)))
         .andExpect(status().isForbidden());
     mockMvc.perform(get("/api/admin/newstart/jipijigi/boards").cookie(new jakarta.servlet.http.Cookie("ACCESS_TOKEN", memberToken)))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/admin/newstart/jipijigi/sessions").cookie(new jakarta.servlet.http.Cookie("ACCESS_TOKEN", memberToken)))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/admin/newstart/jipijigi/drafts/1/exposure-report")
+            .cookie(new jakarta.servlet.http.Cookie("ACCESS_TOKEN", memberToken))
+            .contentType(MediaType.APPLICATION_JSON).content("{\"publishedAs\":\"POST\"}"))
         .andExpect(status().isForbidden());
   }
 

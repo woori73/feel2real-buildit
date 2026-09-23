@@ -4078,12 +4078,13 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - Photos are decoded, resized and re-encoded by ImageSanitizer, removing EXIF/GPS. Videos accept validated MP4/MOV up to 50MB; no autoplay.
 - DRAFT rows never appear in public queries. Published posts integrate into `/choonggi` and `/choonggi/vlog/{slug}`.
 
-## NewStart 지피지기 Agent ADMIN API (V999)
+## NewStart 지피지기 Agent ADMIN API (V999·V1000)
 
 SSR 화면 `/admin/newstart/jipijigi`(WebMvcConfig view → `templates/admin/newstart_jipijigi.html`)가 호출하는
 JSON API. `SecurityConfig`의 `/api/admin/**` `hasRole('ADMIN')` 규칙을 그대로 상속받는다(일반 회원 403, 익명 401).
 actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받지 않는다. 상태 전이 위반·allowlist 위반은 400
 (`AGENT_REQUEST_REJECTED`), 게시 시도는 항상 409(`PUBLISH_DISABLED`).
+운영 규칙의 정본: [`newstart/jipijigi/OPERATING_PRINCIPLES_2026-09-23.md`](newstart/jipijigi/OPERATING_PRINCIPLES_2026-09-23.md).
 
 - `GET /api/admin/newstart/jipijigi/inventory`: KB 실제 보유량(상태·소스별 카운트, 공식 업데이트, 실증 사례,
   질문·초안 수)과 조회 능력 플래그(`keywordLikeRetrieval=true`, `vectorSearch/fullTextIndex/embeddingPipeline=false`)
@@ -4100,3 +4101,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 상태 액션: `POST /drafts/{id}/review`(검토 요청), `/approve`(enabled allowlist 게시판 필수 + 사유),
   `/hold`, `/reject`(사유 필수), `/publish` — V1은 설정 플래그·allowlist·게시 클라이언트 3중 차단으로
   항상 409이며, 화면은 대신 `[원문 복사]`로 운영자 계정 게시용 최종 텍스트를 전달한다.
+- **답변 세션 축적(V1000)**: 초안 생성 성공 시점에 `newstart_jipijigi_answer_sessions`에 자동 저장된다
+  (게시 성공 여부와 무관, `fingerprint`로 동일 질문·동일 근거 dedupe). `/approve`는 세션을 `ACCEPTED`로,
+  `/reject`는 `REJECTED`로 전이시키고 — `ACCEPTED` 행만 다음 질문 STEP1 RAG에서 외부 카페 검색보다 먼저 조회된다.
+  - `GET /sessions?page=&size=`, `GET /sessions/{id}`: 축적된 답변 세션(원 질문·최종 답변·출처별 근거 JSON·
+    `dbHits`·`externalSearched`·`confidence`·`operatorEdited`·`publishedAs`·`reviewState`).
+  - `POST /drafts/{id}/exposure-report`(`publishedAs=POST|COMMENT`, `publishedUrl`, `commentId`, `followUpRef`):
+    **운영자가 실제 카페에 노출한 결과를 보고**하는 유일한 경로. Agent가 스스로 게시 성공을 기록하지 않으며
+    `NONE` 보고는 400이다.
+  - `PUT /sessions/{id}/follow-up`(`followUpRef`): 이후 회원 후속 댓글·실제 결과를 이 답변에 연결한다.

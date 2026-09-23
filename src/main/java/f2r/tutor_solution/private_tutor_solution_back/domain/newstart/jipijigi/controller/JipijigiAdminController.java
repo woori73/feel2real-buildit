@@ -2,9 +2,11 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.dto.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiAnswerSession;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiCommand;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiDraft;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiTargetBoard;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiAnswerSessionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiBoardService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiInventoryService;
@@ -36,6 +38,7 @@ public class JipijigiAdminController {
     private final JipijigiCommandService commandService;
     private final JipijigiQuestionService questionService;
     private final JipijigiWorkflowService workflowService;
+    private final JipijigiAnswerSessionService answerSessions;
     private final JipijigiBoardService boardService;
     private final JipijigiInventoryService inventoryService;
 
@@ -190,6 +193,42 @@ public class JipijigiAdminController {
         return ResponseEntity.ok(JipijigiMapper.toDto(draft));
     }
 
+    // ── accumulated answer sessions (답변 후 자동 축적 DB) ─────────────
+    @GetMapping("/sessions")
+    public Page<JipijigiAnswerSessionResponse> sessions(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return answerSessions.recent(page, size).map(JipijigiMapper::toDto);
+    }
+
+    @GetMapping("/sessions/{sessionId}")
+    public JipijigiAnswerSessionResponse session(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long sessionId) {
+        return JipijigiMapper.toDto(answerSessions.get(sessionId));
+    }
+
+    /** V1: 게시/댓글 주체는 운영자이므로 "운영자가 보고한 실제 노출 결과"만 저장한다. */
+    @PostMapping("/drafts/{draftId}/exposure-report")
+    public JipijigiAnswerSessionResponse reportExposure(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long draftId,
+            @RequestBody JipijigiExposureReportRequest req) {
+        JipijigiAnswerSession.PublishedAs as = parsePublishedAs(req.getPublishedAs());
+        return JipijigiMapper.toDto(answerSessions.reportExposure(draftId, as, req.getPublishedUrl(),
+                req.getCommentId(), req.getFollowUpRef()));
+    }
+
+    /** 이후 회원 후속 댓글·실제 결과를 이 답변 세션에 연결한다. */
+    @PutMapping("/sessions/{sessionId}/follow-up")
+    public JipijigiAnswerSessionResponse attachFollowUp(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable Long sessionId,
+            @RequestBody JipijigiExposureReportRequest req) {
+        return JipijigiMapper.toDto(answerSessions.attachFollowUp(sessionId, req.getFollowUpRef()));
+    }
+
     // ── error mapping ─────────────────────────────────────────────────
     @ExceptionHandler(JipijigiWorkflowService.PublishUnavailableException.class)
     public ResponseEntity<Map<String, String>> handlePublishBlocked(
@@ -210,5 +249,20 @@ public class JipijigiAdminController {
         return boardService.all().stream()
                 .filter(b -> b.getBoardRowId() != null)
                 .collect(Collectors.toMap(JipijigiTargetBoard::getBoardRowId, JipijigiTargetBoard::getBoardName));
+    }
+
+    /** 노출 보고는 POST/COMMENT만 받아들인다 (아직 게시하지 않았다면 보고하지 않으면 된다). */
+    private static JipijigiAnswerSession.PublishedAs parsePublishedAs(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        JipijigiAnswerSession.PublishedAs parsed;
+        try {
+            parsed = JipijigiAnswerSession.PublishedAs.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("알 수 없는 노출 형태: " + raw + " (POST|COMMENT)");
+        }
+        if (parsed == JipijigiAnswerSession.PublishedAs.NONE) {
+            throw new IllegalArgumentException("publishedAs는 POST 또는 COMMENT만 보고할 수 있습니다.");
+        }
+        return parsed;
     }
 }

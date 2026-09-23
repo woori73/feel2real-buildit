@@ -106,4 +106,34 @@ public final class JipijigiMapper {
                 .memo(b.getMemo())
                 .build();
     }
+
+    public static JipijigiAnswerSessionResponse toDto(JipijigiAnswerSession s) {
+        return JipijigiAnswerSessionResponse.builder()
+                .sessionId(s.getSessionId())
+                .draftId(s.getDraftId())
+                .questionId(s.getQuestionId())
+                .commandId(s.getCommandId())
+                .sourceClubId(s.getSourceClubId())
+                .sourceArticleId(s.getSourceArticleId())
+                .sourceCommentId(s.getSourceCommentId())
+                .followUpRef(s.getFollowUpRef())
+                .questionType(s.getQuestionType())
+                .questionTopic(s.getQuestionTopic())
+                .questionText(s.getQuestionText())
+                .answerTitle(s.getAnswerTitle())
+                .answerBody(s.getAnswerBody())
+                .answeredAt(s.getAnsweredAt())
+                .evidenceInternal(s.getEvidenceInternal())
+                .evidenceCcrs(s.getEvidenceCcrs())
+                .evidenceBorrower(s.getEvidenceBorrower())
+                .evidenceOfficial(s.getEvidenceOfficial())
+                .dbHits(s.getDbHits())
+                .externalSearched(s.isExternalSearched())
+                .confidence(s.getConfidence() == null ? null : s.getConfidence().name())
+                .operatorEdited(s.isOperatorEdited())
+                .publishedAs(s.getPublishedAs() == null ? null : s.getPublishedAs().name())
+                .publishedUrl(s.getPublishedUrl())
+                .reviewState(s.getReviewState() == null ? null : s.getReviewState().name())
+                .build();
+    }
 }

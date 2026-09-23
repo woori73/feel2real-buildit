@@ -26,6 +26,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
@@ -42,9 +45,12 @@ class JipijigiResearchServiceTest {
     private NewstartEmpiricalCaseRepository empiricalCaseRepository;
     @Mock
     private NewStartOfficialUpdateRepository officialUpdateRepository;
+    @Mock
+    private JipijigiAnswerSessionService answerSessions;
 
     private JipijigiResearchService service() {
-        return new JipijigiResearchService(knowledgeRepository, empiricalCaseRepository, officialUpdateRepository);
+        return new JipijigiResearchService(knowledgeRepository, empiricalCaseRepository,
+                officialUpdateRepository, answerSessions);
     }
 
     private NewstartKnowledgeItem item(NewstartKnowledgeItem.SourceType type, String url) {        return NewstartKnowledgeItem.builder()
@@ -132,6 +138,67 @@ class JipijigiResearchServiceTest {
     void blankQuestionShortCircuits() {
         JipijigiResearchService service = service();
         assertThat(service.research("  ").getInternalHits()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("축적 답변 세션은 STEP1 내부 근거로 들어가되 공식 규정으로 분류되지 않는다")
+    void accumulatedSessionsAreInternalCaseOnly() {
+        JipijigiResearchService service = service();
+        when(knowledgeRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+        when(answerSessions.searchAcceptedEvidence(any())).thenReturn(List.of(Evidence.builder()
+                .stepNo(1).sourceClass(SourceClass.INTERNAL_CASE).refType(RefType.ANSWER_SESSION)
+                .refId("77").title("[축적 답변] 자동차 담보").excerpt("과거 답변 발췌")
+                .build()));
+        when(empiricalCaseRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+        when(officialUpdateRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+
+        ResearchPack pack = service.research("자동차 담보 재산");
+
+        assertThat(pack.getInternalHits()).singleElement().satisfies(e -> {
+            assertThat(e.getSourceClass()).isEqualTo(SourceClass.INTERNAL_CASE);
+            assertThat(e.getRefType()).isEqualTo(RefType.ANSWER_SESSION);
+        });
+        assertThat(pack.getInternalHits()).noneSatisfy(e -> assertThat(e.getSourceClass()).isEqualTo(SourceClass.OFFICIAL_RULE));
+    }
+
+    @Test
+    @DisplayName("내부 근거가 기준 이상이면 외부 카페 검색(STEP2·STEP3)을 생략하고 사유를 남긴다")
+    void sufficientInternalSkipsExternalCafeSearch() {
+        JipijigiResearchService service = service();
+        when(knowledgeRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(page(List.of(item(NewstartKnowledgeItem.SourceType.CASE, null),
+                        item(NewstartKnowledgeItem.SourceType.CASE, null))));
+        when(answerSessions.searchAcceptedEvidence(any())).thenReturn(List.of(Evidence.builder()
+                .stepNo(1).sourceClass(SourceClass.INTERNAL_CASE).refType(RefType.ANSWER_SESSION)
+                .refId("77").title("축적 답변").build()));
+        when(officialUpdateRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+
+        ResearchPack pack = service.research("자동차 담보 재산");
+
+        assertThat(pack.getInternalHits()).hasSize(3);
+        assertThat(pack.internalInsufficient()).isFalse();
+        assertThat(pack.getCcrsHits()).isEmpty();
+        assertThat(pack.getBorrowerHits()).isEmpty();
+        assertThat(pack.isExternalSearched()).isFalse();
+        assertThat(pack.getGapNotes()).anySatisfy(g -> assertThat(g).contains("생략 사유").contains("내부 근거 충분"));
+        then(empiricalCaseRepository).should(never()).findAll(any(Specification.class), any(Pageable.class));
+        // 공식 기준 검증(STEP4)은 외부 카페가 아니다 — 항상 수행한다
+        then(officialUpdateRepository).should(times(1)).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("내부 근거가 부족하면 외부 카페 검색을 수행하고 그 사실을 남긴다")
+    void insufficientInternalRunsExternalSearch() {
+        JipijigiResearchService service = service();
+        when(knowledgeRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+        when(answerSessions.searchAcceptedEvidence(any())).thenReturn(List.of());
+        when(empiricalCaseRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+        when(officialUpdateRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
+
+        ResearchPack pack = service.research("자동차 담보 재산");
+
+        assertThat(pack.isExternalSearched()).isTrue();
+        then(empiricalCaseRepository).should(times(1)).findAll(any(Specification.class), any(Pageable.class));
     }
 
     private static <T> Page<T> page(List<T> rows) {

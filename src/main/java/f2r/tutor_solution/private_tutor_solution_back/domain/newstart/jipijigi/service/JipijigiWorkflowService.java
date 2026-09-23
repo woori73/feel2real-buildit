@@ -26,6 +26,7 @@ import java.util.List;
  *   <li>게시 대상은 newstart_jipijigi_target_boards allowlist 행만 허용 (질문게시판 등 임의 게시판 게시 불가)</li>
  *   <li>NAVER 실제 게시는 설정상 상시 비활성 — PUBLISHED 전이는 항상 거부</li>
  *   <li>모든 전이는 상태 로그에 provenance 기록</li>
+ *   <li>답변(초안) 생성 성공 즉시 newstart_jipijigi_answer_sessions에 축적 저장, 운영자 승인은 ACCEPTED로 기록</li>
  * </ul>
  */
 @Service
@@ -36,6 +37,7 @@ public class JipijigiWorkflowService {
     private final JipijigiDraftStatusLogRepository statusLogRepository;
     private final JipijigiTargetBoardRepository targetBoardRepository;
     private final JipijigiResearchTraceRepository traceRepository;
+    private final JipijigiAnswerSessionService answerSessions;
 
     /** V1 where true가 될 수 없다: NAVER 연동 구현·운영자 승인 전 게시 금지 더미. */
     @Value("${app.newstart.jipijigi.publish-enabled:false}")
@@ -54,6 +56,8 @@ public class JipijigiWorkflowService {
         logTransition(saved.getDraftId(), null, DraftStatus.DRAFT.name(), saved.getCreatedBy(), "Agent 초안 생성");
         if (pack != null) {
             saveTraces(saved.getDraftId(), saved.getQuestionId(), pack);
+            // 답변 생성 성공 = 게시 여부와 무관하게 즉시 축적 저장 (dedupe는 fingerprint가 담당)
+            answerSessions.recordFromDraft(saved, pack);
         }
         return saved;
     }
@@ -100,7 +104,9 @@ public class JipijigiWorkflowService {
         if (body != null && !body.isBlank()) d.setBody(body);
         d.setUpdatedBy(actor);
         logTransition(d.getDraftId(), d.getStatus().name(), d.getStatus().name(), actor, "내용 수정");
-        return draftRepository.save(d);
+        JipijigiDraft saved = draftRepository.save(d);
+        answerSessions.markEdited(saved.getDraftId(), saved.getTitle(), saved.getBody());
+        return saved;
     }
 
     @Transactional
@@ -125,7 +131,10 @@ public class JipijigiWorkflowService {
                 .orElseThrow(() -> new IllegalStateException(
                         "allowlist의 enabled 게시판만 승인/게시 대상으로 지정할 수 있습니다."));
         d.setTargetBoardId(board.getBoardRowId());
-        return move(d, DraftStatus.APPROVED, actor, "승인 (대상 게시판: " + board.getBoardName() + ")");
+        JipijigiDraft approved = move(d, DraftStatus.APPROVED, actor, "승인 (대상 게시판: " + board.getBoardName() + ")");
+        // 운영자 검토 통과 → 이 시점부터 다음 질문 STEP1 RAG에서 재사용 가능하다.
+        answerSessions.markAccepted(approved.getDraftId());
+        return approved;
     }
 
     @Transactional
@@ -138,7 +147,10 @@ public class JipijigiWorkflowService {
             throw new IllegalArgumentException("반려 사유 필수");
         }
         d.setRejectReason(reason);
-        return move(d, DraftStatus.REJECTED, actor, reason);
+        JipijigiDraft rejected = move(d, DraftStatus.REJECTED, actor, reason);
+        // 반려된 답변은 축적 DB에 남아도 다음 질문 RAG에서 검색되지 않는다.
+        answerSessions.markRejected(rejected.getDraftId());
+        return rejected;
     }
 
     /** V1에서 항상 거부된다. 상태는 APPROVED에 유지된다. */

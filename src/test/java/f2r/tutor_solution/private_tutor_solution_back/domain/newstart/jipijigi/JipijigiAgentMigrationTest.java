@@ -45,4 +45,39 @@ class JipijigiAgentMigrationTest {
                 .doesNotContain("DROP TABLE")
                 .doesNotContain("ALTER TABLE");
     }
+
+    /** V1000: 답변 세션 축적 저장소 — dedupe 키와 승인 상태 분리, 출처별 근거 컬럼 분리. */
+    @Test
+    void answerSessionTableCarriesDedupeKeyAndProvenance() throws Exception {
+        String s = sql("/db/migration/V1000__add_newstart_jipijigi_answer_session.sql");
+        assertThat(s)
+                .contains("CREATE TABLE newstart_jipijigi_answer_sessions")
+                .contains("uk_jipijigi_session_fp (fingerprint)")
+                .contains("uk_jipijigi_session_draft (draft_id)")
+                .contains("review_state")
+                .contains("ACCEPTED")
+                .contains("evidence_internal")
+                .contains("evidence_ccrs")
+                .contains("evidence_borrower")
+                .contains("evidence_official")
+                .contains("db_hits")
+                .contains("external_searched")
+                .contains("operator_edited")
+                .contains("published_as")
+                .contains("follow_up_ref")
+                .contains("source_comment_id");
+        assertThat(s)
+                .doesNotContain("INSERT INTO")
+                .doesNotContain("UPDATE ")
+                .doesNotContain("DELETE FROM")
+                .doesNotContain("DROP TABLE")
+                .doesNotContain("ALTER TABLE");
+    }
+
+    private String sql(String path) throws Exception {
+        try (var input = getClass().getResourceAsStream(path)) {
+            assertThat(input).as("migration resource " + path).isNotNull();
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
 }

@@ -33,7 +33,7 @@ public class JipijigiResearchTrace {
         OTHER
     }
 
-    public enum RefType { KNOWLEDGE_ITEM, EMPIRICAL_CASE, OFFICIAL_UPDATE, CAFE_ARTICLE, EXTERNAL_URL, NONE }
+    public enum RefType { KNOWLEDGE_ITEM, EMPIRICAL_CASE, OFFICIAL_UPDATE, CAFE_ARTICLE, EXTERNAL_URL, ANSWER_SESSION, NONE }
 
     /** 강제 조사 순서. */
     public static final int STEP_INTERNAL = 1;

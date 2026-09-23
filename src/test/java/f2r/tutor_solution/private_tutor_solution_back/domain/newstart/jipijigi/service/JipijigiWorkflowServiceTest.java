@@ -54,13 +54,15 @@ class JipijigiWorkflowServiceTest {
     private JipijigiTargetBoardRepository targetBoardRepository;
     @Mock
     private JipijigiResearchTraceRepository traceRepository;
+    @Mock
+    private JipijigiAnswerSessionService answerSessions;
 
     private JipijigiWorkflowService service;
 
     @BeforeEach
     void setUp() {
         service = new JipijigiWorkflowService(draftRepository, statusLogRepository,
-                targetBoardRepository, traceRepository);
+                targetBoardRepository, traceRepository, answerSessions);
         ReflectionTestUtils.setField(service, "publishEnabled", false);
     }
 
@@ -225,6 +227,62 @@ class JipijigiWorkflowServiceTest {
                 .allSatisfy(t -> assertThat(t.getNote()).contains("STEP3"));
         assertThat(traces).allSatisfy(t -> assertThat(t.getDraftId()).isEqualTo(5L));
         assertThat(created.getStatus()).isEqualTo(DraftStatus.DRAFT);
+        // 답변 생성 성공 즉시 축적 세션으로 저장(게시 여부와 무관)
+        verify(answerSessions).recordFromDraft(created, pack);
+    }
+
+    @Test
+    @DisplayName("패키지 없는 초안(소개글)은 답변 세션으로 저장하지 않는다")
+    void introDraftIsNotAnAnswerSession() {
+        when(draftRepository.save(any())).thenAnswer(i -> {
+            JipijigiDraft saved = i.getArgument(0);
+            saved.setDraftId(9L);
+            return saved;
+        });
+        JipijigiDraft intro = draft(null, null);
+        intro.setDraftType(DraftType.INTRO);
+
+        service.createDraft(intro, null);
+
+        verify(answerSessions, never()).recordFromDraft(any(), any());
+        verify(traceRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("승인 시 축적 세션을 ACCEPTED로 승격해 다음 질문 RAG에서 재사용 가능해진다")
+    void approvePromotesAccumulatedSession() {
+        JipijigiDraft d = draft(1L, DraftStatus.READY_FOR_REVIEW);
+        when(draftRepository.findById(1L)).thenReturn(Optional.of(d));
+        when(targetBoardRepository.findById(7L)).thenReturn(Optional.of(board(7L, true, 1L)));
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.approve(1L, "jipijigi", 7L);
+
+        verify(answerSessions).markAccepted(1L);
+    }
+
+    @Test
+    @DisplayName("반려 시 축적 세션은 REJECTED가 되어 재사용되지 않는다")
+    void rejectDemotesAccumulatedSession() {
+        JipijigiDraft d = draft(1L, DraftStatus.DRAFT);
+        when(draftRepository.findById(1L)).thenReturn(Optional.of(d));
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.reject(1L, "jipijigi", "근거 부족");
+
+        verify(answerSessions).markRejected(1L);
+    }
+
+    @Test
+    @DisplayName("운영자 수정은 축적 세션의 최종 답변에도 반영되고 수정 표시가 남는다")
+    void editUpdatesAccumulatedAnswer() {
+        JipijigiDraft d = draft(1L, DraftStatus.DRAFT);
+        when(draftRepository.findById(1L)).thenReturn(Optional.of(d));
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.edit(1L, "고친 제목", "고친 본문", "operator");
+
+        verify(answerSessions).markEdited(1L, "고친 제목", "고친 본문");
     }
 
     private static Evidence evidence(int step, JipijigiResearchTrace.SourceClass cls) {

@@ -26,6 +26,10 @@ import java.util.List;
  *
  * <p>모델 자체 지식으로 답변하지 않는다: 모든 근거는 실제 NewStart DB 조회 결과만 사용하며,
  * 조회 결과 없는 단계는 "부족/미확인"으로 명시한다(추측·일반화 금지).
+ *
+ * <p>STEP1에는 NewStart 지식/사례와 함께 운영자가 승인한 축적 답변 세션
+ * ({@link JipijigiAnswerSessionService})이 포함된다. 축적 DB는 외부 카페 검색(STEP2·STEP3)보다 먼저 조회하고,
+ * 내부 근거가 충분하면 외부 카페 검색은 생략한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -39,6 +43,7 @@ public class JipijigiResearchService {
     private final NewstartKnowledgeItemRepository knowledgeRepository;
     private final NewstartEmpiricalCaseRepository empiricalCaseRepository;
     private final NewStartOfficialUpdateRepository officialUpdateRepository;
+    private final JipijigiAnswerSessionService answerSessions;
 
     @Getter
     @Builder
@@ -57,12 +62,14 @@ public class JipijigiResearchService {
     @Builder
     public static class ResearchPack {
         private final String question;
-        private final List<Evidence> internalHits;     // STEP1 NewStart 내부 DB/RAG
+        private final List<Evidence> internalHits;     // STEP1 NewStart 내부 DB/RAG + 축적 답변 세션
         private final List<Evidence> ccrsHits;         // STEP2 신복위 (우선)
         private final List<Evidence> borrowerHits;     // STEP3 부실차주 라이브러리 카페
         private final List<Evidence> officialHits;     // STEP4 공식 기준 검증
         private final List<Evidence> extraAgencyHits;  // STEP5 추가 공식기관 (V1: 수동 표기)
         private final List<String> gapNotes;           // 부족·실패·수동조사 필요 사유
+        /** STEP2/STEP3 외부 카페 검색을 실제로 수행했는지 (생략 시 false). */
+        private final boolean externalSearched;
 
         public boolean internalInsufficient() {
             return internalHits.size() < INTERNAL_SUFFICIENT_THRESHOLD;
@@ -73,30 +80,41 @@ public class JipijigiResearchService {
         List<String> keywords = keywordsOf(questionText);
         List<String> gaps = new ArrayList<>();
 
-        // STEP 1 — NewStart 내부 DB/RAG 검색 (항상 먼저)
+        // STEP 1 — NewStart 내부 DB/RAG + 축적된 운영자 승인 답변 세션 (항상 먼저)
         List<Evidence> internal = new ArrayList<>();
         for (NewstartKnowledgeItem item : searchActiveKnowledge(keywords)) {
             internal.add(toKnowledgeEvidence(item));
         }
+        internal.addAll(answerSessions.searchAcceptedEvidence(keywords));
         boolean needExternal = internal.size() < INTERNAL_SUFFICIENT_THRESHOLD;
         if (needExternal) {
-            gaps.add("STEP1 내부 ACTIVE 지식 근거 " + internal.size() + "건(기준 " + INTERNAL_SUFFICIENT_THRESHOLD
+            gaps.add("STEP1 내부 ACTIVE 지식·축적 답변 근거 " + internal.size() + "건(기준 " + INTERNAL_SUFFICIENT_THRESHOLD
                     + "건 미만) → 외부 사례조사 단계 필수");
         }
 
-        // STEP 2 — 신복위: DB에 들어온 신복위 자료만 사용. 라이브 카페 자동조회는 V1 미구현.
+        // STEP 2·3 — 외부 카페 검색. 내부 근거가 충분하면 생략한다(운영원칙 §5).
+        // STEP 4 공식 기준 검증은 우리 DB 조회이므로 생략 대상이 아니다 — 공식 검사는 항상 수행한다.
         List<Evidence> ccrs = new ArrayList<>();
-        ccrs.addAll(searchOfficialUpdates(keywords, NewStartOfficialUpdate.SourceType.CCRS,
-                "신복위 공식자료(수집·저장본)에서 검색"));
-        ccrs.addAll(searchCcrsKnowledgeItems(keywords));
-        if (ccrs.isEmpty()) {
-            gaps.add("STEP2 신복위: 저장된 근거 없음 — 신복위 카페(27453843) 라이브 조사는 운영자 승인된 브라우저/세션 조사 필요 (V1 서버 자동화 없음)");
-        }
+        List<Evidence> borrower = new ArrayList<>();
+        boolean externalSearched = false;
+        if (needExternal) {
+            externalSearched = true;
+            // STEP 2 — 신복위: DB에 들어온 신복위 자료만 사용. 라이브 카페 자동조회는 V1 미구현.
+            ccrs.addAll(searchOfficialUpdates(keywords, NewStartOfficialUpdate.SourceType.CCRS,
+                    "신복위 공식자료(수집·저장본)에서 검색"));
+            ccrs.addAll(searchCcrsKnowledgeItems(keywords));
+            if (ccrs.isEmpty()) {
+                gaps.add("STEP2 신복위: 저장된 근거 없음 — 신복위 카페(27453843) 라이브 조사는 운영자 승인된 브라우저/세션 조사 필요 (V1 서버 자동화 없음)");
+            }
 
-        // STEP 3 — 부실차주 라이브러리 카페 과거 글+댓글 (수집 사례 베이스)
-        List<Evidence> borrower = searchEmpiricalCases(keywords);
-        if (borrower.isEmpty()) {
-            gaps.add("STEP3 부실차주 카페: 키워드 일치 수집 사례 없음 — 질문게시판 원문 자체는 questions 테이블에 보관");
+            // STEP 3 — 부실차주 라이브러리 카페 과거 글+댓글 (수집 사례 베이스)
+            borrower = searchEmpiricalCases(keywords);
+            if (borrower.isEmpty()) {
+                gaps.add("STEP3 부실차주 카페: 키워드 일치 수집 사례 없음 — 질문게시판 원문 자체는 questions 테이블에 보관");
+            }
+        } else {
+            gaps.add("STEP2·STEP3 외부 카페 검색 생략 사유: 내부 근거 충분 (" + internal.size() + "건 ≥ 기준 "
+                    + INTERNAL_SUFFICIENT_THRESHOLD + "건)");
         }
 
         // STEP 4 — 공식 기준 검증: 게시된 공식 업데이트 + 새출발기금/금감원/공공기관 저장 자료
@@ -113,6 +131,7 @@ public class JipijigiResearchService {
                 .officialHits(official)
                 .extraAgencyHits(extra)
                 .gapNotes(gaps)
+                .externalSearched(externalSearched)
                 .build();
     }
 
