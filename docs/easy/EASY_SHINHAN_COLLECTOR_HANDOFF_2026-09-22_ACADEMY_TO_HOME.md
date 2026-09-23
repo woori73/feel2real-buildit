@@ -24,7 +24,7 @@
 - `ShinhanCardNormalizer` — 부호 있는 금액 그대로 보존, 동일 내용 반복 행(예: 교원라이프 59,900원 4건 동일자 동일가)을 `occurrenceIndex`로 구분
 - `ShinhanCardImportService` — FIFO 매칭(카드+가맹점+상품구분+절대값)으로 양수/음수 페어링, fingerprint 기반 재수집 idempotency, boundary dedupe(기존 easy_transactions과 business+date+amount 대조)
 - `EasyCardEvent` + `EasyBusinessCardAccountingService` — `confirmationDate` 필드 추가(거래일과 절대 합치지 않음)
-- **Migration V992** — `easy_card_events.confirmation_date DATE NULL` (nullable, additive, 기존 row 영향 없음)
+- **Migration V995** — `easy_card_events.confirmation_date DATE NULL` (nullable, additive, 기존 row 영향 없음; V992에서 renumber, main CHOONGGI V992와 충돌 회피)
 - PENDING_REVIEW까지만 — `approveAndPost`(기존, 무변경) 전에는 `easy_transactions`/journal 어디도 안 건드림
 
 ---
