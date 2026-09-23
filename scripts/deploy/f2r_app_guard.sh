@@ -23,14 +23,29 @@ set -uo pipefail
 
 # 새 버전이 health를 통과할 때까지 몇 번, 몇 초 간격으로 재시도할지의 기본값.
 # Spring Boot는 재시작 명령 직후 바로 응답하지 않는다 — 5초 x 24회 = 최대 120초 대기.
+# 이 예산은 "한 PID"의 몫이다 — systemd가 Restart=on-failure로 새 PID를 띄우면 그 PID는
+# 이 예산을 그대로 물려받지 않고 자기 몫을 새로 받는다(f2r_wait_for_health_pid_aware).
 F2R_HEALTH_DEFAULT_ATTEMPTS=24
 F2R_HEALTH_DEFAULT_SLEEP_SECS=5
 
+# systemd가 Restart=on-failure로 몇 세대(=몇 번의 새 PID)까지 봐줄지의 기본 상한.
+# 이 상한을 넘기면 "계속 재시작만 반복"으로 판단하고 더 기다리지 않는다 — systemd의
+# 무한 재시작을 이 가드가 그대로 받아들이지 않는다는 뜻이다.
+F2R_MAX_PID_GENERATIONS=3
+
 # 내부에서 실제 systemctl/journalctl 을 부르는 지점을 한 곳으로 모아 둔다 — 테스트가
-# 이 세 함수만 오버라이드하면 나머지 로직(재시도 횟수, 롤백 판단)은 실제 코드 그대로 검증된다.
+# 이 네 함수만 오버라이드하면 나머지 로직(재시도 횟수, PID 세대 판단, 롤백 판단)은 실제
+# 코드 그대로 검증된다.
 f2r__service_restart() { systemctl restart "$1"; }
 f2r__service_status_dump() { systemctl status "$1" --no-pager -l || true; }
 f2r__service_journal_dump() { journalctl -u "$1" -n 200 --no-pager || true; }
+# 현재 MainPID. 서비스가 죽어서 아직 재시작 전이면 systemd는 빈 문자열/0 을 준다 —
+# 그 경우도 "이전에 추적하던 pid와 다르다"로 자연스럽게 처리되도록 0으로 정규화한다.
+f2r__service_main_pid() {
+  local pid
+  pid=$(systemctl show -p MainPID --value "$1" 2>/dev/null)
+  echo "${pid:-0}"
+}
 
 # EC2 내부에서(127.0.0.1) health endpoint를 확인한다. curl 자체가 실패해도(연결 거부 등)
 # "정상 아님"으로 취급한다 — set -e 환경에서 호출자가 죽지 않도록 항상 0/1만 반환한다.
@@ -43,6 +58,11 @@ f2r_health_ok() {
 
 # 최대 attempts 회, sleep_secs 간격으로 health_ok를 재시도한다. 한 번이라도 통과하면
 # 즉시 성공 반환 — "한 번 curl해서 실패하면 바로 종료" 하지 않는다.
+#
+# PID를 모르는(=systemd가 관리하지 않는) 대상을 기다릴 때 쓰는 단순 버전이다.
+# f2r-app.service 처럼 systemd Restart=on-failure 가 붙은 대상은 이 함수가 아니라
+# f2r_wait_for_health_pid_aware 를 쓴다 — PID가 바뀌는데도 원래 카운트다운을 그대로
+# 이어가면(Deploy 사고의 원인) 새 프로세스가 사실상 남은 시간만 받기 때문이다.
 f2r_wait_for_health() {
   local url="$1"
   local attempts="${2:-$F2R_HEALTH_DEFAULT_ATTEMPTS}"
@@ -55,6 +75,58 @@ f2r_wait_for_health() {
     i=$((i + 1))
     sleep "$sleep_secs"
   done
+  return 1
+}
+
+# PID-aware health wait. "재시작 직후 PID A가 죽고 10초 뒤 systemd가 PID B를 새로
+# 띄우는데, 헬스체크는 A 기준으로 시작한 원래 카운트다운을 그대로 이어가 B는 남은
+# 시간만 받고 만다"는 실제 배포 장애의 원인을 직접 막는다:
+#   - 매 poll마다 현재 MainPID를 같이 확인한다.
+#   - 추적하던 pid와 다르면(=systemd가 새로 띄웠다) "새 세대"로 인식하고, 그 세대는
+#     attempts_per_pid 를 처음부터 다시 받는다(이전 pid가 얼마나 기다렸었는지는 새
+#     pid에게 넘어가지 않는다).
+#   - 세대 수는 max_generations 로 상한을 둔다 — systemd가 계속 재시작을 허용해도
+#     이 함수는 무한정 따라가며 기다리지 않는다("반복 종료"는 실패로 확정한다).
+#   - 한 pid가 세대 교체 없이 자기 attempts_per_pid 를 다 쓰면(=재시작도 안 되고
+#     그냥 응답도 안 하는 상태) 그 자체로 실패다.
+f2r_wait_for_health_pid_aware() {
+  local service_name="$1" url="$2"
+  local attempts_per_pid="${3:-$F2R_HEALTH_DEFAULT_ATTEMPTS}"
+  local sleep_secs="${4:-$F2R_HEALTH_DEFAULT_SLEEP_SECS}"
+  local max_generations="${5:-$F2R_MAX_PID_GENERATIONS}"
+
+  local generation=1
+  local tracked_pid
+  tracked_pid=$(f2r__service_main_pid "$service_name")
+  echo "Health wait: ${service_name} MainPID=${tracked_pid} (generation ${generation}/${max_generations}, up to ${attempts_per_pid}x${sleep_secs}s each)"
+
+  local i=0
+  while [ "$generation" -le "$max_generations" ]; do
+    if [ "$i" -ge "$attempts_per_pid" ]; then
+      echo "::error::${service_name} (MainPID=${tracked_pid}) did not become healthy within its window and was not restarted by systemd — giving up"
+      return 1
+    fi
+    if f2r_health_ok "$url"; then
+      echo "${service_name} is healthy (MainPID=${tracked_pid}, generation ${generation}/${max_generations})."
+      return 0
+    fi
+    local current_pid
+    current_pid=$(f2r__service_main_pid "$service_name")
+    if [ "$current_pid" != "$tracked_pid" ]; then
+      generation=$((generation + 1))
+      if [ "$generation" -gt "$max_generations" ]; then
+        break
+      fi
+      echo "::warning::${service_name} MainPID changed ${tracked_pid} -> ${current_pid} (systemd restarted it after a crash) — generation ${generation}/${max_generations} gets its own fresh ${attempts_per_pid}x${sleep_secs}s health window"
+      tracked_pid="$current_pid"
+      i=0
+      continue
+    fi
+    i=$((i + 1))
+    sleep "$sleep_secs"
+  done
+
+  echo "::error::${service_name} exited and was restarted ${max_generations} time(s) without becoming healthy — repeated exit, not a single slow startup"
   return 1
 }
 
@@ -76,7 +148,18 @@ f2r_dump_diagnostics() {
 #   backup_jar    직전 정상 jar를 보관할 경로 (예: /home/ec2-user/app.jar.previous)
 #   service_name  systemd 서비스명 (예: f2r-app.service)
 #   health_url    내부 health endpoint (예: http://127.0.0.1:8080/actuator/health)
-#   attempts/sleep_secs  health 재시도 파라미터 (생략 시 기본값)
+#   attempts/sleep_secs  PID 세대당 health 재시도 파라미터 (생략 시 기본값)
+#   max_generations      한 시도(NEW 또는 rollback)당 몇 세대(=몇 번의 새 PID)까지
+#                         봐줄지 (생략 시 기본값) — systemd가 계속 재시작해도 이 상한을
+#                         넘으면 "반복 종료"로 확정하고 기다림을 끝낸다.
+#
+# NEW 시도와 rollback 시도는 완전히 독립된 f2r_wait_for_health_pid_aware 호출이다 —
+# rollback도 자기 자신의 MainPID 추적과 자기 자신의 attempts×generations 예산을 처음부터
+# 새로 받는다. NEW가 재시작을 몇 번 썼는지는 rollback 예산에 전혀 영향을 주지 않는다.
+#
+# 이 함수는 service_name 으로 넘어온 서비스만 restart/health-check 한다 — 별도 서비스인
+# buildit-wiki는 이 함수 안에서 절대 건드리지 않는다(호출자가 f2r-app.service 하나만
+# 넘기면 그 서비스 하나만 대상이 된다).
 #
 # 반환값(exit code)으로 다섯 가지 결과를 구분한다 — 호출자가 그대로 워크플로 성공/실패에
 # 반영한다:
@@ -87,6 +170,7 @@ f2r_deploy_with_rollback() {
   local current_jar="$1" new_jar="$2" backup_jar="$3" service_name="$4" health_url="$5"
   local attempts="${6:-$F2R_HEALTH_DEFAULT_ATTEMPTS}"
   local sleep_secs="${7:-$F2R_HEALTH_DEFAULT_SLEEP_SECS}"
+  local max_generations="${8:-$F2R_MAX_PID_GENERATIONS}"
 
   local had_previous=0
   if [ -f "$current_jar" ]; then
@@ -100,8 +184,7 @@ f2r_deploy_with_rollback() {
   echo "Restarting ${service_name} with the new jar..."
   f2r__service_restart "$service_name"
 
-  if f2r_wait_for_health "$health_url" "$attempts" "$sleep_secs"; then
-    echo "${service_name} is healthy on the new version."
+  if f2r_wait_for_health_pid_aware "$service_name" "$health_url" "$attempts" "$sleep_secs" "$max_generations"; then
     return 0
   fi
 
@@ -117,7 +200,7 @@ f2r_deploy_with_rollback() {
   echo "Restarting ${service_name} with the previous jar..."
   f2r__service_restart "$service_name"
 
-  if f2r_wait_for_health "$health_url" "$attempts" "$sleep_secs"; then
+  if f2r_wait_for_health_pid_aware "$service_name" "$health_url" "$attempts" "$sleep_secs" "$max_generations"; then
     echo "::error::Deploy FAILED — automatically rolled back to the previous version, which is healthy. Production is restored."
     return 1
   fi
