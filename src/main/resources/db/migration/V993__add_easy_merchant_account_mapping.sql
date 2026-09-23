@@ -32,5 +32,3 @@ CREATE TABLE `easy_merchant_account_mappings` (
 
 -- Index for historical lookups by raw merchant (for normalization matching)
 CREATE INDEX `idx_easy_merchant_mapping_raw_merchant` ON `easy_merchant_account_mappings` (`business_id`, `raw_merchant`);
-
-(End of file - total 33 lines)
