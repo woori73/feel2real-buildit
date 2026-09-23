@@ -1,0 +1,68 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
+
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.FssComplaintHelperService;
+import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 금감원 민원 도우미 API.
+ *
+ * <p>인증은 기존 {@code /api/**} catch-all(인증 필요)을 그대로 따른다 — 새 권한 규칙을 만들지
+ * 않는다. V1은 무상태: 민원 원문·정리문 어디도 DB에 저장하지 않고, 로그에도 남기지 않는다.
+ * 자동 제출은 존재하지 않는다(응답은 텍스트일 뿐이고, 제출은 사용자가 공식 사이트에서 직접 한다).
+ */
+@RestController
+@RequestMapping("/api/newstart/fss")
+public class NewStartFssComplaintController {
+
+  private final FssComplaintHelperService fssComplaintHelperService;
+
+  public NewStartFssComplaintController(FssComplaintHelperService fssComplaintHelperService) {
+    this.fssComplaintHelperService = fssComplaintHelperService;
+  }
+
+  @GetMapping("/companion")
+  public CompanionResponse companion() {
+    return new CompanionResponse("ok",
+        fssComplaintHelperService.samples(), fssComplaintHelperService.manual());
+  }
+
+  @PostMapping("/compose")
+  public ResponseEntity<ComposeResponse> compose(@RequestBody ComposeRequest request) {
+    FssComplaintHelperService.ComposeResult result = fssComplaintHelperService.compose(
+        request == null ? null : request.sampleId(),
+        request == null ? null : request.situationText());
+    if (!result.ok()) {
+      return ResponseEntity.badRequest().body(
+          ComposeResponse.failure(result.errorMessage()));
+    }
+    return ResponseEntity.ok(ComposeResponse.success(result.composedText(), result.model()));
+  }
+
+  /** @param sampleId 카드에서 선택한 전자책 예시 ID(FS-1..FS-3). @param situationText 사용자 자유 서술. */
+  public record ComposeRequest(String sampleId, String situationText) {}
+
+  /**
+   * @param status "ok" | "error". composedText 성공 시 AI 정리문(사용자 확인·수정·복사용),
+   *               실패 시 빈 문자열. errorMessage는 사용자용 안내뿐이며 민원 원문·내부 상세를 담지 않는다.
+   */
+  public record ComposeResponse(String status, String composedText, String errorMessage, String model) {
+    public static ComposeResponse success(String composedText, String model) {
+      return new ComposeResponse("ok", composedText, null, model);
+    }
+
+    public static ComposeResponse failure(String errorMessage) {
+      return new ComposeResponse("error", "", errorMessage, null);
+    }
+  }
+
+  /** 전자책 출처 식별자(ebookRef·sourceLines)가 각 샘플에 포함된 그대로 노출한다. */
+  public record CompanionResponse(String status,
+      List<FssComplaintHelperService.ComplaintSample> samples,
+      FssComplaintHelperService.ManualGuide manual) {}
+}

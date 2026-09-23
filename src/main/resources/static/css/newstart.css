@@ -237,6 +237,7 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-section-heading { margin-bottom: 18px; }
 .ns-section-heading h2 { margin: 0; font-size: clamp(24px, 7vw, 38px); line-height: 1.2; font-weight: 800; letter-spacing: -.045em; word-break: keep-all; }
 .ns-core-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; }
+.ns-practical-grid { grid-template-columns: minmax(0, 1fr); }
 .ns-feature-card { position: relative; min-width: 0; min-height: 218px; padding: 22px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ns-line); border-radius: 20px; color: var(--ns-ink); background: #fff; text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .045); }
 .ns-feature-card:focus-visible { outline: 3px solid rgba(21, 88, 214, .28); outline-offset: 3px; }
 .ns-feature-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--ns-blue); background: var(--ns-blue-soft); }
@@ -347,6 +348,7 @@ html, body { max-width: 100%; overflow-x: clip; }
   .newstart-shell { padding-inline: 28px; }
   .ns-hero-cta { width: auto; padding-inline: 24px; }
   .ns-core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ns-practical-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ns-feature-ai { grid-row: span 2; min-height: 449px; }
 }
 @media (min-width: 768px) {
@@ -362,6 +364,7 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (min-width: 1024px) {
   .newstart-shell { padding-inline: 48px; }
   .ns-core-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
+  .ns-practical-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ns-feature-card, .ns-feature-ai { grid-row: auto; min-height: 278px; }
   .ns-feature-ai { transform: translateY(-12px); }
   .ns-feature-ai:hover { transform: translateY(-15px); }
