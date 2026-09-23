@@ -15,6 +15,8 @@ public final class ParticipantType {
       case TUTOR -> "교육자";
       case STUDENT -> "학생";
       case ADMIN -> "운영자";
+      // CHOONGGI 전용 role — Question Wiki와 무관하므로 일반 참여자로 표시한다.
+      case CREATOR -> "참여자";
     };
   }
 }

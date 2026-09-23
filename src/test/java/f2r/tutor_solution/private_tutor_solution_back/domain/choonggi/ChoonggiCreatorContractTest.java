@@ -96,6 +96,33 @@ class ChoonggiCreatorContractTest {
     var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
     assertThat(service.requireMedia(1L,"ADMIN")).isSameAs(media);
   }
+  /** CREATOR is the scoped CHOONGGI role (not global ADMIN) — it must get the same draft-preview access as ADMIN. */
+  @Test void creatorMayPreviewDraftPostMedia() {
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note"); // DRAFT
+    var media=ChoonggiMedia.of(post,"k",ChoonggiMedia.Type.PHOTO,"image/jpeg","p.jpg",10L,100,100,0);
+    var mediaRepo=mock(ChoonggiMediaRepository.class);
+    when(mediaRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(media));
+    var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
+    assertThat(service.requireMedia(1L,"CREATOR")).isSameAs(media);
+  }
+  @Test void studentIsBlockedFromDraftPostMedia() {
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note"); // DRAFT
+    var media=ChoonggiMedia.of(post,"k",ChoonggiMedia.Type.PHOTO,"image/jpeg","p.jpg",10L,100,100,0);
+    var mediaRepo=mock(ChoonggiMediaRepository.class);
+    when(mediaRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(media));
+    var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
+    assertThatThrownBy(()->service.requireMedia(1L,"STUDENT")).isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("404");
+  }
+  @Test void tutorIsBlockedFromDraftPostMedia() {
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note"); // DRAFT
+    var media=ChoonggiMedia.of(post,"k",ChoonggiMedia.Type.PHOTO,"image/jpeg","p.jpg",10L,100,100,0);
+    var mediaRepo=mock(ChoonggiMediaRepository.class);
+    when(mediaRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(media));
+    var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
+    assertThatThrownBy(()->service.requireMedia(1L,"TUTOR")).isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("404");
+  }
 
   @Test void moveUpSwapsSortOrderWithPreviousItem() {
     var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");
