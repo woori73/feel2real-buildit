@@ -132,6 +132,15 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyReportServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyExecutiveServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyShopPipelineFixtureTest"
+          # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiQuestionServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiDraftComposerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.controller.JipijigiAdminControllerAuthTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.JipijigiAgentMigrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.JipijigiAdminPageContractTest"
 
       - name: Upload test report
         if: always()

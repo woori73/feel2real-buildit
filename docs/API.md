@@ -4077,3 +4077,26 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - Public media: `GET /api/choonggi/media/{id}`. Metadata is in MySQL; bytes are in existing FileStorage (S3 in prd, local in dev).
 - Photos are decoded, resized and re-encoded by ImageSanitizer, removing EXIF/GPS. Videos accept validated MP4/MOV up to 50MB; no autoplay.
 - DRAFT rows never appear in public queries. Published posts integrate into `/choonggi` and `/choonggi/vlog/{slug}`.
+
+## NewStart 지피지기 Agent ADMIN API (V999)
+
+SSR 화면 `/admin/newstart/jipijigi`(WebMvcConfig view → `templates/admin/newstart_jipijigi.html`)가 호출하는
+JSON API. `SecurityConfig`의 `/api/admin/**` `hasRole('ADMIN')` 규칙을 그대로 상속받는다(일반 회원 403, 익명 401).
+actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받지 않는다. 상태 전이 위반·allowlist 위반은 400
+(`AGENT_REQUEST_REJECTED`), 게시 시도는 항상 409(`PUBLISH_DISABLED`).
+
+- `GET /api/admin/newstart/jipijigi/inventory`: KB 실제 보유량(상태·소스별 카운트, 공식 업데이트, 실증 사례,
+  질문·초안 수)과 조회 능력 플래그(`keywordLikeRetrieval=true`, `vectorSearch/fullTextIndex/embeddingPipeline=false`)
+  + 갭 메모. "수집했다고 알려진 것"이 아니라 DB 실제 카운트만 노출한다.
+- `GET|POST /boards`, `PUT /boards/{id}/enabled`: 게시 allowlist. `menuId`는 양수 실측값만 저장(0·음수 400),
+  미확인은 NULL로 두고 `postable=false`로 반환한다.
+- `POST /commands`(`instruction`, `commandType?`): 수동 명령 실행. type 생략 시 명령어 키워드로 분류한다.
+  응답은 `{command, drafts[]}`이며 `resultSummary`에 "게시 미수행"을 명시한다. `GET /commands`: 실행 이력.
+- `POST /questions`(수집 결과 upsert, `articleId`·`title` 필수)/ `GET /questions?limit=`: 질문 저장소.
+  본문 없으면 `bodyStatus=UNREADABLE`, 닉네임·연락처·이메일·계좌·전화는 저장 전 마스킹.
+- `GET /drafts?status=`, `GET /drafts/{id}`: 초안 목록·상세(본문 + STEP별 trace + 상태 이력 + sourceClass별
+  hit 수; `ref_id=GAP` 행은 hit 계산에서 제외). `PUT /drafts/{id}`: DRAFT/READY_FOR_REVIEW에서만 수정·
+  대상 게시판 재지정.
+- 상태 액션: `POST /drafts/{id}/review`(검토 요청), `/approve`(enabled allowlist 게시판 필수 + 사유),
+  `/hold`, `/reject`(사유 필수), `/publish` — V1은 설정 플래그·allowlist·게시 클라이언트 3중 차단으로
+  항상 409이며, 화면은 대신 `[원문 복사]`로 운영자 계정 게시용 최종 텍스트를 전달한다.
