@@ -79,6 +79,30 @@ class NewStartOfficialUpdateServiceTest {
     assertThat(service.publicUpdates(SourceType.CCRS).get(0).reviewStatus()).isEqualTo("PUBLISHED");
   }
 
+  @Test
+  void normalizeUrlRepairsProductionDoubleDomainDefectWithoutLosingQuery() {
+    // Production QA #1 실측 결함 형태
+    assertThat(NewStartOfficialUpdateService.normalizeUrl(
+        "https://www.newstartfund.or.kr/https://www.newstartfund.or.kr/Faq/List.do?pageIndex=1&schPrcdRnk=005"))
+        .isEqualTo("https://www.newstartfund.or.kr/Faq/List.do?pageIndex=1&schPrcdRnk=005");
+  }
+
+  @Test
+  void normalizeUrlKeepsAbsoluteUrlAndPreservesFragmentAnchor() {
+    assertThat(NewStartOfficialUpdateService.normalizeUrl(
+        "https://www.newstartfund.or.kr/Faq/List.do?pageIndex=1&schPrcdRnk=001#30"))
+        .isEqualTo("https://www.newstartfund.or.kr/Faq/List.do?pageIndex=1&schPrcdRnk=001#30");
+    assertThat(NewStartOfficialUpdateService.normalizeUrl("HTTPS://FSC.GO.KR/notice/1/"))
+        .isEqualTo("https://fsc.go.kr/notice/1");
+  }
+
+  @Test
+  void normalizeUrlDoesNotTouchPathThatMerelyContainsScheme() {
+    assertThat(NewStartOfficialUpdateService.normalizeUrl(
+        "https://www.newstartfund.or.kr/Board/View.do?idx=56&redirect=https://kookmin.bank/x"))
+        .isEqualTo("https://www.newstartfund.or.kr/Board/View.do?idx=56&redirect=https://kookmin.bank/x");
+  }
+
   private static NewStartOfficialUpdateRequest request(String url) {
     return new NewStartOfficialUpdateRequest(
         SourceType.FSC, "금융위원회", "제도 변경", "요약", url, null,

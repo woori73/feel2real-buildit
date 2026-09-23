@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -144,9 +146,17 @@ public class NewStartOfficialUpdateService {
         + (publishedAt == null ? "NO_DATE" : publishedAt.toLocalDate());
   }
 
+  /** `https://host/https://host/...` 형태 이중 도메인 오염 (Production QA #1 결함)를 복구한다. */
+  private static final Pattern DOUBLE_DOMAIN_URL =
+      Pattern.compile("(?i)^https?://[^/]+/(https?://.+)$");
+
   static String normalizeUrl(String rawUrl) {
     String value = normalize(rawUrl);
     if (value == null) return null;
+    Matcher doubleDomain = DOUBLE_DOMAIN_URL.matcher(value);
+    if (doubleDomain.matches()) {
+      return normalizeUrl(doubleDomain.group(1));
+    }
     try {
       URI uri = new URI(value);
       String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
@@ -157,8 +167,9 @@ public class NewStartOfficialUpdateService {
         throw new IllegalArgumentException("공식 원문 URL 형식이 올바르지 않습니다.");
       }
       String path = uri.getPath() == null ? "" : uri.getPath().replaceAll("/+$", "");
-      String query = uri.getQuery() == null ? "" : "?" + uri.getQuery();
-      return scheme + "://" + uri.getHost().toLowerCase(Locale.ROOT) + path + query;
+      String query = uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery();
+      String fragment = uri.getRawFragment() == null ? "" : "#" + uri.getRawFragment();
+      return scheme + "://" + uri.getHost().toLowerCase(Locale.ROOT) + path + query + fragment;
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException("공식 원문 URL 형식이 올바르지 않습니다.", e);
     }
