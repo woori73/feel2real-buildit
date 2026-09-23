@@ -67,6 +67,14 @@ docs/플로우_ver_1.drawio.png
 ### BuildIt Wiki local verification ###
 problem-generator/wiki-src/node_modules/
 problem-generator/wiki-src/dist/
+
+### EASY Visible Local Browser Collector — standalone Node agent, not part of the Gradle build.
+### Defense in depth: the collector's default download directory lives outside any repo, but a
+### work-input/-style folder must never be tracked even if run with a relative path by mistake.
+local-collector/node_modules/
+local-collector/.e2e-downloads/
+local-collector/.e2e-downloads-shot-waiting.png
+work-input/
 problem-generator/wiki-backend-src/**/__pycache__/
 .local-venv/
 .local-data/
