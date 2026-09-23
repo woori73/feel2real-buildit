@@ -17,6 +17,16 @@
 
 Phase 1–3 complete: repository audit, recovery audit, and safe-integration plan. No product implementation has started.
 
+## Final Phase 4–7 Status
+
+- Final head pending final documentation commit.
+- FSS: recovered selectively; GitHub Build Check `35830100541` succeeded for `62336db6`. Local Gradle remains blocked by the loopback environment.
+- Credit4U, application preparation, result/status, and court guides: implemented as public, non-authenticating guide routes with direct official handoffs and no credential collection.
+- A-to-Z: implemented at `/newstart/a-to-z`; its contextual links reuse the same helper routes as the home cards.
+- Home: rebuilt around the mandated hero, debt-situation entry, five practical tools, A-to-Z, chat, and preserved latest updates.
+- Official fact audit: `NEWSTART_ATOZ_2025_TO_2026_UPDATE_AUDIT.md` added; no unsupported UI numbers or court deadline calculations were added.
+- Untouched: internal-detail worktree and canonical-RAG runtime branch.
+
 ## Current Main Map
 
 | Area | Current main implementation | Recovery decision |
