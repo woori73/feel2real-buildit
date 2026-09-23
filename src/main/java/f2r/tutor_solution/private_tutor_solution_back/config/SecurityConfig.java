@@ -184,6 +184,11 @@ public class SecurityConfig {
             .requestMatchers("/admin/landing", "/admin/chart").hasRole("ADMIN")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
             .requestMatchers("/easy", "/easy/**").hasRole("ADMIN")
+            // CHOONGGI Creator SSR — ADMIN or the scoped CHOONGGI CREATOR role only; public vlog
+            // routes remain unchanged. CREATOR is NOT global admin — it unlocks only this SSR
+            // screen and /api/admin/choonggi/** (matched separately below, before the generic
+            // /api/admin/** ADMIN-only catch-all — first-match-wins per this file's convention).
+            .requestMatchers("/choonggi/admin", "/choonggi/admin/**").hasAnyRole("ADMIN", "CREATOR")
             // NewStart 운영자 화면 — ADMIN 전용. 메뉴 숨김이 아니라 서버 규칙으로 차단한다.
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
@@ -333,6 +338,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
             // NewStart 공식 업데이트 공개 피드는 PUBLISHED 자료만 서비스가 반환한다.
             .requestMatchers(HttpMethod.GET, "/api/newstart/updates", "/api/newstart/updates/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/choonggi/media/**").permitAll()  // published vlog media
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.
@@ -371,6 +377,10 @@ public class SecurityConfig {
                 .hasAnyRole("ADMIN", "EASY_COLLECTOR_AGENT")
             .requestMatchers(HttpMethod.GET,
                 "/api/admin/easy/collector-agent/next-task").hasAnyRole("ADMIN", "EASY_COLLECTOR_AGENT")
+            // CHOONGGI Creator API — scoped CREATOR role (or ADMIN) only. Must stay strictly
+            // above the generic /api/admin/** ADMIN-only catch-all (first-match-wins) so CREATOR
+            // never gains reach into NewStart/EASY/other global admin APIs through that catch-all.
+            .requestMatchers("/api/admin/choonggi/**").hasAnyRole("ADMIN", "CREATOR")
 
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")

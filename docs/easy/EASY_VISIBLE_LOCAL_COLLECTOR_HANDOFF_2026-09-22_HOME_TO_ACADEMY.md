@@ -40,7 +40,7 @@ POST /collector/tasks     ──큐잉──▶  (poll)
 `STARTING → BROWSER_OPEN → WAITING_FOR_USER_AUTH → AUTHENTICATED → COLLECTING → DOWNLOADING → COMPLETED`
 — 엄격한 순서만 허용(건너뛰기/역행 거부), `FAILED`/`CANCELLED`는 종료상태가 아닌 어느 시점에서든 가능.
 
-**핵심 엔티티/서비스** (모두 신규, V991 migration):
+**핵심 엔티티/서비스** (모두 신규, V997 migration — main의 NewStart V991과 충돌하여 V991에서 renumber):
 - `easy_local_collectors` — business ↔ collector 페어링. `token_hash`(SHA-256)만 저장, 원문 토큰은 등록 응답에 1회만 노출.
 - `easy_collector_tasks` — 위 state machine. 다운로드 metadata(filename/size/sha256)만 저장, 파일 원본 없음.
 - `EasyLocalCollectorService` / `EasyCollectorTaskService` — business isolation(관리자쪽) + collector ownership isolation(에이전트쪽, 다른 collector의 task를 건드릴 수 없음) 양쪽 다 가드.
@@ -203,7 +203,7 @@ c5b84dd0f7d8c290ec84275d44920a9228e21246
 docs/easy/EASY_VISIBLE_LOCAL_COLLECTOR_HANDOFF_2026-09-22_HOME_TO_ACADEMY.md
 
 ### 완료 작업 (V1 foundation)
-1. easy_local_collectors / easy_collector_tasks (V991, additive)
+1. easy_local_collectors / easy_collector_tasks (V997, additive — V991에서 renumber, main NewStart V991과 충돌 회피)
 2. 7단계 state machine + 격리 가드(business/collector) + 중복작업 가드 + credential-leakage 가드
 3. EasyCollectorAgentTokenFilter (ChartAgentTokenFilter narrow-route 패턴 재사용)
 4. local-collector/ — Playwright(Node.js) 기반 visible browser agent, LLM/Qoder/유료 provider 불필요

@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test;
 
 class EasyLocalCollectorMigrationTest {
   @Test
-  void v991IsAdditiveAndContainsCollectorTables() throws Exception {
-    String path = "/db/migration/V991__add_easy_local_collector.sql";
+  void v997IsAdditiveAndContainsCollectorTables() throws Exception {
+    String path = "/db/migration/V997__add_easy_local_collector.sql";
     try (var input = getClass().getResourceAsStream(path)) {
-      assertThat(input).as("V991 migration resource").isNotNull();
+      assertThat(input).as("V997 migration resource").isNotNull();
       String sql = new String(input.readAllBytes(), StandardCharsets.UTF_8);
       assertThat(sql)
           .contains("CREATE TABLE easy_local_collectors")

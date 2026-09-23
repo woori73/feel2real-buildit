@@ -15,8 +15,10 @@ public record NewStartOfficialUpdateResponse(
     LocalDateTime effectiveFrom,
     LocalDateTime effectiveTo,
     String category,
+    String relevancePriority,
     String reviewStatus,
     boolean featured,
+    LocalDateTime discoveredAt,
     String reviewedBy,
     LocalDateTime reviewedAt) {
 
@@ -33,8 +35,10 @@ public record NewStartOfficialUpdateResponse(
         update.getEffectiveFrom(),
         update.getEffectiveTo(),
         update.getCategory().name(),
+        update.getRelevancePriority().name(),
         update.getReviewStatus().name(),
         update.isFeatured(),
+        update.getDiscoveredAt(),
         update.getReviewedBy(),
         update.getReviewedAt());
   }

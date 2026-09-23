@@ -153,6 +153,7 @@ public class PasswordResetService {
       case STUDENT -> "학생";
       case TUTOR -> "강사";
       case ADMIN -> "관리자";
+      case CREATOR -> "CHOONGGI 운영자";
     };
   }
 

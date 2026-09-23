@@ -1,0 +1,53 @@
+name: Diagnose CHOONGGI role (read-only, manual, temporary)
+
+# CHOONGGI CREATOR role provisioning 전 identity 확인 전용(2026-09-23). READ ONLY다.
+# 하지 않는 것: 배포, 서비스 restart, 파일 쓰기·삭제, DB 쓰기(UPDATE/INSERT/DELETE/DDL),
+# secret·비밀번호·이메일·전화번호·기타 개인정보 출력.
+# MySQL 세션은 SET SESSION TRANSACTION READ ONLY로 시작하며 login_id='choonggi' 단일
+# row의 user_id/login_id/role만 조회한다(V1__init_schema.sql의 users 테이블 컬럼과 동일).
+# 패턴은 diagnose-naver-oauth-readonly.yml의 기존 read-only DB 조회 단계를 그대로
+# 재사용한다(같은 instance, 같은 role, 같은 READ ONLY 트랜잭션 관례). SQL은 고정 SELECT
+# 하나뿐이며 임의 입력을 받지 않는다.
+# 진단 완료 후 제거하는 임시 워크플로우다.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: choonggi identity row via SSM (READ ONLY, fixed SELECT)
+        shell: bash
+        run: |
+          cat > /tmp/choonggi-role-diag.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "mysql -h \"${DB_HOST}\" -P \"${DB_PORT}\" -u \"${DB_USER}\" -p\"${DB_PASSWORD}\" \"${DB_NAME}\" -e \"SET SESSION TRANSACTION READ ONLY; SELECT user_id, login_id, role FROM users WHERE login_id = 'choonggi';\" 2>&1 | grep -v 'Using a password' || echo \"mysql_exit=$?\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/choonggi-role-diag.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          exit 0
