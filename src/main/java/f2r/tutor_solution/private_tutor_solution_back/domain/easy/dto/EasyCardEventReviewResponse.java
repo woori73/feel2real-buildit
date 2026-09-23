@@ -3,11 +3,13 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCardEvent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingService.PendingReviewItem;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCardClassificationRecommendationService;
 import java.time.LocalDateTime;
 
 /**
  * accountId/accountName is the rule-based suggestion while PENDING_REVIEW, and the actual
  * posted account once the event has a linked transaction.
+ * recommendation is the Phase 5A.2 classification recommendation (if PENDING_REVIEW).
  */
 public record EasyCardEventReviewResponse(
     Long cardEventId,
@@ -25,10 +27,11 @@ public record EasyCardEventReviewResponse(
     String accountName,
     Long postedTxnId,
     String reviewedBy,
-    LocalDateTime reviewedAt
+    LocalDateTime reviewedAt,
+    EasyCardClassificationRecommendationResponse recommendation
 ) {
   public static EasyCardEventReviewResponse of(EasyCardEvent event, Long suggestedAccountId,
-      String suggestedAccountName) {
+      String suggestedAccountName, EasyCardClassificationRecommendationResponse recommendation) {
     EasyAccount posted = event.getPostedTxn() == null ? null : event.getPostedTxn().getAccount();
     return new EasyCardEventReviewResponse(
         event.getCardEventId(),
@@ -46,14 +49,16 @@ public record EasyCardEventReviewResponse(
         posted != null ? posted.getName() : suggestedAccountName,
         event.getPostedTxn() == null ? null : event.getPostedTxn().getTxnId(),
         event.getReviewedBy(),
-        event.getReviewedAt());
+        event.getReviewedAt(),
+        recommendation);
   }
 
-  public static EasyCardEventReviewResponse from(PendingReviewItem item) {
-    return of(item.event(), item.suggestedAccountId(), item.suggestedAccountName());
+  public static EasyCardEventReviewResponse from(PendingReviewItem item,
+      EasyCardClassificationRecommendationResponse recommendation) {
+    return of(item.event(), item.suggestedAccountId(), item.suggestedAccountName(), recommendation);
   }
 
   public static EasyCardEventReviewResponse from(EasyCardEvent event) {
-    return of(event, null, null);
+    return of(event, null, null, null);
   }
 }
