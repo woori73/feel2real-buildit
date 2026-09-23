@@ -26,7 +26,7 @@ class ChoonggiCreatorContractTest {
     post.unpublish();assertThat(post.getStatus()).isEqualTo(ChoonggiPost.Status.DRAFT);assertThat(post.getPublishedAt()).isNull();
   }
   @Test void migrationStoresMetadataNotBinary() throws Exception {
-    try(var in=getClass().getResourceAsStream("/db/migration/V991__add_choonggi_creator.sql")){
+    try(var in=getClass().getResourceAsStream("/db/migration/V992__add_choonggi_creator.sql")){
       assertThat(in).isNotNull();String sql=new String(in.readAllBytes(),StandardCharsets.UTF_8).toLowerCase();
       assertThat(sql).contains("choonggi_posts","choonggi_media","storage_key","size_bytes","deleted_at");
       assertThat(sql).doesNotContain(" longblob"," mediumblob"," blob ");
