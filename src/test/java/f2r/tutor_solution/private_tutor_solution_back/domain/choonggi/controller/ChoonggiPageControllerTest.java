@@ -29,6 +29,14 @@ class ChoonggiPageControllerTest {
     for (String path : new String[]{"/choonggi","/choonggi/vlog","/choonggi/gamer","/choonggi/india","/choonggi/about","/choonggi/vlog/match-day"})
       mockMvc.perform(get(path)).andExpect(status().isOk()).andExpect(view().name("choonggi/page"));
   }
+
+  @Test void journeyPageRendersAndNeverExposesFlightNumberOrExactTimes() throws Exception {
+    String body = mockMvc.perform(get("/choonggi/journey")).andExpect(status().isOk())
+        .andExpect(view().name("choonggi/journey"))
+        .andReturn().getResponse().getContentAsString();
+    for (String forbidden : new String[]{"VJ961","VJ907","VietJet","11:05","13:35","20:05","23:40"})
+      assertThat(body).as("public journey page must not expose: " + forbidden).doesNotContain(forbidden);
+  }
   @Test void unknownEpisodeIs404() throws Exception { mockMvc.perform(get("/choonggi/vlog/fake")).andExpect(status().isNotFound()); }
   @Test void matchStatusNeverInventsResult() {
     assertThat(ChoonggiPageController.matchStatus(LocalDate.of(2026,9,29))).isEqualTo("UPCOMING");

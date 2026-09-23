@@ -19,6 +19,7 @@
     <section class="why-india"><p class="eyebrow">SEP 30 · 2026</p><h2>인도에서 열리는<br>대회에 참가합니다.</h2></section>
     <section class="journey"><p class="eyebrow">SEP 25 · 2026</p><div class="route"><span>INCHEON</span><i>→</i><span>HANOI</span><i>→</i><span>INDIA</span></div></section>
     <section class="match"><div class="match-grid"><div class="date"><span>SEP</span><strong>30</strong><span>2026</span></div><div><b class="status" th:text="${matchStatus}">UPCOMING</b><h2>TOURNAMENT</h2></div></div></section>
+    <section class="split"><div><p class="eyebrow">INDIA JOURNEY</p><h2>AIRPORT<br>GUIDE</h2></div><div><p>인천 → 하노이 → 뭄바이 여정과 공항 기본 정보.</p><a href="/choonggi/journey">여정 가이드 보기 →</a></div></section>
     <section class="log"><p class="eyebrow">충기의 기록</p><div class="log-feed">
       <article class="log-entry" th:each="post:${publishedPosts}">
         <div class="log-yt" th:if="${post.youtubeVideoId!=null}"><iframe th:src="@{'https://www.youtube-nocookie.com/embed/'+${post.youtubeVideoId}}" loading="lazy" allowfullscreen="allowfullscreen" title="CHOONGGI YouTube 영상" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>

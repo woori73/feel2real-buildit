@@ -14,6 +14,12 @@ public class ChoonggiCreatorController {
   @GetMapping({"/choonggi/admin","/choonggi/admin/posts"}) String list(Model model,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){model.addAttribute("posts",service.adminList(principal.loginId(),principal.role()).stream().map(PostView::of).toList());return "choonggi/admin";}
   @GetMapping("/choonggi/admin/posts/new") String create(Model model){model.addAttribute("post",null);return "choonggi/editor";}
   @GetMapping("/choonggi/admin/posts/{id}/edit") String edit(@PathVariable Long id,Model model,@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal){model.addAttribute("post",PostView.of(service.requireOwned(id,principal.loginId(),principal.role())));return "choonggi/editor";}
+  // Private, Creator/ADMIN-only detailed travel reference -- exact flight numbers/times are not
+  // published on the public /choonggi/journey page (real near-future travel by a named,
+  // identifiable person -- publishing the exact flight+time publicly before departure is a
+  // real-world safety disclosure, not just a style choice). Reuses the existing /choonggi/admin/**
+  // ADMIN-or-CREATOR SecurityConfig matcher -- no new security rule needed.
+  @GetMapping("/choonggi/admin/journey") String journeyDetail(){return "choonggi/journey-private";}
   @GetMapping("/choonggi/admin/posts/{id}/preview") String preview(@PathVariable Long id,Model model,jakarta.servlet.http.HttpServletResponse response){var post=service.require(id);response.setHeader(HttpHeaders.CACHE_CONTROL,"private, no-store");model.addAttribute("page","post");model.addAttribute("pageTitle",post.getTitle()+" — PREVIEW");model.addAttribute("description","CHOONGGI draft preview");model.addAttribute("canonical","https://feel2real.co.kr/choonggi/vlog/"+post.getSlug());model.addAttribute("post",post);return "choonggi/page";}
 
   @RestController @RequestMapping("/api/admin/choonggi") @RequiredArgsConstructor
