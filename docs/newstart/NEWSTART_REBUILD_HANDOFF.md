@@ -19,13 +19,21 @@ Phase 1–3 complete: repository audit, recovery audit, and safe-integration pla
 
 ## Final Phase 4–7 Status
 
-- Final head pending final documentation commit.
+- Final implementation CI: Build Check `35831184023` succeeded for `eb1284d8` before this handoff-finalization commit.
 - FSS: recovered selectively; GitHub Build Check `35830100541` succeeded for `62336db6`. Local Gradle remains blocked by the loopback environment.
 - Credit4U, application preparation, result/status, and court guides: implemented as public, non-authenticating guide routes with direct official handoffs and no credential collection.
 - A-to-Z: implemented at `/newstart/a-to-z`; its contextual links reuse the same helper routes as the home cards.
 - Home: rebuilt around the mandated hero, debt-situation entry, five practical tools, A-to-Z, chat, and preserved latest updates.
 - Official fact audit: `NEWSTART_ATOZ_2025_TO_2026_UPDATE_AUDIT.md` added; no unsupported UI numbers or court deadline calculations were added.
 - Untouched: internal-detail worktree and canonical-RAG runtime branch.
+
+## QA Summary
+
+- Route and link contract: static review confirms home and A-to-Z use the same FSS, Credit4U, application, status, and court helper routes.
+- Official handoffs: FSS, Credit4U, NewStart Fund application/result, and ECFS links point to the specified official domains.
+- Court safety: the client-side note builder only interpolates user-entered text and adds no deadline calculation or legal conclusion.
+- Credit4U privacy: no input or API exists on the guide page.
+- Visual QA: CSS uses responsive single-column mobile cards and bounded page widths; interactive browser rendering remains a follow-up because local Gradle cannot establish a loopback listener in this environment.
 
 ## Current Main Map
 
