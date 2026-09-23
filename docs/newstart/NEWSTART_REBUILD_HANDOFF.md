@@ -146,7 +146,19 @@ The five quick actions must link to the same focused helpers that A-to-Z items l
 
 ## Implemented
 
-No product feature changes. This branch contains only the recovery/audit handoff document.
+### FSS helper recovery checkpoint
+
+- Selectively restored the FSS-specific production, resource, template, documentation, and test files from `origin/feat/newstart-fss-complaint-helper-v1`.
+- Deliberately excluded that branch's legacy `templates/newstart/index.html`; the later home rebuild remains responsible for the new quick-action entry.
+- Recovered route: `/newstart/fss-helper`.
+- Recovered APIs: `GET /api/newstart/fss/companion`, `POST /api/newstart/fss/compose`.
+- Recovered protections: user-fact-only draft prompt, confirmation markers for missing facts, no complaint persistence, no complaint-body logging, no automatic submission, and official FSS handoff.
+
+### FSS test gate
+
+- Attempted the two recovered tests three times: normal Gradle daemon, `--no-daemon`, and `--no-daemon` with empty `org.gradle.jvmargs`.
+- Every attempt stopped before compilation/test discovery with `java.io.IOException: Unable to establish loopback connection`.
+- This is an environment/Gradle startup blocker, not a failing FSS test assertion. FSS test gate remains **not passed** until the local loopback issue is resolved and the recovered tests execute.
 
 ## Not Implemented
 
@@ -169,10 +181,11 @@ Not yet audited in this branch. Use the prescribed source priority and record ea
 ## Known Issues
 
 - The main tree does not currently contain the FSS helper files found in the dedicated FSS branch. Reuse/integration must be assessed before implementation; do not rewrite the helper from scratch.
+- Gradle cannot start in this environment because it cannot establish its required loopback connection. This blocks the mandatory FSS test gate and therefore blocks Phase 5–7 implementation under the approved instructions.
 
 ## Next Exact Step
 
-Commit this Phase 1–3 audit document. Then recover the FSS helper as the first product feature, using the selective-file method above and its tests before starting the A-to-Z/home implementation phase.
+Resolve the Gradle loopback startup issue, rerun `NewStartFssComplaintControllerTest` and `FssComplaintHelperServiceTest`, then commit the FSS recovery checkpoint. Only after the FSS test gate passes may Phase 5–7 implementation begin.
 
 ## Remaining Phases
 
