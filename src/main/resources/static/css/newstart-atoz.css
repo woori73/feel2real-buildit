@@ -1,0 +1,112 @@
+/* NewStart A to Z — 2026-09-24 현행 검증본 기반 전체 여정 STEP UI */
+.az-page { --az-blue: #2563eb; --az-blue-soft: #eef3ff; --az-ink: #111827; --az-muted: #5b6472; --az-line: #e5e7eb; }
+
+.az-hero { margin-top: 24px; }
+.az-hero h1 { font-size: clamp(30px, 8vw, 44px); letter-spacing: -.05em; margin: 6px 0 10px; color: var(--az-ink); }
+.az-hero-copy { color: var(--az-muted); line-height: 1.7; font-size: 15px; }
+
+/* 태그 범례 */
+.az-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; padding: 14px; border: 1px solid var(--az-line); border-radius: 14px; background: #fff; }
+.az-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--az-muted); }
+
+/* 출처 태그 */
+.az-tag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; vertical-align: middle; }
+.az-tag-official { background: #e8f0fe; color: #1a56c4; }
+.az-tag-operator { background: #fdf3e3; color: #8a5a12; }
+.az-tag-member { background: #f3e8fd; color: #7a2bc4; }
+.az-tag-recheck { background: #fdecec; color: #b3261e; }
+
+/* 전체 여정 내비 */
+.az-journey { margin-top: 22px; padding: 18px 16px; border: 1.5px solid var(--az-blue); border-radius: 18px; background: var(--az-blue-soft); }
+.az-journey-title { font-size: 17px; font-weight: 800; margin: 0 0 4px; color: var(--az-ink); }
+.az-journey-sub { font-size: 13px; color: var(--az-muted); margin: 0 0 12px; }
+.az-journey-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: az-step; }
+.az-journey-list a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 12px; background: #fff; border: 1px solid var(--az-line); border-radius: 12px; text-decoration: none; color: var(--az-ink); font-weight: 700; font-size: 14.5px; }
+.az-journey-list a:hover { border-color: var(--az-blue); }
+.az-journey-num { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--az-blue); color: #fff; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.az-journey-arrow { display: none; }
+
+/* STEP 카드 */
+.az-step { margin-top: 26px; padding: 22px 18px 24px; border: 1px solid var(--az-line); border-radius: 20px; background: #fff; scroll-margin-top: 16px; }
+.az-step-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.az-step-num { font-size: 13px; font-weight: 900; color: var(--az-blue); letter-spacing: .08em; }
+.az-step h2 { font-size: clamp(22px, 6vw, 30px); letter-spacing: -.04em; margin: 0; color: var(--az-ink); }
+.az-who { display: inline-block; margin: 8px 0 12px; padding: 8px 12px; border-left: 4px solid var(--az-blue); background: var(--az-blue-soft); border-radius: 0 10px 10px 0; font-size: 13.5px; font-weight: 700; color: #1a56c4; }
+.az-core { font-size: 15.5px; line-height: 1.75; color: var(--az-ink); }
+.az-h3 { font-size: 16.5px; font-weight: 800; color: var(--az-ink); margin: 20px 0 6px; letter-spacing: -.02em; }
+
+/* 확인/준비/주의 블록 */
+.az-block { margin-top: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--az-line); }
+.az-block-title { font-size: 13.5px; font-weight: 900; margin: 0 0 8px; color: var(--az-ink); }
+.az-block ul { margin: 0; padding-left: 20px; display: grid; gap: 7px; }
+.az-block li { font-size: 14px; line-height: 1.65; color: #374151; }
+.az-block-check { background: #f4f8ff; border-color: #d7e4fb; }
+.az-block-check .az-block-title { color: #1a56c4; }
+.az-block-prepare { background: #f3faf4; border-color: #d3ecd8; }
+.az-block-prepare .az-block-title { color: #1e7a34; }
+.az-block-caution { background: #fff6e8; border-color: #f2dfb6; }
+.az-block-caution .az-block-title { color: #8a5a12; }
+
+/* 경험·사례·재확인 본문 */
+.az-source { margin-top: 14px; padding: 14px; border-radius: 14px; border: 1px solid var(--az-line); background: #fbfcfe; }
+.az-source p, .az-source li { font-size: 14px; line-height: 1.7; color: #374151; margin: 6px 0; }
+.az-source ul, .az-source ol { margin: 6px 0; padding-left: 20px; display: grid; gap: 7px; }
+.az-source-official { border-left: 4px solid #1a56c4; }
+.az-source-operator { border-left: 4px solid #b7791f; background: #fffaf0; }
+.az-source-member { border-left: 4px solid #7a2bc4; background: #faf6ff; }
+.az-source-recheck { border-left: 4px solid #b3261e; background: #fff8f7; }
+.az-quote { margin: 10px 0 0; padding: 12px 14px; border-left: 3px solid #d0d5dd; background: #fff; color: #4b5563; font-size: 13.5px; line-height: 1.7; border-radius: 0 10px 10px 0; }
+.az-quote-title { font-weight: 800; color: var(--az-ink); margin: 0 0 4px; font-size: 13.5px; }
+
+/* 회원 사례 타임라인 */
+.az-timeline { list-style: none; margin: 10px 0 0; padding: 0; }
+.az-timeline li { position: relative; padding: 0 0 14px 26px; border-left: 2px solid #e4d5f7; margin-left: 8px; }
+.az-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.az-timeline li::before { content: ""; position: absolute; left: -7px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #7a2bc4; }
+.az-timeline-date { font-weight: 900; color: #7a2bc4; font-size: 13.5px; margin-right: 6px; }
+.az-timeline-text { font-size: 14px; color: #374151; }
+
+/* CTA */
+.az-cta-row { display: grid; gap: 10px; margin-top: 18px; }
+.az-cta { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px; padding: 14px 18px; border-radius: 14px; font-size: 15.5px; font-weight: 800; text-decoration: none; text-align: center; letter-spacing: -.01em; }
+.az-cta-official { background: var(--az-blue); color: #fff; border: 1px solid var(--az-blue); }
+.az-cta-official:hover { background: #1d4ed8; color: #fff; }
+.az-cta-video { background: #111827; color: #fff; border: 1px solid #111827; }
+.az-cta-video:hover { background: #1f2937; color: #fff; }
+.az-cta-internal { background: #fff; color: var(--az-blue); border: 1.5px solid var(--az-blue); }
+.az-cta-internal:hover { background: var(--az-blue-soft); color: #1a56c4; }
+.az-phone { margin-top: 10px; font-size: 13.5px; color: var(--az-muted); }
+.az-phone strong { color: var(--az-ink); }
+
+/* 다음 단계 */
+.az-next { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--az-line); flex-wrap: wrap; }
+.az-next a { font-size: 14px; font-weight: 800; color: var(--az-blue); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.az-next a:hover { text-decoration: underline; }
+
+/* 영상 단계 */
+.az-video-steps { counter-reset: azv; list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.az-video-steps li { counter-increment: azv; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.6; color: #374151; }
+.az-video-steps li::before { content: counter(azv); flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #111827; color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+
+/* 흐름 화살표 리스트 */
+.az-flow { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.az-flow li { background: #f4f8ff; border: 1px solid #d7e4fb; border-radius: 10px; padding: 9px 12px; font-size: 13.5px; font-weight: 700; color: #1a56c4; }
+
+/* 참고 섹션 */
+.az-ref { margin-top: 26px; padding: 22px 18px; border: 1px solid var(--az-line); border-radius: 20px; background: #fff; }
+.az-ref h2 { font-size: 21px; margin: 0 0 10px; letter-spacing: -.03em; }
+.az-ref ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.az-ref li { font-size: 13.5px; line-height: 1.6; }
+.az-ref a { color: var(--az-blue); word-break: break-all; }
+.az-ref details { margin-top: 14px; }
+.az-ref summary { cursor: pointer; font-weight: 800; font-size: 14.5px; color: #b3261e; padding: 6px 0; }
+.az-back-top { display: inline-flex; align-items: center; min-height: 44px; margin-top: 14px; font-weight: 800; color: var(--az-blue); text-decoration: none; }
+
+@media (min-width: 600px) {
+  .az-journey-list { grid-template-columns: 1fr 1fr; }
+  .az-cta-row { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
+@media (min-width: 760px) {
+  .az-step { padding: 30px 28px 32px; }
+  .az-journey-list { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
