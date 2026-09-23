@@ -101,11 +101,17 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
   }
 
   protected static String resolveUrl(String baseUrl, String relativeUrl) {
-    if (relativeUrl.startsWith("http")) return relativeUrl;
+    if (relativeUrl == null || relativeUrl.isBlank()) return relativeUrl;
+    String href = relativeUrl.trim();
+    String lower = href.toLowerCase(Locale.ROOT);
+    if (lower.startsWith("http://") || lower.startsWith("https://")) {
+      return href;
+    }
     try {
-      return new URI(baseUrl).resolve(relativeUrl).toString();
+      // 상대 href 와 protocol-relative(//host/path) 는 URI.resolve 가 base 의 scheme/path 기준으로 해결한다.
+      return new URI(baseUrl).resolve(href).toString();
     } catch (Exception e) {
-      return relativeUrl;
+      return href;
     }
   }
 
@@ -172,9 +178,17 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
         + (candidate.publishedAt() == null ? "NO_DATE" : candidate.publishedAt().toLocalDate());
   }
 
+  /** Service.normalizeUrl 과 반드시 동일하게 동작해야 한다(dedup key 정합성). */
+  private static final Pattern DOUBLE_DOMAIN_URL =
+      Pattern.compile("(?i)^https?://[^/]+/(https?://.+)$");
+
   protected String normalizeUrl(String rawUrl) {
     String value = normalize(rawUrl);
     if (value == null) return null;
+    Matcher doubleDomain = DOUBLE_DOMAIN_URL.matcher(value);
+    if (doubleDomain.matches()) {
+      return normalizeUrl(doubleDomain.group(1));
+    }
     try {
       URI uri = new URI(value);
       String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
@@ -185,8 +199,9 @@ public abstract class AbstractOfficialUpdateDiscoveryAdapter implements Official
         return null;
       }
       String path = uri.getPath() == null ? "" : uri.getPath().replaceAll("/+$", "");
-      String query = uri.getQuery() == null ? "" : "?" + uri.getQuery();
-      return scheme + "://" + uri.getHost().toLowerCase(Locale.ROOT) + path + query;
+      String query = uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery();
+      String fragment = uri.getRawFragment() == null ? "" : "#" + uri.getRawFragment();
+      return scheme + "://" + uri.getHost().toLowerCase(Locale.ROOT) + path + query + fragment;
     } catch (URISyntaxException e) {
       return null;
     }

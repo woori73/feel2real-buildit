@@ -49,7 +49,8 @@ public class NewStartFundFaqDiscoveryAdapter extends AbstractOfficialUpdateDisco
       for (int pageIndex = 1; pageIndex <= MAX_PAGES_PER_CATEGORY; pageIndex++) {
         String url = String.format(FAQ_LIST_URL, pageIndex, category);
         String html = fetchHtmlRequired(url, 3);
-        List<DiscoveredCandidate> page = parseFaqPage(html, "https://www.newstartfund.or.kr/" + url);
+        // url 은 이미 절대 URL — base 를 다시 붙이면 도메인이 중복된다 (Production QA #1 결함).
+        List<DiscoveredCandidate> page = parseFaqPage(html, url);
         if (page.isEmpty()) {
           break;
         }
