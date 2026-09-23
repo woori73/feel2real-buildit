@@ -46,6 +46,13 @@ public class ChoonggiPageController {
     return "choonggi/page";
   }
 
+  @GetMapping("/choonggi/journey")
+  public String journey(Model model, HttpServletResponse response) {
+    page(model, response, "journey", "INDIA JOURNEY — CHOONGGI");
+    model.addAttribute("description", "CHOONGGI's Korea to India travel route and airport basics.");
+    return "choonggi/journey";
+  }
+
   @GetMapping("/choonggi/{section:vlog|gamer|india|about}")
   public String section(@PathVariable String section, Model model, HttpServletResponse response) {
     page(model, response, section, section.toUpperCase() + " — CHOONGGI");
