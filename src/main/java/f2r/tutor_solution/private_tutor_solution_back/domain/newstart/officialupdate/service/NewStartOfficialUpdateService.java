@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateDetailResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto.NewStartOfficialUpdateResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
@@ -17,6 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +50,7 @@ public class NewStartOfficialUpdateService {
 
     NewStartOfficialUpdate saved = repository.save(NewStartOfficialUpdate.review(
         request.sourceType(), requireText(request.sourceName(), "출처명"), title,
-        requireText(request.summary(), "요약"), url, documentId, request.publishedAt(),
+        requireText(request.summary(), "요약"), sanitizeContent(request.content()), url, documentId, request.publishedAt(),
         request.effectiveFrom(), request.effectiveTo(), request.category(), relevancePriority, dedupKey, discoveredAt));
     return NewStartOfficialUpdateResponse.from(saved);
   }
@@ -77,6 +80,19 @@ public class NewStartOfficialUpdateService {
   @Transactional(readOnly = true)
   public List<NewStartOfficialUpdateResponse> latestPublished(int limit) {
     return publicUpdates(null).stream().limit(limit).toList();
+  }
+
+  /**
+   * NewStart 내부 상세보기용. 게시(PUBLISHED)된 항목만 반환하며, 본문은 저장된 공식 원문만 사용한다.
+   * sourceUrl 검증 실패와 무관하게 내용은 항상 열람 가능하다(linkOnly 검증 실패 시 보조 링크만 숨김).
+   */
+  @Transactional(readOnly = true)
+  public NewStartOfficialUpdateDetailResponse publicUpdateDetail(Long updateId) {
+    NewStartOfficialUpdate update = repository.findById(updateId)
+        .filter(u -> u.getReviewStatus() == ReviewStatus.PUBLISHED)
+        .orElseThrow(() -> new IllegalArgumentException("게시된 공식 업데이트를 찾을 수 없습니다."));
+    String verifiedUrl = OfficialSourceLinkPolicy.verifiedUrl(update.getSourceType(), update.getOriginalUrl());
+    return NewStartOfficialUpdateDetailResponse.from(update, verifiedUrl);
   }
 
   @Transactional(readOnly = true)
@@ -177,6 +193,20 @@ public class NewStartOfficialUpdateService {
 
   static String normalizeTitle(String title) {
     return requireText(title, "제목").replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+  }
+
+  /** 저장된 TEXT 컬럼 상한(65,535 bytes) 대비 안전한 문자 상한. 공식 원문 본문은 백분율 생략 없이 앞 부분만 보존한다. */
+  static final int CONTENT_MAX_CHARS = 60_000;
+
+  /**
+   * 공식 출처에서 수집된 원문(detailHtml) 저장 전 XSS 방어용 화이트리스트 클리닝.
+   * 본문 "내용"은 수정하지 않는다 — 태그만 정제하고 텍스트는 그대로 둔다.
+   */
+  static String sanitizeContent(String detailHtml) {
+    String value = normalize(detailHtml);
+    if (value == null) return null;
+    String cleaned = Jsoup.clean(value, Safelist.relaxed());
+    return cleaned.length() > CONTENT_MAX_CHARS ? cleaned.substring(0, CONTENT_MAX_CHARS) : cleaned;
   }
 
   private static String normalize(String value) {

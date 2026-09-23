@@ -260,7 +260,7 @@ public class SecurityConfig {
                 "/admin/wiki-analysis",
                 "/chart",
                 "/chart/educators/**",
-                "/newstart", "/newstart/updates",
+                "/newstart", "/newstart/updates", "/newstart/updates/*",
                 "/lessons",
                 "/stdt_dashboard",
                 "/tutor_dashboard",

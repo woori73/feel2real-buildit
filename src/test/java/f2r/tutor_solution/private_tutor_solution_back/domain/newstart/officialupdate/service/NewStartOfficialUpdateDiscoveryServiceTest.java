@@ -181,7 +181,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     // 첫 등록 후 같은 문서(답변 개정으로 내용만 변경, dedupKey 동일)를 다시 발견된 경우
     when(updateRepository.findByDedupKey("DOC:NEWSTART_FUND:NSF-FAQ-30"))
         .thenReturn(Optional.of(f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate
-            .review(SourceType.NEWSTART_FUND, "새출발기금 공식 FAQ", "제도 안내", "기존 답변",
+            .review(SourceType.NEWSTART_FUND, "새출발기금 공식 FAQ", "제도 안내", "기존 답변", null,
                 "https://official.example/NSF-FAQ-30", "NSF-FAQ-30", null, null, null,
                 Category.ELIGIBILITY, RelevancePriority.NORMAL, "DOC:NEWSTART_FUND:NSF-FAQ-30", null)));
 
@@ -202,7 +202,7 @@ class NewStartOfficialUpdateDiscoveryServiceTest {
     when(updateRepository.findByDedupKey(anyString())).thenAnswer(inv ->
         store.contains(inv.getArgument(0)) ? Optional.of(
             f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate
-                .review(SourceType.NEWSTART_FUND, "새출발기금", "t", "s",
+                .review(SourceType.NEWSTART_FUND, "새출발기금", "t", "s", null,
                     "https://official.example/NSF-B-56", "NSF-B-56", null, null, null,
                     Category.NOTICE, RelevancePriority.NORMAL, inv.getArgument(0), null))
             : Optional.empty());

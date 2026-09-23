@@ -11,14 +11,15 @@
   fragment를 복제하면 사업자 정보가 화면마다 어긋난다.
 -->
 <th:block th:fragment="publicFooter">
-  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(false)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(false, false)}"></th:block>
 </th:block>
 
 <th:block th:fragment="publicFooterBuildIt">
-  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, false)}"></th:block>
 </th:block>
 
-<th:block th:fragment="publicFooterBranded(buildIt)">
+<!-- hideAddress: 화면 표기만 숨긴다(NewStart). 사업자 정보 데이터 자체는 어떤 경로에서도 삭제하지 않는다. -->
+<th:block th:fragment="publicFooterBranded(buildIt, hideAddress)">
   <footer class="public-footer">
     <div class="footer-top">
       <div class="footer-brand">
@@ -47,7 +48,7 @@
       <div class="footer-biz-row">
         <span class="footer-biz-item">상호명: 압구정에듀홀릭출판사</span>
         <span class="footer-biz-item">대표: 박정민</span>
-        <span class="footer-biz-item">주소: 서울특별시 송파구 중대로10길 37-25, 4층(가락동)</span>
+        <span class="footer-biz-item" th:unless="${hideAddress}">주소: 서울특별시 송파구 중대로10길 37-25, 4층(가락동)</span>
       </div>
       <div class="footer-biz-row">
         <span class="footer-biz-item">사업자등록번호: 146-99-01347</span>
