@@ -34,6 +34,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import org.springframework.security.web.util.matcher.AndRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -155,6 +156,21 @@ public class SecurityConfig {
                 (request, response, ex) -> response.sendRedirect("/?login=required"),
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/problem-generator/**"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // CHOONGGI Creator SSR(/choonggi/admin/**)도 익명 브라우저 요청에 raw 401을 주지 않는다 —
+            // Wiki와 동일한 returnUrl 패턴(landing_buildit.js가 처리, /api/admin/choonggi/** JSON API는
+            // TEXT_HTML이 아니므로 영향 없음 — 그대로 401).
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> {
+                  String target = request.getRequestURI();
+                  if (request.getQueryString() != null) target += "?" + request.getQueryString();
+                  response.sendRedirect("/?login=required&returnUrl="
+                      + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
+                },
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(

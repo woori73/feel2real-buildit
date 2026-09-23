@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
@@ -111,11 +112,20 @@ class ChoonggiCreatorRoleAuthorizationMatrixTest {
     }
   }
 
-  // ── anonymous: everything admin-shaped is 401 ──────────────────────────────
+  // ── anonymous: CHOONGGI admin PAGE is a login-entry redirect (not a raw 401 error
+  // page -- a real user hitting /choonggi/admin cold should land on the login modal, not
+  // an unexplained browser error); every admin-shaped API stays a plain 401 -────────────
   @Test
-  @DisplayName("anonymous -> 401 on CHOONGGI admin, NewStart admin, EASY admin")
+  @DisplayName("anonymous -> login-entry redirect on CHOONGGI admin page")
+  void anonymousChoonggiAdminPageRedirectsToLogin() throws Exception {
+    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fchoonggi%2Fadmin"));
+  }
+
+  @Test
+  @DisplayName("anonymous -> 401 on CHOONGGI admin API, NewStart admin, EASY admin")
   void anonymousUnauthorized() throws Exception {
-    mockMvc.perform(get(CHOONGGI_ADMIN_PAGE)).andExpect(status().isUnauthorized());
     mockMvc.perform(get(CHOONGGI_ADMIN_API)).andExpect(status().isUnauthorized());
     mockMvc.perform(get(NEWSTART_ADMIN_API)).andExpect(status().isUnauthorized());
     mockMvc.perform(get(EASY_ADMIN_API)).andExpect(status().isUnauthorized());
