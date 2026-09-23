@@ -177,7 +177,7 @@ class FssComplaintHelperServiceTest {
     }
 
     @Test
-    @DisplayName("K/P/Q: 템플릿 — textContent 전용(K), 공식 fss.or.kr 링크+noopener(P), 자동 제출 없음(Q)")
+    @DisplayName("K/P/Q/R: 템플릿 — textContent 전용(K), 공식 fss.or.kr 링크+noopener(P), 자동 제출 없음(Q), AI 전송 고지(R)")
     void templateRendersOnlyViaTextContent() throws Exception {
         String html = new String(
             getClass().getResourceAsStream("/templates/newstart/fss-helper.html").readAllBytes(),
@@ -192,6 +192,12 @@ class FssComplaintHelperServiceTest {
         assertThat(html).doesNotContain("<form");
         assertThat(html).doesNotContain(".submit(");
         assertThat(html).doesNotContain("DOMContentLoaded");
+        // R: 프라이버시 고지 — AI 처리 시스템 전송을 숨기지 않고 밝히고, DB 미저장만 강조한다.
+        //    "서버로 전송되지 않는다"는 식의 거짓 주장(전송 은폐)을 금지한다.
+        assertThat(html).contains("AI 처리 시스템으로 전송");
+        assertThat(html).contains("NewStart DB에는 저장하지 않습니다");
+        assertThat(html).doesNotContain("서버로 전송되지");
+        assertThat(html).doesNotContain("브라우저를 떠나지");
     }
 
     private ComplaintSample sample(String id) {
