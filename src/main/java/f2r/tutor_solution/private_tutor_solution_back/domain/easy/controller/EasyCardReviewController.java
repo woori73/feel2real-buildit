@@ -42,15 +42,6 @@ public class EasyCardReviewController {
         .toList());
   }
 
-  @GetMapping("/{eventId}/recommendation")
-  public ResponseEntity<EasyCardClassificationRecommendationResponse> getRecommendation(
-      @PathVariable Long eventId, @RequestParam Long businessId) {
-    // This would require a method to get recommendation for a single event
-    // For now, we rely on the listPendingReview which includes recommendation
-    // A dedicated endpoint can be added if needed
-    return ResponseEntity.ok().build();
-  }
-
   @PostMapping("/{eventId}/approve")
   public ResponseEntity<EasyCardEventReviewResponse> approve(
       @PathVariable Long eventId, @RequestBody EasyCardEventApproveRequest request) {

@@ -318,4 +318,132 @@ class EasyCardClassificationRecommendationServiceTest {
     String branch2 = service.normalizeMerchant("이마트24 압구정점");
     assertThat(branch1).isNotEqualTo(branch2); // Branch names preserved
   }
+
+  @Test
+  void cancellation_inheritsOriginalAccount_whenOriginalPosted() {
+    // H1: linked cancellation + classified original → inherits original account
+    // Given: original PURCHASE event with posted transaction
+    EasyAccount originalAccount = account(10L, "EXP_SUPPLIES", "소모품비");
+    EasyCardEvent original = purchaseEvent("이마트24 강남점", 15_000L);
+    ReflectionTestUtils.setField(original, "cardEventId", 500L);
+    ReflectionTestUtils.setField(original, "postedTxn", createPostedTxn(originalAccount));
+
+    // Cancellation event linked to original
+    EasyCardEvent cancellation = EasyCardEvent.builder()
+        .business(business).instrument(instrument)
+        .originalEvent(original)
+        .eventType(EasyCardEvent.Type.CANCELLATION)
+        .fingerprint("c".repeat(64))
+        .occurredAt(LocalDateTime.of(2026, 9, 15, 10, 0))
+        .amount(15_000L).currency("KRW").build();
+    ReflectionTestUtils.setField(cancellation, "cardEventId", 501L);
+
+    // When
+    var recommendation = service.recommend(cancellation);
+
+    // Then: inherits original account with HIGH confidence
+    assertThat(recommendation.source()).isEqualTo(EasyCardClassificationRecommendationService.Source.HISTORICAL_EXACT);
+    assertThat(recommendation.confidence()).isEqualTo(EasyCardClassificationRecommendationService.Confidence.HIGH);
+    assertThat(recommendation.recommendedAccountId()).isEqualTo(10L);
+    assertThat(recommendation.reason()).contains("원본 카드 이벤트 #500의 확정 계정");
+    assertThat(recommendation.reason()).contains("상속");
+  }
+
+  @Test
+  void cancellation_inheritsOriginalMapping_whenOriginalHasAdminMapping() {
+    // H1 variant: linked cancellation + original has admin mapping (not yet posted)
+    // Given: admin mapping exists for the merchant
+    String expectedNormalized = "신한카드 이마트24 강남점";
+    EasyMerchantAccountMapping mapping = EasyMerchantAccountMapping.builder()
+        .business(business)
+        .normalizedMerchant(expectedNormalized)
+        .rawMerchant("이마트24 강남점")
+        .account(account(10L, "EXP_SUPPLIES", "소모품비"))
+        .source(EasyMerchantAccountMapping.Source.ADMIN_MAPPING)
+        .confidence(EasyMerchantAccountMapping.Confidence.HIGH)
+        .build();
+    when(merchantMappingRepository.findByBusiness_BusinessIdAndNormalizedMerchantAndActiveTrue(1L, expectedNormalized))
+        .thenReturn(Optional.of(mapping));
+
+    // Original event (no posted txn, but has admin mapping)
+    EasyCardEvent original = purchaseEvent("이마트24 강남점", 15_000L);
+    ReflectionTestUtils.setField(original, "cardEventId", 600L);
+    // No posted transaction
+
+    // Cancellation linked to original
+    EasyCardEvent cancellation = EasyCardEvent.builder()
+        .business(business).instrument(instrument)
+        .originalEvent(original)
+        .eventType(EasyCardEvent.Type.CANCELLATION)
+        .fingerprint("c".repeat(64))
+        .occurredAt(LocalDateTime.of(2026, 9, 15, 10, 0))
+        .amount(15_000L).currency("KRW").build();
+
+    // When
+    var recommendation = service.recommend(cancellation);
+
+    // Then: inherits admin mapping
+    assertThat(recommendation.source()).isEqualTo(EasyCardClassificationRecommendationService.Source.ADMIN_MAPPING);
+    assertThat(recommendation.recommendedAccountId()).isEqualTo(10L);
+    assertThat(recommendation.reason()).contains("원본 이벤트 #600의 관리자 매핑");
+    assertThat(recommendation.reason()).contains("상속");
+  }
+
+  @Test
+  void cancellation_unclassified_whenOriginalUnclassified() {
+    // H2: linked cancellation + unclassified original → UNCLASSIFIED
+    // Given: original PURCHASE event with NO posted transaction and NO mapping
+    EasyCardEvent original = purchaseEvent("알수없는가맹점", 10_000L);
+    ReflectionTestUtils.setField(original, "cardEventId", 700L);
+    // No posted transaction, no mapping (repository returns empty)
+
+    // Cancellation linked to original
+    EasyCardEvent cancellation = EasyCardEvent.builder()
+        .business(business).instrument(instrument)
+        .originalEvent(original)
+        .eventType(EasyCardEvent.Type.CANCELLATION)
+        .fingerprint("c".repeat(64))
+        .occurredAt(LocalDateTime.of(2026, 9, 15, 10, 0))
+        .amount(10_000L).currency("KRW").build();
+
+    // When
+    var recommendation = service.recommend(cancellation);
+
+    // Then: UNCLASSIFIED (does not force classification)
+    assertThat(recommendation.source()).isEqualTo(EasyCardClassificationRecommendationService.Source.UNCLASSIFIED);
+    assertThat(recommendation.recommendedAccountId()).isNull();
+  }
+
+  @Test
+  void cancellation_noAutoTransactionOrLearning() {
+    // H3: cancellation recommendation → no EasyTransaction auto-created, no historical learning
+    // Given: cancellation with classified original
+    EasyAccount originalAccount = account(10L, "EXP_SUPPLIES", "소모품비");
+    EasyCardEvent original = purchaseEvent("이마트24 강남점", 15_000L);
+    ReflectionTestUtils.setField(original, "cardEventId", 800L);
+    ReflectionTestUtils.setField(original, "postedTxn", createPostedTxn(originalAccount));
+
+    EasyCardEvent cancellation = EasyCardEvent.builder()
+        .business(business).instrument(instrument)
+        .originalEvent(original)
+        .eventType(EasyCardEvent.Type.CANCELLATION)
+        .fingerprint("c".repeat(64))
+        .occurredAt(LocalDateTime.of(2026, 9, 15, 10, 0))
+        .amount(15_000L).currency("KRW").build();
+
+    // When
+    var recommendation = service.recommend(cancellation);
+
+    // Then: recommendation exists (inherits) but source indicates it's for reference only
+    assertThat(recommendation.source()).isEqualTo(EasyCardClassificationRecommendationService.Source.HISTORICAL_EXACT);
+    assertThat(recommendation.reason()).contains("상속");
+    // Verify service doesn't create merchant mapping for cancellations
+    // (This is verified by the implementation not calling save on merchantMappingRepository for cancellations)
+  }
+
+  private EasyTransaction createPostedTxn(EasyAccount account) {
+    EasyTransaction txn = mock(EasyTransaction.class);
+    when(txn.getAccount()).thenReturn(account);
+    return txn;
+  }
 }

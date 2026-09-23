@@ -62,11 +62,22 @@ public class EasyCardClassificationRecommendationService {
     HIGH, MEDIUM, LOW
   }
 
-  /**
-   * Get recommendation for a card event (PENDING_REVIEW).
-   * Uses issuer + providerExternalId as the raw merchant identifier.
-   */
+/**
+    * Get recommendation for a card event (PENDING_REVIEW).
+    * Uses issuer + providerExternalId as the raw merchant identifier.
+    *
+    * Cancellation/refund handling:
+    * - If linked to original event with classification: inherit original account
+    * - If linked to original event without classification: UNCLASSIFIED
+    * - Never create/learn merchant mapping for cancellations
+    */
   public Recommendation recommend(EasyCardEvent event) {
+    // Handle cancellation/refund events - inherit from original if classified
+    if (event.getEventType() == EasyCardEvent.Type.CANCELLATION ||
+        event.getEventType() == EasyCardEvent.Type.CORRECTION) {
+      return handleCancellationOrCorrection(event);
+    }
+
     if (event.getEventType() != EasyCardEvent.Type.PURCHASE) {
       return Recommendation.unclassified("", "");
     }
@@ -275,5 +286,61 @@ public class EasyCardClassificationRecommendationService {
       case MEDIUM -> Confidence.MEDIUM;
       case LOW -> Confidence.LOW;
     };
+  }
+
+  /**
+   * Handle cancellation/correction events by inheriting from original event.
+   * Requirements:
+   * - If original has posted transaction: inherit that account (HIGH confidence)
+   * - If original has merchant mapping: inherit that mapping (MEDIUM confidence)
+   * - If original unclassified: return UNCLASSIFIED
+   * - Never create/learn merchant mapping for cancellations
+   */
+  private Recommendation handleCancellationOrCorrection(EasyCardEvent event) {
+    EasyCardEvent original = event.getOriginalEvent();
+    if (original == null) {
+      return Recommendation.unclassified("", "취소/정정 이벤트이나 원본 이벤트 연결 없음");
+    }
+
+    // Check if original has a posted transaction (admin-approved classification)
+    if (original.getPostedTxn() != null && original.getPostedTxn().getAccount() != null) {
+      EasyAccount account = original.getPostedTxn().getAccount();
+      String rawMerchant = buildRawMerchant(event);
+      String normalizedMerchant = normalizeMerchant(rawMerchant);
+      return new Recommendation(
+          account.getAccountId(),
+          account.getName(),
+          account.getCode(),
+          Source.HISTORICAL_EXACT,
+          Confidence.HIGH,
+          "원본 카드 이벤트 #" + original.getCardEventId() + "의 확정 계정(" + account.getName() + ")을 상속 (취소/정정 이벤트)",
+          normalizedMerchant,
+          rawMerchant
+      );
+    }
+
+    // Check if original has a merchant mapping (admin-saved or historical)
+    String rawMerchant = buildRawMerchant(original);
+    String normalizedMerchant = normalizeMerchant(rawMerchant);
+    Optional<EasyMerchantAccountMapping> adminMapping = merchantMappingRepository
+        .findByBusiness_BusinessIdAndNormalizedMerchantAndActiveTrue(
+            event.getBusiness().getBusinessId(), normalizedMerchant);
+    if (adminMapping.isPresent() && adminMapping.get().getSource() == EasyMerchantAccountMapping.Source.ADMIN_MAPPING) {
+      EasyMerchantAccountMapping mapping = adminMapping.get();
+      return new Recommendation(
+          mapping.getAccount().getAccountId(),
+          mapping.getAccount().getName(),
+          mapping.getAccount().getCode(),
+          Source.ADMIN_MAPPING,
+          confidenceFromEntity(mapping.getConfidence()),
+          "원본 이벤트 #" + original.getCardEventId() + "의 관리자 매핑(" + mapping.getAccount().getName() + ")을 상속 (취소/정정 이벤트)",
+          normalizedMerchant,
+          rawMerchant
+      );
+    }
+
+    // Original unclassified - cancellation remains unclassified
+    // Do NOT create/learn merchant mapping for cancellations
+    return Recommendation.unclassified(normalizedMerchant, rawMerchant);
   }
 }
