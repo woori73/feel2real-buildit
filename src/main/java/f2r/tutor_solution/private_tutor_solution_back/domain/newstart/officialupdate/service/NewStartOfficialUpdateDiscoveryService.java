@@ -109,6 +109,8 @@ public class NewStartOfficialUpdateDiscoveryService {
                   adapter.getSourceName(),
                   enriched.title(),
                   enriched.summary(),
+                  // 공식 원문 본문(detailHtml)을 요약과 별개로 보존 — 상세보기가 내부에서 원문을 표시한다.
+                  enriched.detailHtml(),
                   enriched.originalUrl(),
                   enriched.officialDocumentId(),
                   enriched.publishedAt(),

@@ -49,6 +49,10 @@ public class NewStartOfficialUpdate {
   @Column(name = "summary", nullable = false, columnDefinition = "TEXT")
   private String summary;
 
+  /** 공식 출처에서 수집·저장된 원문 본문. 미저장 시 null — 상세화면에서 임의로 생성하지 않는다. */
+  @Column(name = "content", columnDefinition = "TEXT")
+  private String content;
+
   @Column(name = "original_url", length = URL_MAX_LENGTH)
   private String originalUrl;
 
@@ -100,13 +104,14 @@ public class NewStartOfficialUpdate {
   private LocalDateTime updatedAt;
 
   private NewStartOfficialUpdate(SourceType sourceType, String sourceName, String title,
-      String summary, String originalUrl, String officialDocumentId, LocalDateTime publishedAt,
+      String summary, String content, String originalUrl, String officialDocumentId, LocalDateTime publishedAt,
       LocalDateTime effectiveFrom, LocalDateTime effectiveTo, Category category,
       RelevancePriority relevancePriority, String dedupKey, LocalDateTime discoveredAt) {
     this.sourceType = sourceType;
     this.sourceName = sourceName;
     this.title = title;
     this.summary = summary;
+    this.content = content;
     this.originalUrl = originalUrl;
     this.officialDocumentId = officialDocumentId;
     this.publishedAt = publishedAt;
@@ -121,10 +126,10 @@ public class NewStartOfficialUpdate {
   }
 
   public static NewStartOfficialUpdate review(SourceType sourceType, String sourceName, String title,
-      String summary, String originalUrl, String officialDocumentId, LocalDateTime publishedAt,
+      String summary, String content, String originalUrl, String officialDocumentId, LocalDateTime publishedAt,
       LocalDateTime effectiveFrom, LocalDateTime effectiveTo, Category category,
       RelevancePriority relevancePriority, String dedupKey, LocalDateTime discoveredAt) {
-    return new NewStartOfficialUpdate(sourceType, sourceName, title, summary, originalUrl,
+    return new NewStartOfficialUpdate(sourceType, sourceName, title, summary, content, originalUrl,
         officialDocumentId, publishedAt, effectiveFrom, effectiveTo, category, relevancePriority, dedupKey, discoveredAt);
   }
 

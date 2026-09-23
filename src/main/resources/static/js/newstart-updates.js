@@ -30,8 +30,8 @@
           return;
         }
         list.innerHTML = items.map(function (item) {
-          return '<a class="ns-update-item" href="' + escapeHtml(item.originalUrl) + '" target="_blank" rel="noopener noreferrer">'
-            + '<span>' + escapeHtml(item.sourceName) + '</span>'
+          return '<a class="ns-update-item" href="/newstart/updates/' + encodeURIComponent(item.updateId) + '">'
+            + '<span class="ns-update-source">' + escapeHtml(item.sourceName) + '</span>'
             + '<span class="ns-update-copy"><strong>' + escapeHtml(item.title) + '</strong><small>' + escapeHtml(item.summary) + '</small></span>'
             + '<time class="ns-update-date">' + escapeHtml(formatDate(item.publishedAt)) + '</time><span aria-hidden="true">→</span></a>';
         }).join('');
