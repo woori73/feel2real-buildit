@@ -71,6 +71,35 @@ class ChoonggiPageControllerTest {
         .doesNotContain("HELLO MUMBAI");
   }
 
+  @Test void homeShowsTeamPhotoCompanyAndGame() throws Exception {
+    String body = mockMvc.perform(get("/choonggi")).andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString();
+    assertThat(body).contains("/img/choonggi/honor-of-kings-roster.jpg");
+    assertThat(body).contains("YUVIN RECKONING");
+    assertThat(body).contains("HONOR OF KINGS");
+  }
+
+  @Test void homeLogFeedRendersYoutubeEmbedForPublishedPostWithLink() throws Exception {
+    var post = ChoonggiPost.draft("EP01", "Departure Day", "departure-day", "First note");
+    post.publish();
+    post.setYoutubeVideoId("dQw4w9WgXcQ");
+    when(creatorService.published()).thenReturn(List.of(post));
+    String body = mockMvc.perform(get("/choonggi")).andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString();
+    assertThat(body).contains("youtube-nocookie.com/embed/dQw4w9WgXcQ");
+    assertThat(body).contains("Departure Day");
+  }
+
+  @Test void homeLogFeedRendersTextOnlyPostWithoutCrashing() throws Exception {
+    var post = ChoonggiPost.draft("EP01", "Text Only Note", "text-only-note", "Just a short note, no media.");
+    post.publish();
+    when(creatorService.published()).thenReturn(List.of(post));
+    String body = mockMvc.perform(get("/choonggi")).andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString();
+    assertThat(body).contains("Text Only Note");
+    assertThat(body).contains("Just a short note, no media.");
+  }
+
   private static int occurrences(String haystack, String needle) {
     int count = 0, from = 0;
     while ((from = haystack.indexOf(needle, from)) != -1) { count++; from += needle.length(); }

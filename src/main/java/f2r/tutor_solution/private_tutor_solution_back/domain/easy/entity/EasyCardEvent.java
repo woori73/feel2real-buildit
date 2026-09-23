@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.BaseEntity;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.*;
 
@@ -46,6 +47,9 @@ public class EasyCardEvent extends BaseEntity {
   private String fingerprint;
   @Column(name = "occurred_at", nullable = false)
   private LocalDateTime occurredAt;
+  /** Card issuer's confirm/settlement date, when the source distinguishes it from occurredAt. Never merged with occurredAt. */
+  @Column(name = "confirmation_date")
+  private LocalDate confirmationDate;
   @Column(name = "amount", nullable = false)
   private long amount;
   @Column(name = "currency", nullable = false, length = 3)
@@ -63,8 +67,8 @@ public class EasyCardEvent extends BaseEntity {
   @Builder
   public EasyCardEvent(EasyBusiness business, EasyCollectionConnection connection,
       EasyCardInstrument instrument, EasyCardEvent originalEvent, Type eventType,
-      String providerExternalId, String fingerprint, LocalDateTime occurredAt, long amount,
-      String currency, String approvalReferenceHash) {
+      String providerExternalId, String fingerprint, LocalDateTime occurredAt,
+      LocalDate confirmationDate, long amount, String currency, String approvalReferenceHash) {
     if (business == null || instrument == null || eventType == null || occurredAt == null)
       throw new IllegalArgumentException("business, instrument, type and occurredAt are required.");
     if (amount <= 0) throw new IllegalArgumentException("Card event amount must be positive.");
@@ -80,6 +84,7 @@ public class EasyCardEvent extends BaseEntity {
     this.providerExternalId = blankToNull(providerExternalId);
     this.fingerprint = fingerprint;
     this.occurredAt = occurredAt;
+    this.confirmationDate = confirmationDate;
     this.amount = amount;
     this.currency = currency == null || currency.isBlank() ? "KRW" : currency.trim().toUpperCase();
     this.approvalReferenceHash = blankToNull(approvalReferenceHash);

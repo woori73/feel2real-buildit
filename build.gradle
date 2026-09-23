@@ -48,6 +48,9 @@ dependencies {
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
+	// Shinhan card statement parsing — legacy Excel 97-2003 (.xls, BIFF8) only, poi-ooxml not needed.
+	implementation 'org.apache.poi:poi:5.3.0'
+
 	// DB 마이그레이션 (Flyway).
 	// Spring Boot 4부터 autoconfiguration이 모듈별로 분리되어, flyway-core만으로는 autoconfig가
 	// 활성화되지 않는다. spring-boot-starter-flyway 명시가 필수.

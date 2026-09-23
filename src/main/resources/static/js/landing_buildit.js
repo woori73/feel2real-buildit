@@ -67,26 +67,35 @@
     const returnUrl = rawReturnUrl && typeof window.safeInternalReturnUrl === 'function'
       ? window.safeInternalReturnUrl(rawReturnUrl)
       : null;
-    if (returnUrl && returnUrl.startsWith('/wiki/')) {
+    const isWikiReturn = returnUrl && returnUrl.startsWith('/wiki/');
+    // CHOONGGI Creator SSR(/choonggi/admin/**) uses the same post-login returnUrl mechanism as
+    // Wiki -- SecurityConfig redirects anonymous /choonggi/admin/** here instead of a raw 401.
+    const isChoonggiReturn = returnUrl && returnUrl.startsWith('/choonggi/admin');
+    if (isWikiReturn) {
       try { sessionStorage.setItem('wikiPostLoginReturnUrl', returnUrl); } catch (_) {}
       document.querySelectorAll('[data-auth-signup]').forEach((link) => {
         link.href = '/register?returnUrl=' + encodeURIComponent(returnUrl);
       });
+    } else if (isChoonggiReturn) {
+      try { sessionStorage.setItem('postLoginReturnUrl', returnUrl); } catch (_) {}
     }
 
     params.delete('login');
     params.delete('returnUrl');
     const query = params.toString();
     history.replaceState({}, '', location.pathname + (query ? '?' + query : '') + location.hash);
-    alert('회원 전용 자료입니다. 로그인 또는 무료 회원가입 후 모든 Wiki 자료를 이용할 수 있습니다.');
+    alert(isChoonggiReturn
+      ? '로그인이 필요합니다. 로그인 후 계속 이용할 수 있습니다.'
+      : '회원 전용 자료입니다. 로그인 또는 무료 회원가입 후 모든 Wiki 자료를 이용할 수 있습니다.');
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
   }
 
   window.addEventListener('f2r:login', () => {
     let returnUrl = null;
     try {
-      returnUrl = sessionStorage.getItem('wikiPostLoginReturnUrl');
+      returnUrl = sessionStorage.getItem('wikiPostLoginReturnUrl') || sessionStorage.getItem('postLoginReturnUrl');
       sessionStorage.removeItem('wikiPostLoginReturnUrl');
+      sessionStorage.removeItem('postLoginReturnUrl');
     } catch (_) {}
     if (returnUrl && typeof window.safeInternalReturnUrl === 'function') {
       location.href = window.safeInternalReturnUrl(returnUrl);

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.ExternalVideoUrlValidator;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.entity.ChoonggiMedia;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.entity.ChoonggiPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.repository.ChoonggiMediaRepository;
@@ -34,7 +35,7 @@ class ChoonggiCreatorContractTest {
   }
 
   private ChoonggiCreatorService newService(ChoonggiPostRepository posts,ChoonggiMediaRepository media){
-    return new ChoonggiCreatorService(posts,media,mock(ImageSanitizer.class),mock(FileStorage.class));
+    return new ChoonggiCreatorService(posts,media,mock(ImageSanitizer.class),mock(FileStorage.class),new ExternalVideoUrlValidator());
   }
 
   /** Test-only: entity ids are DB-generated and have no public setter. */
@@ -125,22 +126,26 @@ class ChoonggiCreatorContractTest {
   }
 
   @Test void moveUpSwapsSortOrderWithPreviousItem() {
-    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");setId(post,1L);
     var m0=ChoonggiMedia.of(post,"k0",ChoonggiMedia.Type.PHOTO,"image/jpeg","0.jpg",1L,10,10,0);setId(m0,10L);
     var m1=ChoonggiMedia.of(post,"k1",ChoonggiMedia.Type.PHOTO,"image/jpeg","1.jpg",1L,10,10,1);setId(m1,11L);
     var mediaRepo=mock(ChoonggiMediaRepository.class);
     when(mediaRepo.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(1L)).thenReturn(List.of(m0,m1));
-    var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
-    service.moveUp(1L,11L);
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mediaRepo);
+    service.moveUp(1L,11L,"admin","ADMIN");
     assertThat(m1.getSortOrder()).isEqualTo(0);assertThat(m0.getSortOrder()).isEqualTo(1);
   }
   @Test void moveUpAtTopIsANoOp() {
-    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");setId(post,1L);
     var m0=ChoonggiMedia.of(post,"k0",ChoonggiMedia.Type.PHOTO,"image/jpeg","0.jpg",1L,10,10,0);setId(m0,10L);
     var mediaRepo=mock(ChoonggiMediaRepository.class);
     when(mediaRepo.findByPost_IdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(1L)).thenReturn(List.of(m0));
-    var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
-    service.moveUp(1L,10L);
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mediaRepo);
+    service.moveUp(1L,10L,"admin","ADMIN");
     assertThat(m0.getSortOrder()).isEqualTo(0);
   }
   @Test void deleteMediaSoftDeletesAndClearsCover() {
@@ -148,8 +153,100 @@ class ChoonggiCreatorContractTest {
     var m0=ChoonggiMedia.of(post,"k0",ChoonggiMedia.Type.PHOTO,"image/jpeg","0.jpg",1L,10,10,0);setId(m0,10L);m0.setCover(true);
     var mediaRepo=mock(ChoonggiMediaRepository.class);
     when(mediaRepo.findByIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(m0));
-    var service=newService(mock(ChoonggiPostRepository.class),mediaRepo);
-    service.deleteMedia(1L,10L);
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mediaRepo);
+    service.deleteMedia(1L,10L,"admin","ADMIN");
     assertThat(m0.getDeletedAt()).isNotNull();assertThat(m0.isCover()).isFalse();
+  }
+
+  // ── ownership: CREATOR may only mutate their own posts; ADMIN bypasses ─────────────────
+  @Test void creatorMayDeleteOwnPost() {
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");setId(post,1L);setCreatedBy(post,"choonggi");
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    service.delete(1L,"choonggi","CREATOR");
+    assertThat(post.getDeletedAt()).isNotNull();
+  }
+  @Test void creatorCannotDeleteAnotherCreatorsPost() {
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");setId(post,1L);setCreatedBy(post,"choonggi");
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    assertThatThrownBy(()->service.delete(1L,"someone-else","CREATOR"))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("403");
+    assertThat(post.getDeletedAt()).isNull();
+  }
+  @Test void adminMayDeleteAnyonesPost() {
+    var post=ChoonggiPost.draft("EP01","Goodbye Korea","goodbye-korea-real","note");setId(post,1L);setCreatedBy(post,"choonggi");
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    service.delete(1L,"the-operator","ADMIN");
+    assertThat(post.getDeletedAt()).isNotNull();
+  }
+
+  // ── save(): title-only/text-only and photo-only combinations are all valid ────────────
+  @Test void saveAllowsBlankBodyWhenOnlyTitleIsProvided() {
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.save(org.mockito.ArgumentMatchers.any())).thenAnswer(inv->inv.getArgument(0));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    var saved=service.save(null,"제목만 있음","","","choonggi","CREATOR");
+    assertThat(saved.getBody()).isEmpty();
+  }
+  @Test void saveRejectsBlankTitle() {
+    var service=newService(mock(ChoonggiPostRepository.class),mock(ChoonggiMediaRepository.class));
+    assertThatThrownBy(()->service.save(null,"  ","body","","choonggi","CREATOR"))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
+  }
+  @Test void publishNoLongerRequiresMedia() {
+    var post=ChoonggiPost.draft("EP01","Text Only","text-only","note");setId(post,1L);setCreatedBy(post,"choonggi");
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(post));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    var published=service.publish(1L,"choonggi","CREATOR");
+    assertThat(published.getStatus()).isEqualTo(ChoonggiPost.Status.PUBLISHED);
+  }
+
+  // ── YouTube link resolution ─────────────────────────────────────────────────────────
+  @Test void saveExtractsYoutubeVideoIdFromWatchUrl() {
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.save(org.mockito.ArgumentMatchers.any())).thenAnswer(inv->inv.getArgument(0));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    var saved=service.save(null,"T","b","https://www.youtube.com/watch?v=dQw4w9WgXcQ","choonggi","CREATOR");
+    assertThat(saved.getYoutubeVideoId()).isEqualTo("dQw4w9WgXcQ");
+  }
+  @Test void saveExtractsYoutubeVideoIdFromShortUrl() {
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.save(org.mockito.ArgumentMatchers.any())).thenAnswer(inv->inv.getArgument(0));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    var saved=service.save(null,"T","b","https://youtu.be/dQw4w9WgXcQ","choonggi","CREATOR");
+    assertThat(saved.getYoutubeVideoId()).isEqualTo("dQw4w9WgXcQ");
+  }
+  @Test void saveRejectsNonYoutubeUrl() {
+    var service=newService(mock(ChoonggiPostRepository.class),mock(ChoonggiMediaRepository.class));
+    assertThatThrownBy(()->service.save(null,"T","b","https://example.com/video.mp4","choonggi","CREATOR"))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
+  }
+  @Test void saveRejectsArbitraryIframeOrHtmlAsYoutubeUrl() {
+    var service=newService(mock(ChoonggiPostRepository.class),mock(ChoonggiMediaRepository.class));
+    assertThatThrownBy(()->service.save(null,"T","b","<iframe src=x></iframe>","choonggi","CREATOR"))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
+  }
+  @Test void saveLeavesYoutubeVideoIdNullWhenFieldIsBlank() {
+    var postRepo=mock(ChoonggiPostRepository.class);
+    when(postRepo.save(org.mockito.ArgumentMatchers.any())).thenAnswer(inv->inv.getArgument(0));
+    var service=newService(postRepo,mock(ChoonggiMediaRepository.class));
+    var saved=service.save(null,"T","b","   ","choonggi","CREATOR");
+    assertThat(saved.getYoutubeVideoId()).isNull();
+  }
+
+  /** Test-only: created_by is normally set by JPA auditing, not by application code. */
+  private static void setCreatedBy(Object entity,String loginId){
+    try{
+      var f=f2r.tutor_solution.private_tutor_solution_back.domain.BaseEntity.class.getDeclaredField("createdBy");
+      f.setAccessible(true);f.set(entity,loginId);
+    }catch(ReflectiveOperationException e){throw new RuntimeException(e);}
   }
 }

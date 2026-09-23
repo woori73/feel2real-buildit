@@ -68,7 +68,7 @@ class NewStartOfficialUpdateServiceTest {
   void publicFeedUsesPublishedOnlyAndSourceFilter() {
     NewStartOfficialUpdateService service = new NewStartOfficialUpdateService(repository);
     NewStartOfficialUpdate published = NewStartOfficialUpdate.review(
-        SourceType.CCRS, "신용회복위원회", "공식 공지", "요약", "https://ccrs.or.kr/a", null,
+        SourceType.CCRS, "신용회복위원회", "공식 공지", "요약", null, "https://ccrs.or.kr/a", null,
         LocalDateTime.of(2026, 9, 21, 9, 0), null, null, Category.NOTICE,
         RelevancePriority.NORMAL, "URL:https://ccrs.or.kr.a", LocalDateTime.now());
     published.publish("admin");
@@ -134,7 +134,7 @@ class NewStartOfficialUpdateServiceTest {
   void adminArchiveAfterAutoPublishRemovesItemFromPublicFeed() {
     NewStartOfficialUpdateService service = new NewStartOfficialUpdateService(repository);
     NewStartOfficialUpdate autoPublished = NewStartOfficialUpdate.review(
-        SourceType.FSC, "금융위원회", "제도 변경", "요약", "https://fsc.go.kr/notice/2", null,
+        SourceType.FSC, "금융위원회", "제도 변경", "요약", null, "https://fsc.go.kr/notice/2", null,
         LocalDateTime.of(2026, 9, 22, 10, 0), null, null, Category.POLICY,
         RelevancePriority.NORMAL, "URL:https://fsc.go.kr/notice/2", LocalDateTime.now());
     autoPublished.publish(NewStartOfficialUpdateService.AUTO_PUBLISHED_BY);
@@ -178,7 +178,7 @@ class NewStartOfficialUpdateServiceTest {
 
   private static NewStartOfficialUpdate review() {
     return NewStartOfficialUpdate.review(
-        SourceType.FSC, "금융위원회", "제도 변경", "요약", null, "DOC-1",
+        SourceType.FSC, "금융위원회", "제도 변경", "요약", null, null, "DOC-1",
         LocalDateTime.of(2026, 9, 21, 10, 0), null, null, Category.POLICY,
         RelevancePriority.NORMAL, "DOC:FSC:doc-1", LocalDateTime.now());
   }

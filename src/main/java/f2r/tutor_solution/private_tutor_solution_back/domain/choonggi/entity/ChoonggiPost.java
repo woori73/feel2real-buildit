@@ -17,6 +17,7 @@ public class ChoonggiPost extends BaseEntity {
   @Column(name="episode_code",nullable=false,length=30) private String episodeCode;
   @Column(nullable=false,length=120) private String title;
   @Column(nullable=false,unique=true,length=140) private String slug;
+  @Column(name="youtube_video_id",length=20) private String youtubeVideoId;
   @Lob @Column(nullable=false,columnDefinition="TEXT") private String body;
   @Enumerated(EnumType.STRING) @Column(nullable=false,length=20) private Status status=Status.DRAFT;
   @Column(name="published_at") private LocalDateTime publishedAt;
@@ -25,6 +26,8 @@ public class ChoonggiPost extends BaseEntity {
   @OrderBy("sortOrder ASC, id ASC") private List<ChoonggiMedia> media=new ArrayList<>();
   public static ChoonggiPost draft(String episode,String title,String slug,String body){var p=new ChoonggiPost();p.update(episode,title,slug,body);return p;}
   public void update(String episode,String title,String slug,String body){this.episodeCode=episode;this.title=title;this.slug=slug;this.body=body;}
+  /** Null clears the video (e.g. creator removes the YouTube link on edit). */
+  public void setYoutubeVideoId(String youtubeVideoId){this.youtubeVideoId=youtubeVideoId;}
   public void publish(){status=Status.PUBLISHED;if(publishedAt==null)publishedAt=LocalDateTime.now();}
   public void unpublish(){status=Status.DRAFT;publishedAt=null;}
   public void softDelete(){deletedAt=LocalDateTime.now();status=Status.DRAFT;}

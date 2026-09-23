@@ -7,7 +7,7 @@
   <meta name="description" content="내 상황 확인, NewStart AI, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260921-2">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260923-1">
 </head>
 <body>
   <div class="newstart-page">
@@ -108,7 +108,7 @@
           <div class="ns-section-heading"><p class="ns-section-kicker">LATEST</p><h2 id="ns-updates-title">최신 정보</h2></div>
           <div th:if="${#lists.isEmpty(latestUpdates)}" class="ns-empty">아직 관리자 검토를 마친 공식 업데이트가 없습니다.</div>
           <div th:unless="${#lists.isEmpty(latestUpdates)}" class="ns-update-list">
-            <a th:each="item : ${latestUpdates}" class="ns-update-item" th:href="${item.originalUrl}" target="_blank" rel="noopener noreferrer">
+            <a th:each="item : ${latestUpdates}" class="ns-update-item" th:href="'/newstart/updates/' + ${item.updateId}">
               <span class="ns-update-source" th:text="${item.sourceName}">출처</span>
               <span class="ns-update-copy"><strong th:text="${item.title}">제목</strong><small th:text="${item.summary}">요약</small></span>
               <time class="ns-update-date" th:if="${item.publishedAt != null}" th:datetime="${item.publishedAt}" th:text="${#temporals.format(item.publishedAt, 'yyyy.MM.dd')}">날짜</time>
@@ -126,7 +126,8 @@
     </div>
   </div>
 
-  <th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
+  <!-- NewStart: 주소 표기만 제외(hideAddress=true) — 다른 서비스 footer과 동일한 사업자 정보, 표기 범위만 다름 -->
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, true)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
   <script src="/js/newstart.js?v=20260921-2" defer></script>
