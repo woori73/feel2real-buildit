@@ -201,6 +201,22 @@ class FssComplaintHelperServiceTest {
     }
 
     @Test
+    @DisplayName("Extension 브리지 — 배지 id·ping 계약 유지, 가짜 Web Store URL 금지, 미게시 상태 정직 고지")
+    void extensionBridgeContract() throws Exception {
+        String html = new String(
+            getClass().getResourceAsStream("/templates/newstart/fss-helper.html").readAllBytes(),
+            StandardCharsets.UTF_8);
+        // newstartContent.js가 갱신하는 배지 요소와 페이지측 ping 브리지 계약
+        assertThat(html).contains("id=\"ns-chrome-badge\"");
+        assertThat(html).contains("newstart-page-ping");
+        assertThat(html).contains("newstart-agent");
+        // Web Store 미게시 단계 — 가짜 스토어 URL·설치 버튼 금지, 실제 소스(GitHub)만 링크
+        assertThat(html).doesNotContain("chromewebstore.google.com");
+        assertThat(html).doesNotContain("chrome.google.com/webstore");
+        assertThat(html).contains("Chrome Web Store에 게시되지 않았습니다");
+    }
+
+    @Test
     @DisplayName("§7 officialGuide: 금감원 공식 페이지 3종 출처와 소관 분기 데이터가 리소스에서 로딩된다")
     void officialGuideLoadsFromResources() {
         var official = service.officialGuide();

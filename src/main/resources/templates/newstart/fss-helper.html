@@ -63,6 +63,11 @@
     .ns-iv-timeline-row{white-space:pre-wrap;border-bottom:1px dashed #e2e8f0;padding:8px 0;font-size:13px;color:#334155}
     .ns-iv-timeline-row:last-child{border-bottom:none}
     .ns-btn.is-disabled{opacity:.45;pointer-events:none}
+    /* --- Extension 사용 준비 / 연결 배지 --- */
+    .ns-fss-prep{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin:12px 0;background:#f8fafc}
+    .ns-fss-prep-list{margin:0 0 8px;padding-left:20px;font-size:14px;color:#1e293b;display:grid;gap:6px}
+    #ns-chrome-badge{font-weight:700;color:#9a3412}
+    #ns-chrome-badge[data-ns-agent="connected"]{color:#14532d}
     /* --- Guided Agent (Phase 1: 사용자 PC Chrome 안내 — 서버 자동화 없음) --- */
     .ns-ag-notice{display:flex;gap:8px;align-items:flex-start;background:#eff6ff;border:1px solid #bfdbfe;
       border-radius:12px;padding:10px 12px;font-size:13px;color:#1e40af;margin:10px 0}
@@ -125,6 +130,24 @@
             <span class="ns-fss-step" id="ns-fss-tab4">4 금감원 접수 안내</span>
           </div>
           <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. NewStart AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
+
+          <section class="ns-fss-prep" aria-labelledby="ns-fss-prep-title">
+            <h2 class="ns-fss-label" id="ns-fss-prep-title">금감원 민원 도우미 사용 준비</h2>
+            <ol class="ns-fss-prep-list">
+              <li>PC에서 Google Chrome 사용</li>
+              <li>NewStart 금감원 도우미 Extension 설치 — 현재 검증 전용 단계이며 Chrome Web Store에 게시되지 않았습니다</li>
+              <li>Extension 연결 확인: <span id="ns-chrome-badge" data-ns-agent="absent">Extension 미설치</span></li>
+              <li>금융감독원 민원 페이지 열기</li>
+              <li>Agent 안내에 따라 진행</li>
+            </ol>
+            <p class="ns-fss-note">개인정보 입력·본인인증·최종 제출은 사용자가 직접 수행합니다.
+              Extension을 설치하지 않아도 이 화면의 인터뷰·초안·수동 안내는 그대로 사용할 수 있습니다.</p>
+            <div class="ns-fss-actions">
+              <a class="ns-btn ns-btn-ghost" id="ns-ext-source-link"
+                 href="https://github.com/woori73/feel2real-buildit/tree/feat/newstart-chrome-agent-fss-poc/browser-extension/newstart-chrome-agent"
+                 target="_blank" rel="noopener noreferrer">Extension 소스(GitHub·개발자용) <span aria-hidden="true">↗</span></a>
+            </div>
+          </section>
 
           <h2 class="ns-fss-label">금감원 민원 신청 — 두 가지 방법</h2>
           <div class="ns-ag-notice" id="ns-ag-notice"></div>
@@ -876,6 +899,20 @@
 
     $('ns-fss-input').addEventListener('input', updateCompose);
     $('ns-fss-compose').addEventListener('click', compose);
+
+    /* ---------- Extension 연결 확인 (브리지 계약: newstartContent.js) ---------- */
+    (function () {
+      var badge = $('ns-chrome-badge');
+      window.addEventListener('message', function (e) {
+        var d = e.data;
+        if (e.source !== window || !d || d.source !== 'newstart-agent') return;
+        if (d.installed) {
+          text(badge, 'Chrome Agent 연결됨 (v' + (d.version || '') + ')');
+          badge.setAttribute('data-ns-agent', 'connected');
+        }
+      });
+      try { window.postMessage({ source: 'newstart-page-ping' }, location.origin); } catch (err) { /* 미설치 — 기본 문구 유지 */ }
+    })();
 
     renderCats();
     renderChecks();
