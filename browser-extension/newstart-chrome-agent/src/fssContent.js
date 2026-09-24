@@ -93,6 +93,8 @@
     bd.appendChild(ft);
     wrap.appendChild(hd);
     wrap.appendChild(bd);
+    /* 인증/지도 popup처럼 작은 창에서는 접은 상태로 표시(화면 가림 최소화). */
+    if (window.innerWidth < 480 || window.innerHeight < 480) wrap.classList.add('is-min');
     panel.appendChild(wrap);
     refs.wrap = wrap;
   }
