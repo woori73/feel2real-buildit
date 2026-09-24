@@ -2,7 +2,7 @@
 
 - Worktree: `C:\Users\VIEW LIFE\feel2real-wt-newstart-chrome-agent`
 - Branch: `feat/newstart-chrome-agent-fss-poc` (base `7719646c` = PR #400 head; **PR #400 미수정**)
-- Scope: STEP 1~4만 (§7). 서버 Playwright/CDP/Qoder runtime 의존 **없음** (§3/§17/§24).
+- Scope: STEP 1~5 + AUTH(본인인증 팝업 상태)까지 (§7). 서버 Playwright/CDP/Qoder runtime 의존 **없음** (§3/§17/§24).
 
 ## 1. 아키텍처
 
@@ -39,8 +39,12 @@ NewStart 페이지(feel2real.co.kr/newstart* 또는 로컬 /newstart*)
   hidden input **name만**, 알려진 id(`#popup-alert`)의 **존재 boolean**.
 - 텍스트/비밀번호 `input`의 `value`, `textarea` content, `checked`/`selected` 상태, 쿼리스트링,
   cookie, localStorage, 인증 팝업(`certificationPop.do`) 내부: **미열람** (수집 함수 자체가 조회하지 않음 + 단위 테스트로 회귀 방지).
+  `window.opener`는 존재 boolean만 수집 — 속성 접근 트랩 테스트로 내부 미열람 증명(v0.4.0).
 - 전송 payload: `{step, substate, evidence 카테고리 라벨 ≤6, version}` — 화면 텍스트 원문은 어떤 메시지에도 포함되지 않음.
-- 인증 팝업(new window)에도 content script가 들어가지만 UNKNOWN fallback만 표시 (별도 근거 없음).
+- 인증 팝업(new window)에도 content script가 들어가지만, v0.4.0부터는 UNKNOWN이 아니라
+  **AUTH 상태**(중립 안내)로 표시한다. 판별 근거는 URL path(`certificationPop.do`)와
+  `window.opener` **존재 boolean**, 타이틀/heading 텍스트뿐 — 팝업 내 입력값·인증수단 선택 상태·
+  opener 창 내부는 절대로 읽지 않고 전송하지도 않는다.
 
 ## 4. STEP detector (§7~§9, 실측 evidence만 근거)
 
@@ -52,6 +56,7 @@ NewStart 페이지(feel2real.co.kr/newstart* 또는 로컬 /newstart*)
 | 4 | `forInsertAgre.do` + 동의 3종 — **v0.3.0 실측 교정: 실제 DOM은 Y/N `radio`(`agreechkYn`/`sinfoSndYn`/`agreechkRgnoYn`)**, hidden 3종도 인정. substate(`#popup-alert` 존재 시 POPUP_ALERT). 타이틀 `1단계 개인정보동의` → fssStage(1) 병행 표시 | handoff §3 STEP4(가정) → 2026-09-24 2차 QA CDP 읽기전용 probe 실측으로 radio 확정 |
 | 5 (v0.2.0, v0.3.0 강화) | `forInsertStep1.do` 파일명 + 구조 신호(타이틀 `2단계 개인정보입력` / 본인인증·실명인증·개인정보 입력 문구 / radio 선택지) → substate=`PII_INPUT`, **인식·직접 입력 안내만** — 자동 입력·클릭·제출 없음. 신호 약하면 UNKNOWN | 2026-09-24 REAL CHROME QA 실측 URL + probe |
 | 기타 | UNKNOWN → "현재 화면을 자동으로 확인하지 못했습니다. 수동 안내를 이용해주세요." | §9 |
+| AUTH (v0.4.0) | 민원 단계가 **아닌** 본인인증 창: `certificationPop.do` URL 또는 `window.opener` 존재 boolean+본인/실명인증 타이틀·heading → step=`AUTH`, 중립 안내. 단계 추정 없음·인증 자동화 0 | handoff §3 STEP7(fnCertificationPop window.open 실측) + 3차 REAL QA(팝업에서 UNKNOWN 오출력 보고) |
 
 **금감원 자체 4단계 모델 (v0.3.0, 2026-09-24 실측)**: FSS 진행표시는 1단계 개인정보동의 / 2단계 개인정보입력 /
 3단계 민원정보입력 / 4단계 민원등록이며, 좌측 nav가 4개 문구를 전부 항상 나열하므로 **nav만으로는 현재 단계를 못 정한다**.
@@ -118,9 +123,37 @@ radio name+선택지(Y/N), 타이틀 `1단계 개인정보동의`, `#minwon-popu
   (실제 동의 DOM fixture 회귀, radio 값 읽기/변경 금지 트랩, click/submit/value 대입 정적 금지 스캔,
   패널 레이아웃/접기/단계분리 계약, STEP 1~4 regression, UNKNOWN fallback).
 
-### 3차 QA (v0.3.0) — 재테스트 대기
-- chrome://extensions ⟳ 후 배지 "Chrome Agent 연결됨 (v0.3.0)", 동의 화면에서 "금감원 1단계 · 개인정보동의" 확인,
-  개인정보 입력 화면 "금감원 2단계", 상단 중앙 카드/접기 bar, 미지원 화면 UNKNOWN 회귀 확인.
+### 3차 QA (v0.3.0) — 결과 (2026-09-24 사용자 수동 실측)
+- PASS: 개인정보동의 화면 "금감원 1단계 · 개인정보동의" 인식, 개인정보 입력 화면까지 진행,
+  "금감원 2단계 · 개인정보입력" 인식.
+- **NEW ISSUE**: 사용자가 직접 [본인인증받기]를 누르자 열린 **인증 팝업에서 패널이
+  "단계 자동 확인 실패"(빨강 UNKNOWN)** 표시 → 절차 실패로 오인. 인증 창은 금감원 민원
+  진행 단계가 아니므로 UNKNOWN/FAIL이 아니라 별도 정상 상태로 취급해야 함(지시 §3).
+- 창 구분 조사(§5): 인증 팝업의 NewStart 패널 출력 자체가 증거 — content script match가
+  `https://www.fss.or.kr/*`이므로 **팝업 origin = www.fss.or.kr(FSS_MAIN과 FSS_AUTH_POPUP이
+  같은 확장 컨텍스트, 탭별로 독립 주입·독립 판별)**. handoff §3 STEP7 실측:
+  `[본인인증받기]` → `fnCertificationPop()`이 `certificationPop.do`를 **window.open 팝업**으로 연다.
+
+### v0.4.0 수정 (같은 브랜치)
+- detector: `step:'AUTH'` 상태 신설 — 1차 근거 `certificationPop.do` path(CERT_POPUP),
+  fallback `window.opener` 존재 boolean + 본인/실명인증 타이틀·heading(AUTH_WINDOW).
+  알려진 STEP 화면(forInsertStep1.do는 [본인인증받기] 버튼 보유)은 규칙 순서로 AUTH 오탐 차단.
+  `collectFacts(doc, href, win)`로 window 컨텍스트 추가 — **opener는 truthiness만 조회,
+  속성 접근 시 throw하는 Proxy 트랩 테스트로 내부 미열람 증명**.
+- 패널: AUTH = 중립 남색(`.st.is-auth`) + "본인인증 진행" + 직접 수행·미대행 고지 GUIDE.
+  빨간 "자동 확인 실패"는 UNKNOWN 전용. compact(360px, 작은 글자) + 낮은 창(<620px)에서는
+  **1회만** 자동 접힘(사용자 수동 토글 안 덮어씀) — 인증 UI 가림 최소화.
+- FSS 복귀 감지(§6): 메인 창은 이미 `visibilitychange`+MutationObserver 재검지 루프 보유 —
+  팝업 닫고 포커스 돌아오면 메인 화면을 실제 URL/title/DOM evidence로 재판별(추측 없음).
+- payload 계약 불변: `{step('AUTH' 포함 문자열 가능), substate, evidence≤6, version}` —
+  fssStage/opener 미전송(정적 계약 테스트). badge의 "마지막 확인 단계 N"은 number일 때만 표시(AUTH 무표시).
+- targeted tests: `node --test test/detector.test.mjs test/panel.contract.test.mjs` → **37/37 pass**
+  (AUTH 인식/UNKNOWN 분리/STEP 오탐 방지/opener 트랩/가이드 문구/중립색·compact 계약, 기존 privacy 정적 가드 유지).
+
+### 4차 QA (v0.4.0) — 재테스트 대기
+- chrome://extensions ⟳ (v0.4.0) → 동의/입력 화면 회귀 + [본인인증받기] 수동 클릭 후
+  인증 팝업에서 "본인인증 진행" 중립 카드 확인 → **인증 완수 후 메인 창 복귀 시 재판별 확인.
+  여기서도 최종 [등록] 제출 금지.**
 
 
 ## 6. 성공/실패와 한계 (§23/§24)

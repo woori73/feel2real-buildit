@@ -14,7 +14,6 @@ const content = readFileSync(join(here, '..', 'src', 'fssContent.js'), 'utf8');
 const detector = readFileSync(join(here, '..', 'src', 'fssStepDetector.js'), 'utf8');
 const background = readFileSync(join(here, '..', 'src', 'background.js'), 'utf8');
 const newstart = readFileSync(join(here, '..', 'src', 'newstartContent.js'), 'utf8');
-const allSrc = content + detector + background + newstart;
 
 test('desktop: bottom 고정 폐기 — 상단 중앙(top:24px, left:50% translateX) 플로팅 카드', () => {
   assert.ok(/position:fixed;top:24px;left:50%;transform:translateX\(-50%\)/.test(content),
@@ -84,4 +83,31 @@ test('URL stage detection 회귀: STEP 1~4 라우팅 문구/근거 그대로', (
   assert.match(detector, /\/forinsertstep1\.do/); /* 신규: 개인정보 화면 인식(안내 전용) */
   assert.ok(detector.indexOf('/forinsertselect.do') < detector.indexOf('/forinsertstep1.do'),
     'STEP 3/4 판별 경로가 STEP 5보다 먼저 평가된다(순서 회귀 방지)');
+});
+
+/* ===== REAL QA ROUND 3: 본인인증 popup — 빨간 실패 금지, 중립 compact 안내 ===== */
+test('AUTH 상태: 빨간 "자동 확인 실패" 대신 중립색 — UNKNOWN(빨강)과 분리', () => {
+  assert.match(content, /\.st\.is-auth\{color:#1e3a8a\}/, 'AUTH 중립 남색');
+  assert.match(content, /\.st\.is-unknown\{color:#b91c1c/, 'UNKNOWN 빨강은 실패 전용으로 유지');
+  assert.match(content, /r\.step === 'UNKNOWN' \? ' is-unknown' : \(r\.step === 'AUTH' \? ' is-auth' : ''\)/,
+    'is-unknown은 UNKNOWN에만 — AUTH에는 붙지 않음');
+  assert.ok(/function stepMain[\s\S]*r\.step === 'AUTH'[\s\S]*본인인증 진행/.test(content),
+    'AUTH 주 제목 = "본인인증 진행"');
+  assert.match(content, /· 본인인증/, 'chip 라벨 = · 본인인증');
+});
+
+test('AUTH compact 패널 계약: 좁은 폭 + 작은 글자 + 좁은 창에서 1회 접힘(인증 UI 가림 최소화)', () => {
+  assert.match(content, /\.wrap\.is-auth\{width:360px\}/, 'compact 폭');
+  assert.match(content, /\.wrap\.is-auth \.st\{font-size:16px\}/, 'compact 제목');
+  assert.match(content, /authCompactDone/, '가림 최소화를 위한 1회성 접힘 플래그');
+  assert.match(content, /window\.innerHeight < 620/, '낮은 인증 popup 창 기준');
+});
+
+test('AUTH 창은 FSS 단계 모델과 분리: fssStage 없이 전송 payload도 최소 계약 불변', () => {
+  assert.match(detector, /step: 'AUTH', substate: 'CERT_POPUP'/);
+  assert.match(detector, /step: 'AUTH', substate: 'AUTH_WINDOW'/);
+  /* report payload: step/substate/evidence/version만 — fssStage/opener 미전송 회귀 방지 */
+  const payload = content.match(/sendMessage\(\{\s*type: 'FSS_STEP'[\s\S]*?\}\s*,\s*function/);
+  assert.ok(payload, 'FSS_STEP payload 리터럴 존재');
+  assert.ok(!/fssStage|opener/i.test(payload[0]), '전송 필드는 step/substate/evidence/version뿐');
 });

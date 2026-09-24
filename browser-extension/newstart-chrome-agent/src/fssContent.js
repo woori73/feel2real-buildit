@@ -17,6 +17,7 @@
   var panel = null;
   var refs = {};
   var lastRendered = '';
+  var authCompactDone = false;
 
   function ensurePanel() {
     if (panel) return;
@@ -55,6 +56,12 @@
       '.st{font-weight:800;font-size:19px;line-height:1.3;color:#0f172a;margin-bottom:2px}' +
       '.sub{font-size:11.5px;color:#475569;font-weight:600;margin-bottom:8px}' +
       '.st.is-unknown{color:#b91c1c;font-size:16.5px}' +
+      /* AUTH(본인인증 창): 실패가 아닌 정상 수동 단계 — 빨간 금지, 중립 남색. 작은 인증 UI를 덜 가리는 compact 폭. */
+      '.st.is-auth{color:#1e3a8a}' +
+      '.wrap.is-auth{width:360px}' +
+      '.wrap.is-auth .st{font-size:16px}' +
+      '.wrap.is-auth .gd{font-size:12.5px}' +
+      '@media (max-width:560px){.wrap.is-auth{width:auto}}' +
       '.gd{color:#1f2937;font-size:13.5px;font-weight:600}' +
       '.ev{margin-top:8px;color:#64748b;font-size:11px;word-break:break-all;border-top:1px dashed #e2e8f0;padding-top:7px}' +
       '.ft{margin-top:9px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}' +
@@ -90,6 +97,7 @@
     hd.appendChild(brand);
     hd.appendChild(refs.chip);
     hd.appendChild(mini);
+    refs.mini = mini;
 
     var bd = document.createElement('div');
     bd.className = 'bd';
@@ -144,16 +152,19 @@
      - NewStart 내부 흐름(신청 준비·사전확인 포함 1~14): 보조 표기만 */
   function stepMain(r) {
     if (r.step === 'UNKNOWN') return '단계 자동 확인 실패';
+    if (r.step === 'AUTH') return '본인인증 진행';
     if (r.fssStage) return '금감원 ' + r.fssStage.no + '단계 · ' + r.fssStage.name;
     return '현재 단계 ' + r.step + '으로 확인됩니다';
   }
   function stepSub(r) {
     if (r.step === 'UNKNOWN') return '아래 수동 안내를 이용해주세요';
+    if (r.step === 'AUTH') return '이 창은 금감원 민원 단계가 아닌 인증 창 — 정상적인 사용자 직접 단계입니다';
     return 'NewStart 흐름 STEP ' + r.step + ' · 14단계 기준' +
       (r.fssStage ? ' · 금감원 진행nav ' + r.fssStage.no + '/4단계' : '');
   }
   function chipLabel(r) {
     if (r.step === 'UNKNOWN') return '· 확인 실패';
+    if (r.step === 'AUTH') return '· 본인인증';
     if (r.fssStage) return '· 금감원 ' + r.fssStage.no + '단계';
     return '· STEP ' + r.step;
   }
@@ -164,11 +175,23 @@
     if (key === lastRendered) return;
     lastRendered = key;
     refs.step.textContent = stepMain(r);
-    refs.step.className = 'st' + (r.step === 'UNKNOWN' ? ' is-unknown' : '');
+    refs.step.className = 'st' +
+      (r.step === 'UNKNOWN' ? ' is-unknown' : (r.step === 'AUTH' ? ' is-auth' : ''));
     refs.sub.textContent = stepSub(r);
     refs.guide.textContent = guideFor(r);
     refs.ev.textContent = '근거: ' + (r.evidence || []).join(' / ');
     refs.chip.textContent = chipLabel(r);
+    refs.wrap.classList.toggle('is-auth', r.step === 'AUTH');
+    /* §7(3차 QA): 작은 인증 popup에서는 compact + 처음엔 접어서 인증 UI 가림 최소화.
+       사용자의 접기/펼치기 수동 조작을 덮어쓰지 않도록 1회만 적용. */
+    if (r.step === 'AUTH' && !authCompactDone) {
+      authCompactDone = true;
+      if (window.innerHeight < 620) {
+        refs.wrap.classList.add('is-min');
+        refs.mini.textContent = '펼치기';
+        refs.mini.setAttribute('aria-expanded', 'false');
+      }
+    }
   }
 
   function report(r) {
@@ -185,7 +208,7 @@
 
   function detect() {
     if (location.hostname !== 'www.fss.or.kr') return; /* defense-in-depth */
-    var facts = det.collectFacts(document, location.href);
+    var facts = det.collectFacts(document, location.href, window);
     var r = det.classify(facts);
     render(r);
     report(r);

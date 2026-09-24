@@ -1,5 +1,6 @@
 /*
- * NewStart Chrome Agent — FSS STEP 1~4 detector (Phase 2 PoC).
+ * NewStart Chrome Agent — FSS STEP detector (Phase 2 PoC).
+ *  판별 대상: STEP 1~5(금감원 화면) + AUTH(본인인증 popup — 단계가 아닌 별도 정상 상태).
  *
  * 원칙:
  *  - STRUCTURAL DOM만 사용한다: URL path, title, heading, 버튼/링크 텍스트,
@@ -20,7 +21,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  var VERSION = '0.3.0';
+  var VERSION = '0.4.0';
 
   function trimText(s, max) {
     var t = (s || '').replace(/\s+/g, ' ').trim();
@@ -28,7 +29,7 @@
   }
 
   /* content script가 실제 document로부터 만드는 구조 사실 팩. 값 계열은 여기서 차단. */
-  function collectFacts(doc, href) {
+  function collectFacts(doc, href, win) {
     var facts = {
       version: VERSION,
       path: '',
@@ -39,8 +40,13 @@
       radioOptions: {},   /* { name: [value,...] } — 선택지 정의만 */
       hiddenNames: [],    /* hidden input의 name만 (value 미조회) */
       progressLabels: [], /* 사이드 진행 단계 텍스트 "N단계 …" (2026-09-24 실측 구조) */
+      hasOpener: false,   /* window.open으로 열린 창 여부 — 존재 boolean만 (opener 내부 미열람) */
       knownIds: {}        /* evidence로 알려진 id의 존재 여부만 */
     };
+    try {
+      /* opener의 어떤 속성도 읽지 않는다 — truthiness만 (cross-origin 접근 자체가 아님/불필요). */
+      facts.hasOpener = !!(win && win.opener);
+    } catch (e) { /* noop */ }
     try {
       var a = doc.createElement('a');
       a.href = href;
@@ -117,6 +123,18 @@
     var ev = [];
     var path = f.path || '';
 
+    /* AUTH — 본인인증 창은 금감원 민원 "단계"가 아니다(2026-09-24 3차 REAL QA).
+       handoff §3 STEP 7 실측: forInsertStep1.do의 [본인인증받기] → fnCertificationPop()이
+       `certificationPop.do`를 window.open 팝업으로 연다. 이 화면에서 UNKNOWN(빨간 "확인 실패")을
+       띄우면 절차 실패로 오인 → 별도 정상 상태(step:'AUTH', 중립 안내)로 취급한다.
+       *** 인증 수단 선택·입력·클릭·닫기 등 어떤 자동화도 하지 않는다(§12/HARD GUARD).
+       판별은 URL path와 창 컨텍스트(hasOpener)·비민감 텍스트 신호만 사용, 입력값 미열람. *** */
+    if (path.indexOf('/certificationpop.do') >= 0) {
+      ev.push('URL:certificationPop.do');
+      if (f.hasOpener) ev.push('WINDOW:popup(opener 존재)');
+      return { step: 'AUTH', substate: 'CERT_POPUP', evidence: ev };
+    }
+
     /* STEP 3 — forInsertSelect.do: minwonChk Y/N + [다음](checkForm) (POC+ACADEMY 실측) */
     if (path.indexOf('/forinsertselect.do') >= 0) {
       var chk = f.radioOptions && f.radioOptions.minwonChk;
@@ -188,6 +206,15 @@
       return { step: 'UNKNOWN', evidence: ['URL:search.jsp([신청]/제목 조건 미충족)'] };
     }
 
+    /* AUTH fallback — popup 컨텍스트(hasOpener) + 인증 문구가 STEP 화면이 아닌 창에 있을 때.
+       알려진 STEP 화면(forInsertStep1.do 등)은 위에서 이미 반환되므로 오탐 없음(본인인증받기 버튼 보유). */
+    if (f.hasOpener &&
+      (f.title.indexOf('본인인증') >= 0 || f.title.indexOf('실명인증') >= 0 ||
+        has(f.headings, /본인인증|실명인증|공동인증서|아이PIN/i))) {
+      ev.push('WINDOW:popup(opener 존재)', 'TEXT:본인/실명인증 화면');
+      return { step: 'AUTH', substate: 'AUTH_WINDOW', evidence: ev };
+    }
+
     /* path 표시는 .do 확장자와 실제 경로를 충분히 보여줘야 진단에 유용하다(slice(0,40)이
        '.do'를 잘라내 "매칭 누락"처럼 보이게 한 원인이 되므로 60자로 완화). */
     return { step: 'UNKNOWN', evidence: ['URL 매칭 없음(path=' + path.slice(0, 60) + ')'] };
@@ -200,6 +227,7 @@
     4: '개인정보 동의 3종(수집·이용 / 민감정보 / 고유식별정보) 단계입니다. [동의]를 선택하고 [다음]을 누른 뒤, 뜨는 창에서 [민원신청]을 눌러주세요.',
     '4-POPUP_ALERT': '창에서 [민원신청]을 누르면 개인정보 입력 화면으로 넘어갑니다. 입력과 인증은 사용자 직접 영역입니다.',
     5: '개인정보 입력 화면(forInsertStep1.do)입니다. 성명·생년월일·연락처·주소는 화면에서 직접 입력하고, [본인인증받기]도 본인이 직접 진행해주세요. NewStart는 입력·인증·제출을 대신하지 않으며 이 화면의 입력값을 읽지 않습니다.',
+    AUTH: '이 창은 본인인증 창으로, 금감원 민원 진행 단계 자체가 아닙니다. 인증수단 선택·입력·확인 모두 이 창에서 본인이 직접 완료해주세요. NewStart는 인증정보를 읽거나 입력하지 않습니다. 인증 후 이 창이 닫히고 금감원 민원 창으로 돌아가면 다음 단계를 계속 안내합니다.',
     UNKNOWN: '현재 화면을 자동으로 확인하지 못했습니다. 수동 안내를 이용해주세요.'
   };
 

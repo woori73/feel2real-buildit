@@ -1,6 +1,6 @@
 # NewStart Chrome Agent — FSS Phase 2 PoC (Manifest V3)
 
-NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype (v0.3.0).
+NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype (v0.4.0).
 사용자의 실제 Chrome에서 금융감독원(FSS) 민원 화면의 **구조적 DOM 사실만**으로
 현재 단계를 판별하고, 화면 **상단 중앙** 플로팅 어시스턴트 카드로 다음 절차를 안내한다.
 
@@ -32,8 +32,9 @@ NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype 
 - 읽지·전송하지 않음: 성명·주민등록번호·생년월일·전화·주소·이메일·금융회사 입력값·
   민원 본문 입력값·공동인증서 정보/비밀번호·OTP·휴대폰 인증번호·iPIN·쿠키·세션 토큰.
 - 판별은 **구조적 DOM**만으로: URL path, 페이지 title, heading/legend 텍스트,
-  버튼/링크 텍스트, radio의 name/value **선택지 정의 속성**, hidden input의 **name**,
-  알려진 요소 id(`#popup-alert`)의 **존재 여부**.
+  버튼/링크 텍스트, radio의 name/value **선택지 정의 속성**(사용자 선택 상태 아님),
+  hidden input의 **name**, 알려진 요소 id(`#popup-alert`)의 **존재 여부**,
+  `window.opener`는 **존재 boolean만**(opener 창 내부·속성은 읽지 않음).
 - 텍스트 계열 `input`의 `value`, `textarea`, `password` 필드는 **조회조차 하지 않는다**
   (`collectFacts`가 해당 속성을 읽지 않도록 구현 + 단위 테스트로 강제).
 - 서버 전송 자체가 없음: 백그라운드로 가는 메시지는 `{step, substate, evidence 카테고리, version}`.
@@ -62,6 +63,7 @@ NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype 
 | 4 | `forInsertAgre.do` + 동의 3종 — **v0.3.0 실측 교정: 실제 DOM은 `agreechkYn`·`sinfoSndYn`·`agreechkRgnoYn` Y/N `radio`** (v0.2.0까지 hidden으로 가정해 UNKNOWN 오검출). hidden 3종 also 인정. `#popup-alert` 존재 시 substate=`POPUP_ALERT`. 타이틀 `1단계 개인정보동의` → fssStage 1 표시 |
 | 5 | `forInsertStep1.do`(실측: `/fss/cvpl/ctrbsUnlawFncdl/…`) + 구조 신호(타이틀 `2단계 개인정보입력` 또는 본인인증/실명인증/개인정보입력 문구, radio 선택지 정의) → **인식·안내 전용**: 직접 입력·직접 인증 고지. 자동 입력/클릭/다음/인증/제출 대행 일절 없음 |
 | 6~14 | PoC 범위 밖 (수동 안내 / Phase 1 Guided Agent fallback) |
+| AUTH (v0.4.0) | `certificationPop.do`(handoff §3 STEP7 실측: `[본인인증받기]`→`fnCertificationPop()`의 window.open 팝업) 또는 **popup 컨텍스트(`window.opener` 존재 boolean)+ 본인증/실명인증 타이틀·heading**. 민원 "단계"가 아니므로 UNKNOWN(빨간 실패) 대신 **중립 상태 "본인인증 진행"**으로 표시 — 인증수단 선택·입력·클릭·닫기 등 자동화 일절 없음(DETECT+GUIDE+WAIT 뿐). 낮은 창에서는 compact 폭(360px) + 1회 자동 접힘으로 인증 UI 가림 최소화 |
 
 > 2026-09-24 실제 Chrome QA에서 `.do` 화면들의 실제 prefix는 `/fss/minwon/`이 아니라
 > `/fss/cvpl/ctrbsUnlawFncdl/`임이 확인됐다. 판별은 파일명(`forInsertSelect.do` 등) 기준으로

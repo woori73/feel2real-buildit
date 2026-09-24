@@ -15,7 +15,7 @@ const det = require('../src/fssStepDetector.js');
 function facts(over) {
   return Object.assign({
     version: det.VERSION, path: '', title: '', headings: [], buttons: [], labels: [],
-    radioOptions: {}, hiddenNames: [], progressLabels: [], knownIds: {}
+    radioOptions: {}, hiddenNames: [], progressLabels: [], hasOpener: false, knownIds: {}
   }, over);
 }
 
@@ -178,8 +178,7 @@ test('STEP 5 — 타이틀 "2단계 개인정보입력" → fssStage 2 (실측 �
   assert.deepEqual(r.fssStage, { no: 2, name: '개인정보입력' });
 });
 
-/* collectFacts: 실제 입력값(text/password)은 절대 읽지 않는다는 원칙을 최소 DOM 스텁으로 확인. */
-test('collectFacts does not read text/password input values', () => {
+/* collectFacts: 실제 입력값(text/password)은 절대 읽지 않는다는 원칙을 최소 DOM 스텁으로 확인. */test('collectFacts does not read text/password input values', () => {
   let pwdRead = false;
   const stubRadio = [{ name: 'minwonChk', getAttribute: () => 'Y' }];
   const doc = {
@@ -200,4 +199,75 @@ test('collectFacts does not read text/password input values', () => {
   assert.equal(f.path, '/fss/cvpl/ctrbsunlawfncdl/forinsertselect.do');
   assert.deepEqual(f.radioOptions.minwonChk, ['Y']);
   void pwdRead;
+});
+
+/* ===== REAL QA ROUND 3 (2026-09-24): 본인인증 popup은 UNKNOWN이 아닌 AUTH 상태 =====
+   근거: handoff §3 STEP7 실측 — [본인인증받기] → fnCertificationPop()이 certificationPop.do를
+   window.open 팝업으로 연다. 3차 QA에서 그 팝업(www.fss.or.kr origin)의 패널이
+   "단계 자동 확인 실패"를 띄워 절차 실패로 오인됨 → 별도 상태로 승격. */
+test('AUTH — certificationPop.do popup → step AUTH (UNKNOWN 아님, FSS STEP 아님)', () => {
+  const r = det.classify(facts({
+    path: '/fss/cvpl/ctrbsunlawfncdl/certificationpop.do',
+    title: '본인인증',
+    hasOpener: true
+  }));
+  assert.equal(r.step, 'AUTH');
+  assert.equal(r.substate, 'CERT_POPUP');
+  assert.notEqual(r.step, 'UNKNOWN');
+  assert.equal(typeof r.step, 'string'); /* STEP 번호(1~5)와 혼용 금지 */
+  assert.equal(r.fssStage, undefined);  /* 인증 창은 금감원 4단계 모델이 아니다 */
+  assert.ok(r.evidence.some((e) => e.indexOf('certificationPop.do') >= 0));
+});
+
+test('AUTH fallback — popup 컨텍스트(hasOpener) + 인증 타이틀/heading 문구 → AUTH', () => {
+  const r = det.classify(facts({
+    path: '/fss/cmmn/someauthwin.do',
+    title: '공동인증서 본인인증',
+    hasOpener: true
+  }));
+  assert.equal(r.step, 'AUTH');
+  assert.equal(r.substate, 'AUTH_WINDOW');
+});
+
+test('AUTH 오탐 방지 — forInsertStep1.do는 [본인인증받기] 버튼이 있어도 STEP 5 유지(hasOpener 무관)', () => {
+  const r = det.classify(facts({
+    path: '/fss/cvpl/ctrbsunlawfncdl/forinsertstep1.do',
+    title: '2단계 개인정보입력 | 금융감독원 민원신청',
+    buttons: ['본인인증받기', '실명인증', '다음 단계'],
+    hasOpener: true
+  }));
+  assert.equal(r.step, 5);
+});
+
+test('AUTH와 UNKNOWN 구분 — opener 없는 일반 미지원 FSS 화면은 여전히 UNKNOWN(빨간 실패 유지 대상)', () => {
+  const r = det.classify(facts({ path: '/fss/minwon/someOther.do', title: '민원 안내', hasOpener: false }));
+  assert.equal(r.step, 'UNKNOWN');
+});
+
+test('AUTH 안내문은 직접 수행 고지 + 결과 주장 금지(인증 완료/실패 선언 없음)', () => {
+  const g = det.GUIDE.AUTH;
+  assert.ok(g.includes('직접'));
+  assert.ok(g.includes('NewStart는 인증정보를 읽거나 입력하지 않습니다'));
+  assert.ok(!/인증이 완료|인증을 대행|자동 인증|성공적으로 인증/.test(g));
+});
+
+test('AUTH — classify 결과는 필드 최소 계약(step/substate/evidence뿐, 조작 필드 없음)', () => {
+  const r = det.classify(facts({ path: '/fss/cvpl/ctrbsunlawfncdl/certificationpop.do', hasOpener: true }));
+  assert.deepEqual(Object.keys(r).sort(), ['evidence', 'step', 'substate']);
+});
+
+test('collectFacts — window 컨텍스트에서 hasOpener boolean만 수집(opener 내부 미열람)', () => {
+  const doc = {
+    title: '본인인증',
+    createElement: () => ({ set href(_v) {}, get pathname() { return '/fss/cvpl/ctrbsunlawfncdl/certificationPop.do'; } }),
+    querySelectorAll: () => [],
+    getElementById: () => null
+  };
+  /* opener 객체의 어떤 속성 읽지도 금지 — 읽으면 throw. */
+  const openerTrap = new Proxy({}, { get() { throw new Error('opener property read!'); } });
+  const f = det.collectFacts(doc, 'https://www.fss.or.kr/fss/cvpl/ctrbsunlawfncdl/certificationPop.do',
+    { opener: openerTrap });
+  assert.equal(f.hasOpener, true);
+  const g = det.collectFacts(doc, 'https://www.fss.or.kr/x');
+  assert.equal(g.hasOpener, false); /* 2-arg 호환(기존 fixture/테스트) */
 });
