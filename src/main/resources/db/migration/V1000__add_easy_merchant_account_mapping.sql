@@ -1,5 +1,5 @@
 -- ============================================================
--- V991: Easy Phase 5A.2 - Merchant Account Mapping (additive only)
+-- V1000: Easy Phase 5A.2 - Merchant Account Mapping (additive only)
 --   · Business-scoped merchant → account mapping for admin explicit mappings
 --   · Normalized merchant key for historical/rule-based matching
 --   · Source tracking for recommendation transparency
