@@ -6,7 +6,7 @@
   <title>금감원 민원 도우미 | 새출발기금 부실차주</title>
   <meta name="description" content="전자책 실제 민원 예시를 참고해 내 상황을 금감원 민원 문장으로 정리하는 도우미">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260923-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260924-1">
   <style>
     .ns-fss-steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
     .ns-fss-step{font-size:13px;padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#475569}
@@ -28,6 +28,40 @@
     .ns-fss-manual .ns-fss-caution{display:block;color:#b45309;font-size:12px;margin-top:2px}
     .ns-fss-err{color:#b91c1c;font-size:13px;margin-top:8px}
     .ns-fss-note{font-size:12px;color:#64748b;margin-top:6px}
+    /* --- Guided Agent (Phase 1: 사용자 PC Chrome 안내 — 서버 자동화 없음) --- */
+    .ns-ag-notice{display:flex;gap:8px;align-items:flex-start;background:#eff6ff;border:1px solid #bfdbfe;
+      border-radius:12px;padding:10px 12px;font-size:13px;color:#1e40af;margin:10px 0}
+    .ns-ag-notice:empty{display:none}
+    .ns-ag-explain{white-space:pre-wrap;font-size:13px;color:#475569;margin:6px 0 12px}
+    .ns-ag-explain:empty{display:none}
+    .ns-ag-panel{border:1px solid #cbd5e1;border-radius:14px;padding:14px;background:#f8fafc;margin:12px 0}
+    .ns-ag-progress{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .ns-ag-dot{width:22px;height:22px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#64748b;
+      font-size:12px;display:flex;align-items:center;justify-content:center}
+    .ns-ag-dot.is-done{background:#0f172a;border-color:#0f172a;color:#fff}
+    .ns-ag-dot.is-current{outline:2px solid #2563eb;outline-offset:1px;color:#1e40af;font-weight:700}
+    .ns-ag-step-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin:0 0 4px}
+    .ns-ag-step-no{font-size:12px;font-weight:700;color:#fff;background:#0f172a;border-radius:999px;padding:2px 8px}
+    .ns-ag-step-title{font-size:16px;font-weight:700;color:#0f172a;margin:0}
+    .ns-ag-where{font-size:13px;color:#475569;margin:0 0 8px}
+    .ns-ag-check{font-size:14px;color:#1e293b;background:#fff;border:1px solid #e2e8f0;border-radius:10px;
+      padding:10px;margin:0 0 8px;white-space:pre-wrap}
+    .ns-ag-caution{font-size:13px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;
+      padding:8px 10px;margin:0 0 8px;white-space:pre-wrap}
+    .ns-ag-privacy{font-size:13px;color:#7c2d12;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;
+      padding:8px 10px;margin:0 0 8px}
+    .ns-ag-badge{font-size:12px;color:#334155;margin:0 0 8px}
+    .ns-ag-verify{font-size:12px;color:#334155;background:#f1f5f9;border-radius:999px;padding:2px 8px}
+    .ns-ag-verify.is-manual{color:#92400e;background:#fffbeb}
+    .ns-ag-finished{font-size:14px;color:#14532d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
+      padding:10px;margin:0 0 8px;white-space:pre-wrap}
+    .ns-ag-mobilenote{display:none;background:#fff7ed;border:1px solid #fdba74;border-radius:12px;
+      padding:10px 12px;font-size:13px;color:#9a3412;margin:10px 0}
+    @media (max-width: 640px){
+      .ns-ag-mobilenote{display:block}
+      .ns-ag-panel{display:none}
+      #ns-ag-open{display:none}
+    }
   </style>
 </head>
 <body>
@@ -56,6 +90,35 @@
             <span class="ns-fss-step" id="ns-fss-tab4">4 금감원 접수 안내</span>
           </div>
           <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. NewStart AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
+
+          <h2 class="ns-fss-label">금감원 민원 신청 — 두 가지 방법</h2>
+          <div class="ns-ag-notice" id="ns-ag-notice"></div>
+          <p class="ns-ag-explain" id="ns-ag-explain"></p>
+          <div class="ns-fss-actions">
+            <button type="button" class="ns-btn ns-btn-primary" id="ns-ag-open">Agent와 함께 신청하기</button>
+            <a class="ns-btn ns-btn-ghost" href="#ns-fss-manual-section" id="ns-ag-manual-link">화면을 보며 직접 따라하기</a>
+          </div>
+          <p class="ns-ag-mobilenote" id="ns-ag-mobilenote">금감원 민원 Agent는 PC의 Chrome 브라우저에서 이용할 수 있습니다.
+            이 화면에서는 준비사항·14단계 수동 안내·AI 민원 초안(작성·복사)을 그대로 이용하실 수 있습니다.</p>
+
+          <section class="ns-ag-panel" id="ns-ag-panel" hidden aria-label="금감원 민원 Agent 단계 안내">
+            <div class="ns-ag-progress" id="ns-ag-progress" role="list" aria-label="14단계 진행 표시"></div>
+            <div id="ns-ag-body"></div>
+            <div class="ns-fss-actions">
+              <a class="ns-btn ns-btn-primary" id="ns-ag-official"
+                 href="https://www.fss.or.kr/fss/minwon/search.jsp?query=&amp;collection=simcase&amp;searchField=ALL&amp;sort=&amp;pageNum=1&amp;rgnlCd=&amp;cvplCd=&amp;cvplCd2="
+                 target="_blank" rel="noopener noreferrer"
+                 aria-label="새 탭에서 금융감독원 민원신청 페이지 열기">금감원 공식사이트 새 탭에서 열기 <span aria-hidden="true">↗</span></a>
+              <button type="button" class="ns-btn ns-btn-ghost" id="ns-ag-back">이전 단계</button>
+            </div>
+            <div class="ns-fss-actions">
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-ag-confirm">이 단계를 완료했습니다</button>
+              <button type="button" class="ns-btn ns-btn-ghost" id="ns-ag-restart">처음부터 다시</button>
+            </div>
+            <p class="ns-fss-note">NewStart는 이 화면의 안내만 드립니다. 금감원 탭에서 일어나는
+              입력·인증·제출은 전부 사용자가 직접 하며, NewStart는 그 화면을 볼 수 없습니다.</p>
+            <p id="ns-ag-err" class="ns-fss-err" hidden></p>
+          </section>
 
           <h2 class="ns-fss-label">1단계 · 저와 비슷한 예시를 선택하세요</h2>
           <div id="ns-fss-cards"></div>
@@ -87,7 +150,7 @@
             <p id="ns-fss-copy-err" class="ns-fss-err" hidden></p>
           </div>
 
-          <h2 class="ns-fss-label">4단계 · 금감원 접수 안내</h2>
+          <h2 class="ns-fss-label" id="ns-fss-manual-section">4단계 · 금감원 접수 안내</h2>
           <p>
             <a class="ns-btn ns-btn-primary" id="ns-fss-official-link"
                href="https://www.fss.or.kr/fss/minwon/search.jsp?query=&amp;collection=simcase&amp;searchField=ALL&amp;sort=&amp;pageNum=1&amp;rgnlCd=&amp;cvplCd=&amp;cvplCd2="
@@ -122,6 +185,128 @@
         $('ns-fss-tab' + i).classList.toggle('is-active', i <= n);
       });
     }
+
+    /* ---- Guided Agent (Phase 1: 사용자 PC Chrome 안내 전용 — 서버 자동화 없음) ---- */
+    var agent = { steps: [], current: 1, finished: false, loaded: false };
+
+    function agentError(msg) {
+      var el = $('ns-ag-err');
+      text(el, msg || '');
+      el.hidden = !msg;
+    }
+
+    function agentFetch(path, method) {
+      return fetch(path, { method: method || 'GET', credentials: 'same-origin' })
+        .then(function (r) {
+          if (r.status === 401) { $('ns-fss-auth').hidden = false; return null; }
+          if (!r.ok) throw new Error('http ' + r.status);
+          return r.json();
+        });
+    }
+
+    function agentRenderProgress() {
+      var host = $('ns-ag-progress');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      agent.steps.forEach(function (s) {
+        var d = document.createElement('span');
+        d.className = 'ns-ag-dot';
+        d.setAttribute('role', 'listitem');
+        var state = '';
+        if (s.number < agent.current || agent.finished) { d.classList.add('is-done'); state = '완료됨'; }
+        else if (s.number === agent.current && !agent.finished) { d.classList.add('is-current'); state = '현재 단계'; }
+        else { state = '앞으로'; }
+        text(d, s.number);
+        d.setAttribute('aria-label', '단계 ' + s.number + ' ' + s.title + ' — ' + state);
+        host.appendChild(d);
+      });
+    }
+
+    function agentEl(tag, cls, value) {
+      var el = document.createElement(tag);
+      if (cls) el.className = cls;
+      text(el, value);
+      return el;
+    }
+
+    function agentRenderBody() {
+      var host = $('ns-ag-body');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      if (agent.finished) {
+        host.appendChild(agentEl('p', 'ns-ag-finished',
+          '14단계 안내를 모두 마쳤습니다. 금감원 화면의 최종 제출(등록) 버튼은 사용자가 직접 '
+          + '내용을 확인한 뒤에 누릅니다. NewStart는 제출 여부를 알 수 없고 관여하지 않습니다.'));
+      } else {
+        var s = null;
+        for (var i = 0; i < agent.steps.length; i++) {
+          if (agent.steps[i].number === agent.current) { s = agent.steps[i]; break; }
+        }
+        if (!s) return;
+        var head = agentEl('div', 'ns-ag-step-head');
+        head.appendChild(agentEl('span', 'ns-ag-step-no', 'STEP ' + s.number + ' / ' + agent.steps.length));
+        head.appendChild(agentEl('p', 'ns-ag-step-title', s.title));
+        host.appendChild(head);
+        host.appendChild(agentEl('p', 'ns-ag-where', s.where));
+        var badge = agentEl('span', 'ns-ag-badge');
+        // 서버는 evidence(POC 확인 여부)만 보낸다 — 검증 여부는 여기서 판정(자동화 감지 아님).
+        var ok = s.evidence && s.evidence !== 'MANUAL_UNVERIFIED';
+        var v = agentEl('span', 'ns-ag-verify' + (ok ? '' : ' is-manual'),
+          ok ? '2026-09-24 화면 조사에서 확인' : '과거 매뉴얼 기준 · 현재 화면 미검증');
+        badge.appendChild(v);
+        host.appendChild(badge);
+        host.appendChild(agentEl('p', 'ns-ag-check', '금감원 화면에서 확인해주세요: ' + s.checkAction));
+        if (s.caution) host.appendChild(agentEl('p', 'ns-ag-caution', '참고: ' + s.caution));
+        if (s.personalFields) host.appendChild(agentEl('p', 'ns-ag-privacy', s.personalFields));
+        text($('ns-ag-confirm'), s.confirmLabel || '이 단계를 완료했습니다');
+      }
+      $('ns-ag-confirm').hidden = agent.finished;
+      $('ns-ag-back').disabled = !agent.finished && agent.current <= 1;
+      agentRenderProgress();
+    }
+
+    function agentApplySession(b) {
+      if (!b) return;
+      agent.current = b.currentStep;
+      agent.finished = !!b.finished;
+      agentRenderBody();
+    }
+
+    function agentAdvance() {
+      agentError('');
+      agentFetch('/api/newstart/fss/agent/advance', 'POST').then(agentApplySession)
+        .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
+    }
+
+    function agentOpen() {
+      $('ns-ag-panel').hidden = false;
+      if (agent.loaded) { agentRenderBody(); return; }
+      agentFetch('/api/newstart/fss/agent/workflow').then(function (b) {
+        if (!b) return;
+        agent.steps = b.steps || [];
+        agent.loaded = true;
+        return agentFetch('/api/newstart/fss/agent/session').then(agentApplySession);
+      }).catch(function () { agentError('안내 데이터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.'); });
+    }
+
+    function agentRenderStatic(b) {
+      if (!b || !b.agent) return;
+      text($('ns-ag-notice'), b.agent.pcChromeNotice);
+      text($('ns-ag-explain'), b.agent.explanation);
+      agent.steps = b.agent.steps || [];
+      agent.loaded = agent.steps.length > 0;
+    }
+
+    $('ns-ag-open').addEventListener('click', agentOpen);
+    $('ns-ag-confirm').addEventListener('click', agentAdvance);
+    $('ns-ag-back').addEventListener('click', function () {
+      agentError('');
+      agentFetch('/api/newstart/fss/agent/back', 'POST').then(agentApplySession)
+        .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
+    });
+    $('ns-ag-restart').addEventListener('click', function () {
+      agentError('');
+      agentFetch('/api/newstart/fss/agent/restart', 'POST').then(agentApplySession)
+        .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
+    });
 
     function renderCards() {
       var host = $('ns-fss-cards');
@@ -252,6 +437,7 @@
         // preview는 서버 record 계산값(JSON 직렬화) 사용.
         renderCards();
         renderManual(b.manual);
+        agentRenderStatic(b);
       })
       .catch(function () { $('ns-fss-auth').hidden = false; });
   })();

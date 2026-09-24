@@ -86,7 +86,11 @@ class NewStartFssComplaintControllerTest {
         .andExpect(jsonPath("$.samples.length()").value(3))
         .andExpect(jsonPath("$.samples[0].id").value("FS-1"))
         .andExpect(jsonPath("$.samples[0].ebookRef").value("EBK-6-3 / 3-1"))
-        .andExpect(jsonPath("$.manual.steps[0].action").value("민원을 넣는다"));
+        .andExpect(jsonPath("$.manual.steps[0].action").value("민원을 넣는다"))
+        // Guided Agent 14단계 안내가 companion 1회 응답에 함께 실린다(정적 문구, 개인정보 없음).
+        .andExpect(jsonPath("$.agent.steps.length()").value(14))
+        .andExpect(jsonPath("$.agent.pcChromeNotice")
+            .value("금감원 민원 Agent는 PC의 Chrome 브라우저에서 이용할 수 있습니다."));
   }
 
   @Test

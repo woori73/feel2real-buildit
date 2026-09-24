@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.fssagent.FssGuidedWorkflow;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.fssagent.NewStartFssAgentController;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.FssComplaintHelperService;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +31,14 @@ public class NewStartFssComplaintController {
   @GetMapping("/companion")
   public CompanionResponse companion() {
     return new CompanionResponse("ok",
-        fssComplaintHelperService.samples(), fssComplaintHelperService.manual());
+        fssComplaintHelperService.samples(), fssComplaintHelperService.manual(), agentWorkflow());
+  }
+
+  /** Guided Agent 정적 안내 — {@link NewStartFssAgentController}/와 동일한 14단계 payload. */
+  private static NewStartFssAgentController.WorkflowResponse agentWorkflow() {
+    return new NewStartFssAgentController.WorkflowResponse("ok",
+        FssGuidedWorkflow.OFFICIAL_ENTRY_URL, FssGuidedWorkflow.PC_CHROME_NOTICE,
+        FssGuidedWorkflow.EXPLANATION, FssGuidedWorkflow.steps());
   }
 
   @PostMapping("/compose")
@@ -62,7 +71,9 @@ public class NewStartFssComplaintController {
   }
 
   /** 전자책 출처 식별자(ebookRef·sourceLines)가 각 샘플에 포함된 그대로 노출한다. */
+  /** @param agent Phase 1 Guided Agent 14단계 정적 안내(개인정보 없음) — 화면 1회 로딩으로 함께 전달. */
   public record CompanionResponse(String status,
       List<FssComplaintHelperService.ComplaintSample> samples,
-      FssComplaintHelperService.ManualGuide manual) {}
+      FssComplaintHelperService.ManualGuide manual,
+      NewStartFssAgentController.WorkflowResponse agent) {}
 }
