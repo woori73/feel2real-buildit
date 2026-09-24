@@ -34,6 +34,11 @@
     .ns-ag-notice:empty{display:none}
     .ns-ag-explain{white-space:pre-wrap;font-size:13px;color:#475569;margin:6px 0 12px}
     .ns-ag-explain:empty{display:none}
+    .ns-ag-chrome-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#64748b;
+      border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;margin:4px 0 10px;background:#f8fafc}
+    .ns-ag-chrome-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:#94a3b8;flex:none}
+    .ns-ag-chrome-badge[data-ns-agent="connected"]{color:#166534;border-color:#bbf7d0;background:#f0fdf4}
+    .ns-ag-chrome-badge[data-ns-agent="connected"]::before{background:#16a34a}
     .ns-ag-panel{border:1px solid #cbd5e1;border-radius:14px;padding:14px;background:#f8fafc;margin:12px 0}
     .ns-ag-progress{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
     .ns-ag-dot{width:22px;height:22px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#64748b;
@@ -94,6 +99,8 @@
           <h2 class="ns-fss-label">금감원 민원 신청 — 두 가지 방법</h2>
           <div class="ns-ag-notice" id="ns-ag-notice"></div>
           <p class="ns-ag-explain" id="ns-ag-explain"></p>
+          <p class="ns-ag-chrome-badge" id="ns-chrome-badge" data-ns-agent="absent">
+            Chrome Agent 확장 미설치 — 이 화면의 수동·단계 안내 모드로 이용됩니다.</p>
           <div class="ns-fss-actions">
             <button type="button" class="ns-btn ns-btn-primary" id="ns-ag-open">Agent와 함께 신청하기</button>
             <a class="ns-btn ns-btn-ghost" href="#ns-fss-manual-section" id="ns-ag-manual-link">화면을 보며 직접 따라하기</a>

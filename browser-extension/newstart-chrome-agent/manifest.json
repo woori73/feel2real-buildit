@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "NewStart Chrome Agent (FSS PoC)",
+  "version": "0.1.0",
+  "description": "NewStart가 금융감독원 민원 화면의 구조(URL·제목·라벨·버튼 텍스트)만 읽어 현재 단계를 안내하는 Phase 2 PoC. 입력값·인증정보·쿠키는 읽지도 전송하지 않는다.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://feel2real.co.kr/*",
+    "https://www.fss.or.kr/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://feel2real.co.kr/newstart*", "http://localhost/newstart*", "http://localhost:*/newstart*", "http://127.0.0.1:*/newstart*"],
+      "js": ["src/newstartContent.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.fss.or.kr/*"],
+      "js": ["src/fssStepDetector.js", "src/fssContent.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
