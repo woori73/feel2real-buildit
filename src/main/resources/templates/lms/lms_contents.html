@@ -20,9 +20,58 @@
 
   <main class="lms-content">
     <h1 class="page-title">콘텐츠 관리</h1>
+    <p class="content-sub">복습영상을 강좌에 연결해 재원생에게 공개합니다. 학원 홍보영상과는 별도입니다.</p>
+
     <div class="panel">
-      <div class="course-select" data-content-course-select></div>
-      <div class="video-card-grid" data-video-manage-list></div>
+      <h2 class="section-title">복습영상 업로드</h2>
+      <form data-content-form class="content-form">
+        <input type="hidden" name="lmsContentId" data-field-lms-content-id>
+        <div class="form-row">
+          <label for="contentLesson">강좌</label>
+          <select id="contentLesson" name="lessonId" data-field-lesson required></select>
+        </div>
+        <div class="form-row">
+          <label for="contentTitle">제목</label>
+          <input id="contentTitle" name="title" type="text" data-field-title required maxlength="200">
+        </div>
+        <div class="form-row">
+          <label for="contentDescription">설명</label>
+          <textarea id="contentDescription" name="description" data-field-description rows="2"></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="contentSchool">학교</label>
+            <input id="contentSchool" name="schoolName" type="text" data-field-school>
+          </div>
+          <div class="form-row">
+            <label for="contentGrade">학년</label>
+            <input id="contentGrade" name="gradeLabel" type="text" data-field-grade placeholder="예: 중2">
+          </div>
+          <div class="form-row">
+            <label for="contentExam">시험</label>
+            <input id="contentExam" name="examName" type="text" data-field-exam placeholder="예: 2학기 중간고사">
+          </div>
+          <div class="form-row">
+            <label for="contentUnit">단원</label>
+            <input id="contentUnit" name="unitLabel" type="text" data-field-unit placeholder="예: Lesson 5">
+          </div>
+        </div>
+        <div class="form-row" data-field-video-row>
+          <label for="contentVideo">영상 파일</label>
+          <input id="contentVideo" name="video" type="file" accept="video/*" data-field-video>
+          <p class="field-hint">새 업로드일 때만 필요합니다. 수정 시 영상은 그대로 유지됩니다.</p>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-auto" data-form-submit>업로드 · 저장</button>
+          <button type="button" class="btn-flat" data-form-cancel hidden>수정 취소</button>
+        </div>
+        <p class="form-status" data-form-status></p>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2 class="section-title">등록된 콘텐츠</h2>
+      <div class="content-list" data-content-list></div>
     </div>
   </main>
 </div>

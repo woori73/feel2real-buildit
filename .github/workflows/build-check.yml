@@ -137,6 +137,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardExcelParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardNormalizerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardImportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.entity.LmsContentEntityTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmsenrollment.entity.LmsEnrollmentEntityTest"
 
       - name: Upload test report
         if: always()

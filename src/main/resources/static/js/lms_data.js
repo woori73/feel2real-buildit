@@ -96,6 +96,84 @@
       if (!video) return Promise.resolve(null);
       Object.keys(patch || {}).forEach(function (key) { video[key] = patch[key]; });
       return Promise.resolve(clone(video));
+    },
+
+    // ── 콘텐츠 관리(실 API, 에듀홀릭 LMS Phase 1) ──────────────────────────
+    // 아래 함수들은 LMS_MOCK을 건드리지 않는다 — 재원생 복습영상은 별도 도메인이다.
+
+    /** 강좌관리 콘텐츠 탭: 강좌 선택 목록 + 등록된 콘텐츠 전체. */
+    listAdminContents: function (handle) {
+      var url = '/api/tutor/lms/' + encodeURIComponent(handle) + '/contents';
+      return window.fetchAuth(url, { redirectOnAuthError: false }).then(function (response) {
+        if (!response.ok) throw responseError(response, '콘텐츠 목록을 불러오지 못했습니다.');
+        return response.json();
+      });
+    },
+
+    /** formData: lessonId/title/description/schoolName/gradeLabel/examName/unitLabel/video. */
+    createAdminContent: function (handle, formData) {
+      var url = '/api/tutor/lms/' + encodeURIComponent(handle) + '/contents';
+      return window.fetchAuth(url, {
+        method: 'POST',
+        body: formData,
+        redirectOnAuthError: false
+      }).then(function (response) {
+        if (!response.ok) throw responseError(response, '콘텐츠를 저장하지 못했습니다.');
+        return response.json();
+      });
+    },
+
+    /** patch: {lessonId, title, description, schoolName, gradeLabel, examName, unitLabel, displayOrder}. */
+    updateAdminContent: function (handle, lmsContentId, patch) {
+      var url = '/api/tutor/lms/' + encodeURIComponent(handle) + '/contents/' + encodeURIComponent(lmsContentId);
+      return window.fetchAuth(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+        redirectOnAuthError: false
+      }).then(function (response) {
+        if (!response.ok) throw responseError(response, '콘텐츠를 수정하지 못했습니다.');
+        return response.json();
+      });
+    },
+
+    setAdminContentPublished: function (handle, lmsContentId, published) {
+      var url = '/api/tutor/lms/' + encodeURIComponent(handle) + '/contents/'
+        + encodeURIComponent(lmsContentId) + '/publish';
+      return window.fetchAuth(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ published: !!published }),
+        redirectOnAuthError: false
+      }).then(function (response) {
+        if (!response.ok) throw responseError(response, '공개 상태를 변경하지 못했습니다.');
+        return response.json();
+      });
+    },
+
+    deleteAdminContent: function (handle, lmsContentId) {
+      var url = '/api/tutor/lms/' + encodeURIComponent(handle) + '/contents/' + encodeURIComponent(lmsContentId);
+      return window.fetchAuth(url, { method: 'DELETE', redirectOnAuthError: false }).then(function (response) {
+        if (!response.ok) throw responseError(response, '콘텐츠를 삭제하지 못했습니다.');
+      });
+    },
+
+    // ── 내 복습수업(실 API, 학생) ────────────────────────────────────────────
+
+    listMyReviewLessons: function (handle) {
+      var url = '/api/lms/' + encodeURIComponent(handle) + '/my/lessons';
+      return window.fetchAuth(url, { redirectOnAuthError: false }).then(function (response) {
+        if (!response.ok) throw responseError(response, '복습수업 목록을 불러오지 못했습니다.');
+        return response.json();
+      });
+    },
+
+    getReviewLesson: function (handle, lessonId) {
+      var url = '/api/lms/' + encodeURIComponent(handle) + '/my/lessons/' + encodeURIComponent(lessonId);
+      return window.fetchAuth(url, { redirectOnAuthError: false }).then(function (response) {
+        if (!response.ok) throw responseError(response, '복습수업 정보를 불러오지 못했습니다.');
+        return response.json();
+      });
     }
   };
 })();
