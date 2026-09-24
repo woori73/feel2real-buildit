@@ -2,10 +2,11 @@
  * NewStart Chrome Agent — FSS page content script (Phase 2 PoC).
  *
  * 동작: 화면이 로드되고 DOM이 바뀌면(fssStepDetector.collectFacts → classify)
- *  구조 사실만으로 단계를 판별하고, 그림자 DOM 미니 패널로 안내문만 표시한다.
- *  panel/배경으로 전송하는 것은 {step 번호, substate, evidence 카테고리 문자열, 버전} 뿐 —
+ *  구조 사실만으로 단계를 판별하고, 그림자 DOM 상단 중앙 어시스턴트 카드로 안내한다.
+ *  패널/배경으로 전송하는 것은 {step 번호, substate, evidence 카테고리 문자열, 버전} 뿐 —
  *  입력값·텍스트 내용·개인정보·쿠키는 어떤 경로로도 전송하지 않는다(§6).
  * 금지: 클릭/체크/폼 입력/인증 대행 등 어떤 자동 조작도 하지 않는다(§12).
+ * 이 카드는 모달 오버레이가 아닌 비차단 fixed 요소 — 사용자는 FSS 화면을 보면서 조작한다.
  */
 'use strict';
 
@@ -13,7 +14,6 @@
   var det = globalThis.NewStartFssDetector;
   if (!det) return; /* detector load 실패 시 조용히 아무 것도 하지 않음 */
 
-  var STALE_TITLE = 'NewStart 안내';
   var panel = null;
   var refs = {};
   var lastRendered = '';
@@ -22,57 +22,81 @@
     if (panel) return;
     var host = document.createElement('div');
     host.id = 'newstart-chrome-agent-host';
-    /* fixed. 데스크톱 우상단(top:90px,right:20px) — 스크롤 유지, FSS 상단 메뉴 회피. 좁은 화면은 상단 full-width. */
     (document.documentElement || document.body).appendChild(host);
     panel = host.attachShadow({ mode: 'closed' });
 
     var style = document.createElement('style');
-    /* desktop: 우상단 고정(스크롤해도 유지) — FSS 상단 헤더/메뉴를 피하기 top:90px.
-       narrow/mobile: 상단 full-width 계열(좌우 8px margin), 억지로 우측 좁은 박스 유지하지 않음. */
+    /* DESKTOP: 상단 중앙 플로팅 카드 — top:24px, left:50%+translateX(-50%), 폭 450px.
+       NARROW(<=560px): 좌우 8px 여백의 상단 full-width. viewport 밖으로 나가지 않음.
+       금감원 흰/회색 카드와 명확히 구분: 남색 브랜드 헤더 그라데이션 + 진한 border + 강한 shadow. */
     style.textContent =
       ':host{all:initial}' +
-      '.wrap{position:fixed;top:90px;right:20px;width:300px;max-width:calc(100vw - 40px);' +
-      'box-sizing:border-box;background:#ffffff;border:1px solid #d5dae2;border-radius:10px;' +
-      'box-shadow:0 6px 18px rgba(20,30,50,.18);font-family:-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;' +
-      'font-size:13px;color:#1c2430;z-index:2147483000;line-height:1.45}' +
-      '@media (max-width:640px){.wrap{top:8px;left:8px;right:8px;width:auto;max-width:none}}' +
-      '.hd{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;' +
-      'background:#f4f7fb;border-bottom:1px solid #e2e7ee;border-radius:10px 10px 0 0}' +
-      '.hd b{font-size:12.5px}' +
-      '.mini{border:0;background:transparent;font-size:15px;line-height:1;padding:2px 6px;cursor:pointer;color:#5a6678}' +
-      '.bd{padding:9px 11px 11px}' +
+      '.wrap{position:fixed;top:24px;left:50%;transform:translateX(-50%);width:450px;' +
+      'max-width:calc(100vw - 32px);box-sizing:border-box;background:#fff;' +
+      'border:1px solid #1e293b;border-top:3px solid #1d4ed8;border-radius:12px;' +
+      'box-shadow:0 10px 30px rgba(15,23,42,.28);' +
+      'font-family:-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;' +
+      'font-size:13px;color:#0f172a;z-index:2147483000;line-height:1.5}' +
+      '@media (max-width:560px){.wrap{top:8px;left:8px;right:8px;transform:none;width:auto;max-width:none}}' +
+      '.hd{display:flex;align-items:center;gap:8px;padding:9px 12px;' +
+      'background:linear-gradient(90deg,#1e3a8a,#2563eb);color:#fff;border-radius:11px 11px 0 0}' +
+      '.brand{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13.5px;white-space:nowrap}' +
+      '.brand .logo{width:9px;height:9px;border-radius:50%;background:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.35)}' +
+      '.chip{font-size:12px;font-weight:700;color:#dbeafe;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.wrap.is-min .chip{margin-right:auto}' +
+      '.mini{margin-left:auto;border:0;background:rgba(255,255,255,.18);color:#fff;border-radius:7px;' +
+      'font-size:12px;line-height:1;padding:4px 10px;cursor:pointer;white-space:nowrap}' +
+      '.mini:hover{background:rgba(255,255,255,.3)}' +
+      '.bd{padding:11px 13px 12px}' +
       '.wrap.is-min .bd{display:none}' +
-      '.wrap.is-min{width:auto;max-width:calc(100vw - 40px)}' +
-      /* 시각 우선순위: 1 단계 → 2 행동(안내) → 3 근거/주의 → 4 수동 안내 */ +
-      '.st{font-weight:800;font-size:15px;margin-bottom:5px}' +
-      '.st.is-unknown{color:#b91c1c}' +
-      '.gd{color:#1f2a38;font-size:13px}' +
-      '.ev{margin-top:7px;color:#7b8798;font-size:11px;word-break:break-all}' +
-      '.ft{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}' +
-      'a.open,.open{color:#2456a6;font-size:12px}' +
-      '.tag{color:#9aa5b3;font-size:10.5px;margin-left:auto}';
+      '.wrap.is-min{width:auto;max-width:calc(100vw - 32px)}' +
+      '@media (max-width:560px){.wrap.is-min{width:auto}}' +
+      /* 시각 우선순위: 1 현재 단계(최대) → 2 지금 할 행동 → 3 근거/주의 → 4 수동 안내 */
+      '.st{font-weight:800;font-size:19px;line-height:1.3;color:#0f172a;margin-bottom:2px}' +
+      '.sub{font-size:11.5px;color:#475569;font-weight:600;margin-bottom:8px}' +
+      '.st.is-unknown{color:#b91c1c;font-size:16.5px}' +
+      '.gd{color:#1f2937;font-size:13.5px;font-weight:600}' +
+      '.ev{margin-top:8px;color:#64748b;font-size:11px;word-break:break-all;border-top:1px dashed #e2e8f0;padding-top:7px}' +
+      '.ft{margin-top:9px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}' +
+      '.open{color:#1d4ed8;font-size:12px;font-weight:600;text-decoration:underline}' +
+      '.tag{color:#94a3b8;font-size:10.5px;margin-left:auto}';
     panel.appendChild(style);
 
     var wrap = document.createElement('div');
     wrap.className = 'wrap';
+
     var hd = document.createElement('div');
     hd.className = 'hd';
-    var title = document.createElement('b');
-    title.textContent = STALE_TITLE;
+    var brand = document.createElement('div');
+    brand.className = 'brand';
+    var logo = document.createElement('span');
+    logo.className = 'logo';
+    var brandTx = document.createElement('span');
+    brandTx.textContent = 'NewStart 안내';
+    brand.appendChild(logo);
+    brand.appendChild(brandTx);
+    refs.chip = document.createElement('span');
+    refs.chip.className = 'chip';
     var mini = document.createElement('button');
     mini.className = 'mini';
     mini.type = 'button';
-    mini.textContent = '—';
+    mini.textContent = '접기';
+    mini.setAttribute('aria-expanded', 'true');
     mini.addEventListener('click', function () {
-      wrap.classList.toggle('is-min');
+      var collapsed = wrap.classList.toggle('is-min');
+      mini.textContent = collapsed ? '펼치기' : '접기';
+      mini.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     });
-    hd.appendChild(title);
+    hd.appendChild(brand);
+    hd.appendChild(refs.chip);
     hd.appendChild(mini);
 
     var bd = document.createElement('div');
     bd.className = 'bd';
     refs.step = document.createElement('div');
     refs.step.className = 'st';
+    refs.sub = document.createElement('div');
+    refs.sub.className = 'sub';
     refs.guide = document.createElement('div');
     refs.guide.className = 'gd';
     refs.ev = document.createElement('div');
@@ -93,14 +117,19 @@
     ft.appendChild(link);
     ft.appendChild(tag);
     bd.appendChild(refs.step);
+    bd.appendChild(refs.sub);
     bd.appendChild(refs.guide);
     bd.appendChild(refs.ev);
     bd.appendChild(ft);
     wrap.appendChild(hd);
     wrap.appendChild(bd);
-    /* 인증/지도 popup처럼 창 자체가 낮은 경우에만 접은 상태로 시작(가림 최소화).
-       모바일 세로(높이가 충분)는 상단 full-width 패널로 펼침 — 오류도 상단에서 즉시 보여야 한다. */
-    if (window.innerHeight < 480) wrap.classList.add('is-min');
+    /* 인증/지도 popup처럼 창 자체가 낮은 경우에만 접은 상태로 시작 — bar에 "NewStart 안내 · STEP N".
+       모바일 세로(높이 충분)는 펼침: 안내·오류가 상단에서 즉시 보여야 한다. */
+    if (window.innerHeight < 480) {
+      wrap.classList.add('is-min');
+      mini.textContent = '펼치기';
+      mini.setAttribute('aria-expanded', 'false');
+    }
     panel.appendChild(wrap);
     refs.wrap = wrap;
   }
@@ -110,20 +139,36 @@
     return det.GUIDE[r.step] || det.GUIDE.UNKNOWN;
   }
 
-  function stepLabel(r) {
+  /* 두 단계 체계 분리(2026-09-24 QA 지시):
+     - FSS 자체 4단계: "금감원 N단계 · NAME" (화면 타이틀 실측 근거) → 사용자에게 우선 표시
+     - NewStart 내부 흐름(신청 준비·사전확인 포함 1~14): 보조 표기만 */
+  function stepMain(r) {
     if (r.step === 'UNKNOWN') return '단계 자동 확인 실패';
-    return '현재 단계 ' + r.step + '으로 확인됩니다 (14단계 기준)';
+    if (r.fssStage) return '금감원 ' + r.fssStage.no + '단계 · ' + r.fssStage.name;
+    return '현재 단계 ' + r.step + '으로 확인됩니다';
+  }
+  function stepSub(r) {
+    if (r.step === 'UNKNOWN') return '아래 수동 안내를 이용해주세요';
+    return 'NewStart 흐름 STEP ' + r.step + ' · 14단계 기준' +
+      (r.fssStage ? ' · 금감원 진행nav ' + r.fssStage.no + '/4단계' : '');
+  }
+  function chipLabel(r) {
+    if (r.step === 'UNKNOWN') return '· 확인 실패';
+    if (r.fssStage) return '· 금감원 ' + r.fssStage.no + '단계';
+    return '· STEP ' + r.step;
   }
 
   function render(r) {
     ensurePanel();
-    var key = JSON.stringify([r.step, r.substate, r.evidence]);
+    var key = JSON.stringify([r.step, r.substate, r.fssStage, r.evidence]);
     if (key === lastRendered) return;
     lastRendered = key;
-    refs.step.textContent = stepLabel(r);
+    refs.step.textContent = stepMain(r);
     refs.step.className = 'st' + (r.step === 'UNKNOWN' ? ' is-unknown' : '');
+    refs.sub.textContent = stepSub(r);
     refs.guide.textContent = guideFor(r);
     refs.ev.textContent = '근거: ' + (r.evidence || []).join(' / ');
+    refs.chip.textContent = chipLabel(r);
   }
 
   function report(r) {

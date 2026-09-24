@@ -14,8 +14,8 @@ const det = require('../src/fssStepDetector.js');
 
 function facts(over) {
   return Object.assign({
-    version: det.VERSION, path: '', title: '', headings: [], buttons: [],
-    radioOptions: {}, hiddenNames: [], knownIds: {}
+    version: det.VERSION, path: '', title: '', headings: [], buttons: [], labels: [],
+    radioOptions: {}, hiddenNames: [], progressLabels: [], knownIds: {}
   }, over);
 }
 
@@ -109,7 +109,9 @@ test('STEP 5 — classify 결과는 {step,substate,evidence}만 포함: action/c
   const r = det.classify(facts({
     path: '/fss/cvpl/ctrbsunlawfncdl/forinsertstep1.do', buttons: ['본인인증받기']
   }));
-  assert.deepEqual(Object.keys(r).sort(), ['evidence', 'step', 'substate']);
+  const keys = Object.keys(r).sort();
+  assert.deepEqual(keys, ['evidence', 'fssStage', 'step', 'substate']);
+  assert.ok(!('action' in r) && !('click' in r) && !('submit' in r) && !('fill' in r));
 });
 
 test('STEP 5 — detector 모듈에 자동 조작 함수(click/submit/fill/navigate/execute)가 존재하지 않는다', () => {
@@ -134,6 +136,46 @@ test('UNKNOWN 진단 path 표시는 .do 잘림 없음(60자)', () => {
   const r = det.classify(facts({ path: long.toLowerCase() }));
   assert.equal(r.step, 'UNKNOWN');
   assert.ok(r.evidence[0].endsWith('.do)'), r.evidence[0]);
+});
+
+/* ===== REAL QA ROUND 2 (2026-09-24): 실제 동의 화면은 hidden이 아니라 RADIO 3종 ===== */
+test('STEP 4 — 실제 DOM: agreechkYn/sinfoSndYn/agreechkRgnoYn radio(Y/N) + 타이틀 "1단계 개인정보동의"', () => {
+  const r = det.classify(facts({
+    path: '/fss/cvpl/ctrbsunlawfncdl/forinsertagre.do',
+    title: '1단계 개인정보동의 | 금융감독원 민원신청',
+    headings: ['개인정보동의 개인정보 수집·이용 동의', '개인정보 제3자 제공 내역', '민감정보 제3자 제공내역', '고유식별정보 제3자 제공 내역'],
+    buttons: ['다음', '재설정', '민원신청', '닫기'],
+    radioOptions: { agreechkYn: ['Y', 'N'], sinfoSndYn: ['Y', 'N'], agreechkRgnoYn: ['Y', 'N'] },
+    hiddenNames: ['menuNo', 'viewType', 'minwonChk', 'suitChk'],
+    labels: ['동의', '동의하지 않음']
+  }));
+  assert.equal(r.step, 4);
+  assert.equal(r.substate, 'AGREE');
+  assert.deepEqual(r.fssStage, { no: 1, name: '개인정보동의' });
+  assert.ok(r.evidence.some((e) => e.indexOf('RADIO:agreechkYn') >= 0));
+  assert.ok(r.evidence.some((e) => e.indexOf('TITLE:1단계') >= 0));
+});
+
+test('STEP 4 — radio 3종 없으면 여전히 UNKNOWN(URL 단독 성공 금지)', () => {
+  const r = det.classify(facts({
+    path: '/fss/cvpl/ctrbsunlawfncdl/forinsertagre.do',
+    title: '1단계 개인정보동의 | 금융감독원 민원신청',
+    hiddenNames: ['menuNo', 'viewType']
+  }));
+  assert.equal(r.step, 'UNKNOWN');
+});
+
+test('STEP 5 — 타이틀 "2단계 개인정보입력" → fssStage 2 (실측 화면)', () => {
+  const r = det.classify(facts({
+    path: '/fss/cvpl/ctrbsunlawfncdl/forinsertstep1.do',
+    title: '2단계 개인정보입력 | 금융감독원 민원신청',
+    headings: ['민원신청하기', '개인정보입력(본인인증)'],
+    buttons: ['실명인증', '본인인증받기', '주소 찾기', '직접입력', '다음 단계'],
+    radioOptions: { receiveYn: ['Y', 'N'], rsltReceiveYn: ['Y', 'N', 'Z'] }
+  }));
+  assert.equal(r.step, 5);
+  assert.equal(r.substate, 'PII_INPUT');
+  assert.deepEqual(r.fssStage, { no: 2, name: '개인정보입력' });
 });
 
 /* collectFacts: 실제 입력값(text/password)은 절대 읽지 않는다는 원칙을 최소 DOM 스텁으로 확인. */

@@ -20,7 +20,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  var VERSION = '0.2.0';
+  var VERSION = '0.3.0';
 
   function trimText(s, max) {
     var t = (s || '').replace(/\s+/g, ' ').trim();
@@ -35,8 +35,10 @@
       title: '',
       headings: [],
       buttons: [],
+      labels: [],         /* label 요소 텍스트(선택지/영역 명칭) — 입력값 아님 */
       radioOptions: {},   /* { name: [value,...] } — 선택지 정의만 */
       hiddenNames: [],    /* hidden input의 name만 (value 미조회) */
+      progressLabels: [], /* 사이드 진행 단계 텍스트 "N단계 …" (2026-09-24 실측 구조) */
       knownIds: {}        /* evidence로 알려진 id의 존재 여부만 */
     };
     try {
@@ -73,15 +75,41 @@
       if (hn && hn.length <= 40 && facts.hiddenNames.indexOf(hn) < 0) facts.hiddenNames.push(hn);
     }
 
+    /* 라벨 텍스트(선택지 설명 문구) — 구조적 라벨이지 사용자 입력값이 아니다. */
+    var lb = doc.querySelectorAll('label');
+    for (var n2 = 0; n2 < lb.length && facts.labels.length < 40; n2++) {
+      var lt = trimText(lb[n2].textContent, 30);
+      if (lt && facts.labels.indexOf(lt) < 0) facts.labels.push(lt);
+    }
+
     /* #popup-alert: HOME POC STEP4 실측(재설정/민원신청/닫기 모달). 존재 여부만 읽는다. */
     var pa = doc.getElementById('popup-alert');
     facts.knownIds['popup-alert'] = !!pa;
+    /* 실측(2026-09-24): 좌측 진행 단계가 li/label/a/span에 "1단계 개인정보동의" 형태로 존재.
+       FSS 자체 4단계 모델(동의/입력/민원정보/등록) — 텍스트만 수집, 값 미열람. */
+    var pn = doc.querySelectorAll('li,label,a,span,em,strong');
+    for (var q = 0; q < pn.length && facts.progressLabels.length < 12; q++) {
+      var pt = trimText(pn[q].textContent, 24);
+      if (/^[1-4]\s*단계/.test(pt) && facts.progressLabels.indexOf(pt) < 0) facts.progressLabels.push(pt);
+    }
     return facts;
   }
 
   function has(list, re) {
     for (var i = 0; i < list.length; i++) if (re.test(list[i])) return true;
     return false;
+  }
+
+  /* FSS 자체 4단계 모델(개인정보동의/입력/민원정보입력/민원등록)을 NewStart 내부 STEP과 분리해
+     추출. 2026-09-24 REAL QA 실측: 타이틀 자체가 현재 단계를 명시 —
+     "1단계 개인정보동의 | 금융감독원 민원신청"(forInsertAgre.do), "2단계 개인정보입력 | …"(forInsertStep1.do).
+     진행 nav에는 1~4단계가 모두 존재하므로 nav 텍스트로 현재 단계를 추정하지 않고 타이틀만 근거로 쓴다. */
+  function deriveFssStage(f) {
+    var m = /([1-4])\s*단계\s*([^|]{2,20})/.exec(f.title || '');
+    if (!m) return null;
+    var name = trimText(m[2], 20);
+    if (!name) return null;
+    return { no: parseInt(m[1], 10), name: name };
   }
 
   /* 순수 판별. fixture 단위 테스트 대상. */
@@ -99,33 +127,51 @@
       return { step: 'UNKNOWN', evidence: ['URL:forInsertSelect.do(부분 일치, 선택지 미확인)'] };
     }
 
-    /* STEP 4 — forInsertAgre.do: 동의 3종 hidden name + [다음] / #popup-alert 모달 (POC 실측) */
+    /* STEP 4 — forInsertAgre.do: 금감원 진행 1단계 "개인정보동의".
+       2026-09-24 REAL QA 실측: agreechkYn/sinfoSndYn/agreechkRgnoYn은 hidden이 아니라
+       **radio(선택지 Y/N, 화면 표시 "동의"/"동의하지 않음")**로 존재. HOME POC가 본 화면과
+       다른 경로(직접 진입)에서는 hidden으로 있을 수 있어 두 형태를 모두 구조 근거로 받되,
+       URL 단독으로는 확정하지 않는다. */
     if (path.indexOf('/forinsertagre.do') >= 0) {
       var h = f.hiddenNames || [];
-      var three = h.indexOf('agreechkYn') >= 0 && h.indexOf('sinfoSndYn') >= 0 && h.indexOf('agreechkRgnoYn') >= 0;
+      var ro = f.radioOptions || {};
+      function yn(name) {
+        if (h.indexOf(name) >= 0) return true;
+        var v = ro[name];
+        return !!(v && v.indexOf('Y') >= 0 && v.indexOf('N') >= 0);
+      }
+      var three = yn('agreechkYn') && yn('sinfoSndYn') && yn('agreechkRgnoYn');
       if (three) {
-        ev.push('URL:forInsertAgre.do', 'HIDDEN:agreechkYn+sinfoSndYn+agreechkRgnoYn');
+        ev.push('URL:forInsertAgre.do',
+          ro.agreechkYn ? 'RADIO:agreechkYn+sinfoSndYn+agreechkRgnoYn(Y/N)' : 'HIDDEN:agreechkYn+sinfoSndYn+agreechkRgnoYn');
         if (has(f.buttons, /^다음$/)) ev.push('BUTTON:다음');
+        if (has(f.headings, /제3자\s*제공/) || has(f.labels || [], /동의하지\s*않음/)) ev.push('TEXT:개인정보 제3자 제공/동의');
+        var stage4 = deriveFssStage(f);
+        if (stage4) ev.push('TITLE:' + stage4.no + '단계 ' + stage4.name);
         if (f.knownIds && f.knownIds['popup-alert']) {
           ev.push('ID:#popup-alert(모달 노출)');
-          return { step: 4, substate: 'POPUP_ALERT', evidence: ev };
+          return { step: 4, substate: 'POPUP_ALERT', fssStage: stage4, evidence: ev };
         }
-        return { step: 4, substate: 'AGREE', evidence: ev };
+        return { step: 4, substate: 'AGREE', fssStage: stage4, evidence: ev };
       }
       return { step: 'UNKNOWN', evidence: ['URL:forInsertAgre.do(동의 항목 미확인)'] };
     }
 
-    /* STEP 5~7 — forInsertStep1.do: 개인정보 입력 + 본인인증이 있는 화면 (handoff §3 STEP5·6·7은
-       "한 화면 forInsertStep1.do"로 기록. 실제 URL은 /fss/cvpl/ctrbsUnlawFncdl/forInsertStep1.do
-       — 2026-09-24 REAL CHROME QA에서 사용자 실측). 파일명 접미사로만 매칭해 경로는 확장 가능.
-       *** 이 단계는 인식·안내 전용. 절대 자동 입력·자동 클릭·다음/인증/제출 대행 없음(§12). ***
+    /* STEP 5~7 — forInsertStep1.do: 금감원 진행 2단계 "개인정보입력(본인인증)" 화면.
+       2026-09-24 REAL QA 실측: 타이틀 "2단계 개인정보입력 …", heading "개인정보입력(본인인증)",
+       버튼 [실명인증]/[본인인증받기]/[주소 찾기]/[다음 단계], radio receiveYn/rsltReceiveYn/avoidYn.
+       *** 인식·안내 전용. 절대 자동 입력·자동 클릭·다음/인증/제출 대행 없음(§12). ***
        입력·인증은 전적으로 사용자 영역이며 화면의 어떤 input 값도 읽지 않는다. */
     if (path.indexOf('/forinsertstep1.do') >= 0) {
-      var auth = has(f.buttons, /본인인증/) || has(f.buttons, /인증/);
-      var piiSignals = auth || Object.keys(f.radioOptions || {}).length > 0 || (f.hiddenNames || []).length > 0;
+      var stage5 = deriveFssStage(f);
+      var piiSignals = (stage5 && stage5.no === 2) || has(f.buttons, /본인인증/) || has(f.buttons, /실명인증/)
+        || has(f.headings, /개인정보\s*입력/) || Object.keys(f.radioOptions || {}).length > 0;
       if (piiSignals) {
-        ev.push('URL:forInsertStep1.do', auth ? 'BUTTON:본인인증' : 'STRUCT:개인정보 폼');
-        return { step: 5, substate: 'PII_INPUT', evidence: ev };
+        ev.push('URL:forInsertStep1.do');
+        if (stage5) ev.push('TITLE:' + stage5.no + '단계 ' + stage5.name);
+        if (has(f.buttons, /본인인증/) || has(f.buttons, /실명인증/)) ev.push('BUTTON:본인/실명인증');
+        if (has(f.headings, /개인정보\s*입력/)) ev.push('HEADING:개인정보입력');
+        return { step: 5, substate: 'PII_INPUT', fssStage: stage5, evidence: ev };
       }
       /* URL은 맞지만 구조 신호가 약하면 무리하게 확정하지 않고 UNKNOWN으로 정직 처리. */
       return { step: 'UNKNOWN', evidence: ['URL:forInsertStep1.do(구조 신호 미확인)'] };

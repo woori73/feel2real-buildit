@@ -8,7 +8,7 @@
  */
 'use strict';
 
-var VERSION = '0.2.0';
+var VERSION = '0.3.0';
 var STORE_KEY = 'lastFssStep';
 var STALE_MS = 10 * 60 * 1000; /* 10분 이상 지난 판별은 만료 취급 */
 
