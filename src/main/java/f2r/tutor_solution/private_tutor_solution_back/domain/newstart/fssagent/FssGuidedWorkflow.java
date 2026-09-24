@@ -7,7 +7,9 @@ import java.util.List;
  *
  * <p>STEP 1~7의 화면 사실은 HOME READ-ONLY POC 실측 결과(handoff §3, 2026-09-24)를 그대로
  * 사용한다. 2026-09-24 아카데미 PC Chrome 재조사로 STEP 3(minwonChk [네]/[아니요]),
- * STEP 6(rsltReceiveYn), STEP 8(처리결과회신방법 rsltRplyMthdDiv)의 실제 라벨을 확인했다.
+ * STEP 6(rsltReceiveYn), STEP 8(처리결과회신방법 rsltRplyMthdDiv)의 실제 라벨을 확인했고,
+ * 2026-09-25 READ-ONLY 재검증에서 진입 URL 유효성(HTTP 200)과 STEP 2 alert 원문 문구를
+ * 재확인했다.
  * STEP 9~14는 인증 이후 입력 화면(금융회사명·상품종류·유형·제목/요지/본문)을 조사하지 못했으므로
  * 카페 매뉴얼(2961) 텍스트 기준 {@link FssStepEvidence#MANUAL_UNVERIFIED}로 두고, 매 단계
  * "현재 화면과 다를 수 있습니다"를 고지한다 — 추측 selector·자동화 없음.
@@ -44,7 +46,9 @@ public final class FssGuidedWorkflow {
           null, FssStepEvidence.POC_VERIFIED, null),
       new FssGuidedStep(2, "[신청] 클릭과 pop-up [확인]",
           "같은 화면(search.jsp) — 새 화면이 아닙니다",
-          "[신청]을 누르면 pop-up 창이 뜹니다. 그 안의 [확인]을 눌러주세요.",
+          "[신청]을 누르면 pop-up 창이 뜹니다. 2026-09-25 재확인에서는 \"유사사례 검색을 "
+              + "완료하셨습니까? 유사사례를 검색하지 않으신 경우 효율적인 민원처리를 위해 검색을 "
+              + "먼저 완료해주시기 바랍니다.\"라는 창이 보였습니다. 그 안의 [확인]을 눌러주세요.",
           "pop-up의 [확인]을 눌렀습니다",
           null, FssStepEvidence.POC_VERIFIED, null),
       new FssGuidedStep(3, "사실확인 필요 민원 질문 (minwonChk)",

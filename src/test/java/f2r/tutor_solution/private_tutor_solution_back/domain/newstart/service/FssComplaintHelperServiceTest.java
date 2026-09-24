@@ -200,6 +200,106 @@ class FssComplaintHelperServiceTest {
         assertThat(html).doesNotContain("브라우저를 떠나지");
     }
 
+    @Test
+    @DisplayName("§7 officialGuide: 금감원 공식 페이지 3종 출처와 소관 분기 데이터가 리소스에서 로딩된다")
+    void officialGuideLoadsFromResources() {
+        var official = service.officialGuide();
+        assertThat(official).isNotNull();
+        assertThat(official.authority()).isEqualTo("OFFICIAL");
+        assertThat(official.retrievedAt()).isEqualTo("2026-09-25");
+        assertThat(official.sources()).hasSize(3)
+            .allSatisfy(s -> assertThat(s.url()).startsWith("https://www.fss.or.kr/"));
+        assertThat(official.byCategory()).containsKeys("COLLECTION_CONTACT", "CREDITOR_RESPONSE",
+            "REPAYMENT_DEBT", "NO_EXPLANATION", "UNFAIR_TREATMENT", "OTHER");
+        assertThat(official.otherAgencies()).isNotEmpty()
+            .anySatisfy(a -> assertThat(a.matter()).contains("신용회복"));
+        // 부실차주 핵심 오답 방지: 채무조정은 신용회복위원회 소관임을 공식 데이터가 포함한다.
+        assertThat(official.byCategory().get("REPAYMENT_DEBT")).contains("신용회복위원회");
+    }
+
+    @Test
+    @DisplayName("§13/§14 interview 프롬프트: FACT/CLAIM 분리 마커 + 타임라인 + 위법 단정 금지 + 제목/본문 형식")
+    void interviewPromptCarriesSeparationAndFormatContract() {
+        when(router.complete(any(), any(), anyInt()))
+            .thenReturn(new WikiAiRouterClient.Completion(true,
+                "제목: 추심 연락 절차 확인 요청\n본문:\n사건 개요\n2026-09-01 전화 수신", null, "offline", "test-model"));
+        ComposeResult result = service.composeInterview(newInterview());
+        assertThat(result.ok()).isTrue();
+        ArgumentCaptor<String> system = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> user = ArgumentCaptor.forClass(String.class);
+        verify(router).complete(system.capture(), user.capture(), anyInt());
+        assertThat(system.getValue())
+            .contains("Never invent facts")
+            .contains("FACT / CLAIM / CONCERN / REQUEST")
+            .contains("확정 금지")
+            .contains("확인을 요청");
+        String sent = user.getValue();
+        assertThat(sent)
+            .contains("[FACT — 사용자 본인의 진술")
+            .contains("[타임라인(FACT)]")
+            .contains("2026-09-01 | OO채권관리 | 전화 수신 | 증거: 통화기록")
+            .contains("[CONCERN/REQUEST")
+            .contains("매일 전화가 와요");
+    }
+
+    @Test
+    @DisplayName("§19 제목/본문 분리 파싱 — '제목:'/'본문:' 경계 추출과 실패 시 원문 전체 fallback")
+    void parsesSubjectAndBodyWithFallback() {
+        var parsed = FssComplaintHelperService.parseDraft(
+            "제목: 채권 내역 확인 요청\n\n본문:\n사건 개요\nA\n시간순 사실관계\nB");
+        assertThat(parsed.subject()).isEqualTo("채권 내역 확인 요청");
+        assertThat(parsed.body()).startsWith("사건 개요").contains("B");
+
+        var noTitle = FssComplaintHelperService.parseDraft("제목 없음의 평문 답변 전체");
+        assertThat(noTitle.subject()).isEmpty();
+        assertThat(noTitle.body()).isEqualTo("제목 없음의 평문 답변 전체");
+
+        var titleOnly = FssComplaintHelperService.parseDraft("제목: OO 요청\n본문 없는 continued text");
+        assertThat(titleOnly.subject()).isEqualTo("OO 요청");
+        assertThat(titleOnly.body()).isEqualTo("본문 없는 continued text");
+    }
+
+    @Test
+    @DisplayName("interview 가드: 빈 facts는 router 호출 없이 거부, 상한 초과 항목도 거부")
+    void interviewGuardsSkipRouter() {
+        assertThat(service.composeInterview(null).ok()).isFalse();
+        var blank = new FssComplaintHelperService.Interview("OTHER", "   ", "OO", null,
+            null, null, null, "원함");
+        assertThat(service.composeInterview(blank).ok()).isFalse();
+        var longFacts = new FssComplaintHelperService.Interview("OTHER", "가".repeat(1001), "OO", null,
+            null, null, null, "원함");
+        var r = service.composeInterview(longFacts);
+        assertThat(r.ok()).isFalse();
+        assertThat(r.errorMessage()).contains("1000");
+        verify(router, never()).complete(any(), any(), anyInt());
+    }
+
+    @Test
+    @DisplayName("interview 입력 원문도 application log에 남지 않는다")
+    void interviewInputNeverLogged() {
+        String secret = "인터뷰비밀마커-QM3Z";
+        stubOk();
+        var iv = new FssComplaintHelperService.Interview("COLLECTION_CONTACT",
+            secret + " 매일 전화가 옵니다", "OO채권관리",
+            java.util.List.of(new FssComplaintHelperService.EventRow("2026-09-01", "OO",
+                secret + " 전화 수신", "통화기록")),
+            "연락 내용", "없음", java.util.List.of("통화기록"), "연락 중단");
+        service.composeInterview(iv);
+        String allLogs = logAppender.list.stream()
+            .map(ILoggingEvent::getFormattedMessage)
+            .collect(java.util.stream.Collectors.joining("\n"));
+        assertThat(allLogs).doesNotContain(secret);
+    }
+
+    private FssComplaintHelperService.Interview newInterview() {
+        return new FssComplaintHelperService.Interview("COLLECTION_CONTACT",
+            "매일 전화가 와요", "OO채권관리",
+            java.util.List.of(new FssComplaintHelperService.EventRow(
+                "2026-09-01", "OO채권관리", "전화 수신", "통화기록")),
+            "법적 조치한다고 했음", "아직 없음",
+            java.util.List.of("통화기록"), "연락 빈도 제한");
+    }
+
     private ComplaintSample sample(String id) {
         return service.samples().stream().filter(s -> s.id().equals(id)).findFirst().orElseThrow();
     }

@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>금감원 민원 도우미 | 새출발기금 부실차주</title>
-  <meta name="description" content="전자책 실제 민원 예시를 참고해 내 상황을 금감원 민원 문장으로 정리하는 도우미">
+  <meta name="description" content="상황 선택부터 단계별 인터뷰, 증거 타임라인, 민원 초안 정리까지 — 접수는 금감원 공식 사이트에서 본인이 직접">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260924-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260925-1">
   <style>
     .ns-fss-steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
     .ns-fss-step{font-size:13px;padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#475569}
@@ -19,6 +19,7 @@
     .ns-fss-full{white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px;font-size:13px;color:#334155;margin:0 0 8px}
     .ns-fss-link{background:none;border:none;color:#2563eb;font-size:13px;padding:0;cursor:pointer}
     .ns-fss-textarea{width:100%;min-height:160px;border:1px solid #cbd5e1;border-radius:12px;padding:12px;font:inherit;font-size:15px;box-sizing:border-box}
+    .ns-fss-input{width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:12px;font:inherit;font-size:15px;box-sizing:border-box}
     .ns-fss-hint{font-size:13px;color:#64748b;margin:6px 0 12px}
     .ns-fss-label{font-size:13px;font-weight:700;color:#0f172a;margin:14px 0 6px}
     .ns-fss-original{white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px;font-size:13px;color:#334155}
@@ -28,6 +29,40 @@
     .ns-fss-manual .ns-fss-caution{display:block;color:#b45309;font-size:12px;margin-top:2px}
     .ns-fss-err{color:#b91c1c;font-size:13px;margin-top:8px}
     .ns-fss-note{font-size:12px;color:#64748b;margin-top:6px}
+    /* --- §9 상황 선택 / §7 소관 안내 --- */
+    .ns-fss-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
+    .ns-fss-cat{border:1px solid #cbd5e1;background:#fff;border-radius:12px;padding:14px 10px;font:inherit;
+      font-size:15px;font-weight:700;color:#0f172a;cursor:pointer;min-height:52px}
+    .ns-fss-cat.is-selected{border-color:#0f172a;background:#0f172a;color:#fff}
+    .ns-fss-official{border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;padding:12px;margin:10px 0;font-size:14px;color:#0c4a6e}
+    .ns-fss-official h3{margin:0 0 6px;font-size:14px}
+    .ns-fss-official a{color:#0369a1;font-size:13px}
+    .ns-fss-official ul{margin:6px 0 0;padding-left:18px}
+    .ns-fss-official .ns-fss-src{font-size:12px;color:#64748b;margin-top:8px}
+    /* --- §10 인터뷰 --- */
+    .ns-iv-panel{border:1px solid #cbd5e1;border-radius:14px;padding:14px;background:#fff;margin:12px 0}
+    .ns-iv-count{font-size:12px;font-weight:700;color:#fff;background:#0f172a;border-radius:999px;padding:2px 10px;display:inline-block;margin-bottom:8px}
+    .ns-iv-q{font-size:17px;font-weight:700;color:#0f172a;margin:0 0 4px}
+    .ns-iv-sub{font-size:13px;color:#64748b;margin:0 0 12px}
+    .ns-iv-privacy{font-size:13px;color:#7c2d12;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;margin:10px 0}
+    .ns-iv-event{border:1px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:6px}
+    .ns-iv-tl{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:13px;color:#334155;margin:8px 0}
+    .ns-iv-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+    .ns-iv-chip{border:1px solid #cbd5e1;border-radius:999px;background:#fff;padding:10px 14px;font:inherit;font-size:14px;color:#334155;cursor:pointer;min-height:44px}
+    .ns-iv-chip.is-on{background:#0f172a;border-color:#0f172a;color:#fff}
+    .ns-iv-review dt{font-size:12px;font-weight:700;color:#64748b;margin-top:10px}
+    .ns-iv-review dd{margin:2px 0 0;font-size:14px;color:#0f172a;white-space:pre-wrap;word-break:keep-all}
+    /* --- §14/§19 제목·본문 분리 복사 --- */
+    .ns-fss-part{display:flex;gap:8px;align-items:center;margin:6px 0}
+    .ns-fss-part .ns-fss-label{margin:0}
+    /* --- §16 제출 전 체크리스트 --- */
+    .ns-fss-checklist{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin:12px 0;background:#fff}
+    .ns-fss-checklist legend,.ns-fss-checklist .ns-fss-cl-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:8px}
+    .ns-fss-check{display:flex;gap:10px;align-items:flex-start;padding:8px 4px;font-size:14px;color:#1e293b;min-height:44px}
+    .ns-fss-check input{width:20px;height:20px;margin-top:1px;flex:none}
+    .ns-iv-timeline-row{white-space:pre-wrap;border-bottom:1px dashed #e2e8f0;padding:8px 0;font-size:13px;color:#334155}
+    .ns-iv-timeline-row:last-child{border-bottom:none}
+    .ns-btn.is-disabled{opacity:.45;pointer-events:none}
     /* --- Guided Agent (Phase 1: 사용자 PC Chrome 안내 — 서버 자동화 없음) --- */
     .ns-ag-notice{display:flex;gap:8px;align-items:flex-start;background:#eff6ff;border:1px solid #bfdbfe;
       border-radius:12px;padding:10px 12px;font-size:13px;color:#1e40af;margin:10px 0}
@@ -80,13 +115,13 @@
         <section class="ns-card" aria-labelledby="ns-fss-title">
           <p class="ns-section-kicker">실전 도우미</p>
           <h1 id="ns-fss-title" style="margin:0 0 6px">금감원 민원 도우미</h1>
-          <p class="ns-feature-copy">전자책에 실린 실제 민원 예시를 참고해, 경험한 일을 적어 주시면
-            민원 제출용 문장으로 정리해 드립니다. 정리된 문장은 반드시 직접 검토한 뒤,
-            금감원 공식 사이트에서 본인이 직접 제출합니다.</p>
+          <p class="ns-feature-copy"> 있었던 일을 한 질문씩 알려 주시면 증거 타임라인과 민원 초안으로
+            정리해 드립니다. 정리된 내용은 반드시 직접 검토한 뒤, 금감원 공식 사이트에서
+            본인이 직접 제출합니다.</p>
           <div class="ns-fss-steps" aria-hidden="true">
-            <span class="ns-fss-step is-active" id="ns-fss-tab1">1 예시 선택</span>
-            <span class="ns-fss-step" id="ns-fss-tab2">2 내 상황 작성</span>
-            <span class="ns-fss-step" id="ns-fss-tab3">3 정리·복사</span>
+            <span class="ns-fss-step is-active" id="ns-fss-tab1">1 어떤 일이에요?</span>
+            <span class="ns-fss-step" id="ns-fss-tab2">2 단계 인터뷰</span>
+            <span class="ns-fss-step" id="ns-fss-tab3">3 초안·복사</span>
             <span class="ns-fss-step" id="ns-fss-tab4">4 금감원 접수 안내</span>
           </div>
           <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. NewStart AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
@@ -120,53 +155,114 @@
             <p id="ns-ag-err" class="ns-fss-err" hidden></p>
           </section>
 
-          <h2 class="ns-fss-label">1단계 · 저와 비슷한 예시를 선택하세요</h2>
-          <div id="ns-fss-cards"></div>
-
-          <h2 class="ns-fss-label">2단계 · 내 상황 작성</h2>
-          <p class="ns-fss-hint">정리하지 않아도 괜찮습니다. 있었던 일을 사실대로 적어 주세요.
-            (예: "은행에서 이런 말을 들었고, 새출발기금에 전화했는데 이렇게 답했고, 나는 이런 상황이다…")</p>
-          <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
-            placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
-          <p class="ns-fss-note">입력한 내용은 민원문 AI 정리를 위해 AI 처리 시스템으로 전송되며,
-            NewStart DB에는 저장하지 않습니다.</p>
-
-          <div class="ns-fss-actions">
-            <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
-          </div>
-          <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
-
-          <div id="ns-fss-result" hidden>
-            <h2 class="ns-fss-label">[내가 작성한 내용]</h2>
-            <div class="ns-fss-original" id="ns-fss-original"></div>
-            <h2 class="ns-fss-label">[AI가 정리한 민원문] — 직접 수정할 수 있습니다</h2>
-            <textarea class="ns-fss-textarea" id="ns-fss-output"></textarea>
+          <!-- ==================== 1화면: 상황 선택 ==================== -->
+          <div id="ns-fss-screen1">
+            <h2 class="ns-fss-label">1단계 · 어떤 일이 있었나요?</h2>
+            <p class="ns-fss-hint">해당하는 것을 하나 눌러 주세요. 처음부터 긴 민원서를 쓸 필요 없습니다.</p>
+            <div class="ns-fss-cats" id="ns-fss-cats" role="group" aria-label="상황 선택"></div>
+            <div class="ns-fss-official" id="ns-fss-official" hidden></div>
             <div class="ns-fss-actions">
-              <button type="button" class="ns-btn ns-btn-ghost" id="ns-fss-retry">다시 정리</button>
-              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-copy">전체 복사</button>
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-iv-start" disabled>단계별 인터뷰 시작 (7문항)</button>
             </div>
-            <p class="ns-fss-note">AI 정리문에 없는 사실이 섞였거나 확인할 값이 있으면
-              [ … 확인 필요 ] 표시를 지우고 직접 고친 뒤 복사하세요. 제출 전 최종 책임은 본인에게 있습니다.</p>
-            <p id="ns-fss-copy-err" class="ns-fss-err" hidden></p>
+
+            <h2 class="ns-fss-label">참고 · 저와 비슷한 전자책 예시 (선택)</h2>
+            <p class="ns-fss-hint">인터뷰와 별도로, 전자책에 실린 실제 민원 예시를 구조 참고로 볼 수 있습니다.</p>
+            <div id="ns-fss-cards"></div>
+
+            <details id="ns-fss-free-details">
+              <summary class="ns-fss-label" style="cursor:pointer">인터뷰 없이 자유롭게 적기</summary>
+              <p class="ns-fss-hint">정리하지 않아도 괜찮습니다. 있었던 일을 사실대로 적어 주세요.
+                (예: "은행에서 이런 말을 들었고, 새출발기금에 전화했는데 이렇게 답했고, 나는 이런 상황이다…")</p>
+              <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
+                placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
+              <div class="ns-fss-actions">
+                <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
+              </div>
+            </details>
+            <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
           </div>
 
-          <h2 class="ns-fss-label" id="ns-fss-manual-section">4단계 · 금감원 접수 안내</h2>
-          <p>
-            <a class="ns-btn ns-btn-primary" id="ns-fss-official-link"
-               href="https://www.fss.or.kr/fss/minwon/search.jsp?query=&amp;collection=simcase&amp;searchField=ALL&amp;sort=&amp;pageNum=1&amp;rgnlCd=&amp;cvplCd=&amp;cvplCd2="
-               target="_blank" rel="noopener noreferrer"
-               aria-label="새 탭에서 금융감독원 민원신청 페이지 열기">금감원 민원 접수하러 가기 <span aria-hidden="true">↗</span></a>
-          </p>
-          <p class="ns-fss-note">NewStart는 작성·정리·복사·안내만 합니다. 접수는 새 탭에 열리는
-            금감원 공식 사이트(www.fss.or.kr)에서 본인이 직접 로그인·직접 클릭·직접 제출합니다.
-            (자동 입력·자동 제출·정보 저장 없음)</p>
-          <p id="ns-fss-manual-intro" class="ns-fss-hint"></p>
-          <ol class="ns-fss-manual" id="ns-fss-manual"></ol>
-          <h3 class="ns-fss-label">사이트 접수 단계 <small>(부실차주 카페 매뉴얼 — 비공식 실무 안내)</small></h3>
-          <p id="ns-fss-site-image-note" class="ns-fss-note"></p>
-          <ol class="ns-fss-manual" id="ns-fss-site-steps"></ol>
-          <ul class="ns-fss-manual" id="ns-fss-site-tips"></ul>
-          <p id="ns-fss-manual-note" class="ns-fss-note"></p>
+          <!-- ==================== 2화면: guided interview ==================== -->
+          <div id="ns-fss-screen2" hidden>
+            <h2 class="ns-fss-label">2단계 · 한 가지만 알려 주세요</h2>
+            <section class="ns-iv-panel" aria-label="단계별 인터뷰">
+              <span class="ns-iv-count" id="ns-iv-count"></span>
+              <div id="ns-iv-body"></div>
+              <p id="ns-iv-err" class="ns-fss-err" hidden></p>
+              <div class="ns-fss-actions">
+                <button type="button" class="ns-btn ns-btn-ghost" id="ns-iv-back">이전</button>
+                <button type="button" class="ns-btn ns-btn-primary" id="ns-iv-next">다음</button>
+              </div>
+              <p class="ns-fss-note">이 인터뷰 내용은 민원 초안 AI 정리를 위해
+                AI 처리 시스템으로 전송되며, NewStart DB에는 저장하지 않습니다.</p>
+            </section>
+          </div>
+
+          <!-- ==================== 3화면: 초안·복사·체크리스트 ==================== -->
+          <div id="ns-fss-screen3" hidden>
+            <h2 class="ns-fss-label">3단계 · 초안 검토와 복사</h2>
+            <div id="ns-fss-result">
+              <h2 class="ns-fss-label">[내가 입력한 내용]</h2>
+              <div class="ns-fss-original" id="ns-fss-original"></div>
+              <div id="ns-fss-timeline-box" hidden>
+                <h2 class="ns-fss-label">[사건 타임라인]</h2>
+                <div class="ns-iv-timeline" id="ns-fss-timeline"></div>
+              </div>
+              <div id="ns-fss-subject-box" hidden>
+                <div class="ns-fss-part">
+                  <span class="ns-fss-label">[제목] — 직접 수정 가능</span>
+                  <button type="button" class="ns-btn ns-btn-ghost" id="ns-fss-copy-subject">제목 복사</button>
+                </div>
+                <input class="ns-fss-input" id="ns-fss-subject" maxlength="120">
+              </div>
+              <div class="ns-fss-part">
+                <span class="ns-fss-label">[본문] — 직접 수정 가능</span>
+                <button type="button" class="ns-btn ns-btn-ghost" id="ns-fss-copy-body">본문 복사</button>
+              </div>
+              <textarea class="ns-fss-textarea" id="ns-fss-output"></textarea>
+              <div class="ns-fss-actions">
+                <button type="button" class="ns-btn ns-btn-ghost" id="ns-fss-retry">다시 정리</button>
+                <button type="button" class="ns-btn ns-btn-ghost" id="ns-fss-edit-iv">인터뷰 내용 수정</button>
+                <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-copy">전체 복사</button>
+              </div>
+              <p class="ns-fss-note">AI 정리문에 없는 사실이 섞였거나 확인할 값이 있으면
+                [ … 확인 필요 ] 표시를 지우고 직접 고친 뒤 복사하세요. 제출 전 최종 책임은 본인에게 있습니다.</p>
+              <p id="ns-fss-copy-err" class="ns-fss-err" hidden></p>
+            </div>
+
+            <div class="ns-fss-checklist" role="group" aria-labelledby="ns-fss-cl-title">
+              <p id="ns-fss-cl-title" class="ns-fss-cl-title">금감원에 제출하기 전, 아래를 확인하세요</p>
+              <div id="ns-fss-checks"></div>
+              <div class="ns-fss-actions">
+                <a class="ns-btn ns-btn-primary" id="ns-fss-open-official" href="#"
+                   target="_blank" rel="noopener noreferrer" aria-disabled="true">
+                  금감원 공식 민원 페이지 열기 <span aria-hidden="true">↗</span></a>
+              </div>
+              <p class="ns-fss-note">모두 확인하면 버튼이 활성화됩니다. 공식 페이지에서는
+                로그인·본인인증·최종 제출을 사용자가 직접 합니다. NewStart는 대신 제출하지 않습니다.</p>
+            </div>
+          </div>
+
+          <!-- ==================== 4화면: 접수 안내 ==================== -->
+          <div id="ns-fss-screen4">
+            <h2 class="ns-fss-label" id="ns-fss-manual-section">4단계 · 금감원 접수 안내</h2>
+            <p>
+              <a class="ns-btn ns-btn-primary" id="ns-fss-official-link"
+                 href="https://www.fss.or.kr/fss/minwon/search.jsp?query=&amp;collection=simcase&amp;searchField=ALL&amp;sort=&amp;pageNum=1&amp;rgnlCd=&amp;cvplCd=&amp;cvplCd2="
+                 target="_blank" rel="noopener noreferrer"
+                 aria-label="새 탭에서 금융감독원 민원신청 페이지 열기">금감원 민원 접수하러 가기 <span aria-hidden="true">↗</span></a>
+            </p>
+            <p class="ns-fss-note">NewStart는 작성·정리·복사·안내만 합니다. 접수는 새 탭에 열리는
+              금감원 공식 사이트(www.fss.or.kr)에서 본인이 직접 로그인·직접 클릭·직접 제출합니다.
+              (자동 입력·자동 제출·정보 저장 없음)</p>
+            <p id="ns-fss-manual-intro" class="ns-fss-hint"></p>
+            <ol class="ns-fss-manual" id="ns-fss-manual"></ol>
+            <h3 class="ns-fss-label">사이트 접수 단계 <small>(부실차주 카페 매뉴얼 — 비공식 실무 안내)</small></h3>
+            <p id="ns-fss-site-image-note" class="ns-fss-note"></p>
+            <ol class="ns-fss-manual" id="ns-fss-site-steps"></ol>
+            <ul class="ns-fss-manual" id="ns-fss-site-tips"></ul>
+            <p id="ns-fss-manual-note" class="ns-fss-note"></p>
+          </div>
         </section>
       </main>
     </div>
@@ -176,7 +272,37 @@
   (function () {
     'use strict';
     // 프라이버시/보안: 서버·입력 데이터는 전부 textContent로만 렌더(innerHTML 금지).
-    var state = { samples: [], selected: null };
+    var state = { samples: [], selected: null, official: null, officialEntryUrl: null };
+
+    /* ---------- §9 상황 선택 + §7 공식 소관 안내 ---------- */
+    var CATEGORIES = [
+      { id: 'COLLECTION_CONTACT', label: '추심 연락 문제' },
+      { id: 'CREDITOR_RESPONSE', label: '채권사 대응 문제' },
+      { id: 'REPAYMENT_DEBT', label: '상환·채무 관련 문제' },
+      { id: 'NO_EXPLANATION', label: '설명을 제대로 받지 못함' },
+      { id: 'UNFAIR_TREATMENT', label: '처리가 부당하다고 생각함' },
+      { id: 'OTHER', label: '기타' }
+    ];
+    var chosenCategory = null;
+
+    /* ---------- §10~§12 guided interview ---------- */
+    var EVIDENCE_OPTIONS = ['문자 캡처', '카카오톡 내용', '통화기록', '통화 녹취', '우편물',
+      '내용증명', '채권 관련 통지', '계약서·대출 서류', '상환내역', '금융회사 답변',
+      '신용정보 조회 결과', '법원 문서', '증거 없음'];
+    var iv = { facts: '', company: '', events: [], contacts: '', ownResponses: '',
+      evidence: [], outcome: '' };
+    var ivStep = 0; // 0..7 (7=최종 확인)
+    var IV_STEPS = [
+      { key: 'facts', title: '어떤 일이 있었나요?', sub: '감정 표현은 뒤로 두고, 있었던 일을 그대로 적어 주세요. 상대방이 한 말은 뒤에 따로 묻습니다.', type: 'textarea' },
+      { key: 'company', title: '어느 금융회사/채권사인가요?', sub: '정식 회사 이름을 모르면 메모에 적힌 이름 그대로 적어도 됩니다.', type: 'text' },
+      { key: 'events', title: '언제 발생했나요?', sub: '기억나는 날부터 추가하세요. 날짜가 애매하면 날짜칸을 비우고 "9월 초"처럼 적어도 됩니다.', type: 'events' },
+      { key: 'contacts', title: '어떤 연락/행위가 있었나요?', sub: '전화·문자·카톡·우편으로 받은 내용과 상대방이 주장한 말을 적어 주세요. (예: "변제계획 변경되면 연락 준다고 했음")', type: 'textarea' },
+      { key: 'ownResponses', title: '이미 어떻게 대응했나요?', sub: '회사에 문의했는지, 무엇을 답변받았는지 적어 주세요. 아직 한 게 없으면 "아직 없음"이라고 적어 주세요.', type: 'textarea' },
+      { key: 'evidence', title: '보유한 증거가 무엇인가요?', sub: '실제로 갖고 있는 것만 선택하세요. 없는 증거가 있다고 가정하지 않습니다.', type: 'evidence' },
+      { key: 'outcome', title: '어떻게 되기를 원하나요?', sub: '예: "연락 빈도 제한", "채권 내역 확인", "오래된 연체의 추심 중단 검토" 등 실제로 바라는 것.', type: 'textarea' },
+      { key: 'review', title: '입력 내용을 확인하세요', sub: '타임라인과 답변을 검토한 뒤 아래 버튼으로 초안을 정리합니다.', type: 'review' }
+    ];
+
     function $(id) { return document.getElementById(id); }
     function text(node, value) { node.textContent = value == null ? '' : value; }
 
@@ -184,6 +310,442 @@
       [1, 2, 3, 4].forEach(function (i) {
         $('ns-fss-tab' + i).classList.toggle('is-active', i <= n);
       });
+    }
+
+    function showScreen(n) {
+      [1, 2, 3, 4].forEach(function (i) { $('ns-fss-screen' + i).hidden = (i !== n); });
+      if (n !== 4) setTab(n);
+    }
+
+    /* ---- 공식 소관 안내 패널(§7) — 출처는 서버 companion.official ---- */
+    function renderOfficialForCategory(catId) {
+      var host = $('ns-fss-official');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      var o = state.official;
+      if (!catId || !o) { host.hidden = true; return; }
+      host.hidden = false;
+      var h = document.createElement('h3'); text(h, '금감원이 담당하는 일일까? — 공식 안내');
+      host.appendChild(h);
+      var cat = document.createElement('p');
+      text(cat, (o.byCategory && o.byCategory[catId]) || '1332 상담으로 소관을 먼저 확인해 보세요.');
+      host.appendChild(cat);
+      if (o.consultFirst) { var c = document.createElement('p'); text(c, o.consultFirst); host.appendChild(c); }
+      if (catId === 'REPAYMENT_DEBT' && o.otherAgencies && o.otherAgencies.length) {
+        var ul = document.createElement('ul');
+        o.otherAgencies.slice(0, 5).forEach(function (r) {
+          var li = document.createElement('li'); text(li, r.matter + ' → ' + r.agency); ul.appendChild(li);
+        });
+        host.appendChild(ul);
+      }
+      var src = document.createElement('p'); src.className = 'ns-fss-src';
+      text(src, '출처: 금융감독원 공식 안내(' + (o.retrievedAt || '') + ' 조회)');
+      host.appendChild(src);
+      (o.sources || []).forEach(function (s) {
+        var a = document.createElement('a'); a.href = s.url; a.target = '_blank';
+        a.rel = 'noopener noreferrer'; a.textContent = s.name + ' ↗';
+        a.style.display = 'block';
+        host.appendChild(a);
+      });
+    }
+
+    function renderCats() {
+      var host = $('ns-fss-cats');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      CATEGORIES.forEach(function (c) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'ns-fss-cat'; text(b, c.label);
+        b.addEventListener('click', function () {
+          chosenCategory = c.id;
+          Array.prototype.forEach.call(host.children, function (x) { x.classList.remove('is-selected'); });
+          b.classList.add('is-selected');
+          renderOfficialForCategory(c.id);
+          $('ns-iv-start').disabled = false;
+        });
+        host.appendChild(b);
+      });
+    }
+
+    /* ---- 타임라인(§12) — 인터뷰 이벤트 행과 동일 렌더 ---- */
+    function timelineLines() {
+      return iv.events.filter(function (e) {
+        return (e.date || e.party || e.happened || '').trim() !== '';
+      }).map(function (e) {
+        var l = (e.date || '날짜 확인 필요') + '  ' + (e.party || iv.company || '') + '\n'
+          + (e.happened || '');
+        if ((e.evidence || '').trim()) l += '\n증거: ' + e.evidence;
+        return l;
+      });
+    }
+
+    /* ---- 인터뷰 렌더 ---- */
+    function ivEl(tag, cls, value) {
+      var el = document.createElement(tag);
+      if (cls) el.className = cls;
+      if (value != null) el.textContent = value;
+      return el;
+    }
+
+    function ivError(msg) {
+      var el = $('ns-iv-err');
+      text(el, msg || '');
+      el.hidden = !msg;
+    }
+
+    function renderInterview() {
+      var host = $('ns-iv-body');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      var s = IV_STEPS[ivStep];
+      text($('ns-iv-count'), 'STEP ' + (ivStep + 1) + ' / ' + IV_STEPS.length);
+      host.appendChild(ivEl('p', 'ns-iv-q', s.title));
+      host.appendChild(ivEl('p', 'ns-iv-sub', s.sub));
+      if (s.type === 'textarea' || s.type === 'text') {
+        var input;
+        if (s.type === 'textarea') {
+          input = document.createElement('textarea');
+          input.className = 'ns-fss-textarea';
+          input.style.minHeight = '120px';
+        } else {
+          input = document.createElement('input');
+          input.className = 'ns-fss-input';
+        }
+        input.maxLength = 1000;
+        input.value = iv[s.key] || '';
+        input.setAttribute('aria-label', s.title);
+        input.addEventListener('input', function () { iv[s.key] = input.value; });
+        host.appendChild(input);
+      } else if (s.type === 'events') {
+        var list = ivEl('div', 'ns-iv-events');
+        iv.events.forEach(function (e, i) {
+          var row = ivEl('div', 'ns-iv-event');
+          ['date', 'party', 'happened', 'evidence'].forEach(function (k) {
+            var inp = document.createElement('input');
+            inp.className = 'ns-fss-input';
+            inp.placeholder = k === 'date' ? '날짜 (예: 2026-09-01)'
+              : k === 'party' ? '누구/어느 회사 (예: OO채권관리)'
+              : k === 'happened' ? '일을 적어 주세요' : '증거 (예: 통화기록, 생략 가능)';
+            inp.maxLength = 1000;
+            if (k === 'date') inp.maxLength = 30;
+            if (k === 'evidence') inp.maxLength = 100;
+            inp.value = e[k] || '';
+            inp.setAttribute('aria-label', '타임라인 ' + (i + 1) + ' ' + k);
+            inp.addEventListener('input', function () { e[k] = inp.value; });
+            row.appendChild(inp);
+          });
+          var del = ivEl('button', 'ns-fss-link', '이 기록 삭제');
+          del.type = 'button';
+          del.addEventListener('click', function () {
+            iv.events.splice(i, 1); renderInterview();
+          });
+          row.appendChild(del);
+          list.appendChild(row);
+        });
+        var add = ivEl('button', 'ns-btn ns-btn-ghost', '날짜 기록 추가');
+        add.type = 'button';
+        add.addEventListener('click', function () {
+          iv.events.push({ date: '', party: '', happened: '', evidence: '' });
+          renderInterview();
+        });
+        host.appendChild(list);
+        host.appendChild(add);
+      } else if (s.type === 'evidence') {
+        var chips = ivEl('div', 'ns-iv-chips');
+        EVIDENCE_OPTIONS.forEach(function (opt) {
+          var b = ivEl('button', 'ns-iv-chip', opt);
+          b.type = 'button';
+          var on = iv.evidence.indexOf(opt) >= 0;
+          if (on) b.classList.add('is-on');
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          b.addEventListener('click', function () {
+            var i = iv.evidence.indexOf(opt);
+            if (i >= 0) iv.evidence.splice(i, 1); else iv.evidence.push(opt);
+            if (opt === '증거 없음' && i < 0) {
+              iv.evidence = ['증거 없음'];
+            } else if (opt !== '증거 없음') {
+              var j = iv.evidence.indexOf('증거 없음');
+              if (j >= 0) iv.evidence.splice(j, 1);
+            }
+            renderInterview();
+          });
+          chips.appendChild(b);
+        });
+        host.appendChild(chips);
+        host.appendChild(ivEl('p', 'ns-iv-privacy',
+          '증거 원본은 이 화면에 업로드하지 않습니다. 목록만 정리하고, 실제 첨부는 금감원 공식 사이트에서 직접 합니다.'));
+      } else if (s.type === 'review') {
+        var dl = ivEl('dl', 'ns-iv-review');
+        function row(label, value) {
+          dl.appendChild(ivEl('dt', null, label));
+          dl.appendChild(ivEl('dd', null, value || '(입력하지 않음)'));
+        }
+        var catLabel = '';
+        CATEGORIES.forEach(function (c) { if (c.id === chosenCategory) catLabel = c.label; });
+        row('상황', catLabel);
+        row('무슨 일', iv.facts);
+        row('상대 기관', iv.company);
+        var tls = timelineLines();
+        row('타임라인', tls.length ? tls.join('\n\n') : '(날짜 기록 없음)');
+        row('연락/행위·상대방 주장', iv.contacts);
+        row('내 대응', iv.ownResponses);
+        row('보유 증거', iv.evidence.join(', '));
+        row('원하는 해결', iv.outcome);
+        host.appendChild(dl);
+      }
+      var step = IV_STEPS[ivStep];
+      $('ns-iv-back').disabled = ivStep === 0;
+      text($('ns-iv-next'), ivStep === IV_STEPS.length - 1 ? 'AI가 민원 초안 정리' : '다음');
+      ivError('');
+      void step;
+    }
+
+    function ivNext() {
+      var s = IV_STEPS[ivStep];
+      if (s.key === 'facts' && !(iv.facts || '').trim()) {
+        ivError('어떤 일이 있었는지 한 줄만 적어 주세요.');
+        return;
+      }
+      if (s.key === 'outcome' && !(iv.outcome || '').trim()) {
+        ivError('어떻게 되기를 원하는지 적어 주세요. (예: 연락 방식 확인 요청)');
+        return;
+      }
+      if (ivStep === IV_STEPS.length - 1) { composeInterview(); return; }
+      ivStep += 1;
+      renderInterview();
+    }
+
+    $('ns-iv-start').addEventListener('click', function () {
+      ivStep = 0;
+      showScreen(2);
+      renderInterview();
+    });
+    $('ns-iv-next').addEventListener('click', ivNext);
+    $('ns-iv-back').addEventListener('click', function () {
+      if (ivStep > 0) { ivStep -= 1; renderInterview(); }
+      else showScreen(1);
+    });
+
+    /* ---------- V1 자유서술 경로(regression 보존) ---------- */
+    function renderCards() {
+      var host = $('ns-fss-cards');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      state.samples.forEach(function (s) {
+        var card = document.createElement('div');
+        card.className = 'ns-fss-card';
+        var h = document.createElement('h3'); text(h, s.title); card.appendChild(h);
+        var sit = document.createElement('p'); sit.className = 'ns-fss-situation'; text(sit, s.situation); card.appendChild(sit);
+        var pv = document.createElement('p'); pv.className = 'ns-fss-preview'; text(pv, '미리보기: ' + s.preview); card.appendChild(pv);
+        var full = document.createElement('pre'); full.className = 'ns-fss-full'; full.hidden = true; text(full, '제목: ' + s.subject + '\n' + s.body); card.appendChild(full);
+        var more = document.createElement('button'); more.type = 'button'; more.className = 'ns-fss-link'; text(more, '자세히 보기');
+        more.addEventListener('click', function () {
+          full.hidden = !full.hidden; text(more, full.hidden ? '자세히 보기' : '닫기');
+        });
+        card.appendChild(more);
+        var pick = document.createElement('div'); pick.className = 'ns-fss-actions';
+        var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ns-btn ns-btn-ghost'; text(btn, '이 사례와 비슷해요');
+        btn.addEventListener('click', function () {
+          state.selected = s;
+          Array.prototype.forEach.call(host.children, function (c) { c.classList.remove('is-selected'); });
+          card.classList.add('is-selected');
+          updateCompose();
+        });
+        pick.appendChild(btn); card.appendChild(pick);
+        host.appendChild(card);
+      });
+    }
+
+    function updateCompose() {
+      $('ns-fss-compose').disabled = !(state.selected && $('ns-fss-input').value.trim().length > 0);
+    }
+
+    function postCompose(body, errEl) {
+      return fetch('/api/newstart/fss/compose', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
+        .then(function (res) {
+          if (res.status === 401) { $('ns-fss-auth').hidden = false; return; }
+          if (res.body.status !== 'ok') {
+            text(errEl, res.body.errorMessage || '정리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+            errEl.hidden = false;
+            return;
+          }
+          applyResult(res.body);
+        });
+    }
+
+    function originalSummary() {
+      var catLabel = '';
+      CATEGORIES.forEach(function (c) { if (c.id === chosenCategory) catLabel = c.label; });
+      var lines = ['[상황] ' + catLabel, '[무슨 일] ' + iv.facts, '[기관] ' + iv.company];
+      var tls = timelineLines();
+      if (tls.length) lines.push('[타임라인]\n' + tls.join('\n\n'));
+      lines.push('[연락·행위] ' + iv.contacts, '[내 대응] ' + iv.ownResponses,
+        '[보유 증거] ' + (iv.evidence.join(', ') || '(없음)'), '[원하는 해결] ' + iv.outcome);
+      return lines.filter(function (l) { return l.indexOf('undefined') < 0 && l.replace(/[^\s[\]]/g, '').length < l.length; }).join('\n\n');
+    }
+
+    function applyResult(b) {
+      var isIv = lastComposeMode === 'interview';
+      text($('ns-fss-original'), isIv ? originalSummary() : $('ns-fss-input').value);
+      var tls = isIv ? timelineLines() : [];
+      $('ns-fss-timeline-box').hidden = tls.length === 0;
+      if (tls.length) {
+        var th = $('ns-fss-timeline');
+        while (th.firstChild) th.removeChild(th.firstChild);
+        tls.forEach(function (l) { th.appendChild(ivEl('div', 'ns-iv-timeline-row', l)); });
+      }
+      $('ns-fss-subject-box').hidden = !(b.subject && b.subject.length);
+      $('ns-fss-subject').value = b.subject || '';
+      $('ns-fss-output').value = b.body || b.composedText || '';
+      $('ns-fss-result').hidden = false;
+      showScreen(3);
+      $('ns-fss-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    var lastComposeMode = null;
+
+    function composeInterview() {
+      var btn = $('ns-iv-next');
+      btn.disabled = true;
+      ivError('');
+      lastComposeMode = 'interview';
+      postCompose({ interview: {
+        category: chosenCategory, facts: iv.facts, company: iv.company,
+        events: iv.events.filter(function (e) { return (e.date || e.party || e.happened || '').trim() !== ''; }),
+        contacts: iv.contacts, ownResponses: iv.ownResponses,
+        evidence: iv.evidence, outcome: iv.outcome
+      } }, $('ns-iv-err'))
+        .catch(function () { ivError('AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.'); })
+        .finally(function () { btn.disabled = false; });
+    }
+
+    function compose() {
+      $('ns-fss-compose').disabled = true;
+      text($('ns-fss-compose-err'), ''); $('ns-fss-compose-err').hidden = true;
+      lastComposeMode = 'free';
+      postCompose({ sampleId: state.selected.id, situationText: $('ns-fss-input').value,
+        mode: 'free' }, $('ns-fss-compose-err'))
+        .catch(function () {
+          text($('ns-fss-compose-err'), 'AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+          $('ns-fss-compose-err').hidden = false;
+        })
+        .finally(function () { updateCompose(); });
+    }
+
+    $('ns-fss-edit-iv').addEventListener('click', function () {
+      ivStep = 0; showScreen(2); renderInterview();
+    });
+    $('ns-fss-retry').addEventListener('click', function () {
+      if (chosenCategory) composeInterview(); else updateCompose();
+    });
+
+    /* ---------- §19 복사 ---------- */
+    function copyValue(value, btn, label) {
+      text($('ns-fss-copy-err'), ''); $('ns-fss-copy-err').hidden = true;
+      function done() {
+        text(btn, '복사되었습니다');
+        setTimeout(function () { text(btn, label); }, 1500);
+      }
+      function fail() {
+        text($('ns-fss-copy-err'), '복사가 실패했습니다. 아래 내용을 손으로 선택해 복사해 주세요.');
+        $('ns-fss-copy-err').hidden = false;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(done, function () { legacyCopy(value) ? done() : fail(); });
+      } else {
+        legacyCopy(value) ? done() : fail();
+      }
+    }
+
+    function legacyCopy(value) {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = value; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+
+    $('ns-fss-copy').addEventListener('click', function () {
+      var subject = $('ns-fss-subject').value.trim();
+      var all = (subject ? '제목: ' + subject + '\n\n' : '') + $('ns-fss-output').value;
+      copyValue(all, $('ns-fss-copy'), '전체 복사');
+    });
+    $('ns-fss-copy-subject').addEventListener('click', function () {
+      copyValue($('ns-fss-subject').value, $('ns-fss-copy-subject'), '제목 복사');
+    });
+    $('ns-fss-copy-body').addEventListener('click', function () {
+      copyValue($('ns-fss-output').value, $('ns-fss-copy-body'), '본문 복사');
+    });
+
+    /* ---------- §16 제출 전 체크리스트 ---------- */
+    var CHECK_ITEMS = [
+      '금융회사/채권사 이름을 확인했습니다',
+      '주요 발생 날짜를 확인했습니다',
+      '연락내역(문자·전화 등)을 확인했습니다',
+      '증거(캡처·통화기록 등)를 준비했습니다',
+      '민원 초안을 처음부터 끝까지 직접 검토했습니다',
+      '금감원에 요청할 사항이 명확합니다',
+      '주민등록번호 등 불필요한 민감정보가 초안에 없습니다'
+    ];
+    var checkBoxes = [];
+    function renderChecks() {
+      var host = $('ns-fss-checks');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      checkBoxes = [];
+      CHECK_ITEMS.forEach(function (label) {
+        var lab = document.createElement('label');
+        lab.className = 'ns-fss-check';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.addEventListener('change', updateOfficialGate);
+        checkBoxes.push(cb);
+        var span = document.createElement('span');
+        text(span, label);
+        lab.appendChild(cb); lab.appendChild(span);
+        host.appendChild(lab);
+      });
+      updateOfficialGate();
+    }
+    function updateOfficialGate() {
+      var all = checkBoxes.length > 0;
+      checkBoxes.forEach(function (b) { if (!b.checked) all = false; });
+      var a = $('ns-fss-open-official');
+      a.setAttribute('aria-disabled', all ? 'false' : 'true');
+      a.classList.toggle('is-disabled', !all);
+      a.onclick = all ? null : function (ev) { ev.preventDefault(); };
+    }
+
+    /* ---------- 서버 companion 로딩 ---------- */
+    function renderManual(manual) {
+      if (!manual) return;
+      text($('ns-fss-manual-intro'), manual.intro);
+      text($('ns-fss-manual-note'), manual.note);
+      var host = $('ns-fss-manual');
+      while (host.firstChild) host.removeChild(host.firstChild);
+      (manual.steps || []).forEach(function (st) {
+        var li = document.createElement('li');
+        var b = document.createElement('strong'); text(b, st.action); li.appendChild(b);
+        if (st.ebook) { var e = document.createElement('span'); e.className = 'ns-fss-ebook'; text(e, '전자책 안내: ' + st.ebook); li.appendChild(e); }
+        if (st.caution) { var c = document.createElement('span'); c.className = 'ns-fss-caution'; text(c, '주의: ' + st.caution); li.appendChild(c); }
+        host.appendChild(li);
+      });
+      var g = manual.siteGuide;
+      if (g) {
+        text($('ns-fss-site-image-note'), g.imageNote);
+        var stepsHost = $('ns-fss-site-steps');
+        while (stepsHost.firstChild) stepsHost.removeChild(stepsHost.firstChild);
+        (g.steps || []).forEach(function (st) {
+          var li = document.createElement('li'); text(li, st.text); stepsHost.appendChild(li);
+        });
+        var tipsHost = $('ns-fss-site-tips');
+        while (tipsHost.firstChild) tipsHost.removeChild(tipsHost.firstChild);
+        (g.tips || []).forEach(function (t) {
+          var li = document.createElement('li'); text(li, t); tipsHost.appendChild(li);
+        });
+      }
     }
 
     /* ---- Guided Agent (Phase 1: 사용자 PC Chrome 안내 전용 — 서버 자동화 없음) ---- */
@@ -211,12 +773,12 @@
         var d = document.createElement('span');
         d.className = 'ns-ag-dot';
         d.setAttribute('role', 'listitem');
-        var state = '';
-        if (s.number < agent.current || agent.finished) { d.classList.add('is-done'); state = '완료됨'; }
-        else if (s.number === agent.current && !agent.finished) { d.classList.add('is-current'); state = '현재 단계'; }
-        else { state = '앞으로'; }
+        var stt = '';
+        if (s.number < agent.current || agent.finished) { d.classList.add('is-done'); stt = '완료됨'; }
+        else if (s.number === agent.current && !agent.finished) { d.classList.add('is-current'); stt = '현재 단계'; }
+        else { stt = '앞으로'; }
         text(d, s.number);
-        d.setAttribute('aria-label', '단계 ' + s.number + ' ' + s.title + ' — ' + state);
+        d.setAttribute('aria-label', '단계 ' + s.number + ' ' + s.title + ' — ' + stt);
         host.appendChild(d);
       });
     }
@@ -250,7 +812,7 @@
         // 서버는 evidence(POC 확인 여부)만 보낸다 — 검증 여부는 여기서 판정(자동화 감지 아님).
         var ok = s.evidence && s.evidence !== 'MANUAL_UNVERIFIED';
         var v = agentEl('span', 'ns-ag-verify' + (ok ? '' : ' is-manual'),
-          ok ? '2026-09-24 화면 조사에서 확인' : '과거 매뉴얼 기준 · 현재 화면 미검증');
+          ok ? '2026-09-24·25 화면 조사에서 확인' : '과거 매뉴얼 기준 · 현재 화면 미검증');
         badge.appendChild(v);
         host.appendChild(badge);
         host.appendChild(agentEl('p', 'ns-ag-check', '금감원 화면에서 확인해주세요: ' + s.checkAction));
@@ -293,6 +855,10 @@
       text($('ns-ag-explain'), b.agent.explanation);
       agent.steps = b.agent.steps || [];
       agent.loaded = agent.steps.length > 0;
+      if (b.agent.officialEntryUrl) {
+        state.officialEntryUrl = b.agent.officialEntryUrl;
+        $('ns-fss-open-official').href = b.agent.officialEntryUrl;
+      }
     }
 
     $('ns-ag-open').addEventListener('click', agentOpen);
@@ -308,132 +874,17 @@
         .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
     });
 
-    function renderCards() {
-      var host = $('ns-fss-cards');
-      while (host.firstChild) host.removeChild(host.firstChild);
-      state.samples.forEach(function (s) {
-        var card = document.createElement('div');
-        card.className = 'ns-fss-card';
-        var h = document.createElement('h3'); text(h, s.title); card.appendChild(h);
-        var sit = document.createElement('p'); sit.className = 'ns-fss-situation'; text(sit, s.situation); card.appendChild(sit);
-        var pv = document.createElement('p'); pv.className = 'ns-fss-preview'; text(pv, '미리보기: ' + s.preview); card.appendChild(pv);
-        var full = document.createElement('pre'); full.className = 'ns-fss-full'; full.hidden = true; text(full, '제목: ' + s.subject + '\n' + s.body); card.appendChild(full);
-        var more = document.createElement('button'); more.type = 'button'; more.className = 'ns-fss-link'; text(more, '자세히 보기');
-        more.addEventListener('click', function () {
-          full.hidden = !full.hidden; text(more, full.hidden ? '자세히 보기' : '닫기');
-        });
-        card.appendChild(more);
-        var pick = document.createElement('div'); pick.className = 'ns-fss-actions';
-        var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ns-btn ns-btn-ghost'; text(btn, '이 사례와 비슷해요');
-        btn.addEventListener('click', function () {
-          state.selected = s;
-          Array.prototype.forEach.call(host.children, function (c) { c.classList.remove('is-selected'); });
-          card.classList.add('is-selected');
-          updateCompose();
-          setTab(2);
-        });
-        pick.appendChild(btn); card.appendChild(pick);
-        host.appendChild(card);
-      });
-    }
-
-    function updateCompose() {
-      $('ns-fss-compose').disabled = !(state.selected && $('ns-fss-input').value.trim().length > 0);
-    }
-
-    function renderManual(manual) {
-      if (!manual) return;
-      text($('ns-fss-manual-intro'), manual.intro);
-      text($('ns-fss-manual-note'), manual.note);
-      var host = $('ns-fss-manual');
-      while (host.firstChild) host.removeChild(host.firstChild);
-      (manual.steps || []).forEach(function (st) {
-        var li = document.createElement('li');
-        var b = document.createElement('strong'); text(b, st.action); li.appendChild(b);
-        if (st.ebook) { var e = document.createElement('span'); e.className = 'ns-fss-ebook'; text(e, '전자책 안내: ' + st.ebook); li.appendChild(e); }
-        if (st.caution) { var c = document.createElement('span'); c.className = 'ns-fss-caution'; text(c, '주의: ' + st.caution); li.appendChild(c); }
-        host.appendChild(li);
-      });
-      var g = manual.siteGuide;
-      if (g) {
-        text($('ns-fss-site-image-note'), g.imageNote);
-        var stepsHost = $('ns-fss-site-steps');
-        while (stepsHost.firstChild) stepsHost.removeChild(stepsHost.firstChild);
-        (g.steps || []).forEach(function (st) {
-          var li = document.createElement('li'); text(li, st.text); stepsHost.appendChild(li);
-        });
-        var tipsHost = $('ns-fss-site-tips');
-        while (tipsHost.firstChild) tipsHost.removeChild(tipsHost.firstChild);
-        (g.tips || []).forEach(function (t) {
-          var li = document.createElement('li'); text(li, t); tipsHost.appendChild(li);
-        });
-      }
-    }
-
-    function compose() {
-      $('ns-fss-compose').disabled = true;
-      text($('ns-fss-compose-err'), ''); $('ns-fss-compose-err').hidden = true;
-      fetch('/api/newstart/fss/compose', {
-        method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sampleId: state.selected.id, situationText: $('ns-fss-input').value })
-      }).then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
-        .then(function (res) {
-          if (res.status === 401) { $('ns-fss-auth').hidden = false; return; }
-          if (res.body.status !== 'ok') {
-            text($('ns-fss-compose-err'), res.body.errorMessage || '정리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-            $('ns-fss-compose-err').hidden = false;
-            return;
-          }
-          text($('ns-fss-original'), $('ns-fss-input').value);
-          $('ns-fss-output').value = res.body.composedText;
-          $('ns-fss-result').hidden = false;
-          setTab(3);
-          $('ns-fss-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        })
-        .catch(function () {
-          text($('ns-fss-compose-err'), 'AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-          $('ns-fss-compose-err').hidden = false;
-        })
-        .finally(function () { updateCompose(); });
-    }
-
-    function copyAll() {
-      var value = $('ns-fss-output').value;
-      text($('ns-fss-copy-err'), ''); $('ns-fss-copy-err').hidden = true;
-      function done() { text($('ns-fss-copy'), '복사되었습니다'); setTimeout(function () { text($('ns-fss-copy'), '전체 복사'); }, 1500); }
-      function fail(e) {
-        text($('ns-fss-copy-err'), '복사가 실패했습니다. 아래 내용을 손으로 선택해 복사해 주세요.');
-        $('ns-fss-copy-err').hidden = false;
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(value).then(done, function () { legacyCopy(value) ? done() : fail(); });
-      } else {
-        legacyCopy(value) ? done() : fail();
-      }
-    }
-
-    function legacyCopy(value) {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = value; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
-        document.body.appendChild(ta); ta.select();
-        var ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        return ok;
-      } catch (e) { return false; }
-    }
-
     $('ns-fss-input').addEventListener('input', updateCompose);
     $('ns-fss-compose').addEventListener('click', compose);
-    $('ns-fss-retry').addEventListener('click', compose);
-    $('ns-fss-copy').addEventListener('click', copyAll);
 
+    renderCats();
+    renderChecks();
     fetch('/api/newstart/fss/companion', { credentials: 'same-origin' })
       .then(function (r) { return r.status === 401 ? null : r.json(); })
       .then(function (b) {
         if (!b) { $('ns-fss-auth').hidden = false; return; }
         state.samples = b.samples || [];
+        state.official = b.official || null;
         // preview는 서버 record 계산값(JSON 직렬화) 사용.
         renderCards();
         renderManual(b.manual);
