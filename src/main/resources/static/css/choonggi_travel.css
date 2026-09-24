@@ -1,0 +1,27 @@
+/* CHOONGGI real-world travel cockpit — mobile first */
+.travel-cockpit{padding:18px 12px;background:#10100f;color:#f7f3e9}
+.travel-cockpit .cockpit-head{position:sticky;top:0;z-index:20;margin:-18px -12px 14px;padding:12px;background:#10100f;border-bottom:2px solid #d8ff3e}
+.travel-cockpit h2{margin:6px 0 4px;font:clamp(30px,10vw,52px)/.9 'Archivo Black';letter-spacing:-.04em}
+.travel-cockpit .now-label{margin:0;color:#d8ff3e;font-size:12px;font-weight:800;letter-spacing:.12em}
+.jump-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0 20px}
+.jump-grid a{display:flex;min-height:52px;align-items:center;justify-content:center;padding:10px;border:1px solid #f7f3e9;background:#20201e;color:#fff;text-align:center;font-size:13px;border-radius:10px}
+.jump-grid a:last-child{grid-column:1/-1;background:#ff5a24;color:#111}
+.action-step{scroll-margin-top:86px;margin:0 0 12px;padding:16px;border-radius:14px;background:#f7f3e9;color:#111}
+.action-step .step-no{display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:50%;background:#ff5a24;color:#fff;font:18px 'Archivo Black'}
+.action-step h3{margin:10px 0 8px;font:clamp(24px,7vw,38px)/1 'Archivo Black'}
+.action-step p,.action-step li{font-size:16px;line-height:1.55}
+.action-step ul,.action-step ol{padding-left:22px}
+.show-card{margin-top:12px;padding:14px;border:3px solid #111;background:#d8ff3e;border-radius:10px;font-size:18px;font-weight:800;line-height:1.35;user-select:all}
+.show-card small{display:block;margin-bottom:5px;font-size:10px;letter-spacing:.1em}
+.alert-card{background:#ffdfd3;border-color:#ff5a24}
+.check-row{display:grid;gap:8px;margin-top:10px}
+.check-row label{padding:11px;background:#ebe5d8;border-radius:8px;font-weight:700}
+.check-row input{width:22px;height:22px;margin:0 8px 0 0;vertical-align:middle}
+.qa{display:grid;gap:8px}
+.qa details{border:1px solid #bbb;border-radius:8px;padding:10px;background:#fff}
+.qa summary{font-weight:800;cursor:pointer}
+.qa .answer{margin:8px 0 0;padding:10px;background:#d8ff3e;font-size:17px;font-weight:800}
+.sos-panel{background:#ff5a24;color:#111}
+.sos-panel .show-card{background:#fff}
+.source-mini{font-size:12px!important;color:#5e5a51}
+@media(min-width:700px){.travel-cockpit{max-width:760px;margin:auto;padding:28px}.travel-cockpit .cockpit-head{margin:-28px -28px 18px;padding:16px 28px}.jump-grid{grid-template-columns:repeat(5,1fr)}.jump-grid a:last-child{grid-column:auto}.action-step{padding:24px}}
