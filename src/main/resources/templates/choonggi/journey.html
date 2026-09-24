@@ -9,11 +9,42 @@
   <meta property="og:title" th:content="${pageTitle}"><meta property="og:description" th:content="${description}">
   <meta property="og:url" th:content="${canonical}">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" th:href="@{/css/choonggi.css}">
+  <link rel="stylesheet" th:href="@{/css/choonggi.css}"><link rel="stylesheet" th:href="@{/css/choonggi_travel.css}">
 </head>
 <body>
 <header><a href="/choonggi" class="brand">CHOONGGI</a><span>KOREA → INDIA / SEASON 01</span></header>
 <main>
+  <section class="travel-cockpit" aria-label="공항 실전 행동 가이드">
+    <div class="cockpit-head"><p class="now-label">MOBILE AIRPORT GUIDE</p><h2>지금 할 일</h2>
+      <nav class="jump-grid"><a href="#public-icn">인천공항</a><a href="#public-han">하노이 환승</a><a href="#public-immigration">인도 입국</a><a href="#public-customs">세관</a><a href="#public-sos">SOS</a></nav>
+    </div>
+    <article class="action-step" id="public-icn"><span class="step-no">1</span><h3>인천 T1 · 3층 출국장</h3>
+      <ol><li>공항버스에서 <b>제1여객터미널</b> 확인 후 하차.</li><li>3층 출국장 전광판에서 항공편명과 목적지를 찾아 <b>당일 체크인 카운터</b> 확인.</li>
+      <li>체크인 때 최종 목적지까지 수하물이 연결되는지 묻고, 수하물표의 <b>BOM</b> 확인.</li><li>보안검색 → 출국심사 → 전광판 게이트 확인 순서로 이동.</li></ol>
+      <div class="show-card"><small>직원에게 보여주기</small>My final destination is Mumbai via Hanoi. Is my baggage checked through to BOM?</div>
+    </article>
+    <article class="action-step" id="public-han"><span class="step-no">2</span><h3>하노이 · International Transfer</h3>
+      <ol><li><b>INTERNATIONAL TRANSFER / CONNECTING FLIGHTS</b> 표지를 따라가기.</li><li>Arrivals·Immigration·Baggage Claim으로 가지 않기.</li>
+      <li>환승 카운터 → 환승 보안검색 → 전광판에서 Mumbai 연결편 게이트 확인.</li></ol>
+      <div class="show-card"><small>직원에게 보여주기</small>I am an international transit passenger going to Mumbai. Where is the transfer counter?</div>
+    </article>
+    <article class="action-step" id="public-immigration"><span class="step-no">3</span><h3>Mumbai · Immigration</h3>
+      <p>여권, e-Visa ETA, e-Arrival 제출 확인, 숙소 예약·주소, 귀국/후속 항공권을 준비합니다. e-Arrival Card는 Indian Immigration의 <b>무료</b> 공식 서비스이며 도착 전 72시간 이내 제출 안내가 제공됩니다.</p>
+      <div class="qa"><details open><summary>Purpose of visit?</summary><p class="answer">I am here for a gaming tournament and tourism.</p></details>
+      <details><summary>Where will you stay?</summary><p class="answer">I will stay at this hotel. Here is my booking.</p></details>
+      <details><summary>Return ticket?</summary><p class="answer">Yes. Here is my return ticket.</p></details></div>
+    </article>
+    <article class="action-step" id="public-customs"><span class="step-no">4</span><h3>Baggage → Customs</h3>
+      <ol><li>전광판에서 도착편의 수하물 벨트 확인.</li><li><b>Green Channel</b>: 신고할 물품이 전혀 없을 때.</li><li><b>Red Channel</b>: 신고 대상이 있거나 확실하지 않을 때.</li></ol>
+      <p>무기·불법 약물, 고가 금·귀금속, 상업용 물품, 많은 현금/외화, 식품·식물·동물성 제품, 드론 등 허가 여부가 의심되는 물품은 Green으로 지나가기 전에 세관에 확인하세요.</p>
+      <div class="show-card"><small>확실하지 않을 때</small>I am not sure whether this item must be declared. I would like to declare it and follow the correct procedure.</div>
+    </article>
+    <article class="action-step sos-panel" id="public-sos"><span class="step-no">!</span><h3>SHOW THIS SCREEN</h3>
+      <div class="show-card">I am travelling from Incheon to Mumbai via Hanoi. I need help finding the correct transfer, immigration, baggage, or customs area.</div>
+      <div class="show-card">I do not understand English well. Please speak slowly, point to the correct place, or type the instructions on my phone.</div>
+    </article>
+  </section>
+
   <section class="journey-page-hero">
     <p class="kicker">2026.09.25</p>
     <h1>INDIA<br>JOURNEY</h1>
