@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalEntry;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalLine;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalStatus;
@@ -40,6 +41,86 @@ public class EasyJournalService {
     public boolean balanced() {
       return debitTotal == creditTotal;
     }
+  }
+
+  /**
+   * 실계정 분개 행 — 차변/대변 중 한쪽만 양수 금액을 가진다.
+   */
+  public record Leg(EasyAccount account, long debit, long credit) {
+  }
+
+  /**
+   * 실계정 복식 전기 (Phase A1).
+   *
+   * 기존 {@link #repost}와 달리 상대계정을 호출자가 명시한다.
+   * insert 전에 전체 legs를 검증하므로 불균형이면 아무 행도 저장되지 않고
+   * 전체 트랜잭션이 롤백된다.
+   *
+   * 규칙:
+   * - legs 2개 이상
+   * - 각 행은 차변/대변 중 한쪽만 양수
+   * - 차변 합계 == 대변 합계
+   * - 신규 분개에 SETTLEMENT 기술계정 사용 금지
+   *   (historical 조회에는 영향 없음 — 기존 분개는 그대로 읽힌다)
+   *
+   * @param txn 연결 거래 (순수 B/S 이동이면 null 가능)
+   */
+  @Transactional
+  public EasyJournalEntry postLegs(EasyBusiness business, LocalDate occurredOn,
+      EasyTransaction txn, String memo, List<Leg> legs) {
+    if (business == null) {
+      throw new IllegalArgumentException("사업체를 선택해 주세요.");
+    }
+    if (occurredOn == null) {
+      throw new IllegalArgumentException("거래일을 입력해 주세요.");
+    }
+    if (legs == null || legs.size() < 2) {
+      throw new IllegalArgumentException("분개 행은 2개 이상이어야 합니다.");
+    }
+    long debitTotal = 0L;
+    long creditTotal = 0L;
+    for (Leg leg : legs) {
+      if (leg == null || leg.account() == null) {
+        throw new IllegalArgumentException("분개 행의 계정을 선택해 주세요.");
+      }
+      if (!leg.account().isActive()) {
+        throw new IllegalArgumentException("비활성 계정은 분개할 수 없습니다: "
+            + leg.account().getCode());
+      }
+      if (SETTLEMENT_CODE.equals(leg.account().getCode())) {
+        throw new IllegalArgumentException("신규 분개에 자금정산(SETTLEMENT) 계정을 "
+            + "사용할 수 없습니다. 실계정을 지정해 주세요.");
+      }
+      if (!((leg.debit() > 0 && leg.credit() == 0)
+          || (leg.credit() > 0 && leg.debit() == 0))) {
+        throw new IllegalArgumentException("분개 행은 차변/대변 중 한쪽만 값을 가집니다.");
+      }
+      debitTotal += leg.debit();
+      creditTotal += leg.credit();
+    }
+    if (debitTotal != creditTotal) {
+      throw new IllegalArgumentException("차변 합계(" + debitTotal + ")와 대변 합계("
+          + creditTotal + ")가 일치해야 합니다.");
+    }
+    if (txn != null) {
+      List<EasyJournalEntry> actives =
+          entryRepository.findByTxn_TxnIdAndStatusOrderByEntryIdDesc(
+              txn.getTxnId(), EasyJournalStatus.POSTED);
+      for (EasyJournalEntry active : actives) {
+        active.voidEntry();
+      }
+    }
+    EasyJournalEntry entry = entryRepository.save(EasyJournalEntry.builder()
+        .business(business)
+        .occurredOn(occurredOn)
+        .txn(txn)
+        .memo(memo)
+        .build());
+    int order = 0;
+    for (Leg leg : legs) {
+      line(entry, leg.account(), leg.debit(), leg.credit(), order++);
+    }
+    return entry;
   }
 
   /** 거래 분개 — 기존 활성 분개를 void하고 새로 분개한다. */
