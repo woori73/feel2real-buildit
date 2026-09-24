@@ -41,7 +41,9 @@ class ChoonggiPageControllerTest {
     String body = mockMvc.perform(get("/choonggi/journey")).andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString();
     assertThat(body).contains("지금 할 일", "INTERNATIONAL TRANSFER", "Baggage → Customs",
-        "SHOW THIS SCREEN", "Please speak slowly", "Green Channel", "Red Channel");
+        "SHOW THIS SCREEN", "Please speak slowly", "Green Channel", "Red Channel",
+        "수하물표의 최종 목적지", "현장 직원 안내를 최종 기준");
+    assertThat(body).doesNotContain("짐 찾지<br>않습니다", "탑승권을 한 번에 받고");
   }
 
   @Test void unknownEpisodeIs404() throws Exception { mockMvc.perform(get("/choonggi/vlog/fake")).andExpect(status().isNotFound()); }
