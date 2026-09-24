@@ -40,7 +40,7 @@ class ChoonggiPageControllerTest {
   @Test void publicJourneyProvidesMobileActionAndHelpScreens() throws Exception {
     String body = mockMvc.perform(get("/choonggi/journey")).andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString();
-    assertThat(body).contains("지금 할 일", "INTERNATIONAL TRANSFER", "India Customs",
+    assertThat(body).contains("지금 할 일", "INTERNATIONAL TRANSFER", "Baggage → Customs",
         "SHOW THIS SCREEN", "Please speak slowly", "Green Channel", "Red Channel");
   }
 
