@@ -122,3 +122,27 @@ NewStart Browser Assistant = Chrome Extension/Bridge 하나:
 
 관련: `docs/newstart/NEWSTART_FSS_COMPLAINT_HELPER_V1_CHECKPOINT1_2026-09-23.md`(V1 도우미),
 `fss-helper.html`의 14단계 manual(`newstart/fss/fss_complaint_sources.json` siteGuide, 원문 verbatim).
+
+## 10. ACADEMY Chrome 재조사 결과 (2026-09-24, 이 PC의 실제 Google Chrome · 읽기 전용)
+
+CDP(9222)로 이 PC의 실제 Chrome에서 금감원 화면을 조사했다. **개인정보 입력 없음, 본인인증
+미수행, 최종 제출 없음**(금감원 탭의 폼은 저장/등록되지 않은 미제출 상태). 기록한 것은 URL·
+화면 제목·라벨·input name뿐이다.
+
+| 단계 | 과거 매뉴얼 | 현재 실측(ACADEMY) | 판정 |
+|---|---|---|---|
+| STEP 1 | 유사사례 검색에서 [신청] | `search.jsp` 제목 "민원신청", [신청]=`fnOkClick()`, [신청취소]=`fnCancelClick()` | MATCH |
+| STEP 2 | pop-up [확인] | 자동화 경로(CDP)에서는 [신청] 클릭 즉시 `forInsertSelect.do`로 이동. 사람이 눌렀을 때의 pop-up은 HOME POC 실측 유지 | MATCH(자동화 환경만 차이) |
+| STEP 3 | [확인]→[아니요] | 질문 문장 + `minwonChk` 라디오 [네]=Y / [아니요]=N, 화면 안내 "대리제출인 경우 아니요", [다음]=`checkForm()` | CHANGED |
+| STEP 4 | 동의 3종 | `forInsertAgre.do`. `agreechkYn`/`sinfoSndYn`/`agreechkRgnoYn`은 hidden input, UI는 [동의]/[동의하지 않음] | MATCH |
+| STEP 5~6 | 개인정보 입력 → [없다]는 별도 화면 | 같은 단일 폼 안에 성명(`inquiManNm`)·연락처(`pHp1`…)·주소(`zip1`/`addr1`)·이메일(`emailId`, 필수), "과거동일내용의 민원접수 여부 안내"=`rsltReceiveYn` [있다]/[없다]/[기타(자율조정, 취하, 이첩처리 등)], 별개 질문 "민원자율조정 및 민원이첩 제도 안내"=`receiveYn`, [본인인증받기]·[다음 단계] 버튼 | CHANGED(단일 페이지) |
+| STEP 7 | 인증 팝업 4수단 | 미조사 — 인증은 사용자가 직접 | UNVERIFIED(유지) |
+| STEP 8 | 인증 후 [전자통지] 선택 | 인증 이전 화면에서 이미 "필수 입력 처리결과회신방법" `rsltRplyMthdDiv`: 1=인터넷(금감원 홈페이지) / 3=전자통지(회신문을 카카오톡으로 발송) / 2=서면 우편통지(등기우편) | MATCH(위치 CHANGED) |
+| STEP 9~14 | 금융회사명→상품→유형→제목/요지/본문→[등록] | "금융회사 정보"·"민원내용" 헤더는 DOM에 존재하나 인증 이전 화면에서는 노출되지 않음 | UNVERIFIED(유지) |
+
+핵심 발견: 현재 금감원 민원 입력은 **하나의 긴 단일 폼 페이지**(진행상황: 개인정보동의 →
+개인정보입력 → 민원정보입력 → 민원등록)로, 과거 매뉴얼의 화면 순차 흐름과 다르다. 이 결과는
+`FssGuidedWorkflow` STEP 3·5·6·8 문구와 `FssGuidedWorkflowTest` 경계에 반영했다.
+
+남은 과제(사용자 인증 후에만 조사 가능): STEP 7 인증 팝업 실제 선택지, STEP 9~14의 금융회사명·
+상품종류·유형·제목/요지/본문·[등록] 버튼 실측.
