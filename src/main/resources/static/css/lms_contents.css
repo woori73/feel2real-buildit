@@ -1,18 +1,25 @@
-/* 콘텐츠 관리(운영자 전용) 전용. 세그먼트 선택은 lms_shell.css 공용. */
+/* 콘텐츠 관리(운영자 전용) 전용. 폼/버튼/카드 기본기는 lms_shell.css 공용. */
 
-.video-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
-.video-card{background:#fff;border:1px solid rgba(0,0,0,.04);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease}
-.video-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-.video-thumb{aspect-ratio:16/9;background:linear-gradient(135deg,#efe9ff,#eef0fb);display:flex;align-items:center;justify-content:center;font-size:36px}
-.video-card-body{padding:22px}
-.video-card-body .v-title{border:0;border-bottom:1.5px solid var(--border);border-radius:0;padding:6px 2px;font-size:17px;font-weight:800;margin-bottom:12px;background:transparent}
-.video-card-body .v-title:focus{background:#fff7d6}
-.video-badges{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.badge{font-size:12px;font-weight:800;padding:6px 12px;border-radius:999px}
-.badge-length{background:#eef0fa;color:var(--navy)}
-.badge-access{background:var(--purple-light);color:var(--purple)}
-.video-card-body .v-desc{font-size:13px;margin-bottom:12px;min-height:52px}
-.video-meta{font-size:12px;color:var(--text-light);margin-bottom:16px}
-.video-card-actions{display:flex;gap:8px}
-.upload-label{cursor:pointer;display:inline-block;flex:1;text-align:center}
-.video-card-actions .v-delete{flex:1}
+.content-sub{color:var(--text-light);margin:-8px 0 24px;font-size:15px}
+
+.content-form .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 20px}
+.content-form .form-actions{display:flex;gap:12px;align-items:center;margin-top:8px}
+.content-form .form-status{margin-top:12px;font-size:14px;color:var(--text-light);min-height:20px}
+.field-hint{margin-top:6px;font-size:12px;color:var(--text-light)}
+
+.content-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.content-empty{color:var(--text-light);font-size:15px}
+.content-card{background:#fff;border:1px solid rgba(0,0,0,.04);border-radius:var(--r-md);box-shadow:var(--shadow-sm);padding:22px}
+.content-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.content-card-head h3{font-size:17px;font-weight:800;margin:0}
+.content-card-meta{font-size:13px;color:var(--text-light);margin-bottom:8px}
+.content-card-desc{font-size:14px;margin-bottom:14px;color:var(--text)}
+.content-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.content-card-actions .delete{background:#fde8e8;color:#c22a2a;border:0;border-radius:10px;padding:9px 15px;font-size:14px;font-weight:700}
+.content-card-actions .delete:disabled{opacity:.4;cursor:not-allowed}
+
+.status-badge{font-size:12px;font-weight:800;padding:6px 12px;border-radius:999px;white-space:nowrap}
+.status-badge.status-published{background:#e7f7ec;color:#1f8a43}
+.status-badge.status-ready{background:#eef0fa;color:var(--navy)}
+.status-badge.status-hidden{background:#f1f1f6;color:var(--text-light)}
+.status-badge.status-failed{background:#fde8e8;color:#c22a2a}

@@ -1517,3 +1517,31 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 `fingerprint` = SHA-256(정규화 질문+근거 ref 세트) UNIQUE로 동일 질문·동일 근거 중복 저장을 막고,
 `draft_id` UNIQUE로 한 초안은 한 번만 축적된다. **`review_state=ACCEPTED`(운영자 승인) 행만 STEP1 RAG에 재사용**되며
 재사용 시 분류는 `INTERNAL_CASE`+`ANSWER_SESSION` 고정 — Agent 답변을 공식 사실로 승격하는 경로는 없다.
+
+## 학원 LMS 콘텐츠/수강권 (Phase 1, V1001)
+
+에듀홀릭 LMS "재원생 시험 전 복습수업"(§`academy-lms-design.md`의 8개 화면 MOCK 프로토타입과는 별개로
+실 DB/API가 붙은 첫 영역이다). 두 신규 도메인 패키지 `domain.lmscontent`/`domain.lmsenrollment`.
+
+- `lms_contents`(`LmsContent`): `LessonProduct`(강좌) 하위 학습 콘텐츠. `academy_id`/`lesson_id` FK
+  (둘 다 `ON DELETE CASCADE`), title/description, `content_type`(현재 `VIDEO`만), `storage_key`/
+  `thumbnail_key`(단일 정규화 mp4 — `AcademyVideo`와 달리 raw/normalized 이중 소스나 CAS 버전 없음),
+  duration/size/width/height, 콘텐츠 단위 school/grade/exam/unit 태그, `display_order`,
+  `status`(UPLOADING·READY·PUBLISHED·HIDDEN·FAILED — UPLOADING/FAILED는 향후 비동기 AI 가공
+  파이프라인 자리, Phase 1은 동기 업로드라 READY에서 시작), `published_at`.
+  저장/재생은 `AcademyVideo`가 쓰는 `FileStorage`/`VideoTranscoder`/`AcademyVideoDeliveryStorage`
+  (범용 컴포넌트)만 재사용하고 `academy_videos` 행과는 완전히 분리한다 — 정책(길이 상한 30분
+  `app.lms.content.*`, 공개 대상)이 다르기 때문이다.
+- `lms_enrollments`(`LmsEnrollment`): 학생의 강좌 수강권. `student_id`/`academy_id`/`lesson_id` FK,
+  `(student_id, lesson_id)` unique, `status`(ACTIVE/REVOKED/EXPIRED — EXPIRED는 예약값, 만료는
+  `expires_at` 타임스탬프로 판정하고 별도 배치가 status를 옮기지 않는다), `grant_source`
+  (ACADEMY/ADMIN — Phase 1은 이 둘만 실사용, `PURCHASE`는 향후 유료 강좌 PG 연동을 위한 예약값),
+  `granted_at`/`expires_at`(nullable). 기존 `lesson_applications`(신청)을 확장하지 않는다 — 배정
+  후보만 그 테이블에서 뽑고(`LmsEnrollmentService.getView`) 별도 행으로 관리한다.
+- 접근 판정은 `LmsLearnerAccessService` 한 곳(owner=`academy.tutor` 소유권, 학생=ACTIVE·미만료
+  `LmsEnrollment`)에서만 하고, SSR 화면(`/lms/{handle}/review/{lessonId}`)·콘텐츠 목록 API·스트리밍
+  API가 모두 이 게이트 하나를 공유한다.
+- Builder "LMS 설정"(`lmsEnabled`/`lmsDisplayName`/`lmsMainTitle`/`lmsIntro`/`lmsSectionName`)은
+  신규 컬럼 없이 기존 `academies.page_settings.builderDraft`(Map&lt;String,String&gt;) JSON에 5개
+  키로 저장한다(`LmsBuilderSettingsService`, `PUT /api/tutor/academy/lms-settings` — 기존
+   `/api/tutor/academy/page-settings`는 의도적으로 builderDraft를 받지 않으므로 별도 엔드포인트).
