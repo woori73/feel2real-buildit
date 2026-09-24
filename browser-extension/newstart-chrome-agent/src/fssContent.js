@@ -22,29 +22,34 @@
     if (panel) return;
     var host = document.createElement('div');
     host.id = 'newstart-chrome-agent-host';
-    /* 레이아웃에 영향 주지 않도록 fixed. 우하단, FSS 본문 버튼 영역을 가리지 않게 좁게. */
+    /* fixed. 데스크톱 우상단(top:90px,right:20px) — 스크롤 유지, FSS 상단 메뉴 회피. 좁은 화면은 상단 full-width. */
     (document.documentElement || document.body).appendChild(host);
     panel = host.attachShadow({ mode: 'closed' });
 
     var style = document.createElement('style');
+    /* desktop: 우상단 고정(스크롤해도 유지) — FSS 상단 헤더/메뉴를 피하기 top:90px.
+       narrow/mobile: 상단 full-width 계열(좌우 8px margin), 억지로 우측 좁은 박스 유지하지 않음. */
     style.textContent =
       ':host{all:initial}' +
-      '.wrap{position:fixed;right:12px;bottom:12px;width:290px;max-width:calc(100vw - 24px);' +
+      '.wrap{position:fixed;top:90px;right:20px;width:300px;max-width:calc(100vw - 40px);' +
       'box-sizing:border-box;background:#ffffff;border:1px solid #d5dae2;border-radius:10px;' +
       'box-shadow:0 6px 18px rgba(20,30,50,.18);font-family:-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;' +
       'font-size:13px;color:#1c2430;z-index:2147483000;line-height:1.45}' +
+      '@media (max-width:640px){.wrap{top:8px;left:8px;right:8px;width:auto;max-width:none}}' +
       '.hd{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;' +
       'background:#f4f7fb;border-bottom:1px solid #e2e7ee;border-radius:10px 10px 0 0}' +
       '.hd b{font-size:12.5px}' +
       '.mini{border:0;background:transparent;font-size:15px;line-height:1;padding:2px 6px;cursor:pointer;color:#5a6678}' +
       '.bd{padding:9px 11px 11px}' +
       '.wrap.is-min .bd{display:none}' +
-      '.st{font-weight:700;margin-bottom:4px}' +
-      '.st.is-unknown{color:#8a5200}' +
-      '.gd{color:#33404f}' +
+      '.wrap.is-min{width:auto;max-width:calc(100vw - 40px)}' +
+      /* 시각 우선순위: 1 단계 → 2 행동(안내) → 3 근거/주의 → 4 수동 안내 */ +
+      '.st{font-weight:800;font-size:15px;margin-bottom:5px}' +
+      '.st.is-unknown{color:#b91c1c}' +
+      '.gd{color:#1f2a38;font-size:13px}' +
       '.ev{margin-top:7px;color:#7b8798;font-size:11px;word-break:break-all}' +
       '.ft{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}' +
-      'a.open{color:#2456a6;font-size:12px}' +
+      'a.open,.open{color:#2456a6;font-size:12px}' +
       '.tag{color:#9aa5b3;font-size:10.5px;margin-left:auto}';
     panel.appendChild(style);
 
@@ -93,8 +98,9 @@
     bd.appendChild(ft);
     wrap.appendChild(hd);
     wrap.appendChild(bd);
-    /* 인증/지도 popup처럼 작은 창에서는 접은 상태로 표시(화면 가림 최소화). */
-    if (window.innerWidth < 480 || window.innerHeight < 480) wrap.classList.add('is-min');
+    /* 인증/지도 popup처럼 창 자체가 낮은 경우에만 접은 상태로 시작(가림 최소화).
+       모바일 세로(높이가 충분)는 상단 full-width 패널로 펼침 — 오류도 상단에서 즉시 보여야 한다. */
+    if (window.innerHeight < 480) wrap.classList.add('is-min');
     panel.appendChild(wrap);
     refs.wrap = wrap;
   }

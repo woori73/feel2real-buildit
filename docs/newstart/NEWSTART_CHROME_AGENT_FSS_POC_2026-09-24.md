@@ -11,7 +11,7 @@ Chrome Manifest V3 unpacked extension. 사용자 실제 Chrome 안에서만 동�
 ```
 FSS 페이지(www.fss.or.kr)
   └ content script: fssStepDetector.js(collectFacts→classify) + fssContent.js
-        ├ shadow-DOM 우하단 미니 패널(안내문 표시만, 조작 없음)
+        ├ shadow-DOM 고정 패널(데스크톱 우상단·좁은화면 상단 full-width; 안내문 표시만, 조작 없음)
         └ chrome.runtime.sendMessage {FSS_STEP: step번호/substate/evidence카테고리/version}
               └ background service worker → chrome.storage(마지막 판별 1건, 10분 TTL)
 NewStart 페이지(feel2real.co.kr/newstart* 또는 로컬 /newstart*)
@@ -50,6 +50,7 @@ NewStart 페이지(feel2real.co.kr/newstart* 또는 로컬 /newstart*)
 | 2 | **의도적 미판별**: `[신청]`→네이티브 `alert()`(DOM 부재) → STEP 1 유지, GUIDE에 [확인] 안내 포함 | handoff §3 STEP2 |
 | 3 | `forInsertSelect.do` + `minwonChk` Y/N + `[다음]` | handoff §3 STEP3 + §10 |
 | 4 | `forInsertAgre.do` + hidden 3종(`agreechkYn`/`sinfoSndYn`/`agreechkRgnoYn`) + substate(`#popup-alert` 존재 시 POPUP_ALERT) | handoff §3 STEP4 |
+| 5 (v0.2.0) | `forInsertStep1.do` 파일명 + 구조 신호(본인인증 버튼/radio/hidden 중 1개 이상) → substate=`PII_INPUT`, **인식·직접 입력 안내만** — 자동 입력·클릭·제출 없음. 신호 약하면 UNKNOWN | 2026-09-24 REAL CHROME QA 실측 URL + handoff §3 STEP5~7("한 화면 forInsertStep1.do") |
 | 기타 | UNKNOWN → "현재 화면을 자동으로 확인하지 못했습니다. 수동 안내를 이용해주세요." | §9 |
 
 우회 신호 검증: URL 단독 판별 금지 — control(radio/hidden/button/id)와 URL이 동시 일치해야 확정, 부분 일치이면 UNKNOWN.
@@ -57,14 +58,34 @@ NewStart 페이지(feel2real.co.kr/newstart* 또는 로컬 /newstart*)
 
 ## 5. 실제 Chrome 테스트 (§16~§18) — RESULT
 
-(아래는 사용자 수동 테스트 완료 후 실측으로 채워짐. Qoder는 QA 관찰자; 결과 생성 대행 없음 — §17.)
+(아래는 사용자 수동 테스트 실측. Qoder는 QA 관찰자; 결과 생성 대행 없음 — §17.)
 
-- 설치: chrome://extensions → 개발자 모드 → 압축 해제된 확장 프로그램 로드 → `browser-extension/newstart-chrome-agent/`
-- STEP 1~4 판별: [PENDING — 사용자 수동 진행 후 기록]
-- 패널 자동 갱신(내비게이션/form submit/모달): [PENDING]
-- UNKNOWN fallback: [PENDING]
-- NewStart 연결 배지: [PENDING]
-- Privacy QA (DevTools/network/mailstone 관찰): 전송 관측 = `FSS_STEP{step, substate, evidence라벨, version}` + `GET_STATUS`뿐, PII=0/credential=0/cookie=0/session=0 확인: [PENDING]
+### 1차 QA (v0.1.0)
+- 설치: chrome://extensions 개발자 모드 → 압축 해제 로드 — 성공
+- §13 연결: `http://localhost:8081/newstart/fss-helper` 배지 → **"Chrome Agent 연결됨 (v0.1.0)"** — PASS
+- STEP 1(search.jsp)→2(alert [확인])→3(forInsertSelect.do)→4(forInsertAgre.do) 자동 판별·panel 갱신: 사용자 보고 정상
+- **발견 1 (실패 정직 기록)**: 개인정보 화면 실URL `https://www.fss.or.kr/fss/cvpl/ctrbsUnlawFncdl/forInsertStep1.do`
+  → v0.1.0 매핑에 없음 → 패널 **"단계 자동 확인 실패 / 수동 안내"** 표시(= §9 동작 정상, 오인 SUCCESS 없음).
+  단, 해당 화면이 STEP 5(개인정보 입력)임을 인식하지 못함. 매뉴얼/handoff §3의 `forInsertStep1.do`는
+  `/fss/minwon/`이 아니라 `/fss/cvpl/ctrbsUnlawFncdl/` prefix를 쓴다는 것이 실측으로 확인됨.
+- **발견 2 (UX)**: 우하단 고정 패널은 사용자가 안내를 발견·활용하기 어려움 → 우상단 고정으로 변경 요구.
+- 사용자는 STEP 5에서 STOP: 개인정보 입력 0, 인증 0, 최종 제출 0.
+
+### v0.2.0 수정 (같은 브랜치)
+- detector: `/forinsertstep1.do` 파일명 매칭 + 구조 신호(본인인증 버튼 또는 radio/hidden 존재)로 STEP 5 `PII_INPUT` 인식,
+  **인식·안내 전용**(직접 입력·직접 인증 고지, 자동 입력/클릭/다음/인증/제출 없음). 구조 신호 없으면 UNKNOWN 유지.
+- 실제 `.do` prefix(`/fss/cvpl/ctrbsUnlawFncdl/`) 대응: 기존 STEP 3/4 판별은 파일명 substring이라 무영향(회귀 없음),
+  test fixture도 실측 prefix로 갱신.
+- UNKNOWN 진단 `path.slice(0,40)`이 `.do`를 잘라 매칭 누락으로 오인되던 표시 문제 → 60자로 완화.
+- 패널: 데스크톱 우상단 고정(top:90px/right:20px), 좁은 화면(≤640px) 상단 full-width, 접기/펼치기 유지,
+  시각 순위 1단계→2행동→3근거→4수동 안내, 실패 메시지 즉각 표시(빨강).
+- targeted tests: `node --test test/detector.test.mjs test/panel.contract.test.mjs` → **22/22 pass**
+  (전체 Gradle suite 재실행 전 extension targeted만 실행 — 지시대로)
+
+### 2차 QA (v0.2.0) — 재테스트 대기
+- localhost:8081 서버/배지, STEP 1~4 회귀, STEP 5 인식(개인정보 화면·직접 입력 안내),
+  다른 미지원 화면 UNKNOWN fallback, 우상단/모바일 상단 배치 확인 필요.
+
 
 ## 6. 성공/실패와 한계 (§23/§24)
 
@@ -74,7 +95,7 @@ NewStart 페이지(feel2real.co.kr/newstart* 또는 로컬 /newstart*)
 3. 세션 바인딩으로 인증 이후 화면 재접근 시 /cmmn/error.jsp — 확장은 그 화면을 UNKNOWN으로만 표시 (추측 자동화 없음).
 4. jQuery validation이 synthetic event를 무시하는 것과 무관하게, 확장은 이벤트를 발생시키지 않으므로 해당 리스크 없음 (§12).
 
-## 7. 향후 STEP 5~14 확장 계획
+## 7. 향후 STEP 6~14 확장 계획 (STEP 5는 v0.2.0에서 인식·안내 전용 추가 완료)
 
 - STEP 5~8: ACADEMY §10 실측(forInsertAgre.do 단일 폼 내 rsltReceiveYn/rsltRplyMthdDiv 등) 근거로 control 시그니처 추가 가능 — 단 value 미열람 원칙 유지.
 - STEP 9~14: 인증 이후 화면은 **사용자 실제 민원 진행 중에만** 관측 — 임의 접근 금지, 매뉴얼 기준 문구 + "현재 화면과 다를 수 있습니다" 유지.

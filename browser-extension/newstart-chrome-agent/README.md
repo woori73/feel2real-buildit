@@ -2,7 +2,7 @@
 
 NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype.
 사용자의 실제 Chrome에서 금융감독원(FSS) 민원 화면의 **구조적 DOM 사실만**으로
-현재 단계를 판별하고, 화면 우하단 미니 패널로 다음 절차를 안내한다.
+현재 단계를 판별하고, 화면 우상단 고정 패널로 다음 절차를 안내한다.
 
 > 이 확장은 **어떤 자동 조작도 하지 않는다**: 클릭·체크·폼 입력·인증·최종 제출 대행 없음.
 > Qoder / Playwright / Selenium / CDP 디버깅 포트 없이 **일반 Chrome에서만** 동작한다.
@@ -46,7 +46,7 @@ NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype.
   NewStart content script의 `GET_STATUS` 응답, FSS content script의 `FSS_STEP` 수신.
 - `src/fssStepDetector.js` — `collectFacts()`(DOM→구조 사실) + 순수 `classify()`(STEP 판별) + `GUIDE`.
 - `src/fssContent.js` — FSS 페이지 로드·DOM 변경(MutationObserver/debounce)마다 재판별,
-  그림자 DOM(minimal) 우하단 패널로 안내. 입력값 미열람.
+  그림자 DOM 패널(데스크톱 우상단 top:90px·right:20px, 좁은 화면 상단 full-width)로 안내. 입력값 미열람.
 - `src/newstartContent.js` — NewStart 페이지 배지 갱신 + 최소 postMessage 응답 계약.
 
 ## STEP 커버리지 (PoC 범위: 1~4)
@@ -57,7 +57,12 @@ NewStart가 개발한 **읽기·판별·안내 전용** Chrome 확장 Prototype.
 | 2 | **관측 불가(의도)**: `[신청]` 클릭 시 네이티브 `alert()`라 DOM이 없음 → search.jsp에 STEP 1으로 머무르며 GUIDE에 [확인] 처리 안내 (PoC 발견 사항) |
 | 3 | `forInsertSelect.do` + `minwonChk` Y/N radio + `[다음]` |
 | 4 | `forInsertAgre.do` + hidden 3종(`agreechkYn`·`sinfoSndYn`·`agreechkRgnoYn`), `#popup-alert` 존재 시 substate=`POPUP_ALERT` |
-| 5~14 | PoC 범위 밖 (수동 안내 / Phase 1 Guided Agent fallback) |
+| 5 | `forInsertStep1.do`(실측: `/fss/cvpl/ctrbsUnlawFncdl/…`) + 구조 신호(본인인증 버튼 또는 radio/hidden 존재) → **인식·안내 전용**: 직접 입력·직접 인증 고지. 자동 입력/클릭/다음/인증/제출 대행 일절 없음 |
+| 6~14 | PoC 범위 밖 (수동 안내 / Phase 1 Guided Agent fallback) |
+
+> 2026-09-24 실제 Chrome QA에서 `.do` 화면들의 실제 prefix는 `/fss/minwon/`이 아니라
+> `/fss/cvpl/ctrbsUnlawFncdl/`임이 확인됐다. 판별은 파일명(`forInsertSelect.do` 등) 기준으로
+> 두 prefix 모두 호환된다.
 
 확인 불가 시 `UNKNOWN` → 패널 문구:
 `현재 화면을 자동으로 확인하지 못했습니다. 수동 안내를 이용해주세요.`

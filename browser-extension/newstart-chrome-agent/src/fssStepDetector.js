@@ -20,7 +20,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  var VERSION = '0.1.0';
+  var VERSION = '0.2.0';
 
   function trimText(s, max) {
     var t = (s || '').replace(/\s+/g, ' ').trim();
@@ -115,6 +115,22 @@
       return { step: 'UNKNOWN', evidence: ['URL:forInsertAgre.do(동의 항목 미확인)'] };
     }
 
+    /* STEP 5~7 — forInsertStep1.do: 개인정보 입력 + 본인인증이 있는 화면 (handoff §3 STEP5·6·7은
+       "한 화면 forInsertStep1.do"로 기록. 실제 URL은 /fss/cvpl/ctrbsUnlawFncdl/forInsertStep1.do
+       — 2026-09-24 REAL CHROME QA에서 사용자 실측). 파일명 접미사로만 매칭해 경로는 확장 가능.
+       *** 이 단계는 인식·안내 전용. 절대 자동 입력·자동 클릭·다음/인증/제출 대행 없음(§12). ***
+       입력·인증은 전적으로 사용자 영역이며 화면의 어떤 input 값도 읽지 않는다. */
+    if (path.indexOf('/forinsertstep1.do') >= 0) {
+      var auth = has(f.buttons, /본인인증/) || has(f.buttons, /인증/);
+      var piiSignals = auth || Object.keys(f.radioOptions || {}).length > 0 || (f.hiddenNames || []).length > 0;
+      if (piiSignals) {
+        ev.push('URL:forInsertStep1.do', auth ? 'BUTTON:본인인증' : 'STRUCT:개인정보 폼');
+        return { step: 5, substate: 'PII_INPUT', evidence: ev };
+      }
+      /* URL은 맞지만 구조 신호가 약하면 무리하게 확정하지 않고 UNKNOWN으로 정직 처리. */
+      return { step: 'UNKNOWN', evidence: ['URL:forInsertStep1.do(구조 신호 미확인)'] };
+    }
+
     /* STEP 1 — search.jsp 진입 화면: [신청](fnOkClick) + 제목 "금융감독원 민원신청" (POC+ACADEMY 실측).
        STEP 2는 [신청] 클릭 시의 네이티브 alert()이라 DOM이 없다 — content script가 관측 불가이므로
        search.jsp에서는 계속 STEP 1으로 판별하고, 안내 문구에 [확인] pop-up 처리를 포함한다(§9 정직 고지). */
@@ -126,7 +142,9 @@
       return { step: 'UNKNOWN', evidence: ['URL:search.jsp([신청]/제목 조건 미충족)'] };
     }
 
-    return { step: 'UNKNOWN', evidence: ['URL 매칭 없음(path=' + path.slice(0, 40) + ')'] };
+    /* path 표시는 .do 확장자와 실제 경로를 충분히 보여줘야 진단에 유용하다(slice(0,40)이
+       '.do'를 잘라내 "매칭 누락"처럼 보이게 한 원인이 되므로 60자로 완화). */
+    return { step: 'UNKNOWN', evidence: ['URL 매칭 없음(path=' + path.slice(0, 60) + ')'] };
   }
 
   /* 패널 안내문 — 실측 evidence에 있는 화면 사실만 쓴다. 금지 문구 없음. */
@@ -135,6 +153,7 @@
     3: '민원 성격을 확인하는 단계입니다. 질문에 [네]/[아니요]를 직접 선택한 뒤 [다음]을 눌러주세요.',
     4: '개인정보 동의 3종(수집·이용 / 민감정보 / 고유식별정보) 단계입니다. [동의]를 선택하고 [다음]을 누른 뒤, 뜨는 창에서 [민원신청]을 눌러주세요.',
     '4-POPUP_ALERT': '창에서 [민원신청]을 누르면 개인정보 입력 화면으로 넘어갑니다. 입력과 인증은 사용자 직접 영역입니다.',
+    5: '개인정보 입력 화면(forInsertStep1.do)입니다. 성명·생년월일·연락처·주소는 화면에서 직접 입력하고, [본인인증받기]도 본인이 직접 진행해주세요. NewStart는 입력·인증·제출을 대신하지 않으며 이 화면의 입력값을 읽지 않습니다.',
     UNKNOWN: '현재 화면을 자동으로 확인하지 못했습니다. 수동 안내를 이용해주세요.'
   };
 
