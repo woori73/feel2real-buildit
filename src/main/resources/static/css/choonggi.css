@@ -31,3 +31,8 @@
 .now-panel{display:none;border-top:2px solid var(--ink);margin-top:24px;padding-top:20px}.now-panel.show{display:block}
 .screenshot-card{border:2px dashed;padding:16px;margin-top:14px;font-size:13px;line-height:1.6}
 @media(min-width:768px){.source-list{grid-template-columns:1fr 1fr}}
+
+.airport-guide-fab{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(66px + env(safe-area-inset-bottom));display:grid;gap:2px;padding:13px 16px;border:2px solid var(--ink);border-radius:12px;background:var(--lime);box-shadow:0 5px 0 var(--ink);line-height:1.1}
+.airport-guide-fab span{font-size:10px;letter-spacing:.08em}
+.airport-guide-fab strong{font:17px 'Archivo Black'}
+@media(min-width:768px){.airport-guide-fab{left:auto;right:24px;top:92px;bottom:auto;width:260px}}

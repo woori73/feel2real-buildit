@@ -90,6 +90,7 @@ class ChoonggiPageControllerTest {
     String body = mockMvc.perform(get("/choonggi")).andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString();
     assertThat(body).contains("/img/choonggi/honor-of-kings-roster.jpg");
+    assertThat(body).contains("airport-guide-fab", "공항 가이드 바로 열기", "href=\"/choonggi/journey\"");
     assertThat(body).contains("YUVIN RECKONING");
     assertThat(body).contains("HONOR OF KINGS");
   }
