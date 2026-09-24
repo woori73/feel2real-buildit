@@ -74,3 +74,13 @@ git worktree add -b feat/easy-kb-local-collector-poc <path> origin/feat/easy-kb-
 - KB manual login/download (file already secured; home needs file transfer, not re-download)
 - KB parser/normalizer/import unit tests from #399 (green)
 - Node e2e-kb mock lifecycle (green)
+
+## 11. ACADEMY VERIFICATION 2026-09-24 (sxxra PC, same branch 73e64b8c)
+- KbCollectorIngestServiceTest: 4/4 PASS (resolves §7 NOT COMPLETED / §8 known problem #1)
+- EASY regression `domain.easy.*`: 254 tests, 0 failures, 0 errors — BUILD SUCCESSFUL
+- compileJava / compileTestJava / bootJar: PASS
+- `npm run test:e2e-kb` (after `npm install`, gitignored node_modules): KB COLLECTOR LIFECYCLE: PASS
+- Real KB file: NOT on this PC (C:\Users\VIEW LIFE profile absent; sxxra Downloads has no KB xls) — real-file import still NOT RUN, file transfer still required
+- Migration audit: main has V990/V991/V992/V994/V996/V997/V998/V999/V1000, no duplicate V-numbers — PASS
+- Data safety: no prod write, no real-file commit, approveAndPost boundary unchanged, IMPORTED/CONFIRMED untouched — PASS
+- No code changes in this verification; production posting NOT executed (admin approval gate intact)
