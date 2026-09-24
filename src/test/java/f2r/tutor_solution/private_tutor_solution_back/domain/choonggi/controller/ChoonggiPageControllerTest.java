@@ -37,6 +37,13 @@ class ChoonggiPageControllerTest {
     for (String forbidden : new String[]{"VJ961","VJ907","VietJet","11:05","13:35","20:05","23:40"})
       assertThat(body).as("public journey page must not expose: " + forbidden).doesNotContain(forbidden);
   }
+  @Test void publicJourneyProvidesMobileActionAndHelpScreens() throws Exception {
+    String body = mockMvc.perform(get("/choonggi/journey")).andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString();
+    assertThat(body).contains("지금 할 일", "INTERNATIONAL TRANSFER", "Baggage → Customs",
+        "SHOW THIS SCREEN", "Please speak slowly", "Green Channel", "Red Channel");
+  }
+
   @Test void unknownEpisodeIs404() throws Exception { mockMvc.perform(get("/choonggi/vlog/fake")).andExpect(status().isNotFound()); }
   @Test void matchStatusNeverInventsResult() {
     assertThat(ChoonggiPageController.matchStatus(LocalDate.of(2026,9,29))).isEqualTo("UPCOMING");
