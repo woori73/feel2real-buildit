@@ -32,6 +32,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // KB PoC mock Excel download: stable fake bytes (NOT a real statement, never parsed as one).
+  // The Java-side KbCard* pipeline is proven separately against the real 14-column schema.
+  if (requested === '/kb-download.xls') {
+    const data = Buffer.from(
+        'KB PoC mock download — fake bytes for collector lifecycle verification only.\n'
+        + 'Not a real card statement. Never ingested as financial data.\n', 'utf-8');
+    res.writeHead(200, {
+      'Content-Type': 'application/vnd.ms-excel',
+      'Content-Disposition': 'attachment; filename="kb-usage-mock.xls"',
+    });
+    res.end(data);
+    return;
+  }
+
   const filePath = path.join(PUBLIC_DIR, requested);
   if (!filePath.startsWith(PUBLIC_DIR)) {
     res.writeHead(400);
