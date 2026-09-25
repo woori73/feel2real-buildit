@@ -6,8 +6,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialup
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface NewStartOfficialUpdateRepository extends JpaRepository<NewStartOfficialUpdate, Long> {
+public interface NewStartOfficialUpdateRepository extends JpaRepository<NewStartOfficialUpdate, Long>,
+    JpaSpecificationExecutor<NewStartOfficialUpdate> {
 
   List<NewStartOfficialUpdate> findByReviewStatusOrderByFeaturedDescPublishedAtDescUpdateIdDesc(
       ReviewStatus reviewStatus);

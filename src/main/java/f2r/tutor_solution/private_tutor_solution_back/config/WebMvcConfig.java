@@ -88,6 +88,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/admin/wiki-originals", "admin/wiki_originals");
         view(registry, "/admin/wiki-analysis", "admin/wiki_analysis");
         view(registry, "/admin/newstart/wiki", "admin/newstart_wiki");
+        view(registry, "/admin/newstart/jipijigi", "admin/newstart_jipijigi");
         view(registry, "/admin/lesson-communities", "admin/lesson_communities");
         view(registry, "/admin/landing", "admin/landing");
 

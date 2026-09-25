@@ -53,10 +53,10 @@
 - 현재 사용처: `/newstart` NewStart AI 질문창
 - 인증/권한: 기존 `/api/**` catch-all(로그인 회원)을 따른다. 별도 권한 규칙 없음.
 - Request JSON: `message` (필수, 1~2000자)
-- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용)
-- 성공: `200` + `{"status":"ok","answer":"...","model":"..."}`
-- 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다.
-- 제약: Knowledge DB/RAG 없음 — 카페 사례·공식자료 검색 계약이 아니다. retrieval layer는 향후 service의 prompt 조립 단계에 삽입한다.
+- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용), `sources`(배열; 답변 조립에 실제 사용된 근거 출처 최대 8건 — 각 `{kind,title,url}`, `kind`는 `공식 자료`/`운영자·전자책 자료`/`실증 사례(DB)`/`신복위 카페 사례`/`부실차주 카페 사례`/`참고` 라벨)
+- 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
+- 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, 지식베이스 조회 실패, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
+- RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립 우선순위: 공식 > 운영/전자책 > 승인 답변 세션 > 카페·실증 사례((refType,refId) 중복 제거, 최대 12건). 답변 프롬프트는 근거 성격을 '공식 안내에 따르면' vs '카페 사례에서는'으로 구분하도록 강제한다.
 
 
 ### NewStart 회원 채팅 (공용방 1개, 텍스트 전용)
@@ -4079,6 +4079,39 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - DRAFT rows never appear in public queries. Published posts integrate into `/choonggi` and `/choonggi/vlog/{slug}`.
 
 
+## NewStart 지피지기 Agent ADMIN API (V1004·V1005)
+
+SSR 화면 `/admin/newstart/jipijigi`(WebMvcConfig view → `templates/admin/newstart_jipijigi.html`)가 호출하는
+JSON API. `SecurityConfig`의 `/api/admin/**` `hasRole('ADMIN')` 규칙을 그대로 상속받는다(일반 회원 403, 익명 401).
+actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받지 않는다. 상태 전이 위반·allowlist 위반은 400
+(`AGENT_REQUEST_REJECTED`), 게시 시도는 항상 409(`PUBLISH_DISABLED`).
+운영 규칙의 정본: [`newstart/jipijigi/OPERATING_PRINCIPLES_2026-09-23.md`](newstart/jipijigi/OPERATING_PRINCIPLES_2026-09-23.md).
+
+- `GET /api/admin/newstart/jipijigi/inventory`: KB 실제 보유량(상태·소스별 카운트, 공식 업데이트, 실증 사례,
+  질문·초안 수)과 조회 능력 플래그(`keywordLikeRetrieval=true`, `vectorSearch/fullTextIndex/embeddingPipeline=false`)
+  + 갭 메모. "수집했다고 알려진 것"이 아니라 DB 실제 카운트만 노출한다.
+- `GET|POST /boards`, `PUT /boards/{id}/enabled`: 게시 allowlist. `menuId`는 양수 실측값만 저장(0·음수 400),
+  미확인은 NULL로 두고 `postable=false`로 반환한다.
+- `POST /commands`(`instruction`, `commandType?`): 수동 명령 실행. type 생략 시 명령어 키워드로 분류한다.
+  응답은 `{command, drafts[]}`이며 `resultSummary`에 "게시 미수행"을 명시한다. `GET /commands`: 실행 이력.
+- `POST /questions`(수집 결과 upsert, `articleId`·`title` 필수)/ `GET /questions?limit=`: 질문 저장소.
+  본문 없으면 `bodyStatus=UNREADABLE`, 닉네임·연락처·이메일·계좌·전화는 저장 전 마스킹.
+- `GET /drafts?status=`, `GET /drafts/{id}`: 초안 목록·상세(본문 + STEP별 trace + 상태 이력 + sourceClass별
+  hit 수; `ref_id=GAP` 행은 hit 계산에서 제외). `PUT /drafts/{id}`: DRAFT/READY_FOR_REVIEW에서만 수정·
+  대상 게시판 재지정.
+- 상태 액션: `POST /drafts/{id}/review`(검토 요청), `/approve`(enabled allowlist 게시판 필수 + 사유),
+  `/hold`, `/reject`(사유 필수), `/publish` — V1은 설정 플래그·allowlist·게시 클라이언트 3중 차단으로
+  항상 409이며, 화면은 대신 `[원문 복사]`로 운영자 계정 게시용 최종 텍스트를 전달한다.
+- **답변 세션 축적(V1005)**: 초안 생성 성공 시점에 `newstart_jipijigi_answer_sessions`에 자동 저장된다
+  (게시 성공 여부와 무관, `fingerprint`로 동일 질문·동일 근거 dedupe). `/approve`는 세션을 `ACCEPTED`로,
+  `/reject`는 `REJECTED`로 전이시키고 — `ACCEPTED` 행만 다음 질문 STEP1 RAG에서 외부 카페 검색보다 먼저 조회된다.
+  - `GET /sessions?page=&size=`, `GET /sessions/{id}`: 축적된 답변 세션(원 질문·최종 답변·출처별 근거 JSON·
+    `dbHits`·`externalSearched`·`confidence`·`operatorEdited`·`publishedAs`·`reviewState`).
+  - `POST /drafts/{id}/exposure-report`(`publishedAs=POST|COMMENT`, `publishedUrl`, `commentId`, `followUpRef`):
+    **운영자가 실제 카페에 노출한 결과를 보고**하는 유일한 경로. Agent가 스스로 게시 성공을 기록하지 않으며
+    `NONE` 보고는 400이다.
+  - `PUT /sessions/{id}/follow-up`(`followUpRef`): 이후 회원 후속 댓글·실제 결과를 이 답변에 연결한다.
+
 ## 금감원 민원 도우미 API (`/api/newstart/fss`) (2026-09, Phase 1 v2)
 
 - 인증: 기존 `/api/**` catch-all(로그인 필요)을 따른다. 권한 규칙은 새로 만들지 않는다.
@@ -4086,4 +4119,3 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - `GET /api/newstart/fss/companion` — 화면 1회 로딩 payload: `samples`(전자책 예시 3종 FS-1..FS-3, ebookRef·sourceLines 포함), `manual`(전자책 기반 안내), `official`(§7 소관 분기 안내: 금감원 공식 페이지 3종 출처·카테고리별 소관·기타 기관 경로·조회 기준일), `agent`(Guided Agent 14단계 정적 안내, PC Chrome 고지 포함).
 - `POST /api/newstart/fss/compose` — 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
 - `GET /api/newstart/fss/agent/workflow`, `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — Guided Agent 단계 안내(메모리 세션, 개인정보 미저장).
-

@@ -32,26 +32,35 @@ public class NewStartAiChatController {
     NewStartAiChatService.NewStartAiAnswer answer =
         newStartAiChatService.ask(request == null ? null : request.message());
     if (!answer.ok()) {
-      return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage()));
+      return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage(), toSourceDtos(answer.sources())));
     }
-    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model()));
+    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources())));
+  }
+
+  private static java.util.List<SourceDto> toSourceDtos(java.util.List<NewStartAiChatService.AnswerSource> sources) {
+    return sources.stream().map(s -> new SourceDto(s.kind(), s.title(), s.url())).toList();
   }
 
   /** @param message 사용자가 입력한 질문. 빈 값/길이 초과는 service가 검증한다. */
   public record ChatRequest(String message) {}
 
+  /** 답변 근거 출처. kind는 "공식 자료" / "부실차주 카페 사례" 등 출처 성격 라벨 — 커뮤니티 근거를 공식처럼 표시하지 않기 위한 구분. */
+  public record SourceDto(String kind, String title, String url) {}
+
   /**
    * @param status "ok" | "error". @param answer 성공 시 AI 답변, 실패 시 빈 문자열.
    * @param errorMessage 실패 시 사용자용 안내 문구(내부 예외·provider 상세 미포함), 성공 시 null.
-   * @param model Wiki Router가 반환한 모델 식별자(검증용). UI 표시는 선택이며 실패 시 null.
+   * @param model Wiki Router가 반환한 모델 식별자(검증용). UI 표시는 선행이며 실패 시 null.
+   * @param sources 답변 조립에 사용된 근거 출처 목록(빈 배열 가능).
    */
-  public record ChatResponse(String status, String answer, String errorMessage, String model) {
-    public static ChatResponse success(String answer, String model) {
-      return new ChatResponse("ok", answer, null, model);
+  public record ChatResponse(String status, String answer, String errorMessage, String model,
+                             java.util.List<SourceDto> sources) {
+    public static ChatResponse success(String answer, String model, java.util.List<SourceDto> sources) {
+      return new ChatResponse("ok", answer, null, model, sources);
     }
 
-    public static ChatResponse failure(String errorMessage) {
-      return new ChatResponse("error", "", errorMessage, null);
+    public static ChatResponse failure(String errorMessage, java.util.List<SourceDto> sources) {
+      return new ChatResponse("error", "", errorMessage, null, sources);
     }
   }
 }
