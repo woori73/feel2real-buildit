@@ -117,17 +117,18 @@ class EasyIncomeTaxEngineTest {
   }
 
   @Test
-  @DisplayName("학원 primary + 합산")
+  @DisplayName("학원 primary + 합산 (데이터 지정)")
   void primaryAndCombined() {
     stubAcademyPublisher();
     BusinessTaxIncome academy = computation.compute(1L, "ACADEMY", 2026, List.of());
     BusinessTaxIncome publishing =
         computation.compute(2L, "PUBLISHING", 2026, List.of());
 
-    PersonalAggregation result =
-        aggregation.aggregate("taxpayer-data", 2026, academy, publishing);
+    PersonalAggregation result = aggregation.aggregate("taxpayer-data", 2026,
+        "ACADEMY", List.of(academy, publishing));
 
     assertThat(result.primaryBusinessCode()).isEqualTo("ACADEMY");
+    assertThat(result.primary().businessCode()).isEqualTo("ACADEMY");
     assertThat(result.combinedBusinessIncome())
         .isEqualTo(60826000L - 50000L);
     assertThat(result.status()).isEqualTo(AggregationStatus.REVIEW_REQUIRED);
@@ -136,15 +137,31 @@ class EasyIncomeTaxEngineTest {
   }
 
   @Test
-  @DisplayName("주사업장이 학원이 아니면 거부")
-  void nonAcademyPrimary_rejected() {
+  @DisplayName("주사업장 코드는 데이터로 결정 (집계 대상에 없으면 거부)")
+  void unknownPrimary_rejected() {
     stubAcademyPublisher();
+    BusinessTaxIncome academy = computation.compute(1L, "ACADEMY", 2026, List.of());
+
+    assertThatThrownBy(() -> aggregation.aggregate("taxpayer-data", 2026,
+        "UNKNOWN", List.of(academy)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("집계 대상에 없습니다");
+  }
+
+  @Test
+  @DisplayName("엔진에 ACADEMY 문자열 hard-code 없음 (출판사 primary도 구조상 가능)")
+  void primaryNotHardcoded() {
+    stubAcademyPublisher();
+    BusinessTaxIncome academy = computation.compute(1L, "ACADEMY", 2026, List.of());
     BusinessTaxIncome publishing =
         computation.compute(2L, "PUBLISHING", 2026, List.of());
 
-    assertThatThrownBy(() ->
-        aggregation.aggregate("taxpayer-data", 2026, publishing, publishing))
-        .isInstanceOf(IllegalArgumentException.class);
+    PersonalAggregation result = aggregation.aggregate("taxpayer-data", 2026,
+        "PUBLISHING", List.of(academy, publishing));
+
+    assertThat(result.primaryBusinessCode()).isEqualTo("PUBLISHING");
+    assertThat(result.combinedBusinessIncome())
+        .isEqualTo(60826000L - 50000L);
   }
 
   @Test
@@ -221,8 +238,8 @@ class EasyIncomeTaxEngineTest {
     BusinessTaxIncome academy = computation.compute(1L, "ACADEMY", 2026, List.of());
     BusinessTaxIncome publishing =
         computation.compute(2L, "PUBLISHING", 2026, List.of());
-    PersonalAggregation result =
-        aggregation.aggregate("taxpayer-data", 2026, academy, publishing);
+    PersonalAggregation result = aggregation.aggregate("taxpayer-data", 2026,
+        "ACADEMY", List.of(academy, publishing));
 
     // 합산 사업소득까지만 확정, 세액 단계는 차단
     assertThat(result.combinedBusinessIncome()).isEqualTo(60826000L - 50000L);

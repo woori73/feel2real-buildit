@@ -28,7 +28,7 @@ public class EasyPersonalTaxAggregation {
 
   /** 개인 집계 — 합산 사업소득까지 확정, 세액 이후는 상태만. */
   public record PersonalAggregation(String taxpayerLabel, int fiscalYear,
-      BusinessTaxIncome academy, BusinessTaxIncome publishing, long combinedBusinessIncome,
+      BusinessTaxIncome primary, List<BusinessTaxIncome> incomes, long combinedBusinessIncome,
       String primaryBusinessCode, AggregationStatus status, List<String> missing) {
   }
 
@@ -39,18 +39,35 @@ public class EasyPersonalTaxAggregation {
   }
 
   /**
-   * 개인 집계 — 납세자 정보는 데이터로 받는다 (실명 hard-code 금지).
-   * 검증済み 세율 규칙이 없으면 세액 계산으로 넘어가지 않고 REVIEW_REQUIRED.
+   * 개인 집계 — 납세자 정보와 주사업장은 데이터로 받는다 (실명·"ACADEMY" hard-code 금지).
+   * 주사업장 코드는 호출자가 신고 구조 데이터로 지정하고, 엔진은 해당 사업장이
+   * 집계 대상에 존재하는지만 검증한다. 검증済み 세율 규칙이 없으면 세액 계산으로
+   * 넘어가지 않고 REVIEW_REQUIRED.
    */
   public PersonalAggregation aggregate(String taxpayerLabel, int fiscalYear,
-      BusinessTaxIncome academy, BusinessTaxIncome publishing) {
-    if (!"ACADEMY".equalsIgnoreCase(academy.businessCode())) {
-      throw new IllegalArgumentException("주사업장은 학원(ACADEMY)이어야 합니다.");
+      String primaryBusinessCode, List<BusinessTaxIncome> incomes) {
+    if (primaryBusinessCode == null || primaryBusinessCode.isBlank()) {
+      throw new IllegalArgumentException("주사업장 코드를 입력해 주세요.");
     }
-    long combined = academy.businessIncome() + publishing.businessIncome();
+    if (incomes == null || incomes.isEmpty()) {
+      throw new IllegalArgumentException("사업장 사업소득이 없습니다.");
+    }
+    BusinessTaxIncome primary = null;
+    for (BusinessTaxIncome income : incomes) {
+      if (primaryBusinessCode.equalsIgnoreCase(income.businessCode())) {
+        primary = income;
+      }
+    }
+    if (primary == null) {
+      throw new IllegalArgumentException(
+          "주사업장(" + primaryBusinessCode + ")이 집계 대상에 없습니다.");
+    }
+    long combined = 0L;
     List<String> missing = new ArrayList<>();
-    missing.addAll(academy.missing());
-    missing.addAll(publishing.missing());
+    for (BusinessTaxIncome income : incomes) {
+      combined += income.businessIncome();
+      missing.addAll(income.missing());
+    }
     if (ruleRegistry.verifiedRule(fiscalYear, RuleType.NATIONAL_RATE_BRACKET).isEmpty()) {
       missing.add("TAX_RULE_PENDING: " + fiscalYear + " 귀속 검증済み 세율 없음 — "
           + "신고 시점 국세청/홈택스 공식 확인 필요");
@@ -61,7 +78,7 @@ public class EasyPersonalTaxAggregation {
     missing.add("MISSING_DATA: 실제 신고서 대조값 없음");
     AggregationStatus status =
         missing.isEmpty() ? AggregationStatus.READY : AggregationStatus.REVIEW_REQUIRED;
-    return new PersonalAggregation(taxpayerLabel, fiscalYear, academy, publishing,
-        combined, "ACADEMY", status, missing);
+    return new PersonalAggregation(taxpayerLabel, fiscalYear, primary, incomes,
+        combined, primary.businessCode(), status, missing);
   }
 }
