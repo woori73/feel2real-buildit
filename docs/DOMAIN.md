@@ -1300,6 +1300,10 @@ GL/TB/감사는 journal_entries + journal_lines에서 계산하며 수치를 별
 |---|---|
 | `easy_cutovers` | `cutover_id` PK, `business_id` FK UNIQUE, `cutover_date`, `opening_entry_id`? FK, `status`(DRAFT/APPROVED) |
 
+### 4.52d easy audit column hotfix (V1006)
+
+V1002/V1003의 신규 테이블 3건(`easy_bank_account_maps`/`easy_card_payment_maps`/`easy_cutovers`)이 `BaseEntity`가 요구하는 `created_by`/`updated_by` 없이 생성되어 fresh MySQL 부트 시 Hibernate schema validation이 실패한다. V1006이 nullable 컬럼만 추가(데이터 UPDATE 없음, 기존 회계 이력 불변)하고, 이미 적용된 V1002/V1003 파일은 수정하지 않는다.
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
