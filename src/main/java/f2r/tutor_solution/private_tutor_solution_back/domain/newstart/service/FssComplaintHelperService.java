@@ -31,6 +31,11 @@ public class FssComplaintHelperService {
 
   private static final String SOURCES_RESOURCE = "newstart/fss/fss_complaint_sources.json";
 
+  /** §10 guided interview 응답 상한(난독 입력 방지용 최소 가드). */
+  static final int MAX_INTERVIEW_FIELD_CHARS = 1000;
+  static final int MAX_INTERVIEW_EVENT_ROWS = 20;
+  static final int MAX_INTERVIEW_EVIDENCE_ITEMS = 20;
+
   /** §5 AI PROMPT CONTRACT — 사실 창작성 절대 금지 + 확인 필요 마커 + 결과 단정 금지. */
   static final String SYSTEM_PROMPT =
       "You are assisting the user in organizing a complaint to the Financial Supervisory Service"
@@ -47,9 +52,28 @@ public class FssComplaintHelperService {
           + " CLASSIFY FIRST, INFORM SECOND, JUDGE ONLY WHEN ASKED."
           + " Output only the organized Korean complaint draft text, no explanations.";
 
+  /**
+   * §13/§14/§15 — guided interview 초안 계약: FACT/CLAIM/CONCERN/REQUEST 분리, 위법 단정 금지,
+   * "확인을 요청합니다" 문체, 고정 섹션 구조, 첫 줄 "제목:" 출력(복사용 분리 파싱 경계).
+   */
+  static final String INTERVIEW_SYSTEM_PROMPT = SYSTEM_PROMPT
+      + " The interview answer sheet is internally labelled FACT / CLAIM / CONCERN / REQUEST;"
+          + " keep that separation in the draft: what the other party said is reported as"
+          + " 주장했다는 내용 (not established truth), never promoted to fact."
+          + " Never conclude illegality or legal violations (\"위법입니다\", \"법을 위반했습니다\" 같은"
+          + " 확정 금지); instead ask for verification, e.g. \"이 연락이 적절한 절차인지 확인을"
+          + " 요청합니다\"."
+          + " Output format is strict: first line \"제목: <40자 이내 제목>\", then a line \"본문:\","
+          + " then these Korean sections in order: 사건 개요 / 시간순 사실관계 / 금융회사·채권사 대응"
+          + " / 현재 상황 / 첨부 가능한 증거 / 확인을 요청하는 사항 / 원하는 해결."
+          + " Style: short sentences, chronological, fact-centered, tied to evidence the user"
+          + " actually holds. Soften insults or excessive blame, but never delete the user's"
+          + " actual harm or grievance.";
+
   private final WikiAiRouterClient wikiAiRouterClient;
   private final List<ComplaintSample> samples;
   private final ManualGuide manual;
+  private final OfficialGuide officialGuide;
 
   public FssComplaintHelperService(WikiAiRouterClient wikiAiRouterClient) {
     this.wikiAiRouterClient = wikiAiRouterClient;
@@ -83,6 +107,29 @@ public class FssComplaintHelperService {
         g.path("imageNote").asText(null), List.copyOf(siteSteps), List.copyOf(tips));
     this.manual = new ManualGuide(m.path("ebookRef").asText(), m.path("intro").asText(),
         List.copyOf(steps), m.path("note").asText(null), siteGuide);
+    this.officialGuide = parseOfficial(root.path("officialRouting"));
+  }
+
+  /** §7 공식 소관 안내(menuNo 201178/201179/201180, 2026-09-25 브라우저 조회). 리소스에 없으면 null. */
+  private static OfficialGuide parseOfficial(JsonNode o) {
+    if (o.isMissingNode()) {
+      return null;
+    }
+    List<OfficialSource> sources = new ArrayList<>();
+    for (JsonNode s : o.path("sources")) {
+      sources.add(new OfficialSource(s.path("name").asText(), s.path("url").asText()));
+    }
+    List<OtherAgencyRoute> others = new ArrayList<>();
+    for (JsonNode a : o.path("otherAgencies")) {
+      others.add(new OtherAgencyRoute(a.path("matter").asText(), a.path("agency").asText()));
+    }
+    java.util.Map<String, String> byCategory = new java.util.LinkedHashMap<>();
+    o.path("byCategory").fieldNames().forEachRemaining(k ->
+        byCategory.put(k, o.path("byCategory").path(k).asText()));
+    return new OfficialGuide(o.path("authority").asText(), o.path("retrievedAt").asText(),
+        o.path("note").asText(null), List.copyOf(sources), o.path("consultFirst").asText(null),
+        o.path("fssScope").asText(null), o.path("processingTime").asText(null),
+        List.copyOf(others), java.util.Map.copyOf(byCategory));
   }
 
   private static JsonNode loadSources() {
@@ -100,6 +147,11 @@ public class FssComplaintHelperService {
 
   public ManualGuide manual() {
     return manual;
+  }
+
+  /** §7 공식 소관 안내(금감원 공식 페이지 요약). 리소스에 없으면 null. */
+  public OfficialGuide officialGuide() {
+    return officialGuide;
   }
 
   /**
@@ -127,7 +179,132 @@ public class FssComplaintHelperService {
     if (!completion.ok()) {
       return ComposeResult.failed(completion.errorMessage());
     }
-    return new ComposeResult(true, completion.text(), null, completion.model());
+    return new ComposeResult(true, completion.text(), "", completion.text(), null, completion.model());
+  }
+
+  /**
+   * §10 guided interview 응답만으로 민원 초안을 만든다(전자책 예시 미사용 — §14 고정 섹션 구조).
+   * 입력이 없거나 상한을 넘기면 AI를 호출하지 않고 사용자용 안내만 반환한다.
+   */
+  public ComposeResult composeInterview(Interview interview) {
+    if (interview == null || blank(interview.facts())) {
+      return ComposeResult.failed("먼저 어떤 일이 있었는지 적어 주세요.");
+    }
+    String overflow = validateInterview(interview);
+    if (overflow != null) {
+      return ComposeResult.failed(overflow);
+    }
+    WikiAiRouterClient.Completion completion = wikiAiRouterClient.complete(
+        INTERVIEW_SYSTEM_PROMPT, buildInterviewPrompt(interview), MAX_COMPOSED_CHARS);
+    if (!completion.ok()) {
+      return ComposeResult.failed(completion.errorMessage());
+    }
+    Draft draft = parseDraft(completion.text());
+    return new ComposeResult(true, completion.text(), draft.subject(), draft.body(),
+        null, completion.model());
+  }
+
+  private static boolean blank(String s) {
+    return s == null || s.strip().isEmpty();
+  }
+
+  private static String validateInterview(Interview interview) {
+    java.util.function.Predicate<String> tooLong =
+        s -> s != null && s.strip().length() > MAX_INTERVIEW_FIELD_CHARS;
+    if (tooLong.test(interview.facts()) || tooLong.test(interview.company())
+        || tooLong.test(interview.contacts()) || tooLong.test(interview.ownResponses())
+        || tooLong.test(interview.outcome())) {
+      return "한 항목은 " + MAX_INTERVIEW_FIELD_CHARS + "자 이내로 적어 주세요.";
+    }
+    if (interview.events() != null && interview.events().size() > MAX_INTERVIEW_EVENT_ROWS) {
+      return "날짜 기록은 최대 " + MAX_INTERVIEW_EVENT_ROWS + "개까지 추가할 수 있습니다.";
+    }
+    if (interview.evidence() != null && interview.evidence().size() > MAX_INTERVIEW_EVIDENCE_ITEMS) {
+      return "증거 항목은 최대 " + MAX_INTERVIEW_EVIDENCE_ITEMS + "개까지 선택할 수 있습니다.";
+    }
+    return null;
+  }
+
+  /** §13 라벨(FACT/CLAIM/CONCERN/REQUEST)을 유지하며 인터뷰지를 프롬프트로 조립한다. */
+  static String buildInterviewPrompt(Interview i) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("[상황 분류(FACT)] ").append(clean(i.category())).append('\n');
+    sb.append("[FACT — 사용자 본인의 진술. 초안의 사실은 오직 아래 내용뿐]\n");
+    sb.append("무슨 일이 있었는지: ").append(clean(i.facts())).append('\n');
+    sb.append("어느 금융회사/채권사: ").append(clean(i.company())).append('\n');
+    sb.append("[타임라인(FACT)]\n");
+    if (i.events() == null || i.events().isEmpty()) {
+      sb.append("(사용자가 추가한 날짜 기록 없음)\n");
+    } else {
+      for (EventRow e : i.events()) {
+        sb.append("- ").append(clean(e.date())).append(" | ").append(clean(e.party()))
+            .append(" | ").append(clean(e.happened()));
+        if (!blank(e.evidence())) {
+          sb.append(" | 증거: ").append(clean(e.evidence()));
+        }
+        sb.append('\n');
+      }
+    }
+    sb.append("[상대방 연락·행위 및 상대방이 주장한 내용(CLAIM — 사실로 확정하지 말고 '~라고"
+        + " 주장/안내했다'로 보고할 것)]\n").append(clean(i.contacts())).append('\n');
+    sb.append("[사용자가 이미 대응한 내용(FACT)]\n").append(clean(i.ownResponses())).append('\n');
+    sb.append("[사용자가 실제로 보유한다고 밝힌 증거만 — 없는 증거를 가정해 적지 말 것]\n");
+    if (i.evidence() == null || i.evidence().isEmpty()) {
+      sb.append("(증거 없음/확인 안 됨)\n");
+    } else {
+      for (String e : i.evidence()) {
+        sb.append("- ").append(clean(e)).append('\n');
+      }
+    }
+    sb.append("[CONCERN/REQUEST — 사용자가 문제라고 생각하는 점과 원하는 해결]\n")
+        .append(clean(i.outcome())).append('\n');
+    sb.append("\n위 인터뷰 내용만으로 §14 섹션 구조의 금감원 민원 초안을 작성하세요."
+        + " 없는 날짜·금액·기관명은 [ … 확인 필요 ]로 표시하고, 상대방 발언은 CLAIM으로,"
+        + " 사용자 불만은 CONCERN으로, 요청은 REQUEST로 분리해 다룹니다.");
+    return sb.toString();
+  }
+
+  private static String clean(String s) {
+    return s == null ? "" : s.strip().replace("\r\n", "\n");
+  }
+
+  /** strict parse: "제목: ..." 첫 줄과 "본문:" 경계를 찾는다. 실패 시 원문 전체를 본문으로 둔다. */
+  static Draft parseDraft(String composed) {
+    String text = composed == null ? "" : composed.strip();
+    String[] lines = text.split("\r?\n");
+    String subject = "";
+    for (int idx = 0; idx < lines.length; idx++) {
+      String line = lines[idx].strip();
+      if (subject.isEmpty() && (line.startsWith("제목:") || line.startsWith("제목："))) {
+        subject = line.substring(3).strip();
+        continue;
+      }
+      if (!subject.isEmpty() && (line.equals("본문") || line.startsWith("본문:")
+          || line.startsWith("본문："))) {
+        int colon = Math.max(line.indexOf(':'), line.indexOf('：'));
+        String inline = colon >= 0 ? line.substring(colon + 1).strip() : "";
+        StringBuilder body = new StringBuilder();
+        if (!inline.isEmpty()) {
+          body.append(inline).append('\n');
+        }
+        for (int j = idx + 1; j < lines.length; j++) {
+          body.append(lines[j]).append('\n');
+        }
+        return new Draft(subject, body.toString().strip());
+      }
+    }
+    if (!subject.isEmpty()) {
+      StringBuilder body = new StringBuilder();
+      for (int j = 0; j < lines.length; j++) {
+        String line = lines[j].strip();
+        if (line.startsWith("제목:") || line.startsWith("제목：")) {
+          continue;
+        }
+        body.append(lines[j]).append('\n');
+      }
+      return new Draft(subject, body.toString().strip());
+    }
+    return new Draft("", text);
   }
 
   static String buildPrompt(ComplaintSample sample, String situation) {
@@ -169,10 +346,33 @@ public class FssComplaintHelperService {
   public record ManualGuide(String ebookRef, String intro, List<ManualStep> steps, String note,
       SiteGuide siteGuide) {}
 
-  /** 성공 시 composedText만, 실패 시 errorMessage만 의미 있다(원문·내부 상세 미포함). */
-  public record ComposeResult(boolean ok, String composedText, String errorMessage, String model) {
+  /**
+   * 성공 시 composedText(원문)·subject·body만 의미 있다. V1 자유서술 경로는 subject가 빈 문자열이고
+   * body는 composedText 전체다. 실패 시 errorMessage만 의미 있으며 사용자 원문·내부 상세를 담지 않는다.
+   */
+  public record ComposeResult(boolean ok, String composedText, String subject, String body,
+      String errorMessage, String model) {
     public static ComposeResult failed(String errorMessage) {
-      return new ComposeResult(false, "", errorMessage, null);
+      return new ComposeResult(false, "", "", "", errorMessage, null);
     }
   }
+
+  /** parseDraft 결과 — 복사용 제목/본문 분리(UI §19). 파싱 실패 시 subject="", body=원문 전체. */
+  public record Draft(String subject, String body) {}
+
+  /** §10 guided interview 응답(7문항). 값은 request→response 왕복만 하고 어디에도 저장하지 않는다. */
+  public record Interview(String category, String facts, String company, List<EventRow> events,
+      String contacts, String ownResponses, List<String> evidence, String outcome) {}
+
+  /** §12 타임라인 1행 — 날짜/상대방/발생한 일/증거. */
+  public record EventRow(String date, String party, String happened, String evidence) {}
+
+  /** §7 공식 소관 안내(금감원 공식 페이지 출처). */
+  public record OfficialGuide(String authority, String retrievedAt, String note,
+      List<OfficialSource> sources, String consultFirst, String fssScope, String processingTime,
+      List<OtherAgencyRoute> otherAgencies, java.util.Map<String, String> byCategory) {}
+
+  public record OfficialSource(String name, String url) {}
+
+  public record OtherAgencyRoute(String matter, String agency) {}
 }

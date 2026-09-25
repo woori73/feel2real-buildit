@@ -2,6 +2,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controlle
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -16,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.FssComplaintHelperService;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -86,13 +89,18 @@ class NewStartFssComplaintControllerTest {
         .andExpect(jsonPath("$.samples.length()").value(3))
         .andExpect(jsonPath("$.samples[0].id").value("FS-1"))
         .andExpect(jsonPath("$.samples[0].ebookRef").value("EBK-6-3 / 3-1"))
-        .andExpect(jsonPath("$.manual.steps[0].action").value("민원을 넣는다"));
+        .andExpect(jsonPath("$.manual.steps[0].action").value("민원을 넣는다"))
+        // Guided Agent 14단계 안내가 companion 1회 응답에 함께 실린다(정적 문구, 개인정보 없음).
+        .andExpect(jsonPath("$.agent.steps.length()").value(14))
+        .andExpect(jsonPath("$.agent.pcChromeNotice")
+            .value("금감원 민원 Agent는 PC의 Chrome 브라우저에서 이용할 수 있습니다."));
   }
 
   @Test
   void composeSuccessReturnsTextAndModel() throws Exception {
     when(fssComplaintHelperService.compose(eq("FS-1"), any())).thenReturn(
-        new FssComplaintHelperService.ComposeResult(true, "정리된 민원문입니다.", null, "test-model"));
+        new FssComplaintHelperService.ComposeResult(true, "정리된 민원문입니다.", "",
+            "정리된 민원문입니다.", null, "test-model"));
 
     mockMvc.perform(post("/api/newstart/fss/compose")
             .cookie(userCookie())
@@ -102,6 +110,30 @@ class NewStartFssComplaintControllerTest {
         .andExpect(jsonPath("$.status").value("ok"))
         .andExpect(jsonPath("$.composedText").value("정리된 민원문입니다."))
         .andExpect(jsonPath("$.model").value("test-model"));
+  }
+
+  @Test
+  @DisplayName("interview 페이로드가 있으면 자유서술이 아니라 guided interview 경로로 라우팅된다")
+  void composeWithInterviewRoutesToInterviewPath() throws Exception {
+    when(fssComplaintHelperService.composeInterview(any())).thenReturn(
+        new FssComplaintHelperService.ComposeResult(true,
+            "제목: 추심 연락 절차 확인 요청\n본문:\n사건 개요 ...",
+            "추심 연락 절차 확인 요청", "사건 개요 ...", null, "test-model"));
+
+    mockMvc.perform(post("/api/newstart/fss/compose")
+            .cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"interview\":{\"category\":\"COLLECTION_CONTACT\",\"facts\":\"매일 전화가 와요\","
+                + "\"company\":\"OO채권관리\",\"events\":[{\"date\":\"2026-09-01\",\"party\":\"OO채권관리\","
+                + "\"happened\":\"전화 수신\",\"evidence\":\"통화기록\"}],"
+                + "\"contacts\":\"변제 안 하면 법적 조치라고 했음\",\"ownResponses\":\"아직 없음\","
+                + "\"evidence\":[\"통화기록\"],\"outcome\":\"연락 빈도 제한\"}}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("ok"))
+        .andExpect(jsonPath("$.subject").value("추심 연락 절차 확인 요청"))
+        .andExpect(jsonPath("$.body").value("사건 개요 ..."))
+        .andExpect(jsonPath("$.model").value("test-model"));
+    verify(fssComplaintHelperService, never()).compose(any(), any());
   }
 
   @Test
