@@ -273,6 +273,142 @@ public class NewstartDataIngestionService {
         );
     }
 
+    /**
+     * 8·9월 정합성 복구 import (§14) — repair_staging JSON을 대상 articleId만 골라 반영한다.
+     *
+     * <p>불변식:
+     * <ul>
+     *   <li>대상이 아닌 행(308건 등)은 어떤 경로로도 건드리지 않는다 — articleId가 staging 목록일 때만 저장.</li>
+     *   <li>contentRaw는 staged가 기존보다 엄밀히 길 때만 교체(본문+댓글+후속 체인 verbatim 복구, 축소 금지).</li>
+     *   <li>나머지 필드는 기존 값이 비어 있을 때만 채운다(null→value). 기존 non-null 값은 절대 덮어쓰지
+     *       않는다 — prediction→confirmed 변환·큐레이션된 rate 훼손 방지.</li>
+     *   <li>knowledge 테이블에는 전혀 접근하지 않는다. ACTIVE 생성 경로는 없으며 REVIEW 승격은
+     *       admin 승인 워크플로 전용이다.</li>
+     *   <li>멱등: 두 번째 실행은 전부 skipped가 된다.</li>
+     * </ul>
+     */
+    @Transactional
+    public RepairIngestionResult repairEmpiricalCases(String articlesDirPath) {
+        Path dir = Paths.get(articlesDirPath);
+        if (!Files.exists(dir)) {
+            return RepairIngestionResult.builder()
+                    .failed(1).errors(List.of("Directory not found: " + articlesDirPath)).build();
+        }
+
+        int inserted = 0;
+        int updated = 0;
+        int skipped = 0;
+        int failed = 0;
+        List<String> updatedArticleIds = new java.util.ArrayList<>();
+        List<String> errors = new java.util.ArrayList<>();
+
+        try (var stream = Files.list(dir)) {
+            List<Path> jsonFiles = stream
+                    .filter(p -> p.getFileName().toString().startsWith("article_"))
+                    .filter(p -> p.toString().endsWith(".json"))
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            for (Path file : jsonFiles) {
+                try {
+                    var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    var node = mapper.readTree(Files.readString(file));
+                    String articleId = node.get("articleId").asText();
+                    Optional<NewstartEmpiricalCase> existing = empiricalCaseRepository.findByArticleId(articleId);
+
+                    if (existing.isEmpty()) {
+                        NewstartEmpiricalCase fresh = buildCaseEntity(node);
+                        fresh.setCreatedBy(REPAIR_ACTOR);
+                        fresh.setUpdatedBy(REPAIR_ACTOR);
+                        empiricalCaseRepository.save(fresh);
+                        inserted++;
+                        updatedArticleIds.add(articleId);
+                        continue;
+                    }
+
+                    NewstartEmpiricalCase target = existing.get();
+                    int changed = mergeRepairFields(target, buildCaseEntity(node));
+                    if (changed == 0) {
+                        skipped++;
+                        continue;
+                    }
+                    target.setUpdatedBy(REPAIR_ACTOR);
+                    empiricalCaseRepository.save(target);
+                    updated++;
+                    updatedArticleIds.add(articleId);
+                } catch (Exception e) {
+                    failed++;
+                    errors.add(file.getFileName() + ": " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            errors.add("list dir: " + e.getMessage());
+            failed++;
+        }
+
+        return RepairIngestionResult.builder()
+                .inserted(inserted)
+                .updated(updated)
+                .skipped(skipped)
+                .failed(failed)
+                .updatedArticleIds(updatedArticleIds)
+                .errors(errors)
+                .build();
+    }
+
+    static final String REPAIR_ACTOR = "REPAIR_BOT";
+
+    /** 비파괴 병합: contentRaw는 더 완전한 쪽(엄밀히 긴 경우)만 교체, 그 외 필드는 빈 값만 채운다. */
+    private static int mergeRepairFields(NewstartEmpiricalCase target, NewstartEmpiricalCase staged) {
+        int changed = 0;
+        for (java.lang.reflect.Field f : NewstartEmpiricalCase.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+            String name = f.getName();
+            if (MERGE_PROTECTED.contains(name)) continue;
+            f.setAccessible(true);
+            try {
+                Object next = f.get(staged);
+                if (next == null) continue;
+                Object cur = f.get(target);
+                if ("contentRaw".equals(name)) {
+                    int curLen = cur == null ? 0 : ((String) cur).length();
+                    int nextLen = ((String) next).length();
+                    if (nextLen > curLen) {
+                        f.set(target, next);
+                        changed++;
+                    }
+                    continue;
+                }
+                boolean curEmpty = cur == null || (cur instanceof String s && s.isBlank());
+                if (curEmpty) {
+                    f.set(target, next);
+                    changed++;
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("repair merge failed on " + name, e);
+            }
+        }
+        return changed;
+    }
+
+    /** 병합 대상에서 제외: 식별·감사 필드(articleId는 staging 목록으로만 대상 지정, updatedBy는 별도 기록). */
+    private static final java.util.Set<String> MERGE_PROTECTED = java.util.Set.of(
+            "caseId", "articleId", "createdBy", "updatedBy", "createdAt", "updatedAt");
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class RepairIngestionResult {
+        private int inserted;
+        private int updated;
+        private int skipped;
+        private int failed;
+        private List<String> updatedArticleIds;
+        private List<String> errors;
+    }
+
     @Getter
     @Setter
     @NoArgsConstructor
