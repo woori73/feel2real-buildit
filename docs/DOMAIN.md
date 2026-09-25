@@ -1442,3 +1442,50 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - `choonggi_posts` (V991): episode_code, title, unique slug, body, DRAFT/PUBLISHED status, published_at, deleted_at and audit timestamps.
 - `choonggi_media` (V991): post FK, opaque storage_key, PHOTO/VIDEO type, MIME, original filename, byte size, optional dimensions/duration, sort order, cover flag and deleted_at.
 - Media binary is never stored in MySQL or Git. Existing FileStorage selects local disk in development and S3 in production.
+
+## NewStart 지피지기 Agent V1 (V1001·V1002)
+
+운영자 수동 명령 → 조사 → 초안 → 승인 워크플로 보조 도메인. Agent는 게시하지 않는다 —
+게시 주체는 언제나 운영자이고 V1은 NAVER write 연동이 없다.
+**작동 규칙(검색 순서·축적·출처 분리)의 정본은
+[`newstart/jipijigi/OPERATING_PRINCIPLES_2026-09-23.md`](newstart/jipijigi/OPERATING_PRINCIPLES_2026-09-23.md).**
+
+### newstart_jipijigi_target_boards
+게시 대상 게시판 서버측 allowlist. `club_id`는 실측값(새출발기금 부실차주 라이브러리 31312978)이고
+`menu_id`는 NAVER에서 확인한 실제 값만 저장한다 — 미확인 행은 `menu_id NULL` 유지이며
+`isPostable() = enabled && menuId != null`이 false가 되어 게시가 원천 차단된다. 추측·자동 채움 금지.
+
+### newstart_jipijigi_commands
+운영자 자연어 명령 원문(`instruction`)과 분류(`command_type` = RECENT_QUESTIONS|CCRS_RESEARCH|INTRO_POST|CUSTOM),
+실행 상태(RECEIVED|RUNNING|DONE|FAILED). 자동 스케줄러는 없으며 전부 명령 접수형이다.
+
+### newstart_jipijigi_questions
+실제로 수집한 카페 질문만 저장(`uk_jipijigi_question_article(club_id, article_id)` 멱등).
+본문을 읽지 못한 행은 발명하지 않고 `body_status=UNREADABLE`로 표시한다.
+`comments_json`은 수집 원본이고, 재노출 시 닉네임·연락처는 `JipijigiSanitizer`로 마스킹한다.
+
+### newstart_jipijigi_drafts
+초안 생명주기 `DRAFT → READY_FOR_REVIEW → APPROVED → PUBLISHED / REJECTED`.
+V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false` ② allowlist `isPostable()`
+③ NAVER 게시 클라이언트 부재로 3중 차단된다. `published_url`은 항상 NULL이다.
+
+### newstart_jipijigi_draft_status_log
+상태 전이별 actor·reason 이력(provenance). 승인/보관에는 사유가 필수다.
+
+### newstart_jipijigi_research_traces
+질문·초안별 STEP 근거 추적. `step_no` 1 내부 DB/RAG · 2 신복위(CCRS) 카페 · 3 부실차주 카페 ·
+4 공식 검증 · 5 추가 기관, `source_class` OFFICIAL_RULE|INTERNAL_CASE|CCRS_CAFE_CASE|BORROWER_CAFE_CASE|OPERATOR_MATERIAL|OTHER,
+`ref_type` KNOWLEDGE_ITEM|EMPIRICAL_CASE|OFFICIAL_UPDATE|CAFE_ARTICLE|EXTERNAL_URL|ANSWER_SESSION|NONE.
+근거가 없으면 같은 step에 `ref_id='GAP'` + `note`로 "없음"을 명시한다(빈 STEP을 침묵으로 넘기지 않음).
+
+### newstart_jipijigi_answer_sessions
+답변 세션 축적 원장(V1000). 초안 생성 성공 시 **게시 여부와 무관하게** 1행이 자동 저장된다.
+원 질문(`question_text` + `question_id`/`source_club_id`/`source_article_id`), 최종 답변
+(`answer_title`/`answer_body`/`answered_at`), 질문 유형·주제(`question_type`/`question_topic` = 운영원칙 §3의 9개 축),
+출처별 근거(`evidence_internal`/`evidence_ccrs`/`evidence_borrower`/`evidence_official` — source_class별 분리 보관),
+`db_hits`(STEP별 건수), `external_searched`, `confidence`, `operator_edited`,
+`published_as`/`published_url`/`source_comment_id`(V1은 운영자 보고 값만 저장),
+`follow_up_ref`(이후 회원 후속 댓글·실제 결과 연결).
+`fingerprint` = SHA-256(정규화 질문+근거 ref 세트) UNIQUE로 동일 질문·동일 근거 중복 저장을 막고,
+`draft_id` UNIQUE로 한 초안은 한 번만 축적된다. **`review_state=ACCEPTED`(운영자 승인) 행만 STEP1 RAG에 재사용**되며
+재사용 시 분류는 `INTERNAL_CASE`+`ANSWER_SESSION` 고정 — Agent 답변을 공식 사실로 승격하는 경로는 없다.
