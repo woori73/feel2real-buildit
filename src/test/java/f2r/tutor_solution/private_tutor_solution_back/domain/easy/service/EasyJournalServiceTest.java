@@ -14,6 +14,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJou
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAnnualClosingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalEntryRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalLineRepository;
 import java.time.LocalDate;
@@ -35,6 +36,7 @@ class EasyJournalServiceTest {
   @Mock EasyJournalEntryRepository entryRepository;
   @Mock EasyJournalLineRepository lineRepository;
   @Mock EasyAccountRepository accountRepository;
+  @Mock EasyAnnualClosingRepository closingRepository;
 
   private EasyJournalService service;
   private EasyBusiness academy;
@@ -43,7 +45,8 @@ class EasyJournalServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new EasyJournalService(entryRepository, lineRepository, accountRepository);
+    service = new EasyJournalService(entryRepository, lineRepository, accountRepository,
+        closingRepository);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     ReflectionTestUtils.setField(academy, "businessId", 1L);
     tuition = EasyAccount.builder().code("INCOME_TUITION").name("수강료")

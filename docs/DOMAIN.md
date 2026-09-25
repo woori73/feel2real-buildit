@@ -1289,6 +1289,17 @@ V973~V1000 불변 — 신규 테이블 + `easy_accounts` ENUM(EQUITY)·seed 13�
 | `easy_card_payment_maps` | `map_id` PK, `business_id` FK, `instrument_id` FK, `card_payable_account_id` FK, `payment_bank_map_id` FK, `active_from`/`active_to`?, `status`, UNIQUE(`business_id`,`instrument_id`) — issuer→은행 추론 금지 |
 | `easy_transactions` 추가 | `tax_class`? (INCOME_INCLUDED/EXPENSE_DEDUCTIBLE_CANDIDATE/NON_DEDUCTIBLE/NOT_INCOME/NOT_EXPENSE/REVIEW_REQUIRED, NULL=REVIEW_REQUIRED) |
 
+### 4.52c easy_* Phase A2 원장·시산표·마감·개시 (V1003)
+
+V973~V1002 불변 — 신규 테이블 `easy_cutovers`만. 마감은 기존 `easy_annual_closings`(OPEN/REVIEW/CLOSED) 재사용.
+신규 전기는 postLegs/repost 중앙 경로에서 CLOSED 귀속연도를 차단한다 (ACCOUNTING_PERIOD_CLOSED).
+GL/TB/감사는 journal_entries + journal_lines에서 계산하며 수치를 별도 저장하지 않는다.
+개시잔액은 복식분개로만 표현하고 DRAFT → APPROVED cut-over로 확정한다 (AI 추정 금지).
+
+| table | key columns |
+|---|---|
+| `easy_cutovers` | `cutover_id` PK, `business_id` FK UNIQUE, `cutover_date`, `opening_entry_id`? FK, `status`(DRAFT/APPROVED) |
+
 # 내신 Wiki V1 최소 데이터 확장
 
 - `exam_material_sets`: 학교 프린트와 학생 오답의 원본 BLOB + canonical JSON 세트. `core_type`과
