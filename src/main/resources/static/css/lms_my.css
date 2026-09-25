@@ -5,3 +5,9 @@
 .myclass-card .school{font-size:14px;color:var(--purple);font-weight:700;margin-bottom:8px}
 .myclass-card h3{font-size:22px;margin-bottom:20px}
 .myclass-empty{font-size:17px;color:var(--text-light)}
+
+.review-lessons-section{margin-bottom:44px;padding-bottom:36px;border-bottom:1px solid var(--border)}
+.review-eyebrow{color:var(--purple);font-weight:800;font-size:14px;margin:0 0 6px}
+.review-intro{color:var(--text-light);font-size:15px;margin:0 0 18px}
+.myclass-card .review-content-count{font-size:13px;color:var(--text-light);margin:0 0 20px}
+.subtle-title{font-size:18px;color:var(--text-light);margin-bottom:20px}
