@@ -104,4 +104,36 @@ class FssPhase1ArchitectureContractTest {
         .doesNotContain(".submit(")
         .doesNotContain("window.open(");
   }
+
+  @Test
+  @DisplayName("온보딩: PC Chrome 상단 고지·4단계 사용법·자동 불대행 5개·/privacy 링크·과장 문구 금지")
+  void templateCarriesChromeOnboarding() throws IOException {
+    String html = Files.readString(
+        repoRoot().resolve("src/main/resources/templates/newstart/fss-helper.html"),
+        StandardCharsets.UTF_8);
+    // 상단 사용자 안내 — PC Chrome 필수 + 확장 설치 시 단계별 작성 안내
+    assertThat(html).contains("금감원 민원 도우미는 PC의 Google Chrome에서 사용하는 기능입니다.");
+    assertThat(html).contains("현재 단계에 맞는 작성 안내를 받을 수 있습니다");
+    // 모바일 fallback — 설치 유도 없이 PC 접속 안내
+    assertThat(html).contains("이 기능은 PC Chrome에서 이용해주세요.");
+    assertThat(html).contains("금감원 민원 도우미의 Chrome 연동 기능은 PC에서 이용할 수 있습니다.");
+    // 4단계 사용법
+    assertThat(html).contains("PC에서 Google Chrome을 실행합니다.");
+    assertThat(html).contains("NewStart Chrome Agent를 설치합니다.");
+    assertThat(html).contains("NewStart의 「금감원 민원 도우미」를 실행합니다.");
+    assertThat(html).contains("금융감독원 사이트에서 화면 안내에 따라 민원을 작성합니다.");
+    // 자동 불대행 5개 + 인증·제출 대행 금지 표현
+    assertThat(html).contains("자동으로 하지 않는 것");
+    assertThat(html).contains("공동인증서/금융인증서 인증을 대신하지 않습니다.");
+    assertThat(html).contains("비밀번호를 입력하거나 저장하지 않습니다.");
+    assertThat(html).contains("OTP/CAPTCHA를 대신 처리하지 않습니다.");
+    assertThat(html).contains("민원을 자동 제출하지 않습니다.");
+    assertThat(html).contains("최종 제출은 사용자가 직접 확인하고 진행합니다.");
+    // 개인정보 — 기존 privacy 정책 링크
+    assertThat(html).contains("비밀번호 등 민감한 입력값은 확장프로그램이 읽거나 저장하지 않습니다");
+    assertThat(html).contains("href=\"/privacy\"");
+    // 과장 금지 — 대리 접수·자동 제출 주장 문구
+    assertThat(html).doesNotContain("AI가 대신 민원을 접수")
+        .doesNotContain("자동으로 민원을 제출");
+  }
 }

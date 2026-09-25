@@ -201,7 +201,7 @@ class FssComplaintHelperServiceTest {
     }
 
     @Test
-    @DisplayName("Extension 브리지 — 배지 id·ping 계약 유지, 가짜 Web Store URL 금지, 미게시 상태 정직 고지")
+    @DisplayName("Extension 브리지 — 배지 id·ping 계약 유지, 가짜 Web Store URL 금지, 심사 대기(pending) 정직 고지")
     void extensionBridgeContract() throws Exception {
         String html = new String(
             getClass().getResourceAsStream("/templates/newstart/fss-helper.html").readAllBytes(),
@@ -210,10 +210,12 @@ class FssComplaintHelperServiceTest {
         assertThat(html).contains("id=\"ns-chrome-badge\"");
         assertThat(html).contains("newstart-page-ping");
         assertThat(html).contains("newstart-agent");
-        // Web Store 미게시 단계 — 가짜 스토어 URL·설치 버튼 금지, 실제 소스(GitHub)만 링크
+        // Web Store 심사 대기 — 가짜 스토어 URL 금지, 설치 버튼은 pending/null URL 배선
         assertThat(html).doesNotContain("chromewebstore.google.com");
         assertThat(html).doesNotContain("chrome.google.com/webstore");
-        assertThat(html).contains("Chrome Web Store에 게시되지 않았습니다");
+        assertThat(html).contains("Chrome Web Store 검토 중");
+        assertThat(html).contains("var CHROME_WEB_STORE_URL = null;");
+        assertThat(html).contains("id=\"ns-ext-install\" disabled");
     }
 
     @Test
