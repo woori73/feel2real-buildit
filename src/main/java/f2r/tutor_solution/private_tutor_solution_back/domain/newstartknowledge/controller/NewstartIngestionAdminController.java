@@ -24,6 +24,17 @@ public class NewstartIngestionAdminController {
         return ResponseEntity.ok(ingestionService.ingestEmpiricalCases(articlesDir));
     }
 
+    /**
+     * 8·9월 정합성 복구 import — repair_staging JSON 대상 articleId만 비파괴 병합(insert/fill-only).
+     * ACTIVE 생성·승인 워크플로 우회 경로가 아니며, knowledge 테이블에는 접근하지 않는다.
+     */
+    @PostMapping("/ingest/cases/repair")
+    public ResponseEntity<NewstartDataIngestionService.RepairIngestionResult> repairCases(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @RequestParam(defaultValue = "data/newstart-cafe/repair_staging/articles") String articlesDir) {
+        return ResponseEntity.ok(ingestionService.repairEmpiricalCases(articlesDir));
+    }
+
     @PostMapping("/ingest/generate-rules")
     public ResponseEntity<Integer> generateRules(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
