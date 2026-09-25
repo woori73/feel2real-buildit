@@ -1517,3 +1517,13 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 `fingerprint` = SHA-256(정규화 질문+근거 ref 세트) UNIQUE로 동일 질문·동일 근거 중복 저장을 막고,
 `draft_id` UNIQUE로 한 초안은 한 번만 축적된다. **`review_state=ACCEPTED`(운영자 승인) 행만 STEP1 RAG에 재사용**되며
 재사용 시 분류는 `INTERNAL_CASE`+`ANSWER_SESSION` 고정 — Agent 답변을 공식 사실로 승격하는 경로는 없다.
+
+
+## NewStart 본인채무 상태창 (V1007)
+
+- `newstart_member_debt_status` — `/newstart#ns-status-panel`(기존 상태창)의 서버 정본. `user_id`를 그대로 PK로 쓰는 1:1 row(V984 프로필과 동일 패턴, 식별자 재사용·FK `users` ON DELETE CASCADE).
+- 컬럼: 확인 플래그 6종(Credit4U 확인 완료/채권기관/개인대출/연체 등록/채무보증/채권자 변동) + `debt_summary`(사용자 정리 메모, ≤1000자) + `stage`(화면 select allowlist) + BaseEntity 감사 4컬럼(DDL에 created_by/updated_by 포함 — EASY V1002/V1003 감사컬럼 결함 재발 방지 계약 테스트 있음).
+- 수명 주기: upsert 전용. DELETE가 아니라 값을 비운 저장으로 초기화한다. 중복 상태 테이블/화면 금지 — 상태창이 유일한 저장 지점이다.
+- 파생 상태(`NOT_STARTED|IN_PROGRESS|COMPLETED`)는 저장하지 않고 플래그+메모에서 계산해 HOME 카드 배지에만 쓴다(새 상태 체계 금지).
+- 흐름: HOME [채무 확인] → `/newstart/tools/credit4u`(전자책 제5장 연체 기산/장기연체 등록 실전 팁 + Credit4U 공식 메뉴 9단계 안내; 특정 코드=자격 확정 단정 금지, 지원대상 여부는 공식 기준·심사 결과 우선 문구 명시) → CTA `/newstart#ns-status-panel`(해시 복귀 시 자동 펼침) → 저장 → [내 채무상황으로 지피지기에게 물어보기]가 메모·단계를 AI 질문 문구에 실제 포함 → `/api/newstart/ai/chat`.
+- 개인정보: Credit4U 인증정보·주민번호·OTP 절대 미수신·미저장, 대신 로그인 없음. ai/chat 서버의 채무 row 자동 주입은 미구현(후속).
