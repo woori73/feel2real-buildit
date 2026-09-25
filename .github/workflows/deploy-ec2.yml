@@ -87,6 +87,33 @@ jobs:
           fi
           echo "verified: deploying $ACTUAL_SHA ($(git log -1 --format=%s))"
 
+      - name: Verify deploy SHA is main lineage
+        # head_branch == 'main'은 payload가 준 문자열 조건이라, 그 커밋이 실제로 main 계보인지
+        # 별도 확인이 필요하다. compare API의 ahead_by == 0 (main 기준으로 새로운 커밋 0개)이어야
+        # "main의 조상"이다. 다른 브랜치 커밋·diverged는 자동 배포에서 즉시 실패시킨다.
+        # 수동 dispatch는 기존 배포 유연성을 유지하기 위해 경고만 낸다.
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          DEPLOY_SHA: ${{ steps.sha.outputs.value }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          RESP=$(curl -sS -f -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/compare/main...$DEPLOY_SHA") \
+            || { echo "::error::compare main...$DEPLOY_SHA request failed"; exit 1; }
+          STATUS=$(printf '%s' "$RESP" | jq -r '.status')
+          AHEAD=$(printf '%s' "$RESP" | jq -r '.ahead_by')
+          echo "compare main...$DEPLOY_SHA -> status=$STATUS ahead_by=$AHEAD"
+          if [ "$AHEAD" != "0" ]; then
+            if [ "$EVENT_NAME" = "workflow_run" ]; then
+              echo "::error::deploy SHA is not main lineage (status=$STATUS ahead_by=$AHEAD)"
+              exit 1
+            fi
+            echo "::warning::manual deploy SHA is not main lineage (status=$STATUS ahead_by=$AHEAD)"
+          fi
+
       - name: Set up Node 20
         uses: actions/setup-node@v4
         with:
