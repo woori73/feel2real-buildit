@@ -307,7 +307,9 @@ APP_VIDEO_FFPROBE_PATH=/usr/local/bin/ffprobe
 2. `dev` merge 후 dev DB clean boot/Flyway validate.
 3. `stg` merge 후 **production migration set만** stg DB에 적용·validate.
 4. §1 인프라 gate와 DB backup/복구 지점을 확인.
-5. GitHub Actions `deploy-ec2.yml`을 수동 실행한다.
+5. GitHub Actions `deploy-ec2.yml`이 main push `Build Check` 성공 후 자동 실행된다
+   (수동 `workflow_dispatch`도 그대로 유지 — CI가 검증한 SHA를 pin해 checkout하므로, 자동/수동
+   모두 "빌드되는 커밋 == 통과한 커밋"이 보장된다).
 6. service restart 후 health, logs, metrics, DB backlog, 수동 browser/curl gate를 수행한다.
 
 적용된 V936~V938 파일은 수정·재번호하지 않는다. checksum/out-of-order/validation 실패 시 배포를
@@ -338,7 +340,7 @@ APP_VIDEO_FFPROBE_PATH=/usr/local/bin/ffprobe
   검증한다. `.github/workflows/deploy-ec2.yml`은 이 파일을 그대로 잘라 넣어(cat) EC2에서 실행되는
   스크립트를 만들므로, 테스트한 코드와 실제 배포되는 코드가 갈라질 위험이 없다.
 - **동시 배포 방지**: `deploy-ec2.yml`에 `concurrency: { group: production-deploy, cancel-in-progress:
-  false }`를 걸어, 두 번째 수동 실행이 첫 번째를 취소하지 않고 순서를 기다리게 한다.
+  false }`를 걸어, 두 번째 실행(자동이든 수동이든)이 첫 번째를 취소하지 않고 순서를 기다리게 한다.
 - **배포 전 테스트 게이트**: `deploy-ec2.yml`이 `build-check.yml`과 같은(MySQL 불필요) 테스트 목록을
   bootJar 전에 다시 돌린다 — main의 Build Check를 보지 않고 수동으로 배포를 눌러도 깨진 빌드가
   production까지 가지 않는다.

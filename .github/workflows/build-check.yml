@@ -3,6 +3,11 @@ name: Build Check
 on:
   workflow_dispatch:
   pull_request:
+  # main push에서도 돌아야 "배포 대상 SHA 자체가 CI를 통과했다"는 근거가 생긴다.
+  # deploy-ec2.yml의 workflow_run 게이트가 이 run의 head_sha를 그대로 배포한다.
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
