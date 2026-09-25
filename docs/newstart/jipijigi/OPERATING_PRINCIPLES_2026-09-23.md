@@ -83,7 +83,7 @@ STEP1(내부 ACTIVE 지식 + 승인된 축적 답변 세션, `INTERNAL_SUFFICIEN
 
 ## 8. 답변 완료 시 그 세션을 자동 축적하고, 다음 질문에서 외부 검색보다 먼저 조회한다
 
-구현: `JipijigiAnswerSessionService` + `newstart_jipijigi_answer_sessions` (V1002).
+구현: `JipijigiAnswerSessionService` + `newstart_jipijigi_answer_sessions` (V1005).
 
 **저장 시점 — 답변 생성 성공 즉시.** `JipijigiWorkflowService.createDraft()`가 초안·trace를 저장한 뒤
 같은 트랜잭션에서 세션 행을 만든다. **게시 성공 여부와 관계없이 답변 자체는 저장한다**
@@ -133,7 +133,7 @@ STEP1(내부 ACTIVE 지식 + 승인된 축적 답변 세션, `INTERNAL_SUFFICIEN
   (공식 정리표에서 홈택스는 비상장주식 항목에만 등장하고, 자동차는 "동산 조회 중심"으로만 기록됨.)
 - 게시 주체: 운영자 계정. Agent는 초안·조사만 하고, 모든 답변 하단에 고지를 남긴다.
 
-## §8 축적 저장소 실행 결과 (V1002, 같은 날)
+## §8 축적 저장소 실행 결과 (V1005, 같은 날)
 
 - `JipijigiAnswerSessionDbTest`(H2 MySQL 모드, 실제 JPA)로 요청 흐름을 증명했다 — 6 tests / 0 failures:
   답변 생성 성공 즉시 자동 저장 → `review_state=CANDIDATE`에서는 RAG 미노출 → `approve` 후 `ACCEPTED`가 되어

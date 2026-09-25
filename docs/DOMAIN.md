@@ -1467,7 +1467,7 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - `choonggi_media` (V991): post FK, opaque storage_key, PHOTO/VIDEO type, MIME, original filename, byte size, optional dimensions/duration, sort order, cover flag and deleted_at.
 - Media binary is never stored in MySQL or Git. Existing FileStorage selects local disk in development and S3 in production.
 
-## NewStart 지피지기 Agent V1 (V1001·V1002)
+## NewStart 지피지기 Agent V1 (V1004·V1005)
 
 운영자 수동 명령 → 조사 → 초안 → 승인 워크플로 보조 도메인. Agent는 게시하지 않는다 —
 게시 주체는 언제나 운영자이고 V1은 NAVER write 연동이 없다.

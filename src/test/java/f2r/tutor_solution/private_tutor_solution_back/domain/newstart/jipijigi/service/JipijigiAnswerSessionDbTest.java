@@ -30,7 +30,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V1002 답변 세션 자동 축적 — 실제 DB(H2 MySQL 모드)에서 요청 흐름을 검증한다.
+ * V1005 답변 세션 자동 축적 — 실제 DB(H2 MySQL 모드)에서 요청 흐름을 검증한다.
  *
  * <p>질문 1건 실행 → 답변 생성 → DB 자동저장 → 동일/유사 질문 재실행 → 저장된 답변·근거가 RAG에서 검색되는지.
  * 부수 규칙: dedupe, 승인 전 RAG 제외, 게시 여부와 무관한 저장, 출처 분류 분리.
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
         "spring.datasource.url=jdbc:h2:mem:jipijigi_v1000;MODE=MySQL;DB_CLOSE_DELAY=-1"
 })
-@DisplayName("지피지기 Agent 답변 세션 자동 축적/RAG 재사용 (V1002 DB)")
+@DisplayName("지피지기 Agent 답변 세션 자동 축적/RAG 재사용 (V1005 DB)")
 class JipijigiAnswerSessionDbTest {
 
     private static final String QUESTION = "자동차 담보가 있으면 새출발기금 감면을 못 받나요";

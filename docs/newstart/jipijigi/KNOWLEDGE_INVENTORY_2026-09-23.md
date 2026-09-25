@@ -20,8 +20,8 @@
 | `newstart_official_updates` | `V989`(V991 보완) + `V998` content 컬럼 | 새출발기금/금융위/신복위/FSS/공공기관/희망리턴패키지 공식 자료 | `review_status REVIEW|PUBLISHED|REJECTED|ARCHIVED`, `source_type` 6종, `content`(원문 본문) |
 | `newstart_official_discovery_run` | V989/V991 | 자동 discovery 실행 이력 | run 단위 감사 |
 | `newstart_chat_messages` | (기존) | 회원 채팅 저장. **RAG 용도로 쓰지 않음(문서 명시)** | — |
-| 지피지기 Agent 6 테이블 | `V1001__add_newstart_jipijigi_agent.sql` | allowlist/명령/질문/초안/상태로그/조사추적 | 이 PR에서 추가 |
-| `newstart_jipijigi_answer_sessions` | `V1002__add_newstart_jipijigi_answer_session.sql` | 답변 세션 축적 원장 (질문+최종 답변+근거+노출+후속 연결) | `review_state CANDIDATE\|ACCEPTED\|REJECTED` — **ACCEPTED만 STEP1 RAG 재사용**, `fingerprint` UNIQUE로 dedupe |
+| 지피지기 Agent 6 테이블 | `V1004__add_newstart_jipijigi_agent.sql` | allowlist/명령/질문/초안/상태로그/조사추적 | 이 PR에서 추가 |
+| `newstart_jipijigi_answer_sessions` | `V1005__add_newstart_jipijigi_answer_session.sql` | 답변 세션 축적 원장 (질문+최종 답변+근거+노출+후속 연결) | `review_state CANDIDATE\|ACCEPTED\|REJECTED` — **ACCEPTED만 STEP1 RAG 재사용**, `fingerprint` UNIQUE로 dedupe |
 
 `NewstartKnowledgeItem.SourceType`(entity, `NewstartKnowledgeItem.java:98`) =
 `OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, EBOOK, CAFE_ARTICLE, CAFE_COMMENT, CASE, OPERATOR_KNOWLEDGE, DERIVED_RULE`.
@@ -43,7 +43,7 @@ Agent의 6종 근거 분류(`JipijigiResearchTrace.SourceClass`)는 이 enum에�
 - MySQL FULLTEXT 인덱스 사용 → 없음(키워드 LIKE가 유일).
 - 신복위 카페 라이브 자동 크롤링 → 없음. 있는 것은 `NewStartOfficialDiscoveryScheduler` 계열의
   **공식 사이트** discovery뿐이며 결과도 REVIEW까지만 생성(자동 발행 없음).
-- 질문게시판 원문 전용 테이블 → V1001 이전에는 없음(감면율 사례와 knowledge rows만).
+- 질문게시판 원문 전용 테이블 → V1004 이전에는 없음(감면율 사례와 knowledge rows만).
 
 → 그래서 Agent의 STEP1~4는 "검색 어딘가"가 아니라 위 테이블에 대한 LIKE 조회로 구현됐다.
 → 근거가 없는 단계는 빈 목록으로 두지 않고 `research_traces.note`에 사유를 남긴다.

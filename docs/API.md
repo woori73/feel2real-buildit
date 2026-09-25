@@ -4079,7 +4079,7 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - DRAFT rows never appear in public queries. Published posts integrate into `/choonggi` and `/choonggi/vlog/{slug}`.
 
 
-## NewStart 지피지기 Agent ADMIN API (V1001·V1002)
+## NewStart 지피지기 Agent ADMIN API (V1004·V1005)
 
 SSR 화면 `/admin/newstart/jipijigi`(WebMvcConfig view → `templates/admin/newstart_jipijigi.html`)가 호출하는
 JSON API. `SecurityConfig`의 `/api/admin/**` `hasRole('ADMIN')` 규칙을 그대로 상속받는다(일반 회원 403, 익명 401).
@@ -4102,7 +4102,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 상태 액션: `POST /drafts/{id}/review`(검토 요청), `/approve`(enabled allowlist 게시판 필수 + 사유),
   `/hold`, `/reject`(사유 필수), `/publish` — V1은 설정 플래그·allowlist·게시 클라이언트 3중 차단으로
   항상 409이며, 화면은 대신 `[원문 복사]`로 운영자 계정 게시용 최종 텍스트를 전달한다.
-- **답변 세션 축적(V1002)**: 초안 생성 성공 시점에 `newstart_jipijigi_answer_sessions`에 자동 저장된다
+- **답변 세션 축적(V1005)**: 초안 생성 성공 시점에 `newstart_jipijigi_answer_sessions`에 자동 저장된다
   (게시 성공 여부와 무관, `fingerprint`로 동일 질문·동일 근거 dedupe). `/approve`는 세션을 `ACCEPTED`로,
   `/reject`는 `REJECTED`로 전이시키고 — `ACCEPTED` 행만 다음 질문 STEP1 RAG에서 외부 카페 검색보다 먼저 조회된다.
   - `GET /sessions?page=&size=`, `GET /sessions/{id}`: 축적된 답변 세션(원 질문·최종 답변·출처별 근거 JSON·
