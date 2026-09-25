@@ -5,5 +5,6 @@ public enum EasyAccountDirection {
   INCOME,
   EXPENSE,
   ASSET,
-  LIABILITY
+  LIABILITY,
+  EQUITY
 }

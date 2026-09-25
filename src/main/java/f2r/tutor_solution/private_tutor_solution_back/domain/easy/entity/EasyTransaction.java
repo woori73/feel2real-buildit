@@ -115,6 +115,14 @@ public class EasyTransaction extends BaseEntity {
   @Column(name = "is_expense_reversal")
   private Boolean expenseReversal;
 
+  /**
+   * 세무구분 — 회계 분류(direction/account)와 분리 저장한다.
+   * NULL은 REVIEW_REQUIRED로 취급한다 (세법 확정 전 단정 금지).
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "tax_class", length = 30)
+  private EasyTaxClassification taxClassification;
+
   @Builder
   public EasyTransaction(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
@@ -122,7 +130,7 @@ public class EasyTransaction extends BaseEntity {
       EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
       String sourceKind, String sourceRef, String fingerprint,
       EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview,
-      Boolean expenseReversal) {
+      Boolean expenseReversal, EasyTaxClassification taxClassification) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -143,6 +151,7 @@ public class EasyTransaction extends BaseEntity {
     this.evidenceReview = evidenceReview;
     this.withholdingReview = withholdingReview;
     this.expenseReversal = expenseReversal;
+    this.taxClassification = taxClassification;
   }
 
   public void update(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
@@ -172,6 +181,11 @@ public class EasyTransaction extends BaseEntity {
     this.evidenceReview = evidenceReview;
     this.withholdingReview = withholdingReview;
     this.expenseReversal = expenseReversal;
+  }
+
+  /** 세무구분 지정 — NULL은 REVIEW_REQUIRED로 취급한다. */
+  public void assignTaxClassification(EasyTaxClassification taxClassification) {
+    this.taxClassification = taxClassification;
   }
 
   /** 환불 역분개 여부 — NULL은 일반 거래로 읽는다. */
