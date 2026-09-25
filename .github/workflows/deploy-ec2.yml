@@ -1,7 +1,15 @@
-name: Deploy to EC2 (manual)
+name: Deploy to EC2
 
+# 자동: main push로 도는 Build Check가 SUCCESS로 끝나면, 그 CI가 검증한 SHA를 그대로 배포한다.
+# 수동: workflow_dispatch를 남겨서 언제라도 특정 ref를 재배포할 수 있게 한다.
+#   (workflow_run은 발화 시점의 기본 브랜치에 이 워크플로 파일이 있어야 하므로, 자동 배포는
+#    이 변경이 main에 머지된 '다음' 머지부터 동작한다.)
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build Check"]
+    types:
+      - completed
 
 permissions:
   id-token: write
@@ -16,12 +24,68 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    # 자동 배포 게이트: main push로 돈 Build Check가 SUCCESS일 때만 실행한다.
+    #   - conclusion이 failure/cancelled/skipped인 run → 탈락
+    #   - PR(풀 리퀘스트)이나 feature 브랜치 push에서 돈 Build Check → event/head_branch가
+    #     각각 'pull_request' / 'main'이 아니므로 탈락 (PR 브랜치 push 배포 금지)
+    # 수동 workflow_dispatch는 위 조건의 예외로 항상 허용(재배포 경로).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      ( github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.event == 'push'
+        && github.event.workflow_run.head_branch == 'main' )
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
     steps:
+      - name: Resolve deploy SHA
+        id: sha
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_SHA: ${{ github.sha }}
+          CI_SHA: ${{ github.event.workflow_run.head_sha }}
+          CI_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          CI_RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            SHA="$CI_SHA"
+            echo "auto deploy — CI run=$CI_RUN_URL branch=$CI_BRANCH conclusion=$CI_CONCLUSION"
+          else
+            SHA="$DISPATCH_SHA"
+            echo "manual redeploy via workflow_dispatch"
+          fi
+          if ! printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::deploy SHA is not a full 40-char commit (got: $SHA)"
+            exit 1
+          fi
+          echo "deploy SHA = $SHA"
+          echo "value=$SHA" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
+        # workflow_run은 이벤트 자체의 GITHUB_SHA를 기본 브랜치 최신 커밋으로 채운다. 그대로
+        # checkout하면 CI가 검증한 커밋과 다른(머지 후 밀려난) main tip을 배포하는 race가 생긴다.
+        # 그래서 Build Check가 성공한 그 SHA를 명시적으로 pin해서 빌드·배포 대상과 검증 대상을
+        # 일치시킨다. 수동 dispatch는 선택한 ref의 SHA를 그대로 쓴다.
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.sha.outputs.value }}
+
+      - name: Verify checkout matches CI-verified SHA
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ steps.sha.outputs.value }}
+        run: |
+          set -euo pipefail
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::deploy tree mismatch — expected=$EXPECTED_SHA actual=$ACTUAL_SHA"
+            exit 1
+          fi
+          echo "verified: deploying $ACTUAL_SHA ($(git log -1 --format=%s))"
 
       - name: Set up Node 20
         uses: actions/setup-node@v4
