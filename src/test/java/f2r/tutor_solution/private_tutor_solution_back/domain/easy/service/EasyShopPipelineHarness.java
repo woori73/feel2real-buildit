@@ -106,7 +106,8 @@ class EasyShopPipelineHarness {
   EasyShopPipelineHarness() {
     accountService = new EasyAccountService(
         accountRepository, mappingRepository, ruleRepository);
-    journalService = new EasyJournalService(entryRepository, lineRepository, accountRepository);
+    journalService = new EasyJournalService(entryRepository, lineRepository, accountRepository,
+        closingRepository);
     correctionService = new EasyCorrectionService(correctionLogRepository);
     importService = new EasyImportService(
         batchRepository, rowRepository, businessRepository, txnRepository, accountService,

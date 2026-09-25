@@ -18,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTax
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAnnualClosingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalEntryRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalLineRepository;
@@ -46,6 +47,7 @@ class EasyRealDoubleEntryTest {
   @Mock EasyAccountRepository accountRepository;
   @Mock EasyTransactionRepository txnRepository;
   @Mock EasyBusinessRepository businessRepository;
+  @Mock EasyAnnualClosingRepository closingRepository;
 
   private EasyJournalService journalService;
   private EasyRealPostingService postingService;
@@ -61,7 +63,8 @@ class EasyRealDoubleEntryTest {
 
   @BeforeEach
   void setUp() {
-    journalService = new EasyJournalService(entryRepository, lineRepository, accountRepository);
+    journalService = new EasyJournalService(entryRepository, lineRepository, accountRepository,
+        closingRepository);
     postingService = new EasyRealPostingService(journalService, txnRepository,
         accountRepository, businessRepository);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();

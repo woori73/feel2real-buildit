@@ -8,6 +8,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCor
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAnnualClosingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCorrectionLogRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalEntryRepository;
@@ -58,6 +59,7 @@ class EasyLedgerDeleteTxnRegressionTest {
   @Autowired EasyJournalEntryRepository entryRepository;
   @Autowired EasyJournalLineRepository lineRepository;
   @Autowired EasyCorrectionLogRepository correctionLogRepository;
+  @Autowired EasyAnnualClosingRepository closingRepository;
   @Autowired EntityManager entityManager;
 
   private EasyLedgerService ledgerService;
@@ -67,7 +69,8 @@ class EasyLedgerDeleteTxnRegressionTest {
     EasyCorrectionService correctionService =
         new EasyCorrectionService(correctionLogRepository);
     EasyJournalService journalService =
-        new EasyJournalService(entryRepository, lineRepository, accountRepository);
+        new EasyJournalService(entryRepository, lineRepository, accountRepository,
+            closingRepository);
     ledgerService = new EasyLedgerService(
         txnRepository, businessRepository, accountRepository, paymentRepository,
         studentRepository, journalService, correctionService);

@@ -2,12 +2,14 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyClosingStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalEntry;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalLine;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAccountRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAnnualClosingRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalEntryRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyJournalLineRepository;
 import java.time.LocalDate;
@@ -36,6 +38,7 @@ public class EasyJournalService {
   private final EasyJournalEntryRepository entryRepository;
   private final EasyJournalLineRepository lineRepository;
   private final EasyAccountRepository accountRepository;
+  private final EasyAnnualClosingRepository closingRepository;
 
   public record TrialBalance(long debitTotal, long creditTotal) {
     public boolean balanced() {
@@ -74,6 +77,7 @@ public class EasyJournalService {
     if (occurredOn == null) {
       throw new IllegalArgumentException("거래일을 입력해 주세요.");
     }
+    requirePeriodOpen(business, occurredOn);
     if (legs == null || legs.size() < 2) {
       throw new IllegalArgumentException("분개 행은 2개 이상이어야 합니다.");
     }
@@ -126,6 +130,7 @@ public class EasyJournalService {
   /** 거래 분개 — 기존 활성 분개를 void하고 새로 분개한다. */
   @Transactional
   public void repost(EasyTransaction txn) {
+    requirePeriodOpen(txn.getBusiness(), txn.getOccurredOn());
     List<EasyJournalEntry> actives =
         entryRepository.findByTxn_TxnIdAndStatusOrderByEntryIdDesc(
             txn.getTxnId(), EasyJournalStatus.POSTED);
@@ -198,5 +203,24 @@ public class EasyJournalService {
         .filter(EasyAccount::isActive)
         .orElseThrow(() -> new IllegalStateException(
             "자금정산(SETTLEMENT) 계정이 없습니다. V976 migration을 확인해 주세요."));
+  }
+
+  /**
+   * 마감기간 전기 차단 (Phase A2) — 중앙 전기 경로(repost/postLegs)에서 강제한다.
+   * easy_annual_closings의 해당 귀속연도 상태가 CLOSED면 거부한다.
+   * 조회·void·reopen은 차단하지 않는다.
+   */
+  private void requirePeriodOpen(EasyBusiness business, LocalDate occurredOn) {
+    if (business == null || business.getBusinessId() == null || occurredOn == null) {
+      return;
+    }
+    int fiscalYear = occurredOn.getYear();
+    boolean closed = closingRepository
+        .findByBusiness_BusinessIdAndFiscalYear(business.getBusinessId(), fiscalYear)
+        .map(closing -> closing.getStatus() == EasyClosingStatus.CLOSED)
+        .orElse(false);
+    if (closed) {
+      throw new EasyAccountingPeriodClosedException(business.getBusinessId(), fiscalYear);
+    }
   }
 }
