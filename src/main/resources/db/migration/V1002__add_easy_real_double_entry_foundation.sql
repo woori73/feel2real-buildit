@@ -1,5 +1,6 @@
 -- ============================================================
--- V1001: Easy Phase A1 - Real double-entry foundation
+-- V1002: Easy Phase A1 - Real double-entry foundation
+--   (V1001은 LMS PR #403이 선점 — EASY는 미병합 상태에서 V1002로 renumber, 내용 불변)
 --   · easy_accounts.direction ENUM에 EQUITY 추가 (V988 MODIFY 패턴 답습)
 --   · 실계정 seed 13건 (멱등 INSERT, 기존 18건 불변)
 --       ASSET: CASH / BANK_SHINHAN / BANK_KB / ACCT_RECV / CARD_SETTLE_RECV

@@ -1276,7 +1276,7 @@ V973~V975 불변 — 신규 테이블 + `easy_import_rows` NULL 확장(`external
 | `easy_filing_references` | `ref_id` PK, `business_id` FK, `fiscal_year` INT, `revenue`?/`expense`?/`income_amount`?, `source`, `note?`, UNIQUE(`business_id`,`fiscal_year`) |
 | `easy_correction_logs` | `log_id` PK, `business_id` FK, `txn_id`? FK SET NULL, `action`, `before_json`/`after_json` TEXT, `requested_by`?/`confirmed_by`? (append-only) |
 
-### 4.52b easy_* Phase A1 실계정 복식 foundation (V1001)
+### 4.52b easy_* Phase A1 실계정 복식 foundation (V1002)
 
 V973~V1000 불변 — 신규 테이블 + `easy_accounts` ENUM(EQUITY)·seed 13건 + `easy_transactions.tax_class` NULL 컬럼만.
 신규 정상분개는 실계정 쌍으로만 전기한다 (SETTLEMENT 신규 사용 금지 — 기존 분개는 불변 보존).
