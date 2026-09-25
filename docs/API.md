@@ -4078,6 +4078,7 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - Photos are decoded, resized and re-encoded by ImageSanitizer, removing EXIF/GPS. Videos accept validated MP4/MOV up to 50MB; no autoplay.
 - DRAFT rows never appear in public queries. Published posts integrate into `/choonggi` and `/choonggi/vlog/{slug}`.
 
+
 ## NewStart 지피지기 Agent ADMIN API (V1001·V1002)
 
 SSR 화면 `/admin/newstart/jipijigi`(WebMvcConfig view → `templates/admin/newstart_jipijigi.html`)가 호출하는
@@ -4110,3 +4111,11 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
     **운영자가 실제 카페에 노출한 결과를 보고**하는 유일한 경로. Agent가 스스로 게시 성공을 기록하지 않으며
     `NONE` 보고는 400이다.
   - `PUT /sessions/{id}/follow-up`(`followUpRef`): 이후 회원 후속 댓글·실제 결과를 이 답변에 연결한다.
+
+## 금감원 민원 도우미 API (`/api/newstart/fss`) (2026-09, Phase 1 v2)
+
+- 인증: 기존 `/api/**` catch-all(로그인 필요)을 따른다. 권한 규칙은 새로 만들지 않는다.
+- 무상태 원칙: 민원 원문·인터뷰 내용·초안은 DB에 저장하지 않고 로그에도 남기지 않는다. 자동 제출은 존재하지 않으며, 제출·본인인증은 사용자가 금감원 공식 사이트에서 직접 수행한다.
+- `GET /api/newstart/fss/companion` — 화면 1회 로딩 payload: `samples`(전자책 예시 3종 FS-1..FS-3, ebookRef·sourceLines 포함), `manual`(전자책 기반 안내), `official`(§7 소관 분기 안내: 금감원 공식 페이지 3종 출처·카테고리별 소관·기타 기관 경로·조회 기준일), `agent`(Guided Agent 14단계 정적 안내, PC Chrome 고지 포함).
+- `POST /api/newstart/fss/compose` — 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
+- `GET /api/newstart/fss/agent/workflow`, `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — Guided Agent 단계 안내(메모리 세션, 개인정보 미저장).
