@@ -48,11 +48,13 @@ STATUS = LIVE / MAIN_NOT_DEPLOYED / OPEN_PR / LOCAL_ONLY / HOLD 중 하나.
 ## BUILD / TEST (audit 마감 시점)
 
 - JS contract (newstart 7종): **39/39 PASS**.
-- Gradle compile + targeted Java tests: 실행 중이었으나 완료 미확인 — 20:40 하드스톱으로 PASS 미확정.
+- Gradle compileJava + compileTestJava: **PASS** (경고만).
+- targeted Java tests: **미확정** — `NewStartOfficialUpdateSpringContextRegressionTest`가 로컬 MySQL 부재(Flyway ConnectException)로 실패하고 이어 daemon crash. 코드 회귀가 아니라 로컬 환경 이슈이나, 신규 Credit4U/FSS 테스트 PASS 증거는 미확보 → CI Build Check로 재확인 필요.
 - Release diff vs main: 18 파일, 오늘 3범위만 포함 — Agent2/Agent3 파일 없음(확인).
 
 ## DEPLOY
 
-- 20:40 하드스톱 기준 compile/test PASS 미확정 → **배포하지 않음**.
-- 보존: release/newstart-20260926 브랜치 push + PR open (머지 안 함).
+- 20:40 하드스톱 기준 compile PASS / targeted test 미확정 → **배포하지 않음**.
+- 보존: `release/newstart-20260926` 브랜치 push + **PR #427** open (머지 안 함).
+- PR #416 원 브랜치는 이 release 브랜치에 흡수됨 (V1009 renumber 포함). #416는 PR #427 머지 후 close 처리 예정.
 - PR 머지 시 #420 자동 deploy가 main으로 흐름 → 이후 §5 LIVE 최소 QA 필요.
