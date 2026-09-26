@@ -215,7 +215,7 @@
       }
     },
 
-    /* ── NewStart AI 질문 ─────────────────────────────────────────────
+    /* ── 지피지기 AI 질문 ─────────────────────────────────────────────
      * 서버(/api/newstart/ai/chat)에 실제 질문을 보내고 답변을 표시한다.
      * 비로그인은 서버가 401로 거부한다 — 폼 자체를 숨기지 않고 서버 응답을 따른다. */
     bindAiChat: function () {
@@ -255,7 +255,7 @@
         if (busy) return;
         var message = (input.value || '').trim();
         if (!message) {
-          appendBlock('NewStart AI', '질문을 입력해 주세요.', 'error');
+          appendBlock('지피지기 AI', '질문을 입력해 주세요.', 'error');
           return;
         }
         setBusy(true);
@@ -283,19 +283,19 @@
             window.clearTimeout(timer);
             var data = result.data || {};
             if (result.status === 200 && data.status === 'ok' && data.answer) {
-              appendBlock('NewStart AI', data.answer, null);
+              appendBlock('지피지기 AI', data.answer, null);
             } else if (result.status === 401) {
-              appendBlock('NewStart AI', '로그인 후 질문할 수 있습니다.', 'error');
+              appendBlock('지피지기 AI', '로그인 후 질문할 수 있습니다.', 'error');
             } else {
               var msg = data.errorMessage && typeof data.errorMessage === 'string'
                 ? data.errorMessage
                 : '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
-              appendBlock('NewStart AI', msg, 'error');
+              appendBlock('지피지기 AI', msg, 'error');
             }
           })
           .catch(function () {
             window.clearTimeout(timer);
-            appendBlock('NewStart AI', '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+            appendBlock('지피지기 AI', '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
           })
           .then(function () {
             setBusy(false);
