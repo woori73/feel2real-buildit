@@ -20,14 +20,24 @@ test('fss-helper shows the four-step usage flow without dev jargon', () => {
   assert.match(html, /<li>금융감독원 사이트에서 화면 안내에 따라 민원을 작성합니다\.<\/li>/);
 });
 
-test('store pending: install button disabled with null URL wiring, no fabricated store links', () => {
-  assert.match(html, /id="ns-ext-install" disabled\s+aria-disabled="true">Chrome Web Store 검토 중/);
-  assert.match(html, /Chrome 확장프로그램 출시 준비 중/);
-  assert.equal(html.includes('chromewebstore.google.com'), false);
+test('store published: official URL constant, active install CTA, zero pending copy', () => {
+  // 유일한 Store URL 출처 = 상수 1개, 공식 URL exact match
+  const OFFICIAL = 'https://chromewebstore.google.com/detail/aickncaeacnplhgpipmnffillpmocfhf';
+  assert.match(html, new RegExp('var CHROME_WEB_STORE_URL = "' + OFFICIAL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '";'));
+  const storeUrls = html.match(/https:\/\/[a-z.]*webstore[a-z.]*[^\s"']*/g) || [];
+  assert.ok(storeUrls.length > 0);
+  storeUrls.forEach((u) => assert.equal(u, OFFICIAL, 'non-official store URL: ' + u));
+  // 설치는 상수 주입(innerHTML 없음) — 마크업에는 literal URL 중복 금지
+  assert.equal(html.split(OFFICIAL).length - 1, 1, 'official URL must appear exactly once');
+  // 설치 CTA 활성: disabled/aria-disabled 없음
+  assert.match(html, /<button type="button" class="ns-btn ns-btn-primary" id="ns-ext-install">Chrome Agent 설치<\/button>/);
+  assert.equal(/id="ns-ext-install"[^>]*disabled/.test(html), false);
+  // pending 문구 0
+  ['Chrome Web Store 검토 중', '출시 준비 중', '검토 대기', '심사', '승인이 끝나면'].forEach((s) => {
+    assert.equal(html.includes(s), false, 'pending copy remains: ' + s);
+  });
+  // 구형/가짜 Store 링크 금지
   assert.equal(html.includes('chrome.google.com/webstore'), false);
-  // 승인 후 유일한 연결 지점: 상수 하나만 교체하면 된다
-  assert.match(html, /var CHROME_WEB_STORE_URL = null;/);
-  assert.match(html, /if \(!CHROME_WEB_STORE_URL\) return;/);
 });
 
 test('manual-only promises are stated: auth, password, OTP/CAPTCHA, submit', () => {

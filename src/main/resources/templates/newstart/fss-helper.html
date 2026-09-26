@@ -158,7 +158,7 @@
             <h3 class="ns-fss-label">사용 방법 — 4단계</h3>
             <ol class="ns-fss-prep-list">
               <li>PC에서 Google Chrome을 실행합니다.</li>
-              <li>NewStart Chrome Agent를 설치합니다. <span class="ns-fss-flow-status">(현재 Chrome Web Store 검토 중)</span></li>
+              <li>NewStart Chrome Agent를 설치합니다. <span class="ns-fss-flow-status">(Chrome Web Store · PC Chrome)</span></li>
               <li>NewStart의 「금감원 민원 도우미」를 실행합니다. — 지금 이 화면입니다.</li>
               <li>금융감독원 사이트에서 화면 안내에 따라 민원을 작성합니다.</li>
             </ol>
@@ -172,9 +172,8 @@
               <div class="ns-fss-flow-step" role="listitem">
                 <span class="ns-ag-step-no">2</span>
                 <strong>NewStart Chrome Agent 설치</strong>
-                <button type="button" class="ns-btn ns-btn-primary" id="ns-ext-install" disabled
-                        aria-disabled="true">Chrome Web Store 검토 중</button>
-                <span class="ns-fss-flow-status" id="ns-ext-store-status">Chrome 확장프로그램 출시 준비 중 — 승인이 끝나면 이 버튼이 활성 설치 버튼으로 바뀝니다</span>
+                <button type="button" class="ns-btn ns-btn-primary" id="ns-ext-install">Chrome Agent 설치</button>
+                <span class="ns-fss-flow-status" id="ns-ext-store-status">Chrome Web Store에서 설치</span>
               </div>
               <div class="ns-fss-flow-step" role="listitem">
                 <span class="ns-ag-step-no">3</span>
@@ -182,7 +181,7 @@
                 <a class="ns-btn ns-btn-ghost" href="#ns-fss-methods">안내 시작하러 가기</a>
               </div>
             </div>
-            <p class="ns-fss-note">설치 버튼은 Google 검토 대기 중이므로 아직 비활성입니다. 존재하지 않는 설치 링크는 안내하지 않습니다.<br>
+            <p class="ns-fss-note">설치는 Google Chrome 웹스토어 공식 페이지에서 이루어집니다.<br>
               현재 연결 상태: <span id="ns-chrome-badge" data-ns-agent="absent">Extension 미설치</span></p>
 
             <h3 class="ns-fss-label">왜 Chrome 확장프로그램이 필요한가요?</h3>
@@ -977,12 +976,10 @@
     })();
 
     /* ---------- Chrome Web Store 설치 버튼 배선 ----------
-       현재: Google 검토 대기 중 — URL 없음(가짜 Store 링크 금지).
-       승인 후: 아래 상수에 공식 설치 URL을 대입하면 2번 버튼이 활성 설치 링크로,
-       상태 문구가 교체된다. 그 외 수정은 불필요. */
-    var CHROME_WEB_STORE_URL = null;
+       Store 게시 완료(Published/Public) — 공식 URL 상수 하나로 활성 설치 링크가 연결된다.
+       이 파일에서 Store URL은 아래 상수가 유일한 출처다. */
+    var CHROME_WEB_STORE_URL = "https://chromewebstore.google.com/detail/aickncaeacnplhgpipmnffillpmocfhf";
     (function () {
-      if (!CHROME_WEB_STORE_URL) return;
       var btn = $('ns-ext-install');
       var a = document.createElement('a');
       a.className = 'ns-btn ns-btn-primary';
@@ -990,7 +987,7 @@
       a.href = CHROME_WEB_STORE_URL;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
-      text(a, 'Chrome Web Store에서 설치');
+      text(a, 'Chrome Agent 설치');
       btn.parentNode.replaceChild(a, btn);
       text($('ns-ext-store-status'), '설치 후 같은 PC Chrome에서 새로고침하면 자동 연결됩니다');
     })();
