@@ -1,0 +1,28 @@
+{
+  "total_articles": 37,
+  "case_types": {
+    "ADVICE_REQUEST": 2,
+    "PREDICTION_REQUEST": 30,
+    "TEMP_RESULT": 5
+  },
+  "with_actual_reduction_rate": 2,
+  "with_predicted_rate_only": 1,
+  "with_confirmed_amount": 0,
+  "with_author_followup": 7,
+  "with_prediction_and_actual": 7,
+  "unknown_insufficient": 1,
+  "comment_roles": {
+    "COMMUNITY_PREDICTION": 39,
+    "AUTHOR_FOLLOWUP": 27,
+    "AUTHOR_RESULT": 4,
+    "COMMUNITY_OPINION": 2
+  },
+  "extraction_stats": {
+    "debt_total_filled": 6,
+    "asset_property_filled": 16,
+    "income_2025_filled": 18,
+    "age_filled": 21,
+    "predicted_rate_filled": 1,
+    "manager_prediction_filled": 36
+  }
+}
