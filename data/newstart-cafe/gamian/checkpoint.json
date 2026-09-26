@@ -1,0 +1,20 @@
+{
+  "board": "감면율",
+  "menuId": "22",
+  "phase": "COMPLETED",
+  "progress": {
+    "totalArticles": 37,
+    "collected": 37,
+    "failed": 0,
+    "pending": 0
+  },
+  "currentPosition": {
+    "page": 3,
+    "articleIndex": 6,
+    "articleId": "5672"
+  },
+  "lastCommitSha": null,
+  "lastPushAt": null,
+  "checkpointAt": "2026-09-20T16:00:00.000Z",
+  "notes": "All 37 articles collected and structured. 2 cases with confirmed actual reduction rates (5700: 75%, 5727: 74%). Structured dataset created at data/newstart-cafe/gamian/structured/"
+}
