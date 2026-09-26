@@ -159,15 +159,28 @@ jobs:
 
       - name: Call ingest API (ONLY when dry_run=false — ADMIN cookie auth)
         if: ${{ inputs.dry_run == false }}
+        env:
+          SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           RUN_DIR='${{ steps.provision.outputs.run_dir }}'
           JAR=/tmp/seed-cookies.txt
           umask 077
-          curl -sS -o /dev/null -c "$JAR" -H 'Content-Type: application/json' \
-            --data "{\"loginId\":\"${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}\",\"password\":\"${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}\"}" \
-            "$BASE_URL/api/auth/login"
-          grep -q ACCESS_TOKEN "$JAR" || { echo "::error::login did not issue ACCESS_TOKEN cookie"; rm -f "$JAR"; exit 1; }
+          # prd OriginWhitelistFilter는 상태변경 /api/** POST에서 Origin·Referer 둘 다
+          # 없으면 인증 전에 403 거부한다. curl은 Origin을 자동 붙이지 않으므로 동일
+          # 출처 값을 명시한다. body는 jq --arg로 생성해 비밀번호의 " \ $ `가
+          # 셸/JSON에 손상되지 않게 한다. credential·body는 절대 로그에 남기지 않는다.
+          LOGIN_JSON=$(jq -n --arg loginId "$SEED_ADMIN_LOGIN_ID" --arg password "$SEED_ADMIN_PASSWORD" \
+            '{loginId:$loginId,password:$password}')
+          LOGIN_STATUS=$(printf '%s' "$LOGIN_JSON" | curl -sS -o /dev/null -w '%{http_code}' \
+            -c "$JAR" -H 'Content-Type: application/json' -H "Origin: $BASE_URL" \
+            --data-binary @- "$BASE_URL/api/auth/login")
+          if ! grep -q ACCESS_TOKEN "$JAR"; then
+            echo "::error::login failed (http=$LOGIN_STATUS, no ACCESS_TOKEN cookie; body suppressed)"
+            rm -f "$JAR"
+            exit 1
+          fi
           case "${{ inputs.phase }}" in
             EBOOK)
               ENDPOINT="$API_PREFIX/ingest/curated-review?ebookSections=$RUN_DIR/docs/newstart/ebook/ebook_sections.json&gamianDir=$RUN_DIR/data/newstart-cafe/gamian/articles"
@@ -180,10 +193,12 @@ jobs:
               EXPECT='"inserted"' ;;
           esac
           echo "== ${{ inputs.phase }} ingest result =="
-          RESP=$(curl -sS -b "$JAR" -X POST "$BASE_URL$ENDPOINT")
+          RESP=$(curl -sS -b "$JAR" -X POST -H "Origin: $BASE_URL" -w '\n%{http_code}' "$BASE_URL$ENDPOINT")
           rm -f "$JAR"
-          echo "$RESP"
-          echo "$RESP" | grep -q "$EXPECT" || { echo "::error::unexpected ingest response contract"; exit 1; }
+          INGEST_STATUS=$(printf '%s' "$RESP" | tail -n1)
+          printf '%s\n' "$RESP" | sed '$d'
+          { [ "$INGEST_STATUS" = "200" ] && printf '%s' "$RESP" | grep -q "$EXPECT"; } \
+            || { echo "::error::unexpected ingest result (http=$INGEST_STATUS)"; exit 1; }
 
       - name: Dry-run report
         if: ${{ inputs.dry_run == true }}
