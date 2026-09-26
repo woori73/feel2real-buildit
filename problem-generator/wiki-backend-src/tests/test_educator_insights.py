@@ -43,6 +43,33 @@ class EducatorInsightTest(unittest.TestCase):
 
         self.assertEqual(400, raised.exception.status_code)
 
+    def test_given_25_saved_insights_when_listed_with_limit_100_then_all_returned_newest_first(self):
+        """STEP2 화면의 기록 건수는 조회 결과와 같아야 한다. 기존 20 cap은 21건째부터
+        숫자와 실제 목록이 어긋나게 만드는 원인이었다."""
+        for n in range(25):
+            main.create_educator_insight(main.EducatorInsightCreate(
+                content=f'수업 기록 {n}', school='신구중', grade='중2',
+                year=2026, semester='2학기', exam='중간고사'))
+
+        rows = main.list_educator_insights(limit=100, school='신구중', grade='중2',
+                                          year=2026, semester='2학기', exam='중간고사')
+
+        self.assertEqual(25, len(rows))
+        self.assertEqual('수업 기록 24', rows[0]['content'])
+
+    def test_given_two_exam_scopes_when_listed_then_only_matching_scope_returned(self):
+        main.create_educator_insight(main.EducatorInsightCreate(
+            content='신구중 중간고사 기록', school='신구중', grade='중2',
+            year=2026, semester='2학기', exam='중간고사'))
+        main.create_educator_insight(main.EducatorInsightCreate(
+            content='압구정중 기말고사 기록', school='압구정중', grade='중2',
+            year=2026, semester='2학기', exam='기말고사'))
+
+        rows = main.list_educator_insights(limit=100, school='신구중', grade='중2',
+                                          year=2026, semester='2학기', exam='중간고사')
+
+        self.assertEqual(['신구중 중간고사 기록'], [row['content'] for row in rows])
+
 
 if __name__ == '__main__':
     unittest.main()

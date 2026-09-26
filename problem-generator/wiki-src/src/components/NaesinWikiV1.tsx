@@ -8,7 +8,8 @@ import WrongMockHub from './WrongMockHub'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
 type Material = { id:number; core_type:'school_print'|'student_wrong_note'; material_type:'SCHOOL_PRINT'|'STUDENT_WRONG_NOTE'|'PAST_EXAM'|'AI_WORK_LOG'; school:string; grade:string; year:number; semester:string; exam:string; uploaded_by:string; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number; has_body?:number; body_format?:string }
-type Insight = { id:number; content:string; source:'director'|'school_teacher'; created_at:string }
+type Insight = { id:number; content:string; source:'director'|'school_teacher'|'claude'|'chatgpt'; created_at:string; school?:string; grade?:string; year:number|null; semester?:string; exam?:string; student_context?:string; lesson_context?:string }
+const INSIGHT_SOURCE_LABELS: Record<Insight['source'],string> = { director:'박원장 인사이트', school_teacher:'학교 선생님 힌트', claude:'Claude 기록', chatgpt:'ChatGPT 기록' }
 type FinalDeliverable = { id:number; kind:'final'|'jikbo'; school:string; grade:string; year:number; semester:string; exam:string; title:string; original_name:string; created_at:string; has_html?:number }
 type Workspace = 'final'|'jikbo'|null
 const years = [new Date().getFullYear(), new Date().getFullYear()-1, new Date().getFullYear()-2]
@@ -57,6 +58,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [finalTitle,setFinalTitle]=useState(''), [finalHtmlText,setFinalHtmlText]=useState(''), [finalOriginal,setFinalOriginal]=useState<File|null>(null), [finalJsonFile,setFinalJsonFile]=useState<File|null>(null), [finalJsonText,setFinalJsonText]=useState('')
   const [savingFinal,setSavingFinal]=useState(false)
   const [insightText,setInsightText]=useState(''), [insightSource,setInsightSource]=useState<'director'|'school_teacher'>('director')
+  const [insightComposerOpen,setInsightComposerOpen]=useState(false)
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
   const [savingSchoolPrint,setSavingSchoolPrint]=useState(false)
@@ -270,7 +272,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     }catch(error){setNotice(error instanceof Error?`FINAL 완성본을 저장하지 못했습니다: ${error.message}`:'FINAL 완성본을 저장하지 못했습니다.')}
     finally{setSavingFinal(false)}
   }
-  const saveInsight=async()=>{if(!insightText.trim())return;const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...context,content:insightText,source:insightSource,student_context:'',lesson_context:''})});if(r.ok){setInsightText('');setNotice('수업 인사이트를 저장했습니다.');await load({...context})}}
+  const saveInsight=async()=>{if(!insightText.trim())return;const r=await api('educator-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...context,content:insightText,source:insightSource,student_context:'',lesson_context:''})});if(r.ok){setInsightText('');setInsightComposerOpen(false);setNotice('수업 인사이트를 저장했습니다.');await load({...context})}else{const b=await r.json().catch(()=>({}));setNotice(apiErrorMessage(b,'수업 인사이트를 저장하지 못했습니다.'))}}
   const toggle=(key:string)=>setSelected(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next})
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
   const openQuestionMaker=(mode:'new'|'transform')=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,mode}));onNavigate('home')}
@@ -391,7 +393,10 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       {m.original_name?<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 다운로드'}</button>:null}
       <button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button>
     </article>)}</div>:<div className="empty-state"><b>이 시험 Context에 저장된 학교 프린트가 없습니다.</b></div>}</section>}</>}
-    <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트</h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다.</p></div></div><div className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button></div></section>
+    <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트 기록 <strong>{insights.length}</strong></h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다. 아래는 {context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel} Context에 저장된 기록입니다.</p></div></div>
+    {insights.length?<div className="material-list" aria-label="저장된 수업 인사이트 목록">{insights.map(i=><article key={i.id}><div className="past-exam-meta"><span className="past-exam-badge">{INSIGHT_SOURCE_LABELS[i.source]||i.source}</span><b>{new Date(i.created_at).toLocaleString('ko-KR')}</b><p>{[i.school,i.grade,i.year?`${i.year}년`:null,i.semester,i.exam].filter(Boolean).join(' · ')||'시험 Context 미입력'}</p>{(i.student_context||i.lesson_context)?<p>{[i.student_context&&`학생 · ${i.student_context}`,i.lesson_context&&`수업 · ${i.lesson_context}`].filter(Boolean).join(' · ')}</p>:null}</div><p style={{whiteSpace:'pre-wrap'}}>{i.content}</p></article>)}</div>:<div className="empty-state"><b>아직 기록된 수업 인사이트가 없습니다.</b></div>}
+    {insightComposerOpen?<div id="insight-composer" className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button><button type="button" onClick={()=>setInsightComposerOpen(false)}>닫기</button></div>:<div className="twin-actions"><button type="button" className="primary-action" onClick={()=>{setInsightComposerOpen(true);window.setTimeout(()=>document.getElementById('insight-composer')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}>+ 새 수업 인사이트 기록</button></div>}
+    </section>
 
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('final')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
       {aiContext?.workspace==='final'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/final/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}

@@ -899,7 +899,9 @@ def create_educator_insight(payload: EducatorInsightCreate):
 @app.get('/api/educator-insights')
 def list_educator_insights(limit: int = 5, school: str = '', grade: str = '', year: Optional[int] = None,
                            semester: str = '', exam: str = ''):
-    safe_limit = max(1, min(limit, 20))
+    # 호출 측(UI는 limit=100, workspace context는 200)이 실제로 요구하는 상한.
+    # 기존 20 cap은 저장 건수가 20을 넘으면 화면의 기록 건수와 목록이 실제 데이터와 어긋났다.
+    safe_limit = max(1, min(limit, 200))
     with get_db() as conn:
         clauses, values = ['1=1'], []
         for column, value in (('school', school), ('grade', grade), ('semester', semester), ('exam', exam)):
