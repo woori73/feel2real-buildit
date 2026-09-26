@@ -201,7 +201,7 @@ class FssComplaintHelperServiceTest {
     }
 
     @Test
-    @DisplayName("Extension 브리지 — 배지 id·ping 계약 유지, 가짜 Web Store URL 금지, 미게시 상태 정직 고지")
+    @DisplayName("Extension 브리지 — 배지 id·ping 계약 유지, 공식 Store URL 상수 1개, pending 문구 0")
     void extensionBridgeContract() throws Exception {
         String html = new String(
             getClass().getResourceAsStream("/templates/newstart/fss-helper.html").readAllBytes(),
@@ -210,10 +210,17 @@ class FssComplaintHelperServiceTest {
         assertThat(html).contains("id=\"ns-chrome-badge\"");
         assertThat(html).contains("newstart-page-ping");
         assertThat(html).contains("newstart-agent");
-        // Web Store 미게시 단계 — 가짜 스토어 URL·설치 버튼 금지, 실제 소스(GitHub)만 링크
-        assertThat(html).doesNotContain("chromewebstore.google.com");
+        // Store 심사 통과(Published) — 공식 URL이 유일한 상수, 구형/가짜 Store 링크 금지
+        assertThat(html).contains(
+            "var CHROME_WEB_STORE_URL = \"https://chromewebstore.google.com/detail/aickncaeacnplhgpipmnffillpmocfhf\";");
         assertThat(html).doesNotContain("chrome.google.com/webstore");
-        assertThat(html).contains("Chrome Web Store에 게시되지 않았습니다");
+        // pending UX 0: 검토 중/출시 준비/비활성 설치 버튼 금지
+        assertThat(html).doesNotContain("Chrome Web Store 검토 중");
+        assertThat(html).doesNotContain("출시 준비 중");
+        assertThat(html).doesNotContain("id=\"ns-ext-install\" disabled");
+        // 설치 CTA 활성 — 버튼 교체 배선이 상수 href로 공식 anchor 생성
+        assertThat(html).contains(">Chrome Agent 설치</button>");
+        assertThat(html).contains("a.href = CHROME_WEB_STORE_URL;");
     }
 
     @Test
