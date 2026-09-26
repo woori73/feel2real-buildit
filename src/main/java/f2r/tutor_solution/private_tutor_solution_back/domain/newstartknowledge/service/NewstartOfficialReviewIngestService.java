@@ -40,18 +40,59 @@ public class NewstartOfficialReviewIngestService {
 
     public record IngestReport(int created, int skipped, int downgraded, int relations, List<String> errors) {}
 
+    /** 쓰기 없이 source 수집·title 멱등 판정만 수행한 계획. activeCreated는 항상 0이어야 한다. */
+    public record OfficialIngestPlan(
+            int sourceCount, int wouldCreate, int wouldSkip, int nonReviewStatus,
+            int relationCandidates, int activeCreated, List<String> errors) {}
+
     private record PendingItem(
             String title, String sourceType, String category, String dimension, String scheme,
             String summary, String content, String sourceUrl, String sourceDate,
             String effectiveFrom, String confidence, String tags, List<String> evidenceIds,
             String rawStatus) {}
 
-    @Transactional
-    public IngestReport ingestOfficialReview(Path researchOfficialDir) {
+    @Transactional(readOnly = true)
+    public OfficialIngestPlan planOfficialReview(Path researchOfficialDir) {
         List<String> errors = new ArrayList<>();
+        List<PendingItem> pending = collectPending(researchOfficialDir, errors);
+        int wouldSkip = 0;
+        int nonReview = 0;
+        for (PendingItem p : pending) {
+            if (knowledgeRepository.findByTitle(p.title()).isPresent()) {
+                wouldSkip++;
+            }
+            if (p.rawStatus() != null && !p.rawStatus().isEmpty() && !"REVIEW".equals(p.rawStatus())) {
+                nonReview++;
+            }
+        }
+        int relationCandidates = createConflictRelations(relationPlanIds(pending), errors, false);
+        return new OfficialIngestPlan(pending.size(), pending.size() - wouldSkip, wouldSkip,
+                nonReview, relationCandidates, 0, errors);
+    }
+
+    /** dry-run 계획용 저장소: DB 실재 id 또는 (생성 가정) 유사 id — relation 저장 조건 판정만 수행한다. */
+    private Map<String, Long> relationPlanIds(List<PendingItem> pending) {
+        Map<String, Long> ids = new HashMap<>();
+        java.util.concurrent.atomic.AtomicLong pseudo = new java.util.concurrent.atomic.AtomicLong(-1);
+        for (PendingItem p : pending) {
+            Optional<NewstartKnowledgeItem> existing = knowledgeRepository.findByTitle(p.title());
+            ids.put(p.title(), existing.map(NewstartKnowledgeItem::getKnowledgeId)
+                    .orElseGet(pseudo::getAndDecrement));
+        }
+        return ids;
+    }
+
+    private List<PendingItem> collectPending(Path researchOfficialDir, List<String> errors) {
         List<PendingItem> pending = new ArrayList<>();
         collectComparison(researchOfficialDir.resolve("comparison"), pending, errors);
         collectCcrs(researchOfficialDir.resolve("ccrs"), pending, errors);
+        return pending;
+    }
+
+    @Transactional
+    public IngestReport ingestOfficialReview(Path researchOfficialDir) {
+        List<String> errors = new ArrayList<>();
+        List<PendingItem> pending = collectPending(researchOfficialDir, errors);
 
         int created = 0;
         int skipped = 0;
@@ -72,7 +113,7 @@ public class NewstartOfficialReviewIngestService {
             created++;
         }
 
-        int relations = createConflictRelations(savedIds, errors);
+        int relations = createConflictRelations(savedIds, errors, true);
         return new IngestReport(created, skipped, downgraded, relations, errors);
     }
 
@@ -248,7 +289,8 @@ public class NewstartOfficialReviewIngestService {
         return rows;
     }
 
-    private int createConflictRelations(Map<String, Long> savedIds, List<String> errors) {
+    /** persist=false면 생성 조건 판정만 수행하고 relation row를 쓰지 않는다(dry-run). */
+    private int createConflictRelations(Map<String, Long> savedIds, List<String> errors, boolean persist) {
         Long from = savedIds.get("[공식] [부실우려차주 연체기준]");
         Long to = savedIds.get("[공식] [부실우려 연체하한 evidence: 10일 vs 31일]");
         if (from == null || to == null) {
@@ -259,6 +301,9 @@ public class NewstartOfficialReviewIngestService {
                         && r.getRelationType() == NewstartKnowledgeRelation.RelationType.CONTRADICTS);
         if (dup) {
             return 0;
+        }
+        if (!persist) {
+            return 1;
         }
         try {
             relationRepository.save(NewstartKnowledgeRelation.builder()

@@ -168,6 +168,38 @@ class NewstartOfficialReviewIngestServiceTest {
     }
 
     @Test
+    @DisplayName("DRY-RUN plan: 쓰지 않고 실제 ingest와 동일 수치를 예측한다")
+    void planMatchesIngestWithoutWrites() throws Exception {
+        // given
+        Path dir = fixtureDir();
+
+        // when — 빈 저장소에서의 계획
+        NewstartOfficialReviewIngestService.OfficialIngestPlan plan = service.planOfficialReview(dir);
+
+        // then — 계획만으로는 아무것도 저장되지 않는다
+        assertThat(store).isEmpty();
+        assertThat(relations).isEmpty();
+        assertThat(plan.activeCreated()).isZero();
+        assertThat(plan.wouldSkip()).isZero();
+        assertThat(plan.nonReviewStatus()).isEqualTo(1);   // k01 status=ACTIVE 1건
+        assertThat(plan.relationCandidates()).isEqualTo(1); // k02 쌍 생성 후보
+
+        // when — 실제 ingest 후 계획 재수행
+        NewstartOfficialReviewIngestService.IngestReport report = service.ingestOfficialReview(dir);
+        NewstartOfficialReviewIngestService.OfficialIngestPlan after = service.planOfficialReview(dir);
+
+        // then — 계획 총계 = 소스 수, 재실행이면 전부 skip
+        assertThat(report.created()).isEqualTo(plan.wouldCreate());
+        assertThat(after.sourceCount()).isEqualTo(report.created());
+        assertThat(after.wouldCreate()).isZero();
+        assertThat(after.wouldSkip()).isEqualTo(report.created());
+        int sizeBeforeRerunPlan = store.size();
+        service.planOfficialReview(dir);
+        assertThat(store).hasSize(sizeBeforeRerunPlan);
+        assertThat(relations).hasSize(1); // dry-run이 relation을 늘리지 않음
+    }
+
+    @Test
     @DisplayName("answerability: 근거 충분성 판정 로직")
     void answerabilityVerdicts() {
         // given

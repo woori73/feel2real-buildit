@@ -3977,10 +3977,19 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   아니라 관리자 확인 대상(`CASE_DERIVED` 포함).
 - `POST /ingest/cases`(`articlesDir`, 기본 `data/newstart-cafe/gamian/articles`),
   `POST /ingest/generate-rules`: 카페 사례→knowledge 파생(별도 컨트롤러 `NewstartIngestionAdminController`).
+- `POST /ingest/cases/repair`(`articlesDir`, 기본 `data/newstart-cafe/repair_staging/articles`):
+  staging articleId만 대상 비파괴 병합(insert / null→fill / contentRaw는 더 긴 쪽만), 재실행 멱등,
+  `created_by/updated_by=REPAIR_BOT`, knowledge 테이블 무접촉 (V1007 이전 #417 계약).
 - `POST /ingest/curated-review`(`ebookSections` 기본 `docs/newstart/ebook/ebook_sections.json`,
   `gamianDir` 기본 `data/newstart-cafe/gamian/articles`): Agent3 큐레이션 산출물(EBOOK 19 section +
   CASE 11건) REVIEW 전용 적재 — ACTIVE 생성 경로 없음, title/articleId 멱등, CONFLICT_REVIEW 태그·
   CONTRADICTS 관계는 대응 공식 item 존재 시에만 생성.
+- `POST /ingest/official-review`(`officialDir` 기본 `docs/newstart/research-official`,
+  `dryRun` 기본 **true**): `NewstartOfficialReviewIngestService`를 그대로 호출하는 ADMIN 전용
+  공식 자료 REVIEW 시드. dryRun=true면 수집·title 멱등 판정만 수행하고 쓰지 않는다.
+  응답 `{dryRun, sourceCount, created, skipped, conflictReview, relations, failed, activeCreated, errors}`
+  — `activeCreated`는 항상 0(ACTIVE 전환은 `/review/{id}/approve` 승인 워크플로 전용),
+  `newstart_official_updates` 테이블에는 접근하지 않는다.
 
 ### 사례 `/api/admin/newstart/wiki/cases`
 
@@ -3989,12 +3998,13 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   `hasFinalReductionRate`, `page`, `size`, `sort`): 감면율 사례 검색.
 - `GET /{articleId}`, `GET /with-actual-rate`, `GET /by-household/{householdType}`, `GET /stats`.
 
-### 공식자료 REVIEW ingest (코드 경유, HTTP endpoint 없음)
+### 공식자료 REVIEW ingest
 
 `NewstartOfficialReviewIngestService.ingestOfficialReview(docs/newstart/research-official)`가
 `comparison/*.json` + `ccrs/k*.json` + `evidence_*.json` + `concepts.json`을 읽어
 **`status=REVIEW`로만** 적재한다(ACTIVE 생성 경로 없음, 동일 title skip=멱등, UNKNOWN/CONFLICT
-보존). Top10 차주 질문 근거 충분성 판정은 `NewstartTop10Answerability`(AI 생성 없음,
+보존). HTTP 호출은 `POST /api/admin/newstart/wiki/ingest/official-review`(위 항목, ROLE_ADMIN,
+dryRun 기본 true). Top10 차주 질문 근거 충분성 판정은 `NewstartTop10Answerability`(AI 생성 없음,
 ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 
 

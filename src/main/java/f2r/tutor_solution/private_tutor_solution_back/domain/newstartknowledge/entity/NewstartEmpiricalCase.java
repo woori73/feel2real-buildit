@@ -98,7 +98,7 @@ public class NewstartEmpiricalCase {
     @Column(name = "employment_status", length = 30)
     private String employmentStatus;
 
-    @Column(name = "business_status", length = 30)
+    @Column(name = "business_status", length = 255)
     private String businessStatus;
 
     @Column(name = "application_type", length = 30)
