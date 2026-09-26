@@ -117,6 +117,34 @@
       .ns-ag-panel{display:none}
       #ns-ag-open{display:none}
     }
+    /* --- FINAL UX: 히어로 3행동 · 큰 글씨 · 참고자료는 기본 닫힘 --- */
+    #ns-fss-title{font-size:30px;line-height:1.25;margin:4px 0 2px}
+    .ns-fss-hero-copy{font-size:17px;color:#334155;margin:8px 0 14px}
+    .ns-btn-hero{display:block;width:100%;max-width:460px;margin:12px auto;font-size:17px;font-weight:700;
+      padding:16px 22px;text-align:center;text-decoration:none;min-height:56px}
+    .ns-fss-conn{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin:14px 0}
+    .ns-fss-conn #ns-ext-install{font-size:16px;font-weight:700;padding:14px 22px;min-height:52px}
+    .ns-fss-conn #ns-chrome-badge{display:none}
+    .ns-fss-conn #ns-chrome-badge[data-ns-agent="connected"]{display:inline-flex;align-items:center;gap:6px;
+      font-size:16px;color:#14532d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:999px;padding:12px 18px}
+    .ns-fss-conn.is-connected #ns-ext-install{display:none}
+    .ns-fss-ask{font-size:15px;color:#475569;text-align:center;margin:20px 0 2px}
+    .ns-fss-secondary{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+    .ns-fss-secondary .ns-fss-link{font-size:15px}
+    .ns-fss-privacy-oneline{font-size:13px;color:#64748b;text-align:center;margin:18px 0 4px}
+    .ns-fss-more{margin:16px 0}
+    .ns-fss-more>summary,.ns-fss-big>summary{cursor:pointer;font-size:15px;font-weight:700;color:#0f172a;
+      background:#f1f5f9;border-radius:12px;padding:12px 16px}
+    .ns-fss-more>summary::-webkit-details-marker,.ns-fss-big>summary::-webkit-details-marker{display:none}
+    .ns-fss-more>summary::after,.ns-fss-big>summary::after{content:" ▾";color:#64748b}
+    .ns-fss-big{display:block;border:1px solid #e2e8f0;border-radius:16px;padding:6px 16px 14px;
+      background:#fff;margin:14px 0}
+    .ns-fss-big>summary{margin:10px 0 4px}
+    .ns-fss-diag{margin:12px 0}
+    .ns-fss-diag>summary{cursor:pointer;font-size:13px;color:#64748b}
+    @media (max-width: 640px){
+      .ns-fss-pc-only{display:none}
+    }
   </style>
 </head>
 <body>
@@ -132,28 +160,38 @@
       </header>
 
       <main aria-label="금감원 민원 도우미">
-        <section class="ns-card" aria-labelledby="ns-fss-title">
+        <section class="ns-card ns-fss-hero" aria-labelledby="ns-fss-title">
           <p class="ns-section-kicker">실전 도우미</p>
-          <h1 id="ns-fss-title" style="margin:0 0 6px">금감원 민원 도우미</h1>
-          <p class="ns-feature-copy">있었던 일을 한 질문씩 알려 주시면 증거 타임라인과 민원 초안으로
-            정리해 드립니다. 정리된 내용은 반드시 직접 검토한 뒤, 금감원 공식 사이트에서
-            본인이 직접 제출합니다.</p>
-          <div class="ns-fss-steps" aria-hidden="true">
-            <span class="ns-fss-step is-active" id="ns-fss-tab1">1 어떤 일이에요?</span>
-            <span class="ns-fss-step" id="ns-fss-tab2">2 단계 인터뷰</span>
-            <span class="ns-fss-step" id="ns-fss-tab3">3 초안·복사</span>
-            <span class="ns-fss-step" id="ns-fss-tab4">4 금감원 접수 안내</span>
-          </div>
-          <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. NewStart AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
+          <h1 id="ns-fss-title">금감원 민원 도우미</h1>
+          <p class="ns-fss-hero-copy">복잡한 금감원 민원, Agent가 한 단계씩 함께 정리해 드립니다.</p>
 
-          <section class="ns-fss-prep" aria-labelledby="ns-fss-prep-title">
-            <h2 class="ns-fss-label" id="ns-fss-prep-title">금감원 민원 도우미 사용 안내</h2>
+          <p class="ns-fss-onb-mobile" role="note"><strong>이 기능은 PC Chrome에서 이용해주세요.</strong><br>
+            금감원 민원 도우미의 Chrome 연동 기능은 PC에서 이용할 수 있습니다.<br>
+            PC에서 Chrome으로 NewStart에 접속해주세요.</p>
+
+          <div class="ns-fss-pc-only">
+            <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. NewStart AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
+            <div class="ns-fss-conn" id="ns-fss-conn">
+              <span id="ns-chrome-badge" data-ns-agent="absent">✓ Chrome Agent 연결됨</span>
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-ext-install">Chrome Agent 설치</button>
+            </div>
+            <button type="button" class="ns-btn ns-btn-primary ns-btn-hero" id="ns-ag-open">Agent와 함께 시작하기</button>
+            <p class="ns-fss-ask">어떻게 해야 할지 모르겠나요?</p>
+            <a class="ns-btn ns-btn-ghost ns-btn-hero" href="/newstart#ns-ai" id="ns-fss-ask-ai">지피지기 AI에게 물어보기</a>
+            <div class="ns-fss-secondary">
+              <a class="ns-fss-link" href="#ns-fss-do-myself" id="ns-ag-manual-link">화면을 보며 직접 따라하기</a>
+              <a class="ns-fss-link" href="#ns-fss-cases-details" id="ns-fss-cases-link">실제 사례 보기</a>
+            </div>
+          </div>
+
+          <p class="ns-fss-privacy-oneline">본인인증과 최종 제출은 사용자가 직접 진행합니다.
+            <a class="ns-fss-link" href="/privacy">개인정보처리방침</a></p>
+
+          <details class="ns-fss-more">
+            <summary>자세한 안내 보기</summary>
             <p class="ns-fss-onb-pc"><strong>금감원 민원 도우미는 PC의 Google Chrome에서 사용하는 기능입니다.</strong><br>
               NewStart Chrome Agent 확장프로그램을 설치하면 금융감독원 민원 신청 과정에서
               현재 단계에 맞는 작성 안내를 받을 수 있습니다.</p>
-            <p class="ns-fss-onb-mobile" role="note"><strong>이 기능은 PC Chrome에서 이용해주세요.</strong><br>
-              금감원 민원 도우미의 Chrome 연동 기능은 PC에서 이용할 수 있습니다.<br>
-              PC에서 Chrome으로 NewStart에 접속해주세요.</p>
 
             <h3 class="ns-fss-label">사용 방법 — 4단계</h3>
             <ol class="ns-fss-prep-list">
@@ -162,27 +200,6 @@
               <li>NewStart의 「금감원 민원 도우미」를 실행합니다. — 지금 이 화면입니다.</li>
               <li>금융감독원 사이트에서 화면 안내에 따라 민원을 작성합니다.</li>
             </ol>
-
-            <div class="ns-fss-flow" role="list" aria-label="설치부터 시작까지 3단계 흐름">
-              <div class="ns-fss-flow-step" role="listitem">
-                <span class="ns-ag-step-no">1</span>
-                <strong>PC에서 Chrome 실행</strong>
-                <span class="ns-fss-note">Google Chrome (PC)</span>
-              </div>
-              <div class="ns-fss-flow-step" role="listitem">
-                <span class="ns-ag-step-no">2</span>
-                <strong>NewStart Chrome Agent 설치</strong>
-                <button type="button" class="ns-btn ns-btn-primary" id="ns-ext-install">Chrome Agent 설치</button>
-                <span class="ns-fss-flow-status" id="ns-ext-store-status">Chrome Web Store에서 설치</span>
-              </div>
-              <div class="ns-fss-flow-step" role="listitem">
-                <span class="ns-ag-step-no">3</span>
-                <strong>금감원 민원 시작</strong>
-                <a class="ns-btn ns-btn-ghost" href="#ns-fss-methods">안내 시작하러 가기</a>
-              </div>
-            </div>
-            <p class="ns-fss-note">설치는 Google Chrome 웹스토어 공식 페이지에서 이루어집니다.<br>
-              현재 연결 상태: <span id="ns-chrome-badge" data-ns-agent="absent">Extension 미설치</span></p>
 
             <h3 class="ns-fss-label">왜 Chrome 확장프로그램이 필요한가요?</h3>
             <p class="ns-fss-situation">일반 NewStart 웹사이트는 금융감독원 사이트의 현재 화면을 직접 확인할 수 없습니다.
@@ -203,20 +220,19 @@
             <p class="ns-fss-situation">민원 작성 중 비밀번호 등 민감한 입력값은 확장프로그램이 읽거나 저장하지 않습니다.
               확장프로그램이 보는 정보와 저장 여부는 <a class="ns-fss-link" href="/privacy">개인정보처리방침</a>에서 확인할 수 있습니다.</p>
             <p class="ns-fss-note">Extension을 설치하지 않아도 이 화면의 인터뷰·초안·수동 안내는 그대로 사용할 수 있습니다.</p>
-            <div class="ns-fss-actions">
-              <a class="ns-btn ns-btn-ghost" id="ns-ext-source-link"
-                 href="https://github.com/woori73/feel2real-buildit/tree/feat/newstart-chrome-agent-fss-poc/browser-extension/newstart-chrome-agent"
-                 target="_blank" rel="noopener noreferrer">Extension 소스(GitHub·개발자용) <span aria-hidden="true">↗</span></a>
-            </div>
-          </section>
 
-          <h2 class="ns-fss-label" id="ns-fss-methods">금감원 민원 신청 — 두 가지 방법</h2>
+            <details class="ns-fss-diag">
+              <summary>연결이 안 될 때 — 진단</summary>
+              <p class="ns-fss-note">설치는 Google Chrome 웹스토어 공식 페이지에서 이루어집니다.
+                <span id="ns-ext-store-status">Chrome Web Store에서 설치</span></p>
+              <p class="ns-fss-note">연결된 Agent 버전: <span id="ns-ext-version">연결 안 됨</span></p>
+            </details>
+          </details>
+        </section>
+
+        <section class="ns-card ns-fss-agentbox ns-fss-pc-only" id="ns-fss-agentbox" aria-label="Agent 진행" hidden>
           <div class="ns-ag-notice" id="ns-ag-notice"></div>
           <p class="ns-ag-explain" id="ns-ag-explain"></p>
-          <div class="ns-fss-actions">
-            <button type="button" class="ns-btn ns-btn-primary" id="ns-ag-open">Agent와 함께 신청하기</button>
-            <a class="ns-btn ns-btn-ghost" href="#ns-fss-manual-section" id="ns-ag-manual-link">화면을 보며 직접 따라하기</a>
-          </div>
           <p class="ns-ag-mobilenote" id="ns-ag-mobilenote">금감원 민원 Agent는 PC의 Chrome 브라우저에서 이용할 수 있습니다.
             이 화면에서는 준비사항·14단계 수동 안내·AI 민원 초안(작성·복사)을 그대로 이용하실 수 있습니다.</p>
 
@@ -238,6 +254,16 @@
               입력·인증·제출은 전부 사용자가 직접 하며, NewStart는 그 화면을 볼 수 없습니다.</p>
             <p id="ns-ag-err" class="ns-fss-err" hidden></p>
           </section>
+        </section>
+
+        <details class="ns-fss-big ns-fss-pc-only" id="ns-fss-do-myself">
+          <summary><strong>화면을 보며 직접 따라하기</strong> — 14단계 수동 안내와 민원 초안 작성</summary>
+          <div class="ns-fss-steps" aria-hidden="true">
+            <span class="ns-fss-step is-active" id="ns-fss-tab1">1 어떤 일이에요?</span>
+            <span class="ns-fss-step" id="ns-fss-tab2">2 단계 인터뷰</span>
+            <span class="ns-fss-step" id="ns-fss-tab3">3 초안·복사</span>
+            <span class="ns-fss-step" id="ns-fss-tab4">4 금감원 접수 안내</span>
+          </div>
 
           <!-- ==================== 1화면: 상황 선택 ==================== -->
           <div id="ns-fss-screen1">
@@ -248,22 +274,6 @@
             <div class="ns-fss-actions">
               <button type="button" class="ns-btn ns-btn-primary" id="ns-iv-start" disabled>단계별 인터뷰 시작 (7문항)</button>
             </div>
-
-            <h2 class="ns-fss-label">참고 · 저와 비슷한 전자책 예시 (선택)</h2>
-            <p class="ns-fss-hint">인터뷰와 별도로, 전자책에 실린 실제 민원 예시를 구조 참고로 볼 수 있습니다.</p>
-            <div id="ns-fss-cards"></div>
-
-            <details id="ns-fss-free-details">
-              <summary class="ns-fss-label" style="cursor:pointer">인터뷰 없이 자유롭게 적기</summary>
-              <p class="ns-fss-hint">정리하지 않아도 괜찮습니다. 있었던 일을 사실대로 적어 주세요.
-                (예: "은행에서 이런 말을 들었고, 새출발기금에 전화했는데 이렇게 답했고, 나는 이런 상황이다…")</p>
-              <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
-                placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
-              <div class="ns-fss-actions">
-                <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
-              </div>
-            </details>
-            <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
           </div>
 
           <!-- ==================== 2화면: guided interview ==================== -->
@@ -347,7 +357,23 @@
             <ul class="ns-fss-manual" id="ns-fss-site-tips"></ul>
             <p id="ns-fss-manual-note" class="ns-fss-note"></p>
           </div>
-        </section>
+        </details>
+
+        <details class="ns-fss-big ns-fss-pc-only" id="ns-fss-cases-details">
+          <summary><strong>실제 민원 사례 보기</strong> — 전자책 예시 참고 · 인터뷰 없이 자유롭게 적기</summary>
+          <div id="ns-fss-cards"></div>
+          <details id="ns-fss-free-details">
+            <summary class="ns-fss-label" style="cursor:pointer">인터뷰 없이 자유롭게 적기</summary>
+            <p class="ns-fss-hint">정리하지 않아도 괜찮습니다. 있었던 일을 사실대로 적어 주세요.
+              (예: "은행에서 이런 말을 들었고, 새출발기금에 전화했는데 이렇게 답했고, 나는 이런 상황이다…")</p>
+            <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
+              placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
+            <div class="ns-fss-actions">
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
+            </div>
+          </details>
+          <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
+        </details>
       </main>
     </div>
   </div>
@@ -683,6 +709,7 @@
       $('ns-fss-output').value = b.body || b.composedText || '';
       $('ns-fss-result').hidden = false;
       showScreen(3);
+      $('ns-fss-do-myself').open = true; // 자유서술 경로로 만들어진 초안이 닫힌 영역 안으로 숨지 않도록 펼친다.
       $('ns-fss-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -923,7 +950,10 @@
     }
 
     function agentOpen() {
+      var box = $('ns-fss-agentbox');
+      box.hidden = false;
       $('ns-ag-panel').hidden = false;
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (agent.loaded) { agentRenderBody(); return; }
       agentFetch('/api/newstart/fss/agent/workflow').then(function (b) {
         if (!b) return;
@@ -961,18 +991,38 @@
     $('ns-fss-input').addEventListener('input', updateCompose);
     $('ns-fss-compose').addEventListener('click', compose);
 
-    /* ---------- Extension 연결 확인 (브리지 계약: newstartContent.js) ---------- */
+    /* ---------- 참고자료는 눌렀을 때만 펼쳐짐 (DEFAULT = CLOSED) ---------- */
+    function openSection(id) {
+      var el = $(id);
+      if (!el) return;
+      el.open = true;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    $('ns-ag-manual-link').addEventListener('click', function (ev) {
+      ev.preventDefault();
+      openSection('ns-fss-do-myself');
+    });
+    $('ns-fss-cases-link').addEventListener('click', function (ev) {
+      ev.preventDefault();
+      openSection('ns-fss-cases-details');
+    });
+
+    /* ---------- Extension 연결 확인 (브리지 계약: newstartContent.js) ----------
+       연결 상태/버전은 실제 설치된 Extension이 보내는 메시지에서만 취득한다(하드코딩 금지).
+       버전은 주 UI에 노출하지 않고 작은 진단 영역에만 표시한다. */
     (function () {
       var badge = $('ns-chrome-badge');
       window.addEventListener('message', function (e) {
         var d = e.data;
         if (e.source !== window || !d || d.source !== 'newstart-agent') return;
         if (d.installed) {
-          text(badge, 'Chrome Agent 연결됨 (v' + (d.version || '') + ')');
+          text(badge, '✓ Chrome Agent 연결됨');
           badge.setAttribute('data-ns-agent', 'connected');
+          $('ns-fss-conn').classList.add('is-connected');
+          text($('ns-ext-version'), d.version || '연결됨 · 버전 미전달');
         }
       });
-      try { window.postMessage({ source: 'newstart-page-ping' }, location.origin); } catch (err) { /* 미설치 — 기본 문구 유지 */ }
+      try { window.postMessage({ source: 'newstart-page-ping' }, location.origin); } catch (err) { /* 미설치 — 설치 버튼 유지 */ }
     })();
 
     /* ---------- Chrome Web Store 설치 버튼 배선 ----------
