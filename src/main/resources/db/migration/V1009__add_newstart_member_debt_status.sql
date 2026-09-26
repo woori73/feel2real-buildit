@@ -1,5 +1,5 @@
 -- ============================================================
--- V1007: NewStart "본인채무 확인 상태창" 저장 (Credit4U 확인 → 내 채무상황 정리)
+-- V1009: NewStart "본인채무 확인 상태창" 저장 (Credit4U 확인 → 내 채무상황 정리)
 --   · 기존 /newstart #ns-status-panel은 정적 stub(서버 저장 없음)이었다. 이 표로
 --     상태창을 SOURCE OF TRUTH로 승격한다 — 별도 채무관리 화면/중복 저장 테이블을 만들지 않는다.
 --   · user_id = users.user_id 그대로 PK(1:1) — V984 newstart_member_profiles와 동일한 패턴.

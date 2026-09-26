@@ -3979,7 +3979,7 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   `POST /ingest/generate-rules`: 카페 사례→knowledge 파생(별도 컨트롤러 `NewstartIngestionAdminController`).
 - `POST /ingest/cases/repair`(`articlesDir`, 기본 `data/newstart-cafe/repair_staging/articles`):
   staging articleId만 대상 비파괴 병합(insert / null→fill / contentRaw는 더 긴 쪽만), 재실행 멱등,
-  `created_by/updated_by=REPAIR_BOT`, knowledge 테이블 무접촉 (V1007 이전 #417 계약).
+  `created_by/updated_by=REPAIR_BOT`, knowledge 테이블 무접촉 (V1009 이전 #417 계약).
 - `POST /ingest/curated-review`(`ebookSections` 기본 `docs/newstart/ebook/ebook_sections.json`,
   `gamianDir` 기본 `data/newstart-cafe/gamian/articles`): Agent3 큐레이션 산출물(EBOOK 19 section +
   CASE 11건) REVIEW 전용 적재 — ACTIVE 생성 경로 없음, title/articleId 멱등, CONFLICT_REVIEW 태그·
@@ -4131,7 +4131,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/newstart/fss/agent/workflow`, `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — Guided Agent 단계 안내(메모리 세션, 개인정보 미저장).
 
 
-## NewStart 본인채무 상태창 API (`/api/newstart/debt-status`) (2026-09, V1007)
+## NewStart 본인채무 상태창 API (`/api/newstart/debt-status`) (2026-09, V1009)
 
 전자책 실전 가이드 → 한국신용정보원 Credit4U → 기존 `/newstart#ns-status-panel` 상태창을 하나의 흐름으로 연결한다. 상태창이 SOURCE OF TRUTH이며 별도 채무관리 화면/중복 저장 테이블은 없다.
 

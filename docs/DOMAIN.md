@@ -1519,7 +1519,7 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 재사용 시 분류는 `INTERNAL_CASE`+`ANSWER_SESSION` 고정 — Agent 답변을 공식 사실로 승격하는 경로는 없다.
 
 
-## NewStart 본인채무 상태창 (V1007)
+## NewStart 본인채무 상태창 (V1009)
 
 - `newstart_member_debt_status` — `/newstart#ns-status-panel`(기존 상태창)의 서버 정본. `user_id`를 그대로 PK로 쓰는 1:1 row(V984 프로필과 동일 패턴, 식별자 재사용·FK `users` ON DELETE CASCADE).
 - 컬럼: 확인 플래그 6종(Credit4U 확인 완료/채권기관/개인대출/연체 등록/채무보증/채권자 변동) + `debt_summary`(사용자 정리 메모, ≤1000자) + `stage`(화면 select allowlist) + BaseEntity 감사 4컬럼(DDL에 created_by/updated_by 포함 — EASY V1002/V1003 감사컬럼 결함 재발 방지 계약 테스트 있음).

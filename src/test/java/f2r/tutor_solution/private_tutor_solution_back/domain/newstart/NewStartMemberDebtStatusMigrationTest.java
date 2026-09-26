@@ -7,18 +7,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * V1007 스키마 계약: 본인채무 상태창은 신규 1:1 테이블만 추가하고, Entity가 요구하는
+ * V1009 스키마 계약: 본인채무 상태창은 신규 1:1 테이블만 추가하고, Entity가 요구하는
  * BaseEntity 감사 컬럼(특히 created_by/updated_by)을 DDL에 반드시 포함한다.
  * (EASY V1002/V1003에서 발생한 "새 MySQL 부트 시 validate 실패" 패턴의 재발 방지.)
  */
-@DisplayName("NewStart 채무상황 V1007 마이그레이션 계약")
+@DisplayName("NewStart 채무상황 V1009 마이그레이션 계약")
 class NewStartMemberDebtStatusMigrationTest {
 
-  private static final String PATH = "/db/migration/V1007__add_newstart_member_debt_status.sql";
+  private static final String PATH = "/db/migration/V1009__add_newstart_member_debt_status.sql";
 
   private String sql() throws Exception {
     try (var input = getClass().getResourceAsStream(PATH)) {
-      assertThat(input).as("V1007 migration resource").isNotNull();
+      assertThat(input).as("V1009 migration resource").isNotNull();
       return new String(input.readAllBytes(), StandardCharsets.UTF_8);
     }
   }
