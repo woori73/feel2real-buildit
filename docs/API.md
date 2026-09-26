@@ -3420,9 +3420,9 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### ✅ GET /problem-generator/wiki/api/educator-insights?limit=5
 
 - 목적: 최근 수업 인사이트를 최신순으로 조회한다.
-- 현재 사용처: React Wiki `InsightRecorder` 최근 기록.
+- 현재 사용처: React Wiki `InsightRecorder` 최근 기록, 내신Wiki V1 STEP 2 `수업 인사이트 기록` 목록(NaesinWikiV1이 `limit=100` + school/grade/year/semester/exam Context로 조회).
 - 전달 경로: Wiki frontend → Spring proxy → FastAPI `GET /api/educator-insights`.
-- Query: `limit` 1~20(범위 밖 값은 서버에서 보정), 기본 5.
+- Query: `limit` 1~200(범위 밖 값은 서버에서 보정), 기본 5. 선택 필터 `school`, `grade`, `year`, `semester`, `exam`.
 - Response: `200 OK`, insight row 배열.
 
 ### ✅ GET /problem-generator/wiki/api/schools
