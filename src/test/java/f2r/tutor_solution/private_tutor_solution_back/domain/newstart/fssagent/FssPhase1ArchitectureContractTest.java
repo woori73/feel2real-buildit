@@ -90,7 +90,7 @@ class FssPhase1ArchitectureContractTest {
         repoRoot().resolve("src/main/resources/templates/newstart/fss-helper.html"),
         StandardCharsets.UTF_8);
     assertThat(html).contains("금감원 민원 Agent는 PC의 Chrome 브라우저에서 이용할 수 있습니다");
-    assertThat(html).contains("Agent와 함께 신청하기");
+    assertThat(html).contains("Agent와 함께 시작하기");
     assertThat(html).contains("화면을 보며 직접 따라하기");
     assertThat(html).contains("ns-ag-mobilenote");
     // honest UX 금지 — 감지·자동 진행을 주장하는 문구(서버는 사용자 탭을 볼 수 없다)
