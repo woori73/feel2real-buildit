@@ -3,6 +3,11 @@ name: Build Check
 on:
   workflow_dispatch:
   pull_request:
+  # main push에서도 돌아야 "배포 대상 SHA 자체가 CI를 통과했다"는 근거가 생긴다.
+  # deploy-ec2.yml의 workflow_run 게이트가 이 run의 head_sha를 그대로 배포한다.
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -137,6 +142,21 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardExcelParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardNormalizerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardImportServiceTest"
+          # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiQuestionServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiDraftComposerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartOfficialReviewIngestServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartCuratedReviewIngestServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartDataIngestionRepairTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.controller.NewstartIngestionAdminControllerAuthTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.controller.JipijigiAdminControllerAuthTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.JipijigiAgentMigrationTest"
+          # V1005 답변 세션 자동 축적 + RAG 재사용 (H2 MySQL 모드 DB 테스트)
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiAnswerSessionDbTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.JipijigiAdminPageContractTest"
 
       - name: Upload test report
         if: always()

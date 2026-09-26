@@ -60,7 +60,8 @@ class WebMvcConfigTest {
       "/admin/members, admin/members",
       "/admin/analytics, admin/analytics",
       "/admin/analyzes, admin/analyzes",
-      "/admin/landing, admin/landing"
+      "/admin/landing, admin/landing",
+      "/admin/newstart/jipijigi, admin/newstart_jipijigi"
   })
   @DisplayName("화면 URL을 templates view name으로 매핑한다")
   void page_routes_resolve_to_template_view_names(String endpoint, String viewName) throws Exception {

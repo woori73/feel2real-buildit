@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 지피지기 Agent</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <style>
+    .jp-grid { display: grid; gap: 16px; }
+    .jp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .jp-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; background: #fff; }
+    .jp-card b { display: block; font-size: 22px; }
+    .jp-section { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; padding: 16px; margin-bottom: 18px; }
+    .jp-section h3 { margin: 0 0 4px; font-size: 17px; }
+    .jp-hint { color: #6b7280; font-size: 12px; margin-bottom: 12px; }
+    .jp-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .jp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .jp-item { border: 1px solid #eee; border-radius: 8px; padding: 10px; font-size: 13px; }
+    .jp-item header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .jp-tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 999px; background: #eef2ff; color: #3730a3; }
+    .jp-tag.draft { background: #fef3c7; color: #92400e; }
+    .jp-tag.ready { background: #dbeafe; color: #1e40af; }
+    .jp-tag.approved { background: #dcfce7; color: #166534; }
+    .jp-tag.rejected { background: #fee2e2; color: #991b1b; }
+    .jp-warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 10px; border-radius: 8px; font-size: 12px; }
+    .jp-body { white-space: pre-wrap; font-family: ui-monospace, "D2Coding", monospace; font-size: 12px; max-height: 420px; overflow: auto; background: #f9fafb; padding: 10px; border-radius: 8px; }
+    .jp-traces { font-size: 12px; }
+    .jp-traces table { width: 100%; border-collapse: collapse; }
+    .jp-traces th, .jp-traces td { border-bottom: 1px solid #eee; padding: 6px; text-align: left; vertical-align: top; }
+    textarea.jp-edit { width: 100%; min-height: 260px; font-family: ui-monospace, "D2Coding", monospace; font-size: 12px; }
+    input.jp-input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('jipijigiAgent')}"></th:block>
+
+  <main class="main">
+    <div class="jp-section">
+      <h3>지피지기 Agent — 수동 명령 (V1)</h3>
+      <p class="jp-hint">운영자가 지시하면 Agent가 <b>STEP1 우리 DB/RAG → STEP2 신복위 → STEP3 부실차주 카페 → STEP4 공식 검증 → STEP5 추가 기관</b> 순서로 조사해 초안을 만듭니다.
+        게시 주체는 언제나 운영자 지피지기이며, V1에서 서버는 NAVER 실제 게시를 수행하지 않습니다.</p>
+      <div class="jp-btns">
+        <button class="btn btn-primary" type="button" data-cmd="RECENT_QUESTIONS">최근 질문 5개 조사</button>
+        <button class="btn btn-secondary" type="button" data-cmd="CCRS_RESEARCH">신복위 카페 사례 조사</button>
+        <button class="btn btn-secondary" type="button" data-cmd="INTRO_POST">Agent 소개글 작성</button>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <input id="customCmd" class="jp-input" placeholder="직접 명령 입력 (예: 개인회생과 새출발기금 차이 조사)">
+        <button class="btn btn-primary" type="button" id="runCustom">직접 명령 실행</button>
+      </div>
+      <div id="cmdMessage" class="jp-warn" style="margin-top:10px; display:none;"></div>
+    </div>
+
+    <div class="jp-section">
+      <h3>지식 자원 실측 (inventory)</h3>
+      <p class="jp-hint">Agent가 실제로 읽을 수 있는 근거 규모. 추측이 아니라 조회 값입니다.</p>
+      <div class="jp-cards" id="invCards"></div>
+      <ul class="jp-list" id="invGaps" style="margin-top:10px;"></ul>
+    </div>
+
+    <div class="jp-section">
+      <h3>질문 수집 현황</h3>
+      <p class="jp-hint">질문은 실제 수집본만 저장합니다(발명 금지). 본문 확인 실패는 UNREADABLE로 남깁니다.</p>
+      <ul class="jp-list" id="questionList"></ul>
+    </div>
+
+    <div class="jp-section">
+      <h3>작성 명령 기록</h3>
+      <ul class="jp-list" id="commandList"></ul>
+    </div>
+
+    <div class="jp-section">
+      <h3>초안 검토함</h3>
+      <p class="jp-hint">DRAFT → 검토요청(READY_FOR_REVIEW) → 승인(APPROVED) → 게시. 게시는 allowlist 게시판 확인 후 운영자가 수행합니다.</p>
+      <div class="jp-btns" style="margin-bottom:10px;">
+        <button class="btn btn-secondary" type="button" id="refreshDrafts">새로고침</button>
+        <select id="statusFilter" class="jp-input" style="width:200px;">
+          <option value="">전체 상태</option>
+          <option value="DRAFT">DRAFT</option>
+          <option value="READY_FOR_REVIEW">READY_FOR_REVIEW</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="REJECTED">REJECTED</option>
+        </select>
+      </div>
+      <ul class="jp-list" id="draftList"></ul>
+      <div id="draftDetail" class="jp-section" style="display:none; margin-top:14px;"></div>
+    </div>
+
+    <div class="jp-section">
+      <h3>게시 대상 allowlist 게시판</h3>
+      <p class="jp-hint">이 테이블의 enabled 행만 게시 대상으로 인정됩니다. menuid를 NAVER에서 확인하기 전에는 게시 준비가 완료되지 않습니다.</p>
+      <ul class="jp-list" id="boardList"></ul>
+      <div class="jp-grid" style="margin-top:10px;">
+        <input id="boardMenu" class="jp-input" placeholder="menuid (NAVER에서 확인한 값만 입력 / 미확인이면 비워둠)">
+        <div class="jp-btns">
+          <button class="btn btn-primary" type="button" id="saveAgentBoard">지피지기 agent 게시판 등록/갱신</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/admin_newstart_jipijigi.js?v=20260923-1" defer></script>
+</body>
+</html>

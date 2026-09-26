@@ -141,7 +141,7 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     for(const step of ['STEP 1','STEP 2','STEP 3','STEP 4']) {
       expect(screen.getByText(step)).toBeInTheDocument()
     }
-    for(const name of ['학교 프린트 추가','학생 오답 추가','수업 인사이트 기록','문제 만들기','기존 문제 변형','크롬 문제 변형','저장된 문제','FINAL 준비','직보 준비']) {
+    for(const name of ['학교 프린트 추가','학생 오답 추가','^수업 인사이트 기록','문제 만들기','기존 문제 변형','크롬 문제 변형','저장된 문제','FINAL 준비','직보 준비']) {
       expect(screen.getByRole('button',{name:new RegExp(name)})).toBeInTheDocument()
     }
     expect(screen.queryByRole('button',{name:'Admin / Final 자료 보기'})).not.toBeInTheDocument()
@@ -269,11 +269,93 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
 
   it('수업 인사이트 기록 버튼의 기존 스크롤 동작은 회귀 없이 그대로 유지된다', async()=>{
     render(<App/>)
-    fireEvent.click(await screen.findByRole('button',{name:/수업 인사이트 기록/}))
+    fireEvent.click(await screen.findByRole('button',{name:/^수업 인사이트 기록/}))
     const insightSection = document.getElementById('insight-entry')
     expect(insightSection).toBeInTheDocument()
     expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' })
     expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length - 1]).toBe(insightSection)
+  })
+
+  it('STEP 2 수업 인사이트는 기존 기록 목록이 먼저 보이고 신규 입력은 별도 버튼으로 연다', async()=>{
+    const year=new Date().getFullYear()
+    const schools=[{school:'신구중',grades:[{grade:'중2',exams:[{exam:'전체',twinId:null,version:null,updatedAt:'',hasDigitalTwin:false}]}]}]
+    const insightRows=[
+      {id:2,content:'INSIGHT LIST TOKEN B',source:'school_teacher',created_at:'2026-09-20T10:00:00',school:'신구중',grade:'중2',year,semester:'1학기',exam:'전체',student_context:'월수 반',lesson_context:'3회차 문항 6'},
+      {id:1,content:'INSIGHT LIST TOKEN A',source:'director',created_at:'2026-09-19T10:00:00',school:'신구중',grade:'중2',year,semester:'1학기',exam:'전체'},
+    ]
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.endsWith('/schools'))return new Response(JSON.stringify(schools),{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.includes('/educator-insights'))return new Response(JSON.stringify(insightRows),{status:200,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<App/>)
+    await screen.findAllByText('신구중 · 중2')
+    const section=document.getElementById('insight-entry') as HTMLElement
+    // 클릭 전에 이미 기존 2건이 본문까지 읽힌 상태로 보인다 (LIST가 FIRST).
+    const section2=section as HTMLElement
+    expect(await within(section2).findByText('INSIGHT LIST TOKEN B')).toBeInTheDocument()
+    expect(within(section2).getByText('INSIGHT LIST TOKEN A')).toBeInTheDocument()
+    expect(within(section2).getByText('학교 선생님 힌트')).toBeInTheDocument()
+    expect(within(section2).getByText('박원장 인사이트')).toBeInTheDocument()
+    expect(within(section2).getAllByText(`신구중 · 중2 · ${year}년 · 1학기 · 전체`).length).toBeGreaterThanOrEqual(2)
+    expect(within(section2).getByText(/학생 · 월수 반 · 수업 · 3회차 문항 6/)).toBeInTheDocument()
+    expect(within(section2).queryByPlaceholderText('이번 시험에 재사용할 관찰과 힌트')).not.toBeInTheDocument()
+    // 버튼 숫자는 목록과 같은 source(insights)에서 나온다.
+    expect(screen.getByRole('button',{name:/^수업 인사이트 기록\s*2/})).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:/^수업 인사이트 기록\s*2/}))
+    expect(scrollIntoViewMock.mock.instances[scrollIntoViewMock.mock.instances.length-1]).toBe(section)
+    // 신규 입력은 SECOND: 별도 버튼으로 열 때만 composer가 등장한다.
+    fireEvent.click(within(section).getByRole('button',{name:'+ 새 수업 인사이트 기록'}))
+    expect(within(section).getByPlaceholderText('이번 시험에 재사용할 관찰과 힌트')).toBeInTheDocument()
+  })
+
+  it('기록 0건이면 빈 상태 문구를 보이고 새 기록 입력은 그대로 가능하다', async()=>{
+    const schools=[{school:'신구중',grades:[{grade:'중2',exams:[{exam:'전체',twinId:null,version:null,updatedAt:'',hasDigitalTwin:false}]}]}]
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>{
+      const url=String(input)
+      if(url.endsWith('/schools'))return new Response(JSON.stringify(schools),{status:200,headers:{'Content-Type':'application/json'}})
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<App/>)
+    await screen.findAllByText('신구중 · 중2')
+    const section=document.getElementById('insight-entry') as HTMLElement
+    expect(within(section).getByText('아직 기록된 수업 인사이트가 없습니다.')).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:/^수업 인사이트 기록\s*0/})).toBeInTheDocument()
+    fireEvent.click(within(section).getByRole('button',{name:'+ 새 수업 인사이트 기록'}))
+    expect(within(section).getByPlaceholderText('이번 시험에 재사용할 관찰과 힌트')).toBeInTheDocument()
+  })
+
+  it('새 인사이트 저장 후 목록과 버튼 숫자가 갱신되고 조회 요청은 현재 시험 Context만 묻는다', async()=>{
+    const year=new Date().getFullYear()
+    const schools=[{school:'신구중',grades:[{grade:'중2',exams:[{exam:'전체',twinId:null,version:null,updatedAt:'',hasDigitalTwin:false},{exam:'기말고사',twinId:null,version:null,updatedAt:'',hasDigitalTwin:false}]}]}]
+    let rows=[{id:1,content:'INSIGHT BEFORE SAVE',source:'director',created_at:'2026-09-19T10:00:00',school:'신구중',grade:'중2',year,semester:'1학기',exam:'전체'}]
+    const requestUrls:string[]=[]
+    vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL,init?:RequestInit)=>{
+      const url=String(input)
+      if(url.endsWith('/schools'))return new Response(JSON.stringify(schools),{status:200,headers:{'Content-Type':'application/json'}})
+      if(url.includes('/educator-insights')&&init?.method==='POST'){
+        const payload=JSON.parse(String(init.body))
+        rows=[{id:2,content:payload.content,source:payload.source,created_at:'2026-09-21T10:00:00',school:payload.school,grade:payload.grade,year:payload.year,semester:payload.semester,exam:payload.exam},...rows]
+        return new Response(JSON.stringify(rows[0]),{status:201,headers:{'Content-Type':'application/json'}})
+      }
+      if(url.includes('/educator-insights')){requestUrls.push(decodeURIComponent(url));return new Response(JSON.stringify(rows),{status:200,headers:{'Content-Type':'application/json'}})}
+      return new Response('[]',{status:200,headers:{'Content-Type':'application/json'}})
+    }))
+    render(<App/>)
+    await screen.findAllByText('신구중 · 중2')
+    const section=document.getElementById('insight-entry') as HTMLElement
+    // 조회 요청은 학교/학년/연도/학기/시험 Context 그대로 서버 scope 필터에 맡긴다.
+    await waitFor(()=>expect(requestUrls.some(u=>u.includes('educator-insights')&&u.includes('school=신구중')&&u.includes('grade=중2')&&u.includes('semester=1학기')&&u.includes('exam=전체'))).toBe(true))
+    fireEvent.click(within(section).getByRole('button',{name:'+ 새 수업 인사이트 기록'}))
+    fireEvent.change(within(section).getByPlaceholderText('이번 시험에 재사용할 관찰과 힌트'),{target:{value:'INSIGHT AFTER SAVE'}})
+    fireEvent.click(within(section).getByRole('button',{name:'저장'}))
+    await waitFor(()=>expect(within(section).getByText('INSIGHT AFTER SAVE')).toBeInTheDocument())
+    expect(within(section).getByText('INSIGHT BEFORE SAVE')).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:/^수업 인사이트 기록\s*2/})).toBeInTheDocument()
+    // 시험을 기말고사로 바꾸면 새 Context로만 조회한다 (다른 scope 섞임 없음).
+    fireEvent.change(within(screen.getByLabelText('시험 Context')).getByLabelText('시험'),{target:{value:'기말고사'}})
+    await waitFor(()=>expect(requestUrls.some(u=>u.includes('exam=기말고사'))).toBe(true))
   })
 
   it('버튼에 저장 건수를 "추가 · 저장 N건" 형식으로 표시한다', async()=>{

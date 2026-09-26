@@ -49,8 +49,15 @@ main에서 작업
   → ./gradlew test 또는 ./gradlew build
   → feature branch push / PR 생성
   → PR 리뷰·검증 후 main merge
-  → GitHub Actions Deploy to EC2 (manual) 수동 실행
+  → main push Build Check SUCCESS → Deploy to EC2 자동 실행 (HEAD = CI가 검증한 그 SHA)
+  → (필요 시) Deploy to EC2 workflow_dispatch로 수동 재배포
 ```
+
+- **자동 배포 조건**: `workflow_run`은 "main push로 돈 `Build Check`가 success"일 때만 발화한다.
+  PR 브랜치 push, 실패/취소된 CI는 대상에서 제외되고, 배포는 CI가 통과한 SHA를 명시적으로
+  checkout해 빌드 대상과 검증 대상을 일치시킨다(머지 후 main이 밀려나도 다른 SHA를 배포하지 않는다).
+- **배포는 schema migration(Flyway)만 수행한다.** NewStart seed/repair/approval, EASY 운영 데이터
+  write 등은 이 워크플로의 범위가 아니며 어떤 경로로도 자동 실행되지 않는다.
 
 - **main 직접 push 금지** — 배포 기준 브랜치가 `main`이므로 변경은 PR로 직렬화한다.
 - 기존 `dev`/`stg` 브랜치 승격 플로우는 기본 워크플로에서 사용하지 않는다.

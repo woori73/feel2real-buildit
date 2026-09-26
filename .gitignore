@@ -88,3 +88,10 @@ docs/temp/
 ### Legacy Chart V3 re-research inspection (original .env + app.db with PII — never commit) ###
 .legacy-chart-inspection/
 .gradle-codex/
+
+### NewStart initial-seed 로컬 스테이징 (카페 기사 전문 — 커밋 금지, 정본은 article_json) ###
+data/newstart-cafe/repair_staging/
+data/newstart-cafe/initial_seed/
+ec_state.tsv
+
+__pycache__/

@@ -63,7 +63,8 @@ class NewStartAiChatControllerTest {
   @Test
   void chatReturnsOkWithAnswer() throws Exception {
     when(newStartAiChatService.ask(anyString())).thenReturn(
-        new NewStartAiChatService.NewStartAiAnswer(true, "새출발기금은 ...입니다.", null, "qwen/qwen3.7-flash"));
+        new NewStartAiChatService.NewStartAiAnswer(true, "새출발기금은 ...입니다.", null, "qwen/qwen3.7-flash",
+            java.util.List.of(new NewStartAiChatService.AnswerSource("공식 자료", "공식 안내", "https://x/y"))));
 
     mockMvc.perform(post("/api/newstart/ai/chat")
             .cookie(userCookie())
@@ -72,7 +73,9 @@ class NewStartAiChatControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ok"))
         .andExpect(jsonPath("$.answer").value("새출발기금은 ...입니다."))
-        .andExpect(jsonPath("$.model").value("qwen/qwen3.7-flash"));
+        .andExpect(jsonPath("$.model").value("qwen/qwen3.7-flash"))
+        .andExpect(jsonPath("$.sources[0].kind").value("공식 자료"))
+        .andExpect(jsonPath("$.sources[0].title").value("공식 안내"));
   }
 
   @Test
