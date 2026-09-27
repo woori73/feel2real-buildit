@@ -10,6 +10,9 @@ name: Easy Extended Sales Census (read-only, manual)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [chore/easy-extended-census-20260927]
+    paths: [.github/workflows/easy-ledger-census-extended.yml]
 
 permissions:
   id-token: write
