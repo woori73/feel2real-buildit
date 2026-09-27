@@ -5,13 +5,13 @@ import type { Page } from '../App'
 // 수능영어 Wiki V1 — DAY 1 범위: ①평가원 기출 ②평가원 출제 DNA만 활성.
 // ③학생 오답 ④학생 약점 DNA ⑤개인별 대비는 구조만 노출하고 "준비 중" 안내(가짜 데이터 금지).
 type Evidence = { question_no:number; exam_id?:number; exam_year?:number; exam_type?:string }
-type CsatExam = { id:number; exam_year:number; exam_type:string; subject:string; exam_date:string; label:string; question_count:number; resource_count:number; dna_count:number; claim_count:number }
+type CsatExam = { id:number; exam_year:number; exam_type:string; subject:string; exam_date:string; label:string; question_count:number; resource_count:number; dna_count:number; claim_count:number; expert_count:number }
 type ExamResource = { id:number; resource_type:string; original_name:string; original_type:string; created_at:string }
-type DnaEntry = { id:number; question_id:number; exam_id:number; entry_type:'DNA'|'TRAP'; tag:string; choice_no:number|null; note:string; evidence:Evidence[]; importance:number; provenance:string; expert:string; agreement:boolean; status:string }
-type DnaClaim = { id:number; exam_id:number; claim_type:string; tag:string; claim_text:string; evidence:Evidence[]; importance:number; provenance:string; expert:string; agreement:boolean; status:string }
-type Comparison = { id:number; exam_a_id:number; exam_b_id:number; tag:string; verdict:string; claim_text:string; evidence:Evidence[]; provenance:string; expert:string; agreement:boolean; status:string }
+type DnaEntry = { id:number; question_id:number; exam_id:number; entry_type:'DNA'|'TRAP'; tag:string; choice_no:number|null; note:string; evidence:Evidence[]; importance:number; provenance:string; expert:string; agreement:boolean; agreement_kind?:string; timestamp_start?:number|null; timestamp_end?:number|null; expert_video_url?:string; status:string }
+type DnaClaim = { id:number; exam_id:number; claim_type:string; tag:string; claim_text:string; evidence:Evidence[]; importance:number; provenance:string; expert:string; agreement:boolean; agreement_kind?:string; timestamp_start?:number|null; timestamp_end?:number|null; expert_video_url?:string; status:string }
+type Comparison = { id:number; exam_a_id:number; exam_b_id:number; tag:string; verdict:string; claim_text:string; evidence:Evidence[]; provenance:string; expert:string; agreement:boolean; agreement_kind?:string; timestamp_start?:number|null; timestamp_end?:number|null; expert_video_url?:string; status:string }
 type ExamQuestion = { id:number; question_no:number; csat_type_id:string; csat_type_name:string; prompt:string; passage:string; answer:string; solution:string; dna:DnaEntry[] }
-type ExamDna = { exam:CsatExam; tags:{entry_type:string;tag:string;question_nos:number[];notes:{question_no:number;note:string;provenance:string;expert:string}[]}[]; traps:{entry_type:string;tag:string;question_nos:number[]}[]; per_question:{question_no:number;entries:DnaEntry[]}[]; claims:DnaClaim[] }
+type ExamDna = { exam:CsatExam; tags:{entry_type:string;tag:string;question_nos:number[];notes:{question_no:number;note:string;provenance:string;expert:string;agreement_kind?:string;timestamp_start?:number|null;video_url?:string}[]}[]; traps:{entry_type:string;tag:string;question_nos:number[]}[]; per_question:{question_no:number;entries:DnaEntry[]}[]; claims:DnaClaim[] }
 
 const EXAM_TYPE_LABEL:Record<string,string>={JUNE_MOCK:'6월 모평',SEPTEMBER_MOCK:'9월 모평',CSAT:'수능'}
 const STATUS_LABEL:Record<string,string>={AI_PROPOSED:'AI 제안',TEACHER_CONFIRMED:'선생님 확정',TEACHER_EDITED:'선생님 수정'}
@@ -21,7 +21,10 @@ const MENU:[string,string][]=[['questions','① 평가원 기출'],['dna','② �
 const COMPARE=-1
 
 const Badge=({text,tone=''}:{text:string;tone?:string})=><span className="context-chip" style={{fontSize:11,marginLeft:4,background:tone||undefined}}>{text}</span>
-const provenanceBadge=(entry:{provenance:string;expert:string;agreement:boolean},key?:string)=>entry.provenance==='EXPERT_ANALYSIS'?<span key={key}> <Badge text={`[${entry.expert}${entry.agreement?' · 분석가 합의':''} 분석]`} tone="#6b5b1e" /></span>:entry.provenance==='WIKI_SYNTHESIS'?<span key={key}> <Badge text="[Wiki 종합 분석]" tone="#31445c" /></span>:entry.provenance==='ACTUAL_EXAM'?<span key={key}> <Badge text="[실제 문항 근거]" tone="#1f4d36" /></span>:<span key={key}> <Badge text="[공식 자료]" tone="#41414d" /></span>
+const AGREEMENT_LABEL:Record<string,string>={AGREEMENT:'근거 분석과 합의',DIFFERENT_EMPHASIS:'관점 차이 보존',EXPERT_ONLY:'강사 고유 진단',UNKNOWN:'검토 필요'}
+const clock=(seconds?:number|null)=>seconds==null?'':`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`
+type ProvenanceInfo={provenance:string;expert:string;agreement:boolean;agreement_kind?:string;timestamp_start?:number|null;timestamp_end?:number|null;expert_video_url?:string;video_url?:string}
+const provenanceBadge=(entry:ProvenanceInfo,key?:string)=>entry.provenance==='EXPERT_ANALYSIS'?<span key={key}> <Badge text={`[${entry.expert} 분석${entry.agreement_kind?` · ${AGREEMENT_LABEL[entry.agreement_kind]||entry.agreement_kind}`:''}${entry.timestamp_start!=null?` · ${clock(entry.timestamp_start)}`:''}]`} tone="#6b5b1e" />{entry.expert_video_url&&<a href={`${entry.expert_video_url}&t=${entry.timestamp_start||0}s`} target="_blank" rel="noreferrer" style={{marginLeft:6,fontSize:12}}>영상 구간</a>}</span>:entry.provenance==='WIKI_SYNTHESIS'?<span key={key}> <Badge text="[Wiki 종합 분석]" tone="#31445c" /></span>:entry.provenance==='ACTUAL_EXAM'?<span key={key}> <Badge text="[실제 문항 근거]" tone="#1f4d36" /></span>:<span key={key}> <Badge text="[공식 자료]" tone="#41414d" /></span>
 const statusBadge=(status:string,key?:string)=><span key={key}> <Badge text={STATUS_LABEL[status]||status} tone={status==='AI_PROPOSED'?'#5c4a12':'#1f4d36'} /></span>
 
 export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
@@ -58,7 +61,11 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
   const openEvidence=(evidence:Evidence[])=>{const first=evidence.map(item=>({...item,exam_id:resolveExamId(item)})).find(item=>item.exam_id);if(!first?.exam_id){setNotice('이 화면에서 이동할 수 없는 근거 참조입니다.');return}if(first.exam_id!==activeExamId)setActiveExamId(first.exam_id);setMenu('questions');setFocusQuestion(first.question_no);window.setTimeout(()=>document.getElementById(`csat-q-${first.question_no}`)?.scrollIntoView({behavior:'auto',block:'center'}),80)}
   const evidenceChips=(evidence:Evidence[],keyPrefix:string)=><span style={{marginLeft:6}}>{evidence.map((item,index)=><button key={`${keyPrefix}-${index}`} className="btn-ghost" style={{padding:'1px 8px',fontSize:12,marginLeft:4}} onClick={()=>openEvidence([item])}>{examLabelOf(resolveExamId(item))} {item.question_no}번</button>)}</span>
   const tagLabel=(tag:string)=>trapTags.includes(tag)?`${tag}${TRAP_LABEL_KO[tag]?` · ${TRAP_LABEL_KO[tag]}`:''}`:tag.split('_').join(' ')
+  // 같은 태그에 근거 유형(평가원/강사)이 다르면 같은 문항번호가 반복된다 — chip key는 중복 금지
+  const uniqueNos=(nos:number[])=>[...new Set(nos)].sort((a,b)=>a-b)
   const claimGroups=(types:string[])=>(dna?.claims||[]).filter(claim=>types.includes(claim.claim_type))
+  // 비교(COMPARE) 선택 상태에서 ①를 열면 회차가 없는 빈 화면이 된다 → 첫 회차로 되돌린다.
+  const openMenu=(id:typeof menu)=>{if(id!=='dna'&&activeExamId===COMPARE&&exams.length)setActiveExamId(exams[0].id);setMenu(id)}
   const repeatedSkills=(dna?.tags||[]).filter(tag=>tag.entry_type==='DNA'&&new Set(tag.question_nos).size>=2)
   const renderClaim=(claim:DnaClaim)=> <p key={claim.id}><b>{claim.claim_text}</b>{evidenceChips(claim.evidence,`claim-${claim.id}`)}{provenanceBadge(claim)}{statusBadge(claim.status)}</p>
 
@@ -73,7 +80,7 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
       <p>평가원 기출(LEVEL 1)이 최우선 근거입니다. 강사 분석은 실제 기출보다 우선하지 않으며, 모든 CLAIM은 근거 문항을 클릭해 직접 검증할 수 있습니다.</p>
     </header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
-    <nav className="provider-tabs" aria-label="수능영어 Wiki 메뉴">{MENU.map(([id,label])=><button key={id} className={menu===id?'active':''} onClick={()=>setMenu(id as typeof menu)}>{label}</button>)}</nav>
+    <nav className="provider-tabs" aria-label="수능영어 Wiki 메뉴">{MENU.map(([id,label])=><button key={id} className={menu===id?'active':''} onClick={()=>openMenu(id as typeof menu)}>{label}</button>)}</nav>
 
     {menu==='questions'&&<>
       <div className="provider-tabs" aria-label="시험 선택">{exams.map(item=><button key={item.id} className={activeExamId===item.id?'active':''} onClick={()=>{setActiveExamId(item.id);setFocusQuestion(null)}}>{item.label||`${item.exam_year} ${EXAM_TYPE_LABEL[item.exam_type]||item.exam_type}`}</button>)}{!exams.length&&<span>등록된 평가원 시험이 없습니다. ADMIN이 기출을 등록하면 여기에 나타납니다.</span>}</div>
@@ -84,8 +91,7 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
         <div className="csat-question-grid">{questions.map(item=><article key={item.id} id={`csat-q-${item.question_no}`} style={focusQuestion===item.question_no?{outline:'2px solid #c9a227'}:undefined}>
           <div><b>{item.question_no}. {item.csat_type_name} <span className="context-chip">정답 {item.answer||'-'}</span></b><p>{String(item.prompt||'').slice(0,140)}</p>
             <div>{item.dna.map(entry=><span key={entry.id}><Badge text={`${entry.entry_type==='TRAP'?'함정':'DNA'} · ${tagLabel(entry.tag)}${entry.choice_no?` (${entry.choice_no}번 선지)`:''}`} tone={entry.entry_type==='TRAP'?'#5c1f2e':''}/>{provenanceBadge(entry,`p-${entry.id}`)}{statusBadge(entry.status,`s-${entry.id}`)}</span>)}{!item.dna.length&&<small>DNA 미등록</small>}</div>
-            {item.dna.some(entry=>entry.note)&&<details><summary>DNA 상세</summary><ul>{item.dna.filter(entry=>entry.note).map(entry=><li key={entry.id}><b>{tagLabel(entry.tag)}</b> {entry.note}{provenanceBadge(entry,`n-${entry.id}`)}{statusBadge(entry.status,`ns-${entry.id}`)}</li>)}</ul></details>}
-          </div></article>)}{!questions.length&&exam&&<div className="empty-state"><b>이 시험에는 아직 문항이 등록되지 않았습니다.</b></div>}</div>
+            {item.dna.some(entry=>entry.note)&&<details><summary>DNA 상세</summary><ul>{item.dna.filter(entry=>entry.note).map(entry=><li key={entry.id}><b>{tagLabel(entry.tag)}</b> {entry.note}{provenanceBadge(entry,`n-${entry.id}`)}{statusBadge(entry.status,`ns-${entry.id}`)}</li>)}</ul></details>}          </div></article>)}{!questions.length&&exam&&<div className="empty-state"><b>이 시험에는 아직 문항이 등록되지 않았습니다.</b></div>}</div>
       </article>}
     </>}
 
@@ -96,16 +102,16 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
       </div>
       {dnaLoading&&<p>DNA를 불러오는 중입니다...</p>}
       {!dnaLoading&&exam&&dna&&<>
-        <article className="work-panel"><div className="panel-heading"><div><p className="kicker">CORE TRAITS · {exam.label}</p><h2>핵심 출제 특징</h2></div></div>
+        <article className="work-panel"><div className="panel-heading"><div><p className="kicker">CORE TRAITS · {exam.label}</p><h2>핵심 출제 특징</h2><p>강사 분석 {exam.expert_count}건 · 평가원/기출 근거 {exam.dna_count + exam.claim_count - exam.expert_count}건</p></div></div>
           {claimGroups(['CORE_TRAIT','SKILL_DEMAND']).map(renderClaim)}
           {!claimGroups(['CORE_TRAIT','SKILL_DEMAND']).length&&<p>아직 등록된 CLAIM이 없습니다. (근거 없는 단정은 표시하지 않습니다.)</p>}
         </article>
         <article className="work-panel"><div className="panel-heading"><div><p className="kicker">REPEATED SKILLS</p><h2>반복되는 사고 능력</h2></div></div>
-          {repeatedSkills.map(tag=><p key={tag.tag}><b>{tagLabel(tag.tag)}</b> · {new Set(tag.question_nos).size}개 문항 {tag.question_nos.map(no=><button key={no} className="btn-ghost" style={{padding:'1px 8px',fontSize:12,marginLeft:4}} onClick={()=>openEvidence([{question_no:no,exam_id:exam.id}])}>{no}번</button>)}</p>)}
+          {repeatedSkills.map(tag=><p key={tag.tag}><b>{tagLabel(tag.tag)}</b> · {uniqueNos(tag.question_nos).length}개 문항 {uniqueNos(tag.question_nos).map(no=><button key={no} className="btn-ghost" style={{padding:'1px 8px',fontSize:12,marginLeft:4}} onClick={()=>openEvidence([{question_no:no,exam_id:exam.id}])}>{no}번</button>)}</p>)}
           {!repeatedSkills.length&&<p>2개 문항 이상에서 반복된 DNA 태그가 아직 없습니다.</p>}
         </article>
         <article className="work-panel"><div className="panel-heading"><div><p className="kicker">TRAPS</p><h2>오답 함정</h2></div></div>
-          {dna.traps.map(trap=><p key={trap.tag}><b>{tagLabel(trap.tag)}</b> · {trap.question_nos.map(no=><button key={no} className="btn-ghost" style={{padding:'1px 8px',fontSize:12,marginLeft:4}} onClick={()=>openEvidence([{question_no:no,exam_id:exam.id}])}>{no}번</button>)}</p>)}
+          {dna.traps.map(trap=><p key={trap.tag}><b>{tagLabel(trap.tag)}</b> · {uniqueNos(trap.question_nos).map(no=><button key={no} className="btn-ghost" style={{padding:'1px 8px',fontSize:12,marginLeft:4}} onClick={()=>openEvidence([{question_no:no,exam_id:exam.id}])}>{no}번</button>)}</p>)}
           {claimGroups(['MAJOR_TRAP']).map(renderClaim)}
           {!dna.traps.length&&!claimGroups(['MAJOR_TRAP']).length&&<p>등록된 함정 기록이 없습니다.</p>}
         </article>

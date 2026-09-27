@@ -52,7 +52,7 @@ class CsatEnglishDnaTest(unittest.TestCase):
         with main.get_db() as conn:
             for table in ('csat_question_dna', 'csat_dna_claims', 'csat_dna_comparisons',
                           'csat_exam_resources', 'csat_wrong_answers', 'csat_questions',
-                          'csat_question_sources', 'csat_exams'):
+                          'csat_expert_sources', 'csat_question_sources', 'csat_exams'):
                 conn.execute(f'DELETE FROM {table}')
         june = self.client.post('/api/csat/exams', json={
             'exam_year': 2027, 'exam_type': 'JUNE_MOCK', 'exam_date': '2026-06-04', 'label': '2027학년도 6월 모의평가'})
@@ -102,6 +102,8 @@ class CsatEnglishDnaTest(unittest.TestCase):
         self.assertIn('WORD_ECHO', taxonomy['traps'])
         self.assertIn('ACTUAL_EXAM', taxonomy['provenance'])
         self.assertIn('STRENGTHENED', taxonomy['verdicts'])
+        self.assertIn('EXPERT_ANALYSIS', taxonomy['provenance'])
+        self.assertEqual({'AGREEMENT', 'DIFFERENT_EMPHASIS', 'EXPERT_ONLY', 'UNKNOWN'}, set(taxonomy['agreement_kinds']))
         self.assertEqual({'ANSWER', 'ANALYSIS', 'QUESTION_PAPER', 'TEACHER_NOTE'}, set(taxonomy['resource_types']))
 
     # ── 원본 자료(SOURCE) 업로드 ───────────────────────────────────────────────
@@ -193,6 +195,20 @@ class CsatEnglishDnaTest(unittest.TestCase):
         self.assertEqual(201, response.status_code, response.text)
         return response.json()
 
+    def create_expert_source(self, exam_id=None, **overrides):
+        payload = {'expert': '이명학', 'target_exam_id': exam_id or self.june_id,
+                   'video_url': 'https://www.youtube.com/watch?v=gt3K_OVxaZg',
+                   'video_title': '2027 6월 모평 영어 분석', 'published_at': '2026-06-05', **overrides}
+        response = self.client.post('/api/csat/expert-sources', json=payload)
+        self.assertEqual(201, response.status_code, response.text)
+        return response.json()['id']
+
+    def expert_fields(self, source_id, exam_id=None):
+        exam_id = exam_id or self.june_id
+        return {'provenance': 'EXPERT_ANALYSIS', 'expert': '이명학', 'expert_source_id': source_id,
+                'timestamp_start': 200, 'timestamp_end': 305, 'agreement_kind': 'AGREEMENT',
+                'evidence': [{'exam_id': exam_id, 'question_no': 31}]}
+
     def test_dna_multitag_creation_and_evidence_link(self):
         # given: 6월 31번 문항이 있고
         ids = self.seed_dna_question()
@@ -233,15 +249,18 @@ class CsatEnglishDnaTest(unittest.TestCase):
 
     def test_dna_actualexam_requires_evidence_and_expert_analysis_requires_expert(self):
         ids = self.seed_dna_question()
+        source_id = self.create_expert_source()
         # given/when/then: LEVEL 1(실제 문항)은 evidence 필수,
-        # LEVEL 2(강사 분석)은 expert 기록 필수 — 출처 없는 단정 방지 계약
+        # LEVEL 2(강사 분석)은 expert·출처·구간·합의 분류 필수 — 출처 없는 단정 방지 계약
         self.assertEqual(400, self.client.post(f'/api/csat/questions/{ids[22]}/dna',
                      json={'entry_type': 'DNA', 'tag': 'MAIN_IDEA', 'provenance': 'ACTUAL_EXAM'}).status_code)
         self.assertEqual(400, self.client.post(f'/api/csat/questions/{ids[22]}/dna',
                      json={'entry_type': 'DNA', 'tag': 'MAIN_IDEA', 'provenance': 'EXPERT_ANALYSIS'}).status_code)
-        expert = self.create_dna(ids[22], {'entry_type': 'DNA', 'tag': 'INFERENCE', 'provenance': 'EXPERT_ANALYSIS',
-                                           'expert': '조정식', 'note': '추론 요구 문항 비중 증가 분석'})
-        self.assertEqual('조정식', expert['expert'])
+        expert = self.create_dna(ids[22], {
+            'entry_type': 'DNA', 'tag': 'INFERENCE', 'note': '추론 요구 문항 비중 증가 분석',
+            **self.expert_fields(source_id)})
+        self.assertEqual('이명학', expert['expert'])
+        self.assertEqual(source_id, expert['expert_source_id'])
         # evidence 항목은 question_no와 exam 특정(exam_id 또는 exam_year+exam_type)이 모두 필요하다
         self.assertEqual(400, self.client.post(f'/api/csat/questions/{ids[22]}/dna',
                      json={'entry_type': 'DNA', 'tag': 'SYNTAX', 'provenance': 'ACTUAL_EXAM',
@@ -249,6 +268,64 @@ class CsatEnglishDnaTest(unittest.TestCase):
         self.assertEqual(400, self.client.post(f'/api/csat/questions/{ids[22]}/dna',
                      json={'entry_type': 'DNA', 'tag': 'SYNTAX', 'provenance': 'ACTUAL_EXAM',
                            'evidence': [{'exam_id': self.june_id, 'question_no': 999}]}).status_code)
+
+    def test_expert_analysis_dna_requires_full_provenance(self):
+        # given: 6월 31번과 이명학 출처 영상이 있고
+        ids = self.seed_dna_question()
+        source_id = self.create_expert_source()
+        full = {'entry_type': 'DNA', 'tag': 'COHESION', **self.expert_fields(source_id)}
+        # when/then: evidence·출처·구간·agreement_kind 중 하나라도 빠지면 400 (evidence 없는 expert claim = FAIL)
+        for missing, replacement in (
+            ('evidence', {'evidence': []}),
+            ('expert_source_id', {'expert_source_id': None}),
+            ('expert_source_id', {'expert_source_id': 999999}),
+            ('timestamp_start', {'timestamp_start': None}),
+            ('timestamp', {'timestamp_start': 305, 'timestamp_end': 305}),
+            ('agreement_kind', {'agreement_kind': ''}),
+            ('agreement_kind', {'agreement_kind': 'BETTER_THAN_OFFICIAL'}),
+            ('expert', {'expert': ' '}),
+        ):
+            response = self.client.post(f'/api/csat/questions/{ids[31]}/dna', json={**full, **replacement})
+            self.assertEqual(400, response.status_code, f'{missing} 누락이 통과됐다: {response.text}')
+        # and: 완성된 근거 분석은 등록되고 응답에 영상 URL·구간이 보존된다
+        created = self.create_dna(ids[31], full)
+        self.assertEqual('https://www.youtube.com/watch?v=gt3K_OVxaZg', created['expert_video_url'])
+        self.assertEqual((200, 305), (created['timestamp_start'], created['timestamp_end']))
+        # and: agreement_kind는 EXPERT_ANALYSIS 전용 — 다른 provenance에서 쓰면 거부된다
+        self.assertEqual(400, self.client.post(f'/api/csat/questions/{ids[31]}/dna', json={
+            'entry_type': 'DNA', 'tag': 'MAIN_IDEA', 'provenance': 'OFFICIAL_SOURCE',
+            'agreement_kind': 'AGREEMENT'}).status_code)
+        self.assertEqual(400, self.client.put(f"/api/csat/dna/{created['id']}",
+                     json={'provenance': 'WIKI_SYNTHESIS'}).status_code)
+        # and: 수정으로 구간을 망가뜨리는 요청도 거부된다
+        self.assertEqual(400, self.client.put(f"/api/csat/dna/{created['id']}",
+                     json={'timestamp_end': 100}).status_code)
+        self.assertEqual(200, self.client.put(f"/api/csat/dna/{created['id']}",
+                     json={'agreement_kind': 'EXPERT_ONLY'}).status_code)
+        self.assertEqual('EXPERT_ONLY', self.client.get(f"/api/csat/questions/{ids[31]}/dna").json()[0]['agreement_kind'])
+
+    def test_expert_analysis_never_overwrites_official_dna(self):
+        # given: 6월 31번에 평가원 근거 DNA(OFFICIAL_SOURCE, DISTRACTOR_TRAP 함정)가 있고
+        ids = self.seed_dna_question()
+        official = self.create_dna(ids[31], {'entry_type': 'TRAP', 'tag': 'WORD_ECHO', 'choice_no': 3,
+                                             'provenance': 'OFFICIAL_SOURCE',
+                                             'evidence': [{'exam_id': self.june_id, 'question_no': 31}]})
+        source_id = self.create_expert_source()
+        # when: 같은 태그·선지에 강사 분석을 별도 provenance로 등록하면
+        expert = self.create_dna(ids[31], {
+            'entry_type': 'TRAP', 'tag': 'WORD_ECHO', 'choice_no': 3, 'note': '강사가 지목한 대표 함정',
+            **self.expert_fields(source_id)})
+        # then: 중복이 아니라 근거 유형이 다른 별개 행이고, 기존 행은 그대로다
+        self.assertEqual('OFFICIAL_SOURCE', official['provenance'])
+        self.assertEqual('EXPERT_ANALYSIS', expert['provenance'])
+        rows = self.client.get(f"/api/csat/questions/{ids[31]}/dna").json()
+        self.assertEqual({'OFFICIAL_SOURCE', 'EXPERT_ANALYSIS'}, {r['provenance'] for r in rows})
+        self.assertEqual(2, len(rows))
+        self.assertEqual(official['id'], next(r['id'] for r in rows if r['provenance'] == 'OFFICIAL_SOURCE'))
+        # and: 같은 provenance·태그·선지는 여전히 409
+        self.assertEqual(409, self.client.post(f'/api/csat/questions/{ids[31]}/dna', json={
+            'entry_type': 'TRAP', 'tag': 'WORD_ECHO', 'choice_no': 3, 'provenance': 'OFFICIAL_SOURCE',
+            'evidence': [{'exam_id': self.june_id, 'question_no': 31}]}).status_code)
 
     def test_teacher_correction_flow_ai_proposed_to_confirmed(self):
         # given: AI가 제안한 DNA가 있고
@@ -325,15 +402,56 @@ class CsatEnglishDnaTest(unittest.TestCase):
         self.assertEqual([], self.client.get(f'/api/csat/exams/{self.june_id}/dna').json()['claims'])
 
     def test_expert_claims_record_instructor_and_agreement(self):
-        # given/when: 강사 분석 CLAIM(조정식·이명학 합의)을 agreement와 함께 등록하면
+        # given: 이명학 6월 모평 분석 영상이 출처로 등록되어 있고
+        source_id = self.create_expert_source()
+        # when: 강사 분석 CLAIM을 근거 문항·영상 구간·합의 분류와 함께 등록하면
         claim = self.client.post(f'/api/csat/exams/{self.june_id}/dna-claims', json={
             'claim_type': 'MAJOR_TRAP', 'tag': 'WORD_ECHO', 'claim_text': '지선 워드에코가 대표 함정',
-            'provenance': 'EXPERT_ANALYSIS', 'expert': '조정식', 'agreement': True,
-            'evidence': [{'exam_id': self.june_id, 'question_no': 31}]}).json()
-        # then: 출처·합의 여부가 보존된다 (강사 의견 ≠ 평가원 공식 의도)
+            'agreement': True, **self.expert_fields(source_id)}).json()
+        # then: 출처·합의 분류·구간이 보존된다 (강사 의견 ≠ 평가원 공식 의도)
         self.assertEqual('EXPERT_ANALYSIS', claim['provenance'])
-        self.assertEqual('조정식', claim['expert'])
+        self.assertEqual('이명학', claim['expert'])
         self.assertTrue(claim['agreement'])
+        self.assertEqual('AGREEMENT', claim['agreement_kind'])
+        self.assertEqual(source_id, claim['expert_source_id'])
+        self.assertIn('gt3K_OVxaZg', claim['expert_video_url'])
+        # and: 출처 영상 없이 등록한 강사 CLAIM은 거부된다 (evidence 없는 expert claim = FAIL)
+        self.assertEqual(400, self.client.post(f'/api/csat/exams/{self.june_id}/dna-claims', json={
+            'claim_type': 'CORE_TRAIT', 'tag': 'LOGIC', 'claim_text': '출처 없는 단정',
+            'provenance': 'EXPERT_ANALYSIS', 'expert': '이명학',
+            'evidence': [{'exam_id': self.june_id, 'question_no': 31}]}).status_code)
+        # and: 시험 상세는 강사 분석 건수를 별도 집계한다
+        detail = self.client.get(f'/api/csat/exams/{self.june_id}').json()
+        self.assertEqual(1, detail['expert_count'])
+
+    def test_expert_source_registration_contract(self):
+        # given/when: 강사 출처 영상을 등록하면
+        source_id = self.create_expert_source(video_title='2027 6월 모평 영어 강평', verified_note='자막 구간 대조 완료')
+        listed = self.client.get('/api/csat/expert-sources').json()
+        # then: URL·제목·공개일·검증 메모만 저장되고 자막 전문은 저장하지 않는다
+        self.assertEqual(1, len(listed))
+        self.assertEqual(source_id, listed[0]['id'])
+        self.assertEqual('이명학', listed[0]['expert'])
+        self.assertEqual('2026-06-05', listed[0]['published_at'])
+        self.assertEqual(0, listed[0]['claim_count'])
+        self.assertNotIn('transcript', listed[0])
+        # and: (expert, video_url) 중복·비(非)YouTube 링크·미등록 회차는 거부된다
+        self.assertEqual(409, self.client.post('/api/csat/expert-sources', json={
+            'expert': '이명학', 'target_exam_id': self.june_id,
+            'video_url': 'https://www.youtube.com/watch?v=gt3K_OVxaZg'}).status_code)
+        self.assertEqual(400, self.client.post('/api/csat/expert-sources', json={
+            'expert': '이명학', 'target_exam_id': self.june_id, 'video_url': 'https://example.com/v/123456'}).status_code)
+        self.assertEqual(400, self.client.post('/api/csat/expert-sources', json={
+            'expert': '', 'target_exam_id': self.june_id,
+            'video_url': 'https://www.youtube.com/watch?v=another1'}).status_code)
+        # and: DNA/CLAIM 집계 카운트가 출처별로 노출된다
+        ids = self.seed_dna_question()
+        self.create_dna(ids[31], {'entry_type': 'DNA', 'tag': 'LOGIC', **self.expert_fields(source_id)})
+        self.client.post(f'/api/csat/exams/{self.june_id}/dna-claims', json={
+            'claim_type': 'CORE_TRAIT', 'tag': 'LOGIC', 'claim_text': '논리 전개가 반복된다',
+            **self.expert_fields(source_id)})
+        counts = self.client.get('/api/csat/expert-sources').json()[0]
+        self.assertEqual((1, 1), (counts['dna_count'], counts['claim_count']))
 
     # ── 6월↔9월 교차 비교 계약 ─────────────────────────────────────────────────
 
@@ -365,8 +483,39 @@ class CsatEnglishDnaTest(unittest.TestCase):
         self.client.put(f"/api/csat/dna-comparisons/{created['id']}", json={'status': 'REJECTED'})
         self.assertEqual([], self.client.get(f'/api/csat/dna-comparisons?exam_a_id={self.june_id}&exam_b_id={self.sept_id}').json())
 
-    # ── DAY 2 대비: 학생 오답 ↔ 문항 DNA 연결 구조 ─────────────────────────────
+    def test_expert_comparison_preserves_viewpoint_without_overwriting(self):
+        # given: 6월↔9월에 평가원 근거 비교(REPEATED·VOCABULARY)가 이미 있고
+        self.import_questions(self.june_id, 30)
+        self.import_questions(self.sept_id, 30)
+        official = self.client.post('/api/csat/dna-comparisons', json={
+            'exam_a_id': self.june_id, 'exam_b_id': self.sept_id, 'tag': 'VOCABULARY', 'verdict': 'REPEATED',
+            'claim_text': '어휘 요구가 두 회차 모두 출제', 'provenance': 'OFFICIAL_SOURCE', 'evidence': [
+                {'exam_id': self.june_id, 'question_no': 30}, {'exam_id': self.sept_id, 'question_no': 30}]}).json()
+        source_id = self.create_expert_source(
+            exam_id=self.sept_id, video_url='https://www.youtube.com/watch?v=Dt-6ej9XqAc',
+            video_title='2027 9월 모평 영어 분석', published_at='2026-09-02')
+        # when: 같은 태그에서 강사가 다른 판정(REDUCED)을 말하면 비교 행을 추가한다
+        expert = self.client.post('/api/csat/dna-comparisons', json={
+            'exam_a_id': self.june_id, 'exam_b_id': self.sept_id, 'tag': 'VOCABULARY', 'verdict': 'REDUCED',
+            'claim_text': '9월에는 어휘 부담이 덜했다는 진단', 'agreement': False,
+            'provenance': 'EXPERT_ANALYSIS', 'expert': '이명학', 'expert_source_id': source_id,
+            'timestamp_start': 323, 'timestamp_end': 330, 'agreement_kind': 'DIFFERENT_EMPHASIS',
+            'evidence': [{'exam_id': self.sept_id, 'question_no': 30}]}).json()
+        # then: 기존 비교는 덮어쓰지 않고 관점 차이로 함께 보존된다
+        self.assertEqual('OFFICIAL_SOURCE', official['provenance'])
+        self.assertEqual('EXPERT_ANALYSIS', expert['provenance'])
+        self.assertEqual('DIFFERENT_EMPHASIS', expert['agreement_kind'])
+        listed = self.client.get(f'/api/csat/dna-comparisons?exam_a_id={self.june_id}&exam_b_id={self.sept_id}').json()
+        self.assertEqual({'REPEATED', 'REDUCED'}, {r['verdict'] for r in listed})
+        self.assertEqual('https://www.youtube.com/watch?v=Dt-6ej9XqAc',
+                         next(r for r in listed if r['verdict'] == 'REDUCED')['expert_video_url'])
+        # and: 구간·agreement_kind 없는 강사 비교는 거부된다
+        self.assertEqual(400, self.client.post('/api/csat/dna-comparisons', json={
+            'exam_a_id': self.june_id, 'exam_b_id': self.sept_id, 'tag': 'SYNTAX', 'verdict': 'REDUCED',
+            'claim_text': '출처 없는 강사 단정', 'provenance': 'EXPERT_ANALYSIS', 'expert': '이명학',
+            'evidence': [{'exam_id': self.sept_id, 'question_no': 30}]}).status_code)
 
+    # ── DAY 2 대비: 학생 오답 ↔ 문항 DNA 연결 구조 ─────────────────────────────
     def test_student_wrong_answer_links_to_question_dna(self):
         # given: 6월 31번에 DNA가 걸려 있고 LOCAL fixture 학생 오답이 문항 id로 연결될 때
         ids = self.seed_dna_question()
@@ -409,6 +558,9 @@ class CsatEnglishDnaTest(unittest.TestCase):
         self.assertEqual(403, self.client.post('/api/csat/dna-comparisons', json={
             'exam_a_id': self.june_id, 'exam_b_id': self.sept_id, 'tag': '', 'verdict': 'NEW',
             'claim_text': 'x', 'evidence': [{'exam_id': self.june_id, 'question_no': 20}]}, headers=tutor).status_code)
+        self.assertEqual(403, self.client.post('/api/csat/expert-sources', json={
+            'expert': '이명학', 'target_exam_id': self.june_id,
+            'video_url': 'https://www.youtube.com/watch?v=gt3K_OVxaZg'}, headers=tutor).status_code)
         # and:읽기는 403이 아니면서, 레거시 workspace의 기출 데이터가 개인 workspace로 새지 않는다(격리)
         self.assertEqual([], self.client.get('/api/csat/exams', headers=tutor).json())
         self.assertEqual(404, self.client.get(f'/api/csat/exams/{self.june_id}/dna', headers=tutor).status_code)

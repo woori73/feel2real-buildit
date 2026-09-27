@@ -3854,12 +3854,12 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 ### ✅ GET /api/csat/dna/taxonomy
 
-- 목적: DNA 분류 체계(16개 차원 `dimensions`, 10개 함정 `traps`, `provenance`: ACTUAL_EXAM/OFFICIAL_SOURCE/EXPERT_ANALYSIS/WIKI_SYNTHESIS, `statuses`: AI_PROPOSED/TEACHER_CONFIRMED/TEACHER_EDITED/REJECTED, 비교 `verdicts`: REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED, `claim_types`, `exam_types`, `resource_types`)를 반환한다.
+- 목적: DNA 분류 체계(16개 차원 `dimensions`, 10개 함정 `traps`, `provenance`: ACTUAL_EXAM/OFFICIAL_SOURCE/EXPERT_ANALYSIS/WIKI_SYNTHESIS, `statuses`: AI_PROPOSED/TEACHER_CONFIRMED/TEACHER_EDITED/REJECTED, 비교 `verdicts`: REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED, `agreement_kinds`: AGREEMENT/DIFFERENT_EMPHASIS/EXPERT_ONLY/UNKNOWN, `claim_types`, `exam_types`, `resource_types`)를 반환한다.
 
 ### ✅ POST /api/csat/exams · GET /api/csat/exams · GET /api/csat/exams/{id}
 
 - Request: `exam_year`(학년도, 2000~2100), `exam_type`(CSAT/JUNE_MOCK/SEPTEMBER_MOCK), `subject`(기본 ENGLISH), `exam_date`, `label`.
-- `(exam_year, exam_type, subject)` UNIQUE — 중복이면 `409`. 응답에 `question_count`/`resource_count`/`dna_count`/`claim_count`(REJECTED 제외)를 포함한다.
+- `(exam_year, exam_type, subject)` UNIQUE — 중복이면 `409`. 응답에 `question_count`/`resource_count`/`dna_count`/`claim_count`(REJECTED 제외)와 `expert_count`(해당 회차에 연결된 `provenance=EXPERT_ANALYSIS` DNA+CLAIM 건수)를 포함한다.
 - 상세(`GET /{id}`)는 `resources[]`(id, resource_type, original_name, original_type)를 함께 반환한다.
 
 ### ✅ POST /api/csat/exams/{id}/resources · GET /api/csat/exam-resources/{id}/original · DELETE /api/csat/exam-resources/{id}
@@ -3876,27 +3876,37 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 ### ✅ POST /api/csat/questions/{id}/dna · GET /api/csat/questions/{id}/dna · PUT /api/csat/dna/{dna_id} · DELETE /api/csat/dna/{dna_id}
 
-- Create 검증: `entry_type`은 DNA/TRAP; DNA tag는 16개 차원, TRAP tag는 10개 함정 집합 소속; TRAP은 `choice_no`(1~7) 필수; `provenance=ACTUAL_EXAM`이면 evidence 필수; `EXPERT_ANALYSIS`이면 `expert` 필수(강사 의견을 평가원 공식 출제 의도로 표시 금지).
+- Create 검증: `entry_type`은 DNA/TRAP; DNA tag는 16개 차원, TRAP tag는 10개 함정 집합 소속; TRAP은 `choice_no`(1~7) 필수; `provenance=ACTUAL_EXAM`이면 evidence 필수.
+- `provenance=EXPERT_ANALYSIS` 게이트(LEVEL 2): `expert` + `expert_source_id`(실존하는 `csat_expert_sources.id`) + 유효한 `timestamp_start`/`timestamp_end`(초, `end > start ≥ 0`) + `agreement_kind`(AGREEMENT/DIFFERENT_EMPHASIS/EXPERT_ONLY/UNKNOWN) + evidence가 **모두** 필수. 하나라도 빠지면 `400`(evidence 없는 강사 인용 등록 불가). `agreement_kind`는 EXPERT_ANALYSIS에서만 쓰므로 다른 provenance에서 보내면 `400`.
 - evidence 항목은 `{question_no: int(1~99), exam_id 또는 exam_year+exam_type}` 형태여야 한다.
-- `(question_id, entry_type, tag, choice_no)` dup은 `409`. Create 시 상태는 항상 `AI_PROPOSED`, `updated_by`에 identity login_id를 기록한다.
-- PUT(ADMIN 교정 플로우): tag/note/evidence/importance(1~3)/provenance/expert/agreement/status 수정 가능 — `AI_PROPOSED → TEACHER_CONFIRMED/TEACHER_EDITED`, 오기는 `REJECTED`(조회·집계에서 제외).
-- GET 목록과 집계는 `status<>'REJECTED'`만 반환한다.
+- `(question_id, entry_type, tag, choice_no, provenance)` dup은 `409`. provenance가 키에 포함되므로 같은 태그·선지에 평가원 근거와 강사 분석을 별개 행으로 보존한다(덮어쓰기 금지). Create 시 상태는 항상 `AI_PROPOSED`, `updated_by`에 identity login_id를 기록한다.
+- PUT(ADMIN 교정 플로우): tag/note/evidence/importance(1~3)/provenance/expert/agreement/agreement_kind/expert_source_id/timestamp_*/status 수정 가능 — `AI_PROPOSED → TEACHER_CONFIRMED/TEACHER_EDITED`, 오기는 `REJECTED`(조회·집계에서 제외). 수정 후 병합 행이 EXPERT_ANALYSIS 게이트를 위반하면 `400`.
+- GET 목록·집계· Create/PUT 응답은 REJECTED를 제외하고 반환하며, `expert_source_id`가 있는 행에는 출처 메타데이터(`expert_video_url`/`expert_video_title`/`expert_published_at`)를 붙인다.
 
 ### ✅ GET /api/csat/exams/{id}/dna
 
-- 시험별 DNA 집계: `exam`, `tags[]`(entry_type+tag → 근거 question_nos·note·provenance), `traps[]`(함정 우선 정렬), `per_question[]`(문항번호별 entries), `claims[]`(시험 수준 CLAIM). REJECTED 제외.
+- 시험별 DNA 집계: `exam`, `tags[]`(entry_type+tag → 근거 question_nos·note·provenance), `traps[]`(함정 우선 정렬), `per_question[]`(문항번호별 entries), `claims[]`(시험 수준 CLAIM). REJECTED 제외. `tags[].notes[]`와 `claims[]`는 강사 분석이면 `agreement_kind`/`timestamp_start`/`video_url`을 함께 담는다(UI는 `[이름 분석 · 합의분류 · mm:ss]` + `&t=초` 영상 구간 링크로 표시).
+
+### ✅ POST /api/csat/expert-sources · GET /api/csat/expert-sources
+
+- LEVEL-2 강사 분석의 **출처**를 등록한다. 자막 전문·영상 파일은 저장하지 않고 URL과 메타데이터(발표일·제목·검증 메모)와 구간(초)만 보존한다.
+- Request: `expert`(예: 이명학), `target_exam_id`(실존 평가 필수), `video_url`(`https://(www.)youtube.com/watch?v=…` 형식, 그 외 `400`), `source_type`(현재 `EXPERT_ANALYSIS`만 허용), `video_title`, `published_at`, `verified_note`.
+- `(expert, video_url)` dup은 `409`. 쓰기는 ADMIN만(`403`).
+- GET은 출처별로 연결된 `claim_count`/`dna_count`/`comparison_count`(REJECTED 제외)를 붙여 반환한다.
 
 ### ✅ POST /api/csat/exams/{id}/dna-claims · PUT /api/csat/dna-claims/{claim_id} · DELETE /api/csat/dna-claims/{claim_id}
 
 - `claim_type`(CORE_TRAIT/REPEATED_SKILL/MAJOR_TRAP/HIGH_DIFFICULTY/SKILL_DEMAND) + `claim_text` 필수, `tag`는 DNA∪TRAP 집합(선택).
-- `provenance`가 ACTUAL_EXAM/WIKI_SYNTHESIS면 evidence(CLAIM+EVIDENCE 규칙) 필수. §14에 따라 "반드시 나온다"류 단정은 데이터로 저장하지 않는다.
-- 주의: dna-claims에는 UNIQUE 제약이 없다 — API 클라이언트(시드 스크립트 등)는 `(claim_type, tag)` 선조회로 멱등성을 확보한다.
+- `provenance`가 ACTUAL_EXAM/WIKI_SYNTHESIS면 evidence(CLAIM+EVIDENCE 규칙) 필수. §14에 따라 "반드시 나온다"류 단정은 데이터로 저장하지 않는다. `EXPERT_ANALYSIS`면 위 DNA 게이트와 동일하게 expert/expert_source_id/timestamps/agreement_kind/evidence 필수(`400`).
+- 주의: dna-claims에는 UNIQUE 제약이 없다 — API 클라이언트(시드 스크립트 등)는 `(claim_type, tag, provenance, expert_source_id)` 선조회로 멱등성을 확보한다.
 
 ### ✅ POST /api/csat/dna-comparisons · GET /api/csat/dna-comparisons?exam_a_id&exam_b_id · PUT /api/csat/dna-comparisons/{id}
 
 - 두 시험(예: 6월↔9월)의 차이를 REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED 판정으로 기록한다. `exam_a_id == exam_b_id`면 `400`, evidence 필수, `(exam_a, exam_b, tag, verdict)` dup은 `409`.
 - GET은 두 exam id가 필수(둘 다 실존하는 평가여야 함). 비교 행에는 `importance` 컬럼이 없다.
-- 비교 문구는 문항 evidence를 가져야 하며(예: 순서 36번이 양 시험 모두 지시어 회상 구조), 근거 없는 출제 예측은 저장하지 않는다.
+- 비교 문구는 문항 evidence를 가져야 하며(예: 순서 36번이 양 시험 모두 지시어 회상 구조), 근거 없는 출제 예측은 저장하지 않는다. `EXPERT_ANALYSIS` 비교는 위와 같은 expert 게이트(expert/expert_source_id/timestamps/agreement_kind)를 적용한다. 기존 평가원·WIKI_SYNTHESIS 비교와 같은 태그여도 판정(verdict)이 다르면 별개 행으로 **관점 차이로 보존**하고 덮어쓰지 않는다.
+- 시드: `scripts/seed_csat_expert_lee.py --base http://127.0.0.1:8000`가 `fixtures/csat_day1/dna_expert_lee.json`(출처 2·CLAIM 12·문항 DNA 12·비교 5 = EXPERT_ANALYSIS 29건)을 멱등하게 등록한다. 기존 ACTUAL_EXAM/OFFICIAL_SOURCE/WIKI_SYNTHESIS 행은 읽기만 한다.
+
 ## 수능 WebMCP Site Tools
 
 - 등록 위치: top-level React Wiki의 `document.modelContext.registerTool()`.
