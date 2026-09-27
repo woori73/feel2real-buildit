@@ -17,8 +17,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.Stu
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /** 학생의 "내 복습수업"(작업지시서 §5) 목록·상세. 배정된 강좌 + 그 강좌의 공개(PUBLISHED) 콘텐츠만 보여준다. */
 @Service
@@ -34,6 +36,9 @@ public class LmsContentStudentService {
   @Transactional(readOnly = true)
   public List<StudentLessonSummary> listMyLessons(
       String handle, JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    }
     Academy academy = academyService.getPublishedEntityByHandle(handle);
     Student student = studentRepository.findByUser_UserId(principal.userId()).orElse(null);
     if (student == null) {

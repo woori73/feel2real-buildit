@@ -1518,7 +1518,7 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 `draft_id` UNIQUE로 한 초안은 한 번만 축적된다. **`review_state=ACCEPTED`(운영자 승인) 행만 STEP1 RAG에 재사용**되며
 재사용 시 분류는 `INTERNAL_CASE`+`ANSWER_SESSION` 고정 — Agent 답변을 공식 사실로 승격하는 경로는 없다.
 
-## 학원 LMS 콘텐츠/수강권 (Phase 1, V1001)
+## 학원 LMS 콘텐츠/수강권 (Phase 1, V1009)
 
 에듀홀릭 LMS "재원생 시험 전 복습수업"(§`academy-lms-design.md`의 8개 화면 MOCK 프로토타입과는 별개로
 실 DB/API가 붙은 첫 영역이다). 두 신규 도메인 패키지 `domain.lmscontent`/`domain.lmsenrollment`.
