@@ -18,8 +18,8 @@ const TOOL = read('../../main/resources/templates/newstart/practical-tool.html')
 
 test('NewStart motion tokens define FAST/NORMAL/GUIDED durations with shared easing', () => {
   assert.match(CSS, /--ns-motion-fast:\s*1[0-9]{2}ms/);
-  assert.match(CSS, /--ns-motion-normal:\s*2[0-9]{2}ms/);
-  assert.match(CSS, /--ns-motion-guided:\s*[34][0-9]{2}ms/);
+  assert.match(CSS, /--ns-motion-normal:\s*[23][0-9]{2}ms/);
+  assert.match(CSS, /--ns-motion-guided:\s*[456][0-9]{2}ms/); // 사람 눈에 인지되는 진입 강도 (Phase 1 가시성 재작업)
   assert.match(CSS, /--ns-ease-out:/);
 });
 
@@ -56,8 +56,8 @@ test('HOME marks hero, five practical cards, service cards, AI and updates for o
   assert.match(INDEX, /id="ns-ai"[^>]*data-ns-reveal/);
   assert.match(INDEX, /id="ns-updates"[^>]*data-ns-reveal/);
   // 지연은 토큰 기반 스태거, 레이아웃 이동(클릭 영역)은 불변
-  assert.match(INDEX, /--ns-reveal-delay:60ms/);
   assert.match(INDEX, /--ns-reveal-delay:240ms/);
+  assert.match(INDEX, /--ns-reveal-delay:600ms/);
 });
 
 test('HOME keeps the 지피지기 anchor contract and loads the motion bootstrap before newstart.js', () => {
