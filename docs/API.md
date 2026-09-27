@@ -70,7 +70,7 @@
 
 DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_id), `message` VARCHAR(500), `deleted` soft delete flag. 화면: `/newstart/chat`(공개 — 데이터는 전부 인증 뒤, 비로그인 시 로그인 모달 안내).
 
-### NewStart 질문요청 게시판 (설계 §5, V1011)
+### NewStart 질문요청 게시판 (설계 §5, V1013)
 
 [질문·조사 요청]과 [사이트 개선 요청]을 한 인박스로 받는 게시판. 회원 간 열람은 허용하되(전체 회원 상호 열람 확정), **쓰기·취소는 THANKS_MEMBER grant**가 있어야 한다. 운영자의 상태 관리는 `/api/admin/**`(hasRole ADMIN) 경로로만 들어온다. GitHub issue 자동 생성은 없다 — `githubRef`는 반영 시점에 운영자가 수기로 기입한다.
 
@@ -88,7 +88,7 @@ DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_
 
 인증/권한 요약: 비로그인은 `/api/**` catch-all이 `401`. 미부여 회원의 작성은 `403` + `{"status":"error","errorMessage":"회원 전용 기능입니다. ..."}`(화면은 이 문구를 그대로 노출). 검증 실패는 `400` + `errorMessage`.
 
-### NewStart 갈무리 게시판 (설계 §6, V1011)
+### NewStart 갈무리 게시판 (설계 §6, V1013)
 
 운영자 승인(`ACTIVE`) 지식 항목을 회원에게 노출하는 **read-only feed**. 새 테이블·새 게시판이 아니라 `newstart_knowledge_items`를 그대로 읽는다(§6 "중복 테이블 금지"). **쓰기 endpoint가 없다** — POST는 `405`. 회원이 글을 올리는 공간이 아니라 채팅·카페·사례·질문요청을 분석·비식별화·요약해 승인한 결과물을 보는 화면이기 때문이다.
 

@@ -58,7 +58,7 @@ public class NewstartKnowledgeItem {
     private LocalDate sourceDate;
 
     /**
-     * 갈무리 중복 제거 키(V1011, UNIQUE). 같은 출처·같은 항목이 두 번 쌓이면 지피지기 RAG 근거가
+     * 갈무리 중복 제거 키(V1013, UNIQUE). 같은 출처·같은 항목이 두 번 쌓이면 지피지기 RAG 근거가
      * 중복되어 답변이 한 쪽으로 기운다 — Agent/운영자 저장 경로에서 안정 키(예: source_type+원본 id)를
      * 넣어 충돌시키지 않고 갱신하도록 한다. nullable: 수기 등록 항목은 키 없이도 저장된다.
      */

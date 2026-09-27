@@ -1,5 +1,5 @@
 -- ============================================================
--- V1011: NewStart 질문요청 게시판 + 갈무리 중복검사 키
+-- V1013: NewStart 질문요청 게시판 + 갈무리 중복검사 키
 --   · newstart_requests: 회원 요청 INBOX. kind로 [질문·조사 요청]과 [사이트 개선 요청]을 한 테이블에서
 --     구분한다 — 두 종류는 검토 주체와 상태 흐름이 같아서(접수→검토→답변/해결) 분리하면 목록·조인이 중복된다.
 --   · 상태 8종(RECEIVED/REVIEWING/ANSWERED/ACCEPTED/IN_PROGRESS/RESOLVED/REJECTED/DUPLICATE)은
