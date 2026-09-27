@@ -53,6 +53,18 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 - `csat_questions`: source FK, half/full, 18~45 번호, 표준 유형 id/name, passage, prompt, choices JSON, answer/solution, footnote, group, source reference, 유형 불일치 flag/reason, raw JSON을 보관한다.
 - `csat_wrong_answers`: 학생, 시험, 번호, 표준 유형, 오답, 정답, 메모, 원본 파일명을 보관한다. 기존 `student_wrong_notes`와 FK나 overwrite 관계가 없다.
 
+### Wiki SQLite: 수능영어 Wiki V1 (평가원 기출 + 출제 DNA)
+
+내신Wiki의 학교 `digital_twin` DNA와 완전히 별도인 평가원 중심 저장소다. SOURCE(원본)와 ANALYSIS(DNA)를 분리하고, 모든 DNA 행은 CLAIM+EVIDENCE 구조이며 evidence의 `question_no`로 실제 문항에 도착한다. 강사 분석(EXPERT_ANALYSIS)은 실제 기출보다 우선할 수 없고, 기록 없이 평가원의 공식 출제 의도로 표시하지 않는다(§14: 근거 없는 출제 예측 단정 금지).
+
+- `csat_exams`: 평가 1차 식별값. `exam_year`(학년도) + `exam_type`(CSAT/JUNE_MOCK/SEPTEMBER_MOCK) + `subject`(기본 ENGLISH)가 UNIQUE, `exam_date`/`label`/`created_at`. 시행일을 표지로 검증한 뒤 등록한다(파일명만 근거로 연도 판단 금지).
+- `csat_exam_resources`: exam FK + `resource_type`(QUESTION_PAPER/ANSWER/ANALYSIS/TEACHER_NOTE) + `original_name`/`original_type`과 원본 바이트를 그대로 담은 `original_blob`. `/original` 엔드포인트로 동일성 검증(업로드-다운로드 바이트 일치)이 가능한다.
+- `csat_questions.exam_id`: nullable FK → `csat_exams.id`. 평가원 회차 문항은 `POST /api/csat/exams/{id}/questions`로 등록하며 회당 `csat_question_sources`(parser `csat-exam-v1`) 1건에 연결된다.
+- `csat_question_dna`: 문항별 DNA/TRAP 태그 행. `question_id`(FK)·`exam_id`(스킬 복원용 convenience FK), `entry_type`(DNA|TRAP), `tag`(DNA는 16개 차원, TRAP은 10개 함정 — `main.py`의 `CSAT_DNA_DIMENSIONS`/`CSAT_TRAP_TAGS`가 정본), TRAP의 `choice_no`(1~7), `note`, `evidence_json`, `importance`(1~3), `provenance`(ACTUAL_EXAM/OFFICIAL_SOURCE/EXPERT_ANALYSIS/WIKI_SYNTHESIS — ACTUAL_EXAM은 evidence 필수, EXPERT_ANALYSIS는 expert 필수), `expert`/`agreement`, 교정 워크플로우 `status`(AI_PROPOSED→TEACHER_CONFIRMED/TEACHER_EDITED, 오기 REJECTED는 조회·집계에서 제외), `updated_by`. `(question_id, entry_type, tag, choice_no)` dup 금지.
+- `csat_dna_claims`: 시험 수준 CLAIM. `exam_id`(FK) + `claim_type`(CORE_TRAIT/REPEATED_SKILL/MAJOR_TRAP/HIGH_DIFFICULTY/SKILL_DEMAND) + `tag`(DNA∪TRAP, 선택) + `claim_text` 필수 + evidence. UNIQUE 제약이 없으므로 작성 클라이언트가 `(claim_type, tag)` 선조회로 멱등성을 확보한다.
+- `csat_dna_comparisons`: 두 시험 비교(예: 6월↔9월). `exam_a_id`/`exam_b_id`(서로 다른 실존 평가 필수), `tag`, `verdict`(REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED), `claim_text`, `evidence_json`(필수), provenance/expert/agreement/status. `(exam_a, exam_b, tag, verdict)` dup 금지. `importance` 컬럼은 없다.
+- 1차 범위: 평가원 기출 등록과 평가원 DNA. 학생 오답·학생 약점 DNA·개인별 대비(③④⑤)는 미구현 placeholder이며, DAY-2용 학생 workspace는 LOCAL fixture로만 검증하고 production에 학생 오답 사진을 넣지 않는다.
+
 ### Wiki SQLite: Generated Question Store (MCP 생성문항)
 
 기존 Wiki SQLite에 additive로 `source_materials`, `generated_tests`를 추가하고 `generated_questions`에 `test_id` 컬럼을 더한다. `Source Material → Generated Test → Questions → Answer/Explanation` 관계로, MCP `save_generated_test`가 유일한 write 경로다.
@@ -1387,7 +1399,7 @@ NewStart AI 답변의 근거가 되는 공식/감사/전자책/카페/사례/규
 
 Every user-owned Wiki table is migrated idempotently with a nullable `workspace_id` column, backfilled without changing row counts, indexed, and protected by an insert trigger that writes the database workspace ID. The isolated database file is the primary security boundary; therefore a resource ID from another workspace cannot resolve even if numeric IDs collide.
 
-Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.
+Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, 수능영어 Wiki V1의 `csat_exams`/`csat_exam_resources`/`csat_question_dna`/`csat_dna_claims`/`csat_dna_comparisons` tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.
 
 ### exam_material_sets — PAST_EXAM + AI_WORK_LOG 확장
 

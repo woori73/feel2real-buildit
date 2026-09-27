@@ -306,6 +306,90 @@ def init_db():
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_assessment_items_order ON csat_assessment_items(assessment_id, day_no, position)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_usage_lookup ON csat_question_usage(question_id, assessment_type, used_at)')
+        # ── 수능영어 Wiki (CSAT English DNA) ──────────────────────────────────────────
+        # 내신Wiki의 학교별 digital_twin DNA와 완전히 별도 저장소다. 평가원 시험은
+        # csat_exams(1차 식별값)로 관리하고, 원본 파일은 csat_exam_resources에 BLOB로 보존한다.
+        # DNA는 CLAIM + EVIDENCE 구조이며 provenance로 실제 문항/공식 해설/강사 분석/위키 종합을 구분한다.
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_exams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exam_year INTEGER NOT NULL,
+            exam_type TEXT NOT NULL CHECK (exam_type IN ('CSAT','JUNE_MOCK','SEPTEMBER_MOCK')),
+            subject TEXT NOT NULL DEFAULT 'ENGLISH',
+            exam_date TEXT NOT NULL DEFAULT '',
+            label TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            UNIQUE (exam_year, exam_type, subject)
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_exam_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exam_id INTEGER NOT NULL,
+            resource_type TEXT NOT NULL CHECK (resource_type IN ('QUESTION_PAPER','ANSWER','ANALYSIS','TEACHER_NOTE')),
+            original_name TEXT NOT NULL,
+            original_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+            original_blob BLOB NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (exam_id) REFERENCES csat_exams(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_exam_resources ON csat_exam_resources(exam_id, resource_type)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_dna (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            exam_id INTEGER,
+            entry_type TEXT NOT NULL CHECK (entry_type IN ('DNA','TRAP')),
+            tag TEXT NOT NULL,
+            choice_no INTEGER,
+            note TEXT NOT NULL DEFAULT '',
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            importance INTEGER NOT NULL DEFAULT 2 CHECK (importance BETWEEN 1 AND 3),
+            provenance TEXT NOT NULL CHECK (provenance IN ('ACTUAL_EXAM','OFFICIAL_SOURCE','EXPERT_ANALYSIS','WIKI_SYNTHESIS')),
+            expert TEXT NOT NULL DEFAULT '',
+            agreement INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'AI_PROPOSED' CHECK (status IN ('AI_PROPOSED','TEACHER_CONFIRMED','TEACHER_EDITED','REJECTED')),
+            updated_by TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT '',
+            FOREIGN KEY (question_id) REFERENCES csat_questions(id),
+            FOREIGN KEY (exam_id) REFERENCES csat_exams(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_question_dna_lookup ON csat_question_dna(question_id, entry_type, provenance)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_question_dna_exam ON csat_question_dna(exam_id, tag)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_dna_claims (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exam_id INTEGER NOT NULL,
+            claim_type TEXT NOT NULL CHECK (claim_type IN ('CORE_TRAIT','REPEATED_SKILL','MAJOR_TRAP','HIGH_DIFFICULTY','SKILL_DEMAND')),
+            tag TEXT NOT NULL DEFAULT '',
+            claim_text TEXT NOT NULL,
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            importance INTEGER NOT NULL DEFAULT 2 CHECK (importance BETWEEN 1 AND 3),
+            provenance TEXT NOT NULL CHECK (provenance IN ('ACTUAL_EXAM','OFFICIAL_SOURCE','EXPERT_ANALYSIS','WIKI_SYNTHESIS')),
+            expert TEXT NOT NULL DEFAULT '',
+            agreement INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'AI_PROPOSED' CHECK (status IN ('AI_PROPOSED','TEACHER_CONFIRMED','TEACHER_EDITED','REJECTED')),
+            updated_by TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT '',
+            FOREIGN KEY (exam_id) REFERENCES csat_exams(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_dna_claims_exam ON csat_dna_claims(exam_id, claim_type)')
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_dna_comparisons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exam_a_id INTEGER NOT NULL,
+            exam_b_id INTEGER NOT NULL,
+            tag TEXT NOT NULL,
+            verdict TEXT NOT NULL CHECK (verdict IN ('REPEATED','STRENGTHENED','REDUCED','NEW','CHANGED')),
+            claim_text TEXT NOT NULL,
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            provenance TEXT NOT NULL CHECK (provenance IN ('ACTUAL_EXAM','OFFICIAL_SOURCE','EXPERT_ANALYSIS','WIKI_SYNTHESIS')),
+            expert TEXT NOT NULL DEFAULT '',
+            agreement INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'AI_PROPOSED' CHECK (status IN ('AI_PROPOSED','TEACHER_CONFIRMED','TEACHER_EDITED','REJECTED')),
+            updated_by TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT '',
+            FOREIGN KEY (exam_a_id) REFERENCES csat_exams(id),
+            FOREIGN KEY (exam_b_id) REFERENCES csat_exams(id),
+            UNIQUE (exam_a_id, exam_b_id, tag, verdict)
+        )''')
         conn.execute('''CREATE TABLE IF NOT EXISTS ai_ab_evaluations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             school TEXT NOT NULL DEFAULT '', grade TEXT NOT NULL DEFAULT '', exam TEXT NOT NULL DEFAULT '',
@@ -495,6 +579,10 @@ def migrate_schema():
         if 'question_id' not in wrong_cols:
             conn.execute('ALTER TABLE csat_wrong_answers ADD COLUMN question_id INTEGER')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_question ON csat_wrong_answers(question_id)')
+        question_cols = {row['name'] for row in conn.execute("PRAGMA table_info(csat_questions)").fetchall()}
+        if 'exam_id' not in question_cols:
+            conn.execute('ALTER TABLE csat_questions ADD COLUMN exam_id INTEGER')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_questions_exam ON csat_questions(exam_id, question_no)')
         gq_cols = {row['name'] for row in conn.execute("PRAGMA table_info(generated_questions)").fetchall()}
         if 'test_id' not in gq_cols:
             conn.execute("ALTER TABLE generated_questions ADD COLUMN test_id INTEGER")
@@ -4998,6 +5086,548 @@ def export_csat_exam_html(ids: str = '', exam_kind: Optional[Literal['half', 'fu
     for row in rows:
         item = dict(row); item['choices'] = json.loads(item['choices_json']); item['type_mismatch'] = bool(item['type_mismatch']); items.append(item)
     return render_csat_problem_document(items, title, 'full' if exam_kind == 'full' else 'compact')
+
+
+# ==================================================================================
+# 수능영어 Wiki — 평가원 기출(csat_exams)과 출제 DNA
+# 내신Wiki의 학교 digital_twin DNA와 저장소를 분리한다. DNA는 항상 CLAIM+EVIDENCE이고,
+# provenance로 ACTUAL_EXAM(실제 문항 근거) / OFFICIAL_SOURCE(평가원 공식 해설) /
+# EXPERT_ANALYSIS(강사 공개 분석) / WIKI_SYNTHESIS(위키 종합)를 구분한다 (§14: 단정 금지).
+# 쓰기 경로는 서명 identity의 ADMIN 역할만 허용한다 (?role=ADMIN 표시값이 아니라 JWT 역할).
+# ==================================================================================
+
+CSAT_EXAM_TYPES = {'CSAT', 'JUNE_MOCK', 'SEPTEMBER_MOCK'}
+CSAT_RESOURCE_TYPES = {'QUESTION_PAPER', 'ANSWER', 'ANALYSIS', 'TEACHER_NOTE'}
+CSAT_DNA_DIMENSIONS = {
+    'MAIN_IDEA', 'DETAIL', 'VOCABULARY', 'SYNTAX', 'REFERENCE', 'COHESION', 'LOGIC', 'INFERENCE',
+    'PARAGRAPH_STRUCTURE', 'DISCOURSE_MARKER', 'CAUSE_EFFECT', 'CONTRAST', 'EXAMPLE_GENERALIZATION',
+    'ABSTRACT_CONCEPT', 'DISTRACTOR_TRAP', 'TIME_PRESSURE',
+}
+CSAT_TRAP_TAGS = {
+    'WORD_ECHO', 'PARTIAL_TRUE', 'TRUE_NOT_ANSWER', 'SCOPE_EXPANSION', 'CAUSAL_REVERSAL',
+    'SUBJECT_SHIFT', 'EXTREME_GENERALIZATION', 'OPPOSITE_MEANING', 'DETAIL_AS_MAIN', 'NO_SUPPORT',
+}
+CSAT_DNA_PROVENANCE = {'ACTUAL_EXAM', 'OFFICIAL_SOURCE', 'EXPERT_ANALYSIS', 'WIKI_SYNTHESIS'}
+CSAT_DNA_STATUSES = {'AI_PROPOSED', 'TEACHER_CONFIRMED', 'TEACHER_EDITED', 'REJECTED'}
+CSAT_DNA_CLAIM_TYPES = {'CORE_TRAIT', 'REPEATED_SKILL', 'MAJOR_TRAP', 'HIGH_DIFFICULTY', 'SKILL_DEMAND'}
+CSAT_COMPARISON_VERDICTS = {'REPEATED', 'STRENGTHENED', 'REDUCED', 'NEW', 'CHANGED'}
+
+
+class CsatExamCreate(BaseModel):
+    exam_year: int
+    exam_type: str
+    subject: str = 'ENGLISH'
+    exam_date: str = ''
+    label: str = ''
+
+
+class CsatExamQuestionIn(BaseModel):
+    question_no: int
+    csat_type_id: str = ''
+    csat_type_name: str = ''
+    passage: str = ''
+    prompt: str = ''
+    choices: list[str] = []
+    answer: str = ''
+    solution: str = ''
+    footnote: str = ''
+    group_label: str = ''
+    source_reference: str = ''
+
+
+class CsatExamQuestionsImport(BaseModel):
+    questions: list[CsatExamQuestionIn]
+    source_filename: str = 'csat-exam-questions'
+
+
+class CsatDnaWrite(BaseModel):
+    entry_type: str
+    tag: str
+    choice_no: Optional[int] = None
+    note: str = ''
+    evidence: list[dict] = []
+    importance: int = 2
+    provenance: str = 'ACTUAL_EXAM'
+    expert: str = ''
+    agreement: bool = False
+
+
+class CsatDnaUpdate(BaseModel):
+    tag: Optional[str] = None
+    choice_no: Optional[int] = None
+    note: Optional[str] = None
+    evidence: Optional[list[dict]] = None
+    importance: Optional[int] = Field(default=None, ge=1, le=3)
+    provenance: Optional[str] = None
+    expert: Optional[str] = None
+    agreement: Optional[bool] = None
+    status: Optional[str] = None
+
+
+class CsatDnaClaimWrite(BaseModel):
+    claim_type: str
+    tag: str = ''
+    claim_text: str
+    evidence: list[dict] = []
+    importance: int = Field(default=2, ge=1, le=3)
+    provenance: str = 'WIKI_SYNTHESIS'
+    expert: str = ''
+    agreement: bool = False
+
+
+class CsatDnaClaimUpdate(BaseModel):
+    claim_type: Optional[str] = None
+    tag: Optional[str] = None
+    claim_text: Optional[str] = None
+    evidence: Optional[list[dict]] = None
+    importance: Optional[int] = Field(default=None, ge=1, le=3)
+    provenance: Optional[str] = None
+    expert: Optional[str] = None
+    agreement: Optional[bool] = None
+    status: Optional[str] = None
+
+
+class CsatDnaComparisonWrite(BaseModel):
+    exam_a_id: int
+    exam_b_id: int
+    tag: str
+    verdict: str
+    claim_text: str
+    evidence: list[dict] = []
+    provenance: str = 'WIKI_SYNTHESIS'
+    expert: str = ''
+    agreement: bool = False
+
+
+class CsatDnaComparisonUpdate(BaseModel):
+    tag: Optional[str] = None
+    verdict: Optional[str] = None
+    claim_text: Optional[str] = None
+    evidence: Optional[list[dict]] = None
+    provenance: Optional[str] = None
+    expert: Optional[str] = None
+    agreement: Optional[bool] = None
+    status: Optional[str] = None
+
+
+def _require_csat_admin(request: Request):
+    identity = getattr(request.state, 'wiki_identity', None)
+    if identity is None or not wiki_workspace.is_workspace_admin(identity):
+        raise HTTPException(status_code=403, detail='평가원 DNA 등록·관리는 ADMIN만 가능합니다.')
+    return identity
+
+
+def _csat_evidence_issues(evidence: list[dict]) -> list[str]:
+    issues = []
+    for index, item in enumerate(evidence):
+        if not isinstance(item, dict):
+            issues.append(f'evidence[{index}]는 객체여야 합니다.')
+            continue
+        number = item.get('question_no')
+        if not isinstance(number, int) or not 1 <= number <= 99:
+            issues.append(f'evidence[{index}].question_no가 유효하지 않습니다.')
+        if not item.get('exam_id') and not (item.get('exam_year') and item.get('exam_type')):
+            issues.append(f'evidence[{index}]에는 exam_id 또는 exam_year+exam_type이 필요합니다.')
+    return issues
+
+
+def _csat_dna_validate(entry: CsatDnaWrite, entry_type: str, tag: str, choice_no, provenance: str, expert: str):
+    if entry_type not in {'DNA', 'TRAP'}:
+        raise HTTPException(status_code=400, detail='entry_type은 DNA 또는 TRAP이어야 합니다.')
+    allowed = CSAT_DNA_DIMENSIONS if entry_type == 'DNA' else CSAT_TRAP_TAGS
+    if tag not in allowed:
+        raise HTTPException(status_code=400, detail=f'{entry_type} 태그가 분류 체계에 없습니다: {tag}')
+    if entry_type == 'TRAP' and not (isinstance(choice_no, int) and 1 <= choice_no <= 7):
+        raise HTTPException(status_code=400, detail='TRAP은 오답 선지 번호(choice_no 1~7)가 필요합니다.')
+    if provenance not in CSAT_DNA_PROVENANCE:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 provenance입니다: {provenance}')
+    if provenance == 'EXPERT_ANALYSIS' and not expert.strip():
+        raise HTTPException(status_code=400, detail='강사 분석에는 expert(예: 조정식, 이명학)을 기록해야 합니다.')
+    if provenance == 'ACTUAL_EXAM' and not entry.evidence:
+        raise HTTPException(status_code=400, detail='ACTUAL_EXAM 근거 문항(evidence)이 필요합니다.')
+
+
+def _csat_dna_response(row: sqlite3.Row) -> dict:
+    item = dict(row)
+    item['evidence'] = json.loads(item.pop('evidence_json') or '[]')
+    item['agreement'] = bool(item['agreement'])
+    return item
+
+
+def _csat_exam_row(conn, exam_id: int):
+    row = conn.execute('SELECT * FROM csat_exams WHERE id=?', (exam_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='평가를 찾을 수 없습니다.')
+    return row
+
+
+def _csat_exam_response(conn, row) -> dict:
+    item = dict(row)
+    item['question_count'] = conn.execute('SELECT COUNT(*) c FROM csat_questions WHERE exam_id=?', (row['id'],)).fetchone()['c']
+    item['resource_count'] = conn.execute('SELECT COUNT(*) c FROM csat_exam_resources WHERE exam_id=?', (row['id'],)).fetchone()['c']
+    item['dna_count'] = conn.execute("SELECT COUNT(*) c FROM csat_question_dna WHERE exam_id=? AND status<>'REJECTED'", (row['id'],)).fetchone()['c']
+    item['claim_count'] = conn.execute("SELECT COUNT(*) c FROM csat_dna_claims WHERE exam_id=? AND status<>'REJECTED'", (row['id'],)).fetchone()['c']
+    return item
+
+
+@app.get('/api/csat/dna/taxonomy')
+def csat_dna_taxonomy():
+    return {'dimensions': sorted(CSAT_DNA_DIMENSIONS), 'traps': sorted(CSAT_TRAP_TAGS),
+            'provenance': sorted(CSAT_DNA_PROVENANCE), 'statuses': sorted(CSAT_DNA_STATUSES),
+            'verdicts': sorted(CSAT_COMPARISON_VERDICTS), 'claim_types': sorted(CSAT_DNA_CLAIM_TYPES),
+            'exam_types': sorted(CSAT_EXAM_TYPES), 'resource_types': sorted(CSAT_RESOURCE_TYPES)}
+
+
+@app.post('/api/csat/exams', status_code=201)
+def create_csat_exam(payload: CsatExamCreate, request: Request):
+    _require_csat_admin(request)
+    if payload.exam_type not in CSAT_EXAM_TYPES:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 시험 유형입니다: {payload.exam_type}')
+    if not 2000 <= payload.exam_year <= 2100:
+        raise HTTPException(status_code=400, detail='exam_year(학년도)를 확인해 주세요.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        duplicate = conn.execute('SELECT id FROM csat_exams WHERE exam_year=? AND exam_type=? AND subject=?',
+                                 (payload.exam_year, payload.exam_type, payload.subject)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail=f'이미 등록된 시험입니다. (exam_id={duplicate["id"]})')
+        cursor = conn.execute('INSERT INTO csat_exams(exam_year,exam_type,subject,exam_date,label,created_at) VALUES(?,?,?,?,?,?)',
+                              (payload.exam_year, payload.exam_type, payload.subject, payload.exam_date, payload.label, now))
+        row = conn.execute('SELECT * FROM csat_exams WHERE id=?', (cursor.lastrowid,)).fetchone()
+        return _csat_exam_response(conn, row)
+
+
+@app.get('/api/csat/exams')
+def list_csat_exams():
+    with get_db() as conn:
+        rows = conn.execute('SELECT * FROM csat_exams ORDER BY exam_year DESC, exam_type').fetchall()
+        return [_csat_exam_response(conn, row) for row in rows]
+
+
+@app.get('/api/csat/exams/{exam_id}')
+def get_csat_exam(exam_id: int):
+    with get_db() as conn:
+        row = _csat_exam_row(conn, exam_id)
+        item = _csat_exam_response(conn, row)
+        item['resources'] = [dict(r) for r in conn.execute(
+            'SELECT id,resource_type,original_name,original_type,created_at FROM csat_exam_resources WHERE exam_id=? ORDER BY resource_type,id', (exam_id,)).fetchall()]
+        return item
+
+
+@app.post('/api/csat/exams/{exam_id}/resources', status_code=201)
+async def upload_csat_exam_resource(exam_id: int, request: Request, resource_type: str = Form(...), file: UploadFile = File(...)):
+    _require_csat_admin(request)
+    if resource_type not in CSAT_RESOURCE_TYPES:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 자료 종류입니다: {resource_type}')
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail='빈 파일은 업로드할 수 없습니다.')
+    if len(data) > 30 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='평가 자료는 30MB 이하여야 합니다.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        _csat_exam_row(conn, exam_id)
+        cursor = conn.execute('INSERT INTO csat_exam_resources(exam_id,resource_type,original_name,original_type,original_blob,created_at) VALUES(?,?,?,?,?,?)',
+                              (exam_id, resource_type, file.filename or 'original', file.content_type or 'application/octet-stream', data, now))
+    return {'id': cursor.lastrowid, 'exam_id': exam_id, 'resource_type': resource_type,
+            'original_name': file.filename or 'original', 'size': len(data)}
+
+
+@app.get('/api/csat/exam-resources/{resource_id}/original')
+def open_csat_exam_resource(resource_id: int):
+    with get_db() as conn:
+        row = conn.execute('SELECT original_blob,original_type,original_name FROM csat_exam_resources WHERE id=?', (resource_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        safe_name = re.sub(r'[^0-9A-Za-z._-]', '_', row['original_name'])
+        return Response(row['original_blob'], media_type=row['original_type'], headers={'Content-Disposition': f'inline; filename="{safe_name}"'})
+
+
+@app.delete('/api/csat/exam-resources/{resource_id}')
+def delete_csat_exam_resource(resource_id: int, request: Request):
+    _require_csat_admin(request)
+    with get_db() as conn:
+        row = conn.execute('SELECT id FROM csat_exam_resources WHERE id=?', (resource_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('DELETE FROM csat_exam_resources WHERE id=?', (resource_id,))
+    return {'deleted_resource_id': resource_id}
+
+
+@app.post('/api/csat/exams/{exam_id}/questions', status_code=201)
+def import_csat_exam_questions(exam_id: int, payload: CsatExamQuestionsImport, request: Request):
+    """평가 단위로 구조화된 문항(문제+정답 연결)을 등록한다. 원본 회차 source를 만들고 csat_questions에 exam_id로 연결한다."""
+    _require_csat_admin(request)
+    if not payload.questions:
+        raise HTTPException(status_code=400, detail='등록할 문항이 없습니다.')
+    numbers = [question.question_no for question in payload.questions]
+    if len(set(numbers)) != len(numbers):
+        raise HTTPException(status_code=400, detail='문항번호가 중복되었습니다.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        exam = _csat_exam_row(conn, exam_id)
+        existing = [row['question_no'] for row in conn.execute('SELECT question_no FROM csat_questions WHERE exam_id=?', (exam_id,)).fetchall()]
+        if existing:
+            raise HTTPException(status_code=409, detail=f'이 시험에는 이미 문항이 등록되어 있습니다. (question_no: {sorted(existing)[:5]}...)')
+        source = conn.execute('INSERT INTO csat_question_sources(exam_kind,source_filename,exam_metadata_json,parser,raw_text,created_at,source_hash,original_stored,owner_scope) VALUES(?,?,?,?,?,?,?,?,?)',
+                              ('full', payload.source_filename,
+                               json.dumps({'source_kind': 'full', 'source_title': exam['label'] or f"{exam['exam_year']} {exam['exam_type']}",
+                                           'source_year': str(exam['exam_year']), 'exam_id': exam_id}, ensure_ascii=False),
+                               'csat-exam-v1', '', now, '', 0, 'shared'))
+        saved = []
+        for question in payload.questions:
+            type_id, type_name = question.csat_type_id, question.csat_type_name
+            if not type_id:
+                detected = csat_type_for_number(question.question_no)
+                type_id, type_name = detected['id'], detected['name']
+            cursor = conn.execute('''INSERT INTO csat_questions
+                (source_id, exam_kind, question_no, csat_type_id, csat_type_name, passage, prompt, choices_json,
+                 answer, solution, footnote, group_label, source_reference, type_mismatch, mismatch_reason, raw_json, created_at, exam_id)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,'',?,?)''',
+                (source.lastrowid, 'full', question.question_no, type_id, type_name, question.passage, question.prompt,
+                 json.dumps(question.choices, ensure_ascii=False), question.answer, question.solution, question.footnote,
+                 question.group_label, question.source_reference,
+                 json.dumps(question.model_dump(), ensure_ascii=False), now, exam_id))
+            saved.append(cursor.lastrowid)
+    return {'exam_id': exam_id, 'source_id': source.lastrowid, 'question_ids': saved}
+
+
+@app.get('/api/csat/exams/{exam_id}/questions')
+def list_csat_exam_questions(exam_id: int, from_no: Optional[int] = None, to_no: Optional[int] = None):
+    with get_db() as conn:
+        _csat_exam_row(conn, exam_id)
+        filters, values = ['q.exam_id=?'], [exam_id]
+        if from_no is not None:
+            filters.append('q.question_no>=?'); values.append(from_no)
+        if to_no is not None:
+            filters.append('q.question_no<=?'); values.append(to_no)
+        rows = conn.execute(f'''SELECT q.* FROM csat_questions q WHERE {' AND '.join(filters)} ORDER BY q.question_no''', values).fetchall()
+        result = []
+        for row in rows:
+            item = _csat_question_response(row)
+            item['dna'] = [_csat_dna_response(d) for d in conn.execute(
+                "SELECT * FROM csat_question_dna WHERE question_id=? AND status<>'REJECTED' ORDER BY entry_type, importance DESC, id", (row['id'],)).fetchall()]
+            result.append(item)
+        return result
+
+
+@app.post('/api/csat/questions/{question_id}/dna', status_code=201)
+def create_csat_question_dna(question_id: int, payload: CsatDnaWrite, request: Request):
+    identity = _require_csat_admin(request)
+    _csat_dna_validate(payload, payload.entry_type, payload.tag, payload.choice_no, payload.provenance, payload.expert)
+    issues = _csat_evidence_issues(payload.evidence)
+    if issues:
+        raise HTTPException(status_code=400, detail='; '.join(issues))
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        question = conn.execute('SELECT id, exam_id, question_no FROM csat_questions WHERE id=?', (question_id,)).fetchone()
+        if not question:
+            raise HTTPException(status_code=404, detail='수능 문항을 찾을 수 없습니다.')
+        duplicate = conn.execute('SELECT id FROM csat_question_dna WHERE question_id=? AND entry_type=? AND tag=? AND IFNULL(choice_no,0)=IFNULL(?,0)',
+                                 (question_id, payload.entry_type, payload.tag, payload.choice_no)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail=f'같은 태그의 DNA 기록이 이미 있습니다. (dna_id={duplicate["id"]})')
+        cursor = conn.execute('''INSERT INTO csat_question_dna
+            (question_id, exam_id, entry_type, tag, choice_no, note, evidence_json, importance, provenance, expert, agreement, status, updated_by, created_at, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (question_id, question['exam_id'], payload.entry_type, payload.tag, payload.choice_no, payload.note,
+             json.dumps(payload.evidence, ensure_ascii=False), payload.importance, payload.provenance, payload.expert,
+             int(payload.agreement), 'AI_PROPOSED', identity.login_id, now, now))
+        row = conn.execute('SELECT * FROM csat_question_dna WHERE id=?', (cursor.lastrowid,)).fetchone()
+    return _csat_dna_response(row)
+
+
+@app.get('/api/csat/questions/{question_id}/dna')
+def list_csat_question_dna(question_id: int):
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM csat_question_dna WHERE question_id=? AND status<>'REJECTED' ORDER BY entry_type, importance DESC, id", (question_id,)).fetchall()
+    return [_csat_dna_response(row) for row in rows]
+
+
+def _apply_dna_update(conn, table: str, record_id: int, payload, identity, validate_tag):
+    row = conn.execute(f'SELECT * FROM {table} WHERE id=?', (record_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='DNA 기록을 찾을 수 없습니다.')
+    columns = {column[1] for column in conn.execute(f'PRAGMA table_info({table})').fetchall()}
+    data = {}
+    for key, value in payload.model_dump().items():
+        if value is None:
+            continue
+        if key == 'evidence':
+            issues = _csat_evidence_issues(value)
+            if issues:
+                raise HTTPException(status_code=400, detail='; '.join(issues))
+            data['evidence_json'] = json.dumps(value, ensure_ascii=False)
+        elif key == 'agreement':
+            data['agreement'] = int(value)
+        elif key in columns:
+            data[key] = value
+    if 'status' in data and data['status'] not in CSAT_DNA_STATUSES:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 상태입니다: {data["status"]}')
+    if 'provenance' in data and data['provenance'] not in CSAT_DNA_PROVENANCE:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 provenance입니다: {data["provenance"]}')
+    if 'tag' in data:
+        validate_tag(data['tag'], row)
+    if 'verdict' in data and data['verdict'] not in CSAT_COMPARISON_VERDICTS:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 비교 판정입니다: {data["verdict"]}')
+    if 'importance' in data and not 1 <= int(data['importance']) <= 3:
+        raise HTTPException(status_code=400, detail='importance는 1~3이어야 합니다.')
+    data['updated_by'] = identity.login_id
+    data['updated_at'] = datetime.now().isoformat()
+    conn.execute(f'UPDATE {table} SET {", ".join(f"{key}=?" for key in data)} WHERE id=?', [*data.values(), record_id])
+    return conn.execute(f'SELECT * FROM {table} WHERE id=?', (record_id,)).fetchone()
+
+
+@app.put('/api/csat/dna/{dna_id}')
+def update_csat_question_dna(dna_id: int, payload: CsatDnaUpdate, request: Request):
+    identity = _require_csat_admin(request)
+    def validate_tag(tag, row):
+        allowed = CSAT_DNA_DIMENSIONS if row['entry_type'] == 'DNA' else CSAT_TRAP_TAGS
+        if tag not in allowed:
+            raise HTTPException(status_code=400, detail=f'{row["entry_type"]} 태그가 분류 체계에 없습니다: {tag}')
+    with get_db() as conn:
+        row = _apply_dna_update(conn, 'csat_question_dna', dna_id, payload, identity, validate_tag)
+    return _csat_dna_response(row)
+
+
+@app.delete('/api/csat/dna/{dna_id}')
+def delete_csat_question_dna(dna_id: int, request: Request):
+    _require_csat_admin(request)
+    with get_db() as conn:
+        if not conn.execute('SELECT id FROM csat_question_dna WHERE id=?', (dna_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='DNA 기록을 찾을 수 없습니다.')
+        conn.execute('DELETE FROM csat_question_dna WHERE id=?', (dna_id,))
+    return {'deleted_dna_id': dna_id}
+
+
+@app.get('/api/csat/exams/{exam_id}/dna')
+def get_csat_exam_dna(exam_id: int):
+    """시험별 DNA 집계: 태그 → 근거 문항(CLAIM+EVIDENCE), 문항별 태그, 함정. REJECTED는 제외."""
+    with get_db() as conn:
+        exam = _csat_exam_row(conn, exam_id)
+        dna_rows = conn.execute('''SELECT d.*, q.question_no FROM csat_question_dna d
+            JOIN csat_questions q ON q.id=d.question_id
+            WHERE d.exam_id=? AND d.status<>'REJECTED' ORDER BY q.question_no, d.entry_type, d.importance DESC''', (exam_id,)).fetchall()
+        claim_rows = conn.execute("SELECT * FROM csat_dna_claims WHERE exam_id=? AND status<>'REJECTED' ORDER BY claim_type, importance DESC, id", (exam_id,)).fetchall()
+    by_tag: dict = {}
+    per_question: dict = {}
+    for row in dna_rows:
+        item = _csat_dna_response(row)
+        bucket = by_tag.setdefault((row['entry_type'], row['tag']), {'entry_type': row['entry_type'], 'tag': row['tag'], 'question_nos': [], 'notes': []})
+        bucket['question_nos'].append(row['question_no'])
+        if row['note']:
+            bucket['notes'].append({'question_no': row['question_no'], 'note': row['note'], 'provenance': row['provenance'], 'expert': row['expert']})
+        per_question.setdefault(row['question_no'], []).append(item)
+    return {'exam': dict(exam),
+            'tags': sorted(by_tag.values(), key=lambda t: (t['entry_type'], -len(set(t['question_nos'])))),
+            'traps': sorted([t for t in by_tag.values() if t['entry_type'] == 'TRAP'], key=lambda t: -len(set(t['question_nos']))),
+            'per_question': [{'question_no': number, 'entries': entries} for number, entries in sorted(per_question.items())],
+            'claims': [_csat_dna_response(row) for row in claim_rows]}
+
+
+@app.post('/api/csat/exams/{exam_id}/dna-claims', status_code=201)
+def create_csat_dna_claim(exam_id: int, payload: CsatDnaClaimWrite, request: Request):
+    identity = _require_csat_admin(request)
+    if payload.claim_type not in CSAT_DNA_CLAIM_TYPES:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 claim 종류입니다: {payload.claim_type}')
+    if not payload.claim_text.strip():
+        raise HTTPException(status_code=400, detail='claim_text는 필수입니다.')
+    if payload.tag and payload.tag not in CSAT_DNA_DIMENSIONS | CSAT_TRAP_TAGS:
+        raise HTTPException(status_code=400, detail=f'claim 태그가 분류 체계에 없습니다: {payload.tag}')
+    if payload.provenance not in CSAT_DNA_PROVENANCE:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 provenance입니다: {payload.provenance}')
+    if payload.provenance in {'ACTUAL_EXAM', 'WIKI_SYNTHESIS'}:
+        issues = _csat_evidence_issues(payload.evidence)
+        if not payload.evidence or issues:
+            raise HTTPException(status_code=400, detail='DNA는 CLAIM+EVIDENCE 구조여야 합니다. 근거 문항(evidence)이 필요합니다. ' + '; '.join(issues))
+    if payload.provenance == 'EXPERT_ANALYSIS' and not payload.expert.strip():
+        raise HTTPException(status_code=400, detail='강사 분석에는 expert(예: 조정식, 이명학)을 기록해야 합니다.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        _csat_exam_row(conn, exam_id)
+        cursor = conn.execute('''INSERT INTO csat_dna_claims
+            (exam_id, claim_type, tag, claim_text, evidence_json, importance, provenance, expert, agreement, status, updated_by, created_at, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (exam_id, payload.claim_type, payload.tag, payload.claim_text, json.dumps(payload.evidence, ensure_ascii=False),
+             payload.importance, payload.provenance, payload.expert, int(payload.agreement), 'AI_PROPOSED', identity.login_id, now, now))
+        row = conn.execute('SELECT * FROM csat_dna_claims WHERE id=?', (cursor.lastrowid,)).fetchone()
+    return _csat_dna_response(row)
+
+
+@app.put('/api/csat/dna-claims/{claim_id}')
+def update_csat_dna_claim(claim_id: int, payload: CsatDnaClaimUpdate, request: Request):
+    identity = _require_csat_admin(request)
+    def validate_tag(tag, row):
+        if tag and tag not in CSAT_DNA_DIMENSIONS | CSAT_TRAP_TAGS:
+            raise HTTPException(status_code=400, detail=f'claim 태그가 분류 체계에 없습니다: {tag}')
+    with get_db() as conn:
+        row = _apply_dna_update(conn, 'csat_dna_claims', claim_id, payload, identity, validate_tag)
+    return _csat_dna_response(row)
+
+
+@app.delete('/api/csat/dna-claims/{claim_id}')
+def delete_csat_dna_claim(claim_id: int, request: Request):
+    _require_csat_admin(request)
+    with get_db() as conn:
+        if not conn.execute('SELECT id FROM csat_dna_claims WHERE id=?', (claim_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='DNA claim을 찾을 수 없습니다.')
+        conn.execute('DELETE FROM csat_dna_claims WHERE id=?', (claim_id,))
+    return {'deleted_claim_id': claim_id}
+
+
+@app.post('/api/csat/dna-comparisons', status_code=201)
+def create_csat_dna_comparison(payload: CsatDnaComparisonWrite, request: Request):
+    identity = _require_csat_admin(request)
+    if payload.exam_a_id == payload.exam_b_id:
+        raise HTTPException(status_code=400, detail='서로 다른 두 시험을 비교해야 합니다.')
+    if payload.verdict not in CSAT_COMPARISON_VERDICTS:
+        raise HTTPException(status_code=400, detail=f'알 수 없는 비교 판정입니다: {payload.verdict}')
+    if not payload.claim_text.strip():
+        raise HTTPException(status_code=400, detail='claim_text는 필수입니다.')
+    if payload.tag and payload.tag not in CSAT_DNA_DIMENSIONS | CSAT_TRAP_TAGS:
+        raise HTTPException(status_code=400, detail=f'비교 태그가 분류 체계에 없습니다: {payload.tag}')
+    issues = _csat_evidence_issues(payload.evidence)
+    if not payload.evidence or issues:
+        raise HTTPException(status_code=400, detail='비교도 CLAIM+EVIDENCE — 근거 문항이 필요합니다. ' + '; '.join(issues))
+    if payload.provenance == 'EXPERT_ANALYSIS' and not payload.expert.strip():
+        raise HTTPException(status_code=400, detail='강사 분석에는 expert(예: 조정식, 이명학)을 기록해야 합니다.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        _csat_exam_row(conn, payload.exam_a_id)
+        _csat_exam_row(conn, payload.exam_b_id)
+        duplicate = conn.execute('SELECT id FROM csat_dna_comparisons WHERE exam_a_id=? AND exam_b_id=? AND tag=? AND verdict=?',
+                                 (payload.exam_a_id, payload.exam_b_id, payload.tag, payload.verdict)).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail=f'같은 조건의 비교 기록이 있습니다. (comparison_id={duplicate["id"]})')
+        cursor = conn.execute('''INSERT INTO csat_dna_comparisons
+            (exam_a_id, exam_b_id, tag, verdict, claim_text, evidence_json, provenance, expert, agreement, status, updated_by, created_at, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (payload.exam_a_id, payload.exam_b_id, payload.tag, payload.verdict, payload.claim_text,
+             json.dumps(payload.evidence, ensure_ascii=False), payload.provenance, payload.expert, int(payload.agreement),
+             'AI_PROPOSED', identity.login_id, now, now))
+        row = conn.execute('SELECT * FROM csat_dna_comparisons WHERE id=?', (cursor.lastrowid,)).fetchone()
+    return _csat_dna_response(row)
+
+
+@app.get('/api/csat/dna-comparisons')
+def list_csat_dna_comparisons(exam_a_id: int, exam_b_id: int):
+    with get_db() as conn:
+        _csat_exam_row(conn, exam_a_id)
+        _csat_exam_row(conn, exam_b_id)
+        rows = conn.execute('''SELECT * FROM csat_dna_comparisons WHERE exam_a_id=? AND exam_b_id=? AND status<>'REJECTED'
+            ORDER BY verdict, tag, id''', (exam_a_id, exam_b_id)).fetchall()
+    return [_csat_dna_response(row) for row in rows]
+
+
+@app.put('/api/csat/dna-comparisons/{comparison_id}')
+def update_csat_dna_comparison(comparison_id: int, payload: CsatDnaComparisonUpdate, request: Request):
+    identity = _require_csat_admin(request)
+    def validate_tag(tag, row):
+        if tag and tag not in CSAT_DNA_DIMENSIONS | CSAT_TRAP_TAGS:
+            raise HTTPException(status_code=400, detail=f'비교 태그가 분류 체계에 없습니다: {tag}')
+    with get_db() as conn:
+        row = _apply_dna_update(conn, 'csat_dna_comparisons', comparison_id, payload, identity, validate_tag)
+    return _csat_dna_response(row)
 
 
 PASSAGE_MEMORY_SCHEMA = {

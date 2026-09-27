@@ -15,6 +15,7 @@ import CategoryHub from './components/CategoryHub'
 import InsightRecorder from './components/InsightRecorder'
 import AssistantComposer, { AssistantMessage } from './components/AssistantComposer'
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
+import CsatWikiV1 from './components/CsatWikiV1'
 import NaesinWikiV1 from './components/NaesinWikiV1'
 import GeneratedTestBrowser from './components/GeneratedTestBrowser'
 import ManualQuestionSave from './components/ManualQuestionSave'
@@ -28,7 +29,7 @@ import { storageKey } from './lib/workspaceStorage'
 import './styles/generator.css'
 import './styles/chrome-workbench.css'
 
-export type Page = 'state' | 'create' | 'student' | 'intelligence' | 'home' | 'chrometransform' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'wrongrestore' | 'wronghub' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
+export type Page = 'state' | 'csatwiki' | 'create' | 'student' | 'intelligence' | 'home' | 'chrometransform' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'wrongrestore' | 'wronghub' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
 
 // role=ADMIN 같은 query parameter는 권한 컨텍스트일 뿐 Wiki의 초기 화면을 바꾸지 않는다.
 const initialPage = (): Page => 'state'
@@ -53,6 +54,7 @@ const menu: { id: Page; label: string; icon: string }[] = [
 
 const descriptions: Record<Page, string> = {
   state: '현재 목표와 BuildIt이 기억하고 있는 자료를 확인하고 다음 작업을 시작합니다.',
+  csatwiki: '평가원 기출과 출제 DNA를 확인하는 수능영어 Wiki입니다.',
   create: '필요한 제작 작업 하나를 선택합니다.',
   student: '학생 오답 기록과 누적 자료 작업을 선택합니다.',
   intelligence: '수업 판단과 출제 기억을 기록합니다.',
@@ -144,7 +146,7 @@ export default function App() {
     } finally { setAssistantBusy(false) }
   }
 
-  const isHome = page === 'state'
+  const isHome = page === 'state' || page === 'csatwiki'
   const isHub = page === 'create' || page === 'student' || page === 'intelligence'
   const parentHub: Page = ['wrongextract', 'wrongrestore', 'wrongnote', 'wronghub'].includes(page) ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
   return <div className={`tool-shell${isHome ? ' wiki-home-shell' : ''}${isHub ? ' category-shell' : ''}`}>
@@ -152,6 +154,7 @@ export default function App() {
     <main className={`tool-main${isHome ? ' wiki-home-main' : ''}${isHub ? ' category-main' : ''}`}><AdminWorkspaceSelector />{!isHome && !isHub && <header className="tool-header"><div><h1>{menu.find(item => item.id === page)?.label || (page === 'brain' ? '수업 인사이트' : '')}</h1><p>{descriptions[page]}</p>{storageLabels[page] && <p className="storage-location">저장 위치 · {storageLabels[page]}</p>}</div><span className="context-chip">{page === 'database' ? `저장 ${questions.length}문항 · 선택 ${selectedExamIds.length}개` : ''}</span></header>}
       {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
       {page === 'state' && <><button className="wiki-home-settings" onClick={() => setSettingsOpen(true)} aria-label="AI 설정 열기">⚙ 설정</button><NaesinWikiV1 onNavigate={setPage} /></>}
+      {page === 'csatwiki' && <CsatWikiV1 onNavigate={setPage} />}
       {page === 'create' && <CategoryHub hub="create" onNavigate={setPage} />}
       {page === 'student' && <CategoryHub hub="student" onNavigate={setPage} />}
       {page === 'intelligence' && <CategoryHub hub="intelligence" onNavigate={setPage} />}

@@ -28,7 +28,9 @@ OWNED_TABLES = (
     "students", "student_wrong_notes", "educator_insights", "exam_material_sets",
     "final_deliverables", "csat_question_sources", "csat_questions",
     "csat_wrong_answers", "csat_assessments", "csat_assessment_items",
-    "csat_question_usage", "source_materials", "generated_tests", "ai_ab_evaluations",
+    "csat_question_usage", "csat_exams", "csat_exam_resources",
+    "csat_question_dna", "csat_dna_claims", "csat_dna_comparisons",
+    "source_materials", "generated_tests", "ai_ab_evaluations",
     "textbook_materials", "textbook_questions", "weekly_exam_sets", "weekly_exam_audit",
     "wrong_mock_rounds", "wrong_mock_photos", "wrong_mock_audit",
 )

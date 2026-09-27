@@ -3848,6 +3848,55 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - Explanation: 크림색 A4, 금색 강조, 2단 해설.
 - 두 HTML은 같은 `csat_assessment_items`에서 동일 `data-question-id`와 `data-day-no` 순서를 출력한다.
 
+## 수능영어 Wiki V1: 평가원 기출과 출제 DNA
+
+내신Wiki의 학교 `digital_twin` DNA와 저장소를 분리한 평가원 중심 API다. SOURCE(원본 문제·정답)와 ANALYSIS(DNA)를 구분하고, 모든 DNA는 CLAIM+EVIDENCE 구조이며 evidence의 `question_no` 클릭으로 실제 문항으로 이동한다. 쓰기는 서명 identity의 ADMIN 역할만 허용한다(`?role=ADMIN` 표시값이 아니라 JWT/identity 역할; 로컬은 unsigned fallback).
+
+### ✅ GET /api/csat/dna/taxonomy
+
+- 목적: DNA 분류 체계(16개 차원 `dimensions`, 10개 함정 `traps`, `provenance`: ACTUAL_EXAM/OFFICIAL_SOURCE/EXPERT_ANALYSIS/WIKI_SYNTHESIS, `statuses`: AI_PROPOSED/TEACHER_CONFIRMED/TEACHER_EDITED/REJECTED, 비교 `verdicts`: REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED, `claim_types`, `exam_types`, `resource_types`)를 반환한다.
+
+### ✅ POST /api/csat/exams · GET /api/csat/exams · GET /api/csat/exams/{id}
+
+- Request: `exam_year`(학년도, 2000~2100), `exam_type`(CSAT/JUNE_MOCK/SEPTEMBER_MOCK), `subject`(기본 ENGLISH), `exam_date`, `label`.
+- `(exam_year, exam_type, subject)` UNIQUE — 중복이면 `409`. 응답에 `question_count`/`resource_count`/`dna_count`/`claim_count`(REJECTED 제외)를 포함한다.
+- 상세(`GET /{id}`)는 `resources[]`(id, resource_type, original_name, original_type)를 함께 반환한다.
+
+### ✅ POST /api/csat/exams/{id}/resources · GET /api/csat/exam-resources/{id}/original · DELETE /api/csat/exam-resources/{id}
+
+- `multipart/form-data`: `resource_type`(QUESTION_PAPER/ANSWER/ANALYSIS/TEACHER_NOTE) + `file`. 원본 바이트를 `csat_exam_resources.original_blob`에 그대로 보관한다(30MB 초과 `413`, 빈 파일/알 수 없는 종류 `400`).
+- `/original`은 저장된 원본을 원래 MIME으로 inline 반환 → 업로드-다운로드 바이트 동일성 검증에 사용한다.
+- DELETE는 ADMIN만. DNA와 다르게 원본 자료는 대체 삭제 경로로 관리한다.
+
+### ✅ POST /api/csat/exams/{id}/questions · GET /api/csat/exams/{id}/questions
+
+- Request: `{ questions: [{question_no, csat_type_id?, csat_type_name?, passage, prompt, choices[], answer, solution, footnote, group_label, source_reference}], source_filename }`. `csat_type_id`가 비면 번호로 표준 유형을 자동 분류한다.
+- 평가 단위로 `csat_question_sources`(parser `csat-exam-v1`) 1건 + `csat_questions` 행을 `exam_id`로 연결해 저장한다. 문항번호 중복 `400`, 이미 문항이 있는 평가에 재등록하면 `409`(부분 저장이 아니라 전체 거부).
+- Query `from_no`/`to_no`로 번호 범위 조회; 각 문항에 REJECTED를 제외한 `dna[]`(evidence 포함)를 붙여 반환한다.
+
+### ✅ POST /api/csat/questions/{id}/dna · GET /api/csat/questions/{id}/dna · PUT /api/csat/dna/{dna_id} · DELETE /api/csat/dna/{dna_id}
+
+- Create 검증: `entry_type`은 DNA/TRAP; DNA tag는 16개 차원, TRAP tag는 10개 함정 집합 소속; TRAP은 `choice_no`(1~7) 필수; `provenance=ACTUAL_EXAM`이면 evidence 필수; `EXPERT_ANALYSIS`이면 `expert` 필수(강사 의견을 평가원 공식 출제 의도로 표시 금지).
+- evidence 항목은 `{question_no: int(1~99), exam_id 또는 exam_year+exam_type}` 형태여야 한다.
+- `(question_id, entry_type, tag, choice_no)` dup은 `409`. Create 시 상태는 항상 `AI_PROPOSED`, `updated_by`에 identity login_id를 기록한다.
+- PUT(ADMIN 교정 플로우): tag/note/evidence/importance(1~3)/provenance/expert/agreement/status 수정 가능 — `AI_PROPOSED → TEACHER_CONFIRMED/TEACHER_EDITED`, 오기는 `REJECTED`(조회·집계에서 제외).
+- GET 목록과 집계는 `status<>'REJECTED'`만 반환한다.
+
+### ✅ GET /api/csat/exams/{id}/dna
+
+- 시험별 DNA 집계: `exam`, `tags[]`(entry_type+tag → 근거 question_nos·note·provenance), `traps[]`(함정 우선 정렬), `per_question[]`(문항번호별 entries), `claims[]`(시험 수준 CLAIM). REJECTED 제외.
+
+### ✅ POST /api/csat/exams/{id}/dna-claims · PUT /api/csat/dna-claims/{claim_id} · DELETE /api/csat/dna-claims/{claim_id}
+
+- `claim_type`(CORE_TRAIT/REPEATED_SKILL/MAJOR_TRAP/HIGH_DIFFICULTY/SKILL_DEMAND) + `claim_text` 필수, `tag`는 DNA∪TRAP 집합(선택).
+- `provenance`가 ACTUAL_EXAM/WIKI_SYNTHESIS면 evidence(CLAIM+EVIDENCE 규칙) 필수. §14에 따라 "반드시 나온다"류 단정은 데이터로 저장하지 않는다.
+- 주의: dna-claims에는 UNIQUE 제약이 없다 — API 클라이언트(시드 스크립트 등)는 `(claim_type, tag)` 선조회로 멱등성을 확보한다.
+
+### ✅ POST /api/csat/dna-comparisons · GET /api/csat/dna-comparisons?exam_a_id&exam_b_id · PUT /api/csat/dna-comparisons/{id}
+
+- 두 시험(예: 6월↔9월)의 차이를 REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED 판정으로 기록한다. `exam_a_id == exam_b_id`면 `400`, evidence 필수, `(exam_a, exam_b, tag, verdict)` dup은 `409`.
+- GET은 두 exam id가 필수(둘 다 실존하는 평가여야 함). 비교 행에는 `importance` 컬럼이 없다.
+- 비교 문구는 문항 evidence를 가져야 하며(예: 순서 36번이 양 시험 모두 지시어 회상 구조), 근거 없는 출제 예측은 저장하지 않는다.
 ## 수능 WebMCP Site Tools
 
 - 등록 위치: top-level React Wiki의 `document.modelContext.registerTool()`.
