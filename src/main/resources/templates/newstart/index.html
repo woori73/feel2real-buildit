@@ -7,7 +7,7 @@
   <meta name="description" content="내 상황 확인, 지피지기 AI, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260927-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260927-2">
 </head>
 <body>
   <div class="newstart-page">
@@ -35,20 +35,20 @@
           <a class="ns-text-link" href="#ns-status-panel" data-ns-open="ns-status-panel">내 채무상황 정리하기 →</a>
           <div class="ns-section-heading"><p class="ns-section-kicker">PRACTICAL TOOLS</p><h2 id="ns-practical-title">지금 필요한 도움</h2></div>
           <div class="ns-core-grid ns-practical-grid">
-            <a class="ns-feature-card" href="/newstart/fss-helper" data-ns-reveal style="--ns-reveal-delay:0ms"><strong>추심 대응</strong><span class="ns-feature-copy">금감원 민원 샘플과 작성 도우미</span><span class="ns-feature-cta">민원 도우미 →</span></a>
-            <a class="ns-feature-card" href="/newstart/tools/credit4u" data-ns-reveal style="--ns-reveal-delay:60ms"><strong>채무 확인</strong><span class="ns-feature-copy">내 채권기관·대출·연체정보를 Credit4U에서 확인하고 내 채무상황에 정리합니다.</span><span class="ns-debt-home-state" id="ns-debt-home-state" data-state="NOT_STARTED">미확인</span><span class="ns-feature-cta">Credit4U 확인 →</span></a>
-            <a class="ns-feature-card" href="/newstart/tools/application" data-ns-reveal style="--ns-reveal-delay:120ms"><strong>신청 준비</strong><span class="ns-feature-copy">부실차주 신청 전 순서 정리</span><span class="ns-feature-cta">신청 도우미 →</span></a>
-            <a class="ns-feature-card" href="/newstart/tools/status" data-ns-reveal style="--ns-reveal-delay:180ms"><strong>신청 후</strong><span class="ns-feature-copy">공식 결과·진행상태 확인</span><span class="ns-feature-cta">진행상태 확인 →</span></a>
-            <a class="ns-feature-card" href="/newstart/tools/court" data-ns-reveal style="--ns-reveal-delay:240ms"><strong>법원 대응</strong><span class="ns-feature-copy">전자소송·지급명령 대응 정리</span><span class="ns-feature-cta">전자소송 도우미 →</span></a>
+            <a class="ns-feature-card" href="/newstart/fss-helper" data-ns-reveal style="--ns-reveal-delay:120ms"><strong>추심 대응</strong><span class="ns-feature-copy">금감원 민원 샘플과 작성 도우미</span><span class="ns-feature-cta">민원 도우미 →</span></a>
+            <a class="ns-feature-card" href="/newstart/tools/credit4u" data-ns-reveal style="--ns-reveal-delay:240ms"><strong>채무 확인</strong><span class="ns-feature-copy">내 채권기관·대출·연체정보를 Credit4U에서 확인하고 내 채무상황에 정리합니다.</span><span class="ns-debt-home-state" id="ns-debt-home-state" data-state="NOT_STARTED">미확인</span><span class="ns-feature-cta">Credit4U 확인 →</span></a>
+            <a class="ns-feature-card" href="/newstart/tools/application" data-ns-reveal style="--ns-reveal-delay:360ms"><strong>신청 준비</strong><span class="ns-feature-copy">부실차주 신청 전 순서 정리</span><span class="ns-feature-cta">신청 도우미 →</span></a>
+            <a class="ns-feature-card" href="/newstart/tools/status" data-ns-reveal style="--ns-reveal-delay:480ms"><strong>신청 후</strong><span class="ns-feature-copy">공식 결과·진행상태 확인</span><span class="ns-feature-cta">진행상태 확인 →</span></a>
+            <a class="ns-feature-card" href="/newstart/tools/court" data-ns-reveal style="--ns-reveal-delay:600ms"><strong>법원 대응</strong><span class="ns-feature-copy">전자소송·지급명령 대응 정리</span><span class="ns-feature-cta">전자소송 도우미 →</span></a>
           </div>
           <div class="ns-service-grid">
-            <a class="ns-service-card ns-service-atoz" href="/newstart/a-to-z" data-ns-reveal>
+            <a class="ns-service-card ns-service-atoz" href="/newstart/a-to-z" data-ns-reveal style="--ns-reveal-delay:120ms">
               <p class="ns-section-kicker">A TO Z GUIDE</p>
               <strong>새출발기금 A to Z</strong>
               <span class="ns-service-copy">연체가 시작된 순간부터 신청·심사·확정·성실상환 이후까지, 지금 내 단계부터 시작하세요.</span>
               <span class="ns-service-cta">A to Z 시작하기 →</span>
             </a>
-            <a class="ns-service-card ns-service-chat" href="/newstart/chat" data-ns-reveal style="--ns-reveal-delay:80ms">
+            <a class="ns-service-card ns-service-chat" href="/newstart/chat" data-ns-reveal style="--ns-reveal-delay:240ms">
               <p class="ns-section-kicker">COMMUNITY</p>
               <strong>회원 채팅</strong>
               <span class="ns-service-copy">실제 진행 경험과 정보를 회원들과 나누세요.</span>
@@ -160,8 +160,8 @@
   <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, true)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
-  <script src="/js/newstart-motion.js?v=20260927-1" defer></script>
-  <script src="/js/newstart.js?v=20260927-1" defer></script>
+  <script src="/js/newstart-motion.js?v=20260927-2" defer></script>
+  <script src="/js/newstart.js?v=20260927-2" defer></script>
   <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
 </body>
 </html>

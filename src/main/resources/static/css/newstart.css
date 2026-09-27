@@ -406,14 +406,14 @@ html, body { max-width: 100%; overflow-x: clip; }
    모션은 기능 피드백(진입/안내/상태변화)에만 사용.장식 루프·스크롤 하이재킹 금지.
    prefers-reduced-motion에서는 모든 이동이 중단되고 콘텐츠가 그대로 보인다. */
 :root {
-  --ns-motion-fast: 150ms;
-  --ns-motion-normal: 240ms;
-  --ns-motion-guided: 420ms;
+  --ns-motion-fast: 180ms;
+  --ns-motion-normal: 300ms;
+  --ns-motion-guided: 560ms;
   --ns-ease-out: cubic-bezier(.22, .61, .36, 1);
 }
 
 /* 스크롤 진입 reveal: JS가 동작 가능으로 판단한 페이지(ns-motion-on)에만 적용 — no-JS는 항상 노출 */
-.ns-motion-on [data-ns-reveal] { opacity: 0; transform: translateY(14px); }
+.ns-motion-on [data-ns-reveal] { opacity: 0; transform: translateY(20px); }
 .ns-motion-on [data-ns-reveal].ns-revealed {
   opacity: 1;
   transform: none;
@@ -424,8 +424,8 @@ html, body { max-width: 100%; overflow-x: clip; }
 /* 지피지기 AI 도달 강조: #ns-ai 앵커 도착(:target, no-JS 포함)과 사전입력 버튼 이동 시 1회만 재생 */
 #ns-ai:target, .ns-ai-arrival { animation: ns-ai-arrival var(--ns-motion-guided) var(--ns-ease-out) 1; }
 @keyframes ns-ai-arrival {
-  0% { box-shadow: 0 0 0 4px rgba(37, 99, 235, .38); }
-  100% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0); }
+  0% { box-shadow: 0 0 0 6px rgba(37, 99, 235, .46); }
+  100% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
 }
 
 /* 내 채무상태: 배지 색상 전이 + 상태가 실제로 바뀐 때만 1회 강조 */

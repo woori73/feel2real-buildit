@@ -6,7 +6,7 @@
   <title>금감원 민원 도우미 | 새출발기금 부실차주</title>
   <meta name="description" content="상황 선택부터 단계별 인터뷰, 증거 타임라인, 민원 초안 정리까지 — 접수는 금감원 공식 사이트에서 본인이 직접">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260927-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260927-2">
   <style>
     .ns-fss-steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
     .ns-fss-step{font-size:13px;padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#475569}
@@ -155,7 +155,7 @@
       /* 문항→문항, 화면→화면, 소관 안내 갱신 시 1회만 재생(reveal 반복 금지) */
       #ns-iv-body.ns-iv-enter,.ns-fss-screen.ns-fss-enter,#ns-fss-official.ns-fss-enter{animation:ns-fss-guided-enter var(--ns-motion-guided) var(--ns-ease-out) 1}
     }
-    @keyframes ns-fss-guided-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @keyframes ns-fss-guided-enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
   </style>
 </head>
 <body>
@@ -389,7 +389,7 @@
     </div>
   </div>
 
-  <script src="/js/newstart-motion.js?v=20260927-1" defer></script>
+  <script src="/js/newstart-motion.js?v=20260927-2" defer></script>
   <script>
   (function () {
     'use strict';
