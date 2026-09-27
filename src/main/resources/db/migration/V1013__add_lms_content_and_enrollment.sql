@@ -11,10 +11,15 @@ SET CHARACTER SET utf8mb4;
 --   * LmsEnrollment(수강권)는 기존 lesson_applications(신청)를 확장하지 않는다 — 별도 개념.
 --     Phase 1은 grant_source = ACADEMY|ADMIN 무료 배정만 실제로 쓰인다. PURCHASE는 값만
 --     미리 열어 둔다(향후 유료 영문법 강좌 PG 연동).
---   * 신규 테이블만 추가 → 1단계 마이그레이션. 다음 마이그레이션 = V1011.
+--   * 신규 테이블만 추가 → 1단계 마이그레이션. 다음 마이그레이션 = V1014.
 --   * renumber 이력: PR #403 원안 V1001 → recovery에서 V1009로 이동했으나, main에
 --     V1009__add_newstart_member_debt_status가 먼저 병합돼 V1010으로 재이동(WORKFLOW.md §4).
---     내용은 원안과 동일하며 DROP/TRUNCATE/백필 없음.
+--     이후 #428가 V1010으로 OPEN인 동안 NewStart PR #432의 V1011·V1012가 main에 머지되고
+--     프로덕션 flyway_schema_history에 실제 적용됐다. prd Flyway는 validate-on-migrate=true이고
+--     out-of-order가 켜져 있지 않아, 미적용 V1010을 그대로 배포하면 이미 적용된 V1011/V1012
+--     뒤를 쫓는 out-of-order 조건에서 실패한다. 그래서 어떤 DB에도 적용되지 않은 본 파일의
+--     번호만 V1013으로 이동한다. DDL·테이블·컬럼·데이터 동작은 원안과 동일하며
+--     DROP/TRUNCATE/백필이 없다.
 
 CREATE TABLE lms_contents (
     lms_content_id   BIGINT        NOT NULL AUTO_INCREMENT,
