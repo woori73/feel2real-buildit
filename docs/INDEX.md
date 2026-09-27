@@ -16,6 +16,7 @@
 | **Windows에서 처음 환경 세팅 (WSL2/Docker/JDK)** | [LOCAL_SETUP_WINDOWS.md](LOCAL_SETUP_WINDOWS.md) |
 | **요구사항 변경으로 기능 숨김/보존(/archived)** | [ARCHIVED_FEATURES.md](ARCHIVED_FEATURES.md) + [API.md](API.md) |
 | **기능 화면·API·상태 흐름 구현** | [FLOWS.md](FLOWS.md) + [API.md](API.md) |
+| **수능영어 Wiki ③④⑤ 학생 오답 입력(DAY-2)·약점 DNA 도출 규칙** | [MONDAY_DAY2_HANDOFF.md](MONDAY_DAY2_HANDOFF.md) |
 | **랜딩 통계 / 서비스 지표 / GA4 경계** | [service-statistics-design.md](service-statistics-design.md) |
 | **Controller endpoint 추가/변경** | [API.md](API.md) (계약 동기화 필수) |
 | **Academy 발행 API / 미래 LLM 콘텐츠 생성** | [academy-publish-design.md](academy-publish-design.md) |
