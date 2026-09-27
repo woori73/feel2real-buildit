@@ -1,5 +1,21 @@
 (function () {
   'use strict';
+
+  /* 기능성 모션: 클래스 재적용으로 CSS 1회 애니메이션 재생. reduced-motion에서는 아무 것도 하지 않는다. */
+  function flashOnce(el, cls) {
+    if (!el || typeof window.matchMedia !== 'function') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  /* 부드러운 스크롤도 motion — reduce에서는 즉시 이동 */
+  function scrollBehavior() {
+    return (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth';
+  }
+
   var NS = {
     init: function () {
       NS.bindToggles();
@@ -100,12 +116,18 @@
 
       function paintHomeState(data) {
         if (!homeState || !data) return;
+        var prev = homeState.getAttribute('data-state');
         homeState.textContent = self.DEBT_STATE_LABELS[data.status] || '미확인';
         homeState.setAttribute('data-state', data.status || 'NOT_STARTED');
+        // 저장 후·조회 후 상태가 실제로 바뀐 때만 1회 강조 (최초 페인팅은 조용히)
+        if (prev && prev !== (data.status || 'NOT_STARTED')) flashOnce(homeState, 'ns-debt-flash');
       }
 
-      function setState(text) {
-        if (stateEl) stateEl.textContent = text || '';
+      function setState(textStr) {
+        if (stateEl) {
+          stateEl.textContent = textStr || '';
+          if (textStr) flashOnce(stateEl, 'ns-debt-flash');
+        }
       }
 
       function hydrate(data) {
@@ -185,8 +207,10 @@
             + '. 이 상황에서 다음에 할 일을 알려주세요.';
           aiInput.value = question;
           var aiSection = document.getElementById('ns-ai');
-          if (aiSection && aiSection.scrollIntoView) aiSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (aiSection && aiSection.scrollIntoView) aiSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
           aiInput.focus();
+          // 지피지기로 이동한 도착점을 1회 강조 (해시 변경 없는 스크롤 이동에서도)
+          flashOnce(aiSection, 'ns-ai-arrival');
         });
       }
     },
@@ -197,7 +221,7 @@
         var panel = document.getElementById('ns-status-panel');
         if (!panel) return;
         panel.removeAttribute('hidden');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        panel.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       }
       openIfTarget();
       window.addEventListener('hashchange', openIfTarget);
@@ -247,7 +271,7 @@
         block.appendChild(who);
         block.appendChild(body);
         thread.appendChild(block);
-        if (block.scrollIntoView) block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (block.scrollIntoView) block.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
       }
 
       form.addEventListener('submit', function (e) {

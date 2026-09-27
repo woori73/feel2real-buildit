@@ -6,7 +6,7 @@
   <title>금감원 민원 도우미 | 새출발기금 부실차주</title>
   <meta name="description" content="상황 선택부터 단계별 인터뷰, 증거 타임라인, 민원 초안 정리까지 — 접수는 금감원 공식 사이트에서 본인이 직접">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260925-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260927-1">
   <style>
     .ns-fss-steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
     .ns-fss-step{font-size:13px;padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#475569}
@@ -145,6 +145,17 @@
     @media (max-width: 640px){
       .ns-fss-pc-only{display:none}
     }
+    /* --- 기능성 모션 Phase 1: 상태변화 전이 + 안내 강조(구조·문구 불변) --- */
+    @media (prefers-reduced-motion: no-preference) {
+      .ns-fss-step{transition:background-color var(--ns-motion-fast) linear,color var(--ns-motion-fast) linear}
+      .ns-fss-card{transition:border-color var(--ns-motion-fast) linear,box-shadow var(--ns-motion-fast) linear}
+      .ns-fss-cat{transition:background-color var(--ns-motion-fast) linear,border-color var(--ns-motion-fast) linear,color var(--ns-motion-fast) linear}
+      .ns-iv-chip{transition:background-color var(--ns-motion-fast) linear,border-color var(--ns-motion-fast) linear,color var(--ns-motion-fast) linear}
+      .ns-ag-dot{transition:background-color var(--ns-motion-fast) linear,color var(--ns-motion-fast) linear}
+      /* 문항→문항, 화면→화면, 소관 안내 갱신 시 1회만 재생(reveal 반복 금지) */
+      #ns-iv-body.ns-iv-enter,.ns-fss-screen.ns-fss-enter,#ns-fss-official.ns-fss-enter{animation:ns-fss-guided-enter var(--ns-motion-guided) var(--ns-ease-out) 1}
+    }
+    @keyframes ns-fss-guided-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   </style>
 </head>
 <body>
@@ -160,7 +171,7 @@
       </header>
 
       <main aria-label="금감원 민원 도우미">
-        <section class="ns-card ns-fss-hero" aria-labelledby="ns-fss-title">
+        <section class="ns-card ns-fss-hero" aria-labelledby="ns-fss-title" data-ns-reveal>
           <p class="ns-section-kicker">실전 도우미</p>
           <h1 id="ns-fss-title">금감원 민원 도우미</h1>
           <p class="ns-fss-hero-copy">복잡한 금감원 민원, Agent가 한 단계씩 함께 정리해 드립니다.</p>
@@ -266,7 +277,7 @@
           </div>
 
           <!-- ==================== 1화면: 상황 선택 ==================== -->
-          <div id="ns-fss-screen1">
+          <div id="ns-fss-screen1" class="ns-fss-screen">
             <h2 class="ns-fss-label">1단계 · 어떤 일이 있었나요?</h2>
             <p class="ns-fss-hint">해당하는 것을 하나 눌러 주세요. 처음부터 긴 민원서를 쓸 필요 없습니다.</p>
             <div class="ns-fss-cats" id="ns-fss-cats" role="group" aria-label="상황 선택"></div>
@@ -277,7 +288,7 @@
           </div>
 
           <!-- ==================== 2화면: guided interview ==================== -->
-          <div id="ns-fss-screen2" hidden>
+          <div id="ns-fss-screen2" class="ns-fss-screen" hidden>
             <h2 class="ns-fss-label">2단계 · 한 가지만 알려 주세요</h2>
             <section class="ns-iv-panel" aria-label="단계별 인터뷰">
               <span class="ns-iv-count" id="ns-iv-count"></span>
@@ -293,7 +304,7 @@
           </div>
 
           <!-- ==================== 3화면: 초안·복사·체크리스트 ==================== -->
-          <div id="ns-fss-screen3" hidden>
+          <div id="ns-fss-screen3" class="ns-fss-screen" hidden>
             <h2 class="ns-fss-label">3단계 · 초안 검토와 복사</h2>
             <div id="ns-fss-result">
               <h2 class="ns-fss-label">[내가 입력한 내용]</h2>
@@ -338,7 +349,7 @@
           </div>
 
           <!-- ==================== 4화면: 접수 안내 ==================== -->
-          <div id="ns-fss-screen4">
+          <div id="ns-fss-screen4" class="ns-fss-screen">
             <h2 class="ns-fss-label" id="ns-fss-manual-section">4단계 · 금감원 접수 안내</h2>
             <p>
               <a class="ns-btn ns-btn-primary" id="ns-fss-official-link"
@@ -378,6 +389,7 @@
     </div>
   </div>
 
+  <script src="/js/newstart-motion.js?v=20260927-1" defer></script>
   <script>
   (function () {
     'use strict';
@@ -416,6 +428,21 @@
     function $(id) { return document.getElementById(id); }
     function text(node, value) { node.textContent = value == null ? '' : value; }
 
+    /* 기능성 모션: 클래스 재적용으로 1회 애니메이션 재생. reduced-motion에서는 아무 것도 하지 않는다. */
+    function guidedFlash(el, cls) {
+      if (!el || !window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      el.classList.remove(cls);
+      void el.offsetWidth;
+      el.classList.add(cls);
+    }
+
+    /* 부드러운 스크롤도 motion — reduce에서는 즉시 이동 */
+    function scrollGently(el, block) {
+      if (!el || !el.scrollIntoView) return;
+      var smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: block || 'start' });
+    }
+
     function setTab(n) {
       [1, 2, 3, 4].forEach(function (i) {
         $('ns-fss-tab' + i).classList.toggle('is-active', i <= n);
@@ -425,6 +452,7 @@
     function showScreen(n) {
       [1, 2, 3, 4].forEach(function (i) { $('ns-fss-screen' + i).hidden = (i !== n); });
       if (n !== 4) setTab(n);
+      guidedFlash($('ns-fss-screen' + n), 'ns-fss-enter');
     }
 
     /* ---- 공식 소관 안내 패널(§7) — 출처는 서버 companion.official ---- */
@@ -456,6 +484,7 @@
         a.style.display = 'block';
         host.appendChild(a);
       });
+      guidedFlash(host, 'ns-fss-enter');
     }
 
     function renderCats() {
@@ -620,17 +649,22 @@
       if (ivStep === IV_STEPS.length - 1) { composeInterview(); return; }
       ivStep += 1;
       renderInterview();
+      guidedFlash($('ns-iv-body'), 'ns-iv-enter');
     }
 
     $('ns-iv-start').addEventListener('click', function () {
       ivStep = 0;
       showScreen(2);
       renderInterview();
+      guidedFlash($('ns-iv-body'), 'ns-iv-enter');
     });
     $('ns-iv-next').addEventListener('click', ivNext);
     $('ns-iv-back').addEventListener('click', function () {
-      if (ivStep > 0) { ivStep -= 1; renderInterview(); }
-      else showScreen(1);
+      if (ivStep > 0) {
+        ivStep -= 1;
+        renderInterview();
+        guidedFlash($('ns-iv-body'), 'ns-iv-enter');
+      } else showScreen(1);
     });
 
     /* ---------- V1 자유서술 경로(regression 보존) ---------- */
@@ -710,7 +744,7 @@
       $('ns-fss-result').hidden = false;
       showScreen(3);
       $('ns-fss-do-myself').open = true; // 자유서술 경로로 만들어진 초안이 닫힌 영역 안으로 숨지 않도록 펼친다.
-      $('ns-fss-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollGently($('ns-fss-result'));
     }
 
     var lastComposeMode = null;
@@ -953,7 +987,7 @@
       var box = $('ns-fss-agentbox');
       box.hidden = false;
       $('ns-ag-panel').hidden = false;
-      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollGently(box);
       if (agent.loaded) { agentRenderBody(); return; }
       agentFetch('/api/newstart/fss/agent/workflow').then(function (b) {
         if (!b) return;
@@ -996,7 +1030,7 @@
       var el = $(id);
       if (!el) return;
       el.open = true;
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollGently(el);
     }
     $('ns-ag-manual-link').addEventListener('click', function (ev) {
       ev.preventDefault();

@@ -401,3 +401,65 @@ html, body { max-width: 100%; overflow-x: clip; }
   .newstart-brand-name { font-size: 16px; }
   .newstart-brand-sub { font-size: 9px; }
 }
+
+/* ═══ NewStart 기능성 모션 Phase 1 ═══
+   모션은 기능 피드백(진입/안내/상태변화)에만 사용.장식 루프·스크롤 하이재킹 금지.
+   prefers-reduced-motion에서는 모든 이동이 중단되고 콘텐츠가 그대로 보인다. */
+:root {
+  --ns-motion-fast: 150ms;
+  --ns-motion-normal: 240ms;
+  --ns-motion-guided: 420ms;
+  --ns-ease-out: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* 스크롤 진입 reveal: JS가 동작 가능으로 판단한 페이지(ns-motion-on)에만 적용 — no-JS는 항상 노출 */
+.ns-motion-on [data-ns-reveal] { opacity: 0; transform: translateY(14px); }
+.ns-motion-on [data-ns-reveal].ns-revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--ns-motion-guided) var(--ns-ease-out) var(--ns-reveal-delay, 0ms),
+              transform var(--ns-motion-guided) var(--ns-ease-out) var(--ns-reveal-delay, 0ms);
+}
+
+/* 지피지기 AI 도달 강조: #ns-ai 앵커 도착(:target, no-JS 포함)과 사전입력 버튼 이동 시 1회만 재생 */
+#ns-ai:target, .ns-ai-arrival { animation: ns-ai-arrival var(--ns-motion-guided) var(--ns-ease-out) 1; }
+@keyframes ns-ai-arrival {
+  0% { box-shadow: 0 0 0 4px rgba(37, 99, 235, .38); }
+  100% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0); }
+}
+
+/* 내 채무상태: 배지 색상 전이 + 상태가 실제로 바뀐 때만 1회 강조 */
+.ns-debt-home-state { transition: background-color var(--ns-motion-fast) linear, color var(--ns-motion-fast) linear; }
+.ns-debt-home-state.ns-debt-flash { animation: ns-debt-flash var(--ns-motion-normal) var(--ns-ease-out) 1; }
+@keyframes ns-debt-flash {
+  0% { transform: scale(.92); }
+  55% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.ns-debt-save-state.ns-debt-flash { animation: ns-debt-text-in var(--ns-motion-normal) var(--ns-ease-out) 1; }
+@keyframes ns-debt-text-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* 체크리스트 체크 피드백 (색 전이 + 표시 scale) */
+.ns-check-box { transition: background-color var(--ns-motion-fast) linear, border-color var(--ns-motion-fast) linear; }
+.ns-check .ns-check-mark { transition: color var(--ns-motion-fast) linear, transform var(--ns-motion-fast) var(--ns-ease-out); }
+.ns-check:not(.checked) .ns-check-mark { transform: scale(.6); }
+
+/* 모바일(터치) 카드 눌림 피드백 — 데스크톱 hover는 위 (hover:hover) 블록이 이미 담당 */
+@media (hover: none) and (pointer: coarse) {
+  .ns-feature-card { transition: transform var(--ns-motion-fast) var(--ns-ease-out); }
+  .ns-feature-card:active { transform: scale(.985); }
+}
+
+/* 하드 게이트: reduce에서는 NewStart 화면 전체의 이동·깜빡임을 중단하고 콘텐츠를 즉시 노출 */
+@media (prefers-reduced-motion: reduce) {
+  .newstart-page *, .newstart-shell *, .ns-tool-page * {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+  }
+  .ns-motion-on [data-ns-reveal], .ns-motion-on [data-ns-reveal-group] > li {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -136,8 +136,9 @@ test('A to Z and HOME contain no placeholder hrefs', () => {
 });
 
 test('HOME promotes A to Z and member chat to primary service cards', () => {
-  assert.match(home, /<a class="ns-service-card ns-service-atoz" href="\/newstart\/a-to-z">/);
-  assert.match(home, /<a class="ns-service-card ns-service-chat" href="\/newstart\/chat">/);
+  // 모션 Phase 1의 추가 속성(data-ns-reveal 등)을 허용하고 클래스·라우트 계약만 검증
+  assert.match(home, /<a class="ns-service-card ns-service-atoz" href="\/newstart\/a-to-z"[^>]*>/);
+  assert.match(home, /<a class="ns-service-card ns-service-chat" href="\/newstart\/chat"[^>]*>/);
   assert.match(home, /A to Z 시작하기/);
   assert.match(home, /채팅방 들어가기/);
 });
