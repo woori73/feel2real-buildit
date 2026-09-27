@@ -1,10 +1,14 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartCapability;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.fssagent.FssGuidedWorkflow;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.fssagent.NewStartFssAgentController;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.FssComplaintHelperService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,8 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 금감원 민원 도우미 API.
  *
- * <p>인증은 기존 {@code /api/**} catch-all(인증 필요)을 그대로 따른다 — 새 권한 규칙을 만들지
- * 않는다. V1은 무상태: 민원 원문·정리문 어디도 DB에 저장하지 않고, 로그에도 남기지 않는다.
+ * <p>인증은 기존 {@code /api/**} catch-all(인증 필요)을 따른다. 설계 §7 경계에 따라
+ * {@code GET /companion}(설명·예시·공식 안내)은 로그인 회원이면 열람하고,
+ * {@code POST /compose}(AI 실행)는 THANKS_MEMBER 권한이 있을 때만 동작한다 — 거절은
+ * 권한 예외 핸들러가 403 + 안내 문구로 번역한다.
+ *
+ * <p>V1은 무상태: 민원 원문·정리문 어디도 DB에 저장하지 않고, 로그에도 남기지 않는다.
  * 자동 제출은 존재하지 않는다(응답은 텍스트일 뿐이고, 제출은 사용자가 공식 사이트에서 직접 한다).
  */
 @RestController
@@ -23,9 +31,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewStartFssComplaintController {
 
   private final FssComplaintHelperService fssComplaintHelperService;
+  private final NewStartEntitlementService entitlementService;
 
-  public NewStartFssComplaintController(FssComplaintHelperService fssComplaintHelperService) {
+  public NewStartFssComplaintController(FssComplaintHelperService fssComplaintHelperService,
+      NewStartEntitlementService entitlementService) {
     this.fssComplaintHelperService = fssComplaintHelperService;
+    this.entitlementService = entitlementService;
   }
 
   @GetMapping("/companion")
@@ -43,7 +54,10 @@ public class NewStartFssComplaintController {
   }
 
   @PostMapping("/compose")
-  public ResponseEntity<ComposeResponse> compose(@RequestBody ComposeRequest request) {
+  public ResponseEntity<ComposeResponse> compose(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody ComposeRequest request) {
+    entitlementService.require(principal, NewStartCapability.THANKS_MEMBER);
     FssComplaintHelperService.ComposeResult result;
     if (request != null && request.interview() != null) {
       result = fssComplaintHelperService.composeInterview(request.interview());

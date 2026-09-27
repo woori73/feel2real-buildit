@@ -187,7 +187,9 @@ public class JipijigiResearchService {
             case OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, DERIVED_RULE -> SourceClass.OFFICIAL_RULE;
             case EBOOK, OPERATOR_KNOWLEDGE -> SourceClass.OPERATOR_MATERIAL;
             case CAFE_ARTICLE, CAFE_COMMENT -> url.contains("newhopero") ? SourceClass.BORROWER_CAFE_CASE : SourceClass.CCRS_CAFE_CASE;
-            case CASE -> SourceClass.INTERNAL_CASE;
+            // 회원 채팅·질문요청에서 갈무리한 항목은 공식 규정이 아니라 내부 경험 자료다(RAG에서
+            // "공식 안내에 따르면"으로 인용되는 것을 막기 위해 CASE와 같은 등급으로 둔다).
+            case CASE, CHAT_DISCOVERY, REQUEST_DISCOVERY -> SourceClass.INTERNAL_CASE;
         };
     }
 

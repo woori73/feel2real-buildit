@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>갈무리 게시판 | 새출발기금 부실차주</title>
+  <meta name="description" content="회원 대화·사례·질문요청에서 운영자가 갈무리한 새출발기금·부실차주 지식을 신뢰 라벨과 함께 열람하는 게시판">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/newstart.css?v=20260927-2">
+  <style>
+    .ns-gm-main{display:grid;gap:14px}
+    .ns-gm-head{display:flex;gap:10px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+    .ns-gm-list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+    .ns-gm-item{border:1px solid #e2e8f0;border-radius:14px;background:#fff;padding:12px}
+    .ns-gm-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .ns-gm-label,.ns-gm-cat{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+    /* 신뢰 라벨 색은 서버가 내린 tone(official/operator/case)에서만 온다 — 프론트가 자체 판정하지 않는다. */
+    .ns-gm-label{background:#f1f5f9;color:#334155}
+    .ns-gm-label.is-official{background:#dcfce7;color:#14532d}
+    .ns-gm-label.is-operator{background:#e0e7ff;color:#3730a3}
+    .ns-gm-label.is-case{background:#fef9c3;color:#854d0e}
+    .ns-gm-cat{background:#e0f2fe;color:#0c4a6e}
+    .ns-gm-title{font-size:16px;font-weight:700;color:#0f172a;margin:6px 0 2px;word-break:keep-all}
+    .ns-gm-summary{font-size:14px;color:#334155;margin:4px 0 0;word-break:keep-all}
+    .ns-gm-meta{font-size:12px;color:#64748b;margin:6px 0 0}
+    .ns-gm-open{background:none;border:none;padding:0;color:#2563eb;font:inherit;font-size:14px;
+      font-weight:700;cursor:pointer;text-align:left;min-height:44px}
+    .ns-gm-detail{border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;padding:14px;margin:12px 0}
+    .ns-gm-field{margin:10px 0}
+    .ns-gm-label-text{font-size:12px;font-weight:700;color:#64748b;margin:0 0 2px}
+    .ns-gm-content{font-size:15px;color:#0f172a;margin:0;white-space:pre-wrap;word-break:keep-all}
+    .ns-gm-tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+    .ns-gm-tag{font-size:12px;background:#f1f5f9;color:#334155;border-radius:8px;padding:2px 8px}
+    .ns-gm-notice{border:1px solid #bfdbfe;background:#eff6ff;border-radius:12px;padding:10px;margin:10px 0;
+      font-size:13px;color:#0c4a6e}
+    .ns-gm-note{font-size:13px;color:#64748b;margin:0}
+    @media (max-width: 640px){
+      .ns-gm-head{align-items:flex-start}
+      .ns-gm-title{font-size:15px}
+    }
+  </style>
+</head>
+<body>
+  <div class="newstart-page newstart-galmuri-page">
+    <div class="newstart-shell ns-chat-shell">
+
+      <header class="newstart-top">
+        <a class="newstart-brand" href="/newstart" aria-label="새출발기금 부실차주 홈">새출발기금 부실차주</a>
+        <nav class="newstart-topbar" aria-label="기본 메뉴">
+          <a class="ns-btn ns-btn-ghost" href="/newstart">홈</a>
+          <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
+        </nav>
+      </header>
+
+      <main class="ns-gm-main" aria-label="갈무리 게시판">
+
+        <!-- 비로그인 방문자: 셸은 열리지만 항목은 인증 뒤에 있다(API가 401로 거부). -->
+        <section id="ns-gm-login" class="ns-card ns-chat-login" hidden>
+          <p class="ns-empty">갈무리 게시판은 로그인 회원이 운영 승인 자료를 열람하는 공간입니다.</p>
+          <a class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버 로그인</a>
+        </section>
+
+        <section class="ns-card" aria-label="갈무리 항목">
+          <div class="ns-gm-head">
+            <div>
+              <h1 class="ns-card-title">갈무리 게시판</h1>
+              <p class="ns-card-meta">회원 대화·카페·사례·질문요청에서 운영자가 추려 구조화한 지식입니다. 자유 글을 올리는 게시판이 아닙니다.</p>
+            </div>
+          </div>
+
+          <p class="ns-gm-notice">
+            라벨은 신뢰 등급입니다. <b>[공식·현재]</b>는 지금도 적용되는 공식 안내,
+            <b>[운영자 실제 경험]</b>은 운영자가 직접 확인한 처리,
+            <b>[사례 참고]</b>은 참고용 사례일 뿐 규정으로 읽으면 안 됩니다.
+            지원대상 여부와 절차는 항상 공식 기관 기준·심사 결과 우선입니다.
+          </p>
+
+          <div id="ns-gm-list" class="ns-gm-list" aria-live="polite" aria-label="갈무리 목록"></div>
+          <p id="ns-gm-empty" class="ns-empty" hidden>아직 갈무리된 항목이 없습니다.</p>
+          <button type="button" class="ns-btn ns-btn-ghost" id="ns-gm-more" hidden>더 보기</button>
+          <p id="ns-gm-status" class="ns-note" role="status"></p>
+        </section>
+
+        <section id="ns-gm-detail" class="ns-gm-detail" hidden aria-label="갈무리 상세"></section>
+      </main>
+
+      <script src="/js/newstart-galmuri.js?v=20260927-1" defer></script>
+    </div>
+  </div>
+</body>
+</html>

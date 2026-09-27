@@ -906,9 +906,17 @@
       return fetch(path, { method: method || 'GET', credentials: 'same-origin' })
         .then(function (r) {
           if (r.status === 401) { $('ns-fss-auth').hidden = false; return null; }
-          if (!r.ok) throw new Error('http ' + r.status);
-          return r.json();
+          if (r.ok) return r.json();
+          // 서버가 안내 문구를 내려준 4xx(권한 미부여 403 포함)는 그 문구를 그대로 보여준다.
+          return r.json().catch(function () { return null; }).then(function (b) {
+            throw new Error(b && typeof b.errorMessage === 'string' && b.errorMessage
+              ? b.errorMessage : '연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.');
+          });
         });
+    }
+
+    function agentFail(err, fallback) {
+      agentError(err && err.message ? err.message : fallback);
     }
 
     function agentRenderProgress() {
@@ -980,7 +988,7 @@
     function agentAdvance() {
       agentError('');
       agentFetch('/api/newstart/fss/agent/advance', 'POST').then(agentApplySession)
-        .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
+        .catch(function (err) { agentFail(err, '연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
     }
 
     function agentOpen() {
@@ -993,7 +1001,13 @@
         if (!b) return;
         agent.steps = b.steps || [];
         agent.loaded = true;
-        return agentFetch('/api/newstart/fss/agent/session').then(agentApplySession);
+        return agentFetch('/api/newstart/fss/agent/session')
+          .then(agentApplySession)
+          // 세션(실행)이 막혀도 14단계 안내 자체는 공개 유지 — 1단계 화면을 그대로 보여준다.
+          .catch(function (err) {
+            agentRenderBody();
+            agentFail(err, '세션 정보를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.');
+          });
       }).catch(function () { agentError('안내 데이터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.'); });
     }
 
@@ -1014,12 +1028,12 @@
     $('ns-ag-back').addEventListener('click', function () {
       agentError('');
       agentFetch('/api/newstart/fss/agent/back', 'POST').then(agentApplySession)
-        .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
+        .catch(function (err) { agentFail(err, '연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
     });
     $('ns-ag-restart').addEventListener('click', function () {
       agentError('');
       agentFetch('/api/newstart/fss/agent/restart', 'POST').then(agentApplySession)
-        .catch(function () { agentError('연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
+        .catch(function (err) { agentFail(err, '연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.'); });
     });
 
     $('ns-fss-input').addEventListener('input', updateCompose);

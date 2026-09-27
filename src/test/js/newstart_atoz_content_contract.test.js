@@ -29,23 +29,66 @@ test('A to Z keeps every official URL from the source MD', () => {
     'https://www.newstartfund.or.kr/Contents/Objc.do',
     'https://www.newstartfund.or.kr/Faq/List.do',
     'https://www.newstartfund.or.kr/Board/List.do',
-    'https://home.newstartfund.or.kr/Rslt/Rslt.do',
-    'https://www.credit4u.or.kr/',
-    'https://www.kamco.or.kr/portal/bbs/view.do?bIdx=26065',
+    'https://www.newstartfund.or.kr/Rslt/Rslt.do',
+    'https://home.newstartfund.or.kr/',
+    'https://www.credit4u.or.kr:2443/',
+    'https://www.youtube.com/watch?v=GALYPhiZLaw',
     'https://ecfs.scourt.go.kr/',
     'https://ecfs.scourt.go.kr/psp/index.on?m=PSP004M01',
     'https://www.fsc.go.kr/',
+    'https://www.fss.or.kr/',
     'https://cafe.naver.com/newhopero/659',
     'https://cafe.naver.com/newhopero/325',
   ];
   urls.forEach((u) => assert.ok(atoz.includes(u.replace(/&/g, '&amp;')) || atoz.includes(u), 'missing official URL: ' + u));
 });
 
-test('A to Z links each stage to the same canonical helpers as HOME', () => {
-  ['/newstart/fss-helper', '/newstart/tools/credit4u', '/newstart/tools/application', '/newstart/tools/status', '/newstart/tools/court'].forEach((route) => {
+test('Phase2 §2: HOME은 5개 진입점만, 도구 route는 A to Z가 canonical로 보유한다', () => {
+  // HOME 중복 카드(Credit4U·신청 준비·진행상태·법원 대응)는 제거하지만 backend와 A to Z 참조는 그대로 보존 (reference audit)
+  ['/newstart/fss-helper', '/newstart/a-to-z', '/newstart/questions', '/newstart/galmuri'].forEach((route) => {
     assert.match(home, new RegExp('href="' + route + '"'));
+  });
+  assert.match(home, /href="#ns-ai"/);
+  ['/newstart/tools/credit4u', '/newstart/tools/application', '/newstart/tools/status', '/newstart/tools/court'].forEach((route) => {
     assert.match(atoz, new RegExp('href="' + route + '"'));
   });
+  // 상태창 재진입 링크는 보존 — Credit4U 도우미로 가는 유일한 HOME 경로
+  assert.match(home, /href="\/newstart\/tools\/credit4u"/);
+  assert.doesNotMatch(home, /class="ns-feature-card" href="\/newstart\/tools\/(application|status|court)"/);
+});
+
+test('Phase2 §3: STEP 4·12의 CTA를 정리하고 공식 경로를 실사이트 확인대로 통일한다', () => {
+  const slice = (from, to) => atoz.slice(atoz.indexOf(from), atoz.indexOf(to));
+  const step4 = slice('id="step-4"', 'id="step-5"');
+  const step12 = slice('id="step-12"', 'id="step-13"');
+
+  // 4-4: 신청 준비 도우미 카드는 제거, 다른 STEP의 동일 도우미 참조는 보존(reference audit)
+  assert.doesNotMatch(step4, /\/newstart\/tools\/application/);
+  assert.match(atoz, /부실차주 신청 준비 도우미/);
+  // 신청 CTA는 공식 홈페이지로 — 신청하기는 공식 사이트 팝업이라 deep link를 지어내지 않는다
+  assert.match(step4, /href="https:\/\/home\.newstartfund\.or\.kr\/"/);
+
+  // 공식 영상은 캠코TV 원본 하나로 통일 (게시판 view 주소는 더 이상 쓰지 않는다)
+  assert.equal(atoz.match(/https:\/\/www\.youtube\.com\/watch\?v=GALYPhiZLaw/g).length, 2);
+  assert.doesNotMatch(atoz, /kamco\.or\.kr\/portal/);
+
+  // 12-3: 자체 도우미 링크가 아니라 공식 사이트가 "진행상태 확인하기"로 거는 실제 주소
+  assert.match(step12, /href="https:\/\/www\.newstartfund\.or\.kr\/Rslt\/Rslt\.do"/);
+  assert.doesNotMatch(step12, /\/newstart\/tools\/status/);
+  assert.doesNotMatch(atoz, /home\.newstartfund\.or\.kr\/Rslt\/Rslt\.do/);
+
+  //기관 라벨 뒤바뀜 수정: fsc=금융위원회, fss=금융감독원
+  assert.match(atoz, /https:\/\/www\.fsc\.go\.kr\/"[^>]*>금융위원회/);
+  assert.match(atoz, /https:\/\/www\.fss\.or\.kr\/"[^>]*>금융감독원/);
+  assert.doesNotMatch(atoz, /https:\/\/www\.fsc\.go\.kr\/"[^>]*>금융감독원/);
+
+  // Credit4U는 실제 서비스되는 포트로 통일
+  assert.doesNotMatch(atoz, /credit4u\.or\.kr\/"/);
+
+  // STEP 13 앞단계 화살표는 실제 직전 단계(STEP 12)를 가리킨다
+  const step13 = slice('id="step-13"', 'id="refs"');
+  assert.match(step13, /<a href="#step-12">← STEP 12/);
+  assert.doesNotMatch(step13, /href="#step-11"/);
 });
 
 test('A to Z preserves key content units of every MD section', () => {
@@ -135,10 +178,11 @@ test('A to Z and HOME contain no placeholder hrefs', () => {
   });
 });
 
-test('HOME promotes A to Z and member chat to primary service cards', () => {
+test('HOME keeps member chat as the single service card and A to Z as a practical entry', () => {
   // 모션 Phase 1의 추가 속성(data-ns-reveal 등)을 허용하고 클래스·라우트 계약만 검증
-  assert.match(home, /<a class="ns-service-card ns-service-atoz" href="\/newstart\/a-to-z"[^>]*>/);
+  assert.match(home, /<a class="ns-feature-card" href="\/newstart\/a-to-z"[^>]*>/);
   assert.match(home, /<a class="ns-service-card ns-service-chat" href="\/newstart\/chat"[^>]*>/);
+  assert.doesNotMatch(home, /ns-service-atoz/);
   assert.match(home, /A to Z 시작하기/);
   assert.match(home, /채팅방 들어가기/);
 });
