@@ -1542,3 +1542,47 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 파생 상태(`NOT_STARTED|IN_PROGRESS|COMPLETED`)는 저장하지 않고 플래그+메모에서 계산해 HOME 카드 배지에만 쓴다(새 상태 체계 금지).
 - 흐름: HOME [채무 확인] → `/newstart/tools/credit4u`(전자책 제5장 연체 기산/장기연체 등록 실전 팁 + Credit4U 공식 메뉴 9단계 안내; 특정 코드=자격 확정 단정 금지, 지원대상 여부는 공식 기준·심사 결과 우선 문구 명시) → CTA `/newstart#ns-status-panel`(해시 복귀 시 자동 펼침) → 저장 → [내 채무상황으로 지피지기에게 물어보기]가 메모·단계를 AI 질문 문구에 실제 포함 → `/api/newstart/ai/chat`.
 - 개인정보: Credit4U 인증정보·주민번호·OTP 절대 미수신·미저장, 대신 로그인 없음. ai/chat 서버의 채무 row 자동 주입은 미구현(후속).
+
+## NewStart 회원 실행 권한 grant (V1011)
+
+`newstart_member_grants` — NewStart **실행형 기능**(지피지기 AI 질문, 금감원 Agent 세션/민원 초안 정리, 이후 질문요청 글쓰기)을 쓸 수 있는 회원 목록의 DB 정본.
+
+- 컬럼: `grant_id` PK(AI), `user_id` FK → `users.user_id`(ON DELETE CASCADE), `capability` VARCHAR(40), `granted_by`(운영자 식별), BaseEntity 감사 4컬럼. `UNIQUE(user_id, capability)` — 같은 회원에 같은 권한 중복 row 불가, 다른 capability는 같은 user_id로 공존.
+- **row 1건 = grant 1회, row DELETE = 회수.** `revoked_at` 같은 nullable 칼럼을 쓰지 않는 이유: MySQL UNIQUE는 NULL을 중복으로 허용해 "(user, capability, NULL)" 회수 이력이 무한 적립되어 재부여 판정을 오염한다. 감사 필요 시 `granted_by`/감사 컬럼과 운영 로그로 남긴다.
+- `capability`는 enum(STRING) `NewStartCapability` + DDL은 VARCHAR — 새 권한 추가 시 마이그레이션 없이 값만 늘린다. 현재 값은 `THANKS_MEMBER` 하나(운영자·전자책 기반 유료 세션 회원).
+- **`users.role`을 건드리지 않는다.** `Role` enum(STUDENT/TUTOR/CREATOR/ADMIN)은 BuildIt 전체 기능의 전역 역할이라, NewStart 전용 gating을 위해 전역 역할을 바꾸거나 hard-coded 사용자 목록을 만드는 것은 금지. 판정 단일 지점은 `NewStartEntitlementService`(ADMIN은 row 없이 통과).
+- 부여·회수는 SQL 1문으로 가능(배포 불필요): `INSERT INTO newstart_member_grants(user_id, capability, granted_by) VALUES(?, 'THANKS_MEMBER', 'operator')` / `DELETE ... WHERE user_id=? AND capability='THANKS_MEMBER'`. 마이그레이션에는 seed row를 넣지 않는다(운영 부여 데이터와 스키마 분리).
+- **일괄 부치는 idempotent 문형**(재실행해도 row가 늘지 않는다): `INSERT IGNORE INTO newstart_member_grants(user_id, capability, granted_by) SELECT u.user_id, 'THANKS_MEMBER', 'operator' FROM users u WHERE u.user_id IN (<운영자가 넘긴 user_id 목록>)`. `INSERT IGNORE`/`UNIQUE(user_id, capability)`가 중복을 걸러주고, user_id 목록은 email·실명 등 PII가 아니라 숫자 키만 넘긴다(PII를 SQL·저장소에 커밋 금지). 대상 선정을 모를 때는 `newstart-prod-census-readonly.yml`(read-only 집계)로 먼저 실측하고, write는 운영자 손으로만 실행한다.
+- 강제 지점은 API/컨트롤러다(읽기 화면에서 버튼을 숨기는 것만으로 처리하지 않음): 미부여 회원의 실행 호출은 `403` + `NewStartEntitlementService.DENIAL_MESSAGE`. 거절 번역은 `NewStartEntitlementExceptionHandler`(newstart 패키지 한정)가 `{status:"error", errorMessage}`로 내보내고, 프론트는 그 문구를 그대로 보여준다.
+- 설명·읽기는 공개 유지: A to Z, `/newstart/fss`의 14단계 안내(`GET /api/newstart/fss/agent/workflow`는 익명 permitAll), 공식 기관 링크.
+
+## NewStart 질문요청 게시판 (V1012)
+
+`newstart_requests` + `newstart_request_status_logs` — 설계 §5의 [질문·조사 요청] / [사이트 개선 요청] 인박스.
+
+- 두 kind를 한 테이블에: `kind` VARCHAR(20)(`QUESTION`/`SITE_IMPROVEMENT`) — 검토 주체와 상태 흐름이 같아 테이블을 분리하지 않는다. 개선 요청 전용 칼럼(`screen_location`, `a_to_z_step`)은 `SITE_IMPROVEMENT`에서만 채워지고 엔티티 생성자가 나머지 kind에서는 강제로 null화한다(화면·서버 오탈자 방지).
+- `a_to_z_step`은 `"13-2"` 형태 정규식 검증만 허용 — A to Z STEP 번호를 자유 텍스트로 두면 운영 반영 위치를 특정할 수 없다.
+- 상태 8종은 enum(STRING) 단일 정본: `RECEIVED→REVIEWING→ANSWERED→ACCEPTED→IN_PROGRESS→RESOLVED`(+ 종단 `REJECTED`/`DUPLICATE`). 이동마다 `newstart_request_status_logs`에 from/to row를 남긴다(첫 접수는 from=null). 거절·중복은 회원에게 설명할 사유가 필요하므로 `reason` 필수 검증이 service에 있다.
+- 작성자 userId는 요청 body가 아니라 서버 principal에서만 채워진다. 표시 이름은 저장하지 않고 조회 시점 `User`에서 resolve(chat과 동일한 규칙) — 계정 정리 시 "회원"으로 대체한다.
+- **삭제는 soft delete + 원문 파기**: `problem`/`answer`에 채무·기관 정보가 남을 수 있어 취소 시 `title`/`problem`/`proposal`을 비우고 `deleted` flag만 세운다(row 삭제 아님 — 검토 이력의 `request_id` 연결을 보존). 삭제된 요청은 상세·취소 모두 "찾을 수 없습니다"로 응답한다.
+- 권한: 읽기 = 인증 회원 상호 열람, 쓰기·취소 = THANKS_MEMBER(위 grant 표), 상태 관리 = `/api/admin/**`(hasRole ADMIN). GitHub issue 자동 생성은 없고 `github_ref`/`resolved_version`은 운영자가 수기 기입한다.
+- `newstart_knowledge_items.dedup_key` VARCHAR(191) UNIQUE도 V1012에 함께 추가 — 갈무리 feed(P2-3)이 채팅·질문요청·사례에서 뽑은 항목을 중복 저장하지 않는 키. 컬럼 길이 191은 MySQL utf8mb4 인덱스 한도(767바이트) 때문.
+
+## NewStart 갈무리 = 지식 항목 회원 feed (V1012 확장)
+
+`newstart_knowledge_items`를 그대로 읽는 **노출 레이어**(설계 §6). 테이블·게시판 구조를 새로 만들지 않고, 회원이 글을 쓰는 공간도 아니다(쓰기 endpoint 없음).
+
+- 갈무리 자격 = `status=ACTIVE` **AND** 오늘이 `effective_from`~`effective_to` 구간. RAG(`JipijigiResearchService`)가 ACTIVE만 검색하는 안전선과 같은 기준이라, 화면에 보이는 것과 AI가 인용하는 근거가 같은 집합에서 나온다. REVIEW/DRAFT는 운영자 검토함, 만료 항목은 [공식·과거] 재분류 전까지 feed에서 빠진다.
+- `SourceType`에 `CHAT_DISCOVERY`(회원 공용방 채팅 갈무리)·`REQUEST_DISCOVERY`(질문요청 갈무리) 추가 — 원 출처를 숨기지 않으면서 "사례를 공식 규칙처럼" 취급하지 않도록 분류 가능. RAG에서는 `CASE`와 같은 `INTERNAL_CASE` 등급(= OFFICIAL_RULE로 인용 금지).
+- 신뢰 라벨(§4)은 `source_type`에서 서버가 결정: `[공식·현재]`/`[공식·과거]`/`[운영자 실제 경험]`/`[사례 참고]`/`[전자책·운영 정리]`. 설계 3라벨에 두 칸을 더 둔 이유 — 만료 공식 자료를 "사례"로 취급하면 부정확하고, 2차 정리 자료(전자책·도출 규칙)를 "운영자 실제 경험"이라 쓰면 경험 단정이 된다.
+- `dedup_key`는 적재 파이프라인의 중복 제거 앵커. 기존 행은 NULL(MySQL UNIQUE는 NULL 중복 허용)이고 신규 적재분부터 기입 — 소급 갱신은 별도 운영 작업.
+- 자동 적재(scheduler/Agent)·production 자동 write는 미구현, 별도 승인 (§8). 현재 배선 범위는 읽기 API(`/api/newstart/galmuri`)와 화면(`/newstart/galmuri`)까지.
+
+## NewStart HOME 진입점 (설계 §2)
+
+HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대응(`/newstart/fss-helper`) → A to Z(`/newstart/a-to-z`) → 지피지기 질문(`#ns-ai`) → 질문요청 게시판(`/newstart/questions`) → 갈무리(`/newstart/galmuri`).
+
+- 중복 카드였던 `/newstart/tools/{credit4u,application,status,court}` 4종은 **HOME에서만 제거**했다. 컨트롤러·API는 그대로 두고, A to Z가 각 STEP에서 같은 도우미를 계속 참조하므로(reference audit) 화면 진입점은 줄고 기능은 그대로다. 상태창 `#ns-status-panel`의 Credit4U 재진입 링크도 유지.
+- 카드 제거 시 `#ns-debt-home-state`(채무상태 배지)까지 사라지면 Credit4U 복귀 flash 모션이 목적소를 잃는다 — 배지는 practical grid에서 MY DEBT 진입행(`.ns-row`)으로 옮겨 보존. 모션 토큰·reveal 훅 자체는 #431 baseline 그대로다.
+- 지피지기는 전용 라우트가 없어 HOME 앵커(`#ns-ai`)가 진입점이며, 실행(질문 전송)은 §7에 따라 API에서 THANKS_MEMBER 강제. 설명·열람은 공개, 카피에는 "승인 회원이 이용합니다"만 표기(버튼 숨김으로 권한을 대신하지 않음).
+

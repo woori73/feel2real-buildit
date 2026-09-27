@@ -274,3 +274,12 @@ A to Z/회원채팅을 작은 텍스트 링크로 숨기지 않는다.
 - 모바일 375/390/430에서 A to Z와 회원채팅을 크게 노출한다.
 - HOME과 A to Z 동일 기능은 같은 canonical helper로 연결한다.
 - “깔끔하게 보이게 한다”는 이유로 원문 세부내용을 삭제하지 않는다.
+
+# 19. 2026-09-27 공식 링크 재확인 (Phase 2 §3) — 위 스냅샷의 갱신 지시
+2026-09-27에 공식 사이트에서 직접 확인(HTTP 200 + 페이지 문구)한 결과로 화면 링크를 통일한다. 추정 URL은 사용하지 않았다.
+- **신청결과·진행상태 조회**: 공식 홈페이지가 메뉴 "진행상태 확인하기"로 거는 주소는 `https://www.newstartfund.or.kr/Rslt/Rslt.do`이다(`home.` 서브도메인도 200이지만 사이트가 공개한 정본은 `www.`) → Rslt.do 참조는 전부 `www.`로 통일. 페이지 문구는 "새출발기금 지원 결과조회", 본인인증 필수, "대표자만 신청 가능", "공동인증서는 PC에서만".
+- **신청하기 진입점**: 공식 홈페이지(https://home.newstartfund.or.kr/)의 "새출발기금 신청하기"는 `javascript:void(0)` 팝업이라 deep link가 없다. 따라서 STEP 4 CTA는 공식 홈페이지로 보내고, 존재하지 않는 신청 URL을 지어내지 않는다.
+- **공식 영상**: 4-4의 정본은 캠코TV 원본 `https://www.youtube.com/watch?v=GALYPhiZLaw`(oEmbed 확인: 제목 "새출발기금 홈페이지 신청 방법", 채널 "한국자산관리공사 캠코TV"). 캠코 게시판 view 주소는 더 이상 화면에 쓰지 않는다.
+- **Credit4U**: `https://www.credit4u.or.kr/`은 `https://www.credit4u.or.kr:2443/`으로 리다이렉트되므로 실서비스 포트로 통일(도우미 화면과 동일 기준).
+- **기관 라벨**: `fsc.go.kr`은 **금융위원회**, `fss.or.kr`이 **금융감독원**. 기존 "fsc.go.kr = 금융감독원" 표기는 오류였고, 두 항목을 분리해 등재한다.
+- HOME과 A to Z 연결 규칙(§18 마지막 줄)은 Phase 2 §2로 대체: HOME practical grid는 5개 진입점(fss-helper · A to Z · 지피지기 · 질문요청 게시판 · 갈무리)만 노출하고, `/newstart/tools/*` 4종은 A to Z STEP 내부에서 계속 호출된다(컨트롤러는 보존).

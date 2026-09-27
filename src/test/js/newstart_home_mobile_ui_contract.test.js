@@ -12,7 +12,7 @@ test('NewStart home exposes exactly four mobile-first core feature cards', () =>
   const cards = html.match(/class="ns-feature-card ns-feature-\w+/g) || [];
   assert.equal(cards.length, 4);
   ['내 상황', '지피지기 AI', '회원 채팅', '최신 정보'].forEach((label) => assert.match(html, new RegExp('>' + label + '<')));
-  ['/newstart/fss-helper', '/newstart/tools/credit4u', '/newstart/tools/application', '/newstart/tools/status', '/newstart/tools/court'].forEach((route) => assert.match(html, new RegExp('href="' + route + '"')));
+  ['/newstart/fss-helper', '/newstart/a-to-z', '/newstart/questions', '/newstart/galmuri'].forEach((route) => assert.match(html, new RegExp('href="' + route + '"')));
   assert.doesNotMatch(html, /<h3>정보·가이드<\/h3>|<h3>실제 사례<\/h3>/);
 });
 

@@ -1,7 +1,10 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,9 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * NewStart AI 질문 API.
  *
- * <p>인증 정책은 SecurityConfig의 기존 {@code /api/**} catch-all(인증 필요)을 그대로 따른다 —
- * Wiki AI Router가 로그인 principal 기준 X-BuildIt-* 서명을 요구하므로 익명 질문은 어차피
- * 불가능하다. 이 계층에서 새로운 권한 규칙을 만들지 않는다.
+ * <p>비로그인은 SecurityConfig의 {@code /api/**} catch-all이 401로 막고, 로그인 회원은
+ * {@link NewStartEntitlementService}의 THANKS_MEMBER 판정에서 403/통과가 갈린다. 지피지기는
+ * 운영 비용이 드는 실행형 기능이므로 "로그인 회원 = 전원 실행"으로 두지 않는다.
+ * 거절 응답은 {@link NewStartEntitlementExceptionHandler}가 안내 문구로 번역한다.
  *
  * <p>에러 상세(provider 응답, exception, stack trace)는 브라우저로 노출하지 않는다 — service가
  * 실패를 result-object로 변환하고 controller는 안내 문구만 내린다.
@@ -22,13 +26,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewStartAiChatController {
 
   private final NewStartAiChatService newStartAiChatService;
+  private final NewStartEntitlementService newStartEntitlementService;
 
-  public NewStartAiChatController(NewStartAiChatService newStartAiChatService) {
+  public NewStartAiChatController(NewStartAiChatService newStartAiChatService,
+      NewStartEntitlementService newStartEntitlementService) {
     this.newStartAiChatService = newStartAiChatService;
+    this.newStartEntitlementService = newStartEntitlementService;
   }
 
   @PostMapping("/chat")
-  public ResponseEntity<ChatResponse> chat(@RequestBody ChatRequest request) {
+  public ResponseEntity<ChatResponse> chat(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody ChatRequest request) {
+    newStartEntitlementService.requireThanksMember(principal);
     NewStartAiChatService.NewStartAiAnswer answer =
         newStartAiChatService.ask(request == null ? null : request.message());
     if (!answer.ok()) {

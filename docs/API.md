@@ -51,11 +51,11 @@
 
 - 목적: NewStart 화면의 AI 질문. 기존 BuildIt Wiki AI Router(`ai_router.py`, `provider=auto`)를 서버-서버로 재사용한다(공용 `WikiAiRouterClient`). 새 provider·모델 설정을 만들지 않는다.
 - 현재 사용처: `/newstart` NewStart AI 질문창
-- 인증/권한: 기존 `/api/**` catch-all(로그인 회원)을 따른다. 별도 권한 규칙 없음.
+- 인증/권한: 비로그인은 기존 `/api/**` catch-all이 `401`. 로그인 회원은 **THANKS_MEMBER** grant가 있어야 실행할 수 있다(`newstart_member_grants` row, ADMIN은 grant 없이 통과) — 미부여 회원은 `403` + `errorMessage` 안내. AI 호출(Router 비용)이 드는 실행형 기능이므로 "로그인 회원 = 전원 실행"으로 두지 않는다. 화면에서 입력창을 숨기는 것과 무관하게 API에서 강제한다.
 - Request JSON: `message` (필수, 1~2000자)
 - Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용), `sources`(배열; 답변 조립에 실제 사용된 근거 출처 최대 8건 — 각 `{kind,title,url}`, `kind`는 `공식 자료`/`운영자·전자책 자료`/`실증 사례(DB)`/`신복위 카페 사례`/`부실차주 카페 사례`/`참고` 라벨)
 - 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
-- 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, 지식베이스 조회 실패, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
+- 실패: `400`(빈 질문·길이 초과·지식베이스 조회 실패·provider/네트워크 오류 공통), `403`(THANKS_MEMBER 미부여 회원) 모두 `{"status":"error","errorMessage":"..."}`. 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
 - RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립 우선순위: 공식 > 운영/전자책 > 승인 답변 세션 > 카페·실증 사례((refType,refId) 중복 제거, 최대 12건). 답변 프롬프트는 근거 성격을 '공식 안내에 따르면' vs '카페 사례에서는'으로 구분하도록 강제한다.
 
 
@@ -69,6 +69,38 @@
 - `WS /ws/newstart-chat` — raw WebSocket(동일 origin + 로그인만 handshake 통과, 비로그인 401/교차 origin 403). 클라이언트 → 서버 `{ "message": "본문" }`(500자 상한, 빈 값 거부, 도배 방지 10건/15초). 서버 → 클라이언트 `{ "type": "new", "id", "senderUserId", "displayName", "message", "createdAt" }` / `{ "type": "deleted", "id" }` / `{ "type": "error", "message" }`.
 
 DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_id), `message` VARCHAR(500), `deleted` soft delete flag. 화면: `/newstart/chat`(공개 — 데이터는 전부 인증 뒤, 비로그인 시 로그인 모달 안내).
+
+### NewStart 질문요청 게시판 (설계 §5, V1012)
+
+[질문·조사 요청]과 [사이트 개선 요청]을 한 인박스로 받는 게시판. 회원 간 열람은 허용하되(전체 회원 상호 열람 확정), **쓰기·취소는 THANKS_MEMBER grant**가 있어야 한다. 운영자의 상태 관리는 `/api/admin/**`(hasRole ADMIN) 경로로만 들어온다. GitHub issue 자동 생성은 없다 — `githubRef`는 반영 시점에 운영자가 수기로 기입한다.
+
+- `GET /newstart/questions` — 화면 shell(채팅과 동일: 페이지는 공개, 데이터는 전부 인증 뒤. 비로그인은 로그인 안내).
+- `GET /api/newstart/requests?kind={QUESTION|SITE_IMPROVEMENT}&page={0..}&size={1~50, 기본 20}` — 최근 작성 순. `{ "requests": [ RequestView ], "hasMore" }`. `kind` 생략 시 두 인박스 합산.
+- `GET /api/newstart/requests/{requestId}` — 상세. 목록과 달리 `statusLogs`(상태 이동 이력, `actor`는 "운영자"로 통일 노출)를 싣는다. 삭제·없음은 `404` + `errorMessage`.
+- `POST /api/newstart/requests` — 작성. Request JSON `kind`(필수), `title`(필수 ≤200자), `problem`(필수 ≤4000자), `proposal`(≤4000자), `screenLocation`(≤120자), `aToZStep`(`"13-2"` 형태만). `screenLocation`/`aToZStep`은 `SITE_IMPROVEMENT`에서만 저장된다. 작성자 userId는 본문이 아니라 principal에서만 채워진다.
+- `DELETE /api/newstart/requests/{requestId}` — 취소(본인 또는 ADMIN). soft delete이며 `title`/`problem`/`proposal` 원문은 파기하고 이력 row만 남긴다. 타인 것은 `403`.
+- `GET /api/admin/newstart/requests/queue?status={8종, 기본 RECEIVED}` — 검토 큐(같은 상태가 오래된 순).
+- `POST /api/admin/newstart/requests/{requestId}/review` — 상태 이동. Request JSON `status`, `answer`, `reason`, `githubRef`, `resolvedVersion`. `REJECTED`/`DUPLICATE`는 `reason` 필수(미기입 `400`), `RESOLVED`일 때만 `githubRef`/`resolvedVersion`을 기록하고 `resolvedAt`을 세운다.
+
+`RequestView`: `{ id, kind, title, screenLocation, aToZStep, problem, proposal, status, answer, answeredBy, resolvedAt, githubRef, resolvedVersion, authorId, author, createdAt, statusLogs }` — `author`는 서버가 resolve한 공개 표기(실명·이메일·전화 아님), `authorId`는 취소 버튼 표시 판정용(채팅 `senderUserId`와 같은 공개 범위)이고 실제 권한 근거는 항상 서버 principal이다.
+
+상태 8종: `RECEIVED`(접수) · `REVIEWING`(검토 중) · `ANSWERED`(답변 완료) · `ACCEPTED`(채택) · `IN_PROGRESS`(반영 진행 중) · `RESOLVED`(해결 완료) · `REJECTED`(거절) · `DUPLICATE`(중복).
+
+인증/권한 요약: 비로그인은 `/api/**` catch-all이 `401`. 미부여 회원의 작성은 `403` + `{"status":"error","errorMessage":"회원 전용 기능입니다. ..."}`(화면은 이 문구를 그대로 노출). 검증 실패는 `400` + `errorMessage`.
+
+### NewStart 갈무리 게시판 (설계 §6, V1012)
+
+운영자 승인(`ACTIVE`) 지식 항목을 회원에게 노출하는 **read-only feed**. 새 테이블·새 게시판이 아니라 `newstart_knowledge_items`를 그대로 읽는다(§6 "중복 테이블 금지"). **쓰기 endpoint가 없다** — POST는 `405`. 회원이 글을 올리는 공간이 아니라 채팅·카페·사례·질문요청을 분석·비식별화·요약해 승인한 결과물을 보는 화면이기 때문이다.
+
+- `GET /newstart/galmuri` — 화면 shell(채팅·질문요청과 동일: 셸은 공개, 데이터는 인증 뒤).
+- `GET /api/newstart/galmuri?category={분류}&page={0..}&size={1~50, 기본 20}` — ACTIVE이면서 **오늘이 효력 구간인** 항목을 출처 기준시점(`source_date`, 없으면 등록시점) 최신순. `{ "items": [ GalmuriCard ], "hasMore" }`.
+- `GET /api/newstart/galmuri/{knowledgeId}` — 상세(본문 `content` + `sourceUrl`). REVIEW/DRAFT/ARCHIVED이거나 `effective_to`가 지났으면 목록과 같은 기준으로 `404` + `errorMessage`(본문 회수).
+
+`GalmuriCard`: `{ id, title, summary, category, label, tone, authority, sourceDate, effectiveTo, tags[] }` / 상세 추가 필드: `{ content, effectiveFrom, sourceUrl }`.
+
+- `label`(§4 신뢰 등급)은 **서버가 `source_type`에서 결정**한다 — 프론트가 자체 판정하면 라벨과 배지 색이 어긋난다. `OFFICIAL_CURRENT`→`[공식·현재]`, `OFFICIAL_HISTORICAL`→`[공식·과거]`, `OPERATOR_KNOWLEDGE`/`AUDIT`→`[운영자 실제 경험]`, `CASE`/`CAFE_*`/`CHAT_DISCOVERY`/`REQUEST_DISCOVERY`→`[사례 참고]`, `EBOOK`/`DERIVED_RULE`→`[전자책·운영 정리]`. `tone`은 `official`/`operator`/`case` 3계(화면은 색만 입힌다).
+- 회원 개인정보성 필드(`created_by`, `related_case_ids`, `related_rule_ids`)는 view에 존재하지 않는다. 원출처 링크는 `http/https`만 렌더(`javascript:` 차단) + `rel="noopener noreferrer"`.
+- 자동 적재(Agent 분석 → 중복 제거 → 갈무리)는 **미구현·별도 승인** — §8에 따라 scheduler와 production 자동 write를 이 단계에서 만들지 않는다. 배선은 읽기 side + 중복 앵커(`dedup_key`) + `source_type` 확장(`CHAT_DISCOVERY`, `REQUEST_DISCOVERY`)까지.
 
 # API 명세
 
@@ -4183,11 +4215,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ## 금감원 민원 도우미 API (`/api/newstart/fss`) (2026-09, Phase 1 v2)
 
-- 인증: 기존 `/api/**` catch-all(로그인 필요)을 따른다. 권한 규칙은 새로 만들지 않는다.
+- 인증: 비로그인은 기존 `/api/**` catch-all이 `401`로 막는다. **설계 §7 경계** — 설명/예시/공식 안내는 읽기, AI 실행은 THANKS_MEMBER(`newstart_member_grants` row, ADMIN은 grant 없이 통과). 미부여 회원의 실행 호출은 `403` + `{"status":"error","errorMessage":"회원 전용 기능입니다..."}`이고 AI는 호출되지 않는다.
 - 무상태 원칙: 민원 원문·인터뷰 내용·초안은 DB에 저장하지 않고 로그에도 남기지 않는다. 자동 제출은 존재하지 않으며, 제출·본인인증은 사용자가 금감원 공식 사이트에서 직접 수행한다.
 - `GET /api/newstart/fss/companion` — 화면 1회 로딩 payload: `samples`(전자책 예시 3종 FS-1..FS-3, ebookRef·sourceLines 포함), `manual`(전자책 기반 안내), `official`(§7 소관 분기 안내: 금감원 공식 페이지 3종 출처·카테고리별 소관·기타 기관 경로·조회 기준일), `agent`(Guided Agent 14단계 정적 안내, PC Chrome 고지 포함).
-- `POST /api/newstart/fss/compose` — 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
-- `GET /api/newstart/fss/agent/workflow`, `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — Guided Agent 단계 안내(메모리 세션, 개인정보 미저장).
+- `POST /api/newstart/fss/compose` — **THANKS_MEMBER 실행**. 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
+- `GET /api/newstart/fss/agent/workflow` — 14단계 정적 안내(개인정보 없음). **익명 열람 허용**(SecurityConfig permitAll, GET 한정) — 설명은 누구나 본다.
+- `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — **THANKS_MEMBER 실행**(세션 생성·진행). 미부여 회원은 403, 화면은 안내 문구를 그대로 보여주되 14단계 목록 렌더는 계속 진행한다(메모리 세션, 개인정보 미저장).
 
 
 ## NewStart 본인채무 상태창 API (`/api/newstart/debt-status`) (2026-09, V1009)
