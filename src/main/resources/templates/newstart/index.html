@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>새출발기금 부실차주 | 내 채무조정 상황을 한곳에서 관리</title>
-  <meta name="description" content="내 상황 확인, NewStart AI, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
+  <meta name="description" content="내 상황 확인, 지피지기 AI, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260924-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260925-1">
 </head>
 <body>
   <div class="newstart-page">
@@ -36,7 +36,7 @@
           <div class="ns-section-heading"><p class="ns-section-kicker">PRACTICAL TOOLS</p><h2 id="ns-practical-title">지금 필요한 도움</h2></div>
           <div class="ns-core-grid ns-practical-grid">
             <a class="ns-feature-card" href="/newstart/fss-helper"><strong>추심 대응</strong><span class="ns-feature-copy">금감원 민원 샘플과 작성 도우미</span><span class="ns-feature-cta">민원 도우미 →</span></a>
-            <a class="ns-feature-card" href="/newstart/tools/credit4u"><strong>채무 확인</strong><span class="ns-feature-copy">한국신용정보원에서 확인할 항목</span><span class="ns-feature-cta">Credit4U 확인 →</span></a>
+            <a class="ns-feature-card" href="/newstart/tools/credit4u"><strong>채무 확인</strong><span class="ns-feature-copy">내 채권기관·대출·연체정보를 Credit4U에서 확인하고 내 채무상황에 정리합니다.</span><span class="ns-debt-home-state" id="ns-debt-home-state" data-state="NOT_STARTED">미확인</span><span class="ns-feature-cta">Credit4U 확인 →</span></a>
             <a class="ns-feature-card" href="/newstart/tools/application"><strong>신청 준비</strong><span class="ns-feature-copy">부실차주 신청 전 순서 정리</span><span class="ns-feature-cta">신청 도우미 →</span></a>
             <a class="ns-feature-card" href="/newstart/tools/status"><strong>신청 후</strong><span class="ns-feature-copy">공식 결과·진행상태 확인</span><span class="ns-feature-cta">진행상태 확인 →</span></a>
             <a class="ns-feature-card" href="/newstart/tools/court"><strong>법원 대응</strong><span class="ns-feature-copy">전자소송·지급명령 대응 정리</span><span class="ns-feature-cta">전자소송 도우미 →</span></a>
@@ -71,7 +71,7 @@
             </a>
             <a class="ns-feature-card ns-feature-ai" href="#ns-ai">
               <span class="ns-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Zm6 11 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z"/></svg></span>
-              <span class="ns-feature-category">ASK AI</span><strong>NewStart AI</strong>
+              <span class="ns-feature-category">ASK AI</span><strong>지피지기 AI</strong>
               <span class="ns-feature-copy">궁금한 내용을 AI에게 바로 물어보세요.</span>
               <span class="ns-feature-cta">AI에게 질문하기 <span aria-hidden="true">→</span></span>
             </a>
@@ -91,7 +91,7 @@
         </section>
 
         <section id="ns-ai" class="ns-ai-hero" aria-labelledby="ns-ai-title">
-          <p class="ns-section-kicker">NEWSTART AI</p>
+          <p class="ns-section-kicker">지피지기 AI</p>
           <h2 id="ns-ai-title" class="ns-ai-title">무엇이든 물어보세요</h2>
           <form class="ns-ai-input-row" id="ns-ai-form">
             <input class="ns-input ns-ai-input" id="ns-ai-input" type="text" placeholder="궁금한 점을 질문하세요" autocomplete="off" maxlength="2000">
@@ -101,19 +101,37 @@
           <div id="ns-ai-thread" class="ns-ai-thread" aria-live="polite"></div>
         </section>
 
-        <section id="ns-status-panel" class="ns-card ns-status-panel" hidden aria-label="내 상황">
+        <section id="ns-status-panel" class="ns-card ns-status-panel" hidden aria-label="내 채무상황">
           <div class="ns-card-head">
-            <div><p class="ns-section-kicker">MY STATUS</p><h2 class="ns-card-title">내 상황 정리</h2></div>
+            <div><p class="ns-section-kicker">MY STATUS</p><h2 class="ns-card-title">내 채무상황 정리</h2></div>
             <button class="ns-btn ns-btn-ghost" type="button" data-ns-toggle="ns-status-panel">접기</button>
           </div>
-          <p class="ns-empty">아직 기록된 개인 상황이 없습니다. 현재 기능 준비 단계이며 아래 입력 내용은 서버에 저장되지 않습니다.</p>
+          <p class="ns-empty" id="ns-debt-empty">Credit4U에서 확인한 내용을 아래 체크리스트에 정리하세요. 로그인한 회원의 채무상황으로 저장됩니다.</p>
+          <div class="ns-debt-checklist" id="ns-debt-checklist">
+            <p class="ns-label">Credit4U 확인 체크리스트</p>
+            <label class="ns-check" for="ns-flag-credit4u"><input class="ns-check-input" type="checkbox" id="ns-flag-credit4u"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">Credit4U 확인 완료</span></label>
+            <label class="ns-check" for="ns-flag-creditor"><input class="ns-check-input" type="checkbox" id="ns-flag-creditor"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">채권기관 확인</span></label>
+            <label class="ns-check" for="ns-flag-loan"><input class="ns-check-input" type="checkbox" id="ns-flag-loan"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">개인대출 확인</span></label>
+            <label class="ns-check" for="ns-flag-overdue"><input class="ns-check-input" type="checkbox" id="ns-flag-overdue"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">연체정보 확인</span></label>
+            <label class="ns-check" for="ns-flag-guarantee"><input class="ns-check-input" type="checkbox" id="ns-flag-guarantee"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">채무보증 확인</span></label>
+            <label class="ns-check" for="ns-flag-creditor-change"><input class="ns-check-input" type="checkbox" id="ns-flag-creditor-change"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">채권자 변동 확인</span></label>
+          </div>
           <form id="ns-situation-form">
             <div class="ns-grid ns-grid-2">
-              <div><label class="ns-label" for="ns-debt-summary">채무 현황 메모</label><textarea class="ns-textarea" id="ns-debt-summary" rows="3" placeholder="연체 여부와 현재 상황을 간단히 적어보세요"></textarea></div>
+              <div><label class="ns-label" for="ns-debt-summary">채무 현황 메모</label><textarea class="ns-textarea" id="ns-debt-summary" rows="3" maxlength="1000" placeholder="채권기관·채무 종류·잔액·연체 여부·확인일을 정리해 보세요. 실명·연락처·계좌번호는 적지 마세요."></textarea></div>
               <div><label class="ns-label" for="ns-stage">현재 진행 단계</label><select class="ns-select" id="ns-stage"><option value="">선택</option><option>정보 확인 중</option><option>신청 준비 중</option><option>신청 완료</option><option>심사 진행 중</option><option>협약·약정 단계</option><option>기타</option></select></div>
             </div>
-            <div class="ns-row"><button class="ns-btn ns-btn-primary" type="button" disabled>메모 저장 — 준비 중</button><button class="ns-btn" type="reset">작성 내용 지우기</button></div>
+            <div class="ns-row">
+              <button class="ns-btn ns-btn-primary" type="submit" id="ns-debt-save">내 채무상황 저장</button>
+              <button class="ns-btn" type="reset">작성 내용 지우기</button>
+              <span class="ns-debt-save-state" id="ns-debt-save-state" role="status"></span>
+            </div>
           </form>
+          <div class="ns-row ns-debt-agent-row">
+            <button class="ns-btn ns-btn-primary" type="button" id="ns-debt-ask-agent">내 채무상황으로 지피지기에게 물어보기</button>
+            <p class="ns-note">지금 정리한 단계·메모가 아래 AI 질문창에 채워지고, 전송하면 실제로 함께 전달됩니다.</p>
+          </div>
+          <a class="ns-text-link" href="/newstart/tools/credit4u">Credit4U에서 확인할 항목 다시 보기 →</a>
         </section>
 
         <section id="ns-updates" class="ns-content-section ns-updates" aria-labelledby="ns-updates-title">
@@ -142,7 +160,7 @@
   <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, true)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
-  <script src="/js/newstart.js?v=20260921-2" defer></script>
+  <script src="/js/newstart.js?v=20260925-1" defer></script>
   <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
 </body>
 </html>

@@ -4007,7 +4007,7 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   `POST /ingest/generate-rules`: 카페 사례→knowledge 파생(별도 컨트롤러 `NewstartIngestionAdminController`).
 - `POST /ingest/cases/repair`(`articlesDir`, 기본 `data/newstart-cafe/repair_staging/articles`):
   staging articleId만 대상 비파괴 병합(insert / null→fill / contentRaw는 더 긴 쪽만), 재실행 멱등,
-  `created_by/updated_by=REPAIR_BOT`, knowledge 테이블 무접촉 (V1007 이전 #417 계약).
+  `created_by/updated_by=REPAIR_BOT`, knowledge 테이블 무접촉 (V1009 이전 #417 계약).
 - `POST /ingest/curated-review`(`ebookSections` 기본 `docs/newstart/ebook/ebook_sections.json`,
   `gamianDir` 기본 `data/newstart-cafe/gamian/articles`): Agent3 큐레이션 산출물(EBOOK 19 section +
   CASE 11건) REVIEW 전용 적재 — ACTIVE 생성 경로 없음, title/articleId 멱등, CONFLICT_REVIEW 태그·
@@ -4157,3 +4157,16 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/newstart/fss/companion` — 화면 1회 로딩 payload: `samples`(전자책 예시 3종 FS-1..FS-3, ebookRef·sourceLines 포함), `manual`(전자책 기반 안내), `official`(§7 소관 분기 안내: 금감원 공식 페이지 3종 출처·카테고리별 소관·기타 기관 경로·조회 기준일), `agent`(Guided Agent 14단계 정적 안내, PC Chrome 고지 포함).
 - `POST /api/newstart/fss/compose` — 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
 - `GET /api/newstart/fss/agent/workflow`, `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — Guided Agent 단계 안내(메모리 세션, 개인정보 미저장).
+
+
+## NewStart 본인채무 상태창 API (`/api/newstart/debt-status`) (2026-09, V1009)
+
+전자책 실전 가이드 → 한국신용정보원 Credit4U → 기존 `/newstart#ns-status-panel` 상태창을 하나의 흐름으로 연결한다. 상태창이 SOURCE OF TRUTH이며 별도 채무관리 화면/중복 저장 테이블은 없다.
+
+- 인증: 기존 `/api/**` catch-all(로그인 필요)을 그대로 따른다. 권한 규칙은 새로 만들지 않는다. 대상 회원은 서버 principal(userId)로만 결정되고 요청 바디에 userId가 없다.
+- `GET /api/newstart/debt-status/me` — 회원별 1:1 상태. row가 없으면 기본 빈 상태(`status=NOT_STARTED`). 응답은 확인 플래그 6종(`credit4uChecked|creditorConfirmed|personalLoanConfirmed|overdueRegisteredConfirmed|debtGuaranteeConfirmed|creditorChangeConfirmed`), `debtSummary`, `stage`, 파생 `status`(`NOT_STARTED|IN_PROGRESS|COMPLETED`).
+- `PUT /api/newstart/debt-status` — upsert 전용(초기화는 값 비운 저장, DELETE API 없음). `stage`는 화면 select allowlist(정보 확인 중/신청 준비 중/신청 완료/심사 진행 중/협약·약정 단계/기타)만 허용, 위반·1000자 초과 메모는 400(`errorMessage`)이며 원문을 자르지 않는다.
+- 파생 상태는 저장값이 아니라 표시값: 체크 0개 → 미확인, 일부 → 확인 중, 6개 전부 + 메모 또는 단계 → 정리 완료(HOME `#ns-debt-home-state` 배지).
+- `/newstart/tools/credit4u`는 전자책 3줄 stub을 공식 메뉴 기준 9단계 실전 안내(일반신용정보→신용정보 등록현황→신용도판단정보/공공정보/개인대출정보/개설·발급정보/채무보증정보→채권자 변동정보→개인회생 신청 등 정보→대출채권소각정보)로 교체했고, 하단 CTA `[확인한 채무정보 정리하기 →]`가 `/newstart#ns-status-panel`로 복귀해 상태창을 자동 연다.
+- 개인정보 원칙: Credit4U ID/PW·주민번호·공동/금융인증서 비밀번호·OTP는 절대 수신·저장하지 않고 대신 로그인하지 않는다. 채무 원본(금액·기관 목록 데이터)이 아니라 사용자가 직접 정리한 메모만 저장한다.
+- 지피지기 연결: 상태창 버튼은 메모·단계를 AI 질문창에 실제로 채워 `/api/newstart/ai/chat` 전달 문의로 사용한다. ai/chat 서버가 DB의 채무상황 row를 자동 컨텍스트로 주입하지는 않는다(미연결 — 후속 작업).
