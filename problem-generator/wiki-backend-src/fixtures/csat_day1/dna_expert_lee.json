@@ -1,0 +1,150 @@
+{
+  "_meta": {
+    "note": "LEVEL-2 EXPERT_ANALYSIS 출처: 이명학 공개 총평 2건. 자막·영상 전문은 저장하지 않고 URL/구간(초)/요약만 보존한다(저작권 정책). 각 구간은 브라우저에서 해당 초로 재생해 실제 렌더링 자막과 대조 확인했다.",
+    "verification": "2026-09-27 Playwright로 seek 대조한 초: LEE6 = 55/75/100/118/200/232/250/265/300/990/1000/1010/1150/1170, LEE9 = 62/78/88/100/112/122/186/196/325/332/340/346/353/363/376. 대조 실패 구간(LEE9 898-917 '6평 수준으로 공부')과 자동자막 숫자 판독만 가능한 진술(작년 수능 3.11%·1등급 비율·31번 오답률 순위·23/25학년도 9평 비교)은 등록하지 않았다.",
+    "priority_policy": "강사 분석은 실제 기출·평가원 공식 해설보다 우선하지 않는다. 충돌하는 진술은 덮어쓰지 않고 agreement_kind=DIFFERENT_EMPHASIS로 관점 차이를 보존한다.",
+    "exams": {
+      "J2027": {"exam_year": 2027, "exam_type": "JUNE_MOCK", "subject": "ENGLISH"},
+      "S2027": {"exam_year": 2027, "exam_type": "SEPTEMBER_MOCK", "subject": "ENGLISH"}
+    }
+  },
+  "sources": [
+    {
+      "key": "LEE6",
+      "expert": "이명학",
+      "target_exam": "J2027",
+      "source_type": "EXPERT_ANALYSIS",
+      "video_url": "https://www.youtube.com/watch?v=gt3K_OVxaZg",
+      "video_title": "[대성마이맥] 영어 이명학T - 2026년 고3 6월 모평 영어 총평 해설강의",
+      "published_at": "2026-06-05",
+      "verified_note": "길이 1331초. 한국어 자동생성 자막(ASR) 494조각, 사람 작성 자막 없음. 등록한 모든 구간은 seek 대조로 확인."
+    },
+    {
+      "key": "LEE9",
+      "expert": "이명학",
+      "target_exam": "S2027",
+      "source_type": "EXPERT_ANALYSIS",
+      "video_url": "https://www.youtube.com/watch?v=Dt-6ej9XqAc",
+      "video_title": "[대성마이맥] 영어 이명학T - 2026년 9월 모평 분석 LIVE 다시보기 [영어영역]",
+      "published_at": "2026-09-02",
+      "verified_note": "길이 1063초. 한국어 자동생성 자막(ASR) 372조각, 사람 작성 자막 없음. 등록한 모든 구간은 seek 대조로 확인."
+    }
+  ],
+  "claims": [
+    {
+      "exam": "J2027", "claim_type": "CORE_TRAIT", "tag": "LOGIC", "importance": 3,
+      "source": "LEE6", "timestamp_start": 200, "timestamp_end": 305, "agreement_kind": "AGREEMENT",
+      "claim_text": "6월 모평의 변별력은 지문 자체의 난도가 아니라 문제 해결력에서 나왔다고 진단 — 지문은 대략 이해되는데 정답을 확정하는 순간 갈린다",
+      "evidence": [{"question_no": 31}, {"question_no": 32}, {"question_no": 33}, {"question_no": 34}, {"question_no": 36}, {"question_no": 37}]
+    },
+    {
+      "exam": "J2027", "claim_type": "HIGH_DIFFICULTY", "tag": "COHESION", "importance": 2,
+      "source": "LEE6", "timestamp_start": 276, "timestamp_end": 305, "agreement_kind": "AGREEMENT",
+      "claim_text": "순서 문제가 쉬웠다고 볼 수 없다고 선을 긋고, 명시적 근거를 의도적으로 덜어낸 출제라고 해석한다",
+      "evidence": [{"question_no": 36}, {"question_no": 37}]
+    },
+    {
+      "exam": "J2027", "claim_type": "MAJOR_TRAP", "tag": "DISTRACTOR_TRAP", "importance": 3,
+      "source": "LEE6", "timestamp_start": 250, "timestamp_end": 275, "agreement_kind": "DIFFERENT_EMPHASIS",
+      "claim_text": "빈칸의 강도를 유사 선지 간 갈등에서 찾는다 — 위키 종합이 지목한 어휘 메아리·지문 밖 상식 추가와 우열이 아니라 초점 차이로 병존",
+      "evidence": [{"question_no": 31}, {"question_no": 32}, {"question_no": 33}, {"question_no": 34}]
+    },
+    {
+      "exam": "J2027", "claim_type": "SKILL_DEMAND", "tag": "", "importance": 2,
+      "source": "LEE6", "timestamp_start": 1149, "timestamp_end": 1176, "agreement_kind": "EXPERT_ONLY",
+      "claim_text": "'읽고 나서 이게 답인지 아닌지를 묻는' 국어식 선지 판단 문항이 있었고 이를 올해 기조 신호로 읽되, 수능 난이도 단정은 하지 않는다",
+      "evidence": [{"question_no": 21}, {"question_no": 31}, {"question_no": 33}, {"question_no": 34}]
+    },
+    {
+      "exam": "J2027", "claim_type": "HIGH_DIFFICULTY", "tag": "INFERENCE", "importance": 2,
+      "source": "LEE6", "timestamp_start": 985, "timestamp_end": 1015, "agreement_kind": "EXPERT_ONLY",
+      "claim_text": "영어는 2점 문항이 3점 문항보다 변별력이 높을 수 있다고 말하며 이번 6월의 해당 문항으로 31번을 지목한다 (오답률 순위 수치는 대조 불가라 미등록)",
+      "evidence": [{"question_no": 31}]
+    },
+    {
+      "exam": "S2027", "claim_type": "CORE_TRAIT", "tag": "VOCABULARY", "importance": 3,
+      "source": "LEE9", "timestamp_start": 49, "timestamp_end": 71, "agreement_kind": "AGREEMENT",
+      "claim_text": "난이도 요인을 어휘·구문에서 first로 두고, 어휘는 힘든 어휘가 상당수 포함됐다고 본다 — 위키 종합의 어휘 판단 변별 지점(30·42)과 같은 방향",
+      "evidence": [{"question_no": 30}, {"question_no": 42}]
+    },
+    {
+      "exam": "S2027", "claim_type": "CORE_TRAIT", "tag": "SYNTAX", "importance": 2,
+      "source": "LEE9", "timestamp_start": 60, "timestamp_end": 71, "agreement_kind": "EXPERT_ONLY",
+      "claim_text": "구문은 긴 호흡이나 복잡한 구조가 거의 등장하지 않았다고 본다 — 어휘 부담과 구문 부담이 같은 방향이 아니었다는 진단",
+      "evidence": [{"question_no": 29}]
+    },
+    {
+      "exam": "S2027", "claim_type": "CORE_TRAIT", "tag": "TIME_PRESSURE", "importance": 2,
+      "source": "LEE9", "timestamp_start": 71, "timestamp_end": 84, "agreement_kind": "EXPERT_ONLY",
+      "claim_text": "지문 길이는 21번 문항을 제외하면 줄었다고 본다",
+      "evidence": [{"question_no": 21}]
+    },
+    {
+      "exam": "S2027", "claim_type": "HIGH_DIFFICULTY", "tag": "ABSTRACT_CONCEPT", "importance": 2,
+      "source": "LEE9", "timestamp_start": 84, "timestamp_end": 105, "agreement_kind": "DIFFERENT_EMPHASIS",
+      "claim_text": "추상적·철학적인 소재는 등장하지 않았고 한 단락의 말이 딱 떨어지는 명료성이 높았다고 평가 — 위키 종합의 '9월 23번 개념 전환형 출현' 판정과 초점이 다르다",
+      "evidence": [{"question_no": 23}]
+    },
+    {
+      "exam": "S2027", "claim_type": "MAJOR_TRAP", "tag": "DISTRACTOR_TRAP", "importance": 3,
+      "source": "LEE9", "timestamp_start": 105, "timestamp_end": 128, "agreement_kind": "DIFFERENT_EMPHASIS",
+      "claim_text": "매력적인 오답이 많이 등장하지 않았고, 답을 고를 때 갈린 지점으로 33·34번 빈칸을 지목한다 — 위키 종합이 23번의 통설 함정을 높은 매력도로 본 것과 병존",
+      "evidence": [{"question_no": 33}, {"question_no": 34}]
+    },
+    {
+      "exam": "S2027", "claim_type": "SKILL_DEMAND", "tag": "COHESION", "importance": 3,
+      "source": "LEE9", "timestamp_start": 357, "timestamp_end": 368, "agreement_kind": "AGREEMENT",
+      "claim_text": "빈칸·순서·삽입을 해결하지 못하면 1·2등급이 어렵다고 정리한다",
+      "evidence": [{"question_no": 31}, {"question_no": 33}, {"question_no": 34}, {"question_no": 36}, {"question_no": 37}, {"question_no": 38}, {"question_no": 39}]
+    },
+    {
+      "exam": "S2027", "claim_type": "CORE_TRAIT", "tag": "", "importance": 3,
+      "source": "LEE9", "timestamp_start": 319, "timestamp_end": 347, "agreement_kind": "EXPERT_ONLY",
+      "claim_text": "어휘·구문 / 지문 길이 / 소재 명료성 / 매력적 오답이 6월과 9월에서 서로 반대 방향으로 움직였다며 '경향이 없는 것이 경향'이라고 결론 — 9월 데이터만으로 수능 난이도를 예측하지 않는다",
+      "evidence": [{"question_no": 21}, {"question_no": 30}, {"question_no": 33}, {"question_no": 34}]
+    }
+  ],
+  "dna": [
+    {"exam": "J2027", "question_no": 31, "entry_type": "DNA", "tag": "DISTRACTOR_TRAP", "importance": 3, "source": "LEE6", "timestamp_start": 250, "timestamp_end": 275, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 빈칸에서 '이건가 저건가' 갈리는 선지 구성을 강도의 원천으로 지목"},
+    {"exam": "J2027", "question_no": 32, "entry_type": "DNA", "tag": "DISTRACTOR_TRAP", "importance": 3, "source": "LEE6", "timestamp_start": 250, "timestamp_end": 275, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 31~34번 빈칸 전체를 답 선택 갈등 구간으로 본다"},
+    {"exam": "J2027", "question_no": 33, "entry_type": "DNA", "tag": "DISTRACTOR_TRAP", "importance": 3, "source": "LEE6", "timestamp_start": 250, "timestamp_end": 275, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 지문 이해가 아니라 선지 판별에서 갈린다고 진단"},
+    {"exam": "J2027", "question_no": 34, "entry_type": "DNA", "tag": "DISTRACTOR_TRAP", "importance": 3, "source": "LEE6", "timestamp_start": 250, "timestamp_end": 275, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 순서·빈칸과 함께 '문제 해결력' 변별의 근거 문항"},
+    {"exam": "J2027", "question_no": 36, "entry_type": "DNA", "tag": "COHESION", "importance": 2, "source": "LEE6", "timestamp_start": 276, "timestamp_end": 305, "agreement_kind": "AGREEMENT",
+     "note": "이명학: 순서는 명시적 근거를 뺀 설계라 쉬웠다고 볼 수 없다고 평가"},
+    {"exam": "J2027", "question_no": 37, "entry_type": "DNA", "tag": "COHESION", "importance": 2, "source": "LEE6", "timestamp_start": 276, "timestamp_end": 305, "agreement_kind": "AGREEMENT",
+     "note": "이명학: 순서 유형을 '한번 해보자는' 연결 문제 풀이로 해석"},
+    {"exam": "S2027", "question_no": 21, "entry_type": "DNA", "tag": "TIME_PRESSURE", "importance": 2, "source": "LEE9", "timestamp_start": 71, "timestamp_end": 84, "agreement_kind": "EXPERT_ONLY",
+     "note": "이명학: 9월은 이 문항을 제외하면 지문 길이가 줄었다고 진단"},
+    {"exam": "S2027", "question_no": 23, "entry_type": "DNA", "tag": "ABSTRACT_CONCEPT", "importance": 2, "source": "LEE9", "timestamp_start": 84, "timestamp_end": 105, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 추상·철학 소재는 없었다는 진단 — 위키 종합의 개념 전환 판정과 초점 차이"},
+    {"exam": "S2027", "question_no": 29, "entry_type": "DNA", "tag": "SYNTAX", "importance": 1, "source": "LEE9", "timestamp_start": 60, "timestamp_end": 71, "agreement_kind": "EXPERT_ONLY",
+     "note": "이명학: 긴 호흡·복잡한 구문이 거의 등장하지 않았다고 평가"},
+    {"exam": "S2027", "question_no": 30, "entry_type": "DNA", "tag": "VOCABULARY", "importance": 3, "source": "LEE9", "timestamp_start": 49, "timestamp_end": 71, "agreement_kind": "AGREEMENT",
+     "note": "이명학: 별표 어휘 수준을 근거로 어휘 부담이 컸다고 평가"},
+    {"exam": "S2027", "question_no": 33, "entry_type": "DNA", "tag": "DISTRACTOR_TRAP", "importance": 3, "source": "LEE9", "timestamp_start": 105, "timestamp_end": 128, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 9월에서 답 선택이 갈린 문항으로 지목 (지문은 어렵지 않았다는 단서 포함)"},
+    {"exam": "S2027", "question_no": 34, "entry_type": "DNA", "tag": "DISTRACTOR_TRAP", "importance": 3, "source": "LEE9", "timestamp_start": 105, "timestamp_end": 128, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "note": "이명학: 33번과 함께 갈등 지점으로 지목한 빈칸 문항"}
+  ],
+  "comparisons": [
+    {"exam_a": "J2027", "exam_b": "S2027", "tag": "VOCABULARY", "verdict": "REDUCED", "source": "LEE9", "timestamp_start": 323, "timestamp_end": 330, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "claim_text": "이명학은 어휘·구문 축을 '6평은 어렵고 9평은 엄청 쉬웠다'고 비교한다 — 위키 종합의 어휘 STRENGTHENED(판단 단위가 확대)와 반대 방향이므로 관점 차이로 병존",
+     "evidence": [{"exam": "J2027", "question_no": 30}, {"exam": "S2027", "question_no": 30}]},
+    {"exam_a": "J2027", "exam_b": "S2027", "tag": "SYNTAX", "verdict": "REDUCED", "source": "LEE9", "timestamp_start": 323, "timestamp_end": 330, "agreement_kind": "EXPERT_ONLY",
+     "claim_text": "구문 복잡도는 6월보다 9월이 낮았다고 본다(긴 호흡·복잡한 구조가 거의 등장하지 않음) — 위키 종합의 29번 어법 설계 REPEATED와 다른 축",
+     "evidence": [{"exam": "J2027", "question_no": 29}, {"exam": "S2027", "question_no": 29}]},
+    {"exam_a": "J2027", "exam_b": "S2027", "tag": "TIME_PRESSURE", "verdict": "REDUCED", "source": "LEE9", "timestamp_start": 328, "timestamp_end": 338, "agreement_kind": "EXPERT_ONLY",
+     "claim_text": "지문 길이는 6월이 길었고 9월은 짧았다고 비교한다(9월은 21번이 예외)",
+     "evidence": [{"exam": "J2027", "question_no": 21}, {"exam": "S2027", "question_no": 21}]},
+    {"exam_a": "J2027", "exam_b": "S2027", "tag": "ABSTRACT_CONCEPT", "verdict": "REDUCED", "source": "LEE9", "timestamp_start": 332, "timestamp_end": 342, "agreement_kind": "DIFFERENT_EMPHASIS",
+     "claim_text": "소재·명료성은 6월이 헤비하고 9월은 라이트했다고 본다 — 위키 종합이 9월 23번을 '개념 전환형 NEW'로 본 것과 초점이 다르다",
+     "evidence": [{"exam": "J2027", "question_no": 23}, {"exam": "S2027", "question_no": 23}]},
+    {"exam_a": "J2027", "exam_b": "S2027", "tag": "DISTRACTOR_TRAP", "verdict": "REDUCED", "source": "LEE9", "timestamp_start": 338, "timestamp_end": 347, "agreement_kind": "EXPERT_ONLY",
+     "claim_text": "매력적 오답은 6월에 까다로운 것이 있었지만 9월에는 없었다고 본다 — 9월의 갈등 지점은 33·34번 빈칸에 국한",
+     "evidence": [{"exam": "J2027", "question_no": 31}, {"exam": "S2027", "question_no": 33}, {"exam": "S2027", "question_no": 34}]}
+  ]
+}
