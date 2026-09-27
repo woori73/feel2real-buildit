@@ -160,10 +160,14 @@ public class LmsContentAdminService {
     String thumbnailKey = null;
     try {
       try (InputStream mp4 = Files.newInputStream(result.mp4())) {
-        storageKey = fileStorage.saveRaw(ownerUserId, "lms-content.mp4", mp4, result.sizeBytes());
+        String rawStorageKey = fileStorage.saveRaw(ownerUserId, "lms-content.mp4", mp4, result.sizeBytes());
+        // Convert to absolute path for LocalAcademyVideoDeliveryStorage compatibility
+        storageKey = Path.of(rawStorageKey).toAbsolutePath().toString();
       }
       thumbnailKey = fileStorage.saveImage(
           ownerUserId, "lms-content-thumb", Files.readAllBytes(result.thumbnail()));
+      // Convert thumbnail key to absolute path for consistency
+      thumbnailKey = Path.of(thumbnailKey).toAbsolutePath().toString();
 
       LmsContent saved = lmsContentRepository.save(LmsContent.builder()
           .academy(academy)
