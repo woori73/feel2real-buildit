@@ -1543,7 +1543,7 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 흐름: HOME [채무 확인] → `/newstart/tools/credit4u`(전자책 제5장 연체 기산/장기연체 등록 실전 팁 + Credit4U 공식 메뉴 9단계 안내; 특정 코드=자격 확정 단정 금지, 지원대상 여부는 공식 기준·심사 결과 우선 문구 명시) → CTA `/newstart#ns-status-panel`(해시 복귀 시 자동 펼침) → 저장 → [내 채무상황으로 지피지기에게 물어보기]가 메모·단계를 AI 질문 문구에 실제 포함 → `/api/newstart/ai/chat`.
 - 개인정보: Credit4U 인증정보·주민번호·OTP 절대 미수신·미저장, 대신 로그인 없음. ai/chat 서버의 채무 row 자동 주입은 미구현(후속).
 
-## NewStart 회원 실행 권한 grant (V1012)
+## NewStart 회원 실행 권한 grant (V1011)
 
 `newstart_member_grants` — NewStart **실행형 기능**(지피지기 AI 질문, 금감원 Agent 세션/민원 초안 정리, 이후 질문요청 글쓰기)을 쓸 수 있는 회원 목록의 DB 정본.
 
@@ -1556,7 +1556,7 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 강제 지점은 API/컨트롤러다(읽기 화면에서 버튼을 숨기는 것만으로 처리하지 않음): 미부여 회원의 실행 호출은 `403` + `NewStartEntitlementService.DENIAL_MESSAGE`. 거절 번역은 `NewStartEntitlementExceptionHandler`(newstart 패키지 한정)가 `{status:"error", errorMessage}`로 내보내고, 프론트는 그 문구를 그대로 보여준다.
 - 설명·읽기는 공개 유지: A to Z, `/newstart/fss`의 14단계 안내(`GET /api/newstart/fss/agent/workflow`는 익명 permitAll), 공식 기관 링크.
 
-## NewStart 질문요청 게시판 (V1013)
+## NewStart 질문요청 게시판 (V1012)
 
 `newstart_requests` + `newstart_request_status_logs` — 설계 §5의 [질문·조사 요청] / [사이트 개선 요청] 인박스.
 
@@ -1566,9 +1566,9 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 작성자 userId는 요청 body가 아니라 서버 principal에서만 채워진다. 표시 이름은 저장하지 않고 조회 시점 `User`에서 resolve(chat과 동일한 규칙) — 계정 정리 시 "회원"으로 대체한다.
 - **삭제는 soft delete + 원문 파기**: `problem`/`answer`에 채무·기관 정보가 남을 수 있어 취소 시 `title`/`problem`/`proposal`을 비우고 `deleted` flag만 세운다(row 삭제 아님 — 검토 이력의 `request_id` 연결을 보존). 삭제된 요청은 상세·취소 모두 "찾을 수 없습니다"로 응답한다.
 - 권한: 읽기 = 인증 회원 상호 열람, 쓰기·취소 = THANKS_MEMBER(위 grant 표), 상태 관리 = `/api/admin/**`(hasRole ADMIN). GitHub issue 자동 생성은 없고 `github_ref`/`resolved_version`은 운영자가 수기 기입한다.
-- `newstart_knowledge_items.dedup_key` VARCHAR(191) UNIQUE도 V1013에 함께 추가 — 갈무리 feed(P2-3)이 채팅·질문요청·사례에서 뽑은 항목을 중복 저장하지 않는 키. 컬럼 길이 191은 MySQL utf8mb4 인덱스 한도(767바이트) 때문.
+- `newstart_knowledge_items.dedup_key` VARCHAR(191) UNIQUE도 V1012에 함께 추가 — 갈무리 feed(P2-3)이 채팅·질문요청·사례에서 뽑은 항목을 중복 저장하지 않는 키. 컬럼 길이 191은 MySQL utf8mb4 인덱스 한도(767바이트) 때문.
 
-## NewStart 갈무리 = 지식 항목 회원 feed (V1013 확장)
+## NewStart 갈무리 = 지식 항목 회원 feed (V1012 확장)
 
 `newstart_knowledge_items`를 그대로 읽는 **노출 레이어**(설계 §6). 테이블·게시판 구조를 새로 만들지 않고, 회원이 글을 쓰는 공간도 아니다(쓰기 endpoint 없음).
 

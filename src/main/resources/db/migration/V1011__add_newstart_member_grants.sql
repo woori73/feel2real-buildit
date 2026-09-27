@@ -1,5 +1,5 @@
 -- ============================================================
--- V1012: NewStart 회원 전용 실행 권한(grant)
+-- V1011: NewStart 회원 전용 실행 권한(grant)
 --   · newstart_member_grants: capability 1개 = row 1개. row가 존재하면 부여, DELETE 하면 회수.
 --     users.role(STUDENT/ADMIN/TUTOR/CREATOR)은 BuildIt/Wiki/Academy가 공유하는 전역 권한이라
 --     NewStart 실행 권한을 거기에 섞지 않는다 — 다른 서비스 권한과 상호 오염되기 때문.
