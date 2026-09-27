@@ -3,3 +3,14 @@
 .ns-record-list{display:grid;gap:8px;margin:0;padding-left:22px;line-height:1.7;color:var(--ns-muted)}
 .ns-cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}.ns-cta-row .ns-btn{min-height:48px;padding:13px 19px;font-size:15px;flex:1 1 auto;text-align:center}.ns-btn-secondary{background:var(--ns-blue-soft,#eef4ff);color:var(--ns-blue);border-color:var(--ns-blue)}
 @media(max-width:480px){.ns-tool-page{padding-inline:16px}.ns-tool{padding:20px}.ns-cta-row{flex-direction:column}}
+/* 기능성 모션 Phase 1 — Credit4U 9단계를 절차로 인식시키는 순차 진입(1회성, 문구·정보 불변) */
+.ns-motion-on [data-ns-reveal-group]>li{opacity:0;transform:translateY(10px)}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li{opacity:1;transform:none;transition:opacity var(--ns-motion-normal) var(--ns-ease-out),transform var(--ns-motion-normal) var(--ns-ease-out)}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(2){transition-delay:60ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(3){transition-delay:120ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(4){transition-delay:180ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(5){transition-delay:240ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(6){transition-delay:300ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(7){transition-delay:360ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(8){transition-delay:420ms}
+.ns-motion-on [data-ns-reveal-group].ns-revealed>li:nth-child(9){transition-delay:480ms}
