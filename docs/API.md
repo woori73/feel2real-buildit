@@ -49,11 +49,11 @@
 
 ### ✅ POST /api/newstart/ai/chat
 
-- 목적: NewStart 화면의 AI 질문. 기존 BuildIt Wiki AI Router(`ai_router.py`, `provider=auto`)를 서버-서버로 재사용한다(공용 `WikiAiRouterClient`). 새 provider·모델 설정을 만들지 않는다.
+- 목적: NewStart 화면의 AI 질문. **NewStart 전용 DIRECT LLM**(`NewStartLlmClient`)을 쓴다 — primary NVIDIA NIM Nemotron Lightning(`https://integrate.api.nvidia.com/v1`, 공식 sample 계약 `temperature=1`·`top_p=0.95`·`max_tokens=16384`·`chat_template_kwargs.enable_thinking=true`·`reasoning_budget=16384`), 기술적 실패 시에만 OpenRouter Qwen(`qwen/qwen3.7-flash`) DIRECT 1회. 공용 BuildIt Wiki AI Router는 이 경로에서 경유하지 않는다(Router·`WikiAiRouterClient` 자체는 내신Wiki/Academy 등 다른 기능이 계속 사용). 모델 호출은 질문 1건당 정상 1회, fallback은 최대 1회이며 재검색·재시도 루프가 없다. 키는 `NVIDIA_API_KEY`/`OPENROUTER_API_KEY` 환경변수만 읽고 provider의 `reasoning_content`(내부 사고)는 화면·로그·저장에 노출하지 않는다. 설정은 `app.newstart.llm.*`에서 override 가능.
 - 현재 사용처: `/newstart` NewStart AI 질문창
 - 인증/권한: 비로그인은 기존 `/api/**` catch-all이 `401`. 로그인 회원은 **THANKS_MEMBER** grant가 있어야 실행할 수 있다(`newstart_member_grants` row, ADMIN은 grant 없이 통과) — 미부여 회원은 `403` + `errorMessage` 안내. AI 호출(Router 비용)이 드는 실행형 기능이므로 "로그인 회원 = 전원 실행"으로 두지 않는다. 화면에서 입력창을 숨기는 것과 무관하게 API에서 강제한다.
 - Request JSON: `message` (필수, 1~2000자)
-- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용), `sources`(배열; 답변 조립에 실제 사용된 근거 출처 최대 8건 — 각 `{kind,title,url}`, `kind`는 `공식 자료`/`운영자·전자책 자료`/`실증 사례(DB)`/`신복위 카페 사례`/`부실차주 카페 사례`/`참고` 라벨)
+- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(호출된 LLM이 반환한 모델 식별자 — `nvidia/nemotron-3.5-lightning-30b-a3b` 또는 fallback 시 `qwen/qwen3.7-flash`, 검증용), `sources`(배열; 답변 조립에 실제 사용된 근거 출처 최대 8건 — 각 `{kind,title,url}`, `kind`는 `공식 자료`/`운영자·전자책 자료`/`실증 사례(DB)`/`신복위 카페 사례`/`부실차주 카페 사례`/`참고` 라벨)
 - 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
 - 실패: `400`(빈 질문·길이 초과·지식베이스 조회 실패·provider/네트워크 오류 공통), `403`(THANKS_MEMBER 미부여 회원) 모두 `{"status":"error","errorMessage":"..."}`. 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
 - RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립 우선순위: 공식 > 운영/전자책 > 승인 답변 세션 > 카페·실증 사례((refType,refId) 중복 제거, 최대 12건). 답변 프롬프트는 근거 성격을 '공식 안내에 따르면' vs '카페 사례에서는'으로 구분하도록 강제한다.
