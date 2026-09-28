@@ -1,10 +1,9 @@
-name: NewStart Production Knowledge Census (read-only, manual)
+name: NewStart production grant census (read-only, manual)
 
-# NEWSTART TASK #13 PRE-FLIGHT — 운영 DB read-only 실측.
-# - 고정 SELECT census만 실행한다 (임의 SQL 입력 없음, 범용 DB shell 아님).
-# - DB session은 SET SESSION TRANSACTION READ ONLY.
-# - 출력: article_id·길이·플래그·집계만. 본문/제목/닉네임 등 원문 텍스트와 secret 출력 금지.
-# - INSERT/UPDATE/DELETE/ALTER/CREATE/DROP 없음. repair/approve endpoint 호출 없음(GET probes만, 무변경 405/401/404 코드만 관찰).
+# NEWSTART 10/1 OPEN PRE-FLIGHT — 감사회원(THANKS_MEMBER) grant 상태 read-only 실측.
+# - 고정 SELECT만 실행한다(임의 SQL 입력 없음, SET SESSION TRANSACTION READ ONLY).
+# - INSERT/UPDATE/DELETE/DDL 없음, 쓰기 엔드포인트 호출 없음.
+# - 출력은 집계 숫자·enum 값만. email·닉네임·user_id 목록 등 PII와 secret은 출력하지 않는다.
 
 on:
   workflow_dispatch:
@@ -16,7 +15,7 @@ permissions:
 jobs:
   census:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Configure AWS credentials
@@ -25,7 +24,7 @@ jobs:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
 
-      - name: Build fixed read-only census script
+      - name: Build fixed read-only grant census script
         shell: bash
         run: |
           python3 - <<'PYEOF'
@@ -38,48 +37,45 @@ jobs:
           C.append('MYSQL_CENSUS="mysql -h \\"${DB_HOST}\\" -P \\"${DB_PORT}\\" -u \\"${DB_USER}\\" -p\\"${DB_PASSWORD}\\" \\"${DB_NAME}\\" --default-character-set=utf8mb4 --batch 2>&1"')
           C.append('run_q() { echo "=== $1 ==="; eval "$MYSQL_CENSUS -e \\"$2\\"" || echo "QUERY_FAILED: $1"; }')
 
-          q = lambda name, sql: run_q_line(name, RO + " " + sql)
-          def run_q_line(name, sql):
-              return 'run_q %s "%s"' % (name, sql)
+          def q(name, sql):
+              return 'run_q %s "%s"' % (name, RO + " " + sql)
 
-          C.append(q("SCHEMA_VERSION", "SELECT version, description, installed_on FROM flyway_schema_history ORDER BY CAST(version AS UNSIGNED) DESC LIMIT 8;"))
-          C.append(q("CASES", "SELECT COUNT(*) AS total, COUNT(DISTINCT article_id) AS distinct_ids FROM newstart_empirical_cases;"))
-          C.append(q("CASE_DUP", "SELECT COUNT(*) AS dup_groups FROM (SELECT article_id FROM newstart_empirical_cases GROUP BY article_id HAVING COUNT(*)>1) d;"))
-          C.append(q("KNOW_STATUS", "SELECT status, COUNT(*) AS cnt FROM newstart_knowledge_items GROUP BY status;"))
-          C.append(q("KNOW_SRC", "SELECT source_type, COUNT(*) AS cnt FROM newstart_knowledge_items GROUP BY source_type;"))
-          C.append(q("KNOW_DUP_TITLE", "SELECT COUNT(*) AS dup_title_groups FROM (SELECT title FROM newstart_knowledge_items GROUP BY title HAVING COUNT(*)>1) d;"))
-          C.append(q("OTHER_TABLES", "SELECT (SELECT COUNT(*) FROM newstart_official_updates) AS official_total, (SELECT COUNT(*) FROM newstart_jipijigi_answer_sessions) AS sessions_total, (SELECT COUNT(*) FROM newstart_jipijigi_questions) AS questions_total, (SELECT COUNT(*) FROM newstart_jipijigi_drafts) AS drafts_total;"))
-          C.append(q("CANON_STATE", "SELECT article_id, CHAR_LENGTH(COALESCE(content_raw,'')) AS len, LOCATE(X'5BEB8C93EAB880',COALESCE(content_raw,''))>0 AS has_com, LOCATE(X'5BED9B84EC868D20EAB2B0EAB3BC5D',COALESCE(content_raw,''))>0 AS has_fol FROM newstart_empirical_cases WHERE article_id BETWEEN 5737 AND 6010 ORDER BY article_id+0;"))
-          C.append(q("SIX_DETAIL", "SELECT article_id, CHAR_LENGTH(COALESCE(content_raw,'')) AS len, LOCATE(X'5BEB8C93EAB880',COALESCE(content_raw,''))>0 AS has_com, LOCATE(X'5BED9B84EC868D20EAB2B0EAB3BC5D',COALESCE(content_raw,''))>0 AS has_fol, predicted_reduction_rate IS NULL AS p_null, final_reduction_rate IS NULL AS f_null, temp_reduction_rate IS NULL AS t_null, author_followup_result IS NULL AS af_null, source_url IS NULL AS url_null FROM newstart_empirical_cases WHERE article_id IN ('5870','5955','5956','5967','5971','5973');"))
-          C.append(q("MIRROR", "SELECT (SELECT COUNT(*) FROM newstart_knowledge_items WHERE source_type='CASE') AS case_mirrors, (SELECT COUNT(*) FROM newstart_empirical_cases c WHERE NOT EXISTS (SELECT 1 FROM newstart_knowledge_items k WHERE k.title LIKE CONCAT(X'5BEC82ACEBA1805D20', c.article_id, ' %'))) AS cases_without_mirror;"))
-          C.append(q("STATUS_LOG", "SELECT COUNT(*) AS logs, MAX(created_at) AS latest FROM newstart_knowledge_status_log;"))
+          C.append(q("GRANT_TABLE_EXISTS",
+              "SELECT COUNT(*) AS grant_table FROM information_schema.tables "
+              "WHERE table_schema=DATABASE() AND table_name='newstart_member_grants';"))
+          C.append(q("GRANT_ROWS",
+              "SELECT capability, COUNT(*) AS rows_cnt, COUNT(DISTINCT user_id) AS distinct_users "
+              "FROM newstart_member_grants GROUP BY capability;"))
+          C.append(q("GRANT_TOTAL", "SELECT COUNT(*) AS grants_total FROM newstart_member_grants;"))
+          C.append(q("ROLE_SPLIT", "SELECT role, COUNT(*) AS cnt FROM users GROUP BY role;"))
+          C.append(q("ROLE_JOIN_GRANT",
+              "SELECT u.role, COUNT(DISTINCT u.user_id) AS members, "
+              "COUNT(DISTINCT g.user_id) AS with_thanks_grant FROM users u "
+              "LEFT JOIN newstart_member_grants g ON g.user_id=u.user_id "
+              "AND g.capability='THANKS_MEMBER' GROUP BY u.role;"))
+          C.append(q("MEMBER_ACTIVITY",
+              "SELECT (SELECT COUNT(*) FROM users) AS users_total, "
+              "(SELECT COUNT(DISTINCT user_id) FROM newstart_chat_messages) AS chat_users, "
+              "(SELECT COUNT(*) FROM newstart_member_profiles) AS profiles, "
+              "(SELECT COUNT(*) FROM newstart_member_debt_status) AS debt_rows, "
+              "(SELECT COUNT(*) FROM newstart_requests) AS requests_rows, "
+              "(SELECT COUNT(*) FROM newstart_jipijigi_answer_sessions) AS jipijigi_sessions;"))
+          C.append(q("FLYWAY_V1011",
+              "SELECT version, description, success, installed_on FROM flyway_schema_history "
+              "WHERE version IN ('1011','1012','1005','1004') ORDER BY version;"))
 
-          # NEWSTART PHASE 2 DISCOVERY — 채팅/회원/스테이지/역할 분포 집계(원문·PII 출력 없음).
-          C.append(q("PHASE2_CHAT", "SELECT COUNT(*) AS msgs, SUM(deleted=1) AS soft_deleted, COUNT(DISTINCT user_id) AS distinct_users, MIN(created_at) AS first_at, MAX(created_at) AS last_at FROM newstart_chat_messages;"))
-          C.append(q("PHASE2_MEMBER", "SELECT (SELECT COUNT(*) FROM newstart_member_profiles) AS profiles, (SELECT COUNT(*) FROM newstart_member_debt_status) AS debt_rows, (SELECT COUNT(*) FROM users) AS users_total;"))
-          C.append(q("PHASE2_STAGE", "SELECT COALESCE(stage,'(null)') AS stage, COUNT(*) AS cnt FROM newstart_member_debt_status GROUP BY stage;"))
-          C.append(q("PHASE2_ROLES", "SELECT role, COUNT(*) AS cnt FROM users GROUP BY role;"))
-          C.append(q("PHASE2_OFFICIAL", "SELECT review_status, COUNT(*) AS cnt, MAX(published_at) AS latest_published FROM newstart_official_updates GROUP BY review_status;"))
-          C.append(q("PHASE2_TABLES", "SELECT table_name, table_rows AS approx_rows FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'newstart%' ORDER BY table_name;"))
-
-          C.append('echo "=== DB_CATEGORY ==="')
-          C.append('echo "DB_NAME=${DB_NAME:-unset}"')
-          C.append('case "${DB_HOST:-}" in *amazonaws.com*) echo "DB_HOST_CATEGORY=RDS";; "") echo "DB_HOST_CATEGORY=UNKNOWN";; *) echo "DB_HOST_CATEGORY=NON_RDS_OTHER";; esac')
+          C.append('echo "=== ENV_KEY_PRESENCE (names only) ==="')
+          C.append('for K in NVIDIA_API_KEY OPENROUTER_API_KEY; do '
+                   'if grep -Eq "^[[:space:]]*(export[[:space:]]+)?${K}=.+" /etc/f2r/env; then echo "${K} PRESENT: YES"; '
+                   'else echo "${K} PRESENT: NO"; fi; done')
           C.append('echo "=== APP_UNIT ==="')
-          C.append('systemctl show f2r-app.service -p MainPID -p ActiveEnterTimestamp -p ExecMainStartTimestamp')
-          C.append('ls -l --time-style=full-iso /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true')
+          C.append('systemctl is-active f2r-app.service')
           C.append('date -u "+NOW_UTC=%Y-%m-%dT%H:%M:%SZ"')
-          C.append('echo "=== JAR_REPAIR_PROBE ==="')
-          C.append('unzip -p /home/ec2-user/app.jar "BOOT-INF/classes/f2r/tutor_solution/private_tutor_solution_back/domain/newstartknowledge/controller/NewstartIngestionAdminController.class" 2>/dev/null | strings | grep -c "ingest/cases/repair" | sed "s/^/REPAIR_ENDPOINT_IN_JAR=/" || echo "REPAIR_ENDPOINT_IN_JAR=0"')
-          C.append('unzip -p /home/ec2-user/app.jar "BOOT-INF/classes/f2r/tutor_solution/private_tutor_solution_back/domain/newstartknowledge/controller/NewstartIngestionAdminController.class" 2>/dev/null | strings | grep -c "repairEmpiricalCases" | sed "s/^/REPAIR_SERVICE_IN_JAR=/" || echo "REPAIR_SERVICE_IN_JAR=0"')
-          C.append('echo "=== HTTP_PROBE (GET only, no POST) ==="')
-          C.append('curl -s -o /dev/null -w "GET_REPAIR_ENDPOINT=%{http_code}\\n" --max-time 10 http://localhost:8080/api/admin/newstart/wiki/ingest/cases/repair || echo "CURL_FAILED"')
-          C.append('curl -s -o /dev/null -w "GET_ACTIVE_KNOWLEDGE=%{http_code}\\n" --max-time 10 "http://localhost:8080/api/admin/newstart/wiki/active?sourceType=CASE" || echo "CURL_FAILED"')
           C.append("exit 0")
 
           with open("/tmp/census.json", "w", encoding="utf-8") as f:
               json.dump({"commands": C}, f, ensure_ascii=False)
-          print("params bytes:", len(open("/tmp/census.json","rb").read()))
+          print("params bytes:", len(open("/tmp/census.json", "rb").read()))
           PYEOF
 
       - name: Run census via SSM
@@ -91,7 +87,7 @@ jobs:
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --parameters file:///tmp/census.json \
-            --comment "newstart task13 read-only pre-flight census" \
+            --comment "newstart pre-open read-only grant census" \
             --query 'Command.CommandId' --output text)
           echo "SSM Command ID: $COMMAND_ID"
           set +e
