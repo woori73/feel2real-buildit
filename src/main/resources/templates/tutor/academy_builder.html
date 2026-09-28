@@ -1095,6 +1095,11 @@
     <button class="ai-guide-toggle" id="builderAiGuideToggle" type="button" aria-pressed="false" aria-controls="builderBildiStage builderAiGuidePanel">
       <i class="fa-solid fa-dove"></i> <span id="builderAiGuideToggleLabel">빌디 OFF</span>
     </button>
+    <!-- LMS는 캔버스에 렌더되는 공개페이지 섹션이 아니라 별도 화면(/lms/{handle})이라
+         섹션 블록이 아닌 독립 버튼+모달로 둔다(에듀홀릭 LMS Phase 1 §7). -->
+    <button class="tb-btn" id="builderLmsSettingsBtn" type="button">
+      <i class="fa-solid fa-graduation-cap"></i> LMS 설정
+    </button>
     <button class="tb-btn tb-btn-green" id="builderPublishBtn" type="button">
       <i class="fa-solid fa-rocket"></i> 발행
     </button>
@@ -1837,8 +1842,53 @@ function setView(mode, btn){
   </div>
 </div>
 
+<!-- LMS 설정 — /lms/{handle}에 표시되는 학원별 문구(에듀홀릭 LMS Phase 1 §7).
+     저장 위치는 page_settings.businessInfo가 아니라 page_settings.builderDraft의 lms* 키다
+     (/api/tutor/academy/lms-settings, 기존 /page-settings와는 별도 엔드포인트). -->
+<div class="builder-text-modal-backdrop" id="builderLmsSettingsModal" aria-hidden="true">
+  <div class="builder-text-modal" role="dialog" aria-modal="true" aria-labelledby="builderLmsSettingsTitle">
+    <div class="builder-text-modal-head">
+      <div>
+        <h3 id="builderLmsSettingsTitle">LMS 설정</h3>
+        <p>재원생 복습수업 화면(/lms/{handle})에 표시되는 문구를 학원에 맞게 바꿉니다.</p>
+      </div>
+      <button type="button" class="builder-text-modal-close" data-lms-settings-close aria-label="닫기">×</button>
+    </div>
+    <div class="builder-text-modal-body">
+      <div class="builder-text-field">
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input id="builderLmsEnabledInput" type="checkbox" style="width:auto;" />
+          LMS 사용
+        </label>
+      </div>
+      <div class="builder-text-field">
+        <label for="builderLmsDisplayNameInput">LMS 표시명</label>
+        <input id="builderLmsDisplayNameInput" type="text" maxlength="60" placeholder="예: 에듀홀릭 학습실" />
+      </div>
+      <div class="builder-text-field">
+        <label for="builderLmsMainTitleInput">메인 제목</label>
+        <input id="builderLmsMainTitleInput" type="text" maxlength="60" placeholder="예: 시험 전 복습수업" />
+      </div>
+      <div class="builder-text-field">
+        <label for="builderLmsIntroInput">소개 문구</label>
+        <input id="builderLmsIntroInput" type="text" maxlength="200" placeholder="예: 수업에서 배운 핵심 내용을 시험 전에 다시 확인하세요." />
+      </div>
+      <div class="builder-text-field">
+        <label for="builderLmsSectionNameInput">복습강의 섹션명</label>
+        <input id="builderLmsSectionNameInput" type="text" maxlength="40" placeholder="예: 내 복습수업" />
+      </div>
+      <div class="builder-text-modal-error" id="builderLmsSettingsError" hidden></div>
+    </div>
+    <div class="builder-text-modal-actions">
+      <button type="button" class="secondary" data-lms-settings-close>취소</button>
+      <button type="button" class="primary" id="builderLmsSettingsApplyBtn">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- /builder 실제 배선: 신규 발행, 기존 Academy 텍스트 저장, 섹션 표시 설정. 나머지 빌더 UI는 위 인라인 mock 유지. -->
 <script src="/js/academy_builder_text_utils.js"></script>
+<script src="/js/lms_builder_settings.js"></script>
 <script src="/js/academy_business_info.js"></script>
 <script src="/js/academy_business_info_editor.js"></script>
 <script src="/js/academy_builder_editable_guide.js?v=20260801-1"></script>

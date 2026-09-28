@@ -424,6 +424,7 @@ LMS 주소가 성립하지 않는다(404).
 | `GET /lms/{handle}/lecture/{courseId}` | `lms/lms_lecture` | authenticated | 〃 |
 | `GET /lms/{handle}/manage` | `lms/lms_manage` | `hasRole("TUTOR")` | `AcademyLmsManagePageController` · **slug owner 전용** — `requireOwnedAcademyByHandle`, 타 학원 TUTOR도 403, ADMIN 우회 없음 |
 | `GET /lms/{handle}/contents` | `lms/lms_contents` | `hasRole("TUTOR")` | 〃 |
+| `GET /lms/{handle}/review/{lessonId}` | `lms/lms_review` | `authenticated`(owner 또는 ACTIVE 수강 학생, `LmsLearnerAccessService`) | `LmsReviewPageController`(신규, `domain.lmscontent`). §2.1이 열거하는 8개 MOCK 화면과 별개다 — 재원생 복습영상 실 API 전용 화면이라 URL·id 공간을 분리했다(MOCK `courseId`와 실제 `LessonProduct.lessonId`가 섞이지 않게). `SecurityConfig`에 이 경로 전용 매처를 추가하지 않았다 — `/lms/**` fail-closed catch-all(아래 줄)이 이미 인증을 강제하고, owner/수강 판정은 컨트롤러가 한다. |
 
 - 매처에 열거되지 않은 `/lms/**` 하위 경로는 **fail-closed**(최소 인증). catch-all이 `permitAll`이라 이 줄이 없으면 새어 나간다.
 - 비로그인 + `Accept: text/html`로 인증 필요 화면에 접근하면 **302 `/`**(빈 401 대신). LMS 보호 화면은 로그인 상태 전용이고 로그아웃도 `/`로 가므로(`static/js/account_menu.js`) 비로그인 목적지를 `/`로 맞춘다. 그 외(예: `Accept: application/json`)와 LMS 밖 경로는 기존 **401** 계약 그대로다 — `SecurityConfig`의 `defaultAuthenticationEntryPointFor` 2분기.
@@ -433,6 +434,33 @@ LMS 주소가 성립하지 않는다(404).
 - `HandlePolicy.RESERVED`에 `lms`를 추가했다 — 플랫폼용 `lms.{base-domain}`을 학원이 선점하지 못하게 한다.
 
 > `/academy` 행(위 표)은 이 LMS 경로와 무관하다. LMS는 `/academy`·`/academies` 어느 계열도 쓰지 않는다.
+
+### 2.2 LMS 콘텐츠/수강권 API (Phase 1, 신규)
+
+> 도메인 배경은 [DOMAIN.md § 학원 LMS 콘텐츠/수강권](DOMAIN.md). §2.1의 8개 화면(courses~contents)은
+> 계속 MOCK이고, 이 절의 API만 `lms_contents`/`lms_enrollments` 실 DB를 쓴다.
+
+**강사(운영자) — `/api/tutor/**`, hasRole("TUTOR"), handle owner는 서비스가 재검증**
+
+| Route | 설명 |
+|---|---|
+| `GET /api/tutor/lms/{handle}/contents` | 강좌 선택 목록 + 등록된 콘텐츠 전체 |
+| `POST /api/tutor/lms/{handle}/contents` (multipart) | 강좌 선택+메타데이터+영상 업로드를 한 번에 저장. 길이 상한은 `app.lms.content.max-duration-sec`(기본 30분) — 홍보영상 120초 제한과 무관 |
+| `PUT /api/tutor/lms/{handle}/contents/{id}` | 메타데이터만 수정(영상 교체는 Phase 1 미지원) |
+| `PATCH /api/tutor/lms/{handle}/contents/{id}/publish` | 공개/비공개 토글 |
+| `DELETE /api/tutor/lms/{handle}/contents/{id}` | 삭제(행 삭제 + storage best-effort 삭제) |
+| `GET /api/tutor/lms/{handle}/enrollments/lessons/{lessonId}` | 배정 후보(`lesson_applications` APPROVED) + 현재 수강권 목록 |
+| `POST /api/tutor/lms/{handle}/enrollments/lessons/{lessonId}` | 수강권 부여(grantSource=ACADEMY 고정). 후보가 아닌 studentId는 400 |
+| `DELETE /api/tutor/lms/{handle}/enrollments/lessons/{lessonId}/{enrollmentId}` | 수강권 회수(REVOKED) |
+| `GET`/`PUT /api/tutor/academy/lms-settings` | Builder "LMS 설정"(표시명/메인제목/소개/섹션명/사용여부). `page_settings.builderDraft`에 저장 — 기존 `/api/tutor/academy/page-settings`는 builderDraft를 받지 않으므로 별도 엔드포인트 |
+
+**학생(재원생) — `/api/lms/{handle}/**`, 일반 `authenticated()`(catch-all), owner/수강 판정은 서비스가 함**
+
+| Route | 설명 |
+|---|---|
+| `GET /api/lms/{handle}/my/lessons` | 내가 ACTIVE 수강권을 가진 강좌 목록(+공개 콘텐츠 수) |
+| `GET /api/lms/{handle}/my/lessons/{lessonId}` | 강좌의 공개(PUBLISHED) 콘텐츠 목록. owner 또는 수강 학생만(`LmsLearnerAccessService`, 아니면 403) |
+| `GET`/`HEAD /api/lms/{handle}/contents/{contentId}/stream` | Range 지원 영상 스트리밍. 학생은 PUBLISHED만, owner는 상태 무관 미리보기 허용 |
 
 ## 3. Auth API
 

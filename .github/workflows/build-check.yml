@@ -157,6 +157,8 @@ jobs:
           # V1005 답변 세션 자동 축적 + RAG 재사용 (H2 MySQL 모드 DB 테스트)
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiAnswerSessionDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.JipijigiAdminPageContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.entity.LmsContentEntityTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmsenrollment.entity.LmsEnrollmentEntityTest"
 
       - name: Upload test report
         if: always()

@@ -124,7 +124,11 @@ public class AcademyService {
       "miniLecturesSectionTitle",
       // Mobile-first brand/typography tokens. Values are registry IDs or bounded pixel numbers.
       "typographyPreset", "headingFont", "bodyFont",
-      "logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile");
+      "logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile",
+      // ── Eduholic LMS Phase 1: Builder "LMS 설정" (LmsBuilderSettingsService) ──
+      // LMS 전용 엔드포인트가 직접 저장하므로, 일반 Builder 저장이 validateBuilderDraft에서
+      // 거부하지 않도록 allowlist에 등록한다. lmsIntro(소개 문구)는 길어질 수 있어 LONG 목록에도 둔다.
+      "lmsEnabled", "lmsDisplayName", "lmsMainTitle", "lmsIntro", "lmsSectionName");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
@@ -147,7 +151,9 @@ public class AcademyService {
           "aiProcessStep5",
           "aiProcessNote",
           // Mini Lectures 목록 JSON — 강의 수 × (제목/노트/태그)라 200자를 넘는다.
-          "miniLectures");
+          "miniLectures",
+          // LMS 소개 문구 — 문장형이라 200자를 넘을 수 있다.
+          "lmsIntro");
   private static final String TEMP_HANDLE_PREFIX = "academy-";
   private static final String TEMP_HANDLE_SALT = "private-tutor-solution-academy-handle-v1";
   private static final String DEFAULT_LOGO_FILENAME = "default-academy-logo.jpg";
