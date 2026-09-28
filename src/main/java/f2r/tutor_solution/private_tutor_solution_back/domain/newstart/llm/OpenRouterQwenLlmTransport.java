@@ -46,7 +46,8 @@ public class OpenRouterQwenLlmTransport implements NewStartLlmTransport {
   @Override
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
-      return NewStartLlmCompletion.failed("OpenRouter 키가 설정되지 않았습니다.", false);
+      // fallback도 미설정이면 내부 provider명을 회원 응답으로 내리지 않고 통제된 오류로 끝낸다.
+      return NewStartLlmCompletion.failed(GENERIC_ERROR, false);
     }
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("model", config.getModel());

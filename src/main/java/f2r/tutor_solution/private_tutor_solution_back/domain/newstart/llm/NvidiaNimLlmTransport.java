@@ -49,7 +49,9 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
   @Override
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
-      return NewStartLlmCompletion.failed("NVIDIA NIM 키가 설정되지 않았습니다.", true);
+      // 키 미설정은 "연결이 실패한 것"이 아니라 설정 상태다. §4의 재시도 대상이 아니므로
+      // fallback(Qwen)으로 넘기지 않고, 설정상 세부(provider명·사유)를 회원 응답에 내리지 않는다.
+      return NewStartLlmCompletion.failed(GENERIC_ERROR, false);
     }
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("model", config.getModel());
@@ -74,7 +76,7 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
       if (response.statusCode() != 200) {
         // §4: 429·5xx만 재시도 대상. 그 외 4xx(인증·요건 오류)는 fallback 없이 통제된 실패로 알린다.
         boolean eligible = response.statusCode() == 429 || response.statusCode() >= 500;
-        return NewStartLlmCompletion.failed(eligible ? GENERIC_ERROR : statusMessage(response), eligible);
+        return NewStartLlmCompletion.failed(GENERIC_ERROR, eligible);
       }
       return parse(response.body());
     } catch (IOException exception) {
@@ -119,17 +121,5 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
       return text.toString();
     }
     return content.asText("");
-  }
-
-  private String statusMessage(HttpResponse<byte[]> response) {
-    try {
-      JsonNode detail = objectMapper.readTree(response.body()).path("error").path("message");
-      if (detail.isTextual() && !detail.asText().isBlank()) {
-        return detail.asText();
-      }
-    } catch (IOException ignored) {
-      // 메시지 구조를 읽을 수 없으면 안내 문구로 대체한다(본문을 그대로 노출하지 않는다).
-    }
-    return GENERIC_ERROR;
   }
 }

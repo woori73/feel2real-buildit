@@ -133,7 +133,9 @@ class NvidiaNimLlmTransportTest {
 
     assertThat(result.ok()).isFalse();
     assertThat(result.fallbackEligible()).isFalse();
-    assertThat(result.errorMessage()).isEqualTo("Invalid API key");
+    // upstream 원문("Invalid API key")을 회원 응답으로 내리지 않고 통제된 안내만 돌려준다
+    assertThat(result.errorMessage()).isEqualTo("AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    assertThat(result.errorMessage()).doesNotContain("Invalid", "API", "key", "NVIDIA", "NIM");
   }
 
   @Test
@@ -170,7 +172,7 @@ class NvidiaNimLlmTransportTest {
   }
 
   @Test
-  @DisplayName("given NVIDIA_API_KEY 미설정 when complete then 네트워크를 타지 않고 fallback 대상으로 돌려준다")
+  @DisplayName("given NVIDIA_API_KEY 미설정 when complete then 네트워크를 타지 않고 Qwen으로 넘기지 않는다")
   void complete_withoutKeyDoesNotCallNetwork() throws Exception {
     AtomicInteger hits = new AtomicInteger();
     AtomicReference<String> capturedBody = new AtomicReference<>();
@@ -183,7 +185,11 @@ class NvidiaNimLlmTransportTest {
     NewStartLlmCompletion result = transport(baseUrl, "").complete("시스템", "질문", 4000);
 
     assertThat(result.ok()).isFalse();
-    assertThat(result.fallbackEligible()).isTrue();
+    // 키 미설정은 기술적 실패가 아니라 설정 상태 → fallback(Qwen) 대상으로 넘기지 않는다
+    assertThat(result.fallbackEligible()).isFalse();
+    // 내부 provider·사유를 회원 응답으로 내리지 않고 통제된 안내만 돌려준다
+    assertThat(result.errorMessage()).doesNotContain("NVIDIA", "NIM", "OpenRouter", "키");
+    assertThat(result.errorMessage()).isNotBlank();
     assertThat(hits.get()).isZero();
   }
 }

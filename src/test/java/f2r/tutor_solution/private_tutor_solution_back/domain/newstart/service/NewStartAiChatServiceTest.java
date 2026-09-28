@@ -101,6 +101,8 @@ class NewStartAiChatServiceTest {
     assertThat(client.wasCalled).isTrue();
     assertThat(client.capturedPrompt).isEqualTo("새출발기금이 무엇인가요?");
     assertThat(client.capturedSystem).contains("새출발기금");
+    // LOCAL E2E(2026-09-28)에서 Nemotron이 사고 과정을 content로 흘린 사례 → 출력 계약으로 막는다
+    assertThat(client.capturedSystem).contains("사용자에게 바로 보여도 되는 최종 문장만 한국어로");
     assertThat(client.capturedMaxChars).isPositive();
   }
 
@@ -154,6 +156,39 @@ class NewStartAiChatServiceTest {
     assertThat(ebook).isGreaterThan(official);
     assertThat(cafe).isGreaterThan(ebook);
     assertThat(sys).contains("카페 경험담이나 근거 없는 자료를 공식 정책처럼 말하지 않는다");
+  }
+
+  @Test
+  @DisplayName("given 공식 근거가 출처 상한을 초과할 when ask then 실증 사례가 컨텍스트·출처에서 밀려나지 않는다")
+  void ask_keepsCaseEvidenceWhenOfficialPoolIsLarge() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
+    FakeResearchService research = new FakeResearchService();
+    List<Evidence> official = new java.util.ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      official.add(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "o" + i,
+          "공식 기준 " + i, "https://nsf/" + i, "공식 안내"));
+    }
+    List<Evidence> cases = List.of(
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6010",
+            "후순위 담보 임시안 납부 사례", "https://cafe/6010", "기한이익상실 전 신복위 상담"),
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6011",
+            "임시안 대기 중 이자 납부", "https://cafe/6011", "변제 방법"));
+    research.pack = ResearchPack.builder().question("후순위 담보 임시안")
+        .internalHits(List.of()).officialHits(official)
+        .ccrsHits(List.of()).borrowerHits(cases).extraAgencyHits(List.of()).gapNotes(List.of())
+        .externalSearched(false).build();
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
+
+    NewStartAiChatService.NewStartAiAnswer answer = service.ask("후순위 담보 대출 임시안 동안 변제해야 하나요?");
+
+    assertThat(client.capturedSystem).contains("후순위 담보 임시안 납부 사례");
+    assertThat(answer.sources())
+        .anySatisfy(s -> assertThat(s.kind()).isEqualTo("부실차주 카페 사례"))
+        .anySatisfy(s -> assertThat(s.kind()).isEqualTo("공식 자료"));
+    assertThat(answer.sources()).hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_SOURCES);
+    assertThat(NewStartAiChatService.orderedEvidence(research.pack))
+        .hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
   }
 
   @Test
