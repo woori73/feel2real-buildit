@@ -138,7 +138,10 @@ DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_
 - Assistant, Wiki, 기출/자료 분석, JSON 구조화, Digital Twin 분석, 일반 문제 생성, 기존문제 변형의 기본 모델은 Qwen3.7 Flash다.
 - 일반 문제 생성·기존문제 변형·자료 분석 등 핵심 결과는 Qwen 실패 시 무료 모델로 조용히 fallback하지 않는다.
 - Assistant/OCR 같은 비핵심 보조 호출만 Qwen → Ox Alpha → `openrouter/free` 백업 체인을 명시적으로 허용한다.
-- `gemini`, `ox-alpha`, `openrouter:<model>` 명시 선택은 admin 진단 호환을 위해 유지하며 자동 fallback하지 않는다.
+- `gemini`, `ox-alpha`, `openrouter:<model>`, `nvidia`, `nvidia-ultra`, `nvidia:<model-id>` 명시 선택은 admin 진단 호환·A/B 비교를 위해 유지하며 자동 fallback하지 않는다.
+- `nvidia`는 NVIDIA NIM OpenAI-compatible chat completions(`https://integrate.api.nvidia.com/v1/chat/completions`, 서버 환경변수 `NVIDIA_API_KEY`)로 Nemotron Lightning(`nvidia/nemotron-3.5-lightning-30b-a3b`, `NVIDIA_NEMOTRON_MODEL`로 모델 ID override)을 호출한다. 공식 sample 계약 고정: `temperature=1`, `top_p=0.95`, `max_tokens=16384`, `chat_template_kwargs.enable_thinking=true`, `reasoning_budget=16384`. `auto` 체인에는 포함하지 않는다(production default는 Qwen 유지).
+- NVIDIA 최종 답변은 assistant `content`만 사용하며 `reasoning_content`(내부 사고)는 사용자 화면·저장 경로에 노출하지 않는다. Ultra(향후 심층 분석)는 코드 변경 없이 `NVIDIA_NEMOTRON_ULTRA_MODEL` 설정만으로 `nvidia-ultra`로 연결되고, 임의 NIM 모델은 `nvidia:<model-id>`로 호출한다.
+- 지피지기 A/B(Qwen vs Lightning, 동일 RAG/근거 컨텍스트): Java는 `WikiAiRouterClient.complete(system,prompt,maxChars,provider)` 오버로드, HTTP는 `POST /api/ai/complete`의 `provider` 인자로 같은 입력을 두 provider에 보낸다. 로컬 도구는 `scripts/newstart_provider_ab.py`(비교), `scripts/nvidia_nim_connectivity_check.py`(최소 연결 확인)이며 결과는 저장하지 않고 인쇄만 한다.
 - 요청의 `api_key`/`openrouter_api_key` 레거시 필드는 호환을 위해 허용하되 인증에 사용하지 않는다. 키는 응답·로그에 포함하지 않는다.
 - AI 응답은 가능한 모든 endpoint에서 실제 응답의 `provider`와 `model`을 그대로 반환한다.
 - GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장 지점이며 현재 구매나 연결을 요구하지 않는다.
@@ -3515,7 +3518,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### ✅ Wiki AI Router / A/B API
 
-- `GET /problem-generator/wiki/api/ai/providers`: Gemini/OpenRouter의 server-key availability와 모델 ID만 반환한다. 키 값은 반환하지 않는다.
+- `GET /problem-generator/wiki/api/ai/providers`: Gemini/OpenRouter/NVIDIA의 server-key availability와 모델 ID만 반환한다(`nvidia`, `nvidia-ultra` 포함). 키 값은 반환하지 않는다.
+- `POST /problem-generator/wiki/api/ai/complete`: `provider=auto|gemini|openrouter-free|ox-alpha|openrouter:<model-id>|nvidia|nvidia-ultra|nvidia:<model-id>`를 받는다. 지피지기 Qwen vs Lightning A/B는 같은 system/prompt로 `qwen`과 `nvidia`를 각각 호출해 비교한다(서버-서버 호출은 `WikiAiRouterClient.complete(...,provider)` 오버로드). `nvidia` 선택 시에도 `auto` 기본 정책(Qwen)은 그대로이며 production default는 변경하지 않는다.
 - `GET /problem-generator/wiki/api/ai/openrouter/free-models`: 백엔드가 OpenRouter 공식 `/api/v1/models`를 조회해 무료 text-generation 모델을 반환한다. `:free` 또는 prompt/completion 가격이 모두 0인 모델을 무료로 판정하며 `id`, `name`, `contextLength`, `structuredOutput`만 노출한다. 조회 실패 시 마지막 성공 cache 또는 빈 목록을 반환한다.
 - `POST /problem-generator/wiki/api/questions/generate`: `provider=auto|gemini|openrouter-free|ox-alpha|openrouter:<model-id>`를 받는다. 일반 UI는 API 키를 전송하지 않으며 서버 `GEMINI_API_KEY`/`OPENROUTER_API_KEY`를 사용한다. legacy request key 필드는 관리자·개발 호환용 optional override로만 유지한다.
 - `auto`만 Gemini → OpenRouter 무료 자동 fallback을 허용한다. 명시적으로 고른 provider/model은 실패해도 다른 결과로 바꾸지 않는다. `openrouter-free`는 `openrouter/free`, Ox Alpha는 `stealth/ox-alpha`를 호출한다.

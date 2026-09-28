@@ -5,8 +5,10 @@ import prompt_logic as pl
 import private_reference_bank
 DEFAULT_PROVIDER_TIMEOUT_SECONDS=45.0;_LOG=logging.getLogger(__name__)
 MODELS_URL='https://openrouter.ai/api/v1/models';CHAT_URL='https://openrouter.ai/api/v1/chat/completions';FREE_ROUTER='openrouter/free'
+NIM_CHAT_URL='https://integrate.api.nvidia.com/v1/chat/completions'
 QUESTION_WIKI_FREE_MODELS=('z-ai/glm-5.2:free','liquid/lfm-2.5-2.6b:free')
 QWEN_PROVIDER='openrouter';QWEN_MODEL='qwen/qwen3.7-flash';GEMINI_PROBLEM_MODEL='google/gemini-3.7-flash';LUNA_MODEL='gpt-5.6-luna';_models_cache=(0.0,[])
+NEMOTRON_LIGHTNING_MODEL='nvidia/nemotron-3.5-lightning-30b-a3b'
 def provider_timeout_seconds():
     try:value=float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS',DEFAULT_PROVIDER_TIMEOUT_SECONDS))
     except ValueError:value=DEFAULT_PROVIDER_TIMEOUT_SECONDS
@@ -16,6 +18,12 @@ class ProviderError(Exception):
 @dataclass
 class ProviderResult:text:str;provider:str;model:str;key_source:str
 def _server_keys():return os.getenv('GEMINI_API_KEY','').strip(),os.getenv('OPENROUTER_API_KEY','').strip()
+def _nvidia_key():return os.getenv('NVIDIA_API_KEY','').strip()
+def _nemotron_model(candidate):
+    # Lightning은 기본 공식 모델 ID, Ultra는 NVIDIA_NEMOTRON_ULTRA_MODEL로만 붙인다(모델 설정만으로 확장).
+    if candidate=='nvidia':return os.getenv('NVIDIA_NEMOTRON_MODEL','').strip() or NEMOTRON_LIGHTNING_MODEL
+    if candidate=='nvidia-ultra':return os.getenv('NVIDIA_NEMOTRON_ULTRA_MODEL','').strip()
+    return candidate.removeprefix('nvidia:')
 def _zero(value):
     try:return float(value)==0
     except (TypeError,ValueError):return False
@@ -38,7 +46,8 @@ def openrouter_free_models(force=False):
         models=[_normalized(x) for x in payload.get('data',[]) if _free(x)];models=sorted((m for m in models if m['id'] and m['textGeneration']),key=lambda m:(not m['structuredOutput'],-(m['contextLength'] or 0),m['name']));_models_cache=(now,models);return models
     except Exception:return _models_cache[1]
 def availability():
-    gemini,openrouter=_server_keys();return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')}}}
+    gemini,openrouter=_server_keys();nvidia=_nvidia_key();ultra=os.getenv('NVIDIA_NEMOTRON_ULTRA_MODEL','').strip()
+    return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')},'nvidia':{'available':bool(nvidia),'experimental':True,'serverKeyConfigured':bool(nvidia),'model':_nemotron_model('nvidia'),'purpose':'newstart-jipijigi-lightning'},'nvidia-ultra':{'available':bool(nvidia and ultra),'experimental':True,'serverKeyConfigured':bool(nvidia),'model':ultra,'purpose':'future-deep-analysis'}}}
 def _openrouter(key,model,provider,system,prompt,schema,temperature,models=None,provider_routing=None):
     schema=strict_object_schema(schema) if schema else None
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
@@ -66,6 +75,30 @@ def _openrouter_request(key,model,provider,system,prompt,schema,temperature,forc
     except urllib.error.URLError as exc:raise ProviderError('OpenRouter 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
     except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True) from exc
     finally:_LOG.info('ai_provider_done provider=%s model=%s routing=%s provider_total_ms=%.2f',provider,model,provider_routing,(time.perf_counter()-started)*1000)
+def _nvidia_nim_request(key,model,provider,system,prompt,schema):
+    # NVIDIA NIM OpenAI-compatible chat completions. 공식 sample 확정 계약:
+    # temperature=1, top_p=0.95, max_tokens=16384, chat_template_kwargs.enable_thinking,
+    # reasoning_budget=16384. 호출부의 temperature는 Qwen 정책값이라 NIM에서는 무시(모델별 고정).
+    # 최종 답변은 assistant message.content만 사용한다 — reasoning_content(내부 사고)는
+    # 어떤 경로로도 사용자에게 노출하지 않고 폐기한다.
+    schema=strict_object_schema(schema) if schema else None
+    if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
+    body={'model':model,'messages':[{'role':'system','content':system or ' '},{'role':'user','content':prompt}],'temperature':1,'top_p':0.95,'max_tokens':16384,'chat_template_kwargs':{'enable_thinking':True},'reasoning_budget':16384}
+    request_bytes=json.dumps(body,ensure_ascii=False).encode();request=urllib.request.Request(NIM_CHAT_URL,data=request_bytes,method='POST',headers={'Authorization':f'Bearer {key}','Content-Type':'application/json'})
+    started=time.perf_counter()
+    _LOG.info('ai_provider_start provider=%s model=%s prompt_chars=%s estimated_tokens=%s request_bytes=%s timeout_seconds=%s',provider,model,len(prompt),(len(prompt)+3)//4,len(request_bytes),provider_timeout_seconds())
+    try:
+        with urllib.request.urlopen(request,timeout=provider_timeout_seconds()) as response:payload=json.loads(response.read().decode())
+        message=(payload.get('choices') or [{}])[0].get('message') or {}
+        text=message.get('content','')
+        if isinstance(text,list):text=''.join(x.get('text','') for x in text if isinstance(x,dict))
+        if not str(text).strip():raise ProviderError('NVIDIA NIM 응답 내용이 없습니다.',provider,502,'NVIDIA_NIM_EMPTY_RESPONSE',True)
+        return ProviderResult(str(text),payload.get('provider') or provider,payload.get('model') or model,'server')
+    except urllib.error.HTTPError as exc:raise ProviderError(f'NVIDIA NIM 요청 실패 ({exc.code})',provider,exc.code,'NVIDIA_NIM_UPSTREAM',exc.code in (429,502,503,504)) from exc
+    except (TimeoutError,socket.timeout) as exc:raise ProviderError('AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.',provider,504,'NVIDIA_NIM_TIMEOUT',True) from exc
+    except urllib.error.URLError as exc:raise ProviderError('NVIDIA NIM 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.',provider,502) from exc
+    except json.JSONDecodeError as exc:raise ProviderError('NVIDIA NIM 응답을 해석하지 못했습니다.',provider,502,'NVIDIA_NIM_INVALID_RESPONSE',True) from exc
+    finally:_LOG.info('ai_provider_done provider=%s model=%s nvidia_total_ms=%.2f',provider,model,(time.perf_counter()-started)*1000)
 def generate_multimodal(model,system,content,temperature=.15):
     _,openrouter=_server_keys()
     if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.','openrouter',503)
@@ -100,6 +133,11 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
                 if not gemini:raise ProviderError('Gemini 서버 키가 설정되지 않았습니다.',candidate)
                 text=pl.call_gemini_structured(gemini,system,prompt,schema,temperature) if schema else pl.call_gemini_text(gemini,system,prompt,temperature);return ProviderResult(text,'gemini','gemini-flash','server')
             if candidate=='gpt-5.6-luna':raise ProviderError('GPT-5.6 Luna는 향후 변형문제 제작·중요 검수 확장용이며 아직 연결되지 않았습니다.',candidate,503)
+            if candidate=='nvidia' or candidate=='nvidia-ultra' or candidate.startswith('nvidia:'):
+                if not _nvidia_key():raise ProviderError('NVIDIA NIM 서버 키가 설정되지 않았습니다.',candidate,503)
+                model=_nemotron_model(candidate)
+                if not model:raise ProviderError('Nemotron Ultra 모델이 설정되지 않았습니다. NVIDIA_NEMOTRON_ULTRA_MODEL에 모델 ID를 지정해 주세요.',candidate,503)
+                return _nvidia_nim_request(_nvidia_key(),model,candidate,system,prompt,schema)
             if candidate in ('qwen','ox-alpha','openrouter-free') or candidate.startswith('openrouter:'):
                 if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.',candidate)
                 if question_wiki:
