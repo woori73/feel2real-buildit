@@ -5,7 +5,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.e
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.Evidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.ResearchPack;
-import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiAiRouterClient;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmClient;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmCompletion;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,19 +19,21 @@ import java.util.Set;
  *
  * <p>질문이 오면 지피지기 Agent V1의 강제 조사 사다리({@link JipijigiResearchService})로
  * 승인(ACTIVE)된 지식·공식 자료·수집 사례를 먼저 검색하고, 그 근거를 프롬프트에 조립한 뒤
- * 공용 {@link WikiAiRouterClient}에 위임한다. 근거 없는 모델 자체 지식 단정 answers를 억제하는 것이 목적이다.
+ * NewStart 전용 {@link NewStartLlmClient}(NVIDIA NIM Lightning DIRECT)에 위임한다. 근거 없는
+ * 모델 자체 지식 단정 answers를 억제하는 것이 목적이다.
  *
  * <p>REVIEW 자료는 검색 대상이 아니다 — 사다리의 ACTIVE 필터를 유지하고,
  * 승인(REVIEW→ACTIVE)은 admin 승인 워크플로를 거친 자료만 이곳에 도달한다.
  *
- * <p>모델 정책은 Wiki Router 단일 출처를 따른다. NewStart에 별도 모델 설정이나 model ID
- * hard-code는 두지 않는다.
+ * <p>LLM transport는 NewStart 독립 경로다(공용 Wiki AI Router를 경유하지 않는다). 조사 사다리와
+ * 근거 우선순위는 그대로 두고, 마지막 모델 호출만 NVIDIA DIRECT → 기술적 실패 시 OpenRouter
+ * Qwen DIRECT 1회로 교체된다. NewStart에 model ID hard-code는 두지 않고 설정으로만 갖는다.
  */
 @Service
 public class NewStartAiChatService {
   /** 질문 길이 상한. 과대 프롬프트 남용을 막는 최소한의 가드다. */
   static final int MAX_QUESTION_CHARS = 2000;
-  /** 답변 출력 상한. Wiki Router의 max_output_chars로 그대로 위임된다. */
+  /** 답변 출력 상한. {@link NewStartLlmClient}가 응답에 적용한다. */
   static final int MAX_ANSWER_CHARS = 4000;
   /** 컨텍스트에 실리는 근거 총량 상한 — 프롬프트 폭주를 막는다. */
   static final int MAX_CONTEXT_EVIDENCE = 12;
@@ -54,15 +57,15 @@ public class NewStartAiChatService {
           + " 공식 자료는 '공식 안내에 따르면', 카페 회원 경험은 '카페 사례에서는'처럼 출처 성격을 명시해 구분한다."
           + " 근거에 없는 내용은 근거가 없다고 밝히고 공식 기관 안내 확인을 권유한다.";
 
-  private final WikiAiRouterClient wikiAiRouterClient;
+  private final NewStartLlmClient newStartLlmClient;
   private final JipijigiResearchService researchService;
 
-  public NewStartAiChatService(WikiAiRouterClient wikiAiRouterClient, JipijigiResearchService researchService) {
-    this.wikiAiRouterClient = wikiAiRouterClient;
+  public NewStartAiChatService(NewStartLlmClient newStartLlmClient, JipijigiResearchService researchService) {
+    this.newStartLlmClient = newStartLlmClient;
     this.researchService = researchService;
   }
 
-  /** 질문 하나를 조사 사다리 → 근거 컨텍스트 → Wiki AI Router 흐름으로 답변한다. 실패는 result-object로 보고한다. */
+  /** 질문 하나를 조사 사다리 → 근거 컨텍스트 → NewStart DIRECT LLM 흐름으로 답변한다. 실패는 result-object로 보고한다. */
   public NewStartAiAnswer ask(String rawQuestion) {
     String question = rawQuestion == null ? "" : rawQuestion.strip();
     if (question.isEmpty()) {
@@ -85,8 +88,8 @@ public class NewStartAiChatService {
         ? SYSTEM_PROMPT
         : SYSTEM_PROMPT + "\n\n[NewStart 지식베이스 근거]\n" + buildEvidenceContext(ordered);
 
-    WikiAiRouterClient.Completion completion =
-        wikiAiRouterClient.complete(systemPrompt, question, MAX_ANSWER_CHARS);
+    NewStartLlmCompletion completion =
+        newStartLlmClient.complete(systemPrompt, question, MAX_ANSWER_CHARS);
     if (!completion.ok()) {
       return NewStartAiAnswer.failed(completion.errorMessage(), toSources(ordered));
     }

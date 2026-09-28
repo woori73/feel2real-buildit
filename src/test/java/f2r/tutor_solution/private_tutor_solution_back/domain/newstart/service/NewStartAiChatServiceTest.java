@@ -7,39 +7,48 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.e
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.Evidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.ResearchPack;
-import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiAiRouterClient;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmClient;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmCompletion;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmTransport;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * NewStartAiChatService — given/when/then 단위테스트. 실제 Wiki 백엔드 대신 {@link FakeRouterClient},
- * DB 대신 {@link FakeResearchService}로 retrieval→context→router 위임 흐름과 입력 가드를 검증한다.
+ * NewStartAiChatService — given/when/then 단위테스트. 실제 LLM 호출 대신 {@link FakeLlmTransport},
+ * DB 대신 {@link FakeResearchService}로 retrieval→context→DIRECT LLM 위임 흐름과 입력 가드를 검증한다.
+ * 근거 조립(order·라벨·컨텍스트) 계약은 LLM transport 교체 전과 동일하게 유지된다.
  */
-@DisplayName("NewStartAiChatService — 지식 retrieval → 근거 컨텍스트 → Wiki AI Router 위임")
+@DisplayName("NewStartAiChatService — 지식 retrieval → 근거 컨텍스트 → NewStart DIRECT LLM 위임")
 class NewStartAiChatServiceTest {
 
-  /** 네트워크 없이 complete() 인자만 캡처하는 fake. */
-  private static class FakeRouterClient extends WikiAiRouterClient {
+  /** 네트워크 없이 complete() 인자만 캡처하는 fake transport. primary로만 붙는다. */
+  private static class FakeLlmTransport implements NewStartLlmTransport {
     boolean wasCalled;
     String capturedSystem;
     String capturedPrompt;
     int capturedMaxChars;
-    WikiAiRouterClient.Completion stubbed =
-        new WikiAiRouterClient.Completion(true, "답변입니다.", null, "qwen", "qwen/qwen3.7-flash");
+    NewStartLlmCompletion stubbed = NewStartLlmCompletion.success(
+        "답변입니다.", "nvidia", "nvidia/nemotron-3.5-lightning-30b-a3b");
 
-    FakeRouterClient() {
-      super(null, null, "http://127.0.0.1:1");
+    @Override
+    public String name() {
+      return "fake-primary";
     }
 
     @Override
-    public Completion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
       this.wasCalled = true;
       this.capturedSystem = systemPrompt;
       this.capturedPrompt = prompt;
       this.capturedMaxChars = maxOutputChars;
       return stubbed;
     }
+  }
+
+  /** primary-only 클라이언트: 이 테스트들의 stub은 항상 fallbackEligible=false라 fallback은 0회다. */
+  private static NewStartLlmClient llmClient(FakeLlmTransport primary) {
+    return new NewStartLlmClient(primary, new FakeLlmTransport());
   }
 
   /** DB 없이 research() 결과만 캡처·조작하는 fake 지피지기 조사 사다리. */
@@ -75,11 +84,12 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 정상 질문 when ask then 조사 사다리를 통과하고 router에 system prompt와 함께 위임한다")
-  void ask_delegatesToRouter() {
-    FakeRouterClient client = new FakeRouterClient();
+  @DisplayName("given 정상 질문 when ask then 조사 사다리를 통과하고 DIRECT LLM에 system prompt와 함께 위임한다")
+  void ask_delegatesToDirectLlm() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("새출발기금이 무엇인가요?");
 
@@ -87,7 +97,7 @@ class NewStartAiChatServiceTest {
     assertThat(research.capturedQuestion).isEqualTo("새출발기금이 무엇인가요?");
     assertThat(answer.ok()).isTrue();
     assertThat(answer.answer()).isEqualTo("답변입니다.");
-    assertThat(answer.model()).isEqualTo("qwen/qwen3.7-flash");
+    assertThat(answer.model()).isEqualTo("nvidia/nemotron-3.5-lightning-30b-a3b");
     assertThat(client.wasCalled).isTrue();
     assertThat(client.capturedPrompt).isEqualTo("새출발기금이 무엇인가요?");
     assertThat(client.capturedSystem).contains("새출발기금");
@@ -97,7 +107,8 @@ class NewStartAiChatServiceTest {
   @Test
   @DisplayName("given ACTIVE 근거가 있을 when ask then 공식 라벨·본문·출처 URL이 system prompt에 실리고 sources로 노출된다")
   void ask_includesActiveEvidenceContext() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
     research.pack = ResearchPack.builder().question("감면율")
         .internalHits(List.of())
@@ -105,7 +116,7 @@ class NewStartAiChatServiceTest {
             "[새출발기금] 감면율 기준", "https://nsf/official", "차상위는 최대 90%까지 가능하다")))
         .ccrsHits(List.of()).borrowerHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of())
         .externalSearched(false).build();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("감면율 기준이 궁금해요");
 
@@ -120,7 +131,8 @@ class NewStartAiChatServiceTest {
   @Test
   @DisplayName("given 공식 자료와 카페 사례가 모두 있을 when ask then 우선순위가 공식 > 운영자료 > 사례이고 카페 라벨이 보존된다")
   void ask_ordersOfficialBeforeCafeCases() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
     research.pack = ResearchPack.builder().question("90% 되나요")
         .internalHits(List.of(
@@ -130,7 +142,7 @@ class NewStartAiChatServiceTest {
             "공식 감면율 상한", "https://nsf", "최대 90%, 원칙 70%")))
         .ccrsHits(List.of()).borrowerHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of())
         .externalSearched(false).build();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     service.ask("감면율이 90%까지 되나요?");
 
@@ -147,9 +159,10 @@ class NewStartAiChatServiceTest {
   @Test
   @DisplayName("given 근거가 0건 when ask then 컨텍스트 없이 기존 system prompt로 위임하고 sources는 빈다")
   void ask_withoutEvidenceHasNoContextBlock() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("전혀 없는 주제 질문");
 
@@ -159,12 +172,13 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 조사 DB 실패 when ask then router를 타지 않고 정직한 실패를 돌려준다")
+  @DisplayName("given 조사 DB 실패 when ask then LLM을 타지 않고 정직한 실패를 돌려준다")
   void ask_researchFailureDoesNotAskModelWithoutGrounding() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
     research.failure = new IllegalStateException("db down");
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("질문");
 
@@ -174,11 +188,12 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 빈 질문 when ask then 조사도 router도 타지 않는다")
+  @DisplayName("given 빈 질문 when ask then 조사도 LLM도 타지 않는다")
   void ask_rejectsBlankQuestion() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("   ");
 
@@ -189,11 +204,12 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 길이 초과 질문 when ask then 조사도 router도 타지 않는다")
+  @DisplayName("given 길이 초과 질문 when ask then 조사도 LLM도 타지 않는다")
   void ask_rejectsOverlongQuestion() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("가".repeat(2001));
 
@@ -203,17 +219,18 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given router 실패 when ask then 근거 출처 목록은 유지하며 안내 문구를 돌려준다")
-  void ask_propagatesRouterFailureMessage() {
-    FakeRouterClient client = new FakeRouterClient();
+  @DisplayName("given LLM 실패 when ask then 근거 출처 목록은 유지하며 안내 문구를 돌려준다")
+  void ask_propagatesLlmFailureMessage() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
     research.pack = ResearchPack.builder().question("질문")
         .internalHits(List.of(evidence(SourceClass.INTERNAL_CASE, RefType.EMPIRICAL_CASE, "5866",
             "90% 탕감 사례", "https://cafe/5866", "체결 완료")))
         .officialHits(List.of()).ccrsHits(List.of()).borrowerHits(List.of()).extraAgencyHits(List.of())
         .gapNotes(List.of()).externalSearched(false).build();
-    client.stubbed = WikiAiRouterClient.Completion.failed("AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    client.stubbed = NewStartLlmCompletion.failed("AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.", false);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     NewStartAiChatService.NewStartAiAnswer answer = service.ask("질문");
 
@@ -225,11 +242,12 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 앞뒤 공백 질문 when ask then strip된 질문이 조사와 router 양쪽에 전달된다")
+  @DisplayName("given 앞뒤 공백 질문 when ask then strip된 질문이 조사와 LLM 양쪽에 전달된다")
   void ask_stripsQuestion() {
-    FakeRouterClient client = new FakeRouterClient();
+    FakeLlmTransport client = new FakeLlmTransport();
+    NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
-    NewStartAiChatService service = new NewStartAiChatService(client, research);
+    NewStartAiChatService service = new NewStartAiChatService(llm, research);
 
     service.ask("  질문  ");
 
