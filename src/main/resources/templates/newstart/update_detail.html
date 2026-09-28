@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title th:text="${detail.title} + ' - 최신 정보 | 새출발기금 부실차주'">최신 정보 | 새출발기금 부실차주</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260923-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260928-1">
 </head>
 <body>
   <div class="newstart-page">
@@ -17,6 +17,8 @@
           <a class="ns-btn ns-btn-ghost" href="/newstart/updates">전체 업데이트</a>
         </nav>
       </header>
+
+      <a class="ns-back" href="/newstart/updates" data-ns-back>← 뒤로</a>
       <main>
         <article class="ns-detail" aria-labelledby="ns-detail-title">
           <div class="ns-detail-meta">
@@ -63,5 +65,6 @@
       </main>
     </div>
   </div>
+  <script src="/js/newstart-back.js?v=20260928-1" defer></script>
 </body>
 </html>
