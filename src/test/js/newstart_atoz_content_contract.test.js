@@ -193,3 +193,22 @@ test('source MD section headers all map into the page or hold list', () => {
   const missing = sectionTitles.filter((t) => !source.includes(t) || !atoz.includes(t));
   assert.deepEqual(missing, [], 'sections missing between MD and page: ' + missing.join(', '));
 });
+
+test('STEP 0은 공식 링크 2개만 남기고 신청 준비 도우미 단추를 되살리지 않는다', () => {
+  const step0 = atoz.slice(atoz.indexOf('id="step-0"'), atoz.indexOf('id="step-1"'));
+  const ctas = step0.match(/<a class="az-cta[^"]*" href="([^"]+)"/g) || [];
+  assert.equal(ctas.length, 2, 'STEP 0 CTA 개수: ' + ctas.length);
+  ctas.forEach((c) => assert.match(c, /href="https:\/\//));
+  assert.doesNotMatch(step0, /\/newstart\/tools\/application/);
+});
+
+test('4-1 신청 자격은 공식 문구(2020.4~2025.6)와 2026 공식을 유지한다', () => {
+  const step4 = atoz.slice(atoz.indexOf('id="step-4"'), atoz.indexOf('id="step-5"'));
+  const q1 = step4.slice(0, step4.indexOf('4-2'));
+  assert.match(q1, /2020\.4~2025\.6/);
+  assert.match(q1, /폐업 법인은 신청 불가/);
+  assert.match(q1, /신청은 <strong>1회만<\/strong>/);
+  assert.match(q1, /제도개선 시행\(’26\.3\.25\)/);
+  assert.match(q1, /지원체계 보완\(’26\.6\.25\)/);
+  assert.equal((q1.match(/공식·현재/g) || []).length >= 2, true, '공식·현재 배지 2개 이상');
+});

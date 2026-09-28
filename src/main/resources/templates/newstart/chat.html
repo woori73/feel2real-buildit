@@ -6,7 +6,7 @@
   <title>회원 채팅 | 새출발기금 부실차주</title>
   <meta name="description" content="새출발기금·부실차주 정보를 회원들과 교류하는 공용 채팅방">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260919-4">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260928-1">
 </head>
 <body>
   <div class="newstart-page newstart-chat-page">
@@ -20,6 +20,8 @@
           <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
         </nav>
       </header>
+
+      <a class="ns-back" href="/newstart" data-ns-back>← 뒤로</a>
 
       <!-- 채팅방 : 단일 공용방, 모바일 우선 메신저 구조 -->
       <main class="ns-chat-main" aria-label="회원 채팅">
@@ -63,5 +65,6 @@
       <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
     </div>
   </div>
+  <script src="/js/newstart-back.js?v=20260928-1" defer></script>
 </body>
 </html>

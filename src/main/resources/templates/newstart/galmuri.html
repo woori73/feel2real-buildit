@@ -6,7 +6,7 @@
   <title>갈무리 게시판 | 새출발기금 부실차주</title>
   <meta name="description" content="회원 대화·사례·질문요청에서 운영자가 갈무리한 새출발기금·부실차주 지식을 신뢰 라벨과 함께 열람하는 게시판">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260927-2">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260928-1">
   <style>
     .ns-gm-main{display:grid;gap:14px}
     .ns-gm-head{display:flex;gap:10px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
@@ -52,6 +52,8 @@
         </nav>
       </header>
 
+      <a class="ns-back" href="/newstart" data-ns-back>← 뒤로</a>
+
       <main class="ns-gm-main" aria-label="갈무리 게시판">
 
         <!-- 비로그인 방문자: 셸은 열리지만 항목은 인증 뒤에 있다(API가 401로 거부). -->
@@ -87,5 +89,6 @@
       <script src="/js/newstart-galmuri.js?v=20260927-1" defer></script>
     </div>
   </div>
+  <script src="/js/newstart-back.js?v=20260928-1" defer></script>
 </body>
 </html>

@@ -8,6 +8,10 @@
 .newstart-topbar { display: flex; gap: 8px; flex-wrap: wrap; }
 .newstart-topbar .ns-btn { flex: 0 1 auto; }
 
+/* 내부 상세 화면 공통 뒤로가기 — 390px에서 손으로 누르기 쉬운 최소 44px 타깃 */
+.ns-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 10px 12px; margin: 4px 0 2px; border-radius: 10px; color: var(--ns-blue); font-weight: 700; text-decoration: none; }
+.ns-back:hover { background: var(--ns-blue-soft); }
+
 /* NewStart AI — 첫 화면 핵심 영역 */
 .ns-ai-hero { margin-top: 22px; padding: 18px 16px 14px; border: 1.5px solid var(--ns-blue); border-radius: 14px; background: var(--ns-blue-soft); }
 .ns-chat-login-alert { color: #b91c1c; font-weight: 600; }
@@ -247,6 +251,8 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-service-chat { border-color: #176b4d; background: linear-gradient(160deg, #eaf8f2, #fff 65%); }
 .ns-service-chat .ns-service-cta, .ns-service-chat .ns-section-kicker { color: #176b4d; }
 @media (min-width: 760px) { .ns-service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 서비스 카드가 1장이면 절반이 빈 행으로 남는다 — 남은 열까지 채운다. */
+@media (min-width: 760px) { .ns-service-grid > :only-child { grid-column: 1 / -1; } }
 .ns-feature-card { position: relative; min-width: 0; min-height: 218px; padding: 22px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ns-line); border-radius: 20px; color: var(--ns-ink); background: #fff; text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .045); }
 .ns-feature-card:focus-visible { outline: 3px solid rgba(21, 88, 214, .28); outline-offset: 3px; }
 .ns-feature-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--ns-blue); background: var(--ns-blue-soft); }
@@ -255,14 +261,6 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-feature-card strong { margin-top: 5px; font-size: 25px; line-height: 1.2; letter-spacing: -.04em; }
 .ns-feature-copy { margin-top: 8px; color: var(--ns-muted); font-size: 14px; line-height: 1.55; word-break: keep-all; }
 .ns-feature-cta { min-height: 44px; margin-top: auto; padding-top: 14px; display: flex; align-items: flex-end; color: var(--ns-blue); font-size: 14px; font-weight: 750; }
-.ns-feature-ai { color: #fff; border-color: #1558d6; background: linear-gradient(145deg, #1558d6, #0b347f); box-shadow: 0 16px 32px rgba(21, 88, 214, .2); }
-.ns-feature-ai .ns-feature-icon { color: #fff; background: rgba(255,255,255,.15); }
-.ns-feature-ai .ns-feature-category, .ns-feature-ai .ns-feature-copy { color: #dce8ff; }
-.ns-feature-ai .ns-feature-cta { color: #fff; }
-.ns-feature-status { background: #fbfcff; }
-.ns-feature-chat .ns-feature-icon { color: #176b4d; background: #eaf8f2; }
-.ns-feature-updates { background: #f7f3ea; border-color: #e8dfcf; }
-.ns-feature-updates .ns-feature-icon { color: #76571d; background: #fffaf0; }
 
 .ns-ai-hero { scroll-margin-top: 18px; margin-top: 34px; padding: 25px 20px 20px; border: 0; border-radius: 20px; background: #edf4ff; }
 .ns-ai-title { margin: 0 0 16px; font-size: clamp(25px, 7vw, 35px); line-height: 1.2; letter-spacing: -.04em; }
@@ -365,14 +363,14 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (hover: hover) and (pointer: fine) {
   .ns-feature-card { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
   .ns-feature-card:hover { transform: translateY(-3px); border-color: #b9c9e3; box-shadow: 0 14px 32px rgba(16,24,40,.09); }
-  .ns-feature-ai:hover { border-color: #1558d6; box-shadow: 0 18px 38px rgba(21,88,214,.27); }
 }
 @media (min-width: 560px) {
   .newstart-shell { padding-inline: 28px; }
   .ns-hero-cta { width: auto; padding-inline: 24px; }
   .ns-core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ns-practical-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ns-feature-ai { grid-row: span 2; min-height: 449px; }
+  /* 5장을 2열로 놓면 마지막 장 옆이 빈 칸 — 마지막 카드를 행 전체로 채운다. */
+  .ns-practical-grid > :last-child:nth-child(2n+1) { grid-column: 1 / -1; }
 }
 @media (min-width: 768px) {
   .newstart-shell { padding: 20px 38px 58px; }
@@ -388,9 +386,9 @@ html, body { max-width: 100%; overflow-x: clip; }
   .newstart-shell { padding-inline: 48px; }
   .ns-core-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
   .ns-practical-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ns-feature-card, .ns-feature-ai { grid-row: auto; min-height: 278px; }
-  .ns-feature-ai { transform: translateY(-12px); }
-  .ns-feature-ai:hover { transform: translateY(-15px); }
+  /* 3열에서도 마지막 줄의 빈 칸이 남지 않게 2칸을 채운다. */
+  .ns-practical-grid > :last-child:nth-child(3n+2) { grid-column: span 2; }
+  .ns-feature-card { grid-row: auto; min-height: 278px; }
   .ns-ai-hero { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); column-gap: 30px; align-items: center; }
   .ns-ai-hero .ns-section-kicker, .ns-ai-hero .ns-ai-title, .ns-ai-hero .ns-ai-note { grid-column: 1; }
   .ns-ai-hero .ns-ai-input-row, .ns-ai-hero .ns-ai-thread { grid-column: 2; }
