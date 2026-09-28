@@ -156,5 +156,102 @@ class NvidiaNimProviderTest(unittest.TestCase):
         self.assertEqual('qwen 답변', result.text)
 
 
+class NewstartRoutingChainTest(unittest.TestCase):
+    """지피지기 newstart 프로파일: PRIMARY=nvidia Lightning, FALLBACK=qwen — 가용성 전용 1회 전환."""
+
+    def _lightning(self, text='Lightning 답변'):
+        return ai_router.ProviderResult(text, 'nvidia', ai_router.NEMOTRON_LIGHTNING_MODEL, 'server')
+
+    def _qwen(self, text='Qwen 답변'):
+        return ai_router.ProviderResult(text, 'openrouter', ai_router.QWEN_MODEL, 'server')
+
+    def _fail(self, code, status, provider='nvidia'):
+        return ai_router.ProviderError(f'NVIDIA NIM 요청 실패 ({code})', provider, status, code=code, retryable=True)
+
+    def test_A_lightning_ok_never_calls_qwen(self):
+        """given Lightning 정상 when provider='newstart' then Lightning 응답만 쓰고 Qwen 호출 0."""
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-key', 'OPENROUTER_API_KEY': 'k'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', return_value=self._lightning()) as nim, \
+             patch.object(ai_router, '_openrouter') as qwen:
+            result = ai_router.generate('newstart', 'system', '질문')
+        self.assertEqual('Lightning 답변', result.text)
+        self.assertEqual('nvidia', result.provider)
+        nim.assert_called_once()
+        qwen.assert_not_called()
+
+    def test_B_timeout_falls_back_to_qwen_with_identical_context(self):
+        """given Lightning timeout when newstart then 동일 system/prompt로 Qwen 1회 fallback 성공."""
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-key', 'OPENROUTER_API_KEY': 'router-key'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', side_effect=self._fail('NVIDIA_NIM_TIMEOUT', 504)) as nim, \
+             patch.object(ai_router, '_openrouter', return_value=self._qwen()) as qwen:
+            result = ai_router.generate('newstart', '시스템', '근거+질문')
+        self.assertEqual('Qwen 답변', result.text)
+        self.assertEqual('openrouter', result.provider)
+        nim.assert_called_once()
+        qwen.assert_called_once()
+        self.assertEqual('시스템', qwen.call_args.args[3])
+        self.assertEqual('근거+질문', qwen.call_args.args[4])
+        self.assertEqual(nim.call_args.args[3], qwen.call_args.args[3])
+        self.assertEqual(nim.call_args.args[4], qwen.call_args.args[4])
+
+    def test_C_429_falls_back(self):
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-key', 'OPENROUTER_API_KEY': 'router-key'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', side_effect=self._fail('NVIDIA_NIM_UPSTREAM', 429)), \
+             patch.object(ai_router, '_openrouter', return_value=self._qwen()) as qwen:
+            self.assertEqual('Qwen 답변', ai_router.generate('newstart', 's', 'q').text)
+        qwen.assert_called_once()
+
+    def test_D_5xx_falls_back(self):
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-key', 'OPENROUTER_API_KEY': 'router-key'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', side_effect=self._fail('NVIDIA_NIM_UPSTREAM', 503)), \
+             patch.object(ai_router, '_openrouter', return_value=self._qwen()):
+            self.assertEqual('Qwen 답변', ai_router.generate('newstart', 's', 'q').text)
+
+    def test_E_empty_response_falls_back(self):
+        """given 빈/잘못된 Lightning 응답(empty/invalid) when newstart then Qwen fallback."""
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-key', 'OPENROUTER_API_KEY': 'router-key'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', side_effect=self._fail('NVIDIA_NIM_EMPTY_RESPONSE', 502)), \
+             patch.object(ai_router, '_openrouter', return_value=self._qwen()):
+            self.assertEqual('Qwen 답변', ai_router.generate('newstart', 's', 'q').text)
+
+    def test_F_both_fail_controlled_error_without_loop(self):
+        """given Lightning+Qwen 모두 실패 when newstart then 최종 오류 1회 — Lightning 재시도(loop) 없음."""
+        qwen_error = ai_router.ProviderError('Qwen도 실패', 'qwen', 502)
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-key', 'OPENROUTER_API_KEY': 'router-key'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', side_effect=self._fail('NVIDIA_NIM_UPSTREAM', 502)) as nim, \
+             patch.object(ai_router, '_openrouter', side_effect=qwen_error) as qwen:
+            with self.assertRaises(ai_router.ProviderError) as raised:
+                ai_router.generate('newstart', 's', 'q')
+        self.assertEqual('qwen', raised.exception.provider)
+        self.assertEqual(1, nim.call_count)
+        self.assertEqual(1, qwen.call_count)
+
+    def test_given_both_keys_when_newstart_fallback_then_logs_expose_no_secret(self):
+        """given 키 2개 when fallback 발생 then 경보 로그에 키 원문이 없다."""
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'nim-secret-xyz', 'OPENROUTER_API_KEY': 'router-secret-xyz'}, clear=False), \
+             patch.object(ai_router, '_nvidia_nim_request', side_effect=self._fail('NVIDIA_NIM_UPSTREAM', 502)), \
+             patch.object(ai_router, '_openrouter', return_value=self._qwen()):
+            with self.assertLogs('ai_router', level='WARNING') as logs:
+                ai_router.generate('newstart', 's', 'q')
+        joined = '\n'.join(logs.output)
+        self.assertIn('newstart_availability_fallback', joined)
+        self.assertNotIn('nim-secret-xyz', joined)
+        self.assertNotIn('router-secret-xyz', joined)
+
+    def test_chain_is_env_configurable_and_deduplicated(self):
+        """given NEWSTART_PRIMARY/FALLBACK_PROVIDER env when 체인 then 설정값 2중 구조가 유지된다."""
+        with patch.dict(os.environ, {'NEWSTART_PRIMARY_PROVIDER': 'nvidia-ultra', 'NEWSTART_FALLBACK_PROVIDER': 'openrouter-free'}, clear=False):
+            self.assertEqual(['nvidia-ultra', 'openrouter-free'], ai_router._newstart_chain())
+        with patch.dict(os.environ, {'NEWSTART_PRIMARY_PROVIDER': 'qwen', 'NEWSTART_FALLBACK_PROVIDER': 'qwen'}, clear=False):
+            self.assertEqual(['qwen'], ai_router._newstart_chain())
+
+    def test_newstart_profile_visible_in_availability_without_secret(self):
+        with patch.dict(os.environ, {'NVIDIA_API_KEY': 'do-not-return'}, clear=False):
+            body = json.dumps(ai_router.availability())
+        self.assertIn('newstart', body)
+        self.assertIn('nvidia', body)
+        self.assertNotIn('do-not-return', body)
+
+
 if __name__ == '__main__':
     unittest.main()

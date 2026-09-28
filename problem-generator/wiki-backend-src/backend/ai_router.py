@@ -9,6 +9,14 @@ NIM_CHAT_URL='https://integrate.api.nvidia.com/v1/chat/completions'
 QUESTION_WIKI_FREE_MODELS=('z-ai/glm-5.2:free','liquid/lfm-2.5-2.6b:free')
 QWEN_PROVIDER='openrouter';QWEN_MODEL='qwen/qwen3.7-flash';GEMINI_PROBLEM_MODEL='google/gemini-3.7-flash';LUNA_MODEL='gpt-5.6-luna';_models_cache=(0.0,[])
 NEMOTRON_LIGHTNING_MODEL='nvidia/nemotron-3.5-lightning-30b-a3b'
+NEWSTART_PRIMARY_PROVIDER='nvidia';NEWSTART_FALLBACK_PROVIDER='qwen'
+def _newstart_chain():
+    # 지피지기 라우팅 정책(PRIMARY=NVIDIA Lightning, FALLBACK=OpenRouter Qwen).
+    # fallback은 AVAILABILITY 전용: PRIMARY 호출 기술 실패 시에만 동일 입력으로 1회 전환하고,
+    # 응답 품질·스타일·RAG 양으로는 절대 전환하지 않는다. 체인 길이 2 = loop 0.
+    primary=os.getenv('NEWSTART_PRIMARY_PROVIDER',NEWSTART_PRIMARY_PROVIDER).strip() or NEWSTART_PRIMARY_PROVIDER
+    fallback=os.getenv('NEWSTART_FALLBACK_PROVIDER',NEWSTART_FALLBACK_PROVIDER).strip() or NEWSTART_FALLBACK_PROVIDER
+    return list(dict.fromkeys([primary,fallback]))
 def provider_timeout_seconds():
     try:value=float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS',DEFAULT_PROVIDER_TIMEOUT_SECONDS))
     except ValueError:value=DEFAULT_PROVIDER_TIMEOUT_SECONDS
@@ -47,7 +55,7 @@ def openrouter_free_models(force=False):
     except Exception:return _models_cache[1]
 def availability():
     gemini,openrouter=_server_keys();nvidia=_nvidia_key();ultra=os.getenv('NVIDIA_NEMOTRON_ULTRA_MODEL','').strip()
-    return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')},'nvidia':{'available':bool(nvidia),'experimental':True,'serverKeyConfigured':bool(nvidia),'model':_nemotron_model('nvidia'),'purpose':'newstart-jipijigi-lightning'},'nvidia-ultra':{'available':bool(nvidia and ultra),'experimental':True,'serverKeyConfigured':bool(nvidia),'model':ultra,'purpose':'future-deep-analysis'}}}
+    return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')},'nvidia':{'available':bool(nvidia),'experimental':True,'serverKeyConfigured':bool(nvidia),'model':_nemotron_model('nvidia'),'purpose':'newstart-jipijigi-lightning'},'nvidia-ultra':{'available':bool(nvidia and ultra),'experimental':True,'serverKeyConfigured':bool(nvidia),'model':ultra,'purpose':'future-deep-analysis'},'newstart':{'available':bool(nvidia or openrouter),'experimental':False,'profile':'availability-fallback','chain':_newstart_chain()}}}
 def _openrouter(key,model,provider,system,prompt,schema,temperature,models=None,provider_routing=None):
     schema=strict_object_schema(schema) if schema else None
     if schema:prompt+='\n\n반드시 다음 JSON Schema를 따르는 JSON 객체만 반환하라:\n'+json.dumps(schema,ensure_ascii=False)
@@ -126,7 +134,7 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
     if question_wiki:
         try:prompt=private_reference_bank.enrich_prompt(prompt)
         except private_reference_bank.ReferenceNotFoundError as exc:raise ProviderError('현재 문항의 변형 Reference를 찾지 못했습니다.',requested,422,'QUESTION_WIKI_REFERENCE_NOT_FOUND',False) from exc
-    candidates=['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested];last_error=None
+    candidates=_newstart_chain() if requested=='newstart' else ['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested];last_error=None
     for candidate in candidates:
         try:
             if candidate=='gemini':
@@ -151,5 +159,6 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
             raise ProviderError('지원하지 않는 AI provider입니다.',candidate,400)
         except Exception as exc:
             last_error=exc
+            if requested=='newstart':_LOG.warning('newstart_availability_fallback failed_provider=%s reason=%s',candidate,str(exc)[:200]);continue
             if requested!='auto':raise
     raise last_error or ProviderError('사용 가능한 서버 AI credential이 없습니다.',requested)
