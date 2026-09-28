@@ -3,8 +3,9 @@
 ## 0. 상태 스냅샷 (실측)
 - worktree: `C:/Users/VIEW LIFE/feel2real-wt-jipijigi-rag-intent`
 - branch: `feat/jipijigi-rag-intent-20260928` (this branch only, nothing merged)
-- base HEAD = origin/main = `09ee3b3e` (Merge PR #435) — branch had **no commits yet** at close
-- 작업 트리: 2 modified + 3 new files (아래 4번), 미커밋 → 이 handoff와 patch로 보존
+- base HEAD = origin/main = `09ee3b3e` (Merge PR #435)
+- 커밋: 마감 중 `242593d5` WIP push → 마감 후 컴파일 확인 반영 위해 handoff 갱신 커밋 1개 추가.
+  트리 clean, 로컬/원격 동일.
 
 ## 1. 오늘 완료한 것
 ### 1-1. 부실차주 Wiki REVIEW 27건 전건 승인 (Phase 1, 종료)
@@ -85,8 +86,11 @@ diffstat: 2 files changed, ~236 insertions / ~61 deletions + 신규 3파일.
 ## 5. TEST STATUS
 - **NOT RUN**: 전체 테스트 스위트(`JipijigiResearchServiceTest`, `NewStartAiChatServiceTest`,
   `NewstartKnowledgeReviewWorkflowTest` 포함) — 한 번도 실행하지 않았다.
-- **PASS/FAIL 미확인**: 마감 직전 `./gradlew compileJava compileTestJava --offline` 백그라운드 실행만 건드림.
-  결과가 확인됐다면 그 결과만 신뢰하고, 확인되지 않았으면 "미컴파일 상태"로 취급할 것.
+- **컴파일 PASS(실측)**: `./gradlew compileJava compileTestJava --offline` (JAVA_HOME=JDK21) exit 0 — 마감 후 완료 확인.
+  산출물 확인: `JipijigiIntent.class`, `JipijigiQuestionFrame.class`, `JipijigiEvidenceScorer.class`(+$Category/$Term),
+  `JipijigiResearchService.class`(+$Ranked/$Evidence/$ResearchPack), 그리고
+  `JipijigiResearchServiceTest.class`·`NewStartAiChatServiceTest.class` → **WIP 코드가 기존 테스트와 함께 컴파일은 되는 상태**.
+  동작(의도 판정·순위·절취량)은 미검증.
 - 정적 점검으로 확인한 것: 삭제/개명 심볼(`searchActiveKnowledgeRanked`, `toKnowledgeEvidence`,
   `evidenceScore` 시그니처)의 dangling reference 없음, `computeWarnings` 외부 호출부 소스 호환.
 - 기존 테스트가 지켜야 할 계약(코드로 재확인):
@@ -125,10 +129,10 @@ diffstat: 2 files changed, ~236 insertions / ~61 deletions + 신규 3파일.
   를 검증)을 둘 다 만지면 의미가 충돌할 수 있다.
 
 ## 9. HOME FIRST TASK (정확한 다음 순서)
-1. `git -C "C:/Users/VIEW LIFE/feel2real-wt-jipijigi-rag-intent" status --short && git log --oneline -1`
-   그리고 `git diff HEAD~1` (또는 patch)로 WIP 확인 → **첫 동작은 compile/test 실행**:
-   `export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.12.101-hotspot" && ./gradlew compileJava compileTestJava`
-   → 실패하면 위 3번 항목 7의 dead overload/시그니처부터 정리.
+1. `git -C "C:/Users/VIEW LIFE/feel2real-wt-jipijigi-rag-intent" status --short && git log --oneline -2`
+   그리고 `git show --stat HEAD`로 WIP 확인 → **첫 동작은 테스트 실행**(컴파일은 이미 exit 0 확인됨):
+   `export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.12.101-hotspot" && ./gradlew test --offline`
+   실패하면 handoff §3-7의 dead overload 2개와 랭킹 시그니처부터 정리하고, `--tests`로 좁게 재실행.
 2. `JipijigiQuestionFrameTest` 신규(의도 5분류, 대표 질문의 KNOWN/NEW_EVENT/ACTUAL_NEED/EVENT_TERMS 추출,
    사건 질의에 "후순위 담보 기한이익상실"류가 들어가는지) → `JipijigiResearchServiceTest`에
    사건 중심 랭킹·위험 감점·CONFLICT 단독 확정 방지 추가(기존 테스트 수정 금지, 추가만).
