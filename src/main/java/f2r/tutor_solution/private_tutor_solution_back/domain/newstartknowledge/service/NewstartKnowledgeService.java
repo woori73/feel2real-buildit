@@ -349,8 +349,11 @@ public class NewstartKnowledgeService {
      * - HISTORICAL: OFFICIAL_HISTORICAL (과거 규정, CURRENT와 혼합 금지)
      * - CASE_DERIVED: CASE 기반 DERIVED_RULE (소수 사례 일반화 금지)
      * - UNCLEAR_AUTHORITY: authority 없음
+     *
+     * <p>static: 지피지기 RAG 리랭크({@code JipijigiEvidenceScorer})가 같은 규칙을 근거 신뢰도로
+     * 재사용한다. 승인 화면과 검색 결과가 서로 다른 위험 판정을 하면 안 된다.
      */
-    public List<NewstartReviewWarning> computeWarnings(NewstartKnowledgeItem item) {
+    public static List<NewstartReviewWarning> computeWarnings(NewstartKnowledgeItem item) {
         List<NewstartReviewWarning> warnings = new ArrayList<>();
         String haystack = String.join("\n",
                 nullToEmpty(item.getTitle()),
