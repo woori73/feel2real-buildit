@@ -17,13 +17,17 @@ import java.util.UUID;
 /**
  * 로컬 디스크 기반 {@link FileStorage} 구현. {@code app.file.storage-type=local}일 때 활성화.
  *
- * <p>저장 레이아웃 (기존 동작 그대로):
+ * <p>저장 레이아웃:
  * <pre>
  *   {basePath}/{userId}/{uuid}_{filename}.jpg              — IMAGE
  *   {basePath}/{userId}/{uuid}/page_01.jpg, page_02.jpg ... — PDF 페이지들
  *   {basePath}/{userId}/{uuid}_{filename}.{ext}            — UNKNOWN 원본
  * </pre>
- * source.storage_key에는 위의 절대 경로가 그대로 들어간다.
+ * storage_key에는 basePath로부터의 상대 경로가 저장된다.
+ * 이렇게 하면 LocalAcademyVideoDeliveryStorage의 resolvePath(asyncRoot/objects/{key})가
+ * 같은 베이스 디렉터리(asyncRoot/objects)를 공유할 때 키를 바로 찾을 수 있다.
+ * 저장/읽기 내부에서는 절대 경로를 쓰되, 저장 시 반환하는 storage_key는 basePath 기준 상대 경로다.
+ * 읽기/삭제 메서드는 상대 경로와 절대 경로를 모두 처리한다.
  */
 @Slf4j
 @Component
@@ -40,7 +44,7 @@ public class LocalFileStorage implements FileStorage {
     String filename = UUID.randomUUID() + "_" + stripExtension(sanitize(filenameHint)) + "." + extension;
     Path dest = userDir.resolve(filename);
     Files.write(dest, bytes);
-    return dest.toString();
+    return toRelative(dest);
   }
 
   @Override
@@ -54,7 +58,7 @@ public class LocalFileStorage implements FileStorage {
         out.write(pageJpegBytes.get(i));
       }
     }
-    return pageDir.toString();
+    return toRelative(pageDir);
   }
 
   @Override
@@ -63,15 +67,16 @@ public class LocalFileStorage implements FileStorage {
     String filename = UUID.randomUUID() + "_" + sanitize(filenameHint);
     Path dest = userDir.resolve(filename);
     Files.copy(in, dest);
-    return dest.toString();
+    return toRelative(dest);
   }
 
   @Override
   public List<byte[]> readAllPages(String storageKey, String fileType) throws IOException {
+    Path path = resolveStorageKey(storageKey);
     if (!"PDF".equals(fileType)) {
-      return List.of(Files.readAllBytes(Path.of(storageKey)));
+      return List.of(Files.readAllBytes(path));
     }
-    Path pageDir = Path.of(storageKey);
+    Path pageDir = path;
     List<byte[]> pages = new ArrayList<>();
     try (var stream = Files.list(pageDir)) {
       var sorted = stream
@@ -87,11 +92,12 @@ public class LocalFileStorage implements FileStorage {
 
   @Override
   public byte[] readPage(String storageKey, String fileType, int page) throws IOException {
+    Path path = resolveStorageKey(storageKey);
     if (!"PDF".equals(fileType)) {
-      return Files.readAllBytes(Path.of(storageKey));
+      return Files.readAllBytes(path);
     }
     String pageName = String.format("page_%02d.jpg", page);
-    Path pagePath = Path.of(storageKey, pageName);
+    Path pagePath = path.resolve(pageName);
     if (!Files.exists(pagePath)) {
       throw new IOException("페이지를 찾을 수 없습니다: " + pageName);
     }
@@ -105,7 +111,7 @@ public class LocalFileStorage implements FileStorage {
       throw new IOException("PDF 묶음은 단일 객체 제한 조회를 지원하지 않습니다.");
     }
 
-    Path path = Path.of(storageKey);
+    Path path = resolveStorageKey(storageKey);
     if (Files.size(path) > maxBytes) {
       throw new StorageReadLimitExceededException(maxBytes);
     }
@@ -123,11 +129,14 @@ public class LocalFileStorage implements FileStorage {
   @Override
   public int pageCount(String storageKey, String fileType) {
     if (!"PDF".equals(fileType)) return 1;
-    try (var stream = Files.list(Path.of(storageKey))) {
-      long n = stream
-          .filter(p -> p.getFileName().toString().matches("page_\\d+\\.jpg"))
-          .count();
-      return n > 0 ? (int) n : 1;
+    try {
+      Path path = resolveStorageKey(storageKey);
+      try (var stream = Files.list(path)) {
+        long n = stream
+            .filter(p -> p.getFileName().toString().matches("page_\\d+\\.jpg"))
+            .count();
+        return n > 0 ? (int) n : 1;
+      }
     } catch (IOException e) {
       log.warn("PDF 페이지 수 계산 실패: reason={}", e.getClass().getSimpleName());
       return 1;
@@ -143,7 +152,7 @@ public class LocalFileStorage implements FileStorage {
   public boolean deleteReported(String storageKey, String fileType) {
     if (storageKey == null || storageKey.isBlank()) return true;
     try {
-      Path path = Path.of(storageKey);
+      Path path = resolveStorageKey(storageKey);
       if ("PDF".equals(fileType) && Files.isDirectory(path)) {
         boolean complete = true;
         try (var stream = Files.list(path)) {
@@ -156,12 +165,7 @@ public class LocalFileStorage implements FileStorage {
             }
           }
         }
-        try {
-          Files.deleteIfExists(path);
-        } catch (IOException e) {
-          complete = false;
-          log.warn("storage directory delete 실패: reason={}", e.getClass().getSimpleName());
-        }
+        Files.deleteIfExists(path);
         return complete && !Files.exists(path);
       } else {
         Files.deleteIfExists(path);
@@ -173,10 +177,32 @@ public class LocalFileStorage implements FileStorage {
     }
   }
 
+  private Path baseDir() {
+    return Path.of(basePath).toAbsolutePath().normalize();
+  }
+
   private Path userDir(Long userId) throws IOException {
-    Path dir = Path.of(basePath, String.valueOf(userId));
+    Path dir = baseDir().resolve(String.valueOf(userId));
     Files.createDirectories(dir);
     return dir;
+  }
+
+  private String toRelative(Path absolutePath) {
+    Path base = baseDir();
+    try {
+      return base.relativize(absolutePath).toString();
+    } catch (IllegalArgumentException e) {
+      // 이미 상대 경로이거나 다른 볼륨인 경우 원본 반환
+      return absolutePath.toString();
+    }
+  }
+
+  private Path resolveStorageKey(String storageKey) {
+    Path keyPath = Path.of(storageKey);
+    if (keyPath.isAbsolute()) {
+      return keyPath;
+    }
+    return baseDir().resolve(storageKey).normalize();
   }
 
   private String sanitize(String name) {
