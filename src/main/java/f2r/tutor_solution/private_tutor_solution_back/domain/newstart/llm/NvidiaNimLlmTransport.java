@@ -13,6 +13,8 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,6 +29,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class NvidiaNimLlmTransport implements NewStartLlmTransport {
+
+  private static final Logger log = LoggerFactory.getLogger(NvidiaNimLlmTransport.class);
 
   private static final String GENERIC_ERROR = "AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.";
 
@@ -63,23 +67,41 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
     body.put("max_tokens", config.getMaxTokens());
     body.put("chat_template_kwargs", Map.of("enable_thinking", config.isEnableThinking()));
     body.put("reasoning_budget", config.getReasoningBudget());
+    long tStart = System.nanoTime();
     try {
+      String payload = objectMapper.writeValueAsString(body);
       HttpRequest request = HttpRequest
           .newBuilder(URI.create(config.getBaseUrl() + "/chat/completions"))
           .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
           .header("Content-Type", "application/json")
           .header("Authorization", "Bearer " + config.getApiKey())
-          .POST(HttpRequest.BodyPublishers.ofString(
-              objectMapper.writeValueAsString(body), StandardCharsets.UTF_8))
+          .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
           .build();
+      long tSend = System.nanoTime();
       HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+      long tHttp = System.nanoTime();
       if (response.statusCode() != 200) {
         // §4: 429·5xx만 재시도 대상. 그 외 4xx(인증·요건 오류)는 fallback 없이 통제된 실패로 알린다.
         boolean eligible = response.statusCode() == 429 || response.statusCode() >= 500;
+        log.info("newstart nvidia call status={} httpMs={} requestChars={} maxTokens={} reasoningEnabled={} reasoningBudget={}",
+            response.statusCode(), ms(tHttp - tSend), payload.length(), config.getMaxTokens(),
+            config.isEnableThinking(), config.getReasoningBudget());
         return NewStartLlmCompletion.failed(GENERIC_ERROR, eligible);
       }
-      return parse(response.body());
+      CallStats stats = new CallStats();
+      NewStartLlmCompletion completion = parse(response.body(), stats);
+      log.info("newstart nvidia call status={} httpMs={} parseMs={} ok={} provider={} model={} "
+              + "requestChars={} contentChars={} finishReason={} promptTokens={} completionTokens={} "
+              + "totalTokens={} reasoningTokens={} maxTokens={} reasoningEnabled={} reasoningBudget={}",
+          response.statusCode(), ms(tHttp - tSend), ms(System.nanoTime() - tHttp), completion.ok(),
+          completion.provider(), completion.model(), payload.length(), stats.contentChars, stats.finishReason,
+          stats.promptTokens, stats.completionTokens, stats.totalTokens, stats.reasoningTokens,
+          config.getMaxTokens(), config.isEnableThinking(), config.getReasoningBudget());
+      return completion;
     } catch (IOException exception) {
+      log.info("newstart nvidia call ioFailure httpMs={} maxTokens={} reasoningEnabled={} reasoningBudget={}",
+          ms(System.nanoTime() - tStart), config.getMaxTokens(), config.isEnableThinking(),
+          config.getReasoningBudget());
       return NewStartLlmCompletion.failed(GENERIC_ERROR, true);
     } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
@@ -87,7 +109,17 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
     }
   }
 
-  private NewStartLlmCompletion parse(byte[] responseBody) {
+  /** 스레드safe 유지 위해 호출 1건 지역의 카운터(빈 필드에 누적하지 않는다). -1은 provider가 usage를 안 준 경우. */
+  private static final class CallStats {
+    private int contentChars;
+    private String finishReason = "";
+    private int promptTokens = -1;
+    private int completionTokens = -1;
+    private int totalTokens = -1;
+    private int reasoningTokens = -1;
+  }
+
+  private NewStartLlmCompletion parse(byte[] responseBody, CallStats stats) {
     try {
       JsonNode root = objectMapper.readTree(responseBody);
       JsonNode choices = root.path("choices");
@@ -96,7 +128,15 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
       }
       JsonNode choice = choices.get(0);
       String content = assistantContent(choice.path("message").path("content"));
-      if ("interrupted".equals(choice.path("finish_reason").asText(""))) {
+      stats.contentChars = content.length();
+      stats.finishReason = choice.path("finish_reason").asText("");
+      // reasoning_content 값은 읽지 않는다. 소진 token 수만 구간 분석용 카운터로 쓴다.
+      JsonNode usage = root.path("usage");
+      stats.promptTokens = usage.path("prompt_tokens").asInt(-1);
+      stats.completionTokens = usage.path("completion_tokens").asInt(-1);
+      stats.totalTokens = usage.path("total_tokens").asInt(-1);
+      stats.reasoningTokens = usage.path("reasoning_tokens").asInt(-1);
+      if ("interrupted".equals(stats.finishReason)) {
         return NewStartLlmCompletion.failed(GENERIC_ERROR, true);
       }
       if (content.isBlank()) {
@@ -107,6 +147,10 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
     } catch (IOException exception) {
       return NewStartLlmCompletion.failed(GENERIC_ERROR, true);
     }
+  }
+
+  private static long ms(long nanos) {
+    return Math.round(nanos / 1_000_000.0);
   }
 
   /** NIM은 content를 문자열 또는 text part 배열로 반환한다. reasoning_content는 여기서 읽지 않는다. */

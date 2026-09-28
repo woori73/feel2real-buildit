@@ -198,7 +198,7 @@ test('given THANKS_MEMBER 미부여 회원 when 요청 등록(403) then 서버 �
     meResponse: { userId: 1, loginId: 'naver-1', role: 'STUDENT' },
     writeResponse: {
       ok: false, status: 403,
-      json: async () => ({ status: 'error', errorMessage: '회원 전용 기능입니다. 운영자에게 이용 신청을 문의해 주세요.' })
+      json: async () => ({ status: 'error', errorMessage: '감사회원 전용 기능입니다. 감사회원 승인을 운영자에게 요청해 주세요.' })
     }
   });
   await flushAll();
@@ -219,7 +219,7 @@ test('given THANKS_MEMBER 미부여 회원 when 요청 등록(403) then 서버 �
 
   assert.equal(nodes['ns-req-write-err'].hidden, false, '403 안내가 사용자에게 보이지 않는다');
   assert.equal(nodes['ns-req-write-err'].textContent,
-    '회원 전용 기능입니다. 운영자에게 이용 신청을 문의해 주세요.');
+    '감사회원 전용 기능입니다. 감사회원 승인을 운영자에게 요청해 주세요.');
   // 거절로 화면이 초기화되지 않는다 — 이미 열린 목록/상세는 계속 열람 가능해야 한다(§7 READ=회원).
   assert.ok(nodes['ns-req-list'].textContent.includes('개인회생 순서가 궁금해요'),
     '403 이후 목록이 비었다 — 읽기 권한까지 잃은 화면이 됐다');

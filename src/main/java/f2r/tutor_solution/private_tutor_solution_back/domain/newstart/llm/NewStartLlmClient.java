@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class NewStartLlmClient {
 
+  private static final Logger log = LoggerFactory.getLogger(NewStartLlmClient.class);
+
   private final NewStartLlmTransport primary;
   private final NewStartLlmTransport fallback;
 
@@ -29,14 +33,22 @@ public class NewStartLlmClient {
   }
 
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    long tPrimary = System.nanoTime();
     NewStartLlmCompletion first = primary.complete(systemPrompt, prompt, maxOutputChars);
     if (first.ok()) {
+      log.info("newstart llm attempts=1 fallbackUsed=false primaryMs={} model={}",
+          ms(System.nanoTime() - tPrimary), first.model());
       return cap(first, maxOutputChars);
     }
     if (!first.fallbackEligible()) {
+      log.info("newstart llm attempts=1 fallbackUsed=false nonRetryablePrimaryFailure primaryMs={}",
+          ms(System.nanoTime() - tPrimary));
       return first;
     }
+    long tFallback = System.nanoTime();
     NewStartLlmCompletion second = fallback.complete(systemPrompt, prompt, maxOutputChars);
+    log.info("newstart llm attempts=2 fallbackUsed=true primaryMs={} fallbackMs={} fallbackOk={} model={}",
+        ms(tFallback - tPrimary), ms(System.nanoTime() - tFallback), second.ok(), second.model());
     if (second.ok()) {
       return cap(second, maxOutputChars);
     }
@@ -50,5 +62,9 @@ public class NewStartLlmClient {
     }
     return NewStartLlmCompletion.success(
         completion.text().substring(0, maxOutputChars), completion.provider(), completion.model());
+  }
+
+  private static long ms(long nanos) {
+    return Math.round(nanos / 1_000_000.0);
   }
 }
