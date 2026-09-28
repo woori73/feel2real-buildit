@@ -133,5 +133,34 @@ class WikiAiRouterClientTest {
     assertThat(result.errorMessage()).isNotBlank();
   }
 
+  @Test
+  @DisplayName("given provider 오버로드 when complete(provider) 호출 then 명시 provider를 그대로 전송한다")
+  void complete_withExplicitProvider_sendsProviderOverride() throws Exception {
+    AtomicReference<CapturedRequest> captured = new AtomicReference<>();
+    String baseUrl = startFakeWikiBackend(200, "{\"text\":\" Lightning 답변\",\"provider\":\"nvidia\",\"model\":\"nvidia/nemotron-3.5-lightning-30b-a3b\"}", captured);
+    WikiAiRouterClient client = clientWithPrincipal(PRINCIPAL, baseUrl);
+
+    WikiAiRouterClient.Completion result = client.complete("시스템", "질문", 220, "nvidia");
+
+    assertThat(result.ok()).isTrue();
+    assertThat(result.provider()).isEqualTo("nvidia");
+    assertThat(result.model()).isEqualTo("nvidia/nemotron-3.5-lightning-30b-a3b");
+    assertThat(captured.get().body()).contains("\"provider\":\"nvidia\"");
+  }
+
+  @Test
+  @DisplayName("given provider가 null/공백 when complete(provider) 호출 then 기존 auto 정책으로 위임한다")
+  void complete_withBlankProvider_fallsBackToAuto() throws Exception {
+    AtomicReference<CapturedRequest> captured = new AtomicReference<>();
+    String baseUrl = startFakeWikiBackend(200, "{\"text\":\"답변\",\"provider\":\"qwen\",\"model\":\"qwen/qwen3.7-flash\"}", captured);
+    WikiAiRouterClient client = clientWithPrincipal(PRINCIPAL, baseUrl);
+
+    assertThat(client.complete("시스템", "질문", 220, null).ok()).isTrue();
+    assertThat(captured.get().body()).contains("\"provider\":\"auto\"");
+
+    assertThat(client.complete("시스템", "질문", 220, "  ").ok()).isTrue();
+    assertThat(captured.get().body()).contains("\"provider\":\"auto\"");
+  }
+
   private record CapturedRequest(String path, String body, String userIdHeader, String signatureHeader) {}
 }
