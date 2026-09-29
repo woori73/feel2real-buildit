@@ -6,6 +6,10 @@ name: CSAT DAY-1 production seed (writes legacy app.db via API, manual)
 # 원본 PDF가 서버에 없어 resource 7건은 skip되고(PDF SOURCE 미완료 유지), 나머지만 등록된다.
 # 스크립트들은 멱등(존재 시 skip)이라 재실행 안전.
 
+concurrency:
+  group: csat-day1-production-seed
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -13,6 +17,10 @@ on:
         description: SEED를 실행하려면 정확히 SEED 입력
         required: true
         default: DRY
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   seed:
