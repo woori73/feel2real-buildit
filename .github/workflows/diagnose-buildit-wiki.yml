@@ -56,7 +56,7 @@ jobs:
           PY_CENSUS=$(cat <<'PY'
           import sqlite3, os, glob
           TABLES = ["csat_exams","csat_exam_resources","csat_questions","csat_question_dna",
-                    "csat_dna_claims","csat_dna_comparisons","csat_expert_sources"]
+                    "csat_dna_claims","csat_dna_comparisons","csat_expert_sources","csat_wrong_html"]
           def census(path):
               name = os.path.basename(path)
               try:
