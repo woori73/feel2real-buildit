@@ -18,9 +18,12 @@ test('A to Z renders all 14 journey steps from the source MD', () => {
 });
 
 test('A to Z preserves the four source-truth tags and legend', () => {
-  ['공식·현재', '운영자 경험', '회원 사례', '현재 재확인 필요'].forEach((tag) => {
+  ['공식·현재', '운영자 경험', '회원 사례', '과거 회원 사례'].forEach((tag) => {
     assert.ok((atoz.match(new RegExp(tag, 'g')) || []).length >= 2, tag + ' must appear as legend and content marker');
   });
+  // "현재 재확인 필요" 태그 체계는 폐지 — 과거 자료는 보존 라벨로, 해명된 항목은 공식·사례로 채운다
+  assert.doesNotMatch(atoz, /현재 재확인 필요/);
+  assert.doesNotMatch(atoz, /az-tag-recheck/);
 });
 
 test('A to Z keeps every official URL from the source MD', () => {
@@ -133,7 +136,7 @@ test('A to Z preserves key content units of every MD section', () => {
     /한 달 연락 없으면 통과/,             // 10-2 정정
     /채권양도 관련 등기/,                // 10-3
     /소득·나이·부양가족/,               // 10-4
-    /최대 10%p 추가 원금감면 우대\(최대 감면율 90%\)/, // 11-1
+    /최대 10%p 내에서 차등/,              // 11-1 공식 문구
     /국민취업지원제도/,                  // 11-1
     /희망리턴패키지/,                    // 11-1
     /개인\(신용\)정보 수집·이용·제공·조회 동의서/, // 11-2
@@ -157,10 +160,18 @@ test('A to Z preserves key content units of every MD section', () => {
 
 test('A to Z keeps the fact-check hold list and official references', () => {
   // 내부 QA 지시문("공개 전 팩트체크")은 제거되고 사용자 언어 안내로 재작성됨 — 목록 자체는 유지
-  assert.match(atoz, /공식 확인이 필요한 과거 안내 14가지/);
+  assert.match(atoz, /과거 자료에 있었던 수치·표현 14가지/);
   assert.doesNotMatch(atoz, /공개 전 팩트체크/);
   ['장기연체코드 0101', 'newstartfund@kamcocs.co.kr', '담보 고정금리 4.6%', '공공정보 즉시 해제'].forEach((item) => assert.ok(atoz.includes(item), 'hold item missing: ' + item));
   assert.match(atoz, /공식 근거/);
+});
+
+test('A to Z 사례 콘텐츠는 지피지기 DB provenance 주석을 보유한다', () => {
+  // §8 내부 추적: CASE/EBOOK/OPERATOR 출처 주석이 보강 블록마다 존재해야 한다
+  const provenance = atoz.match(/<!-- PROVENANCE:/g) || [];
+  assert.ok(provenance.length >= 10, 'PROVENANCE comments: ' + provenance.length);
+  assert.match(atoz, /PROVENANCE: CASE case_id/);
+  assert.match(atoz, /newstart_empirical_cases/);
 });
 
 test('every A to Z external CTA is a real visible link with safe target', () => {
