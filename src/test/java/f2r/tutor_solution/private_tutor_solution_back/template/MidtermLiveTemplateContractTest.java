@@ -911,7 +911,9 @@ class MidtermLiveTemplateContractTest {
     String js = read("static/js/eduholic_midterm_home_live.js");
     String html = read("templates/public/academy_public.html");
 
-    assertThat(js).contains("function pickMainFeatureLink()");
+    // 2026-09-29 MAIN VIDEO 교체 확정: academy_videos 표식 선별(pickMainFeatureLink) 폐기 → 정적 자산 고정.
+    assertThat(js).doesNotContain("pickMainFeatureLink");
+    assertThat(js).contains("MAIN_FEATURE_VIDEO_SRC = '/video/eduholic/shingu2-jikbo-explainer.mp4'");
     assertThat(js).contains("liveVideosBySchool");
     assertThat(js).contains("scene.video.videoUrl");
     assertThat(js).contains("scene.video.thumbnailUrl");
@@ -923,7 +925,7 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("video.autoplay");
     assertThat(js).contains("head.insertAdjacentElement('afterend', feature)");
     assertThat(js).contains("학교별 내신 대비");
-    assertThat(html).contains("eduholic_midterm_home_live.js?v=20260918-2");
+    assertThat(html).contains("eduholic_midterm_home_live.js?v=20260929-1");
   }
 
   /**
