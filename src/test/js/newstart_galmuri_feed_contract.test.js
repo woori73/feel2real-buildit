@@ -69,7 +69,7 @@ function buildDocument() {
   return { document, nodes: byId, root };
 }
 
-function loadGalmuriPage({ meResponse, feedResponses, detailResponse } = {}) {
+function loadGalmuriPage({ meResponse, feedResponses, detailResponse, feedItems } = {}) {
   const { document, nodes, root } = buildDocument();
   const storage = memoryStorage({});
   const calls = [];
@@ -86,8 +86,8 @@ function loadGalmuriPage({ meResponse, feedResponses, detailResponse } = {}) {
     }
     if (String(url).startsWith('/api/newstart/galmuri')) {
       const page = Number(new URL(String(url), 'https://feel2real.co.kr').searchParams.get('page') || 0);
-      const items = page === 0 ? [CARD, OFFICIAL] : [];
-      return { ok: true, status: 200, json: async () => ({ items, hasMore: page === 0 }) };
+      const items = feedItems ? feedItems(page) : (page === 0 ? [CARD, OFFICIAL] : []);
+      return { ok: true, status: 200, json: async () => ({ items, hasMore: page === 0 && items.length > 0 }) };
     }
     return Promise.reject(new Error('not mocked: ' + url));
   };
@@ -184,4 +184,29 @@ test('given hasMore when 더 보기 then 다음 페이지가 이어붙고 hasMor
     '두 번째 페이지가 요청되지 않았다: ' + JSON.stringify(calls));
   assert.equal(root.querySelectorAll('.ns-gm-item').length, 2, '기존 항목이 덮어써졌다(append 아님)');
   assert.equal(nodes['ns-gm-more'].hidden, true, 'hasMore=false인데 더 보기 버튼이 남았다');
+});
+
+test('given 갈무리 0건 when 열람 then 빈 상태 안내가 화면에 드러난다', async () => {
+  const { nodes, root } = loadGalmuriPage({
+    meResponse: { userId: 1, loginId: 'naver-1', role: 'STUDENT' },
+    feedItems: () => []
+  });
+  await flushAll();
+
+  assert.equal(root.querySelectorAll('.ns-gm-item').length, 0);
+  assert.equal(nodes['ns-gm-empty'].hidden, false, '0건인데 빈 상태 안내가 숨어 있다');
+});
+
+/* .ns-card/.ns-gm-list의 display가 UA의 [hidden]보다 우선하면 JS 숨김이 무시된다(#350류 동일 결함). */
+test('galmuri.html은 [hidden]을 display:none !important로 선언하고 빈 상태 안내가 출처를 밝힌다', () => {
+  const html = fs.readFileSync(
+    path.resolve(__dirname, '../../main/resources/templates/newstart/galmuri.html'), 'utf8');
+  assert.match(html, /\[hidden\]\s*\{\s*display:\s*none\s*!important\s*\}/,
+    'galmuri.html에 [hidden] 우선순위 규칙이 없다 — 비로그인인데 목록이 보일 수 있다');
+  const empty = html.match(/id="ns-gm-empty"[^>]*>([^<]+)</);
+  assert.ok(empty, '빈 상태 안내 마크업이 없다');
+  assert.ok(empty[1].includes('아직 갈무리된 항목이 없습니다.'), '빈 상태 첫 문장이 기대와 다릅니다: ' + empty[1]);
+  ['채팅', '질문요청', '사례'].forEach((w) => {
+    assert.ok(empty[1].includes(w), '빈 상태 안내에 출처 "' + w + '"가 없다 — Wiki 목록이 아니라는 점을 화면이 설명해야 한다');
+  });
 });

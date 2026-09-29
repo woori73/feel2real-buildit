@@ -274,6 +274,46 @@
         if (block.scrollIntoView) block.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
       }
 
+      /* 근거/출처: 백엔드 sources[{kind,title,url}]를 답변 아래 렌더한다(2026-09-29 — 이전엔 폐기).
+         kind는 서버가 내린 한국어 라벨을 사용하되 "(DB)" 같은 내부 표기만 사용자 언어로 바꾼다.
+         url은 http/https만 링크로 열고, provider·model·debug 정보는 절대 표시하지 않는다. */
+      var SOURCE_KIND_LABEL = { '공식 자료': '공식 안내', '실증 사례(DB)': '실증 사례' };
+
+      function appendSources(sources) {
+        if (!thread || !sources || !sources.length) return;
+        var block = document.createElement('div');
+        block.className = 'ns-ai-block ns-ai-sources';
+        var who = document.createElement('strong');
+        who.className = 'ns-ai-who';
+        who.textContent = '이 답변의 근거';
+        block.appendChild(who);
+        var ul = document.createElement('ul');
+        ul.className = 'ns-ai-source-list';
+        sources.forEach(function (src) {
+          if (!src || !src.title) return;
+          var li = document.createElement('li');
+          var tag = document.createElement('span');
+          tag.className = 'ns-ai-source-kind';
+          tag.textContent = SOURCE_KIND_LABEL[src.kind] || src.kind || '참고';
+          li.appendChild(tag);
+          var title = document.createElement('span');
+          title.textContent = src.title;
+          li.appendChild(title);
+          if (typeof src.url === 'string' && /^https?:\/\//i.test(src.url)) {
+            var a = document.createElement('a');
+            a.className = 'ns-ai-source-link';
+            a.setAttribute('href', src.url);
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener noreferrer');
+            a.textContent = '열기';
+            li.appendChild(a);
+          }
+          ul.appendChild(li);
+        });
+        block.appendChild(ul);
+        thread.appendChild(block);
+      }
+
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (busy) return;
@@ -287,9 +327,12 @@
         input.value = '';
 
         var controller = typeof AbortController === 'function' ? new AbortController() : null;
+        /* abort 상한 300s: 서버 체인 상한(NVIDIA primary 180s + Qwen fallback 90s = 270s)보다 크게 —
+           답변이 만들어지는 도중 프론트가 먼저 끊는 사고 방지(2026-09-29 timeout 정렬).
+           실측 정상 경로(budget 1024)는 약 41s이며, 120s abort는 16384 시절 141s 답변을 잘랐다. */
         var timer = window.setTimeout(function () {
           if (controller) controller.abort();
-        }, 120000);
+        }, 300000);
 
         fetch('/api/newstart/ai/chat', {
           method: 'POST',
@@ -308,6 +351,7 @@
             var data = result.data || {};
             if (result.status === 200 && data.status === 'ok' && data.answer) {
               appendBlock('지피지기 AI', data.answer, null);
+              appendSources(data.sources);
             } else if (result.status === 401) {
               appendBlock('지피지기 AI', '로그인 후 질문할 수 있습니다.', 'error');
             } else {

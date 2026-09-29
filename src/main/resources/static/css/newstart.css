@@ -87,6 +87,11 @@
 .ns-ai-error { border-color: #e8b4b4; background: #fdf6f6; }
 .ns-ai-who { display: block; font-size: 12px; font-weight: 700; color: var(--ns-muted); margin-bottom: 3px; }
 .ns-ai-text { font-size: 14px; line-height: 1.65; color: var(--ns-ink); overflow-wrap: anywhere; white-space: pre-wrap; word-break: break-word; }
+.ns-ai-sources { background: #fff; }
+.ns-ai-source-list { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13px; color: var(--ns-ink); }
+.ns-ai-source-list li { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
+.ns-ai-source-kind { flex: none; font-size: 11px; font-weight: 700; color: #0c4a6e; background: #e0f2fe; border-radius: 999px; padding: 1px 8px; }
+.ns-ai-source-link { color: #2563eb; font-weight: 700; text-decoration: none; }
 /* ── 회원 채팅 (/newstart/chat) — 모바일 우선 메신저 구조 ─────────────────── */
 .ns-chat-shell { display: flex; flex-direction: column; min-height: 100svh; }
 .ns-chat-main { flex: 1; display: flex; flex-direction: column; margin-top: 14px; min-height: 0; }

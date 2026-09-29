@@ -18,8 +18,8 @@ const REQUESTS_PATH = path.resolve(__dirname, '../../main/resources/static/js/ne
  * 1. 인증 판정 소스는 채팅과 동일하게 헤더(account_menu.js)를 재사용한다 — 요청 목록은
  *    로그인 회원에게만 열리고(§7 READ=회원), 비로그인에는 목록 자체가 fetch되지 않는다.
  * 2. 상태·종류 라벨은 서버 enum 8종/2종과 1:1로 대응한다(새 상태가 화면에서 "?"로 보이지 않게).
- * 3. 쓰기 거절(THANKS_MEMBER 미부여 403)은 UI가 임의 문장을 지어내지 않고 서버 errorMessage를
- *    그대로 보여준다 — "숨김으로 처리"가 아니라 근거를 보여주는 쪽을 택했기 때문이다.
+ * 3. 쓰기는 인증 회원 전체(2026-09-29 정책 — 질문요청은 일반회원 기본 기능, grant 불필요).
+ *    폼 실패 시 UI가 임의 문장을 지어내지 않고 서버 errorMessage를 그대로 보여준다.
  */
 
 // newstart-requests.js는 상세 렌더 끝에 scrollIntoView를 부르고, 폼 제출 성공 시 form.reset()을
@@ -30,8 +30,7 @@ if (!MiniElement.prototype.scrollIntoView) {
 
 const LIST_IDS = ['ns-req-login', 'ns-req-list', 'ns-req-empty', 'ns-req-more', 'ns-req-status',
   'ns-req-detail', 'ns-req-new', 'ns-req-write', 'ns-req-kind', 'ns-req-title',
-  'ns-req-improve-fields', 'ns-req-location', 'ns-req-step', 'ns-req-problem', 'ns-req-proposal',
-  'ns-req-submit', 'ns-req-write-err'];
+  'ns-req-problem', 'ns-req-submit', 'ns-req-write-err'];
 
 function buildDocument() {
   const root = new MiniElement('root');
@@ -53,12 +52,12 @@ function buildDocument() {
   LIST_IDS.forEach((id) => {
     const tag = id === 'ns-req-write' ? 'details'
       : id === 'ns-req-kind' ? 'select'
-        : id === 'ns-req-title' || id === 'ns-req-location' || id === 'ns-req-step' ? 'input'
-          : id === 'ns-req-problem' || id === 'ns-req-proposal' ? 'textarea'
+        : id === 'ns-req-title' ? 'input'
+          : id === 'ns-req-problem' ? 'textarea'
             : id === 'ns-req-submit' ? 'button' : 'div';
     const node = el(tag, { id });
     if (id === 'ns-req-login' || id === 'ns-req-new' || id === 'ns-req-detail'
-      || id === 'ns-req-more' || id === 'ns-req-improve-fields' || id === 'ns-req-write-err') {
+      || id === 'ns-req-more' || id === 'ns-req-write-err') {
       node.hidden = true;
     }
     byId[id] = node;
@@ -193,13 +192,9 @@ test('given 서버 enum when 화면 라벨을 조회하면 then 8 상태/2 종�
   });
 });
 
-test('given THANKS_MEMBER 미부여 회원 when 요청 등록(403) then 서버 안내 문구를 그대로 보여주고 목록은 그대로 유지된다', async () => {
+test('given 일반(STUDENT) 회원 when 요청 등록 then grant 없이 POST 성공 — 질문요청은 일반회원 기본 기능(2026-09-29 정책)', async () => {
   const { nodes, calls } = loadRequestsPage({
-    meResponse: { userId: 1, loginId: 'naver-1', role: 'STUDENT' },
-    writeResponse: {
-      ok: false, status: 403,
-      json: async () => ({ status: 'error', errorMessage: '감사회원 전용 기능입니다. 감사회원 승인을 운영자에게 요청해 주세요.' })
-    }
+    meResponse: { userId: 1, loginId: 'naver-1', role: 'STUDENT' }
   });
   await flushAll();
 
@@ -214,15 +209,37 @@ test('given THANKS_MEMBER 미부여 회원 when 요청 등록(403) then 서버 �
   const posted = calls.find((c) => c.method === 'POST' && c.url === '/api/newstart/requests');
   assert.ok(posted, '작성 POST가 발생하지 않았다: ' + JSON.stringify(calls.map((c) => c.url)));
   const payload = JSON.parse(posted.body);
+  assert.deepEqual(Object.keys(payload).sort(), ['kind', 'problem', 'title'],
+    '폼은 요청 종류·제목·내용만 전송한다(단순화 2026-09-29): ' + posted.body);
   assert.equal(payload.kind, 'QUESTION');
-  assert.equal(payload.screenLocation, '', 'QUESTION인데 개선 요청 전용 칼럼이 전송됐다');
+  assert.equal(nodes['ns-req-write-err'].hidden, true, '성공인데 오류 안내가 보인다');
+});
 
-  assert.equal(nodes['ns-req-write-err'].hidden, false, '403 안내가 사용자에게 보이지 않는다');
-  assert.equal(nodes['ns-req-write-err'].textContent,
-    '감사회원 전용 기능입니다. 감사회원 승인을 운영자에게 요청해 주세요.');
+test('given 서버가 등록 거절(400 안내) when 요청 등록 then 서버 안내 문구를 그대로 보여주고 목록은 그대로 유지된다', async () => {
+  const { nodes, calls } = loadRequestsPage({
+    meResponse: { userId: 1, loginId: 'naver-1', role: 'STUDENT' },
+    writeResponse: {
+      ok: false, status: 400,
+      json: async () => ({ status: 'error', errorMessage: '내용을 입력해 주세요.' })
+    }
+  });
+  await flushAll();
+
+  nodes['ns-req-kind'].value = 'QUESTION';
+  nodes['ns-req-title'].value = '질문 제목';
+  nodes['ns-req-problem'].value = '';
+  const listeners = nodes['ns-req-form']._listeners.get('submit') || [];
+  listeners.forEach((listener) => listener({ preventDefault() {} }));
+  await flushAll();
+
+  const posted = calls.find((c) => c.method === 'POST' && c.url === '/api/newstart/requests');
+  assert.ok(posted, '작성 POST가 발생하지 않았다: ' + JSON.stringify(calls.map((c) => c.url)));
+
+  assert.equal(nodes['ns-req-write-err'].hidden, false, '실패 안내가 사용자에게 보이지 않는다');
+  assert.equal(nodes['ns-req-write-err'].textContent, '내용을 입력해 주세요.');
   // 거절로 화면이 초기화되지 않는다 — 이미 열린 목록/상세는 계속 열람 가능해야 한다(§7 READ=회원).
   assert.ok(nodes['ns-req-list'].textContent.includes('개인회생 순서가 궁금해요'),
-    '403 이후 목록이 비었다 — 읽기 권한까지 잃은 화면이 됐다');
+    '실패 이후 목록이 비었다 — 읽기 권한까지 잃은 화면이 됐다');
 });
 
 test('given ADMIN이 상세 열람 when 검토 패널로 저장 then /api/admin 경로로 POST하고 반영 정보를 다시 렌더한다', async () => {
@@ -272,4 +289,20 @@ test('given 일반 회원이 타인의 상세 when 열람 then 취소 버튼은 
     '본인 작성자(authorId=1)가 아닌 회원에게 취소 버튼이 보인다');
   assert.equal(root.querySelectorAll('.ns-req-admin').length, 0,
     '일반 회원에게 운영자 검토 패널이 보인다');
+});
+
+/* .ns-card/.ns-req-list/.ns-btn의 display가 UA의 [hidden]보다 우선하면 JS 숨김이 무시된다(#350류).
+   DOM 속성 계약만으로는 "비로그인인데 목록이 보인다"를 못 잡으므로 마크업 규칙을 함께 본다. */
+test('questions.html은 [hidden]을 display:none !important로 선언하고 쓰기 폼은 4필드만 가진다', () => {
+  const html = fs.readFileSync(
+    path.resolve(__dirname, '../../main/resources/templates/newstart/questions.html'), 'utf8');
+  assert.match(html, /\[hidden\]\s*\{\s*display:\s*none\s*!important\s*\}/,
+    'questions.html에 [hidden] 우선순위 규칙이 없다 — 비로그인인데 목록·쓰기 버튼이 보일 수 있다');
+  // 2026-09-29 단순화: 요청 종류·제목·내용·등록. 화면/위치·STEP·개선 제안 입력은 화면에 없다(서버·DB는 보존).
+  ['ns-req-kind', 'ns-req-title', 'ns-req-problem', 'ns-req-submit'].forEach((fid) => {
+    assert.ok(html.includes('id="' + fid + '"'), '쓰기 폼 필수 id 누락: ' + fid);
+  });
+  ['ns-req-improve-fields', 'ns-req-location', 'ns-req-step', 'ns-req-proposal'].forEach((fid) => {
+    assert.equal(html.includes('id="' + fid + '"'), false, '단순화 후에도 남아 있는 입력: ' + fid);
+  });
 });

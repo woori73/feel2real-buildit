@@ -23,9 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
  * NewStart 질문요청 게시판(설계 §5) service — [질문·조사 요청] + [사이트 개선 요청] 인박스.
  *
  * <p>권한 경계는 service가 아니라 요청 경로·SecurityConfig에서 갈린다:
- * 읽기/쓰기는 {@code /api/newstart/requests}(인증 회원), 쓰기 실행은 이 service의
- * {@code principal} 검증을 통과한 THANKS_MEMBER만, 운영자 상태 관리는
- * {@code /api/admin/newstart/requests}(hasRole ADMIN)로만 들어온다.
+ * 읽기/쓰기(작성·취소)는 {@code /api/newstart/requests}(인증 회원 전체 — 질문요청은 일반회원
+ * 기본 기능), 운영자 상태 관리는 {@code /api/admin/newstart/requests}(hasRole ADMIN)로만 들어온다.
  *
  * <p>실패는 예외로 던지지 않고 result-object로 보고한다 — controller가 사용자 안내 문구만
  * 내려보내고 내부 상세는 브라우저에 노출하지 않기 위해서다.
