@@ -16,8 +16,13 @@
   // 학교별 수업 영상 후보에서도 제외하는 표식으로만 남긴다(원본 asset/DB 는 건드리지 않는다).
   var MAIN_FEATURE_MARKER = '내신대비_라이브_최종_53초';
   var MAIN_FEATURE_VIDEO_SRC = '/video/eduholic/shingu2-jikbo-explainer.mp4';
-  var MAIN_FEATURE_TITLE = '신구중2 직보 문제해설';
-  var MAIN_FEATURE_DESC = '내일 시험 전 마지막으로 확인하는 영어 문제풀이 · 핵심 해설';
+  var MAIN_FEATURE_TITLE = '신구중2 2학기 중간고사(9월30일) 대비 직보 자료';
+  var MAIN_FEATURE_DESC = '내일(9월30일) 시험 전 마지막으로 확인하는 영어 문제풀이 · 핵심 해설';
+  var MAIN_FEATURE_NOTES = [
+    '※ AI 한국어 선생님이 영어 발음은 살짝 서툴 수 있어요. 😅',
+    '가끔 귀여운(?) 발음이 나오더라도 너그럽게 이해해 주시고,',
+    '문제 풀이와 핵심 해설에 집중해 주세요!'
+  ];
   var SCENE_MS = 4500;
   var schoolVideos = {};
   var videosReady = false;
@@ -79,6 +84,22 @@
     var feature = document.createElement('article');
     feature.className = 'mt-main-feature';
     feature.setAttribute('data-midterm-main-feature', '');
+
+    // 표시 순서: 제목 → 설명 → AI 음성 안내 → 동영상
+    var copy = document.createElement('div');
+    copy.className = 'mt-main-feature__copy';
+    copy.innerHTML = '<strong></strong><small></small><p class="mt-main-feature__note"></p>';
+    copy.querySelector('strong').textContent = MAIN_FEATURE_TITLE;
+    copy.querySelector('small').textContent = MAIN_FEATURE_DESC;
+    var note = copy.querySelector('.mt-main-feature__note');
+    MAIN_FEATURE_NOTES.forEach(function (lineText) {
+      var line = document.createElement('span');
+      line.className = 'mt-main-feature__note-line';
+      line.textContent = lineText;
+      note.appendChild(line);
+    });
+    feature.appendChild(copy);
+
     var media = document.createElement('div');
     media.className = 'mt-main-feature__media';
     var video = document.createElement('video');
@@ -92,12 +113,6 @@
     video.addEventListener('play', function () { pauseOtherVideos(video); });
     media.appendChild(video);
     feature.appendChild(media);
-
-    var copy = document.createElement('div');
-    copy.className = 'mt-main-feature__copy';
-    copy.innerHTML = '<strong>' + MAIN_FEATURE_TITLE + '</strong>'
-      + '<small>' + MAIN_FEATURE_DESC + '</small>';
-    feature.appendChild(copy);
     head.insertAdjacentElement('afterend', feature);
 
     var cards = section.querySelector('[data-featured-cards]');
@@ -285,12 +300,13 @@
       '#sec-featured .mt-main-feature{width:min(100%,980px);margin:34px auto 44px;}',
       '#sec-featured .mt-main-feature__media{width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:24px;background:#090d18;box-shadow:0 24px 60px rgba(15,23,42,.18);}',
       '#sec-featured .mt-main-feature__video{display:block;width:100%;height:100%;border:0;object-fit:contain;background:#090d18;}',
-      '#sec-featured .mt-main-feature__copy{display:grid;gap:5px;margin-top:18px;text-align:left;}',
+      '#sec-featured .mt-main-feature__copy{display:grid;gap:6px;margin-bottom:12px;text-align:left;}',
       '#sec-featured .mt-main-feature__copy strong{font-size:20px;line-height:1.35;color:#111827;}',
-      '#sec-featured .mt-main-feature__copy span{font-size:14px;font-weight:800;color:#2b3a9e;}',
+      '#sec-featured .mt-main-feature__note-line{display:block;}',
       '#sec-featured .mt-main-feature__copy small{font-size:14px;line-height:1.65;color:#67707c;}',
+      '#sec-featured .mt-main-feature__note{margin:0;display:grid;gap:6px;font-size:12px;line-height:1.6;color:#8a929c;word-break:keep-all;overflow-wrap:anywhere;}',
       '#sec-featured .mt-main-feature__schools-title{width:min(100%,980px);margin:0 auto 18px;font-size:20px;line-height:1.35;color:#111827;}',
-      '@media(max-width:768px){#sec-featured .mt-main-feature{margin:26px auto 34px;}#sec-featured .mt-main-feature__media{border-radius:16px;box-shadow:0 14px 34px rgba(15,23,42,.16);}#sec-featured .mt-main-feature__copy{margin-top:14px;}#sec-featured .mt-main-feature__copy strong,#sec-featured .mt-main-feature__schools-title{font-size:18px;}}',
+      '@media(max-width:768px){#sec-featured .mt-main-feature{margin:26px auto 34px;}#sec-featured .mt-main-feature__media{border-radius:16px;box-shadow:0 14px 34px rgba(15,23,42,.16);}#sec-featured .mt-main-feature__copy{margin-bottom:10px;}#sec-featured .mt-main-feature__copy strong,#sec-featured .mt-main-feature__schools-title{font-size:18px;}}',
       '@media (prefers-reduced-motion:reduce){#sec-featured .mt-hl-stage{transition:none;}}'
     ].join('');
     document.head.appendChild(style);
