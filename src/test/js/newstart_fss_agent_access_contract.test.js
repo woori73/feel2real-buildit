@@ -10,7 +10,7 @@ const HTML_PATH = path.resolve(__dirname, '../../main/resources/templates/newsta
 // git checkout에 CRLF가 들어와도 정규식 계약이 깨지지 않도록 개행만 정규화한다.
 const html = fs.readFileSync(HTML_PATH, 'utf8').replace(/\r\n/g, '\n');
 
-const DENIAL = '회원 전용 기능입니다. 운영자에게 이용 신청을 문의해 주세요.';
+const DENIAL = '감사회원 전용 기능입니다. 감사회원 승인을 운영자에게 요청해 주세요.';
 const GENERIC = '연결에 실패했습니다. 잠시 뒤 다시 눌러 주세요.';
 
 /**

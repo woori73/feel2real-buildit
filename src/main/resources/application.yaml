@@ -61,7 +61,9 @@ app:
         top-p: 0.95
         max-tokens: 16384
         enable-thinking: true
-        reasoning-budget: 16384
+        # 2026-09-28 LOCAL 실측: 16384일 때 답변 111.3~140.9s(140.9s건은 브라우저 120s abort로 미표시),
+        # 1024로 줄이면 같은 근거(promptTokens 3109·출처 8건 동일)에서 40.6s. 즉시 복구는 env override.
+        reasoning-budget: 1024
         timeout-seconds: 180
       openrouter:
         base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}

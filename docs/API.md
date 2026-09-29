@@ -49,7 +49,7 @@
 
 ### ✅ POST /api/newstart/ai/chat
 
-- 목적: NewStart 화면의 AI 질문. **NewStart 전용 DIRECT LLM**(`NewStartLlmClient`)을 쓴다 — primary NVIDIA NIM Nemotron Lightning(`https://integrate.api.nvidia.com/v1`, 공식 sample 계약 `temperature=1`·`top_p=0.95`·`max_tokens=16384`·`chat_template_kwargs.enable_thinking=true`·`reasoning_budget=16384`), 기술적 실패 시에만 OpenRouter Qwen(`qwen/qwen3.7-flash`) DIRECT 1회. 공용 BuildIt Wiki AI Router는 이 경로에서 경유하지 않는다(Router·`WikiAiRouterClient` 자체는 내신Wiki/Academy 등 다른 기능이 계속 사용). 모델 호출은 질문 1건당 정상 1회, fallback은 최대 1회이며 재검색·재시도 루프가 없다. 키는 `NVIDIA_API_KEY`/`OPENROUTER_API_KEY` 환경변수만 읽고 provider의 `reasoning_content`(내부 사고)는 화면·로그·저장에 노출하지 않는다. 설정은 `app.newstart.llm.*`에서 override 가능.
+- 목적: NewStart 화면의 AI 질문. **NewStart 전용 DIRECT LLM**(`NewStartLlmClient`)을 쓴다 — primary NVIDIA NIM Nemotron Lightning(`https://integrate.api.nvidia.com/v1`, 공식 sample 계약 `temperature=1`·`top_p=0.95`·`max_tokens=16384`·`chat_template_kwargs.enable_thinking=true`), `reasoning_budget`은 1024로 운영(2026-09-28 실측 근거는 아래 latency 항목), 기술적 실패 시에만 OpenRouter Qwen(`qwen/qwen3.7-flash`) DIRECT 1회. 공용 BuildIt Wiki AI Router는 이 경로에서 경유하지 않는다(Router·`WikiAiRouterClient` 자체는 내신Wiki/Academy 등 다른 기능이 계속 사용). 모델 호출은 질문 1건당 정상 1회, fallback은 최대 1회이며 재검색·재시도 루프가 없다. 키는 `NVIDIA_API_KEY`/`OPENROUTER_API_KEY` 환경변수만 읽고 provider의 `reasoning_content`(내부 사고)는 화면·로그·저장에 노출하지 않는다. 설정은 `app.newstart.llm.*`에서 override 가능.
 - 현재 사용처: `/newstart` NewStart AI 질문창
 - 인증/권한: 비로그인은 기존 `/api/**` catch-all이 `401`. 로그인 회원은 **THANKS_MEMBER** grant가 있어야 실행할 수 있다(`newstart_member_grants` row, ADMIN은 grant 없이 통과) — 미부여 회원은 `403` + `errorMessage` 안내. AI 호출(Router 비용)이 드는 실행형 기능이므로 "로그인 회원 = 전원 실행"으로 두지 않는다. 화면에서 입력창을 숨기는 것과 무관하게 API에서 강제한다.
 - Request JSON: `message` (필수, 1~2000자)
@@ -57,6 +57,17 @@
 - 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
 - 실패: `400`(빈 질문·길이 초과·지식베이스 조회 실패·provider/네트워크 오류 공통), `403`(THANKS_MEMBER 미부여 회원) 모두 `{"status":"error","errorMessage":"..."}`. 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
 - RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립 우선순위: 공식 > 운영/전자책 > 승인 답변 세션 > 카페·실증 사례((refType,refId) 중복 제거, 최대 12건). 답변 프롬프트는 근거 성격을 '공식 안내에 따르면' vs '카페 사례에서는'으로 구분하도록 강제한다.
+- 레이턴시 실측·로그(2026-09-28 LOCAL, NVIDIA 4회): 구간별 INFO 로그 — `NewStartAiChatController`(`authMs/serviceMs/handlerMs`), `NewStartAiChatService`(`ragMs/evidenceMs/promptMs/llmMs` + `systemPromptChars/promptChars/inputTokenEstimate/evidenceCount/answerChars`), `NewStartLlmClient`(`attempts/fallbackUsed/primaryMs/fallbackMs`), `NvidiaNimLlmTransport`(`httpMs/parseMs/promptTokens/completionTokens/finishReason/maxTokens/reasoningBudget`). 질문 원문·키·`reasoning_content`는 남기지 않고 길이와 ms·token 수만 남긴다. LOCAL 10개 질문 데이터 기준 `httpMs`가 전체의 97.9~99.5%이고 `finishReason=stop`(3~4k tokens)으로 `max_tokens`는 상한만 작용 → 병목은 생성/추론 구간. `reasoning-budget` 16384→1024(yaml 값만 변경, 코드 불변) 단일 변수 테스트: 같은 질문에서 서버 111.3s→40.6s(−63.5%), `promptTokens` 3109 동일·근거 12건·출처 8건(공식 4 + 부실차주 카페 4) 동일, 답변 478→1530자로 짧아지기는커녕 증가. 16384 상태의 세션 3질문은 111.5/141.0/112.8s였고 141.0s건은 프론트의 120s abort(`newstart.js`)로 화면에 못 닿는다. 부수 관측: 예산을 줄인 답변에 모델이 자체 작성한 `[KB2 공식]` 형태 인용 표기가 나타날 수 있다(DB 대조 결과 코퍼스 문구가 아니며, 지칭 번호는 실제 근거 1~8번과 대응) — 화면 `sources` 렌더가 없는 현재는 사용자 노출 차이가 크지 않으므로 후속 확인 항목.
+
+### ✅ 감사회원(THANKS_MEMBER) 권한 부여·회수 — ADMIN
+
+- 목적: 지피지기 AI·금감원 Agent 세션·민원 초안·질문요청 쓰기를 회원이 쓰려면 `newstart_member_grants` row가 있어야 한다. 그 row를 SQL 없이(curl·운영 화면) 넣고 뺄 수 있는 ADMIN API.
+- `GET /api/admin/newstart/grants` — 목록. 항목은 `{grantId,userId,capability,grantedBy}`.
+- `POST /api/admin/newstart/grants` — body `{userId, capability?}`(생략 시 `THANKS_MEMBER`). **idempotent**(이미 있으면 기존 row 반환 — `UNIQUE(user_id, capability)`와 겹치는 INSERT를 하지 않는다). 존재하지 않는 user_id는 `400` + `errorMessage`.
+- `DELETE /api/admin/newstart/grants/{userId}?capability=THANKS_MEMBER` — 회수. row가 없으면 `400`.
+- 인증: `/api/admin/**`는 SecurityConfig의 `hasRole('ADMIN')` — controller에 별도 규칙을 두지 않는다(AdminNewStartRequestController와 동일).
+- PII: 요청·응답은 숫자 user_id와 capability만 다룬다(email·실명·닉네임은 이 경로를 통과하지 않는다).
+- 부여는 즉시 반영된다 — `NewStartEntitlementService.allows()`가 매 요청에서 grant table을 보므로 회원의 재로그인·토큰 재발급이 필요 없다.
 
 
 ### NewStart 회원 채팅 (공용방 1개, 텍스트 전용)
@@ -86,7 +97,7 @@ DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_
 
 상태 8종: `RECEIVED`(접수) · `REVIEWING`(검토 중) · `ANSWERED`(답변 완료) · `ACCEPTED`(채택) · `IN_PROGRESS`(반영 진행 중) · `RESOLVED`(해결 완료) · `REJECTED`(거절) · `DUPLICATE`(중복).
 
-인증/권한 요약: 비로그인은 `/api/**` catch-all이 `401`. 미부여 회원의 작성은 `403` + `{"status":"error","errorMessage":"회원 전용 기능입니다. ..."}`(화면은 이 문구를 그대로 노출). 검증 실패는 `400` + `errorMessage`.
+인증/권한 요약: 비로그인은 `/api/**` catch-all이 `401`. 미부여 회원의 작성은 `403` + `{"status":"error","errorMessage":"감사회원 전용 기능입니다. ..."}`(화면은 이 문구를 그대로 노출). 검증 실패는 `400` + `errorMessage`.
 
 ### NewStart 갈무리 게시판 (설계 §6, V1012)
 
@@ -4243,7 +4254,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ## 금감원 민원 도우미 API (`/api/newstart/fss`) (2026-09, Phase 1 v2)
 
-- 인증: 비로그인은 기존 `/api/**` catch-all이 `401`로 막는다. **설계 §7 경계** — 설명/예시/공식 안내는 읽기, AI 실행은 THANKS_MEMBER(`newstart_member_grants` row, ADMIN은 grant 없이 통과). 미부여 회원의 실행 호출은 `403` + `{"status":"error","errorMessage":"회원 전용 기능입니다..."}`이고 AI는 호출되지 않는다.
+- 인증: 비로그인은 기존 `/api/**` catch-all이 `401`로 막는다. **설계 §7 경계** — 설명/예시/공식 안내는 읽기, AI 실행은 THANKS_MEMBER(`newstart_member_grants` row, ADMIN은 grant 없이 통과). 미부여 회원의 실행 호출은 `403` + `{"status":"error","errorMessage":"감사회원 전용 기능입니다..."}`이고 AI는 호출되지 않는다.
 - 무상태 원칙: 민원 원문·인터뷰 내용·초안은 DB에 저장하지 않고 로그에도 남기지 않는다. 자동 제출은 존재하지 않으며, 제출·본인인증은 사용자가 금감원 공식 사이트에서 직접 수행한다.
 - `GET /api/newstart/fss/companion` — 화면 1회 로딩 payload: `samples`(전자책 예시 3종 FS-1..FS-3, ebookRef·sourceLines 포함), `manual`(전자책 기반 안내), `official`(§7 소관 분기 안내: 금감원 공식 페이지 3종 출처·카테고리별 소관·기타 기관 경로·조회 기준일), `agent`(Guided Agent 14단계 정적 안내, PC Chrome 고지 포함).
 - `POST /api/newstart/fss/compose` — **THANKS_MEMBER 실행**. 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
