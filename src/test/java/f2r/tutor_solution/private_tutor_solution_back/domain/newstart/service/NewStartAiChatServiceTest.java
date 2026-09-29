@@ -103,6 +103,9 @@ class NewStartAiChatServiceTest {
     assertThat(client.capturedSystem).contains("새출발기금");
     // LOCAL E2E(2026-09-28)에서 Nemotron이 사고 과정을 content로 흘린 사례 → 출력 계약으로 막는다
     assertThat(client.capturedSystem).contains("사용자에게 바로 보여도 되는 최종 문장만 한국어로");
+    // LOCAL E2E(2026-09-29)에서 Nemotron이 [KB2 공식]형 인용표를 자체 생성 → 금지 지시
+    assertThat(client.capturedSystem).contains("대괄호 번호·키워드 인용표를 쓰지 말고");
+    assertThat(client.capturedSystem).contains("'[KB1]', '[KB2 공식]'");
     assertThat(client.capturedMaxChars).isPositive();
   }
 

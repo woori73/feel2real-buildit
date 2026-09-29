@@ -4,10 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>질문요청 게시판 | 새출발기금 부실차주</title>
-  <meta name="description" content="새출발기금·부실차주에 대한 질문과 사이트 개선 요청을 남기고 검토 결과를 확인하는 회원 게시판">
+  <meta name="description" content="지피지기 AI에서 부족했던 질문과 사이트 개선·오류 요청을 남기고 검토 결과를 확인하는 회원 게시판">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260928-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260929-2">
   <style>
+    /* 이 페이지의 display 규칙(.ns-card/.ns-req-list/.ns-btn)이 UA의 [hidden]보다 우선해
+       hidden 속성이 무시된다(#350류 동일 결함). JS가 hidden으로 목록·쓰기 버튼·로그인 안내를
+       전환하므로 저 우선순위 규칙 하나로 숨김을 되돌린다. */
+    [hidden]{display:none !important}
+    /* .ns-btn이 38px로 렌더되어 모바일 터치 기준(44px)에 못 미친다(390px 실측). */
+    .ns-btn{min-height:44px}
+    /* 요청 종류·제목 입력도 동일(실측 34px) — 모바일에서 손가락으로 누르는 컨트롤이다. */
+    input.ns-input,select.ns-input{min-height:44px}
     .ns-req-main{display:grid;gap:14px}
     .ns-req-head{display:flex;gap:10px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
     .ns-req-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px}
@@ -64,7 +72,7 @@
 
         <!-- 비로그인 방문자: 게시판 셸은 열리지만 목록·작성은 인증 뒤에 있다(API가 401로 거부). -->
         <section id="ns-req-login" class="ns-card ns-chat-login" hidden>
-          <p class="ns-empty">질문요청 게시판은 로그인 회원이 서로의 요청을 읽는 공간입니다.</p>
+          <p class="ns-empty">질문요청 게시판은 네이버 로그인 회원이라면 누구나 읽고 쓸 수 있는 공간입니다.</p>
           <a class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버 로그인</a>
         </section>
 
@@ -72,7 +80,7 @@
           <div class="ns-req-head">
             <div>
               <h1 class="ns-card-title">질문요청 게시판</h1>
-              <p class="ns-card-meta">[질문·조사 요청]과 [사이트 개선 요청]을 이곳에 남기면 운영자가 검토하고 답변합니다.</p>
+              <p class="ns-card-meta">지피지기 AI 답변에서 부족했던 질문, 그리고 사이트 개선·오류 요청을 남기면 운영자가 검토하고 답변합니다.</p>
             </div>
             <button type="button" class="ns-btn ns-btn-primary" id="ns-req-new" hidden>요청 쓰기</button>
           </div>
@@ -83,7 +91,8 @@
             <button type="button" class="ns-req-tab" role="tab" aria-selected="false" data-ns-req-kind="SITE_IMPROVEMENT">사이트 개선 요청</button>
           </div>
 
-          <!-- 쓰기 폼: 요청 종류를 바꾸면 개선 요청 전용 항목만 나타난다. -->
+          <!-- 쓰기 폼: 요청 종류·제목·내용만 입력한다(2026-09-29 단순화).
+               화면/위치·STEP·개선 제안은 서버·DB에 그대로 남고 새 글에서는 기본값(빈 값)으로 저장된다. -->
           <details id="ns-req-write" class="ns-req-detail" hidden>
             <summary class="ns-card-title">새 요청 작성</summary>
             <p class="ns-req-note">개인정보(주민번호·계좌·인증서 비밀번호·전화번호)는 적지 말아 주세요. 채무 내용은 기관명·금액을 최소한으로 요약해 주세요.</p>
@@ -100,26 +109,10 @@
                 <input id="ns-req-title" class="ns-input" maxlength="200" required
                   placeholder="한 줄로 요약해 주세요">
               </div>
-              <div class="ns-req-improve" id="ns-req-improve-fields" hidden>
-                <div>
-                  <label class="ns-req-label" for="ns-req-location">화면 / 위치</label>
-                  <input id="ns-req-location" class="ns-input" maxlength="120"
-                    placeholder="예: 홈 첫 화면, A to Z 12-3, 금감원 민원 도우미">
-                </div>
-                <div>
-                  <label class="ns-req-label" for="ns-req-step">A to Z STEP (해당 시)</label>
-                  <input id="ns-req-step" class="ns-input" maxlength="20" placeholder="예: 4-4">
-                </div>
-              </div>
               <div>
                 <label class="ns-req-label" for="ns-req-problem">내용</label>
                 <textarea id="ns-req-problem" class="ns-input" rows="5" maxlength="4000" required
                   placeholder="어떤 점이 궁금한지, 무엇이 문제인지 적어 주세요."></textarea>
-              </div>
-              <div>
-                <label class="ns-req-label" for="ns-req-proposal">개선 제안 / 기대하는 답변 (선택)</label>
-                <textarea id="ns-req-proposal" class="ns-input" rows="3" maxlength="4000"
-                  placeholder="어떻게 바뀌면 좋은지 적어 주세요."></textarea>
               </div>
               <div class="ns-req-actions">
                 <button type="submit" class="ns-btn ns-btn-primary" id="ns-req-submit">등록</button>
@@ -138,7 +131,7 @@
         <section id="ns-req-detail" class="ns-req-detail" hidden aria-label="요청 상세"></section>
       </main>
 
-      <script src="/js/newstart-requests.js?v=20260927-1" defer></script>
+      <script src="/js/newstart-requests.js?v=20260929-1" defer></script>
     </div>
   </div>
   <script src="/js/newstart-back.js?v=20260928-1" defer></script>

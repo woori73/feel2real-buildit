@@ -1572,7 +1572,7 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 
 ## NewStart 회원 실행 권한 grant (V1011)
 
-`newstart_member_grants` — NewStart **실행형 기능**(지피지기 AI 질문, 금감원 Agent 세션/민원 초안 정리, 이후 질문요청 글쓰기)을 쓸 수 있는 회원 목록의 DB 정본.
+`newstart_member_grants` — NewStart **실행형 기능**(지피지기 AI 질문, 금감원 Agent 세션/민원 초안 정리)을 쓸 수 있는 회원 목록의 DB 정본. 질문요청 게시판은 여기에 포함되지 않는다 — 2026-09-29 운영정책으로 일반회원 기본 기능(인증 회원 전체 쓰기)으로 확정되었다(§5 참조).
 
 - 컬럼: `grant_id` PK(AI), `user_id` FK → `users.user_id`(ON DELETE CASCADE), `capability` VARCHAR(40), `granted_by`(운영자 식별), BaseEntity 감사 4컬럼. `UNIQUE(user_id, capability)` — 같은 회원에 같은 권한 중복 row 불가, 다른 capability는 같은 user_id로 공존.
 - **row 1건 = grant 1회, row DELETE = 회수.** `revoked_at` 같은 nullable 칼럼을 쓰지 않는 이유: MySQL UNIQUE는 NULL을 중복으로 허용해 "(user, capability, NULL)" 회수 이력이 무한 적립되어 재부여 판정을 오염한다. 감사 필요 시 `granted_by`/감사 컬럼과 운영 로그로 남긴다.
@@ -1593,14 +1593,17 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 상태 8종은 enum(STRING) 단일 정본: `RECEIVED→REVIEWING→ANSWERED→ACCEPTED→IN_PROGRESS→RESOLVED`(+ 종단 `REJECTED`/`DUPLICATE`). 이동마다 `newstart_request_status_logs`에 from/to row를 남긴다(첫 접수는 from=null). 거절·중복은 회원에게 설명할 사유가 필요하므로 `reason` 필수 검증이 service에 있다.
 - 작성자 userId는 요청 body가 아니라 서버 principal에서만 채워진다. 표시 이름은 저장하지 않고 조회 시점 `User`에서 resolve(chat과 동일한 규칙) — 계정 정리 시 "회원"으로 대체한다.
 - **삭제는 soft delete + 원문 파기**: `problem`/`answer`에 채무·기관 정보가 남을 수 있어 취소 시 `title`/`problem`/`proposal`을 비우고 `deleted` flag만 세운다(row 삭제 아님 — 검토 이력의 `request_id` 연결을 보존). 삭제된 요청은 상세·취소 모두 "찾을 수 없습니다"로 응답한다.
-- 권한: 읽기 = 인증 회원 상호 열람, 쓰기·취소 = THANKS_MEMBER(위 grant 표), 상태 관리 = `/api/admin/**`(hasRole ADMIN). GitHub issue 자동 생성은 없고 `github_ref`/`resolved_version`은 운영자가 수기 기입한다.
+- 권한(2026-09-29 운영정책): 읽기·쓰기(작성·취소) 모두 **인증 회원 전체**. 질문요청은 일반회원 기본 기능이고 THANKS_MEMBER grant가 필요하지 않다 — grant 표에서 질문요청을 제외했고, 컨트롤러의 `entitlementService.require(...)` 호출을 제거했다(비로그인은 `SecurityConfig`의 `/api/**` `.authenticated()`가 401). 상태 관리 = `/api/admin/**`(hasRole ADMIN). cancel은 본인/ADMIN만(service의 principal 검증). GitHub issue 자동 생성은 없고 `github_ref`/`resolved_version`은 운영자가 수기 기입한다.
+- 화면 입력은 [요청 유형][제목][내용][등록]로 단순화했지만 서버 contract와 DB 칼럼(`proposal`, `screen_location`, `a_to_z_step`)은 그대로 보존한다 — 기존 항목의 상세 렌더와 이후 kind 확장 근거.
 - `newstart_knowledge_items.dedup_key` VARCHAR(191) UNIQUE도 V1012에 함께 추가 — 갈무리 feed(P2-3)이 채팅·질문요청·사례에서 뽑은 항목을 중복 저장하지 않는 키. 컬럼 길이 191은 MySQL utf8mb4 인덱스 한도(767바이트) 때문.
 
 ## NewStart 갈무리 = 지식 항목 회원 feed (V1012 확장)
 
 `newstart_knowledge_items`를 그대로 읽는 **노출 레이어**(설계 §6). 테이블·게시판 구조를 새로 만들지 않고, 회원이 글을 쓰는 공간도 아니다(쓰기 endpoint 없음).
 
-- 갈무리 자격 = `status=ACTIVE` **AND** 오늘이 `effective_from`~`effective_to` 구간. RAG(`JipijigiResearchService`)가 ACTIVE만 검색하는 안전선과 같은 기준이라, 화면에 보이는 것과 AI가 인용하는 근거가 같은 집합에서 나온다. REVIEW/DRAFT는 운영자 검토함, 만료 항목은 [공식·과거] 재분류 전까지 feed에서 빠진다.
+- 갈무리 자격 = `status=ACTIVE` **AND** 오늘이 `effective_from`~`effective_to` 구간 **AND** `source_type`이 community 계보. RAG(`JipijigiResearchService`)가 ACTIVE만 검색하는 안전선과 같은 기준이라, 화면에 보이는 것과 AI가 인용하는 근거가 같은 집합에서 나온다. REVIEW/DRAFT는 운영자 검토함, 만료 항목은 [공식·과거] 재분류 전까지 feed에서 빠진다.
+- **source 교정(2026-09-29)**: 갈무리는 Wiki 목록이 아니다. product 정의상 [AI가 하루 단위로 커뮤니티 유용 정보를 추려 정리한 digest]이고, Wiki(`OFFICIAL_CURRENT`/`OFFICIAL_PAST`/`AUDIT`/`EBOOK`/`DERIVED_RULE`/`OPERATOR_KNOWLEDGE`)는 RAG의 사실 확인·링크·중복 제거에 쓰이는 보조 KB일 뿐이다. 그래서 `NewStartGalmuriService.FEED_SOURCE_TYPES = {CASE, CAFE_ARTICLE, CAFE_COMMENT, CHAT_DISCOVERY, REQUEST_DISCOVERY}`를 feed 쿼리(`findFeed`/`findFeedByCategory`)와 상세 양쪽에 강제한다. 상세는 allowlist 밖 ACTIVE 항목도 "갈무리 항목을 찾을 수 없습니다"로 404 — 기존 117건 Wiki 항목은 배포 후 갈무리 화면에서 사라지지만 RAG·운영자 검토함에는 그대로 남는다(status/data 변경 없음).
+- 파이프라인 단계: **PHASE 1(이번 작업)** = 잘못된 Wiki 노출 제거 + 정직한 빈 상태 문구 + source 모델/API 확정. **PHASE 2(후속, 별도 승인)** =매일 AI 수집(채팅·질문요청+운영자 답변·지피지기 Q&A·실제 사례) → PII 제거 → ADMIN preview → 검토 → publish. 자동 게시는 금지하고, 생성된 항목은 `CHAT_DISCOVERY`/`REQUEST_DISCOVERY`/`CASE` source_type로만 들어온다.
 - `SourceType`에 `CHAT_DISCOVERY`(회원 공용방 채팅 갈무리)·`REQUEST_DISCOVERY`(질문요청 갈무리) 추가 — 원 출처를 숨기지 않으면서 "사례를 공식 규칙처럼" 취급하지 않도록 분류 가능. RAG에서는 `CASE`와 같은 `INTERNAL_CASE` 등급(= OFFICIAL_RULE로 인용 금지).
 - 신뢰 라벨(§4)은 `source_type`에서 서버가 결정: `[공식·현재]`/`[공식·과거]`/`[운영자 실제 경험]`/`[사례 참고]`/`[전자책·운영 정리]`. 설계 3라벨에 두 칸을 더 둔 이유 — 만료 공식 자료를 "사례"로 취급하면 부정확하고, 2차 정리 자료(전자책·도출 규칙)를 "운영자 실제 경험"이라 쓰면 경험 단정이 된다.
 - `dedup_key`는 적재 파이프라인의 중복 제거 앵커. 기존 행은 NULL(MySQL UNIQUE는 NULL 중복 허용)이고 신규 적재분부터 기입 — 소급 갱신은 별도 운영 작업.

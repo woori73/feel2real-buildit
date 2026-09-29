@@ -1,9 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartCapability;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartRequestKind;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService.RequestPage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService.RequestResult;
@@ -23,8 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * NewStart 질문요청 게시판 API (설계 §5).
  *
- * <p>§7 접근 경계: 읽기는 인증 회원이면 서로의 요청을 열람할 수 있고(비로그인은 {@code /api/**}
- * catch-all이 401), <b>쓰기·취소는 THANKS_MEMBER</b>다. 운영자의 상태 관리는 이 경로가 아니라
+ * <p>§7 접근 경계(2026-09-29 운영정책): 읽기도 쓰기(작성·취소)도 <b>인증 회원 전체</b>다 —
+ * 질문요청 게시판은 일반회원 기본 기능이며 감사회원(THANKS_MEMBER) 전용이 아니다.
+ * 비로그인은 {@code /api/**} catch-all이 401. 운영자의 상태 관리는 이 경로가 아니라
  * {@code /api/admin/newstart/requests}(hasRole ADMIN)만 통과한다.
  *
  * <p>실패 응답은 사용자 안내 문구({@code errorMessage})만 담는다 — service 내부 검증 상세·stack은
@@ -35,12 +34,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewStartRequestController {
 
   private final NewStartRequestService requestService;
-  private final NewStartEntitlementService entitlementService;
 
-  public NewStartRequestController(NewStartRequestService requestService,
-      NewStartEntitlementService entitlementService) {
+  public NewStartRequestController(NewStartRequestService requestService) {
     this.requestService = requestService;
-    this.entitlementService = entitlementService;
   }
 
   /** 목록(최근 작성 순). {@code kind}로 [질문·조사]/[사이트 개선] 인박스를 나눈다. */
@@ -65,12 +61,11 @@ public class NewStartRequestController {
     return ResponseEntity.ok(DetailResponse.success(result.view()));
   }
 
-  /** 요청 작성 — THANKS_MEMBER만(미부여 회원은 403 + 안내). */
+  /** 요청 작성 — 인증 회원 누구나(감사회원 부여 불필요). 비로그인은 SecurityConfig가 401. */
   @PostMapping
   public ResponseEntity<WriteResponse> create(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody CreateRequest request) {
-    entitlementService.require(principal, NewStartCapability.THANKS_MEMBER);
     RequestResult result = requestService.create(principal,
         request == null ? null : request.kind(),
         request == null ? null : request.title(),

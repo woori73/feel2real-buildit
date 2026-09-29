@@ -63,7 +63,7 @@
         P.empty.hidden = rows.length > 0 || P.page > 0 || append;
         P.hasMore = !!data.hasMore;
         P.more.hidden = !P.hasMore;
-        if (!rows.length && !append) setText(P.status, '갈무리된 항목이 아직 없습니다.');
+        if (!rows.length && !append) setText(P.status, '아직 갈무리된 항목이 없습니다. 채팅·질문요청·사례에서 정리한 정보가 이곳에 올라옵니다.');
       })
       .catch(function () {
         P.loading = false;

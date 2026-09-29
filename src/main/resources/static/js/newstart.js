@@ -271,8 +271,9 @@
             var host = pendingEl.querySelector('.ns-ai-p') || pendingEl.querySelector('.ns-ai-text');
             host.appendChild(dots);
           }
-        } else if (pendingEl && pendingEl.parentNode) {
-          pendingEl.parentNode.removeChild(pendingEl);
+        } else if (pendingEl) {
+          if (pendingEl.remove) pendingEl.remove();
+          else if (pendingEl.parentNode) pendingEl.parentNode.removeChild(pendingEl);
           pendingEl = null;
         }
       }
@@ -327,46 +328,49 @@
         }
         flushList();
         flushPara();
-        if (!el.childNodes.length) el.textContent = text;
+        if (!el.children.length && !el.childNodes.length) el.textContent = text;
       }
+
+      /* #437 출처 계약 상속: 서버 kind의 내부 표기("(DB)")는 사용자 언어로, 링크는 http/https만,
+         provider·model·debug는 렌더하지 않는다. */
+      var SOURCE_KIND_LABEL = { '공식 자료': '공식 안내', '실증 사례(DB)': '실증 사례' };
 
       function renderSources(el, sources) {
         if (!sources || !sources.length) return;
         var box = document.createElement('div');
         box.className = 'ns-ai-sources';
         var title = document.createElement('p');
-        title.className = 'ns-ai-sources-title';
-        title.textContent = '이 답변에 사용한 근거';
+        title.className = 'ns-ai-who ns-ai-sources-title';
+        title.textContent = '이 답변의 근거';
         box.appendChild(title);
         var list = document.createElement('ul');
         list.className = 'ns-ai-source-list';
         for (var i = 0; i < sources.length; i++) {
           var s = sources[i] || {};
-          var text = s.title || s.url || '';
-          if (!text) continue;
+          if (!s.title) continue;
           var li = document.createElement('li');
           li.className = 'ns-ai-source-item';
           var kind = document.createElement('span');
           kind.className = 'ns-ai-source-kind';
-          kind.textContent = s.kind || '근거';
+          kind.textContent = SOURCE_KIND_LABEL[s.kind] || s.kind || '참고';
           li.appendChild(kind);
           var body = document.createElement('span');
           body.className = 'ns-ai-source-body';
           var url = typeof s.url === 'string' && /^https?:\/\//i.test(s.url) ? s.url : '';
           if (url) {
             var a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.textContent = text;
+            a.setAttribute('href', url);
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener noreferrer');
+            a.textContent = s.title;
             body.appendChild(a);
           } else {
-            body.textContent = text;
+            body.textContent = s.title;
           }
           li.appendChild(body);
           list.appendChild(li);
         }
-        if (!list.childNodes.length) return;
+        if (!list.children.length && !list.childNodes.length) return;
         box.appendChild(list);
         el.appendChild(box);
       }
@@ -405,6 +409,9 @@
       });
       autoGrow();
 
+
+      /* #437의 별도 appendSources 카드는 폐기 — 렌더는 답변 카드 내부 renderSources 한 벌만 사용한다
+         (kind 매핑·http/https 가드는 그대로 상속). */
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (busy) return;
@@ -419,9 +426,12 @@
         autoGrow();
 
         var controller = typeof AbortController === 'function' ? new AbortController() : null;
+        /* abort 상한 300s: 서버 체인 상한(NVIDIA primary 180s + Qwen fallback 90s = 270s)보다 크게 —
+           답변이 만들어지는 도중 프론트가 먼저 끊는 사고 방지(2026-09-29 timeout 정렬).
+           실측 정상 경로(budget 1024)는 약 41s이며, 120s abort는 16384 시절 141s 답변을 잘랐다. */
         var timer = window.setTimeout(function () {
           if (controller) controller.abort();
-        }, 120000);
+        }, 300000);
 
         fetch('/api/newstart/ai/chat', {
           method: 'POST',

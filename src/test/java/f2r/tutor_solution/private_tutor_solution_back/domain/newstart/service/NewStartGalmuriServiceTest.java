@@ -62,20 +62,25 @@ class NewStartGalmuriServiceTest {
   }
 
   @Test
-  @DisplayName("given ACTIVE 항목 / when feed / then 오늘 기준 window로 조회하고 카드에 라벨·톤·tag가 오른다")
+  @DisplayName("given ACTIVE 항목 / when feed / then community 출처 집합+오늘 window로 조회하고 카드에 라벨·톤·tag가 오른다")
   void feedUsesActiveStatusAndTodayWindow() {
-    when(repository.findFeed(eq(KnowledgeStatus.ACTIVE), any(LocalDate.class), any()))
-        .thenReturn(new PageImpl<>(List.of(item(1L, SourceType.OFFICIAL_CURRENT,
+    assertThat(NewStartGalmuriService.FEED_SOURCE_TYPES).containsExactlyInAnyOrder(
+        SourceType.CASE, SourceType.CAFE_ARTICLE, SourceType.CAFE_COMMENT,
+        SourceType.CHAT_DISCOVERY, SourceType.REQUEST_DISCOVERY);
+
+    when(repository.findFeed(eq(KnowledgeStatus.ACTIVE), any(), any(LocalDate.class), any()))
+        .thenReturn(new PageImpl<>(List.of(item(1L, SourceType.CAFE_ARTICLE,
             KnowledgeStatus.ACTIVE, null)), PageRequest.of(0, 20), 1));
 
     GalmuriPage page = service.feed(null, null, null);
 
-    verify(repository).findFeed(eq(KnowledgeStatus.ACTIVE), eq(LocalDate.now()),
+    verify(repository).findFeed(eq(KnowledgeStatus.ACTIVE),
+        eq(NewStartGalmuriService.FEED_SOURCE_TYPES), eq(LocalDate.now()),
         eq(PageRequest.of(0, 20)));
     assertThat(page.items()).hasSize(1);
     var card = page.items().get(0);
-    assertThat(card.label()).isEqualTo(NewStartGalmuriService.LABEL_OFFICIAL_CURRENT);
-    assertThat(card.tone()).isEqualTo("official");
+    assertThat(card.label()).isEqualTo(NewStartGalmuriService.LABEL_CASE_REFERENCE);
+    assertThat(card.tone()).isEqualTo("case");
     assertThat(card.authority()).isEqualTo("금융감독원");
     assertThat(card.sourceDate()).isEqualTo("2026-09-01");
     // 공백·빈 항목 정리, 상한 8개.
@@ -85,14 +90,14 @@ class NewStartGalmuriServiceTest {
   @Test
   @DisplayName("given category 지정 / when feed / then 분류 쿼리로 갈리고 page/size 상한(50)이 적용된다")
   void feedClampsSizeAndFiltersCategory() {
-    when(repository.findFeedByCategory(eq(KnowledgeStatus.ACTIVE), eq("추심 대응"), any(LocalDate.class), any()))
+    when(repository.findFeedByCategory(eq(KnowledgeStatus.ACTIVE), eq("추심 대응"), any(), any(LocalDate.class), any()))
         .thenReturn(new PageImpl<>(List.of()));
 
     service.feed("  추심 대응  ", 2, 999);
 
-    verify(repository, never()).findFeed(any(), any(), any());
+    verify(repository, never()).findFeed(any(), any(), any(), any());
     verify(repository).findFeedByCategory(eq(KnowledgeStatus.ACTIVE), eq("추심 대응"),
-        eq(LocalDate.now()), eq(PageRequest.of(2, 50)));
+        eq(NewStartGalmuriService.FEED_SOURCE_TYPES), eq(LocalDate.now()), eq(PageRequest.of(2, 50)));
   }
 
   @Test
@@ -157,5 +162,18 @@ class NewStartGalmuriServiceTest {
     assertThat(result.item().content()).isEqualTo("갈무리 본문");
     assertThat(result.item().sourceUrl()).isEqualTo("https://www.fss.or.kr");
     assertThat(result.item().label()).isEqualTo(NewStartGalmuriService.LABEL_CASE_REFERENCE);
+  }
+
+  @Test
+  @DisplayName("given ACTIVE Wiki(OFFICIAL_CURRENT) 상세 / when detail / then 404 — Wiki는 KB이지 갈무리 게시물이 아니다(2026-09-29 source 교정)")
+  void detailHidesWikiSourcedItems() {
+    when(repository.findById(11L)).thenReturn(
+        Optional.of(item(11L, SourceType.OFFICIAL_CURRENT, KnowledgeStatus.ACTIVE, null)));
+
+    GalmuriResult result = service.detail(11L);
+
+    assertThat(result.ok()).isFalse();
+    assertThat(result.errorMessage()).contains("찾을 수 없습니다");
+    assertThat(result.item()).isNull();
   }
 }
