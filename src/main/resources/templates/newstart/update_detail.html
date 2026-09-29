@@ -41,7 +41,7 @@
             <div th:unless="${detail.bodyIsHtml}" class="ns-detail-plain" th:text="${detail.body}"></div>
           </div>
           <div class="ns-detail-missing" th:if="${detail.contentState.name() == 'MISSING'}">
-            <strong>CONTENT MISSING</strong>
+            <strong>본문 미수집</strong>
             <p>이 항목은 아직 공식 원문 본문이 수집·저장되지 않았습니다. 저장된 요약이 없어 본문 없이 제목만 표시합니다. 내용은 임의로 생성되지 않습니다.</p>
           </div>
           <p class="ns-detail-partial" th:if="${detail.contentState.name() == 'PARTIAL'}">
