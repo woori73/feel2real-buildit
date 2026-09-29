@@ -347,6 +347,19 @@ def init_db():
             FOREIGN KEY (target_exam_id) REFERENCES csat_exams(id)
         )''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_expert_sources_exam ON csat_expert_sources(target_exam_id, expert)')
+        # Wiki ③ 학생 오답: ADMIN이 올린 오답 HTML 원문을 그대로 보관하는 최소 테이블.
+        # 업로드 시 파싱·분류·문항 연결을 하지 않으며 분석은 향후 단계의 몫이다.
+        conn.execute('''CREATE TABLE IF NOT EXISTS csat_wrong_html (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            title TEXT NOT NULL DEFAULT '',
+            original_name TEXT NOT NULL,
+            original_type TEXT NOT NULL DEFAULT 'text/html',
+            original_blob BLOB NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_csat_wrong_html_student ON csat_wrong_html(student_id, id)')
         conn.execute('''CREATE TABLE IF NOT EXISTS csat_question_dna (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             question_id INTEGER NOT NULL,
@@ -5857,6 +5870,67 @@ PASSAGE_ANALYSIS_SCHEMA = {
         }, 'required': ['language', 'statement', 'answer']}},
     }, 'required': ['title', 'topic', 'mainIdea', 'summary', 'sentences', 'tfQuestions'],
 }
+
+
+# ---- WIKI ③ 학생 오답 RAW HTML (ADMIN 업로드, 원문 보존만 — 파싱·분류·연결·AI 분석 없음) --
+
+
+@app.post('/api/csat/wrong-html', status_code=201)
+def create_csat_wrong_html(request: Request, student_id: int = Form(...), title: str = Form(''),
+                           file: UploadFile = File(...)):
+    _require_csat_admin(request)
+    raw_title = title if isinstance(title, str) else ''
+    if Path(file.filename or '').suffix.lower() not in ('.html', '.htm'):
+        raise HTTPException(status_code=400, detail='.html/.htm 파일만 등록할 수 있습니다.')
+    data = file.file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail='파일이 비어 있습니다.')
+    if len(data) > 30 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail='원본은 30MB 이하의 파일이어야 합니다.')
+    now = datetime.now().isoformat()
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM students WHERE id=?', (student_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='학생을 찾을 수 없습니다. 기존 학생을 선택해 주세요.')
+        cursor = conn.execute('''INSERT INTO csat_wrong_html(student_id,title,original_name,original_type,original_blob,created_at)
+            VALUES (?,?,?,?,?,?)''',
+            (student_id, raw_title.strip()[:150], (file.filename or '')[:255],
+             file.content_type or 'text/html', data, now))
+        row = conn.execute('''SELECT w.*, s.name student_name FROM csat_wrong_html w JOIN students s ON s.id=w.student_id WHERE w.id=?''',
+                           (cursor.lastrowid,)).fetchone()
+        item = dict(row)
+        item.pop('original_blob')
+        return item
+
+
+@app.get('/api/csat/wrong-html')
+def list_csat_wrong_html():
+    with get_db() as conn:
+        rows = conn.execute('''SELECT w.id,w.student_id,s.name student_name,w.title,w.original_name,
+            w.original_type,w.created_at FROM csat_wrong_html w JOIN students s ON s.id=w.student_id
+            ORDER BY w.id DESC''').fetchall()
+        return [dict(row) for row in rows]
+
+
+@app.get('/api/csat/wrong-html/{html_id}/raw')
+def open_csat_wrong_html_raw(html_id: int):
+    """보기 = 원문 그대로. 같은 origin에서 HTML로 실행되지 않도록 text/plain으로만 전달한다."""
+    with get_db() as conn:
+        row = conn.execute('SELECT original_blob,original_name FROM csat_wrong_html WHERE id=?', (html_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='오답 HTML 자료를 찾지 못했습니다.')
+        safe_name = re.sub(r'[^0-9A-Za-z._-]', '_', row['original_name'])
+        return Response(row['original_blob'], media_type='text/plain; charset=utf-8',
+                        headers={'Content-Disposition': f'inline; filename="{safe_name}.txt"'})
+
+
+@app.delete('/api/csat/wrong-html/{html_id}', status_code=204)
+def delete_csat_wrong_html(html_id: int, request: Request):
+    _require_csat_admin(request)
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM csat_wrong_html WHERE id=?', (html_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='오답 HTML 자료를 찾지 못했습니다.')
+        conn.execute('DELETE FROM csat_wrong_html WHERE id=?', (html_id,))
+    return Response(status_code=204)
 
 
 def _passage_source(payload: PassageRequest) -> str:
