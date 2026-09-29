@@ -73,7 +73,10 @@ test('HOME keeps the 지피지기 anchor contract and loads the motion bootstrap
 test('지피지기 arrival emphasis is one-time and works without JS via :target', () => {
   assert.match(CSS, /#ns-ai:target,\s*\.ns-ai-arrival\s*\{\s*animation:\s*ns-ai-arrival var\(--ns-motion-guided\)[^;]*1;\s*\}/);
   assert.match(CSS, /@keyframes ns-ai-arrival/);
-  assert.doesNotMatch(CSS, /animation:[^;]*infinite/);
+  // 예외: 답변 pending 실상태 동안만 도는 로딩 도트(.ns-ai-dots) — pending 카드 제거와 함께 종료되므로 상태 기반 애니메이션으로 본다.
+  // 그 외 강조/reveal 애니메이션은 전부 1회성이어야 한다 (motion 계약 본래 의도).
+  const cssExceptPendingDots = CSS.replace(/\.ns-ai-dots[^}]*\}/g, '');
+  assert.doesNotMatch(cssExceptPendingDots, /animation:[^;]*infinite/);
 });
 
 test('HOME debt badge and save feedback animate only on real state changes with reduced-motion guard', () => {
