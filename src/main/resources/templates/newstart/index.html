@@ -7,7 +7,7 @@
   <meta name="description" content="내 상황 확인, 지피지기 AI, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260928-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260929-2">
 </head>
 <body>
   <div class="newstart-page">
@@ -58,10 +58,10 @@
           <p class="ns-section-kicker">지피지기 AI</p>
           <h2 id="ns-ai-title" class="ns-ai-title">무엇이든 물어보세요</h2>
           <form class="ns-ai-input-row" id="ns-ai-form">
-            <input class="ns-input ns-ai-input" id="ns-ai-input" type="text" placeholder="궁금한 점을 질문하세요" autocomplete="off" maxlength="2000">
+            <textarea class="ns-input ns-ai-input" id="ns-ai-input" rows="2" placeholder="궁금한 점을 질문하세요" autocomplete="off" maxlength="2000"></textarea>
             <button class="ns-btn ns-btn-primary ns-ai-send" id="ns-ai-send" type="submit">질문</button>
           </form>
-          <p class="ns-note ns-ai-note">질문 정리를 돕는 서비스입니다. 실명·연락처·계좌번호는 입력하지 마세요.</p>
+          <p class="ns-note ns-ai-note">질문 정리를 돕는 서비스입니다. 실명·연락처·계좌번호는 입력하지 마세요. 여러 줄 입력은 Enter, 전송은 Ctrl+Enter(맥 ⌘+Enter) 또는 질문 버튼.</p>
           <div id="ns-ai-thread" class="ns-ai-thread" aria-live="polite"></div>
         </section>
 
@@ -125,7 +125,7 @@
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
   <script src="/js/newstart-motion.js?v=20260927-2" defer></script>
-  <script src="/js/newstart.js?v=20260927-2" defer></script>
+  <script src="/js/newstart.js?v=20260929-2" defer></script>
   <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
 </body>
 </html>
