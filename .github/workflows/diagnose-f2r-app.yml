@@ -1,11 +1,8 @@
 name: Diagnose f2r-app (read-only, manual)
 
-# 운영 Spring(f2r-app.service) 장애 진단 전용 수동 workflow. READ ONLY다.
-# 하지 않는 것: 배포, 서비스 restart/stop/start, 파일 쓰기·삭제,
-# DB 접근·변경, S3 artifact 배포, secret·환경변수·파일내용·DB내용 출력.
-# journalctl 조회만 수행한다. SSM 진단 출력은 Actions 로그에만 남기고,
-# 워크플로우는 진단 결과와 무관하게 항상 성공으로 끝난다
-# (실패 판정이 아니라 상태 수집이 목적).
+# 운영 Spring(f2r-app.service) 지피지기 LLM 경로 전용 READ ONLY 진단.
+# 하지 않는 것: 배포, restart, 파일 쓰기·삭제, DB 접근, secret/키 값 출력(길이만 출력).
+# 워크플로우는 결과와 무관하게 항상 성공으로 끝난다(상태 수집이 목적).
 
 on:
   workflow_dispatch:
@@ -26,34 +23,36 @@ jobs:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
 
-      - name: Run read-only f2r-app journal diagnosis through SSM
+      - name: Run read-only jipijigi llm diagnosis through SSM
         shell: bash
         run: |
-          cat > /tmp/f2r-app-diagnose-params.json <<'PARAMS'
+          cat > /tmp/jipijigi-diagnose-params.json <<'PARAMS'
           {"commands":[
             "set +e",
-            "echo \"=== f2r-app active ===\"",
-            "systemctl is-active f2r-app.service",
-            "echo \"=== f2r-app status ===\"",
-            "systemctl status f2r-app.service --no-pager -l | head -30 || true",
-            "echo \"=== exception search (last 12h, max 5000 lines) ===\"",
-            "journalctl -u f2r-app.service --since \"12 hours ago\" --no-pager -n 5000 | grep -i -B5 -A60 -E 'EasyLedgerService|easy_transactions|DataIntegrityViolationException|ConstraintViolationException|SQLIntegrityConstraintViolationException|foreign key|Caused by|ERROR' | head -600 || true",
-            "echo \"=== recent err level (last 12h) ===\"",
-            "journalctl -u f2r-app.service --since \"12 hours ago\" --no-pager -p err -n 60 || true",
-            "echo \"=== tail 40 ===\"",
-            "journalctl -u f2r-app.service --no-pager -n 40 || true",
+            "echo '=== f2r-app active / wiki active ==='",
+            "systemctl is-active f2r-app.service; systemctl is-active buildit-wiki.service",
+            "echo '=== host resources ==='",
+            "uptime; free -m | sed -n 2p; df -h / | tail -1",
+            "echo '=== llm key presence (length only, never value) ==='",
+            "awk -F= '/^NVIDIA_API_KEY=/{print \"NVIDIA_API_KEY_len=\" length($2)} /^OPENROUTER_API_KEY=/{print \"OPENROUTER_API_KEY_len=\" length($2)}' /etc/f2r/env; grep -E '^(NVIDIA_NIM_BASE_URL|NVIDIA_NEMOTRON_MODEL|NEWSTART_OPENROUTER_MODEL|OPENROUTER_BASE_URL|SPRING_PROFILES_ACTIVE)=' /etc/f2r/env || echo NO_PROVIDER_OVERRIDES",
+            "echo '=== newstart llm/chat log lines (last 12h, tail 30) ==='",
+            "journalctl -u f2r-app.service --since '12 hours ago' --no-pager | grep -E 'newstart (ai chat|nvidia|llm)' | tail -n 30",
+            "echo '=== chat endpoint counts by status (12h) ==='",
+            "journalctl -u f2r-app.service --since '12 hours ago' --no-pager | grep -oE 'newstart ai chat endpoint authMs=[0-9-]+ serviceMs=[0-9-]+ handlerMs=[0-9-]+ status=[a-z]+' | awk '{print $NF}' | sort | uniq -c",
+            "echo '=== err-priority + exception first lines (12h) ==='",
+            "journalctl -u f2r-app.service --since '12 hours ago' --no-pager -p err | tail -n 25",
+            "journalctl -u f2r-app.service --since '12 hours ago' --no-pager | grep -E 'Exception|ERROR' | head -n 20",
             "exit 0"
           ]}
           PARAMS
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "i-09d7cabb5a42d1135" \
             --document-name "AWS-RunShellScript" \
-            --parameters file:///tmp/f2r-app-diagnose-params.json \
+            --parameters file:///tmp/jipijigi-diagnose-params.json \
             --query 'Command.CommandId' --output text)
           echo "SSM Command ID: $COMMAND_ID"
           set +e
           aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
-          echo "wait_exit=$?"
           echo "===== invocation status ====="
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query '{Status:Status,ResponseCode:ResponseCode}' --output text
           echo "===== StandardOutputContent ====="
