@@ -15,8 +15,10 @@
   var PANEL_CLASS = 'mt-free-lecture';
   var OPEN_CLASS = 'is-open';
   var MEDIA_SRC = '/video/eduholic/shingu2-jikbo-explainer.mp4';
+  // 이 영상이 속한 학교. 섹션의 실제 학교 카드([data-school])에 신구중이 있을 때만 노출한다 —
+  // 카드 목록은 builderDraft(DB) 값이므로 코드가 학교를 만들지 않는다.
+  var SCHOOL = '신구중';
   var LABEL = {
-    school: '신구중2',
     title: '신구중2 직보 문제해설',
     desc: '내일 시험 전 마지막으로 확인하는 영어 문제풀이 · 핵심 해설',
     cta: '무료로 바로 보기',
@@ -26,10 +28,23 @@
 
   if (window.location.hostname !== EDUHOLIC_HOST) return;
 
+  function normalizedSchool(value) {
+    return String(value || '').replace(/중학교/g, '중').replace(/\s+/g, '').toLowerCase();
+  }
+
+  function hasSchoolCard(inner) {
+    var cards = inner.querySelectorAll('[data-school]');
+    for (var i = 0; i < cards.length; i++) {
+      if (normalizedSchool(cards[i].getAttribute('data-school')) === normalizedSchool(SCHOOL)) return true;
+    }
+    return false;
+  }
+
   function apply() {
     var inner = document.querySelector('#sec-featured .featured-inner');
     if (!inner) return;
     if (inner.querySelector(':scope > .' + PANEL_CLASS)) return;
+    if (!hasSchoolCard(inner)) return; // 신구중 카드가 없는 화면에서는 아무것도 만들지 않는다
 
     var panel = document.createElement('article');
     panel.className = PANEL_CLASS;
@@ -42,13 +57,13 @@
     badge.textContent = LABEL.badge;
     var school = document.createElement('b');
     school.className = PANEL_CLASS + '__school';
-    school.textContent = '[' + LABEL.school + ']';
+    school.textContent = SCHOOL;
     var title = document.createElement('h3');
     title.className = PANEL_CLASS + '__title';
     title.textContent = LABEL.title;
-    head.appendChild(badge);
     head.appendChild(school);
     head.appendChild(title);
+    head.appendChild(badge);
     panel.appendChild(head);
 
     var desc = document.createElement('p');
