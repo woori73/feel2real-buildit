@@ -1,0 +1,111 @@
+name: CSAT DAY-1 wiki production census (read-only, manual)
+
+# READ ONLY 진단 workflow. 운영 DB·파일에 쓰기 없음.
+# sqlite는 mode=ro URI로만 열고, 단위 파일의 Environment= 경로는 출력하지만
+# EnvironmentFile 내용(시크릿 값)은 절대 출력하지 않는다(변수 이름만).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: csat-day1-wiki-census-readonly
+  cancel-in-progress: true
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Collect read-only wiki census through SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          INSTANCE_ID="i-09d7cabb5a42d1135"
+          run_readonly() {
+            local title="$1" command="$2" params command_id wait_rc
+            echo
+            echo "===== ${title} ====="
+            params=$(jq -cn --arg command "$command" '{commands:[$command]}')
+            command_id=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name "AWS-RunShellScript" --parameters "$params" --query 'Command.CommandId' --output text)
+            set +e
+            aws ssm wait command-executed --command-id "$command_id" --instance-id "$INSTANCE_ID"
+            wait_rc=$?
+            set -e
+            aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text || true
+            echo "--- stderr ---"
+            aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+            echo "wait_exit=$wait_rc"
+          }
+
+          run_readonly "SERVICE + ROUTE PROBE" "systemctl is-active buildit-wiki || true; echo -n 'health_http='; curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:8000/api/health; echo; echo -n 'csat_exams_noauth_http='; curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:8000/api/csat/exams; echo"
+
+          run_readonly "UNIT ENV KEYS (no secret values)" "systemctl cat buildit-wiki.service 2>/dev/null | grep -E '^(Environment=|EnvironmentFile=|ExecStart=)' ; echo -n 'ALLOW_UNSIGNED_IN_UNIT='; systemctl cat buildit-wiki.service 2>/dev/null | grep -c 'BUILDIT_WIKI_ALLOW_UNSIGNED_IDENTITY' || true; echo '--- env file var names only ---'; for f in /etc/buildit-wiki.env /etc/buildit-wiki-identity.env; do echo \"# \$f\"; cut -d= -f1 \"\$f\" 2>/dev/null | grep -E '^[A-Za-z_]+' || echo 'unreadable/missing'; done"
+
+          run_readonly "DATA DIR LISTING" "ls -la /opt/buildit-wiki/data/ 2>&1 || true; echo '--- db sizes ---'; du -b /opt/buildit-wiki/data/* 2>/dev/null || true"
+
+          PY_CENSUS=$(cat <<'PY'
+          import sqlite3, os, glob
+          TABLES = ["csat_exams","csat_exam_resources","csat_questions","csat_question_dna",
+                    "csat_dna_claims","csat_dna_comparisons","csat_expert_sources"]
+          def census(path):
+              name = os.path.basename(path)
+              try:
+                  c = sqlite3.connect("file:" + path + "?mode=ro", uri=True)
+              except Exception as e:
+                  print(name, "OPEN_FAIL", e); return
+              tables = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+              for t in TABLES:
+                  if t in tables:
+                      print(name, t, c.execute("SELECT COUNT(*) FROM \"" + t + "\"").fetchone()[0])
+                  else:
+                      print(name, t, "MISSING")
+              if "csat_question_dna" in tables:
+                  for r in c.execute("SELECT provenance, COUNT(*) FROM csat_question_dna GROUP BY provenance"):
+                      print(name, "dna_by_provenance", r[0], r[1])
+                  for r in c.execute("SELECT COALESCE(workspace_id,'NULL'), COUNT(*) FROM csat_question_dna GROUP BY 1"):
+                      print(name, "dna_by_workspace", r[0], r[1])
+              if "csat_dna_claims" in tables:
+                  for r in c.execute("SELECT provenance, COUNT(*) FROM csat_dna_claims GROUP BY provenance"):
+                      print(name, "claims_by_provenance", r[0], r[1])
+              if "csat_dna_comparisons" in tables:
+                  for r in c.execute("SELECT provenance, COUNT(*) FROM csat_dna_comparisons GROUP BY provenance"):
+                      print(name, "comparisons_by_provenance", r[0], r[1])
+              if "csat_exams" in tables:
+                  for r in c.execute("SELECT id, exam_year, exam_type, label, COALESCE(workspace_id,'NULL') FROM csat_exams ORDER BY id"):
+                      print(name, "exam_row", r)
+                  if "csat_questions" in tables:
+                      for r in c.execute("SELECT exam_id, COUNT(*) FROM csat_questions GROUP BY exam_id"):
+                          print(name, "questions_per_exam", r)
+                      import hashlib
+                      qrows = c.execute("SELECT q.answer FROM csat_questions q JOIN csat_exams e ON q.exam_id=e.id ORDER BY e.exam_year DESC, e.exam_type, q.question_no").fetchall()
+                      if qrows:
+                          print(name, "answers_concat_len", len(qrows), "md5", hashlib.md5("".join(r[0] or "" for r in qrows).encode()).hexdigest())
+          base = "/opt/buildit-wiki/data/app.db"
+          print("=== LEGACY DB ===")
+          census(base)
+          for p in sorted(glob.glob("/opt/buildit-wiki/data/app.workspace-*.db")):
+              print("=== WORKSPACE DB ===")
+              census(p)
+          cat = base + ".workspaces"
+          print("=== CATALOG exists:", os.path.exists(cat))
+          if os.path.exists(cat):
+              c = sqlite3.connect("file:" + cat + "?mode=ro", uri=True)
+              for r in c.execute("SELECT workspace_id, is_legacy, database_path FROM wiki_workspaces"):
+                  print("WS", r)
+              for r in c.execute("SELECT user_id, login_id, workspace_id FROM wiki_workspace_members"):
+                  print("MEMBER", r)
+          PY
+          )
+          run_readonly "SQLITE READ-ONLY CENSUS" "/opt/buildit-wiki/venv/bin/python - <<'PY'
+          ${PY_CENSUS}
+          PY"
