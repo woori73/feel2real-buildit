@@ -13,6 +13,9 @@ type Comparison = { id:number; exam_a_id:number; exam_b_id:number; tag:string; v
 type ExamQuestion = { id:number; question_no:number; csat_type_id:string; csat_type_name:string; prompt:string; passage:string; answer:string; solution:string; dna:DnaEntry[] }
 type ExamDna = { exam:CsatExam; tags:{entry_type:string;tag:string;question_nos:number[];notes:{question_no:number;note:string;provenance:string;expert:string;agreement_kind?:string;timestamp_start?:number|null;video_url?:string}[]}[]; traps:{entry_type:string;tag:string;question_nos:number[]}[]; per_question:{question_no:number;entries:DnaEntry[]}[]; claims:DnaClaim[] }
 
+type Student = {id:number; name:string}
+type WrongHtml = {id:number; student_id:number; student_name:string; title:string; original_name:string; original_type:string; created_at:string}
+
 const EXAM_TYPE_LABEL:Record<string,string>={JUNE_MOCK:'6월 모평',SEPTEMBER_MOCK:'9월 모평',CSAT:'수능'}
 const STATUS_LABEL:Record<string,string>={AI_PROPOSED:'AI 제안',TEACHER_CONFIRMED:'선생님 확정',TEACHER_EDITED:'선생님 수정'}
 const VERDICT_LABEL:Record<string,string>={REPEATED:'반복',STRENGTHENED:'강화',REDUCED:'완화',NEW:'신규',CHANGED:'변형'}
@@ -38,6 +41,11 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
   const [comparisons,setComparisons]=useState<Comparison[]>([])
   const [focusQuestion,setFocusQuestion]=useState<number|null>(null)
   const [notice,setNotice]=useState('')
+  const [students,setStudents]=useState<Student[]>([])
+  const [wrongFiles,setWrongFiles]=useState<WrongHtml[]>([])
+  const [wrongStudent,setWrongStudent]=useState<number|''>('')
+  const [wrongFile,setWrongFile]=useState<File|null>(null)
+  const [wrongBusy,setWrongBusy]=useState(false)
 
   useEffect(()=>{api('csat/exams').then(r=>r.json()).then((rows:CsatExam[])=>{setExams(rows);setActiveExamId(rows[0]?.id??null)}).catch(()=>setNotice('기출 목록을 불러오지 못했습니다.'));api('csat/dna/taxonomy').then(r=>r.ok?r.json():null).then(t=>setTrapTags(t?.traps||[])).catch(()=>undefined)},[])
   useEffect(()=>{
@@ -52,6 +60,16 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
     const [a,b]=exams
     api(`csat/dna-comparisons?exam_a_id=${a.id}&exam_b_id=${b.id}`).then(r=>r.ok?r.json():[]).then(setComparisons).catch(()=>setComparisons([]))
   },[exams,menu,dna])
+  // ③ 학생 오답: 원문 HTML을 그대로 저장만 한다 — 파싱·분류·연결·AI 분석은 이 화면에서 수행하지 않는다.
+  const loadWrong=()=>api('csat/wrong-html').then(r=>r.ok?r.json():[]).then(setWrongFiles).catch(()=>setWrongFiles([]))
+  useEffect(()=>{if(menu!=='wrong')return; api('students').then(r=>r.ok?r.json():[]).then(setStudents).catch(()=>setStudents([])); loadWrong()},[menu])
+  const registerWrong=async()=>{if(!wrongStudent||!wrongFile)return; setWrongBusy(true)
+    const form=new FormData(); form.append('student_id',String(wrongStudent)); form.append('file',wrongFile)
+    try{const response=await api('csat/wrong-html',{method:'POST',body:form})
+      if(response.ok){setNotice('원문 그대로 저장했습니다 — 자동 분류·문항 연결·AI 분석은 하지 않았습니다.'); setWrongFile(null); loadWrong()}
+      else setNotice(response.status===403?'학생 오답 원본은 ADMIN만 등록할 수 있습니다.':(await response.json().catch(()=>null))?.detail||'등록에 실패했습니다.')}
+    finally{setWrongBusy(false)}}
+  const removeWrong=async(id:number)=>{const response=await api(`csat/wrong-html/${id}`,{method:'DELETE'}); if(response.ok)loadWrong(); else setNotice('삭제하지 못했습니다.')}
 
   const exam=exams.find(item=>item.id===activeExamId)||null
   const years=[...new Set(exams.map(item=>item.exam_year))]
@@ -134,6 +152,16 @@ export default function CsatWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}){
     </>}
     {menu==='dna'&&!exams.length&&<div className="empty-state"><b>아직 등록된 평가원 시험이 없습니다.</b><p>기출 등록 후 DNA 화면이 채워집니다.</p></div>}
 
-    {(menu==='wrong'||menu==='weakness'||menu==='plan')&&<article className="work-panel"><div className="panel-heading"><div><p className="kicker">DAY 2 · 준비 중</p><h2>{MENU.find(([id])=>id===menu)?.[1]}</h2><p>학생 오답 등록, 학생별 문항-DNA × 선택 오답 연결, 약점 DNA 크로스레퍼런스는 DAY 2 작업입니다. 근거 없는 학생 분석은 표시하지 않습니다.</p></div></div><div className="empty-state"><b>준비 중인 메뉴입니다.</b><p>기존 학생 수능 오답 DB는 「고3 수능 영어」 제작 워크스페이스에서 계속 관리됩니다.</p><button className="primary-action" onClick={()=>onNavigate('csat')}>기존 수능 제작 워크스페이스 열기</button></div></article>}
+    {menu==='wrong'&&<article className="work-panel"><div className="panel-heading"><div><p className="kicker">STUDENT · 오답 원본 보관</p><h2>학생 오답 HTML 등록</h2><p>ADMIN이 기존 학생별로 오답 HTML(.html/.htm) 원문을 그대로 저장합니다. 시험 자동 분류, 문항번호·답 추출, question_id/DNA/TRAP 연결, AI 분석·약점 판정은 수행하지 않습니다.</p></div></div>
+      <div role="group" aria-label="오답 HTML 등록" style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',margin:'8px 0 14px'}}>
+        <select aria-label="학생 선택" value={wrongStudent} onChange={e=>setWrongStudent(e.target.value?Number(e.target.value):'')}><option value="">학생 선택</option>{students.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        <input key={wrongFiles.length} type="file" accept=".html,.htm" aria-label="오답 HTML 파일" onChange={e=>setWrongFile(e.target.files?.[0]||null)}/>
+        <button className="primary-action" disabled={wrongBusy||!wrongStudent||!wrongFile} onClick={registerWrong}>{wrongBusy?'저장 중…':'HTML 등록'}</button>
+      </div>
+      {!students.length&&<p>등록된 학생이 없습니다. 학생은 기존 학생 목록에서 선택하며, 여기서 새로 만들지 않습니다.</p>}
+      {wrongFiles.map(item=><p key={item.id} style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}><b>{item.student_name}</b><span>{item.title||item.original_name}</span><span className="context-chip" style={{fontSize:11}}>{item.created_at.slice(0,10)}</span><a href={apiUrl(`csat/wrong-html/${item.id}/raw`)} target="_blank" rel="noreferrer">보기</a><button className="btn-ghost" style={{padding:'1px 8px',fontSize:12}} onClick={()=>removeWrong(item.id)}>삭제</button></p>)}
+      {!wrongFiles.length&&<div className="empty-state"><b>등록된 학생 오답 원본이 없습니다.</b></div>}
+    </article>}
+    {(menu==='weakness'||menu==='plan')&&<article className="work-panel"><div className="panel-heading"><div><p className="kicker">DAY 2 · 준비 중</p><h2>{MENU.find(([id])=>id===menu)?.[1]}</h2><p>학생별 문항-DNA × 선택 오답 연결, 약점 DNA 크로스레퍼런스는 DAY 2 작업입니다. 근거 없는 학생 분석은 표시하지 않습니다.</p></div></div><div className="empty-state"><b>준비 중인 메뉴입니다.</b><p>기존 학생 수능 오답 DB는 「고3 수능 영어」 제작 워크스페이스에서 계속 관리됩니다.</p><button className="primary-action" onClick={()=>onNavigate('csat')}>기존 수능 제작 워크스페이스 열기</button></div></article>}
   </section>
 }
