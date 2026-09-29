@@ -104,8 +104,14 @@ patch: `...\lms_preserve\lms-404-dirty-changes.patch` (13,922 B, 재인코딩 �
 
 ## 6. Test status
 
-compileJava: **NOT RUN** (출발 임박, §13 타임 게이트 우선 — NUL 제거 후에는 처음 시도하는 것)
-LmsLocalVideoDeliveryRoundTripTest: **NOT RUN** (위와 동일)
+compileJava: **PASS** — exit 0 (22:24→22:26, 약 2분), `JAVA_HOME=jdk-21.0.12.101` + `--no-daemon`
+ (build.gradle toolchain `languageVersion = JavaLanguageVersion.of(21)` 확인)
+ - 오류 0건 / 경고는 전부 기존 `[removal] VideoStatus` deprecated 계열(본 작업과 무관, 사전 존재)
+ - 산출물 확인: `build/classes/java/main/…/infrastructure/storage/LocalFileStorage.class` 11,246 B 생성됨
+ - **의미:** §4의 UTF-16/NUL 인코딩이 유일한 빌드 블로커였음이 실증됨.javac가 본문을 읽기 시작함.
+ - **주의:** 이것이 통과했다고 미커밋 diff의 상대키/절대키 방향이 옳다는 증거는 아니다. 컴파일은 인코딩만 검증할 뿐,
+   §3의 회귀(절대경로 반환)도 그대로 컴파일된다. 계약 검증은 아래 테스트 항목이다.
+LmsLocalVideoDeliveryRoundTripTest: **NOT RUN** (출발 임박 — compileJava PASS를 확인했으므로 집에서 이게 첫 작업)
 전체 test: **NOT REQUIRED / NOT RUN**
 CI: 대기하지 않음 (push만 확인)
 
@@ -159,9 +165,10 @@ UNCOMMITTED WORK: **YES** — 위 2개 파일. §10 규칙에 따라 **커밋하
    - 의도된 실험이었다면 → 한글만 `git show HEAD:<file>`의 정상 UTF-8 문구로 되돌린 뒤 커밋.
    - **어느 쪽이든 NUL/UTF-16 상태로 되돌리지 말 것 (UTF-8 + LF).**
 3. 인코딩 확인: `python -c "b=open(p,'rb').read(); print(b.count(0), b[:3])"` → `0`, BOM 아님
-4. `./gradlew compileJava` 만 실행 (전체 test 금지). 10분 스톨 시 중단.
-5. `./gradlew test --tests '*LmsLocalVideoDeliveryRoundTripTest'` (단일 테스트)
-   - 이 테스트가 **현재 HEAD의 상대키 계약**을 통과하는지가 404의 첫 관문.
+   (학원 PC에서 이미 NUL 0 확인 + compileJava PASS — 집에서도 깨진 UTF-16으로 되돌아가지 않게 주의)
+4. `./gradlew compileJava` — **재확인용(선택)**. §6에 exit 0으로 기록됨; 첫 작업으로 고를 필요 없음.
+5. **집의 실제 첫 실행:** `./gradlew test --tests '*LmsLocalVideoDeliveryRoundTripTest'` (단일 테스트)
+   - 이 테스트가 **HEAD의 상대키 계약**을 통과하는지가 404의 첫 관문이며, §2의 미커밋 회귀(절대경로)를 적용한 상태에서도 돌려 비교할 것.
 6. local upload → storage_key → actual file 3점 대조: 업로드 후 반환된 storage_key가 상대 논리 키인지,
    그 키가 설정된 local storage root(`app.file.upload-dir` = `${app.video.local-upload-dir}/objects`)에서 실존 파일로 resolve되는지 기록.
 7. student/player 요청 HTTP **200** 확인 (재생 시작)
@@ -185,7 +192,7 @@ UNCOMMITTED WORK: **YES** — 위 2개 파일. §10 규칙에 따라 **커밋하
 
 ## 11. Preservation summary (이번 세션 결과)
 
-- GitHub: `fix/lms-local-video-delivery-404` push → §1의 커밋 2개(404 픽스 + 108줄 회귀 테스트) 보존
-- Transfer ZIP: `HOME_TO_HOME_LMS_2026-09-28.zip` (HANDOFF + dirty patch + UTF-16 원본 백업), secrets/build/.gradle/node_modules 제외
+- GitHub: `fix/lms-local-video-delivery-404` push → §1의 커밋 2개(404 픽스 + 108줄 회귀 테스트) + 본 HANDOFF 보존
+- Transfer ZIP: `HOME_TO_HOME_LMS_2026-09-28.zip` (HANDOFF + dirty patch + UTF-16 원본 백업 + compileJava 증거), secrets/build/.gradle/node_modules 제외
 - production 접촉: 0 (merge no, deploy no, DB write no)
-- 404 상태: **UNRESOLVED / 검증 0건** — 이것이 정확한 현재 지점.
+- 404 상태: **UNRESOLVED / 왕복 검증 0건** — 다만 빌드 블로커는 제거되어 컴파일은 PASS. 집에서 테스트 한 개만 돌리면 되는 지점까지 왔음.
