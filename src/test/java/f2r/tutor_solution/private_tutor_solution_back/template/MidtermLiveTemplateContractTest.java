@@ -925,7 +925,13 @@ class MidtermLiveTemplateContractTest {
     assertThat(js).doesNotContain("video.autoplay");
     assertThat(js).contains("head.insertAdjacentElement('afterend', feature)");
     assertThat(js).contains("학교별 내신 대비");
-    assertThat(html).contains("eduholic_midterm_home_live.js?v=20260929-1");
+    assertThat(html).contains("eduholic_midterm_home_live.js?v=20260929-2");
+
+    // 2026-09-29 시험 전 문구 확정 + 표시 순서(제목 → 설명 → AI 발음 안내 → 동영상).
+    assertThat(js).contains("MAIN_FEATURE_TITLE = '신구중2 2학기 중간고사(9월30일) 대비 직보 자료'");
+    assertThat(js).contains("MAIN_FEATURE_DESC = '내일(9월30일) 시험 전 마지막으로 확인하는 영어 문제풀이 · 핵심 해설'");
+    assertThat(js).contains("AI 한국어 선생님이 영어 발음은 살짝 서툴 수 있어요");
+    assertThat(js.indexOf("feature.appendChild(copy)")).isLessThan(js.indexOf("feature.appendChild(media)"));
   }
 
   /**
