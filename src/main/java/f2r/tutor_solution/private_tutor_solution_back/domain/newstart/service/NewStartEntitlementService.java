@@ -18,8 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class NewStartEntitlementService {
 
-  /** 권한 미부여 회원에게 내보내는 사용자 안내(내부 권한명·예외 상세는 넣지 않는다). */
-  public static final String DENIAL_MESSAGE = "회원 전용 기능입니다. 운영자에게 이용 신청을 문의해 주세요.";
+  /**
+   * 권한 미부여 회원에게 내보내는 사용자 안내(내부 권한명·예외 상세는 넣지 않는다).
+   *
+   * <p>문구는 "감사회원 전용"을 명시한다 — 이전 문구(회원 전용 + 운영자에게 이용 신청 문의)는
+   * 사용자가 "운영자만 쓸 수 있다"고 읽어서 감사회원 승인을 요청하지 못한 적이 있다(2026-09-28 보고).
+   */
+  public static final String DENIAL_MESSAGE = "감사회원 전용 기능입니다. 감사회원 승인을 운영자에게 요청해 주세요.";
 
   private final NewStartMemberGrantRepository grantRepository;
 

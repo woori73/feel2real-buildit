@@ -7,24 +7,28 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.r
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 갈무리 게시판(설계 §6) 회원 feed — 새 테이블 없이 {@code newstart_knowledge_items}를 읽는다.
+ * 갈무리 게시판(설계 §6) 회원 feed — 새 테이블 없이 {@code newstart_knowledge_items}를 읽되,
+ * <b>community 수집 출처만</b> 갈무리 항목으로 노출한다.
  *
- * <p>갈무리는 자유 게시판이 아니라 <b>운영자 승인(ACTIVE)된 지식 항목의 노출 레이어</b>다. 채팅·카페·
- * 사례·질문요청에서 뽑은 원문은 여기 직접 오지 않는다 — Agent 분석·개인정보 제거·요약·구조화를 거쳐
- * ACTIVE로 승인된 항목만 feed에 오른다(REVIEW/DRAFT는 운영자 검토함 안에 남는다).
+ * <p>갈무리 = NewStart에 하루 동안 모인 유용한 실제 정보(지피지기 Q&A·질문요청+운영자 답변·
+ * 회원채팅·실제 사례)를 정리해서 회원이 다시 읽기 쉽게 만든 지식 게시판이다. Wiki 지식
+ * ({@code OFFICIAL_*}, {@code AUDIT}, {@code EBOOK}, {@code DERIVED_RULE},
+ * {@code OPERATOR_KNOWLEDGE})은 지피지기 RAG의 보조 KB일 뿐 갈무리 게시물이 아니므로 feed에서
+ * 제외한다(2026-09-29 source 교정 — 이전에는 ACTIVE 전체를 그대로 노출해 갈무리가 Wiki 목록이었다).
+ *
+ * <p>원칙: 원문 복사 금지, PII 제거·요약을 거친 항목만 ACTIVE로 승인되어 feed에 오른다
+ * (REVIEW/DRAFT는 운영자 검토함 안에 남는다). 자동 적재(scheduler/Agent pipeline)는 여전히
+ * 범위 밖 — production 자동 write 금지, PHASE 2에서 AI 수집 → ADMIN preview → publish 순으로 배선한다.
  *
  * <p>§4 신뢰 등급을 라벨로 내려준다. <b>사례를 공식 규칙처럼 쓰지 않는다</b>가 목적이라, 라벨은
  * source_type에서 서버가 결정하고 프론트가 임의로 고치지 않는다.
- *
- * <p>자동 적재(scheduler/Agent pipeline)는 이 단계 범위 밖이다 — §8에 따라 production 자동 write는
- * 별도 승인이고, 새 scheduler를 만들지 않는다. 지금은 읽기 side와 중복 제거 앵커({@code dedup_key})만
- * 배선한다.
  */
 @Service
 public class NewStartGalmuriService {
@@ -32,6 +36,11 @@ public class NewStartGalmuriService {
   static final int DEFAULT_PAGE_SIZE = 20;
   static final int MAX_PAGE_SIZE = 50;
   private static final int MAX_TAGS = 8;
+
+  /** 갈무리 feed에 오를 수 있는 출처(커뮤니티 수집·사례 계열)만. Wiki/OFFICIAL 계열은 KB 전용이다. */
+  static final Set<SourceType> FEED_SOURCE_TYPES = Set.of(
+      SourceType.CASE, SourceType.CAFE_ARTICLE, SourceType.CAFE_COMMENT,
+      SourceType.CHAT_DISCOVERY, SourceType.REQUEST_DISCOVERY);
 
   /**
    * [공식·현재] / [공식·과거] / [운영자 실제 경험] / [사례 참고] / [전자책·운영 정리].
@@ -52,7 +61,7 @@ public class NewStartGalmuriService {
     this.knowledgeRepository = knowledgeRepository;
   }
 
-  /** 지금 효력이 있는 ACTIVE 항목(최신 출처 기준시점 순). {@code category} 지정 시 그 분류만. */
+  /** 지금 효력이 있는 ACTIVE 갈무리 항목(최신 출처 기준시점 순). {@code category} 지정 시 그 분류만. */
   @Transactional(readOnly = true)
   public GalmuriPage feed(String category, Integer page, Integer size) {
     int p = page == null || page < 0 ? 0 : page;
@@ -61,18 +70,19 @@ public class NewStartGalmuriService {
     LocalDate today = LocalDate.now();
     String cleaned = category == null || category.isBlank() ? null : category.strip();
     Page<NewstartKnowledgeItem> found = cleaned == null
-        ? knowledgeRepository.findFeed(KnowledgeStatus.ACTIVE, today, pageable)
-        : knowledgeRepository.findFeedByCategory(KnowledgeStatus.ACTIVE, cleaned, today, pageable);
+        ? knowledgeRepository.findFeed(KnowledgeStatus.ACTIVE, FEED_SOURCE_TYPES, today, pageable)
+        : knowledgeRepository.findFeedByCategory(KnowledgeStatus.ACTIVE, cleaned, FEED_SOURCE_TYPES, today, pageable);
     List<GalmuriCard> cards = found.getContent().stream().map(NewStartGalmuriService::toCard).toList();
     return new GalmuriPage(cards, found.hasNext());
   }
 
-  /** 상세 — feed에 오른 항목만 열린다(REVIEW/DRAFT·만료 항목은 "찾을 수 없습니다"). */
+  /** 상세 — feed에 오른 항목만 열린다(비-ACTIVE·만료·Wiki 출처는 "찾을 수 없습니다"). */
   @Transactional(readOnly = true)
   public GalmuriResult detail(Long knowledgeId) {
     if (knowledgeId == null) return GalmuriResult.failed("항목이 올바르지 않습니다.");
     NewstartKnowledgeItem item = knowledgeRepository.findById(knowledgeId).orElse(null);
-    if (item == null || item.getStatus() != KnowledgeStatus.ACTIVE || isExpired(item, LocalDate.now())) {
+    if (item == null || item.getStatus() != KnowledgeStatus.ACTIVE || isExpired(item, LocalDate.now())
+        || !FEED_SOURCE_TYPES.contains(item.getSourceType())) {
       return GalmuriResult.failed("갈무리 항목을 찾을 수 없습니다.");
     }
     return GalmuriResult.success(toDetail(item));

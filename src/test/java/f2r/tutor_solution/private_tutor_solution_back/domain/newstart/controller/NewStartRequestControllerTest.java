@@ -1,7 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
@@ -18,17 +17,13 @@ import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.WebMvcConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartCapability;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartRequestKind;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.repository.NewStartMemberGrantRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService.RequestPage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService.RequestResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartRequestService.RequestView;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +40,8 @@ import org.springframework.test.web.servlet.MockMvc;
  *
  * <ul>
  *   <li>읽기(목록·상세): 인증 회원이면 서로의 요청 열람, 비로그인은 401</li>
- *   <li>쓰기(작성): THANKS_MEMBER만 — grant 없는 회원은 403 + 안내, service.create는 호출되지 않는다</li>
+ *   <li>쓰기(작성): 인증 회원 전체 — 질문요청은 일반회원 기본 기능(2026-09-29 운영정책).
+ *       grant(THANKS_MEMBER) 판정 없이 service.create가 바로 호출된다</li>
  *   <li>취소: 본인/ADMIN만(403), 없는 요청은 404</li>
  * </ul>
  */
@@ -56,8 +52,7 @@ import org.springframework.test.web.servlet.MockMvc;
     WebMvcConfig.class,
     RoleModelInterceptor.class,
     JwtTokenProvider.class,
-    CookieUtil.class,
-    NewStartEntitlementService.class
+    CookieUtil.class
 })
 @TestPropertySource(properties = {
     "app.jwt.secret=12345678901234567890123456789012",
@@ -70,7 +65,6 @@ class NewStartRequestControllerTest {
   @Autowired MockMvc mockMvc;
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean NewStartRequestService requestService;
-  @MockitoBean NewStartMemberGrantRepository grantRepository;
 
   private static final String QUESTION_BODY =
       "{\"kind\":\"QUESTION\",\"title\":\"개인회생 순서가 궁금해요\",\"problem\":\"어디부터 시작하나요?\"}";
@@ -83,13 +77,6 @@ class NewStartRequestControllerTest {
     return new RequestView(7L, "QUESTION", "개인회생 순서가 궁금해요", null, null,
         "어디부터 시작하나요?", null, "RECEIVED", null, null, null, null, null,
         1L, "공용닉네임", "2026-09-27T09:00:00", List.of());
-  }
-
-  /** 기본 시나리오는 "grant 보유 회원" — 거절 케이스만 false로 되돌린다. */
-  @BeforeEach
-  void memberHoldsThanksGrant() {
-    when(grantRepository.existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class)))
-        .thenReturn(true);
   }
 
   @Test
@@ -135,8 +122,8 @@ class NewStartRequestControllerTest {
   }
 
   @Test
-  @DisplayName("given: grant 보유 회원 / when: 작성 / then: 200 + 저장된 view, principal이 작성자 근거")
-  void thanksMemberCanCreateRequest() throws Exception {
+  @DisplayName("given: grant 없는 일반(STUDENT) 회원 / when: 작성 / then: 200 — 질문요청은 일반회원 기본 기능(2026-09-29 정책)")
+  void generalMemberCanCreateRequest() throws Exception {
     when(requestService.create(any(), eq(NewStartRequestKind.QUESTION),
         eq("개인회생 순서가 궁금해요"), isNull(), isNull(), eq("어디부터 시작하나요?"), isNull()))
         .thenReturn(RequestResult.success(view()));
@@ -152,23 +139,7 @@ class NewStartRequestControllerTest {
   }
 
   @Test
-  @DisplayName("given: grant 없는 회원 / when: 작성 / then: 403 + 안내, service.create 미호출")
-  void memberWithoutGrantCannotCreate() throws Exception {
-    when(grantRepository.existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class)))
-        .thenReturn(false);
-
-    mockMvc.perform(post("/api/newstart/requests")
-            .cookie(memberCookie())
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(QUESTION_BODY))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.status").value("error"))
-        .andExpect(jsonPath("$.errorMessage").value(NewStartEntitlementService.DENIAL_MESSAGE));
-    verify(requestService, never()).create(any(), any(), any(), any(), any(), any(), any());
-  }
-
-  @Test
-  @DisplayName("given: ADMIN / when: 작성 / then: grant row 없이 통과(DENIAL 규칙 우회)")
+  @DisplayName("given: ADMIN / when: 작성 / then: grant 없이 통과(회원·ADMIN 동일 경로)")
   void adminWritesWithoutGrantRow() throws Exception {
     when(requestService.create(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(RequestResult.success(view()));
@@ -178,7 +149,6 @@ class NewStartRequestControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(QUESTION_BODY))
         .andExpect(status().isOk());
-    verify(grantRepository, never()).existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class));
   }
 
   @Test

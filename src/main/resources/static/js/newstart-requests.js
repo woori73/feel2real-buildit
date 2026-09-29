@@ -272,16 +272,14 @@
   }
 
   /* ── 쓰기 ── */
+  /* 폼은 [요청 종류][제목][내용]만 받는다(2026-09-29 단순화). 화면/위치·STEP·개선 제안은
+     서버·DB에 그대로 두므로 기존 데이터 표시에는 영향이 없다. */
   function submitRequest(e) {
     e.preventDefault();
-    var kind = P.kindSelect.value;
     var payload = {
-      kind: kind,
+      kind: P.kindSelect.value,
       title: P.titleInput.value,
-      problem: P.problem.value,
-      proposal: P.proposal.value,
-      screenLocation: kind === 'SITE_IMPROVEMENT' ? P.location.value : '',
-      aToZStep: kind === 'SITE_IMPROVEMENT' ? P.step.value : ''
+      problem: P.problem.value
     };
     setText(P.writeErr, ''); P.writeErr.hidden = true;
     P.submit.disabled = true;
@@ -301,7 +299,7 @@
           showStatus('요청이 등록되었습니다. 운영자가 검토합니다.');
           return;
         }
-        /* 403 = THANKS_MEMBER 미부여 — 서버 안내 문구를 그대로 보여 판단 근거를 준다. */
+        /* 서버 안내 문구(검증 실패 400 등)를 그대로 보여 판단 근거를 준다. */
         setText(P.writeErr, res.body.errorMessage || '등록하지 못했습니다.');
         P.writeErr.hidden = false;
       })
@@ -310,10 +308,6 @@
         setText(P.writeErr, '등록하지 못했습니다. 잠시 후 다시 시도해 주세요.');
         P.writeErr.hidden = false;
       });
-  }
-
-  function syncKindFields() {
-    P.improveFields.hidden = P.kindSelect.value !== 'SITE_IMPROVEMENT';
   }
 
   function init() {
@@ -328,11 +322,7 @@
     P.form = id('ns-req-form');
     P.kindSelect = id('ns-req-kind');
     P.titleInput = id('ns-req-title');
-    P.improveFields = id('ns-req-improve-fields');
-    P.location = id('ns-req-location');
-    P.step = id('ns-req-step');
     P.problem = id('ns-req-problem');
-    P.proposal = id('ns-req-proposal');
     P.submit = id('ns-req-submit');
     P.writeErr = id('ns-req-write-err');
     if (!P.list) return;
@@ -365,9 +355,7 @@
     P.newBtn.addEventListener('click', function () {
       P.write.hidden = false;
       P.write.open = true;
-      syncKindFields();
     });
-    P.kindSelect.addEventListener('change', syncKindFields);
     P.form.addEventListener('submit', submitRequest);
 
     loadCurrentUser();

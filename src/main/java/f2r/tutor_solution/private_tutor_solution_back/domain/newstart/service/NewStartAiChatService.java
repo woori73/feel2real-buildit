@@ -7,6 +7,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.s
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.ResearchPack;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmClient;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmCompletion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,6 +33,9 @@ import java.util.Set;
  */
 @Service
 public class NewStartAiChatService {
+
+  private static final Logger log = LoggerFactory.getLogger(NewStartAiChatService.class);
+
   /** 질문 길이 상한. 과대 프롬프트 남용을 막는 최소한의 가드다. */
   static final int MAX_QUESTION_CHARS = 2000;
   /** 답변 출력 상한. {@link NewStartLlmClient}가 응답에 적용한다. */
@@ -45,6 +50,8 @@ public class NewStartAiChatService {
   static final int MAX_SOURCES = 8;
   /** 근거 1건 요약 상한. */
   static final int MAX_EVIDENCE_CHARS = 400;
+  /** 한국어 혼합 텍스트의 대략적인 token 크기(정밀 값은 provider의 usage 응답). */
+  private static final int APPROX_CHARS_PER_TOKEN = 3;
 
   private static final String SYSTEM_PROMPT =
       "너는 새출발기금·부실차주·채무조정 정보를 도우는 한국어 안내자다. 이해하기 쉬운 문장으로 답한다."
@@ -61,6 +68,8 @@ public class NewStartAiChatService {
           + " 위법 여부나 민원 결과는 단정하지 않는다."
           + " 아래 [NewStart 지식베이스 근거]가 제공되면 그 근거만으로 답의 핵심을 뒷받침하고,"
           + " 공식 자료는 '공식 안내에 따르면', 카페 회원 경험은 '카페 사례에서는'처럼 출처 성격을 명시해 구분한다."
+          + " 답변 본문에는 '[KB1]', '[KB2 공식]'처럼 대괄호 번호·키워드 인용표를 쓰지 말고,"
+          + " 근거는 위와 같이 출처 성격만 자연어로 밝힌다."
           + " 근거에 없는 내용은 근거가 없다고 밝히고 공식 기관 안내 확인을 권유한다.";
 
   private final NewStartLlmClient newStartLlmClient;
@@ -82,24 +91,52 @@ public class NewStartAiChatService {
     }
 
     ResearchPack pack;
+    long tStart = System.nanoTime();
     try {
       pack = researchService.research(question);
     } catch (RuntimeException e) {
       // DB 장애로 조사를 못 하면 근거 없이 답하는 것보다 실패를 정직하게 알린다.
       return NewStartAiAnswer.failed("지식베이스 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     }
+    long tRag = System.nanoTime();
 
     List<Evidence> ordered = orderedEvidence(pack);
-    String systemPrompt = ordered.isEmpty()
-        ? SYSTEM_PROMPT
-        : SYSTEM_PROMPT + "\n\n[NewStart 지식베이스 근거]\n" + buildEvidenceContext(ordered);
+    long tEvidence = System.nanoTime();
+    String evidenceContext = ordered.isEmpty() ? "" : buildEvidenceContext(ordered);
+    String systemPrompt = ordered.isEmpty() ? SYSTEM_PROMPT : SYSTEM_PROMPT + "\n\n[NewStart 지식베이스 근거]\n" + evidenceContext;
+    long tPrompt = System.nanoTime();
 
     NewStartLlmCompletion completion =
         newStartLlmClient.complete(systemPrompt, question, MAX_ANSWER_CHARS);
+    long tLlm = System.nanoTime();
+
+    // 구간 실측(2026-09-28 latency 지시). 질문 원문·키·reasoning_content는 남기지 않고 길이와 ms만 남긴다.
+    // SERIALIZATION/TOTAL은 이 로그로 안 잡힌다(controller + 클라이언트 time_total로 분리 보고).
+    int promptChars = systemPrompt.length() + question.length();
+    log.info("newstart ai chat timing ragMs={} evidenceMs={} promptMs={} llmMs={} serviceMs={} "
+            + "questionChars={} evidenceCount={} evidenceChars={} systemPromptChars={} promptChars={} "
+            + "inputTokenEstimate={} historyMessages=0 answerChars={} model={} ok={}",
+        ms(tRag - tStart), ms(tEvidence - tRag), ms(tPrompt - tEvidence), ms(tLlm - tPrompt), ms(tLlm - tStart),
+        question.length(), ordered.size(), evidenceChars(ordered), systemPrompt.length(), promptChars,
+        promptChars / APPROX_CHARS_PER_TOKEN, completion.text().length(), completion.model(), completion.ok());
+
     if (!completion.ok()) {
       return NewStartAiAnswer.failed(completion.errorMessage(), toSources(ordered));
     }
     return new NewStartAiAnswer(true, completion.text(), null, completion.model(), toSources(ordered));
+  }
+
+  private static long ms(long nanos) {
+    return Math.round(nanos / 1_000_000.0);
+  }
+
+  private static int evidenceChars(List<Evidence> ordered) {
+    int total = 0;
+    for (Evidence e : ordered) {
+      total += (e.getTitle() == null ? 0 : e.getTitle().length())
+          + (e.getExcerpt() == null ? 0 : e.getExcerpt().length());
+    }
+    return total;
   }
 
   /**

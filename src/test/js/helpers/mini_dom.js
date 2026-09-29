@@ -86,6 +86,10 @@ class MiniElement {
     this._attrs.set(name, String(value));
   }
 
+  removeAttribute(name) {
+    this._attrs.delete(name);
+  }
+
   hasAttribute(name) {
     return this._attrs.has(name);
   }
