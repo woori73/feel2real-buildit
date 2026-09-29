@@ -34,9 +34,14 @@ public class EasyLedgerInquiryService {
   private final EasyJournalLineRepository lineRepository;
   private final EasyAccountRepository accountRepository;
 
-  /** 원장 행 — runningBalance는 계정 정상잔액 부호로 표시한다. */
+  /**
+   * 원장 행 — runningBalance는 계정 정상잔액 부호로 표시한다.
+   * counterparty/description/evidenceType/sourceKind는 drill-down(실적관리)용
+   * 추적 필드이며 집계에는 영향을 주지 않는다. txn이 없으면 null/빈값이다.
+   */
   public record LedgerRow(LocalDate date, Long journalEntryId, String sourceRef,
-      String memo, long debit, long credit, long runningBalance) {
+      String memo, long debit, long credit, long runningBalance,
+      String counterparty, String description, String evidenceType, String sourceKind) {
   }
 
   /** 계정 원장 — opening은 조회 시작일 이전 합산, closing은 기말 잔액. */
@@ -87,7 +92,8 @@ public class EasyLedgerInquiryService {
         periodDebit += leg.debit();
         periodCredit += leg.credit();
         rows.add(new LedgerRow(leg.date(), leg.entryId(), leg.sourceRef(), leg.memo(),
-            leg.debit(), leg.credit(), 0L));
+            leg.debit(), leg.credit(), 0L, leg.counterparty(), leg.description(),
+            leg.evidenceType(), leg.sourceKind()));
       }
     }
     boolean creditNormal = isCreditNormal(account.getDirection());
@@ -96,7 +102,8 @@ public class EasyLedgerInquiryService {
     for (LedgerRow row : rows) {
       running += creditNormal ? row.credit() - row.debit() : row.debit() - row.credit();
       withBalance.add(new LedgerRow(row.date(), row.journalEntryId(), row.sourceRef(),
-          row.memo(), row.debit(), row.credit(), running));
+          row.memo(), row.debit(), row.credit(), running, row.counterparty(),
+          row.description(), row.evidenceType(), row.sourceKind()));
     }
     long closingNet = openingNet + periodDebit - periodCredit;
     return new AccountLedger(account, signed(openingNet, creditNormal), withBalance,
@@ -179,9 +186,14 @@ public class EasyLedgerInquiryService {
       for (EasyJournalLine line : lineRepository
           .findByEntry_EntryIdOrderBySortOrderAsc(entry.getEntryId())) {
         String sourceRef = entry.getTxn() == null ? null : entry.getTxn().getSourceRef();
+        String counterparty = entry.getTxn() == null ? null : entry.getTxn().getCounterparty();
+        String description = entry.getTxn() == null ? null : entry.getTxn().getDescription();
+        String evidenceType = entry.getTxn() == null || entry.getTxn().getEvidenceType() == null
+            ? null : entry.getTxn().getEvidenceType().name();
+        String sourceKind = entry.getTxn() == null ? null : entry.getTxn().getSourceKind();
         legs.add(new EntryLeg(entry.getOccurredOn(), entry.getEntryId(),
             line.getAccount().getAccountId(), line.getDebit(), line.getCredit(),
-            sourceRef, entry.getMemo()));
+            sourceRef, entry.getMemo(), counterparty, description, evidenceType, sourceKind));
       }
     }
     legs.sort(Comparator.comparing(EntryLeg::date).thenComparing(EntryLeg::entryId));
@@ -189,7 +201,8 @@ public class EasyLedgerInquiryService {
   }
 
   private record EntryLeg(LocalDate date, Long entryId, Long accountId, long debit,
-      long credit, String sourceRef, String memo) {
+      long credit, String sourceRef, String memo, String counterparty, String description,
+      String evidenceType, String sourceKind) {
   }
 
   private static class Accumulator {

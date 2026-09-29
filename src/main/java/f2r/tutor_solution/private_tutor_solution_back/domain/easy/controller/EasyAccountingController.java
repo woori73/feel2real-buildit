@@ -5,6 +5,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyFi
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLedgerInquiryService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyOpeningService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyOpeningService.OpeningLeg;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyPerformanceService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyReferenceYearSnapshot;
 import java.time.LocalDate;
 import java.util.List;
@@ -33,6 +34,7 @@ public class EasyAccountingController {
   private final EasyLedgerInquiryService inquiryService;
   private final EasyOpeningService openingService;
   private final EasyFinancialStatementService statementService;
+  private final EasyPerformanceService performanceService;
   private final EasyReferenceYearSnapshot referenceSnapshot;
 
   /** 총계정원장 — GET /api/admin/easy/accounting/general-ledger. */
@@ -104,6 +106,29 @@ public class EasyAccountingController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
       LocalDate at) {
     return ResponseEntity.ok(statementService.balanceSheet(businessId, at));
+  }
+
+  /** 장부요약/실적관리 월별 매트릭스 — POSTED journal만 집계한다. */
+  @GetMapping("/performance")
+  public ResponseEntity<EasyPerformanceService.PerformanceReport> performance(
+      @RequestParam(value = "businessCode", required = false, defaultValue = "ACADEMY")
+      String businessCode,
+      @RequestParam(value = "year", required = false, defaultValue = "2026")
+      int year) {
+    return ResponseEntity.ok(performanceService.performance(businessCode, year));
+  }
+
+  /** 드릴다운 — 월×계정 셀을 구성한 실제 journal rows (추적 필드 포함). */
+  @GetMapping("/drill-down")
+  public ResponseEntity<EasyLedgerInquiryService.AccountLedger> drillDown(
+      @RequestParam Long businessId,
+      @RequestParam String accountCode,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      LocalDate to) {
+    Long accountId = performanceService.accountIdByCode(accountCode);
+    return ResponseEntity.ok(inquiryService.generalLedger(businessId, accountId, from, to));
   }
 
   /** 기준연도 비교 (read-only) — actual이 없으면 NOT_IMPORTED. */
