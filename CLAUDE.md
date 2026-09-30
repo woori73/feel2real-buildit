@@ -9,6 +9,10 @@
 - 테스트 코드는 given/when/then 구조로 생성
 
 
+## DAILY START HARD GATE — 사용자 운영 원칙 (최우선)
+
+**모든 ChatGPT/Qoder/OpenCode/Claude/Freebuck 및 후속 에이전트는 작업 지시를 작성하거나 작업을 시작하기 전에 [docs/operating-principles/MASTER_OPERATING_PRINCIPLES.md](docs/operating-principles/MASTER_OPERATING_PRINCIPLES.md)를 먼저 읽는다.** EASY 작업이면 EASY 원칙, NewStart 지피지기/RAG 작업이면 NewStart 원칙까지 반드시 읽는다. 사용자의 명시적 변경 없이 원칙을 재설계하거나 우선순위를 바꾸지 않는다.
+
 ## 작업 착수 전 (필수)
 1. **BuildIt 관련 기능을 수정하기 전에 `docs/BUILDIT_PHILOSOPHY.md`를 먼저 읽는다.**
 2. **`docs/INDEX.md`를 읽고** 해당 작업 문서를 로드한다.
