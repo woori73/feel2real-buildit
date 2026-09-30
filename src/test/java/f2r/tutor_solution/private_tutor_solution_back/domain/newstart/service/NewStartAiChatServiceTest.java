@@ -83,6 +83,7 @@ class NewStartAiChatServiceTest {
         .refUrl(url).title(title).excerpt(excerpt).note(null).build();
   }
 
+
   @Test
   @DisplayName("given 정상 질문 when ask then 조사 사다리를 통과하고 DIRECT LLM에 system prompt와 함께 위임한다")
   void ask_delegatesToDirectLlm() {
@@ -107,135 +108,6 @@ class NewStartAiChatServiceTest {
     assertThat(client.capturedSystem).contains("대괄호 번호·키워드 인용표를 쓰지 말고");
     assertThat(client.capturedSystem).contains("'[KB1]', '[KB2 공식]'");
     assertThat(client.capturedMaxChars).isPositive();
-  }
-
-  @Test
-  @DisplayName("given ACTIVE 근거가 있을 when ask then 공식 라벨·본문·출처 URL이 system prompt에 실리고 sources로 노출된다")
-  void ask_includesActiveEvidenceContext() {
-    FakeLlmTransport client = new FakeLlmTransport();
-    NewStartLlmClient llm = llmClient(client);
-    FakeResearchService research = new FakeResearchService();
-    research.pack = ResearchPack.builder().question("감면율")
-        .internalHits(List.of())
-        .officialHits(List.of(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "7",
-            "[새출발기금] 감면율 기준", "https://nsf/official", "차상위는 최대 90%까지 가능하다")))
-        .ccrsHits(List.of()).borrowerHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of())
-        .externalSearched(false).build();
-    NewStartAiChatService service = new NewStartAiChatService(llm, research);
-
-    NewStartAiChatService.NewStartAiAnswer answer = service.ask("감면율 기준이 궁금해요");
-
-    assertThat(client.capturedSystem).contains("[NewStart 지식베이스 근거]");
-    assertThat(client.capturedSystem).contains("[공식 자료]");
-    assertThat(client.capturedSystem).contains("차상위는 최대 90%까지 가능하다");
-    assertThat(client.capturedSystem).contains("https://nsf/official");
-    assertThat(answer.sources()).hasSize(1);
-    assertThat(answer.sources().get(0).kind()).isEqualTo("공식 자료");
-  }
-
-  @Test
-  @DisplayName("given 공식 자료와 카페 사례가 모두 있을 when ask then 실제 사례·운영자료가 앞, 공식 자료가 뒤(확인·보완)이고 카페 라벨이 보존된다 (운영원칙 §2)")
-  void ask_ordersCasesBeforeOfficial() {
-    FakeLlmTransport client = new FakeLlmTransport();
-    NewStartLlmClient llm = llmClient(client);
-    FakeResearchService research = new FakeResearchService();
-    research.pack = ResearchPack.builder().question("90% 되나요")
-        .internalHits(List.of(
-            evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "2", "[전자책] 감면율 장", null, "감면율 산정 원리"),
-            evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "5866", "90프로 탕감 사례", "https://cafe/5866", "후속 결과")))
-        .officialHits(List.of(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "7",
-            "공식 감면율 상한", "https://nsf", "최대 90%, 원칙 70%")))
-        .ccrsHits(List.of()).borrowerHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of())
-        .externalSearched(false).build();
-    NewStartAiChatService service = new NewStartAiChatService(llm, research);
-
-    service.ask("감면율이 90%까지 되나요?");
-
-    String sys = client.capturedSystem;
-    int official = sys.indexOf("[공식 자료]");
-    int ebook = sys.indexOf("[운영자·전자책 자료]");
-    int cafe = sys.indexOf("[부실차주 카페 사례]");
-    assertThat(ebook).isGreaterThan(-1);
-    assertThat(cafe).isGreaterThan(ebook);
-    assertThat(official).isGreaterThan(cafe);
-    assertThat(sys).contains("사례 근거가 있는데 이를 무시하고 공식 규정만 답하지 않는다");
-    assertThat(sys).contains("정부기관 설명부터 길게 시작하지 않는다");
-    assertThat(sys).contains("카페 경험담이나 근거 없는 자료를 공식 정책처럼 말하지 않는다");
-  }
-
-  @Test
-  @DisplayName("given 공식 근거가 출처 상한을 초과할 when ask then 실증 사례가 컨텍스트·출처에서 밀려나지 않는다")
-  void ask_keepsCaseEvidenceWhenOfficialPoolIsLarge() {
-    FakeLlmTransport client = new FakeLlmTransport();
-    NewStartLlmClient llm = llmClient(client);
-    FakeResearchService research = new FakeResearchService();
-    List<Evidence> official = new java.util.ArrayList<>();
-    for (int i = 0; i < 10; i++) {
-      official.add(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "o" + i,
-          "공식 기준 " + i, "https://nsf/" + i, "공식 안내"));
-    }
-    List<Evidence> cases = List.of(
-        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6010",
-            "후순위 담보 임시안 납부 사례", "https://cafe/6010", "기한이익상실 전 신복위 상담"),
-        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6011",
-            "임시안 대기 중 이자 납부", "https://cafe/6011", "변제 방법"));
-    research.pack = ResearchPack.builder().question("후순위 담보 임시안")
-        .internalHits(List.of()).officialHits(official)
-        .ccrsHits(List.of()).borrowerHits(cases).extraAgencyHits(List.of()).gapNotes(List.of())
-        .externalSearched(false).build();
-    NewStartAiChatService service = new NewStartAiChatService(llm, research);
-
-    NewStartAiChatService.NewStartAiAnswer answer = service.ask("후순위 담보 대출 임시안 동안 변제해야 하나요?");
-
-    assertThat(client.capturedSystem).contains("후순위 담보 임시안 납부 사례");
-    assertThat(answer.sources())
-        .anySatisfy(s -> assertThat(s.kind()).isEqualTo("부실차주 카페 사례"))
-        .anySatisfy(s -> assertThat(s.kind()).isEqualTo("공식 자료"));
-    assertThat(answer.sources()).hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_SOURCES);
-    assertThat(NewStartAiChatService.orderedEvidence(research.pack))
-        .hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
-  }
-
-  @Test
-  @DisplayName("given ACTIVE 카페 지식과 원시 실증 사례가 공존 when 조립 then 카페 지식이 실증 조회보다 앞서 출처 8건 안에 든다 (2026-09-30 GOLDEN-1: 2026 보완요구 사례가 sources 최후미로 밀려 답변 미노출)")
-  void orderedEvidence_keepsApprovedCafeKnowledgeWithinSources() {
-    List<Evidence> internal = new java.util.ArrayList<>();
-    for (int i = 0; i < 6; i++) {
-      internal.add(evidence(SourceClass.OFFICIAL_RULE, RefType.KNOWLEDGE_ITEM, "11" + i,
-          "[DERIVED_RULE] 공식 기준 " + i, "https://nsf/dr" + i, "공식 안내"));
-    }
-    internal.add(evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "118",
-        "[운영자 자료] 2024년 폐업 사업장 기준선", "", "폐업사실증명만 제출"));
-    internal.add(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.KNOWLEDGE_ITEM, "119",
-        "[부실차주 카페 사례] 2026-08 이후 접수후 보완요구", "", "임대차서류·보증금 반환현황 보완요구 관찰"));
-    List<Evidence> official = new java.util.ArrayList<>();
-    for (int i = 0; i < 4; i++) {
-      official.add(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "u" + i,
-          "[새출발기금 공식 FAQ] 도덕적 해이 " + i, "https://nsf/faq" + i, "공식 안내"));
-    }
-    List<Evidence> empirical = List.of(
-        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "5947", "감면율 사례1", "https://cafe/5947", "감면"),
-        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6001", "감면율 사례2", "https://cafe/6001", "감면"),
-        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "5988", "감면율 사례3", "https://cafe/5988", "감면"));
-    ResearchPack pack = ResearchPack.builder().question("폐업 보증금 통장거래내역")
-        .internalHits(internal).officialHits(official)
-        .ccrsHits(List.of()).borrowerHits(empirical).extraAgencyHits(List.of()).gapNotes(List.of())
-        .externalSearched(false).build();
-
-    List<Evidence> ordered = NewStartAiChatService.orderedEvidence(pack);
-
-    int cafeKnowledge = -1;
-    int firstEmpirical = -1;
-    for (int i = 0; i < ordered.size(); i++) {
-      Evidence e = ordered.get(i);
-      if (cafeKnowledge < 0 && "119".equals(e.getRefId())) cafeKnowledge = i;
-      if (firstEmpirical < 0 && "5947".equals(e.getRefId())) firstEmpirical = i;
-    }
-    assertThat(cafeKnowledge).isGreaterThanOrEqualTo(0);
-    assertThat(ordered).hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
-    // 승인 카페 지식은 원시 실증 조회보다 앞서야 하고, 출처 창(앞 MAX_SOURCES건) 안에 들어야 한다.
-    assertThat(cafeKnowledge).isLessThan(firstEmpirical);
-    assertThat(cafeKnowledge).isLessThan(NewStartAiChatService.MAX_SOURCES);
   }
 
   @Test
@@ -338,30 +210,6 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 사례 근거가 컨텍스트를 채울 만큼 많을 when 조립 then 사례가 앞이고 공식 확인 근거는 최소 3건 남는다")
-  void orderedEvidence_keepsOfficialConfirmationBehindManyCases() {
-    List<Evidence> cases = new java.util.ArrayList<>();
-    for (int i = 0; i < 12; i++) {
-      cases.add(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "c" + i, "사례 " + i, null, "본문"));
-    }
-    List<Evidence> official = new java.util.ArrayList<>();
-    for (int i = 0; i < 6; i++) {
-      official.add(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "o" + i, "공식 " + i, null, "안내"));
-    }
-    ResearchPack pack = ResearchPack.builder().question("q").internalHits(List.of()).officialHits(official)
-        .ccrsHits(List.of()).borrowerHits(cases).extraAgencyHits(List.of()).gapNotes(List.of())
-        .externalSearched(false).build();
-
-    List<Evidence> ordered = NewStartAiChatService.orderedEvidence(pack);
-
-    assertThat(ordered).hasSize(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
-    assertThat(ordered.get(0).getSourceClass()).isEqualTo(SourceClass.BORROWER_CAFE_CASE);
-    assertThat(ordered.stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_RULE).count())
-        .isGreaterThanOrEqualTo(NewStartAiChatService.MIN_OFFICIAL_EVIDENCE);
-    assertThat(ordered.get(ordered.size() - 1).getSourceClass()).isEqualTo(SourceClass.OFFICIAL_RULE);
-  }
-
-  @Test
   @DisplayName("given 모델이 만든 [KB2 공식] 인용표와 근거에 없는 전화번호 when sanitize then 인용표·미근거 번호는 제거, 근거 속 번호는 유지")
   void sanitizeAnswer_removesInventedCitationsAndUngroundedPhones() {
     String ctx = "근거 요지: 신용회복위원회 FAX 02-2169-7028";
@@ -381,5 +229,234 @@ class NewStartAiChatServiceTest {
         .refId("1").title("사례").excerpt("내용").note("카페 실증 사례, 작성 2026-08-11").build();
 
     assertThat(NewStartAiChatService.buildEvidenceContext(List.of(e))).contains("시점: 2026-08-11");
+  }
+
+  // ─────────────── 2단계 답변 구조 (STEP 1 = 전자책+실제 사례, STEP 2 = 현재 공식자료) ───────────────
+
+  private static ResearchPack mixedPack() {
+    return ResearchPack.builder().question("후순위 담보대출 기한이익상실")
+        .internalHits(List.of(
+            evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "e1", "[전자책] EBK-9-1 부동산담보 처리 기준", null, "후순위 담보 접수 방식"),
+            evidence(SourceClass.OFFICIAL_RULE, RefType.KNOWLEDGE_ITEM, "d1", "[공식] 새출발기금 담보채무 기준", "https://nsf/d1", "담보채무는 캠코 인수")))
+        .borrowerHits(List.of(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6037",
+            "사업자 후순위 담보대출 문의드립니다.", "https://cafe.naver.com/newhopero/6037", "기한이익상실 전 상담")))
+        .officialHits(List.of(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "u1",
+            "[새출발기금] 부실우려 담보채무 안내", "https://nsf/u1", "2026 기준 공식 안내")))
+        .ccrsHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of()).externalSearched(false).build();
+  }
+
+  @Test
+  @DisplayName("A. given 전자책·사례·공식이 모두 있을 when STEP 1(ask) then 전자책+실제 사례만 쓰고 공식 자료는 컨텍스트·출처에 없다")
+  void step1_usesEbookAndCasesOnly() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = mixedPack();
+    NewStartAiChatService service = new NewStartAiChatService(llmClient(client), research);
+
+    NewStartAiChatService.NewStartAiAnswer a = service.ask("후순위 담보대출 기한이익상실 통보를 받았는데 어떻게 해야 하나?");
+
+    String sys = client.capturedSystem;
+    assertThat(sys).contains("[운영자·전자책 자료]").contains("[부실차주 카페 사례]");
+    assertThat(sys).doesNotContain("[공식 자료]");
+    assertThat(sys).doesNotContain("담보채무는 캠코 인수").doesNotContain("2026 기준 공식 안내");
+    assertThat(sys.indexOf("[운영자·전자책 자료]")).isLessThan(sys.indexOf("[부실차주 카페 사례]"));
+    assertThat(sys).contains(NewStartAiChatService.CASE_STEP_PROMPT);
+    assertThat(sys).contains("공식 안내에 따르면'·'공식 자료'라고 쓰지 않고");
+    assertThat(a.sources()).extracting(NewStartAiChatService.AnswerSource::kind)
+        .containsExactly("운영자·전자책 자료", "부실차주 카페 사례")
+        .doesNotContain("공식 자료");
+  }
+
+  @Test
+  @DisplayName("A2. given 전자책이 12칸을 다 채울 만큼 많고 직접 관련 사례가 있을 when STEP 1 then 사례가 컨텍스트·출처에서 밀리지 않는다")
+  void step1_ebooksDoNotCrowdOutDirectCases() {
+    List<Evidence> ebooks = new java.util.ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      ebooks.add(evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "e" + i, "[전자책] EBK-" + i, null, "담보"));
+    }
+    ResearchPack pack = ResearchPack.builder().question("q").internalHits(ebooks)
+        .borrowerHits(List.of(
+            evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6037", "후순위 담보 사례1", "https://cafe/6037", "직접 관련"),
+            evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6038", "후순위 담보 사례2", "https://cafe/6038", "직접 관련")))
+        .officialHits(List.of()).ccrsHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of())
+        .externalSearched(false).build();
+
+    List<Evidence> ordered = NewStartAiChatService.caseEvidence(pack);
+
+    assertThat(ordered).hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
+    assertThat(ordered).extracting(Evidence::getRefId).contains("6037", "6038");
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = pack;
+    NewStartAiChatService.NewStartAiAnswer a = new NewStartAiChatService(llmClient(client), research).ask("후순위 담보 질문");
+    assertThat(a.sources()).extracting(NewStartAiChatService.AnswerSource::title)
+        .contains("후순위 담보 사례1", "후순위 담보 사례2");
+    assertThat(a.sources()).hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_SOURCES);
+  }
+
+  @Test
+  @DisplayName("A3. given ACTIVE 카페 지식과 원시 실증 사례 공존 when STEP 1 then 카페 지식이 실증 조회보다 앞서고 출처 창 안에 든다 (GOLDEN-1 회귀)")
+  void step1_keepsApprovedCafeKnowledgeAheadOfRawCases() {
+    List<Evidence> internal = new java.util.ArrayList<>();
+    internal.add(evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "118", "[운영자 자료] 2024 기준선", "", "폐업사실증명만 제출"));
+    internal.add(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.KNOWLEDGE_ITEM, "119", "[카페 사례] 2026-08 보완요구", "", "임대차서류 보완요구 관찰"));
+    List<Evidence> empirical = List.of(
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "5947", "감면율 사례1", "https://cafe/5947", "감면"),
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6001", "감면율 사례2", "https://cafe/6001", "감면"));
+    ResearchPack pack = ResearchPack.builder().question("폐업 보증금").internalHits(internal).borrowerHits(empirical)
+        .officialHits(List.of()).ccrsHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of()).externalSearched(false).build();
+
+    List<Evidence> ordered = NewStartAiChatService.caseEvidence(pack);
+
+    List<String> ids = ordered.stream().map(Evidence::getRefId).toList();
+    assertThat(ids.indexOf("119")).isGreaterThanOrEqualTo(0).isLessThan(ids.indexOf("5947"));
+  }
+
+  @Test
+  @DisplayName("B. given STEP 1 성공 후 STEP 2 when 호출 순서 then STEP 1 응답이 먼저 반환되고 STEP 2는 그 다음 별도 호출이다")
+  void step1_returnsBeforeStep2_separateCalls() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    List<String> order = new java.util.ArrayList<>();
+    FakeResearchService research = new FakeResearchService() {
+      @Override
+      public ResearchPack research(String q) {
+        order.add("research");
+        return super.research(q);
+      }
+    };
+    research.pack = mixedPack();
+    NewStartLlmTransport recording = new NewStartLlmTransport() {
+      @Override public String name() { return "rec"; }
+      @Override public NewStartLlmCompletion complete(String sys, String prompt, int max) {
+        order.add(sys.contains("[1차 답변 — 전자책·실제 사례]") ? "LLM-STEP1" : "LLM-STEP2");
+        return NewStartLlmCompletion.success(sys.contains("[1차 답변 — 전자책·실제 사례]") ? "1차 답변 본문" : "2차 답변 본문",
+            "nvidia", "m");
+      }
+    };
+    NewStartAiChatService service = new NewStartAiChatService(new NewStartLlmClient(recording, new FakeLlmTransport()), research);
+
+    NewStartAiChatService.NewStartAiAnswer step1 = service.ask("질문");
+    order.add("STEP1-DELIVERED");
+    NewStartAiChatService.NewStartAiAnswer step2 = service.askOfficial("질문", step1.answer());
+
+    assertThat(order).containsExactly("research", "LLM-STEP1", "STEP1-DELIVERED", "research", "LLM-STEP2");
+    assertThat(step1.answer()).isEqualTo("1차 답변 본문");
+    assertThat(step2.answer()).isEqualTo("2차 답변 본문");
+  }
+
+  @Test
+  @DisplayName("C. given STEP 2 when askOfficial then 공식 자료만 근거이고 전자책·사례는 근거에 없으며 1차 답변이 비교 입력으로 전달된다")
+  void step2_usesOfficialEvidenceOnly_andReceivesStep1() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = mixedPack();
+    NewStartAiChatService service = new NewStartAiChatService(llmClient(client), research);
+
+    NewStartAiChatService.NewStartAiAnswer a = service.askOfficial("후순위 담보대출 기한이익상실", "전자책에서는 이렇게 진행됐습니다.");
+
+    assertThat(client.capturedSystem).contains(NewStartAiChatService.OFFICIAL_STEP_PROMPT);
+    assertThat(client.capturedSystem).contains("[공식 자료]").contains("2026 기준 공식 안내").contains("담보채무는 캠코 인수");
+    assertThat(client.capturedSystem).doesNotContain("[운영자·전자책 자료]").doesNotContain("[부실차주 카페 사례]");
+    assertThat(client.capturedPrompt).contains("전자책에서는 이렇게 진행됐습니다.").contains("다시 쓰지 말 것");
+    assertThat(a.sources()).extracting(NewStartAiChatService.AnswerSource::kind).containsOnly("공식 자료");
+  }
+
+  @Test
+  @DisplayName("D. given STEP 2 프롬프트 when 확인 then 1차 답변 재작성·삭제 금지와 차이·시점 비교 지시가 있다")
+  void step2_promptForbidsOverwriteAndComparesTimeline() {
+    assertThat(NewStartAiChatService.OFFICIAL_STEP_PROMPT)
+        .contains("반복하거나 삭제·정정하지 말고")
+        .contains("1차 답변(사례·전자책)과 현재 기준이 다른 점")
+        .contains("시점 차이")
+        .contains("사례를 틀렸다고 단정하지 않고");
+  }
+
+  @Test
+  @DisplayName("E. given STEP 2 LLM timeout when askOfficial then STEP 2만 실패 응답이고 이미 받은 STEP 1 응답 객체는 그대로 유지된다")
+  void step2_timeoutKeepsStep1() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = mixedPack();
+    NewStartAiChatService service = new NewStartAiChatService(llmClient(client), research);
+    NewStartAiChatService.NewStartAiAnswer step1 = service.ask("질문");
+    String step1Text = step1.answer();
+    List<NewStartAiChatService.AnswerSource> step1Sources = step1.sources();
+
+    client.stubbed = NewStartLlmCompletion.failed("AI 서비스 응답이 지연되고 있습니다.", false);
+    NewStartAiChatService.NewStartAiAnswer step2 = service.askOfficial("질문", step1Text);
+
+    assertThat(step2.ok()).isFalse();
+    assertThat(step1.ok()).isTrue();
+    assertThat(step1.answer()).isEqualTo(step1Text).isEqualTo("답변입니다.");
+    assertThat(step1.sources()).isEqualTo(step1Sources).isNotEmpty();
+  }
+
+  @Test
+  @DisplayName("E2. given 공식 자료가 없을 때 STEP 2 then LLM을 부르지 않고(공식 규정을 지어내지 않고) 확인할 기관만 안내한다")
+  void step2_withoutOfficialEvidence_doesNotCallLlm() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = ResearchPack.builder().question("q")
+        .internalHits(List.of(evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "e1", "[전자책] x", null, "y")))
+        .officialHits(List.of()).ccrsHits(List.of()).borrowerHits(List.of())
+        .extraAgencyHits(List.of(Evidence.builder().stepNo(5).sourceClass(SourceClass.OTHER).refType(RefType.NONE)
+            .title("추가 공식기관 확인 필요").note("대한민국 법원 전자소송포털 수동 확인 필요").build()))
+        .gapNotes(List.of()).externalSearched(false).build();
+    NewStartAiChatService service = new NewStartAiChatService(llmClient(client), research);
+
+    NewStartAiChatService.NewStartAiAnswer a = service.askOfficial("지급명령이 왔는데", "1차 답변");
+
+    assertThat(a.ok()).isTrue();
+    assertThat(client.wasCalled).isFalse();
+    assertThat(a.answer()).contains("공식 자료를 NewStart에 저장된 게시 자료에서 찾지 못했습니다").contains("대한민국 법원 전자소송포털");
+    assertThat(a.sources()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("F. given 사례와 현재 공식 기준이 다를 수 있을 when 두 단계 then 각 단계가 자기 근거만 쓰고 서로 삭제하지 않는다(차이는 STEP 2가 표시)")
+  void step1AndStep2_keepOwnEvidence_differenceShownInStep2() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = mixedPack();
+    NewStartAiChatService service = new NewStartAiChatService(llmClient(client), research);
+
+    service.ask("q");
+    String step1Sys = client.capturedSystem;
+    service.askOfficial("q", "당시 사례에서는 통보 후에도 접수됐다");
+    String step2Sys = client.capturedSystem;
+
+    assertThat(step1Sys).contains("사업자 후순위 담보대출 문의드립니다.");
+    assertThat(step2Sys).doesNotContain("사업자 후순위 담보대출 문의드립니다.");
+    assertThat(step2Sys).contains("시점 차이");
+    assertThat(client.capturedPrompt).contains("당시 사례에서는 통보 후에도 접수됐다");
+  }
+
+  @Test
+  @DisplayName("G. given 모델 출력에 근거 없는 전화번호·공식 출처표 when 두 단계 then 제거되고 근거 속 번호만 남는다")
+  void bothSteps_doNotEmitUngroundedPhonesOrCitations() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    client.stubbed = NewStartLlmCompletion.success("문의 02-1234-5678 로 하세요 [KB2 공식]. 팩스 02-2169-7028", "nvidia", "m");
+    FakeResearchService research = new FakeResearchService();
+    research.pack = ResearchPack.builder().question("q").internalHits(List.of(
+            evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "e1", "[전자책] 팩스", null, "신용회복위원회 FAX 02-2169-7028")))
+        .officialHits(List.of(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "u1", "공식", "https://x", "안내 02-2169-7028")))
+        .borrowerHits(List.of()).ccrsHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of()).externalSearched(false).build();
+    NewStartAiChatService service = new NewStartAiChatService(llmClient(client), research);
+
+    for (String out : new String[] {service.ask("q").answer(), service.askOfficial("q", "1차").answer()}) {
+      assertThat(out).doesNotContain("02-1234-5678").doesNotContain("[KB2").contains("02-2169-7028");
+    }
+  }
+
+  @Test
+  @DisplayName("H. given 두 단계 프롬프트 when 확인 then 영문 꼬리·번호 인용표·사고과정 금지가 공통이고 전자책을 공식으로 부르지 않도록 STEP 1이 막는다")
+  void prompts_forbidEnglishTailAndOfficialMislabel() {
+    for (String p : new String[] {NewStartAiChatService.CASE_STEP_PROMPT, NewStartAiChatService.OFFICIAL_STEP_PROMPT}) {
+      assertThat(p).contains("영문 문구·메모·'official guidance' 같은 꼬리를 붙이지 않는다");
+      assertThat(p).contains("근거에 없는 전화번호·URL·금액·기한·날짜를 만들어내지 않는다");
+      assertThat(p).contains("재산 은닉, 허위 거래, 가장행위, 심사 회피");
+    }
+    assertThat(NewStartAiChatService.CASE_STEP_PROMPT)
+        .contains("전자책은 '전자책에서는'").contains("공식 자료가 아니다").contains("현재 규정은 다음 단계에서 따로 확인한다");
   }
 }

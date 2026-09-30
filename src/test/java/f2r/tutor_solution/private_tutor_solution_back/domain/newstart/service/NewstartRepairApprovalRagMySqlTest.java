@@ -131,25 +131,28 @@ class NewstartRepairApprovalRagMySqlTest {
         List<Evidence> d = ordered("지급명령이 도착했는데 어떻게 대응하나요 추심");
         assertThat(d).isNotEmpty();
 
-        // E 공식 vs 카페 상충: 90% 감면 주장 → 공식 상한 근거와 카페 사례가 모두 노출되되 우선순위는 공식
-        List<Evidence> e = ordered("감면율 90프로까지 받는다는데 사실인가요");
-        List<String> eLabels = labels(e);
-        int official = eLabels.indexOf("공식 자료");
-        int cafe = firstCafeIndex(eLabels);
-        assertThat(official).isGreaterThanOrEqualTo(0);
+        // E 공식 vs 카페 상충(2026-10-01 2단계): 사례는 STEP 1, 공식은 STEP 2 — 각 단계가 자기 근거만 갖고 라벨이 분리 유지된다
+        ResearchPack ep = researchService.research("감면율 90프로까지 받는다는데 사실인가요");
+        List<Evidence> step1 = NewStartAiChatService.caseEvidence(ep);
+        List<Evidence> step2 = NewStartAiChatService.officialEvidence(ep);
+        assertThat(labels(step1)).doesNotContain("공식 자료");
+        assertThat(labels(step2)).isNotEmpty().containsOnly("공식 자료");
+        assertThat(NewStartAiChatService.buildEvidenceContext(step2, true)).contains("[공식 자료]");
+        int cafe = firstCafeIndex(labels(step1));
         if (cafe >= 0) {
-            assertThat(official).isLessThan(cafe);
-        }
-        String context = NewStartAiChatService.buildEvidenceContext(e);
-        assertThat(context).contains("[공식 자료]");
-        if (cafe >= 0) {
-            // 조립 컨텍스트에서도 공식/카페 라벨이 분리 유지된다
-            assertThat(context).contains("[" + eLabels.get(cafe) + "]");
+            assertThat(NewStartAiChatService.buildEvidenceContext(step1)).contains("[" + labels(step1).get(cafe) + "]");
         }
     }
 
+    /** 옛 단일 호출 조립과 같은 관찰 범위(사례 + 공식)를 유지하는 테스트용 결합 뷰 — STEP 1 근거 뒤에 STEP 2 근거. */
     private List<Evidence> ordered(String question) {
-        return NewStartAiChatService.orderedEvidence(researchService.research(question));
+        return combined(researchService.research(question));
+    }
+
+    private static List<Evidence> combined(ResearchPack pack) {
+        List<Evidence> all = new java.util.ArrayList<>(NewStartAiChatService.caseEvidence(pack));
+        all.addAll(NewStartAiChatService.officialEvidence(pack));
+        return all;
     }
 
     private static List<String> labels(List<Evidence> ev) {
@@ -164,6 +167,6 @@ class NewstartRepairApprovalRagMySqlTest {
     }
 
     private static List<String> titles(ResearchPack pack) {
-        return NewStartAiChatService.orderedEvidence(pack).stream().map(Evidence::getTitle).toList();
+        return combined(pack).stream().map(Evidence::getTitle).toList();
     }
 }

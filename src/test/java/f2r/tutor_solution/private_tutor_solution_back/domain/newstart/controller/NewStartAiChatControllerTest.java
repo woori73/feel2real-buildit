@@ -155,4 +155,45 @@ class NewStartAiChatControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ok"));
   }
+
+  @Test
+  void chatMarksStageCaseAndOfficialEndpointMarksStageOfficial() throws Exception {
+    when(newStartAiChatService.ask(anyString())).thenReturn(
+        new NewStartAiChatService.NewStartAiAnswer(true, "1차", null, "m", java.util.List.of()));
+    when(newStartAiChatService.askOfficial(anyString(), anyString())).thenReturn(
+        new NewStartAiChatService.NewStartAiAnswer(true, "2차", null, "m",
+            java.util.List.of(new NewStartAiChatService.AnswerSource("공식 자료", "공식", "https://x"))));
+
+    mockMvc.perform(post("/api/newstart/ai/chat").cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"질문\"}"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("CASE")).andExpect(jsonPath("$.answer").value("1차"));
+
+    mockMvc.perform(post("/api/newstart/ai/chat/official").cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"질문\",\"step1Answer\":\"1차\"}"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("OFFICIAL"))
+        .andExpect(jsonPath("$.answer").value("2차")).andExpect(jsonPath("$.sources[0].kind").value("공식 자료"));
+
+    verify(newStartAiChatService).askOfficial("질문", "1차");
+  }
+
+  @Test
+  void officialStepRequiresLoginAndGrantAndFailureIsStepScoped() throws Exception {
+    mockMvc.perform(post("/api/newstart/ai/chat/official").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"질문\",\"step1Answer\":\"1차\"}"))
+        .andExpect(status().is4xxClientError());
+
+    when(grantRepository.existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class))).thenReturn(false);
+    mockMvc.perform(post("/api/newstart/ai/chat/official").cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"질문\",\"step1Answer\":\"1차\"}"))
+        .andExpect(status().isForbidden());
+    verify(newStartAiChatService, never()).askOfficial(any(), any());
+
+    when(grantRepository.existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class))).thenReturn(true);
+    when(newStartAiChatService.askOfficial(any(), any())).thenReturn(
+        NewStartAiChatService.NewStartAiAnswer.failed("AI 서비스 응답이 지연되고 있습니다."));
+    mockMvc.perform(post("/api/newstart/ai/chat/official").cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"질문\",\"step1Answer\":\"1차\"}"))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value("error"))
+        .andExpect(jsonPath("$.stage").doesNotExist());
+  }
 }
