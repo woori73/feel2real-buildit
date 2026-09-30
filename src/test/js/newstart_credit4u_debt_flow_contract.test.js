@@ -49,7 +49,7 @@ test('기존 #ns-status-panel이 SOURCE OF TRUTH — 6개 체크·메모·단계
   ['ns-flag-credit4u', 'ns-flag-creditor', 'ns-flag-loan', 'ns-flag-overdue',
     'ns-flag-guarantee', 'ns-flag-creditor-change'].forEach((id) => assert.ok(home.includes('id="' + id + '"'), id));
   assert.match(home, /id="ns-debt-save"[^>]*>내 채무상황 저장<\/button>/);
-  assert.match(home, /id="ns-debt-ask-agent">내 채무상황으로 지피지기에게 물어보기<\/button>/);
+  assert.match(home, /id="ns-debt-ask-agent">내 채무상황으로 지피지기 Agent에게 물어보기<\/button>/);
   assert.doesNotMatch(home, /서버에 저장되지 않습니다|메모 저장 — 준비 중/);
 });
 
