@@ -174,12 +174,18 @@ public class EasyReportService {
   /**
    * 장부 합계 — 자금 이동(EASYSHOP_FUNDS)은 P&L에서 제외하고,
    * 비용 환불 역분개는 비용에서 차감한다 (누락·절댓값 변환 없음).
+   * 차입금·계좌이체 등 세무상 P&L이 아닌 흐름(NOT_INCOME/NOT_EXPENSE)도
+   * 합계에서 뺀다 (대출 입금의 수익 왜곡 방지 — 목록에는 보인다).
    */
   private LedgerTotals ledgerTotals(Long businessId, LocalDate from, LocalDate to) {
     long income = 0L;
     long expense = 0L;
     for (EasyTransaction txn : scopedTxns(businessId, from, to)) {
       if (EasyShopImportService.SOURCE_KIND_FUNDS.equals(txn.getSourceKind())) {
+        continue;
+      }
+      if (txn.getTaxClassification() != null
+          && txn.getTaxClassification().excludesProfit(txn.getDirection())) {
         continue;
       }
       if (txn.getDirection() == EasyTxnDirection.INCOME && !txn.isReversal()) {

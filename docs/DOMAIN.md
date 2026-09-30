@@ -1280,7 +1280,9 @@ V973~V975 불변 — 신규 테이블 + `easy_import_rows` NULL 확장(`external
 
 V973~V1000 불변 — 신규 테이블 + `easy_accounts` ENUM(EQUITY)·seed 13건 + `easy_transactions.tax_class` NULL 컬럼만.
 신규 정상분개는 실계정 쌍으로만 전기한다 (SETTLEMENT 신규 사용 금지 — 기존 분개는 불변 보존).
-미분류 은행거래는 자동 posting 금지 (REVIEW_REQUIRED). 세무구분은 회계분류와 분리 저장하며 세법 확정 전 단정 금지.
+미분류 은행거래도 관리자 확정 시 REVIEW 표시로 장부에 적재한다 (HOLD 금지 — EASY 운영 원칙).
+단, 수집→자동확정(auto-confirm)은 여전히 금지이며 적재는 관리자 confirm 경계 뒤에서만 일어난다.
+세무구분은 회계분류와 분리 저장하며 세법 확정 전 단정 금지.
 
 | table | key columns |
 |---|---|
