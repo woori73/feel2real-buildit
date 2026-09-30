@@ -1,0 +1,26 @@
+[RAW capture — 원문 보존]
+SOURCE_COMMUNITY: NEWSTART_BORROWER_CAFE (clubId 31312978, newhopero)
+BOARD: 초보가이드
+ARTICLE_ID: 3401
+TITLE: 부동산 후순위 담보대출 처리법
+AUTHOR: 지피지기자산 (카페매니저)
+WRITTEN_AT: 2026.01.04. 11:57
+VIEWS: 209 | COMMENTS: 2 | LIKES: 3
+SOURCE_URL: https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=3401
+COLLECTED_AT: 2026-09-30 (Qoder browser-use, logged-in iframe /ca-fe/cafes/31312978/articles/3401)
+EXTRACTION_METHOD: innerText capture (full 853자)
+SOURCE_TYPE: OPERATOR_KNOWLEDGE (지정수집)
+
+--- BEGIN BODY ---
+1. 부실우려때 부동산 후순위 담보대출을 중개형 채무로 놓으시면 부실우려 미납실효후 부실차주 갈때 자동으로 넘어옵니다.
+
+2. 90일 연체하고 바로 부실차주 오신 경우는 부실차주 신청이후 신복위 방문하셔서 중개형 채무조정 받으시면 됩니다.
+
+3. 부실우려때 부동산 후순위 담보대출을 포함시키지 않은 경우:
+새출발기금 신청 시 주택담보대출(주담대)은 자동으로 포함되지 않습니다.
+추가 요청 필수: 차주 접수를 진행하면서 새출발 콜센터에 직접 전화하여 주담대도 함께 접수하겠다고 의사를 밝혀야 합니다. 다만, 부살차주 이후 후순위 캠코 담보 접수는 원채권사가 부동의시 진행이 중단 되고 원채권사에 정상 상환 해야 합니다. [오타 '부살차주'/'원채권사' 원문 그대로]
+--- END BODY ---
+
+--- COMMENTS (2) ---
+[1] 뜨아 | 2026.01.04. 13:52 | (본문 텍스트 렌더 없음 — 좋아요/짧은 댓글 추정, PARTIAL)
+[2] SKYTKD | 2026.01.04. 14:43 | (본문 텍스트 렌더 없음, PARTIAL)

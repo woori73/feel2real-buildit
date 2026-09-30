@@ -1,0 +1,15 @@
+[RAW] SOURCE_COMMUNITY: NEWSTART_BORROWER_CAFE | BOARD: 자유게시판 | ARTICLE_ID: 6040
+TITLE: 드디어 부실차주, 새출발 기금 신청 완료! | AUTHOR: 깐돌이 (감사멤버) | WRITTEN_AT: 2026.09.28. 20:45 | VIEWS:56 COMMENTS:2
+SOURCE_URL: https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=6040
+COLLECTED_AT: 2026-09-30 | METHOD: Qoder browser-use iframe innerText (full)
+SOURCE_TYPE: CAFE_CASE (신청완료 후기 — 정보글 등급 낮음, 스레드 추적 대상)
+
+--- BODY ---
+전자책 보고 여기까지 왔네요!
+온라인으로 신청 했습니다
+무사히 다음 단계로 넘어가면 좋겠네요
+모두 감사합니다
+--- END ---
+--- COMMENTS ---
+[1] 러브시아맘 | 2026.09.29. 23:05 | "전자책이 궁금해요??"
+[2] 김유맘 | 2026.09.30. 00:37 | "축하드려요"

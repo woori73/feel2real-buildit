@@ -1,0 +1,28 @@
+[RAW capture — 원문 보존]
+SOURCE_COMMUNITY: NEWSTART_BORROWER_CAFE (clubId 31312978, newhopero)
+BOARD: 초보가이드
+ARTICLE_ID: 4078
+TITLE: 부실우려 신청 후기 (감사회원 땜통욱님)
+AUTHOR: 지피지기자산 (카페매니저) — 회원 땜통욱의 후기 전재글
+WRITTEN_AT: 2026.02.07. 18:26
+VIEWS: 201 | COMMENTS: 4 | LIKES: 3
+SOURCE_URL: https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=4078
+COLLECTED_AT: 2026-09-30 (Qoder browser-use, logged-in iframe)
+EXTRACTION_METHOD: innerText capture — 본문 없음, 이미지 4장으로 구성
+STATUS: PARTIAL — IMAGE_REQUIRED (본문 4 PNG, OCR 미수행: 세션 정책상 외부 CDN 다운로드 차단됨)
+SOURCE_TYPE: OPERATOR_KNOWLEDGE/CASE 후기 (지정수집)
+
+--- ARTICLE IMAGES (원문 대체) ---
+1. https://cafeptthumb-phinf.pstatic.net/MjAyNjAyMDdfMTE1/MDAxNzcwNDU2MzM3NjA0.B2KLkn4_xZqmhH1lvTtjXYcNMkwhumG_NDPpOB3vO38g.0Z7gQj49_00-rbpFJ1ys-v9BTBVpdO_WdQdPOAu4gX0g.PNG/
+2. https://cafeptthumb-phinf.pstatic.net/MjAyNjAyMDdfOSAg/MDAxNzcwNDU2MzQ3MTY4.ySOEzV5WnjPzZlKaW6Y90XQZ96FhZ0DsN9h0SZubJBog.VUr44N959R77gfQVw0DB46dYyAWF_Ynv2mr0ltBqTwwg.PNG/
+3. https://cafeptthumb-phinf.pstatic.net/MjAyNjAyMDdfMTMy/MDAxNzcwNDU2MzUyNjk0.VFcWOwCeeZcFSufNDHcBkBkL50F5diJdtrwboWB96d8g.cJFq8Kxr03n4MasTP0ZOCYrnc3u2lNEZWM1_LIDnwSYg.PNG/
+4. https://cafeptthumb-phinf.pstatic.net/MjAyNjAyMDdfNTQg/MDAxNzcwNDU2MzU4MDcw.kHioPaQDqmQ_aiA_LQ5dCKPtNVjkmTVOQw1Io9qZpqkg.CxsKMisxRoZCGVU7lBGo4sDfqNR6phcypXUpzl3pBaIg.PNG/
+
+--- TEXT BODY ---
+(없음 — 본문 전체가 이미지)
+
+--- COMMENTS (4) ---
+[1] 뜨아 | 2026.02.07. 21:10 | (본문 텍스트 렌더 없음, PARTIAL)
+[2] SKYTKD | 2026.02.08. 20:45 | "수고하셨습니다 응원해요~^^"
+[3] 최영재4489 | 2026.02.10. 21:12 | "수고하셨습니다. 진행사항 상세히 올려주셔서 감사합니다." | MEMBER 후속 관찰
+[4] 모카짱짱 | 2026.02.17. 12:57 | "어디지점이에요? 전 상담사가 너무 딱딱해서.. 무섭더라고요. 지점 바꿔서 상담해도 될까싶어서." | MEMBER_CASE(질문)

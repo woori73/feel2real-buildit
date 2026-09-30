@@ -1,0 +1,11 @@
+[RAW] SOURCE_COMMUNITY: NEWSTART_BORROWER_CAFE | BOARD: 자유게시판 | ARTICLE_ID: 6044
+TITLE: 안녕하세요 부실차주 준비중입니다 | AUTHOR: 다시해보자 (일반멤버) | WRITTEN_AT: 2026.09.29. 12:31 | VIEWS:18 COMMENTS:1
+SOURCE_URL: https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=6044
+COLLECTED_AT: 2026-09-30 | METHOD: Qoder browser-use iframe innerText (full)
+SOURCE_TYPE: CAFE_CASE(경미 — 연체 60일차 준비 상태事实만 보유)
+
+--- BODY ---
+연체 60일차 부실차주 신청하고자 여기저기 정보와 경험담을 얻고 있습니다 잘 부탁드립니다
+--- END ---
+--- COMMENTS ---
+[1] 러브시아맘 | 2026.09.29. 23:05 | "네 저도 준비중입니다 잘 부탁드립니다"
