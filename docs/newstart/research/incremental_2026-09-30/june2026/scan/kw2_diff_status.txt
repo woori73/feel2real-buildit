@@ -1,0 +1,9 @@
+# KW2 FOUND(192) vs FILE(191) 차이 판정 — 2026-09-30 ACADEMY
+# 방식: 재수집/재스크롤 없음. 기존 dump(kw2_b38_june_rows.txt, k2u.txt, union_raw/unique) 정적 분석.
+#   1) preview 개행 손실: 아님 — 총196행 = 주석4 + 데이터191 + trailing1. 고아 조각행 0건.
+#   2) parser 문제: 아님 — 데이터 행 전부 4/5필드 정상, 일자 내림차순 위반 0건.
+#   3) 파일 내 duplicate: 아님 — date|title|cmt|author 및 date|title 중복 0건.
+#   4) 남은 후보: chunk1 경계(행49/50, 06.24→06.23 전환점)에서의 쓰기기록 누락 1건
+#      또는 검색레벨 duplicate(ta=ARTICLE_COMMENT에서 동일 글의 댓글 2건 매칭 카운트).
+#      판정에는 articleId 필요 → 현재 브라우저 세션 부적합(wedged)으로 확인 보류.
+# STATUS: UNRESOLVED / NON-BLOCKING. 파일 191행이 SOURCE OF TRUTH. 재수집 금지 유지.
