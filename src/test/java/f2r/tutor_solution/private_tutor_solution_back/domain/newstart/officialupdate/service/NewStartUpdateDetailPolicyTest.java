@@ -52,9 +52,25 @@ class NewStartUpdateDetailPolicyTest {
 
   @Test
   void sourceTypesWithoutDocumentedHostsHideLinkEntirely() {
-    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.FSS, "https://www.fss.or.kr/a"))
-        .isNull();
     assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.PUBLIC_AGENCY, "https://example.go.kr/a"))
+        .isNull();
+  }
+
+  @Test
+  void documentedNewSourceTypesExposeVerifiedOfficialLinks() {
+    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.FSS, "https://www.fss.or.kr/a"))
+        .isEqualTo("https://www.fss.or.kr/a");
+    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.FSS, "https://fines.fss.or.kr/a"))
+        .isEqualTo("https://fines.fss.or.kr/a");
+    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.CREDIT4U, "https://www.credit4u.or.kr/a"))
+        .isEqualTo("https://www.credit4u.or.kr/a");
+    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.COURT, "https://ecfs.scourt.go.kr/a"))
+        .isEqualTo("https://ecfs.scourt.go.kr/a");
+    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.HOPE_RETURN_PACKAGE,
+        "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_1"))
+        .isEqualTo("https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_1");
+    // 크로스 출처 URL은 여전히 노출하지 않는다.
+    assertThat(OfficialSourceLinkPolicy.verifiedUrl(SourceType.COURT, "https://www.fss.or.kr/a"))
         .isNull();
   }
 
@@ -104,6 +120,20 @@ class NewStartUpdateDetailPolicyTest {
   void agencyNamesComeFromRegisteredSourceTypesOnly() {
     NewStartOfficialUpdate fund = faq("t", null, "s");
     assertThat(NewStartOfficialUpdateDetailResponse.from(fund, null).agencyName()).isEqualTo("새출발기금");
+    assertThat(agencyNameOf(SourceType.FSS)).isEqualTo("금융감독원");
+    assertThat(agencyNameOf(SourceType.CREDIT4U)).isEqualTo("Credit4U");
+    assertThat(agencyNameOf(SourceType.COURT)).isEqualTo("법원");
+    assertThat(agencyNameOf(SourceType.CCRS)).isEqualTo("신용회복위원회");
+    assertThat(agencyNameOf(SourceType.HOPE_RETURN_PACKAGE)).isEqualTo("희망리턴패키지");
+    assertThat(agencyNameOf(SourceType.PUBLIC_AGENCY)).isNull();
+  }
+
+  private static String agencyNameOf(SourceType sourceType) {
+    NewStartOfficialUpdate update = NewStartOfficialUpdate.review(
+        sourceType, "출처", "제목", "요약 본문", null,
+        "https://www.example.go.kr/a", "DOC-1", null, null, null, Category.NOTICE,
+        RelevancePriority.NORMAL, "DOC:" + sourceType.name() + ":doc-1", LocalDateTime.now());
+    return NewStartOfficialUpdateDetailResponse.from(update, null).agencyName();
   }
 
   @Test

@@ -16,17 +16,27 @@ import java.util.Set;
  */
 public final class OfficialSourceLinkPolicy {
 
-  /** Discovery 어댑터에서 실제 사용하는 공식 호스트만 허용한다 (docs가 아닌 코드 근거). */
+  /** Discovery 어댑터 또는 운영 검증된 수집 원본에서 실제 사용하는 공식 호스트만 허용한다 (docs가 아닌 코드 근거). */
   private static final Map<SourceType, Set<String>> ALLOWED_HOSTS = Map.of(
       SourceType.NEWSTART_FUND, Set.of("www.newstartfund.or.kr"),
-      SourceType.CCRS, Set.of("www.ccrs.or.kr"),
+      SourceType.CCRS, Set.of("www.ccrs.or.kr", "cyber.ccrs.or.kr"),
       SourceType.FSC, Set.of("www.fsc.go.kr"),
-      SourceType.HOPE_RETURN_PACKAGE, Set.of("sbiz24.kr", "www.sbiz24.kr"));
+      SourceType.HOPE_RETURN_PACKAGE, Set.of("sbiz24.kr", "www.sbiz24.kr",
+          "sbiz.or.kr", "www.sbiz.or.kr", "hope.sbiz.or.kr",
+          "bizinfo.go.kr", "www.bizinfo.go.kr"),
+      SourceType.FSS, Set.of("www.fss.or.kr", "fines.fss.or.kr"),
+      SourceType.CREDIT4U, Set.of("www.credit4u.or.kr"),
+      SourceType.COURT, Set.of("www.scourt.go.kr", "file.scourt.go.kr", "ecfs.scourt.go.kr"));
 
   private static final Map<String, String> BARE_TO_CANONICAL = Map.of(
       "newstartfund.or.kr", "www.newstartfund.or.kr",
       "ccrs.or.kr", "www.ccrs.or.kr",
-      "fsc.go.kr", "www.fsc.go.kr");
+      "fsc.go.kr", "www.fsc.go.kr",
+      "fss.or.kr", "www.fss.or.kr",
+      "credit4u.or.kr", "www.credit4u.or.kr",
+      "scourt.go.kr", "www.scourt.go.kr",
+      "sbiz.or.kr", "www.sbiz.or.kr",
+      "bizinfo.go.kr", "www.bizinfo.go.kr");
 
   private OfficialSourceLinkPolicy() {
   }
