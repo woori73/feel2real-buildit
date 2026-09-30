@@ -134,8 +134,8 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
-  @DisplayName("given 공식 자료와 카페 사례가 모두 있을 when ask then 우선순위가 공식 > 운영자료 > 사례이고 카페 라벨이 보존된다")
-  void ask_ordersOfficialBeforeCafeCases() {
+  @DisplayName("given 공식 자료와 카페 사례가 모두 있을 when ask then 실제 사례·운영자료가 앞, 공식 자료가 뒤(확인·보완)이고 카페 라벨이 보존된다 (운영원칙 §2)")
+  void ask_ordersCasesBeforeOfficial() {
     FakeLlmTransport client = new FakeLlmTransport();
     NewStartLlmClient llm = llmClient(client);
     FakeResearchService research = new FakeResearchService();
@@ -155,9 +155,11 @@ class NewStartAiChatServiceTest {
     int official = sys.indexOf("[공식 자료]");
     int ebook = sys.indexOf("[운영자·전자책 자료]");
     int cafe = sys.indexOf("[부실차주 카페 사례]");
-    assertThat(official).isGreaterThan(-1);
-    assertThat(ebook).isGreaterThan(official);
+    assertThat(ebook).isGreaterThan(-1);
     assertThat(cafe).isGreaterThan(ebook);
+    assertThat(official).isGreaterThan(cafe);
+    assertThat(sys).contains("사례 근거가 있는데 이를 무시하고 공식 규정만 답하지 않는다");
+    assertThat(sys).contains("정부기관 설명부터 길게 시작하지 않는다");
     assertThat(sys).contains("카페 경험담이나 근거 없는 자료를 공식 정책처럼 말하지 않는다");
   }
 
@@ -333,5 +335,51 @@ class NewStartAiChatServiceTest {
 
     assertThat(client.capturedPrompt).isEqualTo("질문");
     assertThat(research.capturedQuestion).isEqualTo("질문");
+  }
+
+  @Test
+  @DisplayName("given 사례 근거가 컨텍스트를 채울 만큼 많을 when 조립 then 사례가 앞이고 공식 확인 근거는 최소 3건 남는다")
+  void orderedEvidence_keepsOfficialConfirmationBehindManyCases() {
+    List<Evidence> cases = new java.util.ArrayList<>();
+    for (int i = 0; i < 12; i++) {
+      cases.add(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "c" + i, "사례 " + i, null, "본문"));
+    }
+    List<Evidence> official = new java.util.ArrayList<>();
+    for (int i = 0; i < 6; i++) {
+      official.add(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "o" + i, "공식 " + i, null, "안내"));
+    }
+    ResearchPack pack = ResearchPack.builder().question("q").internalHits(List.of()).officialHits(official)
+        .ccrsHits(List.of()).borrowerHits(cases).extraAgencyHits(List.of()).gapNotes(List.of())
+        .externalSearched(false).build();
+
+    List<Evidence> ordered = NewStartAiChatService.orderedEvidence(pack);
+
+    assertThat(ordered).hasSize(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
+    assertThat(ordered.get(0).getSourceClass()).isEqualTo(SourceClass.BORROWER_CAFE_CASE);
+    assertThat(ordered.stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_RULE).count())
+        .isGreaterThanOrEqualTo(NewStartAiChatService.MIN_OFFICIAL_EVIDENCE);
+    assertThat(ordered.get(ordered.size() - 1).getSourceClass()).isEqualTo(SourceClass.OFFICIAL_RULE);
+  }
+
+  @Test
+  @DisplayName("given 모델이 만든 [KB2 공식] 인용표와 근거에 없는 전화번호 when sanitize then 인용표·미근거 번호는 제거, 근거 속 번호는 유지")
+  void sanitizeAnswer_removesInventedCitationsAndUngroundedPhones() {
+    String ctx = "근거 요지: 신용회복위원회 FAX 02-2169-7028";
+    String raw = "공식 안내에 따르면 가능합니다 [KB2 공식]. 문의는 02-1234-5678 또는 02-2169-7028 로 하세요.";
+
+    String out = NewStartAiChatService.sanitizeAnswer(raw, ctx);
+
+    assertThat(out).doesNotContain("[KB2");
+    assertThat(out).doesNotContain("02-1234-5678");
+    assertThat(out).contains("02-2169-7028");
+  }
+
+  @Test
+  @DisplayName("given 근거 note에 작성 시점 when 컨텍스트 조립 then 시점이 노출된다")
+  void buildEvidenceContext_showsTime() {
+    Evidence e = Evidence.builder().stepNo(3).sourceClass(SourceClass.BORROWER_CAFE_CASE).refType(RefType.EMPIRICAL_CASE)
+        .refId("1").title("사례").excerpt("내용").note("카페 실증 사례, 작성 2026-08-11").build();
+
+    assertThat(NewStartAiChatService.buildEvidenceContext(List.of(e))).contains("시점: 2026-08-11");
   }
 }

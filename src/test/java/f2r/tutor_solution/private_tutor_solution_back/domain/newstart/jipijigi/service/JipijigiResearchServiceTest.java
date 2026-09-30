@@ -259,4 +259,34 @@ class JipijigiResearchServiceTest {
     private static <T> Page<T> emptyPage() {
         return new PageImpl<>(List.of());
     }
+
+    @Test
+    @DisplayName("given 조사·어미가 붙은 실제 질문 when keywordsOf then 조사/불용어 제거 + 질문 의도 동의어가 붙는다")
+    void keywordsOf_stripsParticlesAndExpandsIntent() {
+        JipijigiResearchService service = new JipijigiResearchService(null, null, null, null);
+
+        List<String> a = service.keywordsOf("후순위 담보대출에서 기한이익상실 통보를 받았는데 어떻게 해야 하나?");
+        assertThat(a).contains("후순위", "기한이익상실", "통보", "담보").doesNotContain("어떻게", "해야", "하나", "통보를");
+
+        List<String> c = service.keywordsOf("차량담보대출이 있는데 새출발기금 신청하면 차를 계속 탈 수 있나?");
+        assertThat(c).contains("차량", "자동차", "새출발기금");
+
+        List<String> d = service.keywordsOf("연체 중인데 채권사에서 계속 전화가 온다. 어떻게 대응했나?");
+        assertThat(d).contains("추심", "채권사", "연체");
+
+        List<String> f = service.keywordsOf("장기연체가 등록됐는지 어디서 확인하나?");
+        assertThat(f).contains("Credit4U", "장기연체");
+    }
+
+    @Test
+    @DisplayName("given 긴 사례 본문 when caseExcerpt then 질문 키워드가 몰린 구간을 발췌한다(앞 300자 고정 아님)")
+    void caseExcerpt_picksKeywordDenseWindow() {
+        String filler = "가입인사 드립니다 잘 부탁드립니다. ".repeat(60);
+        String body = filler + "후순위 담보대출 기한이익상실 통보를 받고 신복위에 상담했더니 임시안으로 이자만 납부했습니다." + filler;
+
+        String ex = JipijigiResearchService.caseExcerpt(null, body, List.of("후순위", "기한이익상실", "임시안"));
+
+        assertThat(ex).contains("기한이익상실").contains("임시안");
+        assertThat(ex.length()).isLessThanOrEqualTo(JipijigiResearchService.CASE_EXCERPT_CHARS + 2);
+    }
 }

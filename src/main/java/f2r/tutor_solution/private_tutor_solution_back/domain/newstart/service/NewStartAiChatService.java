@@ -44,8 +44,8 @@ public class NewStartAiChatService {
   static final int MAX_CONTEXT_EVIDENCE = 12;
   /** 공식 자료 상한. 이 값이 없으면 공식 8건+내부 공식 판정분이 12개를 모두 채워 사례가 못 들어온다. */
   static final int MAX_OFFICIAL_EVIDENCE = 8;
-  /** 비공식 근거(운영·전자책·축적 답변·카페/실증 사례) 보장 슬롯 하한. */
-  static final int MIN_SUPPORT_EVIDENCE = 4;
+  /** 공식 근거가 있을 때 확인·보완용으로 남기는 최소 건수(사례 근거가 컨텍스트를 다 채워도 유지). */
+  static final int MIN_OFFICIAL_EVIDENCE = 3;
   /** 답변에 붙이는 출처 상한. */
   static final int MAX_SOURCES = 8;
   /** 근거 1건 요약 상한. */
@@ -70,7 +70,19 @@ public class NewStartAiChatService {
           + " 공식 자료는 '공식 안내에 따르면', 카페 회원 경험은 '카페 사례에서는'처럼 출처 성격을 명시해 구분한다."
           + " 답변 본문에는 '[KB1]', '[KB2 공식]'처럼 대괄호 번호·키워드 인용표를 쓰지 말고,"
           + " 근거는 위와 같이 출처 성격만 자연어로 밝힌다."
-          + " 근거에 없는 내용은 근거가 없다고 밝히고 공식 기관 안내 확인을 권유한다.";
+          + " 근거에 없는 내용은 근거가 없다고 밝히고 공식 기관 안내 확인을 권유한다."
+          + " 운영자 경험은 '운영자 경험에서는', 전자책은 '전자책에서는'처럼 밝힌다."
+          + " [답변 순서] 정부기관 설명부터 길게 시작하지 않는다. 먼저 질문자가 처한 상황을 한두 문장으로 짚고,"
+          + " 근거 목록에서 전자책·운영자 경험·카페/상담 사례 중 질문과 직접 관련된 것을 찾아 그 사례에서 실제로 어떻게 진행됐고"
+          + " 어떻게 대응했는지를 먼저 설명한다. 이어서 지금 확인하거나 할 수 있는 다음 행동을 알려주고,"
+          + " 그 뒤에 '공식 자료' 근거로 현재 기준을 확인·보완한다. 사례와 공식 기준이 다르면 어느 시점의 사례인지와 차이를 둘 다 보여준다."
+          + " 근거 목록은 앞쪽이 질문과 가장 직접적인 사례·경험이고 뒤쪽 '공식 자료'는 확인·보완용이다."
+          + " 사례 근거가 있는데 이를 무시하고 공식 규정만 답하지 않는다. 사례가 질문과 직접 관련이 없으면 억지로 끼우지 말고"
+          + " 비슷한 사례를 찾지 못했다고 밝힌다."
+          + " 단일 사례는 '이 사례에서는', '당시에는', '일부 사례에서 관찰'처럼 수준을 밝히고 모든 경우의 규칙으로 단정하지 않는다."
+          + " 카페 글 속 추정·주장은 확정 사실로 쓰지 않는다. 근거에 작성 시점이 있으면 시점을 함께 말한다."
+          + " 근거에 없는 전화번호·URL·금액·기한·날짜를 만들어내지 않는다."
+          + " 재산 은닉, 허위 거래, 가장행위, 심사 회피처럼 부적절한 행동의 실행 방법은 사례에 있어도 안내하지 않고 위험할 수 있다고만 알린다.";
 
   private final NewStartLlmClient newStartLlmClient;
   private final JipijigiResearchService researchService;
@@ -123,7 +135,32 @@ public class NewStartAiChatService {
     if (!completion.ok()) {
       return NewStartAiAnswer.failed(completion.errorMessage(), toSources(ordered));
     }
-    return new NewStartAiAnswer(true, completion.text(), null, completion.model(), toSources(ordered));
+    return new NewStartAiAnswer(true, sanitizeAnswer(completion.text(), evidenceContext), null, completion.model(),
+        toSources(ordered));
+  }
+
+  private static final java.util.regex.Pattern KB_CITATION =
+      java.util.regex.Pattern.compile("\\s*\\[\\s*KB\\s*\\d*[^\\]\\n]{0,20}\\]");
+  private static final java.util.regex.Pattern PHONE =
+      java.util.regex.Pattern.compile("(?<![\\d-])(0\\d{1,2}-\\d{3,4}-\\d{4}|1[5-9]\\d{2}-\\d{4})(?![\\d-])");
+
+  /**
+   * 모델 출력 결정적 보정(프롬프트 금지 지시가 어겨질 때의 안전망):
+   * 모델이 임의로 만든 [KB2 공식]류 인용표를 제거하고, 근거 컨텍스트에 없는 전화번호는 지운다(hallucination 방지).
+   * 근거에 실제로 있는 번호(예: 기관 대표번호)는 그대로 둔다.
+   */
+  static String sanitizeAnswer(String text, String evidenceContext) {
+    if (text == null) return "";
+    String out = KB_CITATION.matcher(text).replaceAll("");
+    String ctx = evidenceContext == null ? "" : evidenceContext;
+    java.util.regex.Matcher m = PHONE.matcher(out);
+    StringBuilder sb = new StringBuilder();
+    while (m.find()) {
+      m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(
+          ctx.contains(m.group(1)) ? m.group(1) : "(번호는 해당 기관 공식 사이트에서 확인)"));
+    }
+    m.appendTail(sb);
+    return sb.toString();
   }
 
   private static long ms(long nanos) {
@@ -140,28 +177,26 @@ public class NewStartAiChatService {
   }
 
   /**
-   * 근거 우선순위 조립: 1) 공식 자료 2) 승인 운영 지식/전자책 3) 승인 축적 답변 4) 카페·실증 사례.
-   * 같은 (refType, refId) 근거는 먼저 온 우선순위로 1회만 실린다.
+   * 근거 조립 (운영원칙 §2: 실제 사례·경험 먼저 → 현재 공식자료로 뒤에서 확인·보완):
+   * 1) 승인 운영 지식/전자책 2) 승인 카페 지식 3) 승인 축적 답변 4) 카페·실증 사례 5) 공식 자료(확인·보완).
+   * 같은 (refType, refId) 근거는 먼저 온 우선순위로 1회만 실린다. 출처 라벨(provenance)은 유지하며,
+   * 공식 자료가 사례 근거를 밀어내지도, 사례가 공식으로 승격되지도 않는다.
    *
-   * <p>공식 자료는 {@value #MAX_OFFICIAL_EVIDENCE}건으로 막고, 비공식 근거(운영·전자책·축적 답변·
-   * 카페/실증 사례)에는 최소 {@value #MIN_SUPPORT_EVIDENCE}슬롯을 보장한다. 공식이 12개를 채우면
-   * 후순위 담보·임시안·납부 같은 카페 사례가 컨텍스트에서 통째로 사라지기 때문이다(2026-09-28 LIVE QA 실측).
-   * 보장 슬롯은 컨텍스트뿐 아니라 답변에 보이는 출처 {@value #MAX_SOURCES}건 앞부분에서도 확보한다.
+   * <p>공식 자료는 {@value #MAX_OFFICIAL_EVIDENCE}건으로 막고, 공식 근거가 있으면 최소 {@value #MIN_OFFICIAL_EVIDENCE}건은
+   * 확인·보완용으로 컨텍스트와 출처 {@value #MAX_SOURCES}건 안에 남긴다(사례가 12칸을 다 채워도 공식 확인이 사라지지 않게).
    */
   static List<Evidence> orderedEvidence(ResearchPack pack) {
     List<Evidence> official = new ArrayList<>();
     Set<String> officialSeen = new LinkedHashSet<>();
-    // 1. 공식: STEP4 공식 검증_hits + 내부 판정된 OFFICIAL_RULE
     addAll(official, officialSeen, pack.getOfficialHits());
     addAll(official, officialSeen, filterClass(pack.getInternalHits(), SourceClass.OFFICIAL_RULE));
 
     List<Evidence> supporting = new ArrayList<>();
     Set<String> supportingSeen = new LinkedHashSet<>();
-    // 2. 승인 운영 지식/전자책
+    // 1. 승인 운영 지식/전자책
     addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.OPERATOR_MATERIAL));
-    // 2b. ADMIN 승인을 거쳐 ACTIVE된 카페 지식 항목 — 원시 실증 조회(borrowerHits)보다 앞선
-    // 커레이션 등급. 뒤에 두면 운영자 자료+실증 사례에 밀려 출처 8건에서 항상 탈락한다
-    // (2026-09-30 GOLDEN-1 실측: ACTIVE된 2026 보완요구 사례가 sources에서 밀려나 답변 미노출).
+    // 2. ADMIN 승인을 거쳐 ACTIVE된 카페 지식 항목 — 원시 실증 조회(borrowerHits)보다 앞선 커레이션 등급
+    // (2026-09-30 GOLDEN-1: 뒤에 두면 운영자 자료+실증 사례에 밀려 출처에서 항상 탈락).
     addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.BORROWER_CAFE_CASE));
     addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.CCRS_CAFE_CASE));
     // 3. 운영자 승인 축적 답변 세션
@@ -171,27 +206,13 @@ public class NewStartAiChatService {
     addAll(supporting, supportingSeen, pack.getBorrowerHits());
     addAll(supporting, supportingSeen, pack.getCcrsHits());
 
-    int supportSlots = Math.min(MIN_SUPPORT_EVIDENCE, supporting.size());
-    int contextOfficialSlots = Math.min(Math.min(official.size(), MAX_OFFICIAL_EVIDENCE),
-        MAX_CONTEXT_EVIDENCE - supportSlots);
-    // 출처는 ordered의 앞 MAX_SOURCES건이다. 공식이 그 앞을 다 채우면 회원 화면에 뜹니다.
-    // 그래서 출처 상한 안에서도 사례 슬롯을 먼저 확보하고 공식 잔여로만 채운다.
-    int sourceOfficialSlots = Math.min(Math.min(official.size(), MAX_SOURCES - supportSlots), contextOfficialSlots);
+    int officialReserve = Math.min(official.size(), MIN_OFFICIAL_EVIDENCE);
+    int supportTake = Math.min(supporting.size(), MAX_CONTEXT_EVIDENCE - officialReserve);
+    int officialTake = Math.min(Math.min(official.size(), MAX_OFFICIAL_EVIDENCE), MAX_CONTEXT_EVIDENCE - supportTake);
 
-    List<Evidence> ordered = new ArrayList<>();
-    ordered.addAll(official.subList(0, sourceOfficialSlots));
-    ordered.addAll(supporting.subList(0, supportSlots));
-    // 남은 컨텍스트 슬롯은 비공식 잔여 → 공식 잔여 순으로 메운다(사례를 뒤로 밀지 않는다).
-    fillRemaining(ordered, supporting, supportSlots, supporting.size());
-    fillRemaining(ordered, official, sourceOfficialSlots, contextOfficialSlots);
+    List<Evidence> ordered = new ArrayList<>(supporting.subList(0, supportTake));
+    ordered.addAll(official.subList(0, officialTake));
     return List.copyOf(ordered);
-  }
-
-  private static void fillRemaining(List<Evidence> ordered, List<Evidence> pool, int alreadyTaken, int poolCap) {
-    int taken = alreadyTaken;
-    for (int i = alreadyTaken; i < pool.size() && ordered.size() < MAX_CONTEXT_EVIDENCE && taken < poolCap; i++, taken++) {
-      ordered.add(pool.get(i));
-    }
   }
 
   private static void addAll(List<Evidence> out, Set<String> seen, List<Evidence> in) {
@@ -216,16 +237,29 @@ public class NewStartAiChatService {
 
   static String buildEvidenceContext(List<Evidence> ordered) {
     StringBuilder sb = new StringBuilder();
+    sb.append("(앞쪽=전자책·운영자 경험·카페/실증 사례, 뒤쪽 공식 자료=현재 기준 확인·보완용. 각 자료의 성격 라벨을 답변에서도 구분한다.)\n");
     int i = 1;
     for (Evidence e : ordered) {
       sb.append(i++).append(". [").append(labelOf(e.getSourceClass())).append("] ")
           .append(e.getTitle().replace("\n", " ")).append("\n");
+      String when = timeOf(e.getNote());
+      if (when != null) sb.append("   시점: ").append(when).append("\n");
       String excerpt = e.getExcerpt() == null ? "" : e.getExcerpt().replace("\n", " ");
       if (excerpt.length() > MAX_EVIDENCE_CHARS) excerpt = excerpt.substring(0, MAX_EVIDENCE_CHARS) + "…";
       if (!excerpt.isBlank()) sb.append("   근거 요지: ").append(excerpt).append("\n");
       if (e.getRefUrl() != null && !e.getRefUrl().isBlank()) sb.append("   출처: ").append(e.getRefUrl()).append("\n");
     }
     return sb.toString();
+  }
+
+  private static final java.util.regex.Pattern TIME_NOTE =
+      java.util.regex.Pattern.compile("(?:작성 |자료시점=)(\\d{4}-\\d{2}-\\d{2})");
+
+  /** 근거 note에 실린 작성·자료 시점(있으면). 사례와 현재 기준의 시점 차이를 답변이 밝힐 수 있게 컨텍스트에 노출한다. */
+  static String timeOf(String note) {
+    if (note == null) return null;
+    java.util.regex.Matcher m = TIME_NOTE.matcher(note);
+    return m.find() ? m.group(1) : null;
   }
 
   static String labelOf(SourceClass cls) {
@@ -240,10 +274,20 @@ public class NewStartAiChatService {
   }
 
   private static List<AnswerSource> toSources(List<Evidence> ordered) {
+    List<Evidence> visible = ordered.stream().filter(e -> e.getRefType() != RefType.NONE).toList();
+    long officialCount = visible.stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_RULE).count();
+    int officialSlots = (int) Math.min(officialCount, MIN_OFFICIAL_EVIDENCE);
     List<AnswerSource> out = new ArrayList<>();
-    for (Evidence e : ordered) {
+    int support = 0;
+    for (Evidence e : visible) {
+      if (e.getSourceClass() == SourceClass.OFFICIAL_RULE) continue;
+      if (support >= MAX_SOURCES - officialSlots) break;
+      out.add(new AnswerSource(labelOf(e.getSourceClass()), e.getTitle(), e.getRefUrl()));
+      support++;
+    }
+    for (Evidence e : visible) {
+      if (e.getSourceClass() != SourceClass.OFFICIAL_RULE) continue;
       if (out.size() >= MAX_SOURCES) break;
-      if (e.getRefType() == RefType.NONE) continue;
       out.add(new AnswerSource(labelOf(e.getSourceClass()), e.getTitle(), e.getRefUrl()));
     }
     return List.copyOf(out);

@@ -84,7 +84,7 @@ public class JipijigiResearchService {
         // STEP 1 — NewStart 내부 DB/RAG + 축적된 운영자 승인 답변 세션 (항상 먼저)
         List<Evidence> internal = new ArrayList<>();
         for (NewstartKnowledgeItem item : searchActiveKnowledge(keywords)) {
-            internal.add(toKnowledgeEvidence(item));
+            internal.add(toKnowledgeEvidence(item, keywords));
         }
         internal.addAll(answerSessions.searchAcceptedEvidence(keywords));
         boolean needExternal = internal.size() < INTERNAL_SUFFICIENT_THRESHOLD;
@@ -140,13 +140,55 @@ public class JipijigiResearchService {
 
     // ── internal query helpers ───────────────────────────────────────────
 
+    /** 질문 의도와 무관하게 거의 모든 글에 나오는 말 — OR-LIKE 후보를 무관 자료로 채우는 원인이라 키워드에서 뺀다. */
+    private static final java.util.Set<String> STOPWORDS = java.util.Set.of(
+            "어떻게", "어떤", "무엇", "언제", "어디", "어디서", "얼마", "하나", "하나요", "해야", "할까", "될까", "되나", "되나요",
+            "있나", "있나요", "있는", "있는데", "없는", "없나", "받았", "받았는데", "했는데", "하는데", "인데", "이런", "그런",
+            "계속", "진행", "질문", "궁금", "궁금합니다", "알려", "알려주세요", "관련", "경우", "때문", "정말", "혹시", "지금", "현재",
+            "이후", "이전", "그리고", "하지만", "합니다", "입니다", "있습니다", "대한", "위해", "통해", "가능", "가능한가", "가능한지",
+            "온다", "왔는데", "했나", "했는지", "됐는지", "되는지");
+
+    private static final String[] PARTICLES = {
+            "으로부터", "에서는", "에게서", "이라고", "라고", "으로", "에서", "에게", "부터", "까지", "처럼", "한테", "이나", "이면", "라면",
+            "이며", "이고", "하면", "하고", "은요", "는요", "를", "을", "은", "는", "이", "가", "의", "에", "도", "만", "로", "과", "와", "고", "며"};
+
+    /** 질문 표현이 자료 본문의 용어와 달라 LIKE에 걸리지 않는 흔한 경우 — 질문 문장에 단서가 있을 때만 붙는다. */
+    private static final String[][] SYNONYMS = {
+            // {단서(|구분), 붙일 키워드...}
+            {"차량|자동차|자가용|승용차|차를|차가|차는", "차량", "자동차"},
+            {"전화|독촉|문자가", "추심", "독촉"},
+            {"기한이익", "기한이익"},
+            {"지급명령", "전자소송", "지급명령"},
+            {"장기연체|연체 등록|연체등록", "장기연체", "Credit4U", "신용정보원"},
+            {"신복위", "신용회복위원회"},
+            {"부실우려", "부실우려", "실효"},
+            {"후순위", "후순위", "담보"}};
+
     List<String> keywordsOf(String text) {
         if (text == null) return List.of();
-        return java.util.Arrays.stream(text.replaceAll("[^가-힣a-zA-Z0-9]", " ").split("\\s+"))
-                .filter(s -> s.length() >= 2)
-                .distinct()
-                .limit(12)
-                .toList();
+        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+        for (String raw : text.replaceAll("[^가-힣a-zA-Z0-9]", " ").split("\\s+")) {
+            String t = stripParticle(raw);
+            if (t.length() < 2 || STOPWORDS.contains(t) || STOPWORDS.contains(raw)) continue;
+            out.add(t);
+        }
+        for (String[] syn : SYNONYMS) {
+            for (String trigger : syn[0].split("\\|")) {
+                if (text.contains(trigger)) {
+                    for (int i = 1; i < syn.length; i++) out.add(syn[i]);
+                    break;
+                }
+            }
+        }
+        return out.stream().limit(16).toList();
+    }
+
+    /** 조사(을/를/에서 등) 한 겹만 벗긴다 — 벗긴 뒤 2글자 미만이면 원형 유지. */
+    static String stripParticle(String token) {
+        for (String p : PARTICLES) {
+            if (token.length() - p.length() >= 2 && token.endsWith(p)) return token.substring(0, token.length() - p.length());
+        }
+        return token;
     }
 
     List<NewstartKnowledgeItem> searchActiveKnowledge(List<String> keywords) {
@@ -165,10 +207,20 @@ public class JipijigiResearchService {
             return cb.and(cb.equal(root.get("status"), NewstartKnowledgeItem.KnowledgeStatus.ACTIVE),
                     cb.or(kws.toArray(new Predicate[0])));
         };
-        return knowledgeRepository.findAll(spec, PageRequest.of(0, PER_STEP_LIMIT)).getContent();
+        // 최신순 8건만 자르면 흔한 단어가 걸린 무관 자료가 질문과 직접 맞는 자료를 밀어낸다 — 후보 창에서 키워드 일치 수로 순위.
+        return knowledgeRepository.findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).getContent().stream()
+                .sorted(Comparator.comparingInt((NewstartKnowledgeItem k) ->
+                        keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2
+                                + keywordHits(keywords, k.getContent())).reversed())
+                .limit(PER_STEP_LIMIT)
+                .toList();
     }
 
     Evidence toKnowledgeEvidence(NewstartKnowledgeItem item) {
+        return toKnowledgeEvidence(item, List.of());
+    }
+
+    Evidence toKnowledgeEvidence(NewstartKnowledgeItem item, List<String> keywords) {
         SourceClass cls = classifyKnowledge(item);
         return Evidence.builder()
                 .stepNo(STEP_INTERNAL)
@@ -177,8 +229,9 @@ public class JipijigiResearchService {
                 .refId(String.valueOf(item.getKnowledgeId()))
                 .refUrl(item.getSourceUrl())
                 .title(item.getTitle())
-                .excerpt(firstChars(item.getSummary() != null ? item.getSummary() : item.getContent(), 300))
-                .note("sourceType=" + item.getSourceType() + ", authority=" + item.getAuthority())
+                .excerpt(caseExcerpt(item.getSummary(), item.getContent(), keywords))
+                .note("sourceType=" + item.getSourceType() + ", authority=" + item.getAuthority()
+                        + (item.getSourceDate() != null ? ", 자료시점=" + item.getSourceDate() : ""))
                 .build();
     }
 
@@ -316,10 +369,52 @@ public class JipijigiResearchService {
                         .refId(c.getArticleId())
                         .refUrl(c.getSourceUrl())
                         .title(c.getTitle())
-                        .excerpt(firstChars(c.getKeyInsights() != null ? c.getKeyInsights() : c.getContentRaw(), 300))
-                        .note("감면율 사례: 예측 " + c.getPredictedReductionRate() + " / 최종 " + c.getFinalReductionRate())
+                        .excerpt(caseExcerpt(c.getKeyInsights(), c.getContentRaw(), keywords))
+                        .note(caseNote(c))
                         .build())
                 .toList();
+    }
+
+    private static String caseNote(NewstartEmpiricalCase c) {
+        StringBuilder sb = new StringBuilder("카페 실증 사례");
+        if (c.getWrittenAt() != null) sb.append(", 작성 ").append(c.getWrittenAt().toLocalDate());
+        if (c.getFinalReductionRate() != null || c.getPredictedReductionRate() != null) {
+            sb.append(", 감면율 예측 ").append(c.getPredictedReductionRate()).append(" / 최종 ").append(c.getFinalReductionRate());
+        }
+        return sb.toString();
+    }
+
+    static final int CASE_EXCERPT_CHARS = 420;
+
+    /**
+     * 사례 발췌: 정리된 요약(있으면)을 앞에 두고 본문에서는 질문 키워드가 가장 많이 몰린 구간을 잘라 붙인다.
+     * 앞 300자만 쓰면 "실제로 어떻게 진행·대응했는가"가 있는 뒷부분과 운영자 답변 댓글이 잘려 나간다.
+     */
+    static String caseExcerpt(String summary, String body, List<String> keywords) {
+        String head = summary == null ? "" : summary.strip();
+        String headPart = head.length() > 160 ? head.substring(0, 160) + "…" : head;
+        if (body == null || body.isBlank()) return firstChars(head, CASE_EXCERPT_CHARS);
+        String b = body.strip();
+        int budget = CASE_EXCERPT_CHARS - headPart.length();
+        String bodyPart;
+        if (b.length() <= budget) {
+            bodyPart = b;
+        } else {
+            int bestStart = 0;
+            int bestHits = -1;
+            int step = Math.max(40, budget / 4);
+            for (int st = 0; st < b.length(); st += step) {
+                int hits = keywordHits(keywords, b.substring(st, Math.min(b.length(), st + budget)));
+                if (hits > bestHits) {
+                    bestHits = hits;
+                    bestStart = st;
+                }
+            }
+            int end = Math.min(b.length(), bestStart + budget);
+            bodyPart = (bestStart > 0 ? "…" : "") + b.substring(bestStart, end) + (end < b.length() ? "…" : "");
+        }
+        if (headPart.isEmpty() || bodyPart.contains(head)) return bodyPart;
+        return headPart + " / " + bodyPart;
     }
 
     /** STEP5: V1 자동화 없음 — 질문이 가리키는 추가 공식기관을 기록만 남긴다. */
