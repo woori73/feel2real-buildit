@@ -125,6 +125,8 @@ jobs:
           q("GRANTS", "SELECT COUNT(*) AS grant_rows FROM newstart_member_grants;")
           q("REQUESTS", "SELECT COUNT(*) AS req_rows, MAX(DATE(created_at)) AS latest FROM newstart_requests;")
 
+          C.extend(lines)
+
           # --- app state + yesterday's timeout evidence (logs, no question text) ---
           C.append('echo "=== APP_UNIT ==="')
           C.append('systemctl show f2r-app.service -p MainPID -p ActiveEnterTimestamp -p ExecMainStartTimestamp')
