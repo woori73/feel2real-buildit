@@ -1,0 +1,36 @@
+{
+ "articleId": 361,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 실효 후 부실차주 신청하면 대략 기간이 얼마나 걸리나요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-07T09:57:26+00:00",
+ "createdAtMs": 1730973446097,
+ "viewCount": 72,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/361",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "전 부실우려 5월부터 미납후 10월에 실효 통보받고  1주일 후에 원장초기화하고 부실차주 신청했어요."
+ ],
+ "bodyNormalized": "전 부실우려 5월부터 미납후 10월에 실효 통보받고  1주일 후에 원장초기화하고 부실차주 신청했어요.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-21fb873d-e2aa-4946-991d-f84bc8c7ce8f\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-a3a36b00-8197-4290-82ca-2adf0e960b7c\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-22543d35-bc59-4561-9e81-1b31fcbd9c4a\">전 부실우려 5월부터 미납후 10월에 실효 통보받고  1주일 후에 원장초기화하고 부실차주 신청했어요.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

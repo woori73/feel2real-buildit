@@ -1,0 +1,55 @@
+{
+ "articleId": 1313,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 중 실효예정 이런 카톡이 왔습니다",
+ "author": {
+  "nickname": "파티려",
+  "memberGrade": ""
+ },
+ "createdAt": "2025-09-19T01:07:29+00:00",
+ "createdAtMs": 1758244049257,
+ "viewCount": 168,
+ "commentCount": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1313",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "그럼 10월 20일에 주실차주 신청할 수 있을까요",
+  "사업자 3개 있는데 이것때문에 불이익이 생길 수도 있나요?",
+  "",
+  "                                    ​"
+ ],
+ "bodyNormalized": "그럼 10월 20일에 주실차주 신청할 수 있을까요\n사업자 3개 있는데 이것때문에 불이익이 생길 수도 있나요?\n\n                                    ​",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-574366f9-7999-45af-8aec-ca65158c8386\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-78fff4a5-a2a6-47cc-b41a-427d7bb977b7\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-15921554-c0fa-4077-826a-82ad57e70394\">그럼 10월 20일에 주실차주 신청할 수 있을까요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-70622cc6-c1a1-44d6-9e00-b227a8e24f5a\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-9d0587c3-9c22-48ff-bb06-d5dcca6c7aef\">사업자 3개 있는데 이것때문에 불이익이 생길 수도 있나요?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-574366f9-7999-45af-8aec-ca65158c8386\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>                <div class=\"se-component se-image se-l-default\" id=\"SE-53aabb9f-708e-4b4b-9088-452baa71a74d\">\n                    <div class=\"se-component-content se-component-content-extend\">\n                        <div class=\"se-section se-section-image se-l-default se-section-align-\" >\n                                <div class=\"se-module se-module-image\" style=\"\">\n                                    <a href=\"#\" class=\"se-module-image-link __se_image_link __se_link\" style=\"\" onclick=\"return false;\" data-linktype=\"img\" data-linkdata='{\"id\" : \"SE-53aabb9f-708e-4b4b-9088-452baa71a74d\", \"src\" : \"https://cafeptthumb-phinf.pstatic.net/MjAyNTA5MTlfMTc4/MDAxNzU4MjQ0MDQ0Njg0.5ZvhFxnXL4zBrNhn-d-44oqqlC6wyteqwgYkgh6eD3kg.yHq28ioV1cw9zfTzLHNFodnrE_RXd-t2IUZgkt_JJLog.PNG/IMG_1798.png\", \"originalWidth\" : \"1179\", \"originalHeight\" : \"2556\", \"linkUse\" : \"false\", \"link\" : \"\" }'>\n                                        <img src=\"https://cafeptthumb-phinf.pstatic.net/MjAyNTA5MTlfMTc4/MDAxNzU4MjQ0MDQ0Njg0.5ZvhFxnXL4zBrNhn-d-44oqqlC6wyteqwgYkgh6eD3kg.yHq28ioV1cw9zfTzLHNFodnrE_RXd-t2IUZgkt_JJLog.PNG/IMG_1798.png?type=w800\" alt=\"\" class=\"se-image-resource\" />\n                                    </a>\n                                </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_image\", \"id\": \"SE-53aabb9f-708e-4b4b-9088-452baa71a74d\", \"data\": {\"ctype\": \"image\", \"ai\": \"false\" }}'></script>\n                </div>\n                <div class=\"se-component se-text se-l-default\" id=\"SE-5a8dc2fb-38a2-43e0-b43a-d5265222a1d1\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2bc932ba-64f7-4faf-a28b-f310e6ffd9d0\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-f9fc2583-0645-4e66-9b35-9356d8ee9747\">​</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-5a8dc2fb-38a2-43e0-b43a-d5265222a1d1\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [
+  "https://cafeptthumb-phinf.pstatic.net/MjAyNTA5MTlfMTc4/MDAxNzU4MjQ0MDQ0Njg0.5ZvhFxnXL4zBrNhn-d-44oqqlC6wyteqwgYkgh6eD3kg.yHq28ioV1cw9zfTzLHNFodnrE_RXd-t2IUZgkt_JJLog.PNG/IMG_1798.png?type=w800"
+ ],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54036533,
+   "parentCommentId": null,
+   "author": "HN",
+   "memberGrade": null,
+   "createdAt": "2025-09-19T01:43:35.000Z",
+   "createdAtMs": 1758246215000,
+   "text": "미납 5개월차면 부실차주 신청가능해요.\n운영중인 사업에 영향은 없습니다.",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": true,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

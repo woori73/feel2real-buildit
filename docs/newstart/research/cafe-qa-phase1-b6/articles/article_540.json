@@ -1,0 +1,40 @@
+{
+ "articleId": 540,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "변제금 납부개월수에 따른 미납실효",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-24T23:16:43+00:00",
+ "createdAtMs": 1732490203910,
+ "viewCount": 57,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/540",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  ""
+ ],
+ "bodyNormalized": "",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-image se-l-default\" id=\"SE-276760b8-aaba-11ef-9d83-b776bbd7a80f\">\n                    <div class=\"se-component-content se-component-content-extend\">\n                        <div class=\"se-section se-section-image se-l-default se-section-align-\" >\n                                <div class=\"se-module se-module-image\" style=\"\">\n                                    <a href=\"#\" class=\"se-module-image-link __se_image_link __se_link\" style=\"\" onclick=\"return false;\" data-linktype=\"img\" data-linkdata='{\"id\" : \"SE-276760b8-aaba-11ef-9d83-b776bbd7a80f\", \"src\" : \"https://cafeptthumb-phinf.pstatic.net/MjAyNDExMjVfMTQ4/MDAxNzMyNDkwMTk4NTAx.lEyXKU_ZQnz4Q4toIrWJ6wTm5ZkmH099_HJ1LxmeW1Qg.tgujaxUUNALarbBMLOP99AWnKUCzVPuqXM_1iA4A6-Yg.JPEG/Screenshot_20241125_081320_NAVER.jpg\", \"originalWidth\" : \"\", \"originalHeight\" : \"\", \"linkUse\" : \"false\", \"link\" : \"\"}'>\n                                        <img src=\"https://cafeptthumb-phinf.pstatic.net/MjAyNDExMjVfMTQ4/MDAxNzMyNDkwMTk4NTAx.lEyXKU_ZQnz4Q4toIrWJ6wTm5ZkmH099_HJ1LxmeW1Qg.tgujaxUUNALarbBMLOP99AWnKUCzVPuqXM_1iA4A6-Yg.JPEG/Screenshot_20241125_081320_NAVER.jpg?type=w800\" alt=\"\" class=\"se-image-resource\" />\n                                    </a>\n                                </div>\n                        </div>\n                    </div>\n                </div>\n    </div>\n</div>\n",
+ "images": [
+  "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMjVfMTQ4/MDAxNzMyNDkwMTk4NTAx.lEyXKU_ZQnz4Q4toIrWJ6wTm5ZkmH099_HJ1LxmeW1Qg.tgujaxUUNALarbBMLOP99AWnKUCzVPuqXM_1iA4A6-Yg.JPEG/Screenshot_20241125_081320_NAVER.jpg?type=w800"
+ ],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": true,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "EMPTY_BODY",
+ "parseWarnings": [
+  "EMPTY_BODY: commentCount=0 collected=0"
+ ]
+}

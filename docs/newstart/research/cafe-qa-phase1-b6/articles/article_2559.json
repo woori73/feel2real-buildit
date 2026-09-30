@@ -1,0 +1,89 @@
+{
+ "articleId": 2559,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려신청후 채무추가",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-05T07:09:28+00:00",
+ "createdAtMs": 1764918568090,
+ "viewCount": 130,
+ "commentCount": 4,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2559",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려신청시 경기신용보증재단 보증하고 농협에서 마이너스통장 받은거 제외했는데요 포함시키려면 어떻게해야되는걸까요?"
+ ],
+ "bodyNormalized": "부실우려신청시 경기신용보증재단 보증하고 농협에서 마이너스통장 받은거 제외했는데요 포함시키려면 어떻게해야되는걸까요?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-c288042c-d1a8-11f0-9112-fba5eaf5f3b5\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c2882b3d-d1a8-11f0-9112-1f57607d69e3\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-5665b716-d1a9-11f0-9112-c12eb7fa3a9c\">부실우려신청시 경기신용보증재단 보증하고 농협에서 마이너스통장 받은거 제외했는데요 포함시키려면 어떻게해야되는걸까요?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-c288042c-d1a8-11f0-9112-fba5eaf5f3b5\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54622866,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-05T07:17:46.000Z",
+   "createdAtMs": 1764919066000,
+   "text": "신복위는 후에 수정조정 신청이 가능합니다.\n\n신복위 상담원에게 전화를 걸어서 수정조정해서 두 채권 포함하고 싶다고 말하면 조정해 줍니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54622965,
+   "parentCommentId": null,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-05T07:27:49.000Z",
+   "createdAtMs": 1764919669000,
+   "text": "네~~전화로도 가능하군요 감사합니다",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54652561,
+   "parentCommentId": null,
+   "author": "박광자",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-12-09T11:43:03.000Z",
+   "createdAtMs": 1765280583000,
+   "text": "아 부실우려 신청하면 마이너스 통장 제외할수 있군요? 한도는 줄어들지 않는지도 궁금하네요",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54776191,
+   "parentCommentId": 54652561,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-22T21:34:42.000Z",
+   "createdAtMs": 1766439282000,
+   "text": "부실우려는 넣고싶은채무는 넣고 유지할채무는 빼도되요 카드도 우려신청한카드 유지하고쓰는카드 이런식으로 할수있어요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

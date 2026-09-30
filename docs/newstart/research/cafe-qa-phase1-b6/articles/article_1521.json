@@ -1,0 +1,77 @@
+{
+ "articleId": 1521,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려신청시",
+ "author": {
+  "nickname": "H광주",
+  "memberGrade": ""
+ },
+ "createdAt": "2025-11-06T21:18:00+00:00",
+ "createdAtMs": 1762463880123,
+ "viewCount": 162,
+ "commentCount": 3,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1521",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "농협은행에 후순위주담대가 있고 사압자대출 신용대출이 있는데 주담대는 넣을수없어서 못넣고 사업자대출과 신용대출만 포함해서 부실우려차주 신청했는데",
+  "집에 경매이런거 안들어올까요?"
+ ],
+ "bodyNormalized": "농협은행에 후순위주담대가 있고 사압자대출 신용대출이 있는데 주담대는 넣을수없어서 못넣고 사업자대출과 신용대출만 포함해서 부실우려차주 신청했는데\n집에 경매이런거 안들어올까요?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-dfb9219c-2fbd-4ac9-8437-f6b7a1d6310d\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-69979bca-6a2f-425f-b876-52414d52493f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4de10f35-aa2e-4a96-94a4-3d1ef3474352\">농협은행에 후순위주담대가 있고 사압자대출 신용대출이 있는데 주담대는 넣을수없어서 못넣고 사업자대출과 신용대출만 포함해서 부실우려차주 신청했는데</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-57879b97-10cc-42c0-8100-62d5fd6d67a1\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-313baa19-5425-4958-a68c-98fb2e0f5d61\">집에 경매이런거 안들어올까요?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-dfb9219c-2fbd-4ac9-8437-f6b7a1d6310d\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54411442,
+   "parentCommentId": null,
+   "author": "서울찬스",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-11-07T00:41:29.000Z",
+   "createdAtMs": 1762476089000,
+   "text": "주담대 안넣었더라도\n은행 채권팀에 전화해서 다시한번 주담대에 대해 문제없도록 해달라고 요청해두는게 좋습니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54412880,
+   "parentCommentId": 54411442,
+   "author": "H광주",
+   "memberGrade": null,
+   "createdAt": "2025-11-07T03:15:26.000Z",
+   "createdAtMs": 1762485326000,
+   "text": "감사합니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54419735,
+   "parentCommentId": null,
+   "author": "HN",
+   "memberGrade": null,
+   "createdAt": "2025-11-08T00:06:34.000Z",
+   "createdAtMs": 1762560394000,
+   "text": "우려자체가 추심금지입니다.",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

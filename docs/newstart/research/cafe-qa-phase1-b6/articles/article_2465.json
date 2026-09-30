@@ -1,0 +1,102 @@
+{
+ "articleId": 2465,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 실효후 차주",
+ "author": {
+  "nickname": "다보리",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2025-12-02T05:55:37+00:00",
+ "createdAtMs": 1764654937087,
+ "viewCount": 137,
+ "commentCount": 5,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2465",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려 실효 후에 차주신청은 언제쯤할수있나요? 바로 원장초기화신청 해서 그 기간만 기다리면되는거에용?"
+ ],
+ "bodyNormalized": "부실우려 실효 후에 차주신청은 언제쯤할수있나요? 바로 원장초기화신청 해서 그 기간만 기다리면되는거에용?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-177177F8-FD8E-4B55-AE72-329526CF480A\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-965A4EE1-EA15-4FB5-8C84-BCE6827FDA48\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-5CCC19CE-965D-454B-877F-1C9056D8ABCE\">부실우려 실효 후에 차주신청은 언제쯤할수있나요? 바로 원장초기화신청 해서 그 기간만 기다리면되는거에용?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-177177F8-FD8E-4B55-AE72-329526CF480A\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54597115,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-02T06:09:25.000Z",
+   "createdAtMs": 1764655765000,
+   "text": "우려실효후 원장초기화 신청. 장기연체등록. 부살차주 신청순.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54597127,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-02T06:10:11.000Z",
+   "createdAtMs": 1764655811000,
+   "text": "실효후 1주일 전후 장기연체등록됩니다. 원장초기화도 1주일 정도 소요됩니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54597136,
+   "parentCommentId": 54597127,
+   "author": "다보리",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-12-02T06:10:52.000Z",
+   "createdAtMs": 1764655852000,
+   "text": "감사합니다! 부실우려부터 신청했더니 내년까지 가능할지 계속 계산하게되네요ㅠㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54597150,
+   "parentCommentId": 54597127,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-02T06:11:37.000Z",
+   "createdAtMs": 1764655897000,
+   "text": "2026년 12월말 전에 부실차주 신청만 되면 됩니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54597157,
+   "parentCommentId": 54597127,
+   "author": "다보리",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-12-02T06:12:07.000Z",
+   "createdAtMs": 1764655927000,
+   "text": "희망적입니다 늘감사합니다 !",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 3,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

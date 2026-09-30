@@ -1,0 +1,40 @@
+{
+ "articleId": 37,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 실효시 동의한 채권",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-10-24T14:08:34.623Z",
+ "createdAtMs": 1729778914623,
+ "viewCount": 46,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/37",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "<질문>",
+  "부실우려신청시 동의한 채권의경우 부실우려 실효되면 다시 채권사로 되돌아가나요? 부동의건은 새출발에서 매입한걸로 알고 있는데..",
+  "​",
+  "<답변>",
+  "부실우려 실효에서 부실차주로 가면, 부동의 채권의 캠코 매입은 그대로 진행되고 동의 채권은 다시 캠코가 매입해요."
+ ],
+ "bodyNormalized": "<질문>\n부실우려신청시 동의한 채권의경우 부실우려 실효되면 다시 채권사로 되돌아가나요? 부동의건은 새출발에서 매입한걸로 알고 있는데..\n​\n<답변>\n부실우려 실효에서 부실차주로 가면, 부동의 채권의 캠코 매입은 그대로 진행되고 동의 채권은 다시 캠코가 매입해요.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-1a6bdab7-9211-11ef-a661-2d2335736b3b\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-1a6bdab8-9211-11ef-a661-612e7599c8d0\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-74cfcfa1-9211-11ef-a661-b5dae40da58f\">&lt;질문&gt;</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-235d6f9d-9211-11ef-a661-4fc655558968\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-74cfcfa2-9211-11ef-a661-dbe89d5564a6\">부실우려신청시 동의한 채권의경우 부실우려 실효되면 다시 채권사로 되돌아가나요? 부동의건은 새출발에서 매입한걸로 알고 있는데.. </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2ab18117-9211-11ef-a661-fd6a9fbf8183\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-74cfcfa3-9211-11ef-a661-1941de4dc1ed\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2a948336-9211-11ef-a661-a7c48371d3f4\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-74cfcfa4-9211-11ef-a661-89090019a2c2\">&lt;답변&gt;</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2da93d90-9211-11ef-a661-5b21fc6ef436\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-74cfcfa5-9211-11ef-a661-e97af1d073dc\">부실우려 실효에서 부실차주로 가면, 부동의 채권의 캠코 매입은 그대로 진행되고 동의 채권은 다시 캠코가 매입해요.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

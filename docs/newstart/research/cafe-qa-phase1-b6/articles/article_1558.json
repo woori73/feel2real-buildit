@@ -1,0 +1,104 @@
+{
+ "articleId": 1558,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "힘드네요 ㅠ 조언좀 해주세요",
+ "author": {
+  "nickname": "봄을기다리며",
+  "memberGrade": "일반멤버"
+ },
+ "createdAt": "2025-11-15T18:33:34+00:00",
+ "createdAtMs": 1763231614650,
+ "viewCount": 126,
+ "commentCount": 5,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1558",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려 진행하려 합니다 문제는 채권이 물류회사 채권 식사제 물건값 대금인데 서울보증 보험에  가입되여있는 채권입니다 급하게 부실우려 신청하려 하는데 채권이 서울보증보험으로 넘어가기 전에는 안되는걸로 알고 있어서요",
+  "물류회사는 협약기관이 아니라서요ㅠ 사정상 개인회생말고 부실우려 신청하려는데",
+  "어떻게 해야될지 모르겠네요 잠도 안오고 조언좀 부탁드립니다 ㅠ"
+ ],
+ "bodyNormalized": "부실우려 진행하려 합니다 문제는 채권이 물류회사 채권 식사제 물건값 대금인데 서울보증 보험에  가입되여있는 채권입니다 급하게 부실우려 신청하려 하는데 채권이 서울보증보험으로 넘어가기 전에는 안되는걸로 알고 있어서요\n물류회사는 협약기관이 아니라서요ㅠ 사정상 개인회생말고 부실우려 신청하려는데\n어떻게 해야될지 모르겠네요 잠도 안오고 조언좀 부탁드립니다 ㅠ",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-07d367f2-c251-11f0-b94a-4916d2da725a\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-07d367f3-c251-11f0-b94a-bfec5eeb72a2\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-91589120-c253-11f0-b94a-b593eaf39b70\">부실우려 진행하려 합니다 문제는 채권이 물류회사 채권 식사제 물건값 대금인데 서울보증 보험에  가입되여있는 채권입니다 급하게 부실우려 신청하려 하는데 채권이 서울보증보험으로 넘어가기 전에는 안되는걸로 알고 있어서요 </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c335d5cb-c251-11f0-b94a-b758ee99eba8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-91589121-c253-11f0-b94a-19dd6ea6a887\">물류회사는 협약기관이 아니라서요ㅠ 사정상 개인회생말고 부실우려 신청하려는데 </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-862ef864-c251-11f0-b94a-cdbe03093b68\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-91589122-c253-11f0-b94a-ff97f6fb56ea\">어떻게 해야될지 모르겠네요 잠도 안오고 조언좀 부탁드립니다 ㅠ</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-07d367f2-c251-11f0-b94a-4916d2da725a\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54477389,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-16T06:19:14.000Z",
+   "createdAtMs": 1763273954000,
+   "text": "신용회복위원회 상담은 해보셨는지요?\n\n답글이 없어서 제 생각을 남겨드립니다.\n\n신용보증 보험에서 대위변제를 한 다음에 채무자인 글쓴이에게 구상권 청구를 하는 시점에 부실우려 신청하는게 정답이 아닐까 합니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54480258,
+   "parentCommentId": 54477389,
+   "author": "봄을기다리며",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-11-16T16:24:44.000Z",
+   "createdAtMs": 1763310284000,
+   "text": "너무 감사합니다 ㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54477391,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-16T06:20:36.000Z",
+   "createdAtMs": 1763274036000,
+   "text": "상거래 채권이 새출발기금 부실우려 대상이 되는지도 전화를 해서 한번 문의해 보십시오.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54480260,
+   "parentCommentId": 54477391,
+   "author": "봄을기다리며",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-11-16T16:25:13.000Z",
+   "createdAtMs": 1763310313000,
+   "text": "오늘 전화해 보려구요 너무 감사합니다 ㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54480295,
+   "parentCommentId": 54477391,
+   "author": "봄을기다리며",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-11-16T19:06:44.000Z",
+   "createdAtMs": 1763320004000,
+   "text": "대위 변제까지 시간이 걸리면 하루하루 나가는 돈이 너무 많아서요 혹시 카드가 되면 카드 결제후 부실우려차주 가능할까요?? 채무가 2천만원 정도 되는데 카드 별로 나눠서 결제하려구요 총채무 1억4천중 최근 6개월이내 30프로는 안되요 아시는 선까지 말씀해 주시면 감사 하겠습니다 ㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 2,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

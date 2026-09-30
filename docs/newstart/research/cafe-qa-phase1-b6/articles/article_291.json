@@ -1,0 +1,38 @@
+{
+ "articleId": 291,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "새출발기금 부실차주랑 부실우려 차주 둘 다 전체 대출이 아닌 재산-대출-남은 금액에 대해서만 감면 또는 이자 혜택을 주는 건가요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-05T00:56:39+00:00",
+ "createdAtMs": 1730768199660,
+ "viewCount": 42,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/291",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "​",
+  "부실우려는 대출이자 혜택+대출기간 연장, 부실차주는 대출잔액 감면입니다",
+  "​"
+ ],
+ "bodyNormalized": "​\n부실우려는 대출이자 혜택+대출기간 연장, 부실차주는 대출잔액 감면입니다\n​",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-a4a085c1-9b10-11ef-9042-cbe6be7ebb40\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-a4a085c2-9b10-11ef-9042-dfae624c25c3\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-d0ac9d77-9b10-11ef-9042-5f7642d6460f\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-b4140f32-9b10-11ef-9042-3fe6e375f61c\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-d0ac9d78-9b10-11ef-9042-e701096ad6d2\">부실우려는 대출이자 혜택+대출기간 연장, 부실차주는 대출잔액 감면입니다</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d0aaefb6-9b10-11ef-9042-752f75dd0572\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-d0ac9d79-9b10-11ef-9042-f3a1d58695f0\">​</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,36 @@
+{
+ "articleId": 564,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "새출발기금 부실우려에 개인 사업자 카드도 포함되나요 ??",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-27T11:01:17.047Z",
+ "createdAtMs": 1732705277047,
+ "viewCount": 65,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/564",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "네 포함가능합니다"
+ ],
+ "bodyNormalized": "네 포함가능합니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-b84ac53d-53b7-4e44-b68a-0a87192cd478\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-f768553c-1909-4031-bf67-86fd278aff78\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-2f6763d4-6286-48e6-9f91-d9e1d446a629\">네 포함가능합니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

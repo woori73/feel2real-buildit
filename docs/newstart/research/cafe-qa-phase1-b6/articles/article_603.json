@@ -1,0 +1,37 @@
+{
+ "articleId": 603,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실차주 예산 조기 소진과 부실우려",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-12-02T02:38:02.890Z",
+ "createdAtMs": 1733107082890,
+ "viewCount": 169,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/603",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실차주 신청이 26년말까지 기간이 연장되었지만 그 전에 예산소진으로 조기마감이 될 가능성도 물론 있다고 합니다.",
+  "미리 부실우려라도 들어가있어야 실효후 차주를 갈수있는 예산이 따로 편성되어있어서 마음이 편할거랍니다"
+ ],
+ "bodyNormalized": "부실차주 신청이 26년말까지 기간이 연장되었지만 그 전에 예산소진으로 조기마감이 될 가능성도 물론 있다고 합니다.\n미리 부실우려라도 들어가있어야 실효후 차주를 갈수있는 예산이 따로 편성되어있어서 마음이 편할거랍니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-57768335-9f9f-4670-b1c2-524a2f79b381\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2acc3efb-c419-4a9c-af20-8d98af0a1fd7\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-e01a218c-9dc5-4d46-9339-13c4ed600d1b\">부실차주 신청이 26년말까지 기간이 연장되었지만 그 전에 예산소진으로 조기마감이 될 가능성도 물론 있다고 합니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-381a2b3d-5094-4cdc-a07d-332c106fdf2f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-546a4c02-6052-477f-8ee5-128641dfea58\">미리 부실우려라도 들어가있어야 실효후 차주를 갈수있는 예산이 따로 편성되어있어서 마음이 편할거랍니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,36 @@
+{
+ "articleId": 366,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "법인이고 경기신보 보증대출의 원금상환(1500만원씩)이 이 달부터입니다. 지난달에 신용카드 연체가 시작됐는데 부실우려를 먼저 하는게 날지 아님 버텼다가 부실차주를 갈지 맘이 많이 힘드네요, 조언부탁드립니다.",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-07T10:12:29+00:00",
+ "createdAtMs": 1730974349647,
+ "viewCount": 56,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/366",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "법인을 운영하시면 부실우려로 가셨다가 부실차주 가는게 더 일반적인 것 같습니다."
+ ],
+ "bodyNormalized": "법인을 운영하시면 부실우려로 가셨다가 부실차주 가는게 더 일반적인 것 같습니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-d173475b-ba7d-493b-8cd8-29b40de3cb95\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-6458aa79-4f98-4f6b-a427-c92629c88ce3\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-0d0ece13-b7ae-420f-a8cc-9b2847da12b4\">법인을 운영하시면 부실우려로 가셨다가 부실차주 가는게 더 일반적인 것 같습니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

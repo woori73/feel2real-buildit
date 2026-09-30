@@ -1,0 +1,52 @@
+{
+ "articleId": 2452,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "삼성카드",
+ "author": {
+  "nickname": "향기77",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-02T02:29:36+00:00",
+ "createdAtMs": 1764642576330,
+ "viewCount": 57,
+ "commentCount": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2452",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려 신청하면서 삼성카드 현대카드를 뺐는데 어제 카드대금 날짜인데 하루미납시켰다고 바로 전화오고 문자오네요",
+  "새출발기금 신청한걸 모를텐데 심하네요",
+  "오늘카드대금내고 당분간은 카드로 생활해야겠어요"
+ ],
+ "bodyNormalized": "부실우려 신청하면서 삼성카드 현대카드를 뺐는데 어제 카드대금 날짜인데 하루미납시켰다고 바로 전화오고 문자오네요\n새출발기금 신청한걸 모를텐데 심하네요\n오늘카드대금내고 당분간은 카드로 생활해야겠어요",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-4e867708-cf25-11f0-996f-d75dcb39043f\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4e869e19-cf25-11f0-996f-dfefdb9894f8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ceb9df91-cf26-11f0-996f-476ed8c20bd8\">부실우려 신청하면서 삼성카드 현대카드를 뺐는데 어제 카드대금 날짜인데 하루미납시켰다고 바로 전화오고 문자오네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-9376c811-cf25-11f0-996f-4f5f710d39ca\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ceb9df92-cf26-11f0-996f-d1bab2c50e3f\">새출발기금 신청한걸 모를텐데 심하네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-7eb25ac7-cf26-11f0-996f-e1ad2fd16517\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ceb9df93-cf26-11f0-996f-975e5b4cd634\">오늘카드대금내고 당분간은 카드로 생활해야겠어요</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-4e867708-cf25-11f0-996f-d75dcb39043f\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54595496,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-02T02:46:09.000Z",
+   "createdAtMs": 1764643569000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

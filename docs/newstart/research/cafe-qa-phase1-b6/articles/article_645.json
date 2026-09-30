@@ -1,0 +1,54 @@
+{
+ "articleId": 645,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 체결하신 분들 중 혹시 카드사는 동의 or 부동의 기간이 어느 정도 평균 걸리셨는지대략적으로 알 수 있을까요?부동의 났을 경우에 새출발매입 기간까지도 평균적으로 알고 싶습니다",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-12-10T09:29:13+00:00",
+ "createdAtMs": 1733822953920,
+ "viewCount": 182,
+ "commentCount": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/645",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "동의/부동의 결정까지 통상 3개월",
+  "​",
+  "이후 새출발기금 매입까지도 3-4개월 소요됩니다.",
+  "​",
+  "다만 보증서 담보대출의 경우 6개월 이상 소요될 수도 있습니다."
+ ],
+ "bodyNormalized": "동의/부동의 결정까지 통상 3개월\n​\n이후 새출발기금 매입까지도 3-4개월 소요됩니다.\n​\n다만 보증서 담보대출의 경우 6개월 이상 소요될 수도 있습니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-f99a24cd-d9e8-47af-8927-1659f0012796\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-1b725a90-f9c1-4cfb-a834-9aeaeadcdb38\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-50df631e-44e2-4275-88ab-2f1ef249f439\">동의/부동의 결정까지 통상 3개월</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-e3f5958a-c68d-494e-8591-e90511ea2db3\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-50e8d546-b7a6-42d3-a4d5-e5ae1d2b57b7\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-331f2aa1-cf1f-421e-b69f-b55cd2673460\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-8199c408-9f67-43dc-b37d-3bc52b465d9e\">이후 새출발기금 매입까지도 3-4개월 소요됩니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-0f8a4972-33c9-4149-9620-7c7f8e8b0c51\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-71f20052-cf23-4753-88ab-c6f9afd014e3\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-918cdab2-b969-4937-8129-0948d3226070\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-b179c1a7-74cb-4663-93f2-01ce4b794d18\">다만 보증서 담보대출의 경우 6개월 이상 소요될 수도 있습니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54540303,
+   "parentCommentId": null,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-11-25T01:17:37.000Z",
+   "createdAtMs": 1764033457000,
+   "text": "동의,부동의만 통상 3개월이면 적어도 3개월정도는 이자도. 납입안해도 되겠네요 그럼 좀더 숨통트이겠군요",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

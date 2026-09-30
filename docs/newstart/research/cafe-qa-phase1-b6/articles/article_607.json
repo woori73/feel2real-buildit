@@ -1,0 +1,41 @@
+{
+ "articleId": 607,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실 우려 접수하고 왔어요. 그런데 채권자 보호라고 낼부터 돈 빼간대요. 통장 비우라고 3주동안 다비우라했는데 내일  가장 큰 거래처 입금날이예요.",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-12-02T05:37:18+00:00",
+ "createdAtMs": 1733117838447,
+ "viewCount": 157,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/607",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "업체에 이야기해서 입금과 동시에 출금하면되요..",
+  "​",
+  "은행도 자동으로 걸어두기 때문에 시간 틈이 있을거에요.",
+  "​",
+  "[응답]",
+  "근데 저 콜센타 두번전화했는데 두번짜 상담원이 조회하더니 상담원이 상계처리금지계좌로 등록해 놓으셨대요. 내일은 괜찮겠네요."
+ ],
+ "bodyNormalized": "업체에 이야기해서 입금과 동시에 출금하면되요..\n​\n은행도 자동으로 걸어두기 때문에 시간 틈이 있을거에요.\n​\n[응답]\n근데 저 콜센타 두번전화했는데 두번짜 상담원이 조회하더니 상담원이 상계처리금지계좌로 등록해 놓으셨대요. 내일은 괜찮겠네요.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-09b5df50-423a-4cb5-a9bd-acfc2cfea334\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-de0e2074-a752-43ca-bac2-8cd789c4597a\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-cfd27409-28c0-46f4-a81b-1dfde212ed43\">업체에 이야기해서 입금과 동시에 출금하면되요..</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2918737f-4b2d-44a3-86e9-9ee637b88c3c\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ceac1eed-7553-47eb-8048-2d8210da4316\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d846bba3-9106-4c49-879d-f56ff849c355\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-d7633333-42f5-4121-9749-c834a20c4b1f\">은행도 자동으로 걸어두기 때문에 시간 틈이 있을거에요.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-940bba84-a756-46b8-b57c-1d4e073b0ea2\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-41419d1e-2636-42e2-9e9e-9e344099dde9\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d425652c-29ae-4f8b-9e25-8b3db7bd2b3f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-73695a96-bf5b-4b65-ad74-98c76061d922\">[응답]</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-ff235457-1a2d-4e2b-983f-bd4aa7d67984\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-062cf9e4-3d42-485f-8bdc-94c744457b10\">근데 저 콜센타 두번전화했는데 두번짜 상담원이 조회하더니 상담원이 상계처리금지계좌로 등록해 놓으셨대요. 내일은 괜찮겠네요.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,36 @@
+{
+ "articleId": 523,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 12월에 실효 예정입니다. 국취제로 학원다니면서 근로복지공단에서\n직업훈련생계비대출 받았어요...\n대출받은게 있으면.. 부실차주 못가는건지.",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-22T19:11:35.133Z",
+ "createdAtMs": 1732302695133,
+ "viewCount": 45,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/523",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "6개월내 대출이 30프로 이내이면 부실차주 가는데 문제 없을 겁니다"
+ ],
+ "bodyNormalized": "6개월내 대출이 30프로 이내이면 부실차주 가는데 문제 없을 겁니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-4e94cd18-a905-11ef-9fbc-d3402f413309\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-50df5960-a905-11ef-9fbc-9f95616c22f5\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-973ad2eb-a905-11ef-9fbc-85f8727d53af\">6개월내 대출이 30프로 이내이면 부실차주 가는데 문제 없을 겁니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}
