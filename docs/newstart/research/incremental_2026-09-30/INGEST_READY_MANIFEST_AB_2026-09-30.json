@@ -1,0 +1,1170 @@
+{
+  "generatedAt": "2026-09-30",
+  "readOnly": true,
+  "productionWrite": "NONE",
+  "counts": {
+    "total": 23,
+    "payloadReady": 20,
+    "notReady": [
+      [
+        "AB-6040",
+        "SKIP_LOW_INFO"
+      ],
+      [
+        "AB-6044",
+        "SKIP_LOW_INFO"
+      ],
+      [
+        "AB-4078",
+        "NEEDS_ORIGINAL_TEXT"
+      ]
+    ],
+    "byBucket": {
+      "A": 9,
+      "B": 9,
+      "DESIGNATED": 5
+    },
+    "dupCheckRequired": [
+      "AB-4451",
+      "AB-5568"
+    ],
+    "relationsListed": 26
+  },
+  "items": [
+    {
+      "manifestId": "AB-6037",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "자유게시판",
+        "articleId": "6037",
+        "url": "https://cafe.naver.com/newhopero/6037",
+        "writtenAt": "2026-09-28 12:50"
+      },
+      "title": "사업자 후순위 담보대출 문의드립니다.",
+      "category": "담보대출·기한이익상실",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_CLAIM + COMMUNITY_OPINION",
+      "segments": [
+        {
+          "type": "QUESTION",
+          "speaker": "감사멤버(작성자)",
+          "text": "부실차주 접수·임시안 대기 중. 저축은행 후순위 담보대출에 기한이익상실 예정 통지(9/30 상실예정), 이번 달 이자를 내지 않고 있음. 금감원 민원은 제출. 따로 변제해야 하는지."
+        },
+        {
+          "type": "COUNSELOR_CLAIM",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "'이번 달 이자를 안 내도 된다'고 단정 불가. 담보대출은 일반 신용채무와 처리방식이 다르고(부실차주 담보채무는 중개형 취급이라고 운영자가 공식 자료를 인용), 개인 사례(5862·5903)가 있으나 일반화 불가. 9/30 전에 새출발기금/신복위에 해당 채권이 조정대상에 포함됐는지, 이번 회차 이자 납부 필요 여부를 확인할 것. 금감원 민원 접수와 납부의무 정지는 별개."
+        },
+        {
+          "type": "COMMUNITY_OPINION",
+          "speaker": "회원",
+          "label": "CLAIM",
+          "text": "저축은행에 접수증·확인서를 제시하면 상실 처리를 유예해주는 경우가 있다(근거 미확인)."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6037",
+      "fingerprint": "ac5281d249509d8658e507d396715b89",
+      "relations": [
+        {
+          "kind": "TEXT_REF_CASE",
+          "ref": "5862",
+          "note": "운영자 인용 사례(운영 cases에 존재)"
+        },
+        {
+          "kind": "TEXT_REF_CASE",
+          "ref": "5903",
+          "note": "운영자 인용 사례(운영 cases에 존재)"
+        }
+      ],
+      "relatedCaseIds": [
+        "5862",
+        "5903"
+      ],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "운영자가 '공식 자료'를 인용하나 원 링크 미제시 → CONFIRMED 아님(CLAIM)",
+        "9/30 기한 경과 — 시의성 자료, 결과 미추적(UNRESOLVED)"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6037_raw.txt"
+    },
+    {
+      "manifestId": "AB-6038",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "질문게시판",
+        "articleId": "6038",
+        "url": "https://cafe.naver.com/newhopero/6038",
+        "writtenAt": "2026-09-28 15:20"
+      },
+      "title": "은행에서 계속 전화오면",
+      "category": "추심·연락 대응",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_CLAIM",
+      "segments": [
+        {
+          "type": "QUESTION",
+          "speaker": "감사멤버(작성자)",
+          "text": "부실우려차주 접수 후 심사 대기. 우리은행 마이너스통장 2,400만원을 포함했는데 전화·문자가 계속 옴. 받아야 하는지."
+        },
+        {
+          "type": "COUNSELOR_CLAIM",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "한 번 받아서 '새출발기금 부실우려차주로 신청해 신복위 심사 중'이라고 안내. 신청채권에 포함됐는지 확인. 계속되면 기록을 남기고 신복위 1600-5500으로 진행상태·추심중단 여부 확인. 전화가 온다고 심사에 문제가 있다는 뜻은 아님."
+        },
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "작성자",
+          "text": "감사 표시(결과 후속 없음)."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6038",
+      "fingerprint": "256fd68266e9fdccb2c3014582525c79",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "결과 후속 없음"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6038_raw.txt"
+    },
+    {
+      "manifestId": "AB-6040",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "자유게시판",
+        "articleId": "6040",
+        "url": "https://cafe.naver.com/newhopero/6040",
+        "writtenAt": "2026-09-28 20:45"
+      },
+      "title": "드디어 부실차주, 새출발 기금 신청 완료!",
+      "category": "신청 후기(정보 낮음)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "MEMBER_EXPERIENCE",
+      "segments": [
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "감사멤버(작성자)",
+          "label": "EXPERIENCE",
+          "text": "전자책 보고 온라인으로 신청 완료. 세부 사실 없음."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6040",
+      "fingerprint": "907f15eacea70b7f12992a212ea1f07f",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": false,
+      "flags": [
+        "LOW_INFO — 구조화할 사실 없음, REVIEW payload 생략 권고(원문은 raw 보존)"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "SKIP_LOW_INFO",
+      "contentSource": "raw/article_6040_raw.txt"
+    },
+    {
+      "manifestId": "AB-6043",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "질문게시판",
+        "articleId": "6043",
+        "url": "https://cafe.naver.com/newhopero/6043",
+        "writtenAt": "2026-09-29 11:20"
+      },
+      "title": "전자책구매",
+      "category": "신청 절차(운영자 안내)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_GUIDE(비공식)",
+      "segments": [
+        {
+          "type": "QUESTION",
+          "speaker": "감사멤버(작성자)",
+          "text": "전자책 구매 인사(질문 없음)."
+        },
+        {
+          "type": "OPERATOR_GUIDE",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "운영 경험 기반 절차 안내(공식 아님): ①전자책의 원장초기화 안내대로 새출발기금에 원장초기화 메일 → 보통 3일 내 초기화 ②3~7일 사이 신용정보원에서 장기연체등록 여부 확인 ③등록 확인 후 새출발기금 사이트 또는 캠코 방문으로 부실차주 신청."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6043",
+      "fingerprint": "1dcad896a6a54d459ba53aab98fe5609",
+      "relations": [
+        {
+          "kind": "SIMILAR_CANDIDATE",
+          "ref": "5568-Q5",
+          "note": "부실우려→부실차주 전환 절차와 부분 겹침(운영 knowledge 존재 여부 확인 필요)"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "전자책 판매 맥락 — 홍보성 문구 제외하고 절차만 구조화",
+        "운영자 절차 안내는 공식 규정 아님"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6043_raw.txt"
+    },
+    {
+      "manifestId": "AB-6044",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "자유게시판",
+        "articleId": "6044",
+        "url": "https://cafe.naver.com/newhopero/6044",
+        "writtenAt": "2026-09-29 12:31"
+      },
+      "title": "안녕하세요 부실차주 준비중입니다",
+      "category": "준비 상태(정보 낮음)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "MEMBER_EXPERIENCE",
+      "segments": [
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "일반멤버(작성자)",
+          "label": "EXPERIENCE",
+          "text": "연체 60일차, 부실차주 신청 준비 중. 세부 사실 없음."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6044",
+      "fingerprint": "1925d544690e737bfa5177c66c1d3ef1",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": false,
+      "flags": [
+        "LOW_INFO — REVIEW payload 생략 권고"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "SKIP_LOW_INFO",
+      "contentSource": "raw/article_6044_raw.txt"
+    },
+    {
+      "manifestId": "AB-6046",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "질문게시판",
+        "articleId": "6046",
+        "url": "https://cafe.naver.com/newhopero/6046",
+        "writtenAt": "2026-09-29 15:36"
+      },
+      "title": "부실우려 신청 후",
+      "category": "부실우려→부실차주 전환(미납)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_CLAIM + REPEATED_OBSERVATION",
+      "segments": [
+        {
+          "type": "QUESTION",
+          "speaker": "일반멤버(작성자)",
+          "text": "부실우려 신청 후 10/10부터 납입하라는 메시지를 받았는데 미납하면 되는지."
+        },
+        {
+          "type": "COUNSELOR_CLAIM",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "부실우려→부실차주로 넘어간 사례에서는 납입 시작일이 와도 미납을 이어갔고, 순서는 신청→합의서 체결→미납→최종 실효→장기연체 등록 확인→부실차주 신청. 5회차 미납 때 실효 연락이 옴. 부실우려를 유지하려는 경우가 아니라 실효 후 부실차주로 가는 경우에 한한 안내."
+        },
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "작성자",
+          "text": "감사, 불안하지만 진행하겠다(후속 결과 없음)."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6046",
+      "fingerprint": "5747d4da0f1df6ee6253e8b73de5d613",
+      "relations": [
+        {
+          "kind": "SIMILAR_CANDIDATE",
+          "ref": "5568-Q5",
+          "note": "동일 전환 경로(5회 미납 실효)"
+        },
+        {
+          "kind": "SIMILAR_CANDIDATE",
+          "ref": "4451-Q10",
+          "note": "동일 전환 경로"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "'미납' 권고는 실효 후 부실차주 전환 경로에 한정 — 일반 권고로 승격 금지"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6046_raw.txt"
+    },
+    {
+      "manifestId": "AB-6047",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "질문게시판",
+        "articleId": "6047",
+        "url": "https://cafe.naver.com/newhopero/6047",
+        "writtenAt": "2026-09-29 16:58"
+      },
+      "title": "안녕하세요 보증재단 가압류 질문좀 드립니다..",
+      "category": "가압류·보증재단",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_CLAIM (운영 관찰) + 일반 법률 설명(미검증)",
+      "segments": [
+        {
+          "type": "QUESTION",
+          "speaker": "감사멤버(작성자)",
+          "text": "연체 70일차, 부실차주 신청 예정. 보증재단이 10/5까지 변제 못하면 아파트 가압류 예고, 10/19에 90일 도래. 가압류 후 지급명령 가능성, 3년 후 가압류 해제 가능 여부."
+        },
+        {
+          "type": "COUNSELOR_CLAIM",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "최근 사례에서 보증재단이 신청 전 가압류하면 새출발기금 이관 후에도 가압류가 유지되는 경우가 있음. 회피책으로 보증재단 채무를 신청 직전에 연체시키는 대응도 있으나 본 질문자는 신청 전 가압류가 먼저 들어올 수 있음. 3년 경과 시 자동해제가 아니라 본안소송 미제기 등 요건에서 가압류 취소를 신청할 수 있음. 가압류와 지급명령은 별개 절차. 사건번호·집행일자 보관."
+        },
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "작성자",
+          "text": "메모해 두고 대응(후속 결과 없음)."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6047",
+      "fingerprint": "0570187f225807982c5aedbfd33c0965",
+      "relations": [
+        {
+          "kind": "SIMILAR_CANDIDATE",
+          "ref": "5568-Q16",
+          "note": "가압류 여부"
+        },
+        {
+          "kind": "SIMILAR_CANDIDATE",
+          "ref": "5568-Q19",
+          "note": "가압류 후 조치(3년 경과)"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "가압류 취소 요건 설명은 운영자의 일반 법률 설명(미검증) — 법률 자문 아님",
+        "신청 직전 연체 대응은 개인·운영 관찰 사례, 일반화 금지"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6047_raw.txt"
+    },
+    {
+      "manifestId": "AB-6050",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "질문게시판",
+        "articleId": "6050",
+        "url": "https://cafe.naver.com/newhopero/6050",
+        "writtenAt": "2026-09-29 19:45"
+      },
+      "title": "폐업 후 보증금은 어떻게 되나요?",
+      "category": "재산심사·사업장 보증금",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_OBSERVATION + MEMBER_EXPERIENCE(상반)",
+      "segments": [
+        {
+          "type": "QUESTION",
+          "speaker": "일반멤버(작성자)",
+          "text": "폐업 후 받은 보증금을 부실차주 신청 시 통장거래내역에서 문제 삼는지. 7월 이후 강화됐다는데."
+        },
+        {
+          "type": "COUNSELOR_CLAIM",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "최근 사례에서 폐업 후 받은 보증금에 대해 사용처 소명을 요구한다고 함."
+        },
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "회원 후추",
+          "label": "EXPERIENCE",
+          "text": "'소명 없었다'(상반된 경험)."
+        },
+        {
+          "type": "OPERATOR_GUIDE",
+          "speaker": "지피지기자산(운영자)",
+          "label": "CLAIM",
+          "text": "2024년 운영자 사례(6월 폐업→8월 신청, 폐업사실증명 제출)에서는 접수 후 임대차서류·보증금 반환내역을 별도 요구받지 않음. 2026년 8월 이후에는 접수 후 심사 중 폐업 사업장의 임대차서류·보증금 반환 서류/현황을 개별 추가 요구하는 사례가 관찰됨('심사 변화 의심')."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6050",
+      "fingerprint": "f086c509aee704913cf3da5116765944",
+      "relations": [
+        {
+          "kind": "TOPIC_LINK",
+          "ref": "CCRS-798001-K1",
+          "note": "K1(금융마이데이터 9/7)과 재산심사 강화 흐름 토픽 연결 — 인과 아님"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "운영자 관찰과 회원 경험이 상반 → CONFLICT_REVIEW",
+        "'심사 변화 의심'은 공식 확인 아님"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6050_raw.txt"
+    },
+    {
+      "manifestId": "AB-6055",
+      "bucket": "A",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "부실차주 신청",
+        "articleId": "6055",
+        "url": "https://cafe.naver.com/newhopero/6055",
+        "writtenAt": "2026-09-30 07:53"
+      },
+      "title": "추심전화 열번도 안받았어요",
+      "category": "추심 대응·신청 후기",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "MEMBER_EXPERIENCE",
+      "segments": [
+        {
+          "type": "ACTUAL_CASE",
+          "speaker": "인기멤버(작성자)",
+          "label": "EXPERIENCE",
+          "text": "채권 6곳. 추심 문자·전화가 오면 바로 금감원에 신고했더니 취하 요청 전화 후 문자만 간간히 옴. 연체 105일 경과 후 부실차주 신청, 1년 유예 없이 상환 계획."
+        },
+        {
+          "type": "COMMUNITY_OPINION",
+          "speaker": "작성자",
+          "label": "CLAIM",
+          "text": "부실우려를 거치지 말고 바로 부실차주로 가길 추천, '90일 아무것도 아니다'(개인 의견)."
+        }
+      ],
+      "dedup_key": "cafe:31312978:6055",
+      "fingerprint": "daa0a5843f1166a6752a46cde957c1d5",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "'바로 부실차주' 추천은 개인 의견 — 다른 운영자 안내(부실우려→실효 경로)와 병존, 우열 판단 금지",
+        "댓글 0건, 결과 후속 없음"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_6055_raw.txt"
+    },
+    {
+      "manifestId": "AB-798001",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "연체전(신속),이자율(프리),채무조정(개인) (menuId 87)",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[금융정책] 신복위에서 9월7일부터 심사시 금융자산을 보기 시작했습니다",
+      "category": "재산심사·금융자산(신복위)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "MIXED — 원문 미러는 CONFIRMED/CLAIM/INFERENCE 혼재",
+      "segments": [
+        {
+          "type": "RAW_MIRROR",
+          "label": "MIXED",
+          "text": "원문 전체 미러(확정 사실+제보+추정 혼재). RAG 혼합 위험 → 이 미러 자체보다 K1~K7 분리 항목을 승인 대상으로 권고."
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001",
+      "fingerprint": "7e1abfceb15a32faa7d8bf9c8815127c",
+      "relations": [
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K1",
+          "note": "분리 저장"
+        },
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K2",
+          "note": "분리 저장"
+        },
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K3",
+          "note": "분리 저장"
+        },
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K4",
+          "note": "분리 저장"
+        },
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K5",
+          "note": "분리 저장"
+        },
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K6",
+          "note": "분리 저장"
+        },
+        {
+          "kind": "SPLIT_INTO",
+          "ref": "CCRS-798001-K7",
+          "note": "분리 저장"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위 자료 — 새출발기금 자동 적용 규칙 생성 금지",
+        "20M/35M 제보·감면율 추정을 확정 사실과 섞지 않음"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "HOLD_RAW_MIRROR__APPROVE_K1_K7_INSTEAD",
+      "contentSource": "raw/article_798001_raw.txt"
+    },
+    {
+      "manifestId": "AB-799029",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "연체전(신속),이자율(프리),채무조정(개인) (menuId 87)",
+        "articleId": "799029",
+        "url": "https://cafe.naver.com/ccrs5500/799029",
+        "writtenAt": "2026-09-28 16:19"
+      },
+      "title": "[개인] 개인워크체결 후기 긴글주의(고소득자에서 다자녀취약계층 체결 과정)",
+      "category": "개인워크아웃 사례",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "MEMBER_EXPERIENCE (단일 사례)",
+      "segments": [
+        {
+          "type": "ACTUAL_CASE",
+          "speaker": "일반회원(작성자)",
+          "label": "EXPERIENCE",
+          "text": "30대 중반 여성, 채무 5천만원 초과. 2022 프리워크아웃(월 77만원×48개월 안내→연체 후 실효), 2024 개인워크아웃(고소득으로 감면 거의 불가, 24개월 월 200만원+ →소득 감소로 유예 후 연체·실효), 2026-07 3번째 신청(전화상담, 다자녀취약계층 접수비·예납금 면제 안내, 부동의 카톡 1회 후 9/28 합의서 체결). 결과: 원금+이자 7,700만원+ → 2,800만원 감면, 상환기간 최장(96개월 목표)."
+        },
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "댓글 회원들",
+          "label": "EXPERIENCE",
+          "text": "실효 후 추심 심하지 않았음, 지급명령·법원 방문 있었으나 90일 견딜 만함, 통장압류 없었음, 전화 접수 가능(예약 한 달 대기)."
+        }
+      ],
+      "dedup_key": "cafe:27453843:799029",
+      "fingerprint": "a94da31ecec57e44c2e93d4bf0b64a41",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "개인워크아웃(신복위) 사례 — 새출발기금 부실차주 규칙과 혼용 금지",
+        "단일 사례 — 감면 결과 일반화 금지"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW (운영 cases 107건=article_id 5855~6010 범위, 미포함)",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED (ADMIN GET /source-type/CAFE_ARTICLE, dedup_key/제목 대조)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_799029_raw.txt"
+    },
+    {
+      "manifestId": "AB-798001-K1",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K1] 신복위 금융자산 심사: 금융마이데이터 시범 2026-08-31~09-04(서울중앙지부), 정식 2026-09-07(전 지부)",
+      "category": "재산심사",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "CONFIRMED",
+      "segments": [
+        {
+          "type": "OPERATOR_GUIDE",
+          "label": "CONFIRMED",
+          "text": "신복위 금융자산 심사: 금융마이데이터 시범 2026-08-31~09-04(서울중앙지부), 정식 2026-09-07(전 지부)",
+          "note": "USER_PROVIDED_CAPTURE 대조(신복위 공지). 원 URL 직접 재확인은 하지 않음 → 승인 시 공식 링크 대조 권장"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K1",
+      "fingerprint": "080be264f05e71e52a9ee669eed8c28d",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        },
+        {
+          "kind": "TOPIC_LINK",
+          "ref": "6050",
+          "note": "폐업 보증금 서류 요구(토픽 연결, 인과 아님)"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "CONFIRMED=사용자 캡처 대조 기준, 공식 링크 대조 후 ACTIVE 권장"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-798001-K2",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K2] 신복위 금융자산 조회 항목: 은행·보험·금융투자·휴면예금/보험",
+      "category": "재산심사",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "CONFIRMED",
+      "segments": [
+        {
+          "type": "OPERATOR_GUIDE",
+          "label": "CONFIRMED",
+          "text": "신복위 금융자산 조회 항목: 은행·보험·금융투자·휴면예금/보험",
+          "note": "USER_PROVIDED_CAPTURE 대조. 각 자산의 반영 방식은 미확인"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K2",
+      "fingerprint": "2473b50a91422aa8f6e891dc934bd63f",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "CONFIRMED=사용자 캡처 대조 기준, 공식 링크 대조 후 ACTIVE 권장"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-798001-K3",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K3] 게시자 설명: 감사원 지적을 배경으로 신복위가 금융자산을 반영하기 시작",
+      "category": "재산심사",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "CLAIM",
+      "segments": [
+        {
+          "type": "COUNSELOR_CLAIM",
+          "label": "CLAIM",
+          "text": "게시자 설명: 감사원 지적을 배경으로 신복위가 금융자산을 반영하기 시작",
+          "note": "게시자 2차 해석, 공식 인과 확정 금지"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K3",
+      "fingerprint": "306562db3fa460843673576ac0bc9edc",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "OFFICIAL 승격 금지"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-798001-K4",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K4] 상담 제보: 금융자산 3,500만원 초과 시 접수 불가 안내(9/25 업데이트)",
+      "category": "재산심사",
+      "sourceTypeProposed": "CASE",
+      "evidenceType": "CLAIM",
+      "segments": [
+        {
+          "type": "COUNSELOR_CLAIM",
+          "label": "CLAIM",
+          "text": "상담 제보: 금융자산 3,500만원 초과 시 접수 불가 안내(9/25 업데이트)",
+          "note": "단일 상담 제보 — 일반 cutoff 변환 금지"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K4",
+      "fingerprint": "73e8678766082ea36d14d5caa6e7f959",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "OFFICIAL 승격 금지"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-798001-K5",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K5] 상담 제보: 금융자산 2,000만원 초과 시 불가 안내(9/25 업데이트)",
+      "category": "재산심사",
+      "sourceTypeProposed": "CASE",
+      "evidenceType": "CLAIM",
+      "segments": [
+        {
+          "type": "COUNSELOR_CLAIM",
+          "label": "CLAIM",
+          "text": "상담 제보: 금융자산 2,000만원 초과 시 불가 안내(9/25 업데이트)",
+          "note": "K4와 수치 상충 — MERGE 금지"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K5",
+      "fingerprint": "ec9f1edd9c2e7f06e61b8329652d1270",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "OFFICIAL 승격 금지"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-798001-K6",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K6] 커뮤니티 추정: 기존 재산+금융자산이 총채무를 넘지 않는 범위로 심사",
+      "category": "재산심사",
+      "sourceTypeProposed": "CASE",
+      "evidenceType": "INFERENCE",
+      "segments": [
+        {
+          "type": "INFERENCE",
+          "label": "INFERENCE",
+          "text": "커뮤니티 추정: 기존 재산+금융자산이 총채무를 넘지 않는 범위로 심사",
+          "note": "게시자 '확실치 않음' 명시 — RULE 생성 금지"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K6",
+      "fingerprint": "7c4fe277d885d133e5459c43aeead98d",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "OFFICIAL 승격 금지"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-798001-K7",
+      "bucket": "B",
+      "source": {
+        "community": "CCRS_CAFE",
+        "clubId": "27453843",
+        "board": "menuId 87",
+        "articleId": "798001",
+        "url": "https://cafe.naver.com/ccrs5500/798001",
+        "writtenAt": "2026-09-24 13:13"
+      },
+      "title": "[CCRS-798001-K7] 커뮤니티 추정: 금융자산이 채무과중도·감면율 산정에 반영될 수 있다",
+      "category": "재산심사",
+      "sourceTypeProposed": "CASE",
+      "evidenceType": "INFERENCE",
+      "segments": [
+        {
+          "type": "INFERENCE",
+          "label": "INFERENCE",
+          "text": "커뮤니티 추정: 금융자산이 채무과중도·감면율 산정에 반영될 수 있다",
+          "note": "감면율 산식 변환 금지"
+        }
+      ],
+      "dedup_key": "cafe:27453843:798001:K7",
+      "fingerprint": "def4251359d1d85153b70f840b3a27d3",
+      "relations": [
+        {
+          "kind": "SIMILAR",
+          "ref": "798001 RAW_MIRROR",
+          "note": "원본 출처 보존 연결"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "기관 분리: 신복위",
+        "OFFICIAL 승격 금지"
+      ],
+      "duplicateCheck": {
+        "knowledge": "NEW 예상 (제목 [CCRS-798001-Kn] 고유). 승인 전 PROD 제목 대조"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "enrich_798001_usercapture.sql"
+    },
+    {
+      "manifestId": "AB-3401",
+      "bucket": "DESIGNATED",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "초보가이드",
+        "articleId": "3401",
+        "url": "https://cafe.naver.com/newhopero/3401",
+        "writtenAt": "2026-01-04 11:57"
+      },
+      "title": "부동산 후순위 담보대출 처리법",
+      "category": "담보대출·중개형",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_GUIDE(비공식)",
+      "segments": [
+        {
+          "type": "OPERATOR_GUIDE",
+          "speaker": "지피지기자산(카페매니저)",
+          "label": "CLAIM",
+          "text": "①부실우려 때 후순위 담보대출을 중개형 채무로 두면 실효 후 부실차주로 자동 이관 ②90일 연체 후 바로 부실차주로 온 경우 신청 후 신복위 방문해 중개형 조정 ③우려 때 미포함이면 주담대는 자동 포함되지 않아 새출발 콜센터에 직접 접수 의사 표시 필요, 부실차주 이후 후순위 캠코 담보 접수는 원채권사 부동의 시 중단되어 정상 상환."
+        }
+      ],
+      "dedup_key": "cafe:31312978:3401",
+      "fingerprint": "556cd3d95c1aeb02cfbcdb48ae04d2b7",
+      "relations": [
+        {
+          "kind": "SIMILAR_CANDIDATE",
+          "ref": "6037",
+          "note": "후순위 담보대출 사례"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "운영자 안내, 공식 규정 아님"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_3401_raw.txt"
+    },
+    {
+      "manifestId": "AB-3438",
+      "bucket": "DESIGNATED",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "초보가이드",
+        "articleId": "3438",
+        "url": "https://cafe.naver.com/newhopero/3438",
+        "writtenAt": "2026-01-05 21:13"
+      },
+      "title": "10프로 추가감면 교육",
+      "category": "추가감면·국민취업지원제도",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_GUIDE(비공식) + REPEATED_OBSERVATION",
+      "segments": [
+        {
+          "type": "OPERATOR_GUIDE",
+          "speaker": "지피지기자산(카페매니저)",
+          "label": "CLAIM",
+          "text": "10% 추가감면 교육은 폐업증명서가 필요. 확실한 루트: 국민취업제도+희망리턴패키지 재창업(이러닝·비대면) 또는 재취업(기초+심화). 확정안 담당자들이 작년에 위 두 경우 외에는 높은 감면을 주지 않았다고 서술(전언). 국민취업지원제도 유형·신청 방법·절차 일반 정보 포함."
+        },
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "speaker": "회원",
+          "label": "EXPERIENCE",
+          "text": "1유형 구직촉진수당이 월 50만원→60만원×6개월로 변경됐다는 회원 보고."
+        }
+      ],
+      "dedup_key": "cafe:31312978:3438",
+      "fingerprint": "524d2d7a404656a201652619530bb711",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "'담당자 전언' 부분은 CLAIM(공식 아님)",
+        "국민취업지원제도 수치는 고용24 공식 대조 필요"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW",
+        "knowledge": "PROD_TITLE_CHECK_REQUIRED"
+      },
+      "approvalRecommendation": "REVIEW_THEN_ADMIN_DECIDE",
+      "contentSource": "raw/article_3438_raw.txt"
+    },
+    {
+      "manifestId": "AB-4078",
+      "bucket": "DESIGNATED",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "초보가이드",
+        "articleId": "4078",
+        "url": "https://cafe.naver.com/newhopero/4078",
+        "writtenAt": "2026-02-07 18:26"
+      },
+      "title": "부실우려 신청 후기 (감사회원 땜통욱님)",
+      "category": "신청 후기(이미지 본문)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "MEMBER_EXPERIENCE",
+      "segments": [
+        {
+          "type": "MEMBER_EXPERIENCE",
+          "label": "EXPERIENCE",
+          "text": "본문 전체가 이미지 4장(OCR 미수행). 댓글은 응원·지점 문의 수준."
+        }
+      ],
+      "dedup_key": "cafe:31312978:4078",
+      "fingerprint": "7085f3dd4275807315e4cda51384f161",
+      "relations": [],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": false,
+      "flags": [
+        "IMAGE_ONLY — 텍스트 본문 없음, OCR/수기 구조화 전 REVIEW payload 금지"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW",
+        "knowledge": "n/a"
+      },
+      "approvalRecommendation": "NEEDS_ORIGINAL_TEXT",
+      "contentSource": "raw/article_4078_raw.txt"
+    },
+    {
+      "manifestId": "AB-4451",
+      "bucket": "DESIGNATED",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "초보가이드",
+        "articleId": "4451",
+        "url": "https://cafe.naver.com/newhopero/4451",
+        "writtenAt": "2026-03-06 19:37"
+      },
+      "title": "감사회원 FAQ (자주하는 질문들) 정리집",
+      "category": "운영자 FAQ(50문답)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_GUIDE(비공식) — SAFETY_FLAG 포함",
+      "segments": [
+        {
+          "type": "OPERATOR_GUIDE",
+          "speaker": "지피지기자산(카페매니저, 단톡방 방장 정리본)",
+          "label": "CLAIM",
+          "text": "운영자 FAQ 50문답 중 재산심사 회피성 권고 Q[8, 21, 22, 27, 28, 35] 삭제본. 원문 전체는 raw 보존."
+        }
+      ],
+      "dedup_key": "cafe:31312978:4451",
+      "fingerprint": "140c1322587cde08359b77b31ad457d7",
+      "relations": [
+        {
+          "kind": "OVERLAP_CANDIDATE",
+          "ref": "5568",
+          "note": "5568과 부분 겹침(이전 curation 문서 NEWSTART_OPERATOR_FAQ_5568_4451_CURATION 참조)"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "SAFETY_FLAG: 타인 계좌 이체·현금화 등 재산심사 회피성 권고 Q[8, 21, 22, 27, 28, 35] — payload 는 삭제본만 사용",
+        "이 삭제본 기준으로만 REVIEW 생성 가능. phase1 SQL 미러(원문 그대로)는 승인 금지"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW",
+        "knowledge": "DUPLICATE_CHECK_REQUIRED — 운영 OPERATOR_KNOWLEDGE 1/CAFE_ARTICLE 1건과 충돌 가능(이전 4451 후보화 이력)"
+      },
+      "approvalRecommendation": "REVIEW_REDACTED_ONLY__NEVER_APPROVE_PHASE1_MIRROR",
+      "contentSource": "raw/article_4451_raw.txt (SAFETY redacted)"
+    },
+    {
+      "manifestId": "AB-5568",
+      "bucket": "DESIGNATED",
+      "source": {
+        "community": "NEWSTART_BORROWER_CAFE",
+        "clubId": "31312978",
+        "board": "초보가이드",
+        "articleId": "5568",
+        "url": "https://cafe.naver.com/newhopero/5568",
+        "writtenAt": "2026-06-29 10:27"
+      },
+      "title": "부실차주 전자책 상담방 - 30개 Q&A 정리 (실제 33문답)",
+      "category": "운영자 Q&A(33문답)",
+      "sourceTypeProposed": "CAFE_ARTICLE",
+      "evidenceType": "OPERATOR_GUIDE(비공식)",
+      "segments": [
+        {
+          "type": "OPERATOR_GUIDE",
+          "speaker": "지피지기자산(카페매니저)",
+          "label": "CLAIM",
+          "text": "2026-03~06 상담방 대화와 6/25 금융위 개선안을 바탕으로 정리한 33문답(자격·부실우려→부실차주 전환·재산/감면율·추심/법적대응·서류·진행·6/25 개선안). 운영자 안내이며 공식 규정 아님."
+        }
+      ],
+      "dedup_key": "cafe:31312978:5568",
+      "fingerprint": "c54971ac74d68f8a53805c9dd9583a4d",
+      "relations": [
+        {
+          "kind": "OVERLAP_CANDIDATE",
+          "ref": "4451",
+          "note": "부분 겹침"
+        }
+      ],
+      "relatedCaseIds": [],
+      "targetStatus": "REVIEW",
+      "payloadReady": true,
+      "flags": [
+        "Q14(통장잔고 정리 유리)·Q15(보험 계약자·수익자 가족 변경 시 제외 가능) — 재산 정리 관련, 승인 전 SAFETY 재검수 필요",
+        "Q28은 부동산 매도·명의변경 금지를 명시(안전)"
+      ],
+      "duplicateCheck": {
+        "empirical_cases": "NEW",
+        "knowledge": "DUPLICATE_CHECK_REQUIRED — 운영 OPERATOR_KNOWLEDGE 1건과 충돌 가능(이전 5568 후보화 이력)"
+      },
+      "approvalRecommendation": "REVIEW_THEN_SAFETY_RECHECK",
+      "contentSource": "raw/article_5568_raw.txt"
+    }
+  ]
+}
