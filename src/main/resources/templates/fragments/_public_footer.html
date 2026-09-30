@@ -11,15 +11,22 @@
   fragment를 복제하면 사업자 정보가 화면마다 어긋난다.
 -->
 <th:block th:fragment="publicFooter">
-  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(false, false)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(false, false, false)}"></th:block>
 </th:block>
 
 <th:block th:fragment="publicFooterBuildIt">
-  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, false)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, false, false)}"></th:block>
 </th:block>
 
-<!-- hideAddress: 화면 표기만 숨긴다(NewStart). 사업자 정보 데이터 자체는 어떤 경로에서도 삭제하지 않는다. -->
-<th:block th:fragment="publicFooterBranded(buildIt, hideAddress)">
+<!-- NewStart 전용: 사업자/출판사 정보 블록을 렌더에서 제외(footer-biz 미생성 → 빈 공간 없음).
+     다른 서비스(BuildIt landing, F2R home)의 법적 표기는 그대로 유지된다. -->
+<th:block th:fragment="publicFooterNewStart">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, true, true)}"></th:block>
+</th:block>
+
+<!-- hideAddress: 화면 표기만 숨긴다. hideBiz: 사업자 정보 블록 전체를 NewStart 렌더에서 제외.
+     사업자 정보 데이터 자체는 어떤 경로에서도 삭제하지 않는다. -->
+<th:block th:fragment="publicFooterBranded(buildIt, hideAddress, hideBiz)">
   <footer class="public-footer">
     <div class="footer-top">
       <div class="footer-brand">
@@ -43,8 +50,9 @@
         <a onclick="openContactModal()">문의하기</a>
       </div>
     </div>
-    <hr class="footer-divider"/>
-    <div class="footer-biz">
+    <th:block th:unless="${hideBiz}">
+      <hr class="footer-divider"/>
+      <div class="footer-biz">
       <div class="footer-biz-row">
         <span class="footer-biz-item">상호명: 압구정에듀홀릭출판사</span>
         <span class="footer-biz-item">대표: 박정민</span>
@@ -59,16 +67,20 @@
         <span class="footer-biz-item">전화: 010-8507-1453</span>
         <span class="footer-biz-item">이메일: woorinaesin@naver.com</span>
       </div>
-    </div>
+      </div>
+    </th:block>
     <div class="footer-copyright"
          th:text="${buildIt} ? '© 2026 Feel 2 Real. All rights reserved.' : '© 2026 Feel to Real. All rights reserved.'">© 2026 Feel to Real. All rights reserved.</div>
   </footer>
 </th:block>
 
-<th:block th:fragment="publicContactModal">
+<!-- hideDirect(NewStart): 전화/이메일 직접 연락 옵션을 렌더하지 않는다.
+     다른 서비스는 인자 없이 호출 → null(falsy) → 기존 그대로 렌더된다. -->
+<th:block th:fragment="publicContactModal(hideDirect)">
   <div id="contactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;" onclick="closeContactModal(event)">
     <div style="background:#fff; border-radius:16px; padding:32px 28px; max-width:340px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18);" onclick="event.stopPropagation()">
       <div style="font-size:18px; font-weight:700; color:#1a1a2e; margin-bottom:24px;">상담 신청하기</div>
+      <th:block th:unless="${hideDirect}">
       <a href="tel:010-8507-1453" class="public-contact-option">
         <span style="font-size:22px;">📞</span>
         <div style="text-align:left;">
@@ -83,6 +95,7 @@
           <div style="font-size:13px; color:#6b7280; font-weight:400;">woorinaesin@naver.com</div>
         </div>
       </a>
+      </th:block>
       <button onclick="closeContactModal()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#f3f4f6; color:#6b7280; font-size:15px; cursor:pointer;">닫기</button>
     </div>
   </div>

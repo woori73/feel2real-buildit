@@ -48,18 +48,18 @@ test('motion bootstrap respects reduced motion, IntersectionObserver absence, an
 
 /* ── HOME: 진입 reveal + 지피지기 도착 강조 ── */
 
-test('HOME marks hero, five §2 entry cards, chat card, AI and updates for one-time reveal', () => {
+test('HOME marks hero, four §2 entry cards, chat card, AI and updates for one-time reveal', () => {
   assert.match(INDEX, /class="ns-hero"[^>]*data-ns-reveal/);
   const revealedCards = INDEX.match(/<a class="ns-feature-card" href="\/newstart\/[^"]*"[^>]*data-ns-reveal/g) || [];
   assert.equal(revealedCards.length, 4); // fss-helper · a-to-z · questions · galmuri
-  // 지피지기는 HOME 앵커 진입점 — 라우트가 없어 위 계측에 들어가지 않지만 동일하게 reveal 된다
-  assert.match(INDEX, /<a class="ns-feature-card" href="#ns-ai"[^>]*data-ns-reveal/);
+  // 2026-09-30 지시: 상단 지피지기 Agent 카드 삭제 — 카드 진입점 복원 금지(아래 ns-ai 섹션이 유일한 질문 진입점).
+  assert.doesNotMatch(INDEX, /<a class="ns-feature-card" href="#ns-ai"/);
   assert.match(INDEX, /ns-service-chat" href="\/newstart\/chat" data-ns-reveal/);
   assert.match(INDEX, /id="ns-ai"[^>]*data-ns-reveal/);
   assert.match(INDEX, /id="ns-updates"[^>]*data-ns-reveal/);
   // 지연은 토큰 기반 스태거, 레이아웃 이동(클릭 영역)은 불변
   assert.match(INDEX, /--ns-reveal-delay:240ms/);
-  assert.match(INDEX, /--ns-reveal-delay:600ms/);
+  assert.match(INDEX, /--ns-reveal-delay:480ms/);
 });
 
 test('HOME keeps the 지피지기 anchor contract and loads the motion bootstrap before newstart.js', () => {

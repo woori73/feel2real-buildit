@@ -120,10 +120,13 @@ public class NewStartGalmuriService {
   }
 
   private static GalmuriDetail toDetail(NewstartKnowledgeItem item) {
-    return new GalmuriDetail(item.getKnowledgeId(), item.getTitle(), item.getSummary(), item.getContent(),
+    // DB 원본(structured/RAG용)은 그대로 두고, 사용자에게 보이는 content·tags만 사람용으로 변환.
+    return new GalmuriDetail(item.getKnowledgeId(), item.getTitle(), item.getSummary(),
+        NewStartGalmuriDisplay.humanizeContent(item.getContent()),
         item.getCategory(), labelOf(item.getSourceType()), toneOf(item.getSourceType()),
         item.getAuthority(), text(item.getSourceDate()), text(item.getEffectiveFrom()),
-        text(item.getEffectiveTo()), tagsOf(item.getTags()), item.getSourceUrl());
+        text(item.getEffectiveTo()), NewStartGalmuriDisplay.humanizeTags(tagsOf(item.getTags())),
+        item.getSourceUrl());
   }
 
   private static List<String> tagsOf(String tags) {
