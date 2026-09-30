@@ -1,11 +1,10 @@
 name: NewStart Institution Knowledge Audit (read-only, throwaway)
 
-# 2026-09-30 NEWSTART 지피지기 운영 DB 전수감사 — 기관별 지식 census (READ ONLY).
-# - 고정 SELECT만 실행 (임의 SQL 입력 없음, 범용 DB shell 아님).
+# 2026-09-30 GOLDEN 회귀 CASE-retrieval 추적 (READ ONLY, throwaway carrier).
+# - 고정 SELECT/로그 조회만 실행 (임의 SQL 입력 없음).
 # - DB session은 SET SESSION TRANSACTION READ ONLY.
-# - 출력: 집계·article_id·관리자 큐레이션 TITLE 샘플·길이·플래그만. 카페 본문/닉네임/채팅 원문 출력 없음.
+# - 출력: 집계·article_id·id·status·길이·플래그·title 일부만. 카페 본문/닉네임/채팅 원문/질문 원문 출력 없음.
 # - INSERT/UPDATE/DELETE/ALTER/CREATE/DROP 없음. 승인/repair endpoint 호출 없음.
-# - throwaway carrier (선례: chore/newstart-grant-census-readonly-20260928 / 23fdee51).
 
 on:
   workflow_dispatch:
@@ -26,16 +25,29 @@ jobs:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
 
-      - name: Build fixed read-only audit script
+      - name: Build fixed read-only golden-regression probe
         shell: bash
         run: |
           python3 - <<'PYEOF'
-          import json
+          import json, re
 
           RO = "SET SESSION TRANSACTION READ ONLY; SET SESSION group_concat_max_len=65535;"
 
           def hx(s):
               return "X'" + s.encode("utf-8").hex() + "'"
+
+          # Java JipijigiResearchService.keywordsOf 와 동일 규칙 (정규식 / 길이 필터 / distinct / limit 12)
+          GOLDEN = ("폐업 후 보증금 받은거 부실 차주 갈때 통장거래내역에서 문제 삼지 않나요? "
+                    "예전엔 잔고만 확인하고 거래 내역은 확인 안한다는 글이 많은데 "
+                    "7월부터 강화 된 후 어떻게 되는지 궁금합니다.")
+          def keywords_of(text):
+              toks = re.sub(r'[^가-힣a-zA-Z0-9]', ' ', text).split()
+              seen = []
+              for t in toks:
+                  if len(t) >= 2 and t not in seen:
+                      seen.append(t)
+              return seen[:12]
+          KWS = keywords_of(GOLDEN)
 
           lines = []
           def q(name, sql):
@@ -47,95 +59,83 @@ jobs:
           C.append('MYSQL_CENSUS="mysql -h \\"${DB_HOST}\\" -P \\"${DB_PORT}\\" -u \\"${DB_USER}\\" -p\\"${DB_PASSWORD}\\" \\"${DB_NAME}\\" --default-character-set=utf8mb4 --batch 2>&1"')
           C.append('run_q() { echo "=== $1 ==="; eval "$MYSQL_CENSUS -e \\"$2\\"" || echo "QUERY_FAILED: $1"; }')
 
-          # --- deploy state ---
-          q("FLYWAY_TOP5", "SELECT version, description, installed_on FROM flyway_schema_history ORDER BY CAST(version AS UNSIGNED) DESC LIMIT 5;")
+          C.append('echo "=== KEYWORDS_OF (java-identical) ==="')
+          for k in KWS:
+              C.append('echo "KW=%s"' % k)
 
-          # --- knowledge wiki: status / authority census ---
-          q("KS_STATUS", "SELECT status, COUNT(*) AS cnt FROM newstart_knowledge_items GROUP BY status;")
-          q("KS_AUTH", "SELECT COALESCE(NULLIF(authority,''),'(none)') AS auth, COUNT(*) AS total,"
-                       " SUM(status='ACTIVE') AS active, SUM(status='REVIEW') AS review,"
-                       " SUM(status='DRAFT') AS draft, SUM(status='ARCHIVED') AS archived,"
-                       " MAX(DATE(updated_at)) AS latest, MAX(DATE(created_at)) AS latest_created,"
-                       " SUM(source_url IS NOT NULL AND source_url<>'') AS with_url,"
-                       " SUM(CHAR_LENGTH(COALESCE(content,''))>=50) AS filled_content"
-                       " FROM newstart_knowledge_items GROUP BY auth ORDER BY total DESC;")
-          q("KS_AUTH_TYPE_STATUS", "SELECT COALESCE(NULLIF(authority,''),'(none)') AS auth, source_type, status, COUNT(*) AS cnt"
-                       " FROM newstart_knowledge_items GROUP BY auth, source_type, status ORDER BY auth, cnt DESC;")
-          q("KS_ACTIVE_TITLE_SAMPLE", "SELECT COALESCE(NULLIF(authority,''),'(none)') AS auth,"
-                       " SUBSTRING(GROUP_CONCAT(SUBSTRING(title,1,60) ORDER BY COALESCE(updated_at,created_at) DESC SEPARATOR ' || '),1,400) AS recent_titles"
-                       " FROM newstart_knowledge_items WHERE status='ACTIVE' GROUP BY auth ORDER BY COUNT(*) DESC;")
-          q("KS_EBOOK_OPERATOR", "SELECT source_type, status, COUNT(*) AS cnt,"
-                       " SUM(source_url IS NOT NULL AND source_url<>'') AS with_url, MAX(DATE(updated_at)) AS latest"
+          # --- A/B: HANDOFF 사례의 DB 존재 + 상태 (knowledge_items / empirical_cases) ---
+          q("KH_IMDA_HANDOFF", "SELECT knowledge_id, status, source_type, COALESCE(NULLIF(authority,''),'(none)') AS auth,"
+                       " SUBSTRING(title,1,80) AS title80, DATE(created_at) AS cday"
                        " FROM newstart_knowledge_items"
-                       " WHERE source_type IN ('EBOOK','OPERATOR_KNOWLEDGE','AUDIT','RULE','DERIVED_RULE','CHAT_DISCOVERY','REQUEST_DISCOVERY','CASE')"
-                       " GROUP BY source_type, status;")
+                       " WHERE content LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%')"
+                       " OR (content LIKE CONCAT('%%',%s,'%%') AND content LIKE CONCAT('%%',%s,'%%'))"
+                       " ORDER BY knowledge_id DESC LIMIT 20;" % (hx("임대차"), hx("임대차"), hx("보증금"), hx("폐업")))
+          q("KH_CASES_IMDA", "SELECT article_id, SUBSTRING(title,1,60) AS title60, DATE(written_at) AS wday"
+                       " FROM newstart_empirical_cases"
+                       " WHERE content_raw LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%')"
+                       " ORDER BY article_id+0 LIMIT 20;" % (hx("임대차"), hx("임대차")))
+          q("KH_HANDOFF_TAGS", "SELECT knowledge_id, status, source_type, SUBSTRING(title,1,70) AS title70"
+                       " FROM newstart_knowledge_items"
+                       " WHERE tags LIKE CONCAT('%%',%s,'%%') OR tags LIKE CONCAT('%%',%s,'%%') OR tags LIKE CONCAT('%%',%s,'%%')"
+                       " ORDER BY knowledge_id DESC LIMIT 20;" % (hx("보완서류"), hx("접수후심사"), hx("2026-08")))
+          q("NEW_ROWS_2DAYS", "SELECT 'knowledge' AS tbl, status AS st, source_type AS src, DATE(created_at) AS cday, COUNT(*) AS cnt"
+                       " FROM newstart_knowledge_items WHERE created_at >= '2026-09-29' GROUP BY tbl, st, src, cday"
+                       " UNION ALL"
+                       " SELECT 'cases', 'n/a', 'n/a', DATE(created_at), COUNT(*)"
+                       " FROM newstart_empirical_cases WHERE created_at >= '2026-09-29' GROUP BY tbl, st, src, cday"
+                       " ORDER BY cday DESC;")
 
-          # --- topic coverage probes (title/content LIKE, counts only) ---
-          terms = ["임대차","보증금","해약환급","근저당","지급명령","추심","Credit4U","신용정보","전자소송",
-                   "대위변제","보증부","장기연체","부실우려","전입","주소","주식","가상자산","코인","이혼","감사원"]
+          # --- C: GOLDEN 키워드별 검색 히트 (knowledge ACTIVE/REVIEW vs empirical) ---
           unions = []
-          for t in terms:
-              p = hx(t)
-              unions.append("SELECT %s AS term, COUNT(*) AS hits, SUM(status='ACTIVE') AS active_hits"
-                            " FROM newstart_knowledge_items"
-                            " WHERE content LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%') OR tags LIKE CONCAT('%%',%s,'%%')" % (p, p, p, p))
-          q("KS_TOPIC_PROBE", " UNION ALL ".join(unions) + ";")
+          for k in KWS:
+              p = hx(k)
+              unions.append(
+                  "SELECT %s AS kw,"
+                  " (SELECT COUNT(*) FROM newstart_knowledge_items WHERE status='ACTIVE' AND (content LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%') OR tags LIKE CONCAT('%%',%s,'%%') OR category LIKE CONCAT('%%',%s,'%%'))) AS know_active,"
+                  " (SELECT COUNT(*) FROM newstart_knowledge_items WHERE status='REVIEW' AND (content LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%') OR tags LIKE CONCAT('%%',%s,'%%'))) AS know_review,"
+                  " (SELECT COUNT(*) FROM newstart_empirical_cases WHERE title LIKE CONCAT('%%',%s,'%%') OR content_raw LIKE CONCAT('%%',%s,'%%') OR key_insights LIKE CONCAT('%%',%s,'%%') OR special_circumstances LIKE CONCAT('%%',%s,'%%')) AS cases_hits"
+                  % (p, p, p, p, p, p, p, p, p, p, p, p))
+          q("KW_SIM", " UNION ALL ".join(unions) + ";")
 
-          # --- handoff case presence (폐업 사업장 임대차/보증금 보완요구) ---
-          q("KS_HANDOFF_PROBE", "SELECT knowledge_id, status, source_type, COALESCE(NULLIF(authority,''),'(none)') AS auth,"
-                       " SUBSTRING(title,1,80) AS title80 FROM newstart_knowledge_items"
-                       " WHERE content LIKE CONCAT('%%',%s,'%%') AND (content LIKE CONCAT('%%',%s,'%%') OR content LIKE CONCAT('%%',%s,'%%'))"
-                       " ORDER BY knowledge_id DESC LIMIT 20;" % (hx("임대차"), hx("보증금"), hx("폐업")))
-          q("CASES_HANDOFF_PROBE", "SELECT article_id FROM newstart_empirical_cases"
-                       " WHERE content_raw LIKE CONCAT('%%',%s,'%%') ORDER BY article_id+0 LIMIT 30;" % hx("임대차"))
+          # --- D/E: STEP1 실제 상위 8건 (searchActiveKnowledge 재현) ---
+          ors = " OR ".join("(content LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%') OR tags LIKE CONCAT('%%',%s,'%%') OR category LIKE CONCAT('%%',%s,'%%'))" % (hx(k), hx(k), hx(k), hx(k)) for k in KWS)
+          q("STEP1_TOP8", "SELECT knowledge_id, source_type, COALESCE(NULLIF(authority,''),'(none)') AS auth,"
+                       " SUBSTRING(title,1,70) AS title70, DATE(created_at) AS cday"
+                       " FROM newstart_knowledge_items WHERE status='ACTIVE' AND (%s)"
+                       " ORDER BY created_at DESC LIMIT 8;" % ors)
+          # --- D/E: STEP3 searchEmpiricalCases 재현 (window 160 -> keywordHits ranking -> top10) ---
+          case_ors = " OR ".join("(title LIKE CONCAT('%%',%s,'%%') OR content_raw LIKE CONCAT('%%',%s,'%%') OR key_insights LIKE CONCAT('%%',%s,'%%') OR special_circumstances LIKE CONCAT('%%',%s,'%%'))" % (hx(k), hx(k), hx(k), hx(k)) for k in KWS)
+          hits = " + ".join("(LOCATE(%s, CONCAT_WS(' ', title, COALESCE(key_insights,''), COALESCE(special_circumstances,''), COALESCE(content_raw,'')))>0)" % hx(k) for k in KWS)
+          q("STEP3_TOP10", "SELECT article_id, hits, DATE(written_at) AS wday, SUBSTRING(title,1,60) AS title60 FROM ("
+                       "SELECT article_id, written_at, title, (%s) AS hits FROM newstart_empirical_cases WHERE (%s)"
+                       " ORDER BY written_at DESC LIMIT 160) win ORDER BY hits DESC, written_at DESC LIMIT 10;" % (hits, case_ors))
+          # --- STEP4 공식 업데이트 매칭 (orderedEvidence official 슬롯 재현) ---
+          off_ors = " OR ".join("(title LIKE CONCAT('%%',%s,'%%') OR summary LIKE CONCAT('%%',%s,'%%') OR content LIKE CONCAT('%%',%s,'%%'))" % (hx(k), hx(k), hx(k)) for k in KWS)
+          q("STEP4_OFFICIAL", "SELECT update_id, source_type, source_name, SUBSTRING(title,1,60) AS title60, DATE(created_at) AS cday"
+                       " FROM newstart_official_updates WHERE review_status='PUBLISHED' AND (%s)"
+                       " ORDER BY created_at DESC LIMIT 8;" % off_ors)
 
-          # --- operator FAQ sources (5568 33문답 / 4451 50문답 / 상담방) ---
-          q("KS_FAQ_PROBE", "SELECT knowledge_id, status, source_type, SUBSTRING(title,1,70) AS title70"
-                       " FROM newstart_knowledge_items"
-                       " WHERE title LIKE '%%5568%%' OR title LIKE '%%4451%%'"
-                       " OR title LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%') OR title LIKE CONCAT('%%',%s,'%%')"
-                       " OR tags LIKE CONCAT('%%',%s,'%%') ORDER BY knowledge_id DESC LIMIT 40;"
-                       % (hx("상담방"), hx("감사회원"), hx("FAQ"), hx("단톡방")))
-
-          # --- empirical cases census ---
-          q("CASES_AGG", "SELECT COUNT(*) AS rows_total, COUNT(DISTINCT article_id) AS distinct_ids,"
-                       " MIN(article_id+0) AS min_id, MAX(article_id+0) AS max_id,"
-                       " SUM(LOCATE(%s, COALESCE(content_raw,''))>0) AS with_comment_marker,"
-                       " SUM(source_url IS NOT NULL AND source_url<>'') AS with_url"
-                       " FROM newstart_empirical_cases;" % hx("[댓글]"))
-          q("CASES_DUP", "SELECT COUNT(*) AS dup_groups FROM (SELECT article_id FROM newstart_empirical_cases GROUP BY article_id HAVING COUNT(*)>1) d;")
-          q("CASES_IDS", "SELECT GROUP_CONCAT(article_id ORDER BY article_id+0) AS ids FROM newstart_empirical_cases;")
-          q("CASE_MIRROR", "SELECT (SELECT COUNT(*) FROM newstart_knowledge_items WHERE source_type='CASE') AS case_mirrors,"
+          # --- 관계/미러/현재 상태 ---
+          q("RELATIONS", "SELECT COUNT(*) AS rel_rows, MAX(DATE(created_at)) AS latest FROM newstart_knowledge_relations;")
+          q("CASE_MIRROR2", "SELECT (SELECT COUNT(*) FROM newstart_knowledge_items WHERE source_type='CASE') AS case_mirrors,"
                        " (SELECT COUNT(*) FROM newstart_empirical_cases c WHERE NOT EXISTS ("
                        "SELECT 1 FROM newstart_knowledge_items k WHERE k.title LIKE CONCAT(%s, c.article_id, ' %%'))) AS cases_without_mirror;" % hx("[사례] "))
-          q("STATUS_LOG", "SELECT COUNT(*) AS logs, MAX(created_at) AS latest FROM newstart_knowledge_status_log;")
-
-          # --- official updates ---
-          q("OSRC", "SELECT source_type, source_name, review_status, COUNT(*) AS cnt,"
-                       " MAX(DATE(published_at)) AS latest_published, MAX(DATE(updated_at)) AS latest_updated,"
-                       " SUM(original_url IS NOT NULL AND original_url<>'') AS with_url"
-                       " FROM newstart_official_updates GROUP BY source_type, source_name, review_status ORDER BY cnt DESC;")
-          q("OTITLES", "SELECT source_name, SUBSTRING(GROUP_CONCAT(SUBSTRING(title,1,50) ORDER BY published_at DESC SEPARATOR ' || '),1,300) AS recent_titles"
-                       " FROM newstart_official_updates WHERE review_status='PUBLISHED' GROUP BY source_name;")
-
-          # --- jipijigi agent state ---
-          q("SESSIONS", "SELECT review_state, COUNT(*) AS cnt, MAX(DATE(answered_at)) AS latest FROM newstart_jipijigi_answer_sessions GROUP BY review_state;")
-          q("DRAFTS", "SELECT status, COUNT(*) AS cnt, MAX(DATE(created_at)) AS latest FROM newstart_jipijigi_drafts GROUP BY status;")
-          q("TRACES", "SELECT source_class, COUNT(*) AS cnt FROM newstart_jipijigi_research_traces GROUP BY source_class;")
-          q("GRANTS", "SELECT COUNT(*) AS grant_rows FROM newstart_member_grants;")
-          q("REQUESTS", "SELECT COUNT(*) AS req_rows, MAX(DATE(created_at)) AS latest FROM newstart_requests;")
+          q("KS_STATUS_NOW", "SELECT status, COUNT(*) AS cnt, MAX(DATE(updated_at)) AS latest FROM newstart_knowledge_items GROUP BY status;")
 
           C.extend(lines)
 
-          # --- app state + yesterday's timeout evidence (logs, no question text) ---
+          # --- deploy state + today's chat timing (로그에는 길이·ms만 존재, 질문 원문 없음) ---
           C.append('echo "=== APP_UNIT ==="')
           C.append('systemctl show f2r-app.service -p MainPID -p ActiveEnterTimestamp -p ExecMainStartTimestamp')
           C.append('ls -l --time-style=full-iso /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true')
           C.append('date -u "+NOW_UTC=%Y-%m-%dT%H:%M:%SZ"')
-          C.append('echo "=== CHAT_TIMING_LOGS ==="')
-          C.append('journalctl -u f2r-app.service --since "2026-09-29 00:00:00" -o short-iso --no-pager 2>/dev/null | grep -a "newstart ai chat timing" | tail -40 || echo NO_TIMING_LINES')
-          C.append('echo "=== CHAT_ERROR_LOGS ==="')
-          C.append('journalctl -u f2r-app.service --since "2026-09-29 00:00:00" -o short-iso --no-pager 2>/dev/null | grep -aiE "newstart" | grep -aiE "timeout|timed out|SocketTimeout|fallback|FAILED|Exception|error" | tail -60 || echo NO_ERROR_LINES')
+          C.append('echo "=== JAR_RESEARCH_PROBE ==="')
+          C.append('unzip -p /home/ec2-user/app.jar "BOOT-INF/classes/f2r/tutor_solution/private_tutor_solution_back/domain/newstart/jipijigi/service/JipijigiResearchService.class" 2>/dev/null | strings | grep -c "searchEmpiricalCases" | sed "s/^/SEARCH_EMPIRICAL_IN_JAR=//" || echo "SEARCH_EMPIRICAL_IN_JAR=0"')
+          C.append('unzip -p /home/ec2-user/app.jar "BOOT-INF/classes/f2r/tutor_solution/private_tutor_solution_back/domain/newstart/service/NewStartAiChatService.class" 2>/dev/null | strings | grep -c "orderedEvidence" | sed "s/^/ORDERED_EVIDENCE_IN_JAR=//" || echo "ORDERED_EVIDENCE_IN_JAR=0"')
+          C.append('echo "=== CHAT_TIMING_TODAY ==="')
+          C.append('journalctl -u f2r-app.service --since "2026-09-30 00:00:00" -o short-iso --no-pager 2>/dev/null | grep -a "newstart ai chat timing" | sed -E "s/.*timing //" | tail -40 || echo NO_TIMING_LINES')
+          C.append('echo "=== CHAT_ERROR_TODAY ==="')
+          C.append('journalctl -u f2r-app.service --since "2026-09-30 00:00:00" -o short-iso --no-pager 2>/dev/null | grep -aiE "newstart" | grep -aiE "timeout|timed out|SocketTimeout|fallback|FAILED|Exception|error" | tail -40 || echo NO_ERROR_LINES')
 
           C.append('echo "=== DB_CATEGORY ==="')
           C.append('echo "DB_NAME=${DB_NAME:-unset}"')
@@ -144,7 +144,8 @@ jobs:
 
           with open("/tmp/audit.json", "w", encoding="utf-8") as f:
               json.dump({"commands": C}, f, ensure_ascii=False)
-          print("params bytes:", len(open("/tmp/audit.json", "rb").read()))
+          print("keywords:", KWS)
+          print("params bytes:", len(open("/tmp/audit.json","rb").read()))
           PYEOF
 
       - name: Run audit via SSM
@@ -156,7 +157,7 @@ jobs:
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --parameters file:///tmp/audit.json \
-            --comment "newstart 2026-09-30 institution knowledge audit (read-only)" \
+            --comment "newstart golden-regression case-retrieval probe (read-only)" \
             --query 'Command.CommandId' --output text)
           echo "SSM Command ID: $COMMAND_ID"
           set +e
