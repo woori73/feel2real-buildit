@@ -1,0 +1,40 @@
+{
+ "authority": "HIGH / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "신용정보"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "이력 제공 기간",
+   "meaning": "1천만/5백 초과+90일 내 미상환 → 연체기간만큼 최장 1년",
+   "source_url": "https://www.credit4u.or.kr:2443/cnsl/faqList.do"
+  },
+  {
+   "applies_to": "2025 신용회복 지원조치",
+   "meaning": "5천만원 이하 소액연체 완제자 이력 제한, '25.9.30 잠정 시행",
+   "source_url": "https://www.fsc.go.kr/no010101/85072"
+  }
+ ],
+ "normalized_content": "Credit4U FAQ 원문: '해제된 연체정보등은 등록금액이 일정금액(대출금 1천만원, 카드대금 5백만원)을 초과하고 등록사유발생일로부터 90일 이내에 상환되지 못한 경우에는 최장 1년 이내에서 연체한 기간만큼 이력이 금융기관 등에 제공됩니다.' 연체완제 시 연체정보 자체는 해제되나 위 기준에 해당하면 이력정보가 일정기간 공유된다. 한편 금융위원회 2025.8.11 배포 자료: '20.1.1.부터 25.8.31.까지 소액(5,000만원 이하)의 연체가 발생하였으며' 전액 상환한 개인·개인사업자 대출 차주의 연체이력정보 공유·활용을 제한하는 신용회복 지원조치를 '25.9.30.(잠정)' 시행. 대상 약 324만 명 중 약 272만 명이 이미 전액상환 완료, 잔여 약 52만 명도 연말 내 완제 시 적용된다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "금융위원회",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.fsc.go.kr/no010101/85072",
+ "status": "REVIEW",
+ "tags": [
+  "연체이력",
+  "1천만원",
+  "5백만원",
+  "90일",
+  "최장1년",
+  "2025신용회복지원",
+  "5000만원이하"
+ ],
+ "title": "연체해제 후 이력 제공 기간(대출 1천만·카드 5백 초과 90일)과 2025년 소액연체 신용회복 지원조치"
+}

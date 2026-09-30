@@ -1,0 +1,34 @@
+{
+ "authority": "HIGH / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "담보채무"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "브릿지보증 요건·한도·기간",
+   "meaning": "보증부실 처리 이전 폐업자, 최대 15년",
+   "source_url": "https://www.gcgf.or.kr/gcgf/cm/conts/contsView.do?mi=1052&contsId=1023"
+  }
+ ],
+ "normalized_content": "경기신용보증재단 공식 상품 안내: 브릿지보증은 폐업기업의 사업자보증을 대표자의 개인보증으로 전환하여 지속적인 금융지원을 하는 재기지원 보증. 대상은 폐업 상태 사업자등록번호를 보유한 기업이고, 전제는 '보증부실기업으로 처리되지 않았을 것' — 대위변제(보증사고) 발생 이전의 성실상환 폐업자만 이용 가능한 트랙이다. 보증한도는 전차보증의 여신(주채무)잔액 이내, 보증기간은 지원 구분에 따라 5년 이내/7년/최대 15년, 상환방식은 1년 만기일시상환/거치없이 분할상환/거치 후 분할상환 중 선택. 신청은 대면접수 한정. 보증부실(대위변제) 처리 후의 구상채무는 별도로 재단 채무조정제도·새출발기금 매입 대상과 연결되므로, 폐업 시점의 보증 연장 여부가 후속 절차를 좌우한다. 문의 1577-5900.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "경기신용보증재단",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.gcgf.or.kr/gcgf/cm/conts/contsView.do?mi=1052&contsId=1023",
+ "status": "REVIEW",
+ "tags": [
+  "브릿지보증",
+  "폐업",
+  "보증전환",
+  "재기지원",
+  "최대15년",
+  "1577-5900"
+ ],
+ "title": "폐업 소상공인 브릿지보증 — 사업자보증의 대표자 개인보증 전환(보증사고 이전 재기 트랙)"
+}

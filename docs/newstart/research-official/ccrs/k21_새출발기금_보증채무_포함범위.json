@@ -1,0 +1,35 @@
+{
+ "authority": "MEDIUM / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "부실차주 자격",
+  "담보채무"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "보증부채권 처리 순서",
+   "meaning": "금융회사→보증기관, 이행보증 구상채권 제외",
+   "source_url": "https://www.newstartfund.or.kr/Contents/Process_guid.do"
+  }
+ ],
+ "normalized_content": "새출발기금 공식 제도안내(newstartfund.or.kr, 캠코 운영): 부실차주는 '3개월 이상 대출상환금을 연체한 차주', 부실우려차주는 '근시일 내 장기 연체에 빠질 위험이 큰 차주'. 지원 대상은 '20.4월~'25.6월 중 사업을 영위한 개인사업자·법인 소상공인, 채무 한도는 최대 15억원(담보 10억원 + 무담보 5억원), 상환 조건은 거치기간 최대 3년(신용대출 1년), 최장 20년 분할상환(신용대출 10년). 보증기관 채무와 관련해 공식 FAQ는 보증부채권 부실우려차주가 금융회사에서 채무조정 지원을 거절당하는 경우 '금융회사 → 보증기관' 순으로 처리하도록 안내하고, 조정 제외 채권으로 '(계약, 입찰, 하자) 이행보증 관련 구상채권 등'을 명시한다. 즉 신보·지역신보의 일반 보증부대출 및 대위변제 후 금전채권은 매입·조정 대상에 포함되나 이행보증 구상채권은 제외되는 구조다. (포함 범위의 최신 세부 기준은 새출발기금 콜센터 1660-1378 확인 필요)",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "한국자산관리공사 새출발기금",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.newstartfund.or.kr/Contents/Process_guid.do",
+ "status": "REVIEW",
+ "tags": [
+  "보증부채권",
+  "대위변제",
+  "이행보증",
+  "구상채권",
+  "제외채권",
+  "금융회사-보증기관순서"
+ ],
+ "title": "새출발기금 지원대상 채무와 보증채무의 관계 — 보증부채권 처리 순서·이행보증 구상채권 제외"
+}

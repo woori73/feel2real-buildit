@@ -183,14 +183,14 @@
             PC에서 Chrome으로 NewStart에 접속해주세요.</p>
 
           <div class="ns-fss-pc-only">
-            <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. 지피지기 AI와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
+            <p id="ns-fss-auth" class="ns-fss-err" hidden>로그인이 필요합니다. 지피지기 Agent와 같은 방식으로 로그인한 뒤 이용해 주세요.</p>
             <div class="ns-fss-conn" id="ns-fss-conn">
               <span id="ns-chrome-badge" data-ns-agent="absent">✓ Chrome Agent 연결됨</span>
               <button type="button" class="ns-btn ns-btn-primary" id="ns-ext-install">Chrome Agent 설치</button>
             </div>
             <button type="button" class="ns-btn ns-btn-primary ns-btn-hero" id="ns-ag-open">Agent와 함께 시작하기</button>
             <p class="ns-fss-ask">어떻게 해야 할지 모르겠나요?</p>
-            <a class="ns-btn ns-btn-ghost ns-btn-hero" href="/newstart#ns-ai" id="ns-fss-ask-ai">지피지기 AI에게 물어보기</a>
+            <a class="ns-btn ns-btn-ghost ns-btn-hero" href="/newstart#ns-ai" id="ns-fss-ask-ai">지피지기 Agent에게 물어보기</a>
             <div class="ns-fss-secondary">
               <a class="ns-fss-link" href="#ns-fss-do-myself" id="ns-ag-manual-link">화면을 보며 직접 따라하기</a>
               <a class="ns-fss-link" href="#ns-fss-cases-details" id="ns-fss-cases-link">실제 사례 보기</a>
@@ -382,7 +382,7 @@
             <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
               placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
             <div class="ns-fss-actions">
-              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>민원문 자동 정리</button>
             </div>
           </details>
           <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
@@ -633,7 +633,7 @@
       }
       var step = IV_STEPS[ivStep];
       $('ns-iv-back').disabled = ivStep === 0;
-      text($('ns-iv-next'), ivStep === IV_STEPS.length - 1 ? 'AI가 민원 초안 정리' : '다음');
+      text($('ns-iv-next'), ivStep === IV_STEPS.length - 1 ? '민원 초안 자동 정리' : '다음');
       ivError('');
       void step;
     }

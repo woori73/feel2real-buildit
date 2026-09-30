@@ -240,7 +240,7 @@
       }
     },
 
-    /* ── 지피지기 AI 질문 ─────────────────────────────────────────────
+    /* ── 지피지기 Agent 질문 ─────────────────────────────────────────────
      * 서버(/api/newstart/ai/chat)에 실제 질문을 보내고 답변을 표시한다.
      * 비로그인은 서버가 401로 거부한다 — 폼 자체를 숨기지 않고 서버 응답을 따른다.
      * 표시만 구조화한다(문단/목록/출처 영역). 답변·근거 데이터 자체는 그대로 쓴다. */
@@ -260,7 +260,7 @@
         input.disabled = value;
         send.textContent = value ? '답변 중…' : '질문';
         if (value) {
-          pendingEl = appendBlock('지피지기 AI', '답변 작성 중', 'agent ns-ai-pending');
+          pendingEl = appendBlock('지피지기 Agent', '답변 작성 중', 'agent ns-ai-pending');
           if (pendingEl) {
             var dots = document.createElement('span');
             dots.className = 'ns-ai-dots';
@@ -417,7 +417,7 @@
         if (busy) return;
         var message = (input.value || '').trim();
         if (!message) {
-          appendBlock('지피지기 AI', '질문을 입력해 주세요.', 'error');
+          appendBlock('지피지기 Agent', '질문을 입력해 주세요.', 'error');
           return;
         }
         appendBlock('나', message, 'user');
@@ -449,20 +449,20 @@
             window.clearTimeout(timer);
             var data = result.data || {};
             if (result.status === 200 && data.status === 'ok' && data.answer) {
-              var block = appendBlock('지피지기 AI', data.answer, 'agent');
+              var block = appendBlock('지피지기 Agent', data.answer, 'agent');
               if (block) renderSources(block.querySelector('.ns-ai-text'), data.sources);
             } else if (result.status === 401) {
-              appendBlock('지피지기 AI', '로그인 후 질문할 수 있습니다.', 'error');
+              appendBlock('지피지기 Agent', '로그인 후 질문할 수 있습니다.', 'error');
             } else {
               var msg = data.errorMessage && typeof data.errorMessage === 'string'
                 ? data.errorMessage
                 : '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
-              appendBlock('지피지기 AI', msg, 'error');
+              appendBlock('지피지기 Agent', msg, 'error');
             }
           })
           .catch(function () {
             window.clearTimeout(timer);
-            appendBlock('지피지기 AI', '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+            appendBlock('지피지기 Agent', '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
           })
           .then(function () {
             setBusy(false);

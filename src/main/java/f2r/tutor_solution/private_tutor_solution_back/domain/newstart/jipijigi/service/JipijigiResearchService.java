@@ -185,15 +185,28 @@ public class JipijigiResearchService {
     /** 커뮤니티 자료를 공식 규정으로 잘못 붙이지 않도록 출처별 분류를 강제한다. */
     static SourceClass classifyKnowledge(NewstartKnowledgeItem item) {
         NewstartKnowledgeItem.SourceType t = item.getSourceType();
-        String url = item.getSourceUrl() == null ? "" : item.getSourceUrl();
         return switch (t) {
             case OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, DERIVED_RULE -> SourceClass.OFFICIAL_RULE;
             case EBOOK, OPERATOR_KNOWLEDGE -> SourceClass.OPERATOR_MATERIAL;
-            case CAFE_ARTICLE, CAFE_COMMENT -> url.contains("newhopero") ? SourceClass.BORROWER_CAFE_CASE : SourceClass.CCRS_CAFE_CASE;
+            case CAFE_ARTICLE, CAFE_COMMENT -> classifyCafeCase(item);
             // 회원 채팅·질문요청에서 갈무리한 항목은 공식 규정이 아니라 내부 경험 자료다(RAG에서
             // "공식 안내에 따르면"으로 인용되는 것을 막기 위해 CASE와 같은 등급으로 둔다).
             case CASE, CHAT_DISCOVERY, REQUEST_DISCOVERY -> SourceClass.INTERNAL_CASE;
         };
+    }
+
+    /**
+     * sourceUrl이 비어 있어도(카페 원문 URL 미확보 등록 지침) authority/category로 부실차주
+     * 카페 자료를 신복위 카페로 오분류하지 않는다. 판별 불가 시 기존 기본값(CCRS)을 유지한다.
+     */
+    private static SourceClass classifyCafeCase(NewstartKnowledgeItem item) {
+        String url = item.getSourceUrl() == null ? "" : item.getSourceUrl();
+        if (url.contains("newhopero")) return SourceClass.BORROWER_CAFE_CASE;
+        String hay = url + " " + (item.getAuthority() == null ? "" : item.getAuthority())
+                + " " + (item.getCategory() == null ? "" : item.getCategory());
+        if (hay.contains("ccrs") || hay.contains("신복위") || hay.contains("신용회복")) return SourceClass.CCRS_CAFE_CASE;
+        if (hay.contains("부실차주")) return SourceClass.BORROWER_CAFE_CASE;
+        return SourceClass.CCRS_CAFE_CASE;
     }
 
     List<Evidence> searchCcrsKnowledgeItems(List<String> keywords) {

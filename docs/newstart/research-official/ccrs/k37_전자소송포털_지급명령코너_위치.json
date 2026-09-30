@@ -1,0 +1,35 @@
+{
+ "authority": "MEDIUM / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "지급명령",
+  "출처한계"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "ecfs 인용 제한",
+   "meaning": "RAG이 ecfs 코너 URL을 공식 인용 문구로 쓰지 말고 위치 안내로만 사용; 실질 규정 인용은 k35/k36/k38 출처로",
+   "source_url": "https://ecfs.scourt.go.kr/psp/index.on?m=PSP730M12"
+  }
+ ],
+ "normalized_content": "대한민국 법원 전자소송포털(ecfs.scourt.go.kr)에는 '일반소송 외 절차-민사-지급명령(독촉)절차'(PSP730M12)와 '서류제출-지급명령(독촉)신청'(PSPA13M03), '나홀로소송 도움말-피고의 대응-지급명령에 대한 이의'(PSPJ02M06) 안내 코너가 운영 중이다(검색 색인 확인). 다만 해당 페이지는 WebSquare 기반 단일페이지앱이라 서버 응답에 안내 텍스트가 포함되어 있지 않아 2026-09-30 현재 원문 인용이 불가했다. 이 항목의 실질 내용(2주 이의기간, 비용 등)은 대법원 전산양식 A2330·A2335(file.scourt.go.kr) 및 법제처 「나홀로 민사소송」책자(2026-09-15 기준)로 검증하였으며, 저 URL들은 포털 내 해당 안내 코너의 위치 정보로만 참고한다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "대한민국 법원 전자소송포털",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://ecfs.scourt.go.kr/psp/index.on?m=PSP730M12",
+ "status": "REVIEW",
+ "tags": [
+  "ecfs",
+  "전자소송포털",
+  "지급명령코너",
+  "JS렌더링",
+  "원문불가",
+  "MEDIUM"
+ ],
+ "title": "전자소송포털 지급명령(독촉)절차 코너 위치 — ecfs 페이지는 JS 렌더링으로 원문 서버측 열람 불가(2026-09-30)"
+}
