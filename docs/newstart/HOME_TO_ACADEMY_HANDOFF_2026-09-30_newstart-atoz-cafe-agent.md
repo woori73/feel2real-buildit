@@ -79,10 +79,11 @@ AFTER (이번 세션):
 ## [CODE]
 
 - repository: `woori73/feel2real-buildit`
-- branch: `feat/newstart-cafe-qa-phase1-20260930` (origin/main 50c7b9e2에서 분기, **본 세션 커밋은 아래 1건**)
-- HEAD(작업 시작 시): `50c7b9e2`
-- PR: 없음 (미생성)
-- CI: 미실행 (src 코드 변경 0건, 문서/자료만 추가 → Build Impact 없음)
+- branch: `feat/newstart-cafe-qa-phase1-20260930` (origin/main 50c7b9e2에서 분기)
+- commit: `8983434f` docs(newstart): PHASE1 부실우려 게시판 248건 RAW 전수 보존 + ACADEMY handoff
+- HEAD: `8983434f` — **origin에 push 완료**(tracking = origin/feat/newstart-cafe-qa-phase1-20260930)
+- PR: 미생성 (docs/자료만; src·migration·template 변경 0건). 생성 URL: https://github.com/woori73/feel2real-buildit/pull/new/feat/newstart-cafe-qa-phase1-20260930
+- CI: 미실행 (main 미병합, Build Impact 없음)
 
 ## [FILES]
 
@@ -99,10 +100,10 @@ AFTER (이번 세션):
 
 ## [WORKTREE]
 
-- 상태: 커밋 전 DIRTY → 아래 커밋 후 **docs 범위 clean**. 단 `work-output/` 은 untracked로 잔존(의도적, ignore 아님).
+- 상태: docs 범위 clean & push 완료. `work-output/` 만 untracked 잔존(원 dump라 유실돼도 RAW 재현 가능).
 - untracked(커밋): `docs/newstart/research/cafe-qa-phase1-b6/`, `docs/newstart/research/tools/build_board6_raw.py`, 본 handoff
 - untracked(미커밋): `work-output/**`
-- unpushed: 본 커밋 1건 → push 시도(실패 시 아래 WORKTREE NOTES에 기록)
+- unpushed: 없음 — 8983434f origin push 완료
 - 다른 Agent 변경 건드림 없음.
 
 ## [BROWSER / ADMIN]
