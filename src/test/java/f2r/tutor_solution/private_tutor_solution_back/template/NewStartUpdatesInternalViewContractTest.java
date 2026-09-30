@@ -18,8 +18,9 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 /**
  * NewStart "최신 정보" 내부 상세보기 계약 (2026-09-23 방향 변경):
  * 카드 클릭은 외부 기관 URL(newstartfund.or.kr 400 Bad Request 재현 경로)이 아니라
- * NewStart 내부 상세 라우트로 이동해야 하며, footer에서는 주소 표기만 제거되고
- * 다른 서비스(BuildIt landing, F2R home)의 footer는 그대로 유지되어야 한다.
+ * NewStart 내부 상세 라우트로 이동해야 하며, NewStart footer에서는 사업자 정보 블록 전체를
+ * 렌더하지 않는다(2026-09-30 지시). 다른 서비스(BuildIt landing, F2R home)의 footer는
+ * 그대로 유지되어야 한다. 섹션 명칭은 사용자 화면에서 "관련 기관 공시 업데이트"로 통일한다.
  */
 class NewStartUpdatesInternalViewContractTest {
 
@@ -63,6 +64,9 @@ class NewStartUpdatesInternalViewContractTest {
     assertThat(html).contains("href=\"/newstart/updates/42\"");
     // 카드가 외부 기관 도메인으로 곧장 이동하면 안 된다 (400 Bad Request 재현 경로 차단).
     assertThat(html).doesNotContain("newstartfund.or.kr");
+    // 2026-09-30 명칭 지시: 기관 공시 영역 사용자 라벨은 '관련 기관 공시 업데이트'로 통일.
+    assertThat(html).contains("관련 기관 공시 업데이트").doesNotContain("최신 정보");
+    assertThat(html).contains("공시 업데이트 전체 보기");
   }
 
   @Test
@@ -74,19 +78,23 @@ class NewStartUpdatesInternalViewContractTest {
   }
 
   @Test
-  @DisplayName("G. 주소 제거 후에도 footer의 다른 필수 사업자 정보가 그대로 남아 있다")
-  void newStartHomeFooterKeepsOtherBusinessInfo() {
+  @DisplayName("G. NewStart 홈 footer는 사업자/출판사 정보 블록 자체를 렌더하지 않는다 (2026-09-30 사용자 지시)")
+  void newStartHomeFooterOmitsBusinessInfoBlock() {
     String html = renderHome(List.of());
-    assertThat(html).contains("상호명: 압구정에듀홀릭출판사");
-    assertThat(html).contains("대표: 박정민");
-    assertThat(html).contains("사업자등록번호: 146-99-01347");
-    assertThat(html).contains("통신판매업신고번호: 2026-서울송파-1411");
-    assertThat(html).contains("전화: 010-8507-1453");
-    assertThat(html).contains("이메일: woorinaesin@naver.com");
+    assertThat(html).doesNotContain("상호명: 압구정에듀홀릭출판사");
+    assertThat(html).doesNotContain("대표: 박정민");
+    assertThat(html).doesNotContain("사업자등록번호: 146-99-01347");
+    assertThat(html).doesNotContain("통신판매업신고번호: 2026-서울송파-1411");
+    assertThat(html).doesNotContain("010-8507-1453");
+    assertThat(html).doesNotContain("woorinaesin@naver.com");
+    // display:none이 아니라 미렌더 — 빈 footer-biz 컨테이너가 남으면 안 된다.
+    assertThat(html).doesNotContain("footer-biz");
+    // 브랜드·약관/정책·저작권 행은 유지되어 하단이 갑자기 사라지지 않는다.
+    assertThat(html).contains("© 2026 Feel 2 Real. All rights reserved.");
   }
 
   @Test
-  @DisplayName("G. 다른 서비스(BuildIt footer, F2R 공용 footer)는 주소가 계속 표시된다")
+  @DisplayName("G. 다른 서비스(BuildIt footer, F2R 공용 footer)는 사업자 정보와 주소 표기를 그대로 유지한다")
   void otherServiceFootersStillShowAddress() {
     TemplateEngine engine = engine();
     String buildIt = engine.process(
@@ -95,6 +103,7 @@ class NewStartUpdatesInternalViewContractTest {
     String plain = engine.process(
         new TemplateSpec("fragments/_public_footer", "publicFooter"), new Context());
     assertThat(plain).contains(ADDRESS);
+    assertThat(plain).contains("상호명: 압구정에듀홀릭출판사").contains("사업자등록번호: 146-99-01347");
   }
 
   // ---- B/C/D: 내부 상세 화면 ----

@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>새출발기금 부실차주 | 내 채무조정 상황을 한곳에서 관리</title>
-  <meta name="description" content="내 상황 확인, 지피지기 Agent, 회원 채팅, 최신 정보를 한곳에서 이용하는 Feel2Real의 독립 서비스">
+  <meta name="description" content="내 상황 확인, 지피지기 Agent, 회원 채팅, 관련 기관 공시 업데이트를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260929-2">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260930-1">
 </head>
 <body>
   <div class="newstart-page">
@@ -30,19 +30,20 @@
         </section>
 
         <section class="ns-content-section" aria-labelledby="ns-practical-title">
-          <div class="ns-section-heading"><h2>채무상황</h2></div>
-          <p>자신의 개인 채무상황을 정리하세요. 정리한 내용에 맞는 안내를 받을 수 있습니다. 새출발기금 담당자와 상의할 때에도 도움이 됩니다.</p>
-          <div class="ns-row">
-            <a class="ns-text-link" href="#ns-status-panel" data-ns-open="ns-status-panel">내 채무상황 정리하기 →</a>
-            <span class="ns-debt-home-state" id="ns-debt-home-state" data-state="NOT_STARTED">미확인</span>
+          <div class="ns-section-heading ns-debt-heading">
+            <h2>채무상황</h2>
+            <div class="ns-row">
+              <a class="ns-text-link" href="#ns-status-panel" data-ns-open="ns-status-panel">내 채무상황 정리하기 →</a>
+              <span class="ns-debt-home-state" id="ns-debt-home-state" data-state="NOT_STARTED">미확인</span>
+            </div>
           </div>
+          <p>자신의 개인 채무상황을 정리하세요. 정리한 내용에 맞는 안내를 받을 수 있습니다. 새출발기금 담당자와 상의할 때에도 도움이 됩니다.</p>
           <div class="ns-section-heading"><h2 id="ns-practical-title">지금 필요한 도움</h2></div>
           <div class="ns-core-grid ns-practical-grid">
             <a class="ns-feature-card" href="/newstart/fss-helper" data-ns-reveal style="--ns-reveal-delay:120ms"><strong>추심 대응</strong><span class="ns-feature-copy">금감원 민원 샘플과 추심 대응 도우미. 안내는 누구나, 민원 작성 실행은 승인 회원이 이용합니다.</span><span class="ns-feature-cta">민원 도우미 →</span></a>
             <a class="ns-feature-card" href="/newstart/a-to-z" data-ns-reveal style="--ns-reveal-delay:240ms"><strong>A to Z</strong><span class="ns-feature-copy">연체 시작부터 신청·심사·확정·성실상환 이후까지 단계별로, 로그인 없이도 읽을 수 있습니다.</span><span class="ns-feature-cta">A to Z 시작하기 →</span></a>
-            <a class="ns-feature-card" href="#ns-ai" data-ns-reveal style="--ns-reveal-delay:360ms"><strong>지피지기 Agent</strong><span class="ns-feature-copy">내 상황에 맞는 답을 지피지기 Agent에게 바로 질문합니다. 실제 질문 전송은 승인 회원이 이용합니다.</span><span class="ns-feature-cta">질문하기 →</span></a>
-            <a class="ns-feature-card" href="/newstart/questions" data-ns-reveal style="--ns-reveal-delay:480ms"><strong>질문요청 게시판</strong><span class="ns-feature-copy">질문·조사 요청과 사이트 개선 제안을 남기고 운영자 검토 결과를 확인합니다.</span><span class="ns-feature-cta">게시판 보기 →</span></a>
-            <a class="ns-feature-card" href="/newstart/galmuri" data-ns-reveal style="--ns-reveal-delay:600ms"><strong>갈무리</strong><span class="ns-feature-copy">채팅·사례·공식 자료를 운영자가 요약·검증해 정리한 지식 모음.</span><span class="ns-feature-cta">갈무리 보기 →</span></a>
+            <a class="ns-feature-card" href="/newstart/questions" data-ns-reveal style="--ns-reveal-delay:360ms"><strong>질문요청 게시판</strong><span class="ns-feature-copy">질문·조사 요청과 사이트 개선 제안을 남기고 운영자 검토 결과를 확인합니다.</span><span class="ns-feature-cta">게시판 보기 →</span></a>
+            <a class="ns-feature-card" href="/newstart/galmuri" data-ns-reveal style="--ns-reveal-delay:480ms"><strong>갈무리</strong><span class="ns-feature-copy">채팅·사례·공식 자료를 운영자가 요약·검증해 정리한 지식 모음.</span><span class="ns-feature-cta">갈무리 보기 →</span></a>
           </div>
           <div class="ns-service-grid">
             <a class="ns-service-card ns-service-chat" href="/newstart/chat" data-ns-reveal style="--ns-reveal-delay:120ms">
@@ -98,7 +99,7 @@
         </section>
 
         <section id="ns-updates" class="ns-content-section ns-updates" aria-labelledby="ns-updates-title" data-ns-reveal>
-          <div class="ns-section-heading"><h2 id="ns-updates-title">최신 정보</h2></div>
+          <div class="ns-section-heading"><h2 id="ns-updates-title">관련 기관 공시 업데이트</h2></div>
           <div th:if="${#lists.isEmpty(latestUpdates)}" class="ns-empty">아직 관리자 검토를 마친 공식 업데이트가 없습니다.</div>
           <div th:unless="${#lists.isEmpty(latestUpdates)}" class="ns-update-list">
             <a th:each="item : ${latestUpdates}" class="ns-update-item" th:href="'/newstart/updates/' + ${item.updateId}">
@@ -108,7 +109,7 @@
               <span aria-hidden="true">→</span>
             </a>
           </div>
-          <a class="ns-text-link ns-updates-all" href="/newstart/updates">전체 업데이트 보기 <span aria-hidden="true">→</span></a>
+          <a class="ns-text-link ns-updates-all" href="/newstart/updates">공시 업데이트 전체 보기 <span aria-hidden="true">→</span></a>
         </section>
 
         <footer class="ns-footer">
@@ -119,8 +120,8 @@
     </div>
   </div>
 
-  <!-- NewStart: 주소 표기만 제외(hideAddress=true) — 다른 서비스 footer과 동일한 사업자 정보, 표기 범위만 다름 -->
-  <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, true)}"></th:block>
+  <!-- NewStart: 사업자/출판사 정보 블록(hideBiz)과 주소 표기를 렌더에서 제외 — 다른 서비스 footer 법적 표기는 유지 -->
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterNewStart}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
   <script src="/js/newstart-motion.js?v=20260927-2" defer></script>

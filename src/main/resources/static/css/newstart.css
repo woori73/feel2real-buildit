@@ -247,6 +247,10 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-section-heading h2 { margin: 0; font-size: clamp(24px, 7vw, 38px); line-height: 1.2; font-weight: 800; letter-spacing: -.045em; word-break: keep-all; }
 .ns-core-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; }
 .ns-practical-grid { grid-template-columns: minmax(0, 1fr); }
+/* 채무상황 헤더 row: 제목과 CTA·상태 배지를 같은 줄에 놓고 좁은 화면에서는 자연스럽게 줄바꿈한다. */
+.ns-debt-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.ns-debt-heading .ns-row { margin: 0; }
+.ns-debt-heading .ns-debt-home-state { margin-top: 0; }
 .ns-service-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; margin-top: 22px; }
 .ns-service-card { display: flex; flex-direction: column; min-height: 170px; padding: 22px; border-radius: 20px; border: 1.5px solid var(--ns-blue); background: linear-gradient(160deg, var(--ns-blue-soft), #fff 65%); color: var(--ns-ink); text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .05); }
 .ns-service-card .ns-section-kicker { margin: 0; }
@@ -374,8 +378,6 @@ html, body { max-width: 100%; overflow-x: clip; }
   .ns-hero-cta { width: auto; padding-inline: 24px; }
   .ns-core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ns-practical-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* 5장을 2열로 놓면 마지막 장 옆이 빈 칸 — 마지막 카드를 행 전체로 채운다. */
-  .ns-practical-grid > :last-child:nth-child(2n+1) { grid-column: 1 / -1; }
 }
 @media (min-width: 768px) {
   .newstart-shell { padding: 20px 38px 58px; }
@@ -390,9 +392,8 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (min-width: 1024px) {
   .newstart-shell { padding-inline: 48px; }
   .ns-core-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
-  .ns-practical-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  /* 3열에서도 마지막 줄의 빈 칸이 남지 않게 2칸을 채운다. */
-  .ns-practical-grid > :last-child:nth-child(3n+2) { grid-column: span 2; }
+  /* 지피지기 Agent 상단 카드 제거로 4장 — 빈 칸 없이 한 행에 맞춘다. */
+  .ns-practical-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ns-feature-card { grid-row: auto; min-height: 278px; }
   .ns-ai-hero { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); column-gap: 30px; align-items: center; }
   .ns-ai-hero .ns-section-kicker, .ns-ai-hero .ns-ai-title, .ns-ai-hero .ns-ai-note { grid-column: 1; }
