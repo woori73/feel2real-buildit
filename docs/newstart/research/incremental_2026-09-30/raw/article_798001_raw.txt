@@ -43,3 +43,12 @@ OPERATIONAL_STATE: OFFICIAL_CHANGE_UNCONFIRMED (회원 글이 신복위·금융�
 [2] 솔라리스(작성자) | 2026.09.24. 13:19 | MEMBER_CASE
 "네, 그리고 그 정도 금액은 있어도 큰 영향이 없을 것으로 보입니다"
 --- END COMMENTS ---
+
+--- APPEND 2026-09-30 (append-only, 원문 불변) ---
+USER_CAPTURE_VERIFY: 사용자 제공 캡처 3장 대조 검증 완료. 추가 조사 금지.
+DB 보강: knowledge_items 350~356 ([CCRS-798001-K1..K7]) 분리 저장 (REVIEW).
+- K1/K2: 시행정보+조회항목 (USER_CAPTURE)
+- K3: 게시자 제도변화 설명 (SECONDARY, 공식 인과 확정 금지)
+- K4/K5: 3,500만원/2,000만원 상담 제보 (UNCONFIRMED_THRESHOLD, 일반 cutoff 변환 금지)
+- K6/K7: 재산+금융자산 vs 총채무 / 채무과중도·감면율 추정 (UNCONFIRMED, RULE 생성 금지)
+기관 분리 유지: 신복위 자료. 새출발기금 자동 적용 규칙 생성 금지.
