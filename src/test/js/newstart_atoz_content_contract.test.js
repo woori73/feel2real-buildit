@@ -87,7 +87,7 @@ test('Phase2 §3: STEP 4·12의 CTA를 정리하고 공식 경로를 실사이�
 
   // STEP 13 앞단계 화살표는 실제 직전 단계(STEP 12)를 가리킨다
   const step13 = slice('id="step-13"', 'id="refs"');
-  assert.match(step13, /<a href="#step-12">← STEP 12/);
+  assert.match(step13, /<a href="#step-12">← 단계 12/);
   assert.doesNotMatch(step13, /href="#step-11"/);
 });
 

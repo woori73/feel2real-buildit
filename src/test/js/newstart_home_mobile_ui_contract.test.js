@@ -25,6 +25,16 @@ test('NewStart home은 보이는 진입점만 노출하고 삭제된 4코어 껍
   assert.doesNotMatch(html, /<h3>정보·가이드<\/h3>|<h3>실제 사례<\/h3>/);
 });
 
+test('NewStart home 장식 영어 섹션 라벨 제거와 지피지기 Agent 표기 통일을 유지한다', () => {
+  // 2026-09-30 UI 지시: 사용자 화면에서 장식용 영어 kicker/category 삭제, 한글 제목 단일화.
+  assert.doesNotMatch(html, /ns-section-kicker">(MY DEBT|PRACTICAL TOOLS|COMMUNITY|MY STATUS|LATEST)/);
+  assert.doesNotMatch(html, /class="ns-feature-category"/);
+  assert.doesNotMatch(html, /지피지기 AI|NewStart AI|Jipijigi AI|AI Agent/);
+  assert.ok(html.includes('지피지기 Agent'), '지피지기 Agent 표기 유지');
+  // 공식 서비스명·확정 브랜드는 유지 (§3 예외).
+  ['Credit4U', 'NewStart · Feel2Real'].forEach((n) => assert.ok(html.includes(n), n));
+});
+
 test('NewStart home exposes the review-gated official update feed contract', () => {
   assert.match(html, /id="ns-updates"/);
   assert.match(html, /latestUpdates/);

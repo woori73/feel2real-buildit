@@ -12,7 +12,7 @@ const js = fs.readFileSync(path.join(root, 'static/js/newstart.js'), 'utf8');
 
 /* HOME → Credit4U → 기존 본인채무 상태창(#ns-status-panel) → 지피지기 연결의 navigation 계약. */
 
-test('HOME의 채무상태 배지는 MY DEBT 진입행에 남아 있고 상태창으로 바로 열린다', () => {
+test('HOME의 채무상태 배지는 채무상황 진입행에 남아 있고 상태창으로 바로 열린다', () => {
   // Phase2 §2: Credit4U 카드는 HOME 5개 진입점에서 빠졌지만 배지·상태창·재진입 링크는 보존
   assert.match(home, /href="#ns-status-panel"[^>]*data-ns-open="ns-status-panel">내 채무상황 정리하기/);
   assert.match(home, /id="ns-debt-home-state" data-state="NOT_STARTED">미확인<\/span>/);

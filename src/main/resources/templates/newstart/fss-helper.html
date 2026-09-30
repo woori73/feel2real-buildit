@@ -382,7 +382,7 @@
             <textarea class="ns-fss-textarea" id="ns-fss-input" maxlength="4000"
               placeholder="언제, 어느 기관에서, 어떤 일이 있었는지 편하게 적어 주세요."></textarea>
             <div class="ns-fss-actions">
-              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>AI가 민원문 정리</button>
+              <button type="button" class="ns-btn ns-btn-primary" id="ns-fss-compose" disabled>민원문 자동 정리</button>
             </div>
           </details>
           <p id="ns-fss-compose-err" class="ns-fss-err" hidden></p>
@@ -633,7 +633,7 @@
       }
       var step = IV_STEPS[ivStep];
       $('ns-iv-back').disabled = ivStep === 0;
-      text($('ns-iv-next'), ivStep === IV_STEPS.length - 1 ? 'AI가 민원 초안 정리' : '다음');
+      text($('ns-iv-next'), ivStep === IV_STEPS.length - 1 ? '민원 초안 자동 정리' : '다음');
       ivError('');
       void step;
     }
