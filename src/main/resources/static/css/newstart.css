@@ -247,10 +247,13 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-section-heading h2 { margin: 0; font-size: clamp(24px, 7vw, 38px); line-height: 1.2; font-weight: 800; letter-spacing: -.045em; word-break: keep-all; }
 .ns-core-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; }
 .ns-practical-grid { grid-template-columns: minmax(0, 1fr); }
-/* 채무상황 헤더 row: 제목과 CTA·상태 배지를 같은 줄에 놓고 좁은 화면에서는 자연스럽게 줄바꿈한다. */
-.ns-debt-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
-.ns-debt-heading .ns-row { margin: 0; }
-.ns-debt-heading .ns-debt-home-state { margin-top: 0; }
+/* 채무상황 헤더 row: 제목과 CTA·상태 배지를 하나의 block으로 인식 — CTA를 오른쪽 끝으로 고립시키지 않고 제목 가까이에 둔다. */
+.ns-debt-heading { display: flex; align-items: baseline; justify-content: flex-start; gap: 8px 12px; flex-wrap: wrap; }
+.ns-debt-heading .ns-row { margin: 0; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.ns-debt-heading .ns-row .ns-text-link { margin-top: 0; padding-top: 0; min-height: 44px; display: inline-flex; align-items: center; font-size: 15px; font-weight: 800; }
+.ns-debt-heading .ns-debt-home-state { margin-top: 0; flex-shrink: 0; }
+.ns-debt-desc { margin: 10px 0 0; color: var(--ns-muted); font-size: 14px; line-height: 1.65; word-break: keep-all; }
+.ns-practical-heading { margin-top: 28px; }
 .ns-service-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; margin-top: 22px; }
 .ns-service-card { display: flex; flex-direction: column; min-height: 170px; padding: 22px; border-radius: 20px; border: 1.5px solid var(--ns-blue); background: linear-gradient(160deg, var(--ns-blue-soft), #fff 65%); color: var(--ns-ink); text-decoration: none; box-shadow: 0 8px 24px rgba(16, 24, 40, .05); }
 .ns-service-card .ns-section-kicker { margin: 0; }
@@ -514,4 +517,14 @@ html, body { max-width: 100%; overflow-x: clip; }
 }
 @media (min-width: 1000px) {
   .ns-ai-hero .ns-ai-thread { max-height: 70vh; overflow-y: auto; padding-right: 6px; }
+}
+
+/* ══ 2026-10-01 지피지기 질문 안내문 강조 (제목+안내문+스타일만 — 입력창·RAG 불변) ══
+   안내문이 작은 각주로 보이지 않도록 본문급 크기로 키우고, 핵심 3구간만 굵게.
+   포인트 색상은 기존 NewStart 토큰(--ns-blue)만 사용, 빨간 경고색 금지. */
+.ns-ai-note { font-size: 14.5px; line-height: 1.7; color: var(--ns-muted); word-break: keep-all; }
+.ns-ai-note strong { font-weight: 700; color: inherit; }
+.ns-ai-note .ns-ai-em-point { color: var(--ns-blue); }
+@media (min-width: 768px) {
+  .ns-ai-note { font-size: 15.5px; }
 }
