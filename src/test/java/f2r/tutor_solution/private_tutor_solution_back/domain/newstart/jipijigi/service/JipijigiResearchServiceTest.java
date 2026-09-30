@@ -77,6 +77,26 @@ class JipijigiResearchServiceTest {
     }
 
     @Test
+    @DisplayName("given 카페 원문 URL 미확보 등록 when 분류 then authority/category의 부실차주 표기로 부실차주 카페 사례로 둔다 (2026-09-30 GOLDEN-1: 빈 URL이 신복위로 오분류되어 근거에서 밀림)")
+    void classifyCafeCaseWithoutUrlUsesAuthorityCategory() {
+        NewstartKnowledgeItem borrowerNoUrl = NewstartKnowledgeItem.builder()
+                .knowledgeId(119L).sourceType(NewstartKnowledgeItem.SourceType.CAFE_ARTICLE)
+                .status(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE)
+                .title("t").content("c").sourceUrl("").authority("부실차주 카페 회원 제보").category("부실차주")
+                .build();
+        assertThat(JipijigiResearchService.classifyKnowledge(borrowerNoUrl))
+                .isEqualTo(SourceClass.BORROWER_CAFE_CASE);
+
+        NewstartKnowledgeItem ccrsNoUrl = NewstartKnowledgeItem.builder()
+                .knowledgeId(1L).sourceType(NewstartKnowledgeItem.SourceType.CAFE_ARTICLE)
+                .status(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE)
+                .title("t").content("c").sourceUrl(null).authority("신복위 카페 제보").category("감면율")
+                .build();
+        assertThat(JipijigiResearchService.classifyKnowledge(ccrsNoUrl))
+                .isEqualTo(SourceClass.CCRS_CAFE_CASE);
+    }
+
+    @Test
     @DisplayName("STEP1 근거가 기준 미만이면 외부 조사가 필수임을 gap note로 남긴다")
     void insufficientInternalIsRecorded() {
         JipijigiResearchService service = service();

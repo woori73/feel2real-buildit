@@ -44,3 +44,38 @@
 
 ADMIN 승인 적재(payload_wiki_1 2024 기준선 / payload_wiki_2 2026-08 관찰 → REVIEW → ACTIVE) 후에만
 LIVE 재테스트 가능. 재테스트는 답변 본문 + "이 답변의 근거" 목록에 최근 CASE가 실존하는 것까지 확인.
+
+## 2026-09-30 2차 실측 (ADMIN 적재 후): **FAIL (조건 1·4·7)** — 원인 규명, 코드 수정 완료(배포 대기)
+
+적재 실측: knowledgeId **118**(OPERATOR_KNOWLEDGE, 2024 기준선) / **119**(CAFE_ARTICLE, 2026-08 관찰)
+DRAFT→REVIEW→approve(confirmed=true, MISSING_SOURCE·CONFLICT_RISK 경고 사유 명시)→**ACTIVE** 확인.
+relatedRuleIds 118↔119 상호 연결(서로 다른 시점 사례, 합체 아님).
+
+LIVE GOLDEN-1 (POST /api/newstart/ai/chat, ADMIN 세션 = entitlement ALL 통과):
+- run1: 182,355ms에서 응답 도달(클라이트 스크립트 버그로 본문 유실)
+- run2: 126,006ms, HTTP 200 ok=true, model=nvidia/nemotron-3.5-lightning-30b-a3b
+- 근거 8건: 공식 FAQ 4 + [운영자 자료]118 + 실증 카페 3(5947/6001/5988) → **119 부재**
+- 답변은 2024 사례만 참고 언급, "7월 강화" 미단정(조건5 PASS), 공식 단독 아님(조건6 부분)
+
+root cause (retrieval 파이프라인 정상, 배분·분류 결함 2건):
+1. `JipijigiResearchService.classifyKnowledge`: CAFE_ARTICLE은 sourceUrl에 `newhopero`가
+   있어야 BORROWER_CAFE_CASE. 119는 카페 원문 URL 미확보로 빈 URL → CCRS_CAFE_CASE 오분류.
+2. `NewStartAiChatService.orderedEvidence`: internalHits의 카페 지식 2종이 supporting **최후미**
+   → supportSlots(=MIN_SUPPORT_EVIDENCE 4)에서 OPERATOR_MATERIAL(118)+실증 3건에 밀려
+   출처 8건·컨텍스트 앞쪽에서 탈락, LLM이 후미 컨텍스트를 미사용.
+
+수정(2026-09-30, §9 조건 충족 후 시행 — ACTIVE 사례가 실제로 밀린 것을 LIVE로 확인함):
+- classifyCafeCase: 빈 URL이어도 authority/category에 "부실차주"면 BORROWER_CAFE_CASE
+  (ccrs/신복위/신용회복 표기는 CCRS 유지, 판별 불가 시 기존 기본값 유지)
+- orderedEvidence: 승인 카페 지식(BORROWER/CCRS_CAFE_CASE of internalHits)을
+  OPERATOR_MATERIAL 바로 뒤 커레이션 등급(2b)으로 승격, 원시 borrowerHits보다 우선
+- 테스트: JipijigiResearchServiceTest 19/19, NewStartAiChatServiceTest 11/11 PASS
+  (GOLDEN-1 시나리오 재현 회귀 테스트 포함)
+
+성능: ragMs는 경미(evidenceMs=0)이고 지연은 LLM 구간(run2 126s vs 09-30 오전 baseline 29s) —
+provider 측 변동으로 추정, 배포 후 ragMs/llmMs 로그 재실측 필요.
+
+## 3차 재측정 게이트 (배포 후)
+
+ranking/classify 수정 jar 배포(수동 GitHub Actions) 후 동일 질문 LIVE 재실행:
+조건 1(119 retrieval+출처 노출)·4(과거/현재 타임라인 서술)·7(정상 시간)까지 8조건 전부 PASS 확인.

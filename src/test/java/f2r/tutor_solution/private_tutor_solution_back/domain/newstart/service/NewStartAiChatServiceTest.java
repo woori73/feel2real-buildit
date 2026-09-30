@@ -195,6 +195,48 @@ class NewStartAiChatServiceTest {
   }
 
   @Test
+  @DisplayName("given ACTIVE 카페 지식과 원시 실증 사례가 공존 when 조립 then 카페 지식이 실증 조회보다 앞서 출처 8건 안에 든다 (2026-09-30 GOLDEN-1: 2026 보완요구 사례가 sources 최후미로 밀려 답변 미노출)")
+  void orderedEvidence_keepsApprovedCafeKnowledgeWithinSources() {
+    List<Evidence> internal = new java.util.ArrayList<>();
+    for (int i = 0; i < 6; i++) {
+      internal.add(evidence(SourceClass.OFFICIAL_RULE, RefType.KNOWLEDGE_ITEM, "11" + i,
+          "[DERIVED_RULE] 공식 기준 " + i, "https://nsf/dr" + i, "공식 안내"));
+    }
+    internal.add(evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "118",
+        "[운영자 자료] 2024년 폐업 사업장 기준선", "", "폐업사실증명만 제출"));
+    internal.add(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.KNOWLEDGE_ITEM, "119",
+        "[부실차주 카페 사례] 2026-08 이후 접수후 보완요구", "", "임대차서류·보증금 반환현황 보완요구 관찰"));
+    List<Evidence> official = new java.util.ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      official.add(evidence(SourceClass.OFFICIAL_RULE, RefType.OFFICIAL_UPDATE, "u" + i,
+          "[새출발기금 공식 FAQ] 도덕적 해이 " + i, "https://nsf/faq" + i, "공식 안내"));
+    }
+    List<Evidence> empirical = List.of(
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "5947", "감면율 사례1", "https://cafe/5947", "감면"),
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "6001", "감면율 사례2", "https://cafe/6001", "감면"),
+        evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "5988", "감면율 사례3", "https://cafe/5988", "감면"));
+    ResearchPack pack = ResearchPack.builder().question("폐업 보증금 통장거래내역")
+        .internalHits(internal).officialHits(official)
+        .ccrsHits(List.of()).borrowerHits(empirical).extraAgencyHits(List.of()).gapNotes(List.of())
+        .externalSearched(false).build();
+
+    List<Evidence> ordered = NewStartAiChatService.orderedEvidence(pack);
+
+    int cafeKnowledge = -1;
+    int firstEmpirical = -1;
+    for (int i = 0; i < ordered.size(); i++) {
+      Evidence e = ordered.get(i);
+      if (cafeKnowledge < 0 && "119".equals(e.getRefId())) cafeKnowledge = i;
+      if (firstEmpirical < 0 && "5947".equals(e.getRefId())) firstEmpirical = i;
+    }
+    assertThat(cafeKnowledge).isGreaterThanOrEqualTo(0);
+    assertThat(ordered).hasSizeLessThanOrEqualTo(NewStartAiChatService.MAX_CONTEXT_EVIDENCE);
+    // 승인 카페 지식은 원시 실증 조회보다 앞서야 하고, 출처 창(앞 MAX_SOURCES건) 안에 들어야 한다.
+    assertThat(cafeKnowledge).isLessThan(firstEmpirical);
+    assertThat(cafeKnowledge).isLessThan(NewStartAiChatService.MAX_SOURCES);
+  }
+
+  @Test
   @DisplayName("given 근거가 0건 when ask then 컨텍스트 없이 기존 system prompt로 위임하고 sources는 빈다")
   void ask_withoutEvidenceHasNoContextBlock() {
     FakeLlmTransport client = new FakeLlmTransport();

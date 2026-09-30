@@ -159,15 +159,17 @@ public class NewStartAiChatService {
     Set<String> supportingSeen = new LinkedHashSet<>();
     // 2. 승인 운영 지식/전자책
     addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.OPERATOR_MATERIAL));
+    // 2b. ADMIN 승인을 거쳐 ACTIVE된 카페 지식 항목 — 원시 실증 조회(borrowerHits)보다 앞선
+    // 커레이션 등급. 뒤에 두면 운영자 자료+실증 사례에 밀려 출처 8건에서 항상 탈락한다
+    // (2026-09-30 GOLDEN-1 실측: ACTIVE된 2026 보완요구 사례가 sources에서 밀려나 답변 미노출).
+    addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.BORROWER_CAFE_CASE));
+    addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.CCRS_CAFE_CASE));
     // 3. 운영자 승인 축적 답변 세션
     addAll(supporting, supportingSeen, filterRef(pack.getInternalHits(), RefType.ANSWER_SESSION));
     // 4. 카페/실증 사례 (provenance 유지 — 공식으로 승격 금지)
     addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.INTERNAL_CASE));
     addAll(supporting, supportingSeen, pack.getBorrowerHits());
     addAll(supporting, supportingSeen, pack.getCcrsHits());
-    // classifyKnowledge가 internalHits에 붙인 카페 분류 근거도 같은 우선순위로 포함한다.
-    addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.BORROWER_CAFE_CASE));
-    addAll(supporting, supportingSeen, filterClass(pack.getInternalHits(), SourceClass.CCRS_CAFE_CASE));
 
     int supportSlots = Math.min(MIN_SUPPORT_EVIDENCE, supporting.size());
     int contextOfficialSlots = Math.min(Math.min(official.size(), MAX_OFFICIAL_EVIDENCE),
