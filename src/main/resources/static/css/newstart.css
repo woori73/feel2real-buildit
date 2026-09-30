@@ -518,3 +518,13 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (min-width: 1000px) {
   .ns-ai-hero .ns-ai-thread { max-height: 70vh; overflow-y: auto; padding-right: 6px; }
 }
+
+/* ══ 2026-10-01 지피지기 질문 안내문 강조 (제목+안내문+스타일만 — 입력창·RAG 불변) ══
+   안내문이 작은 각주로 보이지 않도록 본문급 크기로 키우고, 핵심 3구간만 굵게.
+   포인트 색상은 기존 NewStart 토큰(--ns-blue)만 사용, 빨간 경고색 금지. */
+.ns-ai-note { font-size: 14.5px; line-height: 1.7; color: var(--ns-muted); word-break: keep-all; }
+.ns-ai-note strong { font-weight: 700; color: inherit; }
+.ns-ai-note .ns-ai-em-point { color: var(--ns-blue); }
+@media (min-width: 768px) {
+  .ns-ai-note { font-size: 15.5px; }
+}
