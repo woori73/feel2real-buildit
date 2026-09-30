@@ -122,7 +122,7 @@
 
   <!-- NewStart: 사업자/출판사 정보 블록(hideBiz)과 주소 표기를 렌더에서 제외 — 다른 서비스 footer 법적 표기는 유지 -->
   <th:block th:replace="~{fragments/_public_footer :: publicFooterNewStart}"></th:block>
-  <th:block th:replace="~{fragments/_public_footer :: publicContactModal}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicContactModal(true)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
   <script src="/js/newstart-motion.js?v=20260927-2" defer></script>
   <script src="/js/newstart.js?v=20260930-1" defer></script>

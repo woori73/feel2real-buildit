@@ -74,10 +74,13 @@
   </footer>
 </th:block>
 
-<th:block th:fragment="publicContactModal">
+<!-- hideDirect(NewStart): 전화/이메일 직접 연락 옵션을 렌더하지 않는다.
+     다른 서비스는 인자 없이 호출 → null(falsy) → 기존 그대로 렌더된다. -->
+<th:block th:fragment="publicContactModal(hideDirect)">
   <div id="contactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;" onclick="closeContactModal(event)">
     <div style="background:#fff; border-radius:16px; padding:32px 28px; max-width:340px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18);" onclick="event.stopPropagation()">
       <div style="font-size:18px; font-weight:700; color:#1a1a2e; margin-bottom:24px;">상담 신청하기</div>
+      <th:block th:unless="${hideDirect}">
       <a href="tel:010-8507-1453" class="public-contact-option">
         <span style="font-size:22px;">📞</span>
         <div style="text-align:left;">
@@ -92,6 +95,7 @@
           <div style="font-size:13px; color:#6b7280; font-weight:400;">woorinaesin@naver.com</div>
         </div>
       </a>
+      </th:block>
       <button onclick="closeContactModal()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#f3f4f6; color:#6b7280; font-size:15px; cursor:pointer;">닫기</button>
     </div>
   </div>
