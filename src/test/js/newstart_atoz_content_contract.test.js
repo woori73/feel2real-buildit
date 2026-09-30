@@ -196,11 +196,12 @@ test('source MD section headers all map into the page or hold list', () => {
   assert.deepEqual(missing, [], 'sections missing between MD and page: ' + missing.join(', '));
 });
 
-test('STEP 0은 공식 링크 2개만 남기고 신청 준비 도우미 단추를 되살리지 않는다', () => {
+test('STEP 0은 공식 링크 3개(새출발기금 2 · 신복위 1)만 남기고 신청 준비 도우미 단추를 되살리지 않는다', () => {
   const step0 = atoz.slice(atoz.indexOf('id="step-0"'), atoz.indexOf('id="step-1"'));
   const ctas = step0.match(/<a class="az-cta[^"]*" href="([^"]+)"/g) || [];
-  assert.equal(ctas.length, 2, 'STEP 0 CTA 개수: ' + ctas.length);
+  assert.equal(ctas.length, 3, 'STEP 0 CTA 개수: ' + ctas.length);
   ctas.forEach((c) => assert.match(c, /href="https:\/\//));
+  assert.match(step0, /https:\/\/www\.ccrs\.or\.kr/);
   assert.doesNotMatch(step0, /\/newstart\/tools\/application/);
 });
 
