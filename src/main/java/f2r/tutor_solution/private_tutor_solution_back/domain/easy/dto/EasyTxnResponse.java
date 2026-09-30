@@ -26,7 +26,8 @@ public record EasyTxnResponse(
     String fingerprint,
     String evidenceReview,
     String withholdingReview,
-    Boolean expenseReversal
+    Boolean expenseReversal,
+    String taxClassification
 ) {
   public static EasyTxnResponse from(EasyTransaction txn) {
     return new EasyTxnResponse(
@@ -52,6 +53,7 @@ public record EasyTxnResponse(
         txn.getFingerprint(),
         txn.getEvidenceReview() == null ? null : txn.getEvidenceReview().name(),
         txn.getWithholdingReview() == null ? null : txn.getWithholdingReview().name(),
-        txn.isReversal() ? Boolean.TRUE : null);
+        txn.isReversal() ? Boolean.TRUE : null,
+        txn.getTaxClassification() == null ? null : txn.getTaxClassification().name());
   }
 }

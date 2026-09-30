@@ -61,6 +61,12 @@ public class EasyLedgerService {
     long income = 0L;
     long expense = 0L;
     for (EasyTransaction txn : txns) {
+      // 차입금·계좌이체 등 세무상 P&L이 아닌 흐름(NOT_INCOME/NOT_EXPENSE)은
+      // 손익에 합산하지 않는다 (대출 입금의 수익 왜곡 방지 — 목록에는 보인다).
+      if (txn.getTaxClassification() != null
+          && txn.getTaxClassification().excludesProfit(txn.getDirection())) {
+        continue;
+      }
       // 역분개(INCOME + expenseReversal)는 매출이 아니라 비용 차감이다
       // (EasyReportService/EasyExecutiveService와 동일 원칙).
       if (txn.getDirection() == EasyTxnDirection.INCOME && !txn.isReversal()) {

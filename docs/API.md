@@ -707,6 +707,9 @@ LMS 주소가 성립하지 않는다(404).
 
 - 목적: 수입·지출 등록/수정/삭제. 삭제는 화면 confirm 후 `204`.
 - 목록 필터(Query, 모두 선택): `businessId`, `from`/`to`(YYYY-MM-DD), `direction`(INCOME/EXPENSE), `category`.
+  `businessId` 지정 시 해당 사업체 거래만 반환한다 (학원/출판사 혼합 없음).
+- 목록 Response 항목에 분류상태가 포함된다: `accountId`/`accountName`(NULL 가능),
+  `evidenceReview`(NULL/NEEDS_REVIEW 등), `taxClassification`(NULL=REVIEW_REQUIRED 취급).
 - 등록 body: `{ businessId, occurredOn, direction, amount(0 이상), category, counterparty, description, payMethod, memo, receiptRef }`.
 - Response: 목록 `200 OK` 배열, 등록/수정 `200 OK` 객체, 삭제 `204 No Content`. 실패 `400 text/plain`.
 - 관련 코드: `EasyLedgerController`, `EasyLedgerService`.
@@ -740,10 +743,19 @@ LMS 주소가 성립하지 않는다(404).
 - 목적: 거래처/적요 패턴 → 내부 계정 자동분류 규칙 (우선순위·금액구간·방향 조건, 잘못된 정규식 스킵).
 - 관련 코드: `EasyAccountController`, `EasyAccountService`.
 
-### ✅ GET/POST /api/admin/easy/imports, GET /api/admin/easy/imports/{batchId}, POST /api/admin/easy/imports/{batchId}/confirm, DELETE /api/admin/easy/imports/{batchId}
+### ✅ GET/POST /api/admin/easy/imports, GET /api/admin/easy/imports/{batchId}, POST /api/admin/easy/imports/{batchId}/confirm, POST /api/admin/easy/imports/{batchId}/prepare, DELETE /api/admin/easy/imports/{batchId}
 
-- 목적: import staging. 원본 행은 staging에만 두고 검증·확정한 READY 행만 장부로 옮긴다.
-  확정 시 계정 제안(규칙 매칭, 확신도 포함)이 따라간다. 확정/폐기된 배치는 재처리 불가.
+- 목적: import staging. EASY 운영 원칙 — 실제 거래를 HOLD하지 않는다.
+  확정 시 PENDING 행은 같은 매핑→규칙 경로로 자동 준비되고, 계정 미분류 행도
+  장부에 적재된다 (account NULL·category `미분류`·`evidenceReview=NEEDS_REVIEW`·
+  `taxClassification=REVIEW_REQUIRED`, 분개 생략). 분류 확정이 적재 조건이 아니다.
+- 확정 가드: 장부 fingerprint 중복은 `DUPLICATE` 확정 제외 (자동합치기 없음).
+  원천 판정(`raw_data.primary_disposition`)이 대출·계좌이체면 세무구분을
+  `NOT_INCOME`/`NOT_EXPENSE`로 두어 손익 왜곡을 막는다 (목록에는 보인다).
+  원천 출판사 확정분(`business=PUBLISHING_CONFIRMED`)은 출판사 장부에 귀속된다.
+- 손익 합계(대시보드·연 P&L·경영요약)는 `NOT_INCOME`/`NOT_EXPENSE`를 제외한다.
+  `REVIEW_REQUIRED`(NULL 포함)는 후보 손익으로 포함된다.
+- `prepare`: 장부 적재 없이 PENDING→READY 분류 상태만 미리 본다.
 - 등록 body: `{ businessId, sourceName, sourceKind, rows: [{ occurredOn, direction, amount, counterparty, description, payMethod, supplyAmount?, vatAmount?, evidenceType?, rawData? }] }` (최대 2000행).
 - 관련 코드: `EasyImportController`, `EasyImportService`.
 

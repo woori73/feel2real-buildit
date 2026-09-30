@@ -17,5 +17,20 @@ public enum EasyTaxClassification {
   /** 필요경비가 아님 (예: 대출원금 상환, 계좌이체 지급). */
   NOT_EXPENSE,
   /** 미분류 — 자동 posting 금지, 관리자 검토 대상. */
-  REVIEW_REQUIRED
+  REVIEW_REQUIRED;
+
+  /**
+   * 손익 제외 여부 — 차입금·계좌이체 등 세무상 P&L이 아닌 흐름은
+   * 장부 목록에는 보이지만 손익 합계에는 들어가지 않는다
+   * (대출 입금의 수익 왜곡 방지. 방향과 tax가 어긋나면 보수적으로 포함한다).
+   */
+  public boolean excludesProfit(EasyTxnDirection direction) {
+    if (direction == null) {
+      return false;
+    }
+    return switch (direction) {
+      case INCOME -> this == NOT_INCOME;
+      case EXPENSE -> this == NOT_EXPENSE;
+    };
+  }
 }

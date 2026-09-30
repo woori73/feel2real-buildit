@@ -64,6 +64,18 @@ public class EasyImportController {
     return ResponseEntity.ok(importService.confirm(batchId, rowIds));
   }
 
+  /**
+   * PENDING 준비 — 직접 적재된 원자료를 확정 매핑→규칙 경로로 READY로 올린다.
+   * 장부 적재 없이 분류 상태만 미리 본다 (dry-run 성격, 원본 불변).
+   */
+  @PostMapping("/{batchId}/prepare")
+  public ResponseEntity<EasyImportBatchResponse> prepare(
+      @PathVariable Long batchId,
+      @RequestBody(required = false) Map<String, List<Long>> body) {
+    List<Long> rowIds = body == null ? null : body.get("rowIds");
+    return ResponseEntity.ok(importService.prepare(batchId, rowIds));
+  }
+
   @DeleteMapping("/{batchId}")
   public ResponseEntity<Void> discard(@PathVariable Long batchId) {
     importService.discard(batchId);

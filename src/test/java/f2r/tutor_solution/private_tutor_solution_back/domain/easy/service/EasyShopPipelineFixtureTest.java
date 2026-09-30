@@ -31,7 +31,8 @@ class EasyShopPipelineFixtureTest {
     harness.seedAccount(11L, "EXPENSE_RENT", "임차료", EasyAccountDirection.EXPENSE);
     harness.seedAccount(12L, "SETTLEMENT", "자금정산", EasyAccountDirection.ASSET);
     harness.seedMapping("임차료(월세)", 11L);
-    // confirm()은 matched READY만 확정하므로 P&L 검증 대상 행을 매칭한다.
+    // confirm()은 미분류 행도 REVIEW로 장부에 적재하므로, P&L 검증 대상 행은
+    // 확정 매핑·규칙으로 매칭해 둔다 (운영 이지샵 매핑 우선 정책과 동일).
     // 매출은 수강료로 매칭한다 (운영 SALES 정책과 동일).
     harness.seedMapping("EASYSHOP:매출", 10L);
     // 환불 역분개(-330,000)는 장부에서 비용 차감되나 분개(비용 합계)에는 네팅되지

@@ -1,0 +1,73 @@
+name: Easy Extended Sales Census (read-only, manual)
+
+# EASY 운영 매출 coverage 확장 집계 — READ ONLY (branch-only, merge 없음).
+# - 고정 SELECT census만 실행한다 (임의 SQL 입력 없음, 범용 DB shell 아님).
+# - DB session은 SET SESSION TRANSACTION READ ONLY.
+# - 집계값만 출력한다 (이름·카드·계좌·거래처·메모·원본 텍스트 출력 금지).
+# - INSERT/UPDATE/DELETE/ALTER/CREATE/DROP 없음. secret 출력 없음.
+# - 목적: CARD/CASH_RECEIPT 월별 coverage, 9월 카드 경계, 09-17~24 카드지출,
+#   income-only source split. CREFIA/HOMETAX 시작일 결정용.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [chore/easy-extended-census-20260927]
+    paths: [.github/workflows/easy-ledger-census-extended.yml]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Run extended read-only census via SSM (reads /etc/f2r/env on EC2)
+        shell: bash
+        run: |
+          cat > /tmp/mysql-census-ext.json <<'PARAMS'
+          {"commands":[
+            "set +e",
+            "source /etc/f2r/env 2>/dev/null || true",
+            "MYSQL_CENSUS=\"mysql -h \\\"${DB_HOST}\\\" -P \\\"${DB_PORT}\\\" -u \\\"${DB_USER}\\\" -p\\\"${DB_PASSWORD}\\\" \\\"${DB_NAME}\\\" --batch 2>&1\"",
+            "run_q() { echo \"=== $1 ===\"; eval \"$MYSQL_CENSUS -e \\\"$2\\\"\" || echo \"QUERY_FAILED: $1\"; }",
+            "RO=\"SET SESSION TRANSACTION READ ONLY;\"",
+            "run_q A_INCOME_EVIDENCE \"$RO SELECT b.code AS biz, DATE_FORMAT(t.occurred_on,'%Y-%m') AS m, COALESCE(t.evidence_type,'OTHER') AS ev, COALESCE(t.source_kind,'NULL') AS src, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt, MIN(t.occurred_on) AS earliest, MAX(t.occurred_on) AS latest FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE t.direction='INCOME' AND t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31' GROUP BY biz, m, ev, src ORDER BY biz, m, ev, src;\"",
+            "run_q B_SEP_CARD_DAILY \"$RO SELECT t.occurred_on AS d, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE b.code='ACADEMY' AND t.direction='INCOME' AND t.evidence_type='CREDIT_CARD' AND t.occurred_on BETWEEN '2026-09-01' AND '2026-09-30' GROUP BY d ORDER BY d;\"",
+            "run_q C_CASH_COVERAGE \"$RO SELECT b.code AS biz, DATE_FORMAT(t.occurred_on,'%Y-%m') AS m, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt, MIN(t.occurred_on) AS earliest, MAX(t.occurred_on) AS latest FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE t.direction='INCOME' AND t.evidence_type='CASH_RECEIPT' AND t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31' GROUP BY biz, m ORDER BY biz, m;\"",
+            "run_q D_CARD_EXPENSE_WINDOW \"$RO SELECT t.occurred_on AS d, COALESCE(t.evidence_type,'OTHER') AS ev, COALESCE(t.source_kind,'NULL') AS src, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE b.code='ACADEMY' AND t.direction='EXPENSE' AND t.occurred_on BETWEEN '2026-09-17' AND '2026-09-24' GROUP BY d, ev, src ORDER BY d, ev, src;\"",
+            "run_q D_CARD_EXPENSE_WINDOW_ALL \"$RO SELECT COALESCE(t.evidence_type,'OTHER') AS ev, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE b.code='ACADEMY' AND t.direction='EXPENSE' AND t.occurred_on BETWEEN '2026-09-17' AND '2026-09-24' GROUP BY ev ORDER BY cnt DESC;\"",
+            "run_q E_INCOME_SOURCE_SPLIT \"$RO SELECT b.code AS biz, COALESCE(t.source_kind,'NULL') AS src, COALESCE(t.evidence_type,'OTHER') AS ev, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt, MIN(t.occurred_on) AS earliest, MAX(t.occurred_on) AS latest FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE t.direction='INCOME' AND t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31' GROUP BY biz, src, ev ORDER BY biz, src, ev;\"",
+            "run_q F_SEP_CARD_EXPENSE_DAILY \"$RO SELECT t.occurred_on AS d, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE b.code='ACADEMY' AND t.direction='EXPENSE' AND t.evidence_type='CREDIT_CARD' AND t.occurred_on BETWEEN '2026-09-01' AND '2026-09-30' GROUP BY d ORDER BY d;\"",
+            "run_q H_BAEK_CANDIDATE_MATCH \"$RO SELECT b.code AS biz, t.direction AS dir, t.occurred_on AS d, t.amount AS amt, COALESCE(t.source_kind,'NULL') AS src, COALESCE(t.evidence_type,'OTHER') AS ev, (SELECT COUNT(*) FROM easy_journal_entries e WHERE e.txn_id=t.txn_id AND e.status='POSTED') AS posted FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE ((t.occurred_on='2026-05-30' OR t.occurred_on='2026-06-13' OR t.occurred_on='2026-07-27') AND t.amount=967000) AND t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31' ORDER BY d;\"",
+            "run_q I_BANK_SOURCE_VALUES \"$RO SELECT COALESCE(t.source_kind,'NULL') AS src, t.direction AS dir, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt, MIN(t.occurred_on) AS earliest, MAX(t.occurred_on) AS latest FROM easy_transactions t WHERE t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31' GROUP BY src, dir ORDER BY src, dir;\"",
+            "run_q I_BATCH_ALL \"$RO SELECT batch_id, business_id, source_kind, status, total_rows, confirmed_rows FROM easy_import_batches ORDER BY batch_id;\"",
+            "run_q I_MANUAL_BREAKDOWN \"$RO SELECT b.code AS biz, t.direction AS dir, COALESCE(t.evidence_type,'OTHER') AS ev, COUNT(*) AS cnt, COALESCE(SUM(t.amount),0) AS amt FROM easy_transactions t JOIN easy_businesses b ON b.business_id=t.business_id WHERE t.source_kind='MANUAL' AND t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31' GROUP BY biz, dir, ev ORDER BY biz, dir, ev;\"",
+            "run_q I_BANK_JOURNAL_LINK \"$RO SELECT COUNT(DISTINCT t.txn_id) AS posted_bank_linked FROM easy_transactions t JOIN easy_journal_entries e ON e.txn_id=t.txn_id AND e.status='POSTED' WHERE t.source_kind IN ('BANK','BANK_CSV','EASYSHOP_FUNDS') AND t.occurred_on BETWEEN '2026-01-01' AND '2026-12-31';\"",
+            "exit 0"
+          ]}
+          PARAMS
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "i-09d7cabb5a42d1135" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/mysql-census-ext.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135"
+          echo "wait_exit=$?"
+          echo "===== invocation status ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query '{Status:Status,ResponseCode:ResponseCode}' --output text
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "i-09d7cabb5a42d1135" --query 'StandardErrorContent' --output text
+          exit 0
