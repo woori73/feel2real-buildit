@@ -1,0 +1,66 @@
+{
+ "articleId": 4392,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려중인데 질문!",
+ "author": {
+  "nickname": "다보리",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2026-03-03T23:57:25+00:00",
+ "createdAtMs": 1772582245187,
+ "viewCount": 140,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/4392",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "제가 부실우려 체결이 되어있는 상태인데",
+  "배우자가 배우자명의로있던 만기일시납대출 상환기간이 다되서",
+  "은행에 그걸 다른대출로 갈아타려해요",
+  "제가 부실우려인게 혹시 걸림돌이 되려나요ㅠㅠ 직장인 신용대출입니다ㅜㅜ"
+ ],
+ "bodyNormalized": "제가 부실우려 체결이 되어있는 상태인데\n배우자가 배우자명의로있던 만기일시납대출 상환기간이 다되서\n은행에 그걸 다른대출로 갈아타려해요\n제가 부실우려인게 혹시 걸림돌이 되려나요ㅠㅠ 직장인 신용대출입니다ㅜㅜ",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-2B10918E-E45A-40E7-88E3-B4D0E69382D7\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-EF220CD1-739C-4FAE-91E3-7BD7F28ABF68\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-5D0C5653-EA13-4974-99EE-BEDFEAF36E1A\">제가 부실우려 체결이 되어있는 상태인데</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-B5F6E7E4-C0FA-41D5-99BE-F7E4C51B594A\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-718F6CFB-FB90-4F93-A131-EC6A99694614\">배우자가 배우자명의로있던 만기일시납대출 상환기간이 다되서</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-89CD6AD2-41DC-4AC4-8673-1898914A5F97\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-728362AE-652F-47D8-A789-79DFA82EB37C\">은행에 그걸 다른대출로 갈아타려해요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-87BA2547-5CFC-4EBE-8E5C-A7036288CF06\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-24443DD6-550D-4CB2-8273-5BAF971956A8\">제가 부실우려인게 혹시 걸림돌이 되려나요ㅠㅠ 직장인 신용대출입니다ㅜㅜ</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-2B10918E-E45A-40E7-88E3-B4D0E69382D7\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 55400623,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-03-04T04:06:19.000Z",
+   "createdAtMs": 1772597179000,
+   "text": "배우자 관련은 상관없습니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 55417446,
+   "parentCommentId": 55400623,
+   "author": "다보리",
+   "memberGrade": "성실멤버",
+   "createdAt": "2026-03-05T17:07:44.000Z",
+   "createdAtMs": 1772730464000,
+   "text": "감사합니다😭",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,63 @@
+{
+ "articleId": 752,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "우려접수후",
+ "author": {
+  "nickname": "휴식",
+  "memberGrade": "일반멤버"
+ },
+ "createdAt": "2025-02-15T15:41:17+00:00",
+ "createdAtMs": 1739634077997,
+ "viewCount": 169,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/752",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "카드연체  40일정도에 우려접수해서 접수번호 나왔는데 보증재단  보증서대출건이  있는데  신경이  쓰이네요...우려때  포함시켰는데  포함시키지말고  제외시켜서  따로  납압을  하는게  좋을지요?  아파트  가압류가   신경쓰이네요.....ㅠㅠ   신보건은  무섭습니다"
+ ],
+ "bodyNormalized": "카드연체  40일정도에 우려접수해서 접수번호 나왔는데 보증재단  보증서대출건이  있는데  신경이  쓰이네요...우려때  포함시켰는데  포함시키지말고  제외시켜서  따로  납압을  하는게  좋을지요?  아파트  가압류가   신경쓰이네요.....ㅠㅠ   신보건은  무섭습니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-9e052cba-ebb2-11ef-a0b2-b5494ea473b3\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-9e0553cb-ebb2-11ef-a0b2-55f83df1b8a6\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4b63a6ea-ebb3-11ef-a0b2-f13d9d91c5a9\">카드연체  40일정도에 우려접수해서 접수번호 나왔는데 보증재단  보증서대출건이  있는데  신경이  쓰이네요...우려때  포함시켰는데  포함시키지말고  제외시켜서  따로  납압을  하는게  좋을지요?  아파트  가압류가   신경쓰이네요.....ㅠㅠ   신보건은  무섭습니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 52308415,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-02-17T02:44:23.000Z",
+   "createdAtMs": 1739760263000,
+   "text": "부실우려 신청했으면 신보가 가압류를.안할 것입니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 52311503,
+   "parentCommentId": 52308415,
+   "author": "휴식",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-02-17T09:21:30.000Z",
+   "createdAtMs": 1739784090000,
+   "text": "네네  오늘  신보  담당자랑  통화했는데  그러진않다고  알려주시더라구요...\n감사합니다",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

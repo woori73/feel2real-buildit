@@ -1,0 +1,40 @@
+{
+ "articleId": 4745,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 대위변제",
+ "author": {
+  "nickname": "다보리",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2026-04-01T07:48:21+00:00",
+ "createdAtMs": 1775029701757,
+ "viewCount": 108,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/4745",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "안녕하십니까 고객님 당행에 보유한 보증서 대출계좌에 대해 대위변제금 상환 완료 후, 잔존 채무액(이자포함)이 존재하여 안내드립니다.",
+  "자세한 문의사항은 아이엠뱅크 앱, 영업점 또는 고객센터 (☎1588-5050/ ☎1566-5050)로 문의바랍니다.",
+  "​",
+  "​",
+  "이렇게 문자가왔는데 잔존채무액? 이라는건 제가내야하는걸까요?"
+ ],
+ "bodyNormalized": "안녕하십니까 고객님 당행에 보유한 보증서 대출계좌에 대해 대위변제금 상환 완료 후, 잔존 채무액(이자포함)이 존재하여 안내드립니다.\n자세한 문의사항은 아이엠뱅크 앱, 영업점 또는 고객센터 (☎1588-5050/ ☎1566-5050)로 문의바랍니다.\n​\n​\n이렇게 문자가왔는데 잔존채무액? 이라는건 제가내야하는걸까요?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-E3F9E5C4-38AB-4E59-87A5-3AF34E3706E1\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-96B6BD20-7923-48CA-A8D7-6347201896F6\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-29FC628C-0262-4D4F-9C9B-19B499BD8C97\">안녕하십니까 고객님 당행에 보유한 보증서 대출계좌에 대해 대위변제금 상환 완료 후, 잔존 채무액(이자포함)이 존재하여 안내드립니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-E439FA9F-A24F-418F-A642-48F624E403F3\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-AE3CC598-C49A-4471-9862-09FD85085914\">자세한 문의사항은 아이엠뱅크 앱, 영업점 또는 고객센터 (☎1588-5050/ ☎1566-5050)로 문의바랍니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-E32324D4-8840-40A6-91DF-5F725558CA68\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-A69B27C9-5578-4DB4-96BB-B6642CDE68F0\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-716C5CE5-E3FF-431C-B4C8-702DD3A44B8E\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-E9FED50F-214B-421B-9678-F8539F22D9BF\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-4187F8FF-FE15-44D8-AA3B-953BDAB71026\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-74346E12-4DFA-4E07-B44A-D4C077BF99D2\">이렇게 문자가왔는데 잔존채무액? 이라는건 제가내야하는걸까요?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-E3F9E5C4-38AB-4E59-87A5-3AF34E3706E1\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

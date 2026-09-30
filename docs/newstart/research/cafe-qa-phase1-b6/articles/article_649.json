@@ -1,0 +1,54 @@
+{
+ "articleId": 649,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려신청할때 꼭 후순위 사업자 담보대출을 넣어야 부실차주로 넘어 갈 때 같이 넘어 가는거에여. (정보)",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-12-12T11:09:59+00:00",
+ "createdAtMs": 1734001799130,
+ "viewCount": 160,
+ "commentCount": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/649",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려 신청시에 후순위 사업자 담보대출을 넣지 않으면,",
+  "​",
+  "부실우려 실효 후 부실차주로 넘어갈 때,",
+  "​",
+  "신복위에서 후순위 사업자 담보대출을 받아주지 않습니다."
+ ],
+ "bodyNormalized": "부실우려 신청시에 후순위 사업자 담보대출을 넣지 않으면,\n​\n부실우려 실효 후 부실차주로 넘어갈 때,\n​\n신복위에서 후순위 사업자 담보대출을 받아주지 않습니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-592ea6ec-dd93-4f15-9747-c9c4c92ad292\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-cfc8ae61-a2de-4eeb-85a7-33f00c0eab79\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-a76464a7-5ab1-4f78-b5ec-1a9c1a3cc619\">부실우려 신청시에 후순위 사업자 담보대출을 넣지 않으면,</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d37d7a8b-c7a6-44a5-b71d-c61126d3dc90\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-89552944-c1f2-4e78-9aec-a941695172ce\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-a25de89f-13ce-4327-8796-3bbe3bc048d7\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-7455448d-446d-4c81-abe5-336b8b143ddb\">부실우려 실효 후 부실차주로 넘어갈 때,</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c259b67c-47b3-4233-9101-79f296118a7b\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-69ab5299-8a84-4580-a0d5-163a9d9393a2\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-135b4ebf-275f-49d8-be75-62080d0d271b\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ea197cd2-aaa7-4471-be37-e190754d3a38\">신복위에서 후순위 사업자 담보대출을 받아주지 않습니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54153191,
+   "parentCommentId": null,
+   "author": "서울찬스",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-10-05T11:22:34.000Z",
+   "createdAtMs": 1759663354000,
+   "text": "부실우려 신청시 후순위 담보대출넣지않았더라도\n부실차주 신청때는 일괄적으로 모든채무가\n접수되는게 아닌가요?\n단.후순위담보대출은 부실차주 접수하고 바로\n신복위에 가서 신청하는것으로 압니다만.",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

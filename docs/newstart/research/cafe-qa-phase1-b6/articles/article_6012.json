@@ -1,0 +1,65 @@
+{
+ "articleId": 6012,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "새출발 부실우려차주",
+ "author": {
+  "nickname": "짱짱짱",
+  "memberGrade": "일반멤버"
+ },
+ "createdAt": "2026-09-21T10:56:07+00:00",
+ "createdAtMs": 1789988167590,
+ "viewCount": 85,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/6012",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "새출발  부실우려차주로 신청하려는데요 상담갔더니 10이상 연체를시켜야한다고 하더라구요 오늘부터 이체되는것들을 안내려고하는데 10일연체하는동안 연락오는건 어떻게해야하나요 그리고 카드5개중1개는 신청을 안하려고했는데 연체하게되면 이카드도 다 막히는거아닌가요",
+  "",
+  "오늘 상담한 신용회복위원회에서 상담원분이 너무 딱딱하게하셔서 제대로 묻지도못하고와서요.. 10일이후에 와야된다고만하고.. 아시는분 답좀부탁드립니다"
+ ],
+ "bodyNormalized": "새출발  부실우려차주로 신청하려는데요 상담갔더니 10이상 연체를시켜야한다고 하더라구요 오늘부터 이체되는것들을 안내려고하는데 10일연체하는동안 연락오는건 어떻게해야하나요 그리고 카드5개중1개는 신청을 안하려고했는데 연체하게되면 이카드도 다 막히는거아닌가요\n\n오늘 상담한 신용회복위원회에서 상담원분이 너무 딱딱하게하셔서 제대로 묻지도못하고와서요.. 10일이후에 와야된다고만하고.. 아시는분 답좀부탁드립니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-136ca1c6-b5aa-11f1-a72a-e700f6887b21\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-136ca1c7-b5aa-11f1-a72a-d74628addced\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-0c251df2-b5ab-11f1-a72a-dbe03bd0478f\">새출발  부실우려차주로 신청하려는데요 상담갔더니 10이상 연체를시켜야한다고 하더라구요 오늘부터 이체되는것들을 안내려고하는데 10일연체하는동안 연락오는건 어떻게해야하나요 그리고 카드5개중1개는 신청을 안하려고했는데 연체하게되면 이카드도 다 막히는거아닌가요</span></p>\n<!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-e874c33d-b5aa-11f1-a72a-2bd1020c724e\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-0c251df3-b5ab-11f1-a72a-f9d7766a89ca\">오늘 상담한 신용회복위원회에서 상담원분이 너무 딱딱하게하셔서 제대로 묻지도못하고와서요.. 10일이후에 와야된다고만하고.. 아시는분 답좀부탁드립니다</span></p>\n<!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-136ca1c6-b5aa-11f1-a72a-e700f6887b21\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 57129454,
+   "parentCommentId": null,
+   "author": "1494232",
+   "memberGrade": "모범멤버",
+   "createdAt": "2026-09-21T17:59:54.000Z",
+   "createdAtMs": 1790013594000,
+   "text": "연체 안시켜도   부실우려 신청 받은건데요",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 57129463,
+   "parentCommentId": 57129454,
+   "author": "짱짱짱",
+   "memberGrade": "일반멤버",
+   "createdAt": "2026-09-21T18:28:21.000Z",
+   "createdAtMs": 1790015301000,
+   "text": "신용점수가높고 폐업도아니라 연체10일이상되야한다네요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,92 @@
+{
+ "articleId": 3096,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "2025년 크리스마스",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-24T14:36:10+00:00",
+ "createdAtMs": 1766586970033,
+ "viewCount": 19,
+ "commentCount": 4,
+ "sourceUrl": "https://cafe.naver.com/newhopero/3096",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "올해도 크리스마스가왔네요",
+  "해마다 오는 성탄절인데 올해는 분위기도안나고 그러네요",
+  "이까페 모든분들 다~즐거운 크리스마스되세요~",
+  "내년크리스마스는 더 행복해지길 바래봅니다"
+ ],
+ "bodyNormalized": "올해도 크리스마스가왔네요\n해마다 오는 성탄절인데 올해는 분위기도안나고 그러네요\n이까페 모든분들 다~즐거운 크리스마스되세요~\n내년크리스마스는 더 행복해지길 바래봅니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-76a07b6d-e0d5-11f0-9074-316a43d09747\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-76a07b6e-e0d5-11f0-9074-6112fcec193c\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-e390831d-e0d5-11f0-9074-115b5c5ded4f\">올해도 크리스마스가왔네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-889ece9d-e0d5-11f0-9074-3fcb768e38e6\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-e390831e-e0d5-11f0-9074-db377e3b8ade\">해마다 오는 성탄절인데 올해는 분위기도안나고 그러네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-bc30dcc1-e0d5-11f0-9074-93a4fe84f5a8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-e390831f-e0d5-11f0-9074-1f741847baf3\">이까페 모든분들 다~즐거운 크리스마스되세요~</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d46d15dc-e0d5-11f0-9074-9b1d3a690e4b\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-e3908320-e0d5-11f0-9074-391da6b4f0bb\">내년크리스마스는 더 행복해지길 바래봅니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-76a07b6d-e0d5-11f0-9074-316a43d09747\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54794346,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-24T14:37:21.000Z",
+   "createdAtMs": 1766587041000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54794354,
+   "parentCommentId": null,
+   "author": "뜨아",
+   "memberGrade": null,
+   "createdAt": "2025-12-24T14:38:37.000Z",
+   "createdAtMs": 1766587117000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54794678,
+   "parentCommentId": null,
+   "author": "곰돌",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-24T15:41:12.000Z",
+   "createdAtMs": 1766590872000,
+   "text": "모든분들 메리 크리스마스~",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54796473,
+   "parentCommentId": null,
+   "author": "독개구리",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-25T01:45:55.000Z",
+   "createdAtMs": 1766627155000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

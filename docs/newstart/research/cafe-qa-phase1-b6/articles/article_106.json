@@ -1,0 +1,39 @@
+{
+ "articleId": 106,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 실효 후 차주 갈 때 카드 상계처리 되나요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-10-26T16:40:00.993Z",
+ "createdAtMs": 1729960800993,
+ "viewCount": 38,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/106",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "[답변]",
+  "\"아뇨 저는 상계처리 없어요.\"",
+  "​",
+  "​"
+ ],
+ "bodyNormalized": "[답변]\n\"아뇨 저는 상계처리 없어요.\"\n​\n​",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-4ea23570-40b0-4fde-a38b-7cadeada5f07\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-14f1db31-e8e3-4e46-aeef-2762522d400f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-3da1959c-2089-4043-bbf7-21e896a1874e\">[답변]</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-30761648-e72c-42d9-a6de-6f90e758a2c2\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-e7b4afdd-a1f9-4d64-b915-d064846af396\">&quot;아뇨 저는 상계처리 없어요.&quot;</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-b537f4b7-3b1a-401c-8ff2-dc2fc1c83777\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-17c1e5a4-2e52-415e-87d2-b82fee5f16cb\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-66498a86-41fc-4694-8606-b7076a7a6bd4\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-71c639a3-ede6-4317-9ffd-221446ea173a\">​</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

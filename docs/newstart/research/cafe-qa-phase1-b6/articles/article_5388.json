@@ -1,0 +1,64 @@
+{
+ "articleId": 5388,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "다음주에 부실우려 신청하러가요.. 신청소요시간 얼마나 걸릴까요?",
+ "author": {
+  "nickname": "힘들",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2026-06-06T03:19:09+00:00",
+ "createdAtMs": 1780715949883,
+ "viewCount": 81,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/5388",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "작성할게 많을까요?",
+  "살고있는 지역 아니어도 신청 가능한거맞죠?"
+ ],
+ "bodyNormalized": "작성할게 많을까요?\n살고있는 지역 아니어도 신청 가능한거맞죠?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-4900b1a2-6156-11f1-91f7-8967874de7b6\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4900d8b3-6156-11f1-91f7-13ee153e9819\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-7b499ef9-6156-11f1-91f7-09369a92665d\">작성할게 많을까요?</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-622e7708-6156-11f1-91f7-0320bec2c195\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-7b499efa-6156-11f1-91f7-433230939edf\">살고있는 지역 아니어도 신청 가능한거맞죠?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-4900b1a2-6156-11f1-91f7-8967874de7b6\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 56280032,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-06-06T03:26:39.000Z",
+   "createdAtMs": 1780716399000,
+   "text": "https://naver.me/5Z15zSVl 이 글 참조하세요.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 56280040,
+   "parentCommentId": 56280032,
+   "author": "힘들",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-06-06T03:28:14.000Z",
+   "createdAtMs": 1780716494000,
+   "text": "감사합니다!!",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

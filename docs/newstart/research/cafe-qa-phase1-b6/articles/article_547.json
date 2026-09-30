@@ -1,0 +1,41 @@
+{
+ "articleId": 547,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 신청하여 진행 중으로 신복위 앱 보니깐 ...아까 아침 9시 30분까지 만해도 분명히 진행이 (동의요청) 이였구요 ~~아침 10시 30분에 다시 보니까 ... (부동의심사) 떠있네요",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-26T05:57:22+00:00",
+ "createdAtMs": 1732600642157,
+ "viewCount": 74,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/547",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "새출발기금 부실우려의 경우 부동의 채무는 새출발기금으로의 매각진행을 위해 부동의 심사과정에서 조정제외됩니다.",
+  "​",
+  "따라서 부동의심사과정에서 부동의 채무들이 제외될 예정이며",
+  "​",
+  "부동의 매각예정으로 제외된 채무는 향후 새출발기금으로부터 매입완료 통지 후 수정조정을 통해",
+  "조정안에 포함하시면됩니다."
+ ],
+ "bodyNormalized": "새출발기금 부실우려의 경우 부동의 채무는 새출발기금으로의 매각진행을 위해 부동의 심사과정에서 조정제외됩니다.\n​\n따라서 부동의심사과정에서 부동의 채무들이 제외될 예정이며\n​\n부동의 매각예정으로 제외된 채무는 향후 새출발기금으로부터 매입완료 통지 후 수정조정을 통해\n조정안에 포함하시면됩니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-79be853c-eb86-4701-a733-c2278feb0ae3\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-f34ad11a-5ea5-401d-99f5-f261af3533e7\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-03b73cad-4be1-423a-ba57-81c33812b65c\">새출발기금 부실우려의 경우 부동의 채무는 새출발기금으로의 매각진행을 위해 부동의 심사과정에서 조정제외됩니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-b5b9ecbc-67d2-48a6-bd62-9f9391274784\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-94c76acd-7d0f-4b59-b387-e4c053eeb778\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4d33ddb6-83f1-4ff8-91aa-1341c9084282\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4b470706-fd98-4318-96ff-50f117909677\">따라서 부동의심사과정에서 부동의 채무들이 제외될 예정이며 </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-93c065bf-74f6-4bd2-9950-3212824c449d\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-05cefff7-2cd9-40d3-89cb-0b1fda127b98\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-e14a78f9-d4d0-4681-a296-3ddfe93087a9\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-45f030b8-4f3b-4109-8ba3-aaa0114d3619\">부동의 매각예정으로 제외된 채무는 향후 새출발기금으로부터 매입완료 통지 후 수정조정을 통해 </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-11fceff2-cc42-44f4-99a4-50ccf82cf23a\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-66b424bb-3911-4cc9-bdb7-ebb2d4483123\">조정안에 포함하시면됩니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

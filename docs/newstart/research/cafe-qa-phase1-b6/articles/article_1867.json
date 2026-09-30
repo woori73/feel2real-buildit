@@ -1,0 +1,66 @@
+{
+ "articleId": 1867,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 상담받고 왔어요",
+ "author": {
+  "nickname": "파란하늘56",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-11-25T07:06:42+00:00",
+ "createdAtMs": 1764054402757,
+ "viewCount": 52,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1867",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "제일 빠른 날짜 상담이 연체 29일째라 갔더니",
+  "2일 더 채우고 30일 넘겨 오라고 하시네요",
+  "혹시나 대상자 아닐까봐 마음 졸였는데 ㅠ",
+  "다행히 신청 된다고 해서 한시름 놨네요🥲"
+ ],
+ "bodyNormalized": "제일 빠른 날짜 상담이 연체 29일째라 갔더니\n2일 더 채우고 30일 넘겨 오라고 하시네요\n혹시나 대상자 아닐까봐 마음 졸였는데 ㅠ\n다행히 신청 된다고 해서 한시름 놨네요🥲",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-ef63ed3d-c9cc-11f0-bdf4-479a8aba36fc\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-ef63ed3e-c9cc-11f0-bdf4-fb816dd1ed2d\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4beedfa7-c9cd-11f0-bdf4-230e9624dc71\">제일 빠른 날짜 상담이 연체 29일째라 갔더니</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-07570f03-c9cd-11f0-bdf4-a74f78172585\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4bef06b8-c9cd-11f0-bdf4-a3b6470ef49b\">2일 더 채우고 30일 넘겨 오라고 하시네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-14ea4030-c9cd-11f0-bdf4-891b4aca901c\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4bef06b9-c9cd-11f0-bdf4-cf73c9c24b65\">혹시나 대상자 아닐까봐 마음 졸였는데 ㅠ</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-3c038f06-c9cd-11f0-bdf4-7751526e500d\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-4bef06ba-c9cd-11f0-bdf4-f3f4a47f8e53\">다행히 신청 된다고 해서 한시름 놨네요🥲</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-ef63ed3d-c9cc-11f0-bdf4-479a8aba36fc\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54543483,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-25T07:11:24.000Z",
+   "createdAtMs": 1764054684000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54544256,
+   "parentCommentId": null,
+   "author": "돌격대장2",
+   "memberGrade": null,
+   "createdAt": "2025-11-25T08:31:54.000Z",
+   "createdAtMs": 1764059514000,
+   "text": "축하드립니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

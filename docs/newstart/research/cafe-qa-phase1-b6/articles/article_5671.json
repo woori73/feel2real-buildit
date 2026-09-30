@@ -1,0 +1,65 @@
+{
+ "articleId": 5671,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려에서 부실차주로 넘어가신분 있으신가요?",
+ "author": {
+  "nickname": "하늘이90",
+  "memberGrade": "일반멤버"
+ },
+ "createdAt": "2026-07-15T04:44:30+00:00",
+ "createdAtMs": 1784090670847,
+ "viewCount": 149,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/5671",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려 미납3회차인데 부실우려에서 부실차주로",
+  "",
+  "넘어가신분 있으신지 궁금합니다.."
+ ],
+ "bodyNormalized": "부실우려 미납3회차인데 부실우려에서 부실차주로\n\n넘어가신분 있으신지 궁금합니다..",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-d11de57c-25b9-4e8f-96d1-60779a4864f4\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-ae39bacf-edf9-4d0b-a567-090964f51444\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-37a2f0f3-4bb7-4721-ab59-3ffebdf0def7\">부실우려 미납3회차인데 부실우려에서 부실차주로</span></p>\n<!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-45ec6544-8f5e-4317-b23e-81808aa74671\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-afa11cd1-f3ae-4dcc-aa94-c0e5767f5eae\">넘어가신분 있으신지 궁금합니다..</span></p>\n<!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-d11de57c-25b9-4e8f-96d1-60779a4864f4\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 56593172,
+   "parentCommentId": null,
+   "author": "부시리",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-07-15T09:02:39.000Z",
+   "createdAtMs": 1784106159000,
+   "text": "총 5회 미납되어야 실효됩니다. 실효되면 부실차주로 넘어가실수있습니다.",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 56605453,
+   "parentCommentId": 56593172,
+   "author": "하늘이90",
+   "memberGrade": "일반멤버",
+   "createdAt": "2026-07-17T06:13:37.000Z",
+   "createdAtMs": 1784268817000,
+   "text": "총5회는 부실우려차주 시작하고 5회인가요? 총 미납횟수가 5회가 되는건가요?",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,38 @@
+{
+ "articleId": 191,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 협약서 체결 전인데 경기신용보증재단 통한 농협은행 3천만원 운전자금이 새출발기금 채무조정 제외 채무인데 경기신용보증재단에서 대위 변제를 해줘야 채무 조정이 가능한 건가요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-10-30T07:31:37.403Z",
+ "createdAtMs": 1730273497403,
+ "viewCount": 60,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/191",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "경기신용보증재단에서 대위 변제를 한 다음에 새출발에서 매입을 할 것입니다.",
+  "​",
+  "기다리셔야 합니다."
+ ],
+ "bodyNormalized": "경기신용보증재단에서 대위 변제를 한 다음에 새출발에서 매입을 할 것입니다.\n​\n기다리셔야 합니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-2b60006d-1652-48aa-a8eb-5311f3e719c2\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c0f9c4fc-53a1-4925-8c46-74503c34e3ce\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-5b4ada57-7f14-4c82-a2f2-753d7c22d7a1\">경기신용보증재단에서 대위 변제를 한 다음에 새출발에서 매입을 할 것입니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-203e93b9-82c2-40af-a68e-73a61a118fd2\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-5f1fb4d3-09c6-4e95-abb4-66469bb14ca4\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-466fa2b2-5545-4210-8fab-d90bb8aa1ba8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-51045a14-0907-45f1-b7ef-7792d5ac3f48\">기다리셔야 합니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,65 @@
+{
+ "articleId": 2677,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "사업자등록",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-14T05:15:57+00:00",
+ "createdAtMs": 1765689357533,
+ "viewCount": 51,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2677",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "온라인사업자등록하려하는데",
+  "일반으로할지 간이로 해야할지몰라서요",
+  "상관없을까요?한두달후에 폐업할겁니다"
+ ],
+ "bodyNormalized": "온라인사업자등록하려하는데\n일반으로할지 간이로 해야할지몰라서요\n상관없을까요?한두달후에 폐업할겁니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-cfe51764-d8ab-11f0-bb99-c1293a3bb646\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-cfe53e75-d8ab-11f0-bb99-67a95cee3dc7\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-f8a5ad62-d8ab-11f0-bb99-8d8ddcb29a0e\">온라인사업자등록하려하는데</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-e03b5fed-d8ab-11f0-bb99-bfb3b50e9d88\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-f8a5ad63-d8ab-11f0-bb99-bb6dc9fd1fd4\">일반으로할지 간이로 해야할지몰라서요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-ed8b45a1-d8ab-11f0-bb99-05e81da714b6\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-f8a5ad64-d8ab-11f0-bb99-138c402a973e\">상관없을까요?한두달후에 폐업할겁니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-cfe51764-d8ab-11f0-bb99-c1293a3bb646\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54696443,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-14T05:18:01.000Z",
+   "createdAtMs": 1765689481000,
+   "text": "간이하시면 됩니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54700542,
+   "parentCommentId": 54696443,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-14T15:20:57.000Z",
+   "createdAtMs": 1765725657000,
+   "text": "감사합니다~~^^",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

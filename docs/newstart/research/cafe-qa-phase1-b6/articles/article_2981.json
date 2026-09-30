@@ -1,0 +1,91 @@
+{
+ "articleId": 2981,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실차주신청 후 차량매매",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-22T20:47:15+00:00",
+ "createdAtMs": 1766436435483,
+ "viewCount": 109,
+ "commentCount": 4,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2981",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "저는 사업자담보대출상관없이 사업용자동차가 현장에서 일하는 장비차량 입니다~그 장비차로 2013년 사업자냈구요~부실우려 신청한상태인데 체결은2월쯤 될것같습니다~서명등록안하고 바로 부실차주 갈계획인데",
+  "혹시 차량을 팔수있는기회(사겠다는사람이 생겨서)가",
+  "생기면 매매해서 그돈으로 부실차주 확정안 돈을갚아도 되는걸까요?매매하면안되고 계속 사업을 영위해야하는걸까요?"
+ ],
+ "bodyNormalized": "저는 사업자담보대출상관없이 사업용자동차가 현장에서 일하는 장비차량 입니다~그 장비차로 2013년 사업자냈구요~부실우려 신청한상태인데 체결은2월쯤 될것같습니다~서명등록안하고 바로 부실차주 갈계획인데\n혹시 차량을 팔수있는기회(사겠다는사람이 생겨서)가\n생기면 매매해서 그돈으로 부실차주 확정안 돈을갚아도 되는걸까요?매매하면안되고 계속 사업을 영위해야하는걸까요?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-6951aac0-df76-11f0-9725-6f2d260b6172\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-6951aac1-df76-11f0-9725-d1b2543c95e4\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-65f061ed-df77-11f0-9725-272f8d9d0b7d\">저는 사업자담보대출상관없이 사업용자동차가 현장에서 일하는 장비차량 입니다~그 장비차로 2013년 사업자냈구요~부실우려 신청한상태인데 체결은2월쯤 될것같습니다~서명등록안하고 바로 부실차주 갈계획인데</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c7187872-df76-11f0-9725-2f21790082d6\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-65f061ee-df77-11f0-9725-d328fb82cf19\">혹시 차량을 팔수있는기회(사겠다는사람이 생겨서)가</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-de38ba87-df76-11f0-9725-b5b6dbe0f6d0\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-65f061ef-df77-11f0-9725-0115d3bada9d\">생기면 매매해서 그돈으로 부실차주 확정안 돈을갚아도 되는걸까요?매매하면안되고 계속 사업을 영위해야하는걸까요? </span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-6951aac0-df76-11f0-9725-6f2d260b6172\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54777246,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-23T00:33:04.000Z",
+   "createdAtMs": 1766449984000,
+   "text": "매매해서 갚아도 됩니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54777883,
+   "parentCommentId": 54777246,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T01:44:40.000Z",
+   "createdAtMs": 1766454280000,
+   "text": "네~~남편이 혹시 차량이 팔리게되면 담보대출이다보니 설정잡혀있는데 그래도 괜찮겠냐?팔면안되지 않겠냐 물어봐서요~부실우려중이든 부실차주든 매매가 상관없을까요?",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54777911,
+   "parentCommentId": 54777246,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-23T01:46:39.000Z",
+   "createdAtMs": 1766454399000,
+   "text": "확정안 이후는 상관없습니다. 일단 부실차주와는 상관없는데 설정이니 그런건 모르겠네요",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54778067,
+   "parentCommentId": 54777246,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T02:04:07.000Z",
+   "createdAtMs": 1766455447000,
+   "text": "그럼 부실차주확정안 이후는 설정잡혀있는 차량이었어도 매매해서 갚는게 되겠네요\n부실우려상태에서 설정건이라 모르겠는거시죠?",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 2,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,63 @@
+{
+ "articleId": 2511,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "재가입했습니다~",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-03T15:23:37+00:00",
+ "createdAtMs": 1764775417583,
+ "viewCount": 17,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2511",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "다시 가입되어 너무 기쁩니다~감사합니다"
+ ],
+ "bodyNormalized": "다시 가입되어 너무 기쁩니다~감사합니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-d061639a-d05b-11f0-bcbf-c14ef5e5b28e\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d0618aab-d05b-11f0-bcbf-039621acae39\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-0a18a053-d05c-11f0-bcbf-49338b30bb26\">다시 가입되어 너무 기쁩니다~감사합니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-d061639a-d05b-11f0-bcbf-c14ef5e5b28e\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54609867,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-03T15:33:06.000Z",
+   "createdAtMs": 1764775986000,
+   "text": "여긴 롤러코스터 카페",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54609871,
+   "parentCommentId": 54609867,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-03T15:35:01.000Z",
+   "createdAtMs": 1764776101000,
+   "text": "감사합니다~잘부탁드려요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

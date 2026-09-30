@@ -1,0 +1,102 @@
+{
+ "articleId": 1864,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "폐업신고후",
+ "author": {
+  "nickname": "다보리",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2025-11-25T06:03:01+00:00",
+ "createdAtMs": 1764050581140,
+ "viewCount": 47,
+ "commentCount": 5,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1864",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "폐업신고 후에는 연체가없어도 바로 부실우려신청 되는거 맞죠?"
+ ],
+ "bodyNormalized": "폐업신고 후에는 연체가없어도 바로 부실우려신청 되는거 맞죠?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-1C7D813A-AAA0-461C-9201-382CCD73B18B\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-67BC948E-E7D8-404F-8892-4E6CFC5FE9E3\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-2D3DEC50-BACF-428C-BF32-5968A832D1A4\">폐업신고 후에는 연체가없어도 바로 부실우려신청 되는거 맞죠?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-1C7D813A-AAA0-461C-9201-382CCD73B18B\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54542874,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-25T06:08:48.000Z",
+   "createdAtMs": 1764050928000,
+   "text": "□ 부실우려차주는 금융회사 채무 중 어느 하나라도 연체일수가 10일 이상 89일 이하이거나,\n\n○ 연체일수가 10일 미만이면서,\n\n    1. 폐업 또는 6개월 이상 휴업한자,\n\n    2. 국세 지방세 체납으로 공공기록정보가 등재된 자 등을 의미합니다.\n\n연체는 해야겠네요.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54542880,
+   "parentCommentId": 54542874,
+   "author": "다보리",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-11-25T06:09:40.000Z",
+   "createdAtMs": 1764050980000,
+   "text": "아 어차피 오늘이지나면.. 연체라 ㅠㅠ 감사합니다 ㅠㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54542886,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-25T06:10:04.000Z",
+   "createdAtMs": 1764051004000,
+   "text": "○ 따라서 연체가 없는 경우에도 부실우려차주 요건*에 해당되는 경우 새출발기금 신청이 가능합니다.\n\n* 폐업자, 6개월 이상 휴업자/국세·지방세·관세 체납으로 신용정보관리대상에 등재된 차주/신용평점 하위차주 또는 고의성 없이 상당기간 연체가 발생한 차주 등",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54542888,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-25T06:10:15.000Z",
+   "createdAtMs": 1764051015000,
+   "text": "연체없어도 가능하다네요",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54542891,
+   "parentCommentId": 54542888,
+   "author": "다보리",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-11-25T06:10:52.000Z",
+   "createdAtMs": 1764051052000,
+   "text": "정말감사합니다 ! 이카페가 절 살렸어요ㅜㅜㅜ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 3,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

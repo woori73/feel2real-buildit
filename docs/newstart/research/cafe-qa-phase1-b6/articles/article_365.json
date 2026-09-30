@@ -1,0 +1,37 @@
+{
+ "articleId": 365,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려를 신청하면 신청한 날부터 연체기록이 중단 되는 걸까요 아님 부실우려 체결부터 연체기록 중단일까요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-07T10:08:04+00:00",
+ "createdAtMs": 1730974084710,
+ "viewCount": 42,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/365",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "저는 부실차주 신청한지 두달이 넘었는데 여전히 연체일수가 쌓이고 있습니다.",
+  "이를 유추하면 부실우려도 확정 체결때부터 연체가 중단되는것 같습니다."
+ ],
+ "bodyNormalized": "저는 부실차주 신청한지 두달이 넘었는데 여전히 연체일수가 쌓이고 있습니다.\n이를 유추하면 부실우려도 확정 체결때부터 연체가 중단되는것 같습니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-2ed3d2a9-05d6-465d-b8f7-52b33563b654\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-86bbd80a-43c9-4533-849a-bc770bafff85\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-7dfaa2a4-2752-4272-892f-70564ec65a0a\">저는 부실차주 신청한지 두달이 넘었는데 여전히 연체일수가 쌓이고 있습니다. </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-090a0904-4320-479d-bfb2-8d5dd735d6bc\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ab11f031-2a7c-4349-a464-604998c91306\">이를 유추하면 부실우려도 확정 체결때부터 연체가 중단되는것 같습니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

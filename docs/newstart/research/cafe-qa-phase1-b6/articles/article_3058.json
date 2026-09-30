@@ -1,0 +1,90 @@
+{
+ "articleId": 3058,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "출근중 전철입니다~",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-23T23:48:25+00:00",
+ "createdAtMs": 1766533705230,
+ "viewCount": 21,
+ "commentCount": 4,
+ "sourceUrl": "https://cafe.naver.com/newhopero/3058",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "출근하는 전철안입니다~오늘 10분 하겠네요",
+  "오늘도 화이팅해보아요"
+ ],
+ "bodyNormalized": "출근하는 전철안입니다~오늘 10분 하겠네요\n오늘도 화이팅해보아요",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-bd59df4a-e059-11f0-a4f4-250b3a593b50\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-bd5a065b-e059-11f0-a4f4-a911acd5dc09\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-df48b280-e059-11f0-a4f4-19bfb22f44fe\">출근하는 전철안입니다~오늘 10분 하겠네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d8a83a37-e059-11f0-a4f4-277a406f4350\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-df48b281-e059-11f0-a4f4-5347e922d4c8\">오늘도 화이팅해보아요</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-bd59df4a-e059-11f0-a4f4-250b3a593b50\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54786436,
+   "parentCommentId": null,
+   "author": "민초보",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-12-23T23:49:28.000Z",
+   "createdAtMs": 1766533768000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54786551,
+   "parentCommentId": null,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-24T00:00:28.000Z",
+   "createdAtMs": 1766534428000,
+   "text": "10분지각~~~지각을 빼먹었네요ㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54787062,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-24T01:04:41.000Z",
+   "createdAtMs": 1766538281000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54787084,
+   "parentCommentId": null,
+   "author": "독개구리",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-24T01:06:01.000Z",
+   "createdAtMs": 1766538361000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

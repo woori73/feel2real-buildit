@@ -1,0 +1,40 @@
+{
+ "articleId": 644,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 12월2일에 실효되고 아직도 장기연체등록이 되지않아 부실차주 신청못하고 있어요.  다른분들은 실효되고10일 정도면 완료 되시는거 같은데 혹시 장기연체등록이 늦게 되신 분도 계실까요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-12-10T09:24:06+00:00",
+ "createdAtMs": 1733822646093,
+ "viewCount": 178,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/644",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "최종실효후 일주일 정도 지나니까 신용점수가 바닥치면서",
+  "연체정보 뜨더라구요.",
+  "부실 우려시 동의된건이 연체정보로 잡히는데",
+  "그 채권사에 전화해서 연체정보 등록 해달라고 하셔도 되요.",
+  "​"
+ ],
+ "bodyNormalized": "최종실효후 일주일 정도 지나니까 신용점수가 바닥치면서\n연체정보 뜨더라구요.\n부실 우려시 동의된건이 연체정보로 잡히는데\n그 채권사에 전화해서 연체정보 등록 해달라고 하셔도 되요.\n​",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-2fe98a10-cfb2-4c30-88ed-d49a363b8287\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4c0024ba-44f2-4db7-b7e8-f08567563b48\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-b63efb67-3b67-4451-a12c-8ae7dad6175f\">최종실효후 일주일 정도 지나니까 신용점수가 바닥치면서</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4a5b0a38-4891-456a-9e0d-542e0327ffd0\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-9c6b0a45-7d39-4b55-a3f8-490ff54858f1\">연체정보 뜨더라구요.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-ed1defdb-e222-4b0d-80ab-f3381ad4e329\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-754fbcdf-1526-4bfd-9683-dad10853e320\">부실 우려시 동의된건이 연체정보로 잡히는데</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4f04708e-1c63-43e0-8719-d73c0b0b1cb8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-a7e5bf97-7275-43ef-b586-4f1c72958b35\">그 채권사에 전화해서 연체정보 등록 해달라고 하셔도 되요.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-938577da-4053-442f-8430-3266ea44faa9\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-55afd81d-108f-472f-a55d-76d5b6cb4009\">​</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

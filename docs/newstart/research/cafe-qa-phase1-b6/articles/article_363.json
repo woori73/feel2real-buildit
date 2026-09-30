@@ -1,0 +1,38 @@
+{
+ "articleId": 363,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "법인대표이면서 개인사업자가 있고 개인사업자만 부실우려차주 신청가능 한가요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-07T10:05:06+00:00",
+ "createdAtMs": 1730973906913,
+ "viewCount": 41,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/363",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "네 가능할 것 같습니다.",
+  "상담원에게 한번 확인해 보십시오.",
+  "새출발기금 콜센터 1660-1378 입니다."
+ ],
+ "bodyNormalized": "네 가능할 것 같습니다.\n상담원에게 한번 확인해 보십시오.\n새출발기금 콜센터 1660-1378 입니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-50d57689-d0ff-493e-8aba-afb72e61fc9c\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-7029c942-eb51-4251-a667-0ea6da72c1ce\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-be3f780c-00fa-4ed6-9a08-665c2de52137\">네 가능할 것 같습니다. </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-a86433af-7102-4406-9954-60eceb4b388e\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-704ba7bc-ca10-4b99-b9fa-eb0889d6b13d\">상담원에게 한번 확인해 보십시오. </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d8243a4c-7af5-447c-a603-e089e29c77e1\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ef49246d-f044-4c6e-b0c1-7a75c33c89e5\">새출발기금 콜센터 1660-1378 입니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

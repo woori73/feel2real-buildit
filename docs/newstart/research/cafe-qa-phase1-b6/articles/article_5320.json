@@ -1,0 +1,37 @@
+{
+ "articleId": 5320,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려차주",
+ "author": {
+  "nickname": "두두둘두",
+  "memberGrade": "일반멤버"
+ },
+ "createdAt": "2026-05-31T13:47:13+00:00",
+ "createdAtMs": 1780235233430,
+ "viewCount": 46,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/5320",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "현재 부실우려차주 신청 조건간 정보 알아보고있습니다.",
+  "신청 자격조건 정확히 알고싶습니다"
+ ],
+ "bodyNormalized": "현재 부실우려차주 신청 조건간 정보 알아보고있습니다.\n신청 자격조건 정확히 알고싶습니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-8c4acdaf-05ed-4949-84ac-c61cbb93868a\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c93340ca-95e2-47d1-b4cb-0ff2eb9169ec\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-948e53e3-98e2-4a05-b302-ca3513b23803\">현재 부실우려차주 신청 조건간 정보 알아보고있습니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-7fb7158c-2988-4171-8c4f-761e3fa3577a\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-7be3b5da-d534-4c52-b828-c222cd0df22d\">신청 자격조건 정확히 알고싶습니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-8c4acdaf-05ed-4949-84ac-c61cbb93868a\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}
