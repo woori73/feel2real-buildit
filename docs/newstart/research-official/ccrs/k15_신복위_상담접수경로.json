@@ -1,0 +1,33 @@
+{
+ "authority": "HIGH / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "상담접수"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "신복위 전 채무조정 제도 공통 상담·접수",
+   "meaning": "1600-5500(평일 09~18시), 해외 (02)6337-2000, 27개 지부·출장소",
+   "source_url": "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=1930"
+  }
+ ],
+ "normalized_content": "신용회복위원회 공식 안내 다수 페이지(개인워크아웃, 신속채무조정, 새출발기금 중개형, 실효위기 지원)에서 확인되는 상담·접수 경로. 전화 상담은 국내 1600-5500, 해외 (02)6337-2000, 운영시간 평일 09시부터 18시까지. 채무조정 신청은 전화·인터넷(ccrs.or.kr 디지털상담)·모바일 앱으로 예약상담을 진행한 뒤 본인확인서류(주민등록증, 운전면허증, 행정안전부 발급 모바일 신분증, 외국인등록증, 국내거소신고증, 여권+여권정보증명서 중 택1)를 지참하여 전국 27개 지부·출장소 방문 또는 온라인으로 접수한다. 재산·소득 증빙 서류는 재무검증 과정에서 추가 요청될 수 있다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "신용회복위원회",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=1930",
+ "status": "REVIEW",
+ "tags": [
+  "1600-5500",
+  "상담",
+  "접수",
+  "본인확인서류",
+  "지부"
+ ],
+ "title": "신용회복위원회 상담·접수 경로 — 1600-5500(평일 09~18시), 예약상담 후 방문·온라인 접수"
+}

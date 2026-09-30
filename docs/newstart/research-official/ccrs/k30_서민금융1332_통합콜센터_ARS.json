@@ -1,0 +1,34 @@
+{
+ "authority": "HIGH / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "추심",
+  "상담접수"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "1332 ARS 구성",
+   "meaning": "3번=불법사금융 피해 상담·신고",
+   "source_url": "https://www.fss.or.kr/fss/s1332/s1332Index/sub.do?menuNo=200037"
+  }
+ ],
+ "normalized_content": "금융감독원 '서민금융1332' 공식 페이지: 1332은 금감원 통합콜센터로 '국번없이 1332(유료, 통화료 발신자 부담)'로 안내된다. ARS 구성은 원문 기준 1번 '보이스피싱 피해 상담 및 신고', 2번 '상속인 금융거래 조회서비스', 3번 '불법사금융 피해 상담 및 신고', 4~8번 금융범죄 신고·공시회계 안내·중소기업 애로상담·금융자문·외국인 상담. 무단 채권추심·고금리 사금융 문제는 ARS 3번으로 실시간 상담이 가능하며, 사이트 내 '불법금융대응' 영역에서 제보신고 양식과 유형별 피해대응 매뉴얼을 제공한다. 불법사금융 예방 캠페인·이자계산기·관련 법령 해설을 제공하는 '불법사금융지킴이' 페이지가 연계되어 있다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "금융감독원",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.fss.or.kr/fss/s1332/s1332Index/sub.do?menuNo=200037",
+ "status": "REVIEW",
+ "tags": [
+  "1332",
+  "서민금융1332",
+  "ARS",
+  "불법사금융지킴이",
+  "이자계산기"
+ ],
+ "title": "서민금융1332 통합콜센터 — ARS 구성(1번 보이스피싱, 3번 불법사금융)과 연계 서비스"
+}

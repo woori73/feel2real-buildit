@@ -1,0 +1,33 @@
+{
+ "authority": "MEDIUM / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "신용정보"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "무료 교부·열람 주기",
+   "meaning": "4개월마다 1회, 처리결과 7일 내 통지",
+   "source_url": "http://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=1702&ccfNo=3&cciNo=2&cnpClsNo=2"
+  }
+ ],
+ "normalized_content": "공식 경로는 (1) 크레딧포유(credit4u.or.kr): '한국신용정보원에서 제공하는 무료 조회서비스'로 본인인증(본인명의 휴대폰 또는 공동인증서) 후 신용정보조회서·열람을 온라인 발급. (2) 신용정보회사 대상 열람 요구: 법제처 「찾기쉬운 생활법령정보」 '본인 신용정보 열람, 정정청구 및 삭제 요구 등' 원문에 따르면 '개인인 신용정보주체는 4개월마다 개인신용평가회사(전문개인신용평가회사는 제외함)에 대하여 … 1회 이상 무료로 교부받거나 알 수 있습니다'이고, 정정·삭제 등 요구 처리결과는 '7일 이내에 해당 신용정보주체에게 알려야' 한다. 한국신용정보원 금융소비자 지원업무는 방문·인터넷·전화(ARS)·우편 4경로를 안내한다. ※ 법 조문 원문(제4조·제34조)은 law.go.kr 접속 제한으로 생활법령 안내 원문으로 확인함(2026-09-30).",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "법제처 찾기쉬운생활법령",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "http://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=1702&ccfNo=3&cciNo=2&cnpClsNo=2",
+ "status": "REVIEW",
+ "tags": [
+  "무료열람",
+  "4개월마다",
+  "정정청구",
+  "7일",
+  "신용정보조회서"
+ ],
+ "title": "본인신용정보 무료 열람 수단·주기 — 크레딧포유 온라인 무료 조회와 신용평가회사 4개월마다 1회 무료 교부"
+}

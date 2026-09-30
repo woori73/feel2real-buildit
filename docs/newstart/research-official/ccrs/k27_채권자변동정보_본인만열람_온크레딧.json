@@ -1,0 +1,39 @@
+{
+ "authority": "HIGH / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "신용정보"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "채권자변동정보 열람 주체",
+   "meaning": "금융기관·CB 미제공, 본인만 열람",
+   "source_url": "https://www.credit4u.or.kr:2443/cnsl/faqList.do"
+  },
+  {
+   "applies_to": "캠코 매입 채무 조회",
+   "meaning": "온크레딧 채무내역·채권소각 조회",
+   "source_url": "https://www.oncredit.or.kr/info/sub0201.do"
+  }
+ ],
+ "normalized_content": "크레딧포유 메인 원문상 조회서비스에 '채권자변동정보'가 명시되어 있으며, Credit4U FAQ 원문: '채권자변동정보는 금융기관 및 신용정보회사(CB)에 제공되지 아니하며, 오직 신용정보주체 본인만 열람할 수 있습니다. 정보 오등록인 경우에는 해당 금융기관을 통해 삭제 등 정정 청구를 할 수 있으나, 정상적 정보인 경우에는 삭제가 불가합니다.' 내 채권이 원대출기관에서 어느 채권자(대부업체·유동화전문회사·채권매입추심업체 등)로 양도되었는지는 Credit4U에서 본인이 직접 확인한다. 캠코(한국자산관리공사)로 매입·양도된 채무 및 소각 여부·추심 현황은 캠코 운영 온크레딧(www.oncredit.or.kr) '채무내역·채권소각 안내/조회' 메뉴에서 공동인증서·간편인증 등 본인인증 후 확인한다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "한국신용정보원",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.credit4u.or.kr:2443/cnsl/faqList.do",
+ "status": "REVIEW",
+ "tags": [
+  "채권자변동정보",
+  "본인열람",
+  "채권양도",
+  "매입추심",
+  "온크레딧",
+  "채권소각"
+ ],
+ "title": "채권자변동정보 조회 — 본인만 열람(금융기관·CB 미제공)과 온크레딧 채무내역·채권소각 확인"
+}
