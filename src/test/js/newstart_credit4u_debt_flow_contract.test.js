@@ -12,10 +12,11 @@ const js = fs.readFileSync(path.join(root, 'static/js/newstart.js'), 'utf8');
 
 /* HOME → Credit4U → 기존 본인채무 상태창(#ns-status-panel) → 지피지기 연결의 navigation 계약. */
 
-test('HOME 채무 확인 카드가 Credit4U 도구와 상태 배지를 노출한다', () => {
-  assert.match(home, /class="ns-feature-card" href="\/newstart\/tools\/credit4u"/);
-  assert.match(home, /내 채권기관·대출·연체정보를 Credit4U에서 확인하고 내 채무상황에 정리합니다/);
+test('HOME의 채무상태 배지는 채무상황 진입행에 남아 있고 상태창으로 바로 열린다', () => {
+  // Phase2 §2: Credit4U 카드는 HOME 5개 진입점에서 빠졌지만 배지·상태창·재진입 링크는 보존
+  assert.match(home, /href="#ns-status-panel"[^>]*data-ns-open="ns-status-panel">내 채무상황 정리하기/);
   assert.match(home, /id="ns-debt-home-state" data-state="NOT_STARTED">미확인<\/span>/);
+  assert.match(home, /href="\/newstart\/tools\/credit4u"/);
 });
 
 test('Credit4U 가이드는 전자책 3줄 stub이 아니라 공식 메뉴 기준 단계별 안내다', () => {
@@ -48,7 +49,7 @@ test('기존 #ns-status-panel이 SOURCE OF TRUTH — 6개 체크·메모·단계
   ['ns-flag-credit4u', 'ns-flag-creditor', 'ns-flag-loan', 'ns-flag-overdue',
     'ns-flag-guarantee', 'ns-flag-creditor-change'].forEach((id) => assert.ok(home.includes('id="' + id + '"'), id));
   assert.match(home, /id="ns-debt-save"[^>]*>내 채무상황 저장<\/button>/);
-  assert.match(home, /id="ns-debt-ask-agent">내 채무상황으로 지피지기에게 물어보기<\/button>/);
+  assert.match(home, /id="ns-debt-ask-agent">내 채무상황으로 지피지기 Agent에게 물어보기<\/button>/);
   assert.doesNotMatch(home, /서버에 저장되지 않습니다|메모 저장 — 준비 중/);
 });
 

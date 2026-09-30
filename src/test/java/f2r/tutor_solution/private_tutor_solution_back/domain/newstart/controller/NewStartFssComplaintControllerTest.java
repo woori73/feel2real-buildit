@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -15,9 +16,13 @@ import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.WebMvcConfig;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.entity.NewStartCapability;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.repository.NewStartMemberGrantRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.FssComplaintHelperService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +35,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * 금감원 민원 도우미 endpoint 계약 테스트. 인증은 {@code /api/**} catch-all 유지,
- * companion 3종 payload, compose 성공/실패 응답이 사용자 원문·내부 상세를 노출하지 않음을 본다.
+ * 금감원 민원 도우미 endpoint 계약 테스트. companion(설명·예시)은 인증 회원이면 열람,
+ * compose(AI 실행)는 THANKS_MEMBER 전용 — grant 없는 회원은 AI 호출 없이 403 안내를 받는다.
+ * 응답이 사용자 원문·내부 상세를 노출하지 않는지도 본다.
  */
 @WebMvcTest(controllers = NewStartFssComplaintController.class)
 @AutoConfigureMockMvc
@@ -40,7 +46,8 @@ import org.springframework.test.web.servlet.MockMvc;
     WebMvcConfig.class,
     RoleModelInterceptor.class,
     JwtTokenProvider.class,
-    CookieUtil.class
+    CookieUtil.class,
+    NewStartEntitlementService.class
 })
 @TestPropertySource(properties = {
     "app.jwt.secret=12345678901234567890123456789012",
@@ -52,9 +59,17 @@ class NewStartFssComplaintControllerTest {
   @Autowired MockMvc mockMvc;
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean FssComplaintHelperService fssComplaintHelperService;
+  @MockitoBean NewStartMemberGrantRepository grantRepository;
 
   private Cookie userCookie() {
     return new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "student", "STUDENT"));
+  }
+
+  /** 기본 시나리오는 "grant 보유 회원" — 거절 케이스만 각 테스트에서 false로 되돌린다. */
+  @BeforeEach
+  void memberHoldsThanksGrant() {
+    when(grantRepository.existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class)))
+        .thenReturn(true);
   }
 
   @Test
@@ -152,5 +167,29 @@ class NewStartFssComplaintControllerTest {
         .andExpect(result -> org.assertj.core.api.Assertions
             .assertThat(result.getResponse().getContentAsString())
             .doesNotContain("민원원문비밀마커-CTRL99"));
+  }
+
+  @Test
+  @DisplayName("given: grant 없는 회원 / when: compose / then: 403 안내 + AI 미호출, companion 설명은 계속 열람")
+  void memberWithoutGrantCannotComposeButStillReadsCompanion() throws Exception {
+    when(grantRepository.existsByUserIdAndCapability(anyLong(), any(NewStartCapability.class)))
+        .thenReturn(false);
+
+    mockMvc.perform(post("/api/newstart/fss/compose")
+            .cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"sampleId\":\"FS-1\",\"situationText\":\"추심 문자가 와요\"}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.status").value("error"))
+        .andExpect(jsonPath("$.errorMessage").value(NewStartEntitlementService.DENIAL_MESSAGE));
+    verify(fssComplaintHelperService, never()).compose(any(), any());
+    verify(fssComplaintHelperService, never()).composeInterview(any());
+
+    when(fssComplaintHelperService.samples()).thenReturn(List.of());
+    when(fssComplaintHelperService.manual()).thenReturn(
+        new FssComplaintHelperService.ManualGuide("EBK-6-1", "인트로", List.of(), "note", null));
+    mockMvc.perform(get("/api/newstart/fss/companion").cookie(userCookie()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.agent.steps.length()").value(14));
   }
 }

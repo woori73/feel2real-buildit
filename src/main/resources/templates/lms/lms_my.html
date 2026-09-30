@@ -19,13 +19,21 @@
   <th:block th:replace="~{fragments/_lms_shell :: sidebar('my')}"></th:block>
 
   <main class="lms-content">
-    <h1 class="page-title">내 강의실</h1>
+    <section class="review-lessons-section" th:if="${lmsAuthenticated and lmsEnabled}">
+      <p class="review-eyebrow" th:text="${lmsMainTitle}">시험 전 복습수업</p>
+      <p class="review-intro" th:text="${lmsIntro}">수업에서 배운 핵심 내용을 시험 전에 다시 확인하세요.</p>
+      <h1 class="page-title" th:text="${lmsSectionName}">내 복습수업</h1>
+      <div class="grid" data-review-lessons-grid></div>
+    </section>
+
+    <h2 class="page-title subtle-title">강의실(구매형 강좌)</h2>
     <div class="grid" data-myclass-grid></div>
   </main>
 </div>
 
 <th:block th:replace="~{fragments/_lms_shell :: footer}"></th:block>
 
+<script src="/js/api.js"></script>
 <script src="/js/lms_mock.js"></script>
 <script src="/js/lms_data.js"></script>
 <script src="/js/lms_state.js"></script>

@@ -1,0 +1,33 @@
+{
+ "authority": "MEDIUM / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "추심"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "민원 접수 이원화",
+   "meaning": "중범죄=1332→3번, 일반 민원=e-금융민원센터",
+   "source_url": "https://www.fss.or.kr/fss/minwon/search.jsp"
+  }
+ ],
+ "normalized_content": "금융감독원 사이트의 민원신청 게이트웨이(www.fss.or.kr/fss/minwon)는 '금융감독원 민원신청' 화면으로, 온라인 민원 접수는 e-금융민원센터(fin.fss.or.kr)와 연계된다. e-금융민원센터에서는 본인이 경험한 금융회사·채권추심회사 관련 부당거래나 피해를 서면(온라인)으로 신청하고 처리 결과를 조회할 수 있다. ※ 조사 당일(2026-09-30) fin.fss.or.kr 직접 접속은 네트워크 오류로 원문 확인 실패 — 본 항목의 세부 절차 서술은 금감원 본 사이트 확인 내용(1332 전화, 민원신청 메뉴 존재)에 한정한다. 불법추심 중범죄 유형은 1332→3번(불법사금융피해신고), 일반 금융회사 민원·분쟁은 e-금융민원센터 신청이 금감원의 이원화 안내다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "금융감독원",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://www.fss.or.kr/fss/minwon/search.jsp",
+ "status": "REVIEW",
+ "tags": [
+  "민원신청",
+  "e-금융민원센터",
+  "fin.fss.or.kr",
+  "분쟁조정",
+  "채권추심회사"
+ ],
+ "title": "금융감독원 민원신청 — e-금융민원센터 연계 온라인 접수 경로"
+}

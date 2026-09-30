@@ -1,7 +1,12 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,9 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * NewStart AI 질문 API.
  *
- * <p>인증 정책은 SecurityConfig의 기존 {@code /api/**} catch-all(인증 필요)을 그대로 따른다 —
- * Wiki AI Router가 로그인 principal 기준 X-BuildIt-* 서명을 요구하므로 익명 질문은 어차피
- * 불가능하다. 이 계층에서 새로운 권한 규칙을 만들지 않는다.
+ * <p>비로그인은 SecurityConfig의 {@code /api/**} catch-all이 401로 막고, 로그인 회원은
+ * {@link NewStartEntitlementService}의 THANKS_MEMBER 판정에서 403/통과가 갈린다. 지피지기는
+ * 운영 비용이 드는 실행형 기능이므로 "로그인 회원 = 전원 실행"으로 두지 않는다.
+ * 거절 응답은 {@link NewStartEntitlementExceptionHandler}가 안내 문구로 번역한다.
  *
  * <p>에러 상세(provider 응답, exception, stack trace)는 브라우저로 노출하지 않는다 — service가
  * 실패를 result-object로 변환하고 controller는 안내 문구만 내린다.
@@ -21,20 +27,40 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/newstart/ai")
 public class NewStartAiChatController {
 
-  private final NewStartAiChatService newStartAiChatService;
+  private static final Logger log = LoggerFactory.getLogger(NewStartAiChatController.class);
 
-  public NewStartAiChatController(NewStartAiChatService newStartAiChatService) {
+  private final NewStartAiChatService newStartAiChatService;
+  private final NewStartEntitlementService newStartEntitlementService;
+
+  public NewStartAiChatController(NewStartAiChatService newStartAiChatService,
+      NewStartEntitlementService newStartEntitlementService) {
     this.newStartAiChatService = newStartAiChatService;
+    this.newStartEntitlementService = newStartEntitlementService;
   }
 
   @PostMapping("/chat")
-  public ResponseEntity<ChatResponse> chat(@RequestBody ChatRequest request) {
+  public ResponseEntity<ChatResponse> chat(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody ChatRequest request) {
+    long t0 = System.nanoTime();
+    newStartEntitlementService.requireThanksMember(principal);
+    long tAuth = System.nanoTime();
     NewStartAiChatService.NewStartAiAnswer answer =
         newStartAiChatService.ask(request == null ? null : request.message());
+    long tService = System.nanoTime();
+    // 구간 실측: AUTH는 grant 판정, HANDLER는 controller+service(직렬화 제외). 직렬화·NETWORK는
+    // 클라이언트 time_total에서 HANDLER를 뺀 값으로 계산한다(service/transport 로그와 함께 본다).
+    log.info("newstart ai chat endpoint authMs={} serviceMs={} handlerMs={} status={} sourceCount={} answerChars={}",
+        ms(tAuth - t0), ms(tService - tAuth), ms(tService - t0), answer.ok() ? "ok" : "error",
+        answer.sources().size(), answer.answer().length());
     if (!answer.ok()) {
       return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage(), toSourceDtos(answer.sources())));
     }
     return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources())));
+  }
+
+  private static long ms(long nanos) {
+    return Math.round(nanos / 1_000_000.0);
   }
 
   private static java.util.List<SourceDto> toSourceDtos(java.util.List<NewStartAiChatService.AnswerSource> sources) {

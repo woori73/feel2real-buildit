@@ -49,14 +49,26 @@
 
 ### ✅ POST /api/newstart/ai/chat
 
-- 목적: NewStart 화면의 AI 질문. 기존 BuildIt Wiki AI Router(`ai_router.py`, `provider=auto`)를 서버-서버로 재사용한다(공용 `WikiAiRouterClient`). 새 provider·모델 설정을 만들지 않는다.
-- 현재 사용처: `/newstart` NewStart AI 질문창
-- 인증/권한: 기존 `/api/**` catch-all(로그인 회원)을 따른다. 별도 권한 규칙 없음.
+- 목적: NewStart 화면의 AI 질문. **NewStart 전용 DIRECT LLM**(`NewStartLlmClient`)을 쓴다 — primary NVIDIA NIM Nemotron Lightning(`https://integrate.api.nvidia.com/v1`, 공식 sample 계약 `temperature=1`·`top_p=0.95`·`max_tokens=16384`·`chat_template_kwargs.enable_thinking=true`), `reasoning_budget`은 1024로 운영(2026-09-28 실측 근거는 아래 latency 항목), 기술적 실패 시에만 OpenRouter Qwen(`qwen/qwen3.7-flash`) DIRECT 1회. 공용 BuildIt Wiki AI Router는 이 경로에서 경유하지 않는다(Router·`WikiAiRouterClient` 자체는 내신Wiki/Academy 등 다른 기능이 계속 사용). 모델 호출은 질문 1건당 정상 1회, fallback은 최대 1회이며 재검색·재시도 루프가 없다. 키는 `NVIDIA_API_KEY`/`OPENROUTER_API_KEY` 환경변수만 읽고 provider의 `reasoning_content`(내부 사고)는 화면·로그·저장에 노출하지 않는다. 설정은 `app.newstart.llm.*`에서 override 가능.
+- 현재 사용처: `/newstart` NewStart AI 질문창. 답변 아래 `sources`를 "이 답변의 근거" 목록으로 렌더한다(2026-09-29 — 이전엔 백엔드가 내려주는 sources를 프론트가 폐기). `kind`는 사용자 언어로 표시(`공식 자료`→`공식 안내`, `실증 사례(DB)`→`실증 사례`), `url`은 `http/https`만 새 탭 `rel="noopener noreferrer"` 링크. `model`·provider 등 내부 정보는 화면에 내지 않는다.
+- 인증/권한: 비로그인은 기존 `/api/**` catch-all이 `401`. 로그인 회원은 **THANKS_MEMBER** grant가 있어야 실행할 수 있다(`newstart_member_grants` row, ADMIN은 grant 없이 통과) — 미부여 회원은 `403` + `errorMessage` 안내. AI 호출(Router 비용)이 드는 실행형 기능이므로 "로그인 회원 = 전원 실행"으로 두지 않는다. 화면에서 입력창을 숨기는 것과 무관하게 API에서 강제한다.
 - Request JSON: `message` (필수, 1~2000자)
-- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(Wiki Router가 반환한 모델 식별자, 검증용), `sources`(배열; 답변 조립에 실제 사용된 근거 출처 최대 8건 — 각 `{kind,title,url}`, `kind`는 `공식 자료`/`운영자·전자책 자료`/`실증 사례(DB)`/`신복위 카페 사례`/`부실차주 카페 사례`/`참고` 라벨)
+- Response JSON: `status`(`ok`/`error`), `answer`, `errorMessage`(실패 시 사용자용 안내 문구), `model`(호출된 LLM이 반환한 모델 식별자 — `nvidia/nemotron-3.5-lightning-30b-a3b` 또는 fallback 시 `qwen/qwen3.7-flash`, 검증용), `sources`(배열; 답변 조립에 실제 사용된 근거 출처 최대 8건 — 각 `{kind,title,url}`, `kind`는 `공식 자료`/`운영자·전자책 자료`/`실증 사례(DB)`/`신복위 카페 사례`/`부실차주 카페 사례`/`참고` 라벨)
 - 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
-- 실패: `400` + `{"status":"error","errorMessage":"..."}` (빈 질문, 길이 초과, 지식베이스 조회 실패, provider/네트워크 오류 공통). 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
+- Timeout 계약(2026-09-29 정렬): 서버 상한 = primary NVIDIA `timeout-seconds=180` + fallback Qwen `timeout-seconds=90` = 최대 270s. 프론트(`newstart.js`) abort는 **300s**로 서버 상한보다 크게 두어, 답변 생성 도중 프론트가 먼저 끊는 사고를 막는다(과거 120s abort는 budget 16384 시절 141s 답변을 잘랐다). 정상 경로(budget 1024) 실측은 약 41s.
+- 실패: `400`(빈 질문·길이 초과·지식베이스 조회 실패·provider/네트워크 오류 공통), `403`(THANKS_MEMBER 미부여 회원) 모두 `{"status":"error","errorMessage":"..."}`. 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
 - RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립 우선순위: 공식 > 운영/전자책 > 승인 답변 세션 > 카페·실증 사례((refType,refId) 중복 제거, 최대 12건). 답변 프롬프트는 근거 성격을 '공식 안내에 따르면' vs '카페 사례에서는'으로 구분하도록 강제한다.
+- 레이턴시 실측·로그(2026-09-28 LOCAL, NVIDIA 4회): 구간별 INFO 로그 — `NewStartAiChatController`(`authMs/serviceMs/handlerMs`), `NewStartAiChatService`(`ragMs/evidenceMs/promptMs/llmMs` + `systemPromptChars/promptChars/inputTokenEstimate/evidenceCount/answerChars`), `NewStartLlmClient`(`attempts/fallbackUsed/primaryMs/fallbackMs`), `NvidiaNimLlmTransport`(`httpMs/parseMs/promptTokens/completionTokens/finishReason/maxTokens/reasoningBudget`). 질문 원문·키·`reasoning_content`는 남기지 않고 길이와 ms·token 수만 남긴다. LOCAL 10개 질문 데이터 기준 `httpMs`가 전체의 97.9~99.5%이고 `finishReason=stop`(3~4k tokens)으로 `max_tokens`는 상한만 작용 → 병목은 생성/추론 구간. `reasoning-budget` 16384→1024(yaml 값만 변경, 코드 불변) 단일 변수 테스트: 같은 질문에서 서버 111.3s→40.6s(−63.5%), `promptTokens` 3109 동일·근거 12건·출처 8건(공식 4 + 부실차주 카페 4) 동일, 답변 478→1530자로 짧아지기는커녕 증가. 16384 상태의 세션 3질문은 111.5/141.0/112.8s였고 141.0s건은 프론트의 120s abort(`newstart.js`)로 화면에 못 닿는다. 부수 관측: 예산을 줄인 답변에 모델이 자체 작성한 `[KB2 공식]` 형태 인용 표기가 나타날 수 있다(DB 대조 결과 코퍼스 문구가 아니며, 지칭 번호는 실제 근거 1~8번과 대응) — 화면 `sources` 렌더가 없는 현재는 사용자 노출 차이가 크지 않으므로 후속 확인 항목.
+
+### ✅ 감사회원(THANKS_MEMBER) 권한 부여·회수 — ADMIN
+
+- 목적: 지피지기 AI·금감원 Agent 세션·민원 초안 정리를 회원이 쓰려면 `newstart_member_grants` row가 있어야 한다. 그 row를 SQL 없이(curl·운영 화면) 넣고 뺄 수 있는 ADMIN API. (질문요청 쓰기는 2026-09-29부터 grant 대상이 아니다 — 일반회원 기본 기능.)
+- `GET /api/admin/newstart/grants` — 목록. 항목은 `{grantId,userId,capability,grantedBy}`.
+- `POST /api/admin/newstart/grants` — body `{userId, capability?}`(생략 시 `THANKS_MEMBER`). **idempotent**(이미 있으면 기존 row 반환 — `UNIQUE(user_id, capability)`와 겹치는 INSERT를 하지 않는다). 존재하지 않는 user_id는 `400` + `errorMessage`.
+- `DELETE /api/admin/newstart/grants/{userId}?capability=THANKS_MEMBER` — 회수. row가 없으면 `400`.
+- 인증: `/api/admin/**`는 SecurityConfig의 `hasRole('ADMIN')` — controller에 별도 규칙을 두지 않는다(AdminNewStartRequestController와 동일).
+- PII: 요청·응답은 숫자 user_id와 capability만 다룬다(email·실명·닉네임은 이 경로를 통과하지 않는다).
+- 부여는 즉시 반영된다 — `NewStartEntitlementService.allows()`가 매 요청에서 grant table을 보므로 회원의 재로그인·토큰 재발급이 필요 없다.
 
 
 ### NewStart 회원 채팅 (공용방 1개, 텍스트 전용)
@@ -69,6 +81,38 @@
 - `WS /ws/newstart-chat` — raw WebSocket(동일 origin + 로그인만 handshake 통과, 비로그인 401/교차 origin 403). 클라이언트 → 서버 `{ "message": "본문" }`(500자 상한, 빈 값 거부, 도배 방지 10건/15초). 서버 → 클라이언트 `{ "type": "new", "id", "senderUserId", "displayName", "message", "createdAt" }` / `{ "type": "deleted", "id" }` / `{ "type": "error", "message" }`.
 
 DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_id), `message` VARCHAR(500), `deleted` soft delete flag. 화면: `/newstart/chat`(공개 — 데이터는 전부 인증 뒤, 비로그인 시 로그인 모달 안내).
+
+### NewStart 질문요청 게시판 (설계 §5, V1012)
+
+[질문·조사 요청]과 [사이트 개선 요청]을 한 인박스로 받는 게시판. **읽기·쓰기(작성·취소) 모두 인증 회원 전체**다 — 질문요청은 일반회원의 기본 기능이며 감사회원(THANKS_MEMBER) grant를 요구하지 않는다(2026-09-29 운영정책, §5-B blocker 해제). 운영자의 상태 관리는 `/api/admin/**`(hasRole ADMIN) 경로로만 들어온다. GitHub issue 자동 생성은 없다 — `githubRef`는 반영 시점에 운영자가 수기로 기입한다.
+
+- `GET /newstart/questions` — 화면 shell(채팅과 동일: 페이지는 공개, 데이터는 전부 인증 뒤. 비로그인은 로그인 안내).
+- `GET /api/newstart/requests?kind={QUESTION|SITE_IMPROVEMENT}&page={0..}&size={1~50, 기본 20}` — 최근 작성 순. `{ "requests": [ RequestView ], "hasMore" }`. `kind` 생략 시 두 인박스 합산.
+- `GET /api/newstart/requests/{requestId}` — 상세. 목록과 달리 `statusLogs`(상태 이동 이력, `actor`는 "운영자"로 통일 노출)를 싣는다. 삭제·없음은 `404` + `errorMessage`.
+- `POST /api/newstart/requests` — 작성(인증 회원 누구나). 화면 폼은 2026-09-29 단순화로 `kind`(필수), `title`(필수 ≤200자), `problem`(필수 ≤4000자)만 입력받는다. Request JSON에 `proposal`(≤4000자), `screenLocation`(≤120자), `aToZStep`(`"13-2"` 형태)을 여전히 받으며 저장도 된다(구 데이터·운영 경로 보존, `screenLocation`/`aToZStep`은 `SITE_IMPROVEMENT`에서만 저장). 작성자 userId는 본문이 아니라 principal에서만 채워진다.
+- `DELETE /api/newstart/requests/{requestId}` — 취소(본인 또는 ADMIN). soft delete이며 `title`/`problem`/`proposal` 원문은 파기하고 이력 row만 남긴다. 타인 것은 `403`.
+- `GET /api/admin/newstart/requests/queue?status={8종, 기본 RECEIVED}` — 검토 큐(같은 상태가 오래된 순).
+- `POST /api/admin/newstart/requests/{requestId}/review` — 상태 이동. Request JSON `status`, `answer`, `reason`, `githubRef`, `resolvedVersion`. `REJECTED`/`DUPLICATE`는 `reason` 필수(미기입 `400`), `RESOLVED`일 때만 `githubRef`/`resolvedVersion`을 기록하고 `resolvedAt`을 세운다.
+
+`RequestView`: `{ id, kind, title, screenLocation, aToZStep, problem, proposal, status, answer, answeredBy, resolvedAt, githubRef, resolvedVersion, authorId, author, createdAt, statusLogs }` — `author`는 서버가 resolve한 공개 표기(실명·이메일·전화 아님), `authorId`는 취소 버튼 표시 판정용(채팅 `senderUserId`와 같은 공개 범위)이고 실제 권한 근거는 항상 서버 principal이다.
+
+상태 8종: `RECEIVED`(접수) · `REVIEWING`(검토 중) · `ANSWERED`(답변 완료) · `ACCEPTED`(채택) · `IN_PROGRESS`(반영 진행 중) · `RESOLVED`(해결 완료) · `REJECTED`(거절) · `DUPLICATE`(중복).
+
+인증/권한 요약: 비로그인은 `/api/**` catch-all이 `401`. 작성은 인증 회원 전체(2026-09-29 정책 — grant/THANKS_MEMBER 판정 없음). 검증 실패는 `400` + `errorMessage`.
+
+### NewStart 갈무리 게시판 (설계 §6, V1012)
+
+운영자 승인(`ACTIVE`) 지식 항목을 회원에게 노출하는 **read-only feed**. 새 테이블·새 게시판이 아니라 `newstart_knowledge_items`를 그대로 읽는다(§6 "중복 테이블 금지"). **쓰기 endpoint가 없다** — POST는 `405`. 회원이 글을 올리는 공간이 아니라 채팅·카페·사례·질문요청을 분석·비식별화·요약해 승인한 결과물을 보는 화면이기 때문이다.
+
+- `GET /newstart/galmuri` — 화면 shell(채팅·질문요청과 동일: 셸은 공개, 데이터는 인증 뒤).
+- `GET /api/newstart/galmuri?category={분류}&page={0..}&size={1~50, 기본 20}` — ACTIVE이면서 **오늘이 효력 구간인** 항목을 출처 기준시점(`source_date`, 없으면 등록시점) 최신순. `{ "items": [ GalmuriCard ], "hasMore" }`. **노출 출처 경계(2026-09-29 source 교정)**: feed는 community 수집 출처(`CASE`·`CAFE_ARTICLE`·`CAFE_COMMENT`·`CHAT_DISCOVERY`·`REQUEST_DISCOVERY`)만 담는다. `OFFICIAL_*`/`AUDIT`/`EBOOK`/`DERIVED_RULE`/`OPERATOR_KNOWLEDGE`(= Wiki·KB)는 갈무리 게시물이 아니라 지피지기 RAG의 보조 근거이므로 목록·상세에서 모두 `404`/미노출.
+- `GET /api/newstart/galmuri/{knowledgeId}` — 상세(본문 `content` + `sourceUrl`). REVIEW/DRAFT/ARCHIVED이거나 `effective_to`가 지났으면 목록과 같은 기준으로 `404` + `errorMessage`(본문 회수).
+
+`GalmuriCard`: `{ id, title, summary, category, label, tone, authority, sourceDate, effectiveTo, tags[] }` / 상세 추가 필드: `{ content, effectiveFrom, sourceUrl }`.
+
+- `label`(§4 신뢰 등급)은 **서버가 `source_type`에서 결정**한다 — 프론트가 자체 판정하면 라벨과 배지 색이 어긋난다. `OFFICIAL_CURRENT`→`[공식·현재]`, `OFFICIAL_HISTORICAL`→`[공식·과거]`, `OPERATOR_KNOWLEDGE`/`AUDIT`→`[운영자 실제 경험]`, `CASE`/`CAFE_*`/`CHAT_DISCOVERY`/`REQUEST_DISCOVERY`→`[사례 참고]`, `EBOOK`/`DERIVED_RULE`→`[전자책·운영 정리]`. `tone`은 `official`/`operator`/`case` 3계(화면은 색만 입힌다).
+- 회원 개인정보성 필드(`created_by`, `related_case_ids`, `related_rule_ids`)는 view에 존재하지 않는다. 원출처 링크는 `http/https`만 렌더(`javascript:` 차단) + `rel="noopener noreferrer"`.
+- 자동 적재(Agent 분석 → 중복 제거 → 갈무리)는 **미구현·별도 승인** — §8에 따라 scheduler와 production 자동 write를 이 단계에서 만들지 않는다. 배선은 읽기 side + 중복 앵커(`dedup_key`) + `source_type` 확장(`CHAT_DISCOVERY`, `REQUEST_DISCOVERY`)까지.
 
 # API 명세
 
@@ -392,6 +436,7 @@ LMS 주소가 성립하지 않는다(404).
 | `GET /lms/{handle}/lecture/{courseId}` | `lms/lms_lecture` | authenticated | 〃 |
 | `GET /lms/{handle}/manage` | `lms/lms_manage` | `hasRole("TUTOR")` | `AcademyLmsManagePageController` · **slug owner 전용** — `requireOwnedAcademyByHandle`, 타 학원 TUTOR도 403, ADMIN 우회 없음 |
 | `GET /lms/{handle}/contents` | `lms/lms_contents` | `hasRole("TUTOR")` | 〃 |
+| `GET /lms/{handle}/review/{lessonId}` | `lms/lms_review` | `authenticated`(owner 또는 ACTIVE 수강 학생, `LmsLearnerAccessService`) | `LmsReviewPageController`(신규, `domain.lmscontent`). §2.1이 열거하는 8개 MOCK 화면과 별개다 — 재원생 복습영상 실 API 전용 화면이라 URL·id 공간을 분리했다(MOCK `courseId`와 실제 `LessonProduct.lessonId`가 섞이지 않게). `SecurityConfig`에 이 경로 전용 매처를 추가하지 않았다 — `/lms/**` fail-closed catch-all(아래 줄)이 이미 인증을 강제하고, owner/수강 판정은 컨트롤러가 한다. |
 
 - 매처에 열거되지 않은 `/lms/**` 하위 경로는 **fail-closed**(최소 인증). catch-all이 `permitAll`이라 이 줄이 없으면 새어 나간다.
 - 비로그인 + `Accept: text/html`로 인증 필요 화면에 접근하면 **302 `/`**(빈 401 대신). LMS 보호 화면은 로그인 상태 전용이고 로그아웃도 `/`로 가므로(`static/js/account_menu.js`) 비로그인 목적지를 `/`로 맞춘다. 그 외(예: `Accept: application/json`)와 LMS 밖 경로는 기존 **401** 계약 그대로다 — `SecurityConfig`의 `defaultAuthenticationEntryPointFor` 2분기.
@@ -401,6 +446,33 @@ LMS 주소가 성립하지 않는다(404).
 - `HandlePolicy.RESERVED`에 `lms`를 추가했다 — 플랫폼용 `lms.{base-domain}`을 학원이 선점하지 못하게 한다.
 
 > `/academy` 행(위 표)은 이 LMS 경로와 무관하다. LMS는 `/academy`·`/academies` 어느 계열도 쓰지 않는다.
+
+### 2.2 LMS 콘텐츠/수강권 API (Phase 1, 신규)
+
+> 도메인 배경은 [DOMAIN.md § 학원 LMS 콘텐츠/수강권](DOMAIN.md). §2.1의 8개 화면(courses~contents)은
+> 계속 MOCK이고, 이 절의 API만 `lms_contents`/`lms_enrollments` 실 DB를 쓴다.
+
+**강사(운영자) — `/api/tutor/**`, hasRole("TUTOR"), handle owner는 서비스가 재검증**
+
+| Route | 설명 |
+|---|---|
+| `GET /api/tutor/lms/{handle}/contents` | 강좌 선택 목록 + 등록된 콘텐츠 전체 |
+| `POST /api/tutor/lms/{handle}/contents` (multipart) | 강좌 선택+메타데이터+영상 업로드를 한 번에 저장. 길이 상한은 `app.lms.content.max-duration-sec`(기본 30분) — 홍보영상 120초 제한과 무관 |
+| `PUT /api/tutor/lms/{handle}/contents/{id}` | 메타데이터만 수정(영상 교체는 Phase 1 미지원) |
+| `PATCH /api/tutor/lms/{handle}/contents/{id}/publish` | 공개/비공개 토글 |
+| `DELETE /api/tutor/lms/{handle}/contents/{id}` | 삭제(행 삭제 + storage best-effort 삭제) |
+| `GET /api/tutor/lms/{handle}/enrollments/lessons/{lessonId}` | 배정 후보(`lesson_applications` APPROVED) + 현재 수강권 목록 |
+| `POST /api/tutor/lms/{handle}/enrollments/lessons/{lessonId}` | 수강권 부여(grantSource=ACADEMY 고정). 후보가 아닌 studentId는 400 |
+| `DELETE /api/tutor/lms/{handle}/enrollments/lessons/{lessonId}/{enrollmentId}` | 수강권 회수(REVOKED) |
+| `GET`/`PUT /api/tutor/academy/lms-settings` | Builder "LMS 설정"(표시명/메인제목/소개/섹션명/사용여부). `page_settings.builderDraft`에 저장 — 기존 `/api/tutor/academy/page-settings`는 builderDraft를 받지 않으므로 별도 엔드포인트 |
+
+**학생(재원생) — `/api/lms/{handle}/**`, 일반 `authenticated()`(catch-all), owner/수강 판정은 서비스가 함**
+
+| Route | 설명 |
+|---|---|
+| `GET /api/lms/{handle}/my/lessons` | 내가 ACTIVE 수강권을 가진 강좌 목록(+공개 콘텐츠 수) |
+| `GET /api/lms/{handle}/my/lessons/{lessonId}` | 강좌의 공개(PUBLISHED) 콘텐츠 목록. owner 또는 수강 학생만(`LmsLearnerAccessService`, 아니면 403) |
+| `GET`/`HEAD /api/lms/{handle}/contents/{contentId}/stream` | Range 지원 영상 스트리밍. 학생은 PUBLISHED만, owner는 상태 무관 미리보기 허용 |
 
 ## 3. Auth API
 
@@ -3860,6 +3932,65 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - Explanation: 크림색 A4, 금색 강조, 2단 해설.
 - 두 HTML은 같은 `csat_assessment_items`에서 동일 `data-question-id`와 `data-day-no` 순서를 출력한다.
 
+## 수능영어 Wiki V1: 평가원 기출과 출제 DNA
+
+내신Wiki의 학교 `digital_twin` DNA와 저장소를 분리한 평가원 중심 API다. SOURCE(원본 문제·정답)와 ANALYSIS(DNA)를 구분하고, 모든 DNA는 CLAIM+EVIDENCE 구조이며 evidence의 `question_no` 클릭으로 실제 문항으로 이동한다. 쓰기는 서명 identity의 ADMIN 역할만 허용한다(`?role=ADMIN` 표시값이 아니라 JWT/identity 역할; 로컬은 unsigned fallback).
+
+### ✅ GET /api/csat/dna/taxonomy
+
+- 목적: DNA 분류 체계(16개 차원 `dimensions`, 10개 함정 `traps`, `provenance`: ACTUAL_EXAM/OFFICIAL_SOURCE/EXPERT_ANALYSIS/WIKI_SYNTHESIS, `statuses`: AI_PROPOSED/TEACHER_CONFIRMED/TEACHER_EDITED/REJECTED, 비교 `verdicts`: REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED, `agreement_kinds`: AGREEMENT/DIFFERENT_EMPHASIS/EXPERT_ONLY/UNKNOWN, `claim_types`, `exam_types`, `resource_types`)를 반환한다.
+
+### ✅ POST /api/csat/exams · GET /api/csat/exams · GET /api/csat/exams/{id}
+
+- Request: `exam_year`(학년도, 2000~2100), `exam_type`(CSAT/JUNE_MOCK/SEPTEMBER_MOCK), `subject`(기본 ENGLISH), `exam_date`, `label`.
+- `(exam_year, exam_type, subject)` UNIQUE — 중복이면 `409`. 응답에 `question_count`/`resource_count`/`dna_count`/`claim_count`(REJECTED 제외)와 `expert_count`(해당 회차에 연결된 `provenance=EXPERT_ANALYSIS` DNA+CLAIM 건수)를 포함한다.
+- 상세(`GET /{id}`)는 `resources[]`(id, resource_type, original_name, original_type)를 함께 반환한다.
+
+### ✅ POST /api/csat/exams/{id}/resources · GET /api/csat/exam-resources/{id}/original · DELETE /api/csat/exam-resources/{id}
+
+- `multipart/form-data`: `resource_type`(QUESTION_PAPER/ANSWER/ANALYSIS/TEACHER_NOTE) + `file`. 원본 바이트를 `csat_exam_resources.original_blob`에 그대로 보관한다(30MB 초과 `413`, 빈 파일/알 수 없는 종류 `400`).
+- `/original`은 저장된 원본을 원래 MIME으로 inline 반환 → 업로드-다운로드 바이트 동일성 검증에 사용한다.
+- DELETE는 ADMIN만. DNA와 다르게 원본 자료는 대체 삭제 경로로 관리한다.
+
+### ✅ POST /api/csat/exams/{id}/questions · GET /api/csat/exams/{id}/questions
+
+- Request: `{ questions: [{question_no, csat_type_id?, csat_type_name?, passage, prompt, choices[], answer, solution, footnote, group_label, source_reference}], source_filename }`. `csat_type_id`가 비면 번호로 표준 유형을 자동 분류한다.
+- 평가 단위로 `csat_question_sources`(parser `csat-exam-v1`) 1건 + `csat_questions` 행을 `exam_id`로 연결해 저장한다. 문항번호 중복 `400`, 이미 문항이 있는 평가에 재등록하면 `409`(부분 저장이 아니라 전체 거부).
+- Query `from_no`/`to_no`로 번호 범위 조회; 각 문항에 REJECTED를 제외한 `dna[]`(evidence 포함)를 붙여 반환한다.
+
+### ✅ POST /api/csat/questions/{id}/dna · GET /api/csat/questions/{id}/dna · PUT /api/csat/dna/{dna_id} · DELETE /api/csat/dna/{dna_id}
+
+- Create 검증: `entry_type`은 DNA/TRAP; DNA tag는 16개 차원, TRAP tag는 10개 함정 집합 소속; TRAP은 `choice_no`(1~7) 필수; `provenance=ACTUAL_EXAM`이면 evidence 필수.
+- `provenance=EXPERT_ANALYSIS` 게이트(LEVEL 2): `expert` + `expert_source_id`(실존하는 `csat_expert_sources.id`) + 유효한 `timestamp_start`/`timestamp_end`(초, `end > start ≥ 0`) + `agreement_kind`(AGREEMENT/DIFFERENT_EMPHASIS/EXPERT_ONLY/UNKNOWN) + evidence가 **모두** 필수. 하나라도 빠지면 `400`(evidence 없는 강사 인용 등록 불가). `agreement_kind`는 EXPERT_ANALYSIS에서만 쓰므로 다른 provenance에서 보내면 `400`.
+- evidence 항목은 `{question_no: int(1~99), exam_id 또는 exam_year+exam_type}` 형태여야 한다.
+- `(question_id, entry_type, tag, choice_no, provenance)` dup은 `409`. provenance가 키에 포함되므로 같은 태그·선지에 평가원 근거와 강사 분석을 별개 행으로 보존한다(덮어쓰기 금지). Create 시 상태는 항상 `AI_PROPOSED`, `updated_by`에 identity login_id를 기록한다.
+- PUT(ADMIN 교정 플로우): tag/note/evidence/importance(1~3)/provenance/expert/agreement/agreement_kind/expert_source_id/timestamp_*/status 수정 가능 — `AI_PROPOSED → TEACHER_CONFIRMED/TEACHER_EDITED`, 오기는 `REJECTED`(조회·집계에서 제외). 수정 후 병합 행이 EXPERT_ANALYSIS 게이트를 위반하면 `400`.
+- GET 목록·집계· Create/PUT 응답은 REJECTED를 제외하고 반환하며, `expert_source_id`가 있는 행에는 출처 메타데이터(`expert_video_url`/`expert_video_title`/`expert_published_at`)를 붙인다.
+
+### ✅ GET /api/csat/exams/{id}/dna
+
+- 시험별 DNA 집계: `exam`, `tags[]`(entry_type+tag → 근거 question_nos·note·provenance), `traps[]`(함정 우선 정렬), `per_question[]`(문항번호별 entries), `claims[]`(시험 수준 CLAIM). REJECTED 제외. `tags[].notes[]`와 `claims[]`는 강사 분석이면 `agreement_kind`/`timestamp_start`/`video_url`을 함께 담는다(UI는 `[이름 분석 · 합의분류 · mm:ss]` + `&t=초` 영상 구간 링크로 표시).
+
+### ✅ POST /api/csat/expert-sources · GET /api/csat/expert-sources
+
+- LEVEL-2 강사 분석의 **출처**를 등록한다. 자막 전문·영상 파일은 저장하지 않고 URL과 메타데이터(발표일·제목·검증 메모)와 구간(초)만 보존한다.
+- Request: `expert`(예: 이명학), `target_exam_id`(실존 평가 필수), `video_url`(`https://(www.)youtube.com/watch?v=…` 형식, 그 외 `400`), `source_type`(현재 `EXPERT_ANALYSIS`만 허용), `video_title`, `published_at`, `verified_note`.
+- `(expert, video_url)` dup은 `409`. 쓰기는 ADMIN만(`403`).
+- GET은 출처별로 연결된 `claim_count`/`dna_count`/`comparison_count`(REJECTED 제외)를 붙여 반환한다.
+
+### ✅ POST /api/csat/exams/{id}/dna-claims · PUT /api/csat/dna-claims/{claim_id} · DELETE /api/csat/dna-claims/{claim_id}
+
+- `claim_type`(CORE_TRAIT/REPEATED_SKILL/MAJOR_TRAP/HIGH_DIFFICULTY/SKILL_DEMAND) + `claim_text` 필수, `tag`는 DNA∪TRAP 집합(선택).
+- `provenance`가 ACTUAL_EXAM/WIKI_SYNTHESIS면 evidence(CLAIM+EVIDENCE 규칙) 필수. §14에 따라 "반드시 나온다"류 단정은 데이터로 저장하지 않는다. `EXPERT_ANALYSIS`면 위 DNA 게이트와 동일하게 expert/expert_source_id/timestamps/agreement_kind/evidence 필수(`400`).
+- 주의: dna-claims에는 UNIQUE 제약이 없다 — API 클라이언트(시드 스크립트 등)는 `(claim_type, tag, provenance, expert_source_id)` 선조회로 멱등성을 확보한다.
+
+### ✅ POST /api/csat/dna-comparisons · GET /api/csat/dna-comparisons?exam_a_id&exam_b_id · PUT /api/csat/dna-comparisons/{id}
+
+- 두 시험(예: 6월↔9월)의 차이를 REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED 판정으로 기록한다. `exam_a_id == exam_b_id`면 `400`, evidence 필수, `(exam_a, exam_b, tag, verdict)` dup은 `409`.
+- GET은 두 exam id가 필수(둘 다 실존하는 평가여야 함). 비교 행에는 `importance` 컬럼이 없다.
+- 비교 문구는 문항 evidence를 가져야 하며(예: 순서 36번이 양 시험 모두 지시어 회상 구조), 근거 없는 출제 예측은 저장하지 않는다. `EXPERT_ANALYSIS` 비교는 위와 같은 expert 게이트(expert/expert_source_id/timestamps/agreement_kind)를 적용한다. 기존 평가원·WIKI_SYNTHESIS 비교와 같은 태그여도 판정(verdict)이 다르면 별개 행으로 **관점 차이로 보존**하고 덮어쓰지 않는다.
+- 시드: `scripts/seed_csat_expert_lee.py --base http://127.0.0.1:8000`가 `fixtures/csat_day1/dna_expert_lee.json`(출처 2·CLAIM 12·문항 DNA 12·비교 5 = EXPERT_ANALYSIS 29건)을 멱등하게 등록한다. 기존 ACTUAL_EXAM/OFFICIAL_SOURCE/WIKI_SYNTHESIS 행은 읽기만 한다.
+
 ## 수능 WebMCP Site Tools
 
 - 등록 위치: top-level React Wiki의 `document.modelContext.registerTool()`.
@@ -4136,11 +4267,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ## 금감원 민원 도우미 API (`/api/newstart/fss`) (2026-09, Phase 1 v2)
 
-- 인증: 기존 `/api/**` catch-all(로그인 필요)을 따른다. 권한 규칙은 새로 만들지 않는다.
+- 인증: 비로그인은 기존 `/api/**` catch-all이 `401`로 막는다. **설계 §7 경계** — 설명/예시/공식 안내는 읽기, AI 실행은 THANKS_MEMBER(`newstart_member_grants` row, ADMIN은 grant 없이 통과). 미부여 회원의 실행 호출은 `403` + `{"status":"error","errorMessage":"감사회원 전용 기능입니다..."}`이고 AI는 호출되지 않는다.
 - 무상태 원칙: 민원 원문·인터뷰 내용·초안은 DB에 저장하지 않고 로그에도 남기지 않는다. 자동 제출은 존재하지 않으며, 제출·본인인증은 사용자가 금감원 공식 사이트에서 직접 수행한다.
 - `GET /api/newstart/fss/companion` — 화면 1회 로딩 payload: `samples`(전자책 예시 3종 FS-1..FS-3, ebookRef·sourceLines 포함), `manual`(전자책 기반 안내), `official`(§7 소관 분기 안내: 금감원 공식 페이지 3종 출처·카테고리별 소관·기타 기관 경로·조회 기준일), `agent`(Guided Agent 14단계 정적 안내, PC Chrome 고지 포함).
-- `POST /api/newstart/fss/compose` — 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
-- `GET /api/newstart/fss/agent/workflow`, `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — Guided Agent 단계 안내(메모리 세션, 개인정보 미저장).
+- `POST /api/newstart/fss/compose` — **THANKS_MEMBER 실행**. 두 경로. V1 자유서술 `{sampleId, situationText}` 또는 guided interview `{interview: {category, facts, company, events: [{date, party, happened, evidence}], contacts, ownResponses, evidence: [], outcome}}`(`interview` 존재 시 이 경로 우선). 응답 `{status, composedText, subject, body, errorMessage, model}`. 실패 시 400이며 응답에 사용자 원문·내부 상세를 넣지 않는다.
+- `GET /api/newstart/fss/agent/workflow` — 14단계 정적 안내(개인정보 없음). **익명 열람 허용**(SecurityConfig permitAll, GET 한정) — 설명은 누구나 본다.
+- `GET /api/newstart/fss/agent/session`, `POST /api/newstart/fss/agent/advance|back|restart` — **THANKS_MEMBER 실행**(세션 생성·진행). 미부여 회원은 403, 화면은 안내 문구를 그대로 보여주되 14단계 목록 렌더는 계속 진행한다(메모리 세션, 개인정보 미저장).
 
 
 ## NewStart 본인채무 상태창 API (`/api/newstart/debt-status`) (2026-09, V1009)

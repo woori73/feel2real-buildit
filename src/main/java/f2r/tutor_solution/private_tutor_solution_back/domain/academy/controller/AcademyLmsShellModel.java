@@ -3,12 +3,15 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings;
+import f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.service.LmsBuilderSettingsService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -25,6 +28,10 @@ import java.util.Optional;
  *   <li>{@code lmsAuthenticated} — 영상 잠금 판정에 쓰는 서버 인증 상태
  *   <li>{@code lmsUserKey} — sessionStorage 키 네임스페이스용. 비인증이면 {@code anon}
  *   <li>{@code lmsIsOwner} — 관리 메뉴 <b>표시</b> 여부. 통제가 아니다(§AcademyLmsManagePageController)
+ *   <li>{@code lmsDisplayName}/{@code lmsMainTitle}/{@code lmsIntro}/{@code lmsSectionName}/
+ *       {@code lmsEnabled} — Builder "LMS 설정" 패널이 쓰는 학원별 문구(에듀홀릭 LMS Phase 1
+ *       §7). {@code Academy.pageSettings.builderDraft}에 저장되며, 값이 없는 학원은
+ *       {@link LmsBuilderSettingsService}의 기본값으로 채워진다 — 코드에 문구를 고정하지 않는다.
  * </ul>
  */
 @Component
@@ -48,6 +55,30 @@ public class AcademyLmsShellModel {
     // "내신 LIVE 관리" 사이드바 항목은 캠페인 행이 있는 학원(에듀홀릭)에만 노출한다(§40).
     model.addAttribute("lmsMidtermEnabled",
         midtermCampaignRepository.existsByAcademy_AcademyId(academy.getAcademyId()));
+
+    Map<String, String> draft = builderDraft(academy);
+    model.addAttribute("lmsEnabled", !"false".equals(draft.get(LmsBuilderSettingsService.KEY_ENABLED)));
+    model.addAttribute("lmsDisplayName", draftOrDefault(
+        draft, LmsBuilderSettingsService.KEY_DISPLAY_NAME, LmsBuilderSettingsService.DEFAULT_DISPLAY_NAME));
+    model.addAttribute("lmsMainTitle", draftOrDefault(
+        draft, LmsBuilderSettingsService.KEY_MAIN_TITLE, LmsBuilderSettingsService.DEFAULT_MAIN_TITLE));
+    model.addAttribute("lmsIntro", draftOrDefault(
+        draft, LmsBuilderSettingsService.KEY_INTRO, LmsBuilderSettingsService.DEFAULT_INTRO));
+    model.addAttribute("lmsSectionName", draftOrDefault(
+        draft, LmsBuilderSettingsService.KEY_SECTION_NAME, LmsBuilderSettingsService.DEFAULT_SECTION_NAME));
+  }
+
+  private static Map<String, String> builderDraft(Academy academy) {
+    AcademyPageSettings settings = academy.getPageSettings();
+    if (settings == null || settings.builderDraft() == null) {
+      return Map.of();
+    }
+    return settings.builderDraft();
+  }
+
+  private static String draftOrDefault(Map<String, String> draft, String key, String fallback) {
+    String value = draft.get(key);
+    return value == null || value.isBlank() ? fallback : value;
   }
 
   /**

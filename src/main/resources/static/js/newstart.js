@@ -1,5 +1,21 @@
 (function () {
   'use strict';
+
+  /* 기능성 모션: 클래스 재적용으로 CSS 1회 애니메이션 재생. reduced-motion에서는 아무 것도 하지 않는다. */
+  function flashOnce(el, cls) {
+    if (!el || typeof window.matchMedia !== 'function') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  /* 부드러운 스크롤도 motion — reduce에서는 즉시 이동 */
+  function scrollBehavior() {
+    return (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth';
+  }
+
   var NS = {
     init: function () {
       NS.bindToggles();
@@ -100,12 +116,18 @@
 
       function paintHomeState(data) {
         if (!homeState || !data) return;
+        var prev = homeState.getAttribute('data-state');
         homeState.textContent = self.DEBT_STATE_LABELS[data.status] || '미확인';
         homeState.setAttribute('data-state', data.status || 'NOT_STARTED');
+        // 저장 후·조회 후 상태가 실제로 바뀐 때만 1회 강조 (최초 페인팅은 조용히)
+        if (prev && prev !== (data.status || 'NOT_STARTED')) flashOnce(homeState, 'ns-debt-flash');
       }
 
-      function setState(text) {
-        if (stateEl) stateEl.textContent = text || '';
+      function setState(textStr) {
+        if (stateEl) {
+          stateEl.textContent = textStr || '';
+          if (textStr) flashOnce(stateEl, 'ns-debt-flash');
+        }
       }
 
       function hydrate(data) {
@@ -184,9 +206,12 @@
             + ', 메모: ' + (payload.debtSummary || '(없음)')
             + '. 이 상황에서 다음에 할 일을 알려주세요.';
           aiInput.value = question;
+          if (aiInput.tagName === 'TEXTAREA') aiInput.dispatchEvent(new Event('input', { bubbles: true }));
           var aiSection = document.getElementById('ns-ai');
-          if (aiSection && aiSection.scrollIntoView) aiSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (aiSection && aiSection.scrollIntoView) aiSection.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
           aiInput.focus();
+          // 지피지기로 이동한 도착점을 1회 강조 (해시 변경 없는 스크롤 이동에서도)
+          flashOnce(aiSection, 'ns-ai-arrival');
         });
       }
     },
@@ -197,7 +222,7 @@
         var panel = document.getElementById('ns-status-panel');
         if (!panel) return;
         panel.removeAttribute('hidden');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        panel.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       }
       openIfTarget();
       window.addEventListener('hashchange', openIfTarget);
@@ -215,9 +240,10 @@
       }
     },
 
-    /* ── 지피지기 AI 질문 ─────────────────────────────────────────────
+    /* ── 지피지기 Agent 질문 ─────────────────────────────────────────────
      * 서버(/api/newstart/ai/chat)에 실제 질문을 보내고 답변을 표시한다.
-     * 비로그인은 서버가 401로 거부한다 — 폼 자체를 숨기지 않고 서버 응답을 따른다. */
+     * 비로그인은 서버가 401로 거부한다 — 폼 자체를 숨기지 않고 서버 응답을 따른다.
+     * 표시만 구조화한다(문단/목록/출처 영역). 답변·근거 데이터 자체는 그대로 쓴다. */
     bindAiChat: function () {
       var form = document.getElementById('ns-ai-form');
       var input = document.getElementById('ns-ai-input');
@@ -226,46 +252,186 @@
       if (!form || !input || !send) return;
 
       var busy = false;
+      var pendingEl = null;
 
       function setBusy(value) {
         busy = value;
         send.disabled = value;
         input.disabled = value;
         send.textContent = value ? '답변 중…' : '질문';
+        if (value) {
+          pendingEl = appendBlock('지피지기 Agent', '답변 작성 중', 'agent ns-ai-pending');
+          if (pendingEl) {
+            var dots = document.createElement('span');
+            dots.className = 'ns-ai-dots';
+            dots.setAttribute('aria-hidden', 'true');
+            dots.appendChild(document.createElement('i'));
+            dots.appendChild(document.createElement('i'));
+            dots.appendChild(document.createElement('i'));
+            var host = pendingEl.querySelector('.ns-ai-p') || pendingEl.querySelector('.ns-ai-text');
+            host.appendChild(dots);
+          }
+        } else if (pendingEl) {
+          if (pendingEl.remove) pendingEl.remove();
+          else if (pendingEl.parentNode) pendingEl.parentNode.removeChild(pendingEl);
+          pendingEl = null;
+        }
+      }
+
+      var ORDERED_RE = /^\s*\d{1,2}[.)]\s+\S/;
+      var BULLET_RE = /^\s*[-•*]\s+\S/;
+
+      function stripMarker(line) {
+        return line.replace(/^\s*(?:\d{1,2}[.)]|[-•*])\s+/, '').trim();
+      }
+
+      /* 답변 원문(textContent)을 유지하면서 문단·번호목록·글머리목록으로만 재배치한다. */
+      function renderRich(el, text) {
+        var lines = String(text).split('\n');
+        var para = [];
+        var items = [];
+        var itemsOrdered = false;
+        function flushPara() {
+          if (!para.length) return;
+          var p = document.createElement('p');
+          p.className = 'ns-ai-p';
+          p.textContent = para.join('\n').replace(/^\n+|\n+$/g, '');
+          el.appendChild(p);
+          para = [];
+        }
+        function flushList() {
+          if (!items.length) return;
+          var list = document.createElement(itemsOrdered ? 'ol' : 'ul');
+          list.className = 'ns-ai-list';
+          for (var i = 0; i < items.length; i++) {
+            var li = document.createElement('li');
+            li.textContent = items[i];
+            list.appendChild(li);
+          }
+          el.appendChild(list);
+          items = [];
+        }
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (!line.trim()) { flushList(); flushPara(); continue; }
+          var ordered = ORDERED_RE.test(line);
+          var bullet = BULLET_RE.test(line);
+          if (ordered || bullet) {
+            flushPara();
+            if (items.length && ordered !== itemsOrdered) flushList();
+            itemsOrdered = ordered;
+            items.push(stripMarker(line));
+          } else {
+            flushList();
+            para.push(line);
+          }
+        }
+        flushList();
+        flushPara();
+        if (!el.children.length && !el.childNodes.length) el.textContent = text;
+      }
+
+      /* #437 출처 계약 상속: 서버 kind의 내부 표기("(DB)")는 사용자 언어로, 링크는 http/https만,
+         provider·model·debug는 렌더하지 않는다. */
+      var SOURCE_KIND_LABEL = { '공식 자료': '공식 안내', '실증 사례(DB)': '실증 사례' };
+
+      function renderSources(el, sources) {
+        if (!sources || !sources.length) return;
+        var box = document.createElement('div');
+        box.className = 'ns-ai-sources';
+        var title = document.createElement('p');
+        title.className = 'ns-ai-who ns-ai-sources-title';
+        title.textContent = '이 답변의 근거';
+        box.appendChild(title);
+        var list = document.createElement('ul');
+        list.className = 'ns-ai-source-list';
+        for (var i = 0; i < sources.length; i++) {
+          var s = sources[i] || {};
+          if (!s.title) continue;
+          var li = document.createElement('li');
+          li.className = 'ns-ai-source-item';
+          var kind = document.createElement('span');
+          kind.className = 'ns-ai-source-kind';
+          kind.textContent = SOURCE_KIND_LABEL[s.kind] || s.kind || '참고';
+          li.appendChild(kind);
+          var body = document.createElement('span');
+          body.className = 'ns-ai-source-body';
+          var url = typeof s.url === 'string' && /^https?:\/\//i.test(s.url) ? s.url : '';
+          if (url) {
+            var a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener noreferrer');
+            a.textContent = s.title;
+            body.appendChild(a);
+          } else {
+            body.textContent = s.title;
+          }
+          li.appendChild(body);
+          list.appendChild(li);
+        }
+        if (!list.children.length && !list.childNodes.length) return;
+        box.appendChild(list);
+        el.appendChild(box);
       }
 
       function appendBlock(label, text, kind) {
-        if (!thread) return;
+        if (!thread) return null;
         var block = document.createElement('div');
-        block.className = 'ns-ai-block' + (kind ? ' ns-ai-' + kind : '');
+        block.className = 'ns-ai-block ns-ai-' + (kind || 'agent');
         var who = document.createElement('strong');
         who.className = 'ns-ai-who';
         who.textContent = label;
         var body = document.createElement('div');
         body.className = 'ns-ai-text';
-        body.textContent = text;
+        if (kind === 'user') body.textContent = text;
+        else renderRich(body, text);
         block.appendChild(who);
         block.appendChild(body);
         thread.appendChild(block);
-        if (block.scrollIntoView) block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (block.scrollIntoView) block.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
+        return block;
       }
 
+      function autoGrow() {
+        if (input.tagName !== 'TEXTAREA') return;
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 168) + 'px';
+      }
+
+      input.addEventListener('input', autoGrow);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          if (form.requestSubmit) form.requestSubmit();
+          else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+      });
+      autoGrow();
+
+
+      /* #437의 별도 appendSources 카드는 폐기 — 렌더는 답변 카드 내부 renderSources 한 벌만 사용한다
+         (kind 매핑·http/https 가드는 그대로 상속). */
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (busy) return;
         var message = (input.value || '').trim();
         if (!message) {
-          appendBlock('지피지기 AI', '질문을 입력해 주세요.', 'error');
+          appendBlock('지피지기 Agent', '질문을 입력해 주세요.', 'error');
           return;
         }
+        appendBlock('나', message, 'user');
         setBusy(true);
-        appendBlock('나', message, null);
         input.value = '';
+        autoGrow();
 
         var controller = typeof AbortController === 'function' ? new AbortController() : null;
+        /* abort 상한 300s: 서버 체인 상한(NVIDIA primary 180s + Qwen fallback 90s = 270s)보다 크게 —
+           답변이 만들어지는 도중 프론트가 먼저 끊는 사고 방지(2026-09-29 timeout 정렬).
+           실측 정상 경로(budget 1024)는 약 41s이며, 120s abort는 16384 시절 141s 답변을 잘랐다. */
         var timer = window.setTimeout(function () {
           if (controller) controller.abort();
-        }, 120000);
+        }, 300000);
 
         fetch('/api/newstart/ai/chat', {
           method: 'POST',
@@ -283,19 +449,20 @@
             window.clearTimeout(timer);
             var data = result.data || {};
             if (result.status === 200 && data.status === 'ok' && data.answer) {
-              appendBlock('지피지기 AI', data.answer, null);
+              var block = appendBlock('지피지기 Agent', data.answer, 'agent');
+              if (block) renderSources(block.querySelector('.ns-ai-text'), data.sources);
             } else if (result.status === 401) {
-              appendBlock('지피지기 AI', '로그인 후 질문할 수 있습니다.', 'error');
+              appendBlock('지피지기 Agent', '로그인 후 질문할 수 있습니다.', 'error');
             } else {
               var msg = data.errorMessage && typeof data.errorMessage === 'string'
                 ? data.errorMessage
                 : '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
-              appendBlock('지피지기 AI', msg, 'error');
+              appendBlock('지피지기 Agent', msg, 'error');
             }
           })
           .catch(function () {
             window.clearTimeout(timer);
-            appendBlock('지피지기 AI', '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+            appendBlock('지피지기 Agent', '답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
           })
           .then(function () {
             setBusy(false);

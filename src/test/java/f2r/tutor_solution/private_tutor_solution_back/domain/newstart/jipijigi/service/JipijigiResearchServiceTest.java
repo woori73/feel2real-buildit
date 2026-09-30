@@ -27,7 +27,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -75,6 +74,26 @@ class JipijigiResearchServiceTest {
     })
     void classifyBySourceType(NewstartKnowledgeItem.SourceType type, String url, SourceClass expected) {
         assertThat(JipijigiResearchService.classifyKnowledge(item(type, url))).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("given 카페 원문 URL 미확보 등록 when 분류 then authority/category의 부실차주 표기로 부실차주 카페 사례로 둔다 (2026-09-30 GOLDEN-1: 빈 URL이 신복위로 오분류되어 근거에서 밀림)")
+    void classifyCafeCaseWithoutUrlUsesAuthorityCategory() {
+        NewstartKnowledgeItem borrowerNoUrl = NewstartKnowledgeItem.builder()
+                .knowledgeId(119L).sourceType(NewstartKnowledgeItem.SourceType.CAFE_ARTICLE)
+                .status(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE)
+                .title("t").content("c").sourceUrl("").authority("부실차주 카페 회원 제보").category("부실차주")
+                .build();
+        assertThat(JipijigiResearchService.classifyKnowledge(borrowerNoUrl))
+                .isEqualTo(SourceClass.BORROWER_CAFE_CASE);
+
+        NewstartKnowledgeItem ccrsNoUrl = NewstartKnowledgeItem.builder()
+                .knowledgeId(1L).sourceType(NewstartKnowledgeItem.SourceType.CAFE_ARTICLE)
+                .status(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE)
+                .title("t").content("c").sourceUrl(null).authority("신복위 카페 제보").category("감면율")
+                .build();
+        assertThat(JipijigiResearchService.classifyKnowledge(ccrsNoUrl))
+                .isEqualTo(SourceClass.CCRS_CAFE_CASE);
     }
 
     @Test
@@ -162,7 +181,7 @@ class JipijigiResearchServiceTest {
     }
 
     @Test
-    @DisplayName("내부 근거가 기준 이상이면 외부 카페 검색(STEP2·STEP3)을 생략하고 사유를 남긴다")
+    @DisplayName("내부 근거가 기준 이상이면 신복위 외부 검색(STEP2)만 생략하고 사유를 남긴다")
     void sufficientInternalSkipsExternalCafeSearch() {
         JipijigiResearchService service = service();
         when(knowledgeRepository.findAll(any(Specification.class), any(Pageable.class)))
@@ -171,6 +190,10 @@ class JipijigiResearchServiceTest {
         when(answerSessions.searchAcceptedEvidence(any())).thenReturn(List.of(Evidence.builder()
                 .stepNo(1).sourceClass(SourceClass.INTERNAL_CASE).refType(RefType.ANSWER_SESSION)
                 .refId("77").title("축적 답변").build()));
+        when(empiricalCaseRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(page(List.of(NewstartEmpiricalCase.builder()
+                        .caseId(9L).articleId("6010").title("후순위 담보 임시안").keyInsights("기납부")
+                        .sourceUrl("https://cafe.naver.com/newhopero/6010").build())));
         when(officialUpdateRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage());
 
         ResearchPack pack = service.research("자동차 담보 재산");
@@ -178,11 +201,14 @@ class JipijigiResearchServiceTest {
         assertThat(pack.getInternalHits()).hasSize(3);
         assertThat(pack.internalInsufficient()).isFalse();
         assertThat(pack.getCcrsHits()).isEmpty();
-        assertThat(pack.getBorrowerHits()).isEmpty();
         assertThat(pack.isExternalSearched()).isFalse();
-        assertThat(pack.getGapNotes()).anySatisfy(g -> assertThat(g).contains("생략 사유").contains("내부 근거 충분"));
-        then(empiricalCaseRepository).should(never()).findAll(any(Specification.class), any(Pageable.class));
-        // 공식 기준 검증(STEP4)은 외부 카페가 아니다 — 항상 수행한다
+        assertThat(pack.getGapNotes()).anySatisfy(g -> assertThat(g).contains("STEP2").contains("생략 사유").contains("내부 근거 충분"));
+        // STEP3(수집 사례 DB)·STEP4(공식 기준)는 우리 DB 조회 → 내부 근거가 충분해도 생략하지 않는다
+        assertThat(pack.getBorrowerHits()).singleElement().satisfies(e -> {
+            assertThat(e.getSourceClass()).isEqualTo(SourceClass.BORROWER_CAFE_CASE);
+            assertThat(e.getRefType()).isEqualTo(RefType.EMPIRICAL_CASE);
+        });
+        then(empiricalCaseRepository).should(times(1)).findAll(any(Specification.class), any(Pageable.class));
         then(officialUpdateRepository).should(times(1)).findAll(any(Specification.class), any(Pageable.class));
     }
 
@@ -199,6 +225,31 @@ class JipijigiResearchServiceTest {
 
         assertThat(pack.isExternalSearched()).isTrue();
         then(empiricalCaseRepository).should(times(1)).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("STEP3 수집 사례는 최신순이 아니라 질문 키워드 일치 수 순으로 골라 쓴다")
+    void empiricalCasesAreRankedByKeywordHits() {
+        JipijigiResearchService service = service();
+        List<String> keywords = service.keywordsOf("후순위 담보대출 기한이익상실 임시안 이자 납부 변제");
+        java.util.List<NewstartEmpiricalCase> candidates = new java.util.ArrayList<>();
+        // 최신 잡글 8건(질문과 사실상 무관)이 먼저 온 DB 응답
+        for (int i = 0; i < 8; i++) {
+            candidates.add(NewstartEmpiricalCase.builder().caseId((long) i).articleId("g" + i)
+                    .title("가입인사 드립니다 " + i).contentRaw("담보")
+                    .writtenAt(java.time.LocalDateTime.of(2026, 9, 1, 0, 0).plusDays(i)).build());
+        }
+        // 한참 지난 실경험 글(키워드 다수 일치)
+        candidates.add(NewstartEmpiricalCase.builder().caseId(99L).articleId("6010")
+                .title("후순위 담보대출 기한이익상실 임시안").contentRaw("이자 납부 변제 순서")
+                .writtenAt(java.time.LocalDateTime.of(2025, 1, 1, 0, 0)).build());
+        when(empiricalCaseRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(page(candidates));
+
+        List<Evidence> hits = service.searchEmpiricalCases(keywords);
+
+        assertThat(hits).hasSize(8);   // 단계당 상한(PER_STEP_LIMIT)만큼만 잘라낸다
+        assertThat(hits.get(0).getRefId()).isEqualTo("6010");
     }
 
     private static <T> Page<T> page(List<T> rows) {

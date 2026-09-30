@@ -354,6 +354,10 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
             // NewStart 공식 업데이트 공개 피드는 PUBLISHED 자료만 서비스가 반환한다.
             .requestMatchers(HttpMethod.GET, "/api/newstart/updates", "/api/newstart/updates/**").permitAll()
+            // NewStart §7 경계: 금감원 14단계 "설명"(개인정보 없는 정적 문구)은 익명에게도 열는다.
+            // Agent 실행(session/advance/back/restart)은 아래 /api/** catch-all로 인증 회원 유지이며,
+            // 실행 여부 자체는 controller의 THANKS_MEMBER 판정(403)이 결정한다.
+            .requestMatchers(HttpMethod.GET, "/api/newstart/fss/agent/workflow").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/choonggi/media/**").permitAll()  // published vlog media
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색

@@ -53,6 +53,21 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 - `csat_questions`: source FK, half/full, 18~45 번호, 표준 유형 id/name, passage, prompt, choices JSON, answer/solution, footnote, group, source reference, 유형 불일치 flag/reason, raw JSON을 보관한다.
 - `csat_wrong_answers`: 학생, 시험, 번호, 표준 유형, 오답, 정답, 메모, 원본 파일명을 보관한다. 기존 `student_wrong_notes`와 FK나 overwrite 관계가 없다.
 
+### Wiki SQLite: 수능영어 Wiki V1 (평가원 기출 + 출제 DNA)
+
+내신Wiki의 학교 `digital_twin` DNA와 완전히 별도인 평가원 중심 저장소다. SOURCE(원본)와 ANALYSIS(DNA)를 분리하고, 모든 DNA 행은 CLAIM+EVIDENCE 구조이며 evidence의 `question_no`로 실제 문항에 도착한다. 강사 분석(EXPERT_ANALYSIS)은 실제 기출보다 우선할 수 없고, 기록 없이 평가원의 공식 출제 의도로 표시하지 않는다(§14: 근거 없는 출제 예측 단정 금지).
+
+- `csat_exams`: 평가 1차 식별값. `exam_year`(학년도) + `exam_type`(CSAT/JUNE_MOCK/SEPTEMBER_MOCK) + `subject`(기본 ENGLISH)가 UNIQUE, `exam_date`/`label`/`created_at`. 시행일을 표지로 검증한 뒤 등록한다(파일명만 근거로 연도 판단 금지).
+- `csat_exam_resources`: exam FK + `resource_type`(QUESTION_PAPER/ANSWER/ANALYSIS/TEACHER_NOTE) + `original_name`/`original_type`과 원본 바이트를 그대로 담은 `original_blob`. `/original` 엔드포인트로 동일성 검증(업로드-다운로드 바이트 일치)이 가능한다.
+- `csat_questions.exam_id`: nullable FK → `csat_exams.id`. 평가원 회차 문항은 `POST /api/csat/exams/{id}/questions`로 등록하며 회당 `csat_question_sources`(parser `csat-exam-v1`) 1건에 연결된다.
+- `csat_expert_sources`: LEVEL-2 강사 분석의 출처 테이블. `expert`(예: 이명학) + `target_exam_id`(FK → `csat_exams.id`) + `source_type`(현재 `EXPERT_ANALYSIS`만) + `video_url`(YouTube watch 링크) + `video_title`/`published_at`/`verified_note`/`created_at`. `(expert, video_url)` UNIQUE. **자막 전문·영상 파일은 저장하지 않는다** — URL·메타데이터·구간(초)만 근거로 보존하고, `verified_note`에 실제 재생 대조 결과를 기록한다.
+- `csat_question_dna`: 문항별 DNA/TRAP 태그 행. `question_id`(FK)·`exam_id`(스킬 복원용 convenience FK), `entry_type`(DNA|TRAP), `tag`(DNA는 16개 차원, TRAP은 10개 함정 — `main.py`의 `CSAT_DNA_DIMENSIONS`/`CSAT_TRAP_TAGS`가 정본), TRAP의 `choice_no`(1~7), `note`, `evidence_json`, `importance`(1~3), `provenance`(ACTUAL_EXAM/OFFICIAL_SOURCE/EXPERT_ANALYSIS/WIKI_SYNTHESIS), `expert`/`agreement`, 강사 분석 근거 4컬럼 `expert_source_id`(FK → `csat_expert_sources.id`)/`timestamp_start`/`timestamp_end`(초)/`agreement_kind`(AGREEMENT/DIFFERENT_EMPHASIS/EXPERT_ONLY/UNKNOWN), 교정 워크플로우 `status`(AI_PROPOSED→TEACHER_CONFIRMED/TEACHER_EDITED, 오기 REJECTED는 조회·집계에서 제외), `updated_by`. `(question_id, entry_type, tag, choice_no, provenance)` dup 금지 — provenance가 키에 들어 있어 평가원 근거와 강사 분석이 같은 태그에서도 별개 행으로 공존한다(덮어쓰기 불가). `provenance=EXPERT_ANALYSIS` 행은 expert·출처·구간·agreement_kind·evidence 5종이 모두 있어야 저장된다(API 게이트).
+- `csat_dna_claims`: 시험 수준 CLAIM. `exam_id`(FK) + `claim_type`(CORE_TRAIT/REPEATED_SKILL/MAJOR_TRAP/HIGH_DIFFICULTY/SKILL_DEMAND) + `tag`(DNA∪TRAP, 선택) + `claim_text` 필수 + evidence + 강사 분석 4컬럼(`expert_source_id`/`timestamp_start`/`timestamp_end`/`agreement_kind`). UNIQUE 제약이 없으므로 작성 클라이언트가 `(claim_type, tag, provenance, expert_source_id)` 선조회로 멱등성을 확보한다.
+- `csat_dna_comparisons`: 두 시험 비교(예: 6월↔9월). `exam_a_id`/`exam_b_id`(서로 다른 실존 평가 필수), `tag`, `verdict`(REPEATED/STRENGTHENED/REDUCED/NEW/CHANGED), `claim_text`, `evidence_json`(필수), provenance/expert/agreement/status + 강사 분석 4컬럼. `(exam_a, exam_b, tag, verdict)` dup 금지. `importance` 컬럼은 없다. 강사 판정이 기존 비교와 달라야 할 때는 새 verdict 행으로 **관점 차이로 보존**하고 기존 행을 수정하지 않는다.
+- 4컬럼은 additive다: `init_db()`가 `CREATE TABLE IF NOT EXISTS`에 포함하고, DAY-1에 만들어진 로컬 DB에는 `PRAGMA table_info` 확인 후 `ALTER TABLE ADD COLUMN`으로 보강한다(기존 행·provenance 값 변경 없음). Wiki SQLite이므로 Flyway 번호정책(`db/migration`)과 무관하다.
+- DAY-2 연결 계약(학생 데이터): `csat_wrong_answers.question_id` → `csat_questions.id`(+`exam_id` → `csat_exams`)로 학생·시험 회차·문항번호·선택 오답·정답을 잡고, 같은 `question_id`의 `entry_type='TRAP'` 행에서 학생이 실제 고른 선지(`choice_no` ↔ `wrong_answer`)로 함정 DNA에 접속한다. 거기서 `tag`(dimension) → `csat_dna_claims`/`csat_dna_comparisons` → `expert_source_id` → 출처 영상으로 이어진다. 학생 약점은 오답 개수가 아니라 **반복되는 dimension 태그 + 실제 선택한 trap**을 근거로 도출하며, 사진 원본·OCR 전문은 저장하지 않고 `source_filename` 참조만 남긴다.
+- 1차 범위: 평가원 기출 등록 + 평가원 DNA + 이명학 공개 분석(EXPERT_ANALYSIS). 학생 오답·학생 약점 DNA·개인별 대비(⑤⑥⑦)는 미구현 placeholder이며, DAY-2용 학생 workspace는 LOCAL fixture로만 검증하고 production에 학생 오답 사진을 넣지 않는다.
+
 ### Wiki SQLite: Generated Question Store (MCP 생성문항)
 
 기존 Wiki SQLite에 additive로 `source_materials`, `generated_tests`를 추가하고 `generated_questions`에 `test_id` 컬럼을 더한다. `Source Material → Generated Test → Questions → Answer/Explanation` 관계로, MCP `save_generated_test`가 유일한 write 경로다.
@@ -1389,7 +1404,7 @@ NewStart AI 답변의 근거가 되는 공식/감사/전자책/카페/사례/규
 
 Every user-owned Wiki table is migrated idempotently with a nullable `workspace_id` column, backfilled without changing row counts, indexed, and protected by an insert trigger that writes the database workspace ID. The isolated database file is the primary security boundary; therefore a resource ID from another workspace cannot resolve even if numeric IDs collide.
 
-Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.
+Covered tables: `digital_twin_profiles`, `generated_questions`, `exam_papers`, `exam_draft`, `students`, `student_wrong_notes`, `educator_insights`, `exam_material_sets`, `final_deliverables`, CSAT source/question/wrong/assessment/item/usage tables, 수능영어 Wiki V1의 `csat_exams`/`csat_exam_resources`/`csat_question_dna`/`csat_dna_claims`/`csat_dna_comparisons`/`csat_expert_sources` tables, `source_materials`, `generated_tests`, and `ai_ab_evaluations`.
 
 ### exam_material_sets — PAST_EXAM + AI_WORK_LOG 확장
 
@@ -1520,6 +1535,33 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 `draft_id` UNIQUE로 한 초안은 한 번만 축적된다. **`review_state=ACCEPTED`(운영자 승인) 행만 STEP1 RAG에 재사용**되며
 재사용 시 분류는 `INTERNAL_CASE`+`ANSWER_SESSION` 고정 — Agent 답변을 공식 사실로 승격하는 경로는 없다.
 
+## 학원 LMS 콘텐츠/수강권 (Phase 1, V1013)
+
+에듀홀릭 LMS "재원생 시험 전 복습수업"(§`academy-lms-design.md`의 8개 화면 MOCK 프로토타입과는 별개로
+실 DB/API가 붙은 첫 영역이다). 두 신규 도메인 패키지 `domain.lmscontent`/`domain.lmsenrollment`.
+
+- `lms_contents`(`LmsContent`): `LessonProduct`(강좌) 하위 학습 콘텐츠. `academy_id`/`lesson_id` FK
+  (둘 다 `ON DELETE CASCADE`), title/description, `content_type`(현재 `VIDEO`만), `storage_key`/
+  `thumbnail_key`(단일 정규화 mp4 — `AcademyVideo`와 달리 raw/normalized 이중 소스나 CAS 버전 없음),
+  duration/size/width/height, 콘텐츠 단위 school/grade/exam/unit 태그, `display_order`,
+  `status`(UPLOADING·READY·PUBLISHED·HIDDEN·FAILED — UPLOADING/FAILED는 향후 비동기 AI 가공
+  파이프라인 자리, Phase 1은 동기 업로드라 READY에서 시작), `published_at`.
+  저장/재생은 `AcademyVideo`가 쓰는 `FileStorage`/`VideoTranscoder`/`AcademyVideoDeliveryStorage`
+  (범용 컴포넌트)만 재사용하고 `academy_videos` 행과는 완전히 분리한다 — 정책(길이 상한 30분
+  `app.lms.content.*`, 공개 대상)이 다르기 때문이다.
+- `lms_enrollments`(`LmsEnrollment`): 학생의 강좌 수강권. `student_id`/`academy_id`/`lesson_id` FK,
+  `(student_id, lesson_id)` unique, `status`(ACTIVE/REVOKED/EXPIRED — EXPIRED는 예약값, 만료는
+  `expires_at` 타임스탬프로 판정하고 별도 배치가 status를 옮기지 않는다), `grant_source`
+  (ACADEMY/ADMIN — Phase 1은 이 둘만 실사용, `PURCHASE`는 향후 유료 강좌 PG 연동을 위한 예약값),
+  `granted_at`/`expires_at`(nullable). 기존 `lesson_applications`(신청)을 확장하지 않는다 — 배정
+  후보만 그 테이블에서 뽑고(`LmsEnrollmentService.getView`) 별도 행으로 관리한다.
+- 접근 판정은 `LmsLearnerAccessService` 한 곳(owner=`academy.tutor` 소유권, 학생=ACTIVE·미만료
+  `LmsEnrollment`)에서만 하고, SSR 화면(`/lms/{handle}/review/{lessonId}`)·콘텐츠 목록 API·스트리밍
+  API가 모두 이 게이트 하나를 공유한다.
+- Builder "LMS 설정"(`lmsEnabled`/`lmsDisplayName`/`lmsMainTitle`/`lmsIntro`/`lmsSectionName`)은
+  신규 컬럼 없이 기존 `academies.page_settings.builderDraft`(Map&lt;String,String&gt;) JSON에 5개
+  키로 저장한다(`LmsBuilderSettingsService`, `PUT /api/tutor/academy/lms-settings` — 기존
+   `/api/tutor/academy/page-settings`는 의도적으로 builderDraft를 받지 않으므로 별도 엔드포인트).
 
 ## NewStart 본인채무 상태창 (V1009)
 
@@ -1529,3 +1571,51 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 파생 상태(`NOT_STARTED|IN_PROGRESS|COMPLETED`)는 저장하지 않고 플래그+메모에서 계산해 HOME 카드 배지에만 쓴다(새 상태 체계 금지).
 - 흐름: HOME [채무 확인] → `/newstart/tools/credit4u`(전자책 제5장 연체 기산/장기연체 등록 실전 팁 + Credit4U 공식 메뉴 9단계 안내; 특정 코드=자격 확정 단정 금지, 지원대상 여부는 공식 기준·심사 결과 우선 문구 명시) → CTA `/newstart#ns-status-panel`(해시 복귀 시 자동 펼침) → 저장 → [내 채무상황으로 지피지기에게 물어보기]가 메모·단계를 AI 질문 문구에 실제 포함 → `/api/newstart/ai/chat`.
 - 개인정보: Credit4U 인증정보·주민번호·OTP 절대 미수신·미저장, 대신 로그인 없음. ai/chat 서버의 채무 row 자동 주입은 미구현(후속).
+
+## NewStart 회원 실행 권한 grant (V1011)
+
+`newstart_member_grants` — NewStart **실행형 기능**(지피지기 AI 질문, 금감원 Agent 세션/민원 초안 정리)을 쓸 수 있는 회원 목록의 DB 정본. 질문요청 게시판은 여기에 포함되지 않는다 — 2026-09-29 운영정책으로 일반회원 기본 기능(인증 회원 전체 쓰기)으로 확정되었다(§5 참조).
+
+- 컬럼: `grant_id` PK(AI), `user_id` FK → `users.user_id`(ON DELETE CASCADE), `capability` VARCHAR(40), `granted_by`(운영자 식별), BaseEntity 감사 4컬럼. `UNIQUE(user_id, capability)` — 같은 회원에 같은 권한 중복 row 불가, 다른 capability는 같은 user_id로 공존.
+- **row 1건 = grant 1회, row DELETE = 회수.** `revoked_at` 같은 nullable 칼럼을 쓰지 않는 이유: MySQL UNIQUE는 NULL을 중복으로 허용해 "(user, capability, NULL)" 회수 이력이 무한 적립되어 재부여 판정을 오염한다. 감사 필요 시 `granted_by`/감사 컬럼과 운영 로그로 남긴다.
+- `capability`는 enum(STRING) `NewStartCapability` + DDL은 VARCHAR — 새 권한 추가 시 마이그레이션 없이 값만 늘린다. 현재 값은 `THANKS_MEMBER` 하나(운영자·전자책 기반 유료 세션 회원).
+- **`users.role`을 건드리지 않는다.** `Role` enum(STUDENT/TUTOR/CREATOR/ADMIN)은 BuildIt 전체 기능의 전역 역할이라, NewStart 전용 gating을 위해 전역 역할을 바꾸거나 hard-coded 사용자 목록을 만드는 것은 금지. 판정 단일 지점은 `NewStartEntitlementService`(ADMIN은 row 없이 통과).
+- 운영 앱 경로(2026-09-28 추가): `AdminNewStartGrantController`(`/api/admin/newstart/grants`, ADMIN)가 같은 row를 넣고 뺀다 — SQL 접속 없이 부여·회수가 가능하고, `NewStartGrantService.grant()`은 기존 row가 있으면 그것을 반환해 재실행해도 row가 늘지 않는다. 판정 규칙은 여전히 `NewStartEntitlementService` 단일 지점이고 grant service에 허용 조건을 중복 정의하지 않는다.
+- 부여·회수는 SQL 1문으로도 가능(배포 불필요): `INSERT INTO newstart_member_grants(user_id, capability, granted_by) VALUES(?, 'THANKS_MEMBER', 'operator')` / `DELETE ... WHERE user_id=? AND capability='THANKS_MEMBER'`. 마이그레이션에는 seed row를 넣지 않는다(운영 부여 데이터와 스키마 분리).
+- **일괄 부치는 idempotent 문형**(재실행해도 row가 늘지 않는다): `INSERT IGNORE INTO newstart_member_grants(user_id, capability, granted_by) SELECT u.user_id, 'THANKS_MEMBER', 'operator' FROM users u WHERE u.user_id IN (<운영자가 넘긴 user_id 목록>)`. `INSERT IGNORE`/`UNIQUE(user_id, capability)`가 중복을 걸러주고, user_id 목록은 email·실명 등 PII가 아니라 숫자 키만 넘긴다(PII를 SQL·저장소에 커밋 금지). 대상 선정을 모를 때는 `newstart-prod-census-readonly.yml`(read-only 집계)로 먼저 실측하고, write는 운영자 손으로만 실행한다.
+- 강제 지점은 API/컨트롤러다(읽기 화면에서 버튼을 숨기는 것만으로 처리하지 않음): 미부여 회원의 실행 호출은 `403` + `NewStartEntitlementService.DENIAL_MESSAGE`. 거절 번역은 `NewStartEntitlementExceptionHandler`(newstart 패키지 한정)가 `{status:"error", errorMessage}`로 내보내고, 프론트는 그 문구를 그대로 보여준다.
+- 설명·읽기는 공개 유지: A to Z, `/newstart/fss`의 14단계 안내(`GET /api/newstart/fss/agent/workflow`는 익명 permitAll), 공식 기관 링크.
+
+## NewStart 질문요청 게시판 (V1012)
+
+`newstart_requests` + `newstart_request_status_logs` — 설계 §5의 [질문·조사 요청] / [사이트 개선 요청] 인박스.
+
+- 두 kind를 한 테이블에: `kind` VARCHAR(20)(`QUESTION`/`SITE_IMPROVEMENT`) — 검토 주체와 상태 흐름이 같아 테이블을 분리하지 않는다. 개선 요청 전용 칼럼(`screen_location`, `a_to_z_step`)은 `SITE_IMPROVEMENT`에서만 채워지고 엔티티 생성자가 나머지 kind에서는 강제로 null화한다(화면·서버 오탈자 방지).
+- `a_to_z_step`은 `"13-2"` 형태 정규식 검증만 허용 — A to Z STEP 번호를 자유 텍스트로 두면 운영 반영 위치를 특정할 수 없다.
+- 상태 8종은 enum(STRING) 단일 정본: `RECEIVED→REVIEWING→ANSWERED→ACCEPTED→IN_PROGRESS→RESOLVED`(+ 종단 `REJECTED`/`DUPLICATE`). 이동마다 `newstart_request_status_logs`에 from/to row를 남긴다(첫 접수는 from=null). 거절·중복은 회원에게 설명할 사유가 필요하므로 `reason` 필수 검증이 service에 있다.
+- 작성자 userId는 요청 body가 아니라 서버 principal에서만 채워진다. 표시 이름은 저장하지 않고 조회 시점 `User`에서 resolve(chat과 동일한 규칙) — 계정 정리 시 "회원"으로 대체한다.
+- **삭제는 soft delete + 원문 파기**: `problem`/`answer`에 채무·기관 정보가 남을 수 있어 취소 시 `title`/`problem`/`proposal`을 비우고 `deleted` flag만 세운다(row 삭제 아님 — 검토 이력의 `request_id` 연결을 보존). 삭제된 요청은 상세·취소 모두 "찾을 수 없습니다"로 응답한다.
+- 권한(2026-09-29 운영정책): 읽기·쓰기(작성·취소) 모두 **인증 회원 전체**. 질문요청은 일반회원 기본 기능이고 THANKS_MEMBER grant가 필요하지 않다 — grant 표에서 질문요청을 제외했고, 컨트롤러의 `entitlementService.require(...)` 호출을 제거했다(비로그인은 `SecurityConfig`의 `/api/**` `.authenticated()`가 401). 상태 관리 = `/api/admin/**`(hasRole ADMIN). cancel은 본인/ADMIN만(service의 principal 검증). GitHub issue 자동 생성은 없고 `github_ref`/`resolved_version`은 운영자가 수기 기입한다.
+- 화면 입력은 [요청 유형][제목][내용][등록]로 단순화했지만 서버 contract와 DB 칼럼(`proposal`, `screen_location`, `a_to_z_step`)은 그대로 보존한다 — 기존 항목의 상세 렌더와 이후 kind 확장 근거.
+- `newstart_knowledge_items.dedup_key` VARCHAR(191) UNIQUE도 V1012에 함께 추가 — 갈무리 feed(P2-3)이 채팅·질문요청·사례에서 뽑은 항목을 중복 저장하지 않는 키. 컬럼 길이 191은 MySQL utf8mb4 인덱스 한도(767바이트) 때문.
+
+## NewStart 갈무리 = 지식 항목 회원 feed (V1012 확장)
+
+`newstart_knowledge_items`를 그대로 읽는 **노출 레이어**(설계 §6). 테이블·게시판 구조를 새로 만들지 않고, 회원이 글을 쓰는 공간도 아니다(쓰기 endpoint 없음).
+
+- 갈무리 자격 = `status=ACTIVE` **AND** 오늘이 `effective_from`~`effective_to` 구간 **AND** `source_type`이 community 계보. RAG(`JipijigiResearchService`)가 ACTIVE만 검색하는 안전선과 같은 기준이라, 화면에 보이는 것과 AI가 인용하는 근거가 같은 집합에서 나온다. REVIEW/DRAFT는 운영자 검토함, 만료 항목은 [공식·과거] 재분류 전까지 feed에서 빠진다.
+- **source 교정(2026-09-29)**: 갈무리는 Wiki 목록이 아니다. product 정의상 [AI가 하루 단위로 커뮤니티 유용 정보를 추려 정리한 digest]이고, Wiki(`OFFICIAL_CURRENT`/`OFFICIAL_PAST`/`AUDIT`/`EBOOK`/`DERIVED_RULE`/`OPERATOR_KNOWLEDGE`)는 RAG의 사실 확인·링크·중복 제거에 쓰이는 보조 KB일 뿐이다. 그래서 `NewStartGalmuriService.FEED_SOURCE_TYPES = {CASE, CAFE_ARTICLE, CAFE_COMMENT, CHAT_DISCOVERY, REQUEST_DISCOVERY}`를 feed 쿼리(`findFeed`/`findFeedByCategory`)와 상세 양쪽에 강제한다. 상세는 allowlist 밖 ACTIVE 항목도 "갈무리 항목을 찾을 수 없습니다"로 404 — 기존 117건 Wiki 항목은 배포 후 갈무리 화면에서 사라지지만 RAG·운영자 검토함에는 그대로 남는다(status/data 변경 없음).
+- 파이프라인 단계: **PHASE 1(이번 작업)** = 잘못된 Wiki 노출 제거 + 정직한 빈 상태 문구 + source 모델/API 확정. **PHASE 2(후속, 별도 승인)** =매일 AI 수집(채팅·질문요청+운영자 답변·지피지기 Q&A·실제 사례) → PII 제거 → ADMIN preview → 검토 → publish. 자동 게시는 금지하고, 생성된 항목은 `CHAT_DISCOVERY`/`REQUEST_DISCOVERY`/`CASE` source_type로만 들어온다.
+- `SourceType`에 `CHAT_DISCOVERY`(회원 공용방 채팅 갈무리)·`REQUEST_DISCOVERY`(질문요청 갈무리) 추가 — 원 출처를 숨기지 않으면서 "사례를 공식 규칙처럼" 취급하지 않도록 분류 가능. RAG에서는 `CASE`와 같은 `INTERNAL_CASE` 등급(= OFFICIAL_RULE로 인용 금지).
+- 신뢰 라벨(§4)은 `source_type`에서 서버가 결정: `[공식·현재]`/`[공식·과거]`/`[운영자 실제 경험]`/`[사례 참고]`/`[전자책·운영 정리]`. 설계 3라벨에 두 칸을 더 둔 이유 — 만료 공식 자료를 "사례"로 취급하면 부정확하고, 2차 정리 자료(전자책·도출 규칙)를 "운영자 실제 경험"이라 쓰면 경험 단정이 된다.
+- `dedup_key`는 적재 파이프라인의 중복 제거 앵커. 기존 행은 NULL(MySQL UNIQUE는 NULL 중복 허용)이고 신규 적재분부터 기입 — 소급 갱신은 별도 운영 작업.
+- 자동 적재(scheduler/Agent)·production 자동 write는 미구현, 별도 승인 (§8). 현재 배선 범위는 읽기 API(`/api/newstart/galmuri`)와 화면(`/newstart/galmuri`)까지.
+
+## NewStart HOME 진입점 (설계 §2)
+
+HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대응(`/newstart/fss-helper`) → A to Z(`/newstart/a-to-z`) → 지피지기 질문(`#ns-ai`) → 질문요청 게시판(`/newstart/questions`) → 갈무리(`/newstart/galmuri`).
+
+- 중복 카드였던 `/newstart/tools/{credit4u,application,status,court}` 4종은 **HOME에서만 제거**했다. 컨트롤러·API는 그대로 두고, A to Z가 각 STEP에서 같은 도우미를 계속 참조하므로(reference audit) 화면 진입점은 줄고 기능은 그대로다. 상태창 `#ns-status-panel`의 Credit4U 재진입 링크도 유지.
+- 카드 제거 시 `#ns-debt-home-state`(채무상태 배지)까지 사라지면 Credit4U 복귀 flash 모션이 목적소를 잃는다 — 배지는 practical grid에서 MY DEBT 진입행(`.ns-row`)으로 옮겨 보존. 모션 토큰·reveal 훅 자체는 #431 baseline 그대로다.
+- 지피지기는 전용 라우트가 없어 HOME 앵커(`#ns-ai`)가 진입점이며, 실행(질문 전송)은 §7에 따라 API에서 THANKS_MEMBER 강제. 설명·열람은 공개, 카피에는 "승인 회원이 이용합니다"만 표기(버튼 숨김으로 권한을 대신하지 않음).
+

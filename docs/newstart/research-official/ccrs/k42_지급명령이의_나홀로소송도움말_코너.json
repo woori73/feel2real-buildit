@@ -1,0 +1,35 @@
+{
+ "authority": "MEDIUM / OFFICIAL",
+ "auto_active": false,
+ "category": [
+  "이의신청",
+  "출처한계"
+ ],
+ "collected_at": "2026-09-30T00:00:00Z",
+ "effective_from": null,
+ "effective_to": null,
+ "evidence": [
+  {
+   "applies_to": "코너 위치 안내",
+   "meaning": "회원 화면에서 '법원 안내 페이지' 링크로만 사용; 내용 인용은 k38 출처 우선",
+   "source_url": "https://ecfs.scourt.go.kr/psp/index.on?m=PSPJ02M06"
+  }
+ ],
+ "normalized_content": "전자소송포털 나홀로소송 도움말의 '피고의 대응 > 지급명령에 대한 이의' 코너(ecfs.scourt.go.kr/psp/index.on?m=PSPJ02M06)는 검색 색인에서 존재가 확인되나, 페이지 본문이 클라이언트 스크립트로 로드되어 서버 응답만으로는 안내문을 인용할 수 없었다. 검증된 동일 주제 공식 근거: 채무자는 지급명령정본을 송달받은 날부터 2주 이내에 이의신청(민사소송법 제468조·제470조제1항), 답변서는 늦어도 송달일부터 30일 이내 제출(대법원 전산양식 A2335 유의사항 제2항 원문). 적법한 이의 시 지급명령은 효력을 잃고 사건은 본안 소송으로 이행(제472조제2항). 전자소송으로 이의를 제출하려면 전자소송 동의(인증번호·사건번호 이용) 후 온라인 제출하거나, 서면 이의신청서를 법원에 제출한다.",
+ "relations": {},
+ "review_state": "REVIEW",
+ "source_date": "2026-09-30(확인일)",
+ "source_name": "대한민국 법원 전자소송포털",
+ "source_type": "OFFICIAL_CURRENT",
+ "source_url": "https://ecfs.scourt.go.kr/psp/index.on?m=PSPJ02M06",
+ "status": "REVIEW",
+ "tags": [
+  "ecfs",
+  "PSPJ02M06",
+  "나홀로소송",
+  "피고대응",
+  "지급명령이의",
+  "MEDIUM"
+ ],
+ "title": "전자소송포털 '지급명령에 대한 이의' 나홀로소송 도움말 코너 존재 확인 — 원문은 A2335·법제처로 검증(MEDIUM)"
+}

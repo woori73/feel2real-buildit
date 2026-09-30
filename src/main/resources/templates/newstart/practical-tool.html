@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NewStart 실전 도우미</title>
-  <link rel="stylesheet" href="/css/newstart.css?v=20260925-1">
-  <link rel="stylesheet" href="/css/newstart-tools.css?v=20260925-1">
+  <link rel="stylesheet" href="/css/newstart.css?v=20260929-2">
+  <link rel="stylesheet" href="/css/newstart-tools.css?v=20260927-2">
 </head>
 <body><main class="newstart-shell ns-tool-page">
   <a class="ns-back" href="/newstart">← NewStart 홈</a>
@@ -12,7 +12,7 @@
     <p class="ns-eyebrow">한국신용정보원 공식서비스 연결</p><h1>내 채무·연체정보 확인</h1>
     <p>새출발기금 대상 여부를 대신 판단하지 않습니다. Credit4U에서 본인 신용정보를 직접 조회하고, 확인한 내용을 아래 순서대로 내 채무상황에 정리하세요.</p>
     <h2 class="ns-guide-title">Credit4U 실전 확인 순서</h2>
-    <ol class="ns-guide-steps">
+    <ol class="ns-guide-steps" data-ns-reveal-group>
       <li><strong>① Credit4U 접속</strong> 아래 버튼으로 한국신용정보원 공식서비스에 이동합니다.</li>
       <li><strong>② 본인인증</strong> 공식사이트에서 본인이 직접 인증합니다. NewStart는 인증 정보를 받지 않습니다.</li>
       <li><strong>③ 일반신용정보 선택</strong> Credit4U 메인 메뉴에서 <em>일반신용정보</em>를 고릅니다.</li>
@@ -56,10 +56,24 @@
     <a class="ns-btn ns-btn-primary" href="https://www.newstartfund.or.kr/Rslt/Rslt.do" target="_blank" rel="noopener noreferrer">새출발기금 공식 사이트에서 확인 ↗</a>
   </section>
   <section th:if="${tool == 'court'}" class="ns-tool">
-    <p class="ns-eyebrow">대한민국 법원 공식서비스 연결</p><h1>전자소송·지급명령 대응 정리</h1>
-    <p>법률대리 서비스가 아닙니다. 문서 종류, 송달 방식, 사건 내용에 따라 절차와 기한이 달라질 수 있으므로 공식 법원 안내와 받은 문서를 반드시 확인하세요.</p>
+    <p class="ns-eyebrow">대한민국 법원 공식서비스 연결</p><h1>지급명령 대응 가이드 · 확인 메모</h1>
+    <p>법률대리 서비스가 아닙니다. 지급명령의 기한·효력은 법률(민사소송법 독촉절차)과 접수 법원의 안내를 우선하세요.</p>
+    <h2 class="ns-guide-title">지급명령 대응 3단계</h2>
+    <ol class="ns-guide-steps" data-ns-reveal-group>
+      <li><strong>① 받은 날짜 확인</strong> 지급명령 <em>정본</em>을 송달받은 날을 적습니다. 봉투 우편소인·송달증명으로 확인할 수 있습니다.</li>
+      <li><strong>② 2주 계산</strong> 정본을 송달받은 날로부터 <em>2주 이내</em>에 이의신청을 해야 합니다. 이 기한을 놓치면 지급명령이 확정되어 확정판결과 같은 효력을 갖고, 압류 등 강제집행으로 이어질 수 있습니다.</li>
+      <li><strong>③ 이의신청 제출</strong> 전자소송·방문·우편으로 접수 법원에 제출합니다. 적법한 이의신청이 접수되면 지급명령은 이의 범위 안에서 효력을 잃고 통상의 민사소송으로 진행되며, 이후 법원 지시에 따라 답변서 등으로 대응합니다. 이의신청으로 채무 자체가 사라지지는 않습니다 — 채무 정리는 새출발기금·신복위 채무조정으로 별도 진행합니다.</li>
+    </ol>
+    <h2 class="ns-guide-title">문서에서 확인할 5가지</h2>
+    <ul class="ns-record-list">
+      <li>문서 이름(지급명령 정본 여부)</li>
+      <li>송달(수령) 날짜</li>
+      <li>사건번호 · 접수 법원</li>
+      <li>채권자(신청자) · 대리인</li>
+      <li>청구금액(원금·이자·비용)</li>
+    </ul>
     <div class="ns-court-form"><label>받은 문서 종류 <input id="court-type" placeholder="예: 지급명령"></label><label>받은 날짜 <input id="court-date" placeholder="사용자가 확인한 날짜만 입력"></label><label>확인할 내용 <textarea id="court-notes" rows="5" placeholder="사건번호·채권자·금액 등 확인한 사실만 적으세요."></textarea></label><button class="ns-btn" type="button" id="court-draft">내 확인 메모 만들기</button><textarea id="court-output" rows="8" readonly aria-label="확인 메모"></textarea></div>
     <p class="ns-safety">제출 전 사건내용과 법정기한을 반드시 확인하세요. NewStart는 사실을 보완하거나 이의신청서를 제출하지 않습니다.</p>
     <a class="ns-btn ns-btn-primary" href="https://ecfs.scourt.go.kr/psp/index.on?m=PSP004M01" target="_blank" rel="noopener noreferrer">대한민국 법원 전자소송포털에서 확인·제출하기 ↗</a>
   </section>
-</main><script src="/js/newstart-court-helper.js?v=20260923-1" defer></script></body></html>
+</main><script src="/js/newstart-motion.js?v=20260927-2" defer></script><script src="/js/newstart-court-helper.js?v=20260923-1" defer></script></body></html>

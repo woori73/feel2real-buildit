@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -92,8 +93,8 @@ public class JipijigiResearchService {
                     + "건 미만) → 외부 사례조사 단계 필수");
         }
 
-        // STEP 2·3 — 외부 카페 검색. 내부 근거가 충분하면 생략한다(운영원칙 §5).
-        // STEP 4 공식 기준 검증은 우리 DB 조회이므로 생략 대상이 아니다 — 공식 검사는 항상 수행한다.
+        // STEP 2 — 외부 카페 검색. 내부 근거가 충분하면 생략한다(운영원칙 §5).
+        // STEP 3·4는 우리 DB 조회이므로 생략 대상이 아니다 — STEP 4와 같은 이유로 항상 수행한다.
         List<Evidence> ccrs = new ArrayList<>();
         List<Evidence> borrower = new ArrayList<>();
         boolean externalSearched = false;
@@ -106,15 +107,17 @@ public class JipijigiResearchService {
             if (ccrs.isEmpty()) {
                 gaps.add("STEP2 신복위: 저장된 근거 없음 — 신복위 카페(27453843) 라이브 조사는 운영자 승인된 브라우저/세션 조사 필요 (V1 서버 자동화 없음)");
             }
-
-            // STEP 3 — 부실차주 라이브러리 카페 과거 글+댓글 (수집 사례 베이스)
-            borrower = searchEmpiricalCases(keywords);
-            if (borrower.isEmpty()) {
-                gaps.add("STEP3 부실차주 카페: 키워드 일치 수집 사례 없음 — 질문게시판 원문 자체는 questions 테이블에 보관");
-            }
         } else {
-            gaps.add("STEP2·STEP3 외부 카페 검색 생략 사유: 내부 근거 충분 (" + internal.size() + "건 ≥ 기준 "
+            gaps.add("STEP2 신복위 외부 검색 생략 사유: 내부 근거 충분 (" + internal.size() + "건 ≥ 기준 "
                     + INTERNAL_SUFFICIENT_THRESHOLD + "건)");
+        }
+
+        // STEP 3 — 부실차주 라이브러리 카페 과거 글+댓글 (article_json 정본 수집 사례 베이스).
+        // 내부 ACTIVE 근거가 충분해도 후순위 담보·임시안·납부 같은 실경험이 컨텍스트에서
+        // 완전히 사라지지 않도록 항상 조회한다(2026-09-28 LIVE QA에서 생략 경로 실측).
+        borrower = searchEmpiricalCases(keywords);
+        if (borrower.isEmpty()) {
+            gaps.add("STEP3 부실차주 카페: 키워드 일치 수집 사례 없음 — 질문게시판 원문 자체는 questions 테이블에 보관");
         }
 
         // STEP 4 — 공식 기준 검증: 게시된 공식 업데이트 + 새출발기금/금감원/공공기관 저장 자료
@@ -182,13 +185,28 @@ public class JipijigiResearchService {
     /** 커뮤니티 자료를 공식 규정으로 잘못 붙이지 않도록 출처별 분류를 강제한다. */
     static SourceClass classifyKnowledge(NewstartKnowledgeItem item) {
         NewstartKnowledgeItem.SourceType t = item.getSourceType();
-        String url = item.getSourceUrl() == null ? "" : item.getSourceUrl();
         return switch (t) {
             case OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, DERIVED_RULE -> SourceClass.OFFICIAL_RULE;
             case EBOOK, OPERATOR_KNOWLEDGE -> SourceClass.OPERATOR_MATERIAL;
-            case CAFE_ARTICLE, CAFE_COMMENT -> url.contains("newhopero") ? SourceClass.BORROWER_CAFE_CASE : SourceClass.CCRS_CAFE_CASE;
-            case CASE -> SourceClass.INTERNAL_CASE;
+            case CAFE_ARTICLE, CAFE_COMMENT -> classifyCafeCase(item);
+            // 회원 채팅·질문요청에서 갈무리한 항목은 공식 규정이 아니라 내부 경험 자료다(RAG에서
+            // "공식 안내에 따르면"으로 인용되는 것을 막기 위해 CASE와 같은 등급으로 둔다).
+            case CASE, CHAT_DISCOVERY, REQUEST_DISCOVERY -> SourceClass.INTERNAL_CASE;
         };
+    }
+
+    /**
+     * sourceUrl이 비어 있어도(카페 원문 URL 미확보 등록 지침) authority/category로 부실차주
+     * 카페 자료를 신복위 카페로 오분류하지 않는다. 판별 불가 시 기존 기본값(CCRS)을 유지한다.
+     */
+    private static SourceClass classifyCafeCase(NewstartKnowledgeItem item) {
+        String url = item.getSourceUrl() == null ? "" : item.getSourceUrl();
+        if (url.contains("newhopero")) return SourceClass.BORROWER_CAFE_CASE;
+        String hay = url + " " + (item.getAuthority() == null ? "" : item.getAuthority())
+                + " " + (item.getCategory() == null ? "" : item.getCategory());
+        if (hay.contains("ccrs") || hay.contains("신복위") || hay.contains("신용회복")) return SourceClass.CCRS_CAFE_CASE;
+        if (hay.contains("부실차주")) return SourceClass.BORROWER_CAFE_CASE;
+        return SourceClass.CCRS_CAFE_CASE;
     }
 
     List<Evidence> searchCcrsKnowledgeItems(List<String> keywords) {
@@ -252,6 +270,23 @@ public class JipijigiResearchService {
                 .toList();
     }
 
+    /** 사례 후보 창. OR-LIKE 후보가 많아도 질문 키워드 일치 수로 순위 매긴 뒤 {@value #PER_STEP_LIMIT}건만 쓴다. */
+    static final int CASE_CANDIDATE_WINDOW = PER_STEP_LIMIT * 20;
+
+    /** 몇 개 키워드가 이 행의 텍스트에 실제로 나타나는지 (중복 키워드 없음 — keywordsOf가 distinct). */
+    static int keywordHits(List<String> keywords, String... fields) {
+        StringBuilder sb = new StringBuilder();
+        for (String f : fields) {
+            if (f != null) sb.append(f).append(' ');
+        }
+        String text = sb.toString();
+        int hits = 0;
+        for (String kw : keywords) {
+            if (text.contains(kw)) hits++;
+        }
+        return hits;
+    }
+
     List<Evidence> searchEmpiricalCases(List<String> keywords) {
         if (keywords.isEmpty()) return List.of();
         Specification<NewstartEmpiricalCase> spec = (root, query, cb) -> {
@@ -267,7 +302,13 @@ public class JipijigiResearchService {
             query.orderBy(cb.desc(root.get("writtenAt")));
             return cb.or(kws.toArray(new Predicate[0]));
         };
-        return empiricalCaseRepository.findAll(spec, PageRequest.of(0, PER_STEP_LIMIT)).stream()
+        return empiricalCaseRepository.findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).stream()
+                // 무순위 최신순이면 "가입인사" 같은 무관 글이 8건을 채워 실경험 근거가 사라진다(LOCAL E2E 실측).
+                .sorted(Comparator.comparingInt((NewstartEmpiricalCase c) ->
+                        keywordHits(keywords, c.getTitle(), c.getContentRaw(), c.getKeyInsights(), c.getSpecialCircumstances())).reversed()
+                        .thenComparing(NewstartEmpiricalCase::getWrittenAt,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(PER_STEP_LIMIT)
                 .map(c -> Evidence.builder()
                         .stepNo(STEP_BORROWER)
                         .sourceClass(SourceClass.BORROWER_CAFE_CASE)
