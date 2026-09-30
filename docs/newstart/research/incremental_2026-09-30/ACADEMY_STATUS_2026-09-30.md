@@ -41,14 +41,14 @@ BRANCH: feat/newstart-case-collector-20260930 (HOME HEAD 8a0086c8에서 연속)
 ## A/B/C/D 버킷 상태표 (REV-2)
 | 단계 | A newhopero 09/25~30 | B CCRS 09/24~30 | C newhopero 06월 | D CCRS 06월 |
 |---|---|---|---|---|
-| RAW | 9건(6037~6055) | 2건(798001,799029) | 없음 | 없음(dump만) |
-| ARTICLE_ID CONFIRMED | 9/9 | 2/2 | 0 | 0/557 |
-| ORIGINAL CHECKED | 9 | 2 | 0 | 0 |
+| RAW/원문 | 9건(6037~6055) | 2건(798001,799029) | 부실우려 board 8건 확보(타 브랜치 S6, INVENTORY 참조) | 557 UNIQUE 목록 확보, 본문은 저장소 전체에 없음 |
+| ARTICLE_ID 매핑 확정 | 9/9 | 2/2 | 8건(부실우려 한정) | 0/557 미확정(dump에 필드 없음) |
+| ORIGINAL CHECKED | 9 | 2 | 8 | 0 |
 | STRUCTURED | phase1 SQL(designated5+A9+B2) | +K1~K7, relations9 | 0 | 0 |
 | DEDUPED | articleId unique | articleId unique | 0 | title-level DRAFT, canonical 미확정 |
 | EDITORIAL READY | DRAFT_924on_roundup(A·B통합) | 동 좌 | 0 | 0(원문 필요) |
 | DB REVIEW | 실행 대상 DB 미검증(HOME-local 추정) | 동 좌 | 0 | 0(원문 0건 — INSERT 금지) |
-| DB ACTIVE | 0 | 0 | 0 | 0 |
+| DB ACTIVE | 운영 미존재(census 확인) | 운영 미존재 | 운영 미존재 | 0 |
 | RAG VERIFIED | NOT RUN | NOT RUN | NOT RUN | NOT RUN |
 
 9/24 newhopero 기존 게시물: **EXISTING_PUBLISHED** — 신규 게시 제외, DB 누락 여부 대조는 미実施(ADMIN/browser 필요).
@@ -62,3 +62,7 @@ BRANCH: feat/newstart-case-collector-20260930 (HOME HEAD 8a0086c8에서 연속)
 3. newhopero 6월 스캔(C) 동일 절차.
 4. DB 대조·idempotent REVIEW INSERT(phase2 SQL, SOURCE_COMMUNITY 분리) + June↔348/349 relation.
 5. ADMIN 승인 → ACTIVE → RAG TEST A~D → DRAFT_924on_roundup 게시(+6월편 작성·게시) → FINAL REPORT.
+
+
+## REV-3 (인벤토리·운영 census)
+상세: `ARTIFACT_INVENTORY_2026-09-30.md`. 운영 RDS = cases 107 / knowledge 119 ALL ACTIVE / REVIEW 0 (HOME 로컬 330/356과 별개). phase1 16건·K1~K7·relations 9는 운영에 없음 → ADMIN 세션 후 정상 REVIEW ingest 필요.
