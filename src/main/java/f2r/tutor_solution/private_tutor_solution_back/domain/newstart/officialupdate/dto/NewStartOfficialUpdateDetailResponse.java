@@ -75,7 +75,10 @@ public record NewStartOfficialUpdateDetailResponse(
       case FSC -> "금융위원회";
       case CCRS -> "신용회복위원회";
       case HOPE_RETURN_PACKAGE -> "희망리턴패키지";
-      case FSS, PUBLIC_AGENCY -> null;
+      case FSS -> "금융감독원";
+      case CREDIT4U -> "Credit4U";
+      case COURT -> "법원";
+      case PUBLIC_AGENCY -> null;
     };
   }
 }

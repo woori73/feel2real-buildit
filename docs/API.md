@@ -12,7 +12,7 @@
 
 - 목적: NewStart 홈과 전체 업데이트 화면에 공식 업데이트를 제공한다.
 - 인증/권한: 공개. 서버가 `reviewStatus=PUBLISHED`만 조회한다.
-- Query: `sourceType` 선택값 `NEWSTART_FUND|FSC|CCRS|FSS|PUBLIC_AGENCY`.
+- Query: `sourceType` 선택값 `NEWSTART_FUND|FSC|CCRS|FSS|PUBLIC_AGENCY|HOPE_RETURN_PACKAGE|CREDIT4U|COURT`.
 - Response: `[{ updateId, sourceType, sourceName, title, summary, originalUrl, publishedAt, effectiveFrom, effectiveTo, category, reviewStatus, featured }]`.
 - 정렬: `featured DESC`, `publishedAt DESC`, `updateId DESC`.
 - 원문: `originalUrl`은 검토된 공식 URL이며 클라이언트가 URL을 생성하지 않는다.

@@ -195,7 +195,9 @@ public class NewStartOfficialUpdate {
     CCRS,
     FSS,
     PUBLIC_AGENCY,
-    HOPE_RETURN_PACKAGE
+    HOPE_RETURN_PACKAGE,
+    CREDIT4U,
+    COURT
   }
 
   public enum Category {
