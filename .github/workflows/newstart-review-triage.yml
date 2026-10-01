@@ -1,0 +1,83 @@
+name: NewStart REVIEW triage (read + apply)
+
+# FAST TRIAGE for the REVIEW backlog (read-only DUMP default).
+# DUMP: paginates the REVIEW queue, saves full items as artifact, prints
+#   aggregates (by sourceType, empty/dup/safety candidates) for rule design.
+# APPLY: rule-based batch processing through existing per-item ADMIN review
+#   APIs only (approve with reason+confirmed / archive with reason / keep).
+#   Never deletes (ARCHIVED preserves rows), never touches RAG/LLM/model/UI,
+#   never approves SAFETY_FLAG/FORBIDDEN items (they stay REVIEW).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "DUMP reads only; APPLY executes the committed rule set"
+        required: true
+        type: choice
+        options:
+          - DUMP
+          - APPLY
+        default: DUMP
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newstart-review-triage
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Require configured ADMIN credentials
+        env:
+          ADMIN_LOGIN: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ADMIN_LOGIN" && test -n "$ADMIN_PASSWORD" || {
+            echo "::error::Existing NewStart ADMIN secrets are required"; exit 1;
+          }
+          echo "Mode=${{ inputs.mode }}; credential values are not printed."
+
+      - name: Checkout triage tooling
+        uses: actions/checkout@v4
+
+      - name: Dump REVIEW queue (read-only)
+        if: ${{ inputs.mode == 'DUMP' }}
+        env:
+          NEWSTART_SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          NEWSTART_SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 docs/newstart/research/tools/triage_dump_prod.py \
+            --out /tmp/review_dump.json
+
+      - name: Upload REVIEW dump
+        if: ${{ inputs.mode == 'DUMP' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-dump
+          path: /tmp/review_dump.json
+          retention-days: 7
+
+      - name: Apply triage rule set
+        if: ${{ inputs.mode == 'APPLY' }}
+        env:
+          NEWSTART_SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          NEWSTART_SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 docs/newstart/research/tools/triage_apply_prod.py \
+            --out /tmp/triage_result.json
+
+      - name: Upload triage result log
+        if: ${{ inputs.mode == 'APPLY' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: triage-result
+          path: /tmp/triage_result.json
+          retention-days: 30
