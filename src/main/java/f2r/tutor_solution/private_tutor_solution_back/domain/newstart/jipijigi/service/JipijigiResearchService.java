@@ -78,7 +78,9 @@ public class JipijigiResearchService {
     }
 
     public ResearchPack research(String questionText) {
-        List<String> keywords = keywordsOf(questionText);
+        // 질문이 가리키는 실제 진행 주제(예: 원장초기화 → 원장정리·Credit4U 장기연체·부실차주)는 일반 키워드만으로는 검색 창에서
+        // 밀리므로, 해당 주제 신호가 있을 때만 검색어를 확장한다(신호 없는 질문은 기존 키워드 그대로).
+        List<String> keywords = withIntentKeywords(keywordsOf(questionText), JipijigiQuestionIntent.analyze(questionText));
         List<String> gaps = new ArrayList<>();
 
         // STEP 1 — NewStart 내부 DB/RAG + 축적된 운영자 승인 답변 세션 (항상 먼저)
@@ -183,6 +185,16 @@ public class JipijigiResearchService {
         return out.stream().limit(16).toList();
     }
 
+    static final int MAX_KEYWORDS_WITH_INTENT = 22;
+
+    /** 기본 키워드 뒤에 질문 의도 주제 키워드를 붙인다(중복 제거, 상한 {@value #MAX_KEYWORDS_WITH_INTENT}). */
+    static List<String> withIntentKeywords(List<String> base, JipijigiQuestionIntent intent) {
+        if (intent == null || intent.expansions().isEmpty()) return base;
+        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>(base);
+        out.addAll(intent.expansions());
+        return out.stream().limit(MAX_KEYWORDS_WITH_INTENT).toList();
+    }
+
     /** 조사(을/를/에서 등) 한 겹만 벗긴다 — 벗긴 뒤 2글자 미만이면 원형 유지. */
     static String stripParticle(String token) {
         for (String p : PARTICLES) {
@@ -211,9 +223,20 @@ public class JipijigiResearchService {
         return knowledgeRepository.findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).getContent().stream()
                 .sorted(Comparator.comparingInt((NewstartKnowledgeItem k) ->
                         keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2
-                                + keywordHits(keywords, k.getContent())).reversed())
+                                + keywordHits(keywords, k.getContent())
+                                + operatorExperienceBonus(k)).reversed())
                 .limit(PER_STEP_LIMIT)
                 .toList();
+    }
+
+    /**
+     * 질문 의도 → <b>동일한 운영자 직접 경험</b> → 전자책 순서(운영원칙 §2): 운영자 직접 경험은 키워드 일치 수가 같을 때 전자책보다
+     * 앞서도록 가산한다. 키워드가 하나도 안 맞는 자료는 조회 단계에서 이미 후보가 아니므로 무관 자료가 올라오지는 않는다.
+     */
+    static final int OPERATOR_EXPERIENCE_BONUS = 3;
+
+    static int operatorExperienceBonus(NewstartKnowledgeItem k) {
+        return k.getSourceType() == NewstartKnowledgeItem.SourceType.OPERATOR_KNOWLEDGE ? OPERATOR_EXPERIENCE_BONUS : 0;
     }
 
     Evidence toKnowledgeEvidence(NewstartKnowledgeItem item) {
@@ -309,7 +332,11 @@ public class JipijigiResearchService {
             base.add(cb.or(kws.toArray(new Predicate[0])));
             return cb.and(base.toArray(new Predicate[0]));
         };
-        return officialUpdateRepository.findAll(spec, PageRequest.of(0, PER_STEP_LIMIT)).stream()
+        // 최신순 8건만 자르면 일반어가 걸린 무관 공식자료가 질문과 직접 맞는 자료를 밀어낸다 — 후보 창에서 키워드 일치 수로 순위(동률은 최신순 유지).
+        return officialUpdateRepository.findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).stream()
+                .sorted(Comparator.comparingInt((NewStartOfficialUpdate u) ->
+                        keywordHits(keywords, u.getTitle(), u.getSummary(), u.getContent())).reversed())
+                .limit(PER_STEP_LIMIT)
                 .map(u -> Evidence.builder()
                         .stepNo(STEP_OFFICIAL)
                         .sourceClass(SourceClass.OFFICIAL_RULE)
