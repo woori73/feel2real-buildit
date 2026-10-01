@@ -291,6 +291,9 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-status-panel .ns-row { margin-top: 16px; }
 .ns-status-panel .ns-btn { min-height: 44px; }
 .ns-visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.ns-debt-guide { margin-top: 20px; }
+.ns-debt-guide-main { margin: 0; color: var(--ns-ink); font-size: 13.5px; font-weight: 600; line-height: 1.65; word-break: keep-all; }
+.ns-debt-guide-sub { margin: 7px 0 0; color: var(--ns-muted); font-size: 11.5px; line-height: 1.55; word-break: keep-all; }
 .ns-debt-upload-box { margin: 18px 0; padding: 16px; border: 1px solid var(--ns-line, #dfe5e2); border-radius: 14px; background: #f8fbfa; }
 .ns-debt-upload-box .ns-note { margin: 6px 0 12px; }
 .ns-debt-analysis-results { display: grid; gap: 12px; margin-top: 14px; }
@@ -301,6 +304,9 @@ html, body { max-width: 100%; overflow-x: clip; }
 
 @media (max-width: 600px) {
   #ns-debt-summary { min-height: 220px; font-size: 16px; line-height: 1.55; }
+  .ns-debt-guide { margin-top: 18px; }
+  .ns-debt-guide-main { font-size: 14px; line-height: 1.7; }
+  .ns-debt-guide-sub { font-size: 12px; }
   .ns-debt-upload-box { margin-inline: -4px; padding: 14px; }
   .ns-debt-upload-box .ns-row { align-items: stretch; }
   .ns-debt-upload-box .ns-row .ns-btn { width: 100%; }
