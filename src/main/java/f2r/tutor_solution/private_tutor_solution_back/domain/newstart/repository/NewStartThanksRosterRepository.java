@@ -19,5 +19,8 @@ public interface NewStartThanksRosterRepository extends JpaRepository<NewStartTh
   /** 닉네임 후보 조회(DB collation 비교 — 호출 측이 정확 일치를 한 번 더 확인한다). 미연결 행만. */
   List<NewStartThanksRoster> findByNicknameAndMatchStatus(String nickname, String matchStatus);
 
+  /** 닉네임 후보(연결 여부 무관) — 이미 연결된 명단 충돌 탐지용. 호출 측이 정확 일치를 한 번 더 확인한다. */
+  List<NewStartThanksRoster> findByNickname(String nickname);
+
   Optional<NewStartThanksRoster> findByLinkedUserId(Long linkedUserId);
 }

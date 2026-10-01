@@ -29,6 +29,8 @@ dependencies {
 	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:4.0.1'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	// 감사회원 셀프 인증 예외 운영자 알림 메일(SMTP는 환경변수로만 설정, 미설정이면 발송만 건너뜀).
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 	implementation 'org.jsoup:jsoup:1.17.2'
 	implementation 'com.anthropic:anthropic-java:2.27.0'

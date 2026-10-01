@@ -78,15 +78,17 @@
 - **Timeout/실패**: STEP 2 실패·timeout은 STEP 2만의 실패(`400`)다. 화면은 이미 표시된 STEP 1을 유지하고 `현재 규정 확인이 지연되고 있습니다. 위 답변은 전자책과 실제 사례를 바탕으로 먼저 안내드렸습니다.`만 추가한다. STEP 1이 실패하면 STEP 2를 요청하지 않는다.
 - 두 응답 모두 서버가 모델 출력의 `[KB2 공식]`류 인용표와 근거 컨텍스트에 없는 전화번호를 제거한다.
 
-### ✅ 감사회원 최초 1회 본인확인 (2026-10-01) — 회원 `/api/newstart/thanks-claim` · 운영자 `/api/admin/newstart/thanks-claims`
+### ✅ 감사회원 최초 1회 셀프 인증 (2026-10-01) — 회원 `/api/newstart/thanks-verification` · 운영자 예외함 `/api/admin/newstart/thanks-exceptions`
 
-- 목적: 감사회원(roster 503명)이 **최초 1회**만 본인확인하면 현재 네이버 OAuth 회원과 roster를 1:1로 연결하고 `THANKS_MEMBER`를 부여한다. 이후에는 별도 입력 없이 네이버 로그인만으로 감사회원 기능이 열린다(판정은 기존 `NewStartEntitlementService`의 grant row).
-- **자동 부여를 하지 않는 이유**: 네이버 OAuth는 실제 로그인 ID를 주지 않고(앱별 `response.id`), roster에는 카페 닉네임·마스킹 ID 접두부뿐이며 둘 다 비밀이 아니다. 접두부·닉네임만으로 부여하면 같은 접두부·공개 닉네임의 일반회원이 오인증될 수 있다. 그래서 **회원은 요청(PENDING)만 만들 수 있고, 연결·부여는 ADMIN 승인 한 경로에서만** 일어난다.
-- 흐름: 회원이 네이버 로그인 → 카페 닉네임 입력 → 후보(닉네임 정확 일치·미연결 roster, 최대 5건, 마스킹 ID만) 중 본인 선택 → 1회용 인증코드(8자) 발급 → 카페 쪽지로 운영자에게 코드 전달 → 운영자가 코드·보낸 카페 계정 확인 후 승인 → roster 연결 + `THANKS_MEMBER`.
-- 회원 API(로그인 필수, `/api/**` catch-all): `GET /status`(상태 `NONE|PENDING|APPROVED|REJECTED`, PENDING일 때만 코드), `POST /candidates {nickname}`, `POST / {rosterId}`(요청 생성, 같은 요청 idempotent, 회원당 PENDING 1건), `DELETE /`(취소). 네이버 계정 미연결·이미 감사회원이면 `400`. 최근 24시간 반려 3건 이상이면 신규 요청 차단.
-- 운영자 API(ROLE_ADMIN): `GET ?status=PENDING`(회원·roster·코드·보조 증거 `emailPrefixMatch`/`nicknameEqualsRoster` — **보조 정보일 뿐 승인 근거 아님**), `POST /{id}/approve`, `POST /{id}/reject {reason?}`. 승인은 한 트랜잭션에서 roster 재확인(미연결) · 요청 시점 네이버 subject == 현재 `social_accounts` 재확인 · roster `link` · `NewStartGrantService.grant`(grantedBy=`thanks-claim:<운영자>`) · 같은 roster의 다른 PENDING 자동 반려. DB UNIQUE 위반(동시 승인 경합)은 `409`.
-- 화면: 회원 `/newstart/thanks-guide`(본인확인 섹션), 운영자 `/admin/newstart/thanks-claims`.
-- DB: `V1017__add_newstart_thanks_claims.sql` — 신규 `newstart_thanks_claims`, `newstart_thanks_roster.linked_user_id`·`linked_provider_user_id`에 UNIQUE(1:1을 DB가 강제, NULL 다중 허용). V1015(503명)·V1016(naver_id_prefix) 데이터·컬럼은 수정하지 않는다.
+- 목적: 감사회원(roster 503명) 대부분이 **운영자 승인 없이** 스스로 인증한다. 최초 1회 인증 후 roster ↔ OAuth userId 를 1:1 로 연결하고 `THANKS_MEMBER`를 자동 부여한다. 이후에는 입력 없이 네이버 로그인만으로 감사회원 기능을 쓴다(판정은 기존 `NewStartEntitlementService`의 grant row).
+- **자동 인증 조건(전부 만족해야 하며 prefix 단독·닉네임 단독 인증은 없다)**: ① 회원이 입력한 카페 닉네임이 roster와 정확히 일치하고 후보가 정확히 1명 ② 네이버 OAuth 이메일이 `@naver.com`이고 로컬파트(= 네이버 로그인 ID)가 그 roster의 `naver_id_prefix`로 시작(접두부는 회원에게 보여주지 않으며, 접두부가 `app.newstart.thanks.min-auto-prefix-length`(기본 4) 미만이면 추측이 쉬워 자동 인증하지 않고 예외로 보낸다) ③ roster가 다른 계정과 연결되지 않았고 현재 OAuth 계정도 다른 roster와 연결되지 않음. 만족하면 한 트랜잭션에서 roster `link` + `NewStartGrantService.grant`(grantedBy=`thanks-self`). 정상 인증은 운영자에게 알리지 않는다.
+- 회원 API(로그인 필수): `GET /status` → `{state, message}`(`NONE|APPROVED|EXCEPTION|ADMIN`), `POST /` `{nickname}` → `{state, message}`(`APPROVED|FAILED|EXCEPTION|ADMIN|ERROR`; `ERROR`만 400). 실패 응답은 어느 항목이 틀렸는지 알리지 않는다. 24시간 내 단순 실패 3회(`max-failures-per-day`)면 예외로 승격한다. 같은 회원의 처리 대기 예외가 있으면 새 시도·중복 알림을 만들지 않는다.
+- **예외 → ADMIN 예외함 + 운영자 이메일**(자동 인증이 안전하게 끝날 수 없는 경우만): `EMAIL_MISSING`(OAuth 이메일 없음), `EMAIL_NOT_NAVER`(@naver.com 아님), `SHORT_PREFIX`, `AMBIGUOUS_CANDIDATES`(후보 2명 이상), `ROSTER_ALREADY_LINKED`, `DUPLICATE_OAUTH_LINK`(한 계정이 두 번째 roster 시도), `REPEATED_FAILURE`, `CONCURRENT_CONFLICT`(DB UNIQUE 경합). 예외는 커밋 직후 비동기로 메일을 보낸다 — 본문은 **닉네임·사유·발생시각(KST)·관리자 확인 링크만**(이메일 주소·네이버 ID·접두부·OAuth 식별값·비밀값 없음). SMTP는 환경변수(`NEWSTART_SMTP_HOST/PORT/USER/PASSWORD`, `NEWSTART_ALERT_FROM`, `NEWSTART_THANKS_ALERT_TO`)로만 설정하며 미설정이면 예외함 적재만 하고 `email_status=NOT_CONFIGURED`로 남긴다.
+- 운영자 예외함(ROLE_ADMIN): `GET ?status=OPEN`, `POST /{id}/resolve {rosterId?}`(연결 승인 — 자동 인증과 같은 불변식과 네이버 subject를 다시 확인, grantedBy=`thanks-exception:<운영자>`), `POST /{id}/dismiss {note?}`. DB UNIQUE 경합은 `409`. 정상 인증은 예외함에 나오지 않는다.
+- **ADMIN**: 인증 절차를 거치지 않는다. `GET /status`·`POST /`가 `state=ADMIN`을 돌려주고 아무 기록·연결·부여·알림도 만들지 않으며, 화면은 인증 섹션을 보여주지 않는다. 감사회원 전용 기능 판정은 `NewStartEntitlementService` 한 곳에서 ADMIN을 항상 통과시킨다(모든 현재·향후 `NewStartCapability`).
+- OAuth 이메일: 로그인마다 OAuth가 준 이메일을 `user_social_accounts.provider_email`에 보관한다(`users.email`은 최초 가입 때만 채워져 이메일 동의 이전 가입자·이메일 변경자는 비어 있었다). 판정 전용이며 화면·메일·로그에 노출하지 않는다.
+- 화면: 회원 `/newstart/thanks-guide`(카페 닉네임 입력 1개), 운영자 `/admin/newstart/thanks-exceptions`.
+- DB: `V1017__add_newstart_thanks_self_verification.sql` — `user_social_accounts.provider_email`, 신규 `newstart_thanks_verifications`(시도·예외 기록), `newstart_thanks_roster.linked_user_id`·`linked_provider_user_id` UNIQUE(1:1을 DB가 강제, NULL 다중 허용). V1015(503명)·V1016(naver_id_prefix)은 수정하지 않는다.
 
 ### ✅ 감사회원(THANKS_MEMBER) 권한 부여·회수 — ADMIN
 
