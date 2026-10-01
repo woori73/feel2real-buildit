@@ -4,11 +4,14 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '../../main/resources');
 const tool = fs.readFileSync(path.join(root, 'templates/newstart/practical-tool.html'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'templates/newstart/index.html'), 'utf8');
 const js = fs.readFileSync(path.join(root, 'static/js/newstart.js'), 'utf8');
+const uploadJs = fs.readFileSync(path.join(root, 'static/js/newstart-debt-upload.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'static/css/newstart.css'), 'utf8');
 
 /* HOME → Credit4U → 기존 본인채무 상태창(#ns-status-panel) → 지피지기 연결의 navigation 계약. */
 
@@ -61,4 +64,38 @@ test('newstart.js가 채무상황 API와 해시 복귀-open, userId 미수신을
   assert.match(js, /로그인 후 저장할 수 있습니다/);
   assert.doesNotMatch(js, /localStorage\.|sessionStorage\./);
   assert.doesNotMatch(js, /userId\s*[:=]/);
+});
+
+test('JPG·PNG·PDF 선택과 기기 내 분석·수정 후 명시적 저장 계약을 유지한다', () => {
+  assert.match(home, /id="ns-debt-file"[^>]*accept="image\/jpeg,image\/png,application\/pdf/);
+  assert.match(home, /id="ns-debt-upload">Credit4U 자료 올리기<\/button>/);
+  assert.match(home, /id="ns-debt-analysis-results"/);
+  assert.match(home, /원본은 이 기기 안에서만 읽고 서버에 업로드하거나 보관하지 않습니다/);
+  assert.match(home, /\/vendor\/tesseract\/tesseract\.min\.js\?v=5\.1\.1/);
+  assert.match(home, /\/vendor\/pdfjs\/pdf\.min\.js\?v=3\.11\.174/);
+  assert.doesNotMatch(uploadJs, /fetch\(|XMLHttpRequest|localStorage|sessionStorage/);
+  assert.match(js, /NewStartDebtDraft\.summary/);
+  assert.match(js, /NewStartDebtDraft\.markSaved/);
+});
+
+test('분석 초안은 요구 5개 필드와 개인정보 제거를 편집 가능한 값으로 만든다', () => {
+  const context = {
+    window: {},
+    document: { readyState: 'loading', addEventListener() {} },
+    URL, console, setTimeout, clearTimeout
+  };
+  vm.runInNewContext(uploadJs, context);
+  const rows = context.window.NewStartDebtDraft.parseDebt(
+    'A은행\n개인신용대출\n대출잔액 3,000,000원\n장기연체 등록\n채권자 변동 B자산관리\n900101-1234567');
+  assert.equal(rows.length > 0, true);
+  assert.equal(rows[0].creditor.includes('A은행'), true);
+  assert.equal(rows[0].balance.includes('3,000,000원'), true);
+  assert.doesNotMatch(JSON.stringify(rows), /900101-1234567/);
+  ['creditor', 'debtType', 'balance', 'overdueInfo', 'creditorChange']
+    .forEach((field) => assert.equal(typeof rows[0][field], 'string'));
+});
+
+test('390px 모바일에서 메모와 분석 필드가 충분한 크기의 단일 열이다', () => {
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*#ns-debt-summary \{ min-height: 220px; font-size: 16px/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*\.ns-debt-result-card \{ grid-template-columns: 1fr; \}/);
 });
