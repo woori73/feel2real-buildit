@@ -528,3 +528,16 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (min-width: 768px) {
   .ns-ai-note { font-size: 15.5px; }
 }
+
+/* ══ 2026-10-01 감사회원 전용 badge (지피지기 Agent + 추심 대응 공용) ══
+   기존 카드/버튼 구조를 바꾸지 않는 작은 pill. 한 줄을 넘기면 다음 줄로
+   자연스럽게 내려가 가로 overflow를 만들지 않는다. */
+.ns-member-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; line-height: 1.5; font-weight: 700; letter-spacing: -.01em;
+  white-space: nowrap; vertical-align: middle;
+  background: var(--ns-blue-soft); color: var(--ns-blue);
+  border: 1px solid currentColor;
+}
+.ns-section-kicker .ns-member-badge { margin-left: 6px; }
+.ns-feature-card .ns-member-badge { align-self: flex-start; margin-top: 8px; }
