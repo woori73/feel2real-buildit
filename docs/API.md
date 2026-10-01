@@ -57,8 +57,18 @@
 - 성공: `200` + `{"status":"ok","answer":"...","model":"...","sources":[...]}`
 - Timeout 계약(2026-09-29 정렬): 서버 상한 = primary NVIDIA `timeout-seconds=180` + fallback Qwen `timeout-seconds=90` = 최대 270s. 프론트(`newstart.js`) abort는 **300s**로 서버 상한보다 크게 두어, 답변 생성 도중 프론트가 먼저 끊는 사고를 막는다(과거 120s abort는 budget 16384 시절 141s 답변을 잘랐다). 정상 경로(budget 1024) 실측은 약 41s.
 - 실패: `400`(빈 질문·길이 초과·지식베이스 조회 실패·provider/네트워크 오류 공통), `403`(THANKS_MEMBER 미부여 회원) 모두 `{"status":"error","errorMessage":"..."}`. 내부 exception·provider 응답·키 값은 노출하지 않는다. 지식베이스 조회 실패 시 근거 없이 답하지 않고 정직하게 실패한다.
-- RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립 우선순위: 공식 > 운영/전자책 > 승인 답변 세션 > 카페·실증 사례((refType,refId) 중복 제거, 최대 12건). 답변 프롬프트는 근거 성격을 '공식 안내에 따르면' vs '카페 사례에서는'으로 구분하도록 강제한다.
+- RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립(2026-10-01 2단계 개편): STEP 1 = 전자책·운영자 자료 → 실제 사례(승인 카페 지식 → 축적 답변 → 실증 사례), STEP 2 = 현재 공식 자료만((refType,refId) 중복 제거, 각 최대 12건/8건). 답변 프롬프트는 근거 성격을 '전자책에서는'/'카페 사례에서는'/'공식 안내에 따르면'으로 구분하며 STEP 1에서는 공식 표현을 금지한다.
 - 레이턴시 실측·로그(2026-09-28 LOCAL, NVIDIA 4회): 구간별 INFO 로그 — `NewStartAiChatController`(`authMs/serviceMs/handlerMs`), `NewStartAiChatService`(`ragMs/evidenceMs/promptMs/llmMs` + `systemPromptChars/promptChars/inputTokenEstimate/evidenceCount/answerChars`), `NewStartLlmClient`(`attempts/fallbackUsed/primaryMs/fallbackMs`), `NvidiaNimLlmTransport`(`httpMs/parseMs/promptTokens/completionTokens/finishReason/maxTokens/reasoningBudget`). 질문 원문·키·`reasoning_content`는 남기지 않고 길이와 ms·token 수만 남긴다. LOCAL 10개 질문 데이터 기준 `httpMs`가 전체의 97.9~99.5%이고 `finishReason=stop`(3~4k tokens)으로 `max_tokens`는 상한만 작용 → 병목은 생성/추론 구간. `reasoning-budget` 16384→1024(yaml 값만 변경, 코드 불변) 단일 변수 테스트: 같은 질문에서 서버 111.3s→40.6s(−63.5%), `promptTokens` 3109 동일·근거 12건·출처 8건(공식 4 + 부실차주 카페 4) 동일, 답변 478→1530자로 짧아지기는커녕 증가. 16384 상태의 세션 3질문은 111.5/141.0/112.8s였고 141.0s건은 프론트의 120s abort(`newstart.js`)로 화면에 못 닿는다. 부수 관측: 예산을 줄인 답변에 모델이 자체 작성한 `[KB2 공식]` 형태 인용 표기가 나타날 수 있다(DB 대조 결과 코퍼스 문구가 아니며, 지칭 번호는 실제 근거 1~8번과 대응) — 화면 `sources` 렌더가 없는 현재는 사용자 노출 차이가 크지 않으므로 후속 확인 항목.
+
+### ✅ 지피지기 2단계 답변 (2026-10-01) — `POST /api/newstart/ai/chat` → `POST /api/newstart/ai/chat/official`
+
+운영원칙(질문 의도 → 전자책/실제 사례/운영자 경험/카페·상담 사례 → 실제 진행·대응 → 현재 공식자료 확인·보완 → 차이·불확실성)을 실제 호출 순서로 구현한다. 한 번의 LLM 호출에 공식자료를 함께 넣지 않는다.
+
+- **STEP 1 — `POST /api/newstart/ai/chat`** (기존 경로·request 유지): 전자책·운영자 자료 + 실제 사례(승인 카페 지식·축적 답변·실증 사례)만 근거로 1차 답변을 만든다. **공식 자료는 근거·출처에 섞지 않는다.** 전자책이 컨텍스트를 채워도 직접 관련 사례에 최소 6칸(컨텍스트)·4칸(출처)을 보장한다. Response에 `stage:"CASE"` 추가(additive), 나머지 필드 불변.
+- 화면은 STEP 1 응답을 받는 즉시 표시하고, 그 아래에 정확히 `관련된 현재 규정을 확인해서 알려드리겠습니다.`를 표시한 뒤 STEP 2를 요청한다.
+- **STEP 2 — `POST /api/newstart/ai/chat/official`**: Request `{message, step1Answer}` (`step1Answer`=이미 표시된 1차 답변, 비교 입력일 뿐 서버는 수정·재생성하지 않고 길이만 2500자로 제한). 질문과 직접 관련된 현재 공식 자료(게시된 공식 업데이트 + ACTIVE 공식 지식)만 별도 조사해 "현재 공식 자료에서 확인되는 내용 / 1차 답변과 다른 점(시점 차이) / 추가 주의사항"을 2차 답변으로 만든다. Response `stage:"OFFICIAL"`, `sources`는 공식 자료만. 공식 자료를 찾지 못하면 LLM을 부르지 않고 확인할 기관만 안내한다(규정을 지어내지 않음). 인증·THANKS_MEMBER 판정은 STEP 1과 동일.
+- **Timeout/실패**: STEP 2 실패·timeout은 STEP 2만의 실패(`400`)다. 화면은 이미 표시된 STEP 1을 유지하고 `현재 규정 확인이 지연되고 있습니다. 위 답변은 전자책과 실제 사례를 바탕으로 먼저 안내드렸습니다.`만 추가한다. STEP 1이 실패하면 STEP 2를 요청하지 않는다.
+- 두 응답 모두 서버가 모델 출력의 `[KB2 공식]`류 인용표와 근거 컨텍스트에 없는 전화번호를 제거한다.
 
 ### ✅ 감사회원(THANKS_MEMBER) 권한 부여·회수 — ADMIN
 

@@ -410,6 +410,46 @@
       autoGrow();
 
 
+      var OFFICIAL_NOTICE = '관련된 현재 규정을 확인해서 알려드리겠습니다.';
+      var OFFICIAL_DELAY = '현재 규정 확인이 지연되고 있습니다. 위 답변은 전자책과 실제 사례를 바탕으로 먼저 안내드렸습니다.';
+
+      /* STEP 2 — 1차 답변 표시 직후 안내문을 띄우고 현재 공식자료 확인을 별도 요청한다.
+         실패·timeout이어도 STEP 1은 그대로이며 전체 질문 실패로 처리하지 않는다(지연 안내만 추가). */
+      function runOfficialStep(message, step1Answer) {
+        appendBlock('지피지기 Agent', OFFICIAL_NOTICE, 'agent');
+        send.textContent = '현재 규정 확인 중…';
+        var controller2 = typeof AbortController === 'function' ? new AbortController() : null;
+        var timer2 = window.setTimeout(function () {
+          if (controller2) controller2.abort();
+        }, 300000);
+        return fetch('/api/newstart/ai/chat/official', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message, step1Answer: step1Answer }),
+          signal: controller2 ? controller2.signal : undefined
+        })
+          .then(function (res) {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              return { status: res.status, data: data };
+            });
+          })
+          .then(function (result) {
+            window.clearTimeout(timer2);
+            var d = result.data || {};
+            if (result.status === 200 && d.status === 'ok' && d.answer) {
+              var b2 = appendBlock('지피지기 Agent · 현재 규정 확인', d.answer, 'agent');
+              if (b2) renderSources(b2.querySelector('.ns-ai-text'), d.sources);
+            } else {
+              appendBlock('지피지기 Agent', OFFICIAL_DELAY, 'agent');
+            }
+          })
+          .catch(function () {
+            window.clearTimeout(timer2);
+            appendBlock('지피지기 Agent', OFFICIAL_DELAY, 'agent');
+          });
+      }
+
       /* #437의 별도 appendSources 카드는 폐기 — 렌더는 답변 카드 내부 renderSources 한 벌만 사용한다
          (kind 매핑·http/https 가드는 그대로 상속). */
       form.addEventListener('submit', function (e) {
@@ -448,9 +488,15 @@
           .then(function (result) {
             window.clearTimeout(timer);
             var data = result.data || {};
+            /* 1차 결과가 도착하면 "답변 작성 중" 표시를 바로 걷는다 — STEP 2 대기 중에도 남으면 1차 답변이 아직 안 나온 것처럼 보인다. */
+            if (pendingEl && pendingEl.remove) pendingEl.remove();
+            pendingEl = null;
             if (result.status === 200 && data.status === 'ok' && data.answer) {
+              /* STEP 1: 전자책+실제 사례 기반 1차 답변을 공식자료 조사를 기다리지 않고 먼저 표시한다. */
               var block = appendBlock('지피지기 Agent', data.answer, 'agent');
               if (block) renderSources(block.querySelector('.ns-ai-text'), data.sources);
+              /* STEP 2는 1차 답변 아래에 "추가"만 한다 — 1차 블록은 다시 그리거나 지우지 않는다. */
+              return runOfficialStep(message, data.answer);
             } else if (result.status === 401) {
               appendBlock('지피지기 Agent', '로그인 후 질문할 수 있습니다.', 'error');
             } else {

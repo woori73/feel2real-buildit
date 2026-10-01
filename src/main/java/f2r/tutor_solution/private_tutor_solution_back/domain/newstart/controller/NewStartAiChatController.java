@@ -29,6 +29,9 @@ public class NewStartAiChatController {
 
   private static final Logger log = LoggerFactory.getLogger(NewStartAiChatController.class);
 
+  static final String STAGE_CASE = "CASE";
+  static final String STAGE_OFFICIAL = "OFFICIAL";
+
   private final NewStartAiChatService newStartAiChatService;
   private final NewStartEntitlementService newStartEntitlementService;
 
@@ -38,6 +41,7 @@ public class NewStartAiChatController {
     this.newStartEntitlementService = newStartEntitlementService;
   }
 
+  /** STEP 1 — 전자책 + 실제 사례 기반 1차 답변. 공식 자료 조사를 기다리지 않고 먼저 응답한다. */
   @PostMapping("/chat")
   public ResponseEntity<ChatResponse> chat(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
@@ -56,7 +60,27 @@ public class NewStartAiChatController {
     if (!answer.ok()) {
       return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage(), toSourceDtos(answer.sources())));
     }
-    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources())));
+    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources()), STAGE_CASE));
+  }
+
+  /**
+   * STEP 2 — 1차 답변이 표시된 뒤 별도 호출로 현재 공식자료를 확인·보완한다. {@code step1Answer}는 비교 입력일 뿐이며
+   * 이 API는 1차 답변을 수정·재생성하지 않는다. 실패·timeout은 이 단계만의 실패다.
+   */
+  @PostMapping("/chat/official")
+  public ResponseEntity<ChatResponse> chatOfficial(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody OfficialRequest request) {
+    long t0 = System.nanoTime();
+    newStartEntitlementService.requireThanksMember(principal);
+    NewStartAiChatService.NewStartAiAnswer answer = newStartAiChatService.askOfficial(
+        request == null ? null : request.message(), request == null ? null : request.step1Answer());
+    log.info("newstart ai chat official endpoint handlerMs={} status={} sourceCount={} answerChars={}",
+        ms(System.nanoTime() - t0), answer.ok() ? "ok" : "error", answer.sources().size(), answer.answer().length());
+    if (!answer.ok()) {
+      return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage(), toSourceDtos(answer.sources())));
+    }
+    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources()), STAGE_OFFICIAL));
   }
 
   private static long ms(long nanos) {
@@ -70,6 +94,9 @@ public class NewStartAiChatController {
   /** @param message 사용자가 입력한 질문. 빈 값/길이 초과는 service가 검증한다. */
   public record ChatRequest(String message) {}
 
+  /** @param message 원 질문. @param step1Answer 이미 표시된 1차 답변(비교 입력, 수정 대상 아님 — 서버가 길이만 제한). */
+  public record OfficialRequest(String message, String step1Answer) {}
+
   /** 답변 근거 출처. kind는 "공식 자료" / "부실차주 카페 사례" 등 출처 성격 라벨 — 커뮤니티 근거를 공식처럼 표시하지 않기 위한 구분. */
   public record SourceDto(String kind, String title, String url) {}
 
@@ -80,13 +107,14 @@ public class NewStartAiChatController {
    * @param sources 답변 조립에 사용된 근거 출처 목록(빈 배열 가능).
    */
   public record ChatResponse(String status, String answer, String errorMessage, String model,
-                             java.util.List<SourceDto> sources) {
-    public static ChatResponse success(String answer, String model, java.util.List<SourceDto> sources) {
-      return new ChatResponse("ok", answer, null, model, sources);
+                             java.util.List<SourceDto> sources, String stage) {
+    /** @param stage "CASE"(1차: 전자책+실제 사례) | "OFFICIAL"(2차: 현재 규정 확인). 실패 응답은 null. */
+    public static ChatResponse success(String answer, String model, java.util.List<SourceDto> sources, String stage) {
+      return new ChatResponse("ok", answer, null, model, sources, stage);
     }
 
     public static ChatResponse failure(String errorMessage, java.util.List<SourceDto> sources) {
-      return new ChatResponse("error", "", errorMessage, null, sources);
+      return new ChatResponse("error", "", errorMessage, null, sources, null);
     }
   }
 }
