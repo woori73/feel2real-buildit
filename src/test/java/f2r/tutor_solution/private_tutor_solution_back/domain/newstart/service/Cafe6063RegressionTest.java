@@ -76,7 +76,7 @@ class Cafe6063RegressionTest {
     int item = ctx.indexOf("[운영자 경험] 원장초기화 후 Credit4U");
     assertThat(item).isNotNegative();
     String block = ctx.substring(item, ctx.indexOf("\n3. ", item) > 0 ? ctx.indexOf("\n3. ", item) : ctx.length());
-    assertThat(block).contains("자료 성격: 운영자 직접 경험").contains("시점: 2026-09-20").contains("보통 약 3일");
+    assertThat(block).contains("자료 성격: 운영자 직접 경험").contains("시점: 2026-09-20").contains("보통 3일 안에 처리");
     assertThat(NewStartAiChatService.CASE_STEP_PROMPT).contains("운영자 경험상 보통 약 N일").contains("다른 숫자를 만들지 않는다");
   }
 
@@ -84,7 +84,7 @@ class Cafe6063RegressionTest {
   @DisplayName("4. Credit4U 확인 → 부실차주 신청 순서와 시간 순서 행동 제시 지시가 있다")
   void actionOrderIsChronological() {
     String ctx = step1.system;
-    int credit4u = ctx.indexOf("Credit4U에서 장기연체 등록을 확인한 다음 부실차주를 신청");
+    int credit4u = ctx.indexOf("Credit4U에서 장기연체 등록을 확인하고, 확인 후 부실차주를 신청");
     assertThat(credit4u).isNotNegative();
     assertThat(NewStartAiChatService.CASE_STEP_PROMPT).contains("지금 해야 할 행동을 시간 순서대로 번호로 제시한다");
   }

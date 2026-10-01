@@ -13,8 +13,8 @@ import java.util.List;
 /**
  * 실제 카페 게시글 #6063 회귀 fixture(조사 사다리 결과 pack).
  *
- * <p><b>출처 주의</b>: 원 게시글 본문과 개선 전 Agent STEP 1·2 답변 원문은 이 저장소에 없고(운영 DB/카페에만 있음) 이번
- * 작업에도 전달되지 않았다. 그래서 {@link #QUESTION}은 사용자가 전달한 사건 요약(핵심 걱정·진행 단계·운영자 답변 요지)으로
+ * <p><b>출처 주의</b>: 원 게시글 본문과 개선 전 Agent STEP 1·2 답변 원문은 이 저장소에 없고(운영 DB/카페에만 있음) 두 차례 지시에서도
+ * 본문으로 전달되지 않았다(운영자 답변은 핵심 요지만 전달됨). 그래서 {@link #QUESTION}은 사용자가 전달한 사건 요약(핵심 걱정·진행 단계·운영자 답변 요지)으로
  * 만든 <b>재구성 질문</b>이며 원문 그대로가 아니다. 운영자 실제 답변 요지와 개선 전 STEP 2가 길게 나열했던 공식규정 주제는
  * 사용자 지시문에 적힌 그대로 옮겼다. 원문이 확보되면 {@code newstart/regression/cafe_6063.json}과 이 클래스의 상수를 교체한다.
  * 이 pack 의 제목·요지는 retrieval 결과를 흉내 낸 테스트 데이터이며 운영 DB 데이터가 아니다.
@@ -45,13 +45,13 @@ final class Cafe6063Fixture {
         ev(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "eb3", "[전자책] 채무 종류별 처리 개요", null,
             "금융기관 채무와 대부업 채무는 처리 경로가 다를 수 있다", "sourceType=EBOOK, authority=전자책"),
         ev(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "op1", "[운영자 경험] 원장초기화 후 Credit4U 장기연체 등록 확인 → 부실차주 신청", null,
-            "운영자 경험상 원장초기화는 메일을 보낸 뒤 보통 약 3일 걸렸다. 이후 Credit4U에서 장기연체 등록을 확인한 다음 부실차주를 신청했다.",
+            "운영자 실제 경험상 원장초기화는 메일을 보낸 뒤 보통 3일 안에 처리됐다. 이후 Credit4U에서 장기연체 등록을 확인하고, 확인 후 부실차주를 신청했다.",
             "sourceType=OPERATOR_KNOWLEDGE, authority=운영자 직접 경험, 자료시점=2026-09-20"),
         ev(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "op2", "[운영자 경험] 대부기관 협약 여부 확인과 비협약 채무 처리", null,
             "대부기관도 새출발기금 협약기관인지 먼저 확인한다. 협약기관 채권은 새출발기금에서 매입되는지 확인하고, 비협약기관 채무는 부실차주 신청 후 신복위 개인워크아웃을 검토한다.",
             "sourceType=OPERATOR_KNOWLEDGE, authority=운영자 직접 경험, 자료시점=2026-09-20"),
         ev(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "op3", "[운영자 경험] 준비 중 추심·압류 걱정에 대한 운영자 판단", null,
-            "이 질문자의 현재 상황에서는 집 압류 걱정할 필요없다고 운영자가 판단했다. 진행 중 실제 추심·압류 문제가 생기면 금감원 민원으로 대응한다.",
+            "이 질문자에 대한 운영자의 실제 판단: \"현 상황에서는 집 압류 걱정할 필요없습니다.\" 새출발 진행 중 실제 추심·압류 문제가 생기면 금감원 민원으로 대응한다.",
             "sourceType=OPERATOR_KNOWLEDGE, authority=운영자 직접 경험, 자료시점=2026-09-20"));
 
     List<Evidence> borrower = List.of(
