@@ -317,6 +317,8 @@ public class SecurityConfig {
 
             // 인증 관련 public API
             .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+            // NewStart 자체 ID/PW 가입(공개, 사용자 승인 2026-10-01). 가입 즉시 로그인 쿠키 발급. 로그인은 위 /api/auth/login 재사용.
+            .requestMatchers(HttpMethod.POST, "/api/newstart/auth/signup").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()  // 빈 쿠키 덮는 건 인증 무관
             .requestMatchers(HttpMethod.POST, "/api/auth/login-id/find").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/request").permitAll()
