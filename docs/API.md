@@ -60,6 +60,14 @@
 - RAG(2026-09-25 연결): 질문은 지피지기 Agent V1 강제 조사 사다리(`JipijigiResearchService`)를 통과한다 — 승인(ACTIVE) 지식·공식 업데이트·수집 사례·운영자 승인 답변 세션만 근거로 사용하며 REVIEW 자료는 검색되지 않는다. 컨텍스트 조립(2026-10-01 2단계 개편): STEP 1 = 전자책·운영자 자료 → 실제 사례(승인 카페 지식 → 축적 답변 → 실증 사례), STEP 2 = 현재 공식 자료만((refType,refId) 중복 제거, 각 최대 12건/8건). 답변 프롬프트는 근거 성격을 '전자책에서는'/'카페 사례에서는'/'공식 안내에 따르면'으로 구분하며 STEP 1에서는 공식 표현을 금지한다.
 - 레이턴시 실측·로그(2026-09-28 LOCAL, NVIDIA 4회): 구간별 INFO 로그 — `NewStartAiChatController`(`authMs/serviceMs/handlerMs`), `NewStartAiChatService`(`ragMs/evidenceMs/promptMs/llmMs` + `systemPromptChars/promptChars/inputTokenEstimate/evidenceCount/answerChars`), `NewStartLlmClient`(`attempts/fallbackUsed/primaryMs/fallbackMs`), `NvidiaNimLlmTransport`(`httpMs/parseMs/promptTokens/completionTokens/finishReason/maxTokens/reasoningBudget`). 질문 원문·키·`reasoning_content`는 남기지 않고 길이와 ms·token 수만 남긴다. LOCAL 10개 질문 데이터 기준 `httpMs`가 전체의 97.9~99.5%이고 `finishReason=stop`(3~4k tokens)으로 `max_tokens`는 상한만 작용 → 병목은 생성/추론 구간. `reasoning-budget` 16384→1024(yaml 값만 변경, 코드 불변) 단일 변수 테스트: 같은 질문에서 서버 111.3s→40.6s(−63.5%), `promptTokens` 3109 동일·근거 12건·출처 8건(공식 4 + 부실차주 카페 4) 동일, 답변 478→1530자로 짧아지기는커녕 증가. 16384 상태의 세션 3질문은 111.5/141.0/112.8s였고 141.0s건은 프론트의 120s abort(`newstart.js`)로 화면에 못 닿는다. 부수 관측: 예산을 줄인 답변에 모델이 자체 작성한 `[KB2 공식]` 형태 인용 표기가 나타날 수 있다(DB 대조 결과 코퍼스 문구가 아니며, 지칭 번호는 실제 근거 1~8번과 대응) — 화면 `sources` 렌더가 없는 현재는 사용자 노출 차이가 크지 않으므로 후속 확인 항목.
 
+### ✅ 지피지기 LLM primary = 기존 내신Wiki AI Router(Qwen) (2026-10-01 결정)
+
+- `/api/newstart/ai/chat`·`/chat/official`의 LLM 호출 primary를 **기존 Wiki AI Router(`WikiAiRouterClient`, `provider=auto` → `qwen/qwen3.7-flash`)**로 바꿨다. NVIDIA NIM Nemotron은 응답시간이 29초~180초 초과로 크게 변동해(2026-09-30~10-01 LIVE 실측, 10-01 STEP 1이 180초 timeout) primary에서 제외했다.
+- NewStart RAG(전자책·운영자 경험·카페/상담 사례, STEP 2 공식자료)는 그대로다. **NewStart가 먼저 검색·조립한 근거 system prompt를 Router에 전달해 답변만 생성**하며 Router/Qwen이 RAG를 하지 않는다. STEP 1 → 안내문 → STEP 2의 2단계 구조·사례 우선 원칙도 그대로다.
+- Wiki Router의 설정·모델·API key는 변경·복사하지 않는다(NewStart 코드는 어떤 secret도 읽지 않는다). 응답 provider/model은 Router가 돌려준 값을 로그에만 남긴다.
+- 선택 설정: `app.newstart.llm.primary`(환경변수 `NEWSTART_LLM_PRIMARY`) = `wiki-router`(기본) | `nvidia`. NVIDIA transport·설정은 삭제하지 않고 비교·재사용용으로 보존한다. fallback은 기존대로 OpenRouter Qwen DIRECT(앱 자신의 `OPENROUTER_API_KEY`가 있을 때만 동작 — 현재 운영 미설정이므로 사실상 비활성).
+- Timeout: Router 호출 90초(Wiki provider 45초) 안쪽이며 프론트 abort 300초보다 작다. 아래 NVIDIA 180초 기술은 `primary=nvidia`일 때만 해당한다.
+
 ### ✅ 지피지기 2단계 답변 (2026-10-01) — `POST /api/newstart/ai/chat` → `POST /api/newstart/ai/chat/official`
 
 운영원칙(질문 의도 → 전자책/실제 사례/운영자 경험/카페·상담 사례 → 실제 진행·대응 → 현재 공식자료 확인·보완 → 차이·불확실성)을 실제 호출 순서로 구현한다. 한 번의 LLM 호출에 공식자료를 함께 넣지 않는다.

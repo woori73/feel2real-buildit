@@ -2,12 +2,14 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
+import f2r.tutor_solution.private_tutor_solution_back.config.NewStartLlmProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * NewStart 지피지기 전용 LLM 클라이언트 — NVIDIA NIM Lightning DIRECT primary,
- * OpenRouter Qwen DIRECT fallback. 공용 Wiki AI Router는 이 경로에서 사용하지 않는다.
+ * NewStart 지피지기 전용 LLM 클라이언트. primary는 {@code app.newstart.llm.primary}로 고른다:
+ * {@code wiki-router}(기본: 기존 내신Wiki AI Router=Qwen, 2026-10-01 결정) 또는 {@code nvidia}(NVIDIA NIM Nemotron, 보존).
+ * fallback은 OpenRouter Qwen DIRECT(앱 자신의 OPENROUTER_API_KEY가 있을 때만 동작).
  *
  * <p>호출 횟수 계약: 정상 경로에서는 primary 1회뿐이고(Qwen 0회), primary가 §4의 기술적
  * 실패(연결 실패·timeout·429·5xx·응답 해석 실패·빈 content·interrupted)로 떨어질 때만
@@ -25,11 +27,25 @@ public class NewStartLlmClient {
   private final NewStartLlmTransport primary;
   private final NewStartLlmTransport fallback;
 
-  public NewStartLlmClient(
-      @Qualifier("nvidiaNimLlmTransport") NewStartLlmTransport primary,
-      @Qualifier("openRouterQwenLlmTransport") NewStartLlmTransport fallback) {
+  /** 테스트·수동 조립용. */
+  public NewStartLlmClient(NewStartLlmTransport primary, NewStartLlmTransport fallback) {
     this.primary = primary;
     this.fallback = fallback;
+  }
+
+  /** Spring 조립: primary는 설정으로 선택하고 NVIDIA transport는 선택되지 않아도 보존된다. */
+  @Autowired
+  public NewStartLlmClient(
+      NewStartLlmProperties properties,
+      WikiRouterLlmTransport wikiRouter,
+      NvidiaNimLlmTransport nvidia,
+      OpenRouterQwenLlmTransport openRouter) {
+    this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia), openRouter);
+    log.info("newstart llm primary={} fallback={}", this.primary.name(), openRouter.name());
+  }
+
+  static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter, NewStartLlmTransport nvidia) {
+    return "nvidia".equalsIgnoreCase(configured == null ? "" : configured.trim()) ? nvidia : wikiRouter;
   }
 
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
