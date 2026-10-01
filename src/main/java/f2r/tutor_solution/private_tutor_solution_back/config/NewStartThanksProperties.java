@@ -13,8 +13,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "app.newstart.thanks")
 public class NewStartThanksProperties {
 
-  /** 자동 인증에 필요한 최소 접두부 길이. 짧은 접두부(예: 2자)는 추측하기 쉬워 예외로 보낸다. */
-  private int minAutoPrefixLength = 4;
   /** 24시간 내 단순 실패 허용 횟수. 이 횟수에 도달하면 예외로 승격한다. */
   private int maxFailuresPerDay = 3;
 
@@ -34,8 +32,6 @@ public class NewStartThanksProperties {
     return v != null && !v.isBlank();
   }
 
-  public int getMinAutoPrefixLength() { return minAutoPrefixLength; }
-  public void setMinAutoPrefixLength(int v) { minAutoPrefixLength = v; }
   public int getMaxFailuresPerDay() { return maxFailuresPerDay; }
   public void setMaxFailuresPerDay(int v) { maxFailuresPerDay = v; }
   public String getAlertTo() { return alertTo; }

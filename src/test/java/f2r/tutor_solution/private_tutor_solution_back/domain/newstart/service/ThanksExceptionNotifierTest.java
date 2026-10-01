@@ -104,7 +104,7 @@ class ThanksExceptionNotifierTest {
   @DisplayName("사유 코드는 운영자용 한글 라벨을 가진다")
   void reasonLabels() {
     for (String code : new String[] {ThanksExceptionReason.EMAIL_MISSING, ThanksExceptionReason.EMAIL_NOT_NAVER,
-        ThanksExceptionReason.SHORT_PREFIX, ThanksExceptionReason.AMBIGUOUS_CANDIDATES,
+        ThanksExceptionReason.AMBIGUOUS_CANDIDATES,
         ThanksExceptionReason.ROSTER_ALREADY_LINKED, ThanksExceptionReason.DUPLICATE_OAUTH_LINK,
         ThanksExceptionReason.REPEATED_FAILURE, ThanksExceptionReason.CONCURRENT_CONFLICT}) {
       assertThat(ThanksExceptionReason.label(code)).isNotEqualTo("기타");

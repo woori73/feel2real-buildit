@@ -40,11 +40,11 @@
 
 자동 인증(**전부 만족**, prefix 단독·닉네임 단독 금지):
 1. 입력 닉네임(NFC·공백 정규화, 대소문자 무시)이 roster와 **정확히 일치**하고 후보가 **정확히 1명**
-2. OAuth 이메일이 `@naver.com`이고 로컬파트(= 네이버 로그인 ID)가 해당 roster `naver_id_prefix`로 시작. **접두부는 회원에게 보여주지 않음.** 접두부가 `min-auto-prefix-length`(기본 **4**) 미만이면 자동 인증하지 않고 예외(`SHORT_PREFIX`) — 접두부 2자 회원이 **69명**(4자 434명)이라 이들은 예외로 간다. ⚠ 사용자 요구의 "접두부 일치"에 더한 **안전 강화**이므로 사용자 확인 필요(환경변수 `NEWSTART_THANKS_MIN_AUTO_PREFIX`로 조정).
+2. OAuth 이메일이 `@naver.com`이고 로컬파트(= 네이버 로그인 ID)가 해당 roster `naver_id_prefix`로 시작. **접두부는 회원에게 보여주지 않음.** 접두부 길이 제한 없음 — 2글자 접두부 69명 포함 503명 전원 동일 로직(후속 정책 변경으로 `min-auto-prefix-length`/`SHORT_PREFIX` 제거). 단 접두부 데이터가 비어 있으면 인증하지 않는다.
 3. roster가 다른 계정과 미연결, 현재 OAuth 계정도 다른 roster와 미연결
 → 한 트랜잭션에서 `roster.link` + `NewStartGrantService.grant(grantedBy="thanks-self")`. DB UNIQUE(`linked_user_id`, `linked_provider_user_id`)가 1:1 최후 방어선.
 
-예외(자동 처리 불가) → ADMIN 예외함 + 이메일: `EMAIL_MISSING`, `EMAIL_NOT_NAVER`, `SHORT_PREFIX`, `AMBIGUOUS_CANDIDATES`(후보 2+), `ROSTER_ALREADY_LINKED`, `DUPLICATE_OAUTH_LINK`(계정 중복 연결 시도), `REPEATED_FAILURE`(24시간 단순 실패 3회), `CONCURRENT_CONFLICT`(UNIQUE 경합 → controller 가 `recordConflict`로 REQUIRES_NEW 기록).
+예외(자동 처리 불가) → ADMIN 예외함 + 이메일: `EMAIL_MISSING`, `EMAIL_NOT_NAVER`, `AMBIGUOUS_CANDIDATES`(후보 2+), `ROSTER_ALREADY_LINKED`, `DUPLICATE_OAUTH_LINK`(계정 중복 연결 시도), `REPEATED_FAILURE`(24시간 단순 실패 3회), `CONCURRENT_CONFLICT`(UNIQUE 경합 → controller 가 `recordConflict`로 REQUIRES_NEW 기록).
 - 단순 불일치(닉네임 없음/이메일 접두부 불일치)는 `FAILED`로 기록만 하고 **어느 항목이 틀렸는지 알려주지 않는 일반 문구** 반환.
 - 같은 회원에게 처리 대기 예외(OPEN)가 있으면 새 시도·중복 알림을 만들지 않는다.
 - 운영자 처리: `resolve`(연결 승인 — 같은 불변식 + 네이버 subject 재확인, grantedBy=`thanks-exception:<운영자>`, 후보 미특정 예외는 body.rosterId 로 선택), `dismiss`(종료). DB UNIQUE 경합은 409.
@@ -108,7 +108,7 @@
 
 ## 11. 사용자 결정/주의 사항
 
-- `min-auto-prefix-length=4`(접두부 2자 69명이 예외로 감) — 사용자 확인 필요(요구서에는 없던 안전 강화).
+- (정책 변경 반영) 접두부 길이 제한 제거 — 503명 전원 자동 인증 대상.
 - SMTP 비밀값 등록(운영 환경변수) — 사용자 몫. 수신 주소는 `woorinaesin@naver.com` 으로 사용자가 지정.
 - 기존(이메일 동의 이전) 회원 재동의 유도(`auth_type=reprompt`)는 미구현 — 오픈 전이라 영향은 작지만 오픈 후 `EMAIL_MISSING` 예외가 많으면 검토.
 - 운영 DB 에는 아무것도 적용되지 않았다(V1017 migrate 는 머지·배포 시). 503명 roster(V1015/V1016)는 변경하지 않았다.

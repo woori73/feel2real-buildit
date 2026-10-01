@@ -147,18 +147,44 @@ class NewStartThanksVerificationServiceTest {
   }
 
   @Test
-  @DisplayName("접두부가 최소 길이(기본 4) 미만이면 추측이 쉬워 자동 인증하지 않고 예외로 보낸다(SHORT_PREFIX)")
-  void shortPrefix_goesToException() {
+  @DisplayName("접두부가 2글자여도 닉네임 정확 일치 + 이메일 접두부 일치 + 양쪽 미연결이면 자동 인증한다(길이 제한 없음, 예외함 미적재)")
+  void twoCharPrefix_autoVerifies() {
     when(social.getProviderEmail()).thenReturn("tomato99@naver.com");
     NewStartThanksRoster r = roster(11, "카페닉", "to");
     rosterFor("카페닉", r);
 
     var out = service.verify(7L, "STUDENT", "카페닉");
 
-    assertThat(out.state()).isEqualTo("EXCEPTION");
-    assertThat(lastSaved().getExceptionReason()).isEqualTo(ThanksExceptionReason.SHORT_PREFIX);
+    assertThat(out.state()).isEqualTo("APPROVED");
+    verify(grantService).grant(eq(7L), eq(NewStartCapability.THANKS_MEMBER), anyString());
+    assertThat(r.isLinked()).isTrue();
+    verify(notifier, never()).notifyAsync(anyLong());
+  }
+
+  @Test
+  @DisplayName("접두부가 2글자이고 닉네임만 맞으면(이메일 접두부 불일치) 인증하지 않는다 — 예외함이 아니라 실패로만 기록")
+  void twoCharPrefix_nicknameAloneStillFails() {
+    when(social.getProviderEmail()).thenReturn("zz99@naver.com");
+    NewStartThanksRoster r = roster(11, "카페닉", "to");
+    rosterFor("카페닉", r);
+
+    var out = service.verify(7L, "STUDENT", "카페닉");
+
+    assertThat(out.state()).isEqualTo("FAILED");
     verify(grantService, never()).grant(anyLong(), any(), anyString());
     assertThat(r.isLinked()).isFalse();
+  }
+
+  @Test
+  @DisplayName("roster 접두부 데이터가 비어 있으면 닉네임 단독 인증이 되지 않도록 인증하지 않는다")
+  void blankPrefix_neverAutoVerifies() {
+    NewStartThanksRoster r = roster(11, "카페닉", "");
+    rosterFor("카페닉", r);
+
+    var out = service.verify(7L, "STUDENT", "카페닉");
+
+    assertThat(out.state()).isEqualTo("FAILED");
+    verify(grantService, never()).grant(anyLong(), any(), anyString());
   }
 
   // ───────── 예외: 자동 인증 중단 + ADMIN 예외함 + 운영자 알림 ─────────

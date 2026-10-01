@@ -30,7 +30,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * <ol>
  *   <li>회원이 입력한 카페 닉네임이 503명 roster 와 <b>정확히 일치</b>하고 후보가 <b>정확히 1명</b></li>
  *   <li>네이버 OAuth 이메일이 {@code @naver.com} 이고 로컬파트(= 네이버 로그인 ID)가 그 roster 의 {@code naver_id_prefix} 로 시작
- *       — 접두부는 회원에게 보여주지 않는다. 접두부가 {@code minAutoPrefixLength} 미만이면 추측이 쉬워 자동 인증하지 않는다.</li>
+ *       — 접두부는 회원에게 보여주지 않는다. 접두부 길이(2자 포함)와 무관하게 503명 전원에게 같은 로직을 적용한다.</li>
  *   <li>해당 roster 가 다른 계정과 연결되지 않았고, 현재 OAuth 계정도 다른 roster 와 연결되지 않음</li>
  * </ol>
  * 위를 못 지키는 경우 중 "안전하게 자동 인증할 수 없는" 상황만 예외(ADMIN 예외함 + 운영자 이메일 알림)로 보내고, 단순 불일치는
@@ -169,10 +169,8 @@ public class NewStartThanksVerificationService {
       return exception(userId, roster.getRosterId(), nickname, social, ThanksExceptionReason.EMAIL_NOT_NAVER);
     }
     String prefix = roster.getNaverIdPrefix() == null ? "" : roster.getNaverIdPrefix().strip().toLowerCase(Locale.ROOT);
-    if (prefix.length() < Math.max(1, props.getMinAutoPrefixLength())) {
-      return exception(userId, roster.getRosterId(), nickname, social, ThanksExceptionReason.SHORT_PREFIX);
-    }
-    if (!naverId.startsWith(prefix)) {
+    // 접두부 길이 제한은 없다(2자 포함 전원 동일). 단, 접두부 데이터가 비어 있으면 startsWith("")가 항상 참이라 닉네임 단독 인증이 되므로 막는다.
+    if (prefix.isEmpty() || !naverId.startsWith(prefix)) {
       return failed(userId, roster.getRosterId(), nickname, social);   // 닉네임만 맞고 네이버 ID가 다르다 — 인증하지 않는다
     }
 
