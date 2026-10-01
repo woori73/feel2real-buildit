@@ -7,7 +7,7 @@
   <meta name="description" content="내 상황 확인, 지피지기 Agent, 회원 채팅, 관련 기관 공시 업데이트를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20261001-3">
+  <link rel="stylesheet" href="/css/newstart.css?v=20261001-4">
 </head>
 <body>
   <div class="newstart-page">
@@ -21,6 +21,38 @@
           <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
         </nav>
       </header>
+
+      <button id="ns-presence-edge" class="ns-presence-edge" type="button" hidden>
+        <span aria-hidden="true">접속회원</span>
+        <span id="ns-presence-edge-count">0</span>
+        <span id="ns-presence-edge-unread" class="ns-presence-unread" hidden>0</span>
+      </button>
+      <button id="ns-presence-rail" class="ns-presence-rail" type="button" hidden aria-label="접속 회원 열기">
+        <span class="ns-presence-dot" aria-hidden="true"></span>
+        <span id="ns-presence-rail-count">0</span>
+        <span id="ns-presence-rail-unread" class="ns-presence-unread" hidden>0</span>
+      </button>
+      <aside id="ns-presence-panel" class="ns-presence-panel" role="dialog" aria-label="접속 회원과 쪽지" hidden>
+        <div class="ns-presence-head">
+          <strong>접속 회원 <span id="ns-presence-online-count">0</span></strong>
+          <span id="ns-presence-unread" class="ns-presence-unread" hidden>읽지 않음 <span id="ns-presence-unread-count">0</span></span>
+          <button id="ns-presence-close" class="ns-btn ns-btn-ghost" type="button">닫기</button>
+        </div>
+        <p class="ns-note">닉네임을 누르면 쪽지를 보낼 수 있습니다.</p>
+        <ul id="ns-presence-list" class="ns-presence-list"></ul>
+        <div id="ns-presence-compose" class="ns-presence-compose" hidden>
+          <p class="ns-presence-to">받는 사람: <strong id="ns-presence-to-name"></strong> <button id="ns-presence-cancel" type="button">취소</button></p>
+          <textarea id="ns-presence-input" class="ns-input" rows="2" maxlength="1000" placeholder="쪽지 내용을 입력하세요"></textarea>
+          <button id="ns-presence-send" class="ns-btn ns-btn-primary" type="button">보내기</button>
+          <p id="ns-presence-msg" class="ns-note" role="status" hidden></p>
+        </div>
+        <h2 class="ns-presence-sub">받은 쪽지</h2>
+        <ul id="ns-presence-inbox" class="ns-presence-inbox"></ul>
+        <button id="ns-presence-more" class="ns-btn ns-btn-ghost" type="button" hidden>더 보기</button>
+        <h2 class="ns-presence-sub">내 설정</h2>
+        <label class="ns-presence-setting"><input type="checkbox" id="ns-presence-hide"> 접속상태 숨기기</label>
+        <label class="ns-presence-setting"><input type="checkbox" id="ns-presence-block"> 쪽지 수신 거부</label>
+      </aside>
 
       <main>
         <section class="ns-hero" aria-labelledby="ns-hero-title" data-ns-reveal>
@@ -88,6 +120,23 @@
             <label class="ns-check" for="ns-flag-guarantee"><input class="ns-check-input" type="checkbox" id="ns-flag-guarantee"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">채무보증 확인</span></label>
             <label class="ns-check" for="ns-flag-creditor-change"><input class="ns-check-input" type="checkbox" id="ns-flag-creditor-change"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">채권자 변동 확인</span></label>
           </div>
+          <div class="ns-debt-guide">
+            <p class="ns-debt-guide-main">채무 상황을 직접 적거나, 신용정보원(Credit4U) 자료를 사진·PDF로 올려주세요.<br>채무 내용을 읽어 보기 쉽게 정리해 드립니다.</p>
+            <p class="ns-debt-guide-sub">자동으로 정리된 내용은 저장 전에 직접 확인하고 수정할 수 있습니다.</p>
+          </div>
+          <div class="ns-debt-upload-box">
+            <div>
+              <p class="ns-label">Credit4U 자료 자동 읽기</p>
+              <p class="ns-note">JPG·PNG·PDF 원본은 이 기기 안에서만 읽고 서버에 업로드하거나 보관하지 않습니다. 분석 결과를 확인·수정한 뒤 저장하세요.</p>
+            </div>
+            <input id="ns-debt-file" class="ns-visually-hidden" type="file" accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf">
+            <div class="ns-row">
+              <button class="ns-btn" type="button" id="ns-debt-upload">Credit4U 자료 올리기</button>
+              <button class="ns-btn ns-btn-ghost" type="button" id="ns-debt-analysis-clear">분석 결과 지우기</button>
+            </div>
+            <p class="ns-debt-save-state" id="ns-debt-upload-state" role="status" aria-live="polite"></p>
+            <div id="ns-debt-analysis-results" class="ns-debt-analysis-results" hidden aria-label="Credit4U 분석 결과"></div>
+          </div>
           <form id="ns-situation-form">
             <div class="ns-grid ns-grid-2">
               <div><label class="ns-label" for="ns-debt-summary">채무 현황 메모</label><textarea class="ns-textarea" id="ns-debt-summary" rows="3" maxlength="1000" placeholder="채권기관·채무 종류·잔액·연체 여부·확인일을 정리해 보세요. 실명·연락처·계좌번호는 적지 마세요."></textarea></div>
@@ -133,7 +182,11 @@
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal(true)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
   <script src="/js/newstart-motion.js?v=20260927-2" defer></script>
-  <script src="/js/newstart.js?v=20261001-2" defer></script>
+  <script src="/vendor/tesseract/tesseract.min.js?v=5.1.1" defer></script>
+  <script src="/vendor/pdfjs/pdf.min.js?v=3.11.174" defer></script>
+  <script src="/js/newstart-debt-upload.js?v=20261001-1" defer></script>
+  <script src="/js/newstart.js?v=20261001-3" defer></script>
   <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
+  <script src="/js/newstart-presence.js?v=20261001-1" defer></script>
 </body>
 </html>

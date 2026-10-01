@@ -75,6 +75,7 @@ class NaverAccountProvisioningService {
           .userId(user.getUserId())
           .provider(SocialProvider.NAVER)
           .providerUserId(identity.providerUserId())
+          .providerEmail(identity.email())
           .build();
       // 여기서 (provider, provider_user_id) unique 위반이 나면(V982) REQUIRES_NEW 트랜잭션 전체가
       // 롤백되어 방금 만든 User도 함께 사라진다 — 고아 User가 남지 않는다.

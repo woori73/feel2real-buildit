@@ -16,6 +16,14 @@ public interface NewStartThanksRosterRepository extends JpaRepository<NewStartTh
 
   List<NewStartThanksRoster> findBySnapshotDateOrderByRosterIdAsc(LocalDate snapshotDate);
 
-  /** 닉네임 후보(연결 여부 무관). 호출 측이 정확 일치를 한 번 더 확인한다(ID/PW 가입 감사회원 판정용). */
+  /** 닉네임 후보 조회(DB collation 비교 — 호출 측이 정확 일치를 한 번 더 확인한다). 미연결 행만. */
+  List<NewStartThanksRoster> findByNicknameAndMatchStatus(String nickname, String matchStatus);
+
+  /** 닉네임 후보(연결 여부 무관) — 이미 연결된 명단 충돌 탐지용. 호출 측이 정확 일치를 한 번 더 확인한다. */
   List<NewStartThanksRoster> findByNickname(String nickname);
+
+  Optional<NewStartThanksRoster> findByLinkedUserId(Long linkedUserId);
+
+  /** 신규 사전등록 identity 중복 확인(roster 503명과 겹치면 별도 identity 를 만들지 않는다). */
+  boolean existsByCafeMemberTag(String cafeMemberTag);
 }

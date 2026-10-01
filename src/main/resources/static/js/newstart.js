@@ -160,13 +160,23 @@
 
       form.addEventListener('submit', function (e) {
         e.preventDefault();
+        var payload = readPayload();
+        var analyzed = window.NewStartDebtDraft && window.NewStartDebtDraft.summary
+          ? window.NewStartDebtDraft.summary() : '';
+        if (analyzed) {
+          payload.debtSummary = [payload.debtSummary, analyzed].filter(Boolean).join('\n\n');
+        }
+        if (payload.debtSummary.length > 1000) {
+          setState('메모와 분석 결과가 1000자를 넘습니다. 분석 항목을 줄이거나 메모를 정리해주세요.');
+          return;
+        }
         saveBtn.disabled = true;
         setState('저장 중…');
         fetch('/api/newstart/debt-status', {
           method: 'PUT',
           credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(readPayload())
+          body: JSON.stringify(payload)
         })
           .then(function (res) {
             return res.json().catch(function () { return {}; }).then(function (data) {
@@ -184,6 +194,9 @@
               self.DEBT_FLAGS.forEach(function (pair) { if (result.data[pair[0]]) checked++; });
               setState('저장되었습니다 (' + checked + '/6 확인)');
               hydrate(result.data);
+              if (window.NewStartDebtDraft && window.NewStartDebtDraft.markSaved) {
+                window.NewStartDebtDraft.markSaved();
+              }
             } else {
               setState(result.data && result.data.errorMessage ? result.data.errorMessage : '저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
             }
