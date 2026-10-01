@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiResearchTrace.RefType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiResearchTrace.SourceClass;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiQuestionIntent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.Evidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.ResearchPack;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +50,8 @@ public class NewStartAiChatService {
   static final int MAX_CONTEXT_EVIDENCE = 12;
   /** 공식 자료 상한. 이 값이 없으면 공식 8건+내부 공식 판정분이 12개를 모두 채워 사례가 못 들어온다. */
   static final int MAX_OFFICIAL_EVIDENCE = 8;
+  /** 질문 신호(focus term)가 있을 때 STEP 2 가 쓰는 공식 자료 상한 — 검색 결과가 많다는 이유로 모두 싣지 않는다. */
+  static final int MAX_OFFICIAL_FOCUSED = 5;
   /** 답변에 붙이는 출처 상한. */
   static final int MAX_SOURCES = 8;
   /** STEP 1에서 전자책이 컨텍스트를 다 채워도 직접 관련 실제 사례에 보장하는 슬롯(사례가 그만큼 있을 때). */
@@ -94,7 +98,19 @@ public class NewStartAiChatService {
       + " 지금 확인하거나 할 수 있는 다음 행동을 알려준다."
       + " 사례 근거가 있는데 이를 무시하지 않는다. 직접 관련이 없으면 억지로 끼우지 말고 비슷한 사례를 찾지 못했다고 밝힌다."
       + " 단일 사례는 '이 사례에서는', '당시에는', '일부 사례에서 관찰'처럼 수준을 밝히고 모든 경우의 규칙으로 단정하지 않는다."
-      + " 카페 글 속 추정·주장은 확정 사실로 쓰지 않는다. 근거에 작성 시점이 있으면 시점을 함께 말한다.";
+      + " 카페 글 속 추정·주장은 확정 사실로 쓰지 않는다. 근거에 작성 시점이 있으면 시점을 함께 말한다."
+      + " [답변 순서] ① 질문자의 현재 상황을 한두 문장으로 정확히 짚는다."
+      + " ② 질문자가 가장 걱정하는 것에 바로 답한다. 동일하거나 매우 유사한 운영자 직접 경험이 근거에 있으면 가장 먼저 그것으로 답하고,"
+      + " 지금 실제 위험이 큰 단계인지·아직 걱정하지 않아도 되는 부분인지·문제가 생기면 쓸 수 있는 대응수단이 무엇인지를 구분해 불안을 줄인다."
+      + " ③ 지금 해야 할 행동을 시간 순서대로 번호로 제시한다."
+      + " ④ 실제 문제(추심·압류 등)가 생겼을 때의 대응을 알려준다(증거 보존, 금감원 민원 대응, 추심 대응 민원 도우미 안내)."
+      + " ⑤ 꼭 필요한 경우에만 추가 설명을 붙인다. 질문과 직접 관련 없는 제도·규정은 설명하지 않는다."
+      + " 사용자가 읽고 '그래서 지금 무엇부터 하면 되는지' 바로 알 수 있어야 한다."
+      + " 불안을 줄이는 것은 빈 위로가 아니다. '걱정하지 마세요'·'힘내세요' 같은 근거 없는 위로는 쓰지 않고, 운영자 경험이나 충분히 유사한 사례,"
+      + " 현재 단계 판단, 행동 방법으로만 줄인다."
+      + " 운영자가 어떤 사례에서 그렇게 판단했다는 것은 법적으로 항상 그렇다는 뜻이 아니다. 운영자 경험을 법률 규정이나 보장으로 바꿔 말하지 않고,"
+      + " '운영자 경험에서는 이 상황에 대해 ~라고 판단했다'처럼 경험·판단임을 밝히며 그 사례 밖으로 일반화하지 않는다."
+      + " 운영자 경험에 소요 기간 같은 수치가 있으면 '운영자 경험상 보통 약 N일'처럼 출처와 함께 그대로 쓰고 다른 숫자를 만들지 않는다.";
 
   /**
    * STEP 2 — 현재 공식 자료로 1차 답변을 확인·보완한다. 1차 답변은 이미 사용자에게 표시돼 있으므로 다시 쓰거나
@@ -107,7 +123,11 @@ public class NewStartAiChatService {
       + " ① 현재 공식 자료에서 확인되는 내용 ② 1차 답변(사례·전자책)과 현재 기준이 다른 점 — 사례 당시와 현재 기준의 시점 차이를 함께 밝힌다"
       + " ③ 지금 진행할 때 추가로 확인·주의할 점."
       + " 공식 근거에 있는 내용만 '공식 안내에 따르면'이라고 쓴다. 공식 근거에 없는 내용은 공식적으로 확인되지 않았다고 밝히고"
-      + " 해당 기관 안내 확인을 권한다. 공식자료가 사례와 다르다고 해서 사례를 틀렸다고 단정하지 않고 시점·차이를 나란히 보여준다.";
+      + " 해당 기관 안내 확인을 권한다. 공식자료가 사례와 다르다고 해서 사례를 틀렸다고 단정하지 않고 시점·차이를 나란히 보여준다."
+      + " 이 단계는 새로운 장문의 정부자료 설명을 만드는 단계가 아니다. 질문자의 가장 큰 걱정과 1차 답변이 제시한 행동 단계 중 현재 규정으로"
+      + " 확인이 필요한 부분, 제도가 바뀐 부분, 중요한 예외만 쓴다. 질문·1차 답변과 직접 관련 없는 공식 규정은 근거에 있어도 쓰지 않는다."
+      + " 항목은 5개 이내, 각 1~2문장으로 쓴다. 운영자 경험과 현재 공식 규정이 충돌하면 '운영자 경험은 이 사례 기준, 공식 안내는 다르게 안내한다'처럼"
+      + " 둘을 서로 다른 출처로 나란히 표시하고, 운영자 경험을 공식 규정으로 바꿔 쓰거나 1차 답변을 덮어쓰지 않는다.";
 
   private final NewStartLlmClient newStartLlmClient;
   private final JipijigiResearchService researchService;
@@ -153,7 +173,8 @@ public class NewStartAiChatService {
     }
     long tRag = System.nanoTime();
 
-    List<Evidence> ordered = officialStep ? officialEvidence(pack) : caseEvidence(pack);
+    JipijigiQuestionIntent intent = JipijigiQuestionIntent.analyze(question);
+    List<Evidence> ordered = officialStep ? officialEvidence(pack, intent) : caseEvidence(pack, intent);
     long tEvidence = System.nanoTime();
 
     if (officialStep && ordered.isEmpty()) {
@@ -167,7 +188,9 @@ public class NewStartAiChatService {
       String agencies = agencyHints(pack);
       if (!agencies.isEmpty()) evidenceContext += "\n[추가 확인이 필요한 기관] " + agencies + "\n";
     }
-    String systemPrompt = evidenceContext.isEmpty() ? base : base + "\n\n[NewStart 지식베이스 근거]\n" + evidenceContext;
+    String intentBlock = officialStep ? officialScopeBlock(intent) : intent.promptBlock();
+    String head = intentBlock.isEmpty() ? base : base + "\n\n" + intentBlock.stripTrailing();
+    String systemPrompt = evidenceContext.isEmpty() ? head : head + "\n\n[NewStart 지식베이스 근거]\n" + evidenceContext;
     String userPrompt = officialStep ? officialUserPrompt(question, step1Answer) : question;
     long tPrompt = System.nanoTime();
 
@@ -190,6 +213,15 @@ public class NewStartAiChatService {
     }
     return new NewStartAiAnswer(true, sanitizeAnswer(completion.text(), evidenceContext), null, completion.model(),
         toSources(ordered));
+  }
+
+  /** STEP 2 범위 한정 블록 — 질문자의 큰 걱정·진행 단계에 직접 관련된 공식 규정만 확인하게 한다(신호가 없으면 빈 문자열). */
+  static String officialScopeBlock(JipijigiQuestionIntent intent) {
+    if (intent == null || (intent.concerns().isEmpty() && intent.stages().isEmpty())) return "";
+    StringBuilder sb = new StringBuilder("[확인 범위 — 아래에 직접 관련된 공식 규정만 확인한다]\n");
+    if (!intent.concerns().isEmpty()) sb.append("- 질문자의 큰 걱정: ").append(String.join(" / ", intent.concerns())).append('\n');
+    if (!intent.stages().isEmpty()) sb.append("- 현재 진행 단계: ").append(String.join(" / ", intent.stages())).append('\n');
+    return sb.toString();
   }
 
   /** STEP 2 입력: 질문 + 이미 표시된 1차 답변(수정 대상 아님, 비교 기준). 1차 답변은 길이만 제한한다. */
@@ -268,9 +300,19 @@ public class NewStartAiChatService {
    * {@value #CASE_RESERVE}칸을 사례에 보장한다(전자책 개수를 기계적으로 자르는 것이 아니라 사례 슬롯을 먼저 잡는다).
    */
   static List<Evidence> caseEvidence(ResearchPack pack) {
+    return caseEvidence(pack, JipijigiQuestionIntent.none());
+  }
+
+  /**
+   * STEP 1 근거(질문 의도 반영). 운영원칙 §2 순서 — <b>동일한 운영자 직접 경험 → 전자책</b> — 를 근거 목록에 반영한다:
+   * 운영자 경험이 전자책보다 앞서고, 같은 부류 안에서는 질문 focus term 과의 관련도가 높은 자료가 앞선다(동률은 기존 순서 유지).
+   */
+  static List<Evidence> caseEvidence(ResearchPack pack, JipijigiQuestionIntent intent) {
     List<Evidence> ebooks = new ArrayList<>();
     Set<String> ebookSeen = new LinkedHashSet<>();
     addAll(ebooks, ebookSeen, filterClass(pack.getInternalHits(), SourceClass.OPERATOR_MATERIAL));
+    ebooks.sort(Comparator.comparingInt((Evidence e) -> isOperatorExperience(e) ? 0 : 1)
+        .thenComparingInt((Evidence e) -> -intent.relevance(e.getTitle(), e.getExcerpt())));
 
     List<Evidence> cases = new ArrayList<>();
     Set<String> caseSeen = new LinkedHashSet<>();
@@ -293,11 +335,31 @@ public class NewStartAiChatService {
 
   /** STEP 2 근거: 현재 공식 자료만(게시된 공식 업데이트 + ACTIVE 공식 지식). 사례·전자책은 넣지 않는다. */
   static List<Evidence> officialEvidence(ResearchPack pack) {
+    return officialEvidence(pack, JipijigiQuestionIntent.none());
+  }
+
+  /**
+   * STEP 2 근거(질문 의도 반영). 질문에서 focus term 을 얻을 수 있으면 관련도 순으로 정렬하고 관련도 0(질문과 겹치는 용어 없음)인
+   * 공식 자료는 싣지 않으며 {@value #MAX_OFFICIAL_FOCUSED}건까지만 쓴다 — 공식자료 검색 결과가 많다는 이유로 모두 싣지 않는다.
+   * 질문에서 focus term 을 얻지 못하면(신호 없음) 기존처럼 최대 {@value #MAX_OFFICIAL_EVIDENCE}건. 공식자료를 새로 덧붙이지는 않는다.
+   */
+  static List<Evidence> officialEvidence(ResearchPack pack, JipijigiQuestionIntent intent) {
     List<Evidence> official = new ArrayList<>();
     Set<String> seen = new LinkedHashSet<>();
     addAll(official, seen, pack.getOfficialHits());
     addAll(official, seen, filterClass(pack.getInternalHits(), SourceClass.OFFICIAL_RULE));
-    return List.copyOf(official.subList(0, Math.min(official.size(), MAX_OFFICIAL_EVIDENCE)));
+    if (intent == null || intent.focusTerms().isEmpty()) {
+      return List.copyOf(official.subList(0, Math.min(official.size(), MAX_OFFICIAL_EVIDENCE)));
+    }
+    List<Evidence> focused = new ArrayList<>(official.stream()
+        .filter(e -> intent.relevance(e.getTitle(), e.getExcerpt()) > 0).toList());
+    focused.sort(Comparator.comparingInt((Evidence e) -> -intent.relevance(e.getTitle(), e.getExcerpt())));
+    return List.copyOf(focused.subList(0, Math.min(focused.size(), MAX_OFFICIAL_FOCUSED)));
+  }
+
+  /** 운영자 직접 경험 자료인가(지식 항목 sourceType=OPERATOR_KNOWLEDGE). 전자책(EBOOK)과 구분한다. */
+  static boolean isOperatorExperience(Evidence e) {
+    return e != null && e.getNote() != null && e.getNote().contains("sourceType=OPERATOR_KNOWLEDGE");
   }
 
   private static void addAll(List<Evidence> out, Set<String> seen, List<Evidence> in) {
@@ -333,6 +395,10 @@ public class NewStartAiChatService {
     for (Evidence e : ordered) {
       sb.append(i++).append(". [").append(labelOf(e.getSourceClass())).append("] ")
           .append(e.getTitle().replace("\n", " ")).append("\n");
+      if (e.getSourceClass() == SourceClass.OPERATOR_MATERIAL) {
+        // 운영자 직접 경험과 전자책은 같은 라벨 묶음이지만 provenance 가 다르다 — 답변에서도 구분해 쓰게 한다.
+        sb.append("   자료 성격: ").append(isOperatorExperience(e) ? "운영자 직접 경험" : "전자책").append("\n");
+      }
       String when = timeOf(e.getNote());
       if (when != null) sb.append("   시점: ").append(when).append("\n");
       String excerpt = e.getExcerpt() == null ? "" : e.getExcerpt().replace("\n", " ");
