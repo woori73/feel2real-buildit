@@ -48,6 +48,7 @@ public class NaverAccountResolutionService {
   public User resolveUser(NaverProfileIdentity identity) {
     Optional<User> existingUser = findLinkedUser(identity.providerUserId());
     if (existingUser.isPresent()) {
+      refreshProviderEmail(identity);
       log.info("NAVER_ACCOUNT_RESOLVED existing=true");
       return existingUser.get();
     }
@@ -62,6 +63,23 @@ public class NaverAccountResolutionService {
           .orElseThrow(() -> raceLoserException); // 정말 unique 위반이 아니었으면 원래 예외를 던진다
       log.info("NAVER_ACCOUNT_RESOLVED existing=true");
       return winner;
+    }
+  }
+
+  /**
+   * 기존 회원도 로그인마다 OAuth 이메일을 소셜 계정에 갱신한다(이메일 동의 이전 가입자·이메일 변경자 대응).
+   * 실패해도 로그인 자체를 막지 않는다 — 감사회원 셀프 인증 판정 보조 정보일 뿐이다. 이메일은 로그에 남기지 않는다.
+   */
+  private void refreshProviderEmail(NaverProfileIdentity identity) {
+    try {
+      socialAccountRepository.findByProviderAndProviderUserId(SocialProvider.NAVER, identity.providerUserId())
+          .ifPresent(account -> {
+            if (account.refreshProviderEmail(identity.email())) {
+              socialAccountRepository.save(account);
+            }
+          });
+    } catch (RuntimeException e) {
+      log.warn("NAVER_PROVIDER_EMAIL_REFRESH_FAILED type={}", e.getClass().getSimpleName());
     }
   }
 
