@@ -14,8 +14,21 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "app.newstart.llm")
 public class NewStartLlmProperties {
 
+  /**
+   * 지피지기 LLM primary. {@code wiki-router}(기본, 기존 내신Wiki AI Router=Qwen) 또는 {@code nvidia}(NVIDIA NIM Nemotron).
+   * NVIDIA는 응답시간 변동(29초~180초 초과)으로 primary에서 제외했지만 비교·재사용을 위해 코드와 설정을 보존한다.
+   */
+  private String primary = "wiki-router";
   private final NvidiaNim nvidia = new NvidiaNim();
   private final OpenRouter openrouter = new OpenRouter();
+
+  public String getPrimary() {
+    return primary;
+  }
+
+  public void setPrimary(String value) {
+    primary = value;
+  }
 
   public NvidiaNim getNvidia() {
     return nvidia;
