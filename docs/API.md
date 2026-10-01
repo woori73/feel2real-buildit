@@ -113,6 +113,21 @@
 
 DB: `newstart_chat_messages`(V981) — `message_id` PK, `user_id` FK(users.user_id), `message` VARCHAR(500), `deleted` soft delete flag. 화면: `/newstart/chat`(공개 — 데이터는 전부 인증 뒤, 비로그인 시 로그인 모달 안내).
 
+### NewStart 접속상태 + 내부 쪽지 (V1017)
+
+HOME 왼쪽 패널(PC 상시 레일 + 모바일 슬라이드)의 접속 회원 목록과 1:1 내부 쪽지. GRANT/OAuth/THANKS 판정과 무관 — 인증 회원 전체가 사용하고, 비로그인은 `/api/**` catch-all이 `401`.
+
+- `POST /api/newstart/presence/ping` — heartbeat 수신 + 본인 설정 반환. 60초 이내 중복은 쓰기 생략.
+- `GET /api/newstart/presence/online` — 현재 접속 회원(숨김·본인 제외, 최근 본 순, 최대 100). `{ userId, displayNickname, lastSeenAt }` — 별명은 서버 resolve(식별자 아님).
+- `GET /api/newstart/presence/settings` / `PUT /api/newstart/presence/settings {hideOnline, dmBlocked}` — 본인 설정 조회·변경.
+- `POST /api/newstart/dm/send {receiverUserId, message}` — 전송(≤1000자). 수신 거부·본인·없는 회원·도배는 거부(`400`, 도배만 `429`).
+- `GET /api/newstart/dm/inbox?before=&limit={1~50, 기본 20}` — 받은 쪽지함(최신순).
+- `GET /api/newstart/dm/unread-count` — `{ unreadCount }`.
+- `POST /api/newstart/dm/{messageId}/read` — 읽음 표시(수신자 본인만).
+- `DELETE /api/newstart/dm/{messageId}` — 받은 쪽지 삭제(수신자 본인만, 단일 복사본 삭제).
+
+DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽지 삭제·수정 endpoint 없음. RAG·AI 학습에 사용하지 않는다.
+
 ### NewStart 질문요청 게시판 (설계 §5, V1012)
 
 [질문·조사 요청]과 [사이트 개선 요청]을 한 인박스로 받는 게시판. **읽기·쓰기(작성·취소) 모두 인증 회원 전체**다 — 질문요청은 일반회원의 기본 기능이며 감사회원(THANKS_MEMBER) grant를 요구하지 않는다(2026-09-29 운영정책, §5-B blocker 해제). 운영자의 상태 관리는 `/api/admin/**`(hasRole ADMIN) 경로로만 들어온다. GitHub issue 자동 생성은 없다 — `githubRef`는 반영 시점에 운영자가 수기로 기입한다.

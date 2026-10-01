@@ -7,7 +7,7 @@
   <meta name="description" content="내 상황 확인, 지피지기 Agent, 회원 채팅, 관련 기관 공시 업데이트를 한곳에서 이용하는 Feel2Real의 독립 서비스">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20261001-3">
+  <link rel="stylesheet" href="/css/newstart.css?v=20261001-4">
 </head>
 <body>
   <div class="newstart-page">
@@ -21,6 +21,38 @@
           <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
         </nav>
       </header>
+
+      <button id="ns-presence-edge" class="ns-presence-edge" type="button" hidden>
+        <span aria-hidden="true">접속회원</span>
+        <span id="ns-presence-edge-count">0</span>
+        <span id="ns-presence-edge-unread" class="ns-presence-unread" hidden>0</span>
+      </button>
+      <button id="ns-presence-rail" class="ns-presence-rail" type="button" hidden aria-label="접속 회원 열기">
+        <span class="ns-presence-dot" aria-hidden="true"></span>
+        <span id="ns-presence-rail-count">0</span>
+        <span id="ns-presence-rail-unread" class="ns-presence-unread" hidden>0</span>
+      </button>
+      <aside id="ns-presence-panel" class="ns-presence-panel" role="dialog" aria-label="접속 회원과 쪽지" hidden>
+        <div class="ns-presence-head">
+          <strong>접속 회원 <span id="ns-presence-online-count">0</span></strong>
+          <span id="ns-presence-unread" class="ns-presence-unread" hidden>읽지 않음 <span id="ns-presence-unread-count">0</span></span>
+          <button id="ns-presence-close" class="ns-btn ns-btn-ghost" type="button">닫기</button>
+        </div>
+        <p class="ns-note">닉네임을 누르면 쪽지를 보낼 수 있습니다.</p>
+        <ul id="ns-presence-list" class="ns-presence-list"></ul>
+        <div id="ns-presence-compose" class="ns-presence-compose" hidden>
+          <p class="ns-presence-to">받는 사람: <strong id="ns-presence-to-name"></strong> <button id="ns-presence-cancel" type="button">취소</button></p>
+          <textarea id="ns-presence-input" class="ns-input" rows="2" maxlength="1000" placeholder="쪽지 내용을 입력하세요"></textarea>
+          <button id="ns-presence-send" class="ns-btn ns-btn-primary" type="button">보내기</button>
+          <p id="ns-presence-msg" class="ns-note" role="status" hidden></p>
+        </div>
+        <h2 class="ns-presence-sub">받은 쪽지</h2>
+        <ul id="ns-presence-inbox" class="ns-presence-inbox"></ul>
+        <button id="ns-presence-more" class="ns-btn ns-btn-ghost" type="button" hidden>더 보기</button>
+        <h2 class="ns-presence-sub">내 설정</h2>
+        <label class="ns-presence-setting"><input type="checkbox" id="ns-presence-hide"> 접속상태 숨기기</label>
+        <label class="ns-presence-setting"><input type="checkbox" id="ns-presence-block"> 쪽지 수신 거부</label>
+      </aside>
 
       <main>
         <section class="ns-hero" aria-labelledby="ns-hero-title" data-ns-reveal>
@@ -135,5 +167,6 @@
   <script src="/js/newstart-motion.js?v=20260927-2" defer></script>
   <script src="/js/newstart.js?v=20261001-2" defer></script>
   <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
+  <script src="/js/newstart-presence.js?v=20261001-1" defer></script>
 </body>
 </html>

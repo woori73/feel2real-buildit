@@ -541,3 +541,88 @@ html, body { max-width: 100%; overflow-x: clip; }
 }
 .ns-section-kicker .ns-member-badge { margin-left: 6px; }
 .ns-feature-card .ns-member-badge { align-self: flex-start; margin-top: 8px; }
+
+/* ══ 2026-10-01 접속 회원 + 내부 쪽지 패널 (HOME 전용, 모바일 우선) ══
+   모바일(<1024px): 왼쪽 엣지 탭 1종. PC(1024px↑): 왼쪽 레일 상시 표시.
+   패널은 왼쪽 슬라이드 1종으로 통일. 카드·버튼 기존 구조 변경 없음. */
+.ns-presence-edge {
+  display: inline-flex; position: fixed; left: 0; top: 42%; z-index: 900;
+  align-items: center; gap: 4px; min-height: 44px; max-width: 46vw;
+  padding: 10px 10px 10px 8px; border: 1px solid var(--ns-line); border-left: none;
+  border-radius: 0 14px 14px 0; background: #fff; color: var(--ns-ink);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+  box-shadow: 4px 4px 16px rgba(16, 24, 40, .10);
+}
+.ns-presence-edge .ns-presence-unread {
+  position: absolute; top: -8px; right: -6px;
+}
+/* author display 규칙이 UA [hidden]을 이기므로 명시 방어(#350 동일 결함). */
+.ns-presence-edge[hidden], .ns-presence-rail[hidden] { display: none !important; }
+.ns-presence-rail .ns-presence-unread {
+  position: absolute; top: -8px; right: -4px;
+}
+.ns-presence-rail {
+  display: none; position: fixed; left: 12px; top: 50%; z-index: 900;
+  transform: translateY(-50%); min-width: 52px; min-height: 52px;
+  align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--ns-line); border-radius: 999px; background: #fff;
+  color: var(--ns-ink); font-size: 13px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, .08); padding: 6px 12px;
+}
+@media (min-width: 1024px) {
+  .ns-presence-edge { display: none; }
+  .ns-presence-rail { display: inline-flex; }
+}
+.ns-presence-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: #16a34a; flex-shrink: 0;
+}
+.ns-presence-panel {
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 1000;
+  width: min(340px, 94vw); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: #fff; border-right: 1px solid var(--ns-line);
+  box-shadow: 8px 0 32px rgba(16, 24, 40, .10);
+  padding: 16px 14px calc(20px + env(safe-area-inset-bottom));
+  transform: translateX(-105%); transition: transform var(--ns-motion-normal, 300ms) var(--ns-ease-out, ease);
+}
+.ns-presence-panel.is-open { transform: none; }
+.ns-presence-panel[hidden] { display: none !important; }
+.ns-presence-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ns-presence-head strong { font-size: 16px; }
+.ns-presence-head .ns-btn { margin-left: auto; min-height: 44px; }
+.ns-presence-unread {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; background: #fef3c7; color: #92400e; white-space: nowrap;
+}
+.ns-presence-unread[hidden] { display: none !important; }
+.ns-presence-list, .ns-presence-inbox { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.ns-presence-member {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 6px 10px; font: inherit; font-size: 14px; font-weight: 600;
+  color: var(--ns-ink); background: #fff; border: 1px solid var(--ns-line);
+  border-radius: 12px; cursor: pointer; text-align: left;
+}
+.ns-presence-member:hover { border-color: #b9c9e3; background: var(--ns-blue-soft); }
+.ns-presence-compose { margin-top: 10px; display: grid; gap: 8px; }
+.ns-presence-compose[hidden] { display: none !important; }
+.ns-presence-to { margin: 0; font-size: 13px; color: var(--ns-muted); }
+.ns-presence-to button {
+  border: none; background: none; color: var(--ns-blue); font: inherit;
+  font-size: 13px; font-weight: 700; cursor: pointer; padding: 6px 4px;
+}
+.ns-presence-compose .ns-input { min-height: 64px; resize: vertical; }
+.ns-presence-compose .ns-btn { min-height: 44px; }
+.ns-presence-sub { margin: 18px 0 0; font-size: 14px; font-weight: 800; }
+.ns-presence-dm { border: 1px solid var(--ns-line); border-radius: 12px; padding: 10px 12px; }
+.ns-presence-dm.is-unread { border-color: var(--ns-blue); background: var(--ns-blue-soft); cursor: pointer; }
+.ns-presence-dm-head { margin: 0 0 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ns-muted); }
+.ns-presence-dm-head strong { color: var(--ns-ink); font-size: 13px; }
+.ns-presence-dm-body { margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ns-presence-dm-del {
+  border: none; background: none; color: var(--ns-muted); font: inherit;
+  font-size: 12px; cursor: pointer; padding: 6px 4px; min-height: 32px; text-decoration: underline;
+}
+.ns-presence-setting { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; cursor: pointer; }
+.ns-presence-setting input { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) {
+  .ns-presence-panel { transition: none; }
+}
