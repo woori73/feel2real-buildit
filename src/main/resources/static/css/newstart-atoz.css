@@ -1,45 +1,92 @@
-/* NewStart A to Z — 2026-09-24 현행 검증본 기반 전체 여정 STEP UI */
-.az-page { --az-blue: #2563eb; --az-blue-soft: #eef3ff; --az-ink: #111827; --az-muted: #5b6472; --az-line: #e5e7eb; }
+/* NewStart A to Z — 2026-09-24 현행 검증본 기반 전체 여정 STEP UI
+   2026-10-01 모바일 퍼스트 가독성 개편 (USWDS/GOV.UK/Pico 패턴 선별 적용):
+   - 본문 17px 이상 · line-height 1.7 전후 · 진한 본문색(--az-body) · 굵기 상향
+   - 제목(800) / 핵심 설명(600) / 본문(400~500) / 보조(태그·배지) 시각 위계 분리
+   - 상단 sticky 목차 칩(48px 터치 타깃) + 현재 위치 표시
+   - 긴 세부 설명만 <details> 접기(자세한 설명) — 핵심 결론·지금 할 일·CTA는 펼침 유지
+   콘텐츠·공식 URL·태그 계약은 불변(newstart_atoz_content_contract.test.js). */
+.az-page {
+  --az-blue: #2563eb;
+  --az-blue-soft: #eef3ff;
+  --az-ink: #111827;    /* 제목 */
+  --az-body: #2f3947;   /* 본문 — 충분히 진한 색 */
+  --az-muted: #4b5563;  /* 보조 — 회색 다단 방지용으로 어둡게 */
+  --az-line: #e5e7eb;
+}
 
 .az-hero { margin-top: 24px; }
-.az-hero h1 { font-size: clamp(30px, 8vw, 44px); letter-spacing: -.05em; margin: 6px 0 10px; color: var(--az-ink); }
-.az-hero-copy { color: var(--az-muted); line-height: 1.7; font-size: 15px; }
+.az-hero h1 { font-size: clamp(28px, 7.6vw, 44px); font-weight: 800; line-height: 1.25; letter-spacing: -.045em; margin: 8px 0 12px; color: var(--az-ink); word-break: keep-all; }
+.az-hero-copy { font-size: 17.5px; font-weight: 500; line-height: 1.7; color: #3f4a5a; word-break: keep-all; }
 
 /* 태그 범례 */
 .az-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; padding: 14px; border: 1px solid var(--az-line); border-radius: 14px; background: #fff; }
-.az-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--az-muted); }
+.az-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; line-height: 1.5; color: var(--az-muted); }
 
-/* 출처 태그 */
-.az-tag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; vertical-align: middle; }
+/* 출처 태그 (보조 배지) */
+.az-tag { display: inline-block; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 999px; vertical-align: middle; }
 .az-tag-official { background: #e8f0fe; color: #1a56c4; }
 .az-tag-operator { background: #fdf3e3; color: #8a5a12; }
 .az-tag-member { background: #f3e8fd; color: #7a2bc4; }
 .az-tag-recheck { background: #fdecec; color: #b3261e; }
 
+/* ── sticky 목차 칩 (신규 · 모바일 우선) ────────────────────────────────
+   GOV.UK step navigation / USWDS 탭 유사 패턴 — 엄지로 누르기 쉬운48px+
+   타깃, 가로 스크롤, 현재 단계는 aria-current로 강조. JS 없어도 앵커만으로 동작. */
+.az-toc {
+  position: sticky; top: 0; z-index: 40;
+  margin-top: 14px; padding: 10px 0;
+  margin-inline: -18px; padding-inline: 18px;
+  background: rgba(247, 249, 252, .96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--az-line);
+}
+.az-toc-track {
+  display: flex; gap: 8px;
+  overflow-x: auto; padding: 2px 0 4px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.az-toc-track::-webkit-scrollbar { display: none; }
+.az-toc a {
+  flex: 0 0 auto; scroll-snap-align: start;
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 48px; padding: 10px 16px;
+  border: 1.5px solid var(--az-line); border-radius: 999px;
+  background: #fff; color: var(--az-ink);
+  font-size: 16.5px; font-weight: 700; white-space: nowrap; text-decoration: none;
+}
+.az-toc a:hover { border-color: var(--az-blue); }
+.az-toc a[aria-current="location"] { background: var(--az-blue); border-color: var(--az-blue); color: #fff; }
+.az-toc-num { font-size: 13.5px; font-weight: 900; color: var(--az-blue); }
+.az-toc a[aria-current="location"] .az-toc-num { color: rgba(255, 255, 255, .9); }
+
 /* 전체 여정 내비 */
-.az-journey { margin-top: 22px; padding: 18px 16px; border: 1.5px solid var(--az-blue); border-radius: 18px; background: var(--az-blue-soft); }
-.az-journey-title { font-size: 17px; font-weight: 800; margin: 0 0 4px; color: var(--az-ink); }
-.az-journey-sub { font-size: 13px; color: var(--az-muted); margin: 0 0 12px; }
+.az-journey { margin-top: 22px; padding: 18px 16px; border: 1.5px solid var(--az-blue); border-radius: 18px; background: var(--az-blue-soft); scroll-margin-top: 76px; }
+.az-journey-title { font-size: 18.5px; font-weight: 800; margin: 0 0 6px; color: var(--az-ink); }
+.az-journey-sub { font-size: 16px; line-height: 1.6; color: var(--az-muted); margin: 0 0 14px; word-break: keep-all; }
 .az-journey-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: az-step; }
-.az-journey-list a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 12px; background: #fff; border: 1px solid var(--az-line); border-radius: 12px; text-decoration: none; color: var(--az-ink); font-weight: 700; font-size: 14.5px; }
+.az-journey-list a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 11px 13px; background: #fff; border: 1px solid var(--az-line); border-radius: 12px; text-decoration: none; color: var(--az-ink); font-weight: 700; font-size: 16.5px; line-height: 1.4; }
 .az-journey-list a:hover { border-color: var(--az-blue); }
-.az-journey-num { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--az-blue); color: #fff; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.az-journey-num { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--az-blue); color: #fff; font-size: 13.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
 .az-journey-arrow { display: none; }
 
 /* STEP 카드 */
-.az-step { margin-top: 26px; padding: 22px 18px 24px; border: 1px solid var(--az-line); border-radius: 20px; background: #fff; scroll-margin-top: 16px; }
-.az-step-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
-.az-step-num { font-size: 13px; font-weight: 900; color: var(--az-blue); letter-spacing: .08em; }
-.az-step h2 { font-size: clamp(22px, 6vw, 30px); letter-spacing: -.04em; margin: 0; color: var(--az-ink); }
-.az-who { display: inline-block; margin: 8px 0 12px; padding: 8px 12px; border-left: 4px solid var(--az-blue); background: var(--az-blue-soft); border-radius: 0 10px 10px 0; font-size: 13.5px; font-weight: 700; color: #1a56c4; }
-.az-core { font-size: 15.5px; line-height: 1.75; color: var(--az-ink); }
-.az-h3 { font-size: 16.5px; font-weight: 800; color: var(--az-ink); margin: 20px 0 6px; letter-spacing: -.02em; }
+.az-step { margin-top: 24px; padding: 22px 18px 26px; border: 1px solid var(--az-line); border-radius: 20px; background: #fff; scroll-margin-top: 76px; }
+.az-step-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.az-step-num { font-size: 14.5px; font-weight: 900; color: var(--az-blue); letter-spacing: .08em; }
+.az-step h2 { font-size: clamp(24px, 6vw, 30px); font-weight: 800; line-height: 1.3; letter-spacing: -.04em; margin: 0; color: var(--az-ink); word-break: keep-all; }
+.az-who { display: inline-block; margin: 10px 0 14px; padding: 9px 13px; border-left: 4px solid var(--az-blue); background: var(--az-blue-soft); border-radius: 0 10px 10px 0; font-size: 17px; font-weight: 700; line-height: 1.6; color: #174291; word-break: keep-all; }
+.az-core { font-size: 18.5px; line-height: 1.75; font-weight: 600; color: var(--az-ink); word-break: keep-all; }
+.az-core strong { font-weight: 800; }
+.az-h3 { font-size: 19.5px; font-weight: 800; line-height: 1.4; color: var(--az-ink); margin: 26px 0 8px; letter-spacing: -.02em; word-break: keep-all; }
 
-/* 확인/준비/주의 블록 */
-.az-block { margin-top: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--az-line); }
-.az-block-title { font-size: 13.5px; font-weight: 900; margin: 0 0 8px; color: var(--az-ink); }
-.az-block ul { margin: 0; padding-left: 20px; display: grid; gap: 7px; }
-.az-block li { font-size: 14px; line-height: 1.65; color: #374151; }
+/* 확인/준비/주의 블록 — 지금 할 일이므로 접지 않는다 */
+.az-block { margin-top: 16px; padding: 16px 15px; border-radius: 14px; border: 1px solid var(--az-line); }
+.az-block-title { font-size: 16px; font-weight: 900; margin: 0 0 9px; color: var(--az-ink); }
+.az-block ul { margin: 0; padding-left: 22px; display: grid; gap: 9px; }
+.az-block li { font-size: 17.5px; line-height: 1.7; color: var(--az-body); word-break: keep-all; }
 .az-block-check { background: #f4f8ff; border-color: #d7e4fb; }
 .az-block-check .az-block-title { color: #1a56c4; }
 .az-block-prepare { background: #f3faf4; border-color: #d3ecd8; }
@@ -48,60 +95,84 @@
 .az-block-caution .az-block-title { color: #8a5a12; }
 
 /* 경험·사례·재확인 본문 */
-.az-source { margin-top: 14px; padding: 14px; border-radius: 14px; border: 1px solid var(--az-line); background: #fbfcfe; }
-.az-source p, .az-source li { font-size: 14px; line-height: 1.7; color: #374151; margin: 6px 0; }
-.az-source ul, .az-source ol { margin: 6px 0; padding-left: 20px; display: grid; gap: 7px; }
+.az-source { margin-top: 16px; padding: 16px 15px; border-radius: 14px; border: 1px solid var(--az-line); background: #fbfcfe; }
+.az-source p, .az-source li { font-size: 17.5px; line-height: 1.75; color: var(--az-body); margin: 8px 0; word-break: keep-all; }
+.az-source ul, .az-source ol { margin: 8px 0; padding-left: 22px; display: grid; gap: 8px; }
+.az-source strong { font-weight: 800; }
 .az-source-official { border-left: 4px solid #1a56c4; }
 .az-source-operator { border-left: 4px solid #b7791f; background: #fffaf0; }
 .az-source-member { border-left: 4px solid #7a2bc4; background: #faf6ff; }
 .az-source-recheck { border-left: 4px solid #b3261e; background: #fff8f7; }
-.az-quote { margin: 10px 0 0; padding: 12px 14px; border-left: 3px solid #d0d5dd; background: #fff; color: #4b5563; font-size: 13.5px; line-height: 1.7; border-radius: 0 10px 10px 0; }
-.az-quote-title { font-weight: 800; color: var(--az-ink); margin: 0 0 4px; font-size: 13.5px; }
+.az-quote { margin: 12px 0 0; padding: 13px 15px; border-left: 3px solid #d0d5dd; background: #fff; color: #3f4a5a; font-size: 16.5px; line-height: 1.75; border-radius: 0 10px 10px 0; word-break: keep-all; }
+.az-quote-title { font-weight: 800; color: var(--az-ink); margin: 0 0 6px; font-size: 16px; }
+
+/* ── 긴 세부 설명만 접는 아코디언 (신규) ────────────────────────────────
+   native <details>/<summary>: 키보드 접근·aria 확장 상태 기본 제공,
+   JS 실패와 무관하게 항상 열 수 있다. 핵심 결론·지금 할 일·CTA는 바깥에 둔다. */
+.az-details { margin-top: 16px; border: 1px dashed #c9d4e5; border-radius: 14px; background: #f8fafd; }
+.az-details > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  min-height: 52px; padding: 13px 16px;
+  font-size: 16.5px; font-weight: 800; color: var(--az-blue);
+}
+.az-details > summary::-webkit-details-marker { display: none; }
+.az-details > summary::after { content: "▼"; font-size: 12px; color: var(--az-blue); transition: transform .15s ease; }
+.az-details[open] > summary::after { transform: rotate(180deg); }
+.az-details[open] > summary { border-bottom: 1px dashed #dbe4f2; border-radius: 13px 13px 0 0; }
+.az-details[open] { background: #fff; }
+.az-details .az-source { margin: 14px; }
+.az-details > summary:focus-visible { outline: 3px solid rgba(37, 99, 235, .35); outline-offset: 2px; border-radius: 12px; }
 
 /* 회원 사례 타임라인 */
-.az-timeline { list-style: none; margin: 10px 0 0; padding: 0; }
-.az-timeline li { position: relative; padding: 0 0 14px 26px; border-left: 2px solid #e4d5f7; margin-left: 8px; }
+.az-timeline { list-style: none; margin: 12px 0 0; padding: 0; }
+.az-timeline li { position: relative; padding: 0 0 15px 26px; border-left: 2px solid #e4d5f7; margin-left: 8px; }
 .az-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
-.az-timeline li::before { content: ""; position: absolute; left: -7px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #7a2bc4; }
-.az-timeline-date { font-weight: 900; color: #7a2bc4; font-size: 13.5px; margin-right: 6px; }
-.az-timeline-text { font-size: 14px; color: #374151; }
+.az-timeline li::before { content: ""; position: absolute; left: -7px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: #7a2bc4; }
+.az-timeline-date { font-weight: 900; color: #7a2bc4; font-size: 16px; margin-right: 6px; }
+.az-timeline-text { font-size: 17px; line-height: 1.6; color: var(--az-body); }
 
 /* CTA */
-.az-cta-row { display: grid; gap: 10px; margin-top: 18px; }
-.az-cta { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px; padding: 14px 18px; border-radius: 14px; font-size: 15.5px; font-weight: 800; text-decoration: none; text-align: center; letter-spacing: -.01em; }
+.az-cta-row { display: grid; gap: 10px; margin-top: 20px; }
+.az-cta { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 56px; padding: 15px 18px; border-radius: 14px; font-size: 17px; font-weight: 800; text-decoration: none; text-align: center; letter-spacing: -.01em; }
 .az-cta-official { background: var(--az-blue); color: #fff; border: 1px solid var(--az-blue); }
 .az-cta-official:hover { background: #1d4ed8; color: #fff; }
 .az-cta-video { background: #111827; color: #fff; border: 1px solid #111827; }
 .az-cta-video:hover { background: #1f2937; color: #fff; }
 .az-cta-internal { background: #fff; color: var(--az-blue); border: 1.5px solid var(--az-blue); }
 .az-cta-internal:hover { background: var(--az-blue-soft); color: #1a56c4; }
-.az-phone { margin-top: 10px; font-size: 13.5px; color: var(--az-muted); }
-.az-phone strong { color: var(--az-ink); }
+.az-phone { margin-top: 12px; font-size: 16.5px; line-height: 1.6; color: #475467; }
+.az-phone strong { color: var(--az-ink); font-weight: 800; }
 
 /* 다음 단계 */
-.az-next { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--az-line); flex-wrap: wrap; }
-.az-next a { font-size: 14px; font-weight: 800; color: var(--az-blue); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.az-next { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--az-line); flex-wrap: wrap; }
+.az-next a { font-size: 16.5px; font-weight: 800; color: var(--az-blue); text-decoration: none; min-height: 48px; display: inline-flex; align-items: center; }
 .az-next a:hover { text-decoration: underline; }
 
 /* 영상 단계 */
-.az-video-steps { counter-reset: azv; list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
-.az-video-steps li { counter-increment: azv; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.6; color: #374151; }
-.az-video-steps li::before { content: counter(azv); flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #111827; color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+.az-video-steps { counter-reset: azv; list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 9px; }
+.az-video-steps li { counter-increment: azv; display: flex; gap: 11px; align-items: flex-start; font-size: 17px; line-height: 1.65; color: var(--az-body); word-break: keep-all; }
+.az-video-steps li::before { content: counter(azv); flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: #111827; color: #fff; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
 
-/* 흐름 화살표 리스트 */
-.az-flow { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
-.az-flow li { background: #f4f8ff; border: 1px solid #d7e4fb; border-radius: 10px; padding: 9px 12px; font-size: 13.5px; font-weight: 700; color: #1a56c4; }
+/* 흐름 화살표 리스트 — USWDS process list 응용: 번호를 되살려 "지금 할 일" 위계 강화 */
+.az-flow { list-style: decimal; margin: 12px 0 0; padding-left: 27px; display: grid; gap: 8px; }
+.az-flow li { background: #f4f8ff; border: 1px solid #d7e4fb; border-radius: 10px; padding: 11px 14px; font-size: 16.5px; font-weight: 700; line-height: 1.6; color: #174291; word-break: keep-all; }
+.az-flow li::marker { color: var(--az-blue); font-weight: 900; }
+.az-flow li a { color: inherit; }
 
 /* 참고 섹션 */
-.az-ref { margin-top: 26px; padding: 22px 18px; border: 1px solid var(--az-line); border-radius: 20px; background: #fff; }
-.az-ref h2 { font-size: 21px; margin: 0 0 10px; letter-spacing: -.03em; }
-.az-ref ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
-.az-ref li { font-size: 13.5px; line-height: 1.6; }
+.az-ref { margin-top: 26px; padding: 22px 18px; border: 1px solid var(--az-line); border-radius: 20px; background: #fff; scroll-margin-top: 76px; }
+.az-ref h2 { font-size: 23px; font-weight: 800; margin: 0 0 12px; letter-spacing: -.03em; }
+.az-ref ul { margin: 0; padding-left: 22px; display: grid; gap: 9px; }
+.az-ref li { font-size: 16.5px; line-height: 1.7; }
 .az-ref a { color: var(--az-blue); word-break: break-all; }
 .az-ref details { margin-top: 14px; }
-.az-ref summary { cursor: pointer; font-weight: 800; font-size: 14.5px; color: #b3261e; padding: 6px 0; }
-.az-back-top { display: inline-flex; align-items: center; min-height: 44px; margin-top: 14px; font-weight: 800; color: var(--az-blue); text-decoration: none; }
+.az-ref summary { cursor: pointer; font-weight: 800; font-size: 16.5px; min-height: 48px; display: flex; align-items: center; color: #b3261e; }
+.az-back-top { display: inline-flex; align-items: center; min-height: 48px; margin-top: 14px; font-size: 16.5px; font-weight: 800; color: var(--az-blue); text-decoration: none; }
 
+@media (min-width: 560px) {
+  .az-toc { margin-inline: -28px; padding-inline: 28px; }
+}
 @media (min-width: 600px) {
   .az-journey-list { grid-template-columns: 1fr 1fr; }
   .az-cta-row { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
@@ -116,11 +187,24 @@
   .az-step { padding: 30px 28px 32px; }
   .az-journey-list { grid-template-columns: 1fr 1fr; gap: 10px; }
 }
+@media (min-width: 768px) {
+  .az-toc { margin-inline: -38px; padding-inline: 38px; }
+}
+@media (min-width: 1024px) {
+  .az-toc { margin-inline: -48px; padding-inline: 48px; }
+}
+@media (max-width: 359px) {
+  .az-toc { margin-inline: -14px; padding-inline: 14px; }
+  .az-toc a { font-size: 15.5px; padding: 10px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .az-details > summary::after { transition: none; }
+}
 
 /* 지급명령 기한 강조 · 체크리스트 (2026-09-29 user content rewrite) */
-.az-deadline { margin-top: 14px; padding: 16px 14px; border: 2px solid #b3261e; border-radius: 14px; background: #fff4f3; }
-.az-deadline-tag { margin: 0 0 6px; font-size: 12.5px; font-weight: 900; color: #b3261e; letter-spacing: .02em; }
-.az-deadline-main { margin: 0; font-size: 17px; font-weight: 900; color: #7f1d1d; line-height: 1.5; letter-spacing: -.02em; }
-.az-deadline-sub { margin: 8px 0 0; font-size: 13.5px; line-height: 1.65; color: #6b2018; }
-.az-checklist { list-style: none; margin: 0; padding-left: 2px; display: grid; gap: 8px; }
-.az-checklist li { font-size: 14px; line-height: 1.6; color: #374151; }
+.az-deadline { margin-top: 16px; padding: 17px 15px; border: 2px solid #b3261e; border-radius: 14px; background: #fff4f3; }
+.az-deadline-tag { margin: 0 0 7px; font-size: 14px; font-weight: 900; color: #b3261e; letter-spacing: .02em; }
+.az-deadline-main { margin: 0; font-size: 19px; font-weight: 900; color: #7f1d1d; line-height: 1.5; letter-spacing: -.02em; word-break: keep-all; }
+.az-deadline-sub { margin: 9px 0 0; font-size: 16.5px; line-height: 1.7; color: #6b2018; word-break: keep-all; }
+.az-checklist { list-style: none; margin: 0; padding-left: 2px; display: grid; gap: 9px; }
+.az-checklist li { font-size: 17px; line-height: 1.7; color: var(--az-body); }

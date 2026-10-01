@@ -649,3 +649,40 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) {
   .ns-presence-panel { transition: none; }
 }
+
+/* ══ 2026-10-01 NewStart 모바일 퍼스트 가독성 레이어 — HOME ══
+   50~60대 사용자가 본문을 확대하지 않고 읽도록 설명 글씨를 17px 이상·진한 색으로.
+   구조·라우트·카드·CTA·기능은 그대로 — 크기·색·줄간격·여백만 다룬다.
+   (HOUSE: 이 레이어는 파일 마지막에 유지 — 앞선 모든 레이어 위에서 적용된다.) */
+.ns-hero-copy { font-size: 17.5px; line-height: 1.7; font-weight: 500; color: #475467; }
+.ns-debt-desc { font-size: 17px; line-height: 1.7; color: #475467; }
+.ns-feature-copy { font-size: 17px; line-height: 1.65; color: #475467; }
+.ns-service-copy { font-size: 17px; line-height: 1.65; color: #475467; }
+.ns-feature-card strong { font-weight: 800; }
+.ns-service-card strong { font-weight: 800; }
+.ns-feature-cta { font-size: 15.5px; font-weight: 800; }
+.ns-update-item strong { font-size: 16.5px; line-height: 1.55; font-weight: 700; }
+.ns-update-copy small { font-size: 15px; line-height: 1.55; font-weight: 400; color: #475467; }
+.ns-update-source { font-size: 13px !important; }
+.ns-update-date { font-size: 13px !important; }
+.ns-updates-item { font-size: 16px; }
+.ns-updates-date { font-size: 14px; }
+.ns-ai-note { font-size: 16px; line-height: 1.75; }
+.ns-empty { font-size: 15px; line-height: 1.6; }
+.ns-text-link { font-size: 16px; }
+.newstart-topbar .ns-btn { font-size: 15px; }
+.ns-ai-send { font-size: 15px; }
+.newstart-brand-sub { font-size: 11.5px; }
+.ns-footer div > span { font-size: 13px; }
+/* 서비스 카드(회원 채팅·전자책)는 첫 화면을 과도하게 차지하지 않게 압축하되 CTA는 유지 */
+@media (max-width: 620px) {
+  .ns-service-grid { margin-top: 16px; gap: 12px; }
+  .ns-service-card { min-height: 0; padding: 18px; border-radius: 18px; }
+  .ns-service-card strong { font-size: 22px; }
+  .ns-service-cta { padding-top: 12px; font-size: 16px; }
+}
+@media (min-width: 768px) {
+  .ns-hero-copy { font-size: 18.5px; }
+  .ns-debt-desc, .ns-feature-copy, .ns-service-copy { font-size: 17.5px; }
+  .ns-ai-note { font-size: 16.5px; }
+}
