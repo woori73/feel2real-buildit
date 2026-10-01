@@ -1,0 +1,59 @@
+{
+  "page": 3,
+  "chunk": 3,
+  "capturedAt": "2026-10-01T01:59:43.805Z",
+  "url": "https://studio.cafe.naver.com/@31312978/member/list?page=3&perPage=200&activityStopFilter=ALL&memberLevel=150",
+  "records": [
+    {
+      "nickname": "파란하늘56",
+      "grade": "감사멤버",
+      "cafeMemberTag": "a0jud71ry2x7",
+      "activityStop": "-",
+      "nicknameChanged": "-",
+      "memo": "",
+      "gradeChangedDate": "26.03.02.",
+      "autoLevelExcluded": "-",
+      "accumulatedReward": "-",
+      "lastVisitDate": "26.09.30.",
+      "joinedDate": "25.12.03.",
+      "visitCount": "64",
+      "postCount": "3",
+      "commentCount": "6",
+      "likeCount": "21"
+    },
+    {
+      "nickname": "청향만당",
+      "grade": "감사멤버",
+      "cafeMemberTag": "usz08nvwi779",
+      "activityStop": "-",
+      "nicknameChanged": "-",
+      "memo": "",
+      "gradeChangedDate": "26.01.06.",
+      "autoLevelExcluded": "-",
+      "accumulatedReward": "-",
+      "lastVisitDate": "26.04.29.",
+      "joinedDate": "25.12.03.",
+      "visitCount": "95",
+      "postCount": "8",
+      "commentCount": "21",
+      "likeCount": "65"
+    },
+    {
+      "nickname": "현이와덕이",
+      "grade": "감사멤버",
+      "cafeMemberTag": "kxd25pyuzt03",
+      "activityStop": "-",
+      "nicknameChanged": "-",
+      "memo": "",
+      "gradeChangedDate": "26.01.18.",
+      "autoLevelExcluded": "-",
+      "accumulatedReward": "-",
+      "lastVisitDate": "26.10.01.",
+      "joinedDate": "25.12.03.",
+      "visitCount": "349",
+      "postCount": "2",
+      "commentCount": "6",
+      "likeCount": "13"
+    }
+  ]
+}

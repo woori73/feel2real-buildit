@@ -1586,6 +1586,16 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 - 강제 지점은 API/컨트롤러다(읽기 화면에서 버튼을 숨기는 것만으로 처리하지 않음): 미부여 회원의 실행 호출은 `403` + `NewStartEntitlementService.DENIAL_MESSAGE`. 거절 번역은 `NewStartEntitlementExceptionHandler`(newstart 패키지 한정)가 `{status:"error", errorMessage}`로 내보내고, 프론트는 그 문구를 그대로 보여준다.
 - 설명·읽기는 공개 유지: A to Z, `/newstart/fss`의 14단계 안내(`GET /api/newstart/fss/agent/workflow`는 익명 permitAll), 공식 기관 링크.
 
+## NewStart 오픈 전 감사회원 사전자격명부 (V1015)
+
+`newstart_thanks_roster` — 오픈 **전** Cafe Studio `memberLevel=150`(감사멤버) 명부를 스냅샷으로 보존하는 **사전자격(pre-entitlement)** 테이블. `newstart_member_grants`(실제 `THANKS_MEMBER` 실행 권한)와 역할이 다르다: 이 테이블은 "Cafe 에서 감사멤버였음"이라는 사실만 담고, 실행 권한 부여는 오픈 후 확정 매칭된 계정에 대해서만 기존 grant 경로로 수행한다.
+
+- 컬럼: `roster_id` PK(AI), `cafe_member_tag`(Cafe Studio 화면 식별자, 32), `nickname`, `grade`, `grade_changed_at` DATE NULL, `member_level`(150=감사멤버), `source`(기본 `NAVER_CAFE`), `snapshot_date`, `source_url`, `source_file`, `match_status`(기본 `UNMATCHED`), `linked_user_id` FK → `users.user_id`(ON DELETE SET NULL), `linked_provider_user_id`(네이버 OAuth subject), BaseEntity 감사 4컬럼. `UNIQUE(snapshot_date, cafe_member_tag)`.
+- **`cafe_member_tag` ≠ 네이버 `provider_user_id`.** Cafe 태그와 네이버 OAuth subject 를 연결하는 기존 crosswalk/컬럼은 없다. 따라서 매칭 전에는 `match_status='UNMATCHED'`, `linked_user_id`/`linked_provider_user_id`는 NULL이며, **닉네임만으로 계정을 추측 매칭하지 않는다**.
+- **`grade_changed_at`은 "최근 등급변경일"이지 최초 감사멤버 승인일이 아니다.** 신규 감사멤버 판정 근거로 쓰지 않는다.
+- 오픈 후 연결 흐름: 로그인 사용자가 감사회원임이 확정 매칭되면 이 사전자격명부 → `confirmed user` → 기존 `newstart_member_grants`(`THANKS_MEMBER`) 순서로 연결한다. 자동 매칭 알고리즘은 이번 범위에 없다.
+- 초기 적재는 `V1015`의 1회성 seed(2026-10-01 스냅샷 503건, `ON DUPLICATE KEY UPDATE`로 idempotent). 원본은 repository `data/newstart-cafe/thanks-members/roster-2026-10-01/`(RAW 503 / UNIQUE 503 / DUPLICATE 0).
+
 ## NewStart 질문요청 게시판 (V1012)
 
 `newstart_requests` + `newstart_request_status_logs` — 설계 §5의 [질문·조사 요청] / [사이트 개선 요청] 인박스.

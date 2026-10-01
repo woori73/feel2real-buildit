@@ -61,6 +61,8 @@ jobs:
           C.append(q("PHASE2_ROLES", "SELECT role, COUNT(*) AS cnt FROM users GROUP BY role;"))
           C.append(q("PHASE2_OFFICIAL", "SELECT review_status, COUNT(*) AS cnt, MAX(published_at) AS latest_published FROM newstart_official_updates GROUP BY review_status;"))
           C.append(q("PHASE2_TABLES", "SELECT table_name, table_rows AS approx_rows FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'newstart%' ORDER BY table_name;"))
+          # V1015 오픈 전 감사회원 사전자격명부 — 배포 전에는 테이블 부재로 QUERY_FAILED(무해).
+          C.append(q("THANKS_ROSTER", "SELECT (SELECT COUNT(*) FROM newstart_thanks_roster) AS total, (SELECT COUNT(DISTINCT cafe_member_tag) FROM newstart_thanks_roster) AS distinct_tags, (SELECT COUNT(*) FROM newstart_thanks_roster WHERE match_status='UNMATCHED') AS unmatched, (SELECT COUNT(*) FROM newstart_thanks_roster WHERE linked_user_id IS NOT NULL) AS linked;"))
 
           C.append('echo "=== DB_CATEGORY ==="')
           C.append('echo "DB_NAME=${DB_NAME:-unset}"')
