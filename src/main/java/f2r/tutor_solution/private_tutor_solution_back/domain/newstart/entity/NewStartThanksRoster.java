@@ -49,6 +49,15 @@ public class NewStartThanksRoster extends BaseEntity {
   @Column(name = "cafe_member_tag", nullable = false, length = 32)
   private String cafeMemberTag;
 
+  /**
+   * Cafe Studio 화면에서 마스킹되어 노출되는 네이버 ID 접두부(예: {@code ssgw}). 전체 네이버 ID가
+   * 아니며 네이버 OAuth {@code provider_user_id} 와도 다르다. 같은 접두부가 여러 네이버 ID에 존재할 수
+   * 있으므로 단독 확정 식별자가 아니며, 이 값만으로 {@code THANKS_MEMBER} 를 자동 부여하지 않는다 —
+   * 본인확인 보조정보로만 쓴다(V1016).
+   */
+  @Column(name = "naver_id_prefix", length = 64)
+  private String naverIdPrefix;
+
   @Column(name = "nickname", nullable = false, length = 50)
   private String nickname;
 
@@ -83,10 +92,11 @@ public class NewStartThanksRoster extends BaseEntity {
   private String linkedProviderUserId;
 
   @Builder
-  public NewStartThanksRoster(String cafeMemberTag, String nickname, String grade, LocalDate gradeChangedAt,
-      int memberLevel, String source, LocalDate snapshotDate, String sourceUrl, String sourceFile,
-      String matchStatus) {
+  public NewStartThanksRoster(String cafeMemberTag, String naverIdPrefix, String nickname, String grade,
+      LocalDate gradeChangedAt, int memberLevel, String source, LocalDate snapshotDate, String sourceUrl,
+      String sourceFile, String matchStatus) {
     this.cafeMemberTag = cafeMemberTag;
+    this.naverIdPrefix = naverIdPrefix;
     this.nickname = nickname;
     this.grade = grade;
     this.gradeChangedAt = gradeChangedAt;

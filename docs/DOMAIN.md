@@ -1590,11 +1590,13 @@ V1에서 `PUBLISHED` 전이는 ① `app.newstart.jipijigi.publish-enabled=false`
 
 `newstart_thanks_roster` — 오픈 **전** Cafe Studio `memberLevel=150`(감사멤버) 명부를 스냅샷으로 보존하는 **사전자격(pre-entitlement)** 테이블. `newstart_member_grants`(실제 `THANKS_MEMBER` 실행 권한)와 역할이 다르다: 이 테이블은 "Cafe 에서 감사멤버였음"이라는 사실만 담고, 실행 권한 부여는 오픈 후 확정 매칭된 계정에 대해서만 기존 grant 경로로 수행한다.
 
-- 컬럼: `roster_id` PK(AI), `cafe_member_tag`(Cafe Studio 화면 식별자, 32), `nickname`, `grade`, `grade_changed_at` DATE NULL, `member_level`(150=감사멤버), `source`(기본 `NAVER_CAFE`), `snapshot_date`, `source_url`, `source_file`, `match_status`(기본 `UNMATCHED`), `linked_user_id` FK → `users.user_id`(ON DELETE SET NULL), `linked_provider_user_id`(네이버 OAuth subject), BaseEntity 감사 4컬럼. `UNIQUE(snapshot_date, cafe_member_tag)`.
+- 컬럼: `roster_id` PK(AI), `cafe_member_tag`(Cafe Studio 화면 식별자, 32), `naver_id_prefix`(V1016, 네이버 ID 접두부, 64), `nickname`, `grade`, `grade_changed_at` DATE NULL, `member_level`(150=감사멤버), `source`(기본 `NAVER_CAFE`), `snapshot_date`, `source_url`, `source_file`, `match_status`(기본 `UNMATCHED`), `linked_user_id` FK → `users.user_id`(ON DELETE SET NULL), `linked_provider_user_id`(네이버 OAuth subject), BaseEntity 감사 4컬럼. `UNIQUE(snapshot_date, cafe_member_tag)`.
 - **`cafe_member_tag` ≠ 네이버 `provider_user_id`.** Cafe 태그와 네이버 OAuth subject 를 연결하는 기존 crosswalk/컬럼은 없다. 따라서 매칭 전에는 `match_status='UNMATCHED'`, `linked_user_id`/`linked_provider_user_id`는 NULL이며, **닉네임만으로 계정을 추측 매칭하지 않는다**.
+- **`naver_id_prefix`(V1016)는 본인확인 보조정보이지 확정 식별자가 아니다.** Cafe Studio 는 네이버 로그인 ID 를 마스킹해 노출하므로(`maskedMemberId`, 예 `ssgw****`) 전체 네이버 ID 는 화면·내부 API 어디에도 없다. `naver_id_prefix` 는 그 마스킹 값에서 후행 `*` 를 제거한, 실제 노출 접두부(예 `ssgw`, `to`)만 담는다 — **전체 ID 가 아니고 네이버 OAuth `provider_user_id` 와도 다르다**. 같은 접두부가 여러 네이버 ID 에 존재할 수 있어(503명 중 distinct 477) **이 값만으로 `THANKS_MEMBER` 를 자동 부여하지 않는다**. 보완 수집 원본은 `data/newstart-cafe/thanks-members/naver-id-prefix-2026-10-01/`(ROSTER 503 / TAG MATCHED 503 / UNMATCHED 0).
 - **`grade_changed_at`은 "최근 등급변경일"이지 최초 감사멤버 승인일이 아니다.** 신규 감사멤버 판정 근거로 쓰지 않는다.
 - 오픈 후 연결 흐름: 로그인 사용자가 감사회원임이 확정 매칭되면 이 사전자격명부 → `confirmed user` → 기존 `newstart_member_grants`(`THANKS_MEMBER`) 순서로 연결한다. 자동 매칭 알고리즘은 이번 범위에 없다.
 - 초기 적재는 `V1015`의 1회성 seed(2026-10-01 스냅샷 503건, `ON DUPLICATE KEY UPDATE`로 idempotent). 원본은 repository `data/newstart-cafe/thanks-members/roster-2026-10-01/`(RAW 503 / UNIQUE 503 / DUPLICATE 0).
+- `V1016` 은 nullable 컬럼 `naver_id_prefix` 를 추가하고(기존 row 무관) 503건을 `(snapshot_date, cafe_member_tag)` 로 찾아 갱신한다 — V1015/RAW/roster 는 수정하지 않는다. 이 단계에서 `THANKS_MEMBER` grant 는 일절 부여하지 않는다.
 
 ## NewStart 질문요청 게시판 (V1012)
 
