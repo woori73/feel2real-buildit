@@ -51,6 +51,7 @@ class NewStartThanksVerificationControllerTest {
   @Autowired MockMvc mockMvc;
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean NewStartThanksVerificationService verificationService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartThanksPreregistrationService preregistrationService;
 
   private Cookie student() { return new Cookie("ACCESS_TOKEN", tokenProvider.issue(7L, "naver_abc", "STUDENT")); }
   private Cookie admin() { return new Cookie("ACCESS_TOKEN", tokenProvider.issue(9L, "admin-f2r", "ADMIN")); }

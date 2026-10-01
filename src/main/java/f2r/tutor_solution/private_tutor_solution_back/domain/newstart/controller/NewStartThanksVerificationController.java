@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartThanksPreregistrationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartThanksVerificationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartThanksVerificationService.Outcome;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,15 +25,29 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewStartThanksVerificationController {
 
   private final NewStartThanksVerificationService verificationService;
+  private final NewStartThanksPreregistrationService preregistrationService;
 
-  public NewStartThanksVerificationController(NewStartThanksVerificationService verificationService) {
+  public NewStartThanksVerificationController(NewStartThanksVerificationService verificationService,
+      NewStartThanksPreregistrationService preregistrationService) {
     this.verificationService = verificationService;
+    this.preregistrationService = preregistrationService;
+  }
+
+  /** 사전등록 회원: OAuth 이메일이 등록값과 정확히 일치하면 입력 없이 자동 연결+부여. 동시 경합(UNIQUE)이면 조용히 무시한다. */
+  private Outcome autoPreregistered(Long userId, String role) {
+    try {
+      return preregistrationService.tryAutoVerify(userId, role).orElse(null);
+    } catch (DataIntegrityViolationException e) {
+      return null;
+    }
   }
 
   @GetMapping("/status")
   public ResponseEntity<Outcome> status(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-    return ResponseEntity.ok(verificationService.status(
-        principal == null ? null : principal.userId(), principal == null ? null : principal.role()));
+    Long userId = principal == null ? null : principal.userId();
+    String role = principal == null ? null : principal.role();
+    Outcome pre = autoPreregistered(userId, role);
+    return ResponseEntity.ok(pre != null ? pre : verificationService.status(userId, role));
   }
 
   @PostMapping
@@ -41,7 +56,8 @@ public class NewStartThanksVerificationController {
     Long userId = principal == null ? null : principal.userId();
     String role = principal == null ? null : principal.role();
     String nickname = request == null ? null : request.nickname();
-    Outcome outcome;
+    Outcome outcome = autoPreregistered(userId, role);
+    if (outcome != null) return ResponseEntity.ok(outcome);
     try {
       outcome = verificationService.verify(userId, role, nickname);
     } catch (DataIntegrityViolationException e) {

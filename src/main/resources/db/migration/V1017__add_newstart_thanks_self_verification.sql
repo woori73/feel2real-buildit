@@ -46,3 +46,24 @@ CREATE TABLE `newstart_thanks_verifications` (
     CONSTRAINT `fk_newstart_thanks_ver_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
     CONSTRAINT `fk_newstart_thanks_ver_roster` FOREIGN KEY (`roster_id`) REFERENCES `newstart_thanks_roster` (`roster_id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 신규 감사회원 사전등록(카페 roster 503명에 없는 회원). 이메일은 운영자가 ADMIN API 로 등록한다(소스 하드코딩 금지).
+-- 인증은 사용자가 이메일을 입력하는 방식이 아니라, Naver OAuth 가 실제 반환한 이메일(user_social_accounts.provider_email)이
+-- 등록된 이메일과 정확히 일치할 때만 한다. 일치하면 OAuth userId 와 1:1 연결 + THANKS_MEMBER 부여.
+CREATE TABLE `newstart_thanks_preregistrations` (
+    `prereg_id` BIGINT NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(100) NOT NULL COMMENT '사전등록 네이버 이메일(소문자 정규화, @naver.com). 공개 화면 노출 금지',
+    `memo` VARCHAR(100) NULL COMMENT '운영자 메모',
+    `linked_user_id` BIGINT NULL COMMENT '연결된 users.user_id',
+    `linked_provider_user_id` VARCHAR(64) NULL COMMENT '연결 시점 네이버 OAuth subject',
+    `linked_at` DATETIME NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_by` VARCHAR(50) NULL,
+    `updated_by` VARCHAR(50) NULL,
+    PRIMARY KEY (`prereg_id`),
+    UNIQUE KEY `uk_newstart_thanks_prereg_email` (`email`),
+    UNIQUE KEY `uk_newstart_thanks_prereg_linked_user` (`linked_user_id`),
+    UNIQUE KEY `uk_newstart_thanks_prereg_linked_provider` (`linked_provider_user_id`),
+    CONSTRAINT `fk_newstart_thanks_prereg_user` FOREIGN KEY (`linked_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

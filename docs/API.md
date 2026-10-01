@@ -88,6 +88,7 @@
 - **ADMIN**: 인증 절차를 거치지 않는다. `GET /status`·`POST /`가 `state=ADMIN`을 돌려주고 아무 기록·연결·부여·알림도 만들지 않으며, 화면은 인증 섹션을 보여주지 않는다. 감사회원 전용 기능 판정은 `NewStartEntitlementService` 한 곳에서 ADMIN을 항상 통과시킨다(모든 현재·향후 `NewStartCapability`).
 - OAuth 이메일: 로그인마다 OAuth가 준 이메일을 `user_social_accounts.provider_email`에 보관한다(`users.email`은 최초 가입 때만 채워져 이메일 동의 이전 가입자·이메일 변경자는 비어 있었다). 판정 전용이며 화면·메일·로그에 노출하지 않는다.
 - 화면: 회원 `/newstart/thanks-guide`(카페 닉네임 입력 1개), 운영자 `/admin/newstart/thanks-exceptions`.
+- **신규 감사회원 사전등록**(카페 roster에 없는 회원, 운영자 전용 `/api/admin/newstart/thanks-preregistrations`): `GET` 목록, `POST {email, memo}` 등록(`@naver.com` 형식만, 소문자 정규화, 중복 400/409), `DELETE /{id}` 미연결 건만 삭제. 인증은 **회원이 이메일을 입력하지 않는다** — 회원 `GET /api/newstart/thanks-verification/status`(및 `POST`) 호출 시 **Naver OAuth가 실제 반환한 이메일**(`user_social_accounts.provider_email`)이 등록값과 정확히 일치하면 OAuth userId와 1:1 연결 + `THANKS_MEMBER` 부여(grantedBy=`thanks-prereg`), 이후 네이버 로그인만으로 이용. 이메일은 소스에 두지 않고 DB에만 저장하며 회원/공개 응답에는 노출하지 않는다(운영자 응답에만 포함). 기존 roster 503명의 자동 인증은 그대로.
 - DB: `V1017__add_newstart_thanks_self_verification.sql` — `user_social_accounts.provider_email`, 신규 `newstart_thanks_verifications`(시도·예외 기록), `newstart_thanks_roster.linked_user_id`·`linked_provider_user_id` UNIQUE(1:1을 DB가 강제, NULL 다중 허용). V1015(503명)·V1016(naver_id_prefix)은 수정하지 않는다.
 
 ### ✅ 감사회원(THANKS_MEMBER) 권한 부여·회수 — ADMIN
