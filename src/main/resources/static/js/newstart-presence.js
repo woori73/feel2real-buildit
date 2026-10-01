@@ -6,15 +6,19 @@
      - 렌더는 textContent/createElement만 사용한다(innerHTML 금지 — 닉네임·쪽지 XSS 방지).
      - 수신자 userId는 JS 변수에만 두고 DOM/요청에 닉네임으로 식별하지 않는다. */
 
-  var openBtn = document.getElementById('ns-presence-open');
+  var edgeBtn = document.getElementById('ns-presence-edge');
   var rail = document.getElementById('ns-presence-rail');
   var panel = document.getElementById('ns-presence-panel');
-  if (!openBtn || !rail || !panel) return;
+  if (!edgeBtn || !rail || !panel) return;
 
   var countEls = [
-    document.getElementById('ns-presence-count'),
+    document.getElementById('ns-presence-edge-count'),
     document.getElementById('ns-presence-rail-count'),
     document.getElementById('ns-presence-online-count')
+  ];
+  var unreadBadges = [
+    document.getElementById('ns-presence-edge-unread'),
+    document.getElementById('ns-presence-rail-unread')
   ];
   var list = document.getElementById('ns-presence-list');
   var inbox = document.getElementById('ns-presence-inbox');
@@ -58,6 +62,11 @@
     countEls.forEach(function (el) { if (el) el.textContent = String(online); });
     if (unreadCount) unreadCount.textContent = String(unread);
     if (unreadWrap) unreadWrap.hidden = !(unread > 0);
+    unreadBadges.forEach(function (el) {
+      if (!el) return;
+      el.textContent = String(unread);
+      el.hidden = !(unread > 0);
+    });
   }
 
   function renderOnline(members) {
@@ -116,6 +125,16 @@
       body.textContent = it.message || '';
       li.appendChild(head);
       li.appendChild(body);
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'ns-presence-dm-del';
+      del.textContent = '삭제';
+      del.setAttribute('aria-label', '쪽지 삭제');
+      del.addEventListener('click', function (e) {
+        e.stopPropagation();
+        deleteMessage(it.messageId, li);
+      });
+      li.appendChild(del);
       if (!it.read) {
         li.setAttribute('role', 'button');
         li.setAttribute('tabindex', '0');
@@ -192,9 +211,20 @@
       .catch(function () { /* 다음 주기에 재시도 */ });
   }
 
+  function deleteMessage(id, li) {
+    json('DELETE', '/api/newstart/dm/' + id)
+      .then(function (res) {
+        if (res.status === 401) { setLoggedOut(); return; }
+        if (!res.ok) throw new Error('delete failed');
+        if (li.parentNode) li.parentNode.removeChild(li);
+        refreshUnread();
+      })
+      .catch(function () { /* 다음 주기에 재시도 */ });
+  }
+
   function setLoggedOut() {
     loggedIn = false;
-    openBtn.hidden = true;
+    edgeBtn.hidden = true;
     rail.hidden = true;
     panel.hidden = true;
     timers.forEach(function (t) { clearInterval(t); });
@@ -213,7 +243,7 @@
     panel.hidden = true;
   }
 
-  openBtn.addEventListener('click', openPanel);
+  edgeBtn.addEventListener('click', openPanel);
   rail.addEventListener('click', openPanel);
   closeBtn.addEventListener('click', closePanel);
   document.addEventListener('keydown', function (e) {
@@ -282,7 +312,7 @@
       loggedIn = true;
       hideBox.checked = !!settings.hideOnline;
       blockBox.checked = !!settings.dmBlocked;
-      openBtn.hidden = false;
+      edgeBtn.hidden = false;
       rail.hidden = false;
       refreshOnline();
       refreshInbox(false);

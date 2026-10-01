@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,6 +63,15 @@ public class NewStartDirectMessageController {
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @PathVariable Long messageId) {
     directMessageService.markRead(principal, messageId);
+    return ResponseEntity.ok().build();
+  }
+
+  /** 받은 쪽지 삭제(수신자 본인만, 단일 복사본 삭제). */
+  @DeleteMapping("/{messageId}")
+  public ResponseEntity<Void> deleteMessage(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable Long messageId) {
+    directMessageService.deleteMessage(principal, messageId);
     return ResponseEntity.ok().build();
   }
 

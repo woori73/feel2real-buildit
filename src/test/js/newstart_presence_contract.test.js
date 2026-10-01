@@ -14,7 +14,9 @@ const js = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/newstart.css'), 'utf8');
 
 test('presence entry points exist and stay login-gated', () => {
-  assert.match(html, /id="ns-presence-open"/);
+  assert.match(html, /id="ns-presence-edge"/);
+  assert.match(html, />접속회원</);
+  assert.match(html, /id="ns-presence-edge-unread"/);
   assert.match(html, /id="ns-presence-rail"/);
   assert.match(html, /id="ns-presence-panel"/);
   assert.match(html, /src="\/js\/newstart-presence\.js\?v=[\d-]+"/);
@@ -31,6 +33,9 @@ test('presence panel exposes online list, compose, inbox and privacy settings', 
   // 수신자는 userId 변수로만 다루고 닉네임 문자열로 식별하지 않는다.
   assert.match(js, /receiverUserId/);
   assert.doesNotMatch(js, /receiverNickname/);
+  // 받은 쪽지 삭제는 수신자 본인 경로로만 나간다.
+  assert.match(js, /\/api\/newstart\/dm\//);
+  assert.match(js, /deleteMessage/);
 });
 
 test('presence rendering is textContent-only', () => {
@@ -41,6 +46,6 @@ test('presence rendering is textContent-only', () => {
 test('presence panel is a left slide-over that stays safe on small screens', () => {
   assert.match(css, /\.ns-presence-panel\s*\{[^}]*left:\s*0/);
   assert.match(css, /\.ns-presence-panel\s*\{[^}]*width:\s*min\(340px,\s*94vw\)/);
-  assert.match(css, /@media \(min-width:\s*1024px\)\s*\{\s*\.ns-presence-rail/);
+  assert.match(css, /@media \(min-width:\s*1024px\)[\s\S]{0,400}?\.ns-presence-rail/);
   assert.match(css, /prefers-reduced-motion/);
 });

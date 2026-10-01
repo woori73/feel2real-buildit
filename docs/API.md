@@ -111,6 +111,7 @@ HOME 왼쪽 패널(PC 상시 레일 + 모바일 슬라이드)의 접속 회원 �
 - `GET /api/newstart/dm/inbox?before=&limit={1~50, 기본 20}` — 받은 쪽지함(최신순).
 - `GET /api/newstart/dm/unread-count` — `{ unreadCount }`.
 - `POST /api/newstart/dm/{messageId}/read` — 읽음 표시(수신자 본인만).
+- `DELETE /api/newstart/dm/{messageId}` — 받은 쪽지 삭제(수신자 본인만, 단일 복사본 삭제).
 
 DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽지 삭제·수정 endpoint 없음. RAG·AI 학습에 사용하지 않는다.
 

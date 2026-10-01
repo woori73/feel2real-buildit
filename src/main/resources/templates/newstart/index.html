@@ -18,14 +18,19 @@
           <span class="newstart-brand-sub">NewStart · Feel2Real</span>
         </a>
         <nav class="newstart-topbar" aria-label="계정 메뉴">
-          <button id="ns-presence-open" class="ns-btn ns-btn-ghost" type="button" hidden>접속 <span id="ns-presence-count">0</span></button>
           <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
         </nav>
       </header>
 
+      <button id="ns-presence-edge" class="ns-presence-edge" type="button" hidden>
+        <span aria-hidden="true">접속회원</span>
+        <span id="ns-presence-edge-count">0</span>
+        <span id="ns-presence-edge-unread" class="ns-presence-unread" hidden>0</span>
+      </button>
       <button id="ns-presence-rail" class="ns-presence-rail" type="button" hidden aria-label="접속 회원 열기">
         <span class="ns-presence-dot" aria-hidden="true"></span>
         <span id="ns-presence-rail-count">0</span>
+        <span id="ns-presence-rail-unread" class="ns-presence-unread" hidden>0</span>
       </button>
       <aside id="ns-presence-panel" class="ns-presence-panel" role="dialog" aria-label="접속 회원과 쪽지" hidden>
         <div class="ns-presence-head">

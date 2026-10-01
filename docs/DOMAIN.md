@@ -1636,6 +1636,6 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 `newstart_member_presence` + `newstart_direct_messages` — PC 왼쪽 패널·모바일 슬라이드에서 접속 회원 목록과 1:1 내부 쪽지(네이버 카페 쪽지와 무관). GRANT/OAuth/THANKS 판정·RAG·AI 학습과 무관한 별도 기능이다.
 
 - `newstart_member_presence`: PK = `users.user_id`(별도 식별자 없음). `last_seen_at`(heartbeat 최종 시각), `hide_online`(접속상태 숨김), `dm_blocked`(쪽지 수신 거부). 행은 첫 ping 시 생성. 온라인 = `last_seen_at >= now - 5분 AND hide_online=false`. ping은 60초 이내 중복 쓰기를 생략한다.
-- `newstart_direct_messages`: `message_id` PK, `sender_user_id`/`receiver_user_id` FK → `users.user_id`(ON DELETE CASCADE), `message` VARCHAR(1000), `is_read` DEFAULT FALSE. 송수신자는 서버 principal·회원 존재 여부로만 결정하고 닉네임 문자열·loginId 저장을 금지 — 표시명은 조회 시 `NewStartMemberProfileService`로 resolve(채팅과 동일 정책). 삭제·수정 endpoint 없음(create + 읽음 표시만).
+- `newstart_direct_messages`: `message_id` PK, `sender_user_id`/`receiver_user_id` FK → `users.user_id`(ON DELETE CASCADE), `message` VARCHAR(1000), `is_read` DEFAULT FALSE. 송수신자는 서버 principal·회원 존재 여부로만 결정하고 닉네임 문자열·loginId 저장을 금지 — 표시명은 조회 시 `NewStartMemberProfileService`로 resolve(채팅과 동일 정책). 삭제는 수신자 본인의 받은함 정리용 row 삭제(1:1 단일 복사본이라 발신 측에도 함께 사라진다).
 - 수신 거부 상대·본인·없는 회원 전송은 거부, 도배 방지 10건/1분(429). 목록·상대는 로그인 회원에게만 노출(비로그인 401) — 숨김 회원은 목록에서 제외.
 

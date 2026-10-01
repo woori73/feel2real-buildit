@@ -1,5 +1,5 @@
 -- ============================================================
--- V1017: NewStart 접속상태 + 내부 쪽지 (1:1 DM)
+-- V1018: NewStart 접속상태 + 내부 쪽지 (1:1 DM)
 --   · newstart_member_presence: user_id PK(FK→users CASCADE),
 --     last_seen_at(heartbeat 최종 시각), hide_online(접속상태 숨김),
 --     dm_blocked(쪽지 수신 거부). 행은 첫 ping 시 생성된다.

@@ -175,6 +175,35 @@ class NewStartDirectMessageServiceTest {
   }
 
   @Test
+  @DisplayName("given 받은 쪽지 when 수신자가 삭제 then row 삭제")
+  void givenOwnMessage_whenDelete_thenDeletes() {
+    // given
+    NewStartDirectMessage row = NewStartDirectMessage.builder()
+        .messageId(5L).senderUserId(1L).receiverUserId(2L).message("hi").isRead(true).build();
+    when(messageRepository.findById(5L)).thenReturn(Optional.of(row));
+
+    // when
+    service().deleteMessage(principal(2L), 5L);
+
+    // then
+    verify(messageRepository).delete(row);
+  }
+
+  @Test
+  @DisplayName("given 받은 쪽지 when 타인이 삭제 then 거부")
+  void givenOthersMessage_whenDelete_thenRejects() {
+    // given
+    NewStartDirectMessage row = NewStartDirectMessage.builder()
+        .messageId(5L).senderUserId(1L).receiverUserId(2L).message("hi").build();
+    when(messageRepository.findById(5L)).thenReturn(Optional.of(row));
+
+    // when + then
+    assertThatThrownBy(() -> service().deleteMessage(principal(1L), 5L))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(messageRepository, org.mockito.Mockito.never()).delete(any());
+  }
+
+  @Test
   @DisplayName("given 수신함 조회 when 호출 then 최신순 뷰 반환")
   void givenInbox_whenQuery_thenReturnsViews() {
     // given

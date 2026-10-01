@@ -23,7 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>발신자·수신자는 서버 principal과 존재하는 회원({@code users.user_id})으로만
  * 결정한다. 수신 거부({@code dm_blocked}) 상대에게는 전송하지 않는다.
- * 쪽지 삭제·수정 endpoint는 두지 않는다(create + 읽음 표시만).
+ * 쪽지 삭제는 수신자 본인의 받은함 정리용이며 row 자체를 지운다(1:1 단일
+ * 복사본이므로 발신 측 보관함도 함께 사라진다 — 별도 보관함 없음).
  */
 @Service
 public class NewStartDirectMessageService {
@@ -140,6 +141,17 @@ public class NewStartDirectMessageService {
       row.setIsRead(true);
       messageRepository.save(row);
     }
+  }
+
+  /** 받은 쪽지 삭제(수신자 본인만). 단일 복사본이므로 row를 지운다. */
+  @Transactional
+  public void deleteMessage(JwtTokenProvider.AuthenticatedPrincipal principal, Long messageId) {
+    NewStartDirectMessage row = messageRepository.findById(messageId)
+        .orElseThrow(() -> new IllegalArgumentException("쪽지를 찾을 수 없습니다."));
+    if (!row.getReceiverUserId().equals(principal.userId())) {
+      throw new IllegalArgumentException("본인이 받은 쪽지가 아닙니다.");
+    }
+    messageRepository.delete(row);
   }
 
   private String displayOf(User user, Map<Long, String> nicknames) {
