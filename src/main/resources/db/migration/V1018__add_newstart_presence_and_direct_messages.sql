@@ -17,6 +17,7 @@ CREATE TABLE `newstart_member_presence` (
     `last_seen_at` TIMESTAMP NULL DEFAULT NULL COMMENT 'heartbeat 최종 수신 시각',
     `hide_online` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '접속상태 숨김',
     `dm_blocked` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '쪽지 수신 거부',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT `fk_newstart_presence_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
     INDEX `idx_newstart_presence_seen` (`last_seen_at`)
