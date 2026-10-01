@@ -1631,3 +1631,11 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 - 카드 제거 시 `#ns-debt-home-state`(채무상태 배지)까지 사라지면 Credit4U 복귀 flash 모션이 목적소를 잃는다 — 배지는 practical grid에서 MY DEBT 진입행(`.ns-row`)으로 옮겨 보존. 모션 토큰·reveal 훅 자체는 #431 baseline 그대로다.
 - 지피지기는 전용 라우트가 없어 HOME 앵커(`#ns-ai`)가 진입점이며, 실행(질문 전송)은 §7에 따라 API에서 THANKS_MEMBER 강제. 설명·열람은 공개, 카피에는 "승인 회원이 이용합니다"만 표기(버튼 숨김으로 권한을 대신하지 않음).
 
+## NewStart 접속상태 + 내부 쪽지 (V1017)
+
+`newstart_member_presence` + `newstart_direct_messages` — PC 왼쪽 패널·모바일 슬라이드에서 접속 회원 목록과 1:1 내부 쪽지(네이버 카페 쪽지와 무관). GRANT/OAuth/THANKS 판정·RAG·AI 학습과 무관한 별도 기능이다.
+
+- `newstart_member_presence`: PK = `users.user_id`(별도 식별자 없음). `last_seen_at`(heartbeat 최종 시각), `hide_online`(접속상태 숨김), `dm_blocked`(쪽지 수신 거부). 행은 첫 ping 시 생성. 온라인 = `last_seen_at >= now - 5분 AND hide_online=false`. ping은 60초 이내 중복 쓰기를 생략한다.
+- `newstart_direct_messages`: `message_id` PK, `sender_user_id`/`receiver_user_id` FK → `users.user_id`(ON DELETE CASCADE), `message` VARCHAR(1000), `is_read` DEFAULT FALSE. 송수신자는 서버 principal·회원 존재 여부로만 결정하고 닉네임 문자열·loginId 저장을 금지 — 표시명은 조회 시 `NewStartMemberProfileService`로 resolve(채팅과 동일 정책). 삭제·수정 endpoint 없음(create + 읽음 표시만).
+- 수신 거부 상대·본인·없는 회원 전송은 거부, 도배 방지 10건/1분(429). 목록·상대는 로그인 회원에게만 노출(비로그인 401) — 숨김 회원은 목록에서 제외.
+
