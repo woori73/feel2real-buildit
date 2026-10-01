@@ -35,4 +35,16 @@ public class AdminNewStartPageController {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
     return "admin/newstart";
   }
+
+  /** 감사회원 본인확인 요청 승인/반려 화면 — 데이터는 /api/admin/newstart/thanks-claims (ROLE_ADMIN). */
+  @GetMapping("/admin/newstart/thanks-claims")
+  public String adminThanksClaims(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      HttpServletResponse response) {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "운영자만 접근할 수 있습니다.");
+    }
+    response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    return "admin/newstart_thanks_claims";
+  }
 }

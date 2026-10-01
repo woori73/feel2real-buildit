@@ -15,4 +15,9 @@ public interface NewStartThanksRosterRepository extends JpaRepository<NewStartTh
   Optional<NewStartThanksRoster> findBySnapshotDateAndCafeMemberTag(LocalDate snapshotDate, String cafeMemberTag);
 
   List<NewStartThanksRoster> findBySnapshotDateOrderByRosterIdAsc(LocalDate snapshotDate);
+
+  /** 닉네임 후보 조회(DB collation 비교 — 호출 측이 정확 일치를 한 번 더 확인한다). 미연결 행만. */
+  List<NewStartThanksRoster> findByNicknameAndMatchStatus(String nickname, String matchStatus);
+
+  Optional<NewStartThanksRoster> findByLinkedUserId(Long linkedUserId);
 }

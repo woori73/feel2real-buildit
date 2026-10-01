@@ -107,4 +107,18 @@ public class NewStartThanksRoster extends BaseEntity {
     this.sourceFile = sourceFile;
     this.matchStatus = matchStatus;
   }
+
+  /**
+   * 운영자 승인을 거쳐 현재 네이버 OAuth 회원과 1:1 로 연결한다(V1017 UNIQUE가 DB에서도 1:1 을 강제).
+   * 이미 연결된 행에는 쓰지 않는다 — 호출 전에 {@link #isLinked()} 로 확인한다.
+   */
+  public void link(Long userId, String providerUserId) {
+    this.linkedUserId = userId;
+    this.linkedProviderUserId = providerUserId;
+    this.matchStatus = MATCH_MATCHED;
+  }
+
+  public boolean isLinked() {
+    return linkedUserId != null || MATCH_MATCHED.equals(matchStatus);
+  }
 }

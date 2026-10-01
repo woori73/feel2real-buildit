@@ -78,6 +78,16 @@
 - **Timeout/실패**: STEP 2 실패·timeout은 STEP 2만의 실패(`400`)다. 화면은 이미 표시된 STEP 1을 유지하고 `현재 규정 확인이 지연되고 있습니다. 위 답변은 전자책과 실제 사례를 바탕으로 먼저 안내드렸습니다.`만 추가한다. STEP 1이 실패하면 STEP 2를 요청하지 않는다.
 - 두 응답 모두 서버가 모델 출력의 `[KB2 공식]`류 인용표와 근거 컨텍스트에 없는 전화번호를 제거한다.
 
+### ✅ 감사회원 최초 1회 본인확인 (2026-10-01) — 회원 `/api/newstart/thanks-claim` · 운영자 `/api/admin/newstart/thanks-claims`
+
+- 목적: 감사회원(roster 503명)이 **최초 1회**만 본인확인하면 현재 네이버 OAuth 회원과 roster를 1:1로 연결하고 `THANKS_MEMBER`를 부여한다. 이후에는 별도 입력 없이 네이버 로그인만으로 감사회원 기능이 열린다(판정은 기존 `NewStartEntitlementService`의 grant row).
+- **자동 부여를 하지 않는 이유**: 네이버 OAuth는 실제 로그인 ID를 주지 않고(앱별 `response.id`), roster에는 카페 닉네임·마스킹 ID 접두부뿐이며 둘 다 비밀이 아니다. 접두부·닉네임만으로 부여하면 같은 접두부·공개 닉네임의 일반회원이 오인증될 수 있다. 그래서 **회원은 요청(PENDING)만 만들 수 있고, 연결·부여는 ADMIN 승인 한 경로에서만** 일어난다.
+- 흐름: 회원이 네이버 로그인 → 카페 닉네임 입력 → 후보(닉네임 정확 일치·미연결 roster, 최대 5건, 마스킹 ID만) 중 본인 선택 → 1회용 인증코드(8자) 발급 → 카페 쪽지로 운영자에게 코드 전달 → 운영자가 코드·보낸 카페 계정 확인 후 승인 → roster 연결 + `THANKS_MEMBER`.
+- 회원 API(로그인 필수, `/api/**` catch-all): `GET /status`(상태 `NONE|PENDING|APPROVED|REJECTED`, PENDING일 때만 코드), `POST /candidates {nickname}`, `POST / {rosterId}`(요청 생성, 같은 요청 idempotent, 회원당 PENDING 1건), `DELETE /`(취소). 네이버 계정 미연결·이미 감사회원이면 `400`. 최근 24시간 반려 3건 이상이면 신규 요청 차단.
+- 운영자 API(ROLE_ADMIN): `GET ?status=PENDING`(회원·roster·코드·보조 증거 `emailPrefixMatch`/`nicknameEqualsRoster` — **보조 정보일 뿐 승인 근거 아님**), `POST /{id}/approve`, `POST /{id}/reject {reason?}`. 승인은 한 트랜잭션에서 roster 재확인(미연결) · 요청 시점 네이버 subject == 현재 `social_accounts` 재확인 · roster `link` · `NewStartGrantService.grant`(grantedBy=`thanks-claim:<운영자>`) · 같은 roster의 다른 PENDING 자동 반려. DB UNIQUE 위반(동시 승인 경합)은 `409`.
+- 화면: 회원 `/newstart/thanks-guide`(본인확인 섹션), 운영자 `/admin/newstart/thanks-claims`.
+- DB: `V1017__add_newstart_thanks_claims.sql` — 신규 `newstart_thanks_claims`, `newstart_thanks_roster.linked_user_id`·`linked_provider_user_id`에 UNIQUE(1:1을 DB가 강제, NULL 다중 허용). V1015(503명)·V1016(naver_id_prefix) 데이터·컬럼은 수정하지 않는다.
+
 ### ✅ 감사회원(THANKS_MEMBER) 권한 부여·회수 — ADMIN
 
 - 목적: 지피지기 AI·금감원 Agent 세션·민원 초안 정리를 회원이 쓰려면 `newstart_member_grants` row가 있어야 한다. 그 row를 SQL 없이(curl·운영 화면) 넣고 뺄 수 있는 ADMIN API. (질문요청 쓰기는 2026-09-29부터 grant 대상이 아니다 — 일반회원 기본 기능.)
