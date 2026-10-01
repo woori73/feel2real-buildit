@@ -180,4 +180,38 @@ class NewStartThanksPreregistrationServiceTest {
     assertThat(service.remove(2L).ok()).isFalse();
     verify(repository, never()).delete(linked);
   }
+
+  @Test
+  @DisplayName("동일인 identity 사전등록: 카페 접두부가 OAuth 이메일과 달라도 이메일 정확 일치로만 연결되고 접두부는 판정에 쓰이지 않는다")
+  void identityPrefixDiffersFromEmail_linksByExactEmailOnly() {
+    when(repository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+    when(repository.save(any(NewStartThanksPreregistration.class))).thenAnswer(inv -> inv.getArgument(0));
+    var reg = service.register(EMAIL, "신규", "테스트닉1", "Zzzz", "tag-test-0001", "감사멤버");
+    assertThat(reg.ok()).isTrue();
+    assertThat(reg.value().cafeNickname()).isEqualTo("테스트닉1");
+    assertThat(reg.value().naverIdPrefix()).isEqualTo("zzzz");          // 소문자 정규화, 이메일 로컬파트(newmember01)와 다름
+    assertThat(reg.value().cafeMemberTag()).isEqualTo("tag-test-0001");
+    assertThat(reg.value().memberGrade()).isEqualTo("감사멤버");
+
+    NewStartThanksPreregistration p = new NewStartThanksPreregistration(EMAIL, null, "테스트닉1", "zzzz", "tag-test-0001", "감사멤버");
+    when(repository.findByEmail(EMAIL)).thenReturn(Optional.of(p));
+    assertThat(service.tryAutoVerify(7L, "STUDENT")).isPresent();
+    assertThat(p.getLinkedUserId()).isEqualTo(7L);
+    verify(grantService).grant(eq(7L), eq(NewStartCapability.THANKS_MEMBER), eq("thanks-prereg"));
+  }
+
+  @Test
+  @DisplayName("roster 503명과 카페 멤버 태그/닉네임이 겹치는 사전등록은 거절한다(같은 사람을 두 번째 identity 로 만들지 않음)")
+  void identityDuplicateOfRoster_rejected() {
+    when(repository.findByEmail(anyString())).thenReturn(Optional.empty());
+    when(rosterRepository.existsByCafeMemberTag("tag-dup")).thenReturn(true);
+    assertThat(service.register(EMAIL, null, "새닉", "abcd", "tag-dup", "감사멤버").ok()).isFalse();
+
+    when(rosterRepository.findByNickname("기존닉")).thenReturn(java.util.List.of(mock(NewStartThanksRoster.class)));
+    assertThat(service.register(EMAIL, null, "기존닉", "abcd", "tag-new", "감사멤버").ok()).isFalse();
+
+    when(repository.existsByCafeNickname("사전닉")).thenReturn(true);
+    assertThat(service.register(EMAIL, null, "사전닉", "abcd", "tag-new2", "감사멤버").ok()).isFalse();
+    verify(repository, never()).save(any(NewStartThanksPreregistration.class));
+  }
 }

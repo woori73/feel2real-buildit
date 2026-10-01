@@ -11,5 +11,9 @@ public interface NewStartThanksPreregistrationRepository extends JpaRepository<N
 
   Optional<NewStartThanksPreregistration> findByLinkedUserId(Long linkedUserId);
 
+  boolean existsByCafeMemberTag(String cafeMemberTag);
+
+  boolean existsByCafeNickname(String cafeNickname);
+
   List<NewStartThanksPreregistration> findAllByOrderByPreregIdAsc();
 }

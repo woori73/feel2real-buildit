@@ -48,7 +48,8 @@ public class NewStartThanksPreregistrationService {
   }
 
   /** 운영자 화면용. 이메일은 ADMIN 응답에만 포함한다. */
-  public record PreregView(Long preregId, String email, String memo, boolean linked, LocalDateTime linkedAt) {}
+  public record PreregView(Long preregId, String email, String memo, String cafeNickname, String naverIdPrefix,
+      String cafeMemberTag, String memberGrade, boolean linked, LocalDateTime linkedAt) {}
 
   // ───────────── member side (자동 인증) ─────────────
 
@@ -87,6 +88,16 @@ public class NewStartThanksPreregistrationService {
 
   @Transactional
   public Result<PreregView> register(String emailInput, String memo) {
+    return register(emailInput, memo, null, null, null, null);
+  }
+
+  /**
+   * 사전등록. identity(카페 닉네임·접두부·멤버 태그·등급)는 선택이며, 주면 roster 503명·기존 사전등록과 닉네임/태그가 겹치는지 확인해
+   * 같은 사람을 두 번째 identity 로 만들지 않는다. 접두부는 OAuth 이메일 로컬파트와 달라도 되고 인증 판정에 쓰지 않는다.
+   */
+  @Transactional
+  public Result<PreregView> register(String emailInput, String memo, String cafeNickname, String naverIdPrefix,
+      String cafeMemberTag, String memberGrade) {
     String email = normalize(emailInput);
     if (!NAVER_EMAIL.matcher(email).matches()) {
       return Result.failure("@naver.com 이메일 형식이 아닙니다.");
@@ -94,9 +105,20 @@ public class NewStartThanksPreregistrationService {
     if (repository.findByEmail(email).isPresent()) {
       return Result.failure("이미 사전등록된 이메일입니다.");
     }
+    String nick = blankToNull(cafeNickname, 50);
+    String prefix = blankToNull(naverIdPrefix, 50);
+    String tag = blankToNull(cafeMemberTag, 32);
+    String grade = blankToNull(memberGrade, 30);
+    if (tag != null && (rosterRepository.existsByCafeMemberTag(tag) || repository.existsByCafeMemberTag(tag))) {
+      return Result.failure("이미 등록된 카페 멤버 태그입니다(기존 감사회원과 중복).");
+    }
+    if (nick != null && (!rosterRepository.findByNickname(nick).isEmpty() || repository.existsByCafeNickname(nick))) {
+      return Result.failure("이미 등록된 카페 닉네임입니다(기존 감사회원과 중복).");
+    }
     String m = memo == null ? "" : memo.strip();
     if (m.length() > 100) m = m.substring(0, 100);
-    NewStartThanksPreregistration saved = repository.save(new NewStartThanksPreregistration(email, m.isEmpty() ? null : m));
+    NewStartThanksPreregistration saved = repository.save(
+        new NewStartThanksPreregistration(email, m.isEmpty() ? null : m, nick, prefix == null ? null : prefix.toLowerCase(Locale.ROOT), tag, grade));
     return Result.success(view(saved));
   }
 
@@ -110,11 +132,19 @@ public class NewStartThanksPreregistrationService {
     return Result.success(null);
   }
 
+  private static String blankToNull(String v, int max) {
+    if (v == null) return null;
+    String s = v.strip();
+    if (s.isEmpty()) return null;
+    return s.length() > max ? s.substring(0, max) : s;
+  }
+
   static String normalize(String email) {
     return email == null ? "" : email.strip().toLowerCase(Locale.ROOT);
   }
 
   private static PreregView view(NewStartThanksPreregistration p) {
-    return new PreregView(p.getPreregId(), p.getEmail(), p.getMemo(), p.isLinked(), p.getLinkedAt());
+    return new PreregView(p.getPreregId(), p.getEmail(), p.getMemo(), p.getCafeNickname(), p.getNaverIdPrefix(),
+        p.getCafeMemberTag(), p.getMemberGrade(), p.isLinked(), p.getLinkedAt());
   }
 }

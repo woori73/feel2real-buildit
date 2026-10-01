@@ -33,6 +33,18 @@ public class NewStartThanksPreregistration extends BaseEntity {
   @Column(name = "memo", length = 100)
   private String memo;
 
+  @Column(name = "cafe_nickname", length = 50)
+  private String cafeNickname;
+
+  @Column(name = "naver_id_prefix", length = 50)
+  private String naverIdPrefix;
+
+  @Column(name = "cafe_member_tag", length = 32)
+  private String cafeMemberTag;
+
+  @Column(name = "member_grade", length = 30)
+  private String memberGrade;
+
   @Column(name = "linked_user_id")
   private Long linkedUserId;
 
@@ -45,6 +57,16 @@ public class NewStartThanksPreregistration extends BaseEntity {
   public NewStartThanksPreregistration(String email, String memo) {
     this.email = email;
     this.memo = memo;
+  }
+
+  /** 운영자가 동일인으로 확인한 카페 identity 포함 사전등록(OAuth 이메일은 카페 접두부와 달라도 된다). */
+  public NewStartThanksPreregistration(String email, String memo, String cafeNickname, String naverIdPrefix,
+      String cafeMemberTag, String memberGrade) {
+    this(email, memo);
+    this.cafeNickname = cafeNickname;
+    this.naverIdPrefix = naverIdPrefix;
+    this.cafeMemberTag = cafeMemberTag;
+    this.memberGrade = memberGrade;
   }
 
   public boolean isLinked() {

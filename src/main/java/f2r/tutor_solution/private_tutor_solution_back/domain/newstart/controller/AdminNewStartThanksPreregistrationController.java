@@ -34,7 +34,9 @@ public class AdminNewStartThanksPreregistrationController {
   @PostMapping
   public ResponseEntity<AdminResponse> register(@RequestBody(required = false) RegisterRequest request) {
     try {
-      Result<PreregView> r = service.register(request == null ? null : request.email(), request == null ? null : request.memo());
+      Result<PreregView> r = request == null ? service.register(null, null)
+          : service.register(request.email(), request.memo(), request.cafeNickname(), request.naverIdPrefix(),
+              request.cafeMemberTag(), request.memberGrade());
       return r.ok() ? ResponseEntity.ok(new AdminResponse("ok", null, r.value()))
           : ResponseEntity.badRequest().body(new AdminResponse("error", r.errorMessage(), null));
     } catch (DataIntegrityViolationException e) {
@@ -49,7 +51,8 @@ public class AdminNewStartThanksPreregistrationController {
         : ResponseEntity.badRequest().body(new AdminResponse("error", r.errorMessage(), null));
   }
 
-  public record RegisterRequest(String email, String memo) {}
+  public record RegisterRequest(String email, String memo, String cafeNickname, String naverIdPrefix, String cafeMemberTag,
+      String memberGrade) {}
 
   public record AdminResponse(String status, String errorMessage, PreregView preregistration) {}
 }

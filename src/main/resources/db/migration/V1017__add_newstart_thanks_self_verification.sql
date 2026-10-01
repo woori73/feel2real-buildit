@@ -54,6 +54,10 @@ CREATE TABLE `newstart_thanks_preregistrations` (
     `prereg_id` BIGINT NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(100) NOT NULL COMMENT '사전등록 네이버 이메일(소문자 정규화, @naver.com). 공개 화면 노출 금지',
     `memo` VARCHAR(100) NULL COMMENT '운영자 메모',
+    `cafe_nickname` VARCHAR(50) NULL COMMENT '운영자가 확인한 카페 닉네임(동일인 identity)',
+    `naver_id_prefix` VARCHAR(50) NULL COMMENT '카페 표시 네이버 ID 접두부(OAuth 이메일과 다를 수 있음 — 판정에 쓰지 않음)',
+    `cafe_member_tag` VARCHAR(32) NULL COMMENT '카페 멤버 태그(roster와 중복 불가)',
+    `member_grade` VARCHAR(30) NULL COMMENT '예: 감사멤버',
     `linked_user_id` BIGINT NULL COMMENT '연결된 users.user_id',
     `linked_provider_user_id` VARCHAR(64) NULL COMMENT '연결 시점 네이버 OAuth subject',
     `linked_at` DATETIME NULL,
@@ -63,6 +67,7 @@ CREATE TABLE `newstart_thanks_preregistrations` (
     `updated_by` VARCHAR(50) NULL,
     PRIMARY KEY (`prereg_id`),
     UNIQUE KEY `uk_newstart_thanks_prereg_email` (`email`),
+    UNIQUE KEY `uk_newstart_thanks_prereg_tag` (`cafe_member_tag`),
     UNIQUE KEY `uk_newstart_thanks_prereg_linked_user` (`linked_user_id`),
     UNIQUE KEY `uk_newstart_thanks_prereg_linked_provider` (`linked_provider_user_id`),
     CONSTRAINT `fk_newstart_thanks_prereg_user` FOREIGN KEY (`linked_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT

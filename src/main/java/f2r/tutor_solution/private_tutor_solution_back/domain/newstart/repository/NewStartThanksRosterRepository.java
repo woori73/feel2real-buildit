@@ -23,4 +23,7 @@ public interface NewStartThanksRosterRepository extends JpaRepository<NewStartTh
   List<NewStartThanksRoster> findByNickname(String nickname);
 
   Optional<NewStartThanksRoster> findByLinkedUserId(Long linkedUserId);
+
+  /** 신규 사전등록 identity 중복 확인(roster 503명과 겹치면 별도 identity 를 만들지 않는다). */
+  boolean existsByCafeMemberTag(String cafeMemberTag);
 }
