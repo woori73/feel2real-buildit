@@ -79,12 +79,15 @@ class NewStartFssAgentControllerTest {
         .andExpect(status().is4xxClientError());
     mockMvc.perform(post("/api/newstart/fss/agent/restart"))
         .andExpect(status().is4xxClientError());
+    // 2026-10-02 정책: 14단계 안내(workflow)도 회원 전용.
+    mockMvc.perform(get("/api/newstart/fss/agent/workflow"))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
   void workflowReturnsFourteenStepsWithNoticeAndEntryUrl() throws Exception {
-    // 설명 공개(§7): grant 여부와 무관하게, 인증 없이도 14단계 안내 전문을 읽을 수 있다.
-    mockMvc.perform(get("/api/newstart/fss/agent/workflow"))
+    // 로그인 회원이면 grant 여부와 무관하게 14단계 안내 전문을 읽을 수 있다.
+    mockMvc.perform(get("/api/newstart/fss/agent/workflow").cookie(userCookie()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ok"))
         .andExpect(jsonPath("$.steps.length()").value(14))

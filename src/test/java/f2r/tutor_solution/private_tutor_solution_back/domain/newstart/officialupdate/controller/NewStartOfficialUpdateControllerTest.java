@@ -43,12 +43,18 @@ class NewStartOfficialUpdateControllerTest {
   }
 
   @Test
-  void anonymousCanReadPublicFeed() throws Exception {
+  void anonymousCannotReadPublicFeed() throws Exception {
+    mockMvc.perform(get("/api/newstart/updates"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void memberCanReadPublicFeed() throws Exception {
     when(service.publicUpdates(null)).thenReturn(List.of(new NewStartOfficialUpdateResponse(
         1L, "FSC", "금융위원회", "공지", "요약", "https://fsc.go.kr/a", null,
         null, null, null, "NOTICE", "NORMAL", "PUBLISHED", false, null, null, null)));
 
-    mockMvc.perform(get("/api/newstart/updates"))
+    mockMvc.perform(get("/api/newstart/updates").cookie(cookie(2L, "STUDENT")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].reviewStatus").value("PUBLISHED"))
         .andExpect(jsonPath("$[0].originalUrl").value("https://fsc.go.kr/a"));

@@ -286,7 +286,7 @@ public class SecurityConfig {
                 "/admin/wiki-analysis",
                 "/chart",
                 "/chart/educators/**",
-                "/newstart", "/newstart/updates", "/newstart/updates/*",
+                "/newstart",  // 홈만 공개. 하위 화면은 NewStartMembersOnlyInterceptor가 비회원을 로그인으로 보낸다.
                 "/lessons",
                 "/stdt_dashboard",
                 "/tutor_dashboard",
@@ -354,12 +354,8 @@ public class SecurityConfig {
             // home-feed는 controller에서 익명 응답의 Thread/LIVE/회원 활동을 제거한다.
             .requestMatchers(HttpMethod.GET, "/api/wiki/home-feed").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
-            // NewStart 공식 업데이트 공개 피드는 PUBLISHED 자료만 서비스가 반환한다.
-            .requestMatchers(HttpMethod.GET, "/api/newstart/updates", "/api/newstart/updates/**").permitAll()
-            // NewStart §7 경계: 금감원 14단계 "설명"(개인정보 없는 정적 문구)은 익명에게도 열는다.
-            // Agent 실행(session/advance/back/restart)은 아래 /api/** catch-all로 인증 회원 유지이며,
-            // 실행 여부 자체는 controller의 THANKS_MEMBER 판정(403)이 결정한다.
-            .requestMatchers(HttpMethod.GET, "/api/newstart/fss/agent/workflow").permitAll()
+            // NewStart 최신 정보·금감원 Agent 안내 API는 회원 전용이다(2026-10-02 정책: 홈만 공개).
+            // 별도 permitAll을 두지 않으므로 아래 /api/** catch-all이 비회원 요청을 401로 거부한다.
             .requestMatchers(HttpMethod.GET, "/api/choonggi/media/**").permitAll()  // published vlog media
             .requestMatchers(HttpMethod.GET, "/api/chart/**").permitAll()  // 공개 BUILD IT CHART 조회
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색

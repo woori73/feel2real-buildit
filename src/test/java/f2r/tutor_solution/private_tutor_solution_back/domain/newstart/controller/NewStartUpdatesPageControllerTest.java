@@ -25,7 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * 내부 상세 라우트 GET /newstart/updates/{id} — 비로그인 공개 열람 + 404 경계.
+ * 내부 상세 라우트 GET /newstart/updates/{id} — 회원 전용(비회원은 로그인으로 redirect) + 404 경계.
  * 카드가 외부 URL로 이동하던 시절의 "클릭 = 400 Bad Request" 경로가 여기서는 존재하지 않는다.
  */
 @WebMvcTest(controllers = NewStartOfficialUpdatesPageController.class)
@@ -41,6 +41,11 @@ class NewStartUpdatesPageControllerTest {
 
   @Autowired MockMvc mockMvc;
   @MockitoBean NewStartOfficialUpdateService service;
+  @Autowired JwtTokenProvider tokenProvider;
+
+  private jakarta.servlet.http.Cookie memberCookie() {
+    return new jakarta.servlet.http.Cookie("ACCESS_TOKEN", tokenProvider.issue(2L, "user2", "STUDENT"));
+  }
 
   private static NewStartOfficialUpdateDetailResponse faqDetail(String verifiedSourceUrl) {
     return new NewStartOfficialUpdateDetailResponse(41L, "NEWSTART_FUND", "새출발기금", "새출발기금 공식 FAQ",
@@ -50,10 +55,18 @@ class NewStartUpdatesPageControllerTest {
   }
 
   @Test
-  void anonymousCanOpenInternalDetail() throws Exception {
+  void anonymousIsRedirectedToLoginWithNext() throws Exception {
+    mockMvc.perform(get("/newstart/updates/41"))
+        .andExpect(status().isFound())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+            .redirectedUrl("/newstart/login?next=%2Fnewstart%2Fupdates%2F41"));
+  }
+
+  @Test
+  void memberCanOpenInternalDetail() throws Exception {
     when(service.publicUpdateDetail(41L)).thenReturn(faqDetail(null));
 
-    mockMvc.perform(get("/newstart/updates/41"))
+    mockMvc.perform(get("/newstart/updates/41").cookie(memberCookie()))
         .andExpect(status().isOk())
         .andExpect(content().string(org.hamcrest.Matchers.containsString("도덕적 해이 조사 제도 안내 원문입니다.")));
   }
@@ -63,13 +76,13 @@ class NewStartUpdatesPageControllerTest {
     doThrow(new IllegalArgumentException("게시된 공식 업데이트를 찾을 수 없습니다."))
         .when(service).publicUpdateDetail(anyLong());
 
-    mockMvc.perform(get("/newstart/updates/9999"))
+    mockMvc.perform(get("/newstart/updates/9999").cookie(memberCookie()))
         .andExpect(status().isNotFound());
   }
 
   @Test
   void nonNumericPathDoesNotHitDetailRoute() throws Exception {
-    mockMvc.perform(get("/newstart/updates/abc"))
+    mockMvc.perform(get("/newstart/updates/abc").cookie(memberCookie()))
         .andExpect(status().isNotFound());
   }
 }
