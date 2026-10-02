@@ -1216,7 +1216,7 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 | role | VARCHAR(20) NOT NULL | STUDENT\|TUTOR\|ADMIN\|GUEST |
 | display_name | VARCHAR(60) NOT NULL | 방문 시점 `users.name`(실명) 스냅샷, 비회원 "비회원" |
 | visitor_key | VARCHAR(64) NOT NULL | UV 식별자: 로그인 `"U:{userId}"`, 비로그인 `"V:{90일 cookie UUID}"`; legacy `"S:{session id}"` 호환. IP/fingerprint 미저장 |
-| service_area | VARCHAR(16) NOT NULL | HOME\|CHART\|WEB\|ACADEMY\|WIKI\|OTHER. 기존 row는 path로 backfill |
+| service_area | VARCHAR(16) NOT NULL | HOME\|CHART\|WEB\|ACADEMY\|WIKI\|NEWSTART\|OTHER. 기존 row는 path로 backfill (NewStart 분리 재분류 = V1019) |
 | traffic_kind | VARCHAR(10) NOT NULL | HUMAN\|BOT. 일반 UV/PV는 HUMAN만, BOT 요청 수는 별도 집계 |
 
 **`wiki_download_logs`** — Wiki 자료(ORIGINAL/ANALYSIS/LEARNING) 다운로드 이벤트. 다운로드 endpoint가 파일을 정상적으로 읽어온 시점에만 기록(버튼 클릭 카운트 아님).

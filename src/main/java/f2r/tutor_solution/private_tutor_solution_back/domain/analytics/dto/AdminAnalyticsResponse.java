@@ -13,6 +13,7 @@ public record AdminAnalyticsResponse(
     PeriodMetric siteViews,
     PeriodMetric wikiVisitors,
     PeriodMetric wikiViews,
+    PeriodMetric newStartVisitors,
     PeriodMetric wikiDownloads,
     PeriodMetric botRequests,
     LocalDate statsSince,

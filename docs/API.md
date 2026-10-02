@@ -4074,7 +4074,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `SiteVisitFilter`(SecurityConfig 필터체인, JwtAuthenticationFilter 뒤)가 모든 실제 GET 페이지 응답에서 자동 기록한다. `/api/**`, `/css/**`, `/js/**`, `/img/**`, `/video/**` 등은 경로로 우선 제외하고, 남은 요청도 응답이 `200` + `Content-Type: text/html` 인 경우에만 기록 — 정적 리소스/리다이렉트/API 응답은 집계되지 않는다.
 - UV 식별: 로그인 `"U:{userId}"`, 비로그인 `F2R_VISITOR` first-party cookie의 UUID(`"V:{uuid}"`). cookie는 Secure, HttpOnly, SameSite=Lax, Path=/, 90일이다. 기존 `"S:{HttpSession id}"` 행은 삭제·변환하지 않고 호환 집계한다. IP/fingerprint는 사용하지 않는다.
 - 명확한 bot/crawler User-Agent는 `traffic_kind=BOT`으로 저장하고 일반 UV/PV에서는 제외한다. 관리자 화면의 `botRequests`에서 별도 요청 수를 본다. 개선 이전 행은 식별 불가능하므로 HUMAN으로 보존된다.
-- `service_area`: 실제 route를 HOME(`/`, `/home`), CHART(`/chart/**`), WEB(`/academies/**`, `/academy-posts/**`, `/subdomain-home`), ACADEMY(`/builder`, `/lessons/**`, `/tutor/academy/**`, `/lms/**`), WIKI(`/wiki/**`), OTHER(그 외)로 분류한다.
+- `service_area`: 실제 route를 HOME(`/`, `/home`), CHART(`/chart/**`), WEB(`/academies/**`, `/academy-posts/**`, `/subdomain-home`), ACADEMY(`/builder`, `/lessons/**`, `/tutor/academy/**`, `/lms/**`), WIKI(`/wiki/**`), NEWSTART(`/newstart`, `/newstart/**` — 운영자 콘솔 `/admin/newstart/**`는 제외), OTHER(그 외)로 분류한다. 과거 row는 저장된 `path` 기준으로 재분류한다(V1019).
 - 로그인 사용자는 `users.name`(실명)을 방문 시점 스냅샷으로 `display_name` 에 저장한다(닉네임 아님 — TUTOR도 동일).
 
 ### 다운로드 기록 (자동, 다운로드 endpoint 내부)
@@ -4083,16 +4083,16 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 ### `GET /api/admin/analytics/summary`
 → `AdminAnalyticsResponse`:
-- `siteVisitors`/`siteViews`/`wikiVisitors`/`wikiViews`: HUMAN만 계산한다. `wikiDownloads`는 기존 다운로드 건수이며, 각 값은 `{today, recent7, recent30, total}`이다.
+- `siteVisitors`/`siteViews`/`wikiVisitors`/`wikiViews`/`newStartVisitors`: HUMAN만 계산한다. `wikiDownloads`는 기존 다운로드 건수이며, 각 값은 `{today, recent7, recent30, total}`이다. `newStartVisitors`는 `service_area=NEWSTART` UV(상단 "NewStart 방문자 (UV)" 카드).
 - `botRequests`: 일반 방문에서 제외된 BOT PV의 `{today, recent7, recent30, total}`.
-- `serviceTraffic`: HOME/CHART/WEB/ACADEMY/WIKI/OTHER별 `{service, visitors, views}`. visitors/views는 각각 기간별 metric이다.
+- `serviceTraffic`: HOME/CHART/WEB/ACADEMY/WIKI/NEWSTART/OTHER별 `{service, visitors, views}`. visitors/views는 각각 기간별 metric이다.
 - `statsSince`: 최초 방문 기록 날짜(`site_page_visits` 최솟값). 기록이 없으면 `null` — 프론트가 "통계 수집 시작일 이후 데이터"임을 안내한다.
 - `recentWikiVisits`: 최근 Wiki 방문 20건 — `{displayName, role, area("WIKI"|"F2R"), path, visitedAt}`.
-- `recentVisits`: 최근 HUMAN 전체 방문 20건 — `{displayName, role, area(HOME|CHART|WEB|ACADEMY|WIKI|OTHER), path, visitedAt}`. visitor key 원문은 반환하지 않는다.
+- `recentVisits`: 최근 HUMAN 전체 방문 20건 — `{displayName, role, area(HOME|CHART|WEB|ACADEMY|WIKI|NEWSTART|OTHER), path, visitedAt}`. visitor key 원문은 반환하지 않는다.
 - `recentDownloads`: 최근 다운로드 20건 — `{displayName, role, materialCategory, materialTitle, downloadedAt}`.
 - `topDownloads`: 자료별 누적 다운로드 수 TOP 10 — `{materialCategory, materialTitle, downloadCount}`.
 
-- 관련 코드: `domain/analytics/*`, `config/SiteVisitFilter`. 마이그레이션 `V962`(기본 로그 테이블), `V964~V966`(nullable 추가 → 기존 path backfill → NOT NULL/인덱스).
+- 관련 코드: `domain/analytics/*`, `config/SiteVisitFilter`. 마이그레이션 `V962`(기본 로그 테이블), `V964~V966`(nullable 추가 → 기존 path backfill → NOT NULL/인덱스), `V1019`(NewStart 분리 재집계).
 
 ## Wiki 학교별 실제 기출 원본 (PAST_EXAM) + AI 작업기록 (AI_WORK_LOG)
 

@@ -19,8 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 관리자 "통합 Analytics" — F2R 전체/Wiki 방문(UV/PV) + Wiki 다운로드 통계를 한 번에 조립한다.
+ * 관리자 "통합 Analytics" — F2R 전체/Wiki/NewStart 방문(UV/PV) + Wiki 다운로드 통계를 한 번에 조립한다.
  * {@code WikiOpsOverviewService}와 동일하게 별도 통계 DB 없이 이벤트 로그 테이블을 직접 집계한다.
+ * 서비스별 수치는 {@code AnalyticsServiceArea} 분류(과거 row 포함, V1019 재분류)를 그대로 따른다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -76,6 +77,12 @@ public class AdminAnalyticsService {
         visitRepository.countWikiPageViews(from30, today),
         visitRepository.countWikiPageViewsAllTime());
 
+    PeriodMetric newStartVisitors = new PeriodMetric(
+        visitRepository.countDistinctVisitorsByArea(AnalyticsServiceArea.NEWSTART, today, today),
+        visitRepository.countDistinctVisitorsByArea(AnalyticsServiceArea.NEWSTART, from7, today),
+        visitRepository.countDistinctVisitorsByArea(AnalyticsServiceArea.NEWSTART, from30, today),
+        visitRepository.countDistinctVisitorsByAreaAllTime(AnalyticsServiceArea.NEWSTART));
+
     PeriodMetric wikiDownloads = new PeriodMetric(
         downloadRepository.countDownloads(today, today),
         downloadRepository.countDownloads(from7, today),
@@ -125,7 +132,7 @@ public class AdminAnalyticsService {
         .toList();
 
     return new AdminAnalyticsResponse(
-        siteVisitors, siteViews, wikiVisitors, wikiViews, wikiDownloads, botRequests, statsSince,
+        siteVisitors, siteViews, wikiVisitors, wikiViews, newStartVisitors, wikiDownloads, botRequests, statsSince,
         serviceTraffic, recentAllVisits, recentVisits, recentDownloads, topDownloads);
   }
 }

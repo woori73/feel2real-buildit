@@ -1,11 +1,11 @@
-/** 관리자 통합 Analytics(/admin/analytics). F2R 전체/Wiki 방문(UV/PV) + Wiki 다운로드 통계. */
+/** 관리자 통합 Analytics(/admin/analytics). F2R 전체/Wiki/NewStart 방문(UV/PV) + Wiki 다운로드 통계. */
 (function () {
   let currentUser = null;
 
   const CATEGORY_LABELS = { ORIGINAL: '모의고사 원본', ANALYSIS: '분석 자료', LEARNING: '학습 자료' };
   const SERVICE_LABELS = {
     HOME: '메인/랜딩', CHART: 'BuildIt Chart', WEB: 'BuildIt Web',
-    ACADEMY: 'Academy', WIKI: 'Wiki', OTHER: '기타'
+    ACADEMY: 'Academy', WIKI: 'Wiki', NEWSTART: 'NewStart', OTHER: '기타'
   };
 
   function fmtNumber(v) {
@@ -55,6 +55,7 @@
 
       renderMetrics('siteVisitorsMetrics', d.siteVisitors);
       renderMetrics('wikiVisitorsMetrics', d.wikiVisitors);
+      renderMetrics('newStartVisitorsMetrics', d.newStartVisitors);
       renderMetrics('wikiDownloadsMetrics', d.wikiDownloads);
       renderMetrics('sitePvMetrics', d.siteViews);
       renderMetrics('wikiPvMetrics', d.wikiViews);
