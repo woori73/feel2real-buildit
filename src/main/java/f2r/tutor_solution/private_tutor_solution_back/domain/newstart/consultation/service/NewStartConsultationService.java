@@ -45,7 +45,7 @@ import org.springframework.web.server.ResponseStatusException;
  * 재사용하고, 스레드·상태는 새 테이블에 담는다(§9 기존 데이터 보존).
  *
  * <p><b>HARD GATE(§8)</b> — 화면 숨김이 아니라 조회 자체에서 강제한다. 회원 경로는
- * {@link NewStartConsultationRepository#findByIdAndMemberUserId} 또는 소유자 비교로 본인 상담만 읽고,
+ * {@link #ownConsultation}이 {@code findById}(PK) 조회 뒤 소유자(user id)를 비교해 본인 상담만 읽고,
  * 다른 회원 상담은 404/403로 막는다. 운영자 경로는 {@code /api/admin/**}(ROLE_ADMIN) + 본 서비스의
  * {@link #requireAdmin} 이중 확인. AI_RESEARCH 메시지는 회원 조회에서 원천 제외한다(§5).
  *

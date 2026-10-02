@@ -20,7 +20,7 @@ public interface NewStartConsultationMessageRepository extends JpaRepository<New
   List<NewStartConsultationMessage> findByConsultationIdAndAuthorRoleInOrderByMessageIdAsc(
       Long consultationId, Collection<MessageAuthorRole> authorRoles);
 
-  /** 읽음 커서 이후의 특정 작성자 메시지 수("새 답변 N건" / 운영자 미답변计数). cursor는 null 대신 0을 넘긴다. */
+  /** 읽음 커서 이후의 특정 작성자 메시지 수("새 답변 N건" / 운영자 미답변 질문 수). cursor는 null 대신 0을 넘긴다. */
   long countByConsultationIdAndAuthorRoleAndMessageIdGreaterThan(
       Long consultationId, MessageAuthorRole authorRole, Long messageId);
 
