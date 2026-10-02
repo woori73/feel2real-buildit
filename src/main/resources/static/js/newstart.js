@@ -406,6 +406,22 @@
         return block;
       }
 
+      function appendAtozStepLink(block, data) {
+        if (!block || !data || !data.atozStepUrl || !data.atozStepTitle) return;
+        var box = document.createElement('div');
+        box.className = 'ns-ai-atoz';
+        var lead = document.createElement('span');
+        lead.className = 'ns-ai-atoz-lead';
+        lead.textContent = '지금 이 단계가 궁금하신가요?';
+        var a = document.createElement('a');
+        a.className = 'ns-ai-atoz-link';
+        a.href = data.atozStepUrl;
+        a.textContent = 'A to Z ' + data.atozStepTitle + ' →';
+        box.appendChild(lead);
+        box.appendChild(a);
+        (block.querySelector('.ns-ai-text') || block).appendChild(box);
+      }
+
       function autoGrow() {
         if (input.tagName !== 'TEXTAREA') return;
         input.style.height = 'auto';
@@ -507,7 +523,10 @@
             if (result.status === 200 && data.status === 'ok' && data.answer) {
               /* STEP 1: 전자책+실제 사례 기반 1차 답변을 공식자료 조사를 기다리지 않고 먼저 표시한다. */
               var block = appendBlock('지피지기 Agent', data.answer, 'agent');
-              if (block) renderSources(block.querySelector('.ns-ai-text'), data.sources);
+              if (block) {
+                renderSources(block.querySelector('.ns-ai-text'), data.sources);
+                appendAtozStepLink(block, data);
+              }
               /* STEP 2는 1차 답변 아래에 "추가"만 한다 — 1차 블록은 다시 그리거나 지우지 않는다. */
               return runOfficialStep(message, data.answer);
             } else if (result.status === 401) {

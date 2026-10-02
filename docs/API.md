@@ -73,6 +73,7 @@
 운영원칙(질문 의도 → 전자책/실제 사례/운영자 경험/카페·상담 사례 → 실제 진행·대응 → 현재 공식자료 확인·보완 → 차이·불확실성)을 실제 호출 순서로 구현한다. 한 번의 LLM 호출에 공식자료를 함께 넣지 않는다.
 
 - **STEP 1 — `POST /api/newstart/ai/chat`** (기존 경로·request 유지): 전자책·운영자 자료 + 실제 사례(승인 카페 지식·축적 답변·실증 사례)만 근거로 1차 답변을 만든다. **공식 자료는 근거·출처에 섞지 않는다.** 전자책이 컨텍스트를 채워도 직접 관련 사례에 최소 6칸(컨텍스트)·4칸(출처)을 보장한다. Response에 `stage:"CASE"` 추가(additive), 나머지 필드 불변.
+- **A to Z 단계 연결(§7, 2026-10-02, additive)**: STEP 1 성공 응답에 질문을 **결정적 키워드**로 A to Z 단계에 연결한 `atozStepNo`/`atozStepTitle`/`atozStepUrl`(예 `2`/`지급명령 · 전자소송`/`/newstart/a-to-z#step-2`)을 추가한다. 신호가 없으면 세 필드 모두 null(존재하지 않는 것과 동일 취급). `NewStartAtozStep` 단일 출처(14단계, AI 판단·LLM 호출 아님)로 계산하며 **RAG 조사 사다리·답변 순서는 그대로** 두는 표시 계층만 얹는다. 화면(`newstart.js`)은 1차 답변 아래에 단계 이동 링크 버튼을 렌더한다. STEP 2는 이 필드를 붙이지 않는다.
 - 화면은 STEP 1 응답을 받는 즉시 표시하고, 그 아래에 정확히 `관련된 현재 규정을 확인해서 알려드리겠습니다.`를 표시한 뒤 STEP 2를 요청한다.
 - **STEP 2 — `POST /api/newstart/ai/chat/official`**: Request `{message, step1Answer}` (`step1Answer`=이미 표시된 1차 답변, 비교 입력일 뿐 서버는 수정·재생성하지 않고 길이만 2500자로 제한). 질문과 직접 관련된 현재 공식 자료(게시된 공식 업데이트 + ACTIVE 공식 지식)만 별도 조사해 "현재 공식 자료에서 확인되는 내용 / 1차 답변과 다른 점(시점 차이) / 추가 주의사항"을 2차 답변으로 만든다. Response `stage:"OFFICIAL"`, `sources`는 공식 자료만. 공식 자료를 찾지 못하면 LLM을 부르지 않고 확인할 기관만 안내한다(규정을 지어내지 않음). 인증·THANKS_MEMBER 판정은 STEP 1과 동일.
 - **Timeout/실패**: STEP 2 실패·timeout은 STEP 2만의 실패(`400`)다. 화면은 이미 표시된 STEP 1을 유지하고 `현재 규정 확인이 지연되고 있습니다. 위 답변은 전자책과 실제 사례를 바탕으로 먼저 안내드렸습니다.`만 추가한다. STEP 1이 실패하면 STEP 2를 요청하지 않는다.
@@ -4333,3 +4334,25 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 개인정보 원칙: Credit4U ID/PW·주민번호·공동/금융인증서 비밀번호·OTP는 절대 수신·저장하지 않고 대신 로그인하지 않는다. 채무 원본(금액·기관 목록 데이터)이 아니라 사용자가 직접 정리한 메모만 저장한다.
 - Credit4U JPG·PNG·PDF 자동 읽기는 `/newstart#ns-status-panel` 브라우저 안에서 자체 호스팅한 Tesseract.js/PDF.js로만 처리한다. 원본 파일과 OCR 원문을 서버 API로 전송하거나 저장하지 않으며, 편집 가능한 5개 항목(채권기관·채무종류·잔액·연체/장기연체·채권자 변동)을 사용자가 확인한 뒤 기존 `PUT /api/newstart/debt-status`를 눌러야 메모에 포함해 저장한다.
 - 지피지기 연결: 상태창 버튼은 메모·단계를 AI 질문창에 실제로 채워 `/api/newstart/ai/chat` 전달 문의로 사용한다. ai/chat 서버가 DB의 채무상황 row를 자동 컨텍스트로 주입하지는 않는다(미연결 — 후속 작업).
+
+## NewStart 감사회원 1:1 비공개 상담 API (`/api/newstart/consultations`, `/api/admin/newstart/consultations`) (2026-10, V1019)
+
+감사회원과 운영자 사이의 비공개 개인 상담. 카카오톡 상담방(공개 질문·경험)과 분리되며 개인 채무·개인 상담은 이 안에서만 오간다(설계 §1·§6). 설계·테이블 상세는 [`DOMAIN.md`](DOMAIN.md) "NewStart 감사회원 1:1 비공개 상담 (V1019)".
+
+인증 경계: `/api/newstart/consultations`는 `/api/**` catch-all로 로그인 회원만 도달하고, 서비스 `requireThanksMember`가 감사회원(THANKS_MEMBER grant, ADMIN은 grant 없이 통과)만 통과시킨다(미부여 403 `{"status":"error","errorMessage"}`). 발신 회원은 서버 principal에서만 결정 — 요청에 userId·authorRole을 받지 않는다. 소유권 HARD GATE는 서비스에서 강제(타인 상담 403/404, §8). 운영자 API는 `/api/admin/**` `hasRole('ADMIN')` + 서비스 `requireAdmin` 이중 확인.
+
+### 회원 측 `/api/newstart/consultations`
+- `POST /`(`{content, linkDebt}`) — 새 상담 작성. 첫 질문을 MEMBER 메시지로 저장하고 질문에서 결정적 키워드로 A to Z 단계를 연결(신호 없으면 NULL). `content` 2000자 초과·빈 값 400(`errorMessage`). 201 `ConsultationThreadView`.
+- `GET /` — 내 상담 목록. 각 행 `{consultationId, status, statusLabel, preview, lastMessageAt, newAnswerCount(못 본 운영자 답변 수), linkDebt}`.
+- `GET /{id}` — 상담 스레드 상세. `messages`는 MEMBER·OPERATOR만(**AI_RESEARCH 원천 제외**, §5). 열람 시 읽음 커서 갱신.
+- `POST /{id}/messages`(`{content}`) — 같은 스레드 추가 질문. 운영자 답변 뒤면 상태 MEMBER_FOLLOWUP.
+- `GET /unread-count` — 헤더/홈 배지용 `{unreadAnswerCount}`.
+- 회원 경로에는 조사 엔드포인트가 없다(AI 결과를 회원 API로 절대 내리지 않음, §5).
+
+### 운영자 측 `/api/admin/newstart/consultations` (ROLE_ADMIN)
+- `GET /` — 상담함 목록. 회원 닉네임만 노출. `{consultationId, memberNickname, status, statusLabel, preview, lastMessageAt, memberQuestionUnread, linkDebt}`.
+- `GET /{id}` — 상담 상세 한 화면(§3: 닉네임/연결 허용한 채무상황(`linkDebt`일 때만)/현재 A to Z 단계 title·url/이번 질문/이전 대화(시간순, AI_RESEARCH 포함 운영자만)/관련 지피지기 실제 사례). 열람 시 NEW→AWAITING_ANSWER 전이·읽음 갱신.
+- `POST /{id}/research` — `[지피지기에게 조사시키기]`: 회원 최신 질문을 `JipijigiSanitizer.mask`(이름·닉네임·표시별명 + 연락처/주민번호/계좌/이메일)로 **익명화한 뒤** `NewStartAiChatService.ask`/`askOfficial`에 조사. 결과는 **운영자 전용** `AI_RESEARCH` 메시지로만 저장하고 회원에게 자동 전송하지 않는다(상태·정렬 시각 미변경). 200 `ConsultationMessageView(authorRole=AI_RESEARCH)`.
+- `POST /{id}/answer`(`{content}`) — `[회원에게 답변]`: 운영자가 읽고 수정·보완한 텍스트만 OPERATOR 메시지로 회원 비공개 스레드에 전달. 상태 OPERATOR_ANSWERED. 200 `ConsultationMessageView(authorRole=OPERATOR)`.
+- 400 처리: `IllegalArgumentException`(빈/초과 본문, 조사할 회원 질문 없음) → `{"status":"error","errorMessage"}`.
+- 화면 진입: `/newstart/consultations`(공개 셸), `/admin/newstart/consultations`(ROLE_ADMIN).

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,14 +14,12 @@
   <a class="ns-back" href="/newstart">← NewStart 홈</a>
 
   <header class="az-hero">
-    <p class="ns-eyebrow">2026-09-24 현행 검증본</p>
     <h1>새출발기금 A to Z</h1>
     <p class="az-hero-copy">협약기관 확인에서 연체·추심 대응, 법원 문서, 신청, 심사·확정안, 추가감면과 성실상환 이후까지. 지금 내 단계부터 시작하세요. 공식 확인 내용과 운영자·회원 경험을 구분해 표시합니다.</p>
     <div class="az-legend" aria-label="표시 구분 범례">
       <span class="az-legend-item"><span class="az-tag az-tag-official">공식·현재</span> 공식자료 확인됨</span>
       <span class="az-legend-item"><span class="az-tag az-tag-operator">운영자 경험</span> 실제 이용·운영 경험</span>
       <span class="az-legend-item"><span class="az-tag az-tag-member">회원 사례</span> 개별 사례</span>
-      <span class="az-legend-item"><span class="az-tag az-tag-recheck">현재 재확인 필요</span> 확정 전 — 공식 확인 필요</span>
     </div>
   </header>
 
@@ -84,6 +82,16 @@
       <a class="az-cta az-cta-official" href="https://www.ccrs.or.kr/" target="_blank" rel="noopener noreferrer">협약 미가입이면 신복위 채무조정 확인 ↗</a>
     </div>
     <p class="az-phone">문의: 새출발기금 <strong>1660-1378</strong> / 신복위 <strong>1600-5500</strong></p>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(0) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(0)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><span></span><a href="#step-1">다음 단계: 연체 시작 · 추심 대응 →</a></div>
   </section>
 
@@ -95,7 +103,7 @@
     <h3 class="az-h3">1-1. 연체 계산</h3>
     <p class="az-core">납부기한 다음 날부터 미납 상태가 이어집니다. 예: 12월 12일까지 납부해야 했다면 미납 시 <strong>12월 13일</strong>부터 연체가 시작됩니다.</p>
     <div class="az-source az-source-official">
-      <p><span class="az-tag az-tag-official">공식·현재</span> 새출발기금 공식 정의(2026-09-28 재확인) — 부실차주는 <strong>3개월 이상 연체</strong>, 즉 3개월 이상 대출상환금을 연체한 차주. 부실우려차주는 <strong>근시일 내 장기 연체에 빠질 위험이 큰 차주</strong>. 신용회복위원회 안내도 같은 기준입니다: 부실차주=연체 90일 이상, 부실우려차주=연체 89일 이하.</p>
+      <p><span class="az-tag az-tag-official">공식·현재</span> 새출발기금 공식 정의 — 부실차주는 <strong>3개월 이상 연체</strong>, 즉 3개월 이상 대출상환금을 연체한 차주. 부실우려차주는 <strong>근시일 내 장기 연체에 빠질 위험이 큰 차주</strong>. 신용회복위원회 안내도 같은 기준입니다: 부실차주=연체 90일 이상, 부실우려차주=연체 89일 이하.</p>
       <p><span class="az-tag az-tag-official">공식·현재</span> 신복위 중개형 세부 요건 — 연체 10~89일, 또는 10일 미만이어도 ① '20.4~'25.6 중 폐업(개인사업자)·6개월 이상 휴업(휴·폐업 신고 필요), ② 국세·지방세·관세 체납으로 공공정보 등재, ③ 개인신용평점 하위 10%(법인소상공인은 대표이사 평점 적용 가능) 중 하나에 해당하면 부실우려로 봅니다.</p>
       <p>토스·카카오페이·네이버페이의 연체표시 확인법은 <strong>보조수단</strong>으로만 활용하고, 공식 판단은 Credit4U와 새출발기금 자격조회를 우선하세요.</p>
     </div>
@@ -140,6 +148,16 @@
       <a class="az-cta az-cta-internal" href="/newstart/fss-helper">금감원 민원 도우미 →</a>
       <a class="az-cta az-cta-official" href="https://www.fss.or.kr/" target="_blank" rel="noopener noreferrer">금감원 공식 사이트(민원·상담) ↗</a>
     </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(1) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(1)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-0">← 단계 0 협약기관 확인</a><a href="#step-2">다음 단계: 지급명령 · 전자소송 →</a></div>
   </section>
 
@@ -174,7 +192,7 @@
     <details class="az-details">
       <summary>자세한 설명</summary>
       <div class="az-source az-source-official">
-        <p><span class="az-tag az-tag-official">공식·현재</span> 「민사소송법」 독촉절차(제463조·제464조 등)와 법제처 찾기쉬운 생활법령정보 「나홀로 민사소송 — 지급명령」 안내를 2026-09-29에 확인한 내용입니다.</p>
+        <p><span class="az-tag az-tag-official">공식·현재</span> 「민사소송법」 독촉절차(제463조·제464조 등)와 법제처 찾기쉬운 생활법령정보 「나홀로 민사소송 — 지급명령」 안내 기준입니다.</p>
       <ul>
         <li><strong>송달일로부터 2주 안에 이의신청을 하지 않으면</strong> — 지급명령이 확정되고, 확정된 지급명령은 <strong>확정판결(최종 판단)과 같은 효력</strong>을 가집니다. 이를 근거로 급여·계좌·부동산 압류 등 강제집행이 진행될 수 있습니다.</li>
         <li><strong>이의신청을 하면</strong> — 적법한 이의신청이 접수되면 지급명령은 <strong>이의를 제기한 범위 안에서 효력을 잃고</strong>, 사건은 <strong>통상의 민사소송</strong>으로 진행됩니다. 소송으로 전환된 뒤에는 법원의 지시에 따라 답변서 등으로 다투게 됩니다.</li>
@@ -256,6 +274,16 @@
       <a class="az-cta az-cta-official" href="https://ecfs.scourt.go.kr/" target="_blank" rel="noopener noreferrer">대한민국 법원 전자소송 바로가기 ↗</a>
       <a class="az-cta az-cta-official" href="https://ecfs.scourt.go.kr/psp/index.on?m=PSP004M01" target="_blank" rel="noopener noreferrer">지정 진입점(전자소송) ↗</a>
     </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(2) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(2)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-1">← 단계 1 연체 · 추심 대응</a><a href="#step-3">다음 단계: Credit4U · 장기연체 →</a></div>
   </section>
 
@@ -271,8 +299,8 @@
     <div class="az-source az-source-official">
       <p><span class="az-tag az-tag-official">공식·현재</span> 부실차주 핵심 기준은 하나 이상의 금융회사 채무가 <strong>3개월 이상 연체</strong>된 경우.</p>
     </div>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> 과거 안내에 등장하는 “장기연체코드 0101”은 현재와 다를 수 있습니다. 특정 코드 하나가 신청자격의 절대 조건은 아니며, 실제 등록 여부는 Credit4U와 1660-1378에서 확인하세요. 운영자 경험담: <a href="https://cafe.naver.com/newhopero/325" target="_blank" rel="noopener noreferrer">장기연체 등록 안내 ↗</a></p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> 과거 안내에 등장하는 “장기연체코드 0101”은 현재와 다를 수 있습니다. 특정 코드 하나가 신청자격의 절대 조건은 아니며, 실제 등록 여부는 Credit4U와 1660-1378에서 확인하세요. 운영자 경험담: <a href="https://cafe.naver.com/newhopero/325" target="_blank" rel="noopener noreferrer">장기연체 등록 안내 ↗</a></p>
     </div>
 
     <h3 class="az-h3">3-3. 반영이 늦을 때</h3>
@@ -291,6 +319,16 @@
       <a class="az-cta az-cta-internal" href="/newstart/tools/credit4u">내 채무·연체정보 확인 도우미 →</a>
       <a class="az-cta az-cta-internal" href="/newstart/fss-helper">금감원 민원 도우미 →</a>
     </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(3) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(3)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-2">← 단계 2 지급명령 · 전자소송</a><a href="#step-4">다음 단계: 신청 자격 · 공식 신청 →</a></div>
   </section>
 
@@ -301,7 +339,7 @@
 
     <h3 class="az-h3">4-1. 신청 자격</h3>
     <div class="az-source az-source-official">
-      <p><span class="az-tag az-tag-official">공식·현재</span> 새출발기금 공식 제도 안내(www.newstartfund.or.kr → 새출발기금 제도안내)를 2026-09-28 재확인한 기준입니다.</p>
+      <p><span class="az-tag az-tag-official">공식·현재</span> 새출발기금 공식 제도 안내(www.newstartfund.or.kr → 새출발기금 제도안내) 기준입니다.</p>
       <ul>
         <li><strong>사업 영위기간</strong> — <strong>2020.4~2025.6</strong> 중 사업을 영위한(휴업 및 폐업 포함) 개인사업자 또는 법인 소상공인. 공식 단서: <strong>폐업 법인은 신청 불가</strong></li>
         <li><strong>부실차주</strong> — 3개월 이상 대출상환금을 연체한 차주</li>
@@ -367,6 +405,16 @@
       <a class="az-cta az-cta-video" href="https://www.youtube.com/watch?v=GALYPhiZLaw" target="_blank" rel="noopener noreferrer">캠코TV 공식 신청방법 영상 ▶</a>
       <a class="az-cta az-cta-official" href="https://home.newstartfund.or.kr/" target="_blank" rel="noopener noreferrer">새출발기금 공식 홈페이지에서 신청하기 ↗</a>
     </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(4) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(4)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-3">← 단계 3 Credit4U · 장기연체</a><a href="#step-5">다음 단계: 원장 초기화 →</a></div>
   </section>
 
@@ -385,8 +433,8 @@
         <li>신분증, 사업자등록증 또는 폐업사실증명서 첨부</li>
       </ul>
     </div>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요 · 개인정보 주의</span> 이 이메일·첨부 방식이 2026년 현재도 공식 절차인지는 확인되지 않았습니다. 신분증을 과거 주소로 보내지 마시고, <strong>1660-1378과 공식 사이트에서 현재 절차</strong>를 먼저 확인하세요. 아래 내용은 과거 운영 경험으로만 참고합니다.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">개인정보 주의</span> 위 이메일·첨부 방식은 과거 운영 경험입니다. 신분증을 과거 주소로 보내지 마시고, <strong>1660-1378과 공식 사이트에서 현재 절차</strong>를 먼저 확인하세요.</p>
     </div>
     <div class="az-block az-block-caution">
       <p class="az-block-title">[주의할 것]</p>
@@ -398,6 +446,16 @@
       <a class="az-cta az-cta-official" href="https://www.newstartfund.or.kr/Contents/Objc.do" target="_blank" rel="noopener noreferrer">공식 제도 안내 확인 ↗</a>
     </div>
     <p class="az-phone">문의: 새출발기금 <strong>1660-1378</strong></p>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(5) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(5)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-4">← 단계 4 신청 방법</a><a href="#step-6">다음 단계: 지원 가능한 대출 →</a></div>
   </section>
 
@@ -431,6 +489,16 @@
       <a class="az-cta az-cta-official" href="https://www.newstartfund.or.kr/Faq/List.do" target="_blank" rel="noopener noreferrer">공식 FAQ에서 대상 채무 확인 ↗</a>
       <a class="az-cta az-cta-official" href="https://www.ccrs.or.kr/" target="_blank" rel="noopener noreferrer">대상 제외 채무는 신복위 채무조정 ↗</a>
       <a class="az-cta az-cta-internal" href="/newstart/tools/credit4u">내 채무·연체정보 확인 도우미 →</a>
+    </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(6) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(6)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
     </div>
     <div class="az-next"><a href="#step-5">← 단계 5 원장 초기화</a><a href="#step-7">다음 단계: 부실우려 → 부실차주 →</a></div>
   </section>
@@ -472,6 +540,16 @@
       <a class="az-cta az-cta-internal" href="/newstart/tools/application">부실차주 신청 준비 도우미 →</a>
       <a class="az-cta az-cta-official" href="https://www.ccrs.or.kr/" target="_blank" rel="noopener noreferrer">부실우려·중개형 조건은 신복위 ↗</a>
     </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(7) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(7)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-6">← 단계 6 지원 가능한 대출</a><a href="#step-8">다음 단계: 부동산 담보 →</a></div>
   </section>
 
@@ -490,8 +568,8 @@
         <li>선순위 주택구입 목적 대출과 사업관련 후순위 담보 구분</li>
       </ul>
     </div>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> “후순위 사업자 담보만 가능”, “금리 4.6%”, “20년”은 모든 신청자에게 똑같이 적용되는 고정 조건이 아닙니다. 현재 조건은 신복위 1600-5500 / 새출발기금 1660-1378에서 확인하세요.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> “후순위 사업자 담보만 가능”, “금리 4.6%”, “20년”은 모든 신청자에게 똑같이 적용되는 고정 조건이 아닙니다. 현재 조건은 신복위 1600-5500 / 새출발기금 1660-1378에서 확인하세요.</p>
     </div>
     <div class="az-block az-block-check">
       <p class="az-block-title">[지금 확인할 것]</p>
@@ -506,6 +584,16 @@
       <a class="az-cta az-cta-official" href="https://www.ccrs.or.kr/" target="_blank" rel="noopener noreferrer">담보채무 중개형은 신복위 ↗</a>
     </div>
     <p class="az-phone">개별 조건 문의: 신복위 <strong>1600-5500</strong> / 새출발기금 <strong>1660-1378</strong></p>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(8) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(8)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-7">← 단계 7 부실우려 → 부실차주</a><a href="#step-9">다음 단계: 차량 담보 →</a></div>
   </section>
 
@@ -524,8 +612,8 @@
         <li>영업용 승합차 채무를 신복위 개인워크아웃에 포함한 사례</li>
       </ul>
     </div>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> 차량 용도·담보순위·상품·채권기관별로 결과가 달라질 수 있어 위 내용은 사례로만 참고하고, 1660-1378 / 1600-5500에서 확인하세요.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> 차량 용도·담보순위·상품·채권기관별로 결과가 달라질 수 있어 위 내용은 사례로만 참고하고, 1660-1378 / 1600-5500에서 확인하세요.</p>
     </div>
     <div class="az-block az-block-check">
       <p class="az-block-title">[지금 확인할 것]</p>
@@ -538,6 +626,16 @@
       <a class="az-cta az-cta-internal" href="/newstart/tools/application">신청 준비 도우미 →</a>
     </div>
     <p class="az-phone">문의: 새출발기금 <strong>1660-1378</strong> / 신복위 <strong>1600-5500</strong></p>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(9) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(9)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-8">← 단계 8 부동산 담보</a><a href="#step-10">다음 단계: 임시안 → 확정안 →</a></div>
   </section>
 
@@ -550,8 +648,8 @@
     <div class="az-source az-source-member">
       <p><span class="az-tag az-tag-member">회원 사례</span> 경험 사례: 2주~1개월, 신용보증재단/기금 지급보증 표시, 일부 카드채무 임시화면 0원 후 반영 사례, 임시 감면수치가 확정안에서 변경된 사례.</p>
     </div>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> 위 기간과 화면 표시는 회원 경험이며, 공식 처리기한이 아닙니다.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> 위 기간과 화면 표시는 회원 경험이며, 공식 처리기한이 아닙니다.</p>
     </div>
 
     <h3 class="az-h3">10-2. 도덕적 해이 · 재산 심사</h3>
@@ -575,11 +673,21 @@
     <div class="az-source az-source-official">
       <p><span class="az-tag az-tag-official">공식·현재</span> 부실차주 무담보채무는 보유재산 등을 반영해 원금조정 가능. 저소득·사회취약계층 확대지원 존재. 실제 조정률은 개별심사.</p>
     </div>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> <strong>소득·나이·부양가족 수</strong>는 감면에 영향을 주는 대표 항목이지만, 이 세 항목만으로 감면율이 정해지지 않습니다. 실제 조정률은 개별 심사 결과입니다.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> <strong>소득·나이·부양가족 수</strong>는 감면에 영향을 주는 대표 항목이지만, 이 세 항목만으로 감면율이 정해지지 않습니다. 실제 조정률은 개별 심사 결과입니다.</p>
     </div>
     <div class="az-cta-row">
       <a class="az-cta az-cta-official" href="https://www.newstartfund.or.kr/Rslt/Rslt.do" target="_blank" rel="noopener noreferrer">공식 결과조회 ↗</a>
+    </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(10) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(10)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
     </div>
     <div class="az-next"><a href="#step-9">← 단계 9 차량 담보</a><a href="#step-11">다음 단계: 교육 이수 · 추가감면 →</a></div>
   </section>
@@ -621,8 +729,8 @@
         </ul>
       </div>
     </details>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> 최대 10%p 추가 감면과 프로그램 확대는 현재 확인된 기준입니다. 다만 개별 6%/3% 비율과 세부 조건은 최신 공고에서 다시 확인하세요.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> 최대 10%p 추가 감면과 프로그램 확대는 현재 확인된 기준입니다. 다만 개별 6%/3% 비율과 세부 조건은 최신 공고에서 다시 확인하세요.</p>
     </div>
 
     <h3 class="az-h3">11-4. 재창업 교육 — 과거 사례 기준 안내</h3>
@@ -637,13 +745,13 @@
         </ul>
       </div>
     </details>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> 프로그램별 10%/5% 비율은 과거 안내이므로 최신 공지를 확인하세요.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> 프로그램별 10%/5% 비율은 과거 안내이므로 최신 공지를 확인하세요.</p>
     </div>
 
     <h3 class="az-h3">11-5. 공공정보</h3>
-    <div class="az-source az-source-recheck">
-      <p><span class="az-tag az-tag-recheck">현재 재확인 필요</span> “교육 후 실제 재취업/재창업 성공 시 공공정보 즉시 해제”는 과거 경험 안내로, 아래의 현행 공식 기본안내와 다릅니다.</p>
+    <div class="az-source az-source-guide">
+      <p><span class="az-tag az-tag-guide">확인하세요</span> “교육 후 실제 재취업/재창업 성공 시 공공정보 즉시 해제”는 과거 경험 안내로, 아래의 현행 공식 기본안내와 다릅니다.</p>
     </div>
     <div class="az-source az-source-official">
       <p><span class="az-tag az-tag-official">공식·현재</span> 부실차주는 채무조정 확정 시 공공정보 등록 후 <strong>1년간 성실상환 시 공공정보 해제</strong> 안내.</p>
@@ -651,6 +759,16 @@
     </div>
     <div class="az-cta-row">
       <a class="az-cta az-cta-official" href="https://www.newstartfund.or.kr/Board/List.do" target="_blank" rel="noopener noreferrer">새출발기금 공지에서 최신 양식·조건 확인 ↗</a>
+    </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(11) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(11)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
     </div>
     <div class="az-next"><a href="#step-10">← 단계 10 임시안 · 확정안</a><a href="#step-12">다음 단계: 성실상환 이후 지원 →</a></div>
   </section>
@@ -664,7 +782,7 @@
     <details class="az-details">
       <summary>자세한 설명</summary>
       <div class="az-source az-source-member">
-        <p><span class="az-tag az-tag-member">과거 자료 · <span class="az-tag az-tag-recheck">현재 재확인 필요</span></span> 아래 3종 지원의 2026년 현재 명칭·기간·한도·금리·모집 여부는 각 시행기관 최신공고에서 확인해야 합니다:</p>
+        <p><span class="az-tag az-tag-member">과거 자료</span> 아래 3종 지원의 2026년 현재 명칭·기간·한도·금리·모집 여부는 각 시행기관 최신공고에서 확인해야 합니다:</p>
       <ul>
         <li><strong>① 소진공 재도전특별 직접대출</strong> — 과거 자료상 부실차주 6개월 이상 성실상환, 최대 7천만원, 5년, 정책자금 기준금리+1.6%.</li>
         <li><strong>② 신용보증재단 일사천리(서울 다시서기 4.0)</strong> — 과거 자료상 3개월 이상 성실상환, 최대 5천만원, 2%대.</li>
@@ -698,6 +816,16 @@
       <a class="az-cta az-cta-official" href="https://www.newstartfund.or.kr/Board/List.do" target="_blank" rel="noopener noreferrer">새출발기금 공지에서 2026 인센티브·재기지원 확인 ↗</a>
       <a class="az-cta az-cta-official" href="https://www.newstartfund.or.kr/Rslt/Rslt.do" target="_blank" rel="noopener noreferrer">공식 지원 결과조회(본인인증 필요) ↗</a>
     </div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(12) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(12)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
     <div class="az-next"><a href="#step-11">← 단계 11 교육 · 추가감면</a><a href="#step-13">다음 단계: 신청결과 · 진행상태 →</a></div>
   </section>
 
@@ -726,7 +854,17 @@
       <a class="az-cta az-cta-internal" href="/newstart/tools/status">진행상태 확인 도우미 →</a>
     </div>
     <p class="az-phone">문의: 새출발기금 <strong>1660-1378</strong> / 신복위 <strong>1600-5500</strong></p>
-    <div class="az-next"><a href="#step-12">← 단계 12 성실상환 이후 지원</a><a href="#refs">공식 근거 · 재확인 중 안내 →</a></div>
+    <div class="az-cases" th:if="${casesByStep != null and casesByStep.get(13) != null}">
+      <p class="az-cases-title">이 단계의 실제 사례</p>
+      <details class="az-case" th:each="c : ${casesByStep.get(13)}">
+        <summary><span class="az-case-arrow" aria-hidden="true">▶</span><span class="az-case-name" th:text="${c.title}">사례 제목</span><span class="az-tag az-tag-case" th:text="${c.label}">라벨</span></summary>
+        <div class="az-case-body">
+          <p th:if="${c.summary != null and !c.summary.isBlank()}" th:text="${c.summary}">요약</p>
+          <a th:if="${c.url != null and !c.url.isBlank()}" th:href="${c.url}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
+        </div>
+      </details>
+    </div>
+    <div class="az-next"><a href="#step-12">← 단계 12 성실상환 이후 지원</a><a href="#refs">공식 근거 →</a></div>
   </section>
 
   <!-- 참고: 공식 근거 + 재확인 중 안내 -->
@@ -748,8 +886,8 @@
     </ul>
 
     <details>
-      <summary>공식 확인이 필요한 과거 안내 14가지</summary>
-      <p class="az-note">아래 내용은 회원·운영자의 과거 경험이나 예전 자료에 있었던 것으로, 2026년 현재 공식 기준으로 확인되지 않았습니다. 각 단계에서 <span class="az-tag az-tag-recheck">현재 재확인 필요</span>로 표시되어 있으며, 확정된 사실처럼 믿지 말고 반드시 공식 창구(1660-1378 / 1600-5500)에서 확인하세요.</p>
+      <summary>과거 안내 중 공식 확인이 필요한 항목</summary>
+      <p class="az-note">아래 내용은 회원·운영자의 과거 경험이나 예전 자료에 있었던 것으로, 조건이 바뀌었을 수 있습니다. 확정된 사실처럼 믿지 말고 반드시 공식 창구(1660-1378 / 1600-5500)에서 현재 기준을 확인하세요.</p>
       <ol>
         <li>장기연체코드 0101 현재 의미 (단계 3)</li>
         <li>원장초기화 이메일 newstartfund@kamcocs.co.kr / 신분증 첨부 방식 유효성 (단계 5)</li>

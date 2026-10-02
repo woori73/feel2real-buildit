@@ -1643,3 +1643,16 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 - `newstart_direct_messages`: `message_id` PK, `sender_user_id`/`receiver_user_id` FK → `users.user_id`(ON DELETE CASCADE), `message` VARCHAR(1000), `is_read` DEFAULT FALSE. 송수신자는 서버 principal·회원 존재 여부로만 결정하고 닉네임 문자열·loginId 저장을 금지 — 표시명은 조회 시 `NewStartMemberProfileService`로 resolve(채팅과 동일 정책). 삭제는 수신자 본인의 받은함 정리용 row 삭제(1:1 단일 복사본이라 발신 측에도 함께 사라진다).
 - 수신 거부 상대·본인·없는 회원 전송은 거부, 도배 방지 10건/1분(429). 목록·상대는 로그인 회원에게만 노출(비로그인 401) — 숨김 회원은 목록에서 제외.
 
+## NewStart 감사회원 1:1 비공개 상담 (V1019)
+
+감사회원과 운영자 사이의 개인 상담 스레드. 카카오톡 감사회원 상담방(공개 가능한 질문·경험 나눔)과 명확히 분리하고, 개인 채무정보·개인 상담은 이 NewStart 안에서만 오간다(설계 §1·§6). 기존 내부 쪽지(`newstart_direct_messages`, V1017)는 단발·1:1 단일복사본·회원 상호 DM이라 상담 스레드로 재사용하지 않고 그대로 보존하며, 새 두 테이블에 스레드·상태를 담는다(§9 기존 데이터 보존).
+
+- `newstart_consultations`: `consultation_id` PK(AI), `member_user_id` FK → `users.user_id`(ON DELETE CASCADE), `status`(`NEW|AWAITING_ANSWER|OPERATOR_ANSWERED|MEMBER_FOLLOWUP`), `link_debt`(본인 채무상황을 이 상담에 연결 허용 플래그), `atoz_step` INT NULL(생성 시 질문에서 **결정적 키워드**로 연결한 A to Z 단계 0..13, 신호 없으면 NULL — AI 판단·단계 창작 없음), `member_last_seen_message_id`/`operator_last_seen_message_id`(읽음 커서), `created_at/updated_at`, `last_message_at`(목록 정렬 시각). 인덱스 `(member_user_id, consultation_id)`, `(status, last_message_at)`.
+- `newstart_consultation_messages`: `message_id` PK(AI), `consultation_id` FK(ON DELETE CASCADE), `author_role`(`MEMBER|OPERATOR|AI_RESEARCH`), `content` TEXT, `created_at`. 인덱스 `(consultation_id, message_id)`.
+- **HARD GATE(§8)**: 화면 숨김이 아니라 조회 자체에서 강제. 회원 경로는 `findById` + 소유자 비교(`member_user_id == principal.userId()`)로 본인 상담만 읽고, 타인 것은 `AccessDeniedException`(403)/없으면 404. 발신 주체는 서버 principal에서만 결정하고 요청값으로 userId·authorRole을 받지 않는다. 운영자 경로는 `SecurityConfig` `/api/admin/**` `hasRole('ADMIN')` + 서비스 `requireAdmin` 이중 확인(직접 호출 방어). 운영자 상담 접근 권한은 ADMIN뿐(별도 상담 역할·권한 없음).
+- **AI는 회원에게 자동 답변하지 않는다(§5)**: `AI_RESEARCH` 메시지는 회원 스레드 조회에서 원천 제외(`MessageAuthorRole.visibleToMember()`=false, 리포지토리 `In(MEMBER,OPERATOR)` 필터)하고, `[지피지기에게 조사시키기]`는 상담 상태·`last_message_at`을 건드리지 않는다. 회원에게 전달되는 유일한 경로는 `[회원에게 답변]`(OPERATOR 메시지)뿐.
+- **조사 익명화(§4)**: `[지피지기에게 조사시키기]`는 회원 최신 질문을 `JipijigiSanitizer.mask(질문, [이름·닉네임·표시별명])`로 마스킹한 뒤(연락처·주민번호·계좌·이메일·닉네임 → 마스킹) `NewStartAiChatService.ask`/`askOfficial`에 넘긴다 — 개인 식별정보를 검색어에 그대로 넣지 않는다. 조사는 지피지기 원칙 순서(전자책·실제 사례→현재 규정 확인)를 그대로 따른다(RAG 답변 순서 반전 금지).
+- **채무 최소 노출(§1·§8)**: `link_debt=true`일 때만 운영자 상세에 `NewStartMemberDebtStatusService.findMine` 결과를 붙이고, 원본을 복사하지 않는다. 로그에 상담 본문·채무 원본을 남기지 않는다. 표시 닉네임은 `NewStartMemberProfileService`로 조회 시 resolve(닉네임·loginId·이메일 저장 금지).
+- **상태 전이(§2, 결정적·AI 없음)**: 회원 첫 질문→NEW. 운영자가 열면→AWAITING_ANSWER. 운영자 답변→OPERATOR_ANSWERED. 답변 뒤 회원 추가 질문→MEMBER_FOLLOWUP. 회원 목록/배지는 아직 못 본 OPERATOR 답변 수(`member_last_seen_message_id` 커서 기준)로 "새 답변 N건" 표시.
+- 관련 화면: 회원 `/newstart/consultations`(공개 셸 + `window.refreshAccountArea` 인증, 감사회원만 API 통과), 운영자 `/admin/newstart/consultations`(ROLE_ADMIN). 홈 `ns-service-consult` 카드 + `newstart-consult-unread.js` 배지.
+
