@@ -38,6 +38,8 @@
       workerPath: '/vendor/tesseract/worker.min.js',
       corePath: '/vendor/tesseract/core',
       langPath: '/vendor/tesseract/lang-data',
+      // blob 워커에서는 절대경로 importScripts가 실패하므로 실제 스크립트 URL을 쓴다(미지정 시 OCR 전건 실패).
+      workerBlobURL: false,
       logger: function (m) {
         if (m.status === 'recognizing text') setStatus(label + ' 문자 인식 중 ' + Math.round((m.progress || 0) * 100) + '%');
       }
