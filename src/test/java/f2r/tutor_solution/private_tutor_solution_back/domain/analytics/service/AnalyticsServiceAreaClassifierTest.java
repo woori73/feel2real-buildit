@@ -23,6 +23,12 @@ class AnalyticsServiceAreaClassifierTest {
       "/lms/edu-holic/courses/3, ACADEMY",
       "/wiki, WIKI",
       "/wiki/questions/31, WIKI",
+      "/newstart, NEWSTART",
+      "/newstart/login, NEWSTART",
+      "/newstart/thanks-guide, NEWSTART",
+      "/newstart/updates/12, NEWSTART",
+      "/newstarter, OTHER",
+      "/admin/newstart, OTHER",
       "/community, OTHER"
   })
   void classifiesActualRoutes(String path, AnalyticsServiceArea expected) {

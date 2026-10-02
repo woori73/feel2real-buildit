@@ -88,7 +88,7 @@ class AdminAnalyticsServiceTest {
   }
 
   @Test
-  @DisplayName("HOME~OTHER 6개 서비스의 UV/PV 기간별 집계를 응답한다")
+  @DisplayName("HOME~OTHER 7개 서비스의 UV/PV 기간별 집계를 응답한다")
   void summary_serviceTraffic() {
     when(visitRepository.countDistinctVisitorsByArea(
         AnalyticsServiceArea.CHART, TODAY, TODAY)).thenReturn(12L);
@@ -99,9 +99,32 @@ class AdminAnalyticsServiceTest {
         .filter(row -> row.service().equals("CHART"))
         .findFirst().orElseThrow();
 
-    assertThat(service.summary().serviceTraffic()).hasSize(6);
+    assertThat(service.summary().serviceTraffic()).hasSize(7);
     assertThat(chart.visitors().today()).isEqualTo(12L);
     assertThat(chart.views().today()).isEqualTo(34L);
+  }
+
+  @Test
+  @DisplayName("given NEWSTART 영역 집계값 when summary then 상단 NewStart 방문자(UV) 카드와 표 행에 동일 기간으로 반영")
+  void summary_newStartVisitors() {
+    when(visitRepository.countDistinctVisitorsByArea(AnalyticsServiceArea.NEWSTART, TODAY, TODAY))
+        .thenReturn(5L);
+    when(visitRepository.countDistinctVisitorsByArea(
+        AnalyticsServiceArea.NEWSTART, TODAY.minusDays(6), TODAY)).thenReturn(20L);
+    when(visitRepository.countDistinctVisitorsByArea(
+        AnalyticsServiceArea.NEWSTART, TODAY.minusDays(29), TODAY)).thenReturn(50L);
+    when(visitRepository.countDistinctVisitorsByAreaAllTime(AnalyticsServiceArea.NEWSTART))
+        .thenReturn(80L);
+
+    AdminAnalyticsResponse response = service.summary();
+
+    assertThat(response.newStartVisitors().today()).isEqualTo(5L);
+    assertThat(response.newStartVisitors().recent7()).isEqualTo(20L);
+    assertThat(response.newStartVisitors().recent30()).isEqualTo(50L);
+    assertThat(response.newStartVisitors().total()).isEqualTo(80L);
+    assertThat(response.serviceTraffic().stream()
+        .filter(row -> row.service().equals("NEWSTART"))
+        .findFirst().orElseThrow().visitors().total()).isEqualTo(80L);
   }
 
   @Test

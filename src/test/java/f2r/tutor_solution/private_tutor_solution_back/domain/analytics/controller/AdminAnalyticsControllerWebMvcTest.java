@@ -46,7 +46,7 @@ class AdminAnalyticsControllerWebMvcTest {
   void stubs() {
     PeriodMetric zero = new PeriodMetric(0, 0, 0, 0);
     when(service.summary()).thenReturn(new AdminAnalyticsResponse(
-        zero, zero, zero, zero, zero, zero, null,
+        zero, zero, zero, zero, zero, zero, zero, null,
         List.of(), List.of(), List.of(), List.of(), List.of()));
   }
 

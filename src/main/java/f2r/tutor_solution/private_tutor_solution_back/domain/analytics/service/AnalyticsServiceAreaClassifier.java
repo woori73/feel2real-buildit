@@ -12,9 +12,15 @@ public final class AnalyticsServiceAreaClassifier {
     if (path.equals("/") || path.equals("/home")) return AnalyticsServiceArea.HOME;
     if (path.equals("/chart") || path.startsWith("/chart/")) return AnalyticsServiceArea.CHART;
     if (path.equals("/wiki") || path.startsWith("/wiki/")) return AnalyticsServiceArea.WIKI;
+    if (isNewStart(path)) return AnalyticsServiceArea.NEWSTART;
     if (isWeb(path)) return AnalyticsServiceArea.WEB;
     if (isAcademy(path)) return AnalyticsServiceArea.ACADEMY;
     return AnalyticsServiceArea.OTHER;
+  }
+
+  private static boolean isNewStart(String path) {
+    // /admin/newstart(운영자 콘솔)는 회원/방문 트래픽이 아니라 관리 화면이므로 제외한다.
+    return path.equals("/newstart") || path.startsWith("/newstart/");
   }
 
   private static boolean isWeb(String path) {

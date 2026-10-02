@@ -49,6 +49,22 @@ class SitePageVisitRepositoryTest {
     assertThat(repository.countWikiPageViews(DAY, DAY)).isEqualTo(1);
   }
 
+  @Test
+  void newStartIsCountedSeparately_withoutMovingOtherAreas() {
+    save("V:newstart-visitor", AnalyticsServiceArea.NEWSTART, AnalyticsTrafficKind.HUMAN, "/newstart");
+    save("V:newstart-visitor", AnalyticsServiceArea.NEWSTART, AnalyticsTrafficKind.HUMAN, "/newstart/login");
+    save("U:77", AnalyticsServiceArea.NEWSTART, AnalyticsTrafficKind.HUMAN, "/newstart/thanks-guide");
+    save("B:BOT", AnalyticsServiceArea.NEWSTART, AnalyticsTrafficKind.BOT, "/newstart");
+    save("V:home-only", AnalyticsServiceArea.HOME, AnalyticsTrafficKind.HUMAN, "/home");
+
+    assertThat(repository.countDistinctVisitorsByArea(AnalyticsServiceArea.NEWSTART, DAY, DAY)).isEqualTo(2);
+    assertThat(repository.countPageViewsByArea(AnalyticsServiceArea.NEWSTART, DAY, DAY)).isEqualTo(3);
+    assertThat(repository.countDistinctVisitorsByAreaAllTime(AnalyticsServiceArea.NEWSTART)).isEqualTo(2);
+    assertThat(repository.countPageViewsByAreaAllTime(AnalyticsServiceArea.NEWSTART)).isEqualTo(3);
+    assertThat(repository.countPageViewsByArea(AnalyticsServiceArea.HOME, DAY, DAY)).isEqualTo(1);
+    assertThat(repository.countPageViewsByArea(AnalyticsServiceArea.OTHER, DAY, DAY)).isZero();
+  }
+
   private void save(String visitorKey, AnalyticsServiceArea area,
       AnalyticsTrafficKind kind, String path) {
     boolean wiki = area == AnalyticsServiceArea.WIKI;

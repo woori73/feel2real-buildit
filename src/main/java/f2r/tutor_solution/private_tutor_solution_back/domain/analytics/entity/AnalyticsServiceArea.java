@@ -7,5 +7,6 @@ public enum AnalyticsServiceArea {
   WEB,
   ACADEMY,
   WIKI,
+  NEWSTART,
   OTHER
 }
