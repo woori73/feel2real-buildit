@@ -47,4 +47,20 @@ public class AdminNewStartPageController {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
     return "admin/newstart_thanks_exceptions";
   }
+
+  /**
+   * 운영자 상담함 화면(§3) — ROLE_ADMIN 전용 진입점. 데이터는 /api/admin/newstart/consultations (ROLE_ADMIN).
+   * 개인 채무·상담 본문이 담기는 화면이라 Cache-Control로 캐시를 완전히 차단하고, 1차 SecurityConfig
+   * ({@code /admin/newstart/**} hasRole ADMIN)에 더해 여기서 role을 재검사한다(직접 URL 방어).
+   */
+  @GetMapping("/admin/newstart/consultations")
+  public String adminConsultations(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      HttpServletResponse response) {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "운영자만 접근할 수 있습니다.");
+    }
+    response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    return "admin/newstart_consultations";
+  }
 }

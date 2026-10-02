@@ -103,6 +103,24 @@
 .az-source-operator { border-left: 4px solid #b7791f; background: #fffaf0; }
 .az-source-member { border-left: 4px solid #7a2bc4; background: #faf6ff; }
 .az-source-recheck { border-left: 4px solid #b3261e; background: #fff8f7; }
+/* §4: AI 내부 "재확인 필요" 각주를 사용자용 중립 안내로 대체 — 빨간 경고색 대신 차분한 강조. */
+.az-source-guide { border-left: 4px solid #1a56c4; background: #f5f8ff; }
+.az-tag-guide { background: #e8f0fe; color: #1a56c4; }
+
+/* §3: 단계별 "이 단계의 실제 사례" — 제목 목록, 누르면 펼침. 처음부터 전문 전개 금지. */
+.az-cases { margin: 18px 0 4px; }
+.az-cases-title { margin: 0 0 10px; font-size: 17px; font-weight: 850; color: var(--az-ink); word-break: keep-all; }
+.az-case { border: 1px solid var(--az-line, #e3e8ef); border-radius: 12px; background: #fff; margin-bottom: 8px; overflow: hidden; }
+.az-case > summary { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 12px 14px; cursor: pointer; list-style: none; font-size: 16px; font-weight: 700; color: var(--az-ink); line-height: 1.5; word-break: keep-all; }
+.az-case > summary::-webkit-details-marker { display: none; }
+.az-case-arrow { flex-shrink: 0; color: var(--ns-blue, #2563eb); font-size: 12px; transition: transform .15s; }
+.az-case[open] .az-case-arrow { transform: rotate(90deg); }
+.az-case-name { flex: 1; min-width: 0; }
+.az-tag-case { flex-shrink: 0; background: #f3e8fd; color: #7a2bc4; }
+.az-case-body { padding: 0 14px 14px; border-top: 1px solid var(--az-line, #eef1f5); }
+.az-case-body p { margin: 10px 0 0; font-size: 16px; line-height: 1.7; color: var(--az-body); word-break: keep-all; }
+.az-case-body a { display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; color: var(--ns-blue, #2563eb); font-size: 15px; font-weight: 750; text-decoration: none; }
+.az-case-body a:hover { text-decoration: underline; }
 .az-quote { margin: 12px 0 0; padding: 13px 15px; border-left: 3px solid #d0d5dd; background: #fff; color: #3f4a5a; font-size: 16.5px; line-height: 1.75; border-radius: 0 10px 10px 0; word-break: keep-all; }
 .az-quote-title { font-weight: 800; color: var(--az-ink); margin: 0 0 6px; font-size: 16px; }
 

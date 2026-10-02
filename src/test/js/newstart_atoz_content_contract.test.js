@@ -17,10 +17,19 @@ test('A to Z renders all 14 journey steps from the source MD', () => {
   assert.match(atoz, /전체 여정 14단계/);
 });
 
-test('A to Z preserves the four source-truth tags and legend', () => {
-  ['공식·현재', '운영자 경험', '회원 사례', '현재 재확인 필요'].forEach((tag) => {
+test('A to Z preserves the three source-truth tags and legend (AI "재확인 필요" 각주 제거 — §4)', () => {
+  // §4(2026-10-02 사용자 지시): 사용자 화면에서 AI 내부 검토 각주("현재 재확인 필요")를 제거한다.
+  // 공식·현재 / 운영자 경험 / 회원 사례 3라벨만 범례·본문 마커로 남는다.
+  ['공식·현재', '운영자 경험', '회원 사례'].forEach((tag) => {
     assert.ok((atoz.match(new RegExp(tag, 'g')) || []).length >= 2, tag + ' must appear as legend and content marker');
   });
+  // AI 내부 검토용 각주·주의문은 사용자 화면에서 사라진다.
+  assert.doesNotMatch(atoz, /현재 재확인 필요/);
+  assert.doesNotMatch(atoz, /az-tag-recheck|az-source-recheck/);
+  assert.doesNotMatch(atoz, /현행 검증본/);
+  // 안전에 필수적인 절차적 경고는 중립 안내(az-source-guide)로 보존된다.
+  assert.match(atoz, /az-source-guide/);
+  assert.match(atoz, /신분증을 과거 주소로 보내지 마시고/);
 });
 
 test('A to Z keeps every official URL from the source MD', () => {
@@ -155,11 +164,13 @@ test('A to Z preserves key content units of every MD section', () => {
   assert.deepEqual(missing, [], 'MD content units missing from A to Z: ' + missing.join(', '));
 });
 
-test('A to Z keeps the fact-check hold list and official references', () => {
-  // 내부 QA 지시문("공개 전 팩트체크")은 제거되고 사용자 언어 안내로 재작성됨 — 목록 자체는 유지
-  assert.match(atoz, /공식 확인이 필요한 과거 안내 14가지/);
+test('A to Z keeps the past-guidance caution list and official references', () => {
+  // §4: AI 내부 "재확인 필요" 각주 프레이밍은 제거하되, "조건이 바뀌었을 수 있으니 공식 창구 확인"
+  // 소비자 보호 목록 자체는 중립 안내로 보존한다.
+  assert.match(atoz, /과거 안내 중 공식 확인이 필요한 항목/);
   assert.doesNotMatch(atoz, /공개 전 팩트체크/);
-  ['장기연체코드 0101', 'newstartfund@kamcocs.co.kr', '담보 고정금리 4.6%', '공공정보 즉시 해제'].forEach((item) => assert.ok(atoz.includes(item), 'hold item missing: ' + item));
+  assert.doesNotMatch(atoz, /공식 확인이 필요한 과거 안내 14가지/);
+  ['장기연체코드 0101', 'newstartfund@kamcocs.co.kr', '담보 고정금리 4.6%', '공공정보 즉시 해제'].forEach((item) => assert.ok(atoz.includes(item), 'caution item missing: ' + item));
   assert.match(atoz, /공식 근거/);
 });
 

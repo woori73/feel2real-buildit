@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 감사회원 1:1 상담함</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_students.css">
+  <style>
+    .cn-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .cn-table th, .cn-table td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+    .cn-table th { background: #f7fafc; color: #4a5568; font-weight: 700; }
+    .cn-unread { font-weight: 700; color: #c53030; }
+    .cn-state { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 9px; background: #edf2f7; color: #334155; }
+    .cn-state.NEW { background: #dbeafe; color: #1e40af; }
+    .cn-state.AWAITING_ANSWER { background: #fef9c3; color: #854d0e; }
+    .cn-state.OPERATOR_ANSWERED { background: #dcfce7; color: #14532d; }
+    .cn-state.MEMBER_FOLLOWUP { background: #ffedd5; color: #9a3412; }
+    .cn-open { background: none; border: none; padding: 0; color: #2b6cb0; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-align: left; }
+    .cn-note { font-size: 12.5px; color: #718096; line-height: 1.6; margin: 8px 0 14px; }
+    #cn-msg { font-size: 13px; margin: 8px 0; min-height: 18px; }
+    .cn-btn { border: 1px solid #cbd5e0; background: #fff; border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 12.5px; margin: 0 6px 6px 0; }
+    .cn-btn.primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+    .cn-btn.ai { background: #6b46c1; border-color: #6b46c1; color: #fff; }
+    .cn-detail { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 16px; margin: 16px 0; }
+    .cn-detail[hidden] { display: none; }
+    .cn-h { font-size: 13px; font-weight: 700; color: #4a5568; margin: 14px 0 4px; }
+    .cn-h:first-child { margin-top: 0; }
+    .cn-field { font-size: 13px; color: #1a202c; margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+    .cn-box { border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; margin: 6px 0; }
+    .cn-box.member { background: #eff6ff; border: 1px solid #bfdbfe; color: #0c4a6e; }
+    .cn-box.operator { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+    .cn-box.ai { background: #f5f3ff; border: 1px dashed #c4b5fd; color: #5b21b6; }
+    .cn-tag { font-size: 11px; font-weight: 700; color: #7c3aed; }
+    .cn-cases { list-style: none; margin: 4px 0; padding: 0; }
+    .cn-cases li { font-size: 12.5px; color: #2d3748; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 10px; margin: 5px 0; }
+    .cn-cases a { color: #2b6cb0; font-weight: 700; text-decoration: none; }
+    .cn-debt { background: #fffaf0; border: 1px solid #fbd38d; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #7b341e; }
+    .cn-answer { width: 100%; min-height: 90px; border: 1px solid #cbd5e0; border-radius: 10px; padding: 10px; font: inherit; font-size: 13px; }
+    .cn-muted { color: #a0aec0; font-size: 12.5px; }
+  </style>
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('newstart')}"></th:block>
+
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">감사회원 1:1 상담함</div>
+      <div class="section-subtitle">회원이 비공개로 남긴 개인 상담. 상담을 열면 닉네임·연결을 허용한 채무상황·현재 A to Z 단계·이번 질문·이전 대화·관련 지피지기 사례를 한 화면에서 봅니다.</div>
+    </div>
+    <p class="cn-note">
+      회원 닉네임 외 개인정보는 상담에 필요한 최소지만 노출됩니다. <strong>지피지기 조사</strong>는 회원 질문을
+      <strong>익명화한 뒤</strong> 수행하며 결과는 <strong>운영자에게만</strong> 보입니다(회원에게 자동 전송되지 않습니다).
+      답변을 보내려면 운영자가 읽고 수정·보완한 뒤 <strong>회원에게 답변</strong>을 눌러야 합니다.
+    </p>
+    <div id="cn-msg" role="status"></div>
+    <table class="cn-table">
+      <thead>
+        <tr><th>최근</th><th>상태</th><th>회원 닉네임</th><th>미확인 질문</th><th>처음 질문 미리보기</th><th>열기</th></tr>
+      </thead>
+      <tbody id="cn-body"><tr><td colspan="6">불러오는 중…</td></tr></tbody>
+    </table>
+
+    <section id="cn-detail" class="cn-detail" hidden aria-label="상담 상세"></section>
+  </div>
+  <script src="/js/admin_newstart_consultations.js?v=20261002-1" defer></script>
+</body>
+</html>
