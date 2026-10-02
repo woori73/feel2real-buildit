@@ -710,3 +710,10 @@ html, body { max-width: 100%; overflow-x: clip; }
   .ns-debt-desc, .ns-feature-copy, .ns-service-copy { font-size: 17.5px; }
   .ns-ai-note { font-size: 16.5px; }
 }
+/* 1:1 비공개 상담 진입점: A-to-Z 바로 아래 전폭 카드. 낮은 min-height로 여백을 없애 첫 화면에서 바로 상담으로. */
+.ns-consult-entry { margin-top: 28px; }
+.ns-consult-entry .ns-service-card { min-height: 0; }
+.ns-consult-entry .ns-service-copy { font-size: 17px; font-weight: 600; }
+@media (min-width: 640px) { .ns-consult-entry { margin-top: 34px; } }
+/* 단계명(A-to-Z 진입)은 홈의 핵심 선택지 — 본문 가독성 기준(≥17px)에 맞춰 굵고 크게. */
+.ns-step-link { font-size: 17px; font-weight: 800; }
