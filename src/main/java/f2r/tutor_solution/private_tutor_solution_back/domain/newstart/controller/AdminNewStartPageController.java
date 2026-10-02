@@ -47,4 +47,20 @@ public class AdminNewStartPageController {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
     return "admin/newstart_thanks_exceptions";
   }
+
+  /**
+   * 회원관리 화면(검색·상세·임시 비밀번호 초기화) — 데이터는 /api/admin/newstart/members (ROLE_ADMIN).
+   *
+   * <p>임시 비밀번호는 초기화 응답 본문에 한 번 실리므로 이 화면도 캐시하면 안 된다(no-store).
+   */
+  @GetMapping("/admin/newstart/members")
+  public String adminNewStartMembers(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      HttpServletResponse response) {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "운영자만 접근할 수 있습니다.");
+    }
+    response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    return "admin/newstart_members";
+  }
 }

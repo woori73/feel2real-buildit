@@ -118,6 +118,8 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 | email | VARCHAR(100) | 이메일 (알림 발송용) |
 | phone | VARCHAR(20) | 전화번호 |
 | role | ENUM | STUDENT / ADMIN / **TUTOR** |
+| password_reset_required | BOOLEAN NOT NULL DEFAULT FALSE | V1021. ADMIN이 1회용 임시 비밀번호로 초기화하면 TRUE, 회원이 `/newstart/password/set`에서 새 비밀번호를 저장하면 FALSE. 기본 FALSE라 기존 행은 아무것도 요구되지 않는다(백필·데이터 변경 없음) |
+| last_login_at | TIMESTAMP NULL | V1021. 로그인 성공 시각(`UserService.login`). NULL = 컬럼 도입 후 로그인 없음 — 과거 이력은 남아있지 않아 소급 생성하지 않는다 |
 
 ### 4.2 password_reset_tokens
 
@@ -131,6 +133,24 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 | expires_at | TIMESTAMP | 생성 후 60분 만료 |
 | used_at | TIMESTAMP NULL | 사용 완료 시각. NULL이면 미사용 |
 | created_at / updated_at / created_by / updated_by | audit | 공통 audit 컬럼 |
+
+> 2026-10-02(V1021)부터 이 테이블이 셀프 재설정의 유일한 저장 경로다. 고정 임시 비밀번호(`reset1234`)로 `users.password`를 곧바로 덮어쓰던 방식은 삭제되었다 — `POST /api/auth/password-reset/request`는 토큰만 발급하고 비밀번호를 건드리지 않으며, 변경은 `confirm`에서 token을 검증한 뒤만 일어난다.
+
+### 4.2.1 newstart_admin_password_resets ✅ ADMIN 회원 비밀번호 초기화 감사 (V1021)
+
+ADMIN이 NewStart 회원을 1회용 임시 비밀번호로 초기화한 **사실만** 남기는 append-only 로그. 코드 위치 `domain/newstart/password/`, 화면 `/admin/newstart/members`.
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| reset_id | BIGINT PK AUTO_INCREMENT | |
+| target_user_id | BIGINT FK | 초기화된 회원 = `users.user_id`, ON DELETE CASCADE. INDEX `(target_user_id, created_at)` — 상세의 '마지막 초기화' 조회 |
+| target_login_id | VARCHAR(50) | 실행 시점 대상 로그인 ID 스냅샷(이후 탈퇴·변경과 무관하게 이력 읽기 가능) |
+| admin_user_id / admin_login_id | BIGINT / VARCHAR(50) | 실행 ADMIN. 요청 본문·쿼리의 admin 식별자가 아니라 JWT principal에서 온 값 |
+| created_at | TIMESTAMP | 실행 시각 |
+
+- **비밀번호 관련 값은 어느 컬럼에도 없다.** 임시 비밀번호는 응답으로만 한 번 나가고, DB에 남는 것은 `users.password`의 BCrypt hash뿐이며, 이 테이블에는 hash·원문·임시 값 중 아무것도 기록하지 않는다.
+- 초기화 대상은 `Role.STUDENT` 계정만(ADMIN/TUTOR는 `400`). 재실행·재조회 API를 만들지 않아 "한 번만 표시"가 저장 구조로 보장된다.
+- 이 테이블의 존재 이유: 운영자가 "언제 누구를 초기화했는가"를 감사할 수 있어야 하지만, 그 감사에 비밀번호는 필요하지 않다.
 
 ### 4.3 students
 `users`와 1:1. 학생 추가 정보 + 학부모 연락처.

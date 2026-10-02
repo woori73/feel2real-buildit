@@ -160,6 +160,30 @@ DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽�
 - 회원 개인정보성 필드(`created_by`, `related_case_ids`, `related_rule_ids`)는 view에 존재하지 않는다. 원출처 링크는 `http/https`만 렌더(`javascript:` 차단) + `rel="noopener noreferrer"`.
 - 자동 적재(Agent 분석 → 중복 제거 → 갈무리)는 **미구현·별도 승인** — §8에 따라 scheduler와 production 자동 write를 이 단계에서 만들지 않는다. 배선은 읽기 side + 중복 앵커(`dedup_key`) + `source_type` 확장(`CHAT_DISCOVERY`, `REQUEST_DISCOVERY`)까지.
 
+### NewStart 회원 비밀번호 관리·재설정 (2026-10-02, V1021)
+
+운영 ADMIN이 회원을 지정해 **1회용 임시 비밀번호**로 초기화하고, 회원은 다른 NewStart 기능을 쓰기 전에 새 비밀번호를 정해야 한다. 세 축이 서로 다른 경로를 쓴다 — ① 운영자 초기화 ② 회원 본인 변경 ③ 셀프 재설정 링크(§3 `password-reset`).
+
+**비밀번호를 되돌려주는 조회 API가 존재하지 않는 것이 구현의 핵심이다.** 저장된 비밀번호(hash)를 반환하는 엔드포인트가 어디에도 없고, 임시 값은 생성된 그 응답 안에서만 살아 있다. 화면을 닫으면 아무도 같은 값을 다시 볼 수 없다.
+
+- 화면: `GET /admin/newstart/members`(ADMIN 회원관리) · `GET /newstart/password/set`(본인 설정/변경).
+- 게이트: `NewStartPasswordGateInterceptor`(`WebMvcConfig`)가 `password_reset_required=true` 회원의 `/newstart/**`·`/api/newstart/**` 요청을 막는다. 화면 요청은 `/newstart/password/set` 302, API는 `428` + `{ "code": "PASSWORD_CHANGE_REQUIRED" }`. 제외 경로는 `/newstart/password/set`, `/newstart/login`, `/api/newstart/auth/**`, `/api/newstart/me/password**`뿐(여기서 막히면 새 비밀번호를 정할 방법이 사라진다).
+
+ADMIN API(`SecurityConfig`의 `/api/admin/**` → `hasRole('ADMIN')`이 1차 차단, 초기화 서비스는 principal role을 한 번 더 확인):
+
+- `GET /api/admin/newstart/members?query={로그인ID|카페닉네임}&page={0..}&size{1~50, 기본 20}` — 부분 일치 검색, 검색어 비우면 최근 가입 순. 400 `검색어는 50자 이내로 입력해 주세요.`
+  `{ query, page, size, totalElements, totalPages, members: [ { userId, loginId, cafeNickname, memberType(THANKS_MEMBER|GENERAL), accountStatus(ACTIVE|RESET_REQUIRED), joinedAt, lastLoginAt } ] }`
+- `GET /api/admin/newstart/members/{userId}` — 상세. `+ { passwordResetRequired, lastResetAt, lastResetBy, thanksRosterLinked }`. 대상이 STUDENT가 아니면 `404` `NewStart 회원만 조회할 수 있습니다.`(ADMIN/TUTOR 계정은 이 화면 대상이 아니다).
+- `POST /api/admin/newstart/members/{userId}/password-reset` — **대상을 명시적으로 고른 뒤에만** 실행. `Cache-Control: no-store` + `{ userId, loginId, cafeNickname, temporaryPassword, resetAt }`. 12자(`NewStartTempPasswordGenerator`: 혼동 글자 0Oo1lI를 뺀 대소문자 알파벳, 마지막 자리는 숫자 확정), `PasswordEncoder`로 hash만 저장, `password_reset_required=true`. 대상이 STUDENT가 아니면 `400` `NewStart 회원 계정만 초기화할 수 있습니다.`, 운영자가 아니면 `403` `운영자만 회원 비밀번호를 초기화할 수 있습니다.`
+
+회원 본인 API(`.authenticated()` → 비로그인 `401`. **userId·role을 본문에 받지 않는다** — 대상은 오직 로그인한 principal):
+
+- `GET /api/newstart/me/password` — `{ changeRequired, minPasswordLength(8), lastLoginAt }`.
+- `POST /api/newstart/me/password` — body `{ currentPassword, newPassword, confirmPassword }` → `{ changed: true, changeRequired: false }`(no-store). 현재 비밀번호 검증 필수(`400` `현재 비밀번호가 올바르지 않습니다.`), 8자 미만·불일치·현재와 동일·공백도 `400`. STUDENT가 아닌 계정 `403` `NewStart 회원 계정만 사용할 수 있습니다.`
+
+보존 규칙: 초기화는 `users.password` hash와 `password_reset_required`, `newstart_admin_password_resets`(감사 row)만 건드린다. `newstart_member_grants`(감사회원 권한)·`newstart_thanks_roster` 1:1 연결· 채무정보·상담·DM·게시판 이력은 어떤 경로도 가지며, 상세의 `thanksRosterLinked`가 연결 유지 여부를 운영자가 확인하는 필드다. 재가입·계정 재생성 요구가 있어도 재설정만 수행한다.
+`lastLoginAt`은 `users.last_login_at` 컬럼 도입 이후 기록만 표시하고 NULL은 화면에서 `기록 없음`으로 보여준다 — 과거 이력을 소급 생성하지 않는다.
+
 # API 명세
 
 ## BuildIt Wiki 학교 프린트·문제 모델
@@ -586,7 +610,7 @@ LMS 주소가 성립하지 않는다(404).
 
 ### ✅ POST /api/auth/password-reset/request
 
-- 목적: 아이디와 가입 이메일을 함께 확인한 뒤 해당 계정 비밀번호를 임시 비밀번호로 재설정한다. SMTP 발송은 현재 우선순위에서 제외되어 있으며, 운영 포함 모든 환경 기본 임시 모드에서는 비밀번호를 `reset1234`로 직접 변경한다.
+- 목적: 아이디와 가입 이메일을 함께 확인한 뒤 **1회용·60분 만료 재설정 링크(token)**를 발급한다. 2026-10-02 개선으로 고정 임시 비밀번호(`reset1234`) 직접 리셋 경로를 제거했다 — 이 API는 더 이상 비밀번호를 변경하지 않고, 변경은 `confirm`에서만 일어난다.
 - 현재 사용처:
   - `templates/auth/password_reset_request.html`
 - 향후 사용 가능성:
@@ -601,13 +625,15 @@ LMS 주소가 성립하지 않는다(404).
     }
     ```
 - Response:
-  - 성공: `200 OK`
+  - 성공: `200 OK` + `Cache-Control: no-store`(발급 링크가 캐시·프록시에 남지 않게)
     ```json
     {
       "email": "student@example.com",
-      "temporaryPassword": "reset1234"
+      "resetUrl": "https://feel2real.co.kr/signin/reset/password/confirm?token=<raw-token>"
     }
     ```
+    - 화면은 `resetUrl`을 링크로만 보여주고, 회원에게 이메일로 보낼 수 있는 SMTP가 없어 운영자 전달용으로 제공한다.
+    - 원문 token은 DB에 들어가지 않는다. 저장소는 SHA-256 hash이고, 생성된 값은 응답 본문으로 한 번만 나간다. token은 60분·1회 사용.
   - 실패: `400 text/plain`
     - `아이디를 입력해 주세요.`
     - `이메일을 입력해 주세요.`
@@ -616,7 +642,7 @@ LMS 주소가 성립하지 않는다(404).
 - 관련 코드:
   - `AuthController.requestPasswordReset`
   - `PasswordResetService.requestReset`
-  - 운영 기본값도 `temporary-direct-reset=true`로 두어 SMTP 연동 전까지 `reset1234` 직접 리셋을 사용한다.
+  - `app.password-reset.*`(temporary-direct-reset / 고정 비밀번호) 설정은 제거됨 — 환경설정 어디서도 비밀번호 값을 하지 않는다.
 
 ### ✅ POST /api/auth/password-reset/confirm
 

@@ -53,11 +53,8 @@ app:
       - webp
     pdf-dpi: 200                     # PDF 페이지 → JPEG 변환 시 DPI (200 = OCR 친화적)
     max-pages-per-pdf: 30            # PDF 1개당 변환 페이지 상한 (악성 PDF 방어 + 메모리 보호)
-  password-reset:
-    # SMTP 실제 발송 전까지 dev/stg/local은 서버 로그에 reset link를 출력한다. 운영 기본값은 false.
-    log-reset-link: true
-    temporary-direct-reset: true
-    temporary-default-password: reset1234
+  # password-reset: 고정 임시 비밀번호(reset1234) 경로는 제거됨. 셀프 재설정은 1회용·60분 만료
+  # 링크만 발급하고 로그에 남기지 않는다 — 설정 키가 하나도 없으므로 블록 자체를 두지 않는다.
   jwt:
     # 로컬 default secret — HS256 최소 32 byte. 운영(prd)은 JWT_SECRET 환경변수로 override.
     secret: local-dev-jwt-secret-please-change-in-production-environment

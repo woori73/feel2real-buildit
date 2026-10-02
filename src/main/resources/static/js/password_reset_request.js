@@ -11,7 +11,7 @@
   var findResult = document.querySelector('[data-login-id-find-result]');
   var modal = document.querySelector('[data-password-reset-result]');
   var modalEmail = document.querySelector('[data-password-reset-result-email]');
-  var temporaryPassword = document.querySelector('[data-password-reset-temp-password]');
+  var resetLink = document.querySelector('[data-password-reset-link]');
   var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   function setError(target, inputs, message) {
@@ -24,9 +24,13 @@
     });
   }
 
-  function openResult(email, password) {
+  function openResult(email, url) {
     if (modalEmail) modalEmail.textContent = email;
-    if (temporaryPassword) temporaryPassword.textContent = password || 'reset1234';
+    if (resetLink) {
+      resetLink.href = url || '';
+      resetLink.textContent = url || '';
+      resetLink.hidden = !url;
+    }
     if (modal) {
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
@@ -119,7 +123,7 @@
           return;
         }
         var payload = await res.json();
-        openResult(payload.email || email, payload.temporaryPassword);
+        openResult(payload.email || email, payload.resetUrl);
       } catch (_) {
         setError(resetError, [resetLoginIdInput, resetEmailInput], '서버 연결에 실패했습니다.');
       } finally {

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 새출발 회원 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_students.css">
+  <style>
+    .nm-search { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .nm-search input { min-height: 40px; padding: 0 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; flex: 1 1 260px; }
+    .nm-btn { border: 1px solid #cbd5e0; background: #fff; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+    .nm-btn.primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+    .nm-btn.danger { background: #c53030; border-color: #c53030; color: #fff; }
+    .nm-btn[disabled] { opacity: .5; cursor: not-allowed; }
+    .nm-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .nm-table th, .nm-table td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+    .nm-table th { background: #f7fafc; color: #4a5568; font-weight: 700; }
+    .nm-row-selected { background: #ebf8ff; }
+    .nm-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .nm-badge.thanks { background: #e6fffa; color: #234e52; border: 1px solid #81e6d9; }
+    .nm-badge.general { background: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; }
+    .nm-badge.reset { background: #fff5f5; color: #822727; border: 1px solid #feb2b2; }
+    .nm-badge.active { background: #f0fff4; color: #22543d; border: 1px solid #9ae6b4; }
+    .nm-detail { margin-top: 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; }
+    .nm-detail h2 { margin: 0 0 12px; font-size: 16px; }
+    .nm-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; font-size: 13px; }
+    .nm-fields dt { color: #718096; }
+    .nm-fields dd { margin: 0; color: #2d3748; font-weight: 600; }
+    .nm-note { font-size: 12.5px; color: #718096; line-height: 1.6; margin: 10px 0 0; }
+    .nm-temp { margin-top: 14px; padding: 12px 14px; border: 1px solid #f0c36d; background: #fffbeb; border-radius: 10px; }
+    .nm-temp code { font-size: 18px; font-weight: 800; letter-spacing: .06em; word-break: break-all; }
+    #nm-msg { font-size: 13px; margin: 8px 0; min-height: 18px; }
+    .nm-pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: #4a5568; }
+    @media (max-width: 720px) { .nm-fields { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('newstartMembers')}"></th:block>
+
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">새출발 회원 관리</div>
+      <div class="section-subtitle">로그인 ID·카페 닉네임으로 회원을 찾고, 비밀번호를 1회용 임시 비밀번호로 초기화합니다.</div>
+    </div>
+
+    <p class="nm-note">
+      비밀번호 원문이나 hash는 이 화면에서 조회할 수 없습니다(조회 기능 자체가 없습니다).
+      초기화 시 생성되는 임시 비밀번호는 <strong>응답에 한 번만</strong> 표시되고 다시 볼 수 없습니다 —
+      회원에게 유선으로 전달한 뒤 이 화면을 닫으면 그 값은 어디에도 남지 않습니다.
+      임시 비밀번호로 로그인한 회원은 다른 기능을 쓰기 전에 새 비밀번호를 직접 설정해야 합니다.
+      계정·감사회원 1:1 연결·권한·채무정보·상담·DM은 초기화와 무관하게 그대로 유지됩니다(재가입 불필요).
+    </p>
+
+    <form class="nm-search" id="nm-search-form" autocomplete="off">
+      <input id="nm-query" type="search" maxlength="50" placeholder="로그인 ID 또는 카페 닉네임 (2자 이상 권장, 비우면 최근 가입 순)">
+      <button class="nm-btn primary" type="submit">검색</button>
+    </form>
+
+    <div id="nm-msg" role="status"></div>
+
+    <table class="nm-table">
+      <thead>
+        <tr>
+          <th>로그인 ID</th><th>카페 닉네임</th><th>구분</th><th>계정 상태</th>
+          <th>가입일</th><th>최근 로그인</th><th>처리</th>
+        </tr>
+      </thead>
+      <tbody id="nm-body"><tr><td colspan="7">검색어를 입력해 주세요.</td></tr></tbody>
+    </table>
+    <div class="nm-pager">
+      <button class="nm-btn" type="button" id="nm-prev" disabled>이전</button>
+      <span id="nm-page-info">0 / 0</span>
+      <button class="nm-btn" type="button" id="nm-next" disabled>다음</button>
+      <span id="nm-total"></span>
+    </div>
+
+    <section class="nm-detail" id="nm-detail" hidden>
+      <h2>회원 상세</h2>
+      <dl class="nm-fields">
+        <dt>로그인 ID</dt><dd id="nm-d-loginId">-</dd>
+        <dt>카페 닉네임</dt><dd id="nm-d-nickname">-</dd>
+        <dt>구분</dt><dd id="nm-d-memberType">-</dd>
+        <dt>계정 상태</dt><dd id="nm-d-accountStatus">-</dd>
+        <dt>가입일</dt><dd id="nm-d-joinedAt">-</dd>
+        <dt>최근 로그인</dt><dd id="nm-d-lastLoginAt">-</dd>
+        <dt>감사회원 명단 1:1 연결</dt><dd id="nm-d-rosterLinked">-</dd>
+        <dt>마지막 초기화</dt><dd id="nm-d-lastReset">-</dd>
+      </dl>
+      <p class="nm-note" id="nm-d-hint"></p>
+      <button class="nm-btn danger" type="button" id="nm-reset-btn" style="margin-top:12px">비밀번호 초기화 (1회용 임시 비밀번호)</button>
+
+      <div class="nm-temp" id="nm-temp" hidden>
+        <div>임시 비밀번호 (지금만 표시됩니다. 이 값을 적어 회원에게 전달하세요.)</div>
+        <code id="nm-temp-value"></code>
+        <p class="nm-note">이 창을 닫거나 다시 검색하면 다시 볼 수 없습니다. 저장·재발송 경로가 없습니다.</p>
+        <button class="nm-btn" type="button" id="nm-temp-close">닫기</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_newstart_members.js?v=20261002-1" defer></script>
+</body>
+</html>

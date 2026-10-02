@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -40,12 +41,16 @@ public class UserService {
   @PersistenceContext
   private EntityManager entityManager;
 
+  /** 로그인 성공 시 최근 로그인 시점을 남긴다(읽기만 하는 경로가 아니라 쓰기 트랜잭션이 필요하다). */
+  @Transactional
   public LoginResponse login(LoginRequest request) {
     User user = userRepository.findByLoginId(request.loginId())
         .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
     }
+    user.markLogin(LocalDateTime.now());
+    userRepository.save(user);
     return LoginResponse.from(user);
   }
 

@@ -17,6 +17,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.UserSe
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -52,14 +53,22 @@ public class AuthController {
         return ResponseEntity.ok(passwordResetService.findLoginIds(request.email()));
     }
 
+    /**
+     * 회원 셀프 재설정 요청 — 1회용·만료(60분) 링크를 발급한다. 비밀번호는 여기서 바뀌지 않는다
+     * (-link로 열어 /password-reset/confirm에서 본인이 새 값을 정한다).
+     *
+     * <p>ADMIN이 NewStart 회원을 임시 비밀번호로 초기화하는 {@code /api/admin/newstart/members/
+     * {userId}/password-reset}과는 경로·의도·권한이 완전히 분리된 별도 API다.
+     */
     @PostMapping("/password-reset/request")
     public ResponseEntity<PasswordResetRequestResponse> requestPasswordReset(
             @RequestBody PasswordResetRequest request,
             HttpServletRequest servletRequest) {
         PasswordResetTokenResult result = passwordResetService.requestReset(
                 request.loginId(), request.email(), baseUrl(servletRequest));
-        return ResponseEntity.ok(new PasswordResetRequestResponse(
-                result.email(), result.temporaryPassword()));
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(new PasswordResetRequestResponse(result.email(), result.resetUrl()));
     }
 
     @PostMapping("/password-reset/confirm")

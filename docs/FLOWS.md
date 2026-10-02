@@ -73,7 +73,7 @@
 > - `POST /api/auth/login` → 비번 검증 후 JWT를 발급하여 `Set-Cookie: ACCESS_TOKEN=...; HttpOnly; SameSite=Lax; Secure(prd)` 로 응답. 클라이언트는 sessionStorage에 사용자 정보(UI용)만 저장하며 토큰은 JS에서 읽을 수 없다 (XSS 방어).
 > - `POST /api/auth/logout` → 동일 쿠키를 `Max-Age=0`으로 덮어 즉시 무효화.
 > - `GET /api/auth/me` → 쿠키 기반 세션 복원용. 새 탭/새로고침에서 sessionStorage가 비어있어도 본인 정보 재조회 가능.
-> - `POST /api/auth/login-id/find` → 이메일로 아이디 목록 조회. `POST /api/auth/password-reset/request` / `confirm` → 비밀번호 재설정. SMTP 실제 발송은 현재 제품 우선순위에서 제외하고, 운영 포함 임시 모드에서는 아이디+이메일 확인 후 비밀번호를 `reset1234`로 직접 변경한다.
+> - `POST /api/auth/login-id/find` → 이메일로 아이디 목록 조회. `POST /api/auth/password-reset/request` / `confirm` → 비밀번호 재설정. 2026-10-02부터 고정 임시 비밀번호(`reset1234`) 직접 리셋 경로는 없다 — request는 **1회용·60분 만료 재설정 링크(token)**만 발급하고 비밀번호를 바꾸지 않으며, 변경은 confirm에서 새 비밀번호를 받아 BCrypt hash로 저장할 때만 일어난다. 회원에게 보낼 SMTP가 없으므로 링크는 `Cache-Control: no-store` 응답으로 운영자/화면에 한 번 전달된다.
 > - 토큰 claim: `sub=userId`, `loginId`, `role`. 만료 24h (`app.jwt.expiration-seconds`).
 > - secret은 로컬은 yaml의 default, 운영은 `JWT_SECRET` 환경변수 (EC2의 `/etc/f2r/env`).
 >
@@ -88,7 +88,7 @@
 >
 > **4. 프론트 인증 UX / redirect 정책 (`/static/js/api.js`, `/static/js/account_menu.js`)**
 > - 일반 로그인은 standalone `/login` 페이지가 아니라 공통 로그인 모달에서 처리한다. `/login`과 `/login.html` 직접 접근은 `/home`으로 302 redirect한다.
-> - 로그인 모달의 `계정 찾기` 링크는 `/signin/reset/password`로 이동한다. 이 페이지는 이메일로 아이디를 찾고(`아이디 (학생/강사)` 목록), 아이디+이메일로 비밀번호를 `reset1234` 임시 비밀번호로 재설정한다.
+> - 로그인 모달의 `계정 찾기` 링크는 `/signin/reset/password`로 이동한다. 이 페이지는 이메일로 아이디를 찾고(`아이디 (학생/강사)` 목록), 아이디+이메일 확인 뒤에 **1회용 재설정 링크**를 발급한다(`reset1234` 같은 고정 비밀번호는 더 이상 쓰지 않는다). 링크 화면은 `resetUrl`을 앵커로만 보여주고 값을 저장하지 않는다.
 > - `/home`은 로그인 여부와 무관하게 접근 가능한 최종 landing이다. 로그인 사용자가 `/home`에 진입해도 role dashboard로 자동 이동하지 않는다. role dashboard 이동은 account menu의 `홈` 항목으로만 제공한다.
 > - 로그인 성공 시 `sessionStorage.currentUser`를 UI 캐시로 갱신하고 현재 URL에 머문다. 토큰은 계속 HTTP-only Cookie로만 보관한다.
 > - 회원가입 버튼은 기존 `/register` 페이지로 이동하되 내부 path만 허용하는 `returnUrl`을 전달한다. 가입/자동 로그인 후 안전한 `returnUrl`로 복귀하고, 외부 URL·scheme-relative·backslash·인코딩 우회 값은 `/home`으로 fallback한다.
@@ -114,12 +114,34 @@ POST /api/auth/login              → 로그인. body { loginId, password } → 
 POST /api/auth/logout             → 쿠키 무효화 (204)
 GET  /api/auth/me                 → 현재 세션 사용자 정보 (인증 필요)
 POST /api/auth/login-id/find        → 아이디 찾기. body { email } → 200 { email, accounts: [{ loginId, role, roleLabel }] }
-POST /api/auth/password-reset/request → 비밀번호 재설정 요청. body { loginId, email } → 200 { email, temporaryPassword } (운영 포함 임시 모드)
+POST /api/auth/password-reset/request → 셀프 재설정 링크 발급. body { loginId, email } → 200 { email, resetUrl } (no-store, 60분·1회용. 비밀번호는 이 단계에서 변경하지 않는다)
 POST /api/auth/password-reset/confirm → 토큰 검증 후 비밀번호 변경. body { token, newPassword } → 204
 POST /api/auth/admin/password-change → 운영 ADMIN(admin-f2r) 전용 변경. body { loginId, currentPassword, newPassword, confirmPassword } → 204 (403 비대상/401 현재비번 오류/400 검증/429 반복차단)
 POST /api/users/tutors            → 강사 회원가입 (인증 불필요)
 GET  /api/users/students/me       → 학생 본인 프로필 (인증 필요). ADMIN은 ?targetUserId= 로 임퍼소네이트.
 ```
+
+#### NewStart 회원 비밀번호 관리·초기화 흐름 (2026-10-02, V1021)
+
+```text
+[운영자]  /admin/newstart/members
+  → 로그인 ID / 카페 닉네임으로 검색 → 목록에서 대상 1명 [상세] → 상세 패널의 [비밀번호 초기화] → 확인 대화상자
+  → POST /api/admin/newstart/members/{userId}/password-reset
+  → 그 응답으로만 임시 비밀번호 1회 표시 → 회원에게 전달 → [닫기] = DOM에서 값 삭제(재조회 불가)
+
+[회원]    로그인 → password_reset_required=true
+  → 어떤 /newstart/** 화면이든 /newstart/password/set으로 302 (API는 428 PASSWORD_CHANGE_REQUIRED)
+  → 임시 비밀번호 + 새 비밀번호(8자 이상) + 확인 → POST /api/newstart/me/password
+  → 성공 시 /newstart 홈으로 → 이후 다른 NewStart 기능 이용 가능
+
+[회원]    계정 메뉴 [비밀번호 변경] → /newstart/password/set → 현재/새/확인 → 본인만 변경
+```
+
+- 대상을 고르기 전에 초기화 버튼은 눌려도 요청이 나가지 않는다(상세 패널 안에서만 보이고, 상세를 여는 순간 이전 표시는 지운다). 확인 대화상자를 취소하면 POST 자체가 없다.
+- 세 경로는 서로 분리했다: 운영자 초기화(`/api/admin/newstart/members/**`, ROLE_ADMIN) / 회원 본인(`/api/newstart/me/password`, principal만 대상) / 셀프 재설정 링크(`/api/auth/password-reset/**`, public+token). **어디에도 비밀번호를 읽는 엔드포인트는 없다.**
+- 이중 확인: `/api/admin/**`의 `hasRole('ADMIN')`이 1차, `NewStartAdminPasswordResetService.requireAdmin`이 실행 principal의 role을 한 번 더 본다. 감사회원은 JWT에 capability이 없고 role=STUDENT이므로 일반 회원과 동일하게 다른 회원 초기화가 403/401로 DENY된다.
+- 감사 로그 `newstart_admin_password_resets`: 대상 회원 ID(와 실행 시점 로그인 ID 스냅샷), 실행 ADMIN ID·로그인 ID, 실행 시각만 남긴다 — 비밀번호 원문·hash·임시 값은 어떤 컬럼에도 없다.
+- 보존: 초기화는 hash와 `password_reset_required`만 바꾼다. `newstart_member_grants`의 `THANKS_MEMBER` 권한, `newstart_thanks_roster` 1:1 연결, 채무자료·상담·쪽지·게시판 이력은 그대로이며 상세의 `thanksRosterLinked`로 운영자가 확인한다. 계정 삭제·재가입은 이 흐름에 존재하지 않는다.
 
 #### 시드 계정
 

@@ -92,11 +92,9 @@ app:
     region: ${S3_REGION:ap-northeast-2}
     # prefix는 모든 키 앞에 붙는 폴더. 한 버킷을 여러 환경(dev/staging/prd)이 공유할 때 분리용.
     key-prefix: ${S3_KEY_PREFIX:prd}
-  password-reset:
-    # SMTP 발송 전까지 운영도 dev/stg와 동일하게 임시 비밀번호 직접 리셋을 사용한다.
-    log-reset-link: ${PASSWORD_RESET_LOG_LINK:false}
-    temporary-direct-reset: ${PASSWORD_RESET_TEMPORARY_DIRECT_RESET:true}
-    temporary-default-password: ${PASSWORD_RESET_TEMPORARY_DEFAULT_PASSWORD:reset1234}
+  # password-reset: 운영의 고정 임시 비밀번호(reset1234) 경로 제거. 회원 셀프 재설정은
+  # 1회용·60분 만료 링크만 발급하며 링크 값은 로그에 남기지 않는다. ADMIN이 회원을 초기화하는
+  # 경로는 /api/admin/newstart/members/{userId}/password-reset으로 완전히 분리되어 있다.
   jwt:
     # secret은 EC2 EnvironmentFile(/etc/f2r/env)의 JWT_SECRET으로 주입. 평문 박지 말 것.
     secret: ${JWT_SECRET}

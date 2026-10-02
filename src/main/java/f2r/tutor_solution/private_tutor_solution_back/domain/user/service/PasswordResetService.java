@@ -8,7 +8,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.Pas
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,15 +42,6 @@ public class PasswordResetService {
   private final SecureRandom secureRandom = new SecureRandom();
   private final Clock clock = Clock.systemDefaultZone();
 
-  @Value("${app.password-reset.log-reset-link:false}")
-  private boolean logResetLink;
-
-  @Value("${app.password-reset.temporary-direct-reset:false}")
-  private boolean temporaryDirectReset;
-
-  @Value("${app.password-reset.temporary-default-password:reset1234}")
-  private String temporaryDefaultPassword;
-
   public LoginIdFindResponse findLoginIds(String email) {
     String normalizedEmail = normalizeEmail(email);
     requireValidEmail(normalizedEmail);
@@ -80,13 +70,6 @@ public class PasswordResetService {
     LocalDateTime now = now();
     tokenRepository.markUnusedTokensUsed(user, now);
 
-    if (temporaryDirectReset) {
-      user.updatePassword(passwordEncoder.encode(temporaryDefaultPassword));
-      userRepository.save(user);
-      log.info("Temporary password reset applied for loginId={} email={}", normalizedLoginId, normalizedEmail);
-      return new PasswordResetTokenResult(normalizedEmail, null, temporaryDefaultPassword);
-    }
-
     String rawToken = generateToken();
     String resetUrl = buildResetUrl(baseUrl, rawToken);
     tokenRepository.save(new PasswordResetToken(
@@ -94,11 +77,12 @@ public class PasswordResetService {
         hashToken(rawToken),
         now.plusMinutes(TOKEN_EXPIRY_MINUTES)));
 
-    if (logResetLink) {
-      log.info("Password reset link generated for loginId={} email={} url={}", normalizedLoginId, normalizedEmail, resetUrl);
-    }
+    // rawToken·resetUrl은 어떤 로그에도 남기지 않는다 — 토큰을 아는 사람은 누구나 비밀번호를
+    // 바꿀 수 있다. 값은 응답으로만 전달하고 DB에는 SHA-256 hash만 저장된다.
+    log.info("Password reset token issued for loginId={} email={} expiresMinutes={}",
+        normalizedLoginId, normalizedEmail, TOKEN_EXPIRY_MINUTES);
 
-    return new PasswordResetTokenResult(normalizedEmail, resetUrl, null);
+    return new PasswordResetTokenResult(normalizedEmail, resetUrl);
   }
 
   @Transactional

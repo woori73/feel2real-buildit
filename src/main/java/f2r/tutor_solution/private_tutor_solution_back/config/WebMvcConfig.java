@@ -15,11 +15,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private final RoleModelInterceptor roleModelInterceptor;
     private final AcademyPathRedirectInterceptor academyPathRedirectInterceptor;
+    private final NewStartPasswordGateInterceptor newStartPasswordGateInterceptor;
 
     public WebMvcConfig(RoleModelInterceptor roleModelInterceptor,
-                        AcademyPathRedirectInterceptor academyPathRedirectInterceptor) {
+                        AcademyPathRedirectInterceptor academyPathRedirectInterceptor,
+                        NewStartPasswordGateInterceptor newStartPasswordGateInterceptor) {
         this.roleModelInterceptor = roleModelInterceptor;
         this.academyPathRedirectInterceptor = academyPathRedirectInterceptor;
+        this.newStartPasswordGateInterceptor = newStartPasswordGateInterceptor;
     }
 
     @Override
@@ -27,6 +30,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(roleModelInterceptor);
         // 경로형 /academies/{slug} → handle 있으면 서브도메인 301. 단일 segment만.
         registry.addInterceptor(academyPathRedirectInterceptor).addPathPatterns("/academies/*");
+        // ADMIN이 임시 비번으로 초기화한 회원은 새 비번을 정하기 전까지 NewStart 기능을 쓰지 못한다.
+        // 제외 목록이 없으면 로그인·해제 경로가 자기 게이트에 걸려 순환한다.
+        registry.addInterceptor(newStartPasswordGateInterceptor)
+                .addPathPatterns("/newstart/**", "/api/newstart/**")
+                .excludePathPatterns(
+                        NewStartPasswordGateInterceptor.SET_PASSWORD_PATH,
+                        "/newstart/login",
+                        "/api/newstart/auth/**",
+                        "/api/newstart/me/password",
+                        "/api/newstart/me/password/**");
     }
 
     @Override

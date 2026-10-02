@@ -11,7 +11,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
@@ -38,9 +37,6 @@ class PasswordResetServiceTest {
     tokenRepository = mock(PasswordResetTokenRepository.class);
     passwordEncoder = mock(PasswordEncoder.class);
     service = new PasswordResetService(userRepository, tokenRepository, passwordEncoder);
-    ReflectionTestUtils.setField(service, "logResetLink", false);
-    ReflectionTestUtils.setField(service, "temporaryDirectReset", false);
-    ReflectionTestUtils.setField(service, "temporaryDefaultPassword", "reset1234");
   }
 
   @Test
@@ -55,7 +51,6 @@ class PasswordResetServiceTest {
 
     // then
     assertThat(result.email()).isEqualTo("student@example.com");
-    assertThat(result.temporaryPassword()).isNull();
     String rawToken = UriComponentsBuilder.fromUriString(result.resetUrl())
         .build()
         .getQueryParams()
@@ -69,28 +64,26 @@ class PasswordResetServiceTest {
     assertThat(saved.getTokenHash()).isEqualTo(sha256(rawToken));
     assertThat(saved.getTokenHash()).hasSize(64);
     assertThat(saved.getExpiresAt()).isAfter(LocalDateTime.now().plusMinutes(50));
+    // 링크를 발급만 받고 비밀번호는 아직 그대로여야 한다 — 고정값으로 덮어쓰는 경로는 없다.
+    assertThat(user.getPassword()).isEqualTo("old-password");
+    verify(userRepository, never()).save(any());
+    verify(passwordEncoder, never()).encode(anyString());
   }
 
   @Test
-  @DisplayName("requestReset — 임시 리셋 모드이면 기본 비밀번호로 즉시 변경하고 토큰을 만들지 않는다")
-  void requestResetAppliesTemporaryDefaultPassword() {
+  @DisplayName("requestReset — 응답에는 1회용 링크만 담기고 비밀번호 값은 어디에도 없다")
+  void requestResetReturnsOnlyExpiringLink() {
     // given
-    ReflectionTestUtils.setField(service, "temporaryDirectReset", true);
     User user = user("student", "student@example.com", Role.STUDENT);
     when(userRepository.findByLoginIdAndEmail("student", "student@example.com")).thenReturn(Optional.of(user));
-    when(passwordEncoder.encode("reset1234")).thenReturn("encoded-reset1234");
 
     // when
     PasswordResetTokenResult result = service.requestReset("student", "student@example.com", "http://localhost:8389");
 
     // then
-    assertThat(result.email()).isEqualTo("student@example.com");
-    assertThat(result.resetUrl()).isNull();
-    assertThat(result.temporaryPassword()).isEqualTo("reset1234");
-    assertThat(user.getPassword()).isEqualTo("encoded-reset1234");
-    verify(tokenRepository).markUnusedTokensUsed(eq(user), any(LocalDateTime.class));
-    verify(userRepository).save(user);
-    verify(tokenRepository, never()).save(any());
+    assertThat(result.resetUrl()).startsWith("http://localhost:8389/signin/reset/password/confirm?token=");
+    assertThat(result.toString().toLowerCase()).doesNotContain("reset1234");
+    assertThat(user.getPassword()).isEqualTo("old-password");
   }
 
   @Test

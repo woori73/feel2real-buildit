@@ -88,7 +88,9 @@ GitHub Actions PR CI를 추가해 최소 다음을 자동 검증한다.
 
 Flyway 단일 history 테이블이지만 두 위치의 역할이 다르다. `db/migration`은 **versioned**(`V_`), `db/dev-seed`는 **repeatable**(`R__`, 버전번호 없음)이다. versioned는 순서·중복 규칙을 따르고, repeatable은 versioned 전부 적용 후 마지막에 실행된다.
 
-- **`db/migration` = 운영(prd) 스키마.** versioned, 순차 번호, 새 파일 = **적용된 max + 1**. 현재 `origin/main` 파일 기준 최고 = **V947** → 다음 운영 마이그레이션 후보 **V948+**. 실제 prd 적용 max는 작업 전 `flyway_schema_history`에서 다시 확인한다.
+- **`db/migration` = 운영(prd) 스키마.** versioned, 순차 번호, 새 파일 = **적용된 max + 1**. 현재 `origin/main` 파일 기준 최고 = **V1018** → 다음 운영 마이그레이션 후보 **V1019+**. 실제 prd 적용 max는 작업 전 `flyway_schema_history`에서 다시 확인한다.
+  - ⚠ 번호는 **merged main만 보고 정한다**. OPEN PR이 이미 잡아간 번호가 main에는 아직 없다(2026-10-02 기준 #469·#470이 V1019/V1020 보유, 미병합). 병렬 작업은 main 최고 +1이 아니라 **전 remote ref를 scan한 최고 +1**을 쓴다(그래서 V1021). 남의 PR 번호를 덮으면 두 PR이 같은 version으로 `Found more than one migration with version N`을 만든다.
+  - ⚠ 번호를 앞으로 잡아둔 쪽이 **먼저 병합되면**, 뒤늦게 들어오는 낮은 번호(V1019/V1020)가 prd에서 out-of-order(`Detected resolved migration not applied`)가 되어 부팅을 거부한다. merge 순서를 의식해 PR 설명에 전제를 남기고, 실제 충돌은 merge 시점 `flyway_schema_history`로 확인한다(2026-10-02: #469·#470이 V1019/V1020, 본 작업이 V1021 — 어느 쪽이 먼저 들어가도 순서 확인이 필요하다).
   - ⚠ 과거 실수로 운영 마이그레이션 일부가 **V903+ (900대)**에 들어가 있다. prd에 적용됨 → **불변**(체크섬). 보기 싫어도 되돌리지 않는다. 운영 번호선은 900대에서 계속 위로.
 - **`db/dev-seed` = 로컬 전용 데이터, Flyway repeatable(`R__`).** 버전번호를 쓰지 않는다. repeatable은 항상 versioned 뒤에 실행된다.
   - ⚠ **R__ 시드는 최종 스키마 기준으로 실행된다.** 나중 마이그레이션이 추가한 NOT NULL/제약을 시드 INSERT가 모두 만족해야 한다.

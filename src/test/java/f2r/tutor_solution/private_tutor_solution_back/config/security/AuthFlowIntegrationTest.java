@@ -181,20 +181,28 @@ class AuthFlowIntegrationTest {
   }
 
   @Test
-  @DisplayName("비밀번호 재설정 요청은 public이며 가입 이메일이면 임시 비밀번호로 변경한다")
-  void passwordResetRequestAppliesTemporaryPassword() throws Exception {
+  @DisplayName("비밀번호 재설정 요청은 public이며 1회용 링크만 발급하고 비밀번호는 바꾸지 않는다")
+  void passwordResetRequestIssuesOneTimeLink() throws Exception {
     // given
     long before = passwordResetTokenRepository.count();
+    String originalHash = userRepository.findByLoginId(LOGIN_ID).orElseThrow().getPassword();
     String body = objectMapper.writeValueAsString(Map.of("loginId", LOGIN_ID, "email", "jwt-reset@example.com"));
 
-    // when & then
-    mockMvc.perform(post("/api/auth/password-reset/request")
+    // when
+    MvcResult result = mockMvc.perform(post("/api/auth/password-reset/request")
             .contentType(MediaType.APPLICATION_JSON)
             .content(body))
         .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", "no-store"))
         .andExpect(jsonPath("$.email").value("jwt-reset@example.com"))
-        .andExpect(jsonPath("$.temporaryPassword").value("reset1234"));
-    assertThat(passwordResetTokenRepository.count()).isEqualTo(before);
+        .andReturn();
+
+    // then — 응답은 만료·1회용 링크이고 고정 임시 비밀번호(reset1234)는 어디에도 없다.
+    String response = result.getResponse().getContentAsString();
+    assertThat(response).contains("/signin/reset/password/confirm?token=");
+    assertThat(response.toLowerCase()).doesNotContain("reset1234");
+    assertThat(passwordResetTokenRepository.count()).isEqualTo(before + 1);
+    assertThat(userRepository.findByLoginId(LOGIN_ID).orElseThrow().getPassword()).isEqualTo(originalHash);
   }
 
   @Test
