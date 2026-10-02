@@ -1,0 +1,110 @@
+name: NewStart July cafe source census (read-only, manual)
+
+# NEWSTART 7월 정리 요약 (2)~(11) PRE-FLIGHT — 운영 DB read-only 실측.
+# - 고정 SELECT만 실행한다 (임의 SQL 입력 없음, 범용 DB shell 아님).
+# - SET SESSION TRANSACTION READ ONLY. INSERT/UPDATE/DELETE/ALTER 없음.
+# - 출력: 식별자·게시물번호·날짜·길이·집계만. 본문/제목 원문 텍스트와 secret 출력 금지.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Build fixed read-only census script
+        shell: bash
+        run: |
+          python3 - <<'PYEOF'
+          import json
+
+          RO = "SET SESSION TRANSACTION READ ONLY;"
+          C = []
+          C.append("set +e")
+          C.append("source /etc/f2r/env 2>/dev/null || true")
+          C.append('MYSQL_CENSUS="mysql -h \\"${DB_HOST}\\" -P \\"${DB_PORT}\\" -u \\"${DB_USER}\\" -p\\"${DB_PASSWORD}\\" \\"${DB_NAME}\\" --default-character-set=utf8mb4 --batch 2>&1"')
+          C.append('run_q() { echo "=== $1 ==="; eval "$MYSQL_CENSUS -e \\"$2\\"" || echo "QUERY_FAILED: $1"; }')
+
+          def run_q_line(name, sql):
+              return 'run_q %s "%s"' % (name, sql)
+          q = lambda name, sql: run_q_line(name, RO + " " + sql)
+
+          # 1) 카페 소스行的 출처 도메인 분포 (어떤 카페자료가 DB에 있는지)
+          C.append(q("CAFE_HOST", "SELECT SUBSTRING_INDEX(source_url,'/',3) AS base, source_type, COUNT(*) AS cnt FROM newstart_knowledge_items WHERE source_type LIKE 'CAFE%' OR source_type='OPERATOR_KNOWLEDGE' OR source_type='CASE' GROUP BY 1,2 ORDER BY cnt DESC;"))
+
+          # 2) 게시물번호 체계: URL 마지막 세그먼트 수치 범위
+          C.append(q("TAIL_RANGE", "SELECT source_type, COUNT(*) AS cnt, MIN(CAST(SUBSTRING_INDEX(source_url,'/',-1) AS UNSIGNED)) AS mn, MAX(CAST(SUBSTRING_INDEX(source_url,'/',-1) AS UNSIGNED)) AS mx, SUM(CAST(SUBSTRING_INDEX(source_url,'/',-1) AS UNSIGNED) BETWEEN 5000 AND 6100) AS in_global_5xxx, SUM(CAST(SUBSTRING_INDEX(source_url,'/',-1) AS UNSIGNED) < 5000) AS small_no FROM newstart_knowledge_items WHERE source_url LIKE '%cafe.naver.com%' GROUP BY source_type;"))
+
+          # 3) source_date 월별 분포
+          C.append(q("KNOW_MONTH", "SELECT DATE_FORMAT(source_date,'%Y-%m') AS ym, source_type, COUNT(*) AS cnt FROM newstart_knowledge_items GROUP BY 1,2 ORDER BY 1,2;"))
+          C.append(q("KNOW_NULLDATE", "SELECT source_type, COUNT(*) AS cnt FROM newstart_knowledge_items WHERE source_date IS NULL GROUP BY source_type;"))
+
+          # 4) 7월 원문 행 목록 (식별자·번호·날짜·길이만)
+          C.append(q("JULY_ROWS", "SELECT knowledge_id, source_type, status, source_date, SUBSTRING_INDEX(source_url,'/',-1) AS tail, CHAR_LENGTH(COALESCE(content,'')) AS clen FROM newstart_knowledge_items WHERE source_date >= '2026-07-01' AND source_date < '2026-08-01' ORDER BY source_date, knowledge_id;"))
+
+          # 5) 「정리 요약」 제목/본문 보유 행 (hex literal, 텍스트 출력 없음)
+          C.append(q("SUMMARY_ROWS", "SELECT knowledge_id, source_type, status, CHAR_LENGTH(title) AS tlen, CHAR_LENGTH(COALESCE(content,'')) AS clen, source_date FROM newstart_knowledge_items WHERE title LIKE CONCAT('%',UNHEX('ECA095EBA6AC'),'%') OR content LIKE CONCAT('%',UNHEX('ECA095EBA6AC20EC9A94EC95BD'),'%') ORDER BY knowledge_id;"))
+
+          # 6) 7월 정리요약(6077)에 인용된 카페A 전역 articleId가 DB에 존재하는지
+          CITED = "5589,5625,5626,5628,5659,5660,5662,5667,5671,5676,5683,5684,5691,5711,5717,5723,5724,5725,5728,5743,5755,5768"
+          C.append(q("CITED_IN_KNOWLEDGE", "SELECT source_type, status, COUNT(*) AS cnt FROM newstart_knowledge_items WHERE SUBSTRING_INDEX(source_url,'/',-1) IN (" + ",".join("'%s'" % x for x in CITED.split(',')) + ") GROUP BY 1,2;"))
+          C.append(q("CITED_IN_CASES", "SELECT article_id, board_name, CHAR_LENGTH(COALESCE(content_raw,'')) AS len, written_at FROM newstart_empirical_cases WHERE article_id IN (" + ",".join("'%s'" % x for x in CITED.split(',')) + ") ORDER BY article_id+0;"))
+
+          # 7) 실증사례 테이블 월별/번호분포
+          C.append(q("CASE_MONTH", "SELECT DATE_FORMAT(written_at,'%Y-%m') AS ym, COUNT(*) AS cnt, MIN(CAST(article_id AS UNSIGNED)) AS mn, MAX(CAST(article_id AS UNSIGNED)) AS mx FROM newstart_empirical_cases GROUP BY 1 ORDER BY 1;"))
+
+          # 8) 상태/승인 현황 (RAG 검색 대상 = ACTIVE)
+          C.append(q("KNOW_STATUS_TYPE", "SELECT status, source_type, COUNT(*) AS cnt FROM newstart_knowledge_items GROUP BY 1,2 ORDER BY 1,2;"))
+          C.append(q("KNOW_CATEGORY", "SELECT category, source_type, COUNT(*) AS cnt FROM newstart_knowledge_items WHERE source_type LIKE 'CAFE%' GROUP BY 1,2 ORDER BY cnt DESC;"))
+
+          # 9) 지피지기 Agent 측 추적 테이블 현황
+          C.append(q("JIPIJIGI", "SELECT (SELECT COUNT(*) FROM newstart_jipijigi_target_boards) AS boards, (SELECT COUNT(*) FROM newstart_jipijigi_questions) AS questions, (SELECT COUNT(*) FROM newstart_jipijigi_drafts) AS drafts, (SELECT COUNT(*) FROM newstart_jipijigi_research_traces) AS traces, (SELECT COUNT(*) FROM newstart_jipijigi_answer_sessions) AS sessions;"))
+
+          # 10) 공식 updates 게시판(사이트 노출면) 현황
+          C.append(q("OFFICIAL_STATE", "SELECT review_status, category, COUNT(*) AS cnt, MAX(published_at) AS latest FROM newstart_official_updates GROUP BY 1,2 ORDER BY cnt DESC;"))
+
+          C.append('echo "=== DB_CATEGORY ==="')
+          C.append('echo "DB_NAME=${DB_NAME:-unset}"')
+          C.append('date -u "+NOW_UTC=%Y-%m-%dT%H:%M:%SZ"')
+          C.append("exit 0")
+
+          with open("/tmp/census.json", "w", encoding="utf-8") as f:
+              json.dump({"commands": C}, f, ensure_ascii=False)
+          print("params bytes:", len(open("/tmp/census.json", "rb").read()))
+          PYEOF
+
+      - name: Run census via SSM
+        shell: bash
+        run: |
+          set -uo pipefail
+          INSTANCE_ID="i-09d7cabb5a42d1135"
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/census.json \
+            --comment "newstart july cafe source read-only census" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $COMMAND_ID"
+          set +e
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID"
+          echo "wait_exit=$?"
+          set -e
+          echo "===== invocation status ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query '{Status:Status,ResponseCode:ResponseCode}' --output text
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text
+          exit 0
