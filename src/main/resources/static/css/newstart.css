@@ -239,6 +239,28 @@ html, body { max-width: 100%; overflow-x: clip; }
 .newstart-topbar .ns-btn { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 13px; }
 .newstart-topbar .account-menu-trigger { width: 44px; height: 44px; }
 
+/* 프로필 메뉴 뷰포트 안전 배치 (2026-10-02)
+   공용 css/account_menu.css의 .account-menu-panel{position:absolute;right:0}은 패널 폭(154~168px)만큼
+   아이콘 "왼쪽"으로 펼친다. 홈(index)은 헤더에 .newstart-brand가 없어 topbar가 유일한 자식이고,
+   실측으로 아이콘이 좌측(x=26)에 붙는다 → 패널 좌변이 -84px(360px)까지 나가 html·body의
+   overflow-x:clip(L220)에 잘린다. 769~1399px에서도 같은 원리로 24~78px 잘림(1400px 이상은 shell이
+   중앙 정렬되어 정상). 아이콘 위치는 그대로 두고 패널 앵커만 고친다. 공용 css/js는 다른 서비스
+   (BuildIt·Wiki)가 쓰므로 NewStart 범위로만 지정한다. */
+@media (min-width: 769px) and (max-width: 1399px) {
+  /* 데스크톱·태블릿: 아이콘 오른쪽으로 열리게 앵커를 반전(기존 1400px 이상 레이아웃은 그대로). */
+  .newstart-page .newstart-top > .newstart-topbar:only-child .account-menu-panel { left: 0; right: auto; }
+}
+@media (max-width: 768px) {
+  /* 모바일: 앵커를 헤더로 올려(아이콘 폭 44px에서는 중앙 정렬 불가) 헤더 폭 기준으로 중앙 정렬.
+     top:calc(100% + 8px)은 헤더 높이 기준이라 브레이크포인트마다 아이콘 바로 아래에 붙는다. */
+  .newstart-page .newstart-top { position: relative; }
+  .newstart-page .newstart-topbar .account-menu { position: static; }
+  .newstart-page .newstart-topbar .account-menu-panel {
+    top: calc(100% + 8px); left: 50%; right: auto;
+    transform: translateX(-50%); max-width: calc(100% - 32px); z-index: 950;
+  }
+}
+
 .ns-hero { padding: 48px 0 36px; max-width: 720px; }
 .ns-eyebrow, .ns-section-kicker { margin: 0 0 10px; color: var(--ns-blue); font-size: 11px; line-height: 1.3; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .ns-hero h1 { margin: 0; max-width: 680px; font-size: clamp(32px, 9vw, 62px); line-height: 1.14; font-weight: 850; letter-spacing: -.055em; word-break: keep-all; }
