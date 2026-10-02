@@ -3,6 +3,7 @@
 작업 브랜치: `feat/newstart-admin-password-management` (base `origin/main` @ `cf9a2277`)
 상태: **구현 완료, LIVE 화면 QA 7/10단계까지 통과, PR 미생성**. 우선순위 전환(#470 먼저 마감)으로 여기서 중단하고 학원에서 이어간다.
 본 문서의 코드는 커밋되어 있지만 **PR을 만들지 않는다** — 배후 지시: "PR 생성/병합은 하지 말고 학원에서 이어서 작업한다."
+이어 작업하기 전: 이 브랜치의 base는 `cf9a2277`이고 그 뒤 main에 #469(V1019)·#470(V1020)이 들어왔다. 시작 시 `origin/main`(2026-10-02 병합 후 `637a475f`)을 merge한 뒤 진행한다. 본 작업의 V1021은 그보다 높은 번호라 순서가 맞으므로 out-of-order 위험은 없다.
 
 ## 1. 이 브랜치에 들어간 것
 
@@ -42,12 +43,12 @@
 7. **본인 변경**: 계정 메뉴 [비밀번호 변경] → 현재 비밀번호 오답 400 / 정답 저장 성공.
 8. **HARD GATE LIVE**: 일반회원·(부여 후)감사회원 세션에서 타인 `POST /api/admin/newstart/members/{id}/password-reset` → 403, 비로그인 → 401, ADMIN → 200.
 9. **데이터 보존**: 초기화 전후 `memberType`(감사회원 배지), `thanksRosterLinked`, `/newstart` 기능 접근성이 그대로인지.
-10. PR 생성(요구 0–11 충족 서술 + V1021 out-of-order 주의), MERGE/DEPLOY는 지시 대기.
+10. PR 생성(요구 0–11 충족 서술. V1019/V1020이 이미 main에 병합되어 V1021 out-of-order 안내는 필요 없다). MERGE/DEPLOY는 지시를 받고 실행.
 
 ## 4. 환경 메모 (재현 실패 방지)
 
 - 로컬 DB는 공유 `localhost:3308/f2r_db`이고 **이 브랜치의 부팅이 V1021을 적용해 이제 schema max = 1021**.
-- 따라서 #469/#470 브랜치(그리고 `origin/main`)는 로컬 기동·`@SpringBootTest`에서 `Detected applied migration not resolved locally: 1021`로 컨텍스트 로딩이 실패한다. 로컬 실행 시 `--spring.flyway.validate-on-migrate=false`를 붙일 것(커밋 설정 변경 금지, 실행 플래그로만).
+- 따라서 `origin/main`(V1020까지 병합됨, V1021 없음)을 checkout한 브랜치는 로컬 기동·`@SpringBootTest`에서 `Detected applied migration not resolved locally: 1021`로 컨텍스트 로딩이 실패한다. 로컬 실행 시 `--spring.flyway.validate-on-migrate=false`를 붙일 것(커밋 설정 변경 금지, 실행 플래그로만).
 - 같은 이유로 `./gradlew test` 전체는 이 머신에서 실패 항목이 생긴다(코드 회귀 아님). 스코프 지정 실행 권장:
   `./gradlew test --tests "*NewStart*Password*" --tests "*PasswordReset*" --tests "*NewStartPasswordAuthority*"`
 - 8080은 다른 세션이 점유 → 이 작업은 `--server.port=8081`.
