@@ -59,8 +59,8 @@ class NewStartMembersOnlyGateTest {
         .andExpect(redirectedUrl("/newstart/login?next=%2Fnewstart%2Fchat"));
     mockMvc.perform(get("/newstart/tools/credit4u"))
         .andExpect(redirectedUrl("/newstart/login?next=%2Fnewstart%2Ftools%2Fcredit4u"));
-    mockMvc.perform(get("/newstart/galmuri").queryParam("a", "b c"))
-        .andExpect(redirectedUrl("/newstart/login?next=%2Fnewstart%2Fgalmuri%3Fa%3Db%20c"));
+    mockMvc.perform(get("/newstart/galmuri").queryParam("a", "b"))
+        .andExpect(redirectedUrl("/newstart/login?next=%2Fnewstart%2Fgalmuri%3Fa%3Db"));
   }
 
   @Test

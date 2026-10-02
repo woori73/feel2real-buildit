@@ -9,8 +9,8 @@
   // 로그인 전에 누른 NewStart 기능으로 복귀. 같은 사이트의 /newstart 경로만 허용(open redirect 방지).
   function nextTarget() {
     var raw = new URLSearchParams(window.location.search).get('next') || '';
-    var ok = /^\/newstart(?:[/?#][^\\\s]*)?$/.test(raw) && raw.indexOf('//') < 0
-      && !/^\/newstart\/login(?:[/?#]|$)/.test(raw);
+    var ok = /^\/newstart(?:[/?#].*)?$/.test(raw) && !/\s/.test(raw) && raw.indexOf('//') < 0
+      && raw.indexOf(String.fromCharCode(92)) < 0 && !/^\/newstart\/login(?:[/?#]|$)/.test(raw);
     return ok ? raw : '/newstart';
   }
 
