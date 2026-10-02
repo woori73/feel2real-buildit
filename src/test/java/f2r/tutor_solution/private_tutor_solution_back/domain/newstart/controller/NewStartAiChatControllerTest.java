@@ -96,6 +96,36 @@ class NewStartAiChatControllerTest {
   }
 
   @Test
+  void chatAttachesAtozStepLinkWhenQuestionMatchesKeyword() throws Exception {
+    when(newStartAiChatService.ask(anyString())).thenReturn(
+        new NewStartAiChatService.NewStartAiAnswer(true, "이의신청 기한을 확인하세요.", null, "m",
+            java.util.List.of()));
+
+    mockMvc.perform(post("/api/newstart/ai/chat")
+            .cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"법원에서 지급명령을 받았는데 이의신청 어떻게 하나요\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.atozStepNo").value(2))
+        .andExpect(jsonPath("$.atozStepTitle").value("지급명령 · 전자소송"))
+        .andExpect(jsonPath("$.atozStepUrl").value("/newstart/a-to-z#step-2"));
+  }
+
+  @Test
+  void chatOmitsAtozStepLinkWhenNoKeywordSignal() throws Exception {
+    when(newStartAiChatService.ask(anyString())).thenReturn(
+        new NewStartAiChatService.NewStartAiAnswer(true, "일반 안내", null, "m", java.util.List.of()));
+
+    mockMvc.perform(post("/api/newstart/ai/chat")
+            .cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"오늘 날씨가 어때요\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.atozStepNo").doesNotExist())
+        .andExpect(jsonPath("$.atozStepUrl").doesNotExist());
+  }
+
+  @Test
   void chatRejectsBlankQuestionWith400() throws Exception {
     when(newStartAiChatService.ask(anyString())).thenReturn(
         NewStartAiChatService.NewStartAiAnswer.failed("질문을 입력해 주세요."));

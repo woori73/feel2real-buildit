@@ -58,7 +58,30 @@
         <section class="ns-hero" aria-labelledby="ns-hero-title" data-ns-reveal>
           <h1 id="ns-hero-title">소상공인·자영업자 새출발기금</h1>
           <p class="ns-hero-copy">부실차주 채무조정 도우미</p>
-          <a class="ns-btn ns-btn-primary ns-btn-large ns-hero-cta" href="#ns-ai">지피지기 Agent에게 질문하기 <span aria-hidden="true">→</span></a>
+
+          <div class="ns-step-picker" aria-labelledby="ns-step-title">
+            <h2 class="ns-step-title" id="ns-step-title">지금 어느 단계인가요?</h2>
+            <p class="ns-step-sub">현재 상황에 해당하는 단계를 선택하세요.</p>
+            <ol class="ns-step-grid">
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-0"><span class="ns-step-num" aria-hidden="true">0</span>협약기관 확인</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-1"><span class="ns-step-num" aria-hidden="true">1</span>연체 시작 · 추심 대응</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-2"><span class="ns-step-num" aria-hidden="true">2</span>지급명령 · 전자소송</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-3"><span class="ns-step-num" aria-hidden="true">3</span>Credit4U · 장기연체</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-4"><span class="ns-step-num" aria-hidden="true">4</span>신청 자격 · 공식 신청</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-5"><span class="ns-step-num" aria-hidden="true">5</span>원장 초기화</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-6"><span class="ns-step-num" aria-hidden="true">6</span>지원 가능한 대출</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-7"><span class="ns-step-num" aria-hidden="true">7</span>부실우려 → 부실차주</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-8"><span class="ns-step-num" aria-hidden="true">8</span>부동산 담보</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-9"><span class="ns-step-num" aria-hidden="true">9</span>차량 담보</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-10"><span class="ns-step-num" aria-hidden="true">10</span>임시안 → 확정안</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-11"><span class="ns-step-num" aria-hidden="true">11</span>교육 이수 · 추가감면</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-12"><span class="ns-step-num" aria-hidden="true">12</span>성실상환 이후 지원</a></li>
+              <li><a class="ns-step-link" href="/newstart/a-to-z#step-13"><span class="ns-step-num" aria-hidden="true">13</span>신청결과 · 진행상태</a></li>
+            </ol>
+            <a class="ns-step-atoz-all" href="/newstart/a-to-z">A to Z 전체 여정 보기 <span aria-hidden="true">→</span></a>
+          </div>
+
+          <a class="ns-btn ns-btn-secondary ns-btn-large ns-hero-cta" href="#ns-ai">지피지기 Agent에게 질문하기 <span aria-hidden="true">→</span></a>
         </section>
 
         <section class="ns-content-section" aria-labelledby="ns-practical-title">
@@ -69,7 +92,7 @@
               <span class="ns-debt-home-state" id="ns-debt-home-state" data-state="NOT_STARTED">미확인</span>
             </div>
           </div>
-          <p class="ns-debt-desc">자신의 개인 채무상황을 정리하세요. 정리한 내용에 맞는 안내를 받을 수 있습니다. 새출발기금 담당자와 상의할 때에도 도움이 됩니다.</p>
+          <p class="ns-debt-desc">먼저 내 채무 상황을 정리해 보세요. 내 채무를 잘 모르겠다면 신용정보 조회하기부터 시작하면 됩니다. 정리한 내용에 맞는 안내를 받고, 새출발기금 담당자와 상의할 때에도 도움이 됩니다.</p>
           <div class="ns-section-heading ns-practical-heading"><h2 id="ns-practical-title">지금 필요한 도움</h2></div>
           <div class="ns-core-grid ns-practical-grid">
             <a class="ns-feature-card" href="/newstart/fss-helper" data-ns-reveal style="--ns-reveal-delay:120ms"><strong>추심 대응</strong><span class="ns-member-badge">감사회원 전용</span><span class="ns-feature-copy">금감원 민원 샘플과 추심 대응 도우미. 안내는 누구나, 민원 작성 실행은 승인 회원이 이용합니다.</span><span class="ns-feature-cta">민원 도우미 →</span></a>
@@ -87,6 +110,11 @@
               <strong>전자책 구매하고 감사회원 되기</strong>
               <span class="ns-service-copy">전자책 구매 회원은 감사회원으로 등록되어 지피지기 Agent와 추심 대응 등 감사회원 전용 기능을 이용할 수 있습니다.</span>
               <span class="ns-service-cta">감사회원 되는 방법 보기 →</span>
+            </a>
+            <a class="ns-service-card ns-service-consult" href="/newstart/consultations" data-ns-reveal style="--ns-reveal-delay:240ms">
+              <strong>1:1 비공개 상담</strong><span id="ns-consult-unread" class="ns-consult-unread" hidden>새 답변 0건</span>
+              <span class="ns-service-copy">개인 채무가 들어간 상담은 카카오톡 단체방 대신, 여기에서 운영자에게 비밀리에 문의하세요. 회원 본인과 운영자만 볼 수 있습니다.</span>
+              <span class="ns-service-cta">내 상담 열기 →</span>
             </a>
           </div>
         </section>
@@ -107,7 +135,8 @@
             <div><h2 class="ns-card-title">내 채무상황 정리</h2></div>
             <button class="ns-btn ns-btn-ghost" type="button" data-ns-toggle="ns-status-panel">접기</button>
           </div>
-          <p class="ns-empty" id="ns-debt-empty">Credit4U에서 확인한 내용을 아래 체크리스트에 정리하세요. 로그인한 회원의 채무상황으로 저장됩니다.</p>
+          <a class="ns-text-link ns-debt-lead" href="/newstart/tools/credit4u">내 채무를 잘 모르겠다면 신용정보 조회하기 →</a>
+          <p class="ns-empty" id="ns-debt-empty">내 채무 상황을 아래 체크리스트에 정리하세요. 신용정보를 아직 확인하지 않았다면 먼저 신용정보를 조회해 보세요. 로그인한 회원의 채무상황으로 저장됩니다.</p>
           <div class="ns-debt-checklist" id="ns-debt-checklist">
             <p class="ns-label">Credit4U 확인 체크리스트</p>
             <label class="ns-check" for="ns-flag-credit4u"><input class="ns-check-input" type="checkbox" id="ns-flag-credit4u"><span class="ns-check-box"><span class="ns-check-mark" aria-hidden="true">✓</span></span><span class="ns-check-text">Credit4U 확인 완료</span></label>
@@ -185,5 +214,6 @@
   <script src="/js/newstart.js?v=20261001-3" defer></script>
   <script src="/js/newstart-profile.js?v=20260921-1" defer></script>
   <script src="/js/newstart-presence.js?v=20261001-1" defer></script>
+  <script src="/js/newstart-consult-unread.js?v=20261002-1" defer></script>
 </body>
 </html>

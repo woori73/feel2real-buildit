@@ -2,6 +2,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controlle
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozStep;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozStep.Step;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +62,10 @@ public class NewStartAiChatController {
     if (!answer.ok()) {
       return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage(), toSourceDtos(answer.sources())));
     }
-    return ResponseEntity.ok(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources()), STAGE_CASE));
+    // §7 — 질문을 결정적 키워드로 A to Z 단계에 연결해 이동 링크를 내려준다(AI 판단 아님, RAG 답변 순서와 무관한 표시 계층).
+    return ResponseEntity.ok(
+        withAtozStep(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources()), STAGE_CASE),
+            request == null ? null : request.message()));
   }
 
   /**
@@ -91,6 +96,16 @@ public class NewStartAiChatController {
     return sources.stream().map(s -> new SourceDto(s.kind(), s.title(), s.url())).toList();
   }
 
+  /** 질문에서 A to Z 단계를 결정적으로 찾아 STEP 1 응답에 이동 링크를 얹는다(신호 없으면 그대로 반환). */
+  private static ChatResponse withAtozStep(ChatResponse base, String message) {
+    int no = NewStartAtozStep.detectStepNo(message);
+    if (no < 0) return base;
+    Step step = NewStartAtozStep.byNo(no);
+    if (step == null) return base;
+    return new ChatResponse(base.status(), base.answer(), base.errorMessage(), base.model(),
+        base.sources(), base.stage(), step.no(), step.title(), step.url());
+  }
+
   /** @param message 사용자가 입력한 질문. 빈 값/길이 초과는 service가 검증한다. */
   public record ChatRequest(String message) {}
 
@@ -105,16 +120,19 @@ public class NewStartAiChatController {
    * @param errorMessage 실패 시 사용자용 안내 문구(내부 예외·provider 상세 미포함), 성공 시 null.
    * @param model Wiki Router가 반환한 모델 식별자(검증용). UI 표시는 선행이며 실패 시 null.
    * @param sources 답변 조립에 사용된 근거 출처 목록(빈 배열 가능).
+   * @param stage "CASE"(1차: 전자책+실제 사례) | "OFFICIAL"(2차: 현재 규정 확인). 실패 응답은 null.
+   * @param atozStepNo/atozStepTitle/atozStepUrl §7 결정적 A to Z 단계 연결(없으면 모두 null).
    */
   public record ChatResponse(String status, String answer, String errorMessage, String model,
-                             java.util.List<SourceDto> sources, String stage) {
+                             java.util.List<SourceDto> sources, String stage,
+                             Integer atozStepNo, String atozStepTitle, String atozStepUrl) {
     /** @param stage "CASE"(1차: 전자책+실제 사례) | "OFFICIAL"(2차: 현재 규정 확인). 실패 응답은 null. */
     public static ChatResponse success(String answer, String model, java.util.List<SourceDto> sources, String stage) {
-      return new ChatResponse("ok", answer, null, model, sources, stage);
+      return new ChatResponse("ok", answer, null, model, sources, stage, null, null, null);
     }
 
     public static ChatResponse failure(String errorMessage, java.util.List<SourceDto> sources) {
-      return new ChatResponse("error", "", errorMessage, null, sources, null);
+      return new ChatResponse("error", "", errorMessage, null, sources, null, null, null, null);
     }
   }
 }
