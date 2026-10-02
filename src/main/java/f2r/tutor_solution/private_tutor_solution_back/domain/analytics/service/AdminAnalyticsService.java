@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 관리자 "통합 Analytics" — F2R 전체/Wiki/NewStart 방문(UV/PV) + Wiki 다운로드 통계를 한 번에 조립한다.
  * {@code WikiOpsOverviewService}와 동일하게 별도 통계 DB 없이 이벤트 로그 테이블을 직접 집계한다.
- * 서비스별 수치는 {@code AnalyticsServiceArea} 분류(과거 row 포함, V1019 재분류)를 그대로 따른다.
+ * 서비스별 수치는 {@code AnalyticsServiceArea} 분류(과거 row 포함, V1020 재분류)를 그대로 따른다.
  */
 @Service
 @Transactional(readOnly = true)
