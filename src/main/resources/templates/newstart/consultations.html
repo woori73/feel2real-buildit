@@ -11,47 +11,49 @@
     /* 이 페이지의 display 규칙이 UA의 [hidden]보다 우선해 hidden이 무시된다(questions와 동일 결함).
        JS가 hidden으로 목록·쓰기 버튼·로그인 안내를 전환하므로 저 우선순위 하나로 숨김을 되돌린다. */
     [hidden]{display:none !important}
-    /* 모바일 터치 기준(44px) 충족. */
-    .ns-btn{min-height:44px}
-    input.ns-input,select.ns-input,textarea.ns-input{min-height:44px}
-    .ns-cns-main{display:grid;gap:14px}
-    .ns-cns-head{display:flex;gap:10px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+    /* 모바일 터치 기준. 상담 화면은 더 넉넉한 48px 터치 영역을 쓴다. */
+    .ns-btn{min-height:48px}
+    input.ns-input,select.ns-input,textarea.ns-input{min-height:48px}
+
+    .ns-cns-main{display:grid;gap:12px}
+    /* 첫 화면 순서: 제목 → 새 상담 작성 → 내 상담 목록. 설명 없이 바로 행동. */
+    .ns-cns-head{display:grid;gap:12px}
+    .ns-cns-title-row .ns-card-title{font-size:25px;font-weight:800;line-height:1.3;color:#0f172a;margin:0;word-break:keep-all}
+    #ns-cns-new{width:100%;font-size:18px;font-weight:800;line-height:1.4;min-height:52px;padding:14px 18px;border-radius:14px}
+
     .ns-cns-list{display:grid;gap:10px;list-style:none;margin:0;padding:0}
-    .ns-cns-item{border:1px solid #e2e8f0;border-radius:14px;background:#fff;padding:12px}
+    .ns-cns-item{border:1px solid #e2e8f0;border-radius:14px;background:#fff;padding:14px}
     .ns-cns-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .ns-cns-state{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;background:#f1f5f9;color:#334155}
+    .ns-cns-state{font-size:15px;font-weight:700;line-height:1.4;border-radius:999px;padding:4px 11px;background:#f1f5f9;color:#334155}
     .ns-cns-state.is-new{background:#dbeafe;color:#1e40af}
     .ns-cns-state.is-await{background:#fef9c3;color:#854d0e}
     .ns-cns-state.is-answered{background:#dcfce7;color:#14532d}
     .ns-cns-state.is-followup{background:#ffedd5;color:#9a3412}
-    .ns-cns-badge{font-size:12px;font-weight:700;color:#b91c1c;background:#fee2e2;border-radius:999px;padding:2px 9px}
-    .ns-cns-open{background:none;border:none;padding:0;color:#2563eb;font:inherit;font-size:14px;font-weight:700;
-      cursor:pointer;text-align:left;min-height:44px;word-break:keep-all}
-    .ns-cns-meta{font-size:12px;color:#64748b;margin:4px 0 0}
-    .ns-cns-detail{border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;padding:14px;margin:12px 0}
-    .ns-cns-title{font-size:16px;font-weight:700;color:#0f172a;margin:6px 0 2px;word-break:keep-all}
-    .ns-cns-thread{display:grid;gap:10px;margin:10px 0}
-    .ns-cns-msg{border-radius:12px;padding:10px 12px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:keep-all}
+    .ns-cns-badge{font-size:15px;font-weight:700;line-height:1.4;color:#b91c1c;background:#fee2e2;border-radius:999px;padding:4px 11px}
+    /* 상담 제목(핵심 질문)이 화면 중심. 본문과 상태는 최소 17px. */
+    .ns-cns-open{background:none;border:none;padding:8px 0;color:#0f172a;font:inherit;font-size:19px;font-weight:700;
+      line-height:1.65;cursor:pointer;text-align:left;min-height:48px;word-break:keep-all;overflow-wrap:anywhere}
+    .ns-cns-meta{font-size:16px;color:#64748b;margin:6px 0 0;line-height:1.6}
+
+    .ns-cns-detail{border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;padding:16px;margin:12px 0}
+    .ns-cns-detail .ns-card-title{font-size:19px;font-weight:700}
+    .ns-cns-title{font-size:20px;font-weight:700;color:#0f172a;line-height:1.5;margin:6px 0 4px;word-break:keep-all}
+    .ns-cns-thread{display:grid;gap:10px;margin:12px 0}
+    .ns-cns-msg{border-radius:12px;padding:12px 14px;font-size:17px;line-height:1.7;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
     .ns-cns-msg.member{background:#eff6ff;border:1px solid #bfdbfe;color:#0c4a6e}
     .ns-cns-msg.operator{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
-    .ns-cns-msg-role{font-size:12px;font-weight:700;margin:0 0 4px}
-    .ns-cns-msg-time{font-size:11px;color:#64748b;margin:4px 0 0}
-    .ns-cns-reply{display:grid;gap:8px;margin-top:10px}
-    .ns-cns-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-    .ns-cns-note{font-size:13px;color:#64748b;margin:0;line-height:1.6}
-    .ns-cns-privacy{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px 12px;font-size:13px;
-      color:#7c4a03;line-height:1.6;margin:0}
-    .ns-cns-err{color:#b91c1c;font-size:13px;margin:6px 0 0}
-    .ns-cns-link{display:inline-block;font-size:13px;font-weight:700;color:#2563eb;min-height:44px;
-      padding:12px 0}
-    .ns-cns-check{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:#0f172a}
-    .ns-cns-check input{margin-top:3px;min-height:auto;width:18px;height:18px}
-    .ns-req-form{display:grid;gap:10px}
-    .ns-req-label{font-size:12px;font-weight:700;color:#64748b;margin:0 0 2px;display:block}
-    @media (max-width: 640px){
-      .ns-cns-head{align-items:flex-start}
-      .ns-cns-title{font-size:15px}
-    }
+    .ns-cns-msg-role{font-size:15px;font-weight:700;margin:0 0 4px}
+    .ns-cns-msg-time{font-size:15px;color:#64748b;margin:6px 0 0}
+    .ns-cns-reply{display:grid;gap:10px;margin-top:12px}
+    .ns-cns-reply textarea.ns-input{font-size:17px;line-height:1.7}
+    .ns-cns-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .ns-cns-note{font-size:16px;color:#475569;margin:8px 0;line-height:1.65}
+    .ns-cns-err{color:#b91c1c;font-size:16px;margin:6px 0 0;line-height:1.6}
+    .ns-cns-link{display:inline-block;font-size:17px;font-weight:700;color:#2563eb;min-height:48px;padding:12px 0}
+    .ns-cns-check{display:flex;gap:10px;align-items:flex-start;font-size:16px;line-height:1.6;color:#0f172a}
+    .ns-cns-check input{margin-top:3px;min-height:auto;width:22px;height:22px}
+    .ns-req-form{display:grid;gap:12px}
+    .ns-req-label{font-size:16px;font-weight:700;color:#334155;margin:0 0 4px;display:block}
   </style>
 </head>
 <body>
@@ -76,34 +78,27 @@
           <a class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버 로그인</a>
         </section>
 
-        <section class="ns-card" aria-label="내 상담 목록">
+        <section class="ns-card" aria-label="내 상담">
           <div class="ns-cns-head">
-            <div>
+            <div class="ns-cns-title-row">
               <h1 class="ns-card-title">1:1 비공개 상담</h1>
-              <p class="ns-card-meta">개인 채무정보나 개인 상담은 이 화면(NewStart) 안에서만 운영자와 나눕니다. 다른 감사회원에게는 절대 보이지 않습니다.</p>
             </div>
             <button type="button" class="ns-btn ns-btn-primary" id="ns-cns-new" hidden>새 상담 작성</button>
           </div>
 
-          <p class="ns-cns-privacy">
-            <strong>카카오톡 감사회원 상담방과 다릅니다.</strong> 공개 가능한 질문·경험 나눔은 카톡 상담방에서,
-            개인 채무정보·금융회사·금액·연체일·담보 등 개인 상담은 이 1:1 비공개 상담에서만 남겨 주세요.
-            여기서 남긴 개인 채무내용은 카톡 단체방으로 자동 전송되지 않습니다.
-          </p>
-
           <!-- 새 상담 작성 폼 -->
           <details id="ns-cns-write" class="ns-cns-detail" hidden>
             <summary class="ns-card-title">새 상담 작성</summary>
-            <p class="ns-cns-note">주민번호·계좌번호·인증서 비밀번호 등 민감정보는 적지 말아 주세요. 운영자가 확인해 답변합니다.</p>
+            <p class="ns-cns-note">상담 내용은 운영자와 1:1로 확인합니다.</p>
             <form id="ns-cns-form" class="ns-req-form">
               <div>
                 <label class="ns-req-label" for="ns-cns-content">상담 내용</label>
                 <textarea id="ns-cns-content" class="ns-input" rows="6" maxlength="2000" required
-                  placeholder="지금 상황이나 궁금한 점을 적어 주세요. 운영자가 답변합니다."></textarea>
+                  placeholder="지금 상황이나 궁금한 점을 적어 주세요."></textarea>
               </div>
               <label class="ns-cns-check">
                 <input type="checkbox" id="ns-cns-linkdebt">
-                <span>내 채무상황을 이 상담에 연결합니다. 운영자가 상담에 필요한 범위에서만 보며, 다른 회원에게는 보이지 않습니다.</span>
+                <span>내 채무상황을 이 상담에 연결합니다.</span>
               </label>
               <div class="ns-cns-actions">
                 <button type="submit" class="ns-btn ns-btn-primary" id="ns-cns-submit">상담 보내기</button>
@@ -121,7 +116,7 @@
         <section id="ns-cns-detail" class="ns-cns-detail" hidden aria-label="상담 스레드"></section>
       </main>
 
-      <script src="/js/newstart-consultations.js?v=20261002-1" defer></script>
+      <script src="/js/newstart-consultations.js?v=20261002-2" defer></script>
     </div>
   </div>
   <script src="/js/newstart-back.js?v=20260928-1" defer></script>
