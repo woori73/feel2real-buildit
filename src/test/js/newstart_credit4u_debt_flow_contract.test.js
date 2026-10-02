@@ -73,6 +73,8 @@ test('JPG·PNG·PDF 선택과 기기 내 분석·수정 후 명시적 저장 계
   assert.match(home, /원본은 이 기기 안에서만 읽고 서버에 업로드하거나 보관하지 않습니다/);
   assert.match(home, /\/vendor\/tesseract\/tesseract\.min\.js\?v=5\.1\.1/);
   assert.match(home, /\/vendor\/pdfjs\/pdf\.min\.js\?v=3\.11\.174/);
+  // blob 워커 base에서는 /vendor 절대경로 importScripts가 실패 → workerBlobURL:false 가 실제로 OCR을 성립시킨다.
+  assert.match(uploadJs, /workerBlobURL:\s*false/);
   assert.doesNotMatch(uploadJs, /fetch\(|XMLHttpRequest|localStorage|sessionStorage/);
   assert.match(js, /NewStartDebtDraft\.summary/);
   assert.match(js, /NewStartDebtDraft\.markSaved/);
