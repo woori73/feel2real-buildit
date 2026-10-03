@@ -34,4 +34,7 @@ public interface NewStartConsultationMessageRepository extends JpaRepository<New
   /** 특정 작성자의 마지막 메시지(운영자가 조사할 "회원 최신 질문" 특정용). */
   Optional<NewStartConsultationMessage> findTopByConsultationIdAndAuthorRoleOrderByMessageIdDesc(
       Long consultationId, MessageAuthorRole authorRole);
+
+  /** 테스트 데이터 정리용 — 해당 상담의 메시지 전체 삭제. 반환값은 삭제된 행 수. */
+  long deleteByConsultationId(Long consultationId);
 }
