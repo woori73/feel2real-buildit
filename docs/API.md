@@ -4038,6 +4038,19 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - 비교 문구는 문항 evidence를 가져야 하며(예: 순서 36번이 양 시험 모두 지시어 회상 구조), 근거 없는 출제 예측은 저장하지 않는다. `EXPERT_ANALYSIS` 비교는 위와 같은 expert 게이트(expert/expert_source_id/timestamps/agreement_kind)를 적용한다. 기존 평가원·WIKI_SYNTHESIS 비교와 같은 태그여도 판정(verdict)이 다르면 별개 행으로 **관점 차이로 보존**하고 덮어쓰지 않는다.
 - 시드: `scripts/seed_csat_expert_lee.py --base http://127.0.0.1:8000`가 `fixtures/csat_day1/dna_expert_lee.json`(출처 2·CLAIM 12·문항 DNA 12·비교 5 = EXPERT_ANALYSIS 29건)을 멱등하게 등록한다. 기존 ACTUAL_EXAM/OFFICIAL_SOURCE/WIKI_SYNTHESIS 행은 읽기만 한다.
 
+### ✅ GET /api/csat/students/{id}/weakness-dna · POST /api/csat/students/{id}/weakness-dna/analyze
+
+학생 ④ 약점 DNA 화면(「수능영어 Wiki → ④ 학생 약점 DNA」) 전용. SOURCE OF TRUTH는 **③에 등록된 학생 오답 원문 HTML**이고, 연결 근거는 ① 평가원 기출·② 평가원 출제 DNA뿐이다 — 임의 생성 금지, 원문에 없는 정보(학생이 고른 선지 등)는 만들지 않는다.
+
+- `GET .../weakness-dna`: 저장된 분석 결과를 읽는다(읽기 전용, 쓰기 권한 없음). 분석 전에는 `{analysis: null, dna: []}`를 반환한다(가짜 데이터 금지). 학생이 없으면 `404`.
+- `POST .../weakness-dna/analyze`: 오답 원문 전체를 재분석해 저장한다 — ADMIN 전용(`_require_csat_admin`, 미서명/비ADMIN `403`). 오답 원문 미등록 `404`, 원문에서 문항을 찾지 못하면 `400`. 재분석은 멱등(upsert analysis + DNA 삭제 후 재insert)이라 결과가 항상 원문 현재 상태와 일치한다.
+- 반복 규칙(약점 확정 조건): **서로 다른 시험 2개 이상 × 문항 2개 이상**의 유형(dimension·trap)만 약점 카드로 올라가고, 미달 건은 `observations`의 "관찰"로만 남긴다(DAY-2 핸드오프 규칙).
+- 응답 구조(양쪽 동일): `analysis`(student, wrong_html_id, original_name, wrong_total, dna_count, observation_count, **student_answer_known**, analyzed_at, prescription[], observations[]) + `dna[]`(카드: key/category/title/wrong_count/source_count + evidence 근거 문항 원문 링크용 wrong_html_id·question_no·exam_label, 평가원 DNA 연결 tags/claims, 잘못된 풀이 과정·앞으로의 풀이 행동).
+- **학생 선택 답 정책**: 오답 원문에 학생 선택 답 표기가 없어(`student_answer_known=false`) 추정하지 않는다. UI도 "원문 미표기(추정하지 않음)"로 명시한다.
+- `prescription`은 행동 단위 「최승원의 수능영어 풀이 처방」, 저장 payload는 ⑤ 개인별 대비(맞춤 복습 문제지) 데이터 구조로 그대로 재사용한다(`csat_weakness_analysis`/`csat_weakness_dna`, 학생당 1 analysis + dna_key UNIQUE).
+- 실제 데이터 검증(2026-10): 오답 원문 176문항 → 약점 DNA 10개 + 관찰 1건(글의순서 39·빈칸 36·문장삽입 35·어휘 21·어법 12·제목 11·함축의미 10·주제 4·무관한문장 4·요지 3, 관찰=필자 주장 1).
+- 관련 코드: `backend/csat_weakness.py`(parse/분류/연결/analyze), `backend/main.py` ④ 엔드포인트 3종, `tests/test_csat_weakness_dna.py`.
+
 ## 수능 WebMCP Site Tools
 
 - 등록 위치: top-level React Wiki의 `document.modelContext.registerTool()`.

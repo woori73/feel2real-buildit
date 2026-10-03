@@ -34,6 +34,7 @@ import question_contract as qc
 import workspace as wiki_workspace
 import weekly_exam
 import wrong_mock
+import csat_weakness
 
 DB_PATH = os.getenv('BUILDIT_WIKI_DB_PATH', '/workspace/data/app.db')
 WORKSPACE = Path(os.getenv('BUILDIT_WIKI_WORKSPACE', '/workspace'))
@@ -489,6 +490,7 @@ def init_db():
 
         weekly_exam.init_schema(conn)
         wrong_mock.init_schema(conn)
+        csat_weakness.init_schema(conn)
 
 
 def _legacy_markup_html(text: str) -> str:
@@ -584,6 +586,7 @@ def migrate_schema():
     with get_db() as conn:
         weekly_exam.init_schema(conn)
         wrong_mock.init_schema(conn)
+        csat_weakness.init_schema(conn)
         cols = {row['name'] for row in conn.execute("PRAGMA table_info(student_wrong_notes)").fetchall()}
         if 'source_text' not in cols:
             conn.execute("ALTER TABLE student_wrong_notes ADD COLUMN source_text TEXT NOT NULL DEFAULT ''")
@@ -5931,6 +5934,115 @@ def delete_csat_wrong_html(html_id: int, request: Request):
             raise HTTPException(status_code=404, detail='오답 HTML 자료를 찾지 못했습니다.')
         conn.execute('DELETE FROM csat_wrong_html WHERE id=?', (html_id,))
     return Response(status_code=204)
+
+
+# ---- WIKI ④ 학생 약점 DNA (③ 오답 원문 + ①② 평가원 DNA만으로 분석, ⑤용 구조로 저장) ----
+
+
+def _csat_weakness_analysis_response(conn, student_id: int) -> Optional[dict]:
+    row = conn.execute('SELECT * FROM csat_weakness_analysis WHERE student_id=?', (student_id,)).fetchone()
+    if not row:
+        return None
+    payload = json.loads(row['payload_json'] or '{}')
+    student = conn.execute('SELECT id,name FROM students WHERE id=?', (student_id,)).fetchone()
+    source = conn.execute('SELECT original_name FROM csat_wrong_html WHERE id=?', (row['wrong_html_id'],)).fetchone() if row['wrong_html_id'] else None
+    return {
+        'student': {'id': student_id, 'name': student['name'] if student else ''},
+        'wrong_html_id': row['wrong_html_id'],
+        'original_name': source['original_name'] if source else '',
+        'wrong_total': row['wrong_total'],
+        'dna_count': row['dna_count'],
+        'observation_count': row['observation_count'],
+        'student_answer_known': bool(row['student_answer_known']),
+        'analyzed_at': row['updated_at'] or row['created_at'],
+        'prescription': payload.get('prescription', []),
+        'observations': payload.get('observations', []),
+    }
+
+
+def _csat_weakness_response(conn, student_id: int) -> dict:
+    return {
+        'analysis': _csat_weakness_analysis_response(conn, student_id),
+        'dna': [csat_weakness.row_to_card(row) for row in conn.execute(
+            'SELECT * FROM csat_weakness_dna WHERE student_id=? ORDER BY wrong_count DESC, dna_key',
+            (student_id,)).fetchall()],
+    }
+
+
+@app.get('/api/csat/students/{student_id}/weakness-dna')
+def get_student_weakness_dna(student_id: int):
+    """저장된 ④ 약점 DNA를 읽는다. 분석 전에는 analysis=null (가짜 데이터 금지)."""
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM students WHERE id=?', (student_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='학생을 찾을 수 없습니다.')
+        return _csat_weakness_response(conn, student_id)
+
+
+@app.post('/api/csat/students/{student_id}/weakness-dna/analyze', status_code=201)
+def analyze_student_weakness_dna(student_id: int, request: Request):
+    """③에 등록된 오답 원문과 ①②의 평가원 출제 DNA만으로 약점 DNA를 만든다.
+
+    원문에 없는 정보(학생이 고른 선지 등)는 만들지 않고, 반복 규칙(서로 다른 시험 2개 이상 ×
+    문항 2개 이상)을 통과한 유형만 약점으로 확정한다. 결과는 ⑤ 개인별 대비가 그대로
+    소비할 수 있도록 csat_weakness_analysis / csat_weakness_dna에 저장한다.
+    """
+    _require_csat_admin(request)
+    with get_db() as conn:
+        student = conn.execute('SELECT id,name FROM students WHERE id=?', (student_id,)).fetchone()
+        if not student:
+            raise HTTPException(status_code=404, detail='학생을 찾을 수 없습니다.')
+        wrong = conn.execute('SELECT id,original_blob,original_name FROM csat_wrong_html WHERE student_id=? ORDER BY id DESC LIMIT 1',
+                             (student_id,)).fetchone()
+        if not wrong:
+            raise HTTPException(status_code=404, detail='등록된 학생 오답 원문이 없습니다. ③에서 오답 HTML을 먼저 등록해 주세요.')
+        items = csat_weakness.parse_wrong_items(wrong['original_blob'])
+        if not items:
+            raise HTTPException(status_code=400, detail='오답 원문에서 분석할 문항을 찾지 못했습니다.')
+        exams = {row['id']: (row['label'] or f"{row['exam_year']} {row['exam_type']}")
+                 for row in conn.execute('SELECT id,label,exam_year,exam_type FROM csat_exams').fetchall()}
+        questions = [{'id': row['id'], 'exam_id': row['exam_id'], 'question_no': row['question_no'],
+                      'csat_type_id': row['csat_type_id'], 'exam_label': exams.get(row['exam_id'], '')}
+                     for row in conn.execute('SELECT id,exam_id,question_no,csat_type_id FROM csat_questions WHERE exam_id IS NOT NULL').fetchall()]
+        sources_map = _csat_expert_source_map(conn)
+        entries = []
+        for row in conn.execute("""SELECT d.*, q.question_no, q.csat_type_id FROM csat_question_dna d
+                JOIN csat_questions q ON q.id=d.question_id
+                WHERE d.status<>'REJECTED' ORDER BY d.id""").fetchall():
+            entry = _csat_dna_response(row, sources_map)
+            entry['exam_label'] = exams.get(row['exam_id'], '')
+            entries.append(entry)
+        claims = []
+        for row in conn.execute("SELECT * FROM csat_dna_claims WHERE status<>'REJECTED' ORDER BY id").fetchall():
+            claim = _csat_dna_response(row, sources_map)
+            claim['exam_label'] = exams.get(row['exam_id'], '')
+            claims.append(claim)
+        analysis = csat_weakness.analyze(
+            items, csat_weakness.collect_exam_links(questions, entries, claims),
+            student['name'], wrong['id'])
+        now = datetime.now().isoformat()
+        summary = {'prescription': analysis['prescription'], 'observations': analysis['observations']}
+        existing = conn.execute('SELECT id FROM csat_weakness_analysis WHERE student_id=?', (student_id,)).fetchone()
+        if existing:
+            analysis_id = existing['id']
+            conn.execute('''UPDATE csat_weakness_analysis SET wrong_html_id=?, wrong_total=?, dna_count=?,
+                    observation_count=?, student_answer_known=?, payload_json=?, updated_at=? WHERE id=?''',
+                (wrong['id'], analysis['wrong_total'], analysis['dna_count'], analysis['observation_count'],
+                 int(analysis['student_answer_known']), json.dumps(summary, ensure_ascii=False), now, analysis_id))
+        else:
+            cursor = conn.execute('''INSERT INTO csat_weakness_analysis
+                    (student_id,wrong_html_id,wrong_total,dna_count,observation_count,student_answer_known,payload_json,created_at,updated_at)
+                    VALUES (?,?,?,?,?,?,?,?,?)''',
+                (student_id, wrong['id'], analysis['wrong_total'], analysis['dna_count'], analysis['observation_count'],
+                 int(analysis['student_answer_known']), json.dumps(summary, ensure_ascii=False), now, now))
+            analysis_id = cursor.lastrowid
+        conn.execute('DELETE FROM csat_weakness_dna WHERE analysis_id=?', (analysis_id,))
+        for card in analysis['dna']:
+            conn.execute('''INSERT INTO csat_weakness_dna
+                    (analysis_id,student_id,dna_key,category,title,wrong_count,source_count,payload_json,created_at)
+                    VALUES (?,?,?,?,?,?,?,?,?)''',
+                (analysis_id, student_id, card['key'], card['category'], card['title'],
+                 card['wrong_count'], card['source_count'], json.dumps(card, ensure_ascii=False), now))
+        return _csat_weakness_response(conn, student_id)
 
 
 def _passage_source(payload: PassageRequest) -> str:
