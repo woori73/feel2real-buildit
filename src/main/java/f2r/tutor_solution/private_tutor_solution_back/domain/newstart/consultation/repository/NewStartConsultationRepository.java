@@ -1,7 +1,9 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.repository;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.entity.ConsultationStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.entity.NewStartConsultation;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
@@ -14,4 +16,10 @@ public interface NewStartConsultationRepository extends JpaRepository<NewStartCo
   List<NewStartConsultation> findByMemberUserIdOrderByLastMessageAtDesc(Long memberUserId);
 
   List<NewStartConsultation> findAllByOrderByLastMessageAtDesc();
+
+  /** Muse ping용 — 가장 최근 상담 1건 (read-only). */
+  Optional<NewStartConsultation> findTopByOrderByConsultationIdDesc();
+
+  /** Muse ping용 — 미확인(NEW) 상담 건수 (read-only). */
+  long countByStatus(ConsultationStatus status);
 }

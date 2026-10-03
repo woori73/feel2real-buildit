@@ -361,6 +361,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/lessons/search").permitAll()  // 공개 수업 검색
             // 공개 랜딩 managed stream은 GET만 익명 허용한다. 같은 prefix의 write는 열지 않는다.
             .requestMatchers(HttpMethod.GET, "/api/landing/videos/*/stream").permitAll()
+            // Muse 1:1 상담 신청 감지용 공개 ping — 개인정보 없음(최신 ID·미확인 건수·접수 시각만). 토큰 세그먼트로 남용 방지.
+            .requestMatchers(HttpMethod.GET, "/api/muse/newstart/consultations/ping/*").permitAll()
 
             // Chart Research Agent (ROLE_CHART_AGENT) — 조사 파이프라인 최소 범위만 허용.
             // Bearer 토큰은 CHART_AGENT_TOKEN 환경변수로 주입되며 미설정 시 이 규칙은
