@@ -54,7 +54,7 @@ OCR/vision 파이프라인은 DAY-2에 구현하되, 위 6필드가 채워지면
 - ③ 학생 오답: §2 필드를 회차·문항번호별로 목록화. 각 행에서 해당 문항(`csat-q-N`)으로 이동.
 - ④ 학생 약점 DNA: dimension(tag) 기준으로 학생 오답을 그룹핑 → 근거 문항 chips + 매핑된 TRAP + CLAIM + 비교 판정 + 강사 구간 링크.
 - ⑤ 개인별 대비: ④의 상위 약점 순서대로 "회차별 반복 문항형" 목록. 예측·단정 문구 금지(§14).
-- 3개 탭 모두 현재는 DAY-2 준비 중 empty-state. 데이터가 들어와도 provenance/STATUS 배지 규약(실제 문항 근거 / 공식 자료 / 강사 분석 / Wiki 종합)을 그대로 사용한다.
+- ~~3개 탭 모두 현재는 DAY-2 준비 중 empty-state.~~ → **④는 구현 완료(2026-10)**: 오답 원문 HTML(③) + ①② 평가원 DNA로만 분석·저장(`GET/POST /api/csat/students/{id}/weakness-dna[/analyze]`, §7 참조). ③ 목록화·⑤ 회차별 반복 문항형은 후속. 데이터가 들어와도 provenance/STATUS 배지 규약(실제 문항 근거 / 공식 자료 / 강사 분석 / Wiki 종합)을 그대로 사용한다.
 
 ## 5. 재현 커맨드(로컬)
 
@@ -80,3 +80,11 @@ cd ../wiki-src && npx tsc --noEmit && npx vite --port 5173
 - agreement_kind 분포: AGREEMENT 7 / DIFFERENT_EMPHASIS 12 / EXPERT_ONLY 10 (UNKNOWN 0)
 - 문항 정답指纹 `md5 = a2e654e57c4365e2f1dee1c4c7e62ba9`(57문항, 시드 전후 동일)
 - 검증 제외 목록(출처 불충족 → 강사 분석으로 등록하지 않음): 작년 수능 3.11%/1등급 비율 관련 통계, 23·25학년도 9평 비교, 31번 오답률 수치 순위, 사과문 인용, 898~917초 "6평 수준으로 공부" 진술
+
+## 7. DAY-2 ④ 학생 약점 DNA 구현 완료 상태 (2026-10-03)
+
+- 백엔드: `backend/csat_weakness.py`(원문 176문항 parse → 유형 분류 → ①② 연결 → 반복 규칙 분석) + `main.py` ④ 엔드포인트 3종 + `tests/test_csat_weakness_dna.py` 8건. 테이블 `csat_weakness_analysis`(학생당 1행)/`csat_weakness_dna`(dna_key UNIQUE), payload에 ⑤용 prescription/observations 보존.
+- 반복 규칙: 서로 다른 시험 2회차 이상 × 문항 2개 이상만 약점, 미달은 "관찰". 학생 선택 답은 원문 미표기라 추정하지 않음(`student_answer_known=false`).
+- 실측(운영 원문 읽기전용 분석): 176오답 → 약점 DNA 10개 + 관찰 1건 — 글의순서 39·빈칸 36·문장삽입 35·어휘 21·어법 12·제목 11·함축의미 10·주제 4·무관한문장 4·요지 3, 관찰=필자 주장 1.
+- 프론트: `CsatWikiV1.tsx` ④ 탭(DNA 카드 + 근거 문항 원문 링크 + 평가원 DNA 연결 + 풀이 처방), QA 하네스 17/17 PASS(390px 모바일 포함).
+- 검증: pytest 관련 4종 76 passed(기저 6 failed 무관), `tsc --noEmit` 0, vitest 신규 3/3, 문서 동기화 `docs/API.md` §weakness-dna + `docs/FLOWS.md` §수능영어 Wiki ④.

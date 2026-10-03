@@ -857,6 +857,13 @@ Wiki 홈
 5. 저장 목록에서 같은 Assessment ID의 문제 HTML과 해설 HTML을 다시 연다.
 6. WRONG 탭은 기존 수능 오답 저장 흐름을 유지하며, 실제 오답과 Question ID 연결은 별도 WRONG composer 단계에서 확장한다.
 
+## 수능영어 Wiki ④ 학생 약점 DNA 흐름
+
+1. ③ 학생 오답(업로드한 오답 원문 HTML)이 SOURCE OF TRUTH다. ④ 화면에서 학생을 선택하면 `GET /api/csat/students/{id}/weakness-dna`로 저장 결과를 읽고, `POST .../analyze`(ADMIN)가 원문 전체를 재분석해 저장한다.
+2. 분석은 오답 원문 + ① 평가원 기출 + ② 평가원 출제 DNA만 사용한다. 원문에 없는 정보(학생이 고른 선지 등)는 만들지 않으며, 원문 미표기 정보는 "추정하지 않음"으로 표시한다.
+3. 약점 확정은 반복 규칙(서로 다른 시험 2회차 이상 × 문항 2개 이상)을 통과한 유형만이고, 미달 건은 "관찰"로 남긴다. 각 DNA 카드는 근거 문항 원문 링크(`csat/wrong-html/{id}/raw`)와 평가원 DNA 연결을 함께 보여준다.
+4. 저장 결과는 「최승원의 수능영어 풀이 처방」(행동 단위 steps)과 함께 ⑤ 개인별 대비(맞춤 복습 문제지) 데이터 구조로 그대로 재사용한다. 상세 계약은 [MONDAY_DAY2_HANDOFF.md](MONDAY_DAY2_HANDOFF.md), API는 [API.md](API.md) §weakness-dna 참조.
+
 ## WRONG Composer
 
 1. 기존 `csat_wrong_answers`에 학생 오답을 계속 누적하되, 선택한 `csat_questions.id`를 nullable 연결값으로 함께 저장한다.
