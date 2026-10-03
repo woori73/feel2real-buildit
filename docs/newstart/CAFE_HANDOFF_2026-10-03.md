@@ -124,15 +124,18 @@
 
 | 커밋 | SHA | 내용 |
 |---|---|---|
-| docs 보존 | `f651467195d3ca223ced2cdca4d3e2c1250f7a8a` | 감사·FINAL PLAN·VISION·백업·캡처 |
-| handoff 문서 | 이 branch HEAD(`git log -1 --format=%H`) | `CAFE_HANDOFF_2026-10-03.md` |
+| docs 보존 | `f651467195d3ca223ced2cdca4d3e2c1250f7a8a` | 감사·FINAL PLAN·VISION·백업·캡처 (28 files in PR) |
+| handoff 문서 | `f7c9c30177d2410cf069f2ab0dafbdaca7980812` | `CAFE_HANDOFF_2026-10-03.md` 최초본 |
+| base | `47615c17` | `origin/main`(PR #474 머지 직후) |
 
-push 검증: `git ls-remote origin refs/heads/handoff/naver-cafe-phase1-20261003` = branch HEAD와 일치(§14에서 확인).
+검증(2026-10-03 학원 PC): `git ls-remote origin refs/heads/handoff/naver-cafe-phase1-20261003` = `f7c9c301…` = 로컬 HEAD **일치**.
+(§12를 실측값으로 갱신한 커밋이 이 위에 하나 더 쌓이며, 그때 HEAD SHA는 달라진다 — branch name으로 받는 것이 안전하다.)
 
 ## 13. PR 번호/URL
 
 - **PR #475** — `https://github.com/woori73/feel2real-buildit/pull/475`
 - 제목: `docs(newstart): Naver Cafe Phase 1 audit and home handoff`
+- 실측(학원 PC): `state=OPEN` · `base=main` · `head=handoff/naver-cafe-phase1-20261003` · `mergeable=MERGEABLE` · 변경 파일 **28개**
 - 상태: **OPEN, MERGE하지 않음**(목적은 인계·기록 보존)
 
 ## 14. 집 PC에서 첫 번째로 할 작업
