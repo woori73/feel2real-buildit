@@ -208,7 +208,6 @@ class NewStartTestCleanupServiceTest {
     when(messageRepository.findByConsultationIdOrderByMessageIdAsc(TEST_CONSULT_ID))
         .thenReturn(List.of(testMsg));
     when(messageRepository.deleteByConsultationId(TEST_CONSULT_ID)).thenReturn(0L);
-    when(consultationRepository.existsById(TEST_CONSULT_ID)).thenReturn(false);
 
     assertThatThrownBy(() -> service.cleanup(validRequest()))
         .isInstanceOf(TestCleanupVerificationException.class)
