@@ -22,7 +22,15 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 @DisplayName("NEWSTART Phase 2 화면 렌더 계약")
 class NewStartPhase2TemplateContractTest {
 
+  private static String renderAs(String viewer) {
+    return renderWith("newstart/index", viewer);
+  }
+
   private static String render(String view) {
+    return renderWith(view, null);
+  }
+
+  private static String renderWith(String view, String viewer) {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -34,25 +42,44 @@ class NewStartPhase2TemplateContractTest {
 
     Context context = new Context();
     context.setVariable("latestUpdates", List.of());
+    if (viewer != null) context.setVariable("viewer", viewer);
     return engine.process(view, context);
   }
 
   @Test
-  @DisplayName("HOME은 §2의 5개 진입점만 practical grid에 두고 중복 도구 카드는 사라진다")
-  void homeRendersFiveEntries() {
+  @DisplayName("HOME은 상담 CTA를 첫 진입점으로 두고, A to Z 링크 없이 실제 필요한 도움 카드만 렌더한다")
+  void homeRendersConsultFirstAndNoAToZLink() {
     String html = render("newstart/index");
 
+    assertThat(html).contains("href=\"/newstart/consultations\"");
     assertThat(html).contains("href=\"/newstart/fss-helper\"");
-    assertThat(html).contains("href=\"/newstart/a-to-z\"");
-    assertThat(html).contains("href=\"#ns-ai\"");
-    assertThat(html).contains("href=\"/newstart/questions\"");
     assertThat(html).contains("href=\"/newstart/galmuri\"");
+    // A to Z는 ADMIN 전용이라 사용자 HOME 어디에도 링크가 없다(죽은 링크 금지)
+    assertThat(html).doesNotContain("/newstart/a-to-z");
+    // 상담 CTA가 채무상황·필요한 도움보다 먼저 나온다
+    assertThat(html.indexOf("id=\"ns-consult-cta\"")).isPositive()
+        .isLessThan(html.indexOf("id=\"ns-debt-title\""))
+        .isLessThan(html.indexOf("id=\"ns-practical-title\""));
     // 제거된 HOME 중복 카드(Credit4U·신청 준비·진행상태·법원 대응) — 상태창의 Credit4U 재진입 링크만 남는다
     assertThat(html).doesNotContain("class=\"ns-feature-card\" href=\"/newstart/tools/");
     assertThat(html).contains("href=\"/newstart/tools/credit4u\"");
     // 모션 Phase 1 baseline: reveal 훅과 배지·상태창은 그대로
     assertThat(html).contains("id=\"ns-debt-home-state\"");
     assertThat(html).contains("data-ns-reveal");
+  }
+
+  @Test
+  @DisplayName("viewer가 GUEST/MEMBER면 지피지기 입력창 없이 안내 카드, THANKS/ADMIN이면 입력창을 렌더한다")
+  void homeGatesAiInputByViewer() {
+    for (String viewer : List.of("GUEST", "MEMBER")) {
+      String html = renderAs(viewer);
+      assertThat(html).doesNotContain("id=\"ns-ai-form\"").doesNotContain("id=\"ns-ai-input\"");
+      assertThat(html).contains("id=\"ns-ai-locked\"").contains("감사회원 전용");
+    }
+    for (String viewer : List.of("THANKS", "ADMIN")) {
+      String html = renderAs(viewer);
+      assertThat(html).contains("id=\"ns-ai-form\"").doesNotContain("id=\"ns-ai-locked\"");
+    }
   }
 
   @Test

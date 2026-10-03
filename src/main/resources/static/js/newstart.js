@@ -121,6 +121,21 @@
         homeState.setAttribute('data-state', data.status || 'NOT_STARTED');
         // 저장 후·조회 후 상태가 실제로 바뀐 때만 1회 강조 (최초 페인팅은 조용히)
         if (prev && prev !== (data.status || 'NOT_STARTED')) flashOnce(homeState, 'ns-debt-flash');
+        paintHomeSummary(data);
+      }
+
+      // 홈 "내 채무상황" 카드 요약 — 저장된 단계·Credit4U 확인 수·메모 앞부분만 보여준다(textContent: HTML 삽입 없음).
+      function paintHomeSummary(data) {
+        var line = document.getElementById('ns-debt-summary-line');
+        if (!line || !data) return;
+        var checked = 0;
+        self.DEBT_FLAGS.forEach(function (pair) { if (data[pair[0]]) checked++; });
+        var parts = [];
+        if (data.stage) parts.push('현재 단계: ' + data.stage);
+        if (checked > 0) parts.push('Credit4U 확인 ' + checked + '/6');
+        var memo = data.debtSummary ? String(data.debtSummary).replace(/\s+/g, ' ').trim() : '';
+        if (!parts.length && !memo) return;
+        line.textContent = parts.join(' · ') + (memo ? (parts.length ? ' — ' : '') + (memo.length > 60 ? memo.slice(0, 60) + '…' : memo) : '');
       }
 
       function setState(textStr) {

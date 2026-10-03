@@ -739,3 +739,21 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (min-width: 640px) { .ns-consult-entry { margin-top: 34px; } }
 /* 단계명(A-to-Z 진입)은 홈의 핵심 선택지 — 본문 가독성 기준(≥17px)에 맞춰 굵고 크게. */
 .ns-step-link { font-size: 17px; font-weight: 800; }
+
+/* ── Phase 1 개인화 상담 HOME: 히어로 + 1:1 비공개 상담 CTA ─────────────────
+ * 390px 기준. 360/430에서도 줄바꿈으로 흡수하고 가로 스크롤을 만들지 않는다. */
+.ns-hero-consult { padding: 28px 20px 24px; max-width: none; }
+.ns-hero-kicker { margin: 0 0 10px; color: var(--ns-blue); font-size: 14px; font-weight: 800; letter-spacing: -.01em; word-break: keep-all; }
+.ns-hero-consult h1 { font-size: clamp(26px, 7.4vw, 40px); line-height: 1.25; word-break: keep-all; }
+.ns-hero-consult .ns-hero-copy { margin-top: 14px; font-size: 16.5px; }
+.ns-consult-cta { box-sizing: border-box; flex-wrap: wrap; padding: 12px 18px; background: var(--ns-blue); color: #fff; font-weight: 800; text-align: center; text-decoration: none; line-height: 1.35; word-break: keep-all; }
+.ns-consult-cta:hover, .ns-consult-cta:focus-visible { filter: brightness(.94); }
+.ns-consult-cta .ns-consult-unread { margin: 0; }
+.ns-consult-sub { margin: 10px 0 0; color: var(--ns-muted); font-size: 15px; font-weight: 600; line-height: 1.5; }
+.ns-consult-sub[hidden] { display: none; }
+.ns-debt-section { margin-top: 28px; }
+.ns-debt-section .ns-debt-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ns-debt-actions { margin-top: 12px; }
+.ns-ai-locked { margin-top: 28px; padding: 20px 18px; border: 1.5px dashed var(--ns-line, #cfd8e6); border-radius: 16px; background: #f8fafc; }
+.ns-ai-locked-title { margin: 6px 0 8px; font-size: 18px; line-height: 1.4; font-weight: 800; word-break: keep-all; }
+.ns-ai-locked .ns-note { margin: 0 0 10px; word-break: keep-all; }

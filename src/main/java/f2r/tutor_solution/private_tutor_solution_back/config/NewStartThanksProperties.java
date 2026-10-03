@@ -23,6 +23,7 @@ public class NewStartThanksProperties {
   private String smtpUsername = "";
   private String smtpPassword = "";
   private String adminUrl = "https://feel2real.co.kr/admin/newstart/thanks-exceptions";
+  private String consultationAdminUrl = "https://feel2real.co.kr/admin/newstart/consultations";
 
   public boolean mailConfigured() {
     return notBlank(alertTo) && notBlank(smtpHost) && notBlank(smtpUsername) && notBlank(smtpPassword);
@@ -48,4 +49,6 @@ public class NewStartThanksProperties {
   public void setSmtpPassword(String v) { smtpPassword = v; }
   public String getAdminUrl() { return adminUrl; }
   public void setAdminUrl(String v) { adminUrl = v; }
+  public String getConsultationAdminUrl() { return consultationAdminUrl; }
+  public void setConsultationAdminUrl(String v) { consultationAdminUrl = v; }
 }

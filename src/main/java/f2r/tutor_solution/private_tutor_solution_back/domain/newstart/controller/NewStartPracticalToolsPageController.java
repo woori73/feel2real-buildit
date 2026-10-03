@@ -1,7 +1,9 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,9 +30,18 @@ public class NewStartPracticalToolsPageController {
     return "newstart/practical-tool";
   }
 
+  /**
+   * A to Z는 운영자(ADMIN)의 내부 상담 참고자료다(2026-10 정책). 회원·비회원이 URL을 직접 입력해도
+   * 서버가 홈으로 돌려보낸다 — 링크를 숨기는 것만으로 처리하지 않는다. 단계 분류(atoz_step)·사례 데이터는 그대로다.
+   */
   @GetMapping("/newstart/a-to-z")
-  public String atoz(Model model, HttpServletResponse response) {
+  public String atoz(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      Model model, HttpServletResponse response) {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      return "redirect:/newstart";
+    }
     // §3: 단계별 "이 단계의 실제 사례" — 운영 DB ACTIVE 항목의 읽기 전용 표시 계층(없으면 빈 맵).
     model.addAttribute("casesByStep", atozCaseService.casesByStep());
     return "newstart/a-to-z";

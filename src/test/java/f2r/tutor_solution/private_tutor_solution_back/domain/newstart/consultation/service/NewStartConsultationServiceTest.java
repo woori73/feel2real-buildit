@@ -22,7 +22,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultati
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService.NewStartAiAnswer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
@@ -39,24 +38,24 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("NewStart 감사회원 1:1 비공개 상담 — 소유권 HARD GATE·AI조사 익명화·상태 전이")
+@DisplayName("NewStart 1:1 비공개 상담(로그인 회원) — 소유권 HARD GATE·AI조사 익명화·상태 전이")
 class NewStartConsultationServiceTest {
 
   @Mock private NewStartConsultationRepository consultationRepository;
   @Mock private NewStartConsultationMessageRepository messageRepository;
-  @Mock private NewStartEntitlementService entitlementService;
   @Mock private NewStartMemberProfileService memberProfileService;
   @Mock private UserRepository userRepository;
   @Mock private NewStartMemberDebtStatusService debtStatusService;
   @Mock private NewStartAtozCaseService atozCaseService;
   @Mock private NewStartAiChatService aiChatService;
+  @Mock private NewStartConsultationNotifier notifier;
 
   private NewStartConsultationService service;
 
   @BeforeEach
   void setUp() {
-    service = new NewStartConsultationService(consultationRepository, messageRepository, entitlementService,
-        memberProfileService, userRepository, debtStatusService, atozCaseService, aiChatService);
+    service = new NewStartConsultationService(consultationRepository, messageRepository,
+        memberProfileService, userRepository, debtStatusService, atozCaseService, aiChatService, notifier);
   }
 
   private static AuthenticatedPrincipal member(long id) {
@@ -83,7 +82,7 @@ class NewStartConsultationServiceTest {
   }
 
   @Test
-  @DisplayName("given 감사회원 첫 질문 when create then NEW·MEMBER 메시지·결정적 A to Z 단계(지급명령=2)")
+  @DisplayName("given 일반 로그인 회원(감사회원 grant 없음) 첫 질문 when create then NEW·MEMBER 메시지·결정적 A to Z 단계(지급명령=2)")
   void givenQuestion_whenCreate_thenNewWithDetectedStep() {
     when(consultationRepository.save(any())).thenAnswer(inv -> {
       NewStartConsultation c = inv.getArgument(0);
@@ -110,6 +109,65 @@ class NewStartConsultationServiceTest {
   void givenBlank_whenCreate_thenThrows() {
     assertThatThrownBy(() -> service.create(member(1L), "   ", false))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  private void stubSaves() {
+    when(consultationRepository.save(any())).thenAnswer(inv -> {
+      NewStartConsultation c = inv.getArgument(0);
+      if (c.getConsultationId() == null) c.setConsultationId(1L);
+      return c;
+    });
+    when(messageRepository.save(any())).thenAnswer(inv -> {
+      NewStartConsultationMessage m = inv.getArgument(0);
+      m.setMessageId(500L);
+      return m;
+    });
+  }
+
+  @Test
+  @DisplayName("given 상담 생성 when create then 운영자 알림을 상담번호·닉네임·본문으로 1회 요청한다(트랜잭션 밖에서는 즉시)")
+  void givenCreate_thenOperatorNotified() {
+    stubSaves();
+    User memberUser = User.builder().loginId("m1").name("홍길동").nickname("길동").build();
+    setUserId(memberUser, 1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(memberUser));
+    when(memberProfileService.resolveDisplayNickname(memberUser)).thenReturn("길동님");
+
+    service.create(member(1L), "대출 상황을 상담하고 싶습니다", true);
+
+    verify(notifier, times(1)).notifyAsync(eq(1L), eq("길동님"), eq("대출 상황을 상담하고 싶습니다"), any());
+  }
+
+  @Test
+  @DisplayName("given 알림 발송 요청이 예외 when create then 상담 생성 결과는 그대로 성공한다(메일 실패가 저장을 막지 않음)")
+  void givenNotifierFails_thenCreateStillSucceeds() {
+    stubSaves();
+    org.mockito.Mockito.doThrow(new RuntimeException("smtp down"))
+        .when(notifier).notifyAsync(any(), any(), any(), any());
+
+    ConsultationThreadView view = service.create(member(1L), "상담 내용", false);
+
+    assertThat(view.consultationId()).isEqualTo(1L);
+    assertThat(view.status()).isEqualTo("NEW");
+  }
+
+  @Test
+  @DisplayName("given 질문 when create then 회원 응답에는 A to Z 제목·URL이 없다(내부 단계 번호만 유지)")
+  void givenCreate_thenMemberViewHasNoAtozLink() {
+    stubSaves();
+
+    ConsultationThreadView view = service.create(member(1L), "법원에서 지급명령을 받았습니다", false);
+
+    assertThat(view.atozStep()).isEqualTo(2);
+    assertThat(view.atozTitle()).isNull();
+    assertThat(view.atozUrl()).isNull();
+  }
+
+  @Test
+  @DisplayName("given 비로그인(principal null) when create/list then AccessDenied")
+  void givenAnonymous_thenDenied() {
+    assertThatThrownBy(() -> service.create(null, "내용", false)).isInstanceOf(AccessDeniedException.class);
+    assertThatThrownBy(() -> service.myConsultations(null)).isInstanceOf(AccessDeniedException.class);
   }
 
   @Test

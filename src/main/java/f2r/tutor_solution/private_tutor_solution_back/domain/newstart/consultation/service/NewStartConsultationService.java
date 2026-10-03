@@ -20,7 +20,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.Ne
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService.AtozCase;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozStep;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozStep.Step;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService.DebtStatusView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
@@ -35,6 +34,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -64,30 +65,30 @@ public class NewStartConsultationService {
 
   private final NewStartConsultationRepository consultationRepository;
   private final NewStartConsultationMessageRepository messageRepository;
-  private final NewStartEntitlementService entitlementService;
   private final NewStartMemberProfileService memberProfileService;
   private final UserRepository userRepository;
   private final NewStartMemberDebtStatusService debtStatusService;
   private final NewStartAtozCaseService atozCaseService;
   private final NewStartAiChatService aiChatService;
+  private final NewStartConsultationNotifier notifier;
 
   public NewStartConsultationService(
       NewStartConsultationRepository consultationRepository,
       NewStartConsultationMessageRepository messageRepository,
-      NewStartEntitlementService entitlementService,
       NewStartMemberProfileService memberProfileService,
       UserRepository userRepository,
       NewStartMemberDebtStatusService debtStatusService,
       NewStartAtozCaseService atozCaseService,
-      NewStartAiChatService aiChatService) {
+      NewStartAiChatService aiChatService,
+      NewStartConsultationNotifier notifier) {
     this.consultationRepository = consultationRepository;
     this.messageRepository = messageRepository;
-    this.entitlementService = entitlementService;
     this.memberProfileService = memberProfileService;
     this.userRepository = userRepository;
     this.debtStatusService = debtStatusService;
     this.atozCaseService = atozCaseService;
     this.aiChatService = aiChatService;
+    this.notifier = notifier;
   }
 
   // ── 회원 경로 ──────────────────────────────────────────────────────────
@@ -95,7 +96,7 @@ public class NewStartConsultationService {
   /** 새 상담 생성 — 첫 질문 1건을 MEMBER 메시지로 남기고, 질문에서 A to Z 단계를 결정적으로 연결(§7). */
   @Transactional
   public ConsultationThreadView create(AuthenticatedPrincipal principal, String content, boolean linkDebt) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     String text = normalize(content);
     LocalDateTime now = LocalDateTime.now();
     NewStartConsultation saved = consultationRepository.save(NewStartConsultation.builder()
@@ -112,13 +113,39 @@ public class NewStartConsultationService {
         .build());
     saved.markMemberSeen(msg.getMessageId());
     consultationRepository.save(saved);
+    notifyOperatorAfterCommit(saved, principal.userId(), text, now);
     return memberThread(saved, List.of(msg));
   }
 
   /** 내 상담 목록(§7). 각 행에 못 본 운영자 답변 수를 실어 "새 답변 N건"을 뽑는다. */
+  /** 커밋 이후에만 알림을 보낸다. 메일 준비·발송 어떤 실패도 상담 저장에 영향을 주지 않는다. */
+  private void notifyOperatorAfterCommit(NewStartConsultation c, Long userId, String text, LocalDateTime at) {
+    try {
+      String nickname = userRepository.findById(userId)
+          .map(memberProfileService::resolveDisplayNickname).orElse(null);
+      Long id = c.getConsultationId();
+      Runnable send = () -> notifier.notifyAsync(id, nickname, text, at);
+      if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+          @Override public void afterCommit() {
+            try {
+              send.run();
+            } catch (RuntimeException e) {
+              // 커밋 후 알림 요청 실패는 이미 저장된 상담에 영향을 주지 않는다.
+            }
+          }
+        });
+      } else {
+        send.run();
+      }
+    } catch (RuntimeException e) {
+      // 알림 준비 실패는 상담 생성 결과와 무관하다.
+    }
+  }
+
   @Transactional(readOnly = true)
   public List<ConsultationSummaryView> myConsultations(AuthenticatedPrincipal principal) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     return consultationRepository.findByMemberUserIdOrderByLastMessageAtDesc(principal.userId()).stream()
         .map(c -> new ConsultationSummaryView(
             c.getConsultationId(),
@@ -134,7 +161,7 @@ public class NewStartConsultationService {
   /** 회원 스레드 상세(§7 과거 대화·답변 시간순). AI_RESEARCH는 조회에서 제외되고 열람 시 읽음 커서를 갱신한다. */
   @Transactional
   public ConsultationThreadView thread(AuthenticatedPrincipal principal, Long consultationId) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     NewStartConsultation c = ownConsultation(principal, consultationId);
     List<NewStartConsultationMessage> msgs =
         messageRepository.findByConsultationIdAndAuthorRoleInOrderByMessageIdAsc(consultationId, MEMBER_VISIBLE);
@@ -150,7 +177,7 @@ public class NewStartConsultationService {
   /** 같은 상담 스레드에 회원 추가 질문(§2). 운영자 답변 뒤면 MEMBER_FOLLOWUP으로 전이. */
   @Transactional
   public ConsultationThreadView reply(AuthenticatedPrincipal principal, Long consultationId, String content) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     String text = normalize(content);
     NewStartConsultation c = ownConsultation(principal, consultationId);
     LocalDateTime now = LocalDateTime.now();
@@ -171,7 +198,7 @@ public class NewStartConsultationService {
   /** 헤더 배지용 — 내 모든 상담 중 아직 못 본 운영자 답변 총계. */
   @Transactional(readOnly = true)
   public long unreadAnswerCount(AuthenticatedPrincipal principal) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     return consultationRepository.findByMemberUserIdOrderByLastMessageAtDesc(principal.userId()).stream()
         .mapToLong(this::unreadOperator)
         .sum();
@@ -316,11 +343,11 @@ public class NewStartConsultationService {
 
   private ConsultationThreadView memberThread(NewStartConsultation c, List<NewStartConsultationMessage> msgs) {
     Integer step = c.getAtozStep();
-    Step st = step == null ? null : NewStartAtozStep.byNo(step);
     List<ConsultationMessageView> views = msgs.stream().map(NewStartConsultationService::toMessageView).toList();
+    // A to Z는 ADMIN 전용 화면이므로 회원 응답에는 제목·URL을 싣지 않는다(내부 단계 번호만 유지).
     return new ConsultationThreadView(
         c.getConsultationId(), c.getStatus().name(), statusLabel(c.getStatus()), c.isLinkDebt(),
-        step, st == null ? null : st.title(), st == null ? null : st.url(), views);
+        step, null, null, views);
   }
 
   /** HARD GATE — 본인 상담만. 없으면 404, 다른 회원 것이면 403(AccessDeniedException). */
@@ -336,6 +363,16 @@ public class NewStartConsultationService {
   private NewStartConsultation loadExisting(Long consultationId) {
     return consultationRepository.findById(consultationId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상담을 찾을 수 없습니다."));
+  }
+
+  /**
+   * 상담은 로그인한 모든 회원이 쓴다(감사회원 요건 없음 — 2026-10 정책). 소유권은 {@link #ownConsultation}이
+   * 계속 강제한다. 지피지기(THANKS_MEMBER)와 이 권한은 별개다.
+   */
+  private void requireLoggedIn(AuthenticatedPrincipal principal) {
+    if (principal == null || principal.userId() == null) {
+      throw new AccessDeniedException("로그인이 필요합니다.");
+    }
   }
 
   private void requireAdmin(AuthenticatedPrincipal principal) {
