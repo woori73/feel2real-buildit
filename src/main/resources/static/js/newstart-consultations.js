@@ -24,7 +24,7 @@
   function showStatus(message) { setText(P.status, message || ''); }
   function shortDate(iso) { return iso ? String(iso).slice(0, 16).replace('T', ' ') : ''; }
 
-  /* ── 인증 상태: 헤더(account_menu.js)와 동일한 판정 소스를 재사용. 감사회원 판정은 서버 API가 다시 한다. */
+  /* ── 인증 상태: 헤더(account_menu.js)와 동일한 판정 소스를 재사용. 상담은 로그인한 모든 회원이 쓰고, 본인 소유 판정은 서버 API가 한다. */
   function loadCurrentUser() {
     var refresh = window.refreshAccountArea;
     if (typeof refresh !== 'function') { showLoginRequired(); return; }
@@ -55,7 +55,7 @@
       .then(function (r) { return r.json().catch(function () { return null; }).then(function (b) { return { status: r.status, body: b }; }); })
       .then(function (res) {
         P.loading = false;
-        if (res.status === 403) { showStatus('감사회원만 1:1 비공개 상담을 이용할 수 있습니다. 전자책 구매 후 감사회원 권한을 받아 주세요.'); return; }
+        if (res.status === 401 || res.status === 403) { showLoginRequired(); return; }
         if (res.status !== 200 || !Array.isArray(res.body)) { showStatus('목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
         showStatus('');
         renderList(res.body);
@@ -66,6 +66,8 @@
   function renderList(rows) {
     P.list.textContent = '';
     P.empty.hidden = rows.length > 0;
+    // 첫 방문(상담 0건)이면 곧바로 작성할 수 있도록 작성 폼을 연다.
+    if (rows.length === 0 && P.write && P.write.hidden) { P.write.hidden = false; P.write.open = true; }
     rows.forEach(function (row) { P.list.appendChild(listItem(row)); });
   }
 
@@ -112,12 +114,7 @@
     host.appendChild(el('h2', 'ns-cns-title', '상담 #' + thread.consultationId
       + (thread.linkDebt ? ' · 내 채무상황 연결됨' : '')));
 
-    /* 연결된 A to Z 단계로 이동 링크(§7): 질문이 가리키는 단계가 있을 때만. */
-    if (thread.atozTitle && thread.atozUrl) {
-      var a = el('a', 'ns-cns-link', '이 상담의 관련 A to Z 단계: ' + thread.atozTitle + ' →');
-      a.href = thread.atozUrl;
-      host.appendChild(a);
-    }
+    /* A to Z는 ADMIN 전용 화면이라 회원 화면에는 단계 링크를 두지 않는다(서버도 회원 응답에 URL을 싣지 않음). */
 
     var threadWrap = el('div', 'ns-cns-thread');
     (thread.messages || []).forEach(function (m) { threadWrap.appendChild(messageBubble(m)); });

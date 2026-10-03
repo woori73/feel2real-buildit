@@ -25,7 +25,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultati
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.service.NewStartConsultationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.service.NewStartConsultationNotifier;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
@@ -49,7 +49,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * 리포지토리만 모킹해 컨텍스트에 넣고, 회원 B(principal userId=2)가 회원 A(소유자 userId=1)의 consultationId를
  * 직접 URL/API로 요청하면 403, 없는 id는 404로 차단됨을 본다. 응답 본문에 A의 질문 내용이 노출되지 않는지도 확인한다.
  *
- * <p>{@code requireThanksMember}는 모킹해 통과시키고(이 테스트의 초점은 소유권 격리), 발신자 userId는
+ * <p>상담은 로그인한 모든 회원이 쓴다(감사회원 요건 없음). 이 테스트의 초점은 소유권 격리이며, 발신자 userId는
  * 서버 발급 JWT 쿠키에서만 나온다(요청값으로 userId를 받지 않는다).
  */
 @WebMvcTest(controllers = NewStartConsultationController.class)
@@ -81,7 +81,7 @@ class NewStartConsultationOwnershipIsolationTest {
 
   @MockitoBean NewStartConsultationRepository consultationRepository;
   @MockitoBean NewStartConsultationMessageRepository messageRepository;
-  @MockitoBean NewStartEntitlementService entitlementService;
+  @MockitoBean NewStartConsultationNotifier notifier;
   @MockitoBean NewStartMemberProfileService memberProfileService;
   @MockitoBean UserRepository userRepository;
   @MockitoBean NewStartMemberDebtStatusService debtStatusService;
@@ -122,6 +122,26 @@ class NewStartConsultationOwnershipIsolationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"content\":\"남의 상담에 답글\"}"))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("비로그인은 상담 API 어느 것도 못 쓴다(401)")
+  void anonymousIsRejected() throws Exception {
+    mockMvc.perform(get("/api/newstart/consultations")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/newstart/consultations/" + FOREIGN_CONSULTATION_ID)).andExpect(status().isUnauthorized());
+    mockMvc.perform(post("/api/newstart/consultations")
+            .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"x\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("감사회원 grant가 없는 일반 로그인 회원도 자기 상담 목록을 200으로 받는다")
+  void plainMemberCanListOwnConsultations() throws Exception {
+    when(consultationRepository.findByMemberUserIdOrderByLastMessageAtDesc(B_MEMBER_ID)).thenReturn(List.of());
+
+    mockMvc.perform(get("/api/newstart/consultations").cookie(cookie(B_MEMBER_ID)))
+        .andExpect(status().isOk())
+        .andExpect(content().json("[]"));
   }
 
   @Test

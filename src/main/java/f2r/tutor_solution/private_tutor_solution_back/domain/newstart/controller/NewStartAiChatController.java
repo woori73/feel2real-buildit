@@ -62,10 +62,13 @@ public class NewStartAiChatController {
     if (!answer.ok()) {
       return ResponseEntity.badRequest().body(ChatResponse.failure(answer.errorMessage(), toSourceDtos(answer.sources())));
     }
-    // §7 — 질문을 결정적 키워드로 A to Z 단계에 연결해 이동 링크를 내려준다(AI 판단 아님, RAG 답변 순서와 무관한 표시 계층).
-    return ResponseEntity.ok(
-        withAtozStep(ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources()), STAGE_CASE),
-            request == null ? null : request.message()));
+    ChatResponse base = ChatResponse.success(answer.answer(), answer.model(), toSourceDtos(answer.sources()), STAGE_CASE);
+    // §7 — 질문을 결정적 키워드로 A to Z 단계에 연결한 이동 링크는 ADMIN에게만 내려준다.
+    // A to Z 화면은 ADMIN 전용이라 감사회원에게 내려주면 죽은 링크가 된다(2026-10 정책).
+    if (!"ADMIN".equals(principal.role())) {
+      return ResponseEntity.ok(base);
+    }
+    return ResponseEntity.ok(withAtozStep(base, request == null ? null : request.message()));
   }
 
   /**

@@ -57,6 +57,8 @@ app:
       smtp-username: ${NEWSTART_SMTP_USER:}
       smtp-password: ${NEWSTART_SMTP_PASSWORD:}
       admin-url: ${NEWSTART_THANKS_ADMIN_URL:https://feel2real.co.kr/admin/newstart/thanks-exceptions}
+      # 새 1:1 상담 알림(수신자·SMTP는 위 감사회원 예외 알림과 동일 설정을 공유한다).
+      consultation-admin-url: ${NEWSTART_CONSULTATION_ADMIN_URL:https://feel2real.co.kr/admin/newstart/consultations}
     # 지피지기 답변 LLM = NewStart 전용 DIRECT 경로(공용 Wiki AI Router를 경유하지 않는다).
     # primary: NVIDIA NIM Nemotron Lightning. 공식 sample 계약이 baseline이며 값은 모두 override 가능.
     # fallback: OpenRouter Qwen — 연결 실패·timeout·429·5xx·응답 해석 실패·빈 content·interrupted처럼

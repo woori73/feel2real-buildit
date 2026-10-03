@@ -52,12 +52,14 @@ test('A to Z keeps every official URL from the source MD', () => {
   urls.forEach((u) => assert.ok(atoz.includes(u.replace(/&/g, '&amp;')) || atoz.includes(u), 'missing official URL: ' + u));
 });
 
-test('Phase2 §2: HOME은 5개 진입점만, 도구 route는 A to Z가 canonical로 보유한다', () => {
+test('Phase2 §2: HOME은 상담 중심 진입점만 두고, 도구 route는 A to Z가 canonical로 보유한다', () => {
   // HOME 중복 카드(Credit4U·신청 준비·진행상태·법원 대응)는 제거하지만 backend와 A to Z 참조는 그대로 보존 (reference audit)
-  ['/newstart/fss-helper', '/newstart/a-to-z', '/newstart/questions', '/newstart/galmuri'].forEach((route) => {
+  // 2026-10 Phase 1: A to Z는 ADMIN 전용이라 HOME에는 어떤 A to Z 링크도 없다. 상담이 첫 CTA다.
+  ['/newstart/consultations', '/newstart/fss-helper', '/newstart/galmuri', '/newstart/chat'].forEach((route) => {
     assert.match(home, new RegExp('href="' + route + '"'));
   });
-  assert.match(home, /href="#ns-ai"/);
+  assert.doesNotMatch(home, /\/newstart\/a-to-z/);
+  assert.match(home, /id="ns-ai-form"/);
   ['/newstart/tools/credit4u', '/newstart/tools/application', '/newstart/tools/status', '/newstart/tools/court'].forEach((route) => {
     assert.match(atoz, new RegExp('href="' + route + '"'));
   });
@@ -191,12 +193,11 @@ test('A to Z and HOME contain no placeholder hrefs', () => {
   });
 });
 
-test('HOME keeps member chat as the single service card and A to Z as a practical entry', () => {
+test('HOME keeps member chat as the single service card and no longer links A to Z', () => {
   // 모션 Phase 1의 추가 속성(data-ns-reveal 등)을 허용하고 클래스·라우트 계약만 검증
-  assert.match(home, /<a class="ns-feature-card" href="\/newstart\/a-to-z"[^>]*>/);
   assert.match(home, /<a class="ns-service-card ns-service-chat" href="\/newstart\/chat"[^>]*>/);
   assert.doesNotMatch(home, /ns-service-atoz/);
-  assert.match(home, /A to Z 시작하기/);
+  assert.doesNotMatch(home, /A to Z 시작하기|A to Z 전체 여정|ns-step-link/);
   assert.match(home, /채팅방 들어가기/);
 });
 

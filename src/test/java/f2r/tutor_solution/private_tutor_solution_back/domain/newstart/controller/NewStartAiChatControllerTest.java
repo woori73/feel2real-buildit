@@ -96,13 +96,29 @@ class NewStartAiChatControllerTest {
   }
 
   @Test
-  void chatAttachesAtozStepLinkWhenQuestionMatchesKeyword() throws Exception {
+  void chatHidesAtozStepLinkFromNonAdminMembers() throws Exception {
+    when(newStartAiChatService.ask(anyString())).thenReturn(
+        new NewStartAiChatService.NewStartAiAnswer(true, "이의신청 기한을 확인하세요.", null, "m",
+            java.util.List.of()));
+
+    // A to Z 화면은 ADMIN 전용이므로 감사회원 응답에 그 링크를 내려주면 죽은 링크가 된다.
+    mockMvc.perform(post("/api/newstart/ai/chat")
+            .cookie(userCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"법원에서 지급명령을 받았는데 이의신청 어떻게 하나요\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.atozStepNo").doesNotExist())
+        .andExpect(jsonPath("$.atozStepUrl").doesNotExist());
+  }
+
+  @Test
+  void chatAttachesAtozStepLinkForAdminWhenQuestionMatchesKeyword() throws Exception {
     when(newStartAiChatService.ask(anyString())).thenReturn(
         new NewStartAiChatService.NewStartAiAnswer(true, "이의신청 기한을 확인하세요.", null, "m",
             java.util.List.of()));
 
     mockMvc.perform(post("/api/newstart/ai/chat")
-            .cookie(userCookie())
+            .cookie(new Cookie("ACCESS_TOKEN", tokenProvider.issue(9L, "admin", "ADMIN")))
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"message\":\"법원에서 지급명령을 받았는데 이의신청 어떻게 하나요\"}"))
         .andExpect(status().isOk())
@@ -117,7 +133,7 @@ class NewStartAiChatControllerTest {
         new NewStartAiChatService.NewStartAiAnswer(true, "일반 안내", null, "m", java.util.List.of()));
 
     mockMvc.perform(post("/api/newstart/ai/chat")
-            .cookie(userCookie())
+            .cookie(new Cookie("ACCESS_TOKEN", tokenProvider.issue(9L, "admin", "ADMIN")))
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"message\":\"오늘 날씨가 어때요\"}"))
         .andExpect(status().isOk())

@@ -1,7 +1,10 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.service.NewStartOfficialUpdateService;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,11 +26,24 @@ import lombok.RequiredArgsConstructor;
 public class NewStartPageController {
 
   private final NewStartOfficialUpdateService officialUpdateService;
+  private final NewStartEntitlementService entitlementService;
 
   @GetMapping("/newstart")
-  public String newstartHome(Model model, HttpServletResponse response) {
+  public String newstartHome(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      Model model, HttpServletResponse response) {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    // 지피지기 입력창은 감사회원(THANKS_MEMBER)·ADMIN에게만 렌더한다 — 권한 없는 회원이 입력 후 403을 겪지 않게 한다.
+    // 실제 차단은 계속 API(NewStartEntitlementService)가 한다. 이 값은 화면 구성용이다.
+    model.addAttribute("viewer", viewerState(principal));
     model.addAttribute("latestUpdates", officialUpdateService.latestPublished(3));
     return "newstart/index";
+  }
+
+  /** GUEST(비로그인) / MEMBER(일반) / THANKS(감사회원) / ADMIN. */
+  private String viewerState(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) return "GUEST";
+    if ("ADMIN".equals(principal.role())) return "ADMIN";
+    return entitlementService.isThanksMember(principal) ? "THANKS" : "MEMBER";
   }
 }

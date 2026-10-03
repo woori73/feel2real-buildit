@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>1:1 비공개 상담 | 새출발기금 부실차주</title>
-  <meta name="description" content="감사회원이 운영자에게 개인 채무·개인 상담을 비공개로 남기고, 시간순 대화와 답변을 확인하는 1:1 상담">
+  <meta name="description" content="로그인한 회원이 운영자에게 개인 채무·개인 상담을 비공개로 남기고, 시간순 대화와 답변을 확인하는 1:1 상담">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/newstart.css?v=20261002-2">
+  <link rel="stylesheet" href="/css/newstart.css?v=20261003-1">
   <style>
     /* 이 페이지의 display 규칙이 UA의 [hidden]보다 우선해 hidden이 무시된다(questions와 동일 결함).
        JS가 hidden으로 목록·쓰기 버튼·로그인 안내를 전환하므로 저 우선순위 하나로 숨김을 되돌린다. */
@@ -72,9 +72,9 @@
 
       <main class="ns-cns-main" aria-label="1:1 비공개 상담">
 
-        <!-- 비로그인/비감사회원 방문자: 셸은 열리지만 상담 데이터는 인증 + 감사회원 판정 뒤에 있다(API가 401/403). -->
+        <!-- 비로그인 방문자: 셸은 열리지만 상담 데이터는 인증 + 본인 소유 판정 뒤에 있다(API가 401/403). -->
         <section id="ns-cns-login" class="ns-card ns-chat-login" hidden>
-          <p class="ns-empty">1:1 비공개 상담은 전자책 구매 후 감사회원 권한을 받은 회원이 운영자와 개인 상담을 나누는 공간입니다. 감사회원이 아닌 회원은 안내 화면에서 확인하실 수 있습니다.</p>
+          <p class="ns-empty">1:1 비공개 상담은 로그인한 회원이 운영자와 개인 상담을 나누는 공간입니다. 로그인하면 바로 상담을 남길 수 있고, 내용은 나와 운영자만 볼 수 있습니다.</p>
           <a class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버 로그인</a>
         </section>
 
@@ -116,7 +116,7 @@
         <section id="ns-cns-detail" class="ns-cns-detail" hidden aria-label="상담 스레드"></section>
       </main>
 
-      <script src="/js/newstart-consultations.js?v=20261002-2" defer></script>
+      <script src="/js/newstart-consultations.js?v=20261003-1" defer></script>
     </div>
   </div>
   <script src="/js/newstart-back.js?v=20260928-1" defer></script>
