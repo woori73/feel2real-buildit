@@ -35,12 +35,13 @@ public class NewStartPracticalToolsPageController {
    * 서버가 홈으로 돌려보낸다 — 링크를 숨기는 것만으로 처리하지 않는다. 단계 분류(atoz_step)·사례 데이터는 그대로다.
    */
   @GetMapping("/newstart/a-to-z")
-  public String atoz(
+  public Object atoz(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       Model model, HttpServletResponse response) {
     response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
     if (principal == null || !"ADMIN".equals(principal.role())) {
-      return "redirect:/newstart";
+      // 공용 model 속성(role 등)이 redirect 쿼리스트링으로 새지 않게 exposeModelAttributes=false.
+      return new org.springframework.web.servlet.view.RedirectView("/newstart", true, true, false);
     }
     // §3: 단계별 "이 단계의 실제 사례" — 운영 DB ACTIVE 항목의 읽기 전용 표시 계층(없으면 빈 맵).
     model.addAttribute("casesByStep", atozCaseService.casesByStep());
