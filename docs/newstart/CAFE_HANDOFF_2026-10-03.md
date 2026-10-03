@@ -147,4 +147,52 @@
 5. 4종 확인 결과를 PLAN §13 건수에 반영(불가 항목은 삭제)하고, **운영자 승인 후** 실행: 글 → 공지 → 메뉴 → 이미지 순서, 각 단계 백업·스크린샷, **3287 삭제는 마지막.**
 6. 실행 후 390px 공동검수(수치 통과만으로 마감하지 않음).
 
+---
+
+## 15. 2026-10-03 학원 PC 1차 실행 기록 (메뉴 개편만 적용)
+
+운영자 지시로 **메뉴/게시판 구조만** 실제 변경했다. 대문·로고·대표이미지·그래픽·공지 슬롯·게시글 이동·삭제는 **0건**.
+
+### 15-1 적용 결과 (라이브 실측: `SideMenuList?cafeId=31312978`, `ManageMenuList.json`)
+
+| 순서 | menuId | 종류 | 메뉴명 | indent |
+|---|---|---|---|---|
+| 1 | 23 | 게시판(B) | 지피지기 Agent + NewStart | false |
+| 2 | 14 | 게시판(B) | 공지사항 | false |
+| 3 | 1 | 게시판(B) | 인사·등업·질문게시판 | false |
+| 4 | 16 | 게시판(B) | 초보가이드 (이름 변경 없음) | false |
+| 5 | **24** | **그룹(F)** | 과거 게시판 | false |
+| 6~16 | 13,15,11,6,7,2,3,4,5,9,22 | 게시판(B) | 자유게시판 … 감면율과 확정금액 예측 게시판 | **true** |
+
+- **기존 menuId 15개 전부 불변** 확인: `23,14,1,16,13,15,11,6,7,2,3,4,5,9,22`. 신규는 그룹 제목 **24** 1개뿐.
+- 이름 변경 2건(23, 1). 나머지 13개는 원문 그대로(이중 공백까지 유지).
+- 게시판별 글 접근: `cafe2/ArticleListV3dot1.json?...menuid=13/1` → 글 정상 반환. 게시글 영구 링크 4건 200 — 3198(댓글 376·조회 3,188·noticeType N), 3287(93·930), 4446(204·1,125), 5526(3).
+- PC `#cafe-menu` DOM: 상위 4개 + `과거 게시판`(링크 없는 그룹 헤더) + 하위 11개. href는 `search.menuid={원 menuId}` 유지.
+- 모바일: `SideMenuList`의 `listOrder/indent/menuType=F`로 상위 5개 구조가 **실제 반영**됨을 데이터로 확인. (패널 hidden이라 390px 시각 QA는 미수행 → 집 PC 공동검수 항목)
+
+### 15-2 카페 저장 메커니즘 (VERIFIED — 집 PC에서 재사용 가능)
+
+- 관리도구: `https://cafe.naver.com/ca-fe/admin/cafes/31312978/menu-management` (Vue2 + Vuex + Apollo).
+- 상태: `store.state.admin.menuManagement.menuList[]` = `{id, code, name, indented, folded, hidden, isHidden, isSelected}`. 코드: 게시판 `NORMAL`, 그룹 제목 `GROUP`, 저장 후 서버가 실 menuId 부여(임시 -1 → 24).
+- 저장 API: **POST `https://apis.naver.com/cafe-web/cafe-mobile/ManageMenuListSave.json`** → 200 후 `ManageMenuList.json` 재조회. 읽기: GET `ManageMenuList.json?cafeId=`.
+- 패널 hidden(실 포터 불가)에서도 합성 이벤트로 전 과정 수행 가능:
+  - 행 선택: `li` 안의 **`a`**에 pointerdown/mousedown/pointerup/mouseup/click (li에 직접 클릭하면 선택 안 됨). 다중 선택은 `ctrlKey:true`로 반복 → `selection.menus`에 누적.
+  - 이름 변경: 선택 후 `.set_area input.ipt_type`에 value setter + `input`/`change` 이벤트 → `menuList[].name` 반영.
+  - 순서/들여쓰기: `.edit_btn_area li.bt_v3`(위로), `bt_v5`(들여쓰기) 등의 **내부 `a`**에 동일 이벤트 세트.
+  - 그룹 제목 추가: 관리도구 `그룹 제목` li의 `a` 클릭 → `selection.lastSelectionIsMenuType=true` → `추가` `a` 클릭 → 선택 행 **다음 위치**에 `GROUP` 삽입.
+  - 저장: `a.btn_type_ny3`.
+- 주의: `.set_area`에는 권한/숨기기/좋아요 컨트롤이 함께 있으므로 **`input.ipt_type` 외 건드림 금지**(저장 시 전체 config가 반영될 수 있음).
+
+### 15-3 article 3198 상태
+
+- 이 창에서 Phase 1 블록 2개(선두 `text`, 후미 `text`)를 제거하고 등록 → 11 components, contentHtml 26,949자.
+- 백업 `audit_raw/art3198_full.json`의 26,906자와 대조: **개행(`
+`) 43자 차이를 제외하고 본문 동일**. 개행 제외 문자열 길이 26,778로 일치, FNV/역순 FNV/가중합 6종 해시 전부 일치(anchors 7·imgs 5·`<b>`46·fs16 27·smartstore 9 동일).
+- 제목·SmartStore 링크(`smartstore.naver.com/newlibrary/products/12879870964`)·ogLink·댓글 376·조회 3,188·noticeType `N`·articleId/URL 보존 확인.
+- 이후 운영자가 19:42 직접 편집·저장했으므로 **현재 라이브 본문은 운영자본이 우선**이며, 이 창에서는 그 뒤로 카페 쓰기 없음(메뉴 관리도구 저장만 수행).
+
+### 15-4 미결(집 PC 2차)
+
+모바일 대문/로고/대표이미지/그래픽, 초보가이드(16) 라벨 여부(1차에서는 이름 변경 안 함), 질문·자유게시판 역할 통합에 따른 게시판 공지 문구, 전체공지 슬롯, 3287 정리, 390px 공동검수.
+
 > **핵심 문구**: "인간 지피지기 + 인공지능 = 지피지기 Agent" — 카페는 지피지기 Agent 중심으로 진화하고, NewStart는 개인 채무상황 정리·1:1 비공개상담·개인화 서비스로 연결한다. 지피지기 Agent는 **감사회원 + ADMIN 전용** 정책을 유지한다.
