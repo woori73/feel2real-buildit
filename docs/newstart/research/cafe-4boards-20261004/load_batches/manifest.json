@@ -1,0 +1,50 @@
+{
+ "package": "cafe-4boards-20261004",
+ "generatedAt": "2026-10-04T05:48:14+00:00",
+ "totalToLoad": 659,
+ "batchSize": 100,
+ "batchCount": 7,
+ "orderNote": "menuId3(신청)→4(임시안~확정안)→5(재취업·재창업) 순, 각 게시판 내 ACTUAL_CASE/OPERATOR_GUIDE/STAFF_ANSWER/ANSWER/MEMBER_EXPERIENCE/QUESTION/COUNSELOR_CLAIM 우선, COMMUNITY_OPINION 마지막",
+ "batches": [
+  {
+   "file": "batch_00.json",
+   "count": 100,
+   "ck_first": "CAFE_4BOARDS,m3,menuId3,unit=ACTUAL_CASE,officialCheck=NOT_CHECKED,ck=CAFE4B:m3:1518:ACTUAL_CASE:body:4a3ed6f9e5f5"
+  },
+  {
+   "file": "batch_01.json",
+   "count": 100,
+   "ck_first": "CAFE_4BOARDS,m4,menuId4,unit=STAFF_ANSWER,officialCheck=NOT_CHECKED,historicalCANDIDATE=true,ck=CAFE4B:m4:3452:STAFF_ANSWER:c54906269:d3c2ff4cab56"
+  },
+  {
+   "file": "batch_02.json",
+   "count": 100,
+   "ck_first": "CAFE_4BOARDS,m4,menuId4,unit=MEMBER_EXPERIENCE,officialCheck=NOT_CHECKED,historicalCANDIDATE=true,ck=CAFE4B:m4:3457:MEMBER_EXPERIENCE:c54910947:316a6047138f"
+  },
+  {
+   "file": "batch_03.json",
+   "count": 100,
+   "ck_first": "CAFE_4BOARDS,m3,menuId3,unit=COMMUNITY_OPINION,officialCheck=NOT_CHECKED,ck=CAFE4B:m3:2591:COMMUNITY_OPINION:c54643535:7b68254850ef"
+  },
+  {
+   "file": "batch_04.json",
+   "count": 100,
+   "ck_first": "CAFE_4BOARDS,m4,menuId4,unit=COMMUNITY_OPINION,officialCheck=NOT_CHECKED,historicalCANDIDATE=true,ck=CAFE4B:m4:933:COMMUNITY_OPINION:c53102140:b3d51b66166c"
+  },
+  {
+   "file": "batch_05.json",
+   "count": 100,
+   "ck_first": "CAFE_4BOARDS,m4,menuId4,unit=COMMUNITY_OPINION,officialCheck=NOT_CHECKED,historicalCANDIDATE=true,ck=CAFE4B:m4:3760:COMMUNITY_OPINION:c55716547:f50010e8186e"
+  },
+  {
+   "file": "batch_06.json",
+   "count": 59,
+   "ck_first": "CAFE_4BOARDS,m5,menuId5,unit=COMMUNITY_OPINION,officialCheck=NOT_CHECKED,ck=CAFE4B:m5:686:COMMUNITY_OPINION:c51941923:1643a73b7d8e"
+  }
+ ],
+ "perBoard": {
+  "부실차주 신청": 197,
+  "부실차주 임시안부터 확정안": 341,
+  "재취업 재창업 감면수익+정부 지원": 121
+ }
+}

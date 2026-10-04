@@ -1,0 +1,21 @@
+{
+  "task": "NewStart cafe 4-board collection (menuId 3/4/5/9)",
+  "package": "cafe-4boards-20261004",
+  "phase": "RAW_PRESERVED_UNITS_BUILT_PR_PENDING",
+  "progress": {
+    "enumerated": 644,
+    "collected": 110,
+    "units": 659,
+    "payloadRows": 659,
+    "pendingCandidates": 485
+  },
+  "nextActions": [
+    "사용자: PR 검수 후 newstart-cafe-4boards-load.yml DRY_RUN 실행(운영 DB read-only 중복 실측)",
+    "사용자: 필요 시 WRITE_REVIEW 실행(insert-only, 승인 없음)",
+    "사람: ADMIN 화면에서 REVIEW->ACTIVE 승인",
+    "다음 tranch: menuId3 308 / menuId4 119 / menuId5 58"
+  ],
+  "checkpointAt": "2026-10-04T05:53:21+00:00",
+  "lastCommitSha": null,
+  "lastPushAt": null
+}

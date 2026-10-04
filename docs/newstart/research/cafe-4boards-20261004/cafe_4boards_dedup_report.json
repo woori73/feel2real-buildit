@@ -1,0 +1,202 @@
+{
+  "package": "cafe-4boards-20261004",
+  "generatedBy": "build_cafe_4boards_dedup_report.py",
+  "scope": {
+    "boards": [
+      3,
+      4,
+      5,
+      9
+    ],
+    "cafeKey": "newhopero",
+    "clubId": 31312978,
+    "note": "지시 §1의 4개 게시판만 대상. 타 게시판·운영자 정리글은 범위 외."
+  },
+  "idempotency_contract": {
+    "knowledge_items": "dedup_key UNIQUE + findByTitle / loader의 14필드 exact-match skip",
+    "empirical_cases": "article_id UNIQUE",
+    "write_policy": "insert-only. update/delete/approve 없음. DRAFT->REVIEW만.",
+    "prod_db_check": "ADMIN 시크릿으로 실행하는 read-only DRY_RUN에서만 수행 (본 리포트는 DB 미접근)"
+  },
+  "article_level": {
+    "baseline_source": "enumeration/baseline_ids.json (기존 보존 articleId 전수)",
+    "baseline_total": 404,
+    "baseline_attested_in_repo": 404,
+    "baseline_unattested_ids": [],
+    "collected_total": 110,
+    "overlap_with_baseline": 0,
+    "overlap_ids": [],
+    "per_source_files": {
+      "docs/newstart/research/cafe-qa-phase1-b6/board6_census.json": 229,
+      "docs/newstart/research/cafe-qa-phase1-b6/board6_ids_1.json": 217,
+      "docs/newstart/research/cafe-qa-phase1-b6/cafe_dedup_report.json": 187,
+      "docs/newstart/NEWSTART_JIPIJIGI_AUG_SEP_2026_KNOWLEDGE_CLASSIFICATION_DRYRUN.md": 47,
+      "docs/newstart/research/CAFE_INVENTORY.md": 35,
+      "data/newstart-cafe/gamian/index.json": 28,
+      "docs/newstart/research/cafe-qa-phase1-b6/A_TO_Z_CONTENT_READY.md": 23,
+      "docs/newstart/research/knowledge/CAFE_COLLECTION_HANDOFF_5754_5705.md": 18,
+      "docs/newstart/research/COLLECTION_STATE_5904_5855.json": 16,
+      "data/newstart-cafe/gamian/structured/cases.json": 16,
+      "docs/newstart/HOME_TO_ACADEMY_HANDOFF_2026-09-30_newstart-atoz-cafe-agent.md": 15,
+      "docs/newstart/research/cafe-qa-phase1-b6/cafe_qa_db_ready.json": 14
+    }
+  },
+  "unit_level": {
+    "payload_rows": 659,
+    "unique_dedup_keys": 659,
+    "duplicate_keys_within_package": [],
+    "existing_b6_keys": 672,
+    "collisions_with_b6": 0,
+    "collision_examples": [],
+    "normalized_title_collision_groups": 2,
+    "normalized_title_collisions": {
+      "[카페 4boards m3#3782·커뮤니티 의견] 감사합니다^^": 2,
+      "[카페 4boards m4#2079·커뮤니티 의견] 축하드립니다!": 2
+    },
+    "identical_evidence_fingerprints": 1
+  },
+  "classification": {
+    "rule": "build_qa_units.process_article 재사용(규칙 복제 없음). noise unitdropped는 잡담/경조사만.",
+    "articlesTotal": 110,
+    "articlesWithUnits": 100,
+    "unitsEmitted": 659,
+    "noiseUnitsDropped": 18,
+    "operatorScopeUnitsDropped": 69,
+    "operatorAuthoredArticles": 36,
+    "byType": {
+      "ACTUAL_CASE": 59,
+      "STAFF_ANSWER": 83,
+      "COMMUNITY_OPINION": 369,
+      "MEMBER_EXPERIENCE": 43,
+      "QUESTION": 59,
+      "COUNSELOR_CLAIM": 17,
+      "ANSWER": 29
+    },
+    "byBoard": {
+      "m4": 341,
+      "m3": 197,
+      "m5": 121
+    },
+    "historical_handling": {
+      "menuId4": "과거 임시안~확정안 게시판 전량을 historicalCandidate=true로 표기. current 정책으로 오인 금지. 실제 적용시점은 원문 작성일만 보존(추측 날짜 미부여).",
+      "schema": "신규 컬럼/값 발명 없음 — existing SourceType + tags.historicalCANDIDATE + RAW historicalCandidate"
+    },
+    "operator_scope": {
+      "rule": "작성자가 운영자(agent) 계정(등급 999 / 카페매니저)인 게시글은 NewStart 수집 범위(회원 정보글만 취합)에서 제외.해당 글의 본문 단위와 운영자 단위만 drop하고, 그 글 아래의 회원 댓글 단위는 취합한다.",
+      "rawPreserved": true,
+      "reflectedInPayloads": false
+    },
+    "menu9_handling": {
+      "operatorInfoPostsDeclared": 15,
+      "greetingExcludedDeclared": 17,
+      "collected": 0,
+      "reason": "운영자(등급 999) 정리글은 NewStart 수집 범위에서 제외, 가입인사·등업류는 지시 §5에 따라 제외",
+      "conflict_flag": "지시 §5(하랑랑 경험글 포함)와 운영 수집범위(운영자 정리글 제외)가 충돌 -> 사용자 확인 필요"
+    }
+  },
+  "per_board": {
+    "menuId3": {
+      "boardName": "부실차주 신청",
+      "surveyed": 350,
+      "enumerationTotal": 350,
+      "existingDuplicateDeclared": 9,
+      "greetingExcludedDeclared": 3,
+      "operatorInfoPostsDeclared": 0,
+      "newCandidatesDeclared": 338,
+      "collectedNewArticles": 30,
+      "operatorAuthoredArticles": 4,
+      "informational": 28,
+      "emptyBodyImageOnly": 1,
+      "commentsPartial": 7,
+      "historicalCandidates": 0,
+      "overlapWithBaseline": 0,
+      "payloadRows": 197,
+      "duplicateIds": [
+        5744,
+        5750,
+        5882,
+        5900,
+        5903,
+        5964,
+        5965,
+        5971,
+        6010
+      ]
+    },
+    "menuId4": {
+      "boardName": "부실차주 임시안부터 확정안",
+      "surveyed": 167,
+      "enumerationTotal": 167,
+      "existingDuplicateDeclared": 2,
+      "greetingExcludedDeclared": 1,
+      "operatorInfoPostsDeclared": 0,
+      "newCandidatesDeclared": 164,
+      "collectedNewArticles": 45,
+      "operatorAuthoredArticles": 7,
+      "informational": 43,
+      "emptyBodyImageOnly": 1,
+      "commentsPartial": 18,
+      "historicalCandidates": 45,
+      "overlapWithBaseline": 0,
+      "payloadRows": 341,
+      "duplicateIds": [
+        5955,
+        5986
+      ]
+    },
+    "menuId5": {
+      "boardName": "재취업 재창업 감면수업 + 정부 지원",
+      "surveyed": 95,
+      "enumerationTotal": 95,
+      "existingDuplicateDeclared": 2,
+      "greetingExcludedDeclared": 0,
+      "operatorInfoPostsDeclared": 0,
+      "newCandidatesDeclared": 93,
+      "collectedNewArticles": 35,
+      "operatorAuthoredArticles": 25,
+      "informational": 28,
+      "emptyBodyImageOnly": 7,
+      "commentsPartial": 7,
+      "historicalCandidates": 0,
+      "overlapWithBaseline": 0,
+      "payloadRows": 121,
+      "duplicateIds": [
+        5737,
+        5956
+      ]
+    },
+    "menuId9": {
+      "boardName": "하랑랑 스페셜",
+      "surveyed": 32,
+      "enumerationTotal": 32,
+      "existingDuplicateDeclared": 0,
+      "greetingExcludedDeclared": 17,
+      "operatorInfoPostsDeclared": 15,
+      "newCandidatesDeclared": 0,
+      "collectedNewArticles": 0,
+      "operatorAuthoredArticles": 0,
+      "informational": 0,
+      "emptyBodyImageOnly": 0,
+      "commentsPartial": 0,
+      "historicalCandidates": 0,
+      "overlapWithBaseline": 0,
+      "payloadRows": 0,
+      "duplicateIds": []
+    }
+  },
+  "totals": {
+    "surveyed": 644,
+    "excluded_greeting": 21,
+    "excluded_operator_posts": 15,
+    "existing_duplicates": 13,
+    "new_valid_articles": 110,
+    "operatorAuthoredArticles": 36,
+    "operatorScopeUnitsDropped": 69,
+    "payload_rows_planned": 659
+  },
+  "not_done": [
+    "운영 DB read-only exact-match DRY_RUN(ADMIN 시크릿 필요 — 사용자 실행)",
+    "REVIEW->ACTIVE 승인(사람 전용)",
+    "ChatGPT Library 업로드(Qoder는 전달파일 2종만 제작)"
+  ]
+}
