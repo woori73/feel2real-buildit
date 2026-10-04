@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashboardResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashboardResponse.EasyOverdueStudent;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTaxClassificationRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
@@ -11,6 +12,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvi
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyWithholdingReview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTaxClassification;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTuitionPayment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
@@ -250,6 +252,51 @@ public class EasyLedgerService {
     correctionService.record(business, txn, "UPDATE", before, EasyTxnSnapshot.of(txn), "admin");
     journalService.repost(txn);
     return EasyTxnResponse.from(txn);
+  }
+
+  /**
+   * 세무구분 지정 — 손익 반영 여부만 확정한다.
+   * 거래 금액·출처(sourceRef)·분개는 바꾸지 않으므로 재분개하지 않는다.
+   * 확정된 거래를 삭제하거나 원본을 다시 쓰지 않는 정정 경로다.
+   */
+  @Transactional
+  public EasyTxnResponse assignTaxClassification(Long txnId,
+      EasyTaxClassificationRequest request) {
+    EasyTransaction txn = txnRepository.findById(txnId)
+        .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다: txnId=" + txnId));
+    EasyTaxClassification tax = parseTaxClassification(
+        request == null ? null : request.taxClassification());
+    if (!matchesDirection(tax, txn.getDirection())) {
+      throw new IllegalArgumentException("direction=" + txn.getDirection()
+          + " 거래에는 " + tax + "을(를) 지정할 수 없습니다.");
+    }
+    String before = EasyTxnSnapshot.of(txn);
+    txn.assignTaxClassification(tax);
+    correctionService.record(txn.getBusiness(), txn, "TAX_CLASS", before,
+        EasyTxnSnapshot.of(txn), "admin");
+    return EasyTxnResponse.from(txn);
+  }
+
+  private EasyTaxClassification parseTaxClassification(String value) {
+    if (value == null || value.isBlank()) {
+      throw new IllegalArgumentException("세무구분을 선택해 주세요.");
+    }
+    try {
+      return EasyTaxClassification.valueOf(value.trim().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("알 수 없는 세무구분입니다: " + value);
+    }
+  }
+
+  /** REVIEW_REQUIRED(미확정)는 어느 방향이든 허용한다. 나머지 확정값은 방향과 맞아야 한다. */
+  private boolean matchesDirection(EasyTaxClassification tax, EasyTxnDirection direction) {
+    if (tax == EasyTaxClassification.REVIEW_REQUIRED) {
+      return true;
+    }
+    return direction == EasyTxnDirection.INCOME
+        ? tax == EasyTaxClassification.INCOME_INCLUDED || tax == EasyTaxClassification.NOT_INCOME
+        : tax == EasyTaxClassification.EXPENSE_DEDUCTIBLE_CANDIDATE
+            || tax == EasyTaxClassification.NON_DEDUCTIBLE || tax == EasyTaxClassification.NOT_EXPENSE;
   }
 
   @Transactional

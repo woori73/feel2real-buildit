@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashboardResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTaxClassificationRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
@@ -70,6 +71,16 @@ public class EasyLedgerController {
   public ResponseEntity<EasyTxnResponse> updateTxn(
       @PathVariable Long txnId, @RequestBody EasyTxnRequest request) {
     return ResponseEntity.ok(ledgerService.updateTxn(txnId, request));
+  }
+
+  /**
+   * 세무구분 지정 — 손익 반영 여부만 확정하고 거래·분개는 그대로 둔다.
+   * 지정이 필요해진 확정 거래의 정정 경로 (삭제·원본 재작성 없음).
+   */
+  @PostMapping("/transactions/{txnId}/tax-classification")
+  public ResponseEntity<EasyTxnResponse> assignTaxClassification(
+      @PathVariable Long txnId, @RequestBody EasyTaxClassificationRequest request) {
+    return ResponseEntity.ok(ledgerService.assignTaxClassification(txnId, request));
   }
 
   @DeleteMapping("/transactions/{txnId}")
