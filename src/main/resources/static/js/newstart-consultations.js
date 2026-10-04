@@ -30,6 +30,10 @@
     if (typeof refresh !== 'function') { showLoginRequired(); return; }
     refresh().then(function (user) {
       if (!user || !user.userId) { showLoginRequired(); return; }
+      // 운영자는 받은 상담을 관리자 패널에서 확인하도록 안내
+      if (user.role === 'ADMIN' && P.adminNotice) {
+        P.adminNotice.hidden = false;
+      }
       enterBoard();
     }).catch(function () { showLoginRequired(); });
   }
@@ -217,6 +221,7 @@
     P.linkDebt = id('ns-cns-linkdebt');
     P.submit = id('ns-cns-submit');
     P.writeErr = id('ns-cns-write-err');
+    P.adminNotice = id('ns-cns-admin-notice');
     if (!P.list) return;
 
     P.loading = false;
