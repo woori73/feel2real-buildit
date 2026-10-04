@@ -56,18 +56,23 @@ public class NewStartDebtImageService {
           + "{\n"
           + "  \"debts\": [\n"
           + "    {\"creditor\": \"채권기관명\", \"debtType\": \"채무종류\", "
-          + "\"balance\": \"잔액(예: 7,500,000원)\", \"overdueInfo\": \"연체정보(없으면 빈 문자열)\", "
-          + "\"creditorChange\": \"채권자변동(없으면 빈 문자열)\"},\n"
+          + "\"balance\": \"채무잔액(현재 남은 금액, 예: 7,500,000원)\", "
+          + "\"loanAmount\": \"최초 대출금액(예: 10,000,000원, 없으면 null)\", "
+          + "\"overdueInfo\": \"연체정보(없으면 빈 문자열)\", "
+          + "\"creditorChange\": \"채권자변동(없으면 빈 문자열)\", "
+          + "\"confidence\": \"high|medium|low\", "
+          + "\"needsVerification\": false},\n"
           + "    ...\n"
           + "  ]\n"
           + "}\n"
-          + "규칙:\n"
-          + "- creditor: 은행/카드/캐피탈/저축은행 등 기관명 (예: 신한은행, 삼성카드)\n"
-          + "- debtType: 일반신용대출, 주택담보대출, 카드론, 현금서비스 등\n"
-          + "- balance: 채무잔액 우선, 없으면 대출금액. 숫자+원 형식\n"
-          + "- overdueInfo: 연체/장기연체 관련 내용, 없으면 \"\"\n"
-          + "- creditorChange: 채권자 변동 내용, 없으면 \"\"\n"
-          + "- 주민등록번호·계좌번호는 절대 포함하지 마세요";
+          + "핵심 규칙 (반드시 준수):\n"
+          + "1. 추측 금지: 이미지에 없는 값은 null로 반환하고 needsVerification을 true로 설정. 절대 추측해서 채우지 마세요.\n"
+          + "2. 잔액 vs 대출금액 구분: balance는 현재 남은 채무잔액, loanAmount는 최초 대출금액. 두 값을 혼동하지 마세요. "
+          + "이미지에 잔액만 있으면 loanAmount는 null.\n"
+          + "3. creditor: 은행/카드/캐피탈/저축은행 등 기관명 (예: 신한은행, 삼성카드)\n"
+          + "4. debtType: 일반신용대출, 주택담보대출, 카드론, 현금서비스 등\n"
+          + "5. confidence: 값이 이미지에서 명확히 읽히면 high, 일부 불확실하면 medium, 추측이 필요하면 low\n"
+          + "6. 주민등록번호·계좌번호는 절대 포함하지 마세요";
 
   private final NewStartLlmProperties.OpenRouter config;
   private final HttpClient httpClient;
@@ -82,7 +87,14 @@ public class NewStartDebtImageService {
 
   /** 채무 항목 DTO. */
   public record DebtImageItem(
-      String creditor, String debtType, String balance, String overdueInfo, String creditorChange) {}
+      String creditor,
+      String debtType,
+      String balance,
+      String loanAmount,
+      String overdueInfo,
+      String creditorChange,
+      String confidence,
+      boolean needsVerification) {}
 
   /**
    * 업로드된 파일을 분석해 채무 목록을 반환한다.
@@ -129,19 +141,12 @@ public class NewStartDebtImageService {
     return parseDebts(jsonResponse);
   }
 
-  /** PDF 첫 페이지를 PNG 이미지로 렌더링한다. 텍스트가 충분하면 텍스트 기반 분석용으로 별도 처리. */
+  /** PDF 첫 페이지를 PNG 이미지로 렌더링한다. */
   private byte[] pdfFirstPageToImage(byte[] pdfBytes) throws IOException {
     try (PDDocument document = Loader.loadPDF(pdfBytes)) {
       if (document.getNumberOfPages() == 0) {
         throw new IllegalArgumentException("PDF에 페이지가 없습니다.");
       }
-      // 첫 페이지 텍스트 추출 시도
-      PDFTextStripper stripper = new PDFTextStripper();
-      stripper.setStartPage(1);
-      stripper.setEndPage(1);
-      String text = stripper.getText(document);
-      // 텍스트가 충분하면 Vision 대신 텍스트 분석 (더 정확하고 저렴)
-      // 여기서는 일단 이미지 렌더링으로 통일 — 텍스트 추출은 프론트에서 이미 처리됨
       PDFRenderer renderer = new PDFRenderer(document);
       // 150 DPI 렌더링
       BufferedImage image = renderer.renderImageWithDPI(0, 150);
@@ -240,12 +245,24 @@ public class NewStartDebtImageService {
 
       for (JsonNode debt : debts) {
         if (items.size() >= MAX_DEBTS) break;
+        String confidence = debt.path("confidence").asText("medium");
+        if (!confidence.equals("high") && !confidence.equals("medium") && !confidence.equals("low")) {
+          confidence = "medium";
+        }
+        // loanAmount가 없으면 null (추측 금지)
+        JsonNode loanNode = debt.path("loanAmount");
+        String loanAmount = (loanNode.isMissingNode() || loanNode.isNull())
+            ? null : mask(loanNode.asText(""));
+        if (loanAmount != null && loanAmount.isBlank()) loanAmount = null;
         items.add(new DebtImageItem(
             mask(debt.path("creditor").asText("")),
             mask(debt.path("debtType").asText("")),
             mask(debt.path("balance").asText("")),
+            loanAmount,
             mask(debt.path("overdueInfo").asText("")),
-            mask(debt.path("creditorChange").asText(""))));
+            mask(debt.path("creditorChange").asText("")),
+            confidence,
+            debt.path("needsVerification").asBoolean(false)));
       }
     } catch (Exception e) {
       log.warn("debt image json parse failed: {}", e.getMessage());
