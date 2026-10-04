@@ -228,6 +228,7 @@ def main():
             "perBoard": db["perBoard"],
             "holdReasons": db["holdReasons"],
             "knowledgeIdRange": db["knowledgeIdRange"],
+            "liveReverification": db.get("liveReverification"),
             "disclosures": db["defectsAndDisclosures"],
         } if db else {"status": "NOT_REFLECTED"}),
         "userRuling20261004": {
@@ -318,6 +319,15 @@ def main():
         L.append("- REVIEW 보류 자료는 근거가 불완전해 억지로 ACTIVE 로 올리지 않았습니다(지시대로). "
                  "하랑랑 스페셜 운영자 정보글 15건(16 unit)은 작성일 2024-11-05·provenance·historicalCANDIDATE=true 를 "
                  "그대로 보존한 채 REVIEW 단계에 있습니다.")
+        lv = db.get("liveReverification")
+        if lv:
+            L.append("- 적재 후 read-only 재실측(%s): 이 패키지 행 %d건(ACTIVE %d / REVIEW %d / DRAFT %d), "
+                     "knowledgeId %d–%d. 운영 DB 전체 %d건(ACTIVE %d / REVIEW %d / DRAFT %d)."
+                     % (lv["verifiedAt"], lv["rowsFound"], lv["statusCounts"]["ACTIVE"],
+                        lv["statusCounts"]["REVIEW"], lv["statusCounts"]["DRAFT"],
+                        lv["knowledgeIdRangeObserved"][0], lv["knowledgeIdRangeObserved"][1],
+                        lv["wholeDb"]["totalElements"], lv["wholeDb"]["ACTIVE"],
+                        lv["wholeDb"]["REVIEW"], lv["wholeDb"]["DRAFT"]))
         L.append("")
         L.append("### 이번 반영에서 생긴 결함과 시정")
         L.append("")

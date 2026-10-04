@@ -36,6 +36,7 @@
 
 - 운영 DB 3826건 → 4501건, 정확일치 기존 0건, 신규 적재 675건, DRAFT 잔존 0건, 생성·승인 오류 0건.
 - REVIEW 보류 자료는 근거가 불완전해 억지로 ACTIVE 로 올리지 않았습니다(지시대로). 하랑랑 스페셜 운영자 정보글 15건(16 unit)은 작성일 2024-11-05·provenance·historicalCANDIDATE=true 를 그대로 보존한 채 REVIEW 단계에 있습니다.
+- 적재 후 read-only 재실측(2026-10-04T07:38:24+00:00): 이 패키지 행 675건(ACTIVE 336 / REVIEW 339 / DRAFT 0), knowledgeId 3827–4501. 운영 DB 전체 4501건(ACTIVE 4137 / REVIEW 341 / DRAFT 0).
 
 ### 이번 반영에서 생긴 결함과 시정
 

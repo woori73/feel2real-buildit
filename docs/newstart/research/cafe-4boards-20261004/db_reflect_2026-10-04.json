@@ -112,5 +112,28 @@
  "nextHumanActions": [
   "REVIEW 에 보류된 339건(이미지/링크 중심 28 + 댓글 부분수집 311)은 근거 보강 후 ADMIN 화면에서 사람이 승인",
   "하랑랑 운영자 15건은 이미지 텍스트 OCR/대체 텍스트 보강 전까지 REVIEW 유지 권장"
- ]
+ ],
+ "liveReverification": {
+  "verifiedAt": "2026-10-04T07:38:24+00:00",
+  "channel": "read-only GET /api/admin/newstart/wiki?page&size=100&sort=knowledgeId,desc 7페이지 스캔 + status 필터 totalElements",
+  "scope": "tags에 CAFE4B: 를 포함하는 행만 집계",
+  "rowsFound": 675,
+  "statusCounts": {
+   "ACTIVE": 336,
+   "REVIEW": 339,
+   "DRAFT": 0
+  },
+  "knowledgeIdRangeObserved": [
+   3827,
+   4501
+  ],
+  "wholeDb": {
+   "totalElements": 4501,
+   "ACTIVE": 4137,
+   "REVIEW": 341,
+   "DRAFT": 0,
+   "otherStatus": 23
+  },
+  "note": "wholeDb REVIEW 341 = 이번 패키지 339 + 패키지 외 기존 2건. 스캔 중 만난 패키지 외 25건은 3827 미만 구간의 기존 ACTIVE 행으로 무변경."
+ }
 }

@@ -1,7 +1,7 @@
 {
  "dataset": "newstart_cafe_4boards",
  "version": "2026-10-04",
- "generatedAt": "2026-10-04T07:29:35+00:00",
+ "generatedAt": "2026-10-04T07:39:16+00:00",
  "task": "NewStart 부실차주 카페 과거 게시판 4곳 추가 수집 (menuId 3/4/5/9)",
  "cafe": {
   "name": "새출발기금 부실차주 라이브러리",
@@ -177,6 +177,29 @@
    3827,
    4501
   ],
+  "liveReverification": {
+   "verifiedAt": "2026-10-04T07:38:24+00:00",
+   "channel": "read-only GET /api/admin/newstart/wiki?page&size=100&sort=knowledgeId,desc 7페이지 스캔 + status 필터 totalElements",
+   "scope": "tags에 CAFE4B: 를 포함하는 행만 집계",
+   "rowsFound": 675,
+   "statusCounts": {
+    "ACTIVE": 336,
+    "REVIEW": 339,
+    "DRAFT": 0
+   },
+   "knowledgeIdRangeObserved": [
+    3827,
+    4501
+   ],
+   "wholeDb": {
+    "totalElements": 4501,
+    "ACTIVE": 4137,
+    "REVIEW": 341,
+    "DRAFT": 0,
+    "otherStatus": 23
+   },
+   "note": "wholeDb REVIEW 341 = 이번 패키지 339 + 패키지 외 기존 2건. 스캔 중 만난 패키지 외 25건은 3827 미만 구간의 기존 ACTIVE 행으로 무변경."
+  },
   "disclosures": [
    "2026-10-04 첫 101건 적재에서 m5 행 8건이 HTTP 500 으로 실패했다. 원인은 newstart_knowledge_items.authority 컬럼(length 50) 대비 m5 게시판명 조합이 51자였기 때문. 생성 스크립트(build_cafe_4boards_units.py)에 authority_for() 상한 처리와 컬럼 상한 게이트를 추가해 재생성했고, 이후 582건은 500 없이 통과했다. 영향 행은 m5 121건의 authority 문자열뿐이며 나머지 554행은 바이트 단위로 동일하다(이미 적재된 행과 중복 재등록 없음).",
    "보류(keep) 루프 첫 실행에서 집합 키를 문자열 첫 문자로 판정해 130건에 REVIEW 유지 메모가 중복 기록됐다. 상태 값에는 영향이 없다(전행 REVIEW 유지, 승인·반려 없음). 이력과 무관한 중복 메모 130건으로 남는다.",

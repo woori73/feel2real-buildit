@@ -97,6 +97,8 @@
   workflow는 기본 브랜치에 없어(`PR #483` 미머지 → `workflow_dispatch` 404) dispatch 불가였고,
   머지는 공유 상태 변경이라 집행하지 않았다. 직접 SQL·JWT 위조·UPDATE/DELETE·기존 ACTIVE 수정은 쓰지 않았다.
 - 대장: `db_reflect_2026-10-04.json`(실행 기록·결함 고지) + `db_reflect_2026-10-04_ledger.json`(675행별 knowledgeId/판정)
+- 적재 후 read-only 재실측(`liveReverification`): 이 패키지 행 675건 = ACTIVE 336 / REVIEW 339 / DRAFT 0, knowledgeId 3827–4501.
+  운영 DB 전체 4501건(ACTIVE 4137 / REVIEW 341 / DRAFT 0 / 기타 23) — REVIEW 341은 패키지 339 + 패키지 외 기존 2건.
 - knowledgeId 3827–4501. 하랑랑 운영자 15건(16unit)은 REVIEW 보류(provenance·작성일·historical 보존).
 - 시정한 결함: m5 `authority` 51자 → `newstart_knowledge_items.authority` length 50 위반으로 create HTTP 500 8건.
   생성기에 `authority_for()` + 컬럼 상한 게이트를 넣고 CI 로더에도 동일 게이트를 미러링한 뒤 재생성·재적재(중복 없음).
