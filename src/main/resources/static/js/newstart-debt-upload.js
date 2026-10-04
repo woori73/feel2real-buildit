@@ -123,6 +123,18 @@
     return m ? m[1] + '원' : '';
   }
 
+  // OCR이 한글 음절 사이에 공백을 넣는 경우("신 한 은 행")를 정규화한다.
+  // 줄바꿈은 유지하고, 음절 사이의 공백/탭만 제거한다.
+  function normalizeOcrSpacing(text) {
+    var prev;
+    var result = String(text || '');
+    do {
+      prev = result;
+      result = result.replace(/([가-힣])[ \t]+([가-힣])/g, '$1$2');
+    } while (result !== prev);
+    return result;
+  }
+
   function segmentDebtBlocks(lines) {
     var boundaries = [];
     lines.forEach(function (line, i) {
@@ -197,7 +209,8 @@
   }
 
   function parseDebt(text) {
-    var lines = String(text || '').split(/\n+/).map(clean).filter(Boolean);
+    // OCR 음절 공백을 먼저 정규화한 뒤 줄 단위로 분리
+    var lines = String(normalizeOcrSpacing(text) || '').split(/\n+/).map(clean).filter(Boolean);
     if (!lines.length) return [];
 
     var blocks = segmentDebtBlocks(lines);
