@@ -12,72 +12,46 @@
     return String(text || '')
       .replace(/\b\d{6}[- ]?[1-4]\d{6}\b/g, '[개인정보 제거]')
       // 10~16자리 숫자는 계좌번호 등으로 보고 제거하되, 금액(뒤에 '원'이 옴)은 보존한다.
-      // OCR이 쉼표를 빼먹은 큰 금액(예: 1500000000원)이 오제거되는 것을 방지.
       .replace(/\b\d{10,16}\b(?!\s*원)/g, '[개인정보 제거]')
       .replace(/[ \t]+/g, ' ').trim();
   }
 
-  function imageCanvas(file) {
-    return new Promise(function (resolve, reject) {
-      var url = URL.createObjectURL(file);
-      var image = new Image();
-      image.onload = function () {
-        var scale = Math.min(1, 2200 / Math.max(image.naturalWidth, image.naturalHeight));
-        var canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        resolve(canvas);
-      };
-      image.onerror = function () { URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없습니다.')); };
-      image.src = url;
-    });
-  }
-
-  function ocr(canvas, label) {
-    if (!window.Tesseract) return Promise.reject(new Error('문자 인식 도구를 불러오지 못했습니다.'));
-    return window.Tesseract.recognize(canvas, 'kor', {
-      workerPath: '/vendor/tesseract/worker.min.js',
-      corePath: '/vendor/tesseract/core',
-      langPath: '/vendor/tesseract/lang-data',
-      // blob 워커에서는 절대경로 importScripts가 실패하므로 실제 스크립트 URL을 쓴다(미지정 시 OCR 전건 실패).
-      workerBlobURL: false,
-      logger: function (m) {
-        if (m.status === 'recognizing text') setStatus(label + ' 문자 인식 중 ' + Math.round((m.progress || 0) * 100) + '%');
-      }
-    }).then(function (result) { return clean(result.data && result.data.text); });
-  }
-
-  async function readPdf(file) {
-    if (!window.pdfjsLib) throw new Error('PDF 읽기 도구를 불러오지 못했습니다.');
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
-    var pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
-    var texts = [];
-    var pages = Math.min(pdf.numPages, MAX_PDF_PAGES);
-    for (var pageNo = 1; pageNo <= pages; pageNo++) {
-      setStatus('PDF ' + pageNo + '/' + pages + '쪽 읽는 중');
-      var page = await pdf.getPage(pageNo);
-      var content = await page.getTextContent();
-      var text = clean(content.items.map(function (item) { return item.str || ''; }).join('\n'));
-      if (text.length < 30) {
-        var viewport = page.getViewport({ scale: 1.7 });
-        var canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
-        text = await ocr(canvas, 'PDF ' + pageNo + '쪽');
-      }
-      texts.push(text);
-    }
-    return texts.join('\n');
-  }
-
-  async function extract(file) {
+  /**
+   * 서버 Vision API로 이미지 분석 (Qwen 3.7 Flash).
+   * 브라우저 내 OCR의 인식률 문제를 해결하기 위해 서버 사이드 분석으로 교체.
+   */
+  async function analyzeViaApi(file) {
     if (file.size > MAX_BYTES) throw new Error('파일은 20MB 이하만 선택할 수 있습니다.');
     var type = (file.type || '').toLowerCase();
-    if (type === 'application/pdf' || /\.pdf$/i.test(file.name)) return readPdf(file);
-    if (!/image\/(jpeg|png)/.test(type) && !/\.(jpe?g|png)$/i.test(file.name)) throw new Error('JPG, PNG, PDF만 선택할 수 있습니다.');
-    return ocr(await imageCanvas(file), '이미지');
+    var name = (file.name || '').toLowerCase();
+    var isPdf = type === 'application/pdf' || /\.pdf$/i.test(name);
+    var isImage = /image\/(jpeg|png|webp)/.test(type) || /\.(jpe?g|png|webp)$/i.test(name);
+    if (!isPdf && !isImage) throw new Error('JPG, PNG, WebP, PDF만 선택할 수 있습니다.');
+
+    var formData = new FormData();
+    formData.append('file', file, file.name || 'debt-image');
+    setStatus('이미지를 분석하고 있습니다.');
+    var response = await fetch('/api/newstart/debt-image/analyze', {
+      method: 'POST',
+      body: formData
+    });
+    var data = await response.json().catch(function () { return {}; });
+    if (!response.ok) {
+      throw new Error((data && data.errorMessage) || '이미지 분석에 실패했습니다.');
+    }
+    var debts = (data && data.debts) || [];
+    return debts.map(function (d) {
+      return {
+        creditor: clean(d.creditor),
+        debtType: clean(d.debtType),
+        balance: clean(d.balance),
+        loanAmount: clean(d.loanAmount),
+        overdueInfo: clean(d.overdueInfo),
+        creditorChange: clean(d.creditorChange),
+        confidence: d.confidence || 'medium',
+        needsVerification: !!d.needsVerification
+      };
+    }).slice(0, MAX_DEBT_ROWS);
   }
 
   // ===== 채무 파싱 (블록 기반) =====
@@ -253,11 +227,18 @@
     host.hidden = false;
     draftItems.forEach(function (item, index) {
       var card = document.createElement('div'); card.className = 'ns-debt-result-card'; card.dataset.index = index;
-      [['creditor', '채권기관'], ['debtType', '채무종류'], ['balance', '잔액'], ['overdueInfo', '연체·장기연체'], ['creditorChange', '채권자 변동']]
+      // 확인 필요 표시 (추측 금지 규칙: needsVerification 또는 low confidence)
+      if (item.needsVerification || item.confidence === 'low') {
+        var warn = document.createElement('p'); warn.className = 'ns-debt-verify-warn';
+        warn.textContent = '⚠ 이미지에서 명확히 확인되지 않았습니다. 직접 확인해 주세요.';
+        card.appendChild(warn);
+      }
+      [['creditor', '채권기관'], ['debtType', '채무종류'], ['balance', '채무잔액'], ['loanAmount', '최초 대출금액'],
+        ['overdueInfo', '연체·장기연체'], ['creditorChange', '채권자 변동']]
         .forEach(function (field) {
           var label = document.createElement('label'); label.className = 'ns-debt-result-field';
           var title = document.createElement('span'); title.textContent = field[1];
-          var control = input(item[field[0]], field[1] + ' ' + (index + 1));
+          var control = input(item[field[0]] || '', field[1] + ' ' + (index + 1));
           control.addEventListener('input', function () { draftItems[index][field[0]] = clean(control.value); });
           label.appendChild(title); label.appendChild(control); card.appendChild(label);
         });
@@ -270,8 +251,11 @@
   function draftSummary() {
     if (!draftItems.length) return '';
     return '[Credit4U 분석]\n' + draftItems.map(function (item) {
-      return ['기관 ' + item.creditor, '종류 ' + item.debtType, '잔액 ' + item.balance,
-        '연체 ' + item.overdueInfo, '변동 ' + item.creditorChange].filter(function (v) { return !/\s$/.test(v); }).join(' / ');
+      var parts = ['기관 ' + item.creditor, '종류 ' + item.debtType, '잔액 ' + item.balance];
+      if (item.loanAmount) parts.push('대출금 ' + item.loanAmount);
+      parts.push('연체 ' + item.overdueInfo, '변동 ' + item.creditorChange);
+      if (item.needsVerification) parts.push('(확인필요)');
+      return parts.filter(function (v) { return !/\s$/.test(v); }).join(' / ');
     }).join('\n');
   }
 
@@ -284,18 +268,13 @@
     inputNode.addEventListener('change', async function () {
       var file = inputNode.files && inputNode.files[0]; inputNode.value = '';
       if (!file) return;
-      upload.disabled = true; setStatus('자료를 기기 안에서 읽는 중입니다.');
+      upload.disabled = true;
       try {
-        var ocrText = await extract(file);
-        draftItems = parseDebt(ocrText);
+        draftItems = await analyzeViaApi(file);
         if (!draftItems.length) draftItems = [{ creditor: '', debtType: '', balance: '', overdueInfo: '', creditorChange: '' }];
         render();
-        // 디버그: OCR 원문을 상태 영역에 표시 (문제 진단용)
-        var lines = ocrText.split('\n').length;
-        setStatus('분석 결과를 확인하고 수정하세요. 아직 저장되지 않았습니다. [디버그: OCR ' + lines + '줄, ' + draftItems.length + '건 인식]');
-        console.log('[OCR DEBUG] Raw text:', ocrText);
-        console.log('[OCR DEBUG] Parsed items:', JSON.stringify(draftItems));
-      } catch (e) { setStatus(e && e.message ? e.message : '자료를 읽지 못했습니다.'); }
+        setStatus('분석 결과를 확인하고 수정하세요. 아직 저장되지 않았습니다. (' + draftItems.length + '건 인식)');
+      } catch (e) { setStatus(e && e.message ? e.message : '이미지 분석에 실패했습니다.'); }
       upload.disabled = false;
     });
     if (clear) clear.addEventListener('click', function () { draftItems = []; render(); setStatus('분석 결과를 지웠습니다. 기존 메모는 그대로입니다.'); });
@@ -305,7 +284,7 @@
     summary: draftSummary,
     markSaved: function () { draftItems = []; render(); },
     parseDebt: parseDebt,
-    analyzeFile: async function (file) { return parseDebt(await extract(file)); }
+    analyzeFile: analyzeViaApi
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
