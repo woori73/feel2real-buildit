@@ -162,7 +162,7 @@ public class NewStartDebtImageService {
     return "image/jpeg";
   }
 
-  /** OpenRouter Qwen Vision API 호출. */
+  /** OpenRouter Qwen Vision API 호출 (429/5xx 시 재시도). */
   private String callVisionApi(String dataUrl) throws IOException {
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
       throw new IOException("AI 서비스 설정이 없습니다.");
@@ -182,38 +182,82 @@ public class NewStartDebtImageService {
     body.put("temperature", 0.1);
     body.put("max_tokens", 4000);
 
+    String requestBody;
     try {
-      HttpRequest request = HttpRequest
-          .newBuilder(URI.create(config.getBaseUrl() + "/chat/completions"))
-          .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
-          .header("Content-Type", "application/json")
-          .header("Authorization", "Bearer " + config.getApiKey())
-          .header("HTTP-Referer", "https://feel2real.co.kr")
-          .header("X-Title", "BuildIt NewStart Debt Image")
-          .POST(HttpRequest.BodyPublishers.ofString(
-              objectMapper.writeValueAsString(body), StandardCharsets.UTF_8))
-          .build();
-
-      HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-      if (response.statusCode() != 200) {
-        log.warn("debt image vision api failed: status={}", response.statusCode());
-        throw new IOException("이미지 분석에 실패했습니다.");
-      }
-
-      JsonNode root = objectMapper.readTree(response.body());
-      JsonNode choices = root.path("choices");
-      if (!choices.isArray() || choices.isEmpty()) {
-        throw new IOException("이미지 분석에 실패했습니다.");
-      }
-      String content = choices.get(0).path("message").path("content").asText("");
-      if (content.isBlank()) {
-        throw new IOException("이미지 분석에 실패했습니다.");
-      }
-      return content.strip();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IOException("이미지 분석이 중단되었습니다.");
+      requestBody = objectMapper.writeValueAsString(body);
+    } catch (Exception e) {
+      throw new IOException("요청 생성에 실패했습니다.");
     }
+
+    // 429(속도 제한)/5xx 시 최대 3회 재시도 (exponential backoff)
+    int maxAttempts = 3;
+    IOException lastError = null;
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        HttpRequest request = HttpRequest
+            .newBuilder(URI.create(config.getBaseUrl() + "/chat/completions"))
+            .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + config.getApiKey())
+            .header("HTTP-Referer", "https://feel2real.co.kr")
+            .header("X-Title", "BuildIt NewStart Debt Image")
+            .POST(HttpRequest.BodyPublishers.ofString(
+                requestBody, StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        int status = response.statusCode();
+
+        if (status == 200) {
+          JsonNode root = objectMapper.readTree(response.body());
+          JsonNode choices = root.path("choices");
+          if (!choices.isArray() || choices.isEmpty()) {
+            throw new IOException("이미지 분석에 실패했습니다.");
+          }
+          String content = choices.get(0).path("message").path("content").asText("");
+          if (content.isBlank()) {
+            throw new IOException("이미지 분석에 실패했습니다.");
+          }
+          return content.strip();
+        }
+
+        // 429 또는 5xx면 재시도
+        if (status == 429 || (status >= 500 && status < 600)) {
+          log.warn("debt image vision api retryable: status={} attempt={}/{}", status, attempt, maxAttempts);
+          lastError = new IOException(
+              status == 429 ? "요청이 많아 잠시 후 다시 시도해 주세요." : "이미지 분석에 실패했습니다.");
+          if (attempt < maxAttempts) {
+            try {
+              Thread.sleep(2000L * attempt); // 2s, 4s backoff
+            } catch (InterruptedException ie) {
+              Thread.currentThread().interrupt();
+              throw new IOException("이미지 분석이 중단되었습니다.");
+            }
+            continue;
+          }
+          throw lastError;
+        }
+
+        // 4xx (429 제외)는 재시도 없이 즉시 실패
+        log.warn("debt image vision api failed: status={}", status);
+        if (status == 401 || status == 403) {
+          throw new IOException("AI 서비스 인증에 실패했습니다.");
+        }
+        throw new IOException("이미지 분석에 실패했습니다.");
+
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException("이미지 분석이 중단되었습니다.");
+      } catch (IOException e) {
+        // 재시도 가능한 에러면 루프 계속, 아니면 즉시 throw
+        if (lastError == e || e.getMessage().contains("다시 시도")) {
+          // 이미 위에서 처리됨
+          throw e;
+        }
+        throw e;
+      }
+    }
+    throw lastError != null ? lastError : new IOException("이미지 분석에 실패했습니다.");
   }
 
   /** Vision API의 JSON 응답을 파싱해 채무 목록으로 변환한다. */
