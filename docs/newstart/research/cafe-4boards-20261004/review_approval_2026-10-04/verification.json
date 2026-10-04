@@ -1,0 +1,937 @@
+{
+ "verifiedAt": "2026-10-04T18:20:00+09:00",
+ "channel": "read-only ADMIN GET /api/admin/newstart/wiki (size=100, sort=knowledgeId,desc) 7페이지 스캔 + status 필터 totalElements",
+ "targetReviewRows": 339,
+ "newlyActive": 152,
+ "remainingReviewInPackage": 187,
+ "packageRows": 675,
+ "packageFinal": {
+  "ACTIVE": 488,
+  "REVIEW": 187,
+  "DRAFT": 0
+ },
+ "wholeDb": {
+  "total": 4501,
+  "ACTIVE": 4289,
+  "REVIEW": 189,
+  "DRAFT": 0
+ },
+ "approveErrors": 0,
+ "previouslyActiveTouched": 0,
+ "newInserts": 0,
+ "approvalChannel": "POST /api/admin/newstart/wiki/review/{id}/approve (ADMIN 세션, reason+confirmed:true) — 직접 SQL/상태 강제변경 없음",
+ "checkedIds": [
+  {
+   "kid": 3827,
+   "cafe": "m3#1518",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3828,
+   "cafe": "m3#2591",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3829,
+   "cafe": "m3#2717",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3830,
+   "cafe": "m3#2870",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3831,
+   "cafe": "m3#3226",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3835,
+   "cafe": "m3#3658",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3836,
+   "cafe": "m3#3782",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3852,
+   "cafe": "m4#975",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3853,
+   "cafe": "m4#1088",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3854,
+   "cafe": "m4#1100",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3855,
+   "cafe": "m4#1129",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3856,
+   "cafe": "m4#1282",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3857,
+   "cafe": "m4#1852",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3858,
+   "cafe": "m4#2079",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3859,
+   "cafe": "m4#3304",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3860,
+   "cafe": "m4#3457",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3865,
+   "cafe": "m4#4671",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3866,
+   "cafe": "m4#4784",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3874,
+   "cafe": "m4#5834",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3893,
+   "cafe": "m3#1518",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3894,
+   "cafe": "m3#1518",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3895,
+   "cafe": "m3#1518",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3896,
+   "cafe": "m3#2591",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3897,
+   "cafe": "m3#2870",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3899,
+   "cafe": "m3#3226",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3924,
+   "cafe": "m5#2619",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3925,
+   "cafe": "m5#2661",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3926,
+   "cafe": "m5#3513",
+   "unitType": "ACTUAL_CASE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3943,
+   "cafe": "m4#3457",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3952,
+   "cafe": "m4#4784",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3953,
+   "cafe": "m4#4784",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3954,
+   "cafe": "m4#4784",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3956,
+   "cafe": "m4#4784",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3957,
+   "cafe": "m4#4784",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3972,
+   "cafe": "m5#2144",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3973,
+   "cafe": "m5#2144",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3974,
+   "cafe": "m5#2144",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3981,
+   "cafe": "m5#2619",
+   "unitType": "STAFF_ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3984,
+   "cafe": "m3#1518",
+   "unitType": "ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3988,
+   "cafe": "m3#2870",
+   "unitType": "ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 3989,
+   "cafe": "m3#3226",
+   "unitType": "ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4000,
+   "cafe": "m4#1282",
+   "unitType": "ANSWER",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4013,
+   "cafe": "m3#1518",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4014,
+   "cafe": "m3#1518",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4015,
+   "cafe": "m3#2717",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4016,
+   "cafe": "m3#3226",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4018,
+   "cafe": "m3#3782",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4019,
+   "cafe": "m3#3782",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4028,
+   "cafe": "m4#885",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4031,
+   "cafe": "m4#1088",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4033,
+   "cafe": "m4#1852",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4035,
+   "cafe": "m4#2070",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4036,
+   "cafe": "m4#2070",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4037,
+   "cafe": "m4#2079",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4041,
+   "cafe": "m4#3457",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4045,
+   "cafe": "m4#4671",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4046,
+   "cafe": "m4#4671",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4050,
+   "cafe": "m4#5834",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4051,
+   "cafe": "m4#5834",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4054,
+   "cafe": "m5#2661",
+   "unitType": "MEMBER_EXPERIENCE",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4084,
+   "cafe": "m4#2070",
+   "unitType": "QUESTION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4109,
+   "cafe": "m5#2144",
+   "unitType": "QUESTION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4124,
+   "cafe": "m4#1852",
+   "unitType": "COUNSELOR_CLAIM",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4127,
+   "cafe": "m4#4671",
+   "unitType": "COUNSELOR_CLAIM",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4132,
+   "cafe": "m3#1518",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4133,
+   "cafe": "m3#1518",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4134,
+   "cafe": "m3#1518",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4139,
+   "cafe": "m3#2591",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4142,
+   "cafe": "m3#2591",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4143,
+   "cafe": "m3#2591",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4144,
+   "cafe": "m3#2717",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4145,
+   "cafe": "m3#2717",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4147,
+   "cafe": "m3#2870",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4148,
+   "cafe": "m3#2870",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4150,
+   "cafe": "m3#2870",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4151,
+   "cafe": "m3#2870",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4155,
+   "cafe": "m3#3226",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4156,
+   "cafe": "m3#3226",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4158,
+   "cafe": "m3#3226",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4159,
+   "cafe": "m3#3226",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4166,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4167,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4168,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4169,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4170,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4171,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4174,
+   "cafe": "m3#3658",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4228,
+   "cafe": "m4#885",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4231,
+   "cafe": "m4#886",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4233,
+   "cafe": "m4#886",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4234,
+   "cafe": "m4#886",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4257,
+   "cafe": "m4#1088",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4265,
+   "cafe": "m4#1100",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4266,
+   "cafe": "m4#1100",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4268,
+   "cafe": "m4#1129",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4274,
+   "cafe": "m4#1129",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4280,
+   "cafe": "m4#1282",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4281,
+   "cafe": "m4#1282",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4283,
+   "cafe": "m4#1282",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4284,
+   "cafe": "m4#1282",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4285,
+   "cafe": "m4#1852",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4286,
+   "cafe": "m4#1852",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4288,
+   "cafe": "m4#1852",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4289,
+   "cafe": "m4#1852",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4290,
+   "cafe": "m4#1852",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4293,
+   "cafe": "m4#2070",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4294,
+   "cafe": "m4#2070",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4295,
+   "cafe": "m4#2070",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4296,
+   "cafe": "m4#2070",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4297,
+   "cafe": "m4#2070",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4298,
+   "cafe": "m4#2070",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4300,
+   "cafe": "m4#2079",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4301,
+   "cafe": "m4#2079",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4302,
+   "cafe": "m4#2079",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4318,
+   "cafe": "m4#3304",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4330,
+   "cafe": "m4#3457",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4334,
+   "cafe": "m4#3457",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4368,
+   "cafe": "m4#4548",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4369,
+   "cafe": "m4#4548",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4381,
+   "cafe": "m4#4671",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4382,
+   "cafe": "m4#4671",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4383,
+   "cafe": "m4#4671",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4384,
+   "cafe": "m4#4671",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4385,
+   "cafe": "m4#4671",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4387,
+   "cafe": "m4#4784",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4388,
+   "cafe": "m4#4784",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4389,
+   "cafe": "m4#4784",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4390,
+   "cafe": "m4#4784",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4417,
+   "cafe": "m4#5834",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4418,
+   "cafe": "m4#5834",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4419,
+   "cafe": "m4#5834",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4420,
+   "cafe": "m4#5834",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4423,
+   "cafe": "m4#5834",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4424,
+   "cafe": "m4#5834",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4441,
+   "cafe": "m5#666",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4442,
+   "cafe": "m5#686",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4443,
+   "cafe": "m5#686",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4444,
+   "cafe": "m5#686",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4446,
+   "cafe": "m5#686",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4448,
+   "cafe": "m5#701",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4454,
+   "cafe": "m5#954",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4455,
+   "cafe": "m5#954",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4457,
+   "cafe": "m5#954",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4464,
+   "cafe": "m5#2144",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4476,
+   "cafe": "m5#2661",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4483,
+   "cafe": "m5#3469",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4484,
+   "cafe": "m5#3469",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4491,
+   "cafe": "m5#3469",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4494,
+   "cafe": "m5#3513",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4495,
+   "cafe": "m5#3513",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4496,
+   "cafe": "m5#3513",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  },
+  {
+   "kid": 4497,
+   "cafe": "m5#3513",
+   "unitType": "COMMUNITY_OPINION",
+   "finalStatus": "ACTIVE"
+  }
+ ]
+}

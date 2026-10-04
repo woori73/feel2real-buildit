@@ -108,8 +108,8 @@
 ## 다음 단계
 1. (완료 2026-10-04) 675행 적재 → REVIEW 675행 → ACTIVE 336행 / REVIEW 보류 339행. 창구는 위 "운영 DB 반영" 참조.
    (`gh workflow run … --ref newstart/cafe-4boards-20261004` 는 브랜치 전용 workflow라 404 — 병합 후에만 dispatch 가능)
-2. ADMIN 화면에서 보류 339행 승인 여부 판단 — 하랑랑 운영자 15건(16unit)을 포함해 근거 보강(이미지 내용 확인)이 필요한 자료.
-   workflow로 다시 돌릴 경우: 머지 후 `mode=DRY_RUN` → `WRITE_REVIEW` → `APPROVE_ELIGIBLE`(idempotent, exact-match skip).
+2. (완료 2026-10-04) 보류 339행 내용 전수 판정 → 152행 ACTIVE 승인 / 187행 REVIEW 유지. `review_approval_2026-10-04/` 참조.
+   workflow 재가동 없이 ADMIN `review/{id}/approve` 정상 API로만 집행. 하랑랑 16unit은 텍스트만으로 성립하는 게 없어 전원 REVIEW 유지.
 3. 다음 tranch: menuId3 308 / menuId4 119 / menuId5 58 미순위 신규 후보
 4. ChatGPT Library 업로드는 Qoder가 하지 않는다. 전달파일 2종만 리포지토리·PC `delivery/`에 저장.
 
@@ -120,3 +120,16 @@
 - 하랑랑 운영자 15건 보존은 각 article의 `scopeIncludedByUserRuling` 플래그가 근거다.
   범위를 되돌리려면 `build_cafe_4boards_units.py`의 `kept_by_ruling` 조건과 `build_cafe_4boards_raw.py`의
   `operator_kept` 조건을 되돌리고 재생성하면 된다(수치는 자동 재계산, batch 잔존 파일은 생성자가 정리).
+
+## REVIEW 339건 → ACTIVE 승인 (2026-10-04 실행 완료)
+
+- 대상: 패키지(knowledgeId 3827–4501) 675행 중 REVIEW 339행 전부. 행 내용을 로컬 파이프라인 대장이 아니라 운영 DB에서 직접 내려받아 건독(件讀) 후 판정했다.
+- 보류 사유로 채택하지 않은 것: `MISSING_SOURCE` / `UNKNOWN_RISK` / `CONFLICT_RISK` / 댓글 부분수집 플래그. 실제 텍스트가 독립 의미가 있고 사례·질문·답변 근거가 되면 승인.
+- 결과: 신규 ACTIVE 152행(전부 HTTP 200, 오류 0) / REVIEW 유지 187행.
+  패키지 최종 ACTIVE 488 / REVIEW 187 / DRAFT 0. 운영 DB 전체 ACTIVE 4289 / REVIEW 189 / DRAFT 0 (총 4501, INSERT 0).
+  (DB 전체 REVIEW 189 = 패키지 유지 187 + 패키지 밖 선행 보류 2)
+- 유지 187행 사유: 인사·축하·감사 137, unitType 중복 게시 21, 이미지-only 운영자 정보글 13, 질문-답변 연결 파손 10, 홍보·참여유도 3, 링크 전용 2, 이미지 게시물 댓글 1.
+- 금지한 것: 직접 SQL/UPDATE/DELETE, 상태 강제변경, 기존 ACTIVE 336행 수정·재등록, 신규 INSERT. 승인 채널은 `POST /api/admin/newstart/wiki/review/{id}/approve`(reason+confirmed:true) 하나.
+- 산출물: `review_approval_2026-10-04/`(REPORT.md, decisions_all_339.json, review_hold_187.json, approve_ledger.json, verification.json, retrieval_test.json)
+- 지피지기 retrieval 실측: `GET /api/muse/newstart/knowledge/search` 10문항 전부 응답, 상위 80건 중 36건이 newly ACTIVE 행. provenance(title 접두 `[카페 4boards …]`, authority, tags `ck=CAFE4B:…`, `officialCheck=NOT_CHECKED`)는 그대로 보존해 카페 경험자료와 공식 규정이 섞이지 않게 했다.
+  미관측 1문항("도덕적해이 심사 기간")은 상위 8건이 모두 선행 ACTIVE라 신규 행이 밀려난 것이지 승인 실패가 아니다.
