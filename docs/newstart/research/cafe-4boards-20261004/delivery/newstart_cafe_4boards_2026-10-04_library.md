@@ -4,26 +4,26 @@
 
 ## 이 자료를 쓸 때 지켜야 할 세 가지
 
-1. 아래 글은 **카페 회원이 직접 남긴 경험과 커뮤니티 안내**입니다. 회원 경험을 공식 규정처럼 제시하지 마세요 (공식 확인 전 = NOT_CHECKED). 운영자(카페매니저·등급 999) 계정이 작성한 게시글 본문은 수집 범위에서 제외되어 본문 마지막 부록에 목록만 남겼고, 그 글 아래의 **회원 댓글 경험**은 본문에 포함했습니다.
+1. 아래 글은 **카페 회원이 직접 남긴 경험과 커뮤니티 안내**입니다. 회원 경험을 공식 규정처럼 제시하지 마세요 (공식 확인 전 = NOT_CHECKED). 운영자(카페매니저·등급 999) 계정이 작성한 게시글 본문은 원칙적으로 수집 범위에서 제외하되, **하랑랑 스페셜(menuId 9) 운영자 정보글 15건은 2026-10-04 사용자 최종 지시로 중요자료로 보존**해 본문에 실었습니다(작성일이 2024-11-05이므로 과거 시점 자료로 읽고, 회원 댓글 경험도 함께 취합했습니다). 그 외 게시판의 운영자 작성 본문은 부록에 목록만 남겼습니다.
 2. **부실차주 임시안부터 확정안(menuId 4)** 글들은 그해 논의되던 임시안~확정안 단계의 기록입니다. **지금은 시행되지 않을 수 있는 내용**이므로 역사 자료로만 사용하고, 현재 규정으로 인용하지 마세요.
 3. 회원 간 대화의 순서(상황 → 행동 → 금융회사·기관 반응 → 결과)를 유지하기 위해 본문과 댓글을 **전문 그대로** 실었습니다. 연락처·계좌 등 숫자열은 전달본에서만 마스킹했습니다.
 
 ## 수집 요약
 
-| 게시판 | menuId | 조사 | 기존중복 | 가입인사·등업 제외 | 원문 보존 | 운영자 글(반영 제외) | 반영 후보 회원 자료 | 지식 단위 |
-|---|---|---|---|---|---|---|---|---|
-| 부실차주 신청 | 3 | 350 | 9 | 3 | 30 | 4 | 26 | 197 |
-| 부실차주 임시안부터 확정안 (과거 자료) | 4 | 167 | 2 | 1 | 45 | 7 | 38 | 341 |
-| 재취업·재창업 감면수익 + 정부 지원 | 5 | 95 | 2 | 0 | 35 | 25 | 10 | 121 |
-| 하랑랑 스페셜 | 9 | 32 | 0 | 17 | 0 | 0 | 0 | 0 |
-| **합계** |  | 644 | 13 | 21 | 110 | 36 | 74 | 659 |
+| 게시판 | menuId | 조사 | 기존중복 | 가입인사·등업 제외 | 원문 보존 | 운영자 글(반영 제외) | 운영자 글(지시 보존) | 반영 범위 자료 | 지식 단위 |
+|---|---|---|---|---|---|---|---|---|---|
+| 부실차주 신청 | 3 | 350 | 9 | 3 | 30 | 4 | 0 | 26 | 197 |
+| 부실차주 임시안부터 확정안 (과거 자료) | 4 | 167 | 2 | 1 | 45 | 7 | 0 | 38 | 341 |
+| 재취업·재창업 감면수익 + 정부 지원 | 5 | 95 | 2 | 0 | 35 | 25 | 0 | 10 | 121 |
+| 하랑랑 스페셜 | 9 | 32 | 0 | 17 | 15 | 0 | 15 | 15 | 16 |
+| **합계** |  | 644 | 13 | 21 | 125 | 36 | 15 | 89 | 675 |
 
-비고: 원본 articleId 110건은 이미 보존된 404건 집합과 중복 0건입니다. 본문 없이 이미지/첨부만 있는 글 9건, 스레드가 길어 댓글이 부분 수집된 글 32건은 각 항목에 표시했습니다.
+비고: 원본 articleId 125건은 이미 보존된 404건 집합과 중복 0건입니다. 본문 없이 이미지/첨부만 있는 글 22건, 스레드가 길어 댓글이 부분 수집된 글 32건은 각 항목에 표시했습니다.
 
 
 ---
 
-## 부실차주 신청 (menuId 3) — 자료 30건 (회원 글 26 + 운영자 글 4)
+## 부실차주 신청 (menuId 3) — 자료 30건 (반영 범위 26 + 운영자 글 반영 제외 4)
 
 ### 금융자산까지 확인하는 방향으로 재산심사가 강화
 
@@ -1228,7 +1228,7 @@ pc로 해야 편해서 pc로 들어갔는데 빨간색 진행상태 클릭해서
 
 ---
 
-## 부실차주 임시안부터 확정안 (과거 자료) (menuId 4) — 자료 45건 (회원 글 38 + 운영자 글 7)
+## 부실차주 임시안부터 확정안 (과거 자료) (menuId 4) — 자료 45건 (반영 범위 38 + 운영자 글 반영 제외 7)
 
 > ⚠ 아래 자료는 **과거 임시안~확정안 논의 시점의 기록**입니다. 작성일·적용 시점을 함께 읽고, 현재 시행 규정으로 쓰지 마세요.
 
@@ -3330,7 +3330,7 @@ KT, SKT, LG 통신 3사 고객명의로 부여된 번호로 전자문서가 나�
 
 ---
 
-## 재취업·재창업 감면수익 + 정부 지원 (menuId 5) — 자료 35건 (회원 글 10 + 운영자 글 25)
+## 재취업·재창업 감면수익 + 정부 지원 (menuId 5) — 자료 35건 (반영 범위 10 + 운영자 글 반영 제외 25)
 
 ### 부실차주 상환유예 확대
 
@@ -4373,20 +4373,265 @@ www.sbiz.or.kr
 
 ---
 
-## 하랑랑 스페셜 (menuId 9) — 자료 0건 (회원 글 0 + 운영자 글 0)
+## 하랑랑 스페셜 (menuId 9) — 자료 15건 (반영 범위 15 + 운영자 글 반영 제외 0)
 
-이 게시판은 이번 tranch에서 **수집 0건**입니다.
+> ℹ 하랑랑 스페셜 32건 중 **가입인사·등업 17건은 제외**(지시 §5), **운영자(지피지기자산) 정보글 15건은 2026-10-04 사용자 최종 지시로 전부 보존**했습니다. 15건은 2024-11-05 작성 자료이고 본문이 이미지·링크 카드로 구성되어, 텍스트 근거가 보강되기 전까지 ACTIVE가 아니라 REVIEW 단계에 둡니다.
 
-- 조사한 글: 32건
-- 운영자(등급 999) 정보 링크 정리글: 15건 — NewStart 수집 범위(회원 정보글만 취합)에서 제외
-- 가입인사·등업·안부: 17건 — 지시 §5에 따라 제외
-- 제외 기준이 애매한 글은 삭제하지 않고 후보로 남깁니다(사용자 확인 대기).
+### 페이머니 카드
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 333 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 129
+- 원문: https://cafe.naver.com/newhopero/333 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 9장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzUg/MDAxNzMwODA5MzU1NzM3.0ZFTy-yzLC0P27qPpnh1aeH7eZ-ZDGBEa5EVEAiimPgg.QhA0I0be_pgK43MFu-ScP_Gd8HNYJKuxQgODs1jRVB0g.JPEG/3.jpg?type=w800
+- 이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTE3/MDAxNzMwODA5MzcxNDI2.vpiXv9sPUlCDXepBY3zx2WKzRfBdsOCsql-C-fZvODgg.alhmmaKrOPFJ-tupnv5bKutJ4-_m2CsuSgyhdL98biwg.JPEG/4.jpg?type=w800
+- 이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzc5MjY4.Un4A45BZndxWNJeoQcWH0MoHKz_clysaCfqffdOB6c8g.3-ZPj2hu79U4_J5vJMDLP6Eq3py1Hz9WejhZDfVzP-og.JPEG/5.jpg?type=w800
+- 이미지 4: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzg3NzM2.yNJBpEnu687oga5RPh7AXE-0fUUobocZDqs2tsDCUXog.yBbya7_dg91lPVlG5NzuGXLkv-3Z1Z0cPHaPt9KB1JMg.JPEG/6.jpg?type=w800
+- 이미지 5: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTgz/MDAxNzMwODA5MzkzNTMz.doTETTEqxWGSEWrC2IOg6pvlJ9iV0kT5ghdU1l-Gu9Ag.R5g-2xvEn8ylTLUksk5X0ae6W_SYZs5AbDM2k7_vi6Qg.JPEG/7.jpg?type=w800
+- 이미지 6: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTUw/MDAxNzMwODA5NDExNTY4.X8PPZhivmVDUXAfAnuzyc_EzIgV8SyMio7cbbPQXnKkg.Tu-ADHrkE8-GtBE84jL7qM8wUpOVupKLF-SbyNyd2n0g.JPEG/8.jpg?type=w800
+- 이미지 7: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA4/MDAxNzMwODA5NDE5MzI4.slZSd9W2kqQ-BkPjJOhPpYFWz7MP3sOY0GSZL2z2xuQg._89WOipwPcUDQ6s05fKaqyUdLjixKZhseEx4sC6Lcn0g.JPEG/9.jpg?type=w800
+- 이미지 8: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTc0/MDAxNzMwODA5NDMwNzEx.FnGcAHAlSDRdsvnNvhJjE7Ob9jIM51WZHlVRY86vnc4g.pzMpl7aurTNZjycaXY0HzA-qy73uQ2cDiuoC5rGUr7Qg.JPEG/10.jpg?type=w800
+- 이미지 9: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzcg/MDAxNzMwODA5NDM3MzQx.KXIN0PpOllCRynJm2JfLTkSdjSWcGS8uxUEfWfHDosQg.iI3A0rVjnWTN8v82OWFM5tIMQC7BZTECYUuzIXtFUdQg.JPEG/11.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 페이머니 카드 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:24:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 9장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzUg/MDAxNzMwODA5MzU1NzM3.0ZFTy-yzLC0P27qPpnh1aeH7eZ-ZDGBEa5EVEAiimPgg.QhA0I0be_pgK43MFu-ScP_Gd8HNYJKuxQgODs1jRVB0g.JPEG/3.jpg?type=w800 이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAy
+
+### 비대면 계좌 개설
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 332 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 134
+- 원문: https://cafe.naver.com/newhopero/332 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjc2/MDAxNzMwODA5MzIxMzQ0._juQ0Y5IHccSo5HH_hbkQ8qoQlJNBhghXhgXx-AgW3og.nXtdJNP_3m5bjT2CfYXLz-nA1-DG5pCh4NlQseoXr70g.JPEG/2.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 비대면 계좌 개설 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:22:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjc2/MDAxNzMwODA5MzIxMzQ0._juQ0Y5IHccSo5HH_hbkQ8qoQlJNBhghXhgXx-AgW3og.nXtdJNP_3m5bjT2CfYXLz-nA1-DG5pCh4NlQseoXr70g.JPEG/2.jpg?type=w800 원문: https://cafe.naver.com/newhopero/332
+
+### 통신 채무 정보
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 331 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 64
+- 원문: https://cafe.naver.com/newhopero/331 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQg/MDAxNzMwODA5Mjk1MTIz.6mFlLK1Ov7s8aWVSUmDZVAxnL3mTYM7kKCq12qUZBVQg.eehN8bMDZlzbP-nUyx_HdWNjBOj25V_8DbOaiRq4sSMg.JPEG/1.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 통신 채무 정보 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:21:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQg/MDAxNzMwODA5Mjk1MTIz.6mFlLK1Ov7s8aWVSUmDZVAxnL3mTYM7kKCq12qUZBVQg.eehN8bMDZlzbP-nUyx_HdWNjBOj25V_8DbOaiRq4sSMg.JPEG/1.jpg?type=w800 원문: https://cafe.naver.com/newhopero/331
+
+### 사업자 신용정보 확인 하는 곳
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 329 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 66
+- 원문: https://cafe.naver.com/newhopero/329 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTcw/MDAxNzMwODA4ODg4MDc0.fp7LmXwqzB0RwfGeAI7CFoV5hssppHbD8xWH6o-pxBog.pjhodbiB06g42sIh9UnmKBJXJrAcZyvz5_DPfjg3m6Ag.JPEG/2.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 사업자 신용정보 확인 하는 곳 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:15:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTcw/MDAxNzMwODA4ODg4MDc0.fp7LmXwqzB0RwfGeAI7CFoV5hssppHbD8xWH6o-pxBog.pjhodbiB06g42sIh9UnmKBJXJrAcZyvz5_DPfjg3m6Ag.JPEG/2.jpg?type=w800 원문: https://cafe.naver.com/newhopero/329
+
+### 대출 이자 3회 이하 납부 사기죄 고소 관련
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 330 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 181
+- 원문: https://cafe.naver.com/newhopero/330 · 수집일: 2026-10-04 · 댓글 1개 중 1개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjgw/MDAxNzMwODA4OTIxNjI4.pSeYxFr3Agv5CXF_c0xpAgwPE-ReL6s9bnWJtck5Lu4g.uMcfB7w5fFoYjmC29Ch7gxEc_MIop5ZKczyuj8nwV9sg.JPEG/3.jpg?type=w800
+
+**댓글 (시간순)**
+
+-  (성실멤버 / 회원 / ): 3회이하면  고소를 일단 하는거군요.
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 대출 이자 3회 이하 납부 사기죄 고소 관련 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:15:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjgw/MDAxNzMwODA4OTIxNjI4.pSeYxFr3Agv5CXF_c0xpAgwPE-ReL6s9bnWJtck5Lu4g.uMcfB7w5fFoYjmC29Ch7gxEc_MIop5ZKczyuj8nwV9sg.JPEG/3.jpg?type=w800 원문: https://cafe.naver.com/newho
+- [커뮤니티 의견] 3회이하면  고소를 일단 하는거군요.
+
+### 연체 일수는 어디에서 확인하나요?
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 328 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 131
+- 원문: https://cafe.naver.com/newhopero/328 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjYg/MDAxNzMwODA4ODUyOTQy.U1n4pYkuoA8lqx1ur5-SI_HGrhoziY-CuH9mWvT3CzQg.y5M41feMrXSM0K-_3nAHIP5D_XnA54U8iGjp5lrv33kg.JPEG/1.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 연체 일수는 어디에서 확인하나요? 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:14:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjYg/MDAxNzMwODA4ODUyOTQy.U1n4pYkuoA8lqx1ur5-SI_HGrhoziY-CuH9mWvT3CzQg.y5M41feMrXSM0K-_3nAHIP5D_XnA54U8iGjp5lrv33kg.JPEG/1.jpg?type=w800 원문: https://cafe.naver.com/newhopero/3
+
+### 채무자 보호법 관련 링크
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 327 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 42
+- 원문: https://cafe.naver.com/newhopero/327 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 외부 링크 미리보기 자료(본문은 링크 카드 텍스트) · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**
+
+10월 17일, 개인채무자보호법 시행 - 전체 | 카드/한컷 | 멀티미디어 | 대한민국 정책브리핑 10월 17일, 개인채무자보호법 시행 문화체육관광부에서 운영하는 대한민국 정부 정책뉴스포털. www.korea.kr
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] 10월 17일, 개인채무자보호법 시행 - 전체 | 카드/한컷 | 멀티미디어 | 대한민국 정책브리핑 10월 17일, 개인채무자보호법 시행 문화체육관광부에서 운영하는 대한민국 정부 정책뉴스포털. www.korea.kr
+
+### 신용정보원에서 장기연체 등록 정보를 확인하는 방법
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 325 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 716
+- 원문: https://cafe.naver.com/newhopero/325 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 3장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQx/MDAxNzMwODA4NTAwOTEz.WcvN0RLaKDIYct7PD9xgroyhUrqG000_a6BEVE9GwfYg.T9Co3wk0p-4q3CRQ4vTpeCa08uT1aZPNMAVmuItE8J0g.JPEG/5.jpg?type=w800
+- 이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTYx/MDAxNzMwODA4NTA5NjM2.-3AuOgFVbsAqYFzXV1D5rB4cK_7R3MMz97uDhNp0Xqkg.Z1sXdUo5xM_o6CtbXl5ra5Z8r7nG0-M-fDT1VcMVjOgg.JPEG/6.jpg?type=w800
+- 이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTI2/MDAxNzMwODA4NTI1Mzkz.EQ0IbgkzcQ8QhAYQapR67E75pqdl--K6W7F17-WjKWwg.Emy5dTPCvcgkPOlefR6WxJNRJfkr_FmhYBP3LZSjHFQg.JPEG/7.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 신용정보원에서 장기연체 등록 정보를 확인하는 방법 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:09:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQx/MDAxNzMwODA4NTAwOTEz.WcvN0RLaKDIYct7PD9xgroyhUrqG000_a6BEVE9GwfYg.T9Co3wk0p-4q3CRQ4vTpeCa08uT1aZPNMAVmuItE8J0g.JPEG/5.jpg?type=w800 이미지 2: https://cafeptthumb-ph
+
+### 채무조정을 진행하던 중 신규 채무가 발생되어 추가를 하고 싶어요.
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 324 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 51
+- 원문: https://cafe.naver.com/newhopero/324 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA5/MDAxNzMwODA4NDYwNTU3.MWKAsfSJSY9pa92RfCagFaSs7KpcciEX5axt_LgqoGIg.OC_ksr2MEkMRDYFYzmiOa34-N2kGF7O5zt8MhnDg6tAg.JPEG/4.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 채무조정을 진행하던 중 신규 채무가 발생되어 추가를 하고 싶어요. 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:08:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA5/MDAxNzMwODA4NDYwNTU3.MWKAsfSJSY9pa92RfCagFaSs7KpcciEX5axt_LgqoGIg.OC_ksr2MEkMRDYFYzmiOa34-N2kGF7O5zt8MhnDg6tAg.JPEG/4.jpg?type=w800 원문: https://cafe.nav
+
+### 프리워크아웃 특례 소급이 가능한가요?
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 323 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 21
+- 원문: https://cafe.naver.com/newhopero/323 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 2장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfOTcg/MDAxNzMwODA4MzkzODQ4.iNyn9Rx817murUanS5lVvDSBIVFLzuvNgZXzh_izwogg.8G9I_qJH26Lp7ceomcPNKa8EkwNm2NqnWwMKpGWraTcg.JPEG/2.jpg?type=w800
+- 이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjEx/MDAxNzMwODA4NDI4Mzc1.sCe90eRvhC8AyrS_AQ7cdsks6nIeS4gfuGJnZ1Y_Uwcg.9f5qxbkETY9aoNlZ01NHBrHTGEzgOihKA4wd7JavxrIg.JPEG/3.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 프리워크아웃 특례 소급이 가능한가요? 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:07:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 2장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfOTcg/MDAxNzMwODA4MzkzODQ4.iNyn9Rx817murUanS5lVvDSBIVFLzuvNgZXzh_izwogg.8G9I_qJH26Lp7ceomcPNKa8EkwNm2NqnWwMKpGWraTcg.JPEG/2.jpg?type=w800 이미지 2: https://cafeptthumb-phinf.pst
+
+### 개인워크아웃 감면율
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 322 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 75
+- 원문: https://cafe.naver.com/newhopero/322 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzAg/MDAxNzMwODA4MzQyOTM1._dBXt0d-gnz1GuRxnbV6almiUM6LhnSRc0wVDmrhKmgg.9tM7nRbsXW19ooBtEMAvFthXi46wd9mSLml2k4B6WDMg.JPEG/1.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 개인워크아웃 감면율 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:06:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzAg/MDAxNzMwODA4MzQyOTM1._dBXt0d-gnz1GuRxnbV6almiUM6LhnSRc0wVDmrhKmgg.9tM7nRbsXW19ooBtEMAvFthXi46wd9mSLml2k4B6WDMg.JPEG/1.jpg?type=w800 원문: https://cafe.naver.com/newhopero/322
+
+### 신용회복위원회 납부 유예 신청 조건 및 방법
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 321 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 41
+- 원문: https://cafe.naver.com/newhopero/321 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 3장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTAx/MDAxNzMwODA4MDgxNTU0.n8pt_z_c7RvBgv2fnoFWtb6PAtWWcGkvM4h4hWONwt4g.DpKEs86INhV16mSpsf4-LdUFr2QsEAA1xoBMZJC3f9wg.JPEG/1.jpg?type=w800
+- 이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzYg/MDAxNzMwODA4MDg2NjU4.pTYjuZPaotGo12xnVoY75ozu79NDrpKIji1MzREFaEAg.c2gH36bZVmrYeZVS556sRRBlQnz_BnwFLLGgUT9b86Ag.JPEG/2.jpg?type=w800
+- 이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjU5/MDAxNzMwODA4MDkxMDY5.BxqQ8fAmn-FLzTLJyJdxdg4cWwd1bhfdXiEcQvP7bMgg.6N5YSI089A_nPtfmLDor67O91ic4WGzEHiKXQR9ELTAg.JPEG/3.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 납부 유예 신청 조건 및 방법 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:01:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTAx/MDAxNzMwODA4MDgxNTU0.n8pt_z_c7RvBgv2fnoFWtb6PAtWWcGkvM4h4hWONwt4g.DpKEs86INhV16mSpsf4-LdUFr2QsEAA1xoBMZJC3f9wg.JPEG/1.jpg?type=w800 이미지 2: https://cafeptthumb-phinf
+
+### 신용회복위원회 채무 조정 신청 이후 첫 납부와 납부 방법
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 320 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 31
+- 원문: https://cafe.naver.com/newhopero/320 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 3장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTk0/MDAxNzMwODA3ODk3ODE3.isRkq7XYiVWrEy9UmAZDCOKHq9eCDqAsuBnBWHBj1b8g.1rKpaV-DlEK4odOr7GGvfJyQN9hklBwCZEYaknO_FKkg.JPEG/2.jpg?type=w800
+- 이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjM0/MDAxNzMwODA3OTAzODU1.TWXousg52w6HVYcRRQo_U5fI6NHXpEy_ZPLZssF08eMg.T4zEbI6BJknCuZEJC_UxMApV4a60LOAnA-2AGxUWc6og.JPEG/3.jpg?type=w800
+- 이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTU0/MDAxNzMwODA3OTA5NDM0.yOy62tcC1kXFYwJ1CGCsR7Hkbe_OzlPSO7o8Vp8FXSIg.tk-uBf5lzn2Xxcf4pajM712OXeK0KJMJHkqiqglIoBMg.JPEG/4.jpg?type=w800
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 채무 조정 신청 이후 첫 납부와 납부 방법 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T20:59:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTk0/MDAxNzMwODA3ODk3ODE3.isRkq7XYiVWrEy9UmAZDCOKHq9eCDqAsuBnBWHBj1b8g.1rKpaV-DlEK4odOr7GGvfJyQN9hklBwCZEYaknO_FKkg.JPEG/2.jpg?type=w800 이미지 2: https://cafeptthum
+
+### 신용회복위원회 협약기관 확인 방법
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 319 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 50
+- 원문: https://cafe.naver.com/newhopero/319 · 수집일: 2026-10-04 · 댓글 1개 중 1개 보존
+- 상태: 본문 이미지/첨부만(텍스트 본문 없음) · 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지 · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**: 텍스트 본문 없이 이미지 1장으로 구성(원본 형태). 이미지 URL을 보존합니다.
+
+- 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800
+
+**댓글 (시간순)**
+
+-  (감사멤버 / 회원 / ): 감사합니다
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] [하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 협약기관 확인 방법 작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T20:56:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9) 본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료). 이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800 원문: https://cafe.naver.com/newhopero/3
+
+### 지급명령 이의신청서 및 답변서 작성방법 링크
+
+- 게시판: 하랑랑 스페셜 (menuId 9) · 글번호: 317 · 작성일: 2024-11-05 · 작성자: 지피지기자산(카페매니저) · 조회: 155
+- 원문: https://cafe.naver.com/newhopero/317 · 수집일: 2026-10-04 · 댓글 0개 중 0개 보존
+- 상태: 운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함 · 외부 링크 미리보기 자료(본문은 링크 카드 텍스트) · 공식확인 전(NOT_CHECKED)
+- 주의: 하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.
+
+**본문**
+
+https://cafe.naver.com/ccrs5500/525728 지급명령 이의신청서 작성방법 및 답변서 작성방법(전자소송 / 등기) - 2024.09.25 대한민국 모임의 시작, 네이버 카페 cafe.naver.com
+
+**이 글에서 뽑은 경험·정보 단위**
+
+- [운영자 안내] https://cafe.naver.com/ccrs5500/525728 지급명령 이의신청서 작성방법 및 답변서 작성방법(전자소송 / 등기) - 2024.09.25 대한민국 모임의 시작, 네이버 카페 cafe.naver.com
+
 
 ---
 
-## 부록 — 운영자(agent) 작성 게시글 목록 (반영 범위 제외, 원문은 리포지토리에 보존)
+## 부록 — 운영자(agent) 작성 게시글로서 반영 범위에서 제외된 목록 (원문은 리포지토리에 보존)
 
-NewStart 수집 범위는 **회원 정보글**입니다. 아래 36건은 카페매니저(등급 999) 계정이 작성한 글이라 본문·운영자 단위를 반영 후보에서 제외했습니다(제외 단위 69건). 각 글 아래의 회원 댓글은 위에 실렸습니다.
+NewStart 수집 범위는 **회원 정보글**입니다. 아래 36건은 카페매니저(등급 999) 계정이 작성한 글이라 본문·운영자 단위를 반영 후보에서 제외했습니다(제외 단위 69건). 각 글 아래의 회원 댓글은 위에 실렸습니다. **예외**: 하랑랑 스페셜(menuId 9)의 운영자 정보글 15건은 2026-10-04 사용자 최종 지시로 반대로 보존·반영되어 위 본문에 운영자 안내 단위로 실렸습니다.
 
 
 | menuId | 글번호 | 제목 | 작성일 | 원문 | 이 글에서 취한 회원 단위 |

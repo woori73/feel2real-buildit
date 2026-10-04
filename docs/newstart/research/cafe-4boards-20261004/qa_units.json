@@ -7,28 +7,32 @@
   "9": "하랑랑 스페셜"
  },
  "generator": "build_cafe_4boards_units.py (reuses build_qa_units.process_article)",
- "rule": "deterministic first-pass; officialCheck=NOT_CHECKED (no cafe->official promotion); greeting/emoji units dropped; INFERENCE not fabricated; menuId=4 units tagged historicalCANDIDATE (과거 임시안, current 판정 안 함); 운영자(agent) 계정 게시글의 본문·운영자 단위 제외(회원 정보글만 취합)",
+ "rule": "deterministic first-pass; officialCheck=NOT_CHECKED (no cafe->official promotion); greeting/emoji units dropped; INFERENCE not fabricated; menuId=4 units tagged historicalCANDIDATE (과거 임시안, current 판정 안 함); 운영자(agent) 계정 게시글의 본문·운영자 단위 제외(회원 정보글만 취합); 예외=menuId9 하랑랑 운영자 정보글 15건(2026-10-04 사용자 지시 보존, OPERATOR_KNOWLEDGE, historicalCANDIDATE+작성일 보존, 이미지 중심 자료는 텍스트 추론 금지)",
  "stats": {
-  "articlesTotal": 110,
-  "articlesWithUnits": 100,
-  "unitsEmitted": 659,
-  "noiseUnitsDropped": 18,
+  "articlesTotal": 125,
+  "articlesWithUnits": 115,
+  "unitsEmitted": 675,
+  "noiseUnitsDropped": 19,
   "operatorScopeUnitsDropped": 69,
-  "operatorAuthoredArticles": 36,
+  "operatorAuthoredArticles": 51,
   "byType": {
    "ACTUAL_CASE": 59,
    "STAFF_ANSWER": 83,
-   "COMMUNITY_OPINION": 369,
+   "COMMUNITY_OPINION": 370,
    "MEMBER_EXPERIENCE": 43,
    "QUESTION": 59,
    "COUNSELOR_CLAIM": 17,
-   "ANSWER": 29
+   "ANSWER": 29,
+   "OPERATOR_GUIDE": 15
   },
   "byBoard": {
    "m4": 341,
    "m3": 197,
-   "m5": 121
-  }
+   "m5": 121,
+   "m9": 16
+  },
+  "operatorKeptArticles": 15,
+  "operatorKeptUnits": 16
  },
  "units": [
   {
@@ -4811,6 +4815,145 @@
    "boardName": "부실차주 신청"
   },
   {
+   "unitId": "m9-u-317-001",
+   "articleId": 317,
+   "boardId": 9,
+   "menuId": 9,
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저"
+   },
+   "createdAt": "2024-11-05T20:52:00+09:00",
+   "createdAtMs": 1730807520000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/317",
+   "evidenceText": "https://cafe.naver.com/ccrs5500/525728 지급명령 이의신청서 작성방법 및 답변서 작성방법(전자소송 / 등기) - 2024.09.25 대한민국 모임의 시작, 네이버 카페 cafe.naver.com",
+   "evidenceFingerprint": "fce878ff09f1605c",
+   "confidence": "medium",
+   "needsHumanReview": false,
+   "notes": "operator post relaying a case",
+   "boardName": "하랑랑 스페셜"
+  },
+  {
+   "unitId": "m9-u-319-001",
+   "articleId": 319,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T20:56:00+09:00",
+   "createdAtMs": 1730807760000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/319",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 협약기관 확인 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T20:56:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/319",
+   "evidenceFingerprint": "408bdf8bf61a",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-320-001",
+   "articleId": 320,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T20:59:00+09:00",
+   "createdAtMs": 1730807940000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/320",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 채무 조정 신청 이후 첫 납부와 납부 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T20:59:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTk0/MDAxNzMwODA3ODk3ODE3.isRkq7XYiVWrEy9UmAZDCOKHq9eCDqAsuBnBWHBj1b8g.1rKpaV-DlEK4odOr7GGvfJyQN9hklBwCZEYaknO_FKkg.JPEG/2.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjM0/MDAxNzMwODA3OTAzODU1.TWXousg52w6HVYcRRQo_U5fI6NHXpEy_ZPLZssF08eMg.T4zEbI6BJknCuZEJC_UxMApV4a60LOAnA-2AGxUWc6og.JPEG/3.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTU0/MDAxNzMwODA3OTA5NDM0.yOy62tcC1kXFYwJ1CGCsR7Hkbe_OzlPSO7o8Vp8FXSIg.tk-uBf5lzn2Xxcf4pajM712OXeK0KJMJHkqiqglIoBMg.JPEG/4.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/320",
+   "evidenceFingerprint": "113b21bb9b2f",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-321-001",
+   "articleId": 321,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:01:00+09:00",
+   "createdAtMs": 1730808060000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/321",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 납부 유예 신청 조건 및 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:01:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTAx/MDAxNzMwODA4MDgxNTU0.n8pt_z_c7RvBgv2fnoFWtb6PAtWWcGkvM4h4hWONwt4g.DpKEs86INhV16mSpsf4-LdUFr2QsEAA1xoBMZJC3f9wg.JPEG/1.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzYg/MDAxNzMwODA4MDg2NjU4.pTYjuZPaotGo12xnVoY75ozu79NDrpKIji1MzREFaEAg.c2gH36bZVmrYeZVS556sRRBlQnz_BnwFLLGgUT9b86Ag.JPEG/2.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjU5/MDAxNzMwODA4MDkxMDY5.BxqQ8fAmn-FLzTLJyJdxdg4cWwd1bhfdXiEcQvP7bMgg.6N5YSI089A_nPtfmLDor67O91ic4WGzEHiKXQR9ELTAg.JPEG/3.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/321",
+   "evidenceFingerprint": "fee8f671b9c1",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-322-001",
+   "articleId": 322,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:06:00+09:00",
+   "createdAtMs": 1730808360000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/322",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 개인워크아웃 감면율\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:06:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzAg/MDAxNzMwODA4MzQyOTM1._dBXt0d-gnz1GuRxnbV6almiUM6LhnSRc0wVDmrhKmgg.9tM7nRbsXW19ooBtEMAvFthXi46wd9mSLml2k4B6WDMg.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/322",
+   "evidenceFingerprint": "29ad2e4f9173",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
    "unitId": "m3-u-3226-001",
    "articleId": 3226,
    "boardId": 3,
@@ -5108,6 +5251,228 @@
    "boardName": "부실차주 신청"
   },
   {
+   "unitId": "m9-u-323-001",
+   "articleId": 323,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:07:00+09:00",
+   "createdAtMs": 1730808420000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/323",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 프리워크아웃 특례 소급이 가능한가요?\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:07:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 2장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfOTcg/MDAxNzMwODA4MzkzODQ4.iNyn9Rx817murUanS5lVvDSBIVFLzuvNgZXzh_izwogg.8G9I_qJH26Lp7ceomcPNKa8EkwNm2NqnWwMKpGWraTcg.JPEG/2.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjEx/MDAxNzMwODA4NDI4Mzc1.sCe90eRvhC8AyrS_AQ7cdsks6nIeS4gfuGJnZ1Y_Uwcg.9f5qxbkETY9aoNlZ01NHBrHTGEzgOihKA4wd7JavxrIg.JPEG/3.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/323",
+   "evidenceFingerprint": "39b5a1cb1d70",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-324-001",
+   "articleId": 324,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:08:00+09:00",
+   "createdAtMs": 1730808480000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/324",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 채무조정을 진행하던 중 신규 채무가 발생되어 추가를 하고 싶어요.\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:08:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA5/MDAxNzMwODA4NDYwNTU3.MWKAsfSJSY9pa92RfCagFaSs7KpcciEX5axt_LgqoGIg.OC_ksr2MEkMRDYFYzmiOa34-N2kGF7O5zt8MhnDg6tAg.JPEG/4.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/324",
+   "evidenceFingerprint": "07e66681e667",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-325-001",
+   "articleId": 325,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:09:00+09:00",
+   "createdAtMs": 1730808540000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/325",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용정보원에서 장기연체 등록 정보를 확인하는 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:09:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQx/MDAxNzMwODA4NTAwOTEz.WcvN0RLaKDIYct7PD9xgroyhUrqG000_a6BEVE9GwfYg.T9Co3wk0p-4q3CRQ4vTpeCa08uT1aZPNMAVmuItE8J0g.JPEG/5.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTYx/MDAxNzMwODA4NTA5NjM2.-3AuOgFVbsAqYFzXV1D5rB4cK_7R3MMz97uDhNp0Xqkg.Z1sXdUo5xM_o6CtbXl5ra5Z8r7nG0-M-fDT1VcMVjOgg.JPEG/6.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTI2/MDAxNzMwODA4NTI1Mzkz.EQ0IbgkzcQ8QhAYQapR67E75pqdl--K6W7F17-WjKWwg.Emy5dTPCvcgkPOlefR6WxJNRJfkr_FmhYBP3LZSjHFQg.JPEG/7.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/325",
+   "evidenceFingerprint": "b056999e2b1e",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-327-001",
+   "articleId": 327,
+   "boardId": 9,
+   "menuId": 9,
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저"
+   },
+   "createdAt": "2024-11-05T21:13:00+09:00",
+   "createdAtMs": 1730808780000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/327",
+   "evidenceText": "10월 17일, 개인채무자보호법 시행 - 전체 | 카드/한컷 | 멀티미디어 | 대한민국 정책브리핑 10월 17일, 개인채무자보호법 시행 문화체육관광부에서 운영하는 대한민국 정부 정책뉴스포털. www.korea.kr",
+   "evidenceFingerprint": "ea44ffafc540a7f0",
+   "confidence": "medium",
+   "needsHumanReview": false,
+   "notes": "operator guide/instructional post",
+   "boardName": "하랑랑 스페셜"
+  },
+  {
+   "unitId": "m9-u-328-001",
+   "articleId": 328,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:14:00+09:00",
+   "createdAtMs": 1730808840000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/328",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 연체 일수는 어디에서 확인하나요?\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:14:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjYg/MDAxNzMwODA4ODUyOTQy.U1n4pYkuoA8lqx1ur5-SI_HGrhoziY-CuH9mWvT3CzQg.y5M41feMrXSM0K-_3nAHIP5D_XnA54U8iGjp5lrv33kg.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/328",
+   "evidenceFingerprint": "5284c8f5c636",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-329-001",
+   "articleId": 329,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:15:00+09:00",
+   "createdAtMs": 1730808900000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/329",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 사업자 신용정보 확인 하는 곳\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:15:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTcw/MDAxNzMwODA4ODg4MDc0.fp7LmXwqzB0RwfGeAI7CFoV5hssppHbD8xWH6o-pxBog.pjhodbiB06g42sIh9UnmKBJXJrAcZyvz5_DPfjg3m6Ag.JPEG/2.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/329",
+   "evidenceFingerprint": "b5083b19154d",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-330-001",
+   "articleId": 330,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:15:00+09:00",
+   "createdAtMs": 1730808900000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/330",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 대출 이자 3회 이하 납부 사기죄 고소 관련\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:15:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjgw/MDAxNzMwODA4OTIxNjI4.pSeYxFr3Agv5CXF_c0xpAgwPE-ReL6s9bnWJtck5Lu4g.uMcfB7w5fFoYjmC29Ch7gxEc_MIop5ZKczyuj8nwV9sg.JPEG/3.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/330",
+   "evidenceFingerprint": "30434943c293",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-330-001",
+   "articleId": 330,
+   "boardId": 9,
+   "menuId": 9,
+   "type": "COMMUNITY_OPINION",
+   "provenance": "COMMUNITY_OPINION",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "MEMBER_COMMENTER",
+   "origin": "COMMENT",
+   "commentId": 54151439,
+   "parentCommentId": null,
+   "author": {
+    "nickname": null,
+    "memberGrade": "성실멤버"
+   },
+   "createdAt": "2024-11-05T21:15:00+09:00",
+   "createdAtMs": 1730808900000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/330",
+   "evidenceText": "3회이하면  고소를 일단 하는거군요.",
+   "evidenceFingerprint": "d6fa0b85b3ec4f3f",
+   "confidence": "medium",
+   "needsHumanReview": false,
+   "notes": "general member opinion/context",
+   "boardName": "하랑랑 스페셜"
+  },
+  {
    "unitId": "m4-u-3304-001",
    "articleId": 3304,
    "boardId": 4,
@@ -5322,6 +5687,90 @@
    "needsHumanReview": false,
    "notes": "general member opinion/context",
    "boardName": "부실차주 임시안부터 확정안"
+  },
+  {
+   "unitId": "m9-u-331-001",
+   "articleId": 331,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:21:00+09:00",
+   "createdAtMs": 1730809260000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/331",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 통신 채무 정보\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:21:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQg/MDAxNzMwODA5Mjk1MTIz.6mFlLK1Ov7s8aWVSUmDZVAxnL3mTYM7kKCq12qUZBVQg.eehN8bMDZlzbP-nUyx_HdWNjBOj25V_8DbOaiRq4sSMg.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/331",
+   "evidenceFingerprint": "78bf2d1d667c",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-332-001",
+   "articleId": 332,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:22:00+09:00",
+   "createdAtMs": 1730809320000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/332",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 비대면 계좌 개설\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:22:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjc2/MDAxNzMwODA5MzIxMzQ0._juQ0Y5IHccSo5HH_hbkQ8qoQlJNBhghXhgXx-AgW3og.nXtdJNP_3m5bjT2CfYXLz-nA1-DG5pCh4NlQseoXr70g.JPEG/2.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/332",
+   "evidenceFingerprint": "8059a541742e",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
+  },
+  {
+   "unitId": "m9-u-333-001",
+   "articleId": 333,
+   "boardId": 9,
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "type": "OPERATOR_GUIDE",
+   "provenance": "OPERATOR_GUIDE",
+   "officialCheck": "NOT_CHECKED",
+   "tier": 1,
+   "role": "OPERATOR",
+   "origin": "BODY",
+   "commentId": null,
+   "parentCommentId": null,
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "createdAt": "2024-11-05T21:24:00+09:00",
+   "createdAtMs": 1730809440000,
+   "sourceUrl": "https://cafe.naver.com/newhopero/333",
+   "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 페이머니 카드\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:24:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 9장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzUg/MDAxNzMwODA5MzU1NzM3.0ZFTy-yzLC0P27qPpnh1aeH7eZ-ZDGBEa5EVEAiimPgg.QhA0I0be_pgK43MFu-ScP_Gd8HNYJKuxQgODs1jRVB0g.JPEG/3.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTE3/MDAxNzMwODA5MzcxNDI2.vpiXv9sPUlCDXepBY3zx2WKzRfBdsOCsql-C-fZvODgg.alhmmaKrOPFJ-tupnv5bKutJ4-_m2CsuSgyhdL98biwg.JPEG/4.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzc5MjY4.Un4A45BZndxWNJeoQcWH0MoHKz_clysaCfqffdOB6c8g.3-ZPj2hu79U4_J5vJMDLP6Eq3py1Hz9WejhZDfVzP-og.JPEG/5.jpg?type=w800\n이미지 4: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzg3NzM2.yNJBpEnu687oga5RPh7AXE-0fUUobocZDqs2tsDCUXog.yBbya7_dg91lPVlG5NzuGXLkv-3Z1Z0cPHaPt9KB1JMg.JPEG/6.jpg?type=w800\n이미지 5: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTgz/MDAxNzMwODA5MzkzNTMz.doTETTEqxWGSEWrC2IOg6pvlJ9iV0kT5ghdU1l-Gu9Ag.R5g-2xvEn8ylTLUksk5X0ae6W_SYZs5AbDM2k7_vi6Qg.JPEG/7.jpg?type=w800\n이미지 6: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTUw/MDAxNzMwODA5NDExNTY4.X8PPZhivmVDUXAfAnuzyc_EzIgV8SyMio7cbbPQXnKkg.Tu-ADHrkE8-GtBE84jL7qM8wUpOVupKLF-SbyNyd2n0g.JPEG/8.jpg?type=w800\n이미지 7: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA4/MDAxNzMwODA5NDE5MzI4.slZSd9W2kqQ-BkPjJOhPpYFWz7MP3sOY0GSZL2z2xuQg._89WOipwPcUDQ6s05fKaqyUdLjixKZhseEx4sC6Lcn0g.JPEG/9.jpg?type=w800\n이미지 8: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTc0/MDAxNzMwODA5NDMwNzEx.FnGcAHAlSDRdsvnNvhJjE7Ob9jIM51WZHlVRY86vnc4g.pzMpl7aurTNZjycaXY0HzA-qy73uQ2cDiuoC5rGUr7Qg.JPEG/10.jpg?type=w800\n이미지 9: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzcg/MDAxNzMwODA5NDM3MzQx.KXIN0PpOllCRynJm2JfLTkSdjSWcGS8uxUEfWfHDosQg.iI3A0rVjnWTN8v82OWFM5tIMQC7BZTECYUuzIXtFUdQg.JPEG/11.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/333",
+   "evidenceFingerprint": "32d967f73f0b",
+   "confidence": "low",
+   "needsHumanReview": true,
+   "notes": "image-only operator post (텍스트 본문 없음, 이미지 URL 보존)"
   },
   {
    "unitId": "m4-u-3346-001",
@@ -17876,6 +18325,13 @@
    "boardId": 3
   },
   {
+   "articleId": 319,
+   "commentId": 55690109,
+   "reason": "trivial/greeting/short",
+   "text": "감사합니다",
+   "boardId": 9
+  },
+  {
    "articleId": 3304,
    "commentId": 54864843,
    "reason": "trivial/greeting/short",
@@ -18521,7 +18977,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1100,
@@ -18536,7 +18994,9 @@
    "unitCount": 11,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1129,
@@ -18551,7 +19011,9 @@
    "unitCount": 13,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1282,
@@ -18566,7 +19028,9 @@
    "unitCount": 11,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1518,
@@ -18581,7 +19045,9 @@
    "unitCount": 12,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1852,
@@ -18596,7 +19062,9 @@
    "unitCount": 10,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1866,
@@ -18611,7 +19079,9 @@
    "unitCount": 6,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 1875,
@@ -18626,7 +19096,9 @@
    "unitCount": 5,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2070,
@@ -18641,7 +19113,9 @@
    "unitCount": 10,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2079,
@@ -18656,7 +19130,9 @@
    "unitCount": 12,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 213,
@@ -18671,7 +19147,9 @@
    "unitCount": 8,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2144,
@@ -18686,7 +19164,9 @@
    "unitCount": 10,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2591,
@@ -18701,7 +19181,9 @@
    "unitCount": 12,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2597,
@@ -18716,7 +19198,9 @@
    "unitCount": 11,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2619,
@@ -18731,7 +19215,9 @@
    "unitCount": 9,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2661,
@@ -18746,7 +19232,9 @@
    "unitCount": 8,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2699,
@@ -18761,7 +19249,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2717,
@@ -18776,7 +19266,9 @@
    "unitCount": 6,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 2870,
@@ -18791,7 +19283,94 @@
    "unitCount": 12,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
+  },
+  {
+   "articleId": 317,
+   "status": "COMPLETE",
+   "bodyLen": 124,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 1,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "LINK_PREVIEW"
+  },
+  {
+   "articleId": 319,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 320,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 321,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 322,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
   },
   {
    "articleId": 3226,
@@ -18806,7 +19385,128 @@
    "unitCount": 11,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
+  },
+  {
+   "articleId": 323,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 324,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 325,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 327,
+   "status": "COMPLETE",
+   "bodyLen": 119,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 1,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "LINK_PREVIEW"
+  },
+  {
+   "articleId": 328,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 329,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 330,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 1,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
   },
   {
    "articleId": 3304,
@@ -18821,7 +19521,60 @@
    "unitCount": 8,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
+  },
+  {
+   "articleId": 331,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 332,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 333,
+   "status": "EMPTY_BODY",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "tier": 1,
+   "informational": true,
+   "excluded": false,
+   "reason": null,
+   "unitCount": 0,
+   "boardId": 9,
+   "boardName": "하랑랑 스페셜",
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": true,
+   "contentForm": "IMAGE_ONLY"
   },
   {
    "articleId": 3346,
@@ -18836,7 +19589,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3354,
@@ -18851,7 +19606,9 @@
    "unitCount": 2,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3452,
@@ -18866,7 +19623,9 @@
    "unitCount": 7,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3457,
@@ -18881,7 +19640,9 @@
    "unitCount": 12,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3462,
@@ -18896,7 +19657,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3464,
@@ -18911,7 +19674,9 @@
    "unitCount": 3,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3466,
@@ -18926,7 +19691,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3467,
@@ -18941,7 +19708,9 @@
    "unitCount": 0,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3468,
@@ -18956,7 +19725,9 @@
    "unitCount": 4,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3469,
@@ -18971,7 +19742,9 @@
    "unitCount": 10,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3472,
@@ -18986,7 +19759,9 @@
    "unitCount": 4,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3475,
@@ -19001,7 +19776,9 @@
    "unitCount": 5,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3513,
@@ -19016,7 +19793,9 @@
    "unitCount": 9,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3518,
@@ -19031,7 +19810,9 @@
    "unitCount": 5,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3578,
@@ -19046,7 +19827,9 @@
    "unitCount": 3,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3604,
@@ -19061,7 +19844,9 @@
    "unitCount": 7,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3658,
@@ -19076,7 +19861,9 @@
    "unitCount": 11,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3742,
@@ -19091,7 +19878,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3760,
@@ -19106,7 +19895,9 @@
    "unitCount": 7,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3782,
@@ -19121,7 +19912,9 @@
    "unitCount": 8,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3801,
@@ -19136,7 +19929,9 @@
    "unitCount": 4,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3923,
@@ -19151,7 +19946,9 @@
    "unitCount": 6,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 3944,
@@ -19166,7 +19963,9 @@
    "unitCount": 6,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4016,
@@ -19181,7 +19980,9 @@
    "unitCount": 5,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4076,
@@ -19196,7 +19997,9 @@
    "unitCount": 4,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4129,
@@ -19211,7 +20014,9 @@
    "unitCount": 7,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4176,
@@ -19226,7 +20031,9 @@
    "unitCount": 0,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4222,
@@ -19241,7 +20048,9 @@
    "unitCount": 6,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4245,
@@ -19256,7 +20065,9 @@
    "unitCount": 1,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4274,
@@ -19271,7 +20082,9 @@
    "unitCount": 9,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4372,
@@ -19286,7 +20099,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4374,
@@ -19301,7 +20116,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4385,
@@ -19316,7 +20133,9 @@
    "unitCount": 8,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4404,
@@ -19331,7 +20150,9 @@
    "unitCount": 8,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4480,
@@ -19346,7 +20167,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4501,
@@ -19361,7 +20184,9 @@
    "unitCount": 13,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4511,
@@ -19376,7 +20201,9 @@
    "unitCount": 5,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4541,
@@ -19391,7 +20218,9 @@
    "unitCount": 10,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4546,
@@ -19406,7 +20235,9 @@
    "unitCount": 8,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4548,
@@ -19421,7 +20252,9 @@
    "unitCount": 10,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4559,
@@ -19436,7 +20269,9 @@
    "unitCount": 10,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4653,
@@ -19451,7 +20286,9 @@
    "unitCount": 5,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4671,
@@ -19466,7 +20303,9 @@
    "unitCount": 13,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4784,
@@ -19481,7 +20320,9 @@
    "unitCount": 12,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 4825,
@@ -19496,7 +20337,9 @@
    "unitCount": 11,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5095,
@@ -19511,7 +20354,9 @@
    "unitCount": 6,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5099,
@@ -19526,7 +20371,9 @@
    "unitCount": 7,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5121,
@@ -19541,7 +20388,9 @@
    "unitCount": 7,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5301,
@@ -19556,7 +20405,9 @@
    "unitCount": 3,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5325,
@@ -19571,7 +20422,9 @@
    "unitCount": 9,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5350,
@@ -19586,7 +20439,9 @@
    "unitCount": 5,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5569,
@@ -19601,7 +20456,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 561,
@@ -19616,7 +20473,9 @@
    "unitCount": 6,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5625,
@@ -19631,7 +20490,9 @@
    "unitCount": 8,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5636,
@@ -19646,7 +20507,9 @@
    "unitCount": 1,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5641,
@@ -19661,7 +20524,9 @@
    "unitCount": 6,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5790,
@@ -19676,7 +20541,9 @@
    "unitCount": 5,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5834,
@@ -19691,7 +20558,9 @@
    "unitCount": 12,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 588,
@@ -19706,7 +20575,9 @@
    "unitCount": 7,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5916,
@@ -19721,7 +20592,9 @@
    "unitCount": 4,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 592,
@@ -19736,7 +20609,9 @@
    "unitCount": 2,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5924,
@@ -19751,7 +20626,9 @@
    "unitCount": 3,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5927,
@@ -19766,7 +20643,9 @@
    "unitCount": 1,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5928,
@@ -19781,7 +20660,9 @@
    "unitCount": 4,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 5940,
@@ -19796,7 +20677,9 @@
    "unitCount": 2,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 6055,
@@ -19811,7 +20694,9 @@
    "unitCount": 2,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 6056,
@@ -19826,7 +20711,9 @@
    "unitCount": 1,
    "boardId": 3,
    "boardName": "부실차주 신청",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 609,
@@ -19841,7 +20728,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 629,
@@ -19856,7 +20745,9 @@
    "unitCount": 0,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 637,
@@ -19871,7 +20762,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 646,
@@ -19886,7 +20779,9 @@
    "unitCount": 2,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 648,
@@ -19901,7 +20796,9 @@
    "unitCount": 9,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 656,
@@ -19916,7 +20813,9 @@
    "unitCount": 0,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 666,
@@ -19931,7 +20830,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 686,
@@ -19946,7 +20847,9 @@
    "unitCount": 10,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 701,
@@ -19961,7 +20864,9 @@
    "unitCount": 1,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 708,
@@ -19976,7 +20881,9 @@
    "unitCount": 3,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 733,
@@ -19991,7 +20898,9 @@
    "unitCount": 5,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 735,
@@ -20006,7 +20915,9 @@
    "unitCount": 10,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 796,
@@ -20021,7 +20932,9 @@
    "unitCount": 5,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 817,
@@ -20036,7 +20949,9 @@
    "unitCount": 4,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 844,
@@ -20051,7 +20966,9 @@
    "unitCount": 3,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 885,
@@ -20066,7 +20983,9 @@
    "unitCount": 11,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 886,
@@ -20081,7 +21000,9 @@
    "unitCount": 9,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 923,
@@ -20096,7 +21017,9 @@
    "unitCount": 11,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 933,
@@ -20111,7 +21034,9 @@
    "unitCount": 8,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 954,
@@ -20126,7 +21051,9 @@
    "unitCount": 11,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 969,
@@ -20141,7 +21068,9 @@
    "unitCount": 8,
    "boardId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   },
   {
    "articleId": 975,
@@ -20156,7 +21085,9 @@
    "unitCount": 13,
    "boardId": 4,
    "boardName": "부실차주 임시안부터 확정안",
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeIncludedByUserRuling": false,
+   "contentForm": null
   }
  ]
 }

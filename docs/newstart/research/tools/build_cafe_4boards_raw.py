@@ -143,6 +143,9 @@ def main() -> int:
         rows = {}
         for r in (inv.get("topByScore") or []):
             rows[int(r[0])] = inv["menuName"]
+        for r in (inv.get("items") or []):
+            # 하랑랑 스페셜 인벤토리는 topByScore 없이 items-only 이므로 id 색인을 여기서 만든다.
+            rows.setdefault(int(r[0]), inv["menuName"])
         inventory[menu] = rows
         c = inv.get("counts") or {}
         items = inv.get("items") or []
@@ -162,8 +165,8 @@ def main() -> int:
                 "rankedCandidates": 0,
                 "duplicateIds": [],
                 "scopeNote": inv.get("note"),
-                "collectionExcluded": "운영자(등급 999) 정리글은 NewStart 수집 범위에서 제외, "
-                                      "가입인사·등업류는 지시 §5에 따라 제외",
+                "collectionExcluded": "가입인사·등업류는 지시 §5에 따라 제외. "
+                                      "운영자(등급 999) 정보글 15건은 2026-10-04 사용자 최종 지시로 보존(중요자료).",
             }
             continue
         counts[str(menu)] = {
@@ -197,6 +200,9 @@ def main() -> int:
         author_level = level((rec.get("author") or {}).get("memberGrade"))
         # 수집 범위: 운영자(agent) 계정 게시글은 제외, 댓글 내 운영자 답변은 보존 (회원 정보글만 취합)
         operator_authored = author_level == 999 or "매니저" in author_grade
+        # 2026-10-04 사용자 최종 지시: 하랑랑 스페셜(menuId 9) 운영자 정보글 15건은 중요자료로 보존.
+        # 다른 게시판의 운영자(agent) 계정 본문 단위는 종전 수집 범위(회원 정보글만 취합)를 그대로 따른다.
+        operator_kept = operator_authored and bool(rec.get("operatorRuling"))
         art = {
             "articleId": aid,
             "boardId": menu,
@@ -232,10 +238,21 @@ def main() -> int:
             "parseWarnings": warnings,
             "historicalCandidate": menu == 4,
             "operatorAuthored": operator_authored,
-            "scopeExcluded": "OPERATOR_AGENT_POST" if operator_authored else None,
+            "scopeExcluded": None if operator_kept else (
+                "OPERATOR_AGENT_POST" if operator_authored else None),
             "boardNote": ("과거 임시안~확정안 게시판: 역사 자료. 현재 시행 규정으로 사용하지 말 것"
-                          if menu == 4 else None),
+                          if menu == 4 else (
+                          "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. "
+                          "2024-11-05 작성 자료이므로 current 규정으로 오인 금지."
+                          if menu == 9 and operator_kept else None)),
         }
+        if operator_kept:
+            art["scopeIncludedByUserRuling"] = rec.get("operatorRuling")
+            art["authorType"] = "OPERATOR"
+            art["historicalNote"] = ("작성일 2024-11-05 자료 — 과거 시점 안내. 작성일·출처URL 보존.")
+        for key in ("images", "links", "contentForm", "bodyHtmlLength"):
+            if rec.get(key):
+                art[key] = rec[key]
         (out / "articles" / f"article_{aid}.json").write_text(
             json.dumps(art, ensure_ascii=False, indent=1), encoding="utf-8")
         collected.append(art)
@@ -247,7 +264,7 @@ def main() -> int:
             **meta,
             "collected": len(arts),
             "informational": sum(1 for a in arts if len(a["bodyNormalized"]) >= 80
-                                 or a["operatorCommentCount"] >= 1),
+                                 or a["operatorCommentCount"] >= 1 or a.get("images")),
             "emptyBody": sum(1 for a in arts if a["collectionStatus"] == "EMPTY_BODY"),
             "commentsPartial": sum(1 for a in arts if a["collectionStatus"] == "COMMENTS_PARTIAL"),
             "historicalCandidates": sum(1 for a in arts if a["historicalCandidate"]),
@@ -264,6 +281,9 @@ def main() -> int:
         "extractionMethod": EXTRACTION_METHOD,
         "totalCollected": len(collected),
         "baselineIds": len(baseline),
+        "userRuling20261004": "하랑랑 스페셜(menuId 9): 가입인사·등업 17건 제외 유지, "
+                              "운영자(지피지기자산) 정보글 15건은 중요자료로 보존. "
+                              "타 게시판의 운영자 본문 단위는 종전 제외 범위 유지.",
         "newVsBaseline": sum(1 for a in collected if a["articleId"] not in baseline),
         "boards_detail": by_board,
         "articles": [
@@ -272,7 +292,9 @@ def main() -> int:
              "commentCount": a["commentCount"], "commentsCaptured": a["commentsCaptured"],
              "collectionStatus": a["collectionStatus"],
              "historicalCandidate": a["historicalCandidate"],
-             "operatorAuthored": a["operatorAuthored"]}
+             "operatorAuthored": a["operatorAuthored"],
+             "scopeExcluded": a["scopeExcluded"],
+             "contentForm": a.get("contentForm")}
             for a in sorted(collected, key=lambda x: (x["boardId"] or 0, x["articleId"]))
         ],
     }

@@ -1,7 +1,7 @@
 {
  "dataset": "newstart_cafe_4boards",
  "version": "2026-10-04",
- "generatedAt": "2026-10-04T05:53:23+00:00",
+ "generatedAt": "2026-10-04T06:44:25+00:00",
  "task": "NewStart 부실차주 카페 과거 게시판 4곳 추가 수집 (menuId 3/4/5/9)",
  "cafe": {
   "name": "새출발기금 부실차주 라이브러리",
@@ -27,8 +27,10 @@
    "greetingExcluded": 3,
    "operatorInfoExcluded": 0,
    "collected": 30,
-   "operatorAgentPosts": 4,
-   "inScopeMemberPosts": 26,
+   "operatorPosts": 4,
+   "operatorPostsKeptByRuling": 0,
+   "operatorPostsExcluded": 4,
+   "postsInScope": 26,
    "informational": 29,
    "units": 197,
    "historical": false,
@@ -42,8 +44,10 @@
    "greetingExcluded": 1,
    "operatorInfoExcluded": 0,
    "collected": 45,
-   "operatorAgentPosts": 7,
-   "inScopeMemberPosts": 38,
+   "operatorPosts": 7,
+   "operatorPostsKeptByRuling": 0,
+   "operatorPostsExcluded": 7,
+   "postsInScope": 38,
    "informational": 44,
    "units": 341,
    "historical": true,
@@ -57,8 +61,10 @@
    "greetingExcluded": 0,
    "operatorInfoExcluded": 0,
    "collected": 35,
-   "operatorAgentPosts": 25,
-   "inScopeMemberPosts": 10,
+   "operatorPosts": 25,
+   "operatorPostsKeptByRuling": 0,
+   "operatorPostsExcluded": 25,
+   "postsInScope": 10,
    "informational": 28,
    "units": 121,
    "historical": false,
@@ -71,28 +77,39 @@
    "existingDuplicate": 0,
    "greetingExcluded": 17,
    "operatorInfoExcluded": 15,
-   "collected": 0,
-   "operatorAgentPosts": 0,
-   "inScopeMemberPosts": 0,
-   "informational": 0,
-   "units": 0,
+   "collected": 15,
+   "operatorPosts": 15,
+   "operatorPostsKeptByRuling": 15,
+   "operatorPostsExcluded": 0,
+   "postsInScope": 15,
+   "informational": 15,
+   "units": 16,
    "historical": false,
    "scopeNote": "24.11.05자 15건은 카페매니저(등급 999, 지피지기자산) 정보 링크글, 26.01~26.10 17건은 가입인사·등업류(지시 §5 제외 후보)"
   }
  ],
  "counts": {
-  "articles": 110,
-  "comments": 621,
-  "knowledgeUnits": 659,
-  "noiseUnitsDropped": 18,
+  "articles": 125,
+  "comments": 623,
+  "knowledgeUnits": 675,
+  "noiseUnitsDropped": 19,
   "operatorScopeUnitsDropped": 69,
+  "operatorPostsKeptByRuling": 15,
+  "operatorKeptUnits": 16,
+  "imageOnlyArticles": 13,
   "baselineArticleIds": 404,
   "overlapWithBaseline": 0
  },
+ "userRuling20261004": {
+  "menuId9": "하랑랑 스페셜 32건 중 가입인사·등업 17건은 제외 유지, 운영자(지피지기자산·등급 999) 정보글 15건은 중요자료로 전원 보존·반영 후보 포함. 다른 게시판의 운영자 본문 단위는 종전 제외 범위 유지.",
+  "harangRejected": 17,
+  "harangOperatorKept": 15,
+  "reCollectionNote": "15건은 1차 tranch에서 전문이 보존되지 않고 목록 메타만 보존되어 있어, 본문·이미지 URL·댓글 증거를 확보하기 위해 15건만 재접속 수집했다(4개 게시판 재수집 아님).",
+  "activeGate": "15건은 본문이 이미지/링크 미리보기로만 구성되어 근거 텍스트가 약하다. 지시에 따라 억지로 ACTIVE 처리하지 않고 REVIEW에서 근거 보류를 남긴다."
+ },
  "excludedFromMenuId9": {
-  "operatorInfoPosts": 15,
   "greetingOrLevelUp": 17,
-  "reason": "운영자(등급 999) 정리글은 NewStart 수집 범위에서 제외, 가입인사·등업류는 지시 §5에 따라 제외"
+  "reason": "가입인사·등업류는 지시 §5에 따라 제외. 운영자(등급 999) 정보글 15건은 2026-10-04 사용자 최종 지시로 보존(중요자료)."
  },
  "articles": [
   {
@@ -126,6 +143,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "희망리턴패키지 재취업 혹은 재창업 + 국취 6개월 해야 10프로 가능합니다."
    ],
@@ -284,6 +305,997 @@
    "boardSurveyed": 95
   },
   {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 317,
+   "title": "지급명령 이의신청서 및 답변서 작성방법 링크",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T20:52:00+09:00",
+   "writtenAtRaw": "24.11.05. 20:52",
+   "viewCount": 155,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/317",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "COMPLETE",
+   "parseWarnings": [],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "LINK_PREVIEW",
+   "images": [
+    "https://dthumb-phinf.pstatic.net/?src=%22https%3A%2F%2Fcafeptthumb-phinf.pstatic.net%2FMjAxOTExMTlfMTM3%2FMDAxNTc0MTMxOTUyOTE2.7yrNC3lDkdhcTbbfKssHq8jAKFihwwiaEo-hD1UjxIIg.WQIC9a5jvgxOjDlUO8a--ub7Yyvp_xKLVQAApAufFNkg.JPEG%2F%2525B4%2525EB%2525C1%2525F6_2-100.jpg%3Ftype%3Dw740%22&type=ff120"
+   ],
+   "links": [
+    "https://cafe.naver.com/ccrs5500/525728"
+   ],
+   "bodyRaw": [
+    "https://cafe.naver.com/ccrs5500/525728 지급명령 이의신청서 작성방법 및 답변서 작성방법(전자소송 / 등기) - 2024.09.25 대한민국 모임의 시작, 네이버 카페 cafe.naver.com"
+   ],
+   "body": "https://cafe.naver.com/ccrs5500/525728 지급명령 이의신청서 작성방법 및 답변서 작성방법(전자소송 / 등기) - 2024.09.25 대한민국 모임의 시작, 네이버 카페 cafe.naver.com",
+   "attachments": [
+    "https://dthumb-phinf.pstatic.net/?src=%22https%3A%2F%2Fcafeptthumb-phinf.pstatic.net%2FMjAxOTExMTlfMTM3%2FMDAxNTc0MTMxOTUyOTE2.7yrNC3lDkdhcTbbfKssHq8jAKFihwwiaEo-hD1UjxIIg.WQIC9a5jvgxOjDlUO8a--ub7Yyvp_xKLVQAApAufFNkg.JPEG%2F%2525B4%2525EB%2525C1%2525F6_2-100.jpg%3Ftype%3Dw740%22&type=ff120"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-317-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "https://cafe.naver.com/ccrs5500/525728 지급명령 이의신청서 작성방법 및 답변서 작성방법(전자소송 / 등기) - 2024.09.25 대한민국 모임의 시작, 네이버 카페 cafe.naver.com",
+     "tier": 1,
+     "confidence": "medium",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 319,
+   "title": "신용회복위원회 협약기관 확인 방법",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T20:56:00+09:00",
+   "writtenAtRaw": "24.11.05. 20:56",
+   "viewCount": 50,
+   "commentCountDeclared": 1,
+   "commentsCaptured": 1,
+   "sourceUrl": "https://cafe.naver.com/newhopero/319",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800"
+   ],
+   "comments": [
+    {
+     "commentId": 55690109,
+     "parentCommentId": null,
+     "author": null,
+     "memberGrade": "감사멤버",
+     "createdAt": null,
+     "createdAtMs": null,
+     "text": "감사합니다",
+     "isAuthor": false,
+     "isOperator": false,
+     "isDeleted": false,
+     "bestComment": false,
+     "sourceType": "CAFE_COMMENT"
+    }
+   ],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-319-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 협약기관 확인 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T20:56:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/319",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 320,
+   "title": "신용회복위원회 채무 조정 신청 이후 첫 납부와 납부 방법",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T20:59:00+09:00",
+   "writtenAtRaw": "24.11.05. 20:59",
+   "viewCount": 31,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/320",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTk0/MDAxNzMwODA3ODk3ODE3.isRkq7XYiVWrEy9UmAZDCOKHq9eCDqAsuBnBWHBj1b8g.1rKpaV-DlEK4odOr7GGvfJyQN9hklBwCZEYaknO_FKkg.JPEG/2.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjM0/MDAxNzMwODA3OTAzODU1.TWXousg52w6HVYcRRQo_U5fI6NHXpEy_ZPLZssF08eMg.T4zEbI6BJknCuZEJC_UxMApV4a60LOAnA-2AGxUWc6og.JPEG/3.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTU0/MDAxNzMwODA3OTA5NDM0.yOy62tcC1kXFYwJ1CGCsR7Hkbe_OzlPSO7o8Vp8FXSIg.tk-uBf5lzn2Xxcf4pajM712OXeK0KJMJHkqiqglIoBMg.JPEG/4.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTk0/MDAxNzMwODA3ODk3ODE3.isRkq7XYiVWrEy9UmAZDCOKHq9eCDqAsuBnBWHBj1b8g.1rKpaV-DlEK4odOr7GGvfJyQN9hklBwCZEYaknO_FKkg.JPEG/2.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjM0/MDAxNzMwODA3OTAzODU1.TWXousg52w6HVYcRRQo_U5fI6NHXpEy_ZPLZssF08eMg.T4zEbI6BJknCuZEJC_UxMApV4a60LOAnA-2AGxUWc6og.JPEG/3.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTU0/MDAxNzMwODA3OTA5NDM0.yOy62tcC1kXFYwJ1CGCsR7Hkbe_OzlPSO7o8Vp8FXSIg.tk-uBf5lzn2Xxcf4pajM712OXeK0KJMJHkqiqglIoBMg.JPEG/4.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-320-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 채무 조정 신청 이후 첫 납부와 납부 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T20:59:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTk0/MDAxNzMwODA3ODk3ODE3.isRkq7XYiVWrEy9UmAZDCOKHq9eCDqAsuBnBWHBj1b8g.1rKpaV-DlEK4odOr7GGvfJyQN9hklBwCZEYaknO_FKkg.JPEG/2.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjM0/MDAxNzMwODA3OTAzODU1.TWXousg52w6HVYcRRQo_U5fI6NHXpEy_ZPLZssF08eMg.T4zEbI6BJknCuZEJC_UxMApV4a60LOAnA-2AGxUWc6og.JPEG/3.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTU0/MDAxNzMwODA3OTA5NDM0.yOy62tcC1kXFYwJ1CGCsR7Hkbe_OzlPSO7o8Vp8FXSIg.tk-uBf5lzn2Xxcf4pajM712OXeK0KJMJHkqiqglIoBMg.JPEG/4.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/320",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 321,
+   "title": "신용회복위원회 납부 유예 신청 조건 및 방법",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:01:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:01",
+   "viewCount": 41,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/321",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTAx/MDAxNzMwODA4MDgxNTU0.n8pt_z_c7RvBgv2fnoFWtb6PAtWWcGkvM4h4hWONwt4g.DpKEs86INhV16mSpsf4-LdUFr2QsEAA1xoBMZJC3f9wg.JPEG/1.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzYg/MDAxNzMwODA4MDg2NjU4.pTYjuZPaotGo12xnVoY75ozu79NDrpKIji1MzREFaEAg.c2gH36bZVmrYeZVS556sRRBlQnz_BnwFLLGgUT9b86Ag.JPEG/2.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjU5/MDAxNzMwODA4MDkxMDY5.BxqQ8fAmn-FLzTLJyJdxdg4cWwd1bhfdXiEcQvP7bMgg.6N5YSI089A_nPtfmLDor67O91ic4WGzEHiKXQR9ELTAg.JPEG/3.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTAx/MDAxNzMwODA4MDgxNTU0.n8pt_z_c7RvBgv2fnoFWtb6PAtWWcGkvM4h4hWONwt4g.DpKEs86INhV16mSpsf4-LdUFr2QsEAA1xoBMZJC3f9wg.JPEG/1.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzYg/MDAxNzMwODA4MDg2NjU4.pTYjuZPaotGo12xnVoY75ozu79NDrpKIji1MzREFaEAg.c2gH36bZVmrYeZVS556sRRBlQnz_BnwFLLGgUT9b86Ag.JPEG/2.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjU5/MDAxNzMwODA4MDkxMDY5.BxqQ8fAmn-FLzTLJyJdxdg4cWwd1bhfdXiEcQvP7bMgg.6N5YSI089A_nPtfmLDor67O91ic4WGzEHiKXQR9ELTAg.JPEG/3.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-321-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용회복위원회 납부 유예 신청 조건 및 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:01:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTAx/MDAxNzMwODA4MDgxNTU0.n8pt_z_c7RvBgv2fnoFWtb6PAtWWcGkvM4h4hWONwt4g.DpKEs86INhV16mSpsf4-LdUFr2QsEAA1xoBMZJC3f9wg.JPEG/1.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzYg/MDAxNzMwODA4MDg2NjU4.pTYjuZPaotGo12xnVoY75ozu79NDrpKIji1MzREFaEAg.c2gH36bZVmrYeZVS556sRRBlQnz_BnwFLLGgUT9b86Ag.JPEG/2.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjU5/MDAxNzMwODA4MDkxMDY5.BxqQ8fAmn-FLzTLJyJdxdg4cWwd1bhfdXiEcQvP7bMgg.6N5YSI089A_nPtfmLDor67O91ic4WGzEHiKXQR9ELTAg.JPEG/3.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/321",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 322,
+   "title": "개인워크아웃 감면율",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:06:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:06",
+   "viewCount": 75,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/322",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzAg/MDAxNzMwODA4MzQyOTM1._dBXt0d-gnz1GuRxnbV6almiUM6LhnSRc0wVDmrhKmgg.9tM7nRbsXW19ooBtEMAvFthXi46wd9mSLml2k4B6WDMg.JPEG/1.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzAg/MDAxNzMwODA4MzQyOTM1._dBXt0d-gnz1GuRxnbV6almiUM6LhnSRc0wVDmrhKmgg.9tM7nRbsXW19ooBtEMAvFthXi46wd9mSLml2k4B6WDMg.JPEG/1.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-322-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 개인워크아웃 감면율\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:06:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzAg/MDAxNzMwODA4MzQyOTM1._dBXt0d-gnz1GuRxnbV6almiUM6LhnSRc0wVDmrhKmgg.9tM7nRbsXW19ooBtEMAvFthXi46wd9mSLml2k4B6WDMg.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/322",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 323,
+   "title": "프리워크아웃 특례 소급이 가능한가요?",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:07:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:07",
+   "viewCount": 21,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/323",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfOTcg/MDAxNzMwODA4MzkzODQ4.iNyn9Rx817murUanS5lVvDSBIVFLzuvNgZXzh_izwogg.8G9I_qJH26Lp7ceomcPNKa8EkwNm2NqnWwMKpGWraTcg.JPEG/2.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjEx/MDAxNzMwODA4NDI4Mzc1.sCe90eRvhC8AyrS_AQ7cdsks6nIeS4gfuGJnZ1Y_Uwcg.9f5qxbkETY9aoNlZ01NHBrHTGEzgOihKA4wd7JavxrIg.JPEG/3.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfOTcg/MDAxNzMwODA4MzkzODQ4.iNyn9Rx817murUanS5lVvDSBIVFLzuvNgZXzh_izwogg.8G9I_qJH26Lp7ceomcPNKa8EkwNm2NqnWwMKpGWraTcg.JPEG/2.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjEx/MDAxNzMwODA4NDI4Mzc1.sCe90eRvhC8AyrS_AQ7cdsks6nIeS4gfuGJnZ1Y_Uwcg.9f5qxbkETY9aoNlZ01NHBrHTGEzgOihKA4wd7JavxrIg.JPEG/3.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-323-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 프리워크아웃 특례 소급이 가능한가요?\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:07:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 2장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfOTcg/MDAxNzMwODA4MzkzODQ4.iNyn9Rx817murUanS5lVvDSBIVFLzuvNgZXzh_izwogg.8G9I_qJH26Lp7ceomcPNKa8EkwNm2NqnWwMKpGWraTcg.JPEG/2.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjEx/MDAxNzMwODA4NDI4Mzc1.sCe90eRvhC8AyrS_AQ7cdsks6nIeS4gfuGJnZ1Y_Uwcg.9f5qxbkETY9aoNlZ01NHBrHTGEzgOihKA4wd7JavxrIg.JPEG/3.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/323",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 324,
+   "title": "채무조정을 진행하던 중 신규 채무가 발생되어 추가를 하고 싶어요.",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:08:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:08",
+   "viewCount": 51,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/324",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA5/MDAxNzMwODA4NDYwNTU3.MWKAsfSJSY9pa92RfCagFaSs7KpcciEX5axt_LgqoGIg.OC_ksr2MEkMRDYFYzmiOa34-N2kGF7O5zt8MhnDg6tAg.JPEG/4.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA5/MDAxNzMwODA4NDYwNTU3.MWKAsfSJSY9pa92RfCagFaSs7KpcciEX5axt_LgqoGIg.OC_ksr2MEkMRDYFYzmiOa34-N2kGF7O5zt8MhnDg6tAg.JPEG/4.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-324-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 채무조정을 진행하던 중 신규 채무가 발생되어 추가를 하고 싶어요.\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:08:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA5/MDAxNzMwODA4NDYwNTU3.MWKAsfSJSY9pa92RfCagFaSs7KpcciEX5axt_LgqoGIg.OC_ksr2MEkMRDYFYzmiOa34-N2kGF7O5zt8MhnDg6tAg.JPEG/4.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/324",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 325,
+   "title": "신용정보원에서 장기연체 등록 정보를 확인하는 방법",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:09:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:09",
+   "viewCount": 716,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/325",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQx/MDAxNzMwODA4NTAwOTEz.WcvN0RLaKDIYct7PD9xgroyhUrqG000_a6BEVE9GwfYg.T9Co3wk0p-4q3CRQ4vTpeCa08uT1aZPNMAVmuItE8J0g.JPEG/5.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTYx/MDAxNzMwODA4NTA5NjM2.-3AuOgFVbsAqYFzXV1D5rB4cK_7R3MMz97uDhNp0Xqkg.Z1sXdUo5xM_o6CtbXl5ra5Z8r7nG0-M-fDT1VcMVjOgg.JPEG/6.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTI2/MDAxNzMwODA4NTI1Mzkz.EQ0IbgkzcQ8QhAYQapR67E75pqdl--K6W7F17-WjKWwg.Emy5dTPCvcgkPOlefR6WxJNRJfkr_FmhYBP3LZSjHFQg.JPEG/7.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQx/MDAxNzMwODA4NTAwOTEz.WcvN0RLaKDIYct7PD9xgroyhUrqG000_a6BEVE9GwfYg.T9Co3wk0p-4q3CRQ4vTpeCa08uT1aZPNMAVmuItE8J0g.JPEG/5.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTYx/MDAxNzMwODA4NTA5NjM2.-3AuOgFVbsAqYFzXV1D5rB4cK_7R3MMz97uDhNp0Xqkg.Z1sXdUo5xM_o6CtbXl5ra5Z8r7nG0-M-fDT1VcMVjOgg.JPEG/6.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTI2/MDAxNzMwODA4NTI1Mzkz.EQ0IbgkzcQ8QhAYQapR67E75pqdl--K6W7F17-WjKWwg.Emy5dTPCvcgkPOlefR6WxJNRJfkr_FmhYBP3LZSjHFQg.JPEG/7.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-325-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 신용정보원에서 장기연체 등록 정보를 확인하는 방법\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:09:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 3장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQx/MDAxNzMwODA4NTAwOTEz.WcvN0RLaKDIYct7PD9xgroyhUrqG000_a6BEVE9GwfYg.T9Co3wk0p-4q3CRQ4vTpeCa08uT1aZPNMAVmuItE8J0g.JPEG/5.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTYx/MDAxNzMwODA4NTA5NjM2.-3AuOgFVbsAqYFzXV1D5rB4cK_7R3MMz97uDhNp0Xqkg.Z1sXdUo5xM_o6CtbXl5ra5Z8r7nG0-M-fDT1VcMVjOgg.JPEG/6.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTI2/MDAxNzMwODA4NTI1Mzkz.EQ0IbgkzcQ8QhAYQapR67E75pqdl--K6W7F17-WjKWwg.Emy5dTPCvcgkPOlefR6WxJNRJfkr_FmhYBP3LZSjHFQg.JPEG/7.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/325",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 327,
+   "title": "채무자 보호법 관련 링크",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:13:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:13",
+   "viewCount": 42,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/327",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "COMPLETE",
+   "parseWarnings": [],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "LINK_PREVIEW",
+   "images": [
+    "https://dthumb-phinf.pstatic.net/?src=%22https%3A%2F%2Fwww.korea.kr%2FnewsWeb%2Fresources%2Fattaches%2F2024.10%2F10%2F5fb4cf4a9f0fcd1ab2e8cfba2ccdfa09.jpg%22&type=ff120"
+   ],
+   "links": [
+    "https://www.korea.kr/multi/visualNewsView.do?newsId=148934896"
+   ],
+   "bodyRaw": [
+    "10월 17일, 개인채무자보호법 시행 - 전체 | 카드/한컷 | 멀티미디어 | 대한민국 정책브리핑 10월 17일, 개인채무자보호법 시행 문화체육관광부에서 운영하는 대한민국 정부 정책뉴스포털. www.korea.kr"
+   ],
+   "body": "10월 17일, 개인채무자보호법 시행 - 전체 | 카드/한컷 | 멀티미디어 | 대한민국 정책브리핑 10월 17일, 개인채무자보호법 시행 문화체육관광부에서 운영하는 대한민국 정부 정책뉴스포털. www.korea.kr",
+   "attachments": [
+    "https://dthumb-phinf.pstatic.net/?src=%22https%3A%2F%2Fwww.korea.kr%2FnewsWeb%2Fresources%2Fattaches%2F2024.10%2F10%2F5fb4cf4a9f0fcd1ab2e8cfba2ccdfa09.jpg%22&type=ff120"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-327-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "10월 17일, 개인채무자보호법 시행 - 전체 | 카드/한컷 | 멀티미디어 | 대한민국 정책브리핑 10월 17일, 개인채무자보호법 시행 문화체육관광부에서 운영하는 대한민국 정부 정책뉴스포털. www.korea.kr",
+     "tier": 1,
+     "confidence": "medium",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 328,
+   "title": "연체 일수는 어디에서 확인하나요?",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:14:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:14",
+   "viewCount": 131,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/328",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjYg/MDAxNzMwODA4ODUyOTQy.U1n4pYkuoA8lqx1ur5-SI_HGrhoziY-CuH9mWvT3CzQg.y5M41feMrXSM0K-_3nAHIP5D_XnA54U8iGjp5lrv33kg.JPEG/1.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjYg/MDAxNzMwODA4ODUyOTQy.U1n4pYkuoA8lqx1ur5-SI_HGrhoziY-CuH9mWvT3CzQg.y5M41feMrXSM0K-_3nAHIP5D_XnA54U8iGjp5lrv33kg.JPEG/1.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-328-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 연체 일수는 어디에서 확인하나요?\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:14:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjYg/MDAxNzMwODA4ODUyOTQy.U1n4pYkuoA8lqx1ur5-SI_HGrhoziY-CuH9mWvT3CzQg.y5M41feMrXSM0K-_3nAHIP5D_XnA54U8iGjp5lrv33kg.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/328",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 329,
+   "title": "사업자 신용정보 확인 하는 곳",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:15:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:15",
+   "viewCount": 66,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/329",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTcw/MDAxNzMwODA4ODg4MDc0.fp7LmXwqzB0RwfGeAI7CFoV5hssppHbD8xWH6o-pxBog.pjhodbiB06g42sIh9UnmKBJXJrAcZyvz5_DPfjg3m6Ag.JPEG/2.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTcw/MDAxNzMwODA4ODg4MDc0.fp7LmXwqzB0RwfGeAI7CFoV5hssppHbD8xWH6o-pxBog.pjhodbiB06g42sIh9UnmKBJXJrAcZyvz5_DPfjg3m6Ag.JPEG/2.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-329-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 사업자 신용정보 확인 하는 곳\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:15:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTcw/MDAxNzMwODA4ODg4MDc0.fp7LmXwqzB0RwfGeAI7CFoV5hssppHbD8xWH6o-pxBog.pjhodbiB06g42sIh9UnmKBJXJrAcZyvz5_DPfjg3m6Ag.JPEG/2.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/329",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 330,
+   "title": "대출 이자 3회 이하 납부 사기죄 고소 관련",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:15:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:15",
+   "viewCount": 181,
+   "commentCountDeclared": 1,
+   "commentsCaptured": 1,
+   "sourceUrl": "https://cafe.naver.com/newhopero/330",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjgw/MDAxNzMwODA4OTIxNjI4.pSeYxFr3Agv5CXF_c0xpAgwPE-ReL6s9bnWJtck5Lu4g.uMcfB7w5fFoYjmC29Ch7gxEc_MIop5ZKczyuj8nwV9sg.JPEG/3.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjgw/MDAxNzMwODA4OTIxNjI4.pSeYxFr3Agv5CXF_c0xpAgwPE-ReL6s9bnWJtck5Lu4g.uMcfB7w5fFoYjmC29Ch7gxEc_MIop5ZKczyuj8nwV9sg.JPEG/3.jpg?type=w800"
+   ],
+   "comments": [
+    {
+     "commentId": 54151439,
+     "parentCommentId": null,
+     "author": null,
+     "memberGrade": "성실멤버",
+     "createdAt": null,
+     "createdAtMs": null,
+     "text": "3회이하면  고소를 일단 하는거군요.",
+     "isAuthor": false,
+     "isOperator": false,
+     "isDeleted": false,
+     "bestComment": false,
+     "sourceType": "CAFE_COMMENT"
+    }
+   ],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-330-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 대출 이자 3회 이하 납부 사기죄 고소 관련\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:15:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjgw/MDAxNzMwODA4OTIxNjI4.pSeYxFr3Agv5CXF_c0xpAgwPE-ReL6s9bnWJtck5Lu4g.uMcfB7w5fFoYjmC29Ch7gxEc_MIop5ZKczyuj8nwV9sg.JPEG/3.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/330",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    },
+    {
+     "unitId": "m9-u-330-001",
+     "type": "COMMUNITY_OPINION",
+     "label": "커뮤니티 의견",
+     "role": "MEMBER_COMMENTER",
+     "origin": "COMMENT",
+     "commentId": 54151439,
+     "evidenceText": "3회이하면  고소를 일단 하는거군요.",
+     "tier": 1,
+     "confidence": "medium",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 331,
+   "title": "통신 채무 정보",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:21:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:21",
+   "viewCount": 64,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/331",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQg/MDAxNzMwODA5Mjk1MTIz.6mFlLK1Ov7s8aWVSUmDZVAxnL3mTYM7kKCq12qUZBVQg.eehN8bMDZlzbP-nUyx_HdWNjBOj25V_8DbOaiRq4sSMg.JPEG/1.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQg/MDAxNzMwODA5Mjk1MTIz.6mFlLK1Ov7s8aWVSUmDZVAxnL3mTYM7kKCq12qUZBVQg.eehN8bMDZlzbP-nUyx_HdWNjBOj25V_8DbOaiRq4sSMg.JPEG/1.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-331-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 통신 채무 정보\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:21:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjQg/MDAxNzMwODA5Mjk1MTIz.6mFlLK1Ov7s8aWVSUmDZVAxnL3mTYM7kKCq12qUZBVQg.eehN8bMDZlzbP-nUyx_HdWNjBOj25V_8DbOaiRq4sSMg.JPEG/1.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/331",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 332,
+   "title": "비대면 계좌 개설",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:22:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:22",
+   "viewCount": 134,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/332",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjc2/MDAxNzMwODA5MzIxMzQ0._juQ0Y5IHccSo5HH_hbkQ8qoQlJNBhghXhgXx-AgW3og.nXtdJNP_3m5bjT2CfYXLz-nA1-DG5pCh4NlQseoXr70g.JPEG/2.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjc2/MDAxNzMwODA5MzIxMzQ0._juQ0Y5IHccSo5HH_hbkQ8qoQlJNBhghXhgXx-AgW3og.nXtdJNP_3m5bjT2CfYXLz-nA1-DG5pCh4NlQseoXr70g.JPEG/2.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-332-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 비대면 계좌 개설\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:22:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 1장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMjc2/MDAxNzMwODA5MzIxMzQ0._juQ0Y5IHccSo5HH_hbkQ8qoQlJNBhghXhgXx-AgW3og.nXtdJNP_3m5bjT2CfYXLz-nA1-DG5pCh4NlQseoXr70g.JPEG/2.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/332",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
+   "menuId": 9,
+   "boardName": "하랑랑 스페셜",
+   "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+   "articleId": 333,
+   "title": "페이머니 카드",
+   "author": {
+    "nickname": "지피지기자산",
+    "memberGrade": "카페매니저",
+    "memberLevel": 999
+   },
+   "writtenAt": "2024-11-05T21:24:00+09:00",
+   "writtenAtRaw": "24.11.05. 21:24",
+   "viewCount": 129,
+   "commentCountDeclared": 0,
+   "commentsCaptured": 0,
+   "sourceUrl": "https://cafe.naver.com/newhopero/333",
+   "collectedAt": "2026-10-04",
+   "collectionStatus": "EMPTY_BODY",
+   "parseWarnings": [
+    "EMPTY_BODY"
+   ],
+   "classification": {
+    "historical": false,
+    "duplicate": false,
+    "informational": true,
+    "officialCheck": "NOT_CHECKED",
+    "origin": "CAFE_OPERATOR_AGENT_POST",
+    "collectionScope": "IN_SCOPE_BY_USER_RULING_2026-10-04"
+   },
+   "topicTags": [],
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+   "contentForm": "IMAGE_ONLY",
+   "images": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzUg/MDAxNzMwODA5MzU1NzM3.0ZFTy-yzLC0P27qPpnh1aeH7eZ-ZDGBEa5EVEAiimPgg.QhA0I0be_pgK43MFu-ScP_Gd8HNYJKuxQgODs1jRVB0g.JPEG/3.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTE3/MDAxNzMwODA5MzcxNDI2.vpiXv9sPUlCDXepBY3zx2WKzRfBdsOCsql-C-fZvODgg.alhmmaKrOPFJ-tupnv5bKutJ4-_m2CsuSgyhdL98biwg.JPEG/4.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzc5MjY4.Un4A45BZndxWNJeoQcWH0MoHKz_clysaCfqffdOB6c8g.3-ZPj2hu79U4_J5vJMDLP6Eq3py1Hz9WejhZDfVzP-og.JPEG/5.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzg3NzM2.yNJBpEnu687oga5RPh7AXE-0fUUobocZDqs2tsDCUXog.yBbya7_dg91lPVlG5NzuGXLkv-3Z1Z0cPHaPt9KB1JMg.JPEG/6.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTgz/MDAxNzMwODA5MzkzNTMz.doTETTEqxWGSEWrC2IOg6pvlJ9iV0kT5ghdU1l-Gu9Ag.R5g-2xvEn8ylTLUksk5X0ae6W_SYZs5AbDM2k7_vi6Qg.JPEG/7.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTUw/MDAxNzMwODA5NDExNTY4.X8PPZhivmVDUXAfAnuzyc_EzIgV8SyMio7cbbPQXnKkg.Tu-ADHrkE8-GtBE84jL7qM8wUpOVupKLF-SbyNyd2n0g.JPEG/8.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA4/MDAxNzMwODA5NDE5MzI4.slZSd9W2kqQ-BkPjJOhPpYFWz7MP3sOY0GSZL2z2xuQg._89WOipwPcUDQ6s05fKaqyUdLjixKZhseEx4sC6Lcn0g.JPEG/9.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTc0/MDAxNzMwODA5NDMwNzEx.FnGcAHAlSDRdsvnNvhJjE7Ob9jIM51WZHlVRY86vnc4g.pzMpl7aurTNZjycaXY0HzA-qy73uQ2cDiuoC5rGUr7Qg.JPEG/10.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzcg/MDAxNzMwODA5NDM3MzQx.KXIN0PpOllCRynJm2JfLTkSdjSWcGS8uxUEfWfHDosQg.iI3A0rVjnWTN8v82OWFM5tIMQC7BZTECYUuzIXtFUdQg.JPEG/11.jpg?type=w800"
+   ],
+   "links": [],
+   "bodyRaw": [],
+   "body": "",
+   "attachments": [
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzUg/MDAxNzMwODA5MzU1NzM3.0ZFTy-yzLC0P27qPpnh1aeH7eZ-ZDGBEa5EVEAiimPgg.QhA0I0be_pgK43MFu-ScP_Gd8HNYJKuxQgODs1jRVB0g.JPEG/3.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTE3/MDAxNzMwODA5MzcxNDI2.vpiXv9sPUlCDXepBY3zx2WKzRfBdsOCsql-C-fZvODgg.alhmmaKrOPFJ-tupnv5bKutJ4-_m2CsuSgyhdL98biwg.JPEG/4.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzc5MjY4.Un4A45BZndxWNJeoQcWH0MoHKz_clysaCfqffdOB6c8g.3-ZPj2hu79U4_J5vJMDLP6Eq3py1Hz9WejhZDfVzP-og.JPEG/5.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzg3NzM2.yNJBpEnu687oga5RPh7AXE-0fUUobocZDqs2tsDCUXog.yBbya7_dg91lPVlG5NzuGXLkv-3Z1Z0cPHaPt9KB1JMg.JPEG/6.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTgz/MDAxNzMwODA5MzkzNTMz.doTETTEqxWGSEWrC2IOg6pvlJ9iV0kT5ghdU1l-Gu9Ag.R5g-2xvEn8ylTLUksk5X0ae6W_SYZs5AbDM2k7_vi6Qg.JPEG/7.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTUw/MDAxNzMwODA5NDExNTY4.X8PPZhivmVDUXAfAnuzyc_EzIgV8SyMio7cbbPQXnKkg.Tu-ADHrkE8-GtBE84jL7qM8wUpOVupKLF-SbyNyd2n0g.JPEG/8.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA4/MDAxNzMwODA5NDE5MzI4.slZSd9W2kqQ-BkPjJOhPpYFWz7MP3sOY0GSZL2z2xuQg._89WOipwPcUDQ6s05fKaqyUdLjixKZhseEx4sC6Lcn0g.JPEG/9.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTc0/MDAxNzMwODA5NDMwNzEx.FnGcAHAlSDRdsvnNvhJjE7Ob9jIM51WZHlVRY86vnc4g.pzMpl7aurTNZjycaXY0HzA-qy73uQ2cDiuoC5rGUr7Qg.JPEG/10.jpg?type=w800",
+    "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzcg/MDAxNzMwODA5NDM3MzQx.KXIN0PpOllCRynJm2JfLTkSdjSWcGS8uxUEfWfHDosQg.iI3A0rVjnWTN8v82OWFM5tIMQC7BZTECYUuzIXtFUdQg.JPEG/11.jpg?type=w800"
+   ],
+   "comments": [],
+   "knowledgeUnits": [
+    {
+     "unitId": "m9-u-333-001",
+     "type": "OPERATOR_GUIDE",
+     "label": "운영자 안내",
+     "role": "OPERATOR",
+     "origin": "BODY",
+     "commentId": null,
+     "evidenceText": "[하랑랑 스페셜 운영자 게시 원문 보존] 페이머니 카드\n작성자: 지피지기자산(카페매니저) · 작성일: 2024-11-05T21:24:00+09:00 · 게시판: 하랑랑 스페셜(menuId 9)\n본문 텍스트 없음 — 이미지 9장으로만 구성. 텍스트 근거 미확인(이미지 중심 자료).\n이미지 1: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzUg/MDAxNzMwODA5MzU1NzM3.0ZFTy-yzLC0P27qPpnh1aeH7eZ-ZDGBEa5EVEAiimPgg.QhA0I0be_pgK43MFu-ScP_Gd8HNYJKuxQgODs1jRVB0g.JPEG/3.jpg?type=w800\n이미지 2: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTE3/MDAxNzMwODA5MzcxNDI2.vpiXv9sPUlCDXepBY3zx2WKzRfBdsOCsql-C-fZvODgg.alhmmaKrOPFJ-tupnv5bKutJ4-_m2CsuSgyhdL98biwg.JPEG/4.jpg?type=w800\n이미지 3: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzc5MjY4.Un4A45BZndxWNJeoQcWH0MoHKz_clysaCfqffdOB6c8g.3-ZPj2hu79U4_J5vJMDLP6Eq3py1Hz9WejhZDfVzP-og.JPEG/5.jpg?type=w800\n이미지 4: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTQ3/MDAxNzMwODA5Mzg3NzM2.yNJBpEnu687oga5RPh7AXE-0fUUobocZDqs2tsDCUXog.yBbya7_dg91lPVlG5NzuGXLkv-3Z1Z0cPHaPt9KB1JMg.JPEG/6.jpg?type=w800\n이미지 5: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTgz/MDAxNzMwODA5MzkzNTMz.doTETTEqxWGSEWrC2IOg6pvlJ9iV0kT5ghdU1l-Gu9Ag.R5g-2xvEn8ylTLUksk5X0ae6W_SYZs5AbDM2k7_vi6Qg.JPEG/7.jpg?type=w800\n이미지 6: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTUw/MDAxNzMwODA5NDExNTY4.X8PPZhivmVDUXAfAnuzyc_EzIgV8SyMio7cbbPQXnKkg.Tu-ADHrkE8-GtBE84jL7qM8wUpOVupKLF-SbyNyd2n0g.JPEG/8.jpg?type=w800\n이미지 7: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTA4/MDAxNzMwODA5NDE5MzI4.slZSd9W2kqQ-BkPjJOhPpYFWz7MP3sOY0GSZL2z2xuQg._89WOipwPcUDQ6s05fKaqyUdLjixKZhseEx4sC6Lcn0g.JPEG/9.jpg?type=w800\n이미지 8: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMTc0/MDAxNzMwODA5NDMwNzEx.FnGcAHAlSDRdsvnNvhJjE7Ob9jIM51WZHlVRY86vnc4g.pzMpl7aurTNZjycaXY0HzA-qy73uQ2cDiuoC5rGUr7Qg.JPEG/10.jpg?type=w800\n이미지 9: https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfNzcg/MDAxNzMwODA5NDM3MzQx.KXIN0PpOllCRynJm2JfLTkSdjSWcGS8uxUEfWfHDosQg.iI3A0rVjnWTN8v82OWFM5tIMQC7BZTECYUuzIXtFUdQg.JPEG/11.jpg?type=w800\n원문: https://cafe.naver.com/newhopero/333",
+     "tier": 1,
+     "confidence": "low",
+     "officialCheck": "NOT_CHECKED"
+    }
+   ],
+   "boardSurveyed": 32
+  },
+  {
    "menuId": 5,
    "boardName": "재취업 재창업 감면수익+정부 지원",
    "boardNote": null,
@@ -314,6 +1326,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안내원이 참여확인서 보내달라고 해서 국취담담자한테 참여확인서 보내달라 했습니다"
    ],
@@ -450,6 +1466,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "국취만 하면 6퍼 재취업 심화만 하면 3퍼 둘다 하면 10퍼입니다"
    ],
@@ -612,6 +1632,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "새출발기금에 신청한 소상공인 혹은 신청 했고 폐업하여 창업하는 분들에게 신용보증재단에서",
     "대출을 저리로 최대 5천만원 지원해 주는 제도입니다.",
@@ -694,6 +1718,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "네 가능합니다.",
     "참고로 추가감면은 확정안 이후에도 제출해서 받을 수 있고, 신청시 원금에서 추가로 감면을 받습니다."
@@ -737,6 +1765,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -775,6 +1807,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "워크아웃 한지 1년됐다고 공공정보 삭제 됐다고",
     "카톡와서 보니 신점 훅 올라가있네요",
@@ -819,6 +1855,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "재창업 부분이 좀 더 명확하게 정리가 되었는데,",
     "올해 재창업사업화 (사업계획서와 면접 통과자를 대상으로 했음) 와는 달리,",
@@ -891,6 +1931,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "사진"
    ],
@@ -1119,6 +2163,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -1159,6 +2207,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -1227,6 +2279,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "첨부파일",
     "「2025년+희망리턴패키지+특화취업지원」+소상공인+모집공고.hwp",
@@ -1491,6 +2547,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -1557,6 +2617,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "희망리턴패키지 재창업 사업화가 오늘 (1월 20일)부터 신청을 시작합니다.",
     "희망리턴패키지",
@@ -1644,6 +2708,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "https://blog.naver.com/data023/223751095174",
     "2025년 희망리턴패키지 신청 안내 영상",
@@ -1771,6 +2839,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "현재 부실차주 확정안이 신청후 평균 6개월 후에 나온다고 합니다.",
     "4-5개월만에 나온 분들도 계시고, 9개월 걸리신 분 12개월 인데도 아직 확정안 안나오신 분들도 계십니다.",
@@ -2034,6 +3106,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "폐업 9일차 입니다.",
     "부실차주 준비중이고 감면 때문에 교육받으려는데",
@@ -2180,6 +3256,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "방장님~~ 혹시 재창업교육신청해서 현재 멘토분 두번만났고..",
     "내일 6시간 현장 교육받으러갑니다.",
@@ -2303,6 +3383,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "혹시 희망리턴패키지에 재창업교육 타지역에서 받아도 될까요?"
    ],
@@ -2411,6 +3495,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "4월 26일 새출발기금 사이트에 접속하여 \"진행상태 확인\"에 접속하여 확정안에 동의와 서명을 하였습니다.",
     "확정서 첫페이지를 보니 가지급금은 지급명령 소송비인것 같습니다.",
@@ -2683,6 +3771,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "요즘은 임시안이 나온 이후 평균 6개월 이후에 확정안이 나온다고 합니다.",
     "그런데 평균일 뿐이고 임시안 나오고 5개월만에 확정안 나오기도 하고 1년이 지나도 안나오기도 합니다.",
@@ -2911,6 +4003,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "1억 부채 -> 감면 5천여만원의 확정 약정 관련 전화를 받았습니다",
     "재산은 집 하나 있는데 선/후순위 떼면 거의 깡통이나 다음 없는것이 있습니다",
@@ -3239,6 +4335,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "https://www.credit4u.or.kr/",
     "본인신용정보 열람서비스",
@@ -3465,6 +4565,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "이번주에 언론에 나온 대선 이후 민주당의 소상공인 채무탕감 정책을 정리해 본것입니다.",
     "* 민주당의 코로나 대출 ‘빚 탕감’ 정책 구상",
@@ -3754,6 +4858,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "국취는 재가 지금 직장다니는 중이라 감면안될거같아서 차라리 재창업쪽으로 2개들으려고합니다 감면율이 별로인가요? 10%꼭 받고싶은데ㅠ 창업으로 2개 들어볼려고하는데요 신청은 다한 상태인데 얼마나 감면이 될까요...? 1번째는 일사천리 재창업교육, 2번째는 새출발기금 전용 성실상환자 재도전교육 입니다 혹시 알고 계시는분 알려주세요ㅠ 재기화사업하고 싶긴한데 혹시 복잡한건가요? 들어보신분 후기도 부탁드립니다ㅠㅠ"
    ],
@@ -3978,6 +5086,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요 지피지기님~^^",
     "지피지기님 덕분에 1차 체결 무사히 완료하였습니다",
@@ -4550,6 +5662,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "직장 다니며 조그만 간이사업자로 사업활동을 하며 살다",
     "돈 문제가 생겨 돌려막기하며 커진 빚..",
@@ -4858,6 +5974,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "24년 11월 신청하여 임시안 62% 받았습니다. 당시 23년 소득이 삼천오백정도에 가진건 2000cc넘는 차량한데 소유하고 집은 지인집에 무상거주하는 것으로 서류제출하였습니다.  올해 5월쯤에 체결하자고 연락이 와서 24년 소득이 전년도 소득보다 낮은 관계로 좀 늦게 체결하고싶어서 새출발에 애기하니 올해 7월이후에 나오는 소득으로 반영하여 지금체결하여  77% 받았습니다. 추가로 지피지기님 도움으로 희망리텐패키지 재취업교육이수하고 국민취업제도 1유형 이수하여 추가감면 10%받을수 있는 상태를 만들어놓고 기다리고있었습니다. 오늘 추가자료 자료보내서 총 87% 받았습니다. 여기까지 오기까지 많은 도움주시 지피지기님 다시한번 감사합니다. 참고로 저의 부채는 이자제외한 원금만 일억천만원정도 됐으며 저의 나이는 50대중반이며 가족은 현재 혼자 별거중에 있습니다. 그리고 24년 소득이 천이백정도로 나왔습니다. 제 명의도 가진것은 통장에 압류된 이백만원이 전부였습니다. 모두 힘내세요 체결약정서 나오면 다시한번 올리겠습니다."
    ],
@@ -5174,6 +6294,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "우리조아님 잘 계시지요? 방장님 항상 건강하시고 행복하시길 바랍니다.",
     "방장님덕에 저도 12월에 신청하여  7월 10일 확정안 체결 완료 하였습니다.",
@@ -5539,6 +6663,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "참 오래 걸렸네요.",
     "2023년 10월 부실우려로 시작해서 올해 3월 실효후 부실차주로 전환신청했습니다. 부채종류는 무담보 신용 1금융권(소진공, 재단, 기금), 캐피탈과 카드입니다.",
@@ -5863,6 +6991,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실우려차주 에서 부실차주 신청시 원장초기화",
     "지점 방문 신청 가능 한가요?",
@@ -6194,6 +7326,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "임시안 10월중순이후 추가제출서류기한11월중순까지 한달이지났습니다",
     "따로연락없으면",
@@ -6498,6 +7634,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "12월15일까지 추가 서류을 제출하라고 하는데 국세, 사대보험, 전기세, 가게월세 미납된것도 필요 할까요?"
    ],
@@ -6696,6 +7836,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "요즘 진행이 오래 걸린다고 하던데 도덕적해이 심사는 기간은 대략적으로 어느정도 걸릴까요?ㅠㅠ"
    ],
@@ -6856,6 +8000,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "임시안이나왔는데 도통어찌된건지 모르겠네요.",
     "와이프이름으로 집계약이되있는데 그게일부재산이잡히지는 않을건데 10년이상차량도 그렇고 재산잡힌것도 금액이 좀 안맞는거같고,아직대출도 다 안떠있는거같구,카드값도아직안들어와있고,",
@@ -7169,6 +8317,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "(대부업 하나저축은행에 환매되면 1.85억정도 됩니다)",
     "임시안 기다리다가",
@@ -7501,6 +8653,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "재창업교육 온라인13시간.현장2일. 수료했습니다.",
     "10프로최대감면 받을려면 재기사업화(재창업)도 교육받아야할까요?",
@@ -7807,6 +8963,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "11/29일 원장초기화 넣고 답변 메일 있는줄 알았는데 12/3 됐다네요.",
     "저같은분들 꼭 새출발기금 전화로 확인하세요. 바로 사이트로 신청 시작했고",
@@ -8169,6 +9329,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "오늘 날짜로 새출발 기금 신청하고 그 후  사업자 폐업 했어요(근로소득 없음. )",
     "① 재취업(구직활동)",
@@ -8530,6 +9694,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "저는",
     "11/29 원장초기화 신청.",
@@ -8894,6 +10062,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "6개월 20만원씩 &#x3D; 120만원 받는 부분 궁금해서 문의했어요.(연계수당)",
     "11/29 원장초기화 신청.",
@@ -9177,6 +10349,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -9431,6 +10607,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "10일 추가자격심사 신청",
     "16일 문자 받고 신청하였습니다",
@@ -9692,6 +10872,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요 방장님 처음뵙겠습니다",
     "우선 매번 좋은 정보 올려주시고 카페 이끌어가주셔서 감사합니다 ^_^",
@@ -10045,6 +11229,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실차주 접수했고 임시안 나왔어요",
     "방금 ㅎㄷ카드에서 상계처리 한다고",
@@ -10368,6 +11556,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "7월 초에 부실차주 신청하고 12월 26일에 담당자 전화 온 후에 연락이 없길래 오늘 혹시나 싶어서 새출발기금 들어가니 약정체결하라고 나와서 체결했어요 아직 35% 정도 남아 있어서 2차 기다려야겠네요 2025년 마지막 날 좋은 선물을 받았습니다 모두 힘냅시다"
    ],
@@ -10646,6 +11838,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "12월 26일 차주신청",
     "빠르게 임시안이 나왔네요."
@@ -10937,6 +12133,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "개인워크아웃(신용회복위원회)은  재산보다 더 많이 갚아야 한다&#x27; 는 대원칙이 있습니다.",
     "1. &#x27;청산가치 보장&#x27;의 원칙",
@@ -11042,6 +12242,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "2024년도 종합과세 내역에 사업소득은 없고 근로소득에 구분이 수입금액과 소득금액이 있는데  수입금액은 2600만원이고 소득금액은 1700만원입니다. 이때 소득을 수입금액인 2600만원으로 책정하는지요?"
    ],
@@ -11254,6 +12458,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "집 빌라 2억 3천(부동산 대출 1억 4800만원)",
     "왼쪽이 제가 정리한건데 새출발에는 오른쪽만 잡혔어요.",
@@ -11615,6 +12823,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "가장 빠르고 간편한 방법 3가지를 정리해 드립니다.",
     "1. 한글(hwp)이나 워드 파일에 붙여넣기 (가장 추천)",
@@ -11682,6 +12894,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "이미 1유형을 신청하실 때 &#x27;1유형 부적합 시 2유형 참여 희망&#x27; 여부에 체크를 하셨다면, 별도의 재신청 없이 바로 심사가 이어집니다.",
     "1. 심사 및 전환 소요 기간",
@@ -11795,6 +13011,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -11863,6 +13083,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -11903,6 +13127,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -12065,6 +13293,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "1. 한국신용정보원 &#x27;크레딧포유&#x27; (Credit4U)",
     "가장 정석적인 사이트로, 은행, 카드사, 대부업체까지 포함된 모든 대출 내역과 보증 채무를 한눈에 볼 수 있습니다.",
@@ -12369,6 +13601,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "추심도 미리 조치 해서 비교적 순탄하게 3개월을 보냈어요",
     "지금 바로 부실차주 신청 하면 될까요 아니면 폐업 후에 하는 게 나을까요?",
@@ -12491,6 +13727,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "신청 하다가",
     "귀하는 무담보대출과 담보대출을 모두 보유한 채무조정 대상자이니 현재 사이트에서 신청(무담보대출)하고 담보건은 신복위에서 상담 받으라는 내용이 뜨는거예요",
@@ -12676,6 +13916,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "< 일정 >",
     "11/29 원장초기화 신청.",
@@ -13020,6 +14264,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "오늘 새출발 부실 차주 신청 했습니다",
     "연체등록은 1월 3일자로 됐던데 제가 확인한 날은 6일이에요",
@@ -13176,6 +14424,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "오늘 소진공 직대 첫날인데, 중요한 직대 대출이 첫날 오전에 다 마감이 되었네요.",
     "신용취약 대출은 아직 진행중입니다.",
@@ -13272,6 +14524,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "[질문]",
     "저는 지금 추가자격심사를 넣어논상태인데",
@@ -13460,6 +14716,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "오늘 새출발 부실차주신청하고왔는데 카드사4군데중 한곳만 올라왔어요.",
     "이건 제가 다시 이의제기해야하나요?"
@@ -13775,6 +15035,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "*",
     "*위 사진처럼, 저는 4개의 채권카드회사에 카드빚이 있습니다. 0원으로 찍혀있네요.",
@@ -14060,6 +15324,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "임시안 기다리는 중이구요 곧 폐업 예정 입니다",
     "이 후에 폐업 증명원, 통장 잔고를 보내야 되는데",
@@ -14277,6 +15545,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "2025.10.01부터 맘먹고 90일 연체 들어갔다가 드디어 2026.01.20. -  오늘 112일차",
     "기나긴 시간 카페에서 정보수집 잘 하며 잘 버텨왔네요ㅡㅜ",
@@ -14543,6 +15815,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "혹시  전세보증금 담보대출  뺴고  부실차주 신청됐다면",
     "여기에 있는 채무들이 조절 가능하나요?"
@@ -14676,6 +15952,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "이틀이지만 마음 졸인게 몇년은 팍 늙은거 같습니다.",
     "(신용보증재단 만기건으로 어제 가압류 등 법적 조치 문자 이슈)",
@@ -14854,6 +16134,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실차주 신청시 코인 계좌 보유한 차주에 대한 자료 제출이 강화되었습니다.",
     "아래는 현재 부실차주 신청이후 코인 잔고증명서 제출 강화로 피해를 보고 있으신 감사회원님 글입니다.",
@@ -15040,6 +16324,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "7월중순부터 연체가 시작되어 10월 말쯤 부실차주 신청해서",
     "어제 전화 받았어요",
@@ -15218,6 +16506,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "카페에서 검색후 정보많이얻고있습니다",
     "감사합니다",
@@ -15340,6 +16632,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요",
     "2024년9월11일 부실차주 신청",
@@ -15565,6 +16861,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [],
    "body": "",
    "attachments": [],
@@ -15618,6 +16918,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실우려에서 실효되고",
     "원장초기화까지 했습니다",
@@ -15797,6 +17101,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "회사 출퇴근 땜에 차량이 필요한데 ㅠㅜ 가능할지 참 ㅠㅠ도움 좀 부탁드려요"
    ],
@@ -15850,6 +17158,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "25년도   12월에   임시안받고    도덕적  헤이 심사까지  완료   했습니다",
     "담당자  배정까지는  2~3개월  걸린다고  하네요",
@@ -16105,6 +17417,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "① 성실상환자에 대한 인센티브 신설",
     "〔①-1. 조기상환 인센티브(매입형)〕",
@@ -16187,6 +17503,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "상환유예 사유 확대(매입형)",
     "부실차주의 무담보 채무조정 진행 중 일시적 사유로 상환이 어려워진",
@@ -16253,6 +17573,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요",
     "23일 회생취하 후 장기연체코드 뜨자마자 28일 토요일 새벽 추가자격심사 신청했는데",
@@ -16480,6 +17804,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요",
     "현재 새출발기금 부실차주 접수했고",
@@ -16718,6 +18046,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "12월중순에 부실차주로 새출발기금 신청하고 1월달에 3주만에 임시안 75% 받고 확정 기다리는 중입니다. 독촉없으니 다 내려놓고 기다리면 되는데 먼가 가슴 한켠이 무거운건 저만 그런것일까요? 시원하게 확정 받고 열심히 다시 시작해 보고 싶습니다!"
    ],
@@ -16966,6 +18298,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실차주 직행. 연체 94일차에 드디어 연체코드 등록되었네요.",
     "연체 93일차였던 2026.03.09 신용정보원에 연체코드 등록이 안되어서,",
@@ -17315,6 +18651,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "카드사 2곳  있어요",
     "신용보증재단 2개은행 3건 있구요",
@@ -17465,6 +18805,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "어제  카톡으로 이   메세지  오고",
     "오늘  02~ 시작되는  새출기금  상담원전화옴",
@@ -17770,6 +19114,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "2025.2월 부실우려 신청",
     "2025.08 부실우려 체결",
@@ -18002,6 +19350,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "감사하게도  감면율을  많이  해줘서",
     "너무   기쁘고    좋습니다",
@@ -18309,6 +19661,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "지난2025년9월30일부실차주신청하면서시작된부실차주신청후 6개월지난26년3월6일",
     "90%감면 확정체결서명하였읍니다.",
@@ -18658,6 +20014,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "새출발기금, 부실 차주 신청후 환매신청관련 경험 공유합니다..",
     "저는 전북은행에서 - > 와이앤케이파트너스 대부로 넘어간 상태였는데,",
@@ -18819,6 +20179,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요~ 봄이지만 아침 저녁은 좀 쌀쌀하고 낮에는 집 안보다 밖이 더 따듯한? 기이한 날씨입니다",
     "우선 3월 3일 부실차주 신청했고요",
@@ -19178,6 +20542,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "3월27일 소진공직접대출만 90일이상 연체후 부실차주신청했습니다 무담보는 소진공대출이고 담보는 경기신보대출이예요 경기도보증도1건포함이구요 담보는 부실차주신청후부터 연체했구요",
     "오늘 임시안받았는데 무담보건만 나왔고 64프로감면율이네요 나중에 담보건들도 대위변제후 새출발에 포함되는거죠? 이제해야할일이 무엇일까요? 한시름 놓긴했고 담보대출들 변제 안하니 마음은 좀 여유있는데 기업은행은 일시변제해야할건이 있었는데 새출발신청했다하니 잘했다고 전화줘서 고맙다고 이후는 본점에서 진행한다더라구요 변제하라고 신용정보등록된다는 톡은와요 나머지한건은 농협인데 전화해서 먼저 얘기를 할까요? 지급명령이나 압류같은거 올까봐요 기업은행은 지급정지시켰더라구요 카드대금결제는 농축협계좌로 받고있구요",
@@ -19507,6 +20875,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실차주 신청후 임시안받았고 전자책도움받아 많은 공부하고 있습니다",
     "궁금한건 임시안에 무담보채권에 대한것만 감면율64프로 받았는데 신보지급보증건이 3천만원쯤이 있어요 이게 대위변제후 새출발에 포함된다면 지급보증건은 감면이 없다는데 추가로 분납을 한다고보면 되나요?"
@@ -19808,6 +21180,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "우려에서 실효 후 25년12월31일 부실차주 신청했습니다.",
     "현재 임시안 74%",
@@ -19989,6 +21365,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "저는 부실 우려 25년 4월 접수하고 실효 후",
     "25년12월31일 부실 차주 접수하였습니다.",
@@ -20209,6 +21589,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "새출발기금 확정안 체결을 앞두고",
     "담당자와 상담도중 전세 살고있는데",
@@ -20434,6 +21818,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "현재 부실차주 임시안 까지 나왔습니다.",
     "ㄹㄷㅋㅍ 가 1월15일부터 협약 체결되어",
@@ -20533,6 +21921,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "이번달에  새출발 체결할거라 연락받았는데요 , 채무에  카뱅이랑 토스는 포함이 안되어 있더라구요",
     "나중에  추가할수 있단 얘기 들었는데, 지금 둘다 서울보증보험에 대위변제는 완료된 상태인데,  이건 제가 따로 새출발에 요청을 해야하나요?",
@@ -20783,6 +22175,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요~ 부실차주로 임시안받았는데 보증담보대출은 포함되지않았던데  가만히 있으면 알아서포함되나요? 아님 새출발에 따로 신청해야되는건가요? 그리고 서류제출더할건없나요?"
    ],
@@ -20927,6 +22323,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "최근 금융위원회와 캠코에서 발표한 새출발기금의 변제능력 심사 강화 및 감면율 개편에 대한 핵심 내용과 질문하신 월상환액 계산 방식을 알기 쉽게 정리해 드립니다.",
     "1. 감면율 기준 변경 핵심 요약",
@@ -21170,6 +22570,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "자가 소유 공동명의 3억2천 담보대출2억",
     "빚 2700 빚보다 자산이 많아서 감면율 0%하네요",
@@ -21410,6 +22814,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "어제 새출발기금 담당자분 직접연락이 왔어요. 제출한 서류대로 진행한다고 하던데 앞으로 확정까지 얼마나 더 걸리나요?"
    ],
@@ -21463,6 +22871,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요, 방장님 덕분에 감면율 76%를 받아 확정안을 체결하였습니다.",
     "1건을 제외하고 매입이 이뤄진거 같은데 혹시 1건이 추후에 매입되어 2차 확정안에 서명할 시 기존 감면율보다 낮아질 수도 있을까요??",
@@ -21635,6 +23047,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실차주로 가려고 합니다",
     "90일 연체를 버텨야 하는데 현재 롯데는 연체가 이미 시작되었고 (7월 중순) 금액이 9만원대라 작아서 압박이 심하진 않습니다.",
@@ -21785,6 +23201,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "폐업자로 부실차주 신청자분들 중에 임대차계약서 제출 요구 받으신분 계실까요",
     "그전에는 폐업자에 경우 부실차주  진행시  운영햇던 사업장에대한 임대차계약서 요구가 없었다는걸로",
@@ -22116,6 +23536,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실우려로 시작해서 1회 납부후 미납시작해서",
     "지난 8월 25일 5회차 미납으로 최종실효 되었습니다",
@@ -22245,6 +23669,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "안녕하세요 30대 초반 남자입니다.",
     "채무액은 3300정도되구요 !!",
@@ -22341,6 +23769,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "오늘 새출발기금에서 채무조정안 발송됬네요",
     "임시안예측과 비슷한 74% 받았습니다",
@@ -22398,6 +23830,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "부실차주 7/28일 접수",
     "9/2일 임시안이 산정되었는데요,",
@@ -22522,6 +23958,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "덕분에 90프로 감면율 받고 체결 완료 하였습니다",
     "그 이후 할아버지께서 돌아가셔서",
@@ -22591,6 +24031,10 @@
    "topicTags": [],
    "operatorAuthored": false,
    "scopeExcluded": null,
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "채권이 총 6군데인데 추심문자오거나 전화오면 바로금감원 신고했더니 취하해달란 전화이후 문자만 간간히 오더니 어제 연체 105일이 넘었더라구요.",
     "새출발부실차주 수월하게 신청하고 왔습니다",
@@ -22676,6 +24120,10 @@
    "topicTags": [],
    "operatorAuthored": true,
    "scopeExcluded": "OPERATOR_AGENT_POST",
+   "scopeIncludedByUserRuling": null,
+   "contentForm": null,
+   "images": [],
+   "links": [],
    "bodyRaw": [
     "최근 신복위에서 2026년 9월 7일부터 금융마이데이터를 활용해 채무조정 신청자의 금융자산을 추가로 확인하기 시작했다는 내용이 확인되고 있습니다.",
     "확인 대상에는 예금·적금뿐 아니라 펀드·신탁·ISA, 보험, 예수금·주식·파생상품, 휴면예금·보험 등이 포함된다는 내용입니다.",

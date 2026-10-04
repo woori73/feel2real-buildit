@@ -11,11 +11,12 @@
   "5": "재취업 재창업 감면수익+정부 지원",
   "9": "하랑랑 스페셜"
  },
- "generatedAt": "2026-10-04T05:48:06+00:00",
+ "generatedAt": "2026-10-04T06:36:48+00:00",
  "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
- "totalCollected": 110,
+ "totalCollected": 125,
  "baselineIds": 404,
- "newVsBaseline": 110,
+ "userRuling20261004": "하랑랑 스페셜(menuId 9): 가입인사·등업 17건 제외 유지, 운영자(지피지기자산) 정보글 15건은 중요자료로 보존. 타 게시판의 운영자 본문 단위는 종전 제외 범위 유지.",
+ "newVsBaseline": 125,
  "boards_detail": {
   "3": {
    "menuName": "부실차주 신청",
@@ -98,14 +99,14 @@
    "rankedCandidates": 0,
    "duplicateIds": [],
    "scopeNote": "24.11.05자 15건은 카페매니저(등급 999, 지피지기자산) 정보 링크글, 26.01~26.10 17건은 가입인사·등업류(지시 §5 제외 후보)",
-   "collectionExcluded": "운영자(등급 999) 정리글은 NewStart 수집 범위에서 제외, 가입인사·등업류는 지시 §5에 따라 제외",
-   "collected": 0,
-   "informational": 0,
-   "emptyBody": 0,
+   "collectionExcluded": "가입인사·등업류는 지시 §5에 따라 제외. 운영자(등급 999) 정보글 15건은 2026-10-04 사용자 최종 지시로 보존(중요자료).",
+   "collected": 15,
+   "informational": 15,
+   "emptyBody": 13,
    "commentsPartial": 0,
    "historicalCandidates": 0,
-   "operatorAuthoredArticles": 0,
-   "newVsBaseline": 0,
+   "operatorAuthoredArticles": 15,
+   "newVsBaseline": 15,
    "alreadyInBaseline": 0
   }
  },
@@ -120,7 +121,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2591,
@@ -132,7 +135,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2717,
@@ -144,7 +149,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2870,
@@ -156,7 +163,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3226,
@@ -168,7 +177,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3472,
@@ -180,7 +191,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3475,
@@ -192,7 +205,9 @@
    "commentsCaptured": 5,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3518,
@@ -204,7 +219,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3604,
@@ -216,7 +233,9 @@
    "commentsCaptured": 5,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3658,
@@ -228,7 +247,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3782,
@@ -240,7 +261,9 @@
    "commentsCaptured": 8,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3801,
@@ -252,7 +275,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3923,
@@ -264,7 +289,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3944,
@@ -276,7 +303,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 4176,
@@ -288,7 +317,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 4222,
@@ -300,7 +331,9 @@
    "commentsCaptured": 4,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4274,
@@ -312,7 +345,9 @@
    "commentsCaptured": 7,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4385,
@@ -324,7 +359,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4404,
@@ -336,7 +373,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4501,
@@ -348,7 +387,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4511,
@@ -360,7 +401,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4546,
@@ -372,7 +415,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4653,
@@ -384,7 +429,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5121,
@@ -396,7 +443,9 @@
    "commentsCaptured": 5,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5325,
@@ -408,7 +457,9 @@
    "commentsCaptured": 7,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5790,
@@ -420,7 +471,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5916,
@@ -432,7 +485,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5924,
@@ -444,7 +499,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 6055,
@@ -456,7 +513,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 6056,
@@ -468,7 +527,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 735,
@@ -480,7 +541,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 885,
@@ -492,7 +555,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 886,
@@ -504,7 +569,9 @@
    "commentsCaptured": 9,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 923,
@@ -516,7 +583,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 933,
@@ -528,7 +597,9 @@
    "commentsCaptured": 7,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 975,
@@ -540,7 +611,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1088,
@@ -552,7 +625,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1100,
@@ -564,7 +639,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1129,
@@ -576,7 +653,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1282,
@@ -588,7 +667,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1852,
@@ -600,7 +681,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1866,
@@ -612,7 +695,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 1875,
@@ -624,7 +709,9 @@
    "commentsCaptured": 4,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2070,
@@ -636,7 +723,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2079,
@@ -648,7 +737,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2699,
@@ -660,7 +751,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3304,
@@ -672,7 +765,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3346,
@@ -684,7 +779,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3354,
@@ -696,7 +793,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3452,
@@ -708,7 +807,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3457,
@@ -720,7 +821,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3742,
@@ -732,7 +835,9 @@
    "commentsCaptured": 9,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3760,
@@ -744,7 +849,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4016,
@@ -756,7 +863,9 @@
    "commentsCaptured": 5,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4129,
@@ -768,7 +877,9 @@
    "commentsCaptured": 5,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4245,
@@ -780,7 +891,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4480,
@@ -792,7 +905,9 @@
    "commentsCaptured": 7,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4541,
@@ -804,7 +919,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4548,
@@ -816,7 +933,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4559,
@@ -828,7 +947,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4671,
@@ -840,7 +961,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4784,
@@ -852,7 +975,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4825,
@@ -864,7 +989,9 @@
    "commentsCaptured": 9,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5095,
@@ -876,7 +1003,9 @@
    "commentsCaptured": 4,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5099,
@@ -888,7 +1017,9 @@
    "commentsCaptured": 4,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5301,
@@ -900,7 +1031,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5350,
@@ -912,7 +1045,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5569,
@@ -924,7 +1059,9 @@
    "commentsCaptured": 8,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 5625,
@@ -936,7 +1073,9 @@
    "commentsCaptured": 7,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5636,
@@ -948,7 +1087,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5641,
@@ -960,7 +1101,9 @@
    "commentsCaptured": 4,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5834,
@@ -972,7 +1115,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5927,
@@ -984,7 +1129,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5928,
@@ -996,7 +1143,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 5940,
@@ -1008,7 +1157,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": true,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 213,
@@ -1020,7 +1171,9 @@
    "commentsCaptured": 7,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 561,
@@ -1032,7 +1185,9 @@
    "commentsCaptured": 5,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 588,
@@ -1044,7 +1199,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 592,
@@ -1056,7 +1213,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 609,
@@ -1068,7 +1227,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 629,
@@ -1080,7 +1241,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 637,
@@ -1092,7 +1255,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 646,
@@ -1104,7 +1269,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 648,
@@ -1116,7 +1283,9 @@
    "commentsCaptured": 8,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 656,
@@ -1128,7 +1297,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 666,
@@ -1140,7 +1311,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 686,
@@ -1152,7 +1325,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 701,
@@ -1164,7 +1339,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 708,
@@ -1176,7 +1353,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 733,
@@ -1188,7 +1367,9 @@
    "commentsCaptured": 4,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 796,
@@ -1200,7 +1381,9 @@
    "commentsCaptured": 3,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 817,
@@ -1212,7 +1395,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 844,
@@ -1224,7 +1409,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 954,
@@ -1236,7 +1423,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 969,
@@ -1248,7 +1437,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2144,
@@ -1260,7 +1451,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2597,
@@ -1272,7 +1465,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2619,
@@ -1284,7 +1479,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 2661,
@@ -1296,7 +1493,9 @@
    "commentsCaptured": 8,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3462,
@@ -1308,7 +1507,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3464,
@@ -1320,7 +1521,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3466,
@@ -1332,7 +1535,9 @@
    "commentsCaptured": 1,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3467,
@@ -1344,7 +1549,9 @@
    "commentsCaptured": 0,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3468,
@@ -1356,7 +1563,9 @@
    "commentsCaptured": 6,
    "collectionStatus": "EMPTY_BODY",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3469,
@@ -1368,7 +1577,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 3513,
@@ -1380,7 +1591,9 @@
    "commentsCaptured": 10,
    "collectionStatus": "COMMENTS_PARTIAL",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 3578,
@@ -1392,7 +1605,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 4076,
@@ -1404,7 +1619,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": false
+   "operatorAuthored": false,
+   "scopeExcluded": null,
+   "contentForm": null
   },
   {
    "articleId": 4372,
@@ -1416,7 +1633,9 @@
    "commentsCaptured": 2,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
   },
   {
    "articleId": 4374,
@@ -1428,7 +1647,219 @@
    "commentsCaptured": 1,
    "collectionStatus": "COMPLETE",
    "historicalCandidate": false,
-   "operatorAuthored": true
+   "operatorAuthored": true,
+   "scopeExcluded": "OPERATOR_AGENT_POST",
+   "contentForm": null
+  },
+  {
+   "articleId": 317,
+   "boardId": 9,
+   "title": "지급명령 이의신청서 및 답변서 작성방법 링크",
+   "createdAt": "2024-11-05T20:52:00+09:00",
+   "viewCount": 155,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "COMPLETE",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "LINK_PREVIEW"
+  },
+  {
+   "articleId": 319,
+   "boardId": 9,
+   "title": "신용회복위원회 협약기관 확인 방법",
+   "createdAt": "2024-11-05T20:56:00+09:00",
+   "viewCount": 50,
+   "commentCount": 1,
+   "commentsCaptured": 1,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 320,
+   "boardId": 9,
+   "title": "신용회복위원회 채무 조정 신청 이후 첫 납부와 납부 방법",
+   "createdAt": "2024-11-05T20:59:00+09:00",
+   "viewCount": 31,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 321,
+   "boardId": 9,
+   "title": "신용회복위원회 납부 유예 신청 조건 및 방법",
+   "createdAt": "2024-11-05T21:01:00+09:00",
+   "viewCount": 41,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 322,
+   "boardId": 9,
+   "title": "개인워크아웃 감면율",
+   "createdAt": "2024-11-05T21:06:00+09:00",
+   "viewCount": 75,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 323,
+   "boardId": 9,
+   "title": "프리워크아웃 특례 소급이 가능한가요?",
+   "createdAt": "2024-11-05T21:07:00+09:00",
+   "viewCount": 21,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 324,
+   "boardId": 9,
+   "title": "채무조정을 진행하던 중 신규 채무가 발생되어 추가를 하고 싶어요.",
+   "createdAt": "2024-11-05T21:08:00+09:00",
+   "viewCount": 51,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 325,
+   "boardId": 9,
+   "title": "신용정보원에서 장기연체 등록 정보를 확인하는 방법",
+   "createdAt": "2024-11-05T21:09:00+09:00",
+   "viewCount": 716,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 327,
+   "boardId": 9,
+   "title": "채무자 보호법 관련 링크",
+   "createdAt": "2024-11-05T21:13:00+09:00",
+   "viewCount": 42,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "COMPLETE",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "LINK_PREVIEW"
+  },
+  {
+   "articleId": 328,
+   "boardId": 9,
+   "title": "연체 일수는 어디에서 확인하나요?",
+   "createdAt": "2024-11-05T21:14:00+09:00",
+   "viewCount": 131,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 329,
+   "boardId": 9,
+   "title": "사업자 신용정보 확인 하는 곳",
+   "createdAt": "2024-11-05T21:15:00+09:00",
+   "viewCount": 66,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 330,
+   "boardId": 9,
+   "title": "대출 이자 3회 이하 납부 사기죄 고소 관련",
+   "createdAt": "2024-11-05T21:15:00+09:00",
+   "viewCount": 181,
+   "commentCount": 1,
+   "commentsCaptured": 1,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 331,
+   "boardId": 9,
+   "title": "통신 채무 정보",
+   "createdAt": "2024-11-05T21:21:00+09:00",
+   "viewCount": 64,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 332,
+   "boardId": 9,
+   "title": "비대면 계좌 개설",
+   "createdAt": "2024-11-05T21:22:00+09:00",
+   "viewCount": 134,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
+  },
+  {
+   "articleId": 333,
+   "boardId": 9,
+   "title": "페이머니 카드",
+   "createdAt": "2024-11-05T21:24:00+09:00",
+   "viewCount": 129,
+   "commentCount": 0,
+   "commentsCaptured": 0,
+   "collectionStatus": "EMPTY_BODY",
+   "historicalCandidate": false,
+   "operatorAuthored": true,
+   "scopeExcluded": null,
+   "contentForm": "IMAGE_ONLY"
   }
  ]
 }

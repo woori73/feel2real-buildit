@@ -111,14 +111,21 @@ def article_records(arts, by_article, index):
             "classification": {
                 "historical": bool(a.get("historicalCandidate")),
                 "duplicate": False,
-                "informational": a.get("collectionStatus") != "EMPTY_BODY",
+                "informational": a.get("collectionStatus") != "EMPTY_BODY" or bool(a.get("images")),
                 "officialCheck": "NOT_CHECKED",
                 "origin": "CAFE_OPERATOR_AGENT_POST" if a.get("operatorAuthored") else "CAFE_MEMBER",
-                "collectionScope": "EXCLUDED_OPERATOR_AGENT_POST" if a.get("operatorAuthored") else "IN_SCOPE",
+                "collectionScope": ("IN_SCOPE_BY_USER_RULING_2026-10-04"
+                                    if a.get("scopeIncludedByUserRuling") else
+                                    ("EXCLUDED_OPERATOR_AGENT_POST" if a.get("operatorAuthored") else "IN_SCOPE")),
             },
             "topicTags": a.get("topicTags"),
             "operatorAuthored": bool(a.get("operatorAuthored")),
             "scopeExcluded": a.get("scopeExcluded"),
+            "scopeIncludedByUserRuling": a.get("scopeIncludedByUserRuling"),
+            "contentForm": a.get("contentForm"),
+            "images": a.get("images") or [],
+            "links": a.get("links") or [],
+            "boardNote": a.get("boardNote"),
             "bodyRaw": a.get("bodyRaw"),
             "body": a.get("bodyNormalized") or "",
             "attachments": a.get("attachments") or [],
@@ -140,6 +147,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("pkg", help="docs/newstart/research/cafe-4boards-20261004")
     ap.add_argument("--outdir", action="append", default=[], help="추가 출력 디렉토리(반복 가능)")
+    ap.add_argument("--db-note", default=None,
+                    help="운영 DB 반영 결과를 전달본 헤더에 기록(미지정 시 미반영으로 표기)")
     args = ap.parse_args()
 
     pkg = pathlib.Path(args.pkg)
@@ -170,10 +179,16 @@ def main():
              "greetingExcluded": index["boards_detail"][str(m)]["greetingExcludedDeclared"],
              "operatorInfoExcluded": index["boards_detail"][str(m)].get("operatorInfoPostsDeclared", 0),
              "collected": sum(1 for r in recs if r["menuId"] == m),
-             "operatorAgentPosts": sum(1 for r in recs if r["menuId"] == m
-                                       and r["classification"]["origin"] == "CAFE_OPERATOR_AGENT_POST"),
-             "inScopeMemberPosts": sum(1 for r in recs if r["menuId"] == m
-                                       and r["classification"]["origin"] != "CAFE_OPERATOR_AGENT_POST"),
+             "operatorPosts": sum(1 for r in recs if r["menuId"] == m
+                                  and r["classification"]["origin"] == "CAFE_OPERATOR_AGENT_POST"),
+             "operatorPostsKeptByRuling": sum(1 for r in recs if r["menuId"] == m
+                                              and r.get("scopeIncludedByUserRuling")),
+             "operatorPostsExcluded": sum(1 for r in recs if r["menuId"] == m
+                                          and r["classification"]["collectionScope"]
+                                          == "EXCLUDED_OPERATOR_AGENT_POST"),
+             "postsInScope": sum(1 for r in recs if r["menuId"] == m
+                                 and r["classification"]["collectionScope"]
+                                 != "EXCLUDED_OPERATOR_AGENT_POST"),
              "informational": sum(1 for r in recs if r["menuId"] == m and r["classification"]["informational"]),
              "units": sum(len(r["knowledgeUnits"]) for r in recs if r["menuId"] == m),
              "historical": m == 4,
@@ -186,11 +201,24 @@ def main():
             "knowledgeUnits": sum(len(r["knowledgeUnits"]) for r in recs),
             "noiseUnitsDropped": units["stats"]["noiseUnitsDropped"],
             "operatorScopeUnitsDropped": units["stats"].get("operatorScopeUnitsDropped", 0),
+            "operatorPostsKeptByRuling": sum(1 for r in recs if r.get("scopeIncludedByUserRuling")),
+            "operatorKeptUnits": units["stats"].get("operatorKeptUnits", 0),
+            "imageOnlyArticles": sum(1 for r in recs if r.get("contentForm") == "IMAGE_ONLY"),
             "baselineArticleIds": dedup["article_level"]["baseline_total"],
             "overlapWithBaseline": dedup["article_level"]["overlap_with_baseline"],
         },
+        "userRuling20261004": {
+            "menuId9": "하랑랑 스페셜 32건 중 가입인사·등업 17건은 제외 유지, "
+                       "운영자(지피지기자산·등급 999) 정보글 15건은 중요자료로 전원 보존·반영 후보 포함. "
+                       "다른 게시판의 운영자 본문 단위는 종전 제외 범위 유지.",
+            "harangRejected": index["boards_detail"]["9"]["greetingExcludedDeclared"],
+            "harangOperatorKept": index["boards_detail"]["9"]["operatorInfoPostsDeclared"],
+            "reCollectionNote": "15건은 1차 tranch에서 전문이 보존되지 않고 목록 메타만 보존되어 있어, "
+                                "본문·이미지 URL·댓글 증거를 확보하기 위해 15건만 재접속 수집했다(4개 게시판 재수집 아님).",
+            "activeGate": "15건은 본문이 이미지/링크 미리보기로만 구성되어 근거 텍스트가 약하다. "
+                          "지시에 따라 억지로 ACTIVE 처리하지 않고 REVIEW에서 근거 보류를 남긴다.",
+        },
         "excludedFromMenuId9": {
-            "operatorInfoPosts": index["boards_detail"]["9"]["operatorInfoPostsDeclared"],
             "greetingOrLevelUp": index["boards_detail"]["9"]["greetingExcludedDeclared"],
             "reason": index["boards_detail"]["9"]["collectionExcluded"],
         },
@@ -211,8 +239,10 @@ def main():
     L.append("## 이 자료를 쓸 때 지켜야 할 세 가지")
     L.append("")
     L.append("1. 아래 글은 **카페 회원이 직접 남긴 경험과 커뮤니티 안내**입니다. 회원 경험을 공식 규정처럼 제시하지 마세요 "
-             "(공식 확인 전 = NOT_CHECKED). 운영자(카페매니저·등급 999) 계정이 작성한 게시글 본문은 수집 범위에서 제외되어 "
-             "본문 마지막 부록에 목록만 남겼고, 그 글 아래의 **회원 댓글 경험**은 본문에 포함했습니다.")
+             "(공식 확인 전 = NOT_CHECKED). 운영자(카페매니저·등급 999) 계정이 작성한 게시글 본문은 원칙적으로 수집 범위에서 "
+             "제외하되, **하랑랑 스페셜(menuId 9) 운영자 정보글 15건은 2026-10-04 사용자 최종 지시로 중요자료로 보존**해 "
+             "본문에 실었습니다(작성일이 2024-11-05이므로 과거 시점 자료로 읽고, 회원 댓글 경험도 함께 취합했습니다). "
+             "그 외 게시판의 운영자 작성 본문은 부록에 목록만 남겼습니다.")
     L.append("2. **부실차주 임시안부터 확정안(menuId 4)** 글들은 그해 논의되던 임시안~확정안 단계의 기록입니다. "
              "**지금은 시행되지 않을 수 있는 내용**이므로 역사 자료로만 사용하고, 현재 규정으로 인용하지 마세요.")
     L.append("3. 회원 간 대화의 순서(상황 → 행동 → 금융회사·기관 반응 → 결과)를 유지하기 위해 본문과 댓글을 **전문 그대로** "
@@ -220,17 +250,19 @@ def main():
     L.append("")
     L.append("## 수집 요약")
     L.append("")
-    L.append("| 게시판 | menuId | 조사 | 기존중복 | 가입인사·등업 제외 | 원문 보존 | 운영자 글(반영 제외) | 반영 후보 회원 자료 | 지식 단위 |")
-    L.append("|---|---|---|---|---|---|---|---|---|")
+    L.append("| 게시판 | menuId | 조사 | 기존중복 | 가입인사·등업 제외 | 원문 보존 | 운영자 글(반영 제외) | 운영자 글(지시 보존) | 반영 범위 자료 | 지식 단위 |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|")
     for b in raw["boards"]:
-        L.append("| %s | %d | %d | %d | %d | %d | %d | %d | %d |" % (
+        L.append("| %s | %d | %d | %d | %d | %d | %d | %d | %d | %d |" % (
             b["boardName"], b["menuId"], b["surveyed"], b["existingDuplicate"], b["greetingExcluded"],
-            b["collected"], b["operatorAgentPosts"], b["inScopeMemberPosts"], b["units"]))
-    L.append("| **합계** |  | %d | %d | %d | %d | %d | %d | %d |" % (
+            b["collected"], b["operatorPostsExcluded"], b["operatorPostsKeptByRuling"],
+            b["postsInScope"], b["units"]))
+    L.append("| **합계** |  | %d | %d | %d | %d | %d | %d | %d | %d |" % (
         sum(b["surveyed"] for b in raw["boards"]), sum(b["existingDuplicate"] for b in raw["boards"]),
         sum(b["greetingExcluded"] for b in raw["boards"]), sum(b["collected"] for b in raw["boards"]),
-        sum(b["operatorAgentPosts"] for b in raw["boards"]), sum(b["inScopeMemberPosts"] for b in raw["boards"]),
-        sum(b["units"] for b in raw["boards"])))
+        sum(b["operatorPostsExcluded"] for b in raw["boards"]),
+        sum(b["operatorPostsKeptByRuling"] for b in raw["boards"]),
+        sum(b["postsInScope"] for b in raw["boards"]), sum(b["units"] for b in raw["boards"])))
     L.append("")
     L.append("비고: 원본 articleId %d건은 이미 보존된 %d건 집합과 중복 0건입니다. "
              "본문 없이 이미지/첨부만 있는 글 %d건, 스레드가 길어 댓글이 부분 수집된 글 %d건은 각 항목에 표시했습니다."
@@ -239,13 +271,14 @@ def main():
                 sum(1 for r in recs if r["collectionStatus"] == "COMMENTS_PARTIAL")))
     L.append("")
 
-    agent_ids = {r["articleId"] for r in recs if r["classification"]["origin"] == "CAFE_OPERATOR_AGENT_POST"}
+    excluded_agent_ids = {r["articleId"] for r in recs
+                          if r["classification"]["collectionScope"] == "EXCLUDED_OPERATOR_AGENT_POST"}
     for menu in BOARD_ORDER:
         all_sub = [r for r in recs if r["menuId"] == menu]
         all_sub.sort(key=lambda r: r["writtenAt"] or "", reverse=True)
-        sub = [r for r in all_sub if r["articleId"] not in agent_ids]
+        sub = [r for r in all_sub if r["articleId"] not in excluded_agent_ids]
         L.append("\n---\n")
-        L.append("## %s (menuId %d) — 자료 %d건 (회원 글 %d + 운영자 글 %d)\n"
+        L.append("## %s (menuId %d) — 자료 %d건 (반영 범위 %d + 운영자 글 반영 제외 %d)\n"
                  % (BOARD_TITLE[menu], menu, len(all_sub), len(sub), len(all_sub) - len(sub)))
         if not all_sub:
             det = index["boards_detail"][str(menu)]
@@ -260,6 +293,11 @@ def main():
         if menu == 4:
             L.append("> ⚠ 아래 자료는 **과거 임시안~확정안 논의 시점의 기록**입니다. 작성일·적용 시점을 함께 읽고, "
                      "현재 시행 규정으로 쓰지 마세요.\n")
+        if menu == 9:
+            L.append("> ℹ 하랑랑 스페셜 32건 중 **가입인사·등업 17건은 제외**(지시 §5), "
+                     "**운영자(지피지기자산) 정보글 15건은 2026-10-04 사용자 최종 지시로 전부 보존**했습니다. "
+                     "15건은 2024-11-05 작성 자료이고 본문이 이미지·링크 카드로 구성되어, "
+                     "텍스트 근거가 보강되기 전까지 ACTIVE가 아니라 REVIEW 단계에 둡니다.\n")
         for r in all_sub:
             date = (r["writtenAt"] or "")[:10]
             L.append("### " + (mask(r["title"]).strip() or "(제목 없음)"))
@@ -278,15 +316,23 @@ def main():
                 flags.append("댓글 부분 수집")
             if r["classification"]["historical"]:
                 flags.append("과거 임시안 후보(historical)")
-            if r["articleId"] in agent_ids:
+            if r["articleId"] in excluded_agent_ids:
                 flags.append("운영자(agent) 작성글 — 본문 반영 제외, 회원 댓글만 취합")
+            elif r.get("scopeIncludedByUserRuling"):
+                flags.append("운영자(지피지기자산) 작성 — 2026-10-04 사용자 지시로 중요자료 보존·반영 범위 포함")
+            if r.get("contentForm") == "IMAGE_ONLY":
+                flags.append("이미지 중심 자료(텍스트 본문 없음) — ACTIVE 보류, REVIEW 유지")
+            if r.get("contentForm") == "LINK_PREVIEW":
+                flags.append("외부 링크 미리보기 자료(본문은 링크 카드 텍스트)")
             flags.append("공식확인 전(NOT_CHECKED)")
             L.append("- 상태: " + " · ".join(flags))
             if r["classification"]["historical"]:
                 L.append("- 주의: %s" % r["boardNote"])
+            if menu == 9 and r.get("scopeIncludedByUserRuling"):
+                L.append("- 주의: %s" % r["boardNote"])
             L.append("")
             body = mask(r["body"]).strip()
-            if r["articleId"] in agent_ids:
+            if r["articleId"] in excluded_agent_ids:
                 L.append("**본문**: 운영자(agent) 작성글이라 수집 범위에서 제외 — 본문은 싣지 않습니다. "
                          "원문 URL로 확인할 수 있고, 이 글 아래의 **회원 댓글 경험**만 반영 후보로 취합했습니다.\n")
             elif body:
@@ -294,8 +340,19 @@ def main():
                 L.append(body)
                 L.append("")
             elif r["collectionStatus"] == "EMPTY_BODY":
-                names = [a.get("name") or a.get("url", "") for a in r["attachments"]] if r["attachments"] else []
-                L.append("**본문**: 텍스트 없음. 첨부%s\n" % ((" " + ", ".join(str(n) for n in names)) if names else ""))
+                names = [(x.get("name") or x.get("url", "")) if isinstance(x, dict) else str(x)
+                         for x in (r["attachments"] or [])]
+                if r.get("images"):
+                    L.append("**본문**: 텍스트 본문 없이 이미지 %d장으로 구성(원본 형태). 이미지 URL을 보존합니다.\n"
+                             % len(r["images"]))
+                    for i, url in enumerate(r["images"], 1):
+                        L.append("- 이미지 %d: %s" % (i, url))
+                    for url in (r.get("links") or []):
+                        L.append("- 첨부 링크: %s" % url)
+                    L.append("")
+                else:
+                    L.append("**본문**: 텍스트 없음. 첨부%s\n"
+                             % ((" " + ", ".join(str(n) for n in names)) if names else ""))
             if r["comments"]:
                 L.append("**댓글 (시간순)**\n")
                 for c in sorted(r["comments"], key=lambda c: c.get("createdAtMs") or 0):
@@ -311,14 +368,17 @@ def main():
                     L.append("- [%s] %s" % (u["label"], mask(u["evidenceText"] or "").replace("\n", " ")[:400]))
                 L.append("")
     L.append("\n---\n")
-    L.append("## 부록 — 운영자(agent) 작성 게시글 목록 (반영 범위 제외, 원문은 리포지토리에 보존)\n")
+    L.append("## 부록 — 운영자(agent) 작성 게시글로서 반영 범위에서 제외된 목록 (원문은 리포지토리에 보존)\n")
     L.append("NewStart 수집 범위는 **회원 정보글**입니다. 아래 %d건은 카페매니저(등급 999) 계정이 작성한 글이라 "
-             "본문·운영자 단위를 반영 후보에서 제외했습니다(제외 단위 %d건). 각 글 아래의 회원 댓글은 위에 실렸습니다.\n"
-             % (len(agent_ids), units["stats"].get("operatorScopeUnitsDropped", 0)))
+             "본문·운영자 단위를 반영 후보에서 제외했습니다(제외 단위 %d건). 각 글 아래의 회원 댓글은 위에 실렸습니다. "
+             "**예외**: 하랑랑 스페셜(menuId 9)의 운영자 정보글 15건은 2026-10-04 사용자 최종 지시로 반대로 보존·반영되어 "
+             "위 본문에 운영자 안내 단위로 실렸습니다.\n"
+             % (len(excluded_agent_ids), units["stats"].get("operatorScopeUnitsDropped", 0)))
     L.append("")
     L.append("| menuId | 글번호 | 제목 | 작성일 | 원문 | 이 글에서 취한 회원 단위 |")
     L.append("|---|---|---|---|---|---|")
-    for r in sorted([r for r in recs if r["articleId"] in agent_ids], key=lambda r: (r["menuId"], r["articleId"])):
+    for r in sorted([r for r in recs if r["articleId"] in excluded_agent_ids],
+                    key=lambda r: (r["menuId"], r["articleId"])):
         L.append("| %d | %d | %s | %s | %s | %d |" % (
             r["menuId"], r["articleId"], mask(r["title"]).replace("|", "/").replace("\n", " ")[:60],
             (r["writtenAt"] or "")[:10], r["sourceUrl"], len(r["knowledgeUnits"])))

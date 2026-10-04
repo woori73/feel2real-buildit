@@ -55,7 +55,8 @@ state = {
     "package": index["package"],
     "packagePath": str(PKG).replace("\\", "/"),
     "status": "TRANCH_COMPLETED_PENDING_USER_APPROVAL",
-    "tranche": "고가치 우선 110건 (사용자 결정). 전체 신규 후보 중 미수집분은 pendingCounts 참조",
+    "tranche": "고가치 우선 110건 + 하랑랑 스페셜 운영자 정보글 15건(2026-10-04 사용자 지시 보존) = 125건. "
+               "전체 신규 후보 중 미수집분은 pendingCounts 참조",
     "startedAt": "2026-10-04T00:00:00+00:00",
     "updatedAt": now,
     "totals": {
@@ -85,7 +86,10 @@ state = {
         "emptyBodyImageOnly": sum(b["emptyBody"] for b in boards),
         "commentsPartial": sum(b["commentsPartial"] for b in boards),
         "historicalCandidatesMenuId4": units["stats"]["byBoard"].get("m4", 0),
-        "menu9Collected": 0,
+        "menu9Collected": units["stats"]["byBoard"].get("m9", 0),
+        "menu9OperatorArticlesKept": index["boards_detail"]["9"].get("collected", 0),
+        "menu9OperatorUnitsKept": units["stats"].get("operatorKeptUnits", 0),
+        "menu9GreetingExcluded": index["boards_detail"]["9"]["greetingExcludedDeclared"],
     },
     "errors": [],
 }

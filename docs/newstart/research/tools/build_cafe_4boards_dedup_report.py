@@ -194,13 +194,24 @@ def main():
                         "해당 글의 본문 단위와 운영자 단위만 drop하고, 그 글 아래의 회원 댓글 단위는 취합한다.",
                 "rawPreserved": True,
                 "reflectedInPayloads": False,
+                "exception": "2026-10-04 사용자 최종 지시: menuId 9(하랑랑 스페셜) 운영자 정보글 15건은 중요자료로 보존 → "
+                             "OPERATOR_KNOWLEDGE 단위로 payload에 반영(sourceType=OPERATOR_KNOWLEDGE). "
+                             "타 게시판의 운영자 본문 단위는 종전 제외 범위 유지.",
+                "operatorKeptArticles": index["boards_detail"]["9"]["collected"],
+                "operatorKeptUnits": units["stats"].get("operatorKeptUnits", 0),
             },
             "menu9_handling": {
                 "operatorInfoPostsDeclared": index["boards_detail"]["9"]["operatorInfoPostsDeclared"],
                 "greetingExcludedDeclared": index["boards_detail"]["9"]["greetingExcludedDeclared"],
-                "collected": 0,
+                "collected": index["boards_detail"]["9"]["collected"],
+                "units": units["stats"]["byBoard"].get("m9", 0),
                 "reason": index["boards_detail"]["9"]["collectionExcluded"],
-                "conflict_flag": "지시 §5(하랑랑 경험글 포함)와 운영 수집범위(운영자 정리글 제외)가 충돌 -> 사용자 확인 필요",
+                "conflict_flag": "RESOLVED_BY_USER 2026-10-04 — 지시 §5(하랑랑 경험글 포함)와 운영 수집범위(운영자 정리글 제외) "
+                                 "충돌은 사용자로써 종료. 가입인사·등업 17건 제외 유지 / 운영자 정보글 15건은 전량 보존.",
+                "evidence_weakness": "15건 중 13건은 본문이 이미지만으로, 2건은 외부 링크 미리보기 카드로만 구성됨 "
+                                     "(contentForm=IMAGE_ONLY/LINK_PREVIEW). 근거 텍스트가 약해 REVIEW에서 ACTIVE 보류 대상.",
+                "re_collection": "1차 tranch에서 15건의 전문이 보존되지 않아(목록 메타만) 본문·이미지·댓글 증거 확보용으로 "
+                                 "해당 15건만 재접속 수집함. 4개 게시판 재수집은 아님.",
             },
         },
         "per_board": per_board,
