@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -162,11 +163,19 @@ public class NewStartDebtImageService {
     return "image/jpeg";
   }
 
-  /** OpenRouter Qwen Vision API 호출 (429/5xx 시 재시도). */
+  /** OpenRouter Qwen Vision API 호출 (429/5xx 시 재시도).
+   *
+   * <p>진단 전용 로그(prefix: {@code DEBT_VISION_DIAG})만 남기며, 요청/재시도/파싱 동작은
+   * 변경하지 않는다. 로그에는 API key·개인정보·이미지 원문을 절대 포함하지 않는다.
+   */
   private String callVisionApi(String dataUrl) throws IOException {
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
       throw new IOException("AI 서비스 설정이 없습니다.");
     }
+
+    long startMs = System.currentTimeMillis();
+    String model = config.getModel();
+    log.info("DEBT_VISION_DIAG | start | model={} | time={}", model, Instant.now().toString());
 
     // OpenRouter vision 형식: content 배열에 text + image_url 포함
     List<Map<String, Object>> contentParts = new ArrayList<>();
@@ -175,7 +184,7 @@ public class NewStartDebtImageService {
         "image_url", Map.of("url", dataUrl)));
 
     Map<String, Object> body = new LinkedHashMap<>();
-    body.put("model", config.getModel());
+    body.put("model", model);
     body.put("messages", List.of(
         Map.of("role", "system", "content", SYSTEM_PROMPT),
         Map.of("role", "user", "content", contentParts)));
@@ -192,7 +201,9 @@ public class NewStartDebtImageService {
     // 429(속도 제한)/5xx 시 최대 3회 재시도 (exponential backoff)
     int maxAttempts = 3;
     IOException lastError = null;
+    List<Integer> retryStatuses = new ArrayList<>();
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      long attemptStartMs = System.currentTimeMillis();
       try {
         HttpRequest request = HttpRequest
             .newBuilder(URI.create(config.getBaseUrl() + "/chat/completions"))
@@ -207,19 +218,38 @@ public class NewStartDebtImageService {
 
         HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
         int status = response.statusCode();
+        long latencyMs = System.currentTimeMillis() - attemptStartMs;
+        retryStatuses.add(status);
+        log.info("DEBT_VISION_DIAG | attempt={} | status={} | latency_ms={}",
+            attempt, status, latencyMs);
 
         if (status == 200) {
           JsonNode root = objectMapper.readTree(response.body());
+          String generationId = root.path("id").asText("");
+          if (generationId.isBlank()) generationId = "N/A";
+          String provider = extractProvider(root, response);
           JsonNode choices = root.path("choices");
-          if (!choices.isArray() || choices.isEmpty()) {
+          boolean hasChoices = choices.isArray() && !choices.isEmpty();
+          log.info("DEBT_VISION_DIAG | response | has_choices={} | generation_id={} | provider={}",
+              hasChoices, generationId, provider);
+          if (!hasChoices) {
+            logDone(false, startMs, retryStatuses);
             throw new IOException("이미지 분석에 실패했습니다.");
           }
           String content = choices.get(0).path("message").path("content").asText("");
           if (content.isBlank()) {
+            logDone(false, startMs, retryStatuses);
             throw new IOException("이미지 분석에 실패했습니다.");
           }
+          logDone(true, startMs, retryStatuses);
           return content.strip();
         }
+
+        // 실패 응답의 안전한 진단 정보 기록
+        String safeMsg = extractSafeErrorMessage(response.body());
+        String errorType = classifyErrorType(status, safeMsg);
+        log.warn("DEBT_VISION_DIAG | error | status={} | error_type={} | message={}",
+            status, errorType, safeMsg);
 
         // 429 또는 5xx면 재시도
         if (status == 429 || (status >= 500 && status < 600)) {
@@ -231,15 +261,18 @@ public class NewStartDebtImageService {
               Thread.sleep(2000L * attempt); // 2s, 4s backoff
             } catch (InterruptedException ie) {
               Thread.currentThread().interrupt();
+              logDone(false, startMs, retryStatuses);
               throw new IOException("이미지 분석이 중단되었습니다.");
             }
             continue;
           }
+          logDone(false, startMs, retryStatuses);
           throw lastError;
         }
 
         // 4xx (429 제외)는 재시도 없이 즉시 실패
         log.warn("debt image vision api failed: status={}", status);
+        logDone(false, startMs, retryStatuses);
         if (status == 401 || status == 403) {
           throw new IOException("AI 서비스 인증에 실패했습니다.");
         }
@@ -247,6 +280,7 @@ public class NewStartDebtImageService {
 
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
+        logDone(false, startMs, retryStatuses);
         throw new IOException("이미지 분석이 중단되었습니다.");
       } catch (IOException e) {
         // 재시도 가능한 에러면 루프 계속, 아니면 즉시 throw
@@ -254,15 +288,86 @@ public class NewStartDebtImageService {
           // 이미 위에서 처리됨
           throw e;
         }
+        logDone(false, startMs, retryStatuses);
         throw e;
       }
     }
+    logDone(false, startMs, retryStatuses);
     throw lastError != null ? lastError : new IOException("이미지 분석에 실패했습니다.");
+  }
+
+  /** 진단 로그: 최종 결과 (성공/실패, 총 소요시간, 재시도 횟수·상태 목록). */
+  private void logDone(boolean success, long startMs, List<Integer> retryStatuses) {
+    long totalMs = System.currentTimeMillis() - startMs;
+    int retries = Math.max(0, retryStatuses.size() - 1);
+    log.info("DEBT_VISION_DIAG | done | success={} | total_latency_ms={} | retries={} | retry_statuses={}",
+        success, totalMs, retries, retryStatuses);
+  }
+
+  /** OpenRouter 응답에서 provider 식별 (없으면 "N/A"). */
+  private String extractProvider(JsonNode root, HttpResponse<byte[]> response) {
+    String provider = root.path("provider").path("name").asText("");
+    if (!provider.isBlank()) return provider;
+    provider = root.path("provider").asText("");
+    if (!provider.isBlank()) return provider;
+    List<String> headerVals = response.headers().allValues("x-openrouter-provider");
+    if (!headerVals.isEmpty() && !headerVals.get(0).isBlank()) return headerVals.get(0).trim();
+    headerVals = response.headers().allValues("x-provider");
+    if (!headerVals.isEmpty() && !headerVals.get(0).isBlank()) return headerVals.get(0).trim();
+    return "N/A";
+  }
+
+  /** HTTP status + (안전 처리된) 메시지로 오류 유형 분류. */
+  private String classifyErrorType(int status, String safeMessage) {
+    if (status == 429) return "rate_limit";
+    if (status == 401 || status == 403) return "auth_error";
+    if (status == 400 || status == 404 || status == 422) {
+      String lower = safeMessage.toLowerCase();
+      if (lower.contains("model")) return "invalid_model";
+      if (lower.contains("image") || lower.contains("vision") || lower.contains("unsupported")) {
+        return "vision_unsupported";
+      }
+      return "invalid_request";
+    }
+    if (status >= 500) return "server_error";
+    return "unknown";
+  }
+
+  /**
+   * OpenRouter 오류 응답에서 안전한 범위의 메시지만 추출 (최대 200자).
+   * API key·토큰·base64 이미지·개인정보 패턴은 마스킹한다.
+   */
+  private String extractSafeErrorMessage(byte[] responseBody) {
+    String msg = "";
+    try {
+      JsonNode root = objectMapper.readTree(responseBody);
+      msg = root.path("error").path("message").asText("");
+      if (msg.isBlank()) msg = root.path("message").asText("");
+      if (msg.isBlank()) msg = root.path("error").asText("");
+    } catch (Exception e) {
+      msg = "";
+    }
+    if (msg.isBlank()) return "N/A";
+    if (msg.length() > 200) msg = msg.substring(0, 200);
+    return sanitizeForLog(msg);
+  }
+
+  /** 로그 출력 전 민감 패턴 마스킹 (키·토큰·이미지·개인정보). */
+  private String sanitizeForLog(String text) {
+    if (text == null) return "";
+    String s = text;
+    s = s.replaceAll("data:image/[^;]+;base64,[A-Za-z0-9+/=\\s]+", "[IMAGE_MASKED]");
+    s = s.replaceAll("(?i)bearer\\s+[A-Za-z0-9._~\\-]+", "Bearer [MASKED]");
+    s = s.replaceAll("(?i)(api[_-]?key|secret)[\"'\\s:=]+[A-Za-z0-9._~\\-]{8,}", "$1=[MASKED]");
+    s = RRN_RE.matcher(s).replaceAll("[개인정보 제거]");
+    s = ACCOUNT_RE.matcher(s).replaceAll("[개인정보 제거]");
+    return s.replaceAll("[ \\t]+", " ").trim();
   }
 
   /** Vision API의 JSON 응답을 파싱해 채무 목록으로 변환한다. */
   List<DebtImageItem> parseDebts(String jsonResponse) {
     List<DebtImageItem> items = new ArrayList<>();
+    boolean success = false;
     try {
       // JSON 코드블록 제거 (```json ... ```)
       String json = jsonResponse.trim();
@@ -284,6 +389,7 @@ public class NewStartDebtImageService {
       JsonNode root = objectMapper.readTree(json);
       JsonNode debts = root.path("debts");
       if (!debts.isArray()) {
+        log.info("DEBT_VISION_DIAG | parse | success=false | debts_count=0");
         return items;
       }
 
@@ -308,9 +414,11 @@ public class NewStartDebtImageService {
             confidence,
             debt.path("needsVerification").asBoolean(false)));
       }
+      success = true;
     } catch (Exception e) {
       log.warn("debt image json parse failed: {}", e.getMessage());
     }
+    log.info("DEBT_VISION_DIAG | parse | success={} | debts_count={}", success, items.size());
     return items;
   }
 
