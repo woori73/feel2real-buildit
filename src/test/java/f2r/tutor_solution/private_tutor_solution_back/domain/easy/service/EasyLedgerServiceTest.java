@@ -9,10 +9,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyDashboardResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTaxClassificationRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyTxnRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTaxClassification;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTuitionPayment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
@@ -349,5 +352,109 @@ class EasyLedgerServiceTest {
         beforeCaptor.capture(), eq("{}"), any());
     assertThat(beforeCaptor.getValue()).contains("\"txnId\":7").contains("100000");
     verify(txnRepository).delete(stored);
+  }
+
+  @Test
+  @DisplayName("세무구분 지정 — 거래·분개 불변, TAX_CLASS 로그만 남긴다")
+  void assignTaxClassification_keepsTxnAndJournal_logsCorrection() {
+    EasyTransaction stored = EasyTransaction.builder()
+        .business(academy).occurredOn(LocalDate.of(2026, 9, 3))
+        .direction(EasyTxnDirection.EXPENSE).amount(2500L)
+        .category("미분류").counterparty("채움약국")
+        .sourceKind("FILE_CSV").sourceRef("kb-card-202609-upload.csv#run:1#row-3")
+        .evidenceType(EasyEvidenceType.CREDIT_CARD).build();
+    ReflectionTestUtils.setField(stored, "txnId", 673L);
+    when(txnRepository.findById(673L)).thenReturn(Optional.of(stored));
+
+    var response = service.assignTaxClassification(673L,
+        new EasyTaxClassificationRequest("NOT_EXPENSE"));
+
+    assertThat(response.taxClassification()).isEqualTo("NOT_EXPENSE");
+    // 원거래 보존 — 방향·금액·출처가 그대로다.
+    assertThat(stored.getDirection()).isEqualTo(EasyTxnDirection.EXPENSE);
+    assertThat(stored.getAmount()).isEqualTo(2500L);
+    assertThat(stored.getSourceRef()).isEqualTo("kb-card-202609-upload.csv#run:1#row-3");
+    org.mockito.ArgumentCaptor<String> before =
+        org.mockito.ArgumentCaptor.forClass(String.class);
+    org.mockito.ArgumentCaptor<String> after =
+        org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(correctionService).record(eq(academy), eq(stored), eq("TAX_CLASS"),
+        before.capture(), after.capture(), any());
+    assertThat(before.getValue())
+        .contains("\"taxClassification\":null")
+        .contains("\"sourceRef\":\"kb-card-202609-upload.csv#run:1#row-3\"")
+        .contains("\"amount\":2500");
+    assertThat(after.getValue()).contains("\"taxClassification\":\"NOT_EXPENSE\"");
+    // 분개는 다시 쓰지 않는다.
+    verify(journalService, never()).repost(any());
+    verify(journalService, never()).voidFor(any());
+  }
+
+  @Test
+  @DisplayName("세무구분 NOT_EXPENSE — 손익 요약 필요경비에서 제외 (목록에는 남음)")
+  void assignTaxClassification_notExpense_excludedFromSummary() {
+    EasyTransaction personal = EasyTransaction.builder()
+        .business(academy).occurredOn(LocalDate.of(2026, 9, 3))
+        .direction(EasyTxnDirection.EXPENSE).amount(42600L).category("미분류").build();
+    ReflectionTestUtils.setField(personal, "txnId", 700L);
+    EasyTransaction businessExpense = txn(academy, EasyTxnDirection.EXPENSE, 100000L);
+    EasyTransaction income = txn(academy, EasyTxnDirection.INCOME, 500000L);
+    when(txnRepository.findById(700L)).thenReturn(Optional.of(personal));
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(txnRepository.findByBusiness_BusinessIdAndOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
+        1L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+        .thenReturn(List.of(income, personal, businessExpense));
+    when(paymentRepository.findByBusiness_BusinessId(1L)).thenReturn(List.of());
+    when(txnRepository.findTop10ByBusiness_BusinessIdInOrderByOccurredOnDescTxnIdDesc(List.of(1L)))
+        .thenReturn(List.of());
+
+    assertThat(service.summary(1L, YearMonth.of(2026, 9)).expense()).isEqualTo(142600L);
+
+    service.assignTaxClassification(700L, new EasyTaxClassificationRequest("NOT_EXPENSE"));
+
+    EasyDashboardResponse after = service.summary(1L, YearMonth.of(2026, 9));
+    assertThat(after.expense()).isEqualTo(100000L);
+    assertThat(after.income()).isEqualTo(500000L);
+    assertThat(after.profit()).isEqualTo(400000L);
+  }
+
+  @Test
+  @DisplayName("세무구분 지정 거부 — 방향 불일치·알 수 없는 값·공백")
+  void assignTaxClassification_rejectsInvalid() {
+    EasyTransaction incomeTxn = txn(academy, EasyTxnDirection.INCOME, 300000L);
+    ReflectionTestUtils.setField(incomeTxn, "txnId", 11L);
+    when(txnRepository.findById(11L)).thenReturn(Optional.of(incomeTxn));
+
+    assertThatThrownBy(() -> service.assignTaxClassification(11L,
+        new EasyTaxClassificationRequest("NOT_EXPENSE")))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.assignTaxClassification(11L,
+        new EasyTaxClassificationRequest("NOT_A_CLASS")))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.assignTaxClassification(11L,
+        new EasyTaxClassificationRequest("  ")))
+        .isInstanceOf(IllegalArgumentException.class);
+
+    assertThat(incomeTxn.getTaxClassification()).isNull();
+    verify(correctionService, never()).record(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("REVIEW_REQUIRED 되돌리기 — 미확정 상태로 원복, 분개 변경 없음")
+  void assignTaxClassification_reviewRequired_reverts() {
+    EasyTransaction stored = EasyTransaction.builder()
+        .business(academy).occurredOn(LocalDate.of(2026, 9, 3))
+        .direction(EasyTxnDirection.EXPENSE).amount(19000L)
+        .taxClassification(EasyTaxClassification.NOT_EXPENSE).build();
+    ReflectionTestUtils.setField(stored, "txnId", 719L);
+    when(txnRepository.findById(719L)).thenReturn(Optional.of(stored));
+
+    var response = service.assignTaxClassification(719L,
+        new EasyTaxClassificationRequest("REVIEW_REQUIRED"));
+
+    assertThat(response.taxClassification()).isEqualTo("REVIEW_REQUIRED");
+    verify(correctionService).record(eq(academy), eq(stored), eq("TAX_CLASS"),
+        any(), any(), any());
+    verify(journalService, never()).repost(any());
   }
 }

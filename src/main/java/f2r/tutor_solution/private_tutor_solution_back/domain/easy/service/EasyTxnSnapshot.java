@@ -12,7 +12,12 @@ public final class EasyTxnSnapshot {
   }
 
   public static String of(EasyTransaction txn) {
-    return of(txn, null, null, null, null);
+    return of(txn, null, null, null, null, null);
+  }
+
+  public static String of(EasyTransaction txn, Long businessId, Long accountId,
+      String evidenceReview, String withholdingReview) {
+    return of(txn, businessId, accountId, evidenceReview, withholdingReview, null);
   }
 
   /**
@@ -20,7 +25,7 @@ public final class EasyTxnSnapshot {
    * AI 수정 계약의 before/after 표시용이다.
    */
   public static String of(EasyTransaction txn, Long businessId, Long accountId,
-      String evidenceReview, String withholdingReview) {
+      String evidenceReview, String withholdingReview, String taxClassification) {
     if (txn == null) {
       return "{}";
     }
@@ -34,6 +39,7 @@ public final class EasyTxnSnapshot {
         + ",\"description\":\"" + esc(txn.getDescription()) + "\""
         + ",\"accountId\":" + (accountId == null
             ? (txn.getAccount() == null ? "null" : txn.getAccount().getAccountId()) : accountId)
+        + ",\"sourceRef\":" + strOrNull(txn.getSourceRef())
         + ",\"evidenceType\":" + strOrNull(txn.getEvidenceType() == null ? null
             : txn.getEvidenceType().name())
         + ",\"evidenceReview\":" + strOrNull(evidenceReview == null
@@ -42,6 +48,9 @@ public final class EasyTxnSnapshot {
         + ",\"withholdingReview\":" + strOrNull(withholdingReview == null
             ? (txn.getWithholdingReview() == null ? null : txn.getWithholdingReview().name())
             : withholdingReview)
+        + ",\"taxClassification\":" + strOrNull(taxClassification == null
+            ? (txn.getTaxClassification() == null ? null : txn.getTaxClassification().name())
+            : taxClassification)
         + "}";
   }
 
