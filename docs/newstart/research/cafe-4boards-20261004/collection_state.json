@@ -6,11 +6,11 @@
     "clubId": 31312978
   },
   "package": "cafe-4boards-20261004",
-  "packagePath": "cafe-4boards-20261004",
+  "packagePath": "docs/newstart/research/cafe-4boards-20261004",
   "status": "TRANCH_COMPLETED_PROD_REFLECTED",
   "tranche": "고가치 우선 110건 + 하랑랑 스페셜 운영자 정보글 15건(2026-10-04 사용자 지시 보존) = 125건. 전체 신규 후보 중 미수집분은 pendingCounts 참조",
   "startedAt": "2026-10-04T00:00:00+00:00",
-  "updatedAt": "2026-10-04T07:23:29+00:00",
+  "updatedAt": "2026-10-04T07:33:22+00:00",
   "totals": {
     "surveyed": 644,
     "existingDuplicate": 13,
