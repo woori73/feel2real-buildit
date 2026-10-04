@@ -49,9 +49,9 @@ logger = logging.getLogger(__name__)
 
 mcp = MCPServer(
     name='buildit-wiki',
-    # save_generated_test 추가 시 bump — 일부 MCP client가 serverInfo.version 변화로
+    # tool 추가 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='4',
+    version='5',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -90,6 +90,73 @@ def get_jikbo_context(school: str, grade: str, year: int, semester: str, exam: s
     운영 GET /api/workspaces/jikbo/context와 완전히 같은 데이터다."""
     from main import get_jikbo_workspace_context
     return get_jikbo_workspace_context(school=school, grade=grade, year=year, semester=semester, exam=exam)
+
+
+@mcp.tool()
+def get_csat_weakness(student: str) -> dict:
+    """학생의 실제 오답과 약점 DNA를 반환한다. (READ ONLY — 수정·재분석·삭제 없음)
+    student에 학생 이름(예: '최승원')을 지정하면 해당 학생의 저장된 약점 DNA
+    분석 결과(analysis, dna 카드 목록)와 실제 오답 목록(wrong_answers)을 함께
+    반환한다. analysis가 null이면 아직 약점 분석이 실행되지 않은 상태다
+    (가짜 데이터를 만들지 않는다). 오답이 없으면 wrong_answers는 빈 배열이다.
+    학생을 찾을 수 없으면 부분 일치 후보 목록을 에러 메시지에 담아 반환한다."""
+    from main import list_students, get_student_weakness_dna, list_csat_wrong_answers
+    from fastapi import HTTPException
+    name = (student or '').strip()
+    if not name:
+        raise ValueError('student(학생 이름)는 비어 있을 수 없습니다.')
+    students = list_students()
+    matched = [s for s in students if (s.get('name') or '').strip() == name]
+    if not matched:
+        candidates = [s.get('name') for s in students if name in (s.get('name') or '')][:10]
+        raise ValueError(f"학생 '{name}'을(를) 찾을 수 없습니다. 후보: {candidates}")
+    if len(matched) > 1:
+        raise ValueError(
+            f"동명이인 {len(matched)}명 — 이름을 더 정확히 지정해 주세요: "
+            f"{[(s.get('id'), s.get('name')) for s in matched]}")
+    sid = matched[0]['id']
+    sname = matched[0]['name']
+    try:
+        weakness = get_student_weakness_dna(sid)
+    except HTTPException as exc:
+        raise ValueError(str(exc.detail)) from exc
+    wrongs = list_csat_wrong_answers(student=sname)
+    return {
+        'student': {'id': sid, 'name': sname},
+        'weakness_dna': weakness,
+        'wrong_answers': wrongs,
+        'wrong_count': len(wrongs),
+    }
+
+
+@mcp.tool()
+def get_csat_problem_context(student: str, include_questions: bool = True) -> dict:
+    """수능영어 문제 제작용 CSAT Context를 반환한다. (READ ONLY — 수정·재분석·삭제 없음)
+    학생의 실제 오답 + weakness DNA + DNA 유형별 관련 기출 문제를 문제 제작에
+    필요한 형태로 묶어 반환한다. related_questions는 dna 카드의 유형(type_id)별로
+    정답·해설이 있는 관련 기출 문제를 최대 20개씩 담은 목록이다. include_questions를
+    false로 주면 오답·DNA만 반환하고 기출 조회는 생략한다."""
+    from main import list_csat_questions
+    base = get_csat_weakness(student)
+    related = []
+    if include_questions:
+        seen = set()
+        for card in (base.get('weakness_dna') or {}).get('dna', []):
+            tid = card.get('type_id') or card.get('key')
+            if not tid or tid in seen:
+                continue
+            seen.add(tid)
+            try:
+                qs = list_csat_questions(type_id=tid, has_answer=True, has_explanation=True) or []
+            except Exception:
+                qs = []
+            related.append({
+                'dna_key': tid,
+                'question_count': len(qs),
+                'questions': qs[:20],
+            })
+    base['related_questions'] = related
+    return base
 
 
 def _save_deliverable(kind: str, school: str, grade: str, year: int, semester: str, exam: str,
