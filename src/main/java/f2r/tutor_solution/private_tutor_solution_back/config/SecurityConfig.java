@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.NewstartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.EasyCollectorAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtAuthenticationFilter;
@@ -111,6 +112,10 @@ public class SecurityConfig {
     // 테스트에서는 TestPropertySource의 CHART_AGENT_TOKEN 으로 주입된다.
     ChartAgentTokenFilter chartAgentTokenFilter =
         new ChartAgentTokenFilter(environment.getProperty(ChartAgentTokenFilter.ENV_VAR));
+    // NewStart 지식 검색 Agent 전용 Bearer 토큰 필터. NEWSTART_AGENT_TOKEN 미설정 시 비활성화.
+    // ChartAgentTokenFilter와 동일한 패턴 (서블릿 자동 등록 이중 실행 방지 + @WebMvcTest 호환).
+    NewstartAgentTokenFilter newstartAgentTokenFilter =
+        new NewstartAgentTokenFilter(environment.getProperty(NewstartAgentTokenFilter.ENV_VAR));
     // EASY Visible Local Browser Collector 전용 Bearer 토큰 필터. 등록된 collector마다 고유 토큰
     // (SHA-256 해시만 DB 저장)이라, ChartAgentTokenFilter와 달리 요청마다 DB 조회로 검증한다.
     EasyCollectorAgentTokenFilter easyCollectorAgentTokenFilter =
@@ -382,6 +387,13 @@ public class SecurityConfig {
                 "/api/admin/chart/tools/research-drafts",
                 "/api/admin/chart/tools/review-batches").hasAnyRole("ADMIN", "CHART_AGENT")
 
+            // NewStart 지식 검색 Agent (ROLE_NEWSTART_AGENT) — Phase 1 read-only 검색 1개 경로만 허용.
+            // Bearer 토큰은 NEWSTART_AGENT_TOKEN 환경변수로 주입되며 미설정 시 이 규칙은
+            // 사실상 ADMIN 전용과 동일해진다 (필터가 인증을 설정하지 않으므로).
+            // 반드시 아래 /api/** catch-all 보다 먼저(좁은 것 우선).
+            .requestMatchers(HttpMethod.GET,
+                "/api/muse/newstart/knowledge/search").hasAnyRole("ADMIN", "NEWSTART_AGENT")
+
             // EASY Visible Local Browser Collector agent (ROLE_EASY_COLLECTOR_AGENT) — collector
             // 콜백 경로만 허용. Bearer 토큰은 collector 등록 시 발급되는 개별 토큰(해시만 DB 저장).
             // 관리 endpoint(register/start/cancel 등)는 아래 /api/admin/** 로 떨어져 ROLE_ADMIN
@@ -426,7 +438,8 @@ public class SecurityConfig {
         .addFilterAfter(archivedRouteAliasFilter, SubdomainAcademyFilter.class)
         .addFilterAfter(jwtAuthenticationFilter, ArchivedRouteAliasFilter.class)
         .addFilterAfter(chartAgentTokenFilter, JwtAuthenticationFilter.class)
-        .addFilterAfter(easyCollectorAgentTokenFilter, ChartAgentTokenFilter.class)
+        .addFilterAfter(newstartAgentTokenFilter, ChartAgentTokenFilter.class)
+        .addFilterAfter(easyCollectorAgentTokenFilter, NewstartAgentTokenFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
