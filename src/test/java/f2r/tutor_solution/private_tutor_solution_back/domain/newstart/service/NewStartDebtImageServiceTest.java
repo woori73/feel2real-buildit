@@ -40,8 +40,8 @@ class NewStartDebtImageServiceTest {
     String json = """
         {
           "debts": [
-            {"creditor": "신한은행", "debtType": "일반신용대출", "balance": "7,500,000원", "overdueInfo": "", "creditorChange": ""},
-            {"creditor": "삼성카드", "debtType": "카드론", "balance": "2,500,000원", "overdueInfo": "장기연체", "creditorChange": ""}
+            {"creditor": "신한은행", "debtType": "일반신용대출", "balance": "7,500,000원", "loanAmount": "10,000,000원", "overdueInfo": "", "creditorChange": "", "confidence": "high", "needsVerification": false},
+            {"creditor": "삼성카드", "debtType": "카드론", "balance": "2,500,000원", "loanAmount": null, "overdueInfo": "장기연체", "creditorChange": "", "confidence": "medium", "needsVerification": true}
           ]
         }
         """;
@@ -49,16 +49,36 @@ class NewStartDebtImageServiceTest {
     assertThat(items).hasSize(2);
     assertThat(items.get(0).creditor()).isEqualTo("신한은행");
     assertThat(items.get(0).balance()).isEqualTo("7,500,000원");
+    assertThat(items.get(0).loanAmount()).isEqualTo("10,000,000원");
+    assertThat(items.get(0).confidence()).isEqualTo("high");
+    assertThat(items.get(0).needsVerification()).isFalse();
+    // loanAmount가 null이면 null 유지 (추측 금지)
+    assertThat(items.get(1).loanAmount()).isNull();
     assertThat(items.get(1).overdueInfo()).isEqualTo("장기연체");
+    assertThat(items.get(1).needsVerification()).isTrue();
   }
 
   @Test
   void parseDebts_handlesMarkdownCodeBlock() throws Exception {
     NewStartDebtImageService service = newServiceWithoutNetwork();
-    String json = "```json\n{\"debts\": [{\"creditor\": \"국민은행\", \"debtType\": \"\", \"balance\": \"1,000,000원\", \"overdueInfo\": \"\", \"creditorChange\": \"\"}]}\n```";
+    String json = "```json\n{\"debts\": [{\"creditor\": \"국민은행\", \"debtType\": \"\", \"balance\": \"1,000,000원\", \"loanAmount\": null, \"overdueInfo\": \"\", \"creditorChange\": \"\", \"confidence\": \"low\", \"needsVerification\": true}]}\n```";
     List<NewStartDebtImageService.DebtImageItem> items = service.parseDebts(json);
     assertThat(items).hasSize(1);
     assertThat(items.get(0).creditor()).isEqualTo("국민은행");
+    assertThat(items.get(0).confidence()).isEqualTo("low");
+  }
+
+  @Test
+  void parseDebts_distinguishesBalanceFromLoanAmount() throws Exception {
+    // 잔액 vs 대출금액 혼동 방지 검증
+    NewStartDebtImageService service = newServiceWithoutNetwork();
+    String json = """
+        {"debts": [{"creditor": "신한은행", "debtType": "일반신용대출", "balance": "7,500,000원", "loanAmount": "10,000,000원", "overdueInfo": "", "creditorChange": "", "confidence": "high", "needsVerification": false}]}
+        """;
+    List<NewStartDebtImageService.DebtImageItem> items = service.parseDebts(json);
+    assertThat(items.get(0).balance()).isEqualTo("7,500,000원");
+    assertThat(items.get(0).loanAmount()).isEqualTo("10,000,000원");
+    assertThat(items.get(0).balance()).isNotEqualTo(items.get(0).loanAmount());
   }
 
   @Test
@@ -72,7 +92,7 @@ class NewStartDebtImageServiceTest {
   void parseDebts_masksPersonalInfoInResponse() throws Exception {
     NewStartDebtImageService service = newServiceWithoutNetwork();
     String json = """
-        {"debts": [{"creditor": "신한은행 900101-1234567", "debtType": "", "balance": "1,000,000원", "overdueInfo": "", "creditorChange": ""}]}
+        {"debts": [{"creditor": "신한은행 900101-1234567", "debtType": "", "balance": "1,000,000원", "loanAmount": null, "overdueInfo": "", "creditorChange": "", "confidence": "high", "needsVerification": false}]}
         """;
     List<NewStartDebtImageService.DebtImageItem> items = service.parseDebts(json);
     assertThat(items).hasSize(1);
