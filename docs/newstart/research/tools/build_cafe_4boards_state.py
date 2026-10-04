@@ -18,6 +18,10 @@ index = json.loads((PKG / "INDEX.json").read_text(encoding="utf-8"))
 units = json.loads((PKG / "qa_units.json").read_text(encoding="utf-8"))
 dedup = json.loads((PKG / "cafe_4boards_dedup_report.json").read_text(encoding="utf-8"))
 manifest = json.loads((PKG / "load_batches" / "manifest.json").read_text(encoding="utf-8"))
+# 운영 DB 반영 대장이 있으면 상태에 반영한다(없으면 미반영 상태로 남긴다).
+DB_FILE = PKG / "db_reflect_2026-10-04.json"
+db = json.loads(DB_FILE.read_text(encoding="utf-8")) if DB_FILE.exists() else None
+dbc = (db or {}).get("counts", {})
 
 now = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
 boards = []
@@ -29,7 +33,9 @@ for menu, det in sorted(index["boards_detail"].items(), key=lambda kv: int(kv[0]
         "surveyed": det["surveyed"],
         "existingDuplicate": det["existingDuplicateDeclared"],
         "greetingExcluded": det["greetingExcludedDeclared"],
-        "operatorInfoExcluded": det.get("operatorInfoPostsDeclared", 0),
+        "operatorInfoPostsFound": det.get("operatorInfoPostsDeclared", 0),
+        # 발견된 운영자 글 중 수집되지 않은 건만 제외로 센다(2026-10-04 지시로 menuId9 15건은 수집됨).
+        "operatorInfoExcluded": max(det.get("operatorInfoPostsDeclared", 0) - det.get("collected", 0), 0),
         "newCandidates": det["newCandidatesDeclared"],
         "trancheRanked": det.get("rankedCandidates", 0),
         "collected": det["collected"],
@@ -54,7 +60,7 @@ state = {
     "cafe": {"name": index["cafe"]["name"], "cafeKey": index["cafe"]["cafeKey"], "clubId": index["cafe"]["clubid"]},
     "package": index["package"],
     "packagePath": str(PKG).replace("\\", "/"),
-    "status": "TRANCH_COMPLETED_PENDING_USER_APPROVAL",
+    "status": ("TRANCH_COMPLETED_PROD_REFLECTED" if db else "TRANCH_COMPLETED_PENDING_USER_APPROVAL"),
     "tranche": "고가치 우선 110건 + 하랑랑 스페셜 운영자 정보글 15건(2026-10-04 사용자 지시 보존) = 125건. "
                "전체 신규 후보 중 미수집분은 pendingCounts 참조",
     "startedAt": "2026-10-04T00:00:00+00:00",
@@ -76,12 +82,34 @@ state = {
         "pendingUnrankedCandidates": pending,
     },
     "boards": boards,
-    "dbReflection": {
+    "dbReflection": ({
+        "writtenToProd": True,
+        "approved": True,
+        "executedAt": db["executedAt"],
+        "path": db["executionChannel"]["how"],
+        "endpoints": db["executionChannel"]["endpoints"],
+        "notUsed": db["executionChannel"]["notUsed"],
+        "prodRowsBefore": dbc.get("prodRowsBefore"),
+        "prodRowsAfter": dbc.get("prodRowsAfter"),
+        "exactMatchExistingBefore": dbc.get("exactMatchExistingBefore"),
+        "newlyInserted": dbc.get("newlyCreated"),
+        "movedToReview": dbc.get("movedToReview"),
+        "activeApproved": dbc.get("approvedActive"),
+        "heldAtReview": dbc.get("heldAtReview"),
+        "draftRemaining": dbc.get("draftRemaining"),
+        "createFailures": dbc.get("createFailures"),
+        "approveFailures": dbc.get("approveFailures"),
+        "duplicateKeepMemoCalls": dbc.get("duplicateKeepMemoCalls"),
+        "knowledgeIdRange": db["knowledgeIdRange"],
+        "perBoard": db["perBoard"],
+        "ledger": "db_reflect_2026-10-04_ledger.json",
+        "disclosures": db["defectsAndDisclosures"],
+    } if db else {
         "writtenToProd": False,
         "approved": False,
         "path": "insert-only DRAFT->REVIEW via existing admin wiki API, workflow newstart-cafe-4boards-load.yml",
         "blocker": "로컬에 ADMIN 세션/AWS 자격 없음. DRY_RUN·WRITE_REVIEW 실행과 REVIEW->ACTIVE 승인은 사용자 전용.",
-    },
+    }),
     "qualityFlags": {
         "emptyBodyImageOnly": sum(b["emptyBody"] for b in boards),
         "commentsPartial": sum(b["commentsPartial"] for b in boards),
@@ -97,7 +125,7 @@ state = {
 checkpoint = {
     "task": state["task"],
     "package": index["package"],
-    "phase": "RAW_PRESERVED_UNITS_BUILT_PR_PENDING",
+    "phase": ("PROD_REFLECTED_DRAFT_REVIEW_ACTIVE" if db else "RAW_PRESERVED_UNITS_BUILT_PR_PENDING"),
     "progress": {
         "enumerated": surveyed,
         "collected": collected,
@@ -105,13 +133,20 @@ checkpoint = {
         "payloadRows": manifest["totalToLoad"],
         "pendingCandidates": pending,
     },
-    "nextActions": [
+    "nextActions": ([
+        "사람: REVIEW 보류 %d건(이미지/링크 중심 %d + 댓글 부분수집 %d) 근거 보강 후 ADMIN 화면에서 승인"
+        % (dbc.get("heldAtReview", 0), db["holdReasons"].get("HOLD_MEDIA", 0),
+           db["holdReasons"].get("HOLD_PARTIAL", 0)),
+        "사람: 하랑랑 스페셜 운영자 15건(16 unit)은 이미지 대체 텍스트/OCR 보강 전까지 REVIEW 유지",
+        "다음 tranch: " + " / ".join("menuId%s %d" % (b["menuId"], b["pendingUnrankedCandidates"])
+                                    for b in boards if b["pendingUnrankedCandidates"]),
+    ] if db else [
         "사용자: PR 검수 후 newstart-cafe-4boards-load.yml DRY_RUN 실행(운영 DB read-only 중복 실측)",
         "사용자: 필요 시 WRITE_REVIEW 실행(insert-only, 승인 없음)",
         "사람: ADMIN 화면에서 REVIEW->ACTIVE 승인",
         "다음 tranch: " + " / ".join("menuId%s %d" % (b["menuId"], b["pendingUnrankedCandidates"])
                                     for b in boards if b["pendingUnrankedCandidates"]),
-    ],
+    ]),
     "checkpointAt": now,
     "lastCommitSha": (sys.argv[2] if len(sys.argv) > 2 else None),
     "lastPushAt": now if len(sys.argv) > 2 else None,

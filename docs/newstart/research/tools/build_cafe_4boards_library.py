@@ -155,6 +155,10 @@ def main():
     arts, units, index, dedup, by_article = load(pkg)
     recs = article_records(arts, by_article, index)
     now = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    # 운영 DB 반영 대장이 있으면 전달본 헤더에 실제 결과를 기록한다(없으면 미반영 표기).
+    db_file = pkg / "db_reflect_2026-10-04.json"
+    db = json.loads(db_file.read_text(encoding="utf-8")) if db_file.exists() else None
+    dbc = (db or {}).get("counts", {})
 
     # ---------- raw json ----------
     raw = {
@@ -170,14 +174,22 @@ def main():
             "officialCheck": "NOT_CHECKED",
             "historicalBoardMenuId4": "임시안~확정안 게시판은 역사 자료. 현재 시행 규정으로 제시 금지",
             "separation": "공식자료 / 회원경험 / 과거정책을 구분해 사용할 것",
-            "productionDbWrite": "본 파일은 전달본이며 운영 DB 반영 여부와 무관하다(REVIEW 적재 미실행)",
+            "productionDbWrite": (args.db_note if args.db_note else (
+                "운영 DB 반영 완료(2026-10-04): %d행 insert-only DRAFT→REVIEW, ACTIVE 승인 %d행, "
+                "근거 불완전 %d행은 REVIEW 보류. 직접 SQL·기존 ACTIVE 수정 없음"
+                % (dbc.get("newlyInserted", 0), dbc.get("approvedActive", 0), dbc.get("heldAtReview", 0))
+                if db else "전달본만 제작 — 운영 DB 미반영(DRY_RUN에서도 아직 실행 안 함)")),
             "deliveryMasking": "전화·계좌·카드·주민 패턴은 전달본에서만 마스킹했다. 저장소 원문 보존본은 무마스크.",
         },
         "boards": [
             {"menuId": m, "boardName": BOARD_TITLE[m], "surveyed": index["boards_detail"][str(m)]["surveyed"],
              "existingDuplicate": index["boards_detail"][str(m)]["existingDuplicateDeclared"],
              "greetingExcluded": index["boards_detail"][str(m)]["greetingExcludedDeclared"],
-             "operatorInfoExcluded": index["boards_detail"][str(m)].get("operatorInfoPostsDeclared", 0),
+             "operatorInfoPostsFound": index["boards_detail"][str(m)].get("operatorInfoPostsDeclared", 0),
+             # 발견한 운영자 글 중 지시 보존(수집)분을 뺀 값만 제외로 센다.
+             "operatorInfoExcluded": max(index["boards_detail"][str(m)].get("operatorInfoPostsDeclared", 0)
+                                         - sum(1 for r in recs if r["menuId"] == m
+                                               and r.get("scopeIncludedByUserRuling")), 0),
              "collected": sum(1 for r in recs if r["menuId"] == m),
              "operatorPosts": sum(1 for r in recs if r["menuId"] == m
                                   and r["classification"]["origin"] == "CAFE_OPERATOR_AGENT_POST"),
@@ -207,6 +219,17 @@ def main():
             "baselineArticleIds": dedup["article_level"]["baseline_total"],
             "overlapWithBaseline": dedup["article_level"]["overlap_with_baseline"],
         },
+        "productionReflection": ({
+            "executedAt": db["executedAt"],
+            "channel": db["executionChannel"]["how"],
+            "endpoints": db["executionChannel"]["endpoints"],
+            "notUsed": db["executionChannel"]["notUsed"],
+            "counts": dbc,
+            "perBoard": db["perBoard"],
+            "holdReasons": db["holdReasons"],
+            "knowledgeIdRange": db["knowledgeIdRange"],
+            "disclosures": db["defectsAndDisclosures"],
+        } if db else {"status": "NOT_REFLECTED"}),
         "userRuling20261004": {
             "menuId9": "하랑랑 스페셜 32건 중 가입인사·등업 17건은 제외 유지, "
                        "운영자(지피지기자산·등급 999) 정보글 15건은 중요자료로 전원 보존·반영 후보 포함. "
@@ -269,6 +292,41 @@ def main():
              % (raw["counts"]["articles"], dedup["article_level"]["baseline_total"],
                 sum(1 for r in recs if r["collectionStatus"] == "EMPTY_BODY"),
                 sum(1 for r in recs if r["collectionStatus"] == "COMMENTS_PARTIAL")))
+    L.append("")
+    if db:
+        L.append("## 운영 DB 반영 결과 (2026-10-04)")
+        L.append("")
+        L.append("- 경로: %s" % db["executionChannel"]["how"])
+        L.append("- 사용 API: %s" % " · ".join(x.strip() for x in db["executionChannel"]["endpoints"]))
+        L.append("- 쓰지 않은 것: %s" % " · ".join(db["executionChannel"]["notUsed"]))
+        L.append("")
+        L.append("| 게시판 | menuId | 적재 | ACTIVE | REVIEW 보류 | 보류: 이미지/링크 | 보류: 댓글 부분 |")
+        L.append("|---|---|---|---|---|---|---|")
+        for m in BOARD_ORDER:
+            pb = db["perBoard"]["m%d" % m]
+            L.append("| %s | %d | %d | %d | %d | %d | %d |" % (
+                pb["boardName"], m, pb["created"], pb["active"], pb["reviewHeld"],
+                pb["holdMedia"], pb["holdPartial"]))
+        L.append("| **합계** |  | %d | %d | %d | %d | %d |" % (
+            dbc["newlyCreated"], dbc["approvedActive"], dbc["heldAtReview"],
+            db["holdReasons"]["HOLD_MEDIA"], db["holdReasons"]["HOLD_PARTIAL"]))
+        L.append("")
+        L.append("- 운영 DB %d건 → %d건, 정확일치 기존 %d건, 신규 적재 %d건, DRAFT 잔존 %d건, 생성·승인 오류 %d건."
+                 % (dbc["prodRowsBefore"], dbc["prodRowsAfter"], dbc["exactMatchExistingBefore"],
+                    dbc["newlyCreated"], dbc["draftRemaining"],
+                    dbc["createFailures"] + dbc["approveFailures"]))
+        L.append("- REVIEW 보류 자료는 근거가 불완전해 억지로 ACTIVE 로 올리지 않았습니다(지시대로). "
+                 "하랑랑 스페셜 운영자 정보글 15건(16 unit)은 작성일 2024-11-05·provenance·historicalCANDIDATE=true 를 "
+                 "그대로 보존한 채 REVIEW 단계에 있습니다.")
+        L.append("")
+        L.append("### 이번 반영에서 생긴 결함과 시정")
+        L.append("")
+        for note in db["defectsAndDisclosures"]:
+            L.append("- %s" % note)
+    else:
+        L.append("## 운영 DB 반영")
+        L.append("")
+        L.append("- 아직 미반영. DRY_RUN·WRITE_REVIEW 실행과 REVIEW→ACTIVE 승인은 사용자 전용.")
     L.append("")
 
     excluded_agent_ids = {r["articleId"] for r in recs

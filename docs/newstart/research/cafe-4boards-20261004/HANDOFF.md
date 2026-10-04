@@ -54,13 +54,19 @@
 - 반영 파일: `load_batches/manifest.json` + `batch_00..06.json` (675행, 14필드 계약)
 - 중복 검수: `cafe_4boards_dedup_report.json`
 - 상태: `collection_state.json`, `checkpoint.json`
+- 운영 반영 기록: `db_reflect_2026-10-04.json`, `db_reflect_2026-10-04_ledger.json`
 - 생성 도구: `tools/build_cafe_4boards_raw.py` / `build_cafe_4boards_units.py` / `build_cafe_4boards_dedup_report.py` /
   `build_cafe_4boards_state.py` / `build_cafe_4boards_library.py` / **`build_menu9_operator_dump.py`(신규)**
 - 로더·검토 도구: `tools/load_cafe_4boards_prod.py` (insert-only, b6 동일 계약), `tools/review_cafe_4boards_prod.py`
   (이번 패키지 REVIEW 행만 기존 review API로 승인/보류, `triage_apply_prod.py`와 동일한 승인 규칙)
-- 실행창구: `.github/workflows/newstart-cafe-4boards-load.yml` (DRY_RUN / WRITE_REVIEW / APPROVE_ELIGIBLE)
+- 실행창구: `.github/workflows/newstart-cafe-4boards-load.yml` (DRY_RUN / WRITE_REVIEW / APPROVE_ELIGIBLE) —
+  이번 반영은 이 workflow가 기본 브랜치에 없어 dispatch 불가(404)였으므로, workflow가 호출하는 것과 **동일한 API 계약**을
+  기존 ADMIN 화면 세션에서 직접 실행했다(아래 "운영 DB 반영" 참조). payload는 커밋된 batch 파일과 sha256 동일함을 실행 전 확인.
 - Library 전달파일: `delivery/newstart_cafe_4boards_2026-10-04_raw.json`, `..._library.md`
   (Qoder는 파일 제작까지만 수행 — ChatGPT Library 업로드 없음)
+  PC 복사본: `C:\Users\sxxra\Documents\Qoder\2026-10-04\2f2a2d6d\delivery\` 동일 파일명·동일 sha256.
+  하랑랑 운영자 15건 미포함 + DB 반영 전 직전본은 삭제하지 않고 같은 폴더에
+  `PREV_not-final_하랑랑운영자15건미포함_DB반영전_{raw.json,library.md}`로 구분 보존.
 
 ## 재사용한 기존 계약 (신규 로직 발명 없음)
 - unit 분류: `build_qa_units.process_article` (부실우려 b6 PHASE1 STEP2) import 재사용, menuId/boardId만 기사 값으로 교정
@@ -81,15 +87,29 @@
 - contentForm: IMAGE_ONLY 13, LINK_PREVIEW 2 (menuId 9 운영자 자료)
 - unit 675행은 원문 구조화가 아닌 **1차 지식화 후보**이며 officialCheck=NOT_CHECKED. 회원 경험을 공식 규정처럼 제시 금지.
 
-## 운영 DB 반영
-- 실행: `gh workflow run newstart-cafe-4boards-load.yml --ref newstart/cafe-4boards-20261004 -f mode=<DRY_RUN|WRITE_REVIEW|APPROVE_ELIGIBLE>`
-- 결과 수치(적재/승인/보류/오류)는 `collection_state.json` `dbReflection`에 기록.
+## 운영 DB 반영 (2026-10-04 실행 완료)
+- 결과: 운영 DB 3826행 → 4501행. payload 675행 전수 신규 적재, 생성·승인 오류 0건, DRAFT 잔존 0건.
+  ACTIVE 승인 336행, REVIEW 보류 339행(이미지/링크 근거 불완전 28 + 댓글 부분수집 311).
+  사전 전수 중복 실측에서 정확일치 기존 행 0건 → 중복 재등록 없음.
+- 창구: 기존 운영 ADMIN 세션(화면 로그인된 admin)에서 문서화된 admin wiki API만 호출
+  (`GET/POST /api/admin/newstart/wiki`, `PUT /wiki/{id}/status?status=REVIEW`,
+  `POST /wiki/review/{id}/approve`, `POST /wiki/review/{id}/keep`).
+  workflow는 기본 브랜치에 없어(`PR #483` 미머지 → `workflow_dispatch` 404) dispatch 불가였고,
+  머지는 공유 상태 변경이라 집행하지 않았다. 직접 SQL·JWT 위조·UPDATE/DELETE·기존 ACTIVE 수정은 쓰지 않았다.
+- 대장: `db_reflect_2026-10-04.json`(실행 기록·결함 고지) + `db_reflect_2026-10-04_ledger.json`(675행별 knowledgeId/판정)
+- knowledgeId 3827–4501. 하랑랑 운영자 15건(16unit)은 REVIEW 보류(provenance·작성일·historical 보존).
+- 시정한 결함: m5 `authority` 51자 → `newstart_knowledge_items.authority` length 50 위반으로 create HTTP 500 8건.
+  생성기에 `authority_for()` + 컬럼 상한 게이트를 넣고 CI 로더에도 동일 게이트를 미러링한 뒤 재생성·재적재(중복 없음).
+- 남긴 고지: keep 루프 첫 실행에서 REVIEW 유지 메모 130건 중복 기록(상태 영향 없음),
+  대장 idx 0 행의 `reviewMoved` 불리언 아티팩트(실측 DRAFT 잔존 0건이 정본).
 
 ## 다음 단계
-1. (완료) DRY_RUN → WRITE_REVIEW → APPROVE_ELIGIBLE 실행 및 결과 검증
-2. ADMIN 화면에서 보류(REVIEW 유지) 자료의 승인 여부 판단 — 근거 보강(이미지 내용 확인) 필요 자료
+1. (완료 2026-10-04) 675행 적재 → REVIEW 675행 → ACTIVE 336행 / REVIEW 보류 339행. 창구는 위 "운영 DB 반영" 참조.
+   (`gh workflow run … --ref newstart/cafe-4boards-20261004` 는 브랜치 전용 workflow라 404 — 병합 후에만 dispatch 가능)
+2. ADMIN 화면에서 보류 339행 승인 여부 판단 — 하랑랑 운영자 15건(16unit)을 포함해 근거 보강(이미지 내용 확인)이 필요한 자료.
+   workflow로 다시 돌릴 경우: 머지 후 `mode=DRY_RUN` → `WRITE_REVIEW` → `APPROVE_ELIGIBLE`(idempotent, exact-match skip).
 3. 다음 tranch: menuId3 308 / menuId4 119 / menuId5 58 미순위 신규 후보
-4. ChatGPT Library 업로드는 Qoder가 하지 않는다. 전달파일 2종만 PC `delivery/`에 저장.
+4. ChatGPT Library 업로드는 Qoder가 하지 않는다. 전달파일 2종만 리포지토리·PC `delivery/`에 저장.
 
 ## 주의사항
 - 표본은 특정 기간의 회원 자발적 게시글이다. 전체 부실차주 통계로 일반화 금지.

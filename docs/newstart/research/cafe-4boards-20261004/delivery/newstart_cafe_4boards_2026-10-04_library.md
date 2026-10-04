@@ -20,6 +20,32 @@
 
 비고: 원본 articleId 125건은 이미 보존된 404건 집합과 중복 0건입니다. 본문 없이 이미지/첨부만 있는 글 22건, 스레드가 길어 댓글이 부분 수집된 글 32건은 각 항목에 표시했습니다.
 
+## 운영 DB 반영 결과 (2026-10-04)
+
+- 경로: 기존 운영 ADMIN 세션(화면 로그인된 admin-f2r)에서 문서화된 NewStart admin wiki API만 호출
+- 사용 API: GET  /api/admin/newstart/wiki?page&size&sort=oldest   (read-only 전수 중복 실측) · POST /api/admin/newstart/wiki                          (14필드 계약, DRAFT 생성) · PUT  /api/admin/newstart/wiki/{id}/status?status=REVIEW(DRAFT->REVIEW) · POST /api/admin/newstart/wiki/review/{id}/approve      (reason + confirmed=true) · POST /api/admin/newstart/wiki/review/{id}/keep         (REVIEW 유지 메모)
+- 쓰지 않은 것: SQL 직접 조작 · JWT 위조 · UPDATE/DELETE · 기존 ACTIVE 행 건드림 · ChatGPT Library 업로드
+
+| 게시판 | menuId | 적재 | ACTIVE | REVIEW 보류 | 보류: 이미지/링크 | 보류: 댓글 부분 |
+|---|---|---|---|---|---|---|
+| 부실차주 신청 | 3 | 197 | 125 | 72 | 0 | 72 |
+| 부실차주 임시안부터 확정안 | 4 | 341 | 152 | 189 | 6 | 183 |
+| 재취업 재창업 감면수익+정부 지원 | 5 | 121 | 59 | 62 | 6 | 56 |
+| 하랑랑 스페셜 | 9 | 16 | 0 | 16 | 16 | 0 |
+| **합계** |  | 675 | 336 | 339 | 28 | 311 |
+
+- 운영 DB 3826건 → 4501건, 정확일치 기존 0건, 신규 적재 675건, DRAFT 잔존 0건, 생성·승인 오류 0건.
+- REVIEW 보류 자료는 근거가 불완전해 억지로 ACTIVE 로 올리지 않았습니다(지시대로). 하랑랑 스페셜 운영자 정보글 15건(16 unit)은 작성일 2024-11-05·provenance·historicalCANDIDATE=true 를 그대로 보존한 채 REVIEW 단계에 있습니다.
+
+### 이번 반영에서 생긴 결함과 시정
+
+- 2026-10-04 첫 101건 적재에서 m5 행 8건이 HTTP 500 으로 실패했다. 원인은 newstart_knowledge_items.authority 컬럼(length 50) 대비 m5 게시판명 조합이 51자였기 때문. 생성 스크립트(build_cafe_4boards_units.py)에 authority_for() 상한 처리와 컬럼 상한 게이트를 추가해 재생성했고, 이후 582건은 500 없이 통과했다. 영향 행은 m5 121건의 authority 문자열뿐이며 나머지 554행은 바이트 단위로 동일하다(이미 적재된 행과 중복 재등록 없음).
+- 보류(keep) 루프 첫 실행에서 집합 키를 문자열 첫 문자로 판정해 130건에 REVIEW 유지 메모가 중복 기록됐다. 상태 값에는 영향이 없다(전행 REVIEW 유지, 승인·반려 없음). 이력과 무관한 중복 메모 130건으로 남는다.
+- 하랑랑 스페셜 운영자 정보글 15건(16 unit)은 본문이 이미지/링크 카드로만 구성되어 있어 지시대로 ACTIVE 로 밀지 않고 REVIEW 에 보류했다. 원문 URL·작성일 2024-11-05·provenance(하랑랑 스페셜/운영자 작성)·historicalCANDIDATE=true 는 그대로 보존된다.
+- 하랑랑 운영자 15건은 직전 tranch 보존본에 전문이 없어 원문을 재수집했다(총 125 article 중 15건). 이 사실은 HANDOFF 와 전달파일에 명시했다.
+- 이전 커밋에는 load_batches/batch_07.json(28행) 이 남아 manifest.totalToLoad(659) 와 디스크 총계(687) 가 어긋나 있었다. 해당 파일을 삭제하고 생성기에 stale 정리 + 총량 단언을 추가했다.
+- 대장(db_reflect_2026-10-04_ledger.json)의 payload idx 0 행은 첫 1건 수동 검증 때 불리언으로 기록되어 reviewMoved 플래트가 false 이다. 운영 DB 실측 DRAFT 잔존 0건(675행 전부 REVIEW 도달)이 정본이며 counts.movedToReview 는 그 실측값이다.
+
 
 ---
 

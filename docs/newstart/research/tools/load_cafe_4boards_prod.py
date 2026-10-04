@@ -30,6 +30,9 @@ FIELDS = (
     "tags", "sourceUrl", "sourceDate", "effectiveFrom", "effectiveTo",
     "confidence", "relatedCaseIds", "relatedRuleIds",
 )
+# newstart_knowledge_items 컬럼 상한. 초과 행은 POST가 DataIntegrityViolation(500, 본문 없음)으로 죽는다
+# (2026-10-04 m5 authority 51자 실측). 쓰기 전에 잡는다.
+COLUMN_LIMITS = {"sourceType": 20, "category": 50, "title": 200, "authority": 50, "sourceUrl": 500}
 
 
 def sig(item: dict) -> tuple:
@@ -107,11 +110,14 @@ def load_inputs(root: pathlib.Path):
                  if not isinstance(row, dict) or any(
                      not isinstance(row.get(k), str) or not row[k].strip()
                      for k in ("sourceType", "title", "content"))]
+    too_long = [(i, k, len(str(row.get(k) or ""))) for i, row in enumerate(payloads)
+                if isinstance(row, dict)
+                for k, n in COLUMN_LIMITS.items() if len(str(row.get(k) or "")) > n]
     signatures = collections.Counter(sig(row) for row in payloads)
     duplicate_extras = sum(n - 1 for n in signatures.values() if n > 1)
     raw_files = glob.glob(str(root / "articles" / "article_*.json"))
     qa = json.loads((root / "qa_units.json").read_text(encoding="utf-8"))
-    return payloads, per_file, malformed, duplicate_extras, len(raw_files), len(qa.get("units", [])), manifest
+    return payloads, per_file, malformed, too_long, duplicate_extras, len(raw_files), len(qa.get("units", [])), manifest
 
 
 def main() -> int:
@@ -120,12 +126,14 @@ def main() -> int:
     ap.add_argument("--write", action="store_true", help="perform production inserts; otherwise read-only dry-run")
     args = ap.parse_args()
     root = pathlib.Path(args.root)
-    payloads, per_file, malformed, duplicate_extras, raw_count, unit_count, manifest = load_inputs(root)
+    payloads, per_file, malformed, too_long, duplicate_extras, raw_count, unit_count, manifest = load_inputs(root)
     print(f"INPUT raw_sources={raw_count} units={unit_count} candidates={len(payloads)} batches={len(per_file)}")
     print("BATCHES " + " ".join(f"{name}:{count}" for name, count in per_file))
     print(f"PER_BOARD " + " ".join(f"{k}={v}" for k, v in sorted(manifest.get("perBoard", {}).items())))
-    print(f"INPUT_CHECK malformed={len(malformed)} exact_duplicate_extras={duplicate_extras}")
-    if malformed or duplicate_extras:
+    print(f"INPUT_CHECK malformed={len(malformed)} exact_duplicate_extras={duplicate_extras} "
+          f"column_limit_exceeded={len(too_long)}")
+    if malformed or duplicate_extras or too_long:
+        print("COLUMN_LIMIT " + " ".join(f"{i}:{k}={n}" for i, k, n in too_long[:10]))
         raise RuntimeError("input integrity gate failed; no API write attempted")
 
     login_id = os.environ.get("NEWSTART_SEED_ADMIN_LOGIN_ID", "")

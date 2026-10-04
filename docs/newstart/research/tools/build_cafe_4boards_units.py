@@ -35,6 +35,13 @@ spec.loader.exec_module(b6)
 
 BOARDS = {3: "부실차주 신청", 4: "부실차주 임시안부터 확정안",
           5: "재취업 재창업 감면수익+정부 지원", 9: "하랑랑 스페셜"}
+# newstart_knowledge_items.authority 는 length=50 컬럼이다. 긴 게시판명(재취업 재창업 감면수익+정부 지원)
+# 으로 51자를 만들면 create 가 DataIntegrityViolation(HTTP 500, body 없음)으로 실패하므로
+# 컬럼 상한은 생성 시점에서만 제어한다(로더·API 는 우회하지 않는다).
+def authority_for(board: str) -> str:
+    full = "%s 카페 4boards REVIEW 적재(2026-10-04)" % board
+    return full if len(full) <= 50 else ("%s 카페 4boards REVIEW 적재" % board)[:50]
+
 LABEL = {
     "QUESTION": "실제로 많이 묻는 질문", "ANSWER": "회원 답변",
     "ACTUAL_CASE": "실제 신청·체결·전환 사례", "MEMBER_EXPERIENCE": "회원 경험담",
@@ -201,7 +208,7 @@ def main() -> int:
                            % (aid, BOARDS.get(menu), label,
                               " · 과거 임시안 후보" if menu == 4 else "", summary_extra),
                 "content": ev[:1500] if operator_kept else ev[:600],
-                "authority": "%s 카페 4boards REVIEW 적재(2026-10-04)" % BOARDS.get(menu),
+                "authority": authority_for(BOARDS.get(menu)),
                 "tags": ("CAFE_4BOARDS,m%d,menuId%d,unit=%s,officialCheck=NOT_CHECKED%s%s,ck=%s"
                          % (menu, menu, u["type"], hist, op_tags, dkey)),
                 "sourceUrl": u.get("sourceUrl"),
@@ -215,6 +222,13 @@ def main() -> int:
     if len(keys) != len(set(keys)):
         dupes = [k for k, c in collections.Counter(keys).items() if c > 1]
         raise SystemExit("DUPLICATE dedup_key: %s" % dupes[:5])
+    # 컬럼 상한 게이트: 초과 행은 create 단계에서 DataIntegrityViolation(500)으로 죽는다
+    # (2026-10-04 m5 authority 51자 실측). 여기서 잡아야 로더가 500 을 세지 않는다.
+    limits = {"sourceType": 20, "category": 50, "title": 200, "authority": 50, "sourceUrl": 500}
+    over = [(i, f, len(str(p[f]))) for i, p in enumerate(payloads)
+            for f, n in limits.items() if len(str(p.get(f) or "")) > n]
+    if over:
+        raise SystemExit("COLUMN_LIMIT_EXCEEDED %s" % over[:5])
     bdir = PKG / "load_batches"
     bdir.mkdir(exist_ok=True)
     batches = [payloads[i:i + BATCH_SIZE] for i in range(0, len(payloads), BATCH_SIZE)]
