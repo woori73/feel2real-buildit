@@ -1,20 +1,23 @@
 {
-  "task": "NewStart cafe 4-board collection (menuId 3/4/5/9)",
-  "package": "cafe-4boards-20261004",
-  "phase": "PROD_REFLECTED_DRAFT_REVIEW_ACTIVE",
-  "progress": {
-    "enumerated": 644,
-    "collected": 125,
-    "units": 675,
-    "payloadRows": 675,
-    "pendingCandidates": 485
-  },
-  "nextActions": [
-    "사람: REVIEW 보류 339건(이미지/링크 중심 28 + 댓글 부분수집 311) 근거 보강 후 ADMIN 화면에서 승인",
-    "사람: 하랑랑 스페셜 운영자 15건(16 unit)은 이미지 대체 텍스트/OCR 보강 전까지 REVIEW 유지",
-    "다음 tranch: menuId3 308 / menuId4 119 / menuId5 58"
-  ],
-  "checkpointAt": "2026-10-04T07:40:35+00:00",
-  "lastCommitSha": "4b41c919d0218db7c02ded32ddc8a14c1993a642",
-  "lastPushAt": "2026-10-04T07:40:35+00:00"
+ "task": "NewStart cafe 4-board collection (menuId 3/4/5/9)",
+ "package": "cafe-4boards-20261004",
+ "phase": "REVIEW_TRIAGED_AND_APPROVED",
+ "progress": {
+  "enumerated": 644,
+  "collected": 125,
+  "units": 675,
+  "payloadRows": 675,
+  "pendingCandidates": 485,
+  "packageRows": 675,
+  "activeFinal": 488,
+  "reviewFinal": 187,
+  "newlyApprovedThisPass": 152
+ },
+ "nextActions": [
+  "사람: REVIEW 유지 187건 중 이미지-only 하랑랑 16unit은 이미지 내용(OCR/대체텍스트) 보강 시 재검토",
+  "다음 tranch: menuId3 308 / menuId4 119 / menuId5 58 미순위 신규 후보"
+ ],
+ "checkpointAt": "2026-10-04T09:06:43+00:00",
+ "lastCommitSha": "e03a37d2992606721483ffc6cc8f97fd1fe5ce6",
+ "lastPushAt": "2026-10-04T09:06:43+00:00"
 }

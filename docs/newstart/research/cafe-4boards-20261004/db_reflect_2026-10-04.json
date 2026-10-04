@@ -135,5 +135,38 @@
    "otherStatus": 23
   },
   "note": "wholeDb REVIEW 341 = 이번 패키지 339 + 패키지 외 기존 2건. 스캔 중 만난 패키지 외 25건은 3827 미만 구간의 기존 ACTIVE 행으로 무변경."
+ },
+ "secondReflection": {
+  "verifiedAt": "2026-10-04T18:25:00+09:00",
+  "action": "REVIEW 339건 전수 판정 후 ADMIN review/{id}/approve로 152건 ACTIVE 전환",
+  "targetReviewRows": 339,
+  "newlyActive": 152,
+  "remainingReview": 187,
+  "holdReasonBreakdown": {
+   "noInfoGreeting": 137,
+   "unitTypeDuplicate": 21,
+   "imageOnlyOperatorPost": 13,
+   "brokenQAContext": 10,
+   "promo": 3,
+   "linkOnly": 2,
+   "commentOnImageOnly": 1
+  },
+  "approveErrors": 0,
+  "packageFinal": {
+   "ACTIVE": 488,
+   "REVIEW": 187,
+   "DRAFT": 0
+  },
+  "wholeDb": {
+   "total": 4501,
+   "ACTIVE": 4289,
+   "REVIEW": 189,
+   "DRAFT": 0,
+   "note": "REVIEW 189 = 패키지 187 + 패키지 밖 선행 보류 2"
+  },
+  "forbiddenChannelsUsed": [],
+  "previousActiveTouched": 0,
+  "inserts": 0,
+  "detail": "review_approval_2026-10-04/"
  }
 }
