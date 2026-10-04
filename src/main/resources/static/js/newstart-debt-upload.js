@@ -45,8 +45,11 @@
         creditor: clean(d.creditor),
         debtType: clean(d.debtType),
         balance: clean(d.balance),
+        loanAmount: clean(d.loanAmount),
         overdueInfo: clean(d.overdueInfo),
-        creditorChange: clean(d.creditorChange)
+        creditorChange: clean(d.creditorChange),
+        confidence: d.confidence || 'medium',
+        needsVerification: !!d.needsVerification
       };
     }).slice(0, MAX_DEBT_ROWS);
   }
@@ -224,11 +227,18 @@
     host.hidden = false;
     draftItems.forEach(function (item, index) {
       var card = document.createElement('div'); card.className = 'ns-debt-result-card'; card.dataset.index = index;
-      [['creditor', '채권기관'], ['debtType', '채무종류'], ['balance', '잔액'], ['overdueInfo', '연체·장기연체'], ['creditorChange', '채권자 변동']]
+      // 확인 필요 표시 (추측 금지 규칙: needsVerification 또는 low confidence)
+      if (item.needsVerification || item.confidence === 'low') {
+        var warn = document.createElement('p'); warn.className = 'ns-debt-verify-warn';
+        warn.textContent = '⚠ 이미지에서 명확히 확인되지 않았습니다. 직접 확인해 주세요.';
+        card.appendChild(warn);
+      }
+      [['creditor', '채권기관'], ['debtType', '채무종류'], ['balance', '채무잔액'], ['loanAmount', '최초 대출금액'],
+        ['overdueInfo', '연체·장기연체'], ['creditorChange', '채권자 변동']]
         .forEach(function (field) {
           var label = document.createElement('label'); label.className = 'ns-debt-result-field';
           var title = document.createElement('span'); title.textContent = field[1];
-          var control = input(item[field[0]], field[1] + ' ' + (index + 1));
+          var control = input(item[field[0]] || '', field[1] + ' ' + (index + 1));
           control.addEventListener('input', function () { draftItems[index][field[0]] = clean(control.value); });
           label.appendChild(title); label.appendChild(control); card.appendChild(label);
         });
@@ -241,8 +251,11 @@
   function draftSummary() {
     if (!draftItems.length) return '';
     return '[Credit4U 분석]\n' + draftItems.map(function (item) {
-      return ['기관 ' + item.creditor, '종류 ' + item.debtType, '잔액 ' + item.balance,
-        '연체 ' + item.overdueInfo, '변동 ' + item.creditorChange].filter(function (v) { return !/\s$/.test(v); }).join(' / ');
+      var parts = ['기관 ' + item.creditor, '종류 ' + item.debtType, '잔액 ' + item.balance];
+      if (item.loanAmount) parts.push('대출금 ' + item.loanAmount);
+      parts.push('연체 ' + item.overdueInfo, '변동 ' + item.creditorChange);
+      if (item.needsVerification) parts.push('(확인필요)');
+      return parts.filter(function (v) { return !/\s$/.test(v); }).join(' / ');
     }).join('\n');
   }
 
