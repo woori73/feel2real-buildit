@@ -15,7 +15,7 @@
     "사람: ADMIN 화면에서 REVIEW->ACTIVE 승인",
     "다음 tranch: menuId3 308 / menuId4 119 / menuId5 58"
   ],
-  "checkpointAt": "2026-10-04T05:53:21+00:00",
-  "lastCommitSha": null,
-  "lastPushAt": null
+  "checkpointAt": "2026-10-04T05:59:12+00:00",
+  "lastCommitSha": "a4afc54faceb32c0b692a805ef041bbfc7b99ff5",
+  "lastPushAt": "2026-10-04T05:59:12+00:00"
 }

@@ -10,7 +10,7 @@
   "status": "TRANCH_COMPLETED_PENDING_USER_APPROVAL",
   "tranche": "고가치 우선 110건 (사용자 결정). 전체 신규 후보 중 미수집분은 pendingCounts 참조",
   "startedAt": "2026-10-04T00:00:00+00:00",
-  "updatedAt": "2026-10-04T05:53:21+00:00",
+  "updatedAt": "2026-10-04T05:59:12+00:00",
   "totals": {
     "surveyed": 644,
     "existingDuplicate": 13,
