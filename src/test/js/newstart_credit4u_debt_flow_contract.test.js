@@ -66,16 +66,15 @@ test('newstart.js가 채무상황 API와 해시 복귀-open, userId 미수신을
   assert.doesNotMatch(js, /userId\s*[:=]/);
 });
 
-test('JPG·PNG·PDF 선택과 기기 내 분석·수정 후 명시적 저장 계약을 유지한다', () => {
-  assert.match(home, /id="ns-debt-file"[^>]*accept="image\/jpeg,image\/png,application\/pdf/);
+test('JPG·PNG·WebP·PDF 선택과 서버 AI 분석·수정 후 명시적 저장 계약을 유지한다', () => {
+  assert.match(home, /id="ns-debt-file"[^>]*accept="image\/jpeg,image\/png,image\/webp,application\/pdf/);
   assert.match(home, /id="ns-debt-upload">Credit4U 자료 올리기<\/button>/);
   assert.match(home, /id="ns-debt-analysis-results"/);
-  assert.match(home, /원본은 이 기기 안에서만 읽고 서버에 업로드하거나 보관하지 않습니다/);
-  assert.match(home, /\/vendor\/tesseract\/tesseract\.min\.js\?v=5\.1\.1/);
-  assert.match(home, /\/vendor\/pdfjs\/pdf\.min\.js\?v=3\.11\.174/);
-  // blob 워커 base에서는 /vendor 절대경로 importScripts가 실패 → workerBlobURL:false 가 실제로 OCR을 성립시킨다.
-  assert.match(uploadJs, /workerBlobURL:\s*false/);
-  assert.doesNotMatch(uploadJs, /fetch\(|XMLHttpRequest|localStorage|sessionStorage/);
+  assert.match(home, /서버의 AI로 분석하며, 원본 이미지는 저장하지 않습니다/);
+  // 서버 Vision API(Qwen) 분석: 브라우저 Tesseract 대신 /api/newstart/debt-image/analyze 호출
+  assert.match(uploadJs, /\/api\/newstart\/debt-image\/analyze/);
+  assert.match(uploadJs, /fetch\(/);
+  assert.doesNotMatch(uploadJs, /Tesseract|workerBlobURL|XMLHttpRequest|localStorage|sessionStorage/);
   assert.match(js, /NewStartDebtDraft\.summary/);
   assert.match(js, /NewStartDebtDraft\.markSaved/);
 });
