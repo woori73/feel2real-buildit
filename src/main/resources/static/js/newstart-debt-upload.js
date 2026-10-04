@@ -3,6 +3,7 @@
 
   var MAX_BYTES = 20 * 1024 * 1024;
   var MAX_PDF_PAGES = 20;
+  var MAX_DEBT_ROWS = 50;
   var draftItems = [];
 
   function el(id) { return document.getElementById(id); }
@@ -10,7 +11,9 @@
   function clean(text) {
     return String(text || '')
       .replace(/\b\d{6}[- ]?[1-4]\d{6}\b/g, '[개인정보 제거]')
-      .replace(/\b\d{10,16}\b/g, '[개인정보 제거]')
+      // 10~16자리 숫자는 계좌번호 등으로 보고 제거하되, 금액(뒤에 '원'이 옴)은 보존한다.
+      // OCR이 쉼표를 빼먹은 큰 금액(예: 1500000000원)이 오제거되는 것을 방지.
+      .replace(/\b\d{10,16}\b(?!\s*원)/g, '[개인정보 제거]')
       .replace(/[ \t]+/g, ' ').trim();
   }
 
@@ -77,39 +80,149 @@
     return ocr(await imageCanvas(file), '이미지');
   }
 
-  function findNear(lines, index, pattern) {
-    for (var distance = 0; distance <= 2; distance++) {
-      var candidates = [lines[index + distance], lines[index - distance]];
-      for (var i = 0; i < candidates.length; i++) if (candidates[i] && pattern.test(candidates[i])) return candidates[i];
+  // ===== 채무 파싱 (블록 기반) =====
+  // Credit4U처럼 여러 채무가 반복되는 자료에서 채무 1건 = 1행을 보장한다.
+  // 전략: 채권기관명으로 블록 경계를 찾고, 각 블록 안에서 필드를 우선순위로 추출한다.
+
+  // 강한 채권기관 패턴: 기관명 + 접미사 (헤더/채무종류 오인 방지)
+  var STRONG_CREDITOR_RE = /([가-힣A-Za-z0-9]+(은행|카드|캐피탈|저축은행|신용금고|농협|수협|새마을금고|신협|자산관리|파이낸스))/;
+  // 제외할 헤더 패턴
+  var HEADER_RE = /(신용정보|등록현황|대출정보|연체정보|보증정보|조회결과|본인신용|현황조회)/;
+  // 채무종류 패턴
+  var TYPE_RE = /(대출|카드론|현금서비스|할부|보증|채무|신용공여)/;
+  // 연체 패턴
+  var OVERDUE_RE = /(장기연체|연체|신용도판단|공공정보)/;
+  // 채권자변동 패턴
+  var CHANGE_RE = /(채권자\s*변동|양도|양수|이관|매각)/;
+  // 잔액 우선 패턴 (진짜 잔액)
+  var BALANCE_PRIORITY_RE = /(채무잔액|대출잔액|잔액)/;
+  // 대출원금 패턴 (잔액이 없을 때 차선책)
+  var PRINCIPAL_RE = /(대출금액|대출액|원금|이용금액)/;
+  // 금액 패턴
+  var AMOUNT_RE = /([\d,]+)\s*원/;
+
+  function isCreditorBoundary(line) {
+    if (!line) return false;
+    if (HEADER_RE.test(line)) return false;
+    if (CHANGE_RE.test(line)) return false; // "채권자 변동 한국자산관리공사"는 경계가 아님
+    // 강한 패턴 매칭 (기관명 + 접미사)
+    var m = STRONG_CREDITOR_RE.exec(line);
+    if (!m) return false;
+    // 채무종류가 주된 내용인 줄 제외 (예: "일반신용대출" — "신용"만으로는 기관 아님)
+    // 강한 패턴은 접미사(은행/카드 등)가 있어야 하므로 이미 걸러짐
+    return true;
+  }
+
+  function extractCreditorName(line) {
+    var m = STRONG_CREDITOR_RE.exec(line || '');
+    return m ? m[1] : clean(line);
+  }
+
+  function extractAmount(line) {
+    var m = AMOUNT_RE.exec(line || '');
+    return m ? m[1] + '원' : '';
+  }
+
+  function segmentDebtBlocks(lines) {
+    var boundaries = [];
+    lines.forEach(function (line, i) {
+      if (isCreditorBoundary(line)) boundaries.push(i);
+    });
+    if (!boundaries.length) {
+      // 채권기관을 못 찾으면 전체를 1개 블록으로 (기존 동작의 안전한 fallback)
+      return lines.length ? [lines] : [];
     }
-    return '';
+    var blocks = [];
+    for (var b = 0; b < boundaries.length; b++) {
+      var start = boundaries[b];
+      var end = (b + 1 < boundaries.length) ? boundaries[b + 1] : lines.length;
+      var block = lines.slice(start, end);
+      if (block.length) blocks.push(block);
+    }
+    return blocks;
+  }
+
+  function extractDebtFields(block) {
+    var item = { creditor: '', debtType: '', balance: '', overdueInfo: '', creditorChange: '' };
+    if (!block || !block.length) return item;
+
+    // 채권기관: 블록의 첫 줄 (경계선 자체)
+    item.creditor = extractCreditorName(block[0]);
+
+    var i, line;
+    // 채무종류: 블록 안에서 종류 패턴이 있는 첫 줄 (기관줄 제외)
+    for (i = 1; i < block.length; i++) {
+      line = block[i];
+      if (TYPE_RE.test(line) && !isCreditorBoundary(line)) {
+        item.debtType = clean(line);
+        break;
+      }
+    }
+
+    // 잔액: 우선순위 1) 잔액/채무잔액/대출잔액 라벨 + 금액
+    //       우선순위 2) 라벨 없는 순수 금액 (대출금액/원금 라벨이 없는 것)
+    //       우선순위 3) 대출금액/원금 (차선책 — 그래도 비워두기보다는 표시)
+    var balanceLine = '';
+    for (i = 0; i < block.length; i++) {
+      line = block[i];
+      if (BALANCE_PRIORITY_RE.test(line) && AMOUNT_RE.test(line)) { balanceLine = line; break; }
+    }
+    if (!balanceLine) {
+      for (i = 0; i < block.length; i++) {
+        line = block[i];
+        if (AMOUNT_RE.test(line) && !PRINCIPAL_RE.test(line)) { balanceLine = line; break; }
+      }
+    }
+    if (!balanceLine) {
+      for (i = 0; i < block.length; i++) {
+        line = block[i];
+        if (AMOUNT_RE.test(line)) { balanceLine = line; break; }
+      }
+    }
+    if (balanceLine) item.balance = extractAmount(balanceLine);
+
+    // 연체정보: 블록 안에서 연체 패턴이 있는 첫 줄
+    for (i = 0; i < block.length; i++) {
+      line = block[i];
+      if (OVERDUE_RE.test(line)) { item.overdueInfo = clean(line); break; }
+    }
+
+    // 채권자변동: 블록 안에서 변동 패턴이 있는 첫 줄
+    for (i = 0; i < block.length; i++) {
+      line = block[i];
+      if (CHANGE_RE.test(line)) { item.creditorChange = clean(line); break; }
+    }
+
+    return item;
   }
 
   function parseDebt(text) {
     var lines = String(text || '').split(/\n+/).map(clean).filter(Boolean);
-    var creditorRe = /(은행|카드|캐피탈|저축|대부|보증|신용|금융|채권|공사|기금|기관)/;
-    var typeRe = /(대출|카드론|현금서비스|할부|보증|채무|신용공여)/;
-    var balanceRe = /(잔액|채무액|대출금액|원금|\d[\d,]*\s*원)/;
-    var overdueRe = /(장기연체|연체|신용도판단|공공정보)/;
-    var changeRe = /(채권자\s*변동|양도|양수|이관|매각)/;
-    var anchors = [];
-    lines.forEach(function (line, i) { if (balanceRe.test(line) || creditorRe.test(line)) anchors.push(i); });
-    if (!anchors.length && lines.length) anchors.push(0);
+    if (!lines.length) return [];
+
+    var blocks = segmentDebtBlocks(lines);
+    var items = [];
     var seen = {};
-    var items = anchors.map(function (i) {
-      return {
-        creditor: findNear(lines, i, creditorRe),
-        debtType: findNear(lines, i, typeRe),
-        balance: findNear(lines, i, balanceRe),
-        overdueInfo: findNear(lines, i, overdueRe),
-        creditorChange: findNear(lines, i, changeRe)
-      };
-    }).filter(function (item) {
+    blocks.forEach(function (block) {
+      var item = extractDebtFields(block);
+      // 빈 블록 제거: 기관도 잔액도 없으면 버림
+      if (!item.creditor && !item.balance) return;
+      // 완전 동일 블록만 제거 (과도한 중복제거 금지 — 유사한 채무는 별도 행으로 유지)
       var key = [item.creditor, item.debtType, item.balance, item.overdueInfo, item.creditorChange].join('|');
-      if (!key.replace(/\|/g, '') || seen[key]) return false;
-      seen[key] = true; return true;
+      if (seen[key]) return;
+      seen[key] = true;
+      items.push(item);
     });
-    return items.slice(0, 20);
+    return items.slice(0, MAX_DEBT_ROWS);
+  }
+
+  // 하위호환: 기존 findNear를 쓰는 코드가 있으면 동작하도록 유지
+  function findNear(lines, index, pattern) {
+    for (var distance = 0; distance <= 5; distance++) {
+      var candidates = [lines[index + distance], lines[index - distance]];
+      for (var i = 0; i < candidates.length; i++) if (candidates[i] && pattern.test(candidates[i])) return candidates[i];
+    }
+    return '';
   }
 
   function input(value, label) {
