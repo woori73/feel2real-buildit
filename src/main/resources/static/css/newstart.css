@@ -757,3 +757,19 @@ html, body { max-width: 100%; overflow-x: clip; }
 .ns-ai-locked { margin-top: 28px; padding: 20px 18px; border: 1.5px dashed var(--ns-line, #cfd8e6); border-radius: 16px; background: #f8fafc; }
 .ns-ai-locked-title { margin: 6px 0 8px; font-size: 18px; line-height: 1.4; font-weight: 800; word-break: keep-all; }
 .ns-ai-locked .ns-note { margin: 0 0 10px; word-break: keep-all; }
+
+/* ── 운영자 상담 안내 배너 ── */
+.ns-cns-admin-notice {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border: 1.5px solid var(--ns-blue, #2563eb);
+  border-radius: 12px;
+  background: #eff6ff;
+}
+.ns-cns-admin-notice p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.ns-cns-admin-notice[hidden] { display: none; }
