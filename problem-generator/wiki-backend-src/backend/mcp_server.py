@@ -49,9 +49,9 @@ logger = logging.getLogger(__name__)
 
 mcp = MCPServer(
     name='buildit-wiki',
-    # tool 추가 시 bump — 일부 MCP client가 serverInfo.version 변화로
+    # tool 수정 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='5',
+    version='6',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -121,11 +121,22 @@ def get_csat_weakness(student: str) -> dict:
     except HTTPException as exc:
         raise ValueError(str(exc.detail)) from exc
     wrongs = list_csat_wrong_answers(student=sname)
+    # 개별 오답 레코드가 없으면 원문 HTML 정보 조회 (176문항 같은 대량 오답은 HTML로만 존재)
+    wrong_html_list = []
+    if not wrongs:
+        from main import get_db
+        with get_db() as conn:
+            rows = conn.execute(
+                'SELECT id, title, original_name, original_type, created_at, '
+                'LENGTH(original_blob) AS blob_size FROM csat_wrong_html '
+                'WHERE student_id=? ORDER BY id DESC', (sid,)).fetchall()
+            wrong_html_list = [dict(r) for r in rows]
     return {
         'student': {'id': sid, 'name': sname},
         'weakness_dna': weakness,
         'wrong_answers': wrongs,
         'wrong_count': len(wrongs),
+        'wrong_html_sources': wrong_html_list,
     }
 
 
