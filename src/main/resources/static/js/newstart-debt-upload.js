@@ -22,10 +22,20 @@
       var url = URL.createObjectURL(file);
       var image = new Image();
       image.onload = function () {
-        var scale = Math.min(1, 2200 / Math.max(image.naturalWidth, image.naturalHeight));
+        // 세로로 긴 스크린샷(채무 목록) 대응: 너비 기준으로 스케일하고,
+        // 높이가 너무 크면 Tesseract가 처리할 수 있도록 4000px로 제한한다.
+        // 기존: max(너비, 높이) 기준 2200px → 긴 스크린샷에서 글자가 너무 작아짐.
+        var targetWidth = 1600;
+        var scale = Math.min(1, targetWidth / image.naturalWidth);
         var canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        // 높이가 4000px을 초과하면 비율 유지하며 추가 축소 (Tesseract 메모리 보호)
+        if (canvas.height > 4000) {
+          var hScale = 4000 / canvas.height;
+          canvas.width = Math.max(1, Math.round(canvas.width * hScale));
+          canvas.height = 4000;
+        }
         canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
         resolve(canvas);
