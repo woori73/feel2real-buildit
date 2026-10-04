@@ -286,9 +286,15 @@
       if (!file) return;
       upload.disabled = true; setStatus('자료를 기기 안에서 읽는 중입니다.');
       try {
-        draftItems = parseDebt(await extract(file));
+        var ocrText = await extract(file);
+        draftItems = parseDebt(ocrText);
         if (!draftItems.length) draftItems = [{ creditor: '', debtType: '', balance: '', overdueInfo: '', creditorChange: '' }];
-        render(); setStatus('분석 결과를 확인하고 수정하세요. 아직 저장되지 않았습니다.');
+        render();
+        // 디버그: OCR 원문을 상태 영역에 표시 (문제 진단용)
+        var lines = ocrText.split('\n').length;
+        setStatus('분석 결과를 확인하고 수정하세요. 아직 저장되지 않았습니다. [디버그: OCR ' + lines + '줄, ' + draftItems.length + '건 인식]');
+        console.log('[OCR DEBUG] Raw text:', ocrText);
+        console.log('[OCR DEBUG] Parsed items:', JSON.stringify(draftItems));
       } catch (e) { setStatus(e && e.message ? e.message : '자료를 읽지 못했습니다.'); }
       upload.disabled = false;
     });
