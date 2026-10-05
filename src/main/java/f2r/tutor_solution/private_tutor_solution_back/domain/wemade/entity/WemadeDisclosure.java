@@ -18,6 +18,15 @@ public class WemadeDisclosure extends BaseEntity {
     private String title;
     @Column(length = 100)
     private String disclosureNo;
+    /** DART 접수번호 (공식 식별자, 예: 20260630900888) */
+    @Column(length = 30)
+    private String rcpNo;
+    /** DART 문서번호 (원문 viewer용) */
+    @Column(length = 30)
+    private String dcmNo;
+    /** KOSCOM 문서번호 (예: 49601334) — DART rcpNo와 다름 */
+    @Column(length = 30)
+    private String koscomDocNo;
     @Builder.Default
     private String source = "DART_LIST";
     @Column(length = 1000)
