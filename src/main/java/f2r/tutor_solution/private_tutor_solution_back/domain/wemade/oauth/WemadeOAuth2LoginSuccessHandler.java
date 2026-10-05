@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.Ne
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverAccountResolutionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverProfileIdentity;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ public class WemadeOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                       Authentication authentication) throws IOException {
+                                       Authentication authentication) throws IOException, ServletException {
         boolean wemade = authentication instanceof OAuth2AuthenticationToken token
                 && WEMADE_REGISTRATION_ID.equals(token.getAuthorizedClientRegistrationId());
         if (!wemade) {
