@@ -1,0 +1,30 @@
+[
+ {
+  "as_of_date": "2026-10-05",
+  "content_hash": "8f8661aaac5e57dc5956d230f753ff207abee2f9ce9c73b3c77f3b0121df435b",
+  "grade": "B",
+  "is_confirmed": false,
+  "p2e_relevance": "디지털자산기본법의 P2E 관련 조항이 게임산업법상 국내 P2E 허용으로 연결되는지를 별도 추적한다. 현재 국내 P2E는 미허용 상태. P2E 합법화와 기본법 통과는 동일 사건이 아니다.",
+  "policy_key": "digital_asset_basic_act",
+  "source_name": "유동수 국회 정무위원장 발언 (2026-09-03) · 민병덕 의원 발언 (2026-10-01) · weeklyblockchain/tokenpost 보도",
+  "source_url": "https://www.weeklyblockchain.co.kr/ko-kr/articles/104149",
+  "stage": "발의 전",
+  "stage_date": null,
+  "summary": "디지털자산기본법 정부안은 2026-09-03 기준으로 국회에 미제출. 민병덕 의원이 국감 직후 공청회·법안소위 논의를 예고하며 연내 처리를 추진. 단계: 발의 → 심사 → 소위 → 상임위 → 법사위 → 본회의 → 공포 → 시행 중 현재는 '발의 전' 단계.",
+  "title": "디지털자산기본법 제정 추진"
+ },
+ {
+  "as_of_date": "2026-10-05",
+  "content_hash": "a2bb741256ea4191ec1be804a292a65e1964cbb285c7e5bd1039c8b5ca02ab83",
+  "grade": "U",
+  "is_confirmed": false,
+  "p2e_relevance": "WEMIX 생태계와 Night Crows의 P2E 요소가 국내 서비스 가능해질 경우 위메이드 사업구조에 직접 영향. 정책 이벤트 전후 WEMIX 가격·위메이드 주가 민감도를 함께 분석.",
+  "policy_key": "p2e_game_act_link",
+  "source_name": "게임물관리위원회·문화체육관광부 자료 추적 중",
+  "source_url": null,
+  "stage": "TRACKING",
+  "stage_date": null,
+  "summary": "디지털자산기본법의 P2E 관련 조항이 게임산업법상 국내 P2E 허용으로 연결되는지를 별도 추적한다. 현재 국내 P2E는 미허용 상태이며, 기본법 통과와 P2E 합법화는 별개 사건으로 관리한다.",
+  "title": "P2E — 게임산업법 연관성"
+ }
+]

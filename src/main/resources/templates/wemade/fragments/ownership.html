@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  위메이드 「새 대주주는 누구인가」 지배구조 시각화 fragment.
+  사용: <div th:replace="~{wemade/fragments/ownership :: ownership}"></div>
+  등급 배지: A=공식공시(초록) B=복수매체(파랑) C=단일매체(주황) D=계산값(회색) U=미확인(빨강)
+-->
+<th:block th:fragment="ownership">
+<section id="wemade-ownership" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:1080px;margin:0 auto;padding:24px 16px;">
+  <h2 style="font-size:22px;margin:0 0 4px;">새 대주주는 누구인가</h2>
+  <p style="color:#666;font-size:13px;margin:0 0 16px;">NeoPulse 컨소시엄 지배구조 · 기준일 2026-10-05 · 사실/추론/미확인 분리 표기</p>
+
+  <div style="margin-bottom:12px;font-size:12px;">
+    <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:2px 8px;margin-right:6px;">A 공식공시</span>
+    <span style="display:inline-block;background:#e3f2fd;color:#0d47a1;border:1px solid #90caf9;border-radius:4px;padding:2px 8px;margin-right:6px;">B 복수매체</span>
+    <span style="display:inline-block;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:4px;padding:2px 8px;margin-right:6px;">C 단일매체</span>
+    <span style="display:inline-block;background:#f5f5f5;color:#424242;border:1px solid #bdbdbd;border-radius:4px;padding:2px 8px;margin-right:6px;">D 계산값</span>
+    <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:2px 8px;">U 미확인</span>
+  </div>
+
+  <!-- 지배 체인 -->
+  <div style="overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px;padding:16px;background:#fafafa;margin-bottom:16px;">
+    <div style="display:flex;align-items:stretch;gap:0;min-width:900px;font-size:13px;">
+      <div style="flex:1;border:2px solid #1b5e20;border-radius:8px;padding:10px;background:#fff;">
+        <div style="font-weight:700;">Mok, Pui Ming <span style="font-weight:400;color:#666;">(목푸이밍)</span></div>
+        <div style="color:#666;font-size:12px;">홍콩계 투자자 · 개인</div>
+        <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A 킹넷 공시</span></div>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;color:#1b5e20;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
+      <div style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
+        <div style="font-weight:700;">Nexpulse</div>
+        <div style="color:#666;font-size:12px;">홍콩 법인 · Neosphere 기존 100% 주주</div>
+        <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A 킹넷 공시</span></div>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">51%</span></div>
+      <div style="flex:1.4;border:2px solid #0d47a1;border-radius:8px;padding:10px;background:#fff;">
+        <div style="font-weight:700;">Neosphere</div>
+        <div style="color:#666;font-size:12px;">홍콩 SPV · 2026-07-28 설립 <span style="display:inline-block;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:4px;padding:0 5px;font-size:11px;">C 단일매체</span></div>
+        <div style="margin-top:4px;font-size:12px;">Nexpulse 51% <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A</span> / Cypress 49% <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A</span></div>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
+      <div style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
+        <div style="font-weight:700;">Shengsong 盛松</div>
+        <div style="color:#666;font-size:12px;">홍콩 법인</div>
+        <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A DART 원문</span></div>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
+      <div style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
+        <div style="font-weight:700;">NeoPulse</div>
+        <div style="color:#666;font-size:12px;">케이맨 법인 · 인수 주체</div>
+        <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A DART 원문</span></div>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;color:#b71c1c;">→<br/><span style="font-size:11px;font-weight:400;">40.25%</span></div>
+      <div style="flex:1;border:2px solid #b71c1c;border-radius:8px;padding:10px;background:#fff;">
+        <div style="font-weight:700;">Wemade 위메이드</div>
+        <div style="color:#666;font-size:12px;">코스닥 112040</div>
+        <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A DART 원문</span></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;min-width:900px;font-size:12px;color:#666;margin-top:10px;">
+      <div style="flex:1;"></div>
+      <div style="flex:1;"></div>
+      <div style="flex:1.4;border-top:2px dashed #0d47a1;padding-top:6px;">
+        <span style="font-weight:700;">킹넷 恺英网络</span> (002517.SZ) → <span style="font-weight:700;">Cypress HK</span> 100% →
+        Neosphere <span style="font-weight:700;">49%</span> 취득 예정
+        <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A 킹넷 공시</span>
+      </div>
+      <div style="flex:3;"></div>
+    </div>
+  </div>
+
+  <!-- 간접 경제지분 (계산값) -->
+  <div style="border:1px solid #e0e0e0;border-radius:8px;padding:14px 16px;margin-bottom:16px;background:#fff;">
+    <h3 style="font-size:15px;margin:0 0 8px;">간접 경제지분 <span style="display:inline-block;background:#f5f5f5;color:#424242;border:1px solid #bdbdbd;border-radius:4px;padding:1px 6px;font-size:11px;">D 계산값</span></h3>
+    <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;">
+      <li><strong>Mok, Pui Ming 측</strong>: 약 <strong>20.53%</strong> = 100% × 51% × 100% × 100% × 40.25%</li>
+      <li><strong>킹넷 측</strong>: 약 <strong>19.72%</strong> = 100% × 49% × 40.25%</li>
+    </ul>
+    <p style="font-size:12px;color:#666;margin:8px 0 0;">간선 지분율의 곱으로 추정한 경제적 지분. 의결권 구조(지배권)는 Neosphere 51:49로 Mok 측에 있으나, 실질 사업 파트너는 킹넷이 될 가능성이 크다는 분석이 있음 <span style="display:inline-block;background:#e3f2fd;color:#0d47a1;border:1px solid #90caf9;border-radius:4px;padding:0 5px;font-size:11px;">B 복수매체</span>.</p>
+  </div>
+
+  <!-- 자금 조달 -->
+  <div style="border:1px solid #e0e0e0;border-radius:8px;padding:14px 16px;margin-bottom:16px;background:#fff;">
+    <h3 style="font-size:15px;margin:0 0 8px;">9,200억원 인수자금 조달 구조</h3>
+    <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;">
+      <li>인수대금 총액 <strong>9,200억원</strong> (39.33%, 주당 68,910원) <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A DART</span><br/><span style="color:#666;font-size:12px;">계약금 10% 920억원(2026-06-30) + 잔금 90% 8,280억원(2026-10-30 예정)</span></li>
+      <li><strong>Nexpulse</strong>: Neosphere에 <strong>최소 3.102억 달러</strong>(약 4,188억원) 증자, 킹넷보다 먼저 납입 <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A 킹넷 공시</span></li>
+      <li><strong>Kingnet(Cypress)</strong>: Neosphere 49% 취득 + <strong>2.98억 달러</strong>(약 4,023억원) 증자 <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A 킹넷 공시</span></li>
+      <li>부족액(약 989억원, 계산값 <span style="display:inline-block;background:#f5f5f5;color:#424242;border:1px solid #bdbdbd;border-radius:4px;padding:0 5px;font-size:11px;">D</span>): <strong>Nexpulse가 추가 조달</strong> (공시 기재) <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A</span></li>
+      <li>Nexpulse 3.102억 달러의 <strong>최종 자금 제공자는 미확인</strong> <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:0 5px;font-size:11px;">U</span> — 공개 자료 없음. 추측 연결 금지.</li>
+      <li>중국 발개위·상무·외환 승인/신고 필요, 불확실성 명시 <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A 킹넷 공시</span></li>
+    </ul>
+  </div>
+
+  <!-- 인물 카드 -->
+  <div style="border:1px solid #e0e0e0;border-radius:8px;padding:14px 16px;margin-bottom:16px;background:#fff;">
+    <h3 style="font-size:15px;margin:0 0 8px;">Mok, Pui Ming (목푸이밍) <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A 킹넷 공시 기재</span></h3>
+    <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;">
+      <li>킹넷 공시에 Nexpulse 100% 주주이자 NeoPulse 실질 지배자로 기재. 킹넷 측과 특수관계 없다고 설명.</li>
+      <li>학력: 홍콩성시대학 학사 (공시 기재) · 소속: 홍콩 해운·물류 관련 단체 및 홍콩 이사협회 회원 (공시 기재)</li>
+      <li>중국어 성명 표기: 공시·언론 어디에도 확인되지 않음 <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:0 5px;font-size:11px;">U</span></li>
+      <li>과거/현재 사업·임원 경력: 공개 자료 없음 <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:0 5px;font-size:11px;">U</span></li>
+      <li>킹넷 관계자와의 과거 관계: 미확인 <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:0 5px;font-size:11px;">U</span> · 박관호 의장과 기존 관계: 미확인 <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:0 5px;font-size:11px;">U</span> · 미르 IP 관련 과거 이해관계: 미확인 <span style="display:inline-block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:4px;padding:0 5px;font-size:11px;">U</span></li>
+    </ul>
+    <p style="font-size:12px;color:#666;margin:8px 0 0;">독립 교차검증(홍콩 기업등기·공시·언론)에서 기록을 찾지 못함. 모든 신상 정보는 킹넷 공시 기재에만 의존.</p>
+  </div>
+
+  <!-- 출처 -->
+  <div style="font-size:12px;color:#666;margin-bottom:8px;">
+    <strong>출처</strong>
+    <ul style="margin:4px 0 0;padding-left:18px;line-height:1.7;">
+      <li>DART 원문 rcpNo 20260630900888 (2026-06-30 체결 공시) — 68,910원·39.33%·9,200억원·Shengsong 100%</li>
+      <li>킹넷 9/12 CNINFO 공시 「关于公司拟间接参股韩国公司Wemade Co.,Ltd.的公告」 — 지배구조·자금조달·Mok, Pui Ming 기재</li>
+      <li>플레이포럼 [단독] <a href="https://www.playforum.net/news/articleView.html?idxno=635337">기사</a> — Neosphere 2026-07-28 홍콩 설립·증자 구조·미르 IP 독점 라이선스</li>
+      <li>서울파이낸스 <a href="https://www.seoulfn.com/news/articleView.html?idxno=637967">기사</a> · 게임뷰 <a href="https://www.gamevu.co.kr/news/articleView.html?idxno=60790">기사</a> · 비즈워치 <a href="https://news.bizwatch.co.kr/article/mobile/2026/09/14/0007">기사</a> — 장내 0.92% 매집·구조 교차확인</li>
+      <li>The Investor <a href="https://www.theinvestor.co.kr/article/10872980">기사</a> · PocketGamer.biz <a href="https://www.pocketgamer.biz/kingnet-invests-298m-to-join-consortium-behind-684m-wemade-deal/">기사</a> — 영문 구조 확인</li>
+    </ul>
+  </div>
+
+  <div id="wemade-ownership-root" data-api="/api/wemade/ownership/tree" style="font-size:12px;color:#999;">
+    <noscript>동적 트리는 JavaScript가 필요합니다. 위 정적 구조가 공식 확인분입니다.</noscript>
+  </div>
+</th:block>
+</body>
+</html>

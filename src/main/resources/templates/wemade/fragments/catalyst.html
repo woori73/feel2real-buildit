@@ -1,0 +1,69 @@
+<div th:fragment="catalyst" id="catalyst-section" xmlns:th="http://www.thymeleaf.org">
+  <style>
+    #catalyst-section .cat-h3 { font-size: 15px; margin: 18px 0 8px; }
+    #catalyst-section .cat-note { font-size: 12px; line-height: 1.6; margin: 8px 0; color: #555; }
+    #catalyst-section .cat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+    @media (max-width: 640px) { #catalyst-section .cat-cards { grid-template-columns: 1fr; } }
+    #catalyst-section .cat-card { border: 2px solid #111; border-radius: 14px; padding: 16px; background: #fff; position: relative; }
+    #catalyst-section .cat-card.unconfirmed { border-style: dashed; border-color: #999; }
+    #catalyst-section .cat-card .num { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 1px; }
+    #catalyst-section .cat-card h3 { font-size: 16px; margin: 6px 0 8px; }
+    #catalyst-section .cat-card .dday { display: inline-block; font-size: 20px; font-weight: 800; color: #b00; background: #fff0f0; border-radius: 8px; padding: 4px 12px; margin: 4px 0 8px; }
+    #catalyst-section .cat-card .dday.na { color: #666; background: #f0f0f0; font-size: 14px; }
+    #catalyst-section .cat-card .tlabel { font-size: 12px; color: #555; margin-bottom: 8px; }
+    #catalyst-section .cat-card .summ { font-size: 13px; line-height: 1.65; color: #333; }
+    #catalyst-section .cat-facts { margin: 10px 0 0; padding: 0; list-style: none; }
+    #catalyst-section .cat-facts li { font-size: 12px; padding: 5px 0; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 8px; }
+    #catalyst-section .cat-facts .fk { color: #666; }
+    #catalyst-section .cat-facts .fv { font-weight: 600; text-align: right; }
+    #catalyst-section .grade { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle; }
+    #catalyst-section .grade.A { background: #e6f4ea; color: #137333; }
+    #catalyst-section .grade.B { background: #e8f0fe; color: #1a73e8; }
+    #catalyst-section .grade.C { background: #fef7e0; color: #b06000; }
+    #catalyst-section .grade.D { background: #f3e8fd; color: #681da8; }
+    #catalyst-section .grade.U { background: #f1f3f4; color: #5f6368; }
+    #catalyst-section .unconf-tag { display: inline-block; font-size: 11px; font-weight: 700; color: #b00; border: 1px dashed #b00; border-radius: 8px; padding: 2px 8px; margin-left: 6px; }
+    #catalyst-section .src { font-size: 11px; color: #888; margin-top: 8px; }
+    #catalyst-section .phase { border-left: 3px solid #111; padding: 8px 0 8px 14px; margin: 10px 0; }
+    #catalyst-section .phase .pw { font-size: 12px; color: #888; font-weight: 700; }
+    #catalyst-section .phase .pt { font-size: 14px; font-weight: 700; margin: 2px 0; }
+    #catalyst-section .phase .pd { font-size: 13px; color: #444; line-height: 1.6; }
+    #catalyst-section .pending { font-size: 12px; color: #888; background: #f5f5f5; border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+    #catalyst-section details.cat-more { border: 1px solid #ddd; border-radius: 10px; margin: 8px 0; background: #fff; }
+    #catalyst-section details.cat-more > summary { cursor: pointer; padding: 12px 14px; font-size: 14px; font-weight: 600; list-style: none; }
+    #catalyst-section details.cat-more > summary::-webkit-details-marker { display: none; }
+    #catalyst-section details.cat-more .body { padding: 0 14px 12px; font-size: 13px; line-height: 1.7; }
+  </style>
+
+  <!-- 2026 Q4 Triple Catalyst: 3대 이벤트 카드 + 복합 시나리오. 숫자는 API에서 자동 갱신. -->
+  <section class="card" aria-labelledby="t-catalyst">
+    <div class="sec-head">
+      <h2 class="sec-title" id="t-catalyst">위메이드 Q4 3대 이벤트</h2>
+      <span class="muted">2026 Q4 Triple Catalyst · 읽기 전용</span>
+    </div>
+    <p class="muted cat-note">
+      ① 10/30 경영권 거래 종결 ② Night Crows W 연내 론칭 ③ 디지털자산기본법 입법 —
+      세 축이 같은 분기에 겹친다. 확정되지 않은 항목은 <span class="unconf-tag">미확정</span>으로 표시한다.
+      투자 권유가 아니다.
+    </p>
+
+    <div class="cat-cards" id="cat-cards">
+      <div class="cat-card"><p class="cat-note">불러오는 중…</p></div>
+    </div>
+
+    <h3 class="cat-h3">복합 시나리오 — 하나의 타임라인</h3>
+    <p class="muted cat-note">
+      2026년 1월 정책 기대 상승 → 6월 말 경영권 변경 급등 → 7월 급락 → 반등과 재하락 → Q4 세 이벤트.
+      각 이벤트 전후 외국인·기관 수급은 데이터 확보 전까지 PENDING으로 표시한다.
+    </p>
+    <div id="cat-phases"></div>
+    <div class="pending" id="cat-flow-note"></div>
+
+    <details class="cat-more">
+      <summary>디지털자산기본법 입법 추적 <span class="unconf-tag">통과 미확정</span></summary>
+      <div class="body" id="cat-policy"></div>
+    </details>
+  </section>
+
+  <script src="/js/wemade-catalyst.js"></script>
+</div>

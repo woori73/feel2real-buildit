@@ -46,6 +46,16 @@ spring:
             redirect-uri: "https://feel2real.co.kr/login/oauth2/code/naver"
             authorization-grant-type: authorization_code
             client-name: Naver
+          # 위메이드 전용 registration — /wemade 로그인 후 /wemade 복귀용.
+          # 동일 NAVER_CLIENT_ID/SECRET 재사용. 네이버 개발자 콘솔에 아래 redirect-uri를
+          # 별도 등록해야 동작한다 (NEEDS_OWNER). 미등록 시 /wemade/login이 기존 naver
+          # 플로우로 폴백하므로 로그인은 계속 동작한다.
+          naver-wemade:
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
+            redirect-uri: "https://feel2real.co.kr/login/oauth2/code/naver-wemade"
+            authorization-grant-type: authorization_code
+            client-name: NaverWemade
         provider:
           naver:
             authorization-uri: https://nid.naver.com/oauth2.0/authorize

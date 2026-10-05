@@ -1,0 +1,102 @@
+<div th:fragment="valuation" id="valuation-section" xmlns:th="http://www.thymeleaf.org">
+  <style>
+    #valuation-section .val-h3 { font-size: 15px; margin: 18px 0 8px; }
+    #valuation-section .val-note { font-size: 12px; line-height: 1.6; margin: 8px 0; }
+    #valuation-section .val-tabs { display: flex; gap: 8px; margin: 12px 0; }
+    #valuation-section .val-tab { padding: 8px 18px; border: 1px solid #ddd; border-radius: 20px; background: #fff; cursor: pointer; font-size: 14px; }
+    #valuation-section .val-tab.active { background: #111; color: #fff; border-color: #111; }
+    #valuation-section .val-basis { font-size: 11px; display: block; margin-top: 4px; }
+    #valuation-section .val-assume { font-size: 12px; background: #f7f7f7; border-radius: 8px; padding: 10px 12px; margin: 10px 0; white-space: pre-wrap; }
+    #valuation-section .val-chart-wrap { position: relative; height: 260px; margin: 12px 0; }
+  </style>
+  <!-- 위메이드 가치 재평가 (SOTP) : 카드+차트. 단일 목표주가 없음. -->
+  <section class="card" aria-labelledby="t-valuation">
+    <div class="sec-head">
+      <h2 class="sec-title" id="t-valuation">위메이드 가치 재평가 (SOTP)</h2>
+      <span class="muted">부분합 · 읽기 전용</span>
+    </div>
+    <p class="muted val-note">
+      리서치로 확정된 구성요소만 합산한 <strong>부분 SOTP</strong>입니다.
+      단일 목표주가는 제시하지 않으며, 시나리오별 가정과 계산근거를 공개합니다. 투자 권유가 아닙니다.
+    </p>
+
+    <div class="val-tabs" role="tablist" aria-label="시나리오 선택">
+      <button type="button" class="val-tab" data-scenario="CONSERVATIVE" role="tab">보수적</button>
+      <button type="button" class="val-tab active" data-scenario="BASE" role="tab" aria-selected="true">기준</button>
+      <button type="button" class="val-tab" data-scenario="OPTIMISTIC" role="tab">낙관적</button>
+    </div>
+
+    <!-- ① 현재 시가총액 -->
+    <h3 class="val-h3">① 현재 시가총액</h3>
+    <div class="deal-numbers" id="val-mktcap">
+      <div class="deal-num"><span class="k">종가 (기준일)</span><span class="v" id="val-close">—</span><span class="muted" id="val-close-date"></span></div>
+      <div class="deal-num"><span class="k">발행주식수</span><span class="v">33,948천주</span><span class="muted">리딩투자증권 2025-12-09</span></div>
+      <div class="deal-num"><span class="k">시가총액</span><span class="v" id="val-mktcap-v">—</span><span class="muted">종가×발행주식수</span></div>
+    </div>
+    <p class="muted val-note">
+      참고: SPA 거래 시사 가치 <strong>68,910원/주</strong>(DART rcpNo 20260630900888, A등급) × 발행주식수 =
+      <strong id="val-deal-implied">—</strong>. 목표주가가 아닌 거래 사실의 산술 환산입니다.
+    </p>
+
+    <!-- ② 상장자회사 지분가치 -->
+    <h3 class="val-h3">② 상장자회사 지분가치</h3>
+    <div class="deal-numbers">
+      <div class="deal-num">
+        <span class="k">위메이드맥스 (101730)</span>
+        <span class="v" id="val-max-v">—</span>
+        <span><span class="grade-a">A·공시</span></span>
+        <span class="muted val-basis">위메이드 직접 보유 30,864,184주(36.83%) × 2026-10-02 종가 4,640원. 특별관계자 포함 60,644,293주(72.37%). 출처: DART 대량보유보고서(2026-05-04)</span>
+      </div>
+      <div class="deal-num">
+        <span class="k">위메이드플레이 (123420)</span>
+        <span class="v">미확인</span>
+        <span class="muted val-basis">2026-04-09 위믹스코리아 보유분 38.28% 해소 공시 이후 위메이드 지분율 미확인 — 합산 제외. 시가총액 참고치(Finnhub): 약 607억원대이나 기준일 상이로 미반영.</span>
+      </div>
+    </div>
+    <p class="muted val-note">매드엔진은 위메이드맥스의 개발 자회사(나이트 크로우 개발). 지배구조: 위메이드 → 위메이드맥스(36.83%) → 매드엔진.</p>
+
+    <!-- ③ 미르 IP -->
+    <h3 class="val-h3">③ 미르(传奇) IP</h3>
+    <div class="deal-numbers">
+      <div class="deal-num"><span class="k">2025 중국 传奇IP 시장</span><span class="v">355.5억 위안</span><span class="muted">伽马数据 2026-02-25</span></div>
+      <div class="deal-num"><span class="k">누적 창출 가치</span><span class="v">3,700억 위안+</span><span class="muted">伽马数据, 2026E 400억 위안量级</span></div>
+      <div class="deal-num"><span class="k">위메이드 몫</span><span class="v">80%</span><span class="muted">2025 한국 법원, 액토즈와 80:20 분할 (언론)</span></div>
+    </div>
+    <p class="muted val-note">
+      SOTP 반영: 연간 로열티 가정 × 5년 단순합(할인 미적용). 보수 연 500억원 → 2,500억원 /
+      기준 연 1,000억원 → 5,000억원(리딩투자증권 2026F 라이선스 매출 1,111억원 수준) /
+      낙관 연 1,500억원 → 7,500억원. 공식 로열티율 미공개이므로 시나리오 가정임을 명시.
+    </p>
+
+    <!-- ④ Night Crows W -->
+    <h3 class="val-h3">④ Night Crows W (신작 옵션)</h3>
+    <div class="deal-numbers">
+      <div class="deal-num"><span class="k">원작 누적 매출</span><span class="v">약 7,500억원</span><span class="muted">위메이드맥스, 2026-04-13 (국내 3주년)</span></div>
+      <div class="deal-num"><span class="k">원작 누적 이용자</span><span class="v">1,400만명</span><span class="muted">동시접속 최대 45만명</span></div>
+      <div class="deal-num"><span class="k">W 출시일</span><span class="v">미공개</span><span class="muted">2026-06-24 게임명 확정, 일정 미제시</span></div>
+    </div>
+    <p class="muted val-note">
+      공식 출시일이 없어 가치 미산정(합산 제외). 원작 가치는 위메이드맥스 지분가치에 내재되어 있어 별도 가산하지 않음(이중 계산 방지).
+      관련 파이프라인: 프로젝트 탈(TAL, 2027년 하반기 출시 목표)·프로젝트 MO(2027년 공개 목표).
+    </p>
+
+    <!-- ⑤ 중국사업 -->
+    <h3 class="val-h3">⑤ 중국사업 옵션가치</h3>
+    <div class="deal-numbers">
+      <div class="deal-num"><span class="k">판호</span><span class="v">夜鸦</span><span><span class="grade-a">A·공시</span></span><span class="muted val-basis">国新出审〔2026〕1504号, 2026-06-29</span></div>
+      <div class="deal-num"><span class="k">킹넷 투자</span><span class="v">2.98억 달러</span><span><span class="grade-a">A·공시</span></span><span class="muted val-basis">Neosphere 49% → 위메이드 19.7% 간접, CNINFO 2026-09-12</span></div>
+      <div class="deal-num"><span class="k">승인 리스크</span><span class="v">불확실성 명시</span><span class="muted val-basis">중국 발개위·상무·외환 승인/신고, 킹넷 공시</span></div>
+    </div>
+    <p class="muted val-note">승인 불확실성 + 로열티율 미공개로 현금흐름 산정 불가. 보수 시나리오 0, 기준/낙관은 미산정(합산 제외).</p>
+
+    <!-- ⑥ SOTP 합계 -->
+    <h3 class="val-h3">⑥ SOTP 부분합</h3>
+    <div class="deal-numbers" id="val-sotp-nums">
+      <div class="deal-num"><span class="k">SOTP 합계</span><span class="v" id="val-total">—</span><span class="muted" id="val-total-scenario">기준 시나리오</span></div>
+      <div class="deal-num"><span class="k">주당 환산</span><span class="v" id="val-pershare">—</span><span class="muted">합계 ÷ 33,948천주</span></div>
+    </div>
+    <div class="val-assume" id="val-assumptions"><span class="muted">가정을 불러오는 중…</span></div>
+    <div class="val-chart-wrap"><canvas id="val-chart" aria-label="시나리오별 SOTP 비교 차트"></canvas></div>
+    <p class="muted val-note" id="val-notes"></p>
+  </section>
+</div>
