@@ -1,117 +1,160 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="위메이드(112040) 개인주주 분석 - 주가·수급·이벤트·Fact Check 정보 제공" />
-  <title>위메이드(112040) 개인주주 분석</title>
-  <link th:href="@{/css/wemade.css}" href="/css/wemade.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
-  <script th:src="@{/js/wemade.js}" src="/js/wemade.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>위메이드 개인주주 분석</title>
+<link rel="stylesheet" th:href="@{/css/wemade.css}" href="/css/wemade.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-<div class="page">
-
-  <!-- 1. 헤더 -->
-  <header class="app-header">
-    <h1>위메이드(112040) 개인주주 분석</h1>
-    <div class="auth-area">
-      <a th:if="${viewer == null or viewer == 'GUEST'}" th:href="@{/wemade/login}" href="/wemade/login" class="btn-login">네이버 로그인</a>
-      <span th:if="${viewer == 'MEMBER'}" class="badge-loggedin" aria-label="로그인 상태">로그인됨</span>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand"><span class="brand-name">위메이드</span><span class="brand-code">112040</span></div>
+    <div class="appbar-right">
+      <span class="live-dot" aria-hidden="true"></span>
+      <a th:if="${viewer == 'GUEST'}" th:href="@{/wemade/login}" href="/wemade/login" class="login-btn">네이버 로그인</a>
+      <span th:unless="${viewer == 'GUEST'}" class="login-badge">로그인됨</span>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main>
+<main class="page">
 
-    <!-- 2. 10초 요약 -->
-    <section class="card" aria-labelledby="t-summary">
-      <h2 class="sec-title" id="t-summary">10초 요약</h2>
-      <div class="sum-grid">
-        <div class="sum-card span2" id="sum-price">
-          <div class="sum-label">현재가 / 등락률</div>
-          <div class="state">불러오는 중…</div>
-        </div>
-        <div class="sum-card" id="sum-flow">
-          <div class="sum-label">오늘 수급</div>
-          <div class="state">불러오는 중…</div>
-        </div>
-        <div class="sum-card">
-          <div class="sum-label">인수계약 상태</div>
-          <div class="sum-value">10/30 종결 목표</div>
-          <span class="status-badge">진행 중</span>
-          <div class="sum-sub">1주당 68,910원 · DART rcpNo 20260630900888</div>
-        </div>
-        <div class="sum-card" id="sum-deal">
-          <div class="sum-label">경영권 매각가 vs 현재가</div>
-          <div class="state">불러오는 중…</div>
-        </div>
-        <div class="sum-card">
-          <div class="sum-label">Night Crows W</div>
-          <div class="sum-value">중국 판호 발급 확인(NPPA)</div>
-          <div class="sum-sub">夜鸦 · 国新出审〔2026〕1504号 · 2026-06-29</div>
-        </div>
-        <div class="sum-card" id="sum-event">
-          <div class="sum-label">오늘 중요정보</div>
-          <div class="state">불러오는 중…</div>
-        </div>
+  <!-- ① 현재 주가 히어로 -->
+  <section class="hero" aria-labelledby="t-price">
+    <div class="hero-top">
+      <div>
+        <div class="hero-name">위메이드 <span class="muted">KOSDAQ 112040</span></div>
+        <div class="hero-price" id="hero-price"><span class="state">불러오는 중…</span></div>
+        <div class="hero-chg" id="hero-chg"></div>
       </div>
-    </section>
+      <div class="spark-wrap"><canvas id="spark" aria-label="최근 주가 흐름"></canvas></div>
+    </div>
+    <div class="range52" id="range52"></div>
+    <div class="hero-date muted" id="hero-date"></div>
+  </section>
 
-    <!-- 3. 주가차트 -->
-    <section class="card" aria-labelledby="t-chart">
-      <h2 class="sec-title" id="t-chart">주가차트</h2>
-      <div class="tabs" id="period-tabs" role="tablist" aria-label="차트 기간"></div>
-      <div id="chart-area">
-        <div class="chart-box"><canvas id="priceChart" aria-label="종가 및 이동평균선 차트"></canvas></div>
-        <div class="chart-sub">RSI14 <span class="rsi-note">(70 과매수 / 30 과매도 기준선)</span></div>
-        <div class="chart-box rsi"><canvas id="rsiChart" aria-label="RSI14 차트"></canvas></div>
-      </div>
-      <div id="chart-state"></div>
-      <p class="fiftytwo" id="fiftytwo"></p>
-      <p class="legend-note">종가 · MA5/20/60/120 · 거래량</p>
-    </section>
+  <!-- ② 인수 진행상황 -->
+  <section class="card accent" aria-labelledby="t-acq">
+    <div class="sec-head">
+      <h2 class="sec-title" id="t-acq">인수 진행상황</h2>
+      <span class="dday" id="dday">D-?</span>
+    </div>
+    <div class="deal-numbers">
+      <div class="deal-num"><span class="k">1주당</span><span class="v">68,910원</span><span class="grade-a">A·공시</span></div>
+      <div class="deal-num"><span class="k">총액</span><span class="v">9,200억</span><span class="grade-a">A·공시</span></div>
+      <div class="deal-num"><span class="k">양도 지분</span><span class="v">39.33%</span><span class="grade-a">A·공시</span></div>
+    </div>
+    <div class="deal-multiple" id="deal-multiple"></div>
+    <ol class="steps" id="acq-steps">
+      <li class="done"><span class="dot"></span><div><strong>6/30 SPA 체결</strong><span>DART rcpNo 20260630900888</span></div></li>
+      <li class="done"><span class="dot"></span><div><strong>계약금 920억 지급</strong><span>2026-06-30</span></div></li>
+      <li class="done"><span class="dot"></span><div><strong>킹넷 참여 공시</strong><span>9/12 CNINFO · Neosphere 49%</span></div></li>
+      <li class="done"><span class="dot"></span><div><strong>공동입장문</strong><span>9/14 · 10/30 종결 목표</span></div></li>
+      <li class="next"><span class="dot"></span><div><strong>잔금 8,280억</strong><span>2026-10-30 예정</span></div></li>
+      <li class="todo"><span class="dot"></span><div><strong>최대주주 변경 종결</strong><span>진행 중 · 미확인</span></div></li>
+    </ol>
+    <div class="fine">인수 후 네오펄스 총지분 40.25% = 기존 0.92% + 양수 39.33%. "넘기는 지분 40.25%"라는 표현은 부정확.</div>
+  </section>
 
-    <!-- 4. 수급 -->
-    <section class="card" aria-labelledby="t-flows">
-      <h2 class="sec-title" id="t-flows">수급 <span class="unit">누적 순매수 · 단위: 백만원</span></h2>
-      <div class="tabs" id="flow-tabs" role="tablist" aria-label="수급 기간"></div>
-      <div id="flow-body"><div class="state">불러오는 중…</div></div>
-    </section>
+  <!-- ③ 중국에서 보는 위메이드 -->
+  <section class="card" aria-labelledby="t-china">
+    <div class="sec-head">
+      <h2 class="sec-title" id="t-china">중국에서 보는 위메이드</h2>
+      <span class="grade-a">A·공식공시</span>
+    </div>
+    <div id="china-hero"><div class="state">불러오는 중…</div></div>
+    <a class="more-link" href="#sec-china-detail">중국 공시·뉴스 전체 보기 →</a>
+  </section>
 
-    <!-- 5. 이벤트 타임라인 -->
-    <section class="card" aria-labelledby="t-events">
-      <h2 class="sec-title" id="t-events">이벤트 타임라인</h2>
-      <div id="event-list"><div class="state">불러오는 중…</div></div>
-      <p class="disclaimer">과거 반응 측정이며 미래 예측이 아님</p>
-    </section>
+  <!-- ④ 수급 -->
+  <section class="card" aria-labelledby="t-flow">
+    <div class="sec-head"><h2 class="sec-title" id="t-flow">외국인 · 기관 · 개인</h2><span class="muted" id="flow-asof"></span></div>
+    <div id="flow-bars"><div class="state">불러오는 중…</div></div>
+  </section>
 
-    <!-- 6. 중국/게임 Tracker -->
-    <section class="card" aria-labelledby="t-track">
-      <h2 class="sec-title" id="t-track">중국/게임 Tracker</h2>
-      <div class="tabs" id="track-tabs" role="tablist" aria-label="트래커 구분"></div>
-      <div id="track-body"><div class="state">불러오는 중…</div></div>
-    </section>
+  <!-- ⑤ 오늘 중요정보 -->
+  <section class="card" aria-labelledby="t-today">
+    <div class="sec-head"><h2 class="sec-title" id="t-today">오늘 중요정보</h2></div>
+    <div id="today-intel"><div class="state">불러오는 중…</div></div>
+  </section>
 
-    <!-- 7. Fact Check -->
-    <section class="card" aria-labelledby="t-fact">
-      <h2 class="sec-title" id="t-fact">Fact Check</h2>
-      <div id="fact-list"><div class="state">불러오는 중…</div></div>
-    </section>
+  <!-- 3종목 비교 -->
+  <section class="card" aria-labelledby="t-compare">
+    <div class="sec-head"><h2 class="sec-title" id="t-compare">3종목 비교</h2></div>
+    <div class="muted small">2026-06-30(SPA 체결일) = 100 정규화 수익률. 통화(KRW/CNY)·거래시간대 차이는 정규화로 제거됨.</div>
+    <div class="chart-box tall"><canvas id="compareChart" aria-label="3종목 정규화 수익률 비교 차트"></canvas></div>
+    <div class="legend" id="compare-legend"></div>
+    <div class="stock-cards" id="stock-cards"></div>
+  </section>
 
-    <!-- 8. 주주 정보(커뮤니티) -->
-    <section class="card" aria-labelledby="t-community">
-      <h2 class="sec-title" id="t-community">주주 정보 <span class="unit">커뮤니티</span></h2>
-      <div id="community-body"><div class="state">불러오는 중…</div></div>
-    </section>
+  <!-- 주가차트 -->
+  <section class="card" aria-labelledby="t-chart">
+    <div class="sec-head"><h2 class="sec-title" id="t-chart">위메이드 주가차트</h2></div>
+    <div class="tabs" id="period-tabs" role="tablist" aria-label="차트 기간"></div>
+    <div id="chart-area">
+      <div class="chart-box"><canvas id="priceChart" aria-label="종가 및 이동평균선 차트"></canvas></div>
+      <div class="chart-box sub"><canvas id="rsiChart" aria-label="RSI 차트"></canvas></div>
+    </div>
+    <div class="state" id="chart-state"></div>
+  </section>
 
-  </main>
+  <!-- 수급 상세 -->
+  <section class="card" aria-labelledby="t-flowd">
+    <div class="sec-head"><h2 class="sec-title" id="t-flowd">수급 상세</h2></div>
+    <div class="tabs" id="flow-tabs" role="tablist" aria-label="수급 기간"></div>
+    <div id="flow-detail"><div class="state">불러오는 중…</div></div>
+  </section>
 
-  <!-- 9. 푸터 면책 -->
-  <footer class="app-footer">
-    <p>투자 권유·매수/매도 추천·목표주가를 제공하지 않습니다. 정보 제공 목적의 참고 자료입니다.</p>
-    <p class="copy">위메이드(112040) 개인주주 분석</p>
+  <!-- 핵심 이벤트 타임라인 -->
+  <section class="card" aria-labelledby="t-events">
+    <div class="sec-head"><h2 class="sec-title" id="t-events">핵심 이벤트</h2></div>
+    <div class="muted small">과거 사건 이후 시장 반응 측정. 미래 예측이 아님.</div>
+    <div class="timeline" id="event-timeline"><div class="state">불러오는 중…</div></div>
+  </section>
+
+  <!-- Night Crows W 트래커 -->
+  <section class="card" aria-labelledby="t-ncw">
+    <div class="sec-head"><h2 class="sec-title" id="t-ncw">Night Crows W 트래커</h2></div>
+    <div class="panho-hero">
+      <span class="grade-a">A·공식확인</span>
+      <div class="panho-title">중국 판호 발급</div>
+      <div class="panho-sub">夜鸦 · 国新出审〔2026〕1504号 · 2026-06-29 (NPPA)</div>
+      <div class="launch-note"><strong>출시일정은 확정 아님</strong> — 연말·연초 출시는 커뮤니티·언론 언급 수준</div>
+    </div>
+    <div class="tabs" id="track-tabs" role="tablist" aria-label="트래커 출처"></div>
+    <div id="track-body"><div class="state">불러오는 중…</div></div>
+  </section>
+
+  <!-- Fact Check -->
+  <section class="card" aria-labelledby="t-fact">
+    <div class="sec-head"><h2 class="sec-title" id="t-fact">Fact Check</h2></div>
+    <div class="muted small">A=공식 1차 자료 · B=복수 신뢰자료 · C=언론/업계자료 · D=계산·커뮤니티 주장 · U=미확인</div>
+    <div id="fact-list"><div class="state">불러오는 중…</div></div>
+  </section>
+
+  <!-- 중국 현지 정보 상세 -->
+  <section class="card" id="sec-china-detail" aria-labelledby="t-chinad">
+    <div class="sec-head"><h2 class="sec-title" id="t-chinad">중국 공시 · 뉴스</h2></div>
+    <h3 class="sub-title">공식 공시 (CNINFO)</h3>
+    <div id="china-disc"><div class="state">불러오는 중…</div></div>
+    <h3 class="sub-title">중국 뉴스 (원문+번역)</h3>
+    <div class="muted small">공시와 충돌하면 공시를 우선합니다.</div>
+    <div id="china-news"><div class="state">불러오는 중…</div></div>
+  </section>
+
+  <!-- 주주 정보 -->
+  <section class="card" aria-labelledby="t-community">
+    <div class="sec-head"><h2 class="sec-title" id="t-community">주주 정보</h2></div>
+    <div id="community-list"><div class="state">불러오는 중…</div></div>
+  </section>
+
+  <footer class="footer">
+    투자 권유·매수/매도 추천·목표주가를 제공하지 않습니다. 정보 제공 목적의 참고 자료입니다.<br>
+    <span class="muted">수집 상태: <a href="/api/wemade/collection/status">/api/wemade/collection/status</a></span>
   </footer>
-
-</div>
+</main>
+<script th:src="@{/js/wemade.js}" src="/js/wemade.js"></script>
 </body>
 </html>
