@@ -13,4 +13,6 @@ public interface WemadeMemberSnapshotRepository extends JpaRepository<WemadeMemb
             String symbol, LocalDateTime from, LocalDateTime to);
     List<WemadeMemberSnapshot> findBySymbolAndBrokerNameAndMeasuredAtBetweenOrderByMeasuredAtAsc(
             String symbol, String brokerName, LocalDateTime from, LocalDateTime to);
+    List<WemadeMemberSnapshot> findBySymbolAndExchangeAndMeasuredAtBetweenOrderByMeasuredAtAsc(
+            String symbol, String exchange, LocalDateTime from, LocalDateTime to);
 }
