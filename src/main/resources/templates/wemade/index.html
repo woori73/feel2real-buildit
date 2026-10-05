@@ -61,6 +61,9 @@
   <!-- 새 대주주는 누구인가 -->
   <div th:replace="~{wemade/fragments/ownership :: ownership}"></div>
 
+  <!-- 가격괴리: 9,200억 vs 시총 5천억 -->
+  <div th:replace="~{wemade/fragments/gap :: gap}"></div>
+
   <!-- ③ 중국에서 보는 위메이드 -->
   <section class="card" aria-labelledby="t-china">
     <div class="sec-head">
@@ -102,6 +105,9 @@
     </div>
     <div class="state" id="chart-state"></div>
   </section>
+
+  <!-- 누가 고점에서 팔았나 -->
+  <div th:replace="~{wemade/fragments/who-sold :: who-sold}"></div>
 
   <!-- 수급 상세 -->
   <section class="card" aria-labelledby="t-flowd">
@@ -164,5 +170,6 @@
 <script th:src="@{/js/wemade.js}" src="/js/wemade.js"></script>
 <script th:src="@{/js/wemade-valuation.js}" src="/js/wemade-valuation.js"></script>
 <script th:src="@{/js/wemade-ownership.js}" src="/js/wemade-ownership.js"></script>
+<script th:src="@{/js/wemade-gap.js}" src="/js/wemade-gap.js"></script>
 </body>
 </html>
