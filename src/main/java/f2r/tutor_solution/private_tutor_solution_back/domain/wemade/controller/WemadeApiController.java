@@ -1,10 +1,10 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.dto.WemadeEventView;
-import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.dto.WemadeFlowSummary;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.dto.WemadePricePoint;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeChinaService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeEventService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadePriceService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class WemadeApiController {
 
     private final WemadePriceService priceService;
     private final WemadeEventService eventService;
-    private final WemadeRawPriceRepository priceRepository;
+    private final WemadeChinaService chinaService;
     private final WemadeInvestorFlowRepository flowRepository;
     private final WemadeFactCheckRepository factCheckRepository;
     private final WemadeGameTrackingRepository gameTrackingRepository;
@@ -33,15 +33,37 @@ public class WemadeApiController {
     private final WemadeDisclosureRepository disclosureRepository;
     private final WemadeCollectionRunRepository runRepository;
 
+    /** 종목 메타: 112040/101730(KRW), 002517(CNY). */
+    @GetMapping("/symbols")
+    public ResponseEntity<List<Map<String, String>>> symbols() {
+        return ResponseEntity.ok(WemadePriceService.SYMBOLS);
+    }
+
     @GetMapping("/overview")
-    public ResponseEntity<Map<String, Object>> overview() {
-        return ResponseEntity.ok(priceService.overview());
+    public ResponseEntity<Map<String, Object>> overview(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        return ResponseEntity.ok(priceService.overview(symbol));
     }
 
     @GetMapping("/prices")
     public ResponseEntity<List<WemadePricePoint>> prices(
+            @RequestParam(defaultValue = "112040") String symbol,
             @RequestParam(defaultValue = "180") int days) {
-        return ResponseEntity.ok(priceService.recentWithIndicators(Math.min(Math.max(days, 5), 1500)));
+        return ResponseEntity.ok(priceService.recentWithIndicators(symbol, Math.min(Math.max(days, 5), 2000)));
+    }
+
+    /**
+     * 3종목 정규화 수익률 비교.
+     * base(기본 2026-06-30 SPA 체결일) 종가=100. 통화(KRW/CNY)·거래시간대 차이는 정규화로 제거됨.
+     */
+    @GetMapping("/compare")
+    public ResponseEntity<Map<String, Object>> compare(
+            @RequestParam(defaultValue = "112040,101730,002517") String symbols,
+            @RequestParam(defaultValue = "2026-06-30") String base,
+            @RequestParam(defaultValue = "120") int days) {
+        List<String> list = Arrays.stream(symbols.split(",")).map(String::trim)
+                .filter(s -> !s.isEmpty()).toList();
+        return ResponseEntity.ok(priceService.compareNormalized(list, base, Math.min(Math.max(days, 10), 500)));
     }
 
     @GetMapping("/flows")
@@ -124,6 +146,29 @@ public class WemadeApiController {
     @GetMapping("/disclosures")
     public ResponseEntity<List<WemadeDisclosure>> disclosures() {
         return ResponseEntity.ok(disclosureRepository.findAllByOrderByDisclosedAtDesc());
+    }
+
+    /** 중국 현지 정보: 킹넷 공식 공시. */
+    @GetMapping("/china/disclosures")
+    public ResponseEntity<List<WemadeChinaDisclosure>> chinaDisclosures() {
+        return ResponseEntity.ok(chinaService.latestDisclosures());
+    }
+
+    /** 중국 현지 정보: 중국 뉴스 (원문+번역). */
+    @GetMapping("/china/news")
+    public ResponseEntity<List<WemadeChinaNews>> chinaNews() {
+        return ResponseEntity.ok(chinaService.latestNews());
+    }
+
+    /** 중국 현지 정보 최신 1건 (첫 화면 카드용). */
+    @GetMapping("/china/latest")
+    public ResponseEntity<Map<String, Object>> chinaLatest() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        List<WemadeChinaDisclosure> d = chinaService.latestDisclosures();
+        List<WemadeChinaNews> n = chinaService.latestNews();
+        m.put("disclosure", d.isEmpty() ? null : d.get(0));
+        m.put("news", n.isEmpty() ? null : n.get(0));
+        return ResponseEntity.ok(m);
     }
 
     @GetMapping("/collection/status")
