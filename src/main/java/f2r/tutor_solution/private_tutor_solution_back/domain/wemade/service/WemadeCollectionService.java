@@ -1,8 +1,10 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeCollectionRun;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeDisclosure;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeRawPrice;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeCollectionRunRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeDisclosureRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeRawPriceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,12 +42,18 @@ public class WemadeCollectionService {
 
     private final WemadeRawPriceRepository priceRepository;
     private final WemadeCollectionRunRepository runRepository;
+    private final WemadeDisclosureRepository disclosureRepository;
+    private final WemadeDartClient dartClient;
     private final HttpClient httpClient;
 
     public WemadeCollectionService(WemadeRawPriceRepository priceRepository,
-                                   WemadeCollectionRunRepository runRepository) {
+                                   WemadeCollectionRunRepository runRepository,
+                                   WemadeDisclosureRepository disclosureRepository,
+                                   WemadeDartClient dartClient) {
         this.priceRepository = priceRepository;
         this.runRepository = runRepository;
+        this.disclosureRepository = disclosureRepository;
+        this.dartClient = dartClient;
         this.httpClient = HttpClient.newHttpClient();
     }
 
@@ -105,12 +113,55 @@ public class WemadeCollectionService {
         return run;
     }
 
-    /** DISCLOSURE 수집: 공시 목록. 원문은 DART API 키 필요이므로 목록까지만 (BLOCKED). */
+    /**
+     * DISCLOSURE 수집: DART Open API 공시 목록.
+     * - DART_API_KEY 환경변수가 없거나 네트워크가 막히면 graceful하게 PARTIAL로 기록하고 끝낸다.
+     * - 키 없이 열리는 viewer.do 경로는 robots.txt Disallow이므로 자동수집에 사용하지 않는다
+     *   (수동 참조용 sourceUrl로만 저장).
+     * - 실패가 다른 source를 rollback하지 않는다.
+     */
     @Transactional
     public WemadeCollectionRun collectDisclosures() {
         WemadeCollectionRun run = startRun("DISCLOSURE");
-        finishRun(run, "PARTIAL", 0, 0, 0, 0,
-                "disclosure body requires DART API key (NEEDS_OWNER); list-level only");
+        try {
+            if (!dartClient.isConfigured()) {
+                finishRun(run, "PARTIAL", 0, 0, 0, 0,
+                        "DART_API_KEY not set (NEEDS_OWNER); keyless viewer.do not used (robots disallow)");
+                return run;
+            }
+            // 위메이드 corp_code 조회 (캐시 없이 매번 조회해도 되나, 실패 시 중단하지 않음)
+            String corpCode = dartClient.resolveCorpCode("위메이드").orElse(null);
+            if (corpCode == null) {
+                finishRun(run, "PARTIAL", 0, 0, 0, 1, "corp_code resolve failed");
+                return run;
+            }
+            java.time.LocalDate today = java.time.LocalDate.now();
+            String endDe = today.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+            String bgnDe = today.minusDays(90).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+            List<WemadeDartClient.DartDisclosure> list = dartClient.fetchDisclosures(corpCode, bgnDe, endDe);
+            int fetched = list.size(), accepted = 0, duplicate = 0;
+            for (WemadeDartClient.DartDisclosure d : list) {
+                String hash = sha256("DART|" + d.rceptNo() + "|" + d.reportName());
+                if (disclosureRepository.existsByContentHash(hash)) { duplicate++; continue; }
+                WemadeDisclosure row = WemadeDisclosure.builder()
+                        .disclosedAt(java.time.LocalDate.parse(d.rceptDate(),
+                                java.time.format.DateTimeFormatter.BASIC_ISO_DATE))
+                        .title(d.reportName())
+                        .disclosureNo(d.rceptNo())
+                        .rcpNo(d.rceptNo())
+                        .source("DART")
+                        .sourceUrl(WemadeDartClient.viewerUrl(d.rceptNo()))
+                        .contentHash(hash)
+                        .collectedAt(LocalDateTime.now())
+                        .build();
+                disclosureRepository.save(row);
+                accepted++;
+            }
+            finishRun(run, fetched == 0 ? "PARTIAL" : "SUCCESS", fetched, accepted, duplicate, 0, null);
+        } catch (Exception e) {
+            log.warn("WEMADE disclosure collection failed (isolated): {}", e.getClass().getSimpleName());
+            finishRun(run, "FAILED", 0, 0, 0, 1, "dart api unreachable from this env");
+        }
         return run;
     }
 
