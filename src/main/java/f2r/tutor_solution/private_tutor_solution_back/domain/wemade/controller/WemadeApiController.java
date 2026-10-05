@@ -241,6 +241,10 @@ public class WemadeApiController {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("configured", kisClient.isConfigured());
         m.put("websocketLive", kisWebSocket.isLive());
+        m.put("subscriptions", List.of(
+                "H0STCNT0/H0STASP0/H0STMBC0 (KRX)",
+                "H0NXCNT0/H0NXASP0/H0NXMBC0 (NXT)",
+                "H0UNCNT0/H0UNASP0/H0UNMBC0 (UNIFIED)"));
         m.put("note", "KIS 원시 시세/호가 데이터는 PRIVATE/INTERNAL — 외부에 재배포하지 않음");
         return ResponseEntity.ok(m);
     }
@@ -252,7 +256,11 @@ public class WemadeApiController {
      */
     @GetMapping("/anomaly/events")
     public ResponseEntity<List<WemadeAnomalyEvent>> anomalyEvents(
-            @RequestParam(defaultValue = "112040") String symbol) {
+            @RequestParam(defaultValue = "112040") String symbol,
+            @RequestParam(required = false) String exchange) {
+        if (exchange != null && !exchange.isBlank()) {
+            return ResponseEntity.ok(anomalyEventRepository.findBySymbolAndExchangeOrderByDetectedAtDesc(symbol, exchange));
+        }
         return ResponseEntity.ok(anomalyEventRepository.findBySymbolOrderByDetectedAtDesc(symbol));
     }
 
@@ -263,9 +271,14 @@ public class WemadeApiController {
     @GetMapping("/anomaly/metrics")
     public ResponseEntity<List<WemadeAnomalyMetric>> anomalyMetrics(
             @RequestParam(defaultValue = "112040") String symbol,
-            @RequestParam(defaultValue = "1") int hours) {
+            @RequestParam(defaultValue = "1") int hours,
+            @RequestParam(required = false) String exchange) {
         java.time.LocalDateTime to = java.time.LocalDateTime.now();
         java.time.LocalDateTime from = to.minusHours(Math.min(Math.max(hours, 1), 72));
+        if (exchange != null && !exchange.isBlank()) {
+            return ResponseEntity.ok(
+                    anomalyMetricRepository.findBySymbolAndExchangeAndMeasuredAtBetweenOrderByMeasuredAtAsc(symbol, exchange, from, to));
+        }
         return ResponseEntity.ok(
                 anomalyMetricRepository.findBySymbolAndMeasuredAtBetweenOrderByMeasuredAtAsc(symbol, from, to));
     }
@@ -277,9 +290,14 @@ public class WemadeApiController {
     @GetMapping("/anomaly/members")
     public ResponseEntity<List<WemadeMemberSnapshot>> memberSnapshots(
             @RequestParam(defaultValue = "112040") String symbol,
-            @RequestParam(defaultValue = "1") int days) {
+            @RequestParam(defaultValue = "1") int days,
+            @RequestParam(required = false) String exchange) {
         java.time.LocalDateTime to = java.time.LocalDateTime.now();
         java.time.LocalDateTime from = to.minusDays(Math.min(Math.max(days, 1), 30));
+        if (exchange != null && !exchange.isBlank()) {
+            return ResponseEntity.ok(
+                    memberSnapshotRepository.findBySymbolAndExchangeAndMeasuredAtBetweenOrderByMeasuredAtAsc(symbol, exchange, from, to));
+        }
         return ResponseEntity.ok(
                 memberSnapshotRepository.findBySymbolAndMeasuredAtBetweenOrderByMeasuredAtAsc(symbol, from, to));
     }
