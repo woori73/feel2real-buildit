@@ -69,7 +69,7 @@ app:
       # primary: wiki-router(기본, 기존 내신Wiki AI Router=Qwen) | meta(Meta Muse Spark DIRECT) | nvidia(NIM Nemotron, 보존·비교용).
       # 2026-10-01: NVIDIA 응답시간이 29초~180초 초과로 변동해 primary에서 제외. Router 설정·키는 건드리지 않는다.
       # 2026-10-05: Meta Muse Spark primary 옵션 추가 (NEWSTART_LLM_PRIMARY=meta).
-      primary: ${NEWSTART_LLM_PRIMARY:wiki-router}
+      primary: ${NEWSTART_LLM_PRIMARY:meta}
       nvidia:
         base-url: ${NVIDIA_NIM_BASE_URL:https://integrate.api.nvidia.com/v1}
         model: ${NVIDIA_NEMOTRON_MODEL:nvidia/nemotron-3.5-lightning-30b-a3b}
