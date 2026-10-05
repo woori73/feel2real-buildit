@@ -6,7 +6,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.Ne
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverAccountResolutionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverProfileIdentity;
-import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverProfileParser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -64,7 +63,7 @@ public class WemadeOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
         }
         // --- 아래는 기존 핸들러와 동일한 보안 원칙의 처리. redirect 목적지만 /wemade ---
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-        Object idAttr = oauth2User.getAttribute(NaverProfileParser.ID_KEY);
+        Object idAttr = oauth2User.getAttribute("id"); // NaverProfileParser.ID_KEY("id")가 패키지-private이므로 리터럴 사용
         boolean providerIdPresent = idAttr != null && !String.valueOf(idAttr).isBlank();
         log.info("NAVER_OAUTH_SUCCESS providerIdPresent={} registration=wemade", providerIdPresent);
 
