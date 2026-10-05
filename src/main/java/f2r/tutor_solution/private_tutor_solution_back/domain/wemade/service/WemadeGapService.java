@@ -175,10 +175,10 @@ public class WemadeGapService {
         List<Map<String, Object>> out = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             WemadeRawPrice r = rows.get(i);
-            if (r.getClosePrice() == null || i == 0) continue;
-            // 전일 종가는 전체 시계열 기준 (분석 시작일 이전 포함)
+            if (r.getClosePrice() == null) continue;
+            // 전일 종가는 전체 시계열 기준 (분석 시작일 6/29의 전일 = 6/26 포함)
             WemadeRawPrice prev = prevInFullSeries(r);
-            if (prev == null || prev.getClosePrice() == null) continue;
+            if (prev == null || prev.getClosePrice() == null || prev.getClosePrice() == 0) continue;
             double chg = (r.getClosePrice() - prev.getClosePrice()) * 100.0 / prev.getClosePrice();
             if (chg < 5.0) continue;
 
