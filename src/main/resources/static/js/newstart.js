@@ -207,7 +207,7 @@
             if (result.status === 200) {
               var checked = 0;
               self.DEBT_FLAGS.forEach(function (pair) { if (result.data[pair[0]]) checked++; });
-              setState('저장되었습니다 (' + checked + '/6 확인)');
+              setState('채무상황이 저장되었습니다. (확인 체크리스트 ' + checked + '/6)');
               hydrate(result.data);
               if (window.NewStartDebtDraft && window.NewStartDebtDraft.markSaved) {
                 window.NewStartDebtDraft.markSaved();
