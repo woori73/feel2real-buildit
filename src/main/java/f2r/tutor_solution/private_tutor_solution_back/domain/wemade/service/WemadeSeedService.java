@@ -32,48 +32,55 @@ public class WemadeSeedService {
     private final WemadeEventRepository eventRepository;
     private final WemadeFactCheckRepository factCheckRepository;
     private final WemadeGameTrackingRepository gameTrackingRepository;
+    private final WemadeChinaDisclosureRepository chinaDisclosureRepository;
+    private final WemadeChinaNewsRepository chinaNewsRepository;
     private final ObjectMapper objectMapper;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadOnStartup() {
         try {
-            loadPrices();
+            loadPrices("112040", "wemade/seed/prices.json", "NAVER_FCHART_SEED");
+            loadPrices("101730", "wemade/seed/prices_101730.json", "NAVER_FCHART_SEED");
+            loadPrices("002517", "wemade/seed/prices_002517.json", "EASTMONEY_SEED");
             loadEvents();
             loadFactChecks();
             loadGameTracking();
+            loadChinaDisclosures();
+            loadChinaNews();
         } catch (Exception e) {
             // 시드 실패가 앱 기동을 막지 않는다.
             log.warn("WEMADE seed load failed (non-fatal): {}", e.getMessage());
         }
     }
 
-    private void loadPrices() throws Exception {
-        if (priceRepository.count() > 0) return;
-        List<Map<String, Object>> rows = readJson("wemade/seed/prices.json",
+    private void loadPrices(String symbol, String path, String source) throws Exception {
+        if (!priceRepository.findBySymbolOrderByTradeDateAsc(symbol).isEmpty()) return;
+        List<Map<String, Object>> rows = readJson(path,
                 new TypeReference<>() {});
         int n = 0;
         for (Map<String, Object> r : rows) {
             String date = (String) r.get("date");
             String hash = WemadeCollectionService.sha256(
-                    date + "|" + r.get("open") + "|" + r.get("high") + "|" + r.get("low")
-                            + "|" + r.get("close") + "|" + r.get("volume"));
+                    symbol + "|" + date + "|" + r.get("open") + "|" + r.get("high") + "|" + r.get("low")
+                            + "|" + r.get("close") + "|" + r.get("volume")); // [SEED-LOAD]
             if (priceRepository.existsByContentHash(hash)) continue;
             WemadeRawPrice p = WemadeRawPrice.builder()
+                    .symbol(symbol)
                     .tradeDate(LocalDate.parse(date, java.time.format.DateTimeFormatter.BASIC_ISO_DATE))
                     .openPrice((Integer) r.get("open"))
                     .highPrice((Integer) r.get("high"))
                     .lowPrice((Integer) r.get("low"))
                     .closePrice((Integer) r.get("close"))
                     .volume(((Number) r.get("volume")).longValue())
-                    .source("NAVER_FCHART_SEED")
+                    .source(source)
                     .contentHash(hash)
                     .collectedAt(LocalDateTime.now())
                     .build();
             priceRepository.save(p);
             n++;
         }
-        log.info("WEMADE seed: prices {} rows", n);
+        log.info("WEMADE seed: prices {} {} rows", symbol, n);
     }
 
     private void loadEvents() throws Exception {
@@ -143,6 +150,60 @@ public class WemadeSeedService {
             n++;
         }
         log.info("WEMADE seed: game_tracking {} rows", n);
+    }
+
+    private void loadChinaDisclosures() throws Exception {
+        List<Map<String, Object>> rows = readJson("wemade/seed/china_disclosures.json",
+                new TypeReference<>() {});
+        int n = 0;
+        for (Map<String, Object> r : rows) {
+            String hash = WemadeCollectionService.sha256(
+                    "CN-DISCLOSURE|" + r.get("announcedAt") + "|" + r.get("titleCn"));
+            if (chinaDisclosureRepository.existsByContentHash(hash)) continue;
+            chinaDisclosureRepository.save(WemadeChinaDisclosure.builder()
+                    .announcedAt(LocalDate.parse((String) r.get("announcedAt")))
+                    .secCode((String) r.get("secCode"))
+                    .secName((String) r.get("secName"))
+                    .titleCn((String) r.get("titleCn"))
+                    .titleKr((String) r.get("titleKr"))
+                    .summaryKr((String) r.get("summaryKr"))
+                    .whyMatters((String) r.get("whyMatters"))
+                    .announcementId((String) r.get("announcementId"))
+                    .sourceUrl((String) r.get("sourceUrl"))
+                    .grade((String) r.getOrDefault("grade", "A"))
+                    .contentHash(hash)
+                    .collectedAt(LocalDateTime.now())
+                    .build());
+            n++;
+        }
+        log.info("WEMADE seed: china_disclosures {} rows", n);
+    }
+
+    private void loadChinaNews() throws Exception {
+        List<Map<String, Object>> rows = readJson("wemade/seed/china_news.json",
+                new TypeReference<>() {});
+        int n = 0;
+        for (Map<String, Object> r : rows) {
+            String hash = WemadeCollectionService.sha256(
+                    "CN-NEWS|" + r.get("publishedAt") + "|" + r.get("titleCn"));
+            if (chinaNewsRepository.existsByContentHash(hash)) continue;
+            chinaNewsRepository.save(WemadeChinaNews.builder()
+                    .publishedAt(LocalDate.parse((String) r.get("publishedAt")))
+                    .titleCn((String) r.get("titleCn"))
+                    .titleKr((String) r.get("titleKr"))
+                    .sourceName((String) r.get("sourceName"))
+                    .sourceUrl((String) r.get("sourceUrl"))
+                    .summaryKr((String) r.get("summaryKr"))
+                    .whyMatters((String) r.get("whyMatters"))
+                    .matchesDisclosure((Boolean) r.get("matchesDisclosure"))
+                    .grade((String) r.getOrDefault("grade", "C"))
+                    .keywords((String) r.get("keywords"))
+                    .contentHash(hash)
+                    .collectedAt(LocalDateTime.now())
+                    .build());
+            n++;
+        }
+        log.info("WEMADE seed: china_news {} rows", n);
     }
 
     private <T> T readJson(String path, TypeReference<T> type) throws Exception {
