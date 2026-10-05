@@ -207,3 +207,12 @@ body {
 @media (min-width: 431px) {
   .page { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 }
+
+/* 실시간/지연 시세 배지 */
+.quote-badge { margin-left: 6px; vertical-align: middle; }
+.badge-live, .badge-delayed {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: -0.2px;
+}
+.badge-live { background: #e8f9ee; color: #0d7a3f; border: 1px solid #0d7a3f33; }
+.badge-delayed { background: #f1f3f5; color: #666; border: 1px solid #ddd; }
