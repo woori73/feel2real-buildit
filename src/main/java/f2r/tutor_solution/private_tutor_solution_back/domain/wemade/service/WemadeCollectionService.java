@@ -36,10 +36,6 @@ import java.util.regex.Pattern;
 @Service
 public class WemadeCollectionService {
 
-    private static final String STOCK_CODE = "112040";
-    private static final String PRICE_URL =
-            "https://fchart.stock.naver.com/sise.nhn?symbol=" + STOCK_CODE + "&timeframe=day&count=1500&requestType=0";
-
     private final WemadeRawPriceRepository priceRepository;
     private final WemadeCollectionRunRepository runRepository;
     private final WemadeDisclosureRepository disclosureRepository;
@@ -57,43 +53,103 @@ public class WemadeCollectionService {
         this.httpClient = HttpClient.newHttpClient();
     }
 
-    /** PRICE 수집: 일봉 전체를 받아 신규 일자만 저장. */
+    /** PRICE 수집: 종목별 일봉을 받아 신규 일자만 저장. 112040/101730=네이버, 002517=eastmoney(CNY). */
     @Transactional
     public WemadeCollectionRun collectPrices() {
         WemadeCollectionRun run = startRun("PRICE");
-        try {
-            String xml = fetch(PRICE_URL);
-            Pattern p = Pattern.compile("<item data=\"([^\"]+)\"");
-            Matcher m = p.matcher(xml);
-            int fetched = 0, accepted = 0, duplicate = 0;
-            while (m.find()) {
-                fetched++;
-                String[] f = m.group(1).split("\\|");
-                LocalDate date = LocalDate.parse(f[0], DateTimeFormatter.BASIC_ISO_DATE);
-                String hash = sha256(m.group(1));
-                if (priceRepository.existsByContentHash(hash)) { duplicate++; continue; }
-                WemadeRawPrice row = priceRepository.findById(date).orElse(null);
-                if (row == null) {
-                    row = new WemadeRawPrice();
-                    row.setTradeDate(date);
-                }
-                row.setOpenPrice(Integer.parseInt(f[1]));
-                row.setHighPrice(Integer.parseInt(f[2]));
-                row.setLowPrice(Integer.parseInt(f[3]));
-                row.setClosePrice(Integer.parseInt(f[4]));
-                row.setVolume(Long.parseLong(f[5]));
-                row.setSource("NAVER_FCHART");
-                row.setContentHash(hash);
-                row.setCollectedAt(LocalDateTime.now());
-                priceRepository.save(row);
-                accepted++;
+        int fetched = 0, accepted = 0, duplicate = 0, error = 0;
+        StringBuilder msg = new StringBuilder();
+        for (String symbol : List.of("112040", "101730", "002517")) {
+            try {
+                int[] r = "002517".equals(symbol) ? collectKingnet(symbol) : collectNaver(symbol);
+                fetched += r[0]; accepted += r[1]; duplicate += r[2];
+            } catch (Exception e) {
+                error++;
+                msg.append(symbol).append(":").append(e.getClass().getSimpleName()).append(" ");
+                log.warn("WEMADE price collection failed for {} (isolated): {}", symbol, e.getClass().getSimpleName());
             }
-            finishRun(run, "SUCCESS", fetched, accepted, duplicate, 0, null);
-        } catch (Exception e) {
-            log.warn("WEMADE price collection failed: {}", e.getMessage());
-            finishRun(run, "FAILED", 0, 0, 0, 1, truncate(e.getMessage()));
         }
+        String status = error == 0 ? "SUCCESS" : (accepted > 0 ? "PARTIAL" : "FAILED");
+        finishRun(run, status, fetched, accepted, duplicate, error,
+                msg.length() == 0 ? null : truncate(msg.toString()));
         return run;
+    }
+
+    /** 네이버 일봉 (112040, 101730). */
+    private int[] collectNaver(String symbol) throws Exception {
+        String url = "https://fchart.stock.naver.com/sise.nhn?symbol=" + symbol + "&timeframe=day&count=1500&requestType=0";
+        String xml = fetch(url);
+        Pattern p = Pattern.compile("<item data=\"([^\"]+)\"");
+        Matcher m = p.matcher(xml);
+        int fetched = 0, accepted = 0, duplicate = 0;
+        while (m.find()) {
+            fetched++;
+            String[] f = m.group(1).split("\\|");
+            LocalDate date = LocalDate.parse(f[0], DateTimeFormatter.BASIC_ISO_DATE);
+            String hash = sha256(symbol + "|" + m.group(1));
+            if (priceRepository.existsByContentHash(hash)) { duplicate++; continue; }
+            WemadeRawPrice.PriceId id = new WemadeRawPrice.PriceId(symbol, date);
+            WemadeRawPrice row = priceRepository.findById(id).orElse(null);
+            if (row == null) {
+                row = new WemadeRawPrice();
+                row.setSymbol(symbol);
+                row.setTradeDate(date);
+            }
+            row.setOpenPrice(Integer.parseInt(f[1]));
+            row.setHighPrice(Integer.parseInt(f[2]));
+            row.setLowPrice(Integer.parseInt(f[3]));
+            row.setClosePrice(Integer.parseInt(f[4]));
+            row.setVolume(Long.parseLong(f[5]));
+            row.setSource("NAVER_FCHART");
+            row.setContentHash(hash);
+            row.setCollectedAt(LocalDateTime.now());
+            priceRepository.save(row);
+            accepted++;
+        }
+        return new int[]{fetched, accepted, duplicate};
+    }
+
+    /** 킹넷(002517.SZ) 일봉 — eastmoney kline API. CNY는 100배 스케일로 저장. */
+    private int[] collectKingnet(String symbol) throws Exception {
+        String url = "https://push2his.eastmoney.com/api/qt/stock/kline/get"
+                + "?fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56,f57"
+                + "&klt=101&fqt=1&secid=0.002517&beg=20200101&end=29991231&lmt=2000";
+        String body = fetchUtf8(url);
+        // "klines":["2026-09-01,17.44,16.97,17.44,16.87,630322,1077170779.50", ...]
+        Matcher km = Pattern.compile("\"klines\":\\[(.*?)]", Pattern.DOTALL).matcher(body);
+        if (!km.find()) throw new IllegalStateException("no klines in response");
+        Matcher im = Pattern.compile("\"(\\d{4}-\\d{2}-\\d{2},[\\d.,-]+)\"").matcher(km.group(1));
+        int fetched = 0, accepted = 0, duplicate = 0;
+        while (im.find()) {
+            fetched++;
+            String[] f = im.group(1).split(",");
+            LocalDate date = LocalDate.parse(f[0]);
+            long open = Math.round(Double.parseDouble(f[1]) * 100);
+            long close = Math.round(Double.parseDouble(f[2]) * 100);
+            long high = Math.round(Double.parseDouble(f[3]) * 100);
+            long low = Math.round(Double.parseDouble(f[4]) * 100);
+            long volume = (long) Double.parseDouble(f[5]);
+            String hash = sha256(symbol + "|" + f[0] + "|" + close);
+            if (priceRepository.existsByContentHash(hash)) { duplicate++; continue; }
+            WemadeRawPrice.PriceId id = new WemadeRawPrice.PriceId(symbol, date);
+            WemadeRawPrice row = priceRepository.findById(id).orElse(null);
+            if (row == null) {
+                row = new WemadeRawPrice();
+                row.setSymbol(symbol);
+                row.setTradeDate(date);
+            }
+            row.setOpenPrice((int) open);
+            row.setHighPrice((int) high);
+            row.setLowPrice((int) low);
+            row.setClosePrice((int) close);
+            row.setVolume(volume);
+            row.setSource("EASTMONEY");
+            row.setContentHash(hash);
+            row.setCollectedAt(LocalDateTime.now());
+            priceRepository.save(row);
+            accepted++;
+        }
+        return new int[]{fetched, accepted, duplicate};
     }
 
     /**
@@ -206,6 +262,16 @@ public class WemadeCollectionService {
         HttpResponse<byte[]> res = httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
         if (res.statusCode() != 200) throw new IllegalStateException("HTTP " + res.statusCode());
         return new String(res.body(), Charset.forName("EUC-KR"));
+    }
+
+    private String fetchUtf8(String url) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+                .header("User-Agent", "Mozilla/5.0")
+                .GET().build();
+        HttpResponse<String> res = httpClient.send(req,
+                HttpResponse.BodyHandlers.ofString(java.nio.charset.StandardCharsets.UTF_8));
+        if (res.statusCode() != 200) throw new IllegalStateException("HTTP " + res.statusCode());
+        return res.body();
     }
 
     static String sha256(String s) {
