@@ -402,6 +402,31 @@ jobs:
             exit 1
           fi
 
+          # NewStart 지피지기 (Meta Muse Spark) 전용 키를 S3 staging에서 가져와 /etc/f2r/env에 동기화한다.
+          # Vision의 META_VISION_API_KEY와 분리된 독립 키이다.
+          # S3 객체는 배포 중에만 존재하는 transient 파일이다. 값은 절대 출력하지 않는다.
+          if aws s3 cp s3://feel2real-buildit-deploy/meta-jipijigi-key /tmp/meta-jipijigi-key 2>/dev/null; then
+            META_JIPJIGI_VALUE=$(cat /tmp/meta-jipijigi-key)
+            shred -u /tmp/meta-jipijigi-key 2>/dev/null || rm -f /tmp/meta-jipijigi-key
+            if [ -n "$META_JIPJIGI_VALUE" ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              grep -vE '^META_JIPJIGI_API_KEY=' /etc/f2r/env > /etc/f2r/env.tmp || true
+              printf 'META_JIPJIGI_API_KEY=%s\n' "$META_JIPJIGI_VALUE" >> /etc/f2r/env.tmp
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo '[DEPLOY] synced META_JIPJIGI_API_KEY into f2r-app env (value hidden)'
+            else
+              echo '::error::META_JIPJIGI_API_KEY staging file is empty; refusing Jipijigi deploy without key'
+              exit 1
+            fi
+            unset META_JIPJIGI_VALUE
+          else
+            echo '::error::META_JIPJIGI_API_KEY staging file unavailable in S3; refusing Jipijigi deploy without key'
+            exit 1
+          fi
+
           # Preserve the legacy OpenRouter sync for any remaining consumers.
           if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
             install -d -m 755 /etc/f2r
@@ -463,6 +488,21 @@ jobs:
           shred -u /tmp/meta-vision-key.staging 2>/dev/null || rm -f /tmp/meta-vision-key.staging
           unset META_VISION_API_KEY
           echo "META_VISION_API_KEY staged in S3 (transient, value hidden)"
+
+      - name: Stage Meta Jipijigi key in S3 (transient)
+        shell: bash
+        env:
+          META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${META_JIPJIGI_API_KEY:-}" || { echo "::error::META_JIPJIGI_API_KEY repository secret is empty"; exit 1; }
+          # 키를 임시 파일에 쓰고 S3에 업로드 (private bucket, 배포 중에만 존재)
+          # 값은 절대 출력하지 않음
+          printf '%s' "$META_JIPJIGI_API_KEY" > /tmp/meta-jipijigi-key.staging
+          aws s3 cp /tmp/meta-jipijigi-key.staging s3://feel2real-buildit-deploy/meta-jipijigi-key --sse AES256 >/dev/null
+          shred -u /tmp/meta-jipijigi-key.staging 2>/dev/null || rm -f /tmp/meta-jipijigi-key.staging
+          unset META_JIPJIGI_API_KEY
+          echo "META_JIPJIGI_API_KEY staged in S3 (transient, value hidden)"
 
       - name: Upload deployment artifacts to S3
         run: |
@@ -531,5 +571,12 @@ jobs:
         shell: bash
         run: |
           aws s3 rm s3://feel2real-buildit-deploy/meta-vision-key 2>/dev/null || true
+          echo "Staging file cleaned up"
+
+      - name: Cleanup Meta Jipijigi key staging file
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://feel2real-buildit-deploy/meta-jipijigi-key 2>/dev/null || true
           echo "Staging file cleaned up"
 

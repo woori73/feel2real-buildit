@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * NewStart 지피지기 전용 LLM 클라이언트. primary는 {@code app.newstart.llm.primary}로 고른다:
- * {@code wiki-router}(기본: 기존 내신Wiki AI Router=Qwen, 2026-10-01 결정) 또는 {@code nvidia}(NVIDIA NIM Nemotron, 보존).
+ * {@code wiki-router}(기본: 기존 내신Wiki AI Router=Qwen, 2026-10-01 결정),
+ * {@code meta}(Meta Muse Spark DIRECT, 2026-10-05 추가),
+ * {@code nvidia}(NVIDIA NIM Nemotron, 보존).
  * fallback은 OpenRouter Qwen DIRECT(앱 자신의 OPENROUTER_API_KEY가 있을 때만 동작).
  *
  * <p>호출 횟수 계약: 정상 경로에서는 primary 1회뿐이고(Qwen 0회), primary가 §4의 기술적
@@ -33,19 +35,31 @@ public class NewStartLlmClient {
     this.fallback = fallback;
   }
 
-  /** Spring 조립: primary는 설정으로 선택하고 NVIDIA transport는 선택되지 않아도 보존된다. */
+  /** Spring 조립: primary는 설정으로 선택하고 선택되지 않은 transport는 보존된다. */
   @Autowired
   public NewStartLlmClient(
       NewStartLlmProperties properties,
       WikiRouterLlmTransport wikiRouter,
       NvidiaNimLlmTransport nvidia,
+      MetaMuseSparkLlmTransport metaMuseSpark,
       OpenRouterQwenLlmTransport openRouter) {
-    this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia), openRouter);
+    this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia, metaMuseSpark), openRouter);
     log.info("newstart llm primary={} fallback={}", this.primary.name(), openRouter.name());
   }
 
-  static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter, NewStartLlmTransport nvidia) {
-    return "nvidia".equalsIgnoreCase(configured == null ? "" : configured.trim()) ? nvidia : wikiRouter;
+  static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
+      NewStartLlmTransport nvidia, NewStartLlmTransport metaMuseSpark) {
+    String value = configured == null ? "" : configured.trim();
+    if ("meta".equalsIgnoreCase(value) && metaMuseSpark != null) {
+      return metaMuseSpark;
+    }
+    return "nvidia".equalsIgnoreCase(value) ? nvidia : wikiRouter;
+  }
+
+  /** 하위 호환: 기존 3-arg 호출은 meta 없이 동작한다. */
+  static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
+      NewStartLlmTransport nvidia) {
+    return selectPrimary(configured, wikiRouter, nvidia, null);
   }
 
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
