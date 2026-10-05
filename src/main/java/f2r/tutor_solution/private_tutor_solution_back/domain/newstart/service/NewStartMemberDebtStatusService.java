@@ -24,7 +24,7 @@ public class NewStartMemberDebtStatusService {
   public static final Set<String> ALLOWED_STAGES = Set.of(
       "정보 확인 중", "신청 준비 중", "신청 완료", "심사 진행 중", "협약·약정 단계", "기타");
 
-  public static final int SUMMARY_MAX_LENGTH = 1000;
+  public static final int SUMMARY_MAX_LENGTH = 10000;
 
   private final NewStartMemberDebtStatusRepository repository;
 
