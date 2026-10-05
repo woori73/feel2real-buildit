@@ -10,4 +10,5 @@ import java.util.List;
 public interface WemadeInvestorFlowRepository extends JpaRepository<WemadeInvestorFlow, WemadeInvestorFlow.FlowId> {
     List<WemadeInvestorFlow> findByTradeDateOrderByInvestorType(LocalDate d);
         List<WemadeInvestorFlow> findByTradeDateBetweenOrderByTradeDateAsc(LocalDate s, LocalDate e);
+    boolean existsByContentHash(String hash);
 }
