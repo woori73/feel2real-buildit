@@ -2,6 +2,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeCollectionRun;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeDisclosure;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeInvestorFlow;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeInvestorFlowRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.WemadeRawPrice;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeCollectionRunRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeDisclosureRepository;
@@ -41,18 +43,24 @@ public class WemadeCollectionService {
     private final WemadeDisclosureRepository disclosureRepository;
     private final WemadeDartClient dartClient;
     private final WemadePykrxCollector pykrxCollector;
+    private final WemadeKisClient kisClient;
+    private final WemadeInvestorFlowRepository flowRepository;
     private final HttpClient httpClient;
 
     public WemadeCollectionService(WemadeRawPriceRepository priceRepository,
                                    WemadeCollectionRunRepository runRepository,
                                    WemadeDisclosureRepository disclosureRepository,
                                    WemadeDartClient dartClient,
-                                   WemadePykrxCollector pykrxCollector) {
+                                   WemadePykrxCollector pykrxCollector,
+                                   WemadeKisClient kisClient,
+                                   WemadeInvestorFlowRepository flowRepository) {
         this.priceRepository = priceRepository;
         this.runRepository = runRepository;
         this.disclosureRepository = disclosureRepository;
         this.dartClient = dartClient;
         this.pykrxCollector = pykrxCollector;
+        this.kisClient = kisClient;
+        this.flowRepository = flowRepository;
         this.httpClient = HttpClient.newHttpClient();
     }
 
@@ -206,6 +214,76 @@ public class WemadeCollectionService {
                     "PENDING: pykrx flows unavailable; fallback=KIS Open API (NEEDS_OWNER)");
         }
         return run;
+    }
+
+    /**
+     * KIS_FLOW 수집: KIS Open API 종목별 투자자 일별 수급 (외국인/기관/개인).
+     * pykrx 투자자 엔드포인트가 KRX 로그인 없이 빈 응답이므로 KIS를 대체원으로 사용한다.
+     * KIS 응답 금액 단위는 백만원으로 WemadeInvestorFlow 스키마와 일치한다.
+     * 키가 없으면 PENDING으로 기록하고 조용히 스킵한다.
+     */
+    @Transactional
+    public WemadeCollectionRun collectKisFlows() {
+        WemadeCollectionRun run = startRun("KIS_FLOW");
+        if (!kisClient.isConfigured()) {
+            finishRun(run, "PARTIAL", 0, 0, 0, 0, "PENDING: KIS_APP_KEY/KIS_APP_SECRET not set (NEEDS_OWNER)");
+            return run;
+        }
+        try {
+            java.util.Optional<java.util.List<java.util.Map<String, Object>>> flowsOpt =
+                    kisClient.investorFlows("112040");
+            if (flowsOpt.isEmpty()) {
+                finishRun(run, "PARTIAL", 0, 0, 0, 0, "KIS investor flows empty");
+                return run;
+            }
+            int fetched = 0, accepted = 0, duplicate = 0;
+            java.time.format.DateTimeFormatter fmt =
+                    java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd");
+            for (java.util.Map<String, Object> f : flowsOpt.get()) {
+                String dateStr = String.valueOf(f.get("date"));
+                LocalDate date;
+                try {
+                    date = LocalDate.parse(dateStr, fmt);
+                } catch (Exception e) {
+                    continue;
+                }
+                fetched++;
+                accepted += saveKisFlow(date, "FOREIGN", toLong(f.get("foreignNetAmt")));
+                accepted += saveKisFlow(date, "INSTITUTION", toLong(f.get("institutionNetAmt")));
+                accepted += saveKisFlow(date, "RETAIL", toLong(f.get("retailNetAmt")));
+            }
+            // duplicate는 saveKisFlow 내부에서 기존 행 존재 시 스킵되므로 accepted에 미포함
+            finishRun(run, accepted > 0 ? "SUCCESS" : "PARTIAL", fetched, accepted, duplicate, 0, "source=KIS");
+        } catch (Exception e) {
+            log.warn("WEMADE KIS flow collection failed (isolated): {}", e.getClass().getSimpleName());
+            finishRun(run, "FAILED", 0, 0, 0, 1, "kis investor api unreachable");
+        }
+        return run;
+    }
+
+    /** KIS 수급 1행 저장. 기존 행이 있으면 스킵(0 반환). */
+    private int saveKisFlow(LocalDate date, String investorType, long netBuyAmount) {
+        String hash = sha256("KIS_FLOW|" + date + "|" + investorType + "|" + netBuyAmount);
+        boolean exists = flowRepository.findAll().stream()
+                .anyMatch(r -> hash.equals(r.getContentHash()));
+        if (exists) return 0;
+        WemadeInvestorFlow row = WemadeInvestorFlow.builder()
+                .tradeDate(date)
+                .investorType(investorType)
+                .netBuyAmount(netBuyAmount)
+                .source("KIS")
+                .contentHash(hash)
+                .collectedAt(LocalDateTime.now())
+                .build();
+        flowRepository.save(row);
+        return 1;
+    }
+
+    private static long toLong(Object o) {
+        if (o == null) return 0L;
+        if (o instanceof Number) return ((Number) o).longValue();
+        try { return Long.parseLong(String.valueOf(o).trim()); }
+        catch (Exception e) { return 0L; }
     }
 
     /**
