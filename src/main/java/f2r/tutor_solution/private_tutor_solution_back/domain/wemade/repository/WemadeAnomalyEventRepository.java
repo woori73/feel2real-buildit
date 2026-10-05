@@ -11,4 +11,6 @@ public interface WemadeAnomalyEventRepository extends JpaRepository<WemadeAnomal
     List<WemadeAnomalyEvent> findBySymbolOrderByDetectedAtDesc(String symbol);
     List<WemadeAnomalyEvent> findBySymbolAndAnalysisTypeOrderByDetectedAtDesc(
             String symbol, String analysisType);
+    List<WemadeAnomalyEvent> findBySymbolAndExchangeOrderByDetectedAtDesc(
+            String symbol, String exchange);
 }
