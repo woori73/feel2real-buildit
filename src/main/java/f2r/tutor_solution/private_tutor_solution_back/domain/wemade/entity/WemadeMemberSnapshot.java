@@ -56,6 +56,16 @@ public class WemadeMemberSnapshot {
     @Builder.Default
     private String source = "KIS";
 
+    /** 시장 구분: KRX / NXT / UNIFIED. KIS에서 실제 제공되는 범위대로 저장한다.
+     *  제공되지 않는 항목을 다른 시장 데이터로 임의 대체하지 않는다. */
+    @Column(length = 10)
+    @Builder.Default
+    private String exchange = "KRX";
+
+    /** 세션 구분: PRE / REGULAR / AFTER / CLOSE (KIS MARKET_CLS_CODE 기준). */
+    @Column(length = 10)
+    private String session;
+
     /** 연관성 메모. 기본값 "연관성 확인되지 않음". 직접 증거 없이 변경하지 않는다. */
     @Column(length = 200)
     @Builder.Default
