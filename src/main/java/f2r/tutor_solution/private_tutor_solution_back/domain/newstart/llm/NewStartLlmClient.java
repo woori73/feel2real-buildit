@@ -50,10 +50,16 @@ public class NewStartLlmClient {
   static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
       NewStartLlmTransport nvidia, NewStartLlmTransport metaMuseSpark) {
     String value = configured == null ? "" : configured.trim();
-    if ("meta".equalsIgnoreCase(value)) {
+    if ("meta".equalsIgnoreCase(value) && metaMuseSpark != null) {
       return metaMuseSpark;
     }
     return "nvidia".equalsIgnoreCase(value) ? nvidia : wikiRouter;
+  }
+
+  /** 하위 호환: 기존 3-arg 호출은 meta 없이 동작한다. */
+  static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
+      NewStartLlmTransport nvidia) {
+    return selectPrimary(configured, wikiRouter, nvidia, null);
   }
 
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
