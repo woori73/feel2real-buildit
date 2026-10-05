@@ -13,4 +13,8 @@ public interface WemadeAnomalyMetricRepository extends JpaRepository<WemadeAnoma
             String symbol, LocalDateTime from, LocalDateTime to);
     List<WemadeAnomalyMetric> findBySymbolAndMetricTypeOrderByMeasuredAtDesc(
             String symbol, String metricType);
+    List<WemadeAnomalyMetric> findBySymbolAndExchangeAndMeasuredAtBetweenOrderByMeasuredAtAsc(
+            String symbol, String exchange, LocalDateTime from, LocalDateTime to);
+    List<WemadeAnomalyMetric> findBySymbolAndExchangeAndMetricTypeOrderByMeasuredAtDesc(
+            String symbol, String exchange, String metricType);
 }
