@@ -36,15 +36,20 @@ public class NewStartMuseKnowledgeController {
   /**
    * 질문 키워드로 ACTIVE NewStart 지식을 검색한다.
    *
-   * @param q     검색 질문/키워드 (필수)
-   * @param limit 최대 반환 건수 (기본 5, 1~20)
+   * @param q        검색 질문/키워드 (필수)
+   * @param limit    최대 반환 건수 (기본 5, 1~20)
+   * @param category 카테고리 필터 (선택, 예: "개인워크아웃")
    * @return 관련도순 지식 목록 (빈 질문이면 빈 배열)
    */
   @GetMapping("/search")
   public ResponseEntity<List<NewstartKnowledgeItemResponse>> search(
       @RequestParam("q") String q,
-      @RequestParam(value = "limit", defaultValue = "5") int limit) {
+      @RequestParam(value = "limit", defaultValue = "5") int limit,
+      @RequestParam(value = "category", required = false) String category) {
     int safeLimit = Math.min(Math.max(limit, 1), MAX_LIMIT);
+    if (category != null && !category.isBlank()) {
+      return ResponseEntity.ok(retrievalService.retrieveForQuestionWithCategory(q, category, safeLimit));
+    }
     return ResponseEntity.ok(retrievalService.retrieveForQuestion(q, safeLimit));
   }
 }
