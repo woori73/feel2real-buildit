@@ -101,10 +101,10 @@ class NewStartDebtImageServiceTest {
 
   /** 네트워크를 타지 않는 생성자 경로 (properties는 null 허용). */
   private NewStartDebtImageService newServiceWithoutNetwork() throws Exception {
-    // NewStartLlmProperties가 null이면 NPE — 리플렉션 없이 기본 생성 불가하므로
-    // OpenRouter 설정이 비어 있는 properties로 생성한다.
-    f2r.tutor_solution.private_tutor_solution_back.config.NewStartLlmProperties props =
-        new f2r.tutor_solution.private_tutor_solution_back.config.NewStartLlmProperties();
+    // NewStartVisionProperties가 null이면 NPE — 리플렉션 없이 기본 생성 불가하므로
+    // 빈 설정으로 생성한다.
+    f2r.tutor_solution.private_tutor_solution_back.config.NewStartVisionProperties props =
+        new f2r.tutor_solution.private_tutor_solution_back.config.NewStartVisionProperties();
     return new NewStartDebtImageService(props);
   }
 }

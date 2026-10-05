@@ -2,7 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import f2r.tutor_solution.private_tutor_solution_back.config.NewStartLlmProperties;
+import f2r.tutor_solution.private_tutor_solution_back.config.NewStartVisionProperties;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * NewStart 채무 이미지 분석 서비스 — Credit4U 채무내역 스크린샷을 NVIDIA Vision (nemotron-3-nano-omni)으로
- * 분석해 채무 목록을 추출한다.
+ * NewStart 채무 이미지 분석 서비스 — Credit4U 채무내역 스크린샷을 Meta Muse Spark Vision
+ * (muse-spark-1.3-contributor)으로 분석해 채무 목록을 추출한다.
  *
  * <p>브라우저 Tesseract.js OCR의 인식률 문제를 해결하기 위해 서버 사이드 Vision 분석으로 교체한다.
  * 이미지 원본은 저장하지 않고 분석 후 즉시 버린다. 개인정보(주민번호·계좌번호)는 마스킹한다.
@@ -47,7 +47,16 @@ public class NewStartDebtImageService {
   private static final Pattern RRN_RE = Pattern.compile("\\b\\d{6}[- ]?[1-4]\\d{6}\\b");
   private static final Pattern ACCOUNT_RE = Pattern.compile("\\b\\d{10,16}\\b(?!\\s*원)");
 
-  private static final String VISION_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
+  private final NewStartVisionProperties config;
+  private final HttpClient httpClient;
+  private final ObjectMapper objectMapper = new ObjectMapper();
+
+  public NewStartDebtImageService(NewStartVisionProperties properties) {
+    this.config = properties;
+    this.httpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .build();
+  }
 
   private static final String SYSTEM_PROMPT =
       "당신은 한국 금융문서에서 채무 정보를 추출하는 전문가입니다. "
@@ -81,17 +90,6 @@ public class NewStartDebtImageService {
           + "5. confidence: 값이 이미지에서 명확히 읽히면 high, 일부 불확실하면 medium, "
           + "추측이 필요하면 low.\n"
           + "6. 주민등록번호·계좌번호는 절대 포함하지 마세요.";
-
-  private final NewStartLlmProperties.NvidiaNim config;
-  private final HttpClient httpClient;
-  private final ObjectMapper objectMapper = new ObjectMapper();
-
-  public NewStartDebtImageService(NewStartLlmProperties properties) {
-    this.config = properties.getNvidia();
-    this.httpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .build();
-  }
 
   /** 채무 항목 DTO. */
   public record DebtImageItem(
@@ -170,7 +168,7 @@ public class NewStartDebtImageService {
     return "image/jpeg";
   }
 
-  /** NVIDIA Vision API 호출 (429/5xx 시 재시도).
+  /** Meta Muse Spark Vision API 호출 (429/5xx 시 재시도).
    *
    * <p>진단 전용 로그(prefix: {@code DEBT_VISION_DIAG})만 남기며, 요청/재시도/파싱 동작은
    * 변경하지 않는다. 로그에는 API key·개인정보·이미지 원문을 절대 포함하지 않는다.
@@ -181,10 +179,10 @@ public class NewStartDebtImageService {
     }
 
     long startMs = System.currentTimeMillis();
-    String model = VISION_MODEL;
+    String model = config.getModel();
     log.info("DEBT_VISION_DIAG | start | model={} | time={}", model, Instant.now().toString());
 
-    // NVIDIA vision 형식: content 배열에 text + image_url 포함
+    // OpenAI 호환 vision 형식: content 배열에 text + image_url 포함
     List<Map<String, Object>> contentParts = new ArrayList<>();
     contentParts.add(Map.of("type", "text", "text", USER_PROMPT));
     contentParts.add(Map.of("type", "image_url",
@@ -195,8 +193,10 @@ public class NewStartDebtImageService {
     body.put("messages", List.of(
         Map.of("role", "system", "content", SYSTEM_PROMPT),
         Map.of("role", "user", "content", contentParts)));
-    body.put("temperature", 0.1);
-    body.put("max_tokens", 4000);
+    body.put("temperature", config.getTemperature());
+    // Muse Spark는 reasoning 모델이므로 max_tokens를 충분히 크게 설정해야 함
+    // (낮으면 reasoning 토큰에 소진되어 content가 null로 반환됨)
+    body.put("max_tokens", config.getMaxTokens());
 
     String requestBody;
     try {
@@ -309,7 +309,7 @@ public class NewStartDebtImageService {
         success, totalMs, retries, retryStatuses);
   }
 
-  /** NVIDIA 응답에서 provider 식별 (없으면 "N/A"). */
+  /** Meta API 응답에서 provider 식별 (없으면 "N/A"). */
   private String extractProvider(JsonNode root, HttpResponse<byte[]> response) {
     String provider = root.path("provider").path("name").asText("");
     if (!provider.isBlank()) return provider;
