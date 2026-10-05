@@ -72,6 +72,46 @@ public class NewstartKnowledgeRetrievalService {
     }
 
     /**
+     * AI가 회원 질문에서 관련 지식을 검색할 때 사용 (카테고리 필터 포함)
+     * 질문의 키워드와 지정된 카테고리를 모두 만족하는 ACTIVE 지식을 반환.
+     * 개인워크아웃/부실차주 등 제도별 검색 분리에 사용.
+     */
+    public List<NewstartKnowledgeItemResponse> retrieveForQuestionWithCategory(
+            String question, String category, int limit) {
+        if (question == null || question.isBlank()) return List.of();
+        if (category == null || category.isBlank()) return retrieveForQuestion(question, limit);
+
+        String[] keywords = extractKeywords(question);
+        if (keywords.length == 0) return List.of();
+
+        Specification<NewstartKnowledgeItem> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("status"), "ACTIVE"));
+            predicates.add(cb.equal(root.get("category"), category));
+
+            List<Predicate> keywordPredicates = new ArrayList<>();
+            for (String kw : keywords) {
+                if (kw.length() < 2) continue;
+                Predicate titleLike = cb.like(root.get("title"), "%" + kw + "%");
+                Predicate contentLike = cb.like(root.get("content"), "%" + kw + "%");
+                Predicate tagLike = cb.like(root.get("tags"), "%" + kw + "%");
+                Predicate categoryLike = cb.like(root.get("category"), "%" + kw + "%");
+                keywordPredicates.add(cb.or(titleLike, contentLike, tagLike, categoryLike));
+            }
+            if (!keywordPredicates.isEmpty()) {
+                predicates.add(cb.or(keywordPredicates.toArray(new Predicate[0])));
+            }
+
+            query.orderBy(cb.desc(root.get("createdAt")));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return knowledgeRepository.findAll(spec, PageRequest.of(0, limit)).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
      * 특정 카테고리의 ACTIVE 지식 조회
      */
     public List<NewstartKnowledgeItemResponse> findActiveByCategory(String category, int limit) {
