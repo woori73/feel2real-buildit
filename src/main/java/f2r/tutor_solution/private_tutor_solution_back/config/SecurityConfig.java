@@ -11,6 +11,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.S
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.CookieOAuth2AuthorizationRequestRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginFailureHandler;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginSuccessHandler;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.oauth.WemadeOAuth2LoginSuccessHandler;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2UserService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NoOpOAuth2AuthorizedClientRepository;
 import jakarta.servlet.DispatcherType;
@@ -292,6 +293,8 @@ public class SecurityConfig {
                 "/chart",
                 "/chart/educators/**",
                 "/newstart",  // 홈만 공개. 하위 화면은 NewStartMembersOnlyInterceptor가 비회원을 로그인으로 보낸다.
+                "/wemade",  // 위메이드 개인주주 분석 (별도 도메인, 공개)
+                "/wemade/login",  // 위메이드 로그인 진입점 (OAuth 리다이렉트용)
                 "/lessons",
                 "/stdt_dashboard",
                 "/tutor_dashboard",
@@ -368,6 +371,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/landing/videos/*/stream").permitAll()
             // Muse 1:1 상담 신청 감지용 공개 ping — 개인정보 없음(최신 ID·미확인 건수·접수 시각만). 토큰 세그먼트로 남용 방지.
             .requestMatchers(HttpMethod.GET, "/api/muse/newstart/consultations/ping/*").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/wemade/**").permitAll()  // 위메이드 공개 API (읽기 전용)
 
             // Chart Research Agent (ROLE_CHART_AGENT) — 조사 파이프라인 최소 범위만 허용.
             // Bearer 토큰은 CHART_AGENT_TOKEN 환경변수로 주입되며 미설정 시 이 규칙은
@@ -462,9 +466,13 @@ public class SecurityConfig {
           // response.id만 쓰고 버리면 되므로 access token을 어디에도 남기지 않는다 — STATELESS 유지.
           .authorizedClientRepository(new NoOpOAuth2AuthorizedClientRepository())
           .userInfoEndpoint(userInfo -> userInfo.userService(new NaverOAuth2UserService()))
-          .successHandler(new NaverOAuth2LoginSuccessHandler(
+          .successHandler(new WemadeOAuth2LoginSuccessHandler(
               naverAccountResolutionServiceProvider.getIfAvailable(), tokenProvider, cookieUtil,
-              newStartMemberProfileServiceProvider.getIfAvailable()))
+              newStartMemberProfileServiceProvider.getIfAvailable(),
+              // 기존 naver 플로우는 delegate가 그대로 처리 — 동작 변경 없음
+              new NaverOAuth2LoginSuccessHandler(
+                  naverAccountResolutionServiceProvider.getIfAvailable(), tokenProvider, cookieUtil,
+                  newStartMemberProfileServiceProvider.getIfAvailable())))
           .failureHandler(new NaverOAuth2LoginFailureHandler()));
     }
 
