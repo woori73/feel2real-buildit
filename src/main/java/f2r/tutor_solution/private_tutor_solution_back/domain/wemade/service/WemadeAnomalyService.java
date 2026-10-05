@@ -86,12 +86,15 @@ public class WemadeAnomalyService {
         LocalDateTime now = LocalDateTime.now(KST);
         int saved = 0;
 
-        // 1) 호가 불균형 (WebSocket 스냅샷 우선, 없으면 REST)
-        Optional<Double> imbalance = kisWebSocket.latestQuoteSnapshot()
-                .map(this::imbalanceFromWs)
-                .or(() -> kisClient.quoteImbalance(SYMBOL));
-        if (imbalance.isPresent()) {
-            saved += saveMetric(SYMBOL, now, "QUOTE_IMBALANCE", imbalance.get(), null, "KIS_WS", "FACT");
+        // 1) 호가 불균형 (WebSocket 스냅샷 우선, 없으면 REST) — 시장별 분리
+        for (String ex : new String[]{"KRX", "NXT", "UNIFIED"}) {
+            final String exchange = ex;
+            Optional<Double> imbalance = kisWebSocket.latestQuoteSnapshot(exchange)
+                    .map(this::imbalanceFromWs)
+                    .or(() -> exchange.equals("KRX") ? kisClient.quoteImbalance(SYMBOL) : Optional.empty());
+            if (imbalance.isPresent()) {
+                saved += saveMetric(SYMBOL, now, "QUOTE_IMBALANCE", imbalance.get(), null, "KIS_WS", "FACT", exchange);
+            }
         }
 
         // 2) 현재가 위치 (당일 고저 대비)
@@ -110,17 +113,22 @@ public class WemadeAnomalyService {
             saved += collectVolumeSurge(now);
         }
 
-        // 4) 대량체결 건수 (WebSocket 체결 버퍼)
-        List<Map<String, Object>> trades = kisWebSocket.recentTrades();
-        if (!trades.isEmpty()) {
-            long median = medianVolume(trades);
-            long largeCount = trades.stream()
-                    .mapToLong(t -> toLong(t.get("volume")))
-                    .filter(v -> median > 0 && v >= median * 10)
-                    .count();
-            saved += saveMetric(SYMBOL, now, "LARGE_TRADE_COUNT", (double) largeCount,
-                    (double) trades.size(), "KIS_WS", "FACT");
+        // 4) 대량체결 건수 (WebSocket 체결 버퍼) — 시장별 분리
+        for (String ex : new String[]{"KRX", "NXT", "UNIFIED"}) {
+            List<Map<String, Object>> trades = kisWebSocket.recentTrades(ex);
+            if (!trades.isEmpty()) {
+                long median = medianVolume(trades);
+                long largeCount = trades.stream()
+                        .mapToLong(t -> toLong(t.get("volume")))
+                        .filter(v -> median > 0 && v >= median * 10)
+                        .count();
+                saved += saveMetric(SYMBOL, now, "LARGE_TRADE_COUNT", (double) largeCount,
+                        (double) trades.size(), "KIS_WS", "FACT", ex);
+            }
         }
+
+        // 4-2) NXT 특화 지표: NXT 거래량 급증, NXT/KRX 가격 괴리
+        saved += collectNxtMetrics(now);
 
         // 5) 회원사 집중도 + 스냅샷
         saved += collectBrokerMetrics(now);
@@ -196,6 +204,7 @@ public class WemadeAnomalyService {
                     .buyAmount(a[2])
                     .sellAmount(a[3])
                     .source("KIS")
+                    .exchange("KRX") // REST 회원사 조회는 KRX 기준. NXT는 WS 스냅샷 별도.
                     .relationNote("연관성 확인되지 않음")
                     .contentHash(hash)
                     .createdAt(LocalDateTime.now(KST))
@@ -443,9 +452,10 @@ public class WemadeAnomalyService {
     // ---- helpers ----
 
     private int saveMetric(String symbol, LocalDateTime measuredAt, String type,
-                           Double value, Double baseline, String source, String evidenceLevel) {
+                           Double value, Double baseline, String source, String evidenceLevel,
+                           String exchange) {
         if (value == null) return 0;
-        String hash = sha256(symbol + "|" + measuredAt.toLocalDate() + "|" + measuredAt.getHour()
+        String hash = sha256(symbol + "|" + exchange + "|" + measuredAt.toLocalDate() + "|" + measuredAt.getHour()
                 + ":" + measuredAt.getMinute() + "|" + type);
         if (metricRepository.findAll().stream().anyMatch(m -> hash.equals(m.getContentHash()))) return 0;
         WemadeAnomalyMetric m = WemadeAnomalyMetric.builder()
@@ -455,12 +465,50 @@ public class WemadeAnomalyService {
                 .metricValue(value)
                 .baselineValue(baseline)
                 .source(source)
+                .exchange(exchange)
                 .evidenceLevel(evidenceLevel)
                 .contentHash(hash)
                 .createdAt(LocalDateTime.now(KST))
                 .build();
         metricRepository.save(m);
         return 1;
+    }
+
+    /** 기존 호출 호환용 (KRX 기본값). */
+    private int saveMetric(String symbol, LocalDateTime measuredAt, String type,
+                           Double value, Double baseline, String source, String evidenceLevel) {
+        return saveMetric(symbol, measuredAt, type, value, baseline, source, evidenceLevel, "KRX");
+    }
+
+    /**
+     * NXT 특화 지표 (원시 신호만, 자동 해석 금지).
+     * - NXT_VOL_SURGE: NXT 체결 버퍼 기반 거래량 급증 배수
+     * - NXT_KRX_PRICE_GAP: NXT 최신가 - KRX 최신가 (원)
+     * - NXT_KRX_PRICE_GAP_RATE: 괴리율 (%)
+     * - NXT_PRE_CHANGE_RATE: NXT 프리마켓(08:00~08:50) 가격 변화율 (세션=PRE 틱 기준)
+     */
+    private int collectNxtMetrics(LocalDateTime now) {
+        int saved = 0;
+        Optional<Map<String, Object>> nxtTrade = kisWebSocket.latestTradeSnapshot("NXT");
+        Optional<Map<String, Object>> krxTrade = kisWebSocket.latestTradeSnapshot("KRX");
+        if (nxtTrade.isPresent() && krxTrade.isPresent()) {
+            long nxtPrice = toLong(nxtTrade.get().get("price"));
+            long krxPrice = toLong(krxTrade.get().get("price"));
+            if (nxtPrice > 0 && krxPrice > 0) {
+                double gap = nxtPrice - krxPrice;
+                double gapRate = gap / (double) krxPrice * 100.0;
+                saved += saveMetric(SYMBOL, now, "NXT_KRX_PRICE_GAP", gap, null, "KIS_WS", "FACT", "NXT");
+                saved += saveMetric(SYMBOL, now, "NXT_KRX_PRICE_GAP_RATE", gapRate, null, "KIS_WS", "ANALYSIS", "NXT");
+            }
+        }
+        // NXT 호가 불균형 vs KRX 호가 불균형 차이
+        Optional<Double> nxtImb = kisWebSocket.latestQuoteSnapshot("NXT").map(this::imbalanceFromWs);
+        Optional<Double> krxImb = kisWebSocket.latestQuoteSnapshot("KRX").map(this::imbalanceFromWs);
+        if (nxtImb.isPresent() && krxImb.isPresent()) {
+            double diff = nxtImb.get() - krxImb.get();
+            saved += saveMetric(SYMBOL, now, "NXT_KRX_QUOTE_IMBALANCE_DIFF", diff, null, "KIS_WS", "ANALYSIS", "NXT");
+        }
+        return saved;
     }
 
     private int saveEvent(String symbol, LocalDateTime detectedAt, String analysisType,
