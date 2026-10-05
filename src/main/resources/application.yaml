@@ -97,7 +97,7 @@ app:
     vision:
       base-url: ${META_VISION_BASE_URL:https://api.meta.ai/v1}
       model: ${META_VISION_MODEL:muse-spark-1.3-contributor}
-      api-key: ${META_API_KEY:}
+      api-key: ${META_VISION_API_KEY:}
       temperature: 0.1
       max-tokens: 8000
       timeout-seconds: 120
