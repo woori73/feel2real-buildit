@@ -1,4 +1,5 @@
--- V1026: 위메이드 급등일 수급 분석 테이블
+-- RENUMBERED: V1026__add_wemade_surge_analysis.sql -> V1036__add_wemade_surge_analysis.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1036: 위메이드 급등일 수급 분석 테이블
 -- wemade_surge_analysis: 급등일(급등률/고점돌파)마다 외국인·기관 순매도량/금액과
 -- 이후 1/3/5/10거래일 수익률을 DB화. '고점 외국인·기관 매도 반복' 가설 검증용.
 -- 원칙: wemade_* 신규 테이블만 추가. 기존 테이블 변경 없음. destructive 변경 없음.

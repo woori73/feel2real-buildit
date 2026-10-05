@@ -1,4 +1,5 @@
--- V1024: 위메이드 가격괴리 분석 (9,200억 SPA vs 시총 약 5천억)
+-- RENUMBERED: V1024__add_wemade_gap_analysis.sql -> V1034__add_wemade_gap_analysis.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1034: 위메이드 가격괴리 분석 (9,200억 SPA vs 시총 약 5천억)
 -- wemade_gap_factors: 괴리 요인 (경쟁가설 ①~⑥ 매핑, hypothesis_no)
 -- wemade_price_events: 2026-06-29 이후 가격 이벤트 타임라인 (OHLCV 실측 기반)
 -- 원칙: wemade_* 신규 테이블만 추가. 기존 테이블 변경 없음. destructive 변경 없음.

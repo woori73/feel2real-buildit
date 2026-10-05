@@ -1,4 +1,5 @@
--- V1023: 위메이드 새 대주주 지배구조 (NeoPulse 컨소시엄)
+-- RENUMBERED: V1023__add_wemade_ownership.sql -> V1033__add_wemade_ownership.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1033: 위메이드 새 대주주 지배구조 (NeoPulse 컨소시엄)
 -- NeoPulse -> Neosphere -> Nexpulse -> Mok, Pui Ming 지배체인 + 인물 프로필.
 -- 원칙: wemade_* 신규 테이블만 추가. 기존 테이블 변경 없음. destructive 변경 없음.
 -- 중복 방지: node_key/person_key/content_hash UNIQUE.

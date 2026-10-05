@@ -1,4 +1,5 @@
--- V1025: 위메이드 2026 Q4 Triple Catalyst (3대 이벤트 + 디지털자산법 입법 추적)
+-- RENUMBERED: V1025__add_wemade_catalyst.sql -> V1035__add_wemade_catalyst.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1035: 위메이드 2026 Q4 Triple Catalyst (3대 이벤트 + 디지털자산법 입법 추적)
 -- wemade_catalyst_events: 3대 촉매 이벤트 정의 및 상태 (DEAL_CLOSE / NCW_LAUNCH / DIGITAL_ASSET_LAW)
 -- wemade_policy_tracking: 디지털자산기본법 입법 단계 추적 (국회·금융위 자료 기반)
 -- 원칙: wemade_* 신규 테이블만 추가. 기존 테이블 변경 없음. destructive 변경 없음.

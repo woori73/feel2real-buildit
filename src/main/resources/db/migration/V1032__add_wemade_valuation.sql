@@ -1,4 +1,5 @@
--- V1022: 위메이드 SOTP 가치 재평가 (읽기 전용)
+-- RENUMBERED: V1022__add_wemade_valuation.sql -> V1032__add_wemade_valuation.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1032: 위메이드 SOTP 가치 재평가 (읽기 전용)
 -- wemade_valuation_components / wemade_valuation_scenarios 신규. destructive 변경 없음.
 -- NOTE: 지시서의 V1003은 V1003__add_easy_cutover_foundation.sql과 버전 충돌
 -- (Flyway 중복 버전 기동 실패) → 최신 번호 V1022 사용.

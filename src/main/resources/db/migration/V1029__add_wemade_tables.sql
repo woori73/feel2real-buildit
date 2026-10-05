@@ -1,3 +1,4 @@
+-- RENUMBERED: V1000__add_wemade_tables.sql -> V1029__add_wemade_tables.sql (Flyway version conflict fix: V1000/V1002 duplicates)
 -- Wemade 개인주주 분석 서비스 MVP 테이블
 -- 원칙: wemade_* 신규 테이블만 추가. 기존 테이블 변경 없음. destructive 변경 없음.
 -- 파이프라인: RAW DATA -> FACT CHECK -> EVENT -> PRICE/FLOW -> ANALYSIS -> UI

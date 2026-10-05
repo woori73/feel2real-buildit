@@ -1,4 +1,5 @@
--- V1002: 3종목 주가 + 중국 현지 정보
+-- RENUMBERED: V1002__add_wemade_symbols_china.sql -> V1031__add_wemade_symbols_china.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1031: 3종목 주가 + 중국 현지 정보
 -- 1) wemade_raw_prices에 종목 구분 컬럼 (복합 PK: symbol + trade_date)
 -- 2) wemade_china_disclosures / wemade_china_news 신규
 -- destructive 변경 없음.

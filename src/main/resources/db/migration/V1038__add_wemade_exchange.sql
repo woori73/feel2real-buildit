@@ -1,4 +1,5 @@
--- V1028: 위메이드 KRX/NXT 시장 분리 컬럼 추가
+-- RENUMBERED: V1028__add_wemade_exchange.sql -> V1038__add_wemade_exchange.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1038: 위메이드 KRX/NXT 시장 분리 컬럼 추가
 -- 원칙: 기존 컬럼/데이터 변경 없음. 신규 컬럼만 추가 (nullable, 기본값 KRX).
 -- KIS 원시 틱 데이터는 DB에 저장하지 않는다 (PRIVATE). 파생 지표만 저장 (INTERNAL).
 

@@ -1,4 +1,5 @@
--- V1001: wemade_disclosures 식별자 3중 매핑
+-- RENUMBERED: V1001__add_wemade_disclosure_ids.sql -> V1030__add_wemade_disclosure_ids.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1030: wemade_disclosures 식별자 3중 매핑
 -- 정정 반영: rcno 49601334/49763361은 KOSCOM 문서번호. DART 공식 식별자는 rcpNo.
 -- 원문 재조회를 위해 KOSCOM id <-> DART rcpNo <-> dcmNo를 함께 저장한다.
 -- (기존 컬럼 변경 없음, 추가만. destructive 변경 없음.)

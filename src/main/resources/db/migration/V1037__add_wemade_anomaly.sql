@@ -1,4 +1,5 @@
--- V1027: 위메이드 이상수급 파이프라인 테이블
+-- RENUMBERED: V1027__add_wemade_anomaly.sql -> V1037__add_wemade_anomaly.sql (Flyway version conflict fix: V1000/V1002 duplicates)
+-- V1037: 위메이드 이상수급 파이프라인 테이블
 -- wemade_anomaly_metrics: 개별 지표 원시 수치 보관 (결론부터 내리지 않는다)
 -- wemade_member_snapshots: 회원사(거래원) 시간별 스냅샷 (30분 간격, 급등 시 5분 간격)
 -- wemade_anomaly_events: 지표 조합 분석 결과 (FACT/ANALYSIS/HYPOTHESIS 구분)
