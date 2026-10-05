@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="위메이드(112040) 개인주주 분석 - 주가·수급·이벤트·Fact Check 정보 제공" />
+  <title>위메이드(112040) 개인주주 분석</title>
+  <link th:href="@{/css/wemade.css}" href="/css/wemade.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+  <script th:src="@{/js/wemade.js}" src="/js/wemade.js" defer></script>
+</head>
+<body>
+<div class="page">
+
+  <!-- 1. 헤더 -->
+  <header class="app-header">
+    <h1>위메이드(112040) 개인주주 분석</h1>
+    <div class="auth-area">
+      <a th:if="${viewer == null or viewer == 'GUEST'}" th:href="@{/wemade/login}" href="/wemade/login" class="btn-login">네이버 로그인</a>
+      <span th:if="${viewer == 'MEMBER'}" class="badge-loggedin" aria-label="로그인 상태">로그인됨</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- 2. 10초 요약 -->
+    <section class="card" aria-labelledby="t-summary">
+      <h2 class="sec-title" id="t-summary">10초 요약</h2>
+      <div class="sum-grid">
+        <div class="sum-card span2" id="sum-price">
+          <div class="sum-label">현재가 / 등락률</div>
+          <div class="state">불러오는 중…</div>
+        </div>
+        <div class="sum-card" id="sum-flow">
+          <div class="sum-label">오늘 수급</div>
+          <div class="state">불러오는 중…</div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-label">인수계약 상태</div>
+          <div class="sum-value">10/30 종결 목표</div>
+          <span class="status-badge">진행 중</span>
+          <div class="sum-sub">1주당 68,910원 · DART rcpNo 20260630900888</div>
+        </div>
+        <div class="sum-card" id="sum-deal">
+          <div class="sum-label">경영권 매각가 vs 현재가</div>
+          <div class="state">불러오는 중…</div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-label">Night Crows W</div>
+          <div class="sum-value">중국 판호 발급 확인(NPPA)</div>
+          <div class="sum-sub">夜鸦 · 国新出审〔2026〕1504号 · 2026-06-29</div>
+        </div>
+        <div class="sum-card" id="sum-event">
+          <div class="sum-label">오늘 중요정보</div>
+          <div class="state">불러오는 중…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 주가차트 -->
+    <section class="card" aria-labelledby="t-chart">
+      <h2 class="sec-title" id="t-chart">주가차트</h2>
+      <div class="tabs" id="period-tabs" role="tablist" aria-label="차트 기간"></div>
+      <div id="chart-area">
+        <div class="chart-box"><canvas id="priceChart" aria-label="종가 및 이동평균선 차트"></canvas></div>
+        <div class="chart-sub">RSI14 <span class="rsi-note">(70 과매수 / 30 과매도 기준선)</span></div>
+        <div class="chart-box rsi"><canvas id="rsiChart" aria-label="RSI14 차트"></canvas></div>
+      </div>
+      <div id="chart-state"></div>
+      <p class="fiftytwo" id="fiftytwo"></p>
+      <p class="legend-note">종가 · MA5/20/60/120 · 거래량</p>
+    </section>
+
+    <!-- 4. 수급 -->
+    <section class="card" aria-labelledby="t-flows">
+      <h2 class="sec-title" id="t-flows">수급 <span class="unit">누적 순매수 · 단위: 백만원</span></h2>
+      <div class="tabs" id="flow-tabs" role="tablist" aria-label="수급 기간"></div>
+      <div id="flow-body"><div class="state">불러오는 중…</div></div>
+    </section>
+
+    <!-- 5. 이벤트 타임라인 -->
+    <section class="card" aria-labelledby="t-events">
+      <h2 class="sec-title" id="t-events">이벤트 타임라인</h2>
+      <div id="event-list"><div class="state">불러오는 중…</div></div>
+      <p class="disclaimer">과거 반응 측정이며 미래 예측이 아님</p>
+    </section>
+
+    <!-- 6. 중국/게임 Tracker -->
+    <section class="card" aria-labelledby="t-track">
+      <h2 class="sec-title" id="t-track">중국/게임 Tracker</h2>
+      <div class="tabs" id="track-tabs" role="tablist" aria-label="트래커 구분"></div>
+      <div id="track-body"><div class="state">불러오는 중…</div></div>
+    </section>
+
+    <!-- 7. Fact Check -->
+    <section class="card" aria-labelledby="t-fact">
+      <h2 class="sec-title" id="t-fact">Fact Check</h2>
+      <div id="fact-list"><div class="state">불러오는 중…</div></div>
+    </section>
+
+    <!-- 8. 주주 정보(커뮤니티) -->
+    <section class="card" aria-labelledby="t-community">
+      <h2 class="sec-title" id="t-community">주주 정보 <span class="unit">커뮤니티</span></h2>
+      <div id="community-body"><div class="state">불러오는 중…</div></div>
+    </section>
+
+  </main>
+
+  <!-- 9. 푸터 면책 -->
+  <footer class="app-footer">
+    <p>투자 권유·매수/매도 추천·목표주가를 제공하지 않습니다. 정보 제공 목적의 참고 자료입니다.</p>
+    <p class="copy">위메이드(112040) 개인주주 분석</p>
+  </footer>
+
+</div>
+</body>
+</html>
