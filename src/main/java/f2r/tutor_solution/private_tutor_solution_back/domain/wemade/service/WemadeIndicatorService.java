@@ -116,4 +116,55 @@ public final class WemadeIndicatorService {
         }
         return e;
     }
+
+    /**
+     * 볼린저 밴드 상단 시리즈 (SMA(n) + k*표준편차). 인덱스 n-1부터 값 존재.
+     * AI 계산 금지 — 순수 수학 함수.
+     */
+    public static List<Double> bollingerUpper(List<Double> values, int n, double k) {
+        return bollingerBand(values, n, k, 1);
+    }
+
+    /** 볼린저 밴드 하단 시리즈 (SMA(n) - k*표준편차). */
+    public static List<Double> bollingerLower(List<Double> values, int n, double k) {
+        return bollingerBand(values, n, k, -1);
+    }
+
+    /** 볼린저 밴드 중간선 = SMA(n). */
+    public static List<Double> bollingerMiddle(List<Double> values, int n) {
+        List<Double> out = new ArrayList<>(values.size());
+        for (int i = 0; i < values.size(); i++) out.add(sma(values, n, i));
+        return out;
+    }
+
+    private static List<Double> bollingerBand(List<Double> values, int n, double k, int sign) {
+        List<Double> out = new ArrayList<>(values.size());
+        for (int i = 0; i < values.size(); i++) out.add(null);
+        if (values == null || values.size() < n) return out;
+        for (int end = n - 1; end < values.size(); end++) {
+            Double m = sma(values, n, end);
+            if (m == null) continue;
+            double var = 0;
+            for (int i = end - n + 1; i <= end; i++) {
+                double d = values.get(i) - m;
+                var += d * d;
+            }
+            double sd = Math.sqrt(var / n);
+            out.set(end, m + sign * k * sd);
+        }
+        return out;
+    }
+
+    /**
+     * %B = (현재가 - 하단) / (상단 - 하단). 0~1 범위, 밴드 돌파 시 1 초과 가능.
+     * 이상수급 탐지의 "볼린저 상단 접근" 판단에 사용한다.
+     */
+    public static Double bollingerPercentB(List<Double> values, int n, double k, int endIdx) {
+        List<Double> upper = bollingerUpper(values, n, k);
+        List<Double> lower = bollingerLower(values, n, k);
+        if (endIdx < 0 || endIdx >= values.size()) return null;
+        Double u = upper.get(endIdx), l = lower.get(endIdx);
+        if (u == null || l == null || u.equals(l)) return null;
+        return (values.get(endIdx) - l) / (u - l);
+    }
 }
