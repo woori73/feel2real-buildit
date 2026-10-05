@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.scheduler;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeChinaService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeCollectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 public class WemadeCollectionScheduler {
 
     private final WemadeCollectionService collectionService;
+    private final WemadeChinaService chinaService;
 
     @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Seoul")
     public void collectAfterMarketClose() {
@@ -24,6 +26,8 @@ public class WemadeCollectionScheduler {
         runSafely("FLOW", collectionService::collectFlows);
         runSafely("DISCLOSURE", collectionService::collectDisclosures);
         runSafely("GAME", collectionService::collectGameInfo);
+        runSafely("CHINA_DISCLOSURE", chinaService::collectDisclosures);
+        runSafely("CHINA_NEWS", chinaService::collectNews);
         log.info("WEMADE scheduled collection done");
     }
 
