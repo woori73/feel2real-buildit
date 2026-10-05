@@ -1,0 +1,38 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.scheduler;
+
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeCollectionService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * 장 마감 후 자동수집. 평일 16:30 KST.
+ * source별 독립 실행 — 실패한 source가 전체를 rollback하지 않는다.
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class WemadeCollectionScheduler {
+
+    private final WemadeCollectionService collectionService;
+
+    @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Seoul")
+    public void collectAfterMarketClose() {
+        log.info("WEMADE scheduled collection start");
+        runSafely("PRICE", collectionService::collectPrices);
+        runSafely("FLOW", collectionService::collectFlows);
+        runSafely("DISCLOSURE", collectionService::collectDisclosures);
+        runSafely("GAME", collectionService::collectGameInfo);
+        log.info("WEMADE scheduled collection done");
+    }
+
+    private void runSafely(String name, Runnable r) {
+        try {
+            r.run();
+        } catch (Exception e) {
+            // 한 source 실패가 나머지를 막지 않는다.
+            log.warn("WEMADE collection source {} failed (isolated): {}", name, e.getMessage());
+        }
+    }
+}
