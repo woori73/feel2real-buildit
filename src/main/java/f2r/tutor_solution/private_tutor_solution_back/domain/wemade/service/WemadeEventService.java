@@ -29,7 +29,8 @@ public class WemadeEventService {
     @Transactional(readOnly = true)
     public List<WemadeEventView> eventsWithPriceReaction() {
         List<WemadeEvent> events = eventRepository.findAllByOrderByEventDateDesc();
-        List<WemadeRawPrice> prices = priceRepository.findAllByOrderByTradeDateAsc();
+        // 이벤트 주가 결합은 위메이드(112040) 기준
+        List<WemadeRawPrice> prices = priceRepository.findBySymbolOrderByTradeDateAsc("112040");
         NavigableMap<LocalDate, WemadeRawPrice> byDate = new TreeMap<>();
         List<LocalDate> dates = new ArrayList<>();
         for (WemadeRawPrice p : prices) { byDate.put(p.getTradeDate(), p); dates.add(p.getTradeDate()); }
