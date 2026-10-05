@@ -40,34 +40,66 @@ public class WemadeCollectionService {
     private final WemadeCollectionRunRepository runRepository;
     private final WemadeDisclosureRepository disclosureRepository;
     private final WemadeDartClient dartClient;
+    private final WemadePykrxCollector pykrxCollector;
     private final HttpClient httpClient;
 
     public WemadeCollectionService(WemadeRawPriceRepository priceRepository,
                                    WemadeCollectionRunRepository runRepository,
                                    WemadeDisclosureRepository disclosureRepository,
-                                   WemadeDartClient dartClient) {
+                                   WemadeDartClient dartClient,
+                                   WemadePykrxCollector pykrxCollector) {
         this.priceRepository = priceRepository;
         this.runRepository = runRepository;
         this.disclosureRepository = disclosureRepository;
         this.dartClient = dartClient;
+        this.pykrxCollector = pykrxCollector;
         this.httpClient = HttpClient.newHttpClient();
     }
 
-    /** PRICE 수집: 종목별 일봉을 받아 신규 일자만 저장. 112040/101730=네이버, 002517=eastmoney(CNY). */
+    /**
+     * PRICE 수집: 종목별 일봉을 받아 신규 일자만 저장.
+     * 112040/101730 = pykrx 우선 (KRX 공식, 키 불필요). pykrx 불가 시 네이버 폴백.
+     * 002517 = eastmoney(CNY). 네이버 bot 우회는 시도하지 않는다.
+     */
     @Transactional
     public WemadeCollectionRun collectPrices() {
         WemadeCollectionRun run = startRun("PRICE");
         int fetched = 0, accepted = 0, duplicate = 0, error = 0;
         StringBuilder msg = new StringBuilder();
-        for (String symbol : List.of("112040", "101730", "002517")) {
-            try {
-                int[] r = "002517".equals(symbol) ? collectKingnet(symbol) : collectNaver(symbol);
-                fetched += r[0]; accepted += r[1]; duplicate += r[2];
-            } catch (Exception e) {
-                error++;
-                msg.append(symbol).append(":").append(e.getClass().getSimpleName()).append(" ");
-                log.warn("WEMADE price collection failed for {} (isolated): {}", symbol, e.getClass().getSimpleName());
+        LocalDate today = LocalDate.now();
+        // 1순위: pykrx (최근 10일 윈도우, dedupe로 중복 방지)
+        try {
+            WemadePykrxCollector.CollectResult r = pykrxCollector.collectPrices(
+                    List.of("112040", "101730"), today.minusDays(10), today);
+            fetched += r.fetched(); accepted += r.accepted(); duplicate += r.duplicate();
+            msg.append(r.note()).append(" ");
+            if (r.accepted() == 0 && r.note() != null && r.note().contains("unavailable")) {
+                // 폴백: 네이버 (기존 수집기 유지)
+                for (String symbol : List.of("112040", "101730")) {
+                    try {
+                        int[] nr = collectNaver(symbol);
+                        fetched += nr[0]; accepted += nr[1]; duplicate += nr[2];
+                        msg.append(symbol).append(":NAVER_FCHART_fallback ");
+                    } catch (Exception e) {
+                        error++;
+                        msg.append(symbol).append(":").append(e.getClass().getSimpleName()).append(" ");
+                        log.warn("WEMADE price fallback failed for {}: {}", symbol, e.getClass().getSimpleName());
+                    }
+                }
             }
+        } catch (Exception e) {
+            error++;
+            msg.append("pykrx:").append(e.getClass().getSimpleName()).append(" ");
+            log.warn("WEMADE pykrx price collection failed (isolated): {}", e.getClass().getSimpleName());
+        }
+        // 킹넷은 eastmoney 유지
+        try {
+            int[] k = collectKingnet("002517");
+            fetched += k[0]; accepted += k[1]; duplicate += k[2];
+        } catch (Exception e) {
+            error++;
+            msg.append("002517:").append(e.getClass().getSimpleName()).append(" ");
+            log.warn("WEMADE price collection failed for 002517 (isolated): {}", e.getClass().getSimpleName());
         }
         String status = error == 0 ? "SUCCESS" : (accepted > 0 ? "PARTIAL" : "FAILED");
         finishRun(run, status, fetched, accepted, duplicate, error,
@@ -153,19 +185,26 @@ public class WemadeCollectionService {
     }
 
     /**
-     * FLOW 수집: 투자자별 수급.
-     * 현재 VM/운영 환경에서 네이버 투자자 페이지는 bot 차단을 반환하므로,
-     * 실패해도 예외를 던지지 않고 run에 error로 기록한다.
+     * FLOW 수집: 투자자별 수급 (pykrx 우선).
+     * pykrx 투자자 엔드포인트는 KRX 로그인(KRX_ID/KRX_PW) 없이 빈 결과를 반환한다.
+     * 이 경우 PENDING으로 기록하고 조용히 종료한다 — 네이버 bot 우회는 시도하지 않는다.
+     * 대체 경로: KIS Open API (NEEDS_OWNER), KRX CSV 다운로드.
      * 데이터가 쌓이기 시작하면 60일 API 제한을 넘어서는 자체 장기 DB가 된다.
      */
     @Transactional
     public WemadeCollectionRun collectFlows() {
         WemadeCollectionRun run = startRun("FLOW");
-        // 투자자별 수급 JSON/HTML 파서는 환경 제약을 받는다.
-        // 구조는 준비되어 있고, 소스가 복구되는 대로 accepted가 쌓인다.
-        // 현재는 소스 불가 상태이므로 error 1로 기록하고 정상 종료한다 (다른 source에 영향 없음).
-        finishRun(run, "PARTIAL", 0, 0, 0, 1,
-                "investor flow source blocked in current env (bot challenge); retry at runtime");
+        LocalDate today = LocalDate.now();
+        try {
+            WemadePykrxCollector.CollectResult r = pykrxCollector.collectFlows(
+                    List.of("112040"), today.minusDays(65), today);
+            String status = r.accepted() > 0 ? "SUCCESS" : "PARTIAL";
+            finishRun(run, status, r.fetched(), r.accepted(), r.duplicate(), 0, r.note());
+        } catch (Exception e) {
+            log.warn("WEMADE pykrx flow collection failed (isolated): {}", e.getClass().getSimpleName());
+            finishRun(run, "PARTIAL", 0, 0, 0, 0,
+                    "PENDING: pykrx flows unavailable; fallback=KIS Open API (NEEDS_OWNER)");
+        }
         return run;
     }
 
