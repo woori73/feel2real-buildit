@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * NewStart 채무 이미지 분석 서비스 — Credit4U 채무내역 스크린샷을 OpenRouter Qwen Vision으로
+ * NewStart 채무 이미지 분석 서비스 — Credit4U 채무내역 스크린샷을 NVIDIA Vision (nemotron-3-nano-omni)으로
  * 분석해 채무 목록을 추출한다.
  *
  * <p>브라우저 Tesseract.js OCR의 인식률 문제를 해결하기 위해 서버 사이드 Vision 분석으로 교체한다.
@@ -47,18 +47,21 @@ public class NewStartDebtImageService {
   private static final Pattern RRN_RE = Pattern.compile("\\b\\d{6}[- ]?[1-4]\\d{6}\\b");
   private static final Pattern ACCOUNT_RE = Pattern.compile("\\b\\d{10,16}\\b(?!\\s*원)");
 
+  private static final String VISION_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
+
   private static final String SYSTEM_PROMPT =
-      "당신은 한국 신용정보원(Credit4U) 채무내역 화면을 분석하는 전문가입니다. "
-          + "이미지에서 채무 정보를 추출해 JSON으로 반환하세요.";
+      "당신은 한국 금융문서에서 채무 정보를 추출하는 전문가입니다. "
+          + "Credit4U 채무내역 화면, 채권양도통지서 등 한글 금융문서를 분석해 채무 목록을 JSON으로 반환하세요.";
 
   private static final String USER_PROMPT =
-      "이 Credit4U 채무내역 이미지에서 모든 채무를 추출해 아래 JSON 형식으로만 응답하세요. "
-          + "다른 설명 없이 JSON만 출력하세요.\n"
+      "이 이미지(한글 금융문서: Credit4U 채무내역, 채권양도통지서 등)에서 모든 채무를 추출해 "
+          + "아래 JSON 형식으로만 응답하세요. 다른 설명 없이 JSON만 출력하세요.\n"
           + "{\n"
           + "  \"debts\": [\n"
-          + "    {\"creditor\": \"채권기관명\", \"debtType\": \"채무종류\", "
-          + "\"balance\": \"채무잔액(현재 남은 금액, 예: 7,500,000원)\", "
-          + "\"loanAmount\": \"최초 대출금액(예: 10,000,000원, 없으면 null)\", "
+          + "    {\"creditor\": \"금융회사명(예: 신한은행)\", "
+          + "\"debtType\": \"채무종류(예: 일반신용대출, 카드론, 현금서비스)\", "
+          + "\"balance\": 7500000, "
+          + "\"loanAmount\": 10000000, "
           + "\"overdueInfo\": \"연체정보(없으면 빈 문자열)\", "
           + "\"creditorChange\": \"채권자변동(없으면 빈 문자열)\", "
           + "\"confidence\": \"high|medium|low\", "
@@ -67,20 +70,24 @@ public class NewStartDebtImageService {
           + "  ]\n"
           + "}\n"
           + "핵심 규칙 (반드시 준수):\n"
-          + "1. 추측 금지: 이미지에 없는 값은 null로 반환하고 needsVerification을 true로 설정. 절대 추측해서 채우지 마세요.\n"
-          + "2. 잔액 vs 대출금액 구분: balance는 현재 남은 채무잔액, loanAmount는 최초 대출금액. 두 값을 혼동하지 마세요. "
-          + "이미지에 잔액만 있으면 loanAmount는 null.\n"
-          + "3. creditor: 은행/카드/캐피탈/저축은행 등 기관명 (예: 신한은행, 삼성카드)\n"
-          + "4. debtType: 일반신용대출, 주택담보대출, 카드론, 현금서비스 등\n"
-          + "5. confidence: 값이 이미지에서 명확히 읽히면 high, 일부 불확실하면 medium, 추측이 필요하면 low\n"
-          + "6. 주민등록번호·계좌번호는 절대 포함하지 마세요";
+          + "1. 추측 금지: 이미지에 없는 정보는 null로 반환하고 needsVerification을 true로 설정. "
+          + "절대 추측해서 채우지 마세요.\n"
+          + "2. balance는 현재 남은 채무잔액, loanAmount는 최초 대출원금. 두 값을 혼동하지 마세요. "
+          + "잔액만 보이면 loanAmount는 null.\n"
+          + "3. balance/loanAmount는 쉼표 없는 정수로(예: 7500000), 없으면 null. "
+          + "금액에 '원' 표기나 쉼표를 붙이지 마세요.\n"
+          + "4. creditor는 은행/카드/캐피탈/저축은행 등 금융회사명, "
+          + "debtType은 일반신용대출/주택담보대출/카드론/현금서비스 등.\n"
+          + "5. confidence: 값이 이미지에서 명확히 읽히면 high, 일부 불확실하면 medium, "
+          + "추측이 필요하면 low.\n"
+          + "6. 주민등록번호·계좌번호는 절대 포함하지 마세요.";
 
-  private final NewStartLlmProperties.OpenRouter config;
+  private final NewStartLlmProperties.NvidiaNim config;
   private final HttpClient httpClient;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public NewStartDebtImageService(NewStartLlmProperties properties) {
-    this.config = properties.getOpenrouter();
+    this.config = properties.getNvidia();
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .build();
@@ -163,7 +170,7 @@ public class NewStartDebtImageService {
     return "image/jpeg";
   }
 
-  /** OpenRouter Qwen Vision API 호출 (429/5xx 시 재시도).
+  /** NVIDIA Vision API 호출 (429/5xx 시 재시도).
    *
    * <p>진단 전용 로그(prefix: {@code DEBT_VISION_DIAG})만 남기며, 요청/재시도/파싱 동작은
    * 변경하지 않는다. 로그에는 API key·개인정보·이미지 원문을 절대 포함하지 않는다.
@@ -174,10 +181,10 @@ public class NewStartDebtImageService {
     }
 
     long startMs = System.currentTimeMillis();
-    String model = config.getModel();
+    String model = VISION_MODEL;
     log.info("DEBT_VISION_DIAG | start | model={} | time={}", model, Instant.now().toString());
 
-    // OpenRouter vision 형식: content 배열에 text + image_url 포함
+    // NVIDIA vision 형식: content 배열에 text + image_url 포함
     List<Map<String, Object>> contentParts = new ArrayList<>();
     contentParts.add(Map.of("type", "text", "text", USER_PROMPT));
     contentParts.add(Map.of("type", "image_url",
@@ -210,8 +217,6 @@ public class NewStartDebtImageService {
             .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + config.getApiKey())
-            .header("HTTP-Referer", "https://feel2real.co.kr")
-            .header("X-Title", "BuildIt NewStart Debt Image")
             .POST(HttpRequest.BodyPublishers.ofString(
                 requestBody, StandardCharsets.UTF_8))
             .build();
@@ -304,7 +309,7 @@ public class NewStartDebtImageService {
         success, totalMs, retries, retryStatuses);
   }
 
-  /** OpenRouter 응답에서 provider 식별 (없으면 "N/A"). */
+  /** NVIDIA 응답에서 provider 식별 (없으면 "N/A"). */
   private String extractProvider(JsonNode root, HttpResponse<byte[]> response) {
     String provider = root.path("provider").path("name").asText("");
     if (!provider.isBlank()) return provider;
@@ -334,7 +339,7 @@ public class NewStartDebtImageService {
   }
 
   /**
-   * OpenRouter 오류 응답에서 안전한 범위의 메시지만 추출 (최대 200자).
+   * Vision 오류 응답에서 안전한 범위의 메시지만 추출 (최대 200자).
    * API key·토큰·base64 이미지·개인정보 패턴은 마스킹한다.
    */
   private String extractSafeErrorMessage(byte[] responseBody) {
