@@ -28,7 +28,17 @@ public class WemadeCollectionScheduler {
         runSafely("GAME", collectionService::collectGameInfo);
         runSafely("CHINA_DISCLOSURE", chinaService::collectDisclosures);
         runSafely("CHINA_NEWS", chinaService::collectNews);
+        runSafely("CATALYST_POLICY", this::checkCatalystPolicy);
         log.info("WEMADE scheduled collection done");
+    }
+
+    /**
+     * Q4 Triple Catalyst 정책 추적 일일 점검.
+     * 디지털자산기본법 입법 단계는 국회·금융위 공식 자료 확인이 필요하므로
+     * 자동 수집원이 확정되기 전까지는 상태 점검 로그만 남긴다.
+     */
+    private void checkCatalystPolicy() {
+        log.info("WEMADE catalyst policy check: 디지털자산기본법 입법 단계 수동 확인 필요");
     }
 
     private void runSafely(String name, Runnable r) {
