@@ -377,20 +377,28 @@ jobs:
           # 이 블록은 f2r-app.service 만 재시작/health-check 한다 — buildit-wiki는 별도
           # systemd 유닛으로 이미 위에서 독립적으로 기동·검증됐고, 여기서 절대 건드리지
           # 않는다(rollback 경로 포함).
-          # NewStart Vision uses a dedicated Meta key. GitHub Actions stores it as an
-          # AWS SSM SecureString; EC2 retrieves it directly so plaintext never enters git or logs.
-          META_VISION_PARAM="/feel2real/newstart/meta-vision-api-key"
-          if META_VISION_VALUE=$(aws ssm get-parameter --name "$META_VISION_PARAM" --with-decryption --query 'Parameter.Value' --output text 2>/dev/null) \
-             && [ -n "$META_VISION_VALUE" ] && [ "$META_VISION_VALUE" != "None" ]; then
-            install -d -m 755 /etc/f2r
-            touch /etc/f2r/env
-            chmod 600 /etc/f2r/env
-            sed -i '/^META_VISION_API_KEY=/d' /etc/f2r/env
-            printf 'META_VISION_API_KEY=%s\n' "$META_VISION_VALUE" >> /etc/f2r/env
+          # NewStart Vision (Meta) 전용 키를 S3 staging에서 가져와 /etc/f2r/env에 동기화한다.
+          # S3 객체는 배포 중에만 존재하는 transient 파일이다.
+          # 값은 절대 출력하지 않는다.
+          if aws s3 cp s3://feel2real-buildit-deploy/meta-vision-key /tmp/meta-vision-key 2>/dev/null; then
+            META_VISION_VALUE=$(cat /tmp/meta-vision-key)
+            shred -u /tmp/meta-vision-key 2>/dev/null || rm -f /tmp/meta-vision-key
+            if [ -n "$META_VISION_VALUE" ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              grep -vE '^META_VISION_API_KEY=' /etc/f2r/env > /etc/f2r/env.tmp || true
+              printf 'META_VISION_API_KEY=%s\n' "$META_VISION_VALUE" >> /etc/f2r/env.tmp
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo '[DEPLOY] synced META_VISION_API_KEY into f2r-app env (value hidden)'
+            else
+              echo '::error::META_VISION_API_KEY staging file is empty; refusing Vision deploy without key'
+              exit 1
+            fi
             unset META_VISION_VALUE
-            echo '[DEPLOY] synced META_VISION_API_KEY into f2r-app env (value hidden)'
           else
-            echo '::error::META_VISION_API_KEY SecureString unavailable; refusing Vision deploy without key'
+            echo '::error::META_VISION_API_KEY staging file unavailable in S3; refusing Vision deploy without key'
             exit 1
           fi
 
@@ -441,19 +449,20 @@ jobs:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
 
-      - name: Sync Meta Vision key to AWS SSM Parameter Store
+      - name: Stage Meta Vision key in S3 (transient)
         shell: bash
         env:
           META_VISION_API_KEY: ${{ secrets.META_VISION_API_KEY }}
         run: |
           set -euo pipefail
-          test -n "$META_VISION_API_KEY" || { echo "::error::META_VISION_API_KEY repository secret is empty"; exit 1; }
-          aws ssm put-parameter \
-            --name "/feel2real/newstart/meta-vision-api-key" \
-            --type "SecureString" \
-            --value "$META_VISION_API_KEY" \
-            --overwrite >/dev/null
-          echo "META_VISION_API_KEY staged as SSM SecureString (value hidden)"
+          test -n "${META_VISION_API_KEY:-}" || { echo "::error::META_VISION_API_KEY repository secret is empty"; exit 1; }
+          # 키를 임시 파일에 쓰고 S3에 업로드 (private bucket, 배포 중에만 존재)
+          # 값은 절대 출력하지 않음
+          printf '%s' "$META_VISION_API_KEY" > /tmp/meta-vision-key.staging
+          aws s3 cp /tmp/meta-vision-key.staging s3://feel2real-buildit-deploy/meta-vision-key --sse AES256 >/dev/null
+          shred -u /tmp/meta-vision-key.staging 2>/dev/null || rm -f /tmp/meta-vision-key.staging
+          unset META_VISION_API_KEY
+          echo "META_VISION_API_KEY staged in S3 (transient, value hidden)"
 
       - name: Upload deployment artifacts to S3
         run: |
@@ -516,4 +525,11 @@ jobs:
             echo "::error::Deploy through SSM did not succeed (Status=${STATUS:-InProgress})"
             exit 1
           fi
+
+      - name: Cleanup Meta Vision key staging file
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://feel2real-buildit-deploy/meta-vision-key 2>/dev/null || true
+          echo "Staging file cleaned up"
 
