@@ -87,6 +87,20 @@ app:
         api-key: ${OPENROUTER_API_KEY:}
         temperature: 0.25
         timeout-seconds: 90
+    # 채무 이미지 Vision 전용 설정 (Meta Muse Spark).
+    # 지피지기 Agent의 app.newstart.llm과는 분리된 독립 설정이다.
+    # 2026-10-05: NVIDIA Vision(nemotron-3-nano-omni) 응답 지연(150초+ 타임아웃)으로
+    # Meta muse-spark-1.3-contributor로 교체. 실측: HTTP 200, 12.2초, 9건 정확 추출.
+    # 키는 환경변수로만 주입하며 응답·로그에 출력하지 않는다.
+    # Muse Spark는 reasoning 모델이므로 max-tokens를 8000 이상으로 유지해야 함
+    # (낮으면 reasoning 토큰에 소진되어 content가 null로 반환됨).
+    vision:
+      base-url: ${META_VISION_BASE_URL:https://api.meta.ai/v1}
+      model: ${META_VISION_MODEL:muse-spark-1.3-contributor}
+      api-key: ${META_API_KEY:}
+      temperature: 0.1
+      max-tokens: 8000
+      timeout-seconds: 120
   # 2026-09-21 cleanup(newstart): 네이버 로그인 V1/V2 구현을 전부 제거하면서 app.naver.oauth.*
   # 바인딩도 함께 정리했다 — NAVER_CLIENT_ID/NAVER_CLIENT_SECRET/NAVER_OAUTH_REDIRECT_URI
   # 환경변수 자체는 (다음 네이버 로그인 재구현을 위해) EC2/GitHub Secrets에 그대로 남아있지만,
