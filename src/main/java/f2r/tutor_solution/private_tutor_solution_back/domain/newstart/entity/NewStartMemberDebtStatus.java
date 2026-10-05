@@ -49,7 +49,7 @@ public class NewStartMemberDebtStatus extends BaseEntity {
   @Column(name = "creditor_change_confirmed", nullable = false)
   private boolean creditorChangeConfirmed;
 
-  @Column(name = "debt_summary", length = 1000)
+  @Column(name = "debt_summary", columnDefinition = "TEXT")
   private String debtSummary;
 
   @Column(name = "stage", length = 30)

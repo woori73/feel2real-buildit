@@ -181,8 +181,8 @@
         if (analyzed) {
           payload.debtSummary = [payload.debtSummary, analyzed].filter(Boolean).join('\n\n');
         }
-        if (payload.debtSummary.length > 1000) {
-          setState('메모와 분석 결과가 1000자를 넘습니다. 분석 항목을 줄이거나 메모를 정리해주세요.');
+        if (payload.debtSummary.length > 10000) {
+          setState('메모와 분석 결과가 10000자를 넘습니다. 분석 항목을 줄이거나 메모를 정리해주세요.');
           return;
         }
         saveBtn.disabled = true;

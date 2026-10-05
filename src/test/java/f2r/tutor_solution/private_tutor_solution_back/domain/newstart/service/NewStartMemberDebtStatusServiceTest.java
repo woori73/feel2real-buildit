@@ -129,12 +129,12 @@ class NewStartMemberDebtStatusServiceTest {
   }
 
   @Test
-  @DisplayName("given 1000자 초과 메모 when save then 거부되고 원문을 자르지 않는다")
+  @DisplayName("given 10000자 초과 메모 when save then 거부되고 원문을 자르지 않는다")
   void rejectsOversizedSummary() {
-    String tooLong = "가".repeat(1001);
+    String tooLong = "가".repeat(10001);
     assertThatThrownBy(() -> service.save(7L, noFlags(tooLong, null)))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("1000");
+        .hasMessageContaining("10000");
     verify(repository, never()).save(any());
   }
 
