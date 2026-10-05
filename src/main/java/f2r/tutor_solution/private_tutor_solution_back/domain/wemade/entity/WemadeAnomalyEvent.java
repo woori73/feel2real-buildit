@@ -50,6 +50,10 @@ public class WemadeAnomalyEvent {
     @Builder.Default
     private String evidenceLevel = "ANALYSIS";
 
+    /** 시장 구분: KRX / NXT / UNIFIED / MULTI (복수 시장 관련 시). */
+    @Column(length = 10)
+    private String exchange;
+
     /** 연관성 메모. 기본값 "연관성 확인되지 않음". 직접 증거 없이 변경하지 않는다. */
     @Column(length = 500)
     @Builder.Default
