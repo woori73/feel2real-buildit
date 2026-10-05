@@ -14,7 +14,8 @@
     community: '/api/wemade/community',
     chinaDisc: '/api/wemade/china/disclosures',
     chinaNews: '/api/wemade/china/news',
-    chinaLatest: '/api/wemade/china/latest'
+    chinaLatest: '/api/wemade/china/latest',
+    quoteRealtime: '/api/wemade/quote/realtime'
   };
   var NO_DATA = '데이터 없음';
   var DEAL_CLOSE = new Date(2026, 9, 30); // 10/30 잔금 예정
@@ -68,6 +69,21 @@
     chgBox.innerHTML = '<span class="chg-pill ' + cls + '">' +
       esc(fmtSigned(o.change) + '원 (' + fmtPct(o.changeRate) + ')') + '</span>';
     el('hero-date').textContent = (o.tradeDate || '') + ' 장마감 기준 · KOSDAQ';
+    // 실시간/지연 배지 (KIS 키 없으면 지연 시세)
+    (function () {
+      var badge = el('quote-badge');
+      if (!badge) return;
+      getJSON(API.quoteRealtime + '?symbol=112040').then(function (q) {
+        if (q && q.realtime) {
+          badge.innerHTML = '<span class="badge-live">실시간</span>';
+          if (q.price) priceBox.textContent = fmtInt(q.price) + '원';
+        } else {
+          badge.innerHTML = '<span class="badge-delayed">지연 시세</span>';
+        }
+      }).catch(function () {
+        badge.innerHTML = '<span class="badge-delayed">지연 시세</span>';
+      });
+    })();
     // 52주 레인지 바
     var hi = num(o.high52w), lo = num(o.low52w), c = num(o.close);
     if (hi !== null && lo !== null && hi > lo) {
