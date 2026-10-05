@@ -58,6 +58,9 @@
     <div class="fine">인수 후 네오펄스 총지분 40.25% = 기존 0.92% + 양수 39.33%. "넘기는 지분 40.25%"라는 표현은 부정확.</div>
   </section>
 
+  <!-- 새 대주주는 누구인가 -->
+  <div th:replace="~{wemade/fragments/ownership :: ownership}"></div>
+
   <!-- ③ 중국에서 보는 위메이드 -->
   <section class="card" aria-labelledby="t-china">
     <div class="sec-head">
@@ -144,6 +147,9 @@
     <div id="china-news"><div class="state">불러오는 중…</div></div>
   </section>
 
+  <!-- 위메이드 가치 재평가 (SOTP) -->
+  <div th:replace="~{wemade/fragments/valuation :: valuation}"></div>
+
   <!-- 주주 정보 -->
   <section class="card" aria-labelledby="t-community">
     <div class="sec-head"><h2 class="sec-title" id="t-community">주주 정보</h2></div>
@@ -156,5 +162,7 @@
   </footer>
 </main>
 <script th:src="@{/js/wemade.js}" src="/js/wemade.js"></script>
+<script th:src="@{/js/wemade-valuation.js}" src="/js/wemade-valuation.js"></script>
+<script th:src="@{/js/wemade-ownership.js}" src="/js/wemade-ownership.js"></script>
 </body>
 </html>
