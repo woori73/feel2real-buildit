@@ -52,6 +52,15 @@ public class WemadeAnomalyMetric {
     @Column(length = 20)
     private String source;
 
+    /** 시장 구분: KRX / NXT / UNIFIED (통합). 기본값 KRX (기존 데이터 호환). */
+    @Column(length = 10)
+    @Builder.Default
+    private String exchange = "KRX";
+
+    /** 세션 구분: PRE / REGULAR / AFTER / CLOSE (KIS MARKET_CLS_CODE 기준). */
+    @Column(length = 10)
+    private String session;
+
     /** 근거 수준: FACT(관측) / ANALYSIS(계산) */
     @Column(length = 20)
     @Builder.Default
