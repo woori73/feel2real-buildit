@@ -6,7 +6,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeChinaService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeEventService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeKisClient;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadePriceService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeSurgeAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +34,8 @@ public class WemadeApiController {
     private final WemadeCommunityPostRepository communityPostRepository;
     private final WemadeDisclosureRepository disclosureRepository;
     private final WemadeCollectionRunRepository runRepository;
+    private final WemadeKisClient kisClient;
+    private final WemadeSurgeAnalysisService surgeAnalysisService;
 
     /** 종목 메타: 112040/101730(KRW), 002517(CNY). */
     @GetMapping("/symbols")
@@ -174,6 +178,51 @@ public class WemadeApiController {
     @GetMapping("/collection/status")
     public ResponseEntity<List<WemadeCollectionRun>> collectionStatus() {
         return ResponseEntity.ok(runRepository.findTop20ByOrderByStartedAtDesc());
+    }
+
+    /**
+     * 실시간 현재가 1건.
+     * 1순위: KIS Open API 실시간 (KIS_APP_KEY/SECRET 설정 시).
+     * 폴백: pykrx/DB 지연 시세 (장마감 기준).
+     *
+     * 약관 주의: KIS 시세정보 서비스 이용약관 제7조는 승인 없는 시세정보의
+     * 제3자 제공·재판매를 금지한다. 약관상 공개 범위 확인 전까지 실시간 시세는
+     * 내부 분석용으로만 사용하고 외부 표시 범위를 제한한다
+     * (현재가 1건 + 배지. 원시 호가/체결 전량은 제공하지 않는다).
+     */
+    @GetMapping("/quote/realtime")
+    public ResponseEntity<Map<String, Object>> realtimeQuote(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        Optional<Map<String, Object>> kis = kisClient.realtimeQuote(symbol);
+        if (kis.isPresent()) {
+            Map<String, Object> m = new LinkedHashMap<>(kis.get());
+            m.put("badge", "실시간");
+            m.put("redistributionRestricted", true);
+            m.put("termsNote", "KIS 약관상 제3자 재배포 제한 — 공개 범위 확인 전까지 내부 분석용");
+            return ResponseEntity.ok(m);
+        }
+        // 폴백: DB 최신 일봉 (지연 시세)
+        Map<String, Object> m = new LinkedHashMap<>(priceService.overview(symbol));
+        m.put("realtime", false);
+        m.put("badge", "지연 시세");
+        m.put("source", "PYKRX_DELAYED");
+        return ResponseEntity.ok(m);
+    }
+
+    /** 급등일 수급 분석 목록. */
+    @GetMapping("/surge-analysis")
+    public ResponseEntity<List<WemadeSurgeAnalysis>> surgeAnalysis(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        return ResponseEntity.ok(
+                surgeAnalysisService == null ? List.of()
+                        : surgeAnalysisService.list(symbol));
+    }
+
+    /** '고점 외국인·기관 매도 반복' 가설 검증 상태. */
+    @GetMapping("/surge-analysis/hypothesis")
+    public ResponseEntity<Map<String, Object>> surgeHypothesis(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        return ResponseEntity.ok(surgeAnalysisService.hypothesisSummary(symbol));
     }
 
     /** 수급 기준일 (데이터 없음이면 null). */
