@@ -377,6 +377,21 @@ jobs:
           # 이 블록은 f2r-app.service 만 재시작/health-check 한다 — buildit-wiki는 별도
           # systemd 유닛으로 이미 위에서 독립적으로 기동·검증됐고, 여기서 절대 건드리지
           # 않는다(rollback 경로 포함).
+          # NewStart Debt Vision runs inside f2r-app.service, while the shared OpenRouter
+          # secret may already live in /etc/buildit-wiki.env. Keep the Spring service env in sync
+          # without ever moving the secret through GitHub/Actions output.
+          if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
+            install -d -m 755 /etc/f2r
+            touch /etc/f2r/env
+            chmod 600 /etc/f2r/env
+            OPENROUTER_LINE=$(grep -E '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env | tail -n 1)
+            sed -i '/^OPENROUTER_API_KEY=/d' /etc/f2r/env
+            printf '%s\n' "$OPENROUTER_LINE" >> /etc/f2r/env
+            echo '[DEPLOY] synced OPENROUTER_API_KEY into f2r-app env (value hidden)'
+          else
+            echo '::warning::OPENROUTER_API_KEY not found in /etc/buildit-wiki.env; debt vision cannot use OpenRouter'
+          fi
+
           echo "[DEPLOY] spring deploy start"
           if f2r_deploy_with_rollback \
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
