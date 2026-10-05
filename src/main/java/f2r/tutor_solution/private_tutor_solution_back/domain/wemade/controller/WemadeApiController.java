@@ -9,6 +9,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.Wema
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeKisClient;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadePriceService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeSurgeAnalysisService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeAnomalyService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeKisWebSocket;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +38,11 @@ public class WemadeApiController {
     private final WemadeCollectionRunRepository runRepository;
     private final WemadeKisClient kisClient;
     private final WemadeSurgeAnalysisService surgeAnalysisService;
+    private final WemadeAnomalyService anomalyService;
+    private final WemadeKisWebSocket kisWebSocket;
+    private final WemadeAnomalyEventRepository anomalyEventRepository;
+    private final WemadeAnomalyMetricRepository anomalyMetricRepository;
+    private final WemadeMemberSnapshotRepository memberSnapshotRepository;
 
     /** 종목 메타: 112040/101730(KRW), 002517(CNY). */
     @GetMapping("/symbols")
@@ -223,6 +230,58 @@ public class WemadeApiController {
     public ResponseEntity<Map<String, Object>> surgeHypothesis(
             @RequestParam(defaultValue = "112040") String symbol) {
         return ResponseEntity.ok(surgeAnalysisService.hypothesisSummary(symbol));
+    }
+
+    /**
+     * KIS 피드 상태 (원시 데이터 노출 없음).
+     * realtime/ws/investor/member 각 피드의 연결 상태만 반환한다.
+     */
+    @GetMapping("/kis/status")
+    public ResponseEntity<Map<String, Object>> kisStatus() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("configured", kisClient.isConfigured());
+        m.put("websocketLive", kisWebSocket.isLive());
+        m.put("note", "KIS 원시 시세/호가 데이터는 PRIVATE/INTERNAL — 외부에 재배포하지 않음");
+        return ResponseEntity.ok(m);
+    }
+
+    /**
+     * 이상수급 분석 이벤트 목록 (파생 분석값만, 원시 KIS 틱 미포함).
+     * evidenceLevel: FACT(관측) / ANALYSIS(계산) / HYPOTHESIS(미확인 가설).
+     * relationNote가 "연관성 확인되지 않음"이 아닌 경우는 직접 증거가 있는 경우뿐이다.
+     */
+    @GetMapping("/anomaly/events")
+    public ResponseEntity<List<WemadeAnomalyEvent>> anomalyEvents(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        return ResponseEntity.ok(anomalyEventRepository.findBySymbolOrderByDetectedAtDesc(symbol));
+    }
+
+    /**
+     * 이상수급 지표 수치 (원시 수치가 아닌 파생 지표).
+     * 각 지표를 독립 수치로 반환하며 결론은 포함하지 않는다.
+     */
+    @GetMapping("/anomaly/metrics")
+    public ResponseEntity<List<WemadeAnomalyMetric>> anomalyMetrics(
+            @RequestParam(defaultValue = "112040") String symbol,
+            @RequestParam(defaultValue = "1") int hours) {
+        java.time.LocalDateTime to = java.time.LocalDateTime.now();
+        java.time.LocalDateTime from = to.minusHours(Math.min(Math.max(hours, 1), 72));
+        return ResponseEntity.ok(
+                anomalyMetricRepository.findBySymbolAndMeasuredAtBetweenOrderByMeasuredAtAsc(symbol, from, to));
+    }
+
+    /**
+     * 회원사 시간별 스냅샷 (파생 집계값).
+     * 특정 거래원과 중국 인수자의 연관성은 직접 증거 없이 추정하지 않는다.
+     */
+    @GetMapping("/anomaly/members")
+    public ResponseEntity<List<WemadeMemberSnapshot>> memberSnapshots(
+            @RequestParam(defaultValue = "112040") String symbol,
+            @RequestParam(defaultValue = "1") int days) {
+        java.time.LocalDateTime to = java.time.LocalDateTime.now();
+        java.time.LocalDateTime from = to.minusDays(Math.min(Math.max(days, 1), 30));
+        return ResponseEntity.ok(
+                memberSnapshotRepository.findBySymbolAndMeasuredAtBetweenOrderByMeasuredAtAsc(symbol, from, to));
     }
 
     /** 수급 기준일 (데이터 없음이면 null). */
