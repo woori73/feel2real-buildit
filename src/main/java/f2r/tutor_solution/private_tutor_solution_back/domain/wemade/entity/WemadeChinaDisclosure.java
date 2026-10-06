@@ -37,4 +37,29 @@ public class WemadeChinaDisclosure extends BaseEntity {
     @Column(length = 64, unique = true, nullable = false)
     private String contentHash;
     private LocalDateTime collectedAt;
+    /** ④ 원문 흐름을 따른 상세 한국어 번역·해설 (전문 복제 금지) */
+    @Column(columnDefinition = "TEXT")
+    private String detailKr;
+    /** ⑤ 금액·지분·회사·승인기관·일정 핵심 사실 */
+    @Column(columnDefinition = "TEXT")
+    private String keyFactsKr;
+    /** ⑥ 한국/중국 공시 대조 */
+    @Column(columnDefinition = "TEXT")
+    private String crossCheckKr;
+    /** ⑦ 공시 확인 사실 vs 언론 해석·주장 구분 */
+    @Column(columnDefinition = "TEXT")
+    private String factVsClaimKr;
+    /** 관련 공시 참조 */
+    @Column(length = 1000)
+    private String relatedRefs;
+    /** ⑨ 원문 링크 상태: OK/BROKEN/BLOCKED/UNKNOWN */
+    @Column(length = 20)
+    private String linkStatus;
+    private LocalDateTime linkCheckedAt;
+
+    /** 목록에서 '한국어로 자세히 보기' 버튼 표시 여부 */
+    @com.fasterxml.jackson.annotation.JsonProperty("hasDetail")
+    public boolean hasDetail() {
+        return detailKr != null && !detailKr.isBlank();
+    }
 }
