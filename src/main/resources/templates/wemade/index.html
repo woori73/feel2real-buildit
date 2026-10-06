@@ -62,7 +62,7 @@ window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
   <section class="sec" aria-labelledby="t-issues">
     <h2 class="sec-title" id="t-issues">풀리지 않은 6가지 쟁점</h2>
     <div id="issue-list">
-      <article th:each="issue : ${issues}" class="issue" th:id="'issue-' + ${issue.number}">
+      <article th:each="issue, issueStat : ${issues}" class="issue" th:id="'issue-' + ${issue.number}">
         <h3 class="issue-q">
           <span th:text="${issue.number}">1</span>.
           <span th:text="${issue.question}">질문</span>
