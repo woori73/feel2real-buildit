@@ -29,7 +29,10 @@ jobs:
           SSM_SCRIPT=$(cat <<'SSMEOF'
           set -euo pipefail
           source /etc/f2r/env
-          MYSQL="mysql -h \"$DB_HOST\" -P \"${DB_PORT:-3306}\" -u \"$DB_USER\" -p\"$DB_PASSWORD\" \"$DB_NAME\""
+          myq() {
+            mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" "$@"
+          }
+          MYSQL="myq"
 
           echo "===== STEP 1: BACKUP rows 137,138,139 ====="
           $MYSQL -e "SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE installed_rank IN (137,138,139) ORDER BY installed_rank;" > /tmp/flyway_backup_137_138_139.txt
