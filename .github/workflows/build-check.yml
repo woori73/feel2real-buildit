@@ -8,6 +8,14 @@ on:
   push:
     branches:
       - main
+    # READ-ONLY 진단 workflow 변경 시에는 Build Check를 실행하지 않는다.
+    # 진단 workflow는 배포와 무관하므로 CI를 통과할 필요가 없다.
+    # paths-ignore는 모든 변경 파일이 패턴에 매칭될 때만 skip되므로,
+    # 진단 workflow와 build-check.yml 자체 변경이 함께 있을 때는 실행된다.
+    paths-ignore:
+      - '.github/workflows/prod-diagnostic.yml'
+      - '.github/workflows/diagnostic-*.yml'
+      - '.github/workflows/tmp-*.yml'
 
 permissions:
   contents: read
