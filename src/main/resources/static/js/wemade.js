@@ -644,3 +644,33 @@
     });
   });
 })();
+
+/* ===== 2026-10-07: 접힘 영역 차트 지연 렌더 (§12-1) ===== */
+(function () {
+  function setupDetailsChartToggle() {
+    var market = document.getElementById('sec-market');
+    if (!market) return;
+    market.addEventListener('toggle', function () {
+      if (!market.open) return;
+      // 펼칠 때 차트 resize (닫힌 상태에서 0으로 그려진 경우 대응)
+      setTimeout(function () {
+        try {
+          if (window.Chart) {
+            Chart.instances.forEach(function (c) { try { c.resize(); } catch (e) {} });
+          }
+        } catch (e) {}
+        // 차트가 아직 없으면 다시 로드 트리거
+        var pc = document.getElementById('priceChart');
+        if (pc && !pc.chart) {
+          var evt = new CustomEvent('wemade:market-open');
+          document.dispatchEvent(evt);
+        }
+      }, 100);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupDetailsChartToggle);
+  } else {
+    setupDetailsChartToggle();
+  }
+})();

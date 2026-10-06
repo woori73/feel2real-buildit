@@ -3,6 +3,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.controller;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeChinaDisclosureRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeChinaNewsRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeDeltaService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeIssueService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -24,13 +26,19 @@ public class WemadePageController {
 
     private final WemadeChinaDisclosureRepository chinaDisclosureRepository;
     private final WemadeChinaNewsRepository chinaNewsRepository;
+    private final WemadeIssueService issueService;
+    private final WemadeDeltaService deltaService;
 
     @GetMapping("/wemade")
     public String wemadeHome(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             Model model, HttpServletResponse response) {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
-        model.addAttribute("viewer", principal == null ? "GUEST" : "MEMBER");
+        String viewer = principal == null ? "GUEST" : "MEMBER";
+        model.addAttribute("viewer", viewer);
+        model.addAttribute("issues", issueService.forViewer(viewer));
+        model.addAttribute("deltaItems", deltaService.buildDelta().stream()
+                .limit("MEMBER".equals(viewer) ? 3 : 1).toList());
         return "wemade/index";
     }
 
