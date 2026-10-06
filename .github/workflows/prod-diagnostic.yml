@@ -30,6 +30,7 @@ on:
           - nginx-wemade
           - deploy-wemade-jar
           - s3-jar-info
+          - rollback-jar
 
 permissions:
   id-token: write
@@ -229,6 +230,26 @@ jobs:
           echo "===== S3 JAR SHA256 (download first 1MB) ====="
           aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/s3check.jar --range bytes=0-1048575 2>&1 | tail -2
           echo "Partial download complete (1MB)"
+          SSMEOF
+              )
+              ;;
+            rollback-jar)
+              DIAG_LABEL="rollback-jar (restore app.jar.previous)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== Current JAR ====="
+          sha256sum /home/ec2-user/app.jar | cut -c1-16
+          echo "===== Previous JAR ====="
+          sha256sum /home/ec2-user/app.jar.previous | cut -c1-16
+          echo ""
+          echo "===== Rolling back ====="
+          cp /home/ec2-user/app.jar.previous /home/ec2-user/app.jar
+          echo "Rollback complete"
+          sha256sum /home/ec2-user/app.jar | cut -c1-16
+          echo ""
+          echo "===== Restarting service ====="
+          systemctl restart f2r-app.service
+          sleep 5
+          systemctl is-active f2r-app.service
           SSMEOF
               )
               ;;
