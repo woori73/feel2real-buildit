@@ -25,6 +25,9 @@ on:
           - system-resources
           - jar-info
           - health-check
+          - jar-wemade-resources
+          - local-wemade-curl
+          - nginx-wemade
 
 permissions:
   id-token: write
@@ -128,6 +131,48 @@ jobs:
           echo ""
           echo "===== port 8080 listening? ====="
           ss -ltnp 2>/dev/null | grep ':8080' || echo "Port 8080 NOT listening"
+          SSMEOF
+              )
+              ;;
+            jar-wemade-resources)
+              DIAG_LABEL="jar-wemade-resources (wemade template in JAR)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== wemade templates in app.jar ====="
+          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'wemade' | head -30 || echo "No wemade entries found in JAR"
+          echo ""
+          echo "===== wemade static resources in app.jar ====="
+          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'static.*wemade\|wemade.*\.js\|wemade.*\.css' | head -20 || echo "No wemade static resources found"
+          echo ""
+          echo "===== WemadePageController in JAR ====="
+          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'WemadePageController' | head -5 || echo "WemadePageController NOT in JAR"
+          SSMEOF
+              )
+              ;;
+            local-wemade-curl)
+              DIAG_LABEL="local-wemade-curl (localhost:8080/wemade)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== curl -i http://localhost:8080/wemade (first 40 lines) ====="
+          curl -si --max-time 15 http://127.0.0.1:8080/wemade 2>&1 | head -40 || echo "CURL_FAILED (exit $?)"
+          echo ""
+          echo "===== title extraction ====="
+          curl -s --max-time 15 http://127.0.0.1:8080/wemade 2>/dev/null | grep -o -m 1 '<title>[^<]*</title>' || echo "No title found"
+          SSMEOF
+              )
+              ;;
+            nginx-wemade)
+              DIAG_LABEL="nginx-wemade (nginx config for /wemade)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== nginx config files ====="
+          ls /etc/nginx/conf.d/ /etc/nginx/sites-enabled/ 2>/dev/null || echo "No conf.d or sites-enabled"
+          echo ""
+          echo "===== grep wemade in nginx config ====="
+          grep -r -i 'wemade' /etc/nginx/ 2>/dev/null | head -20 || echo "No wemade in nginx config"
+          echo ""
+          echo "===== location blocks for / ====="
+          grep -A 5 'location /' /etc/nginx/nginx.conf /etc/nginx/conf.d/*.conf 2>/dev/null | head -40 || echo "No location / blocks found"
+          echo ""
+          echo "===== proxy_pass settings ====="
+          grep -r 'proxy_pass' /etc/nginx/ 2>/dev/null | head -10 || echo "No proxy_pass found"
           SSMEOF
               )
               ;;
