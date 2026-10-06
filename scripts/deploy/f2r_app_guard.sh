@@ -137,6 +137,11 @@ f2r_dump_diagnostics() {
   local service_name="$1"
   echo "----- systemctl status ${service_name} -----"
   f2r__service_status_dump "$service_name"
+  # SSM StandardOutputContent는 24000자로 잘린다 — 200줄 전체 덤프보다 근본 원인 줄을
+  # 먼저 출력한다 (2026-10-06: Provider ID 누락이 200줄 뒤에 잘려서 안 보였다).
+  echo "----- ${service_name} root-cause lines first (Caused by/APPLICATION FAILED/Provider ID/Unknown provider) -----"
+  journalctl -u "$service_name" -n 400 --no-pager 2>/dev/null \
+    | grep -a -E "Caused by|APPLICATION FAILED|Provider ID|Unknown provider" | tail -n 30 || true
   echo "----- journalctl -u ${service_name} (last 200 lines) -----"
   f2r__service_journal_dump "$service_name"
 }
