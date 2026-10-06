@@ -2,7 +2,9 @@ name: Production Diagnostic (read-only, manual)
 
 # READ-ONLY 운영 진단 전용 workflow.
 # - workflow_dispatch 수동 실행만 허용 (자동 실행 없음)
-# - 진단 종류는 코드에 고정 (flyway-history, schema-columns). 임의 SQL 입력 불가.
+# - 진단 종류는 코드에 고정. 임의 명령어/SQL 입력 불가.
+# - DB 진단: flyway-history, schema-columns (SELECT만)
+# - 서비스 진단: service-status, journal-errors, system-resources, jar-info, health-check (DB 작업 없음)
 # - DB credential은 EC2의 /etc/f2r/env에서 로드하며 GitHub 로그에 절대 출력하지 않는다.
 # - DB 쓰기 명령(INSERT/UPDATE/DELETE 등)은 포함하지 않는다.
 # - 기존 OIDC → AWS SSM 권한만 사용한다. 새 secret을 만들지 않는다.
@@ -18,6 +20,11 @@ on:
         options:
           - flyway-history
           - schema-columns
+          - service-status
+          - journal-errors
+          - system-resources
+          - jar-info
+          - health-check
 
 permissions:
   id-token: write
@@ -37,28 +44,100 @@ jobs:
       - name: Run read-only diagnostic via SSM
         run: |
           set -euo pipefail
-          # 진단 SQL은 아래 코드에 고정되어 있다. 사용자 입력으로 SQL을 받지 않는다.
           DIAG_TYPE="${{ inputs.diagnostic_type }}"
-          if [ "$DIAG_TYPE" = "flyway-history" ]; then
-            DIAG_SQL="SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE version IN ('1041','1042') ORDER BY installed_rank;"
-            DIAG_LABEL="flyway-history (V1041/V1042)"
-          elif [ "$DIAG_TYPE" = "schema-columns" ]; then
-            DIAG_SQL="SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name='wemade_gap_factors' AND column_name='hypothesis_no') OR (table_name='wemade_surge_analysis' AND column_name IN ('ret1d','ret3d','ret5d','ret10d'))) ORDER BY table_name, column_name;"
-            DIAG_LABEL="schema-columns (V1041 target columns)"
-          else
-            echo "::error::Unknown diagnostic_type: $DIAG_TYPE"
-            exit 1
-          fi
-          echo "Diagnostic: $DIAG_LABEL"
-          # READ-ONLY: SELECT만 실행한다. DB 쓰기는 포함하지 않는다.
-          # DB credential은 EC2의 /etc/f2r/env에서 로드되며, 이 로그에 출력되지 않는다.
-          SSM_SCRIPT=$(cat <<SSMEOF
-          set -euo pipefail
+          # 각 진단의 SSM 스크립트를 케이스별로 구성한다.
+          # journalctl은 타임아웃 방지를 위해 좁은 범위 + grep으로 제한한다.
+          case "$DIAG_TYPE" in
+            flyway-history)
+              DIAG_LABEL="flyway-history (V1041/V1042)"
+              SSM_BODY=$(cat <<'SSMEOF'
           source /etc/f2r/env
-          echo "===== $DIAG_LABEL ====="
-          mysql -h "\$DB_HOST" -P "\${DB_PORT:-3306}" -u "\$DB_USER" -p"\$DB_PASSWORD" "\$DB_NAME" -e "$DIAG_SQL"
+          echo "===== flyway-history (V1041/V1042) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE version IN ('1041','1042') ORDER BY installed_rank;"
           SSMEOF
-          )
+              )
+              ;;
+            schema-columns)
+              DIAG_LABEL="schema-columns (V1041 target columns)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          echo "===== schema-columns (V1041 target columns) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name='wemade_gap_factors' AND column_name='hypothesis_no') OR (table_name='wemade_surge_analysis' AND column_name IN ('ret1d','ret3d','ret5d','ret10d'))) ORDER BY table_name, column_name;"
+          SSMEOF
+              )
+              ;;
+            service-status)
+              DIAG_LABEL="service-status (f2r-app.service)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== systemctl status f2r-app.service ====="
+          systemctl status f2r-app.service --no-pager -l | head -40 || true
+          echo ""
+          echo "===== systemctl show (key properties) ====="
+          systemctl show f2r-app.service --property=ActiveState,SubState,Result,ExecMainCode,ExecMainStatus,NRestarts,MainPID,ExecMainStartTimestamp | tr ',' '\n' || true
+          echo ""
+          echo "===== is-active ====="
+          systemctl is-active f2r-app.service || true
+          SSMEOF
+              )
+              ;;
+            journal-errors)
+              DIAG_LABEL="journal-errors (narrow range, grep)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== journalctl: first error search (2026-10-06 04:40-04:50 UTC, max 100 lines) ====="
+          journalctl -u f2r-app.service --since "2026-10-06 04:40:00" --until "2026-10-06 04:50:00" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
+          echo ""
+          echo "===== journalctl: tail 30 (most recent) ====="
+          journalctl -u f2r-app.service --no-pager -n 30 || true
+          SSMEOF
+              )
+              ;;
+            system-resources)
+              DIAG_LABEL="system-resources (memory/disk/OOM)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== free -m ====="
+          free -m || true
+          echo ""
+          echo "===== df -h ====="
+          df -h || true
+          echo ""
+          echo "===== OOM killer check (journalctl -k, last 50) ====="
+          journalctl -k --no-pager -n 50 | grep -i -m 20 'oom|killed process|out of memory' || echo "No OOM killer entries found"
+          SSMEOF
+              )
+              ;;
+            jar-info)
+              DIAG_LABEL="jar-info (app.jar vs app.jar.previous)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== current JAR files ====="
+          ls -lh /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true
+          echo ""
+          echo "===== SHA256 ====="
+          sha256sum /home/ec2-user/app.jar 2>&1 | cut -c1-80 || true
+          sha256sum /home/ec2-user/app.jar.previous 2>&1 | cut -c1-80 || true
+          echo ""
+          echo "===== mtime ====="
+          stat -c '%y %n' /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true
+          SSMEOF
+              )
+              ;;
+            health-check)
+              DIAG_LABEL="health-check"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== health endpoint (localhost:8080) ====="
+          curl -fsS --max-time 10 http://127.0.0.1:8080/actuator/health 2>&1 | head -20 || echo "HEALTH_CHECK_FAILED (exit $?)"
+          echo ""
+          echo "===== port 8080 listening? ====="
+          ss -ltnp 2>/dev/null | grep ':8080' || echo "Port 8080 NOT listening"
+          SSMEOF
+              )
+              ;;
+            *)
+              echo "::error::Unknown diagnostic_type: $DIAG_TYPE"
+              exit 1
+              ;;
+          esac
+          echo "Diagnostic: $DIAG_LABEL"
+          SSM_SCRIPT=$(printf 'set -euo pipefail\n%s\n' "$SSM_BODY")
           PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
           CMD_ID=$(aws ssm send-command \
             --instance-ids i-09d7cabb5a42d1135 \
