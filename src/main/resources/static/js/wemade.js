@@ -380,6 +380,7 @@
         '<div class="meta">' + esc(d.secName || '') + '(' + esc(d.secCode || '') + ') · ' + esc(d.announcedAt || '') + '</div>' +
         (d.summaryKr ? '<div class="why"><strong>핵심:</strong> ' + esc(d.summaryKr) + '</div>' : '') +
         (d.whyMatters ? '<div class="why"><strong>왜 중요한가:</strong> ' + esc(d.whyMatters) + '</div>' : '') +
+        (d.hasDetail ? '<div class="meta"><a class="detail-link" href="/wemade/china/disclosures/' + d.id + '">한국어로 자세히 보기 →</a></div>' : '') +
         (d.sourceUrl ? '<div class="meta">원문: <a href="' + esc(d.sourceUrl) + '" target="_blank" rel="noopener noreferrer">CNINFO ↗</a></div>' : '') +
         '</div>';
     }).join('');
@@ -395,6 +396,7 @@
         (n.matchesDisclosure === true ? ' · 공시와 일치' : (n.matchesDisclosure === false ? ' · <strong>공시와 차이 있음(공시 우선)</strong>' : '')) + '</div>' +
         (n.summaryKr ? '<div class="why">' + esc(n.summaryKr) + '</div>' : '') +
         (n.whyMatters ? '<div class="why"><strong>왜 중요한가:</strong> ' + esc(n.whyMatters) + '</div>' : '') +
+        (n.hasDetail ? '<div class="meta"><a class="detail-link" href="/wemade/china/news/' + n.id + '">한국어로 자세히 보기 →</a></div>' : '') +
         extLink(n.sourceUrl) + '</div>';
     }).join('');
   }

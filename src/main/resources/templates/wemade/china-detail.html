@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title th:text="${item.titleKr} + ' | 위메이드 개인주주 분석'">중국 자료 상세 | 위메이드 개인주주 분석</title>
+<link rel="stylesheet" th:href="@{/css/wemade.css}" href="/css/wemade.css">
+<style>
+.detail-body{white-space:pre-line;line-height:1.75}
+.detail-sec{margin:1.1rem 0}
+.detail-sec h3{font-size:1.02rem;margin:0 0 .45rem}
+.detail-meta{color:#666;font-size:.86rem}
+.back-link{display:inline-block;margin:.4rem 0 1rem}
+.link-ok{color:#0a7b2e;font-weight:700}
+.link-broken{color:#b3261e;font-weight:700}
+.link-unknown{color:#8a6d00;font-weight:700}
+.media-note{background:#fff8e1;border-left:4px solid #f0a500;padding:.6rem .8rem;margin:.6rem 0;font-size:.92rem}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand"><span class="brand-name">위메이드</span><span class="brand-code">112040</span></div>
+    <div class="appbar-right">
+      <a th:if="${viewer == 'GUEST'}" th:href="@{/wemade/login}" href="/wemade/login" class="login-btn">네이버 로그인</a>
+      <span th:unless="${viewer == 'GUEST'}" class="login-badge">로그인됨</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <a class="back-link" th:href="@{/wemade}" href="/wemade">← /wemade로 돌아가기</a>
+
+  <section class="card" aria-labelledby="t-detail">
+    <div class="sec-head">
+      <h2 class="sec-title" id="t-detail" th:text="${kindKr}">중국 자료</h2>
+      <span th:if="${item.grade == 'A'}" class="grade-a">A·공식공시</span>
+      <span th:if="${item.grade == 'B'}" class="grade-b">B·신뢰매체</span>
+      <span th:if="${item.grade == 'C'}" class="grade-c">C·언론/업계</span>
+      <span th:if="${item.grade == 'D'}" class="grade-d">D·커뮤니티</span>
+    </div>
+
+    <!-- ① 원문 제목 / 한국어 제목 -->
+    <div class="detail-sec">
+      <h3>① 제목</h3>
+      <div class="cn" th:text="${item.titleCn}"></div>
+      <div class="kr" th:if="${item.titleKr}" th:text="${item.titleKr}"></div>
+    </div>
+
+    <!-- ② 출처 / 발표일 / 수집일 -->
+    <div class="detail-sec">
+      <h3>② 출처 · 날짜</h3>
+      <div class="detail-meta">
+        <span th:text="${kind == 'disclosure' ? item.secName + '(' + item.secCode + ')' : item.sourceName}"></span>
+        <span> · 발표일 </span><span th:text="${kind == 'disclosure' ? item.announcedAt : item.publishedAt}"></span>
+        <span> · 수집일 </span><span th:text="${#temporals.format(item.collectedAt, 'yyyy-MM-dd')}"></span>
+      </div>
+      <div class="detail-meta" th:if="${kind == 'news' and item.matchesDisclosure != null}">
+        <span th:if="${item.matchesDisclosure}">공시와 일치</span>
+        <span th:unless="${item.matchesDisclosure}"><strong>공시와 차이 있음 — 공시를 우선합니다</strong></span>
+      </div>
+    </div>
+
+    <!-- ③ 한눈에 보는 핵심 -->
+    <div class="detail-sec" th:if="${item.summaryKr}">
+      <h3>③ 한눈에 보는 핵심</h3>
+      <div class="detail-body" th:text="${item.summaryKr}"></div>
+    </div>
+
+    <!-- ④ 상세 한국어 번역·해설 -->
+    <div class="detail-sec" th:if="${item.detailKr}">
+      <h3>④ 상세 한국어 번역·해설</h3>
+      <div class="media-note" th:if="${kind == 'news'}">아래는 원문 전문의 복제가 아니라, 원문의 흐름을 따라 풀어쓴 한국어 해설입니다. 공시와 충돌하면 공시를 우선합니다.</div>
+      <div class="detail-body" th:text="${item.detailKr}"></div>
+    </div>
+
+    <!-- ⑤ 핵심 사실 정리 -->
+    <div class="detail-sec" th:if="${item.keyFactsKr}">
+      <h3>⑤ 핵심 사실 정리</h3>
+      <div class="detail-body" th:text="${item.keyFactsKr}"></div>
+    </div>
+
+    <!-- ⑥ 한국 공시 및 중국 공시와 대조 -->
+    <div class="detail-sec" th:if="${item.crossCheckKr}">
+      <h3>⑥ 한국 공시 및 중국 공시와 대조</h3>
+      <div class="detail-body" th:text="${item.crossCheckKr}"></div>
+    </div>
+
+    <!-- ⑦ 공시 확인 사실 / 언론 해석·주장 구분 -->
+    <div class="detail-sec" th:if="${item.factVsClaimKr}">
+      <h3>⑦ 공시에서 확인된 사실 vs 언론의 해석·주장</h3>
+      <div class="detail-body" th:text="${item.factVsClaimKr}"></div>
+    </div>
+
+    <!-- 관련 공시 -->
+    <div class="detail-sec" th:if="${item.relatedRefs}">
+      <h3>관련 공시</h3>
+      <div class="detail-body" th:text="${item.relatedRefs}"></div>
+    </div>
+
+    <!-- ⑧ 개인주주 입장에서 왜 중요한가 -->
+    <div class="detail-sec" th:if="${item.whyMatters}">
+      <h3>⑧ 개인주주 입장에서 왜 중요한가</h3>
+      <div class="detail-body" th:text="${item.whyMatters}"></div>
+    </div>
+
+    <!-- ⑨ 원문 링크 및 현재 링크 상태 -->
+    <div class="detail-sec" th:if="${item.sourceUrl}">
+      <h3>⑨ 원문 링크</h3>
+      <div><a th:href="${item.sourceUrl}" th:text="${item.sourceUrl}" target="_blank" rel="noopener noreferrer">원문 ↗</a></div>
+      <div class="detail-meta">
+        링크 상태:
+        <span th:if="${item.linkStatus == 'OK'}" class="link-ok">정상 (확인됨)</span>
+        <span th:if="${item.linkStatus == 'BROKEN'}" class="link-broken">접속 불가 — 아래 분석자료는 수집·검증 시점의 내용으로 보존됩니다</span>
+        <span th:if="${item.linkStatus == 'BLOCKED'}" class="link-broken">접속 차단 — 아래 분석자료는 수집·검증 시점의 내용으로 보존됩니다</span>
+        <span th:if="${item.linkStatus == null or item.linkStatus == 'UNKNOWN'}" class="link-unknown">미확인</span>
+        <span th:if="${item.linkCheckedAt}" th:text="' (확인: ' + ${#temporals.format(item.linkCheckedAt, 'yyyy-MM-dd')} + ')'"></span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    투자 권유·매수/매도 추천·목표주가를 제공하지 않습니다. 정보 제공 목적의 참고 자료입니다.<br>
+    <span class="muted">공시와 언론보도는 같은 신뢰도로 취급하지 않으며, 충돌 시 공시를 우선합니다.</span>
+  </footer>
+</main>
+</body>
+</html>
