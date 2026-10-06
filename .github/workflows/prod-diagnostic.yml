@@ -28,6 +28,7 @@ on:
           - jar-wemade-resources
           - local-wemade-curl
           - nginx-wemade
+          - deploy-wemade-jar
 
 permissions:
   id-token: write
@@ -173,6 +174,44 @@ jobs:
           echo ""
           echo "===== proxy_pass settings ====="
           grep -r 'proxy_pass' /etc/nginx/ 2>/dev/null | head -10 || echo "No proxy_pass found"
+          SSMEOF
+              )
+              ;;
+            deploy-wemade-jar)
+              DIAG_LABEL="deploy-wemade-jar (manual JAR deploy from S3)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== Downloading JAR from S3 ====="
+          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/app-new.jar 2>&1 | tail -5
+          echo ""
+          echo "===== New JAR SHA256 ====="
+          sha256sum /tmp/app-new.jar | cut -c1-64
+          echo ""
+          echo "===== Current JAR SHA256 ====="
+          sha256sum /home/ec2-user/app.jar | cut -c1-64
+          echo ""
+          echo "===== Verifying wemade in new JAR ====="
+          if unzip -l /tmp/app-new.jar | grep -q "WemadePageController.class"; then
+            echo "✓ WemadePageController: PRESENT in new JAR"
+          else
+            echo "✗ WemadePageController: MISSING - aborting deploy"
+            exit 1
+          fi
+          echo ""
+          echo "===== Backing up current JAR ====="
+          cp /home/ec2-user/app.jar /home/ec2-user/app.jar.previous
+          echo "Backup complete"
+          echo ""
+          echo "===== Installing new JAR ====="
+          mv /tmp/app-new.jar /home/ec2-user/app.jar
+          echo "Install complete"
+          echo ""
+          echo "===== Restarting service ====="
+          systemctl restart f2r-app.service
+          echo "Restart initiated"
+          echo ""
+          echo "===== Waiting for service (60s) ====="
+          sleep 60
+          systemctl is-active f2r-app.service
           SSMEOF
               )
               ;;
