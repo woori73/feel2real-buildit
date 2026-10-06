@@ -282,9 +282,19 @@ jobs:
               DIAG_LABEL="wemade-test"
               SSM_BODY=$(cat <<'SSMEOF'
           echo START_WEMADE_TEST
-          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/wemade-test.jar
-          sha256sum /tmp/wemade-test.jar | cut -c1-16
-          unzip -l /tmp/wemade-test.jar | grep WemadeJacksonConfig | head -3
+          pkill -f wemade-test.jar
+          sleep 3
+          source /etc/f2r/env
+          nohup java -Dserver.port=18081 -jar /tmp/wemade-test.jar > /tmp/wemade-test.log 2>&1 &
+          echo TEST_STARTED_PID_$!
+          sleep 60
+          curl -s --max-time 5 http://127.0.0.1:18081/actuator/health
+          echo HEALTH_CHECK_DONE
+          tail -n 80 /tmp/wemade-test.log
+          echo LOG_TAIL_DONE
+          grep -i caused /tmp/wemade-test.log | head -20
+          echo CAUSED_DONE
+          pkill -f wemade-test.jar
           echo END_WEMADE_TEST
           SSMEOF
               )
