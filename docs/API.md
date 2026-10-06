@@ -4369,3 +4369,21 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /{id}/answer`(`{content}`) — `[회원에게 답변]`: 운영자가 읽고 수정·보완한 텍스트만 OPERATOR 메시지로 회원 비공개 스레드에 전달. 상태 OPERATOR_ANSWERED. 200 `ConsultationMessageView(authorRole=OPERATOR)`.
 - 400 처리: `IllegalArgumentException`(빈/초과 본문, 조사할 회원 질문 없음) → `{"status":"error","errorMessage"}`.
 - 화면 진입: `/newstart/consultations`(공개 셸), `/admin/newstart/consultations`(ROLE_ADMIN).
+
+## /wemade 쟁점·델타 API (2026-10-07)
+
+### ✅ GET /api/wemade/issues
+- 목적: 6개 쟁점 정적 원고 제공.
+- 인증/권한: 공개 (permitAll). 컨트롤러에서 viewer별 응답 축소.
+- Response: `{ viewer: "GUEST"|"MEMBER", version: "2026-10-07", issues: [...] }`
+- GUEST: ①② 전체 + ③~⑥은 number/id/question/shortName만.
+- MEMBER: 6개 전체 (body, nextCheck, sources 포함).
+- 원본: `src/main/resources/wemade/issues.json` (classpath, 앱 기동 시 로딩).
+
+### ✅ GET /api/wemade/delta
+- 목적: 「오늘 새롭게 알게 된 것」 (최근 48h 변화, 쟁점 매핑, 상위 3건).
+- 인증/권한: 공개 (permitAll). 컨트롤러에서 viewer별 응답 축소.
+- Response: `{ viewer, items: [{ issueNumber, issueShortName, dateLabel, kindLabel, title, summary, sourceUrl }], hasUpdate }`
+- GUEST: 최대 1건. MEMBER: 최대 3건.
+- AI 호출 없음. 규칙 기반 매핑 (WemadeDeltaService).
+- 변화 없으면 items 빈 배열, hasUpdate=false.

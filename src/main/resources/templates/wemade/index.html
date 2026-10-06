@@ -24,67 +24,107 @@ window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
 
 <main class="page">
 
-  <!-- ① 오늘의 위메이드 (티저: 비회원 공개) -->
-  <section class="hero" aria-labelledby="t-today">
-    <div class="sec-head">
-      <h2 class="sec-title" id="t-today">오늘의 위메이드</h2>
-      <span id="today-badge"></span>
+  <!-- 1. 현재가 (한 줄) -->
+  <section class="price-line" aria-label="현재가">
+    <span class="price-line-brand">위메이드</span>
+    <span class="price-line-price" id="today-price">…</span>
+    <span class="price-line-chg" id="today-chg">…</span>
+    <span class="price-line-vol">거래량 <span id="today-vol">…</span></span>
+    <span class="price-line-asof muted" id="today-asof"></span>
+    <span id="today-badge"></span>
+    <!-- ID 유지를 위한 hidden 요소 (JS 호환) -->
+    <span id="today-disc" hidden></span>
+    <span id="today-dday" hidden></span>
+    <div class="muted disclaimer">현재가는 정보 제공용이며 투자 권유가 아닙니다.</div>
+  </section>
+  <ul class="today-lines" id="today-lines" hidden><li></li></ul>
+
+  <!-- 2. 오늘 새롭게 알게 된 것 -->
+  <section class="sec" aria-labelledby="t-delta">
+    <h2 class="sec-title" id="t-delta">오늘 새롭게 알게 된 것</h2>
+    <div id="delta-list">
+      <div th:if="${#lists.isEmpty(deltaItems)}" class="delta-empty">
+        오늘은 새로 확인된 변화가 없습니다.
+      </div>
+      <article th:each="d : ${deltaItems}" class="delta-item">
+        <div class="meta"><span th:text="${d.dateLabel}">10월 7일</span> · <span th:text="${d.kindLabel}">중국</span></div>
+        <h3 class="delta-title" th:text="${d.title}">제목</h3>
+        <p class="delta-summary" th:text="${d.summary}">요약</p>
+        <div class="delta-link">
+          <span>→ <span th:text="${d.issueNumber}">①</span> <span th:text="${d.issueShortName}">쟁점</span>과 관련</span>
+          <a th:if="${d.sourceUrl}" th:href="${d.sourceUrl}" target="_blank" rel="noopener">원문 보기</a>
+        </div>
+      </article>
     </div>
-    <div class="today-grid">
-      <div class="today-stat"><span class="k">현재가</span><span class="v" id="today-price">…</span></div>
-      <div class="today-stat"><span class="k">전일대비</span><span class="v" id="today-chg">…</span></div>
-      <div class="today-stat"><span class="k">거래량</span><span class="v" id="today-vol">…</span></div>
-      <div class="today-stat"><span class="k">인수가 대비</span><span class="v" id="today-disc">…</span></div>
-      <div class="today-stat"><span class="k">잔금 D-day</span><span class="v" id="today-dday">…</span></div>
-    </div>
-    <ul class="today-lines" id="today-lines"><li><div class="state">불러오는 중…</div></li></ul>
-    <div class="muted small" id="today-asof"></div>
   </section>
 
-  <!-- 비회원: 잠금 안내 -->
-  <div th:if="${viewer == 'GUEST'}" class="card lock-card" aria-label="회원 전용 안내">
-    <div class="lock-title">🔒 로그인 후 전체 분석 보기</div>
-    <ul class="lock-list">
-      <li>주가 차트 (1일 / 1주 / 1개월 / 3개월) · 투자자 · 창구 수급</li>
-      <li>68,910원 인수 타임라인과 상세 분석</li>
-      <li>앞으로의 핵심 일정</li>
-      <li>최신 핵심 공시 · 뉴스</li>
-      <li>DART · 중국 공시 · 뉴스 자료실</li>
-    </ul>
-    <a class="btn" th:href="@{/wemade/login}" href="/wemade/login">로그인하기</a>
-    <div class="muted small">네이버 ID를 회원 ID로 사용하고, 사이트 전용 비밀번호로 로그인합니다.</div>
-  </div>
+  <!-- 3. 풀리지 않은 6가지 쟁점 -->
+  <section class="sec" aria-labelledby="t-issues">
+    <h2 class="sec-title" id="t-issues">풀리지 않은 6가지 쟁점</h2>
+    <div id="issue-list">
+      <article th:each="issue : ${issues}" class="issue" th:id="'issue-' + ${issue.number}">
+        <h3 class="issue-q">
+          <span th:text="${issue.number}">1</span>.
+          <span th:text="${issue.question}">질문</span>
+        </h3>
+        <div th:if="${issue.body}" class="issue-body">
+          <p th:each="para : ${issue.body}" class="lead" th:text="${para}">본문</p>
+        </div>
+        <div th:if="${issue.nextCheck}" class="issue-next">
+          <strong>다음 확인:</strong> <span th:text="${issue.nextCheck}">확인 포인트</span>
+        </div>
+        <details th:if="${issue.sources}" class="issue-sources">
+          <summary>근거·원문 보기</summary>
+          <ul>
+            <li th:each="src : ${issue.sources}">
+              <a th:href="${src.url}" th:text="${src.label}" target="_blank" rel="noopener">출처</a>
+            </li>
+          </ul>
+        </details>
+        <hr class="issue-divider" th:unless="${issueStat.last}">
+      </article>
+    </div>
+    <!-- 비회원 안내 한 줄 -->
+    <div th:if="${viewer == 'GUEST'}" class="guest-note">
+      ③~⑥ 쟁점의 설명과 근거 원문, 주가·수급 분석은 로그인하면 이어서 볼 수 있습니다.
+      <a th:href="@{/wemade/login}" href="/wemade/login" class="btn">로그인하고 이어 읽기</a>
+    </div>
+  </section>
 
-  <!-- 회원 전용 영역 -->
-  <div th:if="${viewer == 'MEMBER'}">
+  <!-- 4. 앞으로 확인할 일정 -->
+  <section class="sec" aria-labelledby="t-schedule">
+    <h2 class="sec-title" id="t-schedule">앞으로 확인할 일정</h2>
+    <div id="upcoming-list"><div class="state">불러오는 중…</div></div>
+  </section>
 
-    <!-- ② 주가 · 거래량 · 수급 -->
-    <div class="area" id="sec-market">
-      <h2 class="area-title">주가 · 거래량 · 수급</h2>
-      <section class="card" aria-labelledby="t-chart">
-        <div class="sec-head"><h3 class="sec-title" id="t-chart">주가 차트</h3><span class="muted small" id="chart-src"></span></div>
+  <!-- 5. 주가와 수급 (접힘) -->
+  <details class="sec-collapsible" id="sec-market">
+    <summary class="sec-title">주가와 수급</summary>
+    <div>
+      <section aria-labelledby="t-chart">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-chart">주가 차트</h3><span class="muted meta" id="chart-src"></span></div>
         <div class="tabs" id="period-tabs" role="tablist" aria-label="차트 기간"></div>
         <div class="chart-box"><canvas id="priceChart" aria-label="주가 차트"></canvas></div>
         <div class="chart-box sub"><canvas id="rsiChart" aria-label="RSI 차트"></canvas></div>
         <div class="state" id="chart-state"></div>
-        <div class="muted small" id="chart-note"></div>
+        <div class="muted meta" id="chart-note"></div>
       </section>
 
-      <section class="card" aria-labelledby="t-flow">
-        <div class="sec-head"><h3 class="sec-title" id="t-flow">오늘 누가 사고팔았나</h3><span class="muted small" id="flow-asof"></span></div>
+      <section aria-labelledby="t-flow">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-flow">오늘 누가 사고팔았나</h3><span class="muted meta" id="flow-asof"></span></div>
         <div class="tabs" id="flow-tabs" role="tablist" aria-label="수급 기간"></div>
         <div id="flow-detail"><div class="state">불러오는 중…</div></div>
-        <h4 class="sub-title">창구 — 순매수 / 순매도 상위 <span class="muted small" id="broker-asof"></span></h4>
+        <h4 class="sub-title">창구 — 순매수 / 순매도 상위 <span class="muted meta" id="broker-asof"></span></h4>
         <div id="broker-lists"><div class="state">불러오는 중…</div></div>
-        <div class="muted small">관측된 집계 데이터입니다. 특정 세력·자본의 매집으로 단정하지 않습니다.</div>
+        <div class="muted aux">관측된 집계 데이터입니다. 특정 세력·자본의 매집으로 단정하지 않습니다.</div>
       </section>
 
       <details class="more">
         <summary>주가 자세히 보기</summary>
         <div>
-          <section class="card" aria-labelledby="t-compare">
-            <div class="sec-head"><h3 class="sec-title" id="t-compare">3종목 비교</h3></div>
-            <div class="muted small">2026-06-30(SPA 체결일) = 100 정규화 수익률</div>
+          <section aria-labelledby="t-compare">
+            <div class="sec-head"><h3 class="sub-sec-title" id="t-compare">3종목 비교</h3></div>
+            <div class="muted meta">2026-06-30(SPA 체결일) = 100 정규화 수익률</div>
             <div class="chart-box"><canvas id="compareChart" aria-label="3종목 정규화 수익률 비교 차트"></canvas></div>
             <div class="legend" id="compare-legend"></div>
           </section>
@@ -92,96 +132,57 @@ window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
         </div>
       </details>
     </div>
+  </details>
 
-    <!-- ③ 68,910원 인수 -->
-    <div class="area" id="sec-deal">
-      <h2 class="area-title">68,910원 인수</h2>
-      <section class="card" aria-labelledby="t-deal">
-        <div class="deal-grid" id="deal-grid">
-          <div class="deal-num"><span class="k">인수가</span><span class="v">68,910원</span><span class="grade-a">공식 1차 자료</span></div>
-          <div class="deal-num"><span class="k">총액</span><span class="v">9,200억원</span><span class="grade-a">공식 1차 자료</span></div>
-          <div class="deal-num"><span class="k">지분</span><span class="v">39.33%</span><span class="grade-a">공식 1차 자료</span></div>
-          <div class="deal-num"><span class="k">현재가 대비</span><span class="v" id="deal-multiple">…</span></div>
+  <!-- 6. 자료실 (접힘) -->
+  <details class="sec-collapsible" id="sec-archive">
+    <summary class="sec-title">자료실</summary>
+    <div>
+      <!-- 거래와 가치 자세히 (deal-grid, 타임라인, 가격괴리, SOTP 이동) -->
+      <details class="more" th:if="${viewer == 'MEMBER'}">
+        <summary>거래와 가치 자세히</summary>
+        <div>
+          <div class="deal-grid" id="deal-grid">
+            <div class="deal-num"><span class="k">인수가</span><span class="v">68,910원</span></div>
+            <div class="deal-num"><span class="k">총액</span><span class="v">9,200억원</span></div>
+            <div class="deal-num"><span class="k">지분</span><span class="v">39.33%</span></div>
+            <div class="deal-num"><span class="k">현재가 대비</span><span class="v" id="deal-multiple">…</span></div>
+          </div>
+          <ol class="steps" id="deal-timeline"><li><div class="state">불러오는 중…</div></li></ol>
+          <div class="aux"><strong>승인 · 종결 리스크:</strong> 중국 발개위·상무·외환 관련 승인·신고가 필요하며(킹넷 9/12 공시), 완료 여부와 시점에 불확실성이 있습니다.</div>
+          <div class="fine">인수 후 네오펄스 총지분 40.25% = 기존 0.92% + 양수 39.33%. "넘기는 지분 40.25%"라는 표현은 부정확합니다.</div>
+          <div th:replace="~{wemade/fragments/ownership :: ownership}"></div>
+          <div th:replace="~{wemade/fragments/gap :: gap}"></div>
+          <div th:replace="~{wemade/fragments/valuation :: valuation}"></div>
         </div>
-        <ol class="steps" id="deal-timeline"><li><div class="state">불러오는 중…</div></li></ol>
-        <div class="risk-note"><strong>승인 · 종결 리스크:</strong> 중국 발개위·상무·외환 관련 승인·신고가 필요하며(킹넷 9/12 공시), 완료 여부와 시점에 불확실성이 있습니다.</div>
-        <div class="fine">인수 후 네오펄스 총지분 40.25% = 기존 0.92% + 양수 39.33%. "넘기는 지분 40.25%"라는 표현은 부정확합니다.</div>
-      </section>
-      <details class="more">
-        <summary>새 대주주는 누구인가</summary>
-        <div th:replace="~{wemade/fragments/ownership :: ownership}"></div>
       </details>
-      <details class="more">
-        <summary>가격괴리 분석 보기</summary>
-        <div th:replace="~{wemade/fragments/gap :: gap}"></div>
-      </details>
-      <details class="more">
-        <summary>가치 재평가(SOTP) 보기</summary>
-        <div th:replace="~{wemade/fragments/valuation :: valuation}"></div>
-      </details>
-    </div>
 
-    <!-- ④ 앞으로의 핵심 일정 -->
-    <div class="area" id="sec-schedule">
-      <h2 class="area-title">앞으로의 핵심 일정</h2>
-      <section class="card" aria-labelledby="t-upcoming">
-        <div class="muted small">날짜 → 사건 → 현재 상태 → 왜 중요한가 순서입니다.</div>
-        <div id="upcoming-list"><div class="state">불러오는 중…</div></div>
-      </section>
-      <section class="card" aria-labelledby="t-ncw">
-        <div class="sec-head"><h3 class="sec-title" id="t-ncw">Night Crows W</h3><span class="grade-a">공식확인</span></div>
-        <div class="panho-hero">
-          <div class="panho-title">중국 판호 발급</div>
-          <div class="panho-sub">夜鸦 · 国新出审〔2026〕1504号 · 2026-06-29 (NPPA)</div>
-          <div class="launch-note"><strong>출시일정은 확정 아님</strong> — 연말·연초 출시는 커뮤니티·언론 언급 수준</div>
-        </div>
-        <div class="tabs" id="track-tabs" role="tablist" aria-label="트래커 출처"></div>
-        <div id="track-body"><div class="state">불러오는 중…</div></div>
-      </section>
-    </div>
-
-    <!-- ⑤ 최신 핵심 공시 · 뉴스 -->
-    <div class="area" id="sec-headlines">
-      <h2 class="area-title">최신 핵심 공시 · 뉴스</h2>
-      <section class="card" aria-labelledby="t-headline">
-        <div id="headline-list"><div class="state">불러오는 중…</div></div>
-      </section>
-    </div>
-
-    <!-- ⑥ 자료실 -->
-    <div class="area" id="sec-archive">
-      <h2 class="area-title">자료실</h2>
-      <section class="card" aria-labelledby="t-dart">
-        <div class="sec-head"><h3 class="sec-title" id="t-dart">DART 공시 전체</h3></div>
+      <section aria-labelledby="t-dart">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-dart">DART 공시 전체</h3></div>
         <div id="dart-list"><div class="state">불러오는 중…</div></div>
         <button type="button" class="more-btn" id="dart-more" hidden>전체 보기</button>
       </section>
-      <section class="card" aria-labelledby="t-chinad">
-        <div class="sec-head"><h3 class="sec-title" id="t-chinad">중국 공시 · 뉴스 전체</h3></div>
-        <div class="muted small">공시와 충돌하면 공시를 우선합니다. 한국어 요약 → 자세한 번역/해설 → 원문 순서로 제공합니다.</div>
+      <section aria-labelledby="t-chinad">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-chinad">중국 공시 · 뉴스 전체</h3></div>
+        <div class="muted aux">공시와 충돌하면 공시를 우선합니다. 한국어 요약 → 자세한 번역/해설 → 원문 순서로 제공합니다.</div>
         <h4 class="sub-title">공식 공시 (CNINFO)</h4>
         <div id="china-disc"><div class="state">불러오는 중…</div></div>
         <h4 class="sub-title">중국 뉴스 (원문+번역)</h4>
         <div id="china-news"><div class="state">불러오는 중…</div></div>
         <button type="button" class="more-btn" id="china-more" hidden>전체 보기</button>
       </section>
-      <section class="card" aria-labelledby="t-events">
-        <div class="sec-head"><h3 class="sec-title" id="t-events">과거 주요 사건</h3></div>
+      <section aria-labelledby="t-events">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-events">과거 주요 사건</h3></div>
         <div id="event-cards"><div class="state">불러오는 중…</div></div>
       </section>
-      <section class="card" aria-labelledby="t-fact">
-        <div class="sec-head"><h3 class="sec-title" id="t-fact">Fact Check</h3></div>
-        <div id="fact-list"><div class="state">불러오는 중…</div></div>
-      </section>
-      <section class="card" aria-labelledby="t-community">
-        <div class="sec-head"><h3 class="sec-title" id="t-community">주주 정보</h3></div>
-        <div class="muted small">커뮤니티 글은 사실이 아니며 참고용으로만 활용됩니다.</div>
+      <section aria-labelledby="t-community">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-community">주주 정보</h3></div>
+        <div class="muted aux">커뮤니티 글은 사실이 아니며 참고용으로만 활용됩니다.</div>
         <div id="community-list"><div class="state">불러오는 중…</div></div>
         <button type="button" class="more-btn" id="community-more" hidden>전체 보기</button>
       </section>
     </div>
-
-  </div>
+  </details>
 
   <footer class="footer">
     투자 권유·매수/매도 추천·목표주가를 제공하지 않습니다. 정보 제공 목적의 참고 자료입니다.

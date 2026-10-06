@@ -341,3 +341,83 @@ canvas { max-width: 100%; }
 
 .deal-num .v .big { display: block; font-size: 19px; }
 .deal-num .v .cap { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+/* ===== 2026-10-07 쟁점 중심 개편 (§9 타이포그래피) ===== */
+body { font-size: 18px; line-height: 1.7; }
+.sec { margin: 40px 0 0; }
+.sec:first-of-type { margin-top: 24px; }
+.sec-title { font-size: 28px; line-height: 1.35; font-weight: 800; margin: 0 0 16px; letter-spacing: -0.5px; }
+.sub-sec-title { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.3px; }
+.lead, .key { font-size: 19px; line-height: 1.7; }
+.aux { font-size: 17px; line-height: 1.65; }
+.meta { font-size: 14px; color: var(--muted); }
+
+/* 현재가 한 줄 */
+.price-line {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px;
+  padding: 16px 4px; border-bottom: 1px solid var(--line);
+}
+.price-line-brand { font-size: 18px; font-weight: 800; }
+.price-line-price { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.price-line-chg { font-size: 18px; font-weight: 700; }
+.price-line-vol { font-size: 17px; color: var(--muted); }
+.price-line-vol span { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.disclaimer { font-size: 14px; color: var(--muted); width: 100%; margin-top: 4px; }
+
+/* 오늘 새롭게 알게 된 것 */
+.delta-item { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.delta-item:last-child { border-bottom: none; }
+.delta-title { font-size: 19px; font-weight: 700; line-height: 1.5; margin: 6px 0; }
+.delta-summary { font-size: 18px; line-height: 1.7; margin: 0 0 8px; color: var(--ink); }
+.delta-link { font-size: 17px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.delta-link a { color: #4a2fd6; font-weight: 700; white-space: nowrap; }
+.delta-empty { font-size: 18px; color: var(--muted); padding: 12px 0; }
+
+/* 쟁점 */
+.issue { padding: 20px 0; }
+.issue-q { font-size: 22px; line-height: 1.45; font-weight: 700; margin: 0 0 12px; letter-spacing: -0.3px; }
+.issue-body .lead { margin: 0 0 10px; }
+.issue-next { font-size: 17px; margin: 12px 0; padding: 10px 12px; background: #f6f8fd; border-radius: 8px; }
+.issue-sources { margin-top: 10px; }
+.issue-sources summary { font-size: 17px; font-weight: 700; cursor: pointer; color: #4a2fd6; }
+.issue-sources ul { margin: 8px 0 0; padding-left: 20px; }
+.issue-sources li { font-size: 17px; margin-bottom: 6px; }
+.issue-sources a { color: #4a2fd6; }
+.issue-divider { border: none; border-top: 1px solid var(--line); margin: 8px 0; }
+.guest-note { font-size: 18px; line-height: 1.7; padding: 16px 0; border-top: 1px solid var(--line); }
+
+/* 접힘 섹션 */
+.sec-collapsible { margin: 40px 0 0; border-top: 1px solid var(--line); padding-top: 16px; }
+.sec-collapsible > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.sec-collapsible > summary::-webkit-details-marker { display: none; }
+.sec-collapsible > summary::after { content: "＋"; color: var(--accent); font-weight: 800; font-size: 22px; }
+.sec-collapsible[open] > summary::after { content: "－"; }
+.sec-collapsible > div { padding-top: 16px; }
+
+/* 기존 small/muted 하한 상향 (날짜·출처 외) */
+.small { font-size: 14px; }
+.state { font-size: 17px; }
+.fine { font-size: 14px; }
+.footer { font-size: 14px; }
+.tab { font-size: 15px; }
+.flow-row { font-size: 15px; }
+.steps strong { font-size: 17px; }
+.steps span { font-size: 14px; }
+.tl-title { font-size: 17px; }
+.tl-detail { font-size: 17px; }
+.kv { font-size: 17px; }
+.china-item .kr { font-size: 17px; }
+.china-item .why { font-size: 17px; }
+.fact-claim { font-size: 17px; }
+.fact-verdict { font-size: 17px; }
+.event-why { font-size: 17px; }
+.doc-item .why { font-size: 17px; }
+.track-detail { font-size: 17px; }
+.more summary { font-size: 17px; }
+.more-btn { font-size: 17px; }
+.lock-list li { font-size: 17px; }
+.today-lines li { font-size: 17px; }
+.launch-note { font-size: 17px; }
+.panho-sub { font-size: 17px; }
+.deal-num .k { font-size: 14px; }
+.risk-note { font-size: 17px; }
