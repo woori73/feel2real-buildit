@@ -281,13 +281,22 @@ jobs:
             wemade-test)
               DIAG_LABEL="wemade-test"
               SSM_BODY=$(cat <<'SSMEOF'
-          pkill -f wemade-test.jar || true
-          echo JOURNAL_PROVIDER_CHECK
-          journalctl -u f2r-app.service --since "2026-10-06 09:58:00" --until "2026-10-06 10:06:00" --no-pager | grep -a -E "Caused by|Provider ID|Unknown provider|naver-wemade|APPLICATION FAILED TO START" | head -40 || true
-          echo PROVIDER_ID_COUNT
-          journalctl -u f2r-app.service --since "2026-10-06 09:58:00" --until "2026-10-06 10:06:00" --no-pager | grep -a -c "Provider ID must be specified" || true
-          echo FULL_CAUSED_CHAIN
-          journalctl -u f2r-app.service --since "2026-10-06 09:58:00" --until "2026-10-06 10:06:00" --no-pager | grep -a -A2 "APPLICATION FAILED TO START" | head -20 || true
+          echo JAR_SHA
+          sha256sum /home/ec2-user/app.jar | cut -c1-64
+          echo JAR_HAS_PROVIDER_FIX
+          unzip -p /home/ec2-user/app.jar BOOT-INF/classes/config/application-prd.yaml 2>/dev/null | grep -a -A2 'naver-wemade:' | head -8 || echo YAML_PATH_TRY2
+          unzip -l /home/ec2-user/app.jar | grep -a 'application-prd.yaml' | head -3
+          echo SERVICE_STATUS
+          systemctl is-active f2r-app.service
+          systemctl show -p NRestarts --value f2r-app.service
+          echo HEALTH
+          curl -s --max-time 5 http://127.0.0.1:8080/actuator/health
+          echo
+          echo WEMADE_LOCAL
+          curl -s -o /tmp/wemade-page.html -w 'HTTP_CODE=%{http_code}\n' --max-time 10 http://127.0.0.1:8080/wemade
+          grep -a -o '<title>[^<]*</title>' /tmp/wemade-page.html | head -1
+          echo HOME_LOCAL
+          curl -s -o /dev/null -w 'HTTP_CODE=%{http_code}\n' --max-time 10 http://127.0.0.1:8080/
           SSMEOF
               )
               ;;
