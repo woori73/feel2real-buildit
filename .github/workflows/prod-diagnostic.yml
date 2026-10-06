@@ -1,0 +1,85 @@
+name: Production Diagnostic (read-only, manual)
+
+# READ-ONLY 운영 진단 전용 workflow.
+# - workflow_dispatch 수동 실행만 허용 (자동 실행 없음)
+# - 진단 종류는 코드에 고정 (flyway-history, schema-columns). 임의 SQL 입력 불가.
+# - DB credential은 EC2의 /etc/f2r/env에서 로드하며 GitHub 로그에 절대 출력하지 않는다.
+# - DB 쓰기 명령(INSERT/UPDATE/DELETE 등)은 포함하지 않는다.
+# - 기존 OIDC → AWS SSM 권한만 사용한다. 새 secret을 만들지 않는다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      diagnostic_type:
+        description: '진단 종류 (코드 고정)'
+        required: true
+        default: 'flyway-history'
+        type: choice
+        options:
+          - flyway-history
+          - schema-columns
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Run read-only diagnostic via SSM
+        run: |
+          set -euo pipefail
+          # 진단 SQL은 아래 코드에 고정되어 있다. 사용자 입력으로 SQL을 받지 않는다.
+          DIAG_TYPE="${{ inputs.diagnostic_type }}"
+          if [ "$DIAG_TYPE" = "flyway-history" ]; then
+            DIAG_SQL="SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE version IN ('1041','1042') ORDER BY installed_rank;"
+            DIAG_LABEL="flyway-history (V1041/V1042)"
+          elif [ "$DIAG_TYPE" = "schema-columns" ]; then
+            DIAG_SQL="SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name='wemade_gap_factors' AND column_name='hypothesis_no') OR (table_name='wemade_surge_analysis' AND column_name IN ('ret1d','ret3d','ret5d','ret10d'))) ORDER BY table_name, column_name;"
+            DIAG_LABEL="schema-columns (V1041 target columns)"
+          else
+            echo "::error::Unknown diagnostic_type: $DIAG_TYPE"
+            exit 1
+          fi
+          echo "Diagnostic: $DIAG_LABEL"
+          # READ-ONLY: SELECT만 실행한다. DB 쓰기는 포함하지 않는다.
+          # DB credential은 EC2의 /etc/f2r/env에서 로드되며, 이 로그에 출력되지 않는다.
+          SSM_SCRIPT=$(cat <<SSMEOF
+          set -euo pipefail
+          source /etc/f2r/env
+          echo "===== $DIAG_LABEL ====="
+          mysql -h "\$DB_HOST" -P "\${DB_PORT:-3306}" -u "\$DB_USER" -p"\$DB_PASSWORD" "\$DB_NAME" -e "$DIAG_SQL"
+          SSMEOF
+          )
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$PARAMS_JSON" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM CommandId=$CMD_ID"
+          for i in $(seq 1 18); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/18)"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardErrorContent' --output text
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::SSM command finished with status $FINAL"
+            exit 1
+          fi
