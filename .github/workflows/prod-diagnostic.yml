@@ -281,7 +281,33 @@ jobs:
             wemade-test)
               DIAG_LABEL="wemade-test"
               SSM_BODY=$(cat <<'SSMEOF'
-          unzip -p /home/ec2-user/app.jar BOOT-INF/classes/config/application-prd.yaml | grep -a -B1 -A6 'naver-wemade:'
+          set -a
+          source /etc/f2r/env
+          set +a
+          if [ -z "${KIS_APP_KEY:-}" ]; then echo KIS_KEYS_MISSING; exit 0; fi
+          echo KIS_KEYS_PRESENT
+          TOKEN=$(curl -s --max-time 15 -X POST https://openapi.koreainvestment.com:9443/oauth2/tokenP -H 'Content-Type: application/json' -d "{\"grant_type\":\"client_credentials\",\"appkey\":\"$KIS_APP_KEY\",\"appsecret\":\"$KIS_APP_SECRET\"}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))")
+          if [ -z "$TOKEN" ]; then echo KIS_AUTH_FAILED; exit 0; fi
+          echo KIS_AUTH_OK
+          curl -s --max-time 15 "https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-investor?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=112040" -H "authorization: Bearer $TOKEN" -H "appkey: $KIS_APP_KEY" -H "appsecret: $KIS_APP_SECRET" -H "tr_id: FHKST01010900" -H "custtype: P" > /tmp/kis-investor.json || true
+          unset TOKEN
+          python3 << 'PYE'
+          import json
+          d = json.load(open('/tmp/kis-investor.json'))
+          print("rt_cd=" + str(d.get("rt_cd")) + " msg1=" + str(d.get("msg1"))[:80])
+          out = d.get("output") or []
+          print("rows=" + str(len(out)))
+          if out:
+              print("first_row_keys=" + ",".join(sorted(out[0].keys())))
+              for n in out[:5]:
+                  print(n.get("stck_bsop_date"), "close=" + str(n.get("stck_clpr")),
+                        "frgn_qty=" + str(n.get("frgn_ntby_qty")), "frgn_amt=" + str(n.get("frgn_ntby_tr_pbmn")),
+                        "orgn_qty=" + str(n.get("orgn_ntby_qty")), "orgn_amt=" + str(n.get("orgn_ntby_tr_pbmn")),
+                        "prsn_qty=" + str(n.get("prsn_ntby_qty")), "prsn_amt=" + str(n.get("prsn_ntby_tr_pbmn")))
+              print("last_date=" + str(out[-1].get("stck_bsop_date")))
+          PYE
+          rm -f /tmp/kis-investor.json
+          unset KIS_APP_KEY KIS_APP_SECRET
           SSMEOF
               )
               ;;
