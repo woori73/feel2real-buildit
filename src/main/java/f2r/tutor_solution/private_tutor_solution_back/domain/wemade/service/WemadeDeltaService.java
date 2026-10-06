@@ -98,7 +98,7 @@ public class WemadeDeltaService {
     private List<Candidate> collectChinaDisclosures(LocalDateTime cutoff) {
         List<Candidate> out = new ArrayList<>();
         try {
-            for (var d : chinaDisclosureRepo.findAllByOrderByAnnouncedAtDesc()) {
+            for (var d : chinaDisclosureRepo.findTop30ByOrderByAnnouncedAtDesc()) {
                 LocalDateTime at = toDateTime(d.getAnnouncedAt(), d.getCollectedAt());
                 if (at == null || at.isBefore(cutoff)) continue;
                 if (out.size() >= 20) break;
@@ -113,7 +113,7 @@ public class WemadeDeltaService {
     private List<Candidate> collectChinaNews(LocalDateTime cutoff) {
         List<Candidate> out = new ArrayList<>();
         try {
-            for (var n : chinaNewsRepo.findAllByOrderByPublishedAtDesc()) {
+            for (var n : chinaNewsRepo.findTop30ByOrderByPublishedAtDesc()) {
                 LocalDateTime at = toDateTime(n.getPublishedAt(), n.getCollectedAt());
                 if (at == null || at.isBefore(cutoff)) continue;
                 if (out.size() >= 20) break;
@@ -128,7 +128,7 @@ public class WemadeDeltaService {
     private List<Candidate> collectDart(LocalDateTime cutoff) {
         List<Candidate> out = new ArrayList<>();
         try {
-            for (var d : disclosureRepo.findAllByOrderByDisclosedAtDesc()) {
+            for (var d : disclosureRepo.findTop30ByOrderByDisclosedAtDesc()) {
                 LocalDateTime at = toDateTime(d.getDisclosedAt(), d.getCollectedAt());
                 if (at == null || at.isBefore(cutoff)) continue;
                 if (out.size() >= 20) break;
@@ -142,7 +142,7 @@ public class WemadeDeltaService {
     private List<Candidate> collectGame(LocalDateTime cutoff) {
         List<Candidate> out = new ArrayList<>();
         try {
-            for (var g : gameTrackingRepo.findAllByOrderByTrackedAtDesc()) {
+            for (var g : gameTrackingRepo.findTop30ByOrderByTrackedAtDesc()) {
                 LocalDateTime at = toDateTime(g.getTrackedAt(), g.getCollectedAt());
                 if (at == null || at.isBefore(cutoff)) continue;
                 if (out.size() >= 20) break;

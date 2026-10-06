@@ -9,4 +9,5 @@ import java.util.List;
 public interface WemadeChinaNewsRepository extends JpaRepository<WemadeChinaNews, Long> {
     boolean existsByContentHash(String hash);
     List<WemadeChinaNews> findAllByOrderByPublishedAtDesc();
+    List<WemadeChinaNews> findTop30ByOrderByPublishedAtDesc();
 }
