@@ -9,4 +9,5 @@ import java.util.List;
 public interface WemadeGameTrackingRepository extends JpaRepository<WemadeGameTracking, Long> {
     boolean existsByContentHash(String hash);
         List<WemadeGameTracking> findAllByOrderByTrackedAtDesc();
+    List<WemadeGameTracking> findTop30ByOrderByTrackedAtDesc();
 }
