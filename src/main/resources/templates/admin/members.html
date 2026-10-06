@@ -26,6 +26,16 @@
       <div class="section-subtitle" id="sectionSubtitle">기존 회원 DB 기준. 회원 · 가입일 · 구분만 표시합니다.</div>
     </div>
 
+    <!-- QA 테스트 계정 정리 (일회성, 사용 후 제거) -->
+    <div style="margin: 12px 0;">
+      <form method="post" action="/api/admin/wemade/qa-test-accounts"
+            onsubmit="return confirm('wemade_qa_test01~05 계정을 삭제합니다. 계속하시겠습니까?');">
+        <button type="submit" style="background:#e53e3e;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">
+          QA 테스트 계정 삭제 (wemade_qa_test01~05)
+        </button>
+      </form>
+    </div>
+
     <div class="table-scroll">
       <table class="member-table">
         <thead>
