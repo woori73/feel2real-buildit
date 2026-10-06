@@ -27,10 +27,8 @@ jobs:
           # READ-ONLY: SELECT only. No DB writes of any kind.
           SSM_SCRIPT=$(cat <<'SSMEOF'
           set -euo pipefail
-          echo "=== env var names in /etc/f2r/env ==="
-          grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' /etc/f2r/env | tr -d '=' | sort
-          echo "=== mysql client ==="
-          command -v mysql && echo "MYSQL_OK" || echo "NO_MYSQL_CLIENT"
+          source /etc/f2r/env
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT version, description, script, checksum, success, installed_on FROM flyway_schema_history WHERE CAST(version AS UNSIGNED) BETWEEN 1020 AND 1042 ORDER BY CAST(version AS UNSIGNED);"
           SSMEOF
           )
           PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
