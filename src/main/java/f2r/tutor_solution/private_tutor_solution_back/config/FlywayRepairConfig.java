@@ -1,6 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
-import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
+import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,6 +14,10 @@ import org.springframework.context.annotation.Configuration;
  * 배경(2026-10-06): V1038__add_wemade_exchange.sql의 MySQL 미지원 구문
  * (ADD COLUMN IF NOT EXISTS)으로 마이그레이션이 실패했고, 실패 기록이 남아
  * 수정된 V1038도 실행되지 못해 배포가 롤백됐다.
+ *
+ * 참고: Spring Boot 4부터 패키지가
+ * org.springframework.boot.autoconfigure.flyway 에서
+ * org.springframework.boot.flyway.autoconfigure 로 이동했다.
  */
 @Configuration
 public class FlywayRepairConfig {
