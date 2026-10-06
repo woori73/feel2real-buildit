@@ -1,0 +1,65 @@
+name: TMP SSM Flyway Select (read-only)
+
+# TEMPORARY - read-only diagnostic. Deletes after use. Never merge to main.
+# Triggered manually via workflow_dispatch only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  ssm-select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: SSM read-only flyway history SELECT
+        run: |
+          set -euo pipefail
+          # READ-ONLY: SELECT only. No DB writes of any kind.
+          SSM_SCRIPT=$(cat <<'SSMEOF'
+          set -euo pipefail
+          source /etc/f2r/env
+          : "${DB_HOST:?missing}" ; : "${DB_USER:?missing}" ; : "${DB_PASS:?missing}"
+          DB_PORT="${DB_PORT:-3306}"
+          DB_NAME="${DB_NAME:-f2r_db}"
+          QUERY="SELECT version, description, script, checksum, success, installed_on FROM flyway_schema_history WHERE CAST(version AS UNSIGNED) BETWEEN 1020 AND 1042 ORDER BY CAST(version AS UNSIGNED);"
+          if command -v mysql >/dev/null 2>&1; then
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "$QUERY"
+          else
+            echo "NO_MYSQL_CLIENT"
+            command -v python3 >/dev/null 2>&1 && python3 -c "import pymysql" 2>/dev/null && echo "PYMYSQL_AVAILABLE" || echo "NO_PYMYSQL"
+          fi
+          SSMEOF
+          )
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$(printf '{"commands":[%s]}' "$(printf '%s' "$SSM_SCRIPT" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().splitlines()))')")" \
+            --query 'Command.CommandId' --output text)
+          echo "CommandId=$CMD_ID"
+          for i in $(seq 1 18); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/18)"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardErrorContent' --output text
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::SSM command finished with status $FINAL"
+            exit 1
+          fi
