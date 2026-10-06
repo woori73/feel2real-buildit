@@ -254,8 +254,10 @@ jobs:
           # 로그는 하나도 남지 않았다). 완료 여부에는 영향 없음, 출력량만 줄인다.
           aws s3 cp --no-progress s3://$BUCKET/app.jar /tmp/app-new.jar
 
-          # Wiki section: failures here must NOT stop Spring deploy
+          # Wiki section: failures here must NOT stop Spring deploy (complete isolation)
           set +e
+          set +u
+          set +o pipefail
           mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
           aws s3 cp --no-progress s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
           rm -rf /opt/buildit-wiki/app/*
@@ -468,8 +470,8 @@ jobs:
             echo '::warning::OPENROUTER_API_KEY not found in /etc/buildit-wiki.env; debt vision cannot use OpenRouter'
           fi
 
-          set -e
-          # Wiki section end: re-enable exit-on-error for Spring deploy
+          set -euo pipefail
+          # Wiki section end: re-enable strict mode for Spring deploy
           echo "[DEPLOY] spring deploy start"
           if f2r_deploy_with_rollback \
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
@@ -487,6 +489,8 @@ jobs:
           # Spring 배포 이후에도 유지되는지만 본다.
           echo "[DEPLOY] verifying buildit-wiki is still healthy after the spring restart cycle"
           set +e
+          set +u
+          set +o pipefail
           if f2r_health_ok "http://127.0.0.1:8000/api/health"; then
             echo "[DEPLOY] buildit-wiki still healthy"
             echo "[DEPLOY] SUCCESS"
@@ -495,7 +499,7 @@ jobs:
             echo "[DEPLOY] WARNING post_spring_wiki_health_failed_but_spring_ok"
             echo "[DEPLOY] SUCCESS"
           fi
-          set -e
+          set -euo pipefail
           SCRIPT
           chmod +x /tmp/deploy-buildit.sh
 
