@@ -32,9 +32,29 @@ class NaverOAuth2ClientRegistrationConfigTest {
       "spring.security.oauth2.client.provider.naver.user-name-attribute=response",
   };
 
+  /**
+   * prd yaml의 naver-wemade registration을 그대로 재현한다. 2026-10-06 배포 실패의 회귀 방지용 —
+   * {@code provider: naver}가 빠지면 ApplicationContext 기동 자체가
+   * IllegalStateException("Provider ID must be specified for client registration 'naver-wemade'")
+   * 으로 실패한다 (journal 확인済).
+   */
+  private static final String[] WEMADE_TEST_PROPERTIES = {
+      "spring.security.oauth2.client.registration.naver-wemade.client-id=test-dummy-client-id",
+      "spring.security.oauth2.client.registration.naver-wemade.client-secret=test-dummy-client-secret",
+      "spring.security.oauth2.client.registration.naver-wemade.redirect-uri=https://feel2real.co.kr/login/oauth2/code/naver-wemade",
+      "spring.security.oauth2.client.registration.naver-wemade.authorization-grant-type=authorization_code",
+      "spring.security.oauth2.client.registration.naver-wemade.client-name=NaverWemade",
+      "spring.security.oauth2.client.registration.naver-wemade.provider=naver",
+  };
+
   private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
       .withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
       .withPropertyValues(TEST_PROPERTIES);
+
+  private final ApplicationContextRunner wemadeContextRunner = new ApplicationContextRunner()
+      .withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
+      .withPropertyValues(TEST_PROPERTIES)
+      .withPropertyValues(WEMADE_TEST_PROPERTIES);
 
   @Test
   @DisplayName("naver registration이 공식 엔드포인트로 정확히 바인딩된다")
@@ -54,6 +74,29 @@ class NaverOAuth2ClientRegistrationConfigTest {
       assertThat(naver.getRedirectUri()).isEqualTo("https://feel2real.co.kr/login/oauth2/code/naver");
       // Spring 기본 convention과 일치 — 콘솔에 새 URL 등록이 필요 없다(§10 등록 근거 있는 값).
       assertThat(naver.getRedirectUri()).endsWith("/login/oauth2/code/naver");
+    });
+  }
+
+  @Test
+  @DisplayName("naver/naver-wemade 두 registration이 모두 정상 생성된다")
+  void naverAndNaverWemadeRegistrationsAreBothCreated() {
+    wemadeContextRunner.run(context -> {
+      ClientRegistrationRepository repository = context.getBean(ClientRegistrationRepository.class);
+      ClientRegistration naver = repository.findByRegistrationId("naver");
+      ClientRegistration wemade = repository.findByRegistrationId("naver-wemade");
+
+      assertThat(naver).isNotNull();
+      assertThat(wemade).isNotNull();
+      // provider: naver 바인딩 — naver-wemade가 naver provider의 엔드포인트를 그대로 쓴다.
+      assertThat(wemade.getProviderDetails().getAuthorizationUri())
+          .isEqualTo("https://nid.naver.com/oauth2.0/authorize");
+      assertThat(wemade.getProviderDetails().getTokenUri())
+          .isEqualTo("https://nid.naver.com/oauth2.0/token");
+      assertThat(wemade.getProviderDetails().getUserInfoEndpoint().getUri())
+          .isEqualTo("https://openapi.naver.com/v1/nid/me");
+      assertThat(wemade.getAuthorizationGrantType()).isEqualTo(AuthorizationGrantType.AUTHORIZATION_CODE);
+      assertThat(wemade.getRedirectUri())
+          .isEqualTo("https://feel2real.co.kr/login/oauth2/code/naver-wemade");
     });
   }
 }
