@@ -28,7 +28,7 @@ jobs:
           SSM_SCRIPT=$(cat <<'SSMEOF'
           set -euo pipefail
           source /etc/f2r/env
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT version, description, script, checksum, success, installed_on FROM flyway_schema_history WHERE CAST(version AS UNSIGNED) BETWEEN 1020 AND 1042 ORDER BY CAST(version AS UNSIGNED);"
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE version IN ('1040','1041','1042') ORDER BY installed_rank;"
           SSMEOF
           )
           PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
