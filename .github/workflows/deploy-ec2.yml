@@ -254,9 +254,223 @@ jobs:
           # 로그는 하나도 남지 않았다). 완료 여부에는 영향 없음, 출력량만 줄인다.
           aws s3 cp --no-progress s3://$BUCKET/app.jar /tmp/app-new.jar
 
-          # Wiki section removed: Wiki is independent service, managed separately.
-          # Spring deploy does not depend on Wiki. Wiki service on EC2 is untouched.
-          echo "[DEPLOY] Skipping wiki rebuild (separated from Spring deploy)"
+          # Wiki section: failures here must NOT stop Spring deploy
+          set +e
+          mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
+          aws s3 cp --no-progress s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
+          rm -rf /opt/buildit-wiki/app/*
+          tar -xzf /tmp/buildit-wiki-backend.tgz -C /opt/buildit-wiki/app
+
+          # mcp SDK requires Python >=3.10; AL2023's system python3 stays pinned
+          # to 3.9 for the life of the distro, so install 3.11 side by side via
+          # dnf instead of touching /usr/bin/python3.
+          if ! command -v python3.11 >/dev/null 2>&1; then
+            dnf install -y python3.11
+          fi
+
+          VENV_PY=/opt/buildit-wiki/venv/bin/python
+          RECREATE_VENV=1
+          if [ -x "$VENV_PY" ]; then
+            VENV_PYVER=$("$VENV_PY" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo "")
+            if [ "$VENV_PYVER" = "3.11" ]; then
+              RECREATE_VENV=0
+            fi
+          fi
+          if [ "$RECREATE_VENV" = "1" ]; then
+            rm -rf /opt/buildit-wiki/venv
+            python3.11 -m venv /opt/buildit-wiki/venv
+          fi
+
+          # requirements.txt에 고정된 버전(mcp==)은 이미 설치된 다른 버전이 있어도 pip가
+          # 해당 버전으로 재설치한다(요구사항 불충족). 고정 안 한 패키지는 그대로 둔다.
+          /opt/buildit-wiki/venv/bin/pip install --disable-pip-version-check -r /opt/buildit-wiki/app/requirements.txt
+
+          # Spring(f2r-app.service)은 Wiki 프록시 identity를 JWT_SECRET(app.jwt.secret)으로
+          # HMAC 서명한다. 이 FastAPI 서비스는 별도 systemd 유닛이라 /etc/f2r/env를 상속하지
+          # 않으므로, 같은 값을 WIKI_IDENTITY_SECRET 으로 매 배포마다 root 전용 drop-in에
+          # 재생성한다(회전 시 drift 없음, 시크릿은 EC2 밖으로 나가지 않음). /etc/f2r/env 가
+          # 없거나 JWT_SECRET 이 비어 있으면 기존 파일을 건드리지 않는다.
+          if [ -r /etc/f2r/env ]; then
+            JWT_SECRET_LINE=$(grep -E '^JWT_SECRET=.+' /etc/f2r/env | tail -n 1 || true)
+            if [ -n "$JWT_SECRET_LINE" ]; then
+              install -m 600 -o root -g root /dev/null /etc/buildit-wiki-identity.env
+              printf 'WIKI_IDENTITY_SECRET=%s\n' "${JWT_SECRET_LINE#JWT_SECRET=}" > /etc/buildit-wiki-identity.env
+              echo 'wiki identity secret drop-in refreshed from /etc/f2r/env'
+            else
+              echo '::warning::JWT_SECRET not found in /etc/f2r/env; Wiki identity HMAC will stay unconfigured'
+            fi
+          else
+            echo '::warning::/etc/f2r/env not readable; Wiki identity HMAC drop-in not refreshed'
+          fi
+
+          cat > /etc/systemd/system/buildit-wiki.service <<'UNIT'
+          [Unit]
+          Description=BuildIt Wiki FastAPI
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=/opt/buildit-wiki/app/backend
+          Environment=BUILDIT_WIKI_DB_PATH=/opt/buildit-wiki/data/app.db
+          Environment=BUILDIT_WIKI_WORKSPACE=/opt/buildit-wiki
+          Environment=AI_PROVIDER_TIMEOUT_SECONDS=45
+          EnvironmentFile=-/etc/buildit-wiki.env
+          EnvironmentFile=-/etc/buildit-wiki-identity.env
+          ExecStart=/opt/buildit-wiki/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
+          Restart=always
+          RestartSec=3
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          if command -v nginx >/dev/null 2>&1; then
+            install -d -m 755 /etc/nginx/conf.d
+            cat > /etc/nginx/conf.d/buildit-wiki-timeouts.conf <<'NGINX'
+          # Outer proxy deadlines must remain above Spring (280s) and the
+          # bounded AI provider call (90s), so JSON errors reach the browser.
+          proxy_connect_timeout 5s;
+          proxy_send_timeout 290s;
+          proxy_read_timeout 290s;
+          NGINX
+            nginx -t
+            if nginx -T 2>&1 | grep -q 'buildit-wiki-timeouts.conf'; then
+              systemctl reload nginx
+              echo 'nginx timeout config active'
+            else
+              echo 'nginx timeout config directory is not included; leaving existing gateway config unchanged'
+              rm -f /etc/nginx/conf.d/buildit-wiki-timeouts.conf
+            fi
+          else
+            echo 'nginx is not installed on the application host; gateway timeout is managed outside EC2'
+          fi
+
+          systemctl daemon-reload
+          systemctl enable buildit-wiki.service
+          systemctl restart buildit-wiki.service
+          echo "[DEPLOY] wiki restart"
+          # buildit-wiki는 재시작 직후 바로 응답하지 않는다. Type=simple 유닛은
+          # Python이 import 중인 동안에도 is-active가 'active'이므로, 단발 curl이나
+          # is-active만으로는 기동 완료를 판정할 수 없다(Deploy #276 실패 원인) —
+          # 실제 /api/health 응답이 올 때까지 재시도한다 (5초 x 18회 = 최대 90초 대기).
+          # 최종 성공 조건은 systemctl 상태가 아니라 이 health 응답 성공이다.
+          WIKI_HEALTH_ATTEMPTS=18
+          WIKI_HEALTH_SLEEP_SECS=5
+          WIKI_HEALTH_OK=0
+          WIKI_HEALTH_TRY=0
+          while [ "$WIKI_HEALTH_TRY" -lt "$WIKI_HEALTH_ATTEMPTS" ]; do
+            WIKI_HEALTH_TRY=$((WIKI_HEALTH_TRY + 1))
+            if curl -fsS --max-time 5 http://127.0.0.1:8000/api/health; then
+              echo
+              echo "buildit-wiki is healthy (attempt ${WIKI_HEALTH_TRY}/${WIKI_HEALTH_ATTEMPTS})."
+              WIKI_HEALTH_OK=1
+              break
+            fi
+            echo "buildit-wiki health not ready yet (attempt ${WIKI_HEALTH_TRY}/${WIKI_HEALTH_ATTEMPTS})"
+            if [ "$WIKI_HEALTH_TRY" -lt "$WIKI_HEALTH_ATTEMPTS" ]; then
+              echo "waiting ${WIKI_HEALTH_SLEEP_SECS}s before next attempt"
+              sleep "$WIKI_HEALTH_SLEEP_SECS"
+            fi
+          done
+          if [ "$WIKI_HEALTH_OK" != "1" ]; then
+            echo '::warning::buildit-wiki did not become healthy within 90s — dumping diagnostics'
+            systemctl status buildit-wiki --no-pager -l | head -50 || true
+            ss -ltnp | grep ':8000' || true
+            journalctl -u buildit-wiki --no-pager -n 150 || true
+            echo "[DEPLOY] WARNING wiki_health_failed_but_continuing_with_spring_deploy"
+            echo "::warning::Wiki health check failed, but continuing with Spring deploy (wiki is independent service)"
+          fi
+          echo "[DEPLOY] wiki health OK"
+          SCRIPT
+
+          # f2r-app.service(Spring) 배포 가드를 그대로 이어 붙인다. scripts/deploy/f2r_app_guard.sh는
+          # 소싱 전용(함수 정의만, 최상위 실행 없음)이라 안전하게 잘라 넣을 수 있고,
+          # scripts/deploy/f2r_app_guard.test.sh가 로컬에서 검증하는 코드와 완전히 같은 소스다 —
+          # "테스트한 코드"와 "실제 배포되는 코드"가 갈라질 위험이 없다.
+          cat scripts/deploy/f2r_app_guard.sh >> /tmp/deploy-buildit.sh
+
+          cat >> /tmp/deploy-buildit.sh <<'SCRIPT'
+
+          # ---- f2r-app.service 배포: 백업 → 교체 → 재시작 → PID-aware health 재시도 ----
+          # 5초 x 24회(최대 120초)는 "한 PID"의 몫이다 — Restart=on-failure로 새 PID가
+          # 뜨면 f2r_wait_for_health_pid_aware가 그 PID에게 같은 120초를 새로 준다(원래
+          # PID의 남은 시간을 그대로 물려받지 않는다). 최대 3세대(=최대 2번의 재시작)까지만
+          # 봐주고, 그래도 안 되면 "반복 종료"로 확정해 사람 개입이 필요함을 명확히 한다 —
+          # systemd가 계속 재시작을 허용해도 이 스크립트가 무한정 따라가며 기다리지 않는다.
+          # 실패하면 자동으로 이전 jar로 되돌리고(rollback도 자기 자신의 독립된 PID 추적과
+          # 독립된 health window를 새로 받는다), 그래도 안 되면 exit code 2로 명확히 구분한다
+          # (사람이 EC2에 직접 들어가야 한다는 뜻). 반환값(0/1/2)은 f2r_deploy_with_rollback의
+          # 기존 규약 그대로 유지하고, 여기서는 [DEPLOY] 마커만 덧붙인 뒤 같은 코드로 종료한다.
+          #
+          # 이 블록은 f2r-app.service 만 재시작/health-check 한다 — buildit-wiki는 별도
+          # systemd 유닛으로 이미 위에서 독립적으로 기동·검증됐고, 여기서 절대 건드리지
+          # 않는다(rollback 경로 포함).
+          # NewStart Vision (Meta) 전용 키를 S3 staging에서 가져와 /etc/f2r/env에 동기화한다.
+          # S3 객체는 배포 중에만 존재하는 transient 파일이다.
+          # 값은 절대 출력하지 않는다.
+          if aws s3 cp s3://feel2real-buildit-deploy/meta-vision-key /tmp/meta-vision-key 2>/dev/null; then
+            META_VISION_VALUE=$(cat /tmp/meta-vision-key)
+            shred -u /tmp/meta-vision-key 2>/dev/null || rm -f /tmp/meta-vision-key
+            if [ -n "$META_VISION_VALUE" ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              grep -vE '^META_VISION_API_KEY=' /etc/f2r/env > /etc/f2r/env.tmp || true
+              printf 'META_VISION_API_KEY=%s\n' "$META_VISION_VALUE" >> /etc/f2r/env.tmp
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo '[DEPLOY] synced META_VISION_API_KEY into f2r-app env (value hidden)'
+            else
+              echo '::error::META_VISION_API_KEY staging file is empty; refusing Vision deploy without key'
+              exit 1
+            fi
+            unset META_VISION_VALUE
+          else
+            echo '::error::META_VISION_API_KEY staging file unavailable in S3; refusing Vision deploy without key'
+            exit 1
+          fi
+
+          # NewStart 지피지기 (Meta Muse Spark) 전용 키를 S3 staging에서 가져와 /etc/f2r/env에 동기화한다.
+          # Vision의 META_VISION_API_KEY와 분리된 독립 키이다.
+          # S3 객체는 배포 중에만 존재하는 transient 파일이다. 값은 절대 출력하지 않는다.
+          if aws s3 cp s3://feel2real-buildit-deploy/meta-jipijigi-key /tmp/meta-jipijigi-key 2>/dev/null; then
+            META_JIPJIGI_VALUE=$(cat /tmp/meta-jipijigi-key)
+            shred -u /tmp/meta-jipijigi-key 2>/dev/null || rm -f /tmp/meta-jipijigi-key
+            if [ -n "$META_JIPJIGI_VALUE" ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              grep -vE '^META_JIPJIGI_API_KEY=' /etc/f2r/env > /etc/f2r/env.tmp || true
+              printf 'META_JIPJIGI_API_KEY=%s\n' "$META_JIPJIGI_VALUE" >> /etc/f2r/env.tmp
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo '[DEPLOY] synced META_JIPJIGI_API_KEY into f2r-app env (value hidden)'
+            else
+              echo '::error::META_JIPJIGI_API_KEY staging file is empty; refusing Jipijigi deploy without key'
+              exit 1
+            fi
+            unset META_JIPJIGI_VALUE
+          else
+            echo '::error::META_JIPJIGI_API_KEY staging file unavailable in S3; refusing Jipijigi deploy without key'
+            exit 1
+          fi
+
+          # Preserve the legacy OpenRouter sync for any remaining consumers.
+          if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
+            install -d -m 755 /etc/f2r
+            touch /etc/f2r/env
+            chmod 600 /etc/f2r/env
+            OPENROUTER_LINE=$(grep -E '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env | tail -n 1)
+            sed -i '/^OPENROUTER_API_KEY=/d' /etc/f2r/env
+            printf '%s\n' "$OPENROUTER_LINE" >> /etc/f2r/env
+            echo '[DEPLOY] synced OPENROUTER_API_KEY into f2r-app env (value hidden)'
+          else
+            echo '::warning::OPENROUTER_API_KEY not found in /etc/buildit-wiki.env; debt vision cannot use OpenRouter'
+          fi
+
+          set -e
+          # Wiki section end: re-enable exit-on-error for Spring deploy
+          echo "[DEPLOY] spring deploy start"
           if f2r_deploy_with_rollback \
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
             f2r-app.service http://127.0.0.1:8080/actuator/health 24 5 3; then
