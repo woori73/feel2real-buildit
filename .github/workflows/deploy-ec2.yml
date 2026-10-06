@@ -486,6 +486,7 @@ jobs:
           # 다시 시작/재시도하지는 않는다 — 순수 조회만 하고, 이미 위에서 확인된 정상 상태가
           # Spring 배포 이후에도 유지되는지만 본다.
           echo "[DEPLOY] verifying buildit-wiki is still healthy after the spring restart cycle"
+          set +e
           if f2r_health_ok "http://127.0.0.1:8000/api/health"; then
             echo "[DEPLOY] buildit-wiki still healthy"
             echo "[DEPLOY] SUCCESS"
@@ -494,6 +495,7 @@ jobs:
             echo "[DEPLOY] WARNING post_spring_wiki_health_failed_but_spring_ok"
             echo "[DEPLOY] SUCCESS"
           fi
+          set -e
           SCRIPT
           chmod +x /tmp/deploy-buildit.sh
 
