@@ -556,7 +556,7 @@ jobs:
           # EC2 스크립트 최대 실행시간보다 충분히 긴(5분 이상 여유) 시간을 기다린다.
           SSM_INSTANCE_ID="i-09d7cabb5a42d1135"
           SSM_POLL_INTERVAL_SECS=15
-          SSM_MAX_WAIT_SECS=660
+          SSM_MAX_WAIT_SECS=1200
           STATUS=""
           ELAPSED=0
           while :; do
