@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
  * 「오늘 새롭게 알게 된 것」 파이프라인 (§5).
  * 수집(기존 스케줄러) → 후보 조회(최근 48h KST) → 쟁점 매핑(규칙) → 중복 제거 → 점수 → 상위 3건.
  * AI 호출 없음.
+ *
+ * 방어 설계: 어떤 경우에도 예외를 던지지 않는다. 실패 시 빈 목록 반환.
+ * Thymeleaf 호환을 위해 Map<String, Object>로 반환 (record 접근 이슈 회피).
  */
 @Slf4j
 @Service
@@ -29,9 +32,9 @@ public class WemadeDeltaService {
     private final f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadePolicyTrackingRepository policyTrackingRepo;
     private final WemadeIssueService issueService;
 
-    /** 후보 항목 */
-    public record Candidate(
-            String sourceKind,   // CHINA_DISCLOSURE, CHINA_NEWS, DART, GAME, POLICY
+    /** 내부 후보 항목 */
+    private record Candidate(
+            String sourceKind,
             Long id,
             String titleKr,
             String summaryKr,
@@ -42,19 +45,20 @@ public class WemadeDeltaService {
             String contentHash
     ) {}
 
-    /** 선정된 delta 항목 */
-    public record DeltaItem(
-            int issueNumber,
-            String issueShortName,
-            String dateLabel,
-            String kindLabel,
-            String title,
-            String summary,
-            String sourceUrl,
-            String sourceKind
-    ) {}
+    /**
+     * Delta 항목 목록 반환. 절대 예외를 던지지 않음.
+     * 각 항목은 Map: {issueNumber, issueShortName, dateLabel, kindLabel, title, summary, sourceUrl, sourceKind}
+     */
+    public List<Map<String, Object>> buildDelta() {
+        try {
+            return buildDeltaInternal();
+        } catch (Exception e) {
+            log.warn("WemadeDeltaService.buildDelta failed, returning empty", e);
+            return Collections.emptyList();
+        }
+    }
 
-    public List<DeltaItem> buildDelta() {
+    private List<Map<String, Object>> buildDeltaInternal() {
         LocalDateTime cutoff = LocalDateTime.now(KST).minusHours(48);
         List<Candidate> candidates = new ArrayList<>();
         candidates.addAll(collectChinaDisclosures(cutoff));
@@ -70,28 +74,26 @@ public class WemadeDeltaService {
                 .collect(Collectors.toList());
 
         // 쟁점 매핑 + 점수
-        record Scored(Candidate c, int issue, int score) {}
-        List<Scored> scored = new ArrayList<>();
-        for (Candidate c : candidates) {
-            int issue = matchIssue(c);
-            if (issue < 1) continue; // 매핑 안 되면 제외
-            scored.add(new Scored(c, issue, score(c)));
-        }
-
-        // 공시 우선: 같은 사실이면 공시만 (같은 issue+날짜에서 공시가 있으면 언론 제외)
-        // 상위 3건, 같은 쟁점 최대 1건
-        scored.sort((a, b) -> Integer.compare(b.score(), a.score()));
+        List<Map<String, Object>> result = new ArrayList<>();
         Set<Integer> usedIssues = new HashSet<>();
-        List<DeltaItem> result = new ArrayList<>();
-        for (Scored s : scored) {
+
+        List<Candidate> sorted = candidates.stream()
+                .map(c -> new AbstractMap.SimpleEntry<>(c, matchIssue(c)))
+                .filter(e -> e.getValue() >= 1)
+                .sorted((a, b) -> Integer.compare(score(b.getKey()), score(a.getKey())))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        for (Candidate c : sorted) {
             if (result.size() >= 3) break;
-            if (!usedIssues.add(s.issue())) continue;
-            result.add(toDeltaItem(s.c(), s.issue()));
+            int issue = matchIssue(c);
+            if (!usedIssues.add(issue)) continue;
+            result.add(toMap(c, issue));
         }
         return result;
     }
 
-    // ---- 수집 ----
+    // ---- 수집 (각각 try/catch) ----
 
     private List<Candidate> collectChinaDisclosures(LocalDateTime cutoff) {
         List<Candidate> out = new ArrayList<>();
@@ -104,7 +106,7 @@ public class WemadeDeltaService {
                         nz(d.getTitleKr(), d.getTitleCn()), nz(d.getSummaryKr(), ""),
                         "중국 공시", d.getSourceUrl(), at, nz(d.getGrade(), "A"), d.getContentHash()));
             }
-        } catch (Exception e) { log.warn("delta chinaDisclosure collect failed", e); }
+        } catch (Exception e) { log.debug("delta chinaDisclosure collect failed", e); }
         return out;
     }
 
@@ -119,7 +121,7 @@ public class WemadeDeltaService {
                         nz(n.getTitleKr(), n.getTitleCn()), nz(n.getSummaryKr(), ""),
                         nz(n.getSourceName(), "중국 뉴스"), n.getSourceUrl(), at, nz(n.getGrade(), "C"), n.getContentHash()));
             }
-        } catch (Exception e) { log.warn("delta chinaNews collect failed", e); }
+        } catch (Exception e) { log.debug("delta chinaNews collect failed", e); }
         return out;
     }
 
@@ -133,7 +135,7 @@ public class WemadeDeltaService {
                 out.add(new Candidate("DART", d.getId(), nz(d.getTitle(), ""),
                         "", "DART 공시", d.getSourceUrl(), at, "A", d.getContentHash()));
             }
-        } catch (Exception e) { log.warn("delta dart collect failed", e); }
+        } catch (Exception e) { log.debug("delta dart collect failed", e); }
         return out;
     }
 
@@ -144,13 +146,12 @@ public class WemadeDeltaService {
                 LocalDateTime at = toDateTime(g.getTrackedAt(), g.getCollectedAt());
                 if (at == null || at.isBefore(cutoff)) continue;
                 if (out.size() >= 20) break;
-                String kind = "GAME";
-                out.add(new Candidate(kind, g.getId(),
+                out.add(new Candidate("GAME", g.getId(),
                         nz(g.getGameName(), "") + " · " + nz(g.getItem(), ""),
                         nz(g.getDetail(), ""), nz(g.getSourceName(), "게임 트래킹"),
                         g.getSourceUrl(), at, "B", g.getContentHash()));
             }
-        } catch (Exception e) { log.warn("delta game collect failed", e); }
+        } catch (Exception e) { log.debug("delta game collect failed", e); }
         return out;
     }
 
@@ -165,34 +166,37 @@ public class WemadeDeltaService {
                         nz(p.getSummary(), ""), nz(p.getSourceName(), "정책"),
                         p.getSourceUrl(), at, nz(p.getGrade(), "U"), p.getContentHash()));
             }
-        } catch (Exception e) { log.warn("delta policy collect failed", e); }
+        } catch (Exception e) { log.debug("delta policy collect failed", e); }
         return out;
     }
 
-    // ---- 매핑 (§5-2) ----
+    // ---- 매핑 ----
 
     int matchIssue(Candidate c) {
-        String text = (nz(c.titleKr(), "") + " " + nz(c.summaryKr(), "")).toLowerCase();
-        List<Map<String, Object>> issues = issueService.getIssues();
-        int best = -1;
-        int bestHits = 0;
-        for (Map<String, Object> issue : issues) {
-            Object kw = issue.get("keywords");
-            if (!(kw instanceof List)) continue;
-            int hits = 0;
-            for (Object k : (List<?>) kw) {
-                String keyword = String.valueOf(k).toLowerCase();
-                if (!keyword.isBlank() && text.contains(keyword)) hits++;
+        try {
+            String text = (nz(c.titleKr(), "") + " " + nz(c.summaryKr(), "")).toLowerCase();
+            List<Map<String, Object>> issues = issueService.getIssues();
+            if (issues == null || issues.isEmpty()) return -1;
+            int best = -1;
+            int bestHits = 0;
+            for (Map<String, Object> issue : issues) {
+                Object kw = issue.get("keywords");
+                if (!(kw instanceof List)) continue;
+                int hits = 0;
+                for (Object k : (List<?>) kw) {
+                    String keyword = String.valueOf(k).toLowerCase();
+                    if (!keyword.isBlank() && text.contains(keyword)) hits++;
+                }
+                if (hits > bestHits) {
+                    bestHits = hits;
+                    best = toInt(issue.get("number"));
+                }
             }
-            if (hits > bestHits) {
-                bestHits = hits;
-                best = toInt(issue.get("number"));
-            }
+            return bestHits > 0 ? best : -1;
+        } catch (Exception e) {
+            return -1;
         }
-        return bestHits > 0 ? best : -1;
     }
-
-    // ---- 점수 (§5-3) ----
 
     int score(Candidate c) {
         int s = switch (c.sourceKind()) {
@@ -202,42 +206,53 @@ public class WemadeDeltaService {
             case "CHINA_NEWS" -> 50;
             default -> 30;
         };
-        // 최근성 가산 (24h 이내 +20)
-        if (c.eventAt() != null && c.eventAt().isAfter(LocalDateTime.now(KST).minusHours(24))) {
-            s += 20;
-        }
+        try {
+            if (c.eventAt() != null && c.eventAt().isAfter(LocalDateTime.now(KST).minusHours(24))) {
+                s += 20;
+            }
+        } catch (Exception ignored) {}
         return s;
     }
 
-    // ---- 변환 ----
-
-    private DeltaItem toDeltaItem(Candidate c, int issueNumber) {
-        String shortName = issueService.findByNumber(issueNumber)
-                .map(m -> String.valueOf(m.get("shortName"))).orElse("");
-        String dateLabel = c.eventAt() != null
-                ? c.eventAt().getMonthValue() + "월 " + c.eventAt().getDayOfMonth() + "일" : "";
-        String kindLabel = switch (c.sourceKind()) {
+    private Map<String, Object> toMap(Candidate c, int issueNumber) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        String shortName = "";
+        try {
+            shortName = issueService.findByNumber(issueNumber)
+                    .map(x -> String.valueOf(x.get("shortName"))).orElse("");
+        } catch (Exception ignored) {}
+        m.put("issueNumber", issueNumber);
+        m.put("issueShortName", shortName);
+        m.put("dateLabel", c.eventAt() != null
+                ? c.eventAt().getMonthValue() + "월 " + c.eventAt().getDayOfMonth() + "일" : "");
+        m.put("kindLabel", switch (c.sourceKind()) {
             case "CHINA_DISCLOSURE" -> "중국 공시";
             case "CHINA_NEWS" -> "중국 뉴스";
             case "DART" -> "국내 공시";
             case "GAME" -> "나이트 크로우";
             case "POLICY" -> "제도";
             default -> "기타";
-        };
-        String summary = firstTwoSentences(c.summaryKr());
-        return new DeltaItem(issueNumber, shortName, dateLabel, kindLabel,
-                c.titleKr(), summary, c.sourceUrl(), c.sourceKind());
+        });
+        m.put("title", nz(c.titleKr(), ""));
+        m.put("summary", firstTwoSentences(c.summaryKr()));
+        m.put("sourceUrl", nz(c.sourceUrl(), ""));
+        m.put("sourceKind", c.sourceKind());
+        return m;
     }
 
     private static String firstTwoSentences(String s) {
         if (s == null || s.isBlank()) return "";
-        String[] parts = s.split("(?<=[.!?。])\\s*");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < Math.min(2, parts.length); i++) {
-            if (i > 0) sb.append(" ");
-            sb.append(parts[i].trim());
+        try {
+            String[] parts = s.split("(?<=[.!?。])\\s*");
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < Math.min(2, parts.length); i++) {
+                if (i > 0) sb.append(" ");
+                sb.append(parts[i].trim());
+            }
+            return sb.toString().trim();
+        } catch (Exception e) {
+            return s.length() > 200 ? s.substring(0, 200) : s;
         }
-        return sb.toString().trim();
     }
 
     private static LocalDateTime toDateTime(LocalDate d, LocalDateTime fallback) {

@@ -36,9 +36,19 @@ public class WemadePageController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
         String viewer = principal == null ? "GUEST" : "MEMBER";
         model.addAttribute("viewer", viewer);
-        model.addAttribute("issues", issueService.forViewer(viewer));
-        model.addAttribute("deltaItems", deltaService.buildDelta().stream()
-                .limit("MEMBER".equals(viewer) ? 3 : 1).toList());
+        // 방어: issues/delta 로딩 실패해도 페이지는 렌더링되도록
+        try {
+            model.addAttribute("issues", issueService.forViewer(viewer));
+        } catch (Exception e) {
+            model.addAttribute("issues", java.util.Collections.emptyList());
+        }
+        try {
+            java.util.List<java.util.Map<String, Object>> delta = deltaService.buildDelta();
+            int limit = "MEMBER".equals(viewer) ? 3 : 1;
+            model.addAttribute("deltaItems", delta.stream().limit(limit).toList());
+        } catch (Exception e) {
+            model.addAttribute("deltaItems", java.util.Collections.emptyList());
+        }
         return "wemade/index";
     }
 

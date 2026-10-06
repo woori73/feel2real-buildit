@@ -62,19 +62,24 @@ public class WemadeIssueService {
                 .findFirst();
     }
 
-    /** viewer별 필터링. GUEST는 ①② 전체, ③~⑥은 질문 제목만. */
+    /** viewer별 필터링. GUEST는 ①② 전체, ③~⑥은 질문 제목만. 절대 예외를 던지지 않음. */
     public List<Map<String, Object>> forViewer(String viewer) {
-        if ("MEMBER".equals(viewer)) return issues;
-        return issues.stream().map(m -> {
-            int n = toInt(m.get("number"));
-            if (n <= 2) return m;
-            Map<String, Object> slim = new java.util.LinkedHashMap<>();
-            slim.put("number", m.get("number"));
-            slim.put("id", m.get("id"));
-            slim.put("question", m.get("question"));
-            slim.put("shortName", m.get("shortName"));
-            return slim;
-        }).toList();
+        try {
+            if ("MEMBER".equals(viewer)) return issues;
+            return issues.stream().map(m -> {
+                int n = toInt(m.get("number"));
+                if (n <= 2) return m;
+                Map<String, Object> slim = new java.util.LinkedHashMap<>();
+                slim.put("number", m.get("number"));
+                slim.put("id", m.get("id"));
+                slim.put("question", m.get("question"));
+                slim.put("shortName", m.get("shortName"));
+                return slim;
+            }).toList();
+        } catch (Exception e) {
+            log.warn("WemadeIssueService.forViewer failed", e);
+            return Collections.emptyList();
+        }
     }
 
     private static int toInt(Object o) {
