@@ -29,6 +29,7 @@ on:
           - local-wemade-curl
           - nginx-wemade
           - deploy-wemade-jar
+          - s3-jar-info
 
 permissions:
   id-token: write
@@ -212,6 +213,18 @@ jobs:
           echo "===== Waiting for service (60s) ====="
           sleep 60
           systemctl is-active f2r-app.service
+          SSMEOF
+              )
+              ;;
+            s3-jar-info)
+              DIAG_LABEL="s3-jar-info (S3 JAR metadata)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== S3 JAR metadata ====="
+          aws s3api head-object --bucket feel2real-buildit-deploy --key app.jar --query '{Size: ContentLength, LastModified: LastModified, ETag: ETag}' --output json 2>&1 || echo "HEAD_FAILED"
+          echo ""
+          echo "===== S3 JAR SHA256 (download first 1MB) ====="
+          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/s3check.jar --range bytes=0-1048575 2>&1 | tail -2
+          echo "Partial download complete (1MB)"
           SSMEOF
               )
               ;;
