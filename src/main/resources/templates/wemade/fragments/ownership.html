@@ -7,6 +7,17 @@
   등급 배지: A=공식공시(초록) B=복수매체(파랑) C=단일매체(주황) D=계산값(회색) U=미확인(빨강)
 -->
 <th:block th:fragment="ownership">
+<style>
+@media (max-width: 430px) {
+  #wemade-ownership .own-chain-scroll { overflow-x: visible; padding: 12px; }
+  #wemade-ownership .own-chain { display: block; min-width: 0; }
+  #wemade-ownership .own-node { margin: 0 0 2px; }
+  #wemade-ownership .own-arrow { justify-content: center; padding: 3px 0; font-size: 0; }
+  #wemade-ownership .own-arrow::before { content: "\25BC"; font-size: 15px; }
+  #wemade-ownership .own-arrow span { font-size: 12px; margin-left: 6px; }
+  #wemade-ownership .own-branch { display: block; min-width: 0; margin-top: 8px; }
+}
+</style>
 <section id="wemade-ownership" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:1080px;margin:0 auto;padding:24px 16px;">
   <h2 style="font-size:22px;margin:0 0 4px;">새 대주주는 누구인가</h2>
   <p style="color:#666;font-size:13px;margin:0 0 16px;">NeoPulse 컨소시엄 지배구조 · 기준일 2026-10-05 · 사실/추론/미확인 분리 표기</p>
@@ -20,45 +31,45 @@
   </div>
 
   <!-- 지배 체인 -->
-  <div style="overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px;padding:16px;background:#fafafa;margin-bottom:16px;">
-    <div style="display:flex;align-items:stretch;gap:0;min-width:900px;font-size:13px;">
-      <div style="flex:1;border:2px solid #1b5e20;border-radius:8px;padding:10px;background:#fff;">
+  <div class="own-chain-scroll" style="overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px;padding:16px;background:#fafafa;margin-bottom:16px;">
+    <div class="own-chain" style="display:flex;align-items:stretch;gap:0;min-width:900px;font-size:13px;">
+      <div class="own-node" style="flex:1;border:2px solid #1b5e20;border-radius:8px;padding:10px;background:#fff;">
         <div style="font-weight:700;">Mok, Pui Ming <span style="font-weight:400;color:#666;">(목푸이밍)</span></div>
         <div style="color:#666;font-size:12px;">홍콩계 투자자 · 개인</div>
         <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A 킹넷 공시</span></div>
       </div>
-      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;color:#1b5e20;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
-      <div style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
+      <div class="own-arrow" style="display:flex;align-items:center;padding:0 6px;font-weight:700;color:#1b5e20;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
+      <div class="own-node" style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
         <div style="font-weight:700;">Nexpulse</div>
         <div style="color:#666;font-size:12px;">홍콩 법인 · Neosphere 기존 100% 주주</div>
         <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A 킹넷 공시</span></div>
       </div>
-      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">51%</span></div>
-      <div style="flex:1.4;border:2px solid #0d47a1;border-radius:8px;padding:10px;background:#fff;">
+      <div class="own-arrow" style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">51%</span></div>
+      <div class="own-node" style="flex:1.4;border:2px solid #0d47a1;border-radius:8px;padding:10px;background:#fff;">
         <div style="font-weight:700;">Neosphere</div>
         <div style="color:#666;font-size:12px;">홍콩 SPV · 2026-07-28 설립 <span style="display:inline-block;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:4px;padding:0 5px;font-size:11px;">C 단일매체</span></div>
         <div style="margin-top:4px;font-size:12px;">Nexpulse 51% <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A</span> / Cypress 49% <span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:0 5px;font-size:11px;">A</span></div>
       </div>
-      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
-      <div style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
+      <div class="own-arrow" style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
+      <div class="own-node" style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
         <div style="font-weight:700;">Shengsong 盛松</div>
         <div style="color:#666;font-size:12px;">홍콩 법인</div>
         <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A DART 원문</span></div>
       </div>
-      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
-      <div style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
+      <div class="own-arrow" style="display:flex;align-items:center;padding:0 6px;font-weight:700;">→<br/><span style="font-size:11px;font-weight:400;">100%</span></div>
+      <div class="own-node" style="flex:1;border:1px solid #9e9e9e;border-radius:8px;padding:10px;background:#fff;">
         <div style="font-weight:700;">NeoPulse</div>
         <div style="color:#666;font-size:12px;">케이맨 법인 · 인수 주체</div>
         <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A DART 원문</span></div>
       </div>
-      <div style="display:flex;align-items:center;padding:0 6px;font-weight:700;color:#b71c1c;">→<br/><span style="font-size:11px;font-weight:400;">40.25%</span></div>
-      <div style="flex:1;border:2px solid #b71c1c;border-radius:8px;padding:10px;background:#fff;">
+      <div class="own-arrow" style="display:flex;align-items:center;padding:0 6px;font-weight:700;color:#b71c1c;">→<br/><span style="font-size:11px;font-weight:400;">40.25%</span></div>
+      <div class="own-node" style="flex:1;border:2px solid #b71c1c;border-radius:8px;padding:10px;background:#fff;">
         <div style="font-weight:700;">Wemade 위메이드</div>
         <div style="color:#666;font-size:12px;">코스닥 112040</div>
         <div style="margin-top:6px;"><span style="display:inline-block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:4px;padding:1px 6px;font-size:11px;">A DART 원문</span></div>
       </div>
     </div>
-    <div style="display:flex;gap:0;min-width:900px;font-size:12px;color:#666;margin-top:10px;">
+    <div class="own-branch" style="display:flex;gap:0;min-width:900px;font-size:12px;color:#666;margin-top:10px;">
       <div style="flex:1;"></div>
       <div style="flex:1;"></div>
       <div style="flex:1.4;border-top:2px dashed #0d47a1;padding-top:6px;">
@@ -118,9 +129,6 @@
     </ul>
   </div>
 
-  <div id="wemade-ownership-root" data-api="/api/wemade/ownership/tree" style="font-size:12px;color:#999;">
-    <noscript>동적 트리는 JavaScript가 필요합니다. 위 정적 구조가 공식 확인분입니다.</noscript>
-  </div>
 </th:block>
 </body>
 </html>

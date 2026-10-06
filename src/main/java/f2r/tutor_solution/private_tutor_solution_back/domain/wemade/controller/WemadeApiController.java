@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.WemadeDealConstants;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.dto.WemadeEventView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.dto.WemadePricePoint;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.entity.*;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -311,5 +313,136 @@ public class WemadeApiController {
         m.put("asOf", max.map(LocalDate::toString).orElse(null));
         m.put("hasData", max.isPresent());
         return ResponseEntity.ok(m);
+    }
+
+    /**
+     * 인수계약 핵심 상수 (단일 출처).
+     * 근거: DART rcpNo 20260630900888. 화면의 하드코딩을 이 API로 대체한다.
+     */
+    @GetMapping("/deal")
+    public ResponseEntity<Map<String, Object>> deal() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("perShare", WemadeDealConstants.PER_SHARE_KRW);
+        m.put("totalAmount", WemadeDealConstants.TOTAL_AMOUNT_KRW);
+        m.put("stakePct", WemadeDealConstants.STAKE_PCT);
+        m.put("stakeShares", WemadeDealConstants.STAKE_SHARES);
+        m.put("deposit", WemadeDealConstants.DEPOSIT_KRW);
+        m.put("balance", WemadeDealConstants.BALANCE_KRW);
+        m.put("buyer", WemadeDealConstants.BUYER);
+        m.put("rcpNo", WemadeDealConstants.RCP_NO);
+        m.put("closeDate", WemadeDealConstants.CLOSE_DATE.toString());
+        m.put("dday", ChronoUnit.DAYS.between(LocalDate.now(), WemadeDealConstants.CLOSE_DATE));
+        List<Map<String, String>> timeline = new ArrayList<>();
+        for (String[] s : WemadeDealConstants.TIMELINE) {
+            Map<String, String> t = new LinkedHashMap<>();
+            t.put("title", s[0]);
+            t.put("sub", s[1]);
+            t.put("status", s[2]);
+            timeline.add(t);
+        }
+        m.put("timeline", timeline);
+        return ResponseEntity.ok(m);
+    }
+
+    /**
+     * 오늘의 위메이드 (티저용, 비회원 공개).
+     * 규칙 기반 2~3줄 요약 — AI가 아니라 관측 데이터로만 구성한다.
+     * 현재가(KIS 실시간 우선, 폴백 지연 시세) / 할인율 / D-day / 투자자 수급.
+     */
+    @GetMapping("/today")
+    public ResponseEntity<Map<String, Object>> today(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        Map<String, Object> m = new LinkedHashMap<>();
+
+        Map<String, Object> quote = kisClient.realtimeQuote(symbol)
+                .map(LinkedHashMap::new)
+                .orElseGet(() -> new LinkedHashMap<>(priceService.overview(symbol)));
+        long price = toLong(quote.get("price") != null ? quote.get("price") : quote.get("close"));
+        double changeRate = toDouble(quote.get("changeRate"));
+        long change = toLong(quote.get("change"));
+        long volume = toLong(quote.get("volume"));
+        boolean realtime = Boolean.TRUE.equals(quote.get("realtime"));
+        m.put("price", price);
+        m.put("change", change);
+        m.put("changeRate", changeRate);
+        m.put("volume", volume);
+        m.put("realtime", realtime);
+        m.put("badge", realtime ? "실시간" : "지연 시세");
+        m.put("tradeDate", quote.get("tradeDate"));
+
+        long perShare = WemadeDealConstants.PER_SHARE_KRW;
+        double discountPct = price > 0 ? (perShare - price) * 100.0 / perShare : 0;
+        long dday = ChronoUnit.DAYS.between(LocalDate.now(), WemadeDealConstants.CLOSE_DATE);
+        m.put("perShare", perShare);
+        m.put("discountPct", Math.round(discountPct * 10.0) / 10.0);
+        m.put("multiple", price > 0 ? Math.round(perShare * 10.0 / price) / 10.0 : null);
+        m.put("dday", dday);
+        m.put("closeDate", WemadeDealConstants.CLOSE_DATE.toString());
+
+        List<String> lines = new ArrayList<>();
+        String dir = change > 0 ? "▲" : change < 0 ? "▼" : "–";
+        lines.add(String.format("현재가 %,d원 (%s %,d원, %s%.2f%%) · 거래량 %,d주 · %s",
+                price, dir, Math.abs(change), change >= 0 ? "+" : "", changeRate, volume,
+                realtime ? "실시간" : "지연 시세"));
+        if (dday >= 0) {
+            lines.add(String.format("68,910원 인수계약 대비 %.1f%% 할인 · 잔금 D-%d (10/30 예정)",
+                    discountPct, dday));
+        } else {
+            lines.add(String.format("68,910원 인수계약 대비 %.1f%% 할인 · 잔금일 경과", discountPct));
+        }
+        String flowLine = latestFlowLine();
+        if (flowLine != null) lines.add(flowLine);
+        m.put("lines", lines);
+        return ResponseEntity.ok(m);
+    }
+
+    /** 최신 거래일 투자자 수급 한 줄 요약. 데이터 없으면 null. 금액 단위: 백만원 → 억원 변환. */
+    private String latestFlowLine() {
+        List<WemadeInvestorFlow> rows = flowRepository.findAll();
+        if (rows.isEmpty()) return null;
+        LocalDate max = rows.stream().map(WemadeInvestorFlow::getTradeDate)
+                .max(Comparator.naturalOrder()).orElse(null);
+        if (max == null) return null;
+        Map<String, Long> net = new LinkedHashMap<>();
+        for (WemadeInvestorFlow r : rows) {
+            if (max.equals(r.getTradeDate()) && r.getNetBuyAmount() != null) {
+                net.put(r.getInvestorType(), r.getNetBuyAmount());
+            }
+        }
+        if (net.isEmpty()) return null;
+        String[] names = {"FOREIGN", "INSTITUTION", "RETAIL"};
+        String[] krs = {"외국인", "기관", "개인"};
+        List<String> parts = new ArrayList<>();
+        for (int i = 0; i < names.length; i++) {
+            Long v = net.get(names[i]);
+            if (v == null) continue;
+            double eok = v / 100.0;
+            parts.add(String.format("%s %s%.0f억원 %s", krs[i], v >= 0 ? "+" : "−",
+                    Math.abs(eok), v >= 0 ? "순매수" : "순매도"));
+        }
+        if (parts.isEmpty()) return null;
+        return String.join(" · ", parts) + " (" + max + " 기준)";
+    }
+
+    private static long toLong(Object o) {
+        if (o instanceof Number n) return n.longValue();
+        try { return Long.parseLong(String.valueOf(o).replaceAll("[^0-9-]", "")); }
+        catch (Exception e) { return 0; }
+    }
+
+    private static double toDouble(Object o) {
+        if (o instanceof Number n) return n.doubleValue();
+        try { return Double.parseDouble(String.valueOf(o)); }
+        catch (Exception e) { return 0; }
+    }
+
+    /**
+     * 당일 분봉 (1일 차트용). KIS FHKST03010200 페이지네이션.
+     * 키가 없으면 빈 배열 — 호출자는 일봉으로 폴백한다.
+     */
+    @GetMapping("/prices/minute")
+    public ResponseEntity<List<Map<String, Object>>> minutePrices(
+            @RequestParam(defaultValue = "112040") String symbol) {
+        return ResponseEntity.ok(kisClient.dayMinuteBars(symbol).orElse(List.of()));
     }
 }

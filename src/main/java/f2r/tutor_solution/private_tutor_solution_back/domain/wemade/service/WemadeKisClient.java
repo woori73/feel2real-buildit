@@ -307,6 +307,69 @@ public class WemadeKisClient {
         }
     }
 
+    /**
+     * 당일 분봉 전체 (1일 차트용). FHKST03010200을 FID_INPUT_HOUR_1 커서로
+     * 페이지네이션해서 장 시작(09:00)까지 거슬러 올라간다. 최대 14회 호출.
+     * 키가 없거나 실패하면 empty — 호출자는 일봉으로 폴백한다.
+     * 반환: 시간 오름차순, time 중복 제거.
+     */
+    public Optional<List<Map<String, Object>>> dayMinuteBars(String symbol) {
+        if (!isConfigured()) return Optional.empty();
+        try {
+            String token = accessToken().orElse(null);
+            if (token == null) return Optional.empty();
+            List<Map<String, Object>> all = new ArrayList<>();
+            String cursor = "";
+            for (int page = 0; page < 14; page++) {
+                Map<String, String> params = new LinkedHashMap<>();
+                params.put("FID_COND_MRKT_DIV_CODE", "J");
+                params.put("FID_INPUT_ISCD", symbol);
+                params.put("FID_ETC_CLS_CODE", "");
+                params.put("FID_INPUT_HOUR_1", cursor);
+                params.put("FID_PW_DATA_INCU_YN", "Y");
+                Optional<JsonNode> root = getJson(QUOT_BASE + "/inquire-time-itemchartprice", params, TR_MINUTE);
+                if (root.isEmpty()) break;
+                JsonNode out2 = root.get().path("output2");
+                if (!out2.isArray() || out2.size() == 0) break;
+                List<Map<String, Object>> batch = new ArrayList<>();
+                for (JsonNode n : out2) {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("time", n.path("stck_cntg_hour").asText(null));
+                    m.put("price", parseLong(n.path("stck_prpr").asText()));
+                    m.put("open", parseLong(n.path("stck_oprc").asText()));
+                    m.put("high", parseLong(n.path("stck_hgpr").asText()));
+                    m.put("low", parseLong(n.path("stck_lwpr").asText()));
+                    m.put("volume", parseLong(n.path("cntg_vol").asText()));
+                    batch.add(m);
+                }
+                String earliest = null;
+                for (Map<String, Object> b : batch) {
+                    String t = (String) b.get("time");
+                    if (t != null && (earliest == null || t.compareTo(earliest) < 0)) earliest = t;
+                }
+                all.addAll(batch);
+                // 진전 없음 → 중단 (무한 루프 방지)
+                if (earliest == null || (!cursor.isEmpty() && earliest.compareTo(cursor) >= 0)) break;
+                // 장 시작(09:00)까지 확보했거나 충분히 모았으면 중단
+                if (earliest.length() >= 6 && earliest.compareTo("090000") <= 0) break;
+                if (all.size() >= 400) break;
+                cursor = earliest;
+            }
+            // time 기준 중복 제거 + 오름차순 정렬
+            Map<String, Map<String, Object>> dedup = new LinkedHashMap<>();
+            for (Map<String, Object> b : all) {
+                String t = (String) b.get("time");
+                if (t != null) dedup.putIfAbsent(t, b);
+            }
+            List<Map<String, Object>> sorted = new ArrayList<>(dedup.values());
+            sorted.sort((a, b) -> ((String) a.get("time")).compareTo((String) b.get("time")));
+            return sorted.isEmpty() ? Optional.empty() : Optional.of(sorted);
+        } catch (Exception e) {
+            log.warn("WEMADE KIS day minute bars failed (isolated): {}", e.getClass().getSimpleName());
+            return Optional.empty();
+        }
+    }
+
     // ---- 내부 HTTP ----
 
     private Optional<JsonNode> getJson(String path, Map<String, String> params, String trId) {
