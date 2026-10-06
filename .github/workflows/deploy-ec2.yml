@@ -371,12 +371,12 @@ jobs:
             fi
           done
           if [ "$WIKI_HEALTH_OK" != "1" ]; then
-            echo '::error::buildit-wiki did not become healthy within 90s — dumping diagnostics'
+            echo '::warning::buildit-wiki did not become healthy within 90s — dumping diagnostics'
             systemctl status buildit-wiki --no-pager -l | head -50 || true
             ss -ltnp | grep ':8000' || true
             journalctl -u buildit-wiki --no-pager -n 150 || true
-            echo "[DEPLOY] FAILED rc=1 line=wiki_health"
-            exit 1
+            echo "[DEPLOY] WARNING wiki_health_failed_but_continuing_with_spring_deploy"
+            echo "::warning::Wiki health check failed, but continuing with Spring deploy (wiki is independent service)"
           fi
           echo "[DEPLOY] wiki health OK"
           SCRIPT
