@@ -457,6 +457,32 @@ jobs:
             exit 1
           fi
 
+          # KIS (한국투자증권) 키를 S3 staging에서 가져와 /etc/f2r/env에 동기화한다.
+          # Vision/Jipijigi와 달리 soft-fail: 스테이징 파일이 없으면 경고만 남기고
+          # 배포는 계속한다 (앱은 KIS 키 없이도 기동한다).
+          # S3 객체는 배포 중에만 존재하는 transient 파일이다. 값은 절대 출력하지 않는다.
+          if aws s3 cp s3://feel2real-buildit-deploy/kis-app-key /tmp/kis-app-key 2>/dev/null && aws s3 cp s3://feel2real-buildit-deploy/kis-app-secret /tmp/kis-app-secret 2>/dev/null; then
+            KIS_KEY_VALUE=$(cat /tmp/kis-app-key)
+            KIS_SECRET_VALUE=$(cat /tmp/kis-app-secret)
+            shred -u /tmp/kis-app-key /tmp/kis-app-secret 2>/dev/null || rm -f /tmp/kis-app-key /tmp/kis-app-secret
+            if [ -n "$KIS_KEY_VALUE" ] && [ -n "$KIS_SECRET_VALUE" ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              grep -vE '^KIS_APP_KEY=' /etc/f2r/env | grep -vE '^KIS_APP_SECRET=' > /etc/f2r/env.tmp || true
+              printf 'KIS_APP_KEY=%s\n' "$KIS_KEY_VALUE" >> /etc/f2r/env.tmp
+              printf 'KIS_APP_SECRET=%s\n' "$KIS_SECRET_VALUE" >> /etc/f2r/env.tmp
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo '[DEPLOY] synced KIS_APP_KEY/KIS_APP_SECRET into f2r-app env (values hidden)'
+            else
+              echo '::warning::KIS staging files empty; skipping KIS sync'
+            fi
+            unset KIS_KEY_VALUE KIS_SECRET_VALUE
+          else
+            echo '::warning::KIS staging files unavailable in S3; skipping KIS sync (deploy continues)'
+          fi
+
           # Preserve the legacy OpenRouter sync for any remaining consumers.
           if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
             install -d -m 755 /etc/f2r
@@ -538,6 +564,30 @@ jobs:
           shred -u /tmp/meta-jipijigi-key.staging 2>/dev/null || rm -f /tmp/meta-jipijigi-key.staging
           unset META_JIPJIGI_API_KEY
           echo "META_JIPJIGI_API_KEY staged in S3 (transient, value hidden)"
+
+      - name: Stage KIS keys in S3 (transient)
+        shell: bash
+        env:
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+        run: |
+          set -euo pipefail
+          # KIS 키는 soft-fail: 시크릿이 없으면 경고만 남기고 배포는 계속한다.
+          # (Vision/Jipijigi는 hard-fail이지만, KIS는 앱이 키 없이도 기동하고
+          #  수급 파이프라인만 대기 상태가 되므로 배포 자체를 막지 않는다.)
+          if [ -z "${KIS_APP_KEY:-}" ] || [ -z "${KIS_APP_SECRET:-}" ]; then
+            echo "::warning::KIS_APP_KEY/KIS_APP_SECRET secrets not set; skipping KIS staging (deploy continues without KIS sync)"
+            exit 0
+          fi
+          # 키를 임시 파일에 쓰고 S3에 업로드 (private bucket, 배포 중에만 존재)
+          # 값은 절대 출력하지 않음
+          printf '%s' "$KIS_APP_KEY" > /tmp/kis-app-key.staging
+          printf '%s' "$KIS_APP_SECRET" > /tmp/kis-app-secret.staging
+          aws s3 cp /tmp/kis-app-key.staging s3://feel2real-buildit-deploy/kis-app-key --sse AES256 >/dev/null
+          aws s3 cp /tmp/kis-app-secret.staging s3://feel2real-buildit-deploy/kis-app-secret --sse AES256 >/dev/null
+          shred -u /tmp/kis-app-key.staging /tmp/kis-app-secret.staging 2>/dev/null || rm -f /tmp/kis-app-key.staging /tmp/kis-app-secret.staging
+          unset KIS_APP_KEY KIS_APP_SECRET
+          echo "KIS keys staged in S3 (transient, values hidden)"
 
       - name: Upload deployment artifacts to S3
         run: |
@@ -673,3 +723,10 @@ jobs:
           aws s3 rm s3://feel2real-buildit-deploy/meta-jipijigi-key 2>/dev/null || true
           echo "Staging file cleaned up"
 
+      - name: Cleanup KIS key staging files
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://feel2real-buildit-deploy/kis-app-key 2>/dev/null || true
+          aws s3 rm s3://feel2real-buildit-deploy/kis-app-secret 2>/dev/null || true
+          echo "Staging files cleaned up"
