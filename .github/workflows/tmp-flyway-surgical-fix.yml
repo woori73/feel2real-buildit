@@ -62,13 +62,11 @@ jobs:
 
           echo "===== STEP 3: DELETE 2 rows (138 and 139) ====="
           echo "Deleting row 138: installed_rank=138 AND version='1041' AND type='DELETE' AND success=1"
-          $MYSQL -e "DELETE FROM flyway_schema_history WHERE installed_rank=138 AND version='1041' AND type='DELETE' AND success=1;"
-          AFFECTED1=$($MYSQL -N -e "SELECT ROW_COUNT();")
+          AFFECTED1=$($MYSQL -N -e "DELETE FROM flyway_schema_history WHERE installed_rank=138 AND version='1041' AND type='DELETE' AND success=1; SELECT ROW_COUNT();")
           echo "  Affected rows: $AFFECTED1"
 
           echo "Deleting row 139: installed_rank=139 AND version='1041' AND type='SQL' AND success=0"
-          $MYSQL -e "DELETE FROM flyway_schema_history WHERE installed_rank=139 AND version='1041' AND type='SQL' AND success=0;"
-          AFFECTED2=$($MYSQL -N -e "SELECT ROW_COUNT();")
+          AFFECTED2=$($MYSQL -N -e "DELETE FROM flyway_schema_history WHERE installed_rank=139 AND version='1041' AND type='SQL' AND success=0; SELECT ROW_COUNT();")
           echo "  Affected rows: $AFFECTED2"
 
           TOTAL=$((AFFECTED1 + AFFECTED2))
