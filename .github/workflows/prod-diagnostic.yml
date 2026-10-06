@@ -281,13 +281,12 @@ jobs:
             wemade-test)
               DIAG_LABEL="wemade-test"
               SSM_BODY=$(cat <<'SSMEOF'
-          echo KIS_VAR_NAMES
-          grep -oE '^[A-Za-z_]+KIS[A-Za-z_]*=' /etc/f2r/env | tr -d '=' || echo NONE_WITH_KIS
-          echo ALL_KEY_COUNT
-          grep -cE '^[A-Za-z_]+=' /etc/f2r/env || true
-          echo KIS_IN_OTHER_FILES
-          grep -lE 'KIS_APP_KEY' /etc/f2r/* 2>/dev/null || echo NOT_IN_ETC_F2R_DIR
-          ls /etc/f2r/ 2>/dev/null || echo NO_ETC_F2R_DIR
+          echo BAK_KIS_NAMES
+          grep -oE '^[A-Za-z_]+KIS[A-Za-z_]*=' /etc/f2r/env.bak-before-newstart-naver | tr -d '=' || echo NONE_IN_BAK
+          echo KIS_JOURNAL_RECENT
+          journalctl -u f2r-app.service --since "2026-10-06 00:00:00" --no-pager 2>/dev/null | grep -a -c "WEMADE KIS" || echo 0
+          echo KIS_AUTH_LOG
+          journalctl -u f2r-app.service --since "2026-10-05 00:00:00" --no-pager 2>/dev/null | grep -a "WEMADE KIS" | grep -a -iE "auth|token|skipped|PENDING" | tail -5 || echo NO_AUTH_LOGS
           SSMEOF
               )
               ;;
