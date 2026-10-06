@@ -254,12 +254,7 @@ jobs:
           # 로그는 하나도 남지 않았다). 완료 여부에는 영향 없음, 출력량만 줄인다.
           aws s3 cp --no-progress s3://$BUCKET/app.jar /tmp/app-new.jar
 
-          # Wiki rebuild skipped: wiki is independent service, currently healthy.
-# Spring deploy is the priority. Wiki can be rebuilt separately if needed.
-if [ "${SKIP_WIKI_REBUILD:-1}" = "1" ]; then
-  echo "[DEPLOY] Skipping wiki rebuild (SKIP_WIKI_REBUILD=1)"
-else
-mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
+          mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
           aws s3 cp --no-progress s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
           rm -rf /opt/buildit-wiki/app/*
           tar -xzf /tmp/buildit-wiki-backend.tgz -C /opt/buildit-wiki/app
@@ -384,7 +379,6 @@ mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
             echo "::warning::Wiki health check failed, but continuing with Spring deploy (wiki is independent service)"
           fi
           echo "[DEPLOY] wiki health OK"
-fi
           SCRIPT
 
           # f2r-app.service(Spring) 배포 가드를 그대로 이어 붙인다. scripts/deploy/f2r_app_guard.sh는
