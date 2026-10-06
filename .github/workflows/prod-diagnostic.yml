@@ -90,7 +90,7 @@ jobs:
               DIAG_LABEL="journal-errors (narrow range, grep)"
               SSM_BODY=$(cat <<'SSMEOF'
           echo "===== journalctl: first error search (2026-10-06 04:40-04:50 UTC, max 100 lines) ====="
-          journalctl -u f2r-app.service --since "2026-10-06 04:40:00" --until "2026-10-06 04:50:00" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
+          journalctl -u f2r-app.service --since "2026-10-06 06:30:00" --until "2026-10-06 06:45:00" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
           echo ""
           echo "===== journalctl: tail 30 (most recent) ====="
           journalctl -u f2r-app.service --no-pager -n 30 || true
