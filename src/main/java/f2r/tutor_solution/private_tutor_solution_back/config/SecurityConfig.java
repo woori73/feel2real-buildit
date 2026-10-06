@@ -294,7 +294,7 @@ public class SecurityConfig {
                 "/chart/educators/**",
                 "/newstart",  // 홈만 공개. 하위 화면은 NewStartMembersOnlyInterceptor가 비회원을 로그인으로 보낸다.
                 "/wemade",  // 위메이드 개인주주 분석 (별도 도메인, 공개)
-                "/wemade/login",  // 위메이드 로그인 진입점 (OAuth 리다이렉트용)
+                "/wemade/login",  // 위메이드 ID/PW 로그인 페이지 (2026-10-06, OAuth 미사용)
                 "/lessons",
                 "/stdt_dashboard",
                 "/tutor_dashboard",
@@ -326,7 +326,11 @@ public class SecurityConfig {
             // 인증 관련 public API
             .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
             // NewStart 자체 ID/PW 가입(공개, 사용자 승인 2026-10-01). 가입 즉시 로그인 쿠키 발급. 로그인은 위 /api/auth/login 재사용.
+            // NewStart 자체 ID/PW 가입(공개, 사용자 승인 2026-10-01). 가입 즉시 로그인 쿠키 발급. 로그인은 위 /api/auth/login 재사용.
             .requestMatchers(HttpMethod.POST, "/api/newstart/auth/signup").permitAll()
+            // 위메이드 ID/PW 가입(공개, 2026-10-06). 네이버 ID를 회원 ID로 사용 + 사이트 전용 비밀번호.
+            // 가입 즉시 로그인 쿠키 발급. 로그인은 위 /api/auth/login 재사용. 네이버 OAuth는 사용하지 않는다.
+            .requestMatchers(HttpMethod.POST, "/api/wemade/auth/signup").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()  // 빈 쿠키 덮는 건 인증 무관
             .requestMatchers(HttpMethod.POST, "/api/auth/login-id/find").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/request").permitAll()
@@ -371,6 +375,33 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/landing/videos/*/stream").permitAll()
             // Muse 1:1 상담 신청 감지용 공개 ping — 개인정보 없음(최신 ID·미확인 건수·접수 시각만). 토큰 세그먼트로 남용 방지.
             .requestMatchers(HttpMethod.GET, "/api/muse/newstart/consultations/ping/*").permitAll()
+            // 위메이드: 티저용 공개 API (비회원). 1영역(오늘의 위메이드) 렌더링용.
+            .requestMatchers(HttpMethod.GET,
+                "/api/wemade/overview",
+                "/api/wemade/quote/realtime",
+                "/api/wemade/today",
+                "/api/wemade/deal",
+                "/api/wemade/symbols").permitAll()
+            // 위메이드: 상세 분석 API는 회원 전용 (2026-10-06 정책).
+            // 반드시 아래의 "/api/wemade/**" permitAll 보다 먼저 둔다 (좁은 것 우선).
+            .requestMatchers(HttpMethod.GET,
+                "/api/wemade/prices", "/api/wemade/prices/**",
+                "/api/wemade/compare",
+                "/api/wemade/flows", "/api/wemade/flows/**",
+                "/api/wemade/events",
+                "/api/wemade/fact-checks",
+                "/api/wemade/game-tracking",
+                "/api/wemade/community",
+                "/api/wemade/disclosures",
+                "/api/wemade/china/**",
+                "/api/wemade/collection/status",
+                "/api/wemade/surge-analysis", "/api/wemade/surge-analysis/**",
+                "/api/wemade/kis/status",
+                "/api/wemade/anomaly/**",
+                "/api/wemade/catalyst/**",
+                "/api/wemade/gap/**",
+                "/api/wemade/ownership/**",
+                "/api/wemade/valuation/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/wemade/**").permitAll()  // 위메이드 공개 API (읽기 전용)
 
             // Chart Research Agent (ROLE_CHART_AGENT) — 조사 파이프라인 최소 범위만 허용.

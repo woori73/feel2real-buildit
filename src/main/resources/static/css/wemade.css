@@ -73,7 +73,7 @@ body {
 .range52 { margin-top: 12px; font-size: 12px; color: #9fb2d8; }
 .range-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.15); position: relative; margin-top: 6px; }
 .range-bar .pos { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transform: translateX(-50%); box-shadow: 0 0 6px rgba(255,255,255,0.8); }
-.hero-date { margin-top: 8px; font-size: 11.5px; color: #7d92bd; }
+.hero-date { margin-top: 8px; font-size: 12px; color: #7d92bd; }
 
 /* D-Day */
 .dday {
@@ -85,10 +85,10 @@ body {
 /* 딜 숫자 */
 .deal-numbers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .deal-num { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px; text-align: center; }
-.deal-num .k { display: block; font-size: 11px; color: var(--muted); }
+.deal-num .k { display: block; font-size: 12px; color: var(--muted); }
 .deal-num .v { display: block; font-size: 17px; font-weight: 800; margin: 2px 0; letter-spacing: -0.5px; }
 .grade-a, .grade-b, .grade-c, .grade-d, .grade-u {
-  display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
 }
 .grade-a { background: #e6f9ee; color: #14743c; }
 .grade-b { background: #e8f0fe; color: #1a56db; }
@@ -101,7 +101,7 @@ body {
 }
 .deal-multiple .big { font-size: 22px; font-weight: 800; color: #ffd166; letter-spacing: -0.5px; }
 .deal-multiple .cap { font-size: 12px; color: #9fb2d8; }
-.fine { font-size: 11.5px; color: var(--muted); margin-top: 10px; }
+.fine { font-size: 12px; color: var(--muted); margin-top: 10px; }
 
 /* 스텝 타임라인 */
 .steps { list-style: none; margin: 0; padding: 0; }
@@ -121,7 +121,7 @@ body {
 .china-item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
 .china-item .cn { font-size: 14px; font-weight: 700; }
 .china-item .kr { font-size: 13px; color: var(--ink); margin-top: 4px; }
-.china-item .meta { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+.china-item .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .china-item .why { font-size: 12.5px; background: #f6f8fd; border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
 .more-link { display: block; text-align: right; font-size: 13px; color: #4a2fd6; text-decoration: none; margin-top: 6px; font-weight: 700; }
 
@@ -152,7 +152,7 @@ body {
 .stock-card .n { font-size: 12px; font-weight: 700; }
 .stock-card .p { font-size: 16px; font-weight: 800; margin: 2px 0; letter-spacing: -0.5px; }
 .stock-card .r { font-size: 12px; font-weight: 700; }
-.stock-card .c { font-size: 10.5px; color: var(--muted); }
+.stock-card .c { font-size: 12px; color: var(--muted); }
 
 /* 이벤트 타임라인 */
 .timeline { position: relative; padding-left: 4px; }
@@ -167,7 +167,7 @@ body {
 .kv:last-child { border-bottom: none; }
 .kv .k { color: var(--muted); flex-shrink: 0; }
 .kv .v { text-align: right; font-weight: 600; }
-.cat { font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #eef1f7; color: #4a5a7d; }
+.cat { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #eef1f7; color: #4a5a7d; }
 
 /* 판호 히어로 */
 .panho-hero { background: linear-gradient(135deg, #eefbf2, #fff); border: 1px solid #b9e8c9; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
@@ -212,7 +212,7 @@ body {
 .quote-badge { margin-left: 6px; vertical-align: middle; }
 .badge-live, .badge-delayed {
   display: inline-block; padding: 2px 8px; border-radius: 999px;
-  font-size: 11px; font-weight: 700; letter-spacing: -0.2px;
+  font-size: 12px; font-weight: 700; letter-spacing: -0.2px;
 }
 .badge-live { background: #e8f9ee; color: #0d7a3f; border: 1px solid #0d7a3f33; }
 .badge-delayed { background: #f1f3f5; color: #666; border: 1px solid #ddd; }
@@ -220,3 +220,124 @@ body {
 /* 중국 자료 상세 보기 링크 */
 .detail-link{display:inline-block;margin:.35rem 0;padding:.45rem .9rem;border:1px solid #1a73e8;border-radius:8px;color:#1a73e8;text-decoration:none;font-weight:600;font-size:.92rem}
 .detail-link:active{background:#e8f0fe}
+
+/* ===== 2026-10-06 재구성: 5영역 모바일 투자정보 ===== */
+
+/* 영역 타이틀 */
+.area { display: flex; flex-direction: column; gap: 12px; }
+.area-title {
+  font-size: 18px; font-weight: 800; margin: 6px 2px 0; letter-spacing: -0.5px;
+  padding-left: 10px; border-left: 4px solid var(--accent);
+}
+.card h3.sec-title { font-size: 15px; }
+
+/* 1. 오늘의 위메이드 */
+.today-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+.today-stat { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 8px; text-align: center; }
+.today-stat .k { display: block; font-size: 12px; color: #9fb2d8; }
+.today-stat .v { display: block; font-size: 16px; font-weight: 800; margin-top: 2px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.today-lines { list-style: none; margin: 0; padding: 0; }
+.today-lines li {
+  font-size: 13.5px; color: #e8edf7; padding: 8px 0 8px 22px; position: relative;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.today-lines li::before { content: "▸"; position: absolute; left: 4px; color: #ffd166; font-weight: 800; }
+.today-lines .state { color: #9fb2d8; }
+
+/* 잠금 카드 */
+.lock-card { text-align: center; border: 1.5px dashed #b9c6ff; }
+.lock-title { font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+.lock-list { list-style: none; margin: 0 0 14px; padding: 0; text-align: left; }
+.lock-list li { font-size: 13.5px; padding: 7px 0 7px 26px; position: relative; border-bottom: 1px solid #f2f4f9; }
+.lock-list li::before { content: "🔒"; position: absolute; left: 2px; font-size: 13px; }
+.btn {
+  display: inline-block; background: var(--navy); color: #fff; text-decoration: none;
+  font-weight: 800; font-size: 15px; padding: 12px 28px; border-radius: 12px; border: none; cursor: pointer;
+}
+.btn.wide { width: 100%; }
+.btn.secondary { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+
+/* 로그아웃 */
+.logout-btn {
+  background: none; border: none; color: #9fb2d8; font-size: 12px; cursor: pointer;
+  text-decoration: underline; padding: 6px 4px;
+}
+.brand-link { color: inherit; text-decoration: none; }
+
+/* 2. 창구 2열 */
+.broker-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.broker-cols .sub-title.up { color: var(--up); }
+.broker-cols .sub-title.down { color: var(--down); }
+
+/* 3. 딜 그리드 4개 */
+.deal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+
+/* 자세히 보기 */
+.more { background: var(--card); border-radius: var(--radius); box-shadow: 0 2px 12px rgba(15,31,61,0.06); }
+.more summary {
+  padding: 14px 16px; font-weight: 800; font-size: 14px; cursor: pointer; list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.more summary::-webkit-details-marker { display: none; }
+.more summary::after { content: "＋"; color: var(--accent); font-weight: 800; }
+.more[open] summary::after { content: "－"; }
+.more > div { padding: 0 0 8px; }
+.more .card { box-shadow: none; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); }
+
+/* 4. 사건 카드 */
+.event-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+.event-why { font-size: 13px; background: #f6f8fd; border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+.event-src { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.event-src a { color: #4a2fd6; }
+
+/* 5. 자료실 */
+.doc-item { border-bottom: 1px solid #f2f4f9; padding: 10px 0; }
+.doc-item:last-child { border-bottom: none; }
+.more-btn {
+  width: 100%; margin-top: 10px; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: #f6f8fd; color: var(--navy);
+  font-weight: 700; font-size: 13.5px; cursor: pointer;
+}
+
+/* 로그인 폼 */
+.page.narrow { max-width: 430px; }
+.fld { display: block; margin-bottom: 12px; }
+.fld span { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.fld input {
+  width: 100%; padding: 12px; font-size: 15px; border: 1.5px solid var(--line);
+  border-radius: 10px; background: #fff;
+}
+.fld input:focus { outline: none; border-color: var(--accent); }
+.form-msg { font-size: 13px; min-height: 20px; margin-bottom: 8px; }
+.form-msg.err { color: #b3271e; }
+.form-msg.ok { color: #14743c; }
+.hr {
+  display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px;
+  margin: 18px 0 12px;
+}
+.hr::before, .hr::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* 가로스크롤 0 보장 */
+.page, .card, .hero, .area { overflow-x: hidden; }
+canvas { max-width: 100%; }
+
+/* 360px 대응 */
+@media (max-width: 360px) {
+  .today-grid { grid-template-columns: 1fr 1fr; }
+  .today-stat .v { font-size: 15px; }
+  .broker-cols { grid-template-columns: 1fr; }
+  .deal-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .area-title { font-size: 16px; }
+}
+
+/* ===== 앞으로의 핵심 일정 / 헤드라인 / 리스크 ===== */
+.event-why { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.55; }
+.risk-note { font-size: 13px; line-height: 1.6; background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+.doc-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.doc-item:last-child { border-bottom: 0; }
+.doc-item .why { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.6; }
+.doc-item .meta { font-size: 12.5px; margin-top: 6px; }
+.doc-item .detail-link { color: #0d47a1; font-weight: 700; text-decoration: none; }
+
+.deal-num .v .big { display: block; font-size: 19px; }
+.deal-num .v .cap { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }

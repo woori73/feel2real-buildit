@@ -35,28 +35,20 @@ public class WemadePageController {
     }
 
     /**
-     * /wemade 로그인 진입점. naver-wemade registration이 있으면 사용하고,
-     * 없으면(네이버 콘솔 redirect URI 미등록 등) 기존 naver 플로우로 폴백한다.
-     * 기존 OAuth 핸들러/리다이렉트는 건드리지 않는다.
+     * /wemade 로그인 진입점 — ID/PW 로그인 페이지.
+     * 네이버 OAuth는 사용하지 않는다 (2026-10-06 정책).
+     * 기존 회원 시스템(네이버 ID를 회원 ID로 사용 + 사이트 전용 비밀번호)을 재사용하며,
+     * 로그인은 기존 POST /api/auth/login, 가입은 POST /api/wemade/auth/signup.
      */
     @GetMapping("/wemade/login")
     public String wemadeLogin(
-            org.springframework.beans.factory.ObjectProvider<
-                    org.springframework.security.oauth2.client.registration.ClientRegistrationRepository>
-                    repoProvider) {
-        var repo = repoProvider.getIfAvailable();
-        if (repo != null) {
-            try {
-                if (repo.findByRegistrationId("naver-wemade") != null) {
-                    return "redirect:/oauth2/authorization/naver-wemade";
-                }
-            } catch (Exception ignored) { /* 폴백 */ }
-        }
-        return "redirect:/oauth2/authorization/naver";
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+        if (principal != null) return "redirect:/wemade";
+        return "wemade/login";
     }
 
     /**
-     * 중국 공시 상세 (한국어 번역·해설).
+     * 중국 공시 상세 (한국어 번역·해설) — 회원 전용.
      * 원문 전문을 복제하지 않고 한국어 해설 형태로 제공한다.
      */
     @GetMapping("/wemade/china/disclosures/{id}")
@@ -64,6 +56,7 @@ public class WemadePageController {
             @PathVariable Long id,
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             Model model, HttpServletResponse response) {
+        if (principal == null) return "redirect:/wemade";
         var d = chinaDisclosureRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
@@ -75,7 +68,7 @@ public class WemadePageController {
     }
 
     /**
-     * 중국 뉴스 상세 (한국어 번역·해설).
+     * 중국 뉴스 상세 (한국어 번역·해설) — 회원 전용.
      * 공시와 충돌하면 공시를 우선한다는 원칙을 화면에 명시한다.
      */
     @GetMapping("/wemade/china/news/{id}")
@@ -83,6 +76,7 @@ public class WemadePageController {
             @PathVariable Long id,
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             Model model, HttpServletResponse response) {
+        if (principal == null) return "redirect:/wemade";
         var n = chinaNewsRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");

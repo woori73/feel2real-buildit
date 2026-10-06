@@ -1,6 +1,6 @@
 /* 위메이드 가격괴리 분석(gap) + 누가 고점에서 팔았나(who-sold) fragment용 JS.
  * 읽기 전용 fetch. 단일 목표주가를 계산·표시하지 않는다.
- * 수급 데이터는 미확보이므로 PENDING 상태로만 표시한다. */
+ * 수급 데이터 확보 전에는 해당 영역을 대기 상태로 표시한다. */
 (function () {
   'use strict';
 
@@ -10,7 +10,7 @@
     1: { title: '① 미르(传奇) IP 중국 전략가치 가설', verdict: '부분 지지 — IP 시나리오 2,500~7,500억원은 괴리 약 1.81조원 중 일부만 설명' },
     2: { title: '② 경영권 프리미엄 가설', verdict: '규모상 이례적 — 340%대 프리미엄은 Shanda Games 상장폐지(46.5~53.8%) 대비 과도. 단독 설명 불가' },
     3: { title: '③ 거래종결 리스크 할인 가설', verdict: '지지 요소 — 중국 승인 불확실성이 킹넷 공시에 명시(A등급). 정량은 불가' },
-    4: { title: '④ 오버행·수급 압박 가설', verdict: '가격 FACT 확정 · 주체 PENDING — 급등 후 되돌림·lower highs·대량 보합은 확인, 매도 주체 식별 불가' },
+    4: { title: '④ 오버행·수급 압박 가설', verdict: '가격 움직임은 확인 · 매도 주체는 미확인 — 급등 후 되돌림·고점 하락·대량 보합은 확인, 매도 주체 식별 불가' },
     5: { title: '⑤ 실적·재무 펀더멘털 할인 가설', verdict: '미확인 — 별도 재무제표 분석 필요' },
     6: { title: '⑥ 인수 이해관계자-수급 연관 가설', verdict: '미확인 — 직접 증거 없음. "중국 대주주가 주가를 누른다"는 결론을 세우지 않음', unverified: true }
   };
@@ -230,9 +230,9 @@
       return h + '</ul></li>';
     };
     box.innerHTML =
-      sec('① FACT — 가격 고점·반전', v.fact, '<span class="grade-a">A·실측</span>') +
-      sec('② ANALYSIS — 수급 동행', v.analysis, '<span class="muted">PENDING</span>') +
-      sec('③ HYPOTHESIS — 신규 대주주 연관', v.hypothesis, '<span class="muted">미확인</span>');
+      sec('① 확인된 가격 움직임', v.fact, '<span class="grade-a">실측 데이터</span>') +
+      sec('② 수급 동행 분석', v.analysis, '<span class="muted">데이터 확보 중</span>') +
+      sec('③ 신규 대주주 연관 (미확인 가설)', v.hypothesis, '<span class="muted">미확인</span>');
     var note = document.getElementById('ws-supply-note');
     if (note && supply) {
       note.textContent = '상태: ' + supply.status + ' — ' + (supply.reason || '');
