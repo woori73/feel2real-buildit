@@ -201,7 +201,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Build bootJar
-        run: ./gradlew bootJar --no-daemon
+        run: ./gradlew clean bootJar --no-daemon
 
       - name: Locate jar
         id: jar
