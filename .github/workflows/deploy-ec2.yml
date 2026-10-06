@@ -254,6 +254,8 @@ jobs:
           # 로그는 하나도 남지 않았다). 완료 여부에는 영향 없음, 출력량만 줄인다.
           aws s3 cp --no-progress s3://$BUCKET/app.jar /tmp/app-new.jar
 
+          # Wiki section: failures here must NOT stop Spring deploy
+          set +e
           mkdir -p /opt/buildit-wiki/app /opt/buildit-wiki/data
           aws s3 cp --no-progress s3://$BUCKET/buildit-wiki-backend.tgz /tmp/buildit-wiki-backend.tgz
           rm -rf /opt/buildit-wiki/app/*
@@ -466,6 +468,8 @@ jobs:
             echo '::warning::OPENROUTER_API_KEY not found in /etc/buildit-wiki.env; debt vision cannot use OpenRouter'
           fi
 
+          set -e
+          # Wiki section end: re-enable exit-on-error for Spring deploy
           echo "[DEPLOY] spring deploy start"
           if f2r_deploy_with_rollback \
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
