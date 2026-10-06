@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class WemadeQaCleanupController {
 
     private final UserRepository userRepository;
 
-    @DeleteMapping("/qa-test-accounts")
+    @RequestMapping(value = "/qa-test-accounts", method = {RequestMethod.DELETE, RequestMethod.POST})
     @Transactional
     public ResponseEntity<Map<String, Object>> deleteQaTestAccounts() {
         List<String> deleted = new ArrayList<>();
