@@ -281,19 +281,45 @@ jobs:
             wemade-test)
               DIAG_LABEL="wemade-test"
               SSM_BODY=$(cat <<'SSMEOF'
-          echo UNIT_FILE
-          systemctl cat f2r-app.service | grep -E 'User=|WorkingDirectory=|EnvironmentFile=|ExecStart='
-          echo ENV_KEYS
-          grep -oE '^[A-Z_]+' /etc/f2r/env | sort | tr '\n' ' '
-          echo
-          echo DB_HOST_PORT
-          grep -E 'DATASOURCE_URL|DB_HOST|RDS' /etc/f2r/env | sed -E 's/.*\/\/([^/?:]+)(:[0-9]+)?.*/\1\2/' | head -5
-          echo TCP_TEST
-          DBHP=$(grep -E 'DATASOURCE_URL' /etc/f2r/env | sed -E 's/.*\/\/([^/?:]+)(:[0-9]+)?.*/\1\2/' | head -1)
-          timeout 5 bash -c "cat < /dev/null > /dev/tcp/${DBHP/:/\/}" && echo TCP_OK || echo TCP_FAIL
-          echo WHOAMI_PWD
-          whoami
-          pwd
+          date +%s > /tmp/wemade-start-time
+          pkill -f wemade-test.jar || true
+          sleep 2
+          rm -f /tmp/wemade-healthy-time
+          set -a
+          source /etc/f2r/env
+          set +a
+          env | grep -cE '^DB_' > /tmp/wemade-envcount
+          echo ENV_DB_COUNT_$(cat /tmp/wemade-envcount)
+          nohup java -Dserver.port=18081 -jar /tmp/wemade-test.jar > /tmp/wemade-test.log 2>&1 &
+          echo $! > /tmp/wemade-test.pid
+          echo TEST_PID_$(cat /tmp/wemade-test.pid)
+          sleep 10
+          for i in $(seq 1 30); do
+            if curl -s --max-time 3 http://127.0.0.1:18081/actuator/health | grep -q '"status":"UP"'; then
+              date +%s > /tmp/wemade-healthy-time
+              echo HEALTHY_AT_ATTEMPT_$i
+              break
+            fi
+            sleep 5
+          done
+          START=$(cat /tmp/wemade-start-time)
+          if [ -f /tmp/wemade-healthy-time ]; then
+            END=$(cat /tmp/wemade-healthy-time)
+            echo STARTUP_SECONDS_$((END-START))
+          else
+            echo HEALTH_NEVER_REACHED
+          fi
+          echo WEMADE_HTTP_CODE_$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:18081/wemade || true)
+          echo FAIL_START_MARKER
+          grep -a -m1 'APPLICATION FAILED TO START' /tmp/wemade-test.log || echo NO_FAIL_HEADER
+          echo BEAN_ERRORS
+          grep -a -m5 -i 'required a bean\|UnsatisfiedDependencyException\|BeanCreationException' /tmp/wemade-test.log || echo NO_BEAN_ERRORS
+          echo FIRST_CAUSED_BY
+          grep -a -m1 'Caused by' /tmp/wemade-test.log || echo NO_CAUSED_BY
+          echo LOG_TAIL
+          tail -n 30 /tmp/wemade-test.log
+          kill $(cat /tmp/wemade-test.pid) || true
+          pkill -f wemade-test.jar || true
           SSMEOF
               )
               ;;
