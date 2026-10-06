@@ -32,6 +32,7 @@ on:
           - s3-jar-info
           - rollback-jar
           - wiki-status
+          - wemade-test
 
 permissions:
   id-token: write
@@ -274,6 +275,17 @@ jobs:
           echo ""
           echo "===== venv python ====="
           ls -la /opt/buildit-wiki/venv/bin/python 2>&1 || echo "VENV MISSING"
+          SSMEOF
+              )
+              ;;
+            wemade-test)
+              DIAG_LABEL="wemade-test"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo START_WEMADE_TEST
+          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/wemade-test.jar
+          sha256sum /tmp/wemade-test.jar | cut -c1-16
+          unzip -l /tmp/wemade-test.jar | grep WemadeJacksonConfig | head -3
+          echo END_WEMADE_TEST
           SSMEOF
               )
               ;;
