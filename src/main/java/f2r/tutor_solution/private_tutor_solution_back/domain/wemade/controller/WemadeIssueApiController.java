@@ -43,23 +43,13 @@ public class WemadeIssueApiController {
     public ResponseEntity<Map<String, Object>> delta(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
         String viewer = principal == null ? "GUEST" : "MEMBER";
-        List<WemadeDeltaService.DeltaItem> all = deltaService.buildDelta();
+        List<Map<String, Object>> all = deltaService.buildDelta();
         // GUEST는 최대 1건
-        List<WemadeDeltaService.DeltaItem> items =
+        List<Map<String, Object>> items =
                 "MEMBER".equals(viewer) ? all : all.stream().limit(1).toList();
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("viewer", viewer);
-        res.put("items", items.stream().map(d -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("issueNumber", d.issueNumber());
-            m.put("issueShortName", d.issueShortName());
-            m.put("dateLabel", d.dateLabel());
-            m.put("kindLabel", d.kindLabel());
-            m.put("title", d.title());
-            m.put("summary", d.summary());
-            m.put("sourceUrl", d.sourceUrl());
-            return m;
-        }).toList());
+        res.put("items", items);
         res.put("hasUpdate", !items.isEmpty());
         return ResponseEntity.ok(res);
     }
