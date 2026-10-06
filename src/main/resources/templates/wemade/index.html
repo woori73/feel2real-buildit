@@ -189,6 +189,14 @@ window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
   </footer>
 </main>
 
+<!-- JS 호환용 hidden 플레이스홀더 (기존 섹션 제거됨) -->
+<div hidden>
+  <div id="headline-list"></div>
+  <div id="track-tabs"></div>
+  <div id="track-body"></div>
+  <div id="fact-list"></div>
+</div>
+
 <script th:src="@{/js/wemade.js}" src="/js/wemade.js"></script>
 <script th:if="${viewer == 'MEMBER'}" th:src="@{/js/wemade-gap.js}" src="/js/wemade-gap.js"></script>
 <script th:if="${viewer == 'MEMBER'}" th:src="@{/js/wemade-valuation.js}" src="/js/wemade-valuation.js"></script>
