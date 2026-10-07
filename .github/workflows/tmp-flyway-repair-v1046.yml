@@ -52,12 +52,16 @@ jobs:
           mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT installed_rank, version, description, success, installed_on FROM flyway_schema_history WHERE success = 0 ORDER BY version;"
           echo "===== newstart_official_updates row count ====="
           mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT COUNT(*) AS cnt FROM newstart_official_updates;"
+          echo "===== V1046 5 keys presence ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT dedup_key, review_status, published_at, title FROM newstart_official_updates WHERE dedup_key IN ('DOC:FSC:fsc-86357','DOC:FSC:fsc-87188','DOC:PUBLIC_AGENCY:credit-info-enf-decree-appx2-4-20260811','TITLE_DATE:NEWSTART_FUND:새출발기금 채무조정 신청 현황(26.8월말 기준):2026-09-18','URL:https://www.kamco.or.kr/portal/contents.do?mId=0203030000');"
           echo "===== summary ====="
           V1046_S=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT success FROM flyway_schema_history WHERE version='1046' ORDER BY installed_rank DESC LIMIT 1;")
           V1045_S=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT success FROM flyway_schema_history WHERE version='1045' ORDER BY installed_rank DESC LIMIT 1;")
           FAILED_LIST=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT GROUP_CONCAT(version ORDER BY version SEPARATOR '-') FROM flyway_schema_history WHERE success = 0;")
           ROWS=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT COUNT(*) FROM newstart_official_updates;")
-          echo "RESULT_V1046s${V1046_S:-X}_V1045s${V1045_S:-X}_FAILED${FAILED_LIST:-none}_ROWS${ROWS:-X}"
+          KEYS=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT COUNT(*) FROM newstart_official_updates WHERE dedup_key IN ('DOC:FSC:fsc-86357','DOC:FSC:fsc-87188','DOC:PUBLIC_AGENCY:credit-info-enf-decree-appx2-4-20260811','TITLE_DATE:NEWSTART_FUND:새출발기금 채무조정 신청 현황(26.8월말 기준):2026-09-18','URL:https://www.kamco.or.kr/portal/contents.do?mId=0203030000');")
+          PUBKEYS=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT COUNT(*) FROM newstart_official_updates WHERE dedup_key IN ('DOC:FSC:fsc-86357','DOC:FSC:fsc-87188','DOC:PUBLIC_AGENCY:credit-info-enf-decree-appx2-4-20260811','TITLE_DATE:NEWSTART_FUND:새출발기금 채무조정 신청 현황(26.8월말 기준):2026-09-18','URL:https://www.kamco.or.kr/portal/contents.do?mId=0203030000') AND review_status='PUBLISHED';")
+          echo "RESULT_V1046s${V1046_S:-X}_V1045s${V1045_S:-X}_FAILED${FAILED_LIST:-none}_ROWS${ROWS:-X}_KEYS${KEYS:-X}_PUB${PUBKEYS:-X}"
           SSMEOF
             )
           else
