@@ -660,7 +660,20 @@ jobs:
           echo "=== Smoke test: GET /wemade via SSM ==="
           SSM_BODY=$(cat <<'SSMEOF'
           echo "--- localhost:8080/wemade ---"
-          HTTP_CODE=$(curl -s -o /tmp/wemade_smoke.html -w "%{http_code}" --max-time 15 http://127.0.0.1:8080/wemade || echo "CURL_FAILED")
+          # 스모크 테스트: 최대 3회 재시도 (콜드 스타트 대응)
+          # --max-time 30, 재시도 간 10초 대기
+          HTTP_CODE="CURL_FAILED"
+          for ATTEMPT in 1 2 3; do
+            echo "Smoke test attempt $ATTEMPT/3..."
+            CURL_OUT=$(curl -s -o /tmp/wemade_smoke.html -w "%{http_code}" --max-time 30 http://127.0.0.1:8080/wemade 2>/dev/null)
+            CURL_RC=$?
+            if [ $CURL_RC -eq 0 ] && [ "$CURL_OUT" = "200" ]; then
+              HTTP_CODE="200"
+              break
+            fi
+            echo "Attempt $ATTEMPT: curl_rc=$CURL_RC http=$CURL_OUT"
+            if [ $ATTEMPT -lt 3 ]; then sleep 10; fi
+          done
           echo "HTTP: $HTTP_CODE"
           if [ "$HTTP_CODE" = "200" ]; then
             TITLE=$(grep -o -m 1 '<title>[^<]*</title>' /tmp/wemade_smoke.html || echo "NO_TITLE")
