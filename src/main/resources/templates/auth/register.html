@@ -150,7 +150,16 @@
 
   <script>
 
-    const registerReturnUrl = window.safeInternalReturnUrl(new URLSearchParams(location.search).get('returnUrl'));
+    const returnUrlParam = new URLSearchParams(location.search).get('returnUrl');
+    let registerReturnUrl = window.safeInternalReturnUrl(returnUrlParam);
+    if (!returnUrlParam) {
+      try {
+        const ref = new URL(document.referrer);
+        if (ref.origin === location.origin) {
+          registerReturnUrl = window.safeInternalReturnUrl(ref.pathname + ref.search + ref.hash);
+        }
+      } catch (_) { /* keep /home fallback */ }
+    }
     document.getElementById('backLink')?.setAttribute('href', registerReturnUrl);
 
     const loginIdCheckState = {
