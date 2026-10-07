@@ -33,6 +33,7 @@ on:
           - rollback-jar
           - wiki-status
           - wemade-test
+          - member-snapshots
 
 permissions:
   id-token: write
@@ -287,6 +288,21 @@ jobs:
           journalctl -u f2r-app.service --since "2026-10-06 00:00:00" --no-pager 2>/dev/null | grep -a -c "WEMADE KIS" || echo 0
           echo KIS_AUTH_LOG
           journalctl -u f2r-app.service --since "2026-10-05 00:00:00" --no-pager 2>/dev/null | grep -a "WEMADE KIS" | grep -a -iE "auth|token|skipped|PENDING" | tail -5 || echo NO_AUTH_LOGS
+          SSMEOF
+              )
+              ;;
+            member-snapshots)
+              DIAG_LABEL="member-snapshots (wemade_member_snapshots read-only)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          echo "===== MAX(measured_at) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT MAX(measured_at) AS latest_snapshot FROM wemade_member_snapshots;" 2>&1
+          echo ""
+          echo "===== COUNT today (KST) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT COUNT(*) AS today_cnt FROM wemade_member_snapshots WHERE measured_at >= CONVERT_TZ(CURDATE(), '+00:00', '+09:00');" 2>&1
+          echo ""
+          echo "===== latest 10 for 112040 ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT measured_at, broker_name, buy_volume, sell_volume, net_volume, exchange FROM wemade_member_snapshots WHERE symbol='112040' ORDER BY measured_at DESC LIMIT 10;" 2>&1
           SSMEOF
               )
               ;;
