@@ -32,7 +32,7 @@ VALUES
      'POLICY', 'HIGH', 'PUBLISHED',
      FALSE, NOW(6),
      'DOC:FSC:fsc-86357',
-     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6))
 ON DUPLICATE KEY UPDATE
 `title` = VALUES(`title`), `summary` = VALUES(`summary`),
 `original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
@@ -56,7 +56,7 @@ VALUES
      'POLICY', 'CRITICAL', 'PUBLISHED',
      FALSE, NOW(6),
      'DOC:FSC:fsc-87188',
-     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6))
 ON DUPLICATE KEY UPDATE
 `title` = VALUES(`title`), `summary` = VALUES(`summary`),
 `original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
@@ -79,7 +79,7 @@ VALUES
      'POLICY', 'HIGH', 'PUBLISHED',
      FALSE, NOW(6),
      'DOC:PUBLIC_AGENCY:credit-info-enf-decree-appx2-4-20260811',
-     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6))
 ON DUPLICATE KEY UPDATE
 `title` = VALUES(`title`), `summary` = VALUES(`summary`),
 `original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
@@ -105,7 +105,7 @@ VALUES
      'NOTICE', 'NORMAL', 'REVIEW',
      FALSE, NOW(6),
      'TITLE_DATE:NEWSTART_FUND:새출발기금 채무조정 신청 현황(26.8월말 기준):2026-09-18',
-     NULL, NULL, NOW(6), NOW(6));
+     NULL, NULL, NOW(6), NOW(6))
 ON DUPLICATE KEY UPDATE
 `title` = VALUES(`title`), `summary` = VALUES(`summary`),
 `original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
@@ -128,7 +128,7 @@ VALUES
      'DEBT_ADJUSTMENT', 'NORMAL', 'PUBLISHED',
      FALSE, NOW(6),
      'URL:https://www.kamco.or.kr/portal/contents.do?mId=0203030000',
-     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+     'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6))
 ON DUPLICATE KEY UPDATE
 `title` = VALUES(`title`), `summary` = VALUES(`summary`),
 `original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
