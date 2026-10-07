@@ -35,6 +35,7 @@ jobs:
           aws-region: ap-northeast-2
 
       - name: Run via SSM
+        id: ssm
         env:
           MODE: ${{ inputs.mode }}
         run: |
@@ -54,9 +55,9 @@ jobs:
           echo "===== summary ====="
           V1046_S=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT success FROM flyway_schema_history WHERE version='1046' ORDER BY installed_rank DESC LIMIT 1;")
           V1045_S=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT success FROM flyway_schema_history WHERE version='1045' ORDER BY installed_rank DESC LIMIT 1;")
-          FAILED_LIST=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT GROUP_CONCAT(version ORDER BY version) FROM flyway_schema_history WHERE success = 0;")
+          FAILED_LIST=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT GROUP_CONCAT(version ORDER BY version SEPARATOR '-') FROM flyway_schema_history WHERE success = 0;")
           ROWS=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT COUNT(*) FROM newstart_official_updates;")
-          echo "RESULT_SUMMARY: V1046_SUCCESS=[${V1046_S:-missing}] V1045_SUCCESS=[${V1045_S:-missing}] FAILED=[${FAILED_LIST:-none}] UPDATES_ROWS=[$ROWS]"
+          echo "RESULT_V1046s${V1046_S:-X}_V1045s${V1045_S:-X}_FAILED${FAILED_LIST:-none}_ROWS${ROWS:-X}"
           SSMEOF
             )
           else
@@ -86,7 +87,7 @@ jobs:
           FAILED_AFTER=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT GROUP_CONCAT(version ORDER BY version) FROM flyway_schema_history WHERE success = 0;")
           V1046_AFTER=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT COUNT(*) FROM flyway_schema_history WHERE version='1046';")
           V1045_AFTER=$(mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT success FROM flyway_schema_history WHERE version='1045' ORDER BY installed_rank DESC LIMIT 1;")
-          echo "RESULT_SUMMARY: REPAIR=[done] FAILED_AFTER=[${FAILED_AFTER:-none}] V1046_ROWS=[$V1046_AFTER] V1045_SUCCESS=[$V1045_AFTER]"
+          echo "RESULT_REPAIR_${FAILED_AFTER:-none}_V1046rows${V1046_AFTER:-X}_V1045s${V1045_AFTER:-X}"
           SSMEOF
             )
           fi
@@ -112,14 +113,24 @@ jobs:
           done
 
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text > /tmp/ssm-raw-output.txt || true
-          SUMMARY=$(grep "RESULT_SUMMARY:" /tmp/ssm-raw-output.txt | tail -1 || true)
+          SUMMARY=$(grep -o "^RESULT_[A-Za-z0-9_-]*" /tmp/ssm-raw-output.txt | tail -1 || true)
           if [ -n "$SUMMARY" ]; then
             echo "::notice::$SUMMARY"
+            echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::RESULT_SUMMARY not found in SSM output"
+            echo "::warning::RESULT marker not found in SSM output"
+            echo "summary=RESULT_UNKNOWN" >> "$GITHUB_OUTPUT"
           fi
 
           if [ "$STATUS" != "Success" ]; then
             echo "::error::SSM command did not succeed (Status=$STATUS)"
             exit 1
           fi
+
+      - name: Upload result marker
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ssm.outputs.summary }}-mode-${{ inputs.mode }}
+          path: /tmp/ssm-raw-output.txt
+          retention-days: 1
