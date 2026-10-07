@@ -662,6 +662,10 @@ jobs:
           echo "--- localhost:8080/wemade ---"
           # 스모크 테스트: 최대 3회 재시도 (콜드 스타트 대응)
           # --max-time 30, 재시도 간 10초 대기
+          # 워밍업: 첫 요청으로 Thymeleaf 템플릿 캐시 예열 (최대 90초)
+          echo "Warming up /wemade..."
+          curl -s -o /dev/null --max-time 90 http://127.0.0.1:8080/wemade 2>/dev/null || true
+          echo "Warm-up done, starting smoke test"
           HTTP_CODE="CURL_FAILED"
           for ATTEMPT in 1 2 3; do
             echo "Smoke test attempt $ATTEMPT/3..."
