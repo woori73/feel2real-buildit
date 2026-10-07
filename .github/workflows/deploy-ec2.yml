@@ -665,9 +665,8 @@ jobs:
           HTTP_CODE="CURL_FAILED"
           for ATTEMPT in 1 2 3; do
             echo "Smoke test attempt $ATTEMPT/3..."
-            CURL_OUT=$(curl -s -o /tmp/wemade_smoke.html -w "%{http_code}" --max-time 30 http://127.0.0.1:8080/wemade 2>/dev/null || echo "000")
-            CURL_RC=$?
-            if [ $CURL_RC -eq 0 ] && [ "$CURL_OUT" = "200" ]; then
+            CURL_OUT=$(curl -s -o /tmp/wemade_smoke.html -w "%{http_code}" --max-time 60 http://127.0.0.1:8080/wemade 2>/dev/null); CURL_RC=$?
+              if [ $CURL_RC -eq 0 ] && [ "$CURL_OUT" = "200" ]; then
               HTTP_CODE="200"
               break
             fi
