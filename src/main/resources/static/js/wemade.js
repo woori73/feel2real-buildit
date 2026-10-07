@@ -79,15 +79,10 @@
     disc.innerHTML = '<span class="down">' + esc(num(t.discountPct).toFixed(1) + '% 할인') + '</span>';
     var dday = el('today-dday');
     dday.textContent = t.dday > 0 ? 'D-' + t.dday : (t.dday === 0 ? 'D-Day' : 'D+' + Math.abs(t.dday));
-    var badge = el('today-badge');
-    if (badge) badge.innerHTML = t.realtime
-      ? '<span class="badge-live">실시간</span>'
-      : '<span class="badge-delayed">지연 시세</span>';
     el('today-lines').innerHTML = (t.lines || []).map(function (ln) {
       return '<li>' + esc(ln) + '</li>';
     }).join('');
-    el('today-asof').textContent = (t.tradeDate ? t.tradeDate + ' 기준' : '') +
-      ' · 인수가 68,910원 (DART rcpNo 20260630900888)';
+    el('today-asof').textContent = (t.tradeDate ? t.tradeDate + ' 기준' : '');
   }
 
   /* ============ 2. 주가 차트 (1일/1주/1월/3개월) ============ */
