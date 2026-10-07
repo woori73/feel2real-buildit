@@ -33,6 +33,10 @@ VALUES
      FALSE, NOW(6),
      'DOC:FSC:fsc-86357',
      'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+ON DUPLICATE KEY UPDATE
+`title` = VALUES(`title`), `summary` = VALUES(`summary`),
+`original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
+`relevance_priority` = VALUES(`relevance_priority`), `updated_at` = NOW(6);
 
 -- 2) 2026-06-25 금융위원회·캠코 「새출발기금 심사체계 개선」 발표
 -- 가상자산('26.1월~)·비상장주식('26.5월~) 재산심사 반영, 감면기준 차등화(60~80% → 30~80%),
@@ -53,6 +57,10 @@ VALUES
      FALSE, NOW(6),
      'DOC:FSC:fsc-87188',
      'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+ON DUPLICATE KEY UPDATE
+`title` = VALUES(`title`), `summary` = VALUES(`summary`),
+`original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
+`relevance_priority` = VALUES(`relevance_priority`), `updated_at` = NOW(6);
 
 -- 3) 2026-08-11 신용정보법 개정 시행 — 채무조정기구의 재산정보 일괄 확보
 -- 신용정보의 이용 및 보호에 관한 법률 시행령 [별표 2의4] <신설 2026. 8. 11.>
@@ -72,6 +80,10 @@ VALUES
      FALSE, NOW(6),
      'DOC:PUBLIC_AGENCY:credit-info-enf-decree-appx2-4-20260811',
      'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+ON DUPLICATE KEY UPDATE
+`title` = VALUES(`title`), `summary` = VALUES(`summary`),
+`original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
+`relevance_priority` = VALUES(`relevance_priority`), `updated_at` = NOW(6);
 
 -- 4) 2026-09-18 캠코·신용회복위원회 8월말 신청 현황 발표
 -- NOTE: 공식 보도자료 원문 URL을 웹 검색으로 확보하지 못함. 캠코·신복위 공동 발표를
@@ -94,6 +106,10 @@ VALUES
      FALSE, NOW(6),
      'TITLE_DATE:NEWSTART_FUND:새출발기금 채무조정 신청 현황(26.8월말 기준):2026-09-18',
      NULL, NULL, NOW(6), NOW(6));
+ON DUPLICATE KEY UPDATE
+`title` = VALUES(`title`), `summary` = VALUES(`summary`),
+`original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
+`relevance_priority` = VALUES(`relevance_priority`), `updated_at` = NOW(6);
 
 -- 5) 캠코 공식 안내 — 매입형(부실차주) vs 중개형(부실우려차주) 채무조정 구조
 -- 출처: 한국자산관리공사 홈페이지 「채무조정 지원내용」 (상시 안내 페이지, 발표일 없음)
@@ -113,3 +129,7 @@ VALUES
      FALSE, NOW(6),
      'URL:https://www.kamco.or.kr/portal/contents.do?mId=0203030000',
      'MUSE_TRACK_B', NOW(6), NOW(6), NOW(6));
+ON DUPLICATE KEY UPDATE
+`title` = VALUES(`title`), `summary` = VALUES(`summary`),
+`original_url` = VALUES(`original_url`), `review_status` = VALUES(`review_status`),
+`relevance_priority` = VALUES(`relevance_priority`), `updated_at` = NOW(6);
