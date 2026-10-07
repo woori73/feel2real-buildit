@@ -3,7 +3,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.controller;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeChinaDisclosureRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeChinaNewsRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeDeltaService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeIssueService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,6 @@ public class WemadePageController {
     private final WemadeChinaDisclosureRepository chinaDisclosureRepository;
     private final WemadeChinaNewsRepository chinaNewsRepository;
     private final WemadeIssueService issueService;
-    private final WemadeDeltaService deltaService;
 
     @GetMapping("/wemade")
     public String wemadeHome(
@@ -36,18 +34,12 @@ public class WemadePageController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
         String viewer = principal == null ? "GUEST" : "MEMBER";
         model.addAttribute("viewer", viewer);
-        // 방어: issues/delta 로딩 실패해도 페이지는 렌더링되도록
+        // 방어: issues 로딩 실패해도 페이지는 렌더링되도록
+        // delta는 /api/wemade/delta 로 AJAX 비동기 로딩 (초기 렌더링 차단 방지)
         try {
             model.addAttribute("issues", issueService.forViewer(viewer));
         } catch (Exception e) {
             model.addAttribute("issues", java.util.Collections.emptyList());
-        }
-        try {
-            java.util.List<java.util.Map<String, Object>> delta = deltaService.buildDelta();
-            int limit = "MEMBER".equals(viewer) ? 3 : 1;
-            model.addAttribute("deltaItems", delta.stream().limit(limit).toList());
-        } catch (Exception e) {
-            model.addAttribute("deltaItems", java.util.Collections.emptyList());
         }
         return "wemade/index";
     }
