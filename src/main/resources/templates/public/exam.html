@@ -39,7 +39,8 @@
     .exam-price { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; background: #fff; border: 1px solid #dbe7ff; border-radius: 12px; padding: 12px 18px; font-size: 16px; color: var(--exam-gray); }
     .exam-price strong { font-size: 26px; font-weight: 800; color: var(--exam-blue); }
     .exam-cta { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; }
-    .exam-cta a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 10px; padding: 14px 26px; white-space: nowrap; }
+    .exam-cta a, .exam-cta button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 10px; padding: 14px 26px; white-space: nowrap; }
+    .exam-cta button { border: none; cursor: pointer; font-family: inherit; }
     .exam-cta .kakao { background: #fee500; color: #3c1e1e; }
     .exam-cta .kakao:hover { background: #f5dc00; }
     .exam-cta .email { background: var(--exam-blue); color: #fff; }
@@ -79,7 +80,7 @@
       .exam-visual .sub-shot { width: 60%; }
       .exam-logo-note { font-size: 15px; padding: 0 8px; }
       .exam-cta { order: 5; margin-top: 0; }
-      .exam-cta a { flex: 1 1 0; justify-content: center; padding: 14px 8px; font-size: 15px; white-space: nowrap; }
+      .exam-cta a, .exam-cta button { flex: 1 1 0; justify-content: center; padding: 14px 8px; font-size: 15px; white-space: nowrap; }
       .exam-steps { padding: 44px 20px 60px; }
       .exam-steps-inner { grid-template-columns: 1fr; gap: 12px; }
       .exam-step { display: grid; grid-template-columns: 44px 1fr; gap: 16px; text-align: left; padding: 20px 18px; align-items: start; }
@@ -87,6 +88,10 @@
       .exam-step h3 { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
       .exam-step p { font-size: 16px; line-height: 1.6; }
     }
+
+    /* ---------- 토스트 ---------- */
+    .exam-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(16px); background: rgba(17, 24, 39, 0.92); color: #fff; font-size: 15px; font-weight: 600; padding: 13px 22px; border-radius: 12px; opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease; z-index: 9999; max-width: 90vw; text-align: center; }
+    .exam-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
@@ -125,10 +130,10 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3C6.48 3 2 6.36 2 10.5c0 2.62 1.7 4.92 4.25 6.26-.16.6-.6 2.18-.69 2.52-.1.4.15.39.36.29.17-.09 2.6-1.77 3.66-2.49.46.07.94.1 1.42.1 5.52 0 10-3.36 10-7.5S17.52 3 12 3z"/></svg>
             카톡 문의
           </a>
-          <a class="email" href="mailto:woorinaesin@naver.com">
+          <button type="button" class="email" id="examEmailCopyBtn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
             이메일 문의
-          </a>
+          </button>
         </div>
       </div>
       <div class="exam-visual">
@@ -181,6 +186,48 @@
 
   <!-- 로그인 모달 (기존 공통 인증) -->
   <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+  <div class="exam-toast" id="examToast" role="status" aria-live="polite"></div>
+  <script>
+  (function () {
+    var EMAIL = 'woorinaesin@naver.com';
+    var btn = document.getElementById('examEmailCopyBtn');
+    var toast = document.getElementById('examToast');
+    var timer = null;
+    function showToast(msg) {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+    }
+    function fallbackCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+    if (btn) {
+      btn.addEventListener('click', function () {
+        function done(ok) {
+          showToast(ok ? '이메일 주소가 복사되었습니다' : '복사에 실패했습니다: ' + EMAIL);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(EMAIL).then(function () { done(true); }, function () { done(fallbackCopy(EMAIL)); });
+        } else {
+          done(fallbackCopy(EMAIL));
+        }
+      });
+    }
+  })();
+  </script>
   <script src="/js/return_url.js"></script>
   <script src="/js/account_menu.js"></script>
 
