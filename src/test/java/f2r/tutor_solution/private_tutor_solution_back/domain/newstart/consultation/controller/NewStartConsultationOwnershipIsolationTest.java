@@ -3,6 +3,10 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultat
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +29,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultati
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.service.NewStartConsultationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementDeniedException;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.service.NewStartConsultationNotifier;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
@@ -87,6 +93,7 @@ class NewStartConsultationOwnershipIsolationTest {
   @MockitoBean NewStartMemberDebtStatusService debtStatusService;
   @MockitoBean NewStartAtozCaseService atozCaseService;
   @MockitoBean NewStartAiChatService aiChatService;
+  @MockitoBean NewStartEntitlementService entitlementService;
 
   private Cookie cookie(long userId) {
     return new Cookie("ACCESS_TOKEN", tokenProvider.issue(userId, "member" + userId, "STUDENT"));
@@ -135,18 +142,20 @@ class NewStartConsultationOwnershipIsolationTest {
   }
 
   @Test
-  @DisplayName("감사회원 grant가 없는 일반 로그인 회원도 자기 상담 목록을 200으로 받는다")
-  void plainMemberCanListOwnConsultations() throws Exception {
-    when(consultationRepository.findByMemberUserIdOrderByLastMessageAtDesc(B_MEMBER_ID)).thenReturn(List.of());
+  @DisplayName("감사회원 grant가 없는 일반 회원은 자기 상담 목록도 403 (권한 누수 차단)")
+  void plainMemberCannotListOwnConsultations() throws Exception {
+    doThrow(new NewStartEntitlementDeniedException()).when(entitlementService).requireThanksMember(any());
 
     mockMvc.perform(get("/api/newstart/consultations").cookie(cookie(B_MEMBER_ID)))
-        .andExpect(status().isOk())
-        .andExpect(content().json("[]"));
+        .andExpect(status().isForbidden());
+
+    verify(consultationRepository, never()).findByMemberUserIdOrderByLastMessageAtDesc(anyLong());
   }
 
   @Test
-  @DisplayName("존재하지 않는 consultationId는 소유자와 무관하게 404")
+  @DisplayName("존재하지 않는 consultationId는 감사회원이 조회해도 404")
   void missingConsultationIsNotFound() throws Exception {
+    doNothing().when(entitlementService).requireThanksMember(any());
     when(consultationRepository.findById(anyLong())).thenReturn(Optional.empty());
 
     mockMvc.perform(get("/api/newstart/consultations/999").cookie(cookie(B_MEMBER_ID)))
@@ -154,8 +163,9 @@ class NewStartConsultationOwnershipIsolationTest {
   }
 
   @Test
-  @DisplayName("소유 회원 A는 본인 상담을 200으로 읽는다(격리가 과 차단이 아님을 대조 확인)")
+  @DisplayName("감사회원 A는 본인 상담을 200으로 읽는다(격리가 과 차단이 아님을 대조 확인)")
   void ownerReadsOwnConsultation() throws Exception {
+    doNothing().when(entitlementService).requireThanksMember(any());
     when(consultationRepository.findById(FOREIGN_CONSULTATION_ID)).thenReturn(Optional.of(ownedByA()));
     when(messageRepository.findByConsultationIdAndAuthorRoleInOrderByMessageIdAsc(eq(FOREIGN_CONSULTATION_ID), any()))
         .thenReturn(List.of(question(500L)));
