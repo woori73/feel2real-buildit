@@ -39,22 +39,11 @@ window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
   </section>
   <ul class="today-lines" id="today-lines" hidden><li></li></ul>
 
-  <!-- 2. 오늘 새롭게 알게 된 것 -->
+  <!-- 2. 오늘 새롭게 알게 된 것 (AJAX 비동기 로딩) -->
   <section class="sec" aria-labelledby="t-delta">
     <h2 class="sec-title" id="t-delta">오늘 새롭게 알게 된 것</h2>
     <div id="delta-list">
-      <div th:if="${#lists.isEmpty(deltaItems)}" class="delta-empty">
-        오늘은 새로 확인된 변화가 없습니다.
-      </div>
-      <article th:each="d : ${deltaItems}" class="delta-item">
-        <div class="meta"><span th:text="${d.dateLabel}">10월 7일</span> · <span th:text="${d.kindLabel}">중국</span></div>
-        <h3 class="delta-title" th:text="${d.title}">제목</h3>
-        <p class="delta-summary" th:text="${d.summary}">요약</p>
-        <div class="delta-link">
-          <span>→ <span th:text="${d.issueNumber}">①</span> <span th:text="${d.issueShortName}">쟁점</span>과 관련</span>
-          <a th:if="${d.sourceUrl}" th:href="${d.sourceUrl}" target="_blank" rel="noopener">원문 보기</a>
-        </div>
-      </article>
+      <div class="delta-empty" id="delta-loading">최신 정보를 불러오는 중…</div>
     </div>
   </section>
 

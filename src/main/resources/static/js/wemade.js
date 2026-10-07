@@ -537,6 +537,35 @@
   document.addEventListener('DOMContentLoaded', function () {
     wireLogout();
 
+    // 오늘 새롭게 알게 된 것 (AJAX 비동기 로딩 — 초기 HTML 렌더링 차단 방지)
+    (function loadDelta() {
+      var box = el('delta-list');
+      if (!box) return;
+      getJSON('/api/wemade/delta')
+        .then(function (res) {
+          var items = (res && res.items) || [];
+          if (!items.length) {
+            box.innerHTML = '<div class="delta-empty">오늘은 새로 확인된 변화가 없습니다.</div>';
+            return;
+          }
+          var html = '';
+          for (var i = 0; i < items.length; i++) {
+            var d = items[i];
+            html += '<article class="delta-item">'
+              + '<div class="meta"><span>' + esc(d.dateLabel) + '</span> · <span>' + esc(d.kindLabel) + '</span></div>'
+              + '<h3 class="delta-title">' + esc(d.title) + '</h3>'
+              + '<p class="delta-summary">' + esc(d.summary) + '</p>'
+              + '<div class="delta-link"><span>→ ' + esc(d.issueNumber) + ' ' + esc(d.issueShortName) + '과 관련</span>'
+              + (d.sourceUrl ? ' <a href="' + esc(d.sourceUrl) + '" target="_blank" rel="noopener">원문 보기</a>' : '')
+              + '</div></article>';
+          }
+          box.innerHTML = html;
+        })
+        .catch(function () {
+          box.innerHTML = '<div class="delta-empty">오늘은 새로 확인된 변화가 없습니다.</div>';
+        });
+    })();
+
     // 1. 오늘의 위메이드 (티저, 비회원 공개)
     getJSON(API.today + '?symbol=112040')
       .then(function (t) { todayData = t; renderToday(t); })
