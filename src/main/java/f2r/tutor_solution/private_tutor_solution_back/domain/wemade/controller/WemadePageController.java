@@ -31,8 +31,10 @@ public class WemadePageController {
     public String wemadeHome(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
             Model model, HttpServletResponse response) {
+        // 비로그인은 로그인 화면으로 리다이렉트 (2026-10-07 정책: /wemade는 회원 전용)
+        if (principal == null) return "redirect:/wemade/login";
         response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
-        String viewer = principal == null ? "GUEST" : "MEMBER";
+        String viewer = "MEMBER";
         model.addAttribute("viewer", viewer);
         // 방어: issues 로딩 실패해도 페이지는 렌더링되도록
         // delta는 /api/wemade/delta 로 AJAX 비동기 로딩 (초기 렌더링 차단 방지)
