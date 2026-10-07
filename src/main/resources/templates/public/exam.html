@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>내신 영어 문제지 제작 | 내신위키</title>
-  <meta name="description" content="최근 기출·시험범위를 보내주세요. 내신위키와 전문가가 제작합니다.">
+  <meta name="description" content="최근기출, 시험범위, 학교학습지를 보내주세요.">
   <link rel="stylesheet" href="/css/account_menu.css">
   <style>
     :root {
@@ -39,7 +39,7 @@
     .exam-price { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; background: #fff; border: 1px solid #dbe7ff; border-radius: 12px; padding: 12px 18px; font-size: 16px; color: var(--exam-gray); }
     .exam-price strong { font-size: 26px; font-weight: 800; color: var(--exam-blue); }
     .exam-cta { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; }
-    .exam-cta a { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 10px; padding: 14px 26px; }
+    .exam-cta a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 10px; padding: 14px 26px; white-space: nowrap; }
     .exam-cta .kakao { background: #fee500; color: #3c1e1e; }
     .exam-cta .kakao:hover { background: #f5dc00; }
     .exam-cta .email { background: var(--exam-blue); color: #fff; }
@@ -52,16 +52,19 @@
     .exam-visual .sub-shot { position: absolute; z-index: 1; width: 62%; right: -2%; top: 8%; transform: rotate(3deg); background: #fff; padding: 8px; border-radius: 6px; box-shadow: 0 14px 34px rgba(17, 24, 39, 0.14); }
     .exam-visual .sub-shot img { display: block; width: 100%; height: auto; border-radius: 2px; }
     .exam-caption { margin-top: 18px; font-size: 13px; color: #9aa3b2; text-align: center; }
+    .exam-logo-note { margin-top: 10px; font-size: 14px; font-weight: 700; color: var(--exam-blue); text-align: center; line-height: 1.6; }
 
     /* ---------- 제작 과정 ---------- */
     .exam-steps { max-width: 1200px; margin: 0 auto; padding: 64px 24px 80px; }
     .exam-steps-inner { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
-    .exam-step { background: var(--exam-card); border-radius: 16px; padding: 26px 18px; text-align: center; position: relative; }
+    .exam-step { background: var(--exam-card); border-radius: 16px; padding: 26px 20px; text-align: center; position: relative; }
     .exam-step .num { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: #fff; color: var(--exam-blue); font-weight: 800; font-size: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.12); }
-    .exam-step h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
-    .exam-step p { font-size: 14px; color: var(--exam-gray); line-height: 1.6; }
+    .exam-step h3 { font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+    .exam-step p { font-size: 15px; color: var(--exam-gray); line-height: 1.65; }
 
     .exam-footer { border-top: 1px solid #eef1f6; padding: 26px 24px; text-align: center; font-size: 13px; color: #9aa3b2; }
+    .exam-bizinfo { background: #f8fafc; border-top: 1px solid #eef1f6; padding: 22px 24px 30px; text-align: center; font-size: 12.5px; color: #9aa3b2; line-height: 1.8; }
+    .exam-bizinfo strong { color: #6b7280; font-weight: 700; }
 
     /* ---------- 모바일 ---------- */
     @media (max-width: 860px) {
@@ -74,13 +77,15 @@
       .exam-visual { order: 4; max-width: 420px; margin: 0 auto; width: 100%; }
       .exam-visual .main-shot { width: 86%; }
       .exam-visual .sub-shot { width: 60%; }
+      .exam-logo-note { font-size: 15px; padding: 0 8px; }
       .exam-cta { order: 5; margin-top: 0; }
-      .exam-cta a { flex: 1 1 0; justify-content: center; padding: 14px 12px; font-size: 15px; }
+      .exam-cta a { flex: 1 1 0; justify-content: center; padding: 14px 8px; font-size: 15px; white-space: nowrap; }
       .exam-steps { padding: 44px 20px 60px; }
       .exam-steps-inner { grid-template-columns: 1fr; gap: 12px; }
-      .exam-step { display: grid; grid-template-columns: 44px 1fr; gap: 14px; text-align: left; padding: 18px; align-items: center; }
-      .exam-step .num { margin-bottom: 0; }
-      .exam-step h3 { margin-bottom: 4px; }
+      .exam-step { display: grid; grid-template-columns: 44px 1fr; gap: 16px; text-align: left; padding: 20px 18px; align-items: start; }
+      .exam-step .num { margin-bottom: 0; margin-top: 2px; flex-shrink: 0; }
+      .exam-step h3 { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+      .exam-step p { font-size: 16px; line-height: 1.6; }
     }
   </style>
 </head>
@@ -110,7 +115,7 @@
     <div class="exam-hero-inner">
       <div class="exam-copy">
         <h1 class="exam-h1">내신 영어<br><span class="hl">문제지 제작</span></h1>
-        <p class="exam-sub">최근 기출 · 시험범위를 보내주세요.<br>내신위키와 전문가가 제작합니다.</p>
+        <p class="exam-sub">최근기출, 시험범위, 학교학습지를 보내주세요.</p>
         <div class="exam-price">
           <span>기본 1회</span>
           <strong>20,000원</strong>
@@ -128,12 +133,13 @@
       </div>
       <div class="exam-visual">
         <div class="sub-shot" aria-hidden="true">
-          <img src="/img/exam/exam-sub.jpg" alt="" loading="lazy">
+          <img src="/img/exam/exam-main.jpg" alt="" loading="lazy">
         </div>
         <div class="main-shot">
-          <img src="/img/exam/exam-main.jpg" alt="실제 제작 예시 — 압구정중2 영어 시험지">
+          <img src="/img/exam/exam-sub.jpg" alt="실제 제작 예시 — 압구정중2 영어 2026학년도 2학기 중간고사 대비 문제지">
         </div>
         <p class="exam-caption">실제 제작 예시 · 압구정중2 영어 2026학년도 2학기 중간고사 대비</p>
+        <p class="exam-logo-note">학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다</p>
       </div>
     </div>
   </section>
@@ -143,28 +149,35 @@
     <div class="exam-steps-inner">
       <div class="exam-step">
         <span class="num">1</span>
-        <div><h3>자료 보내기</h3><p>기출 · 시험범위</p></div>
+        <div><h3>자료 보내기</h3><p>학교 기출문제·시험범위·교과서 자료를 보내주세요.<br>사진이나 PDF 등 가지고 계신 자료 그대로 보내주시면 됩니다.</p></div>
       </div>
       <div class="exam-step">
         <span class="num">2</span>
-        <div><h3>영어 문제지 제작</h3><p>기출과 비슷한 문항 수 · 배점 · 구성</p></div>
+        <div><h3>영어 문제지 제작</h3><p>보내주신 기출과 시험범위를 분석해 학교 시험과 비슷한 유형으로 제작합니다.<br>문항 수·배점·문제 구성까지 실제 시험에 맞춰 구성합니다.</p></div>
       </div>
       <div class="exam-step">
         <span class="num">3</span>
-        <div><h3>카톡·이메일 전달</h3><p>완성본 발송</p></div>
+        <div><h3>카톡·이메일 전달</h3><p>완성된 문제지와 정답·해설을 카카오톡 또는 이메일로 보내드립니다.<br>받은 파일은 바로 학습하거나 출력해서 사용할 수 있습니다.</p></div>
       </div>
       <div class="exam-step">
         <span class="num">4</span>
-        <div><h3>수정 요청</h3><p>고칠 부분만 말씀</p></div>
+        <div><h3>수정 요청</h3><p>받아보신 뒤 고칠 부분이나 추가하고 싶은 내용을 말씀해 주세요.<br>문항·난이도·구성 등 필요한 부분을 확인해 수정합니다.</p></div>
       </div>
       <div class="exam-step">
         <span class="num">5</span>
-        <div><h3>최종 완성</h3><p>수정 반영본 전달</p></div>
+        <div><h3>최종 완성</h3><p>요청하신 수정사항을 반영해 최종 문제지를 완성합니다.<br>최종 문제지와 정답·해설 파일을 다시 전달해 드립니다.</p></div>
       </div>
     </div>
   </section>
 
   <footer class="exam-footer">내신위키 · 내신 영어 문제지 제작</footer>
+  <div class="exam-bizinfo">
+    <strong>압구정에듀홀릭출판사</strong> · 대표: 박정민<br>
+    서울특별시 송파구 중대로10길 37-25, 4층(가락동)<br>
+    사업자등록번호: 146-99-01347 · 통신판매업신고번호: 2026-서울송파-1411<br>
+    전화: 010-8507-1453 · 이메일: woorinaesin@naver.com<br>
+    © 2026 Feel to Real. All rights reserved.
+  </div>
 
   <!-- 로그인 모달 (기존 공통 인증) -->
   <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
