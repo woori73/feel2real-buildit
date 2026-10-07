@@ -34,6 +34,7 @@ on:
           - wiki-status
           - wemade-test
           - member-snapshots
+          - newstart-review-list
 
 permissions:
   id-token: write
@@ -303,6 +304,21 @@ jobs:
           echo ""
           echo "===== latest 10 for 112040 ====="
           mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT measured_at, broker_name, buy_volume, sell_volume, net_volume, exchange FROM wemade_member_snapshots WHERE symbol='112040' ORDER BY measured_at DESC LIMIT 10;" 2>&1
+          SSMEOF
+              )
+              ;;
+            newstart-review-list)
+              DIAG_LABEL="newstart-review-list (newstart_knowledge_items REVIEW read-only)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          echo "===== REVIEW count ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT COUNT(*) AS review_cnt FROM newstart_knowledge_items WHERE status='REVIEW';" 2>&1
+          echo ""
+          echo "===== classification counts ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT CASE WHEN (source_url IS NOT NULL AND source_url != '') OR content LIKE '%http%' THEN CASE WHEN (content IS NOT NULL AND LENGTH(content) > 100) OR (summary IS NOT NULL AND LENGTH(summary) > 0) THEN 'A_ACTIVE_CANDIDATE' ELSE 'C_EDGE_LINK_NO_CONTENT' END ELSE 'B_DELETE_CANDIDATE' END AS grp, COUNT(*) AS cnt FROM newstart_knowledge_items WHERE status='REVIEW' GROUP BY grp;" 2>&1
+          echo ""
+          echo "===== REVIEW id list (id, title, has_url, content_has_url, content_len) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT knowledge_id, LEFT(title,60) AS title, (source_url IS NOT NULL AND source_url != '') AS has_url, (content LIKE '%http%') AS content_has_url, LENGTH(content) AS content_len, LENGTH(summary) AS summary_len FROM newstart_knowledge_items WHERE status='REVIEW' ORDER BY knowledge_id;" 2>&1
           SSMEOF
               )
               ;;
