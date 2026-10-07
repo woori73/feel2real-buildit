@@ -421,3 +421,47 @@ body { font-size: 18px; line-height: 1.7; }
 .panho-sub { font-size: 17px; }
 .deal-num .k { font-size: 14px; }
 .risk-note { font-size: 17px; }
+
+/* ===== 2026-10-07 통합 개편: 모바일 가독성 강화 ===== */
+/* 본문 색상을 진하게 — 회색 본문 금지 */
+.issue-body .lead, .delta-summary, .guest-note, .today-lines li {
+  color: #1a2338;
+}
+/* 중요 정보 강조 (날짜·금액·회사명·결론) */
+.hl, strong.hl { font-weight: 700; color: #0f1f3d; }
+.issue-body strong, .delta-summary strong { font-weight: 700; }
+/* 링크·출처 최소 크기 보장 */
+a { font-size: inherit; }
+.issue-sources a, .delta-link a, .ext-link {
+  font-size: 17px; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center;
+}
+/* 섹션 제목 강화 */
+.sec-title { font-size: 26px; font-weight: 800; }
+/* 긴 문단 나누기 */
+.issue-body .lead { margin-bottom: 14px; }
+/* 차트 컨테이너 — X축 겹침 방지 여백 */
+.chart-wrap { position: relative; min-height: 260px; }
+.chart-wrap canvas { max-height: 300px; }
+/* 10/30 추적 영역 */
+.deal-tracker { background: linear-gradient(180deg, #f0f4ff, #fff); border: 1.5px solid #c9d8ff; border-radius: 16px; padding: 18px; }
+.deal-tracker .deal-step { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 18px; }
+.deal-tracker .deal-step:last-child { border-bottom: none; }
+.deal-tracker .deal-amt { font-weight: 700; font-size: 20px; color: #0f1f3d; }
+.deal-tracker .deal-date { font-weight: 700; color: #b7791f; }
+/* 원화 환산 표시 */
+.krw { color: #1f9d55; font-weight: 700; }
+.fx-note { font-size: 15px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+/* 중국 기사 상세 */
+.cn-article h4 { font-size: 20px; font-weight: 800; margin: 18px 0 10px; }
+.cn-article p { font-size: 18px; line-height: 1.7; margin: 0 0 12px; color: #1a2338; }
+.cn-article .claim-tag { display: inline-block; font-size: 15px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 6px; }
+.claim-tag.media { background: #fff3e0; color: #b7791f; }
+.claim-tag.official { background: #e8f5e9; color: #1f9d55; }
+.claim-tag.unverified { background: #f5f5f5; color: #6b7a99; }
+/* 390px 실제 기기 대응 */
+@media (max-width: 390px) {
+  body { font-size: 17px; }
+  .sec-title { font-size: 24px; }
+  .issue-q { font-size: 20px; }
+  .page { padding: 10px 10px 40px; }
+}

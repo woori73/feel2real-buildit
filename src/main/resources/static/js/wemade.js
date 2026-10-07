@@ -113,7 +113,7 @@
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { labels: { boxWidth: 12, font: { size: 10 } } } },
       scales: {
-        x: { ticks: { maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 4, font: { size: 11 } }, grid: { display: false } },
         y: { ticks: { font: { size: 10 } } }
       }
     };
@@ -141,7 +141,7 @@
           ]
         },
         options: baseOpts({ scales: {
-          x: { ticks: { maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
+          x: { ticks: { maxTicksLimit: 5, font: { size: 11 } }, grid: { display: false } },
           y: { ticks: { font: { size: 10 } } },
           y1: { position: 'right', ticks: { font: { size: 9 } }, grid: { display: false } }
         }})
@@ -177,7 +177,7 @@
           ]
         },
         options: baseOpts({ scales: {
-          x: { ticks: { maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
+          x: { ticks: { maxTicksLimit: 4, font: { size: 11 } }, grid: { display: false } },
           y: { ticks: { font: { size: 10 } } },
           y1: { position: 'right', ticks: { font: { size: 9 } }, grid: { display: false } }
         }})
@@ -293,7 +293,7 @@
         interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
+          x: { ticks: { maxTicksLimit: 4, font: { size: 11 } }, grid: { display: false } },
           y: { ticks: { font: { size: 10 } }, title: { display: true, text: '기준일=100', font: { size: 10 } } }
         }
       }
@@ -702,4 +702,33 @@
   } else {
     setupDetailsChartToggle();
   }
+})();
+
+/* 위안→원화 자동 병기 (2026-10-07) */
+(function () {
+  'use strict';
+  var CNY_KRW = 200; // 기준 환율 (원/위안), 2026년 10월 기준
+  // 亿元/万元/元 패턴 매칭
+  function convertCny(text) {
+    if (!text || typeof text !== 'string') return text;
+    return text.replace(/(\d+(?:\.\d+)?)\s*(억)?\s*위안/g, function (m, num) {
+      var cny = parseFloat(num) * 1e8; // 억 위안 → 위안
+      var krw = cny * CNY_KRW;
+      var krwStr = krw >= 1e12 ? '약 ' + (krw / 1e12).toFixed(1) + '조원'
+        : krw >= 1e8 ? '약 ' + Math.round(krw / 1e8).toLocaleString('ko-KR') + '억원'
+        : '약 ' + Math.round(krw).toLocaleString('ko-KR') + '원';
+      return m + ' (' + krwStr + ')';
+    }).replace(/(\d+(?:\.\d+)?)\s*亿元/g, function (m, num) {
+      var krw = parseFloat(num) * 1e8 * CNY_KRW;
+      var krwStr = krw >= 1e12 ? '약 ' + (krw / 1e12).toFixed(1) + '조원'
+        : '약 ' + Math.round(krw / 1e8).toLocaleString('ko-KR') + '억원';
+      return m + ' (' + krwStr + ')';
+    }).replace(/(\d+(?:\.\d+)?)\s*万元/g, function (m, num) {
+      var krw = parseFloat(num) * 1e4 * CNY_KRW;
+      var krwStr = '약 ' + Math.round(krw / 1e8).toLocaleString('ko-KR') + '억원';
+      return m + ' (' + krwStr + ')';
+    });
+  }
+  // 전역 노출 (필요시 사용)
+  window.WEMADE_CNY_KRW = { rate: CNY_KRW, convert: convertCny };
 })();
