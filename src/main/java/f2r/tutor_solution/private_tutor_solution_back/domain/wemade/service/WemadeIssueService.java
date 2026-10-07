@@ -74,6 +74,11 @@ public class WemadeIssueService {
                 slim.put("id", m.get("id"));
                 slim.put("question", m.get("question"));
                 slim.put("shortName", m.get("shortName"));
+                // 템플릿이 body/sources/nextCheck 키를 직접 참조하므로 빈 값으로 포함.
+                // 키 자체가 없으면 게스트 렌더링이 issue-3의 th:if 평가 시점에 중단됨 (2026-10-07).
+                slim.put("body", Collections.emptyList());
+                slim.put("sources", Collections.emptyList());
+                slim.put("nextCheck", null);
                 return slim;
             }).toList();
         } catch (Exception e) {
