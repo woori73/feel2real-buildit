@@ -5,8 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,8 +22,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultati
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService.NewStartAiAnswer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementDeniedException;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberProfileService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
@@ -53,17 +49,13 @@ class NewStartConsultationServiceTest {
   @Mock private NewStartAtozCaseService atozCaseService;
   @Mock private NewStartAiChatService aiChatService;
   @Mock private NewStartConsultationNotifier notifier;
-  @Mock private NewStartEntitlementService entitlementService;
 
   private NewStartConsultationService service;
 
   @BeforeEach
   void setUp() {
     service = new NewStartConsultationService(consultationRepository, messageRepository,
-        memberProfileService, userRepository, debtStatusService, atozCaseService, aiChatService, notifier,
-        entitlementService);
-    // 기본: 감사회원 권한 통과 (권한 테스트가 아닌 로직 테스트용)
-    doNothing().when(entitlementService).requireThanksMember(any());
+        memberProfileService, userRepository, debtStatusService, atozCaseService, aiChatService, notifier);
   }
 
   private static AuthenticatedPrincipal member(long id) {
@@ -172,20 +164,19 @@ class NewStartConsultationServiceTest {
   }
 
   @Test
-  @DisplayName("given 비로그인(principal null) when create/list then NewStartEntitlementDeniedException")
+  @DisplayName("given 비로그인(principal null) when create/list then AccessDeniedException")
   void givenAnonymous_thenDenied() {
-    doThrow(new NewStartEntitlementDeniedException()).when(entitlementService).requireThanksMember(null);
-    assertThatThrownBy(() -> service.create(null, "내용", false)).isInstanceOf(NewStartEntitlementDeniedException.class);
-    assertThatThrownBy(() -> service.myConsultations(null)).isInstanceOf(NewStartEntitlementDeniedException.class);
+    assertThatThrownBy(() -> service.create(null, "내용", false)).isInstanceOf(AccessDeniedException.class);
+    assertThatThrownBy(() -> service.myConsultations(null)).isInstanceOf(AccessDeniedException.class);
   }
 
   @Test
-  @DisplayName("given 일반회원(감사회원 grant 없음) when create then NewStartEntitlementDeniedException — 권한 누수 차단")
-  void givenRegularMember_whenCreate_thenDenied() {
-    doThrow(new NewStartEntitlementDeniedException()).when(entitlementService).requireThanksMember(any());
-    assertThatThrownBy(() -> service.create(member(1L), "질문입니다.", false))
-        .isInstanceOf(NewStartEntitlementDeniedException.class);
-    verify(consultationRepository, never()).save(any());
+  @DisplayName("given 일반 로그인 회원(감사회원 grant 없음) when create then 정상 생성 — 1:1 상담은 일반회원 허용(2026-10 정책)")
+  void givenRegularMember_whenCreate_thenAllowed() {
+    stubSaves();
+    ConsultationThreadView view = service.create(member(1L), "질문입니다.", false);
+    assertThat(view.consultationId()).isEqualTo(1L);
+    assertThat(view.status()).isEqualTo("NEW");
   }
 
   @Test
