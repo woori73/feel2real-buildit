@@ -18,7 +18,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.Ne
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAiChatService.NewStartAiAnswer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozCaseService.AtozCase;
-import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartEntitlementService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozStep;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartAtozStep.Step;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.service.NewStartMemberDebtStatusService;
@@ -40,7 +39,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * 감사회원 1:1 비공개 상담 — 회원 본인 + ADMIN만 접근하는 상담 스레드(설계 §1~§8).
+ * 회원 1:1 비공개 상담 — 로그인한 모든 회원이 쓰고, 회원 본인 + ADMIN만 접근하는 상담 스레드(설계 §1~§8).
+ *
+ * <p>2026-10 정책: 1:1 비공개 상담은 일반회원에게 허용된 기능이며 감사회원 요건을 두지 않는다.
+ * 소유권은 {@code ownConsultation}이 계속 강제한다. 지피지기(THANKS_MEMBER)와 이 권한은 별개다.
  *
  * <p><b>기존 쪽지와는 별개</b>: {@code newstart_direct_messages}는 단발·단일복사본·회원 상호 DM이라
  * 상담 스레드로 재사용하지 않는다. 대신 회원 식별·별명·권한·채무·지피지기·A to Z 단계 등 기존 서비스만
@@ -72,7 +74,6 @@ public class NewStartConsultationService {
   private final NewStartAtozCaseService atozCaseService;
   private final NewStartAiChatService aiChatService;
   private final NewStartConsultationNotifier notifier;
-  private final NewStartEntitlementService entitlementService;
 
   public NewStartConsultationService(
       NewStartConsultationRepository consultationRepository,
@@ -82,8 +83,7 @@ public class NewStartConsultationService {
       NewStartMemberDebtStatusService debtStatusService,
       NewStartAtozCaseService atozCaseService,
       NewStartAiChatService aiChatService,
-      NewStartConsultationNotifier notifier,
-      NewStartEntitlementService entitlementService) {
+      NewStartConsultationNotifier notifier) {
     this.consultationRepository = consultationRepository;
     this.messageRepository = messageRepository;
     this.memberProfileService = memberProfileService;
@@ -92,7 +92,6 @@ public class NewStartConsultationService {
     this.atozCaseService = atozCaseService;
     this.aiChatService = aiChatService;
     this.notifier = notifier;
-    this.entitlementService = entitlementService;
   }
 
   // ── 회원 경로 ──────────────────────────────────────────────────────────
@@ -100,7 +99,7 @@ public class NewStartConsultationService {
   /** 새 상담 생성 — 첫 질문 1건을 MEMBER 메시지로 남기고, 질문에서 A to Z 단계를 결정적으로 연결(§7). */
   @Transactional
   public ConsultationThreadView create(AuthenticatedPrincipal principal, String content, boolean linkDebt) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     String text = normalize(content);
     LocalDateTime now = LocalDateTime.now();
     NewStartConsultation saved = consultationRepository.save(NewStartConsultation.builder()
@@ -149,7 +148,7 @@ public class NewStartConsultationService {
 
   @Transactional(readOnly = true)
   public List<ConsultationSummaryView> myConsultations(AuthenticatedPrincipal principal) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     return consultationRepository.findByMemberUserIdOrderByLastMessageAtDesc(principal.userId()).stream()
         .map(c -> new ConsultationSummaryView(
             c.getConsultationId(),
@@ -165,7 +164,7 @@ public class NewStartConsultationService {
   /** 회원 스레드 상세(§7 과거 대화·답변 시간순). AI_RESEARCH는 조회에서 제외되고 열람 시 읽음 커서를 갱신한다. */
   @Transactional
   public ConsultationThreadView thread(AuthenticatedPrincipal principal, Long consultationId) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     NewStartConsultation c = ownConsultation(principal, consultationId);
     List<NewStartConsultationMessage> msgs =
         messageRepository.findByConsultationIdAndAuthorRoleInOrderByMessageIdAsc(consultationId, MEMBER_VISIBLE);
@@ -181,7 +180,7 @@ public class NewStartConsultationService {
   /** 같은 상담 스레드에 회원 추가 질문(§2). 운영자 답변 뒤면 MEMBER_FOLLOWUP으로 전이. */
   @Transactional
   public ConsultationThreadView reply(AuthenticatedPrincipal principal, Long consultationId, String content) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     String text = normalize(content);
     NewStartConsultation c = ownConsultation(principal, consultationId);
     LocalDateTime now = LocalDateTime.now();
@@ -202,7 +201,7 @@ public class NewStartConsultationService {
   /** 헤더 배지용 — 내 모든 상담 중 아직 못 본 운영자 답변 총계. */
   @Transactional(readOnly = true)
   public long unreadAnswerCount(AuthenticatedPrincipal principal) {
-    entitlementService.requireThanksMember(principal);
+    requireLoggedIn(principal);
     return consultationRepository.findByMemberUserIdOrderByLastMessageAtDesc(principal.userId()).stream()
         .mapToLong(this::unreadOperator)
         .sum();
@@ -373,6 +372,12 @@ public class NewStartConsultationService {
    * 상담은 로그인한 모든 회원이 쓴다(감사회원 요건 없음 — 2026-10 정책). 소유권은 {@link #ownConsultation}이
    * 계속 강제한다. 지피지기(THANKS_MEMBER)와 이 권한은 별개다.
    */
+  private void requireLoggedIn(AuthenticatedPrincipal principal) {
+    if (principal == null || principal.userId() == null) {
+      throw new AccessDeniedException("로그인이 필요합니다.");
+    }
+  }
+
   private void requireAdmin(AuthenticatedPrincipal principal) {
     if (principal == null || !"ADMIN".equals(principal.role())) {
       throw new AccessDeniedException("운영자만 접근할 수 있습니다.");
