@@ -68,11 +68,17 @@ public class NewStartOfficialUpdateService {
     return publish(created.updateId(), AUTO_PUBLISHED_BY);
   }
 
+  /**
+   * 공개 피드 정렬 기준(2026-10-08): featured → reviewedAt(사이트 게시 시점) → publishedAt(원문 발표일) → updateId.
+   * 과거 원문을 backfill 등록해도(V1046: 원문 발표일 2026-02~08월) 사이트에 새로 게시된 순서대로 노출된다.
+   * 화면에 표시되는 날짜는 publishedAt(원문 발표일) 그대로이다.
+   */
   @Transactional(readOnly = true)
   public List<NewStartOfficialUpdateResponse> publicUpdates(SourceType sourceType) {
     List<NewStartOfficialUpdate> updates = sourceType == null
-        ? repository.findByReviewStatusOrderByFeaturedDescPublishedAtDescUpdateIdDesc(ReviewStatus.PUBLISHED)
-        : repository.findByReviewStatusAndSourceTypeOrderByFeaturedDescPublishedAtDescUpdateIdDesc(
+        ? repository.findByReviewStatusOrderByFeaturedDescReviewedAtDescPublishedAtDescUpdateIdDesc(
+            ReviewStatus.PUBLISHED)
+        : repository.findByReviewStatusAndSourceTypeOrderByFeaturedDescReviewedAtDescPublishedAtDescUpdateIdDesc(
             ReviewStatus.PUBLISHED, sourceType);
     return updates.stream().map(NewStartOfficialUpdateResponse::from).collect(Collectors.toList());
   }
@@ -220,3 +226,4 @@ public class NewStartOfficialUpdateService {
     return normalized;
   }
 }
+
