@@ -40,6 +40,32 @@ jobs:
       - name: Ensure Gradle wrapper is executable
         run: chmod +x gradlew
 
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build BuildIt Wiki frontend (baked into bootJar)
+        # deploy-ec2.yml이 하던 wiki 빌드를 여기로 이동한다. artifact JAR에 wiki 정적
+        # 리소스가 포함되어야 /problem-generator/wiki/index.html이 정상 서빙된다
+        # (ProblemGeneratorPageController가 /problem-generator/wiki/index.html로 리다이렉트).
+        # 백엔드 tgz도 여기서 만들어 artifact로 올린다 — Deploy는 빌드 없이 다운로드만 한다.
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/buildit-wiki-backend-src
+          mkdir -p /tmp/buildit-wiki-backend-src
+          cp -R "$GITHUB_WORKSPACE/problem-generator/wiki-backend-src/." /tmp/buildit-wiki-backend-src/
+          cd "$GITHUB_WORKSPACE/problem-generator/wiki-src"
+          npm ci
+          npm run build -- --base=/problem-generator/wiki/
+          cd "$GITHUB_WORKSPACE"
+          rm -rf src/main/resources/static/problem-generator/wiki
+          mkdir -p src/main/resources/static/problem-generator/wiki
+          cp -R problem-generator/wiki-src/dist/. src/main/resources/static/problem-generator/wiki/
+          tar -czf /tmp/buildit-wiki-backend.tgz -C /tmp/buildit-wiki-backend-src backend requirements.txt
+          echo "wiki frontend baked into static resources; backend tgz ready"
+
       - name: Build bootJar only (no deploy)
         run: ./gradlew clean bootJar --no-daemon
 
@@ -172,6 +198,40 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.entity.LmsContentEntityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmsenrollment.entity.LmsEnrollmentEntityTest"
 
+      - name: Stage build artifacts (SHA-bound)
+        # main push에서만 실행: Deploy(auto)가 재사용할 artifact를 만든다.
+        # PR 빌드에서는 업로드하지 않아 스토리지 낭비를 막는다.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/build-artifacts
+          JAR=$(find build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*-plain.jar" | head -n 1)
+          test -n "$JAR" || { echo "::error::bootJar not found in build/libs"; exit 1; }
+          cp "$JAR" /tmp/build-artifacts/app.jar
+          test -f /tmp/buildit-wiki-backend.tgz || { echo "::error::wiki backend tgz not found"; exit 1; }
+          cp /tmp/buildit-wiki-backend.tgz /tmp/build-artifacts/buildit-wiki-backend.tgz
+          ls -lh /tmp/build-artifacts/
+          echo "app.jar SHA256: $(sha256sum /tmp/build-artifacts/app.jar | cut -d' ' -f1)"
+
+      - name: Upload bootJar artifact (SHA-bound)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar-${{ github.sha }}
+          path: /tmp/build-artifacts/app.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload wiki backend artifact (SHA-bound)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiki-backend-${{ github.sha }}
+          path: /tmp/build-artifacts/buildit-wiki-backend.tgz
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
@@ -179,3 +239,4 @@ jobs:
           name: build-check-test-report
           path: build/reports/tests/test
           if-no-files-found: ignore
+
