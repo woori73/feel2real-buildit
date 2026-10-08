@@ -72,7 +72,7 @@ class NewStartOfficialUpdateServiceTest {
         LocalDateTime.of(2026, 9, 21, 9, 0), null, null, Category.NOTICE,
         RelevancePriority.NORMAL, "URL:https://ccrs.or.kr.a", LocalDateTime.now());
     published.publish("admin");
-    when(repository.findByReviewStatusAndSourceTypeOrderByFeaturedDescPublishedAtDescUpdateIdDesc(
+    when(repository.findByReviewStatusAndSourceTypeOrderByFeaturedDescReviewedAtDescPublishedAtDescUpdateIdDesc(
         ReviewStatus.PUBLISHED, SourceType.CCRS)).thenReturn(List.of(published));
 
     assertThat(service.publicUpdates(SourceType.CCRS)).hasSize(1);
@@ -139,7 +139,7 @@ class NewStartOfficialUpdateServiceTest {
         RelevancePriority.NORMAL, "URL:https://fsc.go.kr/notice/2", LocalDateTime.now());
     autoPublished.publish(NewStartOfficialUpdateService.AUTO_PUBLISHED_BY);
     java.util.List<NewStartOfficialUpdate> table = new java.util.ArrayList<>(List.of(autoPublished));
-    when(repository.findByReviewStatusOrderByFeaturedDescPublishedAtDescUpdateIdDesc(ReviewStatus.PUBLISHED))
+    when(repository.findByReviewStatusOrderByFeaturedDescReviewedAtDescPublishedAtDescUpdateIdDesc(ReviewStatus.PUBLISHED))
         .thenAnswer(inv -> table.stream().filter(u -> u.getReviewStatus() == ReviewStatus.PUBLISHED).toList());
     when(repository.findById(1L)).thenReturn(Optional.of(autoPublished));
     org.springframework.test.util.ReflectionTestUtils.setField(autoPublished, "updateId", 1L);
@@ -183,3 +183,4 @@ class NewStartOfficialUpdateServiceTest {
         RelevancePriority.NORMAL, "DOC:FSC:doc-1", LocalDateTime.now());
   }
 }
+
