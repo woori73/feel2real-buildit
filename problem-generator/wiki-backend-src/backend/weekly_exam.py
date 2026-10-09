@@ -548,10 +548,12 @@ def update_weekly_exam_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate)
 
 def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
                       *, actor: Optional[str] = None) -> dict:
-    """DRAFT 세트의 artifact 교체. 제공된 파일만 교체하고 나머지는 유지한다.
-    회차·세트 유형·status·version·identity는 유지하고 filename/hash와 본문만
-    다시 계산한다. 세 파일이 모두 없으면 400. sourceMaterialIds가 주어지면
-    _source_refs 기존 검증으로 현재 Context에 속한 ID인지 확인한다."""
+    """Artifact 교체. 제공된 파일만 교체하고 나머지는 유지한다.
+    - DRAFT: 기존 행을 직접 업데이트한다 (기존 동작 유지).
+    - FINAL: 기존 버전을 보존하고 새 버전(DRAFT)을 생성한다. 회차·세트 유형·
+      identity는 유지하고 filename/hash와 본문만 다시 계산한다.
+    세 파일이 모두 없으면 400. sourceMaterialIds가 주어지면 _source_refs 기존
+    검증으로 현재 Context에 속한 ID인지 확인한다."""
     provided = [name for name, value in (
         ('studentPaper', payload.studentPaper),
         ('answerExplanation', payload.answerExplanation),
@@ -569,7 +571,10 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
         else:
             cleaned[name] = _clean_html(value)
     with _db() as conn:
-        row = _draft_row_or_409(conn, exam_id)
+        row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
+        effective = EFFECTIVE_STATUS.get(row['status'], 'DRAFT')
         refs = json.loads(row['source_material_ids'] or '[]')
         if payload.sourceMaterialIds is not None:
             if _context_reader is None:
@@ -582,24 +587,49 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
         student_html = cleaned.get('studentPaper', row['student_paper_html'])
         answer_html = cleaned.get('answerExplanation', row['answer_explanation_html'])
         verification_md = cleaned.get('productionVerification', row['verification_md'])
-        conn.execute("""UPDATE weekly_exam_sets SET student_paper_name=?,student_paper_html=?,
-          student_paper_hash=?,answer_explanation_name=?,answer_explanation_html=?,
-          answer_explanation_hash=?,verification_name=?,verification_md=?,verification_hash=?,
-          source_material_ids=?,updated_at=? WHERE id=?""",
-          ((payload.studentPaperName.strip() or row['student_paper_name'])[:255]
-           if 'studentPaper' in cleaned else row['student_paper_name'], student_html,
-           _sha(student_html),
-           (payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255]
-           if 'answerExplanation' in cleaned else row['answer_explanation_name'],
-           answer_html, _sha(answer_html),
-           (payload.productionVerificationName.strip() or row['verification_name'])[:255]
-           if 'productionVerification' in cleaned else row['verification_name'],
-           verification_md, _sha(verification_md),
-           json.dumps(refs), now, exam_id))
+        student_name = ((payload.studentPaperName.strip() or row['student_paper_name'])[:255]
+                        if 'studentPaper' in cleaned else row['student_paper_name'])
+        answer_name = ((payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255]
+                       if 'answerExplanation' in cleaned else row['answer_explanation_name'])
+        verification_name = ((payload.productionVerificationName.strip() or row['verification_name'])[:255]
+                             if 'productionVerification' in cleaned else row['verification_name'])
+        if effective == 'DRAFT':
+            conn.execute("""UPDATE weekly_exam_sets SET student_paper_name=?,student_paper_html=?,
+              student_paper_hash=?,answer_explanation_name=?,answer_explanation_html=?,
+              answer_explanation_hash=?,verification_name=?,verification_md=?,verification_hash=?,
+              source_material_ids=?,updated_at=? WHERE id=?""",
+              (student_name, student_html, _sha(student_html),
+               answer_name, answer_html, _sha(answer_html),
+               verification_name, verification_md, _sha(verification_md),
+               json.dumps(refs), now, exam_id))
+            conn.execute("""INSERT INTO weekly_exam_audit
+              (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
+              (exam_id, who, now))
+            return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+        # FINAL: 기존 버전 보존 + 새 버전(DRAFT) 생성
+        new_version = conn.execute("""SELECT COALESCE(MAX(version),0)+1 v FROM weekly_exam_sets
+          WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND round=? AND set_type=?""",
+          (row['school'], row['grade'], row['year'], row['semester'],
+           row['exam'], row['round'], row['set_type'])).fetchone()['v']
+        cursor = conn.execute("""INSERT INTO weekly_exam_sets
+          (school,grade,year,semester,exam,round,set_type,question_count,
+           student_paper_name,student_paper_html,student_paper_hash,
+           answer_explanation_name,answer_explanation_html,answer_explanation_hash,
+           verification_name,verification_md,verification_hash,source_material_ids,
+           context_snapshot,context_hash,version,status,created_by,created_at,updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+          (row['school'], row['grade'], row['year'], row['semester'], row['exam'],
+           row['round'], row['set_type'], row['question_count'],
+           student_name, student_html, _sha(student_html),
+           answer_name, answer_html, _sha(answer_html),
+           verification_name, verification_md, _sha(verification_md),
+           json.dumps(refs), row['context_snapshot'], row['context_hash'],
+           new_version, 'DRAFT', who, now, now))
+        new_id = cursor.lastrowid
         conn.execute("""INSERT INTO weekly_exam_audit
-          (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
-          (exam_id, who, now))
-        return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+          (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'VERSIONED','FINAL','DRAFT',?,?)""",
+          (new_id, who, now))
+        return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (new_id,)).fetchone())
 
 
 @router.delete('/{exam_id}')

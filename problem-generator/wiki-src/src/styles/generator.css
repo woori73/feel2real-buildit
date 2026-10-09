@@ -231,3 +231,5 @@ small.replace-hint{color:#536159}
   .material-actions{gap:5px}
   .material-actions button{min-height:34px;padding:5px 9px;font-size:12px}
 }
+.weekly-exam-row.simple .round-title{display:flex;align-items:center;gap:8px}
+.version-tag{font-size:11px;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:1px 6px}

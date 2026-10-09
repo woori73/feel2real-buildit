@@ -113,6 +113,16 @@ export default function WeeklyExamHub(props:Props){
     reader.readAsText(file)
   }
   const latestFor=()=>items.slice().sort((a,b)=>b.round-a.round||b.version-a.version)[0]
+  // 회차·세트별 최신 버전만 표시 (FINAL 교체 시 구버전 보존됨)
+  const visibleItems=(()=>{
+    const map=new Map<string,WeeklyExam>()
+    for(const item of items){
+      const key=`${item.round}|${item.set_type}`
+      const cur=map.get(key)
+      if(!cur||item.version>cur.version)map.set(key,item)
+    }
+    return Array.from(map.values()).sort((a,b)=>b.round-a.round)
+  })()
   const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const currentStatus=items.slice().sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0]?.context_snapshot?.contextStatus||'PARTIAL'
   const nextRound=Math.max(0,...items.map(item=>item.round))+1
@@ -145,8 +155,8 @@ export default function WeeklyExamHub(props:Props){
             <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항 · ${item.status}`:'준비 전'}</small>
           </span>})()}
         </div>
-        {items.length>0&&<div className="weekly-rounds">{items.map(item=><article key={item.id} className="weekly-exam-row simple">
-          <div className="round-title"><b>{item.round}회</b></div>
+        {visibleItems.length>0&&<div className="weekly-rounds">{visibleItems.map(item=><article key={item.id} className="weekly-exam-row simple">
+          <div className="round-title"><b>{item.round}회</b>{item.version>1&&<small className="version-tag">v{item.version}</small>}</div>
           <div className="material-table" role="table" aria-label={`${item.round}회 자료`}>
             {MATERIALS.map(mat=>{
               const exists=hasMaterial(item,mat.kind)
