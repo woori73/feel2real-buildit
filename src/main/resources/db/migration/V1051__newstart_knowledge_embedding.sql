@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS newstart_knowledge_embedding (
     model_version VARCHAR(50) NOT NULL DEFAULT 'embeddinggemma-2' COMMENT '임베딩 모델 버전',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_nke_item FOREIGN KEY (knowledge_id)
-        REFERENCES newstart_knowledge_items (knowledge_id)
+        REFERENCES newstart_knowledge_items (knowledge_id),
+    INDEX idx_nke_model (model_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE INDEX IF NOT EXISTS idx_nke_model ON newstart_knowledge_embedding (model_version);
