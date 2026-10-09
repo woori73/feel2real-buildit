@@ -54,7 +54,8 @@ class NewstartKnowledgeReviewWorkflowTest {
 
     @BeforeEach
     void setUp() {
-        service = new NewstartKnowledgeService(knowledgeRepository, relationRepository, statusLogRepository);
+        service = new NewstartKnowledgeService(knowledgeRepository, relationRepository, statusLogRepository,
+                new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules());
     }
 
     private NewstartKnowledgeItem item(Long id, NewstartKnowledgeItem.KnowledgeStatus status) {
