@@ -1,0 +1,38 @@
+name: Tmp Start Embedding Service
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Start service via SSM
+        run: |
+          set -euo pipefail
+          SSM_BODY=$(cat <<'SSMEOF'
+          python3 -m pip install --quiet fastapi uvicorn 2>&1 | tail -1
+          echo 'SERVICE_B64' | base64 -d > /tmp/embedding_service.py
+          pkill -f "embedding_service.py" || true
+          sleep 2
+          cd /tmp && nohup python3 -m uvicorn embedding_service:app --host 127.0.0.1 --port 8001 > /var/log/embedding-service.log 2>&1 &
+          sleep 10
+          curl -s http://127.0.0.1:8001/health || echo "health check failed (model may still be loading)"
+          SSMEOF
+          )
+          SSM_BODY="${SSM_BODY/SERVICE_B64/IiIiRW1iZWRkaW5nR2VtbWEg7J6E67Kg65SpIOyEnOu5hOyKpCAo7KeA7ZS87KeA6riwIO2VmOydtOu4jOumrOuTnCDqsoDsg4nsmqkpLiIiIgpmcm9tIGZhc3RhcGkgaW1wb3J0IEZhc3RBUEkKZnJvbSBweWRhbnRpYyBpbXBvcnQgQmFzZU1vZGVsCmZyb20gdHlwaW5nIGltcG9ydCBMaXN0CmltcG9ydCB0b3JjaApmcm9tIHRyYW5zZm9ybWVycyBpbXBvcnQgQXV0b1Rva2VuaXplciwgQXV0b01vZGVsCmltcG9ydCBsb2dnaW5nCgpsb2dnaW5nLmJhc2ljQ29uZmlnKGxldmVsPWxvZ2dpbmcuSU5GTykKbG9nZ2VyID0gbG9nZ2luZy5nZXRMb2dnZXIoX19uYW1lX18pCgphcHAgPSBGYXN0QVBJKHRpdGxlPSJFbWJlZGRpbmdHZW1tYSBTZXJ2aWNlIikKCk1PREVMX1BBVEggPSAiL29wdC9lbWJlZGRpbmdnZW1tYS0yIgp0b2tlbml6ZXIgPSBOb25lCm1vZGVsID0gTm9uZQoKY2xhc3MgRW1iZWRSZXF1ZXN0KEJhc2VNb2RlbCk6CiAgICB0ZXh0czogTGlzdFtzdHJdCgpjbGFzcyBFbWJlZFJlc3BvbnNlKEJhc2VNb2RlbCk6CiAgICBlbWJlZGRpbmdzOiBMaXN0W0xpc3RbZmxvYXRdXQogICAgZGltZW5zaW9uOiBpbnQKCkBhcHAub25fZXZlbnQoInN0YXJ0dXAiKQpkZWYgbG9hZF9tb2RlbCgpOgogICAgZ2xvYmFsIHRva2VuaXplciwgbW9kZWwKICAgIGxvZ2dlci5pbmZvKGYiTG9hZGluZyBtb2RlbCBmcm9tIHtNT0RFTF9QQVRIfS4uLiIpCiAgICB0b2tlbml6ZXIgPSBBdXRvVG9rZW5pemVyLmZyb21fcHJldHJhaW5lZChNT0RFTF9QQVRILCB0cnVzdF9yZW1vdGVfY29kZT1UcnVlKQogICAgbW9kZWwgPSBBdXRvTW9kZWwuZnJvbV9wcmV0cmFpbmVkKE1PREVMX1BBVEgsIHRydXN0X3JlbW90ZV9jb2RlPVRydWUpCiAgICBtb2RlbC5ldmFsKCkKICAgIGxvZ2dlci5pbmZvKCJNb2RlbCBsb2FkZWQiKQoKQGFwcC5wb3N0KCIvZW1iZWQiLCByZXNwb25zZV9tb2RlbD1FbWJlZFJlc3BvbnNlKQpkZWYgZW1iZWQocmVxOiBFbWJlZFJlcXVlc3QpOgogICAgaW5wdXRzID0gdG9rZW5pemVyKAogICAgICAgIHJlcS50ZXh0cywgcGFkZGluZz1UcnVlLCB0cnVuY2F0aW9uPVRydWUsCiAgICAgICAgbWF4X2xlbmd0aD0yMDQ4LCByZXR1cm5fdGVuc29ycz0icHQiCiAgICApCiAgICB3aXRoIHRvcmNoLm5vX2dyYWQoKToKICAgICAgICBvdXRwdXRzID0gbW9kZWwoKippbnB1dHMpCiAgICAgICAgbWFzayA9IGlucHV0c1siYXR0ZW50aW9uX21hc2siXS51bnNxdWVlemUoLTEpLmZsb2F0KCkKICAgICAgICBlbWIgPSAob3V0cHV0cy5sYXN0X2hpZGRlbl9zdGF0ZSAqIG1hc2spLnN1bSgxKSAvIG1hc2suc3VtKDEpLmNsYW1wKG1pbj0xZS05KQogICAgICAgIGVtYiA9IHRvcmNoLm5uLmZ1bmN0aW9uYWwubm9ybWFsaXplKGVtYiwgcD0yLCBkaW09MSkKICAgIHJldHVybiBFbWJlZFJlc3BvbnNlKAogICAgICAgIGVtYmVkZGluZ3M9ZW1iLnRvbGlzdCgpLAogICAgICAgIGRpbWVuc2lvbj03NjgKICAgICkKCkBhcHAuZ2V0KCIvaGVhbHRoIikKZGVmIGhlYWx0aCgpOgogICAgcmV0dXJuIHsic3RhdHVzIjogIm9rIiwgIm1vZGVsX2xvYWRlZCI6IG1vZGVsIGlzIG5vdCBOb25lfQo=}"
+          SSM_SCRIPT=$(printf '%s\n' "$SSM_BODY")
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters "$PARAMS_JSON" --query 'Command.CommandId' --output text)
+          for i in $(seq 1 10); do sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text | tail -10
