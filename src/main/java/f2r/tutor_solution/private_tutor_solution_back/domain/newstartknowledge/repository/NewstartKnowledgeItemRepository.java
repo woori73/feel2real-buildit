@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Repository
 public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartKnowledgeItem, Long>,
@@ -36,6 +37,14 @@ public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartK
 
     @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.sourceType = :type ORDER BY k.createdAt DESC")
     List<NewstartKnowledgeItem> findBySourceType(@Param("type") SourceType type);
+
+    // ── RAG 원본 내보내기 전용: ACTIVE + sourceType 스트리밍 (읽기 전용, knowledgeId 오름차순 고정) ──
+    @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status = :status AND k.sourceType = :type ORDER BY k.knowledgeId ASC")
+    Stream<NewstartKnowledgeItem> streamByStatusAndSourceType(@Param("status") KnowledgeStatus status,
+                                                             @Param("type") SourceType type);
+
+    @Query("SELECT COUNT(k) FROM NewstartKnowledgeItem k WHERE k.status = :status AND k.sourceType = :type")
+    long countByStatusAndSourceType(@Param("status") KnowledgeStatus status, @Param("type") SourceType type);
 
     @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status = :status ORDER BY k.createdAt DESC")
     Page<NewstartKnowledgeItem> findByStatus(@Param("status") KnowledgeStatus status, org.springframework.data.domain.Pageable pageable);
