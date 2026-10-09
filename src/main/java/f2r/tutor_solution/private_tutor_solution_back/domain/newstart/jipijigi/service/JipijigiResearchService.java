@@ -266,13 +266,14 @@ public class JipijigiResearchService {
         // LIKE 후보 (점수 계산용으로 넓게)
         List<NewstartKnowledgeItem> likeCandidates = searchActiveKnowledgeLike(keywords);
         java.util.Map<Long, Double> likeScores = new java.util.HashMap<>();
-        double maxLike = 1.0;
+        double maxLikeTmp = 1.0;
         for (NewstartKnowledgeItem k : likeCandidates) {
             double s = keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2.0
                     + keywordHits(keywords, k.getContent());
             likeScores.put(k.getKnowledgeId(), s);
-            if (s > maxLike) maxLike = s;
+            if (s > maxLikeTmp) maxLikeTmp = s;
         }
+        final double maxLike = maxLikeTmp;
         // 벡터 후보
         List<KnowledgeVectorIndex.VectorHit> vecHits =
                 vectorIndex.search(queryVec, embeddingProps.getVectorLimit());
