@@ -1,0 +1,51 @@
+name: Tmp Embedding EC2 (one-time)
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Setup and embed via SSM
+        run: |
+          set -euo pipefail
+          SSM_BODY=$(cat <<'SSMEOF'
+          set -euo pipefail
+          # 1. Create table (idempotent)
+          source /etc/f2r/env
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" << 'SQLEOF'
+          CREATE TABLE IF NOT EXISTS newstart_knowledge_embedding (
+              knowledge_id BIGINT PRIMARY KEY,
+              embedding BLOB NOT NULL,
+              model_version VARCHAR(50) NOT NULL DEFAULT 'embeddinggemma-2',
+              updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              CONSTRAINT fk_nke_item FOREIGN KEY (knowledge_id) REFERENCES newstart_knowledge_items (knowledge_id)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          CREATE INDEX IF NOT EXISTS idx_nke_model ON newstart_knowledge_embedding (model_version);
+          SQLEOF
+          echo "table ready"
+          # 2. Setup Python
+          python3 -m ensurepip --default-pip 2>&1 | tail -1
+          python3 -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu 2>&1 | tail -1
+          python3 -m pip install --quiet transformers numpy 2>&1 | tail -1
+          echo "pip done"
+          SSMEOF
+          )
+          SSM_SCRIPT=$(printf '%s\n' "$SSM_BODY")
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters "$PARAMS_JSON" --query 'Command.CommandId' --output text)
+          echo "CMD: $CMD_ID"
+          for i in $(seq 1 40); do sleep 30
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status: $STATUS"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text | tail -20
