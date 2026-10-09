@@ -84,7 +84,9 @@ final class Cafe6063Fixture {
     private final ResearchPack pack;
 
     FixedResearch(ResearchPack pack) {
-      super(null, null, null, null);
+      super(null, null, null, null,
+          new f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties(),
+          null, null);
       this.pack = pack;
     }
 
