@@ -17,14 +17,30 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.criteria.Join;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HexFormat;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +50,7 @@ public class NewstartKnowledgeService {
     private final NewstartKnowledgeItemRepository knowledgeRepository;
     private final NewstartKnowledgeRelationRepository relationRepository;
     private final NewstartKnowledgeStatusLogRepository statusLogRepository;
+    private final ObjectMapper objectMapper;
 
     public Page<NewstartKnowledgeItemResponse> search(
             String q,
@@ -470,6 +487,166 @@ public class NewstartKnowledgeService {
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    // ── RAG 원본 내보내기 (읽기 전용) ──────────────────────────────────────────
+    // ADMIN 전용. DB 쓰기 없음. ACTIVE 문서만 knowledgeId 오름차순으로 스트리밍한다.
+    // RULE enum 불일치로 깨지는 findAllActive() 경로는 사용하지 않는다.
+
+    /** 내보내기 대상 sourceType (고정 순서). */
+    public static final List<NewstartKnowledgeItem.SourceType> RAG_EXPORT_TYPES = List.of(
+            NewstartKnowledgeItem.SourceType.CAFE_COMMENT,
+            NewstartKnowledgeItem.SourceType.CAFE_ARTICLE,
+            NewstartKnowledgeItem.SourceType.OPERATOR_KNOWLEDGE,
+            NewstartKnowledgeItem.SourceType.EBOOK);
+
+    /** 내보내기 파일명 규칙: 소문자 sourceType + .json */
+    public static String ragExportFileName(NewstartKnowledgeItem.SourceType type) {
+        return type.name().toLowerCase() + ".json";
+    }
+
+    /**
+     * 요청 sourceType 문자열을 검증하고 내보내기 대상 enum으로 변환한다.
+     * 대상 4종이 아니면 IllegalArgumentException (컨트롤러에서 400으로 변환).
+     */
+    public NewstartKnowledgeItem.SourceType resolveRagExportType(String sourceType) {
+        final NewstartKnowledgeItem.SourceType type;
+        try {
+            type = NewstartKnowledgeItem.SourceType.valueOf(sourceType);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new IllegalArgumentException("지원하지 않는 내보내기 유형입니다: " + sourceType);
+        }
+        if (!RAG_EXPORT_TYPES.contains(type)) {
+            throw new IllegalArgumentException("지원하지 않는 내보내기 유형입니다: " + sourceType);
+        }
+        return type;
+    }
+
+    /** 내보내기 전 확인용 manifest 미리보기 (DB 카운트 기준, 파일 미생성). */
+    public NewstartRagExportManifest buildRagExportPreview() {
+        String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        List<NewstartRagExportManifest.FileStats> files = new ArrayList<>();
+        for (NewstartKnowledgeItem.SourceType type : RAG_EXPORT_TYPES) {
+            long count = knowledgeRepository.countByStatusAndSourceType(
+                    NewstartKnowledgeItem.KnowledgeStatus.ACTIVE, type);
+            files.add(NewstartRagExportManifest.FileStats.builder()
+                    .sourceType(type.name())
+                    .fileName(ragExportFileName(type))
+                    .count(count)
+                    .bytes(-1L)
+                    .sha256("")
+                    .build());
+        }
+        return NewstartRagExportManifest.of(now, files);
+    }
+
+    /**
+     * 단일 sourceType의 ACTIVE 문서를 JSON 배열로 {@code out}에 스트리밍한다.
+     * 전체를 메모리에 적재하지 않으며, 호출자는 스트림을 닫지 않는다.
+     *
+     * @return 실제 기록된 건수·바이트·SHA-256
+     */
+    public NewstartRagExportManifest.FileStats exportRagSourceType(
+            NewstartKnowledgeItem.SourceType type, OutputStream out) {
+        if (!RAG_EXPORT_TYPES.contains(type)) {
+            throw new IllegalArgumentException("지원하지 않는 내보내기 유형입니다: " + type);
+        }
+        MessageDigest digest = sha256Digest();
+        CountingOutputStream counter = new CountingOutputStream(out);
+        // DigestOutputStream.close()는 하위 스트림까지 닫으므로 close 호출 금지 — flush만 사용.
+        java.security.DigestOutputStream digestOut = new java.security.DigestOutputStream(counter, digest);
+        long count = 0;
+        try {
+            JsonGenerator gen = objectMapper.getFactory().createGenerator(digestOut, JsonEncoding.UTF8);
+            gen.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+            gen.writeStartArray();
+            try (Stream<NewstartKnowledgeItem> stream = knowledgeRepository.streamByStatusAndSourceType(
+                    NewstartKnowledgeItem.KnowledgeStatus.ACTIVE, type)) {
+                Iterator<NewstartKnowledgeItem> it = stream.iterator();
+                while (it.hasNext()) {
+                    objectMapper.writeValue(gen, toResponse(it.next()));
+                    count++;
+                }
+            }
+            gen.writeEndArray();
+            gen.flush();
+        } catch (IOException e) {
+            throw new IllegalStateException("RAG 원본 내보내기 실패: " + type, e);
+        }
+        return NewstartRagExportManifest.FileStats.builder()
+                .sourceType(type.name())
+                .fileName(ragExportFileName(type))
+                .count(count)
+                .bytes(counter.getCount())
+                .sha256(HexFormat.of().formatHex(digest.digest()))
+                .build();
+    }
+
+    /**
+     * 4개 유형 JSON + manifest.json을 ZIP으로 {@code out}에 스트리밍한다.
+     * manifest는 마지막 엔트리이며 각 파일의 건수·크기·SHA-256을 기록한다.
+     *
+     * @return ZIP에 기록된 manifest (검증·로깅용)
+     */
+    public NewstartRagExportManifest exportRagAll(OutputStream out) {
+        List<NewstartRagExportManifest.FileStats> files = new ArrayList<>();
+        ZipOutputStream zip = new ZipOutputStream(out, StandardCharsets.UTF_8);
+        try {
+            for (NewstartKnowledgeItem.SourceType type : RAG_EXPORT_TYPES) {
+                zip.putNextEntry(new ZipEntry(ragExportFileName(type)));
+                files.add(exportRagSourceType(type, zip));
+                zip.closeEntry();
+            }
+            NewstartRagExportManifest manifest = NewstartRagExportManifest.of(
+                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), files);
+            zip.putNextEntry(new ZipEntry("manifest.json"));
+            zip.write(objectMapper.writeValueAsBytes(manifest));
+            zip.closeEntry();
+            zip.finish();
+            zip.flush();
+            return manifest;
+        } catch (IOException e) {
+            throw new IllegalStateException("RAG 원본 ZIP 내보내기 실패", e);
+        }
+    }
+
+    private static MessageDigest sha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256을 사용할 수 없습니다", e);
+        }
+    }
+
+    /** 바이트 수를 세는 최소 래퍼 (close 시 하위 스트림을 닫지 않음). */
+    private static final class CountingOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private long count;
+
+        CountingOutputStream(OutputStream delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            delegate.write(b);
+            count++;
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            delegate.write(b, off, len);
+            count += len;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            delegate.flush();
+        }
+
+        long getCount() {
+            return count;
+        }
     }
 
     private NewstartKnowledgeItemResponse toResponse(NewstartKnowledgeItem item) {
