@@ -72,9 +72,9 @@
 .manual-edit-row label{display:grid;gap:4px;font-size:11px;font-weight:700;color:#7a857e}
 .manual-edit-row label:last-child{flex:1;min-width:160px}
 .link-button{background:none;border:0;padding:0;color:#3f6b53;font:inherit;font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer}
-.past-exam-action{border-color:#8b5a2b!important;background:#fff8eb!important;color:#6b3f18!important}.past-exam-panel{border-color:#d5b07b}.past-exam-meta{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:7px 9px;min-width:0}.past-exam-meta p{grid-column:1/-1;margin:0}.past-exam-badge,.past-exam-year{display:inline-flex;width:max-content;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800}.past-exam-badge{background:#7a421d;color:#fff}.past-exam-year{background:#f5dfbd;color:#603813}
+.past-exam-action{border-color:#8b5a2b!important;background:#fff8eb!important;color:#6b3f18!important}.past-exam-panel{border-color:#d5b07b}.past-exam-meta{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:7px 9px;min-width:0}.past-exam-meta p{grid-column:1/-1;margin:0}.past-exam-meta b{overflow-wrap:anywhere;word-break:keep-all;min-width:0}.past-exam-badge,.past-exam-year{display:inline-flex;width:max-content;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800}.past-exam-badge{background:#7a421d;color:#fff}.past-exam-year{background:#f5dfbd;color:#603813}
 .ai-work-log-action{border-color:#3f5a8b!important;background:#eef2fb!important;color:#243a63!important}.ai-work-log-panel{border-color:#7b93d5}.ai-work-log-panel .past-exam-badge{background:#2f4a7a}.ai-work-log-panel .past-exam-year{background:#dbe4f7;color:#243a63}
-@media(max-width:640px){.past-exam-panel .material-list article,.ai-work-log-panel .material-list article{align-items:stretch}.past-exam-panel .material-list article>button,.ai-work-log-panel .material-list article>button{width:100%}.past-exam-meta{grid-template-columns:auto auto}.past-exam-meta b{grid-column:1/-1}.past-exam-action,.ai-work-log-action{width:100%}}
+@media(max-width:640px){.past-exam-panel .material-list article,.ai-work-log-panel .material-list article{align-items:stretch}.past-exam-panel .material-list article>button,.ai-work-log-panel .material-list article>button{width:100%}.past-exam-meta{grid-template-columns:auto auto;row-gap:6px}.past-exam-meta b{grid-column:1/-1;overflow-wrap:anywhere}.past-exam-action,.ai-work-log-action{width:100%}}
 
 
 
@@ -213,3 +213,23 @@ small.replace-hint{color:#536159}
 .replace-file-name{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:400;color:#536159}
 .replace-submit{min-height:44px;font-size:14px}
 @media(max-width:375px){.replace-panel{padding:10px}.replace-file-name{white-space:normal;overflow-wrap:anywhere}.replace-submit{width:100%;white-space:normal}}
+
+/* 회차별 자료 간소화: 3종 자료 × 보기/다운로드/교체 */
+.weekly-exam-row.simple{gap:10px}
+.weekly-exam-row.simple .round-title{font-size:16px}
+.weekly-exam-row.simple .round-title b{font-size:17px}
+.material-table{display:grid;gap:6px}
+.material-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;min-width:0}
+.material-label{font-weight:700;min-width:64px;flex-shrink:0}
+.material-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.material-actions button{min-height:36px;padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font-size:13px;white-space:nowrap}
+.material-actions button:disabled{opacity:.55;cursor:wait}
+.material-missing{color:#94a3b8;font-size:13px}
+@media(max-width:430px){
+  .material-row{padding:7px 8px;gap:6px}
+  .material-label{min-width:52px;font-size:13px}
+  .material-actions{gap:5px}
+  .material-actions button{min-height:34px;padding:5px 9px;font-size:12px}
+}
+.weekly-exam-row.simple .round-title{display:flex;align-items:center;gap:8px}
+.version-tag{font-size:11px;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:1px 6px}

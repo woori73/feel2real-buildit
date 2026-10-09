@@ -35,6 +35,19 @@ public class WikiLearningMaterialController {
       @RequestParam(required = false) String title, @RequestPart("file") MultipartFile file) {
     return ResponseEntity.ok(service.upload(principal.userId(), dataType, grade, title, file));
   }
+
+  /**
+   * 1단계 구조조정(4-5): 학습지 다중 업로드.
+   * 여러 파일을 한 번에 등록하고, 파일별 성공/실패 결과를 반환한다.
+   * 일부 실패 시 성공한 파일은 유지된다.
+   */
+  @PostMapping(value = "/api/wiki/learning-materials/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<List<WikiLearningMaterialResponse>> uploadBatch(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestParam String dataType, @RequestParam Integer grade,
+      @RequestParam(required = false) String title, @RequestPart("files") List<MultipartFile> files) {
+    return ResponseEntity.ok(service.uploadBatch(principal.userId(), dataType, grade, title, files));
+  }
   @GetMapping("/api/wiki/learning-materials/{id}")
   public ResponseEntity<WikiLearningMaterialResponse> detail(@PathVariable Long id) { return ResponseEntity.ok(service.getDetail(id)); }
 

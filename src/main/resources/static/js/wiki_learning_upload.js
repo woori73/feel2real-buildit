@@ -29,9 +29,46 @@
   titleInput.addEventListener('input', function () { titleDirty = true; });
 
   fileInput.addEventListener('change', function () {
-    var f = fileInput.files[0];
-    if (f && !titleDirty) titleInput.value = titleFromName(f.name);
+    // 1단계 구조조정(4-5): 다중 파일 선택 지원
+    var files = fileInput.files;
+    if (files.length > 0 && !titleDirty) {
+      titleInput.value = files.length === 1
+        ? titleFromName(files[0].name)
+        : files.length + '개 파일';
+    }
+    renderFileList(files);
   });
+
+  function renderFileList(files) {
+    var listEl = document.getElementById('wlFileList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    for (var i = 0; i < files.length; i++) {
+      (function (f, idx) {
+        var row = document.createElement('div');
+        row.className = 'wl-file-row';
+        row.id = 'wl-file-' + idx;
+        row.innerHTML = '<span class="wl-file-name"></span><span class="wl-file-size"></span><span class="wl-file-status"></span>';
+        row.querySelector('.wl-file-name').textContent = f.name;
+        row.querySelector('.wl-file-size').textContent = formatSize(f.size);
+        listEl.appendChild(row);
+      })(files[i], i);
+    }
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function setFileStatus(idx, text, cls) {
+    var row = document.getElementById('wl-file-' + idx);
+    if (!row) return;
+    var st = row.querySelector('.wl-file-status');
+    st.textContent = text;
+    st.className = 'wl-file-status ' + (cls || '');
+  }
 
   modal.addEventListener('click', function (e) {
     if (e.target === modal || e.target.closest('[data-learning-close]')) closeModal();
@@ -102,33 +139,43 @@
 
   async function submit(e) {
     e.preventDefault();
-    var submitBtn = form.querySelector('[data-learning-submit]');
-    var file = fileInput.files[0];
-    if (!file) { msg('파일을 선택해주세요.', true); return; }
+    var files = fileInput.files;
+    if (!files.length) { msg('파일을 선택해주세요.', true); return; }
+    var submitBtn = form.querySelector('[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    msg('', false);
 
+    // 1단계 구조조정(4-5): 다중 파일 업로드 — /batch 엔드포인트 사용
     var fd = new FormData();
-    fd.set('dataType', selectedType);
-    fd.set('grade', String(currentGrade()));
-    fd.set('title', titleInput.value.trim());
-    fd.set('file', file);
+    fd.append('dataType', selectedType);
+    fd.append('grade', String(currentGrade()));
+    fd.append('title', titleInput.value || '');
+    for (var i = 0; i < files.length; i++) {
+      fd.append('files', files[i]);
+      setFileStatus(i, '업로드 중…', 'uploading');
+    }
 
-    submitBtn.disabled = true;
-    msg('올리는 중...', false);
     try {
-      var res = await fetchAuth('/api/wiki/learning-materials', { method: 'POST', body: fd, redirectOnAuthError: false });
-      if (res.status === 401) {
-        msg('자료 업로드는 회원 가입 후 이용할 수 있습니다.', true);
-        if (typeof window.openLoginModal === 'function') window.openLoginModal();
+      var res = await fetch('/api/wiki/learning-materials/batch', {
+        method: 'POST', body: fd, credentials: 'same-origin'
+      });
+      var body = await res.json().catch(function () { return []; });
+      if (!res.ok) {
+        var errMsg = body.message || '업로드에 실패했습니다.';
+        for (var j = 0; j < files.length; j++) setFileStatus(j, '실패', 'failed');
+        msg(errMsg, true);
         return;
       }
-      if (!res.ok) { msg('업로드 실패: ' + ((await res.text()) || res.status), true); return; }
-      closeModal();
-      alert('자료가 등록되었습니다.');
-      reloadList();
-    } catch (_) {
-      msg('업로드 중 오류가 발생했습니다.', true);
+      var okCount = Array.isArray(body) ? body.length : 0;
+      for (var k = 0; k < okCount; k++) setFileStatus(k, '완료', 'done');
+      // 일부 실패 시 성공 파일은 유지됨 (서버에서 부분 성공 반환)
+      msg(okCount + '개 파일이 업로드되었습니다.', false);
+      if (typeof window.refreshLearningMaterials === 'function') window.refreshLearningMaterials();
+      setTimeout(closeModal, 1200);
+    } catch (err) {
+      msg('네트워크 오류가 발생했습니다.', true);
     } finally {
-      submitBtn.disabled = false;
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 

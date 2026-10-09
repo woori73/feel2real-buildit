@@ -33,7 +33,11 @@ EFFECTIVE_STATUS = {
     'REVIEW': 'DRAFT', 'CHANGES_REQUESTED': 'DRAFT', 'REJECTED': 'DRAFT',
     'APPROVED': 'FINAL', 'FINAL': 'FINAL', 'PUBLISHED': 'FINAL',
 }
-SET_TYPES = ('40', '70', '40A', '40B')
+SET_TYPES = ('STD',)
+# 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규 세트는 'STD' 단일 유형.
+# 기존 DB의 구 값은 CHECK 제약에서 허용하여 조회·다운로드 호환 유지.
+LEGACY_SET_TYPES = ('40', '70', '40A', '40B')
+ALL_SET_TYPES = ('STD',) + LEGACY_SET_TYPES
 ARTIFACTS = ('student-paper', 'answer-explanation', 'production-verification')
 HTML_ARTIFACTS = ('student-paper', 'answer-explanation')
 
@@ -47,12 +51,54 @@ def configure(get_db: Callable, context_reader: Callable, html_sanitizer: Callab
     _get_db, _context_reader, _html_sanitizer = get_db, context_reader, html_sanitizer
 
 
+
+def _migrate_set_type_unified(conn) -> None:
+    """기존 weekly_exam_sets 테이블의 CHECK 제약에 'STD'를 추가한다.
+
+    SQLite는 CHECK 제약을 직접 변경할 수 없으므로 테이블을 재구축한다.
+    기존 데이터(40/70/40A/40B)는 모두 보존된다.
+    """
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='weekly_exam_sets'"
+    ).fetchone()
+    if not row or "'STD'" in (row[0] or ""):
+        return
+    conn.execute("ALTER TABLE weekly_exam_sets RENAME TO weekly_exam_sets_legacy")
+    # 새 스키마로 재생성 (init_schema의 정의를 재사용하지 않고 명시)
+    conn.execute("""CREATE TABLE weekly_exam_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school TEXT NOT NULL, grade TEXT NOT NULL, year INTEGER NOT NULL,
+        semester TEXT NOT NULL, exam TEXT NOT NULL, round INTEGER NOT NULL,
+        set_type TEXT NOT NULL CHECK (set_type IN ('STD','40','70','40A','40B')),
+        question_count INTEGER NOT NULL,
+        student_paper_name TEXT NOT NULL, student_paper_html TEXT NOT NULL, student_paper_hash TEXT NOT NULL,
+        answer_explanation_name TEXT NOT NULL, answer_explanation_html TEXT NOT NULL, answer_explanation_hash TEXT NOT NULL,
+        verification_name TEXT NOT NULL, verification_md TEXT NOT NULL, verification_hash TEXT NOT NULL,
+        source_material_ids TEXT NOT NULL DEFAULT '[]',
+        context_snapshot TEXT NOT NULL, context_hash TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'REVIEW'
+          CHECK (status IN ('REVIEW','CHANGES_REQUESTED','REJECTED','APPROVED','FINAL','PUBLISHED')),
+        created_by TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL, reviewed_by TEXT NOT NULL DEFAULT '',
+        reviewed_at TEXT NOT NULL DEFAULT '', published_by TEXT NOT NULL DEFAULT '',
+        published_at TEXT NOT NULL DEFAULT ''
+    )""")
+    conn.execute("INSERT INTO weekly_exam_sets SELECT * FROM weekly_exam_sets_legacy")
+    conn.execute("DROP TABLE weekly_exam_sets_legacy")
+    conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS uk_weekly_exam_version
+        ON weekly_exam_sets(school,grade,year,semester,exam,round,set_type,version)""")
+    conn.execute("""CREATE INDEX IF NOT EXISTS idx_weekly_exam_context
+        ON weekly_exam_sets(school,grade,year,semester,exam,round,set_type,status)""")
+
+
 def init_schema(conn) -> None:
+    _migrate_set_type_unified(conn)
     conn.execute("""CREATE TABLE IF NOT EXISTS weekly_exam_sets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         school TEXT NOT NULL, grade TEXT NOT NULL, year INTEGER NOT NULL,
         semester TEXT NOT NULL, exam TEXT NOT NULL, round INTEGER NOT NULL,
-        set_type TEXT NOT NULL CHECK (set_type IN ('40','70','40A','40B')),
+        set_type TEXT NOT NULL CHECK (set_type IN ('STD','40','70','40A','40B')),
         question_count INTEGER NOT NULL,
         student_paper_name TEXT NOT NULL, student_paper_html TEXT NOT NULL, student_paper_hash TEXT NOT NULL,
         answer_explanation_name TEXT NOT NULL, answer_explanation_html TEXT NOT NULL, answer_explanation_hash TEXT NOT NULL,
@@ -86,7 +132,7 @@ class WeeklyExamReviewRequest(BaseModel):
     semester: str
     examType: str
     round: int = Field(ge=1)
-    setType: Literal['40', '70', '40A', '40B']
+    setType: Literal['STD', '40', '70', '40A', '40B'] = 'STD'
     questionCount: int = Field(ge=1, le=200)
     studentPaper: str = Field(min_length=1)
     answerExplanation: str = Field(min_length=1)
@@ -115,7 +161,7 @@ class WeeklyExamArtifactsUpdate(BaseModel):
 
 class WeeklyExamMetadataUpdate(BaseModel):
     round: Optional[int] = Field(default=None, ge=1)
-    setType: Optional[Literal['40', '70', '40A', '40B']] = None
+    setType: Optional[Literal['STD', '40', '70', '40A', '40B']] = None
     questionCount: Optional[int] = Field(default=None, ge=1, le=200)
 
 
@@ -352,25 +398,25 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
     return HTMLResponse(document, headers={'Content-Security-Policy': "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:"})
 
 
-_ARTIFACT_DOWNLOAD_LABELS = {'student-paper': '문제지', 'answer-explanation': '정답해설'}
+_ARTIFACT_DOWNLOAD_LABELS = {'student-paper': '문제지', 'answer-explanation': '정답해설', 'production-verification': '출제검수'}
 
 
-def _download_filename(row, kind: str) -> tuple[str, str]:
+def _download_filename(row, kind: str, ext: str = '.html') -> tuple[str, str]:
     """다운로드 파일명. 한글 원본명은 RFC 5987 filename*로, 구형 클라이언트용으로 ASCII
     대체명을 함께 제공한다. 내용은 저장 canonical과 동일하며 파일명만 파생한다."""
     label = _ARTIFACT_DOWNLOAD_LABELS[kind]
     original = (f"{row['school']}_{row['grade']}_{row['year']}_{row['semester']}_"
-                f"{row['exam']}_{row['round']}회_{row['set_type']}_{label}.html")
+                f"{row['exam']}_{row['round']}회_{label}{ext}")
     ascii_name = re.sub(r'[^0-9A-Za-z._-]', '_', original)
-    if not ascii_name.lower().endswith('.html'):
-        ascii_name += '.html'
-    if not ascii_name.strip('._') or ascii_name in ('.html', '_.html'):
-        ascii_name = f"weekly-exam-{row['id']}-{kind}.html"
+    if not ascii_name.lower().endswith(ext):
+        ascii_name += ext
+    if not ascii_name.strip('._') or ascii_name in (ext, '_' + ext):
+        ascii_name = f"weekly-exam-{row['id']}-{kind}{ext}"
     return ascii_name, original
 
 
 @router.get('/{exam_id}/artifacts/{kind}/download')
-def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation']):
+def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation', 'production-verification']):
     """HTML artifact 원본 다운로드. 보기와 동일한 저장 canonical 바이트를 attachment로
     내려준다. MD artifact는 기존 보기 방식을 유지하므로 다운로드 대상이 아니다(404).
     운영자 전용(_require_operator)이며 Public endpoint로 노출하지 않는다."""
@@ -380,14 +426,16 @@ def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-expla
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
     if kind == 'student-paper':
-        body = row['student_paper_html']
+        body, ext, media_type = row['student_paper_html'], '.html', 'text/html; charset=utf-8'
     elif kind == 'answer-explanation':
-        body = row['answer_explanation_html']
+        body, ext, media_type = row['answer_explanation_html'], '.html', 'text/html; charset=utf-8'
+    elif kind == 'production-verification':
+        body, ext, media_type = row['verification_md'], '.md', 'text/markdown; charset=utf-8'
     else:
-        raise HTTPException(status_code=404, detail='HTML 다운로드 대상이 아닙니다.')
-    ascii_name, original = _download_filename(row, kind)
+        raise HTTPException(status_code=404, detail='다운로드 대상이 아닙니다.')
+    ascii_name, original = _download_filename(row, kind, ext)
     disposition = f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(original, safe="")}'
-    return Response(body, media_type='text/html; charset=utf-8',
+    return Response(body, media_type=media_type,
                     headers={'Content-Disposition': disposition, 'Cache-Control': 'no-store'})
 
 
@@ -468,13 +516,7 @@ def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
         new_round = payload.round if payload.round is not None else row['round']
-        new_set_type = payload.setType or row['set_type']
-        expected_count = 70 if new_set_type == '70' else 40
-        if payload.questionCount is not None and payload.questionCount != expected_count:
-            raise HTTPException(
-                status_code=400,
-                detail=f'{new_set_type} 세트의 문항 수는 {expected_count}이어야 합니다.',
-            )
+        # 1단계 구조조정: 40/70 구분 제거 — 문항 수는 questionCount를 직접 사용
         duplicate = conn.execute("""SELECT id FROM weekly_exam_sets
           WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND round=?
             AND set_type=? AND version=? AND id<>?""",
@@ -506,10 +548,12 @@ def update_weekly_exam_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate)
 
 def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
                       *, actor: Optional[str] = None) -> dict:
-    """DRAFT 세트의 artifact 교체. 제공된 파일만 교체하고 나머지는 유지한다.
-    회차·세트 유형·status·version·identity는 유지하고 filename/hash와 본문만
-    다시 계산한다. 세 파일이 모두 없으면 400. sourceMaterialIds가 주어지면
-    _source_refs 기존 검증으로 현재 Context에 속한 ID인지 확인한다."""
+    """Artifact 교체. 제공된 파일만 교체하고 나머지는 유지한다.
+    - DRAFT: 기존 행을 직접 업데이트한다 (기존 동작 유지).
+    - FINAL: 기존 버전을 보존하고 새 버전(DRAFT)을 생성한다. 회차·세트 유형·
+      identity는 유지하고 filename/hash와 본문만 다시 계산한다.
+    세 파일이 모두 없으면 400. sourceMaterialIds가 주어지면 _source_refs 기존
+    검증으로 현재 Context에 속한 ID인지 확인한다."""
     provided = [name for name, value in (
         ('studentPaper', payload.studentPaper),
         ('answerExplanation', payload.answerExplanation),
@@ -527,7 +571,10 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
         else:
             cleaned[name] = _clean_html(value)
     with _db() as conn:
-        row = _draft_row_or_409(conn, exam_id)
+        row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
+        effective = EFFECTIVE_STATUS.get(row['status'], 'DRAFT')
         refs = json.loads(row['source_material_ids'] or '[]')
         if payload.sourceMaterialIds is not None:
             if _context_reader is None:
@@ -540,24 +587,49 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
         student_html = cleaned.get('studentPaper', row['student_paper_html'])
         answer_html = cleaned.get('answerExplanation', row['answer_explanation_html'])
         verification_md = cleaned.get('productionVerification', row['verification_md'])
-        conn.execute("""UPDATE weekly_exam_sets SET student_paper_name=?,student_paper_html=?,
-          student_paper_hash=?,answer_explanation_name=?,answer_explanation_html=?,
-          answer_explanation_hash=?,verification_name=?,verification_md=?,verification_hash=?,
-          source_material_ids=?,updated_at=? WHERE id=?""",
-          ((payload.studentPaperName.strip() or row['student_paper_name'])[:255]
-           if 'studentPaper' in cleaned else row['student_paper_name'], student_html,
-           _sha(student_html),
-           (payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255]
-           if 'answerExplanation' in cleaned else row['answer_explanation_name'],
-           answer_html, _sha(answer_html),
-           (payload.productionVerificationName.strip() or row['verification_name'])[:255]
-           if 'productionVerification' in cleaned else row['verification_name'],
-           verification_md, _sha(verification_md),
-           json.dumps(refs), now, exam_id))
+        student_name = ((payload.studentPaperName.strip() or row['student_paper_name'])[:255]
+                        if 'studentPaper' in cleaned else row['student_paper_name'])
+        answer_name = ((payload.answerExplanationName.strip() or row['answer_explanation_name'])[:255]
+                       if 'answerExplanation' in cleaned else row['answer_explanation_name'])
+        verification_name = ((payload.productionVerificationName.strip() or row['verification_name'])[:255]
+                             if 'productionVerification' in cleaned else row['verification_name'])
+        if effective == 'DRAFT':
+            conn.execute("""UPDATE weekly_exam_sets SET student_paper_name=?,student_paper_html=?,
+              student_paper_hash=?,answer_explanation_name=?,answer_explanation_html=?,
+              answer_explanation_hash=?,verification_name=?,verification_md=?,verification_hash=?,
+              source_material_ids=?,updated_at=? WHERE id=?""",
+              (student_name, student_html, _sha(student_html),
+               answer_name, answer_html, _sha(answer_html),
+               verification_name, verification_md, _sha(verification_md),
+               json.dumps(refs), now, exam_id))
+            conn.execute("""INSERT INTO weekly_exam_audit
+              (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
+              (exam_id, who, now))
+            return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+        # FINAL: 기존 버전 보존 + 새 버전(DRAFT) 생성
+        new_version = conn.execute("""SELECT COALESCE(MAX(version),0)+1 v FROM weekly_exam_sets
+          WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND round=? AND set_type=?""",
+          (row['school'], row['grade'], row['year'], row['semester'],
+           row['exam'], row['round'], row['set_type'])).fetchone()['v']
+        cursor = conn.execute("""INSERT INTO weekly_exam_sets
+          (school,grade,year,semester,exam,round,set_type,question_count,
+           student_paper_name,student_paper_html,student_paper_hash,
+           answer_explanation_name,answer_explanation_html,answer_explanation_hash,
+           verification_name,verification_md,verification_hash,source_material_ids,
+           context_snapshot,context_hash,version,status,created_by,created_at,updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+          (row['school'], row['grade'], row['year'], row['semester'], row['exam'],
+           row['round'], row['set_type'], row['question_count'],
+           student_name, student_html, _sha(student_html),
+           answer_name, answer_html, _sha(answer_html),
+           verification_name, verification_md, _sha(verification_md),
+           json.dumps(refs), row['context_snapshot'], row['context_hash'],
+           new_version, 'DRAFT', who, now, now))
+        new_id = cursor.lastrowid
         conn.execute("""INSERT INTO weekly_exam_audit
-          (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
-          (exam_id, who, now))
-        return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
+          (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'VERSIONED','FINAL','DRAFT',?,?)""",
+          (new_id, who, now))
+        return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (new_id,)).fetchone())
 
 
 @router.delete('/{exam_id}')
