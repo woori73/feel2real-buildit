@@ -1,0 +1,58 @@
+# TEMPORARY - packet capture during download test (read-only). Delete after investigation.
+# paths-ignore 대상이라 Build/Deploy를 실행하지 않는다.
+name: Tmp Tcpdump (read-only, manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Capture packets via SSM
+        run: |
+          set -euo pipefail
+          SSM_BODY=$(cat <<'SSMEOF'
+          which tcpdump || echo "NO_TCPDUMP"
+          rm -f /tmp/dl.pcap
+          echo "===== starting capture (110s) ====="
+          timeout 110 tcpdump -i any -w /tmp/dl.pcap 'tcp port 8080' 2>/tmp/tcpdump.err &
+          TCPID=$!
+          sleep 105
+          wait $TCPID || true
+          echo "===== capture done ====="
+          ls -lh /tmp/dl.pcap 2>/dev/null || echo "no pcap"
+          echo "===== packet summary (first 40) ====="
+          tcpdump -r /tmp/dl.pcap -n 2>/dev/null | head -40 || echo "cannot read pcap"
+          echo "===== HTTP headers seen ====="
+          tcpdump -r /tmp/dl.pcap -n -A 2>/dev/null | grep -a -m 20 -E 'HTTP/|Content-|GET /api' | head -20 || echo "no http"
+          echo "===== TCP flags summary ====="
+          tcpdump -r /tmp/dl.pcap -n 2>/dev/null | grep -oE 'Flags \[[^]]+\]' | sort | uniq -c | head -10 || true
+          SSMEOF
+          )
+          SSM_SCRIPT=$(printf 'set -euo pipefail\n%s\n' "$SSM_BODY")
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$PARAMS_JSON" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM CommandId=$CMD_ID"
+          for i in $(seq 1 25); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/25)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
