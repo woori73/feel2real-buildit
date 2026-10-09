@@ -31,6 +31,11 @@ public class WemadeCollectionScheduler {
 
     @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Seoul")
     public void collectAfterMarketClose() {
+        // 2026-10-09 사용자 지시: 휴장일에는 KIS 수집 실행 안 함
+        if (!KrxMarketCalendar.isTradingDay()) {
+            log.info("WEMADE scheduled collection skipped (market holiday)");
+            return;
+        }
         log.info("WEMADE scheduled collection start");
         runSafely("PRICE", collectionService::collectPrices);
         runSafely("FLOW", collectionService::collectFlows);
@@ -55,6 +60,11 @@ public class WemadeCollectionScheduler {
      */
     @Scheduled(cron = "0 10/10 9-15 * * MON-FRI", zone = "Asia/Seoul")
     public void collectIntradayAnomalyMetrics() {
+        // 2026-10-09 사용자 지시: 휴장일에는 KIS 수집 실행 안 함
+        if (!KrxMarketCalendar.isTradingDay()) {
+            log.info("WEMADE intraday anomaly metrics skipped (market holiday)");
+            return;
+        }
         log.info("WEMADE intraday anomaly metrics start");
         runSafely("ANOMALY_METRICS", anomalyService::collectIntradayMetrics);
         runSafely("ANOMALY_ANALYZE", anomalyService::analyzeCombined);
