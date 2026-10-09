@@ -1,17 +1,25 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmpiricalCaseService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartKnowledgeService;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +78,46 @@ public class NewstartKnowledgeAdminController {
     public ResponseEntity<NewstartKnowledgeStatsResponse> getStats(
             @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
         return ResponseEntity.ok(knowledgeService.getStats());
+    }
+
+    // ── RAG 원본 내보내기 (읽기 전용, ADMIN 전용) ─────────────────────────────
+    // SecurityConfig의 /api/admin/** hasRole('ADMIN') 규칙을 그대로 상속받는다.
+    // DB 쓰기 없음. ACTIVE 문서만 knowledgeId 오름차순으로 스트리밍한다.
+
+    /** 내보내기 전 확인용 manifest 미리보기 (DB 카운트 기준). */
+    @GetMapping("/export/manifest")
+    public ResponseEntity<NewstartRagExportManifest> exportManifest(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+        return ResponseEntity.ok(knowledgeService.buildRagExportPreview());
+    }
+
+    /** 단일 유형 JSON 다운로드. */
+    @GetMapping("/export/type/{sourceType}")
+    public ResponseEntity<StreamingResponseBody> exportSourceType(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @PathVariable String sourceType) {
+        NewstartKnowledgeItem.SourceType type = knowledgeService.resolveRagExportType(sourceType);
+        String fileName = "newstart_rag_" + NewstartKnowledgeService.ragExportFileName(type);
+        StreamingResponseBody body = out -> knowledgeService.exportRagSourceType(type, out);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8).build().toString())
+                .body(body);
+    }
+
+    /** 4개 유형 JSON + manifest.json 일괄 ZIP 다운로드 (관리자 화면 'RAG 원본 내보내기' 버튼). */
+    @GetMapping("/export/all")
+    public ResponseEntity<StreamingResponseBody> exportAll(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+        String zipName = "newstart-rag-export-"
+                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) + ".zip";
+        StreamingResponseBody body = out -> knowledgeService.exportRagAll(out);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(zipName, StandardCharsets.UTF_8).build().toString())
+                .body(body);
     }
 
     @PostMapping

@@ -4194,6 +4194,20 @@ SSR 화면 `/admin/newstart/wiki`(WebMvcConfig view → `templates/admin/newstar
   — `activeCreated`는 항상 0(ACTIVE 전환은 `/review/{id}/approve` 승인 워크플로 전용),
   `newstart_official_updates` 테이블에는 접근하지 않는다.
 
+### RAG 원본 내보내기 `/api/admin/newstart/wiki/export` (읽기 전용, ROLE_ADMIN)
+
+- `GET /export/manifest`: 내보내기 전 확인용 미리보기. 4개 유형
+  (`CAFE_COMMENT`, `CAFE_ARTICLE`, `OPERATOR_KNOWLEDGE`, `EBOOK`)의 ACTIVE 카운트와
+  파일명, 전체 합계를 반환한다 (`NewstartRagExportManifest`).
+- `GET /export/type/{sourceType}`: 단일 유형 JSON 배열 다운로드
+  (`Content-Disposition: attachment`, 파일명 `newstart_rag_<소문자 유형>.json`).
+  대상 4종이 아니면 400. Jackson 스트리밍으로 메모리 적재 없이 전송한다.
+- `GET /export/all`: 4개 유형 JSON + `manifest.json` 일괄 ZIP 다운로드
+  (관리자 화면 `/admin/newstart/wiki`의 "⬇ RAG 원본 내보내기" 버튼).
+  `manifest.json`은 각 파일의 건수·바이트·SHA-256과 전체 합계를 기록한다.
+- 공통: DB 쓰기 없음. `ACTIVE` 문서만 `knowledgeId` 오름차순으로 내보낸다.
+  `RULE` enum 불일치로 실패하는 `/active` 경로는 사용하지 않는다.
+
 ### 사례 `/api/admin/newstart/wiki/cases`
 
 - `GET ""`(`articleId`, `authorNickname`, `finalReductionRate`, `householdType`, `minAge`/`maxAge`,
