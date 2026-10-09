@@ -18,14 +18,11 @@ jobs:
         run: |
           set -euo pipefail
           SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== EBOOK response packets ====="
-          tcpdump -r /tmp/dl.pcap -n -A 2>/dev/null | grep -a -m 10 -E 'HTTP/1.1 (200|401|500)|Content-Disposition|Transfer-Encoding|Content-Length' | head -20
+          echo "===== EBOOK stream 55026 (all packets) ====="
+          tcpdump -r /tmp/dl.pcap -n 2>/dev/null | grep -a '172.31.28.210.55026' | head -40
           echo ""
-          echo "===== connections to port 55026 and 10018 (EBOOK clients) ====="
-          tcpdump -r /tmp/dl.pcap -n 2>/dev/null | grep -E '55026|10018' | grep -a -m 30 -E 'HTTP: HTTP|Flags \[F|Flags \[R' | head -30
-          echo ""
-          echo "===== full stream for 172.31.28.210.55026 ====="
-          tcpdump -r /tmp/dl.pcap -n 2>/dev/null | grep -a '172.31.28.210.55026' | head -25
+          echo "===== response status for EBOOK (server to ALB) ====="
+          tcpdump -r /tmp/dl.pcap -n -A 2>/dev/null | grep -a -B 1 -A 12 '172.31.11.91.webcache > 172.31.28.210.55026' | grep -a -m 2 -A 12 'HTTP/1.1' | head -30
           SSMEOF
           )
           SSM_SCRIPT=$(printf 'set -euo pipefail\n%s\n' "$SSM_BODY")
