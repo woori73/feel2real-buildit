@@ -137,3 +137,17 @@ server:
   port: 8080
   # ALB 뒤에 있을 때 X-Forwarded-* 헤더 신뢰 (실제 client IP 로그 + redirect URL 정상)
   forward-headers-strategy: framework
+
+# NewStart EmbeddingGemma 벡터 검색 (지피지기 Agent 하이브리드)
+# enabled=false이면 기존 LIKE 검색만 사용 (안전장치, 기본값)
+newstart:
+  embedding:
+    enabled: ${EMBEDDING_ENABLED:false}
+    service-url: ${EMBEDDING_SERVICE_URL:}
+    timeout-ms: 5000
+    like-weight: 0.3
+    vector-weight: 0.7
+    official-bonus: 0.1
+    vector-limit: 20
+    model-version: embeddinggemma-2
+    dimension: 768
