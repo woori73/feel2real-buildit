@@ -20,6 +20,12 @@ on:
 permissions:
   contents: read
 
+# PR/브랜치별로 그룹화하여 동일 PR의 중복 빌드는 취소하되,
+# 서로 다른 PR의 빌드는 서로 취소하지 않음
+concurrency:
+  group: build-check-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
