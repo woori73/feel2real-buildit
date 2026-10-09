@@ -77,8 +77,16 @@ class DocumentUploadValidatorTest {
   void rejects_disallowedExtension() {
     assertThatThrownBy(() -> validator.validate(file("a.exe", MZ)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
-    assertThatThrownBy(() -> validator.validate(file("a.txt", PDF)))
-        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("형식");
+  }
+
+  @Test
+  @DisplayName("given txt/md 텍스트 파일 when validate then 허용 (1단계 4-4)")
+  void allows_txtAndMd() {
+    // 1단계 구조조정: txt/md는 파일 형식 자유화에 따라 허용
+    assertThatCode(() -> validator.validate(file("a.txt", "hello world".getBytes())))
+        .doesNotThrowAnyException();
+    assertThatCode(() -> validator.validate(file("a.md", "# title\ncontent".getBytes())))
+        .doesNotThrowAnyException();
   }
 
   @Test
