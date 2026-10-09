@@ -137,8 +137,9 @@ class WikiLearningMaterialServiceTest {
   @DisplayName("given 허용 외 확장자 when upload then 400")
   void upload_rejectsBadExtension() {
     when(userRepository.findById(1L)).thenReturn(Optional.of(member(1L, "n")));
-    MockMultipartFile txt = new MockMultipartFile("file", "x.txt", "text/plain", "plain text".getBytes());
-    assertThatThrownBy(() -> service.upload(1L, "ETC", 1, null, txt))
+    // 1단계 구조조정(4-4): txt/md는 허용되므로, 거부 테스트는 exe로 변경
+    MockMultipartFile exe = new MockMultipartFile("file", "x.exe", "application/octet-stream", new byte[]{0x4D, 0x5A});
+    assertThatThrownBy(() -> service.upload(1L, "ETC", 1, null, exe))
         .isInstanceOf(ResponseStatusException.class);
   }
 
