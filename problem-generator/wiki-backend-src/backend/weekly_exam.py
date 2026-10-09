@@ -398,25 +398,25 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
     return HTMLResponse(document, headers={'Content-Security-Policy': "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:"})
 
 
-_ARTIFACT_DOWNLOAD_LABELS = {'student-paper': '문제지', 'answer-explanation': '정답해설'}
+_ARTIFACT_DOWNLOAD_LABELS = {'student-paper': '문제지', 'answer-explanation': '정답해설', 'production-verification': '출제검수'}
 
 
-def _download_filename(row, kind: str) -> tuple[str, str]:
+def _download_filename(row, kind: str, ext: str = '.html') -> tuple[str, str]:
     """다운로드 파일명. 한글 원본명은 RFC 5987 filename*로, 구형 클라이언트용으로 ASCII
     대체명을 함께 제공한다. 내용은 저장 canonical과 동일하며 파일명만 파생한다."""
     label = _ARTIFACT_DOWNLOAD_LABELS[kind]
     original = (f"{row['school']}_{row['grade']}_{row['year']}_{row['semester']}_"
-                f"{row['exam']}_{row['round']}회_{label}.html")
+                f"{row['exam']}_{row['round']}회_{label}{ext}")
     ascii_name = re.sub(r'[^0-9A-Za-z._-]', '_', original)
-    if not ascii_name.lower().endswith('.html'):
-        ascii_name += '.html'
-    if not ascii_name.strip('._') or ascii_name in ('.html', '_.html'):
-        ascii_name = f"weekly-exam-{row['id']}-{kind}.html"
+    if not ascii_name.lower().endswith(ext):
+        ascii_name += ext
+    if not ascii_name.strip('._') or ascii_name in (ext, '_' + ext):
+        ascii_name = f"weekly-exam-{row['id']}-{kind}{ext}"
     return ascii_name, original
 
 
 @router.get('/{exam_id}/artifacts/{kind}/download')
-def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation']):
+def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation', 'production-verification']):
     """HTML artifact 원본 다운로드. 보기와 동일한 저장 canonical 바이트를 attachment로
     내려준다. MD artifact는 기존 보기 방식을 유지하므로 다운로드 대상이 아니다(404).
     운영자 전용(_require_operator)이며 Public endpoint로 노출하지 않는다."""
@@ -426,14 +426,16 @@ def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-expla
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
     if kind == 'student-paper':
-        body = row['student_paper_html']
+        body, ext, media_type = row['student_paper_html'], '.html', 'text/html; charset=utf-8'
     elif kind == 'answer-explanation':
-        body = row['answer_explanation_html']
+        body, ext, media_type = row['answer_explanation_html'], '.html', 'text/html; charset=utf-8'
+    elif kind == 'production-verification':
+        body, ext, media_type = row['verification_md'], '.md', 'text/markdown; charset=utf-8'
     else:
-        raise HTTPException(status_code=404, detail='HTML 다운로드 대상이 아닙니다.')
-    ascii_name, original = _download_filename(row, kind)
+        raise HTTPException(status_code=404, detail='다운로드 대상이 아닙니다.')
+    ascii_name, original = _download_filename(row, kind, ext)
     disposition = f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(original, safe="")}'
-    return Response(body, media_type='text/html; charset=utf-8',
+    return Response(body, media_type=media_type,
                     headers={'Content-Disposition': disposition, 'Cache-Control': 'no-store'})
 
 

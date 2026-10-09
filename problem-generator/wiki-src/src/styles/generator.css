@@ -213,3 +213,21 @@ small.replace-hint{color:#536159}
 .replace-file-name{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:400;color:#536159}
 .replace-submit{min-height:44px;font-size:14px}
 @media(max-width:375px){.replace-panel{padding:10px}.replace-file-name{white-space:normal;overflow-wrap:anywhere}.replace-submit{width:100%;white-space:normal}}
+
+/* 회차별 자료 간소화: 3종 자료 × 보기/다운로드/교체 */
+.weekly-exam-row.simple{gap:10px}
+.weekly-exam-row.simple .round-title{font-size:16px}
+.weekly-exam-row.simple .round-title b{font-size:17px}
+.material-table{display:grid;gap:6px}
+.material-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;min-width:0}
+.material-label{font-weight:700;min-width:64px;flex-shrink:0}
+.material-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.material-actions button{min-height:36px;padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font-size:13px;white-space:nowrap}
+.material-actions button:disabled{opacity:.55;cursor:wait}
+.material-missing{color:#94a3b8;font-size:13px}
+@media(max-width:430px){
+  .material-row{padding:7px 8px;gap:6px}
+  .material-label{min-width:52px;font-size:13px}
+  .material-actions{gap:5px}
+  .material-actions button{min-height:34px;padding:5px 9px;font-size:12px}
+}

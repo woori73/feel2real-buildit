@@ -1,6 +1,5 @@
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
-import WeeklyExamEditor, { WeeklyEditorArtifact } from './WeeklyExamEditor'
 
 type ExamContext = { school:string; grade:string; year:number; semester:string; exam:string }
 // 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규는 'STD' 단일 유형.
@@ -11,6 +10,7 @@ type WeeklyExam = {
   id:number; school:string; grade:string; year:number; semester:string; exam:string
   round:number; set_type:SetType; question_count:number; status:WeeklyStatus; version:number
   created_by:string; created_at:string; context_hash:string
+  student_paper_name?:string; answer_explanation_name?:string; verification_name?:string
   context_snapshot?:{contextStatus?:'PARTIAL'|'LIVING'|'COMPLETE'}
 }
 type Props = {
@@ -33,24 +33,28 @@ const readFile=(event:ChangeEvent<HTMLInputElement>,setter:(value:string)=>void,
   if(setterName)setterName(file.name)
   const reader=new FileReader();reader.onload=()=>setter(String(reader.result||''));reader.readAsText(file)
 }
-const REPLACE_LABELS={paper:'문제지',expl:'정답·해설',md:'출제근거'} as const
-const joinReplaced=(labels:string[])=>{
-  if(labels.length===1)return `${labels[0]}를 교체했습니다.`
-  if(labels.length===2)return `${labels[0]}와 ${labels[1]}를 교체했습니다.`
-  return `${labels[0]}, ${labels[1]}와 ${labels[2]}를 교체했습니다.`
+
+// 회차별 자료 간소화: 3종 자료 × 보기/다운로드/교체
+type MaterialKind='paper'|'expl'|'verify'
+const MATERIALS:{kind:MaterialKind;label:string;apiKind:string;accept:string}[]=[
+  {kind:'paper',label:'문제지',apiKind:'student-paper',accept:'.html,.htm,text/html'},
+  {kind:'expl',label:'해설지',apiKind:'answer-explanation',accept:'.html,.htm,text/html'},
+  {kind:'verify',label:'출제검수',apiKind:'production-verification',accept:'.md,.markdown,.txt,text/markdown,text/plain'},
+]
+const hasMaterial=(item:WeeklyExam,kind:MaterialKind):boolean=>{
+  if(kind==='paper')return Boolean(item.student_paper_name)
+  if(kind==='expl')return Boolean(item.answer_explanation_name)
+  return Boolean(item.verification_name)
 }
-const statusLabel=(status:WeeklyStatus)=>status==='FINAL'?'제작 완료':'제작·수정 중'
 
 export default function WeeklyExamHub(props:Props){
   const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview}=props
-  const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[canAdmin,setCanAdmin]=useState(false),[notice,setNotice]=useState('')
+  const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>('STD'),[questionCount,setQuestionCount]=useState(40)
-  const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null),[metadataId,setMetadataId]=useState<number|null>(null),[metadataRound,setMetadataRound]=useState(1),[metadataSetType,setMetadataSetType]=useState<SetType>('STD')
-  const [replacePaper,setReplacePaper]=useState(''),[replaceExpl,setReplaceExpl]=useState(''),[replaceMd,setReplaceMd]=useState('')
-  const [replacePaperName,setReplacePaperName]=useState(''),[replaceExplName,setReplaceExplName]=useState(''),[replaceMdName,setReplaceMdName]=useState('')
+  // 자료별 교체: 교체 대상 회차+자료를 지정하고 숨은 파일 입력으로 단일 파일 교체
+  const [replaceTarget,setReplaceTarget]=useState<{id:number;kind:MaterialKind}|null>(null)
   const [replacing,setReplacing]=useState(false)
-  const resetReplace=()=>{setReplacePaper('');setReplaceExpl('');setReplaceMd('');setReplacePaperName('');setReplaceExplName('');setReplaceMdName('');setReplacing(false)}
-  const [editing,setEditing]=useState<{id:number;kind:WeeklyEditorArtifact}|null>(null)
+  const replaceInputRef=useRef<HTMLInputElement>(null)
   const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
   const load=async()=>{
@@ -59,7 +63,7 @@ export default function WeeklyExamHub(props:Props){
       api(`weekly-exams?${query(context)}`).then(r=>r.ok?r.json():[]),
       api('workspace/me').then(r=>r.ok?r.json():{}),
     ])
-    setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean((me as {user_id?:number|string}).user_id));setCanAdmin(Boolean((me as {workspace_admin?:boolean}).workspace_admin))
+    setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean((me as {user_id?:number|string}).user_id))
   }
   useEffect(()=>{setSetType('STD');void load()},[context.school,context.grade,context.year,context.semester,context.exam])
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
@@ -74,50 +78,39 @@ export default function WeeklyExamHub(props:Props){
     setStudentPaper('');setAnswerExplanation('');setVerification('');setShowRegister(false)
     setNotice('세 산출물을 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.');await load()
   }
-  const transition=async(id:number,action:'finalize'|'reopen')=>{
-    const response=await api(`weekly-exams/${id}/transition`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})})
-    const body=await response.json().catch(()=>({}))
-    setNotice(response.ok?'상태를 변경했습니다.':body.detail||'상태를 변경하지 못했습니다.');if(response.ok)await load()
-  }
-  const removeDraft=async(id:number)=>{
-    const response=await api(`weekly-exams/${id}`,{method:'DELETE'})
-    const body=await response.json().catch(()=>({}))
-    setNotice(response.ok?'DRAFT 세트를 삭제했습니다.':body.detail||'삭제하지 못했습니다.')
-    setConfirmDeleteId(null);if(response.ok)await load()
-  }
-  const reopenForEdit=async(id:number)=>{
-    const response=await api(`weekly-exams/${id}/transition`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reopen'})})
-    const body=await response.json().catch(()=>({}))
-    if(!response.ok){setNotice(body.detail||'편집을 위해 DRAFT로 전환하지 못했습니다.');return false}
-    await load()
-    return true
-  }
-  const replaceSelected=async(id:number)=>{
+  const startReplace=(id:number,kind:MaterialKind)=>{
     if(replacing)return
-    const body:Record<string,string>={}
-    const labels:string[]=[]
-    // 선택한 파일만 전송한다. 선택하지 않은 필드는 키 자체를 추가하지 않아
-    // 서버가 기존 경로·파일명·URL·메타데이터를 그대로 유지한다.
-    if(replacePaper){body.studentPaper=replacePaper;if(replacePaperName)body.studentPaperName=replacePaperName;labels.push(REPLACE_LABELS.paper)}
-    if(replaceExpl){body.answerExplanation=replaceExpl;if(replaceExplName)body.answerExplanationName=replaceExplName;labels.push(REPLACE_LABELS.expl)}
-    if(replaceMd){body.productionVerification=replaceMd;if(replaceMdName)body.productionVerificationName=replaceMdName;labels.push(REPLACE_LABELS.md)}
-    if(Object.keys(body).length===0||labels.length===0)return
-    setReplacing(true)
-    try{
-      const response=await api(`weekly-exams/${id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-      const data=await response.json().catch(()=>({}))
-      if(!response.ok){setNotice(`교체에 실패했습니다: ${data.detail||'자료 교체에 실패했습니다.'}`);return}
-      resetReplace();setReplaceId(null)
-      setNotice(`${joinReplaced(labels)} 회차·세트·상태는 그대로 유지됩니다.`);await load()
-    }finally{
-      setReplacing(false)
-    }
+    const mat=MATERIALS.find(m=>m.kind===kind);if(!mat)return
+    setReplaceTarget({id,kind})
+    const input=replaceInputRef.current
+    if(input){input.accept=mat.accept;input.value='';input.click()}
   }
-  const updateMetadata=async(id:number)=>{
-    const response=await api(`weekly-exams/${id}/metadata`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({round:metadataRound,setType:metadataSetType})})
-    const data=await response.json().catch(()=>({}))
-    setNotice(response.ok?'세트 정보를 수정했습니다.':data.detail||'세트 정보 수정에 실패했습니다.')
-    if(response.ok){setMetadataId(null);await load()}
+  const handleReplaceFile=(event:ChangeEvent<HTMLInputElement>)=>{
+    const file=event.target.files?.[0]
+    const target=replaceTarget
+    if(!file||!target){setReplaceTarget(null);return}
+    setReplacing(true)
+    const reader=new FileReader()
+    reader.onload=()=>{
+      const content=String(reader.result||'')
+      const body:Record<string,string>={}
+      if(target.kind==='paper'){body.studentPaper=content;body.studentPaperName=file.name}
+      else if(target.kind==='expl'){body.answerExplanation=content;body.answerExplanationName=file.name}
+      else{body.productionVerification=content;body.productionVerificationName=file.name}
+      void (async()=>{
+        try{
+          const response=await api(`weekly-exams/${target.id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+          const data=await response.json().catch(()=>({}))
+          if(!response.ok){setNotice(`교체에 실패했습니다: ${data.detail||'자료 교체에 실패했습니다.'}`);return}
+          const label=MATERIALS.find(m=>m.kind===target.kind)?.label||'자료'
+          setNotice(`${label}를 교체했습니다.`);await load()
+        }finally{
+          setReplacing(false);setReplaceTarget(null)
+        }
+      })()
+    }
+    reader.onerror=()=>{setNotice('파일을 읽지 못했습니다.');setReplacing(false);setReplaceTarget(null)}
+    reader.readAsText(file)
   }
   const latestFor=()=>items.slice().sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
@@ -126,6 +119,7 @@ export default function WeeklyExamHub(props:Props){
 
   return <section className="naesin-repeat-hub" aria-label="반복 제작 허브">
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
+    <input ref={replaceInputRef} type="file" style={{display:'none'}} aria-hidden="true" tabIndex={-1} onChange={handleReplaceFile}/>
     <div className="current-context-card">
       <div><p className="kicker">CURRENT EXAM CONTEXT</p><h2>{context.school} · {context.grade}</h2><p>{context.year}년 · {context.semester} · {context.exam}</p></div>
       <div className="context-health">
@@ -140,56 +134,38 @@ export default function WeeklyExamHub(props:Props){
     <div className="repeat-entry-grid">
       <article className="repeat-entry-card weekly">
         <p className="kicker">WEEKLY EXAM</p><h2>주간 실전 모의고사</h2>
-        <p>문제지·정답해설·출제근거를 운영자 전용으로 보관하고 DRAFT에서 FINAL로 확정합니다.</p>
+        <p>문제지·해설지·출제검수를 회차별로 보관합니다.</p>
         <div className="next-round-summary"><b>다음 회차 준비 · {nextRound}회</b>
           <span>현재 Context 전체를 다시 계산해 Blueprint를 준비합니다.</span>
-          <small>최근 FINAL {latestFinal?latestFinal.round+'회 · '+latestFinal.set_type:'없음'} · 학생 오답 {wrongCount}건</small>
+          <small>최근 FINAL {latestFinal?latestFinal.round+'회':'없음'} · 학생 오답 {wrongCount}건</small>
           {latestFinal&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
         </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
           {(()=>{const item=latestFor();return <span className={item?`weekly-status ${item.status.toLowerCase()}`:''}>
-            <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항 · ${item.status} · ${statusLabel(item.status)}`:'준비 전'}</small>
+            <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항 · ${item.status}`:'준비 전'}</small>
           </span>})()}
         </div>
-        {items.length>0&&<div className="weekly-rounds">{items.map(item=><article key={item.id} className="weekly-exam-row">
-          <div><b>{item.round}회 · {item.set_type}</b><span className={`status-badge ${item.status.toLowerCase()}`}>{item.status}</span>
-            <small>{item.question_count}문항 · v{item.version} · {item.created_by||'미상'} · {new Date(item.created_at).toLocaleDateString('ko-KR')}</small></div>
-          <div className="artifact-actions">
-            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/student-paper`)}>문제지 보기</button>
-            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/student-paper/download`)}>문제지 HTML 다운로드</button>
-            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/answer-explanation`)}>정답해설 보기</button>
-            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/answer-explanation/download`)}>정답해설 HTML 다운로드</button>
-            <button onClick={()=>open(`weekly-exams/${item.id}/artifacts/production-verification`)}>출제근거 보기</button>
-            <button onClick={()=>open(`weekly-exams/${item.id}/context-snapshot`)}>제작 당시 Context</button>
-            <button onClick={()=>setEditing({id:item.id,kind:'student-paper'})}>문제지 편집</button>
-            <button onClick={()=>setEditing({id:item.id,kind:'answer-explanation'})}>정답해설 편집</button>
+        {items.length>0&&<div className="weekly-rounds">{items.map(item=><article key={item.id} className="weekly-exam-row simple">
+          <div className="round-title"><b>{item.round}회</b></div>
+          <div className="material-table" role="table" aria-label={`${item.round}회 자료`}>
+            {MATERIALS.map(mat=>{
+              const exists=hasMaterial(item,mat.kind)
+              return <div key={mat.kind} className="material-row" role="row">
+                <span className="material-label" role="cell">{mat.label}</span>
+                <div className="material-actions" role="cell">
+                  {exists?<>
+                    <button type="button" onClick={()=>open(`weekly-exams/${item.id}/artifacts/${mat.apiKind}`)}>보기</button>
+                    <button type="button" onClick={()=>open(`weekly-exams/${item.id}/artifacts/${mat.apiKind}/download`)}>다운로드</button>
+                    {canManage&&<button type="button" disabled={replacing} onClick={()=>startReplace(item.id,mat.kind)}>{replacing&&replaceTarget?.id===item.id&&replaceTarget?.kind===mat.kind?'교체 중…':'교체'}</button>}
+                  </>:<>
+                    {canManage
+                      ?<button type="button" disabled={replacing} onClick={()=>startReplace(item.id,mat.kind)}>등록</button>
+                      :<span className="material-missing">미등록</span>}
+                  </>}
+                </div>
+              </div>
+            })}
           </div>
-          {canManage&&<div className="approval-actions">
-            {item.status==='DRAFT'
-              ? <><button onClick={()=>void transition(item.id,'finalize')}>FINAL 확정</button>
-                <button onClick={()=>{if(replaceId===item.id){setReplaceId(null);resetReplace()}else{setReplaceId(item.id);resetReplace()}}}>자료 교체</button>
-                {confirmDeleteId===item.id
-                  ? <><span>정말 삭제할까요?</span><button type="button" className="danger-button" onClick={()=>void removeDraft(item.id)}>삭제 확인</button><button type="button" className="secondary-button" onClick={()=>setConfirmDeleteId(null)}>취소</button></>
-                  : <button type="button" className="danger-button" onClick={()=>setConfirmDeleteId(item.id)}>삭제</button>}</>
-              : <button onClick={()=>void transition(item.id,'reopen')}>DRAFT로 다시 열기</button>}
-            {canAdmin&&<button onClick={()=>{setMetadataId(metadataId===item.id?null:item.id);setMetadataRound(item.round);setMetadataSetType(item.set_type)}}>세트 정보 수정</button>}
-          </div>}
-          {metadataId===item.id&&canAdmin&&<div className="metadata-panel" aria-label="세트 정보 수정">
-            <label>회차<input type="number" min="1" value={metadataRound} onChange={e=>setMetadataRound(Number(e.target.value))}/></label>
-            
-            <p className="field-hint">70 세트는 70문항, 40·40A·40B 세트는 40문항으로 표시됩니다. 문제지와 정답해설 내용은 바뀌지 않습니다.</p>
-            <button className="primary-action" onClick={()=>void updateMetadata(item.id)}>세트 정보 저장</button>
-            <button onClick={()=>setMetadataId(null)}>취소</button>
-          </div>}
-          {replaceId===item.id&&item.status==='DRAFT'&&<div className="artifact-actions replace-panel">
-            <p className="replace-hint">교체할 파일만 선택하세요. 선택하지 않은 기존 자료는 그대로 유지됩니다.</p>
-            <label className="replace-file-row">문제지 교체<input type="file" accept=".html,.htm,text/html" aria-label="문제지 교체 파일 선택" onChange={e=>readFile(e,setReplacePaper,setReplacePaperName)}/><span className="replace-file-name">{replacePaperName?`선택됨: ${replacePaperName}`:'미선택 · 기존 문제지 유지'}</span></label>
-            <label className="replace-file-row">정답·해설 교체<input type="file" accept=".html,.htm,text/html" aria-label="정답·해설 교체 파일 선택" onChange={e=>readFile(e,setReplaceExpl,setReplaceExplName)}/><span className="replace-file-name">{replaceExplName?`선택됨: ${replaceExplName}`:'미선택 · 기존 정답·해설 유지'}</span></label>
-            <label className="replace-file-row">출제근거 교체<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" aria-label="출제근거 교체 파일 선택" onChange={e=>readFile(e,setReplaceMd,setReplaceMdName)}/><span className="replace-file-name">{replaceMdName?`선택됨: ${replaceMdName}`:'미선택 · 기존 출제근거 유지'}</span></label>
-            {(!replacePaper&&!replaceExpl&&!replaceMd)&&<small className="replace-hint">파일을 하나 이상 선택하세요.</small>}
-            <button type="button" className="primary-action replace-submit" disabled={(!replacePaper&&!replaceExpl&&!replaceMd)||replacing} onClick={()=>void replaceSelected(item.id)}>{replacing?'교체 중…':'선택한 자료 교체'}</button>
-            <button type="button" className="secondary-button" onClick={()=>{setReplaceId(null);resetReplace()}}>닫기</button>
-          </div>}
         </article>)}</div>}
         <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>제작물 3종 DRAFT 등록</button>
       </article>
@@ -212,12 +188,6 @@ export default function WeeklyExamHub(props:Props){
       <p className="field-hint">세 파일은 하나의 세트로 저장됩니다. 서버가 현재 Living Context Snapshot을 보존하고 상태를 DRAFT로 고정합니다.</p>
       <button className="primary-action" disabled={!studentPaper||!answerExplanation||!verification} onClick={()=>void register()}>DRAFT 등록</button>
     </section>}
-    <p className="approval-gate-note">원문은 운영자 전용입니다. Agent 등록은 DRAFT이며 운영자가 FINAL을 확정합니다. FINAL은 외부 공개를 의미하지 않습니다.</p>
-    {editing&&<WeeklyExamEditor
-      examId={editing.id}
-      kind={editing.kind}
-      onSaved={()=>{setEditing(null);setNotice('편집 내용을 저장했습니다. 문제지·정답해설 보기에서 바로 확인할 수 있습니다.');void load()}}
-      onClose={()=>setEditing(null)}
-    />}
+    <p className="approval-gate-note">원문은 운영자 전용입니다.</p>
   </section>
 }
