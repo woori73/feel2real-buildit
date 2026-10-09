@@ -15,6 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +30,6 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -92,8 +94,8 @@ class NewstartRagExportServiceTest {
         // given
         List<NewstartKnowledgeItem> docs = List.of(
                 item(1L, SourceType.CAFE_COMMENT), item(2L, SourceType.CAFE_COMMENT), item(3L, SourceType.CAFE_COMMENT));
-        when(knowledgeRepository.streamByStatusAndSourceType(KnowledgeStatus.ACTIVE, SourceType.CAFE_COMMENT))
-                .thenReturn(docs.stream());
+        when(knowledgeRepository.pageByStatusAndSourceType(eq(KnowledgeStatus.ACTIVE), eq(SourceType.CAFE_COMMENT), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(docs));
 
         // when
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -123,8 +125,8 @@ class NewstartRagExportServiceTest {
     @DisplayName("단일 유형: 빈 결과는 빈 배열 []")
     void exportSingleTypeEmpty() throws Exception {
         // given
-        when(knowledgeRepository.streamByStatusAndSourceType(KnowledgeStatus.ACTIVE, SourceType.EBOOK))
-                .thenReturn(Stream.empty());
+        when(knowledgeRepository.pageByStatusAndSourceType(eq(KnowledgeStatus.ACTIVE), eq(SourceType.EBOOK), any(Pageable.class)))
+                .thenReturn(Page.empty());
 
         // when
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -169,8 +171,8 @@ class NewstartRagExportServiceTest {
         docs.put(SourceType.OPERATOR_KNOWLEDGE, List.of(item(31L, SourceType.OPERATOR_KNOWLEDGE)));
         docs.put(SourceType.EBOOK, List.of(item(41L, SourceType.EBOOK), item(42L, SourceType.EBOOK), item(43L, SourceType.EBOOK)));
         for (Map.Entry<SourceType, List<NewstartKnowledgeItem>> e : docs.entrySet()) {
-            when(knowledgeRepository.streamByStatusAndSourceType(KnowledgeStatus.ACTIVE, e.getKey()))
-                    .thenReturn(e.getValue().stream());
+            when(knowledgeRepository.pageByStatusAndSourceType(eq(KnowledgeStatus.ACTIVE), eq(e.getKey()), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(e.getValue()));
         }
 
         // when
@@ -230,8 +232,8 @@ class NewstartRagExportServiceTest {
         // given — 저장소가 knowledgeId ASC 스트림을 반환한다고 가정
         List<NewstartKnowledgeItem> docs = new ArrayList<>(List.of(
                 item(3L, SourceType.CAFE_COMMENT), item(1L, SourceType.CAFE_COMMENT), item(2L, SourceType.CAFE_COMMENT)));
-        when(knowledgeRepository.streamByStatusAndSourceType(KnowledgeStatus.ACTIVE, SourceType.CAFE_COMMENT))
-                .thenReturn(docs.stream());
+        when(knowledgeRepository.pageByStatusAndSourceType(eq(KnowledgeStatus.ACTIVE), eq(SourceType.CAFE_COMMENT), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(docs));
 
         // when
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -242,5 +244,32 @@ class NewstartRagExportServiceTest {
         assertThat(root.get(0).get("knowledgeId").asLong()).isEqualTo(3L);
         assertThat(root.get(1).get("knowledgeId").asLong()).isEqualTo(1L);
         assertThat(root.get(2).get("knowledgeId").asLong()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("단일 유형: 여러 페이지에 걸친 문서도 순서대로 모두 기록")
+    void exportSingleTypeMultiPage() throws Exception {
+        // given — 500건 페이지 크기를 넘는 3건을 2페이지로 분할
+        List<NewstartKnowledgeItem> page0 = List.of(item(1L, SourceType.EBOOK), item(2L, SourceType.EBOOK));
+        List<NewstartKnowledgeItem> page1 = List.of(item(3L, SourceType.EBOOK));
+        when(knowledgeRepository.pageByStatusAndSourceType(eq(KnowledgeStatus.ACTIVE), eq(SourceType.EBOOK), any(Pageable.class)))
+                .thenAnswer(inv -> {
+                    Pageable pg = inv.getArgument(2);
+                    if (pg.getPageNumber() == 0) {
+                        return new PageImpl<>(page0, pg, 3);
+                    }
+                    return new PageImpl<>(page1, pg, 3);
+                });
+
+        // when
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        NewstartRagExportManifest.FileStats stats = service.exportRagSourceType(SourceType.EBOOK, out);
+
+        // then
+        JsonNode root = objectMapper.readTree(out.toByteArray());
+        assertThat(root.size()).isEqualTo(3);
+        assertThat(root.get(0).get("knowledgeId").asLong()).isEqualTo(1L);
+        assertThat(root.get(2).get("knowledgeId").asLong()).isEqualTo(3L);
+        assertThat(stats.getCount()).isEqualTo(3);
     }
 }
