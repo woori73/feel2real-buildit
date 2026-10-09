@@ -1,0 +1,30 @@
+name: Tmp Transfer Chunks 3
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Transfer chunks 30-39 via SSM
+        run: |
+          SSM_BODY=$(cat <<'SSMEOF'
+          echo 'CHUNK_30:'; cat /tmp/chunk_be.b64; echo 'CHUNK_31:'; cat /tmp/chunk_bf.b64; echo 'CHUNK_32:'; cat /tmp/chunk_bg.b64; echo 'CHUNK_33:'; cat /tmp/chunk_bh.b64; echo 'CHUNK_34:'; cat /tmp/chunk_bi.b64; echo 'CHUNK_35:'; cat /tmp/chunk_bj.b64; echo 'CHUNK_36:'; cat /tmp/chunk_bk.b64; echo 'CHUNK_37:'; cat /tmp/chunk_bl.b64; echo 'CHUNK_38:'; cat /tmp/chunk_bm.b64; echo 'CHUNK_39:'; cat /tmp/chunk_bn.b64;
+          SSMEOF
+          )
+          SSM_SCRIPT=$(printf '%s\n' "$SSM_BODY")
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters "$PARAMS_JSON" --query 'Command.CommandId' --output text)
+          for i in $(seq 1 15); do sleep 10
+            S=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            case "$S" in Success|Failed|Cancelled|TimedOut) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
