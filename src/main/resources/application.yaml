@@ -16,6 +16,13 @@ spring:
       # 않고 그대로 전달되게 한다. Academy 영상 업로드 등 기존 @RequestParam MultipartFile
       # 엔드포인트는 그 파라미터에 접근하는 순간 동일하게(다만 지연) 파싱되므로 동작은 그대로다.
       resolve-lazily: true
+  mvc:
+    async:
+      # RAG 원본 내보내기(ZIP 스트리밍)처럼 응답 생성+전송이 수십 초 이상 걸리는
+      # StreamingResponseBody가 Tomcat 기본 async timeout(30s)에 잘려
+      # 다운로드가 중간에 끊기지 않도록 280s로 설정한다.
+      # 앞단 nginx outer deadline(290s)보다 짧게 유지한다.
+      request-timeout: 280s
 
 # Swagger UI 설정 (Springdoc)
 springdoc:
