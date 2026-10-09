@@ -29,12 +29,10 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HexFormat;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -542,7 +540,8 @@ public class NewstartKnowledgeService {
 
     /**
      * 단일 sourceType의 ACTIVE 문서를 JSON 배열로 {@code out}에 스트리밍한다.
-     * 전체를 메모리에 적재하지 않으며, 호출자는 스트림을 닫지 않는다.
+     * 페이지네이션으로 끊어 읽어 메모리를 bound하고, 호출자는 스트림을 닫지 않는다.
+     * (JPA Stream 반환 쿼리는 운영 스트리밍 경로에서 응답이 중간에 끊겨 페이지네이션으로 교체 — 2026-10-09)
      *
      * @return 실제 기록된 건수·바이트·SHA-256
      */
@@ -560,13 +559,19 @@ public class NewstartKnowledgeService {
             JsonGenerator gen = objectMapper.getFactory().createGenerator(digestOut, JsonEncoding.UTF8);
             gen.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
             gen.writeStartArray();
-            try (Stream<NewstartKnowledgeItem> stream = knowledgeRepository.streamByStatusAndSourceType(
-                    NewstartKnowledgeItem.KnowledgeStatus.ACTIVE, type)) {
-                Iterator<NewstartKnowledgeItem> it = stream.iterator();
-                while (it.hasNext()) {
-                    objectMapper.writeValue(gen, toResponse(it.next()));
+            int page = 0;
+            final int pageSize = 500;
+            while (true) {
+                Page<NewstartKnowledgeItem> slice = knowledgeRepository.pageByStatusAndSourceType(
+                        NewstartKnowledgeItem.KnowledgeStatus.ACTIVE, type, PageRequest.of(page, pageSize));
+                for (NewstartKnowledgeItem item : slice.getContent()) {
+                    objectMapper.writeValue(gen, toResponse(item));
                     count++;
                 }
+                if (!slice.hasNext()) {
+                    break;
+                }
+                page++;
             }
             gen.writeEndArray();
             gen.flush();

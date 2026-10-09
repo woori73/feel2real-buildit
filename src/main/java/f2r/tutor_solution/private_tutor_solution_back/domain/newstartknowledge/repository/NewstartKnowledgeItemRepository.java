@@ -13,7 +13,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @Repository
 public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartKnowledgeItem, Long>,
@@ -38,10 +37,13 @@ public interface NewstartKnowledgeItemRepository extends JpaRepository<NewstartK
     @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.sourceType = :type ORDER BY k.createdAt DESC")
     List<NewstartKnowledgeItem> findBySourceType(@Param("type") SourceType type);
 
-    // ── RAG 원본 내보내기 전용: ACTIVE + sourceType 스트리밍 (읽기 전용, knowledgeId 오름차순 고정) ──
+    // ── RAG 원본 내보내기 전용: ACTIVE + sourceType 페이지네이션 (읽기 전용, knowledgeId 오름차순 고정) ──
+    // 주의: JPA Stream 반환 쿼리는 운영(Hibernate 7 + MySQL) 스트리밍 경로에서
+    // 응답이 중간에 끊기는 현상이 확인되어 페이지네이션으로 교체한다. (2026-10-09)
     @Query("SELECT k FROM NewstartKnowledgeItem k WHERE k.status = :status AND k.sourceType = :type ORDER BY k.knowledgeId ASC")
-    Stream<NewstartKnowledgeItem> streamByStatusAndSourceType(@Param("status") KnowledgeStatus status,
-                                                             @Param("type") SourceType type);
+    Page<NewstartKnowledgeItem> pageByStatusAndSourceType(@Param("status") KnowledgeStatus status,
+                                                          @Param("type") SourceType type,
+                                                          Pageable pageable);
 
     @Query("SELECT COUNT(k) FROM NewstartKnowledgeItem k WHERE k.status = :status AND k.sourceType = :type")
     long countByStatusAndSourceType(@Param("status") KnowledgeStatus status, @Param("type") SourceType type);
