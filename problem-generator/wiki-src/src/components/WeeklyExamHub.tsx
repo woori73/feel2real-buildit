@@ -3,7 +3,9 @@ import { api } from '../lib/api'
 import WeeklyExamEditor, { WeeklyEditorArtifact } from './WeeklyExamEditor'
 
 type ExamContext = { school:string; grade:string; year:number; semester:string; exam:string }
-type SetType = '40'|'70'|'40A'|'40B'
+// 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규는 'STD' 단일 유형.
+// 기존 DB 값은 표시용으로 유지.
+type SetType = 'STD'|'40'|'70'|'40A'|'40B'
 type WeeklyStatus = 'DRAFT'|'FINAL'
 type WeeklyExam = {
   id:number; school:string; grade:string; year:number; semester:string; exam:string
@@ -14,17 +16,17 @@ type WeeklyExam = {
 type Props = {
   context:ExamContext; pastExamCount:number; schoolPrintCount:number; wrongCount:number
   aiWorkLogCount:number; hasDigitalTwin:boolean; lastContextUpdate?:string
-  onOpenContext:()=>void; onOpenWeeklyWorkspace:()=>void; onOpenWrongReview:()=>void; onOpenWrongMock:()=>void
+  onOpenContext:()=>void; onOpenWeeklyWorkspace:()=>void; onOpenWrongReview:()=>void
   studentTotalWrongCount?:number|null; onOpenStudentWrongAnswers?:()=>void
 }
 
-const SET_POLICY:Record<string,SetType[]>={
+// 1단계 구조조정: 학교별 세트 정책 제거 — 문항 수 구분 없이 단일 유형
+const _SET_POLICY_REMOVED:Record<string,SetType[]>={
   '압구정중학교|2학년':['40','70'],'압구정중|2학년':['40','70'],
   '신구중학교|2학년':['40','70'],'신구중|2학년':['40','70'],
   '신구중학교|3학년':['40A','40B'],'신구중|3학년':['40A','40B'],
   '신사중학교|3학년':['40A','40B'],'신사중|3학년':['40A','40B'],
 }
-const setTypesFor=(context:ExamContext)=>SET_POLICY[`${context.school}|${context.grade}`]||['40']
 const query=(context:ExamContext)=>new URLSearchParams({...context,year:String(context.year)}).toString()
 const readFile=(event:ChangeEvent<HTMLInputElement>,setter:(value:string)=>void,setterName?:(value:string)=>void)=>{
   const file=event.target.files?.[0];if(!file)return
@@ -40,11 +42,10 @@ const joinReplaced=(labels:string[])=>{
 const statusLabel=(status:WeeklyStatus)=>status==='FINAL'?'제작 완료':'제작·수정 중'
 
 export default function WeeklyExamHub(props:Props){
-  const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview,onOpenWrongMock}=props
-  const setTypes=setTypesFor(context)
+  const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview}=props
   const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[canAdmin,setCanAdmin]=useState(false),[notice,setNotice]=useState('')
-  const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>(setTypes[0])
-  const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null),[metadataId,setMetadataId]=useState<number|null>(null),[metadataRound,setMetadataRound]=useState(1),[metadataSetType,setMetadataSetType]=useState<SetType>(setTypes[0])
+  const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>('STD'),[questionCount,setQuestionCount]=useState(40)
+  const [replaceId,setReplaceId]=useState<number|null>(null),[confirmDeleteId,setConfirmDeleteId]=useState<number|null>(null),[metadataId,setMetadataId]=useState<number|null>(null),[metadataRound,setMetadataRound]=useState(1),[metadataSetType,setMetadataSetType]=useState<SetType>('STD')
   const [replacePaper,setReplacePaper]=useState(''),[replaceExpl,setReplaceExpl]=useState(''),[replaceMd,setReplaceMd]=useState('')
   const [replacePaperName,setReplacePaperName]=useState(''),[replaceExplName,setReplaceExplName]=useState(''),[replaceMdName,setReplaceMdName]=useState('')
   const [replacing,setReplacing]=useState(false)
@@ -60,12 +61,12 @@ export default function WeeklyExamHub(props:Props){
     ])
     setItems(Array.isArray(rows)?rows:[]);setCanManage(Boolean((me as {user_id?:number|string}).user_id));setCanAdmin(Boolean((me as {workspace_admin?:boolean}).workspace_admin))
   }
-  useEffect(()=>{setSetType(setTypesFor(context)[0]);void load()},[context.school,context.grade,context.year,context.semester,context.exam])
+  useEffect(()=>{setSetType('STD');void load()},[context.school,context.grade,context.year,context.semester,context.exam])
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
   const register=async()=>{
     const response=await api('weekly-exams/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       school:context.school,grade:context.grade,year:context.year,semester:context.semester,examType:context.exam,
-      round,setType,questionCount:Number(setType.replace(/\D/g,'')),studentPaper,answerExplanation,
+      round,setType,questionCount:Number(questionCount)||0,studentPaper,answerExplanation,
       productionVerification:verification,contextStatus,
     })})
     const body=await response.json().catch(()=>({}))
@@ -118,7 +119,7 @@ export default function WeeklyExamHub(props:Props){
     setNotice(response.ok?'세트 정보를 수정했습니다.':data.detail||'세트 정보 수정에 실패했습니다.')
     if(response.ok){setMetadataId(null);await load()}
   }
-  const latestFor=(type:SetType)=>items.filter(item=>item.set_type===type).sort((a,b)=>b.round-a.round||b.version-a.version)[0]
+  const latestFor=()=>items.slice().sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const currentStatus=items.slice().sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0]?.context_snapshot?.contextStatus||'PARTIAL'
   const nextRound=Math.max(0,...items.map(item=>item.round))+1
@@ -141,14 +142,14 @@ export default function WeeklyExamHub(props:Props){
         <p className="kicker">WEEKLY EXAM</p><h2>주간 실전 모의고사</h2>
         <p>문제지·정답해설·출제근거를 운영자 전용으로 보관하고 DRAFT에서 FINAL로 확정합니다.</p>
         <div className="next-round-summary"><b>다음 회차 준비 · {nextRound}회</b>
-          <span>현재 Context 전체를 다시 계산해 {setTypes.join(' / ')} Blueprint를 준비합니다.</span>
+          <span>현재 Context 전체를 다시 계산해 Blueprint를 준비합니다.</span>
           <small>최근 FINAL {latestFinal?latestFinal.round+'회 · '+latestFinal.set_type:'없음'} · 학생 오답 {wrongCount}건</small>
           {latestFinal&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
         </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
-          {setTypes.map(type=>{const item=latestFor(type);return <span key={type} className={item?`weekly-status ${item.status.toLowerCase()}`:''}>
-            <b>{type}</b><small>{item?`${item.round}회 · ${item.status} · ${statusLabel(item.status)}`:'준비 전'}</small>
-          </span>})}
+          {(()=>{const item=latestFor();return <span className={item?`weekly-status ${item.status.toLowerCase()}`:''}>
+            <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항 · ${item.status} · ${statusLabel(item.status)}`:'준비 전'}</small>
+          </span>})()}
         </div>
         {items.length>0&&<div className="weekly-rounds">{items.map(item=><article key={item.id} className="weekly-exam-row">
           <div><b>{item.round}회 · {item.set_type}</b><span className={`status-badge ${item.status.toLowerCase()}`}>{item.status}</span>
@@ -175,7 +176,7 @@ export default function WeeklyExamHub(props:Props){
           </div>}
           {metadataId===item.id&&canAdmin&&<div className="metadata-panel" aria-label="세트 정보 수정">
             <label>회차<input type="number" min="1" value={metadataRound} onChange={e=>setMetadataRound(Number(e.target.value))}/></label>
-            <label>세트 유형<select value={metadataSetType} onChange={e=>setMetadataSetType(e.target.value as SetType)}>{setTypes.map(type=><option key={type}>{type}</option>)}</select></label>
+            
             <p className="field-hint">70 세트는 70문항, 40·40A·40B 세트는 40문항으로 표시됩니다. 문제지와 정답해설 내용은 바뀌지 않습니다.</p>
             <button className="primary-action" onClick={()=>void updateMetadata(item.id)}>세트 정보 저장</button>
             <button onClick={()=>setMetadataId(null)}>취소</button>
@@ -200,16 +201,11 @@ export default function WeeklyExamHub(props:Props){
         <button type="button" className="primary-action" onClick={onOpenWrongReview}>오답 복습 열기</button>
       </article>
 
-      <article className="repeat-entry-card wrong-mock">
-        <p className="kicker">WRONG MOCK · 20 QUESTIONS</p><h2>오답 모의고사</h2>
-        <p>회차별 20문항 사진을 직접 등록하고 문제지·간략해설 완성본을 관리합니다.</p>
-        <button type="button" className="primary-action" onClick={onOpenWrongMock}>오답 모의고사 열기</button>
-      </article>
     </div>
 
     {showRegister&&<section className="work-panel weekly-register" aria-label="Weekly Exam DRAFT 등록">
       <div className="panel-heading"><div><p className="kicker">ONE SET · THREE ARTIFACTS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
-      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>세트<select value={setType} onChange={e=>setSetType(e.target.value as SetType)}>{setTypes.map(type=><option key={type}>{type}</option>)}</select></label><label>Context 상태<select value={contextStatus} onChange={e=>setContextStatus(e.target.value as 'PARTIAL'|'LIVING'|'COMPLETE')}><option>PARTIAL</option><option>LIVING</option><option>COMPLETE</option></select></label></div>
+      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label><label>Context 상태<select value={contextStatus} onChange={e=>setContextStatus(e.target.value as 'PARTIAL'|'LIVING'|'COMPLETE')}><option>PARTIAL</option><option>LIVING</option><option>COMPLETE</option></select></label></div>
       <label>학생용 문제지 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setStudentPaper)}/></label>
       <label>정답·해설 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setAnswerExplanation)}/></label>
       <label>제작·검수 MD<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setVerification)}/></label>

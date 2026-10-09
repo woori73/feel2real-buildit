@@ -4,7 +4,6 @@ import { DigitalTwinProfile, exportExamMaterialWrongNotesOffice, fetchQuestions,
 import { loadExamContext, resolveSavedContext, saveExamContext } from '../lib/wikiContext'
 import type { Page } from '../App'
 import WeeklyExamHub from './WeeklyExamHub'
-import WrongMockHub from './WrongMockHub'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
 type Material = { id:number; core_type:'school_print'|'student_wrong_note'; material_type:'SCHOOL_PRINT'|'STUDENT_WRONG_NOTE'|'PAST_EXAM'|'AI_WORK_LOG'; school:string; grade:string; year:number; semester:string; exam:string; uploaded_by:string; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number; has_body?:number; body_format?:string }
@@ -329,10 +328,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       onOpenContext={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
       onOpenWeeklyWorkspace={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
       onOpenWrongReview={()=>setCore('student_wrong_note')}
-      onOpenWrongMock={()=>{window.setTimeout(()=>document.getElementById('wrong-mock-hub')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
     />
 
-    <WrongMockHub context={context} onNavigate={onNavigate} />
 
     <ol className="wiki-steps">
       <li className="wiki-step">

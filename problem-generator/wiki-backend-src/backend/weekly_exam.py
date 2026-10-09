@@ -33,7 +33,11 @@ EFFECTIVE_STATUS = {
     'REVIEW': 'DRAFT', 'CHANGES_REQUESTED': 'DRAFT', 'REJECTED': 'DRAFT',
     'APPROVED': 'FINAL', 'FINAL': 'FINAL', 'PUBLISHED': 'FINAL',
 }
-SET_TYPES = ('40', '70', '40A', '40B')
+SET_TYPES = ('STD',)
+# 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규 세트는 'STD' 단일 유형.
+# 기존 DB의 구 값은 CHECK 제약에서 허용하여 조회·다운로드 호환 유지.
+LEGACY_SET_TYPES = ('40', '70', '40A', '40B')
+ALL_SET_TYPES = ('STD',) + LEGACY_SET_TYPES
 ARTIFACTS = ('student-paper', 'answer-explanation', 'production-verification')
 HTML_ARTIFACTS = ('student-paper', 'answer-explanation')
 
@@ -47,12 +51,54 @@ def configure(get_db: Callable, context_reader: Callable, html_sanitizer: Callab
     _get_db, _context_reader, _html_sanitizer = get_db, context_reader, html_sanitizer
 
 
+
+def _migrate_set_type_unified(conn) -> None:
+    """기존 weekly_exam_sets 테이블의 CHECK 제약에 'STD'를 추가한다.
+
+    SQLite는 CHECK 제약을 직접 변경할 수 없으므로 테이블을 재구축한다.
+    기존 데이터(40/70/40A/40B)는 모두 보존된다.
+    """
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='weekly_exam_sets'"
+    ).fetchone()
+    if not row or "'STD'" in (row[0] or ""):
+        return
+    conn.execute("ALTER TABLE weekly_exam_sets RENAME TO weekly_exam_sets_legacy")
+    # 새 스키마로 재생성 (init_schema의 정의를 재사용하지 않고 명시)
+    conn.execute("""CREATE TABLE weekly_exam_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school TEXT NOT NULL, grade TEXT NOT NULL, year INTEGER NOT NULL,
+        semester TEXT NOT NULL, exam TEXT NOT NULL, round INTEGER NOT NULL,
+        set_type TEXT NOT NULL CHECK (set_type IN ('STD','40','70','40A','40B')),
+        question_count INTEGER NOT NULL,
+        student_paper_name TEXT NOT NULL, student_paper_html TEXT NOT NULL, student_paper_hash TEXT NOT NULL,
+        answer_explanation_name TEXT NOT NULL, answer_explanation_html TEXT NOT NULL, answer_explanation_hash TEXT NOT NULL,
+        verification_name TEXT NOT NULL, verification_md TEXT NOT NULL, verification_hash TEXT NOT NULL,
+        source_material_ids TEXT NOT NULL DEFAULT '[]',
+        context_snapshot TEXT NOT NULL, context_hash TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'REVIEW'
+          CHECK (status IN ('REVIEW','CHANGES_REQUESTED','REJECTED','APPROVED','FINAL','PUBLISHED')),
+        created_by TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL, reviewed_by TEXT NOT NULL DEFAULT '',
+        reviewed_at TEXT NOT NULL DEFAULT '', published_by TEXT NOT NULL DEFAULT '',
+        published_at TEXT NOT NULL DEFAULT ''
+    )""")
+    conn.execute("INSERT INTO weekly_exam_sets SELECT * FROM weekly_exam_sets_legacy")
+    conn.execute("DROP TABLE weekly_exam_sets_legacy")
+    conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS uk_weekly_exam_version
+        ON weekly_exam_sets(school,grade,year,semester,exam,round,set_type,version)""")
+    conn.execute("""CREATE INDEX IF NOT EXISTS idx_weekly_exam_context
+        ON weekly_exam_sets(school,grade,year,semester,exam,round,set_type,status)""")
+
+
 def init_schema(conn) -> None:
+    _migrate_set_type_unified(conn)
     conn.execute("""CREATE TABLE IF NOT EXISTS weekly_exam_sets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         school TEXT NOT NULL, grade TEXT NOT NULL, year INTEGER NOT NULL,
         semester TEXT NOT NULL, exam TEXT NOT NULL, round INTEGER NOT NULL,
-        set_type TEXT NOT NULL CHECK (set_type IN ('40','70','40A','40B')),
+        set_type TEXT NOT NULL CHECK (set_type IN ('STD','40','70','40A','40B')),
         question_count INTEGER NOT NULL,
         student_paper_name TEXT NOT NULL, student_paper_html TEXT NOT NULL, student_paper_hash TEXT NOT NULL,
         answer_explanation_name TEXT NOT NULL, answer_explanation_html TEXT NOT NULL, answer_explanation_hash TEXT NOT NULL,
@@ -86,7 +132,7 @@ class WeeklyExamReviewRequest(BaseModel):
     semester: str
     examType: str
     round: int = Field(ge=1)
-    setType: Literal['40', '70', '40A', '40B']
+    setType: Literal['STD', '40', '70', '40A', '40B'] = 'STD'
     questionCount: int = Field(ge=1, le=200)
     studentPaper: str = Field(min_length=1)
     answerExplanation: str = Field(min_length=1)
@@ -115,7 +161,7 @@ class WeeklyExamArtifactsUpdate(BaseModel):
 
 class WeeklyExamMetadataUpdate(BaseModel):
     round: Optional[int] = Field(default=None, ge=1)
-    setType: Optional[Literal['40', '70', '40A', '40B']] = None
+    setType: Optional[Literal['STD', '40', '70', '40A', '40B']] = None
     questionCount: Optional[int] = Field(default=None, ge=1, le=200)
 
 
@@ -360,7 +406,7 @@ def _download_filename(row, kind: str) -> tuple[str, str]:
     대체명을 함께 제공한다. 내용은 저장 canonical과 동일하며 파일명만 파생한다."""
     label = _ARTIFACT_DOWNLOAD_LABELS[kind]
     original = (f"{row['school']}_{row['grade']}_{row['year']}_{row['semester']}_"
-                f"{row['exam']}_{row['round']}회_{row['set_type']}_{label}.html")
+                f"{row['exam']}_{row['round']}회_{label}.html")
     ascii_name = re.sub(r'[^0-9A-Za-z._-]', '_', original)
     if not ascii_name.lower().endswith('.html'):
         ascii_name += '.html'
@@ -468,13 +514,7 @@ def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
         new_round = payload.round if payload.round is not None else row['round']
-        new_set_type = payload.setType or row['set_type']
-        expected_count = 70 if new_set_type == '70' else 40
-        if payload.questionCount is not None and payload.questionCount != expected_count:
-            raise HTTPException(
-                status_code=400,
-                detail=f'{new_set_type} 세트의 문항 수는 {expected_count}이어야 합니다.',
-            )
+        # 1단계 구조조정: 40/70 구분 제거 — 문항 수는 questionCount를 직접 사용
         duplicate = conn.execute("""SELECT id FROM weekly_exam_sets
           WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND round=?
             AND set_type=? AND version=? AND id<>?""",
