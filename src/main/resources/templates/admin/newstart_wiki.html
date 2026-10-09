@@ -17,7 +17,10 @@
         <h2 class="section-title">부실차주 Wiki</h2>
         <span class="section-hint">공식자료·전자책·감사원·카페사례·실제결과·운영자지식을 지속 축적하는 Knowledge Base</span>
       </div>
-      <button class="btn btn-primary" onclick="openKnowledgeModal()">+ 지식 등록</button>
+      <div style="display:flex; gap:8px;">
+        <a class="btn btn-secondary" href="/api/admin/newstart/wiki/export/all" title="CAFE_COMMENT·CAFE_ARTICLE·OPERATOR_KNOWLEDGE·EBOOK ACTIVE 원본 일괄 다운로드 (ZIP)">⬇ RAG 원본 내보내기</a>
+        <button class="btn btn-primary" onclick="openKnowledgeModal()">+ 지식 등록</button>
+      </div>
     </div>
 
     <!-- Stats Cards -->
