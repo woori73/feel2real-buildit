@@ -27,9 +27,10 @@
               <button type="button" class="wl-type-btn" data-type="ETC">기타</button>
             </div>
           </div>
-          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · DOCX · HTML 등 문서)</span>
-            <input type="file" name="file" required
-                   accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,text/html">
+          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · DOCX · HTML · TXT · MD 등 문서 — 여러 개 선택 가능)</span>
+            <input type="file" name="file" required multiple
+                   accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,.txt,.md,text/html,text/plain">
+            <div id="wlFileList" class="wl-file-list" aria-label="선택한 파일 목록"></div>
           </label>
           <label class="uf uf-full">제목 <span class="muted">(파일명에서 자동 입력 — 수정 가능)</span>
             <input type="text" name="title" maxlength="200" placeholder="자료 제목">

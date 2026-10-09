@@ -26,7 +26,7 @@ public class DocumentUploadValidator {
 
   /** 문서 계열 허용 확장자(소문자, 점 없음) — 자료실 기본 화이트리스트. HTML 포함. */
   private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-      "pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "html", "htm");
+      "pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "html", "htm", "txt", "md");
 
   /** 일반 이미지 확장자. 게시글 첨부(변형문제·자료 공유·요청)에서 문서와 함께 허용한다. */
   private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
@@ -113,6 +113,22 @@ public class DocumentUploadValidator {
     return i < head.length && head[i] == '<';
   }
 
+  /**
+   * 텍스트 파일 판별: NUL 바이트가 없고, 실행파일 위장이 아니면 텍스트로 간주한다.
+   * 1단계 구조조정(4-4 파일 형식 자유화)에서 txt/md 지원을 위해 추가.
+   */
+  private static boolean looksLikeText(byte[] head) {
+    if (head == null || head.length == 0) {
+      return false;
+    }
+    for (byte b : head) {
+      if (b == 0x00) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** 확장자로 응답 Content-Type을 추론한다. 알 수 없으면 application/octet-stream. */
   public static String contentType(String filename) {
     String extension = extensionOf(filename);
@@ -148,6 +164,7 @@ public class DocumentUploadValidator {
       case "png" -> startsWith(head, MAGIC_PNG);
       case "webp" -> startsWith(head, MAGIC_RIFF) && regionEquals(head, 8, MAGIC_WEBP);
       case "html", "htm" -> looksLikeHtml(head);
+      case "txt", "md" -> looksLikeText(head);
       default -> false;
     };
   }
@@ -197,7 +214,7 @@ public class DocumentUploadValidator {
 
   /** 화면·서비스에서 accept 속성/안내에 쓸 문서 허용 확장자 목록. */
   public static List<String> allowedExtensions() {
-    return List.of("pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "html", "htm");
+    return List.of("pdf", "hwp", "hwpx", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "html", "htm", "txt", "md");
   }
 
   /** 게시글 첨부 accept 속성/안내에 쓸 허용 확장자 목록(문서 + HTML + 이미지). */

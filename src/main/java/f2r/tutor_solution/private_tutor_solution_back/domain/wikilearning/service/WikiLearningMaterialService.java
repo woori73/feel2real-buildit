@@ -126,4 +126,31 @@ public class WikiLearningMaterialService {
     if (grade == null || grade < 1 || grade > 3) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학년은 1~3(고1~고3) 사이 숫자로 입력해주세요.");
     return grade;
   }
+
+  /**
+   * 1단계 구조조정(4-5): 학습지 다중 업로드.
+   * 파일별로 개별 처리한다. 일부 실패 시 성공한 파일은 유지된다.
+   * 모든 파일이 실패한 경우에만 400 오류를 반환한다.
+   */
+  public List<WikiLearningMaterialResponse> uploadBatch(Long uploaderUserId, String dataType,
+      Integer grade, String title, List<org.springframework.web.multipart.MultipartFile> files) {
+    if (files == null || files.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "파일을 업로드해주세요.");
+    }
+    List<WikiLearningMaterialResponse> results = new java.util.ArrayList<>();
+    List<String> failures = new java.util.ArrayList<>();
+    for (org.springframework.web.multipart.MultipartFile file : files) {
+      try {
+        results.add(upload(uploaderUserId, dataType, grade, title, file));
+      } catch (Exception e) {
+        String name = file.getOriginalFilename() != null ? file.getOriginalFilename() : "알 수 없는 파일";
+        failures.add(name + ": " + e.getMessage());
+      }
+    }
+    if (!failures.isEmpty() && results.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+          "모든 파일 업로드에 실패했습니다: " + String.join("; ", failures));
+    }
+    return results;
+  }
 }
