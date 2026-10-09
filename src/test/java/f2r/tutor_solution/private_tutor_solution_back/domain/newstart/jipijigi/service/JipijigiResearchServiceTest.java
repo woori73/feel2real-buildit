@@ -48,8 +48,10 @@ class JipijigiResearchServiceTest {
     private JipijigiAnswerSessionService answerSessions;
 
     private JipijigiResearchService service() {
+        f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties props =
+                new f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties();
         return new JipijigiResearchService(knowledgeRepository, empiricalCaseRepository,
-                officialUpdateRepository, answerSessions);
+                officialUpdateRepository, answerSessions, props, null, null);
     }
 
     private NewstartKnowledgeItem item(NewstartKnowledgeItem.SourceType type, String url) {        return NewstartKnowledgeItem.builder()
@@ -263,7 +265,9 @@ class JipijigiResearchServiceTest {
     @Test
     @DisplayName("given 조사·어미가 붙은 실제 질문 when keywordsOf then 조사/불용어 제거 + 질문 의도 동의어가 붙는다")
     void keywordsOf_stripsParticlesAndExpandsIntent() {
-        JipijigiResearchService service = new JipijigiResearchService(null, null, null, null);
+        f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties props =
+                new f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties();
+        JipijigiResearchService service = new JipijigiResearchService(null, null, null, null, props, null, null);
 
         List<String> a = service.keywordsOf("후순위 담보대출에서 기한이익상실 통보를 받았는데 어떻게 해야 하나?");
         assertThat(a).contains("후순위", "기한이익상실", "통보", "담보").doesNotContain("어떻게", "해야", "하나", "통보를");
@@ -288,5 +292,29 @@ class JipijigiResearchServiceTest {
 
         assertThat(ex).contains("기한이익상실").contains("임시안");
         assertThat(ex.length()).isLessThanOrEqualTo(JipijigiResearchService.CASE_EXCERPT_CHARS + 2);
+    }
+
+    @Test
+    @DisplayName("given 벡터 검색 비활성화 when searchActiveKnowledge then 기존 LIKE 검색으로 폴백한다")
+    void searchActiveKnowledge_fallsBackToLikeWhenDisabled() {
+        f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties props =
+                new f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties();
+        props.setEnabled(false);
+        JipijigiResearchService svc = new JipijigiResearchService(
+                knowledgeRepository, empiricalCaseRepository, officialUpdateRepository,
+                answerSessions, props, null, null);
+
+        NewstartKnowledgeItem item = NewstartKnowledgeItem.builder()
+                .knowledgeId(1L).sourceType(NewstartKnowledgeItem.SourceType.CAFE_ARTICLE)
+                .status(NewstartKnowledgeItem.KnowledgeStatus.ACTIVE)
+                .title("감면율 안내").content("새출발기금 감면율").category("감면율")
+                .build();
+        when(knowledgeRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(item)));
+
+        List<NewstartKnowledgeItem> result = svc.searchActiveKnowledge("감면율은?", List.of("감면율"));
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getKnowledgeId()).isEqualTo(1L);
     }
 }

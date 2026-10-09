@@ -9,6 +9,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.e
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartEmpiricalCaseRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartKnowledgeItemRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.EmbeddingClient;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.KnowledgeVectorIndex;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties;
 import jakarta.persistence.criteria.Predicate;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,6 +48,9 @@ public class JipijigiResearchService {
     private final NewstartEmpiricalCaseRepository empiricalCaseRepository;
     private final NewStartOfficialUpdateRepository officialUpdateRepository;
     private final JipijigiAnswerSessionService answerSessions;
+    private final NewstartEmbeddingProperties embeddingProps;
+    private final EmbeddingClient embeddingClient;
+    private final KnowledgeVectorIndex vectorIndex;
 
     @Getter
     @Builder
@@ -85,7 +91,7 @@ public class JipijigiResearchService {
 
         // STEP 1 — NewStart 내부 DB/RAG + 축적된 운영자 승인 답변 세션 (항상 먼저)
         List<Evidence> internal = new ArrayList<>();
-        for (NewstartKnowledgeItem item : searchActiveKnowledge(keywords)) {
+        for (NewstartKnowledgeItem item : searchActiveKnowledge(questionText, keywords)) {
             internal.add(toKnowledgeEvidence(item, keywords));
         }
         internal.addAll(answerSessions.searchAcceptedEvidence(keywords));
@@ -203,7 +209,23 @@ public class JipijigiResearchService {
         return token;
     }
 
-    List<NewstartKnowledgeItem> searchActiveKnowledge(List<String> keywords) {
+    /**
+     * STEP1 내부 지식 검색. 벡터 검색이 활성화되고 준비되면 하이브리드(LIKE+벡터),
+     * 아니면 기존 LIKE 검색 (안전장치).
+     */
+    List<NewstartKnowledgeItem> searchActiveKnowledge(String questionText, List<String> keywords) {
+        if (embeddingProps.isEnabled() && vectorIndex.isReady()) {
+            List<NewstartKnowledgeItem> hybrid = searchActiveKnowledgeHybrid(questionText, keywords);
+            if (!hybrid.isEmpty()) {
+                return hybrid;
+            }
+            // 벡터 결과가 비면 LIKE로 폴백
+        }
+        return searchActiveKnowledgeLike(keywords);
+    }
+
+    /** 기존 LIKE 검색 (변경 없음 — 폴백용). */
+    List<NewstartKnowledgeItem> searchActiveKnowledgeLike(List<String> keywords) {
         if (keywords.isEmpty()) return List.of();
         Specification<NewstartKnowledgeItem> spec = (root, query, cb) -> {
             List<Predicate> kws = new ArrayList<>();
@@ -225,6 +247,65 @@ public class JipijigiResearchService {
                         keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2
                                 + keywordHits(keywords, k.getContent())
                                 + operatorExperienceBonus(k)).reversed())
+                .limit(PER_STEP_LIMIT)
+                .toList();
+    }
+
+    /**
+     * 하이브리드 검색 (LIKE + EmbeddingGemma 벡터).
+     * - LIKE 후보와 벡터 후보를 결합, 가중합으로 순위
+     * - 공식 규정 가산점, 운영자 경험 가산점 유지
+     * - ACTIVE·유효기간 필터 적용
+     * - 임베딩 실패 시 빈 리스트 (호출자가 LIKE로 폴백)
+     */
+    List<NewstartKnowledgeItem> searchActiveKnowledgeHybrid(String questionText, List<String> keywords) {
+        float[] queryVec = embeddingClient.embed(questionText);
+        if (queryVec == null) {
+            return List.of();
+        }
+        // LIKE 후보 (점수 계산용으로 넓게)
+        List<NewstartKnowledgeItem> likeCandidates = searchActiveKnowledgeLike(keywords);
+        java.util.Map<Long, Double> likeScores = new java.util.HashMap<>();
+        double maxLikeTmp = 1.0;
+        for (NewstartKnowledgeItem k : likeCandidates) {
+            double s = keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2.0
+                    + keywordHits(keywords, k.getContent());
+            likeScores.put(k.getKnowledgeId(), s);
+            if (s > maxLikeTmp) maxLikeTmp = s;
+        }
+        final double maxLike = maxLikeTmp;
+        // 벡터 후보
+        List<KnowledgeVectorIndex.VectorHit> vecHits =
+                vectorIndex.search(queryVec, embeddingProps.getVectorLimit());
+        java.util.Map<Long, Double> vecScores = new java.util.HashMap<>();
+        for (KnowledgeVectorIndex.VectorHit h : vecHits) {
+            vecScores.put(h.getKnowledgeId(), h.getSimilarity());
+        }
+        // 후보 합집합 조회
+        java.util.Set<Long> ids = new java.util.HashSet<>(likeScores.keySet());
+        ids.addAll(vecScores.keySet());
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<NewstartKnowledgeItem> candidates = knowledgeRepository.findAllById(ids);
+        double likeW = embeddingProps.getLikeWeight();
+        double vecW = embeddingProps.getVectorWeight();
+        double officialBonus = embeddingProps.getOfficialBonus();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        return candidates.stream()
+                .filter(k -> k.getStatus() == NewstartKnowledgeItem.KnowledgeStatus.ACTIVE)
+                .filter(k -> k.getEffectiveFrom() == null || !k.getEffectiveFrom().isAfter(today))
+                .filter(k -> k.getEffectiveTo() == null || !k.getEffectiveTo().isBefore(today))
+                .sorted(Comparator.comparingDouble((NewstartKnowledgeItem k) -> {
+                    double likeNorm = likeScores.getOrDefault(k.getKnowledgeId(), 0.0) / maxLike;
+                    double vecNorm = (vecScores.getOrDefault(k.getKnowledgeId(), 0.0) + 1.0) / 2.0;
+                    double score = likeW * likeNorm + vecW * vecNorm;
+                    if (classifyKnowledge(k) == JipijigiResearchTrace.SourceClass.OFFICIAL_RULE) {
+                        score += officialBonus;
+                    }
+                    score += operatorExperienceBonus(k) * 0.05;
+                    return score;
+                }).reversed())
                 .limit(PER_STEP_LIMIT)
                 .toList();
     }

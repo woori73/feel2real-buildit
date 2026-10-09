@@ -59,7 +59,9 @@ class NewStartAiChatServiceTest {
     RuntimeException failure;
 
     FakeResearchService() {
-      super(null, null, null, null);
+      super(null, null, null, null,
+          new f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties(),
+          null, null);
     }
 
     @Override
