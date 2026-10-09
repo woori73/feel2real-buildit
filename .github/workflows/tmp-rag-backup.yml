@@ -1,0 +1,60 @@
+# TEMPORARY - RAG source backup (read-only). Delete after 2026-10-09 backup completes.
+# paths-ignore 대상이라 Build/Deploy를 실행하지 않는다.
+# DB 쓰기 없음. SELECT만 수행하고 집계+SHA-256만 로그에 출력한다.
+name: Tmp RAG Backup (read-only, manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Run read-only backup via SSM
+        run: |
+          set -euo pipefail
+          SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== writing backup script ====="
+          rm -f /tmp/ragx.b64 /tmp/rag_export.py
+          echo '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' | base64 -d | gunzip > /tmp/rag_export.py
+          python3 -c "import ast; ast.parse(open('/tmp/rag_export.py').read()); print('script syntax OK')"
+          echo "===== running backup (read-only SELECT, S3) ====="
+          python3 /tmp/rag_export.py
+          SSMEOF
+          )
+          SSM_SCRIPT=$(printf 'set -euo pipefail\n%s\n' "$SSM_BODY")
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$PARAMS_JSON" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM CommandId=$CMD_ID"
+          for i in $(seq 1 40); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/40)"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardErrorContent' --output text
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::SSM command finished with status $FINAL"
+            exit 1
+          fi
