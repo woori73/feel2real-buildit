@@ -33,8 +33,16 @@ on:
           - rollback-jar
           - wiki-status
           - wemade-test
-          - member-snapshots
-          - newstart-review-list
+      log_since:
+        description: 'journal-errors 검색 시작 (UTC, 예: 2026-10-09 07:30:00). 비우면 기본 고정 범위 사용'
+        required: false
+        default: ''
+        type: string
+      log_until:
+        description: 'journal-errors 검색 종료 (UTC, 예: 2026-10-09 08:00:00). 비우면 기본 고정 범위 사용'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   id-token: write
@@ -93,8 +101,15 @@ jobs:
             journal-errors)
               DIAG_LABEL="journal-errors (narrow range, grep)"
               SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== journalctl: first error search (2026-10-06 04:40-04:50 UTC, max 100 lines) ====="
-          journalctl -u f2r-app.service --since "2026-10-06 06:30:00" --until "2026-10-06 06:45:00" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
+          SINCE="${{ inputs.log_since }}"
+          UNTIL="${{ inputs.log_until }}"
+          if [ -z "$SINCE" ]; then SINCE="2026-10-06 06:30:00"; fi
+          if [ -z "$UNTIL" ]; then UNTIL="2026-10-06 06:45:00"; fi
+          echo "===== journalctl: error search ($SINCE ~ $UNTIL UTC, max 100 lines) ====="
+          journalctl -u f2r-app.service --since "$SINCE" --until "$UNTIL" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
+          echo ""
+          echo "===== journalctl: export endpoint errors ($SINCE ~ $UNTIL UTC) ====="
+          journalctl -u f2r-app.service --since "$SINCE" --until "$UNTIL" --no-pager | grep -i -m 60 -B 3 -A 12 -E 'export|StreamingResponseBody|ClientAbort|Broken pipe|AsyncRequestTimeout' | head -150 || true
           echo ""
           echo "===== journalctl: tail 30 (most recent) ====="
           journalctl -u f2r-app.service --no-pager -n 30 || true
@@ -289,36 +304,6 @@ jobs:
           journalctl -u f2r-app.service --since "2026-10-06 00:00:00" --no-pager 2>/dev/null | grep -a -c "WEMADE KIS" || echo 0
           echo KIS_AUTH_LOG
           journalctl -u f2r-app.service --since "2026-10-05 00:00:00" --no-pager 2>/dev/null | grep -a "WEMADE KIS" | grep -a -iE "auth|token|skipped|PENDING" | tail -5 || echo NO_AUTH_LOGS
-          SSMEOF
-              )
-              ;;
-            member-snapshots)
-              DIAG_LABEL="member-snapshots (wemade_member_snapshots read-only)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          source /etc/f2r/env
-          echo "===== MAX(measured_at) ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT MAX(measured_at) AS latest_snapshot FROM wemade_member_snapshots;" 2>&1
-          echo ""
-          echo "===== COUNT today (KST) ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT COUNT(*) AS today_cnt FROM wemade_member_snapshots WHERE measured_at >= CONVERT_TZ(CURDATE(), '+00:00', '+09:00');" 2>&1
-          echo ""
-          echo "===== latest 10 for 112040 ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT measured_at, broker_name, buy_volume, sell_volume, net_volume, exchange FROM wemade_member_snapshots WHERE symbol='112040' ORDER BY measured_at DESC LIMIT 10;" 2>&1
-          SSMEOF
-              )
-              ;;
-            newstart-review-list)
-              DIAG_LABEL="newstart-review-list (newstart_knowledge_items REVIEW read-only)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          source /etc/f2r/env
-          echo "===== REVIEW count ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT COUNT(*) AS review_cnt FROM newstart_knowledge_items WHERE status='REVIEW';" 2>&1
-          echo ""
-          echo "===== classification counts ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT CASE WHEN (source_url IS NOT NULL AND source_url != '') OR content LIKE '%http%' THEN CASE WHEN (content IS NOT NULL AND LENGTH(content) > 100) OR (summary IS NOT NULL AND LENGTH(summary) > 0) THEN 'A_ACTIVE_CANDIDATE' ELSE 'C_EDGE_LINK_NO_CONTENT' END ELSE 'B_DELETE_CANDIDATE' END AS grp, COUNT(*) AS cnt FROM newstart_knowledge_items WHERE status='REVIEW' GROUP BY grp;" 2>&1
-          echo ""
-          echo "===== REVIEW id list (id, title, has_url, content_has_url, content_len) ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT knowledge_id, LEFT(title,60) AS title, (source_url IS NOT NULL AND source_url != '') AS has_url, (content LIKE '%http%') AS content_has_url, LENGTH(content) AS content_len, LENGTH(summary) AS summary_len FROM newstart_knowledge_items WHERE status='REVIEW' ORDER BY knowledge_id;" 2>&1
           SSMEOF
               )
               ;;
