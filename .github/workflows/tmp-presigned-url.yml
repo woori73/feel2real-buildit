@@ -1,0 +1,25 @@
+name: Tmp Presigned URL
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  url:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Generate presigned URL
+        run: |
+          URL=$(aws s3 presign s3://f2r-tutor-uploads-prd-067573916809-ap-northeast-2-an/tmp/embedding/docs.jsonl --expires-in 3600)
+          echo "PRESIGNED_URL=$URL" >> $GITHUB_OUTPUT
+          echo "URL generated (expires in 1 hour)"
+        id: presign
+      - name: Output URL
+        run: |
+          echo "${{ steps.presign.outputs.PRESIGNED_URL }}"
