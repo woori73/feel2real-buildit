@@ -23,8 +23,7 @@ public class NewstartKnowledgeEmbedding {
     private Long knowledgeId;
 
     /** 768 float32 little-endian, L2 정규화. */
-    @Lob
-    @Column(name = "embedding", nullable = false)
+    @Column(name = "embedding", nullable = false, columnDefinition = "BLOB")
     private byte[] embedding;
 
     /** 임베딩 모델 버전 (예: embeddinggemma-2). */
