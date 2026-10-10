@@ -21,7 +21,6 @@
 
   var errorBox = document.getElementById('builderTenantFeaturesError');
   var applyBtn = document.getElementById('builderTenantFeaturesApplyBtn');
-  var closeBtn = document.getElementById('builderTenantFeaturesCloseBtn');
 
   // [key, enabledId, fields: [[inputId, jsonField, kind]]]
   var FEATURES = [
@@ -197,8 +196,10 @@
   }
 
   openBtn.addEventListener('click', openModal);
-  closeBtn.addEventListener('click', closeModal);
   applyBtn.addEventListener('click', save);
+  modal.querySelectorAll('[data-tenant-features-close]').forEach(function (btn) {
+    btn.addEventListener('click', closeModal);
+  });
   modal.addEventListener('click', function (e) {
     if (e.target === modal) closeModal();
   });
