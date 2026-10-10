@@ -705,7 +705,8 @@ public class AcademyService {
 
 
   /**
-   * builderDraft 병합 및 테넌트 기능 설정 검증.
+   * builderDraft 부분 병합. tenant.* 키는 JSON 객체 형태를 검증한다.
+   * tenant.contentTools 키는 ArtCraft AI 편집기 설정용 (Phase 1).
    */
   private Map<String, String> sanitizeBuilderDraft(Map<String, String> patch, Map<String, String> current) {
     Map<String, String> merged = new java.util.HashMap<>();
