@@ -12,7 +12,8 @@ public record AcademyPageSettingsUpdateRequest(
     String heroYoutubeUrl,
     Map<String, Boolean> sectionVisibility,
     List<String> sectionOrder,
-    AcademyBusinessInfo businessInfo) {
+    AcademyBusinessInfo businessInfo,
+    Map<String, String> builderDraft) {
 
   public AcademyPageSettingsUpdateRequest(
       String blogUrl,
@@ -21,6 +22,17 @@ public record AcademyPageSettingsUpdateRequest(
       String heroYoutubeUrl,
       Map<String, Boolean> sectionVisibility,
       List<String> sectionOrder) {
-    this(blogUrl, storeUrl, naverMapUrl, heroYoutubeUrl, sectionVisibility, sectionOrder, null);
+    this(blogUrl, storeUrl, naverMapUrl, heroYoutubeUrl, sectionVisibility, sectionOrder, null, null);
+  }
+
+  public AcademyPageSettingsUpdateRequest(
+      String blogUrl,
+      String storeUrl,
+      String naverMapUrl,
+      String heroYoutubeUrl,
+      Map<String, Boolean> sectionVisibility,
+      List<String> sectionOrder,
+      AcademyBusinessInfo businessInfo) {
+    this(blogUrl, storeUrl, naverMapUrl, heroYoutubeUrl, sectionVisibility, sectionOrder, businessInfo, null);
   }
 }
