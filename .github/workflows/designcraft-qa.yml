@@ -149,10 +149,10 @@ jobs:
       - name: Install veraPDF
         run: |
           set -euo pipefail
-          echo "=== veraPDF ${VERAPDF_VERSION} 설치 ==="
+          echo "=== veraPDF 설치 ==="
           # 설치 실패 시 반드시 FAIL (set -e로 자동 처리)
           # install_verapdf.sh가 exit 1이면 이 단계가 FAIL
-          bash ops/designcraft/qa/install_verapdf.sh "${VERAPDF_VERSION}" "/opt/verapdf"
+          bash ops/designcraft/qa/install_verapdf.sh "/opt/verapdf"
           # 설치 확인: jar 파일 존재 + 동작 확인
           if [[ ! -f "/opt/verapdf/verapdf-cli.jar" ]]; then
             echo "[FAIL] veraPDF jar가 설치되지 않았습니다."
