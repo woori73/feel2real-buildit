@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.EditPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.ProjectResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.RevertProjectRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.SnapshotResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.SourceUploadResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.service.ArtCraftEditorService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.service.ArtCraftEditorService.PdfFile;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -79,6 +81,29 @@ public class ArtCraftEditorController {
         editorService.editProject(principal, projectId, academyId, request));
   }
 
+  /**
+   * 편집 소스 업로드 (ADMIN/TUTOR, multipart).
+   *
+   * <p>HTML 업로드 시 원본은 {@code source.html}로 보존하고 headless Chromium
+   * {@code --print-to-pdf}로 {@code source.pdf}를 생성한다 (Chromium이 없으면 503).
+   * PDF 업로드 시 그대로 {@code source.pdf}로 저장한다.
+   * 기존 소스가 있으면 덮어쓴다. {@code edit}은 {@code source.pdf}가 있을 때만
+   * 허용된다.
+   *
+   * <p>인증은 {@code /api/**} catch-all을 그대로 따른다 (별도 SecurityConfig
+   * 규칙 불필요).
+   */
+  @PostMapping(value = "/projects/{id}/source",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<SourceUploadResponse> uploadSource(
+      @AuthenticationPrincipal AuthenticatedPrincipal principal,
+      @PathVariable("id") String projectId,
+      @RequestParam(required = false) Long academyId,
+      @RequestParam("file") MultipartFile file) {
+    return ResponseEntity.ok(
+        editorService.uploadSource(principal, projectId, academyId, file));
+  }
+
   /** 버전(스냅샷) 목록 조회. */
   @GetMapping("/projects/{id}/snapshots")
   public ResponseEntity<List<SnapshotResponse>> listSnapshots(
@@ -132,3 +157,4 @@ public class ArtCraftEditorController {
         .body(pdf.bytes());
   }
 }
+
