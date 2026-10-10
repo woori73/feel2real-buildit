@@ -16,7 +16,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.Projec
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.ProjectResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.RevertProjectRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.SnapshotResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.SourceUploadResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftNotFoundException;
+import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftSourceMissingException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftVersionConflictException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -40,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -54,6 +57,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  *   <li><b>낙관적 잠금</b> — 프로젝트 JSON의 {@code version} 카운터로 동시 편집을 막는다.
  *       같은 프로젝트의 읽기-수정-쓰기는 프로젝트별 락으로 직렬화한다.
  *   <li><b>스냅샷</b> — 편집/되돌리기 전에 {@code snapshots/v{n}.json}에 버전 n 상태를 보존한다.
+ *   <li><b>소스 임포트</b> — 편집 입력 PDF({@code source.pdf})를 multipart로 등록한다.
+ *       HTML 업로드 시 원본은 {@code source.html}에 보존하고 headless Chromium
+ *       {@code --print-to-pdf}로 {@code source.pdf}를 생성한다 (정본=HTML 정책).
+ *       {@code edit}은 {@code source.pdf}가 있을 때만 허용된다.
  *   <li><b>SSE</b> — 프로젝트별 구독자에게 변경 알림을 브로드캐스트한다.
  * </ul>
  *
@@ -78,9 +85,28 @@ public class ArtCraftEditorService {
   private static final String SNAPSHOT_DIR = "snapshots";
   private static final String WORK_DIR = "work";
 
+  /**
+   * 편집 소스 PDF. {@code edit}의 선행조건 — 존재하지 않으면 409.
+   * HTML 업로드 시 headless Chromium이 생성하고, PDF 업로드 시 그대로 저장된다.
+   */
+  private static final String SOURCE_PDF = "source.pdf";
+
+  /**
+   * 정본 HTML 원본. HTML 업로드 시에만 존재한다.
+   * 정본 정책: HTML이 정본, PDF는 산출물 (PDF→HTML 역변환을 원본 복원으로 사용 금지).
+   */
+  private static final String SOURCE_HTML = "source.html";
+
+  /**
+   * 소스 업로드 크기 상한 (20MB).
+   * 앱 전역 문서 업로드 상한({@code upload.max-document-bytes})과 동일한 값이다.
+   */
+  private static final long MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+
   private final AcademyRepository academyRepository;
   private final ArtCraftEditorProperties props;
   private final ArtCraftCliExecutor cliExecutor;
+  private final ArtCraftHtmlToPdfConverter htmlToPdfConverter;
   private final ObjectMapper objectMapper;
 
   /** 프로젝트별 직렬화 락 (key = academyId + "/" + projectId). */
@@ -158,6 +184,112 @@ public class ArtCraftEditorService {
   }
 
   // -------------------------------------------------------------------------
+  // 편집 소스 업로드 (P0-④ HTML→PDF 입력 경로)
+  // -------------------------------------------------------------------------
+
+  /**
+   * 편집 소스를 업로드한다 (ADMIN/TUTOR, multipart).
+   *
+   * <ul>
+   *   <li><b>PDF</b> — {@code source.pdf}로 그대로 저장한다. 이 경우 정본은 PDF
+   *       자체이므로, 이전에 남아 있던 {@code source.html}(내용 불일치 가능)은
+   *       삭제한다.
+   *   <li><b>HTML</b> — 원본을 {@code source.html}에 보존한 뒤 headless Chromium
+   *       {@code --print-to-pdf}로 {@code source.pdf}를 생성한다.
+   *       Chromium이 없으면 503.
+   * </ul>
+   *
+   * <p>기존 {@code source.pdf}가 있으면 덮어쓴다. 소스 업로드로 프로젝트 버전은
+   * 증가하지 않는다 (버전은 {@code edit}의 낙관적 잠금 카운터 전용).
+   * 업로드 후 SSE {@code source_uploaded} 이벤트를 브로드캐스트한다.
+   *
+   * @return 업로드 결과 (소스 종류·변환 여부 포함)
+   */
+  public SourceUploadResponse uploadSource(AuthenticatedPrincipal principal,
+      String projectId, Long requestedAcademyId, MultipartFile file) {
+    requireEditorRole(principal);
+    if (file == null || file.isEmpty()) {
+      throw new IllegalArgumentException("업로드할 파일(file)은 필수입니다.");
+    }
+    if (file.getSize() > MAX_SOURCE_BYTES) {
+      throw new IllegalArgumentException(
+          "파일 크기가 상한(20MB)을 초과했습니다: " + file.getSize() + " bytes");
+    }
+    String sourceType = detectSourceType(file);
+    long academyId = resolveAcademyId(principal, requestedAcademyId);
+
+    Object lock = lockFor(academyId, validateProjectId(projectId));
+    synchronized (lock) {
+      Path dir = projectDir(academyId, projectId);
+      ObjectNode project = loadProject(dir); // 없으면 404
+      boolean converted = false;
+      if ("html".equals(sourceType)) {
+        // 정본 HTML 원본 보존
+        Path htmlFile = dir.resolve(SOURCE_HTML);
+        try {
+          Files.write(htmlFile, file.getBytes());
+        } catch (IOException e) {
+          throw new UncheckedIOException("소스 HTML 저장 실패", e);
+        }
+        // headless Chromium으로 source.pdf 생성 (없으면 503)
+        htmlToPdfConverter.convert(htmlFile, dir.resolve(SOURCE_PDF));
+        converted = true;
+      } else {
+        Path pdfFile = dir.resolve(SOURCE_PDF);
+        try {
+          Files.write(pdfFile, file.getBytes());
+        } catch (IOException e) {
+          throw new UncheckedIOException("소스 PDF 저장 실패", e);
+        }
+        // PDF 직접 업로드 시 정본은 PDF 자체 — 불일치 가능한 이전 source.html 제거
+        try {
+          Files.deleteIfExists(dir.resolve(SOURCE_HTML));
+        } catch (IOException e) {
+          throw new UncheckedIOException("이전 소스 HTML 정리 실패", e);
+        }
+      }
+
+      String now = nowIso();
+      publishEvent(academyId, projectId,
+          new ProjectEvent("source_uploaded", projectId,
+              project.get("version").asInt(), now, principal.loginId(),
+              "소스 등록 (" + sourceType + ")"));
+      log.info("ArtCraft 소스 업로드: academy={} project={} type={} converted={} by={}",
+          academyId, projectId, sourceType, converted, principal.loginId());
+      return new SourceUploadResponse(projectId, academyId,
+          project.get("version").asInt(), sourceType, SOURCE_PDF, converted);
+    }
+  }
+
+  /**
+   * 업로드 파일의 소스 종류를 판정한다.
+   *
+   * @return "html" 또는 "pdf"
+   * @throws IllegalArgumentException 지원하지 않는 형식이면 400
+   */
+  private String detectSourceType(MultipartFile file) {
+    String contentType = file.getContentType();
+    String name = file.getOriginalFilename();
+    String ext = "";
+    if (name != null) {
+      int dot = name.lastIndexOf('.');
+      if (dot >= 0 && dot < name.length() - 1) {
+        ext = name.substring(dot + 1).toLowerCase();
+      }
+    }
+    if ("pdf".equals(ext) || "application/pdf".equalsIgnoreCase(contentType)) {
+      return "pdf";
+    }
+    if ("html".equals(ext) || "htm".equals(ext)
+        || "text/html".equalsIgnoreCase(contentType)
+        || "application/xhtml+xml".equalsIgnoreCase(contentType)) {
+      return "html";
+    }
+    throw new IllegalArgumentException(
+        "지원하지 않는 파일 형식입니다. HTML(.html) 또는 PDF(.pdf)만 업로드할 수 있습니다.");
+  }
+
+  // -------------------------------------------------------------------------
   // AI 편집 (낙관적 잠금 + CLI 실행)
   // -------------------------------------------------------------------------
 
@@ -165,6 +297,7 @@ public class ArtCraftEditorService {
    * AI 편집 명령을 실행한다 (ADMIN/TUTOR).
    *
    * <ol>
+   *   <li>{@code source.pdf} 존재 확인 — 없으면 409 (소스를 먼저 업로드해야 함)
    *   <li>{@code expectedVersion}과 현재 버전 비교 — 불일치 시 409 (편집 미수행)
    *   <li>명령 화이트리스트 검증 — 허용되지 않은 도구는 400
    *   <li>편집 전 스냅샷 저장 ({@code snapshots/v{current}.json})
@@ -199,6 +332,10 @@ public class ArtCraftEditorService {
     synchronized (lock) {
       Path dir = projectDir(academyId, projectId);
       ObjectNode project = loadProject(dir);
+      // 편집 선행조건: 소스 PDF가 등록되어 있어야 한다 (P0-④)
+      if (!Files.isRegularFile(dir.resolve(SOURCE_PDF))) {
+        throw new ArtCraftSourceMissingException(projectId);
+      }
       int current = project.get("version").asInt();
       String lastEditor = project.path("last_editor").asText("");
       if (current != request.expectedVersion()) {
@@ -215,6 +352,8 @@ public class ArtCraftEditorService {
           request.desc() == null ? "편집 전 스냅샷" : request.desc());
 
       // CLI 실행 (격리된 작업 디렉토리, 프로젝트 디렉토리를 프로세스 작업 디렉토리로)
+      // - executor가 doc_open/doc 기본값/doc_save path를 자동 주입한다 (P0-③)
+      // - step 실패는 예외가 아니라 CliResult.warnings로 반환된다
       Path workDir = dir.resolve(WORK_DIR).resolve(UUID.randomUUID().toString());
       ArtCraftCliExecutor.CliResult cliResult;
       try {
@@ -222,6 +361,7 @@ public class ArtCraftEditorService {
       } finally {
         deleteQuietly(workDir);
       }
+      warnings.addAll(cliResult.warnings());
 
       String now = nowIso();
       int next = current + 1;
@@ -545,6 +685,9 @@ public class ArtCraftEditorService {
   /**
    * {@code doc_save} 명령의 출력 경로를 찾아 프로젝트 디렉토리 기준 상대 경로로 변환한다.
    * 프로젝트 디렉토리를 벗어나는 절대 경로는 무시된다 (격리 유지).
+   *
+   * <p>path를 생략한 {@code doc_save}는 {@link ArtCraftCliExecutor}가
+   * {@code "output.pdf"}로 고정 주입하므로, 여기서도 같은 기본값을 적용한다.
    */
   private String detectPdfPath(Path dir, List<EditCommandRequest> commands) {
     for (EditCommandRequest cmd : commands) {
@@ -552,9 +695,7 @@ public class ArtCraftEditorService {
         continue;
       }
       Object pathArg = cmd.args().get("path");
-      if (!(pathArg instanceof String pathStr) || pathStr.isBlank()) {
-        continue;
-      }
+      String pathStr = (pathArg instanceof String s) && !s.isBlank() ? s : "output.pdf";
       Path resolved = dir.resolve(pathStr).normalize();
       if (resolved.startsWith(dir.normalize()) && Files.isRegularFile(resolved)) {
         return dir.relativize(resolved).toString();
@@ -630,3 +771,4 @@ public class ArtCraftEditorService {
     }
   }
 }
+
