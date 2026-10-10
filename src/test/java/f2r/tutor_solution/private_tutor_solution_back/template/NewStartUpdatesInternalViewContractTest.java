@@ -26,7 +26,7 @@ class NewStartUpdatesInternalViewContractTest {
 
   private static final String POLLUTED_OFFICIAL_URL =
       "https://www.newstartfund.or.kr/https://www.newstartfund.or.kr/Faq/List.do?pageIndex=1&schPrcdRnk=005";
-  private static final String ADDRESS = "서울특별시 송파구 중대로10길 37-25";
+  private static final String ADDRESS = "서울특별시 강남구 압구정로34길 11, 2층 206호";
 
   private static TemplateEngine engine() {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
@@ -94,7 +94,7 @@ class NewStartUpdatesInternalViewContractTest {
   }
 
   @Test
-  @DisplayName("G. 다른 서비스(BuildIt footer, F2R 공용 footer)는 사업자 정보와 주소 표기를 그대로 유지한다")
+  @DisplayName("G. 다른 서비스(BuildIt footer, F2R 공용 footer)는 학원 사업자 정보와 주소 표기를 유지한다 (2026-10-10 압구정에듀홀릭학원으로 변경)")
   void otherServiceFootersStillShowAddress() {
     TemplateEngine engine = engine();
     String buildIt = engine.process(
@@ -103,7 +103,7 @@ class NewStartUpdatesInternalViewContractTest {
     String plain = engine.process(
         new TemplateSpec("fragments/_public_footer", "publicFooter"), new Context());
     assertThat(plain).contains(ADDRESS);
-    assertThat(plain).contains("상호명: 압구정에듀홀릭출판사").contains("사업자등록번호: 146-99-01347");
+    assertThat(plain).contains("상호명: 압구정에듀홀릭학원").contains("사업자등록번호: 759-91-01977");
   }
 
   // ---- B/C/D: 내부 상세 화면 ----
