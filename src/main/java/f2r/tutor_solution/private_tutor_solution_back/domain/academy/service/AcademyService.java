@@ -307,7 +307,9 @@ public class AcademyService {
         request.sectionOrder() == null && current != null
             ? normalizeSectionOrderForWrite(current.sectionOrder())
             : normalizeSectionOrderForWrite(request.sectionOrder()),
-        current != null ? current.builderDraft() : null,
+        request.builderDraft() == null && current != null
+            ? current.builderDraft()
+            : sanitizeBuilderDraft(request.builderDraft(), current != null ? current.builderDraft() : null),
         !businessInfoSupplied && current != null
             ? current.businessInfo()
             : normalizeBusinessInfoForWrite(request.businessInfo()));
@@ -699,6 +701,38 @@ public class AcademyService {
         businessInfoUrl,
         businessInfo.phone(),
         businessInfo.email());
+  }
+
+
+  /**
+   * builderDraft 병합 및 테넌트 기능 설정 검증.
+   */
+  private Map<String, String> sanitizeBuilderDraft(Map<String, String> patch, Map<String, String> current) {
+    Map<String, String> merged = new java.util.HashMap<>();
+    if (current != null) merged.putAll(current);
+    if (patch != null) {
+      for (Map.Entry<String, String> e : patch.entrySet()) {
+        String k = e.getKey();
+        String v = e.getValue();
+        if (k != null && k.startsWith("tenant.")) {
+          validateTenantSettingJson(k, v);
+        }
+        if (v == null) {
+          merged.remove(k);
+        } else {
+          merged.put(k, v);
+        }
+      }
+    }
+    return merged.isEmpty() ? null : merged;
+  }
+
+  private void validateTenantSettingJson(String key, String json) {
+    if (json == null || json.isBlank()) return;
+    String t = json.trim();
+    if (!t.startsWith("{") || !t.endsWith("}")) {
+      throw new IllegalArgumentException("테넌트 설정(" + key + ")은 JSON 객체여야 합니다.");
+    }
   }
 
   private void validatePageSettings(
