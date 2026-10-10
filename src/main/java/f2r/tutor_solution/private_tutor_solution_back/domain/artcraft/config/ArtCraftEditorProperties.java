@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * artcraft:
  *   editor:
  *     cli-path: /opt/artcraft/pdfcraft-cli   # 한글 패치된 PdfCraft CLI 바이너리 경로
+ *     chromium-path: ""                      # HTML→PDF 변환용 headless Chromium 경로 (비어 있으면 PATH 자동 탐색)
  *     storage-root: /var/lib/feel2real/artcraft  # 프로젝트/스냅샷/PDF 저장 루트
  *     cli-timeout-seconds: 60                 # CLI 1회 실행 타임아웃
  *     sse-timeout-millis: 1800000             # SSE 구독 유지 시간 (30분)
@@ -31,6 +32,16 @@ public class ArtCraftEditorProperties {
   private String cliPath = "/opt/artcraft/pdfcraft-cli";
 
   /**
+   * HTML→PDF 변환용 headless Chromium 바이너리 경로.
+   *
+   * <p>비어 있으면 런타임에 PATH에서 자동 탐색한다
+   * ({@code chromium}, {@code chromium-browser}, {@code google-chrome},
+   * {@code google-chrome-stable}, {@code chrome} 순).
+   * Chromium을 찾지 못하면 HTML 소스 업로드가 503을 반환한다.
+   */
+  private String chromiumPath = "";
+
+  /**
    * 프로젝트 저장 루트. 실제 레이아웃은
    * {@code {storage-root}/artcraft-projects/{academyId}/{projectId}/} 이다.
    */
@@ -43,3 +54,4 @@ public class ArtCraftEditorProperties {
   /** SSE({@code /events}) 구독 유지 시간(밀리초). 기본 30분. */
   private long sseTimeoutMillis = 30 * 60 * 1000L;
 }
+

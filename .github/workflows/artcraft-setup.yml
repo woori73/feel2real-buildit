@@ -24,8 +24,8 @@ jobs:
       - name: Upload CLI distribution to S3
         run: |
           set -euo pipefail
-          ls -lh ops/artcraft/pdfcraft-cli-korean.tar.gz
-          aws s3 cp ops/artcraft/pdfcraft-cli-korean.tar.gz s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean.tar.gz
+          ls -lh ops/artcraft/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz
+          aws s3 cp ops/artcraft/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz
           aws s3 ls s3://feel2real-buildit-deploy/artcraft/
           echo "Uploaded to S3"
 
@@ -51,15 +51,16 @@ jobs:
           python3 << 'PYEOF' > /tmp/ssm_params.json
           import json
           commands = [
+              "set -euo pipefail",
               "echo '=== Step 1: Create directories ==='",
               "sudo mkdir -p /opt/artcraft",
               "sudo mkdir -p /opt/artcraft/LICENSES",
               "sudo mkdir -p /opt/artcraft/fonts",
               "echo '=== Step 2: Download from S3 ==='",
-              "aws s3 cp s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean.tar.gz /tmp/pdfcraft-cli-korean.tar.gz",
-              "ls -lh /tmp/pdfcraft-cli-korean.tar.gz",
+              "aws s3 cp s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz /tmp/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz",
+              "ls -lh /tmp/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz",
               "echo '=== Step 3: Extract ==='",
-              "tar xzf /tmp/pdfcraft-cli-korean.tar.gz -C /tmp/",
+              "tar xzf /tmp/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz -C /tmp/",
               "ls -lh /tmp/pdfcraft-cli-korean/",
               "echo '=== Step 4: Install binary ==='",
               "sudo cp /tmp/pdfcraft-cli-korean/pdfcraft-cli /opt/artcraft/pdfcraft-cli",
@@ -69,6 +70,8 @@ jobs:
               "sudo cp /tmp/pdfcraft-cli-korean/NotoSansKR-Variable.ttf /opt/artcraft/fonts/",
               "echo '=== Step 6: Test CLI ==='",
               "/opt/artcraft/pdfcraft-cli --version",
+              "/opt/artcraft/pdfcraft-cli --version | grep -q 'pdfcraft-cli' || (echo 'VERSION CHECK FAILED' >&2; exit 1)",
+              "echo 'CLI version check PASSED'",
               "echo '=== Step 7: Storage directory ==='",
               "sudo mkdir -p /var/lib/feel2real/artcraft",
               "sudo chown ec2-user:ec2-user /var/lib/feel2real/artcraft",
@@ -147,4 +150,4 @@ jobs:
       - name: Cleanup S3
         if: always()
         run: |
-          aws s3 rm s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean.tar.gz || true
+          aws s3 rm s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean-v0.5.0-kr2.tar.gz || true

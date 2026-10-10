@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,7 +25,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.EditPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.ProjectResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.RevertProjectRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.SnapshotResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.dto.SourceUploadResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftCliException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftNotFoundException;
+import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftSourceMissingException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.artcraft.exception.ArtCraftVersionConflictException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +38,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * {@link ArtCraftEditorService} 단위 테스트.
@@ -47,6 +56,7 @@ class ArtCraftEditorServiceTest {
 
   private AcademyRepository academyRepository;
   private ArtCraftCliExecutor cliExecutor;
+  private ArtCraftHtmlToPdfConverter htmlToPdfConverter;
   private ArtCraftEditorService service;
 
   private final AuthenticatedPrincipal tutor =
@@ -60,10 +70,11 @@ class ArtCraftEditorServiceTest {
   void setUp() {
     academyRepository = mock(AcademyRepository.class);
     cliExecutor = mock(ArtCraftCliExecutor.class);
+    htmlToPdfConverter = mock(ArtCraftHtmlToPdfConverter.class);
     ArtCraftEditorProperties props = new ArtCraftEditorProperties();
     props.setStorageRoot(tempDir.toString());
     service = new ArtCraftEditorService(
-        academyRepository, props, cliExecutor, new ObjectMapper());
+        academyRepository, props, cliExecutor, htmlToPdfConverter, new ObjectMapper());
 
     Academy academy = mock(Academy.class);
     when(academy.getAcademyId()).thenReturn(7L);
@@ -79,6 +90,30 @@ class ArtCraftEditorServiceTest {
     return new EditProjectRequest(expectedVersion,
         List.of(new EditCommandRequest(tool, Map.of("doc", 1))),
         "ai-agent", "테스트 편집");
+  }
+
+  private MultipartFile pdfFile(String content) {
+    return new MockMultipartFile("file", "source.pdf",
+        "application/pdf", content.getBytes());
+  }
+
+  private MultipartFile htmlFile(String content) {
+    return new MockMultipartFile("file", "worksheet.html",
+        "text/html", content.getBytes());
+  }
+
+  /** PDF 소스를 등록해 edit 선행조건(source.pdf)을 만족시킨다. */
+  private SourceUploadResponse uploadPdfSource(String projectId) {
+    return service.uploadSource(tutor, projectId, null, pdfFile("fake-source-pdf"));
+  }
+
+  /** HTML→PDF 변환 mock: 변환된 PDF를 가짜 바이트로 기록한다. */
+  private void mockChromiumConvert() {
+    doAnswer(inv -> {
+      Path pdf = inv.getArgument(1);
+      Files.writeString(pdf, "fake-converted-pdf");
+      return null;
+    }).when(htmlToPdfConverter).convert(any(Path.class), any(Path.class));
   }
 
   @Test
@@ -98,6 +133,7 @@ class ArtCraftEditorServiceTest {
   @Test
   void editProject_success_bumpsVersionAndRunsCli() {
     ProjectResponse created = service.createProject(tutor, createRequest("기말고사"));
+    uploadPdfSource(created.projectId());
     when(cliExecutor.execute(anyList(), any(Path.class), any(Path.class)))
         .thenReturn(new ArtCraftCliExecutor.CliResult(0, "ok"));
 
@@ -112,6 +148,7 @@ class ArtCraftEditorServiceTest {
   @Test
   void editProject_staleVersion_throws409WithCurrentVersion() {
     ProjectResponse created = service.createProject(tutor, createRequest("모의고사"));
+    uploadPdfSource(created.projectId());
     when(cliExecutor.execute(anyList(), any(Path.class), any(Path.class)))
         .thenReturn(new ArtCraftCliExecutor.CliResult(0, "ok"));
     service.editProject(tutor, created.projectId(), null, editRequest(1, "doc_info"));
@@ -144,6 +181,7 @@ class ArtCraftEditorServiceTest {
   @Test
   void editProject_userEditedBefore_aiEditWarns() {
     ProjectResponse created = service.createProject(tutor, createRequest("수행평가"));
+    uploadPdfSource(created.projectId());
     when(cliExecutor.execute(anyList(), any(Path.class), any(Path.class)))
         .thenReturn(new ArtCraftCliExecutor.CliResult(0, "ok"));
     // 사용자 직접 편집 시뮬레이션
@@ -160,6 +198,7 @@ class ArtCraftEditorServiceTest {
   @Test
   void revertProject_restoresSnapshotAsNewVersion() {
     ProjectResponse created = service.createProject(tutor, createRequest("중간고사"));
+    uploadPdfSource(created.projectId());
     when(cliExecutor.execute(anyList(), any(Path.class), any(Path.class)))
         .thenReturn(new ArtCraftCliExecutor.CliResult(0, "ok"));
     service.editProject(tutor, created.projectId(), null, editRequest(1, "doc_info"));
@@ -186,6 +225,7 @@ class ArtCraftEditorServiceTest {
   @Test
   void editProject_docSave_registersPdfForDownload() throws Exception {
     ProjectResponse created = service.createProject(tutor, createRequest("출력물"));
+    uploadPdfSource(created.projectId());
     when(cliExecutor.execute(anyList(), any(Path.class), any(Path.class)))
         .thenAnswer(inv -> {
           Path projectDir = inv.getArgument(2);
@@ -254,4 +294,142 @@ class ArtCraftEditorServiceTest {
     assertThrows(ArtCraftNotFoundException.class,
         () -> service.downloadPdf(tutor, created.projectId(), null));
   }
+
+  // -----------------------------------------------------------------------
+  // 소스 업로드 (P0-④)
+  // -----------------------------------------------------------------------
+
+  @Test
+  void uploadSource_pdf_savesSourcePdf() throws Exception {
+    ProjectResponse created = service.createProject(tutor, createRequest("소스등록"));
+
+    SourceUploadResponse res =
+        service.uploadSource(tutor, created.projectId(), null, pdfFile("fake-source-pdf"));
+
+    assertEquals(created.projectId(), res.projectId());
+    assertEquals(7L, res.academyId());
+    assertEquals(1, res.version()); // 소스 업로드로 버전 증가 없음
+    assertEquals("pdf", res.sourceType());
+    assertEquals("source.pdf", res.sourcePath());
+    assertFalse(res.converted());
+    assertEquals("fake-source-pdf", Files.readString(
+        tempDir.resolve("artcraft-projects/7/" + created.projectId() + "/source.pdf")));
+  }
+
+  @Test
+  void uploadSource_html_savesHtmlAndConverts() throws Exception {
+    ProjectResponse created = service.createProject(tutor, createRequest("HTML소스"));
+    mockChromiumConvert();
+
+    SourceUploadResponse res =
+        service.uploadSource(tutor, created.projectId(), null, htmlFile("<html>학습지</html>"));
+
+    assertEquals("html", res.sourceType());
+    assertTrue(res.converted());
+    Path dir = tempDir.resolve("artcraft-projects/7/" + created.projectId());
+    assertTrue(Files.isRegularFile(dir.resolve("source.html"))); // 정본 보존
+    assertEquals("<html>학습지</html>", Files.readString(dir.resolve("source.html")));
+    assertTrue(Files.isRegularFile(dir.resolve("source.pdf"))); // 변환 산출물
+    verify(htmlToPdfConverter).convert(any(Path.class), any(Path.class));
+  }
+
+  @Test
+  void uploadSource_html_chromiumMissing_throws503() {
+    ProjectResponse created = service.createProject(tutor, createRequest("변환불가"));
+    doThrow(new ArtCraftCliException(HttpStatus.SERVICE_UNAVAILABLE, "Chromium 없음"))
+        .when(htmlToPdfConverter).convert(any(Path.class), any(Path.class));
+
+    ArtCraftCliException e = assertThrows(ArtCraftCliException.class,
+        () -> service.uploadSource(tutor, created.projectId(), null,
+            htmlFile("<html>학습지</html>")));
+
+    assertEquals(HttpStatus.SERVICE_UNAVAILABLE, e.getStatus());
+  }
+
+  @Test
+  void uploadSource_unsupportedType_rejected() {
+    ProjectResponse created = service.createProject(tutor, createRequest("형식오류"));
+    MultipartFile txt = new MockMultipartFile("file", "note.txt",
+        "text/plain", "hello".getBytes());
+
+    IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        () -> service.uploadSource(tutor, created.projectId(), null, txt));
+    assertTrue(e.getMessage().contains("HTML"));
+  }
+
+  @Test
+  void uploadSource_emptyFile_rejected() {
+    ProjectResponse created = service.createProject(tutor, createRequest("빈파일"));
+    MultipartFile empty = new MockMultipartFile("file", "empty.pdf",
+        "application/pdf", new byte[0]);
+
+    assertThrows(IllegalArgumentException.class,
+        () -> service.uploadSource(tutor, created.projectId(), null, empty));
+  }
+
+  @Test
+  void uploadSource_overwritesExistingSource() throws Exception {
+    ProjectResponse created = service.createProject(tutor, createRequest("덮어쓰기"));
+    service.uploadSource(tutor, created.projectId(), null, pdfFile("v1"));
+
+    SourceUploadResponse res =
+        service.uploadSource(tutor, created.projectId(), null, pdfFile("v2"));
+
+    Path sourcePdf =
+        tempDir.resolve("artcraft-projects/7/" + created.projectId() + "/source.pdf");
+    assertEquals("v2", Files.readString(sourcePdf));
+    assertEquals(1, res.version()); // 덮어써도 버전 증가 없음
+  }
+
+  @Test
+  void uploadSource_pdf_removesStaleSourceHtml() throws Exception {
+    ProjectResponse created = service.createProject(tutor, createRequest("정본교체"));
+    mockChromiumConvert();
+    service.uploadSource(tutor, created.projectId(), null, htmlFile("<html>구</html>"));
+    Path dir = tempDir.resolve("artcraft-projects/7/" + created.projectId());
+    assertTrue(Files.isRegularFile(dir.resolve("source.html")));
+
+    // PDF 직접 업로드 → 정본은 PDF 자체, 불일치 가능한 이전 source.html 제거
+    service.uploadSource(tutor, created.projectId(), null, pdfFile("new-pdf"));
+
+    assertFalse(Files.exists(dir.resolve("source.html")));
+    assertEquals("new-pdf", Files.readString(dir.resolve("source.pdf")));
+  }
+
+  @Test
+  void uploadSource_missingProject_notFound() {
+    assertThrows(ArtCraftNotFoundException.class,
+        () -> service.uploadSource(tutor, "no-such-project", null, pdfFile("x")));
+  }
+
+  @Test
+  void uploadSource_student_forbidden() {
+    ProjectResponse created = service.createProject(tutor, createRequest("권한"));
+
+    assertThrows(AccessDeniedException.class,
+        () -> service.uploadSource(student, created.projectId(), null, pdfFile("x")));
+  }
+
+  @Test
+  void editProject_withoutSource_throws409() {
+    ProjectResponse created = service.createProject(tutor, createRequest("소스없음"));
+
+    ArtCraftSourceMissingException e = assertThrows(ArtCraftSourceMissingException.class,
+        () -> service.editProject(tutor, created.projectId(), null, editRequest(1, "doc_info")));
+
+    assertTrue(e.getMessage().contains("소스를 먼저 업로드하세요"));
+  }
+
+  @Test
+  void editProject_withUploadedSource_ok() {
+    ProjectResponse created = service.createProject(tutor, createRequest("소스있음"));
+    uploadPdfSource(created.projectId());
+    when(cliExecutor.execute(anyList(), any(Path.class), any(Path.class)))
+        .thenReturn(new ArtCraftCliExecutor.CliResult(0, "ok"));
+
+    var res = service.editProject(tutor, created.projectId(), null, editRequest(1, "doc_info"));
+
+    assertEquals(2, res.version());
+  }
 }
+

@@ -30,9 +30,17 @@ public class ArtCraftExceptionHandler {
         "currentVersion", e.getCurrentVersion()));
   }
 
+  /** 편집 소스 미등록 — 409. 호출자는 소스를 먼저 업로드해야 한다. */
+  @ExceptionHandler(ArtCraftSourceMissingException.class)
+  public ResponseEntity<Map<String, Object>> handleSourceMissing(
+      ArtCraftSourceMissingException e) {
+    return ResponseEntity.status(409).body(Map.of("message", e.getMessage()));
+  }
+
   /** CLI 실행 실패 — 예외가 지정한 상태(502/503/504). */
   @ExceptionHandler(ArtCraftCliException.class)
   public ResponseEntity<Map<String, Object>> handleCliFailure(ArtCraftCliException e) {
     return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
   }
 }
+
