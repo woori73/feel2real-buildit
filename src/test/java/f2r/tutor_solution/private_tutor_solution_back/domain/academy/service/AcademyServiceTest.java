@@ -1072,6 +1072,88 @@ class AcademyServiceTest {
   }
 
   @Test
+  void updatePageSettings_backfillsCtaAtCanonicalPositionPreservingExistingOrder() {
+    // given: sec-cta가 없던 구 저장값을 가진 기존 테넌트가 순서를 저장한다.
+    Academy academy = academy("old/logo.jpg", null);
+    List<String> legacyOrder = new ArrayList<>(AcademyService.DEFAULT_SECTION_ORDER);
+    legacyOrder.remove("sec-cta");
+    // 기존 테넌트가 sec-lessons를 앞으로 당긴 커스텀 순서라고 가정한다.
+    legacyOrder.remove("sec-lessons");
+    legacyOrder.add(2, "sec-lessons");
+    academy.updatePageSettings(new AcademyPageSettings(
+        null, null, null, null, null, legacyOrder, null));
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+    AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, new ArrayList<>(legacyOrder));
+
+    // when
+    AcademyResponse response = service.updatePageSettings(principal, request);
+
+    // then: 기존 상대 순서는 그대로, sec-cta만 canonical 위치(sec-social 바로 앞)에 삽입된다.
+    List<String> saved = response.pageSettings().sectionOrder();
+    assertThat(saved).containsExactlyElementsOf(AcademyService.DEFAULT_SECTION_ORDER);
+    assertThat(saved.indexOf("sec-cta") + 1).isEqualTo(saved.indexOf("sec-social"));
+    assertThat(saved.subList(0, 3)).containsExactly("sec-hero", "sec-featured", "sec-lessons");
+    // 신규 섹션은 기본 OFF: visibility에 키가 없어 렌더되지 않는다.
+    assertThat(response.pageSettings().sectionVisibility()).doesNotContainKey("sec-cta");
+  }
+
+  @Test
+  void updatePageSettings_acceptsCtaAndDesignPresetDraftKeys() {
+    // given: CTA + 디자인 프리셋 draft 키를 함께 저장한다.
+    Academy academy = academy("old/logo.jpg", null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+    Map<String, String> draft = Map.of(
+        "ctaTitle", "지금 상담 신청하세요",
+        "ctaKakaoUrl", "https://pf.kakao.com/_abc",
+        "designPreset", "ARTS",
+        "colorPrimary", "#8b5cf6");
+    AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, null, null, draft);
+
+    // when
+    AcademyResponse response = service.updatePageSettings(principal, request);
+
+    // then
+    assertThat(response.pageSettings().builderDraft())
+        .containsEntry("ctaTitle", "지금 상담 신청하세요")
+        .containsEntry("ctaKakaoUrl", "https://pf.kakao.com/_abc")
+        .containsEntry("designPreset", "ARTS")
+        .containsEntry("colorPrimary", "#8b5cf6");
+  }
+
+  @Test
+  void updatePageSettings_rejectsInvalidDesignPresetAndColorAndKakaoUrl() {
+    // given
+    Academy academy = academy("old/logo.jpg", null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+
+    // when/then: 등록되지 않은 design preset
+    AcademyPageSettingsUpdateRequest badPreset = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, null, null, Map.of("designPreset", "NOPE"));
+    assertThatThrownBy(() -> service.updatePageSettings(principal, badPreset))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("design preset");
+
+    // when/then: 색상 형식 위반
+    AcademyPageSettingsUpdateRequest badColor = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, null, null, Map.of("colorPrimary", "red"));
+    assertThatThrownBy(() -> service.updatePageSettings(principal, badColor))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("#RGB");
+
+    // when/then: 카카오톡 URL 스킴 위반
+    AcademyPageSettingsUpdateRequest badKakao = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, null, null, Map.of("ctaKakaoUrl", "pf.kakao.com/_abc"));
+    assertThatThrownBy(() -> service.updatePageSettings(principal, badKakao))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("http");
+  }
+
+  @Test
   void updatePageSettings_acceptsOptInStorefrontSectionVisibilityToggle() {
     // given: Education Storefront 신규 섹션은 명시적 true로 켤 수 있어야 한다.
     Academy academy = academy("old/logo.jpg", null);

@@ -42,6 +42,286 @@
   --device-shadow:0 0 0 1px rgba(15,23,42,.06),inset 0 0 0 1.5px rgba(255,255,255,.9),0 2px 6px rgba(15,23,42,.06),0 16px 34px rgba(10,12,20,.13);
 }
 
+/* ══════════════ BRAND THEME TOKENS (P0-2) ══════════════
+   10종 브랜드 변수. 기본값은 위 :root의 기존 색상과 1:1 동일이라 프리셋을 고르지 않은
+   학원(에듀홀릭 포함)은 렌더 결과가 한 치도 바뀌지 않는다.
+   디자인 프리셋을 고르면 academy_brand.js의 applyDesign()이 인라인으로 덮어쓰거나,
+   아래 [data-design-preset] 규칙이 레거시 토큰(--ultramarine/--gold/--accent)을 매핑한다. */
+#publicView,
+.builder-public-preview{
+  --brand-primary:#2b3a9e;
+  --brand-secondary:#c9a13b;
+  --brand-accent:#2563eb;
+  --brand-bg:#ffffff;
+  --brand-bg-alt:#f6f7f9;
+  --brand-text:#0a0a0c;
+  --brand-text-light:#67707c;
+  --brand-border:#e8eaee;
+  --brand-hero-bg:#1a2b4a;
+  --brand-hero-text:#ffffff;
+}
+
+/* ══════════════ DESIGN PRESETS (P0-1) ══════════════
+   레거시 토큰 매핑: 히어로·버튼·강조 등 기존 마크업이 쓰는 --ultramarine/--gold/--accent를
+   프리셋 팔레트로 연결한다. 에듀홀릭(data-design-preset 없음)은 이 규칙을 타지 않는다. */
+#publicView[data-design-preset="EXAM"],
+.builder-public-preview[data-design-preset="EXAM"]{
+  --ultramarine:#1a2b4a; --gold:#c9a86a; --accent:#d4a017;
+}
+#publicView[data-design-preset="ENGLISH"],
+.builder-public-preview[data-design-preset="ENGLISH"]{
+  --ultramarine:#4a90d9; --gold:#f5a623; --accent:#f5a623;
+}
+#publicView[data-design-preset="ARTS"],
+.builder-public-preview[data-design-preset="ARTS"]{
+  --ultramarine:#8b5cf6; --gold:#a78bfa; --accent:#c4b5fd;
+}
+#publicView[data-design-preset="STUDY"],
+.builder-public-preview[data-design-preset="STUDY"]{
+  --ultramarine:#8b6f47; --gold:#c2703d; --accent:#c2703d;
+}
+#publicView[data-design-preset="ONLINE"],
+.builder-public-preview[data-design-preset="ONLINE"]{
+  --ultramarine:#0f172a; --gold:#06b6d4; --accent:#22d3ee;
+}
+
+/* ── 히어로 레이아웃 ── */
+#publicView[data-hero-layout="center"] .hero-grid,
+.builder-public-preview[data-hero-layout="center"] .hero-grid{
+  grid-template-columns:minmax(0,760px);
+  justify-content:center;
+  text-align:center;
+}
+#publicView[data-hero-layout="center"] .hero .tablet,
+.builder-public-preview[data-hero-layout="center"] .hero .tablet{
+  display:none;
+}
+#publicView[data-hero-layout="center"] .hero .eyebrow,
+.builder-public-preview[data-hero-layout="center"] .hero .eyebrow{
+  justify-content:center;
+}
+#publicView[data-hero-layout="center"] .hero .hero-stats,
+.builder-public-preview[data-hero-layout="center"] .hero .hero-stats{
+  justify-content:center;
+}
+#publicView[data-hero-layout="center"] .hero .hero-actions,
+.builder-public-preview[data-hero-layout="center"] .hero .hero-actions{
+  justify-content:center;
+}
+/* visual: 원장 사진 중심 — 포토 프레임을 먼저, 크게 */
+#publicView[data-hero-layout="visual"] .hero-grid,
+.builder-public-preview[data-hero-layout="visual"] .hero-grid{
+  grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+}
+#publicView[data-hero-layout="visual"] .hero .tablet,
+.builder-public-preview[data-hero-layout="visual"] .hero .tablet{
+  max-width:min(400px,52cqw);
+  order:-1;
+}
+/* gradient: 브랜드 그라데이션 배경 */
+#publicView[data-hero-layout="gradient"] .hero,
+.builder-public-preview[data-hero-layout="gradient"] .hero{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 130%);
+}
+#publicView[data-hero-layout="gradient"] .hero h1,
+.builder-public-preview[data-hero-layout="gradient"] .hero h1{
+  color:var(--brand-hero-text);
+}
+#publicView[data-hero-layout="gradient"] .hero .hero-quote,
+.builder-public-preview[data-hero-layout="gradient"] .hero .hero-quote{
+  color:var(--brand-hero-text);
+  opacity:.82;
+}
+#publicView[data-hero-layout="gradient"] .hero .eyebrow,
+.builder-public-preview[data-hero-layout="gradient"] .hero .eyebrow{
+  color:var(--brand-accent);
+}
+#publicView[data-hero-layout="gradient"] .hero .btn.outline,
+.builder-public-preview[data-hero-layout="gradient"] .hero .btn.outline{
+  border-color:rgba(255,255,255,.4);
+  color:var(--brand-hero-text);
+}
+/* 모바일(900px 이하)에서는 레이아웃 변형과 무관하게 1열로 붕괴한다.
+   (기본 .hero-grid 1열 규칙보다 specificity가 높아 별도 오버라이드가 필요) */
+@media (max-width:900px){
+  #publicView[data-hero-layout] .hero-grid,
+  .builder-public-preview[data-hero-layout] .hero-grid{
+    grid-template-columns:1fr;
+  }
+  #publicView[data-hero-layout="visual"] .hero .tablet,
+  .builder-public-preview[data-hero-layout="visual"] .hero .tablet{
+    order:-1;
+    max-width:280px;
+  }
+}
+
+/* ── 카드 스타일 (컬렉션 카드 공통) ── */
+#publicView[data-card-style="bordered"] .f2r-program-card,
+#publicView[data-card-style="bordered"] .featured-schoolcard,
+#publicView[data-card-style="bordered"] .p-card,
+.builder-public-preview[data-card-style="bordered"] .f2r-program-card,
+.builder-public-preview[data-card-style="bordered"] .featured-schoolcard,
+.builder-public-preview[data-card-style="bordered"] .p-card{
+  border:1px solid var(--brand-border);
+  border-radius:12px;
+  box-shadow:0 10px 28px rgba(10,12,20,.08);
+}
+#publicView[data-card-style="rounded"] .f2r-program-card,
+#publicView[data-card-style="rounded"] .featured-schoolcard,
+#publicView[data-card-style="rounded"] .p-card,
+.builder-public-preview[data-card-style="rounded"] .f2r-program-card,
+.builder-public-preview[data-card-style="rounded"] .featured-schoolcard,
+.builder-public-preview[data-card-style="rounded"] .p-card{
+  border:none;
+  border-radius:26px;
+  background:var(--brand-bg-alt);
+  box-shadow:0 14px 34px rgba(10,12,20,.07);
+}
+#publicView[data-card-style="media"] .f2r-program-card,
+#publicView[data-card-style="media"] .featured-schoolcard,
+.builder-public-preview[data-card-style="media"] .f2r-program-card,
+.builder-public-preview[data-card-style="media"] .featured-schoolcard{
+  border:none;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 24px 60px rgba(10,12,20,.22);
+}
+#publicView[data-card-style="media"] .f2r-program-card .f2r-program-card-media img,
+#publicView[data-card-style="media"] .featured-schoolcard img,
+.builder-public-preview[data-card-style="media"] .f2r-program-card .f2r-program-card-media img,
+.builder-public-preview[data-card-style="media"] .featured-schoolcard img{
+  aspect-ratio:4/3;
+  object-fit:cover;
+}
+#publicView[data-card-style="minimal"] .f2r-program-card,
+#publicView[data-card-style="minimal"] .featured-schoolcard,
+#publicView[data-card-style="minimal"] .p-card,
+.builder-public-preview[data-card-style="minimal"] .f2r-program-card,
+.builder-public-preview[data-card-style="minimal"] .featured-schoolcard,
+.builder-public-preview[data-card-style="minimal"] .p-card{
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  border-bottom:1px solid var(--brand-border);
+  padding-left:2px;
+  padding-right:2px;
+}
+
+/* ── ARTS(다크) 프리셋: 하드코딩된 밝은 섹션 배경을 다크로 ── */
+#publicView[data-design-preset="ARTS"] .section-wrap,
+.builder-public-preview[data-design-preset="ARTS"] .section-wrap{
+  background:var(--brand-bg) !important;
+}
+#publicView[data-design-preset="ARTS"] .hero,
+.builder-public-preview[data-design-preset="ARTS"] .hero{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,#23232c 100%);
+}
+#publicView[data-design-preset="ARTS"] .hero h1,
+.builder-public-preview[data-design-preset="ARTS"] .hero h1{
+  color:var(--brand-hero-text);
+}
+#publicView[data-design-preset="ARTS"] .hero .hero-quote,
+.builder-public-preview[data-design-preset="ARTS"] .hero .hero-quote{
+  color:var(--brand-hero-text);
+  opacity:.78;
+}
+#publicView[data-design-preset="ARTS"] .hero .btn.outline,
+.builder-public-preview[data-design-preset="ARTS"] .hero .btn.outline{
+  border-color:rgba(255,255,255,.35);
+  color:var(--brand-hero-text);
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb{
+  background:rgba(16,16,20,.94);
+  border-bottom-color:#2a2a33;
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb .eh-logo-title,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb .eh-logo-title{
+  color:var(--brand-text);
+}
+#publicView[data-design-preset="ARTS"] .cv-nav a,
+.builder-public-preview[data-design-preset="ARTS"] .cv-nav a{
+  color:var(--brand-text-light);
+}
+#publicView[data-design-preset="ARTS"] .cta-section,
+.builder-public-preview[data-design-preset="ARTS"] .cta-section{
+  background:linear-gradient(135deg,#171224 0%,#2b2145 130%) !important;
+}
+#publicView[data-design-preset="ARTS"] .section-title,
+.builder-public-preview[data-design-preset="ARTS"] .section-title{
+  color:var(--brand-text);
+}
+#publicView[data-design-preset="ARTS"] .section-sub,
+.builder-public-preview[data-design-preset="ARTS"] .section-sub{
+  color:var(--brand-text-light);
+}
+
+/* ══════════════ CTA SECTION (P0-3) ══════════════ */
+#publicView .cta-section,
+.builder-public-preview .cta-section{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 140%);
+}
+.cta-inner{
+  text-align:center;
+  padding:72px 20px;
+  max-width:720px;
+  margin:0 auto;
+}
+.cta-title{
+  color:var(--brand-hero-text);
+  font-size:clamp(1.6rem,4.6cqw,2.4rem);
+  font-weight:800;
+  letter-spacing:-.02em;
+  margin:0 0 12px;
+}
+.cta-sub{
+  color:var(--brand-hero-text);
+  opacity:.82;
+  font-size:1.02rem;
+  line-height:1.7;
+  margin:0 0 28px;
+  white-space:pre-line;
+}
+.cta-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.cta-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:14px 28px;
+  border-radius:14px;
+  font-weight:800;
+  font-size:1.02rem;
+  text-decoration:none;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.cta-btn:hover{transform:translateY(-2px);}
+.cta-btn-phone{
+  background:var(--brand-hero-text);
+  color:var(--brand-hero-bg);
+  box-shadow:0 12px 30px rgba(0,0,0,.22);
+}
+.cta-btn-kakao{
+  background:#fee500;
+  color:#3c1e1e;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+}
+.cta-empty-note{
+  color:var(--brand-hero-text);
+  opacity:.75;
+  font-size:.92rem;
+}
+.builder-public-preview .cta-btn{cursor:pointer;}
+@media (max-width:640px){
+  .cta-actions{flex-direction:column;}
+  .cta-btn{justify-content:center;}
+}
+
 /* ══════════════ BASE ══════════════ */
 /* 세로 scroll-snap 없음(Shopify 레퍼런스 확정 — 스크롤을 가로채지 않는다).
    스크롤 진입 reveal 은 academy_reveal.{js,css} 의 단일 primitive 가 담당한다. */
@@ -52,7 +332,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* 이 리셋은 specificity가 (1,1,1)이라 클래스 규칙을 전부 이긴다.
    notes 제목/인용문, Storefront 설명/주석이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다
    (margin:X auto 0의 auto가 0으로, margin-top이 0으로 덮여 카드와 겹친다). */
-#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-native-desc,.ai-native-note){margin:0;}
+#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-native-desc,.ai-native-note,.cta-title,.cta-sub){margin:0;}
 #publicView [id^="sec-"]{scroll-margin-top:74px;}
 #errorMsg{text-align:center;color:#ef4444;font-size:.98rem;padding:20px;}
 

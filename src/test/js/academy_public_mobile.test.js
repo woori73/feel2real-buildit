@@ -130,8 +130,8 @@ test('given 빌더 캔버스 when 경계를 확인 then 발행 화면과 같은 
 test('given the publicView margin reset then hero and notes typography keeps its own spacing', () => {
   const css = compact(publicCss);
 
-  // 리셋이 notes 요소와 Storefront 설명/주석을 건드리지 않아야 한다
-  assert.match(css, /#publicView:is\(h1,h2,h3,h4,p\):not\(\.notes-title,\.notes-quote,\.featured-desc,\.ai-native-desc,\.ai-native-note\)\{margin:0;\}/);
+  // 리셋이 notes 요소와 Storefront 설명/주석, CTA 제목/설명을 건드리지 않아야 한다
+  assert.match(css, /#publicView:is\(h1,h2,h3,h4,p\):not\(\.notes-title,\.notes-quote,\.featured-desc,\.ai-native-desc,\.ai-native-note,\.cta-title,\.cta-sub\)\{margin:0;\}/);
   // 새 히어로는 h1과 quote가 자기 여백을 직접 가진다.
   assert.ok(includesDecl(css, 'margin:0;'));
   assert.ok(includesDecl(css, 'margin:18px 0 0;'));

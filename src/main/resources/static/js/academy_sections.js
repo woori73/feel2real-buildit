@@ -39,7 +39,8 @@
   const OPT_IN_SECTION_IDS = new Set([
     'sec-featured',
     'sec-digitaltwin',
-    'sec-minilectures'
+    'sec-minilectures',
+    'sec-cta'
   ]);
 
   // ── Video Taxonomy (Phase 3) ─────────────────────────────────────────────
@@ -146,6 +147,64 @@
     const draft = view && view.pageSettings && view.pageSettings.builderDraft;
     const value = draft && draft[key];
     return value == null || value === '' ? fallback : value;
+  }
+
+  // ── sec-cta ─────────────────────────────────────────────────────────────
+  // 상담 신청 CTA (P0-3). 전화(tel:) + 카카오톡 채널 URL 연결. opt-in이라
+  // sectionVisibility['sec-cta'] === true일 때만 렌더된다 — 기존 테넌트는 변화 없음.
+  const CTA_TITLE_DEFAULT = '지금 상담 신청하세요';
+  const CTA_SUB_DEFAULT = '궁금한 점이 있으시면 편하게 연락 주세요.\n친절하게 안내해 드리겠습니다.';
+  const CTA_PHONE_LABEL_DEFAULT = '전화 상담';
+  const CTA_KAKAO_LABEL_DEFAULT = '카카오톡 상담';
+
+  /** CTA 전화번호: builderDraft.ctaPhone 오버라이드 > 사업자 정보 phone. */
+  function ctaPhoneNumber(view) {
+    const draft = view && view.pageSettings && view.pageSettings.builderDraft;
+    const override = draft && draft.ctaPhone;
+    if (override != null && String(override).trim() !== '') return String(override).trim();
+    const businessInfo = view && view.pageSettings && view.pageSettings.businessInfo;
+    const phone = businessInfo && businessInfo.phone;
+    return phone != null ? String(phone).trim() : '';
+  }
+
+  function ctaTelHref(phone) {
+    const dialable = String(phone || '').replace(/[^0-9+]/g, '');
+    return /[0-9]/.test(dialable) ? `tel:${dialable}` : '';
+  }
+
+  function renderCta(view, ctx) {
+    if (!view.sectionVisible('sec-cta')) return '';
+    const isBuilder = ctx && ctx.mode === 'builder';
+    const title = draftText(view, 'ctaTitle', CTA_TITLE_DEFAULT);
+    const subtitle = draftText(view, 'ctaSubtitle', CTA_SUB_DEFAULT);
+    const phoneLabel = draftText(view, 'ctaPhoneLabel', CTA_PHONE_LABEL_DEFAULT);
+    const kakaoLabel = draftText(view, 'ctaKakaoLabel', CTA_KAKAO_LABEL_DEFAULT);
+    const phone = ctaPhoneNumber(view);
+    const telHref = ctaTelHref(phone);
+    const kakaoUrl = safeUrl(draftText(view, 'ctaKakaoUrl', ''));
+    const phoneBtn = telHref
+      ? (isBuilder
+        ? `<div class="cta-btn cta-btn-phone" data-cta-edit="phone" role="button" tabindex="0" aria-label="${escapeAttr(phoneLabel)} 수정">📞 ${escapeHtml(phoneLabel)}</div>`
+        : `<a class="cta-btn cta-btn-phone" href="${escapeAttr(telHref)}">📞 ${escapeHtml(phoneLabel)}</a>`)
+      : '';
+    const kakaoBtn = kakaoUrl
+      ? (isBuilder
+        ? `<div class="cta-btn cta-btn-kakao" data-cta-edit="kakao" role="button" tabindex="0" aria-label="${escapeAttr(kakaoLabel)} 수정">💬 ${escapeHtml(kakaoLabel)}</div>`
+        : `<a class="cta-btn cta-btn-kakao" href="${escapeAttr(kakaoUrl)}" target="_blank" rel="noopener">💬 ${escapeHtml(kakaoLabel)}</a>`)
+      : '';
+    const actions = (phoneBtn || kakaoBtn)
+      ? `<div class="cta-actions">${phoneBtn}${kakaoBtn}</div>`
+      : (isBuilder
+        ? '<p class="cta-empty-note" data-cta-edit="phone" role="button" tabindex="0">전화번호나 카카오톡 채널 URL을 등록하면 상담 버튼이 표시됩니다. 여기를 눌러 등록하세요.</p>'
+        : '');
+    // 빌더에서도 버튼이 하나도 없으면 섹션 자체는 제목/설명만 보여준다(편집 진입점 유지).
+    return `<section id="sec-cta" data-builder-section-key="sec-cta" class="section-wrap cta-section" data-reveal data-reveal-item>
+        <div class="section-inner cta-inner">
+          ${ctx.editableText({ tag: 'h2', className: 'cta-title', draftKey: 'ctaTitle', value: title, omitWhenEmpty: true })}
+          ${ctx.editableText({ tag: 'p', className: 'cta-sub', draftKey: 'ctaSubtitle', value: subtitle, omitWhenEmpty: true })}
+          ${actions}
+        </div>
+      </section>`;
   }
 
   // ── sec-intro ─────────────────────────────────────────────────────────────
@@ -1606,6 +1665,7 @@
     renderVideos,
     renderMiniLectures,
     renderExternalServices,
+    renderCta,
     renderLessons,
     renderFeatured,
     renderAiProcess

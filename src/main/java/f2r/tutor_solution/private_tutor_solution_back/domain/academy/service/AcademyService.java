@@ -125,6 +125,16 @@ public class AcademyService {
       // Mobile-first brand/typography tokens. Values are registry IDs or bounded pixel numbers.
       "typographyPreset", "headingFont", "bodyFont",
       "logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile",
+      // ── BuildIt Builder P0: 디자인 프리셋 + 색상 테마 ──
+      // designPreset 미설정 시 기존 렌더와 동일(시각 회귀 없음). 색상 키는 #RGB/#RRGGBB만 허용.
+      "designPreset", "heroLayout", "cardStyle",
+      "colorPrimary", "colorSecondary", "colorAccent",
+      "colorBg", "colorBgAlt", "colorText",
+      "colorTextLight", "colorBorder", "colorHeroBg", "colorHeroText",
+      // ── 상담 신청 CTA (sec-cta, opt-in 기본 OFF) ──
+      // ctaPhone 미설정 시 사업자 정보 phone을, ctaKakaoUrl 미설정 시 버튼을 숨긴다.
+      "ctaTitle", "ctaSubtitle", "ctaPhone", "ctaKakaoUrl",
+      "ctaPhoneLabel", "ctaKakaoLabel",
       // ── Eduholic LMS Phase 1: Builder "LMS 설정" (LmsBuilderSettingsService) ──
       // LMS 전용 엔드포인트가 직접 저장하므로, 일반 Builder 저장이 validateBuilderDraft에서
       // 거부하지 않도록 allowlist에 등록한다. lmsIntro(소개 문구)는 길어질 수 있어 LONG 목록에도 둔다.
@@ -153,7 +163,9 @@ public class AcademyService {
           // Mini Lectures 목록 JSON — 강의 수 × (제목/노트/태그)라 200자를 넘는다.
           "miniLectures",
           // LMS 소개 문구 — 문장형이라 200자를 넘을 수 있다.
-          "lmsIntro");
+          "lmsIntro",
+          // CTA 설명문 — 2줄 문장형이라 200자를 넘을 수 있다.
+          "ctaSubtitle");
   private static final String TEMP_HANDLE_PREFIX = "academy-";
   private static final String TEMP_HANDLE_SALT = "private-tutor-solution-academy-handle-v1";
   private static final String DEFAULT_LOGO_FILENAME = "default-academy-logo.jpg";
@@ -173,6 +185,7 @@ public class AcademyService {
       "sec-digitaltwin",
       "sec-market",
       "sec-payment",
+      "sec-cta",
       "sec-social");
   private static final Set<String> MANAGED_SECTION_IDS = Set.copyOf(DEFAULT_SECTION_ORDER);
   /**
@@ -181,7 +194,7 @@ public class AcademyService {
    * 담당하고, 서버는 순서 목록에만 포함해 레이아웃 저장이 깨지지 않게 한다.
    */
   static final Set<String> OPT_IN_SECTION_IDS =
-      Set.of("sec-featured", "sec-digitaltwin", "sec-minilectures");
+      Set.of("sec-featured", "sec-digitaltwin", "sec-minilectures", "sec-cta");
 
   private final AcademyRepository academyRepository;
   private final AcademyRegionRepository academyRegionRepository;
@@ -789,6 +802,19 @@ public class AcademyService {
       if ("typographyPreset".equals(key) && !value.isBlank()
           && !Set.of("MODERN", "PREMIUM", "CLEAN", "FRIENDLY", "ACADEMIC").contains(value)) {
         throw new IllegalArgumentException("등록되지 않은 typography preset입니다.");
+      }
+      if ("designPreset".equals(key) && !value.isBlank()
+          && !Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(value)) {
+        throw new IllegalArgumentException("등록되지 않은 design preset입니다.");
+      }
+      if (Set.of("colorPrimary", "colorSecondary", "colorAccent", "colorBg", "colorBgAlt",
+          "colorText", "colorTextLight", "colorBorder", "colorHeroBg", "colorHeroText").contains(key)
+          && !value.isBlank() && !value.matches("#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?")) {
+        throw new IllegalArgumentException("색상 값은 #RGB 또는 #RRGGBB 형식이어야 합니다: " + key);
+      }
+      if ("ctaKakaoUrl".equals(key) && !value.isBlank()
+          && !value.startsWith("http://") && !value.startsWith("https://")) {
+        throw new IllegalArgumentException("카카오톡 URL은 http:// 또는 https://로 시작해야 합니다.");
       }
       if (("headingFont".equals(key) || "bodyFont".equals(key)) && !value.isBlank()
           && !Set.of("PRETENDARD", "SUIT", "NOTO_SANS_KR", "NOTO_SERIF_KR").contains(value)) {

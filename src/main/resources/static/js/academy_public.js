@@ -10,7 +10,8 @@
   const OPT_IN_SECTION_IDS = new Set([
     'sec-featured',
     'sec-digitaltwin',
-    'sec-minilectures'
+    'sec-minilectures',
+    'sec-cta'
   ]);
   if (!window.F2RAcademyBusinessInfo) {
     throw new Error('F2RAcademyBusinessInfo must be loaded before academy_public.js');
@@ -874,6 +875,7 @@
     if (id === 'sec-minilectures') return renderMiniLectures(academy);
     if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
+    if (id === 'sec-cta') return SECTIONS.renderCta(sectionView(academy), PUBLIC_CTX);
     if (id === 'sec-social') return renderExternalServices(academy);
     return '';
   }
@@ -1113,6 +1115,7 @@
     'sec-digitaltwin',
     'sec-market',
     'sec-payment',
+    'sec-cta',
     'sec-social'
   ];
   const ORDERED_SECTIONS = new Set(DEFAULT_SECTION_ORDER);
@@ -1149,8 +1152,22 @@
     if (!Array.isArray(raw)) return DEFAULT_SECTION_ORDER.slice();
     const seen = new Set();
     const filtered = raw.filter((id) => ORDERED_SECTIONS.has(id) && !seen.has(id) && seen.add(id));
-    const withMissing = filtered.concat(DEFAULT_SECTION_ORDER.filter((id) => !seen.has(id)));
-    return withMissing[0] === 'sec-hero' ? withMissing : DEFAULT_SECTION_ORDER.slice();
+    if (filtered[0] !== 'sec-hero') return DEFAULT_SECTION_ORDER.slice();
+    // 빠진 관리 섹션은 canonical 위치(그 다음 순위 섹션 앞)에 삽입한다.
+    // 서버 AcademyService.normalizeSectionOrderForWrite와 같은 규칙이다.
+    const normalized = filtered.slice();
+    for (const id of DEFAULT_SECTION_ORDER) {
+      if (seen.has(id)) continue;
+      let insertionIndex = normalized.length;
+      const defaultIndex = DEFAULT_SECTION_ORDER.indexOf(id);
+      for (let next = defaultIndex + 1; next < DEFAULT_SECTION_ORDER.length; next++) {
+        const existingIndex = normalized.indexOf(DEFAULT_SECTION_ORDER[next]);
+        if (existingIndex >= 0) { insertionIndex = existingIndex; break; }
+      }
+      normalized.splice(insertionIndex, 0, id);
+      seen.add(id);
+    }
+    return normalized;
   }
 
   window.scrollToId = function (id) {
@@ -1217,7 +1234,18 @@
     renderMiniLectures,
     renderLessons,
     renderExternalServices,
+    renderCta(academy) { return SECTIONS.renderCta(sectionView(academy), PUBLIC_CTX); },
     renderFooter,
+    // 정적 캡처/스냅샷용: 전체 페이지 HTML 문자열을 반환한다(DOM 주입 없이).
+    renderPage(academy) {
+      const primarySubject = (academy.subjects && academy.subjects[0])
+        ? (academy.subjects[0].nameKo || academy.subjects[0].nameEn) : '';
+      const regionText = (academy.regions && academy.regions[0]) ? academy.regions[0].displayName : '';
+      const topBtn = '<button class="cv-btn-primary">상담 신청</button>';
+      return renderGnb(academy, topBtn)
+        + renderOrderedSections(academy, primarySubject, regionText)
+        + renderFooter(academy);
+    },
     escapeHtml,
     escapeAttr,
     setVideos(list) { academyVideos = Array.isArray(list) ? list : []; }
