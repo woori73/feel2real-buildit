@@ -1,0 +1,154 @@
+name: ArtCraft Setup (manual, operational)
+
+# ArtCraft PdfCraft CLI 설치 및 서버 설정용 운영 워크플로우.
+# - workflow_dispatch 수동 실행만 허용
+# - EC2에 CLI 바이너리 배치, OFL 라이선스 동봉, 스토리지 디렉토리 생성
+# - 환경변수 설정 후 앱 재시작
+# - 기존 OIDC → AWS SSM 권한만 사용
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  artcraft-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Upload CLI distribution to S3
+        run: |
+          set -euo pipefail
+          ls -lh ops/artcraft/pdfcraft-cli-korean.tar.gz
+          aws s3 cp ops/artcraft/pdfcraft-cli-korean.tar.gz s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean.tar.gz
+          echo "Uploaded to S3"
+
+      - name: Install CLI and configure on EC2 via SSM
+        run: |
+          set -euo pipefail
+          SSM_SCRIPT=$(cat <<'SSMEOF'
+          set -euo pipefail
+          echo "===== 1. Create /opt/artcraft ====="
+          sudo mkdir -p /opt/artcraft
+          echo "===== 2. Download CLI distribution from S3 ====="
+          aws s3 cp s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean.tar.gz /tmp/pdfcraft-cli-korean.tar.gz
+          echo "===== 3. Extract ====="
+          tar xzf /tmp/pdfcraft-cli-korean.tar.gz -C /tmp/
+          echo "===== 4. Install binary ====="
+          sudo cp /tmp/pdfcraft-cli-korean/pdfcraft-cli /opt/artcraft/pdfcraft-cli
+          sudo chmod +x /opt/artcraft/pdfcraft-cli
+          sudo chown root:root /opt/artcraft/pdfcraft-cli
+          echo "===== 5. Install OFL license ====="
+          sudo mkdir -p /opt/artcraft/LICENSES
+          sudo cp /tmp/pdfcraft-cli-korean/OFL-1.1.txt /opt/artcraft/LICENSES/
+          echo "===== 6. Install font ====="
+          sudo mkdir -p /opt/artcraft/fonts
+          sudo cp /tmp/pdfcraft-cli-korean/NotoSansKR-Variable.ttf /opt/artcraft/fonts/
+          echo "===== 7. Test CLI execution ====="
+          /opt/artcraft/pdfcraft-cli --version
+          echo "===== 8. Create storage directory ====="
+          sudo mkdir -p /var/lib/feel2real/artcraft
+          sudo chown ec2-user:ec2-user /var/lib/feel2real/artcraft
+          sudo chmod 750 /var/lib/feel2real/artcraft
+          echo "===== 9. Write test ====="
+          sudo -u ec2-user touch /var/lib/feel2real/artcraft/.write-test
+          sudo -u ec2-user rm /var/lib/feel2real/artcraft/.write-test
+          echo "write test passed"
+          echo "===== 10. Verify installation ====="
+          ls -lh /opt/artcraft/pdfcraft-cli /opt/artcraft/LICENSES/OFL-1.1.txt
+          ls -ld /var/lib/feel2real/artcraft
+          echo "===== Installation complete ====="
+          SSMEOF
+          )
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$PARAMS_JSON" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 20); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/20)"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+          echo "===== SSM Output ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
+          echo "===== SSM Errors (if any) ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardErrorContent' --output text
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::ArtCraft setup failed (Status=$FINAL)"
+            exit 1
+          fi
+          echo "ArtCraft CLI installation SUCCESS"
+
+      - name: Set environment variable and restart app
+        run: |
+          set -euo pipefail
+          SSM_SCRIPT=$(cat <<'SSMEOF'
+          set -euo pipefail
+          echo "===== Set ARTCRAFT_EDITOR_STORAGE_ROOT in /etc/f2r/env ====="
+          if grep -q "^ARTCRAFT_EDITOR_STORAGE_ROOT=" /etc/f2r/env 2>/dev/null; then
+            sudo sed -i 's|^ARTCRAFT_EDITOR_STORAGE_ROOT=.*|ARTCRAFT_EDITOR_STORAGE_ROOT=/var/lib/feel2real/artcraft|' /etc/f2r/env
+          else
+            echo 'ARTCRAFT_EDITOR_STORAGE_ROOT=/var/lib/feel2real/artcraft' | sudo tee -a /etc/f2r/env > /dev/null
+          fi
+          grep "^ARTCRAFT_EDITOR_STORAGE_ROOT=" /etc/f2r/env
+          echo "===== Restart f2r-app.service ====="
+          sudo systemctl restart f2r-app.service
+          echo "===== Wait for health ====="
+          for i in $(seq 1 24); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
+              echo "health UP (attempt $i)"
+              break
+            fi
+            echo "waiting... ($i/24)"
+            sleep 10
+          done
+          curl -s http://localhost:8080/actuator/health | head -3
+          SSMEOF
+          )
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$PARAMS_JSON" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 20); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/20)"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+          echo "===== SSM Output ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::App restart failed (Status=$FINAL)"
+            exit 1
+          fi
+          echo "App restart SUCCESS"
+
+      - name: Cleanup S3 staging file
+        if: always()
+        run: |
+          aws s3 rm s3://feel2real-buildit-deploy/artcraft/pdfcraft-cli-korean.tar.gz || true
+          echo "S3 staging cleaned"
