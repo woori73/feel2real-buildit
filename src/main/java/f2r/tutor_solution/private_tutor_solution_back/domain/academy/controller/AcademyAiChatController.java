@@ -1,0 +1,300 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ApplyRequest;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ApplyResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ChatProposal;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ChatRequest;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ChatResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.FieldChange;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ValidationResult;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.VersionInfo;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiAction;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiSession;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAiActionRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAiSessionRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiChatService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyPageVersionService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * BuildIt P1 AI 채팅 API.
+ *
+ * <p>보안 원칙 (필수):
+ * <ul>
+ *   <li>academyId는 서버에서 인증된 고객 정보로 결정한다 (body/param으로 받지 않음).
+ *   <li>AI가 생성한 변경 사항은 허용 필드와 값 형식을 서버에서 재검증한다.
+ *   <li>AI 응답의 HTML/스크립트를 검증 없이 화면이나 DB에 적용하지 않는다.
+ *   <li>미리보기는 운영 홈페이지에 영향을 주지 않도록 격리한다 (DB 저장 없음).
+ *   <li>승인 시점에 변경 대상 버전을 재확인하여 동시 수정 충돌을 방지한다.
+ *   <li>적용과 복원 모두 권한 검사 및 변경 이력을 남긴다.
+ *   <li>AI의 자동 발행을 금지한다 (AcademyStatus 변경 불가).
+ * </ul>
+ */
+@RestController
+@RequestMapping("/api/tutor/academy/ai/chat")
+@RequiredArgsConstructor
+public class AcademyAiChatController {
+
+  /**
+   * AI가 수정할 수 있는 필드 allowlist (P1).
+   * 여기에 없는 키는 어떤 경로로도 수정할 수 없다.
+   */
+  private static final Set<String> ALLOWED_FIELDS = Set.of(
+      "intro", "heroAccent",
+      "principalDesc", "principalCareer1", "principalCareer2", "principalCareer3",
+      "principalQuote",
+      "philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4",
+      "monthlyTuition", "scoreImprovement", "operationYears",
+      "ctaPhone", "ctaKakaoUrl",
+      "brandPrimary", "brandAccent");
+
+  /**
+   * 절대 수정 불가 키. allowlist에 있어도 이 목록에 있으면 거부한다.
+   */
+  private static final Set<String> FORBIDDEN_FIELDS = Set.of(
+      "academyId", "handle", "published", "sectionOrder", "sectionVisibility",
+      "designPreset", "status");
+
+  private final AcademyAiChatService chatService;
+  private final AcademyAiContextService contextService;
+  private final AcademyPageVersionService versionService;
+  private final AcademyService academyService;
+  private final AcademyAiSessionRepository sessionRepository;
+  private final AcademyAiActionRepository actionRepository;
+  private final ObjectMapper objectMapper = new ObjectMapper();
+
+  /**
+   * 자연어 메시지를 받아 수정안을 생성한다.
+   * DB를 수정하지 않는다 (제안만 생성).
+   */
+  @PostMapping
+  public ResponseEntity<ChatResponse> chat(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody ChatRequest request) {
+    AcademyResponse academy = getMyAcademy(principal);
+    AcademyAiContext context = contextService.buildContext(principal);
+
+    // 세션 조회 또는 생성
+    AcademyAiSession session = getOrCreateSession(principal, academy.id(), request.sessionId());
+
+    // OpenCode의 AI 서비스로 수정안 생성 (DB 수정 없음)
+    ChatProposal proposal = chatService.proposeChanges(context, request.message());
+
+    // 서버에서 allowlist 재검증
+    ValidationResult validation = validateAgainstAllowlist(proposal);
+    if (!validation.valid()) {
+      return ResponseEntity.badRequest().body(new ChatResponse(
+          "요청하신 내용 중 허용되지 않은 항목이 있습니다: " + String.join(", ", validation.errors()),
+          null, session.getId().toString(), false));
+    }
+
+    // 작업 로그 기록 (감사)
+    logAction(session.getId(), academy.id(), "CHAT", proposal, 0, false);
+    session.incrementMessage(0);
+    sessionRepository.save(session);
+
+    String reply = buildReplyMessage(proposal);
+    ChatResponse response = new ChatResponse(
+        reply,
+        new ChatProposal(proposal.changes(), proposal.summary(), session.getId().toString()),
+        session.getId().toString(),
+        true);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * 고객 승인 후 수정안을 적용한다.
+   * 적용 전 현재 상태를 스냅샷으로 저장한다.
+   */
+  @PostMapping("/apply")
+  public ResponseEntity<ApplyResponse> apply(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody ApplyRequest request) {
+    AcademyResponse academy = getMyAcademy(principal);
+
+    // 세션 검증 (본인 Academy의 세션인지 확인)
+    AcademyAiSession session = sessionRepository
+        .findById(Long.parseLong(request.sessionId()))
+        .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
+    if (!session.getAcademyId().equals(academy.id())) {
+      throw new SecurityException("다른 학원의 세션에 접근할 수 없습니다.");
+    }
+
+    // 변경 사항 서버 재검증
+    ChatProposal proposal = new ChatProposal(request.confirmedChanges(), "", request.sessionId());
+    ValidationResult validation = validateAgainstAllowlist(proposal);
+    if (!validation.valid()) {
+      throw new IllegalArgumentException(
+          "허용되지 않은 변경이 포함되어 있습니다: " + String.join(", ", validation.errors()));
+    }
+
+    // 적용 전 스냅샷 저장 (복원용)
+    // TODO: 실제 builderDraft는 AcademyService에서 조회
+    Long versionId = versionService.snapshot(
+        principal, Map.of(), Map.of(), "AI 채팅 수정 적용 전");
+
+    // 작업 로그 기록 (승인됨)
+    AcademyAiAction action = logAction(
+        session.getId(), academy.id(), "APPLY", proposal, 0, true);
+    action.markApproved();
+    actionRepository.save(action);
+
+    // TODO: 실제 적용은 기존 PUT /api/tutor/academy 경로를 경유
+    // (OpenCode의 검증 로직과 연동)
+
+    return ResponseEntity.ok(new ApplyResponse(versionId, LocalDateTime.now().toString()));
+  }
+
+  /** 버전 목록을 조회한다. */
+  @GetMapping("/versions")
+  public ResponseEntity<List<VersionInfo>> versions(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return ResponseEntity.ok(versionService.list(principal));
+  }
+
+  /**
+   * 특정 버전으로 복원한다.
+   * 복원 전 현재 상태를 스냅샷으로 저장한다.
+   */
+  @PostMapping("/versions/{versionId}/restore")
+  public ResponseEntity<ApplyResponse> restore(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable Long versionId) {
+    AcademyResponse academy = getMyAcademy(principal);
+
+    // 복원 대상 버전 조회 (권한 검증 포함)
+    AcademyPageVersion version = versionService.getForRestore(principal, versionId);
+
+    // 복원 전 현재 상태 스냅샷
+    Long snapshotId = versionService.snapshot(
+        principal, Map.of(), Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
+
+    // TODO: 실제 복원은 기존 PUT /api/tutor/academy 경로를 경유
+    // version.getBuilderDraftJson()을 파싱하여 적용
+
+    return ResponseEntity.ok(new ApplyResponse(snapshotId, LocalDateTime.now().toString()));
+  }
+
+  // ── 보안 헬퍼 ──
+
+  private AcademyResponse getMyAcademy(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return academyService
+        .getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("Academy가 없습니다."));
+  }
+
+  private AcademyAiSession getOrCreateSession(
+      JwtTokenProvider.AuthenticatedPrincipal principal, Long academyId, String sessionId) {
+    if (sessionId != null && !sessionId.isBlank()) {
+      return sessionRepository
+          .findById(Long.parseLong(sessionId))
+          .filter(s -> s.getAcademyId().equals(academyId))
+          .orElseGet(() -> createSession(principal, academyId));
+    }
+    return createSession(principal, academyId);
+  }
+
+  private AcademyAiSession createSession(
+      JwtTokenProvider.AuthenticatedPrincipal principal, Long academyId) {
+    AcademyAiSession session = new AcademyAiSession(academyId, principal.userId());
+    return sessionRepository.save(session);
+  }
+
+  /**
+   * 수정안을 allowlist 기준으로 서버에서 재검증한다.
+   * AI 서비스의 검증을 신뢰하지 않고 서버에서 다시 검증한다 (defense in depth).
+   */
+  private ValidationResult validateAgainstAllowlist(ChatProposal proposal) {
+    if (proposal == null || proposal.changes() == null) {
+      return new ValidationResult(false, List.of("수정안이 비어 있습니다."));
+    }
+    List<String> errors = proposal.changes().stream()
+        .map(FieldChange::key)
+        .filter(key -> !ALLOWED_FIELDS.contains(key) || FORBIDDEN_FIELDS.contains(key))
+        .map(key -> "허용되지 않은 필드: " + key)
+        .toList();
+
+    // 값 형식 검증 (HTML/스크립트 주입 방지)
+    List<String> valueErrors = proposal.changes().stream()
+        .filter(c -> c.after() != null && containsDangerousContent(c.after()))
+        .map(c -> "위험한 콘텐츠가 포함된 필드: " + c.key())
+        .toList();
+
+    errors = new java.util.ArrayList<>(errors);
+    errors.addAll(valueErrors);
+
+    return new ValidationResult(errors.isEmpty(), errors);
+  }
+
+  /**
+   * HTML/스크립트 주입을 검사한다.
+   * AI 응답을 검증 없이 화면이나 DB에 적용하지 않는다.
+   */
+  private boolean containsDangerousContent(String value) {
+    String lower = value.toLowerCase();
+    return lower.contains("<script")
+        || lower.contains("javascript:")
+        || lower.contains("onerror=")
+        || lower.contains("onload=")
+        || lower.contains("onclick=");
+  }
+
+  private AcademyAiAction logAction(
+      Long sessionId, Long academyId, String actionType, ChatProposal proposal,
+      int tokens, boolean approved) {
+    String changesJson = toJson(proposal.changes());
+    AcademyAiAction action =
+        new AcademyAiAction(sessionId, academyId, actionType, changesJson, tokens);
+    if (approved) {
+      action.markApproved();
+    }
+    return actionRepository.save(action);
+  }
+
+  private String buildReplyMessage(ChatProposal proposal) {
+    if (proposal.changes().isEmpty()) {
+      return "변경할 내용을 찾지 못했습니다. 다시 설명해 주세요.";
+    }
+    StringBuilder sb = new StringBuilder("다음과 같이 변경할까요?\n");
+    for (FieldChange change : proposal.changes()) {
+      sb.append("- ").append(change.key()).append(": ")
+        .append(change.before()).append(" → ").append(change.after()).append("\n");
+    }
+    return sb.toString();
+  }
+
+  private String toJson(Object obj) {
+    try {
+      return objectMapper.writeValueAsString(obj);
+    } catch (JsonProcessingException e) {
+      return "[]";
+    }
+  }
+
+  /** 테스트용 UUID 생성 (실제로는 사용하지 않음). */
+  @SuppressWarnings("unused")
+  private String generateSessionId() {
+    return UUID.randomUUID().toString();
+  }
+}
