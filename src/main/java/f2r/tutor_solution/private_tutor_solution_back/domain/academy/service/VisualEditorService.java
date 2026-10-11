@@ -41,6 +41,11 @@ public class VisualEditorService {
   public static final int MAX_PROJECT_SIZE = 16 * 1024 * 1024; // MEDIUMTEXT 16,777,215
   public static final int MAX_REQUEST_SIZE = 33 * 1024 * 1024; // 33MB (전체)
 
+  // 홈페이지 렌더 모드 (builderDraft 키). 기본값 "template" (P0).
+  public static final String RENDER_MODE_KEY = "homepage.renderMode";
+  public static final String RENDER_MODE_TEMPLATE = "template";
+  public static final String RENDER_MODE_CUSTOM = "custom";
+
   private final VisualEditorDraftRepository draftRepository;
   private final VisualEditorPublishedRepository publishedRepository;
   private final AcademyService academyService;
@@ -148,6 +153,142 @@ public class VisualEditorService {
       JwtTokenProvider.AuthenticatedPrincipal principal) {
     AcademyResponse academy = requireMyAcademy(principal);
     return publishedRepository.findByAcademyId(academy.academyId());
+  }
+
+  /**
+   * 공개 홈페이지용 게시본 HTML/CSS를 반환한다. 인증 불필요.
+   *
+   * <p>renderMode가 "custom"이 아니면 empty를 반환하여 P0 폴백을 유도한다.
+   * 출력 시 Sanitizer로 재검증한다 (defense in depth — 저장 시 정제되었더라도
+   * 공개 출력 직전에 한 번 더 검증).
+   *
+   * @param handle 학원 handle (URL 테넌트 키)
+   * @return 정제된 HTML/CSS. custom 모드가 아니거나 게시본이 없으면 empty
+   */
+  @Transactional(readOnly = true)
+  public Optional<PublishedHomepage> getPublishedHomepage(String handle) {
+    var academy = academyService.getPublishedEntityByHandle(handle);
+    if (!RENDER_MODE_CUSTOM.equals(renderModeOf(academy.getPageSettings()))) {
+      return Optional.empty();
+    }
+    return publishedRepository.findByAcademyId(academy.getAcademyId())
+        .map(p -> new PublishedHomepage(
+            VisualEditorSanitizer.sanitizeHtml(p.getHtml()),
+            VisualEditorSanitizer.sanitizeCss(p.getCss())));
+  }
+
+  /**
+   * 공개 홈페이지용 게시본.
+   *
+   * @param html 정제된 HTML
+   * @param css 정제된 CSS
+   */
+  public record PublishedHomepage(String html, String css) {
+  }
+
+  /**
+   * P0 빌더 DOM을 초안으로 가져온다.
+   *
+   * <p>클라이언트(브라우저)에서 P0 미리보기 DOM을 직렬화해 전송한다.
+   * 서버는 academy_sections.js를 재구현하지 않는다.
+   *
+   * <p>기존 초안이 있으면 무단 덮어쓰기를 방지하기 위해 409를 던진다.
+   * P0 원본 데이터(page_settings)는 건드리지 않는다.
+   *
+   * @param principal 인증된 사용자
+   * @param html P0 DOM에서 직렬화한 HTML (정제 전)
+   * @param css P0 브랜드 CSS (정제 전)
+   * @return 생성된 초안
+   * @throws DraftConflictException 기존 초안이 있을 때
+   */
+  @Transactional
+  public VisualEditorDraft importFromP0(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String html,
+      String css) {
+    AcademyResponse academy = requireMyAcademy(principal);
+    Long academyId = academy.academyId();
+
+    if (draftRepository.existsByAcademyId(academyId)) {
+      throw new DraftConflictException(
+          "기존 초안이 있습니다. 가져오기로 덮어쓰려면 기존 초안을 먼저 삭제하세요.");
+    }
+
+    validateSize(html, MAX_HTML_SIZE, "HTML");
+    validateSize(css, MAX_CSS_SIZE, "CSS");
+
+    String cleanHtml = VisualEditorSanitizer.sanitizeHtml(html);
+    String cleanCss = VisualEditorSanitizer.sanitizeCss(css);
+
+    try {
+      VisualEditorDraft draft = new VisualEditorDraft(
+          academyId, cleanHtml, cleanCss, "{}", String.valueOf(principal.userId()));
+      return draftRepository.saveAndFlush(draft);
+    } catch (DataIntegrityViolationException e) {
+      throw new DraftConflictException(
+          "다른 세션에서 초안이 생성되었습니다. 새로고침 후 다시 시도하세요.");
+    }
+  }
+
+  /**
+   * 초안을 게시한다. draft → published 복사와 renderMode 변경을
+   * 하나의 트랜잭션으로 처리하며, 중간 실패 시 전체 롤백된다.
+   *
+   * @param principal 인증된 사용자 (해당 학원 권한 필요)
+   * @param expectedRevision 게시 시점의 초안 revision (낙관적 잠금)
+   * @throws DraftConflictException 초안이 없거나 revision 불일치 시
+   */
+  @Transactional
+  public void publish(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Long expectedRevision) {
+    AcademyResponse academy = requireMyAcademy(principal);
+    Long academyId = academy.academyId();
+
+    VisualEditorDraft draft = draftRepository.findByAcademyId(academyId)
+        .orElseThrow(() -> new DraftConflictException(
+            "게시할 초안이 없습니다. 먼저 초안을 저장하세요."));
+    if (expectedRevision == null || !draft.getRevision().equals(expectedRevision)) {
+      throw new DraftConflictException(
+          "초안이 변경되었습니다. 새로고침 후 다시 시도하세요. "
+              + "(현재 revision=" + draft.getRevision() + ")");
+    }
+
+    // 1. published 교체 (기존 게시본이 있으면 삭제 후 생성)
+    publishedRepository.findByAcademyId(academyId)
+        .ifPresent(publishedRepository::delete);
+    publishedRepository.flush();
+    VisualEditorPublished published = new VisualEditorPublished(
+        academyId, draft.getHtml(), draft.getCss(),
+        String.valueOf(principal.userId()));
+    publishedRepository.save(published);
+
+    // 2. renderMode를 custom으로 변경 (같은 트랜잭션)
+    academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
+  }
+
+  /**
+   * 게시를 취소한다. renderMode를 template으로 되돌린다.
+   * published 행과 P0 데이터는 유지된다.
+   *
+   * @param principal 인증된 사용자 (해당 학원 권한 필요)
+   */
+  @Transactional
+  public void unpublish(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    requireMyAcademy(principal);
+    academyService.setRenderMode(principal, RENDER_MODE_TEMPLATE);
+  }
+
+  /**
+   * page_settings에서 renderMode를 읽는다. 없으면 "template" (기본값).
+   */
+  static String renderModeOf(
+      f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings settings) {
+    if (settings == null || settings.builderDraft() == null) {
+      return RENDER_MODE_TEMPLATE;
+    }
+    String mode = settings.builderDraft().get(RENDER_MODE_KEY);
+    return RENDER_MODE_CUSTOM.equals(mode) ? RENDER_MODE_CUSTOM : RENDER_MODE_TEMPLATE;
   }
 
   private AcademyResponse requireMyAcademy(
