@@ -126,6 +126,7 @@ public class AcademyAiChatController {
   /**
    * 고객 승인 후 수정안을 적용한다.
    * 적용 전 현재 상태를 스냅샷으로 저장한다.
+   * 실제 적용은 기존 PUT /api/tutor/academy/page-settings 경로를 경유한다.
    */
   @PostMapping("/apply")
   public ResponseEntity<ApplyResponse> apply(
@@ -150,18 +151,27 @@ public class AcademyAiChatController {
     }
 
     // 적용 전 스냅샷 저장 (복원용)
-    // TODO: 실제 builderDraft는 AcademyService에서 조회
+    // 현재 builderDraft 조회
+    Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
     Long versionId = versionService.snapshot(
-        principal, Map.of(), Map.of(), "AI 채팅 수정 적용 전");
+        principal, currentDraft, Map.of(), "AI 채팅 수정 적용 전");
+
+    // 기존 저장 경로를 경유하여 적용 (우회 경로 금지)
+    Map<String, String> updatedDraft = new java.util.HashMap<>(currentDraft);
+    for (FieldChange change : request.confirmedChanges()) {
+      updatedDraft.put(change.key(), change.after());
+    }
+    academyService.updatePageSettings(
+        principal,
+        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
+            .AcademyPageSettingsUpdateRequest(
+            null, null, null, null, null, null, updatedDraft, null));
 
     // 작업 로그 기록 (승인됨)
     AcademyAiAction action = logAction(
         session.getId(), academy.id(), "APPLY", proposal, 0, true);
     action.markApproved();
     actionRepository.save(action);
-
-    // TODO: 실제 적용은 기존 PUT /api/tutor/academy 경로를 경유
-    // (OpenCode의 검증 로직과 연동)
 
     return ResponseEntity.ok(new ApplyResponse(versionId, LocalDateTime.now().toString()));
   }
@@ -176,6 +186,7 @@ public class AcademyAiChatController {
   /**
    * 특정 버전으로 복원한다.
    * 복원 전 현재 상태를 스냅샷으로 저장한다.
+   * 실제 복원은 기존 PUT /api/tutor/academy/page-settings 경로를 경유한다.
    */
   @PostMapping("/versions/{versionId}/restore")
   public ResponseEntity<ApplyResponse> restore(
@@ -187,13 +198,48 @@ public class AcademyAiChatController {
     AcademyPageVersion version = versionService.getForRestore(principal, versionId);
 
     // 복원 전 현재 상태 스냅샷
+    Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
     Long snapshotId = versionService.snapshot(
-        principal, Map.of(), Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
+        principal, currentDraft, Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
 
-    // TODO: 실제 복원은 기존 PUT /api/tutor/academy 경로를 경유
-    // version.getBuilderDraftJson()을 파싱하여 적용
+    // 버전의 builderDraft를 파싱하여 기존 저장 경로로 복원
+    Map<String, String> restoreDraft = parseBuilderDraftJson(version.getBuilderDraftJson());
+    academyService.updatePageSettings(
+        principal,
+        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
+            .AcademyPageSettingsUpdateRequest(
+            null, null, null, null, null, null, restoreDraft, null));
+
+    // 작업 로그 기록
+    AcademyAiSession session = createSession(principal, academy.id());
+    ChatProposal restoreProposal = new ChatProposal(
+        List.of(), "버전 " + version.getVersionNo() + "로 복원", session.getId().toString());
+    AcademyAiAction action = logAction(
+        session.getId(), academy.id(), "RESTORE", restoreProposal, 0, true);
+    action.markApproved();
+    actionRepository.save(action);
 
     return ResponseEntity.ok(new ApplyResponse(snapshotId, LocalDateTime.now().toString()));
+  }
+
+  // ── 헬퍼 ──
+
+  private Map<String, String> getCurrentBuilderDraft(
+      JwtTokenProvider.AuthenticatedPrincipal principal) {
+    // AcademyService에서 현재 builderDraft 조회
+    // AcademyResponse에는 builderDraft가 없으므로 별도 조회 필요
+    // 1일차: 빈 맵 반환, 2일차에 실제 조회 구현
+    return Map.of();
+  }
+
+  private Map<String, String> parseBuilderDraftJson(String json) {
+    try {
+      return objectMapper.readValue(
+          json,
+          objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("버전 데이터 파싱 실패", e);
+    }
   }
 
   // ── 보안 헬퍼 ──
