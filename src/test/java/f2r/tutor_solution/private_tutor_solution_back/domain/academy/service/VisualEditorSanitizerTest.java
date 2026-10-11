@@ -191,7 +191,14 @@ class VisualEditorSanitizerTest {
   @DisplayName("한글 콘텐츠가 보존된다")
   void koreanPreserved() {
     String html = "<section><h1>안녕하세요</h1><p>한글 테스트입니다.</p></section>";
-    assertThat(VisualEditorSanitizer.sanitizeHtml(html)).isEqualTo(html);
+    String result = VisualEditorSanitizer.sanitizeHtml(html);
+    // Jsoup이 블록 요소에 개행을 넣어 pretty-print하므로 공백 정규화 후 비교
+    assertThat(normalize(result)).isEqualTo(normalize(html));
+    assertThat(result).contains("안녕하세요");
+  }
+
+  private static String normalize(String s) {
+    return s.replaceAll("\\s+", "");
   }
 
   @Test
