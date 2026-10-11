@@ -94,6 +94,9 @@ class VisualEditorMySqlIntegrationTest {
   @Autowired
   private JdbcTemplate jdbcTemplate;
 
+  @Autowired
+  private org.springframework.transaction.PlatformTransactionManager transactionManager;
+
   private User tutor;
   private JwtTokenProvider.AuthenticatedPrincipal principal;
   private Cookie authCookie;
@@ -125,10 +128,18 @@ class VisualEditorMySqlIntegrationTest {
         "ve-key-" + suffix);
     // 공개 homepage API 테스트를 위해 학원을 PUBLISHED로 변경
     // (공개 API는 기존 규칙대로 PUBLISHED 학원만 serving)
-    jdbcTemplate.update(
-        "UPDATE academies SET status = 'PUBLISHED', is_visible = true "
-            + "WHERE tutor_user_id = ?",
-        tutor.getUserId());
+    // 별도 트랜잭션으로 커밋해야 MockMvc 호출에서 보인다
+    new org.springframework.transaction.support.TransactionTemplate(
+            transactionManager,
+            new org.springframework.transaction.support.DefaultTransactionDefinition(
+                org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW))
+        .execute(status -> {
+          jdbcTemplate.update(
+              "UPDATE academies SET status = 'PUBLISHED', is_visible = true "
+                  + "WHERE tutor_user_id = ?",
+              tutor.getUserId());
+          return null;
+        });
   }
 
   /**
@@ -656,9 +667,18 @@ class VisualEditorMySqlIntegrationTest {
             get("/api/public/academy/" + handle + "/homepage"))
         .andExpect(status().isOk())
         .andReturn();
-    assertThat(objectMapper.readTree(
-        homepage.getResponse().getContentAsString())
-        .get("html").asText()).contains("pub");
+    JsonNode hpJson = objectMapper.readTree(
+        homepage.getResponse().getContentAsString());
+    assertThat(hpJson.get("html").asText()).contains("pub");
+    // renderMode 일관성: custom으로 설정되어 있어야 함
+    assertThat(hpJson.get("renderMode").asText()).isEqualTo("custom");
+
+    // DB 직접 확인: published 1건, renderMode=custom
+    Long publishedCount = jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM academy_visual_editor_published "
+            + "WHERE academy_id = (SELECT academy_id FROM academies WHERE tutor_user_id = ?)",
+        Long.class, tutor.getUserId());
+    assertThat(publishedCount).isEqualTo(1L);
   }
 
   @Test
