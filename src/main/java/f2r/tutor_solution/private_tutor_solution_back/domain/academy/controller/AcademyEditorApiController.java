@@ -142,7 +142,7 @@ public class AcademyEditorApiController {
     return ResponseEntity.ok(response);
   }
 
-  @PutMapping("/visual-editor/publish")
+  @PostMapping("/visual-editor/publish")
   public ResponseEntity<Map<String, Object>> publish(
       @org.springframework.security.core.annotation.AuthenticationPrincipal
       JwtTokenProvider.AuthenticatedPrincipal principal,
