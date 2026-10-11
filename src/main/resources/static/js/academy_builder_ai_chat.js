@@ -902,10 +902,14 @@
   }
 
   /**
-   * 계약 §오류 코드: 400(Academy 없음 / 세션 없음 / 허용 외 필드 / 위험 콘텐츠), 403(타 학원 세션).
-   * 서버는 오류 본문을 두 형태로 내려준다 — JSON({message|error}) 또는 plain string
-   * (GlobalExceptionHandler 의 ResponseEntity<String>). 둘 다 실제 안내 문구로 보여준다.
-   * 단, 5xx 의 Spring 기본 본문 error 필드("Internal Server Error")는 기술 문구라 쓰지 않는다.
+   * 계약 §오류 코드: 400(Academy 없음 / 세션 없음 / 허용 외 필드 / 위험 콘텐츠 / 생성 검증 실패),
+   * 403(타 학원 세션), 409(중복 idempotencyKey), 503(AI 생성 실패).
+   * 서버는 오류 본문을 여러 형태로 내려준다 —
+   *   · ChatResponse(JSON, /chat 400) → 거부 사유는 reply 필드 (B6)
+   *   · ResponseStatusException → ProblemDetail.detail (createApply 400/409)
+   *   · GlobalExceptionHandler 의 Map → message 필드 (503 등)
+   *   · GlobalExceptionHandler 의 ResponseEntity&lt;String&gt; → plain string (400/403)
+   * 그중 실제 안내 문구를 골라 화면에 보여준다. 5xx 의 Spring 기본 상태 문구는 쓰지 않는다.
    */
   function toData(res) {
     return res.text().then(function (raw) {
@@ -916,8 +920,11 @@
       var message = null;
       if (data && typeof data === 'object') {
         message = data.message || data.errorMessage || null;
-        // error 필드는 4xx(예: 409 {error})에서만 보조로 쓴다 — 5xx 는 상태 문구라 무시.
-        if (!message && res.status < 500) message = data.error || null;
+        // B6: /chat 은 거부 사유를 예외가 아니라 ChatResponse(JSON, status 400)의 reply 로 싣는다.
+        if (!message && data.reply) message = data.reply;
+        // ResponseStatusException → ProblemDetail.detail (createApply 400/409). 4xx 에서만 보조로 쓴다
+        // (error 필드는 Boot 기본 오류 속성, 5xx 는 상태 문구라 쓰지 않는다).
+        if (!message && res.status < 500) message = data.detail || data.error || null;
       }
       // plain-string 오류 본문(400/403) — HTML 오류 페이지나 과도하게 긴 본문은 안내로 쓰지 않는다.
       if (!message && raw && !data && raw.charAt(0) !== '<' && raw.length <= 300) {
