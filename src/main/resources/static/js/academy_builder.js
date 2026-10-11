@@ -47,6 +47,7 @@
     'sec-digitaltwin',
     'sec-market',
     'sec-payment',
+    'sec-cta',
     'sec-social'
   ];
   const FUTURE_SECTION_IDS = Object.freeze([
@@ -62,7 +63,8 @@
   const OPT_IN_SECTION_IDS = Object.freeze([
     'sec-featured',
     'sec-digitaltwin',
-    'sec-minilectures'
+    'sec-minilectures',
+    'sec-cta'
   ]);
   const OPT_IN_SECTIONS = new Set(OPT_IN_SECTION_IDS);
   const MANAGED_SECTION_IDS = [
@@ -79,6 +81,7 @@
     'sec-digitaltwin',
     'sec-market',
     'sec-payment',
+    'sec-cta',
     'sec-social'
   ];
   const MANAGED_SECTIONS = new Set(MANAGED_SECTION_IDS);
@@ -129,6 +132,7 @@
     'sec-digitaltwin': 'AI Native 교육 과정',
     'sec-market': '마켓플레이스',
     'sec-payment': '수강료 결제',
+    'sec-cta': '상담 신청 CTA',
     'sec-social': '외부 연동',
     'sec-footer': 'Footer 사업자 정보'
   };
@@ -217,6 +221,7 @@
     wirePublicHandleEditing(preview);
     wireSocialUrlEditing(preview);
     wireConsultContactEditing();
+    wireCtaEditing();
     wireBusinessInfoEditing();
     wireLogoEditing(preview);
     wireBasicDataEditing(preview);
@@ -418,6 +423,7 @@
     if (id === 'sec-minilectures') return renderMiniLectures(academy);
     if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
+    if (id === 'sec-cta') return renderCta(academy);
     if (id === 'sec-social') return renderExternalServices(academy);
     return '';
   }
@@ -581,6 +587,12 @@
   // URL 편집 진입점)은 BUILDER_CTX가 얹는다.
   function renderExternalServices(academy) {
     return SECTIONS.renderExternalServices(sectionView(academy), BUILDER_CTX);
+  }
+
+  // 상담 신청 CTA — 마크업 정본은 academy_sections.js, 빌더는 편집 ctx만 얹는다.
+  // 버튼 클릭은 data-cta-edit 진입점으로 연락처/URL 편집 모달을 연다.
+  function renderCta(academy) {
+    return SECTIONS.renderCta(sectionView(academy), BUILDER_CTX);
   }
 
   function safeUrl(url) {
@@ -3787,7 +3799,8 @@
     'philosophyKeyword', 'philosophyTitle',
     'introHeading', 'introMotto', 'introBodySecondary',
     'featuredEyebrow', 'featuredTitle', 'featuredDescription', 'featuredCtaLabel',
-    'videosSectionTitle', 'socialSectionTitle', 'miniLecturesSectionTitle'
+    'videosSectionTitle', 'socialSectionTitle', 'miniLecturesSectionTitle',
+    'ctaTitle', 'ctaSubtitle'
   ];
   // { proposals: [], applied: Set<id>, textKeys: Set<key>, orderTouched: bool, snapshot: {...}|null }
   let academyComposeState = null;
@@ -4093,6 +4106,7 @@
   let aiGuideSession = null;
   let brandProposal = null;
   let brandUndoSnapshot = null;
+  let designPresetUndoVisibility = null;
   let aiGuidePending = null; // { target, candidates: [] } — 현재 스텝의 마지막 추천 결과
   let aiGuideCandidateIndex = 0; // 추천안 캐러셀 — 한 번에 1개만 보여준다(§2). 말풍선 안에 스크롤을 쌓지 않는다.
   let aiGuideError = '';
@@ -4733,6 +4747,12 @@
     pageSettings.builderDraft = Object.assign({}, brandUndoSnapshot);
     currentPreview.pageSettings = pageSettings;
     brandUndoSnapshot = null;
+    if (designPresetUndoVisibility) {
+      currentPreview.sectionVisibility = normalizeSectionVisibility(designPresetUndoVisibility);
+      designPresetUndoVisibility = null;
+      applySectionVisibilityState(currentPreview.sectionVisibility);
+      persistPendingSectionVisibility(currentPreview.sectionVisibility);
+    }
     renderPublicPreview(currentPreview);
     persistTextChangesAfterApply({});
     renderAiGuide();
@@ -5597,11 +5617,25 @@
     if (!Array.isArray(raw)) return DEFAULT_SECTION_ORDER.slice();
     const seen = new Set();
     const filtered = raw.filter((id) => ORDERED_SECTIONS.has(id) && !seen.has(id) && seen.add(id));
-    const withMissing = filtered.concat(DEFAULT_SECTION_ORDER.filter((id) => !seen.has(id)));
-    if (withMissing[0] !== 'sec-hero') {
+    if (filtered[0] !== 'sec-hero') {
       return DEFAULT_SECTION_ORDER.slice();
     }
-    return withMissing;
+    // 빠진 관리 섹션은 canonical 위치(그 다음 순위 섹션 앞)에 삽입한다.
+    // 서버 AcademyService.normalizeSectionOrderForWrite와 같은 규칙이라
+    // 렌더 순서와 저장 순서가 어긋나지 않는다. 기존 ID의 상대 순서는 그대로 둔다.
+    const normalized = filtered.slice();
+    for (const id of DEFAULT_SECTION_ORDER) {
+      if (seen.has(id)) continue;
+      let insertionIndex = normalized.length;
+      const defaultIndex = DEFAULT_SECTION_ORDER.indexOf(id);
+      for (let next = defaultIndex + 1; next < DEFAULT_SECTION_ORDER.length; next++) {
+        const existingIndex = normalized.indexOf(DEFAULT_SECTION_ORDER[next]);
+        if (existingIndex >= 0) { insertionIndex = existingIndex; break; }
+      }
+      normalized.splice(insertionIndex, 0, id);
+      seen.add(id);
+    }
+    return normalized;
   }
 
   function orderedSectionIds(academy) {
@@ -5841,6 +5875,15 @@
           publishRequest.pageSettings && publishRequest.pageSettings.sectionVisibility
         )
       });
+      // P0-4: 발행 전 검증 — 학원명·전화번호 필수, CTA ON 시 전화번호/카카오톡 URL 필수.
+      const validation = validateBeforePublish(publishRequest);
+      if (!validation.ok) {
+        toast(validation.errors[0], 'fa-triangle-exclamation');
+        if (validation.errors.length > 1) {
+          setTimeout(() => toast(`외 ${validation.errors.length - 1}건: ${validation.errors.slice(1).join(' ')}`, 'fa-circle-info'), 2600);
+        }
+        return;
+      }
       const form = new FormData();
       form.append('academy', new Blob([JSON.stringify(publishRequest)], { type: 'application/json' }));
       const draftLogo = pendingLogoFile ? { blob: pendingLogoFile, name: pendingLogoFile.name || 'logo' } : draftLogoBlob(readJson(PENDING_LOGO_KEY));
@@ -5891,11 +5934,14 @@
     if (!pane || pane.dataset.wired === 'true') return;
     pane.dataset.wired = 'true';
     const sync = function () {
-      const draft = currentBrandDraft();
-      pane.querySelectorAll('[data-brand-preset]').forEach(function (el) { el.classList.toggle('is-selected', el.dataset.brandPreset === (draft.typographyPreset || 'MODERN')); });
-      pane.querySelectorAll('[data-brand-key]').forEach(function (input) { if (draft[input.dataset.brandKey] != null) input.value = draft[input.dataset.brandKey]; });
+      syncBrandPane(pane);
     };
     pane.addEventListener('click', function (event) {
+      const designPreset = event.target.closest && event.target.closest('[data-design-preset]');
+      if (designPreset) {
+        openDesignPresetModal(designPreset.dataset.designPreset);
+        return;
+      }
       const preset = event.target.closest && event.target.closest('[data-brand-preset]');
       const font = event.target.closest && event.target.closest('[data-brand-font]');
       if (!preset && !font) return;
@@ -5906,6 +5952,11 @@
       replaceBrandDraft(next); renderPublicPreview(currentPreview); persistTextChangesAfterApply({}); sync();
     });
     pane.addEventListener('input', function (event) {
+      const colorInput = event.target.closest && event.target.closest('[data-brand-color]');
+      if (colorInput) {
+        onBrandColorInput(colorInput);
+        return;
+      }
       const input = event.target.closest && event.target.closest('[data-brand-key]');
       if (!input) return;
       if (!brandUndoSnapshot) brandUndoSnapshot = currentBrandDraft();
@@ -5919,6 +5970,337 @@
     });
     BRAND.apply(document.querySelector('#pageContent #publicView'), currentPreview);
     sync();
+    wireDesignPresetModal();
+  }
+
+  function syncBrandPane(pane) {
+    const draft = currentBrandDraft();
+    pane.querySelectorAll('[data-brand-preset]').forEach(function (el) { el.classList.toggle('is-selected', el.dataset.brandPreset === (draft.typographyPreset || 'MODERN')); });
+    pane.querySelectorAll('[data-design-preset]').forEach(function (el) { el.classList.toggle('is-selected', el.dataset.designPreset === (draft.designPreset || '')); });
+    pane.querySelectorAll('[data-brand-key]').forEach(function (input) { if (draft[input.dataset.brandKey] != null) input.value = draft[input.dataset.brandKey]; });
+    pane.querySelectorAll('[data-brand-color]').forEach(function (input) {
+      const key = input.dataset.brandColor;
+      const value = draft[key];
+      if (value) input.value = value;
+      else {
+        const preset = BRAND.DESIGN_PRESETS[draft.designPreset];
+        input.value = (preset && preset.colors[brandColorKeyName(key)]) || input.getAttribute('value') || '#000000';
+      }
+    });
+  }
+
+  function brandColorKeyName(draftKey) {
+    const map = BRAND.COLOR_DRAFT_KEYS || {};
+    for (const name in map) if (map[name] === draftKey) return name;
+    return null;
+  }
+
+  /** 색상 피커 직접 조정 — draft에 커스텀값으로 저장해 프리셋 전환 후에도 유지된다. */
+  function onBrandColorInput(input) {
+    if (!currentPreview) return;
+    if (!brandUndoSnapshot) brandUndoSnapshot = currentBrandDraft();
+    const value = String(input.value || '');
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
+    const next = {}; next[input.dataset.brandColor] = value;
+    replaceBrandDraft(next);
+    const root = document.querySelector('#pageContent #publicView');
+    if (root) BRAND.apply(root, currentPreview);
+    persistTextChangesAfterApply({});
+  }
+
+  // ── 디자인 프리셋 적용 확인 모달 (P0-1) ────────────────────────────────
+  // 적용 전 무엇이 바뀌는지 보여준다. 이미 직접 바꾼 값은 유지된다는 점을 명시한다.
+  const DESIGN_PRESET_KEY_LABELS = {
+    designPreset: '디자인 프리셋', typographyPreset: '타이포 프리셋',
+    heroLayout: '히어로 레이아웃', cardStyle: '카드 스타일',
+    colorPrimary: '주색', colorSecondary: '보조색', colorAccent: '강조색',
+    colorBg: '배경', colorBgAlt: '대체 배경', colorText: '본문 텍스트',
+    colorTextLight: '연한 텍스트', colorBorder: '테두리',
+    colorHeroBg: '히어로 배경', colorHeroText: '히어로 텍스트'
+  };
+  const HERO_LAYOUT_LABELS = { split: '좌우 분할', center: '중앙 정렬', visual: '사진 중심', gradient: '그라데이션' };
+  const CARD_STYLE_LABELS = { bordered: '테두리 카드', rounded: '둥근 카드', media: '이미지 중심', minimal: '미니멀' };
+
+  function designPresetChangeSummary(presetId) {
+    if (!BRAND || !BRAND.DESIGN_PRESETS[presetId]) return null;
+    const preset = BRAND.DESIGN_PRESETS[presetId];
+    const draft = currentBrandDraft();
+    const visibility = normalizeSectionVisibility(currentPreview && currentPreview.sectionVisibility);
+    const result = BRAND.designPresetDraft(presetId, draft, visibility);
+    const changes = [];
+    Object.keys(result.draft).forEach((key) => {
+      if (!(key in DESIGN_PRESET_KEY_LABELS)) return;
+      const before = draft[key];
+      const after = result.draft[key];
+      if (before === after) return;
+      changes.push({ label: DESIGN_PRESET_KEY_LABELS[key], before: humanizeDesignValue(key, before), after: humanizeDesignValue(key, after) });
+    });
+    result.sectionChanges.forEach((change) => {
+      const name = STYLE_PANEL_SECTION_NAMES[change.sectionId] || change.sectionId;
+      changes.push({ label: '섹션 표시', before: 'OFF', after: name + ' ON' });
+    });
+    return { preset, changes, result };
+  }
+
+  function humanizeDesignValue(key, value) {
+    if (value == null || value === '') return '(기본값)';
+    if (key === 'heroLayout') return HERO_LAYOUT_LABELS[value] || value;
+    if (key === 'cardStyle') return CARD_STYLE_LABELS[value] || value;
+    if (key === 'typographyPreset' && BRAND.PRESETS[value]) return BRAND.PRESETS[value].label;
+    if (key === 'designPreset' && BRAND.DESIGN_PRESETS[value]) return BRAND.DESIGN_PRESETS[value].label;
+    return String(value);
+  }
+
+  let pendingDesignPresetId = null;
+
+  function openDesignPresetModal(presetId) {
+    if (!BRAND || !currentPreview) {
+      toast('랜딩에서 학원 정보를 입력한 뒤 디자인 프리셋을 적용할 수 있습니다.', 'fa-circle-info');
+      return;
+    }
+    const summary = designPresetChangeSummary(presetId);
+    if (!summary) return;
+    pendingDesignPresetId = presetId;
+    const modal = document.getElementById('builderDesignPresetModal');
+    if (!modal) return;
+    document.getElementById('builderDesignPresetTitle').textContent = `「${summary.preset.label}」 적용`;
+    document.getElementById('builderDesignPresetDesc').textContent = summary.preset.description;
+    const list = document.getElementById('builderDesignPresetChanges');
+    list.innerHTML = summary.changes.length
+      ? summary.changes.map((c) => `<li><b>${escapeHtml(c.label)}</b>: ${escapeHtml(c.before)} → ${escapeHtml(c.after)}</li>`).join('')
+      : '<li>바뀌는 항목이 없습니다. 이미 같은 디자인이 적용되어 있습니다.</li>';
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDesignPresetModal() {
+    const modal = document.getElementById('builderDesignPresetModal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    pendingDesignPresetId = null;
+  }
+
+  async function applyDesignPreset() {
+    const presetId = pendingDesignPresetId;
+    if (!presetId || !BRAND || !currentPreview) return;
+    const summary = designPresetChangeSummary(presetId);
+    if (!summary) return;
+    brandUndoSnapshot = currentBrandDraft();
+    const previousVisibility = normalizeSectionVisibility(currentPreview.sectionVisibility);
+    designPresetUndoVisibility = Object.assign({}, previousVisibility);
+    replaceBrandDraft(summary.result.draft);
+    if (summary.result.sectionChanges.length) {
+      const visibility = normalizeSectionVisibility(Object.assign({}, previousVisibility));
+      summary.result.sectionChanges.forEach((change) => { visibility[change.sectionId] = change.visible; });
+      await saveSectionVisibilityForPreset(visibility, previousVisibility);
+    }
+    closeDesignPresetModal();
+    renderPublicPreview(currentPreview);
+    persistTextChangesAfterApply({});
+    const pane = document.querySelector('[data-builder-panel-pane="brand"]');
+    if (pane) syncBrandPane(pane);
+    toast(`「${summary.preset.label}」 프리셋을 적용했습니다. 상단 발행 버튼으로 저장하세요.`, 'fa-palette');
+  }
+
+  /** 토글과 같은 두 갈래(발행 전 pending / 발행 후 PUT)로 섹션 표시 상태를 저장한다. */
+  async function saveSectionVisibilityForPreset(visibility, previousVisibility) {
+    currentPreview.sectionVisibility = visibility;
+    applySectionVisibilityState(visibility);
+    if (!currentPreview.publicPathUrl) {
+      persistPendingSectionVisibility(visibility);
+      return;
+    }
+    try {
+      const res = await fetch('/api/tutor/academy/page-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(pageSettingsWriteBody(currentPreview.pageSettings, { sectionVisibility: visibility }))
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const academy = await res.json();
+      syncPreviewFromAcademy(academy);
+      currentPreview.sectionVisibility = normalizeSectionVisibility(
+        (academy.pageSettings && academy.pageSettings.sectionVisibility) || visibility
+      );
+      applySectionVisibilityState(currentPreview.sectionVisibility);
+    } catch (_) {
+      currentPreview.sectionVisibility = previousVisibility;
+      designPresetUndoVisibility = null;
+      applySectionVisibilityState(previousVisibility);
+      toast('섹션 표시 설정 저장에 실패했습니다.', 'fa-triangle-exclamation');
+    }
+  }
+
+  function wireDesignPresetModal() {
+    const modal = document.getElementById('builderDesignPresetModal');
+    if (!modal || modal.dataset.wired === 'true') return;
+    modal.dataset.wired = 'true';
+    modal.querySelectorAll('[data-design-preset-close]').forEach((button) => {
+      button.addEventListener('click', closeDesignPresetModal);
+    });
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeDesignPresetModal();
+    });
+    const apply = document.getElementById('builderDesignPresetApplyBtn');
+    if (apply) apply.addEventListener('click', applyDesignPreset);
+  }
+
+  // ── 상담 신청 CTA 편집 (P0-3) ─────────────────────────────────────────
+  // sec-cta 섹션의 버튼(data-cta-edit)을 눌러 전화번호·카카오톡 URL을 입력한다.
+  function wireCtaEditing() {
+    const pageContent = document.getElementById('pageContent');
+    if (!pageContent || pageContent.dataset.ctaWired === 'true') return;
+    pageContent.dataset.ctaWired = 'true';
+    pageContent.addEventListener('click', (event) => {
+      const target = event.target && event.target.closest
+        ? event.target.closest('[data-cta-edit]')
+        : null;
+      if (!target) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openCtaModal();
+    });
+    wireCtaModal();
+  }
+
+  function wireCtaModal() {
+    const modal = document.getElementById('builderCtaModal');
+    if (!modal || modal.dataset.wired === 'true') return;
+    modal.dataset.wired = 'true';
+    modal.querySelectorAll('[data-cta-close]').forEach((button) => {
+      button.addEventListener('click', closeCtaModal);
+    });
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeCtaModal();
+    });
+    const apply = document.getElementById('builderCtaApplyBtn');
+    if (apply) apply.addEventListener('click', applyCtaFromModal);
+  }
+
+  function openCtaModal() {
+    if (!currentPreview) {
+      toast('랜딩에서 학원 정보를 입력한 뒤 CTA를 편집할 수 있습니다.', 'fa-circle-info');
+      return;
+    }
+    const modal = document.getElementById('builderCtaModal');
+    const phoneInput = document.getElementById('builderCtaPhoneInput');
+    const kakaoInput = document.getElementById('builderCtaKakaoInput');
+    if (!modal || !phoneInput || !kakaoInput) return;
+    const draft = (currentPreview.pageSettings && currentPreview.pageSettings.builderDraft) || {};
+    phoneInput.value = draft.ctaPhone || '';
+    kakaoInput.value = draft.ctaKakaoUrl || '';
+    const businessPhone = currentPreview.pageSettings && currentPreview.pageSettings.businessInfo
+      && currentPreview.pageSettings.businessInfo.phone;
+    phoneInput.placeholder = businessPhone
+      ? `비우면 사업자 정보의 전화번호(${businessPhone}) 사용`
+      : '비우면 사업자 정보의 전화번호 사용';
+    clearCtaError();
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => phoneInput.focus(), 30);
+  }
+
+  function closeCtaModal() {
+    const modal = document.getElementById('builderCtaModal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    clearCtaError();
+  }
+
+  function setCtaError(message) {
+    const error = document.getElementById('builderCtaError');
+    if (!error) return;
+    error.textContent = message;
+    error.hidden = false;
+  }
+
+  function clearCtaError() {
+    const error = document.getElementById('builderCtaError');
+    if (!error) return;
+    error.textContent = '';
+    error.hidden = true;
+  }
+
+  async function applyCtaFromModal() {
+    const phoneInput = document.getElementById('builderCtaPhoneInput');
+    const kakaoInput = document.getElementById('builderCtaKakaoInput');
+    const apply = document.getElementById('builderCtaApplyBtn');
+    if (!phoneInput || !kakaoInput || !currentPreview) return;
+    const phone = phoneInput.value.trim();
+    const kakaoUrl = kakaoInput.value.trim();
+    if (kakaoUrl && !/^https?:\/\//i.test(kakaoUrl)) {
+      setCtaError('카카오톡 URL은 http:// 또는 https://로 시작해야 합니다.');
+      return;
+    }
+    if (phone && !/[0-9]/.test(phone.replace(/[^0-9]/g, ''))) {
+      setCtaError('전화번호에 숫자가 포함되어야 합니다.');
+      return;
+    }
+    const patch = { ctaPhone: phone, ctaKakaoUrl: kakaoUrl };
+    const previousDraft = Object.assign({},
+      currentPreview.pageSettings && currentPreview.pageSettings.builderDraft);
+    const merged = Object.assign({}, previousDraft, patch);
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {}, { builderDraft: merged });
+    currentPreview.pageSettings = pageSettings;
+
+    if (!currentPreview.publicPathUrl) {
+      persistPendingTextChanges(currentPreview);
+      renderPublicPreview(currentPreview, 'sec-cta');
+      closeCtaModal();
+      toast('발행 전 미리보기에 CTA 연결 정보를 반영했습니다.', 'fa-phone-volume');
+      return;
+    }
+
+    setSaving(apply, true);
+    try {
+      const res = await fetch('/api/tutor/academy/page-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(pageSettingsWriteBody(currentPreview.pageSettings, { builderDraft: merged }))
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const academy = await res.json();
+      syncPreviewFromAcademy(academy);
+      applyAcademyToLivePreview(currentPreview, 'sec-cta');
+      closeCtaModal();
+      toast('CTA 연결 정보를 저장했습니다.', 'fa-phone-volume');
+    } catch (_) {
+      currentPreview.pageSettings = Object.assign({}, currentPreview.pageSettings || {}, { builderDraft: previousDraft });
+      setCtaError('CTA 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setSaving(apply, false);
+    }
+  }
+
+  // ── 발행 전 검증 (P0-4) ───────────────────────────────────────────────
+  // 학원명·전화번호는 필수. CTA 섹션이 켜져 있으면 전화번호와 카카오톡 URL이 둘 다 있어야 한다.
+  function validateBeforePublish(publishRequest) {
+    const errors = [];
+    const request = publishRequest || {};
+    const pageSettings = request.pageSettings || {};
+    const name = String(request.name || '').trim();
+    if (!name) errors.push('학원명을 입력해 주세요.');
+    const businessInfo = pageSettings.businessInfo || {};
+    const draft = pageSettings.builderDraft || {};
+    const phone = String(draft.ctaPhone || businessInfo.phone || '').trim();
+    const phoneDigits = phone.replace(/[^0-9]/g, '');
+    // 마스킹 dummy(000-0000-0000 등 0만 있는 값)는 전화번호가 아니다
+    if (!phoneDigits || /^0+$/.test(phoneDigits)) {
+      errors.push('전화번호를 입력해 주세요. (사업자 정보 또는 CTA 설정에서 입력)');
+    }
+    const visibility = normalizeSectionVisibility(pageSettings.sectionVisibility);
+    const ctaOn = visibility['sec-cta'] === true;
+    if (ctaOn) {
+      if (!phoneDigits) errors.push('CTA 섹션이 켜져 있습니다. 전화번호를 입력해 주세요.');
+      const kakaoUrl = String(draft.ctaKakaoUrl || '').trim();
+      if (!kakaoUrl) errors.push('CTA 섹션이 켜져 있습니다. 카카오톡 채널 URL을 입력해 주세요.');
+      else if (!/^https?:\/\//i.test(kakaoUrl)) errors.push('카카오톡 채널 URL은 http:// 또는 https://로 시작해야 합니다.');
+    }
+    return { ok: errors.length === 0, errors };
   }
 
   window.F2RAcademyBuilderTestHooks = window.F2RAcademySectionOrderTestHooks = Object.freeze({
@@ -5936,7 +6318,11 @@
     nextSectionOrder,
     textHighlightSelectors,
     featuredLessonIds: SECTIONS.featuredLessonIds,
-    selectedFeaturedLessons: SECTIONS.selectedFeaturedLessons
+    selectedFeaturedLessons: SECTIONS.selectedFeaturedLessons,
+    // P0: 발행 전 검증 + 디자인 프리셋 변경 요약(단위 테스트용)
+    validateBeforePublish,
+    designPresetChangeSummary,
+    humanizeDesignValue
   });
 
   // 렌더 결과 단언용 훅. academy_public.js의 동명 훅과 짝을 이루며, 두 렌더러가 같은 view에서
@@ -5954,6 +6340,7 @@
     renderMiniLectures,
     renderLessons,
     renderExternalServices,
+    renderCta,
     renderFooter,
     escapeHtml,
     escapeAttr,

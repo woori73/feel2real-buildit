@@ -28,6 +28,7 @@ const FULL_ORDER = [
   'sec-digitaltwin',
   'sec-market',
   'sec-payment',
+  'sec-cta',
   'sec-social'
 ];
 

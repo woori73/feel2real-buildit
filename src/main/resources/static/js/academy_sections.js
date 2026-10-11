@@ -39,7 +39,8 @@
   const OPT_IN_SECTION_IDS = new Set([
     'sec-featured',
     'sec-digitaltwin',
-    'sec-minilectures'
+    'sec-minilectures',
+    'sec-cta'
   ]);
 
   // ── Video Taxonomy (Phase 3) ─────────────────────────────────────────────
@@ -146,6 +147,64 @@
     const draft = view && view.pageSettings && view.pageSettings.builderDraft;
     const value = draft && draft[key];
     return value == null || value === '' ? fallback : value;
+  }
+
+  // ── sec-cta ─────────────────────────────────────────────────────────────
+  // 상담 신청 CTA (P0-3). 전화(tel:) + 카카오톡 채널 URL 연결. opt-in이라
+  // sectionVisibility['sec-cta'] === true일 때만 렌더된다 — 기존 테넌트는 변화 없음.
+  const CTA_TITLE_DEFAULT = '지금 상담 신청하세요';
+  const CTA_SUB_DEFAULT = '궁금한 점이 있으시면 편하게 연락 주세요.\n친절하게 안내해 드리겠습니다.';
+  const CTA_PHONE_LABEL_DEFAULT = '전화 상담';
+  const CTA_KAKAO_LABEL_DEFAULT = '카카오톡 상담';
+
+  /** CTA 전화번호: builderDraft.ctaPhone 오버라이드 > 사업자 정보 phone. */
+  function ctaPhoneNumber(view) {
+    const draft = view && view.pageSettings && view.pageSettings.builderDraft;
+    const override = draft && draft.ctaPhone;
+    if (override != null && String(override).trim() !== '') return String(override).trim();
+    const businessInfo = view && view.pageSettings && view.pageSettings.businessInfo;
+    const phone = businessInfo && businessInfo.phone;
+    return phone != null ? String(phone).trim() : '';
+  }
+
+  function ctaTelHref(phone) {
+    const dialable = String(phone || '').replace(/[^0-9+]/g, '');
+    return /[0-9]/.test(dialable) ? `tel:${dialable}` : '';
+  }
+
+  function renderCta(view, ctx) {
+    if (!view.sectionVisible('sec-cta')) return '';
+    const isBuilder = ctx && ctx.mode === 'builder';
+    const title = draftText(view, 'ctaTitle', CTA_TITLE_DEFAULT);
+    const subtitle = draftText(view, 'ctaSubtitle', CTA_SUB_DEFAULT);
+    const phoneLabel = draftText(view, 'ctaPhoneLabel', CTA_PHONE_LABEL_DEFAULT);
+    const kakaoLabel = draftText(view, 'ctaKakaoLabel', CTA_KAKAO_LABEL_DEFAULT);
+    const phone = ctaPhoneNumber(view);
+    const telHref = ctaTelHref(phone);
+    const kakaoUrl = safeUrl(draftText(view, 'ctaKakaoUrl', ''));
+    const phoneBtn = telHref
+      ? (isBuilder
+        ? `<div class="cta-btn cta-btn-phone" data-cta-edit="phone" role="button" tabindex="0" aria-label="${escapeAttr(phoneLabel)} 수정">📞 ${escapeHtml(phoneLabel)}</div>`
+        : `<a class="cta-btn cta-btn-phone" href="${escapeAttr(telHref)}">📞 ${escapeHtml(phoneLabel)}</a>`)
+      : '';
+    const kakaoBtn = kakaoUrl
+      ? (isBuilder
+        ? `<div class="cta-btn cta-btn-kakao" data-cta-edit="kakao" role="button" tabindex="0" aria-label="${escapeAttr(kakaoLabel)} 수정">💬 ${escapeHtml(kakaoLabel)}</div>`
+        : `<a class="cta-btn cta-btn-kakao" href="${escapeAttr(kakaoUrl)}" target="_blank" rel="noopener">💬 ${escapeHtml(kakaoLabel)}</a>`)
+      : '';
+    const actions = (phoneBtn || kakaoBtn)
+      ? `<div class="cta-actions">${phoneBtn}${kakaoBtn}</div>`
+      : (isBuilder
+        ? '<p class="cta-empty-note" data-cta-edit="phone" role="button" tabindex="0">전화번호나 카카오톡 채널 URL을 등록하면 상담 버튼이 표시됩니다. 여기를 눌러 등록하세요.</p>'
+        : '');
+    // 빌더에서도 버튼이 하나도 없으면 섹션 자체는 제목/설명만 보여준다(편집 진입점 유지).
+    return `<section id="sec-cta" data-builder-section-key="sec-cta" class="section-wrap cta-section" data-reveal data-reveal-item>
+        <div class="section-inner cta-inner">
+          ${ctx.editableText({ tag: 'h2', className: 'cta-title', draftKey: 'ctaTitle', value: title, omitWhenEmpty: true })}
+          ${ctx.editableText({ tag: 'p', className: 'cta-sub', draftKey: 'ctaSubtitle', value: subtitle, omitWhenEmpty: true })}
+          ${actions}
+        </div>
+      </section>`;
   }
 
   // ── sec-intro ─────────────────────────────────────────────────────────────
@@ -688,7 +747,175 @@
     { draftKey: 'operationYears', label: '운영 경력' }
   ];
 
-  function renderHero(view, ctx) {
+  // ── P0 보완: 프리셋별 히어로 DOM 차별화 ────────────────────────────────────
+  // designPreset이 없으면 기존 renderHeroDefault를 그대로 써서 기존 테넌트(에듀홀릭 등)
+  // 렌더 결과가 바이트 단위로 동일하게 유지된다.
+  const DESIGN_PRESET_IDS = ['EXAM', 'ENGLISH', 'ARTS', 'STUDY', 'ONLINE'];
+
+  function designPresetOf(view) {
+    const id = draftText(view, 'designPreset', '');
+    return DESIGN_PRESET_IDS.indexOf(id) >= 0 ? id : null;
+  }
+
+  /** 프리셋별 원장 사진 — 검은색 태블릿이 아닌 각 프리셋 컨셉에 맞는 프레임. */
+  function principalPhotoHtml(view, ctx, frameClass, captionHtml) {
+    const name = draftText(view, 'principalName', '원장');
+    const photoUrl = ctx.hasHeroMedia(view, 'principal')
+      ? ctx.heroMediaUrl('principal')
+      : null;
+    const imgHtml = photoUrl
+      ? `<img class="principal-photo-img" src="${escapeAttr(photoUrl)}" alt="${escapeHtml(view.name)} 원장 사진" loading="lazy">`
+      : `<div class="principal-photo-empty"><span>원장 사진</span></div>`;
+    return `<figure class="principal-photo ${frameClass}"${ctx.portraitClusterAttrs ? ctx.portraitClusterAttrs() : ''}>
+      ${imgHtml}
+      <figcaption class="principal-photo-cap">${captionHtml || `<b>${escapeHtml(name)}</b> <span>${escapeHtml(view.name)}</span>`}</figcaption>
+      ${ctx.portraitClusterExtra ? ctx.portraitClusterExtra() : ''}
+    </figure>`;
+  }
+
+  function heroEyebrowHtml(view, ctx) {
+    const eyebrow = draftText(view, 'principalName', '');
+    return eyebrow
+      ? `<div class="eyebrow" data-reveal-item><span class="stroke"></span>${ctx.heroEyebrow(eyebrow)}</div>`
+      : '';
+  }
+
+  function heroTitleHtml(view, ctx) {
+    return `<h1 data-reveal-item>${ctx.heroTitleInner(view.name)}</h1>`;
+  }
+
+  function heroIntroHtml(view, ctx) {
+    return ctx.editableText({ tag: 'blockquote', className: 'hero-quote', anchor: 'text', draftKey: 'intro', value: view.intro, builderClass: 'builder-multiline-text', extraAttrs: 'data-reveal-item' });
+  }
+
+  function heroStatsHtml(view, ctx, itemClass) {
+    const stats = HERO_STATS.map((stat) =>
+      `<div class="${itemClass || ''}"><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
+    ).join('');
+    return `<div class="hero-stats" data-reveal-item>${stats}</div>`;
+  }
+
+  // EXAM — 중앙 정렬, 실적 숫자 3개 prominently, CTA 버튼 2개 나란히
+  function renderHeroExam(view, ctx) {
+    // 실적 데이터가 있는 항목만 표시 (빈 값은 숨김)
+    const examStats = HERO_STATS.map((stat) => {
+      const val = draftText(view, stat.draftKey, '');
+      if (!val || val === '—') return '';
+      return `<div class="hero-exam-stat"><b>${ctx.heroStatValue(stat.draftKey, escapeHtml(val))}</b><span>${stat.label}</span></div>`;
+    }).join('');
+    const statsHtml = examStats
+      ? `<div class="hero-exam-stats" data-reveal-item>${examStats}</div>`
+      : '';
+    return `<section class="hero hero-exam" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="EXAM" data-reveal>
+        <div class="brand-glow" aria-hidden="true"></div>
+        <div class="hero-exam-inner">
+          ${heroEyebrowHtml(view, ctx)}
+          ${heroTitleHtml(view, ctx)}
+          ${heroIntroHtml(view, ctx)}
+          ${statsHtml}
+          <div class="hero-exam-actions" data-reveal-item>
+            <button type="button" class="btn" onclick="requestConsult()">상담 신청하기</button>
+            <button type="button" class="btn outline" onclick="scrollToId('sec-lessons')">커리큘럼 보기</button>
+          </div>
+          ${ctx.heroBadges(view)}
+        </div>
+        <div class="hero-exam-principal" data-reveal-item>
+          ${principalPhotoHtml(view, ctx, 'principal-frame-angular')}
+        </div>
+      </section>`;
+  }
+
+  // ENGLISH — 2열 (좌측 텍스트 + 우측 이미지), 둥근 CTA 버튼 1개
+  function renderHeroEnglish(view, ctx) {
+    return `<section class="hero hero-english" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="ENGLISH" data-reveal>
+        <div class="brand-glow" aria-hidden="true"></div>
+        <div class="hero-english-grid">
+          <div class="hero-english-text">
+            ${heroEyebrowHtml(view, ctx)}
+            ${heroTitleHtml(view, ctx)}
+            ${heroIntroHtml(view, ctx)}
+            <div class="hero-english-actions" data-reveal-item>
+              <button type="button" class="btn btn-rounded" onclick="requestConsult()">무료 레벨테스트 신청</button>
+            </div>
+            ${ctx.heroBadges(view)}
+          </div>
+          <div class="hero-english-visual" data-reveal-item>
+            ${principalPhotoHtml(view, ctx, 'principal-frame-circle-bright')}
+          </div>
+        </div>
+      </section>`;
+  }
+
+  // ARTS — 풀스크린 배경 이미지 + 오버레이 텍스트 + 갤러리 스트립
+  function renderHeroArts(view, ctx) {
+    const bgUrl = ctx.hasHeroMedia(view, 'principal') ? ctx.heroMediaUrl('principal') : null;
+    const galleryItems = (view.lessons || []).slice(0, 3).map((lesson, i) =>
+      `<div class="hero-arts-gallery-item"><span class="hero-arts-gallery-num">0${i + 1}</span><span>${escapeHtml(lesson.title || lesson.name || '작품')}</span></div>`
+    ).join('') || '<div class="hero-arts-gallery-item"><span>갤러리 준비 중</span></div>';
+    return `<section class="hero hero-arts" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="ARTS" data-reveal>
+        ${bgUrl ? `<div class="hero-arts-bg" style="background-image:url('${escapeAttr(bgUrl)}')" aria-hidden="true"></div>` : '<div class="hero-arts-bg hero-arts-bg-empty" aria-hidden="true"></div>'}
+        <div class="hero-arts-overlay">
+          ${heroEyebrowHtml(view, ctx)}
+          ${heroTitleHtml(view, ctx)}
+          ${heroIntroHtml(view, ctx)}
+          <div class="hero-arts-actions" data-reveal-item>
+            <button type="button" class="btn btn-ghost" onclick="scrollToId('sec-videos')">작품 보기</button>
+          </div>
+        </div>
+        <div class="hero-arts-gallery" data-reveal-item>${galleryItems}</div>
+      </section>`;
+  }
+
+  // STUDY — 원형 원장 사진 + 소개 나란히, 손글씨 캡션
+  function renderHeroStudy(view, ctx) {
+    const rawName = draftText(view, 'principalName', '원장');
+    // "김원장"처럼 이미 원장이 포함된 경우 중복 방지
+    const name = rawName.replace(/\s*원장\s*$/, '');
+    const caption = `<b class="handwritten">${escapeHtml(name)} 원장</b> <span>${escapeHtml(view.name)}에서 직접 지도합니다</span>`;
+    return `<section class="hero hero-study" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="STUDY" data-reveal>
+        <div class="brand-glow" aria-hidden="true"></div>
+        <div class="hero-study-wrap">
+          <div class="hero-study-photo" data-reveal-item>
+            ${principalPhotoHtml(view, ctx, 'principal-frame-circle-warm', caption)}
+          </div>
+          <div class="hero-study-text">
+            ${heroEyebrowHtml(view, ctx)}
+            ${heroTitleHtml(view, ctx)}
+            ${heroIntroHtml(view, ctx)}
+            <div class="hero-study-actions" data-reveal-item>
+              <button type="button" class="btn" onclick="requestConsult()">원장과 상담하기</button>
+            </div>
+            ${ctx.heroBadges(view)}
+          </div>
+        </div>
+      </section>`;
+  }
+
+  // ONLINE — 그라데이션 배경 + 강의 썸네일 카드 3개 + 영상 재생 버튼
+  function renderHeroOnline(view, ctx) {
+    const cards = (view.lessons || []).slice(0, 3).map((lesson, i) =>
+      `<button type="button" class="hero-online-card" onclick="scrollToId('sec-lessons')">
+        <span class="hero-online-card-thumb">${escapeHtml(String(i + 1).padStart(2, '0'))}</span>
+        <span class="hero-online-card-title">${escapeHtml(lesson.title || lesson.name || '강의 ' + (i + 1))}</span>
+        <span class="hero-online-card-play" aria-hidden="true">▶</span>
+      </button>`
+    ).join('') || '<div class="hero-online-card hero-online-card-empty"><span>강의 준비 중</span></div>';
+    return `<section class="hero hero-online" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="ONLINE" data-reveal>
+        <div class="hero-online-gradient" aria-hidden="true"></div>
+        <div class="hero-online-head">
+          ${heroEyebrowHtml(view, ctx)}
+          ${heroTitleHtml(view, ctx)}
+          ${heroIntroHtml(view, ctx)}
+        </div>
+        <div class="hero-online-cards" data-reveal-item>${cards}</div>
+        <div class="hero-online-actions" data-reveal-item>
+          <button type="button" class="btn btn-play" onclick="scrollToId('sec-videos')"><span aria-hidden="true">▶</span> 소개 영상 보기</button>
+          <button type="button" class="btn outline" onclick="requestConsult()">수강 신청</button>
+        </div>
+      </section>`;
+  }
+
+  function renderHeroDefault(view, ctx) {
     const eyebrow = draftText(view, 'principalName', '');
     const stats = HERO_STATS.map((stat) =>
       `<div><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
@@ -710,6 +937,16 @@
           ${renderPortraitTablet(view, ctx)}
         </div>
       </section>`;
+  }
+
+  function renderHero(view, ctx) {
+    const preset = designPresetOf(view);
+    if (preset === 'EXAM') return renderHeroExam(view, ctx);
+    if (preset === 'ENGLISH') return renderHeroEnglish(view, ctx);
+    if (preset === 'ARTS') return renderHeroArts(view, ctx);
+    if (preset === 'STUDY') return renderHeroStudy(view, ctx);
+    if (preset === 'ONLINE') return renderHeroOnline(view, ctx);
+    return renderHeroDefault(view, ctx);
   }
 
   // ── sec-videos ────────────────────────────────────────────────────────────
@@ -1606,6 +1843,7 @@
     renderVideos,
     renderMiniLectures,
     renderExternalServices,
+    renderCta,
     renderLessons,
     renderFeatured,
     renderAiProcess

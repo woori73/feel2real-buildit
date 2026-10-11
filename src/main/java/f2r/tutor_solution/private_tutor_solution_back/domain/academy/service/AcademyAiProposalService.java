@@ -46,7 +46,7 @@ public class AcademyAiProposalService {
   /** 문단형(길게 허용) target — 나머지는 카드/슬로건이라 짧게 강제한다. */
   private static final Set<String> LONG_TEXT_TARGETS = Set.of(
       "principalDesc", "principalQuote", "introMotto", "introBodySecondary",
-      "featuredDescription", "philosophyTitle");
+      "featuredDescription", "philosophyTitle", "ctaSubtitle");
 
   private static final int LONG_MAX_CHARS = 240;
   private static final int SHORT_MAX_CHARS = 90;

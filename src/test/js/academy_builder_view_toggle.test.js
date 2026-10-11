@@ -15,14 +15,14 @@ function inlineSetViewScript() {
   return match[0];
 }
 
-test('given builder view toggle when rendering then only desktop and mobile choices remain', () => {
-  // given / when / then
-  assert.doesNotMatch(template, /setView\(['"]tablet['"]/);
+test('given builder view toggle when rendering then desktop, tablet and mobile choices exist', () => {
+  // given / when / then — P0-4: PC 1440 / 태블릿 768 / 모바일 390
   assert.match(template, /setView\('desktop',this\)/);
+  assert.match(template, /setView\('tablet',this\)/);
   assert.match(template, /setView\('mobile',this\)/);
 });
 
-test('actual inline setView keeps desktop and mobile widths with exclusive active state', () => {
+test('actual inline setView keeps PC/tablet/mobile widths with exclusive active state', () => {
   // given
   class FakeClassList {
     constructor(active = false) { this.values = new Set(active ? ['active'] : []); }
@@ -32,6 +32,7 @@ test('actual inline setView keeps desktop and mobile widths with exclusive activ
   }
   const buttons = [
     { classList: new FakeClassList(true) },
+    { classList: new FakeClassList() },
     { classList: new FakeClassList() }
   ];
   const frame = { style: {} };
@@ -50,12 +51,11 @@ test('actual inline setView keeps desktop and mobile widths with exclusive activ
   });
   vm.runInContext(inlineSetViewScript(), context);
 
-  // when / then
-  // 데스크탑은 canvas-area가 주는 폭을 그대로 쓴다(none). 고정 폭(900px)이면 넓은 화면에서도
-  // 프리뷰가 좁아 폭 기반 @container 규칙이 항상 모바일 레이아웃으로 발화한다.
+  // when / then — P0-4: PC 1440 / 태블릿 768 / 모바일 390
   [
-    ['desktop', buttons[0], 'none'],
-    ['mobile', buttons[1], '390px']
+    ['desktop', buttons[0], '1440px'],
+    ['tablet', buttons[1], '768px'],
+    ['mobile', buttons[2], '390px']
   ].forEach(([mode, button, width], selectedIndex) => {
     context.setView(mode, button);
     assert.equal(frame.style.maxWidth, width);

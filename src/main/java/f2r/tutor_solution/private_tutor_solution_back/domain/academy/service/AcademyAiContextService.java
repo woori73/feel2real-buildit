@@ -57,6 +57,7 @@ public class AcademyAiContextService {
       Map.entry("sec-digitaltwin", "AI Native 교육 과정"),
       Map.entry("sec-market", "마켓플레이스"),
       Map.entry("sec-payment", "수강료 결제"),
+      Map.entry("sec-cta", "상담 신청 CTA"),
       Map.entry("sec-social", "외부 연동"));
 
   /**
@@ -90,7 +91,9 @@ public class AcademyAiContextService {
       "featuredCtaLabel",
       "videosSectionTitle",
       "socialSectionTitle",
-      "miniLecturesSectionTitle");
+      "miniLecturesSectionTitle",
+      "ctaTitle",
+      "ctaSubtitle");
 
   private final AcademyService academyService;
   private final LessonProductRepository lessonProductRepository;

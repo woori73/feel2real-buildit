@@ -42,6 +42,673 @@
   --device-shadow:0 0 0 1px rgba(15,23,42,.06),inset 0 0 0 1.5px rgba(255,255,255,.9),0 2px 6px rgba(15,23,42,.06),0 16px 34px rgba(10,12,20,.13);
 }
 
+/* ══════════════ BRAND THEME TOKENS (P0-2) ══════════════
+   10종 브랜드 변수. 기본값은 위 :root의 기존 색상과 1:1 동일이라 프리셋을 고르지 않은
+   학원(에듀홀릭 포함)은 렌더 결과가 한 치도 바뀌지 않는다.
+   디자인 프리셋을 고르면 academy_brand.js의 applyDesign()이 인라인으로 덮어쓰거나,
+   아래 [data-design-preset] 규칙이 레거시 토큰(--ultramarine/--gold/--accent)을 매핑한다. */
+#publicView,
+.builder-public-preview{
+  --brand-primary:#2b3a9e;
+  --brand-secondary:#c9a13b;
+  --brand-accent:#2563eb;
+  --brand-bg:#ffffff;
+  --brand-bg-alt:#f6f7f9;
+  --brand-text:#0a0a0c;
+  --brand-text-light:#67707c;
+  --brand-border:#e8eaee;
+  --brand-hero-bg:#1a2b4a;
+  --brand-hero-text:#ffffff;
+}
+
+/* ══════════════ DESIGN PRESETS (P0-1) ══════════════
+   레거시 토큰 매핑: 히어로·버튼·강조 등 기존 마크업이 쓰는 --ultramarine/--gold/--accent를
+   프리셋 팔레트로 연결한다. 에듀홀릭(data-design-preset 없음)은 이 규칙을 타지 않는다. */
+#publicView[data-design-preset="EXAM"],
+.builder-public-preview[data-design-preset="EXAM"]{
+  --ultramarine:#1a2b4a; --gold:#c9a86a; --accent:#d4a017;
+}
+#publicView[data-design-preset="ENGLISH"],
+.builder-public-preview[data-design-preset="ENGLISH"]{
+  --ultramarine:#4a90d9; --gold:#f5a623; --accent:#f5a623;
+}
+#publicView[data-design-preset="ARTS"],
+.builder-public-preview[data-design-preset="ARTS"]{
+  --ultramarine:#8b5cf6; --gold:#a78bfa; --accent:#c4b5fd;
+}
+#publicView[data-design-preset="STUDY"],
+.builder-public-preview[data-design-preset="STUDY"]{
+  --ultramarine:#8b6f47; --gold:#c2703d; --accent:#c2703d;
+}
+#publicView[data-design-preset="ONLINE"],
+.builder-public-preview[data-design-preset="ONLINE"]{
+  --ultramarine:#0f172a; --gold:#06b6d4; --accent:#22d3ee;
+}
+
+/* ── 히어로 레이아웃 ── */
+#publicView[data-hero-layout="center"] .hero-grid,
+.builder-public-preview[data-hero-layout="center"] .hero-grid{
+  grid-template-columns:minmax(0,760px);
+  justify-content:center;
+  text-align:center;
+}
+#publicView[data-hero-layout="center"] .hero .tablet,
+.builder-public-preview[data-hero-layout="center"] .hero .tablet{
+  display:none;
+}
+#publicView[data-hero-layout="center"] .hero .eyebrow,
+.builder-public-preview[data-hero-layout="center"] .hero .eyebrow{
+  justify-content:center;
+}
+#publicView[data-hero-layout="center"] .hero .hero-stats,
+.builder-public-preview[data-hero-layout="center"] .hero .hero-stats{
+  justify-content:center;
+}
+#publicView[data-hero-layout="center"] .hero .hero-actions,
+.builder-public-preview[data-hero-layout="center"] .hero .hero-actions{
+  justify-content:center;
+}
+/* visual: 원장 사진 중심 — 포토 프레임을 먼저, 크게 */
+#publicView[data-hero-layout="visual"] .hero-grid,
+.builder-public-preview[data-hero-layout="visual"] .hero-grid{
+  grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+}
+#publicView[data-hero-layout="visual"] .hero .tablet,
+.builder-public-preview[data-hero-layout="visual"] .hero .tablet{
+  max-width:min(400px,52cqw);
+  order:-1;
+}
+/* gradient: 브랜드 그라데이션 배경 */
+#publicView[data-hero-layout="gradient"] .hero,
+.builder-public-preview[data-hero-layout="gradient"] .hero{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 130%);
+}
+#publicView[data-hero-layout="gradient"] .hero h1,
+.builder-public-preview[data-hero-layout="gradient"] .hero h1{
+  color:var(--brand-hero-text);
+}
+#publicView[data-hero-layout="gradient"] .hero .hero-quote,
+.builder-public-preview[data-hero-layout="gradient"] .hero .hero-quote{
+  color:var(--brand-hero-text);
+  opacity:.82;
+}
+#publicView[data-hero-layout="gradient"] .hero .eyebrow,
+.builder-public-preview[data-hero-layout="gradient"] .hero .eyebrow{
+  color:var(--brand-accent);
+}
+#publicView[data-hero-layout="gradient"] .hero .btn.outline,
+.builder-public-preview[data-hero-layout="gradient"] .hero .btn.outline{
+  border-color:rgba(255,255,255,.4);
+  color:var(--brand-hero-text);
+}
+/* 모바일(900px 이하)에서는 레이아웃 변형과 무관하게 1열로 붕괴한다.
+   (기본 .hero-grid 1열 규칙보다 specificity가 높아 별도 오버라이드가 필요) */
+@media (max-width:900px){
+  #publicView[data-hero-layout] .hero-grid,
+  .builder-public-preview[data-hero-layout] .hero-grid{
+    grid-template-columns:1fr;
+  }
+  #publicView[data-hero-layout="visual"] .hero .tablet,
+  .builder-public-preview[data-hero-layout="visual"] .hero .tablet{
+    order:-1;
+    max-width:280px;
+  }
+}
+
+/* ── P0 보완: 프리셋별 히어로 DOM ── */
+/* data-design-preset은 renderHero 분기로 출력되는 프리셋 전용 마크업에만 붙는다.
+   무프리셋(기존 테넌트)은 이 규칙을 타지 않아 렌더가 바이트 단위로 동일하다. */
+#publicView .hero[data-design-preset],
+.builder-public-preview .hero[data-design-preset]{
+  position:relative;
+  overflow:hidden;
+}
+
+/* EXAM — 중앙 정렬, 실적 prominently */
+#publicView .hero-exam .hero-exam-inner,
+.builder-public-preview .hero-exam .hero-exam-inner{
+  max-width:760px;
+  margin:0 auto;
+  text-align:center;
+  padding:56px 24px 40px;
+}
+#publicView .hero-exam .eyebrow,
+.builder-public-preview .hero-exam .eyebrow{
+  justify-content:center;
+}
+#publicView .hero-exam-stats,
+.builder-public-preview .hero-exam-stats{
+  display:flex;
+  justify-content:center;
+  gap:48px;
+  margin:32px 0;
+}
+#publicView .hero-exam-stat b,
+.builder-public-preview .hero-exam-stat b{
+  display:block;
+  font-size:2.2em;
+  font-weight:800;
+}
+#publicView .hero-exam-actions,
+.builder-public-preview .hero-exam-actions{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+#publicView .hero-exam-principal,
+.builder-public-preview .hero-exam-principal{
+  display:flex;
+  justify-content:center;
+  padding-bottom:32px;
+}
+
+/* ENGLISH — 2열 (텍스트 좌측 + 이미지 우측) */
+#publicView .hero-english-grid,
+.builder-public-preview .hero-english-grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:40px;
+  align-items:center;
+  max-width:1100px;
+  margin:0 auto;
+  padding:56px 24px;
+}
+#publicView .hero-english .btn-rounded,
+.builder-public-preview .hero-english .btn-rounded{
+  border-radius:999px;
+  padding:14px 32px;
+}
+
+/* ARTS — 풀스크린 배경 + 오버레이 + 갤러리 스트립 */
+#publicView .hero-arts,
+.builder-public-preview .hero-arts{
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+#publicView .hero-arts-bg,
+.builder-public-preview .hero-arts-bg{
+  position:absolute;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+}
+#publicView .hero-arts-bg-empty,
+.builder-public-preview .hero-arts-bg-empty{
+  background:linear-gradient(160deg,#1a1a22,#2d2d3a);
+}
+#publicView .hero-arts-overlay,
+.builder-public-preview .hero-arts-overlay{
+  position:relative;
+  z-index:1;
+  padding:80px 32px 24px;
+  background:linear-gradient(transparent,rgba(0,0,0,.72));
+  color:#fff;
+}
+#publicView .hero-arts-overlay h1,
+.builder-public-preview .hero-arts-overlay h1{
+  color:#fff;
+}
+#publicView .hero-arts-gallery,
+.builder-public-preview .hero-arts-gallery{
+  position:relative;
+  z-index:1;
+  display:flex;
+  gap:12px;
+  padding:0 32px 32px;
+  overflow-x:auto;
+}
+#publicView .hero-arts-gallery-item,
+.builder-public-preview .hero-arts-gallery-item{
+  flex:0 0 auto;
+  min-width:140px;
+  padding:12px 16px;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:8px;
+  color:#fff;
+  font-size:.85em;
+}
+#publicView .btn-ghost,
+.builder-public-preview .btn-ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.5);
+  color:#fff;
+}
+
+/* STUDY — 원형 사진 + 소개 나란히 */
+#publicView .hero-study-wrap,
+.builder-public-preview .hero-study-wrap{
+  display:flex;
+  gap:48px;
+  align-items:center;
+  max-width:960px;
+  margin:0 auto;
+  padding:32px 24px;
+}
+#publicView .hero-study-photo,
+.builder-public-preview .hero-study-photo{
+  flex:0 0 240px;
+}
+
+/* ONLINE — 그라데이션 + 강의 카드 3개 */
+#publicView .hero-online,
+.builder-public-preview .hero-online{
+  text-align:center;
+}
+#publicView .hero-online-gradient,
+.builder-public-preview .hero-online-gradient{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 130%);
+}
+#publicView .hero-online-head,
+.builder-public-preview .hero-online-head{
+  position:relative;
+  z-index:1;
+  max-width:720px;
+  margin:0 auto;
+  padding:56px 24px 0;
+  color:var(--brand-hero-text);
+}
+#publicView .hero-online-head h1,
+.builder-public-preview .hero-online-head h1{
+  color:var(--brand-hero-text);
+}
+#publicView .hero-online-cards,
+.builder-public-preview .hero-online-cards{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:center;
+  gap:16px;
+  padding:32px 24px;
+  flex-wrap:wrap;
+}
+#publicView .hero-online-card,
+.builder-public-preview .hero-online-card{
+  width:200px;
+  padding:20px;
+  border-radius:12px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  color:var(--brand-hero-text);
+  text-align:left;
+  cursor:pointer;
+}
+#publicView .hero-online-card-thumb,
+.builder-public-preview .hero-online-card-thumb{
+  display:block;
+  font-size:1.8em;
+  font-weight:800;
+  opacity:.6;
+}
+#publicView .hero-online-card-title,
+.builder-public-preview .hero-online-card-title{
+  display:block;
+  margin:8px 0;
+  font-weight:600;
+}
+#publicView .hero-online-actions,
+.builder-public-preview .hero-online-actions{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  padding-bottom:48px;
+}
+
+/* ── 원장 사진 프레임 (프리셋별) ── */
+#publicView .principal-photo,
+.builder-public-preview .principal-photo{
+  margin:0;
+  text-align:center;
+}
+#publicView .principal-photo-img,
+.builder-public-preview .principal-photo-img{
+  width:100%;
+  height:auto;
+  display:block;
+  object-fit:cover;
+}
+#publicView .principal-photo-empty,
+.builder-public-preview .principal-photo-empty{
+  aspect-ratio:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--brand-bg-alt);
+  color:var(--brand-text-light);
+}
+/* EXAM: 각진 프레임, 정장 스타일 */
+#publicView .principal-frame-angular .principal-photo-img,
+.builder-public-preview .principal-frame-angular .principal-photo-img,
+#publicView .principal-frame-angular .principal-photo-empty,
+.builder-public-preview .principal-frame-angular .principal-photo-empty{
+  border-radius:4px;
+  border:3px solid var(--brand-secondary);
+  aspect-ratio:3/4;
+}
+/* ENGLISH: 밝은 원형 프레임 */
+#publicView .principal-frame-circle-bright .principal-photo-img,
+.builder-public-preview .principal-frame-circle-bright .principal-photo-img,
+#publicView .principal-frame-circle-bright .principal-photo-empty,
+.builder-public-preview .principal-frame-circle-bright .principal-photo-empty{
+  border-radius:50%;
+  border:4px solid #fff;
+  box-shadow:0 8px 24px rgba(74,144,217,.3);
+  aspect-ratio:1;
+}
+/* ARTS: 비정형 아티스틱 마스크 */
+#publicView .principal-frame-artistic .principal-photo-img,
+.builder-public-preview .principal-frame-artistic .principal-photo-img{
+  border-radius:38% 62% 55% 45% / 45% 42% 58% 55%;
+  aspect-ratio:1;
+}
+/* STUDY: 따뜻한 원형 + 손글씨 캡션 */
+#publicView .principal-frame-circle-warm .principal-photo-img,
+.builder-public-preview .principal-frame-circle-warm .principal-photo-img,
+#publicView .principal-frame-circle-warm .principal-photo-empty,
+.builder-public-preview .principal-frame-circle-warm .principal-photo-empty{
+  border-radius:50%;
+  border:4px solid var(--brand-secondary);
+  aspect-ratio:1;
+}
+#publicView .principal-photo-cap .handwritten,
+.builder-public-preview .principal-photo-cap .handwritten{
+  font-family:'Segoe Script','Comic Sans MS',cursive;
+  font-size:1.1em;
+  color:var(--brand-primary);
+}
+/* ONLINE: 썸네일 카드 형태 */
+#publicView .principal-frame-card .principal-photo-img,
+.builder-public-preview .principal-frame-card .principal-photo-img{
+  border-radius:12px;
+  aspect-ratio:16/10;
+}
+
+/* ── P0 보완: 모바일(390px) 프리셋별 차별화 ── */
+@media (max-width:480px){
+  /* 전체: 가로 스크롤 방지 */
+  #publicView,
+  .builder-public-preview{
+    overflow-x:hidden;
+  }
+  #publicView .hero,
+  .builder-public-preview .hero{
+    overflow-x:hidden;
+  }
+  /* EXAM: 작게, 텍스트 중심 */
+  #publicView .hero-exam .hero-exam-inner,
+  .builder-public-preview .hero-exam .hero-exam-inner{
+    padding:36px 16px 24px;
+  }
+  #publicView .hero-exam-stats,
+  .builder-public-preview .hero-exam-stats{
+    gap:20px;
+    margin:20px 0;
+  }
+  #publicView .hero-exam-stat b,
+  .builder-public-preview .hero-exam-stat b{
+    font-size:1.5em;
+  }
+  #publicView .hero-exam-actions,
+  .builder-public-preview .hero-exam-actions{
+    flex-direction:row;
+  }
+  #publicView .hero-exam-principal .principal-photo,
+  .builder-public-preview .hero-exam-principal .principal-photo{
+    max-width:120px;
+  }
+  /* ENGLISH: 1열, 이미지 중간 크기 */
+  #publicView .hero-english-grid,
+  .builder-public-preview .hero-english-grid{
+    grid-template-columns:1fr;
+    gap:24px;
+    padding:36px 16px;
+  }
+  #publicView .hero-english-visual .principal-photo,
+  .builder-public-preview .hero-english-visual .principal-photo{
+    max-width:200px;
+    margin:0 auto;
+  }
+  /* ARTS: 큰 이미지, 하단 오버레이 */
+  #publicView .hero-arts,
+  .builder-public-preview .hero-arts{
+    min-height:420px;
+  }
+  #publicView .hero-arts-overlay,
+  .builder-public-preview .hero-arts-overlay{
+    padding:48px 20px 16px;
+  }
+  #publicView .hero-arts-gallery,
+  .builder-public-preview .hero-arts-gallery{
+    padding:0 20px 20px;
+  }
+  /* STUDY: 원형 작게, 사진 하단에 제목 */
+  #publicView .hero-study-wrap,
+  .builder-public-preview .hero-study-wrap{
+    flex-direction:column;
+    gap:24px;
+    padding:36px 16px;
+    text-align:center;
+  }
+  #publicView .hero-study-photo,
+  .builder-public-preview .hero-study-photo{
+    flex:none;
+    width:140px;
+  }
+  /* ONLINE: 상단 제목, 카드 세로 쌓기 */
+  #publicView .hero-online-cards,
+  .builder-public-preview .hero-online-cards{
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  #publicView .hero-online-card,
+  .builder-public-preview .hero-online-card{
+    width:min(320px,100%);
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  #publicView .hero-online-actions,
+  .builder-public-preview .hero-online-actions{
+    flex-direction:column;
+    align-items:center;
+  }
+}
+
+/* ── 카드 스타일 (컬렉션 카드 공통) ── */
+#publicView[data-card-style="bordered"] .f2r-program-card,
+#publicView[data-card-style="bordered"] .featured-schoolcard,
+#publicView[data-card-style="bordered"] .p-card,
+.builder-public-preview[data-card-style="bordered"] .f2r-program-card,
+.builder-public-preview[data-card-style="bordered"] .featured-schoolcard,
+.builder-public-preview[data-card-style="bordered"] .p-card{
+  border:1px solid var(--brand-border);
+  border-radius:12px;
+  box-shadow:0 10px 28px rgba(10,12,20,.08);
+}
+#publicView[data-card-style="rounded"] .f2r-program-card,
+#publicView[data-card-style="rounded"] .featured-schoolcard,
+#publicView[data-card-style="rounded"] .p-card,
+.builder-public-preview[data-card-style="rounded"] .f2r-program-card,
+.builder-public-preview[data-card-style="rounded"] .featured-schoolcard,
+.builder-public-preview[data-card-style="rounded"] .p-card{
+  border:none;
+  border-radius:26px;
+  background:var(--brand-bg-alt);
+  box-shadow:0 14px 34px rgba(10,12,20,.07);
+}
+#publicView[data-card-style="media"] .f2r-program-card,
+#publicView[data-card-style="media"] .featured-schoolcard,
+.builder-public-preview[data-card-style="media"] .f2r-program-card,
+.builder-public-preview[data-card-style="media"] .featured-schoolcard{
+  border:none;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 24px 60px rgba(10,12,20,.22);
+}
+#publicView[data-card-style="media"] .f2r-program-card .f2r-program-card-media img,
+#publicView[data-card-style="media"] .featured-schoolcard img,
+.builder-public-preview[data-card-style="media"] .f2r-program-card .f2r-program-card-media img,
+.builder-public-preview[data-card-style="media"] .featured-schoolcard img{
+  aspect-ratio:4/3;
+  object-fit:cover;
+}
+#publicView[data-card-style="minimal"] .f2r-program-card,
+#publicView[data-card-style="minimal"] .featured-schoolcard,
+#publicView[data-card-style="minimal"] .p-card,
+.builder-public-preview[data-card-style="minimal"] .f2r-program-card,
+.builder-public-preview[data-card-style="minimal"] .featured-schoolcard,
+.builder-public-preview[data-card-style="minimal"] .p-card{
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  border-bottom:1px solid var(--brand-border);
+  padding-left:2px;
+  padding-right:2px;
+}
+
+/* ── ARTS(다크) 프리셋: 하드코딩된 밝은 섹션 배경을 다크로 ── */
+#publicView[data-design-preset="ARTS"] .section-wrap,
+.builder-public-preview[data-design-preset="ARTS"] .section-wrap{
+  background:var(--brand-bg) !important;
+}
+#publicView[data-design-preset="ARTS"] .hero,
+.builder-public-preview[data-design-preset="ARTS"] .hero{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,#23232c 100%);
+}
+#publicView[data-design-preset="ARTS"] .hero h1,
+.builder-public-preview[data-design-preset="ARTS"] .hero h1{
+  color:var(--brand-hero-text);
+}
+#publicView[data-design-preset="ARTS"] .hero .hero-quote,
+.builder-public-preview[data-design-preset="ARTS"] .hero .hero-quote{
+  color:var(--brand-hero-text);
+  opacity:.78;
+}
+#publicView[data-design-preset="ARTS"] .hero .btn.outline,
+.builder-public-preview[data-design-preset="ARTS"] .hero .btn.outline{
+  border-color:rgba(255,255,255,.35);
+  color:var(--brand-hero-text);
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb{
+  background:rgba(16,16,20,.94);
+  border-bottom-color:#2a2a33;
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb .eh-logo-title,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb .eh-logo-title{
+  color:#fff;
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb .eh-logo-sub,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb .eh-logo-sub{
+  color:rgba(255,255,255,.75);
+}
+#publicView[data-design-preset="ONLINE"] .cv-gnb,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-gnb{
+  background:rgba(15,23,42,.96);
+  border-bottom-color:#1e293b;
+}
+#publicView[data-design-preset="ONLINE"] .cv-gnb .eh-logo-title,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-gnb .eh-logo-title{
+  color:#fff;
+}
+#publicView[data-design-preset="ONLINE"] .cv-gnb .eh-logo-sub,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-gnb .eh-logo-sub{
+  color:rgba(255,255,255,.75);
+}
+#publicView[data-design-preset="ONLINE"] .cv-nav a,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-nav a{
+  color:rgba(255,255,255,.85);
+}
+#publicView[data-design-preset="ARTS"] .cv-nav a,
+.builder-public-preview[data-design-preset="ARTS"] .cv-nav a{
+  color:var(--brand-text-light);
+}
+#publicView[data-design-preset="ARTS"] .cta-section,
+.builder-public-preview[data-design-preset="ARTS"] .cta-section{
+  background:linear-gradient(135deg,#171224 0%,#2b2145 130%) !important;
+}
+#publicView[data-design-preset="ARTS"] .section-title,
+.builder-public-preview[data-design-preset="ARTS"] .section-title{
+  color:var(--brand-text);
+}
+#publicView[data-design-preset="ARTS"] .section-sub,
+.builder-public-preview[data-design-preset="ARTS"] .section-sub{
+  color:var(--brand-text-light);
+}
+
+/* ══════════════ CTA SECTION (P0-3) ══════════════ */
+#publicView .cta-section,
+.builder-public-preview .cta-section{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 140%);
+}
+.cta-inner{
+  text-align:center;
+  padding:72px 20px;
+  max-width:720px;
+  margin:0 auto;
+}
+.cta-title{
+  color:var(--brand-hero-text);
+  font-size:clamp(1.6rem,4.6cqw,2.4rem);
+  font-weight:800;
+  letter-spacing:-.02em;
+  margin:0 0 12px;
+}
+.cta-sub{
+  color:var(--brand-hero-text);
+  opacity:.82;
+  font-size:1.02rem;
+  line-height:1.7;
+  margin:0 0 28px;
+  white-space:pre-line;
+}
+.cta-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.cta-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:14px 28px;
+  border-radius:14px;
+  font-weight:800;
+  font-size:1.02rem;
+  text-decoration:none;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.cta-btn:hover{transform:translateY(-2px);}
+.cta-btn-phone{
+  background:var(--brand-hero-text);
+  color:var(--brand-hero-bg);
+  box-shadow:0 12px 30px rgba(0,0,0,.22);
+}
+.cta-btn-kakao{
+  background:#fee500;
+  color:#3c1e1e;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+}
+.cta-empty-note{
+  color:var(--brand-hero-text);
+  opacity:.75;
+  font-size:.92rem;
+}
+.builder-public-preview .cta-btn{cursor:pointer;}
+@media (max-width:640px){
+  .cta-actions{flex-direction:column;}
+  .cta-btn{justify-content:center;}
+}
+
 /* ══════════════ BASE ══════════════ */
 /* 세로 scroll-snap 없음(Shopify 레퍼런스 확정 — 스크롤을 가로채지 않는다).
    스크롤 진입 reveal 은 academy_reveal.{js,css} 의 단일 primitive 가 담당한다. */
@@ -52,7 +719,7 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 /* 이 리셋은 specificity가 (1,1,1)이라 클래스 규칙을 전부 이긴다.
    notes 제목/인용문, Storefront 설명/주석이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다
    (margin:X auto 0의 auto가 0으로, margin-top이 0으로 덮여 카드와 겹친다). */
-#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-native-desc,.ai-native-note){margin:0;}
+#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-native-desc,.ai-native-note,.cta-title,.cta-sub){margin:0;}
 #publicView [id^="sec-"]{scroll-margin-top:74px;}
 #errorMsg{text-align:center;color:#ef4444;font-size:.98rem;padding:20px;}
 
