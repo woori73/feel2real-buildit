@@ -37,11 +37,11 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       Map.entry("수강료", List.of("monthlyTuition")),
       Map.entry("월 수강료", List.of("monthlyTuition")),
       Map.entry("가격", List.of("monthlyTuition")),
-      Map.entry("소개", List.of("intro")),
-      Map.entry("학원 소개", List.of("intro", "heroAccent")),
+      Map.entry("소개", List.of("intro", "introHeading", "introMotto")),
+      Map.entry("학원 소개", List.of("intro", "introHeading", "introMotto", "introBodySecondary")),
       Map.entry("원장", List.of("principalDesc")),
       Map.entry("원장 소개", List.of("principalDesc", "principalQuote")),
-      Map.entry("약력", List.of("principalCareer1", "principalCareer2", "principalCareer3")),
+      Map.entry("약력", List.of("principalCareer")),
       Map.entry("철학", List.of("philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4")),
       Map.entry("교육 철학", List.of("philosophyItem1", "philosophyItem2")),
       Map.entry("성적", List.of("scoreImprovement")),
@@ -51,19 +51,17 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       Map.entry("전화", List.of("ctaPhone")),
       Map.entry("연락처", List.of("ctaPhone")),
       Map.entry("카카오", List.of("ctaKakaoUrl")),
-      Map.entry("카톡", List.of("ctaKakaoUrl")),
-      Map.entry("색상", List.of("brandPrimary", "brandAccent")),
-      Map.entry("브랜드", List.of("brandPrimary", "brandAccent")));
+      Map.entry("카톡", List.of("ctaKakaoUrl")));
 
   /** AI가 수정할 수 있는 필드 (컨트롤러의 allowlist와 동일). */
   private static final Set<String> ALLOWED_FIELDS = Set.of(
-      "intro", "heroAccent",
-      "principalDesc", "principalCareer1", "principalCareer2", "principalCareer3",
+      "principalDesc", "principalCareer",
       "principalQuote",
       "philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4",
       "monthlyTuition", "scoreImprovement", "operationYears",
       "ctaPhone", "ctaKakaoUrl",
-      "brandPrimary", "brandAccent");
+      "introHeading", "introMotto", "introBodySecondary",
+      "intro");
 
   @Override
   public ChatProposal proposeChanges(AcademyAiContext context, String userMessage) {
@@ -131,12 +129,6 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
   private String validateFieldValue(String field, String value) {
     if (value == null || value.isBlank()) {
       return "값이 비어 있습니다.";
-    }
-    // 색상 필드: hex 형식 검증
-    if (field.equals("brandPrimary") || field.equals("brandAccent")) {
-      if (!value.matches("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")) {
-        return "색상은 #RRGGBB 형식이어야 합니다. 예: #2b3a9e";
-      }
     }
     // 전화번호 필드: 기본 형식 검증
     if (field.equals("ctaPhone")) {
@@ -222,6 +214,8 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       case "philosophyItem2" -> getPhilosophyItem(context, 1);
       case "philosophyItem3" -> getPhilosophyItem(context, 2);
       case "philosophyItem4" -> getPhilosophyItem(context, 3);
+      // builderDraft 필드는 context에 없으므로 빈 값으로 시작
+      // (실제 값은 프론트엔드가 제공하거나, 2일차에 context 확장)
       default -> "";
     };
   }
