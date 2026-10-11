@@ -83,7 +83,8 @@ class AcademyAiScenarioTest {
   void setUp() {
     analyzer = new AcademyRequirementAnalyzer();
     fakeAiProvider = new FakeAiProvider();
-    createService = new AcademyAiCreateService(fakeAiProvider, analyzer);
+    createService = new AcademyAiCreateService(fakeAiProvider, analyzer,
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.subject.repository.SubjectRepository.class));
     chatService = new AcademyAiChatServiceImpl(
         fakeAiProvider, null); // contextService는 null (테스트에서 미사용)
   }

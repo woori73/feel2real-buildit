@@ -25,6 +25,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiCreateService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiApplyService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiIdempotencyService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyPageVersionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
@@ -37,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -99,6 +101,14 @@ public class AcademyAiChatController {
       "academyId", "handle", "published", "sectionOrder", "sectionVisibility",
       "designPreset", "status");
 
+  /**
+   * 생성 전용 transport 키 (A1).
+   * /create에서 생성되어 /create/apply로 전달되며, P0 필드로 변환 후
+   * builderDraft에는 저장하지 않는다.
+   */
+  private static final Set<String> TRANSPORT_KEYS = Set.of(
+      "academyName", "targetGroups", "ctaEnabled", "subjectIds", "regionLocation");
+
   private final AcademyAiChatService chatService;
   private final AcademyAiCreateService createService;
   private final AcademyAiContextService contextService;
@@ -107,6 +117,7 @@ public class AcademyAiChatController {
   private final AcademyAiSessionRepository sessionRepository;
   private final AcademyAiActionRepository actionRepository;
   private final AcademyAiIdempotencyService idempotencyService;
+  private final AcademyAiApplyService applyService;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
@@ -153,21 +164,37 @@ public class AcademyAiChatController {
    * 적용 전 현재 상태를 스냅샷으로 저장한다.
    * 실제 적용은 기존 PUT /api/tutor/academy/page-settings 경로를 경유한다.
    */
+  /**
+   * 고객 승인 후 수정안을 적용한다.
+   *
+   * <p>처리 순서 (A2·B2·B3):
+   * <ol>
+   *   <li>allowlist·값 사전 검증 (스냅샷 전에 실패해야 고아 버전이 남지 않는다)
+   *   <li>원자적 적용: builderDraft 변경 + intro → 하나의 트랜잭션
+   *   <li>적용 성공 후 적용 전 상태 스냅샷 저장 (복원용)
+   *   <li>작업 로그 기록
+   * </ol>
+   *
+   * <p>{@code intro}는 builderDraft가 아닌 Academy 본문 필드로 저장한다 (A2).
+   */
   @PostMapping("/apply")
   public ResponseEntity<ApplyResponse> apply(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody ApplyRequest request) {
     AcademyResponse academy = getMyAcademy(principal);
 
-    // 세션 검증 (본인 Academy의 세션인지 확인)
+    // 세션 검증 (본인 Academy의 세션인지 확인) — A4: 권한 위반은 403
     AcademyAiSession session = sessionRepository
         .findById(Long.parseLong(request.sessionId()))
         .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
     if (!session.getAcademyId().equals(academy.academyId())) {
-      throw new SecurityException("다른 학원의 세션에 접근할 수 없습니다.");
+      throw new AccessDeniedException("다른 학원의 세션에 접근할 수 없습니다.");
     }
 
-    // 변경 사항 서버 재검증
+    // B2: null/중복 키 사전 검증
+    validateConfirmedChanges(request.confirmedChanges());
+
+    // 변경 사항 서버 재검증 (allowlist + 위험 콘텐츠)
     ChatProposal proposal = new ChatProposal(request.confirmedChanges(), "", request.sessionId());
     ValidationResult validation = validateAgainstAllowlist(proposal);
     if (!validation.valid()) {
@@ -175,22 +202,31 @@ public class AcademyAiChatController {
           "허용되지 않은 변경이 포함되어 있습니다: " + String.join(", ", validation.errors()));
     }
 
-    // 적용 전 스냅샷 저장 (복원용)
-    // 현재 builderDraft 조회
+    // A2: intro 분리 — top-level 필드는 Academy 본문 경로로
+    String introChange = null;
+    Map<String, String> draftChanges = new java.util.HashMap<>();
+    for (FieldChange change : request.confirmedChanges()) {
+      if ("intro".equals(change.key())) {
+        introChange = change.after();
+      } else {
+        draftChanges.put(change.key(), change.after());
+      }
+    }
+
+    // B2: 값 길이·형식 사전 검증 (스냅샷 전)
+    academyService.validateAiDraft(draftChanges);
+
+    // 적용 전 현재 상태 조회 (스냅샷용)
     Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
+
+    // B3: 원자적 적용 (builderDraft + intro를 하나의 트랜잭션으로)
+    Map<String, String> updatedDraft = new java.util.HashMap<>(currentDraft);
+    updatedDraft.putAll(draftChanges);
+    applyService.applyDraftChanges(principal, updatedDraft, introChange);
+
+    // 적용 성공 후 스냅샷 저장 (복원용)
     Long versionId = versionService.snapshot(
         principal, currentDraft, Map.of(), "AI 채팅 수정 적용 전");
-
-    // 기존 저장 경로를 경유하여 적용 (우회 경로 금지)
-    Map<String, String> updatedDraft = new java.util.HashMap<>(currentDraft);
-    for (FieldChange change : request.confirmedChanges()) {
-      updatedDraft.put(change.key(), change.after());
-    }
-    academyService.updatePageSettings(
-        principal,
-        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
-            .AcademyPageSettingsUpdateRequest(
-            null, null, null, null, null, null, null, updatedDraft));
 
     // 작업 로그 기록 (승인됨)
     AcademyAiAction action = logAction(
@@ -199,6 +235,25 @@ public class AcademyAiChatController {
     actionRepository.save(action);
 
     return ResponseEntity.ok(new ApplyResponse(versionId, LocalDateTime.now().toString()));
+  }
+
+  /**
+   * 승인된 변경 목록의 기본 무결성을 검증한다 (B2).
+   * null/빈 키, 중복 키를 스냅샷·적용 전에 차단한다.
+   */
+  private void validateConfirmedChanges(java.util.List<FieldChange> changes) {
+    if (changes == null || changes.isEmpty()) {
+      throw new IllegalArgumentException("적용할 변경이 없습니다.");
+    }
+    java.util.Set<String> seen = new java.util.HashSet<>();
+    for (FieldChange change : changes) {
+      if (change == null || change.key() == null || change.key().isBlank()) {
+        throw new IllegalArgumentException("변경 키가 비어 있습니다.");
+      }
+      if (!seen.add(change.key())) {
+        throw new IllegalArgumentException("중복된 변경 키입니다: " + change.key());
+      }
+    }
   }
 
   /** 버전 목록을 조회한다. */
@@ -267,7 +322,10 @@ public class AcademyAiChatController {
 
     @SuppressWarnings("unchecked")
     Map<String, String> builderDraft = (Map<String, String>) request.get("builderDraft");
-    String academyName = (String) request.getOrDefault("academyName", "새 학원");
+    if (builderDraft == null) {
+      builderDraft = Map.of();
+    }
+    String academyName = (String) request.getOrDefault("academyName", "");
     String designPreset = (String) request.getOrDefault("designPreset", "EXAM");
     String intro = (String) request.getOrDefault("intro", "");
 
@@ -277,26 +335,74 @@ public class AcademyAiChatController {
           HttpStatus.BAD_REQUEST, "지원하지 않는 프리셋입니다: " + designPreset);
     }
 
-    // builderDraft allowlist 검증 + HTML 주입 방지
+    // A1: 생성 전용 transport 키와 builderDraft 저장 키를 분리한다.
+    // transport 키는 P0 필드로 변환하고 builderDraft에는 넣지 않는다.
+    String draftAcademyName = builderDraft.get("academyName");
+    String finalName = !isBlank(academyName) ? academyName.trim()
+        : (draftAcademyName != null ? draftAcademyName.trim() : "");
+    if (finalName.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "학원 이름은 필수입니다.");
+    }
+    String draftIntro = builderDraft.get("intro");
+    String finalIntro = intro != null ? intro.trim() : "";
+    if (finalIntro.isEmpty() && draftIntro != null) {
+      finalIntro = draftIntro.trim();
+    }
+    if (finalIntro.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "학원 소개는 필수입니다.");
+    }
+    if (finalIntro.length() > 1000) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "학원 소개는 1000자 이하로 입력해야 합니다.");
+    }
+
+    // targetGroups: 한글("중학생") → TargetGroup enum 변환
+    java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup>
+        targetGroups = parseTargetGroupsKo(builderDraft.get("targetGroups"));
+    if (targetGroups.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "수업 대상을 확인할 수 없습니다. (예: 중학생)");
+    }
+
+    // subjectIds: transport 키 파싱
+    java.util.Set<Integer> subjectIds = parseSubjectIds(builderDraft.get("subjectIds"));
+    if (subjectIds.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "과목을 확인할 수 없습니다. 초안 생성 시 과목명을 포함해주세요.");
+    }
+
+    // regions: transport 키 regionLocation을 그대로 전달 (사용자 입력 원문)
+    String regionLocation = builderDraft.get("regionLocation");
+    java.util.List<f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyRegionRequest>
+        regions = (regionLocation != null && !regionLocation.isBlank())
+        ? java.util.List.of(
+            new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
+                .AcademyRegionRequest(regionLocation.trim(), ""))
+        : java.util.List.of();
+
+    // builderDraft allowlist 검증 + HTML 주입 방지 (transport 키 제외)
     Map<String, String> finalDraft = new java.util.HashMap<>();
-    if (builderDraft != null) {
-      for (Map.Entry<String, String> entry : builderDraft.entrySet()) {
-        String key = entry.getKey();
-        if (!ALLOWED_FIELDS.contains(key)
-            && !ALLOWED_TOP_LEVEL_FIELDS.contains(key)
-            && !"designPreset".equals(key)
-            && !"academyName".equals(key)
-            && !"targetGroups".equals(key)
-            && !"ctaEnabled".equals(key)) {
-          throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, "허용되지 않은 필드: " + key);
-        }
-        if (entry.getValue() != null && containsDangerousContent(entry.getValue())) {
-          throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, "위험한 콘텐츠가 포함된 필드: " + key);
-        }
+    for (Map.Entry<String, String> entry : builderDraft.entrySet()) {
+      String key = entry.getKey();
+      if (TRANSPORT_KEYS.contains(key)) {
+        continue;
       }
-      finalDraft.putAll(builderDraft);
+      if (ALLOWED_TOP_LEVEL_FIELDS.contains(key)) {
+        // top-level 필드는 별도 경로로 처리하므로 builderDraft에 저장하지 않는다
+        continue;
+      }
+      if (!ALLOWED_FIELDS.contains(key)
+          && !"designPreset".equals(key)) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "허용되지 않은 필드: " + key);
+      }
+      if (entry.getValue() != null && containsDangerousContent(entry.getValue())) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "위험한 콘텐츠가 포함된 필드: " + key);
+      }
+      finalDraft.put(key, entry.getValue());
     }
     finalDraft.put("designPreset", designPreset);
 
@@ -335,12 +441,12 @@ public class AcademyAiChatController {
             .AcademyPageSettings(
             null, null, null, null, null, null, finalDraft, null);
 
-    // AcademyUpsertRequest 생성
+    // AcademyUpsertRequest 생성 (A1: 실제 값 전달)
     f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyUpsertRequest
         upsertRequest =
         new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
             .AcademyUpsertRequest(
-            academyName, null, intro, Set.of(), Set.of(), List.of(), pageSettings);
+            finalName, null, finalIntro, subjectIds, targetGroups, regions, pageSettings);
 
     // 실제 생성 (DRAFT 상태, @Transactional로 부분 저장 방지)
     // 동시 요청 경쟁: tutor UNIQUE 제약 위반 시 409로 변환한다.
@@ -387,18 +493,26 @@ public class AcademyAiChatController {
     // 복원 대상 버전 조회 (권한 검증 포함)
     AcademyPageVersion version = versionService.getForRestore(principal, versionId);
 
-    // 복원 전 현재 상태 스냅샷
+    // 복원 전 현재 상태 조회
     Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
+
+    // 버전의 builderDraft를 파싱하여 복원 맵을 구성한다 (A3).
+    // 스냅샷 이후에 추가된 키는 null로 표시해야 sanitizeBuilderDraft가 제거한다.
+    // (updatePageSettings는 병합 방식이라 빈 맵을 넣어도 이전 값이 남는다)
+    Map<String, String> restoreDraft = parseBuilderDraftJson(version.getBuilderDraftJson());
+    Map<String, String> fullRestore = new java.util.HashMap<>(restoreDraft);
+    for (String key : currentDraft.keySet()) {
+      if (!restoreDraft.containsKey(key)) {
+        fullRestore.put(key, null);
+      }
+    }
+
+    // B3: 원자적 복원
+    applyService.applyDraftChanges(principal, fullRestore, null);
+
+    // 복원 성공 후 복원 전 상태 스냅샷 (되돌리기용)
     Long snapshotId = versionService.snapshot(
         principal, currentDraft, Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
-
-    // 버전의 builderDraft를 파싱하여 기존 저장 경로로 복원
-    Map<String, String> restoreDraft = parseBuilderDraftJson(version.getBuilderDraftJson());
-    academyService.updatePageSettings(
-        principal,
-        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
-            .AcademyPageSettingsUpdateRequest(
-            null, null, null, null, null, null, null, restoreDraft));
 
     // 작업 로그 기록
     AcademyAiSession session = createSession(principal, academy.academyId());
@@ -414,12 +528,68 @@ public class AcademyAiChatController {
 
   // ── 헬퍼 ──
 
+  /**
+   * 현재 저장된 builderDraft를 반환한다 (A3).
+   * AcademyResponse.pageSettings()는 JSON 컬럼이므로 지연 로딩 문제가 없다.
+   */
   private Map<String, String> getCurrentBuilderDraft(
       JwtTokenProvider.AuthenticatedPrincipal principal) {
-    // AcademyService에서 현재 builderDraft 조회
-    // AcademyResponse에는 builderDraft가 없으므로 별도 조회 필요
-    // 1일차: 빈 맵 반환, 2일차에 실제 조회 구현
-    return Map.of();
+    AcademyResponse academy = getMyAcademy(principal);
+    if (academy.pageSettings() == null || academy.pageSettings().builderDraft() == null) {
+      return Map.of();
+    }
+    return new java.util.HashMap<>(academy.pageSettings().builderDraft());
+  }
+
+  /**
+   * 한글 대상 문자열을 TargetGroup enum 집합으로 변환한다 (A1).
+   * 예: "중학생" → {MIDDLE}, "초등,중등" → {ELEMENTARY, MIDDLE}
+   */
+  private java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup>
+      parseTargetGroupsKo(String ko) {
+    java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup>
+        result = java.util.EnumSet.noneOf(
+            f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.class);
+    if (ko == null || ko.isBlank()) {
+      return result;
+    }
+    String t = ko.replaceAll("\\s+", "");
+    if (t.contains("초등")) {
+      result.add(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.ELEMENTARY);
+    }
+    if (t.contains("중학") || t.contains("중학생")) {
+      result.add(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.MIDDLE);
+    }
+    if (t.contains("고등") || t.contains("고등학생")) {
+      result.add(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.HIGH);
+    }
+    if (t.contains("대학")) {
+      result.add(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.UNIVERSITY);
+    }
+    if (t.contains("성인")) {
+      result.add(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.ADULT);
+    }
+    return result;
+  }
+
+  /** transport 키 subjectIds("1,2")를 파싱한다 (A1). */
+  private java.util.Set<Integer> parseSubjectIds(String raw) {
+    java.util.Set<Integer> result = new java.util.HashSet<>();
+    if (raw == null || raw.isBlank()) {
+      return result;
+    }
+    for (String part : raw.split(",")) {
+      try {
+        result.add(Integer.parseInt(part.trim()));
+      } catch (NumberFormatException e) {
+        // 무시: 빈 집합이면 400으로 처리됨
+      }
+    }
+    return result;
+  }
+
+  private boolean isBlank(String s) {
+    return s == null || s.isBlank();
   }
 
   private Map<String, String> parseBuilderDraftJson(String json) {
@@ -489,13 +659,25 @@ public class AcademyAiChatController {
    * HTML/스크립트 주입을 검사한다.
    * AI 응답을 검증 없이 화면이나 DB에 적용하지 않는다.
    */
+  /**
+   * 위험한 콘텐츠 검사 (B5).
+   * {@code onerror =} 같은 공백 우회를 막기 위해 속성명은 {@code =} 없이 검사한다.
+   */
   private boolean containsDangerousContent(String value) {
     String lower = value.toLowerCase();
     return lower.contains("<script")
+        || lower.contains("<iframe")
+        || lower.contains("<svg")
+        || lower.contains("<object")
+        || lower.contains("<embed")
+        || lower.contains("<link")
         || lower.contains("javascript:")
-        || lower.contains("onerror=")
-        || lower.contains("onload=")
-        || lower.contains("onclick=");
+        || lower.contains("vbscript:")
+        || lower.contains("data:text/html")
+        || lower.contains("onerror")
+        || lower.contains("onload")
+        || lower.contains("onclick")
+        || lower.contains("onmouseover");
   }
 
   private AcademyAiAction logAction(

@@ -24,7 +24,8 @@ class AcademyAiCreateServiceTest {
   @BeforeEach
   void setUp() {
     provider = new FakeAiProvider();
-    service = new AcademyAiCreateService(provider, new AcademyRequirementAnalyzer());
+    service = new AcademyAiCreateService(provider, new AcademyRequirementAnalyzer(),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.subject.repository.SubjectRepository.class));
   }
 
   @Test

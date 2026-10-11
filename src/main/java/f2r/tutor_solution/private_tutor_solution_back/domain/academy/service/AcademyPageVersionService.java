@@ -11,7 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -34,6 +39,11 @@ public class AcademyPageVersionService {
   private final AcademyService academyService;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
+  /** version_no 충돌 재시도용 자기 참조 (B4). */
+  @Lazy
+  @Autowired
+  private AcademyPageVersionService self;
+
   /**
    * 현재 상태를 스냅샷으로 저장한다.
    *
@@ -43,8 +53,33 @@ public class AcademyPageVersionService {
    * @param note 버전 설명
    * @return 생성된 버전 ID
    */
-  @Transactional
+  /**
+   * 현재 상태를 스냅샷으로 저장한다 (B4).
+   *
+   * <p>동시에 두 스냅샷이 같은 version_no를 잡으면 UNIQUE 제약에 걸린다.
+   * 이 경우 최대 1회 재시도한다. 재시도를 위해 내부 트랜잭션은 REQUIRES_NEW로
+   * 분리하므로, 실패한 시도가 바깥 트랜잭션을 오염시키지 않는다.
+   */
   public Long snapshot(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Map<String, String> builderDraft,
+      Map<String, Object> pageSettings,
+      String note) {
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        return self.doSnapshot(principal, builderDraft, pageSettings, note);
+      } catch (DataIntegrityViolationException e) {
+        if (attempt == 1) {
+          throw e;
+        }
+        // version_no 충돌 → 다음 번호로 재시도
+      }
+    }
+    throw new IllegalStateException("스냅샷 저장 재시도 실패");
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Long doSnapshot(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       Map<String, String> builderDraft,
       Map<String, Object> pageSettings,
@@ -99,7 +134,7 @@ public class AcademyPageVersionService {
         .findById(versionId)
         .orElseThrow(() -> new IllegalArgumentException("버전을 찾을 수 없습니다: " + versionId));
     if (!version.getAcademyId().equals(academy.academyId())) {
-      throw new SecurityException("다른 학원의 버전에 접근할 수 없습니다.");
+      throw new AccessDeniedException("다른 학원의 버전에 접근할 수 없습니다.");
     }
     return version;
   }

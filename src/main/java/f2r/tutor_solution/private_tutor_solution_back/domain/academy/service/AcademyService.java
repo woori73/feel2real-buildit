@@ -392,6 +392,44 @@ public class AcademyService {
   }
 
   /**
+   * BuildIt AI 채팅용 소개(intro) 단독 업데이트 (A2).
+   *
+   * <p>AI 수정 허용 필드 중 top-level 필드인 {@code intro}는 builderDraft가 아닌
+   * Academy 본문 필드로 저장한다.
+   */
+  @Transactional
+  public AcademyResponse updateIntro(
+      JwtTokenProvider.AuthenticatedPrincipal principal, String intro) {
+    authResolver.requireTutor(principal);
+    Academy academy = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademy(academy);
+    String cleanIntro = intro == null ? "" : intro.trim();
+    if (cleanIntro.isEmpty()) {
+      throw new IllegalArgumentException("소개는 비워둘 수 없습니다.");
+    }
+    if (cleanIntro.length() > MAX_INTRO_LENGTH) {
+      throw new IllegalArgumentException("Academy 소개는 1000자 이하로 입력해야 합니다.");
+    }
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      academy.updateIntro(cleanIntro);
+      return toResponse(academy, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * BuildIt AI 채팅용 builderDraft 사전 검증 (B2).
+   *
+   * <p>스냅샷 저장 전에 호출하여, 검증 실패 시 고아 버전이 남지 않도록 한다.
+   */
+  public void validateAiDraft(Map<String, String> builderDraft) {
+    validateBuilderDraft(builderDraft);
+  }
+
+  /**
    * handle 사용 가능 여부(형식 + 예약어 + 중복). setup 폼 실시간 체크용.
    * 형식/예약어 위반이거나 이미 사용 중이면 false.
    */

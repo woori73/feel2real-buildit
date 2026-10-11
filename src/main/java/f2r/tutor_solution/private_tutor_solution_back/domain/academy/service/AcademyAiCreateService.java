@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateDraft;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider.AiCompletion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider.AiTaskLimits;
+import f2r.tutor_solution.private_tutor_solution_back.domain.subject.repository.SubjectRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +40,7 @@ public class AcademyAiCreateService {
 
   private final AiProvider aiProvider;
   private final AcademyRequirementAnalyzer analyzer;
+  private final SubjectRepository subjectRepository;
 
   private static final Set<String> VALID_PRESETS =
       Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE");
@@ -70,6 +72,17 @@ public class AcademyAiCreateService {
     // 4. 대상 설정
     if (req.target() != null) {
       draft.put("targetGroups", req.target());
+    }
+
+    // 4-1. 생성 승인용 transport 키 (A1): builderDraft 검증 대상이 아니며,
+    // /create/apply에서 strip 후 P0 필드로 변환한다.
+    if (req.subject() != null) {
+      subjectRepository.findByNameKo(req.subject()).ifPresentOrElse(
+          s -> draft.put("subjectIds", String.valueOf(s.getSubjectId())),
+          () -> warnings.add("과목('" + req.subject() + "')을 확인할 수 없어 생성 시 확인이 필요합니다."));
+    }
+    if (req.location() != null) {
+      draft.put("regionLocation", req.location());
     }
 
     // 5. AI로 홈페이지 콘텐츠 생성
