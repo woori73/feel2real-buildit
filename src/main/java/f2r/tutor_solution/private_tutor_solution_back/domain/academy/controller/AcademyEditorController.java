@@ -51,17 +51,10 @@ public class AcademyEditorController {
 
   private AcademyResponse resolveAcademy(
       JwtTokenProvider.AuthenticatedPrincipal principal, Long academyId) {
-    // ADMIN이 고객 홈페이지를 지정한 경우
-    if (academyId != null && isAdmin(principal)) {
-      return academyService.getById(academyId)
-          .orElseThrow(() -> new IllegalArgumentException("학원이 없습니다: " + academyId));
-    }
-    // 일반 회원/TUTOR는 본인 학원만
+    // ADMIN이 고객 홈페이지를 지정한 경우에도 본인 학원만 허용
+    // (향후 AcademyService에 ID 조회 메서드 추가 시 확장)
+    // 현재는 일반 회원/TUTOR는 본인 학원만
     return academyService.getMine(principal)
         .orElseThrow(() -> new AccessDeniedException("편집할 홈페이지가 없습니다."));
-  }
-
-  private boolean isAdmin(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    return "ADMIN".equals(principal.role());
   }
 }
