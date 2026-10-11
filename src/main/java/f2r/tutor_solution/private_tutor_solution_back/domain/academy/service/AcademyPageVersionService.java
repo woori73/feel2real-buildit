@@ -60,26 +60,42 @@ public class AcademyPageVersionService {
    * 이 경우 최대 1회 재시도한다. 재시도를 위해 내부 트랜잭션은 REQUIRES_NEW로
    * 분리하므로, 실패한 시도가 바깥 트랜잭션을 오염시키지 않는다.
    */
+  /**
+   * 버전 스냅샷을 저장한다.
+   *
+   * <p>호출자의 트랜잭션에 참여한다 (REQUIRED). version_no 동시성 충돌 시
+   * 새 트랜잭션에서 1회 재시도한다.
+   */
+  @Transactional
   public Long snapshot(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       Map<String, String> builderDraft,
       Map<String, Object> pageSettings,
       String note) {
-    for (int attempt = 0; attempt < 2; attempt++) {
-      try {
-        return self.doSnapshot(principal, builderDraft, pageSettings, note);
-      } catch (DataIntegrityViolationException e) {
-        if (attempt == 1) {
-          throw e;
-        }
-        // version_no 충돌 → 다음 번호로 재시도
-      }
+    try {
+      return doSnapshotInternal(principal, builderDraft, pageSettings, note);
+    } catch (DataIntegrityViolationException e) {
+      // version_no UNIQUE 충돌 → 현재 TX는 rollback-only이므로 새 TX에서 재시도
+      return self.snapshotRetry(principal, builderDraft, pageSettings, note);
     }
-    throw new IllegalStateException("스냅샷 저장 재시도 실패");
   }
 
+  /**
+   * 스냅샷 재시도용 (REQUIRES_NEW).
+   *
+   * <p>동시성 충돌로 기존 트랜잭션이 broken된 경우에만 호출된다.
+   * 독립 트랜잭션에서 version_no를 다시 계산하여 저장한다.
+   */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Long doSnapshot(
+  public Long snapshotRetry(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Map<String, String> builderDraft,
+      Map<String, Object> pageSettings,
+      String note) {
+    return doSnapshotInternal(principal, builderDraft, pageSettings, note);
+  }
+
+  private Long doSnapshotInternal(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       Map<String, String> builderDraft,
       Map<String, Object> pageSettings,
