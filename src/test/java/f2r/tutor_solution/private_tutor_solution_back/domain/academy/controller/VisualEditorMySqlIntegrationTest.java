@@ -40,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.TestPropertySource;
@@ -90,6 +91,9 @@ class VisualEditorMySqlIntegrationTest {
   @Autowired
   private SubjectRepository subjectRepository;
 
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
+
   private User tutor;
   private JwtTokenProvider.AuthenticatedPrincipal principal;
   private Cookie authCookie;
@@ -119,7 +123,17 @@ class VisualEditorMySqlIntegrationTest {
             new AcademyPageSettings(null, null, null, null, null, null,
                 Map.of("designPreset", "ENGLISH"), null)),
         "ve-key-" + suffix);
+    // 공개 homepage API 테스트를 위해 학원을 PUBLISHED로 변경
+    // (공개 API는 기존 규칙대로 PUBLISHED 학원만 serving)
+    jdbcTemplate.update(
+        "UPDATE academies SET status = 'PUBLISHED', visible = true "
+            + "WHERE tutor_user_id = ?",
+        tutor.getUserId());
   }
+
+  /**
+   * 테스트용 학원의 handle을 반환한다.
+   */
 
   @AfterEach
   void tearDown() {
@@ -598,6 +612,8 @@ class VisualEditorMySqlIntegrationTest {
     AtomicInteger ok200 = new AtomicInteger();
     AtomicInteger conflict409 = new AtomicInteger();
     AtomicInteger other = new AtomicInteger();
+    java.util.concurrent.ConcurrentLinkedQueue<Integer> otherCodes =
+        new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     try {
       List<Future<?>> futures = new java.util.ArrayList<>();
@@ -613,6 +629,7 @@ class VisualEditorMySqlIntegrationTest {
             conflict409.incrementAndGet();
           } else {
             other.incrementAndGet();
+            otherCodes.add(code);
           }
           return null;
         }));
@@ -628,7 +645,9 @@ class VisualEditorMySqlIntegrationTest {
 
     // 정확히 1건만 성공, 나머지는 409. 500 등 다른 오류 없음.
     assertThat(ok200.get()).isEqualTo(1);
-    assertThat(conflict409.get()).isEqualTo(threads - 1);
+    assertThat(conflict409.get())
+        .as("other codes: " + otherCodes)
+        .isEqualTo(threads - 1);
     assertThat(other.get()).isEqualTo(0);
 
     // 최종 게시본이 정상
