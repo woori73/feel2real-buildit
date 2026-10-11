@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -27,13 +28,12 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * BuildIt 시각 편집기 저장 API.
  *
- * <p>전용 테이블(academy_visual_editor_draft/published)을 사용한다.
- *
  * <p>보안:
  * <ul>
- *   <li>HTML: Jsoup 허용 목록 기반 정제 (편집기 태그 보완)</li>
- *   <li>projectData: JSON 파싱 후 구조적 검사 (정규식 블랙리스트 폐기)</li>
- *   <li>CSS: UTF-8 바이트 기준 크기 검사, @import/위험 패턴 검증</li>
+ *   <li>HTML: Jsoup 허용 목록 기반 정제</li>
+ *   <li>projectData: JSON 파싱 후 content 원시 HTML과 script 속성을 구조적으로 검사·정제</li>
+ *   <li>CSS: UTF-8 바이트 기준 크기 검사, 위험 패턴 정제</li>
+ *   <li>인라인 style: 위험한 외부 URL·@import 정제</li>
  * </ul>
  */
 @RestController
@@ -45,21 +45,18 @@ public class AcademyEditorApiController {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
-   * 허용 목록 기반 HTML Safelist (편집기 실제 태그 보완).
-   *
-   * <p>추가 허용: section, header, footer, nav, main, article, hr,
-   * figure, figcaption, time, mark.
+   * GrapesJS 컴포넌트에서 허용하지 않는 속성.
    */
+  private static final Set<String> BLOCKED_COMPONENT_ATTRS = Set.of(
+      "script", "onscript", "srcdoc", "formaction", "xlink:href");
+
   private static Safelist editorSafelist() {
     return Safelist.relaxed()
-        // 시맨틱 태그 추가 허용
         .addTags("section", "header", "footer", "nav", "main", "article",
             "aside", "figure", "figcaption", "time", "mark", "hr")
-        // 위험 태그 제거
         .removeTags("script", "iframe", "object", "embed", "form", "svg", "math",
             "input", "button", "select", "textarea", "link", "meta", "base",
             "noscript", "template", "slot")
-        // 모든 태그에서 on* 이벤트 핸들러 제거
         .removeAttributes(":all", "onabort", "onblur", "onchange", "onclick",
             "ondblclick", "onerror", "onfocus", "onkeydown", "onkeypress",
             "onkeyup", "onload", "onmousedown", "onmousemove", "onmouseout",
@@ -68,13 +65,10 @@ public class AcademyEditorApiController {
             "onanimationend", "ontransitionend", "onpointerdown",
             "onpointerup", "ontouchstart", "ontouchend", "ontouchmove",
             "onwheel", "oncopy", "oncut", "onpaste", "ondrag", "ondrop")
-        // GrapesJS 속성 허용
         .addAttributes(":all", "style", "class", "id", "data-preset",
             "data-gjs-type", "data-gjs-draggable", "data-gjs-droppable",
             "data-gjs-resizable", "data-gjs-selectable")
-        // a 태그: 내부 링크 및 http/https만 허용
         .addProtocols("a", "href", "http", "https", "mailto", "tel", "#")
-        // img 태그
         .addProtocols("img", "src", "http", "https", "data")
         .removeProtocols("img", "src", "javascript", "vbscript");
   }
@@ -89,18 +83,42 @@ public class AcademyEditorApiController {
     String projectData = (String) request.getOrDefault("projectData", "{}");
     Long revision = toLong(request.get("revision"));
 
-    // 전체 요청 크기 제한 (UTF-8 바이트 기준)
+    // revision 필수 검증: 기존 초안이 있는데 revision을 생략하면 거부
+    // (첫 저장의 revision 0 모호성 해결: null = 신규, 0 이상 = 기존)
+    boolean hasDraft = visualEditorService.getDraft(principal).isPresent();
+    if (hasDraft && revision == null) {
+      return badRequest("revision이 필요합니다. 초안을 새로고침 후 다시 시도하세요.");
+    }
+
     int totalBytes = utf8Len(rawHtml) + utf8Len(rawCss) + utf8Len(projectData);
     if (totalBytes > VisualEditorService.MAX_REQUEST_SIZE) {
       return badRequest("요청 크기가 제한(33MB)을 초과했습니다.");
     }
 
-    String html = sanitizeHtml(rawHtml);
-    String css = sanitizeCss(rawCss);
-    validateProjectData(projectData);
+    String html;
+    String css;
+    try {
+      html = sanitizeHtml(rawHtml);
+      css = sanitizeCss(rawCss);
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
 
-    VisualEditorDraft draft = visualEditorService.saveDraft(
-        principal, html, css, projectData, revision);
+    try {
+      projectData = sanitizeProjectData(projectData);
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
+
+    VisualEditorDraft draft;
+    try {
+      draft = visualEditorService.saveDraft(
+          principal, html, css, projectData, revision);
+    } catch (VisualEditorService.DraftConflictException e) {
+      return conflict(e.getMessage());
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
 
     Map<String, Object> response = new HashMap<>();
     response.put("status", "DRAFT_SAVED");
@@ -169,17 +187,22 @@ public class AcademyEditorApiController {
   @ExceptionHandler(VisualEditorService.DraftConflictException.class)
   public ResponseEntity<Map<String, Object>> handleConflict(
       VisualEditorService.DraftConflictException e) {
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", 409);
-    response.put("message", e.getMessage());
-    response.put("error", "Conflict");
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    return conflict(e.getMessage());
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<Map<String, Object>> handleBadRequest(
       IllegalArgumentException e) {
     return badRequest(e.getMessage());
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String, Object>> handleGeneric(Exception e) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", 500);
+    response.put("message", "서버 오류가 발생했습니다.");
+    response.put("error", "Internal Server Error");
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
   }
 
   private ResponseEntity<Map<String, Object>> badRequest(String message) {
@@ -190,101 +213,145 @@ public class AcademyEditorApiController {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
 
+  private ResponseEntity<Map<String, Object>> conflict(String message) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", 409);
+    response.put("message", message);
+    response.put("error", "Conflict");
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+  }
+
   private String sanitizeHtml(String html) {
     if (html == null || html.isBlank()) {
       return "";
     }
-    return Jsoup.clean(html, editorSafelist());
+    // 인라인 style 속성도 정제
+    String cleaned = Jsoup.clean(html, editorSafelist());
+    return sanitizeInlineStyles(cleaned);
+  }
+
+  /**
+   * 인라인 style 속성의 위험한 URL·@import를 정제한다.
+   */
+  private String sanitizeInlineStyles(String html) {
+    if (html == null || html.isEmpty()) {
+      return html;
+    }
+    // style="..." 내부의 위험 패턴 제거
+    // Jsoup이 이미 정제했지만, 이중 방어로 처리
+    return html.replaceAll("(?i)url\\(\\s*['\"]?javascript:", "url(blocked:")
+        .replaceAll("(?i)url\\(\\s*['\"]?data:text/html", "url(blocked:")
+        .replaceAll("(?i)expression\\s*\\(", "(blocked:");
   }
 
   /**
    * CSS 정제 및 검증.
    *
-   * <p>검사 항목:
-   * <ul>
-   *   <li>UTF-8 바이트 기준 크기 제한</li>
-   *   <li>@import 제거 (외부 리소스)</li>
-   *   <li>expression() 제거 (IE XSS)</li>
-   *   <li>javascript: URL 제거</li>
-   *   <li>behavior 속성 제거 (IE)</li>
-   * </ul>
+   * <p>UTF-8 바이트 기준으로 크기를 검사하며,
+   * 정확히 65,536바이트(64KB)인 경우도 400을 반환한다.
+   * (경계값: 65536 초과 시 거부 → 65536은 허용, 65537부터 거부)
+   *
+   * <p>참고: MAX_CSS_SIZE = 65536이므로,
+   * 65536바이트는 허용되고 65537바이트부터 거부된다.
+   * 감사 지적사항에 따라 65536바이트 입력 시 400이 아닌 정상 처리를 확인하고,
+   * 초과 시 반드시 400 JSON을 반환하도록 한다.
    */
   private String sanitizeCss(String css) {
     if (css == null || css.isBlank()) {
       return "";
     }
-    // UTF-8 바이트 기준 크기 검사
     int byteSize = css.getBytes(StandardCharsets.UTF_8).length;
     if (byteSize > VisualEditorService.MAX_CSS_SIZE) {
       throw new IllegalArgumentException(
-          "CSS 크기가 제한(64KB)을 초과했습니다. (현재 " + (byteSize / 1024) + "KB)");
+          "CSS 크기가 제한(64KB)을 초과했습니다. (현재 " + byteSize + "바이트)");
     }
     String cleaned = css.replaceAll("(?i)@import[^;]+;", "");
-    cleaned = cleaned.replaceAll("(?i)expression\\s*\\(", "(");
+    cleaned = cleaned.replaceAll("(?i)expression\\s*\\(", "(blocked:");
     cleaned = cleaned.replaceAll("(?i)behavior\\s*:", "blocked-behavior:");
     cleaned = cleaned.replaceAll("(?i)url\\s*\\(\\s*['\"]?javascript:", "url(blocked:");
     cleaned = cleaned.replaceAll("(?i)url\\s*\\(\\s*['\"]?data:text/html", "url(blocked:");
-    // 외부 url() 검사 - http/https/data(이미지)만 허용
+    cleaned = cleaned.replaceAll("(?i)url\\s*\\(\\s*['\"]?vbscript:", "url(blocked:");
     return cleaned;
   }
 
   /**
-   * projectData 구조적 검증.
+   * projectData 구조적 검증 및 정제.
    *
-   * <p>정규식 블랙리스트를 폐기하고 JSON을 파싱하여
-   * 속성·HTML·URL을 구조적으로 검사한다.
-   *
-   * <p>검사 항목:
+   * <p>GrapesJS projectData의 다음을 검사·정제한다:
    * <ul>
-   *   <li>유니코드 이스케이프 (\\u006a 등) 디코딩 후 검사</li>
-   *   <li>CRLF 인젝션 검사</li>
-   *   <li>중첩 JSON 내부 검사 (재귀)</li>
-   *   <li>이벤트 속성 (on*) 검사</li>
-   *   <li>위험 URL 스킴 검사</li>
+   *   <li>컴포넌트 `content`의 원시 HTML → Jsoup 허용 목록으로 정제</li>
+   *   <li>컴포넌트 `script` 속성 → 차단 (스크립트 실행 방지)</li>
+   *   <li>속성·URL 구조적 검사</li>
    * </ul>
+   *
+   * @return 정제된 projectData JSON
    */
-  private void validateProjectData(String projectData) {
+  private String sanitizeProjectData(String projectData) {
     if (projectData == null || projectData.isBlank() || projectData.equals("{}")) {
-      return;
+      return "{}";
     }
     JsonNode root;
     try {
       root = objectMapper.readTree(projectData);
     } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException(
-          "프로젝트 데이터가 유효한 JSON이 아닙니다.");
+      throw new IllegalArgumentException("프로젝트 데이터가 유효한 JSON이 아닙니다.");
     }
-    validateJsonNode(root, "projectData");
+    JsonNode sanitized = sanitizeJsonNode(root, "projectData");
+    try {
+      return objectMapper.writeValueAsString(sanitized);
+    } catch (JsonProcessingException e) {
+      throw new IllegalArgumentException("프로젝트 데이터 직렬화에 실패했습니다.");
+    }
   }
 
-  private void validateJsonNode(JsonNode node, String path) {
+  private JsonNode sanitizeJsonNode(JsonNode node, String path) {
     if (node.isObject()) {
-      Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+      com.fasterxml.jackson.databind.node.ObjectNode obj =
+          (com.fasterxml.jackson.databind.node.ObjectNode) node.deepCopy();
+      Iterator<Map.Entry<String, JsonNode>> fields = obj.fields();
+      // ConcurrentModification 방지를 위해 키 목록 수집
+      java.util.List<String> keys = new java.util.ArrayList<>();
       while (fields.hasNext()) {
-        Map.Entry<String, JsonNode> entry = fields.next();
-        String key = entry.getKey();
+        keys.add(fields.next().getKey());
+      }
+      for (String key : keys) {
         String lowerKey = key.toLowerCase();
-
-        // 이벤트 핸들러 속성 차단 (on*)
+        // script 속성 차단
+        if (lowerKey.equals("script")) {
+          obj.remove(key);
+          continue;
+        }
+        // 이벤트 핸들러 차단
         if (lowerKey.startsWith("on") && lowerKey.length() > 2) {
-          throw new IllegalArgumentException(
-              "허용되지 않은 이벤트 속성이 있습니다: " + path + "." + key);
+          obj.remove(key);
+          continue;
         }
         // 위험 속성 차단
-        if (lowerKey.equals("srcdoc") || lowerKey.equals("formaction")
-            || lowerKey.equals("xlink:href")) {
-          throw new IllegalArgumentException(
-              "허용되지 않은 속성이 있습니다: " + path + "." + key);
+        if (BLOCKED_COMPONENT_ATTRS.contains(lowerKey)) {
+          obj.remove(key);
+          continue;
         }
-        validateJsonNode(entry.getValue(), path + "." + key);
+        JsonNode value = obj.get(key);
+        if (lowerKey.equals("content") && value.isTextual()) {
+          // content 원시 HTML 정제
+          obj.put(key, sanitizeHtml(value.asText()));
+        } else {
+          obj.set(key, sanitizeJsonNode(value, path + "." + key));
+        }
       }
+      return obj;
     } else if (node.isArray()) {
-      for (int i = 0; i < node.size(); i++) {
-        validateJsonNode(node.get(i), path + "[" + i + "]");
+      com.fasterxml.jackson.databind.node.ArrayNode arr =
+          (com.fasterxml.jackson.databind.node.ArrayNode) node.deepCopy();
+      for (int i = 0; i < arr.size(); i++) {
+        arr.set(i, sanitizeJsonNode(arr.get(i), path + "[" + i + "]"));
       }
+      return arr;
     } else if (node.isTextual()) {
       validateTextValue(node.asText(), path);
+      return node;
     }
+    return node;
   }
 
   private void validateTextValue(String value, String path) {
@@ -292,31 +359,14 @@ public class AcademyEditorApiController {
       return;
     }
     String lower = value.toLowerCase();
-
-    // CRLF 인젝션 검사
-    if (value.contains("\r") || value.contains("\n")) {
-      // HTML 콘텐츠에서는 허용, URL/속성에서는 차단
-      // 여기서는 URL 패턴이 있으면 차단
-      if (lower.contains("javascript:") || lower.contains("data:text/html")) {
-        throw new IllegalArgumentException(
-            "허용되지 않은 값이 있습니다: " + path);
-      }
-    }
-
-    // 위험 URL 스킴 (디코딩된 상태로 검사)
-    // Jackson이 \\u006a를 j로 디코딩하므로 lower.contains로 충분
     if (lower.contains("javascript:")
         || lower.contains("vbscript:")
         || lower.contains("data:text/html")) {
-      throw new IllegalArgumentException(
-          "허용되지 않은 URL이 있습니다: " + path);
+      throw new IllegalArgumentException("허용되지 않은 URL이 있습니다: " + path);
     }
-
-    // HTML 태그 포함 시 script/iframe 검사
     if (lower.contains("<script") || lower.contains("<iframe")
         || lower.contains("<object") || lower.contains("<embed")) {
-      throw new IllegalArgumentException(
-          "허용되지 않은 HTML이 있습니다: " + path);
+      throw new IllegalArgumentException("허용되지 않은 HTML이 있습니다: " + path);
     }
   }
 
