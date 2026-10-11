@@ -321,8 +321,7 @@ class VisualEditorMySqlIntegrationTest {
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
   @DisplayName("병렬 8건 동일 revision → 1건만 200, 7건 409 (서로 다른 내용)")
-  void concurrentSaves_oneWins() throws Exception {
-    MvcResult r1 = putDraft("{\"html\":\"<p>init</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+  void concurrentSaves_oneWins() throws Exception {    MvcResult r1 = putDraft("{\"html\":\"<p>init</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
     assertThat(r1.getResponse().getStatus()).isEqualTo(200);
     long rev = revisionOf(r1);
 
@@ -364,5 +363,271 @@ class VisualEditorMySqlIntegrationTest {
 
     assertThat(ok200.get()).isEqualTo(1);
     assertThat(conflict409.get()).isEqualTo(threads - 1);
+  }
+
+  // ── 2단계: 게시·가져오기·공개 홈페이지 ──
+
+  private MvcResult postPublish(String body) throws Exception {
+    return mockMvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .post("/api/tutor/academy/page-settings/visual-editor/publish")
+                .cookie(authCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andReturn();
+  }
+
+  private MvcResult postImport(String body) throws Exception {
+    return mockMvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .post("/api/tutor/academy/page-settings/visual-editor/import")
+                .cookie(authCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andReturn();
+  }
+
+  private MvcResult postUnpublish() throws Exception {
+    return mockMvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .post("/api/tutor/academy/page-settings/visual-editor/unpublish")
+                .cookie(authCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andReturn();
+  }
+
+  private String myHandle() throws Exception {
+    MvcResult me = mockMvc.perform(get("/api/tutor/academy/me").cookie(authCookie))
+        .andExpect(status().isOk())
+        .andReturn();
+    return objectMapper.readTree(
+        me.getResponse().getContentAsString()).get("handle").asText();
+  }
+
+  @Test
+  @DisplayName("게시: 초안 → published 복사 + renderMode=custom, 공개 API에서 조회")
+  void publish_flow() throws Exception {
+    String html = "<section><h1>게시 테스트</h1></section>";
+    MvcResult saved = putDraft("{\"html\":\"" + html.replace("\"", "\\\"") + "\","
+        + "\"css\":\"h1{color:red}\",\"projectData\":\"{}\"}");
+    assertThat(saved.getResponse().getStatus()).isEqualTo(200);
+    long rev = revisionOf(saved);
+
+    MvcResult published = postPublish("{\"revision\":" + rev + "}");
+    assertThat(published.getResponse().getStatus()).isEqualTo(200);
+    JsonNode pub = objectMapper.readTree(
+        published.getResponse().getContentAsString());
+    assertThat(pub.get("status").asText()).isEqualTo("PUBLISHED");
+    assertThat(pub.get("renderMode").asText()).isEqualTo("custom");
+
+    // 공개 API에서 게시본 조회 (인증 불필요)
+    String handle = myHandle();
+    MvcResult homepage = mockMvc.perform(
+            get("/api/public/academy/" + handle + "/homepage"))
+        .andExpect(status().isOk())
+        .andReturn();
+    JsonNode hp = objectMapper.readTree(
+        homepage.getResponse().getContentAsString());
+    assertThat(hp.get("renderMode").asText()).isEqualTo("custom");
+    assertThat(hp.get("html").asText()).contains("게시 테스트");
+  }
+
+  @Test
+  @DisplayName("게시: 초안 없음 → 409")
+  void publish_withoutDraft_409() throws Exception {
+    MvcResult result = postPublish("{\"revision\":0}");
+    assertThat(result.getResponse().getStatus()).isEqualTo(409);
+  }
+
+  @Test
+  @DisplayName("게시: revision 생략 → 400")
+  void publish_withoutRevision_400() throws Exception {
+    putDraft("{\"html\":\"<p>a</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+    MvcResult result = postPublish("{}");
+    assertThat(result.getResponse().getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  @DisplayName("게시: stale revision → 409")
+  void publish_staleRevision_409() throws Exception {
+    MvcResult r1 = putDraft("{\"html\":\"<p>a</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+    long rev = revisionOf(r1);
+    putDraft("{\"html\":\"<p>b</p>\",\"css\":\"\",\"projectData\":\"{}\","
+        + "\"revision\":" + rev + "}");
+
+    MvcResult result = postPublish("{\"revision\":" + rev + "}");
+    assertThat(result.getResponse().getStatus()).isEqualTo(409);
+  }
+
+  @Test
+  @DisplayName("게시 취소: renderMode=template, 공개 API 404 → P0 폴백")
+  void unpublish_flow() throws Exception {
+    MvcResult saved = putDraft("{\"html\":\"<p>a</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+    long rev = revisionOf(saved);
+    assertThat(postPublish("{\"revision\":" + rev + "}")
+        .getResponse().getStatus()).isEqualTo(200);
+
+    MvcResult unpub = postUnpublish();
+    assertThat(unpub.getResponse().getStatus()).isEqualTo(200);
+    JsonNode un = objectMapper.readTree(
+        unpub.getResponse().getContentAsString());
+    assertThat(un.get("renderMode").asText()).isEqualTo("template");
+
+    String handle = myHandle();
+    mockMvc.perform(get("/api/public/academy/" + handle + "/homepage"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("공개 홈페이지: 게시본 없음 → 404")
+  void publicHomepage_withoutPublished_404() throws Exception {
+    String handle = myHandle();
+    mockMvc.perform(get("/api/public/academy/" + handle + "/homepage"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("공개 홈페이지: XSS는 출력 시 재검증되어 제거됨")
+  void publicHomepage_xssSanitized() throws Exception {
+    // 저장 시 script가 제거되므로, 정제된 내용이 게시·공개되는지 확인
+    MvcResult saved = putDraft(
+        "{\"html\":\"<p>ok</p><script>alert(1)</script>\","
+            + "\"css\":\"\",\"projectData\":\"{}\"}");
+    assertThat(saved.getResponse().getStatus()).isEqualTo(200);
+    long rev = revisionOf(saved);
+    assertThat(postPublish("{\"revision\":" + rev + "}")
+        .getResponse().getStatus()).isEqualTo(200);
+
+    String handle = myHandle();
+    MvcResult homepage = mockMvc.perform(
+            get("/api/public/academy/" + handle + "/homepage"))
+        .andExpect(status().isOk())
+        .andReturn();
+    String html = objectMapper.readTree(
+        homepage.getResponse().getContentAsString()).get("html").asText();
+    assertThat(html).doesNotContain("<script");
+    assertThat(html).contains("ok");
+  }
+
+  @Test
+  @DisplayName("가져오기: 초안 없음 → 신규 초안 생성")
+  void import_noExistingDraft_creates() throws Exception {
+    String p0html = "<section><h1>P0 홈페이지</h1></section>";
+    MvcResult result = postImport("{\"html\":\""
+        + p0html.replace("\"", "\\\"") + "\",\"css\":\"h1{color:blue}\"}");
+    assertThat(result.getResponse().getStatus()).isEqualTo(200);
+    JsonNode json = objectMapper.readTree(
+        result.getResponse().getContentAsString());
+    assertThat(json.get("status").asText()).isEqualTo("IMPORTED");
+
+    // 초안으로 조회됨
+    MvcResult loaded = mockMvc.perform(
+            get("/api/tutor/academy/page-settings/visual-editor/draft")
+                .cookie(authCookie))
+        .andExpect(status().isOk())
+        .andReturn();
+    String stored = objectMapper.readTree(
+        loaded.getResponse().getContentAsString()).get("html").asText();
+    assertThat(stored).contains("P0 홈페이지");
+  }
+
+  @Test
+  @DisplayName("가져오기: 기존 초안 있음 → 409 (무단 덮어쓰기 금지)")
+  void import_existingDraft_409() throws Exception {
+    putDraft("{\"html\":\"<p>existing</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+
+    MvcResult result = postImport(
+        "{\"html\":\"<p>p0</p>\",\"css\":\"\"}");
+    assertThat(result.getResponse().getStatus()).isEqualTo(409);
+
+    // 기존 초안이 그대로 유지됨
+    MvcResult loaded = mockMvc.perform(
+            get("/api/tutor/academy/page-settings/visual-editor/draft")
+                .cookie(authCookie))
+        .andExpect(status().isOk())
+        .andReturn();
+    String stored = objectMapper.readTree(
+        loaded.getResponse().getContentAsString()).get("html").asText();
+    assertThat(stored).contains("existing");
+  }
+
+  @Test
+  @DisplayName("가져오기: XSS 포함 P0 HTML → 정제되어 저장")
+  void import_xssSanitized() throws Exception {
+    MvcResult result = postImport(
+        "{\"html\":\"<p>ok</p><script>alert(1)</script>\",\"css\":\"\"}");
+    assertThat(result.getResponse().getStatus()).isEqualTo(200);
+
+    MvcResult loaded = mockMvc.perform(
+            get("/api/tutor/academy/page-settings/visual-editor/draft")
+                .cookie(authCookie))
+        .andExpect(status().isOk())
+        .andReturn();
+    String stored = objectMapper.readTree(
+        loaded.getResponse().getContentAsString()).get("html").asText();
+    assertThat(stored).doesNotContain("<script");
+    assertThat(stored).contains("ok");
+  }
+
+  @Test
+  @DisplayName("renderMode: 잘못된 값 → 400")
+  void renderMode_invalidValue_400() throws Exception {
+    MvcResult result = mockMvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .put("/api/tutor/academy/page-settings")
+                .cookie(authCookie)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"builderDraft\":{\"homepage.renderMode\":\"invalid\"}}"))
+        .andReturn();
+    assertThat(result.getResponse().getStatus()).isEqualTo(400);
+  }
+
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  @Test
+  @DisplayName("병렬 게시 4건 동일 revision → 모두 200 (멱등), 게시본 1건")
+  void concurrentPublish_idempotent() throws Exception {
+    MvcResult r1 = putDraft("{\"html\":\"<p>pub</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+    assertThat(r1.getResponse().getStatus()).isEqualTo(200);
+    long rev = revisionOf(r1);
+
+    int threads = 4;
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    CountDownLatch ready = new CountDownLatch(threads);
+    CountDownLatch start = new CountDownLatch(1);
+    AtomicInteger ok200 = new AtomicInteger();
+
+    try {
+      List<Future<?>> futures = new java.util.ArrayList<>();
+      for (int i = 0; i < threads; i++) {
+        futures.add(pool.submit(() -> {
+          ready.countDown();
+          start.await();
+          MvcResult r = postPublish("{\"revision\":" + rev + "}");
+          if (r.getResponse().getStatus() == 200) {
+            ok200.incrementAndGet();
+          }
+          return null;
+        }));
+      }
+      ready.await();
+      start.countDown();
+      for (Future<?> f : futures) {
+        f.get(30, TimeUnit.SECONDS);
+      }
+    } finally {
+      pool.shutdownNow();
+    }
+
+    // 게시는 멱등하므로 모두 성공해도 게시본은 1건
+    assertThat(ok200.get()).isEqualTo(threads);
+    String handle = myHandle();
+    MvcResult homepage = mockMvc.perform(
+            get("/api/public/academy/" + handle + "/homepage"))
+        .andExpect(status().isOk())
+        .andReturn();
+    assertThat(objectMapper.readTree(
+        homepage.getResponse().getContentAsString())
+        .get("html").asText()).contains("pub");
   }
 }
