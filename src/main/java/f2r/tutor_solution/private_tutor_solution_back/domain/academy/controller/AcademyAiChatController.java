@@ -12,6 +12,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.Academy
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ValidationResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.VersionInfo;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateDraft;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateRequest;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiAction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiSession;
@@ -77,6 +80,7 @@ public class AcademyAiChatController {
       "designPreset", "status");
 
   private final AcademyAiChatService chatService;
+  private final AcademyAiCreateService createService;
   private final AcademyAiContextService contextService;
   private final AcademyPageVersionService versionService;
   private final AcademyService academyService;
@@ -181,6 +185,37 @@ public class AcademyAiChatController {
   public ResponseEntity<List<VersionInfo>> versions(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     return ResponseEntity.ok(versionService.list(principal));
+  }
+
+  /**
+   * 자연어 요청으로부터 새 홈페이지 초안을 생성한다.
+   * DB를 수정하지 않는다 (승인 전까지).
+   * 기존 학원 홈페이지 및 데이터를 덮어쓰지 않는다.
+   */
+  @PostMapping("/create")
+  public ResponseEntity<CreateResponse> create(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody CreateRequest request) {
+    // 기존 Academy가 있으면 경고 (덮어쓰기 방지)
+    boolean hasExisting = academyService.getMine(principal).isPresent();
+
+    CreateDraft draft = createService.generateDraft(request.message(), request.academyName());
+
+    String reply = draft.summary();
+    if (!draft.warnings().isEmpty()) {
+      reply += "\n주의: " + String.join(", ", draft.warnings());
+    }
+    if (hasExisting) {
+      reply += "\n[안내] 이미 홈페이지가 있습니다. 이 초안을 적용하면 기존 내용이 변경됩니다. "
+          + "적용 전 반드시 미리보기로 확인하세요.";
+    }
+
+    // 세션 생성 (추적용)
+    AcademyResponse academy = getMyAcademy(principal);
+    AcademyAiSession session = createSession(principal, academy.id());
+
+    return ResponseEntity.ok(new CreateResponse(
+        reply, draft, session.getId().toString(), true));
   }
 
   /**
