@@ -1074,6 +1074,8 @@ class AcademyServiceTest {
   @Test
   void updatePageSettings_backfillsCtaAtCanonicalPositionPreservingExistingOrder() {
     // given: sec-cta가 없던 구 저장값을 가진 기존 테넌트가 순서를 저장한다.
+    // visibility는 빈 맵으로 두어 backfill이 sec-cta 키를 주입하지 않음을 검증한다
+    // (null 맵에 대한 doesNotContainKey는 AssertJ가 null actual을 거부하므로 빈 맵 사용).
     Academy academy = academy("old/logo.jpg", null);
     List<String> legacyOrder = new ArrayList<>(AcademyService.DEFAULT_SECTION_ORDER);
     legacyOrder.remove("sec-cta");
@@ -1081,7 +1083,7 @@ class AcademyServiceTest {
     legacyOrder.remove("sec-lessons");
     legacyOrder.add(2, "sec-lessons");
     academy.updatePageSettings(new AcademyPageSettings(
-        null, null, null, null, null, legacyOrder, null));
+        null, null, null, null, Map.of(), legacyOrder, null));
     when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
     when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
     AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
