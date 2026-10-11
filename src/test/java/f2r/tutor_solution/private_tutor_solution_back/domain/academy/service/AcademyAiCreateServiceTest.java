@@ -24,7 +24,7 @@ class AcademyAiCreateServiceTest {
   @BeforeEach
   void setUp() {
     provider = new FakeAiProvider();
-    service = new AcademyAiCreateService(provider);
+    service = new AcademyAiCreateService(provider, new AcademyRequirementAnalyzer());
   }
 
   @Test
