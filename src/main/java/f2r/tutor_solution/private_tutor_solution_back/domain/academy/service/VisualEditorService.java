@@ -255,7 +255,9 @@ public class VisualEditorService {
     }
 
     // 1. published 교체 (기존 게시본이 있으면 삭제 후 생성)
-    // 동시 게시 시 UNIQUE 제약 충돌은 409로 변환 (데이터 정합성 유지)
+    // 동시 게시 시 충돌은 409로 변환 (데이터 정합성 유지):
+    // - DataIntegrityViolationException: UNIQUE 제약 위반 (중복 INSERT)
+    // - CannotAcquireLockException: 데드락/락 타임아웃 (동시 INSERT 경합)
     try {
       publishedRepository.findByAcademyId(academyId)
           .ifPresent(publishedRepository::delete);
@@ -264,13 +266,21 @@ public class VisualEditorService {
           academyId, draft.getHtml(), draft.getCss(),
           String.valueOf(principal.userId()));
       publishedRepository.saveAndFlush(published);
-    } catch (DataIntegrityViolationException e) {
+    } catch (DataIntegrityViolationException
+        | org.springframework.dao.CannotAcquireLockException e) {
       throw new DraftConflictException(
           "다른 세션에서 게시가 진행 중입니다. 새로고침 후 다시 시도하세요.");
     }
 
     // 2. renderMode를 custom으로 변경 (같은 트랜잭션)
-    academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
+    // 동시 업데이트 시 락 경합도 409로 변환
+    try {
+      academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
+    } catch (DataIntegrityViolationException
+        | org.springframework.dao.CannotAcquireLockException e) {
+      throw new DraftConflictException(
+          "다른 세션에서 게시가 진행 중입니다. 새로고침 후 다시 시도하세요.");
+    }
   }
 
   /**
