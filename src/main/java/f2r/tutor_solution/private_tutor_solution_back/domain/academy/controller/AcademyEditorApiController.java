@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -146,10 +147,80 @@ public class AcademyEditorApiController {
       @org.springframework.security.core.annotation.AuthenticationPrincipal
       JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody Map<String, Object> request) {
+    Long revision = asRevision(request.get("revision"));
+    if (revision == null) {
+      return badRequest("revision이 필요합니다. 초안을 새로고침 후 다시 시도하세요.");
+    }
+    try {
+      // draft → published 복사와 renderMode 변경을 하나의 트랜잭션으로 처리
+      visualEditorService.publish(principal, revision);
+    } catch (VisualEditorService.DraftConflictException e) {
+      return conflict(e.getMessage());
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
+
     Map<String, Object> response = new HashMap<>();
-    response.put("status", "NOT_IMPLEMENTED");
-    response.put("message", "게시 기능은 준비 중입니다.");
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(response);
+    response.put("status", "PUBLISHED");
+    response.put("renderMode", VisualEditorService.RENDER_MODE_CUSTOM);
+    response.put("message", "게시되었습니다. 홈페이지에 편집기 디자인이 반영됩니다.");
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * 게시를 취소한다. renderMode를 template(P0)으로 되돌린다.
+   * published 행과 P0 데이터는 유지된다.
+   */
+  @PostMapping("/visual-editor/unpublish")
+  public ResponseEntity<Map<String, Object>> unpublish(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+      JwtTokenProvider.AuthenticatedPrincipal principal) {
+    try {
+      visualEditorService.unpublish(principal);
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", "UNPUBLISHED");
+    response.put("renderMode", VisualEditorService.RENDER_MODE_TEMPLATE);
+    response.put("message", "게시 취소되었습니다. 기존 P0 홈페이지로 되돌아갑니다.");
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * P0 빌더 DOM을 초안으로 가져온다.
+   *
+   * <p>브라우저에서 P0 미리보기 DOM을 직렬화해 전송한다.
+   * 기존 초안이 있으면 무단 덮어쓰기를 방지하기 위해 409를 반환한다.
+   */
+  @PostMapping("/visual-editor/import")
+  public ResponseEntity<Map<String, Object>> importFromP0(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody Map<String, Object> request) {
+    String rawHtml = asString(request, "html");
+    String rawCss = asString(request, "css");
+
+    int totalBytes = utf8Len(rawHtml) + utf8Len(rawCss);
+    if (totalBytes > VisualEditorService.MAX_REQUEST_SIZE) {
+      return badRequest("요청 크기가 제한(33MB)을 초과했습니다.");
+    }
+
+    VisualEditorDraft draft;
+    try {
+      draft = visualEditorService.importFromP0(principal, rawHtml, rawCss);
+    } catch (VisualEditorService.DraftConflictException e) {
+      return conflict(e.getMessage());
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", "IMPORTED");
+    response.put("revision", draft.getRevision());
+    response.put("message", "P0 홈페이지를 초안으로 가져왔습니다.");
+    return ResponseEntity.ok(response);
   }
 
   @ExceptionHandler(VisualEditorService.DraftConflictException.class)
