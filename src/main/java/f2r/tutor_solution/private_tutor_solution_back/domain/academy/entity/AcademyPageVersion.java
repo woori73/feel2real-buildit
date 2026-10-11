@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -21,6 +22,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
     name = "academy_page_versions",
+    uniqueConstraints =
+        @UniqueConstraint(name = "uq_academy_version_no", columnNames = {"academyId", "versionNo"}),
     indexes = {
       @Index(name = "idx_academy_version", columnList = "academyId, versionNo"),
       @Index(name = "idx_academy_created", columnList = "academyId, createdAt")
