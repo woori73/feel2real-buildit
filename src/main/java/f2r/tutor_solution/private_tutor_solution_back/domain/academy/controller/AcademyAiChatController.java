@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * BuildIt P1 AI 채팅 API.
@@ -244,16 +246,18 @@ public class AcademyAiChatController {
   public ResponseEntity<Map<String, Object>> createApply(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody Map<String, Object> request) {
-    // 기존 Academy 존재 시 거부 (덮어쓰기 방지)
+    // 기존 Academy 존재 시 400 거부 (덮어쓰기 방지) - API 계약 준수
     if (academyService.getMine(principal).isPresent()) {
-      throw new IllegalStateException(
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
           "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
               + "채팅 수정 기능을 사용하세요.");
     }
 
     String idempotencyKey = (String) request.get("idempotencyKey");
     if (idempotencyKey == null || idempotencyKey.isBlank()) {
-      throw new IllegalArgumentException("idempotencyKey가 필요합니다.");
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "idempotencyKey가 필요합니다.");
     }
 
     @SuppressWarnings("unchecked")
@@ -264,7 +268,8 @@ public class AcademyAiChatController {
 
     // designPreset 검증
     if (!Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(designPreset)) {
-      throw new IllegalArgumentException("지원하지 않는 프리셋입니다: " + designPreset);
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "지원하지 않는 프리셋입니다: " + designPreset);
     }
 
     // builderDraft allowlist 검증 + HTML 주입 방지
@@ -278,10 +283,12 @@ public class AcademyAiChatController {
             && !"academyName".equals(key)
             && !"targetGroups".equals(key)
             && !"ctaEnabled".equals(key)) {
-          throw new IllegalArgumentException("허용되지 않은 필드: " + key);
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST, "허용되지 않은 필드: " + key);
         }
         if (entry.getValue() != null && containsDangerousContent(entry.getValue())) {
-          throw new IllegalArgumentException("위험한 콘텐츠가 포함된 필드: " + key);
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST, "위험한 콘텐츠가 포함된 필드: " + key);
         }
       }
       finalDraft.putAll(builderDraft);
