@@ -128,18 +128,16 @@ class VisualEditorMySqlIntegrationTest {
         "ve-key-" + suffix);
     // 공개 homepage API 테스트를 위해 학원을 PUBLISHED로 변경
     // (공개 API는 기존 규칙대로 PUBLISHED 학원만 serving)
-    // 별도 트랜잭션으로 커밋해야 MockMvc 호출에서 보인다
-    new org.springframework.transaction.support.TransactionTemplate(
-            transactionManager,
-            new org.springframework.transaction.support.DefaultTransactionDefinition(
-                org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW))
-        .execute(status -> {
-          jdbcTemplate.update(
-              "UPDATE academies SET status = 'PUBLISHED', is_visible = true "
-                  + "WHERE tutor_user_id = ?",
-              tutor.getUserId());
-          return null;
-        });
+    // 테스트 트랜잭션 내에서 수행 (MockMvc도 같은 트랜잭션에 참여하므로 보임)
+    int updated = jdbcTemplate.update(
+        "UPDATE academies SET status = 'PUBLISHED', is_visible = true "
+            + "WHERE tutor_user_id = ?",
+        tutor.getUserId());
+    // UPDATE가 실제로 1건을 변경했는지 검증 (0건이면 WHERE 조건 오류)
+    if (updated != 1) {
+      throw new IllegalStateException(
+          "setUp: academies UPDATE affected " + updated + " rows, expected 1");
+    }
   }
 
   /**
