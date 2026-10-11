@@ -175,6 +175,8 @@ class AcademyAiMySqlIntegrationTest {
   @Test
   @DisplayName("403: 타인의 버전에 접근하면 AccessDeniedException")
   void getForRestore_otherAcademy_throws403() {
+    // 내 Academy도 생성 (getForRestore가 내 Academy를 먼저 조회)
+    academyService.createDraft(principal, draftRequest("내학원", "소개"), "key-mine");
     // 다른 강사의 버전 생성
     User other = userRepository.save(new User(
         "ai_test_other_" + UUID.randomUUID().toString().substring(0, 8),
