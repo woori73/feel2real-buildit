@@ -5,18 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.VersionInfo;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyPageVersionRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -28,6 +26,21 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>적용과 복원 모두 권한 검사 및 변경 이력을 남긴다.
  *   <li>최근 20개 버전만 유지한다.
  * </ul>
+ *
+ * <p>D3 동시성 제어:
+ * 임계 구간의 모든 읽기를 잠금 읽기(SELECT ... FOR UPDATE)로 통일한다.
+ * REPEATABLE READ에서 일반 SELECT는 트랜잭션 시작 시점의 스냅샷을 사용하므로,
+ * 잠금 획득 전에 일반 SELECT를 하면 동시 요청이 같은 version_no를 계산한다.
+ * 잠금 읽기는 항상 최신 커밋 데이터를 보므로 이 문제를 해결한다.
+ *
+ * <p>처리 순서:
+ * 1. findForUpdateByTutorUserId() — Academy 행 잠금 + 최신 데이터 조회
+ * 2. findTopForUpdateByAcademyId() — 최신 version_no 조회 (잠금 읽기)
+ * 3. 저장 → 오래된 버전 정리 → 커밋
+ *
+ * <p>잠금은 Academy 행 단위이므로 다른 학원의 스냅샷 작업은 차단되지 않는다.
+ * REQUIRES_NEW 재시도 방식은 사용하지 않는다.
+ * 격리 수준 전역 변경 없이 REPEATABLE READ를 유지한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,13 +49,9 @@ public class AcademyPageVersionService {
   private static final int MAX_VERSIONS = 20;
 
   private final AcademyPageVersionRepository versionRepository;
+  private final AcademyRepository academyRepository;
   private final AcademyService academyService;
   private final ObjectMapper objectMapper = new ObjectMapper();
-
-  /** version_no 충돌 재시도용 자기 참조 (B4). */
-  @Lazy
-  @Autowired
-  private AcademyPageVersionService self;
 
   /**
    * 현재 상태를 스냅샷으로 저장한다.
@@ -52,21 +61,6 @@ public class AcademyPageVersionService {
    * @param pageSettings 현재 페이지 설정
    * @param note 버전 설명
    * @return 생성된 버전 ID
-   */
-  /**
-   * 현재 상태를 스냅샷으로 저장한다 (B4).
-   *
-   * <p>동시에 두 스냅샷이 같은 version_no를 잡으면 UNIQUE 제약에 걸린다.
-   * 이 경우 최대 1회 재시도한다. 재시도를 위해 내부 트랜잭션은 REQUIRES_NEW로
-   * 분리하므로, 실패한 시도가 바깥 트랜잭션을 오염시키지 않는다.
-   */
-  /**
-   * 버전 스냅샷을 저장한다.
-   *
-   * <p>호출자의 트랜잭션에 참여한다 (REQUIRED). version_no 동시성 충돌 시
-   * 새 트랜잭션에서 1회 재시도한다.
-   *
-   * <p>F2: intro를 함께 저장한다 (AI가 변경한 top-level intro 복원용).
    */
   @Transactional
   public Long snapshot(
@@ -79,6 +73,15 @@ public class AcademyPageVersionService {
 
   /**
    * 버전 스냅샷을 저장한다 (intro 포함).
+   *
+   * <p>D3: 임계 구간의 모든 읽기를 잠금 읽기로 통일한다.
+   * 1. Academy 행 잠금 (findForUpdateByTutorUserId) — 학원별 직렬화
+   * 2. 최신 version_no 조회 (findTopForUpdateByAcademyId) — 잠금 읽기
+   * 3. 저장 → 정리 → 커밋을 단일 트랜잭션에서 처리
+   *
+   * <p>호출자의 트랜잭션에 참여한다 (REQUIRED).
+   *
+   * <p>F2: intro를 함께 저장한다 (AI가 변경한 top-level intro 복원용).
    */
   @Transactional
   public Long snapshot(
@@ -87,56 +90,23 @@ public class AcademyPageVersionService {
       Map<String, Object> pageSettings,
       String intro,
       String note) {
-    try {
-      return doSnapshotInternal(principal, builderDraft, pageSettings, intro, note);
-    } catch (DataIntegrityViolationException e) {
-      // version_no UNIQUE 충돌 → 현재 TX는 rollback-only이므로 새 TX에서 재시도
-      return self.snapshotRetry(principal, builderDraft, pageSettings, intro, note);
-    }
-  }
+    // D3: 잠금 읽기로 Academy 조회 — 일반 SELECT를 먼저 하면 REPEATABLE READ
+    // 스냅샷이 확정되어 동시 요청이 같은 version_no를 계산한다.
+    // findForUpdateByTutorUserId는 잠금 읽기이므로 최신 데이터를 보고,
+    // 동시에 Academy 행 잠금을 획득해 학원별 작업을 직렬화한다.
+    Academy academy = academyRepository
+        .findForUpdateByTutorUserId(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy가 없습니다."));
+    Long academyId = academy.getAcademyId();
 
-  /**
-   * 스냅샷 재시도용 (REQUIRES_NEW).
-   *
-   * <p>동시성 충돌로 기존 트랜잭션이 broken된 경우에만 호출된다.
-   * 독립 트랜잭션에서 version_no를 다시 계산하여 저장한다.
-   */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Long snapshotRetry(
-      JwtTokenProvider.AuthenticatedPrincipal principal,
-      Map<String, String> builderDraft,
-      Map<String, Object> pageSettings,
-      String note) {
-    return doSnapshotInternal(principal, builderDraft, pageSettings, null, note);
-  }
-
-  /**
-   * 스냅샷 재시도용 (REQUIRES_NEW, intro 포함).
-   */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Long snapshotRetry(
-      JwtTokenProvider.AuthenticatedPrincipal principal,
-      Map<String, String> builderDraft,
-      Map<String, Object> pageSettings,
-      String intro,
-      String note) {
-    return doSnapshotInternal(principal, builderDraft, pageSettings, intro, note);
-  }
-
-  private Long doSnapshotInternal(
-      JwtTokenProvider.AuthenticatedPrincipal principal,
-      Map<String, String> builderDraft,
-      Map<String, Object> pageSettings,
-      String intro,
-      String note) {
-    AcademyResponse academy = getMyAcademy(principal);
+    // D3: version_no 조회도 잠금 읽기로 — 최신 커밋 데이터를 보장한다.
     Integer nextNo = versionRepository
-        .findTopByAcademyIdOrderByVersionNoDesc(academy.academyId())
+        .findTopForUpdateByAcademyId(academyId)
         .map(v -> v.getVersionNo() + 1)
         .orElse(1);
 
     AcademyPageVersion version = new AcademyPageVersion(
-        academy.academyId(),
+        academyId,
         nextNo,
         toJson(builderDraft),
         toJson(pageSettings),
@@ -146,7 +116,8 @@ public class AcademyPageVersionService {
     versionRepository.save(version);
 
     // F3: 20개 초과 시 오래된 버전 삭제 (최초 버전 v1은 보존)
-    cleanupOldVersions(academy.academyId());
+    // 같은 트랜잭션·같은 잠금 안에서 처리하므로 상한이 정확히 유지된다.
+    cleanupOldVersions(academyId);
 
     return version.getId();
   }
