@@ -255,13 +255,19 @@ public class VisualEditorService {
     }
 
     // 1. published 교체 (기존 게시본이 있으면 삭제 후 생성)
-    publishedRepository.findByAcademyId(academyId)
-        .ifPresent(publishedRepository::delete);
-    publishedRepository.flush();
-    VisualEditorPublished published = new VisualEditorPublished(
-        academyId, draft.getHtml(), draft.getCss(),
-        String.valueOf(principal.userId()));
-    publishedRepository.save(published);
+    // 동시 게시 시 UNIQUE 제약 충돌은 409로 변환 (데이터 정합성 유지)
+    try {
+      publishedRepository.findByAcademyId(academyId)
+          .ifPresent(publishedRepository::delete);
+      publishedRepository.flush();
+      VisualEditorPublished published = new VisualEditorPublished(
+          academyId, draft.getHtml(), draft.getCss(),
+          String.valueOf(principal.userId()));
+      publishedRepository.saveAndFlush(published);
+    } catch (DataIntegrityViolationException e) {
+      throw new DraftConflictException(
+          "다른 세션에서 게시가 진행 중입니다. 새로고침 후 다시 시도하세요.");
+    }
 
     // 2. renderMode를 custom으로 변경 (같은 트랜잭션)
     academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
