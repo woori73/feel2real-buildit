@@ -106,7 +106,7 @@ public class AcademyAiChatController {
    * /create에서 생성되어 /create/apply로 전달되며, P0 필드로 변환 후
    * builderDraft에는 저장하지 않는다.
    */
-  private static final Set<String> TRANSPORT_KEYS = Set.of(
+  static final Set<String> TRANSPORT_KEYS = Set.of(
       "academyName", "targetGroups", "ctaEnabled", "subjectIds", "regionLocation");
 
   private final AcademyAiChatService chatService;
@@ -545,7 +545,7 @@ public class AcademyAiChatController {
    * 한글 대상 문자열을 TargetGroup enum 집합으로 변환한다 (A1).
    * 예: "중학생" → {MIDDLE}, "초등,중등" → {ELEMENTARY, MIDDLE}
    */
-  private java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup>
+  static java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup>
       parseTargetGroupsKo(String ko) {
     java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup>
         result = java.util.EnumSet.noneOf(
@@ -573,7 +573,7 @@ public class AcademyAiChatController {
   }
 
   /** transport 키 subjectIds("1,2")를 파싱한다 (A1). */
-  private java.util.Set<Integer> parseSubjectIds(String raw) {
+  static java.util.Set<Integer> parseSubjectIds(String raw) {
     java.util.Set<Integer> result = new java.util.HashSet<>();
     if (raw == null || raw.isBlank()) {
       return result;
@@ -588,7 +588,7 @@ public class AcademyAiChatController {
     return result;
   }
 
-  private boolean isBlank(String s) {
+  static boolean isBlank(String s) {
     return s == null || s.isBlank();
   }
 
