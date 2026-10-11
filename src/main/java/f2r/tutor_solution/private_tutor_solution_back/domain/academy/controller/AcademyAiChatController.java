@@ -235,35 +235,43 @@ public class AcademyAiChatController {
 
   /**
    * 승인된 초안으로 새 홈페이지를 생성한다.
-   * 기존 POST /api/tutor/academy 생성 경로를 경유한다.
-   * 이미 Academy가 있는 경우 거부한다 (덮어쓰기 방지).
+   * AcademyService.createDraft()를 경유한다 (DRAFT 상태).
+   * 공개는 기존 P0 발행 절차로 별도 처리한다.
+   *
+   * <p>멱등성: idempotencyKey로 중복 적용을 방지한다.
    */
   @PostMapping("/create/apply")
   public ResponseEntity<Map<String, Object>> createApply(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody Map<String, Object> request) {
-    // 기존 Academy 존재 시 거부
+    // 기존 Academy 존재 시 거부 (덮어쓰기 방지)
     if (academyService.getMine(principal).isPresent()) {
       throw new IllegalStateException(
           "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
               + "채팅 수정 기능을 사용하세요.");
     }
 
+    String idempotencyKey = (String) request.get("idempotencyKey");
+    if (idempotencyKey == null || idempotencyKey.isBlank()) {
+      throw new IllegalArgumentException("idempotencyKey가 필요합니다.");
+    }
+
     @SuppressWarnings("unchecked")
     Map<String, String> builderDraft = (Map<String, String>) request.get("builderDraft");
     String academyName = (String) request.getOrDefault("academyName", "새 학원");
     String designPreset = (String) request.getOrDefault("designPreset", "EXAM");
+    String intro = (String) request.getOrDefault("intro", "");
 
     // designPreset 검증
     if (!Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(designPreset)) {
       throw new IllegalArgumentException("지원하지 않는 프리셋입니다: " + designPreset);
     }
 
-    // builderDraft에 designPreset 주입
+    // builderDraft allowlist 검증 + HTML 주입 방지
     Map<String, String> finalDraft = new java.util.HashMap<>();
     if (builderDraft != null) {
-      // allowlist 검증
-      for (String key : builderDraft.keySet()) {
+      for (Map.Entry<String, String> entry : builderDraft.entrySet()) {
+        String key = entry.getKey();
         if (!ALLOWED_FIELDS.contains(key)
             && !ALLOWED_TOP_LEVEL_FIELDS.contains(key)
             && !"designPreset".equals(key)
@@ -272,18 +280,40 @@ public class AcademyAiChatController {
             && !"ctaEnabled".equals(key)) {
           throw new IllegalArgumentException("허용되지 않은 필드: " + key);
         }
+        if (entry.getValue() != null && containsDangerousContent(entry.getValue())) {
+          throw new IllegalArgumentException("위험한 콘텐츠가 포함된 필드: " + key);
+        }
       }
       finalDraft.putAll(builderDraft);
     }
     finalDraft.put("designPreset", designPreset);
 
-    // TODO: 실제 Academy 생성은 기존 POST /api/tutor/academy 경로를 경유
-    // 2일차 통합 시 AcademyService.create()와 연결
+    // AcademyPageSettings 생성
+    f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings
+        pageSettings =
+        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity
+            .AcademyPageSettings(
+            null, null, null, null, null, null, finalDraft, null);
+
+    // AcademyUpsertRequest 생성
+    f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyUpsertRequest
+        upsertRequest =
+        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
+            .AcademyUpsertRequest(
+            academyName, null, intro, Set.of(), Set.of(), List.of(), pageSettings);
+
+    // 실제 생성 (DRAFT 상태, @Transactional로 부분 저장 방지)
+    AcademyResponse created =
+        academyService.createDraft(principal, upsertRequest, idempotencyKey);
+
+    // 버전 스냅샷 저장
+    versionService.snapshot(principal, finalDraft, Map.of(), "AI 생성 홈페이지 최초 생성");
 
     return ResponseEntity.ok(Map.of(
-        "message", "초안이 승인되었습니다. Academy 생성 API와 연결이 필요합니다.",
+        "academyId", created.id(),
         "designPreset", designPreset,
-        "fieldCount", finalDraft.size()));
+        "status", "DRAFT",
+        "message", "홈페이지가 생성되었습니다. Builder에서 확인 후 발행하세요."));
   }
 
   /**

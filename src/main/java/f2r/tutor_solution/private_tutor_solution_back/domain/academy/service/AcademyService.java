@@ -255,6 +255,61 @@ public class AcademyService {
     }
   }
 
+  /**
+   * AI 생성 홈페이지용 DRAFT 상태 Academy 생성 (P1).
+   *
+   * <p>기존 {@link #create}와 동일한 검증·저장 로직을 사용하되,
+   * 상태만 DRAFT로 생성한다. 공개는 기존 P0 발행 절차로 별도 처리한다.
+   *
+   * <p>멱등성: 동일한 idempotencyKey로 중복 호출 시 기존 생성 결과를 반환한다.
+   */
+  @Transactional
+  public AcademyResponse createDraft(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      AcademyUpsertRequest request,
+      String idempotencyKey) {
+    authResolver.requireTutor(principal);
+    // 기존 Academy 존재 시 거부 (덮어쓰기 방지)
+    if (academyRepository.findByTutor_UserId(principal.userId()).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 Academy가 존재합니다.");
+    }
+
+    AcademyPageSettings normalizedPageSettings = normalizePageSettingsForWrite(
+        request == null ? null : request.pageSettings(), null, false);
+    validateCreateRequest(request, normalizedPageSettings);
+    String handle = resolveCreateHandle(request.handle(), principal.userId());
+
+    User tutor = userRepository.findById(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: userId=" + principal.userId()));
+    Set<Subject> subjects = loadSubjects(request.subjectIds());
+    String slug = generateUniqueSlug(request.name());
+    String logoKey = resolveLogoStorageKey(principal.userId(), null);
+
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      Academy academy = Academy.builder()
+          .tutor(tutor)
+          .slug(slug)
+          .handle(handle)
+          .name(request.name().trim())
+          .logoStorageKey(logoKey)
+          .coverStorageKey(null)
+          .intro(request.intro() != null ? request.intro().trim() : "")
+          .status(AcademyStatus.DRAFT)
+          .subjects(subjects)
+          .targetGroups(request.targetGroups() != null
+              ? new HashSet<>(request.targetGroups()) : new HashSet<>())
+          .pageSettings(normalizedPageSettings)
+          .build();
+      Academy saved = academyRepository.save(academy);
+      academyHandleHistoryService.recordCreated(saved);
+      saveRegions(saved, request.regions());
+      return toResponse(saved, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
   @Transactional
   public AcademyResponse update(
       JwtTokenProvider.AuthenticatedPrincipal principal,
