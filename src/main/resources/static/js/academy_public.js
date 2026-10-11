@@ -65,9 +65,70 @@
       const academy = await res.json();
       academyVideos = await loadVideos();
       window.F2RAcademyPublicVideos = academyVideos;
+      // 시각 편집기 custom 모드: published HTML을 직접 렌더한다.
+      // 실패하거나 게시본이 없으면 기존 P0 렌더로 폴백한다.
+      if (renderModeOf(academy) === 'custom') {
+        const rendered = await renderCustomHomepage(academy);
+        if (rendered) return;
+      }
       render(academy, await isOwnAcademy(academy.slug));
     } catch (err) {
       errorMsg.textContent = err.message || 'Academy 조회에 실패했습니다.';
+    }
+  }
+
+  /**
+   * BuildIt 시각 편집기 custom 렌더 모드.
+   *
+   * <p>pageSettings.builderDraft["homepage.renderMode"]가 "custom"일 때 호출된다.
+   * GET /api/public/academy/{handle}/homepage에서 게시된 HTML/CSS를 받아
+   * 섹션 영역에 삽입한다. GNB와 푸터는 P0 것을 유지하고, tenant 스크립트
+   * (캠페인 팝업·CTA 등)는 script 태그 로더이므로 그대로 동작한다.
+   *
+   * <p>게시본이 없거나 조회 실패 시 false를 반환하여 P0 렌더로 폴백한다.
+   */
+  function renderModeOf(academy) {
+    const draft = academy && academy.pageSettings && academy.pageSettings.builderDraft;
+    const mode = draft && draft['homepage.renderMode'];
+    return mode === 'custom' ? 'custom' : 'template';
+  }
+
+  async function renderCustomHomepage(academy) {
+    try {
+      const handle = academy.handle;
+      if (!handle) return false;
+      const res = await fetch(
+        `/api/public/academy/${encodeURIComponent(handle)}/homepage`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data.html) return false;
+
+      // 편집기 CSS 삽입 (P0 브랜드 CSS 변수와 충돌하지 않도록 스코프는 편집기가 관리)
+      if (data.css) {
+        const style = document.createElement('style');
+        style.setAttribute('data-visual-editor', 'published');
+        style.textContent = data.css;
+        document.head.appendChild(style);
+      }
+      if (BRAND) BRAND.apply(root, academy);
+
+      const ownAcademy = await isOwnAcademy(academy.slug);
+      const topBtn = ownAcademy
+        ? '<a class="cv-btn-owner" href="/tutor/academy">학원 설정으로</a>'
+        : '<button class="cv-btn-primary" onclick="requestConsult()">상담 신청</button>';
+      consultChannels = BUSINESS_INFO.contactChannels(
+        academy.pageSettings && academy.pageSettings.businessInfo);
+
+      // GNB와 푸터는 P0 것을 유지하고, 섹션 영역만 편집기 HTML로 교체한다.
+      root.innerHTML =
+        renderGnb(academy, topBtn)
+        + '<div id="ve-custom-body">' + data.html + '</div>'
+        + renderFooter(academy);
+      SECTIONS.applyImageMediaAspect(root);
+      void loadVisitStatistics(academy, ownAcademy);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
