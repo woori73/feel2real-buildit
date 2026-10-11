@@ -99,6 +99,7 @@
     el.versionsView = document.getElementById('builderAiChatVersionsView');
     el.list = document.getElementById('builderAiChatList');
     el.empty = document.getElementById('builderAiChatEmpty');
+    el.emptyCreate = document.getElementById('builderAiChatEmptyCreate');
     el.form = document.getElementById('builderAiChatForm');
     el.input = document.getElementById('builderAiChatInput');
     el.send = document.getElementById('builderAiChatSend');
@@ -160,6 +161,8 @@
   }
 
   function setMode(mode) {
+    // 요청 진행 중에는 모드를 바꾸지 않는다 — in-flight 응답이 다른 모드에 붙는 race 방지.
+    if (state.busy) return;
     state.mode = mode === 'create' ? 'create' : 'modify';
     var create = state.mode === 'create';
     if (el.modeModify) el.modeModify.classList.toggle('is-active', !create);
@@ -171,6 +174,21 @@
         : '예: 원장 소개를 더 따뜻하게 다듬어줘';
       el.input.focus();
     }
+    updateEmptyHint();
+  }
+
+  /** 빈 목록 안내를 모드에 맞게 교차 노출한다(메시지가 있으면 둘 다 숨긴다). */
+  function updateEmptyHint() {
+    var hasMsg = !!(el.list && el.list.querySelector('.aichat-msg'));
+    var create = state.mode === 'create';
+    if (el.empty) el.empty.hidden = hasMsg || create;
+    if (el.emptyCreate) el.emptyCreate.hidden = hasMsg || !create;
+  }
+
+  /** 메시지·카드가 붙으면 빈 안내를 모두 숨긴다. */
+  function hideEmptyHints() {
+    if (el.empty) el.empty.hidden = true;
+    if (el.emptyCreate) el.emptyCreate.hidden = true;
   }
 
   function readCreateSession() {
@@ -293,7 +311,7 @@
   /** 승인 카드. 복원(restored) 여부와 무관하게 동일하게 그린다. */
   function renderCreateCard(session, restored) {
     if (!el.list) return;
-    if (el.empty) el.empty.hidden = true;
+    hideEmptyHints();
 
     var draft = session.draft || {};
     var builderDraft = draft.builderDraft || {};
@@ -341,6 +359,11 @@
       });
       item.appendChild(warnings);
     }
+
+    var hint = document.createElement('p');
+    hint.className = 'aichat-create-hint';
+    hint.textContent = '미리보기에서 초안을 확인한 후 승인해 주세요. 색상·섹션 구성은 저장 후 Builder에서 다듬을 수 있습니다.';
+    item.appendChild(hint);
 
     var error = document.createElement('p');
     error.className = 'aichat-create-error';
@@ -393,6 +416,7 @@
     if (!session || state.busy) return;
     var draft = session.draft || {};
     var builderDraft = draft.builderDraft || {};
+    var approveLabel = button ? button.textContent : '';
 
     if (!session.idempotencyKey) {
       session.idempotencyKey = newUuid();
@@ -400,7 +424,7 @@
     }
 
     state.busy = true;
-    if (button) button.disabled = true;
+    if (button) { button.disabled = true; button.textContent = '생성 중…'; }
     setStatus('홈페이지를 저장하고 있습니다…');
 
     postJson(API.createApply, {
@@ -424,14 +448,14 @@
           // 중복 적용 — 지시 2항: 추가 생성 요청 중단. 키를 새로 만들지 않는다.
           session.halted = true;
           writeCreateSession(session);
-          if (button) button.disabled = true;
+          if (button) { button.disabled = true; button.textContent = '중복 요청 — 중단됨'; }
           if (errorEl) {
             errorEl.hidden = false;
             errorEl.textContent = '이미 처리된 요청입니다. 추가 생성 요청은 중단되었습니다.';
           }
           return;
         }
-        if (button) button.disabled = false;
+        if (button) { button.disabled = false; button.textContent = approveLabel; }
         if (errorEl) {
           errorEl.hidden = false;
           errorEl.textContent = (error && error.message) || '생성하지 못했습니다. 잠시 후 다시 시도해 주세요.';
@@ -503,8 +527,10 @@
     state.pending = null;
     state.restored = false;
     if (el.list) el.list.innerHTML = '';
-    if (el.empty) el.empty.hidden = false;
     setStatus('');
+    // 진행 중인 생성 초안 카드는 "새 대화"로도 사라지면 안 되므로 다시 그린다.
+    restoreCreateSession();
+    updateEmptyHint();
     if (el.input) el.input.focus();
   }
 
@@ -554,7 +580,7 @@
 
   function appendMessage(kind, text, proposal) {
     if (!el.list) return;
-    if (el.empty) el.empty.hidden = true;
+    hideEmptyHints();
 
     var item = document.createElement('div');
     item.className = 'aichat-msg aichat-msg-' + kind;
@@ -572,7 +598,7 @@
 
   function appendError(error) {
     if (!el.list) return;
-    if (el.empty) el.empty.hidden = true;
+    hideEmptyHints();
     var item = document.createElement('div');
     item.className = 'aichat-msg aichat-msg-error';
     var body = document.createElement('div');
@@ -778,7 +804,7 @@
     if (el.versionEmpty) el.versionEmpty.hidden = true;
 
     fetch(API.versions, { credentials: 'same-origin' })
-      .then(function (res) { return toData(res); })
+      .then(function (res) { return toData(res); }, networkError)
       .then(function (data) {
         setVersionStatus('');
         var versions = Array.isArray(data) ? data : [];
@@ -865,13 +891,21 @@
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
       body: JSON.stringify(body || {})
-    }).then(function (res) { return toData(res); });
+    }).then(function (res) { return toData(res); }, networkError);
+  }
+
+  /** fetch 자체가 실패(오프라인·DNS·CORS 등) — 기술 문구 대신 안내 문구로 바꾼다. */
+  function networkError() {
+    var error = new Error('네트워크 연결을 확인해 주세요. 잠시 후 다시 시도해 주세요.');
+    error.status = 0;
+    throw error;
   }
 
   /**
    * 계약 §오류 코드: 400(Academy 없음 / 세션 없음 / 허용 외 필드 / 위험 콘텐츠), 403(타 학원 세션).
    * 서버는 오류 본문을 두 형태로 내려준다 — JSON({message|error}) 또는 plain string
    * (GlobalExceptionHandler 의 ResponseEntity<String>). 둘 다 실제 안내 문구로 보여준다.
+   * 단, 5xx 의 Spring 기본 본문 error 필드("Internal Server Error")는 기술 문구라 쓰지 않는다.
    */
   function toData(res) {
     return res.text().then(function (raw) {
@@ -881,7 +915,9 @@
 
       var message = null;
       if (data && typeof data === 'object') {
-        message = data.message || data.errorMessage || data.error || null;
+        message = data.message || data.errorMessage || null;
+        // error 필드는 4xx(예: 409 {error})에서만 보조로 쓴다 — 5xx 는 상태 문구라 무시.
+        if (!message && res.status < 500) message = data.error || null;
       }
       // plain-string 오류 본문(400/403) — HTML 오류 페이지나 과도하게 긴 본문은 안내로 쓰지 않는다.
       if (!message && raw && !data && raw.charAt(0) !== '<' && raw.length <= 300) {
@@ -890,6 +926,7 @@
       if (!message) {
         if (res.status === 403) message = '이 학원의 정보를 수정할 권한이 없습니다.';
         else if (res.status === 401) message = '로그인이 필요합니다. 새로고침 후 다시 시도해 주세요.';
+        else if (res.status >= 500) message = '서버에 잠시 문제가 있습니다. 조금 후 다시 시도해 주세요.';
         else message = '요청을 처리하지 못했습니다. (HTTP ' + res.status + ')';
       }
       // 상태코드를 error 에 실어 보낸다 — approveCreate 가 409(중복 적용)를 구별해 중단한다.
