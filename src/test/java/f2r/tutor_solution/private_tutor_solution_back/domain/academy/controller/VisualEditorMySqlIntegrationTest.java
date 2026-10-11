@@ -159,7 +159,9 @@ class VisualEditorMySqlIntegrationTest {
         .andExpect(jsonPath("$.revision").value((int) revision))
         .andReturn();
     JsonNode json = objectMapper.readTree(loaded.getResponse().getContentAsString());
-    assertThat(json.get("html").asText()).isEqualTo(html);
+    // Jsoup 정제가 블록 요소에 개행을 넣어 pretty-print하므로 공백 정규화 후 비교
+    assertThat(json.get("html").asText().replaceAll("\\s+", ""))
+        .isEqualTo(html.replaceAll("\\s+", ""));
     assertThat(json.get("css").asText()).isEqualTo(css);
   }
 
