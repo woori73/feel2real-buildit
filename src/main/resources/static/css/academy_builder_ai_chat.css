@@ -292,9 +292,10 @@ body.aichat-open .canvas-area { padding-right: calc(var(--aichat-width) + 24px);
   }
   .aichat-panel.is-open { transform: translateY(0); }
   .aichat-head { padding-block: 10px; }
-  /* 터치 조작성: 탭 타깃을 ≥40px 로 키운다(모드·이름·승인/적용·복원 버튼). */
+  /* 터치 조작성: 탭 타깃을 ≥40px 로 키운다(모드·이름·승인/적용·복원·전송 버튼). */
   .aichat-mode-btn { padding: 11px 8px; font-size: .7rem; }
   .aichat-name-input { padding: 12px 11px; }
   .aichat-btn { padding: 12px 10px; font-size: .72rem; }
   .aichat-version .aichat-btn { padding: 11px 12px; }
+  .aichat-send { width: 44px; height: 44px; }
 }
