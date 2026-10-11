@@ -23,6 +23,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAiSessionRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiCreateService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyPageVersionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
 import java.time.LocalDateTime;
@@ -116,7 +117,7 @@ public class AcademyAiChatController {
     AcademyAiContext context = contextService.buildContext(principal);
 
     // 세션 조회 또는 생성
-    AcademyAiSession session = getOrCreateSession(principal, academy.id(), request.sessionId());
+    AcademyAiSession session = getOrCreateSession(principal, academy.academyId(), request.sessionId());
 
     // OpenCode의 AI 서비스로 수정안 생성 (DB 수정 없음)
     ChatProposal proposal = chatService.proposeChanges(context, request.message());
@@ -130,7 +131,7 @@ public class AcademyAiChatController {
     }
 
     // 작업 로그 기록 (감사)
-    logAction(session.getId(), academy.id(), "CHAT", proposal, 0, false);
+    logAction(session.getId(), academy.academyId(), "CHAT", proposal, 0, false);
     session.incrementMessage(0);
     sessionRepository.save(session);
 
@@ -158,7 +159,7 @@ public class AcademyAiChatController {
     AcademyAiSession session = sessionRepository
         .findById(Long.parseLong(request.sessionId()))
         .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
-    if (!session.getAcademyId().equals(academy.id())) {
+    if (!session.getAcademyId().equals(academy.academyId())) {
       throw new SecurityException("다른 학원의 세션에 접근할 수 없습니다.");
     }
 
@@ -185,11 +186,11 @@ public class AcademyAiChatController {
         principal,
         new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
             .AcademyPageSettingsUpdateRequest(
-            null, null, null, null, null, null, updatedDraft, null));
+            null, null, null, null, null, null, null, updatedDraft));
 
     // 작업 로그 기록 (승인됨)
     AcademyAiAction action = logAction(
-        session.getId(), academy.id(), "APPLY", proposal, 0, true);
+        session.getId(), academy.academyId(), "APPLY", proposal, 0, true);
     action.markApproved();
     actionRepository.save(action);
 
@@ -228,7 +229,7 @@ public class AcademyAiChatController {
 
     // 세션 생성 (추적용) - Academy가 없어도 세션은 생성 가능하도록 academyId 0 사용
     // 실제로는 Academy 생성 후 세션을 연결
-    AcademyAiSession session = new AcademyAiSession(0L, principal.userId());
+    AcademyAiSession session = new AcademyAiSession(0L, String.valueOf(principal.userId()));
     session = sessionRepository.save(session);
 
     return ResponseEntity.ok(new CreateResponse(
@@ -317,7 +318,7 @@ public class AcademyAiChatController {
     versionService.snapshot(principal, finalDraft, Map.of(), "AI 생성 홈페이지 최초 생성");
 
     return ResponseEntity.ok(Map.of(
-        "academyId", created.id(),
+        "academyId", created.academyId(),
         "designPreset", designPreset,
         "status", "DRAFT",
         "message", "홈페이지가 생성되었습니다. Builder에서 확인 후 발행하세요."));
@@ -348,14 +349,14 @@ public class AcademyAiChatController {
         principal,
         new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
             .AcademyPageSettingsUpdateRequest(
-            null, null, null, null, null, null, restoreDraft, null));
+            null, null, null, null, null, null, null, restoreDraft));
 
     // 작업 로그 기록
-    AcademyAiSession session = createSession(principal, academy.id());
+    AcademyAiSession session = createSession(principal, academy.academyId());
     ChatProposal restoreProposal = new ChatProposal(
         List.of(), "버전 " + version.getVersionNo() + "로 복원", session.getId().toString());
     AcademyAiAction action = logAction(
-        session.getId(), academy.id(), "RESTORE", restoreProposal, 0, true);
+        session.getId(), academy.academyId(), "RESTORE", restoreProposal, 0, true);
     action.markApproved();
     actionRepository.save(action);
 
@@ -403,7 +404,7 @@ public class AcademyAiChatController {
 
   private AcademyAiSession createSession(
       JwtTokenProvider.AuthenticatedPrincipal principal, Long academyId) {
-    AcademyAiSession session = new AcademyAiSession(academyId, principal.userId());
+    AcademyAiSession session = new AcademyAiSession(academyId, String.valueOf(principal.userId()));
     return sessionRepository.save(session);
   }
 

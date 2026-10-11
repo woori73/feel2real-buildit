@@ -51,21 +51,21 @@ public class AcademyPageVersionService {
       String note) {
     AcademyResponse academy = getMyAcademy(principal);
     Integer nextNo = versionRepository
-        .findTopByAcademyIdOrderByVersionNoDesc(academy.id())
+        .findTopByAcademyIdOrderByVersionNoDesc(academy.academyId())
         .map(v -> v.getVersionNo() + 1)
         .orElse(1);
 
     AcademyPageVersion version = new AcademyPageVersion(
-        academy.id(),
+        academy.academyId(),
         nextNo,
         toJson(builderDraft),
         toJson(pageSettings),
-        principal.userId(),
+        String.valueOf(principal.userId()),
         note);
     versionRepository.save(version);
 
     // 20개 초과 시 오래된 버전 삭제
-    cleanupOldVersions(academy.id());
+    cleanupOldVersions(academy.academyId());
 
     return version.getId();
   }
@@ -74,7 +74,7 @@ public class AcademyPageVersionService {
   @Transactional(readOnly = true)
   public List<VersionInfo> list(JwtTokenProvider.AuthenticatedPrincipal principal) {
     AcademyResponse academy = getMyAcademy(principal);
-    return versionRepository.findByAcademyIdOrderByVersionNoDesc(academy.id()).stream()
+    return versionRepository.findByAcademyIdOrderByVersionNoDesc(academy.academyId()).stream()
         .map(v -> new VersionInfo(
             v.getId(),
             v.getVersionNo(),
@@ -98,7 +98,7 @@ public class AcademyPageVersionService {
     AcademyPageVersion version = versionRepository
         .findById(versionId)
         .orElseThrow(() -> new IllegalArgumentException("버전을 찾을 수 없습니다: " + versionId));
-    if (!version.getAcademyId().equals(academy.id())) {
+    if (!version.getAcademyId().equals(academy.academyId())) {
       throw new SecurityException("다른 학원의 버전에 접근할 수 없습니다.");
     }
     return version;

@@ -192,7 +192,7 @@ class AcademyAiScenarioTest {
         "학부모님께서 신뢰하실 수 있는 전문적인 소개문입니다.");
 
     ChatProposal proposal =
-        chatService.proposeChanges(context, "학부모가 신뢰할 수 있는 표현으로 바꿔 줘");
+        chatService.proposeChanges(context, "소개글을 학부모가 신뢰할 수 있는 표현으로 바꿔 줘");
 
     assertThat(proposal.changes()).isNotEmpty();
   }

@@ -133,14 +133,14 @@ public class AcademyRequirementAnalyzer {
   }
 
   private String extractLocation(String message) {
-    Matcher m = LOCATION_PATTERN.matcher(message);
-    if (m.find()) {
-      return m.group(1);
-    }
-    // "압구정에 있는" 같은 패턴
+    // "압구정에 있는" 형태를 먼저 본다. 접미사 패턴을 먼저 쓰면 "압구정"이 "압구"로 잘린다.
     Matcher m2 = Pattern.compile("([가-힣]{2,})에\\s*(?:있는|위치)").matcher(message);
     if (m2.find()) {
       return m2.group(1);
+    }
+    Matcher m = LOCATION_PATTERN.matcher(message);
+    if (m.find()) {
+      return m.group(1);
     }
     return null;
   }
@@ -157,12 +157,20 @@ public class AcademyRequirementAnalyzer {
 
   private String extractSubject(String message) {
     String lower = message.toLowerCase();
-    for (Map.Entry<String, String> entry : SUBJECT_PRESET_MAP.entrySet()) {
-      if (lower.contains(entry.getKey().toLowerCase())) {
-        return entry.getKey();
+    // Map.ofEntries 순회 순서는 JVM 실행마다 달라 비결정적이다. 메시지에서 가장 먼저 나온 키워드를 고른다.
+    String best = null;
+    int bestIdx = Integer.MAX_VALUE;
+    for (String key : SUBJECT_PRESET_MAP.keySet()) {
+      int idx = lower.indexOf(key.toLowerCase());
+      if (idx < 0) {
+        continue;
+      }
+      if (idx < bestIdx || (idx == bestIdx && best != null && key.length() > best.length())) {
+        best = key;
+        bestIdx = idx;
       }
     }
-    return null;
+    return best;
   }
 
   private String determinePreset(String subject, String message) {
