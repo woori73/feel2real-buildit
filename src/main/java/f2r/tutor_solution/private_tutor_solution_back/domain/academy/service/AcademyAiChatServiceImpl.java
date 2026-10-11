@@ -37,11 +37,11 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       Map.entry("수강료", List.of("monthlyTuition")),
       Map.entry("월 수강료", List.of("monthlyTuition")),
       Map.entry("가격", List.of("monthlyTuition")),
-      Map.entry("소개", List.of("intro", "introHeading", "introMotto")),
-      Map.entry("학원 소개", List.of("intro", "introHeading", "introMotto", "introBodySecondary")),
+      Map.entry("소개", List.of("intro")),
+      Map.entry("학원 소개", List.of("intro", "heroAccent")),
       Map.entry("원장", List.of("principalDesc")),
       Map.entry("원장 소개", List.of("principalDesc", "principalQuote")),
-      Map.entry("약력", List.of("principalCareer")),
+      Map.entry("약력", List.of("principalCareer1", "principalCareer2", "principalCareer3")),
       Map.entry("철학", List.of("philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4")),
       Map.entry("교육 철학", List.of("philosophyItem1", "philosophyItem2")),
       Map.entry("성적", List.of("scoreImprovement")),
@@ -51,17 +51,19 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       Map.entry("전화", List.of("ctaPhone")),
       Map.entry("연락처", List.of("ctaPhone")),
       Map.entry("카카오", List.of("ctaKakaoUrl")),
-      Map.entry("카톡", List.of("ctaKakaoUrl")));
+      Map.entry("카톡", List.of("ctaKakaoUrl")),
+      Map.entry("색상", List.of("brandPrimary", "brandAccent")),
+      Map.entry("브랜드", List.of("brandPrimary", "brandAccent")));
 
   /** AI가 수정할 수 있는 필드 (컨트롤러의 allowlist와 동일). */
   private static final Set<String> ALLOWED_FIELDS = Set.of(
-      "principalDesc", "principalCareer",
+      "intro", "heroAccent",
+      "principalDesc", "principalCareer1", "principalCareer2", "principalCareer3",
       "principalQuote",
       "philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4",
       "monthlyTuition", "scoreImprovement", "operationYears",
       "ctaPhone", "ctaKakaoUrl",
-      "introHeading", "introMotto", "introBodySecondary",
-      "intro");
+      "brandPrimary", "brandAccent");
 
   @Override
   public ChatProposal proposeChanges(AcademyAiContext context, String userMessage) {
@@ -69,104 +71,30 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       return new ChatProposal(List.of(), "요청 내용을 이해하지 못했습니다.", newSessionId());
     }
 
-    // 1. 키워드 기반 필드 매핑 (여러 항목 동시 지원)
+    // 1. 키워드 기반 필드 매핑
     List<String> targetFields = mapKeywordsToFields(userMessage);
     if (targetFields.isEmpty()) {
       return new ChatProposal(
           List.of(),
-          buildUnsupportedGuidance(userMessage),
+          "어떤 항목을 수정할지 파악하지 못했습니다. 예: '수강료를 15만원으로 바꿔줘', '원장 소개를 다듬어줘'",
           newSessionId());
     }
 
-    // 2. 각 필드에 대해 수정안 생성
+    // 2. 각 필드에 대해 AI로 수정안 생성
     List<FieldChange> changes = new ArrayList<>();
-    List<String> skipped = new ArrayList<>();
     for (String field : targetFields) {
       String currentValue = getCurrentValue(context, field);
       String newValue = generateNewValue(field, currentValue, userMessage);
       if (newValue != null && !newValue.equals(currentValue)) {
-        // 값 형식 검증
-        String validationError = validateFieldValue(field, newValue);
-        if (validationError != null) {
-          skipped.add(field + ": " + validationError);
-        } else {
-          changes.add(new FieldChange(field, currentValue, newValue));
-        }
+        changes.add(new FieldChange(field, currentValue, newValue));
       }
     }
 
-    String summary = buildSummary(changes, skipped);
+    String summary = changes.isEmpty()
+        ? "변경할 내용을 생성하지 못했습니다."
+        : changes.size() + "개 항목의 수정을 제안합니다.";
 
     return new ChatProposal(changes, summary, newSessionId());
-  }
-
-  /**
-   * 지원하지 않는 요청에 대한 명확한 안내.
-   */
-  private String buildUnsupportedGuidance(String userMessage) {
-    String lower = userMessage.toLowerCase();
-    if (lower.contains("삭제") || lower.contains("없애")) {
-      return "삭제 기능은 현재 지원하지 않습니다. 수정이 필요한 항목을 알려주세요.";
-    }
-    if (lower.contains("섹션") || lower.contains("추가") && lower.contains("페이지")) {
-      return "새 섹션 추가는 본부 승인이 필요합니다. 기존 항목의 수정을 요청해주세요.";
-    }
-    if (lower.contains("디자인") || lower.contains("템플릿") || lower.contains("프리셋")) {
-      return "디자인 프리셋 변경은 Builder의 브랜드 탭에서 직접 선택해주세요. "
-          + "색상 조정은 '브랜드 색상을 #FF0000으로 바꿔줘'와 같이 요청할 수 있습니다.";
-    }
-    return "어떤 항목을 수정할지 파악하지 못했습니다.\n"
-        + "예시:\n"
-        + "- '수강료를 15만원으로 바꿔줘'\n"
-        + "- '원장 소개를 더 친근하게 다듬어줘'\n"
-        + "- '교육 철학 1번을 바꿔줘'\n"
-        + "- '전화번호를 02-1234-5678로 바꿔줘'";
-  }
-
-  /**
-   * 필드별 값 형식을 검증한다.
-   */
-  private String validateFieldValue(String field, String value) {
-    if (value == null || value.isBlank()) {
-      return "값이 비어 있습니다.";
-    }
-    // 전화번호 필드: 기본 형식 검증
-    if (field.equals("ctaPhone")) {
-      if (!value.matches("^[0-9\\-\\(\\)\\s+]+$")) {
-        return "전화번호 형식이 올바르지 않습니다.";
-      }
-    }
-    // URL 필드: 기본 형식 검증
-    if (field.equals("ctaKakaoUrl")) {
-      if (!value.startsWith("http://") && !value.startsWith("https://")) {
-        return "URL은 http:// 또는 https://로 시작해야 합니다.";
-      }
-    }
-    // 숫자 필드: 숫자 포함 확인
-    if (field.equals("monthlyTuition") || field.equals("scoreImprovement")
-        || field.equals("operationYears")) {
-      if (!value.matches(".*\\d.*")) {
-        return "숫자가 포함되어야 합니다.";
-      }
-    }
-    return null;
-  }
-
-  private String buildSummary(List<FieldChange> changes, List<String> skipped) {
-    if (changes.isEmpty() && skipped.isEmpty()) {
-      return "변경할 내용을 생성하지 못했습니다.";
-    }
-    StringBuilder sb = new StringBuilder();
-    if (!changes.isEmpty()) {
-      sb.append(changes.size()).append("개 항목의 수정을 제안합니다.");
-    }
-    if (!skipped.isEmpty()) {
-      if (sb.length() > 0) {
-        sb.append(" ");
-      }
-      sb.append("다음 항목은 건너뜀: ").append(String.join(", ", skipped));
-    }
-    return sb.toString();
   }
 
   @Override
@@ -214,8 +142,6 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       case "philosophyItem2" -> getPhilosophyItem(context, 1);
       case "philosophyItem3" -> getPhilosophyItem(context, 2);
       case "philosophyItem4" -> getPhilosophyItem(context, 3);
-      // builderDraft 필드는 context에 없으므로 빈 값으로 시작
-      // (실제 값은 프론트엔드가 제공하거나, 2일차에 context 확장)
       default -> "";
     };
   }
