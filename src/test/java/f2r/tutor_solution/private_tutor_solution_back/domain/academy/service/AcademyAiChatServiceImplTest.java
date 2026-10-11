@@ -56,6 +56,18 @@ class AcademyAiChatServiceImplTest {
   }
 
   @Test
+  @DisplayName("given 약력 요청 when 제안 생성 then principalCareer 단일 키로 매핑된다")
+  void proposeChanges_careerRequest_mapsToSingleCareerKey() {
+    ChatProposal proposal = service.proposeChanges(
+        fixtureContext, "원장 약력에 수상 경력을 추가해줘");
+
+    assertThat(proposal.changes().stream().map(FieldChange::key))
+        .contains("principalCareer");
+    assertThat(proposal.changes().stream().map(FieldChange::key))
+        .doesNotContain("principalCareer1", "principalCareer2", "principalCareer3");
+  }
+
+  @Test
   @DisplayName("given 지원하지 않는 요청 when 제안 생성 then 안내 메시지를 반환한다")
   void proposeChanges_unsupportedRequest_returnsGuidance() {
     ChatProposal proposal = service.proposeChanges(fixtureContext, "날씨 알려줘");
@@ -93,16 +105,16 @@ class AcademyAiChatServiceImplTest {
   @Test
   @DisplayName("given 잘못된 색상값 when 검증 then 실패한다")
   void validateProposal_invalidColor_fails() {
+    // 색상 필드는 allowlist에서 제거됨 (P0 프리셋 시스템 경유)
+    // 이제 brandPrimary는 허용되지 않은 필드로 거부됨
     ChatProposal proposal = new ChatProposal(
         List.of(new FieldChange("brandPrimary", "#000000", "not-a-color")),
         "test", "session1");
 
-    // validateProposal은 allowlist와 위험 콘텐츠만 검사
-    // 색상 형식은 proposeChanges 단계에서 검증됨
     ValidationResult result = service.validateProposal(proposal);
 
-    // allowlist에 있으므로 통과 (형식은 proposeChanges에서 검증)
-    assertThat(result.valid()).isTrue();
+    assertThat(result.valid()).isFalse();
+    assertThat(result.errors()).anyMatch(e -> e.contains("brandPrimary"));
   }
 
   @Test
