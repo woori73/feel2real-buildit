@@ -1098,6 +1098,10 @@ class AcademyServiceTest {
     assertThat(saved).containsExactlyInAnyOrderElementsOf(AcademyService.DEFAULT_SECTION_ORDER);
     assertThat(saved.indexOf("sec-cta") + 1).isEqualTo(saved.indexOf("sec-social"));
     assertThat(saved.subList(0, 3)).containsExactly("sec-hero", "sec-featured", "sec-lessons");
+    // 기존 15개 섹션 전체의 상대 순서 보존: sec-cta를 제거하면 입력 순서와 완전히 동일해야 한다.
+    List<String> savedWithoutCta = new ArrayList<>(saved);
+    savedWithoutCta.remove("sec-cta");
+    assertThat(savedWithoutCta).containsExactlyElementsOf(legacyOrder);
     // 신규 섹션은 기본 OFF: visibility에 키가 없어 렌더되지 않는다.
     assertThat(response.pageSettings().sectionVisibility()).doesNotContainKey("sec-cta");
   }
