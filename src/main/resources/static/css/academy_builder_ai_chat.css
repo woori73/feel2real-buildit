@@ -1,0 +1,300 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BuildIt P1 — Academy Builder AI 채팅 패널 (Qoder 담당)
+
+   academy_builder_ai_guide.css 와 동일한 도킹 방식을 쓴다: 기존 3-region 레이아웃
+   (.builder-topbar / .left-panel / .canvas-area)을 건드리지 않도록 position:fixed 로
+   얹고, 열려 있을 때만 캔버스에 오른쪽 여백을 준다. 좁은 화면에서는 bottom sheet.
+   z-index 는 ai-guide-panel(180) 아래·modal(2200) 위가 아니라 겹치지 않게 178/177 로 둔다
+   — 두 패널이 동시에 열려도 guide 가 채팅을 덮지 않는다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --aichat-width: 360px;
+}
+
+/* 스크린리더 전용 라벨 — visible 텍스트는 placeholder 가 대신한다. */
+.aichat-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* 실행 버튼 — 빌디 런처와 같은 우하단 계열이되 왼쪽으로 떨어뜨려 겹치지 않게 한다. */
+.aichat-launcher {
+  position: fixed; right: 112px; bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 177; display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(122, 174, 240, .55);
+  background: rgba(15, 23, 42, .92); box-shadow: 0 16px 42px rgba(0, 0, 0, .36);
+  color: #eaf1ff; font-size: .72rem; font-weight: 900; white-space: nowrap;
+}
+.aichat-launcher:hover { filter: brightness(1.14); }
+.aichat-launcher[hidden] { display: none; }
+
+.aichat-panel {
+  position: fixed; top: 48px; right: 0; bottom: 0; width: var(--aichat-width);
+  z-index: 178; display: flex; flex-direction: column;
+  background: #0f172a; border-left: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: -18px 0 48px rgba(0, 0, 0, .38); color: rgba(255, 255, 255, .9);
+  transform: translateX(100%); transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+}
+.aichat-panel.is-open { transform: translateX(0); }
+body.aichat-open .canvas-area { padding-right: calc(var(--aichat-width) + 24px); }
+
+.aichat-head {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.aichat-head strong { font-size: .84rem; font-weight: 900; letter-spacing: -.01em; }
+.aichat-head .aichat-sub { font-size: .62rem; font-weight: 700; color: rgba(255, 255, 255, .5); }
+.aichat-head-spacer { flex: 1; }
+.aichat-icon-btn {
+  width: 28px; height: 28px; border: 0; border-radius: 8px; cursor: pointer; font-size: .8rem;
+  background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .72);
+}
+.aichat-icon-btn:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+
+/* 탭 — 대화 / 이력 */
+.aichat-tabs {
+  display: flex; gap: 6px; flex-shrink: 0; padding: 10px 14px 0;
+}
+.aichat-tab {
+  flex: 1; padding: 7px 8px; border-radius: 8px 8px 0 0; cursor: pointer;
+  border: 1px solid transparent; border-bottom: 0;
+  background: rgba(255, 255, 255, .04); color: rgba(255, 255, 255, .55);
+  font-size: .7rem; font-weight: 800;
+}
+.aichat-tab.is-active {
+  background: rgba(74, 127, 212, .16); border-color: rgba(122, 174, 240, .38);
+  color: #eaf1ff;
+}
+
+.aichat-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.aichat-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.aichat-view[hidden] { display: none; }
+
+/* 메시지 목록 */
+.aichat-list {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.aichat-empty {
+  margin: auto; max-width: 240px; text-align: center;
+  font-size: .7rem; line-height: 1.7; color: rgba(255, 255, 255, .45); font-weight: 700;
+}
+.aichat-empty[hidden] { display: none; }
+.aichat-empty-cap {
+  display: block; margin: 8px 0; padding: 8px 9px; border-radius: 8px; text-align: left;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .07);
+  font-size: .62rem; line-height: 1.7; color: rgba(255, 255, 255, .55); font-weight: 700;
+}
+.aichat-empty-cap b { color: rgba(255, 255, 255, .8); font-weight: 900; }
+
+.aichat-msg { display: flex; flex-direction: column; gap: 6px; max-width: 100%; }
+.aichat-msg-body {
+  align-self: flex-start; max-width: 92%; padding: 9px 11px; border-radius: 12px;
+  font-size: .74rem; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .07);
+}
+.aichat-msg-mine .aichat-msg-body {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(12, 35, 138, .8), rgba(74, 127, 212, .6));
+  border-color: rgba(122, 174, 240, .4); color: #f2f7ff;
+}
+.aichat-msg-error .aichat-msg-body {
+  background: rgba(220, 38, 38, .16); border-color: rgba(248, 113, 113, .42); color: #fecaca;
+}
+
+/* 제안 카드 */
+.aichat-proposal {
+  align-self: stretch; padding: 10px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(122, 174, 240, .3);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.aichat-proposal.is-dismissed { opacity: .5; }
+.aichat-proposal.is-dismissed .aichat-proposal-actions { display: none; }
+.aichat-proposal-summary { font-size: .7rem; font-weight: 800; color: #bcd4ff; }
+.aichat-proposal-empty { font-size: .7rem; color: rgba(255, 255, 255, .5); font-weight: 700; }
+
+.aichat-change {
+  padding: 9px; border-radius: 10px; background: rgba(2, 6, 23, .55);
+  border: 1px solid rgba(255, 255, 255, .07);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.aichat-change-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.aichat-change-label { font-size: .68rem; font-weight: 900; color: #eaf1ff; }
+.aichat-change-key {
+  font-size: .6rem; font-weight: 700; color: rgba(255, 255, 255, .45);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* 전후 비교 — jsdiff 단어 단위 결과 */
+.aichat-diff { display: flex; flex-direction: column; gap: 4px; }
+.aichat-diff-line {
+  font-size: .7rem; line-height: 1.6; word-break: break-word;
+  color: rgba(255, 255, 255, .78);
+}
+.aichat-diff-tag {
+  display: inline-block; min-width: 34px; margin-right: 6px; padding: 1px 5px;
+  border-radius: 5px; font-size: .58rem; font-weight: 900; text-align: center;
+  background: rgba(255, 255, 255, .09); color: rgba(255, 255, 255, .6);
+}
+.aichat-diff-del {
+  background: rgba(220, 38, 38, .22); color: #fecaca;
+  text-decoration: line-through; text-decoration-color: rgba(254, 202, 202, .7);
+  border-radius: 3px; padding: 0 2px;
+}
+.aichat-diff-ins {
+  background: rgba(22, 163, 74, .24); color: #bbf7d0;
+  border-radius: 3px; padding: 0 2px; font-weight: 700;
+}
+
+.aichat-proposal-actions { display: flex; gap: 6px; }
+
+.aichat-btn {
+  flex: 1; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  font-size: .7rem; font-weight: 900; border: 1px solid transparent;
+}
+.aichat-btn:disabled { opacity: .5; cursor: default; }
+.aichat-btn-primary {
+  background: linear-gradient(135deg, #0C238A, #4A7FD4); color: #fff;
+  border-color: rgba(122, 174, 240, .5);
+}
+.aichat-btn-primary:hover:not(:disabled) { filter: brightness(1.12); }
+.aichat-btn-ghost {
+  background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .78);
+  border-color: rgba(255, 255, 255, .12);
+}
+.aichat-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, .12); color: #fff; }
+
+/* 입력부 */
+.aichat-foot {
+  flex-shrink: 0; padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255, 255, 255, .08); background: rgba(2, 6, 23, .5);
+}
+.aichat-status {
+  min-height: 15px; margin-bottom: 6px; font-size: .62rem; font-weight: 700;
+  color: rgba(255, 255, 255, .5);
+}
+.aichat-form { display: flex; gap: 6px; align-items: flex-end; }
+.aichat-input {
+  flex: 1; min-height: 38px; max-height: 96px; resize: none; padding: 9px 11px;
+  border-radius: 10px; font-size: .74rem; line-height: 1.5; font-family: inherit;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .12);
+  color: #fff;
+}
+.aichat-input::placeholder { color: rgba(255, 255, 255, .35); }
+.aichat-input:focus { outline: none; border-color: rgba(122, 174, 240, .6); }
+.aichat-send {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px; cursor: pointer;
+  border: 1px solid rgba(122, 174, 240, .5);
+  background: linear-gradient(135deg, #0C238A, #4A7FD4); color: #fff; font-size: .82rem;
+}
+.aichat-send:disabled { opacity: .45; cursor: default; }
+
+/* 모드 전환 (수정 / 새 홈페이지) + 학원 이름 입력 — foot 상단 */
+.aichat-mode { display: flex; gap: 6px; margin-bottom: 8px; }
+.aichat-mode-btn {
+  flex: 1; padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .04); color: rgba(255, 255, 255, .55);
+  font-size: .66rem; font-weight: 800;
+}
+.aichat-mode-btn.is-active {
+  background: rgba(74, 127, 212, .18); border-color: rgba(122, 174, 240, .45); color: #eaf1ff;
+}
+.aichat-mode-btn:disabled { opacity: .4; cursor: default; }
+.aichat-name-field { margin-bottom: 8px; }
+.aichat-name-field[hidden] { display: none; }
+.aichat-name-input {
+  width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 10px;
+  font-size: .74rem; font-family: inherit;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .12); color: #fff;
+}
+.aichat-name-input::placeholder { color: rgba(255, 255, 255, .35); }
+.aichat-name-input:focus { outline: none; border-color: rgba(122, 174, 240, .6); }
+
+/* 신규 생성 초안 카드 */
+.aichat-create {
+  align-self: stretch; padding: 11px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(122, 174, 240, .34);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.aichat-create-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.aichat-create-badge {
+  padding: 2px 8px; border-radius: 6px; font-size: .6rem; font-weight: 900;
+  background: linear-gradient(135deg, #0C238A, #4A7FD4); color: #fff;
+}
+.aichat-create-tag { font-size: .62rem; font-weight: 800; color: rgba(255, 255, 255, .5); }
+.aichat-create-summary { font-size: .72rem; line-height: 1.6; color: #eaf1ff; font-weight: 700; }
+.aichat-create-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.aichat-create-chip {
+  padding: 3px 8px; border-radius: 999px; font-size: .62rem; font-weight: 700;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1);
+  color: rgba(255, 255, 255, .78);
+}
+.aichat-create-warnings {
+  margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px;
+  font-size: .64rem; line-height: 1.5; color: #fcd9a0; font-weight: 700;
+}
+.aichat-create-error {
+  margin: 0; padding: 7px 9px; border-radius: 8px; font-size: .66rem; font-weight: 800;
+  background: rgba(220, 38, 38, .16); border: 1px solid rgba(248, 113, 113, .42); color: #fecaca;
+}
+.aichat-create-error[hidden] { display: none; }
+.aichat-create-hint {
+  margin: 0; font-size: .62rem; line-height: 1.55; font-weight: 700;
+  color: rgba(255, 255, 255, .5);
+}
+
+/* 이력 탭 */
+.aichat-versions { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; }
+.aichat-version-list { display: flex; flex-direction: column; gap: 8px; }
+.aichat-version {
+  display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .07);
+}
+.aichat-version-info { flex: 1; min-width: 0; }
+.aichat-version-no { display: block; font-size: .7rem; font-weight: 900; color: #eaf1ff; }
+.aichat-version-meta {
+  margin-top: 3px; font-size: .6rem; font-weight: 700; color: rgba(255, 255, 255, .45);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.aichat-version .aichat-btn { flex: 0 0 auto; padding: 6px 10px; }
+.aichat-version-empty {
+  padding: 18px 8px; text-align: center; font-size: .68rem; font-weight: 700;
+  color: rgba(255, 255, 255, .45);
+}
+.aichat-version-empty[hidden] { display: none; }
+.aichat-version-status {
+  padding: 0 14px 10px; font-size: .62rem; font-weight: 700; color: rgba(255, 255, 255, .5);
+}
+
+/* 충분한 desktop: 오른쪽 dock 폭만큼 workspace 를 실제 확보한다. */
+@media (min-width: 1281px) {
+  .aichat-panel { width: clamp(320px, 23vw, 380px); }
+  body.aichat-open .canvas-area { padding-right: calc(clamp(320px, 23vw, 380px) + 24px); }
+}
+
+/* Tablet / 좁은 desktop: 캔버스를 밀지 않고 덮는다. */
+@media (min-width: 721px) and (max-width: 1280px) {
+  body.aichat-open .canvas-area { padding-right: 24px; }
+}
+
+/* 모바일: bottom sheet. 390px 뷰 토글과 별개로 실제 좁은 화면 기준이다. */
+@media (max-width: 720px) {
+  .aichat-launcher { right: 10px; bottom: max(84px, env(safe-area-inset-bottom)); padding: 9px 12px; }
+  body.aichat-open .canvas-area { padding-right: 12px; }
+  .aichat-panel {
+    top: auto; left: 0; right: 0; bottom: 0; width: 100%;
+    height: min(78dvh, 620px); border-radius: 18px 18px 0 0; border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+    transform: translateY(100%); box-shadow: 0 -18px 48px rgba(0, 0, 0, .44);
+  }
+  .aichat-panel.is-open { transform: translateY(0); }
+  .aichat-head { padding-block: 10px; }
+  /* 터치 조작성: 탭 타깃을 ≥40px 로 키운다(모드·이름·승인/적용·복원 버튼). */
+  .aichat-mode-btn { padding: 11px 8px; font-size: .7rem; }
+  .aichat-name-input { padding: 12px 11px; }
+  .aichat-btn { padding: 12px 10px; font-size: .72rem; }
+  .aichat-version .aichat-btn { padding: 11px 12px; }
+}
