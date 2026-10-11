@@ -73,15 +73,7 @@ jobs:
           echo "wiki frontend baked into static resources; backend tgz ready"
 
       - name: Build bootJar only (no deploy)
-        run: ./gradlew clean bootJar --no-daemon 2>&1 | tee /tmp/build.log; exit ${PIPESTATUS[0]}
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log-${{ github.run_id }}
-          path: /tmp/build.log
-          retention-days: 7
+        run: ./gradlew clean bootJar --no-daemon
 
       # MySQL 이 없는 CI 에서 실행 가능한 순수 단위/계약 테스트만 실행한다.
       # @SpringBootTest(MySQL) 통합 테스트는 여기에 포함하지 않는다(로컬/전용 환경에서만).
