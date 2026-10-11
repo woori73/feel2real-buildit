@@ -138,7 +138,11 @@ public class AcademyService {
       // ── Eduholic LMS Phase 1: Builder "LMS 설정" (LmsBuilderSettingsService) ──
       // LMS 전용 엔드포인트가 직접 저장하므로, 일반 Builder 저장이 validateBuilderDraft에서
       // 거부하지 않도록 allowlist에 등록한다. lmsIntro(소개 문구)는 길어질 수 있어 LONG 목록에도 둔다.
-      "lmsEnabled", "lmsDisplayName", "lmsMainTitle", "lmsIntro", "lmsSectionName");
+      "lmsEnabled", "lmsDisplayName", "lmsMainTitle", "lmsIntro", "lmsSectionName",
+      // ── BuildIt 시각 편집기: 홈페이지 렌더 모드 ──
+      // "template" (P0 기본) 또는 "custom" (편집기 published HTML).
+      // publish/unpublish API가 이 키만 단독으로 갱신한다.
+      "homepage.renderMode");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
@@ -386,6 +390,50 @@ public class AcademyService {
       AuditorContextHolder.set(principal.loginId());
       academy.updatePageSettings(merged);
       return toResponse(academy, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * BuildIt 시각 편집기용 홈페이지 렌더 모드 단독 업데이트.
+   *
+   * <p>builderDraft의 {@code homepage.renderMode} 키만 갱신하며, 다른 P0/P1 설정은
+   * 그대로 유지한다. publish/unpublish와 같은 트랜잭션에서 호출되어 원자성을 보장한다.
+   *
+   * @param principal 인증된 사용자 (해당 학원 소유자)
+   * @param mode "template" 또는 "custom"
+   */
+  @Transactional
+  public void setRenderMode(
+      JwtTokenProvider.AuthenticatedPrincipal principal, String mode) {
+    if (!"template".equals(mode) && !"custom".equals(mode)) {
+      throw new IllegalArgumentException(
+          "homepage.renderMode는 template 또는 custom이어야 합니다.");
+    }
+    authResolver.requireTutor(principal);
+    Academy academy = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademy(academy);
+
+    AcademyPageSettings current = academy.getPageSettings();
+    Map<String, String> draft = new java.util.HashMap<>();
+    if (current != null && current.builderDraft() != null) {
+      draft.putAll(current.builderDraft());
+    }
+    draft.put("homepage.renderMode", mode);
+    AcademyPageSettings merged = new AcademyPageSettings(
+        current == null ? null : current.blogUrl(),
+        current == null ? null : current.storeUrl(),
+        current == null ? null : current.naverMapUrl(),
+        current == null ? null : current.heroYoutubeUrl(),
+        current == null ? null : current.sectionVisibility(),
+        current == null ? null : current.sectionOrder(),
+        draft,
+        current == null ? null : current.businessInfo());
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      academy.updatePageSettings(merged);
     } finally {
       AuditorContextHolder.clear();
     }
@@ -912,6 +960,11 @@ public class AcademyService {
       if (("headingFont".equals(key) || "bodyFont".equals(key)) && !value.isBlank()
           && !Set.of("PRETENDARD", "SUIT", "NOTO_SANS_KR", "NOTO_SERIF_KR").contains(value)) {
         throw new IllegalArgumentException("등록되지 않은 Builder font입니다.");
+      }
+      if ("homepage.renderMode".equals(key) && !value.isBlank()
+          && !"template".equals(value) && !"custom".equals(value)) {
+        throw new IllegalArgumentException(
+            "homepage.renderMode는 template 또는 custom이어야 합니다.");
       }
       if (Set.of("logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile").contains(key)
           && !value.isBlank() && !value.matches("\\d{2,3}")) {
