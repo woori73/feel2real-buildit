@@ -71,30 +71,110 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       return new ChatProposal(List.of(), "요청 내용을 이해하지 못했습니다.", newSessionId());
     }
 
-    // 1. 키워드 기반 필드 매핑
+    // 1. 키워드 기반 필드 매핑 (여러 항목 동시 지원)
     List<String> targetFields = mapKeywordsToFields(userMessage);
     if (targetFields.isEmpty()) {
       return new ChatProposal(
           List.of(),
-          "어떤 항목을 수정할지 파악하지 못했습니다. 예: '수강료를 15만원으로 바꿔줘', '원장 소개를 다듬어줘'",
+          buildUnsupportedGuidance(userMessage),
           newSessionId());
     }
 
-    // 2. 각 필드에 대해 AI로 수정안 생성
+    // 2. 각 필드에 대해 수정안 생성
     List<FieldChange> changes = new ArrayList<>();
+    List<String> skipped = new ArrayList<>();
     for (String field : targetFields) {
       String currentValue = getCurrentValue(context, field);
       String newValue = generateNewValue(field, currentValue, userMessage);
       if (newValue != null && !newValue.equals(currentValue)) {
-        changes.add(new FieldChange(field, currentValue, newValue));
+        // 값 형식 검증
+        String validationError = validateFieldValue(field, newValue);
+        if (validationError != null) {
+          skipped.add(field + ": " + validationError);
+        } else {
+          changes.add(new FieldChange(field, currentValue, newValue));
+        }
       }
     }
 
-    String summary = changes.isEmpty()
-        ? "변경할 내용을 생성하지 못했습니다."
-        : changes.size() + "개 항목의 수정을 제안합니다.";
+    String summary = buildSummary(changes, skipped);
 
     return new ChatProposal(changes, summary, newSessionId());
+  }
+
+  /**
+   * 지원하지 않는 요청에 대한 명확한 안내.
+   */
+  private String buildUnsupportedGuidance(String userMessage) {
+    String lower = userMessage.toLowerCase();
+    if (lower.contains("삭제") || lower.contains("없애")) {
+      return "삭제 기능은 현재 지원하지 않습니다. 수정이 필요한 항목을 알려주세요.";
+    }
+    if (lower.contains("섹션") || lower.contains("추가") && lower.contains("페이지")) {
+      return "새 섹션 추가는 본부 승인이 필요합니다. 기존 항목의 수정을 요청해주세요.";
+    }
+    if (lower.contains("디자인") || lower.contains("템플릿") || lower.contains("프리셋")) {
+      return "디자인 프리셋 변경은 Builder의 브랜드 탭에서 직접 선택해주세요. "
+          + "색상 조정은 '브랜드 색상을 #FF0000으로 바꿔줘'와 같이 요청할 수 있습니다.";
+    }
+    return "어떤 항목을 수정할지 파악하지 못했습니다.\n"
+        + "예시:\n"
+        + "- '수강료를 15만원으로 바꿔줘'\n"
+        + "- '원장 소개를 더 친근하게 다듬어줘'\n"
+        + "- '교육 철학 1번을 바꿔줘'\n"
+        + "- '전화번호를 02-1234-5678로 바꿔줘'";
+  }
+
+  /**
+   * 필드별 값 형식을 검증한다.
+   */
+  private String validateFieldValue(String field, String value) {
+    if (value == null || value.isBlank()) {
+      return "값이 비어 있습니다.";
+    }
+    // 색상 필드: hex 형식 검증
+    if (field.equals("brandPrimary") || field.equals("brandAccent")) {
+      if (!value.matches("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")) {
+        return "색상은 #RRGGBB 형식이어야 합니다. 예: #2b3a9e";
+      }
+    }
+    // 전화번호 필드: 기본 형식 검증
+    if (field.equals("ctaPhone")) {
+      if (!value.matches("^[0-9\\-\\(\\)\\s+]+$")) {
+        return "전화번호 형식이 올바르지 않습니다.";
+      }
+    }
+    // URL 필드: 기본 형식 검증
+    if (field.equals("ctaKakaoUrl")) {
+      if (!value.startsWith("http://") && !value.startsWith("https://")) {
+        return "URL은 http:// 또는 https://로 시작해야 합니다.";
+      }
+    }
+    // 숫자 필드: 숫자 포함 확인
+    if (field.equals("monthlyTuition") || field.equals("scoreImprovement")
+        || field.equals("operationYears")) {
+      if (!value.matches(".*\\d.*")) {
+        return "숫자가 포함되어야 합니다.";
+      }
+    }
+    return null;
+  }
+
+  private String buildSummary(List<FieldChange> changes, List<String> skipped) {
+    if (changes.isEmpty() && skipped.isEmpty()) {
+      return "변경할 내용을 생성하지 못했습니다.";
+    }
+    StringBuilder sb = new StringBuilder();
+    if (!changes.isEmpty()) {
+      sb.append(changes.size()).append("개 항목의 수정을 제안합니다.");
+    }
+    if (!skipped.isEmpty()) {
+      if (sb.length() > 0) {
+        sb.append(" ");
+      }
+      sb.append("다음 항목은 건너뜀: ").append(String.join(", ", skipped));
+    }
+    return sb.toString();
   }
 
   @Override
