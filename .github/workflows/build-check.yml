@@ -294,5 +294,14 @@ jobs:
 
       - name: Run MySQL integration tests
         run: >-
-          ./gradlew test --no-daemon
+          ./gradlew test --no-daemon --stacktrace
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
+
+      - name: Upload MySQL test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-test-report
+          path: build/reports/tests/test
+          if-no-files-found: ignore
+          retention-days: 7
