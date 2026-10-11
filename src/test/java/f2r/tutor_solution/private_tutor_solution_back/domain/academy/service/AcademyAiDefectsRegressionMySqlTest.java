@@ -221,6 +221,54 @@ class AcademyAiDefectsRegressionMySqlTest {
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
+  @DisplayName("D1: 400 후 입력 수정 → 동일 키 재시도 → 성공")
+  void d1_badRequest_thenRetryWithFixedInput_succeeds() {
+    String tutorId = String.valueOf(tutor.getUserId());
+    String key = "d1-retry-" + UUID.randomUUID();
+
+    // 1차: 키 선점 (PROCESSING)
+    AcademyAiIdempotency rec = idempotencyService.claim(tutorId, key);
+    assertThat(rec.isProcessing()).isTrue();
+
+    // 검증 400 시뮬레이션: markFailed 호출 (컨트롤러의 doCreateApply 래퍼와 동일)
+    idempotencyService.markFailed(rec.getId());
+
+    // 2차: 동일 키로 재시도 → FAILED이므로 재시도 허용
+    AcademyAiIdempotency retried = idempotencyService.claim(tutorId, key);
+    assertThat(retried.isProcessing()).isTrue();
+    assertThat(retried.getId()).isNotEqualTo(rec.getId());
+
+    // 성공 시뮬레이션: markCompleted
+    idempotencyService.markCompleted(retried.getId(), 999L);
+    AcademyAiIdempotency completed =
+        idempotencyRepository.findByTutorIdAndIdempotencyKey(tutorId, key).orElseThrow();
+    assertThat(completed.isCompleted()).isTrue();
+
+    // 3차: 완료된 키 재요청 → 409 (중복 생성 차단)
+    assertThatThrownBy(() -> idempotencyService.claim(tutorId, key))
+        .isInstanceOf(DuplicateIdempotencyKeyException.class);
+  }
+
+  @Test
+  @DisplayName("D2: intro와 introHeading이 별도로 스냅샷/복원된다")
+  void d2_introAndIntroHeading_separatelySnapshotted() {
+    academyService.createDraft(principal, draftRequest("결함학원", "원본 intro"), "d2-key");
+
+    // introHeading (builderDraft) + intro (top-level) 각각 설정
+    Map<String, String> draft = Map.of("introHeading", "원본 헤드라인");
+    Long versionId = versionService.snapshot(
+        principal, draft, Map.of(), "원본 intro", "D2 스냅샷");
+
+    // 버전에서 각각 확인
+    AcademyPageVersion version = versionService.getForRestore(principal, versionId);
+    assertThat(version.getIntro()).isEqualTo("원본 intro");
+    assertThat(version.getBuilderDraftJson()).contains("원본 헤드라인");
+    // introHeading과 intro가 혼동되지 않음
+    assertThat(version.getBuilderDraftJson()).doesNotContain("원본 intro");
+  }
+
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  @Test
   @DisplayName("PROCESSING 만료: 30분 초과 시 재시도 허용")
   void idempotency_expiredProcessing_allowsRetry() throws Exception {
     String tutorId = String.valueOf(tutor.getUserId());

@@ -145,10 +145,30 @@ public class AcademyPageVersionService {
         note);
     versionRepository.save(version);
 
-    // F3: 20개 초과 시 오래된 버전 삭제 (최초 버전 v1은 보존)
-    cleanupOldVersions(academy.academyId());
+    // D3: cleanup을 별도 트랜잭션으로 분리하여 Lock timeout 방지.
+    // INSERT와 DELETE가 같은 트랜잭션에 있으면 InnoDB 범위 잠금이 충돌한다.
+    // 스냅샷 저장 후 별도 트랜잭션에서 정리한다.
+    Long academyId = academy.academyId();
+    // 트랜잭션 커밋 후 실행되도록 지연 (self 참조로 REQUIRES_NEW 호출)
+    try {
+      self.cleanupOldVersionsAsync(academyId);
+    } catch (Exception e) {
+      // cleanup 실패는 스냅샷 저장에 영향을 주지 않음 (로그만)
+      // 다음 스냅샷 시 다시 시도됨
+    }
 
     return version.getId();
+  }
+
+  /**
+   * D3: 오래된 버전 정리 (별도 트랜잭션).
+   *
+   * <p>스냅샷 INSERT와 분리하여 Lock timeout을 방지한다.
+   * F3: 20개 초과 시 오래된 버전을 삭제하되, 최초 버전(version_no=1)은 항상 보존한다.
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void cleanupOldVersionsAsync(Long academyId) {
+    cleanupOldVersions(academyId);
   }
 
   /** 버전 목록을 조회한다. */

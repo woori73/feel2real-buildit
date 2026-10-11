@@ -218,17 +218,18 @@ public class AcademyAiChatController {
     // B2: 값 길이·형식 사전 검증 (스냅샷 전)
     academyService.validateAiDraft(draftChanges);
 
-    // 적용 전 현재 상태 조회 (스냅샷용)
+    // 적용 전 현재 상태 조회 (스냅샷용, F2: intro 포함)
     Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
+    String currentIntro = getCurrentIntro(principal);
 
     // B3: 원자적 적용 (builderDraft + intro를 하나의 트랜잭션으로)
     Map<String, String> updatedDraft = new java.util.HashMap<>(currentDraft);
     updatedDraft.putAll(draftChanges);
     applyService.applyDraftChanges(principal, updatedDraft, introChange);
 
-    // 적용 성공 후 스냅샷 저장 (복원용)
+    // 적용 성공 후 스냅샷 저장 (복원용, F2: intro 포함)
     Long versionId = versionService.snapshot(
-        principal, currentDraft, Map.of(), "AI 채팅 수정 적용 전");
+        principal, currentDraft, Map.of(), currentIntro, "AI 채팅 수정 적용 전");
 
     // 작업 로그 기록 (승인됨)
     AcademyAiAction action = logAction(
@@ -342,6 +343,28 @@ public class AcademyAiChatController {
           "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
               + "채팅 수정 기능을 사용하세요.");
     }
+
+    // 결함 수정: 검증 400 발생 시 멱등성 키를 FAILED로 표시한다.
+    // 그렇지 않으면 키가 PROCESSING에 30분간 남아 정상 재시도를 차단한다.
+    try {
+      return doCreateApply(principal, request, idempotencyKey, idempotencyRecord);
+    } catch (ResponseStatusException e) {
+      if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+        idempotencyService.markFailed(idempotencyRecord.getId());
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * createApply 본문 (검증 + 생성).
+   * 호출자는 ResponseStatusException(400) 시 markFailed를 처리한다.
+   */
+  private ResponseEntity<Map<String, Object>> doCreateApply(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Map<String, Object> request,
+      String idempotencyKey,
+      AcademyAiIdempotency idempotencyRecord) {
 
     @SuppressWarnings("unchecked")
     Map<String, String> builderDraft = (Map<String, String>) request.get("builderDraft");
@@ -481,9 +504,9 @@ public class AcademyAiChatController {
       throw e;
     }
 
-    // 성공 기록 + 버전 스냅샷 저장
+    // 성공 기록 + 버전 스냅샷 저장 (D2: intro 포함)
     idempotencyService.markCompleted(idemRecord.getId(), created.academyId());
-    versionService.snapshot(principal, finalDraft, Map.of(), "AI 생성 홈페이지 최초 생성");
+    versionService.snapshot(principal, finalDraft, Map.of(), finalIntro, "AI 생성 홈페이지 최초 생성");
 
     return ResponseEntity.ok(Map.of(
         "academyId", created.academyId(),
