@@ -38,6 +38,12 @@ public class AcademyAiIdempotency {
   public static final String STATUS_COMPLETED = "COMPLETED";
   public static final String STATUS_FAILED = "FAILED";
 
+  /**
+   * PROCESSING 만료 시간 (분).
+   * 이 시간을 초과한 PROCESSING 레코드는 고착된 것으로 간주하고 재시도를 허용한다.
+   */
+  public static final long PROCESSING_TIMEOUT_MINUTES = 30;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -88,5 +94,17 @@ public class AcademyAiIdempotency {
 
   public boolean isFailed() {
     return STATUS_FAILED.equals(status);
+  }
+
+  /**
+   * PROCESSING 상태가 만료되었는지 확인한다.
+   * 만료된 PROCESSING은 영구 고착이 아니라 재시도 가능한 상태로 간주한다.
+   */
+  public boolean isProcessingExpired() {
+    if (!isProcessing()) {
+      return false;
+    }
+    return updatedAt.isBefore(
+        LocalDateTime.now().minusMinutes(PROCESSING_TIMEOUT_MINUTES));
   }
 }

@@ -184,10 +184,12 @@ public class AcademyAiChatController {
     AcademyResponse academy = getMyAcademy(principal);
 
     // 세션 검증 (본인 Academy의 세션인지 확인) — A4: 권한 위반은 403
+    // F1: 생성 전 세션(academyId NULL)은 /apply에서 사용할 수 없음
     AcademyAiSession session = sessionRepository
         .findById(Long.parseLong(request.sessionId()))
         .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
-    if (!session.getAcademyId().equals(academy.academyId())) {
+    if (session.getAcademyId() == null
+        || !session.getAcademyId().equals(academy.academyId())) {
       throw new AccessDeniedException("다른 학원의 세션에 접근할 수 없습니다.");
     }
 
@@ -286,9 +288,9 @@ public class AcademyAiChatController {
           + "적용 전 반드시 미리보기로 확인하세요.";
     }
 
-    // 세션 생성 (추적용) - Academy가 없어도 세션은 생성 가능하도록 academyId 0 사용
-    // 실제로는 Academy 생성 후 세션을 연결
-    AcademyAiSession session = new AcademyAiSession(0L, String.valueOf(principal.userId()));
+    // F1: 세션 생성 (추적용) - 승인 전에는 Academy가 없으므로 academyId는 NULL
+    // 0L 같은 가짜 ID를 사용하지 않는다 (V1055 FK 위반 방지)
+    AcademyAiSession session = new AcademyAiSession(null, String.valueOf(principal.userId()));
     session = sessionRepository.save(session);
 
     return ResponseEntity.ok(new CreateResponse(
@@ -306,18 +308,39 @@ public class AcademyAiChatController {
   public ResponseEntity<Map<String, Object>> createApply(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody Map<String, Object> request) {
-    // 기존 Academy 존재 시 400 거부 (덮어쓰기 방지) - API 계약 준수
-    if (academyService.getMine(principal).isPresent()) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST,
-          "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
-              + "채팅 수정 기능을 사용하세요.");
-    }
-
     String idempotencyKey = (String) request.get("idempotencyKey");
     if (idempotencyKey == null || idempotencyKey.isBlank()) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "idempotencyKey가 필요합니다.");
+    }
+
+    // 결함 수정: 409가 400보다 우선한다.
+    // 동일 키 재요청 시 (예: 첫 호출 성공 후 재시도) 400이 아닌 409를 반환해야
+    // 클라이언트가 멱등성으로 인식할 수 있다.
+    // 따라서 Academy 존재 여부(400)보다 멱등성 키 선점(409)을 먼저 확인한다.
+    AcademyAiIdempotency idempotencyRecord;
+    try {
+      idempotencyRecord = idempotencyService.claim(
+          String.valueOf(principal.userId()), idempotencyKey);
+    } catch (AcademyAiIdempotencyService.DuplicateIdempotencyKeyException e) {
+      AcademyAiIdempotency rec = e.getRecord();
+      if (rec.isCompleted() && rec.getAcademyId() != null) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "이미 처리된 요청입니다. 생성된 홈페이지 ID: " + rec.getAcademyId());
+      }
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "이미 처리 중인 요청입니다: " + idempotencyKey);
+    }
+
+    // 기존 Academy 존재 시 400 거부 (덮어쓰기 방지) - API 계약 준수
+    // 멱등성 선점 후이므로, 첫 호출이 성공했다면 위에서 409로 처리됨
+    if (academyService.getMine(principal).isPresent()) {
+      idempotencyService.markFailed(idempotencyRecord.getId());
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
+              + "채팅 수정 기능을 사용하세요.");
     }
 
     @SuppressWarnings("unchecked")
@@ -344,6 +367,15 @@ public class AcademyAiChatController {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "학원 이름은 필수입니다.");
     }
+    // 결함 #4: 학원명 보안 검증 강화
+    if (containsDangerousContent(finalName)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "학원 이름에 허용되지 않은 내용이 포함되어 있습니다.");
+    }
+    if (finalName.length() > 100) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "학원 이름은 100자 이하로 입력해야 합니다.");
+    }
     String draftIntro = builderDraft.get("intro");
     String finalIntro = intro != null ? intro.trim() : "";
     if (finalIntro.isEmpty() && draftIntro != null) {
@@ -356,6 +388,11 @@ public class AcademyAiChatController {
     if (finalIntro.length() > 1000) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "학원 소개는 1000자 이하로 입력해야 합니다.");
+    }
+    // 결함 #4: 소개글 보안 검증 강화
+    if (containsDangerousContent(finalIntro)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "학원 소개에 허용되지 않은 내용이 포함되어 있습니다.");
     }
 
     // targetGroups: 한글("중학생") → TargetGroup enum 변환
@@ -406,33 +443,9 @@ public class AcademyAiChatController {
     }
     finalDraft.put("designPreset", designPreset);
 
-    // 멱등성 키 선점 (DB 영속화). 동일 키 재호출 → 409.
-    // 입력 검증(400) 이후에 수행하므로 400 요청은 키를 오염시키지 않는다.
-    String tutorId = String.valueOf(principal.userId());
-    final AcademyAiIdempotency idemRecord;
-    try {
-      idemRecord = idempotencyService.claim(tutorId, idempotencyKey);
-    } catch (AcademyAiIdempotencyService.DuplicateIdempotencyKeyException e) {
-      AcademyAiIdempotency rec = e.getRecord();
-      if (rec.isCompleted() && rec.getAcademyId() != null) {
-        throw new ResponseStatusException(
-            HttpStatus.CONFLICT,
-            "이미 처리된 요청입니다. 생성된 홈페이지 ID: " + rec.getAcademyId());
-      }
-      // 자가 복구: markCompleted 전에 장애가 나면 레코드는 PROCESSING이지만
-      // Academy는 이미 생성됐을 수 있다. 이 경우 완료로 정정하고 academyId를 알려준다.
-      if (rec.isProcessing()) {
-        java.util.Optional<AcademyResponse> mine = academyService.getMine(principal);
-        if (mine.isPresent()) {
-          idempotencyService.markCompleted(rec.getId(), mine.get().academyId());
-          throw new ResponseStatusException(
-              HttpStatus.CONFLICT,
-              "이미 처리된 요청입니다. 생성된 홈페이지 ID: " + mine.get().academyId());
-        }
-      }
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "이미 처리 중인 요청입니다: " + idempotencyKey);
-    }
+    // 멱등성: 메서드 시작 부분에서 이미 선점됨 (409 우선).
+    // 여기서는 선점된 레코드를 사용한다.
+    final AcademyAiIdempotency idemRecord = idempotencyRecord;
 
     // AcademyPageSettings 생성
     f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings
@@ -483,6 +496,10 @@ public class AcademyAiChatController {
    * 특정 버전으로 복원한다.
    * 복원 전 현재 상태를 스냅샷으로 저장한다.
    * 실제 복원은 기존 PUT /api/tutor/academy/page-settings 경로를 경유한다.
+   *
+   * <p>F2: 버전의 intro도 함께 복원한다.
+   * <p>복원 범위 보호: AI 허용 키(ALLOWED_FIELDS)만 복원 대상으로 하며,
+   * P0 Builder에서 사용자가 직접 수정한 키(색상·구성 등)는 삭제하지 않고 보존한다.
    */
   @PostMapping("/versions/{versionId}/restore")
   public ResponseEntity<ApplyResponse> restore(
@@ -493,26 +510,35 @@ public class AcademyAiChatController {
     // 복원 대상 버전 조회 (권한 검증 포함)
     AcademyPageVersion version = versionService.getForRestore(principal, versionId);
 
-    // 복원 전 현재 상태 조회
+    // 복원 전 현재 상태 조회 (F2: intro 포함)
     Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
+    String currentIntro = getCurrentIntro(principal);
 
     // 버전의 builderDraft를 파싱하여 복원 맵을 구성한다 (A3).
-    // 스냅샷 이후에 추가된 키는 null로 표시해야 sanitizeBuilderDraft가 제거한다.
-    // (updatePageSettings는 병합 방식이라 빈 맵을 넣어도 이전 값이 남는다)
+    // 복원 범위 보호: AI 허용 키에 대해서만 null 표시 (삭제)하고,
+    // P0 키는 현재 값을 유지한다 (삭제하지 않음).
     Map<String, String> restoreDraft = parseBuilderDraftJson(version.getBuilderDraftJson());
     Map<String, String> fullRestore = new java.util.HashMap<>(restoreDraft);
     for (String key : currentDraft.keySet()) {
-      if (!restoreDraft.containsKey(key)) {
+      if (!restoreDraft.containsKey(key) && ALLOWED_FIELDS.contains(key)) {
+        // AI 허용 키만 null로 표시 (삭제 대상)
         fullRestore.put(key, null);
       }
+      // P0 키 (ALLOWED_FIELDS에 없음)는 fullRestore에 포함하지 않음 → 보존
     }
 
     // B3: 원자적 복원
     applyService.applyDraftChanges(principal, fullRestore, null);
 
-    // 복원 성공 후 복원 전 상태 스냅샷 (되돌리기용)
+    // F2: intro 복원 (버전에 저장된 intro가 있으면)
+    if (version.getIntro() != null) {
+      academyService.updateIntro(principal, version.getIntro());
+    }
+
+    // 복원 성공 후 복원 전 상태 스냅샷 (되돌리기용, F2: intro 포함)
     Long snapshotId = versionService.snapshot(
-        principal, currentDraft, Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
+        principal, currentDraft, Map.of(), currentIntro,
+        "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
 
     // 작업 로그 기록
     AcademyAiSession session = createSession(principal, academy.academyId());
@@ -539,6 +565,15 @@ public class AcademyAiChatController {
       return Map.of();
     }
     return new java.util.HashMap<>(academy.pageSettings().builderDraft());
+  }
+
+  /**
+   * F2: 현재 Academy의 top-level intro를 반환한다.
+   */
+  private String getCurrentIntro(
+      JwtTokenProvider.AuthenticatedPrincipal principal) {
+    AcademyResponse academy = getMyAcademy(principal);
+    return academy.intro();
   }
 
   /**
@@ -615,7 +650,8 @@ public class AcademyAiChatController {
     if (sessionId != null && !sessionId.isBlank()) {
       return sessionRepository
           .findById(Long.parseLong(sessionId))
-          .filter(s -> s.getAcademyId().equals(academyId))
+          // F1: academyId NULL 세션은 매칭되지 않음 (생성 전 세션 보호)
+          .filter(s -> academyId != null && academyId.equals(s.getAcademyId()))
           .orElseGet(() -> createSession(principal, academyId));
     }
     return createSession(principal, academyId);
