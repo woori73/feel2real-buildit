@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,8 +21,11 @@ import org.hibernate.annotations.UpdateTimestamp;
  * <p>기존 P0/P1 builderDraft와 완전히 분리된 전용 테이블.
  * P1 스냅샷/D3 버전 번호와 연결하지 않는다.
  *
- * <p>동시 수정 제어: revision 컬럼으로 낙관적 잠금을 수행한다.
- * 저장 시 요청의 revision과 DB의 revision이 다르면 409 Conflict를 반환한다.
+ * <p>동시 수정 제어: JPA {@code @Version} 낙관적 잠금.
+ * DB 레벨에서 원자적으로 revision을 검증하므로,
+ * 메모리 비교 방식의 TOCTOU 문제를 해결한다.
+ * 충돌 시 {@code OptimisticLockException}이 발생하며,
+ * 서비스에서 {@code DraftConflictException}으로 변환한다.
  */
 @Entity
 @Table(
@@ -41,11 +45,13 @@ public class VisualEditorDraft {
   private Long academyId;
 
   /**
-   * 낙관적 잠금용 리비전.
-   * 저장 시 1씩 증가한다.
+   * JPA 낙관적 잠금 버전.
+   * UPDATE 시 WHERE revision = ? 조건으로 원자적 검증.
+   * Hibernate가 자동으로 증가시킨다.
    */
+  @Version
   @Column(name = "revision", nullable = false)
-  private Long revision = 1L;
+  private Long revision;
 
   @Column(name = "html", columnDefinition = "MEDIUMTEXT")
   private String html;
@@ -77,20 +83,14 @@ public class VisualEditorDraft {
   }
 
   /**
-   * 초안 내용을 갱신한다. revision을 1 증가시킨다.
+   * 초안 내용을 갱신한다.
    *
-   * @param expectedRevision 호출자가 읽은 시점의 revision
-   * @throws IllegalStateException revision 불일치 시 (동시 수정 충돌)
+   * <p>JPA {@code @Version}이 UPDATE 시 원자적으로 revision을 검증하므로
+   * 별도의 메모리 비교가 필요 없다. 충돌 시 {@code OptimisticLockException} 발생.
    */
-  public void update(String html, String css, String projectData, Long expectedRevision) {
-    if (!this.revision.equals(expectedRevision)) {
-      throw new IllegalStateException(
-          "다른 세션에서 수정되었습니다. 새로고침 후 다시 시도하세요. "
-              + "(현재 revision=" + this.revision + ", 요청 revision=" + expectedRevision + ")");
-    }
+  public void update(String html, String css, String projectData) {
     this.html = html;
     this.css = css;
     this.projectData = projectData;
-    this.revision += 1;
   }
 }
