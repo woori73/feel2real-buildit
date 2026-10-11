@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName != null ? '홈페이지 편집 — ' + academyName : '홈페이지 편집'}">홈페이지 편집</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+
+  <!-- GrapesJS CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.23.6/dist/css/grapes.min.css">
+
+  <style>
+    /* 편집기 레이아웃 */
+    .editor-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #1f2937;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .editor-toolbar .title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-right: auto;
+    }
+    .editor-toolbar button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .btn-device {
+      background: #374151;
+      color: #fff;
+    }
+    .btn-device.active {
+      background: #3b82f6;
+    }
+    .btn-save {
+      background: #10b981;
+      color: #fff;
+    }
+    .btn-preview {
+      background: #6b7280;
+      color: #fff;
+    }
+    .btn-publish {
+      background: #f59e0b;
+      color: #fff;
+    }
+    .btn-back {
+      background: transparent;
+      color: #9ca3af;
+      border: 1px solid #4b5563 !important;
+    }
+    .editor-main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .editor-sidebar-left {
+      width: 260px;
+      flex-shrink: 0;
+      background: #f9fafb;
+      border-right: 1px solid #e5e7eb;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .editor-canvas-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    #gjs-canvas {
+      height: 100%;
+    }
+    .editor-sidebar-right {
+      width: 280px;
+      flex-shrink: 0;
+      background: #f9fafb;
+      border-left: 1px solid #e5e7eb;
+      overflow-y: auto;
+    }
+    .sidebar-tab {
+      display: flex;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .sidebar-tab button {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .sidebar-tab button.active {
+      color: #1f2937;
+      border-bottom: 2px solid #3b82f6;
+    }
+    .sidebar-panel {
+      display: none;
+      padding: 12px;
+    }
+    .sidebar-panel.active {
+      display: block;
+    }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .preset-btn {
+      padding: 12px 8px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .preset-btn:hover {
+      border-color: #3b82f6;
+    }
+    .preset-btn.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .save-status {
+      font-size: 12px;
+      color: #9ca3af;
+      padding: 8px 16px;
+    }
+    .save-status.saving { color: #f59e0b; }
+    .save-status.saved { color: #10b981; }
+
+    /* GrapesJS 패널 스타일 조정 */
+    .gjs-pn-panel { position: relative; }
+    #gjs-canvas .gjs-cv-canvas { width: 100%; height: 100%; }
+
+    /* 모바일 대응 */
+    @media (max-width: 1024px) {
+      .editor-sidebar-left { display: none; }
+      .editor-sidebar-left.mobile-open {
+        display: flex;
+        position: fixed;
+        left: 0; top: 0; bottom: 0;
+        z-index: 100;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      }
+      .editor-sidebar-right {
+        width: 240px;
+      }
+    }
+    @media (max-width: 768px) {
+      .editor-sidebar-right { display: none; }
+      .editor-sidebar-right.mobile-open {
+        display: block;
+        position: fixed;
+        right: 0; top: 0; bottom: 0;
+        z-index: 100;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      }
+      .editor-toolbar { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="editor-layout">
+  <!-- 상단 툴바 -->
+  <div class="editor-toolbar">
+    <button class="btn-back" onclick="history.back()">← 돌아가기</button>
+    <span class="title" th:text="${academyName ?: '홈페이지 편집'}">홈페이지 편집</span>
+
+    <!-- 디바이스 전환 -->
+    <button class="btn-device active" data-device="Desktop" title="PC">🖥️ PC</button>
+    <button class="btn-device" data-device="Tablet" title="태블릿">📱 태블릿</button>
+    <button class="btn-device" data-device="Mobile" title="모바일">📲 모바일</button>
+
+    <button class="btn-preview" id="previewBtn">미리보기</button>
+    <button class="btn-save" id="saveBtn">💾 저장</button>
+    <button class="btn-publish" id="publishBtn">🚀 게시</button>
+  </div>
+  <div class="save-status" id="saveStatus">변경사항이 없습니다.</div>
+
+  <!-- 메인 영역 -->
+  <div class="editor-main">
+    <!-- 좌측: 블록 패널 -->
+    <div class="editor-sidebar-left" id="blocksPanel">
+      <div class="sidebar-tab">
+        <button class="active" data-panel="blocks">블록</button>
+        <button data-panel="presets">프리셋</button>
+      </div>
+      <div class="sidebar-panel active" id="panel-blocks">
+        <div id="gjs-blocks"></div>
+      </div>
+      <div class="sidebar-panel" id="panel-presets">
+        <h4 style="margin: 0 0 8px; font-size: 14px;">디자인 프리셋</h4>
+        <div class="preset-grid">
+          <button class="preset-btn" data-preset="EXAM">📝<br>입시</button>
+          <button class="preset-btn" data-preset="ENGLISH">🔤<br>영어</button>
+          <button class="preset-btn" data-preset="ARTS">🎨<br>예체능</button>
+          <button class="preset-btn" data-preset="STUDY">📚<br>스터디</button>
+          <button class="preset-btn" data-preset="ONLINE">💻<br>온라인</button>
+        </div>
+        <p style="font-size: 12px; color: #6b7280;">
+          프리셋을 선택하면 해당 스타일의 섹션을 추가할 수 있습니다.
+        </p>
+      </div>
+    </div>
+
+    <!-- 중앙: 캔버스 -->
+    <div class="editor-canvas-wrap">
+      <div id="gjs-canvas">
+        <!-- 기존 P0 HTML이 여기에 로드됨 -->
+        <div th:if="${pageHtml != null}" th:utext="${pageHtml}"></div>
+        <div th:if="${pageHtml == null}" style="padding: 40px; text-align: center; color: #9ca3af;">
+          <h2>홈페이지가 없습니다</h2>
+          <p>좌측 블록 패널에서 섹션을 추가하여 홈페이지를 만드세요.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우측: 스타일/레이어 패널 -->
+    <div class="editor-sidebar-right" id="stylePanel">
+      <div class="sidebar-tab">
+        <button class="active" data-panel="style">스타일</button>
+        <button data-panel="layers">레이어</button>
+        <button data-panel="traits">설정</button>
+      </div>
+      <div class="sidebar-panel active" id="panel-style">
+        <div id="gjs-styles"></div>
+      </div>
+      <div class="sidebar-panel" id="panel-layers">
+        <div id="gjs-layers"></div>
+      </div>
+      <div class="sidebar-panel" id="panel-traits">
+        <div id="gjs-traits"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GrapesJS -->
+<script src="https://unpkg.com/grapesjs@0.23.6/dist/grapes.min.js"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+const ACADEMY_ID = /*[[${academyId}]]*/ null;
+const CSRF_TOKEN = /*[[${_csrf?.token}]]*/ '';
+const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
+/*]]>*/
+</script>
+<script>
+(function() {
+  'use strict';
+
+  // GrapesJS 초기화
+  const editor = grapesjs.init({
+    container: '#gjs-canvas',
+    fromElement: true,
+    height: '100%',
+    width: 'auto',
+    storageManager: false,  // 서버 저장 사용
+
+    // 디바이스 (PC/태블릿/모바일)
+    deviceManager: {
+      devices: [
+        { name: 'Desktop', width: '' },
+        { name: 'Tablet', width: '768px', widthMedia: '992px' },
+        { name: 'Mobile', width: '375px', widthMedia: '768px' },
+      ]
+    },
+
+    // 패널 연결
+    blockManager: { appendTo: '#gjs-blocks' },
+    layerManager: { appendTo: '#gjs-layers' },
+    styleManager: {
+      appendTo: '#gjs-styles',
+      sectors: [
+        { name: '일반', buildProps: ['float', 'display', 'position', 'top', 'right', 'left', 'bottom'] },
+        { name: '크기', buildProps: ['width', 'height', 'max-width', 'min-height', 'margin', 'padding'] },
+        { name: '타이포그래피', buildProps: ['font-family', 'font-size', 'font-weight', 'letter-spacing', 'color', 'line-height', 'text-align', 'text-shadow'] },
+        { name: '장식', buildProps: ['border-radius', 'border', 'box-shadow', 'background'] },
+        { name: '배경', buildProps: ['background-color', 'background-image'] },
+      ],
+    },
+    traitManager: { appendTo: '#gjs-traits' },
+
+    // 한글 폰트 기본 설정
+    canvas: {
+      styles: [
+        'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css'
+      ],
+    },
+  });
+
+  // ===== 커스텀 블록 정의 (P0 프리셋 기반) =====
+
+  const blockManager = editor.BlockManager;
+
+  // 기본 블록
+  blockManager.add('text-block', {
+    label: '📝 텍스트',
+    category: '기본',
+    content: '<p style="padding: 10px;">텍스트를 입력하세요. 클릭하여 수정할 수 있습니다.</p>',
+  });
+
+  blockManager.add('heading-block', {
+    label: '📌 제목',
+    category: '기본',
+    content: '<h2 style="padding: 10px; font-size: 28px; font-weight: 700;">제목을 입력하세요</h2>',
+  });
+
+  blockManager.add('image-block', {
+    label: '🖼️ 이미지',
+    category: '기본',
+    content: '<img src="https://via.placeholder.com/800x400?text=이미지" alt="이미지" style="max-width: 100%; height: auto;"/>',
+  });
+
+  blockManager.add('button-block', {
+    label: '🔘 버튼',
+    category: '기본',
+    content: '<a href="#" style="display: inline-block; padding: 12px 32px; background: #3b82f6; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600;">버튼</a>',
+  });
+
+  blockManager.add('divider-block', {
+    label: '➖ 구분선',
+    category: '기본',
+    content: '<hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>',
+  });
+
+  // 학원 섹션 블록 (P0 프리셋 기반)
+  const presets = {
+    EXAM: { name: '입시', color: '#1e40af', bg: '#eff6ff' },
+    ENGLISH: { name: '영어', color: '#047857', bg: '#ecfdf5' },
+    ARTS: { name: '예체능', color: '#7c3aed', bg: '#f5f3ff' },
+    STUDY: { name: '스터디', color: '#b45309', bg: '#fffbeb' },
+    ONLINE: { name: '온라인', color: '#0e7490', bg: '#ecfeff' },
+  };
+
+  Object.entries(presets).forEach(([key, p]) => {
+    blockManager.add(`hero-${key.toLowerCase()}`, {
+      label: `🏫 히어로 (${p.name})`,
+      category: '학원 섹션',
+      content: `
+        <section data-preset="${key}" style="padding: 60px 20px; background: ${p.bg}; text-align: center;">
+          <h1 style="font-size: 36px; font-weight: 800; color: ${p.color}; margin-bottom: 16px;">학원 이름을 입력하세요</h1>
+          <p style="font-size: 18px; color: #4b5563; margin-bottom: 32px;">학원 소개 문구를 입력하세요</p>
+          <a href="#" style="display: inline-block; padding: 14px 40px; background: ${p.color}; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px;">상담 신청하기</a>
+        </section>
+      `,
+    });
+
+    blockManager.add(`features-${key.toLowerCase()}`, {
+      label: `✨ 특징 (${p.name})`,
+      category: '학원 섹션',
+      content: `
+        <section data-preset="${key}" style="padding: 40px 20px;">
+          <h2 style="font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 32px; color: ${p.color};">우리 학원의 특징</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto;">
+            <div style="padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">특징 1</h3>
+              <p style="color: #6b7280;">설명을 입력하세요</p>
+            </div>
+            <div style="padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">특징 2</h3>
+              <p style="color: #6b7280;">설명을 입력하세요</p>
+            </div>
+            <div style="padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">특징 3</h3>
+              <p style="color: #6b7280;">설명을 입력하세요</p>
+            </div>
+          </div>
+        </section>
+      `,
+    });
+  });
+
+  // CTA 섹션
+  blockManager.add('cta-section', {
+    label: '📞 상담 신청 (CTA)',
+    category: '학원 섹션',
+    content: `
+      <section class="sec-cta" style="padding: 60px 20px; background: #1f2937; text-align: center;">
+        <h2 style="font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 16px;">지금 상담 신청하세요</h2>
+        <p style="font-size: 18px; color: #d1d5db; margin-bottom: 32px;">전문 상담원이 친절하게 안내해 드립니다</p>
+        <a href="#" style="display: inline-block; padding: 16px 48px; background: #f59e0b; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 18px;">무료 상담 신청</a>
+      </section>
+    `,
+  });
+
+  // ===== 디바이스 전환 =====
+  document.querySelectorAll('.btn-device').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-device').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      editor.setDevice(btn.dataset.device);
+    });
+  });
+
+  // ===== 사이드바 탭 전환 =====
+  document.querySelectorAll('.sidebar-tab button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = btn.dataset.panel;
+      const container = btn.closest('.editor-sidebar-left, .editor-sidebar-right');
+      container.querySelectorAll('.sidebar-tab button').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      container.querySelector(`#panel-${panel}`).classList.add('active');
+    });
+  });
+
+  // ===== 저장 상태 표시 =====
+  const saveStatus = document.getElementById('saveStatus');
+  let saveTimer = null;
+  let hasChanges = false;
+
+  function markChanged() {
+    hasChanges = true;
+    saveStatus.textContent = '● 저장되지 않은 변경사항이 있습니다.';
+    saveStatus.className = 'save-status saving';
+
+    // 30초 후 자동 임시 저장
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(autoSave, 30000);
+  }
+
+  function markSaved() {
+    hasChanges = false;
+    saveStatus.textContent = '✓ 저장되었습니다.';
+    saveStatus.className = 'save-status saved';
+  }
+
+  editor.on('change', markChanged);
+
+  // ===== 저장 =====
+  async function saveContent(isDraft = true) {
+    const html = editor.getHtml();
+    const css = editor.getCss();
+    const projectData = editor.getProjectData();
+
+    saveStatus.textContent = '저장 중...';
+    saveStatus.className = 'save-status saving';
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+
+      const res = await fetch(`/api/tutor/academy/page-settings/${isDraft ? 'draft' : 'publish'}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ html, css, projectData }),
+      });
+
+      if (!res.ok) throw new Error(`저장 실패: ${res.status}`);
+
+      markSaved();
+      return true;
+    } catch (e) {
+      saveStatus.textContent = '❌ 저장 실패: ' + e.message;
+      saveStatus.className = 'save-status';
+      console.error('저장 오류:', e);
+      return false;
+    }
+  }
+
+  async function autoSave() {
+    if (hasChanges) {
+      await saveContent(true);
+    }
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', () => saveContent(true));
+
+  // ===== 게시 (명시적 승인) =====
+  document.getElementById('publishBtn').addEventListener('click', async () => {
+    if (!confirm('홈페이지를 게시하시겠습니까?\n게시하면 실제 홈페이지에 반영됩니다.')) return;
+    const ok = await saveContent(false);
+    if (ok) alert('게시되었습니다.');
+  });
+
+  // ===== 미리보기 =====
+  document.getElementById('previewBtn').addEventListener('click', () => {
+    const html = editor.getHtml();
+    const css = editor.getCss();
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <!DOCTYPE html>
+      <html lang="ko">
+      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>${css}</style></head>
+      <body>${html}</body>
+      </html>
+    `);
+    win.document.close();
+  });
+
+  // ===== 페이지 이탈 시 경고 =====
+  window.addEventListener('beforeunload', (e) => {
+    if (hasChanges) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  // 전역 노출 (디버깅용)
+  window.editor = editor;
+
+  console.log('BuildIt 시각 편집기 초기화 완료');
+})();
+</script>
+</body>
+</html>
