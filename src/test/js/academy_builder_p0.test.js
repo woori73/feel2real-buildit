@@ -84,12 +84,20 @@ test('given academy without design preset when applying then no preset attrs and
   assert.deepEqual(Object.keys(calls).filter((k) => k.startsWith('--brand-')), []);
 });
 
-test('given design preset section hints when visibility already chosen then no change is suggested', () => {
-  // given — ARTS는 sec-videos ON을 권장하지만 사용자가 이미 OFF를 골랐다
+test('given design preset section hints when visibility already chosen then no change is suggested for chosen ones', () => {
+  // given — ARTS는 sec-videos·sec-minilectures ON을 권장하지만 사용자가 이미 선택했다
   // when
-  const { sectionChanges } = brand.designPresetDraft('ARTS', {}, { 'sec-videos': false });
+  const { sectionChanges } = brand.designPresetDraft('ARTS', {}, { 'sec-videos': false, 'sec-minilectures': true });
   // then
   assert.deepEqual(sectionChanges, []);
+});
+
+test('given design preset section hints when visibility partially chosen then only unchosen are suggested', () => {
+  // given — ARTS 권장 중 sec-videos만 사용자가 이미 OFF로 골랐다
+  // when
+  const { sectionChanges } = brand.designPresetDraft('ARTS', {}, { 'sec-videos': false });
+  // then — sec-minilectures만 제안된다
+  assert.deepEqual(sectionChanges, [{ sectionId: 'sec-minilectures', visible: true }]);
 });
 
 // ═══════════════ P0-2: 색상 테마 변수화 ═══════════════
@@ -242,6 +250,156 @@ test('given publish request when everything is valid then validation passes', ()
   });
   // then
   assert.equal(result.ok, true);
+});
+
+// ═══════════════ P0 보완: 프리셋별 히어로 DOM 차별화 ═══════════════
+
+function heroFixture(presetId, overrides = {}) {
+  const { pageSettings, ...rest } = overrides;
+  return academyFixture({
+    ...rest,
+    pageSettings: {
+      builderDraft: { designPreset: presetId },
+      ...(pageSettings || {})
+    }
+  });
+}
+
+test('given no design preset when rendering hero then legacy DOM is unchanged (byte-identical structure)', () => {
+  // given — 기존 테넌트: designPreset 없음
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = academyFixture();
+  // when
+  const html = hooks.renderHero(academy);
+  // then — 기존 구조 그대로: .hero-grid + .tablet, 프리셋 전용 클래스 없음
+  assert.match(html, /class="hero-grid"/);
+  assert.match(html, /class="tablet"/);
+  assert.doesNotMatch(html, /hero-exam|hero-english|hero-arts|hero-study|hero-online/);
+  assert.doesNotMatch(html, /data-design-preset/);
+});
+
+test('given EXAM preset when rendering hero then center layout with prominent stats and two buttons', () => {
+  // given
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = heroFixture('EXAM');
+  // when
+  const html = hooks.renderHero(academy);
+  // then
+  assert.match(html, /data-design-preset="EXAM"/);
+  assert.match(html, /hero-exam-inner/);
+  assert.match(html, /hero-exam-stats/);
+  assert.match(html, /hero-exam-stat/);
+  assert.match(html, /hero-exam-actions/);
+  assert.match(html, /상담 신청하기/);
+  assert.match(html, /커리큘럼 보기/);
+  // 원장 사진은 각진 프레임 (태블릿 아님)
+  assert.match(html, /principal-frame-angular/);
+  assert.doesNotMatch(html, /class="tablet"/);
+});
+
+test('given ENGLISH preset when rendering hero then two-column layout with rounded button', () => {
+  // given
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = heroFixture('ENGLISH');
+  // when
+  const html = hooks.renderHero(academy);
+  // then — 2열 구조
+  assert.match(html, /data-design-preset="ENGLISH"/);
+  assert.match(html, /hero-english-grid/);
+  assert.match(html, /hero-english-text/);
+  assert.match(html, /hero-english-visual/);
+  assert.match(html, /btn-rounded/);
+  assert.match(html, /무료 레벨테스트 신청/);
+  // 밝은 원형 프레임
+  assert.match(html, /principal-frame-circle-bright/);
+});
+
+test('given ARTS preset when rendering hero then fullscreen bg with overlay and gallery strip', () => {
+  // given
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = heroFixture('ARTS');
+  // when
+  const html = hooks.renderHero(academy);
+  // then
+  assert.match(html, /data-design-preset="ARTS"/);
+  assert.match(html, /hero-arts-bg/);
+  assert.match(html, /hero-arts-overlay/);
+  assert.match(html, /hero-arts-gallery/);
+  assert.match(html, /작품 보기/);
+});
+
+test('given STUDY preset when rendering hero then circular photo with handwritten caption', () => {
+  // given
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = heroFixture('STUDY');
+  // when
+  const html = hooks.renderHero(academy);
+  // then
+  assert.match(html, /data-design-preset="STUDY"/);
+  assert.match(html, /hero-study-wrap/);
+  assert.match(html, /hero-study-photo/);
+  assert.match(html, /hero-study-text/);
+  assert.match(html, /principal-frame-circle-warm/);
+  assert.match(html, /handwritten/);
+  assert.match(html, /원장과 상담하기/);
+});
+
+test('given ONLINE preset when rendering hero then gradient with three lecture cards', () => {
+  // given
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = heroFixture('ONLINE', {
+    lessons: [
+      { title: '강의 1' }, { title: '강의 2' }, { title: '강의 3' }, { title: '강의 4' }
+    ]
+  });
+  // when
+  const html = hooks.renderHero(academy);
+  // then — 강의 카드 3개
+  assert.match(html, /data-design-preset="ONLINE"/);
+  assert.match(html, /hero-online-gradient/);
+  assert.match(html, /hero-online-cards/);
+  const cardCount = (html.match(/hero-online-card"/g) || []).length;
+  assert.equal(cardCount, 3, '강의 카드는 3개만');
+  assert.match(html, /소개 영상 보기/);
+  assert.match(html, /수강 신청/);
+});
+
+test('given five presets when rendering heroes then each DOM structure is distinct', () => {
+  // given
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  // when
+  const htmls = ['EXAM', 'ENGLISH', 'ARTS', 'STUDY', 'ONLINE'].map((id) =>
+    hooks.renderHero(heroFixture(id)));
+  // then — 5개 모두 서로 다름
+  const unique = new Set(htmls);
+  assert.equal(unique.size, 5, '5종 프리셋 히어로 DOM이 모두 달라야 한다');
+  // 마커 교차 검증: 각 프리셋 고유 클래스가 다른 프리셋에 없음
+  const markers = {
+    EXAM: 'hero-exam-inner', ENGLISH: 'hero-english-grid', ARTS: 'hero-arts-gallery',
+    STUDY: 'hero-study-wrap', ONLINE: 'hero-online-cards'
+  };
+  for (const [id, marker] of Object.entries(markers)) {
+    const html = htmls[['EXAM', 'ENGLISH', 'ARTS', 'STUDY', 'ONLINE'].indexOf(id)];
+    assert.match(html, new RegExp(marker), `${id} 고유 마커`);
+    for (const [otherId, otherMarker] of Object.entries(markers)) {
+      if (otherId === id) continue;
+      assert.doesNotMatch(html, new RegExp(otherMarker), `${id}에 ${otherId} 마커가 없어야 함`);
+    }
+  }
+});
+
+test('given design presets when checking section emphasis then each preset has distinct config', () => {
+  // given / when
+  const sections = {};
+  for (const id of ['EXAM', 'ENGLISH', 'ARTS', 'STUDY', 'ONLINE']) {
+    sections[id] = brand.DESIGN_PRESETS[id].sections;
+  }
+  // then — 프리셋별 섹션 강조가 다름
+  assert.deepEqual(sections.EXAM, { 'sec-featured': true });
+  assert.deepEqual(sections.ENGLISH, { 'sec-lessons': true });
+  assert.deepEqual(sections.ARTS, { 'sec-videos': true, 'sec-minilectures': true });
+  assert.deepEqual(sections.STUDY, { 'sec-videos': false, 'sec-minilectures': false, 'sec-digitaltwin': false });
+  assert.deepEqual(sections.ONLINE, { 'sec-digitaltwin': true, 'sec-minilectures': true });
 });
 
 // ═══════════════ sec-cta 순서 정합성 ═══════════════

@@ -155,6 +155,352 @@
   }
 }
 
+/* ── P0 보완: 프리셋별 히어로 DOM ── */
+/* data-design-preset은 renderHero 분기로 출력되는 프리셋 전용 마크업에만 붙는다.
+   무프리셋(기존 테넌트)은 이 규칙을 타지 않아 렌더가 바이트 단위로 동일하다. */
+#publicView .hero[data-design-preset],
+.builder-public-preview .hero[data-design-preset]{
+  position:relative;
+  overflow:hidden;
+}
+
+/* EXAM — 중앙 정렬, 실적 prominently */
+#publicView .hero-exam .hero-exam-inner,
+.builder-public-preview .hero-exam .hero-exam-inner{
+  max-width:760px;
+  margin:0 auto;
+  text-align:center;
+  padding:56px 24px 40px;
+}
+#publicView .hero-exam .eyebrow,
+.builder-public-preview .hero-exam .eyebrow{
+  justify-content:center;
+}
+#publicView .hero-exam-stats,
+.builder-public-preview .hero-exam-stats{
+  display:flex;
+  justify-content:center;
+  gap:48px;
+  margin:32px 0;
+}
+#publicView .hero-exam-stat b,
+.builder-public-preview .hero-exam-stat b{
+  display:block;
+  font-size:2.2em;
+  font-weight:800;
+}
+#publicView .hero-exam-actions,
+.builder-public-preview .hero-exam-actions{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+#publicView .hero-exam-principal,
+.builder-public-preview .hero-exam-principal{
+  display:flex;
+  justify-content:center;
+  padding-bottom:32px;
+}
+
+/* ENGLISH — 2열 (텍스트 좌측 + 이미지 우측) */
+#publicView .hero-english-grid,
+.builder-public-preview .hero-english-grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:40px;
+  align-items:center;
+  max-width:1100px;
+  margin:0 auto;
+  padding:56px 24px;
+}
+#publicView .hero-english .btn-rounded,
+.builder-public-preview .hero-english .btn-rounded{
+  border-radius:999px;
+  padding:14px 32px;
+}
+
+/* ARTS — 풀스크린 배경 + 오버레이 + 갤러리 스트립 */
+#publicView .hero-arts,
+.builder-public-preview .hero-arts{
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+#publicView .hero-arts-bg,
+.builder-public-preview .hero-arts-bg{
+  position:absolute;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+}
+#publicView .hero-arts-bg-empty,
+.builder-public-preview .hero-arts-bg-empty{
+  background:linear-gradient(160deg,#1a1a22,#2d2d3a);
+}
+#publicView .hero-arts-overlay,
+.builder-public-preview .hero-arts-overlay{
+  position:relative;
+  z-index:1;
+  padding:80px 32px 24px;
+  background:linear-gradient(transparent,rgba(0,0,0,.72));
+  color:#fff;
+}
+#publicView .hero-arts-overlay h1,
+.builder-public-preview .hero-arts-overlay h1{
+  color:#fff;
+}
+#publicView .hero-arts-gallery,
+.builder-public-preview .hero-arts-gallery{
+  position:relative;
+  z-index:1;
+  display:flex;
+  gap:12px;
+  padding:0 32px 32px;
+  overflow-x:auto;
+}
+#publicView .hero-arts-gallery-item,
+.builder-public-preview .hero-arts-gallery-item{
+  flex:0 0 auto;
+  min-width:140px;
+  padding:12px 16px;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:8px;
+  color:#fff;
+  font-size:.85em;
+}
+#publicView .btn-ghost,
+.builder-public-preview .btn-ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.5);
+  color:#fff;
+}
+
+/* STUDY — 원형 사진 + 소개 나란히 */
+#publicView .hero-study-wrap,
+.builder-public-preview .hero-study-wrap{
+  display:flex;
+  gap:48px;
+  align-items:center;
+  max-width:960px;
+  margin:0 auto;
+  padding:56px 24px;
+}
+#publicView .hero-study-photo,
+.builder-public-preview .hero-study-photo{
+  flex:0 0 240px;
+}
+
+/* ONLINE — 그라데이션 + 강의 카드 3개 */
+#publicView .hero-online,
+.builder-public-preview .hero-online{
+  text-align:center;
+}
+#publicView .hero-online-gradient,
+.builder-public-preview .hero-online-gradient{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 130%);
+}
+#publicView .hero-online-head,
+.builder-public-preview .hero-online-head{
+  position:relative;
+  z-index:1;
+  max-width:720px;
+  margin:0 auto;
+  padding:56px 24px 0;
+  color:var(--brand-hero-text);
+}
+#publicView .hero-online-head h1,
+.builder-public-preview .hero-online-head h1{
+  color:var(--brand-hero-text);
+}
+#publicView .hero-online-cards,
+.builder-public-preview .hero-online-cards{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:center;
+  gap:16px;
+  padding:32px 24px;
+  flex-wrap:wrap;
+}
+#publicView .hero-online-card,
+.builder-public-preview .hero-online-card{
+  width:200px;
+  padding:20px;
+  border-radius:12px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  color:var(--brand-hero-text);
+  text-align:left;
+  cursor:pointer;
+}
+#publicView .hero-online-card-thumb,
+.builder-public-preview .hero-online-card-thumb{
+  display:block;
+  font-size:1.8em;
+  font-weight:800;
+  opacity:.6;
+}
+#publicView .hero-online-card-title,
+.builder-public-preview .hero-online-card-title{
+  display:block;
+  margin:8px 0;
+  font-weight:600;
+}
+#publicView .hero-online-actions,
+.builder-public-preview .hero-online-actions{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  padding-bottom:48px;
+}
+
+/* ── 원장 사진 프레임 (프리셋별) ── */
+#publicView .principal-photo,
+.builder-public-preview .principal-photo{
+  margin:0;
+  text-align:center;
+}
+#publicView .principal-photo-img,
+.builder-public-preview .principal-photo-img{
+  width:100%;
+  height:auto;
+  display:block;
+  object-fit:cover;
+}
+#publicView .principal-photo-empty,
+.builder-public-preview .principal-photo-empty{
+  aspect-ratio:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--brand-bg-alt);
+  color:var(--brand-text-light);
+}
+/* EXAM: 각진 프레임, 정장 스타일 */
+#publicView .principal-frame-angular .principal-photo-img,
+.builder-public-preview .principal-frame-angular .principal-photo-img{
+  border-radius:4px;
+  border:3px solid var(--brand-secondary);
+  aspect-ratio:3/4;
+}
+/* ENGLISH: 밝은 원형 프레임 */
+#publicView .principal-frame-circle-bright .principal-photo-img,
+.builder-public-preview .principal-frame-circle-bright .principal-photo-img{
+  border-radius:50%;
+  border:4px solid #fff;
+  box-shadow:0 8px 24px rgba(74,144,217,.3);
+  aspect-ratio:1;
+}
+/* ARTS: 비정형 아티스틱 마스크 */
+#publicView .principal-frame-artistic .principal-photo-img,
+.builder-public-preview .principal-frame-artistic .principal-photo-img{
+  border-radius:38% 62% 55% 45% / 45% 42% 58% 55%;
+  aspect-ratio:1;
+}
+/* STUDY: 따뜻한 원형 + 손글씨 캡션 */
+#publicView .principal-frame-circle-warm .principal-photo-img,
+.builder-public-preview .principal-frame-circle-warm .principal-photo-img{
+  border-radius:50%;
+  border:4px solid var(--brand-secondary);
+  aspect-ratio:1;
+}
+#publicView .principal-photo-cap .handwritten,
+.builder-public-preview .principal-photo-cap .handwritten{
+  font-family:'Segoe Script','Comic Sans MS',cursive;
+  font-size:1.1em;
+  color:var(--brand-primary);
+}
+/* ONLINE: 썸네일 카드 형태 */
+#publicView .principal-frame-card .principal-photo-img,
+.builder-public-preview .principal-frame-card .principal-photo-img{
+  border-radius:12px;
+  aspect-ratio:16/10;
+}
+
+/* ── P0 보완: 모바일(390px) 프리셋별 차별화 ── */
+@media (max-width:480px){
+  /* EXAM: 작게, 텍스트 중심 */
+  #publicView .hero-exam .hero-exam-inner,
+  .builder-public-preview .hero-exam .hero-exam-inner{
+    padding:36px 16px 24px;
+  }
+  #publicView .hero-exam-stats,
+  .builder-public-preview .hero-exam-stats{
+    gap:20px;
+    margin:20px 0;
+  }
+  #publicView .hero-exam-stat b,
+  .builder-public-preview .hero-exam-stat b{
+    font-size:1.5em;
+  }
+  #publicView .hero-exam-actions,
+  .builder-public-preview .hero-exam-actions{
+    flex-direction:row;
+  }
+  #publicView .hero-exam-principal .principal-photo,
+  .builder-public-preview .hero-exam-principal .principal-photo{
+    max-width:120px;
+  }
+  /* ENGLISH: 1열, 이미지 중간 크기 */
+  #publicView .hero-english-grid,
+  .builder-public-preview .hero-english-grid{
+    grid-template-columns:1fr;
+    gap:24px;
+    padding:36px 16px;
+  }
+  #publicView .hero-english-visual .principal-photo,
+  .builder-public-preview .hero-english-visual .principal-photo{
+    max-width:200px;
+    margin:0 auto;
+  }
+  /* ARTS: 큰 이미지, 하단 오버레이 */
+  #publicView .hero-arts,
+  .builder-public-preview .hero-arts{
+    min-height:420px;
+  }
+  #publicView .hero-arts-overlay,
+  .builder-public-preview .hero-arts-overlay{
+    padding:48px 20px 16px;
+  }
+  #publicView .hero-arts-gallery,
+  .builder-public-preview .hero-arts-gallery{
+    padding:0 20px 20px;
+  }
+  /* STUDY: 원형 작게, 사진 하단에 제목 */
+  #publicView .hero-study-wrap,
+  .builder-public-preview .hero-study-wrap{
+    flex-direction:column;
+    gap:24px;
+    padding:36px 16px;
+    text-align:center;
+  }
+  #publicView .hero-study-photo,
+  .builder-public-preview .hero-study-photo{
+    flex:none;
+    width:140px;
+  }
+  /* ONLINE: 상단 제목, 카드 세로 쌓기 */
+  #publicView .hero-online-cards,
+  .builder-public-preview .hero-online-cards{
+    flex-direction:column;
+    align-items:center;
+  }
+  #publicView .hero-online-card,
+  .builder-public-preview .hero-online-card{
+    width:min(320px,90%);
+  }
+  #publicView .hero-online-actions,
+  .builder-public-preview .hero-online-actions{
+    flex-direction:column;
+    align-items:center;
+  }
+}
+
 /* ── 카드 스타일 (컬렉션 카드 공통) ── */
 #publicView[data-card-style="bordered"] .f2r-program-card,
 #publicView[data-card-style="bordered"] .featured-schoolcard,

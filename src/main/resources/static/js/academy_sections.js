@@ -747,7 +747,166 @@
     { draftKey: 'operationYears', label: '운영 경력' }
   ];
 
-  function renderHero(view, ctx) {
+  // ── P0 보완: 프리셋별 히어로 DOM 차별화 ────────────────────────────────────
+  // designPreset이 없으면 기존 renderHeroDefault를 그대로 써서 기존 테넌트(에듀홀릭 등)
+  // 렌더 결과가 바이트 단위로 동일하게 유지된다.
+  const DESIGN_PRESET_IDS = ['EXAM', 'ENGLISH', 'ARTS', 'STUDY', 'ONLINE'];
+
+  function designPresetOf(view) {
+    const id = draftText(view, 'designPreset', '');
+    return DESIGN_PRESET_IDS.indexOf(id) >= 0 ? id : null;
+  }
+
+  /** 프리셋별 원장 사진 — 검은색 태블릿이 아닌 각 프리셋 컨셉에 맞는 프레임. */
+  function principalPhotoHtml(view, ctx, frameClass, captionHtml) {
+    const name = draftText(view, 'principalName', '원장');
+    const photoUrl = ctx.hasHeroMedia(view, 'principal')
+      ? ctx.heroMediaUrl('principal')
+      : null;
+    const imgHtml = photoUrl
+      ? `<img class="principal-photo-img" src="${escapeAttr(photoUrl)}" alt="${escapeHtml(view.name)} 원장 사진" loading="lazy">`
+      : `<div class="principal-photo-empty"><span>원장 사진</span></div>`;
+    return `<figure class="principal-photo ${frameClass}"${ctx.portraitClusterAttrs ? ctx.portraitClusterAttrs() : ''}>
+      ${imgHtml}
+      <figcaption class="principal-photo-cap">${captionHtml || `<b>${escapeHtml(name)}</b>${escapeHtml(view.name)}`}</figcaption>
+      ${ctx.portraitClusterExtra ? ctx.portraitClusterExtra() : ''}
+    </figure>`;
+  }
+
+  function heroEyebrowHtml(view, ctx) {
+    const eyebrow = draftText(view, 'principalName', '');
+    return eyebrow
+      ? `<div class="eyebrow" data-reveal-item><span class="stroke"></span>${ctx.heroEyebrow(eyebrow)}</div>`
+      : '';
+  }
+
+  function heroTitleHtml(view, ctx) {
+    return `<h1 data-reveal-item>${ctx.heroTitleInner(view.name)}</h1>`;
+  }
+
+  function heroIntroHtml(view, ctx) {
+    return ctx.editableText({ tag: 'blockquote', className: 'hero-quote', anchor: 'text', draftKey: 'intro', value: view.intro, builderClass: 'builder-multiline-text', extraAttrs: 'data-reveal-item' });
+  }
+
+  function heroStatsHtml(view, ctx, itemClass) {
+    const stats = HERO_STATS.map((stat) =>
+      `<div class="${itemClass || ''}"><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
+    ).join('');
+    return `<div class="hero-stats" data-reveal-item>${stats}</div>`;
+  }
+
+  // EXAM — 중앙 정렬, 실적 숫자 3개 prominently, CTA 버튼 2개 나란히
+  function renderHeroExam(view, ctx) {
+    return `<section class="hero hero-exam" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="EXAM" data-reveal>
+        <div class="brand-glow" aria-hidden="true"></div>
+        <div class="hero-exam-inner">
+          ${heroEyebrowHtml(view, ctx)}
+          ${heroTitleHtml(view, ctx)}
+          ${heroIntroHtml(view, ctx)}
+          <div class="hero-exam-stats" data-reveal-item>${HERO_STATS.map((stat) =>
+            `<div class="hero-exam-stat"><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
+          ).join('')}</div>
+          <div class="hero-exam-actions" data-reveal-item>
+            <button type="button" class="btn" onclick="requestConsult()">상담 신청하기</button>
+            <button type="button" class="btn outline" onclick="scrollToId('sec-lessons')">커리큘럼 보기</button>
+          </div>
+          ${ctx.heroBadges(view)}
+        </div>
+        <div class="hero-exam-principal" data-reveal-item>
+          ${principalPhotoHtml(view, ctx, 'principal-frame-angular')}
+        </div>
+      </section>`;
+  }
+
+  // ENGLISH — 2열 (좌측 텍스트 + 우측 이미지), 둥근 CTA 버튼 1개
+  function renderHeroEnglish(view, ctx) {
+    return `<section class="hero hero-english" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="ENGLISH" data-reveal>
+        <div class="brand-glow" aria-hidden="true"></div>
+        <div class="hero-english-grid">
+          <div class="hero-english-text">
+            ${heroEyebrowHtml(view, ctx)}
+            ${heroTitleHtml(view, ctx)}
+            ${heroIntroHtml(view, ctx)}
+            <div class="hero-english-actions" data-reveal-item>
+              <button type="button" class="btn btn-rounded" onclick="requestConsult()">무료 레벨테스트 신청</button>
+            </div>
+            ${ctx.heroBadges(view)}
+          </div>
+          <div class="hero-english-visual" data-reveal-item>
+            ${principalPhotoHtml(view, ctx, 'principal-frame-circle-bright')}
+          </div>
+        </div>
+      </section>`;
+  }
+
+  // ARTS — 풀스크린 배경 이미지 + 오버레이 텍스트 + 갤러리 스트립
+  function renderHeroArts(view, ctx) {
+    const bgUrl = ctx.hasHeroMedia(view, 'principal') ? ctx.heroMediaUrl('principal') : null;
+    const galleryItems = (view.lessons || []).slice(0, 3).map((lesson, i) =>
+      `<div class="hero-arts-gallery-item"><span class="hero-arts-gallery-num">0${i + 1}</span><span>${escapeHtml(lesson.title || lesson.name || '작품')}</span></div>`
+    ).join('') || '<div class="hero-arts-gallery-item"><span>갤러리 준비 중</span></div>';
+    return `<section class="hero hero-arts" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="ARTS" data-reveal>
+        ${bgUrl ? `<div class="hero-arts-bg" style="background-image:url('${escapeAttr(bgUrl)}')" aria-hidden="true"></div>` : '<div class="hero-arts-bg hero-arts-bg-empty" aria-hidden="true"></div>'}
+        <div class="hero-arts-overlay">
+          ${heroEyebrowHtml(view, ctx)}
+          ${heroTitleHtml(view, ctx)}
+          ${heroIntroHtml(view, ctx)}
+          <div class="hero-arts-actions" data-reveal-item>
+            <button type="button" class="btn btn-ghost" onclick="scrollToId('sec-videos')">작품 보기</button>
+          </div>
+        </div>
+        <div class="hero-arts-gallery" data-reveal-item>${galleryItems}</div>
+      </section>`;
+  }
+
+  // STUDY — 원형 원장 사진 + 소개 나란히, 손글씨 캡션
+  function renderHeroStudy(view, ctx) {
+    const name = draftText(view, 'principalName', '원장');
+    const caption = `<b class="handwritten">${escapeHtml(name)} 원장</b><span>${escapeHtml(view.name)}에서 직접 지도합니다</span>`;
+    return `<section class="hero hero-study" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="STUDY" data-reveal>
+        <div class="brand-glow" aria-hidden="true"></div>
+        <div class="hero-study-wrap">
+          <div class="hero-study-photo" data-reveal-item>
+            ${principalPhotoHtml(view, ctx, 'principal-frame-circle-warm', caption)}
+          </div>
+          <div class="hero-study-text">
+            ${heroEyebrowHtml(view, ctx)}
+            ${heroTitleHtml(view, ctx)}
+            ${heroIntroHtml(view, ctx)}
+            <div class="hero-study-actions" data-reveal-item>
+              <button type="button" class="btn" onclick="requestConsult()">원장과 상담하기</button>
+            </div>
+            ${ctx.heroBadges(view)}
+          </div>
+        </div>
+      </section>`;
+  }
+
+  // ONLINE — 그라데이션 배경 + 강의 썸네일 카드 3개 + 영상 재생 버튼
+  function renderHeroOnline(view, ctx) {
+    const cards = (view.lessons || []).slice(0, 3).map((lesson, i) =>
+      `<button type="button" class="hero-online-card" onclick="scrollToId('sec-lessons')">
+        <span class="hero-online-card-thumb">${escapeHtml(String(i + 1).padStart(2, '0'))}</span>
+        <span class="hero-online-card-title">${escapeHtml(lesson.title || lesson.name || '강의 ' + (i + 1))}</span>
+        <span class="hero-online-card-play" aria-hidden="true">▶</span>
+      </button>`
+    ).join('') || '<div class="hero-online-card hero-online-card-empty"><span>강의 준비 중</span></div>';
+    return `<section class="hero hero-online" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="ONLINE" data-reveal>
+        <div class="hero-online-gradient" aria-hidden="true"></div>
+        <div class="hero-online-head">
+          ${heroEyebrowHtml(view, ctx)}
+          ${heroTitleHtml(view, ctx)}
+          ${heroIntroHtml(view, ctx)}
+        </div>
+        <div class="hero-online-cards" data-reveal-item>${cards}</div>
+        <div class="hero-online-actions" data-reveal-item>
+          <button type="button" class="btn btn-play" onclick="scrollToId('sec-videos')"><span aria-hidden="true">▶</span> 소개 영상 보기</button>
+          <button type="button" class="btn outline" onclick="requestConsult()">수강 신청</button>
+        </div>
+      </section>`;
+  }
+
+  function renderHeroDefault(view, ctx) {
     const eyebrow = draftText(view, 'principalName', '');
     const stats = HERO_STATS.map((stat) =>
       `<div><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
@@ -769,6 +928,16 @@
           ${renderPortraitTablet(view, ctx)}
         </div>
       </section>`;
+  }
+
+  function renderHero(view, ctx) {
+    const preset = designPresetOf(view);
+    if (preset === 'EXAM') return renderHeroExam(view, ctx);
+    if (preset === 'ENGLISH') return renderHeroEnglish(view, ctx);
+    if (preset === 'ARTS') return renderHeroArts(view, ctx);
+    if (preset === 'STUDY') return renderHeroStudy(view, ctx);
+    if (preset === 'ONLINE') return renderHeroOnline(view, ctx);
+    return renderHeroDefault(view, ctx);
   }
 
   // ── sec-videos ────────────────────────────────────────────────────────────

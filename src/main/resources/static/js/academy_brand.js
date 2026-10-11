@@ -25,32 +25,37 @@
       label: '입시학원형', description: '신뢰와 실적을 강조하는 입시 전문 학원',
       typography: 'ACADEMIC', heroLayout: 'center', cardStyle: 'bordered',
       colors: { primary: '#1a2b4a', secondary: '#c9a86a', accent: '#d4a017', bg: '#ffffff', bgAlt: '#f6f7f9', text: '#141c2e', textLight: '#5b6577', border: '#e2e6ee', heroBg: '#1a2b4a', heroText: '#ffffff' },
-      sections: {}
+      // 실적(featured)·커리큘럼(lessons) 중심
+      sections: { 'sec-featured': true }
     },
     ENGLISH: {
       label: '영어회화형', description: '밝고 친근한 회화·어학 학원',
       typography: 'FRIENDLY', heroLayout: 'split', cardStyle: 'rounded',
       colors: { primary: '#4a90d9', secondary: '#f5a623', accent: '#f5a623', bg: '#ffffff', bgAlt: '#f2f8ff', text: '#22303f', textLight: '#5f7285', border: '#dce9f7', heroBg: '#2f6fb8', heroText: '#ffffff' },
-      sections: {}
+      // 과정(lessons)·후기 중심
+      sections: { 'sec-lessons': true }
     },
     ARTS: {
       label: '예체능형', description: '다크 갤러리 무드의 예체능 학원',
       typography: 'MODERN', heroLayout: 'visual', cardStyle: 'media',
       // 차콜(#2d2d2d 계열)은 bgAlt·border·heroBg로, 인터랙티브 주색은 바이올렛으로 둔다.
       colors: { primary: '#8b5cf6', secondary: '#a78bfa', accent: '#c4b5fd', bg: '#16161a', bgAlt: '#232329', text: '#f4f4f6', textLight: '#a9a9b6', border: '#34343e', heroBg: '#101014', heroText: '#ffffff' },
-      sections: { 'sec-videos': true }
+      // 갤러리(videos)·미니특강(minilectures) 중심
+      sections: { 'sec-videos': true, 'sec-minilectures': true }
     },
     STUDY: {
       label: '공부방형', description: '따뜻하고 소규모인 공부방·교습소',
       typography: 'CLEAN', heroLayout: 'visual', cardStyle: 'bordered',
       colors: { primary: '#8b6f47', secondary: '#c2703d', accent: '#c2703d', bg: '#fffdf8', bgAlt: '#f5f0e8', text: '#3d3225', textLight: '#7a6c58', border: '#e8ddc9', heroBg: '#6f5836', heroText: '#ffffff' },
-      sections: {}
+      // 원장·소개 중심: 영상·특강·디지털트윈은 소규모 공부방과 거리가 멀어 기본 OFF 제안
+      sections: { 'sec-videos': false, 'sec-minilectures': false, 'sec-digitaltwin': false }
     },
     ONLINE: {
       label: '온라인학원형', description: '모던하고 테크 무드의 온라인 학원',
       typography: 'MODERN', heroLayout: 'gradient', cardStyle: 'minimal',
       colors: { primary: '#0f172a', secondary: '#06b6d4', accent: '#22d3ee', bg: '#ffffff', bgAlt: '#f1f5f9', text: '#0f172a', textLight: '#64748b', border: '#e2e8f0', heroBg: '#0f172a', heroText: '#ffffff' },
-      sections: { 'sec-minilectures': true }
+      // 강의(digitaltwin)·미니특강 중심
+      sections: { 'sec-digitaltwin': true, 'sec-minilectures': true }
     }
   });
 
