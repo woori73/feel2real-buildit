@@ -147,6 +147,29 @@
     }
     .save-status.saving { color: #f59e0b; }
     .save-status.saved { color: #10b981; }
+    .panel-close-btn {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      z-index: 10;
+    }
+    @media (max-width: 1024px) {
+      .editor-sidebar-left.mobile-open .panel-close-btn,
+      .editor-sidebar-right.mobile-open .panel-close-btn {
+        display: block;
+      }
+      .editor-sidebar-left, .editor-sidebar-right {
+        position: relative;
+      }
+    }
 
     /* GrapesJS 패널 스타일 조정 */
     .gjs-pn-panel { position: relative; }
@@ -203,6 +226,7 @@
   <div class="editor-main">
     <!-- 좌측: 블록 패널 -->
     <div class="editor-sidebar-left" id="blocksPanel">
+      <button class="panel-close-btn" id="closeLeftPanel" title="닫기">✕</button>
       <div class="sidebar-tab">
         <button class="active" data-panel="blocks">블록</button>
         <button data-panel="presets">프리셋</button>
@@ -239,6 +263,7 @@
 
     <!-- 우측: 스타일/레이어 패널 -->
     <div class="editor-sidebar-right" id="stylePanel">
+      <button class="panel-close-btn" id="closeRightPanel" title="닫기">✕</button>
       <div class="sidebar-tab">
         <button class="active" data-panel="style">스타일</button>
         <button data-panel="layers">레이어</button>
@@ -558,17 +583,16 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     }
 
     const frame = modal.querySelector('#previewFrame');
-    const doc = frame.contentDocument;
-    // sandbox="allow-same-origin"만 허용 - 스크립트 실행 차단
-    // allow-scripts를 제외하여 XSS 방지
-    doc.open();
-    doc.write(`<!DOCTYPE html>
+    // srcdoc 사용: contentDocument에 직접 접근하지 않음
+    // sandbox="" 로 스크립트 실행 차단 및 부모 창 격리
+    const escapedHtml = html.replace(/`/g, '&#96;');
+    const escapedCss = css.replace(/`/g, '&#96;');
+    frame.srcdoc = `<!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>${css}</style></head>
-<body>${html}</body>
-</html>`);
-    doc.close();
+<style>${escapedCss}</style></head>
+<body>${escapedHtml}</body>
+</html>`;
 
     modal.style.display = 'flex';
   });
@@ -662,6 +686,16 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
       }
       updateToggleButtons();
     }
+  });
+
+  // 모바일 패널 닫기 버튼
+  document.getElementById('closeLeftPanel').addEventListener('click', () => {
+    leftPanel.classList.remove('mobile-open');
+    updateToggleButtons();
+  });
+  document.getElementById('closeRightPanel').addEventListener('click', () => {
+    rightPanel.classList.remove('mobile-open');
+    updateToggleButtons();
   });
 
   // ===== 게시 버튼 비활성화 =====
