@@ -585,7 +585,7 @@ class VisualEditorMySqlIntegrationTest {
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
-  @DisplayName("병렬 게시 4건 동일 revision → 모두 200 (멱등), 게시본 1건")
+  @DisplayName("병렬 게시 4건 동일 revision → 1건 200, 나머지는 409 (데이터 정합성 유지)")
   void concurrentPublish_idempotent() throws Exception {
     MvcResult r1 = putDraft("{\"html\":\"<p>pub</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
     assertThat(r1.getResponse().getStatus()).isEqualTo(200);
@@ -596,6 +596,8 @@ class VisualEditorMySqlIntegrationTest {
     CountDownLatch ready = new CountDownLatch(threads);
     CountDownLatch start = new CountDownLatch(1);
     AtomicInteger ok200 = new AtomicInteger();
+    AtomicInteger conflict409 = new AtomicInteger();
+    AtomicInteger other = new AtomicInteger();
 
     try {
       List<Future<?>> futures = new java.util.ArrayList<>();
@@ -604,8 +606,13 @@ class VisualEditorMySqlIntegrationTest {
           ready.countDown();
           start.await();
           MvcResult r = postPublish("{\"revision\":" + rev + "}");
-          if (r.getResponse().getStatus() == 200) {
+          int code = r.getResponse().getStatus();
+          if (code == 200) {
             ok200.incrementAndGet();
+          } else if (code == 409) {
+            conflict409.incrementAndGet();
+          } else {
+            other.incrementAndGet();
           }
           return null;
         }));
@@ -619,8 +626,12 @@ class VisualEditorMySqlIntegrationTest {
       pool.shutdownNow();
     }
 
-    // 게시는 멱등하므로 모두 성공해도 게시본은 1건
-    assertThat(ok200.get()).isEqualTo(threads);
+    // 정확히 1건만 성공, 나머지는 409. 500 등 다른 오류 없음.
+    assertThat(ok200.get()).isEqualTo(1);
+    assertThat(conflict409.get()).isEqualTo(threads - 1);
+    assertThat(other.get()).isEqualTo(0);
+
+    // 최종 게시본이 정상
     String handle = myHandle();
     MvcResult homepage = mockMvc.perform(
             get("/api/public/academy/" + handle + "/homepage"))
@@ -629,5 +640,19 @@ class VisualEditorMySqlIntegrationTest {
     assertThat(objectMapper.readTree(
         homepage.getResponse().getContentAsString())
         .get("html").asText()).contains("pub");
+  }
+
+  @Test
+  @DisplayName("중복 게시 (순차 2회) → 모두 200 (멱등)")
+  void duplicatePublish_sequential_idempotent() throws Exception {
+    MvcResult r1 = putDraft("{\"html\":\"<p>dup</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
+    assertThat(r1.getResponse().getStatus()).isEqualTo(200);
+    long rev = revisionOf(r1);
+
+    assertThat(postPublish("{\"revision\":" + rev + "}")
+        .getResponse().getStatus()).isEqualTo(200);
+    // 같은 revision으로 다시 게시 → 멱등하게 200
+    assertThat(postPublish("{\"revision\":" + rev + "}")
+        .getResponse().getStatus()).isEqualTo(200);
   }
 }
