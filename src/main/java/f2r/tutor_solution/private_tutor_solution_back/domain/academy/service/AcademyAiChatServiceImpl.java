@@ -30,15 +30,33 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
   private final AcademyAiContextService contextService;
 
   /**
+   * 톤/스타일 수정 키워드 → 지시 매핑.
+   * 예: "소개글을 좀 더 짧게" → intro 필드를 짧게
+   */
+  private static final Map<String, ToneInstruction> TONE_INSTRUCTIONS = Map.ofEntries(
+      Map.entry("짧게", new ToneInstruction("더 간결하게", "핵심만 담아 1-2문장으로 줄여주세요")),
+      Map.entry("길게", new ToneInstruction("더 자세하게", "구체적인 내용을 추가해 3-4문장으로 늘려주세요")),
+      Map.entry("신뢰", new ToneInstruction("신뢰감 있게", "학부모가 신뢰할 수 있는 전문적이고 안정적인 표현으로")),
+      Map.entry("친근", new ToneInstruction("친근하게", "따뜻하고 친근한 말투로")),
+      Map.entry("전문적", new ToneInstruction("전문적으로", "전문적이고 권위 있는 표현으로")),
+      Map.entry("부드럽", new ToneInstruction("부드럽게", "부드럽고 정중한 표현으로")),
+      Map.entry("강조", new ToneInstruction("강조해서", "핵심 메시지를 더 강하게 어필하도록")));
+
+  private record ToneInstruction(String label, String instruction) {}
+
+  /**
    * 자연어 키워드 → builderDraft 필드 매핑.
-   * 1일차는 키워드 기반으로 동작하고, 점진적으로 개선한다.
+   * 2일차: 톤 조절, 다중 필드, 문맥 참조 지원.
    */
   private static final Map<String, List<String>> KEYWORD_FIELD_MAP = Map.ofEntries(
       Map.entry("수강료", List.of("monthlyTuition")),
       Map.entry("월 수강료", List.of("monthlyTuition")),
       Map.entry("가격", List.of("monthlyTuition")),
+      Map.entry("소개글", List.of("intro", "introHeading", "introMotto")),
       Map.entry("소개", List.of("intro", "introHeading", "introMotto")),
       Map.entry("학원 소개", List.of("intro", "introHeading", "introMotto", "introBodySecondary")),
+      Map.entry("헤드라인", List.of("introHeading")),
+      Map.entry("모토", List.of("introMotto")),
       Map.entry("원장", List.of("principalDesc")),
       Map.entry("원장 소개", List.of("principalDesc", "principalQuote")),
       Map.entry("약력", List.of("principalCareer")),
@@ -78,12 +96,15 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
           newSessionId());
     }
 
-    // 2. 각 필드에 대해 수정안 생성
+    // 2. 톤/스타일 지시 감지
+    ToneInstruction toneInstruction = detectToneInstruction(userMessage);
+
+    // 3. 각 필드에 대해 수정안 생성
     List<FieldChange> changes = new ArrayList<>();
     List<String> skipped = new ArrayList<>();
     for (String field : targetFields) {
       String currentValue = getCurrentValue(context, field);
-      String newValue = generateNewValue(field, currentValue, userMessage);
+      String newValue = generateNewValue(field, currentValue, userMessage, toneInstruction);
       if (newValue != null && !newValue.equals(currentValue)) {
         // 값 형식 검증
         String validationError = validateFieldValue(field, newValue);
@@ -95,9 +116,23 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       }
     }
 
-    String summary = buildSummary(changes, skipped);
+    String summary = buildSummary(changes, skipped, toneInstruction);
 
     return new ChatProposal(changes, summary, newSessionId());
+  }
+
+  /**
+   * 톤/스타일 수정 지시를 감지한다.
+   * 예: "소개글을 좀 더 짧게" → ToneInstruction("더 간결하게", ...)
+   */
+  private ToneInstruction detectToneInstruction(String userMessage) {
+    String lower = userMessage.toLowerCase();
+    for (Map.Entry<String, ToneInstruction> entry : TONE_INSTRUCTIONS.entrySet()) {
+      if (lower.contains(entry.getKey())) {
+        return entry.getValue();
+      }
+    }
+    return null;
   }
 
   /**
@@ -152,13 +187,17 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
     return null;
   }
 
-  private String buildSummary(List<FieldChange> changes, List<String> skipped) {
+  private String buildSummary(
+      List<FieldChange> changes, List<String> skipped, ToneInstruction tone) {
     if (changes.isEmpty() && skipped.isEmpty()) {
       return "변경할 내용을 생성하지 못했습니다.";
     }
     StringBuilder sb = new StringBuilder();
     if (!changes.isEmpty()) {
       sb.append(changes.size()).append("개 항목의 수정을 제안합니다.");
+      if (tone != null) {
+        sb.append(" (").append(tone.label()).append(")");
+      }
     }
     if (!skipped.isEmpty()) {
       if (sb.length() > 0) {
@@ -167,6 +206,10 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       sb.append("다음 항목은 건너뜀: ").append(String.join(", ", skipped));
     }
     return sb.toString();
+  }
+
+  private String buildSummary(List<FieldChange> changes, List<String> skipped) {
+    return buildSummary(changes, skipped, null);
   }
 
   @Override
@@ -234,8 +277,11 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
   /**
    * AI Provider를 통해 수정안을 생성한다.
    * Provider가 준비되지 않았으면 원본 메시지를 파싱하여 직접 값을 추출한다.
+   *
+   * @param toneInstruction 톤/스타일 지시 (예: "짧게", "신뢰감 있게"). null 가능.
    */
-  private String generateNewValue(String field, String currentValue, String userMessage) {
+  private String generateNewValue(
+      String field, String currentValue, String userMessage, ToneInstruction toneInstruction) {
     // 숫자 필드는 메시지에서 직접 추출 시도
     if (isNumericField(field)) {
       String extracted = extractNumericValue(userMessage);
@@ -244,18 +290,51 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
       }
     }
 
+    // 톤 조절만 요청된 경우 (예: "소개글을 좀 더 짧게")
+    // 현재 값이 있으면 AI로 스타일 변환
+    if (toneInstruction != null && !currentValue.isBlank()) {
+      return generateToneAdjustedValue(field, currentValue, toneInstruction);
+    }
+
     // AI Provider로 텍스트 생성
     if (!aiProvider.isReady()) {
       return null;
     }
 
-    String prompt = buildPrompt(field, currentValue, userMessage);
+    String prompt = buildPrompt(field, currentValue, userMessage, toneInstruction);
     AiCompletion result = aiProvider.complete(prompt, new AiTaskLimits(500));
 
     if (!result.ok() || result.text().isBlank()) {
       return null;
     }
 
+    return sanitize(result.text());
+  }
+
+  private String generateNewValue(String field, String currentValue, String userMessage) {
+    return generateNewValue(field, currentValue, userMessage, null);
+  }
+
+  /**
+   * 톤/스타일 지시에 따라 기존 값을 변환한다.
+   */
+  private String generateToneAdjustedValue(
+      String field, String currentValue, ToneInstruction tone) {
+    if (!aiProvider.isReady()) {
+      return null;
+    }
+
+    String prompt = String.format(
+        "다음 학원 홈페이지 문구를 '%s' 스타일로 다듬어주세요.\n"
+            + "원본: %s\n"
+            + "%s\n"
+            + "수정된 문구만 출력하세요. 과장 광고는 사용하지 마세요.",
+        tone.label(), currentValue, tone.instruction());
+
+    AiCompletion result = aiProvider.complete(prompt, new AiTaskLimits(500));
+    if (!result.ok() || result.text().isBlank()) {
+      return null;
+    }
     return sanitize(result.text());
   }
 
@@ -280,15 +359,25 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
     return null;
   }
 
-  private String buildPrompt(String field, String currentValue, String userMessage) {
-    return String.format(
+  private String buildPrompt(
+      String field, String currentValue, String userMessage, ToneInstruction tone) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(String.format(
         "학원 홈페이지의 '%s' 항목을 수정해주세요.\n"
             + "현재 값: %s\n"
-            + "고객 요청: %s\n"
-            + "자연스럽고 전문적인 문체로 수정안을 제시해주세요. "
-            + "과장 광고나 근거 없는 표현은 사용하지 마세요. "
-            + "수정된 값만 출력하세요.",
-        field, currentValue, userMessage);
+            + "고객 요청: %s\n",
+        field, currentValue, userMessage));
+    if (tone != null) {
+      sb.append("스타일 지시: ").append(tone.instruction()).append("\n");
+    }
+    sb.append("자연스럽고 전문적인 문체로 수정안을 제시해주세요. "
+        + "과장 광고나 근거 없는 표현은 사용하지 마세요. "
+        + "수정된 값만 출력하세요.");
+    return sb.toString();
+  }
+
+  private String buildPrompt(String field, String currentValue, String userMessage) {
+    return buildPrompt(field, currentValue, userMessage, null);
   }
 
   private String sanitize(String text) {
