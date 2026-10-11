@@ -7,16 +7,13 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.Academy
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyPageVersionRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -28,6 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>적용과 복원 모두 권한 검사 및 변경 이력을 남긴다.
  *   <li>최근 20개 버전만 유지한다.
  * </ul>
+ *
+ * <p>D3 동시성 제어:
+ * 스냅샷 생성 전 Academy 행에 비관적 쓰기 잠금(PESSIMISTIC_WRITE, SELECT ... FOR UPDATE)을
+ * 획득한다. 이로써 같은 학원의 스냅샷 생성 작업이 직렬화되며, version_no 결정·저장·오래된
+ * 버전 정리가 하나의 트랜잭션 경계에서 원자적으로 처리된다.
+ *
+ * <p>잠금은 Academy 행 단위이므로 다른 학원의 스냅샷 작업은 차단되지 않는다.
+ * REQUIRES_NEW 재시도 방식은 사용하지 않는다 — 잠금으로 충돌 자체가 발생하지 않으므로
+ * 재시도가 불필요하고, "실패 응답인데 DB에 버전이 저장되는" 현상도 제거된다.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,13 +42,9 @@ public class AcademyPageVersionService {
   private static final int MAX_VERSIONS = 20;
 
   private final AcademyPageVersionRepository versionRepository;
+  private final AcademyRepository academyRepository;
   private final AcademyService academyService;
   private final ObjectMapper objectMapper = new ObjectMapper();
-
-  /** version_no 충돌 재시도용 자기 참조 (B4). */
-  @Lazy
-  @Autowired
-  private AcademyPageVersionService self;
 
   /**
    * 현재 상태를 스냅샷으로 저장한다.
@@ -52,21 +54,6 @@ public class AcademyPageVersionService {
    * @param pageSettings 현재 페이지 설정
    * @param note 버전 설명
    * @return 생성된 버전 ID
-   */
-  /**
-   * 현재 상태를 스냅샷으로 저장한다 (B4).
-   *
-   * <p>동시에 두 스냅샷이 같은 version_no를 잡으면 UNIQUE 제약에 걸린다.
-   * 이 경우 최대 1회 재시도한다. 재시도를 위해 내부 트랜잭션은 REQUIRES_NEW로
-   * 분리하므로, 실패한 시도가 바깥 트랜잭션을 오염시키지 않는다.
-   */
-  /**
-   * 버전 스냅샷을 저장한다.
-   *
-   * <p>호출자의 트랜잭션에 참여한다 (REQUIRED). version_no 동시성 충돌 시
-   * 새 트랜잭션에서 1회 재시도한다.
-   *
-   * <p>F2: intro를 함께 저장한다 (AI가 변경한 top-level intro 복원용).
    */
   @Transactional
   public Long snapshot(
@@ -79,6 +66,11 @@ public class AcademyPageVersionService {
 
   /**
    * 버전 스냅샷을 저장한다 (intro 포함).
+   *
+   * <p>D3: Academy 행 잠금 → version_no 결정 → 저장 → 정리를 단일 트랜잭션에서 처리한다.
+   * 호출자의 트랜잭션에 참여한다 (REQUIRED).
+   *
+   * <p>F2: intro를 함께 저장한다 (AI가 변경한 top-level intro 복원용).
    */
   @Transactional
   public Long snapshot(
@@ -87,49 +79,15 @@ public class AcademyPageVersionService {
       Map<String, Object> pageSettings,
       String intro,
       String note) {
-    try {
-      return doSnapshotInternal(principal, builderDraft, pageSettings, intro, note);
-    } catch (DataIntegrityViolationException e) {
-      // version_no UNIQUE 충돌 → 현재 TX는 rollback-only이므로 새 TX에서 재시도
-      return self.snapshotRetry(principal, builderDraft, pageSettings, intro, note);
-    }
-  }
-
-  /**
-   * 스냅샷 재시도용 (REQUIRES_NEW).
-   *
-   * <p>동시성 충돌로 기존 트랜잭션이 broken된 경우에만 호출된다.
-   * 독립 트랜잭션에서 version_no를 다시 계산하여 저장한다.
-   */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Long snapshotRetry(
-      JwtTokenProvider.AuthenticatedPrincipal principal,
-      Map<String, String> builderDraft,
-      Map<String, Object> pageSettings,
-      String note) {
-    return doSnapshotInternal(principal, builderDraft, pageSettings, null, note);
-  }
-
-  /**
-   * 스냅샷 재시도용 (REQUIRES_NEW, intro 포함).
-   */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Long snapshotRetry(
-      JwtTokenProvider.AuthenticatedPrincipal principal,
-      Map<String, String> builderDraft,
-      Map<String, Object> pageSettings,
-      String intro,
-      String note) {
-    return doSnapshotInternal(principal, builderDraft, pageSettings, intro, note);
-  }
-
-  private Long doSnapshotInternal(
-      JwtTokenProvider.AuthenticatedPrincipal principal,
-      Map<String, String> builderDraft,
-      Map<String, Object> pageSettings,
-      String intro,
-      String note) {
     AcademyResponse academy = getMyAcademy(principal);
+
+    // D3: 학원별 스냅샷 작업 직렬화.
+    // Academy 행에 PESSIMISTIC_WRITE 잠금을 걸어 동시 스냅샷 요청을 순서대로 처리한다.
+    // 행 단위 잠금이므로 다른 학원의 작업은 영향을 받지 않는다.
+    academyRepository
+        .findForUpdateByAcademyId(academy.academyId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy가 없습니다."));
+
     Integer nextNo = versionRepository
         .findTopByAcademyIdOrderByVersionNoDesc(academy.academyId())
         .map(v -> v.getVersionNo() + 1)
@@ -146,6 +104,7 @@ public class AcademyPageVersionService {
     versionRepository.save(version);
 
     // F3: 20개 초과 시 오래된 버전 삭제 (최초 버전 v1은 보존)
+    // 같은 트랜잭션·같은 잠금 안에서 처리하므로 상한이 정확히 유지된다.
     cleanupOldVersions(academy.academyId());
 
     return version.getId();
