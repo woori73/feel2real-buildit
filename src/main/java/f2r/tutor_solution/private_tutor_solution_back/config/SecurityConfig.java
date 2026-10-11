@@ -344,6 +344,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/academies/**").permitAll()  // 공개 Academy 조회/이미지
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
             .requestMatchers(HttpMethod.POST, "/api/academies/*/visits").permitAll()  // 공개 방문 집계
+            .requestMatchers(HttpMethod.GET, "/api/public/academy/*/homepage").permitAll()  // 시각 편집기 공개 홈페이지
             .requestMatchers(HttpMethod.GET, "/api/academy-posts").permitAll()  // 공개 Academy 블로그 포스트 모아보기
             // 일반 공개 커뮤니티 read는 유지하되 Wiki scope 목록은 회원 전용으로 먼저 닫는다.
             // Wiki 게시글 상세는 데이터의 boardType을 알아야 하므로 CommunityController가 2차 방어한다.
