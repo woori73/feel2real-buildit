@@ -1514,6 +1514,15 @@
         </p>
       </div>
       <div class="aichat-foot">
+        <div class="aichat-mode" role="group" aria-label="AI 채팅 모드">
+          <button type="button" class="aichat-mode-btn is-active" id="builderAiChatModeModify">수정</button>
+          <button type="button" class="aichat-mode-btn" id="builderAiChatModeCreate">새 홈페이지</button>
+        </div>
+        <div class="aichat-name-field" id="builderAiChatNameField" hidden>
+          <label class="aichat-sr-only" for="builderAiChatName">학원 이름</label>
+          <input type="text" class="aichat-name-input" id="builderAiChatName" maxlength="60"
+            placeholder="학원 이름 (필수) — 예: 테스트학원" autocomplete="off"/>
+        </div>
         <div class="aichat-status" id="builderAiChatStatus" role="status"></div>
         <form class="aichat-form" id="builderAiChatForm">
           <label class="aichat-sr-only" for="builderAiChatInput">수정 요청 입력</label>

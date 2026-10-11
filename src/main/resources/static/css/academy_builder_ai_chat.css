@@ -185,6 +185,57 @@ body.aichat-open .canvas-area { padding-right: calc(var(--aichat-width) + 24px);
 }
 .aichat-send:disabled { opacity: .45; cursor: default; }
 
+/* 모드 전환 (수정 / 새 홈페이지) + 학원 이름 입력 — foot 상단 */
+.aichat-mode { display: flex; gap: 6px; margin-bottom: 8px; }
+.aichat-mode-btn {
+  flex: 1; padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .04); color: rgba(255, 255, 255, .55);
+  font-size: .66rem; font-weight: 800;
+}
+.aichat-mode-btn.is-active {
+  background: rgba(74, 127, 212, .18); border-color: rgba(122, 174, 240, .45); color: #eaf1ff;
+}
+.aichat-mode-btn:disabled { opacity: .4; cursor: default; }
+.aichat-name-field { margin-bottom: 8px; }
+.aichat-name-field[hidden] { display: none; }
+.aichat-name-input {
+  width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 10px;
+  font-size: .74rem; font-family: inherit;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .12); color: #fff;
+}
+.aichat-name-input::placeholder { color: rgba(255, 255, 255, .35); }
+.aichat-name-input:focus { outline: none; border-color: rgba(122, 174, 240, .6); }
+
+/* 신규 생성 초안 카드 */
+.aichat-create {
+  align-self: stretch; padding: 11px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(122, 174, 240, .34);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.aichat-create-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.aichat-create-badge {
+  padding: 2px 8px; border-radius: 6px; font-size: .6rem; font-weight: 900;
+  background: linear-gradient(135deg, #0C238A, #4A7FD4); color: #fff;
+}
+.aichat-create-tag { font-size: .62rem; font-weight: 800; color: rgba(255, 255, 255, .5); }
+.aichat-create-summary { font-size: .72rem; line-height: 1.6; color: #eaf1ff; font-weight: 700; }
+.aichat-create-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.aichat-create-chip {
+  padding: 3px 8px; border-radius: 999px; font-size: .62rem; font-weight: 700;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1);
+  color: rgba(255, 255, 255, .78);
+}
+.aichat-create-warnings {
+  margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px;
+  font-size: .64rem; line-height: 1.5; color: #fcd9a0; font-weight: 700;
+}
+.aichat-create-error {
+  margin: 0; padding: 7px 9px; border-radius: 8px; font-size: .66rem; font-weight: 800;
+  background: rgba(220, 38, 38, .16); border: 1px solid rgba(248, 113, 113, .42); color: #fecaca;
+}
+.aichat-create-error[hidden] { display: none; }
+
 /* 이력 탭 */
 .aichat-versions { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; }
 .aichat-version-list { display: flex; flex-direction: column; gap: 8px; }
