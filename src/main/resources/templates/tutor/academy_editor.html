@@ -184,6 +184,8 @@
   <!-- 상단 툴바 -->
   <div class="editor-toolbar">
     <button class="btn-back" onclick="history.back()">← 돌아가기</button>
+    <button class="btn-device" id="toggleLeftPanel" title="블록 패널">📦</button>
+    <button class="btn-device" id="toggleRightPanel" title="스타일 패널">🎨</button>
     <span class="title" th:text="${academyName ?: '홈페이지 편집'}">홈페이지 편집</span>
 
     <!-- 디바이스 전환 -->
@@ -193,7 +195,7 @@
 
     <button class="btn-preview" id="previewBtn">미리보기</button>
     <button class="btn-save" id="saveBtn">💾 저장</button>
-    <button class="btn-publish" id="publishBtn">🚀 게시</button>
+    <button class="btn-publish" id="publishBtn" disabled title="게시 기능은 준비 중입니다">🚀 게시 (준비 중)</button>
   </div>
   <div class="save-status" id="saveStatus">변경사항이 없습니다.</div>
 
@@ -448,10 +450,23 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
   editor.on('change', markChanged);
 
   // ===== 저장 =====
-  async function saveContent(isDraft = true) {
+  // 저장 중 플래그: 저장 중에 추가 수정이 발생하면 저장 후 다시 저장
+  let isSaving = false;
+  let pendingSave = false;
+
+  async function saveContent() {
+    // 이미 저장 중이면 플래그만 설정하고 리턴
+    if (isSaving) {
+      pendingSave = true;
+      return false;
+    }
+
+    isSaving = true;
+    pendingSave = false;
+
     const html = editor.getHtml();
     const css = editor.getCss();
-    const projectData = editor.getProjectData();
+    const projectData = JSON.stringify(editor.getProjectData());
 
     saveStatus.textContent = '저장 중...';
     saveStatus.className = 'save-status saving';
@@ -460,20 +475,36 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
       const headers = { 'Content-Type': 'application/json' };
       if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
 
-      const res = await fetch(`/api/tutor/academy/page-settings/${isDraft ? 'draft' : 'publish'}`, {
+      const res = await fetch('/api/tutor/academy/page-settings/visual-editor/draft', {
         method: 'PUT',
         headers,
         body: JSON.stringify({ html, css, projectData }),
       });
 
-      if (!res.ok) throw new Error(`저장 실패: ${res.status}`);
+      // 저장 실패 시 성공 메시지 표시 금지
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `저장 실패 (${res.status})`);
+      }
+
+      const data = await res.json();
+      lastSavedAt = data.updatedAt || new Date().toISOString();
+
+      // 저장 중에 추가 수정이 있었으면 다시 저장
+      if (pendingSave) {
+        isSaving = false;
+        return saveContent();
+      }
 
       markSaved();
+      isSaving = false;
       return true;
     } catch (e) {
-      saveStatus.textContent = '❌ 저장 실패: ' + e.message;
+      // 실패 시 성공 메시지를 표시하지 않음
+      saveStatus.textContent = '❌ 저장 실패: ' + e.message + ' (다시 시도해 주세요)';
       saveStatus.className = 'save-status';
       console.error('저장 오류:', e);
+      isSaving = false;
       return false;
     }
   }
@@ -484,20 +515,16 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     }
   }
 
-  document.getElementById('saveBtn').addEventListener('click', () => saveContent(true));
+  document.getElementById('saveBtn').addEventListener('click', () => saveContent());
 
-  // ===== 게시 (명시적 승인) =====
-  document.getElementById('publishBtn').addEventListener('click', async () => {
-    if (!confirm('홈페이지를 게시하시겠습니까?\n게시하면 실제 홈페이지에 반영됩니다.')) return;
-    const ok = await saveContent(false);
-    if (ok) alert('게시되었습니다.');
-  });
+  // 게시 기능은 실제 로직 구현 전까지 비활성화
 
-  // ===== 미리보기 =====
+  // ===== 미리보기 (샌드박스) =====
   document.getElementById('previewBtn').addEventListener('click', () => {
     const html = editor.getHtml();
     const css = editor.getCss();
     const win = window.open('', '_blank');
+    // sandbox 속성으로 스크립트 실행 차단
     win.document.write(`
       <!DOCTYPE html>
       <html lang="ko">
@@ -507,6 +534,7 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
       </html>
     `);
     win.document.close();
+    // 참고: 완전한 샌드박스를 위해서는 iframe sandbox 속성 사용 권장
   });
 
   // ===== 페이지 이탈 시 경고 =====
@@ -517,8 +545,68 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     }
   });
 
+  // ===== 초안 불러오기 =====
+  let lastSavedAt = null;
+
+  async function loadDraft() {
+    try {
+      const headers = {};
+      if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+
+      const res = await fetch('/api/tutor/academy/page-settings/visual-editor/draft', {
+        headers,
+      });
+
+      if (!res.ok) {
+        console.warn('초안 불러오기 실패:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.html) {
+        // 저장된 projectData가 있으면 사용, 없으면 HTML로 로드
+        if (data.projectData && data.projectData !== '{}') {
+          try {
+            editor.setProjectData(JSON.parse(data.projectData));
+          } catch (e) {
+            console.warn('projectData 파싱 실패, HTML로 로드:', e);
+            editor.setComponents(data.html);
+            editor.setStyle(data.css || '');
+          }
+        } else {
+          editor.setComponents(data.html);
+          editor.setStyle(data.css || '');
+        }
+        lastSavedAt = data.updatedAt;
+        saveStatus.textContent = '✓ 초안을 불러왔습니다.' + (lastSavedAt ? ` (${new Date(lastSavedAt).toLocaleString('ko-KR')})` : '');
+        saveStatus.className = 'save-status saved';
+        hasChanges = false;
+      }
+    } catch (e) {
+      console.error('초안 불러오기 오류:', e);
+    }
+  }
+
+  // ===== 모바일 패널 토글 =====
+  document.getElementById('toggleLeftPanel').addEventListener('click', () => {
+    document.getElementById('blocksPanel').classList.toggle('mobile-open');
+  });
+  document.getElementById('toggleRightPanel').addEventListener('click', () => {
+    document.getElementById('stylePanel').classList.toggle('mobile-open');
+  });
+
+  // ===== 게시 버튼 비활성화 =====
+  // 실제 게시 로직 구현 전까지 비활성화 유지
+  const publishBtn = document.getElementById('publishBtn');
+  publishBtn.disabled = true;
+  publishBtn.style.opacity = '0.5';
+  publishBtn.style.cursor = 'not-allowed';
+
   // 전역 노출 (디버깅용)
   window.editor = editor;
+
+  // 초기화 시 초안 불러오기
+  loadDraft();
 
   console.log('BuildIt 시각 편집기 초기화 완료');
 })();
