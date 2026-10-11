@@ -30,9 +30,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -83,6 +87,14 @@ class AcademyAiMySqlIntegrationTest {
         tutor.getUserId(), tutor.getLoginId(), "TUTOR");
     subject = subjectRepository.findByNameKo("영어")
         .orElseGet(() -> subjectRepository.save(new Subject("ENGLISH", "영어")));
+    // verifyOwnsAcademy는 SecurityContext의 principal을 사용하므로 테스트에서 설정
+    SecurityContextHolder.getContext().setAuthentication(
+        new UsernamePasswordAuthenticationToken(principal, null, java.util.List.of()));
+  }
+
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
   }
 
   private AcademyUpsertRequest draftRequest(String name, String intro) {
@@ -169,16 +181,22 @@ class AcademyAiMySqlIntegrationTest {
         "pw", "다른강사", "별명2", null, null, Role.TUTOR));
     var otherPrincipal = new JwtTokenProvider.AuthenticatedPrincipal(
         other.getUserId(), other.getLoginId(), "TUTOR");
+    // 타인 작업 시 SecurityContext도 타인으로 전환 (verifyOwnsAcademy가 SecurityContext 사용)
+    SecurityContextHolder.getContext().setAuthentication(
+        new UsernamePasswordAuthenticationToken(otherPrincipal, null, java.util.List.of()));
     academyService.createDraft(otherPrincipal,
         draftRequest("다른학원", "소개"), "key-other");
     Long otherVersion = versionService.snapshot(
         otherPrincipal, Map.of("k", "v"), Map.of(), "타인 버전");
 
     // 내 principal로 타인 버전에 접근 → 403
+    SecurityContextHolder.getContext().setAuthentication(
+        new UsernamePasswordAuthenticationToken(principal, null, java.util.List.of()));
     assertThatThrownBy(() -> versionService.getForRestore(principal, otherVersion))
         .isInstanceOf(AccessDeniedException.class);
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
   @DisplayName("409: 동일 멱등성 키 재선점 시 DuplicateIdempotencyKeyException")
   void claim_duplicateKey_throws409() {
@@ -189,6 +207,7 @@ class AcademyAiMySqlIntegrationTest {
         .isInstanceOf(DuplicateIdempotencyKeyException.class);
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
   @DisplayName("멱등성 동시 선점 → 1건만 성공, 나머지는 409")
   void claim_concurrent_sameKey_oneWins() throws Exception {
@@ -228,6 +247,7 @@ class AcademyAiMySqlIntegrationTest {
         .isPresent();
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
   @DisplayName("FAILED 키는 재시도가 허용된다")
   void claim_failedKey_allowsRetry() {
