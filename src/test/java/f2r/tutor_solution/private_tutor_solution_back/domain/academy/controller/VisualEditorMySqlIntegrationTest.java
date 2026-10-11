@@ -126,7 +126,7 @@ class VisualEditorMySqlIntegrationTest {
     // 공개 homepage API 테스트를 위해 학원을 PUBLISHED로 변경
     // (공개 API는 기존 규칙대로 PUBLISHED 학원만 serving)
     jdbcTemplate.update(
-        "UPDATE academies SET status = 'PUBLISHED', visible = true "
+        "UPDATE academies SET status = 'PUBLISHED', is_visible = true "
             + "WHERE tutor_user_id = ?",
         tutor.getUserId());
   }
