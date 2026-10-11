@@ -103,6 +103,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiScenarioTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiIdempotencyServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiDeterminismTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAiApplyParamTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiApplyServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoDeliveryServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.AcademyVideoAsyncSchemaContractTest"
