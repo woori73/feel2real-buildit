@@ -178,12 +178,10 @@ public class AcademyRequirementAnalyzer {
       String preset = SUBJECT_PRESET_MAP.get(subject);
       if (preset != null) return preset;
     }
-    // fallback: 키워드 기반
-    String lower = message.toLowerCase();
-    for (Map.Entry<String, String> entry : SUBJECT_PRESET_MAP.entrySet()) {
-      if (lower.contains(entry.getKey().toLowerCase())) {
-        return entry.getValue();
-      }
+    // fallback: 키워드 기반 (결정적 — extractSubject와 동일한 위치 기반 선택)
+    String fallbackSubject = extractSubject(message);
+    if (fallbackSubject != null) {
+      return SUBJECT_PRESET_MAP.get(fallbackSubject);
     }
     return "EXAM"; // 기본값
   }
@@ -210,11 +208,29 @@ public class AcademyRequirementAnalyzer {
     return result;
   }
 
+  /**
+   * 톤/분위기 키워드를 결정적으로 추출한다.
+   * 메시지 등장 순서대로 정렬하고, 같은 위치면 더 긴 키워드를 우선한다.
+   */
   private String extractTone(String message) {
     String lower = message.toLowerCase();
-    List<String> tones = new ArrayList<>();
+    List<Map.Entry<String, String>> matched = new ArrayList<>();
     for (Map.Entry<String, String> entry : TONE_MAP.entrySet()) {
       if (lower.contains(entry.getKey().toLowerCase())) {
+        matched.add(entry);
+      }
+    }
+    matched.sort((a, b) -> {
+      int ia = lower.indexOf(a.getKey().toLowerCase());
+      int ib = lower.indexOf(b.getKey().toLowerCase());
+      if (ia != ib) {
+        return Integer.compare(ia, ib);
+      }
+      return Integer.compare(b.getKey().length(), a.getKey().length());
+    });
+    List<String> tones = new ArrayList<>();
+    for (Map.Entry<String, String> entry : matched) {
+      if (!tones.contains(entry.getValue())) {
         tones.add(entry.getValue());
       }
     }

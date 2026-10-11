@@ -17,6 +17,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.Academy
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiAction;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiIdempotency;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiSession;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAiActionRepository;
@@ -24,6 +25,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiChatService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiContextService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiCreateService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiIdempotencyService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyPageVersionService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
 import java.time.LocalDateTime;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -103,6 +106,7 @@ public class AcademyAiChatController {
   private final AcademyService academyService;
   private final AcademyAiSessionRepository sessionRepository;
   private final AcademyAiActionRepository actionRepository;
+  private final AcademyAiIdempotencyService idempotencyService;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
@@ -296,6 +300,23 @@ public class AcademyAiChatController {
     }
     finalDraft.put("designPreset", designPreset);
 
+    // 멱등성 키 선점 (DB 영속화). 동일 키 재호출 → 409.
+    // 입력 검증(400) 이후에 수행하므로 400 요청은 키를 오염시키지 않는다.
+    String tutorId = String.valueOf(principal.userId());
+    final AcademyAiIdempotency idemRecord;
+    try {
+      idemRecord = idempotencyService.claim(tutorId, idempotencyKey);
+    } catch (AcademyAiIdempotencyService.DuplicateIdempotencyKeyException e) {
+      AcademyAiIdempotency rec = e.getRecord();
+      if (rec.isCompleted() && rec.getAcademyId() != null) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "이미 처리된 요청입니다. 생성된 홈페이지 ID: " + rec.getAcademyId());
+      }
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "이미 처리 중인 요청입니다: " + idempotencyKey);
+    }
+
     // AcademyPageSettings 생성
     f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings
         pageSettings =
@@ -311,10 +332,27 @@ public class AcademyAiChatController {
             academyName, null, intro, Set.of(), Set.of(), List.of(), pageSettings);
 
     // 실제 생성 (DRAFT 상태, @Transactional로 부분 저장 방지)
-    AcademyResponse created =
-        academyService.createDraft(principal, upsertRequest, idempotencyKey);
+    // 동시 요청 경쟁: tutor UNIQUE 제약 위반 시 409로 변환한다.
+    final AcademyResponse created;
+    try {
+      created = academyService.createDraft(principal, upsertRequest, idempotencyKey);
+    } catch (DataIntegrityViolationException e) {
+      idempotencyService.markFailed(idemRecord.getId());
+      // 원인 구분: 이미 홈페이지가 생겼다면(경쟁에서 짐) 409, 그 외는 원본 예외 유지
+      if (academyService.getMine(principal).isPresent()) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
+                + "채팅 수정 기능을 사용하세요.");
+      }
+      throw e;
+    } catch (RuntimeException e) {
+      idempotencyService.markFailed(idemRecord.getId());
+      throw e;
+    }
 
-    // 버전 스냅샷 저장
+    // 성공 기록 + 버전 스냅샷 저장
+    idempotencyService.markCompleted(idemRecord.getId(), created.academyId());
     versionService.snapshot(principal, finalDraft, Map.of(), "AI 생성 홈페이지 최초 생성");
 
     return ResponseEntity.ok(Map.of(

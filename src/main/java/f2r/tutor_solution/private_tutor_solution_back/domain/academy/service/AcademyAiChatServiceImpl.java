@@ -124,15 +124,28 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
   /**
    * 톤/스타일 수정 지시를 감지한다.
    * 예: "소개글을 좀 더 짧게" → ToneInstruction("더 간결하게", ...)
+   *
+   * <p>결정적 처리: 메시지에서 가장 먼저 등장한 키워드를 선택한다.
+   * 같은 위치면 더 긴 키워드를 우선한다. (Map 순회 순서에 의존하지 않음)
    */
   private ToneInstruction detectToneInstruction(String userMessage) {
     String lower = userMessage.toLowerCase();
+    ToneInstruction best = null;
+    int bestIdx = Integer.MAX_VALUE;
+    int bestLen = -1;
     for (Map.Entry<String, ToneInstruction> entry : TONE_INSTRUCTIONS.entrySet()) {
-      if (lower.contains(entry.getKey())) {
-        return entry.getValue();
+      int idx = lower.indexOf(entry.getKey().toLowerCase());
+      if (idx < 0) {
+        continue;
+      }
+      int len = entry.getKey().length();
+      if (idx < bestIdx || (idx == bestIdx && len > bestLen)) {
+        best = entry.getValue();
+        bestIdx = idx;
+        bestLen = len;
       }
     }
-    return null;
+    return best;
   }
 
   /**
@@ -234,15 +247,34 @@ public class AcademyAiChatServiceImpl implements AcademyAiChatService {
     return new ValidationResult(errors.isEmpty(), errors);
   }
 
+  /**
+   * 키워드 → 필드 매핑 (결정적).
+   *
+   * <p>메시지에서 등장한 순서대로 키워드를 정렬하고, 같은 위치면 더 긴 키워드를 우선한다.
+   * Map 순회 순서에 의존하지 않으므로 동일 입력에 항상 동일 결과가 나온다.
+   */
   private List<String> mapKeywordsToFields(String message) {
-    List<String> fields = new ArrayList<>();
     String lower = message.toLowerCase();
+    List<Map.Entry<String, List<String>>> matched = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : KEYWORD_FIELD_MAP.entrySet()) {
       if (lower.contains(entry.getKey().toLowerCase())) {
-        for (String field : entry.getValue()) {
-          if (!fields.contains(field)) {
-            fields.add(field);
-          }
+        matched.add(entry);
+      }
+    }
+    // 등장 위치 오름차순, 같은 위치면 키워드 길이 내림차순
+    matched.sort((a, b) -> {
+      int ia = lower.indexOf(a.getKey().toLowerCase());
+      int ib = lower.indexOf(b.getKey().toLowerCase());
+      if (ia != ib) {
+        return Integer.compare(ia, ib);
+      }
+      return Integer.compare(b.getKey().length(), a.getKey().length());
+    });
+    List<String> fields = new ArrayList<>();
+    for (Map.Entry<String, List<String>> entry : matched) {
+      for (String field : entry.getValue()) {
+        if (!fields.contains(field)) {
+          fields.add(field);
         }
       }
     }
