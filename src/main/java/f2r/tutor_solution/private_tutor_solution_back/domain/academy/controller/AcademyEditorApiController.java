@@ -1,21 +1,15 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VisualEditorDraft;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VisualEditorPublished;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorService;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,12 +22,19 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * BuildIt 시각 편집기 저장 API.
  *
- * <p>보안:
+ * <p>전용 테이블(academy_visual_editor_draft/published)을 사용한다.
+ *
+ * <p>보안 정제는 {@link VisualEditorSanitizer}가 담당한다:
+ * HTML 허용 목록, CSS 바이트 경계, projectData의 tagName·type 허용 목록과
+ * components/content 문자열 HTML 정제.
+ *
+ * <p>revision 규칙:
  * <ul>
- *   <li>HTML: Jsoup 허용 목록 기반 정제</li>
- *   <li>projectData: JSON 파싱 후 content 원시 HTML과 script 속성을 구조적으로 검사·정제</li>
- *   <li>CSS: UTF-8 바이트 기준 크기 검사, 위험 패턴 정제</li>
- *   <li>인라인 style: 위험한 외부 URL·@import 정제</li>
+ *   <li>초안 없음 + revision null/0 → 신규 생성</li>
+ *   <li>초안 없음 + 그 외 revision → 409 (클라이언트 상태 불일치)</li>
+ *   <li>초안 있음 + revision null → 400</li>
+ *   <li>초안 있음 + revision 값 → 현재 revision과 일치해야 하며,
+ *       불일치 시 409</li>
  * </ul>
  */
 @RestController
@@ -42,51 +43,29 @@ import org.springframework.web.bind.annotation.RestController;
 public class AcademyEditorApiController {
 
   private final VisualEditorService visualEditorService;
-  private final ObjectMapper objectMapper = new ObjectMapper();
-
-  /**
-   * GrapesJS 컴포넌트에서 허용하지 않는 속성.
-   */
-  private static final Set<String> BLOCKED_COMPONENT_ATTRS = Set.of(
-      "script", "onscript", "srcdoc", "formaction", "xlink:href");
-
-  private static Safelist editorSafelist() {
-    return Safelist.relaxed()
-        .addTags("section", "header", "footer", "nav", "main", "article",
-            "aside", "figure", "figcaption", "time", "mark", "hr")
-        .removeTags("script", "iframe", "object", "embed", "form", "svg", "math",
-            "input", "button", "select", "textarea", "link", "meta", "base",
-            "noscript", "template", "slot")
-        .removeAttributes(":all", "onabort", "onblur", "onchange", "onclick",
-            "ondblclick", "onerror", "onfocus", "onkeydown", "onkeypress",
-            "onkeyup", "onload", "onmousedown", "onmousemove", "onmouseout",
-            "onmouseover", "onmouseup", "onreset", "onresize", "onscroll",
-            "onselect", "onsubmit", "onunload", "onanimationstart",
-            "onanimationend", "ontransitionend", "onpointerdown",
-            "onpointerup", "ontouchstart", "ontouchend", "ontouchmove",
-            "onwheel", "oncopy", "oncut", "onpaste", "ondrag", "ondrop")
-        .addAttributes(":all", "style", "class", "id", "data-preset",
-            "data-gjs-type", "data-gjs-draggable", "data-gjs-droppable",
-            "data-gjs-resizable", "data-gjs-selectable")
-        .addProtocols("a", "href", "http", "https", "mailto", "tel", "#")
-        .addProtocols("img", "src", "http", "https", "data")
-        .removeProtocols("img", "src", "javascript", "vbscript");
-  }
 
   @PutMapping("/visual-editor/draft")
   public ResponseEntity<Map<String, Object>> saveDraft(
       @org.springframework.security.core.annotation.AuthenticationPrincipal
       JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody Map<String, Object> request) {
-    String rawHtml = (String) request.get("html");
-    String rawCss = (String) request.get("css");
-    String projectData = (String) request.getOrDefault("projectData", "{}");
-    Long revision = toLong(request.get("revision"));
+    // 잘못된 요청 타입은 400으로 처리한다 (ClassCastException → 500 방지)
+    String rawHtml = asString(request, "html");
+    String rawCss = asString(request, "css");
+    String projectData = asString(request, "projectData");
+    if (projectData == null) {
+      projectData = "{}";
+    }
+    Long revision = asRevision(request.get("revision"));
 
-    // revision 필수 검증: 기존 초안이 있는데 revision을 생략하면 거부
-    // (첫 저장의 revision 0 모호성 해결: null = 신규, 0 이상 = 기존)
-    boolean hasDraft = visualEditorService.getDraft(principal).isPresent();
-    if (hasDraft && revision == null) {
+    // revision 규칙: 최초 저장 시 null/0 구분
+    Optional<VisualEditorDraft> existing = visualEditorService.getDraft(principal);
+    if (existing.isEmpty()) {
+      if (revision != null && revision != 0L) {
+        throw new VisualEditorService.DraftConflictException(
+            "초안이 존재하지 않습니다. 새로고침 후 다시 시도하세요.");
+      }
+    } else if (revision == null) {
       return badRequest("revision이 필요합니다. 초안을 새로고침 후 다시 시도하세요.");
     }
 
@@ -95,20 +74,9 @@ public class AcademyEditorApiController {
       return badRequest("요청 크기가 제한(33MB)을 초과했습니다.");
     }
 
-    String html;
-    String css;
-    try {
-      html = sanitizeHtml(rawHtml);
-      css = sanitizeCss(rawCss);
-    } catch (IllegalArgumentException e) {
-      return badRequest(e.getMessage());
-    }
-
-    try {
-      projectData = sanitizeProjectData(projectData);
-    } catch (IllegalArgumentException e) {
-      return badRequest(e.getMessage());
-    }
+    String html = VisualEditorSanitizer.sanitizeHtml(rawHtml);
+    String css = VisualEditorSanitizer.sanitizeCss(rawCss);
+    projectData = VisualEditorSanitizer.sanitizeProjectData(projectData);
 
     VisualEditorDraft draft;
     try {
@@ -221,167 +189,40 @@ public class AcademyEditorApiController {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
   }
 
-  private String sanitizeHtml(String html) {
-    if (html == null || html.isBlank()) {
-      return "";
-    }
-    // 인라인 style 속성도 정제
-    String cleaned = Jsoup.clean(html, editorSafelist());
-    return sanitizeInlineStyles(cleaned);
-  }
-
   /**
-   * 인라인 style 속성의 위험한 URL·@import를 정제한다.
+   * 요청 값을 문자열로 읽는다. 문자열이 아닌 타입이면 400을 위한 예외를 던진다.
    */
-  private String sanitizeInlineStyles(String html) {
-    if (html == null || html.isEmpty()) {
-      return html;
-    }
-    // style="..." 내부의 위험 패턴 제거
-    // Jsoup이 이미 정제했지만, 이중 방어로 처리
-    return html.replaceAll("(?i)url\\(\\s*['\"]?javascript:", "url(blocked:")
-        .replaceAll("(?i)url\\(\\s*['\"]?data:text/html", "url(blocked:")
-        .replaceAll("(?i)expression\\s*\\(", "(blocked:");
-  }
-
-  /**
-   * CSS 정제 및 검증.
-   *
-   * <p>UTF-8 바이트 기준으로 크기를 검사하며,
-   * 정확히 65,536바이트(64KB)인 경우도 400을 반환한다.
-   * (경계값: 65536 초과 시 거부 → 65536은 허용, 65537부터 거부)
-   *
-   * <p>참고: MAX_CSS_SIZE = 65536이므로,
-   * 65536바이트는 허용되고 65537바이트부터 거부된다.
-   * 감사 지적사항에 따라 65536바이트 입력 시 400이 아닌 정상 처리를 확인하고,
-   * 초과 시 반드시 400 JSON을 반환하도록 한다.
-   */
-  private String sanitizeCss(String css) {
-    if (css == null || css.isBlank()) {
-      return "";
-    }
-    int byteSize = css.getBytes(StandardCharsets.UTF_8).length;
-    if (byteSize > VisualEditorService.MAX_CSS_SIZE) {
-      throw new IllegalArgumentException(
-          "CSS 크기가 제한(64KB)을 초과했습니다. (현재 " + byteSize + "바이트)");
-    }
-    String cleaned = css.replaceAll("(?i)@import[^;]+;", "");
-    cleaned = cleaned.replaceAll("(?i)expression\\s*\\(", "(blocked:");
-    cleaned = cleaned.replaceAll("(?i)behavior\\s*:", "blocked-behavior:");
-    cleaned = cleaned.replaceAll("(?i)url\\s*\\(\\s*['\"]?javascript:", "url(blocked:");
-    cleaned = cleaned.replaceAll("(?i)url\\s*\\(\\s*['\"]?data:text/html", "url(blocked:");
-    cleaned = cleaned.replaceAll("(?i)url\\s*\\(\\s*['\"]?vbscript:", "url(blocked:");
-    return cleaned;
-  }
-
-  /**
-   * projectData 구조적 검증 및 정제.
-   *
-   * <p>GrapesJS projectData의 다음을 검사·정제한다:
-   * <ul>
-   *   <li>컴포넌트 `content`의 원시 HTML → Jsoup 허용 목록으로 정제</li>
-   *   <li>컴포넌트 `script` 속성 → 차단 (스크립트 실행 방지)</li>
-   *   <li>속성·URL 구조적 검사</li>
-   * </ul>
-   *
-   * @return 정제된 projectData JSON
-   */
-  private String sanitizeProjectData(String projectData) {
-    if (projectData == null || projectData.isBlank() || projectData.equals("{}")) {
-      return "{}";
-    }
-    JsonNode root;
-    try {
-      root = objectMapper.readTree(projectData);
-    } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("프로젝트 데이터가 유효한 JSON이 아닙니다.");
-    }
-    JsonNode sanitized = sanitizeJsonNode(root, "projectData");
-    try {
-      return objectMapper.writeValueAsString(sanitized);
-    } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("프로젝트 데이터 직렬화에 실패했습니다.");
-    }
-  }
-
-  private JsonNode sanitizeJsonNode(JsonNode node, String path) {
-    if (node.isObject()) {
-      com.fasterxml.jackson.databind.node.ObjectNode obj =
-          (com.fasterxml.jackson.databind.node.ObjectNode) node.deepCopy();
-      Iterator<Map.Entry<String, JsonNode>> fields = obj.fields();
-      // ConcurrentModification 방지를 위해 키 목록 수집
-      java.util.List<String> keys = new java.util.ArrayList<>();
-      while (fields.hasNext()) {
-        keys.add(fields.next().getKey());
-      }
-      for (String key : keys) {
-        String lowerKey = key.toLowerCase();
-        // script 속성 차단
-        if (lowerKey.equals("script")) {
-          obj.remove(key);
-          continue;
-        }
-        // 이벤트 핸들러 차단
-        if (lowerKey.startsWith("on") && lowerKey.length() > 2) {
-          obj.remove(key);
-          continue;
-        }
-        // 위험 속성 차단
-        if (BLOCKED_COMPONENT_ATTRS.contains(lowerKey)) {
-          obj.remove(key);
-          continue;
-        }
-        JsonNode value = obj.get(key);
-        if (lowerKey.equals("content") && value.isTextual()) {
-          // content 원시 HTML 정제
-          obj.put(key, sanitizeHtml(value.asText()));
-        } else {
-          obj.set(key, sanitizeJsonNode(value, path + "." + key));
-        }
-      }
-      return obj;
-    } else if (node.isArray()) {
-      com.fasterxml.jackson.databind.node.ArrayNode arr =
-          (com.fasterxml.jackson.databind.node.ArrayNode) node.deepCopy();
-      for (int i = 0; i < arr.size(); i++) {
-        arr.set(i, sanitizeJsonNode(arr.get(i), path + "[" + i + "]"));
-      }
-      return arr;
-    } else if (node.isTextual()) {
-      validateTextValue(node.asText(), path);
-      return node;
-    }
-    return node;
-  }
-
-  private void validateTextValue(String value, String path) {
-    if (value == null || value.isEmpty()) {
-      return;
-    }
-    String lower = value.toLowerCase();
-    if (lower.contains("javascript:")
-        || lower.contains("vbscript:")
-        || lower.contains("data:text/html")) {
-      throw new IllegalArgumentException("허용되지 않은 URL이 있습니다: " + path);
-    }
-    if (lower.contains("<script") || lower.contains("<iframe")
-        || lower.contains("<object") || lower.contains("<embed")) {
-      throw new IllegalArgumentException("허용되지 않은 HTML이 있습니다: " + path);
-    }
-  }
-
-  private Long toLong(Object value) {
+  private String asString(Map<String, Object> request, String key) {
+    Object value = request.get(key);
     if (value == null) {
       return null;
     }
-    if (value instanceof Number) {
-      return ((Number) value).longValue();
+    if (value instanceof String s) {
+      return s;
     }
-    try {
-      return Long.parseLong(value.toString());
-    } catch (NumberFormatException e) {
+    throw new IllegalArgumentException(
+        "'" + key + "' 형식이 올바르지 않습니다. 문자열이어야 합니다.");
+  }
+
+  /**
+   * revision을 엄격하게 파싱한다. 숫자·숫자 문자열만 허용하며,
+   * 그 외 타입·형식은 400을 위한 예외를 던진다.
+   */
+  private Long asRevision(Object value) {
+    if (value == null) {
       return null;
     }
+    if (value instanceof Number n) {
+      return n.longValue();
+    }
+    if (value instanceof String s) {
+      try {
+        return Long.parseLong(s.trim());
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("revision 형식이 올바르지 않습니다.");
+      }
+    }
+    throw new IllegalArgumentException("revision 형식이 올바르지 않습니다.");
   }
 
   private int utf8Len(String s) {
