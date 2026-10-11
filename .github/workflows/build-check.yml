@@ -253,3 +253,46 @@ jobs:
           path: build/reports/tests/test
           if-no-files-found: ignore
 
+  mysql-integration-test:
+    # BuildIt P1 MySQL 통합 테스트 (격리 DB).
+    # 운영 DB와 완전히 분리된 ephemeral MySQL에서 실제 DB 동작을 검증한다.
+    # 테스트 전용 접속정보만 사용하며, 운영 접속정보는 사용하지 않는다.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x gradlew
+
+      - name: Run MySQL integration tests
+        run: >-
+          ./gradlew test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
