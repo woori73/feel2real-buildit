@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -232,12 +233,33 @@ class VisualEditorApiTest {
   }
 
   @Test
-  @DisplayName("게시 API → 501 유지")
-  void publish_notImplemented() throws Exception {
-    mockMvc.perform(put("/api/tutor/academy/page-settings/visual-editor/publish")
+  @DisplayName("게시 API: revision 생략 → 400")
+  void publish_withoutRevision_400() throws Exception {
+    mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/publish")
             .cookie(tutorCookie())
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
-        .andExpect(status().isNotImplemented());
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @DisplayName("가져오기 API: HTML 타입 오류 → 400")
+  void import_wrongType_400() throws Exception {
+    mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/import")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"html\":123}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @DisplayName("게시 취소 API: 인증됨 → 200")
+  void unpublish_ok() throws Exception {
+    mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/unpublish")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.renderMode").value("template"));
   }
 }
