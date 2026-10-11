@@ -281,7 +281,16 @@ test('given no design preset when rendering hero then legacy DOM is unchanged (b
 test('given EXAM preset when rendering hero then center layout with prominent stats and two buttons', () => {
   // given
   const hooks = bothRenderers().find(([name]) => name === 'public')[1];
-  const academy = heroFixture('EXAM');
+  const academy = heroFixture('EXAM', {
+    pageSettings: {
+      builderDraft: {
+        designPreset: 'EXAM',
+        monthlyTuition: '월 30만원',
+        scoreImprovement: '92%',
+        operationYears: '15년'
+      }
+    }
+  });
   // when
   const html = hooks.renderHero(academy);
   // then
@@ -295,6 +304,19 @@ test('given EXAM preset when rendering hero then center layout with prominent st
   // 원장 사진은 각진 프레임 (태블릿 아님)
   assert.match(html, /principal-frame-angular/);
   assert.doesNotMatch(html, /class="tablet"/);
+});
+
+test('given EXAM preset with no stats when rendering hero then stats section is hidden', () => {
+  // given — 실적 데이터가 없으면 stats 섹션을 숨긴다
+  const hooks = bothRenderers().find(([name]) => name === 'public')[1];
+  const academy = heroFixture('EXAM');
+  // when
+  const html = hooks.renderHero(academy);
+  // then — 빈 stats는 렌더되지 않음
+  assert.doesNotMatch(html, /hero-exam-stats/);
+  // 다른 요소는 정상 렌더
+  assert.match(html, /hero-exam-inner/);
+  assert.match(html, /상담 신청하기/);
 });
 
 test('given ENGLISH preset when rendering hero then two-column layout with rounded button', () => {

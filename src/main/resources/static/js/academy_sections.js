@@ -768,7 +768,7 @@
       : `<div class="principal-photo-empty"><span>원장 사진</span></div>`;
     return `<figure class="principal-photo ${frameClass}"${ctx.portraitClusterAttrs ? ctx.portraitClusterAttrs() : ''}>
       ${imgHtml}
-      <figcaption class="principal-photo-cap">${captionHtml || `<b>${escapeHtml(name)}</b>${escapeHtml(view.name)}`}</figcaption>
+      <figcaption class="principal-photo-cap">${captionHtml || `<b>${escapeHtml(name)}</b> <span>${escapeHtml(view.name)}</span>`}</figcaption>
       ${ctx.portraitClusterExtra ? ctx.portraitClusterExtra() : ''}
     </figure>`;
   }
@@ -797,15 +797,22 @@
 
   // EXAM — 중앙 정렬, 실적 숫자 3개 prominently, CTA 버튼 2개 나란히
   function renderHeroExam(view, ctx) {
+    // 실적 데이터가 있는 항목만 표시 (빈 값은 숨김)
+    const examStats = HERO_STATS.map((stat) => {
+      const val = draftText(view, stat.draftKey, '');
+      if (!val || val === '—') return '';
+      return `<div class="hero-exam-stat"><b>${ctx.heroStatValue(stat.draftKey, escapeHtml(val))}</b><span>${stat.label}</span></div>`;
+    }).join('');
+    const statsHtml = examStats
+      ? `<div class="hero-exam-stats" data-reveal-item>${examStats}</div>`
+      : '';
     return `<section class="hero hero-exam" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="EXAM" data-reveal>
         <div class="brand-glow" aria-hidden="true"></div>
         <div class="hero-exam-inner">
           ${heroEyebrowHtml(view, ctx)}
           ${heroTitleHtml(view, ctx)}
           ${heroIntroHtml(view, ctx)}
-          <div class="hero-exam-stats" data-reveal-item>${HERO_STATS.map((stat) =>
-            `<div class="hero-exam-stat"><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
-          ).join('')}</div>
+          ${statsHtml}
           <div class="hero-exam-actions" data-reveal-item>
             <button type="button" class="btn" onclick="requestConsult()">상담 신청하기</button>
             <button type="button" class="btn outline" onclick="scrollToId('sec-lessons')">커리큘럼 보기</button>
@@ -861,8 +868,10 @@
 
   // STUDY — 원형 원장 사진 + 소개 나란히, 손글씨 캡션
   function renderHeroStudy(view, ctx) {
-    const name = draftText(view, 'principalName', '원장');
-    const caption = `<b class="handwritten">${escapeHtml(name)} 원장</b><span>${escapeHtml(view.name)}에서 직접 지도합니다</span>`;
+    const rawName = draftText(view, 'principalName', '원장');
+    // "김원장"처럼 이미 원장이 포함된 경우 중복 방지
+    const name = rawName.replace(/\s*원장\s*$/, '');
+    const caption = `<b class="handwritten">${escapeHtml(name)} 원장</b> <span>${escapeHtml(view.name)}에서 직접 지도합니다</span>`;
     return `<section class="hero hero-study" id="sec-hero" data-builder-section-key="sec-hero" data-design-preset="STUDY" data-reveal>
         <div class="brand-glow" aria-hidden="true"></div>
         <div class="hero-study-wrap">
