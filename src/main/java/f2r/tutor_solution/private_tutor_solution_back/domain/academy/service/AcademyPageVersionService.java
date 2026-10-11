@@ -65,6 +65,8 @@ public class AcademyPageVersionService {
    *
    * <p>호출자의 트랜잭션에 참여한다 (REQUIRED). version_no 동시성 충돌 시
    * 새 트랜잭션에서 1회 재시도한다.
+   *
+   * <p>F2: intro를 함께 저장한다 (AI가 변경한 top-level intro 복원용).
    */
   @Transactional
   public Long snapshot(
@@ -72,11 +74,24 @@ public class AcademyPageVersionService {
       Map<String, String> builderDraft,
       Map<String, Object> pageSettings,
       String note) {
+    return snapshot(principal, builderDraft, pageSettings, null, note);
+  }
+
+  /**
+   * 버전 스냅샷을 저장한다 (intro 포함).
+   */
+  @Transactional
+  public Long snapshot(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Map<String, String> builderDraft,
+      Map<String, Object> pageSettings,
+      String intro,
+      String note) {
     try {
-      return doSnapshotInternal(principal, builderDraft, pageSettings, note);
+      return doSnapshotInternal(principal, builderDraft, pageSettings, intro, note);
     } catch (DataIntegrityViolationException e) {
       // version_no UNIQUE 충돌 → 현재 TX는 rollback-only이므로 새 TX에서 재시도
-      return self.snapshotRetry(principal, builderDraft, pageSettings, note);
+      return self.snapshotRetry(principal, builderDraft, pageSettings, intro, note);
     }
   }
 
@@ -92,13 +107,27 @@ public class AcademyPageVersionService {
       Map<String, String> builderDraft,
       Map<String, Object> pageSettings,
       String note) {
-    return doSnapshotInternal(principal, builderDraft, pageSettings, note);
+    return doSnapshotInternal(principal, builderDraft, pageSettings, null, note);
+  }
+
+  /**
+   * 스냅샷 재시도용 (REQUIRES_NEW, intro 포함).
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Long snapshotRetry(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Map<String, String> builderDraft,
+      Map<String, Object> pageSettings,
+      String intro,
+      String note) {
+    return doSnapshotInternal(principal, builderDraft, pageSettings, intro, note);
   }
 
   private Long doSnapshotInternal(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       Map<String, String> builderDraft,
       Map<String, Object> pageSettings,
+      String intro,
       String note) {
     AcademyResponse academy = getMyAcademy(principal);
     Integer nextNo = versionRepository
@@ -111,11 +140,12 @@ public class AcademyPageVersionService {
         nextNo,
         toJson(builderDraft),
         toJson(pageSettings),
+        intro,
         String.valueOf(principal.userId()),
         note);
     versionRepository.save(version);
 
-    // 20개 초과 시 오래된 버전 삭제
+    // F3: 20개 초과 시 오래된 버전 삭제 (최초 버전 v1은 보존)
     cleanupOldVersions(academy.academyId());
 
     return version.getId();
@@ -161,14 +191,24 @@ public class AcademyPageVersionService {
         .orElseThrow(() -> new IllegalArgumentException("Academy가 없습니다."));
   }
 
+  /**
+   * F3: 20개 초과 시 오래된 버전을 삭제하되, 최초 버전(version_no=1)은 항상 보존한다.
+   * 최초 원본은 복원의 기준점이므로 삭제하지 않는다.
+   */
   private void cleanupOldVersions(Long academyId) {
     long count = versionRepository.countByAcademyId(academyId);
     if (count > MAX_VERSIONS) {
       List<AcademyPageVersion> versions =
           versionRepository.findByAcademyIdOrderByVersionNoDesc(academyId);
-      // 20개를 초과하는 오래된 버전 삭제
-      for (int i = MAX_VERSIONS; i < versions.size(); i++) {
-        versionRepository.delete(versions.get(i));
+      // version_no=1 (최초 버전)은 제외하고 삭제 대상 선정
+      List<AcademyPageVersion> deletable = versions.stream()
+          .filter(v -> v.getVersionNo() != 1)
+          .collect(Collectors.toList());
+      // 전체가 20개를 초과하는 만큼만 삭제 (최초 버전 제외 후)
+      int excess = (int) (count - MAX_VERSIONS);
+      for (int i = 0; i < excess && i < deletable.size(); i++) {
+        // deletable은 DESC 정렬이므로 뒤에서부터 (오래된 것부터) 삭제
+        versionRepository.delete(deletable.get(deletable.size() - 1 - i));
       }
     }
   }

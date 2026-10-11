@@ -48,6 +48,13 @@ public class AcademyPageVersion {
   @Column(columnDefinition = "MEDIUMTEXT")
   private String pageSettingsJson;
 
+  /**
+   * F2: AI가 변경한 top-level intro를 스냅샷에 포함한다.
+   * 복원 시 builderDraft와 함께 되돌린다.
+   */
+  @Column(columnDefinition = "TEXT")
+  private String intro;
+
   @Column(nullable = false, length = 100)
   private String createdBy;
 
@@ -64,10 +71,22 @@ public class AcademyPageVersion {
       String pageSettingsJson,
       String createdBy,
       String note) {
+    this(academyId, versionNo, builderDraftJson, pageSettingsJson, null, createdBy, note);
+  }
+
+  public AcademyPageVersion(
+      Long academyId,
+      Integer versionNo,
+      String builderDraftJson,
+      String pageSettingsJson,
+      String intro,
+      String createdBy,
+      String note) {
     this.academyId = academyId;
     this.versionNo = versionNo;
     this.builderDraftJson = builderDraftJson;
     this.pageSettingsJson = pageSettingsJson;
+    this.intro = intro;
     this.createdBy = createdBy;
     this.note = note;
     this.createdAt = LocalDateTime.now();

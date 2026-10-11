@@ -80,6 +80,10 @@ public class AcademyAiIdempotencyService {
       if (rec.isFailed()) {
         // 이전 시도 실패 → 재시도 허용: 기존 레코드를 교체한다
         deleteById(rec.getId());
+      } else if (rec.isProcessingExpired()) {
+        // PROCESSING 만료 (30분 초과) → 고착이 아니라 재시도 허용
+        // 기존 레코드를 삭제하고 새로 선점한다
+        deleteById(rec.getId());
       } else {
         throw new DuplicateIdempotencyKeyException(rec);
       }

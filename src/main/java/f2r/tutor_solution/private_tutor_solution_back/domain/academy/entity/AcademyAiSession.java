@@ -29,7 +29,11 @@ public class AcademyAiSession {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
+  /**
+   * F1: 승인 전 생성 세션은 Academy가 없으므로 NULL을 허용한다.
+   * 0L 같은 가짜 ID를 사용하지 않는다 (V1055 FK 위반 방지).
+   */
+  @Column(nullable = true)
   private Long academyId;
 
   @Column(nullable = false, length = 100)
