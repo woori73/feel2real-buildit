@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS academy_visual_editor_draft (
   PRIMARY KEY (draft_id),
   CONSTRAINT uq_visual_draft_academy UNIQUE (academy_id),
   CONSTRAINT fk_visual_draft_academy FOREIGN KEY (academy_id)
-    REFERENCES academy (academy_id) ON DELETE CASCADE,
+    REFERENCES academies (academy_id) ON DELETE CASCADE,
   INDEX idx_visual_draft_updated (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='BuildIt 시각 편집기 초안 (비공개, 본인만 접근)';
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS academy_visual_editor_published (
   PRIMARY KEY (published_id),
   CONSTRAINT uq_visual_published_academy UNIQUE (academy_id),
   CONSTRAINT fk_visual_published_academy FOREIGN KEY (academy_id)
-    REFERENCES academy (academy_id) ON DELETE CASCADE,
+    REFERENCES academies (academy_id) ON DELETE CASCADE,
   INDEX idx_visual_published_at (published_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='BuildIt 시각 편집기 게시본 (공개 홈페이지에 반영)';
