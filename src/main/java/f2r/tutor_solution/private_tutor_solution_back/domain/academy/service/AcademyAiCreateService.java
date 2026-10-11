@@ -89,13 +89,13 @@ public class AcademyAiCreateService {
     draft.put("designPreset", preset);
 
     // 2. 색상 설정
+    // 참고: brandPrimary는 builderDraft 키가 아니므로 draft에 포함하지 않는다.
+    // 색상은 P0 프리셋 시스템을 통해 적용된다. 감지된 색상은 warnings에 기록한다.
     String color = detectColor(message);
     if (color != null) {
-      if (isValidHexColor(color)) {
-        draft.put("brandPrimary", color);
-      } else {
-        warnings.add("지원하지 않는 색상 형식입니다: " + color);
-      }
+      warnings.add("요청하신 색상(" + color + ")은 '" + getPresetDisplayName(preset)
+          + "' 프리셋의 기본 색상을 사용합니다. "
+          + "색상 변경은 Builder의 브랜드 탭에서 직접 조정해주세요.");
     }
 
     // 3. 학원명 설정
@@ -198,10 +198,6 @@ public class AcademyAiCreateService {
       case "ONLINE" -> "온라인학원형";
       default -> preset;
     };
-  }
-
-  private boolean isValidHexColor(String color) {
-    return color.matches("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$");
   }
 
   private String sanitize(String text) {

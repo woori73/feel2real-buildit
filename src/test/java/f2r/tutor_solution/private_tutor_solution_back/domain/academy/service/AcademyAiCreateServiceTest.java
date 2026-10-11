@@ -35,8 +35,10 @@ class AcademyAiCreateServiceTest {
         "테스트학원");
 
     assertThat(draft.designPreset()).isEqualTo("ENGLISH");
-    assertThat(draft.builderDraft()).containsKey("brandPrimary");
-    assertThat(draft.builderDraft().get("brandPrimary")).isEqualTo("#2b3a9e");
+    // 색상은 P0 프리셋 시스템을 경유하므로 draft에 brandPrimary가 없음
+    // 대신 warnings에 안내 메시지가 포함됨
+    assertThat(draft.builderDraft()).doesNotContainKey("brandPrimary");
+    assertThat(draft.warnings()).anyMatch(w -> w.contains("프리셋의 기본 색상"));
     assertThat(draft.builderDraft()).containsKey("ctaEnabled");
   }
 
