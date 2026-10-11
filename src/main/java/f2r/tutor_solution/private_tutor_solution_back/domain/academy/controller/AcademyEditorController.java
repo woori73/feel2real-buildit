@@ -41,7 +41,7 @@ public class AcademyEditorController {
     AcademyResponse academy = resolveAcademy(principal, academyId);
 
     model.addAttribute("academyId", academy.academyId());
-    model.addAttribute("academyName", academy.academyName());
+    model.addAttribute("academyName", academy.name());
     // 기존 P0 페이지 HTML이 있으면 편집기에 로드
     // TODO: AcademyService에서 저장된 HTML 조회
     // model.addAttribute("pageHtml", ...);
