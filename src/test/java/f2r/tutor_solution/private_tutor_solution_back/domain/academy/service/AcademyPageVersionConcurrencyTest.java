@@ -3,7 +3,6 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyPageVersionRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,7 @@ class AcademyPageVersionConcurrencyTest {
     // 실제 환경에서는 테스트용 TUTOR 사용자를 사용한다
     Long testUserId = 999001L;
     principal = new JwtTokenProvider.AuthenticatedPrincipal(
-        testUserId, "test-tutor", Role.TUTOR);
+        testUserId, "test-tutor", "TUTOR");
 
     SecurityContextHolder.getContext().setAuthentication(
         new UsernamePasswordAuthenticationToken(principal, null, List.of()));
