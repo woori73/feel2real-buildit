@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.VersionInfo;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyPageVersionRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
@@ -27,13 +28,19 @@ import org.springframework.transaction.annotation.Transactional;
  * </ul>
  *
  * <p>D3 동시성 제어:
- * 스냅샷 생성 전 Academy 행에 비관적 쓰기 잠금(PESSIMISTIC_WRITE, SELECT ... FOR UPDATE)을
- * 획득한다. 이로써 같은 학원의 스냅샷 생성 작업이 직렬화되며, version_no 결정·저장·오래된
- * 버전 정리가 하나의 트랜잭션 경계에서 원자적으로 처리된다.
+ * 임계 구간의 모든 읽기를 잠금 읽기(SELECT ... FOR UPDATE)로 통일한다.
+ * REPEATABLE READ에서 일반 SELECT는 트랜잭션 시작 시점의 스냅샷을 사용하므로,
+ * 잠금 획득 전에 일반 SELECT를 하면 동시 요청이 같은 version_no를 계산한다.
+ * 잠금 읽기는 항상 최신 커밋 데이터를 보므로 이 문제를 해결한다.
+ *
+ * <p>처리 순서:
+ * 1. findForUpdateByTutorUserId() — Academy 행 잠금 + 최신 데이터 조회
+ * 2. findTopForUpdateByAcademyId() — 최신 version_no 조회 (잠금 읽기)
+ * 3. 저장 → 오래된 버전 정리 → 커밋
  *
  * <p>잠금은 Academy 행 단위이므로 다른 학원의 스냅샷 작업은 차단되지 않는다.
- * REQUIRES_NEW 재시도 방식은 사용하지 않는다 — 잠금으로 충돌 자체가 발생하지 않으므로
- * 재시도가 불필요하고, "실패 응답인데 DB에 버전이 저장되는" 현상도 제거된다.
+ * REQUIRES_NEW 재시도 방식은 사용하지 않는다.
+ * 격리 수준 전역 변경 없이 REPEATABLE READ를 유지한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -67,8 +74,12 @@ public class AcademyPageVersionService {
   /**
    * 버전 스냅샷을 저장한다 (intro 포함).
    *
-   * <p>D3: Academy 행 잠금 → version_no 결정 → 저장 → 정리를 단일 트랜잭션에서 처리한다.
-   * 호출자의 트랜잭션에 참여한다 (REQUIRED).
+   * <p>D3: 임계 구간의 모든 읽기를 잠금 읽기로 통일한다.
+   * 1. Academy 행 잠금 (findForUpdateByTutorUserId) — 학원별 직렬화
+   * 2. 최신 version_no 조회 (findTopForUpdateByAcademyId) — 잠금 읽기
+   * 3. 저장 → 정리 → 커밋을 단일 트랜잭션에서 처리
+   *
+   * <p>호출자의 트랜잭션에 참여한다 (REQUIRED).
    *
    * <p>F2: intro를 함께 저장한다 (AI가 변경한 top-level intro 복원용).
    */
@@ -79,22 +90,23 @@ public class AcademyPageVersionService {
       Map<String, Object> pageSettings,
       String intro,
       String note) {
-    AcademyResponse academy = getMyAcademy(principal);
-
-    // D3: 학원별 스냅샷 작업 직렬화.
-    // Academy 행에 PESSIMISTIC_WRITE 잠금을 걸어 동시 스냅샷 요청을 순서대로 처리한다.
-    // 행 단위 잠금이므로 다른 학원의 작업은 영향을 받지 않는다.
-    academyRepository
-        .findForUpdateByAcademyId(academy.academyId())
+    // D3: 잠금 읽기로 Academy 조회 — 일반 SELECT를 먼저 하면 REPEATABLE READ
+    // 스냅샷이 확정되어 동시 요청이 같은 version_no를 계산한다.
+    // findForUpdateByTutorUserId는 잠금 읽기이므로 최신 데이터를 보고,
+    // 동시에 Academy 행 잠금을 획득해 학원별 작업을 직렬화한다.
+    Academy academy = academyRepository
+        .findForUpdateByTutorUserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy가 없습니다."));
+    Long academyId = academy.getAcademyId();
 
+    // D3: version_no 조회도 잠금 읽기로 — 최신 커밋 데이터를 보장한다.
     Integer nextNo = versionRepository
-        .findTopByAcademyIdOrderByVersionNoDesc(academy.academyId())
+        .findTopForUpdateByAcademyId(academyId)
         .map(v -> v.getVersionNo() + 1)
         .orElse(1);
 
     AcademyPageVersion version = new AcademyPageVersion(
-        academy.academyId(),
+        academyId,
         nextNo,
         toJson(builderDraft),
         toJson(pageSettings),
@@ -105,7 +117,7 @@ public class AcademyPageVersionService {
 
     // F3: 20개 초과 시 오래된 버전 삭제 (최초 버전 v1은 보존)
     // 같은 트랜잭션·같은 잠금 안에서 처리하므로 상한이 정확히 유지된다.
-    cleanupOldVersions(academy.academyId());
+    cleanupOldVersions(academyId);
 
     return version.getId();
   }
