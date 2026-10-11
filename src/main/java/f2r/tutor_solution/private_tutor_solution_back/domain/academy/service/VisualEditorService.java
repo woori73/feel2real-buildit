@@ -234,6 +234,11 @@ public class VisualEditorService {
    * 초안을 게시한다. draft → published 복사와 renderMode 변경을
    * 하나의 트랜잭션으로 처리하며, 중간 실패 시 전체 롤백된다.
    *
+   * <p>동시성: 학원 행을 먼저 비관적 락으로 잠가 같은 학원의 게시/게시취소를 직렬화한다.
+   * 락 순서가 academies → 게시본으로 고정되므로 데드락이 없고, 락 획득 이후에 초안을
+   * 읽으므로 항상 최신 revision을 기준으로 검증한다. 같은 revision을 다시 게시하면
+   * 게시본을 같은 내용으로 교체하는 멱등 동작이다.
+   *
    * @param principal 인증된 사용자 (해당 학원 권한 필요)
    * @param expectedRevision 게시 시점의 초안 revision (낙관적 잠금)
    * @throws DraftConflictException 초안이 없거나 revision 불일치 시
@@ -242,8 +247,7 @@ public class VisualEditorService {
   public void publish(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       Long expectedRevision) {
-    AcademyResponse academy = requireMyAcademy(principal);
-    Long academyId = academy.academyId();
+    Long academyId = academyService.lockMyAcademyForUpdate(principal);
 
     VisualEditorDraft draft = draftRepository.findByAcademyId(academyId)
         .orElseThrow(() -> new DraftConflictException(
@@ -254,44 +258,30 @@ public class VisualEditorService {
               + "(현재 revision=" + draft.getRevision() + ")");
     }
 
-    // 1. published 교체 (기존 게시본이 있으면 삭제 후 생성)
-    // 동시 게시 시 충돌은 409로 변환 (데이터 정합성 유지):
-    // - DataIntegrityViolationException: UNIQUE 제약 위반 (중복 INSERT)
-    // - CannotAcquireLockException: 데드락/락 타임아웃 (동시 INSERT 경합)
-    try {
-      publishedRepository.findByAcademyId(academyId)
-          .ifPresent(publishedRepository::delete);
-      publishedRepository.flush();
-      VisualEditorPublished published = new VisualEditorPublished(
-          academyId, draft.getHtml(), draft.getCss(),
-          String.valueOf(principal.userId()));
-      publishedRepository.saveAndFlush(published);
-    } catch (DataIntegrityViolationException
-        | org.springframework.dao.CannotAcquireLockException e) {
-      throw new DraftConflictException(
-          "다른 세션에서 게시가 진행 중입니다. 새로고침 후 다시 시도하세요.");
-    }
+    // 1. published 교체 (기존 게시본이 있으면 삭제 후 생성). 학원 락 보유 중이므로 경합 없음.
+    publishedRepository.findByAcademyId(academyId)
+        .ifPresent(publishedRepository::delete);
+    publishedRepository.flush();
+    publishedRepository.saveAndFlush(new VisualEditorPublished(
+        academyId, draft.getHtml(), draft.getCss(),
+        String.valueOf(principal.userId())));
 
     // 2. renderMode를 custom으로 변경 (같은 트랜잭션)
-    // 동시 업데이트 시 락 경합도 409로 변환
-    try {
-      academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
-    } catch (DataIntegrityViolationException
-        | org.springframework.dao.CannotAcquireLockException e) {
-      throw new DraftConflictException(
-          "다른 세션에서 게시가 진행 중입니다. 새로고침 후 다시 시도하세요.");
-    }
+    academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
   }
 
   /**
    * 게시를 취소한다. renderMode를 template으로 되돌린다.
    * published 행과 P0 데이터는 유지된다.
    *
+   * <p>publish와 같은 학원 락을 사용해 게시/게시취소가 교차 실행되어도
+   * page_settings 읽기-병합-쓰기가 서로 덮어쓰지 않게 한다.
+   *
    * @param principal 인증된 사용자 (해당 학원 권한 필요)
    */
   @Transactional
   public void unpublish(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    requireMyAcademy(principal);
+    academyService.lockMyAcademyForUpdate(principal);
     academyService.setRenderMode(principal, RENDER_MODE_TEMPLATE);
   }
 

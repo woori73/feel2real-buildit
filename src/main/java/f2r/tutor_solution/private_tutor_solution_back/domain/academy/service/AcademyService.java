@@ -396,6 +396,27 @@ public class AcademyService {
   }
 
   /**
+   * 호출자 소유 Academy 행을 비관적 쓰기 락(SELECT ... FOR UPDATE)으로 잠그고 academyId를 반환한다.
+   *
+   * <p>같은 학원에 대한 게시/게시취소를 직렬화하기 위한 용도다. 락 순서를
+   * 항상 academies → 자식 테이블(게시본) 순으로 고정해, 자식 INSERT의 FK 검사(S락)가
+   * 이후 academies UPDATE(X락)와 교착하는 S→X 업그레이드 데드락을 막는다.
+   * 호출한 트랜잭션이 끝날 때까지 락이 유지된다.
+   *
+   * @param principal 인증된 사용자 (학원 소유 강사)
+   * @return 잠긴 Academy의 ID
+   * @throws AccessDeniedException 소유 학원이 없을 때
+   */
+  @Transactional
+  public Long lockMyAcademyForUpdate(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    authResolver.requireTutor(principal);
+    Academy academy = academyRepository.findForUpdateByTutorUserId(principal.userId())
+        .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("학원이 없습니다."));
+    authResolver.verifyOwnsAcademy(academy);
+    return academy.getAcademyId();
+  }
+
+  /**
    * BuildIt 시각 편집기용 홈페이지 렌더 모드 단독 업데이트.
    *
    * <p>builderDraft의 {@code homepage.renderMode} 키만 갱신하며, 다른 P0/P1 설정은

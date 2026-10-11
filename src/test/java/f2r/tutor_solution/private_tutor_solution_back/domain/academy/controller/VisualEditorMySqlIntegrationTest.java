@@ -94,8 +94,8 @@ class VisualEditorMySqlIntegrationTest {
   @Autowired
   private JdbcTemplate jdbcTemplate;
 
-  @Autowired
-  private org.springframework.transaction.PlatformTransactionManager transactionManager;
+  @jakarta.persistence.PersistenceContext
+  private jakarta.persistence.EntityManager entityManager;
 
   private User tutor;
   private JwtTokenProvider.AuthenticatedPrincipal principal;
@@ -127,16 +127,26 @@ class VisualEditorMySqlIntegrationTest {
                 Map.of("designPreset", "ENGLISH"), null)),
         "ve-key-" + suffix);
     // 공개 homepage API 테스트를 위해 학원을 PUBLISHED로 변경
-    // (공개 API는 기존 규칙대로 PUBLISHED 학원만 serving)
-    // 테스트 트랜잭션 내에서 수행 (MockMvc도 같은 트랜잭션에 참여하므로 보임)
+    // (공개 API는 기존 규칙대로 PUBLISHED 학원만 serving).
+    // Academy에는 status setter가 없어 JDBC로 직접 바꾼다. JDBC UPDATE는 영속성 컨텍스트를
+    // 우회하므로, 컨텍스트에 DRAFT 상태 엔티티가 남아 있으면 이후 dirty flush(setRenderMode 등)가
+    // status='DRAFT'를 되덮어써 공개 API가 404가 된다. 그래서 UPDATE 전에 flush, 후에 clear 한다.
+    // (테스트 트랜잭션이 없는 NOT_SUPPORTED 동시성 테스트는 영속성 컨텍스트가 공유되지 않아 불필요)
+    boolean inTestTransaction =
+        org.springframework.test.context.transaction.TestTransaction.isActive();
+    if (inTestTransaction) {
+      entityManager.flush();
+    }
     int updated = jdbcTemplate.update(
         "UPDATE academies SET status = 'PUBLISHED', is_visible = true "
             + "WHERE tutor_user_id = ?",
         tutor.getUserId());
-    // UPDATE가 실제로 1건을 변경했는지 검증 (0건이면 WHERE 조건 오류)
     if (updated != 1) {
       throw new IllegalStateException(
           "setUp: academies UPDATE affected " + updated + " rows, expected 1");
+    }
+    if (inTestTransaction) {
+      entityManager.clear();
     }
   }
 
@@ -147,6 +157,12 @@ class VisualEditorMySqlIntegrationTest {
   @AfterEach
   void tearDown() {
     SecurityContextHolder.clearContext();
+    // 클래스 기본은 테스트 종료 시 롤백되지만, NOT_SUPPORTED 동시성 테스트는 setUp 데이터가
+    // 커밋된다. 다른 테스트/재실행에 남지 않도록 직접 정리한다 (academies 삭제 시 FK cascade).
+    if (!org.springframework.test.context.transaction.TestTransaction.isActive()) {
+      jdbcTemplate.update("DELETE FROM academies WHERE tutor_user_id = ?", tutor.getUserId());
+      jdbcTemplate.update("DELETE FROM users WHERE user_id = ?", tutor.getUserId());
+    }
   }
 
   private MvcResult putDraft(String body) throws Exception {
@@ -608,13 +624,13 @@ class VisualEditorMySqlIntegrationTest {
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   @Test
-  @DisplayName("병렬 게시 4건 동일 revision → 1건 200, 나머지는 409 (데이터 정합성 유지)")
+  @DisplayName("병렬 게시 8건 동일 revision → 직렬화되어 전부 200(멱등), 5xx/데드락 없음, 게시본 1건")
   void concurrentPublish_idempotent() throws Exception {
     MvcResult r1 = putDraft("{\"html\":\"<p>pub</p>\",\"css\":\"\",\"projectData\":\"{}\"}");
     assertThat(r1.getResponse().getStatus()).isEqualTo(200);
     long rev = revisionOf(r1);
 
-    int threads = 4;
+    int threads = 8;
     ExecutorService pool = Executors.newFixedThreadPool(threads);
     CountDownLatch ready = new CountDownLatch(threads);
     CountDownLatch start = new CountDownLatch(1);
@@ -652,12 +668,11 @@ class VisualEditorMySqlIntegrationTest {
       pool.shutdownNow();
     }
 
-    // 정확히 1건만 성공, 나머지는 409. 500 등 다른 오류 없음.
-    assertThat(ok200.get()).isEqualTo(1);
-    assertThat(conflict409.get())
-        .as("other codes: " + otherCodes)
-        .isEqualTo(threads - 1);
-    assertThat(other.get()).isEqualTo(0);
+    // 학원 행 락으로 게시가 직렬화되므로 같은 revision 재게시는 순차 호출과 동일하게 멱등(200).
+    // (409 개수는 스레드 타이밍에 달라지므로 기대하지 않는다.) 5xx/데드락은 없어야 한다.
+    assertThat(otherCodes).as("5xx 등 예상 외 응답 코드").isEmpty();
+    assertThat(conflict409.get()).isZero();
+    assertThat(ok200.get()).isEqualTo(threads);
 
     // 최종 게시본이 정상
     String handle = myHandle();

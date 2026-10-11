@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
  *       불일치 시 409</li>
  * </ul>
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/tutor/academy/page-settings")
 @RequiredArgsConstructor
@@ -237,6 +239,7 @@ public class AcademyEditorApiController {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Map<String, Object>> handleGeneric(Exception e) {
+    log.error("시각 편집기 API 처리 중 예상치 못한 오류", e);
     Map<String, Object> response = new HashMap<>();
     response.put("status", 500);
     response.put("message", "서버 오류가 발생했습니다.");
