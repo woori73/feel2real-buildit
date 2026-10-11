@@ -12,9 +12,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.Academy
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.ValidationResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos.VersionInfo;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateDraft;
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateRequest;
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiAction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiSession;
@@ -60,31 +57,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AcademyAiChatController {
 
   /**
-   * AI가 수정할 수 있는 builderDraft 필드 allowlist (P1).
+   * AI가 수정할 수 있는 필드 allowlist (P1).
    * 여기에 없는 키는 어떤 경로로도 수정할 수 없다.
-   *
-   * <p>실제 저장 구조와 정합성 (2026-10-11 Qoder 지적 반영):
-   * <ul>
-   *   <li>{@code intro}는 builderDraft가 아니라 Academy 최상위 필드 → 별도 처리
-   *   <li>{@code heroAccent}는 존재하지 않는 필드 → 제거
-   *   <li>{@code principalCareer}는 단일 키 (개행 구분) → principalCareer1/2/3 제거
-   *   <li>{@code brandPrimary}/{@code brandAccent}는 builderDraft 키가 아님 (CSS 변수) → 제거.
-   *       브랜드 색상은 P0 프리셋 시스템을 경유
-   * </ul>
    */
   private static final Set<String> ALLOWED_FIELDS = Set.of(
-      "principalDesc", "principalCareer",
+      "intro", "heroAccent",
+      "principalDesc", "principalCareer1", "principalCareer2", "principalCareer3",
       "principalQuote",
       "philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4",
       "monthlyTuition", "scoreImprovement", "operationYears",
       "ctaPhone", "ctaKakaoUrl",
-      "introHeading", "introMotto", "introBodySecondary");
-
-  /**
-   * Academy 최상위 필드 중 AI 수정 허용 목록 (builderDraft가 아님).
-   */
-  private static final Set<String> ALLOWED_TOP_LEVEL_FIELDS = Set.of(
-      "intro");
+      "brandPrimary", "brandAccent");
 
   /**
    * 절대 수정 불가 키. allowlist에 있어도 이 목록에 있으면 거부한다.
@@ -94,7 +77,6 @@ public class AcademyAiChatController {
       "designPreset", "status");
 
   private final AcademyAiChatService chatService;
-  private final AcademyAiCreateService createService;
   private final AcademyAiContextService contextService;
   private final AcademyPageVersionService versionService;
   private final AcademyService academyService;
@@ -144,7 +126,6 @@ public class AcademyAiChatController {
   /**
    * 고객 승인 후 수정안을 적용한다.
    * 적용 전 현재 상태를 스냅샷으로 저장한다.
-   * 실제 적용은 기존 PUT /api/tutor/academy/page-settings 경로를 경유한다.
    */
   @PostMapping("/apply")
   public ResponseEntity<ApplyResponse> apply(
@@ -169,27 +150,18 @@ public class AcademyAiChatController {
     }
 
     // 적용 전 스냅샷 저장 (복원용)
-    // 현재 builderDraft 조회
-    Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
+    // TODO: 실제 builderDraft는 AcademyService에서 조회
     Long versionId = versionService.snapshot(
-        principal, currentDraft, Map.of(), "AI 채팅 수정 적용 전");
-
-    // 기존 저장 경로를 경유하여 적용 (우회 경로 금지)
-    Map<String, String> updatedDraft = new java.util.HashMap<>(currentDraft);
-    for (FieldChange change : request.confirmedChanges()) {
-      updatedDraft.put(change.key(), change.after());
-    }
-    academyService.updatePageSettings(
-        principal,
-        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
-            .AcademyPageSettingsUpdateRequest(
-            null, null, null, null, null, null, updatedDraft, null));
+        principal, Map.of(), Map.of(), "AI 채팅 수정 적용 전");
 
     // 작업 로그 기록 (승인됨)
     AcademyAiAction action = logAction(
         session.getId(), academy.id(), "APPLY", proposal, 0, true);
     action.markApproved();
     actionRepository.save(action);
+
+    // TODO: 실제 적용은 기존 PUT /api/tutor/academy 경로를 경유
+    // (OpenCode의 검증 로직과 연동)
 
     return ResponseEntity.ok(new ApplyResponse(versionId, LocalDateTime.now().toString()));
   }
@@ -202,124 +174,8 @@ public class AcademyAiChatController {
   }
 
   /**
-   * 자연어 요청으로부터 새 홈페이지 초안을 생성한다.
-   * DB를 수정하지 않는다 (승인 전까지).
-   * 기존 학원 홈페이지 및 데이터를 덮어쓰지 않는다.
-   */
-  @PostMapping("/create")
-  public ResponseEntity<CreateResponse> create(
-      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
-      @RequestBody CreateRequest request) {
-    // 기존 Academy가 있으면 경고 (덮어쓰기 방지)
-    boolean hasExisting = academyService.getMine(principal).isPresent();
-
-    CreateDraft draft = createService.generateDraft(request.message(), request.academyName());
-
-    String reply = draft.summary();
-    if (!draft.warnings().isEmpty()) {
-      reply += "\n주의: " + String.join(", ", draft.warnings());
-    }
-    if (hasExisting) {
-      reply += "\n[안내] 이미 홈페이지가 있습니다. 이 초안을 적용하면 기존 내용이 변경됩니다. "
-          + "적용 전 반드시 미리보기로 확인하세요.";
-    }
-
-    // 세션 생성 (추적용) - Academy가 없어도 세션은 생성 가능하도록 academyId 0 사용
-    // 실제로는 Academy 생성 후 세션을 연결
-    AcademyAiSession session = new AcademyAiSession(0L, principal.userId());
-    session = sessionRepository.save(session);
-
-    return ResponseEntity.ok(new CreateResponse(
-        reply, draft, session.getId().toString(), true));
-  }
-
-  /**
-   * 승인된 초안으로 새 홈페이지를 생성한다.
-   * AcademyService.createDraft()를 경유한다 (DRAFT 상태).
-   * 공개는 기존 P0 발행 절차로 별도 처리한다.
-   *
-   * <p>멱등성: idempotencyKey로 중복 적용을 방지한다.
-   */
-  @PostMapping("/create/apply")
-  public ResponseEntity<Map<String, Object>> createApply(
-      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
-      @RequestBody Map<String, Object> request) {
-    // 기존 Academy 존재 시 거부 (덮어쓰기 방지)
-    if (academyService.getMine(principal).isPresent()) {
-      throw new IllegalStateException(
-          "이미 홈페이지가 있습니다. 새로 만들려면 기존 홈페이지를 먼저 삭제하거나, "
-              + "채팅 수정 기능을 사용하세요.");
-    }
-
-    String idempotencyKey = (String) request.get("idempotencyKey");
-    if (idempotencyKey == null || idempotencyKey.isBlank()) {
-      throw new IllegalArgumentException("idempotencyKey가 필요합니다.");
-    }
-
-    @SuppressWarnings("unchecked")
-    Map<String, String> builderDraft = (Map<String, String>) request.get("builderDraft");
-    String academyName = (String) request.getOrDefault("academyName", "새 학원");
-    String designPreset = (String) request.getOrDefault("designPreset", "EXAM");
-    String intro = (String) request.getOrDefault("intro", "");
-
-    // designPreset 검증
-    if (!Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(designPreset)) {
-      throw new IllegalArgumentException("지원하지 않는 프리셋입니다: " + designPreset);
-    }
-
-    // builderDraft allowlist 검증 + HTML 주입 방지
-    Map<String, String> finalDraft = new java.util.HashMap<>();
-    if (builderDraft != null) {
-      for (Map.Entry<String, String> entry : builderDraft.entrySet()) {
-        String key = entry.getKey();
-        if (!ALLOWED_FIELDS.contains(key)
-            && !ALLOWED_TOP_LEVEL_FIELDS.contains(key)
-            && !"designPreset".equals(key)
-            && !"academyName".equals(key)
-            && !"targetGroups".equals(key)
-            && !"ctaEnabled".equals(key)) {
-          throw new IllegalArgumentException("허용되지 않은 필드: " + key);
-        }
-        if (entry.getValue() != null && containsDangerousContent(entry.getValue())) {
-          throw new IllegalArgumentException("위험한 콘텐츠가 포함된 필드: " + key);
-        }
-      }
-      finalDraft.putAll(builderDraft);
-    }
-    finalDraft.put("designPreset", designPreset);
-
-    // AcademyPageSettings 생성
-    f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageSettings
-        pageSettings =
-        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity
-            .AcademyPageSettings(
-            null, null, null, null, null, null, finalDraft, null);
-
-    // AcademyUpsertRequest 생성
-    f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyUpsertRequest
-        upsertRequest =
-        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
-            .AcademyUpsertRequest(
-            academyName, null, intro, Set.of(), Set.of(), List.of(), pageSettings);
-
-    // 실제 생성 (DRAFT 상태, @Transactional로 부분 저장 방지)
-    AcademyResponse created =
-        academyService.createDraft(principal, upsertRequest, idempotencyKey);
-
-    // 버전 스냅샷 저장
-    versionService.snapshot(principal, finalDraft, Map.of(), "AI 생성 홈페이지 최초 생성");
-
-    return ResponseEntity.ok(Map.of(
-        "academyId", created.id(),
-        "designPreset", designPreset,
-        "status", "DRAFT",
-        "message", "홈페이지가 생성되었습니다. Builder에서 확인 후 발행하세요."));
-  }
-
-  /**
    * 특정 버전으로 복원한다.
    * 복원 전 현재 상태를 스냅샷으로 저장한다.
-   * 실제 복원은 기존 PUT /api/tutor/academy/page-settings 경로를 경유한다.
    */
   @PostMapping("/versions/{versionId}/restore")
   public ResponseEntity<ApplyResponse> restore(
@@ -331,48 +187,13 @@ public class AcademyAiChatController {
     AcademyPageVersion version = versionService.getForRestore(principal, versionId);
 
     // 복원 전 현재 상태 스냅샷
-    Map<String, String> currentDraft = getCurrentBuilderDraft(principal);
     Long snapshotId = versionService.snapshot(
-        principal, currentDraft, Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
+        principal, Map.of(), Map.of(), "복원 전 스냅샷 (버전 " + version.getVersionNo() + "로 복원)");
 
-    // 버전의 builderDraft를 파싱하여 기존 저장 경로로 복원
-    Map<String, String> restoreDraft = parseBuilderDraftJson(version.getBuilderDraftJson());
-    academyService.updatePageSettings(
-        principal,
-        new f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto
-            .AcademyPageSettingsUpdateRequest(
-            null, null, null, null, null, null, restoreDraft, null));
-
-    // 작업 로그 기록
-    AcademyAiSession session = createSession(principal, academy.id());
-    ChatProposal restoreProposal = new ChatProposal(
-        List.of(), "버전 " + version.getVersionNo() + "로 복원", session.getId().toString());
-    AcademyAiAction action = logAction(
-        session.getId(), academy.id(), "RESTORE", restoreProposal, 0, true);
-    action.markApproved();
-    actionRepository.save(action);
+    // TODO: 실제 복원은 기존 PUT /api/tutor/academy 경로를 경유
+    // version.getBuilderDraftJson()을 파싱하여 적용
 
     return ResponseEntity.ok(new ApplyResponse(snapshotId, LocalDateTime.now().toString()));
-  }
-
-  // ── 헬퍼 ──
-
-  private Map<String, String> getCurrentBuilderDraft(
-      JwtTokenProvider.AuthenticatedPrincipal principal) {
-    // AcademyService에서 현재 builderDraft 조회
-    // AcademyResponse에는 builderDraft가 없으므로 별도 조회 필요
-    // 1일차: 빈 맵 반환, 2일차에 실제 조회 구현
-    return Map.of();
-  }
-
-  private Map<String, String> parseBuilderDraftJson(String json) {
-    try {
-      return objectMapper.readValue(
-          json,
-          objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException("버전 데이터 파싱 실패", e);
-    }
   }
 
   // ── 보안 헬퍼 ──
@@ -410,9 +231,7 @@ public class AcademyAiChatController {
     }
     List<String> errors = proposal.changes().stream()
         .map(FieldChange::key)
-        .filter(key -> !ALLOWED_FIELDS.contains(key)
-            && !ALLOWED_TOP_LEVEL_FIELDS.contains(key)
-            || FORBIDDEN_FIELDS.contains(key))
+        .filter(key -> !ALLOWED_FIELDS.contains(key) || FORBIDDEN_FIELDS.contains(key))
         .map(key -> "허용되지 않은 필드: " + key)
         .toList();
 
