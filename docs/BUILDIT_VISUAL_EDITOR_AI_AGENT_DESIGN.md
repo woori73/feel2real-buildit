@@ -3,6 +3,7 @@
 > **상태: 설계 문서. 구현은 별도 승인 후 착수한다.** 이 문서는 코드를 바꾸지 않는다.
 > 대상 브랜치: `buildit-visual-editor/prototype` (안정화 1차 이후 기준)
 > 선행 문서: [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md), [academy-builder-page.md](academy-builder-page.md)
+> 현재 구현 사양·GrapesJS 인스턴스 접근/연동 지점: [BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md](BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md)
 
 ## 1. 목적과 범위
 
