@@ -50,14 +50,23 @@ public class ProposalAiService {
           "수정할 수 있는 요소(id가 있는 요소)가 없습니다. 홈페이지를 저장한 뒤 다시 시도하세요.");
     }
 
-    AiProvider.AiCompletion completion =
-        aiProvider.complete(prompt(ask, outline), new AiProvider.AiTaskLimits(MAX_OUTPUT_CHARS));
-    if (!completion.ok()) {
-      throw new AcademyAiGenerationException(completion.errorMessage() == null
-          ? "AI 수정안을 만들지 못했습니다. 잠시 후 다시 시도하세요." : completion.errorMessage());
+    ParsedAi parsed;
+    try {
+      AiProvider.AiCompletion completion =
+          aiProvider.complete(prompt(ask, outline), new AiProvider.AiTaskLimits(MAX_OUTPUT_CHARS));
+      if (!completion.ok()) {
+        throw new AcademyAiGenerationException(completion.errorMessage() == null
+            ? "AI 수정안을 만들지 못했습니다. 잠시 후 다시 시도하세요." : completion.errorMessage());
+      }
+      parsed = parse(completion.text(), outline);
+    } catch (AcademyAiGenerationException e) {
+      // AI를 쓸 수 없을 때(미구성·장애·해석 실패)는 결정적 규칙 파서로 한 번 더 시도한다. 이해하지 못하면
+      // 추측하지 않고 원래 오류를 그대로 돌려준다.
+      parsed = RuleBasedEditParser.parse(ask, outline)
+          .map(r -> new ParsedAi(r.summary(), r.changes())).orElseThrow(() -> e);
     }
-    ParsedAi parsed = parse(completion.text(), outline);
-    return proposalService.create(academyId, "AI", "ai-request", draft.getRevision(),
+    String kind = parsed.summary().contains("(규칙 기반)") ? "RULE" : "AI";
+    return proposalService.create(academyId, kind, "ai-request", draft.getRevision(),
         parsed.summary(), parsed.changes());
   }
 

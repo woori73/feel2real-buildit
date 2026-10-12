@@ -629,6 +629,27 @@ class VisualEditorProposalFlowMySqlTest {
   }
 
   @Test
+  @DisplayName("given AI 공급자 실패 + 규칙으로 해석 가능한 요청 when 수정 요청 then 규칙 기반 제안(PENDING)이 만들어지고 승인 저장까지 된다")
+  void aiRequest_ruleFallbackThenApprove() throws Exception {
+    long rev = saveBaseDraft(a);
+    when(aiProvider.complete(anyString(), any())).thenReturn(AiProvider.AiCompletion.failed("AI 서버 미구성"));
+
+    MvcResult r = call(asEdu(post(VE + "/ai-requests"), a,
+        Map.of("instruction", "제목을 '규칙으로 만든 제목'으로 바꿔줘")));
+
+    assertThat(r.getResponse().getStatus()).as(r.getResponse().getContentAsString()).isEqualTo(201);
+    JsonNode v = json(r);
+    assertThat(v.get("createdByKind").asText()).isEqualTo("RULE");
+    assertThat(v.get("changes").get(0).get("componentId").asText()).isEqualTo(ProposalFixtures.TITLE_ID);
+    assertThat(draftRevision(a)).isEqualTo(rev);
+    assertThat(publishedRows(a)).isZero();
+
+    MvcResult applied = putApplied(a, "규칙으로 만든 제목", rev, v.get("proposalId").asLong());
+    assertThat(applied.getResponse().getStatus()).isEqualTo(200);
+    assertThat(status(v.get("proposalId").asLong())).isEqualTo("APPLIED");
+  }
+
+  @Test
   @DisplayName("given 비로그인 when 교육자 제안 API then 401")
   void anonymousRejected() throws Exception {
     assertThat(call(get(VE + "/proposals").accept(MediaType.APPLICATION_JSON)).getResponse().getStatus())

@@ -111,4 +111,16 @@ class ProposalAiServiceTest {
         .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
     verify(provider, never()).complete(anyString(), any());
   }
+  @Test
+  @DisplayName("given AI 공급자 실패 + 규칙으로 해석 가능한 요청 when 요청 then 규칙 기반 제안(RULE)을 만든다")
+  void ruleFallbackWhenProviderFails() {
+    when(provider.complete(anyString(), any())).thenReturn(AiProvider.AiCompletion.failed("AI 서버 미구성"));
+
+    service.requestChange(7L, "제목을 '규칙으로 바꾼 제목'으로 바꿔줘");
+
+    ArgumentCaptor<List<ProposalChange>> changes = ArgumentCaptor.forClass(List.class);
+    verify(proposals).create(eq(7L), eq("RULE"), anyString(), any(), anyString(), changes.capture());
+    assertThat(changes.getValue().get(0).after()).isEqualTo("규칙으로 바꾼 제목");
+    assertThat(changes.getValue().get(0).componentId()).isEqualTo("ii5p");
+  }
 }
