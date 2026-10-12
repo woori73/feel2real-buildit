@@ -273,18 +273,18 @@ public class AcademyWorkingCopyService {
         work.businessInfo());
   }
 
-  private static AcademyPageSettingsUpdateRequest builderDraftPatch(Map<String, String> draft) {
+  static AcademyPageSettingsUpdateRequest builderDraftPatch(Map<String, String> draft) {
     return new AcademyPageSettingsUpdateRequest(null, null, null, null, null, null, null, draft);
   }
 
-  private Map<String, Object> pageSettingsMap(AcademyPageSettings settings) {
+  Map<String, Object> pageSettingsMap(AcademyPageSettings settings) {
     if (settings == null) {
       return Map.of();
     }
     return objectMapper.convertValue(settings, new TypeReference<Map<String, Object>>() {});
   }
 
-  private Map<String, String> parseDraftMap(String json) {
+  Map<String, String> parseDraftMap(String json) {
     if (json == null || json.isBlank()) {
       return new HashMap<>();
     }
@@ -296,7 +296,7 @@ public class AcademyWorkingCopyService {
     }
   }
 
-  private AcademyPageSettings parseSettings(String json) {
+  AcademyPageSettings parseSettings(String json) {
     if (json == null || json.isBlank() || "null".equals(json)) {
       return null;
     }
@@ -308,7 +308,7 @@ public class AcademyWorkingCopyService {
   }
 
   /** 키 순서를 고정한 JSON — 저장값과 지문이 로드 순서에 흔들리지 않게 한다. */
-  private String toJson(Object value) {
+  String toJson(Object value) {
     try {
       return canonicalMapper().writeValueAsString(value);
     } catch (JsonProcessingException e) {

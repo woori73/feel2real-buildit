@@ -130,25 +130,58 @@ public class AcademyPageVersionService {
       String intro,
       String note) {
     AcademyResponse academy = getMyAcademy(principal);
+    return saveVersion(academy.academyId(), String.valueOf(principal.userId()),
+        builderDraft, pageSettings, intro, note);
+  }
+
+  private Long saveVersion(
+      Long academyId, String createdBy, Map<String, String> builderDraft,
+      Map<String, Object> pageSettings, String intro, String note) {
     Integer nextNo = versionRepository
-        .findTopByAcademyIdOrderByVersionNoDesc(academy.academyId())
+        .findTopByAcademyIdOrderByVersionNoDesc(academyId)
         .map(v -> v.getVersionNo() + 1)
         .orElse(1);
 
     AcademyPageVersion version = new AcademyPageVersion(
-        academy.academyId(),
-        nextNo,
-        toJson(builderDraft),
-        toJson(pageSettings),
-        intro,
-        String.valueOf(principal.userId()),
-        note);
+        academyId, nextNo, toJson(builderDraft), toJson(pageSettings), intro, createdBy, note);
     versionRepository.save(version);
 
     // F3: 20개 초과 시 오래된 버전 삭제 (최초 버전 v1은 보존)
-    cleanupOldVersions(academy.academyId());
+    cleanupOldVersions(academyId);
 
     return version.getId();
+  }
+
+  /**
+   * 관리자용: 대상 학원(academyId)의 현재 공개 상태를 스냅샷으로 남긴다. 호출자의 트랜잭션에 참여한다.
+   * 권한(ADMIN)은 호출하는 관리자 서비스가 확인한다. created_by는 작업한 관리자의 user_id다.
+   */
+  @Transactional
+  public Long snapshotForAcademy(
+      Long academyId, Long actorUserId, Map<String, String> builderDraft,
+      Map<String, Object> pageSettings, String intro, String note) {
+    return saveVersion(academyId, String.valueOf(actorUserId), builderDraft, pageSettings, intro, note);
+  }
+
+  /** 관리자용: 대상 학원의 버전 목록. */
+  @Transactional(readOnly = true)
+  public List<VersionInfo> listForAcademy(Long academyId) {
+    return versionRepository.findByAcademyIdOrderByVersionNoDesc(academyId).stream()
+        .map(v -> new VersionInfo(
+            v.getId(), v.getVersionNo(), v.getCreatedBy(), v.getCreatedAt().toString(), v.getNote()))
+        .collect(Collectors.toList());
+  }
+
+  /** 관리자용: 버전이 대상 학원의 것인지 확인하고 돌려준다(다른 학원 버전이면 403). */
+  @Transactional(readOnly = true)
+  public AcademyPageVersion getForAcademy(Long academyId, Long versionId) {
+    AcademyPageVersion version = versionRepository
+        .findById(versionId)
+        .orElseThrow(() -> new IllegalArgumentException("버전을 찾을 수 없습니다: " + versionId));
+    if (!version.getAcademyId().equals(academyId)) {
+      throw new AccessDeniedException("다른 학원의 버전에 접근할 수 없습니다.");
+    }
+    return version;
   }
 
   /** 버전 목록을 조회한다. */

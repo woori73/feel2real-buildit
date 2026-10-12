@@ -65,7 +65,7 @@
   async function load() {
     try {
       const res = await fetch(WORKING_COPY_PREVIEW
-        ? '/api/tutor/academy/working-copy/preview'
+        ? ((root && root.dataset.previewApi) || '/api/tutor/academy/working-copy/preview')
         : `/api/academies/${encodeURIComponent(slug)}`);
       if (!res.ok) throw new Error('공개 Academy를 찾을 수 없습니다.');
       const academy = await res.json();
