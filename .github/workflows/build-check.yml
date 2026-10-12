@@ -196,6 +196,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorRealOutputTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalApiTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorProposalSaveTest"
           # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandServiceTest"
@@ -318,6 +320,7 @@ jobs:
           ./gradlew test --no-daemon --stacktrace
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalMySqlTest"
 
       - name: Upload MySQL test report
         if: always()

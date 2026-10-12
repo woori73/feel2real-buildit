@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VisualEditorDraft;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VisualEditorPublished;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorProposalPort;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorService;
 import java.nio.charset.StandardCharsets;
@@ -60,6 +61,8 @@ public class AcademyEditorApiController {
       projectData = "{}";
     }
     Long revision = asRevision(request.get("revision"));
+    // 선택 필드: AI 제안을 적용한 저장이면 제안 ID(없으면 기존 동작 그대로)
+    Long appliedProposalId = asProposalId(request.get("appliedProposalId"));
 
     // revision 규칙: 최초 저장 시 null/0 구분
     Optional<VisualEditorDraft> existing = visualEditorService.getDraft(principal);
@@ -82,11 +85,21 @@ public class AcademyEditorApiController {
     projectData = VisualEditorSanitizer.sanitizeProjectData(projectData);
 
     VisualEditorDraft draft;
+    VisualEditorProposalPort.ProposalApplyResult applied = null;
     try {
-      draft = visualEditorService.saveDraft(
-          principal, html, css, projectData, revision);
+      if (appliedProposalId == null) {
+        // 기존 경로 — appliedProposalId가 없으면 이전과 완전히 같다.
+        draft = visualEditorService.saveDraft(
+            principal, html, css, projectData, revision);
+      } else {
+        // 저장 + Proposal APPLIED를 한 트랜잭션으로. 실패하면 초안도 저장되지 않는다.
+        VisualEditorService.SaveOutcome outcome = visualEditorService.saveDraftWithProposal(
+            principal, html, css, projectData, revision, appliedProposalId);
+        draft = outcome.draft();
+        applied = outcome.appliedProposal();
+      }
     } catch (VisualEditorService.DraftConflictException e) {
-      return conflict(e.getMessage());
+      return conflict(e.getMessage(), "REVISION_CONFLICT");
     } catch (IllegalArgumentException e) {
       return badRequest(e.getMessage());
     }
@@ -96,6 +109,13 @@ public class AcademyEditorApiController {
     response.put("revision", draft.getRevision());
     response.put("updatedAt", draft.getUpdatedAt().toString());
     response.put("message", "초안이 저장되었습니다.");
+    if (applied != null) {
+      Map<String, Object> proposal = new HashMap<>();
+      proposal.put("proposalId", applied.proposalId());
+      proposal.put("status", applied.status());
+      proposal.put("appliedRevision", applied.appliedRevision());
+      response.put("appliedProposal", proposal);
+    }
     return ResponseEntity.ok(response);
   }
 
@@ -256,10 +276,25 @@ public class AcademyEditorApiController {
     return ResponseEntity.ok(response);
   }
 
+  /** 제안 적용 실패(404/409/422/400). 저장 트랜잭션은 이미 롤백되었다. */
+  @ExceptionHandler(VisualEditorProposalPort.ProposalException.class)
+  public ResponseEntity<Map<String, Object>> handleProposal(
+      VisualEditorProposalPort.ProposalException e) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", e.getHttpStatus());
+    response.put("message", e.getMessage());
+    response.put("error", HttpStatus.valueOf(e.getHttpStatus()).getReasonPhrase());
+    response.put("code", e.getCode());
+    if (!e.getDetails().isEmpty()) {
+      response.put("details", e.getDetails());
+    }
+    return ResponseEntity.status(e.getHttpStatus()).body(response);
+  }
+
   @ExceptionHandler(VisualEditorService.DraftConflictException.class)
   public ResponseEntity<Map<String, Object>> handleConflict(
       VisualEditorService.DraftConflictException e) {
-    return conflict(e.getMessage());
+    return conflict(e.getMessage(), "REVISION_CONFLICT");
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
@@ -314,6 +349,16 @@ public class AcademyEditorApiController {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
   }
 
+  /** 클라이언트가 충돌 종류를 구분할 수 있도록 code를 함께 내려준다. */
+  private ResponseEntity<Map<String, Object>> conflict(String message, String code) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", 409);
+    response.put("message", message);
+    response.put("error", "Conflict");
+    response.put("code", code);
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+  }
+
   /**
    * 요청 값을 문자열로 읽는다. 문자열이 아닌 타입이면 400을 위한 예외를 던진다.
    */
@@ -348,6 +393,32 @@ public class AcademyEditorApiController {
       }
     }
     throw new IllegalArgumentException("revision 형식이 올바르지 않습니다.");
+  }
+
+  /**
+   * appliedProposalId를 엄격하게 파싱한다. 양의 정수(숫자 또는 숫자 문자열)만 허용하고,
+   * 그 외 타입·형식은 400을 위한 예외를 던진다. null이면 "제안 없이 저장"이다.
+   */
+  private Long asProposalId(Object value) {
+    if (value == null) {
+      return null;
+    }
+    long id;
+    if (value instanceof Integer || value instanceof Long) {
+      id = ((Number) value).longValue();
+    } else if (value instanceof String s) {
+      try {
+        id = Long.parseLong(s.trim());
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("appliedProposalId 형식이 올바르지 않습니다.");
+      }
+    } else {
+      throw new IllegalArgumentException("appliedProposalId 형식이 올바르지 않습니다.");
+    }
+    if (id <= 0) {
+      throw new IllegalArgumentException("appliedProposalId 형식이 올바르지 않습니다.");
+    }
+    return id;
   }
 
   private int utf8Len(String s) {

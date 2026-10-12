@@ -12,6 +12,7 @@ import jakarta.persistence.OptimisticLockException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
@@ -51,6 +52,8 @@ public class VisualEditorService {
   private final VisualEditorDraftRepository draftRepository;
   private final VisualEditorPublishedRepository publishedRepository;
   private final AcademyService academyService;
+  /** Proposal 도메인이 제공하는 선택적 구현체. 없으면 appliedProposalId 요청은 거부된다. */
+  private final ObjectProvider<VisualEditorProposalPort> proposalPort;
 
   /**
    * 동시 수정 충돌 예외. HTTP 409로 변환된다.
@@ -82,6 +85,60 @@ public class VisualEditorService {
    */
   @Transactional
   public VisualEditorDraft saveDraft(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String html,
+      String css,
+      String projectData,
+      Long expectedRevision) {
+    return persistDraft(principal, html, css, projectData, expectedRevision);
+  }
+
+  /**
+   * 저장 결과와 Proposal 적용 결과.
+   *
+   * @param draft 저장된 초안
+   * @param appliedProposal 적용된 제안(제안 없이 저장했으면 null)
+   */
+  public record SaveOutcome(
+      VisualEditorDraft draft,
+      VisualEditorProposalPort.ProposalApplyResult appliedProposal) {
+  }
+
+  /**
+   * 초안 저장과 Proposal APPLIED 전이를 <b>한 트랜잭션</b>으로 처리한다.
+   *
+   * <p>초안 갱신·flush 뒤에 {@link VisualEditorProposalPort}가 제안을 잠그고 검증하며 APPLIED로 바꾼다.
+   * 제안 관련 실패(404/409/422)나 revision 충돌은 모두 런타임 예외라 초안 갱신까지 함께 롤백된다.
+   * 구현체가 없거나 결과가 APPLIED가 아니면 fail-closed로 거부한다.
+   *
+   * @param appliedProposalId 편집기가 적용했다고 신고한 제안 ID(사실 확인은 구현체가 한다)
+   * @throws VisualEditorProposalPort.ProposalException 제안 관련 실패(저장도 롤백)
+   */
+  @Transactional
+  public SaveOutcome saveDraftWithProposal(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String html,
+      String css,
+      String projectData,
+      Long expectedRevision,
+      long appliedProposalId) {
+    VisualEditorProposalPort port = proposalPort.getIfAvailable();
+    if (port == null) {
+      throw VisualEditorProposalPort.ProposalException.notAvailable();
+    }
+    VisualEditorDraft draft =
+        persistDraft(principal, html, css, projectData, expectedRevision);
+    VisualEditorProposalPort.ProposalApplyResult result = port.applyInSaveTransaction(
+        draft.getAcademyId(), principal.userId(), appliedProposalId,
+        draft.getRevision(), projectData);
+    if (result == null || !"APPLIED".equals(result.status())) {
+      throw VisualEditorProposalPort.ProposalException.verificationFailed(
+          java.util.List.of("APPLY_RESULT_MISSING"));
+    }
+    return new SaveOutcome(draft, result);
+  }
+
+  private VisualEditorDraft persistDraft(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       String html,
       String css,
