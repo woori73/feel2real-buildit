@@ -145,6 +145,8 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
   /**
    * 내부 URL 검증 — open redirect 방지.
    * "/" 로 시작하고 "//" 로 시작하지 않으며, 외부 스킴을 포함하지 않아야 한다.
+   * 2026-10-12: /\evil.com 취약점 수정 — 백슬래시 차단 추가
+   * (브라우저가 /\를 //로 정규화하여 protocol-relative URL로 해석하는 것을 방지)
    */
   private boolean isSafeInternalUrl(String url) {
     if (url == null || url.isBlank()) {
@@ -167,6 +169,17 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
     // 경로 탐색 차단
     if (url.contains("..")) {
       return false;
+    }
+    // 백슬래시 차단 (/\evil.com → //evil.com 정규화 방지)
+    if (url.contains("\\")) {
+      return false;
+    }
+    // 제어 문자 차단
+    for (int i = 0; i < url.length(); i++) {
+      char c = url.charAt(i);
+      if (c < 0x20 || c == 0x7f) {
+        return false;
+      }
     }
     return true;
   }
