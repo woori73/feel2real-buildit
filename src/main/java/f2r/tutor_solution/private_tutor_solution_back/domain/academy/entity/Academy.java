@@ -134,6 +134,11 @@ public class Academy extends BaseEntity {
     this.logoStorageKey = logoStorageKey;
   }
 
+  /** BuildIt AI 채팅용 소개 단독 업데이트 (A2). */
+  public void updateIntro(String intro) {
+    this.intro = intro;
+  }
+
   public void updateCover(String coverStorageKey) {
     this.coverStorageKey = coverStorageKey;
   }

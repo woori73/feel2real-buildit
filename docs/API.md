@@ -163,6 +163,75 @@ DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽�
 
 # API 명세
 
+## BuildIt 시각 편집기 (2026-10, prototype 브랜치)
+
+> GrapesJS 기반 홈페이지 편집기. 기존 P0/P1 데이터와 분리된 전용 테이블(`academy_visual_editor_draft`/`_published`)을 쓴다.
+> 설계·AI Agent 연결: [BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md](BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md)
+
+**인증:** 아래 `/api/tutor/academy/page-settings/visual-editor/**`는 TUTOR(본인 학원) 쿠키 JWT. 소유 학원이 없으면 `403`(500 아님).
+공개 조회 2종은 인증 없음.
+
+| 메서드·경로 | 설명 | 주요 응답 |
+|---|---|---|
+| `GET /tutor/academy/editor` (SSR) | 편집기 화면. 모델: `academyId`, `academyName`, `academySlug` | 200 / 403 |
+| `GET …/visual-editor/status` | 편집기 화면 상태(서버 사실) | `{draftExists, draftRevision, publishedAt, renderMode, hasUnpublishedChanges, publicPath, publicReachable, academyName}` |
+| `GET …/visual-editor/draft` | 초안 조회(없으면 빈 값, `revision:0`) | `{html, css, projectData, revision, updatedAt}` |
+| `PUT …/visual-editor/draft` | 초안 저장. 최초 저장은 `revision` null/0, 이후는 필수. `{html, css, projectData, revision, appliedProposalId?}` — `appliedProposalId`(선택, 양의 정수·숫자 문자열)는 AI 제안을 적용한 저장임을 알리며, 있으면 **저장과 제안 APPLIED 전이가 한 트랜잭션**이다(아래 "AI 제안 적용 저장") | 200 `{status, revision, updatedAt, message, appliedProposal?}` / 400(크기·정제 거부·revision 누락·`appliedProposalId` 형식) / 409(revision 불일치 `code:REVISION_CONFLICT`) / 404·409·422·400(제안 실패, 아래 표) |
+| `POST …/visual-editor/import` | (서버 가져오기, 기존 초안이 있으면 409) 편집기 UI는 쓰지 않고 브라우저 스냅샷 불러오기를 쓴다 | 200 / 409 |
+| `POST …/visual-editor/publish` | `{revision}` 게시. **빈 초안은 400.** 같은 revision 재게시는 멱등 200. 같은 학원의 게시·게시취소는 서버에서 직렬화 | 200 `{status, renderMode, publicPath, publicReachable, message}` / 400 / 409 |
+| `POST …/visual-editor/unpublish` | 게시 취소(P0로 복귀). 게시본·P0 설정은 보존 | 200 `{status, renderMode, publicPath, publicReachable, message}` |
+| `GET …/visual-editor/published` | 게시본 조회(본인) | `{html, css, publishedAt}` |
+| `GET /api/academies/{slug}/homepage` | **공개.** 경로형 공개 페이지(`/academies/{slug}`) 용. handle 없는 학원도 조회됨 | 200 `{html, css, renderMode:"custom"}` / 404(미게시·custom 아님·비공개 학원) |
+| `GET /api/public/academy/{handle}/homepage` | **공개.** 서브도메인 용 | 위와 동일 |
+
+#### AI 제안 적용 저장 (`appliedProposalId`) — 설계: [BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md](BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md)
+
+- `appliedProposalId`가 **없으면** 기존 동작과 완전히 같고 응답에 `appliedProposal` 키도 없다.
+- 있으면 초안 갱신·flush 뒤 같은 트랜잭션에서 `VisualEditorProposalPort`(Proposal 도메인 구현체)가 제안을 학원 조건으로 잠그고(`academy_id`는 로그인 사용자의 학원이며 요청값이 아니다) 검증한 뒤 APPLIED로 바꾼다. 어느 단계든 실패하면 **초안 갱신도 롤백**된다.
+- 성공 200 추가 필드: `appliedProposal: {proposalId, status:"APPLIED", appliedRevision}` — `appliedRevision`은 저장 후 DB의 revision이다.
+- 오류 본문은 기존 형식에 `code`(그리고 422는 `details[]`)가 더해진다. 409는 `code`로 구분한다 — `REVISION_CONFLICT`(또는 `code` 없음)는 revision 충돌, `PROPOSAL_NOT_PENDING`은 제안 상태 충돌.
+
+| HTTP | `code` | 의미 | 초안 | 제안 |
+|---|---|---|---|---|
+| 409 | `REVISION_CONFLICT` | revision 불일치 | 불변 | PENDING 유지 |
+| 404 | `PROPOSAL_NOT_FOUND` | 없음 또는 다른 학원의 제안(구분 불가) | 불변 | 변화 없음 |
+| 409 | `PROPOSAL_NOT_PENDING` | 이미 APPLIED/REJECTED/EXPIRED/STALE | 불변 | 변화 없음 |
+| 422 | `PROPOSAL_VERIFICATION_FAILED` | 제안 내용 ≠ 저장된 projectData(`details[]`에 사유) | 불변 | PENDING 유지 |
+| 400 | `PROPOSAL_NOT_AVAILABLE` | Proposal 구현체가 배포되지 않은 환경 | 불변 | — |
+
+편집기 쪽 계약: `window.__ve.applyProposal({proposalId, changes[]})`(전부 또는 전무, 저장하지 않음) · `window.__ve.undoProposal()`(적용 직전 상태로 한 번에 복원) · `window` 이벤트 `ve:saved`(`{revision, appliedProposal}`, 저장 성공마다) · `ve:proposal-failed`(`{proposalId, code, message, details}`). `window.__ve.state()`에 `pendingAppliedProposalId`가 추가되었다. 저장 revision 충돌 시 편집기는 미저장 내용을 `localStorage`(`ve:backup:{academyId}`)에 먼저 백업하고, 자동저장 충돌은 모달 없이 알리며, 수동 저장 충돌은 "내 내용 유지(기본)/최신 초안 불러오기/덮어쓰기" 중에서 고르게 한다. 백업은 상태줄의 "저장 안 된 내 변경 복원"으로 되돌릴 수 있다.
+
+#### AI 제안·Agent API (V1058, 구현 완료)
+
+**교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`
+
+| 메서드·경로 | 설명 | 응답 |
+|---|---|---|
+| `GET /proposals` | 내 학원의 PENDING·STALE 제안(조회 시 만료 정리, 대상 요소가 초안에서 사라진 제안만 STALE) | `[ProposalView]` |
+| `POST /proposals/{id}/reject` | 거절(PENDING만) | 200 / 404(없음·타 학원) / 409 |
+| `POST /ai-requests` `{instruction}` | AI에게 수정 요청 → 제안(PENDING) 생성. **초안·게시본은 바뀌지 않는다.** 기존 Academy AI 공급자(`AiProvider`, Wiki AI Router)를 쓰며 새 비밀값 없음. 대기 제안이 상한이면 AI 호출 전 409 | 201 `ProposalView` / 400(요청·초안 없음) / 409 / 503(공급자 실패) |
+| `GET /agent-tokens` | 토큰 목록(비밀 없음) | `[{tokenId,label,scopes,expiresAt,lastUsedAt,active}]` |
+| `POST /agent-tokens` `{label}` | 토큰 발급. 응답의 `token`(`vea_…`)은 **이때 한 번만** 보인다(DB에는 SHA-256 해시) | 201 / 409(활성 5개 초과) |
+| `DELETE /agent-tokens/{id}` | 폐기 | 200 / 404(타 학원) |
+
+**Agent(Bearer `vea_…`, 학원 1개에 바인딩, 접두 `/api/agent/academy/visual-editor`)** — 쿠키(TUTOR 포함)로는 403, 토큰으로는 이 3개 경로 밖(초안·게시·renderMode·토큰·거절 등)에 접근할 수 없다(`VisualEditorAgentTokenFilter` allowlist).
+
+| 메서드·경로 | scope | 설명 |
+|---|---|---|
+| `GET /context` | `ve:read` | 저장된 초안 기준 `{revision, components[{id,tag,type,text,src}], editableTypes}` |
+| `POST /proposals` `{baseRevision?, summary, changes[]}` | `ve:propose` | 제안 생성(201 `ProposalView`, PENDING). `changes[]`: `{componentId, type:"text"\|"image"\|"style", after \| styles, mediaText?}` — 1~50건, text는 HTML 태그 금지·2000자, image는 `http(s)://` 또는 `/`로 시작, style은 속성 20개·값 200자·`url()`/`expression`/`;{}` 금지·`mediaText`는 비움 또는 `(max-width: 768px)`. 위반 400. 대기 5건 초과 409 |
+| `GET /proposals/{id}` | `ve:read` | 상태 조회(타 학원 404) |
+
+`ProposalView`: `{proposalId, status(PENDING·APPLIED·REJECTED·EXPIRED·STALE), summary, createdByKind(AGENT·AI), createdAt, expiresAt(14일), baseRevision, changes[], applicable, staleReason}`.
+승인은 별도 API가 아니다 — 편집기가 제안을 적용해 `PUT …/draft`에 `appliedProposalId`를 실어 저장하는 것이 승인이다(위 표). 반영(공개)은 그다음 사용자가 게시할 때다.
+
+
+
+- **`publicReachable`**: 학원이 `PUBLISHED`이고 `visible`일 때만 `true`. `false`면 게시본은 저장됐지만 방문자에게는 보이지 않으며, 응답 `message`가 그 사실을 알린다("성공" 문구로 덮지 않는다).
+- **projectData 정제:** GrapesJS 0.23.x가 프레임마다 붙이는 `component.head`(`{"type":"head"}`)·`component.docEl`(`{"tagName":"html"}`)과 페이지 `type:"main"`은 정해진 빈 모양일 때만 보존한다. 그 밖의 `head`/`docEl` 내용, 트리 안의 `type=head`/`tagName=html`, `script`·`on*`·`javascript:`는 계속 400.
+- **상대경로 URL**(`/api/...`, `/academies/...`)은 `img src`/`a href`에서 보존된다. 스킴이 있는 위험 URL은 계속 차단.
+- **공개 렌더:** 게시본 HTML/CSS는 공개 페이지에서 Shadow DOM으로 격리해 그린다(P0 사이트 CSS와 서로 영향 없음).
+
 ## BuildIt Wiki 학교 프린트·문제 모델
 
 - `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.

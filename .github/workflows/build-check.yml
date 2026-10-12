@@ -98,6 +98,13 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartDiscoveryServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyBuilderTemplateContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiChatServiceImplTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiCreateServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiScenarioTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiIdempotencyServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiDeterminismTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAiApplyParamTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiApplyServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoDeliveryServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyVideoServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.AcademyVideoAsyncSchemaContractTest"
@@ -186,6 +193,17 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardExcelParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardNormalizerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardImportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorRealOutputTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalApiTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorProposalSaveTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalVerifierTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalChangeValidatorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.AgentTokenServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalAiServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.RuleBasedEditParserTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalRepositoryAccessTest"
           # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandServiceTest"
@@ -203,6 +221,24 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.JipijigiAdminPageContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.entity.LmsContentEntityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmsenrollment.entity.LmsEnrollmentEntityTest"
+
+      - name: Verify editor tests executed
+        # 셸 주석(#)으로 --tests 필터가 잘리는 사고 방지: XML 리포트 존재를 강제한다.
+        run: |
+          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerTest.xml
+          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorRealOutputTest.xml
+          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest.xml
+          echo "editor tests executed: OK"
+
+      - name: Upload build-job test report
+        # 편집기 테스트가 실제로 실행됐는지 검증용 (테스트 삭제·비활성화 금지 정책).
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-test-report
+          path: build/reports/tests/test
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Stage build artifacts (SHA-bound)
         # main push에서만 실행: Deploy(auto)가 재사용할 artifact를 만든다.
@@ -246,3 +282,58 @@ jobs:
           path: build/reports/tests/test
           if-no-files-found: ignore
 
+  mysql-integration-test:
+    # BuildIt P1 MySQL 통합 테스트 (격리 DB).
+    # 운영 DB와 완전히 분리된 ephemeral MySQL에서 실제 DB 동작을 검증한다.
+    # 테스트 전용 접속정보만 사용하며, 운영 접속정보는 사용하지 않는다.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x gradlew
+
+      - name: Run MySQL integration tests
+        run: >-
+          ./gradlew test --no-daemon --stacktrace
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.VisualEditorProposalFlowMySqlTest"
+
+      - name: Upload MySQL test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-test-report
+          path: build/reports/tests/test
+          if-no-files-found: ignore
+          retention-days: 7

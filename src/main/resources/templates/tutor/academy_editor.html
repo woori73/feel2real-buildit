@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName != null ? '홈페이지 편집 — ' + academyName : '홈페이지 편집'}">홈페이지 편집</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+
+  <!-- GrapesJS CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.23.6/dist/css/grapes.min.css">
+
+  <style>
+    /* 편집기 레이아웃 */
+    html, body { margin: 0; }
+    body { font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+    .editor-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #1f2937;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .editor-toolbar .title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-right: auto;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .editor-toolbar button {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      min-height: 38px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .editor-toolbar button:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-device { background: #374151; color: #fff; }
+    .btn-device.active { background: #3b82f6; }
+    .btn-import { background: #4f46e5; color: #fff; }
+    .btn-save { background: #10b981; color: #fff; }
+    .btn-preview { background: #6b7280; color: #fff; }
+    .btn-publish { background: #f59e0b; color: #fff; }
+    .btn-unpublish { background: transparent; color: #fbbf24; border: 1px solid #b45309 !important; }
+    .btn-back { background: transparent; color: #9ca3af; border: 1px solid #4b5563 !important; }
+    .device-group { display: flex; gap: 4px; }
+
+    /* 상태 표시줄: 저장 상태 + 게시 상태 + 공개 페이지 링크 */
+    .status-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px;
+      padding: 6px 16px; font-size: 12px; border-bottom: 1px solid #e5e7eb; background: #fff;
+    }
+    .save-status { font-size: 12px; color: #9ca3af; padding: 0; }
+    .save-status.saving { color: #f59e0b; }
+    .save-status.saved { color: #10b981; }
+    .save-status.error { color: #dc2626; }
+    .publish-status { color: #4b5563; }
+    .publish-status.warn { color: #b45309; }
+    .status-bar a { color: #2563eb; text-decoration: none; }
+    .status-action { font-size: 12px; padding: 2px 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #374151; cursor: pointer; }
+    .status-action:hover { background: #f3f4f6; }
+    .ai-badge { background: #dc2626; color: #fff; border-radius: 10px; padding: 0 6px; font-size: 11px; margin-left: 2px; }
+    .ai-panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); background: #fff; z-index: 900; box-shadow: -4px 0 24px rgba(0,0,0,.2); display: flex; flex-direction: column; }
+    .ai-panel[hidden] { display: none; }
+    .ai-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+    .ai-x { border: 0; background: transparent; font-size: 18px; cursor: pointer; min-width: 44px; min-height: 44px; }
+    .ai-body { padding: 12px 14px 24px; overflow-y: auto; flex: 1; font-size: 13px; color: #374151; }
+    .ai-note { font-size: 12px; color: #6b7280; margin: 0 0 10px; line-height: 1.5; }
+    .ai-label { font-weight: 600; margin: 8px 0 4px; display: block; }
+    .ai-panel textarea, .ai-panel input[type=text] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .ai-btn { padding: 8px 12px; min-height: 44px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
+    .ai-btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; margin-top: 8px; width: 100%; }
+    .ai-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .ai-msg { margin-top: 8px; font-size: 12px; min-height: 16px; }
+    .ai-msg.error { color: #dc2626; }
+    .ai-msg.ok { color: #047857; }
+    .ai-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; margin-top: 8px; }
+    .ai-card.stale { background: #fffbeb; border-color: #fcd34d; }
+    .ai-card h4 { margin: 0 0 4px; font-size: 14px; word-break: break-word; }
+    .ai-meta { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+    .ai-changes { margin: 0 0 8px; padding-left: 16px; font-size: 12px; word-break: break-word; }
+    .ai-changes .before { color: #9ca3af; text-decoration: line-through; }
+    .ai-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ai-actions .ai-btn { flex: 1 1 auto; }
+    .ai-actions .ai-btn.approve { background: #047857; border-color: #047857; color: #fff; }
+    .ai-create { margin: 0 0 14px; padding: 8px 10px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; }
+    .ai-create summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+    .ai-agent { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    .ai-token-row { display: flex; gap: 6px; margin: 6px 0; }
+    .ai-token-row input { flex: 1; }
+    .ai-tokens div { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
+    .ve-preview-bar { padding: 8px 14px; background: #fffbeb; border-bottom: 1px solid #fcd34d; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+    .ve-preview-bar .ai-btn { min-height: 38px; }
+    @media (max-width: 640px) { .ai-panel { width: 100vw; } }
+    .ve-modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .ve-modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .ve-modal h3 { margin: 0 0 8px; font-size: 16px; }
+    .ve-modal p { margin: 0 0 14px; font-size: 13px; color: #4b5563; line-height: 1.5; }
+    .ve-modal button { display: block; width: 100%; text-align: left; padding: 10px 12px; margin-top: 8px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
+    .ve-modal button.primary { border-color: #3b82f6; background: #eff6ff; }
+    .ve-modal button small { display: block; color: #6b7280; margin-top: 2px; }
+
+    .editor-main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+    .editor-sidebar-left {
+      width: 260px; flex-shrink: 0; background: #f9fafb; border-right: 1px solid #e5e7eb;
+      overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .editor-canvas-wrap { flex: 1; overflow: hidden; position: relative; min-width: 0; }
+    #gjs-canvas { height: 100%; }
+    .editor-sidebar-right {
+      width: 280px; flex-shrink: 0; background: #f9fafb; border-left: 1px solid #e5e7eb; overflow-y: auto;
+    }
+    .sidebar-tab { display: flex; border-bottom: 1px solid #e5e7eb; }
+    .sidebar-tab button {
+      flex: 1; padding: 12px; background: none; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: #6b7280;
+    }
+    .sidebar-tab button.active { color: #1f2937; border-bottom: 2px solid #3b82f6; }
+    .sidebar-panel { display: none; padding: 12px; }
+    .sidebar-panel.active { display: block; }
+    .panel-hint { font-size: 12px; color: #6b7280; margin: 0 0 10px; line-height: 1.5; }
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .preset-btn {
+      padding: 12px 8px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fff;
+      cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; min-height: 44px;
+    }
+    .preset-btn:hover { border-color: #3b82f6; }
+    .preset-btn.active { border-color: #3b82f6; background: #eff6ff; }
+    .panel-close-btn {
+      display: none; position: absolute; top: 8px; right: 8px; width: 36px; height: 36px;
+      border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 16px; z-index: 10;
+    }
+
+    /* GrapesJS 기본 패널은 쓰지 않는다(panels.defaults=[]): 캔버스가 영역 전체를 쓰도록 위치를 되돌린다. */
+    #gjs-canvas .gjs-editor-cont, #gjs-canvas .gjs-editor { height: 100%; }
+    #gjs-canvas .gjs-cv-canvas { top: 0; left: 0; width: 100%; height: 100%; }
+
+    /* 빈 상태 안내: 캔버스 위 오버레이일 뿐 홈페이지 내용(컴포넌트)이 아니다 → 저장·게시되지 않는다. */
+    .empty-state {
+      position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; padding: 24px;
+      color: #6b7280; pointer-events: none;
+    }
+    .empty-state.show { display: flex; }
+    .empty-state h2 { margin: 0 0 8px; color: #374151; font-size: 20px; }
+    .empty-state p { margin: 0 0 16px; font-size: 14px; line-height: 1.6; max-width: 360px; }
+    .empty-state button {
+      pointer-events: auto; padding: 12px 20px; border: none; border-radius: 8px; background: #4f46e5;
+      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; min-height: 44px;
+    }
+
+    /* 알림 토스트 */
+    .ve-toast {
+      position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 2000;
+      max-width: min(92vw, 560px); padding: 12px 18px; border-radius: 10px; background: #111827;
+      color: #fff; font-size: 14px; line-height: 1.5; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+    .ve-toast.warn { background: #92400e; }
+    .ve-toast.error { background: #991b1b; }
+
+    /* 터치 기기: 캔버스 컴포넌트 툴바·핸들을 손가락 크기로 */
+    @media (pointer: coarse) {
+      .gjs-toolbar-item { width: 40px; height: 40px; line-height: 40px; font-size: 18px; }
+      .gjs-block { min-height: 64px; }
+    }
+
+    @media (max-width: 1024px) {
+      .editor-toolbar { overflow-x: auto; flex-wrap: nowrap; gap: 6px; padding: 8px 10px; }
+      .editor-toolbar .btn-label { display: none; }
+      .editor-toolbar button { padding: 8px 12px; min-width: 42px; }
+      .editor-sidebar-left.mobile-open .panel-close-btn,
+      .editor-sidebar-right.mobile-open .panel-close-btn { display: block; }
+      .editor-sidebar-left, .editor-sidebar-right { position: relative; }
+      .editor-sidebar-left { display: none; }
+      .editor-sidebar-left.mobile-open {
+        display: flex; position: fixed; left: 0; top: 0; bottom: 0; width: min(300px, 86vw);
+        z-index: 100; box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      }
+      .editor-sidebar-right { width: 240px; }
+    }
+    @media (max-width: 768px) {
+      .editor-toolbar .title { display: none; }
+      .editor-toolbar .spacer-title { margin-right: auto; }
+      .editor-sidebar-right { display: none; }
+      .editor-sidebar-right.mobile-open {
+        display: block; position: fixed; right: 0; top: 0; bottom: 0; width: min(300px, 86vw);
+        z-index: 100; box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="editor-layout">
+  <!-- 상단 툴바 -->
+  <div class="editor-toolbar">
+    <button class="btn-back" onclick="history.back()" title="돌아가기" aria-label="돌아가기">← <span class="btn-label">돌아가기</span></button>
+    <button class="btn-device" id="toggleLeftPanel" title="블록 패널" aria-label="블록 패널">📦</button>
+    <button class="btn-device" id="toggleRightPanel" title="스타일 패널" aria-label="스타일 패널">🎨</button>
+    <span class="title" th:text="${academyName ?: '홈페이지 편집'}">홈페이지 편집</span>
+    <span class="spacer-title"></span>
+
+    <!-- 디바이스 전환 (캔버스 폭이 실제 375/768px로 바뀐다) -->
+    <div class="device-group">
+      <button class="btn-device active" data-device="Desktop" title="PC" aria-label="PC">🖥️ <span class="btn-label">PC</span></button>
+      <button class="btn-device" data-device="Tablet" title="태블릿 768px" aria-label="태블릿">📱 <span class="btn-label">태블릿</span></button>
+      <button class="btn-device" data-device="Mobile" title="모바일 375px" aria-label="모바일">📲 <span class="btn-label">모바일</span></button>
+    </div>
+
+    <button class="btn-import" id="aiBtn" title="AI 수정 제안 보기·요청" aria-label="AI 제안">🤖 <span class="btn-label">AI 제안</span> <span id="aiBadge" class="ai-badge" hidden>0</span></button>
+    <button class="btn-import" id="importBtn" title="기존 홈페이지를 편집기로 불러오기" aria-label="불러오기">📥 <span class="btn-label">불러오기</span></button>
+    <button class="btn-preview" id="previewBtn" title="미리보기" aria-label="미리보기">👁 <span class="btn-label">미리보기</span></button>
+    <button class="btn-save" id="saveBtn" title="저장 (Ctrl+S)" aria-label="저장">💾 <span class="btn-label">저장</span></button>
+    <button class="btn-publish" id="publishBtn" title="공개 홈페이지에 게시" aria-label="게시">🚀 <span class="btn-label">게시</span></button>
+    <button class="btn-unpublish" id="unpublishBtn" title="게시 취소(기존 홈페이지로 되돌리기)" aria-label="게시 취소" hidden>↩ <span class="btn-label">게시 취소</span></button>
+  </div>
+  <div class="status-bar">
+    <span class="save-status" id="saveStatus">불러오는 중...</span>
+    <span class="publish-status" id="publishStatus"></span>
+    <a id="publicLink" href="#" target="_blank" rel="noopener" hidden>공개 페이지 보기 ↗</a>
+    <button type="button" class="status-action" id="undoProposalBtn" hidden>↩ AI 제안 되돌리기</button>
+    <button type="button" class="status-action" id="restoreBackupBtn" hidden>↩ 저장 안 된 내 변경 복원</button>
+  </div>
+
+  <!-- AI 제안 패널: 제안 목록·미리보기·승인/거절, AI 수정 요청, Agent 토큰 -->
+  <aside id="aiPanel" class="ai-panel" hidden aria-label="AI 제안">
+    <div class="ai-head">
+      <strong>🤖 AI 수정 제안</strong>
+      <button type="button" id="aiClose" class="ai-x" aria-label="닫기">✕</button>
+    </div>
+    <div class="ai-body">
+      <p class="ai-note">AI 제안은 <b>승인하기 전에는 홈페이지에 반영되지 않습니다.</b> 미리보기로 확인한 뒤 승인하세요.</p>
+      <details id="aiCreateBox" class="ai-create">
+        <summary>✨ AI로 처음 만들기</summary>
+        <p class="ai-note">학원 이름·과목·대상·강점 등을 자연어로 적으면 AI가 알맞은 디자인(프리셋)과 문구로 첫 홈페이지 초안을 만듭니다. 미리보기로 확인한 뒤 <b>승인해야만</b> 편집기에 들어오고 저장됩니다.</p>
+        <textarea id="aiCreateMsg" rows="4" maxlength="1000" placeholder="예) 강남에서 중학생 영어 내신을 가르치는 소수정예 학원입니다. 원어민 수업과 1:1 첨삭이 강점이에요."></textarea>
+        <button type="button" id="aiCreateBtn" class="ai-btn primary">첫 홈페이지 초안 만들기</button>
+        <div id="aiCreateWarn" class="ai-msg" role="status"></div>
+      </details>
+      <label for="aiInstruction" class="ai-label">AI에게 수정 요청</label>
+      <textarea id="aiInstruction" rows="3" maxlength="500" placeholder="예) 메인 제목을 '영어는 우리 학원'으로 바꾸고 글자를 더 크게"></textarea>
+      <button type="button" id="aiAsk" class="ai-btn primary">수정안 만들기</button>
+      <div id="aiMsg" class="ai-msg" role="status"></div>
+      <div class="ai-label" style="margin-top:14px">대기 중인 제안</div>
+      <div id="aiList" class="ai-list"></div>
+      <details class="ai-agent">
+        <summary>외부 AI Agent 연결 (토큰)</summary>
+        <p class="ai-note">Agent는 제안만 만들 수 있고, 승인은 항상 여기서 합니다. 토큰은 만든 직후 한 번만 보입니다.</p>
+        <div class="ai-token-row"><input id="aiTokenLabel" type="text" maxlength="100" placeholder="토큰 이름" /><button type="button" id="aiTokenNew" class="ai-btn">토큰 만들기</button></div>
+        <textarea id="aiTokenShow" rows="2" readonly hidden></textarea>
+        <div id="aiTokens" class="ai-tokens"></div>
+      </details>
+    </div>
+  </aside>
+
+  <!-- 메인 영역 -->
+  <div class="editor-main">
+    <!-- 좌측: 블록 패널 -->
+    <div class="editor-sidebar-left" id="blocksPanel">
+      <button class="panel-close-btn" id="closeLeftPanel" title="닫기" aria-label="닫기">✕</button>
+      <div class="sidebar-tab">
+        <button class="active" data-panel="blocks">블록</button>
+        <button data-panel="presets">프리셋</button>
+      </div>
+      <div class="sidebar-panel active" id="panel-blocks">
+        <p class="panel-hint">블록을 캔버스로 끌어다 놓거나, 눌러서 추가하세요.</p>
+        <div id="gjs-blocks"></div>
+      </div>
+      <div class="sidebar-panel" id="panel-presets">
+        <h4 style="margin: 0 0 8px; font-size: 14px;">디자인 프리셋</h4>
+        <div class="preset-grid">
+          <button class="preset-btn" data-preset="EXAM">📝<br>입시</button>
+          <button class="preset-btn" data-preset="ENGLISH">🔤<br>영어</button>
+          <button class="preset-btn" data-preset="ARTS">🎨<br>예체능</button>
+          <button class="preset-btn" data-preset="STUDY">📚<br>스터디</button>
+          <button class="preset-btn" data-preset="ONLINE">💻<br>온라인</button>
+        </div>
+        <p class="panel-hint">
+          프리셋을 누르면 해당 스타일의 히어로·특징 섹션이 캔버스 맨 아래에 추가됩니다. 추가한 뒤 자유롭게 수정하세요.
+        </p>
+      </div>
+    </div>
+
+    <!-- 중앙: 캔버스 -->
+    <div class="editor-canvas-wrap">
+      <div id="gjs-canvas"></div>
+      <!-- 빈 상태 안내(오버레이): 홈페이지 내용이 아니므로 저장·게시에 포함되지 않는다 -->
+      <div class="empty-state" id="emptyState">
+        <h2>홈페이지가 비어 있습니다</h2>
+        <p>기존에 만든 홈페이지를 불러와 이어서 편집하거나, 왼쪽 블록·프리셋으로 새로 시작하세요.</p>
+        <button id="emptyImportBtn" type="button">📥 기존 홈페이지 불러오기</button>
+        <button id="emptyAiBtn" type="button" style="margin-left:8px">✨ AI로 처음 만들기</button>
+      </div>
+    </div>
+
+    <!-- 우측: 스타일/레이어 패널 -->
+    <div class="editor-sidebar-right" id="stylePanel">
+      <button class="panel-close-btn" id="closeRightPanel" title="닫기" aria-label="닫기">✕</button>
+      <div class="sidebar-tab">
+        <button class="active" data-panel="style">스타일</button>
+        <button data-panel="layers">레이어</button>
+        <button data-panel="traits">설정</button>
+      </div>
+      <div class="sidebar-panel active" id="panel-style">
+        <div id="gjs-styles"></div>
+      </div>
+      <div class="sidebar-panel" id="panel-layers">
+        <div id="gjs-layers"></div>
+      </div>
+      <div class="sidebar-panel" id="panel-traits">
+        <div id="gjs-traits"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GrapesJS -->
+<script src="https://unpkg.com/grapesjs@0.23.6/dist/grapes.min.js"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+const ACADEMY_ID = /*[[${academyId}]]*/ null;
+const ACADEMY_SLUG = /*[[${academySlug}]]*/ null;
+const CSRF_TOKEN = /*[[${_csrf?.token}]]*/ '';
+const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
+/*]]>*/
+</script>
+<!-- 편집 캔버스·미리보기·공개 페이지가 공유하는 렌더러 / P0 불러오기 -->
+<script src="/js/visual_editor_render.js?v=20261012-1"></script>
+<script src="/js/visual_editor_import.js?v=20261012-1"></script>
+<script src="/js/visual_editor_i18n_ko.js?v=20261012-1"></script>
+<script>
+(function() {
+  'use strict';
+
+  const RENDER = window.F2RVisualEditorRender;
+  const IMPORTER = window.F2RVisualEditorImport;
+  const VE_API = '/api/tutor/academy/page-settings/visual-editor';
+  const $ = (id) => document.getElementById(id);
+  const isNarrow = () => window.innerWidth <= 1024;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const utf8Len = (s) => new TextEncoder().encode(String(s || '')).length;
+  const CSS_LIMIT_BYTES = 65535;   // 서버 css 컬럼(TEXT) 한도
+
+  // GrapesJS 초기화
+  // - panels.defaults = []: GrapesJS 기본 패널(상단 바·Style Manager 보조 패널 등)은 쓰지 않는다.
+  //   앱이 툴바와 좌우 패널을 직접 제공하므로, 기본 패널은 캔버스를 가리고 영어 문구만 겹쳐 보였다.
+  // - fromElement=false / components='': 컨테이너 안의 안내 문구가 홈페이지 내용이 되어 저장되지 않게 한다.
+  // - blockManager.appendOnClick: 터치 기기에서는 드래그가 불안정하므로 눌러서 추가할 수 있게 한다.
+  // - canvas.styles: 공개 페이지와 같은 기본 CSS를 캔버스에도 적용한다(기본 글꼴 serif 문제 해결).
+  const editor = grapesjs.init({
+    container: '#gjs-canvas',
+    fromElement: false,
+    components: '',
+    style: '',
+    height: '100%',
+    width: 'auto',
+    storageManager: false,  // 서버 저장 사용
+    panels: { defaults: [] },
+    // 편집 화면 한국어화(스타일 속성·레이어·이미지 선택 창)
+    i18n: { locale: 'ko', detectLocale: false, messages: { ko: window.F2RVisualEditorI18nKo } },
+
+    // 디바이스 (PC/태블릿/모바일): 캔버스 폭이 실제 768/375px가 된다
+    deviceManager: {
+      devices: [
+        { name: 'Desktop', width: '' },
+        { name: 'Tablet', width: '768px', widthMedia: '992px' },
+        { name: 'Mobile', width: '375px', widthMedia: '768px' },
+      ]
+    },
+
+    // 패널 연결
+    blockManager: { appendTo: '#gjs-blocks', appendOnClick: true },
+    layerManager: { appendTo: '#gjs-layers' },
+    styleManager: {
+      appendTo: '#gjs-styles',
+      sectors: [
+        { name: '일반', buildProps: ['float', 'display', 'position', 'top', 'right', 'left', 'bottom'] },
+        { name: '크기', buildProps: ['width', 'height', 'max-width', 'min-height', 'margin', 'padding'] },
+        { name: '타이포그래피', buildProps: ['font-family', 'font-size', 'font-weight', 'letter-spacing', 'color', 'line-height', 'text-align', 'text-shadow'] },
+        { name: '장식', buildProps: ['border-radius', 'border', 'box-shadow', 'background'] },
+        { name: '배경', buildProps: ['background-color', 'background-image'] },
+      ],
+    },
+    traitManager: { appendTo: '#gjs-traits' },
+
+    canvas: {
+      styles: [
+        RENDER.PRETENDARD_URL,
+        location.origin + RENDER.BASE_CSS_URL + '?v=' + RENDER.BASE_CSS_VERSION
+      ],
+    },
+  });
+
+  // ===== 커스텀 블록 정의 (P0 프리셋 기반) =====
+
+  const blockManager = editor.BlockManager;
+
+  // 외부 이미지 서비스에 의존하지 않는 회색 자리표시 이미지(data URI, 서버 정제기가 허용하는 data:image/*)
+  const PLACEHOLDER_IMG = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">'
+    + '<rect width="800" height="400" fill="#e5e7eb"/>'
+    + '<text x="400" y="210" font-family="sans-serif" font-size="32" fill="#6b7280" text-anchor="middle">이미지를 바꿔 주세요</text></svg>');
+
+  const presets = {
+    EXAM: { name: '입시', color: '#1e40af', bg: '#eff6ff' },
+    ENGLISH: { name: '영어', color: '#047857', bg: '#ecfdf5' },
+    ARTS: { name: '예체능', color: '#7c3aed', bg: '#f5f3ff' },
+    STUDY: { name: '스터디', color: '#b45309', bg: '#fffbeb' },
+    ONLINE: { name: '온라인', color: '#0e7490', bg: '#ecfeff' },
+  };
+
+  const heroHtml = (key, p) => `
+        <section data-preset="${key}" style="padding: 60px 20px; background: ${p.bg}; text-align: center;">
+          <h1 style="font-size: 36px; font-weight: 800; color: ${p.color}; margin-bottom: 16px;">학원 이름을 입력하세요</h1>
+          <p style="font-size: 18px; color: #4b5563; margin-bottom: 32px;">학원 소개 문구를 입력하세요</p>
+          <a href="#" style="display: inline-block; padding: 14px 40px; background: ${p.color}; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px;">상담 신청하기</a>
+        </section>`;
+
+  const featuresHtml = (key, p) => `
+        <section data-preset="${key}" style="padding: 40px 20px;">
+          <h2 style="font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 32px; color: ${p.color};">우리 학원의 특징</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto;">
+            ${[1, 2, 3].map((n) => `
+            <div style="padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">특징 ${n}</h3>
+              <p style="color: #6b7280;">설명을 입력하세요</p>
+            </div>`).join('')}
+          </div>
+        </section>`;
+
+  // 기본 블록
+  blockManager.add('text-block', {
+    label: '📝 텍스트',
+    category: '기본',
+    content: '<p style="padding: 10px;">텍스트를 입력하세요. 클릭하여 수정할 수 있습니다.</p>',
+  });
+
+  blockManager.add('heading-block', {
+    label: '📌 제목',
+    category: '기본',
+    content: '<h2 style="padding: 10px; font-size: 28px; font-weight: 700;">제목을 입력하세요</h2>',
+  });
+
+  blockManager.add('image-block', {
+    label: '🖼️ 이미지',
+    category: '기본',
+    content: '<img src="' + PLACEHOLDER_IMG + '" alt="이미지" style="max-width: 100%; height: auto;"/>',
+  });
+
+  blockManager.add('button-block', {
+    label: '🔘 버튼',
+    category: '기본',
+    content: '<a href="#" style="display: inline-block; padding: 12px 32px; background: #3b82f6; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600;">버튼</a>',
+  });
+
+  blockManager.add('divider-block', {
+    label: '➖ 구분선',
+    category: '기본',
+    content: '<hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>',
+  });
+
+  // 학원 섹션 블록 (P0 프리셋 기반)
+  Object.entries(presets).forEach(([key, p]) => {
+    blockManager.add(`hero-${key.toLowerCase()}`, {
+      label: `🏫 히어로 (${p.name})`,
+      category: '학원 섹션',
+      content: heroHtml(key, p),
+    });
+    blockManager.add(`features-${key.toLowerCase()}`, {
+      label: `✨ 특징 (${p.name})`,
+      category: '학원 섹션',
+      content: featuresHtml(key, p),
+    });
+  });
+
+  // CTA 섹션
+  blockManager.add('cta-section', {
+    label: '📞 상담 신청 (CTA)',
+    category: '학원 섹션',
+    content: `
+      <section class="sec-cta" style="padding: 60px 20px; background: #1f2937; text-align: center;">
+        <h2 style="font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 16px;">지금 상담 신청하세요</h2>
+        <p style="font-size: 18px; color: #d1d5db; margin-bottom: 32px;">전문 상담원이 친절하게 안내해 드립니다</p>
+        <a href="#" style="display: inline-block; padding: 16px 48px; background: #f59e0b; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 18px;">무료 상담 신청</a>
+      </section>
+    `,
+  });
+
+  // ===== 알림 / 상태 표시 =====
+  let toastTimer = null;
+  function toast(message, kind) {
+    let el = $('veToast');
+    if (!el) { el = document.createElement('div'); el.id = 'veToast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.className = 've-toast' + (kind ? ' ' + kind : '');
+    el.textContent = message;
+    el.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, kind === 'error' ? 9000 : 5000);
+  }
+
+  const saveStatus = $('saveStatus');
+  function setSaveStatus(text, cls) {
+    saveStatus.textContent = text;
+    saveStatus.className = 'save-status' + (cls ? ' ' + cls : '');
+  }
+
+  // ===== 디바이스 전환 =====
+  let currentDevice = 'Desktop';
+  document.querySelectorAll('.btn-device[data-device]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-device[data-device]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentDevice = btn.dataset.device;
+      editor.setDevice(currentDevice);
+    });
+  });
+
+  // ===== 사이드바 탭 전환 =====
+  document.querySelectorAll('.sidebar-tab button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const panel = btn.dataset.panel;
+      const container = btn.closest('.editor-sidebar-left, .editor-sidebar-right');
+      container.querySelectorAll('.sidebar-tab button').forEach((b) => b.classList.remove('active'));
+      container.querySelectorAll('.sidebar-panel').forEach((p) => p.classList.remove('active'));
+      btn.classList.add('active');
+      container.querySelector(`#panel-${panel}`).classList.add('active');
+    });
+  });
+
+  // ===== 변경 감지 (저장본과 현재 상태를 비교) =====
+  // 이벤트 카운트 대신 "마지막 저장본의 HTML/CSS 지문"과 비교한다.
+  // 그래서 불러오기 직후 GrapesJS가 내는 내부 이벤트로 "변경됨"이 되지 않고,
+  // 편집 후 되돌려 같아지면 다시 "변경 없음"이 된다 → 불필요한 자동저장·이탈 경고가 없다.
+  let currentRevision = 0;
+  let savedSig = null;     // 마지막 저장/불러오기 시점의 지문
+  let hasChanges = false;
+  let ready = false;       // 초기 불러오기가 끝나기 전에는 변경으로 보지 않는다
+  let dirtyTimer = null;
+  let autosaveTimer = null;
+  let isSaving = false;
+  let pendingSave = false;
+
+  const sig = () => editor.getHtml() + '\u0000' + editor.getCss();
+  const isEmpty = () => editor.getComponents().length === 0;
+
+  function refreshSaveStatus() {
+    if (!ready) return;
+    if (hasChanges) setSaveStatus('● 저장되지 않은 변경사항이 있습니다.', 'saving');
+    else setSaveStatus(currentRevision === 0 && isEmpty() ? '변경사항이 없습니다.' : '✓ 저장된 상태입니다.', 'saved');
+  }
+
+  function recomputeDirty() {
+    if (!ready) return;
+    const dirty = sig() !== savedSig;
+    hasChanges = dirty;
+    refreshSaveStatus();
+    clearTimeout(autosaveTimer);
+    if (dirty) autosaveTimer = setTimeout(autoSave, 30000);   // 마지막 변경 30초 후 자동 저장
+  }
+
+  function updateEmptyState() {
+    $('emptyState').classList.toggle('show', ready && isEmpty() && !importing);
+  }
+
+  editor.on('update', () => {
+    clearTimeout(dirtyTimer);
+    dirtyTimer = setTimeout(() => { recomputeDirty(); updateEmptyState(); }, 250);
+  });
+
+  // ===== AI 제안 적용 상태 / 충돌 시 미저장 내용 보호 =====
+  // 설계: docs/BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md §5
+  const PROPOSAL_CODES = ['PROPOSAL_NOT_FOUND', 'PROPOSAL_NOT_PENDING', 'PROPOSAL_VERIFICATION_FAILED', 'PROPOSAL_NOT_AVAILABLE'];
+  let pendingAppliedProposalId = null;   // 적용 후 첫 저장 성공까지 모든 PUT에 실어 보낸다
+  let preApplySnapshot = null;           // 적용 직전 projectData(한 번에 되돌리기용)
+  const BACKUP_KEY = 've:backup:' + ACADEMY_ID;
+  const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
+
+  function updateUndoProposalBtn() {
+    $('undoProposalBtn').hidden = !(preApplySnapshot && pendingAppliedProposalId);
+  }
+  function resetProposalState() {
+    pendingAppliedProposalId = null;
+    preApplySnapshot = null;
+    updateUndoProposalBtn();
+  }
+
+  // 충돌·실패로 버려질 수 있는 미저장 편집 내용을 브라우저에 보관한다(저장소 실패 시 파일로 내려받는다).
+  function backupLocal() {
+    const rec = {
+      savedAt: Date.now(), revision: currentRevision,
+      html: editor.getHtml(), css: editor.getCss(),
+      projectData: JSON.stringify(editor.getProjectData()),
+      appliedProposalId: pendingAppliedProposalId,
+    };
+    const raw = JSON.stringify(rec);
+    let stored = false;
+    try { localStorage.setItem(BACKUP_KEY, raw); stored = true; } catch (_) { /* 용량·차단 */ }
+    if (!stored) { try { sessionStorage.setItem(BACKUP_KEY, raw); stored = true; } catch (_) { /* 용량·차단 */ } }
+    if (!stored) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+      a.download = 'buildit-editor-backup-' + Date.now() + '.json';
+      a.click();
+      toast('브라우저에 보관하지 못해 편집 내용을 파일로 내려받았습니다.', 'warn');
+    }
+    updateRestoreBtn();
+    return stored;
+  }
+  function readBackup() {
+    for (const st of [localStorage, sessionStorage]) {
+      try { const v = st.getItem(BACKUP_KEY); if (v) return JSON.parse(v); } catch (_) { /* 무시 */ }
+    }
+    return null;
+  }
+  function clearBackup() {
+    try { localStorage.removeItem(BACKUP_KEY); } catch (_) { /* 무시 */ }
+    try { sessionStorage.removeItem(BACKUP_KEY); } catch (_) { /* 무시 */ }
+    updateRestoreBtn();
+  }
+  function updateRestoreBtn() { $('restoreBackupBtn').hidden = !readBackup(); }
+  function restoreBackup() {
+    const rec = readBackup();
+    if (!rec) { updateRestoreBtn(); return; }
+    if (!confirm('저장되지 않았던 내 편집 내용으로 지금 화면을 바꿉니다.\n(현재 화면의 내용은 바뀝니다. 저장하기 전에는 Ctrl+Z로 되돌릴 수 있습니다) 계속할까요?')) return;
+    try {
+      editor.loadProjectData(JSON.parse(rec.projectData));
+    } catch (_) {
+      editor.setComponents(rec.html || '');
+      editor.setStyle(rec.css || '');
+    }
+    pendingAppliedProposalId = rec.appliedProposalId || null;
+    recomputeDirty();
+    toast('저장되지 않았던 내 편집 내용을 복원했습니다. 확인 후 저장하세요.');
+  }
+  $('restoreBackupBtn').addEventListener('click', restoreBackup);
+
+  // 3지선다 모달: 'keep'(기본) | 'load' | 'overwrite'. 바깥 클릭·ESC는 keep.
+  function askConflictChoice(message) {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 've-modal-back';
+      back.setAttribute('role', 'dialog');
+      back.innerHTML = '<div class="ve-modal"><h3>다른 세션에서 먼저 수정되었습니다</h3><p></p>' +
+        '<button type="button" class="primary" data-c="keep">내 편집 내용 유지 (지금은 저장하지 않음)<small>화면의 내용은 그대로입니다. 내용은 브라우저에도 백업되었습니다.</small></button>' +
+        '<button type="button" data-c="load">최신 초안 불러오기<small>화면이 최신 초안으로 바뀝니다. 내 변경은 백업에 남아 "복원" 버튼으로 되돌릴 수 있습니다.</small></button>' +
+        '<button type="button" data-c="overwrite">내 내용으로 덮어쓰기<small>다른 세션의 변경을 내 내용으로 대체합니다.</small></button></div>';
+      back.querySelector('p').textContent = message;
+      const done = (c) => { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(c); };
+      const onKey = (e) => { if (e.key === 'Escape') done('keep'); };
+      back.addEventListener('click', (e) => { const c = e.target.closest('[data-c]'); if (c) done(c.dataset.c); else if (e.target === back) done('keep'); });
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(back);
+      back.querySelector('[data-c="keep"]').focus();
+    });
+  }
+
+  async function handleRevisionConflict(errData, silent, opts) {
+    const msg = errData.message || '다른 세션에서 수정되었습니다.';
+    backupLocal();   // 어떤 선택을 하든 내 편집 내용은 먼저 보관한다
+    setSaveStatus('⚠️ ' + msg + ' 내 편집 내용은 화면에 그대로 있고 브라우저에도 백업했습니다. [저장]을 눌러 해결하세요.', 'error');
+    if (silent) return false;   // 자동저장은 사용자를 방해하지 않는다
+    const choice = await askConflictChoice(msg);
+    if (choice === 'load') {
+      resetProposalState();   // 제안은 서버에서 PENDING으로 남는다
+      await loadDraft();
+      return false;
+    }
+    if (choice === 'overwrite') {
+      const res = await fetch(VE_API + '/draft', { headers: CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {} });
+      if (!res.ok) { toast('최신 상태를 확인하지 못했습니다. 잠시 후 다시 시도하세요.', 'error'); return false; }
+      currentRevision = (await res.json()).revision || 0;
+      return saveContent(opts);
+    }
+    return false;
+  }
+
+  async function handleProposalFailure(errData, silent, opts) {
+    const details = Array.isArray(errData.details) && errData.details.length ? ' (' + errData.details.join(', ') + ')' : '';
+    const reason = (errData.message || '제안을 처리하지 못했습니다.') + details;
+    emit('ve:proposal-failed', { proposalId: pendingAppliedProposalId, code: errData.code, message: errData.message, details: errData.details || [] });
+    setSaveStatus('⚠️ AI 제안을 적용 처리하지 못했습니다: ' + reason + ' 편집 내용은 그대로 있습니다. [저장]을 눌러 선택하세요.', 'error');
+    if (silent) return false;
+    if (confirm('AI 제안과 저장하려는 내용이 일치하지 않거나 제안을 처리할 수 없습니다.\n(' + reason + ')\n\n제안 없이 지금 내용을 저장할까요?\n(제안은 처리되지 않은 채 남습니다)')) {
+      resetProposalState();
+      return saveContent(opts);
+    }
+    return false;
+  }
+
+  // 변경 계획: 모든 대상이 정확히 1개씩 있어야 한다(전부 또는 전무). 편집기 인스턴스(ed)를 인자로 받아
+  // 미리보기용 숨은 편집기에도 같은 코드를 쓴다.
+  function planChanges(ed, changes) {
+    const plan = [];
+    const failed = [];
+    for (const c of changes) {
+      const id = c && c.componentId;
+      if (typeof id !== 'string' || !/^[A-Za-z][\w-]*$/.test(id) || !['text', 'image', 'style'].includes(c.type)) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      const found = ed.getWrapper().find('#' + id);
+      if (found.length !== 1) { failed.push({ componentId: id, reason: found.length === 0 ? 'TARGET_NOT_FOUND' : 'TARGET_AMBIGUOUS' }); continue; }
+      if (c.type === 'style' && (!c.styles || typeof c.styles !== 'object')) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      if (c.type !== 'style' && typeof c.after !== 'string') { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      plan.push({ c, cmp: found[0] });
+    }
+    return { plan, failed };
+  }
+  function runPlan(ed, plan) {
+    plan.forEach(({ c, cmp }) => {
+      if (c.type === 'text') cmp.components([{ type: 'textnode', content: c.after }]);
+      else if (c.type === 'image') { cmp.addAttributes({ src: c.after }); cmp.set('src', c.after); }
+      else ed.Css.setIdRule(c.componentId, c.styles, c.mediaText ? { mediaText: c.mediaText } : {});
+    });
+  }
+
+  // 제안(changes[])을 component 단위로 적용한다. 저장은 하지 않는다 — 적용 후 첫 저장(자동저장·수동저장)이
+  // appliedProposalId를 실어 보낸다.
+  async function applyProposal(proposal) {
+    if (!ready || isSaving || importing) return { applied: false, reason: 'EDITOR_BUSY' };
+    const pid = Number(proposal && proposal.proposalId);
+    if (!Number.isInteger(pid) || pid <= 0) return { applied: false, reason: 'INVALID_PROPOSAL' };
+    const changes = proposal.changes;
+    if (!Array.isArray(changes) || changes.length === 0) return { applied: false, reason: 'NO_CHANGES' };
+    if (pendingAppliedProposalId && pendingAppliedProposalId !== pid) return { applied: false, reason: 'ANOTHER_PROPOSAL_PENDING' };
+    const { plan, failed } = planChanges(editor, changes);
+    if (failed.length) return { applied: false, reason: 'TARGET_NOT_FOUND', failed };
+    const snapshot = JSON.parse(JSON.stringify(editor.getProjectData()));
+    runPlan(editor, plan);
+    if (!pendingAppliedProposalId) preApplySnapshot = snapshot;   // 이미 적용 중인 같은 제안이면 최초 스냅샷 유지
+    pendingAppliedProposalId = pid;
+    updateUndoProposalBtn();
+    recomputeDirty();
+    return { applied: true, proposalId: pid };
+  }
+
+  // 적용 직전 상태로 한 번에 되돌린다(저장 전에만 가능).
+  function undoProposal() {
+    if (!preApplySnapshot) return false;
+    editor.loadProjectData(preApplySnapshot);
+    resetProposalState();
+    recomputeDirty();
+    return true;
+  }
+  $('undoProposalBtn').addEventListener('click', () => { if (undoProposal()) toast('AI 제안 적용을 되돌렸습니다.'); });
+
+  // ===== 저장 (revision 낙관적 잠금) =====
+  async function saveContent(opts) {
+    const silent = !!(opts && opts.silent);
+    if (isSaving) { pendingSave = true; return false; }
+    isSaving = true;
+    pendingSave = false;
+
+    const html = editor.getHtml();
+    const css = editor.getCss();
+    const mySig = html + '\u0000' + css;
+    const projectData = JSON.stringify(editor.getProjectData());
+
+    if (utf8Len(css) > CSS_LIMIT_BYTES) {
+      isSaving = false;
+      setSaveStatus('❌ 저장하지 못했습니다: 스타일 크기가 저장 한도(64KB)를 넘습니다. 섹션을 줄인 뒤 다시 저장하세요.', 'error');
+      if (!silent) toast('스타일 크기가 저장 한도(64KB)를 넘습니다. 일부 섹션을 삭제한 뒤 저장하세요.', 'error');
+      return false;
+    }
+
+    setSaveStatus('저장 중...', 'saving');
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+
+      const res = await fetch(VE_API + '/draft', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(pendingAppliedProposalId ? { html, css, projectData, revision: currentRevision, appliedProposalId: pendingAppliedProposalId } : { html, css, projectData, revision: currentRevision }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const code = errData.code || '';
+        // 409 중 제안 상태 충돌(PROPOSAL_NOT_PENDING)만 제안 실패이고, 나머지 409는 revision 충돌이다.
+        if (res.status === 409 && code !== 'PROPOSAL_NOT_PENDING') {
+          isSaving = false;
+          return handleRevisionConflict(errData, silent, opts);
+        }
+        if (PROPOSAL_CODES.includes(code)) {
+          isSaving = false;
+          return handleProposalFailure(errData, silent, opts);
+        }
+        throw new Error(errData.message || `저장 실패 (${res.status})`);
+      }
+
+      const data = await res.json();
+      currentRevision = data.revision;
+      savedSig = mySig;               // 저장을 시작한 시점의 내용이 저장본이다(저장 중 편집은 계속 변경으로 남는다)
+      clearBackup();                  // 저장됐으므로 충돌 대비 백업은 더 필요 없다
+      const appliedProposal = data.appliedProposal || null;
+      if (appliedProposal && appliedProposal.status === 'APPLIED') resetProposalState();
+      emit('ve:saved', { revision: data.revision, appliedProposal });
+
+      if (pendingSave) {
+        isSaving = false;
+        return saveContent(opts);
+      }
+      isSaving = false;
+      recomputeDirty();
+      refreshStatus();
+      return true;
+    } catch (e) {
+      setSaveStatus('❌ 저장하지 못했습니다: ' + e.message + ' (다시 시도해 주세요)', 'error');
+      console.error('저장 오류:', e);
+      isSaving = false;
+      return false;
+    }
+  }
+
+  async function autoSave() {
+    if (hasChanges && ready) await saveContent({ silent: true });
+  }
+
+  $('saveBtn').addEventListener('click', () => saveContent());
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveContent(); }
+  });
+
+  // ===== 미리보기 (sandbox iframe, 실제 디바이스 폭) =====
+  const PREVIEW_WIDTHS = { Desktop: '100%', Tablet: '768px', Mobile: '375px' };
+  const bodyInner = (html) => String(html || '').replace(/^\s*<body[^>]*>/i, '').replace(/<\/body>\s*$/i, '');
+
+  let previewOverride = null;   // AI 제안 미리보기일 때만 값이 있다({html, css}) — 편집기 본 내용은 바뀌지 않는다
+  async function renderPreview(device) {
+    const modal = $('previewModal');
+    const frame = modal.querySelector('#previewFrame');
+    const base = await RENDER.loadBaseCss();
+    // 공개 페이지와 같은 기본 CSS + 같은 정리(body 래퍼 제거). 폭이 실제 768/375px라 미디어쿼리도 같게 적용된다.
+    const src = previewOverride || { html: editor.getHtml(), css: editor.getCss() };
+    frame.srcdoc = RENDER.previewDoc(bodyInner(src.html), src.css, base);
+    frame.style.width = PREVIEW_WIDTHS[device] || '100%';
+    modal.querySelectorAll('[data-pv-device]').forEach((b) => b.classList.toggle('active', b.dataset.pvDevice === device));
+    modal.querySelector('#previewWidthLabel').textContent =
+      device === 'Desktop' ? 'PC (전체 폭)' : (device === 'Tablet' ? '태블릿 768px' : '모바일 375px');
+  }
+
+  function ensurePreviewModal() {
+    let modal = $('previewModal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'previewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+      <div style="background:#e5e7eb;border-radius:12px;width:min(1180px,96vw);height:92vh;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:10px 14px;border-bottom:1px solid #d1d5db;display:flex;gap:8px;align-items:center;background:#fff;flex-wrap:wrap;">
+          <strong style="margin-right:auto">미리보기 <span id="previewWidthLabel" style="font-weight:400;color:#6b7280;font-size:12px;margin-left:6px"></span></strong>
+          <button data-pv-device="Desktop" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;min-height:38px">🖥️ PC</button>
+          <button data-pv-device="Tablet" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;min-height:38px">📱 태블릿</button>
+          <button data-pv-device="Mobile" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;min-height:38px">📲 모바일</button>
+          <button id="closePreview" style="padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;min-height:38px">닫기</button>
+        </div>
+        <div id="previewProposalBar" class="ve-preview-bar" hidden></div>
+        <div style="flex:1;overflow:auto;display:flex;justify-content:center;padding:12px;">
+          <iframe id="previewFrame" sandbox="" title="미리보기" style="border:none;height:100%;max-width:100%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.15);"></iframe>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const style = document.createElement('style');
+    style.textContent = '#previewModal [data-pv-device].active{background:#3b82f6!important;color:#fff;border-color:#3b82f6!important}';
+    document.head.appendChild(style);
+    const closePv = () => { modal.style.display = 'none'; previewOverride = null; const bar = modal.querySelector('#previewProposalBar'); if (bar) bar.hidden = true; };
+    modal.querySelector('#closePreview').addEventListener('click', closePv);
+    modal.__close = closePv;
+    modal.addEventListener('click', (e) => { if (e.target === modal) closePv(); });
+    modal.querySelectorAll('[data-pv-device]').forEach((b) => b.addEventListener('click', () => renderPreview(b.dataset.pvDevice)));
+    return modal;
+  }
+
+  $('previewBtn').addEventListener('click', async () => {
+    const modal = ensurePreviewModal();
+    modal.style.display = 'flex';
+    await renderPreview(currentDevice);   // 열 때는 지금 캔버스의 디바이스와 같은 폭으로 시작
+  });
+
+  // ===== 페이지 이탈 시 경고 (실제 변경이 있을 때만) =====
+  window.addEventListener('beforeunload', (e) => {
+    if (hasChanges) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // ===== 초안 불러오기 =====
+  async function loadDraft() {
+    ready = false;
+    resetProposalState();
+    try {
+      const headers = {};
+      if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+      const res = await fetch(VE_API + '/draft', { headers });
+      if (!res.ok) {
+        console.warn('초안 불러오기 실패:', res.status);
+        setSaveStatus('초안을 불러오지 못했습니다.', 'error');
+        return false;
+      }
+      const data = await res.json();
+      currentRevision = data.revision || 0;
+      if (data.html) {
+        // 저장된 projectData가 있으면 사용(GrapesJS 정보 보존), 없으면 HTML로 로드
+        if (data.projectData && data.projectData !== '{}') {
+          try {
+            editor.loadProjectData(JSON.parse(data.projectData));
+          } catch (e) {
+            console.warn('projectData 파싱 실패, HTML로 로드:', e);
+            editor.setComponents(data.html);
+            editor.setStyle(data.css || '');
+          }
+        } else {
+          editor.setComponents(data.html);
+          editor.setStyle(data.css || '');
+        }
+      } else {
+        editor.setComponents('');
+        editor.setStyle('');
+      }
+      return true;
+    } catch (e) {
+      console.error('초안 불러오기 오류:', e);
+      return false;
+    } finally {
+      await settle();
+    }
+  }
+
+  // 불러오기 직후 GrapesJS가 내부적으로 정리하는 시간을 둔 뒤 그 상태를 "저장본"으로 삼는다.
+  async function settle() {
+    await sleep(500);
+    try { editor.UndoManager.clear(); } catch (_) { /* noop */ }
+    savedSig = sig();
+    hasChanges = false;
+    ready = true;
+    refreshSaveStatus();
+    updateEmptyState();
+  }
+
+  // ===== 기존 홈페이지(P0) 불러오기 =====
+  let importing = false;
+
+  async function importExisting() {
+    if (importing) return;
+    if (!ACADEMY_SLUG) { toast('학원 정보를 찾을 수 없습니다.', 'error'); return; }
+    if (!isEmpty() && !confirm('지금 편집 중인 내용이 기존 홈페이지 내용으로 바뀝니다.\n(저장하기 전에는 Ctrl+Z로 되돌릴 수 있습니다) 계속할까요?')) return;
+    importing = true;
+    $('importBtn').disabled = true;
+    updateEmptyState();
+    try {
+      const result = await IMPORTER.snapshot({ slug: ACADEMY_SLUG, onProgress: (m) => toast(m) });
+      if (!result.html.trim()) { toast('불러올 홈페이지 내용이 없습니다.', 'warn'); return; }
+      resetProposalState();   // 내용이 통째로 바뀌므로 진행 중이던 제안 적용 표시는 해제
+      editor.setComponents(result.html);
+      editor.setStyle('');
+      // CSS 문자열 대신 규칙 API로 적용한다(축약형 유지 → 저장 한도 64KB 보호). 모바일은 768px 미디어 규칙.
+      result.rules.forEach((r) => editor.Css.setIdRule(r.id, r.style));
+      result.mobileRules.forEach((r) => editor.Css.setIdRule(r.id, r.style, { mediaText: result.mobileMedia }));
+      editor.UndoManager.clear();
+      const dropped = Object.keys(result.stats.dropped);
+      let msg = `기존 홈페이지를 불러왔습니다. (섹션 ${result.stats.sections}개)`;
+      if (dropped.length) msg += ' 영상·애니메이션·폼 등 일부 요소는 가져오지 못했습니다.';
+      msg += ' 확인 후 저장하세요.';
+      const cssBytes = utf8Len(editor.getCss());
+      if (cssBytes > CSS_LIMIT_BYTES) {
+        toast(`불러온 홈페이지의 스타일이 저장 한도(64KB)를 넘습니다(${Math.round(cssBytes / 1024)}KB). 일부 섹션을 삭제한 뒤 저장하세요.`, 'error');
+      } else {
+        toast(msg, dropped.length ? 'warn' : '');
+      }
+      recomputeDirty();
+    } catch (e) {
+      console.error('불러오기 오류:', e);
+      toast('기존 홈페이지를 불러오지 못했습니다: ' + e.message, 'error');
+    } finally {
+      importing = false;
+      $('importBtn').disabled = false;
+      updateEmptyState();
+    }
+  }
+  $('importBtn').addEventListener('click', importExisting);
+  $('emptyImportBtn').addEventListener('click', importExisting);
+
+  // ===== 프리셋: 해당 스타일의 히어로 + 특징 섹션을 맨 아래에 추가 =====
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.preset;
+      const p = presets[key];
+      if (!p) return;
+      document.querySelectorAll('.preset-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      const added = editor.addComponents(heroHtml(key, p) + featuresHtml(key, p));
+      try {
+        const first = Array.isArray(added) ? added[0] : added;
+        if (first) { editor.select(first); const el = first.getEl && first.getEl(); if (el) el.scrollIntoView({ block: 'center' }); }
+      } catch (_) { /* 스크롤 실패는 무시 */ }
+      toast(`${p.name} 프리셋 섹션을 추가했습니다.`);
+      if (isNarrow()) closePanels();
+    });
+  });
+
+  // ===== 게시 / 게시 취소 =====
+  let serverStatus = null;
+
+  async function refreshStatus() {
+    try {
+      const res = await fetch(VE_API + '/status', { headers: CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {} });
+      if (!res.ok) return;
+      serverStatus = await res.json();
+      renderStatus();
+    } catch (_) { /* 상태 표시 실패는 편집을 막지 않는다 */ }
+  }
+
+  function renderStatus() {
+    const st = serverStatus;
+    const el = $('publishStatus');
+    const link = $('publicLink');
+    if (!st) return;
+    const custom = st.renderMode === 'custom';
+    let text; let warn = false;
+    if (!custom) {
+      text = '⚪ 미게시 — 방문자는 기존 홈페이지를 봅니다';
+    } else if (!st.publicReachable) {
+      text = '⚠️ 게시됨 — 학원이 비공개 상태라 방문자에게는 보이지 않습니다'; warn = true;
+    } else if (st.hasUnpublishedChanges) {
+      text = '🟡 게시됨 — 게시 안 된 변경이 있습니다';
+    } else {
+      text = '🟢 게시됨';
+    }
+    el.textContent = text;
+    el.className = 'publish-status' + (warn ? ' warn' : '');
+    $('unpublishBtn').hidden = !custom;
+    link.hidden = !st.publicPath;
+    if (st.publicPath) link.href = st.publicPath;
+    $('publishBtn').title = custom ? '변경 내용을 다시 게시' : '공개 홈페이지에 게시';
+  }
+
+  $('publishBtn').addEventListener('click', async () => {
+    if (isEmpty()) { toast('게시할 내용이 없습니다. 홈페이지를 불러오거나 블록을 추가하세요.', 'warn'); return; }
+    if (!confirm('지금 편집한 내용을 공개 홈페이지에 게시합니다.\n게시 전에 미리보기로 PC·모바일 모습을 확인하셨나요?')) return;
+    const btn = $('publishBtn'); btn.disabled = true;
+    try {
+      // 게시는 항상 "저장된 초안"을 기준으로 한다 → 변경이 있으면 먼저 저장한다.
+      if (hasChanges || currentRevision === 0 || isSaving) {
+        const ok = await saveContent();
+        if (!ok) { toast('저장하지 못해 게시를 중단했습니다.', 'error'); return; }
+      }
+      const headers = { 'Content-Type': 'application/json' };
+      if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+      const res = await fetch(VE_API + '/publish', { method: 'POST', headers, body: JSON.stringify({ revision: currentRevision }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast('게시하지 못했습니다: ' + (data.message || res.status), 'error');
+        return;
+      }
+      // 서버가 계산한 "실제 방문자 노출 여부"를 그대로 보여준다(성공 문구로 덮지 않는다).
+      toast(data.message || '게시되었습니다.', data.publicReachable ? '' : 'warn');
+      await refreshStatus();
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('unpublishBtn').addEventListener('click', async () => {
+    if (!confirm('게시를 취소하면 방문자는 기존 홈페이지를 보게 됩니다.\n(편집 중인 초안과 게시본은 삭제되지 않습니다) 계속할까요?')) return;
+    const headers = { 'Content-Type': 'application/json' };
+    if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+    const res = await fetch(VE_API + '/unpublish', { method: 'POST', headers, body: '{}' });
+    const data = await res.json().catch(() => ({}));
+    toast(res.ok ? (data.message || '게시가 취소되었습니다.') : ('게시 취소 실패: ' + (data.message || res.status)), res.ok ? '' : 'error');
+    await refreshStatus();
+  });
+
+  // ===== 모바일 패널 토글 =====
+  const leftPanel = $('blocksPanel');
+  const rightPanel = $('stylePanel');
+  const toggleLeftBtn = $('toggleLeftPanel');
+  const toggleRightBtn = $('toggleRightPanel');
+
+  function updateToggleButtons() {
+    toggleLeftBtn.classList.toggle('active', leftPanel.classList.contains('mobile-open'));
+    toggleRightBtn.classList.toggle('active', rightPanel.classList.contains('mobile-open'));
+  }
+  function closePanels() {
+    leftPanel.classList.remove('mobile-open');
+    rightPanel.classList.remove('mobile-open');
+    updateToggleButtons();
+  }
+
+  toggleLeftBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    leftPanel.classList.toggle('mobile-open');
+    rightPanel.classList.remove('mobile-open');
+    updateToggleButtons();
+  });
+  toggleRightBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    rightPanel.classList.toggle('mobile-open');
+    leftPanel.classList.remove('mobile-open');
+    updateToggleButtons();
+  });
+
+  // 패널 외부 클릭 시 닫기 (모바일)
+  document.addEventListener('click', (e) => {
+    if (isNarrow()) {
+      if (!leftPanel.contains(e.target) && e.target !== toggleLeftBtn) leftPanel.classList.remove('mobile-open');
+      if (!rightPanel.contains(e.target) && e.target !== toggleRightBtn) rightPanel.classList.remove('mobile-open');
+      updateToggleButtons();
+    }
+  });
+  $('closeLeftPanel').addEventListener('click', () => { leftPanel.classList.remove('mobile-open'); updateToggleButtons(); });
+  $('closeRightPanel').addEventListener('click', () => { rightPanel.classList.remove('mobile-open'); updateToggleButtons(); });
+
+  // 블록을 눌러 추가했을 때(터치 기기) 패널을 닫아 결과를 바로 보여준다
+  $('gjs-blocks').addEventListener('click', () => { if (isNarrow()) setTimeout(closePanels, 150); });
+
+  // ===== AI 제안 패널 =====
+  const aiPanel = $('aiPanel');
+  const aiMsg = $('aiMsg');
+  const API_JSON = { 'Content-Type': 'application/json' };
+  const apiHeaders = () => { const h = Object.assign({}, API_JSON); if (CSRF_TOKEN) h[CSRF_HEADER] = CSRF_TOKEN; return h; };
+  let proposals = [];
+
+  function aiSay(text, kind) { aiMsg.textContent = text || ''; aiMsg.className = 'ai-msg' + (kind ? ' ' + kind : ''); }
+  async function aiFetch(path, opts) {
+    const res = await fetch(VE_API + path, Object.assign({ headers: apiHeaders() }, opts || {}));
+    let data = null;
+    try { data = await res.json(); } catch (_) { /* 본문 없음 */ }
+    return { ok: res.ok, status: res.status, data };
+  }
+  const txt = (el, t) => { el.textContent = t; return el; };
+  const mk = (tag, cls, t) => { const el = document.createElement(tag); if (cls) el.className = cls; if (t !== undefined) el.textContent = t; return el; };
+
+  // 현재 편집기 내용에서 대상의 "이전 값"을 읽는다(없으면 null).
+  function beforeValue(c) {
+    const f = editor.getWrapper().find('#' + c.componentId);
+    if (f.length !== 1) return null;
+    if (c.type === 'text') return (f[0].getEl() && f[0].getEl().textContent || '').trim().slice(0, 80);
+    if (c.type === 'image') return f[0].getAttributes().src || '';
+    return Object.keys(c.styles || {}).map((k) => k + ': ' + (f[0].getStyle()[k] || '(없음)')).join(', ');
+  }
+  function describe(c) {
+    const kind = { text: '텍스트', image: '이미지', style: c.mediaText ? '스타일(모바일)' : '스타일' }[c.type] || c.type;
+    const after = c.type === 'style' ? Object.entries(c.styles || {}).map(([k, v]) => k + ': ' + v).join(', ') : c.after;
+    return { kind, after, before: beforeValue(c) };
+  }
+
+  function renderProposals() {
+    const list = $('aiList');
+    list.textContent = '';
+    const pendingCount = proposals.filter((p) => p.status === 'PENDING').length;
+    $('aiBadge').hidden = pendingCount === 0;
+    $('aiBadge').textContent = String(pendingCount);
+    if (!proposals.length) { list.appendChild(mk('p', 'ai-note', '대기 중인 제안이 없습니다.')); return; }
+    proposals.forEach((p) => {
+      const stale = p.status === 'STALE';
+      const card = mk('div', 'ai-card' + (stale ? ' stale' : ''));
+      card.dataset.proposalId = String(p.proposalId);
+      card.appendChild(mk('h4', '', p.summary));
+      card.appendChild(mk('div', 'ai-meta', (p.createdByKind === 'AGENT' ? '외부 Agent' : 'AI 요청') + ' · 만료 ' + String(p.expiresAt || '').slice(0, 10) + (stale ? ' · 대상 요소가 사라져 적용할 수 없습니다' : '')));
+      const ul = mk('ul', 'ai-changes');
+      (p.changes || []).forEach((c) => {
+        const d = describe(c);
+        const li = mk('li', '');
+        li.appendChild(document.createTextNode(d.kind + ' [' + c.componentId + '] '));
+        if (d.before) li.appendChild(mk('span', 'before', d.before));
+        li.appendChild(document.createTextNode(' → ' + d.after));
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      const act = mk('div', 'ai-actions');
+      const bPrev = mk('button', 'ai-btn', '미리보기'); bPrev.type = 'button'; bPrev.dataset.act = 'preview';
+      const bOk = mk('button', 'ai-btn approve', '승인(적용·저장)'); bOk.type = 'button'; bOk.dataset.act = 'approve';
+      const bApply = mk('button', 'ai-btn', '캔버스에 적용'); bApply.type = 'button'; bApply.dataset.act = 'apply';
+      const bNo = mk('button', 'ai-btn', '거절'); bNo.type = 'button'; bNo.dataset.act = 'reject';
+      if (stale) { bPrev.disabled = bOk.disabled = bApply.disabled = true; }
+      [bPrev, bOk, bApply, bNo].forEach((b) => act.appendChild(b));
+      card.appendChild(act);
+      list.appendChild(card);
+    });
+  }
+
+  async function refreshProposals() {
+    const r = await aiFetch('/proposals');
+    if (r.ok && Array.isArray(r.data)) { proposals = r.data; renderProposals(); }
+    else if (r.status === 401 || r.status === 403) aiSay('제안을 불러올 권한이 없습니다.', 'error');
+  }
+
+  // 숨은 편집기에 제안을 적용해 "적용 후" HTML/CSS를 얻는다. 본 편집기는 건드리지 않는다.
+  function buildPreview(p) {
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-99999px;top:0;width:1200px;height:800px;visibility:hidden';
+    document.body.appendChild(holder);
+    let ed = null;
+    try {
+      ed = grapesjs.init({ container: holder, height: '800px', width: '1200px', storageManager: false, undoManager: false,
+        panels: { defaults: [] }, blockManager: { blocks: [] } });
+      ed.loadProjectData(JSON.parse(JSON.stringify(editor.getProjectData())));   // init의 projectData 옵션은 비동기라 직접 적재한다
+      const { plan, failed } = planChanges(ed, p.changes || []);
+      if (failed.length) return { error: '대상 요소를 찾을 수 없습니다: ' + failed.map((f) => f.componentId).join(', ') };
+      runPlan(ed, plan);
+      return { html: ed.getHtml(), css: ed.getCss() };
+    } catch (e) {
+      return { error: e.message };
+    } finally {
+      try { if (ed) ed.destroy(); } catch (_) { /* 무시 */ }
+      holder.remove();
+    }
+  }
+
+  async function previewProposal(p) {
+    const built = buildPreview(p);
+    if (built.error) { aiSay('미리보기를 만들 수 없습니다: ' + built.error, 'error'); return; }
+    previewOverride = { html: built.html, css: built.css };
+    const modal = ensurePreviewModal();
+    const bar = modal.querySelector('#previewProposalBar');
+    bar.textContent = '';
+    bar.appendChild(mk('span', '', 'AI 제안 미리보기 — 아직 적용되지 않았습니다. '));
+    const ok = mk('button', 'ai-btn approve', '이 제안 승인(적용·저장)'); ok.type = 'button';
+    ok.addEventListener('click', () => { modal.__close(); approve(p); });
+    const no = mk('button', 'ai-btn', '닫기'); no.type = 'button';
+    no.addEventListener('click', () => modal.__close());
+    bar.appendChild(ok); bar.appendChild(no); bar.hidden = false;
+    modal.style.display = 'flex';
+    await renderPreview(currentDevice);
+  }
+
+  async function applyOnly(p) {
+    const r = await applyProposal(p);
+    if (!r.applied) {
+      aiSay('적용하지 못했습니다: ' + (r.reason === 'ANOTHER_PROPOSAL_PENDING' ? '다른 제안이 적용된 채 저장되지 않았습니다. 먼저 저장하거나 되돌리세요.' : r.reason === 'EDITOR_BUSY' ? '편집기가 저장 중이거나 준비 중입니다.' : '대상 요소를 찾을 수 없습니다.'), 'error');
+      return false;
+    }
+    aiSay('캔버스에 적용했습니다. 확인 후 저장하면 승인이 완료됩니다. (되돌리려면 "AI 제안 되돌리기")', 'ok');
+    return true;
+  }
+
+  async function approve(p) {
+    if (!(await applyOnly(p))) return;
+    const saved = await saveContent();
+    if (saved && !pendingAppliedProposalId) { aiSay('승인했습니다. 편집 내용이 저장되었습니다. (공개 홈페이지는 게시할 때 반영됩니다)', 'ok'); toast('AI 제안을 승인하고 저장했습니다. 공개하려면 게시하세요.'); }
+    await refreshProposals();
+  }
+
+  async function reject(p) {
+    if (!confirm('이 제안을 거절할까요? 거절하면 다시 적용할 수 없습니다.')) return;
+    const r = await aiFetch('/proposals/' + p.proposalId + '/reject', { method: 'POST', body: '{}' });
+    aiSay(r.ok ? '제안을 거절했습니다.' : ((r.data && r.data.message) || '거절하지 못했습니다.'), r.ok ? 'ok' : 'error');
+    await refreshProposals();
+  }
+
+  $('aiList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = Number(btn.closest('.ai-card').dataset.proposalId);
+    const p = proposals.find((x) => x.proposalId === id);
+    if (!p) return;
+    if (btn.dataset.act === 'preview') previewProposal(p);
+    else if (btn.dataset.act === 'approve') approve(p);
+    else if (btn.dataset.act === 'apply') applyOnly(p);
+    else if (btn.dataset.act === 'reject') reject(p);
+  });
+
+  $('aiAsk').addEventListener('click', async () => {
+    const instruction = $('aiInstruction').value.trim();
+    if (!instruction) { aiSay('수정 요청을 입력하세요.', 'error'); return; }
+    const btn = $('aiAsk'); btn.disabled = true;
+    try {
+      // AI는 "저장된 초안"을 보고 제안하므로, 저장 안 된 변경이 있으면 먼저 저장한다.
+      if (hasChanges || currentRevision === 0) {
+        aiSay('먼저 현재 내용을 저장합니다...');
+        if (!(await saveContent())) { aiSay('저장하지 못해 요청을 보내지 않았습니다.', 'error'); return; }
+      }
+      aiSay('AI가 수정안을 만드는 중입니다...');
+      const r = await aiFetch('/ai-requests', { method: 'POST', body: JSON.stringify({ instruction }) });
+      if (r.ok) { aiSay('수정안이 만들어졌습니다. 아래에서 미리보기 후 승인하세요.', 'ok'); $('aiInstruction').value = ''; await refreshProposals(); }
+      else aiSay((r.data && (r.data.message || r.data)) ? String(r.data.message || r.data) : 'AI 수정안을 만들지 못했습니다. 기존 홈페이지와 편집 내용은 그대로입니다.', 'error');
+    } finally { btn.disabled = false; }
+  });
+
+  async function refreshTokens() {
+    const r = await aiFetch('/agent-tokens');
+    const box = $('aiTokens'); box.textContent = '';
+    if (!r.ok || !Array.isArray(r.data)) return;
+    r.data.filter((t) => t.active).forEach((t) => {
+      const row = mk('div', '');
+      row.appendChild(mk('span', '', t.label + ' · ~' + String(t.expiresAt).slice(0, 10)));
+      const b = mk('button', 'ai-btn', '폐기'); b.type = 'button';
+      b.addEventListener('click', async () => { if (!confirm('이 토큰을 폐기할까요? 연결된 Agent는 즉시 사용할 수 없게 됩니다.')) return; await aiFetch('/agent-tokens/' + t.tokenId, { method: 'DELETE' }); await refreshTokens(); });
+      row.appendChild(b); box.appendChild(row);
+    });
+  }
+  $('aiTokenNew').addEventListener('click', async () => {
+    const label = $('aiTokenLabel').value.trim();
+    if (!label) { aiSay('토큰 이름을 입력하세요.', 'error'); return; }
+    const r = await aiFetch('/agent-tokens', { method: 'POST', body: JSON.stringify({ label }) });
+    if (!r.ok) { aiSay((r.data && r.data.message) || '토큰을 만들지 못했습니다.', 'error'); return; }
+    const show = $('aiTokenShow'); show.hidden = false; show.value = r.data.token;
+    aiSay('토큰을 만들었습니다. 지금 복사해 안전한 곳에 보관하세요. 다시 볼 수 없습니다.', 'ok');
+    $('aiTokenLabel').value = '';
+    await refreshTokens();
+  });
+
+  // ===== AI로 처음 만들기: 기존 P1 생성 서비스(POST /api/tutor/academy/ai/chat/create)의 결과를 편집기 초안으로 =====
+  // 서버는 DB를 바꾸지 않고 초안(프리셋 + 문구)만 돌려준다. 여기서 프리셋 구조에 문구를 채워 미리보기를 만들고,
+  // 사용자가 승인하면 편집기 내용으로 삼아 저장한다. 섹션 빌더(builderDraft)·공개 페이지는 건드리지 않는다.
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const clip = (t, n) => { const x = String(t || '').trim(); return x.length > n ? x.slice(0, n - 1) + '…' : x; };
+
+  // id를 고정해 두면 이후 "AI 수정 요청/Agent 제안"이 요소를 정확히 가리킬 수 있다.
+  function homepageFromDraft(draft, fallbackName) {
+    const b = (draft && draft.builderDraft) || {};
+    const key = presets[draft && draft.designPreset] ? draft.designPreset : 'EXAM';
+    const p = presets[key];
+    const name = clip(b.academyName || fallbackName || '우리 학원', 60);
+    const motto = clip(b.introMotto || b.intro || '', 120) || '학생 한 명 한 명을 위한 맞춤 수업';
+    const introHeading = clip(b.introHeading || '학원 소개', 60);
+    const intro = clip(b.intro || '', 600);
+    const items = [b.philosophyItem1, b.philosophyItem2, b.philosophyItem3].filter(Boolean).map((t) => clip(t, 140));
+    while (items.length < 3) items.push(['체계적인 학습 관리', '학생별 맞춤 지도', '상담으로 시작하는 수업'][items.length]);
+    const cards = items.map((t, i) => `
+            <div id="feature${i + 1}" style="padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <h3 id="feature${i + 1}-title" style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">특징 ${i + 1}</h3>
+              <p id="feature${i + 1}-desc" style="color: #6b7280;">${esc(t)}</p>
+            </div>`).join('');
+    return `
+        <section id="hero" data-preset="${key}" style="padding: 60px 20px; background: ${p.bg}; text-align: center;">
+          <h1 id="hero-title" style="font-size: 36px; font-weight: 800; color: ${p.color}; margin-bottom: 16px;">${esc(name)}</h1>
+          <p id="hero-sub" style="font-size: 18px; color: #4b5563; margin-bottom: 32px;">${esc(motto)}</p>
+          <a id="hero-cta" href="#" style="display: inline-block; padding: 14px 40px; background: ${p.color}; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px;">상담 신청하기</a>
+        </section>
+        <section id="about" style="padding: 40px 20px; max-width: 800px; margin: 0 auto;">
+          <h2 id="about-title" style="font-size: 28px; font-weight: 700; margin-bottom: 16px; color: ${p.color};">${esc(introHeading)}</h2>
+          <p id="about-text" style="font-size: 16px; line-height: 1.7; color: #374151;">${esc(intro || motto)}</p>
+        </section>
+        <section id="features" style="padding: 40px 20px;">
+          <h2 id="features-title" style="font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 32px; color: ${p.color};">우리 학원의 특징</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto;">${cards}
+          </div>
+        </section>`;
+  }
+
+  // 숨은 편집기로 HTML/CSS를 얻어 미리보기에 쓴다(본 편집기는 그대로).
+  function renderHidden(html) {
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-99999px;top:0;width:1200px;height:800px;visibility:hidden';
+    document.body.appendChild(holder);
+    let ed = null;
+    try {
+      ed = grapesjs.init({ container: holder, height: '800px', width: '1200px', storageManager: false, undoManager: false, panels: { defaults: [] }, blockManager: { blocks: [] } });
+      ed.setComponents(html);
+      return { html: ed.getHtml(), css: ed.getCss() };
+    } finally { try { if (ed) ed.destroy(); } catch (_) { /* 무시 */ } holder.remove(); }
+  }
+
+  async function startFromDraft(html) {
+    if (!isEmpty() && !confirm('지금 편집 중인 내용이 AI가 만든 초안으로 바뀝니다.\n(저장하기 전에는 Ctrl+Z로 되돌릴 수 있고, 저장되면 이전 저장본은 새 초안으로 교체됩니다) 계속할까요?')) return false;
+    resetProposalState();
+    editor.setStyle('');            // 먼저 비운 뒤 적재한다(적재 시 인라인 스타일이 #id 규칙으로 만들어지므로 순서가 중요)
+    editor.setComponents(html);
+    await sleep(600);
+    recomputeDirty();
+    const ok = await saveContent();
+    if (ok) {
+      aiSay('AI가 만든 초안을 저장했습니다. 텍스트를 직접 고치거나 아래에서 AI에게 수정을 요청하세요. 공개하려면 게시하세요.', 'ok');
+      toast('AI 초안을 저장했습니다. 확인 후 게시하세요.');
+    }
+    return ok;
+  }
+
+  async function createFromAi() {
+    const message = $('aiCreateMsg').value.trim();
+    if (message.length < 5) { $('aiCreateWarn').textContent = '학원에 대해 한두 문장 이상 적어 주세요.'; $('aiCreateWarn').className = 'ai-msg error'; return; }
+    const btn = $('aiCreateBtn'); btn.disabled = true;
+    $('aiCreateWarn').textContent = 'AI가 초안을 만드는 중입니다...'; $('aiCreateWarn').className = 'ai-msg';
+    try {
+      const res = await fetch('/api/tutor/academy/ai/chat/create', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ message, academyName: (document.querySelector('.title') || {}).textContent || '' }) });
+      let data = null; try { data = await res.json(); } catch (_) { /* 본문 없음 */ }
+      if (!res.ok || !data || !data.draft) {
+        $('aiCreateWarn').textContent = (data && (data.message || data.error)) || 'AI 초안을 만들지 못했습니다. 기존 홈페이지와 편집 내용은 그대로입니다.';
+        $('aiCreateWarn').className = 'ai-msg error';
+        return;
+      }
+      const html = homepageFromDraft(data.draft, (document.querySelector('.title') || {}).textContent);
+      let built;
+      try { built = renderHidden(html); } catch (e) { $('aiCreateWarn').textContent = '미리보기를 만들 수 없습니다: ' + e.message; $('aiCreateWarn').className = 'ai-msg error'; return; }
+      const warns = (data.draft.warnings || []).join(' / ');
+      $('aiCreateWarn').textContent = (data.draft.summary || '초안이 만들어졌습니다.') + (warns ? '  ⚠ ' + warns : '');
+      $('aiCreateWarn').className = 'ai-msg ok';
+      previewOverride = { html: built.html, css: built.css };
+      const modal = ensurePreviewModal();
+      const bar = modal.querySelector('#previewProposalBar');
+      bar.textContent = '';
+      bar.appendChild(mk('span', '', 'AI 초안 미리보기 — 아직 적용되지 않았습니다. '));
+      const ok = mk('button', 'ai-btn approve', '이 초안으로 시작(승인·저장)'); ok.type = 'button';
+      ok.addEventListener('click', async () => { modal.__close(); await startFromDraft(html); });
+      const no = mk('button', 'ai-btn', '닫기'); no.type = 'button';
+      no.addEventListener('click', () => modal.__close());
+      bar.appendChild(ok); bar.appendChild(no); bar.hidden = false;
+      modal.style.display = 'flex';
+      await renderPreview(currentDevice);
+    } finally { btn.disabled = false; }
+  }
+  $('aiCreateBtn').addEventListener('click', createFromAi);
+  $('emptyAiBtn').addEventListener('click', async () => { await openAiPanel(); $('aiCreateBox').open = true; $('aiCreateMsg').focus(); });
+
+  async function openAiPanel() {
+    aiPanel.hidden = false;
+    aiSay('');
+    $('aiTokenShow').hidden = true; $('aiTokenShow').value = '';
+    await Promise.all([refreshProposals(), refreshTokens()]);
+  }
+  $('aiBtn').addEventListener('click', () => { if (aiPanel.hidden) openAiPanel(); else aiPanel.hidden = true; });
+  $('aiClose').addEventListener('click', () => { aiPanel.hidden = true; });
+  window.addEventListener('ve:saved', () => { if (!aiPanel.hidden) refreshProposals(); });
+
+  // 전역 노출 (디버깅/E2E)
+  window.editor = editor;
+  window.__ve = { state: () => ({ hasChanges, currentRevision, ready, isSaving, pendingAppliedProposalId }), refreshStatus, applyProposal, undoProposal };
+
+  // 초기화: 초안 + 게시 상태를 불러온다
+  (async function init() {
+    await Promise.all([loadDraft(), refreshStatus()]);
+    updateRestoreBtn();
+    refreshProposals().catch(() => {});   // 대기 제안 개수 배지
+    console.log('BuildIt 시각 편집기 초기화 완료');
+  })();
+})();
+</script>
+</body>
+</html>
