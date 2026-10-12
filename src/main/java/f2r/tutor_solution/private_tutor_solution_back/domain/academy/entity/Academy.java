@@ -196,6 +196,20 @@ public class Academy extends BaseEntity {
     };
   }
 
+  /**
+   * 최초 게시: DRAFT면 PUBLISHED로 바꾼다. 이미 PUBLISHED면 아무것도 하지 않는다.
+   * visible(공개 여부 스위치)은 건드리지 않는다.
+   *
+   * @return 이번 호출로 상태가 바뀌었는가
+   */
+  public boolean publishIfDraft() {
+    if (this.status != AcademyStatus.DRAFT) {
+      return false;
+    }
+    this.status = AcademyStatus.PUBLISHED;
+    return true;
+  }
+
   public void updateVisibility(boolean visible) {
     this.visible = visible;
   }
