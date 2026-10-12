@@ -49,6 +49,8 @@ public class AcademyAdminBuilderApiController {
       AdminView v = service.open(admin, academyId);
       Map<String, Object> body = stateBody(v.state());
       body.put("academy", v.academy());
+      body.put("live", v.live());
+      body.put("memberDraftDirty", v.memberDraftDirty());
       return body;
     });
   }
@@ -63,6 +65,26 @@ public class AcademyAdminBuilderApiController {
     }
     return respond(() -> stateBody(
         service.save(admin, academyId, request.revision(), request.intro(), request.pageSettings())));
+  }
+
+  /**
+   * 공개 변경 반영(rebase): 공개 홈페이지가 작업본을 만든 뒤 바뀌었을 때 관리자가 바꾼 필드만 새 공개 내용 위에 얹는다.
+   * 같은 필드를 양쪽이 바꾼 충돌은 공개 값을 유지하고 {@code conflicts}로 돌려준다. body: {revision}.
+   */
+  @PostMapping("/rebase")
+  public ResponseEntity<Map<String, Object>> rebase(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal admin, @PathVariable Long academyId,
+      @RequestBody RevisionRequest request) {
+    if (request == null || request.revision() == null) {
+      return error(HttpStatus.BAD_REQUEST, "revision이 필요합니다.", null);
+    }
+    return respond(() -> {
+      var r = service.rebase(admin, academyId, request.revision());
+      Map<String, Object> body = stateBody(r.state());
+      body.put("conflicts", r.conflicts());
+      body.put("keptMine", r.keptMine());
+      return body;
+    });
   }
 
   /** 되돌리기: 작업본을 공개 내용으로. body: {revision}. */

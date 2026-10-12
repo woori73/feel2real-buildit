@@ -49,6 +49,13 @@ public class AcademyAdminWorkingCopy {
   @Column(name = "base_fingerprint", nullable = false, length = 64)
   private String baseFingerprint;
 
+  /** 작업본의 기준이 된 공개 소개/설정(병합 기준). V1063 이전 행은 null. */
+  @Column(name = "base_intro", columnDefinition = "TEXT")
+  private String baseIntro;
+
+  @Column(name = "base_page_settings_json", columnDefinition = "MEDIUMTEXT")
+  private String basePageSettingsJson;
+
   @Column(name = "created_by", nullable = false, length = 100, updatable = false)
   private String createdBy;
 
@@ -69,6 +76,8 @@ public class AcademyAdminWorkingCopy {
     this.intro = intro;
     this.pageSettingsJson = pageSettingsJson;
     this.baseFingerprint = baseFingerprint;
+    this.baseIntro = intro;
+    this.basePageSettingsJson = pageSettingsJson;
     this.createdBy = actor;
     this.updatedBy = actor;
   }
@@ -79,8 +88,11 @@ public class AcademyAdminWorkingCopy {
     this.updatedBy = actor;
   }
 
-  public void rebase(String baseFingerprint, String actor) {
+  /** 공개 내용이 기준이 되도록 지문과 기준 내용을 함께 갱신한다(게시·되돌리기·공개 변경 반영 후). */
+  public void rebase(String baseFingerprint, String baseIntro, String basePageSettingsJson, String actor) {
     this.baseFingerprint = baseFingerprint;
+    this.baseIntro = baseIntro;
+    this.basePageSettingsJson = basePageSettingsJson;
     this.updatedBy = actor;
   }
 }
