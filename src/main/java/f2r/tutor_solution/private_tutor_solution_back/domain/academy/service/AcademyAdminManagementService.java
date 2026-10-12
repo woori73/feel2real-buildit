@@ -52,10 +52,11 @@ public class AcademyAdminManagementService {
   /** 관리 화면용 학원 요약. */
   public record AcademySummary(
       Long academyId, String name, String handle, String slug, AcademyStatus status, boolean visible,
-      Long ownerUserId, String ownerLoginId) {}
+      Long ownerUserId, String ownerLoginId, String confirmKey) {}
 
   /** 확인 화면용: 현재 공개 내용(변경 비교 기준)과 회원이 게시하지 않은 작업본이 있는지(내용은 노출하지 않는다). */
-  public record LiveView(String intro, Map<String, String> builderDraft) {}
+  public record LiveView(
+      String intro, Map<String, String> builderDraft, String blogUrl, String naverMapUrl, String heroYoutubeUrl) {}
 
   public record AdminView(AcademySummary academy, State state, LiveView live, boolean memberDraftDirty) {}
 
@@ -192,7 +193,7 @@ public class AcademyAdminManagementService {
     Academy academy = academyRepository.findForUpdateByAcademyId(academyId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academy를 찾을 수 없습니다."));
     if (!academyId.equals(confirmAcademyId)
-        || confirmHandle == null || !confirmHandle.trim().equalsIgnoreCase(String.valueOf(academy.getHandle()))) {
+        || confirmHandle == null || !confirmHandle.trim().equalsIgnoreCase(confirmKey(academy))) {
       throw new WorkingCopyConflictException(
           "TARGET_MISMATCH", "게시 대상 확인(학원 ID·핸들)이 일치하지 않습니다. 대상 학원을 다시 확인하세요.");
     }
@@ -243,6 +244,11 @@ public class AcademyAdminManagementService {
     return new PublishResult(firstPublish, state(academy, wc));
   }
 
+  /** 게시 대상 확인 키: 핸들, 핸들이 없는 기존 학원은 slug. */
+  static String confirmKey(Academy academy) {
+    return academy.getHandle() != null && !academy.getHandle().isBlank() ? academy.getHandle() : academy.getSlug();
+  }
+
   /** 관리자 작업본 기준 비공개 미리보기. DB를 바꾸지 않는다(작업본이 없으면 공개 내용 그대로). */
   @Transactional(readOnly = true)
   public AcademyResponse preview(JwtTokenProvider.AuthenticatedPrincipal admin, Long academyId) {
@@ -281,7 +287,10 @@ public class AcademyAdminManagementService {
   private LiveView liveView(Academy academy) {
     AcademyPageSettings live = academy.getPageSettings();
     Map<String, String> draft = live == null || live.builderDraft() == null ? Map.of() : live.builderDraft();
-    return new LiveView(academy.getIntro(), draft);
+    return new LiveView(
+        academy.getIntro(), draft,
+        live == null ? null : live.blogUrl(), live == null ? null : live.naverMapUrl(),
+        live == null ? null : live.heroYoutubeUrl());
   }
 
   /** 회원 본인의 작업본에 아직 게시하지 않은 변경이 있는가(내용은 읽지 않고 지문 비교만). */
@@ -298,7 +307,7 @@ public class AcademyAdminManagementService {
     return new AcademySummary(
         a.getAcademyId(), a.getName(), a.getHandle(), a.getSlug(), a.getStatus(), a.isVisible(),
         a.getTutor() == null ? null : a.getTutor().getUserId(),
-        a.getTutor() == null ? null : a.getTutor().getLoginId());
+        a.getTutor() == null ? null : a.getTutor().getLoginId(), confirmKey(a));
   }
 
   private AcademyAdminWorkingCopy loadOrCreate(Academy academy, String actor) {

@@ -257,20 +257,24 @@ ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회�
 
 | 엔드포인트 | 설명 |
 |---|---|
-| `GET ` | 관리 화면 진입: `{academy:{academyId,name,handle,slug,status,visible,ownerUserId,ownerLoginId}, revision, intro, pageSettings, dirty, liveChanged}`. 관리자 작업본이 없으면 현재 공개 내용으로 만든다(공개본 불변). **접근이 감사 기록에 남는다** |
+| `GET ` | 관리 화면 진입: `{academy:{academyId,name,handle,slug,status,visible,ownerUserId,ownerLoginId,confirmKey}, live:{intro,builderDraft,blogUrl,naverMapUrl,heroYoutubeUrl}, memberDraftDirty, revision, intro, pageSettings, dirty, liveChanged}`. 관리자 작업본이 없으면 현재 공개 내용으로 만든다(공개본 불변). **접근이 감사 기록에 남는다** |
 | `PUT ` | `{revision, intro?, pageSettings?}` 관리자 작업본 수정. 공개본 불변. 낡은 revision은 `409 REVISION_CONFLICT` |
+| `POST /rebase` | `{revision}` **공개 변경 반영**: 작업본을 만든 뒤 공개 홈페이지가 바뀌었을 때(`liveChanged`), 관리자가 바꾼 필드만 새 공개 내용 위에 얹는다(필드 단위 3-way 병합). 응답에 `conflicts`(양쪽이 같은 필드를 다르게 바꿔 **공개 값을 유지**한 항목)·`keptMine`(관리자 값이 유지된 항목). 관리자 화면에는 강제 게시(force)가 없다 |
 | `POST /discard` | `{revision}` 되돌리기: 작업본을 현재 공개 내용으로 |
 | `POST /restore` | `{revision, versionId}` 이 학원의 버전 기록을 작업본에 불러옴(공개본 불변). 다른 학원의 버전은 `403` |
 | `POST /publish` | `{revision, force?, confirmAcademyId, confirmHandle, confirmFirstPublish?}` 게시 — 공개 홈페이지가 바뀌는 유일한 경로. 확인 값이 대상과 다르면 `409 TARGET_MISMATCH`, DRAFT 학원의 최초 공개는 `confirmFirstPublish:true`가 없으면 `409 FIRST_PUBLISH_CONFIRM_REQUIRED`. 반영 전 공개 내용은 버전 기록(`academy_page_versions`)에 남고 작업한 관리자가 `created_by`/메모에 기록된다 |
 | `GET /preview` | 관리자 작업본 기준 비공개 미리보기(공개 API와 같은 모양, noindex·no-store) |
 | `GET /versions` | 이 학원의 버전 목록(복원 후보) |
 | `GET /audit?limit=` | 이 학원의 관리자 작업 감사 기록(최근순). ADMIN 전용 |
+| `GET /admin/academies/{academyId}/builder` (페이지) | 관리자 홈페이지 관리 화면(SSR 껍데기 + `/js/admin_manage.js`). 상단 관리자 모드 배너에 학원명·핸들·상태·소유자 표시, 게시 전 대상 확인(학원 ID·핸들 입력)·변경 내용 비교·버전 복원·작업 기록. ADMIN 전용. 진입점은 `/admin/academies`의 "홈페이지 관리" 버튼 |
 | `GET /admin/academies/{academyId}/preview` (페이지) | 위 미리보기를 공개 페이지와 같은 렌더러로 표시. ADMIN 전용, 방문 통계 미기록 |
 
 - **수정은 관리자 전용 작업본(`academy_admin_working_copy`)에만 저장**한다. 회원 본인의 작업본·AI 대화(`academy_assistant_message`)와 섞이지 않고, 회원 화면과 회원의 게시에 딸려 나가지 않는다. 기존 `/ai/chat/apply`처럼 공개 데이터를 직접 쓰는 경로는 관리자 기능에서 쓰지 않는다.
 - 관리자 게시 후 회원의 작업본은 `liveChanged=true`가 되어, 회원이 다음에 게시할 때 충돌(`LIVE_CHANGED`)로 알려 준다.
 - **감사 기록**(`academy_admin_audit`): 관리 화면 진입(ACCESS), 작업본 수정(SAVE, 변경 항목의 전/후 값), 게시(PUBLISH), 복원(RESTORE), 되돌리기(DISCARD)를 작업자·대상 학원·대상 소유자·작업본 revision·게시 여부·시각과 함께 남긴다. 기록은 작업과 **같은 트랜잭션**이라 기록이 실패하면 작업도 롤백된다. 일반 학원 목록 조회는 기록하지 않는다. 회원 API로는 읽을 수 없다.
-- 관리자 AI 대화(수정 턴)와 관리자 화면은 이후 단계(2-C, PR-C)다.
+- **충돌 보호**: 관리자 작업본은 만들 때(또는 rebase·게시·되돌리기 때) 공개 내용을 **기준 내용**(`base_intro`, `base_page_settings_json`)으로 함께 보관한다. 공개가 바뀌면 게시는 `409 LIVE_CHANGED`로 막히고, `POST /rebase`로 양쪽 변경을 필드 단위로 합친다. 관리자 게시는 회원 작업본을 건드리지 않으며(회원의 다음 게시는 `LIVE_CHANGED`), `memberDraftDirty`로 관리자 화면에 경고한다. 한계: 회원 화면의 기존 '그래도 게시'(force)는 회원이 알고 덮어쓰는 동작이라 그대로다.
+- 게시 대상 확인 키(`confirmKey`)는 핸들, 핸들이 없는 기존 학원은 slug다.
+- 관리자 AI 대화(수정 턴)는 이후 단계(2-C)다. 이 화면은 AI 없이 직접 수정한다.
 
 - **향후(이번 범위 아님)**: 지금은 역할(TUTOR/ADMIN)에 BuildIt 이용 권한이 묶여 있다. 장기적으로는 역할과 분리된 '이용 권한(entitlement)'(예: 계정별 BuildIt 사용 권한 테이블 + 서버 검사)로 옮겨 STUDENT/기타 역할도 정책에 따라 부여할 수 있게 한다. 이때 소유권 검증(본인 학원만)은 그대로 유지한다.
 
