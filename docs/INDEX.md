@@ -25,6 +25,7 @@
 | **시각 편집기 AI Agent 연결 설계(구현 전)** | [BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md](BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md) |
 | **시각 편집기 AI Agent Proposal 연동 최종 설계(A안, 구현 전)** | [BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md](BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md) |
 | **VisualEditorProposalPort 구현 계약(뮤즈 Proposal 구현체용)** | [BUILDIT_AI_AGENT_PROPOSAL_PORT_CONTRACT.md](BUILDIT_AI_AGENT_PROPOSAL_PORT_CONTRACT.md) |
+| **BuildIt 통합 대화형 화면 설계(공통 UI 킷·장기 확장 조건 포함, 구현 전)** | [BUILDIT_UNIFIED_CHAT_UI_DESIGN.md](BUILDIT_UNIFIED_CHAT_UI_DESIGN.md) |
 | **시각 편집기 현재 사양(저장 구조·projectData·게시 흐름) / AI Agent(뮤즈) GrapesJS 연동 지점** | [BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md](BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md) |
 | **학원 온라인 LMS(`{handle}.../lms`) / 서브도메인 경로·권한** | [academy-lms-design.md](academy-lms-design.md) |
 | **제품 범위·사용자모델·기술스택** | [MVP.md](MVP.md) |
