@@ -971,7 +971,7 @@ public class AcademyService {
         throw new IllegalArgumentException("등록되지 않은 typography preset입니다.");
       }
       if ("designPreset".equals(key) && !value.isBlank()
-          && !Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(value)) {
+          && !AcademyAiCreateService.VALID_PRESETS.contains(value)) {
         throw new IllegalArgumentException("등록되지 않은 design preset입니다.");
       }
       if (Set.of("colorPrimary", "colorSecondary", "colorAccent", "colorBg", "colorBgAlt",

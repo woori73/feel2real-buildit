@@ -1106,6 +1106,23 @@ class AcademyServiceTest {
     assertThat(response.pageSettings().sectionVisibility()).doesNotContainKey("sec-cta");
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"MINIMAL", "DARK", "WARM", "PHOTO", "DYNAMIC"})
+  void updatePageSettings_acceptsNewDesignPresets(String presetId) {
+    // given: 신규 5종 프리셋 (PR #609)
+    Academy academy = academy("old/logo.jpg", null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+    AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, null, null, Map.of("designPreset", presetId));
+
+    // when
+    AcademyResponse response = service.updatePageSettings(principal, request);
+
+    // then: 저장 검증을 통과해 그대로 저장된다
+    assertThat(response.pageSettings().builderDraft()).containsEntry("designPreset", presetId);
+  }
+
   @Test
   void updatePageSettings_acceptsCtaAndDesignPresetDraftKeys() {
     // given: CTA + 디자인 프리셋 draft 키를 함께 저장한다.

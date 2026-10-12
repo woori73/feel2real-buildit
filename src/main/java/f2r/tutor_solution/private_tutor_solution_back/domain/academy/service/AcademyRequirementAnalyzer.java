@@ -74,6 +74,36 @@ public class AcademyRequirementAnalyzer {
       Map.entry("온라인", "ONLINE"),
       Map.entry("인강", "ONLINE"));
 
+  /**
+   * 분위기/스타일 키워드 → 신규 5종 디자인(MINIMAL·DARK·WARM·PHOTO·DYNAMIC).
+   * 과목 키워드와 분리한다: 스타일 단어("따뜻한")가 과목(subject)으로 잡혀 소개 문구·과목 조회를 오염시키지 않게 하고,
+   * 스타일 키워드가 있으면 업종 기본 프리셋보다 우선한다(운영자가 말한 취향이 업종 추정보다 강한 신호).
+   */
+  private static final Map<String, String> STYLE_PRESET_MAP = Map.ofEntries(
+      Map.entry("미니멀", "MINIMAL"),
+      Map.entry("심플", "MINIMAL"),
+      Map.entry("깔끔", "MINIMAL"),
+      Map.entry("여백", "MINIMAL"),
+      Map.entry("다크", "DARK"),
+      Map.entry("다크모드", "DARK"),
+      Map.entry("어두운", "DARK"),
+      Map.entry("시크", "DARK"),
+      Map.entry("감성", "WARM"),
+      Map.entry("따뜻한", "WARM"),
+      Map.entry("아늑", "WARM"),
+      Map.entry("포근", "WARM"),
+      Map.entry("스토리", "WARM"),
+      Map.entry("포토", "PHOTO"),
+      Map.entry("사진", "PHOTO"),
+      Map.entry("비주얼", "PHOTO"),
+      Map.entry("갤러리", "PHOTO"),
+      Map.entry("이미지", "PHOTO"),
+      Map.entry("다이나믹", "DYNAMIC"),
+      Map.entry("역동", "DYNAMIC"),
+      Map.entry("화려", "DYNAMIC"),
+      Map.entry("생동감", "DYNAMIC"),
+      Map.entry("애니메이션", "DYNAMIC"));
+
   /** 강점 키워드. */
   private static final List<String> STRENGTH_KEYWORDS = List.of(
       "내신 대비", "내신대비", "내신",
@@ -173,17 +203,30 @@ public class AcademyRequirementAnalyzer {
     return best;
   }
 
+  /**
+   * 프리셋 결정. 과목 키워드와 스타일 키워드를 한 줄로 놓고 메시지에서 가장 먼저 나온 것을 고른다
+   * (기존 "선행 키워드 우선" 규칙 유지 — "깔끔하고 신뢰감 있게" 같은 일반 톤 표현이 뒤에 붙어도
+   * 과목에서 정한 프리셋이 뒤집히지 않는다). 스타일 키워드는 subject로는 쓰이지 않는다.
+   */
   private String determinePreset(String subject, String message) {
-    if (subject != null) {
-      String preset = SUBJECT_PRESET_MAP.get(subject);
-      if (preset != null) return preset;
+    String lower = message.toLowerCase();
+    String best = null;
+    String bestPreset = null;
+    int bestIdx = Integer.MAX_VALUE;
+    for (Map<String, String> map : List.of(SUBJECT_PRESET_MAP, STYLE_PRESET_MAP)) {
+      for (Map.Entry<String, String> e : map.entrySet()) {
+        int idx = lower.indexOf(e.getKey().toLowerCase());
+        if (idx < 0) {
+          continue;
+        }
+        if (idx < bestIdx || (idx == bestIdx && best != null && e.getKey().length() > best.length())) {
+          best = e.getKey();
+          bestPreset = e.getValue();
+          bestIdx = idx;
+        }
+      }
     }
-    // fallback: 키워드 기반 (결정적 — extractSubject와 동일한 위치 기반 선택)
-    String fallbackSubject = extractSubject(message);
-    if (fallbackSubject != null) {
-      return SUBJECT_PRESET_MAP.get(fallbackSubject);
-    }
-    return "EXAM"; // 기본값
+    return bestPreset == null ? "EXAM" : bestPreset; // 기본값
   }
 
   private List<String> extractStrengths(String message) {
