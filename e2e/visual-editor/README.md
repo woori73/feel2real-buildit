@@ -25,6 +25,8 @@ UPDATE academies SET page_settings = JSON_REMOVE(page_settings, '$.builderDraft.
 npm run e2e            # BASE_URL=http://localhost:8080 기본. 실패가 있으면 종료 코드 1
 npm run capture-fixture   # GrapesJS 업그레이드 시 서버 테스트용 fixture 재생성(서버 불필요)
 ```
+AI 제안 적용·저장 충돌 보호(응답 모킹+실제 서버 계약)는 `npm run e2e:proposal`(약 1분, 같은 전제)로 검증한다 — `e2e-proposal.js`.
+
 결과: 콘솔 ✔/✘, `artifacts/e2e-result.json`, `artifacts/*.png`(스크린샷).
 
 ## 검증 항목

@@ -4,7 +4,8 @@
   "description": "BuildIt 시각 편집기 실제 브라우저 E2E (GrapesJS 0.23.6, Chromium)",
   "scripts": {
     "capture-fixture": "node capture-fixture.js",
-    "e2e": "node e2e.js"
+    "e2e": "node e2e.js",
+    "e2e:proposal": "node e2e-proposal.js"
   },
   "devDependencies": {
     "font-awesome": "4.7.0",

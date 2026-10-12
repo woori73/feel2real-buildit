@@ -72,6 +72,15 @@
     .publish-status { color: #4b5563; }
     .publish-status.warn { color: #b45309; }
     .status-bar a { color: #2563eb; text-decoration: none; }
+    .status-action { font-size: 12px; padding: 2px 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #374151; cursor: pointer; }
+    .status-action:hover { background: #f3f4f6; }
+    .ve-modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .ve-modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .ve-modal h3 { margin: 0 0 8px; font-size: 16px; }
+    .ve-modal p { margin: 0 0 14px; font-size: 13px; color: #4b5563; line-height: 1.5; }
+    .ve-modal button { display: block; width: 100%; text-align: left; padding: 10px 12px; margin-top: 8px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
+    .ve-modal button.primary { border-color: #3b82f6; background: #eff6ff; }
+    .ve-modal button small { display: block; color: #6b7280; margin-top: 2px; }
 
     .editor-main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
     .editor-sidebar-left {
@@ -189,6 +198,8 @@
     <span class="save-status" id="saveStatus">불러오는 중...</span>
     <span class="publish-status" id="publishStatus"></span>
     <a id="publicLink" href="#" target="_blank" rel="noopener" hidden>공개 페이지 보기 ↗</a>
+    <button type="button" class="status-action" id="undoProposalBtn" hidden>↩ AI 제안 되돌리기</button>
+    <button type="button" class="status-action" id="restoreBackupBtn" hidden>↩ 저장 안 된 내 변경 복원</button>
   </div>
 
   <!-- 메인 영역 -->
@@ -504,6 +515,170 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     dirtyTimer = setTimeout(() => { recomputeDirty(); updateEmptyState(); }, 250);
   });
 
+  // ===== AI 제안 적용 상태 / 충돌 시 미저장 내용 보호 =====
+  // 설계: docs/BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md §5
+  const PROPOSAL_CODES = ['PROPOSAL_NOT_FOUND', 'PROPOSAL_NOT_PENDING', 'PROPOSAL_VERIFICATION_FAILED', 'PROPOSAL_NOT_AVAILABLE'];
+  let pendingAppliedProposalId = null;   // 적용 후 첫 저장 성공까지 모든 PUT에 실어 보낸다
+  let preApplySnapshot = null;           // 적용 직전 projectData(한 번에 되돌리기용)
+  const BACKUP_KEY = 've:backup:' + ACADEMY_ID;
+  const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
+
+  function updateUndoProposalBtn() {
+    $('undoProposalBtn').hidden = !(preApplySnapshot && pendingAppliedProposalId);
+  }
+  function resetProposalState() {
+    pendingAppliedProposalId = null;
+    preApplySnapshot = null;
+    updateUndoProposalBtn();
+  }
+
+  // 충돌·실패로 버려질 수 있는 미저장 편집 내용을 브라우저에 보관한다(저장소 실패 시 파일로 내려받는다).
+  function backupLocal() {
+    const rec = {
+      savedAt: Date.now(), revision: currentRevision,
+      html: editor.getHtml(), css: editor.getCss(),
+      projectData: JSON.stringify(editor.getProjectData()),
+      appliedProposalId: pendingAppliedProposalId,
+    };
+    const raw = JSON.stringify(rec);
+    let stored = false;
+    try { localStorage.setItem(BACKUP_KEY, raw); stored = true; } catch (_) { /* 용량·차단 */ }
+    if (!stored) { try { sessionStorage.setItem(BACKUP_KEY, raw); stored = true; } catch (_) { /* 용량·차단 */ } }
+    if (!stored) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+      a.download = 'buildit-editor-backup-' + Date.now() + '.json';
+      a.click();
+      toast('브라우저에 보관하지 못해 편집 내용을 파일로 내려받았습니다.', 'warn');
+    }
+    updateRestoreBtn();
+    return stored;
+  }
+  function readBackup() {
+    for (const st of [localStorage, sessionStorage]) {
+      try { const v = st.getItem(BACKUP_KEY); if (v) return JSON.parse(v); } catch (_) { /* 무시 */ }
+    }
+    return null;
+  }
+  function clearBackup() {
+    try { localStorage.removeItem(BACKUP_KEY); } catch (_) { /* 무시 */ }
+    try { sessionStorage.removeItem(BACKUP_KEY); } catch (_) { /* 무시 */ }
+    updateRestoreBtn();
+  }
+  function updateRestoreBtn() { $('restoreBackupBtn').hidden = !readBackup(); }
+  function restoreBackup() {
+    const rec = readBackup();
+    if (!rec) { updateRestoreBtn(); return; }
+    if (!confirm('저장되지 않았던 내 편집 내용으로 지금 화면을 바꿉니다.\n(현재 화면의 내용은 바뀝니다. 저장하기 전에는 Ctrl+Z로 되돌릴 수 있습니다) 계속할까요?')) return;
+    try {
+      editor.loadProjectData(JSON.parse(rec.projectData));
+    } catch (_) {
+      editor.setComponents(rec.html || '');
+      editor.setStyle(rec.css || '');
+    }
+    pendingAppliedProposalId = rec.appliedProposalId || null;
+    recomputeDirty();
+    toast('저장되지 않았던 내 편집 내용을 복원했습니다. 확인 후 저장하세요.');
+  }
+  $('restoreBackupBtn').addEventListener('click', restoreBackup);
+
+  // 3지선다 모달: 'keep'(기본) | 'load' | 'overwrite'. 바깥 클릭·ESC는 keep.
+  function askConflictChoice(message) {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 've-modal-back';
+      back.setAttribute('role', 'dialog');
+      back.innerHTML = '<div class="ve-modal"><h3>다른 세션에서 먼저 수정되었습니다</h3><p></p>' +
+        '<button type="button" class="primary" data-c="keep">내 편집 내용 유지 (지금은 저장하지 않음)<small>화면의 내용은 그대로입니다. 내용은 브라우저에도 백업되었습니다.</small></button>' +
+        '<button type="button" data-c="load">최신 초안 불러오기<small>화면이 최신 초안으로 바뀝니다. 내 변경은 백업에 남아 "복원" 버튼으로 되돌릴 수 있습니다.</small></button>' +
+        '<button type="button" data-c="overwrite">내 내용으로 덮어쓰기<small>다른 세션의 변경을 내 내용으로 대체합니다.</small></button></div>';
+      back.querySelector('p').textContent = message;
+      const done = (c) => { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(c); };
+      const onKey = (e) => { if (e.key === 'Escape') done('keep'); };
+      back.addEventListener('click', (e) => { const c = e.target.closest('[data-c]'); if (c) done(c.dataset.c); else if (e.target === back) done('keep'); });
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(back);
+      back.querySelector('[data-c="keep"]').focus();
+    });
+  }
+
+  async function handleRevisionConflict(errData, silent, opts) {
+    const msg = errData.message || '다른 세션에서 수정되었습니다.';
+    backupLocal();   // 어떤 선택을 하든 내 편집 내용은 먼저 보관한다
+    setSaveStatus('⚠️ ' + msg + ' 내 편집 내용은 화면에 그대로 있고 브라우저에도 백업했습니다. [저장]을 눌러 해결하세요.', 'error');
+    if (silent) return false;   // 자동저장은 사용자를 방해하지 않는다
+    const choice = await askConflictChoice(msg);
+    if (choice === 'load') {
+      resetProposalState();   // 제안은 서버에서 PENDING으로 남는다
+      await loadDraft();
+      return false;
+    }
+    if (choice === 'overwrite') {
+      const res = await fetch(VE_API + '/draft', { headers: CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {} });
+      if (!res.ok) { toast('최신 상태를 확인하지 못했습니다. 잠시 후 다시 시도하세요.', 'error'); return false; }
+      currentRevision = (await res.json()).revision || 0;
+      return saveContent(opts);
+    }
+    return false;
+  }
+
+  async function handleProposalFailure(errData, silent, opts) {
+    const details = Array.isArray(errData.details) && errData.details.length ? ' (' + errData.details.join(', ') + ')' : '';
+    const reason = (errData.message || '제안을 처리하지 못했습니다.') + details;
+    emit('ve:proposal-failed', { proposalId: pendingAppliedProposalId, code: errData.code, message: errData.message, details: errData.details || [] });
+    setSaveStatus('⚠️ AI 제안을 적용 처리하지 못했습니다: ' + reason + ' 편집 내용은 그대로 있습니다. [저장]을 눌러 선택하세요.', 'error');
+    if (silent) return false;
+    if (confirm('AI 제안과 저장하려는 내용이 일치하지 않거나 제안을 처리할 수 없습니다.\n(' + reason + ')\n\n제안 없이 지금 내용을 저장할까요?\n(제안은 처리되지 않은 채 남습니다)')) {
+      resetProposalState();
+      return saveContent(opts);
+    }
+    return false;
+  }
+
+  // 제안(changes[])을 component 단위로 적용한다. 전부 찾을 수 있을 때만 적용(전부 또는 전무).
+  // 저장은 하지 않는다 — 적용 후 첫 저장(자동저장·수동저장)이 appliedProposalId를 실어 보낸다.
+  async function applyProposal(proposal) {
+    if (!ready || isSaving || importing) return { applied: false, reason: 'EDITOR_BUSY' };
+    const pid = Number(proposal && proposal.proposalId);
+    if (!Number.isInteger(pid) || pid <= 0) return { applied: false, reason: 'INVALID_PROPOSAL' };
+    const changes = proposal.changes;
+    if (!Array.isArray(changes) || changes.length === 0) return { applied: false, reason: 'NO_CHANGES' };
+    if (pendingAppliedProposalId && pendingAppliedProposalId !== pid) return { applied: false, reason: 'ANOTHER_PROPOSAL_PENDING' };
+    const plan = [];
+    const failed = [];
+    for (const c of changes) {
+      const id = c && c.componentId;
+      if (typeof id !== 'string' || !/^[A-Za-z][\w-]*$/.test(id) || !['text', 'image', 'style'].includes(c.type)) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      const found = editor.getWrapper().find('#' + id);
+      if (found.length !== 1) { failed.push({ componentId: id, reason: found.length === 0 ? 'TARGET_NOT_FOUND' : 'TARGET_AMBIGUOUS' }); continue; }
+      if (c.type === 'style' && (!c.styles || typeof c.styles !== 'object')) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      if (c.type !== 'style' && typeof c.after !== 'string') { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      plan.push({ c, cmp: found[0] });
+    }
+    if (failed.length) return { applied: false, reason: 'TARGET_NOT_FOUND', failed };
+    const snapshot = JSON.parse(JSON.stringify(editor.getProjectData()));
+    plan.forEach(({ c, cmp }) => {
+      if (c.type === 'text') cmp.components([{ type: 'textnode', content: c.after }]);
+      else if (c.type === 'image') { cmp.addAttributes({ src: c.after }); cmp.set('src', c.after); }
+      else editor.Css.setIdRule(c.componentId, c.styles, c.mediaText ? { mediaText: c.mediaText } : {});
+    });
+    if (!pendingAppliedProposalId) preApplySnapshot = snapshot;   // 이미 적용 중인 같은 제안이면 최초 스냅샷 유지
+    pendingAppliedProposalId = pid;
+    updateUndoProposalBtn();
+    recomputeDirty();
+    return { applied: true, proposalId: pid };
+  }
+
+  // 적용 직전 상태로 한 번에 되돌린다(저장 전에만 가능).
+  function undoProposal() {
+    if (!preApplySnapshot) return false;
+    editor.loadProjectData(preApplySnapshot);
+    resetProposalState();
+    recomputeDirty();
+    return true;
+  }
+  $('undoProposalBtn').addEventListener('click', () => { if (undoProposal()) toast('AI 제안 적용을 되돌렸습니다.'); });
+
   // ===== 저장 (revision 낙관적 잠금) =====
   async function saveContent(opts) {
     const silent = !!(opts && opts.silent);
@@ -531,28 +706,31 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
       const res = await fetch(VE_API + '/draft', {
         method: 'PUT',
         headers,
-        body: JSON.stringify({ html, css, projectData, revision: currentRevision }),
+        body: JSON.stringify(pendingAppliedProposalId ? { html, css, projectData, revision: currentRevision, appliedProposalId: pendingAppliedProposalId } : { html, css, projectData, revision: currentRevision }),
       });
-
-      // 409: 동시 수정 충돌
-      if (res.status === 409) {
-        const errData = await res.json().catch(() => ({}));
-        setSaveStatus('⚠️ ' + (errData.message || '다른 세션에서 수정되었습니다. 새로고침 후 다시 시도하세요.'), 'error');
-        isSaving = false;
-        if (!silent && confirm('다른 세션에서 수정되었습니다. 최신 초안을 불러오시겠습니까?\n(현재 수정 내용은 사라집니다)')) {
-          await loadDraft();
-        }
-        return false;
-      }
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
+        const code = errData.code || '';
+        // 409 중 제안 상태 충돌(PROPOSAL_NOT_PENDING)만 제안 실패이고, 나머지 409는 revision 충돌이다.
+        if (res.status === 409 && code !== 'PROPOSAL_NOT_PENDING') {
+          isSaving = false;
+          return handleRevisionConflict(errData, silent, opts);
+        }
+        if (PROPOSAL_CODES.includes(code)) {
+          isSaving = false;
+          return handleProposalFailure(errData, silent, opts);
+        }
         throw new Error(errData.message || `저장 실패 (${res.status})`);
       }
 
       const data = await res.json();
       currentRevision = data.revision;
       savedSig = mySig;               // 저장을 시작한 시점의 내용이 저장본이다(저장 중 편집은 계속 변경으로 남는다)
+      clearBackup();                  // 저장됐으므로 충돌 대비 백업은 더 필요 없다
+      const appliedProposal = data.appliedProposal || null;
+      if (appliedProposal && appliedProposal.status === 'APPLIED') resetProposalState();
+      emit('ve:saved', { revision: data.revision, appliedProposal });
 
       if (pendingSave) {
         isSaving = false;
@@ -638,6 +816,7 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
   // ===== 초안 불러오기 =====
   async function loadDraft() {
     ready = false;
+    resetProposalState();
     try {
       const headers = {};
       if (CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
@@ -700,6 +879,7 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     try {
       const result = await IMPORTER.snapshot({ slug: ACADEMY_SLUG, onProgress: (m) => toast(m) });
       if (!result.html.trim()) { toast('불러올 홈페이지 내용이 없습니다.', 'warn'); return; }
+      resetProposalState();   // 내용이 통째로 바뀌므로 진행 중이던 제안 적용 표시는 해제
       editor.setComponents(result.html);
       editor.setStyle('');
       // CSS 문자열 대신 규칙 API로 적용한다(축약형 유지 → 저장 한도 64KB 보호). 모바일은 768px 미디어 규칙.
@@ -863,11 +1043,12 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
 
   // 전역 노출 (디버깅/E2E)
   window.editor = editor;
-  window.__ve = { state: () => ({ hasChanges, currentRevision, ready, isSaving }), refreshStatus };
+  window.__ve = { state: () => ({ hasChanges, currentRevision, ready, isSaving, pendingAppliedProposalId }), refreshStatus, applyProposal, undoProposal };
 
   // 초기화: 초안 + 게시 상태를 불러온다
   (async function init() {
     await Promise.all([loadDraft(), refreshStatus()]);
+    updateRestoreBtn();
     console.log('BuildIt 시각 편집기 초기화 완료');
   })();
 })();
