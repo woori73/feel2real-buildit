@@ -27,7 +27,7 @@ TUTOR가 BuildIt에 로그인해 **AI와 대화로 홈페이지를 처음 제작
 | 제안 패널(미리보기·승인·거절·AI 수정 요청·토큰) 모바일 390px | **구현·검증 완료** | `e2e-agent-flow.js` 35/35 |
 | **AI 최초 생성 → 편집기 초안** (A안) | **구현·검증 완료**(클로드) | `e2e-ai-create.js` PC 16/16 · 모바일 17/17 |
 | 섹션 빌더(builderDraft) ↔ 시각 편집기 | 최초 import만 연결, 별도 동기화 없음 | 의도적 분리(공개는 `renderMode`+게시본 테이블) |
-| PR #601 CI·병합·배포 | CI 진행 중. 병합·배포는 CI 통과 후 | 아래 게이트 |
+| PR #601 CI·병합·배포 | **CI 통과(build·mysql-integration-test) → 병합(`65634006`)**. 자동 배포는 `main` Build Check 성공 후 | 아래 게이트 |
 
 **AI 최초 생성 구현 방식(A안, 확정):** 기존 `AcademyAiCreateService`(`POST /api/tutor/academy/ai/chat/create`)가 돌려주는 프리셋·문구를 편집기가 받아 고정 id가 있는 첫 홈페이지(히어로·소개·특징 3카드)로 조립한다. 승인 전에는 숨은 편집기 미리보기만 보이고 서버 초안·섹션 빌더(builderDraft)·공개 응답은 바뀌지 않는다. 승인하면 편집기 내용으로 삼아 저장한다(저장 전에는 Ctrl+Z). 이후 수정은 기존 Proposal 흐름(AI 수정 요청·Agent 제안)이며 고정 id 덕에 요소를 정확히 가리킨다.
 
@@ -102,3 +102,4 @@ AI 최초 생성 → 시각 편집 → 수정(AI 제안) → 승인 → 저장 �
 | 10/12 | 클로드 | AI 최초 생성 → 편집기 초안(A안) 구현 | `e2e-ai-create.js` PC 16/16·모바일 17/17, 기존 E2E 회귀 재실행 | 커밋·푸시, 뮤즈에 생성 품질·Flyway 확인 요청 |
 | 10/12 | 클로드 | PR #602 검토·반영 | 규칙 기반 수정 파서 반영(`RuleBasedEditParser`, 단위 9 + MySQL 흐름 1), #602 병합 보류 사유 코멘트 | 뮤즈: #602 정리·후속 PR |
 | 10/12 | 클로드 | Flyway 게이트 확인 | Actions 배포 이력: main(`e4bec313`)만 배포, P1/prototype 브랜치 배포 0건 → V1053~1058 신규 적용 예상 | CI 통과 후 병합→자동 배포→진단 워크플로로 기동 확인 |
+| 10/12 | 클로드 | PR #601 CI 통과·병합 | head `5e09d002` CI 2개 success → merge commit `65634006`(main). `main` Build Check run #1233 진행 → 성공 시 `Deploy to EC2` 자동 | 배포 후 진단(health-check·journal-errors), 운영 TUTOR 화면 확인은 운영 계정 보유자 |
