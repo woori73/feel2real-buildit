@@ -27,6 +27,8 @@ on:
 
 permissions:
   contents: read
+  # pre-check job에서 동일 SHA의 이전 실행 조회를 위해 필요
+  actions: read
 
 # PR/브랜치별로 그룹화하여 동일 PR의 중복 빌드는 취소하되,
 # 서로 다른 PR의 빌드는 서로 취소하지 않음
