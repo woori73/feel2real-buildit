@@ -56,6 +56,47 @@
       colors: { primary: '#0f172a', secondary: '#06b6d4', accent: '#22d3ee', bg: '#ffffff', bgAlt: '#f1f5f9', text: '#0f172a', textLight: '#64748b', border: '#e2e8f0', heroBg: '#0f172a', heroText: '#ffffff' },
       // 강의(digitaltwin)·미니특강 중심
       sections: { 'sec-digitaltwin': true, 'sec-minilectures': true }
+    },
+    // 신규 5종 (2026-10-12): 레이아웃·섹션 구성이 실질적으로 다른 템플릿
+    EXAM_INTENSIVE: {
+      label: '입시집중형', description: '재수·특목고 등 집중 과정을 위한 D-Day 카운터형',
+      typography: 'ACADEMIC', heroLayout: 'countdown', cardStyle: 'bordered',
+      colors: { primary: '#7c2d12', secondary: '#ea580c', accent: '#f59e0b', bg: '#fffbeb', bgAlt: '#fef3c7', text: '#431407', textLight: '#92400e', border: '#fde68a', heroBg: '#7c2d12', heroText: '#ffffff' },
+      // D-Day 카운터·합격대학 로고 그리드·집중 프로그램 탭 중심
+      // heroLayout 'countdown': 히어로에 D-Day 카운터 표시
+      sections: { 'sec-featured': true, 'sec-counter': true, 'sec-logos': true, 'sec-programs': true }
+    },
+    LANGUAGE_KIDS: {
+      label: '어린이어학원형', description: '유아·초등 학부모를 위한 파스텔 카드형',
+      typography: 'FRIENDLY', heroLayout: 'illustrated', cardStyle: 'rounded',
+      colors: { primary: '#0d9488', secondary: '#f472b6', accent: '#fbbf24', bg: '#fff7ed', bgAlt: '#ffedd5', text: '#431407', textLight: '#9a3412', border: '#fed7aa', heroBg: '#0d9488', heroText: '#ffffff' },
+      // 연령별 프로그램 카드·학부모 후기·셔틀버스 노선 중심
+      // heroLayout 'illustrated': 캐릭터 일러스트 영역 포함
+      sections: { 'sec-age-groups': true, 'sec-reviews': true, 'sec-shuttle': true, 'sec-lessons': true }
+    },
+    ARTS_PORTFOLIO: {
+      label: '포트폴리오형', description: '학생 작품 전시 중심의 풀스크린 갤러리형',
+      typography: 'MODERN', heroLayout: 'fullscreen-slider', cardStyle: 'media',
+      colors: { primary: '#18181b', secondary: '#e879f9', accent: '#f0abfc', bg: '#09090b', bgAlt: '#18181b', text: '#fafafa', textLight: '#a1a1aa', border: '#27272a', heroBg: '#09090b', heroText: '#ffffff' },
+      // 풀스크린 작품 슬라이더·메이슨리 갤러리·강사진(약력+작품) 중심
+      // heroLayout 'fullscreen-slider': 히어로 전체를 작품 슬라이더로 사용
+      sections: { 'sec-gallery': true, 'sec-featured': true, 'sec-teachers': true }
+    },
+    STUDY_CAFE: {
+      label: '스터디카페형', description: '공간·시설 중심의 파노라마 요금표형',
+      typography: 'CLEAN', heroLayout: 'panorama', cardStyle: 'bordered',
+      colors: { primary: '#365314', secondary: '#65a30d', accent: '#a3e635', bg: '#f7fee7', bgAlt: '#ecfccb', text: '#1a2e05', textLight: '#4d7c0f', border: '#d9f99d', heroBg: '#365314', heroText: '#ffffff' },
+      // 시설 파노라마·좌석 타입 요금표·이용시간/지도 중심
+      // heroLayout 'panorama': 와이드 파노라마 이미지 히어로
+      sections: { 'sec-pricing': true, 'sec-gallery': true, 'sec-hours': true, 'sec-location': true }
+    },
+    ONLINE_LIVE: {
+      label: '라이브강의형', description: '실시간 수업 중심의 스케줄 카운트다운형',
+      typography: 'MODERN', heroLayout: 'live-countdown', cardStyle: 'minimal',
+      colors: { primary: '#6d28d9', secondary: '#ec4899', accent: '#f472b6', bg: '#faf5ff', bgAlt: '#f3e8ff', text: '#3b0764', textLight: '#7e22ce', border: '#e9d5ff', heroBg: '#4c1d95', heroText: '#ffffff' },
+      // 다음 라이브 카운트다운·주간 스케줄·별점 후기 중심
+      // heroLayout 'live-countdown': 다음 라이브까지 카운트다운 표시
+      sections: { 'sec-schedule': true, 'sec-countdown': true, 'sec-reviews': true, 'sec-teachers': true }
     }
   });
 
