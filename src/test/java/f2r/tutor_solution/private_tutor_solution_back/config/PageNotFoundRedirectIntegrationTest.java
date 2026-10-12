@@ -34,7 +34,7 @@ import org.springframework.test.context.TestPropertySource;
     "app.jwt.cookie-name=ACCESS_TOKEN",
     "app.jwt.secure-cookie=false"
 })
-@DisplayName("404 missing-route redirect integration test")
+@DisplayName("404 missing-route handling test")
 class PageNotFoundRedirectIntegrationTest {
 
   private final HttpClient httpClient = HttpClient.newBuilder()
@@ -48,23 +48,19 @@ class PageNotFoundRedirectIntegrationTest {
   JwtTokenProvider tokenProvider;
 
   @Test
-  @DisplayName("GET missing page route goes through MVC error handling and redirects to /home")
-  void get_missing_page_route_redirects_to_home() throws Exception {
+  @DisplayName("GET missing page route returns 404 (not redirect to /home)")
+  void get_missing_page_route_returns_404() throws Exception {
     HttpResponse<Void> response = request("GET", "/some-missing-page");
 
-    assertThat(response.statusCode()).isEqualTo(HttpStatus.FOUND.value());
-    assertThat(response.headers().firstValue("Location").map(URI::create).map(URI::getPath))
-        .contains("/home");
+    assertThat(response.statusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
   }
 
   @Test
-  @DisplayName("HEAD missing page route goes through MVC error handling and redirects to /home")
-  void head_missing_page_route_redirects_to_home() throws Exception {
+  @DisplayName("HEAD missing page route returns 404 (not redirect to /home)")
+  void head_missing_page_route_returns_404() throws Exception {
     HttpResponse<Void> response = request("HEAD", "/some-missing-page");
 
-    assertThat(response.statusCode()).isEqualTo(HttpStatus.FOUND.value());
-    assertThat(response.headers().firstValue("Location").map(URI::create).map(URI::getPath))
-        .contains("/home");
+    assertThat(response.statusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
   }
 
   @Test
