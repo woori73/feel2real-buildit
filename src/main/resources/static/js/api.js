@@ -1,8 +1,11 @@
 /**
  * 공통 API fetch 헬퍼.
  *
- * - 보호 API 호출에서 401이 떨어지면 sessionStorage를 비우고 /home으로 redirect한다.
+ * - 보호 API 호출에서 401이 떨어지면 현재 URL을 보존하고 로그인 안내로 이동한다.
  *   (JWT 쿠키가 만료/위변조됐거나 로그아웃된 상태)
+ * - 2026-10-12 변경: 무조건 /home으로 보내지 않고, 원래 페이지로 복귀할 수 있도록
+ *   현재 URL을 sessionStorage에 저장한다. sessionStorage 전체를 비우지 않고
+ *   인증 정보(currentUser)만 정리한다.
  * - 응답 그대로 반환하므로 호출 측에서 res.ok / res.json() 등을 그대로 쓸 수 있다.
  *
  * 사용 예:
@@ -83,12 +86,24 @@
     const res = await fetch(archiveAwareUrl(url), requestOpts);
     if (res.status === 401) {
       if (!redirectOnAuthError) return res;
-      // 인증 만료/위변조 — 로그인부터 다시
-      try { sessionStorage.clear(); } catch (_) {}
+      // 인증 만료/위변조 — 현재 URL을 보존하고 로그인 안내로 이동
+      // 2026-10-12 변경: 무조건 /home으로 보내지 않음. 원래 페이지로 복귀 가능하도록 URL 저장.
+      try {
+        // 인증 정보만 정리 (전체 sessionStorage를 비우지 않음)
+        sessionStorage.removeItem('currentUser');
+        // 현재 페이지 URL 저장 (로그인 후 복귀용)
+        const currentUrl = location.pathname + location.search + location.hash;
+        if (currentUrl !== '/home' && currentUrl !== '/' && !currentUrl.startsWith('/?login=')) {
+          sessionStorage.setItem('postLoginReturnUrl', currentUrl);
+        }
+      } catch (_) {}
+      // 로그인 모달을 띄우기 위해 /?login=required&returnUrl=... 로 이동
+      // (landing_buildit.js가 처리. 이미 로그인 페이지에 있으면 중복 이동 방지)
       if (location.pathname !== '/home' && location.pathname !== '/') {
-        location.href = '/home';
+        const returnUrl = encodeURIComponent(location.pathname + location.search);
+        location.href = '/?login=required&returnUrl=' + returnUrl;
       }
-      throw new Error('Unauthorized — redirected to /home');
+      throw new Error('Unauthorized — login required, return URL preserved');
     }
     if (res.status === 403) {
       if (!redirectOnAuthError) return res;
