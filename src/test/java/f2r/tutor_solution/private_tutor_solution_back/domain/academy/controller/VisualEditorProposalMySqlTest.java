@@ -78,6 +78,7 @@ class VisualEditorProposalMySqlTest {
   @TestConfiguration
   static class FakePortConfig {
     @Bean
+    @org.springframework.context.annotation.Primary
     VisualEditorProposalPort fakeProposalPort(JdbcTemplate jdbc) {
       return (academyId, userId, proposalId, savedRevision, projectData) -> {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {

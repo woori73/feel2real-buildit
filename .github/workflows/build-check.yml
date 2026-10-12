@@ -198,6 +198,11 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalApiTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorProposalSaveTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalVerifierTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalChangeValidatorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.AgentTokenServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalAiServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalRepositoryAccessTest"
           # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandServiceTest"
@@ -321,6 +326,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.VisualEditorProposalFlowMySqlTest"
 
       - name: Upload MySQL test report
         if: always()

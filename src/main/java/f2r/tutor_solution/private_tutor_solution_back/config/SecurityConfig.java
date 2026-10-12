@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.VisualEditorAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.NewstartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.EasyCollectorAgentTokenFilter;
@@ -98,7 +99,11 @@ public class SecurityConfig {
       // 다른 서비스들과 동일하게 ObjectProvider로 지연 조회한다(@WebMvcTest 슬라이스 호환).
       org.springframework.beans.factory.ObjectProvider<
               f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLocalCollectorService>
-          easyLocalCollectorServiceProvider) throws Exception {
+          easyLocalCollectorServiceProvider,
+      // 시각 편집기 AI Agent 전용 Bearer 토큰 필터 의존성(JPA 레포 의존 → ObjectProvider 지연 조회, @WebMvcTest 호환).
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.AgentTokenService>
+          veAgentTokenServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -121,6 +126,9 @@ public class SecurityConfig {
     // (SHA-256 해시만 DB 저장)이라, ChartAgentTokenFilter와 달리 요청마다 DB 조회로 검증한다.
     EasyCollectorAgentTokenFilter easyCollectorAgentTokenFilter =
         new EasyCollectorAgentTokenFilter(easyLocalCollectorServiceProvider);
+    // 시각 편집기 AI Agent 전용 Bearer 토큰 필터. 학원 1개에 바인딩된 토큰(SHA-256 해시만 DB 저장), 좁은 allowlist.
+    VisualEditorAgentTokenFilter veAgentTokenFilter =
+        new VisualEditorAgentTokenFilter(veAgentTokenServiceProvider);
     ArchivedRouteAccessFilter archivedRouteAccessFilter =
         new ArchivedRouteAccessFilter(archivedRoutesProperties);
     OriginWhitelistFilter originWhitelistFilter =
@@ -450,6 +458,9 @@ public class SecurityConfig {
             // never gains reach into NewStart/EASY/other global admin APIs through that catch-all.
             .requestMatchers("/api/admin/choonggi/**").hasAnyRole("ADMIN", "CREATOR")
 
+            // 시각 편집기 AI Agent: 토큰으로만 접근. 사용자 쿠키(TUTOR/ADMIN 포함)로는 이 경로를 쓸 수 없다.
+            .requestMatchers("/api/agent/academy/visual-editor/**").hasRole("VE_AGENT")
+
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
@@ -476,6 +487,7 @@ public class SecurityConfig {
         .addFilterAfter(chartAgentTokenFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(newstartAgentTokenFilter, ChartAgentTokenFilter.class)
         .addFilterAfter(easyCollectorAgentTokenFilter, NewstartAgentTokenFilter.class)
+        .addFilterAfter(veAgentTokenFilter, EasyCollectorAgentTokenFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
