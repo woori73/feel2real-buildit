@@ -194,7 +194,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardNormalizerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardImportServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerTest"
-          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerRealOutputTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorRealOutputTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest"
           # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
@@ -218,7 +218,7 @@ jobs:
         # 셸 주석(#)으로 --tests 필터가 잘리는 사고 방지: XML 리포트 존재를 강제한다.
         run: |
           test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerTest.xml
-          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorSanitizerRealOutputTest.xml
+          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.VisualEditorRealOutputTest.xml
           test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest.xml
           echo "editor tests executed: OK"
 

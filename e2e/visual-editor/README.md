@@ -2,7 +2,7 @@
 
 GrapesJS 0.23.6 기반 시각 편집기(`/tutor/academy/editor`)를 Chromium으로 실제 조작해 검증한다.
 CI(Gradle)는 브라우저가 없어 이 E2E를 돌리지 않는다. 대신 CI는 **실제 GrapesJS 출력 fixture**로 서버 정제기·저장 API를 검증한다
-(`VisualEditorSanitizerRealOutputTest`, `VisualEditorMySqlIntegrationTest`). 편집기 화면을 바꾼 PR은 이 E2E를 로컬에서 실행한다.
+(`VisualEditorRealOutputTest`, `VisualEditorMySqlIntegrationTest`). 편집기 화면을 바꾼 PR은 이 E2E를 로컬에서 실행한다.
 
 ## 준비
 ```bash

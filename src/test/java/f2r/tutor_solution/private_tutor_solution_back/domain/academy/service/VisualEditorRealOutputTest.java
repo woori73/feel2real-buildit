@@ -24,14 +24,14 @@ import org.junit.jupiter.api.Test;
  * <p>Spring 컨테이너 없이 실행되므로 CI build 잡에서 MySQL 없이 검증한다.
  */
 @DisplayName("VisualEditorSanitizer — 실제 GrapesJS 출력 회귀 테스트")
-class VisualEditorSanitizerRealOutputTest {
+class VisualEditorRealOutputTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static JsonNode fixture;
 
   @BeforeAll
   static void loadFixture() throws IOException {
-    try (InputStream in = VisualEditorSanitizerRealOutputTest.class
+    try (InputStream in = VisualEditorRealOutputTest.class
         .getResourceAsStream("/visual-editor/grapesjs-project.json")) {
       assertThat(in).as("fixture 파일").isNotNull();
       fixture = MAPPER.readTree(in);
