@@ -26,4 +26,8 @@ public interface NewStartThanksRosterRepository extends JpaRepository<NewStartTh
 
   /** 신규 사전등록 identity 중복 확인(roster 503명과 겹치면 별도 identity 를 만들지 않는다). */
   boolean existsByCafeMemberTag(String cafeMemberTag);
+
+  /** source별 명단 (운영자 화면용 — 수동 등록분 조회). */
+  List<NewStartThanksRoster> findBySourceOrderByRosterIdDesc(String source);
+
 }
