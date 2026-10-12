@@ -167,6 +167,8 @@
   /**
    * 내부 URL 검증 (open redirect 방지).
    * NaverOAuth2LoginSuccessHandler.isSafeInternalUrl과 동일한 규칙.
+   * 2026-10-12: /\evil.com 취약점 수정 — 백슬래시 차단 추가
+   * (브라우저가 /\를 //로 정규화하여 protocol-relative URL로 해석하는 것을 방지)
    */
   function isSafeInternalUrl(url) {
     if (!url || typeof url !== 'string') return false;
@@ -178,6 +180,10 @@
     if (url.startsWith('//')) return false;
     if (!url.startsWith('/')) return false;
     if (url.includes('..')) return false;
+    // 백슬래시 차단
+    if (url.includes('\\')) return false;
+    // 제어 문자 차단
+    if (/[\x00-\x1f\x7f]/.test(url)) return false;
     return true;
   }
 
