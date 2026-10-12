@@ -85,6 +85,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyEditorControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyDesignPresetTenTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantUnitTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyBuilderPageControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller.NewStartMembersOnlyGateTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.controller.NewStartUpdatesPageControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.controller.NewStartOfficialUpdateControllerTest"

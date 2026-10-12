@@ -33,6 +33,15 @@ class AcademyAssistantUnitTest {
   }
 
   @Test
+  @DisplayName("given 샘플, when 과목·대상을 보면, then 문구가 직접 말한 것만 채워져 있다")
+  void samplesFillSubjectOnlyWhenSeedSaysIt() {
+    var general = AcademyAssistantSamples.find("general").orElseThrow();
+    assertThat(general.subjectNameKo()).isNull();
+    assertThat(AcademyAssistantSamples.find("premium").orElseThrow().targets()).isNull();
+    assertThat(AcademyAssistantSamples.find("junior-english").orElseThrow().subjectNameKo()).isEqualTo("영어");
+  }
+
+  @Test
   @DisplayName("given 없는 키, when 샘플을 찾으면, then 비어 있다")
   void unknownSampleKeyIsEmpty() {
     assertThat(AcademyAssistantSamples.find("nope")).isEmpty();

@@ -45,17 +45,21 @@ public class AcademyAssistantApiController {
     body.put("hasAcademy", v.hasAcademy());
     body.put("status", v.status());
     body.put("messages", v.messages());
+    body.put("revision", v.revision());
+    body.put("dirty", v.dirty());
+    body.put("publicUrl", v.publicUrl());
     return noStore(HttpStatus.OK, body);
   }
 
-  /** 대화 한 턴. body: {message?, academyName?, sampleKey?, region?}. */
+  /** 대화 한 턴. body: {message?, academyName?, sampleKey?, region?, subject?, target?}. */
   @PostMapping("/turn")
   public ResponseEntity<Map<String, Object>> turn(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody TurnRequest request) {
     try {
       TurnResult r = service.turn(
-          principal, request.message(), request.academyName(), request.sampleKey(), request.region());
+          principal, request.message(), request.academyName(), request.sampleKey(), request.region(),
+          request.subject(), request.target());
       Map<String, Object> body = new HashMap<>();
       body.put("reply", r.reply());
       body.put("needs", r.needs());
@@ -94,7 +98,8 @@ public class AcademyAssistantApiController {
     return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(typed);
   }
 
-  record TurnRequest(String message, String academyName, String sampleKey, String region) {}
+  record TurnRequest(
+      String message, String academyName, String sampleKey, String region, String subject, String target) {}
 
   record PublishRequest(Long revision, Boolean force) {}
 }

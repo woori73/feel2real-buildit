@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="robots" content="noindex"/>
+  <title>AI 홈페이지 만들기 — BuildIt</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261012-3"/>
+</head>
+<body>
+<div class="ah-app" id="ahApp">
+  <header class="ah-top">
+    <strong class="ah-brand">BuildIt</strong>
+    <a class="ah-classic" href="/builder?classic=1" id="ahClassic">기존 빌더로 돌아가기</a>
+  </header>
+
+  <!-- 시작 화면 -->
+  <main class="ah-start" id="ahStart">
+    <h1>어떤 학원 홈페이지를 만들까요?</h1>
+    <p class="ah-sub">학원 이름만 알려 주세요. 나머지는 대화하면서 채워요.</p>
+    <form class="ah-card" id="ahStartForm" autocomplete="off">
+      <label class="ah-label" for="ahName">학원 이름</label>
+      <input class="ah-input" id="ahName" maxlength="100" placeholder="예: 새봄영어학원" required/>
+      <label class="ah-label" for="ahDesc">어떤 학원인지 알려 주세요 (선택)</label>
+      <textarea class="ah-input" id="ahDesc" rows="3" maxlength="1000"
+                placeholder="예: 중학생 영어 내신을 소수정예로 지도해요"></textarea>
+      <div class="ah-chosen" id="ahChosen" hidden>
+        <span>선택한 샘플: <b id="ahChosenName"></b></span>
+        <button type="button" id="ahChosenClear" class="ah-link">해제</button>
+      </div>
+      <button class="ah-primary" type="submit" id="ahStartBtn">홈페이지 만들기</button>
+    </form>
+    <h2 class="ah-h2">샘플로 시작하기</h2>
+    <div class="ah-samples" id="ahSamples" aria-label="디자인 샘플"></div>
+  </main>
+
+  <!-- 대화 -->
+  <section class="ah-chat" id="ahChat" hidden>
+    <div class="ah-messages" id="ahMessages" role="log" aria-live="polite"></div>
+    <form class="ah-composer" id="ahComposer" autocomplete="off">
+      <input class="ah-input" id="ahInput" maxlength="1000" placeholder="메시지를 입력하세요"/>
+      <button class="ah-send" type="submit" id="ahSend" aria-label="보내기">보내기</button>
+    </form>
+  </section>
+
+  <!-- 전체 화면 미리보기 -->
+  <div class="ah-full" id="ahFull" hidden role="dialog" aria-modal="true" aria-label="전체 화면 미리보기">
+    <div class="ah-fulltop">
+      <button class="ah-ghost" type="button" id="ahBack">← 대화로 돌아가기</button>
+      <div class="ah-seg" role="group" aria-label="화면 크기">
+        <button type="button" id="ahDevMobile" class="on" aria-pressed="true">모바일</button>
+        <button type="button" id="ahDevDesktop" aria-pressed="false">PC</button>
+      </div>
+      <button class="ah-primary ah-small" type="button" id="ahFullPublish">게시하기</button>
+    </div>
+    <div class="ah-stage" id="ahStage"><iframe id="ahFrame" title="홈페이지 미리보기" class="mobile"></iframe></div>
+    <div class="ah-toast" id="ahToast" role="status" hidden></div>
+  </div>
+</div>
+<script src="/js/assistant_home.js?v=20261012-1"></script>
+</body>
+</html>
