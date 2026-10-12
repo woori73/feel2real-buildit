@@ -133,6 +133,61 @@
     return res.json();
   }
 
+  /**
+   * 2026-10-12: 네이버 OAuth 로그인 시작 시 복귀 URL 쿠키 설정.
+   * NaverOAuth2LoginSuccessHandler가 이 쿠키를 읽어 로그인 후 원래 페이지로 복귀한다.
+   * 내부 URL만 저장 (open redirect 방지). 쿠키는 OAuth 완료 후 서버에서 삭제된다.
+   */
+  function setupOAuthReturnUrl() {
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href="/oauth2/authorization/naver"]');
+      if (!link) return;
+      // 저장된 복귀 URL 우선, 없으면 현재 페이지
+      let returnUrl = null;
+      try {
+        returnUrl = sessionStorage.getItem('postLoginReturnUrl')
+          || sessionStorage.getItem('wikiPostLoginReturnUrl');
+      } catch (_) {}
+      if (!returnUrl) {
+        const current = location.pathname + location.search;
+        // 홈·로그인 페이지 자체에서는 복귀 URL 불필요
+        if (current !== '/' && current !== '/home' && !current.startsWith('/?login=')) {
+          returnUrl = current;
+        }
+      }
+      if (returnUrl && isSafeInternalUrl(returnUrl)) {
+        // 5분 유효, Path=/, SameSite=Lax (OAuth 리다이렉트와 호환)
+        const secure = location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = 'oauth_return_url=' + encodeURIComponent(returnUrl)
+          + '; Path=/; Max-Age=300; SameSite=Lax' + secure;
+      }
+    }, true);
+  }
+
+  /**
+   * 내부 URL 검증 (open redirect 방지).
+   * NaverOAuth2LoginSuccessHandler.isSafeInternalUrl과 동일한 규칙.
+   */
+  function isSafeInternalUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    const lower = url.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')
+        || lower.startsWith('javascript:') || lower.startsWith('data:')) {
+      return false;
+    }
+    if (url.startsWith('//')) return false;
+    if (!url.startsWith('/')) return false;
+    if (url.includes('..')) return false;
+    return true;
+  }
+
+  // DOM 준비 후 OAuth 복귀 URL 설정 활성화
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupOAuthReturnUrl);
+  } else {
+    setupOAuthReturnUrl();
+  }
+
   window.archiveAwareUrl = archiveAwareUrl;
   window.userDisplayName = userDisplayName;
   window.dashboardPathForRole = dashboardPathForRole;
@@ -141,4 +196,7 @@
   window.fetchAuth = fetchAuth;
   window.fetchJsonAuth = fetchJsonAuth;
   window.isAuthRedirecting = () => authRedirecting;
+  // 내부 URL 검증 (open redirect 방지) — 다른 스크립트에서 재사용
+  // 검증 실패 시 null 반환 (호출 측에서 fallback 처리)
+  window.safeInternalReturnUrl = (url) => isSafeInternalUrl(url) ? url : null;
 })();
