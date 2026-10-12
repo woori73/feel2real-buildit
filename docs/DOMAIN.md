@@ -1670,6 +1670,14 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 **최초 게시 규칙**: 코드에 DRAFT→PUBLISHED 전환 경로가 따로 없었다(`createDraft`는 "공개는 별도 발행"이라고만 명시). 이제 `POST /api/tutor/academy/assistant/publish`가 작업본 게시와 `Academy.publishIfDraft()`를 한 트랜잭션으로 처리한다. `visible` 스위치는 건드리지 않는다.
 
+### academy_admin_working_copy / academy_admin_audit ✅ 관리자 홈페이지 관리 (V1062)
+
+**academy_admin_working_copy**: 관리자가 대상 학원에 쓰는 비공개 작업본. 구조는 `academy_working_copy`와 같다(`academy_id` UNIQUE FK ON DELETE CASCADE, `revision`@Version, `intro`, `page_settings_json`, `base_fingerprint`, `created_by`/`updated_by`). 회원 작업본과 **별개 테이블**이라 관리자의 미게시 수정이 회원 화면·회원의 게시에 섞이지 않는다.
+
+**academy_admin_audit**: 관리자 작업 감사 기록(추가 전용). `audit_id` PK, `actor_user_id`/`actor_login_id`, `academy_id`(FK 없음 — 학원이 삭제돼도 기록 보존), `owner_user_id`, `action`(ACCESS/SAVE/PUBLISH/RESTORE/DISCARD), `working_copy_revision`, `published`, `summary`, `details_json`(변경 항목 전/후, 값 길이 제한; URL·사업자 정보 같은 설정은 필드 이름만), `created_at`. 인덱스 `(academy_id, audit_id)`, `(actor_user_id, audit_id)`. 회원 API로 노출하지 않는다.
+
+불변식: 관리자 수정·미리보기·복원·되돌리기는 공개 테이블(`academies`)을 쓰지 않는다. 공개본은 `POST /api/admin/academies/{id}/builder/publish`에서만 바뀌며, 그때 직전 공개 내용이 `academy_page_versions`에 보관된다. 감사 기록과 변경은 한 트랜잭션이다.
+
 ### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)
 
 > 시각 편집기(`academy_visual_editor_draft`/`_published`)와 같은 격리 원칙: 기존 테이블 변경 없음, `academies` FK(CASCADE)뿐. 제안은 승인 전까지 초안·게시본·`page_settings`에 어떤 영향도 주지 않는다.

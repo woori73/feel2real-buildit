@@ -131,6 +131,13 @@ public class AuthenticatedUserResolver {
     }
   }
 
+  /** ADMIN만 통과. 관리자의 타인 홈페이지 관리 경로가 서비스 계층에서 한 번 더 확인한다(필터 체인과 이중 방어). */
+  public void requireAdmin(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!isAdmin(principal)) {
+      throw new AccessDeniedException("관리자 권한이 필요합니다.");
+    }
+  }
+
   /**
    * 홈페이지 빌더 계열(생성·수정·AI 채팅·작업본·게시) 전용 역할 검사: TUTOR 또는 ADMIN.
    *
