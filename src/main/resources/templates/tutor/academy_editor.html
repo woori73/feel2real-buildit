@@ -222,7 +222,7 @@
     </div>
 
     <button class="btn-import" id="aiBtn" title="AI 수정 제안 보기·요청" aria-label="AI 제안">🤖 <span class="btn-label">AI 제안</span> <span id="aiBadge" class="ai-badge" hidden>0</span></button>
-    <button class="btn-import" id="importBtn" title="기존 홈페이지를 편집기로 불러오기" aria-label="불러오기">📥 <span class="btn-label">불러오기</span></button>
+    <button class="btn-import" id="importBtn" title="빌더에서 만든 홈페이지를 편집기로 불러오기" aria-label="불러오기">📥 <span class="btn-label">불러오기</span></button>
     <button class="btn-preview" id="previewBtn" title="미리보기" aria-label="미리보기">👁 <span class="btn-label">미리보기</span></button>
     <button class="btn-save" id="saveBtn" title="저장 (Ctrl+S)" aria-label="저장">💾 <span class="btn-label">저장</span></button>
     <button class="btn-publish" id="publishBtn" title="공개 홈페이지에 게시" aria-label="게시">🚀 <span class="btn-label">게시</span></button>
@@ -245,13 +245,13 @@
     <div class="ai-body">
       <p class="ai-note">AI 제안은 <b>승인하기 전에는 홈페이지에 반영되지 않습니다.</b> 미리보기로 확인한 뒤 승인하세요.</p>
       <details id="aiCreateBox" class="ai-create">
-        <summary>✨ AI로 처음 만들기</summary>
-        <p class="ai-note">학원 이름·과목·대상·강점 등을 자연어로 적으면 AI가 알맞은 디자인(프리셋)과 문구로 첫 홈페이지 초안을 만듭니다. 미리보기로 확인한 뒤 <b>승인해야만</b> 편집기에 들어오고 저장됩니다.</p>
+        <summary>고급: AI로 전체 다시 생성</summary>
+        <p class="ai-note">AI 홈페이지의 <b>처음 생성은 <a href="/builder">빌더</a></b>에서 합니다. 여기서는 지금 편집 중인 내용을 통째로 새 AI 초안으로 바꾸고 싶을 때만 쓰세요. 미리보기로 확인한 뒤 <b>승인해야만</b> 바뀌고, 게시 전에는 공개 홈페이지에 영향이 없습니다.</p>
         <textarea id="aiCreateMsg" rows="4" maxlength="1000" placeholder="예) 강남에서 중학생 영어 내신을 가르치는 소수정예 학원입니다. 원어민 수업과 1:1 첨삭이 강점이에요."></textarea>
-        <button type="button" id="aiCreateBtn" class="ai-btn primary">첫 홈페이지 초안 만들기</button>
+        <button type="button" id="aiCreateBtn" class="ai-btn primary">전체 다시 생성 초안 만들기</button>
         <div id="aiCreateWarn" class="ai-msg" role="status"></div>
       </details>
-      <label for="aiInstruction" class="ai-label">AI에게 수정 요청</label>
+      <label for="aiInstruction" class="ai-label">AI에게 현재 홈페이지 수정 요청</label>
       <textarea id="aiInstruction" rows="3" maxlength="500" placeholder="예) 메인 제목을 '영어는 우리 학원'으로 바꾸고 글자를 더 크게"></textarea>
       <button type="button" id="aiAsk" class="ai-btn primary">수정안 만들기</button>
       <div id="aiMsg" class="ai-msg" role="status"></div>
@@ -306,9 +306,9 @@
       <!-- 빈 상태 안내(오버레이): 홈페이지 내용이 아니므로 저장·게시에 포함되지 않는다 -->
       <div class="empty-state" id="emptyState">
         <h2>홈페이지가 비어 있습니다</h2>
-        <p>기존에 만든 홈페이지를 불러와 이어서 편집하거나, 왼쪽 블록·프리셋으로 새로 시작하세요.</p>
-        <button id="emptyImportBtn" type="button">📥 기존 홈페이지 불러오기</button>
-        <button id="emptyAiBtn" type="button" style="margin-left:8px">✨ AI로 처음 만들기</button>
+        <p>빌더에서 만든 홈페이지(문구·이미지·디자인·섹션)를 그대로 불러와 이어서 편집하세요. 불러오기만으로는 공개 홈페이지가 바뀌지 않고, 게시할 때만 반영됩니다. AI로 홈페이지를 처음 만들려면 <a href="/builder">빌더</a>에서 시작하세요.</p>
+        <button id="emptyImportBtn" type="button">📥 빌더에서 만든 홈페이지 불러오기</button>
+        <button id="emptyAiBtn" type="button" style="margin-left:8px" title="고급: 현재 편집 내용을 AI 초안으로 통째로 바꿉니다">고급: AI로 전체 다시 생성</button>
       </div>
     </div>
 

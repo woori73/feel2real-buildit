@@ -299,3 +299,7 @@ body.aichat-open .canvas-area { padding-right: calc(var(--aichat-width) + 24px);
   .aichat-version .aichat-btn { padding: 11px 12px; }
   .aichat-send { width: 44px; height: 44px; }
 }
+
+/* AI 생성 직후 시각 편집기 진입 강조(한 번만 표시) */
+#builderVisualEditorLink.is-next-step { box-shadow: 0 0 0 3px rgba(79,70,229,.35); animation: builditNextStep 1.6s ease-in-out 3; }
+@keyframes builditNextStep { 50% { box-shadow: 0 0 0 7px rgba(79,70,229,.15); } }

@@ -184,6 +184,20 @@
   let editableGuideActive = false;
 
   document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function () { window.setTimeout(showAfterAiCreateHint, 600); });
+
+  /** AI 생성 직후 한 번만: 다음 단계(디자인 → 편집 → 게시)와 시각 편집기 진입을 안내한다. */
+  function showAfterAiCreateHint() {
+    let flagged = false;
+    try {
+      flagged = sessionStorage.getItem('builditAfterAiCreate') === '1';
+      if (flagged) sessionStorage.removeItem('builditAfterAiCreate');
+    } catch (_) { /* 무시 */ }
+    if (!flagged) return;
+    toast('AI가 홈페이지 초안을 만들었습니다. 디자인을 고르고 내용을 다듬은 뒤 게시하세요. 더 자유롭게 고치려면 상단 「시각 편집기」로 이어서 편집할 수 있습니다.', 'fa-wand-magic-sparkles');
+    const link = document.getElementById('builderVisualEditorLink');
+    if (link) link.classList.add('is-next-step');
+  }
 
   async function init() {
     let request = readJson(PENDING_KEY);

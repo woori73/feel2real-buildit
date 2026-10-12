@@ -439,6 +439,7 @@
         toast((data && data.message) || '홈페이지가 생성되었습니다.', 'fa-circle-check');
         writeCreateSession(null);
         clearPendingPreview();
+        try { sessionStorage.setItem('builditAfterAiCreate', '1'); } catch (_) { /* 안내만 생략 */ }
         // DRAFT Academy 가 서버에 생겼으므로 Builder 를 다시 열어 SSR 모델로 편집한다.
         window.setTimeout(function () { window.location.href = BUILDER_URL; }, 900);
       })

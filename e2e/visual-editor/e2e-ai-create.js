@@ -35,9 +35,9 @@ const AG = BASE + '/api/agent/academy/visual-editor';
   const open = async () => { await page.goto(BASE + '/tutor/academy/editor'); await page.waitForFunction(() => window.editor && window.__ve && window.__ve.state().ready, null, { timeout: 30000 }); };
   const pubBefore = await pubApi();
 
-  section(`A. [${MODE}] 빈 편집기에서 "AI로 처음 만들기"`);
+  section(`A. [${MODE}] 빈 편집기에서 "고급: AI로 전체 다시 생성"`);
   await open();
-  check('빈 상태 안내에 "AI로 처음 만들기" 버튼이 보인다', await page.locator('#emptyAiBtn').isVisible());
+  check('빈 상태 안내에 "고급: AI로 전체 다시 생성" 버튼이 보인다', await page.locator('#emptyAiBtn').isVisible());
   await tap('#emptyAiBtn');
   await page.waitForSelector('#aiPanel:not([hidden]) #aiCreateBox[open]');
   await page.fill('#aiCreateMsg', '강남에서 중학생 영어 내신을 가르치는 소수정예 학원입니다. 원어민 수업과 1:1 첨삭이 강점이에요.');

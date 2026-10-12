@@ -31,13 +31,17 @@ public class AcademyEditorController {
    * @param principal 인증된 사용자
    * @param academyId ADMIN이 고객 홈페이지를 지정할 경우 (선택)
    * @param model 뷰 모델
-   * @return 편집기 템플릿
+   * @return 편집기 템플릿 (홈페이지가 없으면 빌더로 redirect)
    */
   @GetMapping("/editor")
   public String editor(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestParam(required = false) Long academyId,
       Model model) {
+    // 홈페이지가 없으면 편집기에서 할 수 있는 일이 없다 → AI 홈페이지 생성이 시작되는 빌더로 보낸다.
+    if (academyService.getMine(principal).isEmpty()) {
+      return "redirect:/builder";
+    }
     AcademyResponse academy = resolveAcademy(principal, academyId);
 
     model.addAttribute("academyId", academy.academyId());
