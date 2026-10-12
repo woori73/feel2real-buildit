@@ -1,0 +1,70 @@
+/* BuildIt 대화형 홈페이지 화면 — 모바일 우선. 공통 UI 킷 토큰(--ah-*)으로 색을 모은다. */
+:root{
+  --ah-bg:#f6f7fb;--ah-surface:#fff;--ah-text:#161a2b;--ah-muted:#5d6580;--ah-line:#e2e6f0;
+  --ah-brand:#0c238a;--ah-brand-ink:#fff;--ah-accent:#eef2ff;--ah-danger:#b3261e;--ah-radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);color:var(--ah-text);line-height:1.55;-webkit-text-size-adjust:100%}
+.ah-app{height:100dvh;overflow:hidden;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
+.ah-top{flex:none;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;position:sticky;top:0;background:var(--ah-bg);z-index:5}
+.ah-brand{font-size:18px;color:var(--ah-brand)}
+.ah-classic,.ah-link{font-size:12px;color:var(--ah-muted);background:none;border:0;text-decoration:underline;cursor:pointer}
+.ah-start{flex:1;overflow-y:auto;padding:8px 16px 40px}
+.ah-start h1{font-size:24px;font-weight:800;line-height:1.3;margin-top:8px}
+.ah-sub{color:var(--ah-muted);margin:6px 0 16px;font-size:14px}
+.ah-card{background:var(--ah-surface);border:1px solid var(--ah-line);border-radius:var(--ah-radius);padding:16px;display:flex;flex-direction:column;gap:8px}
+.ah-label{font-size:13px;font-weight:700;margin-top:4px}
+.ah-input{width:100%;font:inherit;font-size:16px;padding:12px 14px;border:1px solid var(--ah-line);border-radius:12px;background:#fff;color:inherit;resize:vertical}
+.ah-input:focus{outline:2px solid var(--ah-brand);outline-offset:1px}
+.ah-primary{font:inherit;font-weight:700;font-size:16px;background:var(--ah-brand);color:var(--ah-brand-ink);border:0;border-radius:12px;padding:14px 16px;min-height:48px;cursor:pointer}
+.ah-primary:disabled{opacity:.55;cursor:default}
+.ah-primary.ah-small{padding:8px 14px;min-height:40px;font-size:14px}
+.ah-ghost{font:inherit;font-size:14px;background:none;border:0;color:var(--ah-text);padding:8px;min-height:40px;cursor:pointer}
+.ah-chosen{display:flex;justify-content:space-between;align-items:center;background:var(--ah-accent);border-radius:10px;padding:8px 12px;font-size:13px}
+.ah-h2{font-size:15px;font-weight:700;margin:24px 0 10px}
+.ah-samples{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ah-sample{text-align:left;font:inherit;background:var(--ah-surface);border:2px solid var(--ah-line);border-radius:14px;padding:0;cursor:pointer;overflow:hidden;color:inherit}
+.ah-sample[aria-pressed="true"]{border-color:var(--ah-brand)}
+.ah-swatch{height:54px;display:flex;align-items:flex-end;gap:4px;padding:8px}
+.ah-swatch i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.08)}
+.ah-sample b{display:block;font-size:14px;padding:8px 10px 0}
+.ah-sample span{display:block;font-size:12px;color:var(--ah-muted);padding:2px 10px 10px}
+.ah-chat{flex:1;display:flex;flex-direction:column;min-height:0}
+.ah-messages>*{flex:none}
+.ah-messages{flex:1;overflow-y:auto;padding:8px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.ah-msg{max-width:88%;padding:10px 14px;border-radius:16px;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.ah-msg.user{align-self:flex-end;background:var(--ah-brand);color:#fff;border-bottom-right-radius:4px}
+.ah-msg.bot{align-self:flex-start;background:var(--ah-surface);border:1px solid var(--ah-line);border-bottom-left-radius:4px}
+.ah-steps{list-style:none;font-size:14px;color:var(--ah-muted)}
+.ah-steps li{padding:2px 0}
+.ah-steps li.done{color:var(--ah-text)}
+.ah-steps li.now::before{content:"";display:inline-block;width:10px;height:10px;margin-right:8px;border:2px solid var(--ah-brand);border-top-color:transparent;border-radius:50%;animation:ahspin .8s linear infinite}
+.ah-steps li.done::before{content:"✓ "}
+@keyframes ahspin{to{transform:rotate(360deg)}}
+.ah-result{align-self:stretch;background:var(--ah-surface);border:1px solid var(--ah-line);border-radius:var(--ah-radius);overflow:hidden}
+.ah-thumb{height:220px;overflow:hidden;position:relative;background:#eef0f6;border-bottom:1px solid var(--ah-line)}
+.ah-thumb iframe{position:absolute;top:0;left:0;width:390px;height:733px;border:0;transform:scale(.3);transform-origin:0 0;pointer-events:none}
+.ah-thumb{display:flex;justify-content:center}
+.ah-thumb .inner{position:relative;width:117px;height:220px}
+.ah-resbody{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.ah-resbody h3{font-size:16px}
+.ah-badge{display:inline-block;font-size:12px;background:var(--ah-accent);color:var(--ah-brand);border-radius:999px;padding:2px 10px;align-self:flex-start}
+.ah-notes{font-size:13px;color:var(--ah-muted);padding-left:18px}
+.ah-actions{display:flex;gap:8px;padding:0 14px 14px}
+.ah-actions button{flex:1}
+.ah-secondary{font:inherit;font-weight:700;font-size:15px;background:var(--ah-accent);color:var(--ah-brand);border:0;border-radius:12px;padding:12px;min-height:48px;cursor:pointer}
+.ah-composer{display:flex;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--ah-line);background:var(--ah-bg);position:sticky;bottom:0}
+.ah-send{white-space:nowrap;flex:none;font:inherit;font-weight:700;background:var(--ah-brand);color:#fff;border:0;border-radius:12px;padding:0 16px;min-height:48px;cursor:pointer}
+.ah-full{position:fixed;inset:0;background:#e9ebf3;z-index:50;display:flex;flex-direction:column}
+.ah-full[hidden],[hidden]{display:none!important}
+.ah-fulltop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:var(--ah-surface);border-bottom:1px solid var(--ah-line)}
+.ah-seg{display:flex;background:var(--ah-bg);border-radius:10px;padding:2px}
+.ah-seg button{font:inherit;font-size:13px;border:0;background:none;padding:6px 12px;border-radius:8px;cursor:pointer;min-height:36px}
+.ah-seg button.on{background:#fff;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ah-stage{flex:1;display:flex;justify-content:center;overflow:auto;padding:12px}
+.ah-stage iframe{border:0;background:#fff;height:100%;border-radius:12px;box-shadow:0 2px 14px rgba(0,0,0,.12)}
+.ah-stage iframe.mobile{width:min(390px,100%)}
+.ah-stage iframe.desktop{width:100%;max-width:1200px}
+.ah-toast{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);background:#161a2b;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;max-width:90%}
+@media(min-width:640px){.ah-samples{grid-template-columns:repeat(3,1fr)}.ah-start h1{font-size:30px}}

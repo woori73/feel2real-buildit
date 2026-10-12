@@ -128,7 +128,8 @@ class AcademyAssistantMySqlTest {
   }
 
   private MvcResult createFromSample(String sampleKey) throws Exception {
-    return turn(Map.of("academyName", "새봄영어학원", "sampleKey", sampleKey, "region", "서울 강남구"));
+    return turn(Map.of("academyName", "새봄영어학원", "sampleKey", sampleKey, "region", "서울 강남구",
+        "subject", "영어", "target", "중학생"));
   }
 
   @Test
@@ -150,6 +151,27 @@ class AcademyAssistantMySqlTest {
     JsonNode body = json(turn(Map.of("academyName", "새봄영어학원", "sampleKey", "exam")));
     // then
     assertThat(body.get("needs").toString()).contains("region");
+    assertThat(academyCount()).isZero();
+  }
+
+  @Test
+  @DisplayName("given 종합학원 샘플과 지역, when 과목을 말하지 않으면, then 과목을 되묻고 영어로 확정하지 않는다")
+  void generalSampleAsksSubjectInsteadOfAssumingEnglish() throws Exception {
+    // when
+    JsonNode body = json(turn(Map.of("academyName", "새봄학원", "sampleKey", "general", "region", "서울 강남구")));
+    // then
+    assertThat(body.get("needs").toString()).contains("subject");
+    assertThat(academyCount()).isZero();
+  }
+
+  @Test
+  @DisplayName("given 프리미엄 샘플, when 대상을 말하지 않으면, then 대상을 되묻는다")
+  void premiumSampleAsksTarget() throws Exception {
+    // when
+    JsonNode body = json(turn(Map.of("academyName", "새봄학원", "sampleKey", "premium",
+        "region", "서울 강남구", "subject", "영어")));
+    // then
+    assertThat(body.get("needs").toString()).contains("target");
     assertThat(academyCount()).isZero();
   }
 

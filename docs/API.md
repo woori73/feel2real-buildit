@@ -230,6 +230,14 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 
 주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
 
+**2-B 추가**: `POST /turn`에 `subject`(과목 이름), `target`(대상 문구) 필드 추가. 과목·대상은 사용자가 말했거나 샘플 문구가 직접 말한 경우에만 확정하고, 아니면 `needs`로 되묻는다(종합학원·프리미엄·미니멀 샘플은 과목을 정하지 않음). `GET /state`는 `revision`, `dirty`, `publicUrl`을 함께 돌려준다.
+
+#### 대화형 화면 `/builder` 기능 스위치 (2-B)
+
+- 설정: `buildit.assistant.enabled`(기본 `false`), `buildit.assistant.tutor-login-ids`(쉼표 목록, 비우면 모든 TUTOR). 꺼져 있으면 기존 빌더만 쓴다.
+- 켜진 경우 `/builder`는 (학원이 없음) 또는 (대화로 만든 학원: `academy_assistant_message` 기록 있음)일 때 대화형 화면(`tutor/assistant_home`)을 연다. 기존 방식으로 만든 학원은 공개 데이터 보호를 위해 항상 기존 빌더로 간다.
+- `/builder?classic=1`은 언제나 기존 빌더를 연다(화면의 '기존 빌더로 돌아가기'). 기존 편집기·빌더 경로는 그대로다.
+
 #### AI 제안·Agent API (V1058, 구현 완료)
 
 **교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`

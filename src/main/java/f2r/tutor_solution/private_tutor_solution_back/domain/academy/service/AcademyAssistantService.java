@@ -70,23 +70,25 @@ public class AcademyAssistantService {
 
   public record StateView(
       boolean hasAcademy, String status, List<AcademyAssistantMessage> messages,
-      Long revision, boolean dirty) {}
+      Long revision, boolean dirty, String publicUrl) {}
 
   public List<Sample> samples() {
     return AcademyAssistantSamples.all();
   }
 
-  /** 화면 복원용 상태. 학원이 없으면 빈 대화다. 조회만 하고 아무것도 만들지 않는다. */
-  @Transactional(readOnly = true)
+  /** 화면 복원용 상태. 학원이 없으면 빈 대화다. 공개 내용은 바꾸지 않는다(작업본이 없으면 공개 내용으로 복제만 한다). */
+  @Transactional
   public StateView state(JwtTokenProvider.AuthenticatedPrincipal principal) {
     Optional<AcademyResponse> mine = academyService.getMine(principal);
     if (mine.isEmpty()) {
-      return new StateView(false, null, List.of(), null, false);
+      return new StateView(false, null, List.of(), null, false, null);
     }
-    Long academyId = mine.get().academyId();
+    AcademyResponse academy = mine.get();
+    State wc = workingCopyService.open(principal);
     return new StateView(
-        true, mine.get().status().name(),
-        messageRepository.findByAcademyIdOrderByMessageIdAsc(academyId), null, false);
+        true, academy.status().name(),
+        messageRepository.findByAcademyIdOrderByMessageIdAsc(academy.academyId()),
+        wc.revision(), wc.dirty(), academy.publicUrl());
   }
 
   /**
@@ -94,12 +96,15 @@ public class AcademyAssistantService {
    *
    * @param academyName 신규 사용자의 학원 이름
    * @param sampleKey 시작 화면에서 고른 샘플 키(선택)
+   * @param subject 사용자가 말한 과목 이름(예: 영어). 샘플이 과목을 말하지 않으면 되묻는다
+   * @param target 사용자가 말한 대상(예: 중학생). 없으면 되묻는다
    * @param region 학원 지역(시/도 등). 없으면 대화로 되묻는다(주소를 지어내지 않는다)
    */
   @Transactional
   public TurnResult turn(
       JwtTokenProvider.AuthenticatedPrincipal principal,
-      String message, String academyName, String sampleKey, String region) {
+      String message, String academyName, String sampleKey, String region,
+      String subject, String target) {
     String text = message == null ? "" : message.trim();
     if (text.length() > MAX_MESSAGE_LENGTH) {
       throw new IllegalArgumentException("메시지는 " + MAX_MESSAGE_LENGTH + "자 이하로 입력해 주세요.");
@@ -115,7 +120,7 @@ public class AcademyAssistantService {
       remember(academyId, ROLE_ASSISTANT, KIND_TEXT, reply, null);
       return new TurnResult(reply, List.of(), false, academyId, null, null, List.of());
     }
-    return createFirstDraft(principal, text, academyName, sampleKey, region);
+    return createFirstDraft(principal, text, academyName, sampleKey, region, subject, target);
   }
 
   /**
@@ -134,7 +139,8 @@ public class AcademyAssistantService {
 
   private TurnResult createFirstDraft(
       JwtTokenProvider.AuthenticatedPrincipal principal,
-      String text, String academyName, String sampleKey, String region) {
+      String text, String academyName, String sampleKey, String region,
+      String subject, String target) {
     Sample sample = AcademyAssistantSamples.find(sampleKey).orElse(null);
     String name = academyName == null ? "" : academyName.trim();
 
@@ -156,13 +162,29 @@ public class AcademyAssistantService {
     String preset = sample != null ? sample.preset() : draft.designPreset();
     generated.put("designPreset", preset);
 
-    Set<Integer> subjectIds = new java.util.HashSet<>(parseSubjectIds(generated.get("subjectIds")));
-    if (subjectIds.isEmpty() && sample != null) {
+    // 과목·대상은 사용자가 말했거나 샘플 문구가 직접 말한 경우에만 확정한다.
+    // 샘플 문구에서 분석기가 뽑아낸 값은 사용자가 한 말이 아니므로 쓰지 않는다.
+    Set<Integer> subjectIds = new java.util.HashSet<>();
+    if (subject != null && !subject.isBlank()) {
+      subjectRepository.findByNameKo(subject.trim()).map(Subject::getSubjectId).ifPresent(subjectIds::add);
+    }
+    if (subjectIds.isEmpty()) {
+      for (Integer id : parseSubjectIds(generated.get("subjectIds"))) {
+        boolean saidByUser = sample == null || subjectRepository.findById(id)
+            .map(sub -> text.contains(sub.getNameKo())).orElse(false);
+        if (saidByUser) subjectIds.add(id);
+      }
+    }
+    if (subjectIds.isEmpty() && sample != null && sample.subjectNameKo() != null) {
       subjectRepository.findByNameKo(sample.subjectNameKo())
           .map(Subject::getSubjectId).ifPresent(subjectIds::add);
     }
-    Set<TargetGroup> targets = sample != null && generated.get("targetGroups") == null
-        ? EnumSet.copyOf(sample.targets()) : parseTargets(generated.get("targetGroups"));
+    Set<TargetGroup> targets = parseTargets(target);
+    if (targets.isEmpty()) targets = parseTargets(text);
+    if (targets.isEmpty() && sample != null && sample.targets() != null) {
+      targets = EnumSet.copyOf(sample.targets());
+    }
+    if (targets.isEmpty() && sample == null) targets = parseTargets(generated.get("targetGroups"));
 
     List<String> needs = new ArrayList<>();
     if (subjectIds.isEmpty()) needs.add("subject");
@@ -196,9 +218,6 @@ public class AcademyAssistantService {
         new AcademyPageSettingsUpdateRequest(null, null, null, null, null, null, null, builderDraft));
 
     List<String> notes = new ArrayList<>(draft.warnings());
-    if (sample != null && parseSubjectIds(generated.get("subjectIds")).isEmpty()) {
-      notes.add("과목과 대상은 샘플 기본값(" + sample.subjectNameKo() + ")으로 임시 설정했습니다. 다르면 알려 주세요.");
-    }
     notes.add("주소·전화번호·강사·수강료는 알려 주시기 전까지 비워 둡니다.");
 
     String reply = "'" + name + "' 홈페이지 초안을 만들었어요. 아직 공개되지 않았으니 미리보기로 확인해 보세요.";
@@ -211,7 +230,7 @@ public class AcademyAssistantService {
 
   private static String label(String need) {
     return switch (need) {
-      case "subject" -> "과목";
+      case "subject" -> "가르치는 과목";
       case "target" -> "대상 학생(초등/중등/고등 등)";
       case "region" -> "지역";
       default -> need;
