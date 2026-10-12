@@ -328,6 +328,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.VisualEditorProposalFlowMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.FlywayProdHistoryMySqlTest"
 
       - name: Upload MySQL test report
         if: always()
