@@ -283,6 +283,7 @@ jobs:
           name: build-check-test-report
           path: build/reports/tests/test
           if-no-files-found: ignore
+          retention-days: 7
 
   mysql-integration-test:
     # BuildIt P1 MySQL 통합 테스트 (격리 DB).
