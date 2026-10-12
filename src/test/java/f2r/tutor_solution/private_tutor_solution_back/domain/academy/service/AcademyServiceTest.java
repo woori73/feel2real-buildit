@@ -341,7 +341,7 @@ class AcademyServiceTest {
     assertJpeg(bytesCaptor.getValue());
     verify(regionRepository).saveAll(argThat(regions ->
         new ArrayList<>((Collection<?>) regions).size() == 1));
-    verify(authResolver).requireTutor(principal);
+    verify(authResolver).requireAcademyBuilderRole(principal);
   }
 
   @Test
@@ -710,8 +710,8 @@ class AcademyServiceTest {
         .containsEntry("sec-effect", false)
         .containsEntry("sec-payment", false)
         .containsEntry("blogPostsSection", false);
-    verify(authResolver).requireTutor(principal);
-    verify(authResolver).verifyOwnsAcademy(academy);
+    verify(authResolver).requireAcademyBuilderRole(principal);
+    verify(authResolver).verifyOwnsAcademyForBuilder(academy);
   }
 
   @Test
@@ -1358,7 +1358,7 @@ class AcademyServiceTest {
     assertThat(response.logoUrl()).isEqualTo("/api/academies/테스트-academy/logo");
     assertThat(response.handle()).isEqualTo("test-academy");
     assertThat(academy.getLogoStorageKey()).isEqualTo("old/logo.jpg");
-    verify(authResolver).verifyOwnsAcademy(academy);
+    verify(authResolver).verifyOwnsAcademyForBuilder(academy);
     verify(imageSanitizer, never()).sanitize(any(MultipartFile.class));
     verify(regionRepository).deleteByAcademy_AcademyId(100L);
   }
@@ -1595,7 +1595,7 @@ class AcademyServiceTest {
 
     // then
     assertThat(available).isTrue();
-    verify(authResolver).requireTutor(principal);
+    verify(authResolver).requireAcademyBuilderRole(principal);
   }
 
   @Test

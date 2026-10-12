@@ -204,10 +204,10 @@ public class AcademyWorkingCopyService {
   // ───────────────────────── 내부 ─────────────────────────
 
   private Academy ownedAcademy(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
     return academy;
   }
 
