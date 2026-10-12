@@ -53,150 +53,155 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'PYEOF'
-          import json, os, subprocess, sys
+          import json, os, sys, urllib.request, urllib.error
           from datetime import datetime, timezone, timedelta
 
           REPO = os.environ['REPO']
+          TOKEN = os.environ['GH_TOKEN']
           DRY_RUN = os.environ.get('DRY_RUN', 'true').lower() == 'true'
           KEEP_DEPLOY_COUNT = int(os.environ.get('KEEP_DEPLOY_COUNT', '3'))
           REPORT_RETENTION_DAYS = int(os.environ.get('REPORT_RETENTION_DAYS', '7'))
           SUMMARY = os.environ.get('GITHUB_STEP_SUMMARY', '/dev/null')
+          API = 'https://api.github.com'
 
-          def gh(*args):
-              r = subprocess.run(['gh', 'api', *args], capture_output=True, text=True, timeout=60)
-              if r.returncode != 0:
-                  raise RuntimeError(f"gh api failed: {' '.join(args)}\n{r.stderr[:500]}")
-              return json.loads(r.stdout) if r.stdout.strip() else None
+          def api(method, path, params=None):
+              url = API + path
+              if params:
+                  url += '?' + '&'.join(f'{k}={v}' for k, v in params.items())
+              req = urllib.request.Request(url, method=method)
+              req.add_header('Authorization', f'Bearer {TOKEN}')
+              req.add_header('Accept', 'application/vnd.github+json')
+              req.add_header('X-GitHub-Api-Version', '2022-11-28')
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      body = resp.read().decode('utf-8')
+                      return json.loads(body) if body.strip() else {}
+              except urllib.error.HTTPError as e:
+                  raise RuntimeError(f'{method} {path} -> HTTP {e.code}: {e.read().decode()[:300]}')
 
           def summary(lines):
               with open(SUMMARY, 'a') as f:
                   f.write('\n'.join(lines) + '\n')
 
-          now = datetime.now(timezone.utc)
-          cutoff = now - timedelta(days=REPORT_RETENTION_DAYS)
-
-          # 1. 전체 아티팩트 수집 (페이지네이션)
-          artifacts = []
-          page = 1
-          while True:
-              d = gh(f'/repos/{REPO}/actions/artifacts', '-f', 'per_page=100', '-f', f'page={page}')
-              batch = d.get('artifacts', [])
-              if not batch:
-                  break
-              artifacts.extend(batch)
-              if len(batch) < 100 or page >= 20:
-                  break
-              page += 1
-          size_before = sum(a.get('size_in_bytes', 0) for a in artifacts)
-
-          # 2. 최근 성공 배포 SHA (롤백 보존용)
-          deployed_shas = []
+          fatal = None
           try:
-              runs = gh(f'/repos/{REPO}/actions/workflows/deploy-ec2.yml/runs', '-f', 'per_page=20', '-f', 'status=completed')
-              for r in runs.get('workflow_runs', []):
+              now = datetime.now(timezone.utc)
+              cutoff = now - timedelta(days=REPORT_RETENTION_DAYS)
+
+              # 1. 전체 아티팩트 수집
+              artifacts = []
+              for page in range(1, 21):
+                  d = api('GET', f'/repos/{REPO}/actions/artifacts',
+                          {'per_page': '100', 'page': str(page)})
+                  batch = d.get('artifacts', [])
+                  if not batch:
+                      break
+                  artifacts.extend(batch)
+                  if len(batch) < 100:
+                      break
+              size_before = sum(a.get('size_in_bytes', 0) for a in artifacts)
+
+              # 2. 최근 성공 배포 SHA
+              deployed_shas = []
+              d = api('GET', f'/repos/{REPO}/actions/workflows/deploy-ec2.yml/runs',
+                      {'per_page': '20', 'status': 'completed'})
+              for r in d.get('workflow_runs', []):
                   if r.get('conclusion') == 'success':
                       sha = r['head_sha'][:8]
                       if sha not in deployed_shas:
                           deployed_shas.append(sha)
                       if len(deployed_shas) >= KEEP_DEPLOY_COUNT:
                           break
-          except Exception as e:
-              print(f"WARN: deploy runs lookup failed: {e}", file=sys.stderr)
 
-          # 3. 실행 중인 워크플로우의 SHA (삭제 금지)
-          running_shas = set()
-          try:
-              for status in ('in_progress', 'queued', 'waiting', 'requested'):
-                  runs = gh(f'/repos/{REPO}/actions/runs', '-f', 'per_page=50', '-f', f'status={status}')
-                  for r in runs.get('workflow_runs', []):
+              # 3. 실행 중인 워크플로우 SHA
+              running_shas = set()
+              d = api('GET', f'/repos/{REPO}/actions/runs', {'per_page': '50'})
+              for r in d.get('workflow_runs', []):
+                  if r.get('status') in ('in_progress', 'queued', 'waiting', 'requested'):
                       running_shas.add(r['head_sha'][:8])
+
+              keep_shas = set(deployed_shas) | running_shas
+
+              # 4. 분류
+              test_prefixes = ('build-check-test-report', 'deploy-gate-test-report',
+                               'build-test-report', 'mysql-test-report')
+              keep, delete, errors = [], [], []
+
+              for a in artifacts:
+                  name = a['name']
+                  aid = a['id']
+                  sha_part = None
+                  if name.startswith('app-jar-'):
+                      sha_part = name[len('app-jar-'):][:8]
+                  elif name.startswith('wiki-backend-'):
+                      sha_part = name[len('wiki-backend-'):][:8]
+
+                  if sha_part and sha_part in keep_shas:
+                      keep.append(a)
+                      continue
+                  if name.startswith(('app-jar-', 'wiki-backend-')) or name.startswith(test_prefixes):
+                      created = datetime.fromisoformat(a['created_at'].replace('Z', '+00:00'))
+                      if created < cutoff:
+                          delete.append(a)
+                      else:
+                          keep.append(a)
+                      continue
+                  keep.append(a)
+
+              # 5. 삭제
+              deleted_count, deleted_bytes = 0, 0
+              if not DRY_RUN:
+                  for a in delete:
+                      try:
+                          api('DELETE', f"/repos/{REPO}/actions/artifacts/{a['id']}")
+                          deleted_count += 1
+                          deleted_bytes += a.get('size_in_bytes', 0)
+                      except Exception as e:
+                          errors.append(f"{a['name']}: {e}")
+              else:
+                  deleted_bytes = sum(a.get('size_in_bytes', 0) for a in delete)
+
+              size_after = size_before - (0 if DRY_RUN else deleted_bytes)
+
+              def mb(b):
+                  return f"{b / 1024 / 1024:.1f} MB"
+
+              lines = [
+                  "## Artifact Storage Cleanup",
+                  "",
+                  f"- 모드: {'시뮬레이션 (삭제 없음)' if DRY_RUN else '실제 삭제'}",
+                  f"- 실행 시각: {now.strftime('%Y-%m-%d %H:%M UTC')}",
+                  f"- 보존 배포 SHA: {', '.join(deployed_shas) if deployed_shas else '(조회 실패)'}",
+                  f"- 실행 중 워크플로우 SHA: {', '.join(sorted(running_shas)) if running_shas else '없음'}",
+                  "",
+                  "| 항목 | 건수 | 용량 |",
+                  "|---|---|---|",
+                  f"| 정리 전 전체 | {len(artifacts)} | {mb(size_before)} |",
+                  f"| 삭제 대상 | {len(delete)} | {mb(sum(a.get('size_in_bytes', 0) for a in delete))} |",
+                  f"| 보존 | {len(keep)} | {mb(sum(a.get('size_in_bytes', 0) for a in keep))} |",
+              ]
+              if DRY_RUN:
+                  lines.append("| 실제 삭제 | 0 (시뮬레이션) | - |")
+              else:
+                  lines.append(f"| 실제 삭제 | {deleted_count} | {mb(deleted_bytes)} |")
+              lines.append(f"| 정리 후 전체 | {len(artifacts) - (0 if DRY_RUN else deleted_count)} | {mb(size_after)} |")
+              if errors:
+                  lines += ["", "### 오류", ""]
+                  lines += [f"- {e}" for e in errors[:20]]
+                  if len(errors) > 20:
+                      lines.append(f"- ... 외 {len(errors) - 20}건")
+              if DRY_RUN:
+                  lines += ["",
+                            "> 시뮬레이션 모드입니다. 보존/삭제 대상을 검증한 뒤",
+                            "> `DRY_RUN_DEFAULT`를 `'false'`로 변경하는 PR을 제출하세요."]
+              summary(lines)
+              print(f"mode={'dry-run' if DRY_RUN else 'delete'} "
+                    f"total={len(artifacts)} delete={len(delete)} keep={len(keep)} errors={len(errors)}")
+              if errors:
+                  sys.exit(1)
           except Exception as e:
-              print(f"WARN: running runs lookup failed: {e}", file=sys.stderr)
-
-          keep_shas = set(deployed_shas) | running_shas
-
-          # 4. 분류
-          test_prefixes = ('build-check-test-report', 'deploy-gate-test-report',
-                           'build-test-report', 'mysql-test-report')
-          keep, delete, errors = [], [], []
-
-          for a in artifacts:
-              name = a['name']
-              aid = a['id']
-              sha_part = None
-              if name.startswith('app-jar-'):
-                  sha_part = name[len('app-jar-'):][:8]
-              elif name.startswith('wiki-backend-'):
-                  sha_part = name[len('wiki-backend-'):][:8]
-
-              if sha_part and sha_part in keep_shas:
-                  keep.append(a)  # 배포/실행 중 SHA → 보존
-                  continue
-              if name.startswith(('app-jar-', 'wiki-backend-')):
-                  created = datetime.fromisoformat(a['created_at'].replace('Z', '+00:00'))
-                  if created < cutoff:
-                      delete.append(a)
-                  else:
-                      keep.append(a)
-                  continue
-              if name.startswith(test_prefixes):
-                  created = datetime.fromisoformat(a['created_at'].replace('Z', '+00:00'))
-                  if created < cutoff:
-                      delete.append(a)
-                  else:
-                      keep.append(a)
-                  continue
-              keep.append(a)  # 알 수 없는 유형은 보존 (안전 우선)
-
-          # 5. 삭제 (dry-run이 아닐 때만)
-          deleted_count, deleted_bytes = 0, 0
-          if not DRY_RUN:
-              for a in delete:
-                  try:
-                      gh('-X', 'DELETE', f"/repos/{REPO}/actions/artifacts/{a['id']}")
-                      deleted_count += 1
-                      deleted_bytes += a.get('size_in_bytes', 0)
-                  except Exception as e:
-                      errors.append(f"{a['name']}: {e}")
-          else:
-              deleted_bytes = sum(a.get('size_in_bytes', 0) for a in delete)
-
-          size_after = size_before - (0 if DRY_RUN else deleted_bytes)
-
-          # 6. 실행 요약 기록
-          def mb(b):
-              return f"{b / 1024 / 1024:.1f} MB"
-
-          lines = [
-              "## Artifact Storage Cleanup",
-              "",
-              f"- 모드: {'시뮬레이션 (삭제 없음)' if DRY_RUN else '실제 삭제'}",
-              f"- 실행 시각: {now.strftime('%Y-%m-%d %H:%M UTC')}",
-              f"- 보존 배포 SHA: {', '.join(deployed_shas) if deployed_shas else '(조회 실패)'}",
-              f"- 실행 중 워크플로우 SHA: {', '.join(sorted(running_shas)) if running_shas else '없음'}",
-              "",
-              "| 항목 | 건수 | 용량 |",
-              "|---|---|---|",
-              f"| 정리 전 전체 | {len(artifacts)} | {mb(size_before)} |",
-              f"| 삭제 대상 | {len(delete)} | {mb(sum(a.get('size_in_bytes', 0) for a in delete))} |",
-              f"| 보존 | {len(keep)} | {mb(sum(a.get('size_in_bytes', 0) for a in keep))} |",
-              f"| 실제 삭제 | {deleted_count} | {mb(deleted_bytes)} |" if not DRY_RUN else f"| 실제 삭제 | 0 (시뮬레이션) | - |",
-              f"| 정리 후 전체 | {len(artifacts) - (0 if DRY_RUN else deleted_count)} | {mb(size_after)} |",
-          ]
-          if errors:
-              lines += ["", "### 오류", ""]
-              lines += [f"- {e}" for e in errors[:20]]
-              if len(errors) > 20:
-                  lines.append(f"- ... 외 {len(errors) - 20}건")
-          if DRY_RUN:
-              lines += ["",
-                        "> 시뮬레이션 모드입니다. 보존/삭제 대상을 검증한 뒤",
-                        "> `DRY_RUN_DEFAULT`를 `'false'`로 변경하는 PR을 제출하세요."]
-          summary(lines)
-
-          print(f"mode={'dry-run' if DRY_RUN else 'delete'} "
-                f"total={len(artifacts)} delete={len(delete)} keep={len(keep)} "
-                f"errors={len(errors)}")
-          if errors:
+              fatal = f"{type(e).__name__}: {e}"
+              summary(["## Artifact Storage Cleanup", "", f"**실패**: {fatal}"])
+              print(f"FATAL: {fatal}", file=sys.stderr)
               sys.exit(1)
           PYEOF
