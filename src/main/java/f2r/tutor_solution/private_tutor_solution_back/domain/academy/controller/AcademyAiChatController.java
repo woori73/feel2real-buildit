@@ -376,7 +376,7 @@ public class AcademyAiChatController {
     String intro = (String) request.getOrDefault("intro", "");
 
     // designPreset 검증
-    if (!Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(designPreset)) {
+    if (!AcademyAiCreateService.VALID_PRESETS.contains(designPreset)) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "지원하지 않는 프리셋입니다: " + designPreset);
     }
