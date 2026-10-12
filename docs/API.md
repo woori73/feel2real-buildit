@@ -217,6 +217,19 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 
 오류: `409 REVISION_CONFLICT`(작업본이 그 사이 바뀜), `409 LIVE_CHANGED`(작업본 생성 후 공개 내용이 따로 바뀜 — `force:true`로 덮어쓰기 가능), `400`(검증 실패). `homepage.renderMode`는 작업본 요청으로 바꿀 수 없다.
 
+#### 대화 API (BuildIt 통합 화면 2-A, V1061)
+
+접두 `/api/tutor/academy/assistant` (TUTOR). 모든 쓰기는 비공개 작업본에만 닿고, 공개 홈페이지는 `publish`에서만 바뀐다. 기존 AI 생성기(`AcademyAiCreateService`)와 작업본을 재사용하며 새 AI 엔진은 없다.
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET /samples` | 시작 화면 샘플 6종 `[{key,title,description,preset,...}]` (입시·내신 전문/초중등 영어/영어회화/종합학원/프리미엄/미니멀 → 기존 프리셋) |
+| `GET /state` | `{hasAcademy, status, messages[]}` 화면 복원용. 조회만 한다 |
+| `POST /turn` | `{message?, academyName?, sampleKey?, region?}`. 학원이 없으면 이름→(과목·대상·지역 부족 시 `needs`로 되묻기)→DRAFT 학원+작업본 생성. 이미 학원이 있으면 새로 만들지 않는다(수정 턴은 2-C). 응답 `{reply, needs[], created, academyId, revision, designPreset, notes[]}` |
+| `POST /publish` | `{revision, force?}` '게시하기' 하나. 작업본을 공개본에 반영하고, DRAFT면 같은 트랜잭션에서 PUBLISHED로 전환. 응답 `{firstPublish, revision}`. 오류는 작업본 API와 동일(`409 REVISION_CONFLICT/LIVE_CHANGED`) |
+
+주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
+
 #### AI 제안·Agent API (V1058, 구현 완료)
 
 **교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`

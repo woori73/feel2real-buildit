@@ -455,6 +455,23 @@ public class AcademyService {
   }
 
   /**
+   * 최초 게시: DRAFT 학원을 PUBLISHED로 전환한다(이미 PUBLISHED면 변경 없음). visible은 건드리지 않는다.
+   * 학원 행 잠금 아래에서 호출되며, 호출자의 트랜잭션에 합류한다.
+   *
+   * @return 이번 호출로 상태가 바뀌었는가
+   */
+  @Transactional
+  public boolean publishIfDraft(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Academy academy = lockMyAcademyForUpdate(principal);
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      return academy.publishIfDraft();
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
    * BuildIt 시각 편집기용 홈페이지 렌더 모드 단독 업데이트.
    *
    * <p>builderDraft의 {@code homepage.renderMode} 키만 갱신하며, 다른 P0/P1 설정은

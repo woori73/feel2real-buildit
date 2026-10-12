@@ -1664,6 +1664,12 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 불변식: 작업본 저장·버리기·버전 불러오기는 공개 테이블을 쓰지 않는다. `homepage.renderMode`(시각 편집기 게시 상태)는 작업본이 바꿀 수 없고 항상 공개본 값을 따른다. 시각 편집기 계층은 기존 `academy_visual_editor_draft/published`를 그대로 쓴다(중복 저장 없음). 기존 데이터 변경·삭제 없음(신규 테이블만).
 
+### academy_assistant_message ✅ BuildIt 통합 화면 대화 기록 (V1061)
+
+학원당 AI 대화 한 줄기. **academy_assistant_message**: `message_id` PK, `academy_id` FK(ON DELETE CASCADE), `role`(USER/ASSISTANT), `kind`(TEXT/RESULT/QUESTION), `content`, `payload_json`(결과 카드의 revision·프리셋·안내), `created_at`. 인덱스 `(academy_id, message_id)`. 신규 테이블만 추가한다.
+
+**최초 게시 규칙**: 코드에 DRAFT→PUBLISHED 전환 경로가 따로 없었다(`createDraft`는 "공개는 별도 발행"이라고만 명시). 이제 `POST /api/tutor/academy/assistant/publish`가 작업본 게시와 `Academy.publishIfDraft()`를 한 트랜잭션으로 처리한다. `visible` 스위치는 건드리지 않는다.
+
 ### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)
 
 > 시각 편집기(`academy_visual_editor_draft`/`_published`)와 같은 격리 원칙: 기존 테이블 변경 없음, `academies` FK(CASCADE)뿐. 제안은 승인 전까지 초안·게시본·`page_settings`에 어떤 영향도 주지 않는다.
