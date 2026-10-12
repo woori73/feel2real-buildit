@@ -250,6 +250,7 @@ jobs:
           name: deploy-gate-test-report
           path: build/reports/tests/test
           if-no-files-found: ignore
+          retention-days: 7
 
       - name: Build bootJar
         # auto deploy는 CI artifact를 재사용하므로 스킵 (수동 fallback만 빌드)
