@@ -44,6 +44,26 @@ class AcademyBuilderPageControllerTest {
   }
 
   @Test
+  @DisplayName("builder — given ADMIN when 스위치 꺼짐 then 기존 빌더, 켜짐+허용 계정 then 대화형 화면")
+  void builder_admin_access() {
+    JwtTokenProvider.AuthenticatedPrincipal admin =
+        new JwtTokenProvider.AuthenticatedPrincipal(1L, "admin1", "ADMIN");
+    when(academyService.getMine(admin)).thenReturn(Optional.empty());
+    assertThat(controller.builder(admin, null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
+    assertThat(controllerWith(true, "admin1").builder(admin, null, new ConcurrentModel()))
+        .isEqualTo("tutor/assistant_home");
+  }
+
+  @Test
+  @DisplayName("builder — given STUDENT when 스위치 켜짐 then 랜딩으로 리다이렉트 (권한 확대 없음)")
+  void builder_student_stillRedirected() {
+    JwtTokenProvider.AuthenticatedPrincipal student =
+        new JwtTokenProvider.AuthenticatedPrincipal(5L, "stu", "STUDENT");
+    assertThat(controllerWith(true, "").builder(student, null, new ConcurrentModel()))
+        .isInstanceOf(RedirectView.class);
+  }
+
+  @Test
   @DisplayName("builder — given 스위치 꺼짐 when 신규 사용자 then 기존 빌더")
   void builder_flagOff_usesClassic() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());

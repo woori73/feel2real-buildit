@@ -238,6 +238,19 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 - 켜진 경우 `/builder`는 (학원이 없음) 또는 (대화로 만든 학원: `academy_assistant_message` 기록 있음)일 때 대화형 화면(`tutor/assistant_home`)을 연다. 기존 방식으로 만든 학원은 공개 데이터 보호를 위해 항상 기존 빌더로 간다.
 - `/builder?classic=1`은 언제나 기존 빌더를 연다(화면의 '기존 빌더로 돌아가기'). 기존 편집기·빌더 경로는 그대로다.
 
+#### 빌더 계열 접근 권한 (ADMIN 허용)
+
+홈페이지 빌더 계열 경로는 **TUTOR와 ADMIN**이 쓸 수 있다. 소유자 검증은 그대로여서 ADMIN도 **본인이 만든 학원**만 다룬다(다른 회원 학원 관리 기능은 없음).
+
+| 허용(TUTOR, ADMIN) | 계속 TUTOR 전용 |
+|---|---|
+| `/builder`, `POST·PUT /api/tutor/academy`, `PUT /api/tutor/academy/page-settings`, `GET /api/tutor/academy/handle-available`, `/api/tutor/academy/ai/chat/**`, `/api/tutor/academy/assistant/**`, `/api/tutor/academy/working-copy/**` (`GET /me`는 기존부터 허용) | 학원 삭제(`DELETE`), 수업상품·레슨, 블로그, LMS, 영상 업로드, 레이아웃, 시각 편집기(`/page-settings/visual-editor/**`), `/api/tutor/conversations/**` 등 그 외 `/api/tutor/**` 전부 |
+
+- 구현: `AuthenticatedUserResolver.requireAcademyBuilderRole`(역할) + `verifyOwnsAcademyForBuilder`(소유자)를 빌더 경로에서만 쓴다. `requireTutor`/`verifyOwnsAcademy`는 기존 TUTOR 전용 기능이 그대로 쓴다.
+- STUDENT와 비로그인은 변함없이 거부된다(`/builder`는 `/`로 이동, API는 403/401).
+- ADMIN 시험 계정에 새 AI 화면을 켜는 방법은 기능 스위치(`buildit.assistant.enabled=true`, `buildit.assistant.tutor-login-ids=<ADMIN 로그인ID>`)로 같다. 허용 목록은 역할이 아니라 로그인 ID 기준이다.
+- **향후(이번 범위 아님)**: 지금은 역할(TUTOR/ADMIN)에 BuildIt 이용 권한이 묶여 있다. 장기적으로는 역할과 분리된 '이용 권한(entitlement)'(예: 계정별 BuildIt 사용 권한 테이블 + 서버 검사)로 옮겨 STUDENT/기타 역할도 정책에 따라 부여할 수 있게 한다. 이때 소유권 검증(본인 학원만)은 그대로 유지한다.
+
 #### AI 제안·Agent API (V1058, 구현 완료)
 
 **교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`

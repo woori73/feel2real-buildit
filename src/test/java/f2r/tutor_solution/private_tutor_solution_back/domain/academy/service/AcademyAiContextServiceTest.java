@@ -73,7 +73,7 @@ class AcademyAiContextServiceTest {
     ReflectionTestUtils.setField(academy, "academyId", 100L);
 
     principal = mock(JwtTokenProvider.AuthenticatedPrincipal.class);
-    when(academyService.requireMyAcademy(principal)).thenReturn(academy);
+    when(academyService.requireMyAcademyForBuilder(principal)).thenReturn(academy);
   }
 
   @Test
@@ -105,13 +105,13 @@ class AcademyAiContextServiceTest {
   }
 
   @Test
-  @DisplayName("given Academy context when 다른 Academy의 principal로 조회 then 항상 requireMyAcademy 기준으로만 조립된다")
+  @DisplayName("given Academy context when 다른 Academy의 principal로 조회 then 항상 requireMyAcademyForBuilder 기준으로만 조립된다")
   void buildContext_never_takes_academyId_from_caller() {
     // AcademyAiContextService에는애초에 academyId 파라미터를 받는 오버로드가 없다 —
-    // requireMyAcademy(principal)만으로 scope가 정해진다는 것을 시그니처 수준에서 보장한다.
+    // requireMyAcademyForBuilder(principal)만으로 scope가 정해진다는 것을 시그니처 수준에서 보장한다.
     when(lessonProductRepository.findByAcademy_AcademyIdOrderByCreatedAtDesc(100L)).thenReturn(List.of());
     service.buildContext(principal);
-    org.mockito.Mockito.verify(academyService).requireMyAcademy(principal);
+    org.mockito.Mockito.verify(academyService).requireMyAcademyForBuilder(principal);
   }
 
   @Test

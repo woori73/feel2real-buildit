@@ -471,6 +471,18 @@ public class SecurityConfig {
             // 주지 않는다. 반드시 아래 넓은 /api/tutor/** 규칙보다 먼저(좁은 것 우선).
             .requestMatchers(HttpMethod.GET, "/api/tutor/academy/me").hasAnyRole("TUTOR", "ADMIN")
 
+            // 홈페이지 빌더 계열(생성·수정·AI 채팅·작업본·게시)은 TUTOR와 ADMIN 모두 허용한다.
+            // 소유자 검증은 서비스 계층(verifyOwnsAcademyForBuilder)이 맡아 ADMIN도 본인 학원만 다룬다.
+            // 삭제·수업상품·블로그·LMS·영상·레이아웃·시각 편집기 API는 아래 TUTOR 전용 규칙을 그대로 받는다.
+            // 반드시 아래 넓은 /api/tutor/** 규칙보다 먼저(좁은 것 우선).
+            .requestMatchers(HttpMethod.GET, "/api/tutor/academy/handle-available").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/tutor/academy").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/tutor/academy").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/tutor/academy/page-settings").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers("/api/tutor/academy/ai/chat/**").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers("/api/tutor/academy/assistant/**").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers("/api/tutor/academy/working-copy/**").hasAnyRole("TUTOR", "ADMIN")
+
             // Tutor 전용
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
 

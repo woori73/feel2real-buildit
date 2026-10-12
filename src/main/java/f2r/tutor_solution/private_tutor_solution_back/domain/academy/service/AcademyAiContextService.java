@@ -112,7 +112,7 @@ public class AcademyAiContextService {
   }
 
   public AcademyAiContext buildContext(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    Academy academy = academyService.requireMyAcademy(principal);
+    Academy academy = academyService.requireMyAcademyForBuilder(principal);
     List<LessonProduct> lessons =
         lessonProductRepository.findByAcademy_AcademyIdOrderByCreatedAtDesc(academy.getAcademyId());
     List<AcademyVideo> videos =

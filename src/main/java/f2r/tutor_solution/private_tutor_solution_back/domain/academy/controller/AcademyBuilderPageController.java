@@ -40,7 +40,7 @@ public class AcademyBuilderPageController {
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestParam(value = "classic", required = false) String classic,
       Model model) {
-    if (!hasTutorRole(principal)) {
+    if (!hasBuilderRole(principal)) {
       RedirectView redirect = new RedirectView("/");
       redirect.setExposeModelAttributes(false);
       return redirect;
@@ -73,8 +73,9 @@ public class AcademyBuilderPageController {
     return academy == null || assistantMessages.existsByAcademyId(academy.academyId());
   }
 
-  private boolean hasTutorRole(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    return principal != null && "TUTOR".equals(principal.role());
+  private boolean hasBuilderRole(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return principal != null
+        && ("TUTOR".equals(principal.role()) || "ADMIN".equals(principal.role()));
   }
 
   private String academyJson(AcademyResponse academy) {

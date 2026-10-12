@@ -219,7 +219,7 @@ public class AcademyService {
       AcademyUpsertRequest request,
       MultipartFile logo,
       MultipartFile cover) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     if (academyRepository.findByTutor_UserId(principal.userId()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 Academy가 존재합니다.");
     }
@@ -272,7 +272,7 @@ public class AcademyService {
       JwtTokenProvider.AuthenticatedPrincipal principal,
       AcademyUpsertRequest request,
       String idempotencyKey) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     // 기존 Academy 존재 시 거부 (덮어쓰기 방지)
     if (academyRepository.findByTutor_UserId(principal.userId()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 Academy가 존재합니다.");
@@ -320,10 +320,10 @@ public class AcademyService {
       AcademyUpsertRequest request,
       MultipartFile logo,
       MultipartFile cover) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
     AcademyPageSettings normalizedPageSettings = normalizePageSettingsForWrite(
         request == null ? null : request.pageSettings(), academy.getPageSettings(), true);
     boolean businessInfoSupplied = request != null
@@ -360,11 +360,11 @@ public class AcademyService {
   public AcademyResponse updatePageSettings(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       AcademyPageSettingsUpdateRequest request) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     if (request == null) throw new IllegalArgumentException("페이지 설정 정보가 필요합니다.");
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
 
     AcademyPageSettings merged = mergePageSettingsForWrite(academy.getPageSettings(), request);
     try {
@@ -447,10 +447,10 @@ public class AcademyService {
    */
   @Transactional
   public Academy lockMyAcademyForUpdate(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     Academy academy = academyRepository.findForUpdateByTutorUserId(principal.userId())
         .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("학원이 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
     return academy;
   }
 
@@ -524,10 +524,10 @@ public class AcademyService {
   @Transactional
   public AcademyResponse updateIntro(
       JwtTokenProvider.AuthenticatedPrincipal principal, String intro) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
     String cleanIntro = intro == null ? "" : intro.trim();
     if (cleanIntro.isEmpty()) {
       throw new IllegalArgumentException("소개는 비워둘 수 없습니다.");
@@ -558,7 +558,7 @@ public class AcademyService {
    * 형식/예약어 위반이거나 이미 사용 중이면 false.
    */
   public boolean isHandleAvailable(JwtTokenProvider.AuthenticatedPrincipal principal, String handle) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     String normalized = handle == null ? null : handle.trim();
     if (!HandlePolicy.isAcceptable(normalized)) {
       return false;
@@ -625,11 +625,11 @@ public class AcademyService {
     // 공개 스토어프론트(academy_public.js isOwnAcademy)가 방문자 자기소유 여부를 판별하려고
     // 호출한다. 실제 ADMIN principal은 소유 학원이 없어 Optional.empty()(→ 204)로 떨어질 뿐이며,
     // 여기서 403을 던지면 공개 페이지가 admin을 튕겨낸다(운영 회귀). 쓰기 경로는 그대로
-    // verifyOwnsAcademy(내부에서 requireTutor)로 TUTOR 본인만 통과한다.
+    // verifyOwnsAcademyForBuilder로 TUTOR/ADMIN 본인 학원만 통과한다.
     authResolver.requireTutorOrAdmin(principal);
     return academyRepository.findByTutor_UserId(principal.userId())
         .map(academy -> {
-          authResolver.verifyOwnsAcademy(academy);
+          authResolver.verifyOwnsAcademyForBuilder(academy);
           return toResponse(academy, false);
         });
   }
@@ -640,6 +640,14 @@ public class AcademyService {
    *
    * @throws ResponseStatusException 강사가 아니거나 소유 Academy가 없으면 차단
    */
+  public Academy requireMyAcademyForBuilder(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    authResolver.requireAcademyBuilderRole(principal);
+    Academy academy = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademyForBuilder(academy);
+    return academy;
+  }
+
   public Academy requireMyAcademy(JwtTokenProvider.AuthenticatedPrincipal principal) {
     authResolver.requireTutor(principal);
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
