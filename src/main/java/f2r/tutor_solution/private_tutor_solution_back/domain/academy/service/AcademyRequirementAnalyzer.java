@@ -72,7 +72,28 @@ public class AcademyRequirementAnalyzer {
       Map.entry("공부방", "STUDY"),
       Map.entry("독서실", "STUDY"),
       Map.entry("온라인", "ONLINE"),
-      Map.entry("인강", "ONLINE"));
+      Map.entry("인강", "ONLINE"),
+      // 신규 5종 (2026-10-12): 레이아웃·섹션 구성이 실질적으로 다른 템플릿
+      Map.entry("재수", "EXAM_INTENSIVE"),
+      Map.entry("N수", "EXAM_INTENSIVE"),
+      Map.entry("반수", "EXAM_INTENSIVE"),
+      Map.entry("특목고", "EXAM_INTENSIVE"),
+      Map.entry("집중", "EXAM_INTENSIVE"),
+      Map.entry("기숙", "EXAM_INTENSIVE"),
+      Map.entry("어린이", "LANGUAGE_KIDS"),
+      Map.entry("유아", "LANGUAGE_KIDS"),
+      Map.entry("초등", "LANGUAGE_KIDS"),
+      Map.entry("키즈", "LANGUAGE_KIDS"),
+      Map.entry("파닉스", "LANGUAGE_KIDS"),
+      Map.entry("포트폴리오", "ARTS_PORTFOLIO"),
+      Map.entry("입시미술", "ARTS_PORTFOLIO"),
+      Map.entry("미대입시", "ARTS_PORTFOLIO"),
+      Map.entry("스터디카페", "STUDY_CAFE"),
+      Map.entry("카페형독서실", "STUDY_CAFE"),
+      Map.entry("라이브", "ONLINE_LIVE"),
+      Map.entry("실시간", "ONLINE_LIVE"),
+      Map.entry("화상", "ONLINE_LIVE"),
+      Map.entry("줌수업", "ONLINE_LIVE"));
 
   /** 강점 키워드. */
   private static final List<String> STRENGTH_KEYWORDS = List.of(
