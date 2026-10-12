@@ -5,8 +5,7 @@ name: Artifact Storage Cleanup
 # - 7일 이상 된 테스트 리포트와 불필요한 빌드 아티팩트 정리
 # - 최근 성공 배포 3개 버전 + 실행 중인 CI/배포의 아티팩트는 보존
 #
-# 최초 1회는 시뮬레이션 모드(DRY_RUN=true)로 실행하여
-# 보존/삭제 대상을 검증한 뒤, 후속 PR에서 DRY_RUN=false로 전환한다.
+# 시뮬레이션 검증 완료(2026-10-12). 자동 삭제 활성화됨.
 
 on:
   schedule:
@@ -25,7 +24,7 @@ on:
 
 # 최초 실행은 시뮬레이션. 검증 후 'false'로 변경하여 자동 삭제 활성화.
 env:
-  DRY_RUN_DEFAULT: 'true'
+  DRY_RUN_DEFAULT: 'false'
   KEEP_DEPLOY_COUNT: '3'
   REPORT_RETENTION_DAYS: '7'
 
