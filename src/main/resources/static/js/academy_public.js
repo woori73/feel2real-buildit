@@ -45,6 +45,8 @@
   let aiNativeFitBound = false;
   // 편집기의 P0 불러오기 전용: 게시 상태와 관계없이 P0 원본을 렌더한다.
   const FORCE_P0_RENDER = new URLSearchParams(location.search).get('ve-source') === 'p0';
+  // 작업본 비공개 미리보기(/tutor/academy/preview): 작업본 API에서 읽고, 방문 통계를 기록하지 않는다.
+  const WORKING_COPY_PREVIEW = !!(root && root.dataset.preview === 'working-copy');
   const slug = (root && root.dataset.slug)
     ? root.dataset.slug
     : decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
@@ -62,7 +64,9 @@
 
   async function load() {
     try {
-      const res = await fetch(`/api/academies/${encodeURIComponent(slug)}`);
+      const res = await fetch(WORKING_COPY_PREVIEW
+        ? '/api/tutor/academy/working-copy/preview'
+        : `/api/academies/${encodeURIComponent(slug)}`);
       if (!res.ok) throw new Error('공개 Academy를 찾을 수 없습니다.');
       const academy = await res.json();
       academyVideos = await loadVideos();
@@ -70,7 +74,7 @@
       // 시각 편집기 custom 모드: published HTML을 직접 렌더한다.
       // 실패하거나 게시본이 없으면 기존 P0 렌더로 폴백한다.
       // ?ve-source=p0 는 편집기의 "기존 홈페이지 불러오기"가 P0 원본을 읽기 위한 강제 P0 렌더다.
-      if (!FORCE_P0_RENDER && renderModeOf(academy) === 'custom') {
+      if (!FORCE_P0_RENDER && !WORKING_COPY_PREVIEW && renderModeOf(academy) === 'custom') {
         const rendered = await renderCustomHomepage(academy);
         if (rendered) return;
       }
@@ -870,7 +874,7 @@
 
   async function loadVisitStatistics(academy, ownAcademy) {
     const current = currentUser();
-    const shouldRecord = !ownAcademy && (!current || current.role !== 'ADMIN');
+    const shouldRecord = !WORKING_COPY_PREVIEW && !ownAcademy && (!current || current.role !== 'ADMIN');
     try {
       const res = await fetch(`/api/academies/${encodeURIComponent(academy.slug)}/visits`, {
         method: shouldRecord ? 'POST' : 'GET',

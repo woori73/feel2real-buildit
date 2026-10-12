@@ -366,7 +366,24 @@ public class AcademyService {
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
     authResolver.verifyOwnsAcademy(academy);
 
-    AcademyPageSettings current = academy.getPageSettings();
+    AcademyPageSettings merged = mergePageSettingsForWrite(academy.getPageSettings(), request);
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      academy.updatePageSettings(merged);
+      return toResponse(academy, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * 현재 page settings에 부분 업데이트 요청을 합쳐 검증된 새 설정을 만든다(저장은 하지 않는다).
+   *
+   * <p>공개 홈페이지에 바로 쓰는 {@link #updatePageSettings}와, 공개본을 건드리지 않는 작업본 저장이
+   * 같은 정제·검증 규칙을 쓰도록 분리했다. 동작은 분리 전과 같다.
+   */
+  public AcademyPageSettings mergePageSettingsForWrite(
+      AcademyPageSettings current, AcademyPageSettingsUpdateRequest request) {
     boolean businessInfoSupplied = request.businessInfo() != null;
     AcademyPageSettings merged = new AcademyPageSettings(
         request.blogUrl() == null && current != null ? current.blogUrl() : request.blogUrl(),
@@ -386,13 +403,34 @@ public class AcademyService {
             ? current.businessInfo()
             : normalizeBusinessInfoForWrite(request.businessInfo()));
     validatePageSettings(merged, businessInfoSupplied);
-    try {
-      AuditorContextHolder.set(principal.loginId());
-      academy.updatePageSettings(merged);
-      return toResponse(academy, false);
-    } finally {
-      AuditorContextHolder.clear();
+    return merged;
+  }
+
+  /** 소개(intro) 쓰기 정규화·검증. 공개 저장과 작업본 저장이 같은 규칙을 쓴다. */
+  public String normalizeIntroForWrite(String intro) {
+    String cleanIntro = intro == null ? "" : intro.trim();
+    if (cleanIntro.isEmpty()) {
+      throw new IllegalArgumentException("소개는 비워둘 수 없습니다.");
     }
+    if (cleanIntro.length() > MAX_INTRO_LENGTH) {
+      throw new IllegalArgumentException("Academy 소개는 1000자 이하로 입력해야 합니다.");
+    }
+    return cleanIntro;
+  }
+
+  /**
+   * 비공개 미리보기용 응답: 현재 공개 응답에 작업본의 소개·page settings를 덮어 만든다(DB 변경 없음).
+   */
+  @Transactional(readOnly = true)
+  public AcademyResponse toPreviewResponse(
+      Academy academy, String previewIntro, AcademyPageSettings previewSettings) {
+    AcademyResponse base = toResponse(academy, false);
+    return new AcademyResponse(
+        base.academyId(), base.slug(), base.handle(), base.name(),
+        previewIntro != null ? previewIntro : base.intro(),
+        base.status(), base.isVisible(), base.logoUrl(), base.coverUrl(), base.publicUrl(),
+        base.subjects(), base.targetGroups(), base.regions(), base.lessons(), base.heroMediaSlots(),
+        previewSettings != null ? previewSettings : base.pageSettings());
   }
 
   /**
