@@ -113,6 +113,8 @@ public class NewstartKnowledgeItem {
         CASE,
         OPERATOR_KNOWLEDGE,
         DERIVED_RULE,
+        /** 운영 규칙·상담 가이드라인 (일반 규칙, DERIVED_RULE과 달리 사례 기반 도출이 아님). */
+        RULE,
         /** 회원 공용방 채팅에서 갈무리한 항목(개인정보 제거·요약 통과 후). */
         CHAT_DISCOVERY,
         /** 질문요청 게시판(§5)에서 갈무리한 항목(운영자 답변·재현 요청 패턴). */
