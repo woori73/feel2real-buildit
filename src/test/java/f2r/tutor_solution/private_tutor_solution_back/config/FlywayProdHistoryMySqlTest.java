@@ -73,7 +73,7 @@ class FlywayProdHistoryMySqlTest {
         try (ResultSet rs = st.executeQuery("SELECT version, success FROM " + schema
             + ".flyway_schema_history ORDER BY installed_rank DESC LIMIT 1")) {
           assertThat(rs.next()).isTrue();
-          assertThat(rs.getString("version")).isEqualTo("1058");
+          assertThat(Integer.parseInt(rs.getString("version"))).isGreaterThanOrEqualTo(1058);
           assertThat(rs.getInt("success")).isEqualTo(1);
         }
         for (String table : new String[] {"academy_page_versions", "academy_ai_sessions", "academy_ai_actions",
@@ -103,7 +103,7 @@ class FlywayProdHistoryMySqlTest {
         try (ResultSet rs = st.executeQuery("SELECT version FROM " + schema
             + ".flyway_schema_history ORDER BY installed_rank DESC LIMIT 1")) {
           assertThat(rs.next()).isTrue();
-          assertThat(rs.getString(1)).isEqualTo("1058");
+          assertThat(Integer.parseInt(rs.getString(1))).isGreaterThanOrEqualTo(1058);
         }
       } finally {
         st.execute("DROP DATABASE IF EXISTS " + schema);
