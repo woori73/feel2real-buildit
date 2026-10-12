@@ -53,10 +53,21 @@ public class AcademyWorkingCopyService {
   /** 충돌 예외. code: REVISION_CONFLICT(작업본이 그 사이 바뀜) 또는 LIVE_CHANGED(공개 내용이 그 사이 바뀜). */
   public static class WorkingCopyConflictException extends RuntimeException {
     private final String code;
+    private final Map<String, Object> details;
 
     public WorkingCopyConflictException(String code, String message) {
+      this(code, message, null);
+    }
+
+    /** details: 충돌 화면이 사용자에게 보여 줄 부가 정보(예: 덮어쓰게 될 공개 변경). */
+    public WorkingCopyConflictException(String code, String message, Map<String, Object> details) {
       super(message);
       this.code = code;
+      this.details = details;
+    }
+
+    public Map<String, Object> getDetails() {
+      return details;
     }
 
     public String getCode() {
@@ -162,8 +173,14 @@ public class AcademyWorkingCopyService {
     requireRevision(wc, expectedRevision);
 
     if (!force && !wc.getBaseFingerprint().equals(fingerprint(academy.getIntro(), academy.getPageSettings()))) {
+      // 강제 게시하면 덮어쓰게 될 공개 내용(공개 → 작업본 차이)을 함께 알려 준다. 관리자 등 다른 곳의 수정이 조용히 사라지지 않게.
+      Map<String, Object> overwrites = AcademyAdminAuditService.describeChange(
+          academy.getIntro(), wc.getIntro() == null ? academy.getIntro() : wc.getIntro(),
+          academy.getPageSettings(), withLiveRenderMode(parseSettings(wc.getPageSettingsJson()), academy.getPageSettings()));
       throw new WorkingCopyConflictException(
-          "LIVE_CHANGED", "작업본을 만든 뒤 공개 홈페이지가 다른 곳에서 수정되었습니다. 확인 후 다시 게시하세요.");
+          "LIVE_CHANGED",
+          "작업본을 만든 뒤 공개 홈페이지가 다른 곳(예: 관리자)에서 수정되었습니다. 그대로 게시하면 아래 공개 내용이 작업본으로 바뀝니다. 바뀌기 전 공개 내용은 버전 기록에 보관돼요.",
+          overwrites);
     }
 
     AcademyPageSettings live = academy.getPageSettings();

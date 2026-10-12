@@ -239,6 +239,37 @@ class AdminAcademyConflictMySqlTest {
   }
 
   @Test
+  @DisplayName("given 관리자 게시 이후, when 회원이 '그래도 게시'(force) 전에 409를 받으면, then 덮어쓰게 될 공개 내용이 안내되고 강제 게시 뒤에도 관리자 내용은 버전 기록에 남는다")
+  void memberForcePublishShowsOverwriteAndKeepsAdminVersion() throws Exception {
+    long mrev = json(call(get(MEMBER_WC).cookie(ownerCookie))).get("revision").asLong();
+    long mrev2 = json(call(put(MEMBER_WC).cookie(ownerCookie).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("revision", mrev, "intro", "회원 작업본 소개"))))).get("revision").asLong();
+    adminSaveDraft(adminOpen().get("revision").asLong(), Map.of("introMotto", "관리자 모토"));
+    assertThat(adminPost("/publish", publishBody(adminOpen().get("revision").asLong())).getResponse().getStatus()).isEqualTo(200);
+
+    MvcResult blocked = call(post(MEMBER_WC + "/publish").cookie(ownerCookie).contentType(MediaType.APPLICATION_JSON)
+        .content("{\"revision\":" + mrev2 + "}"));
+
+    assertThat(blocked.getResponse().getStatus()).isEqualTo(409);
+    JsonNode body = json(blocked);
+    assertThat(body.get("code").asText()).isEqualTo("LIVE_CHANGED");
+    assertThat(body.get("message").asText()).contains("관리자").contains("버전 기록");
+    JsonNode d = body.get("details");
+    assertThat(d.get("introChanged").asBoolean()).isTrue();
+    assertThat(d.get("builderDraftChanges").toString()).contains("introMotto").contains("관리자 모토");
+    assertThat(liveDraftValue("introMotto")).isEqualTo("관리자 모토"); // 안내만, 공개 불변
+
+    MvcResult forced = call(post(MEMBER_WC + "/publish").cookie(ownerCookie).contentType(MediaType.APPLICATION_JSON)
+        .content("{\"revision\":" + mrev2 + ",\"force\":true}"));
+    assertThat(forced.getResponse().getStatus()).isEqualTo(200);
+    em.flush();
+    Integer kept = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM academy_page_versions WHERE academy_id=? AND builder_draft_json LIKE '%관리자 모토%'",
+        Integer.class, target.academyId());
+    assertThat(kept).isGreaterThanOrEqualTo(1);
+  }
+
+  @Test
   @DisplayName("given 낡은 revision, when rebase하면, then 409 REVISION_CONFLICT이고 작업본은 그대로다")
   void rebaseRespectsRevision() throws Exception {
     long rev = adminOpen().get("revision").asLong();

@@ -86,7 +86,13 @@ public class AcademyAssistantApiController {
       PublishResult r = service.publish(principal, request.revision(), Boolean.TRUE.equals(request.force()));
       return noStore(HttpStatus.OK, Map.of("firstPublish", r.firstPublish(), "revision", r.revision()));
     } catch (WorkingCopyConflictException e) {
-      return noStore(HttpStatus.CONFLICT, Map.of("message", e.getMessage(), "code", e.getCode()));
+      Map<String, Object> body = new java.util.HashMap<>();
+      body.put("message", e.getMessage());
+      body.put("code", e.getCode());
+      if (e.getDetails() != null) {
+        body.put("details", e.getDetails());
+      }
+      return noStore(HttpStatus.CONFLICT, body);
     } catch (IllegalArgumentException e) {
       return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
     }

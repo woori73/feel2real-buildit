@@ -106,7 +106,11 @@ public class AcademyWorkingCopyApiController {
       body.put("liveChanged", s.liveChanged());
       return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
     } catch (WorkingCopyConflictException e) {
-      return error(HttpStatus.CONFLICT, e.getMessage(), e.getCode());
+      ResponseEntity<Map<String, Object>> r = error(HttpStatus.CONFLICT, e.getMessage(), e.getCode());
+      if (e.getDetails() != null) {
+        r.getBody().put("details", e.getDetails());
+      }
+      return r;
     } catch (IllegalArgumentException e) {
       return error(HttpStatus.BAD_REQUEST, e.getMessage(), null);
     }

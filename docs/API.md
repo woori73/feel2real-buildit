@@ -272,7 +272,7 @@ ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회�
 - **수정은 관리자 전용 작업본(`academy_admin_working_copy`)에만 저장**한다. 회원 본인의 작업본·AI 대화(`academy_assistant_message`)와 섞이지 않고, 회원 화면과 회원의 게시에 딸려 나가지 않는다. 기존 `/ai/chat/apply`처럼 공개 데이터를 직접 쓰는 경로는 관리자 기능에서 쓰지 않는다.
 - 관리자 게시 후 회원의 작업본은 `liveChanged=true`가 되어, 회원이 다음에 게시할 때 충돌(`LIVE_CHANGED`)로 알려 준다.
 - **감사 기록**(`academy_admin_audit`): 관리 화면 진입(ACCESS), 작업본 수정(SAVE, 변경 항목의 전/후 값), 게시(PUBLISH), 복원(RESTORE), 되돌리기(DISCARD)를 작업자·대상 학원·대상 소유자·작업본 revision·게시 여부·시각과 함께 남긴다. 기록은 작업과 **같은 트랜잭션**이라 기록이 실패하면 작업도 롤백된다. 일반 학원 목록 조회는 기록하지 않는다. 회원 API로는 읽을 수 없다.
-- **충돌 보호**: 관리자 작업본은 만들 때(또는 rebase·게시·되돌리기 때) 공개 내용을 **기준 내용**(`base_intro`, `base_page_settings_json`)으로 함께 보관한다. 공개가 바뀌면 게시는 `409 LIVE_CHANGED`로 막히고, `POST /rebase`로 양쪽 변경을 필드 단위로 합친다. 관리자 게시는 회원 작업본을 건드리지 않으며(회원의 다음 게시는 `LIVE_CHANGED`), `memberDraftDirty`로 관리자 화면에 경고한다. 한계: 회원 화면의 기존 '그래도 게시'(force)는 회원이 알고 덮어쓰는 동작이라 그대로다.
+- **충돌 보호**: 관리자 작업본은 만들 때(또는 rebase·게시·되돌리기 때) 공개 내용을 **기준 내용**(`base_intro`, `base_page_settings_json`)으로 함께 보관한다. 공개가 바뀌면 게시는 `409 LIVE_CHANGED`로 막히고, `POST /rebase`로 양쪽 변경을 필드 단위로 합친다. 관리자 게시는 회원 작업본을 건드리지 않으며(회원의 다음 게시는 `LIVE_CHANGED`), `memberDraftDirty`로 관리자 화면에 경고한다. 회원 화면의 '그래도 게시'(force)는 그대로 가능하되, 회원 게시가 `409 LIVE_CHANGED`일 때 응답 `details`(`introChanged/introBefore/introAfter`, `builderDraftChanges[{key,before,after}]`, `changedSettings`)에 **덮어쓰게 될 공개 내용**을 담아 화면이 확인 창에 보여 준다. 덮어쓰기 직전 공개 내용은 버전 기록에 보관돼 복원할 수 있다.
 - 게시 대상 확인 키(`confirmKey`)는 핸들, 핸들이 없는 기존 학원은 slug다.
 - 관리자 AI 대화(수정 턴)는 이후 단계(2-C)다. 이 화면은 AI 없이 직접 수정한다.
 
