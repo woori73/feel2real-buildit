@@ -78,6 +78,9 @@
       });
     } else if (isChoonggiReturn) {
       try { sessionStorage.setItem('postLoginReturnUrl', returnUrl); } catch (_) {}
+    } else if (returnUrl) {
+      // 2026-10-12: 일반 페이지의 검증된 returnUrl도 보존 (Wiki·Choonggi뿐 아니라 전체)
+      try { sessionStorage.setItem('postLoginReturnUrl', returnUrl); } catch (_) {}
     }
 
     params.delete('login');
