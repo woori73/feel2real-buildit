@@ -8,7 +8,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261012-3"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261012-4"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -46,20 +46,65 @@
     </form>
   </section>
 
-  <!-- 전체 화면 미리보기 -->
-  <div class="ah-full" id="ahFull" hidden role="dialog" aria-modal="true" aria-label="전체 화면 미리보기">
-    <div class="ah-fulltop">
-      <button class="ah-ghost" type="button" id="ahBack">← 대화로 돌아가기</button>
-      <div class="ah-seg" role="group" aria-label="화면 크기">
-        <button type="button" id="ahDevMobile" class="on" aria-pressed="true">모바일</button>
-        <button type="button" id="ahDevDesktop" aria-pressed="false">PC</button>
+  <!-- 작업 화면: 결과물(미리보기) 중심 + 하단 대화 입력. 생성 직후와 재진입 모두 이 화면에서 수정한다. -->
+  <section class="ah-work" id="ahWork" hidden aria-label="홈페이지 작업 화면">
+    <header class="ah-bar">
+      <strong class="ah-brand">BuildIt</strong>
+      <span class="ah-status" id="ahStatus" aria-live="polite"></span>
+      <div class="ah-bar-actions">
+        <button class="ah-ghost ah-undo" type="button" id="ahUndo" disabled aria-label="되돌리기">↶ 되돌리기 <b id="ahUndoCount">0</b></button>
+        <button class="ah-primary ah-small" type="button" id="ahPublish">게시하기</button>
       </div>
-      <button class="ah-primary ah-small" type="button" id="ahFullPublish">게시하기</button>
+    </header>
+    <div class="ah-subbar">
+      <div class="ah-seg" role="group" aria-label="화면 크기">
+        <button type="button" data-dev="mobile" class="on" aria-pressed="true">모바일</button>
+        <button type="button" data-dev="tablet" aria-pressed="false">태블릿</button>
+        <button type="button" data-dev="desktop" aria-pressed="false">PC</button>
+      </div>
+      <span class="ah-draftnote">미리보기는 비공개 작업본이에요</span>
+      <a class="ah-classic" href="/builder?classic=1" id="ahClassicWork">기존 빌더</a>
     </div>
-    <div class="ah-stage" id="ahStage"><iframe id="ahFrame" title="홈페이지 미리보기" class="mobile"></iframe></div>
+
+    <div class="ah-stage" id="ahStage">
+      <div class="ah-framewrap" id="ahFrameWrap"><div class="ah-device" id="ahDevice"><iframe id="ahFrame" title="홈페이지 미리보기"></iframe></div></div>
+      <div class="ah-busy" id="ahBusy" hidden role="status" aria-live="polite">
+        <div class="ah-busy-card"><ul class="ah-steps" id="ahBusySteps"></ul></div>
+      </div>
+    </div>
+
+    <div class="ah-dock">
+      <div class="ah-strip" id="ahStrip" hidden>
+        <div class="ah-strip-text" id="ahStripText"></div>
+        <ul class="ah-changes" id="ahChanges"></ul>
+        <div class="ah-strip-actions"><button type="button" class="ah-link" id="ahStripUndo" hidden>이 수정 되돌리기</button><button type="button" class="ah-link" id="ahShowHistory">대화 보기</button></div>
+      </div>
+      <div class="ah-chips" id="ahChips" role="group" aria-label="추천 요청"></div>
+      <form class="ah-composer" id="ahWorkComposer" autocomplete="off">
+        <input class="ah-input" id="ahWorkInput" maxlength="1000" placeholder="예: 더 고급스러운 분위기로 바꿔 줘" aria-label="수정 요청"/>
+        <button class="ah-send" type="submit" id="ahWorkSend" aria-label="보내기">보내기</button>
+      </form>
+    </div>
+
+    <div class="ah-sheet" id="ahHistory" hidden role="dialog" aria-modal="true" aria-label="대화 기록">
+      <div class="ah-sheet-head"><strong>대화 기록</strong><button class="ah-ghost" type="button" id="ahHistoryClose">닫기</button></div>
+      <div class="ah-messages" id="ahHistoryList" role="log"></div>
+    </div>
+
+    <div class="ah-modal" id="ahConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="ahConfirmTitle">
+      <div class="ah-modal-card">
+        <h2 id="ahConfirmTitle">홈페이지를 게시할까요?</h2>
+        <p id="ahConfirmText"></p>
+        <pre class="ah-overwrite" id="ahConfirmDetail" hidden></pre>
+        <div class="ah-modal-actions">
+          <button class="ah-secondary" type="button" id="ahConfirmCancel">취소</button>
+          <button class="ah-primary" type="button" id="ahConfirmOk">게시하기</button>
+        </div>
+      </div>
+    </div>
     <div class="ah-toast" id="ahToast" role="status" hidden></div>
-  </div>
+  </section>
 </div>
-<script src="/js/assistant_home.js?v=20261012-2"></script>
+<script src="/js/assistant_home.js?v=20261013-1"></script>
 </body>
 </html>

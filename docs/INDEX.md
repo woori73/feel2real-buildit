@@ -8,6 +8,7 @@
 | 작업 | 먼저 읽을 문서 |
 |---|---|
 | **모든 BuildIt 제품·기능 설계 및 수정** | [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md) |
+| BuildIt 2-C 이후(S2 디자인 자산 조합 / S3 이미지 작업본) 준비 | [BUILDIT_S2_S3_PREPARATION.md](BUILDIT_S2_S3_PREPARATION.md) |
 | **내신 예상문제 / 학교별 시험지 / 인쇄용 문제지 HTML 제작·수정** | **[exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — 작업 전 필독 + 완성 후 체크리스트 검수 필수** |
 | **학교별 Wiki Context / Digital Twin / 기출·프린트 기반 내신 문제 제작** | **[exam/WIKI_TUTOR_BROWSER_CONTEXT.md](exam/WIKI_TUTOR_BROWSER_CONTEXT.md) + [exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — MCP empty 시 TUTOR 브라우저 확인, Context Pack·정답 독립검증 필수** |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |

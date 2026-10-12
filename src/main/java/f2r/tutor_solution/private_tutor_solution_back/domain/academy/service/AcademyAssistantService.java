@@ -26,7 +26,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * BuildIt 통합 화면의 대화 서비스(2-A). 새 AI 엔진을 만들지 않고 기존 생성기
@@ -60,17 +62,20 @@ public class AcademyAssistantService {
   private final AcademyAssistantMessageRepository messageRepository;
   private final SubjectRepository subjectRepository;
   private final ObjectMapper objectMapper;
+  private final AcademyAssistantEditService editService;
+  private final PlatformTransactionManager txManager;
 
   /** 한 번의 대화 결과. needs가 비어 있지 않으면 학원은 아직 만들어지지 않았다. */
   public record TurnResult(
       String reply, List<String> needs, boolean created, Long academyId,
-      Long revision, String designPreset, List<String> notes) {}
+      Long revision, String designPreset, List<String> notes,
+      AcademyAssistantEditService.EditOutcome edit) {}
 
   public record PublishResult(boolean firstPublish, long revision) {}
 
   public record StateView(
       boolean hasAcademy, String status, List<AcademyAssistantMessage> messages,
-      Long revision, boolean dirty, String publicUrl) {}
+      Long revision, boolean dirty, String publicUrl, int undoDepth) {}
 
   public List<Sample> samples() {
     return AcademyAssistantSamples.all();
@@ -81,18 +86,18 @@ public class AcademyAssistantService {
   public StateView state(JwtTokenProvider.AuthenticatedPrincipal principal) {
     Optional<AcademyResponse> mine = academyService.getMine(principal);
     if (mine.isEmpty()) {
-      return new StateView(false, null, List.of(), null, false, null);
+      return new StateView(false, null, List.of(), null, false, null, 0);
     }
     AcademyResponse academy = mine.get();
     State wc = workingCopyService.open(principal);
     return new StateView(
         true, academy.status().name(),
         messageRepository.findByAcademyIdOrderByMessageIdAsc(academy.academyId()),
-        wc.revision(), wc.dirty(), academy.publicUrl());
+        wc.revision(), wc.dirty(), academy.publicUrl(), editService.undoDepth(academy.academyId()));
   }
 
   /**
-   * 대화 한 턴을 처리한다. 현재는 '최초 생성'만 지원한다(수정 턴은 2-C).
+   * 대화 한 턴을 처리한다. 학원이 없으면 '최초 생성', 있으면 '수정 턴'(비공개 작업본에만 적용, 되돌리기 가능)이다.
    *
    * @param academyName 신규 사용자의 학원 이름
    * @param sampleKey 시작 화면에서 고른 샘플 키(선택)
@@ -100,11 +105,18 @@ public class AcademyAssistantService {
    * @param target 사용자가 말한 대상(예: 중학생). 없으면 되묻는다
    * @param region 학원 지역(시/도 등). 없으면 대화로 되묻는다(주소를 지어내지 않는다)
    */
-  @Transactional
   public TurnResult turn(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       String message, String academyName, String sampleKey, String region,
       String subject, String target) {
+    return turn(principal, message, academyName, sampleKey, region, subject, target, null);
+  }
+
+  /** @param revision 수정 턴에서 클라이언트가 마지막으로 본 작업본 revision(동시 수정 감지). */
+  public TurnResult turn(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String message, String academyName, String sampleKey, String region,
+      String subject, String target, Long revision) {
     String text = message == null ? "" : message.trim();
     if (text.length() > MAX_MESSAGE_LENGTH) {
       throw new IllegalArgumentException("메시지는 " + MAX_MESSAGE_LENGTH + "자 이하로 입력해 주세요.");
@@ -114,14 +126,18 @@ public class AcademyAssistantService {
     }
     Optional<AcademyResponse> mine = academyService.getMine(principal);
     if (mine.isPresent()) {
-      Long academyId = mine.get().academyId();
-      remember(academyId, ROLE_USER, KIND_TEXT, text, null);
-      String reply = "수정 요청은 다음 업데이트에서 지원됩니다. 지금은 만들어진 홈페이지를 미리보기로 확인하고 게시할 수 있습니다.";
-      remember(academyId, ROLE_ASSISTANT, KIND_TEXT, reply, null);
-      return new TurnResult(reply, List.of(), false, academyId, null, null, List.of());
+      if (text.isEmpty()) {
+        return new TurnResult("어떻게 바꿀까요? 예: \"더 고급스럽게 바꿔 줘\", \"주색을 파란색으로\", \"수업 영상 섹션 숨겨 줘\"",
+            List.of(), false, mine.get().academyId(), revision, null, List.of(), null);
+      }
+      AcademyAssistantEditService.EditOutcome out = editService.edit(principal, text, revision);
+      return new TurnResult(out.reply(), List.of(), false, mine.get().academyId(), out.revision(), null, List.of(), out);
     }
-    return createFirstDraft(principal, text, academyName, sampleKey, region, subject, target);
+    return new TransactionTemplate(txManager).execute(
+        status -> createFirstDraft(principal, text, academyName, sampleKey, region, subject, target));
   }
+
+  // ───────────── (아래: 최초 생성 이후 공개 API) ─────────────
 
   /**
    * '게시하기' 하나로 작업본을 공개 홈페이지에 반영한다. 최초 게시면 DRAFT 학원을 PUBLISHED로 전환한다.
@@ -132,6 +148,11 @@ public class AcademyAssistantService {
       JwtTokenProvider.AuthenticatedPrincipal principal, long expectedRevision, boolean force) {
     State state = workingCopyService.publish(principal, expectedRevision, force);
     boolean first = academyService.publishIfDraft(principal);
+    // 게시하면 그 이전 수정은 되돌리기 대상에서 빠진다(공개된 내용은 버전 기록으로 복원한다).
+    academyService.getMine(principal).ifPresent(a -> remember(
+        a.academyId(), ROLE_ASSISTANT, AcademyAssistantEditService.KIND_PUBLISHED,
+        first ? "게시했어요. 이제 누구나 홈페이지를 볼 수 있어요." : "수정한 내용을 게시했어요.",
+        toJson(Map.of("revisionAfter", state.revision()))));
     return new PublishResult(first, state.revision());
   }
 
@@ -225,7 +246,7 @@ public class AcademyAssistantService {
     remember(academyId, ROLE_USER, KIND_TEXT, summaryOfRequest(name, text, sample), null);
     remember(academyId, ROLE_ASSISTANT, KIND_RESULT, reply, toJson(Map.of(
         "revision", saved.revision(), "designPreset", preset, "notes", notes)));
-    return new TurnResult(reply, List.of(), true, academyId, saved.revision(), preset, notes);
+    return new TurnResult(reply, List.of(), true, academyId, saved.revision(), preset, notes, null);
   }
 
   private static String label(String need) {
@@ -238,7 +259,7 @@ public class AcademyAssistantService {
   }
 
   private TurnResult ask(List<String> needs, String reply) {
-    return new TurnResult(reply, needs, false, null, null, null, List.of());
+    return new TurnResult(reply, needs, false, null, null, null, List.of(), null);
   }
 
   private String summaryOfRequest(String name, String text, Sample sample) {

@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditService.EditOutcome;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.PublishResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.StateView;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AcademyAssistantApiController {
 
   private final AcademyAssistantService service;
+  private final AcademyAssistantEditService editService;
 
   /** 시작 화면의 샘플 6종. */
   @GetMapping("/samples")
@@ -48,10 +51,14 @@ public class AcademyAssistantApiController {
     body.put("revision", v.revision());
     body.put("dirty", v.dirty());
     body.put("publicUrl", v.publicUrl());
+    body.put("undoDepth", v.undoDepth());
     return noStore(HttpStatus.OK, body);
   }
 
-  /** 대화 한 턴. body: {message?, academyName?, sampleKey?, region?, subject?, target?}. */
+  /**
+   * 대화 한 턴. 학원이 없으면 최초 생성, 있으면 수정 턴(비공개 작업본에만 적용).
+   * body: {message?, academyName?, sampleKey?, region?, subject?, target?, revision?}. 수정 턴의 revision은 동시 수정 감지용이다.
+   */
   @PostMapping("/turn")
   public ResponseEntity<Map<String, Object>> turn(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
@@ -59,7 +66,7 @@ public class AcademyAssistantApiController {
     try {
       TurnResult r = service.turn(
           principal, request.message(), request.academyName(), request.sampleKey(), request.region(),
-          request.subject(), request.target());
+          request.subject(), request.target(), request.revision());
       Map<String, Object> body = new HashMap<>();
       body.put("reply", r.reply());
       body.put("needs", r.needs());
@@ -68,10 +75,56 @@ public class AcademyAssistantApiController {
       body.put("revision", r.revision());
       body.put("designPreset", r.designPreset());
       body.put("notes", r.notes());
+      if (r.edit() != null) {
+        putEdit(body, r.edit());
+      }
       return noStore(HttpStatus.OK, body);
+    } catch (WorkingCopyConflictException e) {
+      return conflict(e);
     } catch (IllegalArgumentException e) {
       return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
     }
+  }
+
+  /** 되돌리기: 마지막 수정(게시 이후, 아직 되돌리지 않은 것)을 작업본에서 되돌린다. body: {revision}. */
+  @PostMapping("/undo")
+  public ResponseEntity<Map<String, Object>> undo(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody UndoRequest request) {
+    try {
+      EditOutcome out = editService.undo(principal, request == null ? null : request.revision());
+      Map<String, Object> body = new HashMap<>();
+      body.put("reply", out.reply());
+      body.put("created", false);
+      putEdit(body, out);
+      return noStore(HttpStatus.OK, body);
+    } catch (WorkingCopyConflictException e) {
+      return conflict(e);
+    } catch (IllegalArgumentException e) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
+    }
+  }
+
+  private static void putEdit(Map<String, Object> body, EditOutcome out) {
+    body.put("edited", !out.failed() && !out.changes().isEmpty());
+    body.put("failed", out.failed());
+    body.put("changes", out.changes());
+    body.put("skipped", out.skipped());
+    body.put("engine", out.engine());
+    body.put("aiMs", out.aiMs());
+    body.put("undoDepth", out.undoDepth());
+    body.put("revision", out.revision());
+    body.put("question", out.question());
+  }
+
+  private static ResponseEntity<Map<String, Object>> conflict(WorkingCopyConflictException e) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("message", e.getMessage());
+    body.put("code", e.getCode());
+    if (e.getDetails() != null) {
+      body.put("details", e.getDetails());
+    }
+    return noStore(HttpStatus.CONFLICT, body);
   }
 
   /** '게시하기': 작업본을 공개하고, 최초면 DRAFT를 PUBLISHED로 바꾼다. body: {revision, force?}. */
@@ -105,7 +158,10 @@ public class AcademyAssistantApiController {
   }
 
   record TurnRequest(
-      String message, String academyName, String sampleKey, String region, String subject, String target) {}
+      String message, String academyName, String sampleKey, String region, String subject, String target,
+      Long revision) {}
+
+  record UndoRequest(Long revision) {}
 
   record PublishRequest(Long revision, Boolean force) {}
 }
