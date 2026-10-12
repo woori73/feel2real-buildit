@@ -3,7 +3,6 @@ package f2r.tutor_solution.private_tutor_solution_back.config;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -20,24 +19,22 @@ class PageNotFoundRedirectControllerTest {
             .build();
 
     @Test
-    @DisplayName("GET 404 general page route redirects to /home")
-    void get_404_general_page_route_redirects_to_home() throws Exception {
+    @DisplayName("GET 404 general page route shows 404 page (not redirect to /home)")
+    void get_404_general_page_route_shows_404() throws Exception {
         mockMvc.perform(get("/error")
                         .requestAttr(RequestDispatcher.ERROR_STATUS_CODE, 404)
                         .requestAttr(RequestDispatcher.ERROR_REQUEST_URI, "/unknown/page"))
-                .andExpect(status().isFound())
-                .andExpect(view().name("redirect:/home"))
-                .andExpect(redirectedUrl("/home"));
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error/404"));
     }
 
     @Test
-    @DisplayName("HEAD 404 general page route redirects to /home")
-    void head_404_general_page_route_redirects_to_home() throws Exception {
+    @DisplayName("HEAD 404 general page route shows 404 status (not redirect to /home)")
+    void head_404_general_page_route_shows_404() throws Exception {
         mockMvc.perform(head("/error")
                         .requestAttr(RequestDispatcher.ERROR_STATUS_CODE, 404)
                         .requestAttr(RequestDispatcher.ERROR_REQUEST_URI, "/unknown/page"))
-                .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/home"));
+                .andExpect(status().isNotFound());
     }
 
     @Test
