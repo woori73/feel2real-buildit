@@ -201,6 +201,22 @@ DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽�
 
 편집기 쪽 계약: `window.__ve.applyProposal({proposalId, changes[]})`(전부 또는 전무, 저장하지 않음) · `window.__ve.undoProposal()`(적용 직전 상태로 한 번에 복원) · `window` 이벤트 `ve:saved`(`{revision, appliedProposal}`, 저장 성공마다) · `ve:proposal-failed`(`{proposalId, code, message, details}`). `window.__ve.state()`에 `pendingAppliedProposalId`가 추가되었다. 저장 revision 충돌 시 편집기는 미저장 내용을 `localStorage`(`ve:backup:{academyId}`)에 먼저 백업하고, 자동저장 충돌은 모달 없이 알리며, 수동 저장 충돌은 "내 내용 유지(기본)/최신 초안 불러오기/덮어쓰기" 중에서 고르게 한다. 백업은 상태줄의 "저장 안 된 내 변경 복원"으로 되돌릴 수 있다.
 
+#### 작업본 API (BuildIt 통합 화면 1단계, V1060)
+
+TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 홈페이지는 `POST /publish`에서만 바뀐다.**
+
+| 메서드·경로 | 설명 |
+|---|---|
+| `GET /api/tutor/academy/working-copy` | 작업본 상태 `{revision, intro, pageSettings, dirty, liveChanged}`. 없으면 현재 공개 내용으로 복제해 만든다(공개본 불변) |
+| `PUT /api/tutor/academy/working-copy` | `{revision, intro?, pageSettings?}` 부분 수정. `pageSettings`는 `AcademyPageSettingsUpdateRequest`와 같은 형태·검증 |
+| `POST /api/tutor/academy/working-copy/discard` | `{revision}` 작업본을 현재 공개 내용으로 되돌림 |
+| `POST /api/tutor/academy/working-copy/restore` | `{revision, versionId}` 기존 버전 기록을 작업본에 불러옴(공개본 불변) |
+| `POST /api/tutor/academy/working-copy/publish` | `{revision, force?}` 작업본을 공개본에 반영. 직전 공개 내용은 버전 기록(`academy_page_versions`)에 남음 |
+| `GET /api/tutor/academy/working-copy/preview` | 공개 API(`/api/academies/{slug}`)와 같은 모양의 작업본 미리보기. `X-Robots-Tag: noindex` |
+| `GET /tutor/academy/preview` (페이지) | 본인 작업본을 공개 페이지와 같은 렌더러로 표시. 방문 통계 미기록, 홈페이지가 없으면 `/builder`로 이동 |
+
+오류: `409 REVISION_CONFLICT`(작업본이 그 사이 바뀜), `409 LIVE_CHANGED`(작업본 생성 후 공개 내용이 따로 바뀜 — `force:true`로 덮어쓰기 가능), `400`(검증 실패). `homepage.renderMode`는 작업본 요청으로 바꿀 수 없다.
+
 #### AI 제안·Agent API (V1058, 구현 완료)
 
 **교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`

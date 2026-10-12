@@ -1656,6 +1656,14 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 - **상태 전이(§2, 결정적·AI 없음)**: 회원 첫 질문→NEW. 운영자가 열면→AWAITING_ANSWER. 운영자 답변→OPERATOR_ANSWERED. 답변 뒤 회원 추가 질문→MEMBER_FOLLOWUP. 회원 목록/배지는 아직 못 본 OPERATOR 답변 수(`member_last_seen_message_id` 커서 기준)로 "새 답변 N건" 표시.
 - 관련 화면: 회원 `/newstart/consultations`(공개 셸 + `window.refreshAccountArea` 인증, 감사회원만 API 통과), 운영자 `/admin/newstart/consultations`(ROLE_ADMIN). 홈 `ns-service-consult` 카드 + `newstart-consult-unread.js` 배지.
 
+### academy_working_copy ✅ BuildIt 통합 화면 작업본 (V1060)
+
+공개 홈페이지(`academies.intro`, `academies.page_settings`)와 분리된 **편집용 복사본**. 대화 수정은 여기에만 쓰이고, 공개본은 게시(`POST /api/tutor/academy/working-copy/publish`)에서만 바뀐다. 설계: [BUILDIT_UNIFIED_CHAT_UI_DESIGN.md](BUILDIT_UNIFIED_CHAT_UI_DESIGN.md).
+
+**academy_working_copy**: `working_copy_id` PK, `academy_id` FK(UNIQUE, ON DELETE CASCADE), `revision`(@Version, 낙관적 잠금), `intro`, `page_settings_json`(AcademyPageSettings JSON, 키 순서 고정), `base_fingerprint`(작업본이 기준으로 삼은 공개 내용의 SHA-256 — 게시 시 공개 내용이 그 사이 바뀌었는지 비교), `created_by`/`updated_by`, `created_at`/`updated_at`.
+
+불변식: 작업본 저장·버리기·버전 불러오기는 공개 테이블을 쓰지 않는다. `homepage.renderMode`(시각 편집기 게시 상태)는 작업본이 바꿀 수 없고 항상 공개본 값을 따른다. 시각 편집기 계층은 기존 `academy_visual_editor_draft/published`를 그대로 쓴다(중복 저장 없음). 기존 데이터 변경·삭제 없음(신규 테이블만).
+
 ### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)
 
 > 시각 편집기(`academy_visual_editor_draft`/`_published`)와 같은 격리 원칙: 기존 테이블 변경 없음, `academies` FK(CASCADE)뿐. 제안은 승인 전까지 초안·게시본·`page_settings`에 어떤 영향도 주지 않는다.
