@@ -201,6 +201,31 @@ DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽�
 
 편집기 쪽 계약: `window.__ve.applyProposal({proposalId, changes[]})`(전부 또는 전무, 저장하지 않음) · `window.__ve.undoProposal()`(적용 직전 상태로 한 번에 복원) · `window` 이벤트 `ve:saved`(`{revision, appliedProposal}`, 저장 성공마다) · `ve:proposal-failed`(`{proposalId, code, message, details}`). `window.__ve.state()`에 `pendingAppliedProposalId`가 추가되었다. 저장 revision 충돌 시 편집기는 미저장 내용을 `localStorage`(`ve:backup:{academyId}`)에 먼저 백업하고, 자동저장 충돌은 모달 없이 알리며, 수동 저장 충돌은 "내 내용 유지(기본)/최신 초안 불러오기/덮어쓰기" 중에서 고르게 한다. 백업은 상태줄의 "저장 안 된 내 변경 복원"으로 되돌릴 수 있다.
 
+#### AI 제안·Agent API (V1058, 구현 완료)
+
+**교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`
+
+| 메서드·경로 | 설명 | 응답 |
+|---|---|---|
+| `GET /proposals` | 내 학원의 PENDING·STALE 제안(조회 시 만료 정리, 대상 요소가 초안에서 사라진 제안만 STALE) | `[ProposalView]` |
+| `POST /proposals/{id}/reject` | 거절(PENDING만) | 200 / 404(없음·타 학원) / 409 |
+| `POST /ai-requests` `{instruction}` | AI에게 수정 요청 → 제안(PENDING) 생성. **초안·게시본은 바뀌지 않는다.** 기존 Academy AI 공급자(`AiProvider`, Wiki AI Router)를 쓰며 새 비밀값 없음. 대기 제안이 상한이면 AI 호출 전 409 | 201 `ProposalView` / 400(요청·초안 없음) / 409 / 503(공급자 실패) |
+| `GET /agent-tokens` | 토큰 목록(비밀 없음) | `[{tokenId,label,scopes,expiresAt,lastUsedAt,active}]` |
+| `POST /agent-tokens` `{label}` | 토큰 발급. 응답의 `token`(`vea_…`)은 **이때 한 번만** 보인다(DB에는 SHA-256 해시) | 201 / 409(활성 5개 초과) |
+| `DELETE /agent-tokens/{id}` | 폐기 | 200 / 404(타 학원) |
+
+**Agent(Bearer `vea_…`, 학원 1개에 바인딩, 접두 `/api/agent/academy/visual-editor`)** — 쿠키(TUTOR 포함)로는 403, 토큰으로는 이 3개 경로 밖(초안·게시·renderMode·토큰·거절 등)에 접근할 수 없다(`VisualEditorAgentTokenFilter` allowlist).
+
+| 메서드·경로 | scope | 설명 |
+|---|---|---|
+| `GET /context` | `ve:read` | 저장된 초안 기준 `{revision, components[{id,tag,type,text,src}], editableTypes}` |
+| `POST /proposals` `{baseRevision?, summary, changes[]}` | `ve:propose` | 제안 생성(201 `ProposalView`, PENDING). `changes[]`: `{componentId, type:"text"\|"image"\|"style", after \| styles, mediaText?}` — 1~50건, text는 HTML 태그 금지·2000자, image는 `http(s)://` 또는 `/`로 시작, style은 속성 20개·값 200자·`url()`/`expression`/`;{}` 금지·`mediaText`는 비움 또는 `(max-width: 768px)`. 위반 400. 대기 5건 초과 409 |
+| `GET /proposals/{id}` | `ve:read` | 상태 조회(타 학원 404) |
+
+`ProposalView`: `{proposalId, status(PENDING·APPLIED·REJECTED·EXPIRED·STALE), summary, createdByKind(AGENT·AI), createdAt, expiresAt(14일), baseRevision, changes[], applicable, staleReason}`.
+승인은 별도 API가 아니다 — 편집기가 제안을 적용해 `PUT …/draft`에 `appliedProposalId`를 실어 저장하는 것이 승인이다(위 표). 반영(공개)은 그다음 사용자가 게시할 때다.
+
+
 
 - **`publicReachable`**: 학원이 `PUBLISHED`이고 `visible`일 때만 `true`. `false`면 게시본은 저장됐지만 방문자에게는 보이지 않으며, 응답 `message`가 그 사실을 알린다("성공" 문구로 덮지 않는다).
 - **projectData 정제:** GrapesJS 0.23.x가 프레임마다 붙이는 `component.head`(`{"type":"head"}`)·`component.docEl`(`{"tagName":"html"}`)과 페이지 `type:"main"`은 정해진 빈 모양일 때만 보존한다. 그 밖의 `head`/`docEl` 내용, 트리 안의 `type=head`/`tagName=html`, `script`·`on*`·`javascript:`는 계속 400.

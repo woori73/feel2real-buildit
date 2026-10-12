@@ -41,6 +41,7 @@ public class ProposalAiService {
     if (ask.isEmpty() || ask.length() > MAX_INSTRUCTION) {
       throw new IllegalArgumentException("수정 요청은 1~" + MAX_INSTRUCTION + "자로 입력하세요.");
     }
+    proposalService.ensureCapacity(academyId);   // 상한이면 AI를 부르기 전에 거부(비용·남용 방지)
     VisualEditorDraft draft = draftRepository.findByAcademyId(academyId).orElseThrow(
         () -> new IllegalArgumentException("먼저 홈페이지를 저장한 뒤 AI에게 수정을 요청하세요."));
     List<EditorOutline.Item> outline = EditorOutline.of(draft.getProjectData());

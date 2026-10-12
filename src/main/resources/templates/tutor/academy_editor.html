@@ -74,6 +74,37 @@
     .status-bar a { color: #2563eb; text-decoration: none; }
     .status-action { font-size: 12px; padding: 2px 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #374151; cursor: pointer; }
     .status-action:hover { background: #f3f4f6; }
+    .ai-badge { background: #dc2626; color: #fff; border-radius: 10px; padding: 0 6px; font-size: 11px; margin-left: 2px; }
+    .ai-panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); background: #fff; z-index: 900; box-shadow: -4px 0 24px rgba(0,0,0,.2); display: flex; flex-direction: column; }
+    .ai-panel[hidden] { display: none; }
+    .ai-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+    .ai-x { border: 0; background: transparent; font-size: 18px; cursor: pointer; min-width: 44px; min-height: 44px; }
+    .ai-body { padding: 12px 14px 24px; overflow-y: auto; flex: 1; font-size: 13px; color: #374151; }
+    .ai-note { font-size: 12px; color: #6b7280; margin: 0 0 10px; line-height: 1.5; }
+    .ai-label { font-weight: 600; margin: 8px 0 4px; display: block; }
+    .ai-panel textarea, .ai-panel input[type=text] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .ai-btn { padding: 8px 12px; min-height: 44px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
+    .ai-btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; margin-top: 8px; width: 100%; }
+    .ai-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .ai-msg { margin-top: 8px; font-size: 12px; min-height: 16px; }
+    .ai-msg.error { color: #dc2626; }
+    .ai-msg.ok { color: #047857; }
+    .ai-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; margin-top: 8px; }
+    .ai-card.stale { background: #fffbeb; border-color: #fcd34d; }
+    .ai-card h4 { margin: 0 0 4px; font-size: 14px; word-break: break-word; }
+    .ai-meta { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+    .ai-changes { margin: 0 0 8px; padding-left: 16px; font-size: 12px; word-break: break-word; }
+    .ai-changes .before { color: #9ca3af; text-decoration: line-through; }
+    .ai-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ai-actions .ai-btn { flex: 1 1 auto; }
+    .ai-actions .ai-btn.approve { background: #047857; border-color: #047857; color: #fff; }
+    .ai-agent { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    .ai-token-row { display: flex; gap: 6px; margin: 6px 0; }
+    .ai-token-row input { flex: 1; }
+    .ai-tokens div { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
+    .ve-preview-bar { padding: 8px 14px; background: #fffbeb; border-bottom: 1px solid #fcd34d; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+    .ve-preview-bar .ai-btn { min-height: 38px; }
+    @media (max-width: 640px) { .ai-panel { width: 100vw; } }
     .ve-modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 16px; }
     .ve-modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
     .ve-modal h3 { margin: 0 0 8px; font-size: 16px; }
@@ -188,6 +219,7 @@
       <button class="btn-device" data-device="Mobile" title="모바일 375px" aria-label="모바일">📲 <span class="btn-label">모바일</span></button>
     </div>
 
+    <button class="btn-import" id="aiBtn" title="AI 수정 제안 보기·요청" aria-label="AI 제안">🤖 <span class="btn-label">AI 제안</span> <span id="aiBadge" class="ai-badge" hidden>0</span></button>
     <button class="btn-import" id="importBtn" title="기존 홈페이지를 편집기로 불러오기" aria-label="불러오기">📥 <span class="btn-label">불러오기</span></button>
     <button class="btn-preview" id="previewBtn" title="미리보기" aria-label="미리보기">👁 <span class="btn-label">미리보기</span></button>
     <button class="btn-save" id="saveBtn" title="저장 (Ctrl+S)" aria-label="저장">💾 <span class="btn-label">저장</span></button>
@@ -201,6 +233,30 @@
     <button type="button" class="status-action" id="undoProposalBtn" hidden>↩ AI 제안 되돌리기</button>
     <button type="button" class="status-action" id="restoreBackupBtn" hidden>↩ 저장 안 된 내 변경 복원</button>
   </div>
+
+  <!-- AI 제안 패널: 제안 목록·미리보기·승인/거절, AI 수정 요청, Agent 토큰 -->
+  <aside id="aiPanel" class="ai-panel" hidden aria-label="AI 제안">
+    <div class="ai-head">
+      <strong>🤖 AI 수정 제안</strong>
+      <button type="button" id="aiClose" class="ai-x" aria-label="닫기">✕</button>
+    </div>
+    <div class="ai-body">
+      <p class="ai-note">AI 제안은 <b>승인하기 전에는 홈페이지에 반영되지 않습니다.</b> 미리보기로 확인한 뒤 승인하세요.</p>
+      <label for="aiInstruction" class="ai-label">AI에게 수정 요청</label>
+      <textarea id="aiInstruction" rows="3" maxlength="500" placeholder="예) 메인 제목을 '영어는 우리 학원'으로 바꾸고 글자를 더 크게"></textarea>
+      <button type="button" id="aiAsk" class="ai-btn primary">수정안 만들기</button>
+      <div id="aiMsg" class="ai-msg" role="status"></div>
+      <div class="ai-label" style="margin-top:14px">대기 중인 제안</div>
+      <div id="aiList" class="ai-list"></div>
+      <details class="ai-agent">
+        <summary>외부 AI Agent 연결 (토큰)</summary>
+        <p class="ai-note">Agent는 제안만 만들 수 있고, 승인은 항상 여기서 합니다. 토큰은 만든 직후 한 번만 보입니다.</p>
+        <div class="ai-token-row"><input id="aiTokenLabel" type="text" maxlength="100" placeholder="토큰 이름" /><button type="button" id="aiTokenNew" class="ai-btn">토큰 만들기</button></div>
+        <textarea id="aiTokenShow" rows="2" readonly hidden></textarea>
+        <div id="aiTokens" class="ai-tokens"></div>
+      </details>
+    </div>
+  </aside>
 
   <!-- 메인 영역 -->
   <div class="editor-main">
@@ -635,8 +691,32 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     return false;
   }
 
-  // 제안(changes[])을 component 단위로 적용한다. 전부 찾을 수 있을 때만 적용(전부 또는 전무).
-  // 저장은 하지 않는다 — 적용 후 첫 저장(자동저장·수동저장)이 appliedProposalId를 실어 보낸다.
+  // 변경 계획: 모든 대상이 정확히 1개씩 있어야 한다(전부 또는 전무). 편집기 인스턴스(ed)를 인자로 받아
+  // 미리보기용 숨은 편집기에도 같은 코드를 쓴다.
+  function planChanges(ed, changes) {
+    const plan = [];
+    const failed = [];
+    for (const c of changes) {
+      const id = c && c.componentId;
+      if (typeof id !== 'string' || !/^[A-Za-z][\w-]*$/.test(id) || !['text', 'image', 'style'].includes(c.type)) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      const found = ed.getWrapper().find('#' + id);
+      if (found.length !== 1) { failed.push({ componentId: id, reason: found.length === 0 ? 'TARGET_NOT_FOUND' : 'TARGET_AMBIGUOUS' }); continue; }
+      if (c.type === 'style' && (!c.styles || typeof c.styles !== 'object')) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      if (c.type !== 'style' && typeof c.after !== 'string') { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
+      plan.push({ c, cmp: found[0] });
+    }
+    return { plan, failed };
+  }
+  function runPlan(ed, plan) {
+    plan.forEach(({ c, cmp }) => {
+      if (c.type === 'text') cmp.components([{ type: 'textnode', content: c.after }]);
+      else if (c.type === 'image') { cmp.addAttributes({ src: c.after }); cmp.set('src', c.after); }
+      else ed.Css.setIdRule(c.componentId, c.styles, c.mediaText ? { mediaText: c.mediaText } : {});
+    });
+  }
+
+  // 제안(changes[])을 component 단위로 적용한다. 저장은 하지 않는다 — 적용 후 첫 저장(자동저장·수동저장)이
+  // appliedProposalId를 실어 보낸다.
   async function applyProposal(proposal) {
     if (!ready || isSaving || importing) return { applied: false, reason: 'EDITOR_BUSY' };
     const pid = Number(proposal && proposal.proposalId);
@@ -644,24 +724,10 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     const changes = proposal.changes;
     if (!Array.isArray(changes) || changes.length === 0) return { applied: false, reason: 'NO_CHANGES' };
     if (pendingAppliedProposalId && pendingAppliedProposalId !== pid) return { applied: false, reason: 'ANOTHER_PROPOSAL_PENDING' };
-    const plan = [];
-    const failed = [];
-    for (const c of changes) {
-      const id = c && c.componentId;
-      if (typeof id !== 'string' || !/^[A-Za-z][\w-]*$/.test(id) || !['text', 'image', 'style'].includes(c.type)) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
-      const found = editor.getWrapper().find('#' + id);
-      if (found.length !== 1) { failed.push({ componentId: id, reason: found.length === 0 ? 'TARGET_NOT_FOUND' : 'TARGET_AMBIGUOUS' }); continue; }
-      if (c.type === 'style' && (!c.styles || typeof c.styles !== 'object')) { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
-      if (c.type !== 'style' && typeof c.after !== 'string') { failed.push({ componentId: id, reason: 'INVALID_CHANGE' }); continue; }
-      plan.push({ c, cmp: found[0] });
-    }
+    const { plan, failed } = planChanges(editor, changes);
     if (failed.length) return { applied: false, reason: 'TARGET_NOT_FOUND', failed };
     const snapshot = JSON.parse(JSON.stringify(editor.getProjectData()));
-    plan.forEach(({ c, cmp }) => {
-      if (c.type === 'text') cmp.components([{ type: 'textnode', content: c.after }]);
-      else if (c.type === 'image') { cmp.addAttributes({ src: c.after }); cmp.set('src', c.after); }
-      else editor.Css.setIdRule(c.componentId, c.styles, c.mediaText ? { mediaText: c.mediaText } : {});
-    });
+    runPlan(editor, plan);
     if (!pendingAppliedProposalId) preApplySnapshot = snapshot;   // 이미 적용 중인 같은 제안이면 최초 스냅샷 유지
     pendingAppliedProposalId = pid;
     updateUndoProposalBtn();
@@ -761,12 +827,14 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
   const PREVIEW_WIDTHS = { Desktop: '100%', Tablet: '768px', Mobile: '375px' };
   const bodyInner = (html) => String(html || '').replace(/^\s*<body[^>]*>/i, '').replace(/<\/body>\s*$/i, '');
 
+  let previewOverride = null;   // AI 제안 미리보기일 때만 값이 있다({html, css}) — 편집기 본 내용은 바뀌지 않는다
   async function renderPreview(device) {
     const modal = $('previewModal');
     const frame = modal.querySelector('#previewFrame');
     const base = await RENDER.loadBaseCss();
     // 공개 페이지와 같은 기본 CSS + 같은 정리(body 래퍼 제거). 폭이 실제 768/375px라 미디어쿼리도 같게 적용된다.
-    frame.srcdoc = RENDER.previewDoc(bodyInner(editor.getHtml()), editor.getCss(), base);
+    const src = previewOverride || { html: editor.getHtml(), css: editor.getCss() };
+    frame.srcdoc = RENDER.previewDoc(bodyInner(src.html), src.css, base);
     frame.style.width = PREVIEW_WIDTHS[device] || '100%';
     modal.querySelectorAll('[data-pv-device]').forEach((b) => b.classList.toggle('active', b.dataset.pvDevice === device));
     modal.querySelector('#previewWidthLabel').textContent =
@@ -788,6 +856,7 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
           <button data-pv-device="Mobile" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;min-height:38px">📲 모바일</button>
           <button id="closePreview" style="padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;min-height:38px">닫기</button>
         </div>
+        <div id="previewProposalBar" class="ve-preview-bar" hidden></div>
         <div style="flex:1;overflow:auto;display:flex;justify-content:center;padding:12px;">
           <iframe id="previewFrame" sandbox="" title="미리보기" style="border:none;height:100%;max-width:100%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.15);"></iframe>
         </div>
@@ -796,8 +865,10 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     const style = document.createElement('style');
     style.textContent = '#previewModal [data-pv-device].active{background:#3b82f6!important;color:#fff;border-color:#3b82f6!important}';
     document.head.appendChild(style);
-    modal.querySelector('#closePreview').addEventListener('click', () => { modal.style.display = 'none'; });
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    const closePv = () => { modal.style.display = 'none'; previewOverride = null; const bar = modal.querySelector('#previewProposalBar'); if (bar) bar.hidden = true; };
+    modal.querySelector('#closePreview').addEventListener('click', closePv);
+    modal.__close = closePv;
+    modal.addEventListener('click', (e) => { if (e.target === modal) closePv(); });
     modal.querySelectorAll('[data-pv-device]').forEach((b) => b.addEventListener('click', () => renderPreview(b.dataset.pvDevice)));
     return modal;
   }
@@ -1041,6 +1112,203 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
   // 블록을 눌러 추가했을 때(터치 기기) 패널을 닫아 결과를 바로 보여준다
   $('gjs-blocks').addEventListener('click', () => { if (isNarrow()) setTimeout(closePanels, 150); });
 
+  // ===== AI 제안 패널 =====
+  const aiPanel = $('aiPanel');
+  const aiMsg = $('aiMsg');
+  const API_JSON = { 'Content-Type': 'application/json' };
+  const apiHeaders = () => { const h = Object.assign({}, API_JSON); if (CSRF_TOKEN) h[CSRF_HEADER] = CSRF_TOKEN; return h; };
+  let proposals = [];
+
+  function aiSay(text, kind) { aiMsg.textContent = text || ''; aiMsg.className = 'ai-msg' + (kind ? ' ' + kind : ''); }
+  async function aiFetch(path, opts) {
+    const res = await fetch(VE_API + path, Object.assign({ headers: apiHeaders() }, opts || {}));
+    let data = null;
+    try { data = await res.json(); } catch (_) { /* 본문 없음 */ }
+    return { ok: res.ok, status: res.status, data };
+  }
+  const txt = (el, t) => { el.textContent = t; return el; };
+  const mk = (tag, cls, t) => { const el = document.createElement(tag); if (cls) el.className = cls; if (t !== undefined) el.textContent = t; return el; };
+
+  // 현재 편집기 내용에서 대상의 "이전 값"을 읽는다(없으면 null).
+  function beforeValue(c) {
+    const f = editor.getWrapper().find('#' + c.componentId);
+    if (f.length !== 1) return null;
+    if (c.type === 'text') return (f[0].getEl() && f[0].getEl().textContent || '').trim().slice(0, 80);
+    if (c.type === 'image') return f[0].getAttributes().src || '';
+    return Object.keys(c.styles || {}).map((k) => k + ': ' + (f[0].getStyle()[k] || '(없음)')).join(', ');
+  }
+  function describe(c) {
+    const kind = { text: '텍스트', image: '이미지', style: c.mediaText ? '스타일(모바일)' : '스타일' }[c.type] || c.type;
+    const after = c.type === 'style' ? Object.entries(c.styles || {}).map(([k, v]) => k + ': ' + v).join(', ') : c.after;
+    return { kind, after, before: beforeValue(c) };
+  }
+
+  function renderProposals() {
+    const list = $('aiList');
+    list.textContent = '';
+    const pendingCount = proposals.filter((p) => p.status === 'PENDING').length;
+    $('aiBadge').hidden = pendingCount === 0;
+    $('aiBadge').textContent = String(pendingCount);
+    if (!proposals.length) { list.appendChild(mk('p', 'ai-note', '대기 중인 제안이 없습니다.')); return; }
+    proposals.forEach((p) => {
+      const stale = p.status === 'STALE';
+      const card = mk('div', 'ai-card' + (stale ? ' stale' : ''));
+      card.dataset.proposalId = String(p.proposalId);
+      card.appendChild(mk('h4', '', p.summary));
+      card.appendChild(mk('div', 'ai-meta', (p.createdByKind === 'AGENT' ? '외부 Agent' : 'AI 요청') + ' · 만료 ' + String(p.expiresAt || '').slice(0, 10) + (stale ? ' · 대상 요소가 사라져 적용할 수 없습니다' : '')));
+      const ul = mk('ul', 'ai-changes');
+      (p.changes || []).forEach((c) => {
+        const d = describe(c);
+        const li = mk('li', '');
+        li.appendChild(document.createTextNode(d.kind + ' [' + c.componentId + '] '));
+        if (d.before) li.appendChild(mk('span', 'before', d.before));
+        li.appendChild(document.createTextNode(' → ' + d.after));
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      const act = mk('div', 'ai-actions');
+      const bPrev = mk('button', 'ai-btn', '미리보기'); bPrev.type = 'button'; bPrev.dataset.act = 'preview';
+      const bOk = mk('button', 'ai-btn approve', '승인(적용·저장)'); bOk.type = 'button'; bOk.dataset.act = 'approve';
+      const bApply = mk('button', 'ai-btn', '캔버스에 적용'); bApply.type = 'button'; bApply.dataset.act = 'apply';
+      const bNo = mk('button', 'ai-btn', '거절'); bNo.type = 'button'; bNo.dataset.act = 'reject';
+      if (stale) { bPrev.disabled = bOk.disabled = bApply.disabled = true; }
+      [bPrev, bOk, bApply, bNo].forEach((b) => act.appendChild(b));
+      card.appendChild(act);
+      list.appendChild(card);
+    });
+  }
+
+  async function refreshProposals() {
+    const r = await aiFetch('/proposals');
+    if (r.ok && Array.isArray(r.data)) { proposals = r.data; renderProposals(); }
+    else if (r.status === 401 || r.status === 403) aiSay('제안을 불러올 권한이 없습니다.', 'error');
+  }
+
+  // 숨은 편집기에 제안을 적용해 "적용 후" HTML/CSS를 얻는다. 본 편집기는 건드리지 않는다.
+  function buildPreview(p) {
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-99999px;top:0;width:1200px;height:800px;visibility:hidden';
+    document.body.appendChild(holder);
+    let ed = null;
+    try {
+      ed = grapesjs.init({ container: holder, height: '800px', width: '1200px', storageManager: false, undoManager: false,
+        panels: { defaults: [] }, blockManager: { blocks: [] } });
+      ed.loadProjectData(JSON.parse(JSON.stringify(editor.getProjectData())));   // init의 projectData 옵션은 비동기라 직접 적재한다
+      const { plan, failed } = planChanges(ed, p.changes || []);
+      if (failed.length) return { error: '대상 요소를 찾을 수 없습니다: ' + failed.map((f) => f.componentId).join(', ') };
+      runPlan(ed, plan);
+      return { html: ed.getHtml(), css: ed.getCss() };
+    } catch (e) {
+      return { error: e.message };
+    } finally {
+      try { if (ed) ed.destroy(); } catch (_) { /* 무시 */ }
+      holder.remove();
+    }
+  }
+
+  async function previewProposal(p) {
+    const built = buildPreview(p);
+    if (built.error) { aiSay('미리보기를 만들 수 없습니다: ' + built.error, 'error'); return; }
+    previewOverride = { html: built.html, css: built.css };
+    const modal = ensurePreviewModal();
+    const bar = modal.querySelector('#previewProposalBar');
+    bar.textContent = '';
+    bar.appendChild(mk('span', '', 'AI 제안 미리보기 — 아직 적용되지 않았습니다. '));
+    const ok = mk('button', 'ai-btn approve', '이 제안 승인(적용·저장)'); ok.type = 'button';
+    ok.addEventListener('click', () => { modal.__close(); approve(p); });
+    const no = mk('button', 'ai-btn', '닫기'); no.type = 'button';
+    no.addEventListener('click', () => modal.__close());
+    bar.appendChild(ok); bar.appendChild(no); bar.hidden = false;
+    modal.style.display = 'flex';
+    await renderPreview(currentDevice);
+  }
+
+  async function applyOnly(p) {
+    const r = await applyProposal(p);
+    if (!r.applied) {
+      aiSay('적용하지 못했습니다: ' + (r.reason === 'ANOTHER_PROPOSAL_PENDING' ? '다른 제안이 적용된 채 저장되지 않았습니다. 먼저 저장하거나 되돌리세요.' : r.reason === 'EDITOR_BUSY' ? '편집기가 저장 중이거나 준비 중입니다.' : '대상 요소를 찾을 수 없습니다.'), 'error');
+      return false;
+    }
+    aiSay('캔버스에 적용했습니다. 확인 후 저장하면 승인이 완료됩니다. (되돌리려면 "AI 제안 되돌리기")', 'ok');
+    return true;
+  }
+
+  async function approve(p) {
+    if (!(await applyOnly(p))) return;
+    const saved = await saveContent();
+    if (saved && !pendingAppliedProposalId) { aiSay('승인했습니다. 편집 내용이 저장되었습니다. (공개 홈페이지는 게시할 때 반영됩니다)', 'ok'); toast('AI 제안을 승인하고 저장했습니다. 공개하려면 게시하세요.'); }
+    await refreshProposals();
+  }
+
+  async function reject(p) {
+    if (!confirm('이 제안을 거절할까요? 거절하면 다시 적용할 수 없습니다.')) return;
+    const r = await aiFetch('/proposals/' + p.proposalId + '/reject', { method: 'POST', body: '{}' });
+    aiSay(r.ok ? '제안을 거절했습니다.' : ((r.data && r.data.message) || '거절하지 못했습니다.'), r.ok ? 'ok' : 'error');
+    await refreshProposals();
+  }
+
+  $('aiList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = Number(btn.closest('.ai-card').dataset.proposalId);
+    const p = proposals.find((x) => x.proposalId === id);
+    if (!p) return;
+    if (btn.dataset.act === 'preview') previewProposal(p);
+    else if (btn.dataset.act === 'approve') approve(p);
+    else if (btn.dataset.act === 'apply') applyOnly(p);
+    else if (btn.dataset.act === 'reject') reject(p);
+  });
+
+  $('aiAsk').addEventListener('click', async () => {
+    const instruction = $('aiInstruction').value.trim();
+    if (!instruction) { aiSay('수정 요청을 입력하세요.', 'error'); return; }
+    const btn = $('aiAsk'); btn.disabled = true;
+    try {
+      // AI는 "저장된 초안"을 보고 제안하므로, 저장 안 된 변경이 있으면 먼저 저장한다.
+      if (hasChanges || currentRevision === 0) {
+        aiSay('먼저 현재 내용을 저장합니다...');
+        if (!(await saveContent())) { aiSay('저장하지 못해 요청을 보내지 않았습니다.', 'error'); return; }
+      }
+      aiSay('AI가 수정안을 만드는 중입니다...');
+      const r = await aiFetch('/ai-requests', { method: 'POST', body: JSON.stringify({ instruction }) });
+      if (r.ok) { aiSay('수정안이 만들어졌습니다. 아래에서 미리보기 후 승인하세요.', 'ok'); $('aiInstruction').value = ''; await refreshProposals(); }
+      else aiSay((r.data && (r.data.message || r.data)) ? String(r.data.message || r.data) : 'AI 수정안을 만들지 못했습니다. 기존 홈페이지와 편집 내용은 그대로입니다.', 'error');
+    } finally { btn.disabled = false; }
+  });
+
+  async function refreshTokens() {
+    const r = await aiFetch('/agent-tokens');
+    const box = $('aiTokens'); box.textContent = '';
+    if (!r.ok || !Array.isArray(r.data)) return;
+    r.data.filter((t) => t.active).forEach((t) => {
+      const row = mk('div', '');
+      row.appendChild(mk('span', '', t.label + ' · ~' + String(t.expiresAt).slice(0, 10)));
+      const b = mk('button', 'ai-btn', '폐기'); b.type = 'button';
+      b.addEventListener('click', async () => { if (!confirm('이 토큰을 폐기할까요? 연결된 Agent는 즉시 사용할 수 없게 됩니다.')) return; await aiFetch('/agent-tokens/' + t.tokenId, { method: 'DELETE' }); await refreshTokens(); });
+      row.appendChild(b); box.appendChild(row);
+    });
+  }
+  $('aiTokenNew').addEventListener('click', async () => {
+    const label = $('aiTokenLabel').value.trim();
+    if (!label) { aiSay('토큰 이름을 입력하세요.', 'error'); return; }
+    const r = await aiFetch('/agent-tokens', { method: 'POST', body: JSON.stringify({ label }) });
+    if (!r.ok) { aiSay((r.data && r.data.message) || '토큰을 만들지 못했습니다.', 'error'); return; }
+    const show = $('aiTokenShow'); show.hidden = false; show.value = r.data.token;
+    aiSay('토큰을 만들었습니다. 지금 복사해 안전한 곳에 보관하세요. 다시 볼 수 없습니다.', 'ok');
+    $('aiTokenLabel').value = '';
+    await refreshTokens();
+  });
+
+  async function openAiPanel() {
+    aiPanel.hidden = false;
+    aiSay('');
+    $('aiTokenShow').hidden = true; $('aiTokenShow').value = '';
+    await Promise.all([refreshProposals(), refreshTokens()]);
+  }
+  $('aiBtn').addEventListener('click', () => { if (aiPanel.hidden) openAiPanel(); else aiPanel.hidden = true; });
+  $('aiClose').addEventListener('click', () => { aiPanel.hidden = true; });
+  window.addEventListener('ve:saved', () => { if (!aiPanel.hidden) refreshProposals(); });
+
   // 전역 노출 (디버깅/E2E)
   window.editor = editor;
   window.__ve = { state: () => ({ hasChanges, currentRevision, ready, isSaving, pendingAppliedProposalId }), refreshStatus, applyProposal, undoProposal };
@@ -1049,6 +1317,7 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
   (async function init() {
     await Promise.all([loadDraft(), refreshStatus()]);
     updateRestoreBtn();
+    refreshProposals().catch(() => {});   // 대기 제안 개수 배지
     console.log('BuildIt 시각 편집기 초기화 완료');
   })();
 })();

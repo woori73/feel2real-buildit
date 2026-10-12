@@ -48,14 +48,22 @@ public class VisualEditorProposalService implements VisualEditorProposalPort {
     }
     List<ProposalChange> changes = ProposalChangeValidator.validate(rawChanges);
     LocalDateTime now = LocalDateTime.now();
-    expireDue(academyId, now);
+    ensureCapacity(academyId);
+    VisualEditorProposal saved = repository.save(new VisualEditorProposal(
+        academyId, baseRevision, cleanSummary, toJson(changes), kind, ref, now.plusDays(TTL_DAYS)));
+    return view(saved, true);
+  }
+
+  /**
+   * 대기 제안이 상한({@link #MAX_PENDING})에 이르면 409. 생성 직전과, <b>AI 호출 전</b>(비용 낭비·남용 방지)에 쓴다.
+   */
+  @Transactional
+  public void ensureCapacity(Long academyId) {
+    expireDue(academyId, LocalDateTime.now());
     if (repository.countByAcademyIdAndStatus(academyId, ProposalStatus.PENDING) >= MAX_PENDING) {
       throw new ResponseStatusException(HttpStatus.CONFLICT,
           "대기 중인 제안이 최대 " + MAX_PENDING + "건입니다. 기존 제안을 승인하거나 거절한 뒤 다시 시도하세요.");
     }
-    VisualEditorProposal saved = repository.save(new VisualEditorProposal(
-        academyId, baseRevision, cleanSummary, toJson(changes), kind, ref, now.plusDays(TTL_DAYS)));
-    return view(saved, true);
   }
 
   /**

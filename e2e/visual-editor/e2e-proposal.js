@@ -93,7 +93,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await sleep(400);
   check('되돌린 뒤에는 저장본과 같아 변경 없음이다', (await state()).hasChanges === false);
 
-  section('C. 실제 서버: 구현체가 없으면 400 PROPOSAL_NOT_AVAILABLE, 초안은 저장되지 않는다');
+  section('C. 실제 서버: 존재하지 않는 제안(404 PROPOSAL_NOT_FOUND; 구현체 미배포면 400 NOT_AVAILABLE)이면 초안은 저장되지 않는다');
   await page.evaluate((p) => window.__ve.applyProposal(p), proposal());
   await sleep(400);
   const bodies = [];
@@ -106,7 +106,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const dAfterReject = await serverDraft();
   check('거부되면 서버 초안은 그대로다(원자성)', dAfterReject.revision === baseRev && dAfterReject.html.includes('원래 제목'), { rev: dAfterReject.revision });
   check('"취소"하면 편집 내용이 화면에 남아 있다', (await html()).includes('AI가 바꾼 제목') && (await state()).hasChanges === true);
-  check('실패 이벤트(ve:proposal-failed)가 발행된다', await page.evaluate(() => window.__events.some((e) => e.t === 'failed' && e.d.code === 'PROPOSAL_NOT_AVAILABLE')));
+  check('실패 이벤트(ve:proposal-failed)가 발행된다', await page.evaluate(() => window.__events.some((e) => e.t === 'failed' && ['PROPOSAL_NOT_FOUND', 'PROPOSAL_NOT_AVAILABLE'].includes(e.d.code))));
   dialogs.length = 0; dialogAnswer = 'accept'; bodies.length = 0;
   await page.locator('#saveBtn').click();
   await page.waitForFunction((r) => window.__ve.state().currentRevision > r && !window.__ve.state().hasChanges, baseRev, { timeout: 15000 });

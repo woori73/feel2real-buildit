@@ -1656,3 +1656,13 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 - **상태 전이(§2, 결정적·AI 없음)**: 회원 첫 질문→NEW. 운영자가 열면→AWAITING_ANSWER. 운영자 답변→OPERATOR_ANSWERED. 답변 뒤 회원 추가 질문→MEMBER_FOLLOWUP. 회원 목록/배지는 아직 못 본 OPERATOR 답변 수(`member_last_seen_message_id` 커서 기준)로 "새 답변 N건" 표시.
 - 관련 화면: 회원 `/newstart/consultations`(공개 셸 + `window.refreshAccountArea` 인증, 감사회원만 API 통과), 운영자 `/admin/newstart/consultations`(ROLE_ADMIN). 홈 `ns-service-consult` 카드 + `newstart-consult-unread.js` 배지.
 
+### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)
+
+> 시각 편집기(`academy_visual_editor_draft`/`_published`)와 같은 격리 원칙: 기존 테이블 변경 없음, `academies` FK(CASCADE)뿐. 제안은 승인 전까지 초안·게시본·`page_settings`에 어떤 영향도 주지 않는다.
+> 설계: [BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md](BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md)
+
+**academy_visual_editor_proposal**: `proposal_id` PK, `academy_id` FK, `version`(@Version), `status`(PENDING/APPLIED/REJECTED/EXPIRED/STALE), `base_revision`, `summary`(≤500), `changes_json`(검증된 changes[]), `created_by_kind`(AGENT/AI), `created_by_ref`, `expires_at`(생성+14일), `applied_revision`/`applied_by`/`applied_at`, `decided_at`, `stale_reason`, `created_at`/`updated_at`. 인덱스 `(academy_id, status, created_at)`. 모든 조회는 `academy_id` 조건 필수(Repository에 id만으로 조회하는 사용 금지 — `ProposalRepositoryAccessTest`).
+
+**academy_visual_editor_agent_token**: `token_id` PK, `academy_id` FK, `token_hash` CHAR(64) UNIQUE(SHA-256), `label`, `scopes`(`ve:read,ve:propose`), `created_by`, `expires_at`(90일), `last_used_at`, `revoked_at`. 평문은 저장하지 않는다. 학원당 활성 5개 제한.
+
+상태 전이: PENDING→APPLIED(저장 트랜잭션 안, `appliedRevision`은 DB revision), PENDING→REJECTED, PENDING→EXPIRED(조회 시 정리), PENDING→STALE(저장된 초안에 대상 요소가 없을 때만). 종결 상태는 재전이 불가.
