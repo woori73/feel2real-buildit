@@ -155,6 +155,7 @@ function loadBrowserScript(path, options = {}) {
     setTimeout: options.setTimeout || setTimeout,
     clearTimeout,
     URL,
+    URLSearchParams,
     Uint8Array,
     window
   });

@@ -41,7 +41,7 @@
    * sectionOrder 는 DEFAULT_SECTION_ORDER, FUTURE 섹션은 기본 OFF — 기존 상수를 그대로 옮긴다.
    */
   var DEFAULT_SECTION_ORDER = [
-    'sec-hero', 'sec-featured', 'sec-intro', 'sec-principal', 'sec-philosophy',
+    'sec-hero', 'sec-featured', 'sec-intro', 'sec-principal', 'sec-teachers', 'sec-philosophy',
     'sec-videos', 'sec-minilectures', 'sec-reviews', 'sec-lessons', 'sec-curriculum',
     'sec-effect', 'sec-digitaltwin', 'sec-market', 'sec-payment', 'sec-cta', 'sec-social'
   ];

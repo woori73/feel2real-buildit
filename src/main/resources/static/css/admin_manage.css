@@ -25,3 +25,9 @@
 .am-check{display:flex;gap:8px;align-items:flex-start;font-size:14px}
 .am-check input{margin-top:4px;width:18px;height:18px}
 @media(min-width:640px){.am-modal{align-items:center}.am-sheet{border-radius:20px}}
+
+.am-teachers{display:flex;flex-direction:column;gap:10px}
+.am-teacher{border:1px solid var(--ah-line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--ah-bg)}
+.am-teacher-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700}
+.am-teacher .ah-input{font-size:15px;padding:10px 12px}
+.am-teacher button{align-self:flex-end;padding:6px 12px;min-height:36px;font-size:13px}

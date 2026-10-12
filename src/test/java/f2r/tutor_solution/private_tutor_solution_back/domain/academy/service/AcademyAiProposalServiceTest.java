@@ -30,9 +30,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("AcademyAiProposalService — 진단 JSON 파싱 + allowlist 검증")
 class AcademyAiProposalServiceTest {
 
-  /** 서버가 인정하는 16개 관리 섹션 순서(AcademyService.DEFAULT_SECTION_ORDER와 동일). */
+  /** 서버가 인정하는 17개 관리 섹션 순서(AcademyService.DEFAULT_SECTION_ORDER와 동일). */
   private static final List<String> CANONICAL_ORDER = List.of(
-      "sec-hero", "sec-featured", "sec-intro", "sec-principal", "sec-philosophy",
+      "sec-hero", "sec-featured", "sec-intro", "sec-principal", "sec-teachers", "sec-philosophy",
       "sec-videos", "sec-minilectures", "sec-reviews", "sec-lessons", "sec-curriculum",
       "sec-effect", "sec-digitaltwin", "sec-market", "sec-payment", "sec-cta", "sec-social");
 
@@ -169,7 +169,7 @@ class AcademyAiProposalServiceTest {
   }
 
   @Test
-  @DisplayName("given 정상 SECTION_ORDER(16개 재배열, sec-hero 0번) when 생성 then 통과한다")
+  @DisplayName("given 정상 SECTION_ORDER(17개 재배열, sec-hero 0번) when 생성 then 통과한다")
   void generate_accepts_valid_section_order() {
     provider.respondWith("{\"diagnosis\":\"진단\",\"proposals\":[{\"id\":\"p1\",\"type\":\"SECTION_ORDER\","
         + "\"title\":\"섹션 순서\",\"current\":\"수업이 뒤쪽\",\"suggestion\":\"수업 영상을 앞으로\","
@@ -178,7 +178,7 @@ class AcademyAiProposalServiceTest {
     AcademyAiProposal proposal = service.generate(principal, "");
     assertThat(proposal.proposals()).hasSize(1);
     assertThat(proposal.proposals().get(0).type()).isEqualTo(Type.SECTION_ORDER);
-    assertThat(proposal.proposals().get(0).sectionOrder()).hasSize(16).startsWith("sec-hero");
+    assertThat(proposal.proposals().get(0).sectionOrder()).hasSize(17).startsWith("sec-hero");
   }
 
   @Test
