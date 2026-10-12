@@ -2,6 +2,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VisualEditorDraft;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.VisualEditorPublished;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.VisualEditorDraftRepository;
@@ -156,22 +158,45 @@ public class VisualEditorService {
   }
 
   /**
-   * 공개 홈페이지용 게시본 HTML/CSS를 반환한다. 인증 불필요.
+   * 공개 홈페이지용 게시본 HTML/CSS를 handle로 반환한다. 인증 불필요.
    *
-   * <p>renderMode가 "custom"이 아니면 empty를 반환하여 P0 폴백을 유도한다.
-   * 출력 시 Sanitizer로 재검증한다 (defense in depth — 저장 시 정제되었더라도
-   * 공개 출력 직전에 한 번 더 검증).
+   * <p>서브도메인({@code {handle}.feel2real.co.kr}) 경로용이다. handle이 없는 학원은
+   * {@link #getPublishedHomepageBySlug(String)}를 쓴다.
    *
    * @param handle 학원 handle (URL 테넌트 키)
    * @return 정제된 HTML/CSS. custom 모드가 아니거나 게시본이 없으면 empty
    */
   @Transactional(readOnly = true)
   public Optional<PublishedHomepage> getPublishedHomepage(String handle) {
-    var academy = academyService.getPublishedEntityByHandle(handle);
+    return toPublishedHomepage(academyService.getPublishedEntityByHandle(handle));
+  }
+
+  /**
+   * 공개 홈페이지용 게시본 HTML/CSS를 slug로 반환한다. 인증 불필요.
+   *
+   * <p>경로형 공개 페이지({@code /academies/{slug}})와 handle이 없는 기존 학원이 사용한다.
+   * handle과 slug는 서로 다른 네임스페이스라 한 키가 다른 학원의 handle과 겹쳐도
+   * 엉뚱한 학원 페이지가 나오지 않도록 엔드포인트를 분리했다.
+   *
+   * @param slug 학원 slug
+   * @return 정제된 HTML/CSS. custom 모드가 아니거나 게시본이 없으면 empty
+   */
+  @Transactional(readOnly = true)
+  public Optional<PublishedHomepage> getPublishedHomepageBySlug(String slug) {
+    return toPublishedHomepage(academyService.getPublishedEntityBySlug(slug));
+  }
+
+  /**
+   * renderMode가 "custom"이 아니면 empty를 반환하여 P0 폴백을 유도한다.
+   * 출력 시 Sanitizer로 재검증한다 (defense in depth — 저장 시 정제되었더라도
+   * 공개 출력 직전에 한 번 더 검증).
+   */
+  private Optional<PublishedHomepage> toPublishedHomepage(Academy academy) {
     if (!RENDER_MODE_CUSTOM.equals(renderModeOf(academy.getPageSettings()))) {
       return Optional.empty();
     }
     return publishedRepository.findByAcademyId(academy.getAcademyId())
+        .filter(p -> p.getHtml() != null && !p.getHtml().isBlank())
         .map(p -> new PublishedHomepage(
             VisualEditorSanitizer.sanitizeHtml(p.getHtml()),
             VisualEditorSanitizer.sanitizeCss(p.getCss())));
@@ -231,6 +256,18 @@ public class VisualEditorService {
   }
 
   /**
+   * 게시·게시취소 결과. 응답이 "실제로 방문자에게 보이는가"와 일치하도록 서버가 계산한다.
+   *
+   * @param renderMode 적용된 렌더 모드 (custom=편집기 게시본, template=P0)
+   * @param publicPath 공개 홈페이지 경로 ({@code /academies/{slug}})
+   * @param publicReachable 방문자가 공개 경로로 이 학원을 볼 수 있는지
+   *     (학원이 PUBLISHED이고 visible일 때만 true)
+   */
+  public record PublishOutcome(
+      String renderMode, String publicPath, boolean publicReachable) {
+  }
+
+  /**
    * 초안을 게시한다. draft → published 복사와 renderMode 변경을
    * 하나의 트랜잭션으로 처리하며, 중간 실패 시 전체 롤백된다.
    *
@@ -239,15 +276,21 @@ public class VisualEditorService {
    * 읽으므로 항상 최신 revision을 기준으로 검증한다. 같은 revision을 다시 게시하면
    * 게시본을 같은 내용으로 교체하는 멱등 동작이다.
    *
+   * <p>빈 초안은 게시할 수 없다. 공개 페이지는 빈 게시본을 P0로 되돌리므로
+   * "게시 성공"과 실제 화면이 어긋나기 때문이다.
+   *
    * @param principal 인증된 사용자 (해당 학원 권한 필요)
    * @param expectedRevision 게시 시점의 초안 revision (낙관적 잠금)
+   * @return 게시 결과(공개 경로와 방문자 노출 여부)
    * @throws DraftConflictException 초안이 없거나 revision 불일치 시
+   * @throws IllegalArgumentException 초안 HTML이 비어 있을 때
    */
   @Transactional
-  public void publish(
+  public PublishOutcome publish(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       Long expectedRevision) {
-    Long academyId = academyService.lockMyAcademyForUpdate(principal);
+    Academy academy = academyService.lockMyAcademyForUpdate(principal);
+    Long academyId = academy.getAcademyId();
 
     VisualEditorDraft draft = draftRepository.findByAcademyId(academyId)
         .orElseThrow(() -> new DraftConflictException(
@@ -256,6 +299,10 @@ public class VisualEditorService {
       throw new DraftConflictException(
           "초안이 변경되었습니다. 새로고침 후 다시 시도하세요. "
               + "(현재 revision=" + draft.getRevision() + ")");
+    }
+    if (draft.getHtml() == null || draft.getHtml().isBlank()) {
+      throw new IllegalArgumentException(
+          "빈 초안은 게시할 수 없습니다. 내용을 추가한 뒤 저장하고 게시하세요.");
     }
 
     // 1. published 교체 (기존 게시본이 있으면 삭제 후 생성). 학원 락 보유 중이므로 경합 없음.
@@ -268,6 +315,7 @@ public class VisualEditorService {
 
     // 2. renderMode를 custom으로 변경 (같은 트랜잭션)
     academyService.setRenderMode(principal, RENDER_MODE_CUSTOM);
+    return outcomeOf(academy, RENDER_MODE_CUSTOM);
   }
 
   /**
@@ -278,11 +326,70 @@ public class VisualEditorService {
    * page_settings 읽기-병합-쓰기가 서로 덮어쓰지 않게 한다.
    *
    * @param principal 인증된 사용자 (해당 학원 권한 필요)
+   * @return 게시취소 결과
    */
   @Transactional
-  public void unpublish(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    academyService.lockMyAcademyForUpdate(principal);
+  public PublishOutcome unpublish(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Academy academy = academyService.lockMyAcademyForUpdate(principal);
     academyService.setRenderMode(principal, RENDER_MODE_TEMPLATE);
+    return outcomeOf(academy, RENDER_MODE_TEMPLATE);
+  }
+
+  private static PublishOutcome outcomeOf(Academy academy, String renderMode) {
+    boolean reachable = academy.getStatus() == AcademyStatus.PUBLISHED && academy.isVisible();
+    return new PublishOutcome(renderMode, publicPathOf(academy), reachable);
+  }
+
+  private static String publicPathOf(Academy academy) {
+    return "/academies/" + academy.getSlug();
+  }
+
+  /**
+   * 편집기 화면 상태 요약. 게시 버튼·상태 표시가 서버 사실만 보여주도록 한다.
+   *
+   * @param draftExists 초안 존재 여부
+   * @param draftRevision 초안 revision (없으면 0)
+   * @param publishedAt 게시 시각(ISO, 게시본이 없으면 빈 문자열)
+   * @param renderMode 현재 렌더 모드
+   * @param hasUnpublishedChanges 초안이 게시본과 다른지(게시 안 된 변경이 있는지)
+   * @param publicPath 공개 홈페이지 경로
+   * @param publicReachable 방문자가 공개 경로로 볼 수 있는지
+   * @param academyName 학원 이름
+   */
+  public record EditorStatus(
+      boolean draftExists,
+      long draftRevision,
+      String publishedAt,
+      String renderMode,
+      boolean hasUnpublishedChanges,
+      String publicPath,
+      boolean publicReachable,
+      String academyName) {
+  }
+
+  /**
+   * 본인 학원의 편집기 상태를 조회한다.
+   */
+  @Transactional(readOnly = true)
+  public EditorStatus getEditorStatus(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Academy academy = academyService.requireMyAcademy(principal);
+    Long academyId = academy.getAcademyId();
+    Optional<VisualEditorDraft> draft = draftRepository.findByAcademyId(academyId);
+    Optional<VisualEditorPublished> published = publishedRepository.findByAcademyId(academyId);
+    boolean unpublished = draft.isPresent() && published
+        .map(p -> !java.util.Objects.equals(p.getHtml(), draft.get().getHtml())
+            || !java.util.Objects.equals(p.getCss(), draft.get().getCss()))
+        .orElse(true);
+    PublishOutcome outcome = outcomeOf(academy, renderModeOf(academy.getPageSettings()));
+    return new EditorStatus(
+        draft.isPresent(),
+        draft.map(VisualEditorDraft::getRevision).orElse(0L),
+        published.map(p -> p.getPublishedAt().toString()).orElse(""),
+        outcome.renderMode(),
+        unpublished,
+        outcome.publicPath(),
+        outcome.publicReachable(),
+        academy.getName());
   }
 
   /**

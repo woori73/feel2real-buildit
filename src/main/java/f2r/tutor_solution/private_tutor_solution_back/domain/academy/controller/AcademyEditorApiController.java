@@ -153,9 +153,10 @@ public class AcademyEditorApiController {
     if (revision == null) {
       return badRequest("revision이 필요합니다. 초안을 새로고침 후 다시 시도하세요.");
     }
+    VisualEditorService.PublishOutcome outcome;
     try {
       // draft → published 복사와 renderMode 변경을 하나의 트랜잭션으로 처리
-      visualEditorService.publish(principal, revision);
+      outcome = visualEditorService.publish(principal, revision);
     } catch (VisualEditorService.DraftConflictException e) {
       return conflict(e.getMessage());
     } catch (IllegalArgumentException e) {
@@ -164,8 +165,14 @@ public class AcademyEditorApiController {
 
     Map<String, Object> response = new HashMap<>();
     response.put("status", "PUBLISHED");
-    response.put("renderMode", VisualEditorService.RENDER_MODE_CUSTOM);
-    response.put("message", "게시되었습니다. 홈페이지에 편집기 디자인이 반영됩니다.");
+    response.put("renderMode", outcome.renderMode());
+    response.put("publicPath", outcome.publicPath());
+    response.put("publicReachable", outcome.publicReachable());
+    // 응답 문구는 실제 방문자 노출 상태와 일치해야 한다.
+    response.put("message", outcome.publicReachable()
+        ? "게시되었습니다. 공개 홈페이지에 편집기 디자인이 반영됩니다."
+        : "게시본은 저장되었지만 학원이 비공개(미발행) 상태라 방문자에게는 아직 보이지 않습니다. "
+            + "학원을 공개로 전환하면 반영됩니다.");
     return ResponseEntity.ok(response);
   }
 
@@ -177,16 +184,40 @@ public class AcademyEditorApiController {
   public ResponseEntity<Map<String, Object>> unpublish(
       @org.springframework.security.core.annotation.AuthenticationPrincipal
       JwtTokenProvider.AuthenticatedPrincipal principal) {
+    VisualEditorService.PublishOutcome outcome;
     try {
-      visualEditorService.unpublish(principal);
+      outcome = visualEditorService.unpublish(principal);
     } catch (IllegalArgumentException e) {
       return badRequest(e.getMessage());
     }
 
     Map<String, Object> response = new HashMap<>();
     response.put("status", "UNPUBLISHED");
-    response.put("renderMode", VisualEditorService.RENDER_MODE_TEMPLATE);
+    response.put("renderMode", outcome.renderMode());
+    response.put("publicPath", outcome.publicPath());
+    response.put("publicReachable", outcome.publicReachable());
     response.put("message", "게시 취소되었습니다. 기존 P0 홈페이지로 되돌아갑니다.");
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * 편집기 화면 상태(게시 여부·미게시 변경·공개 경로·방문자 노출 여부)를 반환한다.
+   * 게시 버튼과 상태 표시가 서버가 아는 사실만 보여주도록 하는 용도다.
+   */
+  @GetMapping("/visual-editor/status")
+  public ResponseEntity<Map<String, Object>> getStatus(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+      JwtTokenProvider.AuthenticatedPrincipal principal) {
+    VisualEditorService.EditorStatus st = visualEditorService.getEditorStatus(principal);
+    Map<String, Object> response = new HashMap<>();
+    response.put("draftExists", st.draftExists());
+    response.put("draftRevision", st.draftRevision());
+    response.put("publishedAt", st.publishedAt());
+    response.put("renderMode", st.renderMode());
+    response.put("hasUnpublishedChanges", st.hasUnpublishedChanges());
+    response.put("publicPath", st.publicPath());
+    response.put("publicReachable", st.publicReachable());
+    response.put("academyName", st.academyName());
     return ResponseEntity.ok(response);
   }
 
@@ -235,6 +266,26 @@ public class AcademyEditorApiController {
   public ResponseEntity<Map<String, Object>> handleBadRequest(
       IllegalArgumentException e) {
     return badRequest(e.getMessage());
+  }
+
+  /** 소유 학원이 없거나 권한이 없는 호출은 500이 아니라 403이다. */
+  @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+  public ResponseEntity<Map<String, Object>> handleAccessDenied(
+      org.springframework.security.access.AccessDeniedException e) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", 403);
+    response.put("message", e.getMessage() == null ? "접근 권한이 없습니다." : e.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+  }
+
+  /** 서비스가 던진 의도된 HTTP 상태(404 등)를 그대로 전달한다. */
+  @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+  public ResponseEntity<Map<String, Object>> handleResponseStatus(
+      org.springframework.web.server.ResponseStatusException e) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", e.getStatusCode().value());
+    response.put("message", e.getReason() == null ? "요청을 처리할 수 없습니다." : e.getReason());
+    return ResponseEntity.status(e.getStatusCode()).body(response);
   }
 
   @ExceptionHandler(Exception.class)

@@ -404,16 +404,16 @@ public class AcademyService {
    * 호출한 트랜잭션이 끝날 때까지 락이 유지된다.
    *
    * @param principal 인증된 사용자 (학원 소유 강사)
-   * @return 잠긴 Academy의 ID
+   * @return 잠긴 Academy 엔티티 (이 트랜잭션 안에서만 사용한다)
    * @throws AccessDeniedException 소유 학원이 없을 때
    */
   @Transactional
-  public Long lockMyAcademyForUpdate(JwtTokenProvider.AuthenticatedPrincipal principal) {
+  public Academy lockMyAcademyForUpdate(JwtTokenProvider.AuthenticatedPrincipal principal) {
     authResolver.requireTutor(principal);
     Academy academy = academyRepository.findForUpdateByTutorUserId(principal.userId())
         .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("학원이 없습니다."));
     authResolver.verifyOwnsAcademy(academy);
-    return academy.getAcademyId();
+    return academy;
   }
 
   /**
@@ -634,6 +634,11 @@ public class AcademyService {
    *
    * @throws ResponseStatusException 공개 Academy가 없으면 404
    */
+  public Academy getPublishedEntityBySlug(String slug) {
+    return academyRepository.findBySlugAndStatusAndVisibleTrue(slug, AcademyStatus.PUBLISHED)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 Academy를 찾을 수 없습니다."));
+  }
+
   public Academy getPublishedEntityByHandle(String handle) {
     return academyRepository.findByHandleAndStatusAndVisibleTrue(handle, AcademyStatus.PUBLISHED)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 Academy를 찾을 수 없습니다."));

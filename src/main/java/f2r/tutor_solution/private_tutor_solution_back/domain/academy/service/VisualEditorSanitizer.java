@@ -34,6 +34,9 @@ import org.jsoup.safety.Safelist;
  *       <li>{@code content} 원시 HTML 정제</li>
  *       <li>{@code script} 속성·{@code on*} 이벤트 속성 제거</li>
  *       <li>{@code attributes}의 URL 속성 스킴 검사</li>
+ *       <li>페이지 객체 {@code type}: GrapesJS 기본값 "main"만 보존, 그 외 거부</li>
+ *       <li>프레임 문서 껍데기 {@code head}/{@code docEl}: GrapesJS가 생성하는 정해진 빈 모양일
+ *           때만 보존하고, 그 외 내용·위치는 거부</li>
  *     </ul>
  *   </li>
  * </ul>
@@ -89,7 +92,18 @@ public final class VisualEditorSanitizer {
   private static final Set<String> ALLOWED_URL_SCHEMES = Set.of(
       "http", "https", "mailto", "tel");
 
+  /**
+   * 상대경로 URL을 검증하기 위한 가상 기준 URI. preserveRelativeLinks(true)여도 Jsoup은
+   * 링크를 기준 URI에 대해 해석해 허용 프로토콜(http/https)인지 확인하므로 기준 URI가 필요하다.
+   * 출력에는 상대경로가 그대로 남고 이 값은 저장되지 않는다.
+   */
+  private static final String RELATIVE_LINK_BASE_URI = "https://visual-editor.invalid/";
+
   private static final Safelist EDITOR_SAFELIST = Safelist.relaxed()
+      // 사이트 내부 상대경로(/api/..., /academies/...)는 스킴이 없어 위험하지 않다.
+      // 보존하지 않으면 Jsoup이 기준 URI 없이 이를 해석하지 못해 src/href를 지운다.
+      // javascript: 등 스킴이 있는 URL은 아래 addProtocols 허용 목록으로 계속 걸러진다.
+      .preserveRelativeLinks(true)
       .addTags("section", "header", "footer", "nav", "main", "article",
           "aside", "figure", "figcaption", "time", "mark", "hr")
       .removeTags("script", "iframe", "object", "embed", "form", "svg", "math",
@@ -117,7 +131,7 @@ public final class VisualEditorSanitizer {
     if (html == null || html.isBlank()) {
       return "";
     }
-    String cleaned = Jsoup.clean(html, EDITOR_SAFELIST);
+    String cleaned = Jsoup.clean(html, RELATIVE_LINK_BASE_URI, EDITOR_SAFELIST);
     return sanitizeInlineStyles(cleaned);
   }
 
@@ -207,11 +221,131 @@ public final class VisualEditorSanitizer {
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("프로젝트 데이터가 유효한 JSON이 아닙니다.");
     }
+    // GrapesJS가 프레임마다 붙이는 문서 껍데기(head, docEl)는 사용자 콘텐츠가 아니다.
+    // 정해진 빈 모양일 때만 떼어 두었다가 정제 후 그대로 복원하고, 그 외에는 거부한다.
+    List<PageType> pageTypes = detachPageTypes(root);
+    List<FrameShell> shells = detachFrameShells(root);
     JsonNode sanitized = sanitizeNode(root, "projectData");
+    reattachFrameShells(sanitized, shells);
+    reattachPageTypes(sanitized, pageTypes);
     try {
       return MAPPER.writeValueAsString(sanitized);
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("프로젝트 데이터 직렬화에 실패했습니다.");
+    }
+  }
+
+  /**
+   * GrapesJS 0.23.x가 {@code pages[].frames[].component} 아래에 생성하는 문서 껍데기.
+   * 실제 출력은 {@code head: {"type":"head"}}, {@code docEl: {"tagName":"html"}} 이다.
+   */
+  private record FrameShell(int page, int frame, JsonNode head, JsonNode docEl) {
+  }
+
+  /** GrapesJS 페이지 객체의 {@code type}(기본 "main"). 컴포넌트 type이 아니라 페이지 종류다. */
+  private record PageType(int page, JsonNode type) {
+  }
+
+  private static final String MAIN_PAGE_TYPE = "main";
+
+  /**
+   * 각 프레임 컴포넌트에서 head/docEl을 떼어 낸다. 정해진 빈 모양이 아니면 거부한다.
+   *
+   * <p>허용 모양: head는 {@code type}만(값 "head"), docEl은 {@code tagName}만(값 "html").
+   * 여기에 components/attributes/content 같은 키가 더해지면(예: head 안의 script)
+   * 사용자 콘텐츠가 섞인 것이므로 400으로 거부한다. 이 예외는 프레임 컴포넌트 바로 아래
+   * 두 키에만 적용되며, 트리 어디의 {@code type=head}/{@code tagName=html}도 통과시키지 않는다.
+   */
+  private static List<FrameShell> detachFrameShells(JsonNode root) {
+    List<FrameShell> shells = new ArrayList<>();
+    JsonNode pages = root.path("pages");
+    if (!pages.isArray()) {
+      return shells;
+    }
+    for (int pi = 0; pi < pages.size(); pi++) {
+      JsonNode frames = pages.get(pi).path("frames");
+      if (!frames.isArray()) {
+        continue;
+      }
+      for (int fi = 0; fi < frames.size(); fi++) {
+        JsonNode component = frames.get(fi).path("component");
+        if (!component.isObject()) {
+          continue;
+        }
+        ObjectNode obj = (ObjectNode) component;
+        String base = "projectData.pages[" + pi + "].frames[" + fi + "].component";
+        JsonNode head = obj.remove("head");
+        JsonNode docEl = obj.remove("docEl");
+        requireShell(head, "type", "head", base + ".head");
+        requireShell(docEl, "tagName", "html", base + ".docEl");
+        shells.add(new FrameShell(pi, fi, head, docEl));
+      }
+    }
+    return shells;
+  }
+
+  /**
+   * 각 페이지 객체의 {@code type}을 떼어 낸다. GrapesJS 기본값 "main"만 허용하고 그 외는 거부한다.
+   * (컴포넌트 type 허용 목록과 별개이므로 페이지 객체에만 적용한다.)
+   */
+  private static List<PageType> detachPageTypes(JsonNode root) {
+    List<PageType> types = new ArrayList<>();
+    JsonNode pages = root.path("pages");
+    if (!pages.isArray()) {
+      return types;
+    }
+    for (int pi = 0; pi < pages.size(); pi++) {
+      JsonNode page = pages.get(pi);
+      if (!page.isObject()) {
+        continue;
+      }
+      JsonNode type = ((ObjectNode) page).remove("type");
+      if (type != null && !(type.isTextual()
+          && MAIN_PAGE_TYPE.equalsIgnoreCase(type.asText()))) {
+        throw new IllegalArgumentException(
+            "허용되지 않은 페이지 구조입니다: projectData.pages[" + pi + "].type");
+      }
+      types.add(new PageType(pi, type));
+    }
+    return types;
+  }
+
+  private static void reattachPageTypes(JsonNode sanitizedRoot, List<PageType> types) {
+    for (PageType t : types) {
+      JsonNode page = sanitizedRoot.path("pages").path(t.page());
+      if (page.isObject() && t.type() != null) {
+        ((ObjectNode) page).set("type", t.type());
+      }
+    }
+  }
+
+  private static void requireShell(JsonNode node, String key, String expected, String path) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return;
+    }
+    boolean ok = node.isObject()
+        && node.size() == 1
+        && node.path(key).isTextual()
+        && expected.equalsIgnoreCase(node.path(key).asText());
+    if (!ok) {
+      throw new IllegalArgumentException("허용되지 않은 문서 구조입니다: " + path);
+    }
+  }
+
+  private static void reattachFrameShells(JsonNode sanitizedRoot, List<FrameShell> shells) {
+    for (FrameShell shell : shells) {
+      JsonNode component = sanitizedRoot.path("pages").path(shell.page())
+          .path("frames").path(shell.frame()).path("component");
+      if (!component.isObject()) {
+        continue;
+      }
+      ObjectNode obj = (ObjectNode) component;
+      if (shell.head() != null && !shell.head().isMissingNode() && !shell.head().isNull()) {
+        obj.set("head", shell.head());
+      }
+      if (shell.docEl() != null && !shell.docEl().isMissingNode() && !shell.docEl().isNull()) {
+        obj.set("docEl", shell.docEl());
+      }
     }
   }
 

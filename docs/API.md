@@ -163,6 +163,32 @@ DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽�
 
 # API 명세
 
+## BuildIt 시각 편집기 (2026-10, prototype 브랜치)
+
+> GrapesJS 기반 홈페이지 편집기. 기존 P0/P1 데이터와 분리된 전용 테이블(`academy_visual_editor_draft`/`_published`)을 쓴다.
+> 설계·AI Agent 연결: [BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md](BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md)
+
+**인증:** 아래 `/api/tutor/academy/page-settings/visual-editor/**`는 TUTOR(본인 학원) 쿠키 JWT. 소유 학원이 없으면 `403`(500 아님).
+공개 조회 2종은 인증 없음.
+
+| 메서드·경로 | 설명 | 주요 응답 |
+|---|---|---|
+| `GET /tutor/academy/editor` (SSR) | 편집기 화면. 모델: `academyId`, `academyName`, `academySlug` | 200 / 403 |
+| `GET …/visual-editor/status` | 편집기 화면 상태(서버 사실) | `{draftExists, draftRevision, publishedAt, renderMode, hasUnpublishedChanges, publicPath, publicReachable, academyName}` |
+| `GET …/visual-editor/draft` | 초안 조회(없으면 빈 값, `revision:0`) | `{html, css, projectData, revision, updatedAt}` |
+| `PUT …/visual-editor/draft` | 초안 저장. 최초 저장은 `revision` null/0, 이후는 필수. `{html, css, projectData, revision}` | 200 `{status, revision, updatedAt}` / 400(크기·정제 거부·revision 누락) / 409(revision 불일치) |
+| `POST …/visual-editor/import` | (서버 가져오기, 기존 초안이 있으면 409) 편집기 UI는 쓰지 않고 브라우저 스냅샷 불러오기를 쓴다 | 200 / 409 |
+| `POST …/visual-editor/publish` | `{revision}` 게시. **빈 초안은 400.** 같은 revision 재게시는 멱등 200. 같은 학원의 게시·게시취소는 서버에서 직렬화 | 200 `{status, renderMode, publicPath, publicReachable, message}` / 400 / 409 |
+| `POST …/visual-editor/unpublish` | 게시 취소(P0로 복귀). 게시본·P0 설정은 보존 | 200 `{status, renderMode, publicPath, publicReachable, message}` |
+| `GET …/visual-editor/published` | 게시본 조회(본인) | `{html, css, publishedAt}` |
+| `GET /api/academies/{slug}/homepage` | **공개.** 경로형 공개 페이지(`/academies/{slug}`) 용. handle 없는 학원도 조회됨 | 200 `{html, css, renderMode:"custom"}` / 404(미게시·custom 아님·비공개 학원) |
+| `GET /api/public/academy/{handle}/homepage` | **공개.** 서브도메인 용 | 위와 동일 |
+
+- **`publicReachable`**: 학원이 `PUBLISHED`이고 `visible`일 때만 `true`. `false`면 게시본은 저장됐지만 방문자에게는 보이지 않으며, 응답 `message`가 그 사실을 알린다("성공" 문구로 덮지 않는다).
+- **projectData 정제:** GrapesJS 0.23.x가 프레임마다 붙이는 `component.head`(`{"type":"head"}`)·`component.docEl`(`{"tagName":"html"}`)과 페이지 `type:"main"`은 정해진 빈 모양일 때만 보존한다. 그 밖의 `head`/`docEl` 내용, 트리 안의 `type=head`/`tagName=html`, `script`·`on*`·`javascript:`는 계속 400.
+- **상대경로 URL**(`/api/...`, `/academies/...`)은 `img src`/`a href`에서 보존된다. 스킴이 있는 위험 URL은 계속 차단.
+- **공개 렌더:** 게시본 HTML/CSS는 공개 페이지에서 Shadow DOM으로 격리해 그린다(P0 사이트 CSS와 서로 영향 없음).
+
 ## BuildIt Wiki 학교 프린트·문제 모델
 
 - `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.

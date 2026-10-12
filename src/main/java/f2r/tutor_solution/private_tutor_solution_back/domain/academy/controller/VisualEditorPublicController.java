@@ -27,17 +27,30 @@ import org.springframework.web.server.ResponseStatusException;
  * 공개 페이지(academy_public.js)는 이 경우 기존 P0 렌더로 폴백한다.
  */
 @RestController
-@RequestMapping("/api/public/academy")
 @RequiredArgsConstructor
 public class VisualEditorPublicController {
 
   private final VisualEditorService visualEditorService;
 
-  @GetMapping("/{handle}/homepage")
+  /** 서브도메인({handle}.feel2real.co.kr) 경로용 — handle이 있는 학원. */
+  @GetMapping("/api/public/academy/{handle}/homepage")
   public ResponseEntity<Map<String, Object>> getHomepage(
       @PathVariable String handle) {
-    Optional<VisualEditorService.PublishedHomepage> homepage =
-        visualEditorService.getPublishedHomepage(handle);
+    return toResponse(visualEditorService.getPublishedHomepage(handle));
+  }
+
+  /**
+   * 경로형 공개 페이지({@code /academies/{slug}}) 경로용. handle이 없는 기존 학원도
+   * slug로는 항상 조회되므로 게시한 편집기 홈페이지가 반영된다.
+   */
+  @GetMapping("/api/academies/{slug}/homepage")
+  public ResponseEntity<Map<String, Object>> getHomepageBySlug(
+      @PathVariable String slug) {
+    return toResponse(visualEditorService.getPublishedHomepageBySlug(slug));
+  }
+
+  private ResponseEntity<Map<String, Object>> toResponse(
+      Optional<VisualEditorService.PublishedHomepage> homepage) {
     if (homepage.isEmpty()) {
       Map<String, Object> response = new HashMap<>();
       response.put("status", 404);

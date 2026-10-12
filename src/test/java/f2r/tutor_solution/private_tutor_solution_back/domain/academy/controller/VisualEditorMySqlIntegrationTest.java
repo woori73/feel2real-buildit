@@ -707,4 +707,249 @@ class VisualEditorMySqlIntegrationTest {
     assertThat(postPublish("{\"revision\":" + rev + "}")
         .getResponse().getStatus()).isEqualTo(200);
   }
+
+  // ── 안정화 1차: 실제 GrapesJS 출력 / 공개 반영 일치 / 기존 학원 호환 ──
+
+  private JsonNode grapesFixture() throws Exception {
+    try (java.io.InputStream in = getClass()
+        .getResourceAsStream("/visual-editor/grapesjs-project.json")) {
+      return objectMapper.readTree(in);
+    }
+  }
+
+  private String draftBody(JsonNode fx, Long revision) throws Exception {
+    var node = objectMapper.createObjectNode()
+        .put("html", fx.get("html").asText())
+        .put("css", fx.get("css").asText())
+        .put("projectData", fx.get("projectData").toString());
+    if (revision != null) {
+      node.put("revision", revision);
+    }
+    return objectMapper.writeValueAsString(node);
+  }
+
+  private JsonNode me() throws Exception {
+    return objectMapper.readTree(mockMvc.perform(get("/api/tutor/academy/me").cookie(authCookie))
+        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+  }
+
+  @Test
+  @DisplayName("실제 GrapesJS 출력(head/docEl/page type 포함): 저장 200 → 재불러오기 → 재저장 200")
+  void realGrapesJsOutput_saveReloadResave() throws Exception {
+    // given: 실제 GrapesJS 0.23.6이 만든 projectData/html/css
+    JsonNode fx = grapesFixture();
+
+    // when: 최초 저장(수동 저장과 자동 저장은 같은 PUT API를 쓴다)
+    MvcResult first = putDraft(draftBody(fx, null));
+
+    // then
+    assertThat(first.getResponse().getStatus())
+        .as("실제 projectData 저장: " + first.getResponse().getContentAsString())
+        .isEqualTo(200);
+    long rev = revisionOf(first);
+
+    // when: 재불러오기
+    JsonNode loaded = objectMapper.readTree(
+        mockMvc.perform(get("/api/tutor/academy/page-settings/visual-editor/draft")
+                .cookie(authCookie))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+
+    // then: 편집기가 loadProjectData에 넘길 projectData 구조가 보존된다
+    JsonNode pd = objectMapper.readTree(loaded.get("projectData").asText());
+    JsonNode component = pd.get("pages").get(0).get("frames").get(0).get("component");
+    assertThat(component.get("head").toString()).isEqualTo("{\"type\":\"head\"}");
+    assertThat(component.get("docEl").toString()).isEqualTo("{\"tagName\":\"html\"}");
+    assertThat(pd.get("pages").get(0).get("type").asText()).isEqualTo("main");
+    assertThat(pd.get("styles").size()).isEqualTo(fx.get("projectData").get("styles").size());
+    assertThat(loaded.get("html").asText()).contains("학원 이름").contains("id=\"");
+    assertThat(loaded.get("css").asText()).contains("@media (max-width: 768px)");
+
+    // when: 재불러오기한 projectData를 그대로 다시 저장(편집기가 로드 후 저장하는 흐름)
+    var resave = objectMapper.createObjectNode()
+        .put("html", loaded.get("html").asText())
+        .put("css", loaded.get("css").asText())
+        .put("projectData", loaded.get("projectData").asText())
+        .put("revision", rev);
+    MvcResult second = putDraft(objectMapper.writeValueAsString(resave));
+
+    // then
+    assertThat(second.getResponse().getStatus())
+        .as("재저장: " + second.getResponse().getContentAsString()).isEqualTo(200);
+  }
+
+  @Test
+  @DisplayName("실제 projectData에 script를 섞으면 여전히 400 (head 예외가 우회로가 되지 않는다)")
+  void realGrapesJsOutput_withScript_stillRejected() throws Exception {
+    // given
+    JsonNode fx = grapesFixture();
+    var pd = (com.fasterxml.jackson.databind.node.ObjectNode) fx.get("projectData").deepCopy();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) pd.get("pages").get(0).get("frames")
+        .get(0).get("component")).set("head", objectMapper.createObjectNode()
+        .put("type", "head")
+        .set("components", objectMapper.createArrayNode()
+            .add(objectMapper.createObjectNode().put("tagName", "script"))));
+    var body = objectMapper.createObjectNode()
+        .put("html", "<p>x</p>").put("css", "").put("projectData", pd.toString());
+
+    // when
+    MvcResult res = putDraft(objectMapper.writeValueAsString(body));
+
+    // then
+    assertThat(res.getResponse().getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  @DisplayName("게시: 학원이 비공개(DRAFT)면 응답이 publicReachable=false로 사실을 알린다")
+  void publish_notReachableWhenAcademyIsDraft() throws Exception {
+    // given: 초안 저장 + 학원을 비공개로 변경
+    long rev = revisionOf(putDraft("{\"html\":\"<p>hi</p>\",\"css\":\"\",\"projectData\":\"{}\"}"));
+    entityManager.flush();
+    jdbcTemplate.update("UPDATE academies SET status = 'DRAFT' WHERE tutor_user_id = ?",
+        tutor.getUserId());
+    entityManager.clear();
+
+    // when
+    MvcResult res = postPublish("{\"revision\":" + rev + "}");
+
+    // then: 게시 자체는 성공하지만 방문자에게 보이지 않는다고 정직하게 응답한다
+    assertThat(res.getResponse().getStatus()).isEqualTo(200);
+    JsonNode json = objectMapper.readTree(res.getResponse().getContentAsString());
+    assertThat(json.get("publicReachable").asBoolean()).isFalse();
+    assertThat(json.get("message").asText()).contains("방문자에게는 아직 보이지 않습니다");
+    assertThat(json.get("publicPath").asText()).startsWith("/academies/");
+  }
+
+  @Test
+  @DisplayName("게시: 공개 학원이면 publicReachable=true")
+  void publish_reachableWhenAcademyPublished() throws Exception {
+    // given
+    long rev = revisionOf(putDraft("{\"html\":\"<p>hi</p>\",\"css\":\"\",\"projectData\":\"{}\"}"));
+
+    // when
+    JsonNode json = objectMapper.readTree(
+        postPublish("{\"revision\":" + rev + "}").getResponse().getContentAsString());
+
+    // then
+    assertThat(json.get("publicReachable").asBoolean()).isTrue();
+    assertThat(json.get("renderMode").asText()).isEqualTo("custom");
+  }
+
+  @Test
+  @DisplayName("게시: 빈 초안은 400 (공개 페이지가 P0로 되돌아가 게시 성공과 어긋나는 것을 막는다)")
+  void publish_emptyDraft_400() throws Exception {
+    // given: 빈 HTML 초안
+    long rev = revisionOf(putDraft("{\"html\":\"\",\"css\":\"\",\"projectData\":\"{}\"}"));
+
+    // when
+    MvcResult res = postPublish("{\"revision\":" + rev + "}");
+
+    // then
+    assertThat(res.getResponse().getStatus()).isEqualTo(400);
+    assertThat(res.getResponse().getContentAsString()).contains("빈 초안");
+  }
+
+  @Test
+  @DisplayName("handle이 없는 기존 학원: 게시 후 slug 경로로 편집기 홈페이지가 공개된다")
+  void publish_worksForAcademyWithoutHandle_viaSlugEndpoint() throws Exception {
+    // given: handle이 없는 기존 학원 (V926: 기존 Academy는 handle 없이 경로형으로 유지)
+    entityManager.flush();
+    jdbcTemplate.update("UPDATE academies SET handle = NULL WHERE tutor_user_id = ?",
+        tutor.getUserId());
+    entityManager.clear();
+    String slug = me().get("slug").asText();
+    assertThat(me().get("handle").isNull()).isTrue();
+    long rev = revisionOf(putDraft(
+        "{\"html\":\"<section id=\\\"a1\\\"><h1>기존 학원 홈</h1></section>\","
+            + "\"css\":\"#a1{color:red}\",\"projectData\":\"{}\"}"));
+
+    // when
+    assertThat(postPublish("{\"revision\":" + rev + "}").getResponse().getStatus()).isEqualTo(200);
+
+    // then: slug 엔드포인트는 200, handle 엔드포인트는 해당 학원을 찾지 못한다
+    mockMvc.perform(get("/api/academies/" + slug + "/homepage"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.renderMode").value("custom"))
+        .andExpect(jsonPath("$.html").value(
+            org.hamcrest.Matchers.containsString("기존 학원 홈")))
+        .andExpect(jsonPath("$.css").value(org.hamcrest.Matchers.containsString("#a1")));
+    mockMvc.perform(get("/api/public/academy/no-such-handle/homepage"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("slug 공개 API: 게시 전/게시 취소 후/존재하지 않는 slug는 404")
+  void slugEndpoint_404WhenNotCustomOrUnknown() throws Exception {
+    // given
+    String slug = me().get("slug").asText();
+    long rev = revisionOf(putDraft("{\"html\":\"<p>hi</p>\",\"css\":\"\",\"projectData\":\"{}\"}"));
+
+    // then 1: 게시 전
+    mockMvc.perform(get("/api/academies/" + slug + "/homepage")).andExpect(status().isNotFound());
+
+    // when: 게시 → 게시 취소
+    postPublish("{\"revision\":" + rev + "}");
+    mockMvc.perform(get("/api/academies/" + slug + "/homepage")).andExpect(status().isOk());
+    postUnpublish();
+
+    // then 2: 취소 후에는 다시 404 → 공개 페이지가 P0로 폴백
+    mockMvc.perform(get("/api/academies/" + slug + "/homepage")).andExpect(status().isNotFound());
+    mockMvc.perform(get("/api/academies/not-a-real-slug-zzz/homepage"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("게시·게시 취소는 기존 학원 데이터(P0 설정·이름·소개)를 보존한다")
+  void publishUnpublish_preservesExistingAcademyData() throws Exception {
+    // given
+    JsonNode before = me();
+    long rev = revisionOf(putDraft("{\"html\":\"<p>hi</p>\",\"css\":\"\",\"projectData\":\"{}\"}"));
+
+    // when
+    postPublish("{\"revision\":" + rev + "}");
+    JsonNode published = me();
+    postUnpublish();
+    JsonNode after = me();
+
+    // then: renderMode만 바뀌고 나머지 P0 설정은 그대로
+    assertThat(published.get("pageSettings").get("builderDraft").get("homepage.renderMode")
+        .asText()).isEqualTo("custom");
+    assertThat(after.get("pageSettings").get("builderDraft").get("homepage.renderMode")
+        .asText()).isEqualTo("template");
+    assertThat(after.get("pageSettings").get("builderDraft").get("designPreset").asText())
+        .isEqualTo(before.get("pageSettings").get("builderDraft").get("designPreset").asText());
+    assertThat(after.get("name").asText()).isEqualTo(before.get("name").asText());
+    assertThat(after.get("intro").asText()).isEqualTo(before.get("intro").asText());
+    assertThat(after.get("slug").asText()).isEqualTo(before.get("slug").asText());
+    assertThat(after.get("status").asText()).isEqualTo(before.get("status").asText());
+  }
+
+  @Test
+  @DisplayName("상태 API: 초안·게시·미게시 변경을 서버 사실대로 반영한다")
+  void statusEndpoint_reflectsDraftAndPublishedState() throws Exception {
+    String url = "/api/tutor/academy/page-settings/visual-editor/status";
+
+    // 1) 초안 없음
+    mockMvc.perform(get(url).cookie(authCookie)).andExpect(status().isOk())
+        .andExpect(jsonPath("$.draftExists").value(false))
+        .andExpect(jsonPath("$.renderMode").value("template"))
+        .andExpect(jsonPath("$.publicReachable").value(true));
+
+    // 2) 초안 저장 → 미게시 변경 있음
+    long rev = revisionOf(putDraft("{\"html\":\"<p>a</p>\",\"css\":\"\",\"projectData\":\"{}\"}"));
+    mockMvc.perform(get(url).cookie(authCookie))
+        .andExpect(jsonPath("$.draftExists").value(true))
+        .andExpect(jsonPath("$.hasUnpublishedChanges").value(true));
+
+    // 3) 게시 → 미게시 변경 없음, custom
+    postPublish("{\"revision\":" + rev + "}");
+    mockMvc.perform(get(url).cookie(authCookie))
+        .andExpect(jsonPath("$.renderMode").value("custom"))
+        .andExpect(jsonPath("$.hasUnpublishedChanges").value(false))
+        .andExpect(jsonPath("$.publishedAt").isNotEmpty());
+
+    // 4) 다시 수정 → 미게시 변경 있음
+    putDraft("{\"html\":\"<p>b</p>\",\"css\":\"\",\"projectData\":\"{}\",\"revision\":" + rev + "}");
+    mockMvc.perform(get(url).cookie(authCookie))
+        .andExpect(jsonPath("$.hasUnpublishedChanges").value(true));
+  }
 }

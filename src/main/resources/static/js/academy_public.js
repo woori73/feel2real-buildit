@@ -43,6 +43,8 @@
   let consultChannels = [];
   // AI Native pipeline canvas(660×460 좌표계)를 stage 폭에 맞추는 resize 리스너를 한 번만 건다.
   let aiNativeFitBound = false;
+  // 편집기의 P0 불러오기 전용: 게시 상태와 관계없이 P0 원본을 렌더한다.
+  const FORCE_P0_RENDER = new URLSearchParams(location.search).get('ve-source') === 'p0';
   const slug = (root && root.dataset.slug)
     ? root.dataset.slug
     : decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
@@ -67,7 +69,8 @@
       window.F2RAcademyPublicVideos = academyVideos;
       // 시각 편집기 custom 모드: published HTML을 직접 렌더한다.
       // 실패하거나 게시본이 없으면 기존 P0 렌더로 폴백한다.
-      if (renderModeOf(academy) === 'custom') {
+      // ?ve-source=p0 는 편집기의 "기존 홈페이지 불러오기"가 P0 원본을 읽기 위한 강제 P0 렌더다.
+      if (!FORCE_P0_RENDER && renderModeOf(academy) === 'custom') {
         const rendered = await renderCustomHomepage(academy);
         if (rendered) return;
       }
@@ -81,8 +84,8 @@
    * BuildIt 시각 편집기 custom 렌더 모드.
    *
    * <p>pageSettings.builderDraft["homepage.renderMode"]가 "custom"일 때 호출된다.
-   * GET /api/public/academy/{handle}/homepage에서 게시된 HTML/CSS를 받아
-   * 섹션 영역에 삽입한다. GNB와 푸터는 P0 것을 유지하고, tenant 스크립트
+   * GET /api/academies/{slug}/homepage에서 게시된 HTML/CSS를 받아
+   * 섹션 영역(Shadow DOM)에 삽입한다. GNB와 푸터는 P0 것을 유지하고, tenant 스크립트
    * (캠페인 팝업·CTA 등)는 script 태그 로더이므로 그대로 동작한다.
    *
    * <p>게시본이 없거나 조회 실패 시 false를 반환하여 P0 렌더로 폴백한다.
@@ -95,21 +98,16 @@
 
   async function renderCustomHomepage(academy) {
     try {
-      const handle = academy.handle;
-      if (!handle) return false;
+      const RENDER = window.F2RVisualEditorRender;
+      if (!RENDER) return false;
+      // slug 엔드포인트: handle이 없는 기존 학원도 동일하게 조회된다.
+      const key = academy.slug || slug;
       const res = await fetch(
-        `/api/public/academy/${encodeURIComponent(handle)}/homepage`);
+        `/api/academies/${encodeURIComponent(key)}/homepage`);
       if (!res.ok) return false;
       const data = await res.json();
       if (!data.html) return false;
 
-      // 편집기 CSS 삽입 (P0 브랜드 CSS 변수와 충돌하지 않도록 스코프는 편집기가 관리)
-      if (data.css) {
-        const style = document.createElement('style');
-        style.setAttribute('data-visual-editor', 'published');
-        style.textContent = data.css;
-        document.head.appendChild(style);
-      }
       if (BRAND) BRAND.apply(root, academy);
 
       const ownAcademy = await isOwnAcademy(academy.slug);
@@ -120,11 +118,13 @@
         academy.pageSettings && academy.pageSettings.businessInfo);
 
       // GNB와 푸터는 P0 것을 유지하고, 섹션 영역만 편집기 HTML로 교체한다.
+      // 편집기 HTML/CSS는 Shadow DOM에 격리해 그린다: P0 사이트 CSS(제목·문단 여백 0 등)가
+      // 편집 결과를 덮어쓰지 않고, 편집기 CSS(* / body 규칙)가 P0 GNB·푸터로 새지도 않는다.
       root.innerHTML =
         renderGnb(academy, topBtn)
-        + '<div id="ve-custom-body">' + data.html + '</div>'
+        + '<div id="ve-custom-body"></div>'
         + renderFooter(academy);
-      SECTIONS.applyImageMediaAspect(root);
+      await RENDER.mount(root.querySelector('#ve-custom-body'), data.html, data.css);
       void loadVisitStatistics(academy, ownAcademy);
       return true;
     } catch (_) {

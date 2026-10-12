@@ -42,9 +42,9 @@ public class AcademyEditorController {
 
     model.addAttribute("academyId", academy.academyId());
     model.addAttribute("academyName", academy.name());
-    // 기존 P0 페이지 HTML이 있으면 편집기에 로드
-    // TODO: AcademyService에서 저장된 HTML 조회
-    // model.addAttribute("pageHtml", ...);
+    // 기존 홈페이지(P0) 불러오기는 브라우저가 공개 페이지(/academies/{slug})를 렌더해
+    // 스냅샷으로 가져온다(visual_editor_import.js). 서버는 slug만 내려준다.
+    model.addAttribute("academySlug", academy.slug());
 
     return "tutor/academy_editor";
   }

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -19,6 +20,9 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Vis
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.server.ResponseStatusException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -253,13 +257,121 @@ class VisualEditorApiTest {
   }
 
   @Test
-  @DisplayName("게시 취소 API: 인증됨 → 200")
+  @DisplayName("게시 취소 API: 인증됨 → 200, 결과(renderMode·공개 경로)를 응답한다")
   void unpublish_ok() throws Exception {
+    // given
+    when(visualEditorService.unpublish(any())).thenReturn(
+        new VisualEditorService.PublishOutcome("template", "/academies/demo", true));
+
+    // when / then
     mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/unpublish")
             .cookie(tutorCookie())
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.renderMode").value("template"));
+        .andExpect(jsonPath("$.renderMode").value("template"))
+        .andExpect(jsonPath("$.publicPath").value("/academies/demo"));
+  }
+
+  @Test
+  @DisplayName("게시 API: 방문자에게 보이는 학원 → publicReachable=true, 반영 안내 문구")
+  void publish_reachable_messageMatchesReality() throws Exception {
+    // given
+    when(visualEditorService.publish(any(), eq(3L))).thenReturn(
+        new VisualEditorService.PublishOutcome("custom", "/academies/demo", true));
+
+    // when / then
+    mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/publish")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"revision\":3}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PUBLISHED"))
+        .andExpect(jsonPath("$.renderMode").value("custom"))
+        .andExpect(jsonPath("$.publicReachable").value(true))
+        .andExpect(jsonPath("$.publicPath").value("/academies/demo"))
+        .andExpect(jsonPath("$.message").value(
+            org.hamcrest.Matchers.containsString("공개 홈페이지에")));
+  }
+
+  @Test
+  @DisplayName("게시 API: 비공개 학원 → publicReachable=false, 성공 문구로 속이지 않는다")
+  void publish_notReachable_messageIsHonest() throws Exception {
+    // given: 게시본은 저장됐지만 학원이 비공개(DRAFT)인 경우
+    when(visualEditorService.publish(any(), anyLong())).thenReturn(
+        new VisualEditorService.PublishOutcome("custom", "/academies/demo", false));
+
+    // when / then
+    mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/publish")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"revision\":1}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.publicReachable").value(false))
+        .andExpect(jsonPath("$.message").value(
+            org.hamcrest.Matchers.containsString("방문자에게는 아직 보이지 않습니다")));
+  }
+
+  @Test
+  @DisplayName("게시 API: 빈 초안 → 400")
+  void publish_emptyDraft_400() throws Exception {
+    // given
+    when(visualEditorService.publish(any(), anyLong()))
+        .thenThrow(new IllegalArgumentException("빈 초안은 게시할 수 없습니다."));
+
+    // when / then
+    mockMvc.perform(post("/api/tutor/academy/page-settings/visual-editor/publish")
+            .cookie(tutorCookie())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"revision\":0}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value(
+            org.hamcrest.Matchers.containsString("빈 초안")));
+  }
+
+  @Test
+  @DisplayName("상태 API: 서버 사실(초안·게시·미게시 변경·방문자 노출)을 그대로 응답한다")
+  void status_returnsServerFacts() throws Exception {
+    // given
+    when(visualEditorService.getEditorStatus(any())).thenReturn(
+        new VisualEditorService.EditorStatus(
+            true, 4L, "2026-10-12T01:00:00", "custom", true, "/academies/demo", false, "데모학원"));
+
+    // when / then
+    mockMvc.perform(get("/api/tutor/academy/page-settings/visual-editor/status")
+            .cookie(tutorCookie()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.draftExists").value(true))
+        .andExpect(jsonPath("$.draftRevision").value(4))
+        .andExpect(jsonPath("$.hasUnpublishedChanges").value(true))
+        .andExpect(jsonPath("$.publicReachable").value(false))
+        .andExpect(jsonPath("$.academyName").value("데모학원"));
+  }
+
+  @Test
+  @DisplayName("소유 학원이 없는 호출 → 500이 아니라 403")
+  void noAcademy_isForbiddenNot500() throws Exception {
+    // given
+    when(visualEditorService.getDraft(any()))
+        .thenThrow(new AccessDeniedException("학원이 없습니다."));
+
+    // when / then
+    mockMvc.perform(get("/api/tutor/academy/page-settings/visual-editor/draft")
+            .cookie(tutorCookie()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.status").value(403));
+  }
+
+  @Test
+  @DisplayName("서비스가 던진 404(ResponseStatusException)는 그대로 404로 전달된다")
+  void responseStatusException_isPassedThrough() throws Exception {
+    // given
+    when(visualEditorService.getEditorStatus(any()))
+        .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Academy를 찾을 수 없습니다."));
+
+    // when / then
+    mockMvc.perform(get("/api/tutor/academy/page-settings/visual-editor/status")
+            .cookie(tutorCookie()))
+        .andExpect(status().isNotFound());
   }
 }
