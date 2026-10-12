@@ -343,7 +343,7 @@ public class JipijigiResearchService {
     static SourceClass classifyKnowledge(NewstartKnowledgeItem item) {
         NewstartKnowledgeItem.SourceType t = item.getSourceType();
         return switch (t) {
-            case OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, DERIVED_RULE -> SourceClass.OFFICIAL_RULE;
+            case OFFICIAL_CURRENT, OFFICIAL_HISTORICAL, AUDIT, DERIVED_RULE, RULE -> SourceClass.OFFICIAL_RULE;
             case EBOOK, OPERATOR_KNOWLEDGE -> SourceClass.OPERATOR_MATERIAL;
             case CAFE_ARTICLE, CAFE_COMMENT -> classifyCafeCase(item);
             // 회원 채팅·질문요청에서 갈무리한 항목은 공식 규정이 아니라 내부 경험 자료다(RAG에서

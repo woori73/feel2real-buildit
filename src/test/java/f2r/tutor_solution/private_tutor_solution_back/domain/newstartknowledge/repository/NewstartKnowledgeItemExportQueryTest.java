@@ -81,4 +81,40 @@ class NewstartKnowledgeItemExportQueryTest {
         // then — ACTIVE CAFE_COMMENT 3건이 knowledgeId 오름차순으로
         assertThat(ids).containsExactly(1L, 2L, 3L);
     }
+
+    @Test
+    @DisplayName("SourceType.RULE enum 매핑 — DB의 'RULE' 값을 JPA가 정상 로드")
+    void ruleSourceTypeMapping() {
+        // given — 운영 DB에 존재하는 source_type='RULE' 행과 동일한 값으로 저장
+        // (V1045 3건·V1049 1건, enum에 RULE이 없으면 여기서 IllegalArgumentException 발생)
+        NewstartKnowledgeItem ruleItem = item(100L, SourceType.RULE, KnowledgeStatus.ACTIVE);
+        repository.save(ruleItem);
+
+        // when — sourceType=RULE로 조회
+        Page<NewstartKnowledgeItem> result = repository.pageByStatusAndSourceType(
+                KnowledgeStatus.ACTIVE, SourceType.RULE, PageRequest.of(0, 10));
+
+        // then — RULE 문서가 정상 조회됨
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getKnowledgeId()).isEqualTo(100L);
+        assertThat(result.getContent().get(0).getSourceType()).isEqualTo(SourceType.RULE);
+    }
+
+    @Test
+    @DisplayName("RULE과 DERIVED_RULE은 별개 유형으로 구분됨")
+    void ruleDistinctFromDerivedRule() {
+        // given
+        repository.save(item(101L, SourceType.RULE, KnowledgeStatus.ACTIVE));
+        repository.save(item(102L, SourceType.DERIVED_RULE, KnowledgeStatus.ACTIVE));
+
+        // when
+        Page<NewstartKnowledgeItem> rules = repository.pageByStatusAndSourceType(
+                KnowledgeStatus.ACTIVE, SourceType.RULE, PageRequest.of(0, 10));
+        Page<NewstartKnowledgeItem> derivedRules = repository.pageByStatusAndSourceType(
+                KnowledgeStatus.ACTIVE, SourceType.DERIVED_RULE, PageRequest.of(0, 10));
+
+        // then — 서로 섞이지 않음
+        assertThat(rules.getContent()).extracting(i -> i.getKnowledgeId()).containsExactly(101L);
+        assertThat(derivedRules.getContent()).extracting(i -> i.getKnowledgeId()).containsExactly(102L);
+    }
 }
