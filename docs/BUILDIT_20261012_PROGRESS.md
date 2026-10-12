@@ -27,16 +27,17 @@ TUTOR가 BuildIt에 로그인해 **AI와 대화로 홈페이지를 처음 제작
 | 제안 패널(미리보기·승인·거절·AI 수정 요청·토큰) 모바일 390px | **구현·검증 완료** | `e2e-agent-flow.js` 35/35 |
 | **AI 최초 생성 → 편집기 초안** (A안) | **구현·검증 완료**(클로드) | `e2e-ai-create.js` PC 16/16 · 모바일 17/17 |
 | 섹션 빌더(builderDraft) ↔ 시각 편집기 | 최초 import만 연결, 별도 동기화 없음 | 의도적 분리(공개는 `renderMode`+게시본 테이블) |
-| PR #601 CI·병합·배포 | CI 진행 중. 병합·배포는 CI 통과 후 | 아래 게이트 |
+| PR #601 병합·배포 | 병합 `65634006`, **자동 배포 실패(Flyway V1055) → 자동 롤백**, 운영은 이전 버전 정상 | 아래 사고·수정 |
 
 **AI 최초 생성 구현 방식(A안, 확정):** 기존 `AcademyAiCreateService`(`POST /api/tutor/academy/ai/chat/create`)가 돌려주는 프리셋·문구를 편집기가 받아 고정 id가 있는 첫 홈페이지(히어로·소개·특징 3카드)로 조립한다. 승인 전에는 숨은 편집기 미리보기만 보이고 서버 초안·섹션 빌더(builderDraft)·공개 응답은 바뀌지 않는다. 승인하면 편집기 내용으로 삼아 저장한다(저장 전에는 Ctrl+Z). 이후 수정은 기존 Proposal 흐름(AI 수정 요청·Agent 제안)이며 고정 id 덕에 요소를 정확히 가리킨다.
 
-### Flyway 게이트 (병합·배포 전 필수) — 확인 결과
-PR #601에는 P1 마이그레이션 V1053~V1056과 시각 편집기 V1057·V1058이 함께 있고 `main`에는 V1052까지만 있다.
-- **확인(GitHub Actions 이력 조회, 클로드):** `Deploy to EC2`는 최근 배포가 모두 `main`(현재 운영 SHA `e4bec313`, run #911 success)이며, `buildit-p1/integration`·`buildit-p1/muse-backend`·`buildit-visual-editor/prototype` 브랜치로 실행된 배포 이력이 **0건**이다. `main`에는 V1053 이상 파일이 없으므로 **운영 DB에 V1053~V1058이 이미 적용되었을 가능성은 낮다** → checksum 충돌 위험 없음(신규 적용).
-- **한계:** 운영 `flyway_schema_history`를 직접 조회한 것은 아니다(읽기 전용 진단 워크플로 `flyway-history`는 1041/1042만 조회). 병합 후 자동 배포 직후 `health-check`·`journal-errors` 진단으로 기동·마이그레이션 성공을 확인한다.
-- **적용될 DDL의 성격:** V1053·V1054는 P1 신규 테이블 생성, V1055·V1056은 **같은 배치에서 만든 P1 신규 테이블에만** `ALTER`, V1057·V1058은 `CREATE TABLE IF NOT EXISTS`. 기존 운영 테이블·데이터 변경 없음.
-- **중요(문서 정정):** 위 이력상 P1(AI 채팅·최초 생성 API)은 **아직 운영에 없다.** PR #601 병합이 곧 P1의 첫 운영 반영이다. (이전 기록의 "P1 AI 채팅 API 운영 중"은 사실과 다르다.) 병합은 `main` push → Build Check 성공 시 **자동 배포**(workflow_run)로 이어진다.
+### Flyway 게이트 — 확인 결과와 사고(2026-10-12 05:45 UTC)
+**사고:** PR #601 병합(`65634006`) 후 자동 배포(`Deploy to EC2` run 38209282392)가 `V1055`에서 실패했고 서비스는 **자동 롤백**되어 이전 버전으로 정상 가동 중이다(`service-status` 확인: active, 05:46:32 재기동). 배포 시도 중 약 2~3분간 재시작이 반복되어 **짧은 중단**이 있었다.
+**원인(실측, 읽기 전용 진단 `flyway-recent`):** 운영 `flyway_schema_history`에는 version **1053이 다른 파일**(`V1053__academy_tenant_features_eduholic.sql`, 2026-10-10 적용)로 이미 있었다. `FlywayRepairConfig`의 `repair()`가 이 이력을 P1의 V1053 파일에 맞춰 덮어쓰고(설명·체크섬 정렬) V1053을 "적용됨"으로 취급 → P1의 V1053(`academy_page_versions` 등 생성)이 **실행되지 않았다.** V1054는 정상 적용(`academy_ai_idempotency` 생성, 이력 rank 150). 이어 V1055가 존재하지 않는 `academy_page_versions`를 ALTER해 실패했다.
+**이전 판단의 오류:** 배포 이력(Actions)에서 P1/prototype 브랜치 배포가 없다는 사실만으로 "V1053 이상은 운영에 없다"고 결론냈으나, 운영 이력에는 main에서 이미 사라진 다른 V1053이 있었다. 운영 이력을 직접 조회하지 않고 병합한 것이 잘못이었다. **이후 규칙: 마이그레이션이 있는 병합 전에는 운영 `flyway_schema_history`를 직접 조회한다**(진단 `flyway-recent`).
+**운영 DB 현재 상태(변경 최소):** V1054만 추가 적용됨(`academy_ai_idempotency` 테이블 신규, 비어 있음), V1053 이력 행의 설명·체크섬이 repair로 정렬됨. 기존 테이블·데이터는 변경 없음.
+**수정:** `V1055`가 ALTER 전에 같은 3개 테이블을 `CREATE TABLE IF NOT EXISTS`로 보장한다(V1053은 불변). 운영 이력 상태를 그대로 재현한 로컬 시뮬레이션(1052까지 → 가짜 V1053 행 삽입 → repair+1054 → 전체)에서 V1055~V1058 적용·앱 기동 성공, 회귀 테스트 `FlywayProdHistoryMySqlTest`(수정 전 실패/수정 후 통과)를 CI에 추가했다.
+**`main`은 수정 병합 전까지 배포 불가 상태**다 — 그 사이 `main`에 다른 PR을 병합하면 같은 실패와 짧은 중단이 반복된다. 병합 보류.
 
 ### PR #602(뮤즈) 검토 결과 — 무조건 병합하지 않음
 | 항목 | 판단 |
@@ -102,3 +103,6 @@ AI 최초 생성 → 시각 편집 → 수정(AI 제안) → 승인 → 저장 �
 | 10/12 | 클로드 | AI 최초 생성 → 편집기 초안(A안) 구현 | `e2e-ai-create.js` PC 16/16·모바일 17/17, 기존 E2E 회귀 재실행 | 커밋·푸시, 뮤즈에 생성 품질·Flyway 확인 요청 |
 | 10/12 | 클로드 | PR #602 검토·반영 | 규칙 기반 수정 파서 반영(`RuleBasedEditParser`, 단위 9 + MySQL 흐름 1), #602 병합 보류 사유 코멘트 | 뮤즈: #602 정리·후속 PR |
 | 10/12 | 클로드 | Flyway 게이트 확인 | Actions 배포 이력: main(`e4bec313`)만 배포, P1/prototype 브랜치 배포 0건 → V1053~1058 신규 적용 예상 | CI 통과 후 병합→자동 배포→진단 워크플로로 기동 확인 |
+| 10/12 | 클로드 | PR #601 CI 통과·병합 | head `5e09d002` CI 2개 success → merge commit `65634006`(main). `main` Build Check run #1233 진행 → 성공 시 `Deploy to EC2` 자동 | 배포 후 진단(health-check·journal-errors), 운영 TUTOR 화면 확인은 운영 계정 보유자 |
+| 10/12 | 클로드 | 운영 자동 배포 실패·롤백 확인 | run 38209282392 Failed(V1055 `academy_page_versions` 없음), 서비스 active(롤백). 진단 `flyway-recent`로 원인 확정(운영 1053이 다른 파일) | 수정 PR 병합→재배포 |
+| 10/12 | 클로드 | V1055 보강 + 운영 이력 재현 테스트 | 로컬 시뮬레이션 성공, `FlywayProdHistoryMySqlTest` 2건(수정 전 실패/후 통과) | PR→CI→병합→재배포→진단 |
