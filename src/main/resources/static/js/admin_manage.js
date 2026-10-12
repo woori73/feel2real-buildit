@@ -28,7 +28,7 @@
     });
   }
   function toast(msg) { var t = $('ahToast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 3500); }
-  var FIELD_LABELS = { intro: '소개 문구', blogUrl: '블로그 주소', naverMapUrl: '네이버 지도 주소', heroYoutubeUrl: '대표 영상 주소', 'builderDraft.designPreset': '디자인' };
+  var FIELD_LABELS = { intro: '소개 문구', blogUrl: '블로그 주소', naverMapUrl: '네이버 지도 주소', heroYoutubeUrl: '대표 영상 주소', 'builderDraft.designPreset': '디자인', 'builderDraft.teachersJson': '강사진', 'builderDraft.teachersSectionTitle': '강사진 제목' };
   function labels(list) { return list.map(function (k) { return FIELD_LABELS[k] || k; }).join(', '); }
   function fmt(iso) { return iso ? String(iso).replace('T', ' ').slice(0, 16) : ''; }
   function draft(settings) { return (settings && settings.builderDraft) || {}; }
@@ -42,6 +42,9 @@
     $('amBlog').value = (j.pageSettings && j.pageSettings.blogUrl) || '';
     $('amMap').value = (j.pageSettings && j.pageSettings.naverMapUrl) || '';
     $('amYoutube').value = (j.pageSettings && j.pageSettings.heroYoutubeUrl) || '';
+    var bd = draft(j.pageSettings);
+    renderTeachers(parseTeachers(bd.teachersJson));
+    $('amTeachersTitle').value = bd.teachersSectionTitle || '';
     $('amDirty').textContent = j.dirty ? '게시 안 된 변경 있음' : '공개와 같음';
     $('amLiveChanged').hidden = !j.liveChanged;
     $('amPublish').disabled = $('ahFullPublish').disabled = !!j.liveChanged;
@@ -65,14 +68,78 @@
     add('대표 영상 주소', live.heroYoutubeUrl, st.pageSettings && st.pageSettings.heroYoutubeUrl);
     var a = live.builderDraft || {}, b = draft(st.pageSettings), keys = {};
     Object.keys(a).forEach(function (k) { keys[k] = 1; }); Object.keys(b).forEach(function (k) { keys[k] = 1; });
-    Object.keys(keys).sort().forEach(function (k) { if (k !== 'homepage.renderMode') add(k === 'designPreset' ? '디자인' : k, a[k], b[k]); });
+    Object.keys(keys).sort().forEach(function (k) {
+      if (k === 'homepage.renderMode') return;
+      if (k === 'teachersJson') return add('강사진', teachersSummary(a[k]), teachersSummary(b[k]));
+      add(k === 'designPreset' ? '디자인' : k === 'teachersSectionTitle' ? '강사진 제목' : k, a[k], b[k]);
+    });
     return rows;
+  }
+
+  /* ───── 강사진 입력 (builderDraft.teachersJson / teachersSectionTitle) ─────
+     실제 입력한 값만 저장한다. 비운 항목은 저장하지 않고, 강사가 0명이면 키를 지운다(섹션 숨김). */
+  var TEACHERS_MAX = 8, CAREERS_MAX = 5;
+  function parseTeachers(json) {
+    if (!json) return [];
+    try { var a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function teacherRow(t, idx) {
+    var box = el('div', 'am-teacher'); box.dataset.idx = String(idx);
+    var head = el('div', 'am-teacher-head'); head.appendChild(el('span', null, '강사 ' + (idx + 1)));
+    var del = el('button', 'ah-secondary', '삭제'); del.type = 'button';
+    del.addEventListener('click', function () { renderTeachers(readTeachers(false).filter(function (_, i) { return i !== idx; })); });
+    head.appendChild(del); box.appendChild(head);
+    function field(label, cls, value, opts) {
+      box.appendChild(el('label', 'ah-label', label));
+      var input = opts && opts.multi ? el('textarea', 'ah-input ' + cls) : el('input', 'ah-input ' + cls);
+      if (opts && opts.multi) input.rows = 3; else if (opts && opts.url) input.inputMode = 'url';
+      input.maxLength = opts && opts.max ? opts.max : 100; input.value = value || '';
+      box.appendChild(input);
+    }
+    field('이름 (필수)', 't-n', t.n, { max: 30 });
+    field('역할/과목 (선택)', 't-r', t.r, { max: 50 });
+    field('경력 (선택, 한 줄에 하나, 최대 5줄)', 't-c', (t.c || []).join('\n'), { multi: true, max: 450 });
+    field('사진 주소 (선택, https:// 로 시작)', 't-p', t.p, { url: true, max: 300 });
+    return box;
+  }
+  function renderTeachers(list) {
+    var box = $('amTeachersList'); box.textContent = '';
+    list.forEach(function (t, i) { box.appendChild(teacherRow(t, i)); });
+    $('amTeachersCount').textContent = list.length ? list.length + '명' : '없음';
+    $('amTeacherAdd').disabled = list.length >= TEACHERS_MAX;
+  }
+  /** 화면 입력값 → [{n,r,c,p}]. keepEmpty=false면 이름이 비어 있는 행은 버린다(저장용). */
+  function readTeachers(dropEmpty) {
+    var rows = [];
+    Array.prototype.forEach.call($('amTeachersList').querySelectorAll('.am-teacher'), function (box) {
+      var v = function (c) { return box.querySelector('.' + c).value.trim(); };
+      var t = { n: v('t-n') };
+      if (v('t-r')) t.r = v('t-r');
+      var c = v('t-c').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, CAREERS_MAX);
+      if (c.length) t.c = c;
+      if (v('t-p')) t.p = v('t-p');
+      rows.push(t);
+    });
+    return dropEmpty === false ? rows : rows.filter(function (t) { return t.n; });
+  }
+  /** 저장 값(문자열 또는 null=키 삭제). 검증 실패 시 Error. */
+  function teachersPayload() {
+    var all = readTeachers(false), named = all.filter(function (t) { return t.n; });
+    if (named.length !== all.length) throw new Error('이름이 비어 있는 강사가 있어요. 이름을 입력하거나 삭제해 주세요.');
+    for (var i = 0; i < named.length; i++) {
+      if (named[i].p && !/^https:\/\//i.test(named[i].p)) throw new Error('사진 주소는 https:// 로 시작해야 해요: ' + named[i].n);
+    }
+    return named.length ? JSON.stringify(named) : null;
+  }
+  function teachersSummary(json) {
+    var list = parseTeachers(json);
+    return list.length ? list.map(function (t) { return t.n + (t.r ? '(' + t.r + ')' : ''); }.bind(null)).join(', ') : '';
   }
 
   /* ───── 저장·되돌리기·반영 ───── */
   function guarded(fn) {
     if (S.busy) return; S.busy = true;
-    return fn().catch(function (e) { toast(e.message); $('amSaveMsg').textContent = e.message; })
+    return Promise.resolve().then(fn).catch(function (e) { toast(e.message); $('amSaveMsg').textContent = e.message; })
       .then(function () { S.busy = false; });
   }
   function save() {
@@ -83,7 +150,13 @@
       if (map !== (cur.naverMapUrl || '')) ps.naverMapUrl = map;
       if (yt !== (cur.heroYoutubeUrl || '')) ps.heroYoutubeUrl = yt;
       var preset = $('amPreset').value;
-      if (preset !== (draft(cur).designPreset || '')) ps.builderDraft = { designPreset: preset };
+      var bdPatch = {};
+      if (preset !== (draft(cur).designPreset || '')) bdPatch.designPreset = preset;
+      var tj = teachersPayload();
+      if ((tj || '') !== (draft(cur).teachersJson || '')) bdPatch.teachersJson = tj;
+      var tt = $('amTeachersTitle').value.trim();
+      if (tt !== (draft(cur).teachersSectionTitle || '')) bdPatch.teachersSectionTitle = tt || null;
+      if (Object.keys(bdPatch).length) ps.builderDraft = bdPatch;
       return api('PUT', '', { revision: S.revision, intro: $('amIntro').value, pageSettings: Object.keys(ps).length ? ps : null })
         .then(function (j) { applyState(j); $('amSaveMsg').textContent = '작업본을 저장했어요. 공개 홈페이지는 아직 그대로예요.'; toast('저장했어요'); return refreshLists(); });
     });
@@ -197,6 +270,7 @@
     var sel = $('amPreset');
     Object.keys(PRESETS).forEach(function (k) { var o = el('option', null, PRESETS[k]); o.value = k; sel.appendChild(o); });
     $('amSave').addEventListener('click', save);
+    $('amTeacherAdd').addEventListener('click', function () { var cur = readTeachers(false); if (cur.length < TEACHERS_MAX) { cur.push({}); renderTeachers(cur); } });
     $('amDiscard').addEventListener('click', discard);
     $('amRebase').addEventListener('click', rebase);
     $('amPreview').addEventListener('click', openFull);

@@ -122,6 +122,10 @@ public class AcademyService {
       // JSON 배열 문자열로 이 키에 담는다([{"v":<videoId>,"t":..,"n":..,"g":..}]). 스키마 변경 없음.
       "miniLectures",
       "miniLecturesSectionTitle",
+      // ── 강사진(sec-teachers) ──
+      // 회원이 입력한 강사 목록(JSON 배열 문자열)과 섹션 제목. 값이 없으면 섹션은 렌더되지 않는다.
+      "teachersJson",
+      "teachersSectionTitle",
       // Mobile-first brand/typography tokens. Values are registry IDs or bounded pixel numbers.
       "typographyPreset", "headingFont", "bodyFont",
       "logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile",
@@ -179,6 +183,7 @@ public class AcademyService {
       "sec-featured",
       "sec-intro",
       "sec-principal",
+      "sec-teachers",
       "sec-philosophy",
       "sec-videos",
       "sec-minilectures",
@@ -1023,6 +1028,14 @@ public class AcademyService {
         throw new IllegalArgumentException("올바르지 않은 Builder draft 키입니다: " + key);
       }
       if (value == null) continue;
+      if ("teachersJson".equals(key)) {
+        TeachersDraft.validate(value);
+        continue;
+      }
+      if ("teachersSectionTitle".equals(key)) {
+        TeachersDraft.validateSectionTitle(value);
+        continue;
+      }
       int maxLength = LONG_BUILDER_DRAFT_KEYS.contains(key)
           ? MAX_BUILDER_DRAFT_LONG_VALUE_LENGTH
           : MAX_BUILDER_DRAFT_VALUE_LENGTH;

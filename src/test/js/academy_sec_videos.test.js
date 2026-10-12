@@ -50,7 +50,8 @@ test('given 빌더 MANAGED_SECTION_IDS when 기본 순서와 비교 then hero만
 test('given sec-videos when 각 정의를 확인 then 학습 철학 뒤에 등록되어 있다', () => {
   // given / when / then
   assert.ok(serverOrder.includes('sec-videos'), '서버 DEFAULT_SECTION_ORDER에 없음');
-  assert.equal(serverOrder[serverOrder.indexOf('sec-principal') + 1], 'sec-philosophy');
+  assert.equal(serverOrder[serverOrder.indexOf('sec-principal') + 1], 'sec-teachers');
+  assert.equal(serverOrder[serverOrder.indexOf('sec-teachers') + 1], 'sec-philosophy');
   assert.equal(serverOrder[serverOrder.indexOf('sec-philosophy') + 1], 'sec-videos');
 });
 

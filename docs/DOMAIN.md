@@ -1678,6 +1678,8 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 **V1063 (추가 전용 ALTER)**: `academy_admin_working_copy`에 `base_intro TEXT NULL`, `base_page_settings_json MEDIUMTEXT NULL` — 작업본을 만든 시점의 공개 내용(필드 단위 병합의 기준). 컬럼이 NULL인 행(V1062로 만들어진 작업본)은 기준을 알 수 없으므로 병합 시 공개 값을 우선하고 다른 항목은 충돌로 알린다.
 
+**강사진(`builderDraft.teachersJson`, `teachersSectionTitle`)**: 스키마 변경 없이 기존 `page_settings.builderDraft` 문자열 키로 저장한다(계약·제한은 API.md '강사진' 절). 작업본·게시·버전·감사·충돌 보호는 키 단위로 기존 구조를 그대로 탄다.
+
 불변식: 관리자 수정·미리보기·복원·되돌리기는 공개 테이블(`academies`)을 쓰지 않는다. 공개본은 `POST /api/admin/academies/{id}/builder/publish`에서만 바뀌며, 그때 직전 공개 내용이 `academy_page_versions`에 보관된다. 감사 기록과 변경은 한 트랜잭션이다.
 
 ### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)

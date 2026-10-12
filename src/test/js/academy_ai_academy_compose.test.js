@@ -59,7 +59,7 @@ function buildComposeDocument() {
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 const DEFAULT_ORDER = [
-  'sec-hero', 'sec-featured', 'sec-intro', 'sec-principal', 'sec-philosophy',
+  'sec-hero', 'sec-featured', 'sec-intro', 'sec-principal', 'sec-teachers', 'sec-philosophy',
   'sec-videos', 'sec-minilectures', 'sec-reviews', 'sec-lessons', 'sec-curriculum',
   'sec-effect', 'sec-digitaltwin', 'sec-market', 'sec-payment', 'sec-cta', 'sec-social'
 ];

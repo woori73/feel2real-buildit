@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/assistant_home.css?v=20261012-3"/>
-  <link rel="stylesheet" href="/css/admin_manage.css?v=20261012-1"/>
+  <link rel="stylesheet" href="/css/admin_manage.css?v=20261012-2"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp" th:attr="data-academy-id=${academyId}">
@@ -49,6 +49,16 @@
         <button class="ah-secondary" type="button" id="amDiscard">공개 내용으로 되돌리기</button>
       </div>
       <p class="ah-sub" id="amSaveMsg" role="status"></p>
+    </section>
+
+    <section class="ah-card am-card" id="amTeachersCard">
+      <h2>강사진 <span class="ah-badge" id="amTeachersCount"></span></h2>
+      <p class="ah-sub">실제 강사 정보만 입력하세요. 입력하지 않은 항목은 홈페이지에 표시되지 않고, 강사를 한 명도 등록하지 않으면 강사진 섹션이 나타나지 않아요. (최대 8명)</p>
+      <label class="ah-label" for="amTeachersTitle">섹션 제목 (선택, 비우면 "강사진")</label>
+      <input class="ah-input" id="amTeachersTitle" maxlength="60"/>
+      <div id="amTeachersList" class="am-teachers"></div>
+      <button class="ah-secondary" type="button" id="amTeacherAdd">+ 강사 추가</button>
+      <p class="ah-sub">저장 버튼(아래 "작업본 저장")을 눌러야 작업본에 반영돼요. 공개 홈페이지는 게시 전까지 바뀌지 않아요.</p>
     </section>
 
     <section class="ah-card am-card">
@@ -105,6 +115,6 @@
   </div>
   <div class="ah-toast" id="ahToast" role="status" hidden></div>
 </div>
-<script src="/js/admin_manage.js?v=20261012-2"></script>
+<script src="/js/admin_manage.js?v=20261012-3"></script>
 </body>
 </html>

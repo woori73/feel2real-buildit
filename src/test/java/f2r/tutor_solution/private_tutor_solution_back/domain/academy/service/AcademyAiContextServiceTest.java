@@ -150,8 +150,8 @@ class AcademyAiContextServiceTest {
     AcademyAiContext.Composition composition = service.buildContext(principal).composition();
 
     assertThat(composition).isNotNull();
-    // sec-hero는 항상 0번, 총 16개 관리 섹션.
-    assertThat(composition.sections()).hasSize(16);
+    // sec-hero는 항상 0번, 총 17개 관리 섹션(sec-teachers 포함).
+    assertThat(composition.sections()).hasSize(17);
     assertThat(composition.sections().get(0).key()).isEqualTo("sec-hero");
     // opt-in 섹션(sec-featured 등)은 명시적 ON이 없으므로 숨김.
     assertThat(composition.sections().stream()

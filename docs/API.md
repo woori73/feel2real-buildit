@@ -276,6 +276,20 @@ ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회�
 - 게시 대상 확인 키(`confirmKey`)는 핸들, 핸들이 없는 기존 학원은 slug다.
 - 관리자 AI 대화(수정 턴)는 이후 단계(2-C)다. 이 화면은 AI 없이 직접 수정한다.
 
+### 강사진(sec-teachers) 데이터 계약 — `builderDraft.teachersJson` / `teachersSectionTitle`
+
+신규 엔드포인트·DB 변경 없음. 기존 작업본 API(회원 `PUT /api/tutor/academy/working-copy`, 관리자 `PUT /api/admin/academies/{id}/builder`)의 `pageSettings.builderDraft`로 저장하고, 게시는 기존 게시 API가 한다(게시 전 공개 불변, 충돌 보호·버전 보관·감사 동일).
+
+| 키 | 형식 | 제한 |
+|---|---|---|
+| `teachersJson` | JSON 배열 문자열 `[{"n":"이름","r":"역할/과목","c":["경력"],"p":"https://사진"}]` | 전체 6,000자 이하, 강사 8명 이하, `n` 필수(30자), `r` 50자, `c` 5개 이하·각 80자, `p`는 `https://` 만(300자). 허용 필드는 `n r c p`뿐. 위반 시 `400` |
+| `teachersSectionTitle` | 문자열(선택, 기본 "강사진") | 60자 이하 |
+
+- 값을 지우려면 해당 키에 `null`을 보낸다(키 삭제). `teachersJson`이 없거나 비었거나 유효한 강사가 없으면 **섹션은 렌더되지 않는다**(플레이스홀더·가짜 강사 없음). 기존 학원은 이 키가 없어 변화 없다.
+- 렌더(`academy_sections.js` `renderTeachers`, 공개·빌더 미리보기 공용)는 저장 값을 신뢰하지 않고 다시 거르며, 모든 문자열을 이스케이프하고 사진은 `https`만 `<img>`로 낸다(없으면 실제 이름의 첫 글자 아바타). 스타일은 `academy_teachers.css`(`.bi-teachers` 격리, 프리셋 `--brand-*` 변수 사용, 모바일 360/390/430·PC).
+- 섹션 ID `sec-teachers`는 `sec-principal` 바로 뒤. 서버 `DEFAULT_SECTION_ORDER`, 공개·빌더·AI 채팅 JS의 순서 목록과 동기화한다(계약 테스트가 5곳 일치를 검사). 숨김은 `sectionVisibility['sec-teachers']=false`일 때만(opt-in 아님 — 데이터가 있어야 보이므로 기존 학원 불변).
+- P0 입력 UI는 관리자 관리 화면. 회원 입력은 후속(같은 키를 회원 AI 대화가 수정 — 설계: BUILDIT_DESIGN_ASSET_INTEGRATION_DESIGN.md §10).
+
 - **향후(이번 범위 아님)**: 지금은 역할(TUTOR/ADMIN)에 BuildIt 이용 권한이 묶여 있다. 장기적으로는 역할과 분리된 '이용 권한(entitlement)'(예: 계정별 BuildIt 사용 권한 테이블 + 서버 검사)로 옮겨 STUDENT/기타 역할도 정책에 따라 부여할 수 있게 한다. 이때 소유권 검증(본인 학원만)은 그대로 유지한다.
 
 #### AI 제안·Agent API (V1058, 구현 완료)

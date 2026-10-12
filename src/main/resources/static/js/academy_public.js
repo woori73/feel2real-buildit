@@ -935,6 +935,7 @@
     if (id === 'sec-featured') return renderFeatured(academy);
     if (id === 'sec-intro') return renderIntro(academy);
     if (id === 'sec-principal') return renderPrincipal(academy);
+    if (id === 'sec-teachers') return renderTeachers(academy);
     if (id === 'sec-philosophy') return renderPhilosophy(academy);
     if (id === 'sec-videos') return renderVideos(academy);
     if (id === 'sec-minilectures') return renderMiniLectures(academy);
@@ -963,6 +964,10 @@
 
   function renderMiniLectures(academy) {
     return SECTIONS.renderMiniLectures(sectionView(academy), PUBLIC_CTX);
+  }
+
+  function renderTeachers(academy) {
+    return SECTIONS.renderTeachers(sectionView(academy));
   }
 
 
@@ -1170,6 +1175,7 @@
     'sec-featured',
     'sec-intro',
     'sec-principal',
+    'sec-teachers',
     'sec-philosophy',
     'sec-videos',
     'sec-minilectures',
@@ -1297,6 +1303,7 @@
     renderPhilosophy,
     renderVideos,
     renderMiniLectures,
+    renderTeachers,
     renderLessons,
     renderExternalServices,
     renderCta(academy) { return SECTIONS.renderCta(sectionView(academy), PUBLIC_CTX); },
