@@ -84,6 +84,26 @@
 .builder-public-preview[data-design-preset="ONLINE"]{
   --ultramarine:#0f172a; --gold:#06b6d4; --accent:#22d3ee;
 }
+#publicView[data-design-preset="MINIMAL"],
+.builder-public-preview[data-design-preset="MINIMAL"]{
+  --ultramarine:#111111; --gold:#666666; --accent:#111111;
+}
+#publicView[data-design-preset="DARK"],
+.builder-public-preview[data-design-preset="DARK"]{
+  --ultramarine:#0a0a0a; --gold:#e5e5e5; --accent:#ffffff;
+}
+#publicView[data-design-preset="WARM"],
+.builder-public-preview[data-design-preset="WARM"]{
+  --ultramarine:#92400e; --gold:#d97706; --accent:#f59e0b;
+}
+#publicView[data-design-preset="PHOTO"],
+.builder-public-preview[data-design-preset="PHOTO"]{
+  --ultramarine:#1c1917; --gold:#ea580c; --accent:#ea580c;
+}
+#publicView[data-design-preset="DYNAMIC"],
+.builder-public-preview[data-design-preset="DYNAMIC"]{
+  --ultramarine:#4c1d95; --gold:#ec4899; --accent:#f59e0b;
+}
 
 /* ── 히어로 레이아웃 ── */
 #publicView[data-hero-layout="center"] .hero-grid,

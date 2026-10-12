@@ -45,7 +45,8 @@ public class AcademyAiCreateService {
   private final AcademyRequirementAnalyzer analyzer;
   private final SubjectRepository subjectRepository;
 
-  private static final Set<String> VALID_PRESETS =
+  /** 디자인 프리셋 allowlist(10종). 저장 검증·AI 생성 검증이 같은 집합을 쓴다. */
+  public static final Set<String> VALID_PRESETS =
       Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE",
           "MINIMAL", "DARK", "WARM", "PHOTO", "DYNAMIC");
 

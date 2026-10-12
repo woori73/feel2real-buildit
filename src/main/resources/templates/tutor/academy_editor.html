@@ -288,6 +288,11 @@
           <button class="preset-btn" data-preset="ARTS">🎨<br>예체능</button>
           <button class="preset-btn" data-preset="STUDY">📚<br>스터디</button>
           <button class="preset-btn" data-preset="ONLINE">💻<br>온라인</button>
+          <button class="preset-btn" data-preset="MINIMAL">◻️<br>미니멀</button>
+          <button class="preset-btn" data-preset="DARK">🌑<br>다크</button>
+          <button class="preset-btn" data-preset="WARM">🧡<br>감성</button>
+          <button class="preset-btn" data-preset="PHOTO">📷<br>포토</button>
+          <button class="preset-btn" data-preset="DYNAMIC">⚡<br>다이나믹</button>
         </div>
         <p class="panel-hint">
           프리셋을 누르면 해당 스타일의 히어로·특징 섹션이 캔버스 맨 아래에 추가됩니다. 추가한 뒤 자유롭게 수정하세요.
@@ -421,6 +426,11 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     ARTS: { name: '예체능', color: '#7c3aed', bg: '#f5f3ff' },
     STUDY: { name: '스터디', color: '#b45309', bg: '#fffbeb' },
     ONLINE: { name: '온라인', color: '#0e7490', bg: '#ecfeff' },
+    MINIMAL: { name: '미니멀', color: '#111111', bg: '#ffffff' },
+    DARK: { name: '다크', color: '#fafafa', bg: '#0a0a0a' },
+    WARM: { name: '감성', color: '#92400e', bg: '#fffbeb' },
+    PHOTO: { name: '포토', color: '#1c1917', bg: '#f5f5f4' },
+    DYNAMIC: { name: '다이나믹', color: '#7c3aed', bg: '#f5f3ff' },
   };
 
   const heroHtml = (key, p) => `
