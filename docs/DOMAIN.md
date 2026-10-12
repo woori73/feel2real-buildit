@@ -1676,6 +1676,8 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 **academy_admin_audit**: 관리자 작업 감사 기록(추가 전용). `audit_id` PK, `actor_user_id`/`actor_login_id`, `academy_id`(FK 없음 — 학원이 삭제돼도 기록 보존), `owner_user_id`, `action`(ACCESS/SAVE/PUBLISH/RESTORE/DISCARD), `working_copy_revision`, `published`, `summary`, `details_json`(변경 항목 전/후, 값 길이 제한; URL·사업자 정보 같은 설정은 필드 이름만), `created_at`. 인덱스 `(academy_id, audit_id)`, `(actor_user_id, audit_id)`. 회원 API로 노출하지 않는다.
 
+**V1063 (추가 전용 ALTER)**: `academy_admin_working_copy`에 `base_intro TEXT NULL`, `base_page_settings_json MEDIUMTEXT NULL` — 작업본을 만든 시점의 공개 내용(필드 단위 병합의 기준). 컬럼이 NULL인 행(V1062로 만들어진 작업본)은 기준을 알 수 없으므로 병합 시 공개 값을 우선하고 다른 항목은 충돌로 알린다.
+
 불변식: 관리자 수정·미리보기·복원·되돌리기는 공개 테이블(`academies`)을 쓰지 않는다. 공개본은 `POST /api/admin/academies/{id}/builder/publish`에서만 바뀌며, 그때 직전 공개 내용이 `academy_page_versions`에 보관된다. 감사 기록과 변경은 한 트랜잭션이다.
 
 ### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)

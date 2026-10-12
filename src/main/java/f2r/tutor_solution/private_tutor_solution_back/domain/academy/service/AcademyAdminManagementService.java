@@ -13,6 +13,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Acad
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyPageVersion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAdminWorkingCopyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyWorkingCopyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyWorkingCopyService.State;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyWorkingCopyService.WorkingCopyConflictException;
@@ -41,6 +42,7 @@ public class AcademyAdminManagementService {
 
   private final AcademyRepository academyRepository;
   private final AcademyAdminWorkingCopyRepository repository;
+  private final AcademyWorkingCopyRepository memberWorkingCopies;
   private final AcademyWorkingCopyService support;
   private final AcademyService academyService;
   private final AcademyPageVersionService versionService;
@@ -50,9 +52,16 @@ public class AcademyAdminManagementService {
   /** 관리 화면용 학원 요약. */
   public record AcademySummary(
       Long academyId, String name, String handle, String slug, AcademyStatus status, boolean visible,
-      Long ownerUserId, String ownerLoginId) {}
+      Long ownerUserId, String ownerLoginId, String confirmKey) {}
 
-  public record AdminView(AcademySummary academy, State state) {}
+  /** 확인 화면용: 현재 공개 내용(변경 비교 기준)과 회원이 게시하지 않은 작업본이 있는지(내용은 노출하지 않는다). */
+  public record LiveView(
+      String intro, Map<String, String> builderDraft, String blogUrl, String naverMapUrl, String heroYoutubeUrl) {}
+
+  public record AdminView(AcademySummary academy, State state, LiveView live, boolean memberDraftDirty) {}
+
+  /** 공개 변경 반영 결과: 새 상태 + 양쪽이 모두 바꿔 공개 값을 유지한 항목(충돌) + 관리자 값이 유지된 항목. */
+  public record RebaseResult(State state, List<String> conflicts, List<String> keptMine) {}
 
   public record PublishResult(boolean firstPublish, State state) {}
 
@@ -64,7 +73,41 @@ public class AcademyAdminManagementService {
     State state = state(academy, wc);
     audit.record(admin, academy, AcademyAdminAuditService.ACCESS, state.revision(), false,
         "관리 화면 진입", Map.of("status", academy.getStatus().name(), "dirty", state.dirty()));
-    return new AdminView(summary(academy), state);
+    return new AdminView(summary(academy), state, liveView(academy), memberDraftDirty(academy));
+  }
+
+  /**
+   * 공개 변경 반영(rebase): 작업본을 만든 뒤 공개 홈페이지가 바뀌었을 때, 관리자가 바꾼 필드만 새 공개 내용 위에
+   * 얹는다. 양쪽이 같은 필드를 다르게 바꾼 경우는 공개 쪽 값을 유지하고 충돌로 알려 어느 쪽 수정도 조용히
+   * 덮어쓰지 않는다. 공개본은 바뀌지 않는다. 감사 기록에는 수정(SAVE)으로 남는다.
+   */
+  @Transactional
+  public RebaseResult rebase(JwtTokenProvider.AuthenticatedPrincipal admin, Long academyId, long expectedRevision) {
+    Academy academy = target(admin, academyId);
+    AcademyAdminWorkingCopy wc = loadOrCreate(academy, admin.loginId());
+    requireRevision(wc, expectedRevision);
+
+    AcademyPageSettings baseSettings = support.parseSettings(wc.getBasePageSettingsJson());
+    boolean baseKnown = wc.getBasePageSettingsJson() != null;
+    AcademyPageSettings mine = support.parseSettings(wc.getPageSettingsJson());
+    AcademyPageSettings live = academy.getPageSettings();
+    AdminDraftMerger.Result merged = AdminDraftMerger.merge(
+        wc.getBaseIntro(), baseSettings, wc.getIntro(), mine, academy.getIntro(), live, baseKnown);
+    AcademyPageSettings next = AcademyWorkingCopyService.withLiveRenderMode(merged.settings(), live);
+
+    Map<String, Object> details = new LinkedHashMap<>(
+        AcademyAdminAuditService.describeChange(wc.getIntro(), merged.intro(), mine, next));
+    details.put("rebase", true);
+    details.put("conflicts", merged.conflicts());
+    details.put("keptMine", merged.keptMine());
+    wc.replaceContent(merged.intro(), support.toJson(next), admin.loginId());
+    wc.rebase(support.fingerprint(academy.getIntro(), live),
+        academy.getIntro(), support.toJson(live), admin.loginId());
+    flush(wc);
+    audit.record(admin, academy, AcademyAdminAuditService.SAVE, nextRevision(wc), false,
+        "공개 변경 반영(rebase)" + (merged.conflicts().isEmpty() ? "" : " — 충돌 " + merged.conflicts().size() + "건 공개 값 유지"),
+        details);
+    return new RebaseResult(state(academy, wc), merged.conflicts(), merged.keptMine());
   }
 
   /** 관리자 작업본 수정(소개·페이지 설정). 공개본은 바뀌지 않는다. */
@@ -97,7 +140,8 @@ public class AcademyAdminManagementService {
     AcademyAdminWorkingCopy wc = loadOrCreate(academy, admin.loginId());
     requireRevision(wc, expectedRevision);
     wc.replaceContent(academy.getIntro(), support.toJson(academy.getPageSettings()), admin.loginId());
-    wc.rebase(support.fingerprint(academy.getIntro(), academy.getPageSettings()), admin.loginId());
+    wc.rebase(support.fingerprint(academy.getIntro(), academy.getPageSettings()),
+        academy.getIntro(), support.toJson(academy.getPageSettings()), admin.loginId());
     flush(wc);
     audit.record(admin, academy, AcademyAdminAuditService.DISCARD, nextRevision(wc), false,
         "작업본을 공개 내용으로 되돌림", Map.of());
@@ -149,7 +193,7 @@ public class AcademyAdminManagementService {
     Academy academy = academyRepository.findForUpdateByAcademyId(academyId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academy를 찾을 수 없습니다."));
     if (!academyId.equals(confirmAcademyId)
-        || confirmHandle == null || !confirmHandle.trim().equalsIgnoreCase(String.valueOf(academy.getHandle()))) {
+        || confirmHandle == null || !confirmHandle.trim().equalsIgnoreCase(confirmKey(academy))) {
       throw new WorkingCopyConflictException(
           "TARGET_MISMATCH", "게시 대상 확인(학원 ID·핸들)이 일치하지 않습니다. 대상 학원을 다시 확인하세요.");
     }
@@ -187,7 +231,8 @@ public class AcademyAdminManagementService {
     } finally {
       AuditorContextHolder.clear();
     }
-    wc.rebase(support.fingerprint(academy.getIntro(), academy.getPageSettings()), admin.loginId());
+    wc.rebase(support.fingerprint(academy.getIntro(), academy.getPageSettings()),
+        academy.getIntro(), support.toJson(academy.getPageSettings()), admin.loginId());
     flush(wc);
 
     Map<String, Object> details = new HashMap<>();
@@ -197,6 +242,11 @@ public class AcademyAdminManagementService {
     audit.record(admin, academy, AcademyAdminAuditService.PUBLISH, nextRevision(wc), true,
         firstPublish ? "최초 공개 게시" : "작업본 게시", details);
     return new PublishResult(firstPublish, state(academy, wc));
+  }
+
+  /** 게시 대상 확인 키: 핸들, 핸들이 없는 기존 학원은 slug. */
+  static String confirmKey(Academy academy) {
+    return academy.getHandle() != null && !academy.getHandle().isBlank() ? academy.getHandle() : academy.getSlug();
   }
 
   /** 관리자 작업본 기준 비공개 미리보기. DB를 바꾸지 않는다(작업본이 없으면 공개 내용 그대로). */
@@ -234,11 +284,30 @@ public class AcademyAdminManagementService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academy를 찾을 수 없습니다."));
   }
 
+  private LiveView liveView(Academy academy) {
+    AcademyPageSettings live = academy.getPageSettings();
+    Map<String, String> draft = live == null || live.builderDraft() == null ? Map.of() : live.builderDraft();
+    return new LiveView(
+        academy.getIntro(), draft,
+        live == null ? null : live.blogUrl(), live == null ? null : live.naverMapUrl(),
+        live == null ? null : live.heroYoutubeUrl());
+  }
+
+  /** 회원 본인의 작업본에 아직 게시하지 않은 변경이 있는가(내용은 읽지 않고 지문 비교만). */
+  private boolean memberDraftDirty(Academy academy) {
+    return memberWorkingCopies.findByAcademyId(academy.getAcademyId()).map(wc -> {
+      AcademyPageSettings settings = AcademyWorkingCopyService.withLiveRenderMode(
+          support.parseSettings(wc.getPageSettingsJson()), academy.getPageSettings());
+      return !support.fingerprint(wc.getIntro(), settings)
+          .equals(support.fingerprint(academy.getIntro(), academy.getPageSettings()));
+    }).orElse(false);
+  }
+
   private AcademySummary summary(Academy a) {
     return new AcademySummary(
         a.getAcademyId(), a.getName(), a.getHandle(), a.getSlug(), a.getStatus(), a.isVisible(),
         a.getTutor() == null ? null : a.getTutor().getUserId(),
-        a.getTutor() == null ? null : a.getTutor().getLoginId());
+        a.getTutor() == null ? null : a.getTutor().getLoginId(), confirmKey(a));
   }
 
   private AcademyAdminWorkingCopy loadOrCreate(Academy academy, String actor) {

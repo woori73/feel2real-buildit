@@ -75,6 +75,8 @@
               </div>
               ${renderVisitStatistics(academy.visitStatistics)}
             </div>
+            <a class="toggle-btn show" style="text-decoration:none;display:inline-block;margin-right:6px"
+               href="/admin/academies/${academy.academyId}/builder">홈페이지 관리</a>
             <button class="toggle-btn ${academy.isVisible ? 'hide' : 'show'}"
                     onclick="toggleAcademy(${academy.academyId}, ${!academy.isVisible}, this)">
               ${academy.isVisible ? '숨기기' : '노출하기'}

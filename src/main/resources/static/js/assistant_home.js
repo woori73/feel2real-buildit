@@ -150,6 +150,18 @@
     clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 3500);
   }
 
+  /* 강제 게시 시 덮어쓰게 될 공개 내용(서버가 공개→작업본 차이를 계산해 409에 실어 준다) */
+  function overwriteText(d) {
+    if (!d) return '';
+    var lines = [];
+    if (d.introChanged) lines.push('· 소개 문구: "' + (d.introBefore || '') + '" → "' + (d.introAfter || '') + '"');
+    (d.builderDraftChanges || []).forEach(function (c) {
+      lines.push('· ' + (c.key === 'designPreset' ? '디자인' : c.key) + ': "' + (c.before || '') + '" → "' + (c.after || '') + '"');
+    });
+    (d.changedSettings || []).forEach(function (k) { lines.push('· 설정 변경: ' + k); });
+    return lines.length ? '\n\n덮어쓰게 될 공개 내용(현재 공개 → 게시 후):\n' + lines.join('\n') : '';
+  }
+
   /* ───── 게시하기 (최초/수정 모두 같은 버튼) ───── */
   function publish(force) {
     if (ctx.busy || ctx.revision == null) return;
@@ -163,7 +175,7 @@
         if (s.publicUrl) { var a = el('a', 'ah-msg bot', s.publicUrl); a.href = s.publicUrl; a.target = '_blank'; a.rel = 'noopener'; $('ahMessages').appendChild(a); scrollDown(); }
       });
     }).catch(function (e) {
-      if (e.status === 409 && e.code === 'LIVE_CHANGED' && window.confirm(e.message + '\n그래도 지금 내용으로 게시할까요?')) {
+      if (e.status === 409 && e.code === 'LIVE_CHANGED' && window.confirm(e.message + overwriteText(e.details) + '\n\n그래도 지금 내용으로 게시할까요?')) {
         ctx.busy = false; return publish(true);
       }
       toast(e.message); bubble('bot', e.message);

@@ -367,7 +367,10 @@ class AdminAcademyManagementMySqlTest {
           .content("{\"revision\":0}")).getResponse().getStatus()).isEqualTo(403);
       assertThat(call(get("/admin/academies/" + target.academyId() + "/preview").cookie(c)).getResponse().getStatus())
           .isEqualTo(403);
+      assertThat(call(get("/admin/academies/" + target.academyId() + "/builder").cookie(c)).getResponse().getStatus())
+          .isEqualTo(403);
     }
+    assertThat(call(get("/admin/academies/" + target.academyId() + "/builder")).getResponse().getStatus()).isIn(401, 403);
     assertThat(call(get(api(target, ""))).getResponse().getStatus()).isIn(401, 403);
     assertThat(call(get("/admin/academies/" + target.academyId() + "/preview")).getResponse().getStatus()).isIn(401, 403);
     // 다른 쪽도 변하지 않았다
@@ -381,6 +384,11 @@ class AdminAcademyManagementMySqlTest {
     assertThat(page.getResponse().getStatus()).isEqualTo(200);
     assertThat(page.getResponse().getContentAsString()).contains("data-preview-api=\"/api/admin/academies/" + target.academyId() + "/builder/preview\"");
     assertThat(call(get("/admin/academies/999999999/preview").cookie(adminCookie)).getResponse().getStatus()).isEqualTo(404);
+    MvcResult manage = call(get("/admin/academies/" + target.academyId() + "/builder").cookie(adminCookie));
+    assertThat(manage.getResponse().getStatus()).isEqualTo(200);
+    assertThat(manage.getResponse().getContentAsString()).contains("data-academy-id=\"" + target.academyId() + "\"");
+    assertThat(manage.getResponse().getHeader("Cache-Control")).contains("no-store");
+    assertThat(call(get("/admin/academies/999999999/builder").cookie(adminCookie)).getResponse().getStatus()).isEqualTo(404);
     assertThat(call(get("/api/admin/academies/999999999/builder").cookie(adminCookie)).getResponse().getStatus()).isEqualTo(404);
   }
 
