@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 /**
  * P1 AI 홈페이지 최초 생성 서비스 (Muse 담당).
  *
- * <p>자연어 요청을 분석하여 P0의 5종 템플릿 중 하나를 선택하고,
+ * <p>자연어 요청을 분석하여 10종 템플릿 중 하나를 선택하고,
  * 초기 builderDraft를 생성한다.
+ * (기존 5종: EXAM, ENGLISH, ARTS, STUDY, ONLINE /
+ *  신규 5종: EXAM_INTENSIVE, LANGUAGE_KIDS, ARTS_PORTFOLIO, STUDY_CAFE, ONLINE_LIVE)
  *
  * <p>고도화 (2일차):
  * <ul>
@@ -31,7 +33,7 @@ import org.springframework.stereotype.Service;
  * <ul>
  *   <li>생성된 초안은 DB에 저장하지 않는다 (승인 전).
  *   <li>기존 학원 홈페이지 및 데이터를 덮어쓰지 않는다.
- *   <li>designPreset은 allowlist의 5종만 허용한다.
+ *   <li>designPreset은 allowlist의 10종만 허용한다.
  * </ul>
  */
 @Service
@@ -43,7 +45,8 @@ public class AcademyAiCreateService {
   private final SubjectRepository subjectRepository;
 
   private static final Set<String> VALID_PRESETS =
-      Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE");
+      Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE",
+          "EXAM_INTENSIVE", "LANGUAGE_KIDS", "ARTS_PORTFOLIO", "STUDY_CAFE", "ONLINE_LIVE");
 
   /**
    * 자연어 요청으로부터 홈페이지 초안을 생성한다.
@@ -327,6 +330,11 @@ public class AcademyAiCreateService {
       case "ARTS" -> "예체능형";
       case "STUDY" -> "공부방형";
       case "ONLINE" -> "온라인학원형";
+      case "EXAM_INTENSIVE" -> "입시집중형";
+      case "LANGUAGE_KIDS" -> "어린이어학원형";
+      case "ARTS_PORTFOLIO" -> "포트폴리오형";
+      case "STUDY_CAFE" -> "스터디카페형";
+      case "ONLINE_LIVE" -> "라이브강의형";
       default -> preset;
     };
   }
