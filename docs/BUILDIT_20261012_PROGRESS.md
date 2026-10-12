@@ -95,3 +95,53 @@
 | 뮤즈 changes[] 생성 | ✅ | ⏳ | ✅ (PR #602) | 🚫 |
 | AI 모델 호출 품질 | — | ⏳ 미확인 | — | — |
 | 템플릿 다양화 | ⏳ 2단계 | — | — | — |
+
+
+## 9. 2단계 작업 (2026-10-12 15:00)
+
+### 9.1 자연어 수정 품질 보완 ✅
+
+**파일**: `AcademyAiEditService.java` (업데이트, commit ad322263)
+
+**보완 내용**:
+- 실제 projectData JSON 파싱 → 컴포넌트 인덱스 구축 (id, tagName, textContent, imgSrc)
+- 편집기의 `planChanges`와 동일한 기준 (HTML id, `/^[A-Za-z][\w-]*$/`)
+- 대상 탐색 우선순위:
+  1. `'A'를 'B'로` 패턴 → A와 일치하는 텍스트를 가진 컴포넌트
+  2. 키워드(제목/부제목/본문/버튼) → 태그(h1/h2/h3/p/button) 매칭
+  3. ID 직접 지정 (예: "ve5를 바꿔줘")
+- 없는 컴포넌트는 `TARGET_NOT_FOUND`로 거부 (임의 수정 방지)
+- 계약 오류 코드 준수: `NO_CHANGES`, `INVALID_CHANGE`, `UNKNOWN_CHANGE_TYPE`
+
+**검증**: 8/8 단위 테스트 통과
+- 제목→ve5, 기존텍스트→ve5, 없는대상→TARGET_NOT_FOUND
+- 스타일→ve5, 모바일→mediaText, 이미지→ve7, ID직접→ve6, 빈projectData→예외
+
+### 9.2 Wiki AI Router 검증 ✅ (부분)
+
+| 항목 | 결과 |
+|------|------|
+| 엔드포인트 존재 | ✅ `POST /api/ai/complete` → 403 (인증 필요, 404 아님) |
+| 코드 경로 | ✅ `WikiRouterAcademyAiProvider` → `WikiAiRouterClient` → Python `ai_router.py` (provider=auto) |
+| 실제 모델 호출 성공 여부 | ⏳ 미확인 (운영 인증 필요) |
+| 최초 생성·수정 요청 응답 품질 | ⏳ 미확인 (운영 인증 필요) |
+| 비밀키 기록 | 없음 (요구사항 준수) |
+
+**처리 결과**: 인증 없이 확인할 수 있는 범위 완료. 실제 호출 검증은 TUTOR 로그인 후 별도 진행 필요.
+
+### 9.3 Lovable 템플릿 확장 설계 ✅ (별도 변경)
+
+**파일**: `docs/BUILDIT_TEMPLATE_EXPANSION_DESIGN.md` (신규, commit 7018dfc1)
+
+**내용**:
+- 기존 5종 유지 (운영 영향 없음)
+- 신규 5종 제안: EXAM_INTENSIVE, LANGUAGE_KIDS, ARTS_PORTFOLIO, STUDY_CAFE, ONLINE_LIVE
+- 각 템플릿의 레이아웃 차별점·섹션 구성·데이터 키 정의
+- 호환성: builderDraft 키 재사용, DB 스키마 변경 없음, 편집기 파이프라인 변경 없음
+- 구현은 별도 PR로 진행 (운영 배포 지연 방지)
+
+### 9.4 작업 경계 준수
+
+- ✅ PR #601, 시각 편집기, Proposal 승인·저장 코드 미수정
+- ✅ 기존 구현 반복 수정 없음
+- ✅ 클로드 브랜치와 파일 충돌 없음
