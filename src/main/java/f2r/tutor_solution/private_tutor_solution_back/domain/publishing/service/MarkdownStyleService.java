@@ -33,7 +33,8 @@ public class MarkdownStyleService {
   private static final Pattern LIST = Pattern.compile("^[-*]\\s+(.+)$");
 
   /** 파싱된 블록: text=clean text, original=마커 포함 원본, style=적용할 스타일 */
-  public record Block(String text, String original, String style) {}
+  public record Block(String text, String original, String style,
+      int paragraphIndex, int markerBytes) {}
 
   /** 파싱 결과: clean text + 스타일 매핑 */
   public record ParsedMarkdown(String cleanText, List<Block> headingBlocks) {}
@@ -47,6 +48,7 @@ public class MarkdownStyleService {
   public ParsedMarkdown parse(String markdown) {
     StringBuilder clean = new StringBuilder();
     List<Block> headings = new ArrayList<>();
+    int paraIndex = 0;
 
     for (String line : markdown.split("\\R")) {
       String trimmed = line.trim();
@@ -57,25 +59,32 @@ public class MarkdownStyleService {
       if (m1.matches()) {
         String text = m1.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-heading1"));
+        headings.add(new Block(text, line.trim(), "ko-heading1", paraIndex, 2));
+        paraIndex++;
       } else if (m2.matches()) {
         String text = m2.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-heading2"));
+        headings.add(new Block(text, line.trim(), "ko-heading2", paraIndex, 3));
+        paraIndex++;
       } else if (m3.matches()) {
         String text = m3.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-heading3"));
+        headings.add(new Block(text, line.trim(), "ko-heading3", paraIndex, 4));
+        paraIndex++;
       } else if (QUOTE.matcher(trimmed).matches()) {
         String text = QUOTE.matcher(trimmed).replaceFirst("$1").trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-quote"));
+        int qMarker = line.trim().startsWith("> ") ? 2 : 1;
+        headings.add(new Block(text, line.trim(), "ko-quote", paraIndex, qMarker));
+        paraIndex++;
       } else if (LIST.matcher(trimmed).matches()) {
         // 목록은 본문 스타일 유지 (ko-body), 마커만 제거
         String text = LIST.matcher(trimmed).replaceFirst("$1").trim();
         clean.append("• ").append(text).append("\n");
+        paraIndex++;
       } else {
         clean.append(line).append("\n");
+        paraIndex++;
       }
     }
 
