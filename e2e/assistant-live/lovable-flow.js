@@ -1,6 +1,6 @@
-// 사용자 흐름 하나를 처음부터 끝까지 실제 브라우저로 확인한다(어제 확정한 Lovable형 대화창 흐름).
-//   한 문장 입력 → 홈페이지 생성 → 대화 속 미리보기 카드 → 전체 화면 확인 → 대화로 돌아와 수정 → 결과 확인
-//   → 학원 정보 수정 → 게시 → (수정·게시 한 번 더) → 이전 버전 불러오기 → HTML 다운로드
+// BuildIt v5 사용자 흐름 하나를 처음부터 끝까지 실제 브라우저로 확인한다.
+//   랜딩 첫 화면에서 제작 요청 입력 → 로그인(요청 복원) → BuildIt 가이드 대화 시작 → 홈페이지 생성 → 대화 속 미리보기 카드
+//   → 전체 화면 확인 → 대화로 수정 → 학원 정보 → 정식 배포 등록(주소 확인 → 공개 완료 카드) → 이전 버전 → HTML 다운로드
 // 격리 DB·로컬 앱에서만 실행한다(운영 접근 없음). 계정: e2e-lov (TUTOR, 학원 없음).
 const fs = require('fs');
 const path = require('path');
@@ -19,7 +19,7 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   const shot = async (page, name) => { await page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
   const errors = [];
 
-  const ctx = await newCtx(b, { viewport: { width: 1280, height: 860 }, acceptDownloads: true }, { loginId: 'e2e-lov', password: 'admin1234' });
+  const ctx = await newCtx(b, { viewport: { width: 1280, height: 860 }, acceptDownloads: true }, null);
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   const msgCount = () => page.evaluate(() => document.querySelectorAll('#ahMsgs .ah-msg').length);
@@ -30,10 +30,35 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   const fullText = () => page.evaluate(() => { const d = document.getElementById('ahFrame').contentDocument; return d && d.body ? d.body.innerText : ''; });
   const waitFullRendered = () => page.waitForFunction(() => { const d = document.getElementById('ahFrame').contentDocument; return d && d.body && d.body.innerText.length > 80; }, null, { timeout: 30000 });
 
-  // ── 1. 시작 화면: 입력창 하나 + 샘플 ──
+  // ── 0. 랜딩 첫 화면 → 제작 요청 입력 → 로그인 → 요청 복원 ──
+  console.log('\n[0] 랜딩 첫 화면 + 로그인 + 요청 복원');
+  await page.goto(BASE + '/');
+  await page.waitForSelector('[data-buildit-prompt]');
+  ok('첫 화면 제목·부제·입력창', (await page.textContent('#hero h1')).includes('어떤 홈페이지를 만들까요?') && (await page.textContent('.hero-ask-sub')).includes('BuildIt 가이드'));
+  ok('첫 화면에 4단계·기능 카드가 없다(제목·부제·입력창만)', await page.evaluate(() => { const h = document.getElementById('hero'); return !h.querySelector('.flow-h, .steps, .feature-card, .hero-video-card') && h.querySelectorAll('input,button,a').length <= 3; }));
+  ok('소개 영상은 첫 화면 아래(#intro)에 있다', await page.evaluate(() => { const v = document.querySelector('.hero-video-card'); return !!v && !document.getElementById('hero').contains(v) && v.getBoundingClientRect().top > window.innerHeight * 0.9; }));
+  await shot(page, '00-landing-pc');
+  const mp = await b.newPage({ viewport: { width: 390, height: 844 } });
+  await mp.goto(BASE + '/'); await mp.waitForSelector('[data-buildit-prompt]');
+  ok('모바일 첫 화면: 가로 스크롤 없음', await mp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await mp.screenshot({ path: path.join(SHOTS, '00-landing-mobile.png') });
+  await mp.close();
+  await page.fill('[data-buildit-prompt]', PROMPT);
+  await page.click('.ask-go');
+  await page.waitForSelector('[data-login-modal]:not([hidden])');
+  ok('로그인 전에는 로그인 창이 열린다', true);
+  const signupHref = await page.evaluate(() => { const a = document.querySelector('.login-modal-signup'); a.addEventListener('click', (e) => e.preventDefault()); a.click(); return a.getAttribute('href'); });
+  ok('회원가입을 누르면 /builder 복귀 주소로 간다', signupHref === '/register?returnUrl=%2Fbuilder', signupHref);
+  await shot(page, '00b-landing-login');
+  await page.fill('[data-login-modal-form] [name="loginId"]', process.env.E2E_LOGIN_ID || 'e2e-lov');
+  await page.fill('[data-login-modal-form] [name="password"]', process.env.E2E_LOGIN_PW || 'admin1234');
+  await Promise.all([page.waitForURL('**/builder', { timeout: 30000 }), page.click('.login-modal-submit')]);
+
+  // ── 1. 시작 화면: 입력창 하나 + 샘플 (랜딩에서 입력한 요청이 복원되어 있다) ──
   console.log('\n[1] 시작 화면');
-  await page.goto(BASE + '/builder');
   await page.waitForSelector('#ahPrompt');
+  ok('로그인 뒤 /builder 시작 화면에 첫 화면에서 입력한 요청이 복원된다', (await page.inputValue('#ahPrompt')) === PROMPT, await page.inputValue('#ahPrompt'));
+  ok('시작 화면 제목·BuildIt 가이드 안내', (await page.textContent('.ah-start h1')).includes('어떤 홈페이지를 만들까요?') && (await page.textContent('.ah-sub')).includes('BuildIt 가이드'));
   ok('시작 화면: 입력창이 있고 학원 이름 폼은 없다', (await page.$('#ahPrompt')) && !(await page.$('#ahName')));
   await page.waitForFunction(() => document.querySelectorAll('#ahSamples .ah-sample').length >= 4, null, { timeout: 15000 });
   ok('샘플 4개 이상', (await page.$$('#ahSamples .ah-sample')).length >= 4);
@@ -41,7 +66,6 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
 
   // ── 2. 한 문장 → 생성 → 대화 속 미리보기 카드 ──
   console.log('\n[2] 한 문장으로 생성');
-  await page.fill('#ahPrompt', PROMPT);
   await page.click('#ahStartBtn');
   await page.waitForSelector('#ahWork:not([hidden])', { timeout: 150000 });
   ok('작업 대화 화면으로 이동', true);
@@ -102,13 +126,21 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   await page.waitForFunction(() => { const d = document.getElementById('ahCardFrame').contentDocument; return d && d.body && d.body.innerText.includes('새봄영어학원'); }, null, { timeout: 30000 }).then(() => ok('카드 미리보기에 바뀐 학원 이름 반영', true), () => ok('카드 미리보기에 바뀐 학원 이름 반영', false));
 
   // ── 6. 게시 ──
-  console.log('\n[6] 게시');
+  console.log('\n[6] 정식 배포 등록');
+  ok('버튼 문구가 "홈페이지 정식 배포 등록"', (await page.textContent('#ahPublish')).trim() === '홈페이지 정식 배포 등록');
+  ok('상단 Agent 이름이 BuildIt 가이드', (await page.textContent('.ah-agent')).trim() === 'BuildIt 가이드');
+  ok('대화 구조: 사용자=회색 사각, AI=배경 없음', await page.evaluate(() => { const u = getComputedStyle(document.querySelector('#ahMsgs .ah-msg.user')); const b = getComputedStyle(document.querySelector('#ahMsgs .ah-msg.bot')); return u.backgroundColor === 'rgb(247, 247, 247)' && parseFloat(u.borderTopLeftRadius) <= 8 && b.backgroundColor === 'rgba(0, 0, 0, 0)'; }));
   await page.click('#ahPublish');
   await page.waitForSelector('#ahConfirm:not([hidden])');
+  await page.waitForSelector('#ahConfirmAddr:not([hidden])', { timeout: 15000 });
+  const addrText = await page.textContent('#ahConfirmAddrText');
+  ok('확인 창에 공개될 주소가 보인다', addrText && addrText.length > 3, addrText);
+  ok('확인 창 버튼이 "홈페이지 정식 배포 등록"', (await page.textContent('#ahConfirmOk')).trim() === '홈페이지 정식 배포 등록');
   await shot(page, '06-publish-confirm');
   await page.click('#ahConfirmOk');
-  await page.waitForFunction(() => /게시했어요/.test(document.getElementById('ahMsgs').textContent), null, { timeout: 30000 });
-  ok('게시 완료 안내', true);
+  await page.waitForSelector('#ahMsgs .ah-pubcard', { timeout: 30000 });
+  ok('공개 완료 카드: 홈페이지 바로가기·주소 복사·계속 수정하기', await page.evaluate(() => { const t = document.querySelector('#ahMsgs .ah-pubcard').textContent; return ['홈페이지 바로가기', '주소 복사', '계속 수정하기'].every((x) => t.includes(x)); }));
+  await shot(page, '06b-published-card');
   const me = await (await ctx.request.get(BASE + '/api/tutor/academy/me')).json();
   const pub = await fetch(BASE + '/api/academies/' + me.slug);
   ok('공개 홈페이지 API가 응답한다', pub.status === 200, pub.status);
@@ -124,10 +156,13 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   await page.fill('#ahWorkInput', '주색을 진한 파란색으로 바꿔줘');
   await page.click('#ahWorkSend');
   await waitIdle(n1);
-  await page.click('#ahPublish');
+  // 대화로 "공개하고 싶어"라고 말하면 AI로 보내지 않고 정식 배포 등록 확인 창이 열린다(등록은 직접 누른다)
+  await page.fill('#ahWorkInput', '홈페이지를 공개하고 싶어.');
+  await page.click('#ahWorkSend');
   await page.waitForSelector('#ahConfirm:not([hidden])');
+  ok('공개 요청 말은 확인 창으로 안내된다(공개는 아직 안 됨)', true);
   await page.click('#ahConfirmOk');
-  await page.waitForFunction(() => /수정한 내용을 게시했어요/.test(document.getElementById('ahMsgs').textContent), null, { timeout: 30000 });
+  await page.waitForFunction(() => /수정한 내용을 공개 홈페이지에 반영했어요/.test(document.getElementById('ahMsgs').textContent), null, { timeout: 30000 });
   await page.click('#ahVersionsBtn');
   await page.waitForSelector('#ahVersions:not([hidden])');
   await page.waitForSelector('#ahVersionList button', { timeout: 15000 });

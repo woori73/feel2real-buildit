@@ -194,7 +194,9 @@ class LandingTemplateContractTest {
     assertThat(js)
         .contains("/api/auth/me")
         .contains("'/register?returnUrl=' + encodeURIComponent(BUILDER_URL)")
-        .contains("user.role === 'TUTOR'");
+        // ADMIN도 /builder를 쓸 수 있다(TUTOR 전용 분기 회귀 방지).
+        .contains("const BUILDER_ROLES = ['TUTOR', 'ADMIN']")
+        .contains("canUseBuilder(user)");
   }
 
   @Test

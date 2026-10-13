@@ -20,14 +20,26 @@
       <span class="nav-logo bi" aria-label="Build It"><b>Build</b><i>It</i></span>
     </a>
     <div class="nav-actions">
-      <a href="/wiki" class="btn outline nav-cta">Buildit 모의고사</a>
-      <a href="/home" class="btn outline nav-cta">F2R</a>
-      <a href="/chart" class="btn outline nav-cta">BUILD IT CHART</a>
-      <a href="/problem-generator" class="btn outline nav-cta">BUILD IT WIKI</a>
-      <button type="button" class="btn outline nav-cta" onclick="openContactModal()">문의하기</button>
+      <div class="nav-links">
+        <a href="/wiki" class="btn outline nav-cta">Buildit 모의고사</a>
+        <a href="/home" class="btn outline nav-cta">F2R</a>
+        <a href="/chart" class="btn outline nav-cta">BUILD IT CHART</a>
+        <a href="/problem-generator" class="btn outline nav-cta">BUILD IT WIKI</a>
+        <button type="button" class="btn outline nav-cta" onclick="openContactModal()">문의하기</button>
+      </div>
       <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
+      <button type="button" class="nav-burger" id="biBurger" aria-label="메뉴 열기" aria-expanded="false" aria-controls="biMenu"><span></span><span></span></button>
     </div>
   </nav>
+
+  <!-- 모바일 메뉴: 전체 오버레이, 큰 글자 행 + 구분선 (Sidekick 패턴) -->
+  <div class="bi-menu" id="biMenu" hidden>
+    <a href="/wiki">Buildit 모의고사</a>
+    <a href="/home">F2R</a>
+    <a href="/chart">BUILD IT CHART</a>
+    <a href="/problem-generator">BUILD IT WIKI</a>
+    <button type="button" onclick="openContactModal()">문의하기</button>
+  </div>
 
   <!-- ============ 1. HERO ============ -->
   <section class="hero" id="hero">
@@ -43,8 +55,38 @@
       </svg>
     </div>
 
+    <div class="hero-inner hero-start">
+      <h1 class="hero-ask">어떤 홈페이지를 만들까요?</h1>
+      <p class="hero-ask-sub">BuildIt 가이드가 제작부터 공개까지 도와드립니다.</p>
+      <form class="ask-ring" data-buildit-form autocomplete="off">
+        <div class="ask-bar">
+          <input type="text" class="ask-input" data-buildit-prompt maxlength="2000"
+                 placeholder="우리 영어학원 홈페이지를 만들어줘." aria-label="만들고 싶은 홈페이지">
+          <button type="submit" class="ask-go">시작하기 <span aria-hidden="true">→</span></button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ 1-1. 이렇게 말해 보세요 (첫 화면 아래) ============ -->
+  <section class="try" id="try">
+    <h2>이렇게 말해 보세요</h2>
+    <div class="try-grid">
+      <button type="button" data-buildit-example>초등학생과 중학생을 위한 밝고 세련된 영어학원 홈페이지를 만들어줘.</button>
+      <button type="button" data-buildit-example>입시·내신 전문 학원 홈페이지를 신뢰감 있게 만들어줘.</button>
+      <button type="button" data-buildit-example>영어회화 학원 홈페이지를 활기차게 만들어줘.</button>
+    </div>
+  </section>
+
+  <!-- ============ 1-2. 브랜드 소개(소개 영상) — 첫 화면 아래로 이동 ============ -->
+  <section class="hero hero-intro" id="intro">
+    <div class="hero-lines" aria-hidden="true">
+      <svg class="l2" viewBox="0 0 2400 900" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,520 C 200,420 400,620 600,520 C 800,420 1000,620 1200,520 C1400,420 1600,620 1800,520 C2000,420 2200,620 2400,520" fill="none" stroke="#2563eb" stroke-width="1.4" opacity="0.28"/>
+      </svg>
+    </div>
     <div class="hero-inner">
-      <h1><span class="hero-title-subject">원장과 강사를 브랜드로</span><br><span class="bi" aria-label="Build It"><b>Build</b><i>It</i></span>.</h1>
+      <h2><span class="hero-title-subject">원장과 강사를 브랜드로</span><br><span class="bi" aria-label="Build It"><b>Build</b><i>It</i></span>.</h2>
       <p class="hero-slogan">숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.</p>
       <svg class="brand-stroke" viewBox="0 0 64 8" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M2,5 C 14,2 22,7 32,4 C 42,1 50,6 62,3" fill="none" stroke="url(#strokeGrad)" stroke-width="2" stroke-linecap="round"/>
@@ -64,11 +106,6 @@
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
-    </div>
-
-    <div class="scroll-indicator" aria-hidden="true">
-      <span>Scroll</span>
-      <div class="track"><div class="dot"></div></div>
     </div>
   </section>
 

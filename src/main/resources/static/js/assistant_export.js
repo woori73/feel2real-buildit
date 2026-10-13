@@ -53,7 +53,32 @@
     { key: 'UNIVERSITY', label: '대학' }, { key: 'ADULT', label: '성인' }
   ];
 
+  /** 첫 화면(랜딩)에서 보관해 둔 제작 요청의 sessionStorage 키. landing_buildit.js와 같은 값이어야 한다. */
+  var PENDING_KEY = 'builditPendingPrompt';
+  var PENDING_TTL_MS = 60 * 60 * 1000;
+
+  /** 보관된 제작 요청을 꺼내고 지운다. 없거나 깨졌거나 1시간이 지났으면 ''를 돌려준다. */
+  function takePendingPrompt(storage, nowMs) {
+    var raw = null;
+    try { raw = storage.getItem(PENDING_KEY); storage.removeItem(PENDING_KEY); } catch (e) { return ''; }
+    if (!raw) return '';
+    try {
+      var v = JSON.parse(raw);
+      var fresh = v && typeof v.text === 'string' && typeof v.at === 'number' && nowMs - v.at <= PENDING_TTL_MS && nowMs >= v.at;
+      return fresh ? v.text.trim() : '';
+    } catch (e) { return ''; }
+  }
+
+  /** "홈페이지를 공개하고 싶어"처럼 공개(정식 배포 등록)를 바라는 짧은 말인지. 디자인 수정 요청은 아니다. */
+  function isPublishIntent(text) {
+    var t = String(text || '').trim();
+    if (!t || t.length > 40) return false;
+    if (/(비공개|숨|삭제|추가|버튼|섹션|문구|색|바꿔|변경|수정)/.test(t)) return false;
+    return /(공개|배포|게시|올려)/.test(t) && /(하고\s*싶|할래|할게|해\s*(줘|주세요|줄래)|하자|하겠|해요|싶어)/.test(t);
+  }
+
   return {
+    takePendingPrompt: takePendingPrompt, isPublishIntent: isPublishIntent, PENDING_KEY: PENDING_KEY,
     fileName: fileName, finalizeHtml: finalizeHtml, versionLabel: versionLabel,
     absolutizeCssUrls: absolutizeCssUrls, TARGETS: TARGETS
   };

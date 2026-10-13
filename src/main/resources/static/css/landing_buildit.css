@@ -327,7 +327,8 @@ body {
   max-width: 820px;
 }
 
-.hero h1 {
+.hero h1,
+.hero-intro h2 {
   font-size: clamp(30px, 5.6vw, 64px);
   font-weight: 800;
   line-height: 1.18;
@@ -341,7 +342,8 @@ body {
   line-height: 1.25;
 }
 
-.hero h1 .bi {
+.hero h1 .bi,
+.hero-intro h2 .bi {
   display: inline-block;
   margin-top: 8px;
   font-size: 1.10em;
@@ -1361,4 +1363,153 @@ body {
     content:"→";position:absolute;right:-10px;top:50%;transform:translateY(-50%);
     font-size:12px;font-weight:900;color:#c2c8d2;
   }
+}
+
+
+/* ---------- BuildIt v5 첫 화면: 제목 · 부제 · 입력창만 (Shopify Sidekick 구조, 라이트 테마) ---------- */
+.hero-start { width: 100%; max-width: 820px; }
+.hero .hero-ask {
+  font-size: clamp(34px, 5.4vw, 64px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -.035em;
+  word-break: keep-all;
+}
+.hero-ask-sub {
+  margin-top: 20px;
+  font-size: clamp(16px, 1.8vw, 22px);
+  line-height: 1.4;
+  color: var(--muted, #545d5e);
+  word-break: keep-all;
+}
+.ask-ring {
+  width: min(720px, 100%);
+  margin: 40px auto 0;
+  padding: 1.5px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #ffd8b7, #f3c6ee, #b8d3ff);
+}
+.ask-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 0 8px 0 24px;
+  border-radius: 9999px;
+  background: #fff;
+}
+.ask-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 18px;
+  color: var(--ink);
+  text-align: left;
+}
+.ask-input::placeholder { color: #8a9293; }
+.ask-go {
+  flex: none;
+  height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 9999px;
+  background: #0a0a0a;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ask-go:hover { background: #2b2b2b; }
+.ask-go:focus-visible, .try-grid button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+.try { padding: 72px 5vw 24px; text-align: center; background: var(--bg); }
+.try h2 { font-size: clamp(26px, 3.4vw, 40px); font-weight: 500; letter-spacing: -.03em; }
+.try-grid {
+  max-width: 1100px;
+  margin: 36px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.try-grid button {
+  min-height: 112px;
+  padding: 24px;
+  border: 1px solid rgba(0, 0, 0, .08);
+  border-radius: 16px;
+  background: #f6f6f7;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  word-break: keep-all;
+  transition: background .15s;
+}
+.try-grid button:hover { background: #eeeef0; }
+
+.hero.hero-intro { min-height: 0; padding: 96px 5vw 90px; }
+
+@media (max-width: 860px) {
+  .try-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .hero .hero-ask { font-size: clamp(30px, 9vw, 38px); }
+  .ask-ring { margin-top: 28px; }
+  .ask-bar { height: 60px; padding-left: 18px; }
+  .ask-input { font-size: 16px; }
+  .ask-go { padding: 0 16px; font-size: 14px; }
+  .try { padding-top: 56px; }
+  .hero.hero-intro { padding: 64px 4vw 64px; }
+}
+
+/* 모바일 메뉴(햄버거 + 전체 오버레이) */
+.nav-links { display: contents; }
+.nav-burger { display: none; }
+.bi-menu { display: none; }
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+  .nav-burger {
+    display: grid;
+    place-content: center;
+    gap: 7px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .nav-burger span { display: block; width: 22px; height: 2px; background: var(--ink); transition: transform .2s; }
+  .nav-burger[aria-expanded="true"] span:first-child { transform: translateY(4.5px) rotate(45deg); }
+  .nav-burger[aria-expanded="true"] span:last-child { transform: translateY(-4.5px) rotate(-45deg); }
+  .bi-menu:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    padding: 88px 16px 24px;
+    background: #fff;
+  }
+  .bi-menu a, .bi-menu button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    background: none;
+    font: inherit;
+    font-size: 24px;
+    text-align: left;
+    color: var(--ink);
+  }
+  .bi-menu a::after, .bi-menu button::after { content: '›'; color: #8a9293; }
 }

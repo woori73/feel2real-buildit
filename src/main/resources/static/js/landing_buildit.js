@@ -8,8 +8,23 @@
   const BUILDER_URL = '/builder';
   const REGISTER_URL = '/register?returnUrl=' + encodeURIComponent(BUILDER_URL);
 
-  // --- 시작하기: 기존 랜딩 발행 게이트와 동일한 분기 ---
-  // TUTOR 로그인 → /builder, 그 외(비로그인/학생) → 강사 가입 게이트.
+  // --- 시작하기: 한 문장 제작 요청을 /builder로 전달하는 게이트 ---
+  // TUTOR·ADMIN 로그인 → /builder, 비로그인 → 로그인 창(로그인 뒤 /builder), 그 외(학생 등) → 강사 가입 게이트.
+  // 입력한 제작 요청은 sessionStorage에 잠깐 보관했다가 /builder 시작 화면이 입력창에 복원한다.
+  const PENDING_KEY = 'builditPendingPrompt';
+  const BUILDER_ROLES = ['TUTOR', 'ADMIN'];
+  const MAX_PROMPT = 2000;
+
+  function canUseBuilder(user) {
+    return !!user && BUILDER_ROLES.indexOf(user.role) >= 0;
+  }
+
+  function savePendingPrompt(text) {
+    const value = String(text || '').trim().slice(0, MAX_PROMPT);
+    if (!value) return;
+    try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ text: value, at: Date.now() })); } catch (_) { /* 저장 실패는 무시 */ }
+  }
+
   async function currentUser() {
     try {
       const cached = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
@@ -26,14 +41,72 @@
     }
   }
 
+  async function startBuilder(prompt) {
+    savePendingPrompt(prompt);
+    const user = await currentUser();
+    if (canUseBuilder(user)) {
+      location.href = BUILDER_URL;
+      return;
+    }
+    if (!user && typeof window.openLoginModal === 'function') {
+      try { sessionStorage.setItem('postLoginReturnUrl', BUILDER_URL); } catch (_) { /* 저장 실패는 무시 */ }
+      window.openLoginModal();
+      return;
+    }
+    location.href = REGISTER_URL;
+  }
+
   async function onStartClick(event) {
     event.preventDefault();
-    const user = await currentUser();
-    location.href = user && user.role === 'TUTOR' ? BUILDER_URL : REGISTER_URL;
+    await startBuilder('');
   }
 
   document.querySelectorAll('[data-buildit-start]').forEach((el) => {
     el.addEventListener('click', onStartClick);
+  });
+
+  // 로그인 창의 회원가입 링크: account_menu.js가 링크 주소를 현재 페이지(/) 기준으로 계속 다시 쓰므로,
+  // 주소를 미리 바꿔 두지 않고 누르는 순간(캡처 단계)에 /builder 복귀 주소로 바꾼다.
+  document.addEventListener('click', (event) => {
+    const link = event.target && event.target.closest ? event.target.closest('[data-auth-signup]') : null;
+    if (!link) return;
+    let pending = null;
+    try { pending = sessionStorage.getItem('postLoginReturnUrl'); } catch (_) { /* 없으면 기존 주소 유지 */ }
+    if (pending === BUILDER_URL) link.href = REGISTER_URL;
+  }, true);
+
+  // 모바일 메뉴: 햄버거로 전체 오버레이를 열고 닫는다(링크를 누르거나 Esc로도 닫힌다).
+  const burger = document.getElementById('biBurger');
+  const menu = document.getElementById('biMenu');
+  if (burger && menu) {
+    const setMenu = (open) => {
+      menu.hidden = !open;
+      burger.setAttribute('aria-expanded', String(open));
+      burger.setAttribute('aria-label', open ? '메뉴 닫기' : '메뉴 열기');
+    };
+    burger.addEventListener('click', () => setMenu(menu.hidden));
+    menu.addEventListener('click', () => setMenu(false));
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
+  }
+
+  // 첫 화면 입력창: Enter/시작 버튼 모두 submit으로 들어온다.
+  document.querySelectorAll('[data-buildit-form]').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = form.querySelector('[data-buildit-prompt]');
+      await startBuilder(input ? input.value : '');
+    });
+  });
+
+  // "이렇게 말해 보세요" 예시: 입력창에 채우고 첫 화면으로 올라간다(자동 시작하지 않는다).
+  document.querySelectorAll('[data-buildit-example]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const input = document.querySelector('[data-buildit-prompt]');
+      if (!input) return;
+      input.value = btn.textContent.trim();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      input.focus({ preventScroll: true });
+    });
   });
 
   // --- Hero 소개영상: 첫 화면에서는 썸네일만, 클릭할 때 YouTube iframe을 생성한다. ---
@@ -93,13 +166,18 @@
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
   }
 
-  window.addEventListener('f2r:login', () => {
+  window.addEventListener('f2r:login', (event) => {
     let returnUrl = null;
     try {
       returnUrl = sessionStorage.getItem('wikiPostLoginReturnUrl') || sessionStorage.getItem('postLoginReturnUrl');
       sessionStorage.removeItem('wikiPostLoginReturnUrl');
       sessionStorage.removeItem('postLoginReturnUrl');
     } catch (_) {}
+    // /builder는 TUTOR·ADMIN만 쓸 수 있다. 다른 계정이면 랜딩에 머물고 보관한 요청은 지운다.
+    if (returnUrl === BUILDER_URL && !canUseBuilder(event && event.detail)) {
+      try { sessionStorage.removeItem(PENDING_KEY); } catch (_) {}
+      return;
+    }
     if (returnUrl && typeof window.safeInternalReturnUrl === 'function') {
       location.href = window.safeInternalReturnUrl(returnUrl);
     }
@@ -185,11 +263,11 @@
     });
   });
 
-  gsap.to('.hero-lines', {
+  gsap.to('#hero .hero-lines', {
     yPercent: 18, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
   });
-  gsap.to('.hero-inner', {
+  gsap.to('#hero .hero-inner', {
     yPercent: -12, opacity: 0, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
   });
