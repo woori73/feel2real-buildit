@@ -200,6 +200,13 @@ public class AdmissionsResearchService {
     }
 
     static String stripParticle(String token) {
+        // 숫자가 포함된 토큰(연도 등)은 조사로 오인 제거하지 않음.
+        // 예: "2027학년도"의 "도"는 학년도의 일부이지 조사가 아님.
+        for (int i = 0; i < token.length(); i++) {
+            if (Character.isDigit(token.charAt(i))) {
+                return token;
+            }
+        }
         for (String p : PARTICLES) {
             if (token.length() - p.length() >= 2 && token.endsWith(p)) {
                 return token.substring(0, token.length() - p.length());
