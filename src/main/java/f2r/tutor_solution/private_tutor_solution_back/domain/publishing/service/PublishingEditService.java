@@ -304,24 +304,31 @@ public class PublishingEditService {
           log.warn("제목 텍스트를 찾지 못함: {}", block.text());
           continue;
         }
-        JsonNode first = matches.get(0);
-        long story = first.get("story").asLong();
-        long start = first.get("start").asLong();
-        long end = first.get("end").asLong();
+        // P5: 모든 일치 항목에 대해 문단 시작 위치인지 확인 후 스타일 적용
+        // 제목과 본문에 동일한 문구가 있어도 제목 문단에만 적용됨
+        String storyTextForCheck = getStoryText(workDir);
+        int blockApplied = 0;
+        for (JsonNode match : matches) {
+          long story = match.get("story").asLong();
+          long start = match.get("start").asLong();
+          long end = match.get("end").asLong();
 
-        // text.select로 선택
-        cliExecutor.execute(
-            new PublishingCommand("text.select",
-                Map.of("story", story, "anchor", start, "focus", end)),
-            workDir);
+          if (!isParagraphStart(storyTextForCheck, start)) {
+            log.debug("문단 시작이 아님, 스킵: '{}' (위치 {})", block.text(), start);
+            continue;
+          }
 
-        // style.paragraph.apply로 스타일 적용
-        cliExecutor.execute(
-            new PublishingCommand("style.paragraph.apply",
-                Map.of("name", block.style())),
-            workDir);
-
-        applied++;
+          cliExecutor.execute(
+              new PublishingCommand("text.select",
+                  Map.of("story", story, "anchor", start, "focus", end)),
+              workDir);
+          cliExecutor.execute(
+              new PublishingCommand("style.paragraph.apply",
+                  Map.of("name", block.style())),
+              workDir);
+          blockApplied++;
+        }
+        applied += blockApplied;
         log.info("스타일 적용: '{}' → {}", block.text(), block.style());
       } catch (Exception e) {
         log.warn("스타일 적용 실패: '{}' - {}", block.text(), e.getMessage());
@@ -335,14 +342,12 @@ public class PublishingEditService {
   /**
    * 스토리 텍스트를 조회한다 (문단 경계 확인용).
    */
-  private String getStoryText(Path workDir, com.fasterxml.jackson.databind.ObjectMapper om,
-      DesignCraftCliExecutor cli) {
+  private String getStoryText(Path workDir) {
     try {
-      var result = cli.execute(
-          new f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PublishingCommand(
-              "story.get", Map.of()),
+      var result = cliExecutor.execute(
+          new PublishingCommand("story.get", Map.of()),
           workDir);
-      var node = om.readTree(result.output());
+      var node = objectMapper.readTree(result.output());
       return node.get("text").asText();
     } catch (Exception e) {
       log.warn("스토리 텍스트 조회 실패, 경계 확인 생략: {}", e.getMessage());
