@@ -32,8 +32,8 @@ public class MarkdownStyleService {
   private static final Pattern QUOTE = Pattern.compile("^>\\s?(.*)$");
   private static final Pattern LIST = Pattern.compile("^[-*]\\s+(.+)$");
 
-  /** 파싱된 블록 */
-  public record Block(String text, String style) {}
+  /** 파싱된 블록: text=clean text, original=마커 포함 원본, style=적용할 스타일 */
+  public record Block(String text, String original, String style) {}
 
   /** 파싱 결과: clean text + 스타일 매핑 */
   public record ParsedMarkdown(String cleanText, List<Block> headingBlocks) {}
@@ -57,19 +57,19 @@ public class MarkdownStyleService {
       if (m1.matches()) {
         String text = m1.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, "ko-heading1"));
+        headings.add(new Block(text, line.trim(), "ko-heading1"));
       } else if (m2.matches()) {
         String text = m2.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, "ko-heading2"));
+        headings.add(new Block(text, line.trim(), "ko-heading2"));
       } else if (m3.matches()) {
         String text = m3.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, "ko-heading3"));
+        headings.add(new Block(text, line.trim(), "ko-heading3"));
       } else if (QUOTE.matcher(trimmed).matches()) {
         String text = QUOTE.matcher(trimmed).replaceFirst("$1").trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, "ko-quote"));
+        headings.add(new Block(text, line.trim(), "ko-quote"));
       } else if (LIST.matcher(trimmed).matches()) {
         // 목록은 본문 스타일 유지 (ko-body), 마커만 제거
         String text = LIST.matcher(trimmed).replaceFirst("$1").trim();
