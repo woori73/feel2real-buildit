@@ -66,20 +66,6 @@
     </div>
   </section>
 
-  <!-- ============ 1-1b. 홈페이지 샘플 (첫 화면 아래, 대화형 시작 화면과 같은 샘플) ============ -->
-  <section class="samples" id="samples">
-    <h2>홈페이지 샘플</h2>
-    <p class="samples-sub">분위기를 고르면 위 입력창에 요청 문장이 채워져요.</p>
-    <div class="samples-grid">
-      <button type="button" class="sample-card" data-buildit-example th:each="sample : ${homepageSamples}"
-              th:attr="data-seed=${sample.seed}" th:classappend="'sample-' + ${sample.preset}">
-        <span class="sample-thumb" aria-hidden="true"><i class="s-bar"></i><i class="s-title"></i><i class="s-line"></i><i class="s-btn"></i></span>
-        <b th:text="${sample.title}">입시·내신 전문</b>
-        <span class="sample-desc" th:text="${sample.description}">내신 대비와 입시 상담을 앞세운 신뢰형 홈페이지</span>
-      </button>
-    </div>
-  </section>
-
   <!-- ============ 1-2. 브랜드 소개(소개 영상) — 첫 화면 아래로 이동 ============ -->
   <section class="hero hero-intro" id="intro">
     <div class="hero-lines" aria-hidden="true">

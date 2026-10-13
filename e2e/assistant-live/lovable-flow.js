@@ -39,18 +39,11 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   ok('첫 화면에 4단계·기능 카드가 없다(제목·부제·입력창만)', await page.evaluate(() => { const h = document.getElementById('hero'); return !h.querySelector('.flow-h, .steps, .feature-card, .hero-video-card') && h.querySelectorAll('input,button,a').length <= 3; }));
   ok('소개 영상은 첫 화면 아래(#intro)에 있다', await page.evaluate(() => { const v = document.querySelector('.hero-video-card'); return !!v && !document.getElementById('hero').contains(v) && v.getBoundingClientRect().top > window.innerHeight * 0.9; }));
   ok('첫 화면에 배경 곡선·광원 장식이 없다', await page.evaluate(() => !document.querySelector('#hero .hero-lines, #hero .brand-glow')));
-  const sm = await page.evaluate(() => { const cards = [...document.querySelectorAll('#samples .sample-card')]; return { n: cards.length, below: document.getElementById('samples').getBoundingClientRect().top > window.innerHeight * 0.9, seeds: cards.every((c) => (c.dataset.seed || '').includes('홈페이지')), titles: cards.map((c) => c.querySelector('b').textContent) }; });
-  ok('첫 화면 아래 홈페이지 샘플 6종(같은 샘플 재사용, 첫 화면 밖)', sm.n === 6 && sm.below && sm.seeds, sm);
-  await page.click('#samples .sample-card:nth-child(2)');
-  ok('샘플을 누르면 입력창에 요청 문장이 채워진다', (await page.inputValue('[data-buildit-prompt]')).includes('초등'), await page.inputValue('[data-buildit-prompt]'));
-  await page.fill('[data-buildit-prompt]', '');
   await shot(page, '00-landing-pc');
   const mp = await b.newPage({ viewport: { width: 390, height: 844 } });
   await mp.goto(BASE + '/'); await mp.waitForSelector('[data-buildit-prompt]');
   ok('모바일 첫 화면: 가로 스크롤 없음', await mp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await mp.screenshot({ path: path.join(SHOTS, '00-landing-mobile.png') });
-  await mp.evaluate(() => document.getElementById('samples').scrollIntoView());
-  ok('모바일 샘플: 1열·가로 스크롤 없음', await mp.evaluate(() => { const g = getComputedStyle(document.querySelector('.samples-grid')).gridTemplateColumns.split(' ').length; return g === 1 && document.documentElement.scrollWidth <= innerWidth + 1; }));
   await mp.screenshot({ path: path.join(SHOTS, '00-landing-mobile-samples.png') });
   await mp.close();
   await page.fill('[data-buildit-prompt]', PROMPT);
@@ -64,14 +57,12 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   await page.fill('[data-login-modal-form] [name="password"]', process.env.E2E_LOGIN_PW || 'admin1234');
   await Promise.all([page.waitForURL('**/builder', { timeout: 30000 }), page.click('.login-modal-submit')]);
 
-  // ── 1. 시작 화면: 입력창 하나 + 샘플 (랜딩에서 입력한 요청이 복원되어 있다) ──
+  // ── 1. 시작 화면: 입력창 하나 (랜딩에서 입력한 요청이 복원되어 있다) ──
   console.log('\n[1] 시작 화면');
   await page.waitForSelector('#ahPrompt');
   ok('로그인 뒤 /builder 시작 화면에 첫 화면에서 입력한 요청이 복원된다', (await page.inputValue('#ahPrompt')) === PROMPT, await page.inputValue('#ahPrompt'));
   ok('시작 화면 제목·BuildIt 가이드 안내', (await page.textContent('.ah-start h1')).includes('어떤 홈페이지를 만들까요?') && (await page.textContent('.ah-sub')).includes('BuildIt 가이드'));
   ok('시작 화면: 입력창이 있고 학원 이름 폼은 없다', (await page.$('#ahPrompt')) && !(await page.$('#ahName')));
-  await page.waitForFunction(() => document.querySelectorAll('#ahSamples .ah-sample').length >= 4, null, { timeout: 15000 });
-  ok('샘플 4개 이상', (await page.$$('#ahSamples .ah-sample')).length >= 4);
   await shot(page, '01-start-desktop');
 
   // ── 2. 한 문장 → 생성 → 대화 속 미리보기 카드 ──

@@ -21,15 +21,6 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-primary:disabled{opacity:.55;cursor:default}
 .ah-primary.ah-small{padding:8px 14px;min-height:40px;font-size:14px}
 .ah-ghost{font:inherit;font-size:14px;background:none;border:0;color:var(--ah-text);padding:8px;min-height:40px;cursor:pointer}
-.ah-chosen{display:flex;justify-content:space-between;align-items:center;background:var(--ah-accent);border-radius:10px;padding:8px 12px;font-size:13px}
-.ah-h2{font-size:15px;font-weight:700;margin:24px 0 10px}
-.ah-samples{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.ah-sample{text-align:left;font:inherit;background:var(--ah-surface);border:2px solid var(--ah-line);border-radius:14px;padding:0;cursor:pointer;overflow:hidden;color:inherit}
-.ah-sample[aria-pressed="true"]{border-color:var(--ah-brand)}
-.ah-swatch{height:54px;display:flex;align-items:flex-end;gap:4px;padding:8px}
-.ah-swatch i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.08)}
-.ah-sample b{display:block;font-size:14px;padding:8px 10px 0}
-.ah-sample span{display:block;font-size:12px;color:var(--ah-muted);padding:2px 10px 10px}
 .ah-chat{flex:1;display:flex;flex-direction:column;min-height:0}
 .ah-messages>*{flex:none}
 .ah-messages{flex:1;overflow-y:auto;padding:8px 16px 16px;display:flex;flex-direction:column;gap:10px}
@@ -67,7 +58,7 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-stage iframe.mobile{width:min(390px,100%)}
 .ah-stage iframe.desktop{width:100%;max-width:1200px}
 .ah-toast{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);background:#161a2b;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;max-width:90%}
-@media(min-width:640px){.ah-samples{grid-template-columns:repeat(3,1fr)}.ah-start h1{font-size:30px}}
+@media(min-width:640px){.ah-start h1{font-size:30px}}
 
 /* ═════════ 작업 화면(결과물 중심 + 하단 대화) ═════════ */
 .ah-app.work{max-width:none}
@@ -136,7 +127,6 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-prompt textarea{width:100%;font:inherit;font-size:17px;line-height:1.5;border:0;outline:0;resize:none;background:transparent;color:inherit;min-height:84px}
 .ah-prompt:focus-within{border-color:var(--ah-brand);box-shadow:0 6px 24px rgba(12,35,138,.16)}
 .ah-prompt-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}
-.ah-prompt-row .ah-chosen{background:var(--ah-accent);border-radius:999px;padding:4px 12px;font-size:13px;display:inline-flex;gap:8px;align-items:center}
 .ah-send-round{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--ah-brand);color:#fff;font:inherit;font-size:22px;line-height:1;cursor:pointer}
 .ah-send-round:disabled{opacity:.5;cursor:default}
 
@@ -194,7 +184,7 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-start{text-align:center;display:flex;flex-direction:column;align-items:center;padding-top:clamp(40px,12vh,120px)}
 .ah-start h1{font-size:clamp(32px,5vw,56px);font-weight:500;letter-spacing:-.035em;line-height:1.12;word-break:keep-all}
 .ah-sub{font-size:clamp(16px,1.8vw,20px);margin:18px 0 32px;word-break:keep-all}
-.ah-start .ah-prompt,.ah-start .ah-samples{width:100%;max-width:720px;text-align:left}
+.ah-start .ah-prompt{width:100%;max-width:720px;text-align:left}
 .ah-prompt{border-radius:24px;box-shadow:none;border:1.5px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(90deg,#ffd8b7,#f3c6ee,#b8d3ff) border-box}
 .ah-prompt:focus-within{box-shadow:none;border-color:transparent}
 .ah-send-round{background:#0a0a0a}
@@ -202,8 +192,6 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-secondary{border-radius:9999px;background:#fff;border:1.5px solid var(--ah-text);color:var(--ah-text);font-weight:550}
 .ah-pill{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;text-decoration:none;margin-top:8px}
 .ah-center{display:block;margin:12px auto 0;text-align:center}
-.ah-sample{border-radius:16px;border:1px solid var(--ah-line)}
-.ah-sample[aria-pressed="true"]{border-color:var(--ah-text)}
 .ah-ghost{border-radius:9999px}
 .ah-undo{border-radius:9999px}
 .ah-tool,.ah-chip{border-radius:9999px}

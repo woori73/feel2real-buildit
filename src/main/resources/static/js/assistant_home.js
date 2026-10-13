@@ -11,10 +11,6 @@
   var API = '/api/tutor/academy/assistant';
   var PREVIEW = '/tutor/academy/preview';
   var DEVICES = { mobile: 390, tablet: 820, desktop: 1280 };
-  var PRESET_COLORS = {
-    EXAM: ['#0c238a', '#4a7fd4'], ENGLISH: ['#0f766e', '#f59e0b'], DYNAMIC: ['#e11d48', '#f97316'],
-    STUDY: ['#2563eb', '#16a34a'], DARK: ['#111827', '#d4af37'], MINIMAL: ['#ffffff', '#111827']
-  };
   var QUESTIONS = {
     academyName: '학원 이름을 알려 주세요.',
     description: '어떤 학원인지 한두 문장으로 알려 주세요. (예: 중학생 영어 내신 전문)',
@@ -32,7 +28,6 @@
     name: '', description: '', region: '', subject: '', target: '', sampleKey: null, pendingNeed: null,
     created: false, revision: null, status: null, publicUrl: null, busy: false, undoDepth: 0, dirty: false, dev: 'mobile'
   };
-  var samples = [];
   var history = [];
 
   function el(tag, cls, text) {
@@ -75,29 +70,6 @@
   function scrollDown() { var m = $('ahMessages'); m.scrollTop = m.scrollHeight; }
   function bubble(role, text) { var b = el('div', 'ah-msg ' + role, text); $('ahMessages').appendChild(b); scrollDown(); return b; }
 
-  function renderSamples() {
-    var box = $('ahSamples'); box.textContent = '';
-    samples.forEach(function (s) {
-      var btn = el('button', 'ah-sample'); btn.type = 'button'; btn.setAttribute('aria-pressed', 'false'); btn.dataset.key = s.key;
-      var sw = el('div', 'ah-swatch'); var cols = PRESET_COLORS[s.preset] || ['#999', '#ccc'];
-      sw.style.background = cols[0] === '#ffffff' ? '#f3f4f6' : cols[0];
-      cols.forEach(function (c) { var i = el('i'); i.style.background = c; sw.appendChild(i); });
-      btn.appendChild(sw); btn.appendChild(el('b', null, s.title)); btn.appendChild(el('span', null, s.description));
-      btn.addEventListener('click', function () { chooseSample(s); });
-      box.appendChild(btn);
-    });
-  }
-  function chooseSample(s) {
-    ctx.sampleKey = s.key;
-    Array.prototype.forEach.call($('ahSamples').children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.key === s.key)); });
-    $('ahChosen').hidden = false; $('ahChosenName').textContent = s.title;
-    $('ahPrompt').focus();
-  }
-  function clearSample() {
-    ctx.sampleKey = null; $('ahChosen').hidden = true;
-    Array.prototype.forEach.call($('ahSamples').children, function (b) { b.setAttribute('aria-pressed', 'false'); });
-  }
-
   /** 진행 상태 표시: steps를 순서대로 'now'로 옮기고, 마지막 단계에서 응답을 기다린다. */
   function progress(listEl, steps, intervalMs) {
     listEl.textContent = '';
@@ -139,11 +111,10 @@
   function submitStart(ev) {
     ev.preventDefault();
     var prompt = $('ahPrompt').value.trim();
-    if (!prompt && !ctx.sampleKey) { $('ahPrompt').focus(); return; }
+    if (!prompt) { $('ahPrompt').focus(); return; }
     ctx.name = ''; ctx.description = prompt;
     showChat();
-    var sample = samples.filter(function (s) { return s.key === ctx.sampleKey; })[0];
-    bubble('user', (prompt || '') + (sample ? (prompt ? '\n' : '') + '샘플: ' + sample.title : ''));
+    bubble('user', prompt);
     sendCreateTurn();
   }
   function submitChat(ev) {
@@ -633,7 +604,6 @@
     $('ahProfileForm').addEventListener('submit', saveProfile);
     $('ahDownloadBtn').addEventListener('click', downloadHtml);
     $('ahComposer').addEventListener('submit', submitChat);
-    $('ahChosenClear').addEventListener('click', clearSample);
     $('ahWorkComposer').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var text = $('ahWorkInput').value.trim();
@@ -682,7 +652,6 @@
       else if (!$('ahProfile').hidden) $('ahProfile').hidden = true;
       else if (!$('ahFull').hidden) closeFull();
     });
-    api('GET', '/samples').then(function (list) { samples = list; renderSamples(); }).catch(function () { /* 샘플 없이도 시작 가능 */ });
     api('GET', '/state').then(function (s) {
       if (!s.hasAcademy) return;
       ctx.created = true; ctx.revision = s.revision; ctx.status = s.status; ctx.publicUrl = s.publicUrl; ctx.dirty = !!s.dirty; ctx.undoDepth = s.undoDepth || 0;
