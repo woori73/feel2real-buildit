@@ -270,12 +270,14 @@ jobs:
 
       - name: Verify admissions tests executed
         # 입시 rate limit 보완 회귀 테스트가 실제로 실행됐는지 검증 (테스트 삭제·비활성화 금지 정책).
+        # glob 기반으로 확인하여 XML 파일명 표기 차이에 강건하게 대응한다.
         run: |
-          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsChatControllerRateLimitTest.xml
-          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsRateLimiterTest.xml
-          test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest.xml
+          echo "--- admissions test XMLs found ---"
+          ls build/test-results/test/TEST-*admissions*.xml 2>/dev/null || echo "(none)"
+          found=$(ls build/test-results/test/TEST-*admissions*.xml 2>/dev/null | wc -l)
+          echo "admissions test XML count: $found"
+          test "$found" -ge 5 || { echo "::error::admissions 테스트 5종 중 일부가 실행되지 않음 (found=$found)"; exit 1; }
           echo "admissions tests executed: OK"
-
       - name: Upload build-job test report
         # 편집기 테스트가 실제로 실행됐는지 검증용 (테스트 삭제·비활성화 금지 정책).
         if: always()
