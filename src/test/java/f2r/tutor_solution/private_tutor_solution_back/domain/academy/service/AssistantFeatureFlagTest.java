@@ -31,4 +31,25 @@ class AssistantFeatureFlagTest {
     AssistantFeatureFlag flag = new AssistantFeatureFlag(true, "");
     assertThat(flag.isOn(new AuthenticatedPrincipal(3L, "anyone", "TUTOR"))).isTrue();
   }
+
+  @Test
+  @DisplayName("given 운영(허용 목록 필수) + 스위치 on + 허용 목록 비어 있음, when 임의 계정, then 모두 꺼짐(전체 공개 방지)")
+  void productionWithEmptyAllowlistIsClosedToEveryone() {
+    // given
+    AssistantFeatureFlag flag = new AssistantFeatureFlag(true, "", true);
+    // when / then
+    assertThat(flag.isOn(new AuthenticatedPrincipal(3L, "anyone", "TUTOR"))).isFalse();
+    assertThat(flag.isOn(new AuthenticatedPrincipal(1L, "admin1", "ADMIN"))).isFalse();
+  }
+
+  @Test
+  @DisplayName("given 운영(허용 목록 필수) + 허용 계정 1명, when ADMIN/다른 TUTOR·ADMIN, then 허용 계정만 켜짐")
+  void productionAllowsOnlyListedAccount() {
+    // given
+    AssistantFeatureFlag flag = new AssistantFeatureFlag(true, "op1", true);
+    // when / then
+    assertThat(flag.isOn(new AuthenticatedPrincipal(1L, "op1", "ADMIN"))).isTrue();
+    assertThat(flag.isOn(new AuthenticatedPrincipal(2L, "tutorX", "TUTOR"))).isFalse();
+    assertThat(flag.isOn(new AuthenticatedPrincipal(4L, "otherAdmin", "ADMIN"))).isFalse();
+  }
 }

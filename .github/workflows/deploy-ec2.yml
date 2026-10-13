@@ -5,6 +5,16 @@ name: Deploy to EC2
 # 영구 개선에서는 production environment 승인 게이트를 추가한 뒤 자동화 재개 여부를 결정한다.
 on:
   workflow_dispatch:
+    inputs:
+      assistant_switch:
+        description: 'AI Builder 스위치: unchanged=변경 없음(기본), admin-only=ADMIN 계정 1명만 허용하고 켬, off=끔'
+        required: false
+        default: unchanged
+        type: choice
+        options:
+          - unchanged
+          - admin-only
+          - off
 
 permissions:
   id-token: write
@@ -541,6 +551,53 @@ jobs:
             echo '::warning::KIS staging files unavailable in S3; skipping KIS sync (deploy continues)'
           fi
 
+          # AI Builder 스위치(BUILDIT_ASSISTANT_*): 배포 입력 assistant_switch가 admin-only/off일 때만 반영한다.
+          # 운영자(ADMIN 1명)의 로그인 ID는 이 EC2 안에서 DB로 읽어 환경파일에만 기록한다 — 로그·S3·GitHub에 남기지 않는다.
+          # 정확히 1명이 아니면 적용하지 않는다. 변경 전 환경파일을 백업하고, 키는 지우고 다시 쓰므로 중복되지 않는다.
+          ASSIST_ENV_BACKUP=""
+          if aws s3 cp s3://feel2real-buildit-deploy/assistant-switch /tmp/assistant-switch 2>/dev/null; then
+            ASSIST_MODE=$(tr -d '\r\n "' < /tmp/assistant-switch | tr 'A-Z' 'a-z')
+            rm -f /tmp/assistant-switch
+            ASSIST_IDS=""
+            ASSIST_N=0
+            ASSIST_APPLY=0
+            case "$ASSIST_MODE" in
+              off) ASSIST_APPLY=1 ;;
+              admin-only)
+                ASSIST_ROWS=$( ( set -a; . /etc/f2r/env; set +a; MYSQL_PWD="${DB_PASSWORD:-}" mysql -N -B -h "${DB_HOST:-127.0.0.1}" -P "${DB_PORT:-3306}" -u "${DB_USER:-}" "${DB_NAME:-}" -e "SELECT login_id FROM users WHERE role='ADMIN'" ) 2>/dev/null || true )
+                ASSIST_N=$(printf '%s\n' "$ASSIST_ROWS" | grep -c . || true)
+                ASSIST_IDS=$(printf '%s' "$ASSIST_ROWS" | tr -d '\r\n "')
+                if [ "$ASSIST_N" = 1 ] && printf '%s' "$ASSIST_IDS" | grep -qE '^[A-Za-z0-9._@-]+$'; then
+                  ASSIST_APPLY=1
+                else
+                  echo "::warning::assistant switch NOT applied: need exactly one ADMIN account with a plain login id (found ${ASSIST_N})"
+                fi
+                ;;
+              *) echo '::warning::assistant switch mode invalid; env left unchanged' ;;
+            esac
+            if [ "$ASSIST_APPLY" = 1 ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              ASSIST_ENV_BACKUP="/etc/f2r/env.bak-assistant-$(date +%Y%m%d%H%M%S)"
+              cp -p /etc/f2r/env "$ASSIST_ENV_BACKUP"
+              chmod 600 "$ASSIST_ENV_BACKUP"
+              grep -vE '^BUILDIT_ASSISTANT_(ENABLED|TUTOR_LOGIN_IDS)=' /etc/f2r/env > /etc/f2r/env.tmp || true
+              if [ "$ASSIST_MODE" = admin-only ]; then
+                printf 'BUILDIT_ASSISTANT_ENABLED=true\n' >> /etc/f2r/env.tmp
+                printf 'BUILDIT_ASSISTANT_TUTOR_LOGIN_IDS=%s\n' "$ASSIST_IDS" >> /etc/f2r/env.tmp
+              else
+                printf 'BUILDIT_ASSISTANT_ENABLED=false\n' >> /etc/f2r/env.tmp
+              fi
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo "[DEPLOY] assistant switch applied: mode=$ASSIST_MODE (login id hidden, backup kept)"
+            fi
+            unset ASSIST_MODE ASSIST_ROWS ASSIST_IDS ASSIST_N ASSIST_APPLY
+          else
+            echo 'assistant switch not requested; env left unchanged'
+          fi
+
           # Preserve the legacy OpenRouter sync for any remaining consumers.
           if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
             install -d -m 755 /etc/f2r
@@ -564,6 +621,10 @@ jobs:
           else
             DEPLOY_RC=$?
             echo "[DEPLOY] FAILED rc=${DEPLOY_RC} line=f2r_deploy_with_rollback"
+            if [ -n "${ASSIST_ENV_BACKUP:-}" ] && [ -r "$ASSIST_ENV_BACKUP" ]; then
+              cp -p "$ASSIST_ENV_BACKUP" /etc/f2r/env && echo "[DEPLOY] restored /etc/f2r/env from backup (assistant switch change reverted)"
+              systemctl restart f2r-app.service || true
+            fi
             exit "$DEPLOY_RC"
           fi
 
@@ -646,6 +707,27 @@ jobs:
           shred -u /tmp/kis-app-key.staging /tmp/kis-app-secret.staging 2>/dev/null || rm -f /tmp/kis-app-key.staging /tmp/kis-app-secret.staging
           unset KIS_APP_KEY KIS_APP_SECRET
           echo "KIS keys staged in S3 (transient, values hidden)"
+
+      - name: Stage assistant switch mode in S3 (transient)
+        shell: bash
+        env:
+          ASSISTANT_SWITCH: ${{ inputs.assistant_switch }}
+        run: |
+          set -euo pipefail
+          # 선택값(unchanged/admin-only/off)만 올린다. 비밀값·로그인 ID는 다루지 않는다(ID는 EC2에서 DB로 읽는다).
+          # unchanged면 이전 실행이 남긴 값이 적용되지 않도록 지운다.
+          case "${ASSISTANT_SWITCH:-unchanged}" in
+            admin-only|off)
+              printf '%s' "$ASSISTANT_SWITCH" > /tmp/assistant-switch.staging
+              aws s3 cp /tmp/assistant-switch.staging s3://feel2real-buildit-deploy/assistant-switch --sse AES256 >/dev/null
+              rm -f /tmp/assistant-switch.staging
+              echo "assistant switch mode staged: $ASSISTANT_SWITCH"
+              ;;
+            *)
+              aws s3 rm s3://feel2real-buildit-deploy/assistant-switch 2>/dev/null || true
+              echo "assistant switch unchanged"
+              ;;
+          esac
 
       - name: Upload deployment artifacts to S3
         run: |
@@ -819,4 +901,11 @@ jobs:
           aws s3 rm s3://feel2real-buildit-deploy/kis-app-key 2>/dev/null || true
           aws s3 rm s3://feel2real-buildit-deploy/kis-app-secret 2>/dev/null || true
           echo "Staging files cleaned up"
+
+      - name: Cleanup assistant switch staging file
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://feel2real-buildit-deploy/assistant-switch 2>/dev/null || true
+          echo "Staging file cleaned up"
 
