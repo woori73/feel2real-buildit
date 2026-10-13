@@ -767,7 +767,24 @@ jobs:
           elif [ "$HTTP_CODE" = "302" ]; then
             LOCATION=$(curl -s -o /dev/null -w "%{redirect_url}" --max-time 15 http://127.0.0.1:8080/wemade || echo "UNKNOWN")
             echo "Redirect to: $LOCATION"
-            echo "::warning::SMOKE_TEST: FAIL - got 302 redirect (non-blocking)"
+            # 2026-10-07 정책: /wemade는 회원 전용이라 비로그인(스모크 요청)은 /wemade/login으로 302가 정상이다.
+            # 로그인 페이지가 200과 제목으로 응답하면 서비스는 정상으로 본다(그렇지 않을 때만 경고).
+            case "$LOCATION" in
+              */wemade/login)
+                LOGIN_CODE=$(curl -s -o /tmp/wemade_login.html -w "%{http_code}" --max-time 30 http://127.0.0.1:8080/wemade/login || echo "CURL_FAILED")
+                LOGIN_TITLE=$(grep -o -m 1 '<title>[^<]*</title>' /tmp/wemade_login.html || echo "NO_TITLE")
+                echo "LOGIN: HTTP $LOGIN_CODE $LOGIN_TITLE"
+                if [ "$LOGIN_CODE" = "200" ] && echo "$LOGIN_TITLE" | grep -q "위메이드 개인주주 분석"; then
+                  echo "SMOKE_TEST: PASS (member-only redirect to login page, login page OK)"
+                else
+                  echo "::warning::SMOKE_TEST: FAIL - /wemade redirects to login but login page is not healthy (non-blocking)"
+                fi
+                rm -f /tmp/wemade_login.html
+                ;;
+              *)
+                echo "::warning::SMOKE_TEST: FAIL - got 302 redirect to unexpected location (non-blocking)"
+                ;;
+            esac
           else
             echo "::warning::SMOKE_TEST: FAIL - unexpected HTTP $HTTP_CODE (non-blocking)"
           fi
