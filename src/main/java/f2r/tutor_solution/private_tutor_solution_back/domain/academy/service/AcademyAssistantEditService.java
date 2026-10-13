@@ -238,7 +238,7 @@ public class AcademyAssistantEditService {
       State saved = workingCopyService.stageMedia(principal, fresh.revision(), slot, storageKey);
       AssistantPatchApplier.Change change = new AssistantPatchApplier.Change(
           (had ? "사진 교체: " : "사진 추가: ") + meta[0], had ? "기존 사진" : "(없음)", "올리신 사진(미리보기에만 반영)", meta[1]);
-      String reply = meta[0] + "을(를) " + (had ? "교체" : "추가") + "했어요. 미리보기에서 확인해 보세요. 게시하기 전에는 공개되지 않아요.";
+      String reply = meta[0] + "을(를) " + (had ? "교체" : "추가") + "했어요. 미리보기에서 확인해 보세요. 홈페이지 정식 배포 등록을 하기 전에는 공개되지 않아요.";
       Map<String, Object> mediaUndo = new java.util.LinkedHashMap<>();
       mediaUndo.put(slot, stagedBefore.get(slot));
       Map<String, Object> payload = new java.util.LinkedHashMap<>();
@@ -266,7 +266,7 @@ public class AcademyAssistantEditService {
       requireRevision(fresh, expectedRevision);
       UndoStack stack = stackOf(academyId);
       if (stack.topEdit == null) {
-        return new EditOutcome("되돌릴 수정이 없어요. (게시한 뒤의 수정만 되돌릴 수 있어요)", List.of(), List.of(),
+        return new EditOutcome("되돌릴 수정이 없어요. (정식 배포 등록 뒤에 한 수정만 되돌릴 수 있어요)", List.of(), List.of(),
             "NONE", 0, true, fresh.revision(), 0, null);
       }
       if (stack.lastRevision == null || stack.lastRevision != fresh.revision()) {

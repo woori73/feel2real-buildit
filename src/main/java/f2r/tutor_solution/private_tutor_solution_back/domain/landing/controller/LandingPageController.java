@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantSamples;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.LandingVideoRenderItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.LandingVideoService;
@@ -32,6 +33,8 @@ public class LandingPageController {
         "academyShortsVideo", required(videos, LandingVideoSlotKey.ACADEMY_SHORTS_DEMO));
     model.addAttribute(
         "parentReportVideo", required(videos, LandingVideoSlotKey.PARENT_REPORT_DEMO));
+    // 첫 화면 아래 "홈페이지 샘플": 대화형 시작 화면과 같은 샘플 6종(디자인 프리셋 + 요청 문장, 개인·학원 데이터 없음)을 재사용한다.
+    model.addAttribute("homepageSamples", AcademyAssistantSamples.all());
     return "public/landing";
   }
 

@@ -16,23 +16,46 @@ function startButton() {
       addEventListener(type, handler) { listeners[type] = handler; },
       querySelector() { return null; }
     },
-    click(event) { return listeners.click(event); }
+    click(event) { return listeners.click(event); },
+    submit(event) { return listeners.submit(event); }
   };
 }
 
-function harness({ user, sessionUser }) {
+function harness({ user, sessionUser, loginModal = false, promptText = null }) {
   const button = startButton();
   const fetchCalls = [];
   const location = { href: '' };
+  const storage = memoryStorage(sessionUser ? { currentUser: sessionUser } : {});
+  const form = startButton();
+  const signupLink = { href: '/register' };
+  const loginListeners = {};
+  let modalOpened = 0;
+  const docListeners = [];
+  const input = { value: promptText || '', focus() {} };
+  const example = startButton();
+  example.el.dataset = { seed: '초등 중등 영어 전문 학원 홈페이지를 만들어 주세요.' };
+  example.el.textContent = ' 화면에 보이는 문구 ';
+  form.el.querySelector = (sel) => (sel === '[data-buildit-prompt]' ? input : null);
+  const windowOpts = {
+    addEventListener(type, handler) { loginListeners[type] = handler; },
+    safeInternalReturnUrl(url) { return url; },
+    scrollTo() {}
+  };
+  if (loginModal) windowOpts.openLoginModal = () => { modalOpened += 1; };
   loadBrowserScript(SCRIPT, {
     location,
-    sessionStorage: memoryStorage(sessionUser ? { currentUser: sessionUser } : {}),
+    sessionStorage: storage,
+    window: windowOpts,
     document: {
-      addEventListener() {},
+      addEventListener(type, handler, capture) { docListeners.push({ type, handler, capture }); },
       getElementById() { return null; },
-      querySelector() { return null; },
+      querySelector(selector) { return selector === '[data-buildit-prompt]' ? input : null; },
       querySelectorAll(selector) {
-        return selector === '[data-buildit-start]' ? [button.el] : [];
+        if (selector === '[data-buildit-example]') return [example.el];
+        if (selector === '[data-buildit-start]') return [button.el];
+        if (selector === '[data-buildit-form]') return [form.el];
+        if (selector === '[data-auth-signup]') return [signupLink];
+        return [];
       }
     },
     async fetch(url) {
@@ -42,7 +65,12 @@ function harness({ user, sessionUser }) {
       return { ok: true, json: async () => user };
     }
   });
-  return { button, fetchCalls, location };
+  return {
+    button, fetchCalls, location, storage, signupLink, loginListeners,
+    clickExample: () => example.click(), input,
+    submit: (event) => form.submit(event), modalOpened: () => modalOpened,
+    clickSignup() { const ev = { target: { closest: () => signupLink } }; docListeners.filter((l) => l.type === 'click').forEach((l) => l.handler(ev)); }
+  };
 }
 
 const clickEvent = () => {
@@ -96,4 +124,98 @@ test('Given a cached session user, When 시작하기 is clicked, Then no auth re
   // then
   assert.equal(location.href, '/builder');
   assert.deepEqual(fetchCalls, []);
+});
+
+test('Given a logged-in ADMIN, When 시작하기 is clicked, Then the builder opens directly (not the signup gate)', async () => {
+  // given
+  const { button, location } = harness({ user: { role: 'ADMIN' } });
+
+  // when
+  await button.click(clickEvent());
+
+  // then
+  assert.equal(location.href, '/builder');
+});
+
+test('Given a typed request and a logged-in ADMIN, When the hero form is submitted, Then the request is kept and the builder opens', async () => {
+  // given
+  const { submit, location, storage } = harness({ user: { role: 'ADMIN' }, promptText: '  우리 영어학원 홈페이지를 만들어줘.  ' });
+
+  // when
+  const event = clickEvent();
+  await submit(event);
+
+  // then
+  assert.equal(event.prevented, true);
+  assert.equal(location.href, '/builder');
+  const saved = storage.json('builditPendingPrompt');
+  assert.equal(saved.text, '우리 영어학원 홈페이지를 만들어줘.');
+  assert.equal(typeof saved.at, 'number');
+});
+
+test('Given a typed request and a logged-out visitor with the login modal, When submitted, Then the login modal opens and /builder is the post-login return', async () => {
+  // given
+  const { submit, location, storage, signupLink, modalOpened, clickSignup } = harness({ user: null, loginModal: true, promptText: '입시 학원 홈페이지' });
+
+  // when
+  await submit(clickEvent());
+
+  // then
+  assert.equal(modalOpened(), 1);
+  assert.equal(location.href, '');
+  assert.equal(storage.getItem('postLoginReturnUrl'), '/builder');
+  assert.equal(storage.json('builditPendingPrompt').text, '입시 학원 홈페이지');
+  clickSignup(); // 회원가입을 누르는 순간 /builder 복귀 주소가 된다
+  assert.equal(signupLink.href, '/register?returnUrl=%2Fbuilder');
+});
+
+test('Given an empty input, When the hero form is submitted, Then no request is stored', async () => {
+  // given
+  const { submit, storage } = harness({ user: { role: 'TUTOR' }, promptText: '   ' });
+
+  // when
+  await submit(clickEvent());
+
+  // then
+  assert.equal(storage.getItem('builditPendingPrompt'), null);
+});
+
+test('Given a pending builder return, When an ADMIN or TUTOR logs in, Then the page moves to /builder', () => {
+  for (const role of ['ADMIN', 'TUTOR']) {
+    // given
+    const { loginListeners, storage, location } = harness({ user: null, loginModal: true });
+    storage.setItem('postLoginReturnUrl', '/builder');
+
+    // when
+    loginListeners['f2r:login']({ detail: { role } });
+
+    // then
+    assert.equal(location.href, '/builder', role);
+  }
+});
+
+test('Given a pending builder return, When a STUDENT logs in, Then they stay on the landing and the stored request is dropped', () => {
+  // given
+  const { loginListeners, storage, location } = harness({ user: null, loginModal: true });
+  storage.setItem('postLoginReturnUrl', '/builder');
+  storage.setItem('builditPendingPrompt', JSON.stringify({ text: 'x', at: Date.now() }));
+
+  // when
+  loginListeners['f2r:login']({ detail: { role: 'STUDENT' } });
+
+  // then
+  assert.equal(location.href, '');
+  assert.equal(storage.getItem('builditPendingPrompt'), null);
+});
+
+test('Given 샘플 카드에 요청 문장(seed)이 있을 때 When 누르면 Then 입력창에 seed가 채워지고 자동 시작하지 않는다', () => {
+  // given
+  const { clickExample, input, location } = harness({ user: null });
+
+  // when
+  clickExample();
+
+  // then
+  assert.equal(input.value, '초등 중등 영어 전문 학원 홈페이지를 만들어 주세요.');
+  assert.equal(location.href, '');
 });
