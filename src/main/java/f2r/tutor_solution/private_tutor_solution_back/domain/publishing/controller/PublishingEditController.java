@@ -87,4 +87,22 @@ public class PublishingEditController {
       @PathVariable Long jobId) {
     return ResponseEntity.ok(editService.runPreflight(principal, jobId));
   }
+
+  /**
+   * Markdown 원고의 제목 스타일을 자동 적용한다 (P4).
+   *
+   * <p>원고가 Markdown(.md)인 경우 {@code #}/{@code ##}/{@code ###} 제목과
+   * {@code >} 인용문을 인식하여 ko-heading1/2/3, ko-quote 스타일을 적용한다.
+   * {@code file.place} 이후에 호출해야 하며, 본문(ko-body)과 충돌하지 않는다.
+   */
+  @PostMapping("/apply-markdown-styles")
+  @PreAuthorize("hasAnyRole('TUTOR','ADMIN')")
+  public ResponseEntity<ApplyStylesResponse> applyMarkdownStyles(
+      @PathVariable Long jobId,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    int applied = editService.applyMarkdownStyles(principal, jobId);
+    return ResponseEntity.ok(new ApplyStylesResponse(applied));
+  }
+
+  public record ApplyStylesResponse(int appliedStyles) {}
 }
