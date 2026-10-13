@@ -1656,47 +1656,20 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 - **상태 전이(§2, 결정적·AI 없음)**: 회원 첫 질문→NEW. 운영자가 열면→AWAITING_ANSWER. 운영자 답변→OPERATOR_ANSWERED. 답변 뒤 회원 추가 질문→MEMBER_FOLLOWUP. 회원 목록/배지는 아직 못 본 OPERATOR 답변 수(`member_last_seen_message_id` 커서 기준)로 "새 답변 N건" 표시.
 - 관련 화면: 회원 `/newstart/consultations`(공개 셸 + `window.refreshAccountArea` 인증, 감사회원만 API 통과), 운영자 `/admin/newstart/consultations`(ROLE_ADMIN). 홈 `ns-service-consult` 카드 + `newstart-consult-unread.js` 배지.
 
-### academy_working_copy ✅ BuildIt 통합 화면 작업본 (V1060)
 
-공개 홈페이지(`academies.intro`, `academies.page_settings`)와 분리된 **편집용 복사본**. 대화 수정은 여기에만 쓰이고, 공개본은 게시(`POST /api/tutor/academy/working-copy/publish`)에서만 바뀐다. 설계: [BUILDIT_UNIFIED_CHAT_UI_DESIGN.md](BUILDIT_UNIFIED_CHAT_UI_DESIGN.md).
+## 입시상담 가이드 (V1066)
 
-**academy_working_copy**: `working_copy_id` PK, `academy_id` FK(UNIQUE, ON DELETE CASCADE), `revision`(@Version, 낙관적 잠금), `intro`, `page_settings_json`(AcademyPageSettings JSON, 키 순서 고정), `base_fingerprint`(작업본이 기준으로 삼은 공개 내용의 SHA-256 — 게시 시 공개 내용이 그 사이 바뀌었는지 비교), `created_by`/`updated_by`, `created_at`/`updated_at`.
+입시상담 Agent 전용 테이블. NewStart 운영 DB와 완전 분리. `admissions_*` 테이블은 입시상담 전용.
 
-불변식: 작업본 저장·버리기·버전 불러오기는 공개 테이블을 쓰지 않는다. `homepage.renderMode`(시각 편집기 게시 상태)는 작업본이 바꿀 수 없고 항상 공개본 값을 따른다. 시각 편집기 계층은 기존 `academy_visual_editor_draft/published`를 그대로 쓴다(중복 저장 없음). 기존 데이터 변경·삭제 없음(신규 테이블만).
+- `admissions_universities`: 대학 (7개교 → 전국 확대). `name` UNIQUE.
+- `admissions_official_materials`: 공식자료 (모집요강 원문). `university_id` FK, `academic_year`, `issuer`, `document_url`.
+- `admissions_departments`: 모집단위. `university_id` FK, `academic_year`, `quota_info` JSON.
+- `admissions_types`: 전형. `university_id` FK, `academic_year`, `details` TEXT.
+- `admissions_schedules`: 일정. `university_id` FK (NULL 가능), `academic_year`, `source_id` FK → official_materials.
+- `admissions_knowledge_items`: 상담 지식베이스 (핵심 RAG 원천). `academic_year` + `year_confirmed` (2027 확정/2028 계획 구분). `source_class`: OFFICIAL/YOUTUBE/SIMULATION. `status`: DRAFT/REVIEW/ACTIVE (ACTIVE만 RAG 대상). `dedup_key` UNIQUE.
+- `admissions_knowledge_embeddings`: 임베딩 (768차원, EmbeddingGemma 2). `knowledge_id` FK, `model_version`, `vector` LONGBLOB.
+- `admissions_conflicts`: 충돌대장. `status`: OPEN/RESOLVED/PENDING. OPEN 항목은 RAG에서 제외.
+- `admissions_youtube_analyses`: 유튜브 분석. `related_knowledge_id` FK. 확정 사실 답변에 사용 금지.
+- `admissions_counseling_sessions`: 상담 이력 (비회원 세션 토큰). `session_token` UNIQUE, `question_fingerprint`. 개인정보 저장 금지.
 
-### academy_assistant_message ✅ BuildIt 통합 화면 대화 기록 (V1061)
-
-학원당 AI 대화 한 줄기. **academy_assistant_message**: `message_id` PK, `academy_id` FK(ON DELETE CASCADE), `role`(USER/ASSISTANT), `kind`(TEXT/RESULT/QUESTION/EDIT/UNDO/PUBLISHED/ADOPTED/RESTORED), `content`, `payload_json`(결과 카드의 revision·프리셋·안내), `created_at`. 인덱스 `(academy_id, message_id)`. 신규 테이블만 추가한다.
-
-**AI 제작 학원 판정(스키마 변경 없음)**: `kind`가 `RESULT`(대화로 최초 생성) 또는 `ADOPTED`(기존 학원을 'AI로 이어서 만들기'로 명시 전환)인 기록이 있는 학원만 AI 제작 학원이다(`AssistantAcademyMode`). `kind`는 VARCHAR(20)이라 `ADOPTED` 추가에 마이그레이션이 필요 없다. 그 밖의 기록(TEXT/EDIT/UNDO/PUBLISHED/RESTORED)만 있는 학원은 기존 방식 학원이며 화면 모드가 바뀌지 않는다.
-
-**디자인 자산 연동(스키마 변경 없음)**: `builderDraft`에 `motionStyle`(`none`/`fade`/`slide`, 미설정=기존 reveal 기본값)과 `designAsset`(마지막으로 적용한 레시피 id) 키를 추가했다. 값 검증은 `AcademyService.validateBuilderDraft`. 자산 목록의 원본은 `src/main/resources/design-assets/catalog.json`(BuildIt2 `3582696` 기준, DB 없음)이다.
-
-**작업본 이미지 예약(S3, V1064)**: `academy_working_copy.staged_media_json TEXT NULL`(JSON `{slot: storageKey}`, 빈 문자열=비우기, NULL=예약 없음)을 추가했다. 새 테이블은 없고 기존 행은 NULL이라 동작이 바뀌지 않는다. 공개 슬롯은 `publish` 트랜잭션에서만 바뀌며, EDIT 메시지 payload에 `mediaUndo`(slot→이전 예약 값, null=예약 없었음)를 남겨 되돌린다. 작업본 `dirty`는 내용 차이 또는 예약이 있으면 true다.
-
-**2-C(S1) 추가 kind (스키마 변경 없음)**: `EDIT`(수정 1회; payload `{revisionBefore, revisionAfter, undo{introChanged,introBefore,draftBefore,visibilityBefore,orderBefore}, changes[]}`), `UNDO`(payload `{undoes:<EDIT message_id>, revision}`), `PUBLISHED`(payload `{revisionAfter}`). 되돌리기 스택 = EDIT push, UNDO가 `undoes` 항목 pop, PUBLISHED는 스택을 비운다. 현재 작업본 revision이 마지막 기록의 revision과 다르면 되돌리기를 거부한다.
-
-**최초 게시 규칙**: 코드에 DRAFT→PUBLISHED 전환 경로가 따로 없었다(`createDraft`는 "공개는 별도 발행"이라고만 명시). 이제 `POST /api/tutor/academy/assistant/publish`가 작업본 게시와 `Academy.publishIfDraft()`를 한 트랜잭션으로 처리한다. `visible` 스위치는 건드리지 않는다.
-
-### academy_admin_working_copy / academy_admin_audit ✅ 관리자 홈페이지 관리 (V1062)
-
-**academy_admin_working_copy**: 관리자가 대상 학원에 쓰는 비공개 작업본. 구조는 `academy_working_copy`와 같다(`academy_id` UNIQUE FK ON DELETE CASCADE, `revision`@Version, `intro`, `page_settings_json`, `base_fingerprint`, `created_by`/`updated_by`). 회원 작업본과 **별개 테이블**이라 관리자의 미게시 수정이 회원 화면·회원의 게시에 섞이지 않는다.
-
-**academy_admin_audit**: 관리자 작업 감사 기록(추가 전용). `audit_id` PK, `actor_user_id`/`actor_login_id`, `academy_id`(FK 없음 — 학원이 삭제돼도 기록 보존), `owner_user_id`, `action`(ACCESS/SAVE/PUBLISH/RESTORE/DISCARD), `working_copy_revision`, `published`, `summary`, `details_json`(변경 항목 전/후, 값 길이 제한; URL·사업자 정보 같은 설정은 필드 이름만), `created_at`. 인덱스 `(academy_id, audit_id)`, `(actor_user_id, audit_id)`. 회원 API로 노출하지 않는다.
-
-**V1063 (추가 전용 ALTER)**: `academy_admin_working_copy`에 `base_intro TEXT NULL`, `base_page_settings_json MEDIUMTEXT NULL` — 작업본을 만든 시점의 공개 내용(필드 단위 병합의 기준). 컬럼이 NULL인 행(V1062로 만들어진 작업본)은 기준을 알 수 없으므로 병합 시 공개 값을 우선하고 다른 항목은 충돌로 알린다.
-
-**강사진(`builderDraft.teachersJson`, `teachersSectionTitle`)**: 스키마 변경 없이 기존 `page_settings.builderDraft` 문자열 키로 저장한다(계약·제한은 API.md '강사진' 절). 작업본·게시·버전·감사·충돌 보호는 키 단위로 기존 구조를 그대로 탄다.
-
-불변식: 관리자 수정·미리보기·복원·되돌리기는 공개 테이블(`academies`)을 쓰지 않는다. 공개본은 `POST /api/admin/academies/{id}/builder/publish`에서만 바뀌며, 그때 직전 공개 내용이 `academy_page_versions`에 보관된다. 감사 기록과 변경은 한 트랜잭션이다.
-
-### academy_visual_editor_proposal / academy_visual_editor_agent_token ✅ 시각 편집기 AI 제안 (V1058)
-
-> 시각 편집기(`academy_visual_editor_draft`/`_published`)와 같은 격리 원칙: 기존 테이블 변경 없음, `academies` FK(CASCADE)뿐. 제안은 승인 전까지 초안·게시본·`page_settings`에 어떤 영향도 주지 않는다.
-> 설계: [BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md](BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md)
-
-**academy_visual_editor_proposal**: `proposal_id` PK, `academy_id` FK, `version`(@Version), `status`(PENDING/APPLIED/REJECTED/EXPIRED/STALE), `base_revision`, `summary`(≤500), `changes_json`(검증된 changes[]), `created_by_kind`(AGENT/AI), `created_by_ref`, `expires_at`(생성+14일), `applied_revision`/`applied_by`/`applied_at`, `decided_at`, `stale_reason`, `created_at`/`updated_at`. 인덱스 `(academy_id, status, created_at)`. 모든 조회는 `academy_id` 조건 필수(Repository에 id만으로 조회하는 사용 금지 — `ProposalRepositoryAccessTest`).
-
-**academy_visual_editor_agent_token**: `token_id` PK, `academy_id` FK, `token_hash` CHAR(64) UNIQUE(SHA-256), `label`, `scopes`(`ve:read,ve:propose`), `created_by`, `expires_at`(90일), `last_used_at`, `revoked_at`. 평문은 저장하지 않는다. 학원당 활성 5개 제한.
-
-상태 전이: PENDING→APPLIED(저장 트랜잭션 안, `appliedRevision`은 DB revision), PENDING→REJECTED, PENDING→EXPIRED(조회 시 정리), PENDING→STALE(저장된 초안에 대상 요소가 없을 때만). 종결 상태는 재전이 불가.
+승인 상태: DRAFT → REVIEW → ACTIVE. APPROVED_CANDIDATE를 ACTIVE로 임의 변경 금지 (관리자 승인 API를 통해서만 전환). 자동 승격 없음.
