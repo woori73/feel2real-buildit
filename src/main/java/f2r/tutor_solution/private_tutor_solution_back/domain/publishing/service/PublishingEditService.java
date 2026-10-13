@@ -278,15 +278,17 @@ public class PublishingEditService {
       return 0;
     }
 
-    Path docPath = jobService.getDocumentPath(principal, jobId);
+    var job = jobService.requireOwned(principal, jobId);
+    Path workDir = Path.of(job.getWorkDir());
     int applied = 0;
     for (var block : parsed.headingBlocks()) {
       try {
         // find.find로 제목 텍스트 위치 확인
-        String findJson = objectMapper.writeValueAsString(
-            Map.of("find", block.text(), "scope", "story"));
-        String findResult = cliExecutor.run(docPath, "find.find", findJson);
-        JsonNode matches = objectMapper.readTree(findResult);
+        var findResult = cliExecutor.execute(
+            new PublishingCommand("find.find",
+                Map.of("find", block.text(), "scope", "story")),
+            workDir);
+        JsonNode matches = objectMapper.readTree(findResult.output());
         if (!matches.isArray() || matches.isEmpty()) {
           log.warn("제목 텍스트를 찾지 못함: {}", block.text());
           continue;
@@ -297,14 +299,16 @@ public class PublishingEditService {
         long end = first.get("end").asLong();
 
         // text.select로 선택
-        String selectJson = objectMapper.writeValueAsString(
-            Map.of("story", story, "anchor", start, "focus", end));
-        cliExecutor.run(docPath, "text.select", selectJson);
+        cliExecutor.execute(
+            new PublishingCommand("text.select",
+                Map.of("story", story, "anchor", start, "focus", end)),
+            workDir);
 
         // style.paragraph.apply로 스타일 적용
-        String applyJson = objectMapper.writeValueAsString(
-            Map.of("name", block.style()));
-        cliExecutor.run(docPath, "style.paragraph.apply", applyJson);
+        cliExecutor.execute(
+            new PublishingCommand("style.paragraph.apply",
+                Map.of("name", block.style())),
+            workDir);
 
         applied++;
         log.info("스타일 적용: '{}' → {}", block.text(), block.style());
