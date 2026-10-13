@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse;
-import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.PreflightIssue;
+import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.Finding;
+import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.LowPpiFinding;
+import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.MissingGlyphFinding;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +31,7 @@ class PublishingGateServiceTest {
   @Test
   @DisplayName("preflight 통과 시 게이트 통과")
   void preflightPass() {
-    PreflightResponse preflight = new PreflightResponse(true, List.of(), List.of());
+    PreflightResponse preflight = PreflightResponse.empty();
     var result = gateService.checkPreflight(preflight, 150);
     assertTrue(result.passed());
   }
@@ -38,8 +40,31 @@ class PublishingGateServiceTest {
   @DisplayName("missingGlyphs가 있으면 게이트 실패")
   void missingGlyphsFail() {
     PreflightResponse preflight = new PreflightResponse(false,
-        List.of(new PreflightIssue("error", "missingGlyphs", "글리프 누락", 1)),
+        List.of(),
+        List.of(new MissingGlyphFinding(1, "글리프 누락", "한")),
         List.of());
+    var result = gateService.checkPreflight(preflight, 150);
+    assertFalse(result.passed());
+  }
+
+  @Test
+  @DisplayName("overset이 있으면 게이트 실패")
+  void oversetFail() {
+    PreflightResponse preflight = new PreflightResponse(false,
+        List.of(new Finding(2, "텍스트 넘침")),
+        List.of(),
+        List.of());
+    var result = gateService.checkPreflight(preflight, 150);
+    assertFalse(result.passed());
+  }
+
+  @Test
+  @DisplayName("lowPpi가 있으면 게이트 실패")
+  void lowPpiFail() {
+    PreflightResponse preflight = new PreflightResponse(false,
+        List.of(),
+        List.of(),
+        List.of(new LowPpiFinding(3, "저해상도 이미지", 72)));
     var result = gateService.checkPreflight(preflight, 150);
     assertFalse(result.passed());
   }
@@ -84,6 +109,19 @@ class PublishingGateServiceTest {
     Path file = tempDir.resolve("test.pdf");
     Files.write(file, pdf.getBytes(StandardCharsets.ISO_8859_1));
     var result = gateService.checkPdfX4(file, 6);
+    assertFalse(result.passed());
+  }
+
+  @Test
+  @DisplayName("X-4 PDF 게이트: 폰트 미임베드 시 실패")
+  void pdfX4FontFail() throws Exception {
+    String pdf = "%PDF-1.7\n"
+        + "/Type /Pages /Count 1\n"
+        + "/S /GTS_PDFX\n"
+        + "/N 4\n";
+    Path file = tempDir.resolve("test.pdf");
+    Files.write(file, pdf.getBytes(StandardCharsets.ISO_8859_1));
+    var result = gateService.checkPdfX4(file, 1);
     assertFalse(result.passed());
   }
 }
