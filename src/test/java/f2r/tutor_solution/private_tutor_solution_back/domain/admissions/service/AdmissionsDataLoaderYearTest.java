@@ -59,4 +59,30 @@ class AdmissionsDataLoaderYearTest {
         assertThat(AdmissionsDataLoader.readSupportedYear(y2029)).isNull();
         assertThat(AdmissionsDataLoader.readSupportedYear(y2026)).isNull();
     }
+
+    @Test
+    @DisplayName("given question_types가 배열(Q1..Q9) when 평탄화하면 then id를 키로 모두 나온다")
+    void question_types_array_is_flattened_by_id() throws Exception {
+        // given
+        JsonNode arr = mapper.readTree("[{\"id\":\"Q1\",\"question\":\"a\"},{\"id\":\"Q2\"},{\"question\":\"id 없음\"}]");
+
+        // when
+        var entries = AdmissionsDataLoader.questionTypeEntries(arr);
+
+        // then
+        assertThat(entries).extracting(java.util.Map.Entry::getKey).containsExactly("Q1", "Q2");
+    }
+
+    @Test
+    @DisplayName("given question_types가 객체 when 평탄화하면 then 기존 형태도 그대로 지원한다")
+    void question_types_object_is_still_supported() throws Exception {
+        // given
+        JsonNode obj = mapper.readTree("{\"Q1\":{\"description\":\"d\"},\"Q2\":{}}");
+
+        // when
+        var entries = AdmissionsDataLoader.questionTypeEntries(obj);
+
+        // then
+        assertThat(entries).extracting(java.util.Map.Entry::getKey).containsExactly("Q1", "Q2");
+    }
 }
