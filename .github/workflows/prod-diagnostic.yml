@@ -3,7 +3,7 @@ name: Production Diagnostic (read-only, manual)
 # READ-ONLY 운영 진단 전용 workflow.
 # - workflow_dispatch 수동 실행만 허용 (자동 실행 없음)
 # - 진단 종류는 코드에 고정. 임의 명령어/SQL 입력 불가.
-# - DB 진단: flyway-history, schema-columns (SELECT만)
+# - DB 진단: flyway-history, schema-columns, assistant-mode-count (SELECT만, 건수만 출력·개인정보 없음)
 # - 서비스 진단: service-status, journal-errors, system-resources, jar-info, health-check (DB 작업 없음)
 # - DB credential은 EC2의 /etc/f2r/env에서 로드하며 GitHub 로그에 절대 출력하지 않는다.
 # - DB 쓰기 명령(INSERT/UPDATE/DELETE 등)은 포함하지 않는다.
@@ -20,6 +20,7 @@ on:
         options:
           - flyway-history
           - schema-columns
+          - assistant-mode-count
           - service-status
           - journal-errors
           - system-resources
@@ -84,6 +85,22 @@ jobs:
           source /etc/f2r/env
           echo "===== schema-columns (V1041 target columns) ====="
           mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name='wemade_gap_factors' AND column_name='hypothesis_no') OR (table_name='wemade_surge_analysis' AND column_name IN ('ret1d','ret3d','ret5d','ret10d'))) ORDER BY table_name, column_name;"
+          SSMEOF
+              )
+              ;;
+            assistant-mode-count)
+              DIAG_LABEL="assistant-mode-count (read-only counts)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          M="mysql -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER -p$DB_PASSWORD $DB_NAME"
+          echo "===== assistant mode counts (SELECT only, counts only) ====="
+          $M -e "SELECT 'academies_total' AS metric, COUNT(*) AS n FROM academies UNION ALL SELECT 'academies_with_any_assistant_message', COUNT(DISTINCT academy_id) FROM academy_assistant_message UNION ALL SELECT 'academies_with_RESULT', COUNT(DISTINCT academy_id) FROM academy_assistant_message WHERE kind='RESULT' UNION ALL SELECT 'academies_messages_but_no_RESULT', COUNT(*) FROM (SELECT academy_id FROM academy_assistant_message GROUP BY academy_id HAVING SUM(kind='RESULT')=0) t UNION ALL SELECT 'academies_with_ADOPTED', COUNT(DISTINCT academy_id) FROM academy_assistant_message WHERE kind='ADOPTED';"
+          echo "===== message kinds ====="
+          $M -e "SELECT kind, COUNT(*) AS n FROM academy_assistant_message GROUP BY kind ORDER BY kind;"
+          echo "===== latest flyway rows ====="
+          $M -e "SELECT version, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 3;"
+          echo "===== V1064 column present? ====="
+          $M -e "SELECT COUNT(*) AS staged_media_json_column FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='academy_working_copy' AND column_name='staged_media_json';"
           SSMEOF
               )
               ;;
