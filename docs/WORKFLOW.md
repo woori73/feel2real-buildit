@@ -138,3 +138,10 @@ Academy 영상 UI는 `POST /api/tutor/academy/videos` multipart 요청으로 app
 기존 direct-upload session API와 DB-backed worker/cleanup 모델은 배포 전 세션 호환과 기존 데이터 정리를 위해 유지하지만 신규 UI 업로드 경로로 사용하지 않는다.
 
 EC2/systemd, IAM, S3 CORS/lifecycle, ALB 180초 inactivity gate, `/var/tmp` 용량, ffmpeg/libx264, Actuator 지표와 Chrome/curl 증거 절차의 **단일 실행 문서**는 [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md)다. 이 문서에 운영 명령이나 timeout 값을 복제하지 않는다.
+
+## AI Builder 운영 스위치 (Deploy to EC2 입력 `assistant_switch`)
+
+- `unchanged`(기본): 환경파일을 건드리지 않는다. `admin-only`: ADMIN 계정이 **정확히 1명**일 때만 `BUILDIT_ASSISTANT_ENABLED=true`와 그 계정 1명만 `BUILDIT_ASSISTANT_TUTOR_LOGIN_IDS`로 기록한다. `off`: `BUILDIT_ASSISTANT_ENABLED=false`로 끈다.
+- 로그인 ID는 EC2 안에서 DB로 읽어 환경파일에만 쓴다(로그·S3·GitHub에 남기지 않는다). 시크릿 등록은 필요 없다.
+- 변경 전 `/etc/f2r/env.bak-assistant-<시각>`에 백업하고, 대상 키는 지우고 다시 써서 중복을 막는다. 배포(health)가 실패하면 백업으로 되돌리고 서비스를 재시작한다.
+- 안전장치: 운영(`prd` 프로필)에서는 허용 계정이 비어 있으면 스위치가 켜져 있어도 모두에게 꺼진다(`AssistantFeatureFlag`).
