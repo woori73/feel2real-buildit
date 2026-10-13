@@ -44,7 +44,7 @@
         item.amount == null ? null : Easy.fmtWon(item.amount)].filter(Boolean).join(' · ');
       const actions = document.createElement('div'); actions.className = 'btn-row';
       const approve = button('승인', 'btn-primary', () => approveItem(item, businessId));
-      const hold = button('보류', 'btn-secondary', () => alert('보류했습니다. 장부 데이터는 변경되지 않았습니다.'));
+      const hold = button('보류', 'btn-secondary', () => holdItem(item, businessId));
       const ignore = button('제외', 'btn-danger-link', () => approveItem(item, businessId, true));
       actions.append(approve, hold, ignore); li.append(title, detail, actions); ul.appendChild(li);
     });
@@ -69,6 +69,19 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });
     if (!res.ok) { alert(res.status === 409 ? '이미 처리되었거나 마감된 기간입니다.' : await res.text()); return; }
+    await load();
+  }
+
+  async function holdItem(item, businessId) {
+    const res = await fetchAuth('/api/admin/easy/workspace/reviews/'
+      + encodeURIComponent(item.reviewId) + '/hold?businessId=' + encodeURIComponent(businessId), {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      alert(res.status === 409 ? '이미 처리된 검토입니다.' : await res.text());
+      return;
+    }
+    alert('보류했습니다. 검토 항목과 장부 데이터는 변경되지 않았습니다.');
     await load();
   }
 

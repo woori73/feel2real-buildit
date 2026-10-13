@@ -915,3 +915,13 @@ STEP 1의 AI 작업기록 영역에서는 Claude/ChatGPT가 남긴 작업 로그
 
 ## Weekly Exam Phase 3
 Agent/운영자 등록 → DRAFT → 운영자 FINAL 확정 → 필요 시 DRAFT 재개. FINAL은 외부 공개가 아니라 운영자용 제작 완료 상태다. Current Context는 Living Context이고 Weekly Exam은 제작 당시 snapshot/hash를 보존한다. 이전 FINAL metadata와 검수 MD는 다음 회차 Context에 포함된다. 공개 LIVE에는 FINAL 및 학습자료의 안전한 metadata만 투영한다.
+
+## Easy Workspace 2A·2B 관리자 파일럿
+
+`사업체 선택 → 월 상태/금액 조회 → 수입·비용 거래 확인·수정 → 유형별 검토 승인 또는 보류 → POSTED 분개 시산표·균형 확인` 순서다. 모든 단계는 `businessId`를 서버에서 다시 검증한다.
+
+- 상태는 `COLLECTED → IMPORT STAGED → LEDGER SAVED → JOURNAL POSTED`를 서로 다른 데이터 원천으로 표시한다. IMPORT STAGED는 아직 장부 행이 아니며, 장부 거래 행의 `IMPORTED_TO_LEDGER`와 혼동하지 않는다.
+- 승인 시 검토 행을 잠그고 하나의 트랜잭션 안에서 원·대상 회계기간 마감, 거래 수정, 정정 로그, 기존 `postLegs` 기반 재분개, 검토 종료를 처리한다.
+- 이미 처리된 검토는 동일 요청임을 증명할 키가 없으므로 재승인하지 않고 `409`다.
+- 보류는 OPEN 항목을 그대로 유지하며 거래·분개를 변경하지 않는다.
+- 이 파일럿 화면은 물리 삭제를 노출하지 않는다. DB 스키마, Flyway, 기존 DELETE 정책, 신규 VOID 기능은 변경하지 않는다.

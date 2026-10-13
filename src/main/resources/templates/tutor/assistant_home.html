@@ -4,11 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="robots" content="noindex"/>
-  <title>AI 홈페이지 만들기 — BuildIt</title>
+  <title>BuildIt 가이드 — 홈페이지 만들기</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261013-4"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261014-2"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -19,11 +19,11 @@
 
   <!-- 시작 화면: 입력창 하나 + 샘플. 한 문장으로 바로 시작한다(학원 이름·지역·대상은 임시로 채우고 나중에 바꾼다). -->
   <main class="ah-start" id="ahStart">
-    <h1>어떤 학원 홈페이지를 만들까요?</h1>
-    <p class="ah-sub">만들고 싶은 홈페이지를 한 문장으로 말해 주세요. 샘플을 골라 시작해도 돼요.</p>
+    <h1>어떤 홈페이지를 만들까요?</h1>
+    <p class="ah-sub">BuildIt 가이드가 제작부터 공개까지 도와드립니다.</p>
     <form class="ah-prompt" id="ahStartForm" autocomplete="off">
       <textarea id="ahPrompt" rows="3" maxlength="2000" aria-label="만들고 싶은 홈페이지"
-                placeholder="예: 영어학원 홈페이지를 세련된 스타일로 만들어줘"></textarea>
+                placeholder="우리 영어학원 홈페이지를 만들어줘."></textarea>
       <div class="ah-prompt-row">
         <span class="ah-chosen" id="ahChosen" hidden>샘플: <b id="ahChosenName"></b>
           <button type="button" id="ahChosenClear" class="ah-link">해제</button></span>
@@ -48,22 +48,22 @@
   <!-- 작업 화면: 대화가 중심. 결과는 대화 속 미리보기 카드로 보이고, 누르면 전체 화면으로 확인한다. 생성과 수정은 같은 대화에서 이어간다. -->
   <section class="ah-work" id="ahWork" hidden aria-label="홈페이지 만들기 대화">
     <header class="ah-bar">
-      <strong class="ah-brand">BuildIt</strong>
+      <strong class="ah-brand ah-agent">BuildIt 가이드</strong>
       <span class="ah-status" id="ahStatus" aria-live="polite"></span>
       <div class="ah-bar-actions">
-        <button class="ah-ghost ah-undo" type="button" id="ahUndo" disabled aria-label="되돌리기">↶ 되돌리기 <b id="ahUndoCount">0</b></button>
-        <button class="ah-primary ah-small" type="button" id="ahPublish">게시하기</button>
+        <button class="ah-primary ah-small ah-pubbtn" type="button" id="ahPublish">홈페이지 정식 배포 등록</button>
+        <div class="ah-more">
+          <button class="ah-more-btn" type="button" id="ahMoreBtn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false">⋯</button>
+          <div class="ah-menu" id="ahMenu" role="menu" hidden>
+            <button type="button" role="menuitem" id="ahUndo" disabled>되돌리기 <b id="ahUndoCount">0</b></button>
+            <button type="button" role="menuitem" id="ahProfileBtn">학원 정보</button>
+            <button type="button" role="menuitem" id="ahVersionsBtn">버전 기록</button>
+            <button type="button" role="menuitem" id="ahDownloadBtn">HTML 내려받기</button>
+            <a role="menuitem" href="/builder?classic=1" id="ahClassicWork">기존 빌더</a>
+          </div>
+        </div>
       </div>
     </header>
-    <div class="ah-subbar">
-      <div class="ah-tools" role="group" aria-label="작업 도구">
-        <button type="button" class="ah-tool" id="ahProfileBtn">학원 정보</button>
-        <button type="button" class="ah-tool" id="ahVersionsBtn">버전</button>
-        <button type="button" class="ah-tool" id="ahDownloadBtn">내려받기</button>
-      </div>
-      <span class="ah-draftnote">미리보기는 비공개 작업본이에요</span>
-      <a class="ah-classic" href="/builder?classic=1" id="ahClassicWork">기존 빌더</a>
-    </div>
 
     <div class="ah-thread" id="ahThread" role="log" aria-live="polite">
       <div class="ah-msgs" id="ahMsgs"></div>
@@ -74,8 +74,10 @@
         <div class="ah-thumb" id="ahThumb" role="button" tabindex="0" aria-label="전체 화면으로 보기">
           <div class="inner"><iframe id="ahCardFrame" title="홈페이지 미리보기 카드" tabindex="-1"></iframe></div>
         </div>
-        <div class="ah-resbody"><h3>홈페이지 미리보기</h3><span class="ah-badge" id="ahCardBadge">비공개 초안</span></div>
-        <div class="ah-actions"><button class="ah-secondary" type="button" id="ahCardFull">전체 화면으로 보기</button></div>
+        <div class="ah-resfoot">
+          <div class="ah-resbody"><h3>홈페이지 미리보기</h3><span class="ah-badge" id="ahCardBadge">비공개 초안</span></div>
+          <button class="ah-primary ah-pill-btn" type="button" id="ahCardFull">전체 화면으로 보기</button>
+        </div>
       </div>
     </div>
 
@@ -90,9 +92,12 @@
       </div>
       <input type="file" id="ahPhotoFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden/>
       <form class="ah-composer" id="ahWorkComposer" autocomplete="off">
-        <button class="ah-photo" type="button" id="ahPhotoBtn" aria-label="사진 올리기" title="사진 올리기">📷</button>
-        <input class="ah-input" id="ahWorkInput" maxlength="1000" placeholder="예: 첫 화면을 밝은 색상으로 바꾸고 상담 신청 버튼을 추가해줘" aria-label="수정 요청"/>
-        <button class="ah-send" type="submit" id="ahWorkSend" aria-label="보내기">보내기</button>
+        <input class="ah-input" id="ahWorkInput" maxlength="1000" placeholder="수정할 내용을 말씀해 주세요" aria-label="수정 요청"/>
+        <div class="ah-crow">
+          <span class="ah-avatar" aria-hidden="true">B</span>
+          <button class="ah-plus" type="button" id="ahPhotoBtn" aria-label="사진 올리기" title="사진 올리기">+</button>
+          <button class="ah-send-round" type="submit" id="ahWorkSend" aria-label="보내기">↑</button>
+        </div>
       </form>
     </div>
 
@@ -105,7 +110,7 @@
           <button type="button" data-dev="tablet" aria-pressed="false">태블릿</button>
           <button type="button" data-dev="desktop" aria-pressed="false">PC</button>
         </div>
-        <button class="ah-primary ah-small" type="button" id="ahFullPublish">게시하기</button>
+        <button class="ah-primary ah-small ah-pubbtn" type="button" id="ahFullPublish">홈페이지 정식 배포 등록</button>
       </div>
       <div class="ah-stage" id="ahStage">
         <div class="ah-framewrap" id="ahFrameWrap"><div class="ah-device" id="ahDevice"><iframe id="ahFrame" title="홈페이지 전체 화면 미리보기"></iframe></div></div>
@@ -115,7 +120,7 @@
     <div class="ah-modal" id="ahVersions" hidden role="dialog" aria-modal="true" aria-labelledby="ahVersionsTitle">
       <div class="ah-modal-card">
         <h2 id="ahVersionsTitle">이전 버전</h2>
-        <p>고른 버전을 작업본에 불러와요. 게시하기 전까지 공개 홈페이지는 그대로예요.</p>
+        <p>고른 버전을 작업본에 불러와요. 정식 배포 등록 전까지 공개 홈페이지는 그대로예요.</p>
         <ul class="ah-versions" id="ahVersionList"></ul>
         <div class="ah-modal-actions"><button class="ah-secondary" type="button" id="ahVersionsClose">닫기</button></div>
       </div>
@@ -124,7 +129,7 @@
     <div class="ah-modal" id="ahProfile" hidden role="dialog" aria-modal="true" aria-labelledby="ahProfileTitle">
       <form class="ah-modal-card" id="ahProfileForm" autocomplete="off">
         <h2 id="ahProfileTitle">학원 정보</h2>
-        <p id="ahProfileNote">게시하기 전에만 바꿀 수 있어요.</p>
+        <p id="ahProfileNote">정식 배포 등록 전에만 바꿀 수 있어요.</p>
         <label class="ah-label" for="ahProfName">학원 이름</label>
         <input class="ah-input" id="ahProfName" maxlength="100" required/>
         <label class="ah-label" for="ahProfRegion">지역 (예: 서울 강남구)</label>
@@ -140,12 +145,13 @@
 
     <div class="ah-modal" id="ahConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="ahConfirmTitle">
       <div class="ah-modal-card">
-        <h2 id="ahConfirmTitle">홈페이지를 게시할까요?</h2>
+        <h2 id="ahConfirmTitle">홈페이지 정식 배포 등록</h2>
         <p id="ahConfirmText"></p>
+        <div class="ah-field" id="ahConfirmAddr" hidden><small>공개될 주소</small><b id="ahConfirmAddrText"></b></div>
         <pre class="ah-overwrite" id="ahConfirmDetail" hidden></pre>
         <div class="ah-modal-actions">
-          <button class="ah-secondary" type="button" id="ahConfirmCancel">취소</button>
-          <button class="ah-primary" type="button" id="ahConfirmOk">게시하기</button>
+          <button class="ah-secondary" type="button" id="ahConfirmCancel">나중에 할게요</button>
+          <button class="ah-primary" type="button" id="ahConfirmOk">홈페이지 정식 배포 등록</button>
         </div>
       </div>
     </div>
@@ -153,7 +159,7 @@
   </section>
 </div>
 <script src="/js/assistant_wait.js?v=20261013-1"></script>
-<script src="/js/assistant_export.js?v=20261013-1"></script>
-<script src="/js/assistant_home.js?v=20261013-5"></script>
+<script src="/js/assistant_export.js?v=20261014-1"></script>
+<script src="/js/assistant_home.js?v=20261014-2"></script>
 </body>
 </html>

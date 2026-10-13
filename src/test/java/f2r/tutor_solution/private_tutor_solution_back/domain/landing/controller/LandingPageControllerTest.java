@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantSamples;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.LandingVideoRenderItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.LandingVideoService;
@@ -42,7 +43,33 @@ class LandingPageControllerTest {
     assertThat(model.asMap())
         .containsEntry("academyShortsVideo", shorts)
         .containsEntry("parentReportVideo", report)
-        .hasSize(2);
+        // 첫 화면 아래 홈페이지 샘플 섹션(대화형 시작 화면과 같은 샘플)
+        .containsEntry("homepageSamples", AcademyAssistantSamples.all())
+        .hasSize(3);
+  }
+
+  @Test
+  @DisplayName("given 랜딩 샘플 섹션 when 모델을 만들면 then 공개해도 되는 샘플 6종(제목·설명·프리셋·요청 문장)만 담긴다")
+  void landing_samples_are_public_safe_presets() {
+    // given
+    when(service.resolveRenderItems()).thenReturn(List.of(
+        LandingVideoRenderItem.hidden(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
+    Model model = new ConcurrentModel();
+
+    // when
+    controller.landing(model);
+
+    // then
+    @SuppressWarnings("unchecked")
+    List<AcademyAssistantSamples.Sample> samples =
+        (List<AcademyAssistantSamples.Sample>) model.getAttribute("homepageSamples");
+    assertThat(samples).hasSize(6);
+    assertThat(samples).allSatisfy(sample -> {
+      assertThat(sample.title()).isNotBlank();
+      assertThat(sample.preset()).isNotBlank();
+      assertThat(sample.seed()).contains("홈페이지");
+    });
   }
 
   @Test

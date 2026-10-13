@@ -44,11 +44,12 @@ class EasyTemplateContractTest {
   }
 
   @Test
-  @DisplayName("4개 화면이 topnav·easy 리소스까지 실제로 렌더된다")
+  @DisplayName("Workspace 7개 화면용 6개 템플릿이 topnav·easy 리소스까지 실제로 렌더된다")
   void templates_render() {
     TemplateEngine engine = engine();
     for (String view : new String[] {
-        "easy/dashboard", "easy/transactions", "easy/students", "easy/payments"}) {
+        "easy/dashboard", "easy/transactions", "easy/students", "easy/payments",
+        "easy/reviews", "easy/accounting"}) {
       String html = engine.process(view, new Context());
       assertThat(html)
           .as(view)
@@ -70,7 +71,8 @@ class EasyTemplateContractTest {
         .contains("id=\"yoyGrid\"")
         .contains("id=\"yearPlGrid\"")
         .contains("id=\"reviewGrid\"")
-        .contains("id=\"btnRebuild\"")
+        .contains("id=\"workspaceStatusGrid\"")
+        .contains("href=\"/easy/reviews\"")
         .contains("id=\"briefList\"")
         .contains("id=\"taxPreview\"")
         .contains("id=\"recentList\"")
@@ -97,18 +99,40 @@ class EasyTemplateContractTest {
   }
 
   @Test
-  @DisplayName("JS는 ADMIN API만 호출하고 삭제는 확인 절차를 거친다")
-  void js_usesAdminApi_andConfirmDelete() throws IOException {
+  @DisplayName("JS는 ADMIN API만 호출하고 Workspace 거래 화면은 물리 삭제를 노출하지 않는다")
+  void js_usesAdminApi_andWorkspaceDoesNotExposeDelete() throws IOException {
     for (String js : new String[] {
         "js/easy_dashboard.js", "js/easy_insight.js", "js/easy_transactions.js",
         "js/easy_students.js", "js/easy_payments.js", "js/easy_import.js"}) {
       assertThat(readStatic(js)).as(js).contains("/api/admin/easy/");
     }
-    assertThat(readStatic("js/easy_transactions.js")).contains("confirm(");
+    assertThat(readStatic("js/easy_transactions.js"))
+        .contains("/api/admin/easy/workspace/transactions")
+        .doesNotContain("method: 'DELETE'", "정말 삭제할까요?");
     assertThat(readStatic("js/easy_payments.js")).contains("confirm(");
     assertThat(readStatic("js/easy_import.js"))
         .contains("/api/admin/easy/imports")
         .contains("confirm(");
+  }
+
+  @Test
+  @DisplayName("검토함의 승인·보류는 businessId가 포함된 Workspace API를 호출한다")
+  void workspaceReviewActions_areBusinessScoped() throws IOException {
+    String js = readStatic("js/easy_reviews.js");
+    assertThat(js)
+        .contains("/api/admin/easy/workspace/reviews/")
+        .contains("/approve?businessId=")
+        .contains("/hold?businessId=")
+        .contains("method: 'POST'");
+  }
+
+  @Test
+  @DisplayName("거래 화면은 수집·가져오기·장부·분개 상태를 구분한다")
+  void workspaceTransactionStatuses_areDistinct() throws IOException {
+    String html = readTemplate("easy/transactions");
+    String js = readStatic("js/easy_transactions.js");
+    assertThat(html).contains("IMPORT STAGED", "IMPORTED TO LEDGER", "JOURNAL POSTED");
+    assertThat(js).contains("collectionStatus", "importStatus", "ledgerStatus", "journalStatus");
   }
 
   @Test
