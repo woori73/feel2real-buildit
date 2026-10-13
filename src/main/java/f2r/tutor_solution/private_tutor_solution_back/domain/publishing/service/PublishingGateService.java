@@ -110,22 +110,35 @@ public class PublishingGateService {
   }
 
   /**
-   * PDF/A-2b 출력 경고: 강제 RGB 변환이 발생하므로 인쇄용으로 부적합.
-   * 아카이빙 전용임을 호출부에 알린다.
+   * PDF/A-2b 출력 검증.
+   *
+   * <p><b>CLI 0.6.0 실측 확인된 제한사항</b>:
+   * <ul>
+   *   <li>XMP 메타데이터는 {@code pdfaid:part=2}로 올바르게 기록됨
+   *   <li>그러나 OutputIntent 서브타입이 {@code /GTS_PDFA1}로 기록됨 (CLI 버그, {@code /GTS_PDFA2}여야 함)
+   *   <li>CMYK 색상이 강제로 RGB로 변환됨 ("no CMYK output intent profile is available yet")
+   * </ul>
+   * 따라서 A-2b는 <b>RGB 아카이빙 전용</b>으로만 사용하고, 인쇄용 CMYK는 X-4를 사용해야 한다.
+   *
+   * @return 항상 passed=true (경고만 기록). 실패 조건이 아님.
    */
   public GateResult checkPdfA2b(Path pdfFile) {
     List<String> failures = new ArrayList<>();
     try {
       String content = new String(Files.readAllBytes(pdfFile), StandardCharsets.ISO_8859_1);
-      if (content.contains("/GTS_PDFA1") && !content.contains("/GTS_PDFX")) {
-        // CLI 버그 의심: a2b 요청 시 서브타입이 PDFA1로 기록됨 (실측)
-        log.warn("PDF/A 서브타입이 GTS_PDFA1로 기록됨 (CLI 버그 의심). veraPDF flavour 2b로 별도 확인 필요.");
+      boolean hasPdfa1Subtype = content.contains("/GTS_PDFA1");
+      boolean hasPart2 = content.contains("pdfaid:part>2");
+      if (hasPdfa1Subtype && hasPart2) {
+        log.warn("PDF/A-2b CLI 제한: XMP part=2이나 OutputIntent가 /GTS_PDFA1로 기록됨. "
+            + "veraPDF 검증 시 flavour 1b로 판정될 수 있음. RGB 아카이빙 용도로만 사용.");
+      }
+      if (content.contains("CMYK colours were converted to RGB")
+          || !content.contains("/N 4")) {
+        log.warn("PDF/A-2b는 CMYK를 RGB로 강제 변환함. 인쇄용으로 사용하지 마세요.");
       }
     } catch (IOException e) {
       return new GateResult(false, List.of("PDF 읽기 실패: " + e.getMessage()));
     }
-    // A-2b는 RGB 아카이빙 전용 — 게이트 자체는 통과시키되 경고 로그
-    log.warn("PDF/A-2b는 강제 RGB 변환되므로 인쇄용으로 사용하지 마세요 (아카이빙 전용).");
     return new GateResult(true, failures);
   }
 
