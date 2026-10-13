@@ -242,6 +242,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalAiServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.RuleBasedEditParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.ProposalRepositoryAccessTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderYearTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsChatControllerRateLimitTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsRateLimiterTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
