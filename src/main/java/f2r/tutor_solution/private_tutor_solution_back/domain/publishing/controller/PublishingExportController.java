@@ -57,15 +57,15 @@ public class PublishingExportController {
     return ResponseEntity.accepted().body(ArtifactResponse.from(artifact));
   }
 
-  /** 산출물 목록. */
+  /** 산출물 목록 → { artifacts: [...] } (갭-G4). */
   @GetMapping("/artifacts")
-  public ResponseEntity<List<ArtifactResponse>> listArtifacts(
+  public ResponseEntity<Map<String, List<ArtifactResponse>>> listArtifacts(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
       @PathVariable Long jobId) {
     jobService.requireOwned(principal, jobId); // 소유자 검증
     List<ArtifactResponse> list = artifactRepository.findByJobIdOrderByIdDesc(jobId)
         .stream().map(ArtifactResponse::from).toList();
-    return ResponseEntity.ok(list);
+    return ResponseEntity.ok(Map.of("artifacts", list));
   }
 
   /** 산출물 다운로드. */
