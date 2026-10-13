@@ -43,8 +43,17 @@ public class PublishingAiService {
   private final CommandAllowlist allowlist;
   private final ObjectMapper objectMapper;
 
-  /** AI 계획 응답. */
-  public record AiPlan(List<PlannedCommand> plan, boolean needsApproval) {
+  /** AI 계획 응답 (Qoder 갭-G3: 차단 시 blocked 형태). */
+  public record AiPlan(List<PlannedCommand> plan, boolean needsApproval,
+      boolean blocked, String reason) {
+
+    public static AiPlan approved(List<PlannedCommand> plan) {
+      return new AiPlan(plan, true, false, null);
+    }
+
+    public static AiPlan blocked(String reason) {
+      return new AiPlan(List.of(), false, true, reason);
+    }
   }
 
   /** 계획된 단일 명령 (사용자 확인용 설명 포함). */
@@ -55,7 +64,9 @@ public class PublishingAiService {
   /**
    * 자연어 수정 요청을 명령 계획으로 변환한다 (실행 안 함).
    *
-   * @return 계획 + needsApproval=true
+   * <p>allowlist 위반 시 403 대신 {@code blocked: true} 응답을 반환한다 (갭-G3).
+   *
+   * @return 계획 + needsApproval=true, 또는 차단 응답
    */
   public AiPlan plan(AuthenticatedPrincipal principal, Long jobId, String message) {
     PublishingJob job = jobService.requireOwned(principal, jobId);
@@ -75,14 +86,19 @@ public class PublishingAiService {
     }
 
     List<PlannedCommand> plan = parsePlan(completion.text());
-    // allowlist 검증 (AI가 허용 외 명령을 계획했으면 거부)
+    // allowlist 검증 (AI가 허용 외 명령을 계획했으면 차단 응답)
     List<PublishingCommand> commands = plan.stream()
         .map(p -> new PublishingCommand(p.command(), p.params()))
         .toList();
-    allowlist.validateAiPlan(commands);
+    try {
+      allowlist.validateAiPlan(commands);
+    } catch (ResponseStatusException e) {
+      log.warn("AI 계획 차단: jobId={}, reason={}", jobId, e.getReason());
+      return AiPlan.blocked(e.getReason());
+    }
 
     log.info("AI 계획 생성: jobId={}, {}건", jobId, plan.size());
-    return new AiPlan(plan, true);
+    return AiPlan.approved(plan);
   }
 
   /**
