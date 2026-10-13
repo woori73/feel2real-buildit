@@ -78,6 +78,13 @@ public class MuseSparkAcademyAiProvider implements AiProvider {
       return AiCompletion.failed(sparkResult.errorMessage());
     }
 
+    if (Thread.currentThread().isInterrupted()) {
+      // 호출부가 취소했다(서버 응답 한도 초과 등). 아무도 기다리지 않는 폴백(Wiki Router → Qwen 체인)을 새로 시작하면
+      // 의미 없는 호출과 비용만 늘므로 건너뛴다.
+      log.info("buildit ai fallback skipped (caller cancelled) museSparkMs={}", sparkMs);
+      return AiCompletion.failed("cancelled");
+    }
+
     // 폴백: 기존 Qwen 체인
     long fallbackStarted = System.nanoTime();
     AiCompletion fallbackResult = wikiRouterProvider.complete(prompt, limits);

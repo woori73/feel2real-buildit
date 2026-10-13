@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAssistantMessageRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantAcademyMode;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantFeatureFlag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ class AcademyBuilderPageControllerTest {
 
   private AcademyBuilderPageController controllerWith(boolean enabled, String loginIds) {
     return new AcademyBuilderPageController(
-        academyService, new AssistantFeatureFlag(enabled, loginIds), assistantMessages);
+        academyService, new AssistantFeatureFlag(enabled, loginIds), new AssistantAcademyMode(assistantMessages));
   }
 
   private static JwtTokenProvider.AuthenticatedPrincipal tutor(String loginId) {
@@ -100,7 +101,7 @@ class AcademyBuilderPageControllerTest {
   @DisplayName("builder — given 기존 방식 학원(대화 기록 없음) when 스위치 켜짐 then 기존 빌더(공개 데이터 보호)")
   void builder_legacyAcademy_staysClassic() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.of(academy()));
-    when(assistantMessages.existsByAcademyId(1L)).thenReturn(false);
+    when(assistantMessages.existsByAcademyIdAndKindIn(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.anyCollection())).thenReturn(false);
     assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
         .isEqualTo("tutor/academy_builder");
   }
@@ -109,7 +110,7 @@ class AcademyBuilderPageControllerTest {
   @DisplayName("builder — given 대화로 만든 학원 when 스위치 켜짐 then 대화형 화면")
   void builder_assistantAcademy_usesAssistant() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.of(academy()));
-    when(assistantMessages.existsByAcademyId(1L)).thenReturn(true);
+    when(assistantMessages.existsByAcademyIdAndKindIn(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.anyCollection())).thenReturn(true);
     assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
         .isEqualTo("tutor/assistant_home");
   }

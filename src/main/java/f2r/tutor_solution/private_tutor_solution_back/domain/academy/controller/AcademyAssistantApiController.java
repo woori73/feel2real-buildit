@@ -49,12 +49,56 @@ public class AcademyAssistantApiController {
     return ResponseEntity.ok(service.samples());
   }
 
+  /**
+   * 화면 모드 조회: {mode: NONE|ASSISTANT|CLASSIC, canAdopt}. 기존 빌더가 'AI로 이어서 만들기' 버튼을 보일지 정한다.
+   * 스위치가 꺼져 있거나 허용 목록에 없는 계정은 403(버튼을 보이지 않는다).
+   */
+  @GetMapping("/mode")
+  public ResponseEntity<Map<String, Object>> mode(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
+    String mode = service.modeOf(principal);
+    return noStore(HttpStatus.OK, Map.of("mode", mode, "canAdopt", "CLASSIC".equals(mode)));
+  }
+
+  /**
+   * 'AI로 이어서 만들기': 기존 방식 학원을 AI 제작 방식으로 명시 전환한다. body: {confirm: true}가 있어야 한다.
+   * 전환 전 공개본을 버전 기록에 보관하고 공개 홈페이지는 바꾸지 않는다.
+   */
+  @PostMapping("/adopt")
+  public ResponseEntity<Map<String, Object>> adopt(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody(required = false) AdoptRequest request) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
+    if (request == null || !Boolean.TRUE.equals(request.confirm())) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of(
+          "code", "CONFIRM_REQUIRED", "message", "AI로 이어서 만들기는 확인이 필요해요."));
+    }
+    try {
+      AcademyAssistantService.AdoptResult r = service.adopt(principal);
+      Map<String, Object> body = new HashMap<>();
+      body.put("adopted", r.adopted());
+      body.put("versionId", r.versionId());
+      body.put("revision", r.revision());
+      return noStore(HttpStatus.OK, body);
+    } catch (IllegalArgumentException e) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
+    }
+  }
+
   /** 화면 복원용: 학원 유무·상태·대화 기록. */
   @GetMapping("/state")
   public ResponseEntity<Map<String, Object>> state(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     if (!featureFlag.isOn(principal)) {
       return featureOff();
+    }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
     }
     StateView v = service.state(principal);
     Map<String, Object> body = new HashMap<>();
@@ -79,6 +123,9 @@ public class AcademyAssistantApiController {
     if (!featureFlag.isOn(principal)) {
       return featureOff();
     }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
+    }
     try {
       TurnResult r = service.turn(
           principal, request.message(), request.academyName(), request.sampleKey(), request.region(),
@@ -95,6 +142,10 @@ public class AcademyAssistantApiController {
         putEdit(body, r.edit());
       }
       return noStore(HttpStatus.OK, body);
+    } catch (AcademyAssistantEditService.AiTimeoutException e) {
+      // 서버 AI 한도 초과: 수정이 아니다. 입력·작업본·공개본·대화 기록은 그대로(쓰기 전에 끊었다).
+      return noStore(HttpStatus.GATEWAY_TIMEOUT, Map.of(
+          "code", "AI_TIMEOUT", "message", e.getMessage(), "limitSeconds", e.getLimitSeconds()));
     } catch (WorkingCopyConflictException e) {
       return conflict(e);
     } catch (IllegalArgumentException e) {
@@ -115,6 +166,9 @@ public class AcademyAssistantApiController {
       @RequestPart("image") MultipartFile image) {
     if (!featureFlag.isOn(principal)) {
       return featureOff();
+    }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
     }
     try {
       HeroMediaSlot parsed = HeroMediaSlot.from(slot);
@@ -151,6 +205,9 @@ public class AcademyAssistantApiController {
     if (!featureFlag.isOn(principal)) {
       return featureOff();
     }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
+    }
     try {
       EditOutcome out = editService.undo(principal, request == null ? null : request.revision());
       Map<String, Object> body = new HashMap<>();
@@ -171,6 +228,17 @@ public class AcademyAssistantApiController {
    */
   private static ResponseEntity<Map<String, Object>> featureOff() {
     return noStore(HttpStatus.FORBIDDEN, Map.of("code", "ASSISTANT_DISABLED", "message", "대화형 홈페이지 제작은 아직 사용할 수 없어요."));
+  }
+
+  private boolean isClassic(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return "CLASSIC".equals(service.modeOf(principal));
+  }
+
+  /** 기존 방식 학원은 대화 API 대상이 아니다. 화면·공개 데이터·작업본은 그대로이며, 전환은 /adopt로만 한다. */
+  private static ResponseEntity<Map<String, Object>> notAssistantAcademy() {
+    return noStore(HttpStatus.CONFLICT, Map.of(
+        "code", "NOT_ASSISTANT_ACADEMY",
+        "message", "이 홈페이지는 기존 방식으로 만들어졌어요. 'AI로 이어서 만들기'를 확인하면 대화로 수정할 수 있어요."));
   }
 
   private static void putEdit(Map<String, Object> body, EditOutcome out) {
@@ -203,6 +271,9 @@ public class AcademyAssistantApiController {
     if (!featureFlag.isOn(principal)) {
       return featureOff();
     }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
+    }
     if (request == null || request.revision() == null) {
       return noStore(HttpStatus.BAD_REQUEST, Map.of("message", "revision이 필요합니다."));
     }
@@ -233,6 +304,8 @@ public class AcademyAssistantApiController {
       Long revision) {}
 
   record UndoRequest(Long revision) {}
+
+  record AdoptRequest(Boolean confirm) {}
 
   record PublishRequest(Long revision, Boolean force) {}
 }

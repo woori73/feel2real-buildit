@@ -222,8 +222,8 @@ class AssistantSwitchAllowListMySqlTest {
   }
 
   @Test
-  @DisplayName("given 허용 계정의 기존 방식 학원, when 대화 수정 턴, then 요청은 처리되지만 공개 데이터는 게시 전까지 그대로다")
-  void allowedLegacyAcademyKeepsPublicData() throws Exception {
+  @DisplayName("given 허용 계정의 기존 방식 학원, when 대화 수정 턴, then 409 NOT_ASSISTANT_ACADEMY이고 공개 데이터는 그대로다")
+  void allowedLegacyAcademyIsNotAssistantAcademy() throws Exception {
     // given
     loginAs("switch_allowed_b");
     createLegacyAcademy();
@@ -233,7 +233,7 @@ class AssistantSwitchAllowListMySqlTest {
     MvcResult r = turn(Map.of("message", "주색을 진한 파란색으로 바꿔줘", "revision", 1));
 
     // then
-    assertThat(r.getResponse().getStatus()).isNotEqualTo(403);
+    assertThat(r.getResponse().getStatus()).isEqualTo(409);
     assertThat(liveJson()).isEqualTo(liveBefore);
   }
 }

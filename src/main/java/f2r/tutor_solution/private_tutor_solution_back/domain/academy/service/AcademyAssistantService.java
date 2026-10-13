@@ -64,6 +64,7 @@ public class AcademyAssistantService {
   private final ObjectMapper objectMapper;
   private final AcademyAssistantEditService editService;
   private final PlatformTransactionManager txManager;
+  private final AssistantAcademyMode assistantMode;
 
   /** 한 번의 대화 결과. needs가 비어 있지 않으면 학원은 아직 만들어지지 않았다. */
   public record TurnResult(
@@ -72,6 +73,9 @@ public class AcademyAssistantService {
       AcademyAssistantEditService.EditOutcome edit) {}
 
   public record PublishResult(boolean firstPublish, long revision) {}
+
+  /** adopted=false면 이미 AI 제작 학원이라 아무것도 바꾸지 않았다. */
+  public record AdoptResult(boolean adopted, Long versionId, Long revision) {}
 
   public record StateView(
       boolean hasAcademy, String status, List<AcademyAssistantMessage> messages,
@@ -135,6 +139,37 @@ public class AcademyAssistantService {
     }
     return new TransactionTemplate(txManager).execute(
         status -> createFirstDraft(principal, text, academyName, sampleKey, region, subject, target));
+  }
+
+  /** 화면 모드: NONE(학원 없음) / ASSISTANT(AI 제작 학원) / CLASSIC(기존 방식 학원, 전환 가능). */
+  public String modeOf(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Optional<AcademyResponse> mine = academyService.getMine(principal);
+    if (mine.isEmpty()) return "NONE";
+    return assistantMode.isAssistantAcademy(mine.get().academyId()) ? "ASSISTANT" : "CLASSIC";
+  }
+
+  /**
+   * 기존 방식 학원을 'AI로 이어서 만들기'로 명시 전환한다. 사용자의 확인(컨트롤러가 요구)이 있어야만 호출된다.
+   *
+   * <p>전환 전 공개 내용을 버전 기록에 남기고(복구 기준점), 작업본을 준비하며, ADOPTED 기록을 남긴다.
+   * 공개 홈페이지는 바꾸지 않는다 — 이후 수정도 게시하기 전까지 작업본에만 닿는다. 이미 AI 제작 학원이면 변경 없다.
+   */
+  @Transactional
+  public AdoptResult adopt(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (academyService.getMine(principal).isEmpty()) {
+      throw new IllegalArgumentException("전환할 홈페이지가 없습니다. 먼저 홈페이지를 만들어 주세요.");
+    }
+    var academy = academyService.lockMyAcademyForUpdate(principal);
+    Long academyId = academy.getAcademyId();
+    if (assistantMode.isAssistantAcademy(academyId)) {
+      return new AdoptResult(false, null, workingCopyService.open(principal).revision());
+    }
+    Long versionId = workingCopyService.snapshotLive(principal, "AI로 이어서 만들기 전 공개본");
+    State state = workingCopyService.open(principal);
+    remember(academyId, ROLE_ASSISTANT, AssistantAcademyMode.KIND_ADOPTED,
+        "AI로 이어서 만들기를 시작했어요. 지금 공개된 홈페이지는 버전 기록에 보관했고, 앞으로의 수정은 게시하기 전까지 공개에 반영되지 않아요. 기존 빌더는 화면 위쪽 '기존 빌더' 링크로 언제든 다시 열 수 있어요.",
+        toJson(Map.of("versionId", versionId, "revision", state.revision())));
+    return new AdoptResult(true, versionId, state.revision());
   }
 
   // ───────────── (아래: 최초 생성 이후 공개 API) ─────────────

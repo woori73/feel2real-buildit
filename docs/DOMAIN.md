@@ -1666,7 +1666,9 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 ### academy_assistant_message ✅ BuildIt 통합 화면 대화 기록 (V1061)
 
-학원당 AI 대화 한 줄기. **academy_assistant_message**: `message_id` PK, `academy_id` FK(ON DELETE CASCADE), `role`(USER/ASSISTANT), `kind`(TEXT/RESULT/QUESTION), `content`, `payload_json`(결과 카드의 revision·프리셋·안내), `created_at`. 인덱스 `(academy_id, message_id)`. 신규 테이블만 추가한다.
+학원당 AI 대화 한 줄기. **academy_assistant_message**: `message_id` PK, `academy_id` FK(ON DELETE CASCADE), `role`(USER/ASSISTANT), `kind`(TEXT/RESULT/QUESTION/EDIT/UNDO/PUBLISHED/ADOPTED), `content`, `payload_json`(결과 카드의 revision·프리셋·안내), `created_at`. 인덱스 `(academy_id, message_id)`. 신규 테이블만 추가한다.
+
+**AI 제작 학원 판정(스키마 변경 없음)**: `kind`가 `RESULT`(대화로 최초 생성) 또는 `ADOPTED`(기존 학원을 'AI로 이어서 만들기'로 명시 전환)인 기록이 있는 학원만 AI 제작 학원이다(`AssistantAcademyMode`). `kind`는 VARCHAR(20)이라 `ADOPTED` 추가에 마이그레이션이 필요 없다. 그 밖의 기록(TEXT/EDIT/UNDO/PUBLISHED)만 있는 학원은 기존 방식 학원이며 화면 모드가 바뀌지 않는다.
 
 **디자인 자산 연동(스키마 변경 없음)**: `builderDraft`에 `motionStyle`(`none`/`fade`/`slide`, 미설정=기존 reveal 기본값)과 `designAsset`(마지막으로 적용한 레시피 id) 키를 추가했다. 값 검증은 `AcademyService.validateBuilderDraft`. 자산 목록의 원본은 `src/main/resources/design-assets/catalog.json`(BuildIt2 `3582696` 기준, DB 없음)이다.
 

@@ -8,7 +8,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261013-1"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261013-2"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -69,7 +69,7 @@
     <div class="ah-stage" id="ahStage">
       <div class="ah-framewrap" id="ahFrameWrap"><div class="ah-device" id="ahDevice"><iframe id="ahFrame" title="홈페이지 미리보기"></iframe></div></div>
       <div class="ah-busy" id="ahBusy" hidden role="status" aria-live="polite">
-        <div class="ah-busy-card"><ul class="ah-steps" id="ahBusySteps"></ul></div>
+        <div class="ah-busy-card"><ul class="ah-steps" id="ahBusySteps"></ul><p class="ah-busy-note" id="ahBusyNote"></p></div>
       </div>
     </div>
 
@@ -114,6 +114,7 @@
     <div class="ah-toast" id="ahToast" role="status" hidden></div>
   </section>
 </div>
-<script src="/js/assistant_home.js?v=20261013-2"></script>
+<script src="/js/assistant_wait.js?v=20261013-1"></script>
+<script src="/js/assistant_home.js?v=20261013-3"></script>
 </body>
 </html>

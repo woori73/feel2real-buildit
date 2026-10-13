@@ -133,12 +133,12 @@ const PASS = 'admin1234';
   ok('기능이 켜져 있어도 기존 방식 학원은 기존 빌더로 열림(대화형 시작 화면 없음)', !/id="ahStartForm"/.test(html) && !/id="ahWork"/.test(html), html.slice(0, 120));
   const htmlLive = await (await ctx.request.fetch(BASE + '/builder?classic=1')).text();
   ok('?classic=1이면 대화로 만든 학원도 기존 빌더', !/id="ahWork"/.test(htmlLive));
-  const lTurn = await api(legacy, 'POST', '/api/tutor/academy/assistant/turn', { message: '주색을 진한 빨간색으로 바꿔줘', revision: (await state(legacy)).revision });
-  ok('기존 학원에 API로 수정을 시켜도 공개 데이터는 그대로', lslug && (await lpub()) === lBefore, lTurn.s);
-
-  // 참고(통과/실패에 넣지 않음): 대화 API를 직접 호출하면 기존 학원에도 대화 기록이 생기고, 그 뒤 /builder가 대화형 화면으로 바뀐다.
+  const lTurn = await api(legacy, 'POST', '/api/tutor/academy/assistant/turn', { message: '주색을 진한 빨간색으로 바꿔줘', revision: (await state(legacy)).revision || 1 });
+  ok('기존 학원에 대화 API를 직접 호출하면 409 NOT_ASSISTANT_ACADEMY', lTurn.s === 409 && lTurn.j && lTurn.j.code === 'NOT_ASSISTANT_ACADEMY', lTurn);
+  ok('호출 뒤에도 공개 데이터는 그대로', lslug && (await lpub()) === lBefore);
   const htmlAfter = await (await legacy.request.fetch(BASE + '/builder')).text();
-  console.log('  ℹ 참고: 기존 학원에 대화 API를 직접 호출한 뒤 /builder 화면 = ' + (/id="ahWork"|id="ahStartForm"/.test(htmlAfter) ? '대화형으로 바뀜' : '기존 빌더 유지'));
+  ok('호출 뒤에도 /builder는 기존 빌더(화면 모드 불변)', !/id="ahWork"|id="ahStartForm"/.test(htmlAfter));
+
   ok('페이지 오류 없음', errors.length === 0, errors);
   console.log(`\n검증 항목 ${rows.filter(Boolean).length}/${rows.length} 통과`);
   await b.close();

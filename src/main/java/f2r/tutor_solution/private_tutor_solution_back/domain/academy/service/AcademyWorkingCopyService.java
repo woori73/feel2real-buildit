@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
@@ -132,8 +133,13 @@ public class AcademyWorkingCopyService {
   }
 
   /**
-   * 기존 버전 기록의 내용을 작업본에 불러온다(공개본은 변경하지 않는다).
-   * 버전의 builderDraft 키를 작업본에 덮어쓰고, 버전에 intro가 있으면 intro도 되돌린다.
+   * 기존 버전 기록의 내용을 작업본에 **그대로** 불러온다(공개본은 변경하지 않는다).
+   *
+   * <p>선택한 버전과 복원 결과가 일치하도록, builderDraft는 버전에 있는 키만 남기고(이후 수정으로 새로 생긴 키는 제거),
+   * 버전의 페이지 설정(섹션 표시·순서, 외부 링크, 사업자 정보 등)에 해당 항목이 기록돼 있으면 그 값으로 되돌린다.
+   * 버전이 기록하지 않은 항목(예: 페이지 설정이 비어 있는 옛 AI 생성 버전)은 현재 작업본 값을 유지한다.
+   * 시각 편집기 게시 상태(renderMode)는 항상 공개본을 따르고, 예약한 사진은 버전에 없으므로 건드리지 않는다.
+   * 값은 작업본 저장과 같은 정제·검증을 거친다.
    */
   @Transactional
   public State restoreFromVersion(
@@ -143,12 +149,25 @@ public class AcademyWorkingCopyService {
     requireRevision(wc, expectedRevision);
     AcademyPageVersion version = versionService.getForRestore(principal, versionId);
 
-    Map<String, String> overlay = parseDraftMap(version.getBuilderDraftJson());
-    overlay.remove(RENDER_MODE_KEY);
+    Map<String, String> exactDraft = parseDraftMap(version.getBuilderDraftJson());
+    exactDraft.remove(RENDER_MODE_KEY);
     AcademyPageSettings current = parseSettings(wc.getPageSettingsJson());
-    AcademyPageSettings next = overlay.isEmpty()
-        ? current
-        : academyService.mergePageSettingsForWrite(current, builderDraftPatch(overlay));
+    AcademyPageSettings recorded = parseSettings(version.getPageSettingsJson());
+    JsonNode recordedKeys = readTreeOrNull(version.getPageSettingsJson());
+
+    // 버전이 기록한 항목은 버전 값(비어 있었으면 비움)으로, 기록하지 않은 항목은 현재 값으로 시작한다.
+    AcademyPageSettings base = new AcademyPageSettings(
+        pick(recordedKeys, "blogUrl", recorded == null ? null : recorded.blogUrl(), current == null ? null : current.blogUrl()),
+        pick(recordedKeys, "storeUrl", recorded == null ? null : recorded.storeUrl(), current == null ? null : current.storeUrl()),
+        pick(recordedKeys, "naverMapUrl", recorded == null ? null : recorded.naverMapUrl(), current == null ? null : current.naverMapUrl()),
+        pick(recordedKeys, "heroYoutubeUrl", recorded == null ? null : recorded.heroYoutubeUrl(), current == null ? null : current.heroYoutubeUrl()),
+        pick(recordedKeys, "sectionVisibility", recorded == null ? null : recorded.sectionVisibility(), current == null ? null : current.sectionVisibility()),
+        pick(recordedKeys, "sectionOrder", recorded == null ? null : recorded.sectionOrder(), current == null ? null : current.sectionOrder()),
+        null, // builderDraft는 아래에서 버전 값 그대로 채운다(현재 작업본의 키를 이어받지 않는다)
+        pick(recordedKeys, "businessInfo", recorded == null ? null : recorded.businessInfo(), current == null ? null : current.businessInfo()));
+    AcademyPageSettings next = exactDraft.isEmpty()
+        ? academyService.mergePageSettingsForWrite(base, new AcademyPageSettingsUpdateRequest(null, null, null, null, null, null, null, null))
+        : academyService.mergePageSettingsForWrite(base, builderDraftPatch(exactDraft));
     String nextIntro = version.getIntro() != null
         ? academyService.normalizeIntroForWrite(version.getIntro())
         : wc.getIntro();
@@ -157,6 +176,41 @@ public class AcademyWorkingCopyService {
     wc.replaceContent(nextIntro, toJson(next), principal.loginId());
     flush(wc);
     return state(academy, wc);
+  }
+
+  /** 버전이 해당 키를 기록했으면 버전 값(null 포함), 아니면 현재 값. */
+  private static <T> T pick(JsonNode recordedKeys, String key, T recordedValue, T currentValue) {
+    return recordedKeys != null && recordedKeys.has(key) ? recordedValue : currentValue;
+  }
+
+  private JsonNode readTreeOrNull(String json) {
+    if (json == null || json.isBlank() || "null".equals(json)) {
+      return null;
+    }
+    try {
+      JsonNode tree = objectMapper.readTree(json);
+      return tree != null && tree.isObject() ? tree : null;
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+  }
+
+  /**
+   * 현재 공개 내용을 버전 기록에 남긴다(공개본·작업본은 바꾸지 않는다). 'AI로 이어서 만들기' 전환 전 보존용이며,
+   * 남긴 버전은 {@link #restoreFromVersion}으로 작업본에 불러와 게시하면 공개본을 되돌릴 수 있다.
+   *
+   * @return 버전 ID
+   */
+  @Transactional
+  public Long snapshotLive(JwtTokenProvider.AuthenticatedPrincipal principal, String note) {
+    Academy academy = ownedAcademy(principal);
+    AcademyPageSettings live = academy.getPageSettings();
+    return versionService.snapshot(
+        principal,
+        live != null && live.builderDraft() != null ? live.builderDraft() : Map.of(),
+        pageSettingsMap(live),
+        academy.getIntro(),
+        note);
   }
 
   /**

@@ -87,6 +87,8 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-device{position:absolute;top:0;left:0;transform-origin:0 0;background:#fff}
 .ah-work .ah-stage iframe{display:block;width:100%;height:100%;border:0;border-radius:0;box-shadow:none;background:#fff}
 .ah-busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,247,251,.72);backdrop-filter:blur(2px);z-index:5}
+.ah-busy-note{margin-top:8px;max-width:280px;font-size:13px;color:var(--ah-muted);line-height:1.5}
+.ah-busy-note:empty{display:none}
 .ah-busy-card{background:#fff;border:1px solid var(--ah-line);border-radius:16px;padding:16px 20px;box-shadow:0 6px 24px rgba(0,0,0,.14);text-align:left}
 .ah-dock{flex:none;background:var(--ah-bg);border-top:1px solid var(--ah-line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;z-index:6}
 .ah-strip{background:#fff;border:1px solid var(--ah-line);border-radius:14px;padding:8px 12px;font-size:13px;max-height:24vh;overflow:auto}

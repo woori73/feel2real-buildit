@@ -41,13 +41,17 @@
     if (text != null) e.textContent = text;
     return e;
   }
-  function api(method, path, body) {
+  function api(method, path, body, opts) {
     var isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+    var ctl = (opts && opts.timeoutMs && typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, opts.timeoutMs) : null;
     return fetch(API + path, {
       method: method, credentials: 'same-origin',
       headers: body && !isForm ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? (isForm ? body : JSON.stringify(body)) : undefined
+      body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
+      signal: ctl ? ctl.signal : undefined
     }).then(function (r) {
+      if (timer) clearTimeout(timer);
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (!r.ok) {
           var err = new Error(j.message || '요청을 처리하지 못했어요.');
@@ -55,6 +59,10 @@
         }
         return j;
       });
+    }, function (e) {
+      if (timer) clearTimeout(timer);
+      if (e && e.name === 'AbortError') { var te = new Error(AssistantWait.timeoutMessage()); te.timeout = true; throw te; }
+      throw e;
     });
   }
   function toast(msg) {
@@ -251,9 +259,14 @@
     $('ahWorkInput').value = '';
     var busyBox = $('ahBusy'); busyBox.hidden = false;
     var p = progress($('ahBusySteps'), EDIT_STEPS, 1600);
+    // 오래 걸리면 경과 시간과 안내를 보여 준다. 한도를 넘기면 기다리기를 멈추고 서버 작업본 상태를 다시 읽는다.
+    var note = $('ahBusyNote'); var t0 = Date.now(); note.textContent = '';
+    var noteTimer = setInterval(function () { note.textContent = AssistantWait.noticeFor(Date.now() - t0); }, 1000);
+    var revisionBefore = ctx.revision;
+    var stopWait = function () { p.stop(); clearInterval(noteTimer); note.textContent = ''; busyBox.hidden = true; };
     history.push({ role: 'USER', kind: 'TEXT', content: text });
-    api('POST', '/turn', { message: text, revision: ctx.revision }).then(function (r) {
-      p.stop(); busyBox.hidden = true;
+    api('POST', '/turn', { message: text, revision: ctx.revision }, { timeoutMs: AssistantWait.timeoutMs(window.__AH_TURN_TIMEOUT_MS__) }).then(function (r) {
+      stopWait();
       if (r.revision != null) ctx.revision = r.revision;
       if (r.undoDepth != null) ctx.undoDepth = r.undoDepth;
       history.push({ role: 'ASSISTANT', kind: r.edited ? 'EDIT' : 'TEXT', content: r.reply, payload: { changes: r.changes } });
@@ -267,7 +280,21 @@
       }
       renderStatus();
     }).catch(function (e) {
-      p.stop(); busyBox.hidden = true; history.pop();
+      stopWait(); history.pop();
+      if (e.timeout) {
+        $('ahWorkInput').value = text; // 입력 보존: 다시 보낼 수 있다
+        // 서버가 늦게라도 끝냈을 수 있으니 서버 작업본을 정본으로 다시 읽는다.
+        return refresh().then(function () {
+          if (ctx.revision !== revisionBefore) showStrip(AssistantWait.lateAppliedMessage(), false, []);
+          else showStrip(AssistantWait.timeoutMessage(), true, []);
+        }, function () { showStrip(AssistantWait.timeoutMessage(), true, []); });
+      }
+      if (e.code === 'AI_TIMEOUT') {
+        // 서버 AI 한도 초과: 수정이 아니다. 오류로 표시하고 입력을 돌려놓아 다시 보낼 수 있게 한다(작업본·공개본 그대로).
+        $('ahWorkInput').value = text;
+        showStrip(e.message, true, []);
+        return;
+      }
       if (e.status === 409 && e.code === 'REVISION_CONFLICT') {
         showStrip(e.message + ' 최신 작업본을 다시 불러왔어요. 같은 요청을 다시 보내 주세요.', true, []);
         $('ahWorkInput').value = text;

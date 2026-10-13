@@ -57,6 +57,16 @@ jobs:
         with:
           node-version: '20'
 
+      - name: JS unit tests (AI builder allowlist)
+        # src/test/js 전체가 아니라 현재 통과하는 AI 제작 관련 파일만 실행한다.
+        # 나머지 35건 실패(하네스 결함 13 + 낡은 계약 22)는 docs/BUILDIT_JS_TEST_BASELINE_20261013.md에 기록했다.
+        run: >-
+          node --test
+          src/test/js/assistant_wait.test.js
+          src/test/js/academy_adopt.test.js
+          src/test/js/assistant_home_contract.test.js
+          src/test/js/academy_public_hero_cycle.test.js
+
       - name: Build BuildIt Wiki frontend (baked into bootJar)
         # deploy-ec2.yml이 하던 wiki 빌드를 여기로 이동한다. artifact JAR에 wiki 정적
         # 리소스가 포함되어야 /problem-generator/wiki/index.html이 정상 서빙된다
@@ -95,6 +105,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantRuleInterpreterTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantAssetCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantAiDeadlineTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAdminAuditServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AdminDraftMergerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AdminConfirmKeyTest"
@@ -354,6 +365,9 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchAllowListMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAcademyModeMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAiTimeoutMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantVersionRestoreMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminBuilderAccessMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminAcademyManagementMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminAcademyAuditTransactionMySqlTest"

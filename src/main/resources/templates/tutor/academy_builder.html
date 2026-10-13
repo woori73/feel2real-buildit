@@ -53,6 +53,23 @@
          ├─ [Canvas]     flex-1 scrollable
          └─ [RightPanel] 280px fixed, slides in on select
     ══════════════════════════════════════════ */
+    /* 'AI로 이어서 만들기'(기존 빌더 → AI 제작 명시 전환): 상단 바 아래 얇은 안내 줄. 좁은 화면에서도 보이고 눌리도록 상단 바에 끼우지 않는다. */
+    .adopt-bar{position:fixed;top:48px;left:0;right:0;height:44px;z-index:210;display:flex;align-items:center;gap:10px;padding:0 12px;background:#eff6ff;border-bottom:1px solid #bfdbfe;color:#1e3a8a;font-size:.8rem}
+    .adopt-note{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .adopt-btn{flex:none;white-space:nowrap;padding:8px 14px;border-radius:8px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff;font-weight:700;font-size:.82rem;line-height:1.2;cursor:pointer}
+    .adopt-btn:hover{background:#1e40af}
+    body.has-adopt-bar .builder-body{top:92px}
+    .adopt-modal{position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+    .adopt-modal[hidden]{display:none}
+    .adopt-card{background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+    .adopt-card h2{font-size:1.1rem;font-weight:700;margin-bottom:10px}
+    .adopt-points{list-style:disc;padding-left:18px;font-size:.88rem;line-height:1.6;color:#334155}
+    .adopt-check{display:block;margin:12px 0 4px;font-size:.88rem;cursor:pointer}
+    .adopt-msg{min-height:1.2em;font-size:.82rem;color:#b45309}
+    .adopt-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+    .adopt-cancel,.adopt-ok{padding:8px 14px;border-radius:8px;font-weight:600;font-size:.85rem;border:1px solid #cbd5e1;background:#fff;cursor:pointer}
+    .adopt-ok{background:#2563eb;border-color:#2563eb;color:#fff}
+    .adopt-ok:disabled{opacity:.45;cursor:not-allowed}
     .builder-topbar{
       position:fixed;top:0;left:0;right:0;height:48px;z-index:200;
       background:linear-gradient(90deg,#081a6e 0%,#0C238A 60%,#1a3ab0 100%);
@@ -2084,6 +2101,7 @@ function setView(mode, btn){
 <script src="/js/academy_builder_ai_guide.js?v=20260908-1"></script>
 <script src="/js/academy_brand.js?v=20261013-1"></script>
 <script src="/js/academy_builder.js?v=20261012-2"></script>
+<script src="/js/academy_adopt.js?v=20261013-1"></script>
 <!-- P1 AI 채팅: 전후 비교용 jsdiff(vendored, BSD-3-Clause) → 채팅 패널 순서로 로드한다.
      패널은 academy_builder.js 내부를 호출하지 않는다(IIFE 라 접근 불가) — 전역은 showToast 뿐. -->
 <script src="/js/vendor/diff.min.js?v=5.2.0"></script>
