@@ -60,18 +60,20 @@ const { launch, newCtx, BASE } = require('../visual-editor/lib');
     ['주색을 진한 초록색으로 바꿔줘', async (p) => /^#/.test(p.builderDraft.colorPrimary || ''), '색상'],
     ['수업 영상 섹션은 숨겨주고 상담 신청 섹션을 맨 위로 올려줘', async (p) => (p.sectionVisibility || {})['sec-videos'] === false && (p.sectionOrder || [])[1] === 'sec-cta', '섹션 숨김+순서(복합)'],
     ['학원 소개 제목을 아이의 속도에 맞춰 함께 걷는다는 느낌의 따뜻한 문장으로 바꿔줘', async (p) => !!p.builderDraft.introHeading, '문구 수정'],
-    // 최초 생성이 이미 같은 효과를 골랐을 수 있으니 지금과 다른 효과를 요청한다("이미 적용" 응답과 구분).
-    [d0.motionStyle === 'slide' ? '스크롤할 때 자연스럽게 서서히 등장하게 해줘' : '카드들이 스크롤할 때 아래에서 차례대로 올라오게 해줘',
-      async (p) => !!p.builderDraft.motionStyle && p.builderDraft.motionStyle !== d0.motionStyle, '등장 효과(자산)'],
+    // 앞 단계에서 AI가 이미 같은 효과를 골랐을 수 있으니, 그 시점의 값과 다른 효과를 요청한다("이미 적용" 응답과 구분).
+    [async () => ((await wcDraft()).builderDraft.motionStyle === 'slide' ? '스크롤할 때 자연스럽게 서서히 등장하게 해줘' : '카드들이 스크롤할 때 아래에서 차례대로 올라오게 해줘'),
+      async (p, prev) => !!p.builderDraft.motionStyle && p.builderDraft.motionStyle !== prev.builderDraft.motionStyle, '등장 효과(자산)'],
     ['학교처럼 신뢰감 있는 학교형으로 바꿔줘', async (p) => !!p.builderDraft.designAsset, '디자인 자산 선택']];
   let depth = 0; let editedCount = 0; const stepMs = [];
-  for (const [text, check, label] of steps) {
+  for (const [rawText, check, label] of steps) {
+    const text = typeof rawText === 'function' ? await rawText() : rawText;
+    const prev = await wcDraft();
     const ms = await say(text); stepMs.push(ms); depth++;
     const t = turns[turns.length - 1] || {};
     const p = await wcDraft();
     const edited = t.edited === true;
     if (edited) editedCount++;
-    ok(`수정 ${depth}: ${label} — 엔진=${t.engine} 서버AI=${t.aiMs}ms 화면=${ms}ms 변경=${t.changes}건`, edited && (await check(p)), { t, builderDraft: p.builderDraft });
+    ok(`수정 ${depth}: ${label} — 엔진=${t.engine} 서버AI=${t.aiMs}ms 화면=${ms}ms 변경=${t.changes}건`, edited && (await check(p, prev)), { t, builderDraft: p.builderDraft });
     ok('  → 변경 요약 표시', (await page.locator('#ahChanges li').count()) >= 1);
     ok('  → 공개 홈페이지 그대로', await pubSame());
     if (depth === 1) await wait(2500);
