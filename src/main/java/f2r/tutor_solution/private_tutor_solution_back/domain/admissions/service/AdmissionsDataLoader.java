@@ -179,45 +179,55 @@ public class AdmissionsDataLoader {
         JsonNode root = objectMapper.readTree(knowledgeBaseJson);
         int count = 0;
 
-        // question_types에서 지식 항목 생성
-        JsonNode questionTypes = root.path("question_types");
-        if (questionTypes.isObject()) {
-            var fields = questionTypes.fields();
-            while (fields.hasNext()) {
-                var entry = fields.next();
-                String qKey = entry.getKey();
-                JsonNode qNode = entry.getValue();
-                String dedupKey = "kb_" + qKey;
-                if (knowledgeRepository.findByDedupKey(dedupKey).isPresent()) continue;
+        // question_types에서 지식 항목 생성 (객체 {key: {...}} 또는 배열 [{id: "Q1", ...}] 모두 지원)
+        for (Map.Entry<String, JsonNode> entry : questionTypeEntries(root.path("question_types"))) {
+            String qKey = entry.getKey();
+            JsonNode qNode = entry.getValue();
+            String dedupKey = "kb_" + qKey;
+            if (knowledgeRepository.findByDedupKey(dedupKey).isPresent()) continue;
 
-                StringBuilder content = new StringBuilder();
-                content.append("질문 유형: ").append(qKey).append("\n");
-                if (qNode.has("description")) {
-                    content.append(qNode.path("description").asText()).append("\n");
-                }
-                if (qNode.has("answer_guide")) {
-                    content.append("답변 가이드: ").append(qNode.path("answer_guide").asText());
-                }
-
-                AdmissionsKnowledgeItem item = AdmissionsKnowledgeItem.builder()
-                        .academicYear(2027)
-                        .yearConfirmed(true)
-                        .title("상담 지식: " + qKey)
-                        .content(content.toString())
-                        .category("상담지식")
-                        .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
-                        .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
-                        .dedupKey(dedupKey)
-                        .verificationNote("Qoder knowledge_base.json에서 적재. NORMALIZED 상태 — 운영자 승인 필요.")
-                        .createdBy("admissions-loader")
-                        .build();
-                knowledgeRepository.save(item);
-                count++;
+            StringBuilder content = new StringBuilder();
+            content.append("질문 유형: ").append(qKey).append("\n");
+            for (String field : new String[]{"question", "description"}) {
+                if (qNode.hasNonNull(field)) content.append(qNode.path(field).asText()).append("\n");
             }
+            for (String field : new String[]{"answer_basis", "answer_guide"}) {
+                if (qNode.hasNonNull(field)) content.append("답변 근거: ").append(qNode.path(field).asText()).append("\n");
+            }
+
+            AdmissionsKnowledgeItem item = AdmissionsKnowledgeItem.builder()
+                    .academicYear(2027)
+                    .yearConfirmed(true)
+                    .title("상담 지식: " + qKey)
+                    .content(content.toString().trim())
+                    .category("상담지식")
+                    .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                    .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
+                    .dedupKey(dedupKey)
+                    .verificationNote("Qoder knowledge_base.json에서 적재. NORMALIZED 상태 — 운영자 승인 필요.")
+                    .createdBy("admissions-loader")
+                    .build();
+            knowledgeRepository.save(item);
+            count++;
         }
 
         log.info("admissions knowledge base loaded: {} items (DRAFT)", count);
         return count;
+    }
+
+    /** question_types를 (키, 노드) 목록으로 평탄화한다. 객체/배열 외 형태나 id 없는 배열 원소는 건너뛴다. */
+    static java.util.List<Map.Entry<String, JsonNode>> questionTypeEntries(JsonNode questionTypes) {
+        java.util.List<Map.Entry<String, JsonNode>> out = new java.util.ArrayList<>();
+        if (questionTypes == null) return out;
+        if (questionTypes.isObject()) {
+            questionTypes.fields().forEachRemaining(e -> out.add(Map.entry(e.getKey(), e.getValue())));
+        } else if (questionTypes.isArray()) {
+            for (JsonNode n : questionTypes) {
+                String id = n.path("id").asText("");
+                if (!id.isBlank()) out.add(Map.entry(id, n));
+            }
+        }
+        return out;
     }
 
     private static String extractUnivCode(String docKey) {
