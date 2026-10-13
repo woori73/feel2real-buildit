@@ -48,6 +48,18 @@ public class AdminNewStartPageController {
     return "admin/newstart_thanks_exceptions";
   }
 
+  /** 감사회원 명단 관리 화면 — 데이터는 /api/admin/newstart/thanks-roster (ROLE_ADMIN). */
+  @GetMapping("/admin/newstart/thanks-roster")
+  public String adminThanksRoster(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      HttpServletResponse response) {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "운영자만 접근할 수 있습니다.");
+    }
+    response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+    return "admin/newstart_thanks_roster";
+  }
+
   /**
    * 운영자 상담함 화면(§3) — ROLE_ADMIN 전용 진입점. 데이터는 /api/admin/newstart/consultations (ROLE_ADMIN).
    * 개인 채무·상담 본문이 담기는 화면이라 Cache-Control로 캐시를 완전히 차단하고, 1차 SecurityConfig
