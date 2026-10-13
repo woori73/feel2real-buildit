@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiChatDtos;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiCreateDtos.CreateDraft;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyPageSettingsUpdateRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyRegionRequest;
@@ -56,6 +57,11 @@ public class AcademyAssistantService {
   private static final Set<String> NON_DRAFT_KEYS = Set.of(
       "academyName", "targetGroups", "ctaEnabled", "subjectIds", "regionLocation", "intro");
 
+  /** 한 문장 시작(instant)에서 사용자가 말하지 않은 값을 채우는 임시 값. 초안에서만 고칠 수 있다. */
+  static final String PROVISIONAL_REGION = "지역 미정";
+  static final Set<TargetGroup> PROVISIONAL_TARGETS =
+      Set.copyOf(EnumSet.of(TargetGroup.ELEMENTARY, TargetGroup.MIDDLE, TargetGroup.HIGH));
+
   private final AcademyAiCreateService createService;
   private final AcademyService academyService;
   private final AcademyWorkingCopyService workingCopyService;
@@ -65,6 +71,7 @@ public class AcademyAssistantService {
   private final AcademyAssistantEditService editService;
   private final PlatformTransactionManager txManager;
   private final AssistantAcademyMode assistantMode;
+  private final AcademyPageVersionService versionService;
 
   /** 한 번의 대화 결과. needs가 비어 있지 않으면 학원은 아직 만들어지지 않았다. */
   public record TurnResult(
@@ -116,11 +123,22 @@ public class AcademyAssistantService {
     return turn(principal, message, academyName, sampleKey, region, subject, target, null);
   }
 
-  /** @param revision 수정 턴에서 클라이언트가 마지막으로 본 작업본 revision(동시 수정 감지). */
   public TurnResult turn(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       String message, String academyName, String sampleKey, String region,
       String subject, String target, Long revision) {
+    return turn(principal, message, academyName, sampleKey, region, subject, target, revision, false);
+  }
+
+  /**
+   * @param revision 수정 턴에서 클라이언트가 마지막으로 본 작업본 revision(동시 수정 감지).
+   * @param instant true면 최초 생성에서 학원 이름·지역·대상이 없어도 임시 값으로 바로 만든다(Lovable식 한 문장 시작).
+   *     임시 값은 초안일 때만 {@code /profile}로 고칠 수 있고, 과목은 문장에서 읽히지 않으면 여전히 되묻는다.
+   */
+  public TurnResult turn(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String message, String academyName, String sampleKey, String region,
+      String subject, String target, Long revision, boolean instant) {
     String text = message == null ? "" : message.trim();
     if (text.length() > MAX_MESSAGE_LENGTH) {
       throw new IllegalArgumentException("메시지는 " + MAX_MESSAGE_LENGTH + "자 이하로 입력해 주세요.");
@@ -138,7 +156,35 @@ public class AcademyAssistantService {
       return new TurnResult(out.reply(), List.of(), false, mine.get().academyId(), out.revision(), null, List.of(), out);
     }
     return new TransactionTemplate(txManager).execute(
-        status -> createFirstDraft(principal, text, academyName, sampleKey, region, subject, target));
+        status -> createFirstDraft(principal, text, academyName, sampleKey, region, subject, target, instant));
+  }
+
+  /** 버전 기록 목록(게시 전 공개본·AI 생성 이력). */
+  public List<AcademyAiChatDtos.VersionInfo> versions(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return versionService.list(principal);
+  }
+
+  /**
+   * 버전 기록을 비공개 작업본에 불러온다(공개본 불변). 이전 수정의 되돌리기 정보는 더는 맞지 않으므로 대화 기록에
+   * RESTORED를 남겨 되돌리기 스택을 비운다.
+   */
+  @Transactional
+  public State restoreVersion(
+      JwtTokenProvider.AuthenticatedPrincipal principal, long expectedRevision, Long versionId) {
+    State state = workingCopyService.restoreFromVersion(principal, expectedRevision, versionId);
+    academyService.getMine(principal).ifPresent(a -> remember(
+        a.academyId(), ROLE_ASSISTANT, AcademyAssistantEditService.KIND_RESTORED,
+        "이전 버전을 작업본에 불러왔어요. 게시하기 전까지 공개 홈페이지는 그대로예요.",
+        toJson(Map.of("versionId", versionId, "revisionAfter", state.revision()))));
+    return state;
+  }
+
+  /** 초안 학원의 이름·지역·대상 수정(임시 값을 실제 값으로). 게시된 학원은 거절한다. */
+  @Transactional
+  public void updateProfile(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String name, String region, Set<TargetGroup> targets) {
+    academyService.updateDraftProfile(principal, name, region, null, targets);
   }
 
   /** 화면 모드: NONE(학원 없음) / ASSISTANT(AI 제작 학원) / CLASSIC(기존 방식 학원, 전환 가능). */
@@ -196,10 +242,15 @@ public class AcademyAssistantService {
   private TurnResult createFirstDraft(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       String text, String academyName, String sampleKey, String region,
-      String subject, String target) {
+      String subject, String target, boolean instant) {
     Sample sample = AcademyAssistantSamples.find(sampleKey).orElse(null);
     String name = academyName == null ? "" : academyName.trim();
+    boolean provisionalName = false;
 
+    if (name.isEmpty() && instant) {
+      name = provisionalName(inferSubjectName(text, subjectRepository.findAll().stream().map(Subject::getNameKo).toList()));
+      provisionalName = true;
+    }
     if (name.isEmpty()) {
       return ask(List.of("academyName"), "학원 이름을 알려 주세요. 이름이 정해지면 바로 홈페이지를 만들어 드릴게요.");
     }
@@ -258,6 +309,14 @@ public class AcademyAssistantService {
     }
     if (targets.isEmpty() && sample == null) targets = parseTargets(generated.get("targetGroups"));
 
+    if (instant && subjectIds.isEmpty()) {
+      return ask(List.of("subject"), "어떤 과목을 가르치는 학원인가요? 예: 영어, 수학");
+    }
+    boolean provisionalTargets = false;
+    if (instant && targets.isEmpty() && !subjectIds.isEmpty()) {
+      targets = EnumSet.copyOf(PROVISIONAL_TARGETS);
+      provisionalTargets = true;
+    }
     List<String> needs = new ArrayList<>();
     if (subjectIds.isEmpty()) needs.add("subject");
     if (targets.isEmpty()) needs.add("target");
@@ -265,6 +324,11 @@ public class AcademyAssistantService {
     String analyzed = generated.get("regionLocation");
     String regionText = region != null && !region.isBlank() ? region.trim()
         : (analyzed != null && text.contains(analyzed) ? analyzed : null);
+    boolean provisionalRegion = false;
+    if (instant && (regionText == null || regionText.isBlank()) && !subjectIds.isEmpty()) {
+      regionText = PROVISIONAL_REGION;
+      provisionalRegion = true;
+    }
     if (regionText == null || regionText.isBlank()) needs.add("region");
     if (!needs.isEmpty()) {
       return ask(needs, "홈페이지를 만들려면 " + String.join(", ", needs.stream().map(AcademyAssistantService::label).toList())
@@ -291,6 +355,14 @@ public class AcademyAssistantService {
 
     List<String> notes = new ArrayList<>(draft.warnings());
     notes.add("주소·전화번호·강사·수강료는 알려 주시기 전까지 비워 둡니다.");
+    List<String> provisional = new ArrayList<>();
+    if (provisionalName) provisional.add("학원 이름");
+    if (provisionalRegion) provisional.add("지역");
+    if (provisionalTargets) provisional.add("대상 학생");
+    if (!provisional.isEmpty()) {
+      notes.add("임시로 채운 정보: " + String.join(", ", provisional)
+          + ". 화면 위쪽 '학원 정보'에서 실제 값으로 바꿀 수 있어요(게시 전까지).");
+    }
     if (recipe != null) {
       notes.add("디자인 자산 '" + recipe.label() + "'을(를) 적용했어요. 다른 느낌을 원하시면 말씀해 주세요.");
     }
@@ -339,6 +411,22 @@ public class AcademyAssistantService {
     String lower = value.toLowerCase();
     return lower.contains("<script") || lower.contains("javascript:")
         || lower.contains("onerror=") || lower.contains("onload=");
+  }
+
+  /** 임시 학원 이름: 과목이 읽히면 "새 영어학원", 아니면 "새 학원". */
+  static String provisionalName(String subjectNameKo) {
+    return subjectNameKo == null || subjectNameKo.isBlank() ? "새 학원" : "새 " + subjectNameKo.trim() + "학원";
+  }
+
+  /** 문장에 들어 있는 과목 이름(가장 긴 일치)을 찾는다. 없으면 null. */
+  static String inferSubjectName(String text, java.util.Collection<String> subjectNames) {
+    if (text == null || text.isBlank() || subjectNames == null) return null;
+    String best = null;
+    for (String n : subjectNames) {
+      if (n == null || n.isBlank() || !text.contains(n)) continue;
+      if (best == null || n.length() > best.length()) best = n;
+    }
+    return best;
   }
 
   static Set<Integer> parseSubjectIds(String raw) {

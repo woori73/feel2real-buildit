@@ -130,3 +130,57 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-photo-menu[hidden]{display:none}
 .ah-photo-menu button{font:inherit;font-size:14px;background:#fff;border:1px solid var(--ah-line);border-radius:999px;padding:8px 14px;cursor:pointer}
 .ah-work .ah-photo-menu{max-width:880px;align-self:center;width:100%}
+
+/* ═════════ 시작 화면: 입력창 하나(한 문장으로 시작) ═════════ */
+.ah-prompt{background:var(--ah-surface);border:1px solid var(--ah-line);border-radius:22px;padding:14px 14px 10px;box-shadow:0 6px 24px rgba(12,35,138,.08)}
+.ah-prompt textarea{width:100%;font:inherit;font-size:17px;line-height:1.5;border:0;outline:0;resize:none;background:transparent;color:inherit;min-height:84px}
+.ah-prompt:focus-within{border-color:var(--ah-brand);box-shadow:0 6px 24px rgba(12,35,138,.16)}
+.ah-prompt-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}
+.ah-prompt-row .ah-chosen{background:var(--ah-accent);border-radius:999px;padding:4px 12px;font-size:13px;display:inline-flex;gap:8px;align-items:center}
+.ah-send-round{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--ah-brand);color:#fff;font:inherit;font-size:22px;line-height:1;cursor:pointer}
+.ah-send-round:disabled{opacity:.5;cursor:default}
+
+/* 작업 도구(학원 정보·버전·내려받기) */
+.ah-tools{display:flex;gap:6px;flex:none}
+.ah-tool{font:inherit;font-size:13px;background:#fff;border:1px solid var(--ah-line);border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer;color:var(--ah-text);white-space:nowrap}
+.ah-tool[hidden]{display:none}
+.ah-subbar{overflow-x:auto;scrollbar-width:none}
+.ah-subbar::-webkit-scrollbar{display:none}
+.ah-subbar>*{flex:none}
+.ah-subbar .ah-draftnote{flex:1 1 auto;min-width:0}
+
+/* 버전·학원 정보 창 */
+.ah-versions{list-style:none;display:flex;flex-direction:column;gap:6px;max-height:50dvh;overflow:auto}
+.ah-versions li{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--ah-accent);border-radius:10px;padding:8px 10px;font-size:14px}
+.ah-versions li.ah-muted{background:none;color:var(--ah-muted)}
+.ah-secondary.ah-small{padding:6px 12px;min-height:36px;font-size:13px;flex:none}
+.ah-targets{display:flex;flex-wrap:wrap;gap:8px}
+.ah-check{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--ah-line);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer}
+@media(min-width:640px){.ah-prompt textarea{min-height:96px}}
+
+/* ═════════ 작업 화면: 대화가 중심(스레드 + 미리보기 카드 + 전체 화면) ═════════ */
+.ah-work{background:var(--ah-bg)}
+.ah-thread{flex:1;min-height:0;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:760px;margin:0 auto}
+.ah-msgs{display:flex;flex-direction:column;gap:10px}
+.ah-msgs>*,.ah-thread>*{flex:none}
+.ah-msg.err{align-self:flex-start;background:#fff5f5;border:1px solid #f2b8b5;color:var(--ah-danger);border-bottom-left-radius:4px}
+.ah-msg .ah-changes{margin-top:6px}
+.ah-thread .ah-busy{position:static;inset:auto;background:none;backdrop-filter:none;display:block;z-index:auto}
+.ah-thread .ah-busy[hidden]{display:none}
+.ah-thread .ah-busy-card{display:inline-block;box-shadow:none}
+.ah-thread .ah-result{align-self:stretch}
+.ah-thumb{cursor:pointer;height:260px;background:#e9ebf3}
+.ah-thumb .inner{position:relative;width:410px;height:260px;margin:0 auto;overflow:hidden}
+.ah-thumb iframe{width:1024px;height:650px;transform:scale(.4);transform-origin:0 0}
+@media(max-width:480px){
+  .ah-thumb{height:221px}
+  .ah-thumb .inner{width:348px;height:221px}
+  .ah-thumb iframe{transform:scale(.34)}
+}
+.ah-dock{max-width:760px;width:100%;margin:0 auto;border-top:1px solid var(--ah-line)}
+.ah-full{z-index:50;background:#e9ebf3}
+.ah-full .ah-stage{flex:1;min-height:0}
+.ah-modal{z-index:60}
+.ah-toast{z-index:70;position:fixed}
+.ah-attach{flex:none;font:inherit;font-size:20px;background:#fff;border:1px solid var(--ah-line);border-radius:12px;min-height:44px;min-width:44px;cursor:pointer}
+@media(min-width:760px){.ah-work .ah-composer{max-width:none}}

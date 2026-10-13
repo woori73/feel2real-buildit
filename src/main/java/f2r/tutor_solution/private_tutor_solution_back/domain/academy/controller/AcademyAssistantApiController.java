@@ -129,7 +129,7 @@ public class AcademyAssistantApiController {
     try {
       TurnResult r = service.turn(
           principal, request.message(), request.academyName(), request.sampleKey(), request.region(),
-          request.subject(), request.target(), request.revision());
+          request.subject(), request.target(), request.revision(), Boolean.TRUE.equals(request.instant()));
       Map<String, Object> body = new HashMap<>();
       body.put("reply", r.reply());
       body.put("needs", r.needs());
@@ -293,6 +293,71 @@ public class AcademyAssistantApiController {
     }
   }
 
+  /** 버전 기록 목록(복원 대상). */
+  @GetMapping("/versions")
+  public ResponseEntity<Object> versions(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!featureFlag.isOn(principal)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("code", "ASSISTANT_DISABLED", "message", "대화형 홈페이지 제작은 아직 사용할 수 없어요."));
+    }
+    if (isClassic(principal)) {
+      return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("code", "NOT_ASSISTANT_ACADEMY", "message", "기존 방식 홈페이지예요."));
+    }
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.versions(principal));
+  }
+
+  /** 버전 복원: 선택한 버전을 비공개 작업본에 불러온다(공개본 불변). body: {revision, versionId}. */
+  @PostMapping("/restore")
+  public ResponseEntity<Map<String, Object>> restore(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody RestoreRequest request) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
+    }
+    if (request == null || request.revision() == null || request.versionId() == null) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", "revision과 versionId가 필요합니다."));
+    }
+    try {
+      var state = service.restoreVersion(principal, request.revision(), request.versionId());
+      return noStore(HttpStatus.OK, Map.of("revision", state.revision(), "undoDepth", 0));
+    } catch (WorkingCopyConflictException e) {
+      return conflict(e);
+    } catch (IllegalArgumentException e) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
+    }
+  }
+
+  /** 초안 학원의 이름·지역·대상 수정(한 문장 생성의 임시 값을 실제 값으로). body: {academyName?, region?, targets?[]}. */
+  @PostMapping("/profile")
+  public ResponseEntity<Map<String, Object>> profile(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody ProfileRequest request) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
+    }
+    try {
+      java.util.Set<f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup> targets = null;
+      if (request != null && request.targets() != null) {
+        targets = request.targets().stream()
+            .map(String::trim).filter(v -> !v.isEmpty())
+            .map(v -> f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.valueOf(v))
+            .collect(java.util.stream.Collectors.toCollection(() -> java.util.EnumSet.noneOf(
+                f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.TargetGroup.class)));
+      }
+      service.updateProfile(principal,
+          request == null ? null : request.academyName(), request == null ? null : request.region(), targets);
+      return noStore(HttpStatus.OK, Map.of("updated", true));
+    } catch (IllegalArgumentException e) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
+    }
+  }
+
   private static ResponseEntity<Map<String, Object>> noStore(HttpStatus status, Map<String, ?> body) {
     @SuppressWarnings("unchecked")
     Map<String, Object> typed = (Map<String, Object>) body;
@@ -301,7 +366,11 @@ public class AcademyAssistantApiController {
 
   record TurnRequest(
       String message, String academyName, String sampleKey, String region, String subject, String target,
-      Long revision) {}
+      Long revision, Boolean instant) {}
+
+  record RestoreRequest(Long revision, Long versionId) {}
+
+  record ProfileRequest(String academyName, String region, java.util.List<String> targets) {}
 
   record UndoRequest(Long revision) {}
 

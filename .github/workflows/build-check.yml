@@ -63,6 +63,7 @@ jobs:
         run: >-
           node --test
           src/test/js/assistant_wait.test.js
+          src/test/js/assistant_export.test.js
           src/test/js/academy_adopt.test.js
           src/test/js/assistant_home_contract.test.js
           src/test/js/academy_public_hero_cycle.test.js
