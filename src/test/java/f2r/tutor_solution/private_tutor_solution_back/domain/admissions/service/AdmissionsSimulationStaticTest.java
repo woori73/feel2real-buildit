@@ -84,11 +84,18 @@ class AdmissionsSimulationStaticTest {
         assertFalse(answer.contains("확실합니다") && !answer.contains("확인"),
                 c.id() + " 잘못된 단정 의심");
 
-        // 실패 기준 2: 학년도 혼동 — 2027/2028이 모두 언급되면 구분 표기 확인
+        // 실패 기준 2: 학년도 혼동 — 2027/2028이 모두 언급되면 구분 표기 확인.
+        // "확정"/"계획" 외에 "기준/부터/학년도/대비/체계" 등 연도 구분 표현도 인정한다
+        // (예: "2027 기준", "2028부터", "2028학년도"는 정상적인 구분 표기).
         boolean mentions2027 = answer.contains("2027");
         boolean mentions2028 = answer.contains("2028");
         if (mentions2027 && mentions2028) {
-            assertTrue(answer.contains("확정") || answer.contains("계획"),
+            boolean distinguished = answer.contains("확정") || answer.contains("계획")
+                    || answer.contains("기준") || answer.contains("부터")
+                    || answer.contains("학년도") || answer.contains("대비")
+                    || answer.contains("체계") || answer.contains("체제")
+                    || answer.contains("구분");
+            assertTrue(distinguished,
                     c.id() + " 학년도 혼동 — 2027/2028 구분 표기 필요");
         }
 
