@@ -84,11 +84,21 @@ public class AdmissionsFactSearchService {
     // ── 모집단위(학과) ───────────────────────────────────────────────
 
     private List<Evidence> searchDepartments(String question, AdmissionsQueryParser.Parsed p, Set<Integer> years) {
-        List<Evidence> out = new ArrayList<>();
+        List<AdmissionsDepartment> candidates = new ArrayList<>();
         for (AdmissionsDepartment d : departmentRepository.findAll()) {
             if (d.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(d.getAcademicYear())) continue;
             if (!univSelected(p, d.getUniversity())) continue;
-            if (!AdmissionsQueryParser.mentionsDepartment(question, d.getName())) continue;
+            candidates.add(d);
+        }
+        // 1차: 학과명(접미 제거 포함) 매칭. 하나도 없으면 2차: 핵심어 부분 일치(예: "반도체").
+        List<AdmissionsDepartment> matched = candidates.stream()
+                .filter(d -> AdmissionsQueryParser.mentionsDepartment(question, d.getName())).toList();
+        if (matched.isEmpty()) {
+            matched = candidates.stream()
+                    .filter(d -> AdmissionsQueryParser.mentionsDepartmentByKeyword(question, d.getName())).toList();
+        }
+        List<Evidence> out = new ArrayList<>();
+        for (AdmissionsDepartment d : matched) {
             out.add(evidence("dept", d.getDepartmentId(), d.getAcademicYear(),
                     d.getUniversity().getName() + " " + d.getAcademicYear() + "학년도 " + d.getName() + " 모집인원",
                     "전형별 모집인원: " + formatQuota(d.getQuotaInfo()), d.getSource()));

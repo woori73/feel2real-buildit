@@ -203,4 +203,60 @@ class AdmissionsFactSearchServiceDbTest {
         assertThat(result.searchedYears()).containsExactly(2027);
         assertThat(result.evidence()).allSatisfy(e -> assertThat(e.getAcademicYear()).isEqualTo(2027));
     }
+
+    private static String deptJson(String name, int total) {
+        return "{\"university_code\":\"TST\",\"academic_year\":\"2027\",\"department_name\":\"" + name
+                + "\",\"counts_by_type\":{\"학생부종합\":" + total + ",\"합계\":" + total + "},\"source_document_key\":\"doc_tst_2027_susi\"}";
+    }
+
+    private void reloadWith(String... deptNames) throws Exception {
+        clean();
+        StringBuilder depts = new StringBuilder();
+        for (int i = 0; i < deptNames.length; i++) depts.append(i > 0 ? "," : "").append(deptJson(deptNames[i], 10 + i));
+        loader.loadSeed("{\"ipsi_universities\":[{\"name\":\"테스트대학교\",\"university_code\":\"TST\"}],"
+                + "\"ipsi_documents\":[{\"document_key\":\"doc_tst_2027_susi\",\"document_name\":\"테스트대 2027 수시 모집요강\",\"applicable_academic_year\":2027,\"institution_name\":\"테스트대\"}],"
+                + "\"ipsi_departments\":[" + depts + "],\"ipsi_admission_types\":[],\"ipsi_schedules\":[]}");
+        approveAll();
+    }
+
+    @Test
+    @DisplayName("given 반도체 모집단위 여러 개 when 반도체만 말해 물으면 then 반도체 관련 행만 모두 나오고 다른 학과는 나오지 않는다 (S21)")
+    void keyword_only_question_finds_semiconductor_departments() throws Exception {
+        // given
+        reloadWith("시스템반도체공학과", "지능형반도체전공", "반도체시스템공학과", "반도체융합공학과", "반도체공학과", "컴퓨터공학과", "경영학과", "자유전공학부");
+
+        // when
+        var result = search.search("반도체 전공 가고 싶은데 대학별 길이가 어떻게 돼요?", null);
+
+        // then
+        assertThat(result.evidence()).hasSize(5);
+        assertThat(result.evidence()).allSatisfy(e -> assertThat(e.getTitle()).contains("반도체"));
+    }
+
+    @Test
+    @DisplayName("given 의예과와 치의예과가 함께 있을 때 when 의예과를 정확히 물으면 then 키워드 폴백을 쓰지 않아 치의예과는 섞이지 않는다")
+    void exact_department_name_suppresses_keyword_fallback() throws Exception {
+        // given
+        reloadWith("의예과", "치의예과", "한의예과(인문)");
+
+        // when
+        var result = search.search("의예과 논술로 지원할 수 있나요", null);
+
+        // then
+        assertThat(result.evidence()).hasSize(1);
+        assertThat(result.evidence().get(0).getTitle()).contains("의예과").doesNotContain("치의예과");
+    }
+
+    @Test
+    @DisplayName("given 학과명과 무관한 일반 질문 when 물으면 then 학과 근거가 하나도 나오지 않는다")
+    void generic_question_returns_no_department_rows() throws Exception {
+        // given
+        reloadWith("시스템반도체공학과", "자유전공학부", "전자공학부");
+
+        // when
+        var result = search.search("전공 상관없이 대학별 전형이 궁금해요", null);
+
+        // then
+        assertThat(result.evidence()).isEmpty();
+    }
 }

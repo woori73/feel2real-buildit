@@ -4597,7 +4597,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 인증/권한: 공개 (permitAll). IP 기반 rate limit (분당 10회, 시간당 60회, 초과 시 429).
 - Request: `{ message: string, academicYear: 2027|2028|null, sessionToken: string|null }`
 - Response: `{ status: "ok"|"error", answer: string, errorMessage: string|null, model: string|null, sources: [{kind, title, url|null, id}], academicYear: int|null, yearConfirmed: boolean|null }`
-- 동작: 학과·전형·일정 DB(승인된 행만)와 지식·공식자료를 검색한다. 합격 가능성·추천·경쟁률/입결/권장이수 질문과 근거 없는 2028 질문은 LLM 없이 고정 문구로 답하고, 근거(FACT)가 없거나 GUIDE만 있으면 LLM을 호출하지 않는다. 답변의 두 자리 이상 숫자가 근거에 없으면 폐기한다. 출처는 URL이 없어도 `id`(예: dept:7)와 제목으로 표시한다. 입시 전용 DB만 검색 (NewStart 지피지기 DB 참조 금지). 공식 모집요강 우선, 학년도 명시, 2027 확정/2028 계획 구분, 유튜브 의견 분리, 충돌·보류 자료 확정 답변 금지, 근거 없으면 "모른다"고 답변.
+- 동작: 학과·전형·일정 DB(승인된 행만)와 지식·공식자료를 검색한다. 합격 가능성·추천·경쟁률/입결/권장이수 질문, 대학을 특정하지 않은 전국 총량 통계 질문("미수집" 문구), 근거 없는 대학별 2028 질문("미발표" 문구)은 LLM 없이 고정 문구로 답하고, 근거(FACT)가 없거나 GUIDE만 있거나 공식자료 제목(material)뿐이면 LLM을 호출하지 않는다. 답변의 두 자리 이상 숫자가 근거에 없으면 폐기한다. 출처는 URL이 없어도 `id`(예: dept:7)와 제목으로 표시한다. 입시 전용 DB만 검색 (NewStart 지피지기 DB 참조 금지). 공식 모집요강 우선, 학년도 명시, 2027 확정/2028 계획 구분, 유튜브 의견 분리, 충돌·보류 자료 확정 답변 금지, 근거 없으면 "모른다"고 답변.
 - 화면: `/admissions/guide` (permitAll).
 
 ### ✅ /api/admin/admissions/** (ADMIN 전용)

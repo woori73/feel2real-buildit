@@ -89,4 +89,66 @@ class AdmissionsQueryParserTest {
         assertThat(AdmissionsQueryParser.mentionsDepartment("경영학과은 고려대가", "경영학과")).isTrue();
         assertThat(AdmissionsQueryParser.mentionsDepartment("수학 공부법", "수학과")).isFalse();
     }
+
+    /** 시드(학과 480행)에서 "반도체"가 들어간 실제 모집단위 8개. */
+    private static final List<String> SEMICONDUCTOR_DEPTS = List.of(
+            "시스템반도체공학과", "지능형반도체전공", "반도체시스템공학과", "반도체융합공학과",
+            "반도체공학과◇", "반도체공학과", "전자공학부 반도체공학과", "반도체시스템공학과");
+    private static final List<String> OTHER_DEPTS = List.of(
+            "컴퓨터공학과", "경영학과", "의예과", "치의예과", "한의예과(인문)", "신소재공학부", "자유전공학부", "전자공학부", "기계공학과");
+
+    @Test
+    @DisplayName("given 반도체만 말한 질문(S21) when 핵심어 매칭하면 then 반도체 관련 8개 모집단위만 걸리고 다른 학과는 걸리지 않는다")
+    void keyword_matches_all_semiconductor_departments_only() {
+        // given
+        String q = "반도체 전공 가고 싶은데 대학별 길이가 어떻게 돼요?";
+
+        // when / then
+        assertThat(SEMICONDUCTOR_DEPTS).allSatisfy(n -> assertThat(AdmissionsQueryParser.mentionsDepartmentByKeyword(q, n)).as(n).isTrue());
+        assertThat(OTHER_DEPTS).allSatisfy(n -> assertThat(AdmissionsQueryParser.mentionsDepartmentByKeyword(q, n)).as(n).isFalse());
+    }
+
+    @Test
+    @DisplayName("given 일반 단어·짧은 단어뿐인 질문 when 핵심어를 뽑으면 then 학과 오탐을 일으킬 말은 제외된다")
+    void keywords_exclude_stopwords_and_short_words() {
+        // given / when
+        var generic = AdmissionsQueryParser.departmentKeywords("전공 학과 대학별 모집 전형 공학 전자 수시 정시");
+        var particle = AdmissionsQueryParser.departmentKeywords("반도체는 어떻게 되나요");
+
+        // then
+        assertThat(generic).isEmpty();                         // 3자 미만("공학","전자")·일반 단어는 쓰지 않는다
+        assertThat(particle).contains("반도체").doesNotContain("어떻게");
+    }
+
+    @Test
+    @DisplayName("given 일반 단어만 있는 질문 when 핵심어 매칭하면 then 자유전공학부 같은 학과에 걸리지 않는다")
+    void generic_words_do_not_match_departments() {
+        // given
+        String q = "전공 학과 상관없이 대학별 전형이 궁금해요";
+
+        // when / then
+        assertThat(AdmissionsQueryParser.mentionsDepartmentByKeyword(q, "자유전공학부")).isFalse();
+        assertThat(AdmissionsQueryParser.mentionsDepartmentByKeyword(q, "전자공학부")).isFalse();
+    }
+
+    @Test
+    @DisplayName("given 정확한 학과명 질문 when 이름 매칭하면 then 이름 기준으로만 걸린다(치의예과·한의예과는 걸리지 않는다)")
+    void exact_name_match_is_unchanged() {
+        // given
+        String q = "의예과 논술로 지원할 수 있는 대학이 있나요?";
+
+        // when / then
+        assertThat(AdmissionsQueryParser.mentionsDepartment(q, "의예과")).isTrue();
+        assertThat(AdmissionsQueryParser.mentionsDepartment(q, "치의예과")).isFalse();
+        assertThat(AdmissionsQueryParser.mentionsDepartment(q, "한의예과(인문)")).isFalse();
+    }
+
+    @Test
+    @DisplayName("given 총량 통계 질문 when 분석하면 then 총량 통계로 표시하고 대학별 질문은 표시하지 않는다")
+    void flags_aggregate_stats() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("2028이면 수시 비중이 80% 좀 넘죠? 몇 퍼센트예요?", UNIVS).asksAggregateStats()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("전국 수시 모집인원이 몇 명이에요", UNIVS).asksAggregateStats()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("인하대 컴퓨터공학과 몇 명 뽑나요", UNIVS).asksAggregateStats()).isFalse();
+    }
 }

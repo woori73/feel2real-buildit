@@ -88,9 +88,16 @@ public class AdmissionsChatService {
     static final String MSG_NOT_COLLECTED =
             "경쟁률·전년도 입시결과·충원 현황·권장 이수 과목은 아직 수집된 공식 자료가 없어 안내할 수 없습니다. "
                     + "해당 정보는 각 대학 입학처 발표를 확인해 주세요.";
+    /** 미발표: 대학별 2028학년도 모집요강이 아직 나오지 않았다(수집 여부와 무관). */
     static final String MSG_UNPUBLISHED_2028 =
-            "2028학년도 모집요강의 일정·수치는 대부분의 대학에서 아직 발표 전입니다. 현재 확보한 2028학년도 자료가 "
-                    + "질문에 해당하지 않아 확정된 일정이나 수치를 안내할 수 없습니다. 각 대학 입학처 발표를 확인해 주세요.";
+            "대학별 2028학년도 모집요강(전형·일정·모집인원)은 대부분의 대학에서 아직 발표 전입니다. 현재 확보한 2028학년도 "
+                    + "자료는 일부 대학의 시행계획 방향뿐이라 질문에 해당하는 확정된 일정이나 수치를 안내할 수 없습니다. "
+                    + "각 대학 입학처 발표를 확인해 주세요.";
+    /** 미수집: 자료가 발표되었을 수 있으나 이 가이드가 수집하지 않았다(발표 여부와 무관). */
+    static final String MSG_AGGREGATE_NOT_COLLECTED =
+            "전국 단위 모집인원·수시/정시 비중 같은 총량 통계(예: 대교협 발표 자료)는 이 가이드에 수집된 공식 자료가 없어 "
+                    + "정확한 수치를 안내할 수 없습니다. 통계가 발표되지 않았다는 뜻이 아니라 아직 수집하지 않았다는 뜻이니 "
+                    + "대교협 등 공식 발표 자료를 직접 확인해 주세요. 대학별 전형·모집단위·일정은 대학 이름을 넣어 물어보세요.";
     static final String MSG_UNSUPPORTED_YEAR =
             "입시상담 가이드는 2027학년도(확정)와 2028학년도(계획) 자료만 다룹니다. 다른 학년도는 안내할 수 없습니다.";
     static final String MSG_UNGROUNDED_NUMBER =
@@ -135,6 +142,9 @@ public class AdmissionsChatService {
         }
         if (parsed.asksNotCollected()) {
             return refuse(MSG_NOT_COLLECTED, sessionToken, question, academicYearFilter);
+        }
+        if (parsed.asksAggregateStats() && parsed.universities().isEmpty()) {
+            return refuse(MSG_AGGREGATE_NOT_COLLECTED, sessionToken, question, academicYearFilter);
         }
         if (parsed.mentionsUnsupportedYear() && parsed.years().isEmpty()) {
             return refuse(MSG_UNSUPPORTED_YEAR, sessionToken, question, academicYearFilter);

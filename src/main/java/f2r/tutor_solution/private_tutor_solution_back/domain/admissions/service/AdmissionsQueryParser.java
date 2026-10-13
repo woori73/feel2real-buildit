@@ -30,6 +30,10 @@ public final class AdmissionsQueryParser {
     private static final Pattern NOT_COLLECTED = Pattern.compile(
             "경쟁률|입시\\s*결과|입결|충원|등급\\s*컷|평균\\s*등급|권장\\s*이수|권장\\s*과목");
 
+    /** 전국 단위 총량 통계(수시/정시 비중, 전체 모집인원 등) — 대학을 특정하지 않으면 수집된 자료가 없다. */
+    private static final Pattern AGGREGATE_STATS = Pattern.compile(
+            "(수시|정시)\\s*(비중|비율|인원)|전체\\s*모집|총\\s*모집|전국|비중|몇\\s*퍼센트|몇\\s*%");
+
     private static final Pattern SCHEDULE_INTENT = Pattern.compile(
             "일정|언제|접수|원서|발표|마감|까지|입력|등록|며칠|날짜|몇\\s*월");
 
@@ -49,6 +53,7 @@ public final class AdmissionsQueryParser {
             boolean mentionsUnsupportedYear,
             boolean asksAdmissionChance,
             boolean asksNotCollected,
+            boolean asksAggregateStats,
             boolean wantsSchedule,
             boolean wantsType,
             boolean wantsQuota) {
@@ -88,6 +93,7 @@ public final class AdmissionsQueryParser {
                 years, univs, unsupported,
                 CHANCE.matcher(q).find(),
                 NOT_COLLECTED.matcher(q).find(),
+                AGGREGATE_STATS.matcher(q).find(),
                 SCHEDULE_INTENT.matcher(q).find(),
                 TYPE_INTENT.matcher(q).find(),
                 QUOTA_INTENT.matcher(q).find());
@@ -115,7 +121,46 @@ public final class AdmissionsQueryParser {
         return out;
     }
 
-    /** 모집단위 이름이 질문에 언급됐는지. "컴퓨터공학과" ↔ "컴퓨터공학"처럼 접미(학과/학부/과/전공)를 뗀 형태도 인정. */
+    /** 학과 핵심어로 쓰지 않는 일반 단어(학과명에 흔히 섞이거나 입시 질문에 늘 나오는 말). */
+    private static final Set<String> DEPT_KEYWORD_STOPWORDS = Set.of(
+            "전공", "학과", "학부", "계열", "대학", "대학별", "대학교", "모집", "전형", "지원", "수시", "정시", "입시",
+            "입학", "선발", "학생부", "논술", "수능", "최저", "자격", "일정", "접수", "원서", "합격", "가능", "추천",
+            "경쟁률", "어떻게", "어디", "무엇", "알려", "궁금", "있나요", "되나요", "하려고", "싶은데");
+
+    private static final Pattern HANGUL_RUN = Pattern.compile("[가-힣]{3,}");
+    private static final String[] TRAILING_PARTICLES = {
+            "으로", "에서", "에게", "까지", "부터", "보다", "처럼", "이나", "이며", "하고", "라고",
+            "는", "은", "이", "가", "을", "를", "의", "에", "도", "로", "과", "와", "만", "고", "며", "요"};
+
+    /**
+     * 질문에서 학과 핵심어 후보를 뽑는다. 한글 3자 이상 덩어리(조사 한 겹 제거형 포함)에서 일반 단어를 뺀다.
+     * 2자 이하 단어는 쓰지 않는다("공학", "전자" 같은 짧은 말이 여러 학과에 걸려 오탐이 나기 때문).
+     */
+    static Set<String> departmentKeywords(String question) {
+        Set<String> out = new LinkedHashSet<>();
+        if (question == null) return out;
+        Matcher m = HANGUL_RUN.matcher(question);
+        while (m.find()) {
+            String run = m.group();
+            List<String> candidates = new ArrayList<>();
+            candidates.add(run);
+            for (String particle : TRAILING_PARTICLES) {
+                if (run.endsWith(particle) && run.length() - particle.length() >= 3) {
+                    candidates.add(run.substring(0, run.length() - particle.length()));
+                    break;
+                }
+            }
+            for (String c : candidates) {
+                if (c.length() >= 3 && !DEPT_KEYWORD_STOPWORDS.contains(c)) out.add(c);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * 모집단위 이름이 질문에 언급됐는지(1차, 이름 기준).
+     * 이름 전체 포함, 또는 "컴퓨터공학과" ↔ "컴퓨터공학"처럼 접미(학과/학부/과/전공)를 뗀 형태를 인정한다.
+     */
     static boolean mentionsDepartment(String question, String departmentName) {
         if (question == null || departmentName == null || departmentName.isBlank()) return false;
         String name = departmentName.trim();
@@ -123,5 +168,19 @@ public final class AdmissionsQueryParser {
         String stem = name.replaceAll("(학과|학부|전공|과)$", "");
         return stem.length() >= 3 && question.contains(stem)
                 || (stem.length() == 2 && question.contains(stem + "과"));
+    }
+
+    /**
+     * 학과명의 핵심어로 언급됐는지(2차 폴백). "반도체 전공 가고 싶어요" → "시스템반도체공학과", "반도체공학과".
+     * 1차 이름 매칭이 하나도 없을 때만 써야 한다. 질문이 "의예과"처럼 정확한 학과명을 말했는데 부분 일치까지 더하면
+     * "치의예과"·"한의예과" 같은 다른 학과가 섞이기 때문이다.
+     */
+    static boolean mentionsDepartmentByKeyword(String question, String departmentName) {
+        if (question == null || departmentName == null || departmentName.isBlank()) return false;
+        String name = departmentName.trim();
+        for (String keyword : departmentKeywords(question)) {
+            if (name.contains(keyword)) return true;
+        }
+        return false;
     }
 }

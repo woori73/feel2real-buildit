@@ -287,4 +287,56 @@ class AdmissionsChatServicePolicyTest {
         assertThat(answer.answer()).contains("계획 단계");
         assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::id).containsExactly("knowledge:42");
     }
+
+    @Test
+    @DisplayName("given 전국 수시 비중 질문(S13) when 대학 없이 묻으면 then 미발표가 아니라 미수집 문구로 답하고 LLM을 호출하지 않는다")
+    void aggregate_stats_question_gets_not_collected_message() {
+        // given
+        String q = "2028이면 수시 비중이 80% 좀 넘죠? 몇 퍼센트예요?";
+        givenFacts(q, List.of(), Set.of(2028), true);
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_AGGREGATE_NOT_COLLECTED);
+        assertThat(answer.answer()).doesNotContain("아직 발표 전").contains("수집");
+        assertThat(answer.answer()).doesNotContainPattern("\\d+\\s*%"); // 수치를 만들어내지 않는다
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 대학별 2028 일정 질문 when 근거가 없으면 then 미수집이 아니라 미발표 문구를 쓴다")
+    void university_2028_schedule_keeps_unpublished_message() {
+        // given
+        String q = "서울대 2028 수시 원서접수는 몇 월인가요?";
+        givenFacts(q, List.of(), Set.of(2028), true);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_UNPUBLISHED_2028);
+        assertThat(answer.answer()).contains("아직 발표 전").doesNotContain("수집된 공식 자료가 없어");
+    }
+
+    @Test
+    @DisplayName("given 대학을 말한 수시 비중 질문 when 묻으면 then 총량 통계 차단에 걸리지 않고 정상 흐름으로 진행한다")
+    void aggregate_filter_does_not_block_university_specific_questions() {
+        // given
+        String q = "서울대 수시 비중이 어떻게 되나요";
+        Evidence e = fact("type:1", "서울대학교 2027학년도 지역균형", "모집인원: 414", 2027, null);
+        givenFacts(q, List.of(e), Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2027학년도 서울대 지역균형 모집인원은 414명입니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).contains("414명");
+        verify(llm).complete(anyString(), anyString(), anyInt());
+    }
 }
