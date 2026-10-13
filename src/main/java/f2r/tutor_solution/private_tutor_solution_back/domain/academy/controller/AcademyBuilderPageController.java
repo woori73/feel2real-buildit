@@ -30,10 +30,21 @@ public class AcademyBuilderPageController {
 
   static final String ASSISTANT_VIEW = "tutor/assistant_home";
 
+  static final String ENTRY_VIEW = "tutor/builder_entry";
+
   private final AcademyService academyService;
   private final AssistantFeatureFlag assistantFlag;
   private final AssistantAcademyMode assistantMode;
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  /**
+   * 빌더 진입 화면: AI 신규 제작 또는 샘플 선택.
+   * 샘플 갤러리는 비회원도 볼 수 있으나, 실제 제작은 /builder (TUTOR/ADMIN) 로 이동한다.
+   */
+  @GetMapping("/builder/entry")
+  public String builderEntry() {
+    return ENTRY_VIEW;
+  }
 
   @GetMapping("/builder")
   public Object builder(
