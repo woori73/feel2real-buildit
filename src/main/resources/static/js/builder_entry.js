@@ -8,19 +8,12 @@
   'use strict';
 
   // AI로 만들기 버튼
+  // 참고: 입력된 프롬프트는 현재 /builder로 전달되지 않음 (백엔드 연동은 Claude 담당)
+  // 버튼 클릭 시 기존 /builder로 이동만 수행
   document.querySelectorAll('[data-action="ai-create"]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var prompt = document.querySelector('#aiPrompt');
-      var promptText = prompt ? prompt.value.trim() : '';
-      // /builder로 이동 (기존 권한 체크가 적용됨)
-      var url = '/builder';
-      if (promptText) {
-        // 프롬프트를 sessionStorage에 저장하여 빌더에서 활용
-        try {
-          sessionStorage.setItem('buildit_entry_prompt', promptText);
-        } catch (e) {}
-      }
-      window.location.href = url;
+      // 기존 /builder로 이동 (TUTOR/ADMIN 권한 체크 적용)
+      window.location.href = '/builder';
     });
   });
 
