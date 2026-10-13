@@ -78,6 +78,7 @@ public class AdmissionsDataLoader {
             univCount++;
         }
 
+        int skipped = 0;
         int matCount = 0;
         for (JsonNode d : root.path("ipsi_documents")) {
             String docKey = d.path("document_key").asText();
@@ -87,11 +88,18 @@ public class AdmissionsDataLoader {
                     .anyMatch(m -> title.equals(m.getTitle()));
             if (exists) continue;
 
+            Integer matYear = readSupportedYear(d.path("applicable_academic_year"));
+            if (matYear == null) {
+                log.warn("admissions seed: 적용 학년도 미확정/미지원 자료는 적재하지 않는다 title={} year={}",
+                        title, d.path("applicable_academic_year"));
+                skipped++;
+                continue;
+            }
             String univCode = extractUnivCode(docKey);
             AdmissionsUniversity univ = univByCode.get(univCode);
             AdmissionsOfficialMaterial mat = AdmissionsOfficialMaterial.builder()
                     .university(univ)
-                    .academicYear(d.path("applicable_academic_year").asInt(2027))
+                    .academicYear(matYear)
                     .title(title)
                     .issuer(d.path("institution_name").asText("미확인"))
                     .publishDate(parseDate(d.path("published_at").asText(null)))
@@ -107,7 +115,8 @@ public class AdmissionsDataLoader {
         for (JsonNode dep : root.path("ipsi_departments")) {
             AdmissionsUniversity univ = univByCode.get(dep.path("university_code").asText());
             if (univ == null) continue;
-            int year = parseYear(dep.path("academic_year").asText("2027"));
+            Integer year = readSupportedYear(dep.path("academic_year"));
+            if (year == null) { skipped++; continue; }
             AdmissionsDepartment dept = AdmissionsDepartment.builder()
                     .university(univ)
                     .academicYear(year)
@@ -122,7 +131,8 @@ public class AdmissionsDataLoader {
         for (JsonNode t : root.path("ipsi_admission_types")) {
             AdmissionsUniversity univ = univByCode.get(t.path("university_code").asText());
             if (univ == null) continue;
-            int year = t.path("academic_year").asInt(2027);
+            Integer year = readSupportedYear(t.path("academic_year"));
+            if (year == null) { skipped++; continue; }
             StringBuilder details = new StringBuilder();
             details.append("모집인원: ").append(t.path("recruitment_count").asText("미확인")).append("\n");
             details.append("지원자격: ").append(t.path("eligibility").asText("")).append("\n");
@@ -142,7 +152,8 @@ public class AdmissionsDataLoader {
         int schedCount = 0;
         for (JsonNode s : root.path("ipsi_schedules")) {
             AdmissionsUniversity univ = univByCode.get(s.path("university_code").asText());
-            int year = parseYear(s.path("academic_year").asText("2027"));
+            Integer year = readSupportedYear(s.path("academic_year"));
+            if (year == null) { skipped++; continue; }
             String docKey = s.path("source_document_key").asText(null);
             AdmissionsSchedule sched = AdmissionsSchedule.builder()
                     .university(univ)
@@ -155,8 +166,8 @@ public class AdmissionsDataLoader {
             schedCount++;
         }
 
-        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={}",
-                univCount, matCount, deptCount, typeCount, schedCount);
+        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={}",
+                univCount, matCount, deptCount, typeCount, schedCount, skipped);
         return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0);
     }
 
@@ -226,12 +237,25 @@ public class AdmissionsDataLoader {
         };
     }
 
-    private static int parseYear(String yearStr) {
-        try {
-            return Integer.parseInt(yearStr.trim());
-        } catch (Exception e) {
-            return 2027;
+    /** 상담이 다루는 학년도. 2029 등 그 밖의 연도는 섞이지 않도록 적재하지 않는다. */
+    static final java.util.Set<Integer> SUPPORTED_YEARS = java.util.Set.of(2027, 2028);
+
+    /**
+     * 학년도를 읽는다. 값이 없거나 숫자가 아니거나 2027/2028이 아니면 null — 임의로 2027로 확정하지 않는다.
+     */
+    static Integer readSupportedYear(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) return null;
+        Integer year;
+        if (node.isInt()) {
+            year = node.asInt();
+        } else {
+            try {
+                year = Integer.parseInt(node.asText("").trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
+        return SUPPORTED_YEARS.contains(year) ? year : null;
     }
 
     private static LocalDate parseDate(String dateStr) {
