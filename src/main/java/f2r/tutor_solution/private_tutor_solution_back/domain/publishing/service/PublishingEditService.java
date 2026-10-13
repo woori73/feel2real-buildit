@@ -27,6 +27,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * 출판 편집 서비스 (P1).
@@ -43,6 +45,7 @@ public class PublishingEditService {
   private final DesignCraftCliExecutor cliExecutor;
   private final CommandAllowlist allowlist;
   private final StyleParamNormalizer normalizer;
+  private final MarkdownStyleService markdownStyleService;
   private final PublishingVersionRepository versionRepository;
   private final ObjectMapper objectMapper;
 
@@ -238,5 +241,80 @@ public class PublishingEditService {
 
   private String str(Object o) {
     return o == null ? "" : String.valueOf(o);
+  }
+
+  /**
+   * Markdown 원고의 제목 스타일을 자동 적용한다 (P4).
+   *
+   * <p>원고 파일을 읽어 Markdown 구조를 파싱하고, 각 제목에 대해
+   * {@code find.find} → {@code text.select} → {@code style.paragraph.apply}
+   * 시퀀스로 ko-heading 스타일을 적용한다.
+   *
+   * @return 적용된 스타일 수
+   */
+  @Transactional
+  public int applyMarkdownStyles(AuthenticatedPrincipal principal, Long jobId) {
+    var job = jobService.getJob(principal, jobId);
+    Path manuscriptPath = jobService.getManuscriptPath(jobId);
+    if (manuscriptPath == null || !Files.exists(manuscriptPath)) {
+      throw new IllegalArgumentException("원고 파일이 없습니다. 먼저 원고를 업로드하세요.");
+    }
+    String fileName = manuscriptPath.getFileName().toString().toLowerCase();
+    if (!fileName.endsWith(".md") && !fileName.endsWith(".markdown")
+        && !fileName.endsWith(".txt")) {
+      throw new IllegalArgumentException("Markdown(.md) 또는 텍스트(.txt) 원고만 지원합니다.");
+    }
+
+    String markdown;
+    try {
+      markdown = Files.readString(manuscriptPath, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new IllegalStateException("원고 읽기 실패: " + e.getMessage(), e);
+    }
+
+    var parsed = markdownStyleService.parse(markdown);
+    if (parsed.headingBlocks().isEmpty()) {
+      log.info("Markdown 제목 없음 (jobId={}), 스타일 적용 스킵", jobId);
+      return 0;
+    }
+
+    Path docPath = jobService.getDocumentPath(jobId);
+    int applied = 0;
+    for (var block : parsed.headingBlocks()) {
+      try {
+        // find.find로 제목 텍스트 위치 확인
+        String findJson = objectMapper.writeValueAsString(
+            Map.of("find", block.text(), "scope", "story"));
+        String findResult = cliExecutor.run(docPath, "find.find", findJson);
+        JsonNode matches = objectMapper.readTree(findResult);
+        if (!matches.isArray() || matches.isEmpty()) {
+          log.warn("제목 텍스트를 찾지 못함: {}", block.text());
+          continue;
+        }
+        JsonNode first = matches.get(0);
+        long story = first.get("story").asLong();
+        long start = first.get("start").asLong();
+        long end = first.get("end").asLong();
+
+        // text.select로 선택
+        String selectJson = objectMapper.writeValueAsString(
+            Map.of("story", story, "anchor", start, "focus", end));
+        cliExecutor.run(docPath, "text.select", selectJson);
+
+        // style.paragraph.apply로 스타일 적용
+        String applyJson = objectMapper.writeValueAsString(
+            Map.of("name", block.style()));
+        cliExecutor.run(docPath, "style.paragraph.apply", applyJson);
+
+        applied++;
+        log.info("스타일 적용: '{}' → {}", block.text(), block.style());
+      } catch (Exception e) {
+        log.warn("스타일 적용 실패: '{}' - {}", block.text(), e.getMessage());
+      }
+    }
+
+    // 스냅샷 생성 (스타일 적용 후 상태 보존)
+    jobService.createSnapshot(principal, jobId, "Markdown 스타일 자동 적용 (" + applied + "개)");
+    return applied;
   }
 }
