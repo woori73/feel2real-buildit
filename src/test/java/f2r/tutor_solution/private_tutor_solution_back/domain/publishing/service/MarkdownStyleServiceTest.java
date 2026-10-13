@@ -19,6 +19,7 @@ class MarkdownStyleServiceTest {
     assertThat(result.cleanText()).contains("대제목");
     assertThat(result.headingBlocks()).hasSize(3);
     assertThat(result.headingBlocks().get(0).style()).isEqualTo("ko-heading1");
+    assertThat(result.headingBlocks().get(0).original()).isEqualTo("# 대제목");
     assertThat(result.headingBlocks().get(1).style()).isEqualTo("ko-heading2");
     assertThat(result.headingBlocks().get(2).style()).isEqualTo("ko-heading3");
   }
